@@ -1,0 +1,50 @@
+= ranch:set_max_connections(3)
+
+== Name
+
+ranch:set_max_connections - Set the max number of connections
+
+== Description
+
+[source,erlang]
+----
+set_max_connections(Ref      :: ranch:ref(),
+                    MaxConns :: ranch:max_conns())
+    -> ok
+----
+
+Set the max number of connections.
+
+The change will be applied immediately. If the new value is
+smaller than the previous one, Ranch will wait for the extra
+connections to terminate and will not accept new connections
+until the number of connections goes below the limit.
+
+== Arguments
+
+Ref::
+
+The listener name.
+
+MaxConns::
+
+The new maximum number of connections.
+
+== Return value
+
+The atom `ok` is always returned. It can be safely ignored.
+
+== Examples
+
+.Set the max number of connections
+[source,erlang]
+----
+ranch:set_max_connections(example, 10000).
+----
+
+== See also
+
+link:man:ranch:get_max_connections(3)[ranch:get_max_connections(3)],
+link:man:ranch:set_protocol_options(3)[ranch:set_protocol_options(3)],
+link:man:ranch:set_transport_options(3)[ranch:set_transport_options(3)],
+link:man:ranch(3)[ranch(3)]

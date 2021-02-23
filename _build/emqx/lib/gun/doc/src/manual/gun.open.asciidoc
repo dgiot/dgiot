@@ -1,0 +1,72 @@
+= gun:open(3)
+
+== Name
+
+gun:open - Open a connection to the given host and port
+
+== Description
+
+[source,erlang]
+----
+open(Host, Port)       -> open(Host, Port, #{})
+open(Host, Port, Opts) -> {ok, pid()} | {error, any()}
+
+Host :: inet:hostname() | inet:ip_address()
+Port :: inet:port_number()
+Opts :: gun:opts()
+----
+
+Open a connection to the given host and port.
+
+== Arguments
+
+Host::
+
+Host or IP address to connect to.
+
+Port::
+
+Port to connect to.
+
+Opts::
+
+Options for this connection.
+
+== Return value
+
+The pid of the newly created Gun process is returned.
+Note that this does not indicate that the connection
+has been successfully opened; the link:man:gun_up(3)[gun_up(3)]
+message will be sent for that.
+
+== Changelog
+
+* *1.0*: Function introduced.
+
+== Examples
+
+.Connect to a server
+[source,erlang]
+----
+{ok, ConnPid} = gun:open("example.org", 443).
+----
+
+.Connect to a server with custom options
+[source,erlang]
+----
+{ok, ConnPid} = gun:open("example.org", 443,
+    #{protocols => [http2]}).
+----
+
+.Connect to a server using its IP address
+[source,erlang]
+----
+{ok, ConnPid} = gun:open({127,0,0,1}, 443).
+----
+
+== See also
+
+link:man:gun(3)[gun(3)],
+link:man:gun:open_unix(3)[gun:open_unix(3)],
+link:man:gun:await_up(3)[gun:await_up(3)],
+link:man:gun_up(3)[gun_up(3)]

@@ -1,0 +1,99 @@
+== Protocols
+
+A protocol handler starts a connection process and defines the
+protocol logic executed in this process.
+
+=== Writing a protocol handler
+
+All protocol handlers must implement the `ranch_protocol` behavior
+which defines a single callback, `start_link/4`. This callback is
+responsible for spawning a new process for handling the connection.
+It receives four arguments: the name of the listener, the socket, the
+transport handler being used and the protocol options defined in
+the call to `ranch:start_listener/5`. This callback must
+return `{ok, Pid}`, with `Pid` the pid of the new process.
+
+The newly started process can then freely initialize itself. However,
+it must call `ranch:handshake/1,2` before doing any socket operation.
+This will ensure the connection process is the owner of the socket.
+It expects the listener's name as argument.
+
+.Perform the socket handshake
+
+[source,erlang]
+{ok, Socket} = ranch:handshake(Ref).
+
+If your protocol code requires specific socket options, you should
+set them while initializing your connection process, after
+calling `ranch:handshake/1,2`. You can use `Transport:setopts/2`
+for that purpose.
+
+Following is the complete protocol code for the example found
+in `examples/tcp_echo/`.
+
+.Protocol module that echoes everything it receives
+
+[source,erlang]
+----
+-module(echo_protocol).
+-behaviour(ranch_protocol).
+
+-export([start_link/4]).
+-export([init/3]).
+
+start_link(Ref, _Socket, Transport, Opts) ->
+	Pid = spawn_link(?MODULE, init, [Ref, Transport, Opts]),
+	{ok, Pid}.
+
+init(Ref, Transport, _Opts = []) ->
+	{ok, Socket} = ranch:handshake(Ref),
+	loop(Socket, Transport).
+
+loop(Socket, Transport) ->
+	case Transport:recv(Socket, 0, 5000) of
+		{ok, Data} ->
+			Transport:send(Socket, Data),
+			loop(Socket, Transport);
+		_ ->
+			ok = Transport:close(Socket)
+	end.
+----
+
+=== Using gen_statem
+
+Special processes like the ones that use the `gen_statem` or `gen_server`
+behaviours have the particularity of having their `start_link` call not
+return until the `init` function returns. This is problematic, because
+you won't be able to call `ranch:handshake/1,2` from the `init` callback
+as this would cause a deadlock to happen.
+
+Use the `gen_statem:enter_loop/4` function. It allows you to start your process
+normally (although it must be started with `proc_lib` like all special
+processes), then perform any needed operations before falling back into
+the normal `gen_statem` execution loop.
+
+.Use a gen_statem for protocol handling
+
+[source,erlang]
+----
+-module(my_protocol).
+-behaviour(gen_statem).
+-behaviour(ranch_protocol).
+
+-export([start_link/4]).
+-export([init/1]).
+%% Exports of other gen_statem callbacks here.
+
+start_link(Ref, _Socket, Transport, Opts) ->
+	{ok, proc_lib:spawn_link(?MODULE, init, [{Ref, Transport, Opts}])}.
+
+init({Ref, Transport, _Opts = []}) ->
+	%% Perform any required state initialization here.
+	{ok, Socket} = ranch:handshake(Ref),
+	ok = Transport:setopts(Socket, [{active, once}]),
+	gen_statem:enter_loop(?MODULE, [], state_name, {state_data, Socket, Transport}).
+
+%% Other gen_statem callbacks here.
+----
+
+Check the `tcp_reverse` example for a complete example.

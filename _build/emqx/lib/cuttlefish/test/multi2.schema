@@ -1,0 +1,19 @@
+%% This'll be the 'a' namespace
+
+{mapping, "a.some.var1", "app_a.some_var1", []}.
+{translation, "app_a.some_var1", fun(X) -> "a1" end}.
+
+{mapping, "a.some.var2", "app_a.some_var2", []}.
+{translation, "app_a.some_var2", fun(X) -> "a2" end}.
+
+{mapping, "a.some.var3", "app_a.some_var3", []}.
+{translation, "app_a.some_var3", fun(X) -> "a3" end}.
+
+{validator, "a.validator1", "validate! validate!", fun(_AlwaysTrue) -> true end}.
+
+{validator, "a.validator2", "validate! validate!", fun(_AlwaysTrue) -> true end}.
+
+%% In a weird and highly unlikely cross namespace definition. some developer of app A has decided
+%% that they want to override "b.validator2". They can do that here, but it will still occur after
+%% "b.validator2"
+{validator, "b.validator2", "validators are just ok", fun(_AlwaysTrue) -> true end}.

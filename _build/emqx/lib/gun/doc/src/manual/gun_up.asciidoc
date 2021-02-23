@@ -1,0 +1,61 @@
+= gun_up(3)
+
+== Name
+
+gun_up - The connection is up
+
+== Description
+
+[source,erlang]
+----
+{gun_up, ConnPid, Protocol}
+
+ConnPid  :: pid()
+Protocol :: http | http2
+----
+
+The connection is up.
+
+This message informs the owner process that the connection or
+reconnection completed.
+
+Gun will now start processing the messages it received while
+waiting for the connection to be up. If this is a reconnection,
+then this may not be desirable for all requests. Those requests
+should be cancelled when the connection goes down, and any
+subsequent messages ignored.
+
+== Elements
+
+ConnPid::
+
+The pid of the Gun connection process.
+
+Protocol::
+
+The protocol selected for this connection. It can be used
+to determine the capabilities of the server.
+
+== Changelog
+
+* *1.0*: Message introduced.
+
+== Examples
+
+.Receive a gun_up message in a gen_server
+[source,erlang]
+----
+handle_info({gun_up, ConnPid, _Protocol},
+            State=#state{conn_pid=ConnPid}) ->
+    %% Do something.
+    {noreply, State}.
+----
+
+== See also
+
+link:man:gun(3)[gun(3)],
+link:man:gun:open(3)[gun:open(3)],
+link:man:gun:open_unix(3)[gun:open_unix(3)],
+link:man:gun:await_up(3)[gun:await_up(3)],
+link:man:gun_down(3)[gun_down(3)],
+link:man:gun_error(3)[gun_error(3)]

@@ -1,0 +1,34 @@
+[appendix]
+== Upcoming changes in Ranch 2.0
+
+The following changes will be done in Ranch 2.0. In most
+cases an alternative is already available in the most
+recent Ranch version.
+
+* The function `ranch:start_listener/6` has been deprecated
+  in favor of `ranch:start_listener/5`. The number of acceptors
+  was removed and will be taken from the transport options.
+
+* The function `ranch:child_spec/6` has also been deprecated,
+  in favor of `ranch:child_spec/5`.
+
+* The function `ranch:accept_ack/1` has been deprecated in
+  favor of `ranch:handshake/1,2`.
+
+* The function `ranch:info/1,2` will return a map containing
+  each listener's information rather than a list of key/values.
+  The `num_acceptors` key will be removed.
+
+* The socket will no longer be passed to the protocol when
+  starting it. It will be available as a return value from
+  `ranch:handshake/1,2` only.
+
+* Starting from Ranch 2.0 it will no longer be allowed to
+  pass Ranch options along with socket options as a proplist.
+  The only forms allowed will be the `ranch:opts()` map or socket
+  options as-is. The `ranch:opts()` map must be used in case socket
+  options also use a map.
+
+* The `socket` option will be removed. A more viable solution
+  is to define a custom transport module that returns a fresh
+  socket when `Transport:listen/1` is called.

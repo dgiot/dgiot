@@ -1,0 +1,12 @@
+%% this is a bad erlang schema file
+%% it's purpose is to validate that we're good about
+%% reporting WHERE things went wrong.
+%% @doc this is some mapping that is ok!
+{mapping, "setting", "nested.setting", []}.
+
+%% but this one is bad!
+%% it has no closing bracket on the proplist
+%% @doc bad setting
+{mapping, "setting2, "nested.nesting", [
+    {datatype, string}
+}.

@@ -1,0 +1,103 @@
+Now
+===
+
+Before 1.0.0
+============
+
+- It seems Python 2 pickles don't work in Python 3 and crash ErlPort session.
+
+- Don't import modules on every call. We probably should catch the exception
+  and import only if needed
+
+- Raise some special errors if language libraries are called without the
+  ErlPort connection
+
+- We can add erlang.receive() function which waits for next message with
+  optional timeout (timeouts can be implemented with select/etc. modules and
+  probably with msvcrt.kbhit() on Windows). What about Ruby?
+
+- How erlang.receive() should work with threads? Can we just wait for calls in
+  different threads with erlang.receive() (probably it should be an
+  erlang.wait_for_calls_here() call which calls erlang._receive() without any
+  arguments)? What if someone call this function in main thread, does it block
+  everything? Maybe it's better to create an erlang.start_receive_thread()
+  function? If we run receive() from a thread main thread can be already in
+  receive mode so it will be UnexpectedMessage error in this case.
+
+- Should we exit in case of Python's SystemExit exception?
+
+- Do we really need erlang.make_ref() function?
+
+- Split erlport_utils:send_request into send_call_request and send_request?
+
+- Probably we need 'queue' option for set_message_handler() in which case
+  only receive() call can be used to receive messages?
+
+- Set default timeout to 5 sec?
+
+- Allow not only atoms in call() functions and Atom() classes. Convert strings,
+  unicode(?) to atoms. Test functions with Unicode names.
+
+- Add more API for middleware scenario (python, ruby). Reraise the language
+  related exceptions in every module. And allow to start a language instance on
+  other nodes. Also language instances can be created with a pid. We can also
+  create factory functions at module level.
+
+- Add custom encode/decode handlers in Erlang? Should it be a callback module?
+  And tests.
+
+- Add [{timeout, Timeout}] options for erlang.call() function
+
+- Allow calls in selected processes in Erlang. We can create a class
+  (erlang.Process) which has call and exit methods. If Erlang process will die
+  we just raise 'noproc' error.
+
+- Split Erlang tests by languages? For example it can be useful if some of the
+  languages not installed.
+
+- Comments for modules
+
+- Check all TODO/FIXME comments
+
+- We need more robust error identification in erlport:spawn_call?
+
+- erlport:server_name/0 and erlport:server_instances() types should be moved to
+  some utils module? Maybe move types to a header file because -export_type
+  seems doesn't work as expected in Erlang R13
+
+Later
+=====
+
+- Threaded mode with numbered requests. We can use distinct callback module
+  in this case.
+
+- Support for other languages (Perl, Lua, ?).
+
+Ideas
+=====
+
+- Faster Erlang terms decoder
+
+- Maybe we can also redirect STDIN?
+
+- Can we allow method calls for objects? For example we can pass a tuple
+  {object, Object} instead of a module name? It also can be another method for
+  example call_method()?
+
+- We can try to use 'no_suspend' options for port and try to batch port
+  requests
+
+- We can create references for unpicklable objects (and all objects through the
+  explicit API). And we can create proxy objects this way. Need to think about
+  garbage collection however.
+
+- Add xref checks?
+
+- More methods for Ruby's Tuple class?
+
+- Add a pub/sub framework?
+
+- Add workers_pool module with pluggable workers selection policies?
+
+- Maybe it's possible to create an ErlPort interface which loads dynamic
+  libraries?

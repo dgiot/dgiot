@@ -1,0 +1,65 @@
+= ranch:info(3)
+
+== Name
+
+ranch:info - Overview of Ranch listeners
+
+== Description
+
+[source,erlang]
+----
+info() -> [{Ref, Info}]
+info(Ref) -> Info
+
+Info :: [{Key :: atom(), Value :: any()}]
+----
+
+Overview of Ranch listeners.
+
+== Arguments
+
+Ref::
+
+The listener name.
+
+== Return value
+
+Returns detailed information about one or all
+Ranch listeners. The following keys are returned:
+
+pid:: Pid of the listener's top-level supervisor.
+status:: Listener status, either running or suspended.
+ip:: Interface Ranch listens on.
+port:: Port number Ranch listens on.
+num_acceptors:: Number of acceptor processes.
+max_connections:: Maximum number of connections.
+active_connections:: Number of active connections.
+all_connections:: Number of connections, including those removed from the count.
+transport:: Transport module.
+transport_options:: Transport options.
+protocol:: Protocol module.
+protocol_options:: Protocol options.
+
+// @todo I mistakenly removed the num_acceptors key,
+// it should be added back.
+
+== Examples
+
+.Get information about all listeners
+[source,erlang]
+----
+AllInfo = ranch:info().
+----
+
+.Get information about a specific listener
+[source,erlang]
+----
+Info = ranch:info(example).
+----
+
+== See also
+
+link:man:ranch:get_addr(3)[ranch:get_addr(3)],
+link:man:ranch:get_port(3)[ranch:get_port(3)],
+link:man:ranch:procs(3)[ranch:procs(3)],
+link:man:ranch(3)[ranch(3)]

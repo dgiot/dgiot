@@ -1,0 +1,49 @@
+= ranch_proxy_header:parse(3)
+
+== Name
+
+ranch_proxy_header:parse - Parse a PROXY protocol header
+
+== Description
+
+[source,erlang]
+----
+parse(Data :: binary())
+    -> {ok, ranch_proxy_header:proxy_info(), Rest :: binary()}
+     | {error, HumanReadable :: atom()}
+----
+
+Parse a PROXY protocol header.
+
+== Arguments
+
+Data::
+
+The PROXY protocol header optionally followed by more data.
+
+== Return value
+
+An `ok` tuple is returned on success, containing the proxy
+information found in the header and the rest of the data
+if more was provided.
+
+An `error` tuple is returned when a protocol error is
+detected. It contains a human readable message about the
+error.
+
+== Changelog
+
+* *1.7*: Function introduced.
+
+== Examples
+
+.Parse the PROXY protocol header
+[source,erlang]
+----
+{ok ProxyInfo, Rest} = ranch_proxy_header:parse(Data).
+----
+
+== See also
+
+link:man:ranch_proxy_header:header(3)[ranch_proxy_header:header(3)],
+link:man:ranch_proxy_header(3)[ranch_proxy_header(3)]

@@ -1,0 +1,44 @@
+= gun:close(3)
+
+== Name
+
+gun:close - Brutally close the connection
+
+== Description
+
+[source,erlang]
+----
+close(ConnPid) -> ok
+
+ConnPid :: pid()
+----
+
+Brutally close the connection.
+
+== Arguments
+
+ConnPid::
+
+The pid of the Gun connection process.
+
+== Return value
+
+The atom `ok` is returned.
+
+== Changelog
+
+* *1.0*: Function introduced.
+
+== Examples
+
+.Close the connection
+[source,erlang]
+----
+ok = gun:close(ConnPid).
+----
+
+== See also
+
+link:man:gun(3)[gun(3)],
+link:man:gun:open(3)[gun:open(3)],
+link:man:gun:open_unix(3)[gun:open_unix(3)]

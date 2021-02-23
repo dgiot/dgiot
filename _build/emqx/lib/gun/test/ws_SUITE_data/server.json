@@ -1,0 +1,7 @@
+{
+	"url": "ws://localhost:33080",
+
+	"cases": ["*"],
+	"exclude-cases": [],
+	"exclude-agent-cases": {}
+} 

@@ -1,0 +1,39 @@
+[appendix]
+== Migrating from Gun 1.2 to 1.3
+
+Gun 1.3 improves the support for CONNECT requests
+introduced in the previous version and documents
+Websocket protocol negotiation.
+
+== Features added
+
+* The `protocols` CONNECT destination option has been added
+  as a replacement for the now deprecated `protocol` option.
+
+* Add built-in support for Websocket protocol negotiation
+  through the Websocket option `protocols`. The interface
+  of the handler module currently remains undocumented and
+  must be set to `gun_ws_h`.
+
+* Add the h2specd HTTP/2 test suite from the h2spec project.
+
+=== Bugs fixed
+
+* Fix connecting to HTTP/2 over TLS origin servers via
+  HTTP/1.1 CONNECT proxies.
+
+* Do not send the HTTP/1.1 keepalive while waiting for
+  a response to a CONNECT request.
+
+* Do not crash on HTTP/2 HEADERS frames with the
+  PRIORITY flag set.
+
+* Do not crash on HTTP/2 HEADERS frames when the
+  END_HEADERS flag is not set.
+
+* Do not crash on unknown HTTP/2 frame types.
+
+* Reject HTTP/2 WINDOW_UPDATE frames when they would
+  cause the window to overflow.
+
+* Send a GOAWAY frame on closing the HTTP/2 connection.

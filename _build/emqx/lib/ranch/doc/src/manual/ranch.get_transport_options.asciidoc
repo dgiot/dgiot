@@ -1,0 +1,40 @@
+= ranch:get_transport_options(3)
+
+== Name
+
+ranch:get_transport_options - Get the current transport options
+
+== Description
+
+[source,erlang]
+----
+get_transport_options(Ref :: ranch:ref())
+    -> TransOpts :: any()
+----
+
+Get the current transport options.
+
+== Arguments
+
+Ref::
+
+The listener name.
+
+== Return value
+
+The current transport options are returned.
+
+== Examples
+
+.Get the current transport options
+[source,erlang]
+----
+TransOpts = ranch:get_transport_options(example).
+----
+
+== See also
+
+link:man:ranch:get_max_connections(3)[ranch:get_max_connections(3)],
+link:man:ranch:get_protocol_options(3)[ranch:get_protocol_options(3)],
+link:man:ranch:set_transport_options(3)[ranch:set_transport_options(3)],
+link:man:ranch(3)[ranch(3)]

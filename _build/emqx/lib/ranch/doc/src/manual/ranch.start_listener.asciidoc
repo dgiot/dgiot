@@ -1,0 +1,131 @@
+= ranch:start_listener(3)
+
+== Name
+
+ranch:start_listener - Start a listener
+
+== Description
+
+[source,erlang]
+----
+start_listener(Ref       :: ranch_ref(),
+               Transport :: module(),
+               TransOpts :: ranch:opts(),
+               Protocol  :: module(),
+               ProtoOpts :: any())
+    -> {ok, ListenerPid :: pid()}
+     | {error, any()}
+----
+
+Start a listener.
+
+A listener is a set of processes that accepts and manages
+connections using the given transport and protocol modules.
+
+== Arguments
+
+Ref::
+
+The listener name is used to refer to this listener in
+future calls, for example when stopping it or when
+updating the configuration.
++
+It can be any Erlang term. An atom is generally good enough,
+for example `api`, `my_app_clear` or `my_app_tls`.
+
+Transport::
+
+The transport module that will be used by Ranch to accept
+connections and that will be passed to the protocol module
+along with the socket.
++
+The interface of the transport module is documented in the
+link:man:ranch_transport(3)[ranch_transport(3)] manual.
+
+TransportOpts::
+
+Transport options include the Ranch-specific options
+and the socket options. The listener's port number must
+be defined in the socket options.
++
+Socket options may be given directly if there are no
+Ranch-specific options.
++
+The available options for the built-in Ranch transports
+are documented in the link:man:ranch_tcp(3)[ranch_tcp(3)]
+and link:man:ranch_ssl(3)[ranch_ssl(3)] manuals.
+
+Protocol::
+
+The protocol module that will be used by Ranch after
+the connection has been accepted.
++
+The interface of the protocol module is documented in the
+link:man:ranch_protocol(3)[ranch_protocol(3)] manual.
+
+ProtocolOpts::
+
+The protocol options given when calling the protocol
+module. Please consult the documentation of the protocol
+module you are using for more details.
+
+== Return value
+
+An ok tuple is returned on success. It contains the pid of
+the top-level supervisor for the listener.
+
+An error tuple is returned on error. The error reason may
+be any Erlang term.
+
+A common error is `eaddrinuse`. It indicates that the port
+configured for Ranch is already in use.
+
+== Changelog
+
+* *1.4*: The `NumAcceptors` argument was moved to the transport options.
+
+== Examples
+
+.Start a listener
+[source,erlang]
+----
+{ok, _} = ranch:start_listener(example,
+    ranch_tcp, [{port, 8080}],
+    cowboy_http2, #{}
+).
+----
+
+.Start a listener with Ranch-specific options
+[source,erlang]
+----
+{ok, _} = ranch:start_listener(example,
+    ranch_tcp, #{
+        num_acceptors => 75,
+        socket_opts => [{port, 8080}]
+    },
+    cowboy_http2, #{}
+).
+----
+
+.Start a listener on a random port
+[source,erlang]
+----
+Ref = example,
+
+{ok, _} = ranch:start_listener(Ref,
+    ranch_tcp, #{},
+    cowboy_http2, #{}
+),
+
+Port = ranch:get_port(Ref).
+----
+
+== See also
+
+link:man:ranch:stop_listener(3)[ranch:stop_listener(3)],
+link:man:ranch:child_spec(3)[ranch:child_spec(3)],
+link:man:ranch(3)[ranch(3)],
+link:man:ranch_tcp(3)[ranch_tcp(3)],
+link:man:ranch_ssl(3)[ranch_ssl(3)],
+link:man:ranch_transport(3)[ranch_transport(3)],
+link:man:ranch_protocol(3)[ranch_protocol(3)]

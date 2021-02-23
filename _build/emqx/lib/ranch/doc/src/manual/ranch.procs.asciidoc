@@ -1,0 +1,51 @@
+= ranch:procs(3)
+
+== Name
+
+ranch:procs - Retrieve pids from a listener
+
+== Description
+
+[source,erlang]
+----
+procs(Ref  :: ranch:ref(),
+      Type :: acceptors | connections)
+    -> Pids :: [pid()]
+----
+
+Retrieve pids from a listener.
+
+== Arguments
+
+Ref::
+
+The listener name.
+
+Type::
+
+The type of process that will be returned.
+
+== Return value
+
+A list of pids is returned.
+
+== Examples
+
+.Get the pids of the acceptor processes
+[source,erlang]
+----
+Pids = ranch:procs(acceptors).
+----
+
+.Get the pids of the connection processes
+[source,erlang]
+----
+Pids = ranch:procs(connections).
+----
+
+== See also
+
+link:man:ranch:get_addr(3)[ranch:get_addr(3)],
+link:man:ranch:get_port(3)[ranch:get_port(3)],
+link:man:ranch:info(3)[ranch:info(3)],
+link:man:ranch(3)[ranch(3)]

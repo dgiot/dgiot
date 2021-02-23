@@ -1,0 +1,84 @@
+= ranch_transport:sendfile(3)
+
+== Name
+
+ranch_transport:sendfile - Send a file on the socket
+
+== Description
+
+[source,erlang]
+----
+sendfile(Transport :: module(),
+         Socket    :: ranch_transport:socket(),
+         File      :: file:name_all() | file:fd(),
+         Offset    :: non_neg_integer(),
+         Bytes     :: non_neg_integer(),
+         Opts      :: ranch_transport:sendfile_opts())
+    -> {ok, SentBytes :: non_neg_integer()} | {error, atom()}
+----
+
+Send a file on the socket.
+
+The file may be sent full or in parts, and may be specified
+by its filename or by an already open file descriptor.
+
+This function emulates the function `file:sendfile/2,4,5`
+and may be used when transports are not manipulating TCP
+directly.
+
+== Arguments
+
+Transport::
+
+The transport module.
+
+Socket::
+
+The socket.
+
+File::
+
+The filename or file descriptor for the file to be sent.
+
+Offset::
+
+Start position in the file, in bytes.
+
+Bytes::
+
+Length in bytes.
+
+Opts::
+
+Additional options.
+
+== Return value
+
+The number of bytes actually sent is returned on success
+inside an `ok` tuple.
+
+An `error` tuple is returned otherwise.
+
+== Changelog
+
+* *1.6*: The type of the `File` argument was extended.
+
+== Examples
+
+.Implement Transport:sendfile using the fallback
+[source,erlang]
+----
+sendfile(Socket, Filename) ->
+    sendfile(Socket, Filename, 0, 0, []).
+
+sendfile(Socket, File, Offset, Bytes) ->
+    sendfile(Socket, File, Offset, Bytes, []).
+
+sendfile(Socket, File, Offset, Bytes, Opts) ->
+    ranch_transport:sendfile(?MODULE, Socket,
+        File, Offset, Bytes, Opts).
+----
+
+== See also
+
+link:man:ranch_transport(3)[ranch_transport(3)]

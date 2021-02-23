@@ -1,0 +1,75 @@
+= gun:data(3)
+
+== Name
+
+gun:data - Stream the body of a request
+
+== Description
+
+[source,erlang]
+----
+data(ConnPid, StreamRef, IsFin, Data) -> ok
+
+ConnPid   :: pid()
+StreamRef :: reference()
+IsFin     :: fin | nofin
+Data      :: iodata()
+----
+
+Stream the body of a request.
+
+This function can only be used if the original request
+had headers indicating that a body would be streamed.
+
+All calls to this function must use the `nofin` flag
+except for the last which must use `fin` to indicate
+the end of the request body.
+
+Empty data is allowed regardless of the value of `IsFin`.
+Gun may or may not send empty data chunks, however.
+
+== Arguments
+
+ConnPid::
+
+The pid of the Gun connection process.
+
+StreamRef::
+
+Identifier of the stream for the original request.
+
+IsFin::
+
+Whether this message terminates the request.
+
+Data::
+
+All or part of the response body.
+
+== Return value
+
+The atom `ok` is returned.
+
+== Changelog
+
+* *1.0*: Function introduced.
+
+== Examples
+
+.Stream the body of a request
+[source,erlang]
+----
+StreamRef = gun:put(ConnPid, "/lang/fr_FR/hello", [
+    {<<"content-type">>, <<"text/plain">>}
+]).
+gun:data(ConnPid, StreamRef, nofin, <<"Bonjour !\n">>).
+gun:data(ConnPid, StreamRef, fin, <<"Bonsoir !\n">>).
+----
+
+== See also
+
+link:man:gun(3)[gun(3)],
+link:man:gun:patch(3)[gun:patch(3)],
+link:man:gun:post(3)[gun:post(3)],
+link:man:gun:put(3)[gun:put(3)],
+link:man:gun:request(3)[gun:request(3)]

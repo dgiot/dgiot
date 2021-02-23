@@ -1,0 +1,244 @@
+# Goldrush #
+
+Goldrush is a small Erlang app that provides fast event stream processing
+
+# Features #
+* Event processing compiled to a query module
+ - per module private event processing statistics
+ - query module logic can be combined for any/all filters
+ - query module logic can be reduced to efficiently match event processing
+
+* Complex event processing logic
+ - match input events with greater than (gt) logic
+ - match input events with less than (lt) logic
+ - match input events with equal to (eq) logic
+ - match input events with wildcard (wc) logic
+ - match input events with notfound (nf) logic
+ - match no input events (null blackhole) logic
+ - match all input events (null passthrough) logic
+
+* Handle output events
+ - Once a query has been composed the output action can be overriden
+   with one or more erlang functions. The functions will be applied to each
+   output event from the query.
+
+* Handle low latency retrieval of compile-time stored values.
+- Values stored are also provided to functions called on event output.
+
+* Usage 
+  To use goldrush in your application, you need to define it as a rebar dep or
+  include it in erlang's path.
+
+
+Before composing modules, you'll need to define a query. The query syntax 
+matches any number of `{erlang, terms}' and is composed as follows:
+
+* Simple Logic 
+ - Simple logic is defined as any logic matching a single event filter
+
+Select all events where 'a' exists and is greater than 0.
+#+BEGIN_EXAMPLE
+    glc:gt(a, 0).
+#+END_EXAMPLE
+
+Select all events where 'a' exists and is greater than or equal to 0.
+#+BEGIN_EXAMPLE
+    glc:gte(a, 0).
+#+END_EXAMPLE
+
+Select all events where 'a' exists and is equal to 0.
+#+BEGIN_EXAMPLE
+    glc:eq(a, 0).
+#+END_EXAMPLE
+
+Select all events where 'a' exists and is not equal to 0.
+#+BEGIN_EXAMPLE
+    glc:neq(a, 0).
+#+END_EXAMPLE
+
+Select all events where 'a' exists and is less than 0.
+#+BEGIN_EXAMPLE
+    glc:lt(a, 0).
+#+END_EXAMPLE
+
+Select all events where 'a' exists and is less than or equal to 0.
+#+BEGIN_EXAMPLE
+    glc:lte(a, 0).
+#+END_EXAMPLE
+
+Select all events where 'a' exists.
+#+BEGIN_EXAMPLE
+    glc:wc(a).
+#+END_EXAMPLE
+
+Select all events where 'a' does not exist.
+#+BEGIN_EXAMPLE
+    glc:nf(a).
+#+END_EXAMPLE
+
+Select no input events. User as a black hole query.
+#+BEGIN_EXAMPLE
+    glc:null(false).
+#+END_EXAMPLE
+
+Select all input events. Used as a passthrough query.
+#+BEGIN_EXAMPLE
+    glc:null(true).
+#+END_EXAMPLE
+
+
+* Combined Logic
+ - Combined logic is defined as logic matching multiple event filters
+
+Select all events where both 'a' AND 'b' exists and are greater than 0.
+#+BEGIN_EXAMPLE
+    glc:all([glc:gt(a, 0), glc:gt(b, 0)]).
+#+END_EXAMPLE
+
+Select all events where 'a' OR 'b' exists and are greater than 0.
+#+BEGIN_EXAMPLE
+    glc:any([glc:gt(a, 0), glc:gt(b, 0)]).
+#+END_EXAMPLE
+
+Select all events where 'a' AND 'b' exists where 'a' is greater than 1 and 'b' is less than 2.
+#+BEGIN_EXAMPLE
+    glc:all([glc:gt(a, 1), glc:lt(b, 2)]).
+#+END_EXAMPLE
+
+Select all events where 'a' OR 'b' exists where 'a' is greater than 1 and 'b' is less than 2.
+#+BEGIN_EXAMPLE
+    glc:any([glc:gt(a, 1), glc:lt(b, 2)]).
+#+END_EXAMPLE
+
+
+* Reduced Logic
+ - Reduced logic is defined as logic which can be simplified to improve efficiency.
+
+Select all events where 'a' is equal to 1, 'b' is equal to 2 and 'c' is equal to 3 and collapse any duplicate logic.
+#+BEGIN_EXAMPLE
+        glc_lib:reduce(
+            glc:all([
+                glc:any([glc:eq(a, 1), glc:eq(b, 2)]),
+                glc:any([glc:eq(a, 1), glc:eq(c, 3)])])).
+#+END_EXAMPLE
+
+The previous example will produce and is equivalent to:
+#+BEGIN_EXAMPLE
+    glc:all([glc:eq(a, 1), glc:eq(b, 2), glc:eq(c, 3)]).
+#+END_EXAMPLE
+
+
+
+# Composing Modules #
+
+To compose a module you will take your Query defined above and compile it. 
+#+BEGIN_EXAMPLE
+    glc:compile(Module, Query).
+#+END_EXAMPLE
+
+
+- At this point you will be able to handle an event using a compiled query. 
+
+Begin by constructing an event list.
+#+BEGIN_EXAMPLE
+    Event = gre:make([{'a', 2}], [list]).
+#+END_EXAMPLE
+
+Now pass it to your query module to be handled.
+#+BEGIN_EXAMPLE
+    glc:handle(Module, Event).
+#+END_EXAMPLE
+
+* Handling output events
+  - You can override the output action with an erlang function.
+
+Write all input events as info reports to the error logger.
+#+BEGIN_EXAMPLE
+    glc:with(glc:null(true), fun(E) ->
+         error_logger:info_report(gre:pairs(E)) end).
+#+END_EXAMPLE
+
+Write all input events where `error_level' exists and is less than 5 as info reports to the error logger.
+#+BEGIN_EXAMPLE
+    glc:with(glc:lt(error_level, 5), fun(E) ->
+         error_logger:info_report(gre:pairs(E)) end).
+#+END_EXAMPLE
+
+Write all input events where `error_level' exists and is 3 or 5 as info reports to the error logger.
+#+BEGIN_EXAMPLE
+   glc:any([
+     glc:with(glc:lt(error_level, 3), fun(E) ->
+         error_logger:info_report(gre:pairs(E)) end),
+     glc:with(glc:lt(error_level, 5), fun(E) ->
+         error_logger:info_report(gre:pairs(E)) end)]).
+
+#+END_EXAMPLE
+
+
+# Composing Modules with stored state #
+
+To compose a module with state data you will add a third argument (orddict).
+#+BEGIN_EXAMPLE
+    glc:compile(Module, Query, [{stored, value}]).
+#+END_EXAMPLE
+
+# Accessing stored state data #
+
+Return the stored value in this query module.
+#+BEGIN_EXAMPLE
+{ok, value} = glc:get(stored).
+#+END_EXAMPLE
+
+Return all stored values in this query module.
+#+BEGIN_EXAMPLE
+[...] = Module:get().
+#+END_EXAMPLE
+
+# Event Processing Statistics #
+
+Return the number of input events for this query module.
+#+BEGIN_EXAMPLE
+glc:input(Module).
+#+END_EXAMPLE
+
+Return the number of output events for this query module.
+#+BEGIN_EXAMPLE
+glc:output(Module).
+#+END_EXAMPLE
+
+Return the number of filtered events for this query module.
+#+BEGIN_EXAMPLE
+glc:filter(Module).
+#+END_EXAMPLE
+
+
+* Build
+
+#+BEGIN_EXAMPLE
+ $ ./rebar compile
+#+END_EXAMPLE
+
+or
+
+#+BEGIN_EXAMPLE
+    $ make
+#+END_EXAMPLE
+
+* CHANGELOG 
+0.1.8
+- Add support for not equal
+
+0.1.7
+- Support multiple functions specified using `with/2` 
+- Add support for greater than or less than operators
+- Add state storage option for output events or lookup
+
+0.1.6 
+- Add notfound event matching
+
+0.1.5 
+- Rewrite to make highly crash resilient
+  - per module supervision
+  - statistics data recovery 
+- Add wildcard event matching
+- Add reset counters

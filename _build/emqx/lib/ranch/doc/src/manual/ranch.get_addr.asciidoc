@@ -1,0 +1,44 @@
+= ranch:get_addr(3)
+
+== Name
+
+ranch:get_addr - Get the listening port and IP
+
+== Description
+
+[source,erlang]
+----
+get_addr(Ref :: ranch:ref())
+    -> {IP   :: inet:ip_address(),
+        Port :: inet:port_number()}
+----
+
+Get the listening port and IP.
+
+== Arguments
+
+Ref::
+
+The listener name.
+
+== Return value
+
+The address of the listener is returned as a tuple.
+
+The IP address is the IP of the network interface the
+socket is bound to.
+
+== Examples
+
+.Get the listening port and IP
+[source,erlang]
+----
+{IP, Port} = ranch:get_addr(example).
+----
+
+== See also
+
+link:man:ranch:start_listener(3)[ranch:start_listener(3)],
+link:man:ranch:get_port(3)[ranch:get_port(3)],
+link:man:ranch:info(3)[ranch:info(3)],
+link:man:ranch(3)[ranch(3)]

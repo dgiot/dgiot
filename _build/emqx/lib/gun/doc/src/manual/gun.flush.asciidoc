@@ -1,0 +1,59 @@
+= gun:flush(3)
+
+== Name
+
+gun:flush - Flush all messages related to a connection or a stream
+
+== Description
+
+[source,erlang]
+----
+flush(ConnPid) -> ok
+flush(StreamRef) -> ok
+
+ConnPid    :: pid()
+StreamRef  :: reference()
+----
+
+Flush all messages related to a connection or a stream.
+
+== Arguments
+
+Either of these arguments may be provided:
+
+ConnPid::
+
+The pid of the Gun connection process.
+
+StreamRef::
+
+Identifier of the stream for the original request.
+
+== Return value
+
+The atom `ok` is returned.
+
+== Changelog
+
+* *1.0*: Function introduced.
+
+== Examples
+
+.Flush all messages from a connection
+[source,erlang]
+----
+gun:flush(ConnPid).
+----
+
+.Flush messages from a single stream
+[source,erlang]
+----
+gun:flush(StreamRef).
+----
+
+== See also
+
+link:man:gun(3)[gun(3)],
+link:man:gun:await(3)[gun:await(3)],
+link:man:gun:await_body(3)[gun:await_body(3)],
+link:man:gun:await_up(3)[gun:await_up(3)]

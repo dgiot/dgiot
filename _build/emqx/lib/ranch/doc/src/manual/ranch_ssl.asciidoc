@@ -1,0 +1,262 @@
+= ranch_ssl(3)
+
+== Name
+
+ranch_ssl - SSL transport
+
+== Description
+
+The module `ranch_ssl` implements an SSL Ranch transport.
+
+== Exports
+
+The module `ranch_ssl` implements the interface defined
+by link:man:ranch_transport(3)[ranch_transport(3)].
+
+== Types
+
+=== opt()
+
+[source,erlang]
+----
+opt() :: ranch_tcp:opt() | ssl_opt()
+----
+
+Listen options.
+
+The TCP options are defined in link:man:ranch_tcp(3)[ranch_tcp(3)].
+
+=== opts()
+
+[source,erlang]
+----
+opts() :: [opt()]
+----
+
+List of listen options.
+
+=== ssl_opt()
+
+[source,erlang]
+----
+ssl_opt() = {alpn_preferred_protocols, [binary()]}
+          | {beast_mitigation, one_n_minus_one | zero_n | disabled}
+          | {cacertfile, string()}
+          | {cacerts, [public_key:der_encoded()]}
+          | {cert, public_key:der_encoded()}
+          | {certfile, string()}
+          | {ciphers, [ssl:erl_cipher_suite()] | string()}
+          | {client_renegotiation, boolean()}
+          | {crl_cache, {module(), {internal | any(), list()}}}
+          | {crl_check, boolean() | peer | best_effort}
+          | {depth, 0..255}
+          | {dh, public_key:der_encoded()}
+          | {dhfile, string()}
+          | {fail_if_no_peer_cert, boolean()}
+          | {hibernate_after, integer() | undefined}
+          | {honor_cipher_order, boolean()}
+          | {key, {'RSAPrivateKey' | 'DSAPrivateKey' | 'PrivateKeyInfo',
+                public_key:der_encoded()}}
+          | {keyfile, string()}
+          | {log_alert, boolean()}
+          | {next_protocols_advertised, [binary()]}
+          | {padding_check, boolean()}
+          | {partial_chain, fun(([public_key:der_encoded()])
+                -> {trusted_ca, public_key:der_encoded()} | unknown_ca)}
+          | {password, string()}
+          | {psk_identity, string()}
+          | {reuse_session, fun()}
+          | {reuse_sessions, boolean()}
+          | {secure_renegotiate, boolean()}
+          | {signature_algs, [{atom(), atom()}]}
+          | {sni_fun, fun()}
+          | {sni_hosts, [{string(), ssl_opt()}]}
+          | {user_lookup_fun, {fun(), any()}}
+          | {v2_hello_compatible, boolean()}
+          | {verify, ssl:verify_type()}
+          | {verify_fun, {fun(), any()}}
+          | {versions, [atom()]}
+----
+
+SSL-specific listen options.
+
+Specifying a certificate is mandatory, either through the `cert`
+or `certfile` option, or by configuring SNI. None of the other
+options are required.
+
+The default value is given next to the option name:
+
+alpn_preferred_protocols::
+
+Perform Application-Layer Protocol Negotiation
+with the given list of preferred protocols.
+
+beast_mitigation::
+
+Change the BEAST mitigation strategy for SSL-3.0 and TLS-1.0
+to interoperate with legacy software.
+
+cacertfile::
+
+Path to PEM encoded trusted certificates file used to verify
+peer certificates.
+
+cacerts::
+
+List of DER encoded trusted certificates.
+
+cert::
+
+DER encoded user certificate.
+
+certfile::
+
+Path to the PEM encoded user certificate file. May also
+contain the private key.
+
+ciphers::
+
+List of ciphers that clients are allowed to use.
+
+client_renegotiation (true)::
+
+Whether to allow client-initiated renegotiation.
+
+crl_cache ({ssl_crl_cache, {internal, []}})::
+
+Customize the module used to cache Certificate Revocation Lists.
+
+crl_check (false)::
+
+Whether to perform CRL check on all certificates in the chain
+during validation.
+
+depth (1)::
+
+Maximum of intermediate certificates allowed in the
+certification path.
+
+dh::
+
+DER encoded Diffie-Hellman parameters.
+
+dhfile::
+
+Path to the PEM encoded Diffie-Hellman parameters file.
+
+fail_if_no_peer_cert (false)::
+
+Whether to refuse the connection if the client sends an
+empty certificate.
+
+hibernate_after (undefined)::
+
+Time in ms after which SSL socket processes go into
+hibernation to reduce memory usage.
+
+honor_cipher_order (false)::
+
+If true, use the server's preference for cipher selection.
+If false, use the client's preference.
+
+key::
+
+DER encoded user private key.
+
+keyfile::
+
+Path to the PEM encoded private key file, if different from
+the certfile.
+
+log_alert (true)::
+
+If false, error reports will not be displayed.
+
+next_protocols_advertised::
+
+List of protocols to send to the client if it supports the
+Next Protocol extension.
+
+padding_check::
+
+Allow disabling the block cipher padding check for TLS-1.0
+to be able to interoperate with legacy software.
+
+partial_chain::
+
+Claim an intermediate CA in the chain as trusted.
+
+password::
+
+Password to the private key file, if password protected.
+
+psk_identity::
+
+Provide the given PSK identity hint to the client during the
+handshake.
+
+reuse_session::
+
+Custom policy to decide whether a session should be reused.
+
+reuse_sessions (false)::
+
+Whether to allow session reuse.
+
+secure_renegotiate (false)::
+
+Whether to reject renegotiation attempts that do not conform
+to RFC5746.
+
+signature_algs::
+
+The TLS signature algorithm extension may be used, from TLS 1.2,
+to negotiate which signature algorithm to use during the TLS
+handshake.
+
+sni_fun::
+
+Function called when the client requests a host using Server
+Name Indication. Returns options to apply.
+
+sni_hosts::
+
+Options to apply for the host that matches what the client
+requested with Server Name Indication.
+
+user_lookup_fun::
+
+Function called to determine the shared secret when using PSK,
+or provide parameters when using SRP.
+
+v2_hello_compatible::
+
+Accept clients that send hello messages in SSL-2.0 format while
+offering supported SSL/TLS versions.
+
+verify (verify_none)::
+
+Use `verify_peer` to request a certificate from the client.
+
+verify_fun::
+
+Custom policy to decide whether a client certificate is valid.
+
+versions::
+
+TLS protocol versions that will be supported.
+
+Note that the client will not send a certificate unless the
+value for the `verify` option is set to `verify_peer`. This
+means that `fail_if_no_peer_cert` only applies when combined
+with the `verify` option. The `verify_fun` option allows
+greater control over the client certificate validation.
+
+The options `sni_fun` and `sni_hosts` are mutually exclusive.
+
+== See also
+
+link:man:ranch(7)[ranch(7)],
+link:man:ranch_transport(3)[ranch_transport(3)],
+link:man:ranch_tcp(3)[ranch_tcp(3)],
+ssl(3)

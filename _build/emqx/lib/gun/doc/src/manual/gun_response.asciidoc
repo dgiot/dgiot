@@ -1,0 +1,75 @@
+= gun_response(3)
+
+== Name
+
+gun_response - Response
+
+== Description
+
+[source,erlang]
+----
+{gun_response, ConnPid, StreamRef, IsFin, Status, Headers}
+
+ConnPid   :: pid()
+StreamRef :: reference()
+IsFin     :: fin | nofin
+Status    :: non_neg_integer()
+Headers   :: [{binary(), binary()}]
+----
+
+Response.
+
+This message informs the relevant process that the server
+sent a response to the original request.
+
+== Elements
+
+ConnPid::
+
+The pid of the Gun connection process.
+
+StreamRef::
+
+Identifier of the stream for the original request.
+
+IsFin::
+
+Whether this message terminates the response.
+
+Status::
+
+Status code for the response.
+
+Headers::
+
+Headers sent with the response.
+
+== Changelog
+
+* *1.0*: Message introduced.
+
+== Examples
+
+.Receive a gun_response message in a gen_server
+[source,erlang]
+----
+handle_info({gun_response, ConnPid, _StreamRef,
+             _IsFin, _Status, _Headers},
+            State=#state{conn_pid=ConnPid}) ->
+    %% Do something.
+    {noreply, State}.
+----
+
+== See also
+
+link:man:gun(3)[gun(3)],
+link:man:gun:get(3)[gun:get(3)],
+link:man:gun:head(3)[gun:head(3)],
+link:man:gun:patch(3)[gun:patch(3)],
+link:man:gun:post(3)[gun:post(3)],
+link:man:gun:put(3)[gun:put(3)],
+link:man:gun:delete(3)[gun:delete(3)],
+link:man:gun:options(3)[gun:options(3)],
+link:man:gun:request(3)[gun:request(3)],
+link:man:gun_inform(3)[gun_inform(3)],
+link:man:gun_push(3)[gun_push(3)]

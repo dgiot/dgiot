@@ -1,0 +1,100 @@
+= gun:ws_upgrade(3)
+
+== Name
+
+gun:ws_upgrade - Upgrade to Websocket
+
+== Description
+
+[source,erlang]
+----
+ws_upgrade(ConnPid, Path)
+    -> ws_upgrade(ConnPid, Path, [])
+
+ws_upgrade(ConnPid, Path, Headers)
+    -> StreamRef
+
+ws_upgrade(ConnPid, Path, Headers, WsOpts)
+    -> StreamRef
+
+ConnPid   :: pid()
+Path      :: iodata()
+Headers   :: [{binary(), iodata()}]
+WsOpts    :: gun:ws_opts
+StreamRef :: reference()
+----
+
+Upgrade to Websocket.
+
+The behavior of this function depends on the protocol
+selected.
+
+HTTP/1.1 cannot handle Websocket and HTTP requests
+concurrently. The upgrade, if successful, will result
+in the complete takeover of the connection. Any
+subsequent HTTP requests will be rejected.
+
+Gun does not currently support Websocket over HTTP/2.
+
+By default Gun will take the Websocket options from
+the connection's `ws_opts`.
+
+== Arguments
+
+ConnPid::
+
+The pid of the Gun connection process.
+
+Path::
+
+Path to the resource.
+
+Headers::
+
+Additional request headers.
+
+WsOpts::
+
+Configuration for the Websocket protocol.
+
+== Return value
+
+A reference that identifies the newly created stream is
+returned. It is this reference that must be passed in
+subsequent calls and will be received in messages related
+to this new stream.
+
+== Changelog
+
+* *1.0*: Function introduced.
+
+== Examples
+
+.Upgrade to Websocket
+[source,erlang]
+----
+StreamRef = gun:ws_upgrade(ConnPid, "/ws", [
+    {<<"sec-websocket-protocol">>, <<"chat">>}
+]).
+receive
+    {gun_upgrade, ConnPid, StreamRef, [<<"websocket">>], _} ->
+        ok
+after 5000 ->
+    error(timeout)
+end.
+----
+
+.Upgrade to Websocket with different options
+[source,erlang]
+----
+StreamRef = gun:ws_upgrade(ConnPid, "/ws", [], #{
+    compress => false
+}).
+----
+
+== See also
+
+link:man:gun(3)[gun(3)],
+link:man:gun:ws_send(3)[gun:ws_send(3)],
+link:man:gun_upgrade(3)[gun_upgrade(3)],
+link:man:gun_ws(3)[gun_ws(3)]

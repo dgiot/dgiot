@@ -1,0 +1,191 @@
+= ranch_tcp(3)
+
+== Name
+
+ranch_tcp - TCP transport
+
+== Description
+
+The module `ranch_tcp` implements a TCP Ranch transport.
+
+The function `sendfile` may not work correctly when used
+against files stored in a VirtualBox shared folder.
+
+== Exports
+
+The module `ranch_tcp` implements the interface defined
+by link:man:ranch_transport(3)[ranch_transport(3)].
+
+== Types
+
+=== opt()
+
+[source,erlang]
+----
+opt() = {backlog, non_neg_integer()}
+      | {buffer, non_neg_integer()}
+      | {delay_send, boolean()}
+      | {dontroute, boolean()}
+      | {exit_on_close, boolean()}
+      | {fd, non_neg_integer()}
+      | {high_msgq_watermark, non_neg_integer()}
+      | {high_watermark, non_neg_integer()}
+      | inet
+      | inet6
+      | {ip, inet:ip_address()}
+      | {ipv6_v6only, boolean()}
+      | {keepalive, boolean()}
+      | {linger, {boolean(), non_neg_integer()}}
+      | {low_msgq_watermark, non_neg_integer()}
+      | {low_watermark, non_neg_integer()}
+      | {nodelay, boolean()}
+      | {port, inet:port_number()}
+      | {priority, integer()}
+      | {raw, non_neg_integer(), non_neg_integer(), binary()}
+      | {recbuf, non_neg_integer()}
+      | {send_timeout, timeout()}
+      | {send_timeout_close, boolean()}
+      | {sndbuf, non_neg_integer()}
+      | {tos, integer()}
+----
+
+Listen options.
+
+Note that additional options may be set by the protocol
+module using `Transport:setopts/2`.
+
+None of the options are required.
+
+Please consult the `gen_tcp` and `inet` manuals for a more
+thorough description of these options. This manual only aims
+to provide a short description along with what the defaults
+are. Defaults may be different in Ranch compared to `gen_tcp`.
+Defaults are given next to the option name:
+
+backlog (1024)::
+
+Max length of the queue of pending connections.
+
+buffer::
+
+Size of the buffer used by the Erlang driver. Default
+is system-dependent.
+
+delay_send (false)::
+
+Always queue data before sending, to send fewer, larger
+packets over the network.
+
+dontroute (false)::
+
+Don't send via a gateway, only send to directly connected hosts.
+
+exit_on_close (true)::
+
+Disable to allow sending data after a close has been detected.
+
+fd::
+
+File descriptor of the socket, if it was opened externally.
+
+high_msgq_watermark (8192)::
+
+Limit in the amount of data in the socket message queue before
+the queue becomes busy.
+
+high_watermark (8192)::
+
+Limit in the amount of data in the ERTS socket implementation's
+queue before the socket becomes busy.
+
+inet::
+
+Set up the socket for IPv4.
+
+inet6::
+
+Set up the socket for IPv6.
+
+ip::
+
+Interface to listen on. Listen on all interfaces by default.
+
+ipv6_v6only (false)::
+
+Listen on IPv4 and IPv6 (false) or only on IPv6 (true).
+Use with inet6.
+
+keepalive (false)::
+
+Enable sending of keep-alive messages.
+
+linger ({false, 0})::
+
+Whether to wait and how long to flush data sent before closing
+the socket.
+
+low_msgq_watermark (4096)::
+
+Amount of data in the socket message queue before the queue
+leaves busy state.
+
+low_watermark (4096)::
+
+Amount of data in the ERTS socket implementation's queue
+before the socket leaves busy state.
+
+nodelay (true)::
+
+Whether to enable TCP_NODELAY.
+
+port (0)::
+
+TCP port number to listen on. 0 means a random port will be used.
+
+priority (0)::
+
+Priority value for all packets to be sent on this socket.
+
+recbuf::
+
+Minimum size of the socket's receive buffer.
+Default is system-dependent.
+
+send_timeout (30000)::
+
+How long the send call may wait for confirmation before returning.
+
+send_timeout_close (true)::
+
+Whether to close the socket when the confirmation wasn't received.
+
+sndbuf::
+
+Minimum size of the socket's send buffer.
+Default is system-dependent.
+
+tos::
+
+Value for the IP_TOS IP level option. Use with caution.
+
+In addition, the `raw` option can be used to set system-specific
+options by specifying the protocol level, the option number and
+the actual option value specified as a binary. This option is not
+portable. Use with caution.
+
+=== opts()
+
+[source,erlang]
+----
+opts() :: [opt()]
+----
+
+List of listen options.
+
+== See also
+
+link:man:ranch(7)[ranch(7)],
+link:man:ranch_transport(3)[ranch_transport(3)],
+link:man:ranch_ssl(3)[ranch_ssl(3)],
+gen_tcp(3),
+inet(3)

@@ -1,0 +1,71 @@
+= ranch:recv_proxy_header(3)
+
+== Name
+
+ranch:recv_proxy_header - Receive the PROXY protocol header
+
+== Description
+
+[source,erlang]
+----
+recv_proxy_header(ranch:ref(), timeout())
+    -> {ok, ranch_proxy_header:proxy_info()}
+     | {error, Reason :: atom()}
+     | {error, protocol_error, HumanReadable :: atom()}
+----
+
+Receive the PROXY protocol header.
+
+This function must be called before `ranch:handshake/1,2`
+on newly accepted connections to read and parse the PROXY
+protocol header, if any.
+
+== Arguments
+
+Ref::
+
+The listener name.
+
+Timeout::
+
+Receive timeout in milliseconds.
+
+== Return value
+
+An `ok` tuple is returned containing PROXY header information
+on success.
+
+An `error` 2-tuple is returned when a socket error occurs.
+
+An `error` 3-tuple is returned when a protocol error occurs
+and Ranch was not able to parse the PROXY header information.
+The third element contains a human-readable description of
+the error.
+
+== Changelog
+
+* *1.7*: Function introduced.
+
+== Examples
+
+.Receive the PROXY protocol header
+[source,erlang]
+----
+start_link(Ref, _, Transport, Opts) ->
+    Pid = proc_lib:spawn_link(?MODULE, init,
+        [Ref, Transport, Opts]),
+    {ok, Pid}.
+
+init(Ref, Transport, Opts) ->
+    {ok, ProxyInfo} = ranch:recv_proxy_header(Ref, 1000),
+    {ok, Socket} = ranch:handshake(Ref),
+    loop(#state{ref=Ref, socket=Socket, transport=Transport,
+        proxy_info=ProxyInfo, opts=Opts}).
+----
+
+== See also
+
+link:man:ranch:start_listener(3)[ranch:start_listener(3)],
+link:man:ranch:handshake(3)[ranch:handshake(3)],
+link:man:ranch:remove_connection(3)[ranch:remove_connection(3)],
+link:man:ranch(3)[ranch(3)]

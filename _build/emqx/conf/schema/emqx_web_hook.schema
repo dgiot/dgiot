@@ -1,0 +1,67 @@
+%%-*- mode: erlang -*-
+%% EMQ X R3.0 config mapping
+
+{mapping, "web.hook.api.url", "emqx_web_hook.url", [
+  {datatype, string}
+]}.
+
+{mapping, "web.hook.encode_payload", "emqx_web_hook.encode_payload", [
+  {default, undefined},
+  {datatype, {enum, [base62, base64]}}
+]}.
+
+{mapping, "web.hook.rule.client.connect.$name", "emqx_web_hook.rules", [
+  {datatype, string}
+]}.
+
+{mapping, "web.hook.rule.client.connack.$name", "emqx_web_hook.rules", [
+  {datatype, string}
+]}.
+
+{mapping, "web.hook.rule.client.connected.$name", "emqx_web_hook.rules", [
+  {datatype, string}
+]}.
+
+{mapping, "web.hook.rule.client.disconnected.$name", "emqx_web_hook.rules", [
+  {datatype, string}
+]}.
+
+{mapping, "web.hook.rule.client.subscribe.$name", "emqx_web_hook.rules", [
+  {datatype, string}
+]}.
+
+{mapping, "web.hook.rule.client.unsubscribe.$name", "emqx_web_hook.rules", [
+  {datatype, string}
+]}.
+
+{mapping, "web.hook.rule.session.subscribed.$name", "emqx_web_hook.rules", [
+  {datatype, string}
+]}.
+
+{mapping, "web.hook.rule.session.unsubscribed.$name", "emqx_web_hook.rules", [
+  {datatype, string}
+]}.
+
+{mapping, "web.hook.rule.session.terminated.$name", "emqx_web_hook.rules", [
+  {datatype, string}
+]}.
+
+{mapping, "web.hook.rule.message.publish.$name", "emqx_web_hook.rules", [
+  {datatype, string}
+]}.
+
+{mapping, "web.hook.rule.message.acked.$name", "emqx_web_hook.rules", [
+  {datatype, string}
+]}.
+
+{mapping, "web.hook.rule.message.delivered.$name", "emqx_web_hook.rules", [
+  {datatype, string}
+]}.
+
+{translation, "emqx_web_hook.rules", fun(Conf) ->
+  Hooks = cuttlefish_variable:filter_by_prefix("web.hook.rule", Conf),
+  lists:map(
+    fun({[_, _, _,Name1,Name2, _], Val}) -> 
+	  {lists:concat([Name1,".",Name2]), Val}
+	end, Hooks)
+end}.

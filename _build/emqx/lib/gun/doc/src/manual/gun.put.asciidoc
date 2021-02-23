@@ -1,0 +1,115 @@
+= gun:put(3)
+
+== Name
+
+gun:put - Create or replace a resource
+
+== Description
+
+[source,erlang]
+----
+put(ConnPid, Path, Headers)
+    -> StreamRef
+
+put(ConnPid, Path, Headers, Body)
+    -> put(ConnPid, Path, Headers, Body, #{})
+
+put(ConnPid, Path, Headers, Body, ReqOpts)
+    -> StreamRef
+
+ConnPid   :: pid()
+Path      :: iodata()
+Headers   :: [{binary(), iodata()}]
+Body      :: iodata()
+ReqOpts   :: gun:req_opts()
+StreamRef :: reference()
+----
+
+Create or replace a resource.
+
+The behavior of this function varies depending on whether
+a body is provided.
+
+The function `put/3` expects either a content-length
+or content-type header to indicate that a body will be
+sent afterwards. The body can then be sent using
+link:man:gun:data(3)[gun:data(3)].
+
+The function `put/4,5` sends the entire request, including
+the request body, immediately. It is therefore not possible
+to use link:man:gun:data(3)[gun:data(3)] after that. You
+should provide a content-type header. Gun will set the
+content-length header automatically.
+
+== Arguments
+
+ConnPid::
+
+The pid of the Gun connection process.
+
+Path::
+
+Path to the resource.
+
+Headers::
+
+Additional request headers.
+
+Body::
+
+Request body.
+
+ReqOpts::
+
+Request options.
+
+== Return value
+
+A reference that identifies the newly created stream is
+returned. It is this reference that must be passed in
+subsequent calls and will be received in messages related
+to this new stream.
+
+== Changelog
+
+* *1.0*: Function introduced.
+
+== Examples
+
+.Put a resource
+[source,erlang]
+----
+StreamRef = gun:put(ConnPid, "/lang/fr_FR/hello",
+    [{<<"content-type">>, <<"text/plain">>}],
+    <<"Bonjour !">>).
+----
+
+.Put a resource in multiple calls
+[source,erlang]
+----
+StreamRef = gun:put(ConnPid, "/lang/fr_FR/hello", [
+    {<<"content-type">>, <<"text/plain">>}
+]).
+gun:data(ConnPid, StreamRef, fin, <<"Bonjour !">>).
+----
+
+.Put a resource with request options
+[source,erlang]
+----
+StreamRef = gun:put(ConnPid, "/lang/fr_FR/hello",
+    [{<<"content-type">>, <<"text/plain">>}],
+    <<"Bonjour !">>,
+    #{reply_to => ReplyToPid}).
+----
+
+== See also
+
+link:man:gun(3)[gun(3)],
+link:man:gun:patch(3)[gun:patch(3)],
+link:man:gun:post(3)[gun:post(3)],
+link:man:gun:await(3)[gun:await(3)],
+link:man:gun:await_body(3)[gun:await_body(3)],
+link:man:gun_push(3)[gun_push(3)],
+link:man:gun_inform(3)[gun_inform(3)],
+link:man:gun_response(3)[gun_response(3)],
+link:man:gun_data(3)[gun_data(3)]

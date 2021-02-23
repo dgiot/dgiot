@@ -1,0 +1,64 @@
+= gun:info(3)
+
+== Name
+
+gun:info - Obtain information about the connection
+
+== Description
+
+[source,erlang]
+----
+info(ConnPid) -> Info
+
+ConnPid :: pid()
+Info :: #{
+    socket         => inet:socket() | ssl:sslsocket(),
+    transport      => tcp | tls,
+    protocol       => http | http2 | ws,
+    sock_ip        => inet:ip_address(),
+    sock_port      => inet:port_number(),
+    origin_host    => inet:hostname() | inet:ip_address(),
+    origin_port    => inet:port_number(),
+    intermediaries => [Intermediary]
+}
+Intermediary :: #{
+    type      => connect,
+    host      => inet:hostname() | inet:ip_address(),
+    port      => inet:port_number(),
+    transport => tcp | tls,
+    protocol  => http | http2
+}
+----
+
+Obtain information about the connection.
+
+== Arguments
+
+ConnPid::
+
+The pid of the Gun connection process.
+
+== Return value
+
+A map is returned containing various informations about
+the connection.
+
+== Changelog
+
+* *1.3*: The values `socket`, `transport`, `protocol`, `origin_host`,
+         `origin_port` and `intermediaries` were added.
+* *1.0*: Function introduced.
+
+== Examples
+
+.Obtain information about the connection
+[source,erlang]
+----
+Info = gun:info(ConnPid).
+----
+
+== See also
+
+link:man:gun(3)[gun(3)],
+link:man:gun:open(3)[gun:open(3)],
+link:man:gun:open_unix(3)[gun:open_unix(3)]

@@ -1,0 +1,56 @@
+= ranch:set_transport_options(3)
+
+== Name
+
+ranch:set_transport_options - Set the transport options
+
+== Description
+
+[source,erlang]
+----
+set_transport_options(Ref       :: ranch:ref(),
+                      TransOpts :: any())
+    -> ok | {error, running}
+----
+
+Set the transport options.
+
+The listener must be suspended for this call to succeed.
+If the listener is running, `{error, running}` will be returned.
+
+The change will take effect when the listener resumes.
+
+== Arguments
+
+Ref::
+
+The listener name.
+
+TransOpts::
+
+The new transport options.
+
+== Return value
+
+The atom `ok` is always returned. It can be safely ignored.
+
+== Examples
+
+.Set the transport options
+[source,erlang]
+----
+Ref = example,
+
+ok = ranch:suspend_listener(Ref),
+ok = ranch:set_transport_options(Ref, TransOpts),
+ok = ranch:resume_listener(Ref).
+----
+
+== See also
+
+link:man:ranch:suspend_listener(3)[ranch:suspend_listener(3)],
+link:man:ranch:resume_listener(3)[ranch:resume_listener(3)],
+link:man:ranch:get_transport_options(3)[ranch:get_transport_options(3)],
+link:man:ranch:set_max_connections(3)[ranch:set_max_connections(3)],
+link:man:ranch:set_protocol_options(3)[ranch:set_protocol_options(3)],
+link:man:ranch(3)[ranch(3)]

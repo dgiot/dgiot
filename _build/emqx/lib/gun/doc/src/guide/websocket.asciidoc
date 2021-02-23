@@ -1,0 +1,133 @@
+[[websocket]]
+== Websocket
+
+This chapter describes how to use the Gun client for
+communicating with a Websocket server.
+
+// @todo recovering from connection failure, reconnecting to Websocket etc.
+
+=== HTTP upgrade
+
+Websocket is a protocol built on top of HTTP. To use Websocket,
+you must first request for the connection to be upgraded. Only
+HTTP/1.1 connections can be upgraded to Websocket, so you might
+need to restrict the protocol to HTTP/1.1 if you are planning
+to use Websocket over TLS.
+
+You must use the `gun:ws_upgrade/2,3,4` function to upgrade
+to Websocket. This function can be called anytime after connection,
+so you can send HTTP requests before upgrading to Websocket.
+
+.Upgrade to Websocket
+[source,erlang]
+----
+gun:ws_upgrade(ConnPid, "/websocket").
+----
+
+Gun will set all the necessary headers for performing the
+Websocket upgrade, but you can specify additional headers
+if needed. For example you can authenticate.
+
+.Upgrade to Websocket using HTTP authentication
+[source,erlang]
+----
+gun:ws_upgrade(ConnPid, "/websocket", [
+    {<<"authorization">>, "Basic dXNlcm5hbWU6cGFzc3dvcmQ="}
+]).
+----
+
+You can pass the Websocket options as part of the `gun:open/2,3`
+call when opening the connection, or using the `gun:ws_upgrade/4`.
+The fourth argument is those same options.
+
+Gun can negotiate the protocol to be used for the Websocket
+connection. The `protocols` option can be given with a list
+of protocols accepted and the corresponding handler module.
+Note that the interface for handler modules is currently
+undocumented and must be set to `gun_ws_h`.
+
+.Upgrade to Websocket with protocol negotiation
+[source,erlang]
+----
+gun:ws_upgrade(ConnPid, "/websocket", []
+    #{protocols => [{<<"xmpp">>, gun_ws_h}]}).
+----
+
+The upgrade will fail if the server cannot satisfy the
+protocol negotiation.
+
+When the upgrade succeeds, a `gun_upgrade` message is sent.
+If the server does not understand Websocket or refused the
+upgrade, a `gun_response` message is sent. If Gun couldn't
+perform the upgrade due to an error (for example attempting
+to upgrade to Websocket on an HTTP/1.0 connection) then a
+`gun_error` message is sent.
+
+When the server does not understand Websocket, it may send
+a meaningful response which should be processed. In the
+following example we however ignore it:
+
+[source,erlang]
+----
+receive
+    {gun_upgrade, ConnPid, StreamRef, [<<"websocket">>], Headers} ->
+        upgrade_success(ConnPid, StreamRef);
+    {gun_response, ConnPid, _, _, Status, Headers} ->
+        exit({ws_upgrade_failed, Status, Headers});
+    {gun_error, ConnPid, StreamRef, Reason} ->
+        exit({ws_upgrade_failed, Reason})
+    %% More clauses here as needed.
+after 1000 ->
+    exit(timeout)
+end.
+----
+
+=== Sending data
+
+Once the Websocket upgrade has completed successfully, you no
+longer have access to functions for performing requests. You
+can only send and receive Websocket messages.
+
+Use `gun:ws_send/2` to send messages to the server.
+
+.Send a text frame
+[source,erlang]
+----
+gun:ws_send(ConnPid, {text, "Hello!"}).
+----
+
+// @todo Implement sending of N frames
+//
+//.Send a text frame, a binary frame and then close the connection
+//[source,erlang]
+//----
+//gun:ws_send(ConnPid, [
+//    {text, "Hello!"},
+//    {binary, BinaryValue},
+//    close
+//]).
+//----
+
+Note that if you send a close frame, Gun will close the connection
+cleanly but will attempt to reconnect afterwards.
+
+=== Receiving data
+
+Gun sends an Erlang message to the owner process for every
+Websocket message it receives.
+
+[source,erlang]
+----
+receive
+    {gun_ws, ConnPid, StreamRef, Frame} ->
+        handle_frame(ConnPid, StreamRef, Frame)
+end.
+----
+
+// @todo auto ping has not been implemented yet
+//
+//Gun will automatically send ping messages to the server to keep
+//the connection alive, however if the connection dies and Gun has
+//to reconnect it will not upgrade to Websocket automatically, you
+//need to perform the operation when you receive the `gun_error`
+//message.

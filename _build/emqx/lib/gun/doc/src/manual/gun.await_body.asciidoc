@@ -1,0 +1,88 @@
+= gun:await_body(3)
+
+== Name
+
+gun:await_body - Wait for the complete response body
+
+== Description
+
+[source,erlang]
+----
+await_body(ConnPid, StreamRef)
+    -> await_body(ConnPid, StreamRef, 5000, MonitorRef)
+
+await_body(ConnPid, StreamRef, MonitorRef)
+    -> await_body(ConnPid, StreamRef, 5000, MonitorRef)
+
+await_body(ConnPid, StreamRef, Timeout)
+    -> await_body(ConnPid, StreamRef, Timeout, MonitorRef)
+
+await_body(ConnPid, StreamRef, Timeout, MonitorRef)
+    -> {ok, Body} | {ok, Body, Trailers} | {error, Reason}
+
+ConnPid    :: pid()
+StreamRef  :: reference()
+MonitorRef :: reference()
+Timeout    :: timeout()
+Body       :: binary()
+Trailers   :: [{binary(), binary()}]
+Reason     :: timeout | any()
+----
+
+Wait for the complete response body.
+
+== Arguments
+
+ConnPid::
+
+The pid of the Gun connection process.
+
+StreamRef::
+
+Identifier of the stream for the original request.
+
+Timeout::
+
+How long to wait for each message, in milliseconds.
+
+MonitorRef::
+
+Monitor for the Gun connection process.
++
+A monitor is automatically created for the duration of this
+call when one is not provided.
+
+== Return value
+
+The body is returned, possibly with trailers if the
+request contained a `te: trailers` header. Error tuples
+may also be returned when a timeout or an error occur.
+
+== Changelog
+
+* *1.0*: Function introduced.
+
+== Examples
+
+.Wait for the complete response body
+[source,erlang]
+----
+StreamRef = gun:get(ConnPid, "/articles", [
+    {<<"accept">>, <<"text/html;q=1.0, application/xml;q=0.1">>}
+]).
+{response, nofin, 200, _Headers} = gun:await(ConnPid, StreamRef).
+{ok, _Body} = gun:await_body(ConnPid, StreamRef).
+----
+
+== See also
+
+link:man:gun(3)[gun(3)],
+link:man:gun:get(3)[gun:get(3)],
+link:man:gun:head(3)[gun:head(3)],
+link:man:gun:options(3)[gun:options(3)],
+link:man:gun:patch(3)[gun:patch(3)],
+link:man:gun:post(3)[gun:post(3)],
+link:man:gun:put(3)[gun:put(3)],
+link:man:gun:delete(3)[gun:delete(3)],
+link:man:gun:request(3)[gun:request(3)],
+link:man:gun:await(3)[gun:await(3)]

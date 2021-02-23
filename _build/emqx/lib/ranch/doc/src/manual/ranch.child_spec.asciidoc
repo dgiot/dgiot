@@ -1,0 +1,103 @@
+= ranch:child_spec(3)
+
+== Name
+
+ranch:child_spec - Build child specifications for a new listener
+
+== Description
+
+[source,erlang]
+----
+child_spec(Ref       :: ranch_ref(),
+           Transport :: module(),
+           TransOpts :: ranch:opts(),
+           Protocol  :: module(),
+           ProtoOpts :: any())
+    -> supervisor:child_spec()
+----
+
+Build child specifications for a new listener.
+
+This function can be used to embed a listener directly
+in an application's supervision tree.
+
+== Arguments
+
+Ref::
+
+The listener name is used to refer to this listener in
+future calls, for example when stopping it or when
+updating the configuration.
++
+It can be any Erlang term. An atom is generally good enough,
+for example `api`, `my_app_clear` or `my_app_tls`.
+
+Transport::
+
+The transport module that will be used by Ranch to accept
+connections and that will be passed to the protocol module
+along with the socket.
++
+The interface of the transport module is documented in the
+link:man:ranch_transport(3)[ranch_transport(3)] manual.
+
+TransportOpts::
+
+Transport options include the Ranch-specific options
+and the socket options. The listener's port number must
+be defined in the socket options.
++
+Socket options may be given directly if there are no
+Ranch-specific options.
++
+The available options for the built-in Ranch transports
+are documented in the link:man:ranch_tcp(3)[ranch_tcp(3)]
+and link:man:ranch_ssl(3)[ranch_ssl(3)] manuals.
+
+Protocol::
+
+The protocol module that will be used by Ranch after
+the connection has been accepted.
++
+The interface of the protocol module is documented in the
+link:man:ranch_protocol(3)[ranch_protocol(3)] manual.
+
+ProtocolOpts::
+
+The protocol options given when calling the protocol
+module. Please consult the documentation of the protocol
+module you are using for more details.
+
+== Return value
+
+Child specifications are returned.
+
+== Changelog
+
+* *1.4*: The `NumAcceptors` argument was moved to the transport options.
+
+== Examples
+
+.Embed a listener
+[source,erlang]
+----
+-behavior(supervisor).
+
+init(_) ->
+    {ok, {#{strategy => one_for_one}, [
+        ranch:child_spec(echo,
+            ranch_tcp, [{port, 5555}],
+            echo_protocol, []
+        )
+    ]}}.
+----
+
+== See also
+
+link:man:ranch:start_listener(3)[ranch:start_listener(3)],
+link:man:ranch:stop_listener(3)[ranch:stop_listener(3)],
+link:man:ranch(3)[ranch(3)],
+link:man:ranch_tcp(3)[ranch_tcp(3)],
+link:man:ranch_ssl(3)[ranch_ssl(3)],
+link:man:ranch_transport(3)[ranch_transport(3)],
+link:man:ranch_protocol(3)[ranch_protocol(3)]

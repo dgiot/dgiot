@@ -1,0 +1,166 @@
+= ranch(3)
+
+== Name
+
+ranch - Socket acceptor pool
+
+== Description
+
+The module `ranch` provides functions for starting and
+manipulating Ranch listeners.
+
+== Exports
+
+Start/stop:
+
+* link:man:ranch:start_listener(3)[ranch:start_listener(3)] - Start a listener
+* link:man:ranch:stop_listener(3)[ranch:stop_listener(3)] - Stop a listener
+* link:man:ranch:child_spec(3)[ranch:child_spec(3)] - Build child specifications for a new listener
+
+Suspend/resume:
+
+* link:man:ranch:suspend_listener(3)[ranch:suspend_listener(3)] - Suspend a running listener
+* link:man:ranch:resume_listener(3)[ranch:resume_listener(3)] - Resume a suspended listener
+* link:man:ranch:get_status(3)[ranch:get_status(3)] - Get a listener's running state
+
+Connections:
+
+* ranch:accept_ack(3) - Deprecated in favor of link:man:ranch:handshake(3)[ranch:handshake(3)]
+* link:man:ranch:handshake(3)[ranch:handshake(3)] - Perform the transport handshake
+* link:man:ranch:recv_proxy_header(3)[ranch:recv_proxy_header(3)] - Receive the PROXY protocol header
+* link:man:ranch:remove_connection(3)[ranch:remove_connection(3)] - Remove connection from the count
+
+Options:
+
+* link:man:ranch:get_max_connections(3)[ranch:get_max_connections(3)] - Get the max number of connections
+* link:man:ranch:get_protocol_options(3)[ranch:get_protocol_options(3)] - Get the current protocol options
+* link:man:ranch:get_transport_options(3)[ranch:get_transport_options(3)] - Get the current transport options
+* link:man:ranch:set_max_connections(3)[ranch:set_max_connections(3)] - Set the max number of connections
+* link:man:ranch:set_protocol_options(3)[ranch:set_protocol_options(3)] - Set the protocol options
+* link:man:ranch:set_transport_options(3)[ranch:set_transport_options(3)] - Set the transport options
+
+Introspection:
+
+* link:man:ranch:get_addr(3)[ranch:get_addr(3)] - Get the listening port and IP
+* link:man:ranch:get_port(3)[ranch:get_port(3)] - Get the listening port
+* link:man:ranch:info(3)[ranch:info(3)] - Overview of Ranch listeners
+* link:man:ranch:procs(3)[ranch:procs(3)] - Retrieve pids from a listener
+* link:man:ranch:wait_for_connections(3)[ranch:wait_for_connections(3)] - Wait for a specific number of connections
+
+== Types
+
+=== max_conns()
+
+[source,erlang]
+----
+max_conns() = non_neg_integer() | infinity
+----
+
+Maximum number of connections allowed on this listener.
+
+This is a soft limit. The actual number of connections
+might be slightly above the limit due to concurrency
+when accepting new connections. Some connections may
+also be removed from this count explicitly by the user
+code.
+
+=== opt()
+
+[source,erlang]
+----
+opt() = {ack_timeout, timeout()}
+      | {connection_type, worker | supervisor}
+      | {max_connections, max_conns()}
+      | {num_acceptors, pos_integer()}
+      | {shutdown, timeout() | brutal_kill}
+      | {socket, any()}
+----
+
+Deprecated form for Ranch-specific options.
+
+Please use the `opts()` type when you need to provide
+Ranch-specific transport options. Socket options will
+remain separate from the Ranch-specific options.
+
+=== opts()
+
+[source,erlang]
+----
+opts() = any() | #{
+    connection_type   => worker | supervisor,
+    handshake_timeout => timeout(),
+    max_connections   => max_conns(),
+    logger            => module(),
+    num_acceptors     => pos_integer(),
+    shutdown          => timeout() | brutal_kill,
+    socket            => any(),
+    socket_opts       => any()
+}
+----
+
+Transport options.
+
+The transport options are a combination of Ranch-specific
+options and socket options. Socket options may be given
+directly (assuming they are not a map and no Ranch-specific
+option needs to be given) or as part of `socket_opts`.
+
+None of the options are required.
+
+ack_timeout::
+
+When `ack_timeout` is found in a transport options proplist,
+it is converted to the `handshake_timeout` option from the
+map. They are equivalent. The `ack_timeout` option will be
+removed in Ranch 2.0.
+
+connection_type (worker)::
+
+Type of process that will handle the connection.
+
+handshake_timeout (5000)::
+
+Maximum allowed time for the `ranch:handshake/1,2` call to finish.
+
+max_connections (1024)::
+
+Maximum number of active connections. Soft limit.
+Use `infinity` to disable the limit entirely.
+
+num_acceptors (10)::
+
+Number of processes that accept connections.
+
+shutdown (5000)::
+
+Maximum allowed time for children to stop on listener shutdown.
+
+socket::
+
+Listening socket opened externally to be used instead of
+calling `Transport:listen/1`. This option will be removed
+in Ranch 2.0. Use a custom transport module acting as a
+wrapper for `ranch_tcp` or `ranch_ssl` instead.
+
+socket_opts::
+
+Socket options given to `Transport:listen/1`. Please refer to the
+documentation of the transport module you are using for more details.
+
+=== ref()
+
+[source,erlang]
+----
+ref() = any()
+----
+
+Unique name used to refer to a listener.
+
+== Changelog
+
+* *1.6*: The `logger` option was added.
+* *1.6*: The `opt()` type was deprecated in favor of the new `opts()` type.
+
+== See also
+
+link:man:ranch(7)[ranch(7)]

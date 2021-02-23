@@ -1,0 +1,78 @@
+= cow_cookie(3)
+
+== Name
+
+cow_cookie - Cookies
+
+== Description
+
+The module `cow_cookie` provides functions for parsing
+and manipulating cookie headers.
+
+== Exports
+
+* link:man:cow_cookie:parse_cookie(3)[cow_cookie:parse_cookie(3)] - Parse a cookie header
+* link:man:cow_cookie:setcookie(3)[cow_cookie:setcookie(3)] - Generate a set-cookie header
+
+== Types
+
+=== cookie_opts()
+
+[source,erlang]
+----
+cookie_opts() :: #{
+    domain    => binary(),
+    http_only => boolean(),
+    max_age   => non_neg_integer(),
+    path      => binary(),
+    same_site => lax | strict,
+    secure    => boolean()
+}
+----
+
+Options for the set-cookie header. They are added to the
+header as attributes. More information about the options
+can be found in https://tools.ietf.org/html/rfc6265[RFC 6265].
+
+The following options are defined:
+
+domain::
+
+Hosts to which the cookie will be sent. By default it will
+only be sent to the origin server.
+
+http_only::
+
+Whether the cookie should be restricted to HTTP requests, or
+it should also be exposed to other APIs, for example Javascript.
+By default there are no restrictions.
+
+max_age::
+
+Maximum lifetime of the cookie, in seconds. By default the
+cookie is kept for the duration of the session.
+
+path::
+
+Path to which the cookie will be sent. By default it will
+be sent to the current "directory" of the effective request URI.
+
+same_site::
+
+Whether the cookie should be sent along with cross-site
+requests. This header is currently non-standard but is in
+the process of being standardized. Please refer to the
+https://tools.ietf.org/html/draft-ietf-httpbis-rfc6265bis-03#section-4.1.2.7[RFC 6265 (bis) draft]
+for details.
+
+secure::
+
+Whether the cookie should be sent only on secure channels
+(for example TLS). Note that this does not guarantee the
+integrity of the cookie, only its confidentiality during
+transfer. By default there are no restrictions.
+
+== See also
+
+link:man:cowlib(7)[cowlib(7)],
+https://tools.ietf.org/html/rfc6265[RFC 6265]

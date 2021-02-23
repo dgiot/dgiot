@@ -1,0 +1,82 @@
+= gun:delete(3)
+
+== Name
+
+gun:delete - Delete a resource
+
+== Description
+
+[source,erlang]
+----
+delete(ConnPid, Path)
+    -> delete(ConnPid, Path, [], #{}).
+
+delete(ConnPid, Path, Headers)
+    -> delete(ConnPid, Path, Headers, #{})
+
+delete(ConnPid, Path, Headers, ReqOpts)
+    -> StreamRef
+
+ConnPid   :: pid()
+Path      :: iodata()
+Headers   :: [{binary(), iodata()}]
+ReqOpts   :: gun:req_opts()
+StreamRef :: reference()
+----
+
+Delete a resource.
+
+== Arguments
+
+ConnPid::
+
+The pid of the Gun connection process.
+
+Path::
+
+Path to the resource.
+
+Headers::
+
+Additional request headers.
+
+ReqOpts::
+
+Request options.
+
+== Return value
+
+A reference that identifies the newly created stream is
+returned. It is this reference that must be passed in
+subsequent calls and will be received in messages related
+to this new stream.
+
+== Changelog
+
+* *1.0*: Function introduced.
+
+== Examples
+
+.Delete a resource
+[source,erlang]
+----
+StreamRef = gun:delete(ConnPid, "/drafts/123").
+----
+
+.Delete a resource with request options
+[source,erlang]
+----
+StreamRef = gun:delete(ConnPid, "/drafts/123", [],
+    #{reply_to => ReplyToPid}).
+----
+
+== See also
+
+link:man:gun(3)[gun(3)],
+link:man:gun:put(3)[gun:put(3)],
+link:man:gun:await(3)[gun:await(3)],
+link:man:gun:await_body(3)[gun:await_body(3)],
+link:man:gun_push(3)[gun_push(3)],
+link:man:gun_inform(3)[gun_inform(3)],
+link:man:gun_response(3)[gun_response(3)],
+link:man:gun_data(3)[gun_data(3)]

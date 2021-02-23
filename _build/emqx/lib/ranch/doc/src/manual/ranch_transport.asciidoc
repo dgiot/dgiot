@@ -1,0 +1,294 @@
+= ranch_transport(3)
+
+== Name
+
+ranch_transport - Transport modules
+
+== Description
+
+The module `ranch_transport` defines the interface used
+by Ranch transports.
+
+== Callbacks
+
+Ranch transports implement the following interface:
+
+=== accept
+
+[source,erlang]
+----
+accept(LSocket :: socket(), Timeout :: timeout())
+    -> {ok, Socket :: socket()}
+     | {error, closed | timeout | atom()}
+----
+
+Use the listening socket returned by `listen/1`
+to accept a new connection. The timeout is specified
+in milliseconds.
+
+=== close
+
+[source,erlang]
+----
+close(Socket :: socket()) -> ok
+----
+
+Close the socket.
+
+=== controlling_process
+
+[source,erlang]
+----
+controlling_process(Socket :: socket(), Pid :: pid())
+    -> ok | {error, closed | not_owner | atom()}
+----
+
+Assign a new controlling process to the socket. The
+controlling process is the process that is linked to
+and receives messages from the socket.
+
+=== getopts
+
+[source,erlang]
+----
+getopts(Socket :: socket(), SockOpts :: [atom()])
+    -> {ok, any()} | {error, atom()}
+----
+
+Get one or more options for the socket.
+
+=== getstat
+
+[source,erlang]
+----
+getstat(Socket :: socket())
+    -> {ok, SockStatValues :: any()} | {error, atom()}
+----
+
+Get all statistics for the socket.
+
+[source,erlang]
+----
+getstat(Socket :: socket(), SockStats :: [atom()])
+    -> {ok, SockStatValues :: any()} | {error, atom()}
+----
+
+Get one or more statistic options for the socket.
+
+=== handshake
+
+[source,erlang]
+----
+handshake(Socket0  :: socket(),
+          SockOpts :: any(),
+          Timeout  :: timeout())
+    -> {ok, Socket}
+----
+
+Perform the transport-level handshake.
+
+This function will be called by connection processes
+before performing any socket operation. It allows
+transports that require extra initialization to perform
+their task and return a socket that is ready to use.
+
+This function may also be used to upgrade a connection
+from a transport to another depending on the capabilities
+of the transports. For example a `ranch_tcp` socket may
+be upgraded to a `ranch_ssl` one using this function.
+
+=== listen
+
+[source,erlang]
+----
+listen(SockOpts :: any())
+    -> {ok, LSocket :: socket()} | {error, atom()}
+----
+
+Create a socket that listens on the given port.
+
+The port may not be specified or may be set to 0, which
+means a random available port number will be chosen.
+
+=== messages
+
+[source,erlang]
+----
+messages()
+    -> {OK     :: atom(),
+        Closed :: atom(),
+        Error  :: atom()}
+----
+
+Return the tuple keys for the messages sent by the socket.
+
+=== name
+
+[source,erlang]
+----
+name() -> Name :: atom()
+----
+
+Return the name of the transport.
+
+=== peername
+
+[source,erlang]
+----
+peername(Socket :: socket())
+    -> {ok, {inet:ip_address(), inet:port_number()}}
+     | {error, atom()}.
+----
+
+Return the address and port number for the other end of
+the connection.
+
+=== recv
+
+[source,erlang]
+----
+recv(Socket :: socket(),
+     Length :: non_neg_integer(),
+     Timeout :: timeout())
+    -> {ok, Packet :: any()}
+     | {error, closed | timeout | atom()}
+----
+
+Receive a packet from the socket in passive mode.
+
+Attempting to receive data from a socket that is
+in active mode will return an error.
+
+A length of 0 will return the data available on
+the socket as soon as possible, regardless of length.
+
+While it is possible to use the timeout value `infinity`,
+it is highly discouraged as it could cause your process
+to get stuck waiting for data that will never come. This may
+happen when a socket becomes half-open due to a crash of the
+remote endpoint. Wi-Fi going down is another common culprit.
+
+=== secure
+
+[source,erlang]
+----
+secure() -> boolean()
+----
+
+Return whether the transport can be used for secure connections.
+
+=== send
+
+[source,erlang]
+----
+send(Socket :: socket(), Packet :: iodata())
+    -> ok | {error, atom()}
+----
+
+Send a packet on the socket.
+
+=== sendfile
+
+[source,erlang]
+----
+sendfile(Socket, File)
+    -> sendfile(Socket, File, 0, 0, [])
+
+sendfile(Socket, File, Offset, Bytes)
+    -> sendfile(Socket, File, Offset, Bytes, [])
+
+sendfile(Socket :: socket(),
+         File   :: file:name_all() | file:fd(),
+         Offset :: non_neg_integer(),
+         Bytes  :: non_neg_integer(),
+         Opts   :: sendfile_opts())
+    -> {ok, SentBytes :: non_neg_integer()} | {error, atom()}
+----
+
+Send a file on the socket.
+
+The file may be sent full or in parts, and may be specified
+by its filename or by an already open file descriptor.
+
+Transports that manipulate TCP directly may use the
+`file:sendfile/2,4,5` function, which calls the `sendfile`
+syscall where applicable (on Linux, for example). Other
+transports can use the `sendfile/6` function exported from
+this module.
+
+=== setopts
+
+[source,erlang]
+----
+setopts(Socket :: socket(), SockOpts :: any())
+    -> ok | {error, atom()}
+----
+
+Set one or more options for the socket.
+
+=== shutdown
+
+[source,erlang]
+----
+shutdown(Socket :: socket(),
+         How    :: read | write | read_write)
+    -> ok | {error, atom()}
+----
+
+Close the socket for reading and/or writing.
+
+=== sockname
+
+[source,erlang]
+----
+sockname(Socket :: socket())
+    -> {ok, {inet:ip_address(), inet:port_number()}}
+     | {error, atom()}.
+----
+
+Return the address and port number for the local end
+of the connection.
+
+== Exports
+
+The following function can be used when implementing
+transport modules:
+
+* link:man:ranch_transport:sendfile(3)[ranch_transport:sendfile(3)] - Send a file on the socket
+
+== Types
+
+=== sendfile_opts()
+
+[source,erlang]
+----
+sendfile_opts() :: [{chunk_size, non_neg_integer()}]
+----
+
+Options accepted by the sendfile function and callbacks:
+
+chunk_size (8191)::
+
+The chunk size, in bytes.
+
+=== socket()
+
+[source,erlang]
+----
+socket() :: any()
+----
+
+The socket.
+
+The exact type will vary depending on the transport module.
+
+== Changelog
+
+* *1.6*: The `socket()` type was added for documentation purposes.
+* *1.6*: The type of the sendfile filename was extended.
+
+== See also
+
+link:man:ranch(7)[ranch(7)],
+link:man:ranch_tcp(3)[ranch_tcp(3)],
+link:man:ranch_ssl(3)[ranch_ssl(3)]

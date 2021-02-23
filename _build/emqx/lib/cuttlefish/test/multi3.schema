@@ -1,0 +1,17 @@
+%%% We'll call this a 'b' namespace
+
+{mapping, "b.some.var1", "app_b.some_var1", []}.
+{translation, "app_b.some_var1", fun(X) -> "b1" end}.
+
+{mapping, "b.some.var2", "app_b.some_var2", []}.
+{translation, "app_b.some_var2", fun(X) -> "b2" end}.
+
+{validator, "b.validator1", "validators are magic!", fun(_AlwaysFalse) -> false end}.
+{validator, "b.validator2", "validators are magic!", fun(_AlwaysFalse) -> false end}.
+
+%% For some nutty reason, somebody has decided to redefine "b.some.var1" later in the same schema.
+%% This should appear in the same place the original definition above was, but with the new values.
+{mapping, "b.some.var1", "app_b.some_var3", []}.
+%% Same for translations
+{translation, "app_b.some_var1", fun(X) -> "b3" end}.
+

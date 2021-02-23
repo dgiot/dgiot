@@ -1,0 +1,76 @@
+[appendix]
+== Migrating from Ranch 1.5 to 1.6
+
+Ranch 1.6 added the ability to suspend and resume listeners.
+It also deprecates a number of features and add interfaces
+that will be used in Ranch 2.0.
+
+Ranch 1.6 is compatible with Erlang/OTP 18.0 onward. Support
+for older releases has been removed.
+
+=== Features added
+
+* Listeners can now be suspended/resumed without stopping existing
+  connection processes. This effectively closes the listening socket
+  and stops the acceptor processes.
+
+* Transport options can now be updated for suspended listeners.
+
+* The `Socket` argument given when the protocol starts has been
+  deprecated. In Ranch 2.0 the socket will be obtainable only
+  by calling `ranch:handshake/1,2`.
+
+* Ranch-specific transport options and socket options are now
+  better separated. When passing Ranch-specific transport options,
+  Ranch now expects to receive a map, in which case socket
+  options are passed in the `socket_opts` value. When there
+  are only socket options they can be passed to Ranch directly
+  as a convenience.
+
+* Any future transport option will only be added to the map
+  type. This includes transport options added in this release.
+
+* The transport option `ack_timeout` was renamed to `handshake_timeout`
+  in the map type.
+
+* The `cacerts` socket option is now silenced in error logs
+  just like the `certs` and `key` options.
+
+* The manual has been heavily updated and now features one
+  manual page per function and module, complete with a per-function
+  changelog, examples and more.
+
+=== Experimental features added
+
+* It is now possible to configure the restart intensity for
+  `ranch_sup` using the OTP application environment. This
+  feature will remain undocumented unless there is popular
+  demand for it.
+
+* Add the transport option `logger` that allows configuring
+  which logger module will be used. The logger module must
+  follow the interface of the new `logger` module in Erlang/OTP 21,
+  or be set to `error_logger` to keep the old behavior.
+
+=== Changed behaviors
+
+* Transport modules must now implement `Transport:handshake/2,3`
+  which deprecates and will replace `Transport:accept_ack/1` in
+  Ranch 2.0. It returns a new socket and can therefore be used
+  for implementing TLS upgrade mechanisms.
+
+=== New functions
+
+* The functions `ranch:suspend_listener/1` and `ranch:resume_listener/1`
+  were added. In addition the function `ranch:get_state/1` can be used
+  to obtain the running state of a listener.
+
+* A function `ranch:wait_for_connections/3` was added.
+
+* A function `ranch:handshake/1,2` was added to replace the
+  function `ranch:accept_ack/1`.
+
+=== Bugs fixed
+
+* The specs for the function `Transport:sendfile/2,4,5` have been
+  corrected. The type used for the filename was too restricting.

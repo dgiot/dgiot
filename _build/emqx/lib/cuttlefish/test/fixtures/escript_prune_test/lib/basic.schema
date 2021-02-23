@@ -1,0 +1,7 @@
+{mapping, "a.b", "a.b", [
+    {default, "c"}
+]}.
+
+{mapping, "a.c", "vm_args.+B", [
+    {default, "c"}
+]}.

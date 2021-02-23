@@ -1,0 +1,160 @@
+[[connect]]
+== Connection
+
+This chapter describes how to open, monitor and close
+a connection using the Gun client.
+
+=== Gun connections
+
+Gun is designed with the HTTP/2 and Websocket protocols in mind.
+They are built for long-running connections that allow concurrent
+exchange of data, either in the form of request/responses for
+HTTP/2 or in the form of messages for Websocket.
+
+A Gun connection is an Erlang process that manages a socket to
+a remote endpoint. This Gun connection is owned by a user
+process that is called the _owner_ of the connection, and is
+managed by the supervision tree of the `gun` application.
+
+The owner process communicates with the Gun connection
+by calling functions from the module `gun`. All functions
+perform their respective operations asynchronously. The Gun
+connection will send Erlang messages to the owner process
+whenever needed.
+
+When the remote endpoint closes the connection, Gun attempts
+to reconnect automatically.
+
+=== Opening a new connection
+
+The `gun:open/2,3` function must be used to open a connection.
+
+.Opening a connection to example.org on port 443
+[source,erlang]
+----
+{ok, ConnPid} = gun:open("example.org", 443).
+----
+
+If the port given is 443, Gun will attempt to connect using
+TLS. The protocol will be selected automatically using the
+ALPN extension for TLS. By default Gun supports HTTP/2
+and HTTP/1.1 when connecting using TLS.
+
+For any other port, Gun will attempt to connect using
+plain TCP and will use the HTTP/1.1 protocol.
+
+The transport and protocol used can be overriden via
+options. The manual documents all available options.
+
+Options can be provided as a third argument, and take the
+form of a map.
+
+.Opening a TLS connection to example.org on port 8443
+[source,erlang]
+----
+{ok, ConnPid} = gun:open("example.org", 8443, #{transport => tls}).
+----
+
+=== Waiting for the connection to be established
+
+When Gun successfully connects to the server, it sends a
+`gun_up` message with the protocol that has been selected
+for the connection.
+
+Gun provides the functions `gun:await_up/1,2,3` that wait
+for the `gun_up` message. They can optionally take a monitor
+reference and/or timeout value. If no monitor is provided,
+one will be created for the duration of the function call.
+
+.Synchronous opening of a connection
+[source,erlang]
+----
+{ok, ConnPid} = gun:open("example.org", 443),
+{ok, Protocol} = gun:await_up(ConnPid).
+----
+
+=== Handling connection loss
+
+When the connection is lost, Gun will send a `gun_down`
+message indicating the current protocol, the reason the
+connection was lost and two lists of stream references.
+
+The first list indicates open streams that _may_ have been
+processed by the server. The second list indicates open
+streams that the server did not process.
+
+=== Monitoring the connection process
+
+Because software errors are unavoidable, it is important to
+detect when the Gun process crashes. It is also important
+to detect when it exits normally. Erlang provides two ways
+to do that: links and monitors.
+
+Gun leaves you the choice as to which one will be used.
+However, if you use the `gun:await/2,3` or `gun:await_body/2,3`
+functions, a monitor may be used for you to avoid getting
+stuck waiting for a message that will never come.
+
+If you choose to monitor yourself you can do it on a permanent
+basis rather than on every message you will receive, saving
+resources. Indeed, the `gun:await/3,4` and `gun:await_body/3,4`
+functions both accept a monitor argument if you have one already.
+
+.Monitoring the connection process
+[source,erlang]
+----
+{ok, ConnPid} = gun:open("example.org", 443).
+MRef = monitor(process, ConnPid).
+----
+
+This monitor reference can be kept and used until the connection
+process exits.
+
+.Handling `DOWN` messages
+[source,erlang]
+----
+receive
+    %% Receive Gun messages here...
+    {'DOWN', Mref, process, ConnPid, Reason} ->
+        error_logger:error_msg("Oops!"),
+        exit(Reason)
+end.
+----
+
+What to do when you receive a `DOWN` message is entirely up to you.
+
+=== Closing the connection abruptly
+
+The connection can be stopped abruptly at any time by calling
+the `gun:close/1` function.
+
+.Immediate closing of the connection
+[source,erlang]
+----
+gun:close(ConnPid).
+----
+
+The process is stopped immediately without having a chance to
+perform the protocol's closing handshake, if any.
+
+//=== Closing the connection gracefully
+//
+//The connection can also be stopped gracefully by calling the
+//`gun:shutdown/1` function.
+//
+//.Graceful shutdown of the connection
+//[source,erlang]
+//----
+//gun:shutdown(ConnPid).
+//----
+//
+//Gun will refuse any new requests or messages after you call
+//this function. It will however continue to send you messages
+//for existing streams until they are all completed.
+//
+//For example if you performed a GET request just before calling
+//`gun:shutdown/1`, you will still receive the response before
+//Gun closes the connection.
+//
+//If you set a monitor beforehand, you will receive a message
+//when the connection has been closed.

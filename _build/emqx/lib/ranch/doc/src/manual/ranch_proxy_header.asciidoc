@@ -1,0 +1,164 @@
+= ranch_proxy_header(3)
+
+== Name
+
+ranch_proxy_header - PROXY protocol
+
+== Description
+
+The module `ranch_proxy_header` provides functions
+for parsing and building the PROXY protocol header.
+
+== Exports
+
+* link:man:ranch_proxy_header:parse(3)[ranch_proxy_header:parse(3)] - Parse a PROXY protocol header
+* link:man:ranch_proxy_header:header(3)[ranch_proxy_header:header(3)] - Build a PROXY protocol header
+
+== Types
+
+=== proxy_info()
+
+[source,erlang]
+----
+proxy_info() = #{
+    %% Mandatory part.
+    version := 1 | 2,
+    command := local | proxy,
+    transport_family   => undefined | ipv4 | ipv6 | unix,
+    transport_protocol => undefined | stream | dgram,
+
+    %% Addresses.
+    src_address  => inet:ip_address() | binary(),
+    src_port     => inet:port_number(),
+    dest_address => inet:ip_address() | binary(),
+    dest_port    => inet:port_number(),
+
+    %% Extra TLV-encoded data.
+    alpn      => binary(), %% US-ASCII.
+    authority => binary(), %% UTF-8.
+    netns     => binary(), %% US-ASCII.
+    ssl       => #{
+        client   := [ssl | cert_conn | cert_sess],
+        verified := boolean(),
+        version  => binary(), %% US-ASCII.
+        cipher   => binary(), %% US-ASCII.
+        sig_alg  => binary(), %% US-ASCII.
+        key_alg  => binary(), %% US-ASCII.
+        cn       => binary()  %% UTF-8.
+    },
+
+    %% Unknown TLVs can't be parsed so the raw data is given.
+    raw_tlvs => [{0..255, binary()}]
+}.
+----
+
+The PROXY protocol information.
+
+The following fields may be found, although most of them are
+optional:
+
+version::
+
+The PROXY protocol version used.
+
+command::
+
+`proxy` is used for proxied connections. `local` for non-proxied
+connections. Those do not have any additional information.
+
+transport_family::
+
+The transport family of the original connection.
+
+transport_protocol::
+
+The transport protocol of the original connection.
+
+src_address::
+
+The source address of the original connection. This is the
+original address of the client.
+
+src_port::
+
+The source port of the original connection. This is the
+port the client opened on its end for the connection. It
+is not defined for UNIX domain sockets.
+
+dest_address::
+
+The destination address of the original connection.
+
+dest_port::
+
+The destination port of the original connection. It
+is not defined for UNIX domain sockets.
+
+alpn::
+
+The upper layer protocol in use over the connection. This
+is typically negotiated via the ALPN extension for TLS.
+
+authority::
+
+The host name serving as authority for the connection.
+This is typically passed using the SNI extension for TLS.
+
+netns::
+
+The namespace's name for the original connection.
+
+ssl::
+
+Various informations pertaining to the original SSL/TLS
+connection.
+
+client:::
+
+A list containing a number of flags. `ssl` indicates
+that the client connected over SSL/TLS. `cert_conn`
+indicates that the client provided a certificate over
+the original connection. `cert_sess` indicates that
+the client provided a certificate at least once over
+the TLS session this connection belongs to.
+
+verified:::
+
+Whether the client presented a certificate and it was
+successfully verified.
+
+version:::
+
+The US-ASCII string containing the SSL/TLS version
+used for the original connection.
+
+cipher:::
+
+The US-ASCII string name of the cipher used.
+
+sig_alg:::
+
+The US-ASCII string name of the algorithm used to sign
+the certificate provided by the client.
+
+key_alg:::
+
+The US-ASCII string name of the algorithm used to generate
+the key of the certificate provided by the client.
+
+cn:::
+
+The UTF-8 string representation of the Common Name field
+of the client certificate's Distinguished Name.
+
+raw_tlvs::
+
+The non-standard TLVs that Ranch was not able to parse.
+
+== Changelog
+
+* *1.7*: Module introduced.
+
+== See also
+
+link:man:ranch(7)[ranch(7)]

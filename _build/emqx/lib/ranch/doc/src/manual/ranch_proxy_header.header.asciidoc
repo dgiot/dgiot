@@ -1,0 +1,75 @@
+= ranch_proxy_header:header(3)
+
+== Name
+
+ranch_proxy_header:header - Build a PROXY protocol header
+
+== Description
+
+[source,erlang]
+----
+header(ProxyInfo)            -> header(ProxyInfo, #{})
+header(ProxyInfo, BuildOpts) -> iodata()
+
+ProxyInfo :: ranch_proxy_header:proxy_info()
+BuildOpts :: #{
+    checksum => crc32c,
+    padding  => pos_integer() %% >= 3
+}
+----
+
+Build a PROXY protocol header.
+
+== Arguments
+
+ProxyInfo::
+
+The proxy information to encode.
+
+BuildOpts::
+
+Options to control whether to add a checksum or padding
+should be included in the encoded PROXY protocol header.
+
+== Return value
+
+The PROXY protocol header is returned.
+
+== Changelog
+
+* *1.7*: Function introduced.
+
+== Examples
+
+.Build a PROXY protocol header
+[source,erlang]
+----
+ProxyInfo = #{
+    version => 2,
+    command => proxy,
+
+    transport_family   => ipv4,
+    transport_protocol => stream,
+
+    src_address  => {192, 168, 1, 11},
+    src_port     => 54321,
+    dest_address => {192, 168, 1, 42},
+    dest_port    => 443
+},
+Data = ranch_proxy_header:parse(ProxyInfo).
+----
+
+.Build a PROXY protocol header with checksum and padding
+[source,erlang]
+----
+Data = ranch_proxy_header:parse(ProxyInfo, #{
+    checksum => crc32c,
+    padding  => 7
+}).
+----
+
+== See also
+
+link:man:ranch_proxy_header:header(3)[ranch_proxy_header:header(3)],
+link:man:ranch_proxy_header(3)[ranch_proxy_header(3)]
+

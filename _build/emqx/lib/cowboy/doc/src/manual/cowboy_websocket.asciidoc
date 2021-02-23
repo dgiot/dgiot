@@ -1,0 +1,293 @@
+= cowboy_websocket(3)
+
+== Name
+
+cowboy_websocket - Websocket
+
+== Description
+
+The module `cowboy_websocket` implements Websocket
+as a Ranch protocol. It also defines a callback interface
+for handling Websocket connections.
+
+== Callbacks
+
+Websocket handlers must implement the following callback
+interface:
+
+[source,erlang]
+----
+init(Req, State)
+    -> {cowboy_websocket, Req, State}
+     | {cowboy_websocket, Req, State, Opts}
+
+websocket_init(State)            -> CallResult  %% optional
+websocket_handle(InFrame, State) -> CallResult
+websocket_info(Info, State)      -> CallResult
+
+terminate(Reason, PartialReq, State) -> ok      %% optional
+
+Req        :: cowboy_req:req()
+PartialReq :: map()
+State      :: any()
+Opts       :: cowboy_websocket:opts()
+InFrame    :: ping | pong | {text | binary | ping | pong, binary()}
+Info       :: any()
+
+CallResult :: {commands(), State}
+            | {commands(), State, hibernate}
+            | Deprecated
+
+Deprecated :: {ok, State}
+            | {ok, State, hibernate}
+            | {reply, OutFrame | [OutFrame], State}
+            | {reply, OutFrame | [OutFrame], State, hibernate}
+            | {stop, State}
+OutFrame   :: cow_ws:frame()                    %% see types below
+
+Reason     :: normal | stop | timeout
+            | remote | {remote, cow_ws:close_code(), binary()}
+            | {error, badencoding | badframe | closed | atom()}
+            | {crash, error | exit | throw, any()}
+----
+
+The `init/2` callback is common to all handlers. To upgrade
+the connection to Websocket, it must return `cowboy_websocket`
+as the first element of the tuple.
+
+Any operation requiring the HTTP request must be done in the
+`init/2` function, as the Req object will not be available
+after it returns. Websocket sub-protocol selection should
+therefore be done in this function.
+
+The optional `websocket_init/1` callback will be called once
+the connection has been upgraded to Websocket. It can be used
+to perform any required initialization of the handler.
+
+Note that the `init/2` function does not run in the same
+process as the Websocket callbacks. Any Websocket-specific
+initialization must be done in `websocket_init/1`.
+
+The `websocket_handle/2` callback will be called for every
+frame received. The `websocket_info/2` callback will be
+called for every Erlang message received.
+
+All three Websocket callbacks may send one or more frames
+back to the client, including close frames to terminate
+the connection; enable/disable active mode; enable/disable
+compression for subsequent frames; or change Websocket options.
+
+The optional `terminate/3` callback will ultimately be called
+with the reason for the termination of the connection. This
+callback is common to all handlers. Note that Websocket will
+not provide the full Req object by default, to save memory.
+
+Cowboy will terminate the process right after closing the
+Websocket connection. This means that there is no need to
+perform any cleanup in the `terminate/3` callback.
+
+The following terminate reasons are defined for Websocket
+connections:
+
+normal::
+    The connection was closed normally before establishing a Websocket
+    connection. This typically happens if an `ok` tuple is returned
+    from the `init/2` callback.
+
+remote::
+    The remote endpoint closed the connection without giving any
+    further details.
+
+{remote, Code, Payload}::
+    The remote endpoint closed the connection with the given
+    `Code` and `Payload` as the reason.
+
+stop::
+    The handler requested to close the connection, either by returning
+    a `stop` tuple or by sending a `close` frame.
+
+timeout::
+    The connection has been closed due to inactivity. The timeout
+    value can be configured from `init/2`.
+
+{crash, Class, Reason}::
+    A crash occurred in the handler. `Class` and `Reason` can be
+    used to obtain more information about the crash. The function
+    `erlang:get_stacktrace/0` can also be called to obtain the
+    stacktrace of the process when the crash occurred.
+
+{error, badencoding}::
+    A text frame was sent by the client with invalid encoding. All
+    text frames must be valid UTF-8.
+
+{error, badframe}::
+    A protocol error has been detected.
+
+{error, closed}::
+    The socket has been closed brutally without a close frame being
+    received first.
+
+{error, Reason}::
+    A socket error ocurred.
+
+== Types
+
+=== commands()
+
+[source,erlang]
+----
+commands() :: [Command]
+
+Command :: {active, boolean()}
+         | {deflate, boolean()}
+         | {set_options, #{idle_timeout => timeout()}}
+         | {shutdown_reason, any()}
+         | Frame :: cow_ws:frame()
+----
+
+Commands that may be returned from Websocket callbacks.
+
+The following commands are defined:
+
+active::
+
+Whether to disable or enable reading from the socket. This
+can be used to apply flow control to a Websocket connection.
+
+deflate::
+
+Whether the subsequent frames should be compressed. Has no
+effect on connections that did not negotiate compression.
+
+set_options::
+
+Set Websocket options. Currently only the option `idle_timeout`
+may be updated from a Websocket handler.
+
+shutdown_reason::
+
+Change the shutdown reason. The Websocket process will exit
+with reason `normal` by default. This command can be used to
+exit with reason `{shutdown, ShutdownReason}` under normal
+conditions. This command has no effect when the Websocket
+process exits abnormally, for example following a crash in a
+handler callback.
+
+Frame::
+
+Send the corresponding Websocket frame.
+
+=== cow_ws:frame()
+
+[source,erlang]
+----
+frame() :: {text, iodata()}
+    | {binary, iodata()}
+    | ping | {ping, iodata()}
+    | pong | {pong, iodata()}
+    | close | {close, iodata()} | {close, close_code(), iodata()}
+
+close_code() :: 1000..1003 | 1006..1011 | 3000..4999
+----
+
+Websocket frames that can be sent as a response.
+
+Note that there is no need to send pong frames back as
+Cowboy does it automatically for you.
+
+=== opts()
+
+[source,erlang]
+----
+opts() :: #{
+    compress       => boolean(),
+    deflate_opts   => cow_ws:deflate_opts()
+    idle_timeout   => timeout(),
+    max_frame_size => non_neg_integer() | infinity,
+    req_filter     => fun((cowboy_req:req()) -> map()),
+    validate_utf8  => boolean()
+}
+----
+
+Websocket handler options.
+
+This configuration is passed to Cowboy from the `init/2`
+function:
+
+[source,erlang]
+----
+init(Req, State) ->
+    Opts = #{compress => true},
+    {cowboy_websocket, Req, State, Opts}.
+----
+
+The default value is given next to the option name:
+
+compress (false)::
+
+Whether to enable the Websocket frame compression
+extension. Frames will only be compressed for the
+clients that support this extension.
+
+deflate_opts (#{})::
+
+Configuration for the permessage-deflate Websocket
+extension. Allows configuring both the negotiated
+options and the zlib compression options. The
+defaults optimize the compression at the expense
+of some memory and CPU.
+
+idle_timeout (60000)::
+
+Time in milliseconds that Cowboy will keep the
+connection open without receiving anything from
+the client.
++
+This option can be updated at any time using the
+`set_options` command.
+
+max_frame_size (infinity)::
+
+Maximum frame size in bytes allowed by this Websocket
+handler. Cowboy will close the connection when
+a client attempts to send a frame that goes over
+this limit. For fragmented frames this applies
+to the size of the reconstituted frame.
+
+req_filter::
+
+A function applied to the Req to compact it and
+only keep required information. The Req is only
+given back in the `terminate/3` callback. By default
+it keeps the method, version, URI components and peer
+information.
+
+validate_utf8 (true)::
+
+Whether Cowboy should verify that the payload of
+`text` and `close` frames is valid UTF-8. This is
+required by the protocol specification but in some
+cases it may be more interesting to disable it in
+order to save resources.
++
+Note that `binary` frames do not have this UTF-8
+requirement and are what should be used under
+normal circumstances if necessary.
+
+== Changelog
+
+* *2.7*: The commands based interface has been documented.
+         The old interface is now deprecated.
+* *2.7*: The command `shutdown_reason` was introduced.
+* *2.7*: The option `validate_utf8` has been added.
+* *2.6*: Deflate options can now be configured via `deflate_opts`.
+* *2.0*: The Req object is no longer passed to Websocket callbacks.
+* *2.0*: The callback `websocket_terminate/3` was removed in favor of `terminate/3`.
+* *1.0*: Protocol introduced.
+
+== See also
+
+link:man:cowboy(7)[cowboy(7)],
+link:man:cowboy_handler(3)[cowboy_handler(3)],
+link:man:cowboy_http(3)[cowboy_http(3)],
+link:man:cowboy_http2(3)[cowboy_http2(3)]

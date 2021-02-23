@@ -1,0 +1,55 @@
+= cow_cookie:setcookie(3)
+
+== Name
+
+cow_cookie:setcookie - Generate a set-cookie header
+
+== Description
+
+[source,erlang]
+----
+setcookie(Name  :: iodata(),
+          Value :: iodata(),
+          Opts  :: cow_cookie:cookie_opts())
+    -> iolist()
+----
+
+Generate a set-cookie header.
+
+== Arguments
+
+Name::
+
+Cookie name.
+
+Value::
+
+Cookie value.
+
+Opts::
+
+Options added to the set-cookie header as attributes.
+
+== Return value
+
+An iolist with the generated set-cookie header value.
+
+== Changelog
+
+* *1.0*: Function introduced.
+
+== Examples
+
+.Generate a set-cookie header
+[source,erlang]
+----
+SetCookie = cow_cookie:setcookie(<<"sessionid">>, ID, #{
+    http_only => true,
+    secure    => true
+}).
+----
+
+== See also
+
+link:man:cow_cookie(3)[cow_cookie(3)],
+link:man:cow_cookie:parse_cookie(3)[cow_cookie:parse_cookie(3)]

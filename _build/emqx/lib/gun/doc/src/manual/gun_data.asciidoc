@@ -1,0 +1,77 @@
+= gun_data(3)
+
+== Name
+
+gun_data - Response body
+
+== Description
+
+[source,erlang]
+----
+{gun_data, ConnPid, StreamRef, IsFin, Data}
+
+ConnPid   :: pid()
+StreamRef :: reference()
+IsFin     :: fin | nofin
+Data      :: binary()
+----
+
+Response body.
+
+This message informs the relevant process that the server
+sent a all or part of the body for the response to the
+original request.
+
+A data message is always preceded by a response message.
+
+The response body may be terminated either by a data
+message with the flag `fin` set or by a
+link:man:gun_trailers(3)[gun_trailers(3)] message.
+
+== Elements
+
+ConnPid::
+
+The pid of the Gun connection process.
+
+StreamRef::
+
+Identifier of the stream for the original request.
+
+IsFin::
+
+Whether this message terminates the response.
+
+Data::
+
+All or part of the response body.
+
+== Changelog
+
+* *1.0*: Message introduced.
+
+== Examples
+
+.Receive a gun_data message in a gen_server
+[source,erlang]
+----
+handle_info({gun_data, ConnPid, _StreamRef,
+             _IsFin, _Data},
+            State=#state{conn_pid=ConnPid}) ->
+    %% Do something.
+    {noreply, State}.
+----
+
+== See also
+
+link:man:gun(3)[gun(3)],
+link:man:gun:get(3)[gun:get(3)],
+link:man:gun:head(3)[gun:head(3)],
+link:man:gun:patch(3)[gun:patch(3)],
+link:man:gun:post(3)[gun:post(3)],
+link:man:gun:put(3)[gun:put(3)],
+link:man:gun:delete(3)[gun:delete(3)],
+link:man:gun:options(3)[gun:options(3)],
+link:man:gun:request(3)[gun:request(3)],
+link:man:gun_response(3)[gun_response(3)],
+link:man:gun_trailers(3)[gun_trailers(3)]

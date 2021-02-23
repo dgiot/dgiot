@@ -1,0 +1,10 @@
+{mapping, "a.b", "erlang.key", [
+    {datatype, integer}
+]}.
+
+{translation, "erlang.key",
+    fun(Conf) -> cuttlefish:conf_get("a.b", Conf) * 17 end
+}.
+
+%% nevermind, I don't want this translated.
+{translation, "erlang.key"}.

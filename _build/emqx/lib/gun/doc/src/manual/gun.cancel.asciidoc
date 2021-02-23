@@ -1,0 +1,68 @@
+= gun:cancel(3)
+
+== Name
+
+gun:cancel - Cancel the given stream
+
+== Description
+
+[source,erlang]
+----
+cancel(ConnPid, StreamRef) -> ok
+
+ConnPid   :: pid()
+StreamRef :: reference()
+----
+
+Cancel the given stream.
+
+The behavior of this function depends on the protocol
+selected.
+
+HTTP/1.1 does not support this feature. Gun will simply
+silence the stream and stop relaying messages. Gun may
+also decide to close the connection if the response body
+is too large, to avoid wasting time and bandwidth.
+
+HTTP/2 allows cancelling streams at any time.
+
+This function is asynchronous. Messages related to this
+stream may still be sent after the function returns.
+
+== Arguments
+
+ConnPid::
+
+The pid of the Gun connection process.
+
+StreamRef::
+
+Identifier of the stream for the original request.
+
+== Return value
+
+The atom `ok` is returned.
+
+== Changelog
+
+* *1.0*: Function introduced.
+
+== Examples
+
+.Cancel a stream
+[source,erlang]
+----
+gun:cancel(ConnPid, StreamRef).
+----
+
+== See also
+
+link:man:gun(3)[gun(3)],
+link:man:gun:get(3)[gun:get(3)],
+link:man:gun:head(3)[gun:head(3)],
+link:man:gun:options(3)[gun:options(3)],
+link:man:gun:patch(3)[gun:patch(3)],
+link:man:gun:post(3)[gun:post(3)],
+link:man:gun:put(3)[gun:put(3)],
+link:man:gun:delete(3)[gun:delete(3)],
+link:man:gun:request(3)[gun:request(3)]
