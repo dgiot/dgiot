@@ -1,0 +1,10 @@
+{application,gproc,
+             [{description,"Extended process registry for Erlang"},
+              {vsn,"0.8.0"},
+              {id,"GPROC"},
+              {registered,[]},
+              {applications,[kernel,stdlib]},
+              {mod,{gproc_app,[]}},
+              {maintainers,["Ulf Wiger"]},
+              {licenses,["APL 2.0"]},
+              {links,[{"Github","https://github.com/uwiger/gproc"}]}]}.

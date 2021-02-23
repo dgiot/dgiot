@@ -1,0 +1,10 @@
+language: erlang
+
+sudo: false
+
+otp_release:
+   - 21.3
+   - 22.0
+
+script: 
+  - make

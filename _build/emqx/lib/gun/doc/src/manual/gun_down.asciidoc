@@ -1,0 +1,86 @@
+= gun_down(3)
+
+== Name
+
+gun_down - The connection is down
+
+== Description
+
+[source,erlang]
+----
+{gun_down, ConnPid, Protocol, Reason, KilledStreams, UnprocessedStreams}
+
+ConnPid            :: pid()
+Protocol           :: http | http2 | ws
+Reason             :: any()
+KilledStreams      :: [reference()]
+UnprocessedStreams :: [reference()]
+----
+
+The connection is down.
+
+This message informs the owner process that the connection
+was lost. Depending on the `retry` and `retry_timeout`
+options Gun may automatically attempt to reconnect.
+
+When the connection goes back up, Gun will not attempt to retry
+requests. It will also not upgrade to Websocket automatically
+if that was the protocol in use when the connection was lost.
+
+== Elements
+
+ConnPid::
+
+The pid of the Gun connection process.
+
+Protocol::
+
+The protocol that was selected for this connection
+or upgraded to during the course of the connection.
+
+Reason::
+
+The reason for the loss of the connection.
++
+It is present for debugging purposes only. You should not
+rely on this value to perform operations programmatically.
+
+KilledStreams::
+
+List of streams that have been brutally terminated.
++
+They are active streams that did not complete before the closing
+of the connection. Whether they can be retried safely depends
+on the protocol used and the idempotence property of the requests.
+
+UnprocessedStreams::
+
+List of streams that have not been processed by the server.
++
+They are streams that the server did not start processing yet.
+They may be retried safely depending on whether related streams
+were killed.
+
+== Changelog
+
+* *1.0*: Message introduced.
+
+== Examples
+
+.Receive a gun_down message in a gen_server
+[source,erlang]
+----
+handle_info({gun_down, ConnPid, _Protocol,
+             _Reason, _Killed, _Unprocessed},
+            State=#state{conn_pid=ConnPid}) ->
+    %% Do something.
+    {noreply, State}.
+----
+
+== See also
+
+link:man:gun(3)[gun(3)],
+link:man:gun:open(3)[gun:open(3)],
+link:man:gun:open_unix(3)[gun:open_unix(3)],
+link:man:gun_up(3)[gun_up(3)],
+link:man:gun_error(3)[gun_error(3)]

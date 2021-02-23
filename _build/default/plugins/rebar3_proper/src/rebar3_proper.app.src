@@ -1,0 +1,11 @@
+{application,rebar3_proper,
+             [{description,"Run PropEr test suites"},
+              {vsn,"0.11.1"},
+              {registered,[]},
+              {applications,[kernel,stdlib,proper]},
+              {env,[]},
+              {modules,[]},
+              {maintainers,["Fred Hebert"]},
+              {licenses,["BSD"]},
+              {links,[{"Github","https://hub.fastgit.org/ferd/rebar3_proper"},
+                      {"PropEr","http://proper.softlab.ntua.gr/"}]}]}.

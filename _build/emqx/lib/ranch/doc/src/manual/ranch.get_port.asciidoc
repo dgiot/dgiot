@@ -1,0 +1,44 @@
+= ranch:get_port(3)
+
+== Name
+
+ranch:get_port - Get the listening port
+
+== Description
+
+[source,erlang]
+----
+get_port(Ref :: ranch:ref())
+    -> Port :: inet:port_number()
+----
+
+Get the listening port.
+
+This function is particularly useful to retrieve the
+listening port number when it was not provided in the
+options and was chosen randomly instead.
+
+== Arguments
+
+Ref::
+
+The listener name.
+
+== Return value
+
+The listening port is returned.
+
+== Examples
+
+.Get the listening port
+[source,erlang]
+----
+Port = ranch:get_port(example).
+----
+
+== See also
+
+link:man:ranch:start_listener(3)[ranch:start_listener(3)],
+link:man:ranch:get_addr(3)[ranch:get_addr(3)],
+link:man:ranch:info(3)[ranch:info(3)],
+link:man:ranch(3)[ranch(3)]

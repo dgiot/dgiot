@@ -1,0 +1,29 @@
+#!/usr/bin/env escript
+
+-mode(compile).
+
+main(_Args) ->
+    update_apps(os:getenv("WITH_WS")).
+
+add_app(Apps, NewApp) ->
+    Apps ++ [NewApp].
+
+del_app(Apps, OldApp) ->
+    Apps -- [OldApp].
+
+update_apps("true") ->
+    do_update_apps(fun add_app/2);
+update_apps(_false) ->
+    do_update_apps(fun del_app/2).
+
+do_update_apps(Operator) ->
+    FilePath = filename:join(["src", "emqtt.app.src"]),
+    {ok, [{application, emqtt, PropLists0}]} = file:consult(FilePath),
+    Applications0 = proplists:get_value(applications, PropLists0),
+    Applications = Operator(Applications0, gun),
+    PropLists = [{applications, Applications} | proplists:delete(applications, PropLists0)],
+    NewAppSrc = {application, emqtt, PropLists},
+    ok = file:write_file(FilePath, [io_lib:format("~p.\n", [NewAppSrc])]).
+
+
+

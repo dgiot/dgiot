@@ -1,0 +1,33 @@
+%% -*- erlang -*-
+Script = fun(D,S,Vs) ->
+		 Scr = filename:join(D, S),
+		 case file:script(Scr, orddict:store('SCRIPT', Scr, Vs)) of
+		     {ok, Res} -> Res;
+		     {error,_} = Err ->
+			 io:fwrite("Error evaluating script ~s~n", [S]),
+			 Err
+		 end
+	 end.
+CFG1 = case os:getenv("REBAR_DEPS") of
+	   false -> CONFIG;
+	   [] -> CONFIG;
+	   Dir ->
+	       lists:keystore(deps_dir, 1, CONFIG, {deps_dir, Dir})
+       end.
+Priv = filename:join(filename:dirname(SCRIPT), "priv").
+CFG2 = case os:getenv("GPROC_DIST") of
+	   "true" ->
+	       Sh = proplists:get_value(shell, CFG1, []),
+	       case lists:keymember(config, 1, Sh) of
+		   true ->
+		       CFG1;
+		   false ->
+		       lists:keystore(
+			 shell, 1, CFG1,
+			 {shell, [{config, "dist_shell.config"}|Sh]})
+	       end;
+	   F when F=="false"; F==false ->
+		 Script(Priv, "remove_deps.script",
+			[{'CONFIG', CFG1}, {'DEPS', [gen_leader]}])
+       end.
+Script(Priv, "check_edown.script", [{'CONFIG', CFG2}]).

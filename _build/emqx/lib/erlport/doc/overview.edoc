@@ -1,0 +1,4 @@
+@author Dmitry Vasiliev <dima@hlabs.org>
+@copyright 2009-2015 Dmitry Vasiliev <dima@hlabs.org>
+@version 0.9.8
+@title ErlPort - Erlang port protocol

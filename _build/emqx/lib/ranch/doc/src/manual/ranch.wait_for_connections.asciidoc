@@ -1,0 +1,76 @@
+= ranch:wait_for_connections(3)
+
+== Name
+
+ranch:wait_for_connections - Wait for a specific number of connections
+
+== Description
+
+[source,erlang]
+----
+wait_for_connections(Ref      :: ranch:ref(),
+                     Operator,
+                     NumConns :: non_neg_integer())
+    -> ok
+
+Operator :: '>' | '>=' | '==' | '=<' | '<'
+----
+
+Wait for a specific number of connections.
+
+This function waits until the number of connections on the
+given listener becomes higher than, equal to or lower than
+the given number. It never returns otherwise.
+
+This function can be used to gracefully shutdown a listener
+by first suspending the listener and then waiting for
+connections to terminate before finally stopping the listener.
+
+// @todo The suspend/wait/stop pattern should be tested.
+
+== Arguments
+
+Ref::
+
+The listener name.
+
+Operator::
+
+The operator to use for the comparison.
+
+NumConns::
+
+The number of connections to reach.
+
+== Return value
+
+The atom `ok` is always returned. It can be safely ignored.
+
+== Changelog
+
+* *1.6*: Function introduced.
+
+== Examples
+
+.Wait for at least 100 connections
+[source,erlang]
+----
+ranch:wait_for_connections(example, '>=', 100).
+----
+
+.Gracefully shutdown a listener
+[source,erlang]
+----
+Ref = example,
+
+ok = ranch:suspend_listener(Ref),
+ranch:wait_for_connections(Ref, '==', 0),
+ok = ranch:stop_listener(Ref).
+----
+
+== See also
+
+link:man:ranch:stop_listener(3)[ranch:stop_listener(3)],
+link:man:ranch:suspend_listener(3)[ranch:suspend_listener(3)],
+link:man:ranch:resume_listener(3)[ranch:resume_listener(3)],
+link:man:ranch(3)[ranch(3)]

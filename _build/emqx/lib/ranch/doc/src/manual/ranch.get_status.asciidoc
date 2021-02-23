@@ -1,0 +1,46 @@
+= ranch:get_status(3)
+
+== Name
+
+ranch:get_status - Get a listener's running state
+
+== Description
+
+[source,erlang]
+----
+get_status(Ref :: ranch_ref()) -> running | suspended
+----
+
+Get a listener's running state.
+
+== Arguments
+
+Ref::
+
+The listener name.
+
+== Return value
+
+An atom is returned indicating the running status of the listener.
+
+== Changelog
+
+* *1.6*: Function introduced.
+
+== Examples
+
+.Get a listener's running state
+[source,erlang]
+----
+ranch:get_status(example).
+----
+
+== See also
+
+link:man:ranch:start_listener(3)[ranch:start_listener(3)],
+link:man:ranch:stop_listener(3)[ranch:stop_listener(3)],
+link:man:ranch:suspend_listener(3)[ranch:suspend_listener(3)],
+link:man:ranch:resume_listener(3)[ranch:resume_listener(3)],
+link:man:ranch:set_transport_options(3)[ranch:set_transport_options(3)],
+link:man:ranch:wait_for_connections(3)[ranch:wait_for_connections(3)],
+link:man:ranch(3)[ranch(3)]

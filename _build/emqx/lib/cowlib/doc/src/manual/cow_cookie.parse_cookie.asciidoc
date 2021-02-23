@@ -1,0 +1,44 @@
+= cow_cookie:parse_cookie(3)
+
+== Name
+
+cow_cookie:parse_cookie - Parse a cookie header
+
+== Description
+
+[source,erlang]
+----
+parse_cookie(Cookie :: binary())
+    -> [{binary(), binary()}]
+----
+
+Parse a cookie header.
+
+== Arguments
+
+Cookie::
+
+The cookie header value.
+
+== Return value
+
+A list of cookie name/value pairs is returned on success.
+
+An exception is thrown in the event of a parse error.
+
+== Changelog
+
+* *1.0*: Function introduced.
+
+== Examples
+
+.Parse a cookie header
+[source,erlang]
+----
+Cookies = cow_cookie:parse_cookie(CookieHd).
+----
+
+== See also
+
+link:man:cow_cookie(3)[cow_cookie(3)],
+link:man:cow_cookie:setcookie(3)[cow_cookie:setcookie(3)]

@@ -1,0 +1,40 @@
+= ranch:get_max_connections(3)
+
+== Name
+
+ranch:get_max_connections - Get the max number of connections
+
+== Description
+
+[source,erlang]
+----
+get_max_connections(Ref :: ranch:ref())
+    -> MaxConns :: ranch:max_conns()
+----
+
+Get the max number of connections.
+
+== Arguments
+
+Ref::
+
+The listener name.
+
+== Return value
+
+The maximum number of connections is returned.
+
+== Examples
+
+.Get the max number of connections
+[source,erlang]
+----
+MaxConns = ranch:get_max_connections(example).
+----
+
+== See also
+
+link:man:ranch:get_protocol_options(3)[ranch:get_protocol_options(3)],
+link:man:ranch:get_transport_options(3)[ranch:get_transport_options(3)],
+link:man:ranch:set_max_connections(3)[ranch:set_max_connections(3)],
+link:man:ranch(3)[ranch(3)]

@@ -1,0 +1,57 @@
+= ranch:resume_listener(3)
+
+== Name
+
+ranch:resume_listener - Resume a suspended listener
+
+== Description
+
+[source,erlang]
+----
+resume_listener(Ref :: ranch_ref())
+    -> ok | {error, any()}
+----
+
+Resume a suspended listener.
+
+Ranch will start listening for and accepting connections
+again. The function
+link:man:ranch:set_transport_options(3)[ranch:set_transport_options(3)]
+can be used to change the transport options before resuming
+the listener.
+
+Nothing is done when the listener is already running.
+
+== Arguments
+
+Ref::
+
+The listener name.
+
+== Return value
+
+The atom `ok` is returned on success.
+
+An error tuple is returned when the listener could not be restarted.
+
+== Changelog
+
+* *1.6*: Function introduced.
+
+== Examples
+
+.Resume a listener
+[source,erlang]
+----
+ok = ranch:resume_listener(example).
+----
+
+== See also
+
+link:man:ranch:start_listener(3)[ranch:start_listener(3)],
+link:man:ranch:stop_listener(3)[ranch:stop_listener(3)],
+link:man:ranch:suspend_listener(3)[ranch:suspend_listener(3)],
+link:man:ranch:get_status(3)[ranch:get_status(3)],
+link:man:ranch:set_transport_options(3)[ranch:set_transport_options(3)],
+link:man:ranch:wait_for_connections(3)[ranch:wait_for_connections(3)],
+link:man:ranch(3)[ranch(3)]

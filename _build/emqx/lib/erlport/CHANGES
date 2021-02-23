@@ -1,0 +1,129 @@
+Version 1.0.0beta (YYYY-MM-DD)
+
+    - More robust message ID generation. Patch by Steve Cohen.
+
+    - Fixed `make test` on OSX by replacing `cp -l` with `ln`. Patch by
+      Johnlin.
+
+    - Fixed handling of arrays of integers by Ruby's `encode_term` function.
+      Patch by Johnlin.
+
+    - Removed upper version limits for Python/Ruby. It seems Python versions up
+      to 3.4.2 and Ruby up to 2.2.0 work without any other changes.
+
+    - `make test` now uses Python/Ruby installed on the system.
+
+    - More robust Python/Ruby version detection in case if ErlPort starts from
+      another process. Patch by Maxim V.
+
+    - Added Erlang R17 support for release and test scripts.
+      Reported by Mark A. Sheldon. Patch by Alexander Shorin.
+
+    - Added empty 'registered' option to erlport.app. This option can be needed
+      by some external tools. Patch by Daniel Kempkens.
+
+    - STDIN/STDOUT redirectors for Python in erlport.stdio modules now
+      implements full file object interface. Reported by Francesco Mosconi.
+
+    - Replaced proc_lib:spawn_link/1 with just spawn_link/1 because the former
+      reports expected process exits as crashes if SASL is enabled. Reported by
+      Sonic Gao.
+
+    - Fixed too restrictive checks for PYTHONPATH and RUBYLIB paths. Reported
+      by willemdj at GitHub.
+
+    - Added rebar.config. Patch by Chad DePue.
+
+Version 1.0.0alpha (2013-06-10)
+
+    - Redesigned as Erlang application
+
+    - Added support for all recent Python versions
+
+    - Added support for all recent Ruby versions
+
+    - Added support for custom data types
+
+    - Added STDOUT redirection to Erlang
+
+Version 0.7 (2011-MM-DD) ABANDONED
+
+    - Removed encoding of datetime.datetime() as {{Y, M, D}, {H, M, S}}.
+      It can be done in a high level code.
+
+    - Added encoding/decoding for fun M:F/A
+
+    - Added Port class and encoding/decoding for port() Erlang type
+
+    - Added python.erl Erlang module
+
+    - Added Reference class and encoding/decoding for reference() Erlang type
+
+    - Added Pid class and encoding/decoding for pid() Erlang type
+
+    - Updated Atom representation
+
+    - Fixed "Port._read_data() may read excess data"
+      (https://github.com/hdima/erlport/issues/2) (reported by Ivan Glushkov)
+
+    - Added erlport.org sources (Dmitry Vasiliev)
+
+    - Added exception handling (Dmitry Vasiliev)
+
+    - Updated README.rst with note about erlport.String class (Jacob Perkins)
+
+Version 0.6 (2010-04-26)
+
+    - Encode datetime as a tuple of two tuples (Marko Mikulicic)
+
+    - Fixed a bug in the SMALL/LARGE_BIG_EXT decoding where an extra byte was
+      being added to the number if there was any data after the number
+      (Paul Bonser)
+
+Version 0.5 (2010-02-25)
+
+    - Added 'compressed' keyword argument for Port (Dmitry Vasiliev)
+
+    - Encode None as atom none (Dmitry Vasiliev)
+
+    - Encode dict as a proplist (ordered by Python sort order, may be used as
+      orddict if keys are all the same type) (Bob Ippolito)
+
+    - Encode True, False as true and false (Bob Ippolito)
+
+    - Added support for encoding and decoding compressed terms (Bob Ippolito)
+    
+    - Optimized encoding and decoding of big integers, general encoder
+      optimization hacks (avoid global lookups) (Bob Ippolito)
+
+Version 0.4 (2010-01-10)
+
+    - Added support for big integers
+
+    - Added support for Erlang bitstrings whose length in bits is not a
+      multiple of 8
+
+    - Updated examples to work on Windows
+
+    - Now decode() doesn't return String objects, only lists. Use String as
+      wrapper if you expect Unicode string instead of a list.
+
+    - Optimized encoding for lists of bytes (integer in the range 0-255)
+
+    - Fixed encoding/decoding for integer values
+
+    - Fixed encoding for small Unicode strings with characters in range 128-255
+
+Version 0.3 (2010-01-03)
+
+    - Added float datatype
+
+    - Splitted Port and Protocol
+
+    - Added more examples
+
+    - Miscellaneous fixes
+
+Version 0.2 (2009-12-29)
+
+    - Initial version

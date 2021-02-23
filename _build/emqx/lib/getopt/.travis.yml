@@ -1,0 +1,11 @@
+language: erlang
+
+otp_release:
+  - R13B04
+  - R14B04
+  - R15B03
+  - R16B03
+  - 17.5
+  - 18.3
+  - 19.3
+  - 20.0

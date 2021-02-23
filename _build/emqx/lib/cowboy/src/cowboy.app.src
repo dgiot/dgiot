@@ -1,0 +1,9 @@
+{application, cowboy,
+ [{description, "Small, fast, modern HTTP server."},
+  {vsn, "2.8.1"},
+  {modules, []},
+  {registered, [cowboy_sup,cowboy_clock]},
+  {applications, [kernel,stdlib,crypto,cowlib,ranch]},
+  {mod, {cowboy_app, []}},
+  {env, []}
+ ]}.

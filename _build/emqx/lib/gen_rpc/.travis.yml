@@ -1,0 +1,19 @@
+sudo: false
+language: erlang
+otp_release:
+  - "21.0"
+cache:
+  directories:
+  - $HOME/otp/21.0
+  - $HOME/.cache/rebar3
+  - _plt
+install: "true"
+script: "make travis"
+branches:
+  only:
+    - master
+    - develop
+notifications:
+  email:
+    - pj@ezgr.net
+

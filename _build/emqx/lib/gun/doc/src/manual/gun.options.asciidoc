@@ -1,0 +1,83 @@
+= gun:options(3)
+
+== Name
+
+gun:options - Query the capabilities of the server or a resource
+
+== Description
+
+[source,erlang]
+----
+options(ConnPid, Path)
+    -> options(ConnPid, Path, [], #{}).
+
+options(ConnPid, Path, Headers)
+    -> options(ConnPid, Path, Headers, #{})
+
+options(ConnPid, Path, Headers, ReqOpts)
+    -> StreamRef
+
+ConnPid   :: pid()
+Path      :: iodata()
+Headers   :: [{binary(), iodata()}]
+ReqOpts   :: gun:req_opts()
+StreamRef :: reference()
+----
+
+Query the capabilities of the server or a resource.
+
+The special path `"*"` can be used to obtain information about
+the server as a whole. Any other path will return information
+about that resource specifically.
+
+== Arguments
+
+ConnPid::
+
+The pid of the Gun connection process.
+
+Path::
+
+Path to the resource.
+
+Headers::
+
+Additional request headers.
+
+ReqOpts::
+
+Request options.
+
+== Return value
+
+A reference that identifies the newly created stream is
+returned. It is this reference that must be passed in
+subsequent calls and will be received in messages related
+to this new stream.
+
+== Changelog
+
+* *1.0*: Function introduced.
+
+== Examples
+
+.Query the capabilities of the server
+[source,erlang]
+----
+StreamRef = gun:options(ConnPid, "*").
+----
+
+.Query the capabilities of a resource
+[source,erlang]
+----
+StreamRef = gun:options(ConnPid, "/articles").
+----
+
+== See also
+
+link:man:gun(3)[gun(3)],
+link:man:gun:await(3)[gun:await(3)],
+link:man:gun:await_body(3)[gun:await_body(3)],
+link:man:gun_inform(3)[gun_inform(3)],
+link:man:gun_response(3)[gun_response(3)],
+link:man:gun_data(3)[gun_data(3)]

@@ -1,0 +1,46 @@
+= ranch:remove_connection(3)
+
+== Name
+
+ranch:remove_connection - Remove connection from the count
+
+== Description
+
+[source,erlang]
+----
+remove_connection(Ref :: ranch:ref()) -> ok
+----
+
+Remove connection from the count.
+
+This connection will no longer be included in the count when
+limiting the number of connections. This can be useful in a
+mixed environment where some connections are active and others
+are passive. Passive connections spend most of their time idling 
+and are not consuming much resources.
+
+This function may only be called from a connection process.
+
+== Arguments
+
+Ref::
+
+The listener name.
+
+== Return value
+
+The atom `ok` is always returned. It can be safely ignored.
+
+== Examples
+
+.Remove the connection process from the count
+[source,erlang]
+----
+ranch:remove_connection(example).
+----
+
+== See also
+
+link:man:ranch:start_listener(3)[ranch:start_listener(3)],
+link:man:ranch:handshake(3)[ranch:handshake(3)],
+link:man:ranch(3)[ranch(3)]

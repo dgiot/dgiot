@@ -1,0 +1,46 @@
+[appendix]
+== Migrating from Ranch 1.6 to 1.7
+
+Ranch 1.7 adds built-in support for the PROXY protocol.
+
+The PROXY protocol is a simple and efficient way for proxies
+to transmit information about the client.
+
+While a third-party library already existed, it was not
+entirely compatible with the Ranch interface, in particular
+when socket active mode was involved. This new implementation
+fixes that and supports the full protocol with as little
+overhead as possible compared to normal operations: just one
+extra function call.
+
+Ranch 1.7 is compatible with Erlang/OTP 19.0 onward. Support
+for Erlang/OTP 18 has been removed.
+
+=== Features added
+
+* Full support for the PROXY protocol was added.
+
+=== New functions
+
+* Add the function `ranch:recv_proxy_header/2` to receive
+  the PROXY protocol header and parse it. It must be called
+  before `ranch:handshake/1,2`.
+
+* Add the functions `ranch_proxy_header:parse/1` and
+  `ranch_proxy_header:header/1,2` to parse and build a
+  PROXY protocol header, respectively.
+
+=== Bugs fixed
+
+* Fix a race condition when the listener is restarted
+  after `ranch_listener_sup` crashes. This resulted in
+  the original options being used even if the options
+  were updated at runtime.
+
+* Make the acceptors exit instead of crash when the
+  listening socket has been closed to prevent
+  unnecessary logs.
+
+* Fix an issue where listener information would not get
+  cleaned up when an embedded listener was stopped. This
+  was fixed in Ranch 1.6.2.

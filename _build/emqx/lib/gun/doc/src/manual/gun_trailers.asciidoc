@@ -1,0 +1,67 @@
+= gun_trailers(3)
+
+== Name
+
+gun_trailers - Response trailers
+
+== Description
+
+[source,erlang]
+----
+{gun_trailers, ConnPid, StreamRef, Headers}
+
+ConnPid   :: pid()
+StreamRef :: reference()
+Headers   :: [{binary(), binary()}]
+----
+
+Response trailers.
+
+This message informs the relevant process that the server
+sent response trailers for the response to the original
+request.
+
+A trailers message terminates the response.
+
+== Elements
+
+ConnPid::
+
+The pid of the Gun connection process.
+
+StreamRef::
+
+Identifier of the stream for the original request.
+
+Headers::
+
+Trailing headers sent after the response body.
+
+== Changelog
+
+* *1.0*: Message introduced.
+
+== Examples
+
+.Receive a gun_trailers message in a gen_server
+[source,erlang]
+----
+handle_info({gun_trailers, ConnPid, _StreamRef, _Headers},
+            State=#state{conn_pid=ConnPid}) ->
+    %% Do something.
+    {noreply, State}.
+----
+
+== See also
+
+link:man:gun(3)[gun(3)],
+link:man:gun:get(3)[gun:get(3)],
+link:man:gun:head(3)[gun:head(3)],
+link:man:gun:patch(3)[gun:patch(3)],
+link:man:gun:post(3)[gun:post(3)],
+link:man:gun:put(3)[gun:put(3)],
+link:man:gun:delete(3)[gun:delete(3)],
+link:man:gun:options(3)[gun:options(3)],
+link:man:gun:request(3)[gun:request(3)],
+link:man:gun_response(3)[gun_response(3)],
+link:man:gun_data(3)[gun_data(3)]

@@ -1,0 +1,351 @@
+%%-*- mode: erlang -*-
+
+%% @doc Starts the Erlang runtime system with SMP support
+%% enabled. This may fail if no runtime system with SMP support is
+%% available. The 'auto' setting starts the Erlang runtime system with
+%% SMP support enabled if it is available and more than one logical
+%% processor are detected. -smp disable starts a runtime system
+%% without SMP support.
+%%
+%% NOTE: The runtime system with SMP support will not be available on
+%% all supported platforms. See also the erlang.schedulers settings.
+%%
+%% NOTE: Some native extensions (NIFs) require use of the SMP
+%% emulator.
+%%
+%% More information at: http://erlang.org/doc/man/erl.html
+{mapping, "erlang.smp", "vm_args.-smp", [
+  {default, enable},
+  {datatype, {enum, [enable, auto, disable]}},
+  hidden
+]}.
+
+%% @doc Sets the mapping of warning messages for error_logger.
+%% Messages sent to the error logger using one of the warning
+%% routines can be mapped either to errors (default), warnings
+%% (w - default), or info reports (i).
+{mapping, "erlang.W", "vm_args.+W", [
+  {default, "w"},
+  hidden
+]}.
+
+%% @doc Sets the number of scheduler threads to create and scheduler
+%% threads to set online when erlang.smp support has been enabled. The
+%% maximum for both values is 1024. If the Erlang runtime system is
+%% able to determine the amount of logical processors configured and
+%% logical processors available, schedulers.total will default to
+%% logical processors configured, and schedulers.online will default
+%% to logical processors available; otherwise, the default values will
+%% be 1. Schedulers may be omitted if schedulers.online is not and
+%% vice versa.
+%%
+%% If schedulers.total or schedulers.online is specified as a negative
+%% number, the value is subtracted from the default number of logical
+%% processors configured or logical processors available,
+%% respectively.
+%%
+%% Specifying the value 0 for Schedulers or SchedulersOnline resets
+%% the number of scheduler threads or scheduler threads online
+%% respectively to its default value.
+%%
+%% This option is ignored if the emulator doesn't have SMP support
+%% enabled (see the erlang.smp flag).
+%%
+%% More information at: http://erlang.org/doc/man/erl.html
+%% +S Schedulers:SchedulerOnline
+{mapping, "erlang.schedulers.total", "vm_args.+S", [
+  {default, undefined},
+  {datatype, integer},
+  {validators, ["=<1024"]}
+]}.
+
+%% @see erlang.schedulers.total
+{mapping, "erlang.schedulers.online", "vm_args.+S", [
+  {default, undefined},
+  {datatype, integer},
+  {validators, ["=<1024"]}
+]}.
+
+{translation, "vm_args.+S",
+ fun(Conf) ->
+  Total = cuttlefish:conf_get("erlang.schedulers.total", Conf, undefined),
+  Online = cuttlefish:conf_get("erlang.schedulers.online", Conf, undefined),
+  case {Total, Online} of
+      {undefined, undefined} -> cuttlefish:unset();
+      {undefined, O} -> ":" ++ integer_to_list(O);
+      {T, undefined} -> integer_to_list(T);
+      _ -> integer_to_list(Total) ++ ":" ++ integer_to_list(Online)
+  end
+ end
+}.
+
+{validator, "=<1024", "has a maximum value of 1024",
+ fun(X) -> X =< 1024 end}.
+
+%% @doc Enables or disables the kernel poll functionality if the
+%% emulator supports it. If the emulator does not support kernel poll,
+%% and the K flag is passed to the emulator, a warning is issued at
+%% startup.
+%%
+%% Similar information at: http://erlang.org/doc/man/erl.html
+{mapping, "erlang.K", "vm_args.+K", [
+  {default, on},
+  {datatype, flag},
+  hidden
+]}.
+
+%%%% Tunables
+%% @doc Name of the Erlang node
+{mapping, "nodename", "vm_args.-name", [
+  {default, "{{node}}"}
+]}.
+
+%% @doc Cookie for distributed node communication.  All nodes in the
+%% same cluster should use the same cookie or they will not be able to
+%% communicate.
+{mapping, "distributed_cookie", "vm_args.-setcookie", [
+  {default, "erlang"}
+]}.
+
+%% @doc Sets the number of threads in async thread pool, valid range
+%% is 0-1024. If thread support is available, the default is 64.
+%%
+%% More information at: http://erlang.org/doc/man/erl.html
+{mapping, "erlang.async_threads", "vm_args.+A", [
+  {default, 64},
+  {datatype, integer},
+  {validators, ["range:0-1024"]}
+]}.
+
+{validator, "range:0-1024", "must be 0 to 1024",
+ fun(X) -> X >= 0 andalso X =< 1024 end}.
+
+%% @doc Suggested stack size, in bytes, for threads in the
+%% async-thread pool. Valid range is 16-8192 kilowords. The default
+%% suggested stack size is 16 kilowords, i.e, 64 kilobyte on 32-bit
+%% architectures. This small default size has been chosen since the
+%% amount of async-threads might be quite large. The default size is
+%% enough for drivers delivered with Erlang/OTP, but might not be
+%% sufficiently large for other dynamically linked in drivers that use
+%% the driver_async() functionality. Note that the value passed is
+%% only a suggestion, and it might even be ignored on some platforms.
+%%
+%% More information at: http://erlang.org/doc/man/erl.html
+{mapping, "erlang.async_threads.stack_size", "vm_args.+a", [
+  {datatype, bytesize},
+  {validators, [ "stack-size-divisible", "stack-size-range"]},
+  hidden
+]}.
+
+{validator, "stack-size-divisible", ("must be divisible by " ++ integer_to_list(erlang:system_info({wordsize,external}))),
+ fun(X) -> X rem (erlang:system_info({wordsize, external})) == 0 end}.
+
+{validator, "stack-size-range",
+ begin
+     WordSize = erlang:system_info({wordsize, external}),
+     ("must be in the range of " ++ cuttlefish_bytesize:to_string(16 * 1024 * WordSize)
+      ++ " to " ++ cuttlefish_bytesize:to_string(8192 * 1024 * WordSize))
+ end,
+ fun(X) ->
+   Scaled = X div (1024 * erlang:system_info({wordsize, external})),
+   Scaled =< 8192 andalso Scaled >= 16
+ end}.
+
+{translation, "vm_args.+a",
+ fun(Conf) ->
+   RawValue = cuttlefish:conf_get("erlang.async_threads.stack_size", Conf),
+   RawValue div (1024 * erlang:system_info({wordsize, external}))
+ end}.
+
+%% Note: OTP R15 and earlier uses -env ERL_MAX_PORTS, R16+ uses +Q
+%% @doc The number of concurrent ports/sockets
+%% Valid range is 1024-134217727
+{mapping, "erlang.max_ports",
+  cuttlefish:otp("R16", "vm_args.+Q", "vm_args.-env ERL_MAX_PORTS"), [
+  {default, 262144},
+  {datatype, integer},
+  {validators, ["range4ports"]}
+]}.
+
+{validator, "range4ports", "must be 1024 to 134217727",
+ fun(X) -> X >= 1024 andalso X =< 134217727 end}.
+
+%% @doc A non-negative integer which indicates how many times
+%% generational garbage collections can be done without forcing a
+%% fullsweep collection. In low-memory systems (especially without
+%% virtual memory), setting the value to 0 can help to conserve
+%% memory.
+%%
+%% More information at:
+%% http://www.erlang.org/doc/man/erlang.html#system_flag-2
+{mapping, "erlang.fullsweep_after", "vm_args.-env ERL_FULLSWEEP_AFTER", [
+  {default, 0},
+  {datatype, integer},
+  hidden,
+  {validators, ["positive_integer"]}
+]}.
+
+{validator, "positive_integer", "must be a positive integer",
+  fun(X) -> X >= 0 end}.
+
+%% @doc Set the location of crash dumps
+{mapping, "erlang.crash_dump", "vm_args.-env ERL_CRASH_DUMP", [
+  {default, "{{crash_dump}}"},
+  {datatype, file},
+  hidden
+]}.
+
+%% Note: OTP R15 and earlier uses -env ERL_MAX_ETS_TABLES,
+%% R16+ uses +e
+%% @doc Raise the ETS table limit
+{mapping, "erlang.max_ets_tables",
+  cuttlefish:otp("R16", "vm_args.+e", "vm_args.-env ERL_MAX_ETS_TABLES"), [
+  {default, 256000},
+  {datatype, integer},
+  hidden
+]}.
+
+%% @doc Raise the default erlang process limit
+{mapping, "erlang.process_limit", "vm_args.+P", [
+  {datatype, integer},
+  {default, 256000},
+  hidden
+]}.
+
+%% @doc For nodes with many busy_dist_port events, Basho recommends
+%% raising the sender-side network distribution buffer size.
+%% 32MB may not be sufficient for some workloads and is a suggested
+%% starting point. Erlangers may know this as +zdbbl.
+%% The Erlang/OTP default is 1024 (1 megabyte).
+%% See: http://www.erlang.org/doc/man/erl.html#%2bzdbbl
+{mapping, "erlang.distribution_buffer_size", "vm_args.+zdbbl", [
+  {datatype, bytesize},
+  {commented, "32MB"},
+  hidden,
+  {validators, ["zdbbl_range"]}
+]}.
+
+{translation, "vm_args.+zdbbl",
+ fun(Conf) ->
+  ZDBBL = cuttlefish:conf_get("erlang.distribution_buffer_size", Conf, undefined),
+  case ZDBBL of
+    undefined -> undefined;
+    X when is_integer(X) -> cuttlefish_util:ceiling(X / 1024); %% Bytes to Kilobytes;
+    _ -> undefined
+  end
+ end
+}.
+
+{validator, "zdbbl_range", "must be between 1KB and 2097151KB",
+ fun(ZDBBL) ->
+  %% 2097151KB = 2147482624
+  ZDBBL >= 1024 andalso ZDBBL =< 2147482624
+ end
+}.
+
+%% @doc Set scheduler forced wakeup interval. All run queues will be
+%% scanned each Interval milliseconds. While there are sleeping
+%% schedulers in the system, one scheduler will be woken for each
+%% non-empty run queue found. An Interval of zero disables this
+%% feature, which also is the default.
+%%
+%% This feature is a workaround for lengthy executing native code, and
+%% native code that do not bump reductions properly.
+%%
+%% More information: http://www.erlang.org/doc/man/erl.html#+sfwi
+{mapping, "erlang.schedulers.force_wakeup_interval", "vm_args.+sfwi", [
+  {commented, 500},
+  {datatype, integer}
+]}.
+
+%% @doc Enable or disable scheduler compaction of load. By default
+%% scheduler compaction of load is enabled. When enabled, load
+%% balancing will strive for a load distribution which causes as many
+%% scheduler threads as possible to be fully loaded (i.e., not run out
+%% of work). This is accomplished by migrating load (e.g. runnable
+%% processes) into a smaller set of schedulers when schedulers
+%% frequently run out of work. When disabled, the frequency with which
+%% schedulers run out of work will not be taken into account by the
+%% load balancing logic.
+%%
+%% More information: http://www.erlang.org/doc/man/erl.html#+scl
+{mapping, "erlang.schedulers.compaction_of_load", "vm_args.+scl", [
+  {commented, "false"},
+  {datatype, {enum, [true, false]}}
+]}.
+
+%% @doc Enable or disable scheduler utilization balancing of load. By
+%% default scheduler utilization balancing is disabled and instead
+%% scheduler compaction of load is enabled which will strive for a
+%% load distribution which causes as many scheduler threads as
+%% possible to be fully loaded (i.e., not run out of work). When
+%% scheduler utilization balancing is enabled the system will instead
+%% try to balance scheduler utilization between schedulers. That is,
+%% strive for equal scheduler utilization on all schedulers.
+%%
+%% More information: http://www.erlang.org/doc/man/erl.html#+sub
+{mapping, "erlang.schedulers.utilization_balancing", "vm_args.+sub", [
+  {commented, "true"},
+  {datatype, {enum, [true, false]}}
+]}.
+
+%% @doc For ease of firewall configuration, the Erlang distribution
+%% can be bound to a limited range of TCP ports. If this is set, and
+%% erlang.distribution.port_range.maximum is *unset*, only this port
+%% will be used. If the minimum is *unset*, no restriction will be
+%% made on the port range; instead Erlang will listen on a random
+%% high-numbered port.
+%%
+%% More information: http://www.erlang.org/faq/how_do_i.html#id55090
+%% http://www.erlang.org/doc/man/kernel_app.html
+{mapping, "erlang.distribution.port_range.minimum", "kernel.inet_dist_listen_min", [
+  {commented, 6000},
+  {datatype, integer},
+  hidden
+]}.
+
+%% @see erlang.distribution.port_range.minimum
+{mapping, "erlang.distribution.port_range.maximum", "kernel.inet_dist_listen_max", [
+  {commented, 7999},
+  {datatype, integer},
+  hidden
+]}.
+
+%% @doc Set the interface/IP to listen for distributed Erlang connections.
+%%
+%% More information: http://erlang.org/doc/man/kernel_app.html
+{mapping, "erlang.distribution.interface", "kernel.inet_dist_use_interface", [
+  {commented, "true"},
+  {datatype, string},
+  {validators, ["ip_strict"]},
+  hidden
+]}.
+
+{translation, "kernel.inet_dist_use_interface",
+ fun(Conf) ->
+  IPStr = cuttlefish:conf_get("erlang.distribution.interface", Conf),
+  {ok, IP_address} = inet:parse_strict_address(IPStr),
+  IP_address
+ end
+}.
+
+{validator, "ip_strict", "must be a valid IPv4 or IPv6 address",
+fun(String) ->
+  try inet:parse_strict_address(String) of
+    {ok,{_,_,_,_}} -> true;
+    {ok,{_,_,_,_,_,_,_,_}} -> true;
+    _ -> false
+  catch  _:_ ->
+    false
+  end
+end}.
+
+%% @doc Set the net_kernel's net_ticktime.
+%%
+%% More information: http://www.erlang.org/doc/man/kernel_app.html#net_ticktime
+%% and http://www.erlang.org/doc/man/net_kernel.html#set_net_ticktime-1
+{mapping, "erlang.distribution.net_ticktime", "vm_args.-kernel net_ticktime", [
+  {commented, 60},
+  {datatype, integer},
+  hidden
+]}.

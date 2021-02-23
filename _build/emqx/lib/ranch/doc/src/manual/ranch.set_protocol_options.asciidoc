@@ -1,0 +1,48 @@
+= ranch:set_protocol_options(3)
+
+== Name
+
+ranch:set_protocol_options - Set the protocol options
+
+== Description
+
+[source,erlang]
+----
+set_protocol_options(Ref       :: ranch:ref(),
+                     ProtoOpts :: any())
+    -> ok
+----
+
+Set the protocol options.
+
+The change will be applied immediately for all new connections.
+Old connections will not receive the new options.
+
+== Arguments
+
+Ref::
+
+The listener name.
+
+ProtoOpts::
+
+The new protocol options.
+
+== Return value
+
+The atom `ok` is always returned. It can be safely ignored.
+
+== Examples
+
+.Set the protocol options
+[source,erlang]
+----
+ranch:set_protocol_options(example, ProtoOpts).
+----
+
+== See also
+
+link:man:ranch:get_protocol_options(3)[ranch:get_protocol_options(3)],
+link:man:ranch:set_max_connections(3)[ranch:set_max_connections(3)],
+link:man:ranch:set_transport_options(3)[ranch:set_transport_options(3)],
+link:man:ranch(3)[ranch(3)]

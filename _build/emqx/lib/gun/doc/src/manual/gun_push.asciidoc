@@ -1,0 +1,90 @@
+= gun_push(3)
+
+== Name
+
+gun_push - Server-initiated push
+
+== Description
+
+[source,erlang]
+----
+{gun_push, ConnPid, StreamRef, NewStreamRef, Method, URI, Headers}
+
+ConnPid      :: pid()
+StreamRef    :: reference()
+NewStreamRef :: reference()
+Method       :: binary()
+URI          :: binary()
+Headers      :: [{binary(), binary()}]
+----
+
+Server-initiated push.
+
+This message informs the relevant process that the server
+is pushing a resource related to the effective target URI
+of the original request.
+
+A server-initiated push message always precedes the response
+to the original request.
+
+This message will not be sent when using the HTTP/1.1 protocol
+because it lacks the concept of server-initiated push.
+
+== Elements
+
+ConnPid::
+
+The pid of the Gun connection process.
+
+StreamRef::
+
+Identifier of the stream for the original request.
+
+NewStreamRef::
+
+Identifier of the stream being pushed.
+
+Method::
+
+Method of the equivalent HTTP request.
+
+URI::
+
+URI of the resource being pushed.
+
+Headers::
+
+Headers of the equivalent HTTP request.
+
+== Changelog
+
+* *1.0*: Message introduced.
+
+== Examples
+
+.Receive a gun_push message in a gen_server
+[source,erlang]
+----
+handle_info({gun_push, ConnPid, _StreamRef,
+             _NewStreamRef, _Method, _URI, _Headers},
+            State=#state{conn_pid=ConnPid}) ->
+    %% Do something.
+    {noreply, State}.
+----
+
+.Cancel an unwanted push
+[source,erlang]
+----
+handle_info({gun_push, ConnPid, _StreamRef,
+             NewStreamRef, _Method, _URI, _Headers},
+            State=#state{conn_pid=ConnPid}) ->
+    gun:cancel(ConnPid, NewStreamRef),
+    {noreply, State}.
+----
+
+== See also
+
+link:man:gun(3)[gun(3)],
+link:man:gun:get(3)[gun:get(3)],
+link:man:gun:cancel(3)[gun:cancel(3)],
+link:man:gun_response(3)[gun_response(3)]

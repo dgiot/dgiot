@@ -1,0 +1,85 @@
+= gun:get(3)
+
+== Name
+
+gun:get - Get a resource representation
+
+== Description
+
+[source,erlang]
+----
+get(ConnPid, Path)
+    -> get(ConnPid, Path, [], #{}).
+
+get(ConnPid, Path, Headers)
+    -> get(ConnPid, Path, Headers, #{})
+
+get(ConnPid, Path, Headers, ReqOpts)
+    -> StreamRef
+
+ConnPid   :: pid()
+Path      :: iodata()
+Headers   :: [{binary(), iodata()}]
+ReqOpts   :: gun:req_opts()
+StreamRef :: reference()
+----
+
+Get a resource representation.
+
+== Arguments
+
+ConnPid::
+
+The pid of the Gun connection process.
+
+Path::
+
+Path to the resource.
+
+Headers::
+
+Additional request headers.
+
+ReqOpts::
+
+Request options.
+
+== Return value
+
+A reference that identifies the newly created stream is
+returned. It is this reference that must be passed in
+subsequent calls and will be received in messages related
+to this new stream.
+
+== Changelog
+
+* *1.0*: Function introduced.
+
+== Examples
+
+.Get a resource representation
+[source,erlang]
+----
+StreamRef = gun:get(ConnPid, "/articles", [
+    {<<"accept">>, <<"text/html;q=1.0, application/xml;q=0.1">>}
+]).
+----
+
+.Get a resource representation with request options
+[source,erlang]
+----
+StreamRef = gun:get(ConnPid, "/articles", [], #{
+    reply_to => ReplyToPid
+}).
+----
+
+== See also
+
+link:man:gun(3)[gun(3)],
+link:man:gun:head(3)[gun:head(3)],
+link:man:gun:await(3)[gun:await(3)],
+link:man:gun:await_body(3)[gun:await_body(3)],
+link:man:gun_push(3)[gun_push(3)],
+link:man:gun_inform(3)[gun_inform(3)],
+link:man:gun_response(3)[gun_response(3)],
+link:man:gun_data(3)[gun_data(3)]

@@ -1,0 +1,5 @@
+{nodes, ['gen_rpc_master@127.0.0.1', 'gen_rpc_slave1@127.0.0.1']}.
+{export, "../_build/test/cover/ct.coverdata"}.
+{level, details}.
+{incl_dirs_r, ["../src"]}.
+{excl_dirs_r, ["../test"]}.

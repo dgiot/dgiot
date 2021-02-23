@@ -1,0 +1,62 @@
+= gun_ws(3)
+
+== Name
+
+gun_ws - Websocket frame
+
+== Description
+
+[source,erlang]
+----
+{gun_ws, ConnPid, StreamRef, Frame}
+
+ConnPid   :: pid()
+StreamRef :: reference()
+Frame     :: close
+           | {text | binary | close, binary()}
+           | {close, non_neg_integer(), binary()}
+----
+
+Websocket frame.
+
+This message informs the relevant process that the server
+sent the enclosed frame.
+
+This message can only be sent on streams that were upgraded
+to the Websocket protocol.
+
+== Elements
+
+ConnPid::
+
+The pid of the Gun connection process.
+
+StreamRef::
+
+Identifier of the stream that was upgraded to Websocket.
+
+Frame::
+
+The Websocket frame in question.
+
+== Changelog
+
+* *1.0*: Message introduced.
+
+== Examples
+
+.Receive a gun_ws message in a gen_server
+[source,erlang]
+----
+handle_info({gun_ws, ConnPid, _StreamRef, _Frame},
+            State=#state{conn_pid=ConnPid}) ->
+    %% Do something.
+    {noreply, State}.
+----
+
+== See also
+
+link:man:gun(3)[gun(3)],
+link:man:gun:ws_upgrade(3)[gun:ws_upgrade(3)],
+link:man:gun:ws_send(3)[gun:ws_send(3)],
+link:man:gun_upgrade(3)[gun_upgrade(3)]

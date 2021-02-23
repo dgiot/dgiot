@@ -1,0 +1,61 @@
+= ranch(7)
+
+== Name
+
+ranch - Socket acceptor pool for TCP protocols
+
+== Description
+
+Ranch is a socket acceptor pool for TCP protocols.
+
+Ranch manages listeners which are a set of processes that
+accept and manage connections. The connection's transport
+and protocol modules are configured per listener. Listeners
+can be inspected and reconfigured without interruptions in
+service.
+
+== Modules
+
+Functions:
+
+* link:man:ranch(3)[ranch(3)] - Socket acceptor pool
+* link:man:ranch_proxy_header(3)[ranch_proxy_header(3)] - PROXY protocol
+
+Transports:
+
+* link:man:ranch_ssl(3)[ranch_ssl(3)] - SSL transport
+* link:man:ranch_tcp(3)[ranch_tcp(3)] - TCP transport
+
+Behaviors:
+
+* link:man:ranch_protocol(3)[ranch_protocol(3)] - Protocol modules
+* link:man:ranch_transport(3)[ranch_transport(3)] - Transport modules
+
+== Dependencies
+
+* ssl - Secure communication over sockets
+
+All these applications must be started before the `ranch`
+application. To start Ranch and all dependencies at once:
+
+[source,erlang]
+----
+{ok, _} = application:ensure_all_started(ranch).
+----
+
+== Environment
+
+The `ranch` application defines one application environment
+configuration parameter.
+
+profile (false)::
+
+When enabled, Ranch will start `eprof` profiling automatically.
++
+You can use the `ranch_app:profile_output/0` function to stop
+profiling and output the results to the files 'procs.profile'
+and 'total.profile'. Do not use in production.
+
+== See also
+
+ssl(7)

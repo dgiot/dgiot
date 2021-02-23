@@ -1,0 +1,73 @@
+= gun:await_up(3)
+
+== Name
+
+gun:await_up - Wait for the connection to be up
+
+== Description
+
+[source,erlang]
+----
+await_up(ConnPid)
+    -> await_up(ConnPid, 5000, MonitorRef)
+
+await_up(ConnPid, MonitorRef)
+    -> await_up(ConnPid, 5000, MonitorRef)
+
+await_up(ConnPid, Timeout)
+    -> await_up(ConnPid, Timeout, MonitorRef)
+
+await_up(ConnPid, Timeout, MonitorRef)
+    -> {ok, Protocol} | {error, Reason}
+
+ConnPid    :: pid()
+MonitorRef :: reference()
+Timeout    :: timeout()
+Protocol   :: http | http2
+Reason     :: timeout | any()
+----
+
+Wait for the connection to be up.
+
+== Arguments
+
+ConnPid::
+
+The pid of the Gun connection process.
+
+Timeout::
+
+How long to wait for, in milliseconds.
+
+MonitorRef::
+
+Monitor for the Gun connection process.
++
+A monitor is automatically created for the duration of this
+call when one is not provided.
+
+== Return value
+
+The protocol selected for this connection. It can be used
+to determine the capabilities of the server. Error tuples
+may also be returned when a timeout or an error occur.
+
+== Changelog
+
+* *1.0*: Function introduced.
+
+== Examples
+
+.Wait for the connection to be up
+[source,erlang]
+----
+{ok, ConnPid} = gun:open("example.org", 443).
+{ok, _} = gun:await_up(ConnPid).
+----
+
+== See also
+
+link:man:gun(3)[gun(3)],
+link:man:gun:open(3)[gun:open(3)],
+link:man:gun:open_unix(3)[gun:open_unix(3)],
+link:man:gun_up(3)[gun_up(3)]

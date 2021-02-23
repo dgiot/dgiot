@@ -1,0 +1,56 @@
+= ranch_protocol(3)
+
+== Name
+
+ranch_protocol - Protocol modules
+
+== Description
+
+The module `ranch_protocol` defines the interface used
+by Ranch protocols.
+
+== Callbacks
+
+Ranch protocols implement the following interface:
+
+[source,erlang]
+----
+start_link(Ref       :: ranch:ref(),
+           _,
+           Transport :: module(),
+           ProtoOpts :: any())
+    -> {ok, ConnPid :: pid()}
+     | {ok, SupPid :: pid(), ConnPid :: pid()}
+----
+
+Start a new connection process.
+
+The only purpose of this callback is to start a process that
+will handle the socket. It must spawn the process, link and
+then return the new pid. This function will always be called
+from inside a supervisor.
+
+This callback can also return two pids. The first pid is the
+pid of the process that will be supervised. The second pid is
+the pid of the process that will receive ownership of the
+socket. This second process must be a child of the first. This
+form is only available when `connection_type` is set to
+`supervisor`.
+
+If any other value is returned, the supervisor will close the
+socket and assume no process has been started.
+
+Do not perform any operations in this callback, as this would
+block the supervisor responsible for starting connection
+processes and degrade performance severely.
+
+== Changelog
+
+* *1.6*: The second argument `Socket` was deprecated and will
+         be removed in Ranch 2.0. The socket should be obtained
+         by calling link:man:ranch:handshake(3)[ranch:handshake(3)].
+
+== See also
+
+link:man:ranch:handshake(3)[ranch:handshake(3)],
+link:man:ranch(7)[ranch(7)]

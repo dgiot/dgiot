@@ -1,0 +1,40 @@
+= ranch:get_protocol_options(3)
+
+== Name
+
+ranch:get_protocol_options - Get the current protocol options
+
+== Description
+
+[source,erlang]
+----
+get_protocol_options(Ref :: ranch:ref())
+    -> ProtoOpts :: any()
+----
+
+Get the current protocol options.
+
+== Arguments
+
+Ref::
+
+The listener name.
+
+== Return value
+
+The current protocol options are returned.
+
+== Examples
+
+.Get the current protocol options
+[source,erlang]
+----
+ProtoOpts = ranch:get_protocol_options(example).
+----
+
+== See also
+
+link:man:ranch:get_max_connections(3)[ranch:get_max_connections(3)],
+link:man:ranch:get_transport_options(3)[ranch:get_transport_options(3)],
+link:man:ranch:set_protocol_options(3)[ranch:set_protocol_options(3)],
+link:man:ranch(3)[ranch(3)]

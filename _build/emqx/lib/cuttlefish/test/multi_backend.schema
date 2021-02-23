@@ -1,0 +1,405 @@
+{mapping, "multi_backend.default", "riak_kv.multi_backend_default", [
+  {level, advanced}
+]}.
+
+%% Riak KV config
+%% @doc Storage_backend specifies the Erlang module defining the storage
+%% mechanism that will be used on this node.
+{mapping, "multi_backend.$name.storage_backend", "riak_kv.multi_backend", [
+  {default, bitcask},
+  {datatype, {enum, [bitcask, leveldb, memory]}}
+]}.
+
+{translation,
+ "riak_kv.multi_backend",
+ fun(Conf, Schema) ->
+  %% group by $name into list, also cut the "multi_backend.$name" off every key
+  BackendNames = cuttlefish_variable:fuzzy_matches(["multi_backend","$name","storage_backend"], Conf),
+  %% for each in list, case statement on backend type
+  [ begin
+    BackendConfigName = ["multi_backend", Name],
+    {BackendModule, BackendConfig} = case cuttlefish:conf_get(BackendConfigName ++ ["storage_backend"], Conf) of
+      bitcask ->
+        BackendConfigPrefix = BackendConfigName ++ ["bitcask"],
+        SubConf = [ begin
+          {Key -- BackendConfigName, Value}
+        end || {Key, Value} <- cuttlefish_variable:filter_by_prefix(BackendConfigPrefix, Conf)],
+
+        BackendProplist = cuttlefish_generator:map(Schema, SubConf),
+
+        {riak_kv_bitcask_backend, proplists:get_value(bitcask, BackendProplist)};
+      leveldb ->
+        BackendConfigPrefix = BackendConfigName ++ ["leveldb"],
+        SubConf = [ begin
+          {Key -- BackendConfigName, Value}
+        end || {Key, Value} <- cuttlefish_variable:filter_by_prefix(BackendConfigPrefix, Conf)],
+
+        BackendProplist = cuttlefish_generator:map(Schema, SubConf),
+
+        {riak_kv_eleveldb_backend, proplists:get_value(eleveldb, BackendProplist)};
+      memory ->
+        BackendConfigPrefix = BackendConfigName ++ ["memory_backend"],
+        SubConf = [ begin
+          {Key -- BackendConfigName, Value}
+        end || {Key, Value} <- cuttlefish_variable:filter_by_prefix(BackendConfigPrefix, Conf)],
+        BackendProplist = cuttlefish_generator:map(Schema, SubConf),
+        {riak_kv_memory_backend, proplists:get_value(memory_backend, proplists:get_value(riak_kv, BackendProplist))};
+      _ -> oops_all_berries
+    end,
+    {list_to_binary(Name),  BackendModule, BackendConfig}
+  end || {"$name", Name} <- BackendNames]
+ end
+}.
+
+%% @doc bitcask data root
+{mapping, "multi_backend.$name.bitcask.data_root", "riak_kv.multi_backend", [
+  {level, advanced}
+]}.
+
+
+%% @doc The open_timeout setting specifies the maximum time Bitcask will
+%% block on startup while attempting to create or open the data directory.
+%% The value is in seconds and the default is 4. You generally need not
+%% change this value. If for some reason the timeout is exceeded on open
+%% you'll see a log message of the form:
+%% "Failed to start bitcask backend: .... "
+%% Only then should you consider a longer timeout.
+{mapping, "multi_backend.$name.bitcask.open_timeout", "riak_kv.multi_backend", [
+  {default, 4},
+  {datatype, integer},
+  {level, advanced}
+]}.
+
+% @doc The `sync_strategy` setting changes the durability of writes by
+% specifying when to synchronize data to disk. The default setting protects
+% against data loss in the event of application failure (process death) but
+% leaves open a small window wherein data could be lost in the event of complete
+% system failure (e.g. hardware, O/S, power).
+%
+% The default mode, `none`, writes data into operating system buffers which
+% which will be written to the disks when those buffers are flushed by the
+% operating system. If the system fails (power loss, crash, etc.) before before
+% those buffers are flushed to stable storage that data is lost.
+%
+% This is prevented by the setting `o_sync` which forces the operating system to
+% flush to stable storage at every write. The effect of flushing each write is
+% better durability, however write throughput will suffer as each write will
+% have to wait for the write to complete.
+%
+% ___Available Sync Strategies___
+%
+% * `none` - (default) Lets the operating system manage syncing writes.
+% * `o_sync` - Uses the O_SYNC flag which forces syncs on every write.
+%
+% * `interval` - Riak will force Bitcask to sync every `bitcask.sync_interval`
+%   `seconds.
+
+{mapping,
+ "multi_backend.$name.bitcask.sync_strategy",
+ "riak_kv.multi_backend", [
+  {default, none},
+  {datatype, {enum, [none, o_sync, interval]}},
+  {level, advanced}
+]}.
+
+{mapping, "multi_backend.$name.bitcask.sync_interval", "riak_kv.multi_backend", [
+  {datatype, {duration, s}},
+  {level, advanced}
+]}.
+
+%% @doc The `max_file_size` setting describes the maximum permitted size for any
+%% single data file in the Bitcask directory. If a write causes the current
+%% file to exceed this size threshold then that file is closed, and a new file
+%% is opened for writes.
+{mapping, "multi_backend.$name.bitcask.max_file_size", "riak_kv.multi_backend", [
+  {default, "2GB"},
+  {datatype, bytesize},
+  {level, advanced}
+]}.
+
+
+%% @doc The `merge_window` setting lets you specify when during the day merge
+%% operations are allowed to be triggered. Valid options are:
+%%
+%% * `always` (default) No restrictions
+%% * `never` Merge will never be attempted
+%% * `window` Hours during which merging is permitted, where
+%%     `bitcask.merge_window.start` and
+%%     `bitcask.merge_window.end` are integers between 0 and 23.
+%%
+%% If merging has a significant impact on performance of your cluster, or your
+%% cluster has quiet periods in which little storage activity occurs, you may
+%% want to change this setting from the default.
+{mapping, "multi_backend.$name.bitcask.merge_window", "riak_kv.multi_backend", [
+  {default, always},
+  {datatype, {enum, [always, never, window]}},
+  {level, advanced}
+]}.
+
+{mapping, "multi_backend.$name.bitcask.merge_window.start", "riak_kv.multi_backend", [
+  {default, 0},
+  {datatype, integer},
+  {level, advanced}
+]}.
+
+{mapping, "multi_backend.$name.bitcask.merge_window.end", "riak_kv.multi_backend", [
+  {default, 23},
+  {datatype, integer},
+  {level, advanced}
+]}.
+
+%% @doc `frag_merge_trigger` setting describes what ratio of
+%% dead keys to total keys in a file will trigger merging. The value of this
+%% setting is a percentage (0-100). For example, if a data file contains 6
+%% dead keys and 4 live keys, then merge will be triggered at the default
+%% setting. Increasing this value will cause merging to occur less often,
+%% whereas decreasing the value will cause merging to happen more often.
+%%
+%% Default is: `60`
+{mapping, "multi_backend.$name.bitcask.frag_merge_trigger", "riak_kv.multi_backend", [
+  {datatype, integer},
+  {level, advanced},
+  {default, 60}
+]}.
+
+
+%% @doc `dead_bytes_merge_trigger` setting describes how much
+%% data stored for dead keys in a single file will trigger merging. The
+%% value is in bytes. If a file meets or exceeds the trigger value for dead
+%% bytes, merge will be triggered. Increasing the value will cause merging
+%% to occur less often, whereas decreasing the value will cause merging to
+%% happen more often.
+%%
+%% When either of these constraints are met by any file in the directory,
+%% Bitcask will attempt to merge files.
+%%
+%% Default is: 512mb in bytes
+{mapping, "multi_backend.$name.bitcask.dead_bytes_merge_trigger", "riak_kv.multi_backend", [
+  {datatype, bytesize},
+  {level, advanced},
+  {default, "512MB"}
+]}.
+
+%% @doc `frag_threshold` setting describes what ratio of
+%% dead keys to total keys in a file will cause it to be included in the
+%% merge. The value of this setting is a percentage (0-100). For example,
+%% if a data file contains 4 dead keys and 6 live keys, it will be included
+%% in the merge at the default ratio. Increasing the value will cause fewer
+%% files to be merged, decreasing the value will cause more files to be
+%% merged.
+%%
+%% Default is: `40`
+{mapping, "multi_backend.$name.bitcask.frag_threshold", "riak_kv.multi_backend", [
+  {datatype, integer},
+  {level, advanced},
+  {default, 40}
+]}.
+
+%% @doc `dead_bytes_threshold` setting describes the minimum
+%% amount of data occupied by dead keys in a file to cause it to be included
+%% in the merge. Increasing the value will cause fewer files to be merged,
+%% decreasing the value will cause more files to be merged.
+%%
+%% Default is: 128mb in bytes
+{mapping, "multi_backend.$name.bitcask.dead_bytes_threshold", "riak_kv.multi_backend", [
+  {datatype, bytesize},
+  {level, advanced},
+  {default, "128MB"}
+]}.
+
+%% @doc `small_file_threshold` setting describes the minimum
+%% size a file must have to be _excluded_ from the merge. Files smaller
+%% than the threshold will be included. Increasing the value will cause
+%% _more_ files to be merged, decreasing the value will cause _fewer_ files
+%% to be merged.
+%%
+%% Default is: 10mb in bytes
+{mapping, "multi_backend.$name.bitcask.small_file_threshold", "riak_kv.multi_backend", [
+  {datatype, bytesize},
+  {level, advanced},
+  {default, "10MB"}
+]}.
+
+%% @doc Fold keys thresholds will reuse the keydir if another fold was started less
+%% than `max_fold_age` ago and there were less than `max_fold_puts` updates.
+%% Otherwise it will wait until all current fold keys complete and then start.
+%% Set either option to -1 to disable.
+%% Age in micro seconds (-1 means "unlimited")
+{mapping, "multi_backend.$name.bitcask.max_fold_age", "riak_kv.multi_backend", [
+  {datatype, integer},
+  {level, advanced},
+  {default, -1}
+]}.
+
+{mapping, "multi_backend.$name.bitcask.max_fold_puts", "riak_kv.multi_backend", [
+  {datatype, integer},
+  {level, advanced},
+  {default, 0}
+]}.
+
+%% @doc By default, Bitcask keeps all of your data around. If your data has
+%% limited time-value, or if for space reasons you need to purge data, you can
+%% set the `expiry_secs` option. If you needed to purge data automatically
+%% after 1 day, set the value to `1d`.
+%%
+%% Default is: `-1` which disables automatic expiration
+{mapping, "multi_backend.$name.bitcask.expiry", "riak_kv.multi_backend", [
+  {datatype, {duration, s}},
+  {level, advanced},
+  {default, -1}
+]}.
+
+
+%% @doc Require the CRC to be present at the end of hintfiles.
+%% Bitcask defaults to a backward compatible mode where
+%% old hint files will still be accepted without them.
+%% It is safe to set this true for new deployments and will
+%% become the default setting in a future release.
+{mapping, "multi_backend.$name.bitcask.require_hint_crc", "riak_kv.multi_backend", [
+  {default, true},
+  {datatype, {enum, [true, false]}},
+  {level, advanced}
+]}.
+
+%% By default, Bitcask will trigger a merge whenever a data file contains
+%% an expired key. This may result in excessive merging under some usage
+%% patterns. To prevent this you can set the `expiry_grace_time` option.
+%% Bitcask will defer triggering a merge solely for key expiry by the
+%% configured number of seconds. Setting this to `1h` effectively limits
+%% each cask to merging for expiry once per hour.
+%%
+%% Default is: `0`
+{mapping, "multi_backend.$name.bitcask.expiry_grace_time", "riak_kv.multi_backend", [
+  {datatype, {duration, s}},
+  {level, advanced},
+  {default, 0}
+]}.
+
+%% @doc Configure how Bitcask writes data to disk.
+%%   erlang: Erlang's built-in file API
+%%      nif: Direct calls to the POSIX C API
+%%
+%% The NIF mode provides higher throughput for certain
+%% workloads, but has the potential to negatively impact
+%% the Erlang VM, leading to higher worst-case latencies
+%% and possible throughput collapse.
+{mapping, "multi_backend.$name.bitcask.io_mode", "riak_kv.multi_backend", [
+  {default, erlang},
+  {datatype, {enum, [erlang, nif]}}
+]}.
+
+%%%% This is the leveldb section
+
+%% @doc leveldb data_root
+{mapping, "multi_backend.$name.leveldb.data_root", "riak_kv.multi_backend", [
+  {default, "./data/leveldb"}
+]}.
+
+%% @doc The `max_open_files` value is multiplied by 4 megabytes to create a
+%% file cache. The file cache may end up holding more or fewer files at any
+%% given moment due to variations in file metadata size. `max_open_files`
+%% applies to a single vnode, not to the entire server.
+{mapping, "multi_backend.$name.leveldb.max_open_files", "riak_kv.multi_backend", [
+  {datatype, integer},
+  {default, 30},
+  {level, advanced}
+]}.
+
+%% @doc The cache_size determines the size of each vnode's block cache. The
+%% block cache holds data blocks that leveldb has recently retrieved from
+%% `.sst` table files. Any given block contains one or more complete key/value
+%% pairs. The cache speeds up repeat access to the same key and potential
+%% access to adjacent keys.
+{mapping, "multi_backend.$name.leveldb.cache_size", "riak_kv.multi_backend", [
+  {datatype, bytesize},
+  {default, "8MB"},
+  {level, advanced}
+]}.
+
+%% @doc The 'sync' parameter defines how new key/value data is placed in the
+%% recovery log. The recovery log is only used if the Riak program crashes or
+%% the server loses power unexpectedly. The parameter's original intent was
+%% to guarantee that each new key / value was written to the physical disk
+%% before leveldb responded with “write good”. The reality in modern servers
+%% is that many layers of data caching exist between the database program and
+%% the physical disks. This flag influences only one of the layers.
+{mapping, "multi_backend.$name.leveldb.sync", "riak_kv.multi_backend", [
+  {default, false},
+  {datatype, {enum, [true, false]}},
+  {level, advanced}
+]}.
+
+%% @doc Each vnode first stores new key/value data in a memory based write
+%% buffer. This write buffer is in parallel to the recovery log mentioned
+%% in the “sync” parameter. Riak creates each vnode with a randomly sized
+%% write buffer for performance reasons. The random size is somewhere
+%% between write_buffer_size_min and write_buffer_size_max.
+{mapping, "multi_backend.$name.leveldb.write_buffer_size_min", "riak_kv.multi_backend", [
+  {default, "15MB"},
+  {datatype, bytesize},
+  {level, advanced}
+]}.
+
+{mapping, "multi_backend.$name.leveldb.write_buffer_size_max", "riak_kv.multi_backend", [
+  {default, "30MB"},
+  {datatype, bytesize},
+  {level, advanced}
+]}.
+
+%% @doc Each database .sst table file can include an optional "bloom filter"
+%% that is highly effective in shortcutting data queries that are destined
+%% to not find the requested key. The bloom_filter typically increases the
+%% size of an .sst table file by about 2%. This option must be set to true
+%% in the riak.conf to take effect.
+{mapping, "multi_backend.$name.leveldb.bloomfilter", "riak_kv.multi_backend", [
+  {default, on},
+  {datatype, {enum, [on, off]}}
+]}.
+
+%% @doc sst_block_size defines the size threshold for a block / chunk of data
+%% within one .sst table file. Each new block gets an index entry in the .sst
+%% table file's master index.
+{mapping, "multi_backend.$name.leveldb.block_size", "riak_kv.multi_backend", [
+  {default, "4KB"},
+  {datatype, bytesize},
+  {level, advanced}
+]}.
+
+%% @doc block_restart_interval defines the key count threshold for a new key
+%% entry in the key index for a block.
+%% Most clients should leave this parameter alone.
+{mapping, "multi_backend.$name.leveldb.block_restart_interval", "riak_kv.multi_backend", [
+  {default, 16},
+  {datatype, integer},
+  {level, advanced}
+]}.
+
+%% @doc verify_checksums controls whether or not validation occurs when Riak
+%% requests data from the leveldb database on behalf of the user.
+{mapping, "multi_backend.$name.leveldb.verify_checksums", "riak_kv.multi_backend", [
+  {default, true},
+  {datatype, {enum, [true, false]}},
+  {level, advanced}
+]}.
+
+%% @doc verify_compaction controls whether or not validation occurs when
+%% leveldb reads data as part of its background compaction operations.
+{mapping, "multi_backend.$name.leveldb.verify_compaction", "riak_kv.multi_backend", [
+  {default, true},
+  {datatype, {enum, [true, false]}},
+  {level, advanced}
+]}.
+
+%%%% Memory backend section
+
+{mapping, "multi_backend.$name.memory_backend.max_memory", "riak_kv.multi_backend", [
+  {datatype, bytesize},
+  {default, "4GB"},
+  {level, advanced}
+]}.
+
+{mapping, "multi_backend.$name.memory_backend.ttl", "riak_kv.multi_backend", [
+  {datatype, {duration, s}},
+  {commented, "1d"}, %% no default, it's undefined.
+  {level, advanced}
+]}.

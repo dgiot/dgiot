@@ -1,0 +1,9 @@
+{mapping, "a.b.c", "cuttlefish.duration_extended", [
+  {default, "1m"},
+  {datatype, [{duration, s}, {atom, foo}]}
+]}.
+
+{mapping, "b.c", "cuttlefish.duration", [
+  {default, "10s"},
+  {datatype, {duration, ms}}
+]}.

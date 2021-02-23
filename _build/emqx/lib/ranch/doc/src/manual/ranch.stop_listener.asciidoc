@@ -1,0 +1,58 @@
+= ranch:stop_listener(3)
+
+== Name
+
+ranch:stop_listener - Stop a listener
+
+== Description
+
+[source,erlang]
+----
+stop_listener(Ref :: ranch_ref())
+    -> ok | {error, not_found}
+----
+
+Stop a listener.
+
+The listener is stopped gracefully, first by closing the
+listening port, then by stopping the connection processes.
+These processes are stopped according to the `shutdown`
+transport option, which may be set to brutally kill all
+connection processes or give them some time to stop properly.
+
+In order for the connection processes to exit gracefully,
+they need to trap exit signals and stop before the configured
+shutdown timeout. If greater control over the shutdown is
+required the functions link:man:ranch:suspend_listener(3)[ranch:suspend_listener(3)]
+and link:man:ranch:wait_for_connections(3)[ranch:wait_for_connections(3)]
+can be used.
+
+This function does not return until the listener is
+completely stopped.
+
+== Arguments
+
+Ref::
+
+The listener name.
+
+== Return value
+
+The atom `ok` is returned on success.
+
+An error tuple is returned when the listener is not found.
+
+== Examples
+
+.Stop a listener
+[source,erlang]
+----
+ok = ranch:stop_listener(example).
+----
+
+== See also
+
+link:man:ranch:start_listener(3)[ranch:start_listener(3)],
+link:man:ranch:child_spec(3)[ranch:child_spec(3)],
+link:man:ranch:suspend_listener(3)[ranch:suspend_listener(3)],
+link:man:ranch(3)[ranch(3)]

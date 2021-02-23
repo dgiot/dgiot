@@ -1,0 +1,322 @@
+= gun(3)
+
+== Name
+
+gun - Asynchronous HTTP client
+
+== Description
+
+The `gun` module provides an asynchronous interface for
+connecting and communicating with Web servers over HTTP,
+HTTP/2 or Websocket.
+
+== Exports
+
+Connection:
+
+* link:man:gun:open(3)[gun:open(3)] - Open a connection to the given host and port
+* link:man:gun:open_unix(3)[gun:open_unix(3)] - Open a connection to the given Unix domain socket
+// @todo * link:man:gun:shutdown(3)[gun:shutdown(3)] - Gracefully close the connection
+* link:man:gun:close(3)[gun:close(3)] - Brutally close the connection
+* link:man:gun:info(3)[gun:info(3)] - Obtain information about the connection
+
+Requests:
+
+* link:man:gun:get(3)[gun:get(3)] - Get a resource representation
+* link:man:gun:head(3)[gun:head(3)] - Get headers of a resource representation
+* link:man:gun:options(3)[gun:options(3)] - Query the capabilities of the server or a resource
+* link:man:gun:patch(3)[gun:patch(3)] - Apply a set of changes to a resource
+* link:man:gun:post(3)[gun:post(3)] - Process the enclosed representation according to a resource's own semantics
+* link:man:gun:put(3)[gun:put(3)] - Create or replace a resource
+* link:man:gun:delete(3)[gun:delete(3)] - Delete a resource
+* link:man:gun:request(3)[gun:request(3)] - Perform the given request
+* link:man:gun:data(3)[gun:data(3)] - Stream the body of a request
+
+Proxies:
+
+* link:man:gun:connect(3)[gun:connect(3)] - Establish a tunnel to the origin server
+
+Messages:
+
+* link:man:gun:await(3)[gun:await(3)] - Wait for a response
+* link:man:gun:await_body(3)[gun:await_body(3)] - Wait for the complete response body
+* link:man:gun:await_up(3)[gun:await_up(3)] - Wait for the connection to be up
+* link:man:gun:flush(3)[gun:flush(3)] - Flush all messages related to a connection or a stream
+
+Streams:
+
+* link:man:gun:cancel(3)[gun:cancel(3)] - Cancel the given stream
+
+Websocket:
+
+* link:man:gun:ws_upgrade(3)[gun:ws_upgrade(3)] - Upgrade to Websocket
+* link:man:gun:ws_send(3)[gun:ws_send(3)] - Send Websocket frames
+
+== Messages
+
+Gun will inform the calling process of events asynchronously
+by sending any of the following messages:
+
+Connection:
+
+* link:man:gun_up(3)[gun_up(3)] - The connection is up
+* link:man:gun_down(3)[gun_down(3)] - The connection is down
+* link:man:gun_upgrade(3)[gun_upgrade(3)] - Successful protocol upgrade
+* link:man:gun_error(3)[gun_error(3)] - Stream or connection-wide error
+
+Responses:
+
+* link:man:gun_push(3)[gun_push(3)] - Server-initiated push
+* link:man:gun_inform(3)[gun_inform(3)] - Informational response
+* link:man:gun_response(3)[gun_response(3)] - Response
+* link:man:gun_data(3)[gun_data(3)] - Response body
+* link:man:gun_trailers(3)[gun_trailers(3)] - Response trailers
+
+Websocket:
+
+* link:man:gun_ws(3)[gun_ws(3)] - Websocket frame
+
+The response messages will be sent to the process that opened
+the connection by default. The `reply_to` request option can
+be used to redirect request-specific messages to a different
+process.
+
+== Types
+
+=== connect_destination()
+
+[source,erlang]
+----
+connect_destination() :: #{
+    host      := inet:hostname() | inet:ip_address(),
+    port      := inet:port_number(),
+
+    username  => iodata(),
+    password  => iodata(),
+    protocols => [http | http2],
+    transport => tcp | tls,
+
+    tls_opts              => [ssl:connect_option()],
+    tls_handshake_timeout => timeout()
+}
+----
+
+Destination of a CONNECT request.
+
+The default value, if any, is given next to the option name:
+
+host, port::
+
+Destination hostname and port number. Mandatory.
++
+Upon successful completion of the CONNECT request, Gun will
+begin using these as the host and port of the origin server
+for subsequent requests.
+
+username, password::
+
+Proxy authorization credentials. They are only sent when
+both options are provided.
+
+protocol (http)::
+
+Protocol that will be used for tunneled requests.
+
+transport (tcp)::
+
+Transport that will be used for tunneled requests. Note that
+due to Erlang/OTP limitations it is not possible to tunnel
+a TLS connection inside a TLS tunnel.
+
+tls_opts ([])::
+
+Options to use for tunneled TLS connections.
+
+tls_handshake_timeout (infinity)::
+
+Handshake timeout for tunneled TLS connections.
+
+=== http_opts()
+
+[source,erlang]
+----
+http_opts() :: #{
+    keepalive             => timeout(),
+    transform_header_name => fun((binary()) -> binary()),
+    version               => 'HTTP/1.1' | 'HTTP/1.0'
+}
+----
+
+Configuration for the HTTP protocol.
+
+The default value is given next to the option name:
+
+// @todo Document content_handlers and gun_sse_h.
+
+keepalive (5000)::
+
+Time between pings in milliseconds. Since the HTTP protocol has
+no standardized way to ping the server, Gun will simply send an
+empty line when the connection is idle. Gun only makes a best
+effort here as servers usually have configurable limits to drop
+idle connections. Use `infinity` to disable.
+
+transform_header_name - see below::
+
+A function that will be applied to all header names before they
+are sent to the server. Gun assumes that all header names are in
+lower case. This function is useful if you, for example, need to
+re-case header names in the event that the server incorrectly
+considers the case of header names to be significant.
+
+version (`'HTTP/1.1'`)::
+
+HTTP version to use.
+
+=== http2_opts()
+
+[source,erlang]
+----
+http2_opts() :: #{
+    keepalive => timeout()
+}
+----
+
+Configuration for the HTTP/2 protocol.
+
+The default value is given next to the option name:
+
+// @todo Document content_handlers and gun_sse_h.
+
+keepalive (5000)::
+
+Time between pings in milliseconds.
+
+// @todo Allow and document max_frame_size_sent.
+
+=== opts()
+
+[source,erlang]
+----
+opts() :: #{
+    connect_timeout => timeout(),
+    http_opts       => http_opts(),
+    http2_opts      => http2_opts(),
+    protocols       => [http | http2],
+    retry           => non_neg_integer(),
+    retry_timeout   => pos_integer(),
+    trace           => boolean(),
+    transport       => tcp | tls,
+    transport_opts  => [gen_tcp:connect_option()] | [ssl:connect_option()],
+    ws_opts         => ws_opts()
+}
+----
+
+Configuration for the connection.
+
+The default value is given next to the option name:
+
+connect_timeout (infinity)::
+
+Connection timeout.
+
+http_opts (#{})::
+
+Options specific to the HTTP protocol.
+
+http2_opts (#{})::
+
+Options specific to the HTTP/2 protocol.
+
+protocols - see below::
+
+Ordered list of preferred protocols. When the transport is `tcp`,
+this list must contain exactly one protocol. When the transport
+is `tls`, this list must contain at least one protocol and will be
+used to negotiate a protocol via ALPN. When the server does not
+support ALPN then `http` will always be used. Defaults to
+`[http]` when the transport is `tcp`, and `[http2, http]` when the
+transport is `tls`.
+
+retry (5)::
+
+Number of times Gun will try to reconnect on failure before giving up.
+
+retry_timeout (5000)::
+
+Time between retries in milliseconds.
+
+trace (false)::
+
+Whether to enable `dbg` tracing of the connection process. Should
+only be used during debugging.
+
+transport - see below::
+
+Whether to use TLS or plain TCP. The default varies depending on the
+port used. Port 443 defaults to `tls`. All other ports default to `tcp`.
+
+transport_opts ([])::
+
+Transport options. They are TCP options or TLS options depending on
+the selected transport.
+
+ws_opts (#{})::
+
+Options specific to the Websocket protocol.
+
+=== req_opts()
+
+[source,erlang]
+----
+req_opts() :: #{
+    reply_to => pid()
+}
+----
+
+Configuration for a particular request.
+
+The default value is given next to the option name:
+
+reply_to (`self()`)::
+
+The pid of the process that will receive the response messages.
+
+=== ws_opts()
+
+[source,erlang]
+----
+ws_opts() :: #{
+    compress  => boolean(),
+    protocols => [{binary(), module()}]
+}
+----
+
+Configuration for the Websocket protocol.
+
+The default value is given next to the option name:
+
+compress (false)::
+
+Whether to enable permessage-deflate compression. This does
+not guarantee that compression will be used as it is the
+server that ultimately decides. Defaults to false.
+
+protocols ([])::
+
+A non-empty list enables Websocket protocol negotiation. The
+list of protocols will be sent in the sec-websocket-protocol
+request header. The handler module interface is currently
+undocumented and must be set to `gun_ws_h`.
+
+// @todo Document default_protocol and user_opts.
+
+== Changelog
+
+* *1.3*: Add the CONNECT destination's `protocols` option and
+         deprecate the previously introduced `protocol` option.
+* *1.2*: Introduce the type `connect_destination()`.
+
+== See also
+
+link:man:gun(7)[gun(7)]

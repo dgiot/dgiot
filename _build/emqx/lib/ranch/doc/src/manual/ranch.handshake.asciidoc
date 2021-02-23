@@ -1,0 +1,75 @@
+= ranch:handshake(3)
+
+== Name
+
+ranch:handshake - Perform the transport handshake
+
+== Description
+
+[source,erlang]
+----
+handshake(Ref)       -> handshake(Ref, [])
+handshake(Ref, Opts) -> {ok, Socket}
+
+Ref    :: ranch:ref()
+Opts   :: any()
+Socket :: any()
+----
+
+Perform the transport handshake.
+
+This function must be called by the protocol process in order
+to retrieve the socket for the connection. Ranch performs the
+handshake necessary to give control of the socket to this
+process and also does the transport handshake, for example
+setting up the TLS connection.
+
+Currently the socket can be obtained from a
+`Protocol:start_link/4` argument and as a return value
+from `ranch:handshake/1,2`. In Ranch 2.0 the socket will
+only be available from `ranch:handshake/1,2`.
+
+== Arguments
+
+Ref::
+
+The listener name.
+
+Opts::
+
+Transport handshake options.
++
+Allowed options depend on the transport module.
+
+== Return value
+
+An `ok` tuple is returned containing the socket for the connection.
+
+This function will trigger an exception when an error occurs.
+
+== Changelog
+
+* *1.6*: Function introduced. Replaces `ranch:accept_ack/1`.
+
+== Examples
+
+.Initialize the connection process
+[source,erlang]
+----
+start_link(Ref, _, Transport, Opts) ->
+    Pid = proc_lib:spawn_link(?MODULE, init,
+        [Ref, Transport, Opts]),
+    {ok, Pid}.
+
+init(Ref, Transport, Opts) ->
+    {ok, Socket} = ranch:handshake(Ref),
+    loop(#state{ref=Ref, socket=Socket,
+        transport=Transport, opts=Opts}).
+----
+
+== See also
+
+link:man:ranch:start_listener(3)[ranch:start_listener(3)],
+link:man:ranch:recv_proxy_header(3)[ranch:recv_proxy_header(3)],
+link:man:ranch:remove_connection(3)[ranch:remove_connection(3)],
+link:man:ranch(3)[ranch(3)]

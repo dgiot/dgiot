@@ -1,0 +1,7 @@
+{mapping, "a.b", "c.d", []}.
+{translation,
+ "c.d.",
+ fun(Conf) ->
+    Value = cuttlefish:conf_get("a.b", Conf),
+    Value
+ end}.

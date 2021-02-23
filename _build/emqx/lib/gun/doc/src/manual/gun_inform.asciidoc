@@ -1,0 +1,70 @@
+= gun_inform(3)
+
+== Name
+
+gun_inform - Informational response
+
+== Description
+
+[source,erlang]
+----
+{gun_inform, ConnPid, StreamRef, Status, Headers}
+
+ConnPid   :: pid()
+StreamRef :: reference()
+Status    :: 100..199
+Headers   :: [{binary(), binary()}]
+----
+
+Informational response.
+
+This message informs the relevant process that the server
+sent an informational response to the original request.
+
+Informational responses are only intermediate responses
+and provide no guarantees as to what the final response
+will be. An informational response always precedes the
+response to the original request.
+
+== Elements
+
+ConnPid::
+
+The pid of the Gun connection process.
+
+StreamRef::
+
+Identifier of the stream for the original request.
+
+Status::
+
+Status code for the informational response.
+
+Headers::
+
+Headers sent with the informational response.
+
+== Changelog
+
+* *1.0*: Message introduced.
+
+== Examples
+
+.Receive a gun_inform message in a gen_server
+[source,erlang]
+----
+handle_info({gun_inform, ConnPid, _StreamRef,
+             _Status, _Headers},
+            State=#state{conn_pid=ConnPid}) ->
+    %% Do something.
+    {noreply, State}.
+----
+
+== See also
+
+link:man:gun(3)[gun(3)],
+link:man:gun:get(3)[gun:get(3)],
+link:man:gun:patch(3)[gun:patch(3)],
+link:man:gun:post(3)[gun:post(3)],
+link:man:gun:put(3)[gun:put(3)],
+link:man:gun_response(3)[gun_response(3)]

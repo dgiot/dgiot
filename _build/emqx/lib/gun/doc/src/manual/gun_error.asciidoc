@@ -1,0 +1,67 @@
+= gun_error(3)
+
+== Name
+
+gun_error - Stream or connection-wide error
+
+== Description
+
+[source,erlang]
+----
+{gun_error, ConnPid, StreamRef, Reason}
+{gun_error, ConnPid, Reason}
+
+ConnPid   :: pid()
+StreamRef :: reference()
+Reason    :: any()
+----
+
+Stream or connection-wide error.
+
+These messages inform the relevant process that an error
+occurred. A reference is given when the error pertains
+to a specific stream. Connection-wide errors do not
+imply that the connection is no longer usable, they are
+used for all errors that are not specific to a stream.
+
+== Elements
+
+ConnPid::
+
+The pid of the Gun connection process.
+
+StreamRef::
+
+Identifier of the stream that resulted in an error.
+
+Reason::
+
+The reason for the error.
++
+It is present for debugging purposes only. You should not
+rely on this value to perform operations programmatically.
+
+== Changelog
+
+* *1.0*: Message introduced.
+
+== Examples
+
+.Receive a gun_error message in a gen_server
+[source,erlang]
+----
+handle_info({gun_error, ConnPid, _Reason},
+            State=#state{conn_pid=ConnPid}) ->
+    %% Do something.
+    {noreply, State};
+handle_info({gun_error, ConnPid, _StreamRef, _Reason},
+            State=#state{conn_pid=ConnPid}) ->
+    %% Do something.
+    {noreply, State}.
+----
+
+== See also
+
+link:man:gun(3)[gun(3)],
+link:man:gun_up(3)[gun_up(3)],
+link:man:gun_down(3)[gun_down(3)]

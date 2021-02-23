@@ -1,0 +1,66 @@
+= gun:ws_send(3)
+
+== Name
+
+gun:ws_send - Send Websocket frames
+
+== Description
+
+[source,erlang]
+----
+ws_send(ConnPid, Frames) -> ok
+
+ConnPid :: pid()
+Frames  :: Frame | [Frame]
+Frame   :: close | ping | pong
+         | {text | binary | close | ping | pong, iodata()}
+         | {close, non_neg_integer(), iodata()}
+----
+
+Send Websocket frames.
+
+The connection must first be upgraded to Websocket using
+the function link:man:gun:ws_upgrade(3)[gun:ws_upgrade(3)].
+
+== Arguments
+
+ConnPid::
+
+The pid of the Gun connection process.
+
+Frames::
+
+A Websocket frame.
+// @todo One or more Websocket frame(s).
+
+== Return value
+
+The atom `ok` is returned.
+
+== Changelog
+
+* *1.0*: Function introduced.
+
+== Examples
+
+.Send a single frame
+[source,erlang]
+----
+gun:ws_send(ConnPid, {text, <<"Hello world!">>}).
+----
+
+//.Send many frames including a close frame
+//[source,erlang]
+//----
+//gun:ws_send(ConnPid, [
+//    {text, <<"See you later, world!">>},
+//    close
+//]).
+//----
+
+== See also
+
+link:man:gun(3)[gun(3)],
+link:man:gun:ws_upgrade(3)[gun:ws_upgrade(3)],
+link:man:gun_upgrade(3)[gun_upgrade(3)],
+link:man:gun_ws(3)[gun_ws(3)]

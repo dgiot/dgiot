@@ -1,0 +1,39 @@
+%%-*- mode: erlang -*-
+CONFIG1 = case os:getenv("TRAVIS") of
+              "true" ->
+                  JobId = os:getenv("TRAVIS_JOB_ID"),
+                  [{coveralls_service_job_id, JobId},
+                   {coveralls_coverdata, "_build/test/cover/*.coverdata"},
+                   {coveralls_service_name , "travis-ci"} | CONFIG];
+              _ ->
+                  CONFIG
+          end,
+
+CUR_BRANCH = os:cmd("git branch | grep -e '^*' | cut -d' ' -f 2") -- "\n",
+
+MATCH_BRANCH = fun (BranchName) when BranchName =:= "master";
+                                     BranchName =:= "develop" ->
+                       BranchName;
+                   (BranchName) ->
+                       case string:prefix(BranchName, "release") of
+                           nomatch -> "develop";
+                           _Match -> BranchName
+                       end
+               end,
+
+BRANCH = MATCH_BRANCH(CUR_BRANCH),
+
+DEPS = case lists:keyfind(deps, 1, CONFIG1) of
+           {_, Deps} -> Deps;
+           _ -> []
+       end,
+
+UrlPrefix = "https://github.com/emqx/",
+
+EMQX_DEP = {emqx, {git, UrlPrefix ++ "emqx", {branch, BRANCH}}},
+
+NewDeps = [EMQX_DEP | DEPS],
+
+CONFIG2 = lists:keystore(deps, 1, CONFIG1, {deps, NewDeps}),
+
+CONFIG2.

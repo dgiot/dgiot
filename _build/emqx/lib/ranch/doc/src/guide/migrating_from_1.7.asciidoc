@@ -1,0 +1,14 @@
+[appendix]
+== Changes since Ranch 1.7
+
+The following patch versions were released since Ranch 1.7:
+
+=== Ranch 1.7.1
+
+This release fixes an issue with the PROXY protocol where
+the wrong CRC32 algorithm was used and would cause checksum
+verification to fail.
+
+Because the plain `crc32` checksum is not supported by the
+PROXY protocol, the configuration value when building PROXY
+headers has been changed to `crc32c`.

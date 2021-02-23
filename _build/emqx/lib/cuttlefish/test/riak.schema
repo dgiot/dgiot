@@ -1,0 +1,1214 @@
+%% example of super basic mapping
+%% @doc Default ring creation size.  Make sure it is a power of 2,
+%% e.g. 16, 32, 64, 128, 256, 512 etc
+{mapping, "ring_size", "riak_core.ring_creation_size", [
+  {datatype, integer},
+  {default, 64},
+  {commented, 64},
+  {validators, ["ring_size"]}
+]}.
+
+{validator, "ring_size", "not a power of 2 greater than 1",
+ fun(Size) ->
+  Size > 1 andalso (Size band (Size-1) =:= 0)
+ end}.
+
+%% Slightly more complex mapping with translation layer
+%% @doc enable active anti-entropy subsystem
+{mapping, "anti_entropy", "riak_kv.anti_entropy", [
+  {datatype, {enum, [on, off, debug]}},
+  {default, on}
+]}.
+
+{ translation,
+  "riak_kv.anti_entropy",
+  fun(Conf) ->
+    Setting = cuttlefish:conf_get("anti_entropy", Conf),
+    case Setting of
+      on -> {on, []};
+      debug -> {on, [debug]};
+      off -> {off, []};
+      _Default -> {on, []}
+    end
+  end
+}.
+
+%% complex lager example
+%% @doc where do you want the console.log output:
+%% off : nowhere
+%% file: the file specified by log.console.file
+%% console : standard out
+%% both : log.console.file and standard out.
+{mapping, "log.console", "lager.handlers", [
+  {default, file},
+  {datatype, {enum, [off, file, console, both]}}
+]}.
+
+%% @doc the log level of the console log
+{mapping, "log.console.level", "lager.handlers", [
+  {default, info},
+  {datatype, {enum, [debug, info, warning, error]}}
+]}.
+
+%% @doc location of the console log
+{mapping, "log.console.file", "lager.handlers", [
+  {default, "./log/console.log"}
+]}.
+
+%% *gasp* notice the same @mapping!
+%% @doc location of the error log
+{mapping, "log.error.file", "lager.handlers", [
+  {default, "./log/error.log"}
+]}.
+
+%% *gasp* notice the same @mapping!
+%% @doc turn on syslog
+{mapping, "log.syslog", "lager.handlers", [
+  {default, off},
+  {datatype, {enum, [on, off]}}
+]}.
+
+{ translation,
+  "lager.handlers",
+  fun(Conf) ->
+    SyslogHandler = case cuttlefish:conf_get("log.syslog", Conf) of
+      on ->  [{lager_syslog_backend, ["riak", daemon, info]}];
+      _ -> []
+    end,
+    ErrorHandler = case cuttlefish:conf_get("log.error.file", Conf) of
+      undefined -> [];
+      ErrorFilename -> [{lager_file_backend, [{file, ErrorFilename},
+                                              {level, error},
+                                              {size, 10485760},
+                                              {date, "$D0"},
+                                              {count, 5}]}]
+    end,
+
+    ConsoleLogLevel = cuttlefish:conf_get("log.console.level", Conf),
+    ConsoleLogFile = cuttlefish:conf_get("log.console.file", Conf),
+
+    ConsoleHandler = {lager_console_handler, ConsoleLogLevel},
+    ConsoleFileHandler = {lager_file_backend, [{file, ConsoleLogFile},
+                                                {level, ConsoleLogLevel},
+                                                {size, 10485760},
+                                                {date, "$D0"},
+                                                {count, 5}]},
+
+    ConsoleHandlers = case cuttlefish:conf_get("log.console", Conf) of
+      off -> [];
+      file -> [ConsoleFileHandler];
+      console -> [ConsoleHandler];
+      both -> [ConsoleHandler, ConsoleFileHandler];
+      _ -> []
+    end,
+    SyslogHandler ++ ConsoleHandlers ++ ErrorHandler
+  end
+}.
+
+%% SASL
+%% We should never care about this
+{mapping, "sasl", "sasl.sasl_error_logger", [
+  {default, off},
+  {datatype, {enum, [on, off]}},
+  {level, advanced}
+]}.
+
+{ translation,
+  "sasl.sasl_error_logger",
+  fun(Conf) ->
+    case cuttlefish:conf_get("sasl", Conf) of %%how to pull default?
+        on -> true;
+        _ -> false
+    end
+  end
+}.
+
+%% HTTP Listeners
+%% @doc listener.http.<name> is an IP address and TCP port that the Riak
+%% HTTP interface will bind.
+{mapping, "listener.http.$name", "riak_core.http", [
+  {default, {"127.0.0.1",8098}},
+  {datatype, ip},
+  {include_default, "internal"}
+]}.
+
+{ translation,
+  "riak_core.http",
+    fun(Conf) ->
+        HTTP = cuttlefish_variable:filter_by_prefix("listener.http", Conf),
+        [ IP || {_, IP} <- HTTP]
+    end
+}.
+
+%% protobuf Listeners
+%% @doc listener.protobuf.<name> is an IP address and TCP port that the Riak
+%% Protocol Buffers interface will bind.
+{mapping, "listener.protobuf.$name", "riak_api.pb", [
+  {default, {"127.0.0.1", 8087}},
+  {datatype, ip},
+  {include_default, "internal"}
+]}.
+
+{ translation,
+  "riak_api.pb",
+    fun(Conf) ->
+        PB = cuttlefish_variable:filter_by_prefix("listener.protobuf", Conf),
+        [ IP || {_, IP} <- PB]
+    end
+}.
+
+%% @doc pb_backlog is the maximum length to which the queue of pending
+%% connections may grow. If set, it must be an integer >= 0.
+%% By default the value is 5. If you anticipate a huge number of
+%% connections being initialised *simultaneously*, set this number
+%% higher.
+{mapping, "protobuf.backlog", "riak_api.pb_backlog", [
+  {datatype, integer},
+  {commented, 64}
+]}.
+
+%% @doc Default location of ringstate
+{mapping, "ring.state_dir", "riak_core.ring_state_dir", [
+  {default, "$(platform_data_dir)/ring"}
+]}.
+
+%% @doc listener.https.<name> is an IP address and TCP port that the Riak
+%% HTTPS interface will bind.
+{mapping, "listener.https.$name", "riak_core.https", [
+  {commented, {"127.0.0.1", 8098}},
+  {datatype, ip},
+  {include_default, "internal"}
+]}.
+
+{ translation,
+  "riak_core.https",
+    fun(Conf) ->
+        HTTPS = cuttlefish_variable:filter_by_prefix("listener.https", Conf),
+        [ IP || {_, IP} <- HTTPS]
+    end
+}.
+
+%% @doc Default cert location for https can be overridden
+%% with the ssl config variable, for example:
+{mapping, "ssl.certfile", "riak_core.ssl.certfile", [
+  {commented, "./etc/cert.pem"}
+]}.
+
+%% @doc Default key location for https can be overridden
+%% with the ssl config variable, for example:
+{mapping, "ssl.keyfile", "riak_core.ssl.keyfile", [
+  {commented, "./etc/key.pem"}
+]}.
+
+%% @doc handoff.port is the TCP port that Riak uses for
+%% intra-cluster data handoff.
+{mapping, "handoff.port", "riak_core.handoff_port", [
+  {default, 8099},
+  {datatype, integer}
+]}.
+
+%% @doc To encrypt riak_core intra-cluster data handoff traffic,
+%% uncomment the following line and edit its path to an
+%% appropriate certfile and keyfile.  (This example uses a
+%% single file with both items concatenated together.)
+{mapping, "handoff.ssl.certfile", "riak_core.handoff_ssl_options.certfile", [
+  {commented, "/tmp/erlserver.pem"}
+]}.
+
+%% @doc if you need a seperate keyfile for handoff
+{mapping, "handoff.ssl.keyfile", "riak_core.handoff_ssl_options.keyfile", []}.
+
+%% @doc DTrace support
+%% Do not enable 'dtrace' unless your Erlang/OTP
+%% runtime is compiled to support DTrace.  DTrace is
+%% available in R15B01 (supported by the Erlang/OTP
+%% official source package) and in R14B04 via a custom
+%% source repository & branch.
+{mapping, "dtrace", "riak_core.dtrace_support", [
+  {default, off},
+  {datatype, {enum, [on, off]}}
+]}.
+
+%% consistent on/off (in lieu of enabled/disabled, true/false)
+{ translation,
+  "riak_core.dtrace_support",
+  fun(Conf) ->
+    Setting = cuttlefish:conf_get("dtrace", Conf),
+    case Setting of
+      on -> true;
+      off -> false;
+      _Default -> false
+    end
+  end
+}.
+
+%% Platform-specific installation paths (substituted by rebar)
+{mapping, "platform_bin_dir", "riak_core.platform_bin_dir", [
+  {default, "./bin"}
+]}.
+
+{mapping, "platform_data_dir", "riak_core.platform_data_dir", [
+  {default, "./data"}
+]}.
+
+{mapping, "platform_etc_dir", "riak_core.platform_etc_dir", [
+  {default, "./etc"}
+]}.
+
+{mapping, "platform_lib_dir", "riak_core.platform_lib_dir", [
+  {default, "./lib"}
+]}.
+
+{mapping, "platform_log_dir", "riak_core.platform_log_dir", [
+  {default, "./log"}
+]}.
+
+%% @doc To enable Search functionality set this 'on'.
+%% @datatype enum on, off
+{mapping, "search", "riak_search.enabled", [
+  {default, off},
+  {datatype, {enum, [on, off]}}
+]}.
+
+{ translation,
+  "riak_search.enabled", fun(Conf) ->
+    Setting = cuttlefish:conf_get("search", Conf),
+    case Setting of
+      on -> true;
+      off -> false;
+      _Default -> false
+    end
+end}.
+
+%% Merge Index Config
+%% @doc The root dir to store search merge_index data
+{mapping, "merge_index.data_root", "merge_index.data_root", [
+  {default, "./data/merge_index"}
+]}.
+
+%% @doc Size, in bytes, of the in-memory buffer.  When this
+%% threshold has been reached the data is transformed
+%% into a segment file which resides on disk.
+{mapping, "merge_index.buffer_rollover_size", "merge_index.buffer_rollover_size", [
+  {default, "1MB"},
+  {datatype, bytesize}
+]}.
+
+%% @doc Overtime the segment files need to be compacted.
+%% This is the maximum number of segments that will be
+%% compacted at once.  A lower value will lead to
+%% quicker but more frequent compactions.
+{mapping, "merge_index.max_compact_segments", "merge_index.max_compact_segments", [
+  {default, 20},
+  {datatype, integer}
+]}.
+
+%% Lager Config
+
+%% @doc Whether to write a crash log, and where.
+%% Commented/omitted/undefined means no crash logger.
+{mapping, "log.crash.file", "lager.crash_log", [
+  {default, "./log/crash.log"}
+]}.
+
+%% @doc Maximum size in bytes of events in the crash log - defaults to 65536
+%% @datatype integer
+%% @mapping
+{mapping, "log.crash.msg_size", "lager.crash_log_msg_size", [
+  {default, "64KB"},
+  {datatype, bytesize}
+]}.
+
+%% @doc Maximum size of the crash log in bytes, before its rotated, set
+%% to 0 to disable rotation - default is 0
+{mapping, "log.crash.size", "lager.crash_log_size", [
+  {default, "10MB"},
+  {datatype, bytesize}
+]}.
+
+%% @doc What time to rotate the crash log - default is no time
+%% rotation. See the lager README for a description of this format:
+%% https://github.com/basho/lager/blob/master/README.org
+{mapping, "log.crash.date", "lager.crash_log_date", [
+  {default, "$D0"}
+]}.
+
+%% @doc Number of rotated crash logs to keep, 0 means keep only the
+%% current one - default is 0
+{mapping, "log.crash.count", "lager.crash_log_count", [
+  {default, 5},
+  {datatype, integer}
+]}.
+
+%% @doc Whether to redirect error_logger messages into lager - defaults to true
+{mapping, "log.error.redirect", "lager.error_logger_redirect", [
+  {default, on},
+  {datatype, {enum, [on, off]}}
+]}.
+
+{ translation,
+  "lager.error_logger_redirect", fun(Conf) ->
+    Setting = cuttlefish:conf_get("log.error.redirect", Conf),
+    case Setting of
+      on -> true;
+      off -> false;
+      _Default -> true
+    end
+end}.
+
+%% @doc maximum number of error_logger messages to handle in a second
+%% lager 2.0.0 shipped with a limit of 50, which is a little low for riak's startup
+{mapping, "log.error.messages_per_second", "lager.error_logger_hwm", [
+  {default, 100},
+  {datatype, integer}
+]}.
+
+%% Riak KV config
+%% @doc Storage_backend specifies the Erlang module defining the storage
+%% mechanism that will be used on this node.
+{mapping, "storage_backend", "riak_kv.storage_backend", [
+  {default, bitcask},
+  {datatype, {enum, [bitcask, leveldb, memory, multi]}}
+]}.
+
+{ translation,
+  "riak_kv.storage_backend",
+  fun(Conf) ->
+    Setting = cuttlefish:conf_get("storage_backend", Conf),
+    case Setting of
+      bitcask -> riak_kv_bitcask_backend;
+      leveldb -> riak_kv_eleveldb_backend;
+      memory -> riak_kv_memory_backend;
+      multi -> riak_kv_multi_backend;
+      _Default -> riak_kv_bitcask_backend
+    end
+  end}.
+
+%% @doc raw_name is the first part of all URLS used by the Riak raw HTTP
+%% interface.  See riak_web.erl and raw_http_resource.erl for
+%% details.
+{mapping, "raw_name", "riak_kv.raw_name", [
+  {commented, "riak"}
+]}.
+
+%% @doc Restrict how fast AAE can build hash trees. Building the tree
+%% for a given partition requires a full scan over that partition's
+%% data. Once built, trees stay built until they are expired.
+%% Config is of the form:
+%%   {num-builds, per-timespan}
+%% Default is 1 build per hour.
+{mapping, "anti_entropy.build_limit.number", "riak_kv.anti_entropy_build_limit", [
+  {default, 1},
+  {datatype, integer}
+]}.
+
+{mapping, "anti_entropy.build_limit.per_timespan", "riak_kv.anti_entropy_build_limit", [
+  {default, "1h"},
+  {datatype, {duration, ms}}
+]}.
+
+{translation,
+ "riak_kv.anti_entropy_build_limit",
+ fun(Conf) ->
+    {cuttlefish:conf_get("anti_entropy.build_limit.number", Conf),
+     cuttlefish:conf_get("anti_entropy.build_limit.per_timespan", Conf)}
+ end}.
+
+%% @doc Determine how often hash trees are expired after being built.
+%% Periodically expiring a hash tree ensures the on-disk hash tree
+%% data stays consistent with the actual k/v backend data. It also
+%% helps Riak identify silent disk failures and bit rot. However,
+%% expiration is not needed for normal AAE operation and should be
+%% infrequent for performance reasons. The time is specified in
+%% milliseconds. The default is 1 week.
+{mapping, "anti_entropy.expire", "riak_kv.anti_entropy_expire", [
+  {default, "1w"},
+  {datatype, {duration, ms}}
+]}.
+
+%% @doc Limit how many AAE exchanges/builds can happen concurrently.
+{mapping, "anti_entropy.concurrency", "riak_kv.anti_entropy_concurrency", [
+  {default, 2},
+  {datatype, integer}
+]}.
+
+%% @doc The tick determines how often the AAE manager looks for work
+%% to do (building/expiring trees, triggering exchanges, etc).
+%% The default is every 15 seconds. Lowering this value will
+%% speedup the rate that all replicas are synced across the cluster.
+%% Increasing the value is not recommended.
+{mapping, "anti_entropy.tick", "riak_kv.anti_entropy_tick", [
+  {default, "15s"},
+  {datatype, {duration, ms}}
+]}.
+
+%% @doc The directory where AAE hash trees are stored.
+{mapping, "anti_entropy.data_dir", "riak_kv.anti_entropy_data_dir", [
+  {default, "./data/anti_entropy"}
+]}.
+
+%% @doc The LevelDB options used by AAE to generate the LevelDB-backed
+%% on-disk hashtrees.
+{mapping, "anti_entropy.write_buffer_size", "riak_kv.anti_entropy_leveldb_opts.write_buffer_size", [
+  {default, "4MB"},
+  {datatype, bytesize}
+]}.
+
+{mapping, "anti_entropy.max_open_files", "riak_kv.anti_entropy_leveldb_opts.max_open_files", [
+  {default, 20},
+  {datatype, integer}
+]}.
+
+%% @doc mapred_name is URL used to submit map/reduce requests to Riak.
+{mapping, "mapred_name", "riak_kv.mapred_name",  [
+  {default, "mapred"}
+]}.
+
+%% @doc mapred_2i_pipe indicates whether secondary-index
+%% MapReduce inputs are queued in parallel via their own
+%% pipe ('true'), or serially via a helper process
+%% ('false' or undefined).  Set to 'false' or leave
+%% undefined during a rolling upgrade from 1.0.
+{mapping, "mapred_2i_pipe", "riak_kv.mapred_2i_pipe", [
+  {default, on},
+  {datatype, {enum, [on, off]}}
+]}.
+
+{ translation,
+  "riak_kv.mapred_2i_pipe",
+  fun(Conf) ->
+    Setting = cuttlefish:conf_get("mapred_2i_pipe", Conf),
+    case Setting of
+      on -> true;
+      off -> false;
+      _Default -> true
+    end
+  end}.
+%% @doc Each of the following entries control how many Javascript
+%% virtual machines are available for executing map, reduce,
+%% pre- and post-commit hook functions.
+%% @datatype integer
+%% @mapping
+{mapping, "javascript_vm.map_js_vm_count", "riak_kv.map_js_vm_count", [
+  {default, 8},
+  {datatype, integer}
+]}.
+{mapping, "javascript_vm.reduce_js_vm_count", "riak_kv.reduce_js_vm_count", [
+  {default, 6},
+  {datatype, integer}
+]}.
+{mapping, "javascript_vm.hook_js_vm_count", "riak_kv.hook_js_vm_count", [
+  {default, 2},
+  {datatype, integer}
+]}.
+
+%% @doc js_max_vm_mem is the maximum amount of memory, in megabytes,
+%% allocated to the Javascript VMs. If unset, the default is
+%% 8mb.
+{mapping, "javascript_vm.max_vm_mem", "riak_kv.js_max_vm_mem", [
+  {default, 8},
+  {datatype, integer}
+]}.
+
+%% @doc js_thread_stack is the maximum amount of thread stack, in megabyes,
+%% allocate to the Javascript VMs. If unset, the default is 16mb.
+%% NOTE: This is not the same as the C thread stack.
+{mapping, "javascript_vm.thread_stack", "riak_kv.js_thread_stack", [
+  {default, 16},
+  {datatype, integer}
+]}.
+
+%% @doc js_source_dir should point to a directory containing Javascript
+%% source files which will be loaded by Riak when it initializes
+%% Javascript VMs.
+{mapping, "javascript_vm.source_dir", "riak_kv.js_source_dir", [
+  {commented, "/tmp/js_source"}
+]}.
+
+%% @doc http_url_encoding determines how Riak treats URL encoded
+%% buckets, keys, and links over the REST API. When set to 'on'
+%% Riak always decodes encoded values sent as URLs and Headers.
+%% Otherwise, Riak defaults to compatibility mode where links
+%% are decoded, but buckets and keys are not. The compatibility
+%% mode will be removed in a future release.
+{mapping, "http_url_encoding", "riak_kv.http_url_encoding", [
+  {default, on},
+  {datatype, {enum, [on, off]}}
+]}.
+
+%% @doc Switch to vnode-based vclocks rather than client ids.  This
+%% significantly reduces the number of vclock entries.
+%% Only set on if *all* nodes in the cluster are upgraded to 1.0
+{mapping, "vnode_vclocks", "riak_kv.vnode_vclocks", [
+  {default, on},
+  {datatype, {enum, [on, off]}}
+]}.
+
+{ translation,
+  "riak_kv.vnode_vclocks",
+  fun(Conf) ->
+    Setting = cuttlefish:conf_get("vnode_vclocks", Conf),
+    case Setting of
+      on -> true;
+      off -> false;
+      _Default -> true
+    end
+  end}.
+
+%% @doc This option toggles compatibility of keylisting with 1.0
+%% and earlier versions.  Once a rolling upgrade to a version
+%% > 1.0 is completed for a cluster, this should be set to
+%% true for better control of memory usage during key listing
+%% operations
+{mapping, "listkeys_backpressure", "riak_kv.listkeys_backpressure", [
+  {default, on},
+  {datatype, {enum, [on, off]}}
+]}.
+
+{ translation,
+  "riak_kv.listkeys_backpressure",
+  fun(Conf) ->
+    Setting = cuttlefish:conf_get("listkeys_backpressure", Conf),
+    case Setting of
+      on -> true;
+      off -> false;
+      _Default -> true
+    end
+  end}.
+
+%% @doc This option specifies how many of each type of fsm may exist
+%% concurrently.  This is for overload protection and is a new
+%% mechanism that obsoletes 1.3's health checks. Note that this number
+%% represents two potential processes, so +P in vm.args should be at
+%% least 3X the fsm_limit.
+{mapping, "fsm_limit", "riak_kv.fsm_limit", [
+  {default, 50000},
+  {datatype, integer}
+]}.
+
+%% @doc object_format controls which binary representation of a riak_object
+%% is stored on disk.
+%% Current options are: v0, v1.
+%% v0: Original erlang:term_to_binary format. Higher space overhead.
+%% v1: New format for more compact storage of small values.
+{mapping, "object_format", "riak_kv.object_format", [
+  {default, v1},
+  {datatype, {enum, [v0, v1]}}
+]}.
+
+%% riak_sysmon config
+%% @doc To disable forwarding events of a particular type, use a
+%% limit of 0.
+{mapping, "riak_sysmon.process_limit", "riak_sysmon.process_limit", [
+  {default, 30},
+  {datatype, integer},
+  {level, advanced}
+]}.
+
+{mapping, "riak_sysmon.port_limit", "riak_sysmon.port_limit", [
+  {default, 2},
+  {datatype, integer},
+  {level, advanced}
+]}.
+
+%% Finding reasonable limits for a given workload is a matter
+%% of experimentation.
+%% NOTE: Enabling the 'gc_ms_limit' monitor (by setting non-zero)
+%%       can cause performance problems on multi-CPU systems.
+{mapping, "riak_sysmon.gc_ms_limit", "riak_sysmon.gc_ms_limit", [
+  {default, 0},
+  {datatype, integer},
+  {level, advanced}
+]}.
+{mapping, "riak_sysmon.heap_word_limit", "riak_sysmon.heap_word_limit", [
+  {default, 40111000},
+  {datatype, integer},
+  {level, advanced}
+]}.
+
+%% @doc Configure the following items to 'false' to disable logging
+%% of that event type.
+{mapping, "riak_sysmon.busy_port", "riak_sysmon.busy_port", [
+  {default, true},
+  {datatype, {enum, [true, false]}},
+  {level, advanced}
+]}.
+{mapping, "riak_sysmon.busy_dist_port", "riak_sysmon.busy_dist_port", [
+  {default, true},
+  {datatype, {enum, [true, false]}},
+  {level, advanced}
+]}.
+
+%% riak_control config
+%% @doc Set to false to disable the admin panel.
+{mapping, "riak_control", "riak_control.enabled", [
+  {default, off},
+  {datatype, {enum, [on, off]}}
+]}.
+
+{translation,
+ "riak_control.enabled",
+ fun(Conf) ->
+    Setting = cuttlefish:conf_get("riak_control", Conf),
+    case Setting of
+      on -> true;
+      off -> false;
+      _Default -> false
+    end
+ end}.
+
+%% @doc Authentication style used for access to the admin
+%% panel. Valid styles are: off, userlist
+{mapping, "riak_control.auth", "riak_control.auth", [
+  {default, userlist},
+  {datatype, {enum, [off, userlist]}}
+]}.
+
+{translation,
+"riak_control.auth",
+fun(Conf) ->
+  case cuttlefish:conf_get("riak_control.auth", Conf) of
+    userlist -> userlist;
+    off -> none;
+    _ -> none
+  end
+end}.
+
+%% @doc If auth is set to 'userlist' then this is the
+%% list of usernames and passwords for access to the
+%% admin panel.
+{mapping, "riak_control.user.$username.password", "riak_control.userlist", [
+  {default, "pass"},
+  {include_default, "user"}
+]}.
+
+{translation,
+"riak_control.userlist",
+fun(Conf) ->
+  UserList1 = lists:filter(
+    fun({Var, _V}) ->
+      cuttlefish_variable:is_fuzzy_match(Var, ["riak_control","user","$username","password"])
+    end,
+    Conf),
+  UserList = [ begin
+    [_, _, Username, _] = UserVariable,
+    {Username, Password}
+  end || {UserVariable, Password} <- UserList1]
+
+end}.
+
+%% @doc The admin panel is broken up into multiple
+%% components, each of which is enabled or disabled
+%% by one of these settings.
+{mapping, "riak_control.admin", "riak_control.admin", [
+  {default, on},
+  {datatype, {enum, [on, off]}}
+]}.
+
+{translation,
+ "riak_control.admin",
+ fun(Conf) ->
+    Setting = cuttlefish:conf_get("riak_control.admin", Conf),
+    case Setting of
+      on -> true;
+      off -> false;
+      _Default -> true
+    end
+ end}.
+
+ %%%% bitcask
+
+%% @doc bitcask data root
+{mapping, "bitcask.data_root", "bitcask.data_root", [
+  {default, "./data/bitcask"}
+]}.
+
+
+%% @doc The open_timeout setting specifies the maximum time Bitcask will
+%% block on startup while attempting to create or open the data directory.
+%% The value is in seconds and the default is 4. You generally need not
+%% change this value. If for some reason the timeout is exceeded on open
+%% you'll see a log message of the form:
+%% "Failed to start bitcask backend: .... "
+%% Only then should you consider a longer timeout.
+{mapping, "bitcask.open_timeout", "bitcask.open_timeout", [
+  {default, 4},
+  {datatype, integer},
+  {level, advanced}
+]}.
+
+%% @doc The `sync_strategy` setting changes the durability of writes by specifying
+%%  when to synchronize data to disk. The default setting protects against data
+%%  loss in the event of application failure (process death) but leaves open a
+%%  small window wherein data could be lost in the event of complete system
+%%  failure (e.g. hardware, O/S, power).
+%%
+%%  The default mode, `none`, writes data into operating system buffers which
+%%  which will be written to the disks when those buffers are flushed by the
+%%  operating system. If the system fails (power loss, crash, etc.) before
+%%  before those buffers are flushed to stable storage that data is lost.
+%%
+%%  This is prevented by the setting `o_sync` which forces the operating system
+%%  to flush to stable storage at every write. The effect of flushing each
+%%  write is better durability, however write throughput will suffer as each
+%%  write will have to wait for the write to complete.
+%%
+%%  ___Available Sync Strategies___
+%%
+%%  * `none` - (default) Lets the operating system manage syncing writes.
+%%  * `o_sync` - Uses the O_SYNC flag which forces syncs on every write.
+%%  * `interval` - Riak will force Bitcask to sync every `bitcask.sync_interval` seconds.
+{mapping, "bitcask.sync_strategy", "bitcask.sync_strategy", [
+  {default, none},
+  {datatype, {enum, [none, o_sync, interval]}},
+  {level, advanced}
+]}.
+
+{mapping, "bitcask.sync_interval", "bitcask.sync_strategy", [
+  {datatype, {duration, s}},
+  {level, advanced}
+]}.
+
+{translation,
+ "bitcask.sync_strategy",
+ fun(Conf) ->
+  Setting = cuttlefish:conf_get("bitcask.sync_strategy", Conf),
+    case Setting of
+      none -> none;
+      o_sync -> o_sync;
+      interval ->
+        Interval = cuttlefish:conf_get("bitcask.sync_interval", Conf, undefined),
+        {seconds, Interval};
+      _Default -> none
+    end
+ end}.
+
+%% @doc The `max_file_size` setting describes the maximum permitted size for any
+%% single data file in the Bitcask directory. If a write causes the current
+%% file to exceed this size threshold then that file is closed, and a new file
+%% is opened for writes.
+{mapping, "bitcask.max_file_size", "bitcask.max_file_size", [
+  {default, "2GB"},
+  {datatype, bytesize},
+  {level, advanced}
+]}.
+
+
+%% @doc The `merge_window` setting lets you specify when during the day merge
+%% operations are allowed to be triggered. Valid options are:
+%%
+%% * `always` (default) No restrictions
+%% * `never` Merge will never be attempted
+%% * `window` Hours during which merging is permitted, where
+%%     `bitcask.merge_window.start` and
+%%     `bitcask.merge_window.end` are integers between 0 and 23.
+%%
+%% If merging has a significant impact on performance of your cluster, or your
+%% cluster has quiet periods in which little storage activity occurs, you may
+%% want to change this setting from the default.
+{mapping, "bitcask.merge_window", "bitcask.merge_window", [
+  {default, always},
+  {datatype, {enum, [always, never, window]}},
+  {level, advanced}
+]}.
+
+{mapping, "bitcask.merge_window.start", "bitcask.merge_window", [
+  {default, 0},
+  {datatype, integer},
+  {level, advanced}
+]}.
+
+{mapping, "bitcask.merge_window.end", "bitcask.merge_window", [
+  {default, 23},
+  {datatype, integer},
+  {level, advanced}
+]}.
+
+
+{translation,
+ "bitcask.merge_window",
+ fun(Conf) ->
+  Setting = cuttlefish:conf_get("bitcask.merge_window", Conf),
+    case Setting of
+      always -> always;
+      never -> never;
+      window ->
+        Start = cuttlefish:conf_get("bitcask.merge_window.start", Conf, undefined),
+        End = cuttlefish:conf_get("bitcask.merge_window.end", Conf, undefined),
+        {Start, End};
+      _Default -> always
+    end
+ end}.
+
+%% @doc `frag_merge_trigger` setting describes what ratio of
+%% dead keys to total keys in a file will trigger merging. The value of this
+%% setting is a percentage (0-100). For example, if a data file contains 6
+%% dead keys and 4 live keys, then merge will be triggered at the default
+%% setting. Increasing this value will cause merging to occur less often,
+%% whereas decreasing the value will cause merging to happen more often.
+%%
+%% Default is: `60`
+{mapping, "bitcask.frag_merge_trigger", "bitcask.frag_merge_trigger", [
+  {datatype, integer},
+  {level, advanced},
+  {default, 60}
+]}.
+
+
+%% @doc `dead_bytes_merge_trigger` setting describes how much
+%% data stored for dead keys in a single file will trigger merging. The
+%% value is in bytes. If a file meets or exceeds the trigger value for dead
+%% bytes, merge will be triggered. Increasing the value will cause merging
+%% to occur less often, whereas decreasing the value will cause merging to
+%% happen more often.
+%%
+%% When either of these constraints are met by any file in the directory,
+%% Bitcask will attempt to merge files.
+%%
+%% Default is: 512mb in bytes
+{mapping, "bitcask.dead_bytes_merge_trigger", "bitcask.dead_bytes_merge_trigger", [
+  {datatype, bytesize},
+  {level, advanced},
+  {default, "512MB"}
+]}.
+
+%% @doc `frag_threshold` setting describes what ratio of
+%% dead keys to total keys in a file will cause it to be included in the
+%% merge. The value of this setting is a percentage (0-100). For example,
+%% if a data file contains 4 dead keys and 6 live keys, it will be included
+%% in the merge at the default ratio. Increasing the value will cause fewer
+%% files to be merged, decreasing the value will cause more files to be
+%% merged.
+%%
+%% Default is: `40`
+{mapping, "bitcask.frag_threshold", "bitcask.frag_threshold", [
+  {datatype, integer},
+  {level, advanced},
+  {default, 40}
+]}.
+
+%% @doc `dead_bytes_threshold` setting describes the minimum
+%% amount of data occupied by dead keys in a file to cause it to be included
+%% in the merge. Increasing the value will cause fewer files to be merged,
+%% decreasing the value will cause more files to be merged.
+%%
+%% Default is: 128mb in bytes
+{mapping, "bitcask.dead_bytes_threshold", "bitcask.dead_bytes_threshold", [
+  {datatype, bytesize},
+  {level, advanced},
+  {default, "128MB"}
+]}.
+
+%% @doc `small_file_threshold` setting describes the minimum
+%% size a file must have to be _excluded_ from the merge. Files smaller
+%% than the threshold will be included. Increasing the value will cause
+%% _more_ files to be merged, decreasing the value will cause _fewer_ files
+%% to be merged.
+%%
+%% Default is: 10mb in bytes
+{mapping, "bitcask.small_file_threshold", "bitcask.small_file_threshold", [
+  {datatype, bytesize},
+  {level, advanced},
+  {default, "10MB"}
+]}.
+
+%% @doc Fold keys thresholds will reuse the keydir if another fold was started less
+%% than `max_fold_age` ago and there were less than `max_fold_puts` updates.
+%% Otherwise it will wait until all current fold keys complete and then start.
+%% Set either option to -1 to disable.
+%% Age in micro seconds (-1 means "unlimited")
+{mapping, "bitcask.max_fold_age", "bitcask.max_fold_age", [
+  {datatype, integer},
+  {level, advanced},
+  {default, -1}
+]}.
+
+{mapping, "bitcask.max_fold_puts", "bitcask.max_fold_puts", [
+  {datatype, integer},
+  {level, advanced},
+  {default, 0}
+]}.
+
+%% @doc By default, Bitcask keeps all of your data around. If your data has
+%% limited time-value, or if for space reasons you need to purge data, you can
+%% set the `expiry_secs` option. If you needed to purge data automatically
+%% after 1 day, set the value to `1d`.
+%%
+%% Default is: `-1` which disables automatic expiration
+{mapping, "bitcask.expiry", "bitcask.expiry_secs", [
+  {datatype, {duration, s}},
+  {level, advanced},
+  {default, -1}
+]}.
+
+
+%% @doc Require the CRC to be present at the end of hintfiles.
+%% Bitcask defaults to a backward compatible mode where
+%% old hint files will still be accepted without them.
+%% It is safe to set this true for new deployments and will
+%% become the default setting in a future release.
+{mapping, "bitcask.require_hint_crc", "bitcask.require_hint_crc", [
+  {default, true},
+  {datatype, {enum, [true, false]}},
+  {level, advanced}
+]}.
+
+%% By default, Bitcask will trigger a merge whenever a data file contains
+%% an expired key. This may result in excessive merging under some usage
+%% patterns. To prevent this you can set the `expiry_grace_time` option.
+%% Bitcask will defer triggering a merge solely for key expiry by the
+%% configured number of seconds. Setting this to `1h` effectively limits
+%% each cask to merging for expiry once per hour.
+%%
+%% Default is: `0`
+{mapping, "bitcask.expiry_grace_time", "bitcask.expiry_grace_time", [
+  {datatype, {duration, s}},
+  {level, advanced},
+  {default, 0}
+]}.
+
+%% @doc Configure how Bitcask writes data to disk.
+%%   erlang: Erlang's built-in file API
+%%      nif: Direct calls to the POSIX C API
+%%
+%% The NIF mode provides higher throughput for certain
+%% workloads, but has the potential to negatively impact
+%% the Erlang VM, leading to higher worst-case latencies
+%% and possible throughput collapse.
+{mapping, "bitcask.io_mode", "bitcask.io_mode", [
+  {default, erlang},
+  {datatype, {enum, [erlang, nif]}}
+]}.
+
+%%%% This is the leveldb section
+
+%% @doc leveldb data_root
+{mapping, "leveldb.data_root", "eleveldb.data_root", [
+  {default, "./data/leveldb"}
+]}.
+
+%% @doc The `max_open_files` value is multiplied by 4 megabytes to create a
+%% file cache. The file cache may end up holding more or fewer files at any
+%% given moment due to variations in file metadata size. `max_open_files`
+%% applies to a single vnode, not to the entire server.
+{mapping, "leveldb.max_open_files", "eleveldb.max_open_files", [
+  {datatype, integer},
+  {default, 30},
+  {level, advanced}
+]}.
+
+%% @doc The cache_size determines the size of each vnode's block cache. The
+%% block cache holds data blocks that leveldb has recently retrieved from
+%% `.sst` table files. Any given block contains one or more complete key/value
+%% pairs. The cache speeds up repeat access to the same key and potential
+%% access to adjacent keys.
+{mapping, "leveldb.cache_size", "eleveldb.cache_size", [
+  {datatype, bytesize},
+  {default, "8MB"},
+  {level, advanced}
+]}.
+
+%% @doc The 'sync' parameter defines how new key/value data is placed in the
+%% recovery log. The recovery log is only used if the Riak program crashes or
+%% the server loses power unexpectedly. The parameter's original intent was
+%% to guarantee that each new key / value was written to the physical disk
+%% before leveldb responded with “write good”. The reality in modern servers
+%% is that many layers of data caching exist between the database program and
+%% the physical disks. This flag influences only one of the layers.
+{mapping, "leveldb.sync", "eleveldb.sync", [
+  {default, false},
+  {datatype, {enum, [true, false]}},
+  {level, advanced}
+]}.
+
+%% @doc Each vnode first stores new key/value data in a memory based write
+%% buffer. This write buffer is in parallel to the recovery log mentioned
+%% in the “sync” parameter. Riak creates each vnode with a randomly sized
+%% write buffer for performance reasons. The random size is somewhere
+%% between write_buffer_size_min and write_buffer_size_max.
+{mapping, "leveldb.write_buffer_size_min", "eleveldb.write_buffer_size_min", [
+  {default, "30MB"},
+  {datatype, bytesize},
+  {level, advanced}
+]}.
+
+{mapping, "leveldb.write_buffer_size_max", "eleveldb.write_buffer_size_max", [
+  {default, "60MB"},
+  {datatype, bytesize},
+  {level, advanced}
+]}.
+
+%% @doc Each database .sst table file can include an optional "bloom filter"
+%% that is highly effective in shortcutting data queries that are destined
+%% to not find the requested key. The bloom_filter typically increases the
+%% size of an .sst table file by about 2%. This option must be set to true
+%% in the riak.conf to take effect.
+{mapping, "leveldb.bloomfilter", "eleveldb.use_bloomfilter", [
+  {default, on},
+  {datatype, {enum, [on, off]}}
+]}.
+
+{ translation,
+  "eleveldb.use_bloomfilter",
+  fun(Conf) ->
+    case cuttlefish:conf_get("leveldb.bloomfilter", Conf) of
+        on -> true;
+        off -> false;
+        _ -> true
+    end
+  end
+}.
+
+%% @doc sst_block_size defines the size threshold for a block / chunk of data
+%% within one .sst table file. Each new block gets an index entry in the .sst
+%% table file's master index.
+{mapping, "leveldb.block_size", "eleveldb.sst_block_size", [
+  {default, "4KB"},
+  {datatype, bytesize},
+  {level, advanced}
+]}.
+
+%% @doc block_restart_interval defines the key count threshold for a new key
+%% entry in the key index for a block.
+%% Most clients should leave this parameter alone.
+{mapping, "leveldb.block_restart_interval", "eleveldb.block_restart_interval", [
+  {default, 16},
+  {datatype, integer},
+  {level, advanced}
+]}.
+
+%% @doc verify_checksums controls whether or not validation occurs when Riak
+%% requests data from the leveldb database on behalf of the user.
+{mapping, "leveldb.verify_checksums", "eleveldb.verify_checksums", [
+  {default, true},
+  {datatype, {enum, [true, false]}},
+  {level, advanced}
+]}.
+
+%% @doc verify_compaction controls whether or not validation occurs when
+%% leveldb reads data as part of its background compaction operations.
+{mapping, "leveldb.verify_compaction", "eleveldb.verify_compaction", [
+  {default, true},
+  {datatype, {enum, [true, false]}},
+  {level, advanced}
+]}.
+
+%%%% Memory backend section
+
+{mapping, "memory_backend.max_memory", "riak_kv.memory_backend.max_memory", [
+  {datatype, bytesize},
+  {default, "4GB"},
+  {level, advanced}
+]}.
+
+{translation,
+ "riak_kv.memory_backend.max_memory",
+ fun(Conf) ->
+  Bytes = cuttlefish:conf_get("memory_backend.max_memory", Conf),
+  cuttlefish_util:ceiling(Bytes / 1048576)
+ end
+}.
+
+{mapping, "memory_backend.ttl", "riak_kv.memory_backend.ttl", [
+  {datatype, {duration, s}},
+  {commented, "1d"}, %% no default, it's undefined.
+  {level, advanced}
+]}.
+
+%% o man o man o man vm.args!
+
+%%% Things that need to be in vm.args, but never tuned
+{mapping, "erlang.smp", "vm_args.-smp", [
+  {default, "enable"},
+  {level, advanced}
+]}.
+
+{mapping, "erlang.W", "vm_args.+W", [
+  {default, "w"},
+  {level, advanced}
+]}.
+
+{mapping, "erlang.K", "vm_args.+K", [
+  {default, "true"},
+  {level, advanced}
+]}.
+
+%%%% Tunables
+%% @doc Name of the riak node
+{mapping, "nodename", "vm_args.-name", [
+  {default, "dev1@127.0.0.1"}
+]}.
+
+%% @doc Cookie for distributed node communication.  All nodes in the same cluster
+%% should use the same cookie or they will not be able to communicate.
+{mapping, "distributed_cookie", "vm_args.-setcookie", [
+  {default, "riak"}
+]}.
+
+{mapping, "erlang.asyc_threads", "vm_args.+A", [
+  {default, "64"}
+]}.
+
+%% @doc Increase number of concurrent ports/sockets
+{mapping, "erlang.max_ports", "vm_args.-env ERL_MAX_PORTS", [
+  {default, "64000"}
+]}.
+
+%% @doc Tweak GC to run more often
+{mapping, "erlang.fullsweep_after", "vm_args.-env ERL_FULLSWEEP_AFTER", [
+  {default, "0"},
+  {level, advanced}
+]}.
+
+%% @doc Set the location of crash dumps
+{mapping, "erlang.crash_dump", "vm_args.-env ERL_CRASH_DUMP", [
+  {default, "./log/erl_crash.dump"}
+]}.
+
+%% @doc Raise the ETS table limit
+{mapping, "erlang.max_ets_tables", "vm_args.-env ERL_MAX_ETS_TABLES", [
+  {default, "256000"}
+]}.
+
+%% @doc Raise the default erlang process limit
+{mapping, "process_limit", "vm_args.+P", [
+  {datatype, integer},
+  {default, 256000}
+]}.
+
+{translation, "vm_args.+P",
+fun(Conf) ->
+  Procs = cuttlefish:conf_get("process_limit", Conf),
+  integer_to_list(Procs)
+end}.
+
+%% @doc For nodes with many busy_dist_port events, Basho recommends
+%% raising the sender-side network distribution buffer size.
+%% 32mb may not be sufficient for some workloads and is a suggested
+%% starting point.
+%% The Erlang/OTP default is 1024 (1 megabyte).
+%% See: http://www.erlang.org/doc/man/erl.html#%2bzdbbl
+{mapping, "erlang.zdouble", "vm_args.+zdbbl", [
+  {commented, "32MB"},
+  {datatype, bytesize}
+]}.
+
+%% @doc Erlang VM scheduler tuning.
+%% Prerequisite: a patched VM from Basho, or a VM compiled separately
+%% with this patch applied (R15B only):
+%%     https://gist.github.com/evanmcc/a599f4c6374338ed672e
+{mapping, "erlang.swiffy", "vm_args.+sfwi", [
+  {commented, "500"}
+]}.
+
+{mapping, "erlang.scl", "vm_args.+scl", [
+  {commented, "false"},
+  {datatype, {enum, [true, false]}},
+  {level, advanced}
+]}.
+
+{mapping, "erlang.sub", "vm_args.+sub", [
+  {commented, "true"},
+  {datatype, {enum, [true, false]}},
+  {level, advanced}
+]}.

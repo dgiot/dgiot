@@ -1,0 +1,101 @@
+= cowboy_req:stream_events(3)
+
+== Name
+
+cowboy_req:stream_events - Stream events
+
+== Description
+
+[source,erlang]
+----
+stream_events(Events, IsFin, Req :: cowboy_req:req()) -> ok
+
+Events :: Event | [Event]
+IsFin  :: fin | nofin
+
+Event  :: #{
+    comment => iodata(),
+    data    => iodata(),
+    event   => iodata() | atom(),
+    id      => iodata(),
+    retry   => non_neg_integer()
+}
+----
+
+Stream events.
+
+This function should only be used for `text/event-stream`
+responses when using server-sent events. Cowboy will
+automatically encode the given events to their text
+representation.
+
+This function may be called as many times as needed after
+initiating a response using the
+link:man:cowboy_req:stream_reply(3)[cowboy_req:stream_reply(3)]
+function.
+
+The second argument indicates if this call is the final
+call. Use the `nofin` value until you know no more data
+will be sent. The final call should use `fin` (possibly
+with an empty data value) or be a call to the
+link:man:cowboy_req:stream_trailers(3)[cowboy_req:stream_trailers(3)]
+function.
+
+Note that not using `fin` for the final call is not an
+error; Cowboy will take care of it when the request
+handler terminates if needed. Depending on the resource
+it may however be more efficient to do it as early as
+possible.
+
+You do not need to handle HEAD requests specifically as
+Cowboy will ensure no data is sent when you call this function.
+
+== Arguments
+
+Events::
+
+Events to be sent. All fields are optional.
+
+IsFin::
+
+A flag indicating whether this is the final piece of data
+to be sent.
+
+Req::
+
+The Req object.
+
+== Return value
+
+The atom `ok` is always returned. It can be safely ignored.
+
+== Changelog
+
+* *2.5*: Function introduced.
+
+== Examples
+
+.Stream events
+[source,erlang]
+----
+Req = cowboy_req:stream_reply(200, #{
+    <<"content-type">> => <<"text/event-stream">>
+}, Req0),
+cowboy_req:stream_events(#{
+    id => <<"comment-123">>,
+    event => <<"add_comment">>,
+    data => <<"Hello,\n\nI noticed something wrong in ...">>
+}, nofin, Req),
+timer:sleep(1000),
+cowboy_req:stream_events(#{
+    event => <<"debug">>,
+    data => io_lib:format("An error occurred: ~p~n", [Error])
+}, fin, Req).
+----
+
+== See also
+
+link:man:cowboy_req(3)[cowboy_req(3)],
+link:man:cowboy_req:stream_reply(3)[cowboy_req:stream_reply(3)],
+link:man:cowboy_req:stream_body(3)[cowboy_req:stream_body(3)],
+link:man:cowboy_req:stream_trailers(3)[cowboy_req:stream_trailers(3)]

@@ -1,0 +1,72 @@
+= gun_upgrade(3)
+
+== Name
+
+gun_upgrade - Successful protocol upgrade
+
+== Description
+
+[source,erlang]
+----
+{gun_upgrade, ConnPid, StreamRef, Protocols, Headers}
+
+ConnPid   :: pid()
+StreamRef :: reference()
+Protocols :: [<<"websocket">>]
+Headers   :: [{binary(), binary()}]
+----
+
+Successful protocol upgrade.
+
+This message informs the relevant process that the server
+accepted to upgrade to one or more protocols given in the
+original request.
+
+The exact semantics of this message depend on the original
+protocol. HTTP/1.1 upgrades apply to the entire connection.
+HTTP/2 uses a different mechanism which allows switching
+specific streams to a different protocol.
+
+Gun currently only supports upgrading HTTP/1.1 connections
+to the Websocket protocol.
+
+== Elements
+
+ConnPid::
+
+The pid of the Gun connection process.
+
+StreamRef::
+
+Identifier of the stream that resulted in an upgrade.
+
+Protocols::
+
+List of protocols this stream was upgraded to.
+
+Headers::
+
+Headers sent with the upgrade response.
+
+== Changelog
+
+* *1.0*: Message introduced.
+
+== Examples
+
+.Receive a gun_upgrade message in a gen_server
+[source,erlang]
+----
+handle_info({gun_upgrade, ConnPid, _StreamRef,
+             _Protocols, _Headers},
+            State=#state{conn_pid=ConnPid}) ->
+    %% Do something.
+    {noreply, State}.
+----
+
+== See also
+
+link:man:gun(3)[gun(3)],
+link:man:gun:ws_upgrade(3)[gun:ws_upgrade(3)],
+link:man:gun:ws_send(3)[gun:ws_send(3)],
+link:man:gun_ws(3)[gun_ws(3)]

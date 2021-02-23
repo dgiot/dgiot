@@ -1,0 +1,19 @@
+%% We'll say this is the application level schema. This is where the developer
+%% defines their own big config knobs. Also, overrides anything brought in from
+%% dependencies. That means we can do things like override "a.some.var2"
+%% The original order should be preserved.
+{mapping, "a.some.var2", "app_a.some_var", [
+    {default, "defined!"}
+]}.
+
+%% Works for translations too!
+{translation, "app_a.some_var3", fun(X) -> "toplevel" end}.
+
+%% And validators!
+{validator, "a.validator2", "so much validator", fun(_AlwaysFalse) -> false end}.
+
+%% But we can have our own mappings too! And they will come cuttlefish_lager_test_backend
+{mapping, "top_level.var1", "app_a.big_var", []}.
+{translation, "app_a.big_var", fun(X) -> "tippedy top" end}.
+{validator, "top.val", "you only validate once.", fun(_AlwaysFalse) -> false end}.
+
