@@ -1,0 +1,209 @@
+%%-*- mode: erlang -*-
+
+%% ==============================================================================
+%% maybe upload coverdata
+%% ==============================================================================
+
+CONFIG0 = case os:getenv("TRAVIS") of
+              "true" ->
+                  JobId = os:getenv("TRAVIS_JOB_ID"),
+                  [{coveralls_service_job_id, JobId},
+                   {coveralls_coverdata, "_build/test/cover/*.coverdata"},
+                   {coveralls_service_name , "travis-ci"} | CONFIG];
+              _ ->
+                  CONFIG
+          end,
+
+%% ==============================================================================
+%% Dependencies
+%% ==============================================================================
+PluginsNeededByElixir = [rebar_mix, 
+                         {rebar3_elixir_compile,
+                          {git, "https://hub.fastgit.org/barrel-db/rebar3_elixir_compile.git",
+                           {branch, "master"}}}],
+
+HooksNeededByElixir = {provider_hooks, [{pre, [{compile, {ex, compile}}]}]},
+
+OptsNeededByElixir = {elixir_opts, [{env, dev}]},
+
+Kf = fun(K, L) -> {K, V} = lists:keyfind(K, 1, L), V end,
+{ElixirDeps, CONFIG1} = case Kf(elixir_deps, CONFIG0) of
+                            false ->{[], CONFIG0};
+                            [] -> {[], CONFIG0};
+                            ElixirDeps0 ->
+                                Plugins = Kf(plugins, CONFIG0),
+                                NewConfig = lists:keydelete(plugins, 1, CONFIG0),
+                                Plugins1 = {plugins, PluginsNeededByElixir ++ Plugins},
+                                {ElixirDeps0,
+                                 [Plugins1, HooksNeededByElixir, OptsNeededByElixir | NewConfig]}
+                        end,
+
+PluginCompatWindowsPlatform = fun(Config) ->
+                                      PluginsTmp = Kf(plugins, Config),
+                                      ConfigTmp = lists:keydelete(plugins, 1, Config),
+                                      Plugins2 = {plugins, case os:type() of
+                                                               {win32, nt} -> PluginsTmp -- [rebar3_run];
+                                                               _ -> PluginsTmp
+                                                           end},
+                                      CONFIG2 = [Plugins2 | ConfigTmp]
+                              end,
+
+CONFIG2 = PluginCompatWindowsPlatform(CONFIG1),
+BaseDeps = Kf(deps, CONFIG2) ++ ElixirDeps,
+CloudDeps = BaseDeps ++ Kf(cloud_deps, CONFIG2),
+EdgeDeps = BaseDeps ++ Kf(edge_deps, CONFIG2),
+
+%% Make a dep element for rebar.config GitRef should be either {tag, Tag} or {branch, Branch}
+MakeDep =
+    fun({Name, {git, _, _}} = App, _DefaultDepRef) ->
+        %% alreay a complete ref
+        App;
+       (App, DefaultDepRef) ->
+        {AppName, GitRef} =
+            case App of
+                {Name, Pinned} when is_tuple(Pinned) -> {Name, Pinned};
+                {Name, Tag} when is_list(Tag) -> {Name, {tag, Tag}};
+                Name when is_atom(Name) -> {Name, DefaultDepRef}
+           end,
+       {URL, NewGitRef}  =
+            case atom_to_list(AppName) of
+              "emqx" ->
+                RepoName = string:join(string:tokens(atom_to_list(AppName), "_"), "-"),
+                {"https://hub.fastgit.org/emqx/" ++ RepoName,GitRef};
+              _ ->
+                case string:split(atom_to_list(AppName),"_") of
+                 ["emqx", _] ->
+                    RepoName = string:join(string:tokens(atom_to_list(AppName), "_"), "-"),
+                    {"https://hub.fastgit.org/emqx/" ++ RepoName,GitRef};
+                 _ ->
+                    RepoName = string:join(string:tokens(atom_to_list(AppName), "_"), "-"),
+                    {"https://hub.fastgit.org/emqx/" ++ RepoName,GitRef}
+                end
+            end,
+        {AppName, {git, URL, NewGitRef}}
+    end,
+
+MakeDeps = fun(Deps, DefaultDepRef, TestDeps) -> [MakeDep(App, DefaultDepRef) || App <- Deps] ++ TestDeps end,
+
+%% TODO: this is only a temporary workaround in order to be backward compatible
+%% The right way is to always pin dependency version in rebar.config
+%% Any dependency that can not be tested and released independently
+%% (i.e. has to be a part of a emqx release in order to be tested)
+%% should not be a dependency but a local application reside in the same repo.
+%% (Meaning: emqx should be an umbrella project)
+
+CUR_BRANCH = os:cmd("git branch | grep -e '^*' | cut -d' ' -f 2") -- "\n",
+
+MATCH_BRANCH = fun (BranchName) when BranchName =:= "master";
+                                     BranchName =:= "develop" ->
+                       BranchName;
+                   (BranchName) ->
+                       case string:prefix(BranchName, "release") of
+                           nomatch -> "develop";
+                           _Match -> BranchName
+                       end
+               end,
+
+BRANCH = MATCH_BRANCH(CUR_BRANCH),
+
+DefaultDepRef =
+    case os:getenv("EMQX_DEPS_DEFAULT_VSN") of
+        false -> {branch, BRANCH}; %% not set
+        "" -> {branch, BRANCH}; %% set empty
+        MaybeTag ->
+            case re:run(MaybeTag, "v\[0-9\]+\.\[0-9\]+\.*") of
+                nomatch -> {branch, MaybeTag};
+                _ -> {tag, MaybeTag}
+            end
+    end,
+
+%% ==============================================================================
+%% Relx configs
+%% ==============================================================================
+GitDescribe = case DefaultDepRef of
+                  {tag, EnvTag} -> EnvTag;
+                  _Else -> 
+		      case catch lists:last(string:tokens(os:cmd("git tag -l \"v*\""), "\n")) of
+                          {'EXIT', Reason} -> "";
+                          Version -> Version
+                      end
+              end,
+Relx0 = Kf(relx, CONFIG2),
+{release, {_, Vsn0}, RelxBaseApps0} = lists:keyfind(release, 1, Relx0),
+Vsn1 = case Vsn0 of
+    git_describe -> GitDescribe;
+    Vsn -> Vsn
+end,
+RelxElixirApps = Kf(elixir_relx_apps, CONFIG2),
+RelxBaseApps = RelxBaseApps0 ++ RelxElixirApps,
+RelxOverlay = Kf(overlay, Relx0),
+RelxCloudApps = RelxBaseApps ++ Kf(cloud_relx_apps, CONFIG2),
+RelxEdgeApps = RelxBaseApps ++ Kf(edge_relx_apps, CONFIG2),
+RelxCloudOverlay0 = Kf(cloud_relx_overlay, CONFIG2),
+RelxEdgeOverlay0 = Kf(edge_relx_overlay, CONFIG2),
+RelxCloudOverlay = RelxOverlay ++ RelxCloudOverlay0,
+RelxEdgeOverlay = RelxOverlay ++ RelxEdgeOverlay0,
+
+MakeRelx =
+    fun(Apps, Overlay, Vars) ->
+        VarFiles = ["vars-" ++ atom_to_list(Var) ++ ".config" || Var <- Vars],
+        Apps1 = case os:type() of {win32, nt} -> Apps -- [bcrypt]; _Other -> Apps end,
+        Relx1 = lists:keystore(release, 1, Relx0, {release, {emqx, Vsn1}, Apps1}),
+        Relx2 = lists:keystore(overlay, 1, Relx1, {overlay, Overlay}),
+        lists:keystore(overlay_vars, 1, Relx2, {overlay_vars, VarFiles})
+    end,
+Relx = fun(Vars) -> MakeRelx(RelxBaseApps, RelxOverlay, Vars) end,
+RelxCloud = fun(Vars) -> MakeRelx(RelxCloudApps, RelxCloudOverlay, Vars) end,
+RelxEdge = fun(Vars) -> MakeRelx(RelxEdgeApps, RelxEdgeOverlay, Vars) end,
+
+TestDeps = [ {meck, "0.8.13"} % hex
+           , {bbmustache, "1.7.0"} % hex
+           , {emqx_ct_helpers, {git, "https://hub.fastgit.org/emqx/emqx-ct-helpers", {tag, "v1.1.1"}}}
+           ],
+
+%% ==============================================================================
+%% Profiles
+%% ==============================================================================
+Profiles =
+[ {emqx, [ {deps, MakeDeps(CloudDeps, DefaultDepRef, [])}
+         , {relx, RelxCloud([cloud, dev])}
+         ]}
+, {'emqx-pkg', [ {deps, MakeDeps(CloudDeps, DefaultDepRef, [])}
+             , {relx, RelxCloud([cloud, pkg])}
+             ]}
+, {'emqx-edge', [ {deps, MakeDeps(EdgeDeps, DefaultDepRef, [])}
+              , {relx, RelxEdge([edge, dev])}
+              ]}
+, {'emqx-edge-pkg', [ {deps, MakeDeps(EdgeDeps, DefaultDepRef, [])}
+                  , {relx, RelxEdge([edge, pkg])}
+                  ]}
+],
+
+Deletes = [ deps
+          , relx
+          , elixir_deps
+          , edge_deps
+          , cloud_deps
+          , elixir_relx_apps
+          , edge_relx_apps
+          , cloud_relx_apps
+          , cloud_relx_overlay
+          ],
+
+Additions = [{profiles, Profiles}],
+
+CONFIG3 = lists:foldl(fun(K, Acc) -> lists:keydelete(K, 1, Acc) end, CONFIG2, Deletes),
+
+CONFIG4 = lists:foldl(fun({K, V}, Acc) -> lists:keystore(K, 1, Acc, {K, V}) end, CONFIG3, Additions),
+
+FilePath = case os:type() of
+               {win32, nt} ->
+                   "emqx.rebar.config";
+               _ ->
+                   "/tmp/emqx.rebar.config"
+           end,
+
+file:write_file(FilePath, [io_lib:format("~p.\n", [I]) || I <- CONFIG4]),
+
+CONFIG4.
+
