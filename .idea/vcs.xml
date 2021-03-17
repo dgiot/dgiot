@@ -3,6 +3,26 @@
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/default/plugins/pc" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/cowboy" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/cowlib" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/cuttlefish" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/cuttlefish/_build/default/lib/getopt" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/cuttlefish/_build/escript/lib/getopt" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/ekka" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/emqx" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/emqx_dashboard" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/emqx_delayed_publish" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/emqx_management" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/emqx_psk_file" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/emqx_recon" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/emqx_reloader" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/emqx_retainer" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/emqx_rule_engine" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/esockd" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/gen_rpc" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/minirest" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/ranch" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/rulesql" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/ssl_verify_fun" vcs="Git" />
   </component>
 </project>
