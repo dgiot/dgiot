@@ -5,7 +5,7 @@ workdir = sys.argv[1]
 project_dir = os.path.dirname(workdir)
 
 
-def get_emqx_config(key):
+def get_dgiot_config(key):
     with open(os.path.join(project_dir, 'etc', 'emqx.conf'), 'r') as f:
         for line in f.readlines():
             if line.startswith(key):
@@ -31,10 +31,10 @@ cmd = "erl" \
       " -proto_dist ekka" \
       " -pa {ekka}" \
       " -remsh {node}".format(
-    remote_node=remote_node(get_emqx_config('node.name')),
-    node=get_emqx_config('node.name'),
+    remote_node=remote_node(get_dgiot_config('node.name')),
+    node=get_dgiot_config('node.name'),
     ekka=ekka(),
-    cookie=get_emqx_config('node.cookie')
+    cookie=get_dgiot_config('node.cookie')
 )
 
 print(cmd)
