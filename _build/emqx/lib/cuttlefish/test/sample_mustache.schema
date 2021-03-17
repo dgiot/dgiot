@@ -1,3 +1,0 @@
-{mapping, "a.b", "app_a.setting_b", [
-  {default, "$(c)/{{mustache}}/a.b"}
-]}.
