@@ -77,7 +77,7 @@ MakeDep =
                     {"https://github.com/fastdgiot/" ++ RepoName,GitRef};
                  ["shuwa", _] ->
                     RepoName = string:join(string:tokens(atom_to_list(AppName), "_"), "_"),
-                    {"ssh://johnliu@git.iotn2n.com:29418/" ++ RepoName, {branch,"master"}};
+                    {"https://github.com/fastdgiot/" ++ RepoName, GitRef};
                  _ ->
                     RepoName = string:join(string:tokens(atom_to_list(AppName), "_"), "-"),
                     {"https://github.com/fastdgiot/" ++ RepoName,GitRef}
