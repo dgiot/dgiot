@@ -53,6 +53,7 @@
 | ------------ | ------------ | ------------ |
 | 微信  | dgiot_wechat  | 微信  |
 | 微信公众号  | dgiot_wx  |  微信公众号 |
+| 微信小程序  | dgiot_mini-_program  |  微信小程序 |
 | 百度底图  | dgiot_baidumap | 百度底图  |
 |  kafka | dgiot_kafka | kafka桥接   |
 |  mysql | dgiot_mysql | mysql集成   |
