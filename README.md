@@ -37,44 +37,33 @@
 
  | 业界标杆  | 平台插件  |  说明 |
 | ------------ | ------------ | ------------ |
-| 阿里物联网物模型  | shuwa_thing  | 物模模型  |
+| 阿里云物模型  | dgiot_thing  | 物模型  |
+|  亚马逊 |   |   |
 |   |   |   |
 |   |   |   |
 |   |   |   |
 |   |   |   |
 |   |   |   |
-|   |   |   |
-|   |   |   |
-|   |   |   |
-|   |   |   |
-|   |   |   |
-|   |   |   |
-|   |   |   |
-|   |   |   |
-|   |   |   |
-|   |   |   |
-|   |   |   |
-|   |   |   |
-|   |   |   |
-|   |   |   |
-|   |   |   |
-|   |   |   |
-|   |   |   |
-|   |   |   |
-|   |   |   |
-|   |   |   |
-|   |   |   |
-|   |   |   |
+
+
 
 # 行业软件
 
- | 行业软件  | 平台插件  |  说明 |
+ | 行业软件  | 平台插件  |  说明 | 
 | ------------ | ------------ | ------------ |
-| 微信  | shuwa_wechat  | 微信  |
-| 微信公众号  | shuwa_wx  |  微信公众号 |
-| 金蝶ERP  |   |   |
-|  MES |   |   |
-|   |   |   |
+| 微信  | dgiot_wechat  | 微信  |
+| 微信公众号  | dgiot_wx  |  微信公众号 |
+| 百度底图  | dgiot_baidumap | 百度底图  |
+|  kafka | dgiot_kafka | kafka桥接   |
+|  mysql | dgiot_mysql | mysql集成   |
+|  postgres | dgiot_postgres | postgres集成   |
+|  tengine | dgiot_td | td集成   |
+|  Grafana | dgiot_grafana | Grafana   |
+|  Prometheus | dgiot_prometheus | Prometheus集成   |
+|  gitlab |  dgiot_gitlab | 代码提交  |
+|  jenkins | dgiot jenkins |  持续集成|
+|  MES | dgiot_mes  | mes集成  |
+| 金蝶ERP  | dgiot_erp  |  erp集成 |
 
 # 构建
 
