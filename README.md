@@ -54,11 +54,11 @@
 | 微信  | dgiot_wechat  | 微信  |
 | 微信公众号  | dgiot_wx  |  微信公众号 |
 | 微信小程序  | dgiot_mini-_program  |  微信小程序 |
-| 百度底图  | dgiot_baidumap | 百度底图  |
+| 百度地图  | dgiot_baidumap | 百度地图  |
 |  kafka | dgiot_kafka | kafka桥接   |
 |  mysql | dgiot_mysql | mysql集成   |
 |  postgres | dgiot_postgres | postgres集成   |
-|  tengine | dgiot_td | td集成   |
+|  TDengine | dgiot_td | TD集成   |
 |  Grafana | dgiot_grafana | Grafana   |
 |  Prometheus | dgiot_prometheus | Prometheus集成   |
 |  gitlab |  dgiot_gitlab | 代码提交  |
