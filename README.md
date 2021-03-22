@@ -75,12 +75,13 @@ make
 ```
 
 + windows构建
+
  ```
  下载msys64
  
 git clone https://hub.fastgit.org/dgiot/dgiot_server.git
 make
-``
+ ```
 
 ## 预览地址
 
