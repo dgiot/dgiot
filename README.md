@@ -69,10 +69,11 @@
 # 构建
 
 +   Linux/Unix/Mac构建
-```
+```shell
 git clone https://hub.fastgit.org/dgiot/dgiot_server.git
 make
-``
+```
+
 + windows构建
  ```
  下载msys64
