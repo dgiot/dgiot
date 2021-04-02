@@ -84,6 +84,9 @@ MakeDep =
                         false ->
                                  {"ssh://someone@git.iotn2n.com:29418/" ++ RepoName, {branch,"master"}}
                      end;
+		["dgiot", _Mod] ->
+                      RepoName = string:join(string:tokens(atom_to_list(AppName), "_"), "_"),
+                      {"https://github.com/dgiot/" ++ RepoName, GitRef};
                  _ ->
                     RepoName = string:join(string:tokens(atom_to_list(AppName), "_"), "-"),
                     {"https://github.com/fastdgiot/" ++ RepoName,GitRef}
