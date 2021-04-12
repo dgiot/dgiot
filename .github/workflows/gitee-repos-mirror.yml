@@ -25,4 +25,4 @@ jobs:
         timeout: 600
         debug: true
         force_update: true
-        black_list: ""
+        black_list: "dgiot.github.io, issue-generator, dgiot_amazedtu"
