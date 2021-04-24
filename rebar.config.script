@@ -69,31 +69,24 @@ MakeDep =
             case atom_to_list(AppName) of
               "emqx" ->
                 RepoName = string:join(string:tokens(atom_to_list(AppName), "_"), "-"),
-                {"https://github.com/fastdgiot/" ++ RepoName,GitRef};
+                {"https://gitee.com/fastdgiot/" ++ RepoName,GitRef};
               _ ->
                 case string:split(atom_to_list(AppName),"_") of
                  ["emqx", _] ->
                     RepoName = string:join(string:tokens(atom_to_list(AppName), "_"), "-"),
-                    {"https://github.com/fastdgiot/" ++ RepoName,GitRef};
-                 ["shuwa", Mod] ->
+                    {"https://gitee.com/fastdgiot/" ++ RepoName,GitRef};
+                 ["dgiot", Mod] ->
                     RepoName = string:join(string:tokens(atom_to_list(AppName), "_"), "_"),
-                     Fastdgiot =  ["td", "web_manager", "task", "statsd", "public", "framework","parse","mqtt","group","license","bridge","evidence","device_shadow","exproto","api","smartmeter"],
-                     case lists:member(Mod,Fastdgiot) of
-                     	true ->
-                    		 {"https://github.com/fastdgiot/" ++ RepoName, GitRef};
-                        false ->
-                                 {"ssh://someone@somegit.com/" ++ RepoName, {branch,"master"}}
-                     end;
-		["dgiot", _Mod] ->
-                      RepoName = string:join(string:tokens(atom_to_list(AppName), "_"), "_"),
-                      {"https://github.com/dgiot/" ++ RepoName, GitRef};
+                    {"https://github.com/dgiot/" ++ RepoName, {branch,"master"}};
+                 ["shuwa", Mod] ->
+                     RepoName = string:join(string:tokens(atom_to_list(AppName), "_"), "_"),
+                     {"https://gitee.com/fastdgiot/" ++ RepoName, {branch,"master"}};
                  _ ->
                     RepoName = string:join(string:tokens(atom_to_list(AppName), "_"), "-"),
-                    {"https://github.com/fastdgiot/" ++ RepoName,GitRef}
+                    {"https://gitee.com/fastdgiot/" ++ RepoName, GitRef}
                 end
             end,
-         NewURL = re:replace(URL,"github.com","hub.fastgit.org",[global,{return,list}]),
-        {AppName, {git, NewURL, NewGitRef}}
+        {AppName, {git, URL, NewGitRef}}
     end,
 
 MakeDeps = fun(Deps, DefaultDepRef, TestDeps) -> [MakeDep(App, DefaultDepRef) || App <- Deps] ++ TestDeps end,
