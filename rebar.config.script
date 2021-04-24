@@ -77,7 +77,7 @@ MakeDep =
                     {"https://gitee.com/fastdgiot/" ++ RepoName,GitRef};
                  ["dgiot", Mod] ->
                     RepoName = string:join(string:tokens(atom_to_list(AppName), "_"), "_"),
-                    {"https://github.com/dgiot/" ++ RepoName, {branch,"master"}};
+                    {"https://gitee.com/dgiot/" ++ RepoName, {branch,"master"}};
                  ["shuwa", Mod] ->
                      RepoName = string:join(string:tokens(atom_to_list(AppName), "_"), "_"),
                      {"https://gitee.com/fastdgiot/" ++ RepoName, {branch,"master"}};
