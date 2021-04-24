@@ -69,21 +69,21 @@ MakeDep =
             case atom_to_list(AppName) of
               "emqx" ->
                 RepoName = string:join(string:tokens(atom_to_list(AppName), "_"), "-"),
-                {"https://gitee.com/fastdgiot/" ++ RepoName,GitRef};
+                {"https://gitee.com/fastdgiot/" ++ RepoName ++ ".git", GitRef};
               _ ->
                 case string:split(atom_to_list(AppName),"_") of
                  ["emqx", _] ->
                     RepoName = string:join(string:tokens(atom_to_list(AppName), "_"), "-"),
-                    {"https://gitee.com/fastdgiot/" ++ RepoName,GitRef};
+                    {"https://gitee.com/fastdgiot/" ++ RepoName ++ ".git",GitRef};
                  ["dgiot", Mod] ->
                     RepoName = string:join(string:tokens(atom_to_list(AppName), "_"), "_"),
-                    {"https://gitee.com/dgiiot/" ++ RepoName, {branch,"master"}};
+                    {"https://gitee.com/dgiiot/" ++ RepoName ++ ".git", {branch,"master"}};
                  ["shuwa", Mod] ->
                      RepoName = string:join(string:tokens(atom_to_list(AppName), "_"), "_"),
-                     {"https://gitee.com/fastdgiot/" ++ RepoName, {branch,"master"}};
+                     {"https://gitee.com/fastdgiot/" ++ RepoName ++ ".git", {branch,"master"}};
                  _ ->
                     RepoName = string:join(string:tokens(atom_to_list(AppName), "_"), "-"),
-                    {"https://gitee.com/fastdgiot/" ++ RepoName, GitRef}
+                    {"https://gitee.com/fastdgiot/" ++ RepoName ++ ".git", GitRef}
                 end
             end,
         {AppName, {git, URL, NewGitRef}}
