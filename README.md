@@ -29,7 +29,30 @@
  
 # 开发
 
-  [开发部署](https://github.com/dgiot/dgiot_deploy)
+ github国内下载速度太慢，可以直接下载腾讯云上的开发工程包进行快速开发,更多详情请见[开发部署](https://github.com/dgiot/dgiot_deploy)
+ 
+ ## window开发环境
+ [dgiot_server.zip](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot4.0/windows/dgiot_server_v4.0.0.tar.gz)
+ 
+ ```
+ wget http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot4.0/windows/dgiot_server_v4.0.0.tar.gz
+ tar xvf dgiot_server.zip
+ cd dgiot_server
+ make
+ _build/dgiot/rel/emqx/bin/emqx.cmd console
+ ```
+ ## centos 7.6 开发环境
+  [dgiot_server.zip](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot4.0/linux/dgiot_server_v4.0.0.tar.gz)
+ 
+ ```
+ wget http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot4.0/linux/dgiot_server_v4.0.0.tar.gz
+ tar xvf dgiot_server.zip
+ cd dgiot_server
+ make
+ _build/dgiot/rel/emqx/bin/emqx.cmd console
+ ```
+ 
+  
 
 # 产品
   
