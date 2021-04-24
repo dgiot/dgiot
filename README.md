@@ -92,6 +92,7 @@
 +   Linux/Unix/Mac构建
 ```shell
 git clone https://hub.fastgit.org/dgiot/dgiot_server.git
+cd dgiot_server
 make
 ```
 
@@ -101,6 +102,7 @@ make
  下载msys64
  
 git clone https://hub.fastgit.org/dgiot/dgiot_server.git
+cd dgiot_server
 make
  ```
 
