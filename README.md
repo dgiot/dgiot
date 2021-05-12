@@ -36,7 +36,7 @@
  
  ```
  wget http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot4.0/windows/dgiot_server_v4.0.0.tar.gz
- tar xvf dgiot_server.zip
+ tar xvf dgiot_server_v4.0.0.tar.gz
  cd dgiot_server
  make
  _build/dgiot/rel/emqx/bin/emqx.cmd console
@@ -46,7 +46,7 @@
  
  ```
  wget http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot4.0/linux/dgiot_server_v4.0.0.tar.gz
- tar xvf dgiot_server.zip
+ tar xvf dgiot_server_v4.0.0.tar.gz
  cd dgiot_server
  make
  _build/dgiot/rel/emqx/bin/emqx.cmd console
