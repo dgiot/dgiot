@@ -23,7 +23,7 @@ ct/logs/*
 *.iml
 vars.config
 erlang.mk
-_build
+
 rebar.lock
 test/
 _checkouts

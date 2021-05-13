@@ -1,0 +1,144 @@
+   Copyright (c) 2013 Robert Virding
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+
+
+Implementation Notes
+--------------------
+
+Syntax
+------
+
+We are almost able to represent the Lua syntax as an LALR(1)
+grammar. The only place this doesn't work is when a statement can be a
+function call as it clashes when it can also be a varlist. We get
+around this by using the more general prefixexp and doing a post-test
+to check that it is a functioncall. This works together with the
+varlist.
+
+Data
+----
+
+For the Lua data types we internally use the corresponding Erlang:
+
+nil		- nil
+true/false	- true/false
+strings		- binaries
+numbers		- floats
+tables		- #table{} with array for keys 1..n, ordict for rest
+userdata	- #userdata{}
+function	- #function{} or {function,Fun}
+thread		- #thread{}
+
+See luerl.hrl for the field names of the records.
+
+All tables are combinations of ttdicts and arrays. In each table an
+array is used for integer keys >= 1 while an ttdict is used for all
+other keys. We use this information when building/processing
+tables. Seems like Lua internaly stores elements as a (unordered)
+sequence of key-value elements, except maybe for the table part. Some
+tests show that using ttdicts for all elements results the system
+being 10-20% slower and using more memory.
+
+So using the array module for positive integer keys seems a reasonable
+choice. Direct read/write access is fast, but "shifting" access for
+example in table.insert/remove is not that efficient. Most table
+functions work after a fashion even in the "undefined" case all the
+elements don't have keys only in 1..n, but it seems like the order in
+which elements were added affects the outcome. We don't have any such
+information available. We do try to do something reasonable that sort
+of mirrors the Lua functions. Should we or should we be strict?
+
+The table table can be either an ordict, an array, use the process
+dictionary, or an ETS table; these are accessed through macros. To use
+ETS would need a bigger change as copying the whole table for each
+access would be very inefficient. Either use bags and have one per
+table or use sets and have the ETS key as {Tab,Key}.
+
+Machine
+-------
+
+The VM is a hybrid. It uses normal Erlang function calls for Luerl
+calls and blocks and has a small instruction set for operations inside
+a block. This should make it not too difficult to compile down to
+straight Erlang in the future.
+
+Blocks keep variables in tuples. There are two variable types
+depending on how they are defined:
+
+- Local variables that are used in this block and sub-blocks, but not
+  used in any functions defined in the blocks. These are kept in a
+  stack of tuples, the LocalVars or Lvs, and referenced by offset in stack
+  and offset in tuple.
+
+- Environemnt variables that are defined in functions which are
+  defined in this block or in sub-blocks. This mean they must be kept
+  around as long as the functions are alive and are stored in the
+  global heap as each invocation can modify them. They are kept in a
+  stack of references, the EnvironmentVars or Evs, to tuples in the
+  global heap and referenced by offset in stack and offset in tuple.
+
+A function contains a reference to the stack of environment variables
+which existed when it was created. Note that the mutable nature of Lua
+data means that these can be modified and the changes must be visible
+to every function which references them.
+
+There is also a stack containing arguments and temporary values. This
+is stack is "global" in the sense that it is passed through all calls
+and blocks. It is also passed as an argument into functions
+implemented in Erlang. This is so that event of a Lua/Luerl GC the
+collector uses the stack to determine which data in the global heap is
+to be saved.
+
+The VM is a pure stack machine.
+
+To handle multiple return values we always return a list of values.
+The only place this is not done is in luerl_eval.erl when getting
+values from the environment where we can only have one value. This
+means a lot of calls to first_value/1 in luerl_emul.erl, but the
+consistency is worth it.
+
+Similarily all the arguments in a function call are passed in a list.
+The function then unpacks the list into its arguments, including
+'...'.
+
+All of the predefined libraries have an install/1 function. This is
+called when initialising Luerl; it does any library specific
+initialisation necessary and returns a table containing the functions
+in the library.
+
+We create a unique tag which is saved in the environment. This is used
+so we can implement 'break' with a simple throw. The thrown value
+includes the tag so we can uniquely catch it and not get confused with
+a throw/error/exit from the erlang code.
+
+Compiler
+--------
+
+The compiler has state at different levels:
+
+- In luerl_comp there is #comp{} containing code, options and errors.
+- In the #cst{} between the compiler modules for data outside the
+  code. This empty so far.
+- Inside and local to the compiler modules.
+
+All the compiler modules are written so that they chain a status
+argument through their code, even if it not used. When they are not
+used we just send the atom 'nil' through and check it comes out "the
+other end".
+
+Lua implementation "features"
+-----------------------------
+
+When "integers" are wanted then float input values are often "rounded"
+to the correct float value. So 1.3 --> 1.0 and 3.7 --> 4.0.

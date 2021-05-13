@@ -1,0 +1,257 @@
+= cowboy_http2(3)
+
+== Name
+
+cowboy_http2 - HTTP/2
+
+== Description
+
+The module `cowboy_http2` implements HTTP/2
+as a Ranch protocol.
+
+== Options
+
+// @todo Might be worth moving cowboy_clear/tls/stream_h options
+// to their respective manual, when they are added.
+
+[source,erlang]
+----
+opts() :: #{
+    connection_type                => worker | supervisor,
+    connection_window_margin_size  => 0..16#7fffffff,
+    connection_window_update_threshold => 0..16#7fffffff,
+    enable_connect_protocol        => boolean(),
+    idle_timeout                   => timeout(),
+    inactivity_timeout             => timeout(),
+    initial_connection_window_size => 65535..16#7fffffff,
+    initial_stream_window_size     => 0..16#7fffffff,
+    logger                         => module(),
+    max_concurrent_streams         => non_neg_integer() | infinity,
+    max_connection_buffer_size     => non_neg_integer(),
+    max_connection_window_size     => 0..16#7fffffff,
+    max_decode_table_size          => non_neg_integer(),
+    max_encode_table_size          => non_neg_integer(),
+    max_frame_size_received        => 16384..16777215,
+    max_frame_size_sent            => 16384..16777215 | infinity,
+    max_received_frame_rate        => {pos_integer(), timeout()},
+    max_reset_stream_rate          => {pos_integer(), timeout()},
+    max_stream_buffer_size         => non_neg_integer(),
+    max_stream_window_size         => 0..16#7fffffff,
+    preface_timeout                => timeout(),
+    proxy_header                   => boolean(),
+    sendfile                       => boolean(),
+    settings_timeout               => timeout(),
+    stream_handlers                => [module()],
+    stream_window_data_threshold   => 0..16#7fffffff,
+    stream_window_margin_size      => 0..16#7fffffff,
+    stream_window_update_threshold => 0..16#7fffffff
+}
+----
+
+Configuration for the HTTP/2 protocol.
+
+This configuration is passed to Cowboy when starting listeners
+using `cowboy:start_clear/3` or `cowboy:start_tls/3` functions.
+
+It can be updated without restarting listeners using the
+Ranch functions `ranch:get_protocol_options/1` and
+`ranch:set_protocol_options/2`.
+
+The default value is given next to the option name:
+
+connection_type (supervisor)::
+
+Whether the connection process also acts as a supervisor.
+
+connection_window_margin_size (65535)::
+
+Extra amount in bytes to be added to the window size when
+updating the connection window. This is used to
+ensure that there is always some space available in
+the window.
+
+connection_window_update_threshold (163840)::
+
+The connection window will only get updated when its size
+becomes lower than this threshold, in bytes. This is to
+avoid sending too many `WINDOW_UPDATE` frames.
+
+enable_connect_protocol (false)::
+
+Whether to enable the extended CONNECT method to allow
+protocols like Websocket to be used over an HTTP/2 stream.
+This option is experimental and disabled by default.
+
+idle_timeout (60000)::
+
+Time in ms with no data received before Cowboy closes the connection.
+
+inactivity_timeout (300000)::
+
+Time in ms with nothing received at all before Cowboy closes the connection.
+
+initial_connection_window_size (65535)::
+
+Initial window size in bytes for the connection. This is the total amount
+of data (from request bodies for example) that may be buffered
+by the connection across all streams before the user code
+explicitly requests it.
++
+Note that this value cannot be lower than the default.
+
+initial_stream_window_size (65535)::
+
+Initial window size in bytes for new streams. This is the total amount
+of data (from request bodies for example) that may be buffered
+by a single stream before the user code explicitly requests it.
+
+logger (error_logger)::
+
+The module that will be used to write log messages.
+
+max_concurrent_streams (infinity)::
+
+Maximum number of concurrent streams allowed on the connection.
+
+max_connection_buffer_size (16000000)::
+
+Maximum size of all stream buffers for this connection, in bytes.
+This is a soft limit used to apply backpressure to handlers that
+send data faster than the HTTP/2 connection allows.
+
+max_connection_window_size (16#7fffffff)::
+
+Maximum connection window size in bytes. This is used as an upper bound
+when calculating the window size, either when reading the request
+body or receiving said body.
+
+max_decode_table_size (4096)::
+
+Maximum header table size in bytes used by the decoder. This is the value
+advertised to the client. The client can then choose a header table size
+equal or lower to the advertised value.
+
+max_encode_table_size (4096)::
+
+Maximum header table size in bytes used by the encoder. The server will
+compare this value to what the client advertises and choose the smallest
+one as the encoder's header table size.
+
+max_frame_size_received (16384)::
+
+Maximum size in bytes of the frames received by the server. This value is
+advertised to the remote endpoint which can then decide to use
+any value lower or equal for its frame sizes.
+
+max_frame_size_sent (infinity)::
+
+Maximum size in bytes of the frames sent by the server. This option allows
+setting an upper limit to the frame sizes instead of blindly
+following the client's advertised maximum.
++
+Note that actual frame sizes may be lower than the limit when
+there is not enough space left in the flow control window.
+
+max_received_frame_rate ({1000, 10000})::
+
+Maximum frame rate allowed per connection. The rate is expressed
+as a tuple `{NumFrames, TimeMs}` indicating how many frames are
+allowed over the given time period. This is similar to a supervisor
+restart intensity/period.
+
+max_reset_stream_rate ({10, 10000})::
+
+Maximum reset stream rate per connection. This can be used to
+protect against misbehaving or malicious peers that do not follow
+the protocol, leading to the server resetting streams, by limiting
+the number of streams that can be reset over a certain time period.
+The rate is expressed as a tuple `{NumResets, TimeMs}`. This is
+similar to a supervisor restart intensity/period.
+
+max_stream_buffer_size (8000000)::
+
+Maximum stream buffer size in bytes. This is a soft limit used
+to apply backpressure to handlers that send data faster than
+the HTTP/2 connection allows.
+
+max_stream_window_size (16#7fffffff)::
+
+Maximum stream window size in bytes. This is used as an upper bound
+when calculating the window size, either when reading the request
+body or receiving said body.
+
+preface_timeout (5000)::
+
+Time in ms Cowboy is willing to wait for the connection preface.
+
+proxy_header (false)::
+
+Whether incoming connections have a PROXY protocol header. The
+proxy information will be passed forward via the `proxy_header`
+key of the Req object.
+
+sendfile (true)::
+
+Whether the sendfile syscall may be used. It can be useful to disable
+it on systems where the syscall has a buggy implementation, for example
+under VirtualBox when using shared folders.
+
+settings_timeout (5000)::
+
+Time in ms Cowboy is willing to wait for a SETTINGS ack.
+
+stream_handlers ([cowboy_stream_h])::
+
+Ordered list of stream handlers that will handle all stream events.
+
+stream_window_data_threshold (16384)::
+
+Window threshold in bytes below which Cowboy will not attempt
+to send data, with one exception. When Cowboy has data to send
+and the window is high enough, Cowboy will always send the data,
+regardless of this option.
+
+stream_window_margin_size (65535)::
+
+Extra amount in bytes to be added to the window size when
+updating a stream's window. This is used to
+ensure that there is always some space available in
+the window.
+
+stream_window_update_threshold (163840)::
+
+A stream's window will only get updated when its size
+becomes lower than this threshold, in bytes. This is to avoid sending
+too many `WINDOW_UPDATE` frames.
+
+== Changelog
+
+* *2.7*: Add the options `connection_window_margin_size`,
+         `connection_window_update_threshold`,
+         `max_connection_window_size`, `max_stream_window_size`,
+         `stream_window_margin_size` and
+         `stream_window_update_threshold` to configure
+         behavior on sending WINDOW_UPDATE frames;
+         `max_connection_buffer_size` and
+         `max_stream_buffer_size` to apply backpressure
+         when sending data too fast;
+         `max_received_frame_rate` and `max_reset_stream_rate`
+         to protect against various flood scenarios; and
+         `stream_window_data_threshold` to control how small
+         the DATA frames that Cowboy sends can get.
+* *2.7*: The `logger` option was added.
+* *2.6*: The `proxy_header` and `sendfile` options were added.
+* *2.4*: Add the options `initial_connection_window_size`,
+         `initial_stream_window_size`, `max_concurrent_streams`,
+         `max_decode_table_size`, `max_encode_table_size`,
+         `max_frame_size_received`, `max_frame_size_sent`
+         and `settings_timeout` to configure HTTP/2 SETTINGS
+         and related behavior.
+* *2.4*: Add the experimental option `enable_connect_protocol`.
+* *2.0*: Protocol introduced.
+
+== See also
+
+link:man:cowboy(7)[cowboy(7)],
+link:man:cowboy_http(3)[cowboy_http(3)],
+link:man:cowboy_websocket(3)[cowboy_websocket(3)]

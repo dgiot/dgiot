@@ -1,0 +1,17 @@
+sudo: false
+language: erlang
+otp_release:
+  - 22.0
+  - 21.0
+  - 20.0
+  - 19.3
+  - 18.3
+  - 17.3
+  - 17.1
+script: "wget https://s3.amazonaws.com/rebar3/rebar3 && escript rebar3 do edoc, eunit, ct"
+branches:
+  only:
+    - master
+notifications:
+  email:
+    - mononcqc@ferd.ca

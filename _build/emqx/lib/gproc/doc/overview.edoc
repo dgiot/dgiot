@@ -1,0 +1,95 @@
+@author Ulf Wiger <ulf@wiger.net>
+@author Joseph Wayne Norton <norton@geminimobile.com>
+
+@doc Extended process dictionary
+
+[![Build Status](https://travis-ci.org/uwiger/gproc.png?branch=master)](https://travis-ci.org/uwiger/gproc)
+[![Hex pm](http://img.shields.io/hexpm/v/gproc.svg?style=flat)](https://hex.pm/packages/gproc)
+
+
+<h2>Note</h2>
+
+Gproc has two dependencies: `gen_leader' and `edown'. Since most people don't
+actively use either, they are no longer fetched by default.
+
+<ul>
+<li>To enable fetching of `gen_leader', export the OS environment variable
+ `GPROC_DIST=true' (this can be done e.g. from a GNU Makefile)</li>
+<li>`edown' is fetched on-demand whenever `rebar get-deps doc' is called (which
+  happens when you call `make doc')</li>
+</ul>
+
+<h2>Installation</h2>
+
+You can get `gproc' from the <a href="https://hex.pm/packages/gproc">Hex package manager</a>
+
+That means declaring dependency on `{gproc, "0.5.0"}' in your `rebar3'-based applications or `{:gproc, "~> 0.5.0"}' in your `mix' based applications.
+
+<h2>Introduction</h2>
+
+Gproc is a process dictionary for Erlang, which provides a number of useful features beyond what the built-in dictionary has:
+
+<ul>
+<li>Use any term as a process alias</li>
+<li>Register a process under several aliases</li>
+<li>Non-unique properties can be registered simultaneously by many processes</li>
+<li>QLC and match specification interface for efficient queries on the
+  dictionary</li>
+<li>Await registration, let's you wait until a process registers itself</li>
+<li>Atomically give away registered names and properties to another process</li>
+<li>Counters, and aggregated counters, which automatically maintain the
+  total of all counters with a given name</li>
+<li>Global registry, with all the above functions applied to a network of nodes</li>
+</ul>
+
+<h3>Use case: System inspection</h3>
+
+Gproc was designed to work as a central index for "process metadata", i.e.
+properties that describe the role and characteristics of each process. Having
+a single registry that is flexible enough to hold important types of property
+makes it easier to (a) find processes of a certain type, and (b) query and
+browse key data in a running system.
+
+<h3>Use case: Pub/Sub patterns</h3>
+
+An interesting application of gproc is building publish/subscribe patterns.
+Example:
+
+<pre lang="erlang">
+subscribe(EventType) ->
+    %% Gproc notation: {p, l, Name} means {(p)roperty, (l)ocal, Name}
+    gproc:reg({p, l, {?MODULE, EventType}}).
+
+notify(EventType, Msg) ->
+    Key = {?MODULE, EventType},
+    gproc:send({p, l, Key}, {self(), Key, Msg}).
+</pre>
+
+<h3>Use case: Environment handling</h3>
+
+Gproc provides a set of functions to read environment variables, possibly from
+alternative sources, and cache them for efficient lookup. Caching also provides
+a way to see which processes rely on certain configuration values, as well as
+which values they actually ended up using.
+
+See {@link gproc:get_env/4}, {@link gproc:get_set_env/4} and
+{@link gproc:set_env/5} for details.
+
+<h2>Testing</h2>
+
+Gproc has a QuickCheck test suite, covering a fairly large part of the local
+gproc functionality, although none of the global registry. It requires a
+commercial EQC license, but rebar is smart enough to detect whether EQC is
+available, and if it isn't, the code in gproc_eqc.erl will be "defined away".
+
+There is also an eunit suite, covering the basic operations for local and
+global gproc.
+
+<h2>Building Edoc</h2>
+By default, `./rebar doc` generates Github-flavored Markdown files.
+If you want to change this, remove the `edoc_opts' line from `rebar.config'.
+
+Gproc was first introduced at the ACM SIGPLAN Erlang Workshop in
+Freiburg 2007 (<a href="erlang07-wiger.pdf">Paper available here</a>).
+
+@end

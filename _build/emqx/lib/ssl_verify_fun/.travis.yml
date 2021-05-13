@@ -1,0 +1,20 @@
+language: erlang
+otp_release:
+  - 21.0.2
+  - 20.3
+  - 20.0
+  - 19.3
+  - 19.0
+  - 18.1
+  - 18.0
+  - 17.3
+  - 17.1
+  - 17.0
+  - R16B03
+  - R16B02
+  - R16B01
+  - R16B
+  - R15B03
+  - R15B02
+
+script: "./rebar3 do dialyzer, eunit"

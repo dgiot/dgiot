@@ -1,0 +1,21 @@
+{application, ekka,
+ [{description, "Autocluster and Autoheal for EMQ X Broker"},
+  {vsn, "git"},
+  {mod, {ekka_app,[]}},
+  {registered,
+   [ekka_sup,
+    ekka_membership,
+    ekka_cluster_sup,
+    ekka_node_monitor
+   ]},
+  {applications,
+   [kernel,
+    stdlib,
+    mnesia,
+    inets
+   ]},
+  {modules, []},
+  {licenses, ["Apache 2.0"]},
+  {maintainers, ["EMQ X Team <contact@emqx.io>"]},
+  {links, [{"Github","https://hub.fastgit.org/emqx/ekka"}]}
+ ]}.

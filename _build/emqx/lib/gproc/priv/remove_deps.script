@@ -1,0 +1,18 @@
+%% -*- erlang -*-
+%%
+%% Assumes the following bound variables:
+%% CONFIG - a rebar.config options list
+%% DEPS :: [atom()]  - a list of deps to remove
+case lists:keyfind(deps, 1, CONFIG) of
+    {_, Deps0} ->
+	Deps1 = lists:filter(
+		  fun(D) when is_atom(D) ->
+			  not lists:member(D, DEPS);
+		     (D) when is_tuple(D) ->
+			  not lists:member(element(1,D), DEPS)
+		  end, Deps0),
+	lists:keyreplace(deps, 1, CONFIG, {deps, Deps1});
+    false ->
+	CONFIG
+end.
+

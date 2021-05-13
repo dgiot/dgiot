@@ -1,0 +1,80 @@
+html {
+    background: #003340;
+}
+
+body {
+    background: #003946;
+    color: #a4b1b1;
+    font-family: 'Titillium Web', sans-serif;
+    margin: 0 auto;
+    width: 66%;
+    padding: 1em;
+}
+
+header {
+    border-bottom: 1px solid #2fafa8;
+    margin-bottom: 3em;
+}
+
+h1 {
+    color: #2fafa8;
+    color: #c39900;
+}
+
+h2 {
+    color: #2c9edb;
+}
+
+h3 {
+    color: #de5194;
+    color: #2c9edb;
+}
+
+h4 {
+    font-family: 'Ubuntu Mono', sans-serif;
+    font-size: 1.2em;
+    color: #c39900;
+}
+
+code {
+    font-family: 'Ubuntu Mono', sans-serif;
+    color: #95a4a6;
+    background: #015969;
+    border: 1px dotted #003846;
+}
+article div p code {
+    background: inherit;
+    border: inherit;
+    color: inherit;
+}
+
+nav {
+    float: right;
+    margin-top: -5em;
+    margin-left: 5em;
+}
+nav ul li {
+    float: left;
+    list-style-type: none;
+    width: 7.5em;
+    text-align: center;
+}
+
+ul.definitions {
+    list-style-type: none;
+}
+
+.spec {
+    margin-left: 1em;
+    border: 1px dotted #6b8188;
+    padding-left: 1em;
+}
+
+dl dt {
+    font-weight: bold;
+}
+
+ a:link {color:#2c9eda;}      /* unvisited link */
+ a:visited {color:#7f88cf;}   /* visited link */
+ a:hover {color:#30afa9;}     /* mouse over link */
+ a:active {color:#30afa9;}    /* selected link */ 

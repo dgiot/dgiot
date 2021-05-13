@@ -1,0 +1,139 @@
+name: Build packages
+
+on:
+    push:
+    pull_request:
+    release:
+        types:
+            - published
+            - prereleased 
+
+jobs:
+
+    build:
+        runs-on: ubuntu-latest
+
+        strategy:
+            matrix:
+              os: 
+                - ubuntu18.04 
+                - ubuntu16.04 
+                - ubuntu14.04 
+                - debian10
+                - debian9 
+                - debian8 
+                - opensuse
+                - centos7 
+                - centos6
+            
+        steps:
+        - uses: actions/checkout@v1
+        - name: build emqx packages
+          env:
+            ERL_OTP: erl22.1
+            SYSTEM: ${{ matrix.os }}
+          run: |
+            docker run -i --name emqtt-$SYSTEM-build -v $(pwd):/emqtt emqx/build-env:$ERL_OTP-$SYSTEM /bin/bash -c "cd /emqtt && .github/workflows/script/build.sh"
+            cd _packages && for var in $(ls); do sudo bash -c "echo $(sha256sum $var | awk '{print $1}') > $var.sha256"; done && cd -
+        - uses: actions/upload-artifact@v1
+          with:
+            name: packages-${{ matrix.os }}
+            path: _packages/.
+            
+    build-on-mac:
+        runs-on: macos-latest
+
+        steps:
+        - uses: actions/checkout@v1
+        - name: prepare
+          run: |
+            /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+            brew install curl zip unzip gnu-sed erlang
+            echo "/usr/local/bin:$PATH" >> ~/.bashrc
+        - name: install rebar3
+          run: |
+            curl -Lo /usr/local/bin/rebar3 https://s3.amazonaws.com/rebar3/rebar3
+            chmod +x /usr/local/bin/rebar3
+        - name: build
+          run: |
+            .github/workflows/script/build.sh
+            pkg=emqtt-macos-$(git describe --tags --always).zip
+            openssl dgst -sha256 _packages/$pkg | awk '{print $2}' > _packages/$pkg.sha256
+        - uses: actions/upload-artifact@v1
+          with:
+            name: packages-mac
+            path: _packages/.
+
+    release:
+        runs-on: ubuntu-latest
+
+        needs: [build, build-on-mac]
+        
+        steps:
+        - uses: actions/checkout@v2
+        - uses: actions/download-artifact@v1
+          with:
+            name: packages-ubuntu18.04
+            path: _packages
+        - uses: actions/download-artifact@v1
+          with:
+            name: packages-ubuntu16.04
+            path: _packages
+        - uses: actions/download-artifact@v1
+          with:
+            name: packages-ubuntu14.04
+            path: _packages
+        - uses: actions/download-artifact@v1
+          with:
+            name: packages-debian10
+            path: _packages
+        - uses: actions/download-artifact@v1
+          with:
+            name: packages-debian9
+            path: _packages
+        - uses: actions/download-artifact@v1
+          with:
+            name: packages-debian8
+            path: _packages
+        - uses: actions/download-artifact@v1
+          with:
+            name: packages-opensuse
+            path: _packages
+        - uses: actions/download-artifact@v1
+          with:
+            name: packages-centos7
+            path: _packages
+        - uses: actions/download-artifact@v1
+          with:
+            name: packages-centos6
+            path: _packages
+        - uses: actions/download-artifact@v1
+          with:
+            name: packages-mac
+            path: _packages
+        - name: set aws
+          run: |
+            curl "https://d1vvhvl2y92vvt.cloudfront.net/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+            unzip awscliv2.zip
+            sudo ./aws/install
+            aws2 configure set aws_access_key_id ${{ secrets.AwsAccessKeyId }} 
+            aws2 configure set aws_secret_access_key ${{ secrets.AwsSecretAccessKey }} 
+            aws2 configure set default.region us-west-2
+        - name: get packages
+          run: |
+            cd _packages && for var in $( ls |grep emqtt |grep -v sha256); do 
+              echo "$(cat $var.sha256) $var" | sha256sum -c || exit 1
+            done
+        - name: upload aws
+          if: github.event_name == 'release'
+          run: |
+            version=$(echo ${{ github.ref }} | sed -r  "s .*/.*/(.*) \1 g")
+            aws2 s3 cp --recursive ./_packages  s3://packages.emqx.io/emqtt/$version
+            aws2 cloudfront create-invalidation --distribution-id E3TYD0WSP4S14P --paths "/emqtt/$version/*"
+        - name: upload github
+          if: github.event_name == 'release'
+          run: |
+            version=$(echo ${{ github.ref }} | sed -r  "s .*/.*/(.*) \1 g")
+            for var in $(ls _packages) ; do
+                .github/workflows/script/upload_github_release_asset.sh owner=emqx repo=emqtt tag=$version filename=_packages/$var github_api_token=$(echo ${{ secrets.AccessToken }})
+            done

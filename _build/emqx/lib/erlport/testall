@@ -1,0 +1,47 @@
+#! /bin/sh
+
+SANDBOX="$(pwd)/sandbox"
+LOGFILE="testall.log"
+
+PATHS=" \
+    $SANDBOX/otp_src_R13B04/bin \
+    $SANDBOX/otp_src_R14B04/bin \
+    $SANDBOX/otp_src_R15B01/bin \
+    $SANDBOX/otp_src_R16B/bin \
+    $SANDBOX/otp_src_17.3/bin \
+    $SANDBOX/Python-2.5.6 \
+    $SANDBOX/Python-2.6.8 \
+    $SANDBOX/Python-2.7.3 \
+    $SANDBOX/Python-3.1.5 \
+    $SANDBOX/Python-3.2.3 \
+    $SANDBOX/Python-3.3.0 \
+    $SANDBOX/Python-3.4.2 \
+    $SANDBOX/ruby-1.8.7/bin \
+    $SANDBOX/ruby-1.9.1/bin \
+    $SANDBOX/ruby-1.9.2/bin \
+    $SANDBOX/ruby-1.9.3/bin \
+    $SANDBOX/ruby-2.0.0/bin \
+    $SANDBOX/ruby-2.1.5/bin \
+    $SANDBOX/ruby-2.2.0/bin \
+"
+
+testall()
+{
+    for path in $PATHS; do
+        echo
+        echo "================================================================="
+        echo "Test with $path"
+        echo "================================================================="
+        echo
+        make -s clean
+        (export PATH="$path:$PATH"; make -s test)
+    done
+    make -s clean
+}
+
+set -e
+testall 2>&1 | tee $LOGFILE
+
+echo
+echo "DONE"
+echo

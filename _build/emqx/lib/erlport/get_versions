@@ -1,0 +1,31 @@
+#! /bin/sh
+
+display_python_folder()
+{
+    which python > /dev/null 2>&1
+    if [ $? = 0 ]; then
+        case $(python --version 2>&1 | sed 's/^Python \([0-9]\).*/\1/') in
+            "2") echo "python2";;
+            "3") echo "python3";;
+        esac
+    fi
+}
+
+display_ruby_folder()
+{
+    which ruby > /dev/null 2>&1
+    if [ $? = 0 ]; then
+        case $(ruby --version | sed 's/^ruby \([0-9]\.[0-9]\).*/\1/') in
+            "1.8") echo "ruby1.8";;
+            *) echo "ruby1.9";;
+        esac
+    fi
+}
+
+display_folders()
+{
+    display_python_folder
+    display_ruby_folder
+}
+
+display_folders

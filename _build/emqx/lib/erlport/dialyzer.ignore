@@ -1,0 +1,72 @@
+python2_tests.erl:200: The variable _ can never match since previous clauses completely covered the type 'false'
+python2_tests.erl:202: The variable _ can never match since previous clauses completely covered the type 'false'
+python2_tests.erl:203: The variable _ can never match since previous clauses completely covered the type 'false'
+python3_tests.erl:205: The variable _ can never match since previous clauses completely covered the type 'false'
+python3_tests.erl:207: The variable _ can never match since previous clauses completely covered the type 'false'
+python3_tests.erl:208: The variable _ can never match since previous clauses completely covered the type 'false'
+python_options_tests.erl:56: The created fun has no local return
+python_options_tests.erl:56: The created fun has no local return
+python_options_tests.erl:57: The call python_options:parse([{'buffer_size','invalid'},...]) breaks the contract (Options::options()) -> {'ok',#python_options{}} | {'error',Reason::term()}
+python_options_tests.erl:80: The created fun has no local return
+python_options_tests.erl:80: The created fun has no local return
+python_options_tests.erl:81: The call python_options:parse([{'compressed','invalid'},...]) breaks the contract (Options::options()) -> {'ok',#python_options{}} | {'error',Reason::term()}
+python_options_tests.erl:105: The created fun has no local return
+python_options_tests.erl:105: The created fun has no local return
+python_options_tests.erl:106: The call python_options:parse([{'start_timeout','invalid'},...]) breaks the contract (Options::options()) -> {'ok',#python_options{}} | {'error',Reason::term()}
+python_options_tests.erl:118: The created fun has no local return
+python_options_tests.erl:118: The created fun has no local return
+python_options_tests.erl:119: The call python_options:parse([{'call_timeout','invalid'},...]) breaks the contract (Options::options()) -> {'ok',#python_options{}} | {'error',Reason::term()}
+python_options_tests.erl:128: The created fun has no local return
+python_options_tests.erl:128: The created fun has no local return
+python_options_tests.erl:133: The created fun has no local return
+python_options_tests.erl:133: The created fun has no local return
+python_options_tests.erl:134: The call python_options:parse([{'env','invalid_env'},...]) breaks the contract (Options::options()) -> {'ok',#python_options{}} | {'error',Reason::term()}
+python_options_tests.erl:191: The created fun has no local return
+python_options_tests.erl:191: The created fun has no local return
+python_options_tests.erl:192: The call python_options:parse([{'python','not_string'},...]) breaks the contract (Options::options()) -> {'ok',#python_options{}} | {'error',Reason::term()}
+python_options_tests.erl:350: The created fun has no local return
+python_options_tests.erl:350: The created fun has no local return
+python_options_tests.erl:352: The call python_options:parse([{'python_path','invalid_path'},...]) breaks the contract (Options::options()) -> {'ok',#python_options{}} | {'error',Reason::term()}
+python_options_tests.erl:356: The created fun has no local return
+python_options_tests.erl:356: The created fun has no local return
+python_options_tests.erl:359: The created fun has no local return
+python_options_tests.erl:359: The created fun has no local return
+python_options_tests.erl:374: The created fun has no local return
+python_options_tests.erl:374: The created fun has no local return
+python_options_tests.erl:375: The call python_options:parse(['unknown',...]) breaks the contract (Options::options()) -> {'ok',#python_options{}} | {'error',Reason::term()}
+ruby18_tests.erl:203: The variable _ can never match since previous clauses completely covered the type 'false'
+ruby18_tests.erl:206: The variable _ can never match since previous clauses completely covered the type 'false'
+ruby18_tests.erl:207: The variable _ can never match since previous clauses completely covered the type 'false'
+ruby19_tests.erl:215: The variable _ can never match since previous clauses completely covered the type 'false'
+ruby19_tests.erl:218: The variable _ can never match since previous clauses completely covered the type 'false'
+ruby19_tests.erl:219: The variable _ can never match since previous clauses completely covered the type 'false'
+ruby_options_tests.erl:56: The created fun has no local return
+ruby_options_tests.erl:56: The created fun has no local return
+ruby_options_tests.erl:57: The call ruby_options:parse([{'buffer_size','invalid'},...]) breaks the contract (Options::options()) -> {'ok',#ruby_options{}} | {'error',Reason::term()}
+ruby_options_tests.erl:80: The created fun has no local return
+ruby_options_tests.erl:80: The created fun has no local return
+ruby_options_tests.erl:81: The call ruby_options:parse([{'compressed','invalid'},...]) breaks the contract (Options::options()) -> {'ok',#ruby_options{}} | {'error',Reason::term()}
+ruby_options_tests.erl:105: The created fun has no local return
+ruby_options_tests.erl:105: The created fun has no local return
+ruby_options_tests.erl:106: The call ruby_options:parse([{'start_timeout','invalid'},...]) breaks the contract (Options::options()) -> {'ok',#ruby_options{}} | {'error',Reason::term()}
+ruby_options_tests.erl:118: The created fun has no local return
+ruby_options_tests.erl:118: The created fun has no local return
+ruby_options_tests.erl:119: The call ruby_options:parse([{'call_timeout','invalid'},...]) breaks the contract (Options::options()) -> {'ok',#ruby_options{}} | {'error',Reason::term()}
+ruby_options_tests.erl:128: The created fun has no local return
+ruby_options_tests.erl:128: The created fun has no local return
+ruby_options_tests.erl:133: The created fun has no local return
+ruby_options_tests.erl:133: The created fun has no local return
+ruby_options_tests.erl:134: The call ruby_options:parse([{'env','invalid_env'},...]) breaks the contract (Options::options()) -> {'ok',#ruby_options{}} | {'error',Reason::term()}
+ruby_options_tests.erl:204: The created fun has no local return
+ruby_options_tests.erl:204: The created fun has no local return
+ruby_options_tests.erl:205: The call ruby_options:parse([{'ruby','not_string'},...]) breaks the contract (Options::options()) -> {'ok',#ruby_options{}} | {'error',Reason::term()}
+ruby_options_tests.erl:363: The created fun has no local return
+ruby_options_tests.erl:363: The created fun has no local return
+ruby_options_tests.erl:365: The call ruby_options:parse([{'ruby_lib','invalid_path'},...]) breaks the contract (Options::options()) -> {'ok',#ruby_options{}} | {'error',Reason::term()}
+ruby_options_tests.erl:369: The created fun has no local return
+ruby_options_tests.erl:369: The created fun has no local return
+ruby_options_tests.erl:372: The created fun has no local return
+ruby_options_tests.erl:372: The created fun has no local return
+ruby_options_tests.erl:387: The created fun has no local return
+ruby_options_tests.erl:387: The created fun has no local return
+ruby_options_tests.erl:388: The call ruby_options:parse(['unknown',...]) breaks the contract (Options::options()) -> {'ok',#ruby_options{}} | {'error',Reason::term()}

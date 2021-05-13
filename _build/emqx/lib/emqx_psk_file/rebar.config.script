@@ -1,0 +1,48 @@
+%%-*- mode: erlang -*-
+%% emqx_management rebar.config.script
+
+CONFIG1 = case os:getenv("TRAVIS") of
+              "true" ->
+                  JobId = os:getenv("TRAVIS_JOB_ID"),
+                  [{coveralls_service_job_id, JobId},
+                   {coveralls_coverdata, "_build/test/cover/*.coverdata"},
+                   {coveralls_service_name , "travis-ci"} | CONFIG];
+              _ ->
+                  CONFIG
+          end,
+
+DEPS = case lists:keyfind(deps, 1, CONFIG1) of
+           {_, Deps} -> Deps;
+           _ -> []
+       end,
+
+CUR_BRANCH = case os:getenv("GITHUB_RUN_ID") of
+               false ->
+                 os:cmd("git branch | grep -e '^*' | cut -d' ' -f 2") -- "\n";
+               _ ->
+                 re:replace(os:getenv("GITHUB_REF"), ".*/", "", [global, {return ,list}])
+             end,
+
+MATCH_BRANCH = fun (BranchName) ->
+                 case re:run(BranchName, "^release|develop|master", [{capture, none}]) of
+                   match -> BranchName;
+                   _ -> case re:run(BranchName, "^[v]?[0-9]\.[0-9]\.([0-9]|(rc|beta|alpha)\.[0-9])", [{capture, none}]) of
+                          match -> BranchName;
+                          _ -> "develop"
+                        end
+                 end
+               end,
+
+BRANCH = MATCH_BRANCH(CUR_BRANCH),
+
+UrlPrefix = "https://hub.fastgit.org/emqx/",
+
+EMQX_DEP = {emqx, {git, UrlPrefix ++ "emqx", {branch, BRANCH}}},
+
+EMQX_RELOADER_DEP = {emqx_reloader, {git, UrlPrefix ++ "emqx-reloader", {branch, BRANCH}}},
+
+NewDeps = [EMQX_DEP, EMQX_RELOADER_DEP | DEPS],
+
+CONFIG2 = lists:keystore(deps, 1, CONFIG1, {deps, NewDeps}),
+
+CONFIG2.

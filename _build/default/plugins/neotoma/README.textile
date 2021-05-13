@@ -1,0 +1,40 @@
+h1. Neotoma
+
+!https://travis-ci.org/seancribbs/neotoma.svg?branch=master!:https://travis-ci.org/seancribbs/neotoma
+
+h2. About
+
+Neotoma is a packrat parser-generator for Erlang for Parsing Expression Grammars (PEGs).
+It consists of a parsing-combinator library with memoization routines, a parser for PEGs,
+and a utility to generate parsers from PEGs.  It is inspired by treetop, a Ruby library with
+similar aims, and parsec, the parser-combinator library for Haskell.
+
+Neotoma is licensed under the MIT License (see LICENSE).
+
+h2. Features
+
+# Simple, declarative parsers generated from even simpler grammars.
+# Fully integrated, single-pass lexical and syntactic analysis (a feature of PEGs).
+# Packrat-style memoization, boasting parse-time bound linearly to the input size (at the expense of memory usage).
+# In-place semantic analysis/transformation, supporting single-pass end-to-end in some applications.
+# Erlang code-generation for the lexical/syntactic analysis piece, with the option of semantic analysis/transformation inline, or in a separate module.
+# Line/column number tracking for easy resolution of parsing errors.
+
+h2. Installation
+
+# Clone the repository from github: <notextile><pre><code>$ git clone git://github.com/seancribbs/neotoma.git</code></pre></notextile>
+# Symlink or copy the cloned repository to somewhere in your Erlang code path. $ERLANG_HOME/lib is best.
+# Build the source: <notextile><pre><code>$ make</code></pre></notextile>
+
+h2. Usage
+
+# After making sure the library is in your code path, fire up an Erlang shell.
+# To generate a parser from a PEG, use @neotoma:file/1,2@ (more detailed documentation pending).  For PEG examples, see the @extra/@ directory in the repository.
+
+  <notextile><pre><code>1&gt; neotoma:file("extra/arithmetic.peg").</code></pre></notextile>
+
+  This will place @arithmetic.erl@ in the same directory as the @.peg@ file by default.
+
+h2. Contributing
+
+Please send pull-requests to 'seancribbs' on github.  When submitting a patch, eunit tests are strongly encouraged.

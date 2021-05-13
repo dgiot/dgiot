@@ -1,0 +1,100 @@
+#! /bin/sh
+
+RELEASE_DIR=packages
+
+bin_release()
+{
+    name=erlport-$(get_version)
+    root=$RELEASE_DIR/$name
+    arch_name=erlport-$(get_erl_version)-$(get_version)
+
+    mkdir $root
+    copy_files "$(bin_files)" "$root"
+    (cd $RELEASE_DIR && tar --owner root --group root -c $name \
+                        | gzip -9 > $arch_name.tar.gz)
+    (cd $RELEASE_DIR && zip -rq9 $arch_name.zip $name)
+}
+
+src_release()
+{
+    name=erlport
+    root=$RELEASE_DIR/$name
+    arch_name=erlport-src-$(get_version)
+
+    mkdir $root
+    copy_files "$(src_files)" "$root"
+    (cd $RELEASE_DIR && tar --owner root --group root -c $name \
+                        | gzip -9 > $arch_name.tar.gz)
+    (cd $RELEASE_DIR && zip -rq9 $arch_name.zip $name)
+}
+
+copy_files()
+{
+    for n in $1; do
+        path=$2/$(dirname $n)
+        mkdir -p $path
+        ln $n $path
+    done
+}
+
+bin_files()
+{
+    ls -1 priv/python*/erlport/*.py
+    ls -1 priv/ruby*/erlport/*.rb
+    ls -1 src/*.[he]rl
+    ls -1 ebin/*.app ebin/*.beam
+    ls -1 AUTHORS CHANGES CONTRIBUTORS LICENSE README.rst
+}
+
+src_files()
+{
+    ls -1 priv/python*/Makefile
+    find priv/python*/erlport -name '*.py'
+    ls -1 priv/ruby*/Makefile
+    find priv/ruby*/ -name '*.rb'
+    ls -1 src/*.[he]rl
+    find test -name '*.[he]rl' -o -name '*.py' -o -name '*.rb'
+    ls -1 ebin/*.app
+    ls -1 doc/overview.edoc
+    ls -1 AUTHORS CHANGES CONTRIBUTORS LICENSE Makefile README.rst TODO
+    ls -1 dialyzer.ignore release releaseall runtest testall
+}
+
+get_erl_version()
+{
+    erl -noinput \
+        -eval 'ok = io:put_chars(erlang:system_info(otp_release))' \
+        -s init stop | sed 's/^R\?\([0-9]\+\).*/R\1/'
+}
+
+get_version()
+{
+    awk -F \" '/{vsn,/ {print $2}' ebin/erlport.app
+}
+
+init_release_dir()
+{
+    mkdir -p $RELEASE_DIR
+    find $RELEASE_DIR -mindepth 1 -maxdepth 1 -type d -exec rm -rf '{}' \;
+}
+
+main()
+{
+    if [ $# -ge 0 ]; then
+        cmd="$1"
+    else
+        cmd="bin"
+    fi
+    init_release_dir
+    case "$cmd" in
+        src)
+            src_release
+            ;;
+        *)
+            bin_release
+            ;;
+    esac
+}
+
+set -e
+main "$@"
