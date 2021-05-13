@@ -41,6 +41,8 @@
  make
  _build/dgiot/rel/emqx/bin/emqx.cmd console
  ```
+ http://127.0.0.1:5080 用户名:dgiot_admin 密码:dgiot_admin
+ 
  ## centos 7.6 开发环境
   [dgiot_server.zip](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot4.0/linux/dgiot_server_v4.0.0.tar.gz)
  
