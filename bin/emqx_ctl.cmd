@@ -4,9 +4,9 @@
 
 :: Set variables that describe the release
 @set rel_name=emqx
-@set rel_vsn=v4.0.0
-@set erts_vsn=10.3
-@set erl_opts=
+@set rel_vsn={{ rel_vsn }}
+@set erts_vsn={{ erts_vsn }}
+@set erl_opts={{ erl_opts }}
 
 :: Discover the release root directory from the directory
 :: of this script

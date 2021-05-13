@@ -15,9 +15,9 @@
 
 :: Set variables that describe the release
 @set rel_name=emqx
-@set rel_vsn=v4.0.0
-@set erts_vsn=10.3
-@set erl_opts=
+@set rel_vsn={{ rel_vsn }}
+@set erts_vsn={{ erts_vsn }}
+@set erl_opts={{ erl_opts }}
 
 @set script=%~n0
 
@@ -138,11 +138,7 @@
 @goto :eof
 
 :generate_app_config
-@set mergeconf_cmd=%escript% %nodetool% mergeconf %etc_dir%\emqx.conf %etc_dir%\plugins %data_dir%\configs
-@for /f %%Z in ('%%mergeconf_cmd%%') do @(
-  set merged_app_conf=%%Z
-)
-@set gen_config_cmd=%escript% %cuttlefish% -s %rel_dir%\schema -c %merged_app_conf% -d %data_dir%\configs generate
+@set gen_config_cmd=%escript% %cuttlefish% -i %rel_dir%\emqx.schema -c %etc_dir%\emqx.conf -d %data_dir%\configs generate
 @for /f "delims=" %%A in ('%%gen_config_cmd%%') do @(
   set generated_config_args=%%A
 )
@@ -180,7 +176,7 @@
 @call :generate_app_config
 :: Install the service
 @set args="-boot %boot_script% %sys_config% %generated_config_args% -mnesia dir '%mnesia_dir%'"
-@set description=EMQ node %node_name% in %rootdir%
+@set description=EMQX node %node_name% in %rootdir%
 @if "" == "%2" (
   %erlsrv% add %service_name% %node_type% "%node_name%" -on restart -c "%description%" ^
            -i "emqx" -w "%rootdir%" -m %erl_exe% -args %args% ^

@@ -14,10 +14,6 @@ for /d %%i in ("lib\emqx*") do call :conf %%i
 
 for /d %%i in ("lib\emqx*") do call :schema %%i
 
-for /d %%i in ("lib\shuwa*") do call :conf %%i
-
-for /d %%i in ("lib\shuwa*") do call :schema %%i
-
 exit 0
 
 :conf
@@ -41,10 +37,7 @@ popd
 
 :schema
 pushd %1
-for %%f in ("priv\*.schema") do (
-    ::echo %%f
-    copy %%f "%REBAR_BUILD_DIR%\conf\schema\"
-)
+copy priv\emqx.schema "%REBAR_BUILD_DIR%\conf\schema\"
 popd
 :end
 

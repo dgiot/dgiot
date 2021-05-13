@@ -7,16 +7,16 @@ set -e
 REL_NAME="emqx"
 
 ## constants from relx template
-RUNNER_ROOT_DIR="$(cd $(dirname $(readlink $0 || echo $0))/..; pwd -P)"
-RUNNER_BIN_DIR="$RUNNER_ROOT_DIR/bin"
-REL_VSN="v4.0.0"
-ERTS_VSN="10.3"
-ERL_OPTS=""
-RUNNER_LOG_DIR="$RUNNER_ROOT_DIR/log"
-RUNNER_LIB_DIR="$RUNNER_ROOT_DIR/lib"
-RUNNER_ETC_DIR="$RUNNER_ROOT_DIR/etc"
-RUNNER_DATA_DIR="$RUNNER_ROOT_DIR/data"
-RUNNER_USER=""
+RUNNER_ROOT_DIR="{{ runner_root_dir }}"
+RUNNER_BIN_DIR="{{ runner_bin_dir }}"
+REL_VSN="{{ rel_vsn }}"
+ERTS_VSN="{{ erts_vsn }}"
+ERL_OPTS="{{ erl_opts }}"
+RUNNER_LOG_DIR="{{ runner_log_dir }}"
+RUNNER_LIB_DIR="{{ runner_lib_dir }}"
+RUNNER_ETC_DIR="{{ runner_etc_dir }}"
+RUNNER_DATA_DIR="{{ runner_data_dir }}"
+RUNNER_USER="{{ runner_user }}"
 
 RUNNER_SCRIPT="$RUNNER_BIN_DIR/$REL_NAME"
 ERTS_PATH=$RUNNER_ROOT_DIR/erts-$ERTS_VSN/bin
@@ -24,6 +24,36 @@ CODE_LOADING_MODE="${CODE_LOADING_MODE:-embedded}"
 REL_DIR="$RUNNER_ROOT_DIR/releases/$REL_VSN"
 
 WHOAMI=$(whoami)
+
+# Make sure log directory exists
+mkdir -p "$RUNNER_LOG_DIR"
+
+# Make sure data directory exists
+mkdir -p "$RUNNER_DATA_DIR"
+
+# Simple way to check the correct user and fail early
+check_user() {
+    # Validate that the user running the script is the owner of the
+    # RUN_DIR.
+    if ([ "$RUNNER_USER" ] && [ "x$WHOAMI" != "x$RUNNER_USER" ]); then
+        if [ "x$WHOAMI" != "xroot" ]; then
+            echo "You need to be root or use sudo to run this command"
+            exit 1
+        fi
+        ESCAPED_ARGS=`echo "$@" | sed -e 's/\([{}"]\)/\\\\\1/g'`
+        # This will drop priviledges into the runner user
+        # It exec's in a new shell and the current shell will exit
+        exec su - $RUNNER_USER -c "$RUNNER_SCRIPT $ESCAPED_ARGS"
+    fi
+}
+
+
+# Make sure the user running this script is the owner and/or su to that user
+check_user $@
+ES=$?
+if [ "$ES" -ne 0 ]; then
+    exit $ES
+fi
 
 if [ -z "$WITH_EPMD" ]; then
     EPMD_ARG="-start_epmd false -epmd_module ekka_epmd -proto_dist ekka"
@@ -44,13 +74,12 @@ echoerr() { echo "$@" 1>&2; }
 
 # By default, use cuttlefish to generate app.config and vm.args
 CUTTLEFISH="${USE_CUTTLEFISH:-yes}"
-CUTTLEFISH_COMMAND_PREFIX="$ERTS_PATH/escript $RUNNER_ROOT_DIR/bin/cuttlefish -s $REL_DIR/schema -d $RUNNER_DATA_DIR/configs"
 
 SED_REPLACE="sed -i "
 case $(sed --help 2>&1) in
     *GNU*) SED_REPLACE="sed -i ";;
     *BusyBox*) SED_REPLACE="sed -i ";;
-    *) SED_REPLACE="sed -i ''";;
+    *) SED_REPLACE="sed -i '' ";;
 esac
 
 # Get node pid
@@ -127,9 +156,7 @@ generate_config() {
         # the vm, we need to pass it in twice.
         CONFIG_ARGS=" -config $RUNNER_ETC_DIR/app.config -args_file $RUNNER_ETC_DIR/vm.args -vm_args $RUNNER_ETC_DIR/vm.args "
     else
-        APPCONF=`relx_nodetool mergeconf $RUNNER_ETC_DIR/emqx.conf $RUNNER_ETC_DIR/plugins $RUNNER_DATA_DIR/configs`
-        replace_env_in_conf
-        CONFIG_ARGS=`$CUTTLEFISH_COMMAND_PREFIX -c $APPCONF generate`
+        CONFIG_ARGS=`$ERTS_PATH/escript $RUNNER_ROOT_DIR/bin/cuttlefish -i $REL_DIR/emqx.schema -c $RUNNER_ETC_DIR/emqx.conf -d $RUNNER_DATA_DIR/configs generate`
 
         ## Merge cuttlefish generated *.args into the vm.args
         CUTTLE_GEN_ARG_FILE=`echo "$CONFIG_ARGS" | sed -n 's/^.*\(vm_args[[:space:]]\)//p' | awk '{print $1}'`
@@ -137,10 +164,15 @@ generate_config() {
         cp "$RUNNER_ETC_DIR/vm.args" "$TMP_ARG_FILE"
         echo "" >> "$TMP_ARG_FILE"
         sed '/^#/d' $CUTTLE_GEN_ARG_FILE | sed '/^$/d' | while IFS='' read -r ARG_LINE || [ -n "$ARG_LINE" ]; do
-            ARG_KEY=`echo "$ARG_LINE" | awk '{NF--; print}'`
-            ## if not found in vm.args, append a new line
-            if ! grep -q "^$ARG_KEY" "$TMP_ARG_FILE"; then
-                echo "$ARG_LINE" >> "$TMP_ARG_FILE"
+            ARG_KEY=`echo "$ARG_LINE" | awk '{$NF="";print}'`
+            ARG_VALUE=`echo "$ARG_LINE" | awk '{print $NF}'`
+            TMP_ARG_VALUE=`grep "^$ARG_KEY" "$TMP_ARG_FILE" | awk '{print $NF}'`
+            if [ "$ARG_VALUE" != "$TMP_ARG_VALUE" ] ; then
+                if [ ! -z $TMP_ARG_VALUE ]; then
+                    sh -c "$SED_REPLACE 's/^$ARG_KEY.*$/$ARG_LINE/' $TMP_ARG_FILE"
+                else
+                    echo "$ARG_LINE" >> "$TMP_ARG_FILE"
+                fi
             fi
         done
         mv -f "$TMP_ARG_FILE" "$CUTTLE_GEN_ARG_FILE"
@@ -152,59 +184,12 @@ generate_config() {
     fi
 }
 
-replace_env_in_conf() {
-    [ "x" = "x$EMQX_NODE_NAME" ]       || $SED_REPLACE "s/^[ \t]*node.name[ \t]*=.*$/node.name= $EMQX_NODE_NAME/" $APPCONF
-    [ "x" = "x$EMQX_NODE_COOKIE" ]     || $SED_REPLACE "s/^[ \t]*node.cookie[ \t]*=.*$/node.cookie= $EMQX_NODE_COOKIE/" $APPCONF
-    [ "x" = "x$EMQX_MAX_PORTS" ]       || $SED_REPLACE "s/^[ \t]*node.max_ports[ \t]*=.*$/node.max_ports = $EMQX_MAX_PORTS/" $APPCONF
-    [ "x" = "x$EMQX_MAX_PACKET_SIZE" ] || $SED_REPLACE "s/^[ \t]*mqtt.max_packet_size[ \t]*=.*$/mqtt.max_packet_size = $EMQX_MAX_PACKET_SIZE/" $APPCONF
-    [ "x" = "x$EMQX_TCP_PORT" ]        || $SED_REPLACE "s/^[ \t]*listener.tcp.external[ \t]*=.*$/listener.tcp.external = $EMQX_TCP_PORT/" $APPCONF
-    [ "x" = "x$EMQX_SSL_PORT" ]        || $SED_REPLACE "s/^[ \t]*listener.ssl.external[ \t]*=.*$/listener.ssl.external = $EMQX_SSL_PORT/" $APPCONF
-    [ "x" = "x$EMQX_WS_PORT" ]         || $SED_REPLACE "s/^[ \t]*listener.ws.external[ \t]*=.*$/listener.ws.external = $EMQX_WS_PORT/" $APPCONF
-    [ "x" = "x$EMQX_WSS_PORT" ]        || $SED_REPLACE "s/^[ \t]*listener.wss.external[ \t]*=.*$/listener.wss.external = $EMQX_WSS_PORT/" $APPCONF
-}
-
 # Call bootstrapd for daemon commands like start/stop/console
 bootstrapd() {
     if [ -e "$RUNNER_DATA_DIR/.erlang.cookie" ]; then
         chown $RUNNER_USER $RUNNER_DATA_DIR/.erlang.cookie
     fi
-    # Fail fast if they have no rights to mess around with pids
-    check_user_internal
-
-    # Make sure the user running this script is the owner and/or su to that user
-    check_user $@
-    ES=$?
-    if [ "$ES" -ne 0 ]; then
-        exit $ES
-    fi
 }
-
-# Simple way to check the correct user and fail early
-check_user_internal() {
-    # Validate that the user running the script is the owner of the
-    # RUN_DIR.
-    if ([ "$RUNNER_USER" ] && [ "x$WHOAMI" != "x$RUNNER_USER" ]); then
-        if [ "x$WHOAMI" != "xroot" ]; then
-            echo "You need to be root or use sudo to run this command"
-            exit 1
-        fi
-    fi
-}
-
-# Function to su into correct user that is poorly named for historical
-check_user() {
-    check_user_internal
-    # do not su again if we are already the runner user
-    if ([ "$RUNNER_USER" ] && [ "x$WHOAMI" != "x$RUNNER_USER" ]); then
-        ESCAPED_ARGS=`echo "$@" | sed -e 's/\([{}"]\)/\\\\\1/g'`
-        # This will drop priviledges into the runner user
-        # It exec's in a new shell and the current shell will exit
-        exec su - $RUNNER_USER -c "$RUNNER_SCRIPT $ESCAPED_ARGS"
-    fi
-}
-
-# Make sure log directory exists
-mkdir -p "$RUNNER_LOG_DIR"
 
 # Use $CWD/etc/sys.config if exists
 if [ -z "$RELX_CONFIG_PATH" ]; then
@@ -215,13 +200,19 @@ if [ -z "$RELX_CONFIG_PATH" ]; then
     fi
 fi
 
-[ "x" = "x$EMQX_NODE_NAME" ] || NAME_ARG="-name $EMQX_NODE_NAME"
 # Extract the target node name from node.args
 if [ -z "$NAME_ARG" ]; then
-    NODENAME=`egrep '^[ \t]*node.name[ \t]*=[ \t]*' $RUNNER_ETC_DIR/emqx.conf 2> /dev/null | tail -1 | cut -d = -f 2-`
+    if [ ! -z "$EMQX_NODE_NAME" ]; then
+        NODENAME="$EMQX_NODE_NAME"
+    elif [ ! -z `ps -ef | grep "$ERTS_PATH/beam.smp" | grep -o -E '\-name (\S*)' | awk '{print $2}'` ]; then
+        NODENAME=`ps -ef | grep "$ERTS_PATH/beam.smp" | grep -o -E '\-name (\S*)' | awk '{print $2}'`
+    else
+        NODENAME=`egrep '^[ \t]*node.name[ \t]*=[ \t]*' "$RUNNER_ETC_DIR/emqx.conf" 2> /dev/null | tail -1 | cut -d = -f 2-`
+    fi
     if [ -z "$NODENAME" ]; then
         echoerr "vm.args needs to have a -name parameter."
         echoerr "  -sname is not supported."
+        echoerr "perhaps you do not have read permissions on $RUNNER_ETC_DIR/emqx.conf"
         exit 1
     else
         NAME_ARG="-name ${NODENAME# *}"
@@ -234,12 +225,18 @@ NAME="$(echo "$NAME_ARG" | awk '{print $2}')"
 
 PIPE_DIR="${PIPE_DIR:-/$RUNNER_DATA_DIR/${WHOAMI}_erl_pipes/$NAME/}"
 
-[ "x" = "x$EMQX_NODE_COOKIE" ] || COOKIE_ARG="-setcookie $EMQX_NODE_COOKIE"
 # Extract the target cookie
 if [ -z "$COOKIE_ARG" ]; then
-    COOKIE=`egrep '^[ \t]*node.cookie[ \t]*=[ \t]*' $RUNNER_ETC_DIR/emqx.conf 2> /dev/null | tail -1 | cut -d = -f 2-`
+    if [ ! -z "$EMQX_NODE_COOKIE" ]; then
+        COOKIE="$EMQX_NODE_COOKIE"
+    elif [ ! -z `ps -ef | grep "$ERTS_PATH/beam.smp" | grep -o -E '\-setcookie (\S*)' | awk '{print $2}'` ]; then
+        COOKIE=`ps -ef | grep "$ERTS_PATH/beam.smp" | grep -o -E '\-setcookie (\S*)' | awk '{print $2}'`
+    else
+        COOKIE=`egrep '^[ \t]*node.cookie[ \t]*=[ \t]*' "$RUNNER_ETC_DIR/emqx.conf" 2> /dev/null | tail -1 | cut -d = -f 2-`
+    fi
     if [ -z "$COOKIE" ]; then
         echoerr "vm.args needs to have a -setcookie parameter."
+        echoerr "please check $RUNNER_ETC_DIR/emqx.conf"
         exit 1
     else
         COOKIE_ARG="-setcookie $COOKIE"
@@ -250,7 +247,7 @@ fi
 COOKIE="$(echo "$COOKIE_ARG" | awk '{print $2}')"
 
 # Support for IPv6 Dist. See: https://hub.fastgit.org/emqtt/emqttd/issues/1460
-PROTO_DIST=`egrep '^[ \t]*cluster.proto_dist[ \t]*=[ \t]*' $RUNNER_ETC_DIR/emqx.conf 2> /dev/null | tail -1 | cut -d = -f 2-`
+PROTO_DIST=`egrep '^[ \t]*cluster.proto_dist[ \t]*=[ \t]*' "$RUNNER_ETC_DIR/emqx.conf" 2> /dev/null | tail -1 | cut -d = -f 2-`
 if [ -z "$PROTO_DIST" ]; then
     PROTO_DIST_ARG=""
 else
@@ -329,18 +326,20 @@ case "$1" in
         "$BINDIR/run_erl" -daemon "$PIPE_DIR" "$RUNNER_LOG_DIR" \
                           "$(relx_start_command)"
 
-        WAIT=${WAIT_FOR_ERLANG:-15}
-        while [ $WAIT -gt 0 ]; do
-            WAIT=`expr $WAIT - 1`
-            sleep 1
+        WAIT_TIME=${WAIT_FOR_ERLANG:-15}
+        while [ $WAIT_TIME -gt 0 ]; do
             if ! relx_nodetool "ping" >/dev/null 2>&1; then
+                WAIT_TIME=`expr $WAIT_TIME - 1`
+                sleep 1
                 continue
             fi
-            echo "emqx $REL_VSN is started successfully!"
-            exit 0
-        done
-        echo "The broker failed to start within ${WAIT_FOR_ERLANG:-15} seconds,"
-        echo "see the output of './bin/emqx console' for more information."
+            sleep 1
+            if relx_nodetool "ping" >/dev/null 2>&1; then
+                echo "{{ emqx_description }} $REL_VSN is started successfully!"
+                exit 0
+            fi
+        done && echo "{{ emqx_description }} $REL_VSN failed to start within ${WAIT_FOR_ERLANG:-15} seconds,"
+        echo "see the output of '$0 console' for more information."
         echo "If you want to wait longer, set the environment variable"
         echo "WAIT_FOR_ERLANG to the number of seconds to wait."
         exit 1
@@ -358,24 +357,9 @@ case "$1" in
         done
         ;;
 
-    restart)
-        #generate app.config and vm.args
-        generate_config
-
-        ## Restart the VM without exiting the process
-        if ! relx_nodetool "restart" $CONFIG_ARGS; then
-            exit 1
-        fi
-        ;;
-
-    reboot)
-        #generate app.config and vm.args
-        generate_config
-
-        ## Restart the VM completely (uses heart to restart it)
-        if ! relx_nodetool "reboot" $CONFIG_ARGS; then
-            exit 1
-        fi
+    restart|reboot)
+        echo "{{ emqx_description }} $REL_VSN is stopped: $($RUNNER_BIN_DIR/emqx stop)"
+        $RUNNER_BIN_DIR/emqx start
         ;;
 
     pid)

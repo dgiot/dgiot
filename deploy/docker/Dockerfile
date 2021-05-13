@@ -1,5 +1,5 @@
-ARG BUILD_FROM=erlang:22.1-alpine 
-ARG RUN_FROM=alpine:3.10
+ARG BUILD_FROM=emqx/build-env:erl22.3-alpine-amd64
+ARG RUN_FROM=alpine:3.11
 FROM ${BUILD_FROM} AS builder
 
 ARG QEMU_ARCH=x86_64
@@ -9,13 +9,15 @@ COPY . /emqx_rel
 RUN apk add git \
     curl \
     gcc \
+    g++ \
     make \
     perl \
     ncurses-dev \
     openssl-dev \
     coreutils \
     bsd-compat-headers \
-    libc-dev 
+    libc-dev \
+    libstdc++
 
 ARG EMQX_DEPS_DEFAULT_VSN=develop
 ARG EMQX_NAME=emqx
@@ -40,7 +42,7 @@ COPY deploy/docker/docker-entrypoint.sh deploy/docker/start.sh deploy/docker/tmp
 COPY --from=builder /emqx_rel/_build/emqx*/rel/emqx /opt/emqx
 
 RUN ln -s /opt/emqx/bin/* /usr/local/bin/ 
-RUN apk add --no-cache ncurses-libs openssl sudo
+RUN apk add --no-cache curl ncurses-libs openssl sudo libstdc++
 
 WORKDIR /opt/emqx
 
@@ -56,7 +58,7 @@ VOLUME ["/opt/emqx/log", "/opt/emqx/data", "/opt/emqx/lib", "/opt/emqx/etc"]
 
 # emqx will occupy these port:
 # - 1883 port for MQTT
-# - 8080 for mgmt API
+# - 8081 for mgmt API
 # - 8083 for WebSocket/HTTP
 # - 8084 for WSS/HTTPS
 # - 8883 port for MQTT(SSL)
@@ -65,7 +67,7 @@ VOLUME ["/opt/emqx/log", "/opt/emqx/data", "/opt/emqx/lib", "/opt/emqx/etc"]
 # - 4369 for port mapping
 # - 5369 for gen_rpc port mapping
 # - 6369 for distributed node
-EXPOSE 1883 8080 8083 8084 8883 11883 18083 4369 5369 6369
+EXPOSE 1883 8081 8083 8084 8883 11883 18083 4369 5369 6369
 
 ENTRYPOINT ["/usr/bin/docker-entrypoint.sh"]
 

@@ -6,7 +6,7 @@ ifneq ($(shell uname -s),Linux)
 endif
 # The version-release used for package
 ifneq ($(shell echo $(EMQX_DEPS_DEFAULT_VSN) | grep -oE "v[0-9]+\.[0-9]+(\.[0-9]+)?"),)
-	PKG_VSN := $(EMQX_DEPS_DEFAULT_VSN)
+	PKG_VSN := $(EMQX_DEPS_DEFAULT_VSN:v%=%)
 else
 	PKG_VSN := 4.0
 endif

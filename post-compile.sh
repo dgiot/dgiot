@@ -27,7 +27,5 @@ done
 
 ## Collect all schema files
 mkdir -p conf/schema
-for schema in lib/*/priv/*.schema; do
-    cp ${schema} conf/schema/
-done
+cp lib/emqx/priv/emqx.schema conf/schema/
 

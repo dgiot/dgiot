@@ -20,7 +20,6 @@ main(Args) ->
             end
     end,
     ok = do_with_halt(Args, "mnesia_dir", fun create_mnesia_dir/2),
-    ok = do_with_halt(Args, "mergeconf", fun mergeconf/3),
     ok = do_with_halt(Args, "chkconfig", fun("-config", X) -> chkconfig(X) end),
     ok = do_with_halt(Args, "chkconfig", fun chkconfig/1),
     Args1 = do_with_ret(Args, "-name",
@@ -66,8 +65,6 @@ main(Args) ->
             rpc:call(TargetNode, emqx_plugins, unload, [], 60000),
             io:format("~p\n", [rpc:call(TargetNode, init, stop, [], 60000)]);
         ["restart", "-config", ConfigFile | _RestArgs1] ->
-            io:format("~p\n", [rpc:call(TargetNode, emqx, restart, [ConfigFile], 60000)]);
-        ["reboot", "-config", ConfigFile | _RestArgs1] ->
             io:format("~p\n", [rpc:call(TargetNode, emqx, restart, [ConfigFile], 60000)]);
         ["rpc", Module, Function | RpcArgs] ->
             case rpc:call(TargetNode, list_to_atom(Module), list_to_atom(Function),
@@ -221,14 +218,14 @@ compile_epmd_module() ->
       "dist_port(Name) when is_atom(Name) ->
          dist_port(atom_to_list(Name));
        dist_port(Name) when is_list(Name) ->
-         NodeName = re:replace(Name, \"@.*$\", \"\"),
-         Offset =
-           case re:run(NodeName, \"[0-9]+$\", [{capture, first, list}]) of
-             nomatch -> 0;
-             {match, [OffsetAsString]} ->
-               list_to_integer(OffsetAsString)
-             end,
-         4370 + Offset."
+         4370 + offset(Name).",
+      "offset(NodeName) ->
+         ShortName = re:replace(NodeName, \"@.*$\", \"\"),
+         case re:run(ShortName, \"[0-9]+$\", [{capture, first, list}]) of
+           nomatch -> 0;
+           {match, [OffsetAsString]} ->
+             (list_to_integer(OffsetAsString) rem 60000)
+         end."
     ]).
 
 compile(Exprs) ->
@@ -264,34 +261,6 @@ create_mnesia_dir(DataDir, NodeName) ->
     file:make_dir(MnesiaDir),
     io:format("~s", [MnesiaDir]),
     halt(0).
-
-mergeconf(EmqCfg, PluginsEtc, DestDir) ->
-    filelib:ensure_dir(DestDir),%% support brew on macosx
-    AppConf = filename:join(DestDir, appconf()),
-    case file:open(AppConf, [write]) of
-        {ok, DestFd} ->
-            CfgFiles = [EmqCfg | cfgfiles(PluginsEtc)],
-            lists:foreach(fun(CfgFile) ->
-                            {ok, CfgData} = file:read_file(CfgFile),
-                            file:write(DestFd, CfgData),
-                            file:write(DestFd, <<"\n">>)
-                          end, CfgFiles),
-            file:close(DestFd),
-            io:format("~s", [AppConf]),
-            halt(0);
-        {error, Error} ->
-            io:format(standard_error, ["Error opening file: ", AppConf, " ", file:format_error(Error), "\n"], []),
-            halt(1)
-    end.
-
-appconf() ->
-    {{Y, M, D}, {H, MM, S}} = calendar:local_time(),
-    lists:flatten(
-      io_lib:format(
-        "app.~4..0w.~2..0w.~2..0w.~2..0w.~2..0w.~2..0w.conf", [Y, M, D, H, MM, S])).
-
-cfgfiles(Dir) ->
-    [filename:join(Dir, CfgFile) || CfgFile <- filelib:wildcard("*.conf", Dir)].
 
 chkconfig(File) ->
     case file:consult(File) of

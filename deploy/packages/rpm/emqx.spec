@@ -5,7 +5,8 @@
 %define _log_dir %{_var}/log/%{_name}
 %define _lib_home /usr/lib/%{_name}
 %define _var_home %{_sharedstatedir}/%{_name}
-%define _build_name_fmt %{_arch}/%{_name}%{?_ostype}-v%{_version}-%{_release}.%{_arch}.rpm
+%define _build_name_fmt %{_arch}/%{_name}%{?_ostype}-%{_version}-%{_release}.%{_arch}.rpm
+%define _build_id_links none
 
 Name: %{_package_name}
 Version: %{_version}
@@ -16,6 +17,7 @@ License: Apache License Version 2.0
 URL: https://www.emqx.io
 BuildRoot: %{_tmppath}/%{_name}-%{_version}-root
 Provides: %{_name}
+AutoReq: 0
 
 %description
 EMQX, a distributed, massively scalable, highly extensible MQTT message broker written in Erlang/OTP.
@@ -39,7 +41,7 @@ cp -R %{_reldir}/releases %{buildroot}%{_lib_home}/
 cp -R %{_reldir}/bin %{buildroot}%{_lib_home}/
 cp -R %{_reldir}/etc/* %{buildroot}%{_conf_dir}/
 cp -R %{_reldir}/data/* %{buildroot}%{_var_home}/
-install -m755 %{_service_src} %{buildroot}%{_service_dst}
+install -m644 %{_service_src} %{buildroot}%{_service_dst}
 
 %pre
 if [ $1 = 1 ]; then
