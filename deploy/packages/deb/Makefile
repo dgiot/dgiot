@@ -2,17 +2,15 @@
 TOPDIR := /tmp/emqx
 SRCDIR := $(TOPDIR)/$(PKG_VSN)
 BUILT := $(SRCDIR)/BUILT
-DEB_VSN := $(PKG_VSN:v%=%)
 
-ARCH := $(shell dpkg --print-architecture)
-SOURCE_PKG := $(EMQX_NAME)_$(DEB_VSN)_$(ARCH)
-TARGET_PKG := $(EMQX_NAME)-$(SYSTEM)-$(PKG_VSN)_$(ARCH)
+SOURCE_PKG := $(EMQX_NAME)_$(PKG_VSN)_$(shell dpkg --print-architecture)
+TARGET_PKG := $(EMQX_NAME)-$(SYSTEM)-$(PKG_VSN)_$(shell uname -m)
 
 .PHONY: all
 all: | $(BUILT)
 	cp -r debian $(SRCDIR)/
 	sed -i "s#<DATETIME>#$(shell date -u '+%a, %d %b %Y %T %z')#g" $(SRCDIR)/debian/changelog
-	sed -i "s#<VERSION>#$(DEB_VSN)#g" $(SRCDIR)/debian/changelog
+	sed -i "s#<VERSION>#$(PKG_VSN)#g" $(SRCDIR)/debian/changelog
 	if [ ! -z $(shell echo $(EMQX_NAME) |grep edge) ]; then \
 		sed -i "s/emqx-pkg/emqx-edge-pkg/g" $(SRCDIR)/debian/rules; \
 		sed -i "s debian/emqx debian/emqx-edge g" $(SRCDIR)/debian/rules; \

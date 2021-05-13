@@ -2,51 +2,5 @@
 <project version="4">
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/_build/default/plugins/pc" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/cowboy" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/cowlib" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/cuttlefish" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/cuttlefish/_build/default/lib/getopt" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/cuttlefish/_build/escript/lib/getopt" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/ekka" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/emqx" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/emqx_dashboard" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/emqx_delayed_publish" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/emqx_management" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/emqx_psk_file" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/emqx_recon" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/emqx_reloader" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/emqx_retainer" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/emqx_rule_engine" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/erlport" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/erlydtl" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/esockd" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/gen_rpc" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/goldrush" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/jesse" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/lager" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/minirest" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/poolboy" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/prometheus" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/ranch" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/rfc3339" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/rulesql" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/shuwa_api" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/shuwa_bridge" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/shuwa_device_shadow" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/shuwa_evidence" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/shuwa_exproto" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/shuwa_framework" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/shuwa_group" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/shuwa_license" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/shuwa_mqtt" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/shuwa_parse" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/shuwa_public" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/shuwa_statsd" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/shuwa_task" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/shuwa_td" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/shuwa_web_manager" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/ssl_verify_fun" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/_build/dgiot/lib/websocket_client" vcs="Git" />
   </component>
 </project>

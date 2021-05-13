@@ -17,7 +17,7 @@ CONFIG0 = case os:getenv("TRAVIS") of
 %% ==============================================================================
 %% Dependencies
 %% ==============================================================================
-PluginsNeededByElixir = [rebar_mix,
+PluginsNeededByElixir = [rebar_mix, 
                          {rebar3_elixir_compile,
                           {git, "https://hub.fastgit.org/barrel-db/rebar3_elixir_compile.git",
                            {branch, "master"}}}],
@@ -65,28 +65,9 @@ MakeDep =
                 {Name, Tag} when is_list(Tag) -> {Name, {tag, Tag}};
                 Name when is_atom(Name) -> {Name, DefaultDepRef}
            end,
-       {URL, NewGitRef}  =
-            case atom_to_list(AppName) of
-              "emqx" ->
-                RepoName = string:join(string:tokens(atom_to_list(AppName), "_"), "-"),
-                {"https://gitee.com/fastdgiot/" ++ RepoName ++ ".git", GitRef};
-              _ ->
-                case string:split(atom_to_list(AppName),"_") of
-                 ["emqx", _] ->
-                    RepoName = string:join(string:tokens(atom_to_list(AppName), "_"), "-"),
-                    {"https://gitee.com/fastdgiot/" ++ RepoName ++ ".git",GitRef};
-                 ["dgiot", Mod] ->
-                    RepoName = string:join(string:tokens(atom_to_list(AppName), "_"), "_"),
-                    {"https://gitee.com/dgiiot/" ++ RepoName ++ ".git", {branch,"master"}};
-                 ["shuwa", Mod] ->
-                     RepoName = string:join(string:tokens(atom_to_list(AppName), "_"), "_"),
-                     {"https://gitee.com/fastdgiot/" ++ RepoName ++ ".git", {branch,"master"}};
-                 _ ->
-                    RepoName = string:join(string:tokens(atom_to_list(AppName), "_"), "-"),
-                    {"https://gitee.com/fastdgiot/" ++ RepoName ++ ".git", GitRef}
-                end
-            end,
-        {AppName, {git, URL, NewGitRef}}
+        RepoName = string:join(string:tokens(atom_to_list(AppName), "_"), "-"),
+        URL = "https://hub.fastgit.org/emqx/" ++ RepoName,
+        {AppName, {git, URL, GitRef}}
     end,
 
 MakeDeps = fun(Deps, DefaultDepRef, TestDeps) -> [MakeDep(App, DefaultDepRef) || App <- Deps] ++ TestDeps end,
@@ -117,7 +98,7 @@ DefaultDepRef =
         false -> {branch, BRANCH}; %% not set
         "" -> {branch, BRANCH}; %% set empty
         MaybeTag ->
-            case re:run(MaybeTag, "v\[0-9\]+\.\[0-9\]+\.*") of
+            case re:run(MaybeTag, "[0-9\]+\.\[0-9\]+\.*") of
                 nomatch -> {branch, MaybeTag};
                 _ -> {tag, MaybeTag}
             end
@@ -126,13 +107,10 @@ DefaultDepRef =
 %% ==============================================================================
 %% Relx configs
 %% ==============================================================================
+
 GitDescribe = case DefaultDepRef of
-                  {tag, EnvTag} -> EnvTag;
-                  _Else ->
-		      case catch lists:last(string:tokens(os:cmd("git tag -l \"v*\""), "\n")) of
-                          {'EXIT', Reason} -> "";
-                          Version -> Version
-                      end
+                  {tag, EnvTag} -> re:replace(EnvTag, "v", "", [global, {return ,list}]);
+                  _Else -> lists:last(string:tokens(os:cmd("git tag -l \"v*\""), "\n"))
               end,
 Relx0 = Kf(relx, CONFIG2),
 {release, {_, Vsn0}, RelxBaseApps0} = lists:keyfind(release, 1, Relx0),
@@ -171,16 +149,16 @@ TestDeps = [ {meck, "0.8.13"} % hex
 %% Profiles
 %% ==============================================================================
 Profiles =
-[ {dgiot, [ {deps, MakeDeps(CloudDeps, DefaultDepRef, [])}
-         , {relx, RelxCloud([cloud, dev])}
+[ {emqx, [ {deps, MakeDeps(CloudDeps, DefaultDepRef, [])}
+         , {relx, RelxCloud([cloud, bin])}
          ]}
-, {'dgiot-pkg', [ {deps, MakeDeps(CloudDeps, DefaultDepRef, [])}
+, {'emqx-pkg', [ {deps, MakeDeps(CloudDeps, DefaultDepRef, [])}
              , {relx, RelxCloud([cloud, pkg])}
              ]}
-, {'dgiot-edge', [ {deps, MakeDeps(EdgeDeps, DefaultDepRef, [])}
-              , {relx, RelxEdge([edge, dev])}
+, {'emqx-edge', [ {deps, MakeDeps(EdgeDeps, DefaultDepRef, [])}
+              , {relx, RelxEdge([edge, bin])}
               ]}
-, {'dgiot-edge-pkg', [ {deps, MakeDeps(EdgeDeps, DefaultDepRef, [])}
+, {'emqx-edge-pkg', [ {deps, MakeDeps(EdgeDeps, DefaultDepRef, [])}
                   , {relx, RelxEdge([edge, pkg])}
                   ]}
 ],
@@ -204,9 +182,9 @@ CONFIG4 = lists:foldl(fun({K, V}, Acc) -> lists:keystore(K, 1, Acc, {K, V}) end,
 
 FilePath = case os:type() of
                {win32, nt} ->
-                   "dgiot.rebar.config";
+                   "emqx.rebar.config";
                _ ->
-                   "/tmp/dgiot.rebar.config"
+                   "/tmp/emqx.rebar.config"
            end,
 
 file:write_file(FilePath, [io_lib:format("~p.\n", [I]) || I <- CONFIG4]),

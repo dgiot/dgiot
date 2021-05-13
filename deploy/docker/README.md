@@ -1,58 +1,35 @@
-# EMQ X Docker
+# Quick reference
 
-TODO: ...
++ **Where to get help**:
 
-*EMQ* (Erlang MQTT Broker) is a distributed, massively scalable, highly extensible MQTT messaging broker written in Erlang/OTP.
+  https://emqx.io, https://github.com/emqx/emqx-rel, or https://github.com/emqx/emqx
 
-Current docker image size: 47 MB
++ **Where to file issues:**
 
-### Build emqx from source
+  https://github.com/emqx/emqx-rel/issues
 
-1. Update docker configuration to enable docker manifest command and prepare qemu to build images other then x86_64
-    ```bash
-    make prepare
-    ```
-2. Build Docker image
-    ```bash
-    make build
-    ```
-3. Test the docker image with paho
-    ```bash
-    make test 
-    ```
-4. Tag Docker image
-    ```bash
-    make tag 
-    ```
-5. Save the docker image as a zip file
-   ```bash
-    make save 
-    ``` 
-6. Push Docker image
-   ```bash
-    docker login
-    make push
-    make manifest-list
-    docker logout
-    ```
-7. Clean up the compiled image
-    ```bash
-    make clear
-    ```
++ **Supported architectures**
 
-### Get emqx from the docker hub
+  `amd64`, `arm64v8`,  `arm32v7`, `i386`, `s390x`
 
-You can pull the image on the [docker hub](https://hub.docker.com/r/emqx/emqx).
 
-```bash
-docker pull emqx/emqx:latest
-```
++ **Supported Docker versions**:
+
+  [the latest release](https://github.com/docker/docker-ce/releases/latest)
+
+# What is EMQ X
+
+[EMQ X  MQTT broker](https://emqx.io/products/broker) is a fully open source, highly scalable, highly available distributed MQTT messaging broker for IoT, M2M and Mobile applications that can handle tens of millions of concurrent clients.
+
+Starting from 3.0 release, *EMQ X* broker fully supports MQTT V5.0 protocol specifications and backward compatible with MQTT V3.1 and V3.1.1,  as well as other communication protocols such as MQTT-SN, CoAP, LwM2M, WebSocket and STOMP. The 3.0 release of the *EMQ X* broker can scaled to 10+ million concurrent MQTT connections on one cluster.
+
+# How to use this image
 
 ### Run emqx
 
 Execute some command under this docker image
 
-``docker run -d -v `pwd`:$(somewhere) emqx/emqx:$(tag) $(somecommand)``
+``docker run -d --name emqx emqx/emqx:$(tag)``
 
 For example
 
@@ -90,7 +67,7 @@ These environment variables will ignore for configuration file.
 
 #### EMQ X Configuration
 
-> NOTE: All EMQ X Configuration in [etc/emqx.conf](https://github.com/emqx/emqx/blob/emqx30/etc/emqx.conf) could config by environment. The following list is just an example, not a complete configuration.
+> NOTE: All EMQ X Configuration in [etc/emqx.conf](https://github.com/emqx/emqx/blob/master/etc/emqx.conf) could config by environment. The following list is just an example, not a complete configuration.
 
 | Options                    | Default            | Mapped                    | Description                           |
 | ---------------------------| ------------------ | ------------------------- | ------------------------------------- |
@@ -110,7 +87,7 @@ These environment variables will ignore for configuration file.
 | EMQX_LISTENER__API__MGMT    | 8080               | listener.api.mgmt         | MGMT API  port                        |
 | EMQX_MQTT__MAX_PACKET_SIZE  | 64KB               | mqtt.max_packet_size      | Max Packet Size Allowed               |
 
-The list is incomplete and may changed with [etc/emqx.conf](https://github.com/emqx/emqx/blob/emqx30/etc/emqx.conf) and plugin configuration files. But the mapping rule is similar.
+The list is incomplete and may changed with [etc/emqx.conf](https://github.com/emqx/emqx/blob/master/etc/emqx.conf) and plugin configuration files. But the mapping rule is similar.
 
 If set ``EMQX_NAME`` and ``EMQX_HOST``, and unset ``EMQX_NODE__NAME``, ``EMQX_NODE__NAME=$EMQX_NAME@$EMQX_HOST``.
 
@@ -180,28 +157,99 @@ docker run -d --name emqx -p 18083:18083 -p 1883:1883 -p 4369:4369 \
 
 ```
 
-### Cluster
+### Cluster 
 
-You can specify a initial cluster and join.
+EMQ X supports a variety of clustering methods, see our [documentation](https://docs.emqx.io/broker/latest/en/advanced/cluster.html#emqx-service-discovery) for details.
 
-> Note: You must publsh port 4369, 5369 and range of port 6000-6999 for EMQ X Cluster.
+Let's create a static node list cluster from docker-compose.
 
-For example, using 6000-6100 for cluster.
++ Create `docker-compose.yaml`:
 
-```bash
+  ```
+  version: '3'
 
-docker run -d --name emqx -p 18083:18083 -p 1883:1883 -p 4369:4369 -p 6000-6100:6000-6100 \
-    -e EMQX_NAME="emqx" \
-    -e EMQX_HOST="t.emqx.io" \
-    -e EMQX_LISTENER__TCP__EXTERNAL=1883 \
-    -e EMQX_JOIN_CLUSTER="emqx@t.emqx.io" \
-    emqx/emqx:latest
+  services:
+    emqx1:
+      image: emqx/emqx:v4.0.0
+      environment:
+      - "EMQX_NAME=emqx"
+      - "EMQX_HOST=node1.emqx.io"
+      - "EMQX_CLUSTER__DISCOVERY=static"
+      - "EMQX_CLUSTER__STATIC__SEEDS=emqx@node1.emqx.io, emqx@node2.emqx.io"
+      networks:
+        emqx-bridge:
+          aliases:
+          - node1.emqx.io
+    
+    emqx2:
+      image: emqx/emqx:v4.0.0
+      environment:
+      - "EMQX_NAME=emqx"
+      - "EMQX_HOST=node2.emqx.io"
+      - "EMQX_CLUSTER__DISCOVERY=static"
+      - "EMQX_CLUSTER__STATIC__SEEDS=emqx@node1.emqx.io, emqx@node2.emqx.io"
+      networks:
+        emqx-bridge:
+          aliases:
+          - node2.emqx.io
+  
+  networks:
+    emqx-bridge:
+      driver: bridge
 
+  ```
+
++ Start the docker-compose cluster
+
+  ```
+  $ docker-compose -p my_emqx up -d
+  ```
+
++ View cluster
+
+  ```
+  $ docker exec -it my_emqx_emqx1_1 sh -c "emqx_ctl cluster status"
+  Cluster status: #{running_nodes => ['emqx@node1.emqx.io','emqx@node2.emqx.io'],
+                    stopped_nodes => []}
+  ```
+
+### Persistence
+
+If you want to persist the EMQ X docker container, you need to keep the following directories:
+
++ `/opt/emqx/data`
++ `/opt/emqx/etc`
++ `/opt/emqx/log`
+
+Since data in these folders are partially stored under the `/opt/emqx/data/mnesia/${node_name}`, the user also needs to reuse the same node name to see the previous state. In detail, one needs to specify the two environment variables: `EMQX_NAME` and `EMQX_HOST`, `EMQX_HOST` set as `127.0.0.1` or network alias would be useful.
+
+In if you use docker-compose, the configuration would look something like this:
+
+```
+volumes:
+  vol-emqx-data:
+    name: foo-emqx-data
+  vol-emqx-etc:
+    name: foo-emqx-etc
+  vol-emqx-log:
+    name: foo-emqx-log
+
+services:
+  emqx:
+    image: emqx/emqx:v4.0.0
+    restart: always
+    environment:
+      EMQX_NAME: foo_emqx
+      EMQX_HOST: 127.0.0.1
+    volumes:
+      - vol-emqx-data:/opt/emqx/data
+      - vol-emqx-etc:/opt/emqx/etc
+      - vol-emqx-log:/opt/emqx/log
 ```
 
 ### Kernel Tuning
 
-Under linux host machine, the easiest way is [tuning host machine's kernel](http://emqttd-docs.readthedocs.io/en/latest/tune.html).
+Under linux host machine, the easiest way is [tuning host machine's kernel](https://docs.emqx.io/broker/latest/en/tutorial/turn.html#turning-guide).
 
 If you want tune linux kernel by docker, you must ensure your docker is latest version (>=1.12).
 
@@ -233,3 +281,4 @@ docker run -d --name emqx -p 18083:18083 -p 1883:1883 -p 4369:4369 \
 
 + [@je-al](https://github.com/emqx/emqx-docker/issues/2)
 + [@RaymondMouthaan](https://github.com/emqx/emqx-docker/pull/91)
++ [@zhongjiewu](https://github.com/emqx/emqx/issues/3427)

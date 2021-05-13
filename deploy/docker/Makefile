@@ -3,11 +3,11 @@ TARGET ?= emqx/emqx
 QEMU_ARCH ?= x86_64
 ARCH ?= amd64
 QEMU_VERSION ?= v4.0.0
-OS ?= alpine3.10
+OS ?= alpine
 
 ## versioning
 EMQX_DEPS_DEFAULT_VSN ?= develop
-BUILD_VERSION ?= $(EMQX_DEPS_DEFAULT_VSN)
+BUILD_VERSION ?= $(EMQX_DEPS_DEFAULT_VSN:v%=%)
 
 EMQX_NAME = $(subst emqx/,,$(TARGET))
 ARCH_LIST = amd64 arm64v8 arm32v7 i386 s390x
@@ -18,9 +18,9 @@ all: build tag
 .PHONY: prepare
 prepare:
 	## Prepare the machine before any code installation scripts
-	@echo "PREPARE: Setting up dependencies."
-	@apt update -y
-	@apt install --only-upgrade docker-ce -y
+	# @echo "PREPARE: Setting up dependencies."
+	# @apt update -y
+	# @apt install --only-upgrade docker-ce -y
 	
 	## Update docker configuration to enable docker manifest command
 	@echo "PREPARE: Updating docker configuration"
@@ -57,8 +57,8 @@ build:
 	@cd ../.. \
 	&& docker build --no-cache \
 		--build-arg EMQX_DEPS_DEFAULT_VSN=$(EMQX_DEPS_DEFAULT_VSN) \
-		--build-arg BUILD_FROM=$(ARCH)/erlang:22.1-alpine  \
-		--build-arg RUN_FROM=$(ARCH)/alpine:3.10 \
+		--build-arg BUILD_FROM=emqx/build-env:erl22.3-alpine-$(ARCH)  \
+		--build-arg RUN_FROM=$(ARCH)/alpine:3.11 \
 		--build-arg EMQX_NAME=$(EMQX_NAME) \
 		--build-arg QEMU_ARCH=$(QEMU_ARCH) \
 		--tag $(TARGET):build-$(OS)-$(ARCH) \

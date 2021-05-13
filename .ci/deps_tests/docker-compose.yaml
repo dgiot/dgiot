@@ -1,0 +1,101 @@
+version: '3'
+
+services:
+  nginx:
+    build: ./emqx-nginx
+    image: emqx-nginx:1.15
+    restart: always
+    ports:
+      - "18080:80"
+    networks:
+      - emqx-bridge
+    volumes:
+      - ../../tests/logs:/usr/share/nginx/html
+
+  emqx:
+    build: ./emqx-erlang
+    image: emqx-erlang
+    depends_on:
+      - mysql_server
+      - redis_server
+      - mongo_server
+      - pgsql_server
+      - ldap_server
+    networks:
+      - emqx-bridge
+    volumes:
+      - ../../.:/emqx-rel
+    tty: true
+
+  python:
+    image: python:3.7.2
+    networks:
+      - emqx-bridge
+    volumes:
+      - ../../.:/emqx-rel
+    tty: true
+
+  mysql_server:
+    image: mysql:5.7
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: public 
+      MYSQL_DATABASE: mqtt
+    volumes:
+      - ../../_build/emqx/lib/emqx_auth_mysql/test/emqx_auth_mysql_SUITE_data/ca.pem:/etc/certs/ca-cert.pem
+      - ../../_build/emqx/lib/emqx_auth_mysql/test/emqx_auth_mysql_SUITE_data/server-cert.pem:/etc/certs/server-cert.pem
+      - ../../_build/emqx/lib/emqx_auth_mysql/test/emqx_auth_mysql_SUITE_data/server-key.pem:/etc/certs/server-key.pem
+    networks:
+      - emqx-bridge
+    command:
+      --bind-address 0.0.0.0
+      --default-authentication-plugin=mysql_native_password
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_general_ci
+      --explicit_defaults_for_timestamp=true
+      --lower_case_table_names=1
+      --max_allowed_packet=128M
+      --skip-symbolic-links
+      --ssl-ca=/etc/certs/ca.pem
+      --ssl-cert=/etc/certs/server-cert.pem
+      --ssl-key=/etc/certs/server-key.pem
+
+  redis_server:
+    build: ./emqx-redis
+    image: emqx-redis:5
+    restart: always
+    networks:
+      - emqx-bridge
+
+  mongo_server:
+    image: mongo:4.1
+    restart: always
+    environment:
+      MONGO_INITDB_DATABASE: mqtt
+    networks:
+      - emqx-bridge
+    command: --bind_ip_all
+
+  pgsql_server:
+    image: postgres:11 
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: public
+      POSTGRES_USER: root
+      POSTGRES_DB: mqtt
+    networks:
+      - emqx-bridge
+
+  ldap_server:
+    build: ./emqx-ldap
+    image: emqx-ldap:1.0
+    restart: always
+    networks:
+      - emqx-bridge
+
+networks:
+  emqx-bridge:
+    driver: bridge
+
+volumes:
+  logs-volumes:

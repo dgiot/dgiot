@@ -8,13 +8,19 @@ space := $(none) $(none)
 RPM_VSN ?= $(shell echo $(PKG_VSN) | grep -oE "[0-9]+\.[0-9]+(\.[0-9]+)?")
 RPM_REL ?= $(shell echo $(PKG_VSN) | grep -oE "(alpha|beta|rc)\.[0-9]")
 
-TARGET_PKG := $(EMQX_NAME)-$(SYSTEM)-v$(RPM_VSN)-$(RPM_REL).x86_64
+ARCH:=$(shell uname -m)
+ifeq ($(ARCH),mips64)
+ARCH:=mips64el
+endif
+
+TARGET_PKG := $(EMQX_NAME)-$(SYSTEM)-$(RPM_VSN)-$(RPM_REL).$(ARCH)
+
 ifeq ($(RPM_REL),)
 	# no tail
 	RPM_REL := 1
-	TARGET_PKG := $(EMQX_NAME)-$(SYSTEM)-v$(RPM_VSN).x86_64
+	TARGET_PKG := $(EMQX_NAME)-$(SYSTEM)-$(RPM_VSN).$(ARCH)
 endif
-SOURCE_PKG := emqx-$(SYSTEM)-v$(RPM_VSN)-$(RPM_REL).x86_64
+SOURCE_PKG := emqx-$(SYSTEM)-$(RPM_VSN)-$(RPM_REL).$(ARCH)
 
 SYSTEMD := $(shell if command -v systemctl >/dev/null 2>&1; then echo yes; fi)
 # Not $(PWD) as it does not work for make -C
@@ -43,7 +49,7 @@ all: | $(BUILT)
 		--define "_sharedstatedir /var/lib" \
 		emqx.spec
 	mkdir -p $(EMQX_REL)/_packages/$(EMQX_NAME)
-	cp $(TOPDIR)/RPMS/x86_64/$(SOURCE_PKG).rpm $(EMQX_REL)/_packages/$(EMQX_NAME)/$(TARGET_PKG).rpm
+	cp $(TOPDIR)/RPMS/$(ARCH)/$(SOURCE_PKG).rpm $(EMQX_REL)/_packages/$(EMQX_NAME)/$(TARGET_PKG).rpm
 
 $(BUILT):
 	mkdir -p $(TOPDIR) $(SRCDIR)
