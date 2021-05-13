@@ -1,0 +1,147 @@
+----------------------------------------------------------------------
+
+function f (x) local y=5 do local z=10 do local a=7 x=x+y+z+a end z=z+x end return x end
+^D
+main <stdin:0,0> (3 instructions at 0x100100e40)
+0+ params, 2 slots, 1 upvalue, 0 locals, 1 constant, 1 function
+	1	[1]	CLOSURE  	0 0	; 0x100101020
+	2	[1]	SETTABUP 	0 -1 0	; _ENV "f"
+	3	[1]	RETURN   	0 1
+constants (1) for 0x100100e40:
+	1	"f"
+locals (0) for 0x100100e40:
+upvalues (1) for 0x100100e40:
+	0	_ENV	1	0
+
+function <stdin:1,1> (9 instructions at 0x100101020)
+1 param, 5 slots, 0 upvalues, 4 locals, 3 constants, 0 functions
+	1	[1]	LOADK    	1 -1	; 5
+	2	[1]	LOADK    	2 -2	; 10
+	3	[1]	LOADK    	3 -3	; 7
+	4	[1]	ADD      	4 0 1
+	5	[1]	ADD      	4 4 2
+	6	[1]	ADD      	0 4 3
+	7	[1]	ADD      	2 2 0
+	8	[1]	RETURN   	0 2
+	9	[1]	RETURN   	0 1
+constants (3) for 0x100101020:
+	1	5
+	2	10
+	3	7
+locals (4) for 0x100101020:
+	0	x	1	10
+	1	y	2	10
+	2	z	3	8
+	3	a	4	7
+upvalues (0) for 0x100101020:
+
+----------------------------------------------------------------------
+
+function f (x) local y=5 if x>y then local z=x+y x=z else local w=x-y x=w end end
+^D
+main <stdin:0,0> (3 instructions at 0x100100e40)
+0+ params, 2 slots, 1 upvalue, 0 locals, 1 constant, 1 function
+	1	[1]	CLOSURE  	0 0	; 0x100101020
+	2	[1]	SETTABUP 	0 -1 0	; _ENV "f"
+	3	[1]	RETURN   	0 1
+constants (1) for 0x100100e40:
+	1	"f"
+locals (0) for 0x100100e40:
+upvalues (1) for 0x100100e40:
+	0	_ENV	1	0
+
+function <stdin:1,1> (9 instructions at 0x100101020)
+1 param, 3 slots, 0 upvalues, 4 locals, 1 constant, 0 functions
+	1	[1]	LOADK    	1 -1	; 5
+	2	[1]	LT       	0 1 0
+	3	[1]	JMP      	0 3	; to 7
+	4	[1]	ADD      	2 0 1
+	5	[1]	MOVE     	0 2
+	6	[1]	JMP      	0 2	; to 9
+	7	[1]	SUB      	2 0 1
+	8	[1]	MOVE     	0 2
+	9	[1]	RETURN   	0 1
+constants (1) for 0x100101020:
+	1	5
+locals (4) for 0x100101020:
+	0	x	1	10
+	1	y	2	10
+	2	z	5	6
+	3	w	8	9
+upvalues (0) for 0x100101020:
+
+----------------------------------------------------------------------
+
+function f (x) local y=x do local y=z x=x+y end y=y-x return y end
+^D
+main <stdin:0,0> (3 instructions at 0x100100e40)
+0+ params, 2 slots, 1 upvalue, 0 locals, 1 constant, 1 function
+	1	[1]	CLOSURE  	0 0	; 0x100101020
+	2	[1]	SETTABUP 	0 -1 0	; _ENV "f"
+	3	[1]	RETURN   	0 1
+constants (1) for 0x100100e40:
+	1	"f"
+locals (0) for 0x100100e40:
+upvalues (1) for 0x100100e40:
+	0	_ENV	1	0
+
+function <stdin:1,1> (6 instructions at 0x100101020)
+1 param, 3 slots, 1 upvalue, 3 locals, 1 constant, 0 functions
+	1	[1]	MOVE     	1 0
+	2	[1]	GETTABUP 	2 0 -1	; _ENV "z"
+	3	[1]	ADD      	0 0 2
+	4	[1]	SUB      	1 1 0
+	5	[1]	RETURN   	1 2
+	6	[1]	RETURN   	0 1
+constants (1) for 0x100101020:
+	1	"z"
+locals (3) for 0x100101020:
+	0	x	1	7
+	1	y	2	7
+	2	y	3	4
+upvalues (1) for 0x100101020:
+	0	_ENV	0	0
+
+----------------------------------------------------------------------
+
+function f (x) local y=5 for z=x,x*y,2*x do local m x=x+m+z z=z+1 end end
+^D
+main <stdin:0,0> (3 instructions at 0x100100e40)
+0+ params, 2 slots, 1 upvalue, 0 locals, 1 constant, 1 function
+	1	[1]	CLOSURE  	0 0	; 0x100101020
+	2	[1]	SETTABUP 	0 -1 0	; _ENV "f"
+	3	[1]	RETURN   	0 1
+constants (1) for 0x100100e40:
+	1	"f"
+locals (0) for 0x100100e40:
+upvalues (1) for 0x100100e40:
+	0	_ENV	1	0
+
+function <stdin:1,1> (11 instructions at 0x100101020)
+1 param, 8 slots, 0 upvalues, 7 locals, 3 constants, 0 functions
+	1	[1]	LOADK    	1 -1	; 5
+	2	[1]	MOVE     	2 0
+	3	[1]	MUL      	3 0 1
+	4	[1]	MUL      	4 -2 0	; 2 -
+	5	[1]	FORPREP  	2 4	; to 10
+	6	[1]	LOADNIL  	6 0
+	7	[1]	ADD      	7 0 6
+	8	[1]	ADD      	0 7 5
+	9	[1]	ADD      	5 5 -3	; - 1
+	10	[1]	FORLOOP  	2 -5	; to 6
+	11	[1]	RETURN   	0 1
+constants (3) for 0x100101020:
+	1	5
+	2	2
+	3	1
+locals (7) for 0x100101020:
+	0	x	1	12
+	1	y	2	12
+	2	(for index)	5	11
+	3	(for limit)	5	11
+	4	(for step)	5	11
+	5	z	6	10
+	6	m	7	10
+upvalues (0) for 0x100101020:
+
+----------------------------------------------------------------------

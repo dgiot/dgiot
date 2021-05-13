@@ -1,0 +1,14 @@
+{application, ssl_verify_fun,
+ [
+  {description, ""},
+  {vsn, "1.1.4"},
+  {modules, []},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib,
+                  ssl
+                 ]},
+  {env, []}
+ ]}.
+

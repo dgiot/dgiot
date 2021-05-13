@@ -1,0 +1,20 @@
+%% emqx_statsd config
+
+{mapping, "statsd.push.gateway.server", "emqx_statsd.push_gateway", [
+  {default, "http://127.0.0.1:9091"},
+  {datatype, string}
+]}.
+
+{mapping, "statsd.interval", "emqx_statsd.interval", [
+  {default, 5000},
+  {datatype, integer}
+]}.
+
+{mapping, "prometheus.collector.$name", "prometheus.collectors", [
+  {datatype, atom}
+]}.
+
+{translation, "prometheus.collectors", fun(Conf) ->
+  Collectors = cuttlefish_variable:filter_by_prefix("prometheus.collector", Conf),
+  lists:map(fun({_, Collector}) -> Collector end, Collectors)
+end}.

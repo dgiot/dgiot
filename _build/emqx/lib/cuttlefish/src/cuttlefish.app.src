@@ -1,0 +1,11 @@
+{application, cuttlefish,
+ [
+  {description, "cuttlefish configuration abstraction"},
+  {vsn, git},
+  {registered, []},
+  {applications, [
+                  kernel,
+                  stdlib
+                 ]},
+  {env, []}
+ ]}.

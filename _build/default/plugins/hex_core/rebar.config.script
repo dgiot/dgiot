@@ -1,0 +1,9 @@
+case os:getenv("TARGET_ERLANG_VERSION") of
+    false -> CONFIG;
+    [] -> CONFIG;
+    TargetErlangVersionString ->
+        GpbOpts = proplists:get_value(gpb_opts, CONFIG),
+        TargetErlangVersion = {target_erlang_version, list_to_integer(TargetErlangVersionString)},
+        NewGpbOpts = lists:keystore(target_erlang_version, 1, GpbOpts, TargetErlangVersion),
+        lists:keystore(gpb_opts, 1, CONFIG, {gpb_opts, NewGpbOpts})
+end.

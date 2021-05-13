@@ -1,0 +1,11 @@
+#!/bin/sh
+set -e
+
+## constants from relx template
+RUNNER_ROOT_DIR="{{ runner_root_dir }}"
+RUNNER_BIN_DIR="{{ runner_bin_dir }}"
+ERTS_VSN="{{ erts_vsn }}"
+
+ERTS_PATH=$RUNNER_ROOT_DIR/erts-$ERTS_VSN/bin
+
+exec ${ERTS_PATH}/escript ${RUNNER_BIN_DIR}/emqtt_cli $@

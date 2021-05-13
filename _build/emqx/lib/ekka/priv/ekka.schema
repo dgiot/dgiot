@@ -1,0 +1,200 @@
+%%--------------------------------------------------------------------
+%% Cluster
+%%--------------------------------------------------------------------
+
+%% @doc Cluster name
+{mapping, "cluster.name", "ekka.cluster_name", [
+  {default, ekka},
+  {datatype, atom}
+]}.
+
+%% @doc Cluster enable
+{mapping, "cluster.enable", "ekka.cluster_enable", [
+  {default, on},
+  {datatype, flag}
+]}.
+
+%% @doc Cluster discovery
+{mapping, "cluster.discovery", "ekka.cluster_discovery", [
+  {default, manual},
+  {datatype, atom}
+]}.
+
+%% @doc Clean down node from the cluster
+{mapping, "cluster.autoclean", "ekka.cluster_autoclean", [
+  {datatype, {duration, ms}}
+]}.
+
+%% @doc Cluster autoheal
+{mapping, "cluster.autoheal", "ekka.cluster_autoheal", [
+  {datatype, [flag, {duration, ms}]},
+  {default, off}
+]}.
+
+%% @doc The erlang distributed protocol for the cluster
+{mapping, "cluster.proto_dist", "ekka.proto_dist", [
+  {default, inet_tcp},
+  {datatype, {enum, [inet_tcp, inet6_tcp, inet_tls]}}
+]}.
+
+%%--------------------------------------------------------------------
+%% Cluster by static node list
+
+{mapping, "cluster.static.seeds", "ekka.cluster_discovery", [
+  {datatype, string}
+]}.
+
+%%--------------------------------------------------------------------
+%% Cluster using UDP Multicast
+
+{mapping, "cluster.mcast.addr", "ekka.cluster_discovery", [
+  {default, "239.192.0.1"},
+  {datatype, string}
+]}.
+
+{mapping, "cluster.mcast.ports", "ekka.cluster_discovery", [
+  {default, "4369"},
+  {datatype, string}
+]}.
+
+{mapping, "cluster.mcast.iface", "ekka.cluster_discovery", [
+  {datatype, string},
+  {default, "0.0.0.0"}
+]}.
+
+{mapping, "cluster.mcast.ttl", "ekka.cluster_discovery", [
+  {datatype, integer},
+  {default, 255}
+]}.
+
+{mapping, "cluster.mcast.loop", "ekka.cluster_discovery", [
+  {datatype, flag},
+  {default, on}
+]}.
+
+{mapping, "cluster.mcast.sndbuf", "ekka.cluster_discovery", [
+  {datatype, bytesize},
+  {default, "16KB"}
+]}.
+
+{mapping, "cluster.mcast.recbuf", "ekka.cluster_discovery", [
+  {datatype, bytesize},
+  {default, "16KB"}
+]}.
+
+{mapping, "cluster.mcast.buffer", "ekka.cluster_discovery", [
+  {datatype, bytesize},
+  {default, "32KB"}
+]}.
+
+%%--------------------------------------------------------------------
+%% Cluster by DNS A Record
+
+{mapping, "cluster.dns.name", "ekka.cluster_discovery", [
+  {datatype, string}
+]}.
+
+{mapping, "cluster.dns.app", "ekka.cluster_discovery", [
+  {datatype, string}
+]}.
+
+%%--------------------------------------------------------------------
+%% Cluster using etcd
+
+{mapping, "cluster.etcd.server", "ekka.cluster_discovery", [
+  {datatype, string}
+]}.
+
+{mapping, "cluster.etcd.prefix", "ekka.cluster_discovery", [
+  {datatype, string}
+]}.
+
+{mapping, "cluster.etcd.node_ttl", "ekka.cluster_discovery", [
+  {datatype, {duration, ms}},
+  {default, "1m"}
+]}.
+
+{mapping, "cluster.etcd.ssl.keyfile", "ekka.cluster_discovery", [
+  {datatype, string}
+]}.
+
+{mapping, "cluster.etcd.ssl.certfile", "ekka.cluster_discovery", [
+  {datatype, string}
+]}.
+
+{mapping, "cluster.etcd.ssl.cacertfile", "ekka.cluster_discovery", [
+  {datatype, string}
+]}.
+
+%%--------------------------------------------------------------------
+%% Cluster on K8s
+
+{mapping, "cluster.k8s.apiserver", "ekka.cluster_discovery", [
+  {datatype, string}
+]}.
+
+{mapping, "cluster.k8s.service_name", "ekka.cluster_discovery", [
+  {datatype, string}
+]}.
+
+{mapping, "cluster.k8s.address_type", "ekka.cluster_discovery", [
+  {datatype, {enum, [ip, dns, hostname]}}
+]}.
+
+{mapping, "cluster.k8s.app_name", "ekka.cluster_discovery", [
+  {datatype, string}
+]}.
+
+{mapping, "cluster.k8s.namespace", "ekka.cluster_discovery", [
+  {datatype, string}
+]}.
+
+{mapping, "cluster.k8s.suffix", "ekka.cluster_discovery", [
+  {datatype, string},
+  {default, ""}
+]}.
+
+{translation, "ekka.cluster_discovery", fun(Conf) ->
+  Strategy = cuttlefish:conf_get("cluster.discovery", Conf),
+  Filter  = fun(Opts) -> [{K, V} || {K, V} <- Opts, V =/= undefined] end,
+  IpPort = fun(S) ->
+             [Addr, Port] = string:tokens(S, ":"),
+             {ok, Ip} = inet:parse_address(Addr),
+             {Ip, Port}
+           end,
+  Options = fun(static) ->
+                 [{seeds, [list_to_atom(S) || S <- string:tokens(cuttlefish:conf_get("cluster.static.seeds", Conf, ""), ",")]}];
+               (mcast) ->
+                 {ok, Addr} = inet:parse_address(cuttlefish:conf_get("cluster.mcast.addr", Conf)),
+                 {ok, Iface} = inet:parse_address(cuttlefish:conf_get("cluster.mcast.iface", Conf)),
+                 Ports = [list_to_integer(S) || S <- string:tokens(cuttlefish:conf_get("cluster.mcast.ports", Conf), ",")],
+                 [{addr, Addr}, {ports, Ports}, {iface, Iface},
+                  {ttl, cuttlefish:conf_get("cluster.mcast.ttl", Conf, 1)},
+                  {loop, cuttlefish:conf_get("cluster.mcast.loop", Conf, true)}];
+               (dns) ->
+                 [{name, cuttlefish:conf_get("cluster.dns.name", Conf)},
+                  {app, cuttlefish:conf_get("cluster.dns.app", Conf)}];
+               (etcd) ->
+                 SslOpts = fun(Conf) ->
+                              Options = cuttlefish_variable:filter_by_prefix("cluster.etcd.ssl", Conf),
+                              lists:map(fun({["cluster", "etcd", "ssl", Name], Value}) ->
+                                              {list_to_atom(Name), Value}
+                                        end, Options)
+                            end,
+                 [{server, string:tokens(cuttlefish:conf_get("cluster.etcd.server", Conf), ",")},
+                  {prefix, cuttlefish:conf_get("cluster.etcd.prefix", Conf, "emqcl")},
+                  {node_ttl, cuttlefish:conf_get("cluster.etcd.node_ttl", Conf, 60)},
+                  {ssl_options, SslOpts(Conf)}];
+               (k8s) ->
+                 [{apiserver, cuttlefish:conf_get("cluster.k8s.apiserver", Conf)},
+                  {service_name, cuttlefish:conf_get("cluster.k8s.service_name", Conf)},
+                  {address_type, cuttlefish:conf_get("cluster.k8s.address_type", Conf, ip)},
+                  {app_name, cuttlefish:conf_get("cluster.k8s.app_name", Conf)},
+                  {namespace, cuttlefish:conf_get("cluster.k8s.namespace", Conf)},
+                  {suffix, cuttlefish:conf_get("cluster.k8s.suffix", Conf, "")}];
+               (manual) ->
+                 [ ]
+            end,
+  {Strategy, Filter(Options(Strategy))}
+end}.
+

@@ -1,0 +1,12 @@
+{application, minirest,
+ [{description, "A mini RESTful API framework built on cowboy and jsx"},
+  {id, "minirest"},
+  {vsn, "git"},
+  {modules, []},
+  {registered, []},
+  {applications, [kernel,stdlib,jsx,cowboy]},
+  {env, []},
+  {licenses, ["Apache-2.0"]},
+  {maintainers, ["EMQ X Team <contact@emqx.io>"]},
+  {links, ["Github", "https://hub.fastgit.org/emqx/minirest"]}
+ ]}.

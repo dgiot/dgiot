@@ -1,0 +1,22 @@
+%%-*- mode: erlang -*-
+
+%% ==============================================================================
+%% Relx configs
+%% ==============================================================================
+Keyfind = fun(K, L) -> {K, V} = lists:keyfind(K, 1, L), V end,
+
+NewRelx = 
+    fun(Name, Profiles) ->
+        EMQTT = Keyfind(Name, Profiles),
+        Relx = Keyfind(relx, EMQTT),
+        {release, {emqtt, Vsn}, Apps} = lists:keyfind(release, 1, Relx),
+        GitDescribe = lists:last(string:tokens(os:cmd("git describe --tags --always"), "\n")),
+        Relx1 = lists:keystore(release, 1, Relx, {release, {emqtt, GitDescribe}, Apps}),
+        [{relx, Relx1}]
+    end,
+
+Profiles = Keyfind(profiles, CONFIG),
+Profiles1 = lists:keystore(emqtt, 1, Profiles, {emqtt, NewRelx(emqtt, Profiles)}),
+Profiles2 = lists:keystore(emqtt_pkg, 1, Profiles1, {emqtt_pkg, NewRelx(emqtt_pkg, Profiles1)}),
+NewConfig = lists:keystore(profiles, 1, CONFIG, {profiles, Profiles2}),
+NewConfig.

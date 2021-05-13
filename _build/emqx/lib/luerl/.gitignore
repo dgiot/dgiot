@@ -1,0 +1,8 @@
+*~
+.swp
+.*.swp
+.DS_Store
+*.beam
+src/luerl_scan.erl
+src/luerl_parse.erl
+erl_crash.dump

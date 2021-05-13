@@ -1,0 +1,14 @@
+#!/bin/sh
+# postinst script for emqtt
+#
+# see: dh_installdeb(1)
+
+set -e
+
+chmod -R 0755 /usr/lib/emqtt/bin
+[ -f /usr/bin/emqtt ] && rm /usr/bin/emqtt
+[ -f /usr/bin/emqtt_cli ] && rm /usr/bin/emqtt_cli
+ln -s /usr/lib/emqtt/bin/emqtt /usr/bin/emqtt
+ln -s /usr/lib/emqtt/bin/emqtt_cli /usr/bin/emqtt_cli
+
+exit 0

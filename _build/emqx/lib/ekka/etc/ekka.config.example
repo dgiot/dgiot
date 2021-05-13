@@ -1,0 +1,49 @@
+[{ekka, [
+  {cluster_name, ekka},
+  {cluster_autoheal, true},
+  {cluster_autoclean, 60000},
+  {proto_dist, inet_tcp},
+
+%% Clustering via static node list
+%% {cluster_discovery, {static, [
+%%                       {seeds, ['ekka1@127.0.0.1', 'ekka2@127.0.0.1']}
+%%                     ]}},
+
+%% Clustering via IP Multicast
+%% {cluster_discovery, {mcast, [
+%%                       {addr, {239,192,0,1}},
+%%                       {ports, [4369,4370]},
+%%                       {iface, {0,0,0,0}},
+%%                       {ttl, 255},
+%%                       {loop, true}
+%%                     ]}},
+
+%% Clustering via DNS A Record
+%% {cluster_discovery, {dns, [
+%%                        {name, "localhost"},
+%%                        {app, "ekka"}
+%%                     ]}},
+
+%% Clustering via etcd
+%% {cluster_discovery, {etcd, [
+%%                       {server, ["http://127.0.0.1:2379"]},
+%%                       {prefix, "ekkacluster"},
+%%                       {ssl_options, [{keyfile, "path/to/client-key.pem"},
+%%                                      {certfile, "path/to/client.pem"},
+%%                                      {cacertfile, "path/to/ca.pem"}
+%%                                     ]},
+%%                       {node_ttl, 60000}
+%%                     ]}},
+
+%% Clustering via k8s
+%% {cluster_discovery, {k8s, [
+%%                       {apiserver, "http://10.110.111.204:8080"},
+%%                       {namespace, "default"},
+%%                       {service_name, "ekka"},
+%%                       {address_type, ip},
+%%                       {app_name, "ekka"},
+%%                       {suffix, "pod.cluster.local"}
+%%                     ]}},
+
+  {cluster_discovery, {manual, []}}
+]}].

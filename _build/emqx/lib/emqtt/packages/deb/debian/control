@@ -1,0 +1,12 @@
+Source: emqtt
+Section: unknown
+Priority: optional
+Maintainer: emqx <contact@emqx.io>
+Build-Depends: debhelper (>=9)
+Standards-Version: 3.9.6
+Homepage: https://www.emqx.io
+
+Package: emqtt
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Erlang MQTT v5.0 Client compatible with MQTT v3.0

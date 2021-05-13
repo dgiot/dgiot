@@ -1,0 +1,45 @@
+#! /bin/sh
+
+get_erl_version()
+{
+    which erl > /dev/null 2>&1
+    if [ $? = 0 ]; then
+        erl -noinput \
+            -eval 'ok = io:put_chars(erlang:system_info(system_version))' \
+            -s init stop
+    else
+        echo "NOT FOUND"
+    fi
+}
+
+get_python_version()
+{
+    which python > /dev/null 2>&1
+    if [ $? = 0 ]; then
+        python --version 2>&1
+    else
+        echo "NOT FOUND"
+    fi
+}
+
+get_ruby_version()
+{
+    which ruby > /dev/null 2>&1
+    if [ $? = 0 ]; then
+        ruby --version
+    else
+        echo "NOT FOUND"
+    fi
+}
+
+display_versions()
+{
+    echo
+    echo "====================== Versions ============================="
+    echo "  Erlang: $(get_erl_version)"
+    echo "  Python: $(get_python_version)"
+    echo "  Ruby:   $(get_ruby_version)"
+    echo "============================================================="
+}
+
+display_versions

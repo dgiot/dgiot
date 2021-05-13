@@ -1,0 +1,123 @@
+[[constraints]]
+== Constraints
+
+Constraints are validation and conversion functions applied
+to user input.
+
+They are used in various places in Cowboy, including the
+router and the `cowboy_req` match functions.
+
+=== Syntax
+
+Constraints are provided as a list of fields. For each field
+in the list, specific constraints can be applied, as well as
+a default value if the field is missing.
+
+A field can take the form of an atom `field`, a tuple with
+constraints `{field, Constraints}` or a tuple with constraints
+and a default value `{field, Constraints, Default}`.
+The `field` form indicates the field is mandatory.
+
+Note that when used with the router, only the second form
+makes sense, as it does not use the default and the field
+is always defined.
+
+Constraints for each field are provided as an ordered list
+of atoms or funs to apply. Built-in constraints are provided
+as atoms, while custom constraints are provided as funs.
+
+When multiple constraints are provided, they are applied in
+the order given. If the value has been modified by a constraint
+then the next one receives the new value.
+
+For example, the following constraints will first validate
+and convert the field `my_value` to an integer, and then
+check that the integer is positive:
+
+[source,erlang]
+----
+PositiveFun = fun
+    (_, V) when V > 0 ->
+        {ok, V};
+    (_, _) ->
+        {error, not_positive}
+end,
+{my_value, [int, PositiveFun]}.
+----
+
+We ignore the first fun argument in this snippet. We shouldn't.
+We will simply learn what it is later in this chapter.
+
+When there's only one constraint, it can be provided directly
+without wrapping it into a list:
+
+[source,erlang]
+----
+{my_value, int}
+----
+
+=== Built-in constraints
+
+Built-in constraints are specified as an atom:
+
+[cols="<,<",options="header"]
+|===
+| Constraint | Description
+| int        | Converts binary value to integer.
+| nonempty   | Ensures the binary value is non-empty.
+|===
+
+=== Custom constraints
+
+Custom constraints are specified as a fun. This fun takes
+two arguments. The first argument indicates the operation
+to be performed, and the second is the value. What the
+value is and what must be returned depends on the operation.
+
+Cowboy currently defines three operations. The operation
+used for validating and converting user input is the `forward`
+operation.
+
+[source,erlang]
+----
+int(forward, Value) ->
+    try
+        {ok, binary_to_integer(Value)}
+    catch _:_ ->
+        {error, not_an_integer}
+    end;
+----
+
+The value must be returned even if it is not converted
+by the constraint.
+
+The `reverse` operation does the opposite: it
+takes a converted value and changes it back to what the
+user input would have been.
+
+[source,erlang]
+----
+int(reverse, Value) ->
+	try
+		{ok, integer_to_binary(Value)}
+	catch _:_ ->
+		{error, not_an_integer}
+	end;
+----
+
+Finally, the `format_error` operation takes an error
+returned by any other operation and returns a formatted
+human-readable error message.
+
+[source,erlang]
+----
+int(format_error, {not_an_integer, Value}) ->
+	io_lib:format("The value ~p is not an integer.", [Value]).
+----
+
+Notice that for this case you get both the error and
+the value that was given to the constraint that produced
+this error.
+
+Cowboy will not catch exceptions coming from constraint
+functions. They should be written to not emit any exceptions.
