@@ -7,7 +7,7 @@ TAG = $(shell git tag -l --points-at HEAD)
 
 CUR_BRANCH := $(shell git branch | grep -e "^*" | cut -d' ' -f 2)
 
-#EMQX_DEPS_DEFAULT_VSN = release-4.2
+EMQX_DEPS_DEFAULT_VSN = release-4.2
 ifeq ($(EMQX_DEPS_DEFAULT_VSN),)
 	ifneq ($(TAG),)
 		EMQX_DEPS_DEFAULT_VSN ?= $(lastword 1, $(TAG))
