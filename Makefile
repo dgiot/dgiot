@@ -22,36 +22,11 @@ REBAR_URL = https://s3.amazonaws.com/rebar3/rebar3
 
 export EMQX_DEPS_DEFAULT_VSN
 
-PROFILE ?= emqx
-PROFILES := emqx emqx-edge
-PKG_PROFILES := emqx-pkg emqx-edge-pkg
+PROFILE ?= dgiot
+PROFILES := dgiot dgiot-edge
+PKG_PROFILES := dgiot-pkg dgiot-edge-pkg
 
-CT_APPS := emqx \
-           emqx_auth_clientid \
-           emqx_auth_http \
-           emqx_auth_jwt \
-           emqx_auth_ldap \
-           emqx_auth_mongo \
-           emqx_auth_mysql \
-           emqx_auth_pgsql \
-           emqx_auth_redis \
-           emqx_auth_username \
-           emqx_auth_mnesia \
-           emqx_sasl \
-           emqx_coap \
-           emqx_recon \
-           emqx_dashboard \
-           emqx_delayed_publish \
-           emqx_lua_hook \
-           emqx_lwm2m \
-           emqx_management \
-           emqx_retainer \
-           emqx_sn \
-           emqx_stomp \
-           emqx_web_hook \
-           emqx_bridge_mqtt \
-           emqx_rule_engine \
-           emqx_extension_hook
+CT_APPS := dgiot
 
 .PHONY: default
 default: $(REBAR) $(PROFILE)
@@ -115,9 +90,9 @@ checkout:
 .PHONY: $(REBAR) $(CT_APPS:%=ct-%)
 ct: $(CT_APPS:%=ct-%)
 $(CT_APPS:%=ct-%): checkout-$(PROFILE)
-	-make -C _build/emqx/lib/$(@:ct-%=%) ct
+	-make -C _build/dgiot/lib/$(@:ct-%=%) ct
 	@mkdir -p tests/logs/$(@:ct-%=%)
-	@if [ -d _build/emqx/lib/$(@:ct-%=%)/_build/test/logs ]; then cp -r _build/emqx/lib/$(@:ct-%=%)/_build/test/logs/* tests/logs/$(@:ct-%=%); fi
+	@if [ -d _build/dgiot/lib/$(@:ct-%=%)/_build/test/logs ]; then cp -r _build/dgiot/lib/$(@:ct-%=%)/_build/test/logs/* tests/logs/$(@:ct-%=%); fi
 
 $(REBAR):
 ifneq ($(wildcard rebar3),rebar3)
@@ -129,44 +104,44 @@ endif
 .PHONY: $(PKG_PROFILES)
 $(PKG_PROFILES:%=%): $(REBAR)
 	ln -snf _build/$(@)/lib ./_checkouts
-	@if [ $$(echo $(@) |grep edge) ];then export EMQX_DESC="EMQ X Edge";else export EMQX_DESC="EMQ X Broker"; fi;\
+	@if [ $$(echo $(@) |grep edge) ];then export DGIOT_DESC="DGIOT X Edge";else export DGIOT_DESC="DGIOT X Broker"; fi;\
 	$(REBAR) as $(@) release
-	EMQX_REL=$$(pwd) EMQX_BUILD=$(@) EMQX_DEPS_DEFAULT_VSN=$(EMQX_DEPS_DEFAULT_VSN) make -C deploy/packages
+	DGIOT_REL=$$(pwd) DGIOT_BUILD=$(@) EMQX_DEPS_DEFAULT_VSN=$(EMQX_DEPS_DEFAULT_VSN) make -C deploy/packages
 
 # Build docker image
 .PHONY: $(PROFILES:%=%-docker-build)
 $(PROFILES:%=%-docker-build):
 	@if [ ! -z `echo $(@) |grep -oE edge` ]; then \
-		TARGET=emqx/emqx-edge EMQX_DEPS_DEFAULT_VSN=$(EMQX_DEPS_DEFAULT_VSN) make -C deploy/docker; \
+		TARGET=dgiot/dgiot-edge EMQX_DEPS_DEFAULT_VSN=$(EMQX_DEPS_DEFAULT_VSN) make -C deploy/docker; \
 	else \
-		TARGET=emqx/emqx EMQX_DEPS_DEFAULT_VSN=$(EMQX_DEPS_DEFAULT_VSN) make -C deploy/docker; \
+		TARGET=dgiot/dgiot EMQX_DEPS_DEFAULT_VSN=$(EMQX_DEPS_DEFAULT_VSN) make -C deploy/docker; \
 	fi;
 
 # Save docker images
 .PHONY: $(PROFILES:%=%-docker-save)
 $(PROFILES:%=%-docker-save):
 	@if [ ! -z `echo $(@) |grep -oE edge` ]; then \
-		TARGET=emqx/emqx-edge EMQX_DEPS_DEFAULT_VSN=$(EMQX_DEPS_DEFAULT_VSN) make -C deploy/docker save; \
+		TARGET=dgiot/dgiot-edge EMQX_DEPS_DEFAULT_VSN=$(EMQX_DEPS_DEFAULT_VSN) make -C deploy/docker save; \
 	else \
-		TARGET=emqx/emqx EMQX_DEPS_DEFAULT_VSN=$(EMQX_DEPS_DEFAULT_VSN) make -C deploy/docker save; \
+		TARGET=dgiot/dgiot EMQX_DEPS_DEFAULT_VSN=$(EMQX_DEPS_DEFAULT_VSN) make -C deploy/docker save; \
 	fi;
 
 # Push docker image
 .PHONY: $(PROFILES:%=%-docker-push)
 $(PROFILES:%=%-docker-push):
 	@if [ ! -z `echo $(@) |grep -oE edge` ]; then \
-		TARGET=emqx/emqx-edge EMQX_DEPS_DEFAULT_VSN=$(EMQX_DEPS_DEFAULT_VSN) make -C deploy/docker push; \
-		TARGET=emqx/emqx-edge EMQX_DEPS_DEFAULT_VSN=$(EMQX_DEPS_DEFAULT_VSN) make -C deploy/docker manifest_list; \
+		TARGET=dgiot/dgiot-edge EMQX_DEPS_DEFAULT_VSN=$(EMQX_DEPS_DEFAULT_VSN) make -C deploy/docker push; \
+		TARGET=dgiot/dgiot-edge EMQX_DEPS_DEFAULT_VSN=$(EMQX_DEPS_DEFAULT_VSN) make -C deploy/docker manifest_list; \
 	else \
-		TARGET=emqx/emqx EMQX_DEPS_DEFAULT_VSN=$(EMQX_DEPS_DEFAULT_VSN) make -C deploy/docker push; \
-		TARGET=emqx/emqx EMQX_DEPS_DEFAULT_VSN=$(EMQX_DEPS_DEFAULT_VSN) make -C deploy/docker manifest_list; \
+		TARGET=dgiot/dgiot EMQX_DEPS_DEFAULT_VSN=$(EMQX_DEPS_DEFAULT_VSN) make -C deploy/docker push; \
+		TARGET=dgiot/dgiot EMQX_DEPS_DEFAULT_VSN=$(EMQX_DEPS_DEFAULT_VSN) make -C deploy/docker manifest_list; \
 	fi;
 
 # Clean docker image
 .PHONY: $(PROFILES:%=%-docker-clean)
 $(PROFILES:%=%-docker-clean):
 	@if [ ! -z `echo $(@) |grep -oE edge` ]; then \
-		TARGET=emqx/emqx-edge EMQX_DEPS_DEFAULT_VSN=$(EMQX_DEPS_DEFAULT_VSN) make -C deploy/docker clean; \
+		TARGET=dgiot/dgiot-edge EMQX_DEPS_DEFAULT_VSN=$(EMQX_DEPS_DEFAULT_VSN) make -C deploy/docker clean; \
 	else \
-		TARGET=emqx/emqx EMQX_DEPS_DEFAULT_VSN=$(EMQX_DEPS_DEFAULT_VSN) make -C deploy/docker clean; \
+		TARGET=dgiot/dgiot EMQX_DEPS_DEFAULT_VSN=$(EMQX_DEPS_DEFAULT_VSN) make -C deploy/docker clean; \
 	fi;

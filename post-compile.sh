@@ -14,7 +14,7 @@ cd ${REBAR_BUILD_DIR}
 rm -rf conf
 mkdir -p conf/plugins
 for conf in lib/*/etc/*.conf* ; do
-    if [ "emqx.conf" = "${conf##*/}" ]; then
+    if [ "dgiot.conf" = "${conf##*/}" ]; then
         cp ${conf} conf/
     elif [ "acl.conf" = "${conf##*/}" ]; then
         cp ${conf} conf/
@@ -27,5 +27,7 @@ done
 
 ## Collect all schema files
 mkdir -p conf/schema
-cp lib/emqx/priv/emqx.schema conf/schema/
+for schema in lib/*/priv/*.schema; do
+    cp ${schema} conf/schema/
+done
 

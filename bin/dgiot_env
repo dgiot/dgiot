@@ -1,0 +1,11 @@
+#!/bin/sh
+
+[ "x" = "x$DGIOT_NODE_NAME" ] && DGIOT_NODE_NAME=dgiot@127.0.0.1
+[ "x" = "x$DGIOT_NODE_COOKIE" ] && DGIOT_NODE_COOKIE=dgiotsecretcookie
+[ "x" = "x$EMQX_MAX_PACKET_SIZE" ] && EMQX_MAX_PACKET_SIZE=64KB
+[ "x" = "x$EMQX_MAX_PORTS" ] && EMQX_MAX_PORTS=65536
+[ "x" = "x$EMQX_TCP_PORT" ] && EMQX_TCP_PORT=1883
+[ "x" = "x$EMQX_SSL_PORT" ] && EMQX_SSL_PORT=8883
+[ "x" = "x$EMQX_WS_PORT" ] && EMQX_WS_PORT=8083
+[ "x" = "x$EMQX_WSS_PORT" ] && EMQX_WSS_PORT=8084
+
