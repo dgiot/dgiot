@@ -65,9 +65,31 @@ MakeDep =
                 {Name, Tag} when is_list(Tag) -> {Name, {tag, Tag}};
                 Name when is_atom(Name) -> {Name, DefaultDepRef}
            end,
-        RepoName = string:join(string:tokens(atom_to_list(AppName), "_"), "-"),
-        URL = "https://hub.fastgit.org/emqx/" ++ RepoName,
-        {AppName, {git, URL, GitRef}}
+       {URL, NewGitRef}  =
+            case atom_to_list(AppName) of
+              "emqx" ->
+                    RepoName = string:join(string:tokens(atom_to_list(AppName), "_"), "-"),
+                    {"https://hub.fastgit.org/emqx/" ++ RepoName,GitRef};
+               "dgiot" ->
+                    RepoName = string:join(string:tokens(atom_to_list(AppName), "_"), "-"),
+                    {"https://hub.fastgit.org/dgiot/" ++ RepoName,GitRef};
+              _ ->
+                case string:split(atom_to_list(AppName),"_") of
+                 ["emqx", _] ->
+                    RepoName = string:join(string:tokens(atom_to_list(AppName), "_"), "-"),
+                    {"https://hub.fastgit.org/emqx/" ++ RepoName,GitRef};
+                 ["dgiot", Mod] ->
+                    RepoName = string:join(string:tokens(atom_to_list(AppName), "_"), "_"),
+                    {"https://hub.fastgit.org/dgiot/" ++ RepoName, {branch,"master"}};
+                 ["shuwa", Mod] ->
+                     RepoName = string:join(string:tokens(atom_to_list(AppName), "_"), "_"),
+                     {"ssh://johnliu@git.iotn2n.com:29418/" ++ RepoName, {branch,"master"}};
+                 _ ->
+                    RepoName = string:join(string:tokens(atom_to_list(AppName), "_"), "-"),
+                    {"https://hub.fastgit.org/fastdgiot/" ++ RepoName, GitRef}
+                end
+            end,
+        {AppName, {git, URL, NewGitRef}}
     end,
 
 MakeDeps = fun(Deps, DefaultDepRef, TestDeps) -> [MakeDep(App, DefaultDepRef) || App <- Deps] ++ TestDeps end,
@@ -132,7 +154,7 @@ MakeRelx =
     fun(Apps, Overlay, Vars) ->
         VarFiles = ["vars-" ++ atom_to_list(Var) ++ ".config" || Var <- Vars],
         Apps1 = case os:type() of {win32, nt} -> Apps -- [bcrypt]; _Other -> Apps end,
-        Relx1 = lists:keystore(release, 1, Relx0, {release, {emqx, Vsn1}, Apps1}),
+        Relx1 = lists:keystore(release, 1, Relx0, {release, {dgiot, Vsn1}, Apps1}),
         Relx2 = lists:keystore(overlay, 1, Relx1, {overlay, Overlay}),
         lists:keystore(overlay_vars, 1, Relx2, {overlay_vars, VarFiles})
     end,
@@ -149,16 +171,16 @@ TestDeps = [ {meck, "0.8.13"} % hex
 %% Profiles
 %% ==============================================================================
 Profiles =
-[ {emqx, [ {deps, MakeDeps(CloudDeps, DefaultDepRef, [])}
+[ {dgiot, [ {deps, MakeDeps(CloudDeps, DefaultDepRef, [])}
          , {relx, RelxCloud([cloud, bin])}
          ]}
-, {'emqx-pkg', [ {deps, MakeDeps(CloudDeps, DefaultDepRef, [])}
+, {'dgiot-pkg', [ {deps, MakeDeps(CloudDeps, DefaultDepRef, [])}
              , {relx, RelxCloud([cloud, pkg])}
              ]}
-, {'emqx-edge', [ {deps, MakeDeps(EdgeDeps, DefaultDepRef, [])}
+, {'dgiot-edge', [ {deps, MakeDeps(EdgeDeps, DefaultDepRef, [])}
               , {relx, RelxEdge([edge, bin])}
               ]}
-, {'emqx-edge-pkg', [ {deps, MakeDeps(EdgeDeps, DefaultDepRef, [])}
+, {'dgiot-edge-pkg', [ {deps, MakeDeps(EdgeDeps, DefaultDepRef, [])}
                   , {relx, RelxEdge([edge, pkg])}
                   ]}
 ],
@@ -182,9 +204,9 @@ CONFIG4 = lists:foldl(fun({K, V}, Acc) -> lists:keystore(K, 1, Acc, {K, V}) end,
 
 FilePath = case os:type() of
                {win32, nt} ->
-                   "emqx.rebar.config";
+                   "dgiot.rebar.config";
                _ ->
-                   "/tmp/emqx.rebar.config"
+                   "/tmp/dgiot.rebar.config"
            end,
 
 file:write_file(FilePath, [io_lib:format("~p.\n", [I]) || I <- CONFIG4]),
