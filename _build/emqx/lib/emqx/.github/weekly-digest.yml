@@ -1,7 +1,0 @@
-# Configuration for weekly-digest - https://hub.fastgit.org/apps/weekly-digest
-publishDay: monday
-canPublishIssues: true
-canPublishPullRequests: true
-canPublishContributors: true
-canPublishStargazers: true
-canPublishCommits: true

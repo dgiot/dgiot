@@ -1,8 +1,0 @@
-current_counterexample.eqc
-deps/
-.eunit/
-*~
-*/*~
-*/#*#
-erl_crash.dump
-gproc_dist*@*

@@ -1,5 +1,0 @@
--ifdef(TEST).
--define(logger, cuttlefish_test_logger).
--else.
--define(logger, logger).
--endif.
