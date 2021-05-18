@@ -39,13 +39,13 @@ install: build
 	mkdir -p debian/emqx/etc/emqx
 	mkdir -p debian/emqx/etc/init.d
 	
-	cp _build/emqx-pkg/rel/emqx/bin/* debian/emqx/usr/lib/emqx/bin
+	cp bin/* debian/emqx/usr/lib/emqx/bin
 	
-	cp -R _build/emqx-pkg/rel/emqx/lib debian/emqx/usr/lib/emqx
-	cp -R _build/emqx-pkg/rel/emqx/erts*  debian/emqx/usr/lib/emqx
-	cp -R _build/emqx-pkg/rel/emqx/releases debian/emqx/usr/lib/emqx
-	cp -R _build/emqx-pkg/rel/emqx/etc/* debian/emqx/etc/emqx
-	cp -R _build/emqx-pkg/rel/emqx/data/*  debian/emqx/var/lib/emqx
+	cp -R lib debian/emqx/usr/lib/emqx
+	cp -R erts*  debian/emqx/usr/lib/emqx
+	cp -R releases debian/emqx/usr/lib/emqx
+	cp -R etc/* debian/emqx/etc/emqx
+	cp -R data/*  debian/emqx/var/lib/emqx
 	install -m755 debian/init.script debian/emqx/etc/init.d/emqx
 	
 	dh_shlibdeps

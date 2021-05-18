@@ -8,6 +8,10 @@ metadata:
     helm.sh/chart: {{ include "emqx.chart" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/managed-by: {{ .Release.Service }}
+  {{- if .Values.service.annotations }}
+  annotations:
+{{ toYaml .Values.service.annotations | indent 4 }}
+  {{- end }}
 spec:
   type: {{ .Values.service.type }}
   {{- if eq .Values.service.type "LoadBalancer" }}
@@ -73,6 +77,17 @@ spec:
     {{- else if eq .Values.service.type "ClusterIP" }}
     nodePort: null
     {{- end }}
+  {{- if not (empty .Values.service.dashboardtls) }}
+  - name: dashboardtls
+    port: {{ .Values.service.dashboardtls }}
+    protocol: TCP
+    targetPort: dashboardtls
+    {{- if and (or (eq .Values.service.type "NodePort") (eq .Values.service.type "LoadBalancer")) (not (empty .Values.service.nodePorts.dashboardtls)) }}
+    nodePort: {{ .Values.service.nodePorts.dashboardtls }}
+    {{- else if eq .Values.service.type "ClusterIP" }}
+    nodePort: null
+    {{- end }}
+  {{- end }}
   selector:
     app.kubernetes.io/name: {{ include "emqx.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
@@ -117,6 +132,10 @@ spec:
     port: {{ .Values.service.dashboard | default 18083 }}
     protocol: TCP
     targetPort: dashboard
+  - name: ekka
+    port: 4370
+    protocol: TCP
+    targetPort: ekka
   selector:
     app.kubernetes.io/name: {{ include "emqx.name" . }}
     app.kubernetes.io/instance: {{ .Release.Name }}
