@@ -43,10 +43,24 @@ spec:
   template:
     metadata:
       labels:
+        app: {{ include "emqx.name" . }}
+        version: {{ .Chart.AppVersion }}
         app.kubernetes.io/name: {{ include "emqx.name" . }}
         app.kubernetes.io/instance: {{ .Release.Name }}
     spec:
       volumes:
+      - name: emqx-loaded-plugins
+        configMap:
+          name: {{ include "emqx.fullname" . }}-loaded-plugins
+          items:
+          - key: loaded_plugins
+            path: loaded_plugins
+      - name: emqx-loaded-modules
+        configMap:
+          name: {{ include "emqx.fullname" . }}-loaded-modules
+          items:
+          - key: loaded_modules
+            path: loaded_modules
       - name: emqx-acl
         configMap:
           name: {{ include "emqx.fullname" . }}-acl
@@ -69,12 +83,26 @@ spec:
           secretName: {{ .Values.emqxLicneseSecretName }}
       {{- end }}
       serviceAccountName:  {{ include "emqx.fullname" . }}
-      securityContext:
-        fsGroup: 1000
+      {{- if .Values.podSecurityContext.enabled }}
+      securityContext: {{- omit .Values.podSecurityContext "enabled" | toYaml | nindent 8 }}
+      {{- end }}
+      {{- if .Values.initContainers }}
+      initContainers:
+{{ toYaml .Values.initContainers | indent 8 }}
+      {{- end }}
+      {{- if .Values.image.pullSecrets }}
+      imagePullSecrets:
+        {{- range .Values.image.pullSecrets }}
+        - name: {{ . }}
+      {{- end }}
+      {{- end }}
       containers:
         - name: emqx
           image: "{{ .Values.image.repository }}:{{ .Chart.AppVersion }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
+          {{- if .Values.containerSecurityContext.enabled }}
+          securityContext: {{- omit .Values.containerSecurityContext "enabled" | toYaml | nindent 12 }}
+          {{- end }}
           ports:
           - name: mqtt
             containerPort: {{ .Values.emqxConfig.EMQX_LISTENER__TCP__EXTERNAL | default 1883 }}
@@ -88,16 +116,22 @@ spec:
             containerPort: {{ .Values.emqxConfig.EMQX_LISTENER__WSS__EXTERNAL | default 8084 }}
           - name: dashboard
             containerPort: {{ .Values.emqxConfig.EMQX_DASHBOARD__LISTENER__HTTP | default 18083 }}
+          {{- if not (empty .Values.emqxConfig.EMQX_DASHBOARD__LISTENER__HTTPS) }}
+          - name: dashboardtls
+            containerPort: {{ .Values.emqxConfig.EMQX_DASHBOARD__LISTENER__HTTPS }}
+          {{- end }}
+          - name: ekka
+            containerPort: 4370
           envFrom:
             - configMapRef:
-                name: {{ include "emqx.fullname" . }}-env 
+                name: {{ include "emqx.fullname" . }}-env
           env:
           - name: EMQX_NAME
-            value: {{ .Release.Name }} 
+            value: {{ .Release.Name }}
           - name: EMQX_CLUSTER__K8S__APP_NAME
-            value: {{ .Release.Name }} 
+            value: {{ .Release.Name }}
           - name: EMQX_CLUSTER__DISCOVERY
-            value: k8s 
+            value: k8s
           - name: EMQX_CLUSTER__K8S__SERVICE_NAME
             value: {{ include "emqx.fullname" . }}-headless
           - name: EMQX_CLUSTER__K8S__NAMESPACE
@@ -110,6 +144,12 @@ spec:
           - name: emqx-acl
             mountPath: "/opt/emqx/etc/acl.conf"
             subPath: "acl.conf"
+          - name: emqx-loaded-plugins
+            mountPath: "/opt/emqx/data/loaded_plugins"
+            subPath: "loaded_plugins"
+          - name: emqx-loaded-modules
+            mountPath: "/opt/emqx/data/loaded_modules"
+            subPath: "loaded_modules"
           {{ if .Values.emqxLicneseSecretName  }}
           - name: emqx-license
             mountPath: "/opt/emqx/etc/emqx.lic"

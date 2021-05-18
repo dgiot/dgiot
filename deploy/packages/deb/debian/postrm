@@ -55,6 +55,9 @@ case "$1" in
         if [ -f /usr/bin/emqx_ctl ]; then
                 rm /usr/bin/emqx_ctl
         fi
+        if [ -d /usr/lib/emqx ]; then
+                rm -r /usr/lib/emqx
+        fi
     ;;
 
     remove)

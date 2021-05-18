@@ -3,10 +3,16 @@
 ## Declare variables to be passed into your templates.
 
 ## It is recommended to have odd number of nodes in a cluster, otherwise the emqx cluster cannot be automatically healed in case of net-split.
-replicaCount: 3 
+replicaCount: 3
 image:
   repository: emqx/emqx
   pullPolicy: IfNotPresent
+  ## Optionally specify an array of imagePullSecrets.
+  ## Secrets must be manually created in the namespace.
+  ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+  ##
+  # pullSecrets:
+  # - myRegistryKeySecretName
 
 persistence:
   enabled: false
@@ -28,7 +34,13 @@ resources: {}
   #   cpu: 500m
   #   memory: 512Mi
 
-## EMQX configuration item, see the documentation (https://github.com/emqx/emqx-docker#emq-x-configuration)
+# Containers that run before the creation of EMQX containers. They can contain utilities or setup scripts.
+initContainers: {}
+  # - name: mysql-probe
+  #   image: alpine
+  #   command: ["sh", "-c", "for i in $(seq 1 300); do nc -zvw1 mysql 3306 && exit 0 || sleep 3; done; exit 1"]
+
+## EMQX configuration item, see the documentation (https://hub.docker.com/r/emqx/emqx)
 emqxConfig:
   EMQX_CLUSTER__K8S__APISERVER: "https://kubernetes.default.svc:443"
   ## The address type is used to extract host from k8s service.
@@ -62,6 +74,23 @@ emqxAclConfig: >
   {deny, all, subscribe, ["$SYS/#", {eq, "#"}]}.
   {allow, all}.
 
+emqxLoadedPlugins: >
+  {emqx_management, true}.
+  {emqx_recon, true}.
+  {emqx_retainer, true}.
+  {emqx_dashboard, true}.
+  {emqx_telemetry, true}.
+  {emqx_rule_engine, true}.
+  {emqx_bridge_mqtt, false}.
+
+emqxLoadedModules: >
+  {emqx_mod_acl_internal, true}.
+  {emqx_mod_presence, true}.
+  {emqx_mod_delayed, false}.
+  {emqx_mod_rewrite, false}.
+  {emqx_mod_subscription, false}.
+  {emqx_mod_topic_metrics, false}.
+
 ## EMQX Enterprise Edition requires manual creation of a Secret containing the licensed content. Write the name of Secret to the value of "emqxLicneseSecretName"
 ## Example:
 ##   kubectl create secret generic emqx-license-secret-name --from-file=/path/to/emqx.lic
@@ -74,7 +103,7 @@ service:
   ## Port for MQTT
   ##
   mqtt: 1883
-  ## Port for MQTT(SSL) 
+  ## Port for MQTT(SSL)
   ##
   mqttssl: 8883
   ## Port for mgmt API
@@ -89,6 +118,9 @@ service:
   ## Port for dashboard
   ##
   dashboard: 18083
+  ## Port for dashboard HTTPS
+  ##
+  # dashboardtls: 18084
   ## Specify the nodePort(s) value for the LoadBalancer and NodePort service types.
   ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#type-nodeport
   ##
@@ -99,6 +131,7 @@ service:
     ws:
     wss:
     dashboard:
+    dashboardtls:
   ## Set the LoadBalancer service type to internal only.
   ## ref: https://kubernetes.io/docs/concepts/services-networking/service/#internal-load-balancer
   ##
@@ -120,18 +153,38 @@ tolerations: []
 
 affinity: {}
 
-## TODO:
 ingress:
-  enabled: false
-  annotations: {}
-    # kubernetes.io/ingress.class: nginx
-    # kubernetes.io/tls-acme: "true"
-  path: /
-  hosts:
-    - chart-example.local
-  tls: []
-  #  - secretName: chart-example-tls
-  #    hosts:
-  #      - chart-example.local
+  ## ingress for EMQX Dashboard
+  dashboard:
+    enabled: false
+    annotations: {}
+      # kubernetes.io/ingress.class: nginx
+      # kubernetes.io/tls-acme: "true"
+    path: /
+    hosts:
+    - dashboard.emqx.local
+    tls: []
 
+  ## ingress for EMQX Mgmt API
+  mgmt:
+    enabled: false
+    annotations: {}
+      # kubernetes.io/ingress.class: nginx
+      # kubernetes.io/tls-acme: "true"
+    path: /
+    hosts:
+    - api.emqx.local
+    tls: []
 
+podSecurityContext:
+  enabled: true
+  fsGroup: 1000
+  fsGroupChangePolicy: Always
+  runAsUser: 1000
+  supplementalGroups:
+    - 1000
+
+containerSecurityContext:
+  enabled: true
+  runAsNonRoot: true
+  runAsUser: 1000

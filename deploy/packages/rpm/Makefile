@@ -8,19 +8,20 @@ space := $(none) $(none)
 RPM_VSN ?= $(shell echo $(PKG_VSN) | grep -oE "[0-9]+\.[0-9]+(\.[0-9]+)?")
 RPM_REL ?= $(shell echo $(PKG_VSN) | grep -oE "(alpha|beta|rc)\.[0-9]")
 
-ARCH:=$(shell uname -m)
+ARCH ?= amd64
 ifeq ($(ARCH),mips64)
 ARCH:=mips64el
 endif
 
-TARGET_PKG := $(EMQX_NAME)-$(SYSTEM)-$(RPM_VSN)-$(RPM_REL).$(ARCH)
+EMQX_NAME=$(subst -pkg,,$(EMQX_BUILD))
 
+TAR_PKG := $(EMQX_REL)/_build/$(EMQX_BUILD)/rel/emqx/emqx-$(PKG_VSN).tar.gz
+TARGET_PKG := $(EMQX_NAME)-$(SYSTEM)-$(PKG_VSN)-$(ARCH)
 ifeq ($(RPM_REL),)
 	# no tail
 	RPM_REL := 1
-	TARGET_PKG := $(EMQX_NAME)-$(SYSTEM)-$(RPM_VSN).$(ARCH)
 endif
-SOURCE_PKG := emqx-$(SYSTEM)-$(RPM_VSN)-$(RPM_REL).$(ARCH)
+SOURCE_PKG := emqx-$(SYSTEM)-$(RPM_VSN)-$(RPM_REL).$(shell uname -m)
 
 SYSTEMD := $(shell if command -v systemctl >/dev/null 2>&1; then echo yes; fi)
 # Not $(PWD) as it does not work for make -C
@@ -34,12 +35,13 @@ PREUN_ADDITION := $(if $(SYSTEMD),%systemd_preun %{_name}.service,echo preun)
 
 .PHONY: all
 all: | $(BUILT)
+	cd $(SRCDIR)
 	rpmbuild -v -bb \
 		--define "_package_name $(EMQX_NAME)" \
 		--define "_name emqx" \
 		--define "_topdir $(TOPDIR)" \
 		--define "_version $(RPM_VSN)" \
-		--define "_reldir $(SRCDIR)/_build/$(EMQX_BUILD)/rel/emqx" \
+		--define "_reldir $(SRCDIR)" \
 		--define "_release $(RPM_REL)" \
 		--define "_service_src $(SERVICE_SRC)" \
 		--define "_service_dst $(SERVICE_DST)" \
@@ -49,12 +51,11 @@ all: | $(BUILT)
 		--define "_sharedstatedir /var/lib" \
 		emqx.spec
 	mkdir -p $(EMQX_REL)/_packages/$(EMQX_NAME)
-	cp $(TOPDIR)/RPMS/$(ARCH)/$(SOURCE_PKG).rpm $(EMQX_REL)/_packages/$(EMQX_NAME)/$(TARGET_PKG).rpm
+	cp $(TOPDIR)/RPMS/$(shell uname -m)/$(SOURCE_PKG).rpm $(EMQX_REL)/_packages/$(EMQX_NAME)/$(TARGET_PKG).rpm
 
 $(BUILT):
-	mkdir -p $(TOPDIR) $(SRCDIR)
-	cp -r $(EMQX_REL)/. $(SRCDIR) 
-	cd $(SRCDIR) && mkdir BUILT 
+	mkdir -p $(TOPDIR) $(SRCDIR) $(SRCDIR)/BUILT
+	tar zxf $(TAR_PKG) -C $(SRCDIR)
 
 clean:
 	rm -rf $(SRCDIR)

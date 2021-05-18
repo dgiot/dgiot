@@ -1,32 +1,21 @@
-## shallow clone for speed
-
-REBAR_GIT_CLONE_OPTIONS += --depth 1
-export REBAR_GIT_CLONE_OPTIONS
-
-TAG = $(shell git tag -l --points-at HEAD)
-
-CUR_BRANCH := $(shell git branch | grep -e "^*" | cut -d' ' -f 2)
-
-EMQX_DEPS_DEFAULT_VSN = release-4.2
-ifeq ($(EMQX_DEPS_DEFAULT_VSN),)
-	ifneq ($(TAG),)
-		EMQX_DEPS_DEFAULT_VSN ?= $(lastword 1, $(TAG))
-	else
-		EMQX_DEPS_DEFAULT_VSN ?= $(CUR_BRANCH)
-	endif
+$(shell $(CURDIR)/scripts/git-hooks-init.sh)
+REBAR_VERSION = 3.14.3-emqx-7
+REBAR = $(CURDIR)/rebar3
+BUILD = $(CURDIR)/build
+SCRIPTS = $(CURDIR)/scripts
+export PKG_VSN ?= $(shell $(CURDIR)/pkg-vsn.sh)
+export EMQX_DESC ?= EMQ X
+export EMQX_CE_DASHBOARD_VERSION ?= v4.3.1
+ifeq ($(OS),Windows_NT)
+	export REBAR_COLOR=none
 endif
 
-REBAR = $(CURDIR)/rebar3
+PROFILE ?= emqx
+REL_PROFILES := emqx emqx-edge
+PKG_PROFILES := emqx-pkg emqx-edge-pkg
+PROFILES := $(REL_PROFILES) $(PKG_PROFILES) default
 
-REBAR_URL = https://s3.amazonaws.com/rebar3/rebar3
-
-export EMQX_DEPS_DEFAULT_VSN
-
-PROFILE ?= dgiot
-PROFILES := dgiot dgiot-edge
-PKG_PROFILES := dgiot-pkg dgiot-edge-pkg
-
-CT_APPS := dgiot
+export REBAR_GIT_CLONE_OPTIONS += --depth=1
 
 .PHONY: default
 default: $(REBAR) $(PROFILE)
@@ -34,114 +23,132 @@ default: $(REBAR) $(PROFILE)
 .PHONY: all
 all: $(REBAR) $(PROFILES)
 
-.PHONY: distclean
-distclean:
-	@rm -rf _build
-	@rm -f data/app.*.config data/vm.*.args rebar.lock
-	@rm -rf _checkouts
+.PHONY: ensure-rebar3
+ensure-rebar3:
+	@$(SCRIPTS)/fail-on-old-otp-version.escript
+	@$(SCRIPTS)/ensure-rebar3.sh $(REBAR_VERSION)
 
-.PHONY: $(PROFILES)
-$(PROFILES:%=%): $(REBAR)
-ifneq ($(OS),Windows_NT)
-	@ln -snf _build/$(@)/lib ./_checkouts
-endif
-	@if [ $$(echo $(@) |grep edge) ];then export EMQX_DESC="EMQ X Edge";else export EMQX_DESC="EMQ X Broker"; fi;\
-	$(REBAR) as $(@) release
+$(REBAR): ensure-rebar3
 
-.PHONY: $(PROFILES:%=build-%)
-$(PROFILES:%=build-%): $(REBAR)
-	$(REBAR) as $(@:build-%=%) compile
+.PHONY: get-dashboard
+get-dashboard:
+	@$(SCRIPTS)/get-dashboard.sh
 
-.PHONY: deps-all
-deps-all: $(REBAR) $(PROFILES:%=deps-%) $(PKG_PROFILES:%=deps-%)
+.PHONY: eunit
+eunit: $(REBAR)
+	@ENABLE_COVER_COMPILE=1 $(REBAR) eunit -v -c
 
-.PHONY: $(PROFILES:%=deps-%)
-$(PROFILES:%=deps-%): $(REBAR)
-	$(REBAR) as $(@:deps-%=%) get-deps
+.PHONY: proper
+proper: $(REBAR)
+	@ENABLE_COVER_COMPILE=1 $(REBAR) proper -d test/props -c
 
-.PHONY: $(PKG_PROFILES:%=deps-%)
-$(PKG_PROFILES:%=deps-%): $(REBAR)
-	$(REBAR) as $(@:deps-%=%) get-deps
+.PHONY: ct
+ct: $(REBAR)
+	@ENABLE_COVER_COMPILE=1 $(REBAR) ct --name 'test@127.0.0.1' -c -v
 
-.PHONY: run $(PROFILES:%=run-%)
-run: run-$(PROFILE)
-$(PROFILES:%=run-%): $(REBAR)
-ifneq ($(OS),Windows_NT)
-	@ln -snf _build/$(@:run-%=%)/lib ./_checkouts
-endif
-	$(REBAR) as $(@:run-%=%) run
+APPS=$(shell $(CURDIR)/scripts/find-apps.sh)
 
+## app/name-ct targets are intended for local tests hence cover is not enabled
+.PHONY: $(APPS:%=%-ct)
+define gen-app-ct-target
+$1-ct:
+	$(REBAR) ct --name 'test@127.0.0.1' -v --suite $(shell $(CURDIR)/scripts/find-suites.sh $1)
+endef
+$(foreach app,$(APPS),$(eval $(call gen-app-ct-target,$(app))))
+
+## apps/name-prop targets
+.PHONY: $(APPS:%=%-prop)
+define gen-app-prop-target
+$1-prop:
+	$(REBAR) proper -d test/props -v -m $(shell $(CURDIR)/scripts/find-props.sh $1)
+endef
+$(foreach app,$(APPS),$(eval $(call gen-app-prop-target,$(app))))
+
+.PHONY: cover
+cover: $(REBAR)
+	@ENABLE_COVER_COMPILE=1 $(REBAR) cover
+
+.PHONY: coveralls
+coveralls: $(REBAR)
+	@ENABLE_COVER_COMPILE=1 $(REBAR) as test coveralls send
+
+.PHONY: $(REL_PROFILES)
+$(REL_PROFILES:%=%): $(REBAR) get-dashboard
+	@$(REBAR) as $(@) do compile,release
+
+## Not calling rebar3 clean because
+## 1. rebar3 clean relies on rebar3, meaning it reads config, fetches dependencies etc.
+## 2. it's slow
+## NOTE: this does not force rebar3 to fetch new version dependencies
+## make clean-all to delete all fetched dependencies for a fresh start-over
 .PHONY: clean $(PROFILES:%=clean-%)
 clean: $(PROFILES:%=clean-%)
-$(PROFILES:%=clean-%): $(REBAR)
-	@rm -rf _build/$(@:clean-%=%)
-	@rm -rf _build/$(@:clean-%=%)+test
+$(PROFILES:%=clean-%):
+	@if [ -d _build/$(@:clean-%=%) ]; then \
+		rm -rf _build/$(@:clean-%=%)/rel; \
+		find _build/$(@:clean-%=%) -name '*.beam' -o -name '*.so' -o -name '*.app' -o -name '*.appup' -o -name '*.o' -o -name '*.d' -type f | xargs rm -f; \
+	fi
 
-.PHONY: $(PROFILES:%=checkout-%)
-$(PROFILES:%=checkout-%): $(REBAR) build-$(PROFILE)
-	ln -s -f _build/$(@:checkout-%=%)/lib ./_checkouts
+.PHONY: clean-all
+clean-all:
+	@rm -rf _build
 
-# Checkout current profile
-.PHONY: checkout
-checkout:
-	@ln -s -f _build/$(PROFILE)/lib ./_checkouts
+.PHONY: deps-all
+deps-all: $(REBAR) $(PROFILES:%=deps-%)
 
-# Run ct for an app in current profile
-.PHONY: $(REBAR) $(CT_APPS:%=ct-%)
-ct: $(CT_APPS:%=ct-%)
-$(CT_APPS:%=ct-%): checkout-$(PROFILE)
-	-make -C _build/dgiot/lib/$(@:ct-%=%) ct
-	@mkdir -p tests/logs/$(@:ct-%=%)
-	@if [ -d _build/dgiot/lib/$(@:ct-%=%)/_build/test/logs ]; then cp -r _build/dgiot/lib/$(@:ct-%=%)/_build/test/logs/* tests/logs/$(@:ct-%=%); fi
+## deps-<profile> is used in CI scripts to download deps and the
+## share downloads between CI steps and/or copied into containers
+## which may not have the right credentials
+.PHONY: $(PROFILES:%=deps-%)
+$(PROFILES:%=deps-%): $(REBAR) get-dashboard
+	@$(REBAR) as $(@:deps-%=%) get-deps
 
-$(REBAR):
-ifneq ($(wildcard rebar3),rebar3)
-	@curl -Lo rebar3 $(REBAR_URL) || wget $(REBAR_URL)
-endif
-	@chmod a+x rebar3
+.PHONY: xref
+xref: $(REBAR)
+	@$(REBAR) as check xref
 
-# Build packages
+.PHONY: dialyzer
+dialyzer: $(REBAR)
+	@$(REBAR) as check dialyzer
+
+COMMON_DEPS := $(REBAR) get-dashboard $(CONF_SEGS)
+
+## rel target is to create release package without relup
+.PHONY: $(REL_PROFILES:%=%-rel) $(PKG_PROFILES:%=%-rel)
+$(REL_PROFILES:%=%-rel) $(PKG_PROFILES:%=%-rel): $(COMMON_DEPS)
+	@$(BUILD) $(subst -rel,,$(@)) rel
+
+## relup target is to create relup instructions
+.PHONY: $(REL_PROFILES:%=%-relup)
+define gen-relup-target
+$1-relup: $(COMMON_DEPS)
+	@$(BUILD) $1 relup
+endef
+ALL_ZIPS = $(REL_PROFILES)
+$(foreach zt,$(ALL_ZIPS),$(eval $(call gen-relup-target,$(zt))))
+
+## zip target is to create a release package .zip with relup
+.PHONY: $(REL_PROFILES:%=%-zip)
+define gen-zip-target
+$1-zip: $1-relup
+	@$(BUILD) $1 zip
+endef
+ALL_ZIPS = $(REL_PROFILES)
+$(foreach zt,$(ALL_ZIPS),$(eval $(call gen-zip-target,$(zt))))
+
+## A pkg target depend on a regular release
 .PHONY: $(PKG_PROFILES)
-$(PKG_PROFILES:%=%): $(REBAR)
-	ln -snf _build/$(@)/lib ./_checkouts
-	@if [ $$(echo $(@) |grep edge) ];then export DGIOT_DESC="DGIOT X Edge";else export DGIOT_DESC="DGIOT X Broker"; fi;\
-	$(REBAR) as $(@) release
-	DGIOT_REL=$$(pwd) DGIOT_BUILD=$(@) EMQX_DEPS_DEFAULT_VSN=$(EMQX_DEPS_DEFAULT_VSN) make -C deploy/packages
+define gen-pkg-target
+$1: $1-rel
+	@$(BUILD) $1 pkg
+endef
+$(foreach pt,$(PKG_PROFILES),$(eval $(call gen-pkg-target,$(pt))))
 
-# Build docker image
-.PHONY: $(PROFILES:%=%-docker-build)
-$(PROFILES:%=%-docker-build):
-	@if [ ! -z `echo $(@) |grep -oE edge` ]; then \
-		TARGET=dgiot/dgiot-edge EMQX_DEPS_DEFAULT_VSN=$(EMQX_DEPS_DEFAULT_VSN) make -C deploy/docker; \
-	else \
-		TARGET=dgiot/dgiot EMQX_DEPS_DEFAULT_VSN=$(EMQX_DEPS_DEFAULT_VSN) make -C deploy/docker; \
-	fi;
+.PHONY: run
+run: $(PROFILE) quickrun
 
-# Save docker images
-.PHONY: $(PROFILES:%=%-docker-save)
-$(PROFILES:%=%-docker-save):
-	@if [ ! -z `echo $(@) |grep -oE edge` ]; then \
-		TARGET=dgiot/dgiot-edge EMQX_DEPS_DEFAULT_VSN=$(EMQX_DEPS_DEFAULT_VSN) make -C deploy/docker save; \
-	else \
-		TARGET=dgiot/dgiot EMQX_DEPS_DEFAULT_VSN=$(EMQX_DEPS_DEFAULT_VSN) make -C deploy/docker save; \
-	fi;
+.PHONY: quickrun
+quickrun:
+	./_build/$(PROFILE)/rel/emqx/bin/emqx console
 
-# Push docker image
-.PHONY: $(PROFILES:%=%-docker-push)
-$(PROFILES:%=%-docker-push):
-	@if [ ! -z `echo $(@) |grep -oE edge` ]; then \
-		TARGET=dgiot/dgiot-edge EMQX_DEPS_DEFAULT_VSN=$(EMQX_DEPS_DEFAULT_VSN) make -C deploy/docker push; \
-		TARGET=dgiot/dgiot-edge EMQX_DEPS_DEFAULT_VSN=$(EMQX_DEPS_DEFAULT_VSN) make -C deploy/docker manifest_list; \
-	else \
-		TARGET=dgiot/dgiot EMQX_DEPS_DEFAULT_VSN=$(EMQX_DEPS_DEFAULT_VSN) make -C deploy/docker push; \
-		TARGET=dgiot/dgiot EMQX_DEPS_DEFAULT_VSN=$(EMQX_DEPS_DEFAULT_VSN) make -C deploy/docker manifest_list; \
-	fi;
-
-# Clean docker image
-.PHONY: $(PROFILES:%=%-docker-clean)
-$(PROFILES:%=%-docker-clean):
-	@if [ ! -z `echo $(@) |grep -oE edge` ]; then \
-		TARGET=dgiot/dgiot-edge EMQX_DEPS_DEFAULT_VSN=$(EMQX_DEPS_DEFAULT_VSN) make -C deploy/docker clean; \
-	else \
-		TARGET=dgiot/dgiot EMQX_DEPS_DEFAULT_VSN=$(EMQX_DEPS_DEFAULT_VSN) make -C deploy/docker clean; \
-	fi;
+include docker.mk
