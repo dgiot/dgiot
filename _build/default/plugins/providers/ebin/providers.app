@@ -1,0 +1,8 @@
+{application,providers,
+             [{description,"Providers provider."},
+              {vsn,"1.8.1"},
+              {registered,[]},
+              {applications,[kernel,stdlib,getopt]},
+              {licenses,["Apache 2.0"]},
+              {links,[{"Github","https://github.com/tsloughter/providers"}]},
+              {modules,[provider,providers,providers_topo]}]}.

@@ -1,0 +1,36 @@
+#! /usr/bin/env bash
+
+if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1
+then
+    echo "ERROR: Building outside a git work tree is not supported," >&2
+    echo "       unless the source has first been exported." >&2
+    echo "       This is for the version number to get correct." >&2
+    echo "       To build outside a git work tree, first export it:" >&2
+    echo "       Start with a git clone, then run helpers/export-from-git." >&2
+    echo "       For further info, see the README.md, the section section" >&2
+    echo "       named Building outside of a git work tree" >&2
+    echo "" >&2
+    echo "       Github automatically generates tar/zip files from tags,"  >&2
+    echo "       but these will unfortunately not do, since the version"  >&2
+    echo "       number does not get set correctly."  >&2
+    exit 1
+fi
+
+vsn="$(git describe --always --tags --match '[0-9]*.[0-9]*')"
+
+if [[ x"$vsn" = x || x"$vsn" =~ x[a-f0-9]{7,} ]]
+then
+    echo "ERROR: Unexpected version \"$vsn\", please make sure you are" >&2
+    echo "       building in a git repository with all tags intact, or" >&2
+    echo "       in a directory that has been exported from git." >&2
+    echo "       For further info, see the README.md, the section section" >&2
+    echo "       named Building outside of a git work tree" >&2
+    exit 1
+fi
+
+sed \
+    -e "s/@vsn@/$vsn/g" \
+    -e "s/is expected to be/was/g" \
+    -e '/^%% The version below/ i \
+%% DO NOT EDIT -- generated from gpb_version.hrl.in' \
+    -e "/^%% NB: The build.mk_version_hrl depends/ d"

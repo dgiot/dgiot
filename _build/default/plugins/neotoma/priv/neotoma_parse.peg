@@ -1,0 +1,303 @@
+%% Grammar and transformations
+
+rules <- space? declaration_sequence space? code_block? space?
+`
+  RootRule = verify_rules(),
+  Rules = unicode:characters_to_binary(lists:map(fun(R) -> [R, "\n\n"] end, lists:nth(2, Node))),
+  Code = case lists:nth(4, Node) of
+             {code, Block} -> Block;
+             _ -> []
+         end,
+  [{rules, Rules},
+   {code, Code},
+   {root, RootRule},
+   {transform, ets:lookup(memo_table_name(),gen_transform)},
+   {combinators, ets:lookup_element(memo_table_name(), combinators, 2)}]
+
+`;
+
+declaration_sequence <- head:declaration tail:(space declaration)*
+`
+  FirstRule = proplists:get_value(head, Node),
+  OtherRules =  [I || [_,I] <- proplists:get_value(tail, Node, [])],
+  [FirstRule|OtherRules]
+`;
+
+declaration <- nonterminal space* '<-' space* parsing_expression space? code_block? space? ';'
+`
+  [{nonterminal,Symbol}|Tail] = Node,
+  add_lhs(Symbol, Index),
+  Transform = case lists:nth(6,Tail) of
+                  {code, CodeBlock} -> CodeBlock;
+                  _ ->
+                      ets:insert_new(memo_table_name(),{gen_transform, true}),
+                      ["transform('",Symbol,"', Node, Idx)"]
+                  end,
+  TransformArgs = case used_transform_variables(Transform) of
+    []              -> "_Node, _Idx";
+    ['Idx']         -> "_Node, Idx";
+    ['Node']        -> "Node, _Idx";
+    ['Idx', 'Node'] -> "Node, Idx"
+  end,
+  ["-spec '", Symbol, "'(input(), index()) -> parse_result().\n",
+   "'",Symbol,"'","(Input, Index) ->\n  ",
+        "p(Input, Index, '",Symbol,"', fun(I,D) -> (",
+        lists:nth(4, Tail),
+        ")(I,D) end, fun(", TransformArgs, ") ->",Transform," end)."]
+`;
+
+parsing_expression <- choice / sequence / primary ~;
+
+choice <- head:alternative tail:(space '/' space alternative)+
+`
+  Tail = [lists:last(S) || S <- proplists:get_value(tail, Node)],
+  Head = proplists:get_value(head, Node),
+  Statements = [[", ", TS] ||  TS <- Tail],
+  used_combinator(p_choose),
+  ["p_choose([", Head, Statements, "])"]
+`;
+
+alternative <- sequence / labeled_primary ~;
+
+primary <- prefix atomic / atomic suffix / atomic
+`
+case Node of
+  [Atomic, one_or_more] ->
+        used_combinator(p_one_or_more),
+        used_combinator(p_scan),
+        ["p_one_or_more(", Atomic, ")"];
+  [Atomic, zero_or_more] ->
+        used_combinator(p_zero_or_more),
+        used_combinator(p_scan),
+        ["p_zero_or_more(", Atomic, ")"];
+  [Atomic, optional] ->
+        used_combinator(p_optional),
+        ["p_optional(", Atomic, ")"];
+  [assert, Atomic] ->
+        used_combinator(p_assert),
+        ["p_assert(", Atomic, ")"];
+  [not_, Atomic] ->
+        used_combinator(p_not),
+        ["p_not(", Atomic, ")"];
+  _ -> Node
+end
+`;
+
+sequence <- head:labeled_primary tail:(space labeled_primary)+
+`
+  Tail = [lists:nth(2, S) || S <- proplists:get_value(tail, Node)],
+  Head = proplists:get_value(head, Node),
+  Statements = [[", ", TS] || TS <- Tail],
+  used_combinator(p_seq),
+  ["p_seq([", Head, Statements, "])"]
+`;
+
+labeled_primary <- label? primary
+`
+  case hd(Node) of
+    [] -> lists:nth(2, Node);
+    Label ->
+          used_combinator(p_label),
+          ["p_label('",  Label, "', ", lists:nth(2, Node), ")"]
+  end
+`;
+
+label <- alpha_char alphanumeric_char* ':'
+`
+  lists:sublist(Node, length(Node)-1)
+`;
+
+suffix <- repetition_suffix / optional_suffix
+`
+  case Node of
+    <<"*">> -> zero_or_more;
+    <<"+">> -> one_or_more;
+    <<"?">> -> optional
+  end
+`;
+
+optional_suffix <- '?' ~;
+
+repetition_suffix <- '+' / '*' ~;
+
+prefix <- '&' / '!'
+`
+  case Node of
+    <<"&">> -> assert;
+    <<"!">> -> not_
+  end
+`;
+
+atomic <- terminal / nonterminal / parenthesized_expression
+`
+case Node of
+  {nonterminal, Symbol} ->
+                [<<"fun '">>, Symbol, <<"'/2">>];
+  _ -> Node
+end
+`;
+
+parenthesized_expression <- '(' space? parsing_expression space? ')' `lists:nth(3, Node)`;
+
+nonterminal <- alpha_char alphanumeric_char*
+`
+  Symbol = unicode:characters_to_binary(Node),
+  add_nt(Symbol, Idx),
+  {nonterminal, Symbol}
+`;
+
+terminal <- regexp_string / quoted_string / character_class / anything_symbol ~;
+
+regexp_string <- '#' string:(!'#' ('\\#' / .))+ '#'
+`
+  used_combinator(p_regexp),
+  ["p_regexp(<<\"",
+	% Escape \ and " as they are used in erlang string. Other sumbol stay as is.
+	%  \ -> \\
+	%  " -> \"
+   re:replace(proplists:get_value(string, Node), "\"|\\\\", "\\\\&", [{return, binary}, global]),
+   "\">>)"]
+`;
+
+quoted_string <- single_quoted_string / double_quoted_string
+`
+  used_combinator(p_string),
+  lists:flatten(["p_string(<<\"",
+   escape_string(unicode:characters_to_list(proplists:get_value(string, Node))),
+   "\">>)"])
+`;
+
+double_quoted_string <- '"' string:(!'"' ("\\\\" / '\\"' / .))* '"' ~;
+
+single_quoted_string <- "'" string:(!"'" ("\\\\" / "\\'" / .))* "'" ~;
+
+character_class <- '[' characters:(!']' ('\\\\' . / !'\\\\' .))+ ']'
+`
+  used_combinator(p_charclass),
+  ["p_charclass(<<\"[",
+   escape_string(unicode:characters_to_list(proplists:get_value(characters, Node))),
+   "]\">>)"]
+`;
+
+anything_symbol <- '.' ` used_combinator(p_anything), <<"p_anything()">> `;
+
+alpha_char <- [A-Za-z_] ~;
+
+alphanumeric_char <- alpha_char / [0-9] ~;
+
+space <- (white / comment_to_eol)+ ~;
+
+comment_to_eol <- !'%{' '%' (!"\n" .)* ~;
+
+white <- [ \t\n\r] ~;
+
+code_block <- ( '%{' code:('\\%' / '$%' / !'%}' .)+ '%}' ) /
+              ('`' code:('\\`' / '$`' / !'`' .)+ '`') /
+              '~'
+`
+   case Node of
+       <<"~">> -> {code, <<"Node">>};
+       _   -> {code, proplists:get_value('code', Node)}
+   end
+`;
+
+%% Extra functions
+`
+% insert escapes into a string
+-spec escape_string(string()) -> string().
+escape_string(String) -> escape_string(String, []).
+
+-spec escape_string(string(), string()) -> string().
+escape_string([], Output) ->
+  lists:reverse(Output);
+escape_string([H|T], Output) ->
+  escape_string(T,
+    case H of
+        $/  -> [$/,$\\|Output];
+        $\" -> [$\",$\\|Output];     % " comment inserted to help some editors with highlighting the generated parser
+        $\' -> [$\',$\\|Output];     % ' comment inserted to help some editors with highlighting the generated parser
+        $\b -> [$b,$\\|Output];
+        $\d -> [$d,$\\|Output];
+        $\e -> [$e,$\\|Output];
+        $\f -> [$f,$\\|Output];
+        $\n -> [$n,$\\|Output];
+        $\r -> [$r,$\\|Output];
+        $\s -> [$s,$\\|Output];
+        $\t -> [$t,$\\|Output];
+        $\v -> [$v,$\\|Output];
+        _   -> [H|Output]
+    end).
+
+-spec add_lhs(binary(), index()) -> true.
+add_lhs(Symbol, Index) ->
+  case ets:lookup(memo_table_name(), lhs) of
+    [] ->
+      ets:insert(memo_table_name(), {lhs, [{Symbol,Index}]});
+    [{lhs, L}] when is_list(L) ->
+      ets:insert(memo_table_name(), {lhs, [{Symbol,Index}|L]})
+  end.
+
+-spec add_nt(binary(), index()) -> true | ok.
+add_nt(Symbol, Index) ->
+  case ets:lookup(memo_table_name(), nts) of
+    [] ->
+      ets:insert(memo_table_name(), {nts, [{Symbol,Index}]});
+    [{nts, L}] when is_list(L) ->
+      case proplists:is_defined(Symbol, L) of
+        true ->
+          ok;
+        _ ->
+          ets:insert(memo_table_name(), {nts, [{Symbol,Index}|L]})
+      end
+  end.
+
+-spec verify_rules() -> ok | no_return().
+verify_rules() ->
+  [{lhs, LHS}] = ets:lookup(memo_table_name(), lhs),
+  [{nts, NTs}] = ets:lookup(memo_table_name(), nts),
+  [Root|NonRoots] = lists:reverse(LHS),
+  lists:foreach(fun({Sym,Idx}) ->
+                    case proplists:is_defined(Sym, NTs) of
+                      true ->
+                        ok;
+                      _ ->
+                        io:format("neotoma warning: rule '~s' is unused. ~p~n", [Sym,Idx])
+                    end
+                end, NonRoots),
+  lists:foreach(fun({S,I}) ->
+                    case proplists:is_defined(S, LHS) of
+                      true ->
+                        ok;
+                      _ ->
+                        io:format("neotoma error: nonterminal '~s' has no reduction. (found at ~p) No parser will be generated!~n", [S,I]),
+                        exit({neotoma, {no_reduction, list_to_atom(binary_to_list(S))}})
+                    end
+                end, NTs),
+    Root.
+
+-spec used_combinator(atom()) -> true.
+used_combinator(C) ->
+    case ets:lookup(memo_table_name(), combinators) of
+        [] ->
+            ets:insert(memo_table_name(), {combinators, ordsets:from_list([C])});
+        [{combinators, Cs}] ->
+            ets:insert(memo_table_name(), {combinators, ordsets:add_element(C, Cs)})
+    end.
+
+-spec used_transform_variables(binary()) -> [ 'Node' | 'Idx' ].
+used_transform_variables(Transform) ->
+  Code = unicode:characters_to_list(Transform),
+  {ok, Tokens, _} = erl_scan:string(Code),
+  used_transform_variables(Tokens, []).
+
+used_transform_variables([{var, _, Name}|Tokens], Acc) ->
+  used_transform_variables(Tokens, case Name of
+                                    'Node' -> [Name | Acc];
+                                    'Idx'  -> [Name | Acc];
+                                    _      -> Acc
+                                  end);
+used_transform_variables([_|Tokens], Acc) ->
+  used_transform_variables(Tokens, Acc);
+used_transform_variables([], Acc) ->
+  lists:usort(Acc).
+`

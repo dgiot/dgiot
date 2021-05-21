@@ -1,0 +1,13 @@
+{application,gpb,
+             [{description,"Google protocol buffer compiler and runtime support"},
+              {vsn,"4.11.2"},
+              {modules,[gpb,gpb_analyzer,gpb_codegen,gpb_codemorpher,
+                        gpb_compile,gpb_decoders_lib,gpb_defs,
+                        gpb_gen_decoders,gpb_gen_encoders,gpb_gen_introspect,
+                        gpb_gen_json_decoders,gpb_gen_json_encoders,
+                        gpb_gen_mergers,gpb_gen_nif,gpb_gen_translators,
+                        gpb_gen_types,gpb_gen_verifiers,gpb_lib,gpb_names,
+                        gpb_parse,gpb_scan]},
+              {applications,[kernel,stdlib]},
+              {registered,[]},
+              {env,[]}]}.

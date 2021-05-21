@@ -1,12 +1,9 @@
 .eunit
 test-data/
-deps
 !deps/.placeholder
 *.o
-*.beam
 *.plt
 erl_crash.dump
-ebin
 !ebin/.placeholder
 .concrete/DEV_MODE
 .rebar
@@ -21,7 +18,6 @@ eunit.coverdata
 test/ct.cover.spec
 ct.coverdata
 .idea/
-_build
 .rebar3
 rebar3.crashdump
 .DS_Store
