@@ -1,0 +1,12 @@
+-ifndef(gpb_version_hrl).
+-define(gpb_version_hrl, true).
+
+%% The version below is expected to be substituted
+%% at build-time, see the rebar.config or the Makefile
+%% NB: The build/mk_version_hrl depends on the exact wording
+
+-define(gpb_version, "@vsn@").
+
+-define(gpb_version_source, "@vsn-source@").
+
+-endif. %% gpb_version_hrl

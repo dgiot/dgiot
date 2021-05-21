@@ -1,0 +1,72 @@
+The `nif' option will cause the compiler to generate nif C++ code
+that can be linked with the Google protobuf C++ library.
+
+The purpose for this is speed: the Google protobuf C++ is faster than
+the interpreted Erlang code. Gpb will try to avoid locking up an
+Erlang scheduler for doing the encoding and decoding work, if
+supported by the Erlang VM, which currently means at least 17.3
+configured with --enable-dirty-schedulers.  If gpb cannot run on a
+dirty scheduler, it will lock up an Erlang scheduler for as long as it
+takes for the Google protobuf library to complete the encoding or
+decoding of a message. This is normally a small amount of time, but
+can be a longer time for huge messages.
+
+The generated nif code can be compiled with Erlang R14B or later. The
+`gpb_compile' will only generate C++ code, it will _not_ compile the
+generated C++ code for you. Below is an example of how to generate and
+compile the C++ nif code under Linux. Details may differ from system
+to system.
+
+     # Use protoc to generate C++ code, and compile it.
+     # This will generate x.pb.cc and x.pb.h from x.proto.
+     protoc --cpp_out=$PWD x.proto
+     g++ -g -fPIC -O3 -I/path/to/protobuf-include -o x.pb.o -c x.pb.cc
+     # Generate Erlang code and C++ nif glue code, and compile it.
+     # This will generate x.erl, x.hrl and x.nif.cc from x.proto.
+     erl -boot start_clean -pa /path/to/gpb/ebin -noshell -noinput +B \
+           -I$PWD -nif -s gpb_compile c x.proto
+     erlc -Wall x.erl
+     g++ -g -fPIC -Wall -O3 -I/path/to/protobuf -o x.nif.o -c x.nif.cc
+     # Link all the C++ code together to a shared library.
+     g++ -g -fPIC -shared -O3 -Wall -o x.nif.so x.nif.o x.pb.o \
+           -L/path/to/protobuf-libs -lprotobuf \
+           -Wl,-rpath=/path/to/protobuf-libs
+     # Now, if you load x.beam into an Erlang VM, it will
+     # automatically load x.nif.so which contains the nif glue C++
+     code as well as the protobuf code.
+
+NB: Caveats: Reloading or upgrading code compiled with the `nif'
+option, might have unexpected behaviour.  The Google protobuf
+library maintains a database of .proto descriptors and will
+complain -- and halt the entire Erlang VM -- if you try to load nif
+code in two different modules that defines a message with the same
+name.  I have also seen cases where protobuf descriptors from old
+versions of the nif code appears to be used even if new code has
+been loaded.  The descriptor database appears to be kept as long as
+the Google C++ protobuf library is loaded, and it is not possible
+to control unloading of a sharerd library in Erlang, at least as of
+R15B01.  Even if the code has been purged and deleted, the shared
+object for the nif, and thus also for the Google protobuf library's
+database, may still be kept in memory.
+
+The `load_nif' option lets you specify the code to use to load the nif.
+The value to the `load_nif' must be a text that defines the function
+`load_nif/0', that in the end calls `erlang:load_nif/2'.
+Two special substrings are recognized and substituted in the text:
+
+  `{{nifbase}}'
+      The basename of the nif file to be loaded (a string).
+      Example: `"MyModule.nif"' if we are compiling `MyModule.proto'.
+      This is intended to be (part of) the first argument in
+      the call to `erlang:load_nif/2'.
+
+  `{{loadinfo}}'
+      This is a term that is intended to be the second argument in
+      the call to `erlang:load_nif/2'.
+
+The default for the `load_nif' is as follows: If the module's
+directory, as returned by`code:which/1', is on the form
+`/path/to/ebin/Mod.beam', then the nif object code is loaded from
+`/path/to/priv/Mod.nif'. Otherwise: if `code:which/1' returns
+`/some/path/Mod.beam', then the nif is loaded from
+`/some/path/Mod.nif'.

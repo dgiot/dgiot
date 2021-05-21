@@ -1,0 +1,8 @@
+{description, "Template for a state machine PropEr suite"}.
+{variables, [
+    {name, "fsm", "Name of the suite (prop_<name>)"},
+    {test_dir, "test", "The directory where the test suite goes"}
+]}.
+{template, "prop_fsm.erl.tpl", "{{test_dir}}/prop_{{name}}.erl"}.
+
+

@@ -1,0 +1,13 @@
+{application,observer_cli,
+             [{description,"Visualize Erlang Nodes On The Command Line"},
+              {vsn,"1.6.1"},
+              {modules,[observer_cli]},
+              {registered,[]},
+              {applications,[kernel,stdlib,recon]},
+              {files,["include","LICENSE*","mix.exs","mix.lock","README.md",
+                      "rebar.config","rebar.lock","src"]},
+              {build_tools,["mix","rebar3"]},
+              {env,[{scheduler_usage,disable},{plugins,[]}]},
+              {licenses,["MIT"]},
+              {links,[{"Github",
+                       "https://github.com/zhongwencool/observer_cli"}]}]}.

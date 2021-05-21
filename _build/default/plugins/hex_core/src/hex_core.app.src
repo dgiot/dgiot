@@ -1,0 +1,10 @@
+{application,hex_core,
+             [{description,"Reference implementation of Hex specifications"},
+              {vsn,"0.7.1"},
+              {registered,[]},
+              {applications,[kernel,stdlib]},
+              {licenses,["Apache-2.0"]},
+              {include_files,["CHANGELOG.md"]},
+              {links,[{"GitHub","https://github.com/hexpm/hex_core"},
+                      {"Hex specifications",
+                       "https://github.com/hexpm/specifications"}]}]}.

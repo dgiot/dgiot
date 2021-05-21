@@ -1,0 +1,95 @@
+#!/usr/bin/env escript
+%% -*- erlang -*-
+
+-mode(compile).
+main(Argv) ->
+    {Opts, Args} = parse_opts(Argv, [], []),
+    [InFile, OutFile] = if length(Args) == 2 -> Args;
+                           true -> usage(), halt(1)
+                        end,
+    {Vsn, VsnSource} =
+        case proplists:get_value(override_version, Opts) of
+            undefined ->
+                find_vsn_and_source();
+            Version ->
+                {Version, overriding_option}
+        end,
+    BaseStr = case file:read_file(InFile) of
+                  {ok, S} ->
+                      S;
+                  {error, Reason} ->
+                      file_err(read_file, InFile, Reason)
+              end,
+    SedList =
+        [
+            {<<"@vsn@">>, Vsn},
+            {<<"@vsn-source@">>, VsnSource},
+            {<<"is expected to be">>, <<"was">>},
+            {<<"%% The version below">>, [<<"%% DO NOT EDIT -- generated ">>,
+                <<"from gpb_version.hrl.in\n%% The version below">>]},
+            {<<"%% NB: The build.mk_version_hrl depends.*">>, <<"">>}
+        ],
+    VersionStr = lists:foldl(fun({Patten, Replacement}, Acc) ->
+        re:replace(Acc, Patten, Replacement, [{return, binary}])
+                             end, BaseStr, SedList),
+    case file:write_file(OutFile, VersionStr) of
+        ok ->
+            ok;
+        {error, Reason2} ->
+            file_err(write_file, OutFile, Reason2)
+    end.
+
+parse_opts(["--override-version="++Vsn | Rest], Opts, Args) ->
+    parse_opts(Rest, [{override_version, Vsn} | Opts], Args);
+parse_opts([Arg | Rest], Opts, Args) ->
+    parse_opts(Rest, Opts, [Arg | Args]);
+parse_opts([], Opts, Args) ->
+    {lists:reverse(Opts), lists:reverse(Args)}.
+
+usage() ->
+    io:format("mk_version_hrl [Opts] InFile OutFile~n"
+              "Opts: --override-version=VSN~n").
+
+-define(NO_VERSION_ERR_MSG,
+    "ERROR: To build outside a git work tree, you must explicitly
+           set the version, either by writing it to a file gpb.vsn,
+           or by creating a versioned archive, and then unpack and
+           build that.
+
+           If you want to create a versioned archive, then
+           use helpers/mk-versioned-archive.
+
+           The helpers/mk-versioned-archive can be used from a git worktree
+           or from eg Github's automatically generated tar/zip files
+           or similar. If you use it from a (non-shallow) git work tree
+           with tags intact, the version will get picked up automatically,
+           otherwise you must know the proper version and specify it manually,
+           see mk-versioned-archive --help for further assistance.
+
+           For further info, see the README.md, the section section
+           named Building outside of a git work tree.").
+
+
+find_vsn_and_source() ->
+    case os:cmd("./build/find-vsn --have-vsn") of
+        "true" ++ _ ->
+            Vsn = first_line_no_nl(
+                    os:cmd("./build/find-vsn --show-vsn")),
+            VsnSource = first_line_no_nl(
+                          os:cmd("./build/find-vsn --show-vsn-source")),
+            {Vsn, VsnSource};
+        "false" ++ _ ->
+            io:format(standard_error, "~s~n", [?NO_VERSION_ERR_MSG]),
+            halt(1)
+    end.
+
+first_line_no_nl("\r" ++ _) -> "";
+first_line_no_nl("\n" ++ _) -> "";
+first_line_no_nl([C | Tl]) -> [C | first_line_no_nl(Tl)];
+first_line_no_nl("") -> "".
+
+file_err(FunName, FileName, Reason) ->
+    io:format(standard_error, "file:~p(~s) excute failed!, Reason :~s ~n",
+              [FunName, FileName, file:format_error(Reason)]),
+    halt(1).
+
