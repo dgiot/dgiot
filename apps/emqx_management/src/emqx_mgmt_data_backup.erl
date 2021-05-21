@@ -514,7 +514,7 @@ import_modules(Modules) ->
                                <<"enabled">> := Enabled,
                                <<"created_at">> := CreatedAt,
                                <<"description">> := Description}) ->
-                            _ = emqx_modules:import_module({Id, any_to_atom(Type), Config, Enabled, CreatedAt, Description})
+                            emqx_modules:import_module({Id, any_to_atom(Type), Config, Enabled, CreatedAt, Description})
                          end, Modules)
     end.
 

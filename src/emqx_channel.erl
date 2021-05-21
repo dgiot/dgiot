@@ -241,7 +241,7 @@ setting_peercert_infos(Peercert, ClientInfo, Options) ->
 
 -dialyzer([{nowarn_function, [peer_cert_as/5]}]).
 % esockd_peercert:peercert is opaque
-% https://hub.fastgit.org/emqx/esockd/blob/master/src/esockd_peercert.erl
+% https://github.com/emqx/esockd/blob/master/src/esockd_peercert.erl
 peer_cert_as(Key, Options, Peercert, DN, CN) ->
     case proplists:get_value(Key, Options) of
          cn  -> CN;

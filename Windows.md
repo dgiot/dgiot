@@ -13,7 +13,7 @@ install Visual Studio.
 Visual Studio 2019 is used in our tests.
 If you are like me (@zmstone), do not know where to start,
 please follow this OTP guide:
-https://hub.fastgit.org/erlang/otp/blob/master/HOWTO/INSTALL-WIN32.md
+https://github.com/erlang/otp/blob/master/HOWTO/INSTALL-WIN32.md
 
 NOTE: To avoid surprises, you may need to add below two paths to `Path` environment variable
 and order them before other paths.
@@ -86,7 +86,7 @@ scoop install git curl make jq zip unzip
 
 ## Build EMQ X source code
 
-* Clone the repo: `git clone https://hub.fastgit.org/emqx/emqx.git`
+* Clone the repo: `git clone https://github.com/emqx/emqx.git`
 
 * Start CMD or Powershell
 

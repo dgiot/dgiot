@@ -7,7 +7,7 @@ VERSION="$1"
 # ensure dir
 cd -P -- "$(dirname -- "${BASH_SOURCE[0]}")/.."
 
-DOWNLOAD_URL='https://hub.fastgit.org/emqx/rebar3/releases/download'
+DOWNLOAD_URL='https://github.com/emqx/rebar3/releases/download'
 
 download() {
     curl -f -L "${DOWNLOAD_URL}/${VERSION}/rebar3" -o ./rebar3

@@ -1,6 +1,6 @@
 # EMQ X Broker
 
-[![GitHub Release](https://img.shields.io/github/release/emqx/emqx?color=brightgreen)](https://hub.fastgit.org/emqx/emqx/releases)
+[![GitHub Release](https://img.shields.io/github/release/emqx/emqx?color=brightgreen)](https://github.com/emqx/emqx/releases)
 [![Build Status](https://travis-ci.org/emqx/emqx.svg)](https://travis-ci.org/emqx/emqx)
 [![Coverage Status](https://coveralls.io/repos/github/emqx/emqx/badge.svg)](https://coveralls.io/github/emqx/emqx)
 [![Docker Pulls](https://img.shields.io/docker/pulls/emqx/emqx)](https://hub.docker.com/r/emqx/emqx)
@@ -16,7 +16,7 @@
 
 从 3.0 版本开始，*EMQ X* 完整支持 MQTT V5.0 协议规范，向下兼容 MQTT V3.1 和 V3.1.1，并支持 MQTT-SN、CoAP、LwM2M、WebSocket 和 STOMP 等通信协议。EMQ X 3.0 单集群可支持千万级别的 MQTT 并发连接。
 
-- 新功能的完整列表，请参阅 [EMQ X Release Notes](https://hub.fastgit.org/emqx/emqx/releases)。
+- 新功能的完整列表，请参阅 [EMQ X Release Notes](https://github.com/emqx/emqx/releases)。
 - 获取更多信息，请访问 [EMQ X 官网](https://www.emqx.cn/)。
 
 ## 安装
@@ -45,7 +45,7 @@ docker run -d --name emqx -p 1883:1883 -p 8081:8081 -p 8083:8083 -p 8883:8883 -p
 4.3 及以后的版本：
 
 ```bash
-git clone https://hub.fastgit.org/emqx/emqx.git
+git clone https://github.com/emqx/emqx.git
 cd emqx
 make
 _build/emqx/rel/emqx/bin console
@@ -54,7 +54,7 @@ _build/emqx/rel/emqx/bin console
 对于 4.3 之前的版本，通过另外一个仓库构建：
 
 ```bash
-git clone https://hub.fastgit.org/emqx/emqx-rel.git
+git clone https://github.com/emqx/emqx-rel.git
 cd emqx-rel
 make
 _build/emqx/rel/emqx/bin/emqx console
@@ -111,12 +111,12 @@ DIALYZER_ANALYSE_APP=emqx_lwm2m,emqx_auth_jwt,emqx_auth_ldap make dialyzer
 
 ### 问答
 
-[GitHub Discussions](https://hub.fastgit.org/emqx/emqx/discussions)
+[GitHub Discussions](https://github.com/emqx/emqx/discussions)
 [EMQ 中文问答社区](https://askemq.com)
 
 ### 参与设计
 
-如果对 EMQ X 有改进建议，可以向[EIP](https://hub.fastgit.org/emqx/eip) 提交 PR 和 ISSUE
+如果对 EMQ X 有改进建议，可以向[EIP](https://github.com/emqx/eip) 提交 PR 和 ISSUE
 
 ### 插件开发
 
@@ -134,7 +134,7 @@ DIALYZER_ANALYSE_APP=emqx_lwm2m,emqx_auth_jwt,emqx_auth_ldap make dialyzer
 - [Weibo](https://weibo.com/emqtt)
 - [Blog](https://www.emqx.cn/blog)
 
-欢迎你将任何 bug、问题和功能请求提交到 [emqx/emqx](https://hub.fastgit.org/emqx/emqx/issues)。
+欢迎你将任何 bug、问题和功能请求提交到 [emqx/emqx](https://github.com/emqx/emqx/issues)。
 
 ## MQTT 规范
 

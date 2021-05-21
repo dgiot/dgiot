@@ -184,11 +184,11 @@ Apache License Version 2.0
 
 ## Author
 
-* [Sakib Sami](https://hub.fastgit.org/s4kibs4mi)
+* [Sakib Sami](https://github.com/s4kibs4mi)
 
 ## Contributors
 
-* [Deng](https://hub.fastgit.org/turtleDeng)
-* [vishr](https://hub.fastgit.org/vishr)
-* [emqplus](https://hub.fastgit.org/emqplus)
-* [huangdan](https://hub.fastgit.org/huangdan)
+* [Deng](https://github.com/turtleDeng)
+* [vishr](https://github.com/vishr)
+* [emqplus](https://github.com/emqplus)
+* [huangdan](https://github.com/huangdan)

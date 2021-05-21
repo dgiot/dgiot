@@ -1,6 +1,6 @@
 # EMQ X Broker
 
-[![GitHub Release](https://img.shields.io/github/release/emqx/emqx?color=brightgreen)](https://hub.fastgit.org/emqx/emqx/releases)
+[![GitHub Release](https://img.shields.io/github/release/emqx/emqx?color=brightgreen)](https://github.com/emqx/emqx/releases)
 [![Build Status](https://travis-ci.org/emqx/emqx.svg)](https://travis-ci.org/emqx/emqx)
 [![Coverage Status](https://coveralls.io/repos/github/emqx/emqx/badge.svg)](https://coveralls.io/github/emqx/emqx)
 [![Docker Pulls](https://img.shields.io/docker/pulls/emqx/emqx)](https://hub.docker.com/r/emqx/emqx)
@@ -16,7 +16,7 @@
 version 3.0 以降、*EMQ X* は MQTT V5.0 の仕様を完全にサポートしており、MQTT V3.1およびV3.1.1とも下位互換性があります。
 MQTT-SN、CoAP、LwM2M、WebSocket、STOMPなどの通信プロトコルをサポートしています。 MQTTの同時接続数は1つのクラスター上で1,000万以上にまでスケールできます。
 
-- 新機能の一覧については、[EMQ Xリリースノート](https://hub.fastgit.org/emqx/emqx/releases)を参照してください。
+- 新機能の一覧については、[EMQ Xリリースノート](https://github.com/emqx/emqx/releases)を参照してください。
 - 詳細はこちら[EMQ X公式ウェブサイト](https://www.emqx.io/)をご覧ください。
 
 ## インストール
@@ -46,7 +46,7 @@ version 3.0 以降の *EMQ X* をビルドするには Erlang/OTP R21+ が必要
 version 4.3 以降の場合：
 
 ```bash
-git clone https://hub.fastgit.org/emqx/emqx-rel.git
+git clone https://github.com/emqx/emqx-rel.git
 cd emqx-rel
 make
 _build/emqx/rel/emqx/bin/emqx console
@@ -105,11 +105,11 @@ DIALYZER_ANALYSE_APP=emqx_lwm2m,emqx_auth_jwt,emqx_auth_ldap make dialyzer
 
 ### 質問する
 
-質問や知識共有の場として[GitHub Discussions](https://hub.fastgit.org/emqx/emqx/discussions)を用意しています。
+質問や知識共有の場として[GitHub Discussions](https://github.com/emqx/emqx/discussions)を用意しています。
 
 ### 提案
 
-大規模な改善のご提案がある場合は、[EIP](https://hub.fastgit.org/emqx/eip)にPRをどうぞ。
+大規模な改善のご提案がある場合は、[EIP](https://github.com/emqx/eip)にPRをどうぞ。
 
 ### 自作プラグイン
 
@@ -128,4 +128,4 @@ DIALYZER_ANALYSE_APP=emqx_lwm2m,emqx_auth_jwt,emqx_auth_ldap make dialyzer
 
 ## License
 
-Apache License 2.0, see [LICENSE](https://hub.fastgit.org/emqx/MQTTX/blob/master/LICENSE).
+Apache License 2.0, see [LICENSE](https://github.com/emqx/MQTTX/blob/master/LICENSE).

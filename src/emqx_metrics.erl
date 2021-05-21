@@ -65,10 +65,6 @@
         , code_change/3
         ]).
 
-%% BACKW: v4.3.0
--export([ upgrade_retained_delayed_counter_type/0
-        ]).
-
 -export_type([metric_idx/0]).
 
 -compile({inline, [inc/1, inc/2, dec/1, dec/2]}).
@@ -149,8 +145,8 @@
          {counter, 'messages.dropped.expired'},  % QoS2 Messages expired
          {counter, 'messages.dropped.no_subscribers'},  % Messages dropped
          {counter, 'messages.forward'},       % Messages forward
-         {counter, 'messages.retained'},      % Messages retained
-         {counter, 'messages.delayed'},       % Messages delayed
+         {gauge,   'messages.retained'},      % Messages retained
+         {gauge,   'messages.delayed'},       % Messages delayed
          {counter, 'messages.delivered'},     % Messages delivered
          {counter, 'messages.acked'}          % Messages acked
         ]).
@@ -198,11 +194,6 @@ start_link() ->
 
 -spec(stop() -> ok).
 stop() -> gen_server:stop(?SERVER).
-
-%% BACKW: v4.3.0
-upgrade_retained_delayed_counter_type() ->
-    Ks = ['messages.retained', 'messages.delayed'],
-    gen_server:call(?SERVER, {set_type_to_counter, Ks}, infinity).
 
 %%--------------------------------------------------------------------
 %% Metrics API
@@ -458,13 +449,6 @@ handle_call({create, Type, Name}, _From, State = #state{next_idx = NextIdx}) ->
             true = ets:insert(?TAB, Metric),
             {reply, {ok, NextIdx}, State#state{next_idx = NextIdx + 1}}
     end;
-
-handle_call({set_type_to_counter, Keys}, _From, State) ->
-    lists:foreach(
-      fun(K) ->
-        ets:update_element(?TAB, K, {#metric.type, counter})
-      end, Keys),
-    {reply, ok, State};
 
 handle_call(Req, _From, State) ->
     ?LOG(error, "Unexpected call: ~p", [Req]),

@@ -1,12 +1,12 @@
 # Брокер EMQ X
 
-[![GitHub Release](https://img.shields.io/github/release/emqx/emqx?color=brightgreen)](https://hub.fastgit.org/emqx/emqx/releases)
+[![GitHub Release](https://img.shields.io/github/release/emqx/emqx?color=brightgreen)](https://github.com/emqx/emqx/releases)
 [![Build Status](https://travis-ci.org/emqx/emqx.svg)](https://travis-ci.org/emqx/emqx)
 [![Coverage Status](https://coveralls.io/repos/github/emqx/emqx/badge.svg?branch=master)](https://coveralls.io/github/emqx/emqx?branch=master)
 [![Docker Pulls](https://img.shields.io/docker/pulls/emqx/emqx)](https://hub.docker.com/r/emqx/emqx)
 [![Slack Invite](<https://slack-invite.emqx.io/badge.svg>)](https://slack-invite.emqx.io)
 [![Twitter](https://img.shields.io/badge/Follow-EMQ-1DA1F2?logo=twitter)](https://twitter.com/EMQTech)
-[![Community](https://img.shields.io/badge/Community-EMQ%20X-yellow?logo=github)](https://hub.fastgit.org/emqx/emqx/discussions)
+[![Community](https://img.shields.io/badge/Community-EMQ%20X-yellow?logo=github)](https://github.com/emqx/emqx/discussions)
 
 [![The best IoT MQTT open source team looks forward to your joining](https://www.emqx.io/static/img/github_readme_en_bg.png)](https://www.emqx.io/careers)
 
@@ -16,7 +16,7 @@
 
 Начиная с релиза 3.0, брокер *EMQ X* полностью поддерживает протокол MQTT версии 5.0, и обратно совместим с версиями 3.1 и 3.1.1, а также протоколами MQTT-SN, CoAP, LwM2M, WebSocket и STOMP. Начиная с релиза 3.0, брокер *EMQ X* может масштабироваться до более чем 10 миллионов одновременных MQTT соединений на один кластер.
 
-- Полный список возможностей доступен по ссылке: [EMQ X Release Notes](https://hub.fastgit.org/emqx/emqx/releases).
+- Полный список возможностей доступен по ссылке: [EMQ X Release Notes](https://github.com/emqx/emqx/releases).
 - Более подробная информация доступна на нашем сайте: [EMQ X homepage](https://www.emqx.io).
 
 ## Установка
@@ -46,7 +46,7 @@ docker run -d --name emqx -p 1883:1883 -p 8081:8081 -p 8083:8083 -p 8883:8883 -p
 Инструкция для сборки версии 4.3 и выше:
 
 ```bash
-git clone https://hub.fastgit.org/emqx/emqx.git
+git clone https://github.com/emqx/emqx.git
 cd emqx
 make
 _build/emqx/rel/emqx/bin console
@@ -55,7 +55,7 @@ _build/emqx/rel/emqx/bin console
 Более ранние релизы могут быть собраны с помощью другого репозитория:
 
 ```bash
-git clone https://hub.fastgit.org/emqx/emqx-rel.git
+git clone https://github.com/emqx/emqx-rel.git
 cd emqx-rel
 make
 _build/emqx/rel/emqx/bin/emqx console
@@ -115,11 +115,11 @@ DIALYZER_ANALYSE_APP=emqx_lwm2m,emqx_auth_jwt,emqx_auth_ldap make dialyzer
 
 ### Вопросы
 
-Задать вопрос или поделиться идеей можно в [GitHub Discussions](https://hub.fastgit.org/emqx/emqx/discussions).
+Задать вопрос или поделиться идеей можно в [GitHub Discussions](https://github.com/emqx/emqx/discussions).
 
 ### Предложения
 
-Более масштабные предложения можно присылать в виде pull request в репозиторий [EIP](https://hub.fastgit.org/emqx/eip).
+Более масштабные предложения можно присылать в виде pull request в репозиторий [EIP](https://github.com/emqx/eip).
 
 ### Разработка плагинов
 

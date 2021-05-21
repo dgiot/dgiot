@@ -32,8 +32,8 @@ See: `priv/protos/exhook.proto`
 
 ## Recommended gRPC Framework
 
-See: https://hub.fastgit.org/grpc-ecosystem/awesome-grpc
+See: https://github.com/grpc-ecosystem/awesome-grpc
 
 ## Thanks
 
-- [grpcbox](https://hub.fastgit.org/tsloughter/grpcbox)
+- [grpcbox](https://github.com/tsloughter/grpcbox)

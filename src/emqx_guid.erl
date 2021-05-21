@@ -73,7 +73,7 @@ bin({Ts, NPid, Seq}) ->
 
 ts() -> erlang:system_time(micro_seconds).
 
-%% Copied from https://hub.fastgit.org/okeuday/uuid.git.
+%% Copied from https://github.com/okeuday/uuid.git.
 npid() ->
     <<NodeD01, NodeD02, NodeD03, NodeD04, NodeD05,
       NodeD06, NodeD07, NodeD08, NodeD09, NodeD10,
