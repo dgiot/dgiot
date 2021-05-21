@@ -174,10 +174,9 @@ relx_gen_id() {
 # Control a node
 relx_nodetool() {
     command="$1"; shift
-    export RUNNER_ROOT_DIR
-    export REL_VSN
 
     ERL_FLAGS="$ERL_FLAGS $EPMD_ARG" \
+    ERL_LIBS="${LIB_EKKA_DIR}:${ERL_LIBS:-}" \
     "$ERTS_DIR/bin/escript" "$ROOTDIR/bin/nodetool" "$NAME_TYPE" "$NAME" \
                                 -setcookie "$COOKIE" "$command" "$@"
 }
@@ -346,7 +345,7 @@ if [ -z "$COOKIE" ]; then
     exit 1
 fi
 
-# Support for IPv6 Dist. See: https://hub.fastgit.org/emqtt/emqttd/issues/1460
+# Support for IPv6 Dist. See: https://github.com/emqtt/emqttd/issues/1460
 PROTO_DIST=$(grep -E '^[ \t]*cluster.proto_dist[ \t]*=[ \t]*' "$RUNNER_ETC_DIR/emqx.conf" 2> /dev/null | tail -1 | awk -F"= " '{print $NF}')
 if [ -z "$PROTO_DIST" ]; then
     PROTO_DIST_ARG=""

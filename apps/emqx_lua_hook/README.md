@@ -3,13 +3,13 @@
 
 This plugin makes it possible to write hooks in lua scripts.
 
-Lua virtual machine is implemented by [luerl](https://hub.fastgit.org/rvirding/luerl) which supports Lua 5.2. Following features may not work properly:
+Lua virtual machine is implemented by [luerl](https://github.com/rvirding/luerl) which supports Lua 5.2. Following features may not work properly:
 * label and goto
 * tail-call optimisation in return
 * only limited standard libraries
 * proper handling of `__metatable`
 
-For the supported functions, please refer to luerl's [project page](https://hub.fastgit.org/rvirding/luerl).
+For the supported functions, please refer to luerl's [project page](https://github.com/rvirding/luerl).
 
 Lua scripts are stored in 'data/scripts' directory, and will be loaded automatically. If a script is changed during runtime, it should be reloaded to take effect.
 

@@ -17,7 +17,7 @@
   "gnetId": null,
   "graphTooltip": 0,
   "id": 2,
-  "iteration": 1620639954651,
+  "iteration": 1589443996970,
   "links": [],
   "panels": [
     {
@@ -26,12 +26,6 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "Prometheus",
-      "fieldConfig": {
-        "defaults": {
-          "links": []
-        },
-        "overrides": []
-      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -60,10 +54,9 @@
       "links": [],
       "nullPointMode": "null",
       "options": {
-        "alertThreshold": true
+        "dataLinks": []
       },
       "percentage": false,
-      "pluginVersion": "7.5.5",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -73,22 +66,13 @@
       "steppedLine": false,
       "targets": [
         {
-          "exemplar": true,
           "expr": "emqx_connections_count{instance=\"$host\"}",
           "format": "time_series",
           "interval": "1m",
           "intervalFactor": 1,
-          "legendFormat": "Current",
+          "legendFormat": "Clients",
           "refId": "A",
           "step": 60
-        },
-        {
-          "exemplar": true,
-          "expr": "emqx_connections_max{instance=\"$host\"}",
-          "hide": false,
-          "interval": "1m",
-          "legendFormat": "Max",
-          "refId": "B"
         }
       ],
       "thresholds": [],
@@ -138,11 +122,7 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": null,
-      "fieldConfig": {
-        "defaults": {},
-        "overrides": []
-      },
+      "datasource": "Prometheus",
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
@@ -150,228 +130,6 @@
         "w": 12,
         "x": 12,
         "y": 0
-      },
-      "hiddenSeries": false,
-      "id": 15,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null",
-      "options": {
-        "alertThreshold": true
-      },
-      "percentage": false,
-      "pluginVersion": "7.5.5",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "exemplar": true,
-          "expr": "emqx_sessions_count{instance=\"$host\"}",
-          "interval": "",
-          "legendFormat": "Current",
-          "refId": "A"
-        },
-        {
-          "exemplar": true,
-          "expr": "emqx_sessions_max{instance=\"$host\"}",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "Max",
-          "refId": "B"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "Session",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": null,
-      "fieldConfig": {
-        "defaults": {},
-        "overrides": []
-      },
-      "fill": 1,
-      "fillGradient": 0,
-      "gridPos": {
-        "h": 7,
-        "w": 12,
-        "x": 0,
-        "y": 7
-      },
-      "hiddenSeries": false,
-      "id": 17,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null",
-      "options": {
-        "alertThreshold": true
-      },
-      "percentage": false,
-      "pluginVersion": "7.5.5",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "exemplar": true,
-          "expr": "emqx_suboptions_count{instance=\"$host\"}",
-          "interval": "",
-          "legendFormat": "Subopt-Current",
-          "refId": "A"
-        },
-        {
-          "exemplar": true,
-          "expr": "emqx_suboptions_max{instance=\"$host\"}",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "Subopt-Max",
-          "refId": "B"
-        },
-        {
-          "exemplar": true,
-          "expr": "emqx_subscribers_count{instance=\"$host\"}",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "Suber-Current",
-          "refId": "C"
-        },
-        {
-          "exemplar": true,
-          "expr": "emqx_subscribers_max{instance=\"$host\"}",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "Suber-Max",
-          "refId": "D"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "Subscribers & Suboptions",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "Prometheus",
-      "fieldConfig": {
-        "defaults": {
-          "links": []
-        },
-        "overrides": []
-      },
-      "fill": 1,
-      "fillGradient": 0,
-      "gridPos": {
-        "h": 7,
-        "w": 12,
-        "x": 12,
-        "y": 7
       },
       "hiddenSeries": false,
       "id": 7,
@@ -389,10 +147,9 @@
       "links": [],
       "nullPointMode": "null",
       "options": {
-        "alertThreshold": true
+        "dataLinks": []
       },
       "percentage": false,
-      "pluginVersion": "7.5.5",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -402,38 +159,12 @@
       "steppedLine": false,
       "targets": [
         {
-          "exemplar": true,
           "expr": "emqx_subscriptions_count{instance=\"$host\"}",
           "format": "time_series",
-          "interval": "",
           "intervalFactor": 1,
-          "legendFormat": "Normal-Current",
+          "legendFormat": "Subscriptions",
           "refId": "A",
           "step": 60
-        },
-        {
-          "exemplar": true,
-          "expr": "emqx_subscriptions_max{instance=\"$host\"}",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "Normal-Max",
-          "refId": "B"
-        },
-        {
-          "exemplar": true,
-          "expr": "emqx_subscriptions_shared_count{instance=\"$host\"}",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "Shared-Current",
-          "refId": "C"
-        },
-        {
-          "exemplar": true,
-          "expr": "emqx_subscriptions_shared_max{instance=\"$host\"}",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "Shared-Max",
-          "refId": "D"
         }
       ],
       "thresholds": [],
@@ -484,19 +215,13 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "Prometheus",
-      "fieldConfig": {
-        "defaults": {
-          "links": []
-        },
-        "overrides": []
-      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
-        "h": 6,
+        "h": 7,
         "w": 12,
         "x": 0,
-        "y": 14
+        "y": 7
       },
       "hiddenSeries": false,
       "id": 12,
@@ -514,10 +239,9 @@
       "links": [],
       "nullPointMode": "null",
       "options": {
-        "alertThreshold": true
+        "dataLinks": []
       },
       "percentage": false,
-      "pluginVersion": "7.5.5",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -527,21 +251,11 @@
       "steppedLine": false,
       "targets": [
         {
-          "exemplar": true,
           "expr": "emqx_routes_count{instance=\"$host\"}",
           "format": "time_series",
-          "interval": "",
           "intervalFactor": 2,
-          "legendFormat": "Current",
+          "legendFormat": "Topics",
           "refId": "A"
-        },
-        {
-          "exemplar": true,
-          "expr": "emqx_routes_max{instance=\"$host\"}",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "Max",
-          "refId": "B"
         }
       ],
       "thresholds": [],
@@ -591,123 +305,14 @@
       "bars": false,
       "dashLength": 10,
       "dashes": false,
-      "datasource": null,
-      "fieldConfig": {
-        "defaults": {},
-        "overrides": []
-      },
+      "datasource": "Prometheus",
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
-        "h": 6,
+        "h": 7,
         "w": 12,
         "x": 12,
-        "y": 14
-      },
-      "hiddenSeries": false,
-      "id": 19,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
-      "nullPointMode": "null",
-      "options": {
-        "alertThreshold": true
-      },
-      "percentage": false,
-      "pluginVersion": "7.5.5",
-      "pointradius": 2,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "exemplar": true,
-          "expr": "emqx_retained_count{instance=\"$host\"}",
-          "interval": "",
-          "legendFormat": "Current",
-          "refId": "A"
-        },
-        {
-          "exemplar": true,
-          "expr": "emqx_retained_max{instance=\"$host\"}",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "Max",
-          "refId": "B"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "Retained Messages",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "Prometheus",
-      "description": "",
-      "fieldConfig": {
-        "defaults": {
-          "links": []
-        },
-        "overrides": []
-      },
-      "fill": 1,
-      "fillGradient": 0,
-      "gridPos": {
-        "h": 6,
-        "w": 12,
-        "x": 0,
-        "y": 20
+        "y": 7
       },
       "hiddenSeries": false,
       "id": 13,
@@ -725,10 +330,9 @@
       "links": [],
       "nullPointMode": "null",
       "options": {
-        "alertThreshold": true
+        "dataLinks": []
       },
       "percentage": false,
-      "pluginVersion": "7.5.5",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -738,7 +342,6 @@
       "steppedLine": false,
       "targets": [
         {
-          "exemplar": true,
           "expr": "sum(rate(emqx_messages_received{instance=\"$host\"}[$__interval]) or irate(emqx_messages_received{instance=\"$host\"}[$__interval]))",
           "format": "time_series",
           "interval": "$interval",
@@ -747,7 +350,6 @@
           "refId": "A"
         },
         {
-          "exemplar": true,
           "expr": "sum(rate(emqx_messages_sent{instance=\"$host\"}[$__interval]) or irate(emqx_messages_sent{instance=\"$host\"}[$__interval]))",
           "format": "time_series",
           "interval": "$interval",
@@ -756,7 +358,6 @@
           "refId": "B"
         },
         {
-          "exemplar": true,
           "expr": "sum(rate(emqx_messages_retained{instance=\"$host\"}[$__interval]) or irate(emqx_messages_retained{instance=\"$host\"}[$__interval]))",
           "format": "time_series",
           "interval": "$interval",
@@ -765,36 +366,19 @@
           "refId": "C"
         },
         {
-          "exemplar": true,
           "expr": "sum(rate(emqx_messages_dropped{instance=\"$host\"}[$__interval]) or irate(emqx_messages_dropped{instance=\"$host\"}[$__interval]))",
           "format": "time_series",
           "interval": "$interval",
           "intervalFactor": 2,
           "legendFormat": "Dropped",
           "refId": "D"
-        },
-        {
-          "exemplar": true,
-          "expr": "sum(rate(emqx_messages_delayed{instance=\"$host\"}[$__interval]) or irate(emqx_messages_delayed{instance=\"$host\"}[$__interval]))",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "Delayed",
-          "refId": "E"
-        },
-        {
-          "exemplar": true,
-          "expr": "sum(rate(emqx_messages_forward{instance=\"$host\"}[$__interval]) or irate(emqx_messages_forward{instance=\"$host\"}[$__interval]))",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "Forward",
-          "refId": "F"
         }
       ],
       "thresholds": [],
       "timeFrom": null,
       "timeRegions": [],
       "timeShift": null,
-      "title": "Messages Overview",
+      "title": "Messages",
       "tooltip": {
         "shared": true,
         "sort": 0,
@@ -838,433 +422,13 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "Prometheus",
-      "description": "",
-      "fieldConfig": {
-        "defaults": {
-          "links": []
-        },
-        "overrides": []
-      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
-        "h": 6,
-        "w": 12,
-        "x": 12,
-        "y": 20
-      },
-      "hiddenSeries": false,
-      "id": 22,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
-      "links": [],
-      "nullPointMode": "null",
-      "options": {
-        "alertThreshold": true
-      },
-      "percentage": false,
-      "pluginVersion": "7.5.5",
-      "pointradius": 5,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "exemplar": true,
-          "expr": "sum(rate(emqx_messages_dropped{instance=\"$host\"}[$__interval]) or irate(emqx_messages_dropped{instance=\"$host\"}[$__interval]))",
-          "format": "time_series",
-          "interval": "$interval",
-          "intervalFactor": 2,
-          "legendFormat": "Message.Dropped",
-          "refId": "A"
-        },
-        {
-          "exemplar": true,
-          "expr": "sum(rate(emqx_messages_dropped_expired {instance=\"$host\"}[$__interval]) or irate(emqx_messages_dropped_expired {instance=\"$host\"}[$__interval]))",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "Message.Dropped.Expired",
-          "refId": "B"
-        },
-        {
-          "exemplar": true,
-          "expr": "sum(rate(emqx_messages_dropped_no_subscribers {instance=\"$host\"}[$__interval]) or irate(emqx_messages_dropped_no_subscribers {instance=\"$host\"}[$__interval]))",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "Message.Dropped.no_subscribers",
-          "refId": "C"
-        },
-        {
-          "exemplar": true,
-          "expr": "sum(rate(emqx_delivery_dropped {instance=\"$host\"}[$__interval]) or irate(emqx_delivery_dropped {instance=\"$host\"}[$__interval]))",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "Delivery.Dropped",
-          "refId": "D"
-        },
-        {
-          "exemplar": true,
-          "expr": "sum(rate(emqx_delivery_dropped_no_local{instance=\"$host\"}[$__interval]) or irate(emqx_delivery_dropped_no_local {instance=\"$host\"}[$__interval]))",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "Delivery.Dropped.no_local",
-          "refId": "E"
-        },
-        {
-          "exemplar": true,
-          "expr": "sum(rate(emqx_delivery_dropped_too_large {instance=\"$host\"}[$__interval]) or irate(emqx_delivery_dropped_too_large {instance=\"$host\"}[$__interval]))",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "Delivery.Dropped.too_large",
-          "refId": "F"
-        },
-        {
-          "exemplar": true,
-          "expr": "sum(rate(emqx_delivery_dropped_qos0_msg {instance=\"$host\"}[$__interval]) or irate(emqx_delivery_dropped_qos0_msg {instance=\"$host\"}[$__interval]))",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "Delivery.Dropped.qos0_msg",
-          "refId": "G"
-        },
-        {
-          "exemplar": true,
-          "expr": "sum(rate(emqx_delivery_dropped_queue_full {instance=\"$host\"}[$__interval]) or irate(emqx_delivery_dropped_queue_full {instance=\"$host\"}[$__interval]))",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "Delivery.Dropped.queue_full",
-          "refId": "H"
-        },
-        {
-          "exemplar": true,
-          "expr": "sum(rate(emqx_delivery_dropped_expired {instance=\"$host\"}[$__interval]) or irate(emqx_delivery_dropped_expired {instance=\"$host\"}[$__interval]))",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "Delivery.Dropped.expired",
-          "refId": "I"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "Messages/Delivery Dropped",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "decimals": 0,
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": "0",
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "Prometheus",
-      "description": "",
-      "fieldConfig": {
-        "defaults": {
-          "links": []
-        },
-        "overrides": []
-      },
-      "fill": 1,
-      "fillGradient": 0,
-      "gridPos": {
-        "h": 6,
+        "h": 7,
         "w": 12,
         "x": 0,
-        "y": 26
-      },
-      "hiddenSeries": false,
-      "id": 20,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
-      "links": [],
-      "nullPointMode": "null",
-      "options": {
-        "alertThreshold": true
-      },
-      "percentage": false,
-      "pluginVersion": "7.5.5",
-      "pointradius": 5,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "exemplar": true,
-          "expr": "sum(rate(emqx_messages_received{instance=\"$host\"}[$__interval]) or irate(emqx_messages_received{instance=\"$host\"}[$__interval]))",
-          "format": "time_series",
-          "interval": "$interval",
-          "intervalFactor": 2,
-          "legendFormat": "Received",
-          "refId": "A"
-        },
-        {
-          "exemplar": false,
-          "expr": "sum(rate(emqx_messages_qos0_received {instance=\"$host\"}[$__interval]) or irate(emqx_messages_qos0_received {instance=\"$host\"}[$__interval]))",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "Received.QoS0",
-          "refId": "B"
-        },
-        {
-          "exemplar": true,
-          "expr": "sum(rate(emqx_messages_qos1_received {instance=\"$host\"}[$__interval]) or irate(emqx_messages_qos1_received {instance=\"$host\"}[$__interval]))",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "Received.QoS1",
-          "refId": "C"
-        },
-        {
-          "exemplar": true,
-          "expr": "sum(rate(emqx_messages_qos2_received {instance=\"$host\"}[$__interval]) or irate(emqx_messages_qos2_received {instance=\"$host\"}[$__interval]))",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "Received.QoS2",
-          "refId": "D"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "Messages Received",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "decimals": 0,
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": "0",
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "Prometheus",
-      "description": "",
-      "fieldConfig": {
-        "defaults": {
-          "links": []
-        },
-        "overrides": []
-      },
-      "fill": 1,
-      "fillGradient": 0,
-      "gridPos": {
-        "h": 6,
-        "w": 12,
-        "x": 12,
-        "y": 26
-      },
-      "hiddenSeries": false,
-      "id": 21,
-      "legend": {
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
-        "show": true,
-        "total": false,
-        "values": false
-      },
-      "lines": true,
-      "linewidth": 1,
-      "links": [],
-      "nullPointMode": "null",
-      "options": {
-        "alertThreshold": true
-      },
-      "percentage": false,
-      "pluginVersion": "7.5.5",
-      "pointradius": 5,
-      "points": false,
-      "renderer": "flot",
-      "seriesOverrides": [],
-      "spaceLength": 10,
-      "stack": false,
-      "steppedLine": false,
-      "targets": [
-        {
-          "expr": "sum(rate(emqx_messages_sent{instance=\"$host\"}[$__interval]) or irate(emqx_messages_sent{instance=\"$host\"}[$__interval]))",
-          "format": "time_series",
-          "interval": "$interval",
-          "intervalFactor": 2,
-          "legendFormat": "Sent",
-          "refId": "E"
-        },
-        {
-          "exemplar": true,
-          "expr": "sum(rate(emqx_messages_qos0_sent {instance=\"$host\"}[$__interval]) or irate(emqx_messages_qos0_sent {instance=\"$host\"}[$__interval]))",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "Sent.QoS0",
-          "refId": "F"
-        },
-        {
-          "exemplar": true,
-          "expr": "sum(rate(emqx_messages_qos1_sent {instance=\"$host\"}[$__interval]) or irate(emqx_messages_qos1_sent {instance=\"$host\"}[$__interval]))",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "Sent.QoS1",
-          "refId": "G"
-        },
-        {
-          "exemplar": true,
-          "expr": "sum(rate(emqx_messages_qos2_sent {instance=\"$host\"}[$__interval]) or irate(emqx_messages_qos2_sent {instance=\"$host\"}[$__interval]))",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "Sent.QoS2",
-          "refId": "H"
-        }
-      ],
-      "thresholds": [],
-      "timeFrom": null,
-      "timeRegions": [],
-      "timeShift": null,
-      "title": "Messages  Sent",
-      "tooltip": {
-        "shared": true,
-        "sort": 0,
-        "value_type": "individual"
-      },
-      "type": "graph",
-      "xaxis": {
-        "buckets": null,
-        "mode": "time",
-        "name": null,
-        "show": true,
-        "values": []
-      },
-      "yaxes": [
-        {
-          "decimals": 0,
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": "0",
-          "show": true
-        },
-        {
-          "format": "short",
-          "label": null,
-          "logBase": 1,
-          "max": null,
-          "min": null,
-          "show": true
-        }
-      ],
-      "yaxis": {
-        "align": false,
-        "alignLevel": null
-      }
-    },
-    {
-      "aliasColors": {},
-      "bars": false,
-      "dashLength": 10,
-      "dashes": false,
-      "datasource": "Prometheus",
-      "fieldConfig": {
-        "defaults": {
-          "links": []
-        },
-        "overrides": []
-      },
-      "fill": 1,
-      "fillGradient": 0,
-      "gridPos": {
-        "h": 6,
-        "w": 12,
-        "x": 0,
-        "y": 32
+        "y": 14
       },
       "hiddenSeries": false,
       "id": 9,
@@ -1283,10 +447,9 @@
       "links": [],
       "nullPointMode": "null",
       "options": {
-        "alertThreshold": true
+        "dataLinks": []
       },
       "percentage": false,
-      "pluginVersion": "7.5.5",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -1361,19 +524,13 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "Prometheus",
-      "fieldConfig": {
-        "defaults": {
-          "links": []
-        },
-        "overrides": []
-      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
-        "h": 6,
+        "h": 7,
         "w": 12,
         "x": 12,
-        "y": 32
+        "y": 14
       },
       "hiddenSeries": false,
       "id": 2,
@@ -1397,10 +554,9 @@
       "links": [],
       "nullPointMode": "null",
       "options": {
-        "alertThreshold": true
+        "dataLinks": []
       },
       "percentage": false,
-      "pluginVersion": "7.5.5",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -1410,8 +566,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "exemplar": true,
-          "expr": "rate(emqx_packets_connect{instance=\"$host\"}[$__interval])",
+          "expr": "sum(rate(emqx_packets_connect{instance=\"$host\"}[$__interval]) or irate(emqx_packets_connect{instance=\"$host\"}[$__interval]))",
           "format": "time_series",
           "hide": false,
           "interval": "$interval",
@@ -1421,8 +576,7 @@
           "step": 60
         },
         {
-          "exemplar": true,
-          "expr": "rate(emqx_packets_connack_sent{instance=\"$host\"}[$__interval])",
+          "expr": "sum(rate(emqx_packets_connack_sent{instance=\"$host\"}[$__interval]) or irate(emqx_packets_connack_sent{instance=\"$host\"}[$__interval]))",
           "format": "time_series",
           "interval": "$interval",
           "intervalFactor": 1,
@@ -1431,47 +585,13 @@
           "step": 60
         },
         {
-          "exemplar": true,
-          "expr": "rate(emqx_packets_disconnect_sent{instance=\"$host\"}[$__interval])",
+          "expr": "sum(rate(emqx_packets_disconnect_sent{instance=\"$host\"}[$__interval]) or irate(emqx_packets_disconnect_sent{instance=\"$host\"}[$__interval]))",
           "format": "time_series",
           "interval": "$interval",
           "intervalFactor": 1,
           "legendFormat": "Disconnect sent",
           "refId": "C",
           "step": 60
-        },
-        {
-          "exemplar": true,
-          "expr": "rate(emqx_packets_connack_error {instance=\"$host\"}[$__interval])",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "connack_error",
-          "refId": "D"
-        },
-        {
-          "exemplar": true,
-          "expr": "rate(emqx_packets_connack_auth_error {instance=\"$host\"}[$__interval])",
-          "hide": false,
-          "interval": "",
-          "intervalFactor": 1,
-          "legendFormat": "connack_auth_error",
-          "refId": "E"
-        },
-        {
-          "exemplar": true,
-          "expr": "rate(emqx_packets_auth_received {instance=\"$host\"}[$__interval])",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "Auth",
-          "refId": "F"
-        },
-        {
-          "exemplar": true,
-          "expr": "rate(emqx_packets_auth_sent {instance=\"$host\"}[$__interval])",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "Auth sent",
-          "refId": "G"
         }
       ],
       "thresholds": [],
@@ -1522,19 +642,13 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "Prometheus",
-      "fieldConfig": {
-        "defaults": {
-          "links": []
-        },
-        "overrides": []
-      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
-        "h": 6,
+        "h": 7,
         "w": 12,
         "x": 0,
-        "y": 38
+        "y": 21
       },
       "hiddenSeries": false,
       "hideTimeOverride": false,
@@ -1557,10 +671,9 @@
       "links": [],
       "nullPointMode": "null",
       "options": {
-        "alertThreshold": true
+        "dataLinks": []
       },
       "percentage": false,
-      "pluginVersion": "7.5.5",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -1571,10 +684,8 @@
       "steppedLine": false,
       "targets": [
         {
-          "exemplar": true,
-          "expr": "rate(emqx_packets_subscribe_received{instance=\"$host\"}[$__interval])",
+          "expr": "sum(rate(emqx_packets_subscribe_received{instance=\"$host\"}[$__interval]) or irate(emqx_packets_subscribe_received{instance=\"$host\"}[$__interval]))",
           "format": "time_series",
-          "instant": false,
           "interval": "$interval",
           "intervalFactor": 1,
           "legendFormat": "Subscribe received",
@@ -1583,8 +694,7 @@
           "step": 30
         },
         {
-          "exemplar": true,
-          "expr": "rate(emqx_packets_suback_sent{instance=\"$host\"}[$__interval])",
+          "expr": "sum(rate(emqx_packets_suback_sent{instance=\"$host\"}[$__interval]) or irate(emqx_packets_suback_sent{instance=\"$host\"}[$__interval]))",
           "format": "time_series",
           "interval": "$interval",
           "intervalFactor": 2,
@@ -1593,8 +703,7 @@
           "step": 60
         },
         {
-          "exemplar": true,
-          "expr": "rate(emqx_packets_unsubscribe_received{instance=\"$host\"}[$__interval])",
+          "expr": "sum(rate(emqx_packets_unsubscribe_received{instance=\"$host\"}[$__interval]) or irate(emqx_packets_unsubscribe_received{instance=\"$host\"}[$__interval]))",
           "format": "time_series",
           "interval": "$interval",
           "intervalFactor": 2,
@@ -1603,38 +712,13 @@
           "step": 60
         },
         {
-          "exemplar": true,
-          "expr": "rate(emqx_packets_unsuback_sent{instance=\"$host\"}[$__interval])",
+          "expr": "sum(rate(emqx_packets_unsuback_sent{instance=\"$host\"}[$__interval]) or irate(emqx_packets_unsuback_send{instance=\"$host\"}[$__interval]))",
           "format": "time_series",
           "interval": "$interval",
           "intervalFactor": 2,
           "legendFormat": "Unsuback sent",
           "refId": "D",
           "step": 60
-        },
-        {
-          "exemplar": true,
-          "expr": "rate(emqx_packets_subscribe_auth_error {instance=\"$host\"}[$__interval])",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "sub_auth_error",
-          "refId": "E"
-        },
-        {
-          "exemplar": true,
-          "expr": "rate(emqx_packets_subscribe_error {instance=\"$host\"}[$__interval])",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "sub_error",
-          "refId": "F"
-        },
-        {
-          "exemplar": true,
-          "expr": "rate(emqx_packets_unsubscribe_error {instance=\"$host\"}[$__interval])",
-          "hide": false,
-          "interval": "",
-          "legendFormat": "unsub_error",
-          "refId": "G"
         }
       ],
       "thresholds": [],
@@ -1685,19 +769,13 @@
       "dashLength": 10,
       "dashes": false,
       "datasource": "Prometheus",
-      "fieldConfig": {
-        "defaults": {
-          "links": []
-        },
-        "overrides": []
-      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
-        "h": 6,
+        "h": 7,
         "w": 12,
         "x": 12,
-        "y": 38
+        "y": 21
       },
       "hiddenSeries": false,
       "id": 10,
@@ -1716,10 +794,9 @@
       "links": [],
       "nullPointMode": "null",
       "options": {
-        "alertThreshold": true
+        "dataLinks": []
       },
       "percentage": false,
-      "pluginVersion": "7.5.5",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -1796,19 +873,13 @@
       "dashes": false,
       "datasource": "Prometheus",
       "decimals": null,
-      "fieldConfig": {
-        "defaults": {
-          "links": []
-        },
-        "overrides": []
-      },
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
         "h": 7,
         "w": 24,
         "x": 0,
-        "y": 44
+        "y": 28
       },
       "hiddenSeries": false,
       "hideTimeOverride": false,
@@ -1829,10 +900,9 @@
       "links": [],
       "nullPointMode": "null",
       "options": {
-        "alertThreshold": true
+        "dataLinks": []
       },
       "percentage": false,
-      "pluginVersion": "7.5.5",
       "pointradius": 5,
       "points": false,
       "renderer": "flot",
@@ -1842,8 +912,7 @@
       "steppedLine": false,
       "targets": [
         {
-          "exemplar": true,
-          "expr": "rate(emqx_packets_publish_received{instance=\"$host\"}[$__interval])",
+          "expr": "sum(rate(emqx_packets_publish_received{instance=\"$host\"}[$__interval]) or irate(emqx_packets_publish_received{instance=\"$host\"}[$__interval]))",
           "format": "time_series",
           "interval": "$interval",
           "intervalFactor": 1,
@@ -1852,8 +921,7 @@
           "step": 15
         },
         {
-          "exemplar": true,
-          "expr": "rate(emqx_packets_publish_sent{instance=\"$host\"}[$__interval])",
+          "expr": "sum(rate(emqx_packets_publish_sent{instance=\"$host\"}[$__interval]) or irate(emqx_packets_publish_sent{instance=\"$host\"}[$__interval]))",
           "format": "time_series",
           "interval": "$interval",
           "intervalFactor": 1,
@@ -1862,8 +930,7 @@
           "step": 15
         },
         {
-          "exemplar": true,
-          "expr": "rate(emqx_packets_puback_received{instance=\"$host\"}[$__interval])",
+          "expr": "sum(rate(emqx_packets_puback_received{instance=\"$host\"}[$__interval]) or irate(emqx_packets_puback_received{instance=\"$host\"}[$__interval]))",
           "format": "time_series",
           "interval": "$interval",
           "intervalFactor": 1,
@@ -1873,8 +940,7 @@
           "step": 15
         },
         {
-          "exemplar": true,
-          "expr": "rate(emqx_packets_puback_sent{instance=\"$host\"}[$__interval])",
+          "expr": "sum(rate(emqx_packets_puback_sent{instance=\"$host\"}[$__interval]) or irate(emqx_packets_puback_sent{instance=\"$host\"}[$__interval]))",
           "format": "time_series",
           "interval": "$interval",
           "intervalFactor": 2,
@@ -1883,8 +949,7 @@
           "step": 30
         },
         {
-          "exemplar": true,
-          "expr": "rate(emqx_packets_pubrel_received{instance=\"$host\"}[$interval])",
+          "expr": "sum(rate(emqx_packets_pubrel_received{instance=\"$host\"}[$interval]) or irate(emqx_packets_pubrel_received{instance=\"$host\"}[$__interval]))",
           "format": "time_series",
           "interval": "$interval",
           "intervalFactor": 2,
@@ -1893,8 +958,7 @@
           "step": 30
         },
         {
-          "exemplar": true,
-          "expr": "rate(emqx_packets_pubrel_sent{instance=\"$host\"}[$interval])",
+          "expr": "sum(rate(emqx_packets_pubrel_sent{instance=\"$host\"}[$interval]) or irate(emqx_packets_pubrel_sent{instance=\"$host\"}[$__interval]))",
           "format": "time_series",
           "interval": "$interval",
           "intervalFactor": 2,
@@ -1903,8 +967,7 @@
           "step": 30
         },
         {
-          "exemplar": true,
-          "expr": "rate(emqx_packets_pubcomp_received{instance=\"$host\"}[$interval])",
+          "expr": "sum(rate(emqx_packets_pubcomp_received{instance=\"$host\"}[$interval]) or irate(emqx_packets_pubcomp_received{instance=\"$host\"}[$__interval]))",
           "format": "time_series",
           "interval": "$interval",
           "intervalFactor": 2,
@@ -1913,8 +976,7 @@
           "step": 30
         },
         {
-          "exemplar": true,
-          "expr": "rate(emqx_packets_pubcomp_sent{instance=\"$host\"}[$interval])",
+          "expr": "sum(rate(emqx_packets_pubcomp_sent{instance=\"$host\"}[$interval]) or irate(emqx_packets_pubcomp_sent{instance=\"$host\"}[$__interval]))",
           "format": "time_series",
           "interval": "$interval",
           "intervalFactor": 2,
@@ -1967,7 +1029,7 @@
     }
   ],
   "refresh": false,
-  "schemaVersion": 27,
+  "schemaVersion": 22,
   "style": "dark",
   "tags": [],
   "templating": {
@@ -1981,8 +1043,6 @@
           "text": "auto",
           "value": "$__auto_interval_interval"
         },
-        "description": null,
-        "error": null,
         "hide": 0,
         "label": "Interval",
         "name": "interval",
@@ -2036,24 +1096,19 @@
       {
         "allValue": null,
         "current": {
-          "selected": false,
-          "text": "128.160.171.92:8081",
-          "value": "128.160.171.92:8081"
+          "text": "emqx~127.0.0.1",
+          "value": "emqx~127.0.0.1"
         },
         "datasource": "Prometheus",
         "definition": "label_values(emqx_connections_count, instance)",
-        "description": null,
-        "error": null,
         "hide": 0,
         "includeAll": false,
+        "index": -1,
         "label": "Host",
         "multi": false,
         "name": "host",
         "options": [],
-        "query": {
-          "query": "label_values(emqx_connections_count, instance)",
-          "refId": "Prometheus-host-Variable-Query"
-        },
+        "query": "label_values(emqx_connections_count, instance)",
         "refresh": 1,
         "regex": "",
         "skipUrlSync": false,
@@ -2098,5 +1153,8 @@
   "timezone": "browser",
   "title": "EMQ",
   "uid": "tjRlQw6Zk",
-  "version": 29
+  "variables": {
+    "list": []
+  },
+  "version": 6
 }

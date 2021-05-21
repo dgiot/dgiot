@@ -37,7 +37,7 @@ get_assets(){
     download_url="$(curl --silent --show-error \
         --header "${AUTH}" \
         --header "Accept: application/vnd.github.v3+json" \
-        "https://api.hub.fastgit.org/repos/emqx/${DASHBOARD_REPO}/releases/tags/${VERSION}" \
+        "https://api.github.com/repos/emqx/${DASHBOARD_REPO}/releases/tags/${VERSION}" \
         | jq --raw-output ".assets[] | select(.name==\"${RELEASE_ASSET_FILE}\").url" \
         | tr -d '\n' | tr -d '\r')"
     # Get GitHub's S3 redirect URL

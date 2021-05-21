@@ -127,7 +127,7 @@ t_modules_cmd(_) ->
                  "Module emqx_mod_presence unloaded successfully.\n"),
     unmock_print().
 
-%% For: https://hub.fastgit.org/emqx/emqx/issues/4511
+%% For: https://github.com/emqx/emqx/issues/4511
 t_join_cluster(_) ->
     %% Started by emqx application
     {error, {already_started, emqx_modules}} = application:start(emqx_modules),

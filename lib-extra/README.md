@@ -14,7 +14,7 @@ e.g. For an Erlang plugin named `plugin_foo`:
 
 ```
 {erlang_plugins,
-  [ {plugin_foo, {git, "https://hub.fastgit.org/bar/plugin-foo.git", {tag, "0.1.0"}}}
+  [ {plugin_foo, {git, "https://github.com/bar/plugin-foo.git", {tag, "0.1.0"}}}
   ]
 }.
 ```

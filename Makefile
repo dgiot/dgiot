@@ -5,10 +5,15 @@ BUILD = $(CURDIR)/build
 SCRIPTS = $(CURDIR)/scripts
 export PKG_VSN ?= $(shell $(CURDIR)/pkg-vsn.sh)
 export EMQX_DESC ?= EMQ X
-export EMQX_CE_DASHBOARD_VERSION ?= v4.3.1
+export EMQX_CE_DASHBOARD_VERSION ?= v4.3.0
 ifeq ($(OS),Windows_NT)
 	export REBAR_COLOR=none
 endif
+ifeq ($(OS),Windows_NT)
+		GET_DASHBOARD=$(SCRIPTS)/get-windashboard.sh
+	else
+	  	GET_DASHBOARD=$(SCRIPTS)/get-dashboard.sh
+	endif
 
 PROFILE ?= emqx
 REL_PROFILES := emqx emqx-edge
@@ -32,7 +37,7 @@ $(REBAR): ensure-rebar3
 
 .PHONY: get-dashboard
 get-dashboard:
-	@$(SCRIPTS)/get-dashboard.sh
+	 @$(GET_DASHBOARD)
 
 .PHONY: eunit
 eunit: $(REBAR)

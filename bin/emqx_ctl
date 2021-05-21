@@ -8,9 +8,6 @@ ROOT_DIR="$(cd "$(dirname "$(readlink "$0" || echo "$0")")"/..; pwd -P)"
 # shellcheck disable=SC1090
 . "$ROOT_DIR"/releases/emqx_vars
 
-export RUNNER_ROOT_DIR
-export REL_VSN
-
 # shellcheck disable=SC2012,SC2086
 LATEST_VM_ARGS="$(ls -t $RUNNER_DATA_DIR/configs/vm.*.args | head -1)"
 if [ -z "$LATEST_VM_ARGS" ]; then
@@ -67,7 +64,7 @@ if [ -z "$COOKIE" ]; then
     exit 1
 fi
 
-# Support for IPv6 Dist. See: https://hub.fastgit.org/emqtt/emqttd/issues/1460
+# Support for IPv6 Dist. See: https://github.com/emqtt/emqttd/issues/1460
 PROTO_DIST=$(grep -E '^[ \t]*cluster.proto_dist[ \t]*=[ \t]*' "$RUNNER_ETC_DIR"/emqx.conf 2> /dev/null | tail -1 | awk -F"= " '{print $NF}')
 if [ -z "$PROTO_DIST" ]; then
     PROTO_DIST_ARG=""

@@ -8,7 +8,7 @@ do(_Dir, CONFIG) ->
     maybe_dump(Config ++ [{overrides, overrides()}] ++ coveralls() ++ config(HasElixir)).
 
 bcrypt() ->
-    {bcrypt, {git, "https://hub.fastgit.org/emqx/erlang-bcrypt.git", {branch, "0.6.0"}}}.
+    {bcrypt, {git, "https://github.com/emqx/erlang-bcrypt.git", {branch, "0.6.0"}}}.
 
 deps(Config) ->
     {deps, OldDeps} = lists:keyfind(deps, 1, Config),
@@ -81,11 +81,11 @@ project_app_dirs() ->
     ["apps/*", alternative_lib_dir() ++ "/*", "."].
 
 plugins(HasElixir) ->
-    [ {relup_helper,{git,"https://hub.fastgit.org/emqx/relup_helper", {tag, "2.0.0"}}}
-    , {er_coap_client, {git, "https://hub.fastgit.org/emqx/er_coap_client", {tag, "v1.0"}}}
+    [ {relup_helper,{git,"https://hub.fastgit.org/fastdgiot/relup_helper", {tag, "2.0.0"}}}
+    , {er_coap_client, {git, "https://hub.fastgit.org/fastdgiot/er_coap_client", {tag, "v1.0"}}}
       %% emqx main project does not require port-compiler
       %% pin at root level for deterministic
-    , {pc, {git, "https://hub.fastgit.org/emqx/port_compiler.git", {tag, "v1.11.1"}}}
+    , {pc, {git, "https://hub.fastgit.org/fastdgiot/port_compiler.git", {tag, "v1.11.1"}}}
     | [ rebar_mix || HasElixir ]
     ]
     %% test plugins are concatenated to default profile plugins
@@ -94,12 +94,12 @@ plugins(HasElixir) ->
 
 test_plugins() ->
     [ rebar3_proper,
-      {coveralls, {git, "https://hub.fastgit.org/emqx/coveralls-erl", {branch, "fix-git-info"}}}
+      {coveralls, {git, "https://hub.fastgit.org/fastdgiot/coveralls-erl", {branch, "fix-git-info"}}}
     ].
 
 test_deps() ->
     [ {bbmustache, "1.10.0"}
-    , {emqx_ct_helpers, {git, "https://hub.fastgit.org/emqx/emqx-ct-helpers", {tag, "1.3.9"}}}
+    , {emqx_ct_helpers, {git, "https://hub.fastgit.org/fastdgiot/emqx-ct-helpers", {tag, "1.3.9"}}}
     , meck
     ].
 
@@ -263,16 +263,25 @@ relx_plugin_apps(ReleaseType) ->
     [ emqx_retainer
     , emqx_management
     , emqx_dashboard
+    , emqx_bridge_mqtt
+    , emqx_sn
+    , emqx_coap
+    , emqx_stomp
+    , emqx_web_hook
     , emqx_recon
     , emqx_rule_engine
     , emqx_sasl
+    , dgiot
     ]
+    ++ [emqx_telemetry || not is_enterprise()]
     ++ relx_plugin_apps_per_rel(ReleaseType)
     ++ relx_plugin_apps_enterprise(is_enterprise())
     ++ relx_plugin_apps_extra().
 
 relx_plugin_apps_per_rel(cloud) ->
-    [  emqx_exhook
+    [ emqx_lwm2m
+    , emqx_lua_hook
+    , emqx_exhook
     , emqx_exproto
     , emqx_prometheus
     , emqx_psk_file
@@ -335,8 +344,8 @@ etc_overlay(ReleaseType) ->
     ++ extra_overlay(ReleaseType).
 
 extra_overlay(cloud) ->
-    [
-     {copy, "{{base_dir}}/lib/emqx_psk_file/etc/psk.txt", "etc/psk.txt"}
+    [ {copy,"{{base_dir}}/lib/emqx_lwm2m/lwm2m_xml","etc/"}
+    , {copy, "{{base_dir}}/lib/emqx_psk_file/etc/psk.txt", "etc/psk.txt"}
     ];
 extra_overlay(edge) ->
     [].
