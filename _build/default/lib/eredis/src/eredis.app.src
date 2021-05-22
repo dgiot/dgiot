@@ -1,0 +1,15 @@
+{application, eredis, [
+    {description, "Erlang Redis Client"},
+    {vsn, "git"},
+    {modules, [eredis,
+    		   eredis_client,
+    		   eredis_parser,
+    		   eredis_sub,
+    		   eredis_sub_client,
+    		   eredis_sentinel,
+    		   eredis_sentinel_client,
+    		   eredis_sentinel_masters,
+    		   eredis_sentinel_sup]},
+    {registered, []},
+    {applications, [kernel, stdlib]}
+]}.
