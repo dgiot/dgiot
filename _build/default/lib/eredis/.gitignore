@@ -1,0 +1,12 @@
+ebin/*
+.eunit
+*~
+Emakefile
+.rebar
+.DS_Store
+doc
+_build
+*.dump
+*.beam
+.rebar3/**
+rebar3.*

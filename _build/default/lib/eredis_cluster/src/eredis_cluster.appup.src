@@ -1,0 +1,36 @@
+%% -*-: erlang -*-
+
+{"0.6.5",
+  [
+    {"0.5.11", [
+      {load_module, eredis_cluster_pool_worker, brutal_purge, soft_purge, []},
+      {load_module, eredis_cluster_monitor, brutal_purge, soft_purge, []},
+      {load_module, eredis_cluster_pool, brutal_purge, soft_purge, []}
+    ]},
+    {"0.6.2", [
+      {load_module, eredis_cluster_pool_worker, brutal_purge, soft_purge, []},
+      {load_module, eredis_cluster_monitor, brutal_purge, soft_purge, []}
+    ]},
+    {<<"0.6.[34]">>, [
+      {load_module, eredis_cluster_pool_worker, brutal_purge, soft_purge, []}
+    ]},
+    {<<".*">>, [
+    ]}
+  ],
+  [
+    {"0.5.11", [
+      {load_module, eredis_cluster_pool_worker, brutal_purge, soft_purge, []},
+      {load_module, eredis_cluster_monitor, brutal_purge, soft_purge, []},
+      {load_module, eredis_cluster_pool, brutal_purge, soft_purge, []}
+    ]},
+    {"0.6.2", [
+      {load_module, eredis_cluster_pool_worker, brutal_purge, soft_purge, []},
+      {load_module, eredis_cluster_monitor, brutal_purge, soft_purge, []}
+    ]},
+    {<<"0.6.[34]">>, [
+      {load_module, eredis_cluster_pool_worker, brutal_purge, soft_purge, []}
+    ]},
+    {<<".*">>, [
+    ]}
+  ]
+}.
