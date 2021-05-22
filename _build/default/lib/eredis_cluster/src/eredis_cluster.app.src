@@ -1,0 +1,12 @@
+{application, eredis_cluster, [
+    {description, "Redis Cluster pool"},
+    {vsn, "git"},
+    {modules, []},
+    {registered, []},
+    {applications, [
+        kernel,
+        stdlib
+    ]},
+    {mod, {eredis_cluster, []}},
+    {env, []}
+]}.

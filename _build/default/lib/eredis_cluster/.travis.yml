@@ -1,0 +1,12 @@
+language: erlang
+otp_release:
+   - 21.0
+   - 20.3
+   - 19.3
+   - 18.3
+   - 17.5
+
+install: 
+   - make travis-install
+   - wget -c https://github.com/erlang/rebar3/releases/download/3.6.2/rebar3 && chmod +x rebar3
+script: REBAR=./rebar3 make travis-run
