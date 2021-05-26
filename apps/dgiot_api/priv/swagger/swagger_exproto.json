@@ -1,0 +1,299 @@
+{
+  "tags": [
+    {
+      "name": "EXPROTO",
+      "description": "扩展编程"
+    }
+  ],
+  "definitions": {
+  },
+  "paths": {
+    "/release_exproto": {
+      "post": {
+        "description": "发布扩展编程API",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "data",
+            "description": "API信息",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "description": "编程语言类型",
+                  "type": "string",
+                  "enum": [
+                    "python",
+                    "java",
+                    "ruby"
+                  ]
+                },
+                "mod": {
+                  "description": "模块名称",
+                  "type": "string",
+                  "example":"hello"
+                },
+                "code": {
+                  "description": "base64编码的源码",
+                  "type": "string",
+                  "example":"IyBjb2Rpbmc9dXRmOAppbXBvcnQgb3MKCmRlZiBwb3N0KGFyZ3Msc2Vzc2lvbixlbnYpOgogICAgI2JvZHkgPSBqc29uLmxvYWRzKGJhc2U2NC5iNjRkZWNvZGUoYXJncykuZGVjb2RlKCJ1dGYtOCIpKQogICAgI3ByaW50KGJvZHkpCiAgICAjc3RyYm9keSA9ICd7fScuZm9ybWF0KGJvZHkpCiAgICAjZW5ib2R5ID0gIGJhc2U2NC5iNjRlbmNvZGUoc3RyYm9keS5lbmNvZGUoJ3V0Zi04JykpCiAgICAjcHJpbnQoZW5ib2R5KQogICAgI3N0YXRlID0ganNvbi5sb2FkcyhiYXNlNjQuYjY0ZGVjb2RlKGVudikuZGVjb2RlKCJ1dGYtOCIpKQogICAgI3ByaW50KHN0YXRlKQogICAgIyByZXN0dXJsID0gc3RhdGVbJ3JvbGVzJ11bMF1bJ3RhZyddWydhcHBjb25maWcnXVsncmVzdCddCiAgICAjIHByaW50KHJlc3R1cmwpCiAgICAjIHMuaGVhZGVycy51cGRhdGUoeyJzZXNzaW9uVG9rZW4iOiBzZXNzaW9uLCAnQ29udGVudC1UeXBlJzogJ2FwcGxpY2F0aW9uL2pzb24nfSkKICAgICMgcnQgPSBzLmdldCgne30vY2xhc3Nlcy9EZXZpY2U/b3JkZXI9Y3JlYXRlZEF0JmxpbWl0PTEwJnNraXA9MCcuZm9ybWF0KHJlc3R1cmwpLAogICAgIyAgICAgICAgICAgICAgcGFyYW1zPXsnb3JkZXInOiAnY3JlYXRlZEF0JywgfSkKICAgICMgZm9yIHJvdyBpbiAocnQuanNvbigpWydyZXN1bHRzJ10pOgogICAgIyAgICAgcHJpbnQocm93KQogICAgcHJpbnQoYXJncykKICAgIHByaW50KHNlc3Npb24pCiAgICBwcmludChlbnYpCiAgICByZXR1cm4gYXJncwoKZGVmIG1haW4oKToKICAgICN7Im5hbWUiOiJzaHV3YSJ9CiAgICBhcmd2cyA9ICdleUp1WVcxbElqb2ljMmgxZDJFaWZRPT0nCiAgICByZXR1cm4gIHBvc3QoYXJndnMsICdzZXNzaW9uJywnZW52JykKCmRlZiBleGl0KCk6CiAgICBvcy5fZXhpdCgwKQoKaWYgX19uYW1lX18gPT0gIl9fbWFpbl9fIjoKICAgIG1haW4oKQ==",
+                },
+                "swagger": {
+                  "description": "swagger文件",
+                  "type": "object",
+                  "example":{"tags":[{"description":"扩展编程","name":"EXPROTO"}],"definitions":{},"paths":{"/python_hello":{"post":{"summary":"Python测试API","description":"Python测试API","parameters":[{"in":"body","name":"data","description":"生成报告","required":true,"schema":{"type":"object","properties":{"name":{"required":true,"description":"姓名","type":"string","example":"shuwa"}}}}],"responses":{"200":{"description":"Returns operation status"},"400":{"description":"Bad Request"},"401":{"description":"Unauthorized"},"403":{"description":"Forbidden"},"500":{"description":"Server Internal error"}},"tags":["EXPROTO"]}}}}
+                }
+              }
+            }
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns instance data"
+          },
+          "404": {
+            "description": "object not found",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        },
+        "summary": "热加载API",
+        "tags": [
+          "EXPROTO"
+        ]
+      }
+    },
+    "/exproto": {
+      "get": {
+        "description": "获取扩展编程API列表",
+        "parameters": [
+          {
+            "description": "编程语言类型",
+            "in": "query",
+            "name": "type",
+            "required": true,
+            "type": "string",
+            "enum": [
+              "python",
+              "java",
+              "ruby"
+            ]
+          },
+          {
+            "description": "模块名称",
+            "in": "query",
+            "name": "mod",
+            "type": "string",
+            "default": "all"
+          },
+          {
+            "description": "版本",
+            "in": "query",
+            "name": "version",
+            "type": "string",
+            "default": "debug",
+            "enum": [
+              "debug",
+              "release",
+              "all"
+            ]
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns instance data"
+          },
+          "404": {
+            "description": "object not found",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        },
+        "summary": "获取扩展编程API列表",
+        "tags": [
+          "EXPROTO"
+        ]
+      },
+      "post": {
+        "summary": "新增扩展编程API",
+        "description": "新增扩展编程API",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "data",
+            "description": "API信息",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "description": "编程语言类型",
+                  "type": "string",
+                  "enum": [
+                    "python",
+                    "java",
+                    "ruby"
+                  ]
+                },
+                "mod": {
+                  "description": "模块名称",
+                  "type": "string",
+                  "example":"hello"
+                },
+                "code": {
+                  "description": "base64编码的源码",
+                  "type": "string",
+                  "example":"IyBjb2Rpbmc9dXRmOAppbXBvcnQgb3MKCmRlZiBwb3N0KGFyZ3Msc2Vzc2lvbixlbnYpOgogICAgI2JvZHkgPSBqc29uLmxvYWRzKGJhc2U2NC5iNjRkZWNvZGUoYXJncykuZGVjb2RlKCJ1dGYtOCIpKQogICAgI3ByaW50KGJvZHkpCiAgICAjc3RyYm9keSA9ICd7fScuZm9ybWF0KGJvZHkpCiAgICAjZW5ib2R5ID0gIGJhc2U2NC5iNjRlbmNvZGUoc3RyYm9keS5lbmNvZGUoJ3V0Zi04JykpCiAgICAjcHJpbnQoZW5ib2R5KQogICAgI3N0YXRlID0ganNvbi5sb2FkcyhiYXNlNjQuYjY0ZGVjb2RlKGVudikuZGVjb2RlKCJ1dGYtOCIpKQogICAgI3ByaW50KHN0YXRlKQogICAgIyByZXN0dXJsID0gc3RhdGVbJ3JvbGVzJ11bMF1bJ3RhZyddWydhcHBjb25maWcnXVsncmVzdCddCiAgICAjIHByaW50KHJlc3R1cmwpCiAgICAjIHMuaGVhZGVycy51cGRhdGUoeyJzZXNzaW9uVG9rZW4iOiBzZXNzaW9uLCAnQ29udGVudC1UeXBlJzogJ2FwcGxpY2F0aW9uL2pzb24nfSkKICAgICMgcnQgPSBzLmdldCgne30vY2xhc3Nlcy9EZXZpY2U/b3JkZXI9Y3JlYXRlZEF0JmxpbWl0PTEwJnNraXA9MCcuZm9ybWF0KHJlc3R1cmwpLAogICAgIyAgICAgICAgICAgICAgcGFyYW1zPXsnb3JkZXInOiAnY3JlYXRlZEF0JywgfSkKICAgICMgZm9yIHJvdyBpbiAocnQuanNvbigpWydyZXN1bHRzJ10pOgogICAgIyAgICAgcHJpbnQocm93KQogICAgcHJpbnQoYXJncykKICAgIHByaW50KHNlc3Npb24pCiAgICBwcmludChlbnYpCiAgICByZXR1cm4gYXJncwoKZGVmIG1haW4oKToKICAgICN7Im5hbWUiOiJzaHV3YSJ9CiAgICBhcmd2cyA9ICdleUp1WVcxbElqb2ljMmgxZDJFaWZRPT0nCiAgICByZXR1cm4gIHBvc3QoYXJndnMsICdzZXNzaW9uJywnZW52JykKCmRlZiBleGl0KCk6CiAgICBvcy5fZXhpdCgwKQoKaWYgX19uYW1lX18gPT0gIl9fbWFpbl9fIjoKICAgIG1haW4oKQ==",
+                },
+                "swagger": {
+                  "description": "swagger文件",
+                  "type": "object",
+                  "example":{"tags":[{"description":"扩展编程","name":"EXPROTO"}],"definitions":{},"paths":{"/python_hello":{"post":{"summary":"Python测试API","description":"Python测试API","parameters":[{"in":"body","name":"data","description":"生成报告","required":true,"schema":{"type":"object","properties":{"name":{"required":true,"description":"姓名","type":"string","example":"shuwa"}}}}],"responses":{"200":{"description":"Returns operation status"},"400":{"description":"Bad Request"},"401":{"description":"Unauthorized"},"403":{"description":"Forbidden"},"500":{"description":"Server Internal error"}},"tags":["EXPROTO"]}}}}
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Returns success",
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "EXPROTO"
+        ]
+      },
+      "put": {
+        "summary": "调测扩展编程API",
+        "description": "调测扩展编程API",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "data",
+            "description": "API信息",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "description": "编程语言类型",
+                  "type": "string",
+                  "enum": [
+                    "python",
+                    "java",
+                    "ruby"
+                  ]
+                },
+                "mod": {
+                  "description": "模块名称",
+                  "type": "string",
+                  "example":"hello"
+                },
+                "code": {
+                  "description": "base64编码的源码",
+                  "type": "string",
+                  "example":"IyBjb2Rpbmc9dXRmOAppbXBvcnQgb3MKCmRlZiBwb3N0KGFyZ3Msc2Vzc2lvbixlbnYpOgogICAgI2JvZHkgPSBqc29uLmxvYWRzKGJhc2U2NC5iNjRkZWNvZGUoYXJncykuZGVjb2RlKCJ1dGYtOCIpKQogICAgI3ByaW50KGJvZHkpCiAgICAjc3RyYm9keSA9ICd7fScuZm9ybWF0KGJvZHkpCiAgICAjZW5ib2R5ID0gIGJhc2U2NC5iNjRlbmNvZGUoc3RyYm9keS5lbmNvZGUoJ3V0Zi04JykpCiAgICAjcHJpbnQoZW5ib2R5KQogICAgI3N0YXRlID0ganNvbi5sb2FkcyhiYXNlNjQuYjY0ZGVjb2RlKGVudikuZGVjb2RlKCJ1dGYtOCIpKQogICAgI3ByaW50KHN0YXRlKQogICAgIyByZXN0dXJsID0gc3RhdGVbJ3JvbGVzJ11bMF1bJ3RhZyddWydhcHBjb25maWcnXVsncmVzdCddCiAgICAjIHByaW50KHJlc3R1cmwpCiAgICAjIHMuaGVhZGVycy51cGRhdGUoeyJzZXNzaW9uVG9rZW4iOiBzZXNzaW9uLCAnQ29udGVudC1UeXBlJzogJ2FwcGxpY2F0aW9uL2pzb24nfSkKICAgICMgcnQgPSBzLmdldCgne30vY2xhc3Nlcy9EZXZpY2U/b3JkZXI9Y3JlYXRlZEF0JmxpbWl0PTEwJnNraXA9MCcuZm9ybWF0KHJlc3R1cmwpLAogICAgIyAgICAgICAgICAgICAgcGFyYW1zPXsnb3JkZXInOiAnY3JlYXRlZEF0JywgfSkKICAgICMgZm9yIHJvdyBpbiAocnQuanNvbigpWydyZXN1bHRzJ10pOgogICAgIyAgICAgcHJpbnQocm93KQogICAgcHJpbnQoYXJncykKICAgIHByaW50KHNlc3Npb24pCiAgICBwcmludChlbnYpCiAgICByZXR1cm4gYXJncwoKZGVmIG1haW4oKToKICAgICN7Im5hbWUiOiJzaHV3YSJ9CiAgICBhcmd2cyA9ICdleUp1WVcxbElqb2ljMmgxZDJFaWZRPT0nCiAgICByZXR1cm4gIHBvc3QoYXJndnMsICdzZXNzaW9uJywnZW52JykKCmRlZiBleGl0KCk6CiAgICBvcy5fZXhpdCgwKQoKaWYgX19uYW1lX18gPT0gIl9fbWFpbl9fIjoKICAgIG1haW4oKQ==",
+                },
+                "swagger": {
+                  "description": "swagger文件",
+                  "type": "object",
+                  "example":{"tags":[{"description":"扩展编程","name":"EXPROTO"}],"definitions":{},"paths":{"/python_hello":{"post":{"summary":"Python测试API","description":"Python测试API","parameters":[{"in":"body","name":"data","description":"生成报告","required":true,"schema":{"type":"object","properties":{"name":{"required":true,"description":"姓名","type":"string","example":"shuwa"}}}}],"responses":{"200":{"description":"Returns operation status"},"400":{"description":"Bad Request"},"401":{"description":"Unauthorized"},"403":{"description":"Forbidden"},"500":{"description":"Server Internal error"}},"tags":["EXPROTO"]}}}}
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Returns success",
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "EXPROTO"
+        ]
+      },
+      "delete": {
+        "summary": "下架扩展编程API",
+        "description": "下架扩展编程API",
+        "parameters": [
+          {
+            "description": "编程语言类型",
+            "in": "query",
+            "name": "type",
+            "required": true,
+            "type": "string",
+            "enum": [
+              "python",
+              "java",
+              "ruby"
+            ]
+          },
+          {
+            "description": "模块名称",
+            "in": "query",
+            "name": "mod",
+            "required": true,
+            "type": "string",
+            "default": "hello"
+          },
+          {
+            "description": "版本",
+            "in": "query",
+            "name": "version",
+            "required": true,
+            "type": "string",
+            "enum": [
+              "debug",
+              "release",
+              "all"
+            ]
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Returns success",
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "EXPROTO"
+        ]
+      }
+    }
+  }
+}

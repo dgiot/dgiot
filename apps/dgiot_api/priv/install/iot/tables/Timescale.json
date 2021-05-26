@@ -1,0 +1,50 @@
+[
+  {
+    "className": "Timescale",
+    "fields": {
+      "product": {
+        "targetClass": "Product",
+        "type": "Pointer",
+        "required": false
+      },
+      "device": {
+        "targetClass": "Device",
+        "type": "Pointer"
+      },
+      "values": {
+        "type": "Object",
+        "required": true
+      },
+      "tags": {
+        "type": "Object",
+        "required": false
+      }
+    },
+    "classLevelPermissions": {
+      "find": {
+        "*": true
+      },
+      "get": {
+        "*": true
+      },
+      "count": {
+        "*": true
+      },
+      "create": {
+        "*": true
+      },
+      "update": {
+        "*": true
+      },
+      "delete": {
+        "*": true
+      },
+      "addField": {
+        "role:root": true
+      },
+      "protectedFields": {
+        "*": []
+      }
+    }
+  }
+]

@@ -1,0 +1,12 @@
+{application, dgiot_bridge,
+    [{description, "DGIOT Bridge"},
+        {vsn, "4.3.0"},
+        {registered, []},
+        {mod, {dgiot_bridge_app, []}},
+        {applications, [kernel, stdlib, dgiot, dgiot_parse]},
+        {env, []},
+        {modules, []},
+        {maintainers, []},
+        {licenses, ["Apache 2.0"]},
+        {links, []}
+    ]}.

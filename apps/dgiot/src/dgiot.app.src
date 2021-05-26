@@ -1,15 +1,7 @@
 {application, dgiot,
- [{description, "dgiot vm"},
-  {id, "dgiot"},
-  {vsn, "git"},
-  {modules, []},
-  {registered, []},
-  {applications, [kernel,stdlib,gproc,gen_rpc, sasl,os_mon]},
-  {mod, {dgiot_app,[]}},
-  {env, []},
-  {licenses, ["Apache-2.0"]},
-  {maintainers, ["DGIOT Team "]},
-  {links, [{"Homepage", "https://www.iotn2n.com/"},
-           {"Github", "https://hub.fastgit.org/dgiot/dgiot"}
-          ]}
-]}.
+    [{description, "DGIOT"},
+        {vsn, "4.2"},
+        {modules, []},
+        {registered, [dgiot_sup]},
+        {applications, [kernel, stdlib,prometheus]},
+        {mod, {dgiot_app, []}}]}.

@@ -1,0 +1,51 @@
+#!/usr/bin/env escript
+%% -*- erlang -*-
+
+-define(HEAD_LINE, "@doc automatically generated scanner").
+-define(ALL_AUTO_STR_FORMAT, "%%" ++ ?HEAD_LINE ++ "
+%% @private
+%% @end
+-file(\"~s\", 0).
+").
+
+write_file_whithout_change_file_info(FileName, Str) ->
+    OldFileInfo = case file:read_file_info(FileName) of
+                      {ok, Info} ->
+                          Info;
+                      {error, Reason} ->
+                          file_err(read_file_info, FileName, Reason)
+                  end,
+    case file:write_file(FileName, Str) of
+        ok ->
+            ok;
+        {error, Reason2} ->
+            file_err(write_file, FileName, Reason2)
+    end,
+    case file:write_file_info(FileName, OldFileInfo)of
+        ok ->
+            ok;
+        {error, Reason3} ->
+            file_err(write_file_info, FileName, Reason3)
+    end.
+
+
+file_err(FunName, FileName, Reason) ->
+    io:format(standard_error, "file:~p(~s) execute failed!, Reason: ~s~n",
+              [FunName, FileName, file:format_error(Reason)]),
+    halt(1).
+
+main([ErlFile, OrigFile]) ->
+    case file:read_file(ErlFile) of
+        {ok, ErlStr} ->
+            [Line|_] = binary:split(ErlStr, <<"\n">>),
+            case re:run(Line, ?HEAD_LINE) of
+                'nomatch' ->
+                    WriteString = io_lib:format(?ALL_AUTO_STR_FORMAT,
+                                                [OrigFile]) ++ ErlStr,
+                    write_file_whithout_change_file_info(ErlFile, WriteString);
+                _ ->
+                    ok
+            end;
+        {error, Reason} ->
+            file_err(read_file, ErlFile, Reason)
+    end.

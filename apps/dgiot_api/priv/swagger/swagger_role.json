@@ -1,0 +1,669 @@
+{
+  "tags": [
+    {
+      "name": "_Role",
+      "description": "角色"
+    }
+  ],
+  "definitions": {
+    "Token":{
+      "type":"object",
+      "properties":{
+        "appid": {
+          "description": "app secret",
+          "type": "string",
+          "example":"gEsTiaPAjv"
+        },
+        "secret": {
+          "description": "app secret",
+          "type": "string",
+          "example":"VzY0Mjc5NDQxNTg1ODI4NDk1MzYx"
+        }
+      }
+    }
+  },
+  "paths": {
+    "/login": {
+      "post": {
+        "security": [],
+        "summary": "用户登录",
+        "description": "用户登录",
+        "consumes": [
+          "text/plain"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "user",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "username": {
+                  "required": true,
+                  "type": "string",
+                  "example":"username"
+                },
+                "password": {
+                  "required": true,
+                  "type": "string",
+                  "example":"password"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "404": {
+            "description": "Forbidden",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "500": {
+            "description": "Server Internal error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        },
+        "tags": [
+          "_Role"
+        ]
+      }
+    },
+    "/roletemp": {
+      "post": {
+        "summary": "保存岗位",
+        "description": "保存岗位",
+        "consumes": [
+          "*"
+        ],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "type": "string",
+            "default": "pump",
+            "description": "岗位名称"
+          },
+          {
+            "name": "tempname",
+            "in": "query",
+            "type": "string",
+            "default": "系统管理员",
+            "description": "岗位名称"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "_Role"
+        ]
+      },
+      "get": {
+        "summary": "导出岗位",
+        "description": "导出岗位",
+        "consumes": [
+          "*"
+        ],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "type": "string",
+            "default": "pump",
+            "description": "岗位名称"
+          },
+          {
+            "name": "tempname",
+            "in": "query",
+            "type": "string",
+            "default": "系统管理员",
+            "description": "岗位名称"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "_Role"
+        ]
+      },
+      "put": {
+        "summary": "修改岗位",
+        "description": "修改岗位",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "data",
+            "description": "岗位信息",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "objectId": {
+                  "description": "角色ID",
+                  "type": "string",
+                  "example":"tXcMOOJFA1"
+                },
+                "menus": {
+                  "description": "菜单列表",
+                  "type": "array",
+                  "example":["项目管理","访问权限"]
+                },
+                "roles": {
+                  "description": "父角色列表",
+                  "type": "array",
+                  "example":["admin"]
+                },
+                "rules": {
+                  "description": "API列表",
+                  "type": "array",
+                  "example":["GET_USERS_ID", "GET_USERS_ME"]
+                },
+                "users": {
+                  "description": "用户列表",
+                  "type": "array",
+                  "example":["test"]
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "_Role"
+        ]
+      },
+      "delete": {
+        "summary": "删除岗位",
+        "description": "删除岗位",
+        "consumes": [
+          "*"
+        ],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "type": "string",
+            "default": "系统管理员",
+            "description": "岗位名称"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "_Role"
+        ]
+      }
+    },
+    "/role": {
+      "put": {
+        "summary": "修改角色",
+        "description": "修改角色",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "data",
+            "description": "角色信息",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "objectId": {
+                  "description": "角色ID",
+                  "type": "string",
+                  "example":"tXcMOOJFA1"
+                },
+                "menus": {
+                  "description": "菜单列表",
+                  "type": "array",
+                  "example":["项目管理","访问权限"]
+                },
+                "roles": {
+                  "description": "父角色列表",
+                  "type": "array",
+                  "example":["admin"]
+                },
+                "rules": {
+                  "description": "API列表",
+                  "type": "array",
+                  "example":["GET_USERS_ID", "GET_USERS_ME"]
+                },
+                "users": {
+                  "description": "用户列表",
+                  "type": "array",
+                  "example":["test"]
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "_Role"
+        ]
+      },
+      "post": {
+        "summary": "创建角色",
+        "description": "创建角色",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "data",
+            "description": "角色信息",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "description": "名称",
+                  "type": "string",
+                  "example":"shuwa"
+                },
+                "desc": {
+                  "description": "描述",
+                  "type": "string",
+                  "example":"Project"
+                },
+                "parent": {
+                  "description": "父亲ID",
+                  "type": "string",
+                  "example":"cBdwcIdp0n"
+                },
+                "depname": {
+                  "description": "部门名称",
+                  "type": "string",
+                  "example":"运维部"
+                },
+                "tempname": {
+                  "description": "角色模版名称",
+                  "type": "string",
+                  "example":"pump模版"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Returns success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "_Role"
+        ]
+      },
+      "get": {
+        "summary": "获取角色",
+        "description": "获取角色",
+        "consumes": [
+          "*"
+        ],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "type": "string",
+            "default": "developer",
+            "description": "名称"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "_Role"
+        ]
+      },
+      "delete": {
+        "summary": "删除角色",
+        "description": "删除角色",
+        "consumes": [
+          "*"
+        ],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "type": "string",
+            "default": "developer",
+            "description": "名称"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "_Role"
+        ]
+      }
+    },
+    "/roletree": {
+      "get": {
+        "summary": "获取角色树",
+        "description": "获取角色树",
+        "parameters": [
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "_Role"
+        ]
+      }
+    },
+    "/roleuser": {
+      "put": {
+        "summary": "修改用户权限",
+        "description": "修改用户权限",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "data",
+            "description": "角色信息",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "userid": {
+                  "description": "用户id",
+                  "type": "string",
+                  "example":"6H7kpYpIin"
+                },
+                  "delfilter": {
+                    "description": "删除角色用户条件",
+                    "type": "object",
+                    "example":{"where":{"name":"test"}}
+                  },
+                 "addfilter": {
+                  "description": "新增角色用户条件",
+                  "type": "object",
+                  "example":{"where":{"name":"test2"}}
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "_Role"
+        ]
+      },
+      "post": {
+        "summary": "新增用户权限",
+        "description": "新增用户权限",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "data",
+            "description": "角色信息",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "userid": {
+                  "description": "用户id",
+                  "type": "string",
+                  "example":"tnFJKWVOGY"
+                },
+                "filter": {
+                  "description": "过滤条件，eg: {\"where\":{\"name\":\"test\"}}",
+                  "type": "object",
+                  "example":{"where":{"name":"test"}}
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Returns success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "_Role"
+        ]
+      },
+      "get": {
+        "summary": "查询用户权限",
+        "description": "查询用户权限",
+        "parameters": [
+          {
+            "name": "where",
+            "in": "query",
+            "type": "string",
+            "default": "{}",
+            "description": "过滤条件，eg: {}"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "type": "number",
+            "default": 1,
+            "description": "limit, 显示多少条记录，显示100条记录 eg:100"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "_Role"
+        ]
+      },
+      "delete": {
+        "summary": "删除用户权限",
+        "description": "删除用户权限",
+        "parameters": [
+          {
+            "name": "userid",
+            "in": "query",
+            "type": "string",
+            "default": "tnFJKWVOGY",
+            "description": "用户id"
+          },
+          {
+            "name": "filter",
+            "in": "query",
+            "type": "string",
+            "default": "{\"where\":{\"name\":\"test\"}}",
+            "description": "过滤条件，eg: {\"where\":{\"name\":\"test\"}}"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "_Role"
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,35 @@
+[
+  {
+    "username": "root",
+    "email": "johnliu@iotn2n.com",
+    "password": "root",
+    "emailVerified": true,
+    "phone": "",
+    "nick": "数蛙科技",
+    "roles": [
+      "root"
+    ]
+  },
+  {
+    "username": "admin",
+    "email": "admin@iotn2n.com",
+    "password": "admin",
+    "emailVerified": true,
+    "phone": "",
+    "nick": "管理员",
+    "roles": [
+      "admin"
+    ]
+  },
+  {
+    "username": "test",
+    "email": "test@iotn2n.com",
+    "password": "test",
+    "emailVerified": true,
+    "phone": "",
+    "nick": "测试帐号",
+    "roles": [
+      "developer"
+    ]
+  }
+]

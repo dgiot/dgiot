@@ -1,5 +1,5 @@
 %%--------------------------------------------------------------------
-%% Copyright (c) 2020 EMQ Technologies Co., Ltd. All Rights Reserved.
+%% Copyright (c) 2020-2021 DGIOT Technologies Co., Ltd. All Rights Reserved.
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -16,16 +16,17 @@
 
 -module(dgiot_sup).
 
+-author("johnliu").
+-include("dgiot.hrl").
+
 -behaviour(supervisor).
 
 -include("types.hrl").
--include("dgiot.hrl").
-
--logger_header("[Supervisor]").
 
 -export([start_link/0
     , start_child/1
     , start_child/2
+    , start_child/3
     , stop_child/1
 ]).
 
@@ -51,7 +52,12 @@ start_child(ChildSpec) when is_map(ChildSpec) ->
 
 -spec(start_child(module(), worker | supervisor) -> startchild_ret()).
 start_child(Mod, Type) ->
-    start_child(child_spec(Mod, Type)).
+    start_child(child_spec(Mod, Type, [])).
+
+
+-spec(start_child(module(), worker | supervisor, list()) -> startchild_ret()).
+start_child(Mod, Type, Args) ->
+    start_child(child_spec(Mod, Type, Args)).
 
 -spec(stop_child(supervisor:child_id()) -> ok | {error, term()}).
 stop_child(ChildId) ->
@@ -65,8 +71,12 @@ stop_child(ChildId) ->
 %%--------------------------------------------------------------------
 
 init([]) ->
-    Childs = get_child_supervisor() ,
-    io:format(" ~p ~n", [Childs]),
+    KernelSup = child_spec(dgiot_kernel_sup, supervisor, []),
+    MnesiaSup = child_spec(dgiot_mnesia_sup, supervisor, []),
+    CMSup = child_spec(dgiot_cm_sup, supervisor, []),
+    Childs = [KernelSup]
+        ++ [MnesiaSup]
+        ++ [CMSup],
     SupFlags = #{strategy => one_for_all,
         intensity => 0,
         period => 1
@@ -77,38 +87,20 @@ init([]) ->
 %% Internal functions
 %%--------------------------------------------------------------------
 
-child_spec(Mod, supervisor) ->
+child_spec(Mod, supervisor, Args) ->
     #{id => Mod,
-        start => {Mod, start_link, []},
+        start => {Mod, start_link, Args},
         restart => permanent,
         shutdown => infinity,
         type => supervisor,
         modules => [Mod]
     };
 
-child_spec(Mod, worker) ->
+child_spec(Mod, worker, Args) ->
     #{id => Mod,
-        start => {Mod, start_link, []},
+        start => {Mod, start_link, Args},
         restart => permanent,
         shutdown => 15000,
         type => worker,
         modules => [Mod]
     }.
-
-get_child_supervisor() ->
-    Specs = lists:foldl(fun({_Name, Mod, [Order | _]}, Acc) ->
-        case lists:member({behaviour, [supervisor]}, Mod:module_info(attributes)) of
-            true ->
-                Acc ++ [{Order, child_spec(Mod, supervisor)}];
-            _ ->
-                case lists:member({behaviour, [worker]}, Mod:module_info(attributes)) of
-                    true -> Acc ++ [{Order, child_spec(Mod, supervisor)}];
-                    false -> Acc
-                end
-        end
-                        end, [], lists:sort(ekka_boot:all_module_attributes(dgiot_supervisor))),
-    lists:foldl(fun({_,Spec}, Acc1) ->
-        Acc1 ++ [Spec]
-                end, [], lists:keysort(1, Specs)).
-
-

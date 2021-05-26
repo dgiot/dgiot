@@ -1,0 +1,1028 @@
+{
+  "tags": [
+    {
+      "name": "Data",
+      "description": "数据管理"
+    },
+    {
+      "name": "_Role",
+      "description": "角色管理"
+    },
+    {
+      "name": "Product",
+      "description": "产品管理"
+    }
+  ],
+  "definitions": {
+    "Token":{
+      "type":"object",
+      "properties":{
+        "appid": {
+          "description": "app secret",
+          "type": "string",
+          "example":"gEsTiaPAjv"
+        },
+        "secret": {
+          "description": "app secret",
+          "type": "string",
+          "example":"VzY0Mjc5NDQxNTg1ODI4NDk1MzYx"
+        }
+      }
+    }
+  },
+  "paths": {
+    "/tree": {
+      "post": {
+        "summary": "获取类树",
+        "description": "获取类树",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "data",
+            "description": "获取类树",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "class": {
+                  "required": true,
+                  "description": "类表名",
+                  "type": "string",
+                  "example":"Device"
+                },
+                "parent": {
+                  "required": true,
+                  "description": "父字段名",
+                  "type": "string",
+                  "example":"parentId"
+                },
+                "filter": {
+                  "description": "过滤条件 {\"keys\":[\"parentId\",\"name\"],\"where\":{\"$or\":[{\"parentId\":\"lgtDJDEZlW\"},{\"objectId\":\"lgtDJDEZlW\"}]}}",
+                  "type": "object",
+                  "example": "{\"keys\":[\"parentId\",\"name\"]}"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Data"
+        ]
+      }
+    },
+    "/menu": {
+      "post": {
+        "summary": "菜单导入",
+        "description": "导入菜单",
+        "consumes": [
+          "multipart/form-data"
+        ],
+        "parameters": [
+          {
+            "name": "file",
+            "in": "formData",
+            "description": "产品数据文件",
+            "type": "file"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Menu"
+        ]
+      },
+      "get": {
+        "summary": "菜单导出",
+        "description": "导出菜单",
+        "consumes": [
+          "*"
+        ],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "type": "string",
+            "default": "product",
+            "description": "菜单名称"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "file": {
+                  "description": "菜单配置文件",
+                  "type": "string",
+                  "example":"menu.zip"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Menu"
+        ]
+      }
+    },
+    "/graphql": {
+      "post": {
+        "security": [],
+        "summary": "graphql",
+        "description": "graphql",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "graphql",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Data"
+        ]
+      }
+    },
+    "/import_file": {
+      "post": {
+        "summary": "文件导入",
+        "description": "导入文件",
+        "consumes": [
+          "*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "data",
+            "description": "导入文件信息",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "path": {
+                  "description": "文件路径",
+                  "type": "string",
+                  "example":"/shapes/利欧泵业测试部/file.zip"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Data"
+        ]
+      }
+    },
+    "/export_file": {
+      "post": {
+        "summary": "文件导出",
+        "description": "文件导出",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "data",
+            "description": "文件列表",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "files": {
+                  "description": "文件列表",
+                  "type": "array",
+                  "example":["/shapes/利欧泵业测试部/6.png","/shapes/利欧泵业测试部/1.png","/shapes/利欧泵业测试部/GBT 3216-2016 回转动力泵 水力性能验收试验 1、2级和3级.pdf"]
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "file": {
+                  "description": "下载地址",
+                  "type": "string",
+                  "example":"http://127.0.0.1:1250/shapes/upload/app/1.png"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Data"
+        ]
+      }
+    },
+    "/import_data": {
+      "post": {
+        "summary": "导库",
+        "description": "json文件导库",
+        "consumes": [
+          "multipart/form-data"
+        ],
+        "parameters": [
+          {
+            "name": "className",
+            "in": "formData",
+            "description": "表名",
+            "type": "string"
+          },
+          {
+            "name": "file",
+            "in": "formData",
+            "description": "数据文件",
+            "type": "file"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Data"
+        ]
+      }
+    },
+    "/export_data": {
+      "post": {
+        "summary": "档案导出",
+        "description": "档案导出",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "classname",
+            "description": "表名",
+            "required": true,
+            "default":"Device",
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "filter",
+            "description": "过来条件",
+            "schema": {
+              "type": "object",
+              "properties": {
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "file": {
+                  "description": "档案文件",
+                  "type": "string",
+                  "example":"product.zip"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Data"
+        ]
+      }
+    },
+    "/thing": {
+      "put": {
+        "summary": "修改物模型",
+        "description": "修改物模型",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "data",
+            "description": "关联信息",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "productid": {
+                  "description": "产品标识",
+                  "type": "string",
+                  "example":"9c5930e565"
+                },
+                "item": {
+                  "description": "物模型单项指标",
+                  "type": "object",
+                  "example": {
+                    "name":"出口压力",
+                    "dataForm":{
+                      "rate":1,
+                      "offset":0,
+                      "address":"0x0001",
+                      "slaveid":1,
+                      "protocol":"modbus",
+                      "quantity":2,
+                      "byteorder":"big",
+                      "operatetype":"holdingRegister",
+                      "originaltype":"int16"
+                    },
+                    "dataType":{
+                      "type":"float",
+                      "specs":{
+                        "max":500,
+                        "min":-500,
+                        "step":0.1,
+                        "unit":"MPa"
+                      }
+                    },
+                    "required":true,
+                    "accessMode":"r",
+                    "identifier":"pressure_out"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Product"
+        ]
+      }
+    },
+    "/product": {
+      "post": {
+        "summary": "产品档案导入",
+        "description": "导入产品及其设备",
+        "consumes": [
+          "multipart/form-data"
+        ],
+        "parameters": [
+          {
+            "name": "appid",
+            "in": "formData",
+            "description": "应用id",
+            "type": "string"
+          },
+          {
+            "name": "file",
+            "in": "formData",
+            "description": "产品数据文件",
+            "type": "file"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "file": {
+                  "description": "档案文件",
+                  "type": "string",
+                  "example":"product.zip"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Product"
+        ]
+      },
+      "get": {
+        "summary": "产品档案导出",
+        "description": "导入产品及其设备",
+        "consumes": [
+          "*"
+        ],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "type": "string",
+            "default": "product",
+            "description": "产品名称"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "file": {
+                  "description": "产品配置文件",
+                  "type": "string",
+                  "example":"product.zip"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Product"
+        ]
+      }
+    },
+    "/device": {
+      "post": {
+        "summary": "查询设备时序数据",
+        "description": "查询设备时序数据",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "filter",
+            "description": "查询条件",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "order": {
+                  "description": "排序",
+                  "type": "string",
+                  "example": "-createdAt"
+                },
+                "include": {
+                  "description": "包含对象",
+                  "type": "string",
+                  "example": "product"
+                },
+                "where": {
+                  "description": "查询条件",
+                  "type": "object",
+                  "example": "{\"objectId\":{\"$in\":[\"689cc9c4a2\",\"cf3795a76a\"]}}"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Device"
+        ]
+      }
+    },
+    "/hash": {
+      "post": {
+        "summary": "获取类对象hash值",
+        "description": "查询类对象objectid",
+        "parameters": [
+          {
+            "description": "类名",
+            "in": "path",
+            "name": "class",
+            "required": true,
+            "default":"Device",
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "config",
+            "description": "配置",
+            "required": true,
+            "schema": {
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Data"
+        ]
+      }
+    },
+    "/upload_token": {
+      "post": {
+        "summary": "获取上传文件Token",
+        "description": "获取上传文件Token",
+        "security": [],
+        "consumes": [
+          "*"
+        ],
+        "parameters": [
+          {
+            "name": "from",
+            "in": "query",
+            "type": "string",
+            "default": "fastdfs",
+            "description": "文件服务器类型"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Data"
+        ]
+      }
+    },
+    "/relation": {
+      "post": {
+        "summary": "创建关联",
+        "description": "创建关联",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "data",
+            "description": "关联信息",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "srcClass": {
+                  "description": "源类名",
+                  "type": "string",
+                  "example":"_User"
+                },
+                "srcId": {
+                  "description": "源类对象",
+                  "type": "string",
+                  "example":"hXc9BkGCOD"
+                },
+                "destClass": {
+                  "description": "目标类名",
+                  "type": "string",
+                  "example":"_Role"
+                },
+                "destId": {
+                  "description": "目标类对象",
+                  "type": "string",
+                  "example":"0w66Wg1thM"
+                },
+                "destField": {
+                  "description": "目标关联字段",
+                  "type": "string",
+                  "example":"users"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Returns success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Data"
+        ]
+      },
+      "delete": {
+        "summary": "删除关联",
+        "description": "删除关联",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "data",
+            "description": "关联信息",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "srcClass": {
+                  "description": "源类名",
+                  "type": "string",
+                  "example":"_User"
+                },
+                "srcId": {
+                  "description": "源类对象",
+                  "type": "string",
+                  "example":"hXc9BkGCOD"
+                },
+                "destClass": {
+                  "description": "目标类名",
+                  "type": "string",
+                  "example":"_Role"
+                },
+                "destId": {
+                  "description": "目标类对象",
+                  "type": "string",
+                  "example":"0w66Wg1thM"
+                },
+                "destField": {
+                  "description": "目标关联字段",
+                  "type": "string",
+                  "example":"users"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Returns success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Data"
+        ]
+      }
+    },
+    "/upload": {
+      "post": {
+        "summary": "服务器文件上传",
+        "description": "文件上传到服务器",
+        "consumes": [
+          "multipart/form-data"
+        ],
+        "parameters": [
+          {
+            "name": "file",
+            "in": "formData",
+            "type": "file"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Data"
+        ]
+      }
+    },
+    "/sendsms": {
+      "post": {
+        "security": [],
+        "consumes": [
+          "*"
+        ],
+        "summary": "发送短信验证码",
+        "description": "发送短信,短信验证码发送成功后,则会在缓存中以mobile为键写入, 用户下一步提交时，可以根据此键查询验证通过",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "nationcode",
+            "type": "string",
+            "description": "国家/地区",
+            "enum": [
+              "+86/中国",
+              "+886/中国台湾",
+              "+852/中国香港",
+              "+91/India",
+              "+244/Angola",
+              "+54/Argentina",
+              "+1/American Samoa",
+              "+880/Bangladesh",
+              "+56/Chile",
+              "+855/Cambodia",
+              "+20/Egypt",
+              "+33/France",
+              "+49/Germany",
+              "+62/Indonesia",
+              "+353/Ireland",
+              "+972/Israel",
+              "+39/Italy",
+              "+81/Japan",
+              "+60/Malaysia",
+              "+63/Philippines",
+              "+92/Pakistan",
+              "+82/South Korea",
+              "+46/Sweden",
+              "+65/Singapore",
+              "+27/South Africa",
+              "+66/Thailand",
+              "+971/United Arab Emirates",
+              "+44/United Kingdom",
+              "+84/Vietnam",
+              "+967/Yemen",
+              "+260/Zambia"
+            ],
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "account",
+            "type": "string",
+            "description": "大陆手机号码",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "expire": {
+                  "type": "number"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Data"
+        ]
+      }
+    },
+    "/verify_code": {
+      "post": {
+        "security": [],
+        "summary": "验证手机号/邮箱是否通过",
+        "description": "验证手机号/邮箱是否通过",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "Action",
+            "type": "string",
+            "description": "验证操作类型",
+            "enum": [
+              "login",
+              "register",
+              "passwordreset",
+              "modifyuser"
+            ],
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "account",
+            "type": "string",
+            "description": "邮箱或手机号",
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "code",
+            "type": "integer",
+            "description": "验证码",
+            "required": true
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+              }
+            },
+            "description": "扩展参数"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "302": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Data"
+        ]
+      }
+    }
+  }
+}

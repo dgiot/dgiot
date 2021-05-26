@@ -1,0 +1,6 @@
+{description, "Template for a regular PropEr suite"}.
+{variables, [
+    {name, "Name of the suite (prop_<name>)"},
+    {test_dir, "test", "The directory where the test suite goes"}
+]}.
+{template, "prop.erl.tpl", "{{test_dir}}/prop_{{name}}.erl"}.

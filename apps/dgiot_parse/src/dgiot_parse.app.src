@@ -1,0 +1,7 @@
+{application,dgiot_parse,
+             [{description,"DGIOT Parse"},
+              {vsn,"4.3.0"},
+              {modules,[]},
+              {registered,[dgiot_parse_sup]},
+              {applications,[kernel,stdlib,dgiot]},
+              {mod,{dgiot_parse_app,[]}}]}.
