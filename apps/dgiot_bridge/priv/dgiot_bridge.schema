@@ -1,0 +1,105 @@
+{mapping, "bridge.appid", "dgiot_bridge.appid", [
+  {datatype, string}
+]}.
+
+{mapping, "bridge.secret", "dgiot_bridge.secret", [
+  {datatype, string}
+]}.
+
+{mapping, "bridge.filter.$name", "dgiot_bridge.filters", [
+  {datatype, string}
+]}.
+
+{translation, "dgiot_bridge.filters", fun(Conf) ->
+  Collectors = cuttlefish_variable:filter_by_prefix("bridge.filter", Conf),
+  lists:map(fun({_, Collector}) -> Collector end, Collectors)
+end}.
+
+
+{mapping, "dgiot.listener.tcp.acceptors", "dgiot_bridge.listeners", [
+  {default, 16},
+  {datatype, integer}
+]}.
+
+{mapping, "dgiot.listener.tcp.max_connections", "dgiot_bridge.listeners", [
+  {default, 1000000},
+  {datatype, integer}
+]}.
+
+{mapping, "dgiot.listener.tcp.max_conn_rate", "dgiot_bridge.listeners", [
+  {datatype, integer}
+]}.
+
+{mapping, "dgiot.listener.tcp.active_n", "dgiot_bridge.listeners", [
+  {default, 100},
+  {datatype, integer}
+]}.
+
+{mapping, "dgiot.listener.tcp.rate_limit", "dgiot_bridge.listeners", [
+  {default, undefined},
+  {datatype, string}
+]}.
+
+{mapping, "dgiot.listener.tcp.backlog", "dgiot_bridge.listeners", [
+  {datatype, integer},
+  {default, 1024}
+]}.
+
+{mapping, "dgiot.listener.tcp.send_timeout", "dgiot_bridge.listeners", [
+  {datatype, {duration, ms}},
+  {default, "15s"}
+]}.
+
+{mapping, "dgiot.listener.tcp.send_timeout_close", "dgiot_bridge.listeners", [
+  {datatype, flag},
+  {default, on}
+]}.
+
+{mapping, "dgiot.listener.tcp.nodelay", "dgiot_bridge.listeners", [
+  {datatype, {enum, [true, false]}},
+  hidden
+]}.
+
+{mapping, "dgiot.listener.tcp.reuseaddr", "dgiot_bridge.listeners", [
+  {datatype, {enum, [true, false]}},
+  hidden
+]}.
+
+{mapping, "dgiot.listener.tcp.keepalive", "dgiot_bridge.listeners", [
+  {datatype, {enum, [true, false]}},
+  {default, false}
+]}.
+
+{translation, "dgiot_bridge.listeners", fun(Conf) ->
+
+    Filter  = fun(Opts) -> [{K, V} || {K, V} <- Opts, V =/= undefined] end,
+    Atom = fun(undefined) -> undefined; (S) -> list_to_atom(S) end,
+    Ratelimit = fun(undefined) ->
+                    undefined;
+                   (S) ->
+                    list_to_tuple([list_to_integer(Token) || Token <- string:tokens(S, ",")])
+                end,
+
+    LisOpts = fun(Prefix) ->
+                  Filter([{max_connections, cuttlefish:conf_get(Prefix ++ ".max_connections", Conf)},
+                          {acceptors, cuttlefish:conf_get(Prefix ++ ".acceptors", Conf, undefined)},
+                          {max_conn_rate, cuttlefish:conf_get(Prefix ++ ".max_conn_rate", Conf, undefined)},
+                          {active_n, cuttlefish:conf_get(Prefix ++ ".active_n", Conf, undefined)},
+                          {rate_limit, Ratelimit(cuttlefish:conf_get(Prefix ++ ".rate_limit", Conf, undefined))}])
+              end,
+
+    TcpOpts = fun(Prefix) ->
+                  Filter([{backlog, cuttlefish:conf_get(Prefix ++ ".backlog", Conf, undefined)},
+                          {keepalive, cuttlefish:conf_get(Prefix ++ ".keepalive", Conf, false)},
+                          {send_timeout, cuttlefish:conf_get(Prefix ++ ".send_timeout", Conf, undefined)},
+                          {send_timeout_close, cuttlefish:conf_get(Prefix ++ ".send_timeout_close", Conf, undefined)},
+                          {nodelay, cuttlefish:conf_get(Prefix ++ ".nodelay", Conf, true)},
+                          {reuseaddr, cuttlefish:conf_get(Prefix ++ ".reuseaddr", Conf, undefined)}])
+              end,
+
+    TcpListeners = fun(Type, Name) ->
+                       Prefix = string:join(["dgiot", Type, Name], "."),
+                       [{tcp_options, TcpOpts(Prefix)} | LisOpts(Prefix)]
+                   end,
+    lists:flatten([TcpListeners("listener", "tcp")])
+end}.

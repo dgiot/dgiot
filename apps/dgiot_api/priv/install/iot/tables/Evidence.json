@@ -1,0 +1,49 @@
+[{
+	"className": "Evidence",
+	"fields": {
+		"reportId": {
+			"type": "String"
+		},
+		"ukey": {
+			"type": "String"
+		},
+		"scene": {
+			"type": "String"
+		},
+		"timestamp": {
+			"type": "Number"
+		},
+		"original": {
+			"type": "Object"
+		},
+		"signData": {
+			"type": "String"
+		}
+	},
+	"classLevelPermissions": {
+		"find": {
+			"*": true
+		},
+		"get": {
+			"*": true
+		},
+		"count": {
+			"*": true
+		},
+		"create": {
+			"*": true
+		},
+		"update": {
+			"*": true
+		},
+		"delete": {
+			"*": true
+		},
+		"addField": {
+			"role:root": true
+		},
+		"protectedFields": {
+			"*": []
+		}
+	}
+}]

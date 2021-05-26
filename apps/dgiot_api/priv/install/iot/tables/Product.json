@@ -1,0 +1,81 @@
+[
+  {
+    "className": "Product",
+    "classLevelPermissions": {
+      "count":{
+        "*":true
+      },
+      "get": {
+        "*": true
+      },
+      "find": {
+        "*": true
+      },
+      "create": {
+        "*": true
+      },
+      "update": {
+        "*": true
+      },
+      "delete": {
+        "*": true
+      },
+      "addField": {
+        "role:root": true
+      }
+    },
+    "fields": {
+      "name": {
+        "type": "String",
+        "required": true
+      },
+      "devType": {
+        "type": "String",
+        "required": true
+      },
+      "productIdentifier": {
+        "type": "String"
+      },
+      "productSecret": {
+        "type": "String"
+      },
+      "netType": {
+        "type": "String"
+      },
+      "decoder":{
+        "type":"Object"
+      },
+      "nodeType": {
+        "type": "Number"
+      },
+      "desc":{
+        "type":"String"
+      },
+      "icon": {
+        "type": "String"
+      },
+      "topics": {
+        "type": "Array"
+      },
+      "category": {
+        "type": "String"
+      },
+      "dynamicReg": {
+        "type": "Boolean"
+      },
+      "thing": {
+        "type": "Object"
+      },
+      "config": {
+        "type": "Object"
+      },
+      "children":{
+        "targetClass": "Product",
+        "type": "Relation"
+      },
+      "serverCallbackModel": {
+        "type": "Array"
+      }
+    }
+  }
+]

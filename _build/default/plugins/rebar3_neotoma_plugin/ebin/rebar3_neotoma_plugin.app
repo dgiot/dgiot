@@ -1,0 +1,12 @@
+{application,rebar3_neotoma_plugin,
+             [{description,"Neotoma rebar plugin"},
+              {vsn,"0.2.0"},
+              {registered,[]},
+              {applications,[kernel,stdlib,neotoma]},
+              {env,[]},
+              {modules,[rebar3_neotoma_plugin,rebar3_prv_neotoma_clean,
+                        rebar3_prv_neotoma_compile]},
+              {maintainers,["Oleg Tsarev","Tristan Sloughter"]},
+              {licenses,["Apache"]},
+              {links,[{"Github",
+                       "https://github.com/zamotivator/rebar3_neotoma_plugin"}]}]}.

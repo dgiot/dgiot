@@ -1,0 +1,15 @@
+Def0 = case erlang:is_builtin(erlang, binary_to_integer, 1) andalso
+            erlang:is_builtin(erlang, binary_to_float, 1) of
+           true -> [];
+           false -> [{d, no_binary_to_whatever}]
+       end,
+Def1 = case erlang:is_builtin(erlang, is_map, 1) of
+           true -> [{d, maps_support}|Def0];
+           false -> Def0
+       end,
+Defs = case os:getenv("JSX_FORCE_MAPS") of
+           false -> Def1;
+           _ -> [{d, maps_always}|Def1]
+       end,
+lists:keystore(erl_opts, 1, CONFIG,
+               {erl_opts, proplists:get_value(erl_opts, CONFIG, []) ++ Defs}).

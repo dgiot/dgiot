@@ -1,0 +1,66 @@
+[
+  {
+    "className": "Crond",
+    "classLevelPermissions": {
+      "count":{
+        "*":true
+      },
+      "get": {
+        "*": true
+      },
+      "find": {
+        "*": true
+      },
+      "create": {
+        "*": true
+      },
+      "update": {
+        "*": true
+      },
+      "delete": {
+        "*": true
+      },
+      "addField": {
+        "role:root": true
+      }
+    },
+    "fields": {
+      "name": {
+        "type": "String",
+        "required": true
+      },
+      "crond": {
+        "type": "Object"
+      },
+      "task": {
+        "type": "Object"
+      },
+      "remark": {
+        "type": "String"
+      },
+      "args": {
+        "type": "Object"
+      },
+      "active": {
+        "type": "Number"
+      },
+      "visible": {
+        "type": "Number"
+      },
+      "tid":{
+        "type":"Number"
+      },
+      "type":{
+        "type":"Number",
+        "required": true
+      },
+      "typedesc":{
+        "type":"String"
+      },
+      "product": {
+        "targetClass": "Product",
+        "type": "Pointer"
+      }
+    }
+  }
+]

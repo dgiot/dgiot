@@ -1,0 +1,43 @@
+[
+  {
+    "className": "_Role",
+    "fields": {
+      "alias": {
+        "type": "String"
+      },
+      "desc": {
+        "type": "String"
+      },
+      "menus": {
+        "targetClass": "Menu",
+        "type": "Relation"
+      },
+      "rules": {
+        "targetClass": "Permission",
+        "type": "Relation"
+      },
+      "depname": {
+        "type": "String"
+      },
+      "level": {
+        "type": "Number"
+      },
+      "order": {
+        "type": "Number"
+      },
+      "leafnode":{
+        "type":"Boolean"
+      },
+      "org_type":{
+        "type":"String"
+      },
+      "parent": {
+        "type": "Pointer",
+        "targetClass": "_Role"
+      },
+      "tag": {
+        "type": "Object"
+      }
+    }
+  }
+]

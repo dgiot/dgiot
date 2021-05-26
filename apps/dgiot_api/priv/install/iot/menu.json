@@ -1,0 +1,120 @@
+[
+  {
+    "name": "分组",
+    "icon": "connect",
+    "url" :"/dashboard/devproduct",
+    "orderBy": 1
+  },
+  {
+    "name": "通道",
+    "icon": "connect",
+    "url": "/dashboard/resourcechannel",
+    "orderBy": 2
+  },
+  {
+    "name": "设备",
+    "icon": "connect",
+    "url": "/dashboard/devicelist",
+    "orderBy": 3
+  },
+  {
+    "name": "产品",
+    "icon": "connect",
+    "url": "/dashboard/productlist",
+    "orderBy": 4
+  },
+  {
+    "name": "规则",
+    "icon": "connect",
+    "url": "/dashboard/engine",
+    "orderBy": 5
+  },
+  {
+    "name": "定制",
+    "icon": "connect",
+    "url": "/roles",
+    "orderBy": 6,
+    "children": [
+      {
+        "name": "用户管理",
+        "url": "/roles/structure",
+        "icon": "usermanage",
+        "orderBy": 61
+      },
+      {
+        "name": "角色管理",
+        "url": "/roles/roles",
+        "icon": "adminmanage",
+        "orderBy": 62
+      },
+      {
+        "name": "接口管理",
+        "url": "/roles/rolescontrol",
+        "icon": "rolescontrol",
+        "orderBy": 63
+      },
+      {
+        "name": "菜单管理",
+        "url": "/roles/menu",
+        "icon": "menu",
+        "orderBy": 64
+      },
+      {
+        "name": "岗位管理",
+        "url": "/roles/department",
+        "icon": "department",
+        "orderBy": 65
+      },
+      {
+        "name": "应用管理",
+        "url": "/roles/applicationManagement",
+        "icon": "application",
+        "orderBy": 66
+      }
+    ]
+  },
+  {
+    "name": "系统",
+    "url": "/base",
+    "icon": "engine",
+    "orderBy": 7,
+    "children": [
+      {
+        "name": "性能监控",
+        "url": "/performance_monitoring",
+        "icon": "platform",
+        "orderBy": 71
+      },
+      {
+        "name": "集群管理",
+        "url": "/roles/nodes",
+        "icon": "nodemgr",
+        "orderBy": 72
+      },
+      {
+        "name": "插件管理",
+        "url": "/roles/appmanage",
+        "icon": "appmanage",
+        "orderBy": 73
+      },
+      {
+        "name": "解码管理",
+        "url": "/roles/thingsParse",
+        "icon": "appmanage",
+        "orderBy": 73
+      },
+      {
+        "name": "节点管理",
+        "url": "/roles/server_control",
+        "icon": "platform",
+        "orderBy": 74
+      },
+      {
+        "name": "拓展编程",
+        "url": "/dashboard/expandprogram",
+        "icon": "platform",
+        "orderBy": 75
+      },
+    ]
+  }
+]

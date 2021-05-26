@@ -1,0 +1,32 @@
+[
+  {
+    "className": "Notification",
+    "fields": {
+      "content": {
+        "type": "String"
+      },
+      "deletedBy": {
+        "targetClass": "_User",
+        "type": "Relation"
+      },
+      "public": {
+        "type": "Boolean"
+      },
+      "readBy": {
+        "targetClass": "_User",
+        "type": "Relation"
+      },
+      "sender": {
+        "targetClass": "_User",
+        "type": "Pointer"
+      },
+      "type": {
+        "type": "String"
+      },
+      "user": {
+        "targetClass": "_User",
+        "type": "Pointer"
+      }
+    }
+  }
+]

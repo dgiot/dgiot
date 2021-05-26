@@ -1,0 +1,85 @@
+[
+  {
+    "className": "Project",
+    "classLevelPermissions": {
+      "count":{
+        "*":true
+      },
+      "get": {
+        "*": true
+      },
+      "find": {
+        "*": true
+      },
+      "create": {
+        "*": true
+      },
+      "update": {
+        "*": true
+      },
+      "delete": {
+        "*": true
+      },
+      "addField": {
+        "role:root": true
+      }
+    },
+    "fields": {
+      "productIdentifier": {
+        "type": "String"
+      },
+      "user": {
+        "targetClass": "_User",
+        "type": "Pointer"
+      },
+      "title": {
+        "type": "String",
+        "required": true
+      },
+      "config": {
+        "type": "Object"
+      },
+      "dashboard": {
+        "type": "String"
+      },
+      "background": {
+        "type": "String"
+      },
+      "copyright": {
+        "type": "String"
+      },
+      "logo": {
+        "type": "String"
+      },
+      "desc":{
+        "type":"String"
+      },
+      "domain":{
+        "type":"String"
+      },
+      "category":{
+        "type":"String"
+      },
+      "enable":{
+        "type":"Boolean"
+      },
+      "default":{
+        "type":"Boolean"
+      },
+      "product": {
+        "targetClass": "Product",
+        "type": "Relation"
+      },
+      "app": {
+        "targetClass": "App",
+        "type": "Relation"
+      },
+      "userUnit": {
+        "type": "String"
+      },
+      "scale":{
+        "type": "Number"
+      }
+    }
+  }
+]

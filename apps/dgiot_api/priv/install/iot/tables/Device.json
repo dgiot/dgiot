@@ -1,0 +1,68 @@
+[
+  {
+    "className": "Device",
+    "classLevelPermissions": {
+      "count":{
+        "*":true
+      },
+      "get": {
+        "*": true
+      },
+      "find": {
+        "*": true
+      },
+      "create": {
+        "*": true
+      },
+      "update": {
+        "*": true
+      },
+      "delete": {
+        "*": true
+      },
+      "addField": {"role:root": true}
+    },
+    "fields": {
+      "name":{
+        "type":"String"
+      },
+      "product": {
+        "targetClass": "Product",
+        "type": "Pointer",
+        "required": true
+      },
+      "devaddr":{
+        "type": "String",
+        "required": true
+      },
+      "parentId":{
+        "targetClass": "Device",
+        "type":"Pointer"
+      },
+      "route": {
+        "type": "Object"
+      },
+      "status": {
+        "type": "String"
+      },
+      "isEnable":{
+        "type":"Boolean"
+      },
+      "ip":{
+        "type":"String"
+      },
+      "lastOnlineTime":{
+        "type":"Number"
+      },
+      "basedata": {
+        "type": "Object"
+      },
+      "detail": {
+        "type": "Object"
+      },
+      "location": {
+        "type": "GeoPoint"
+      }
+    }
+  }
+]

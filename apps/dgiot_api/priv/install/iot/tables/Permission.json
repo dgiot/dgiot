@@ -1,0 +1,46 @@
+[
+  {
+    "className": "Permission",
+    "classLevelPermissions": {
+      "count":{
+        "*":true
+      },
+      "get": {
+        "*": true
+      },
+      "find": {
+        "*": true
+      },
+      "create": {
+        "*": true
+      },
+      "update": {
+        "*": true
+      },
+      "delete": {
+        "*": true
+      },
+      "addField": {
+        "role:root": true
+      }
+    },
+    "fields": {
+      "name": {
+        "type": "String"
+      },
+      "alias": {
+        "type": "String"
+      },
+      "description": {
+        "type": "String"
+      },
+      "tags": {
+        "type": "Array"
+      },
+      "parent": {
+        "targetClass": "Permission",
+        "type": "Pointer"
+      }
+    }
+  }
+]

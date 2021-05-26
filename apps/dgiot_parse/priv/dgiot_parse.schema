@@ -1,0 +1,72 @@
+%% dgiot_parse config
+%%--------------------------------------------------------------------
+%% parse缓存设置
+%%--------------------------------------------------------------------
+%% 检查时间
+{mapping, "parse.cache.auto_save", "dgiot_parse.cache_auto_save", [
+     {default, 30000},
+     {datatype, integer}
+]}.
+
+%% 最大条数 最大5万条数据
+{mapping, "parse.cache.max_size", "dgiot_parse.cache_max_size", [
+     {default, 50000},
+     {datatype, integer}
+]}.
+
+%% 内存最大为100M
+{mapping, "parse.cache.max_memory", "dgiot_parse.cache_max_memory", [
+     {default, 102400},
+     {datatype, integer}
+]}.
+
+%% 最大30秒时间存库
+{mapping, "parse.cache.max_time", "dgiot_parse.cache_max_time", [
+     {default, 30},
+     {datatype, integer}
+]}.
+
+
+%%--------------------------------------------------------------------
+%% parse配置
+%%--------------------------------------------------------------------
+
+{mapping, "parse.delete_field", "dgiot_parse.delete_field", [
+     {default, ""},
+     {datatype, string}
+]}.
+
+{mapping, "parse.parse_server", "dgiot_parse.parse_server", [
+     {default, ""},
+     {datatype, string}
+]}.
+
+{mapping, "parse.parse_path", "dgiot_parse.parse_path", [
+     {default, "/parse/"},
+     {datatype, string}
+]}.
+
+{mapping, "parse.parse_appid", "dgiot_parse.parse_appid", [
+     {default, ""},
+     {datatype, string}
+]}.
+
+{mapping, "parse.parse_master_key", "dgiot_parse.parse_master_key", [
+     {default, ""},
+     {datatype, string}
+]}.
+
+{mapping, "parse.parse_js_key", "dgiot_parse.parse_js_key", [
+     {default, ""},
+     {datatype, string}
+]}.
+
+{mapping, "parse.parse_rest_key", "dgiot_parse.parse_rest_key", [
+     {default, ""},
+     {datatype, string}
+]}.
+
+{mapping, "parse.log", "dgiot_parse.log", [
+     {default, false},
+     {datatype, atom}
+]}.

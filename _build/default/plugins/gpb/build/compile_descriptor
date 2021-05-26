@@ -1,0 +1,62 @@
+#! /bin/sh
+
+# This is a simple form of make, called as a post_hook from rebar,
+# but depending on make for rebar support seemed ... wrong somehow
+
+is_up_to_date () {
+    target="$1"
+    shift
+    test ! -f "$target" && return 1
+    for f in "$@"
+    do
+        test "$f" -nt "$target" && return 1
+    done
+    return 0
+}
+
+# The || exit $? is needed, if sh is a bash, then with some
+# versions of bash with -e, execution does not terminte if a
+# subshell exits with non-zero exit code
+
+set -e
+
+if [ -d "$REBAR_DEPS_DIR/gpb" ]; then
+    # rebar3
+    EBIN="$REBAR_DEPS_DIR/gpb/ebin"
+    TEST="$REBAR_DEPS_DIR/gpb/test"
+    mkdir -p "$EBIN"
+else
+    # rebar2
+    EBIN="./ebin"
+    TEST="./test"
+fi
+
+is_up_to_date descr_src/gpb_descriptor.erl \
+          priv/proto3/google/protobuf/descriptor.proto || \
+    ( echo "Compiling descriptor.proto..."
+    erl +B -noinput -pa "$EBIN" \
+        -I priv/proto3/google/protobuf -o descr_src \
+    -modprefix gpb_ \
+        -s gpb_compile c descriptor.proto ) || exit $?
+is_up_to_date "$EBIN/gpb_descriptor.beam" descr_src/gpb_descriptor.erl || \
+    ( echo "Compiling gpb_descriptor.erl..."
+    erlc -Idescr_src -Iinclude -o "$EBIN" +debug_info \
+        descr_src/gpb_descriptor.erl ) || exit $?
+is_up_to_date "$EBIN/gpb_compile_descr.beam" \
+    descr_src/gpb_compile_descr.erl \
+    descr_src/gpb_descriptor.hrl || \
+    ( echo "Compiling gpb_compile_descr.erl..."
+    erlc -Idescr_src -Iinclude -o "$EBIN" +debug_info \
+    descr_src/gpb_compile_descr.erl ) || exit $?
+if [ -d "$TEST" ]; then
+    # eg: "rebar3 eunit" or "rebar2 eunit"
+    # but not "rebar3 compile"
+    # and not when compiling gpb as a dependency, since
+    # the test directory does not exist in the hex package.
+    is_up_to_date "$TEST/gpb_compile_descr_tests.beam" \
+        descr_src/gpb_compile_descr_tests.erl \
+        descr_src/gpb_descriptor.hrl || \
+        ( echo "Compiling gpb_compile_descr_tests.erl..."
+        erlc -Idescr_src -Iinclude -o "$TEST" +debug_info \
+        descr_src/gpb_compile_descr_tests.erl ) || exit $?
+fi

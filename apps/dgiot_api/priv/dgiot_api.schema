@@ -1,0 +1,68 @@
+{mapping, "api.forbidden", "dgiot_api.app_forbidden", [
+  {datatype, string},
+  {default, ""}
+]}.
+
+{mapping, "web.docroot", "dgiot_api.docroot", [
+{datatype, string},
+{default, "priv/www/"}
+]}.
+
+{mapping, "web.port", "dgiot_api.port", [
+{datatype, integer},
+{default, 5080}
+]}.
+
+{mapping, "web.acceptors", "dgiot_api.acceptors", [
+{datatype, integer},
+{default, 200}
+]}.
+
+{mapping, "web.sessionExpiration", "dgiot_api.session_expiration", [
+{datatype, integer},
+{default, 1800}
+]}.
+
+{mapping, "developer.mod", "dgiot_api.developer_mode", [
+{datatype, {enum, [true, false]}},
+{default, true}
+]}.
+
+%% 证书
+{mapping, "web.cacertfile", "dgiot_api.cacertfile", [
+{datatype, string},
+{default, ""}
+]}.
+
+{mapping, "web.certfile", "dgiot_api.certfile", [
+{datatype, string},
+{default, ""}
+]}.
+
+{mapping, "web.keyfile", "dgiot_api.keyfile", [
+{datatype, string},
+{default, ""}
+]}.
+
+
+{mapping, "parse.not_delete_table.$name", "dgiot_api.not_delete_table", [
+{datatype, string}
+]}.
+
+{translation, "dgiot_api.not_delete_table", fun(Conf) ->
+Collectors = cuttlefish_variable:filter_by_prefix("parse.not_delete_table", Conf),
+lists:map(fun({_, Collector}) -> Collector end, Collectors)
+end}.
+
+{mapping, "swagger.apps", "dgiot_api.swagger_apps", [
+{datatype, string}
+]}.
+
+{mapping, "swagger.tables", "dgiot_api.swagger_tables", [
+{datatype, string}
+]}.
+
+{mapping, "dgiotproxy.dicttype", "dgiot_api.dicttype", [
+{datatype, string},
+{default, "c6dc816698"}
+]}.

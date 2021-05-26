@@ -1,0 +1,37 @@
+[
+  {
+    "className": "Dict",
+    "classLevelPermissions": {
+      "count":{
+        "*":true
+      },
+      "get": {
+        "*": true
+      },
+      "find": {
+        "*": true
+      },
+      "create": {
+        "*": true
+      },
+      "update": {
+        "*": true
+      },
+      "delete": {
+        "*": true
+      },
+      "addField": {"role:root": true}
+    },
+    "fields": {
+      "data": {
+        "type": "Object"
+      },
+      "type": {
+        "type": "String"
+      },
+      "key": {
+        "type": "String"
+      }
+    }
+  }
+]

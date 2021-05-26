@@ -1,0 +1,80 @@
+[
+  {
+    "className": "License",
+    "classLevelPermissions": {
+      "count":{
+        "*":true
+      },
+      "get": {
+        "*": true
+      },
+      "find": {
+        "*": true
+      },
+      "create": {
+        "*": true
+      },
+      "update": {
+        "*": true
+      },
+      "delete": {
+        "*": true
+      },
+      "addField": {
+        "role:root": true
+      }
+    },
+    "fields": {
+      "private_ip": {
+        "type": "String"
+      },
+      "public_ip": {
+        "type": "String"
+      },
+      "is_online":{
+        "type":"Boolean"
+      },
+      "product": {
+        "type": "Object"
+      },
+      "detail": {
+        "type": "Object"
+      },
+      "key": {
+        "type": "String",
+        "required": true
+      },
+      "license": {
+        "type": "String"
+      },
+      "software": {
+        "type": "String"
+      },
+      "mac": {
+        "type": "String"
+      },
+      "disk": {
+        "type": "String"
+      },
+      "core": {
+        "type": "String"
+      },
+      "type":{
+        "type":"String"
+      },
+      "status":{
+        "type":"String"
+      },
+      "appname":{
+        "type":"String"
+      },
+      "customer_name":{
+        "type":"String"
+      },
+      "app": {
+        "targetClass": "App",
+        "type": "Pointer"
+      }
+    }
+  }
+]

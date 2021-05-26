@@ -1,0 +1,454 @@
+{
+  "tags": [
+    {
+      "name": "System",
+      "description": "系统管理"
+    }
+  ],
+  "definitions": {
+    "Swagger": {
+      "type": "object",
+      "properties": {
+        "definitions": {
+          "description": "Models",
+          "type": "object"
+        },
+        "paths": {
+          "description": "路径",
+          "type": "object"
+        }
+      }
+    }
+  },
+  "paths": {
+    "/log/level": {
+      "get": {
+        "summary": "获取日志配置",
+        "description": "获取日志配置",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "Handle",
+            "description": "日志模块",
+            "type": "string",
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "level",
+            "type": "string",
+            "description": "日志级别",
+            "required": true
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "System"
+        ]
+      },
+      "put": {
+        "summary": "更新日志配置",
+        "description": "更新日志配置",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "Handle",
+            "type": "string",
+            "description": "日志模块",
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "level",
+            "type": "string",
+            "description": "日志级别",
+            "required": true
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "System"
+        ]
+      }
+    },
+    "/plugin": {
+      "get": {
+        "summary": "获取插件",
+        "description": "获取插件",
+        "parameters": [],
+        "responses": {
+          "201": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "System"
+        ]
+      }
+    },
+    "/plugin/{App}": {
+      "post": {
+        "summary": "对插件启动/停止/热更新/获取",
+        "consumes": [
+          "*"
+        ],
+        "description": "对插件启动/停止/热更新/获取",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "App",
+            "type": "string",
+            "description": "插件名",
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "Action",
+            "type": "string",
+            "description": "启动/停止/热更新/获取",
+            "required": true,
+            "enum": [
+              "start",
+              "stop",
+              "reload",
+              "modules"
+            ]
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "System"
+        ]
+      }
+    },
+    "/generate_api/{type}": {
+      "post": {
+        "summary": "根据swagger产生API代码",
+        "description": "根据swagger产生API代码",
+        "operationId": "generate_api",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "type",
+            "type": "string",
+            "description": "编译出对应的代码模块",
+            "required": true,
+            "enum": [
+              "erlang"
+            ]
+          },
+          {
+            "in": "query",
+            "name": "mod",
+            "type": "string",
+            "description": "模块名",
+            "required": true
+          },
+          {
+            "in": "body",
+            "name": "swagger",
+            "description": "swagger描述",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Swagger"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "System"
+        ]
+      }
+    },
+    "/chart": {
+      "get": {
+        "summary": "统计获取",
+        "description": "调用Grafanfa查询曲线",
+        "security": [],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "version",
+            "type": "string",
+            "description": "版本号,默认为v1",
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "query",
+            "type": "string",
+            "description": "查询语句",
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "start",
+            "type": "number",
+            "description": "开始时间",
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "end",
+            "type": "number",
+            "description": "结束时间",
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "step",
+            "type": "number",
+            "description": "步长,单位秒",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "status": {
+                  "type": "string"
+                },
+                "data": {
+                  "type": "object",
+                  "properties": {
+                    "resultType": {
+                      "type": "string"
+                    },
+                    "result": {
+                      "type": "array",
+                      "items":{
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "System"
+        ]
+      }
+    },
+    "/compile": {
+      "post": {
+        "summary": "编译代码",
+        "description": "在线编译代码",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "code": {
+                  "type": "string",
+                  "description": "代码"
+                }
+              }
+            },
+            "description": "在线编译代码",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "System"
+        ]
+      }
+    },
+    "/nodes": {
+      "get": {
+        "summary": "获取节点",
+        "description": "获取节点",
+        "consumes": [
+          "*"
+        ],
+        "parameters": [
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "System"
+        ]
+      }
+    },
+    "/cluster": {
+      "post": {
+        "summary": "集群操作",
+        "description": "加入,退出集群",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "action",
+            "type": "string",
+            "enum": [
+              "join",
+              "leave"
+            ],
+            "description": "操作类型",
+            "required": true
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "node": {
+                  "type": "string",
+                  "description": "节点名称"
+                }
+              }
+            },
+            "description": "相关参数",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "System"
+        ]
+      }
+    }
+  }
+}

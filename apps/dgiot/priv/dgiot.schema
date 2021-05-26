@@ -1,0 +1,205 @@
+%% dgiot_stats config
+
+{mapping, "statsd.prometheus_server", "dgiot.prometheus_server", [
+{default, "http://127.0.0.1:9090"},
+{datatype, string}
+]}.
+
+{mapping, "statsd.push_gateway", "dgiot.push_gateway", [
+{default, "http://127.0.0.1:9091"},
+{datatype, string}
+]}.
+
+{mapping, "statsd.interval", "dgiot.interval", [
+{default, 5000},
+{datatype, integer}
+]}.
+
+{mapping, "statsd.collector.$name", "dgiot.collectors", [
+{datatype, atom}
+]}.
+
+{translation, "dgiot.collectors", fun(Conf) ->
+Collectors = cuttlefish_variable:filter_by_prefix("statsd.collector", Conf),
+lists:map(fun({_, Collector}) -> Collector end, Collectors)
+end}.
+
+
+{mapping, "dgiot.timezone", "dgiot_frame.timezone", [
+     {default, +8},
+     {datatype, integer}
+]}.
+
+%% @doc Node name
+%% @doc Global GC Interval
+%% {@configurable}
+{mapping, "gc.interval", "dgiot.gc_interval", [
+{default, "5m"},
+{datatype, {duration, ms}}
+]}.
+
+%% @doc Global GC Interval
+{mapping, "node.global_gc_interval", "dgiot.global_gc_interval", [
+{datatype, {duration, s}}
+]}.
+
+%%--------------------------------------------------------------------
+%% 监控配置
+%%--------------------------------------------------------------------
+{mapping, "monitor.ports", "dgiot.monitor_ports", [
+  {datatype, string}
+]}.
+
+%%--------------------------------------------------------------------
+%% Log
+%%--------------------------------------------------------------------
+
+{mapping, "logger.dir", "lager.log_root", [
+  {default, "/var/log/dgiot__iot/"},
+  {datatype, string}
+]}.
+
+{mapping, "logger.error.redirect", "lager.error_logger_redirect", [
+  {default, on},
+  {datatype, flag},
+  hidden
+]}.
+
+{mapping, "logger.error.messages_per_second", "lager.error_logger_hwm", [
+  {default, 1000},
+  {datatype, integer},
+  hidden
+]}.
+
+{mapping, "logger.console", "lager.handlers", [
+  {default, file},
+  {datatype, {enum, [off, file, console, both]}}
+]}.
+
+{mapping, "logger.console.level", "lager.handlers", [
+  {default, info},
+  {datatype, {enum, [debug, info, notice, warning, error, critical, alert, emergency, none]}}
+]}.
+
+{mapping, "logger.console.file", "lager.handlers", [
+  {default, "console.log"},
+  {datatype, file}
+]}.
+
+{mapping, "logger.console.size", "lager.handlers", [
+  {default, 10485760},
+  {datatype, integer}
+]}.
+
+{mapping, "logger.console.count", "lager.handlers", [
+  {default, 5},
+  {datatype, integer}
+]}.
+
+{mapping, "logger.console.save", "dgiot__framework.log_save_type", [
+  {default, none},
+  {datatype, {enum, [none, mqtt, db, kafka]}}
+]}.
+
+{mapping, "logger.info.file", "lager.handlers", [
+  {datatype, file}
+]}.
+
+{mapping, "logger.info.size", "lager.handlers", [
+  {default, 10485760},
+  {datatype, integer}
+]}.
+
+{mapping, "logger.info.count", "lager.handlers", [
+  {default, 5},
+  {datatype, integer}
+]}.
+
+{mapping, "logger.error.file", "lager.handlers", [
+  {default, "error.log"},
+  {datatype, file}
+]}.
+
+{mapping, "logger.error.size", "lager.handlers", [
+  {default, 10485760},
+  {datatype, integer}
+]}.
+
+{mapping, "logger.error.count", "lager.handlers", [
+  {default, 5},
+  {datatype, integer}
+]}.
+
+{mapping, "logger.colored", "lager.colored", [
+  {default, true},
+  {datatype, atom}
+]}.
+
+{translation, "lager.colors",
+ fun(Conf) ->
+    [{debug,"\e[0;38m"},
+     {info,"\e[1;37m"},
+     {notice,"\e[1;36m"},
+     {warning,"\e[1;33m"},
+     {error,"\e[1;31m"},
+     {critical,"\e[1;35m"},
+     {alert,"\e[1;44m"},
+     {emergency,"\e[1;41m"}
+    ]
+  end
+}.
+
+{translation, "lager.handlers",
+ fun(Conf) ->
+    ErrorHandler = case cuttlefish:conf_get("logger.error.file", Conf) of
+        undefined ->
+            [];
+        ErrorFilename ->
+            [{lager_file_backend, [
+               {file, ErrorFilename},
+               {level, error},
+               {size, cuttlefish:conf_get("logger.error.size", Conf)},
+               {date, "$D0"},
+               {count, cuttlefish:conf_get("logger.error.count", Conf)}]}]
+    end,
+    InfoHandler = case cuttlefish:conf_get("logger.info.file", Conf, undefined) of
+          undefined -> [];
+          InfoFilename -> [{lager_file_backend,
+             [
+                {file, InfoFilename},
+                {level, info},
+                {size, cuttlefish:conf_get("logger.info.size", Conf)},
+                {date, "$D0"},
+                {count, cuttlefish:conf_get("logger.info.count", Conf)}
+             ]}]
+    end,
+    ConsoleLogLevel = cuttlefish:conf_get("logger.console.level", Conf),
+    ConsoleLogFile = cuttlefish:conf_get("logger.console.file", Conf),
+    ConsoleHandler = {lager_console_backend, [ConsoleLogLevel, {lager_default_formatter, ["\033[36m", time, " [",severity,"] ", pid, "@", module, ":", function, ":", line, "\033[0m", color, " ", message, "\e[0m\r\n"]}]},
+    ConsoleFileHandler = {lager_file_backend,
+        [
+            {file, ConsoleLogFile},
+            {level, ConsoleLogLevel},
+            {size, cuttlefish:conf_get("logger.console.size", Conf)},
+            {date, "$D0"},
+            {count, cuttlefish:conf_get("logger.console.count", Conf)}
+        ]
+    },
+    ConsoleHandlers = case cuttlefish:conf_get("logger.console", Conf) of
+          off -> [];
+          file -> [ConsoleFileHandler];
+          console -> [ConsoleHandler];
+          both -> [ConsoleHandler, ConsoleFileHandler];
+          _ -> []
+    end,
+    LoggerHandlers = [{dgiot__logger,
+        [
+           {level, ConsoleLogLevel}
+        ]
+    }],
+    case cuttlefish:conf_get("logger.console", Conf) of
+        off -> [];
+        _ -> LoggerHandlers ++ ConsoleHandlers ++ ErrorHandler ++ InfoHandler
+    end
+  end
+}.
