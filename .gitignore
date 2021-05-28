@@ -3,6 +3,8 @@ test-data/
 !deps/.placeholder
 *.o
 *.plt
+*.iml
+*.iws
 erl_crash.dump
 !ebin/.placeholder
 .concrete/DEV_MODE
