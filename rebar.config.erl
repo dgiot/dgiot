@@ -239,6 +239,7 @@ relx_apps(ReleaseType) ->
         , jsx
         , erlydtl
         , ecpool
+        , erlport
         , poolboy
         , emqx
         , {mnesia, load}

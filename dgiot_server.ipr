@@ -35,6 +35,7 @@
     <mapping directory="$PROJECT_DIR$/_build/default/lib/cowlib" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/default/lib/cuttlefish" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/default/lib/cuttlefish/_build/default/lib/getopt" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/_build/default/lib/cuttlefish/_build/escript/lib/getopt" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/default/lib/ecpool" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/default/lib/ehttpc" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/default/lib/ekka" vcs="Git" />
@@ -44,6 +45,7 @@
     <mapping directory="$PROJECT_DIR$/_build/default/lib/esockd" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/default/lib/gen_coap" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/default/lib/gen_rpc" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/_build/default/lib/getopt" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/default/lib/goldrush" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/default/lib/gpb" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/default/lib/gproc" vcs="Git" />
@@ -85,6 +87,7 @@
     <mapping directory="$PROJECT_DIR$/_build/emqx/lib/esockd" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/emqx/lib/gen_coap" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/emqx/lib/gen_rpc" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/_build/emqx/lib/getopt" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/emqx/lib/goldrush" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/emqx/lib/gpb" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/emqx/lib/gproc" vcs="Git" />

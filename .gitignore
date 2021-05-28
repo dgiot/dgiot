@@ -1,6 +1,7 @@
 .eunit
 test-data/
 !deps/.placeholder
+_build/
 *.o
 *.plt
 *.iml
