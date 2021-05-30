@@ -4,7 +4,6 @@
 [![Build Status](https://travis-ci.org/dgiot/dgiot.svg)](https://travis-ci.org/dgiot/dgiot)
 [![Coverage Status](https://coveralls.io/repos/github/dgiot/dgiot/badge.svg)](https://coveralls.io/github/dgiot/dgiot)
 [![Docker Pulls](https://img.shields.io/docker/pulls/dgiot/dgiot)](https://hub.docker.com/r/dgiot/dgiot)
-[![Slack Invite](<https://slack-invite.dgiot.com/badge.svg>)](https://slack-invite.dgiot.com)
 [![Community](https://img.shields.io/badge/Community-DGIOT%20X-yellow)](https://tech.iotn2n.com)
 
 [English](./README.md) | 简体中文 | [日本語](./README-JP.md) | [русский](./README-RU.md)
@@ -145,9 +144,7 @@ DIALYZER_ANALYSE_APP=dgiot,dgiot_api,dgiot_parse make dialyzer
 | 公众号         | ![qrcode.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/wechat/qrcode.png) |
 
 ### 联系我们
-
 你可通过以下途径与 DGIOT 社区及开发者联系:
-
 - [Slack](https://slack-invite.dgiot.com)
 - [Twitter](https://twitter.com/dgiotTech)
 - [Facebook](https://www.facebook.com/dgiot)
@@ -156,5 +153,4 @@ DIALYZER_ANALYSE_APP=dgiot,dgiot_api,dgiot_parse make dialyzer
 - [Blog](https://www.dgiot.cn/blog)
 
 ## 开源许可
-
 Apache License 2.0, 详见 [LICENSE](./LICENSE)。
