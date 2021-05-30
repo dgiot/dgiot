@@ -4,10 +4,9 @@
 [![Build Status](https://travis-ci.org/dgiot/dgiot.svg)](https://travis-ci.org/dgiot/dgiot)
 [![Coverage Status](https://coveralls.io/repos/github/dgiot/dgiot/badge.svg)](https://coveralls.io/github/dgiot/dgiot)
 [![Docker Pulls](https://img.shields.io/docker/pulls/dgiot/dgiot)](https://hub.docker.com/r/dgiot/dgiot)
-[![Slack Invite](<https://slack-invite.dgiot.com/badge.svg>)](https://slack-invite.dgiot.com)
 [![Community](https://img.shields.io/badge/Community-DGIOT%20X-yellow)](https://tech.iotn2n.com)
 
-[English](./README.md) | 简体中文 | [日本語](./README-JP.md)
+[English](./README.md) | 简体中文 | [日本語](./README-JP.md) | [русский](./README-RU.md)
 
 *DGIOT * 是国内首款轻量级开源平台
 
@@ -36,21 +35,18 @@
   + 物联网平台最终能够实现简洁易用，回归到工具化的本质
 
 # 构建
-
 +   Linux/Unix/Mac构建
 ```
 git clone https://hub.fastgit.org/dgiot/dgiot_server.git
 make
 ```
 + windows构建
-
 [一键式开发环境](https://github.com/dgiot/dgiot_deploy)
 
 ```
 git clone https://hub.fastgit.org/dgiot/dgiot_server.git
 make
  ```
-
 - 新功能的完整列表，请参阅 [DGIOT Release Notes](https://github.com/dgiot/dgiot/releases)。
 - 获取更多信息，请访问 [DGIOT 官网](https://tech.iotn2n.com/)。
 
@@ -60,12 +56,6 @@ make
 
 Windows 上编译和运行 *DGIOT* 的详情参考：[Windows.md](./Windows.md)
 
-#### DGIOT 镜像安装
-
-```
-docker run -d --name emqx -p 1883:1883 -p 8081:8081 -p 8083:8083 -p 8883:8883 -p 8084:8084 -p 18083:18083 emqx/emqx
-```
-
 #### 二进制软件包安装
 
 需从 [DGIOT下载](http://ci.iotn2n.com/shuwa/package/) 页面获取相应操作系统的二进制软件包。
@@ -74,9 +64,7 @@ docker run -d --name emqx -p 1883:1883 -p 8081:8081 -p 8083:8083 -p 8883:8883 -p
 
 ## 从源码构建
 
-4.3 版本开始，构建 *dgiot* 需要 Erlang/OTP R21+。
-
-4.3 及以后的版本：
+构建 *dgiot* 需要 Erlang/OTP R21+。
 
 ```bash
 git clone https://github.com/dgiot/dgiot.git
@@ -147,9 +135,6 @@ DIALYZER_ANALYSE_APP=dgiot,dgiot_api,dgiot_parse make dialyzer
 
 如果想集成或开发你自己的插件，参考 [lib-extra/README.md](./lib-extra/README.md)
 
-
-
-
 欢迎你将任何 bug、问题和功能请求提交到 [dgiot/dgiot](https://github.com/dgiot/dgiot/issues)。
 
 ## 预览地址
@@ -175,6 +160,8 @@ DIALYZER_ANALYSE_APP=dgiot,dgiot_api,dgiot_parse make dialyzer
 | 物联网接入平台 | [https://dgiot.iotn2n.com](https://dgiot.iotn2n.com?from=git)                             |
 | 公众号         | ![qrcode.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/wechat/qrcode.png) |
 
+### 联系我们
+
 你可通过以下途径与 DGIOT 社区及开发者联系:
 
 - [Slack](https://slack-invite.dgiot.com)
@@ -183,20 +170,6 @@ DIALYZER_ANALYSE_APP=dgiot,dgiot_api,dgiot_parse make dialyzer
 - [Reddit](https://www.reddit.com/r/dgiot/)
 - [Weibo](https://weibo.com/dgiot)
 - [Blog](https://www.dgiot.cn/blog)
-
-
-## MQTT 规范
-
-你可以通过以下链接了解与查阅 MQTT 协议:
-
-[MQTT Version 3.1.1](https://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html)
-
-[MQTT Version 5.0](https://docs.oasis-open.org/mqtt/mqtt/v5.0/cs02/mqtt-v5.0-cs02.html)
-
-[MQTT SN](http://mqtt.org/new/wp-content/uploads/2009/06/MQTT-SN_spec_v1.2.pdf)
-
-### 联系我们
-
 
 ## 开源许可
 
