@@ -15,7 +15,7 @@
 %%--------------------------------------------------------------------
 
 -module(dgiot_shadow_worker).
--include("dgiot_device_shadow.hrl").
+-include("dgiot_device.hrl").
 -include_lib("dgiot/include/dgiot_mnesia.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -author("kenneth").

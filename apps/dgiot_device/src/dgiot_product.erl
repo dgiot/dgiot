@@ -20,7 +20,7 @@
 -define(TYPE, <<"shadow">>).
 -define(CHANNEL, <<"product">>).
 -define(CACHE, binary_to_atom(<<?TYPE/binary, ?CHANNEL/binary>>, utf8)).
--define(CONFIG(Key, Default), dgiot:get_env(dgiot_device_shadow, Key, Default)).
+-define(CONFIG(Key, Default), dgiot:get_env(dgiot_device, Key, Default)).
 -export([start/0, init/3, handle_event/3, handle_message/2, stop/3]).
 -export([load/1, add_device/2, local/1, save/1, query/1, synchronize_device/1]).
 -export([add_handler/4, do_handler/3, del_handler/1]).

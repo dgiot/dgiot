@@ -1,7 +1,7 @@
-{application,dgiot_device_shadow,
-             [{description,"DGIOT device shadow"},
+{application,dgiot_device,
+             [{description,"DGIOT device"},
               {vsn,"1.6.4"},
               {modules,[]},
               {registered,[]},
               {applications,[kernel,stdlib,dgiot]},
-              {mod,{dgiot_device_shadow_app,[]}}]}.
+              {mod,{dgiot_device_app,[]}}]}.

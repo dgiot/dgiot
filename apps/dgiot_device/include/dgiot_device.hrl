@@ -17,4 +17,4 @@
 -define(LOCAL, smartdev).
 -define(VCON, 0).
 -define(DEV, 1).
--define(WORKER_SERVER(Args), {dgiot_device_worker, {dgiot_device_worker, start_link, Args}, transient, 5000, supervisor, [dgiot_device_worker]}).
+-define(WORKER_SERVER(Args), {dgiot_shadow_worker, {dgiot_shadow_worker, start_link, Args}, transient, 5000, supervisor, [dgiot_shadow_worker]}).
