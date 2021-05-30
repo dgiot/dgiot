@@ -1,31 +1,66 @@
-# EMQ X Broker
+# DGIOT
 
-[![GitHub Release](https://img.shields.io/github/release/emqx/emqx?color=brightgreen)](https://github.com/emqx/emqx/releases)
-[![Build Status](https://travis-ci.org/emqx/emqx.svg)](https://travis-ci.org/emqx/emqx)
-[![Coverage Status](https://coveralls.io/repos/github/emqx/emqx/badge.svg)](https://coveralls.io/github/emqx/emqx)
-[![Docker Pulls](https://img.shields.io/docker/pulls/emqx/emqx)](https://hub.docker.com/r/emqx/emqx)
-[![Slack Invite](<https://slack-invite.emqx.io/badge.svg>)](https://slack-invite.emqx.io)
-[![Twitter](https://img.shields.io/badge/Twitter-EMQ-1DA1F2?logo=twitter)](https://twitter.com/EMQTech)
-[![Community](https://img.shields.io/badge/Community-EMQ%20X-yellow)](https://askemq.com)
-
-[![最棒的物联网 MQTT 开源团队期待您的加入](https://www.emqx.io/static/img/github_readme_cn_bg.png)](https://careers.emqx.cn/)
+[![GitHub Release](https://img.shields.io/github/release/dgiot/dgiot?color=brightgreen)](https://github.com/dgiot/dgiot/releases)
+[![Build Status](https://travis-ci.org/dgiot/dgiot.svg)](https://travis-ci.org/dgiot/dgiot)
+[![Coverage Status](https://coveralls.io/repos/github/dgiot/dgiot/badge.svg)](https://coveralls.io/github/dgiot/dgiot)
+[![Docker Pulls](https://img.shields.io/docker/pulls/dgiot/dgiot)](https://hub.docker.com/r/dgiot/dgiot)
+[![Slack Invite](<https://slack-invite.dgiot.com/badge.svg>)](https://slack-invite.dgiot.com)
+[![Community](https://img.shields.io/badge/Community-DGIOT%20X-yellow)](https://tech.iotn2n.com)
 
 [English](./README.md) | 简体中文 | [日本語](./README-JP.md) | [русский](./README-RU.md)
 
-*EMQ X* 是一款完全开源，高度可伸缩，高可用的分布式 MQTT 消息服务器，适用于 IoT、M2M 和移动应用程序，可处理千万级别的并发客户端。
+*DGIOT * 是国内首款轻量级开源平台
 
-从 3.0 版本开始，*EMQ X* 完整支持 MQTT V5.0 协议规范，向下兼容 MQTT V3.1 和 V3.1.1，并支持 MQTT-SN、CoAP、LwM2M、WebSocket 和 STOMP 等通信协议。EMQ X 3.0 单集群可支持千万级别的 MQTT 并发连接。
+数蛙团队2016年之前，在互联网和移动互联网爬坑多年，2016年开始进入物联网爬坑，希望通过这个开源平台把多年爬坑经验共享出来，让多学科交叉的工业互联网项目变得更简单。
 
-- 新功能的完整列表，请参阅 [EMQ X Release Notes](https://github.com/emqx/emqx/releases)。
-- 获取更多信息，请访问 [EMQ X 官网](https://www.emqx.cn/)。
+   - 让丰富工程人员可以通过视窗交互可以完成需求较简单的工业互联网项目
+
+   - 让广大的初级前端工程师通过serverless的方式可以承接需求较复杂的工业互联网项目
+
+   - 让Python、Java、Go、C初级后台工程师通过web编程开发通道来承接复杂的工业互联网项目
+
+   工业互联网落地过程是IT和OT持续融合的过程，也是技术领域和业务领域持续融合的过程。会者不难，难着不会，要把工业互联网项目变得简单一些，主要还是需要依赖于各个领域的专家围绕业务场景进行信息流的无缝路由，构建一张多学科融合的知识路由表。
+
+   基于数蛙工业物联网持续集成平台可以让学者多学科交叉的知识路由表中发布学术论文，技者在实战中练就快速消化项目的本领和收入回报，商者围绕实际项目找到盈利商机。
+
+# 愿景
+
+  数蛙团队希望通过数蛙工业互联网持续集成平台达成下面一些愿景：
+
+  + 通过工程人员、前端工程师、初级后台工程师在不超过1个月的实际完成中小型的工业互联网项目
+
+  + 通过代码开源、软件免费、文档共享、技术认证、产品认证、运维托管等多种方式保证高质量的交付
+
+  + 技术领域专家不断持续集成业界优秀技术框架、业务领域专家不断持续优化业务模型和流程、构建多学科交叉的开放平台
+
+  + 物联网平台最终能够实现简洁易用，回归到工具化的本质
+
+# 构建
+
++   Linux/Unix/Mac构建
+```
+git clone https://hub.fastgit.org/dgiot/dgiot_server.git
+make
+```
++ windows构建
+
+[一键式开发环境](https://github.com/dgiot/dgiot_deploy)
+
+```
+git clone https://hub.fastgit.org/dgiot/dgiot_server.git
+make
+ ```
+
+- 新功能的完整列表，请参阅 [DGIOT Release Notes](https://github.com/dgiot/dgiot/releases)。
+- 获取更多信息，请访问 [DGIOT 官网](https://tech.iotn2n.com/)。
 
 ## 安装
 
-*EMQ X* 是跨平台的，支持 Linux、Unix、macOS 以及 Windows。这意味着 *EMQ X* 可以部署在 x86_64 架构的服务器上，也可以部署在 Raspberry Pi 这样的 ARM 设备上。
+*DGIOT* 是跨平台的，支持 Linux、Unix、macOS 以及 Windows。这意味着 *DGIOT* 可以部署在 x86_64 架构的服务器上，也可以部署在 Raspberry Pi 这样的 ARM 设备上。
 
-Windows 上编译和运行 *EMQ X* 的详情参考：[Windows.md](./Windows.md)
+Windows 上编译和运行 *DGIOT* 的详情参考：[Windows.md](./Windows.md)
 
-#### EMQ X Docker 镜像安装
+#### DGIOT 镜像安装
 
 ```
 docker run -d --name emqx -p 1883:1883 -p 8081:8081 -p 8083:8083 -p 8883:8883 -p 8084:8084 -p 18083:18083 emqx/emqx
@@ -33,50 +68,40 @@ docker run -d --name emqx -p 1883:1883 -p 8081:8081 -p 8083:8083 -p 8883:8883 -p
 
 #### 二进制软件包安装
 
-需从 [EMQ X 下载](https://www.emqx.cn/downloads) 页面获取相应操作系统的二进制软件包。
+需从 [DGIOT下载](http://ci.iotn2n.com/shuwa/package/) 页面获取相应操作系统的二进制软件包。
 
-- [单节点安装文档](https://docs.emqx.cn/broker/latest/getting-started/install.html)
-- [集群配置文档](https://docs.emqx.cn/broker/latest/advanced/cluster.html)
+- [安装文档](https://github.com/dgiot/dgiot_deploy)
 
 ## 从源码构建
 
-3.0 版本开始，构建 *EMQ X* 需要 Erlang/OTP R21+。
+4.3 版本开始，构建 *dgiot* 需要 Erlang/OTP R21+。
 
 4.3 及以后的版本：
 
 ```bash
-git clone https://github.com/emqx/emqx.git
-cd emqx
+git clone https://github.com/dgiot/dgiot.git
+cd dgiot
 make
 _build/emqx/rel/emqx/bin console
 ```
 
-对于 4.3 之前的版本，通过另外一个仓库构建：
-
-```bash
-git clone https://github.com/emqx/emqx-rel.git
-cd emqx-rel
-make
-_build/emqx/rel/emqx/bin/emqx console
-```
-
 ## 快速入门
 
-如果 emqx 从源码编译，`cd _build/emqx/rel/emqx`。
-如果 emqx 通过 zip 包安装，则切换到 emqx 的根目录。
+如果 dgiot 从源码编译，`cd _build/emqx/rel/emqx`。
+如果 dgiot 通过 zip 包安装，则切换到 dgiot 的根目录。
 
 ```
-# Start emqx
+# Start dgiot
 ./bin/emqx start
 
 # Check Status
 ./bin/emqx_ctl status
 
-# Stop emqx
+# Stop dgiot
 ./bin/emqx stop
 ```
 
-*EMQ X* 启动，可以使用浏览器访问 http://localhost:18083 来查看 Dashboard。
+*DGIOT* 启动，可以使用浏览器访问 http://localhost:5080 来查看 Dashboard。
 
 ## 测试
 
@@ -89,7 +114,7 @@ make eunit ct
 ### 执行部分应用的 common tests
 
 ```bash
-make apps/emqx_bridge_mqtt-ct
+make apps/dgiot_parse-ct
 ```
 
 ### 静态分析(Dialyzer)
@@ -100,41 +125,65 @@ make dialyzer
 
 ##### 要分析特定的应用程序，（用逗号分隔的应用程序列表）
 ```
-DIALYZER_ANALYSE_APP=emqx_lwm2m,emqx_auth_jwt,emqx_auth_ldap make dialyzer
+DIALYZER_ANALYSE_APP=dgiot,dgiot_api,dgiot_parse make dialyzer
 ```
 
 ## 社区
 
 ### FAQ
 
-访问 [EMQ X FAQ](https://docs.emqx.cn/broker/latest/faq/faq.html) 以获取常见问题的帮助。
+访问 [DGIOT FAQ](https://tech.iotn2n.com/zh/backend/) 以获取常见问题的帮助。
 
 ### 问答
 
-[GitHub Discussions](https://github.com/emqx/emqx/discussions)
-[EMQ 中文问答社区](https://askemq.com)
+[GitHub Discussions](https://github.com/dgiot/dgiot_server/discussions)
+[DGIOT 中文问答社区](https://tech.iotn2n.com/)
 
 ### 参与设计
 
-如果对 EMQ X 有改进建议，可以向[EIP](https://github.com/emqx/eip) 提交 PR 和 ISSUE
+如果对 DGIOT 有改进建议，可以向[EIP](https://github.com/dgiot/eip) 提交 PR 和 ISSUE
 
 ### 插件开发
 
 如果想集成或开发你自己的插件，参考 [lib-extra/README.md](./lib-extra/README.md)
 
 
-### 联系我们
 
-你可通过以下途径与 EMQ 社区及开发者联系:
 
-- [Slack](https://slack-invite.emqx.io)
-- [Twitter](https://twitter.com/EMQTech)
-- [Facebook](https://www.facebook.com/emqxmqtt)
-- [Reddit](https://www.reddit.com/r/emqx/)
-- [Weibo](https://weibo.com/emqtt)
-- [Blog](https://www.emqx.cn/blog)
+欢迎你将任何 bug、问题和功能请求提交到 [dgiot/dgiot](https://github.com/dgiot/dgiot/issues)。
 
-欢迎你将任何 bug、问题和功能请求提交到 [emqx/emqx](https://github.com/emqx/emqx/issues)。
+## 预览地址
+
+[腾讯云预览地址](https://dgiotdashboard-8gb17b3673ff6cdd-1253666439.ap-shanghai.app.tcloudbase.com?ftom=git)
+
+## 扫码预览
+
+![dgiot_dashboard.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/wechat/dgiot_dashboard.png)
+
+## 环境要求
+
+- node > 14.5
+
+### 关于我们
+
+| 联系方式       | 地址                                                                                      |
+| -------------- | ----------------------------------------------------------------------------------------- |
+| github         | [https://github.com/dgiot](https://github.com/dgiot?from=git)                             |
+| gitee          | [https://gitee.com/dgiot](https://gitee.com/dgiiot?from=git)                              |
+| 官网           | [https://www.iotn2n.com](https://www.iotn2n.com?from=git)                                 |
+| 博客           | [https://tech.iotn2n.com](https://tech.iotn2n.com?from=git)                               |
+| 物联网接入平台 | [https://dgiot.iotn2n.com](https://dgiot.iotn2n.com?from=git)                             |
+| 公众号         | ![qrcode.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/wechat/qrcode.png) |
+
+你可通过以下途径与 DGIOT 社区及开发者联系:
+
+- [Slack](https://slack-invite.dgiot.com)
+- [Twitter](https://twitter.com/dgiotTech)
+- [Facebook](https://www.facebook.com/dgiot)
+- [Reddit](https://www.reddit.com/r/dgiot/)
+- [Weibo](https://weibo.com/dgiot)
+- [Blog](https://www.dgiot.cn/blog)
+
 
 ## MQTT 规范
 
@@ -145,6 +194,9 @@ DIALYZER_ANALYSE_APP=emqx_lwm2m,emqx_auth_jwt,emqx_auth_ldap make dialyzer
 [MQTT Version 5.0](https://docs.oasis-open.org/mqtt/mqtt/v5.0/cs02/mqtt-v5.0-cs02.html)
 
 [MQTT SN](http://mqtt.org/new/wp-content/uploads/2009/06/MQTT-SN_spec_v1.2.pdf)
+
+### 联系我们
+
 
 ## 开源许可
 
