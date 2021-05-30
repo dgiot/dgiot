@@ -4,11 +4,12 @@
 [![Build Status](https://travis-ci.org/dgiot/dgiot.svg)](https://travis-ci.org/dgiot/dgiot)
 [![Coverage Status](https://coveralls.io/repos/github/dgiot/dgiot/badge.svg)](https://coveralls.io/github/dgiot/dgiot)
 [![Docker Pulls](https://img.shields.io/docker/pulls/dgiot/dgiot)](https://hub.docker.com/r/dgiot/dgiot)
+[![Slack Invite](<https://slack-invite.dgiot.com/badge.svg>)](https://slack-invite.dgiot.com)
 [![Community](https://img.shields.io/badge/Community-DGIOT%20X-yellow)](https://tech.iotn2n.com)
 
 [English](./README.md) | 简体中文 | [日本語](./README-JP.md) | [русский](./README-RU.md)
 
-*DGIOT * 是国内首款轻量级开源平台
+*DGIOT*  是国内首款轻量级开源工业物联网持续集成平台
 
 数蛙团队2016年之前，在互联网和移动互联网爬坑多年，2016年开始进入物联网爬坑，希望通过这个开源平台把多年爬坑经验共享出来，让多学科交叉的工业互联网项目变得更简单。
 
