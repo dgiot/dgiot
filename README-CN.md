@@ -26,13 +26,13 @@
 
  构建 *dgiot* 需要 Erlang/OTP R21+, Windows下用[msys64](https://github.com/dgiot/dgiot_deploy)开发
 
-+   Linux/Unix/Mac/windows构建
+ +  Linux/Unix/Mac/windows 构建
 
-```bash
-https://github.com/dgiot/dgiot.git
-make
-_build/emqx/rel/emqx/bin/emqx console
-```
+    ```bash
+    git clone https://github.com/dgiot/dgiot.git
+    make
+    _build/emqx/rel/emqx/bin/emqx console
+    ```
 
 *DGIOT* 启动，可以使用浏览器访问 http://localhost:5080 来查看 Dashboard。
 

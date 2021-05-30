@@ -29,7 +29,7 @@
  +  Linux/Unix/Mac/windows 构建
 
     ```bash
-    https://github.com/dgiot/dgiot.git
+    git clone https://github.com/dgiot/dgiot.git
     make
     _build/emqx/rel/emqx/bin/emqx console
     ```
