@@ -23,81 +23,22 @@
   + 物联网平台最终能够实现简洁易用，回归到工具化的本质
 
 # 构建
-+   Linux/Unix/Mac/[windows](https://github.com/dgiot/dgiot_deploy)构建
 
-```
-https://github.com/dgiot/dgiot.git
-make
-```
+ 构建 *dgiot* 需要 Erlang/OTP R21+, Windows下用[msys64](https://github.com/dgiot/dgiot_deploy)开发
 
-- 新功能的完整列表，请参阅 [DGIOT Release Notes](https://github.com/dgiot/dgiot/releases)。
-- 获取更多信息，请访问 [DGIOT 官网](https://tech.iotn2n.com/)。
-
-## 安装
-
-*DGIOT* 是跨平台的，支持 Linux、Unix、macOS 以及 Windows。这意味着 *DGIOT* 可以部署在 x86_64 架构的服务器上，也可以部署在 Raspberry Pi 这样的 ARM 设备上。
-
-Windows 上编译和运行 *DGIOT* 的详情参考：[Windows.md](./Windows.md)
-
-#### 二进制软件包安装
-
-需从 [DGIOT下载](http://ci.iotn2n.com/shuwa/package/) 页面获取相应操作系统的二进制软件包。
-
-- [安装文档](https://github.com/dgiot/dgiot_deploy)
-
-## 从源码构建
-
-构建 *dgiot* 需要 Erlang/OTP R21+。
++   Linux/Unix/Mac/windows构建
 
 ```bash
-git clone https://github.com/dgiot/dgiot.git
-cd dgiot
+https://github.com/dgiot/dgiot.git
 make
-_build/emqx/rel/emqx/bin console
-```
-
-## 快速入门
-
-如果 dgiot 从源码编译，`cd _build/emqx/rel/emqx`。
-如果 dgiot 通过 zip 包安装，则切换到 dgiot 的根目录。
-
-```
-# Start dgiot
-./bin/emqx start
-
-# Check Status
-./bin/emqx_ctl status
-
-# Stop dgiot
-./bin/emqx stop
+_build/emqx/rel/emqx/bin/emqx console
 ```
 
 *DGIOT* 启动，可以使用浏览器访问 http://localhost:5080 来查看 Dashboard。
 
-## 测试
-
-### 执行所有测试
-
-```
-make eunit ct
-```
-
-### 执行部分应用的 common tests
-
-```bash
-make apps/dgiot_parse-ct
-```
-
-### 静态分析(Dialyzer)
-##### 分析所有应用程序
-```
-make dialyzer
-```
-
-##### 要分析特定的应用程序，（用逗号分隔的应用程序列表）
-```
-DIALYZER_ANALYSE_APP=dgiot,dgiot_api,dgiot_parse make dialyzer
-```
+- 新功能的完整列表，请参阅 [DGIOT Release Notes](https://github.com/dgiot/dgiot/releases)。
+- 获取更多信息，请访问 [DGIOT 官网](https://tech.iotn2n.com/)。
+- [安装部署](https://github.com/dgiot/dgiot_deploy)
 
 ## 社区
 
@@ -120,20 +61,7 @@ DIALYZER_ANALYSE_APP=dgiot,dgiot_api,dgiot_parse make dialyzer
 
 欢迎你将任何 bug、问题和功能请求提交到 [dgiot/dgiot](https://github.com/dgiot/dgiot/issues)。
 
-## 预览地址
-
-[腾讯云预览地址](https://dgiotdashboard-8gb17b3673ff6cdd-1253666439.ap-shanghai.app.tcloudbase.com?ftom=git)
-
-## 扫码预览
-
-![dgiot_dashboard.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/wechat/dgiot_dashboard.png)
-
-## 环境要求
-
-- node > 14.5
-
 ### 关于我们
-
 | 联系方式       | 地址                                                                                      |
 | -------------- | ----------------------------------------------------------------------------------------- |
 | github         | [https://github.com/dgiot](https://github.com/dgiot?from=git)                             |
@@ -151,6 +79,13 @@ DIALYZER_ANALYSE_APP=dgiot,dgiot_api,dgiot_parse make dialyzer
 - [Reddit](https://www.reddit.com/r/dgiot/)
 - [Weibo](https://weibo.com/dgiot)
 - [Blog](https://www.dgiot.cn/blog)
+
+## 预览地址
+[腾讯云预览地址](https://dgiotdashboard-8gb17b3673ff6cdd-1253666439.ap-shanghai.app.tcloudbase.com?ftom=git)
+
+## 扫码预览
+![dgiot_dashboard.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/wechat/dgiot_dashboard.png)
+
 
 ## 开源许可
 Apache License 2.0, 详见 [LICENSE](./LICENSE)。
