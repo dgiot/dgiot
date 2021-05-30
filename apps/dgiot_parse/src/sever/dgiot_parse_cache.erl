@@ -16,7 +16,6 @@
 
 -module(dgiot_parse_cache).
 -author("johnliu").
--include_lib("eunit/include/eunit.hrl").
 -include("dgiot_parse.hrl").
 -include_lib("dgiot/include/logger.hrl").
 

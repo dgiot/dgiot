@@ -30,7 +30,6 @@ start(Sup) ->
 start(Sup, Name) ->
     ChildSpec = childspec(Name),
     dgiot_data:init(?DGIOT_CRON),
-    dgiot_task_sup:start_link(),
     supervisor:start_child(Sup, ChildSpec).
 
 start_timer(StartTime, Callback) ->

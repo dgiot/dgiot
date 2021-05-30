@@ -15,7 +15,7 @@
 %%--------------------------------------------------------------------
 
 -module(dgiot_role).
--author("shuwa").
+-author("dgiot").
 -include_lib("dgiot/include/logger.hrl").
 
 %% API

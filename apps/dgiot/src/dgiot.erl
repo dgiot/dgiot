@@ -17,7 +17,7 @@
 -module(dgiot).
 -author("johnliu").
 -include("dgiot.hrl").
--export([get_env/1,get_env/2,init_plugins/0]).
+-export([get_env/1,get_env/2, get_env/3, init_plugins/0]).
 
 %%--------------------------------------------------------------------
 %% API

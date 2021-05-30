@@ -199,7 +199,7 @@ escape_attr(S) when is_list(S) ->
 escape_attr(I) when is_integer(I) ->
     escape_attr(integer_to_list(I), []);
 escape_attr(F) when is_float(F) ->
-    escape_attr(mochinum:digits(F), []).
+    escape_attr(digiot_num:digits(F), []).
 
 to_html([], Acc) ->
     lists:reverse(Acc);
@@ -691,7 +691,7 @@ tokenize_charref(Bin, S = #decoder{offset = O}) ->
                 %% Surrogate pair
                 tokeninize_charref_surrogate_pair(Bin, S1, C1);
             {Unichar, S1} when is_integer(Unichar) ->
-                {{data, mochiutf8:codepoint_to_bytes(Unichar), false},
+                {{data, dgiot_utf8:codepoint_to_bytes(Unichar), false},
                     S1};
             {Unichars, S1} when is_list(Unichars) ->
                 {{data, unicode:characters_to_binary(Unichars), false},

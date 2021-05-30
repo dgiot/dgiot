@@ -72,7 +72,7 @@
       "SuperId": 0,
       "key": "category"
     },
-    "type": "ShuwaStressTest"
+    "type": "dgiotStressTest"
   },
   {
     "ACL": {

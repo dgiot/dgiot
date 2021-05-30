@@ -1,0 +1,43 @@
+{
+  "konva": {
+    "Stage": {
+      "attrs": {
+        "x": -525,
+        "y": -35,
+        "id": "stage",
+        "width": 1667,
+        "height": 379,
+        "draggable": true
+      },
+      "children": [
+        {
+          "attrs": {
+            "id": "imagelayer",
+            "listening": false
+          },
+          "children": [
+            {
+              "attrs": {
+                "id": "group",
+                "width": 2000,
+                "height": 2000
+              },
+              "children": [
+                {
+                  "attrs": {
+                    "id": "image",
+                    "source": "imagurl"
+                  },
+                  "className": "Image"
+                }
+              ],
+              "className": "Group"
+            }
+          ],
+          "className": "Layer"
+        }
+      ],
+      "className": "Stage"
+    }
+  }
+}

@@ -92,6 +92,7 @@
     , string2value/1
     , get_file/3
     , post_file/2
+    , random/0
 ]).
 
 -define(TIMEZONE, + 8).
@@ -484,7 +485,7 @@ read_csv(IoDevice, Fun, Delimiter) ->
         eof ->
             {ok, read_complete};
         {error, Reason} ->
-            ?LOG(error,"~p", [Reason])
+            ?LOG(error, "~p", [Reason])
     end.
 
 rate(_Success, 0) ->
@@ -532,7 +533,7 @@ format(Format, Args) ->
     re:replace(lists:flatten(io_lib:format(Format, Args)), "\"|\n|\s+", " ", [global, {return, binary}]).
 
 guid() ->
-    <<<<Y>> || <<X:4>> <= dgiot_guid:gen(), Y <- integer_to_list(X, 16)>>.
+    <<<<Y>> || <<X:4>> <= emqx_guid:gen(), Y <- integer_to_list(X, 16)>>.
 
 new_counter(Name, Max) ->
     dgiot_data:insert({{Name, counter}, max}, Max),
@@ -621,7 +622,7 @@ get_file(Root, Files, App) ->
               {win32, _} -> "chcp 65001 && dgiot_zip zippath " ++ ZipFile ++ " " ++ ZipRoot;
               _ -> "zip  " ++ ZipFile ++ " " ++ ZipRoot
           end,
-    ?LOG(info,"Cmd ~p", [Cmd]),
+    ?LOG(info, "Cmd ~p", [Cmd]),
     spawn(fun() ->
         os:cmd(Cmd)
           end),
@@ -629,16 +630,21 @@ get_file(Root, Files, App) ->
 
 post_file(Root, FileName) ->
     ZipFile = Root ++ "/" ++ FileName,
-    ?LOG(info,"ZipFile ~p", [ZipFile]),
+    ?LOG(info, "ZipFile ~p", [ZipFile]),
     case filelib:is_file(ZipFile) of
         true ->
             Cmd = case os:type() of
                       {win32, _} -> "chcp 65001 && dgiot_zip unzip " ++ ZipFile ++ " " ++ Root;
                       _ -> "unzip -O CP936 " ++ ZipFile ++ " -d " ++ Root
                   end,
-            ?LOG(info,"Cmd ~p", [Cmd]),
+            ?LOG(info, "Cmd ~p", [Cmd]),
             {ok, os:cmd(Cmd)};
         false ->
-            ?LOG(info,"~p not exist", [ZipFile]),
+            ?LOG(info, "~p not exist", [ZipFile]),
             {error, ZipFile ++ "not exirt"}
     end.
+
+
+%随机生成16位Key值
+random() ->
+    to_md5(io_lib:format("~p",[erlang:make_ref()])).

@@ -103,7 +103,7 @@ do_channel(_Type, CType, ChannelId, Products, Cfg) ->
                     dgiot_data:insert(?ETS, {ChannelId, productIds}, {CType, ProductIds}),
                     case Mod:start(ChannelId, Cfg#{<<"product">> => Products}) of
                         {ok, _} ->
-                            dgiot_utils:subscribe(<<"channel/", ChannelId/binary, "/#">>),
+                            dgiot_mqtt:subscribe(<<"channel/", ChannelId/binary, "/#">>),
                             dgiot_bridge:send_log(ChannelId, "Channel ~s is Install Protocol ~s", [ChannelId, jsx:encode(ProductIds)]),
                             ok;
                         {error, Reason} ->

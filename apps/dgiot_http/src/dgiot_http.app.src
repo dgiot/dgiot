@@ -1,0 +1,11 @@
+{application, dgiot_http,
+    [{description, "DGIOT HTTP"},
+        {vsn, "1.6.4"},
+        {registered, []},
+        {mod, {dgiot_http_app, []}},
+        {applications,[kernel, stdlib, dgiot, dgiot_parse]},
+        {env, []},
+        {modules, []},
+        {licenses, ["Apache 2.0"]},
+        {links, []}
+    ]}.

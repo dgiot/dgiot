@@ -124,7 +124,7 @@ do_request(post_cluster, #{<<"action">> := Action, <<"node">> := N}, _Context, _
             <<"join">> ->
                 dgiot_node:join(Node);
             <<"leave">> ->
-                dgiot_node:force_leave(Node)
+                dgiot_node:leave(Node)
         end,
     case Rtn of
         ok ->
@@ -141,12 +141,6 @@ do_request(put_log_level, _Args, _Context, _Req) ->
 %% Log 概要: 获取日志配置 描述:获取日志配置
 do_request(get_log_level, _Args, _Context, _Req) ->
     {error, <<"TO DO">>};
-
-do_request(get_file_signature, Args, _Context, _Req) ->
-    case maps:get(<<"type">>, Args, null) of
-        <<"aliyun">> -> {200, dgiot_platform_auth:aliyun_upload()};
-        _ -> {404, #{<<"code">> => 1001, <<"error">> => <<"not support this type">>}}
-    end;
 
 %%  服务器不支持的API接口
 do_request(OperationId, Args, _Context, _Req) ->

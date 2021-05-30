@@ -1,0 +1,744 @@
+{
+  "tags": [
+    {
+      "name": "Evidence",
+      "description": "证据"
+    }
+  ],
+  "definitions": {
+  },
+  "paths": {
+    "/capture": {
+      "get": {
+        "description": "关联组态控件与物模型",
+        "parameters": [
+          {
+            "name": "productid",
+            "in": "query",
+            "type": "string",
+            "default": "JVANH8bf5n",
+            "description": "组态控件的产品Id"
+          },
+          {
+            "name": "topoid",
+            "in": "query",
+            "type": "string",
+            "default": "330980",
+            "description": "组态控件的句柄"
+          },
+          {
+            "name": "thingid",
+            "in": "query",
+            "type": "string",
+            "default": "temper",
+            "description": "物模型的数据标识"
+          },
+          {
+            "name": "subdevid",
+            "in": "query",
+            "type": "string",
+            "default": "JVANH8bf5n",
+            "description": "物模型的子产品Id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "summary": "关联组态控件与物模型",
+        "tags": [
+          "Evidence"
+        ]
+      }
+    },
+    "/cert": {
+      "get": {
+        "description": "扫描U盾",
+        "parameters": [
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "summary": "扫描U盾",
+        "tags": [
+          "Evidence"
+        ]
+      }
+    },
+    "/import_reportTemp": {
+      "post": {
+        "summary": "导库",
+        "description": "json文件导库",
+        "consumes": [
+          "multipart/form-data"
+        ],
+        "parameters": [
+          {
+            "name": "className",
+            "in": "formData",
+            "description": "表名",
+            "type": "string"
+          },
+          {
+            "name": "file",
+            "in": "formData",
+            "description": "数据文件",
+            "type": "file"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Data"
+        ]
+      }
+    },
+    "/reportTemp": {
+      "put": {
+        "description": "新增报告子模版",
+        "parameters": [
+          {
+            "description": "取证模版",
+            "in": "body",
+            "name": "data",
+            "required": true,
+            "schema": {
+              "properties": {
+                "name": {
+                  "description": "取证模版名称",
+                  "type": "string",
+                  "example": "离心泵取证模版"
+                },
+                "desc": {
+                  "description": "模版编号",
+                  "type": "string",
+                  "example": "0"
+                },
+                "devType": {
+                  "description": "报告模版类型",
+                  "type": "string",
+                  "example": "dgiot_pump_report"
+                },
+                "nodeType": {
+                  "description": "网络类型",
+                  "type": "number",
+                  "example": 1
+                },
+                "config": {
+                  "description": "模版描述信息",
+                  "type": "object",
+                  "example": {"name":"image0","identifier":"a28b138a-0f31-fe7d-cadc-0be47faf8a8d"}
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "summary": "新增报告子模版",
+        "tags": [
+          "Evidence"
+        ]
+      },
+      "post": {
+        "description": "新增报告模版",
+        "consumes": [
+          "multipart/form-data"
+        ],
+        "parameters": [
+          {
+            "name": "name",
+            "in": "formData",
+            "description": "取证模版名称",
+            "type": "string",
+            "example": "离心泵取证模版"
+          },
+          {
+            "name": "devType",
+            "in": "formData",
+            "description": "报告模版类型",
+            "type": "string"
+          },
+          {
+            "name": "config",
+            "in": "formData",
+            "description": "报告其他信息",
+            "type": "object",
+            "example": {"client":"离心泵","identifier":"a28b138a-0f31-fe7d-cadc-0be47faf8a8d"}
+          },
+          {
+            "name": "file",
+            "in": "formData",
+            "description": "数据文件",
+            "type": "file"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "summary": "新增报告模版",
+        "tags": [
+          "Evidence"
+        ]
+      }
+    },
+    "/report": {
+      "get": {
+        "description": "导出取证报告压缩包",
+        "parameters": [
+          {
+            "description": "报告设备号",
+            "in": "query",
+            "name": "id",
+            "required": true,
+            "default": "CME8XE2gyr",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "summary": "导出取证报告压缩包",
+        "tags": [
+          "Evidence"
+        ]
+      },
+      "post": {
+        "description": "新增取证报告",
+        "parameters": [
+          {
+            "description": "新增取证报告",
+            "in": "body",
+            "name": "data",
+            "required": true,
+            "schema": {
+              "properties": {
+                "name": {
+                  "description": "取证报告名称",
+                  "type": "string",
+                  "example": "离心泵取证报告"
+                },
+                "devType": {
+                  "description": "报告产品类型",
+                  "type": "string",
+                  "example": "dgiot_pump_report"
+                },
+                "basedata": {
+                  "description": "报告描述信息",
+                  "type": "object",
+                  "example": {"name":"image0","identifier":"a28b138a-0f31-fe7d-cadc-0be47faf8a8d"}
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "summary": "新增取证报告",
+        "tags": [
+          "Evidence"
+        ]
+      },
+      "put": {
+        "summary": "导入取证报告压缩包",
+        "description": "导入取证报告压缩包",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "data",
+            "description": "导入文件信息",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "path": {
+                  "description": "文件路径",
+                  "type": "string",
+                  "example":"/shapes/利欧泵业测试部/5a27bcd88f.zip"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Evidence"
+        ]
+      },
+      "delete": {
+        "description": "删除取证报告",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "reportId",
+            "type": "string",
+            "description": "报告Id",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "summary": "删除取证报告",
+        "tags": [
+          "Evidence"
+        ]
+      }
+    },
+    "/evidence": {
+      "get": {
+        "description": "证据统计",
+        "parameters": [
+          {
+            "description": "报告号",
+            "in": "query",
+            "name": "reportId",
+            "required": true,
+            "default": "9b1be7e831",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "summary": "证据统计",
+        "tags": [
+          "Evidence"
+        ]
+      },
+      "post": {
+        "description": "存证",
+        "parameters": [
+          {
+            "description": "书证号",
+            "in": "query",
+            "name": "id",
+            "required": true,
+            "type": "string",
+            "default":"IMAWAarmTP"
+          },
+          {
+            "description": "电子数据",
+            "in": "body",
+            "name": "data",
+            "required": true,
+            "schema": {
+              "properties": {
+                "timestamp": {
+                  "description": "取证时间",
+                  "type": "string",
+                  "example": "2020-04-14 18:12:10"
+                },
+                "original": {
+                  "description": "原件",
+                  "type": "object",
+                  "example": {"name":"image0","identifier":"a28b138a-0f31-fe7d-cadc-0be47faf8a8d"}
+                },
+                "md5": {
+                  "description": "校验码",
+                  "type": "string",
+                  "example": "e9d737315a867b1bd15864d74a4054b9"
+                },
+                "scene": {
+                  "description": "取证现场",
+                  "type": "string",
+                  "example": "tyApRskkxw"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "summary": "存证",
+        "tags": [
+          "Evidence"
+        ]
+      },
+      "put": {
+        "description": "证据固化",
+        "parameters": [
+          {
+            "description": "电子证据",
+            "in": "body",
+            "name": "evidence",
+            "required": true,
+            "schema": {
+              "properties": {
+                "reportId": {
+                  "description": "报告Id",
+                  "type": "string",
+                  "example":"d3f9a0a820"
+                },
+                "type": {
+                  "description": "批处理类型：single或者all",
+                  "type": "string",
+                  "example":"single"
+                },
+                "objectId": {
+                  "description": "书证号",
+                  "type": "string",
+                  "example":"83f990a820"
+                },
+                "status": {
+                  "description": "审核状态",
+                  "type": "string",
+                  "example":"未审核",
+                  "required": true
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "summary": "证据固化",
+        "tags": [
+          "Evidence"
+        ]
+      }
+    },
+    "/bed": {
+      "get": {
+        "description": "查询台体其子设备",
+        "parameters": [
+          {
+            "description": "报告设备号",
+            "in": "query",
+            "name": "id",
+            "required": true,
+            "default": "CME8XE2gyr",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "summary": "查询台体其子设备",
+        "tags": [
+          "Evidence"
+        ]
+      },
+      "post": {
+        "description": "取证前处理",
+        "parameters": [
+          {
+            "description": "交互信息",
+            "in": "body",
+            "name": "data",
+            "required": true,
+            "schema": {
+              "properties": {
+                "bedaddr": {
+                  "description": "台体地址",
+                  "type": "string",
+                  "example": "28a68a908d8c"
+                },
+                "reportid": {
+                  "description": "报告设备号",
+                  "type": "string",
+                  "example": "CME8XE2gyr"
+                },
+                "controlid": {
+                  "description": "控件号",
+                  "type": "string",
+                  "example": "1cbd3751-c968-38d6-4819-35b56b9a509a"
+                },
+                "datatype": {
+                  "description": "数据类型",
+                  "type": "string",
+                  "example": "liveMonitor"
+                },
+                "step": {
+                  "description": "证据节点",
+                  "type": "string",
+                  "example": "1"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "summary": "取证前处理",
+        "tags": [
+          "Evidence"
+        ]
+      }
+    },
+    "/point": {
+      "get": {
+        "description": "获取采集点",
+        "parameters": [
+          {
+            "description": "报告号",
+            "in": "query",
+            "name": "reportid",
+            "required": true,
+            "default": "6L0USgdnp5",
+            "type": "string"
+          },
+          {
+            "description": "采样点号",
+            "in": "query",
+            "name": "index",
+            "type": "number",
+            "default": 1
+          },
+          {
+            "description": "开始时间",
+            "in": "query",
+            "name": "begin",
+            "type": "number",
+            "default": 1591609983
+          },
+          {
+            "description": "结束时间",
+            "in": "query",
+            "name": "end",
+            "type": "number",
+            "default": 1591607482
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "summary": "获取采集点",
+        "tags": [
+          "Evidence"
+        ]
+      },
+      "post": {
+        "description": "标识采样点",
+        "parameters": [
+          {
+            "description": "交互信息",
+            "in": "body",
+            "name": "data",
+            "required": true,
+            "schema": {
+              "properties": {
+                "reportid": {
+                  "description": "报告号",
+                  "type": "string",
+                  "example": "CME8XE2gyr"
+                },
+                "index": {
+                  "description": "采样点号",
+                  "type": "number",
+                  "example": 1
+                },
+                "begin":{
+                  "description": "开始时间",
+                  "type": "number",
+                  "example": 1591609983
+                },
+                "end":{
+                  "description": "开始时间",
+                  "type": "number",
+                  "example": 1591609983
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "summary": "标识采样点",
+        "tags": [
+          "Evidence"
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{application,dgiot_evidence,
+             [{description,"DGIOT Evidence"},
+              {vsn,"1.6.4"},
+              {registered,[]},
+              {mod,{dgiot_evidence_app,[]}},
+              {applications,[kernel,stdlib]},
+              {env,[]},
+              {modules,[]},
+              {maintainers,[]},
+              {licenses,["Apache 2.0"]},
+              {links,[]}]}.
