@@ -1,0 +1,83 @@
+{
+      "properties": [
+        {
+          "identifier": "Uab",
+          "dataType": {
+            "specs": {
+              "unit": "V",
+              "min": "0",
+              "unitName": "伏特",
+              "max": "10000000000",
+              "step": "0.01"
+            },
+            "type": "double"
+          },
+          "name": "AB线电压",
+          "accessMode": "r",
+          "required": false
+        },
+        {
+          "identifier": "COSa",
+          "dataType": {
+            "specs": {
+              "min": "-1.00",
+          "unitName": "无",
+          "max": "1.00",
+          "step": "0.01"
+        },
+        "type": "double"
+      },
+      "name": "A相功率因数",
+      "accessMode": "r",
+      "required": false
+    },
+    {
+      "identifier": "electric_pfa",
+      "dataType": {
+        "specs": {
+          "unit": "kW",
+          "min": "0",
+          "unitName": "千瓦",
+          "max": "1000000",
+          "step": "0.01"
+        },
+        "type": "double"
+      },
+      "name": "A相功率因素",
+      "accessMode": "r",
+      "required": false
+    },
+    {
+      "identifier": "electric_pqa",
+      "dataType": {
+        "specs": {
+          "unit": "kvar",
+          "min": "0",
+          "unitName": "千乏",
+          "max": "10000000",
+          "step": "0.01"
+        },
+        "type": "double"
+      },
+      "name": "A相无功功率",
+      "accessMode": "r",
+      "required": false
+    },
+    {
+      "identifier": "electric_psa",
+      "dataType": {
+        "specs": {
+          "unit": "KVA",
+          "min": "0",
+          "unitName": "千伏安",
+          "max": "100000000",
+          "step": "0.01"
+        },
+        "type": "double"
+      },
+      "name": "A相视在功率",
+      "accessMode": "r",
+      "required": false
+    }
+  ]
+}

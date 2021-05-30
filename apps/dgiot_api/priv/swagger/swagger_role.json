@@ -342,7 +342,7 @@
                 "name": {
                   "description": "名称",
                   "type": "string",
-                  "example":"shuwa"
+                  "example":"dgiot"
                 },
                 "desc": {
                   "description": "描述",

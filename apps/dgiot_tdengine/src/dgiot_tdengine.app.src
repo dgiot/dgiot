@@ -1,0 +1,16 @@
+{application, dgiot_tdengine,
+ [{description, "tdengine channel"},
+  {vsn, "4.3.0"},
+  {registered, []},
+  {mod, {dgiot_tdengine_app, []}},
+  {applications,
+   [kernel,
+    stdlib
+   ]},
+  {env,[]},
+  {modules, []},
+
+  {maintainers, []},
+  {licenses, ["Apache 2.0"]},
+  {links, []}
+ ]}.

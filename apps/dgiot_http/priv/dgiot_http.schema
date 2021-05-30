@@ -1,0 +1,77 @@
+
+%%--------------------------------------------------------------------
+%% 阿里云配置
+%%--------------------------------------------------------------------
+{mapping, "aliyun.accessKeyId", "dgiot_http.aliyun_accessKeyId", [
+{datatype, string}
+]}.
+
+{mapping, "aliyun.accessKeySecret", "dgiot_http.aliyun_accessKeySecret", [
+{datatype, string}
+]}.
+
+
+%%--------------------------------------------------------------------
+%% 阿里云oss
+%%--------------------------------------------------------------------
+
+{mapping, "aliyun.uploadCallbackUrl", "dgiot_http.aliyun_uploadCallbackUrl", [
+{datatype, string}
+]}.
+
+{mapping, "aliyun.uploadHost", "dgiot_http.aliyun_uploadHost", [
+{datatype, string}
+]}.
+
+
+%%--------------------------------------------------------------------
+%% 腾讯短信配置
+%%--------------------------------------------------------------------
+
+{mapping, "tencent_sms.appid", "dgiot_http.tencent_sms_appid", [
+{default, "1400214975"},
+{datatype, string}
+]}.
+
+{mapping, "tencent_sms.appkey", "dgiot_http.tencent_sms_appkey", [
+{default, "25c8c3a4d17367a8232931ff54d114a2"},
+{datatype, string}
+]}.
+
+
+%%--------------------------------------------------------------------
+%% 百度地图配置
+%%--------------------------------------------------------------------
+
+{mapping, "baidumap.appkey", "dgiot_http.baidumap_appkey", [
+{default, "fnc5Z92jC7CwfBGz8Dk36E9sXEIYZ6TG"},
+{datatype, string}
+]}.
+
+%%--------------------------------------------------------------------
+%% 友盟消息推送配置
+%%--------------------------------------------------------------------
+
+{mapping, "umeng.appkey", "dgiot_http.umeng_appkey", [
+{default, "5f8bfc1780455951e4ad0482"},
+{datatype, string}
+]}.
+
+{mapping, "umeng.masterkey", "dgiot_http.umeng_masterkey", [
+{default, "ilkx2mnd2sc9u2t1h77qnx0bopy46bso"},
+{datatype, string}
+]}.
+
+%%--------------------------------------------------------------------
+%% 微信公众号
+%%--------------------------------------------------------------------
+
+{mapping, "wechat.appid", "dgiot_http.wechat_appid", [
+{default, "wxfb27e58a4c6b0584"},
+{datatype, string}
+]}.
+
+{mapping, "wechat.secret", "dgiot_http.wechat_secret", [
+{default, "14a79843ec57d70ce23194f0ab6490ff"},
+{datatype, string}
+]}.

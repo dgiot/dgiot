@@ -17,7 +17,6 @@
 -module(dgiot_parse_rest).
 -compile(nowarn_deprecated_function).
 -author("kenneth").
--include_lib("eunit/include/eunit.hrl").
 -include("dgiot_parse.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -define(JSON_DECODE(Data), jsx:decode(Data, [{labels, binary}, return_maps])).

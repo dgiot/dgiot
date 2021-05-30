@@ -2,6 +2,7 @@
 test-data/
 !deps/.placeholder
 _build/
+www/
 *.o
 *.plt
 *.iml

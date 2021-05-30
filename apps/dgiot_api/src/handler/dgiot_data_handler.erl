@@ -15,7 +15,7 @@
 %%--------------------------------------------------------------------
 
 -module(dgiot_data_handler).
--author("shuwa").
+-author("dgiot").
 -include_lib("dgiot/include/logger.hrl").
 -include("dgiot_api.hrl").
 -behavior(dgiot_rest).
@@ -213,41 +213,6 @@ do_request(get_product, #{<<"name">> := Name}, #{<<"sessionToken">> := SessionTo
             Err
     end;
 
-
-%% Device 概要: 查询设备 描述:json文件导库
-%% OperationId:post_menus
-%% 请求:POST /iotapi/post_device
-do_request(post_device, Body, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
-    case dgiot_tdengine:get_channel(SessionToken) of
-        {error, _Error} ->
-            case dgiot_parse:query_object(<<"Device">>, Body#{<<"include">> => <<"product">>}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
-                {ok, #{<<"results">> := Result} = All} ->
-                    NewResult = lists:foldl(fun(X, Acc) ->
-                        Acc ++ [X#{<<"lasttime">> => 0, <<"swtopo">> => [], <<"tddata">> => []}]
-                                end, [], Result),
-                        {200, All#{<<"results">> => NewResult}};
-                {error, What} ->
-                    {error, What}
-            end;
-        {ok, Channel} ->
-            case dgiot_parse:query_object(<<"Device">>, Body#{<<"include">> => <<"product">>}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
-                {ok, #{<<"results">> := Result} = All} ->
-                    NewResult =
-                        lists:foldl(fun(X, Acc) ->
-                            #{<<"product">> := Product, <<"devaddr">> := DevAddr} = X,
-                            case Body of
-                                #{<<"include">> := <<"product">>} ->
-                                    get_tddata(Channel, Acc, X, Product, DevAddr);
-                                _ ->
-                                    get_tddata(Channel, Acc, maps:without([<<"product">>], X), Product, DevAddr)
-                            end
-                                    end, [], Result),
-                    {200, All#{<<"results">> => NewResult}};
-                {error, What} ->
-                    {error, What}
-            end
-    end;
-
 %% Product 概要: 导库 描述:json文件导库
 %% OperationId:post_product
 %% 请求:POST /iotapi/post_product
@@ -322,7 +287,7 @@ do_request(post_export_file, #{<<"files">> := Files}, #{<<"sessionToken">> := Se
         <<"keys">> => [<<"name">>, <<"tag">>],
         <<"limit">> => 1}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
         {ok, #{<<"results">> := [#{<<"name">> := AppName, <<"tag">> := #{<<"appconfig">> := Config}} | _]}} ->
-            Root = unicode:characters_to_list(maps:get(<<"home">>, Config, <<"D:/shuwa/dgiot_data_center/datacenter/file/files">>)),
+            Root = unicode:characters_to_list(maps:get(<<"home">>, Config, <<"D:/dgiot/dgiot_data_center/datacenter/file/files">>)),
             FileServer = unicode:characters_to_list(maps:get(<<"file">>, Config, <<"http://127.0.0.1:1250/shapes/upload">>)),
             App = unicode:characters_to_list(AppName),
             Url = string:sub_string(FileServer, 1, string:rchr(FileServer, $/)),
@@ -345,7 +310,7 @@ do_request(post_import_file, #{<<"path">> := Path}, #{<<"sessionToken">> := Sess
         <<"keys">> => [<<"name">>, <<"tag">>],
         <<"limit">> => 1}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
         {ok, #{<<"results">> := [#{<<"name">> := AppName, <<"tag">> := #{<<"appconfig">> := Config}} | _]}} ->
-            Root = unicode:characters_to_list(maps:get(<<"home">>, Config, <<"D:/shuwa/dgiot_data_center/datacenter/file/files">>)),
+            Root = unicode:characters_to_list(maps:get(<<"home">>, Config, <<"D:/dgiot/dgiot_data_center/datacenter/file/files">>)),
             [_, _, FileApp, FileName] = re:split(Path, <<"/">>),
             ?LOG(info,"FileApp ~p", [FileApp]),
             case AppName of
@@ -532,70 +497,3 @@ get_json_from_zip(FileInfo) ->
         {error, Reason} ->
             {error, Reason}
     end.
-
-get_tddata(Channel, Acc, #{<<"objectId">> := DeviceId} = Device, #{<<"objectId">> := ProdcutId} = Product, DevAddr) ->
-    [Time, Data] =
-        case maps:get(<<"thing">>, Product, #{}) of
-            #{<<"properties">> := Properties} when length(Properties) > 0 ->
-                case dgiot_tdengine:get_device(Channel, ProdcutId, DeviceId, DeviceId, #{<<"keys">> => <<"last_row(*)">>, <<"limit">> => 1}) of
-                    {ok, #{<<"results">> := [Data1 | _]}} ->
-%%                        ?LOG(info,"Data1 ~p",[Data1]),
-                        [dgiot_tdengine:to_unixtime(maps:get(<<"createdat">>, Data1)), Data1];
-                    _ -> [0, #{}]
-                end;
-            _ ->
-                [0, #{}]
-        end,
-    TdData =
-        lists:foldl(fun(Y, Acc2) ->
-            #{
-                <<"objectId">> := SubDeviceId,
-                <<"devaddr">> := SubDtuAddr,
-                <<"product">> := #{<<"objectId">> := SubProductId}
-            } = Y,
-            case dgiot_tdengine:get_device(Channel, SubProductId, SubDeviceId, SubDtuAddr, #{<<"keys">> => <<"last_row(*)">>, <<"limit">> => 1}) of
-                {ok, #{<<"results">> := [Data2 | _]}} ->
-                    Acc2#{SubDeviceId => #{<<"productid">> => SubProductId, <<"deviceid">> => SubDeviceId, <<"data">> => maps:without([<<"createdat">>], Data2)}};
-                _ -> Acc2
-            end
-                    end, #{DeviceId => #{<<"productid">> => ProdcutId, <<"deviceid">> => DeviceId, <<"data">> => maps:without([<<"createdat">>], Data)}},
-            dgiot_shadow:get_sub_device(DevAddr)),
-    Topo =
-        case maps:find(<<"config">>, Product) of
-            error -> #{};
-            {ok, #{<<"components">> := Components}} ->
-                lists:foldl(fun(X, Acc3) ->
-                    case X of
-                        #{<<"identifier">> := Identifier, <<"type">> := Type, <<"wumoxing">> := #{<<"identifier">> := Di, <<"subdevid">> := Subdevid2}} ->
-                            case maps:get(Subdevid2, TdData, null) of
-                                null -> Acc3;
-                                #{<<"data">> := SubData} ->
-                                    case maps:get(Di, SubData, null) of
-                                        null -> Acc3;
-                                        Value ->
-                                            case Type of
-                                                <<"video">> ->
-                                                    Acc3#{Identifier => SubData};
-                                                _ ->
-                                                    Acc3#{Identifier => Value}
-                                            end
-                                    end
-                            end;
-                        #{<<"identifier">> := Identifier, <<"type">> := Type, <<"wumoxing">> := #{<<"identifier">> := Key}} ->
-                            case maps:get(Key, Data, null) of
-                                null ->
-                                    Acc3;
-                                Value ->
-                                    case Type of
-                                        <<"video">> ->
-                                            Acc3#{Identifier => Data};
-                                        _ ->
-                                            Acc3#{Identifier => Value}
-                                    end
-                            end;
-                        _ -> Acc3
-                    end
-                            end, #{}, Components);
-            _ -> #{}
-        end,
-    Acc ++ [Device#{<<"lasttime">> => Time, <<"swtopo">> => Topo, <<"tddata">> => maps:values(TdData)}].

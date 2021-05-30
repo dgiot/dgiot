@@ -1,0 +1,14 @@
+{mapping, "task.page_index", "dgiot_task.page_index", [
+     {default, 1},
+     {datatype, integer}
+]}.
+
+{mapping, "task.dev_total", "dgiot_task.dev_total", [
+     {default, 5000},
+     {datatype, integer}
+]}.
+
+{mapping, "task.page_size", "dgiot_task.page_size", [
+     {default, 5000},
+     {datatype, integer}
+]}.

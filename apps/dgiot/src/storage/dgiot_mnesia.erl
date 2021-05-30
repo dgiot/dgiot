@@ -176,7 +176,7 @@ select_where(TB, Filter, Order) ->
 select_object(TB, Filter, Order) ->
     F =
         fun() ->
-            shuwa_pager:all(mnesia:table(TB), Filter, Order)
+            dgiot_pager:all(mnesia:table(TB), Filter, Order)
         end,
     mnesia:transaction(F).
 
@@ -208,7 +208,7 @@ do_add_mnesia(Key, Value) when is_binary(Key) ->
     case lists:member(Mnesia, do_add_mnesia(Key)) of
         true -> ok;
         false ->
-            ok = dgiot_mnseia_helper:monitor(Value),
+            ok = dgiot_mnesia_helper:monitor(Value),
             insert_direct_mnseia(Mnesia)
     end.
 

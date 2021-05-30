@@ -16,141 +16,171 @@
 
 -module(dgiot_bridge_actions).
 -author("zwx").
--define(RESOURCE_TYPE, 'data_resource').
 -include_lib("dgiot/include/logger.hrl").
+-include_lib("emqx/include/emqx.hrl").
+-include_lib("emqx_rule_engine/include/rule_engine.hrl").
+-include_lib("emqx_rule_engine/include/rule_actions.hrl").
 
-%% API
--export([
-    on_resource_create/2,
-    on_get_resource_status/2,
-    on_resource_destroy/2,
-    on_action_create/2
-]).
-
--export([create_resource/1]).
-
-
--define(RESOURCE_CONFIG_SPEC, #{
-    channel => #{
+-define(REPUBLISH_PARAMS_SPEC, #{
+    target_topic => #{
         order => 1,
         type => string,
         required => true,
-        default => <<"">>,
-        title => #{
-            en => <<"Channel objectId">>,
-            zh => <<"资源/采集通道ID"/utf8>>
-        },
-        description => #{
-            en => <<"Channel objectId">>,
-            zh => <<"资源/采集通道ID"/utf8>>}
+        default => <<"repub/to/${clientid}">>,
+        title => #{en => <<"Target Topic">>,
+            zh => <<"目的主题"/utf8>>},
+        description => #{en => <<"To which topic the message will be republished">>,
+            zh => <<"重新发布消息到哪个主题"/utf8>>}
+    },
+    target_qos => #{
+        order => 2,
+        type => number,
+        enum => [-1, 0, 1, 2],
+        required => true,
+        default => 0,
+        title => #{en => <<"Target QoS">>,
+            zh => <<"目的 QoS"/utf8>>},
+        description => #{en => <<"The QoS Level to be uses when republishing the message. Set to -1 to use the original QoS">>,
+            zh => <<"重新发布消息时用的 QoS 级别, 设置为 -1 以使用原消息中的 QoS"/utf8>>}
+    },
+    payload_tmpl => #{
+        order => 3,
+        type => string,
+        input => textarea,
+        required => false,
+        default => <<"${payload}">>,
+        title => #{en => <<"Payload Template">>,
+            zh => <<"消息内容模板"/utf8>>},
+        description => #{en => <<"The payload template, variable interpolation is supported">>,
+            zh => <<"消息内容模板，支持变量"/utf8>>}
     }
 }).
 
--define(ACTION_PARAM_RESOURCE, #{
-    type => string,
-    required => true,
-    title => #{
-        en => <<"Resource ID">>,
-        zh => <<"资源/采集通道ID"/utf8>>
-    },
-    description => #{
-        en => <<"Bind a resource to this action">>,
-        zh => <<"给动作绑定一个资源/采集通道"/utf8>>
-    }
+-rule_action(#{name => inspect,
+    category => debug,
+    for => '$any',
+    types => [],
+    create => on_action_create_inspect,
+    params => #{},
+    title => #{en => <<"Inspect (debug)">>,
+        zh => <<"数蛙检查 (调试)"/utf8>>},
+    description => #{en => <<"Inspect the details of action params for debug purpose">>,
+        zh => <<"检查动作参数 (用以调试)"/utf8>>}
 }).
 
--rule_action(#{
-    name => data_to_resource,
-    for => 'message.publish',
-    types => [?RESOURCE_TYPE],
-    create => on_action_create,
-    params => #{'$resource' => ?ACTION_PARAM_RESOURCE},
-    title => #{
-        en => <<"Data bridge to Data Resource">>,
-        zh => <<"桥接数据到资源/采集通道"/utf8>>
-    },
-    description => #{
-        en => <<"Bridge Data to Data Resource">>,
-        zh => <<"桥接数据到资源/采集通道"/utf8>>
-    }
+-rule_action(#{name => republish,
+    category => data_forward,
+    for => '$any',
+    types => [],
+    create => on_action_create_republish,
+    params => ?REPUBLISH_PARAMS_SPEC,
+    title => #{en => <<"Republish">>,
+        zh => <<"数蛙消息重新发布"/utf8>>},
+    description => #{en => <<"Republish a MQTT message to another topic">>,
+        zh => <<"重新发布消息到另一个主题"/utf8>>}
 }).
 
--resource_type(#{
-    name => ?RESOURCE_TYPE,
-    create => on_resource_create,
-    status => on_get_resource_status,
-    destroy => on_resource_destroy,
-    params => ?RESOURCE_CONFIG_SPEC,
-    title => #{
-        en => <<"Data Resource">>,
-        zh => <<"资源/采集通道"/utf8>>
-    },
-    description => #{
-        en => <<"Data Resource">>,
-        zh => <<"资源/采集通道"/utf8>>
-    }
-}).
+-export([on_resource_create/2]).
+
+%% callbacks for rule engine
+-export([ on_action_create_inspect/2
+    , on_action_create_republish/2
+]).
+
+-export([ on_action_inspect/2
+    , on_action_republish/2
+]).
+
+-spec(on_resource_create(binary(), map()) -> map()).
+on_resource_create(_Name, Conf) ->
+    Conf.
+
+%%------------------------------------------------------------------------------
+%% Action 'inspect'
+%%------------------------------------------------------------------------------
+-spec on_action_create_inspect(Id :: action_instance_id(), Params :: map()) -> {bindings(), NewParams :: map()}.
+on_action_create_inspect(Id, Params) ->
+    Params.
+
+-spec on_action_inspect(selected_data(), env_vars()) -> any().
+on_action_inspect(Selected, Envs) ->
+    io:format("[inspect]~n"
+    "\tSelected Data: ~p~n"
+    "\tEnvs: ~p~n"
+    "\tAction Init Params: ~p~n", [Selected, Envs, ?bound_v('Params', Envs)]),
+    emqx_rule_metrics:inc_actions_success(?bound_v('Id', Envs)).
 
 
-on_resource_create(ResId, #{<<"channel">> := ObjectId}) ->
-    application:ensure_all_started(dgiot_parse),
-    case dgiot_parse:get_object(<<"Channel">>, ObjectId) of
-        {ok, Channel} ->
-%%            ?LOG(info,"on_resource_create ~p,~p", [ResId, Channel]),
-            #{<<"channel">> => Channel};
-        {error, #{<<"code">> := 101, <<"error">> := <<"Object not found.">>}} ->
-            case catch emqx_rule_registry:remove_resource(ResId) of
-                {'EXIT', {{throw, {dependency_exists, {rule, RuleId}}}, _}} ->
-                    ok = emqx_rule_registry:remove_rule(RuleId),
-                    ok = emqx_rule_registry:remove_resource(ResId);
-                _ ->
-                    ok
-            end,
-            #{<<"channel">> => false};
-        {error, Reason} ->
-            ?LOG(error,"Resource create error, Channel:~s, Reason:~p", [ObjectId, Reason]),
-            #{<<"channel">> => false}
-    end.
+%%------------------------------------------------------------------------------
+%% Action 'republish'
+%%------------------------------------------------------------------------------
+-spec on_action_create_republish(action_instance_id(), Params :: map()) -> {bindings(), NewParams :: map()}.
+on_action_create_republish(Id, Params = #{
+    <<"target_topic">> := TargetTopic,
+    <<"target_qos">> := TargetQoS,
+    <<"payload_tmpl">> := PayloadTmpl
+}) ->
+    TopicTks = emqx_rule_utils:preproc_tmpl(TargetTopic),
+    PayloadTks = emqx_rule_utils:preproc_tmpl(PayloadTmpl),
+    Params.
 
-on_get_resource_status(_ResId, #{<<"channel">> := Channel}) ->
-    case Channel of
-        false ->
-            #{is_alive => false};
-        _ ->
-            #{is_alive => true}
-    end.
+-spec on_action_republish(selected_data(), env_vars()) -> any().
+on_action_republish(_Selected, Envs = #{
+    topic := Topic,
+    headers := #{republish_by := ActId},
+    ?BINDING_KEYS := #{'Id' := ActId}
+}) ->
+    ?LOG(error, "[republish] recursively republish detected, msg topic: ~p, target topic: ~p",
+        [Topic, ?bound_v('TargetTopic', Envs)]),
+    emqx_rule_metrics:inc_actions_error(?bound_v('Id', Envs));
 
-on_resource_destroy(ResId, Params) ->
-    ?LOG(info,"on_resource_destroy ~p,~p", [ResId, Params]),
-    ok.
+on_action_republish(Selected, _Envs = #{
+    qos := QoS, flags := Flags, timestamp := Timestamp,
+    ?BINDING_KEYS := #{
+        'Id' := ActId,
+        'TargetTopic' := TargetTopic,
+        'TargetQoS' := TargetQoS,
+        'TopicTks' := TopicTks,
+        'PayloadTks' := PayloadTks
+    }}) ->
+    ?LOG(debug, "[republish] republish to: ~p, Payload: ~p",
+        [TargetTopic, Selected]),
+    increase_and_publish(ActId,
+        #message{
+            id = emqx_guid:gen(),
+            qos = if TargetQoS =:= -1 -> QoS; true -> TargetQoS end,
+            from = ActId,
+            flags = Flags,
+            headers = #{republish_by => ActId},
+            topic = emqx_rule_utils:proc_tmpl(TopicTks, Selected),
+            payload = emqx_rule_utils:proc_tmpl(PayloadTks, Selected),
+            timestamp = Timestamp
+        });
 
-on_action_create(Id, #{<<"channel">> := #{<<"cType">> := CType, <<"objectId">> := ChannelId}} = Params) ->
-    ?LOG(info,"on_action_create ~p,~p", [Id, Params]),
-    fun(Msg, Env) ->
-        dgiot_channelx:do_message(CType, ChannelId, {rule, Msg, Env}, 60000)
-    end.
+%% in case this is not a "message.publish" request
+on_action_republish(Selected, _Envs = #{
+    ?BINDING_KEYS := #{
+        'Id' := ActId,
+        'TargetTopic' := TargetTopic,
+        'TargetQoS' := TargetQoS,
+        'TopicTks' := TopicTks,
+        'PayloadTks' := PayloadTks
+    }}) ->
+    ?LOG(debug, "[republish] republish to: ~p, Payload: ~p",
+        [TargetTopic, Selected]),
+    increase_and_publish(ActId,
+        #message{
+            id = emqx_guid:gen(),
+            qos = if TargetQoS =:= -1 -> 0; true -> TargetQoS end,
+            from = ActId,
+            flags = #{dup => false, retain => false},
+            headers = #{republish_by => ActId},
+            topic = emqx_rule_utils:proc_tmpl(TopicTks, Selected),
+            payload = emqx_rule_utils:proc_tmpl(PayloadTks, Selected),
+            timestamp = erlang:system_time(millisecond)
+        }).
 
-
-
-create_resource(ChannelId) ->
-    Args = #{
-        id => <<"resource:", ChannelId/binary>>,
-        type => ?RESOURCE_TYPE,
-        config => #{<<"channel">> => ChannelId},
-        description => ChannelId
-    },
-    try emqx_rule_engine:create_resource(Args) of
-        {ok, Resource} ->
-            {ok, Resource};
-        {error, {resource_type_not_found, Type}} ->
-            {error, {resource_type_not_found, Type}}
-    catch
-        throw:{resource_type_not_found, Type} ->
-            {error, {resource_type_not_found, Type}};
-        throw:{init_resource_failure, Reason} ->
-            {error, {init_resource_failure, Reason}};
-        throw:Reason ->
-            {error, Reason};
-        _Error:Reason:_StackT ->
-            {error, Reason}
-    end.
+increase_and_publish(ActId, Msg) ->
+    _ = emqx_broker:safe_publish(Msg),
+    emqx_rule_metrics:inc_actions_success(ActId),
+    emqx_metrics:inc_msg(Msg).

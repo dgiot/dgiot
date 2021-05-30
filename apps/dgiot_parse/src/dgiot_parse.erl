@@ -16,7 +16,6 @@
 
 -module(dgiot_parse).
 -author("kenneth").
--include_lib("eunit/include/eunit.hrl").
 -include("dgiot_parse.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -define(DEFField, re:split(application:get_env(?MODULE, delete_field, ""), ",")).
@@ -992,16 +991,6 @@ handle_response(Result) ->
             {error, #{<<"code">> => 1, <<"error">> => Reason}}
     end.
 
-
-all_test() ->
-    {ok, #{<<"objectId">> := Id}} = create_object(<<"test">>, #{<<"name">> => 1}),
-    {ok, #{<<"results">> := [#{<<"objectId">> := Id1}]}} = query_object(<<"test">>, #{<<"name">> => 1}),
-    ?assertEqual(Id1, Id),
-    {ok, #{<<"updatedAt">> := _}} = update_object(<<"test">>, Id, #{<<"age">> => 12}),
-    {ok, #{<<"age">> := Age}} = get_object(<<"test">>, Id),
-    ?assertEqual(Age, 12),
-    del_object(<<"test">>, Id),
-    {error, _} = get_object(<<"test">>, Id).
 
 test_graphql() ->
     Data = #{
