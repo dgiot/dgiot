@@ -15,7 +15,7 @@
 %%--------------------------------------------------------------------
 
 -module(dgiot_local_devcache).
--include("dgiot_device_shadow.hrl").
+-include("dgiot_device.hrl").
 -include_lib("dgiot/include/dgiot_mnesia.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -author("kenneth").
@@ -104,6 +104,6 @@ page(Type, DevType, PageNo, PageSize, Filter, RowFun) ->
     end.
 
 get_cache_table() ->
-    Type = application:get_env(dgiot_device_shadow, cache_type, ets),
+    Type = application:get_env(dgiot_device, cache_type, ets),
     {Type, list_to_atom(lists:concat([Type, "_", smartdev]))}.
 

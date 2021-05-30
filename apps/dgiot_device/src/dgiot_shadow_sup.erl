@@ -21,7 +21,7 @@
 
 %% API
 -export([start_link/0, start_shadow/3, start_shadow/4]).
--include("dgiot_device_shadow.hrl").
+-include("dgiot_device.hrl").
 %% Supervisor callbacks
 -export([init/1]).
 

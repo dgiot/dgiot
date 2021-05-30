@@ -1,10 +1,10 @@
--module(dgiot_device_shadow_app).
+-module(dgiot_device_app).
 
 -emqx_plugin(?MODULE).
 
 -behaviour(application).
 
--include("dgiot_device_shadow.hrl").
+-include("dgiot_device.hrl").
 
 -export([start/2, stop/1]).
 
