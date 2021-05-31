@@ -34,30 +34,29 @@ jobs:
           timeout: '1h'
           debug: true
           force_update: true
-
-    - name: prepare
-      uses: actions/checkout@v1
-      run: |
-        if make emqx-ee --dry-run > /dev/null 2>&1; then
-          echo "https://ci%40emqx.io:${{ secrets.CI_GIT_TOKEN }}@github.com" > $HOME/.git-credentials
-          git config --global credential.helper store
-          echo "${{ secrets.CI_GIT_TOKEN }}" >> ./scripts/git-token
-          echo "EMQX_NAME=emqx-ee" >> $GITHUB_ENV
-        else
-          echo "EMQX_NAME=emqx" >> $GITHUB_ENV
-        fi
-    - name: build zip packages
-      run: make ${EMQX_NAME}-zip
-    - name: build deb/rpm packages
-      run: make ${EMQX_NAME}-pkg
-    - name: pakcages test
-      run: |
-        export CODE_PATH=$GITHUB_WORKSPACE
-        .ci/build_packages/tests.sh
-    - uses: actions/upload-artifact@v2
-      with:
-        name: ${{ matrix.os }}
-        path: _packages/**/*.zip
+      - name: prepare
+        uses: actions/checkout@v1
+        run: |
+          if make emqx-ee --dry-run > /dev/null 2>&1; then
+            echo "https://ci%40emqx.io:${{ secrets.CI_GIT_TOKEN }}@github.com" > $HOME/.git-credentials
+            git config --global credential.helper store
+            echo "${{ secrets.CI_GIT_TOKEN }}" >> ./scripts/git-token
+            echo "EMQX_NAME=emqx-ee" >> $GITHUB_ENV
+          else
+            echo "EMQX_NAME=emqx" >> $GITHUB_ENV
+          fi
+      - name: build zip packages
+        run: make ${EMQX_NAME}-zip
+      - name: build deb/rpm packages
+        run: make ${EMQX_NAME}-pkg
+      - name: pakcages test
+        run: |
+          export CODE_PATH=$GITHUB_WORKSPACE
+          .ci/build_packages/tests.sh
+      - uses: actions/upload-artifact@v2
+        with:
+          name: ${{ matrix.os }}
+          path: _packages/**/*.zip
   mac:
     runs-on: macos-10.15
 
