@@ -19,7 +19,7 @@ jobs:
         - name: prepare
           run: |
             if make emqx-ee --dry-run > /dev/null 2>&1; then
-              echo "https://ci%40emqx.io:${{ secrets.CI_GIT_TOKEN }}@hub.fastgit.org" > $HOME/.git-credentials
+              echo "https://ci%40emqx.io:${{ secrets.CI_GIT_TOKEN }}@github.com" > $HOME/.git-credentials
               git config --global credential.helper store
               echo "${{ secrets.CI_GIT_TOKEN }}" >> scripts/git-token
               make deps-emqx-ee
@@ -69,7 +69,7 @@ jobs:
         - name: prepare
           run: |
             if make emqx-ee --dry-run > /dev/null 2>&1; then
-              echo "https://ci%40emqx.io:${{ secrets.CI_GIT_TOKEN }}@hub.fastgit.org" > $HOME/.git-credentials
+              echo "https://ci%40emqx.io:${{ secrets.CI_GIT_TOKEN }}@github.com" > $HOME/.git-credentials
               git config --global credential.helper store
               echo "${{ secrets.CI_GIT_TOKEN }}" >> scripts/git-token
               make deps-emqx-ee
@@ -196,7 +196,7 @@ jobs:
         - name: prepare
           run: |
             if make -C emqx emqx-ee --dry-run > /dev/null 2>&1; then
-              echo "https://ci%40emqx.io:${{ secrets.CI_GIT_TOKEN }}@hub.fastgit.org" > $HOME/.git-credentials
+              echo "https://ci%40emqx.io:${{ secrets.CI_GIT_TOKEN }}@github.com" > $HOME/.git-credentials
               git config --global credential.helper store
               echo "${{ secrets.CI_GIT_TOKEN }}" >> emqx/scripts/git-token
               echo "PROFILE=emqx-ee" >> $GITHUB_ENV

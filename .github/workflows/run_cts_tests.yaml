@@ -44,7 +44,7 @@ jobs:
       - name: set git token
         run: |
           if make emqx-ee --dry-run > /dev/null 2>&1; then
-            docker exec -i erlang bash -c "echo \"https://ci%40emqx.io:${{ secrets.CI_GIT_TOKEN }}@hub.fastgit.org\" > /root/.git-credentials && git config --global credential.helper store"
+            docker exec -i erlang bash -c "echo \"https://ci%40emqx.io:${{ secrets.CI_GIT_TOKEN }}@github.com\" > /root/.git-credentials && git config --global credential.helper store"
           fi
       - name: run test cases
         run: |
@@ -113,7 +113,7 @@ jobs:
       - name: set git token
         run: |
           if make emqx-ee --dry-run > /dev/null 2>&1; then
-            docker exec -i erlang bash -c "echo \"https://ci%40emqx.io:${{ secrets.CI_GIT_TOKEN }}@hub.fastgit.org\" > /root/.git-credentials && git config --global credential.helper store"
+            docker exec -i erlang bash -c "echo \"https://ci%40emqx.io:${{ secrets.CI_GIT_TOKEN }}@github.com\" > /root/.git-credentials && git config --global credential.helper store"
           fi
       - name: run test cases
         run: |
@@ -195,7 +195,7 @@ jobs:
       - name: set git token
         run: |
           if make emqx-ee --dry-run > /dev/null 2>&1; then
-            docker exec -i erlang bash -c "echo \"https://ci%40emqx.io:${{ secrets.CI_GIT_TOKEN }}@hub.fastgit.org\" > /root/.git-credentials && git config --global credential.helper store"
+            docker exec -i erlang bash -c "echo \"https://ci%40emqx.io:${{ secrets.CI_GIT_TOKEN }}@github.com\" > /root/.git-credentials && git config --global credential.helper store"
           fi
       - name: run test cases
         run: |
@@ -266,7 +266,7 @@ jobs:
       - name: set git token
         run: |
           if make emqx-ee --dry-run > /dev/null 2>&1; then
-            docker exec -i erlang bash -c "echo \"https://ci%40emqx.io:${{ secrets.CI_GIT_TOKEN }}@hub.fastgit.org\" > /root/.git-credentials && git config --global credential.helper store"
+            docker exec -i erlang bash -c "echo \"https://ci%40emqx.io:${{ secrets.CI_GIT_TOKEN }}@github.com\" > /root/.git-credentials && git config --global credential.helper store"
           fi
       - name: run test cases
         run: |
@@ -389,7 +389,7 @@ jobs:
       - name: set git token
         run: |
           if make emqx-ee --dry-run > /dev/null 2>&1; then
-            docker exec -i erlang bash -c "echo \"https://ci%40emqx.io:${{ secrets.CI_GIT_TOKEN }}@hub.fastgit.org\" > /root/.git-credentials && git config --global credential.helper store"
+            docker exec -i erlang bash -c "echo \"https://ci%40emqx.io:${{ secrets.CI_GIT_TOKEN }}@github.com\" > /root/.git-credentials && git config --global credential.helper store"
           fi
       - name: run test cases
         run: |
