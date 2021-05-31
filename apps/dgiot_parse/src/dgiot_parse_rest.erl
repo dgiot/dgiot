@@ -174,9 +174,9 @@ get_query(Path) ->
                 {match, Match} ->
                     Querys = lists:foldl(
                         fun([_All, Key, Value0], Acc) ->
-                            Value = iolist_to_binary(http_uri:encode(binary_to_list(Value0))),
+                            Value = iolist_to_binary(http_uri:decode(binary_to_list(Value0))),
                             Acc#{
-                                Key => iolist_to_binary(http_uri:encode(binary_to_list(Value)))
+                                Key => iolist_to_binary(http_uri:decode(binary_to_list(Value)))
                             }
                         end, #{}, Match),
                     {NewPath, Querys};
@@ -275,7 +275,7 @@ encode_body(_Path, _Method, Map, _) ->
     jsx:encode(Map).
 
 do_request(Method, Path, Header, Data, Options) ->
-   ?LOG(info,"~p ~p ~p ,Method ~p, Path ~p, Header ~p, Data ~p, Options ~p",[?FILE,?LINE, self(),Method, Path, Header, Data, Options]),
+   ?LOG(info,"Method ~p, Path ~p, Data ~p, Options ~p",[Method, Path, Data, Options]),
     case httpc_request(Method, Path, Header, Data, [], [], Options) of
         {error, Reason} ->
             {error, Reason};

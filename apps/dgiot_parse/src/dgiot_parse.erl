@@ -747,7 +747,7 @@ format_data(<<"Dict">>, Data) ->
     NewData =
         case Data of
             #{<<"key">> := _} -> Data;
-            _ -> Data#{<<"key">> => dgiot_license:to_md5(jsx:encode(Data))}
+            _ -> Data#{<<"key">> => dgiot_utils:to_md5(jsx:encode(Data))}
         end,
     maps:fold(
         fun(Key, Value, Acc) ->
