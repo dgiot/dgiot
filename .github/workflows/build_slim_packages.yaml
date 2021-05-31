@@ -46,8 +46,9 @@ jobs:
       with:
         name: ${{ matrix.os }}
         path: _packages/**/*.zip
+
     - name: Mirror the Github organization repos to Gitee.
-    - uses: Yikun/hub-mirror-action@v1.0
+      uses: Yikun/hub-mirror-action@v1.0
       with:
         src: github/dgiot
         dst: gitee/dgiiot
