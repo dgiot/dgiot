@@ -22,6 +22,6 @@ jobs:
           dst_key: ${{ secrets.PRIVATE_KEY }}
           dst_token:  ${{ secrets.TOKEN }}
           account_type: org
-          timeout: 600
+          timeout: '1h'
           debug: true
           force_update: true
