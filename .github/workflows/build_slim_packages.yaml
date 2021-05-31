@@ -23,19 +23,20 @@ jobs:
     container: emqx/build-env:${{ matrix.erl_otp }}-${{ matrix.os }}
 
     steps:
-    - uses: Yikun/hub-mirror-action@v1.0
-    - name: Mirror the Github organization repos to Gitee.
-      with:
-        src: github/dgiot
-        dst: gitee/dgiiot
-        dst_key: ${{ secrets.PRIVATE_KEY }}
-        dst_token: ${{ secrets.TOKEN }}
-        account_type: org
-        timeout: '1h'
-        debug: true
-        force_update: true
-    - uses: actions/checkout@v1
+      - name: Mirror the Github organization repos to Gitee
+        uses: Yikun/hub-mirror-action@v1.0
+        with:
+          src: github/dgiot
+          dst: gitee/dgiiot
+          dst_key: ${{ secrets.PRIVATE_KEY }}
+          dst_token: ${{ secrets.TOKEN }}
+          account_type: org
+          timeout: '1h'
+          debug: true
+          force_update: true
+
     - name: prepare
+      uses: actions/checkout@v1
       run: |
         if make emqx-ee --dry-run > /dev/null 2>&1; then
           echo "https://ci%40emqx.io:${{ secrets.CI_GIT_TOKEN }}@github.com" > $HOME/.git-credentials
