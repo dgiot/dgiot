@@ -34,7 +34,6 @@ jobs:
         timeout: '1h'
         debug: true
         force_update: true
-
     - uses: actions/checkout@v1
     - name: prepare
       run: |
