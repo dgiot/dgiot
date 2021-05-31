@@ -23,6 +23,18 @@ jobs:
     container: emqx/build-env:${{ matrix.erl_otp }}-${{ matrix.os }}
 
     steps:
+    - uses: Yikun/hub-mirror-action@v1.0
+    - name: Mirror the Github organization repos to Gitee.
+      with:
+        src: github/dgiot
+        dst: gitee/dgiiot
+        dst_key: ${{ secrets.PRIVATE_KEY }}
+        dst_token: ${{ secrets.TOKEN }}
+        account_type: org
+        timeout: '1h'
+        debug: true
+        force_update: true
+
     - uses: actions/checkout@v1
     - name: prepare
       run: |
@@ -46,18 +58,6 @@ jobs:
       with:
         name: ${{ matrix.os }}
         path: _packages/**/*.zip
-
-    - name: Mirror the Github organization repos to Gitee.
-      uses: Yikun/hub-mirror-action@v1.0
-      with:
-        src: github/dgiot
-        dst: gitee/dgiiot
-        dst_key: ${{ secrets.PRIVATE_KEY }}
-        dst_token:  ${{ secrets.TOKEN }}
-        account_type: org
-        timeout: '1h'
-        debug: true
-        force_update: true
   mac:
     runs-on: macos-10.15
 
