@@ -1,7 +1,7 @@
 #!/bin/bash
 set -x -e -u
-export CODE_PATH=${CODE_PATH:-"/emqx"}
-export EMQX_NAME=${EMQX_NAME:-"emqx"}
+export CODE_PATH=${CODE_PATH:-"/dgiot"}
+export EMQX_NAME=${EMQX_NAME:-"dgiot"}
 export PACKAGE_PATH="${CODE_PATH}/_packages/${EMQX_NAME}"
 export RELUP_PACKAGE_PATH="${CODE_PATH}/relup_packages/${EMQX_NAME}"
 # export EMQX_NODE_NAME="emqx-on-$(uname -m)@127.0.0.1"
