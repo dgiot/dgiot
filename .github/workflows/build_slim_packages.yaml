@@ -35,9 +35,9 @@ jobs:
             echo "EMQX_NAME=dgiot" >> $GITHUB_ENV
           fi
       - name: build zip packages
-        run: make ${EMQX_NAME}-zip
+        run: make emqx-zip
       - name: build deb/rpm packages
-        run: make ${EMQX_NAME}-pkg
+        run: make emqx-pkg
 #      - name: pakcages test
 #        run: |
 #          export CODE_PATH=$GITHUB_WORKSPACE
@@ -86,11 +86,11 @@ jobs:
       - name: build
         run: |
           . $HOME/.kerl/${{ matrix.erl_otp }}/activate
-          make ${EMQX_NAME}-zip
+          make emqx-zip
       - name: test
         run: |
-          pkg_name=$(basename _packages/${EMQX_NAME}/emqx-*.zip)
-          unzip -q _packages/${EMQX_NAME}/$pkg_name
+          pkg_name=$(basename _packages/emqx/emqx-*.zip)
+          unzip -q _packages/emqx/$pkg_name
           gsed -i '/emqx_telemetry/d' ./emqx/data/loaded_plugins
           ./emqx/bin/emqx start || cat emqx/log/erlang.log.1
           ready='no'
