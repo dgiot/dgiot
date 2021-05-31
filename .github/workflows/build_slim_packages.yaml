@@ -32,7 +32,7 @@ jobs:
           echo "${{ secrets.CI_GIT_TOKEN }}" >> ./scripts/git-token
           echo "EMQX_NAME=emqx-ee" >> $GITHUB_ENV
         else
-          echo "EMQX_NAME=dgiot" >> $GITHUB_ENV
+          echo "EMQX_NAME=emqx" >> $GITHUB_ENV
         fi
     - name: build zip packages
       run: make ${EMQX_NAME}-zip
