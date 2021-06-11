@@ -1,0 +1,560 @@
+{
+  "tags": [
+    {
+      "name": "License",
+      "description": "授权"
+    }
+  ],
+  "definitions": {
+  },
+  "paths": {
+    "/lictool": {
+      "get": {
+        "security": [],
+        "summary": "lictool",
+        "description": "下载license辅助小工具",
+        "consumes": [
+          "*"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "appid",
+            "type": "string",
+            "description": "appid",
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "appsecret",
+            "type": "string",
+            "description": "appsecret",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "License"
+        ]
+      }
+    },
+    "/licsetup": {
+      "get": {
+        "security": [],
+        "summary": "离线安装",
+        "description": "下载安装脚本",
+        "consumes": [
+          "*"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "license",
+            "type": "string",
+            "description": "license",
+            "default":"fc2400836d1071f26c7f7e0ebeae3b43",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "License"
+        ]
+      }
+    },
+    "/licupdate": {
+      "get": {
+        "security": [],
+        "summary": "离线升级",
+        "description": "下载升级脚本",
+        "consumes": [
+          "*"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "license",
+            "type": "string",
+            "description": "license",
+            "default":"fc2400836d1071f26c7f7e0ebeae3b43",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "License"
+        ]
+      }
+    },
+    "/setup_result": {
+      "get": {
+        "security": [],
+        "summary": "安装结果",
+        "description": "安装结果",
+        "consumes": [
+          "*"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "license",
+            "type": "string",
+            "description": "license",
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "result",
+            "type": "string",
+            "description": "result",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "License"
+        ]
+      }
+    },
+    "/health": {
+      "get": {
+        "security": [],
+        "summary": "health",
+        "description": "检测是启动",
+        "consumes": [
+          "*"
+        ],
+        "parameters": [
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "License"
+        ]
+      }
+    },
+    "/hardinfo": {
+      "get": {
+        "security": [],
+        "summary": "获取硬件key",
+        "description": "获取硬件key",
+        "parameters": [
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "License"
+        ]
+      }
+    },
+    "/license": {
+      "get": {
+        "security": [],
+        "summary": "获取license",
+        "description": "获取license",
+        "parameters": [
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "License"
+        ]
+      }
+    },
+    "/iothub": {
+      "get": {
+        "security": [],
+        "summary": "启动物联网关",
+        "description": "启动物联网网关",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "type",
+            "type": "string",
+            "description": "产品类型",
+            "required": false
+          },
+          {
+            "in": "query",
+            "name": "license",
+            "type": "string",
+            "description": "授权文件",
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "addr",
+            "type": "string",
+            "description": "数据中心地址",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "License"
+        ]
+      }
+    },
+    "/iotapp": {
+      "get": {
+        "security": [],
+        "summary": "部署平台",
+        "description": "部署平台",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "type",
+            "type": "string",
+            "description": "授权类型",
+            "required": false,
+            "default": "standard"
+          },
+          {
+            "in": "query",
+            "name": "license",
+            "type": "string",
+            "description": "授权文件",
+            "required": true,
+            "default":"fc2400836d1071f26c7f7e0ebeae3b43"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "License"
+        ]
+      },
+      "post": {
+        "summary": "部署应用",
+        "description": "部署应用",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "data",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "appname": {
+                  "description": "应用名称",
+                  "type": "string",
+                  "example": "pump"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "License"
+        ]
+      }
+    },
+    "/login": {
+      "post": {
+        "security": [],
+        "summary": "用户登录",
+        "description": "用户登录",
+        "consumes": [
+          "text/plain"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "user",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "username": {
+                  "required": true,
+                  "type": "string",
+                  "example":"username"
+                },
+                "password": {
+                  "required": true,
+                  "type": "string",
+                  "example":"password"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "404": {
+            "description": "Forbidden",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "500": {
+            "description": "Server Internal error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        },
+        "tags": [
+          "License"
+        ]
+      }
+    },
+    "/apihub": {
+      "get": {
+        "description": "数蛙API网关",
+        "consumes": [
+          "*"
+        ],
+        "security": [],
+        "parameters": [
+          {
+            "description": "应用名称",
+            "in": "query",
+            "name": "appname",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "访问Token",
+            "in": "query",
+            "name": "token",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "file": {
+                  "description": "数据文件服务器访问地址",
+                  "type": "string",
+                  "example":"http://file.iotn2n.com/shapes/upload"
+                },
+                "topo": {
+                  "description": "组态文件服务器访问地址",
+                  "type": "string",
+                  "example":" http://shapes.iotn2n.com/"
+                },
+                "rest": {
+                  "description": "iot rest api跨域访问地址",
+                  "type": "string",
+                  "example":"http://cad.iotn2n.com:5080/iotapi"
+                },
+                "graphql": {
+                  "description": "graphql api访问地址",
+                  "type": "string",
+                  "example":"http://cad.iotn2n.com:5080/iotapi/graphql"
+                },
+                "desc": {
+                  "description": "应用描述",
+                  "type": "string",
+                  "example":"pump"
+                },
+                "appid": {
+                  "description": "appid",
+                  "type": "string",
+                  "example":"UBB4gbG8Hk"
+                },
+                "dashboard": {
+                  "description": "首页",
+                  "type": "string",
+                  "example":"/roles/platform_overview"
+                },
+                "access_token": {
+                  "description": "访问token",
+                  "type": "string",
+                  "example":"Sjk4NTcxNjkxNTg1ODIwNjkzMjY4"
+                },
+                "expires_in": {
+                  "description": "过期时间",
+                  "type": "number",
+                  "example": 5184000
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "object not found",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "summary": "应用访问参数",
+        "tags": [
+          "License"
+        ]
+      }
+    }
+  }
+}

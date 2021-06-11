@@ -1,0 +1,18 @@
+{
+  "pg_writer_name":"dgiot_pg_writer",
+  "pg_writer_port":7432,
+  "parse_server": "dgiot_parse_server",
+  "parse_server_software": "dgiot_parse_server_1.5.4.tar.gz",
+  "parse_server_port": 1337,
+  "parse_server_username": "dgiot_parse",
+  "td_bridge_name": "dgiot_td_bridge",
+  "td_port": 6020,
+  "td_username": "root",
+  "dgiot_iot": "dgiot_iot",
+  "dgiot_iot_software": "dgiot_iot_cad_121.tar.gz",
+  "node_exporter": "node_exporter-0.18.1.linux-amd64",
+  "mosquitto": "mosquitto-1.6.7",
+  "TDengine": "TDengine-1.6.4.3",
+  "otp_src": "otp_src_21.3",
+  "postgresql": "postgresql-12.0"
+}

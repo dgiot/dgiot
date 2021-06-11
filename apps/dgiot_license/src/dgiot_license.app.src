@@ -1,0 +1,11 @@
+{application,dgiot_license,
+             [{description,"数蛙授权管理"},
+              {vsn,"1.6.4"},
+              {registered,[]},
+              {mod,{dgiot_license_app,[]}},
+              {applications,[kernel,stdlib]},
+              {env,[]},
+              {modules,[]},
+              {maintainers,[]},
+              {licenses,["Apache 2.0"]},
+              {links,[]}]}.

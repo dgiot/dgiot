@@ -1,0 +1,220 @@
+{
+  "properties": [
+    {
+      "name": "电压",
+      "dataForm": {
+        "data": "528590",
+        "rate": 1,
+        "offset": 0,
+        "address": "Edit-24",
+        "control": "%q",
+        "protocol": "normal",
+        "quantity": "528590",
+        "strategy": "20",
+        "byteorder": "big",
+        "collection": "%s"
+      },
+      "dataType": {
+        "type": "int",
+        "specs": {
+          "max": 1000,
+          "min": 0,
+          "step": 0,
+          "unit": "kV"
+        }
+      },
+      "required": true,
+      "accessMode": "r",
+      "identifier": "U_OPC"
+    },
+    {
+      "name": "输入功率",
+      "dataForm": {
+        "data": "528590",
+        "rate": 1,
+        "offset": 0,
+        "address": "Edit-24",
+        "control": "%q",
+        "protocol": "normal",
+        "quantity": "528590",
+        "strategy": "20",
+        "byteorder": "big",
+        "collection": "%s"
+      },
+      "dataType": {
+        "type": "int",
+        "specs": {
+          "max": 100000,
+          "min": 0,
+          "step": 0,
+          "unit": "W"
+        }
+      },
+      "required": true,
+      "accessMode": "r",
+      "identifier": "P_OPC"
+    },
+    {
+      "name": "电流",
+      "dataForm": {
+        "data": "528590",
+        "rate": 1,
+        "offset": 0,
+        "address": "Edit-24",
+        "control": "%q",
+        "protocol": "normal",
+        "quantity": "528590",
+        "strategy": "20",
+        "byteorder": "big",
+        "collection": "%s"
+      },
+      "dataType": {
+        "type": "float",
+        "specs": {
+          "max": 100,
+          "min": 0,
+          "step": 0,
+          "unit": "A"
+        }
+      },
+      "required": true,
+      "accessMode": "r",
+      "identifier": "I_OPC"
+    },
+    {
+      "name": "电机转速",
+      "dataForm": {
+        "data": "528590",
+        "rate": 1,
+        "offset": 0,
+        "address": "Edit-24",
+        "control": "%q",
+        "protocol": "normal",
+        "quantity": "528590",
+        "strategy": "20",
+        "byteorder": "big",
+        "collection": "%s"
+      },
+      "dataType": {
+        "type": "float",
+        "specs": {
+          "max": 100000,
+          "min": 0,
+          "step": 0,
+          "unit": "r/min"
+        }
+      },
+      "required": true,
+      "accessMode": "r",
+      "identifier": "DJZS_OPC"
+    },
+    {
+      "name": "水温度",
+      "dataForm": {
+        "data": "528590",
+        "rate": 1,
+        "offset": 0,
+        "address": "Edit-24",
+        "control": "%q",
+        "protocol": "normal",
+        "quantity": "528590",
+        "strategy": "20",
+        "byteorder": "big",
+        "collection": "%s"
+      },
+      "dataType": {
+        "type": "float",
+        "specs": {
+          "max": 100,
+          "min": 0,
+          "step": 0,
+          "unit": "°"
+        }
+      },
+      "required": true,
+      "accessMode": "r",
+      "identifier": "SWD_OPC"
+    },
+    {
+      "name": "电磁流量",
+      "dataForm": {
+        "data": "528590",
+        "rate": 1,
+        "offset": 0,
+        "address": "Edit-24",
+        "control": "%q",
+        "protocol": "normal",
+        "quantity": "528590",
+        "strategy": "20",
+        "byteorder": "big",
+        "collection": "%s"
+      },
+      "dataType": {
+        "type": "float",
+        "specs": {
+          "max": 1000,
+          "min": 0,
+          "step": 0,
+          "unit": "m³/h"
+        }
+      },
+      "required": true,
+      "accessMode": "r",
+      "identifier": "DCLL_OPC"
+    },
+    {
+      "name": "进口压力",
+      "dataForm": {
+        "data": "528590",
+        "rate": 1,
+        "offset": 0,
+        "address": "Edit-24",
+        "control": "%q",
+        "protocol": "opcda",
+        "quantity": "528590",
+        "strategy": "20",
+        "byteorder": "big",
+        "collection": "%s/100"
+      },
+      "dataType": {
+        "type": "float",
+        "specs": {
+          "max": 500,
+          "min": -500,
+          "step": 0.1,
+          "unit": "Mpa"
+        }
+      },
+      "required": true,
+      "accessMode": "r",
+      "identifier": "JKYL_OPC"
+    },
+    {
+      "name": "出口压力",
+      "dataForm": {
+        "data": "528590",
+        "rate": 1,
+        "offset": 0,
+        "address": "Edit-24",
+        "control": "%q",
+        "protocol": "opcda",
+        "quantity": "528590",
+        "strategy": "20",
+        "byteorder": "big",
+        "collection": "%s/100"
+      },
+      "dataType": {
+        "type": "float",
+        "specs": {
+          "max": 500,
+          "min": -500,
+          "step": 0.1,
+          "unit": "Mpa"
+        }
+      },
+      "required": true,
+      "accessMode": "r",
+      "identifier": "CKYL_OPC"
+    }
+  ]
+}
