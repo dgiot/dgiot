@@ -55,7 +55,7 @@ get_nodes(Sort) ->
         fun({{Node, node}, Info}) ->
             Info#{node => Node}
         end,
-    case dgiot_mcache:match_object({{'$1', node}, '$2'}, RowFun) of
+    case dgiot_mnesia:match_object({{'$1', node}, '$2'}, RowFun) of
         [] -> [];
         Nodes -> lists:sort(Sort, Nodes)
     end.
@@ -103,7 +103,7 @@ handle_info(_Info, State) ->
     {noreply, State}.
 
 terminate(_Reason, _State) ->
-    dgiot_mcache:delete({node(), node}),
+    dgiot_mnesia:delete({node(), node}),
     ok.
 
 code_change(_OldVsn, State, _Extra) ->
@@ -121,7 +121,7 @@ register_service(#state{  }) ->
             fun(Key, Value, _) ->
                 dgiot_metrics:gauge(dgiot_global, <<"node">>, [Key], Value)
             end, no, Info),
-        dgiot_mcache:insert({{node(), node}, Info#{pid => self(), update => Now}})
+        dgiot_mnesia:insert({node(), node}, Info#{pid => self(), update => Now})
     catch
         Err:Reason ->
             ?LOG(error,"~p:~p", [Err, Reason])

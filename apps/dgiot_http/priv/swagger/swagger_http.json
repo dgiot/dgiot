@@ -1,13 +1,70 @@
 {
   "tags": [
     {
-      "name": "Http",
-      "description": "http扩展"
+      "name": "Wechat",
+      "description": "微信适配"
     }
   ],
   "definitions": {
 
   },
   "paths": {
+    "/wechat": {
+      "get": {
+        "description": "wechat登陆",
+        "parameters": [
+          {
+            "name": "openid",
+            "in": "query",
+            "type": "string",
+            "default": "JVANH8bf5n",
+            "description": "微信OpenId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "summary": "wechat登陆",
+        "tags": [
+          "Wechat"
+        ]
+      },
+      "post": {
+        "description": "wechat绑定",
+        "parameters": [
+          {
+            "description": "Jscode",
+            "in": "body",
+            "name": "jscode",
+            "required": true,
+            "type": "string",
+            "default":"JSCODE"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "wechat绑定",
+        "tags": [
+          "Wechat"
+        ]
+      }
+    }
   }
 }

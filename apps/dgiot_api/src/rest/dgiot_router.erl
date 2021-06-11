@@ -139,6 +139,8 @@ init(Req, {index, DocRoot}) ->
 
 %% hand swagger.json
 init(Req0, swagger_list) ->
+    io:format("Req0 swagger ~p",[Req0]),
+    ?LOG(error,"Req0 ~p ",[Req0]),
     Req =
         case dgiot_swagger:list() of
             {ok, List} ->
@@ -162,7 +164,9 @@ init(Req0, swagger_list) ->
     {ok, Req, swagger_list};
 
 init(Req0, {swagger, Name} = Opts) ->
+    io:format("Req0 swagger  ~p",[Req0]),
     Config = dgiot_req:parse_qs(Req0, [{return, map}]),
+    ?LOG(error,"Config ~p ",[Config]),
     Req =
         case dgiot_swagger:read(Name, Config) of
             {ok, Schema} ->
@@ -178,6 +182,7 @@ init(Req0, {swagger, Name} = Opts) ->
 
 %% install
 init(Req0, install) ->
+    io:format("Req0 install ~p",[Req0]),
     Product = dgiot_req:binding(<<"Product">>, Req0),
     #{peer := {IpPeer, _}} = Req0,
     Req =
@@ -205,8 +210,11 @@ init(Req0, install) ->
 
 %% 所有服务器回调总入口
 init(Req0, mod) ->
+    io:format("Req0 mod ~p",[Req0]),
+    ?LOG(error,"Req0 ~p",[Req0]),
     Mod = dgiot_req:binding(<<"Mod">>, Req0),
     Fun = dgiot_req:binding(<<"Fun">>, Req0),
+    ?LOG(error,"Mod ~p Fun ~p",[Mod,Fun]),
     Req =
         case catch apply(list_to_atom(binary_to_list(Mod)), list_to_atom(binary_to_list(Fun)), [Req0]) of
             {Err, Reason} when Err == 'EXIT'; Err == error ->
@@ -220,6 +228,7 @@ init(Req0, mod) ->
     {ok, Req, mod};
 
 init(Req, Opts) ->
+    ?LOG(error,"Opts ~p ",[Opts]),
     case dgiot_req:method(Req) of
         <<"OPTIONS">> ->
             case ?ACCESS_CONTROL_ALLOW_HEADERS of

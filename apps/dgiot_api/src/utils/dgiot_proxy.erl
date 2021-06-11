@@ -20,6 +20,7 @@
 -include_lib("dgiot/include/logger.hrl").
 
 -export([init/2]).
+-export([pre_hook/1,post_hook/2]).
 
 %%%-------------------------------------------------------------------
 %%% COWBOY
@@ -36,7 +37,7 @@ get_opts(Path) ->
             _ ->
                 string:sub_string(dgiot_utils:to_list(Path), Size + 1)
         end,
-    {ok, Type} = application:get_env(dgiot, dicttype),
+    {ok, Type} = application:get_env(dgiot_api, dicttype),
     DictId = dgiot_parse:get_dictid(Flag, dgiot_utils:to_binary(Type)),
     Data =
         case dgiot_data:get(DictId) of
@@ -52,13 +53,15 @@ get_opts(Path) ->
     Host = dgiot_utils:to_list(maps:get(<<"host">>, Data, <<"www.iotn2n.com">>)),
     Protocol = dgiot_utils:to_list(maps:get(<<"protocol">>, Data, <<"http">>)),
     Forward_Header = maps:get(<<"x-forwarded-for">>, Data, true),
+    Hook = maps:get(<<"hook">>, Data, ?MODULE),
     [
         {host, Host},
         {protocol, Protocol},
         {?FORWARD_HEADER, Forward_Header},
         {disable_proxy_headers, true},
         {use_forwarded_for, true},
-        {modify_path, dgiot_utils:to_list(NewPath)}
+        {modify_path, dgiot_utils:to_list(NewPath)},
+        {hook, dgiot_utils:to_atom(Hook)}
     ].
 
 init(Req0, proxy) ->
@@ -69,17 +72,21 @@ init(Req0, proxy) ->
     HTTPOptions = opts_http_opts(State),
     Options = opts_misc_opts(State),
     %% TODO: Use request/5 if state has a profile parameter
-    case httpc:request(Method, Request, HTTPOptions, Options) of
+    Mod = opts_hook_opts(State),
+    PreRequest = Mod:pre_hook(Request),
+    case httpc:request(Method, PreRequest, HTTPOptions, Options) of
         % We got a response from the remote server!
         {ok, Resp = {{_RespVersion, RespStatus, RespReason}, _RespHeaders, RespBody}} ->
             ?LOG(info,"Proxy response: ~p ~s", [RespStatus, RespReason]),
             OkReq1 = cowboy_req:reply(RespStatus, response_headers(Resp, State), RespBody, Req1),
-            {ok, OkReq1, State};
+            PostOkReq1 = Mod:post_hook(OkReq1,State),
+            {ok, PostOkReq1, State};
         % Proxy error (not error on remote server, actual e.g. network error)
         Error ->
             ?LOG(error,"Proxy error: ~p", [Error]),
             ErrReq1 = cowboy_req:reply(502, #{"content-type" => "text/plain"}, dump(Error), Req1),
-            {ok, ErrReq1, State}
+            PostErrReq1 = Mod:post_hook(ErrReq1,State),
+            {ok, PostErrReq1, State}
     end.
 
 %%%-------------------------------------------------------------------
@@ -182,6 +189,7 @@ opts_modify_path(Opts) -> proplists:get_value(modify_path, Opts, fun identity/1)
 opts_body_opts(Opts) -> proplists:get_value(body_opts, Opts, #{}).
 opts_http_opts(Opts) -> proplists:get_value(http_opts, Opts, []).
 opts_misc_opts(Opts) -> proplists:get_value(misc_opts, Opts, []).
+opts_hook_opts(Opts) -> proplists:get_value(hook, Opts, []).
 
 %%%-------------------------------------------------------------------
 %%% HELPER
@@ -211,3 +219,9 @@ to_string(List) -> binary_to_list(iolist_to_binary(List)).
 %% Dumps any term into a string representation.
 dump(Term) ->
     to_string(io_lib:format("~p", [Term])).
+
+pre_hook(Req) ->
+    Req.
+
+post_hook(Resp,_State) ->
+    Resp.

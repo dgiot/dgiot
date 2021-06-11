@@ -1,0 +1,409 @@
+{
+  "tags": [
+    {
+      "name": "Rule",
+      "description": "规则引擎"
+    }
+  ],
+  "definitions": {
+    "Action": {
+      "type": "object",
+      "properties": {
+        "app": {
+          "type": "string",
+          "description": "插件"
+        },
+        "for": {
+          "type": "string",
+          "description": "触发事件"
+        },
+        "name": {
+          "type": "string",
+          "description": "名称"
+        },
+        "title": {
+          "type": "string",
+          "description": "标题"
+        },
+        "types": {
+          "type": "array",
+          "description": "类型",
+          "items": {
+            "type": "string"
+          }
+        },
+        "params": {
+          "type": "object",
+          "description": "参数",
+          "properties": {
+          }
+        },
+        "description": {
+          "type": "string",
+          "description": "描述"
+        }
+      }
+    },
+    "Resource": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "资源ID"
+        },
+        "type": {
+          "type": "string",
+          "description": "类型"
+        },
+        "config": {
+          "type": "object",
+          "description": "配置"
+        },
+        "description": {
+          "type": "string",
+          "description": "描述"
+        }
+      }
+    },
+    "Rule": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "规则名称"
+        },
+        "for": {
+          "type": "string",
+          "description": "触发来源"
+        },
+        "rawsql": {
+          "type": "string",
+          "description": "rawsql"
+        },
+        "description": {
+          "type": "string",
+          "description": "description"
+        },
+        "actions": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "params": {
+                "type": "object",
+                "properties": {
+                  "$resource": {
+                    "type": "string",
+                    "description": "$resource"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "ctx": {
+          "type": "object",
+          "properties": {
+            "clientid": {
+              "type": "string",
+              "description": "clientid"
+            },
+            "payload": {
+              "type": "string",
+              "description": "payload"
+            },
+            "qos": {
+              "type": "number",
+              "description": "qos"
+            },
+            "topic": {
+              "type": "number",
+              "description": "topic"
+            },
+            "username": {
+              "type": "number",
+              "description": "username"
+            }
+          }
+        }
+      }
+    }
+  },
+  "paths": {
+    "/rule/{id}": {
+      "get": {
+        "security": [],
+        "summary": "获取规则引擎",
+        "description": "获取规则引擎",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "规则引擎名称",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/Rule"
+                  }
+                },
+                "code": {
+                  "type": "number"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Rule"
+        ]
+      },
+      "delete": {
+        "security": [],
+        "summary": "删除规则引擎",
+        "description": "删除规则引擎",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "规则引擎名称",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/Rule"
+                  }
+                },
+                "code": {
+                  "type": "number"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Rule"
+        ]
+      }
+    },
+    "/rule_test": {
+      "post": {
+        "security": [],
+        "summary": "测试规则引擎",
+        "description": "创建规则引擎",
+        "parameters": [
+          {
+            "name": "rule",
+            "in": "body",
+            "description": "规则引擎配置",
+            "schema": {
+              "$ref": "#/definitions/Rule"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Rule"
+        ]
+      }
+    },
+    "/rules": {
+      "get": {
+        "security": [],
+        "summary": "获取规则引擎列表",
+        "description": "获取规则引擎列表",
+        "parameters": [
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/Rule"
+                  }
+                },
+                "code": {
+                  "type": "number"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Rule"
+        ]
+      },
+      "post": {
+        "security": [],
+        "summary": "创建规则引擎",
+        "description": "创建规则引擎",
+        "parameters": [
+          {
+            "name": "rule",
+            "in": "body",
+            "description": "规则引擎配置",
+            "schema": {
+              "$ref": "#/definitions/Rule"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Rule"
+        ]
+      }
+    },
+    "/resource_types": {
+      "get": {
+        "security": [],
+        "summary": "获取资源类型列表",
+        "description": "获取资源类型列表",
+        "parameters": [
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "名称"
+                  },
+                  "params": {
+                    "type": "object",
+                    "description": "参数",
+                    "properties": {
+                    }
+                  },
+                  "provider": {
+                    "type": "string",
+                    "description": "provider"
+                  },
+                  "title": {
+                    "type": "string",
+                    "description": "标题"
+                  },
+                  "description": {
+                    "type": "string",
+                    "description": "描述"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Rule"
+        ]
+      }
+    }
+  }
+}

@@ -36,7 +36,7 @@ createsub(ProductId, DeviceId, DtuAddr, ACL, Rotation, #{<<"parentDtu">> := Pare
         } = X,
         NewPn = <<DtuAddr/binary, "/", Pn/binary>>,
         create(ProductId, DeviceId, NewPn, ACL, Rotation, Thing#{<<"parentDtu">> => ParentDtu})
-              end, dgiot_shadow:get_sub_device(DtuAddr)),
+              end, dgiot_device:get_sub_device(DtuAddr)),
     ok.
 
 create(ProductId, DeviceId, Pn, ACL, Rotation, #{<<"properties">> := Props}) ->
@@ -179,7 +179,7 @@ get_instruct(_ProductId, DeviceId, Round, instruct) ->
     get_que(DeviceId, Round).
 
 get_instruct(ProductId, Round) ->
-    case dgiot_shadow:lookup_prod(ProductId) of
+    case dgiot_device:lookup_prod(ProductId) of
         {ok, #{<<"thing">> := #{<<"properties">> := Props}}} when length(Props) > 0 ->
             {_, NewList} = lists:foldl(fun(X, Acc) ->
                 {Order, List} = Acc,
@@ -259,7 +259,7 @@ get_que_(Que, Round) ->
 
 
 %%save_thing(ProductId) ->
-%%    case dgiot_shadow:lookup_prod(ProductId) of
+%%    case dgiot_device:lookup_prod(ProductId) of
 %%        {ok, #{<<"thing">> := #{<<"properties">> := Props}}} when length(Props) > 0 ->
 %%            lists:map(fun(X) ->
 %%                case X of

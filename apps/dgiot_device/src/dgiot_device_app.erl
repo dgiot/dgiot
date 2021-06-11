@@ -10,10 +10,9 @@
 
 
 start(_StartType, _StartArgs) ->
-    {ok, Sup} = dgiot_shadow_sup:start_link(),
+    {ok, Sup} = dgiot_device_sup:start_link(),
     dgiot_product:start(),
     dgiot_protocol:start(),
-    dgiot_local_devcache:init(),
     {ok, Sup}.
 
 stop(_State) ->

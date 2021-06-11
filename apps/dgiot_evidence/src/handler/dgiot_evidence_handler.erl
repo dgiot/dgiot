@@ -547,7 +547,7 @@ post_report(#{<<"name">> := Name, <<"devType">> := DevType,
                 {ok, #{<<"results">> := Results}} when length(Results) == 0 ->
                     <<DtuAddr:12/binary, _/binary>> = license_loader:random(),
                     {ok, #{<<"objectId">> := ParentId}} =
-                        dgiot_shadow:create_device(#{
+                        dgiot_device:create_device(#{
                             <<"devaddr">> => DtuAddr,
                             <<"name">> => Name,
                             <<"ip">> => <<"">>,
@@ -569,7 +569,7 @@ post_report(#{<<"name">> := Name, <<"devType">> := DevType,
                                     <<"objectId">> := ObjectId
                                 } = X,
                                 <<Addr:12/binary, _/binary>> = dgiot_license:to_md5(license_loader:random()),
-                                R0 = dgiot_shadow:create_device(#{
+                                R0 = dgiot_device:create_device(#{
                                     <<"devaddr">> => Addr,
                                     <<"name">> => <<Name/binary, "_", Desc/binary, ""/utf8>>,
                                     <<"ip">> => <<"">>,

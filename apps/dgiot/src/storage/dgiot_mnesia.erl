@@ -35,18 +35,15 @@
 %% API
 -export([
     page/5,
-    page/6,
-    lookup/2,
+    lookup/1,
     insert/2,
-    delete/2,
-    select_count/1,
-    select_where/2,
-    select_where/3,
-    select_limit/2,
-    select_object/3,
-    match_object/2
+    delete/1,
+    select_count/0,
+    select_where/1,
+    select_limit/1,
+    select_object/2,
+    match_object/1
 ]).
-
 
 -export([start_link/2]).
 
@@ -82,8 +79,6 @@
     , code_change/3
 ]).
 
--define(MNESIA_TAB, dgiot_mnesia).
-
 %%--------------------------------------------------------------------
 %% Mnesia bootstrap
 %%--------------------------------------------------------------------
@@ -105,34 +100,66 @@ mnesia(copy) ->
 
 -spec(start_link(atom(), pos_integer()) -> startlink_ret()).
 start_link(Pool, Id) ->
-    gen_server:start_link({local, emqx_misc:proc_name(?MODULE, Id)},
+    gen_server:start_link({local, dgiot_misc:proc_name(?MODULE, Id)},
         ?MODULE, [Pool, Id], [{hibernate_after, 1000}]).
 
 %%--------------------------------------------------------------------
 %% Mnesia APIs
 %%--------------------------------------------------------------------
-lookup(Tab, Key) ->
-    mnesia:transaction(fun mnesia:read/1, [{Tab, Key}]).
+-spec(lookup(dgiot_type:key()) -> ok | {error, term()}).
+lookup(Key) ->
+    lookup(?MNESIA_TAB, Key).
 
-insert(TAB, Record) ->
+-spec(lookup(dgiot_type:key(),dgiot_type:value()) -> ok | {error, term()}).
+lookup(Tab, Key) ->
+    Result = mnesia:transaction(fun mnesia:read/1, [{Tab, Key}]),
+    result(Result).
+
+%% todo 分布式节点是否需要远程调用？
+%%lookup(Node, ProductId, DevAddr) ->
+%%%%    case rpc:call(Node, ?MODULE, lookup, [Node, ProductId, DevAddr]) of
+%%%%        {badrpc, Reason} ->
+%%%%            {error, Reason};
+%%%%        Res ->
+%%%%            Res
+%%%%    end.
+-spec(insert(dgiot_type:key(),dgiot_type:value()) -> ok | {error, term()}).
+insert(Key, Value) ->
+    insert(?MNESIA_TAB, Key, Value).
+
+insert(TB, Key, Value) ->
+    insert_(TB, #mnesia{key = Key, value = Value}).
+
+insert_(TAB, Record) ->
     F = fun() -> mnesia:write(TAB, Record, write) end,
-    mnesia:transaction(F).
+    Result = mnesia:transaction(F),
+    result(Result).
+
+delete(Key) ->
+    delete(?MNESIA_TAB, Key).
 
 delete(TAB, Key) ->
     F =
         fun() ->
             mnesia:delete({TAB, Key})
         end,
-    mnesia:transaction(F).
+    Result = mnesia:transaction(F),
+    result(Result).
 
+
+select_count() ->
+    select_count(?MNESIA_TAB).
 
 select_count(TAB) ->
     F =
         fun() ->
             mnesia:table_info(TAB, size)
         end,
-    mnesia:transaction(F).
+    Result = mnesia:transaction(F),
+    result(Result).
 
+select_limit(Limit) ->
+    select_limit(?MNESIA_TAB, Limit).
 
 select_limit(TAB, Limit) ->
     F =
@@ -141,19 +168,42 @@ select_limit(TAB, Limit) ->
             QC = qlc:cursor(Q),
             qlc:next_answers(QC, Limit)
         end,
-    mnesia:transaction(F).
+    Result = mnesia:transaction(F),
+    result(Result).
 
+match_object({PKey, PValue}) ->
+    match_object(?MNESIA_TAB, {PKey, PValue}, fun(Row) -> Row end);
+
+match_object({PKey, PValue, RowFun}) ->
+    match_object(?MNESIA_TAB, {PKey, PValue}, RowFun).
 
 match_object(TB, Record) ->
     F =
         fun() ->
             mnesia:match_object(TB, Record, read)
         end,
-    mnesia:transaction(F).
+    Result = mnesia:transaction(F),
+    result(Result).
+
+match_object(TB, {PKey, PValue}, RowFun) ->
+    Result = match_object(TB, #mnesia{key = PKey, value = PValue}),
+    case result(Result) of
+        {ok, Records} ->
+            [RowFun({Key, Value}) || #mnesia{key = Key, value = Value} <- Records];
+        {error, empty} ->
+            [];
+        {error, Reason} ->
+            {error, Reason}
+    end.
 
 
 %% where qlc:q([E || E <- mnesia:table(TAB), E#tabrecord.id > 5])
 %% order fun(A, B) -> B#tabrecord.id > A#tabrecord.id end,
+select_where({Filter}) ->
+    select_where(?MNESIA_TAB, Filter);
+select_where({Filter, Order}) ->
+    select_where(?MNESIA_TAB, Filter, Order).
+
 select_where(TB, Filter) ->
     select_where(TB, Filter, none).
 
@@ -170,40 +220,65 @@ select_where(TB, Filter, Order) ->
                 end,
             qlc:e(NewQ)
         end,
-    mnesia:transaction(F).
+    Result = mnesia:transaction(F),
+    result(Result).
 
+select_object(Filter, Order) ->
+    select_object(?MNESIA_TAB, Filter, Order).
 
 select_object(TB, Filter, Order) ->
     F =
         fun() ->
             dgiot_pager:all(mnesia:table(TB), Filter, Order)
         end,
-    mnesia:transaction(F).
+    Result = mnesia:transaction(F),
+    result(Result).
 
+page(PageNo, PageSize, Filter, RowFun, Order) ->
+    page(?MNESIA_TAB, PageNo, PageSize, Filter, RowFun, Order).
 
-page(TB, PageNo, PageSize, Filter, RowFun) ->
-    page(TB, PageNo, PageSize, Filter, RowFun, none).
 page(TB, PageNo, PageSize, Filter, RowFun, Order) ->
-    F =
-        fun() ->
-            dgiot_pager:page(mnesia:table(TB), Filter, PageNo, PageSize, RowFun, Order)
+    NewRowFun =
+        fun(#mnesia{key = Key, value = Value}) ->
+            RowFun({Key, Value})
         end,
-    mnesia:transaction(F).
+    NewFilter =
+        fun(#mnesia{key = Key, value = Value}) ->
+            Filter({Key, Value})
+        end,
+    NewOrder =
+        case is_function(Order) of
+            true ->
+                fun(#mnesia{key = Key, value = Value}, #mnesia{key = Key1, value = Value1}) ->
+                    Order({Key, Value}, {Key1, Value1})
+                end;
+            _ ->
+                Order
+        end,
+    Result = dgiot_pager:page(TB, PageNo, PageSize, NewFilter, NewRowFun, NewOrder),
+    result(Result).
 
--spec(add_mnesia(binary()) -> ok | {error, term()}).
-add_mnesia(Topic) when is_binary(Topic) ->
-    add_mnesia(Topic, node()).
+
+result({atomic, ok}) -> true;
+result({atomic, []}) -> {error, empty};
+result({aborted, Reason}) -> {error, Reason};
+result({atomic, Result}) -> {ok, Result};
+result(Result) -> Result.
+
+-spec(add_mnesia(dgiot_type:key()) -> ok | {error, term()}).
+add_mnesia(Key) ->
+    add_mnesia(Key, node()).
 
 -spec(add_mnesia(dgiot_type:key(), dgiot_type:value()) -> ok | {error, term()}).
-add_mnesia(Topic, Dest) when is_binary(Topic) ->
-    call(pick(Topic), {add_mnesia, Topic, Dest}).
+add_mnesia(Key, Value) ->
+    call(pick(Key), {add_mnesia, Key, Value}).
 
 -spec(do_add_mnesia(dgiot_type:key()) -> ok | {error, term()}).
-do_add_mnesia(Topic) when is_binary(Topic) ->
-    do_add_mnesia(Topic, node()).
+do_add_mnesia(Key) ->
+    do_add_mnesia(Key, node()).
 
 -spec(do_add_mnesia(dgiot_type:key(), dgiot_type:value()) -> ok | {error, term()}).
-do_add_mnesia(Key, Value) when is_binary(Key) ->
+do_add_mnesia(Key, Value) ->
     Mnesia = #mnesia{key = Key, value = Value},
     case lists:member(Mnesia, do_add_mnesia(Key)) of
         true -> ok;
@@ -250,7 +325,7 @@ keys() ->
 -spec(print_mnesia(dgiot_type:key()) -> ok).
 print_mnesia(Key) ->
     lists:foreach(fun(#mnesia{key = Key1, value = Value}) ->
-        io:format("~s -> ~s~n", [Key1, Value])
+        io:format("~p -> ~p~n", [Key1, Value])
                   end, match_mnesia(Key)).
 
 call(Mnesia, Msg) ->
@@ -302,7 +377,6 @@ insert_direct_mnseia(Mnesia) ->
 
 delete_direct_mnesia(Mnesia) ->
     mnesia:async_dirty(fun mnesia:delete_object/3, [?MNESIA_TAB, Mnesia, sticky_write]).
-
 
 %% @private
 -spec(maybe_trans(function(), list(any())) -> ok | {error, term()}).

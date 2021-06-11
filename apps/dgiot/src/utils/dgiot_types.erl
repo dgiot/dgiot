@@ -17,6 +17,7 @@
 -module(dgiot_types).
 
 -include("dgiot.hrl").
+-include("dgiot_mnesia.hrl").
 -include("types.hrl").
 
 -export_type([
@@ -41,6 +42,6 @@
 max_heap_size => non_neg_integer()
 }).
 
--type(key() :: binary()).
+-type(key() :: binary() | list() | tuple()).
 -type(value() :: node() | {binary(), node()} | {map(), node()} | {list(), node()}).
 -type(mnesia() :: #mnesia{}).

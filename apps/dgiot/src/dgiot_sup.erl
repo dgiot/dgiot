@@ -76,7 +76,10 @@ init([]) ->
     CMSup = child_spec(dgiot_cm_sup, supervisor, []),
     Childs = [KernelSup]
         ++ [MnesiaSup]
-        ++ [CMSup],
+        ++ [CMSup]
+        ++ [child_spec(dgiot_dcache, worker, [?DCACHE]),
+            dgiot_channelx:spec(channelx_mgr)],
+
     SupFlags = #{strategy => one_for_all,
         intensity => 0,
         period => 1

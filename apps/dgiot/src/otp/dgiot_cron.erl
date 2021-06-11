@@ -18,18 +18,16 @@
 -include_lib("stdlib/include/ms_transform.hrl").
 -include("dgiot_cron.hrl").
 -include_lib("dgiot/include/logger.hrl").
--export([test/0, init_ets/0, init/1, childspec/1, childspec/2, do_task/2, change_time/2]).
+-export([test/0, childspec/1, childspec/2, do_task/2, change_time/2]).
 -export([start/1, start/2, start_timer/2, start_timer/3, handle_call/3, handle_info/2, get_next_time/3]).
 -export([save/2, match_task/2,now/1,push/1]).
 
 -include_lib("eunit/include/eunit.hrl").
 start(Sup) ->
-    init_ets(),
     {ok, _} = start(Sup, ?DEFAULT_CRON).
 
 start(Sup, Name) ->
     ChildSpec = childspec(Name),
-    dgiot_data:init(?DGIOT_CRON),
     supervisor:start_child(Sup, ChildSpec).
 
 start_timer(StartTime, Callback) ->
@@ -51,14 +49,6 @@ start_timer(ID, Secs, Callback) when is_integer(Secs) ->
         <<"count">> => 1,
         <<"callback">> => Callback
     }).
-
-
-init_ets() ->
-    init(?CRON_DB).
-
-%% 初始化数据,可以多共用一个
-init(Name) ->
-    dgiot_data:init(Name, [public, named_table, {write_concurrency, true}, {read_concurrency, true}]).
 
 
 %% 返回任务进程描述，可以挂到sup下面

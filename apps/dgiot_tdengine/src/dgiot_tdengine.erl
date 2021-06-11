@@ -203,7 +203,7 @@ get_tddata(Channel, Acc, #{<<"objectId">> := DeviceId} = Device, #{<<"objectId">
                 _ -> Acc2
             end
                     end, #{DeviceId => #{<<"productid">> => ProdcutId, <<"deviceid">> => DeviceId, <<"data">> => maps:without([<<"createdat">>], Data)}},
-            dgiot_shadow:get_sub_device(DevAddr)),
+            dgiot_device:get_sub_device(DevAddr)),
     Acc ++ [Device#{<<"lasttime">> => Time, <<"swtopo">> => [], <<"tddata">> => maps:values(TdData)}].
 
 

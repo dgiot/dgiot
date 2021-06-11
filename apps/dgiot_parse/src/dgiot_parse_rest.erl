@@ -275,7 +275,7 @@ encode_body(_Path, _Method, Map, _) ->
     jsx:encode(Map).
 
 do_request(Method, Path, Header, Data, Options) ->
-   ?LOG(info,"Method ~p, Path ~p, Data ~p, Options ~p",[Method, Path, Data, Options]),
+%%   ?LOG(info,"Method ~p, Path ~p, Data ~p, Options ~p",[Method, Path, Data, Options]),
     case httpc_request(Method, Path, Header, Data, [], [], Options) of
         {error, Reason} ->
             {error, Reason};
