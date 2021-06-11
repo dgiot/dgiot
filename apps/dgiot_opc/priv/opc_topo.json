@@ -1,0 +1,146 @@
+{
+  "konva": {
+    "Stage": {
+      "attrs": {
+        "id": "container",
+        "width": 1667,
+        "height": 350,
+        "draggable": true
+      },
+      "children": [
+        {
+          "attrs": {
+            "id": "layer_040a1c7933"
+          },
+          "children": [
+            {
+              "attrs": {
+                "id": "Acrel",
+                "width": 2000,
+                "height": 2000
+              },
+              "children": [
+                {
+                  "attrs": {
+                    "x": 280,
+                    "y": 290,
+                    "id": "U_OPC",
+                    "fill": "#ffffff",
+                    "text": "电压",
+                    "type": "text",
+                    "fontSize": 20,
+                    "draggable": true,
+                    "fontFamily": "Calibri"
+                  },
+                  "className": "Text"
+                },
+                {
+                  "attrs": {
+                    "x": 580,
+                    "y": 290,
+                    "id": "P_OPC",
+                    "fill": "#ffffff",
+                    "text": "输入功率",
+                    "type": "text",
+                    "fontSize": 20,
+                    "draggable": true,
+                    "fontFamily": "Calibri"
+                  },
+                  "className": "Text"
+                },
+                {
+                  "attrs": {
+                    "x": 430,
+                    "y": 290,
+                    "id": "I_OPC",
+                    "fill": "#ffffff",
+                    "text": "电流",
+                    "type": "text",
+                    "fontSize": 20,
+                    "draggable": true,
+                    "fontFamily": "Calibri"
+                  },
+                  "className": "Text"
+                },
+                {
+                  "attrs": {
+                    "x": 790,
+                    "y": 590,
+                    "id": "DJZS_OPC",
+                    "fill": "#ffffff",
+                    "text": "电机转速",
+                    "type": "text",
+                    "fontSize": 20,
+                    "draggable": true,
+                    "fontFamily": "Calibri"
+                  },
+                  "className": "Text"
+                },
+                {
+                  "attrs": {
+                    "x": 280,
+                    "y": 450,
+                    "id": "SWD_OPC",
+                    "fill": "#ffffff",
+                    "text": "水温度",
+                    "type": "text",
+                    "fontSize": 20,
+                    "draggable": true,
+                    "fontFamily": "Calibri"
+                  },
+                  "className": "Text"
+                },
+                {
+                  "attrs": {
+                    "x": 430,
+                    "y": 88,
+                    "id": "DCLL_OPC",
+                    "fill": "#ffffff",
+                    "text": "电磁流量",
+                    "type": "text",
+                    "fontSize": 20,
+                    "draggable": true,
+                    "fontFamily": "Calibri"
+                  },
+                  "className": "Text"
+                },
+                {
+                  "attrs": {
+                    "x": 500,
+                    "y": 537,
+                    "id": "JKYL_OPC",
+                    "fill": "#ffffff",
+                    "text": "进口压力",
+                    "type": "text",
+                    "fontSize": 20,
+                    "draggable": true,
+                    "fontFamily": "Calibri"
+                  },
+                  "className": "Text"
+                },
+                {
+                  "attrs": {
+                    "x": 820,
+                    "y": 440,
+                    "id": "CKYL_OPC",
+                    "fill": "#ffffff",
+                    "text": "出口压力",
+                    "type": "text",
+                    "fontSize": 20,
+                    "draggable": true,
+                    "fontFamily": "Calibri"
+                  },
+                  "className": "Text"
+                }
+              ],
+              "className": "Group"
+            }
+          ],
+          "className": "Layer"
+        }
+      ],
+      "className": "Stage"
+    },
+    "background": "http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_tech/zh/blog/study/opc/black_xbs.png"
+  }
+}

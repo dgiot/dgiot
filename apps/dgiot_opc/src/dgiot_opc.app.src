@@ -1,0 +1,7 @@
+{application, dgiot_opc,
+    [{description, "DGIOT OPC"},
+        {vsn, "4.0.0"},
+        {modules, []},
+        {registered, [dgiot_opc_sup]},
+        {applications, [kernel, stdlib, dgiot]},
+        {mod, {dgiot_opc_app, []}}]}.
