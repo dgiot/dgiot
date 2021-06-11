@@ -16,6 +16,7 @@
 
 -module(dgiot_data).
 -author("johnliu").
+-include("dgiot_cron.hrl").
 
 -export([init/0, init/1, init/2]).
 -export([insert/2, save/2, delete/1, match/1, match_object/2, match_limit/2, match_safe_do/3, match_object/3, match_delete/1, select/2, lookup/1, page/6, destroy/1, update_counter/2]).
@@ -28,7 +29,9 @@
 
 init() ->
     init(?CONSUMER),
-    init(?DB).
+    init(?DB),
+    init(?DGIOT_CRON),
+    init(?CRON_DB).
 
 init(Name) ->
     init(Name, [public, named_table, ordered_set, {write_concurrency, true}, {read_concurrency, true}]).
@@ -40,7 +43,6 @@ init(Name, Options) ->
         _ ->
             Name
     end.
-
 
 insert(Key, Value) ->
     insert(?DB, Key, Value).

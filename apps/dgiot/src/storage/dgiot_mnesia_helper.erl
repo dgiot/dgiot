@@ -21,8 +21,9 @@
 -include("dgiot.hrl").
 -include("logger.hrl").
 -include("types.hrl").
+-include("dgiot_mnesia.hrl").
 
--logger_header("[Router Helper]").
+-logger_header("[Mnesia Helper]").
 
 %% Mnesia bootstrap
 -export([mnesia/1]).

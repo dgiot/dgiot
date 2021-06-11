@@ -21,15 +21,70 @@
 -define(CHANNEL, <<"product">>).
 -define(CACHE, binary_to_atom(<<?TYPE/binary, ?CHANNEL/binary>>, utf8)).
 -define(CONFIG(Key, Default), dgiot:get_env(dgiot_device, Key, Default)).
--export([start/0, init/3, handle_event/3, handle_message/2, stop/3]).
--export([load/1, add_device/2, local/1, save/1, query/1, synchronize_device/1]).
+-record(state, {}).
+
+-export([start/0, load/1, init/3, handle_event/3, handle_message/2, stop/3]).
+-export([ add_device/2, local/1, save/1, query/1, synchronize_device/1]).
 -export([add_handler/4, do_handler/3, del_handler/1]).
 -export([update_config/2, parse_frame/3, to_frame/2]).
 
 -export([create_product/2]).
 
 
--record(state, {}).
+start() ->
+    dgiot_data:init(?MODULE),
+    dgiot_channelx:add(?TYPE, ?CHANNEL, ?MODULE, #{}).
+
+%% 载入产品
+load(ProductId) ->
+    case dgiot_channelx:call(?TYPE, ?CHANNEL, {load, ProductId, true}) of
+        {ok, Product} = Result ->
+            dgiot_device:save_prod(ProductId, Product),
+            Result;
+        Error -> Error
+    end.
+
+%% 通道初始化
+init(?TYPE, _ChannelId, _ChannelArgs) ->
+    {ok, #state{}}.
+
+%% 通道消息处理,注意：进程池调用
+handle_event(EventId, Event, _State) ->
+    ?LOG(info,"channel ~p, ~p", [EventId, Event]),
+    ok.
+
+handle_message({load, ProductId, IsLoadDevice}, State) ->
+    Reply =
+        case dgiot_product:query(ProductId) of
+            {ok, Product} ->
+                {ok, Product1} = dgiot_product:save(Product),
+                case IsLoadDevice of
+                    true ->
+                        case dgiot_product:synchronize_device(ProductId) of
+                            ok ->
+                                {ok, Product1};
+                            {error, Why} ->
+                                {error, Why}
+                        end;
+                    false ->
+                        {ok, Product1}
+                end;
+            {error, Reason} ->
+                {error, Reason}
+        end,
+    {reply, Reply, State};
+
+handle_message(_Message, State) ->
+    %?LOG(info,"channel ~p", [Message]),
+    {ok, State}.
+
+stop(ChannelType, ChannelId, _) ->
+    ?LOG(error,"channel stop ~p,~p", [ChannelType, ChannelId]),
+    ok.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
 
 %% 注册数据处理通道
 add_handler([], _, _, _) -> ok;
@@ -50,15 +105,6 @@ do_handler(ProductId, EndPoint, Message) ->
             excute_handler(ProductId, Actions, Message);
         {error, empty} ->
             ok
-    end.
-
-%% 载入产品
-load(ProductId) ->
-    case dgiot_channelx:call(?TYPE, ?CHANNEL, {load, ProductId, true}) of
-        {ok, Product} = Result ->
-            dgiot_shadow:save_prod(ProductId, Product),
-            Result;
-        Error -> Error
     end.
 
 %% 同步设备
@@ -89,7 +135,7 @@ save(Product) ->
     Product1 = format_product(Product),
     #{<<"productId">> := ProductId} = Product1,
     dgiot_data:insert(?MODULE, ProductId, Product1),
-%%    ?LOG(info,"update product ~p", [Product1]),
+    ?LOG(info,"update product ~p", [Product1]),
     {ok, Product1}.
 
 local(ProductId) ->
@@ -113,15 +159,6 @@ query(ProductId) ->
 % 保证产品与设备在同一节点上
 % 2.dynamicReg ：load 为读库启动的
 %   dynamicReg ：true 为动态注册
-add_device(#{<<"productId">> := ProductId} = Product, #{<<"devaddr">> := DevAddr} = Device) ->
-    NewDevice = maps:without([<<"devaddr">>, <<"createdAt">>, <<"updatedAt">>], Device),
-    Info = maps:merge(maps:with([<<"nodeType">>, <<"ACL">>, <<"topics">>], Product), NewDevice),
-    case maps:get(<<"dynamicReg">>, Product, false) of
-        T when T == true; T == <<"load">> ->
-            dgiot_shadow:start(ProductId, DevAddr, Info);
-        _ ->
-            {error, <<"This Product not allow dynamic register">>}
-    end;
 add_device(ProductId, Device) when is_map(Device) ->
     case local(ProductId) of
         {error, not_find} ->
@@ -134,7 +171,7 @@ add_device(ProductId, DevAddr) ->
         {error, not_find} ->
             {error, {product, not_find}};
         {ok, Product} ->
-            case dgiot_shadow:query(ProductId, DevAddr) of
+            case dgiot_device:query(ProductId, DevAddr) of
                 {ok, Device} ->
                     add_device(Product, Device);
                 {error, Reason} ->
@@ -142,50 +179,6 @@ add_device(ProductId, DevAddr) ->
             end
     end.
 
-
-start() ->
-    dgiot_channelx:add(?TYPE, ?CHANNEL, ?MODULE, #{}).
-
-
-%% 通道初始化
-init(?TYPE, _ChannelId, _ChannelArgs) ->
-    dgiot_data:init(?MODULE),
-    {ok, #state{}}.
-
-%% 通道消息处理,注意：进程池调用
-handle_event(EventId, Event, _State) ->
-    ?LOG(info,"channel ~p, ~p", [EventId, Event]),
-    ok.
-
-handle_message({load, ProductId, IsLoadDevice}, State) ->
-    Reply =
-        case query(ProductId) of
-            {ok, Product} ->
-                {ok, Product1} = save(Product),
-                case IsLoadDevice of
-                    true ->
-                        case synchronize_device(ProductId) of
-                            ok ->
-                                {ok, Product1};
-                            {error, Why} ->
-                                {error, Why}
-                        end;
-                    false ->
-                        {ok, Product1}
-                end;
-            {error, Reason} ->
-                {error, Reason}
-        end,
-    {reply, Reply, State};
-
-
-handle_message(_Message, State) ->
-    %?LOG(info,"channel ~p", [Message]),
-    {ok, State}.
-
-stop(ChannelType, ChannelId, _) ->
-    ?LOG(error,"channel stop ~p,~p", [ChannelType, ChannelId]),
-    ok.
 
 %%%===================================================================
 %%% Internal functions
@@ -227,17 +220,15 @@ synchronize_device(Query, Fun) ->
     Keys = [<<"devaddr">>, <<"isEnable">>, <<"route">>, <<"status">>],
     dgiot_parse_loader:start(<<"Device">>, Query#{<<"keys">> => Keys}, 1, PageSize, MaxTotal, Fun).
 
-
 load_device(_, []) -> ok;
 load_device(#{<<"productId">> := ProductId} = Product, [Device | Devices]) ->
-    case add_device(Product#{<<"dynamicReg">> => <<"load">>}, Device) of
+    case add_device(Product, Device) of
         {ok, Pid} ->
             ?LOG(debug,"ProductId:~p, DevAddr:~p -> ~p", [ProductId, Device, Pid]);
         {error, Reason} ->
             ?LOG(error,"ProductId:~p, DevAddr:~p -> ~p", [ProductId, Device, Reason])
     end,
     load_device(Product, Devices).
-
 
 excute_handler(_, [], _) ->
     ok;
@@ -363,3 +354,4 @@ parse_frame(ProductId, Bin, Opts) ->
 
 to_frame(ProductId, Msg) ->
     apply(binary_to_atom(ProductId, utf8), to_frame, [Msg]).
+

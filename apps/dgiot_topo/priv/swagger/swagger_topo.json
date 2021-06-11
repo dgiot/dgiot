@@ -1,0 +1,93 @@
+{
+  "definitions": {},
+  "paths": {
+    "/topo": {
+      "get": {
+        "basePath":"/",
+        "description": "云组态",
+        "parameters": [
+          {
+            "description": "产品ObjectId",
+            "in": "query",
+            "name": "productid",
+            "required": true,
+            "type": "string",
+            "default":""
+          },
+          {
+            "description": "设备编号",
+            "in": "query",
+            "name": "devaddr",
+            "required": false,
+            "type": "string",
+            "default":""
+          },
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "云组态",
+        "tags": [
+          "TOPO"
+        ]
+      },
+      "post": {
+        "basePath":"/",
+        "security": [],
+        "description": "云组态",
+        "consumes": [
+          "*"
+        ],
+        "parameters": [
+          {
+            "description": "产品ObjectId",
+            "in": "body",
+            "name": "productid",
+            "required": true,
+            "type": "string",
+            "default":""
+          },
+          {
+            "description": "设备编号",
+            "in": "body",
+            "name": "devaddr",
+            "required": true,
+            "type": "string",
+            "default":""
+          },
+          {
+            "description": "base64",
+            "in": "body",
+            "name": "base64",
+            "required": true,
+            "type": "string",
+            "default":""
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "云组态",
+        "tags": [
+          "TOPO"
+        ]
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "TOPO",
+      "description": "云组态"
+    }
+  ]
+}

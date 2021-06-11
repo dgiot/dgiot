@@ -1,0 +1,364 @@
+{
+  "tags": [
+    {
+      "name": "Decoder",
+      "description": "解码器"
+    }
+  ],
+  "definitions": {
+
+  },
+  "paths": {
+    "/control/channel": {
+      "post": {
+        "summary": "通道控制",
+        "description": "如果通道配置有改变时的要操作",
+        "parameters": [
+          {
+            "description": "通道ID",
+            "in": "query",
+            "name": "id",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "动作",
+            "in": "query",
+            "name": "action",
+            "required": true,
+            "type": "string",
+            "enum": [
+              "update",
+              "enable",
+              "disable"
+            ]
+          }
+        ],
+        "consumes": [
+          "*"
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns instance data"
+          },
+          "404": {
+            "description": "object not found",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        },
+        "tags": [
+          "Channel"
+        ]
+      }
+    },
+    "/classes/Decoder": {
+      "post": {
+        "summary": "新增解码器",
+        "description": "给产品新增解码器",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "decoder",
+            "description": "解码器, code字段为Base64编码",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "description": "名称",
+                  "type": "string"
+                },
+                "version": {
+                  "description": "版本",
+                  "type": "string"
+                },
+                "desc": {
+                  "description": "描述",
+                  "type": "string"
+                },
+                "code": {
+                  "description": "代码",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Decoder"
+        ]
+      },
+      "get": {
+        "summary": "查询解码器",
+        "description": "查询解码器",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "order",
+            "description": "排序方式, 负为降序, eg: score,-name",
+            "required": false,
+            "type": "string",
+            "default": "createdAt"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "description": "limit, 显示多少条记录，显示100条记录 eg:100",
+            "required": false,
+            "default": 10,
+            "type": "integer"
+          },
+          {
+            "in": "query",
+            "name": "skip",
+            "description": "skip",
+            "required": false,
+            "default": 0,
+            "type": "integer"
+          },
+          {
+            "in": "query",
+            "name": "keys",
+            "description": "需要显示的字段,加count(*)则结果里面会显示总记录数, eg: username,email",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "in": "query",
+            "name": "include",
+            "description": "include",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "in": "query",
+            "name": "where",
+            "description": "过滤条件，eg: {\"objectId\":{\"$in\":[\"BGS3BFgcZN\"]}}",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "consumes": [
+          "*"
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Decoder"
+        ]
+      }
+    },
+    "/classes/Decoder/{id}": {
+      "get": {
+        "summary": "获取解码器",
+        "description": "根据ID获取解码器",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "description": "解码器ID",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "consumes": [
+          "*"
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Decoder"
+        ]
+      },
+      "delete": {
+        "summary": "删除解码器",
+        "description": "根据ID删除解码器",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "description": "解码器ID",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "consumes": [
+          "*"
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Decoder"
+        ]
+      },
+      "put": {
+        "summary": "更新解码器",
+        "description": "根据ID更新解码器",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "description": "解码器ID",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "decoder",
+            "description": "解码器, code字段为Base64编码",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "description": "名称",
+                  "type": "string"
+                },
+                "version": {
+                  "description": "版本",
+                  "type": "string"
+                },
+                "desc": {
+                  "description": "描述",
+                  "type": "string"
+                },
+                "code": {
+                  "description": "代码",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Decoder"
+        ]
+      }
+    },
+    "/decoder/func": {
+      "get": {
+        "summary": "获取指令集",
+        "description": "根据产品ID关联的解码器获取指令集",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "description": "解码器ID",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "consumes": [
+          "*"
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Decoder"
+        ]
+      }
+    }
+  }
+}

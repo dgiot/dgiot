@@ -1,5 +1,5 @@
 {application,dgiot_task,
-             [{description,"dgiot task"},
+             [{description,"DGIOT TASK"},
               {vsn,"1.6.4"},
               {modules,[]},
               {registered,[dgiot_task_sup]},

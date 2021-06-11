@@ -85,7 +85,7 @@ handle_call({set, Key, TTL}, _From, #checkstate{
     Now = calendar:local_time(),
     StartTime = calendar:datetime_to_gregorian_seconds(Now),
     ets:insert(CheckEts, {Key, {0, StartTime, TTL}}),
-    %dgiot_mcache:insert({{Key, cache}, {0, StartTime, TTL}}),
+    %dgiot_mnesia:insert({{Key, cache}, {0, StartTime, TTL}}),
     {reply, ok, State};
 handle_call(sortkey, _From, #checkstate{
     weight = Weight,
