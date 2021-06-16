@@ -1,5 +1,5 @@
 %%--------------------------------------------------------------------
-%% Copyright (c) 2020 DGIOT Technologies Co., Ltd. All Rights Reserved.
+%% Copyright (c) 2020-2021 DGIOT Technologies Co., Ltd. All Rights Reserved.
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -14,23 +14,5 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
-%% @doc dgiot_topo Application
--module(dgiot_topo_app).
--include("dgiot_topo.hrl").
--behaviour(application).
--emqx_plugin(?MODULE).
-
-%% Application callbacks
--export([start/2, stop/1]).
-
-
-%%--------------------------------------------------------------------
-%% Application callbacks
-%%--------------------------------------------------------------------
-
-start(_StartType, _StartArgs) ->
-   dgiot_topo_sup:start_link().
-
-stop(_State) ->
-    ok.
+-define(dgiot_niisten_DTU, dgiot_niisten_dtu_ets).
 

@@ -93,6 +93,18 @@
     , get_file/3
     , post_file/2
     , random/0
+    , get_hostname/0
+    , get_ip/1
+    , get_natip/0
+    , get_wlanip/0
+    , get_computerconfig/0
+    , get_ipbymac/1
+    , get_ifaddrs/0
+    , ping_all/0
+    , get_ipbymac/2
+    , get_ipv4/1
+    , get_ipv6/1
+    , trim_string/1
 ]).
 
 -define(TIMEZONE, + 8).
@@ -647,4 +659,150 @@ post_file(Root, FileName) ->
 
 %随机生成16位Key值
 random() ->
-    to_md5(io_lib:format("~p",[erlang:make_ref()])).
+    to_md5(io_lib:format("~p", [erlang:make_ref()])).
+
+get_hostname() ->
+    {ok, Hostname} = inet:gethostname(),
+    unicode:characters_to_binary(Hostname).
+
+get_natip() ->
+    IpList = lists:foldl(fun({A, B, C, D}, Acc) ->
+        Acc
+        ++ [to_list(A) ++ "."]
+            ++ [to_list(B) ++ "."]
+            ++ [to_list(C) ++ "."]
+            ++ [to_list(D) ++ " "]
+                         end, [], get_ifaddrs()),
+    to_binary(IpList).
+
+get_wlanip() ->
+    inets:start(),
+    case httpc:request(get, {"http://whatismyip.akamai.com/", []}, [], []) of
+        {ok, {_, _, IP}} -> to_binary(IP);
+        _ -> <<"">>
+    end.
+
+get_computerconfig() ->
+    case os:type() of
+        {win32, _} ->
+            <<"Active code page: 65001\r\nNumberOfCores  \r\r\n", CPU:2/binary, _/binary>> =
+                unicode:characters_to_binary(os:cmd("chcp 65001 && wmic cpu get NumberOfCores")),
+            <<"Active code page: 65001\r\nCapacity    \r\r\n", MemBin/binary>> =
+                unicode:characters_to_binary(os:cmd("chcp 65001 && wmic memorychip  get Capacity")),
+            List = re:split(MemBin, " "),
+            Mem = lists:foldl(fun(X, Acc) ->
+                M = trim_string(to_list(X)),
+                case to_binary(M) of
+                    <<"\n", _/binary>> -> Acc;
+                    <<"\r", _/binary>> -> Acc;
+                    _ -> Acc + to_int(M) div (1024 * 1024 * 1024)
+                end
+                              end, 0, List),
+            BinMem = to_binary(Mem),
+            <<CPU/binary, "C/", BinMem/binary, " G">>;
+        _ ->
+            <<BinCPU/binary>> =
+                unicode:characters_to_binary(string:strip(os:cmd("cat /proc/cpuinfo | grep \"cpu cores\" | uniq | wc -l"), right, $\n)),
+            <<BinMem/binary>> =
+                unicode:characters_to_binary(string:strip(os:cmd("grep MemTotal /proc/meminfo | awk '{print $2 / 1024 / 1024}'"), right, $\n)),
+            <<BinCPU/binary, "C/", BinMem/binary, " G">>
+    end.
+
+get_ipbymac(Mac, ping) ->
+    case get_ipbymac(Mac) of
+        <<"">> ->
+            ping_all(),
+            get_ipbymac(Mac);
+        Ip -> Ip
+    end.
+
+get_ipbymac(Mac) ->
+    case re:run(os:cmd("chcp 65001 & arp -a"),
+        <<"([\\d]{1,3}\\.[\\d]{1,3}\\.[\\d]{1,3}\\.[\\d]{1,3}).*?([\\S]{2}-[\\S]{2}-[\\S]{2}-[\\S]{2}-[\\S]{2}-[\\S]{2})">>,
+        [global, {capture, all_but_first, binary}]) of
+        {match, Iflist} ->
+            IpList = lists:foldl(fun(X, Acc) ->
+                case X of
+                    [Ip, Mac] -> lists:umerge([Acc, [<<Ip/binary, " ">>]]);
+                    _ -> Acc
+                end
+                                 end, [], Iflist),
+            case IpList of
+                [] -> <<"">>;
+                _ ->
+                    to_binary(trim_string(IpList))
+            end;
+        _ -> <<"">>
+    end.
+
+get_ip(Socket) ->
+    {ok, {{A, B, C, D}, _Port}} = esockd_transport:peername(Socket),
+    Ip = to_list(A) ++ "." ++
+        to_list(B) ++ "." ++
+        to_list(C) ++ "." ++
+        to_list(D),
+    to_binary(Ip).
+
+%%re:run(os:cmd("chcp 65001 & arp -a"),
+%%<<"([\\d]{1,3}\\.[\\d]{1,3}\\.[\\d]{1,3}\\.[\\d]{1,3}).*?([\\S]{2}-[\\S]{2}-[\\S]{2}-[\\S]{2}-[\\S]{2}-[\\S]{2})">>,
+%%[global, {capture, all_but_first, binary}])
+
+ping_all() ->
+    lists:map(fun({A, B, C, _D}) ->
+        Cmd = "for /l %i in (1,1,255) do ping -n 1 -w 50 "
+            ++ to_list(A) ++ "."
+            ++ to_list(B) ++ "."
+            ++ to_list(C) ++ "."
+            ++ "%i",
+        os:cmd(Cmd)
+              end,
+        get_ifaddrs()).
+
+get_ifaddrs() ->
+    case inet:getifaddrs() of
+        {ok, Iflist} ->
+            lists:foldl(fun({_K, V}, Acc) ->
+                NewAcc =
+                    case lists:keyfind([up, running], 2, V) of
+                        false -> Acc;
+                        _ ->
+                            Acc ++ get_ipv4(V)
+                    end,
+                case lists:keyfind([up, broadcast, running, multicast], 2, V) of
+                    false -> NewAcc;
+                    _ -> NewAcc ++ get_ipv4(V)
+                end
+                        end, [], Iflist);
+        _ -> []
+    end.
+
+get_ipv4(Hostent) ->
+    lists:foldl(fun({K, V}, Acc) ->
+        case K of
+            addr ->
+                case inet:parse_ipv4_address(inet:ntoa(V)) of
+                    {error, einval} -> Acc;
+                    _ -> Acc ++ [V]
+                end;
+            _ -> Acc
+        end
+                end, [], Hostent).
+
+get_ipv6(Hostent) ->
+    lists:foldl(fun({K, V}, Acc) ->
+        case K of
+            addr -> case inet:parse_ipv6_address(inet:ntoa(V)) of
+                        {error, einval} -> Acc;
+                        _ -> Acc ++ [V]
+                    end;
+            _ -> Acc
+        end
+                end, [], Hostent).
+
+trim_string(Str) when is_binary(Str) ->
+    trim_string(Str, binary);
+trim_string(Str) when is_list(Str) ->
+    trim_string(Str, list).
+
+trim_string(Str, Ret) ->
+    re:replace(Str, "^[\s\x{3000}]+|[\s\x{3000}]+$", "", [global, {return, Ret}, unicode]).

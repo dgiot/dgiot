@@ -42,7 +42,8 @@
     select_where/1,
     select_limit/1,
     select_object/2,
-    match_object/1
+    match_object/1,
+    match_object/2
 ]).
 
 -export([start_link/2]).
@@ -110,7 +111,7 @@ start_link(Pool, Id) ->
 lookup(Key) ->
     lookup(?MNESIA_TAB, Key).
 
--spec(lookup(dgiot_type:key(),dgiot_type:value()) -> ok | {error, term()}).
+-spec(lookup(dgiot_type:key(), dgiot_type:value()) -> ok | {error, term()}).
 lookup(Tab, Key) ->
     Result = mnesia:transaction(fun mnesia:read/1, [{Tab, Key}]),
     result(Result).
@@ -123,7 +124,7 @@ lookup(Tab, Key) ->
 %%%%        Res ->
 %%%%            Res
 %%%%    end.
--spec(insert(dgiot_type:key(),dgiot_type:value()) -> ok | {error, term()}).
+-spec(insert(dgiot_type:key(), dgiot_type:value()) -> ok | {error, term()}).
 insert(Key, Value) ->
     insert(?MNESIA_TAB, Key, Value).
 
@@ -176,6 +177,9 @@ match_object({PKey, PValue}) ->
 
 match_object({PKey, PValue, RowFun}) ->
     match_object(?MNESIA_TAB, {PKey, PValue}, RowFun).
+
+match_object({PKey, PValue}, RowFun) ->
+    match_object(?MNESIA_TAB, {PKey, PValue}, RowFun);
 
 match_object(TB, Record) ->
     F =

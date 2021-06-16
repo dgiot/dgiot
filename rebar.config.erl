@@ -8,7 +8,7 @@ do(_Dir, CONFIG) ->
     maybe_dump(Config ++ [{overrides, overrides()}] ++ coveralls() ++ config(HasElixir)).
 
 bcrypt() ->
-    {bcrypt, {git, "https://hub.fastgit.org/fastdgiot/erlang-bcrypt.git", {branch, "0.6.0"}}}.
+    {bcrypt, {git, "https://github.com.cnpmjs.org/fastdgiot/erlang-bcrypt.git", {branch, "0.6.0"}}}.
 
 deps(Config) ->
     {deps, OldDeps} = lists:keyfind(deps, 1, Config),
@@ -81,11 +81,11 @@ project_app_dirs() ->
     ["apps/*", alternative_lib_dir() ++ "/*", "."].
 
 plugins(HasElixir) ->
-    [{relup_helper, {git, "https://hub.fastgit.org/fastdgiot/relup_helper", {tag, "2.0.0"}}}
-        , {er_coap_client, {git, "https://hub.fastgit.org/fastdgiot/er_coap_client", {tag, "v1.0"}}}
+    [{relup_helper, {git, "https://github.com.cnpmjs.org/fastdgiot/relup_helper", {tag, "2.0.0"}}}
+        , {er_coap_client, {git, "https://github.com.cnpmjs.org/fastdgiot/er_coap_client", {tag, "v1.0"}}}
         %% emqx main project does not require port-compiler
         %% pin at root level for deterministic
-        , {pc, {git, "https://hub.fastgit.org/fastdgiot/port_compiler.git", {tag, "v1.11.1"}}}
+        , {pc, {git, "https://github.com.cnpmjs.org/fastdgiot/port_compiler.git", {tag, "v1.11.1"}}}
         | [rebar_mix || HasElixir]
     ]
     %% test plugins are concatenated to default profile plugins
@@ -94,12 +94,12 @@ plugins(HasElixir) ->
 
 test_plugins() ->
     [rebar3_proper,
-        {coveralls, {git, "https://hub.fastgit.org/fastdgiot/coveralls-erl", {branch, "fix-git-info"}}}
+        {coveralls, {git, "https://github.com.cnpmjs.org/fastdgiot/coveralls-erl", {branch, "fix-git-info"}}}
     ].
 
 test_deps() ->
     [{bbmustache, "1.10.0"}
-        , {emqx_ct_helpers, {git, "https://hub.fastgit.org/fastdgiot/emqx-ct-helpers", {tag, "1.3.9"}}}
+        , {emqx_ct_helpers, {git, "https://github.com.cnpmjs.org/fastdgiot/emqx-ct-helpers", {tag, "1.3.9"}}}
         , meck
     ].
 
@@ -189,11 +189,14 @@ overlay_vars_rel(RelType) ->
         , {enable_plugin_dgiot_parse, true}
         , {enable_plugin_dgiot_api, true}
         , {enable_plugin_dgiot_device, true}
+        , {enable_plugin_dgiot_license, true}
+        , {enable_plugin_dgiot_evidence, true}
         , {enable_plugin_dgiot_tdengine, true}
         , {enable_plugin_dgiot_task, true}
         , {enable_plugin_dgiot_http, true}
         , {enable_plugin_dgiot_topo, true}
         , {enable_plugin_dgiot_opc, true}
+        , {enable_plugin_dgiot_niisten, true}
         , {vm_args_file, VmArgs}
     ].
 
@@ -307,10 +310,14 @@ relx_plugin_apps_per_rel(cloud) ->
         , dgiot_bridge
         , dgiot_device
         , dgiot_tdengine
+        , dgiot_evidence
+        , dgiot_license
+        , dgiot_niisten
         , dgiot_task
         , dgiot_http
         , dgiot_topo
         , dgiot_opc
+        , dgiot_niisten
     ];
 relx_plugin_apps_per_rel(edge) ->
     [].

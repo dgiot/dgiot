@@ -42,7 +42,7 @@ init([#{<<"appid">> := AppId, <<"appsecret">> := AppSecret, <<"key">> := Key,
     SubTopic = <<"swlic_", Key/binary, "/", AppSecret/binary>>,
     dgiot_mqtt:subscribe(SubTopic),
     erlang:send_after(2000, self(), get_node_info),
-    dgiot_livequery:subscribe(SessionToken, <<"License">>, #{}),
+%%    dgiot_livequery:subscribe(SessionToken, <<"License">>, #{}),
     dgiot_data:insert(?DGIOT_LIC_WORK, {AppId, AppSecret, Key}, #{}),
     ?LOG(info, "SessionToken  ~p", [SessionToken]),
     {ok, #task{appid = AppId, appsecret = AppSecret, sessionToken = SessionToken, key = Key, step = <<"core">>, status = <<"boot_up">>}};
@@ -132,10 +132,10 @@ handle_info({deliver, _Topic, Msg}, #task{step = <<"mac">>, key = Key} = State) 
 handle_info(_Msg, State) ->
     {noreply, State}.
 
-terminate(_Reason, #task{appsecret = AppSecret, key = Key, sessionToken = SessionToken} = _State) ->
+terminate(_Reason, #task{appsecret = AppSecret, key = Key, sessionToken = _SessionToken} = _State) ->
     ?LOG(info, "_State ~p ~n", [_State]),
     dgiot_mqtt:unsubscribe(<<"swlic_", Key/binary, "/", AppSecret/binary>>),
-    dgiot_livequery:stop(SessionToken),
+%%    dgiot_livequery:stop(SessionToken),
     ok.
 
 code_change(_OldVsn, State, _Extra) ->

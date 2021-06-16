@@ -27,7 +27,7 @@ DEPS = case lists:keyfind(deps, 1, CONFIG1) of
            _ -> []
        end,
 
-UrlPrefix = "https://hub.fastgit.org/emqx/",
+UrlPrefix = "https://github.com.cnpmjs.org/emqx/",
 
 EMQX = {emqx, {git, UrlPrefix ++ "emqx", {branch, BRANCH}}},
 

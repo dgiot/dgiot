@@ -3,8 +3,8 @@
   "paths": {
     "/topo": {
       "get": {
-        "basePath":"/",
-        "description": "云组态",
+        "basePath": "/",
+        "description": "获取产品组态",
         "parameters": [
           {
             "description": "产品ObjectId",
@@ -12,7 +12,7 @@
             "name": "productid",
             "required": true,
             "type": "string",
-            "default":""
+            "default": ""
           },
           {
             "description": "设备编号",
@@ -20,8 +20,8 @@
             "name": "devaddr",
             "required": false,
             "type": "string",
-            "default":""
-          },
+            "default": ""
+          }
         ],
         "responses": {
           "200": {
@@ -31,15 +31,15 @@
             "description": ""
           }
         },
-        "summary": "云组态",
+        "summary": "获取产品组态",
         "tags": [
           "TOPO"
         ]
       },
       "post": {
-        "basePath":"/",
+        "basePath": "/",
         "security": [],
-        "description": "云组态",
+        "description": "发送组态",
         "consumes": [
           "*"
         ],
@@ -50,7 +50,7 @@
             "name": "productid",
             "required": true,
             "type": "string",
-            "default":""
+            "default": ""
           },
           {
             "description": "设备编号",
@@ -58,7 +58,7 @@
             "name": "devaddr",
             "required": true,
             "type": "string",
-            "default":""
+            "default": ""
           },
           {
             "description": "base64",
@@ -66,7 +66,7 @@
             "name": "base64",
             "required": true,
             "type": "string",
-            "default":""
+            "default": ""
           }
         ],
         "responses": {
@@ -77,7 +77,115 @@
             "description": ""
           }
         },
-        "summary": "云组态",
+        "summary": "发送组态",
+        "tags": [
+          "TOPO"
+        ]
+      }
+    },
+    "/konva_thing": {
+      "get": {
+        "basePath": "/",
+        "description": "物模型详情",
+        "parameters": [
+          {
+            "description": "产品ObjectId",
+            "in": "query",
+            "name": "productid",
+            "required": true,
+            "type": "string",
+            "default": ""
+          },
+          {
+            "description": "shapeid",
+            "in": "query",
+            "name": "shapeid",
+            "required": true,
+            "type": "string",
+            "default": ""
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "物模型详情",
+        "tags": [
+          "TOPO"
+        ]
+      },
+      "post": {
+        "basePath": "/",
+        "description": "修改组态",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "data",
+            "description": "修改组态",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "productid": {
+                  "type": "string"
+                },
+                "shapeid": {
+                  "type": "string"
+                },
+                "identifier": {
+                  "type": "string"
+                },
+                "name": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "组态修改",
+        "tags": [
+          "TOPO"
+        ]
+      }
+    },
+    "/dashboard": {
+      "post": {
+        "description": "启动任务",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "data",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns instance data"
+          },
+          "404": {
+            "description": "object not found",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        },
+        "summary": "启动任务",
         "tags": [
           "TOPO"
         ]

@@ -45,7 +45,7 @@ handle(OperationID, Args, Context, Req) ->
             ?LOG(info,"do request: ~p, ~p, ~p~n", [OperationID, Args, Reason]),
             Err = case is_binary(Reason) of
                       true -> Reason;
-                      false -> dgiot_framework:format("~p", [Reason])
+                      false -> dgiot_utils:format("~p", [Reason])
                   end,
             {500, Headers, #{<<"error">> => Err}};
         ok ->
@@ -124,10 +124,10 @@ do_request(get_health, _Body, _Context, Req) ->
     {200, #{<<"content-type">> => <<"text/plain">>}, <<"ok">>, Req};
 
 do_request(get_hardinfo, _Body, _Context, Req) ->
-    HostName = dgiot_evidence:get_hostname(),
-    NatIP = dgiot_evidence:get_natip(),
-    WlanIp = dgiot_evidence:get_wlanip(),
-    ComputerConfig = dgiot_evidence:get_computerconfig(),
+    HostName = dgiot_utils:get_hostname(),
+    NatIP = dgiot_utils:get_natip(),
+    WlanIp = dgiot_utils:get_wlanip(),
+    ComputerConfig = dgiot_utils:get_computerconfig(),
     ComputerKey = dgiot_license:get_hardkey(),
     ComputerAuth = case dgiot_license:check() of
                        true -> <<"已授权"/utf8>>;
@@ -265,18 +265,6 @@ do_request(get_apihub, #{<<"appname">> := AppName, <<"token">> := Token} = _Args
         _ ->
             {error, <<"token fail">>}
     end;
-
-%% iot_hub 概要: 查询平台api资源 描述:查询平台api资源
-%% OperationId:post_login
-%% 请求:POST /iotapi/post_login
-do_request(post_login, #{<<"type">> := <<"wechat">>, <<"openid">> := Openid}, _Context, _Req) ->
-   dgiot_wechat:get_sns_user(Openid);
-
-do_request(post_login, #{<<"type">> := <<"wechat">>, <<"jscode">> := JSCODE}, _Context, _Req) ->
-    dgiot_wechat:get_sns(JSCODE);
-
-do_request(post_login, #{<<"username">> := UserName, <<"password">> := Password}, _Context, _Req) ->
-    dgiot_parse_handler:login_by_account(UserName, Password);
 
 %%  服务器不支持的API接口
 do_request(_OperationId, _Args, _Context, _Req) ->

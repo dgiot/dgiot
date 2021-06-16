@@ -126,7 +126,6 @@ handle_info(_Msg, State) ->
     {noreply, State}.
 
 terminate(_Reason, #checkstate{checkets = CheckEts}) ->
-    ?LOG(info,"check terminates", []),
     ets:delete(CheckEts),
     ok.
 

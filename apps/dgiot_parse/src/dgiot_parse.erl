@@ -80,6 +80,8 @@
     get_deviceid/2,
     get_dictid/2,
     get_shapeid/2,
+    get_instruct/3,
+    get_productid/3,
     subscribe/2,
     send_msg/3
 ]).
@@ -92,20 +94,20 @@ subscribe(Table, Method) ->
             dgiot_data:insert({sub, Table, Method}, dgiot_utils:unique_2(Acc ++ [self()]))
     end,
     Fun = fun(Args) ->
-            case Args of
-                [_, Data, _Body] ->
-                    dgiot_parse:send_msg(Table, Method, Data),
-                    {ok, Data};
-                [_, _ObjectId, Data, _Body] ->
-                    dgiot_parse:send_msg(Table, Method, Data),
-                    {ok,Data};
-                _ ->
-                    {ok, []}
-            end
-        end,
+        case Args of
+            [_, Data, _Body] ->
+                dgiot_parse:send_msg(Table, Method, Data),
+                {ok, Data};
+            [_, _ObjectId, Data, _Body] ->
+                dgiot_parse:send_msg(Table, Method, Data),
+                {ok, Data};
+            _ ->
+                {ok, []}
+        end
+          end,
     dgiot_hook:add(one_for_one, {Table, Method}, Fun).
 
-send_msg(Table, Method,Args) ->
+send_msg(Table, Method, Args) ->
     Pids = lists:foldl(fun(Pid, Acc) ->
         case is_process_alive(Pid) of
             true ->
@@ -113,9 +115,9 @@ send_msg(Table, Method,Args) ->
                 Acc ++ [Pid];
             false ->
                 Acc
-       end
+        end
                        end, [], dgiot_data:get({sub, Table, Method})),
-     dgiot_data:insert({sub, Table, Method}, Pids).
+    dgiot_data:insert({sub, Table, Method}, Pids).
 
 get_shapeid(DeviceId, Identifier) ->
     <<ShapeId:10/binary, _/binary>> = dgiot_utils:to_md5(<<DeviceId/binary, Identifier/binary, "dgiottopo">>),
@@ -130,6 +132,14 @@ get_deviceid(ProductId, DevAddr) ->
     #{<<"objectId">> := DeviceId} =
         dgiot_parse:get_objectid(<<"Device">>, #{<<"product">> => ProductId, <<"devaddr">> => DevAddr}),
     DeviceId.
+
+get_instruct(DeviceId, Pn, Di) ->
+    <<DId:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Instruct", DeviceId/binary, Pn/binary, Di/binary>>),
+    DId.
+
+get_productid(Category, DevType, Name) ->
+    <<Pid:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Product", Category/binary, DevType/binary, Name/binary>>),
+    Pid.
 
 get_objectid(Class, Map) ->
     case Class of
@@ -347,7 +357,7 @@ graphql(Data) ->
             <<"undefined">> -> [];
             Token -> [{"X-Parse-Session-Token", dgiot_utils:to_list(Token)}]
         end,
-    ?LOG(info,"Header ~p", [Header]),
+    ?LOG(info, "Header ~p", [Header]),
     graphql(?DEFAULT, Header, maps:without([<<"access_token">>], Data)).
 graphql(Name, Header, Data) ->
     request_rest(Name, 'POST', Header, <<"/graphql">>, Data, []).
@@ -479,7 +489,7 @@ add_all_trigger(Name, Host) ->
                                                     {ok, _} ->
                                                         [{Key, success} | Acc1];
                                                     {error, Reason} ->
-                                                        ?LOG(error,"~p,~p~n", [Key, Reason]),
+                                                        ?LOG(error, "~p,~p~n", [Key, Reason]),
                                                         [Reason | Acc1]
                                                 end
                                         end
@@ -683,7 +693,7 @@ import(Class, Datas, Count, Fun, Acc) ->
     import(?DEFAULT, Class, Datas, Count, Fun, Acc).
 
 import(Name, Class, {json, Path}, Count, Fun, Acc) ->
-    ?LOG(info,"~p import to ~p:~p~n", [Name, Class, Path]),
+    ?LOG(info, "~p import to ~p:~p~n", [Name, Class, Path]),
     case file:read_file(Path) of
         {ok, Bin} ->
             case catch jsx:decode(Bin, [{labels, binary}, return_maps]) of
@@ -812,7 +822,7 @@ format_value(Class, Key, #{<<"iskey">> := IsKey, <<"value">> := Value}) ->
         true ->
             case query_object(Class, #{<<"keys">> => Key, <<"where">> => #{Key => Value}}) of
                 {ok, #{<<"results">> := []}} ->
-                    ?LOG(info,"~p, ~p,~p", [Class, Key, Value]),
+                    ?LOG(info, "~p, ~p,~p", [Class, Key, Value]),
                     Value;
                 {ok, #{<<"results">> := _}} ->
                     not_add;
@@ -863,7 +873,7 @@ get_tables([Dir | Other], Acc) ->
                         false ->
                             Acc1;
                         {error, Reason} ->
-                            ?LOG(error,"load error ~p,~p~n", [Path, Reason]),
+                            ?LOG(error, "load error ~p,~p~n", [Path, Reason]),
                             Acc1
                     end
                 end, Acc, Files),
@@ -894,7 +904,7 @@ init_database(Name, Dirs, Op) when Op == merge; Op == delete ->
             Schemas = get_tables(Dirs),
             init_tables(Name, OldSchemas, Schemas, Op);
         {error, Reason} ->
-            ?LOG(error,"~p~n", [Reason]),
+            ?LOG(error, "~p~n", [Reason]),
             {error, Reason}
     end.
 
@@ -912,7 +922,7 @@ init_tables(Name, OldSchemas, Schemas, Op) ->
                         case length(TargetTab) > 0 of
                             true ->
                                 % @todo 需要提前创建这些表
-                                ?LOG(info,"~p~n", [TargetTab]);
+                                ?LOG(info, "~p~n", [TargetTab]);
                             false ->
                                 ok
                         end,
@@ -933,9 +943,9 @@ init_tables(Name, OldSchemas, Schemas, Op) ->
                 end,
             case Result of
                 {error, #{<<"message">> := Why}} ->
-                    ?LOG(error,"~p:~p~n", [Class, Why]);
+                    ?LOG(error, "~p:~p~n", [Class, Why]);
                 {error, #{<<"error">> := Why}} ->
-                    ?LOG(error,"~p:~p~n", [Class, Why]);
+                    ?LOG(error, "~p:~p~n", [Class, Why]);
                 ok ->
                     ok;
                 {ok, _Rtn} ->
