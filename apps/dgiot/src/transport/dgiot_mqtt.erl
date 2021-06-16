@@ -18,6 +18,10 @@
 -module(dgiot_mqtt).
 -author("jonhliu").
 -include("dgiot_mqtt.hrl").
+-include_lib("dgiot/include/logger.hrl").
+-include_lib("emqx_rule_engine/include/rule_engine.hrl").
+-include_lib("emqx_rule_engine/include/rule_actions.hrl").
+
 -export([has_routes/1
     , subscribe/1
     , unsubscribe/1
@@ -26,7 +30,9 @@
     , shared_sub/3
     , shared_unsub/3
     , get_payload/1
-    , get_topic/1]).
+    , get_topic/1
+    , get_channel/1
+    , republish/2]).
 
 has_routes(Topic) ->
     emqx_router:has_routes(Topic).
@@ -68,3 +74,71 @@ get_payload(Msg) ->
 
 get_topic(Msg) ->
     Msg#message.topic.
+
+get_channel(#{
+    ?BINDING_KEYS := #{
+        'Params' := Params
+    }}) ->
+    maps:get(<<"channel">>, Params, <<"">>);
+
+get_channel(_) ->
+    <<"">>.
+
+republish(Selected, #{
+    qos := QoS, flags := Flags, timestamp := Timestamp,
+    ?BINDING_KEYS := #{
+        '_Id' := ActId,
+        'Params' := _Params,
+        'TopicTks' := TopicTks,
+        'PayloadTks' := PayloadTks
+    } = Bind}) ->
+    ?LOG(error,"Selected ~p ",[Selected]),
+    TargetQoS = maps:get('TargetQoS',Bind,0),
+    Msg = #message{
+        id = emqx_guid:gen(),
+        qos = if TargetQoS =:= -1 -> QoS; true -> TargetQoS end,
+        from = ActId,
+        flags = Flags,
+        headers = #{republish_by => ActId},
+        topic = emqx_rule_utils:proc_tmpl(TopicTks, Selected),
+        payload = emqx_rule_utils:proc_tmpl(PayloadTks, Selected),
+        timestamp = Timestamp
+    },
+    ?LOG(error,"Msg ~p ",[Msg]),
+    _ = emqx_broker:safe_publish(Msg),
+    emqx_rule_metrics:inc_actions_success(ActId),
+    emqx_metrics:inc_msg(Msg);
+
+republish(Selected, #{
+    ?BINDING_KEYS := #{
+        '_Id' := ActId,
+        'Params' := _Params,
+        'TopicTks' := TopicTks,
+        'PayloadTks' := PayloadTks
+    } = Bind}) ->
+    ?LOG(error,"Selected ~p ",[Selected]),
+    TargetQoS = maps:get('TargetQoS',Bind,0),
+    Msg = #message{
+        id = emqx_guid:gen(),
+        qos = if TargetQoS =:= -1 -> 0; true -> TargetQoS end,
+        from = ActId,
+        flags = #{dup => false, retain => false},
+        headers = #{republish_by => ActId},
+        topic = emqx_rule_utils:proc_tmpl(TopicTks, Selected),
+        payload = emqx_rule_utils:proc_tmpl(PayloadTks, Selected),
+        timestamp = erlang:system_time(millisecond)
+    },
+    ?LOG(error,"Msg ~p ",[Msg]),
+    _ = emqx_broker:safe_publish(Msg),
+    emqx_rule_metrics:inc_actions_success(ActId),
+    emqx_metrics:inc_msg(Msg);
+
+republish(_Selected, Envs = #{
+    topic := Topic,
+    headers := #{republish_by := ActId},
+    ?BINDING_KEYS := #{'_Id' := ActId}
+}) ->
+    ?LOG(error, " msg topic: ~p, target topic: ~p",
+        [Topic, ?bound_v('TargetTopic', Envs)]),
+    emqx_rule_metrics:inc_actions_error(?bound_v('_Id', Envs)).
+
