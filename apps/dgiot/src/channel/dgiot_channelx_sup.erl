@@ -16,6 +16,7 @@
 
 -module(dgiot_channelx_sup).
 -author("johnliu").
+-include_lib("dgiot/include/logger.hrl").
 -behaviour(supervisor).
 
 %% API
@@ -116,6 +117,7 @@ init([sup, ServerName, ChannelType, ChannelId, Mod]) ->
 
 init([ChannelType, ChannelId, Mod]) ->
     Name = binary_to_atom(dgiot_channelx:get_name(ChannelType, ChannelId), utf8),
+    ?LOG(error,"Name ~p",[Name]),
     case dgiot_data:lookup({Name, channel}) of
         {ok, {_, ChannelArgs}} ->
             Size = maps:get(<<"Size">>, ChannelArgs, 5),

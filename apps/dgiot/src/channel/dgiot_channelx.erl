@@ -22,7 +22,7 @@
 -include_lib("dgiot/include/logger.hrl").
 
 %% API
--export([get_name/2, add2/5, add/4, add/5, spec/0, spec/1, delete/2, delete/3, do_event/4, do_event/5, do_message/4, do_message/3, call/3, call/4, call2/3, call2/4, start_link/1]).
+-export([get_name/2, add2/5, add/4, add/5, spec/0, spec/1, delete/2, delete/3, status/1, do_event/4, do_event/5, do_message/4, do_message/3, call/3, call/4, call2/3, call2/4, start_link/1]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
@@ -69,6 +69,12 @@ spec() ->
 spec(SerName) ->
     {dgiot_channelx_mgr, {dgiot_channelx_mgr, start_link, [SerName]}, permanent, 5000, supervisor, [dgiot_channelx_mgr]}.
 
+status(Pid) when is_pid(Pid) ->
+    gen_statem:call(Pid, status);
+status(Id) ->
+    gen_statem:call(name(Id), status).
+
+name(Id) -> list_to_atom(lists:concat([?MODULE, "_", Id])).
 
 do_event(ChannelType, ChannelId, EventId, Event) ->
     do_event(ChannelType, ChannelId, EventId, Event, 5000).
