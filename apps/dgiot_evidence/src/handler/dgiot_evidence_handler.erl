@@ -52,7 +52,7 @@ handle(OperationID, Args, Context, Req) ->
         {ErrType, Reason} when ErrType == 'EXIT'; ErrType == error ->
             Err = case is_binary(Reason) of
                       true -> Reason;
-                      false -> dgiot_framework:format("~p", [Reason])
+                      false -> dgiot_utils:format("~p", [Reason])
                   end,
             {500, Headers, #{<<"error">> => Err}};
         ok ->
@@ -442,7 +442,7 @@ put_report(Path, SessionToken) ->
                             file:delete(Root ++ "/Product.json"),
                             file:delete(Root ++ "/Device.json"),
                             file:delete(Root ++ "/Evidence.json"),
-                            case dgiot_evidence:post_file(Root, NewPath) of
+                            case dgiot_utils:post_file(Root, NewPath) of
                                 {ok, _} ->
                                     {_, R1} = dgiot_evidence:post_data(<<"Product">>, Root ++ "/Product.json"),
                                     {_, R2} = dgiot_evidence:post_data(<<"Device">>, Root ++ "/Device.json"),

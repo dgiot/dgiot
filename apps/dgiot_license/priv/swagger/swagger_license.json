@@ -406,61 +406,6 @@
         ]
       }
     },
-    "/login": {
-      "post": {
-        "security": [],
-        "summary": "用户登录",
-        "description": "用户登录",
-        "consumes": [
-          "text/plain"
-        ],
-        "parameters": [
-          {
-            "in": "body",
-            "name": "user",
-            "required": true,
-            "schema": {
-              "type": "object",
-              "properties": {
-                "username": {
-                  "required": true,
-                  "type": "string",
-                  "example":"username"
-                },
-                "password": {
-                  "required": true,
-                  "type": "string",
-                  "example":"password"
-                }
-              }
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Returns success"
-          },
-          "400": {
-            "description": "Bad Request"
-          },
-          "404": {
-            "description": "Forbidden",
-            "schema": {
-              "$ref": "#/definitions/Error"
-            }
-          },
-          "500": {
-            "description": "Server Internal error",
-            "schema": {
-              "$ref": "#/definitions/Error"
-            }
-          }
-        },
-        "tags": [
-          "License"
-        ]
-      }
-    },
     "/apihub": {
       "get": {
         "description": "数蛙API网关",

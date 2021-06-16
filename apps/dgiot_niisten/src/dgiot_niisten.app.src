@@ -1,0 +1,7 @@
+{application,dgiot_niisten,
+             [{description,"dgiot_niisten"},
+              {vsn,"1.0.0"},
+              {modules,[]},
+              {registered,[dgiot_niisten_sup]},
+              {applications,[kernel,stdlib,dgiot]},
+              {mod,{dgiot_niisten_app,[]}}]}.

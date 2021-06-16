@@ -172,8 +172,8 @@ random() ->
     dgiot_license:to_md5(io_lib:format("~p",[erlang:make_ref()])).
 
 get_license_host() ->
-    dgiot_evidence:get_wlanip().
-%%    case dgiot_evidence:get_wlanip() of
+    dgiot_utils:get_wlanip().
+%%    case dgiot_utils:get_wlanip() of
 %%        {ok, Host} -> dgiot_utils:to_binary(Host);
 %%        _ -> <<"license.iotn2n.com">>
 %%    end.
@@ -322,7 +322,6 @@ load_config(ProductType, ProductVersion) ->
     case file:read_file(TplPath) of
         {ok, Bin} ->
             jsx:decode(Bin, [{labels, binary}, return_maps]);
-        {error, Reason} ->
-            lager:error("Reason", [Reason]),
+        {error, _Reason} ->
             #{}
     end.

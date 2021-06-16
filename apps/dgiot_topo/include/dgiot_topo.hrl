@@ -14,4 +14,5 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
+-record(task, {oldque = [], newque = [], freq = 0, heart = 0, sessiontoken = <<>>}).
 

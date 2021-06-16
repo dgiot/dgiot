@@ -1,5 +1,4 @@
-%%--------------------------------------------------------------------
-%% Copyright (c) 2020 DGIOT Technologies Co., Ltd. All Rights Reserved.
+%% Copyright (c) 2020-2021 DGIOT Technologies Co., Ltd. All Rights Reserved.
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -15,14 +14,9 @@
 %%--------------------------------------------------------------------
 -module(dgiot_topo).
 -author("johnliu").
--include_lib("dgiot/include/logger.hrl").
 
--export([start_http/0, docroot/0, get_topo/2, send_topo/3, get_product/0, get_name/3, put_topo/2]).
+-export([docroot/0, get_topo/2, send_topo/3, get_Product/0, get_name/3, put_topo/2, get_konva_thing/2, edit_konva/2, push/4]).
 
-start_http() ->
-    Port = application:get_env(?MODULE, port, 6081),
-    DocRoot = docroot(),
-    dgiot_http_server:start_http(?MODULE, Port, DocRoot).
 
 
 docroot() ->
@@ -31,6 +25,15 @@ docroot() ->
     Root = dgiot_httpc:url_join([Dir, "/priv/"]),
     Root ++ "www".
 
+
+%%{ok,#{<<"results">> =>
+%%[#{<<"battery_voltage">> => 11.7,<<"charge_current">> => 0,
+%%<<"core_temperature">> => 37,
+%%<<"createdat">> => <<"2021-06-07 18:49:42.061">>,
+%%<<"day_electricity">> => 0.11,<<"dump_energy">> => 75.0,
+%%<<"i_out">> => 0.0,<<"outside_temperature">> => 25,
+%%<<"system_state">> => <<"0">>,<<"total_power">> => 2.1,
+%%<<"v_out">> => 0.0,<<"v_solarpanel">> => 0.3}]}}
 
 
 get_topo(Arg, _Context) ->
@@ -41,88 +44,146 @@ get_topo(Arg, _Context) ->
         {ok, #{<<"config">> := #{<<"konva">> := #{<<"Stage">> := #{<<"children">> := Children} = Stage} = Konva}}} when length(Children) > 0 ->
             case Devaddr of
                 undefined ->
-                    NewChildren1 = get_children(ProductId, Children, ProductId),
+                    NewChildren1 = get_children(ProductId, Children, ProductId, <<"KonvatId">>, <<"Shapeid">>, <<"Identifier">>, <<"Name">>),
                     {ok, #{<<"code">> => 200, <<"message">> => <<"SUCCESS">>, <<"data">> => Konva#{<<"Stage">> => Stage#{<<"children">> => NewChildren1}}}};
                 _ ->
-%%                    device
                     DeviceId = dgiot_parse:get_deviceid(ProductId, Devaddr),
-                    NewChildren1 = get_children(ProductId, Children, DeviceId),
+                    case dgiot_tdengine:get_device(ProductId, Devaddr, #{<<"keys">> => <<"last_row(*)">>, <<"limit">> => 1}) of
+                        {ok, #{<<"results">> := [Result | _]}} ->
+                            put({self(), td}, Result);
+                        _ ->
+                            put({self(), td}, #{})
+                    end,
+                    NewChildren1 = get_children(ProductId, Children, DeviceId, <<"KonvatId">>, <<"Shapeid">>, <<"Identifier">>, <<"Name">>),
                     {ok, #{<<"code">> => 200, <<"message">> => <<"SUCCESS">>, <<"data">> => Konva#{<<"Stage">> => Stage#{<<"children">> => NewChildren1}}}}
             end;
         _ ->
             {ok, #{<<"code">> => 204, <<"message">> => <<"没有组态"/utf8>>}}
-
     end.
 
-get_children(ProductId, Children, DeviceId) ->
+get_konva_thing(Arg, _Context) ->
+    #{<<"productid">> := ProductId,
+        <<"shapeid">> := Shapeid
+    } = Arg,
+    case dgiot_parse:get_object(<<"Product">>, ProductId) of
+        {ok, #{<<"config">> := #{<<"konva">> := #{<<"Stage">> := #{<<"children">> := Children}}}, <<"thing">> := #{<<"properties">> := Properties}}} ->
+            put({self(), shapeids}, []),
+            get_children(ProductId, Children, ProductId, <<"KonvatId">>, <<"Shapeid">>, <<"Identifier">>, <<"Name">>),
+            Shapids = get({self(), shapeids}),
+            Nobound =
+                lists:foldl(fun(Prop, Acc) ->
+                    Identifier = maps:get(<<"identifier">>, Prop),
+                    case lists:member(Identifier, Shapids) of
+                        false ->
+                            Acc ++ [Prop];
+                        true ->
+                            Acc
+                    end
+                            end, [], Properties),
+            KonvaThing =
+                lists:foldl(fun(Prop, Acc) ->
+                    Identifier = maps:get(<<"identifier">>, Prop),
+                    case Shapeid of
+                        Identifier ->
+                            Prop;
+                        _ ->
+                            Acc
+                    end
+                            end, #{}, Properties),
+            {ok, #{<<"code">> => 200, <<"message">> => <<"SUCCESS">>, <<"data">> => #{<<"nobound">> => Nobound, <<"konvathing">> => KonvaThing}}};
+        _ ->
+            {ok, #{<<"code">> => 204, <<"message">> => <<"没有组态"/utf8>>}}
+    end.
+
+edit_konva(Arg, _Context) ->
+    #{<<"productid">> := ProductId,
+        <<"shapeid">> := Shapeid,
+        <<"identifier">> := Identifier,
+        <<"name">> := Name
+    } = Arg,
+    case dgiot_parse:get_object(<<"Product">>, ProductId) of
+        {ok, #{<<"config">> := #{<<"konva">> := #{<<"Stage">> := #{<<"children">> := Children} = Stage} = Konva} = Config}} ->
+            put({self(), shapeids}, []),
+            NewChildren = get_children(ProductId, Children, ProductId, ProductId, Shapeid, Identifier, Name),
+            NewConfig = Config#{<<"konva">> => Konva#{<<"Stage">> => Stage#{<<"children">> => NewChildren}}},
+            case dgiot_parse:update_object(<<"Product">>, ProductId, #{<<"config">> => NewConfig}) of
+                {ok, Message} ->
+                    {ok, #{<<"code">> => 200, <<"message">> => Message}};
+                {error, Message} ->
+                    {ok, Message};
+                _ ->
+                    {ok, #{<<"code">> => 500, <<"message">> => <<"error">>}}
+            end;
+        _ ->
+            {ok, #{<<"code">> => 101, <<"message">> => <<ProductId/binary, " not found">>}}
+    end.
+
+get_children(ProductId, Children, DeviceId, KonvatId, Shapeid, Identifier, Name) ->
     lists:foldl(fun(X, Acc) ->
         #{<<"attrs">> := Attrs, <<"className">> := ClassName} = X,
         X1 =
             case maps:find(<<"children">>, X) of
                 error ->
-                    X#{<<"attrs">> => get_attrs(ProductId, ClassName, Attrs, DeviceId)};
+                    X#{<<"attrs">> => get_attrs(ProductId, ClassName, Attrs, DeviceId, KonvatId, Shapeid, Identifier, Name)};
                 {ok, SubChildren} ->
-                    X#{<<"attrs">> => get_attrs(ProductId, ClassName, Attrs, DeviceId),
-                        <<"children">> => get_children(ProductId, SubChildren, DeviceId)}
+                    X#{<<"attrs">> => get_attrs(ProductId, ClassName, Attrs, DeviceId, KonvatId, Shapeid, Identifier, Name),
+                        <<"children">> => get_children(ProductId, SubChildren, DeviceId, KonvatId, Shapeid, Identifier, Name)}
             end,
         Acc ++ [X1]
                 end, [], Children).
 
-get_attrs(ProductId, ClassName, Attrs, DeviceId) ->
+get_attrs(ProductId, ClassName, Attrs, DeviceId, KonvatId, Shapeid, Identifier, Name) ->
     case ClassName of
         <<"Layer">> ->
             Attrs;
         <<"Group">> ->
             Attrs;
         _ ->
-            case ProductId of
-                DeviceId ->
-                    dgiot_data:insert({shapetype, dgiot_parse:get_shapeid(ProductId, maps:get(<<"id">>, Attrs))}, ClassName),
-%%                    Attrs#{<<"text">> => Text};
+            case maps:find(<<"id">>, Attrs) of
+                error ->
                     Attrs;
-                _ ->
-%%                    Text = get_name(ProductId, maps:get(<<"id">>, Attrs), dgiot_utils:to_binary(maps:get(<<"text">>, Attrs))),
-%%                    Attrs#{<<"id">> => dgiot_parse:get_shapeid(DeviceId, maps:get(<<"id">>, Attrs)), <<"text">> => Text}
-                    Attrs#{<<"id">> => dgiot_parse:get_shapeid(DeviceId, maps:get(<<"id">>, Attrs))}
+                {ok, Id} ->
+                    case ProductId of
+                        KonvatId ->
+                            case Id of
+                                Shapeid ->
+                                    Attrs#{<<"id">> => Identifier, <<"text">> => Name};
+                                _ ->
+                                    Attrs
+                            end;
+                        DeviceId ->
+                            case get({self(), shapeids}) of
+                                undefined ->
+                                    put({self(), shapeids}, [Id]);
+                                List ->
+                                    put({self(), shapeids}, List ++ [Id])
+                            end,
+                            dgiot_data:insert({shapetype, dgiot_parse:get_shapeid(ProductId, Id)}, ClassName),
+                            Attrs;
+                        _ ->
+                            Id = maps:get(<<"id">>, Attrs),
+                            Result = get({self(), td}),
+                            Text =
+                                case maps:find(Id, Result) of
+                                    error ->
+                                        <<"0">>;
+                                    {ok, Text1} ->
+                                        dgiot_utils:to_binary(Text1)
+                                end,
+                            Unit = get_unit(ProductId, Id),
+
+                            Attrs#{<<"id">> => dgiot_parse:get_shapeid(DeviceId, Id), <<"text">> => <<Text/binary, " ", Unit/binary>>, <<"draggable">> => false}
+                    end
             end
     end.
 
-%% #{<<"Arcel">>=> 1,<<"Flow">> => 1.2} => ShapeId = md5(<<DeviceId/binary,"Arcel">>)
-%%{
-%%"konva":{
-%%    [
-%%                {
-%%                "id":[shapeid],
-%%                "text":"16",
-%%                "type":"text",
-%%                },
-%%                {
-%%                "id":[shapeid],
-%%                "text":"16",
-%%                "type":"Image",
-%%                }
-%%        ]
-%%    }
-%%}  dgiot_data:get({product, <<"16cf2bf9f7energy">>})
-%% dgiot_topo:send_topo(<<"9b5c1a3ed5">>, <<"001">>, #{<<"Acrel">> => 10,<<"current">> => 20,<<"current">> => 30}).
-send_topo(ProductId, Devaddr, Payload) ->
-    DeviceId = dgiot_parse:get_deviceid(ProductId, Devaddr),
-    Shape =
-        maps:fold(fun(K, V, Acc) ->
-            Text = get_name(ProductId, K, dgiot_utils:to_binary(V)),
-            Type =
-                case dgiot_data:get({shapetype, dgiot_parse:get_shapeid(ProductId, K)}) of
-                    not_find ->
-                        <<"text">>;
-                    Type1 ->
-                        Type1
-                end,
-            Acc ++ [#{<<"id">> => dgiot_parse:get_shapeid(DeviceId, K), <<"text">> => Text, <<"type">> => Type}]
-                  end, [], Payload),
-    Pubtopic = <<"thing/", DeviceId/binary, "/post">>,
-    Base64 = base64:encode(jsx:encode(#{<<"konva">> => Shape})),
-    dgiot_mqtt:publish(self(), Pubtopic, Base64).
-
+get_unit(ProductId, Id) ->
+    case dgiot_data:get({product, <<ProductId/binary, Id/binary>>}) of
+        not_find ->
+            <<>>;
+        {_, _, Unit1} ->
+            Unit1
+    end.
 
 put_topo(Arg, _Context) ->
     #{<<"productid">> := ProductId,
@@ -138,40 +199,30 @@ get_name(ProductId, K, V) ->
     case dgiot_data:get({product, <<ProductId/binary, K/binary>>}) of
         not_find ->
             V;
-        {Name, Type, Unit} when Type =:= <<"float">> ->
+        {Name, Type, Unit} when Type =:= <<"float">> orelse Type =:= <<"double">> ->
             NewV = dgiot_utils:to_binary(dgiot_utils:to_float(V, 3)),
             <<Name/binary, ": ", NewV/binary, " ", Unit/binary>>;
         {Name, _Type, Unit} ->
-            %todo 物模型配置错误，临时规避一下
-            NewV = dgiot_utils:to_binary(dgiot_utils:to_float(V / 1.0, 3)),
-            <<Name/binary, ":", NewV/binary, " ", Unit/binary>>
+            <<Name/binary, ":", V/binary, " ", Unit/binary>>
     end.
 
-get_product() ->
+get_Product() ->
     case dgiot_parse:query_object(<<"Product">>, #{<<"skip">> => 0}) of
         {ok, #{<<"results">> := Results}} ->
             lists:foldl(fun(X, _Acc) ->
                 case X of
                     #{<<"objectId">> := ProductId, <<"config">> := #{<<"konva">> := #{<<"Stage">> := #{<<"children">> := Children}}}, <<"thing">> := #{<<"properties">> := Properties}} ->
                         lists:map(fun(P) ->
-%%                            "dataType": {
-%%                                "type": "float",
-%%                                "specs": {
-%%                                    "max": 500,
-%%                                    "min": -500,
-%%                                    "step": 0.1,
-%%                                    "unit": "MPa"
-%%                                }
-%%                            },
                             DataType = maps:get(<<"dataType">>, P),
                             Type = maps:get(<<"type">>, DataType),
                             Specs = maps:get(<<"specs">>, DataType),
                             Unit = maps:get(<<"unit">>, Specs, <<"">>),
                             Identifier = maps:get(<<"identifier">>, P),
                             Name = maps:get(<<"name">>, P),
-                            dgiot_data:insert({product, <<ProductId/binary, Identifier/binary>>}, {Name, Type, Unit})
+                            dgiot_data:insert({product, <<ProductId/binary, Identifier/binary>>}, {Name, Type, Unit}),
+                            dgiot_data:insert({thing, <<ProductId/binary, Identifier/binary>>}, P)
                                   end, Properties),
-                        get_children(ProductId, Children, ProductId);
+                        get_children(ProductId, Children, ProductId, <<"KonvatId">>, <<"Shapeid">>, <<"Identifier">>, <<"Name">>);
                     _ ->
                         pass
                 end
@@ -179,4 +230,34 @@ get_product() ->
         _ ->
             pass
     end.
+
+send_topo(ProductId, DeviceId, Payload) ->
+    Base64 = get_optshape(ProductId, DeviceId, Payload),
+    Pubtopic = <<"thing/", DeviceId/binary, "/post">>,
+    dgiot_mqtt:publish(self(), Pubtopic, Base64).
+
+
+get_optshape(ProductId, DeviceId, Payload) ->
+    Shape =
+        maps:fold(fun(K, V, Acc) ->
+            Type =
+                case dgiot_data:get({shapetype, dgiot_parse:get_shapeid(ProductId, K)}) of
+                    not_find ->
+                        <<"text">>;
+                    Type1 ->
+                        Type1
+                end,
+            Unit = get_unit(ProductId, K),
+            BinV = dgiot_utils:to_binary(V),
+            Acc ++ [#{<<"id">> => dgiot_parse:get_shapeid(DeviceId, K), <<"text">> => <<BinV/binary, " ", Unit/binary>>, <<"type">> => Type}]
+                  end, [], Payload),
+    base64:encode(jsx:encode(#{<<"konva">> => Shape})).
+
+push(ProductId, Devaddr, DeviceId, Payload) ->
+    Base64 = get_optshape(ProductId, DeviceId, Payload),
+    Url = dgiot_data:get(topourl),
+    Url1 = dgiot_utils:to_list(Url),
+    Data = #{<<"productid">> => ProductId, <<"devaddr">> => Devaddr, <<"base64">> => Base64},
+    Data1 = dgiot_utils:to_list(jsx:encode(Data)),
+    httpc:request(post, {Url1, [], "application/json", Data1}, [], []).
 

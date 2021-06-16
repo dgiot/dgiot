@@ -1,5 +1,5 @@
 %%--------------------------------------------------------------------
-%% Copyright (c) 2020 DGIOT Technologies Co., Ltd. All Rights Reserved.
+%% Copyright (c) 2020-2021 DGIOT Technologies Co., Ltd. All Rights Reserved.
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -14,33 +14,21 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
-%% @doc dgiot_topo supervisor
--module(dgiot_topo_sup).
--include("dgiot_topo.hrl").
--behaviour(supervisor).
+%% @doc dgiot_niisten Application
+-module(dgiot_niisten_app).
+-behaviour(application).
+-emqx_plugin(?MODULE).
 
-%% API
--export([start_link/0]).
+%% Application callbacks
+-export([start/2, stop/1]).
 
-%% Supervisor callbacks
--export([init/1]).
-
--define(CHILD(I, Type, Args), {I, {I, start_link, Args}, permanent, 5000, Type, [I]}).
 
 %%--------------------------------------------------------------------
-%% API functions
+%% Application callbacks
 %%--------------------------------------------------------------------
 
-start_link() ->
-    supervisor:start_link({local, ?MODULE}, ?MODULE, []).
+start(_StartType, _StartArgs) ->
+    dgiot_niisten_sup:start_link().
 
-%%--------------------------------------------------------------------
-%% Supervisor callbacks
-%%--------------------------------------------------------------------
-
-init([]) ->
-    Children = [
-        ?CHILD(dashboard_sup, supervisor, [dashboard_task])
-    ],
-    {ok, {{one_for_one, 5, 10}, Children}}.
-
+stop(_State) ->
+    ok.
