@@ -11,7 +11,7 @@ find_app() {
 }
 
 # append emqx application first
-echo 'dgiot'
+echo 'emqx'
 
 find_app 'apps'
 if [ -f 'EMQX_ENTERPRISE' ]; then
