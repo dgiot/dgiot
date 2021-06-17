@@ -49,7 +49,7 @@
 
 -dialyzer([{nowarn_function, [coap_discover/2]}]).
 % we use {'absolute', string(), [{atom(), binary()}]} as coap_uri()
-% https://hub.fastgit.org/fastdgiot/lwm2m-coap/blob/258e9bd3762124395e83c1e68a1583b84718230f/src/lwm2m_coap_resource.erl#L61
+% https://github.com.cnpmjs.org/fastdgiot/lwm2m-coap/blob/258e9bd3762124395e83c1e68a1583b84718230f/src/lwm2m_coap_resource.erl#L61
 % resource operations
 coap_discover(_Prefix, _Args) ->
     [{absolute, "mqtt", []}].

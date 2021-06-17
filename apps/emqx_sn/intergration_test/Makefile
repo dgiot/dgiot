@@ -93,8 +93,8 @@ case6:
 	client/case6_sleep.exe
 
 $(RELX_CONF):
-	git clone -b master https://hub.fastgit.org/fastdgiot/emqx-rel.git
-	git clone https://hub.fastgit.org/fastdgiot/emqx-sn.git
+	git clone -b master https://github.com.cnpmjs.org/fastdgiot/emqx-rel.git
+	git clone https://github.com.cnpmjs.org/fastdgiot/emqx-sn.git
 	@echo "update emqx-sn with this development code"
 	mv emqx-sn  emqx_sn
 	-rm -rf emqx_sn/etc
