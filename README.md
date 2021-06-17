@@ -44,10 +44,10 @@
     yarn install
     yarn build
     cd ../dgiot
+    rm app/dgiot_api/priv/www -rf
+    cp ../dgiot_dashboard/dist/* apps/dgiot_api/priv/www/ -rf
+    cp ../dgiot_dashboard/swagger app/dgiot_api/priv/www/ -rf
     make
-    rm ./app/dgiot_api/priv/www -rf
-    cp ../dgiot_dashboard/dist ./app/dgiot_api/priv/www
-    cp ../dgiot_dashboard/swagger ./app/dgiot_api/priv/www/
     _build/emqx/rel/emqx/bin/emqx console
   ```
 *DGIOT* 启动，可以使用浏览器访问 http://localhost:5080 来查看 Dashboard。
