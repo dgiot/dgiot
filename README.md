@@ -24,16 +24,32 @@
 
 # 构建
 
- 构建 *dgiot* 需要 Erlang/OTP R21+, Windows下用[msys64](https://github.com/dgiot/dgiot_deploy)开发
+ 构建 *dgiot* 需要 Erlang/OTP R21+, Windows下用[msys64](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_release/dgiot_devtools.zip)开发
 
- +  Linux/Unix/Mac/windows 构建
+ +  国外下载源码
+  ```bash
+     git clone https://github.com/dgiot/dgiot_dashboard.git
+     git clone https://github.com/dgiot/dgiot.git
+   ```
 
-    ```bash
-    git clone https://github.com/dgiot/dgiot.git
+ +  国内下载源码
+   ```bash
+     git clone https://gitee.com/dgiiot/dgiot_dashboard.git
+     git clone https://github.com/dgiot/dgiot.git
+   ```
+
+ +  国内Linux/Unix/Mac/windows 构建
+  ```bash
+    cd dgiot_dashboard
+    yarn install
+    yarn build
+    cd ../dgiot
     make
+    rm ./app/dgiot_api/priv/www -rf
+    cp ../dgiot_dashboard/dist ./app/dgiot_api/priv/www
+    cp ../dgiot_dashboard/swagger ./app/dgiot_api/priv/www/
     _build/emqx/rel/emqx/bin/emqx console
-    ```
-
+  ```
 *DGIOT* 启动，可以使用浏览器访问 http://localhost:5080 来查看 Dashboard。
 
 - 新功能的完整列表，请参阅 [DGIOT Release Notes](https://github.com/dgiot/dgiot/releases)。
