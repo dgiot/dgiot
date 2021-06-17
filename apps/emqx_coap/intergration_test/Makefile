@@ -71,8 +71,8 @@ case4:
 
 
 $(RELX_CONF):
-	git clone https://hub.fastgit.org/fastdgiot/emqx-rel.git
-	git clone https://hub.fastgit.org/fastdgiot/emq-coap.git
+	git clone https://github.com.cnpmjs.org/fastdgiot/emqx-rel.git
+	git clone https://github.com.cnpmjs.org/fastdgiot/emq-coap.git
 	@echo "update emq-coap with this development code"
 	mv emq-coap  emqx_coap
 	-rm -rf emqx_coap/etc
