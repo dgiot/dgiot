@@ -44,9 +44,9 @@
     yarn install
     yarn build
     cd ../dgiot
-    rm app/dgiot_api/priv/www -rf
+    rm apps/dgiot_api/priv/www -rf
     cp ../dgiot_dashboard/dist/* apps/dgiot_api/priv/www/ -rf
-    cp ../dgiot_dashboard/swagger app/dgiot_api/priv/www/ -rf
+    cp ../dgiot_dashboard/swagger apps/dgiot_api/priv/www/ -rf
     make
     _build/emqx/rel/emqx/bin/emqx console
   ```
