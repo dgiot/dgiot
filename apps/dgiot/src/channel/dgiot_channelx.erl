@@ -22,7 +22,16 @@
 -include_lib("dgiot/include/logger.hrl").
 
 %% API
--export([get_name/2, add2/5, add/4, add/5, spec/0, spec/1, delete/2, delete/3, status/1, do_event/4, do_event/5, do_message/4, do_message/3, call/3, call/4, call2/3, call2/4, start_link/1]).
+-export([
+    get_name/1, get_name/2,
+    add2/5, add/4, add/5,
+    spec/0, spec/1,
+    delete/2, delete/3,
+    status/1,
+    do_event/4, do_event/5,
+    do_message/2, do_message/3, do_message/4,
+    call/3, call/4, call2/3, call2/4,
+    start_link/1]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
@@ -84,8 +93,14 @@ do_event(ChannelType, ChannelId, EventId, Event, Timeout) ->
         fun(Worker) ->
             Worker ! {event, Pool, EventId, Event}, ok
         end,
-    transaction(Pool, Fun, Timeout).
+    poolboy:transaction(Pool, Fun, Timeout).
 
+do_message(ChannelId, Message) ->
+    case dgiot_data:get({channeltype, ChannelId}) of
+        not_find -> pass;
+        ChannelType ->
+            do_message(ChannelType, ChannelId, Message, 5000)
+    end.
 
 do_message(ChannelType, ChannelId, Message) ->
     do_message(ChannelType, ChannelId, Message, 5000).
@@ -95,7 +110,7 @@ do_message(ChannelType, ChannelId, Message, Timeout) ->
         fun(Worker) ->
             Worker ! {message, Pool, Message}, ok
         end,
-    transaction(Pool, Fun, Timeout).
+    poolboy:transaction(Pool, Fun, Timeout).
 
 call(ChannelType, ChannelId, Request) ->
     call(ChannelType, ChannelId, Request, 5000).
@@ -124,11 +139,13 @@ call2(ChannelType, ServerName, Request, Timeout) ->
             call(ChannelType, ServerName, Request, Timeout)
     end.
 
-
-transaction(Pool, Fun, Timeout) ->
-    Worker = poolboy:checkout(Pool, true, Timeout),
-    Fun(Worker).
-
+get_name(ChannelId) ->
+    case dgiot_data:get({channeltype, ChannelId}) of
+        not_find ->
+            pass;
+        ChannelType ->
+            get_name(binary_to_list(ChannelType), ChannelId)
+    end.
 
 get_name(ChannelType, ChannelId) when is_binary(ChannelType) ->
     get_name(binary_to_list(ChannelType), ChannelId);
@@ -174,29 +191,27 @@ handle_cast(_Request, State) ->
     {noreply, State}.
 
 
-handle_info({event, Pool, EventId, Event}, State) ->
+handle_info({event, _Pool, EventId, Event}, State) ->
     Result = handle_event(EventId, Event, State),
-    ok = poolboy:checkin(Pool, self()),
     case Result of
         ok ->
             {noreply, State};
         {ok, NewState} ->
             {noreply, State#state{childState = NewState}};
         {Err, Reason} when Err == 'EXIT'; Err == error ->
-            ?LOG(error,"do_event, ~p, ~p,~p", [EventId, Event, Reason]),
+            ?LOG(error, "do_event, ~p, ~p,~p", [EventId, Event, Reason]),
             {noreply, State}
     end;
 
-handle_info({message, Pool, Message}, State) ->
+handle_info({message, _Pool, Message}, State) ->
     Result = handle_message(Message, State),
-    ok = poolboy:checkin(Pool, self()),
     case Result of
         ok ->
             {noreply, State};
         {ok, NewState} ->
             {noreply, State#state{childState = NewState}};
         {Err, Reason} when Err == 'EXIT'; Err == error ->
-            ?LOG(error,"do_message, ~p,~p", [Message, Reason]),
+            ?LOG(error, "do_message, ~p,~p", [Message, Reason]),
             {noreply, State}
     end;
 
@@ -210,12 +225,12 @@ handle_info(Info, State) ->
         {stop, Reason} ->
             {stop, Reason, State};
         {Err, Reason} when Err == 'EXIT'; Err == error ->
-            ?LOG(error,"do_message, ~p,~p", [Info, Reason]),
+            ?LOG(error, "do_message, ~p,~p", [Info, Reason]),
             {noreply, State}
     end.
 
 terminate(Reason, _State) ->
-    ?LOG(error,"~p~n", [Reason]),
+    ?LOG(error, "~p~n", [Reason]),
     ok.
 
 code_change(_OldVsn, State, _Extra) ->

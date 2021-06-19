@@ -31,6 +31,7 @@
 
 add(Sup, ServerName, ChannelType, ChannelId, Mod, ChannelArgs) ->
     Name = binary_to_atom(dgiot_channelx:get_name(ChannelType, ChannelId), utf8),
+    dgiot_data:insert({channeltype,ChannelId},ChannelType),
     case dgiot_data:lookup({Name, channel}) of
         {ok, {Pid, _OldArgs}} when is_pid(Pid) ->
             case is_process_alive(Pid) of
@@ -117,7 +118,6 @@ init([sup, ServerName, ChannelType, ChannelId, Mod]) ->
 
 init([ChannelType, ChannelId, Mod]) ->
     Name = binary_to_atom(dgiot_channelx:get_name(ChannelType, ChannelId), utf8),
-    ?LOG(error,"Name ~p",[Name]),
     case dgiot_data:lookup({Name, channel}) of
         {ok, {_, ChannelArgs}} ->
             Size = maps:get(<<"Size">>, ChannelArgs, 5),
