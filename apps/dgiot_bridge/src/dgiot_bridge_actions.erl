@@ -147,14 +147,15 @@ on_action_create_dgiot(_Id, Params = #{
 }) ->
     TopicTks = emqx_rule_utils:preproc_tmpl(TargetTopic),
     PayloadTks = emqx_rule_utils:preproc_tmpl(PayloadTmpl),
-    ?LOG(error, " msg topic: ~p, payload: ~p",
-        [TopicTks, PayloadTks]),
+    ?LOG(error, " msg topic: ~p, payload: ~p", [TopicTks, PayloadTks]),
     Params.
 
 -spec on_action_dgiot(selected_data(), env_vars()) -> any().
 on_action_dgiot(Selected, Envs ) ->
-    Channel = dgiot_mqtt:get_channel(Envs),
-    ?LOG(error, "[dgiot] recursively Channel: ~p", [Channel]),
+    ChannelId = dgiot_mqtt:get_channel(Envs),
+    Msg = dgiot_mqtt:get_message(Selected, Envs),
+    ?LOG(error, " ChannelId ~p Msg: ~p", [ChannelId,Msg]),
+    dgiot_channelx:do_message(ChannelId, {rule, Msg, Selected}),
     dgiot_mqtt:republish(Selected, Envs).
 
 

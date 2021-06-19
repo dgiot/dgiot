@@ -32,7 +32,8 @@
     , get_payload/1
     , get_topic/1
     , get_channel/1
-    , republish/2]).
+    , republish/2
+    , get_message/2]).
 
 has_routes(Topic) ->
     emqx_router:has_routes(Topic).
@@ -84,6 +85,38 @@ get_channel(#{
 get_channel(_) ->
     <<"">>.
 
+get_message(Selected, #{
+    timestamp := Timestamp,
+    ?BINDING_KEYS := #{
+        'Params' := _Params,
+        'TopicTks' := TopicTks,
+        'PayloadTks' := PayloadTks
+    }}) ->
+    #{
+        topic => emqx_rule_utils:proc_tmpl(TopicTks, Selected),
+        payload => emqx_rule_utils:proc_tmpl(PayloadTks, Selected),
+        timestamp => Timestamp
+    };
+
+get_message(Selected, #{
+    ?BINDING_KEYS := #{
+        'Params' := _Params,
+        'TopicTks' := TopicTks,
+        'PayloadTks' := PayloadTks
+    }}) ->
+    #{
+        topic => emqx_rule_utils:proc_tmpl(TopicTks, Selected),
+        payload => emqx_rule_utils:proc_tmpl(PayloadTks, Selected),
+        timestamp => erlang:system_time(millisecond)
+    };
+
+get_message(_Selected, _Envs = #{
+    topic := _Topic,
+    headers := #{republish_by := ActId},
+    ?BINDING_KEYS := #{'_Id' := ActId}
+}) ->
+    #{}.
+
 republish(Selected, #{
     qos := QoS, flags := Flags, timestamp := Timestamp,
     ?BINDING_KEYS := #{
@@ -92,8 +125,8 @@ republish(Selected, #{
         'TopicTks' := TopicTks,
         'PayloadTks' := PayloadTks
     } = Bind}) ->
-    ?LOG(error,"Selected ~p ",[Selected]),
-    TargetQoS = maps:get('TargetQoS',Bind,0),
+    ?LOG(debug, "Selected ~p ", [Selected]),
+    TargetQoS = maps:get('TargetQoS', Bind, 0),
     Msg = #message{
         id = emqx_guid:gen(),
         qos = if TargetQoS =:= -1 -> QoS; true -> TargetQoS end,
@@ -104,7 +137,7 @@ republish(Selected, #{
         payload = emqx_rule_utils:proc_tmpl(PayloadTks, Selected),
         timestamp = Timestamp
     },
-    ?LOG(error,"Msg ~p ",[Msg]),
+    ?LOG(debug, "Msg ~p ", [Msg]),
     _ = emqx_broker:safe_publish(Msg),
     emqx_rule_metrics:inc_actions_success(ActId),
     emqx_metrics:inc_msg(Msg);
@@ -116,8 +149,8 @@ republish(Selected, #{
         'TopicTks' := TopicTks,
         'PayloadTks' := PayloadTks
     } = Bind}) ->
-    ?LOG(error,"Selected ~p ",[Selected]),
-    TargetQoS = maps:get('TargetQoS',Bind,0),
+    ?LOG(debug, "Selected ~p ", [Selected]),
+    TargetQoS = maps:get('TargetQoS', Bind, 0),
     Msg = #message{
         id = emqx_guid:gen(),
         qos = if TargetQoS =:= -1 -> 0; true -> TargetQoS end,
@@ -128,7 +161,7 @@ republish(Selected, #{
         payload = emqx_rule_utils:proc_tmpl(PayloadTks, Selected),
         timestamp = erlang:system_time(millisecond)
     },
-    ?LOG(error,"Msg ~p ",[Msg]),
+    ?LOG(debug, "Msg ~p ", [Msg]),
     _ = emqx_broker:safe_publish(Msg),
     emqx_rule_metrics:inc_actions_success(ActId),
     emqx_metrics:inc_msg(Msg);
@@ -138,7 +171,7 @@ republish(_Selected, Envs = #{
     headers := #{republish_by := ActId},
     ?BINDING_KEYS := #{'_Id' := ActId}
 }) ->
-    ?LOG(error, " msg topic: ~p, target topic: ~p",
+    ?LOG(debug, " msg topic: ~p, target topic: ~p",
         [Topic, ?bound_v('TargetTopic', Envs)]),
     emqx_rule_metrics:inc_actions_error(?bound_v('_Id', Envs)).
 
