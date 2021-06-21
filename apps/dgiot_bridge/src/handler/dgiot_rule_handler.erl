@@ -49,26 +49,26 @@ handle(OperationID, Args, Context, Req) ->
     Headers = #{},
     case catch do_request(OperationID, Args, Context, Req) of
         {ErrType, Reason} when ErrType == 'EXIT'; ErrType == error ->
-            ?LOG(error,"do request: ~p, ~p, ~p~n", [OperationID, Args, Reason]),
+            ?LOG(error, "do request: ~p, ~p, ~p~n", [OperationID, Args, Reason]),
             Err = case is_binary(Reason) of
                       true -> Reason;
                       false -> list_to_binary(io_lib:format("~p", [Reason]))
                   end,
             {500, Headers, #{<<"error">> => Err}};
         ok ->
-            ?LOG(debug,"do request: ~p, ~p ->ok ~n", [OperationID, Args]),
+            ?LOG(debug, "do request: ~p, ~p ->ok ~n", [OperationID, Args]),
             {200, Headers, #{}, Req};
         {ok, Res} ->
-            ?LOG(debug,"do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
+            ?LOG(debug, "do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
             {200, Headers, Res, Req};
         {Status, Res} ->
-            ?LOG(debug,"do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
+            ?LOG(debug, "do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
             {Status, Headers, Res, Req};
         {Status, NewHeaders, Res} ->
-            ?LOG(debug,"do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
+            ?LOG(debug, "do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
             {Status, maps:merge(Headers, NewHeaders), Res, Req};
         {Status, NewHeaders, Res, NewReq} ->
-            ?LOG(debug,"do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
+            ?LOG(debug, "do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
             {Status, maps:merge(Headers, NewHeaders), Res, NewReq}
     end.
 
@@ -93,50 +93,64 @@ do_request(delete_rule_id, #{<<"id">> := RuleID}, _Context, _Req) ->
 %% OperationId:post_rule_test
 %% 请求:DELETE /iotapi/rule/test
 do_request(post_rule_test, Params, _Context, _Req) ->
-    emqx_rule_engine_api:create_rule(#{},maps:to_list(Params) ++ [{<<"test">>,<<"true">>}]);
+    emqx_rule_engine_api:create_rule(#{}, maps:to_list(Params) ++ [{<<"test">>, <<"true">>}]);
 
 %% Rule 概要: 创建规则引擎 描述:创建规则引擎
 %% OperationId:post_rules
 %% 请求:POST /iotapi/rules
 do_request(post_rules, Params, _Context, _Req) ->
-    ?LOG(error,"Params ~p ", [Params]),
-    Actions = maps:get(<<"actions">>,Params),
-    lists:map(fun(Action) ->
+    ?LOG(error, "Params ~p ", [Params]),
+    Actions = maps:get(<<"actions">>, Params),
+    NewActions = lists:foldl(fun(Action,Acc) ->
         case Action of
-            #{<<"args">> := #{<<"$resource">> := <<"resource:bf00440de5">>}} ->
-                ?LOG(error,"Action ~p",[Action]);
-            #{<<"params">> := #{<<"$resource">> := <<"resource:bf00440de5">>}} ->
-              ?LOG(error,"Action ~p",[Action])
-        end,
-        ?LOG(error,"Action ~p ", [Action])
-              end, Actions),
-    emqx_rule_engine_api:create_rule(#{},maps:to_list(Params));
+            #{<<"args">> := #{<<"$resource">> := Resource, <<"name">> := Name} = Args} ->
+                emqx_rule_engine_api:create_resource(#{},
+                    [{<<"id">>, Resource},
+                        {<<"name">>, Resource},
+                        {<<"type">>, Name},
+                        {<<"config">>, [{<<"channel">>, Resource}]},
+                        {<<"description">>, <<"dgiot_resource">>}]),
+                ?LOG(error, "Action ~p Resource ~p", [Action, Resource]),
+                Acc ++ [Action#{<<"args">> => Args}];
+            #{<<"params">> := #{<<"$resource">> := Resource, <<"name">> := Name}} ->
+                emqx_rule_engine_api:create_resource(#{},
+                    [{<<"id">>, Resource},
+                        {<<"name">>, Resource},
+                        {<<"type">>, Name},
+                        {<<"config">>, [{<<"channel">>, Resource}]},
+                        {<<"description">>, <<"dgiot_resource">>}]),
+                ?LOG(error, "Action ~p Resource ~p ", [Action, Resource]),
+                Acc ++ [Action]
+        end
+              end,[], Actions),
+    emqx_rule_engine_api:create_rule(#{}, maps:to_list(Params#{<<"actions">> => NewActions}));
 
 %% Rule 概要: 获取规则引擎列表 描述:获取规则引擎列表
 %% OperationId:get_rules
 %% 请求:GET /iotapi/rules
 do_request(get_rules, _Args, _Context, _Req) ->
-   emqx_rule_engine_api:list_rules(#{}, []);
+    emqx_rule_engine_api:list_rules(#{}, []);
 
 %% OperationId:get_actions
 do_request(get_rule_actions, Args, _Context, _Req) ->
-    ?LOG(info,"~p", [Args]),
+    ?LOG(info, "~p", [Args]),
     emqx_rule_engine_api:list_actions(#{}, []);
 
 %% OperationId:post_rule_resource
 do_request(post_rule_resource, Params, _Context, _Req) ->
-    ?LOG(info,"Params ~p ", [Params]),
-    Actions = maps:get(<<"actions">>,Params),
+    ?LOG(info, "Params ~p ", [Params]),
+    Actions = maps:get(<<"actions">>, Params),
+    ?LOG(info, "Actions ~p ", [Actions]),
     lists:map(fun(Action) ->
-        ?LOG(info,"Action ~p ", [Action])
-       end, Actions),
-    emqx_rule_engine_api:create_resource(#{},maps:to_list(Params));
+        ?LOG(info, "Action ~p ", [Action])
+              end, Actions),
+    emqx_rule_engine_api:create_resource(#{}, maps:to_list(Params));
 
 do_request(get_rule_resource_id, #{<<"id">> := ResId}, _Context, _Req) ->
     emqx_rule_engine_api:show_resource(#{id => ResId}, []);
 
 do_request(delete_rule_resource_id, #{<<"id">> := Id}, _Context, _Req) ->
-   emqx_rule_engine_api:delete_resource(#{id => Id},#{});
+    emqx_rule_engine_api:delete_resource(#{id => Id}, #{});
 
 do_request(get_resource_types, _Args, _Context, _Req) ->
     Resources = dgiot_bridge:get_all_channel(),
