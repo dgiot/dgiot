@@ -188,7 +188,7 @@ do_request(_OperationId, _Args, _Context, _Req) ->
 get_channel() ->
     case dgiot_parse:query_object(<<"Channel">>, #{<<"keys">> => [<<"name">>]}) of
         {ok, #{<<"results">> := Results}} when length(Results) > 0 ->
-            lists:foldl(fun(#{<<"objectId">> := ChannelId,<<"name">> := Name} Acc) ->
+            lists:foldl(fun(#{<<"objectId">> := ChannelId,<<"name">> := Name}, Acc) ->
                 Acc ++ [#{
                     <<"config">> => #{<<"channel">> => ChannelId},
                     <<"description">> => Name,
