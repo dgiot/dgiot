@@ -122,25 +122,27 @@ do_request(get_rules, _Args, _Context, _Req) ->
 %% OperationId:get_actions
 do_request(get_actions, Args, _Context, _Req) ->
     ?LOG(info, "~p", [Args]),
-    {ok, #{data := Data} = Result} = emqx_rule_engine_api:list_actions(#{}, []),
-    NewData =
-        lists:foldl(fun(X, Acc) ->
-            case X of
-                #{<<"app">> := <<"dgiot_bridge">>} ->
-                    Acc ++ [X#{<<"dgiot_channel">> => get_channel()}];
-                _ ->
-                    Acc ++ [X]
-
-            end
-                    end, [], Data),
-    ?LOG(error, "R ~p ", [R]),
-    {ok, Result#{data := NewData}};
+%%    {ok, #{data := Data} = Result} = emqx_rule_engine_api:list_actions(#{}, []),
+%%    NewData =
+%%        lists:foldl(fun(X, Acc) ->
+%%            case X of
+%%                #{<<"app">> := <<"dgiot_bridge">>} ->
+%%                    Acc ++ [X#{<<"dgiot_channel">> => get_channel()}];
+%%                _ ->
+%%                    Acc ++ [X]
+%%
+%%            end
+%%                    end, [], Data),
+%%    ?LOG(error, "NewData ~p ", [NewData]),
+%%    {ok, Result#{data => NewData}};
+    emqx_rule_engine_api:list_actions(#{}, []);
 
 do_request(get_actions_id, #{<<"id">> := RuleID}, _Context, _Req) ->
     emqx_rule_engine_api:show_action(#{id => RuleID}, []);
 
 do_request(get_resources, _Args, _Context, _Req) ->
-    emqx_rule_engine_api:list_resources(#{}, []);
+    {ok, #{data := Data} = Result} = emqx_rule_engine_api:list_resources(#{}, []),
+    {ok, Result#{data => Data ++ get_channel()}};
 
 %% OperationId:post_rule_resource
 do_request(post_resources, Params, _Context, _Req) ->
@@ -186,8 +188,14 @@ do_request(_OperationId, _Args, _Context, _Req) ->
 get_channel() ->
     case dgiot_parse:query_object(<<"Channel">>, #{<<"keys">> => [<<"name">>]}) of
         {ok, #{<<"results">> := Results}} when length(Results) > 0 ->
-            lists:foldl(fun(#{<<"objectId">> := ChannelId}, Acc) ->
-                Acc ++ [#{<<"objectId">> => ChannelId}]
+            lists:foldl(fun(#{<<"objectId">> := ChannelId,<<"name">> := Name} Acc) ->
+                Acc ++ [#{
+                    <<"config">> => #{<<"channel">> => ChannelId},
+                    <<"description">> => Name,
+                    <<"id">> => <<"resource:", ChannelId/binary>>,
+                    <<"status">> => true,
+                    <<"type">> => <<"dgiot_resource">>
+                }]
                         end, [], Results);
         _ -> []
     end.
