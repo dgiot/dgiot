@@ -44,12 +44,19 @@
     yarn install
     yarn build
     cd ../dgiot
-    rm ./apps/dgiot_api/priv/www -rf
+    rm ./app/dgiot_api/priv/www -rf
     cp ../dgiot_dashboard/dist/ ./apps/dgiot_api/priv/www -rf
     cp ../dgiot_dashboard/swagger ./apps/dgiot_api/priv/www/ -rf
     make DIAGNOSTIC=1
-    _build/emqx/rel/emqx/bin/emqx console
+ ```
++ windows 启动
+ ```
+    _build/emqx/rel/emqx/bin/emqx.cmd console
   ```
++ Linux/Unix/Mac 启动
+ ```
+    _build/emqx/rel/emqx/bin/emqx console
+ ```
 *DGIOT* 启动，可以使用浏览器访问 http://localhost:5080 来查看 Dashboard。
 
 - 新功能的完整列表，请参阅 [DGIOT Release Notes](https://github.com/dgiot/dgiot/releases)。
