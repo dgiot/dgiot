@@ -99,9 +99,10 @@ do_request(post_rule_test, Params, _Context, _Req) ->
 %% OperationId:post_rules
 %% 请求:POST /iotapi/rules
 do_request(post_rules, Params, _Context, _Req) ->
-    ?LOG(error, "Params ~p ", [Params]),
+
     Actions = maps:get(<<"actions">>, Params),
     NewActions = lists:foldl(fun(Action,Acc) ->
+        ?LOG(error, "Action ~p ", [Action]),
         case Action of
             #{<<"args">> := #{<<"$resource">> := Resource, <<"name">> := Name} = Args} ->
                 emqx_rule_engine_api:create_resource(#{},
@@ -110,8 +111,8 @@ do_request(post_rules, Params, _Context, _Req) ->
                         {<<"type">>, Name},
                         {<<"config">>, [{<<"channel">>, Resource}]},
                         {<<"description">>, <<"dgiot_resource">>}]),
-                ?LOG(error, "Action ~p Resource ~p", [Action, Resource]),
-                Acc ++ [Action#{<<"args">> => Args}];
+                NewAction  = maps:without([<<"args">>],Action),
+                Acc ++ [NewAction#{<<"params">> => Args}];
             #{<<"params">> := #{<<"$resource">> := Resource, <<"name">> := Name}} ->
                 emqx_rule_engine_api:create_resource(#{},
                     [{<<"id">>, Resource},
@@ -119,10 +120,9 @@ do_request(post_rules, Params, _Context, _Req) ->
                         {<<"type">>, Name},
                         {<<"config">>, [{<<"channel">>, Resource}]},
                         {<<"description">>, <<"dgiot_resource">>}]),
-                ?LOG(error, "Action ~p Resource ~p ", [Action, Resource]),
                 Acc ++ [Action]
         end
-              end,[], Actions),
+              end, [], Actions),
     emqx_rule_engine_api:create_rule(#{}, maps:to_list(Params#{<<"actions">> => NewActions}));
 
 %% Rule 概要: 获取规则引擎列表 描述:获取规则引擎列表
