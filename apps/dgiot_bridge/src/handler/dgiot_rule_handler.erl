@@ -110,7 +110,8 @@ do_request(post_rules, Params, _Context, _Req) ->
         Acc ++ [X]
                              end, [], Actions),
     ?LOG(error, "Params ~p ", [Params#{<<"actions">> => NewActions}]),
-    emqx_rule_engine_api:create_rule(#{}, maps:to_list(Params#{<<"actions">> => NewActions}));
+    R = emqx_rule_engine_api:create_rule(#{}, maps:to_list(Params#{<<"actions">> => NewActions})),
+    R;
 
 %% Rule 概要: 获取规则引擎列表 描述:获取规则引擎列表
 %% OperationId:get_rules
@@ -121,7 +122,19 @@ do_request(get_rules, _Args, _Context, _Req) ->
 %% OperationId:get_actions
 do_request(get_actions, Args, _Context, _Req) ->
     ?LOG(info, "~p", [Args]),
-    emqx_rule_engine_api:list_actions(#{}, []);
+    {ok, #{data := Data} = Result} = emqx_rule_engine_api:list_actions(#{}, []),
+    NewData =
+        lists:foldl(fun(X, Acc) ->
+            case X of
+                #{<<"app">> := <<"dgiot_bridge">>} ->
+                    Acc ++ [X#{<<"dgiot_channel">> => get_channel()}];
+                _ ->
+                    Acc ++ [X]
+
+            end
+                    end, [], Data),
+    ?LOG(error, "R ~p ", [R]),
+    {ok, Result#{data := NewData}};
 
 do_request(get_actions_id, #{<<"id">> := RuleID}, _Context, _Req) ->
     emqx_rule_engine_api:show_action(#{id => RuleID}, []);
@@ -169,3 +182,12 @@ do_request(_OperationId, _Args, _Context, _Req) ->
 %%            ?LOG(info,"Reason1 ~p",[Reason1]),
 %%            {error, Reason1}
 %%    end.
+
+get_channel() ->
+    case dgiot_parse:query_object(<<"Channel">>, #{<<"keys">> => [<<"name">>]}) of
+        {ok, #{<<"results">> := Results}} when length(Results) > 0 ->
+            lists:foldl(fun(#{<<"objectId">> := ChannelId}, Acc) ->
+                Acc ++ [#{<<"objectId">> => ChannelId}]
+                        end, [], Results);
+        _ -> []
+    end.
