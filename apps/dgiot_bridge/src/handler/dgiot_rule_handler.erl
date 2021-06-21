@@ -102,27 +102,15 @@ do_request(post_rules, Params, _Context, _Req) ->
     Actions = maps:get(<<"actions">>, Params),
     NewActions = lists:foldl(fun(X, Acc) ->
         ?LOG(error, "X ~p ", [X]),
-        case X of
-            #{<<"args">> := #{<<"$resource">> := Resource}} = Args ->
-                ?LOG(error, "Args ~p ", [Args]),
-                <<"resource:", Channel/binary>> = Resource,
-                emqx_rule_engine_api:create_resource(#{}, [
-                    {<<"id">>, Resource},
-                    {<<"type">>, <<"dgiot_resource">>},
-                    {<<"config">>, [{<<"channel">>, Channel}]},
-                    {<<"description">>, Resource}]),
-                Action = maps:without([<<"args">>], X),
-                Acc ++ [Action#{<<"params">> => Args}];
-            #{<<"params">> := #{<<"$resource">> := Resource}} ->
-                <<"resource:", Channel/binary>> = Resource,
-                emqx_rule_engine_api:create_resource(#{},
-                    [
-                        {<<"id">>, Resource},
-                        {<<"type">>, <<"dgiot_resource">>},
-                        {<<"config">>, [{<<"channel">>, Channel}]},
-                        {<<"description">>, Resource}]),
-                Acc ++ [X]
-        end
+        #{<<"params">> := #{<<"$resource">> := Resource}} = X,
+        <<"resource:", Channel/binary>> = Resource,
+        emqx_rule_engine_api:create_resource(#{},
+            [
+                {<<"id">>, Resource},
+                {<<"type">>, <<"dgiot_resource">>},
+                {<<"config">>, [{<<"channel">>, Channel}]},
+                {<<"description">>, Resource}]),
+        Acc ++ [X]
                              end, [], Actions),
     ?LOG(error, "Params ~p ", [Params#{<<"actions">> => NewActions}]),
     emqx_rule_engine_api:create_rule(#{}, maps:to_list(Params#{<<"actions">> => NewActions}));
@@ -163,7 +151,6 @@ do_request(delete_resources_id, #{<<"id">> := Id}, _Context, _Req) ->
 do_request(get_resource_types, _Args, _Context, _Req) ->
     Resources = dgiot_bridge:get_all_channel(),
     {200, Resources};
-
 
 
 %%  服务器不支持的API接口
