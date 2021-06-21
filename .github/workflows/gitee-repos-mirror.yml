@@ -25,4 +25,4 @@ jobs:
         timeout: '1h'
         debug: true
         force_update: true
-        black_list: ""
+        black_list: "issue-generator"
