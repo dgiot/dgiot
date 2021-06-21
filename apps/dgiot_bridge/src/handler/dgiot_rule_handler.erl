@@ -90,11 +90,8 @@ do_request(delete_rule_id, #{<<"id">> := RuleID}, _Context, _Req) ->
     emqx_rule_engine_api:delete_rule(#{id => RuleID}, []);
 
 %% Rule 概要: 测试规则引擎 描述:测试规则引擎
-%% OperationId:post_rule_test
-%% 请求:DELETE /iotapi/rule/test
-do_request(post_rule_test, Params, _Context, _Req) ->
-    emqx_rule_engine_api:create_rule(#{}, maps:to_list(Params) ++ [{<<"test">>, <<"true">>}]);
-
+do_request(post_rules, #{<<"test">> := <<"true">>} = Params, _Context, _Req) ->
+    emqx_rule_engine_api:create_rule(#{}, maps:to_list(Params));
 %% Rule 概要: 创建规则引擎 描述:创建规则引擎
 %% OperationId:post_rules
 %% 请求:POST /iotapi/rules
