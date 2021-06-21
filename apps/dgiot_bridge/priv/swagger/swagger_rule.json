@@ -346,6 +346,275 @@
         ]
       }
     },
+    "/actions": {
+      "get": {
+        "security": [],
+        "summary": "获取动作列表",
+        "description": "获取动作列表",
+        "parameters": [
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/Action"
+                  }
+                },
+                "code": {
+                  "type": "number"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Rule"
+        ]
+      }
+    },
+    "/actions/{id}": {
+      "get": {
+        "security": [],
+        "summary": "获取动作",
+        "description": "获取动作",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "动作名称",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/Action"
+                  }
+                },
+                "code": {
+                  "type": "number"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Rule"
+        ]
+      }
+    },
+    "/resources": {
+      "get": {
+        "security": [],
+        "summary": "获取资源列表",
+        "description": "获取资源列表",
+        "parameters": [
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/Resource"
+                  }
+                },
+                "code": {
+                  "type": "number"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Rule"
+        ]
+      },
+      "post": {
+        "security": [],
+        "summary": "创建资源",
+        "description": "创建资源",
+        "parameters": [
+          {
+            "name": "rule",
+            "in": "body",
+            "description": "规则引擎配置",
+            "schema": {
+              "$ref": "#/definitions/Resource"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Rule"
+        ]
+      }
+    },
+    "/resources/{id}": {
+      "get": {
+        "security": [],
+        "summary": "获取资源",
+        "description": "获取资源",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "资源名称",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/Resource"
+                  }
+                },
+                "code": {
+                  "type": "number"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Rule"
+        ]
+      },
+      "delete": {
+        "security": [],
+        "summary": "删除资源",
+        "description": "删除资源",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "description": "资源名称",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/Resource"
+                  }
+                },
+                "code": {
+                  "type": "number"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Rule"
+        ]
+      }
+    },
     "/resource_types": {
       "get": {
         "security": [],
