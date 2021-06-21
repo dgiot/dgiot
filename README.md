@@ -47,15 +47,11 @@
     rm ./app/dgiot_api/priv/www -rf
     cp ../dgiot_dashboard/dist/ ./apps/dgiot_api/priv/www -rf
     cp ../dgiot_dashboard/swagger ./apps/dgiot_api/priv/www/ -rf
-    make DIAGNOSTIC=1
+    make run
  ```
-+ windows 启动
++ Make Debug
  ```
-    _build/emqx/rel/emqx/bin/emqx.cmd console
-  ```
-+ Linux/Unix/Mac 启动
- ```
-    _build/emqx/rel/emqx/bin/emqx console
+  make DIAGNOSTIC=1
  ```
 *DGIOT* 启动，可以使用浏览器访问 http://localhost:5080 来查看 Dashboard。
 

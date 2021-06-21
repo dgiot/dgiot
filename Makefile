@@ -154,6 +154,9 @@ run: $(PROFILE) quickrun
 
 .PHONY: quickrun
 quickrun:
-	./_build/$(PROFILE)/rel/emqx/bin/emqx console
-
+ifeq ($(OS),Windows_NT)
+		./_build/$(PROFILE)/rel/emqx/bin/emqx.cmd console
+	else
+	  	./_build/$(PROFILE)/rel/emqx/bin/emqx console
+	endif
 include docker.mk

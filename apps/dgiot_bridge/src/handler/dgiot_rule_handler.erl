@@ -99,30 +99,32 @@ do_request(post_rule_test, Params, _Context, _Req) ->
 %% OperationId:post_rules
 %% 请求:POST /iotapi/rules
 do_request(post_rules, Params, _Context, _Req) ->
-
     Actions = maps:get(<<"actions">>, Params),
-    NewActions = lists:foldl(fun(Action,Acc) ->
-        ?LOG(error, "Action ~p ", [Action]),
-        case Action of
-            #{<<"args">> := #{<<"$resource">> := Resource, <<"name">> := Name} = Args} ->
+    NewActions = lists:foldl(fun(X, Acc) ->
+        ?LOG(error, "X ~p ", [X]),
+        case X of
+            #{<<"args">> := #{<<"$resource">> := Resource}} = Args ->
+                ?LOG(error, "Args ~p ", [Args]),
+                <<"resource:", Channel/binary>> = Resource,
+                emqx_rule_engine_api:create_resource(#{}, [
+                    {<<"id">>, Resource},
+                    {<<"type">>, <<"dgiot_resource">>},
+                    {<<"config">>, [{<<"channel">>, Channel}]},
+                    {<<"description">>, Resource}]),
+                Action = maps:without([<<"args">>], X),
+                Acc ++ [Action#{<<"params">> => Args}];
+            #{<<"params">> := #{<<"$resource">> := Resource}} ->
+                <<"resource:", Channel/binary>> = Resource,
                 emqx_rule_engine_api:create_resource(#{},
-                    [{<<"id">>, Resource},
-                        {<<"name">>, Resource},
-                        {<<"type">>, Name},
-                        {<<"config">>, [{<<"channel">>, Resource}]},
-                        {<<"description">>, <<"dgiot_resource">>}]),
-                NewAction  = maps:without([<<"args">>],Action),
-                Acc ++ [NewAction#{<<"params">> => Args}];
-            #{<<"params">> := #{<<"$resource">> := Resource, <<"name">> := Name}} ->
-                emqx_rule_engine_api:create_resource(#{},
-                    [{<<"id">>, Resource},
-                        {<<"name">>, Resource},
-                        {<<"type">>, Name},
-                        {<<"config">>, [{<<"channel">>, Resource}]},
-                        {<<"description">>, <<"dgiot_resource">>}]),
-                Acc ++ [Action]
+                    [
+                        {<<"id">>, Resource},
+                        {<<"type">>, <<"dgiot_resource">>},
+                        {<<"config">>, [{<<"channel">>, Channel}]},
+                        {<<"description">>, Resource}]),
+                Acc ++ [X]
         end
-              end, [], Actions),
+                             end, [], Actions),
+    ?LOG(error, "Params ~p ", [Params#{<<"actions">> => NewActions}]),
     emqx_rule_engine_api:create_rule(#{}, maps:to_list(Params#{<<"actions">> => NewActions}));
 
 %% Rule 概要: 获取规则引擎列表 描述:获取规则引擎列表
