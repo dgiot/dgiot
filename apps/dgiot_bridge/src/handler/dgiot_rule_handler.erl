@@ -93,14 +93,24 @@ do_request(delete_rule_id, #{<<"id">> := RuleID}, _Context, _Req) ->
 %% OperationId:post_rule_test
 %% 请求:DELETE /iotapi/rule/test
 do_request(post_rule_test, Params, _Context, _Req) ->
-    emqx_rule_engine_api:create_rule(#{},Params#{<<"test">> => <<"true">>});
+    emqx_rule_engine_api:create_rule(#{},maps:to_list(Params) ++ [{<<"test">>,<<"true">>}]);
 
 %% Rule 概要: 创建规则引擎 描述:创建规则引擎
 %% OperationId:post_rules
 %% 请求:POST /iotapi/rules
 do_request(post_rules, Params, _Context, _Req) ->
-    ?LOG(error,"[RuleEngineAPI] ~p ", [Params]),
-    emqx_rule_engine_api:create_rule(#{},Params);
+    ?LOG(error,"Params ~p ", [Params]),
+    Actions = maps:get(<<"actions">>,Params),
+    lists:map(fun(Action) ->
+        case Action of
+            #{<<"args">> := #{<<"$resource">> := <<"resource:bf00440de5">>}} ->
+                ?LOG(error,"Action ~p",[Action]);
+            #{<<"params">> := #{<<"$resource">> := <<"resource:bf00440de5">>}} ->
+              ?LOG(error,"Action ~p",[Action])
+        end,
+        ?LOG(error,"Action ~p ", [Action])
+              end, Actions),
+    emqx_rule_engine_api:create_rule(#{},maps:to_list(Params));
 
 %% Rule 概要: 获取规则引擎列表 描述:获取规则引擎列表
 %% OperationId:get_rules
@@ -114,9 +124,13 @@ do_request(get_rule_actions, Args, _Context, _Req) ->
     emqx_rule_engine_api:list_actions(#{}, []);
 
 %% OperationId:post_rule_resource
-do_request(post_rule_resource, Args, _Context, _Req) ->
-    ?LOG(info,"Args ~p ", [Args]),
-    emqx_rule_engine_api:create_resource(#{},Args);
+do_request(post_rule_resource, Params, _Context, _Req) ->
+    ?LOG(info,"Params ~p ", [Params]),
+    Actions = maps:get(<<"actions">>,Params),
+    lists:map(fun(Action) ->
+        ?LOG(info,"Action ~p ", [Action])
+       end, Actions),
+    emqx_rule_engine_api:create_resource(#{},maps:to_list(Params));
 
 do_request(get_rule_resource_id, #{<<"id">> := ResId}, _Context, _Req) ->
     emqx_rule_engine_api:show_resource(#{id => ResId}, []);

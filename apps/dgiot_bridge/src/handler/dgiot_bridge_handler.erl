@@ -175,59 +175,6 @@ do_request(get_classes_decoder, Args, #{<<"sessionToken">> := Session}, _Req) ->
             {error, Reason}
     end;
 
-%% Rule 概要: 获取规则引擎 描述:获取规则引擎
-%% OperationId:get_rules_id
-%% 请求:GET /iotapi/rule/:{id}
-do_request(get_rule_id, #{<<"id">> := _Id}, _Context, _Req) ->
-    {200, <<"Resources">>};
-
-%% Rule 概要: 删除规则引擎 描述:删除规则引擎
-%% OperationId:delete_rules_id
-%% 请求:DELETE /iotapi/rules/:{id}
-do_request(delete_rule_id, #{<<"id">> := _Id}, _Context, _Req) ->
-    {200, <<"Resources">>};
-
-%% Rule 概要: 测试规则引擎 描述:测试规则引擎
-%% OperationId:post_rule_test
-%% 请求:DELETE /iotapi/rule/test
-do_request(post_rule_test, _Params, _Context, _Req) ->
-    {200, <<"Resources">>};
-
-%% Rule 概要: 创建规则引擎 描述:创建规则引擎
-%% OperationId:post_rules
-%% 请求:POST /iotapi/rules
-do_request(post_rules, _Params, _Context, _Req) ->
-    {200, <<"Resources">>};
-
-%% Rule 概要: 获取规则引擎列表 描述:获取规则引擎列表
-%% OperationId:get_rules
-%% 请求:GET /iotapi/rules
-do_request(get_rules, _Args, _Context, _Req) ->
-    Rules = emqx_rule_registry:get_rules(),
-    {200, Rules};
-
-%% OperationId:get_actions
-do_request(get_rule_actions, _Args, _Context, _Req) ->
-    {200, <<"Resources">>};
-
-%% OperationId:post_rule_resource
-do_request(post_rule_resource, _Args, _Context, _Req) ->
-    {200, <<"Resources">>};
-
-do_request(get_rule_resource_id, #{<<"id">> := _Id}, _Context, _Req) ->
-    {200, <<"Resources">>};
-
-do_request(delete_rule_resource_id, #{<<"id">> := _Id}, _Context, _Req) ->
-    {200, <<"Resources">>};
-
-do_request(get_resource_types, _Args, _Context, _Req) ->
-    Resources = dgiot_bridge:get_all_channel(),
-    {200, Resources};
-
-do_request(get_rule_resource, _Args, _Context, _Req) ->
-    {200, <<"Resources">>};
-
-
 %%  服务器不支持的API接口
 do_request(_OperationId, _Args, _Context, _Req) ->
     {error, <<"Not Allowed.">>}.
