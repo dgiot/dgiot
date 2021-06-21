@@ -68,6 +68,11 @@
     "Rule": {
       "type": "object",
       "properties": {
+        "test": {
+          "type": "string",
+          "description": "是否测试规则引擎（true/false）",
+          "example": "false"
+        },
         "name": {
           "type": "string",
           "description": "规则名称",
@@ -80,7 +85,7 @@
         "rawsql": {
           "type": "string",
           "description": "rawsql",
-          "example": "SELECT\\n  payload.msg as msg\\nFROM\\n  \\\"t/#\\\"\\nWHERE\\n  msg = 'hello'"
+          "example": "SELECT \n  payload.msg as msg \n FROM \n  \"t/#\" \n WHERE \n  msg = 'hello'"
         },
         "description": {
           "type": "string",
@@ -94,7 +99,8 @@
             "properties": {
               "name": {
                 "type": "string",
-                "example": "republish"
+                "example": "dgiot",
+                "description": "数蛙dgiot通道"
               },
               "params": {
                 "type": "object",
@@ -103,6 +109,21 @@
                     "type": "string",
                     "description": "$resource",
                     "example": "resource:bf00440de5"
+                  },
+                  "target_topic": {
+                    "type": "string",
+                    "description": "target_topic",
+                    "example": "thing/${productid}/${clientid}/post"
+                  },
+                  "target_qos": {
+                    "type": "number",
+                    "description": "target_qos",
+                    "example":0
+                  },
+                  "payload_tmpl": {
+                    "type": "string",
+                    "description": "payload_tmpl",
+                    "example": "${payload}"
                   }
                 }
               }
@@ -120,7 +141,7 @@
             "payload": {
               "type": "string",
               "description": "payload",
-              "example": "{\\\"msg\\\": \\\"hello\\\"}"
+              "example": "{\"msg\": \"hello\"}"
             },
             "qos": {
               "type": "number",
@@ -222,43 +243,6 @@
                 }
               }
             }
-          },
-          "400": {
-            "description": "Bad Request"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "403": {
-            "description": "Forbidden"
-          },
-          "500": {
-            "description": "Server Internal error"
-          }
-        },
-        "tags": [
-          "Rule"
-        ]
-      }
-    },
-    "/rule_test": {
-      "post": {
-        "security": [],
-        "summary": "测试规则引擎",
-        "description": "创建规则引擎",
-        "parameters": [
-          {
-            "name": "rule",
-            "in": "body",
-            "description": "规则引擎配置",
-            "schema": {
-              "$ref": "#/definitions/Rule"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Returns operation status"
           },
           "400": {
             "description": "Bad Request"
