@@ -97,7 +97,8 @@ do_event(ChannelType, ChannelId, EventId, Event, Timeout) ->
 
 do_message(ChannelId, Message) ->
     case dgiot_data:get({channeltype, ChannelId}) of
-        not_find -> pass;
+        not_find ->
+            not_find;
         ChannelType ->
             do_message(ChannelType, ChannelId, Message, 5000)
     end.

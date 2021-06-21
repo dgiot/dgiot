@@ -151,11 +151,12 @@ on_action_create_dgiot(_Id, Params = #{
     Params.
 
 -spec on_action_dgiot(selected_data(), env_vars()) -> any().
-on_action_dgiot(Selected, Envs ) ->
+on_action_dgiot(Selected, Envs) ->
     ChannelId = dgiot_mqtt:get_channel(Envs),
     Msg = dgiot_mqtt:get_message(Selected, Envs),
-    ?LOG(error, " ChannelId ~p Msg: ~p", [ChannelId,Msg]),
-    dgiot_channelx:do_message(ChannelId, {rule, Msg, Selected}),
-    dgiot_mqtt:republish(Selected, Envs).
+    case dgiot_channelx:do_message(ChannelId, {rule, Msg, Selected}) of
+        not_find -> dgiot_mqtt:republish(Selected, Envs);
+        _ -> pass
+    end.
 
 
