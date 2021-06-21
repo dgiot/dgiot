@@ -9,6 +9,7 @@ export EMQX_CE_DASHBOARD_VERSION ?= v4.3.0
 ifeq ($(OS),Windows_NT)
 	export REBAR_COLOR=none
 endif
+
 ifeq ($(OS),Windows_NT)
 		GET_DASHBOARD=$(SCRIPTS)/get-windashboard.sh
 	else
@@ -19,6 +20,12 @@ PROFILE ?= emqx
 REL_PROFILES := emqx emqx-edge
 PKG_PROFILES := emqx-pkg emqx-edge-pkg
 PROFILES := $(REL_PROFILES) $(PKG_PROFILES) default
+
+ifeq ($(OS),Windows_NT)
+		QUIKRUN=$(CURDIR)/_build/$(PROFILE)/rel/emqx/bin/emqx.cmd console
+	else
+	  	QUIKRUN=$(CURDIR)/_build/$(PROFILE)/rel/emqx/bin/emqx console
+	endif
 
 export REBAR_GIT_CLONE_OPTIONS += --depth=1
 
@@ -154,9 +161,5 @@ run: $(PROFILE) quickrun
 
 .PHONY: quickrun
 quickrun:
-ifeq ($(OS),Windows_NT)
-		./_build/$(PROFILE)/rel/emqx/bin/emqx.cmd console
-	else
-	  	./_build/$(PROFILE)/rel/emqx/bin/emqx console
-	endif
+	@$(QUIKRUN)
 include docker.mk

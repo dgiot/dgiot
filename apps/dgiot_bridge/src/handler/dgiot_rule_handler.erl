@@ -134,12 +134,18 @@ do_request(get_rules, _Args, _Context, _Req) ->
     emqx_rule_engine_api:list_rules(#{}, []);
 
 %% OperationId:get_actions
-do_request(get_rule_actions, Args, _Context, _Req) ->
+do_request(get_actions, Args, _Context, _Req) ->
     ?LOG(info, "~p", [Args]),
     emqx_rule_engine_api:list_actions(#{}, []);
 
+do_request(get_actions_id, #{<<"id">> := RuleID}, _Context, _Req) ->
+    emqx_rule_engine_api:show_action(#{id => RuleID}, []);
+
+do_request(get_resources, _Args, _Context, _Req) ->
+    emqx_rule_engine_api:list_resources(#{}, []);
+
 %% OperationId:post_rule_resource
-do_request(post_rule_resource, Params, _Context, _Req) ->
+do_request(post_resources, Params, _Context, _Req) ->
     ?LOG(info, "Params ~p ", [Params]),
     Actions = maps:get(<<"actions">>, Params),
     ?LOG(info, "Actions ~p ", [Actions]),
@@ -148,18 +154,17 @@ do_request(post_rule_resource, Params, _Context, _Req) ->
               end, Actions),
     emqx_rule_engine_api:create_resource(#{}, maps:to_list(Params));
 
-do_request(get_rule_resource_id, #{<<"id">> := ResId}, _Context, _Req) ->
+do_request(get_resources_id, #{<<"id">> := ResId}, _Context, _Req) ->
     emqx_rule_engine_api:show_resource(#{id => ResId}, []);
 
-do_request(delete_rule_resource_id, #{<<"id">> := Id}, _Context, _Req) ->
+do_request(delete_resources_id, #{<<"id">> := Id}, _Context, _Req) ->
     emqx_rule_engine_api:delete_resource(#{id => Id}, #{});
 
 do_request(get_resource_types, _Args, _Context, _Req) ->
     Resources = dgiot_bridge:get_all_channel(),
     {200, Resources};
 
-do_request(get_rule_resource, _Args, _Context, _Req) ->
-    emqx_rule_engine_api:list_resources(#{}, []);
+
 
 %%  服务器不支持的API接口
 do_request(_OperationId, _Args, _Context, _Req) ->
