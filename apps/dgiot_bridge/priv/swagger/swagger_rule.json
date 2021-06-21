@@ -70,7 +70,8 @@
       "properties": {
         "name": {
           "type": "string",
-          "description": "规则名称"
+          "description": "规则名称",
+          "example": "dgiot"
         },
         "for": {
           "type": "string",
@@ -78,11 +79,13 @@
         },
         "rawsql": {
           "type": "string",
-          "description": "rawsql"
+          "description": "rawsql",
+          "example": "SELECT\\n  payload.msg as msg\\nFROM\\n  \\\"t/#\\\"\\nWHERE\\n  msg = 'hello'"
         },
         "description": {
           "type": "string",
-          "description": "description"
+          "description": "description",
+          "example": "this is republish action"
         },
         "actions": {
           "type": "array",
@@ -90,14 +93,16 @@
             "type": "object",
             "properties": {
               "name": {
-                "type": "string"
+                "type": "string",
+                "example": "republish"
               },
               "params": {
                 "type": "object",
                 "properties": {
                   "$resource": {
                     "type": "string",
-                    "description": "$resource"
+                    "description": "$resource",
+                    "example": "resource:bf00440de5"
                   }
                 }
               }
@@ -109,23 +114,28 @@
           "properties": {
             "clientid": {
               "type": "string",
-              "description": "clientid"
+              "description": "clientid",
+              "example": "c_emqx"
             },
             "payload": {
               "type": "string",
-              "description": "payload"
+              "description": "payload",
+              "example": "{\\\"msg\\\": \\\"hello\\\"}"
             },
             "qos": {
               "type": "number",
-              "description": "qos"
+              "description": "qos",
+              "example": 1
             },
             "topic": {
               "type": "number",
-              "description": "topic"
+              "description": "topic",
+              "example": "t/a"
             },
             "username": {
-              "type": "number",
-              "description": "username"
+              "type": "string",
+              "description": "username",
+              "example": "u_emqx"
             }
           }
         }
