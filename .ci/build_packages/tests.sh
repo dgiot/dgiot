@@ -11,7 +11,7 @@ emqx_prepare(){
     mkdir -p "${PACKAGE_PATH}"
 
     if [ ! -d "/paho-mqtt-testing" ]; then
-        git clone -b develop-4.0 https://hub.fastgit.org/emqx/paho.mqtt.testing.git /paho-mqtt-testing
+        git clone -b develop-4.0 https://github.com.cnpmjs.org/emqx/paho.mqtt.testing.git /paho-mqtt-testing
     fi
     pip3 install pytest
 }
