@@ -25,7 +25,7 @@ jobs:
           messages="$(curl --silent --show-error \
                       --header "${{ env.AUTH_HEADER }}" \
                       --header "Accept: application/vnd.github.v3+json" \
-                      "https://api.hub.fastgit.org/repos/${GITHUB_REPOSITORY}/pulls/${pr_number}/commits")"
+                      "https://api.github.com.cnpmjs.org/repos/${GITHUB_REPOSITORY}/pulls/${pr_number}/commits")"
           len=$(echo $messages | jq length)
           result=true
           for i in $( seq 0 $(($len - 1)) ); do
