@@ -1,4 +1,4 @@
-# Configuration for weekly-digest - https://hub.fastgit.org/apps/weekly-digest
+# Configuration for weekly-digest - https://github.com.cnpmjs.org/apps/weekly-digest
 publishDay: monday
 canPublishIssues: true
 canPublishPullRequests: true
