@@ -41,9 +41,11 @@
  +  国内Linux/Unix/Mac/windows 构建
   ```bash
     cd dgiot_dashboard
+    git pull
     yarn install
     yarn build
     cd ../dgiot
+    git pull
     rm ./apps/dgiot_api/priv/www -rf
     cp ../dgiot_dashboard/dist/ ./apps/dgiot_api/priv/www -rf
     cp ../dgiot_dashboard/swagger ./apps/dgiot_api/priv/www/ -rf
