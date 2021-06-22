@@ -83,6 +83,13 @@ handle(OperationID, Args, Context, Req) ->
 do_request(get_rule_id, #{<<"id">> := RuleID}, _Context, _Req) ->
     emqx_rule_engine_api:show_rule(#{id => RuleID}, []);
 
+
+%% Rule 概要: 修改规则引擎 描述:修改规则引擎
+%% OperationId:put_rules_id
+%% 请求:PUT /iotapi/rule/:{id}
+do_request(put_rules_id, #{<<"id">> := RuleID,<<"params">> := Params}, _Context, _Req) ->
+    emqx_rule_engine_api:update_rule(#{id => RuleID}, maps:to_list(Params));
+
 %% Rule 概要: 删除规则引擎 描述:删除规则引擎
 %% OperationId:delete_rules_id
 %% 请求:DELETE /iotapi/rules/:{id}
