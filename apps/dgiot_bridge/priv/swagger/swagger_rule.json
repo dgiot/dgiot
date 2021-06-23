@@ -118,7 +118,7 @@
                   "target_qos": {
                     "type": "number",
                     "description": "target_qos",
-                    "example":0
+                    "example": 0
                   },
                   "payload_tmpl": {
                     "type": "string",
@@ -205,7 +205,7 @@
                   "target_qos": {
                     "type": "number",
                     "description": "target_qos",
-                    "example":0
+                    "example": 0
                   },
                   "payload_tmpl": {
                     "type": "string",
@@ -335,12 +335,61 @@
             "in": "body",
             "required": true,
             "schema": {
-              "schema": {
-                "$ref": "#/definitions/UpdateRule"
-              }
+              "$ref": "#/definitions/UpdateRule"
             },
             "description": "规则引擎内容参数",
             "type": "object"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/definitions/Rule"
+                  }
+                },
+                "code": {
+                  "type": "number"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Rule"
+        ]
+      }
+    },
+    "/provider": {
+      "get": {
+        "security": [],
+        "summary": "获取acl编辑器提示语",
+        "description": "获取acl编辑器提示语",
+        "parameters": [
+          {
+            "name": "language",
+            "in": "query",
+            "description": "语言类型",
+            "required": true,
+            "type": "string",
+            "default": "Provider_SQL"
           }
         ],
         "responses": {
