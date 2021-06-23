@@ -77,6 +77,15 @@ handle(OperationID, Args, Context, Req) ->
 %%% 内部函数 Version:API版本
 %%%===================================================================
 
+
+%% Rule 概要: 获取acl编辑器提示语
+%% OperationId:get_provider
+%% 请求:GET /iotapi/provider}
+
+do_request(get_provider, #{<<"language">> := Language}, _Context, _Req) ->
+    {ok, get_dictLanguage(Language)};
+
+
 %% Rule 概要: 获取规则引擎 描述:获取规则引擎
 %% OperationId:get_rules_id
 %% 请求:GET /iotapi/rule/:{id}
@@ -87,7 +96,13 @@ do_request(get_rule_id, #{<<"id">> := RuleID}, _Context, _Req) ->
 %% Rule 概要: 修改规则引擎 描述:修改规则引擎
 %% OperationId:put_rules_id
 %% 请求:PUT /iotapi/rule/:{id}
-do_request(put_rules_id, #{<<"id">> := RuleID,<<"params">> := Params}, _Context, _Req) ->
+%%do_request(put_rule_id, Params, _Context, _Req) ->
+%%    ?LOG(info, "Params ~p ", [Params]),
+%%    {error, <<"Not Allowed.">>};
+%%    emqx_rule_engine_api:update_rule(#{id => RuleID}, maps:to_list(Params));
+
+do_request(put_rule_id, #{<<"id">> := RuleID, <<"params">> := Params}, _Context, _Req) ->
+    ?LOG(info, "Params ~p ", [Params]),
     emqx_rule_engine_api:update_rule(#{id => RuleID}, maps:to_list(Params));
 
 %% Rule 概要: 删除规则引擎 描述:删除规则引擎
@@ -195,7 +210,7 @@ do_request(_OperationId, _Args, _Context, _Req) ->
 get_channel() ->
     case dgiot_parse:query_object(<<"Channel">>, #{<<"keys">> => [<<"name">>]}) of
         {ok, #{<<"results">> := Results}} when length(Results) > 0 ->
-            lists:foldl(fun(#{<<"objectId">> := ChannelId,<<"name">> := Name}, Acc) ->
+            lists:foldl(fun(#{<<"objectId">> := ChannelId, <<"name">> := Name}, Acc) ->
                 Acc ++ [#{
                     <<"config">> => #{<<"channel">> => ChannelId},
                     <<"description">> => Name,
@@ -206,3 +221,17 @@ get_channel() ->
                         end, [], Results);
         _ -> []
     end.
+
+%% Acc ++ [maps:without([<<"applicationtText">>,<<"description">>,<<"enable">>,<<"templateId">>,<<"templateName">>,<<"templateTypekey">>],Data)]  %% without过滤掉不需要的字段
+%%Acc ++ [maps:with([<<"name">>, <<"value">>, <<"caption">>, <<"meta">>, <<"type">>, <<"score">>], Data)] %% with 只取需要的字段
+%% ;结尾是分支 .结尾是结束
+get_dictLanguage(Language) ->
+    Type = dgiot_parse:get_dictid(Language, <<"dict_template">>),
+    case dgiot_parse:query_object(<<"Dict">>, #{<<"where">> => #{<<"type">> => Type}}) of
+        {ok, #{<<"results">> := Results}} when length(Results) > 0 ->
+            lists:foldl(fun(#{<<"data">> := Data}, Acc) ->
+                Acc ++ [maps:with([<<"name">>, <<"value">>, <<"caption">>, <<"meta">>, <<"type">>, <<"score">>], Data)]
+                        end, [], Results);
+        _ -> []
+    end.
+
