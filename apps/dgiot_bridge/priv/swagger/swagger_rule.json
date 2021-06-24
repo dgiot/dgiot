@@ -375,8 +375,7 @@
           "Rule"
         ]
       }
-    }
-  },
+    },
     "/provider": {
       "get": {
         "summary": "获取acl编辑器提示语",
