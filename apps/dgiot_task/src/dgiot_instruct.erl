@@ -46,14 +46,16 @@ create(ProductId, DeviceId, Pn, ACL, Rotation, #{<<"properties">> := Props}) ->
                 pass;
             #{<<"dataForm">> := #{<<"strategy">> := <<"主动上报"/utf8>>}} ->
                 pass;
-            #{<<"accessMode">> := Op, <<"dataForm">> := #{<<"address">> := Di} = DataForm,
+            #{<<"accessMode">> := Op, <<"dataForm">> := #{<<"address">> := Di, <<"order">> := Order} = DataForm,
                 <<"name">> := Name, <<"identifier">> := Identifier, <<"required">> := Enable} ->
                 case Di of
                     <<"">> -> pass;
                     _ ->
-                        case dgiot_parse:query_object(<<"Instruct">>, #{<<"where">> => #{<<"product">> => ProductId,
-                            <<"device">> => DeviceId, <<"pn">> => Pn, <<"di">> => Di}}) of
-                            {ok, #{<<"results">> := []}} ->
+                        ObjectId = dgiot_parse:get_instruct(DeviceId, Pn, Di),
+                        case dgiot_parse:get_object(<<"Instruct">>, ObjectId) of
+                            {ok, _} ->
+                                pass;
+                            _ ->
                                 Map = #{<<"ACL">> => ACL, <<"enable">> => Enable,
                                     <<"product">> => #{
                                         <<"__type">> => <<"Pointer">>,
@@ -65,17 +67,18 @@ create(ProductId, DeviceId, Pn, ACL, Rotation, #{<<"properties">> := Props}) ->
                                         <<"className">> => <<"Device">>,
                                         <<"objectId">> => DeviceId
                                     },
-                                    <<"name">> => Name, <<"order">> => Pn,
+                                    <<"name">> => Name, <<"order">> => dgiot_utils:to_binary(Order),
                                     <<"pn">> => Pn, <<"di">> => Di,
                                     <<"op">> => Op, <<"interval">> => 20,
                                     <<"duration">> => 5, <<"rotation">> => Rotation,
                                     <<"other">> => DataForm#{<<"identifier">> => Identifier}
                                 },
-                                dgiot_parse:create_object(<<"Instruct">>, Map);
-                            _ ->
-                                pass
+                                dgiot_parse:create_object(<<"Instruct">>, Map)
                         end
-                end
+                end;
+            Other ->
+                ?LOG(info,"Other ~p", [Other]),
+                pass
         end
               end, Props).
 
@@ -132,7 +135,7 @@ create_group(ProductId, DeviceId, Group, Pn, ACL, Rotation, #{<<"properties">> :
 init_que(DeviceId, Round) ->
     case dgiot_parse:query_object(<<"Instruct">>, #{<<"order">> => <<"-order">>, <<"where">> => #{<<"device">> => DeviceId}}) of
         {ok, #{<<"results">> := []}} ->
-            pass;
+            [];
         {ok, #{<<"results">> := List}} ->
             NewList = lists:foldl(
                 fun(X, Acc) ->
@@ -168,15 +171,15 @@ init_que(DeviceId, Round) ->
             lists:foldl(fun(X, Acc1) ->
                 {_, Y} = X,
                 Acc1 ++ [Y]
-                        end, [], lists:ukeysort(1, NewList));
+                        end, [], lists:keysort(1, NewList));
         _ -> []
     end.
 
 get_instruct(ProductId, _DeviceId, Round, thing) ->
     get_instruct(ProductId, Round);
 
-get_instruct(_ProductId, DeviceId, Round, instruct) ->
-    get_que(DeviceId, Round).
+get_instruct(ProductId, DeviceId, Round, instruct) ->
+    get_que(ProductId, DeviceId, Round).
 
 get_instruct(ProductId, Round) ->
     case dgiot_device:lookup_prod(ProductId) of
@@ -217,13 +220,13 @@ get_instruct(ProductId, Round) ->
                         Acc
                 end
                                        end, {1, []}, Props),
-            lists:ukeysort(1, NewList);
+            lists:keysort(1, NewList);
         _ ->
             []
     end.
 
 
-get_que(DeviceId, Round) ->
+get_que(_ProductId, DeviceId, Round) ->
     case dgiot_data:get({instuct, DeviceId}) of
         not_find ->
             Que = init_que(DeviceId, Round),
@@ -257,23 +260,4 @@ get_que_(Que, Round) ->
         end
                 end, [], Que).
 
-
-%%save_thing(ProductId) ->
-%%    case dgiot_device:lookup_prod(ProductId) of
-%%        {ok, #{<<"thing">> := #{<<"properties">> := Props}}} when length(Props) > 0 ->
-%%            lists:map(fun(X) ->
-%%                case X of
-%%                    #{<<"accessMode">> := AccessMode, <<"identifier">> := Identifier,
-%%                        <<"dataForm">> := #{<<"address">> := Address} = DataForm} ->
-%%                        NewData = DataForm#{<<"accessMode">> => AccessMode, <<"identifier">> => Identifier},
-%%                        dgiot_data:insert(?DGIOT_TASK, {task, ProductId, Address}, NewData),
-%%                        dgiot_data:insert(?DGIOT_TASK, {task, ProductId, Identifier}, NewData);
-%%                    _ -> pass
-%%                end
-%%                      end, Props);
-%%        _ -> pass
-%%    end.
-%%
-%%get_thing(ProductId, Identifier) ->
-%%    dgiot_data:get(?DGIOT_TASK, {task, ProductId, Identifier}).
 

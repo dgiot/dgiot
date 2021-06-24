@@ -337,7 +337,7 @@
             "schema": {
               "$ref": "#/definitions/UpdateRule"
             },
-            "description": "规则引擎内容参数",
+            "description": "规则引擎内容参数"
           }
         ],
         "responses": {
