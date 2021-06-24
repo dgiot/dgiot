@@ -135,7 +135,7 @@ save(Product) ->
     Product1 = format_product(Product),
     #{<<"productId">> := ProductId} = Product1,
     dgiot_data:insert(?MODULE, ProductId, Product1),
-    ?LOG(info,"update product ~p", [Product1]),
+    ?LOG(debug,"product ~p", [Product1]),
     {ok, Product1}.
 
 local(ProductId) ->
@@ -226,7 +226,7 @@ load_device(#{<<"productId">> := ProductId} = Product, [Device | Devices]) ->
         {ok, Pid} ->
             ?LOG(debug,"ProductId:~p, DevAddr:~p -> ~p", [ProductId, Device, Pid]);
         {error, Reason} ->
-            ?LOG(error,"ProductId:~p, DevAddr:~p -> ~p", [ProductId, Device, Reason])
+            ?LOG(debug,"ProductId:~p, DevAddr:~p -> ~p", [ProductId, Device, Reason])
     end,
     load_device(Product, Devices).
 
