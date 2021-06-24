@@ -87,7 +87,7 @@ do_request(get_provider, #{<<"language">> := Language}, _Context, _Req) ->
 
 
 %% Rule 概要: 获取规则引擎 描述:获取规则引擎
-%% OperationId:get_rules_id
+%% OperationId:get_rule_id
 %% 请求:GET /iotapi/rule/:{id}
 do_request(get_rule_id, #{<<"id">> := RuleID}, _Context, _Req) ->
     emqx_rule_engine_api:show_rule(#{id => RuleID}, []);
@@ -96,18 +96,12 @@ do_request(get_rule_id, #{<<"id">> := RuleID}, _Context, _Req) ->
 %% Rule 概要: 修改规则引擎 描述:修改规则引擎
 %% OperationId:put_rules_id
 %% 请求:PUT /iotapi/rule/:{id}
-%%do_request(put_rule_id, Params, _Context, _Req) ->
-%%    ?LOG(info, "Params ~p ", [Params]),
-%%    {error, <<"Not Allowed.">>};
-%%    emqx_rule_engine_api:update_rule(#{id => RuleID}, maps:to_list(Params));
-
-do_request(put_rule_id, #{<<"id">> := RuleID, <<"params">> := Params}, _Context, _Req) ->
-    ?LOG(info, "Params ~p ", [Params]),
-    emqx_rule_engine_api:update_rule(#{id => RuleID}, maps:to_list(Params));
+do_request(put_rule_id, #{<<"id">> := RuleID} = Params, _Context, _Req) ->
+    emqx_rule_engine_api:update_rule(#{id => RuleID}, maps:to_list(maps:without([<<"id">>],Params)));
 
 %% Rule 概要: 删除规则引擎 描述:删除规则引擎
-%% OperationId:delete_rules_id
-%% 请求:DELETE /iotapi/rules/:{id}
+%% OperationId:delete_rule_id
+%% 请求:DELETE /iotapi/rule/:{id}
 do_request(delete_rule_id, #{<<"id">> := RuleID}, _Context, _Req) ->
     emqx_rule_engine_api:delete_rule(#{id => RuleID}, []);
 
@@ -210,7 +204,7 @@ do_request(_OperationId, _Args, _Context, _Req) ->
 get_channel() ->
     case dgiot_parse:query_object(<<"Channel">>, #{<<"keys">> => [<<"name">>]}) of
         {ok, #{<<"results">> := Results}} when length(Results) > 0 ->
-            lists:foldl(fun(#{<<"objectId">> := ChannelId, <<"name">> := Name}, Acc) ->
+            lists:foldl(fun(#{<<"objectId">> := ChannelId,<<"name">> := Name}, Acc) ->
                 Acc ++ [#{
                     <<"config">> => #{<<"channel">> => ChannelId},
                     <<"description">> => Name,
