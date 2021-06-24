@@ -319,7 +319,6 @@
         ]
       },
       "put": {
-        "security": [],
         "summary": "修改规则引擎",
         "description": "修改规则引擎",
         "parameters": [
@@ -331,6 +330,7 @@
             "type": "string"
           },
           {
+            "in": "body",
             "name": "params",
             "in": "body",
             "required": true,
@@ -338,7 +338,6 @@
               "$ref": "#/definitions/UpdateRule"
             },
             "description": "规则引擎内容参数",
-            "type": "object"
           }
         ],
         "responses": {
@@ -379,7 +378,6 @@
     },
     "/provider": {
       "get": {
-        "security": [],
         "summary": "获取acl编辑器提示语",
         "description": "获取acl编辑器提示语",
         "parameters": [
@@ -430,7 +428,6 @@
     },
     "/rules": {
       "get": {
-        "security": [],
         "summary": "获取规则引擎列表",
         "description": "获取规则引擎列表",
         "parameters": [
@@ -471,7 +468,6 @@
         ]
       },
       "post": {
-        "security": [],
         "summary": "创建规则引擎",
         "description": "创建规则引擎",
         "parameters": [
@@ -508,7 +504,6 @@
     },
     "/actions": {
       "get": {
-        "security": [],
         "summary": "获取动作列表",
         "description": "获取动作列表",
         "parameters": [
@@ -551,7 +546,6 @@
     },
     "/actions/{id}": {
       "get": {
-        "security": [],
         "summary": "获取动作",
         "description": "获取动作",
         "parameters": [
@@ -601,7 +595,6 @@
     },
     "/resources": {
       "get": {
-        "security": [],
         "summary": "获取资源列表",
         "description": "获取资源列表",
         "parameters": [
@@ -642,7 +635,6 @@
         ]
       },
       "post": {
-        "security": [],
         "summary": "创建资源",
         "description": "创建资源",
         "parameters": [
@@ -679,7 +671,6 @@
     },
     "/resources/{id}": {
       "get": {
-        "security": [],
         "summary": "获取资源",
         "description": "获取资源",
         "parameters": [
@@ -777,7 +768,6 @@
     },
     "/resource_types": {
       "get": {
-        "security": [],
         "summary": "获取资源类型列表",
         "description": "获取资源类型列表",
         "parameters": [
