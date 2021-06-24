@@ -28,6 +28,7 @@ start_link() ->
 init([]) ->
     {ok, {{one_for_one, 10, 100},
         [child_spec(dgiot_global_gc, worker),
+            child_spec(dgiot_node, worker),
             child_spec(dgiot_pool_sup, supervisor),
             child_spec(dgiot_hooks, worker),
             child_spec(dgiot_stats, worker),

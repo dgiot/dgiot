@@ -26,6 +26,7 @@
     get_collection/4,
     get_calculated/2,
     string2value/1,
+    string2value/3,
     save_pnque/4,
     get_pnque/1
 ]).
@@ -71,21 +72,36 @@ start(#{
     <<"channel">> := Channel,
     <<"dtuid">> := DtuId
 } = Args) ->
-    %% 设备没上线则不加入到采集任务队列中
+%% 设备没上线则不加入到采集任务队列中
     dgiot_data:set_consumer(<<"taskround/", Channel/binary, "/", DtuId/binary>>, 1000000),
+    case dgiot_task:get_pnque(DtuId) of
+        not_find ->
+            ?LOG(info, "not_find ~p", [DtuId]);
+        _ ->
+            ?LOG(info, "find ~p", [Args]),
+            supervisor:start_child(dgiot_task, [Args])
+    end,
     Callback =
-        fun(_X) ->
-            case dgiot_task:get_pnque(DtuId) of
+        fun(X) ->
+            #{<<"id">> := Id} = X,
+            DeviceId =
+                case binary:split(Id, <<$/>>, [global, trim]) of
+                    [_, _, DeviceId1] ->
+                        DeviceId1;
+                    _ ->
+                        DtuId
+                end,
+            case dgiot_task:get_pnque(DeviceId) of
                 not_find ->
 %%                    ?LOG(info,"task ~p",[DtuId]),
-                    {ok, _X};
+                    {ok, X};
                 _ ->
 %%                    ?LOG(info,"task ~p",[Args]),
                     {ok, supervisor:start_child(dgiot_task, [Args])}
             end
         end,
     Task = #{
-        <<"freq">> => Freq,
+        <<"freq">> => Freq * 5,
         <<"unit">> => 5,
         <<"start_time">> => dgiot_datetime:to_localtime(Start_time),
         <<"end_time">> => dgiot_datetime:to_localtime(End_time),
@@ -113,7 +129,7 @@ stop(#{
             dgiot_cron:save(default_task, #{
                 <<"id">> => <<"task/", Channel/binary, "/", DtuId/binary>>,
                 <<"count">> => 0}),
-                dgiot_task_worker:stop(#{<<"channel">> => Channel, <<"dtuid">> => DtuId})
+            dgiot_task_worker:stop(#{<<"channel">> => Channel, <<"dtuid">> => DtuId})
                   end, Page)
               end,
     Query = #{
@@ -154,12 +170,13 @@ get_calculated(ProductId, Ack) ->
             lists:foldl(fun(X, Acc) ->
                 case X of
                     #{<<"identifier">> := Identifier, <<"dataForm">> := #{
-                        <<"strategy">> := <<"计算值"/utf8>>, <<"collection">> := Collection}} ->
+                        <<"strategy">> := <<"计算值"/utf8>>, <<"collection">> := Collection},
+                        <<"dataType">> := #{<<"type">> := Type, <<"specs">> := Specs}} ->
                         Str1 = maps:fold(fun(K, V, Acc2) ->
                             Str = re:replace(Acc2, dgiot_utils:to_list(<<"%%", K/binary>>), "(" ++ dgiot_utils:to_list(V) ++ ")", [global, {return, list}]),
                             re:replace(Str, "%s", "(" ++ dgiot_utils:to_list(V) ++ ")", [global, {return, list}])
                                          end, dgiot_utils:to_list(Collection), Ack),
-                        Acc#{Identifier => string2value(Str1)};
+                        Acc#{Identifier => string2value(Str1, Type, Specs)};
                     _ ->
                         Acc
                 end
@@ -169,22 +186,35 @@ get_calculated(ProductId, Ack) ->
     end.
 
 %%转换设备上报值，必须返回物模型里面的数据表示，不能用寄存器地址
-get_collection(ProductId, Identifier, Payload, Ack) ->
+get_collection(ProductId, Dis, Payload, Ack) ->
+%%    ?LOG(info,"Payload ~p", [Payload]),
     case dgiot_device:lookup_prod(ProductId) of
         {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
-            lists:foldl(fun(X, Acc) ->
-                case X of
-                    #{<<"dataForm">> := #{<<"strategy">> := Strategy, <<"collection">> := Collection},
-                        <<"identifier">> := Identifier} when Strategy =/= <<"计算值"/utf8>> ->
-                        case maps:find(Identifier, Payload) of
-                            {ok, Value} ->
-                                Str = re:replace(Collection, dgiot_utils:to_list(<<"%%", Identifier/binary>>), "(" ++ dgiot_utils:to_list(Value) ++ ")", [global, {return, list}]),
-                                Str1 = re:replace(Str, "%s", "(" ++ dgiot_utils:to_list(Value) ++ ")", [global, {return, list}]),
-                                Acc#{Identifier => string2value(Str1)};
-                            _ -> Acc
-                        end
-                end
-                        end, Ack, Props);
+            lists:foldl(fun(Identifier, Acc1) ->
+                lists:foldl(fun(X, Acc2) ->
+                    case X of
+                        #{<<"dataForm">> := #{<<"address">> := Address, <<"strategy">> := Strategy, <<"collection">> := Collection},
+                            <<"dataType">> := #{<<"type">> := Type, <<"specs">> := Specs},
+                            <<"identifier">> := Identifier} when Strategy =/= <<"计算值"/utf8>> ->
+                            case maps:find(Identifier, Payload) of
+                                {ok, Value} ->
+                                    Str = re:replace(Collection, dgiot_utils:to_list(<<"%%", Identifier/binary>>), "(" ++ dgiot_utils:to_list(Value) ++ ")", [global, {return, list}]),
+                                    Str1 = re:replace(Str, "%s", "(" ++ dgiot_utils:to_list(Value) ++ ")", [global, {return, list}]),
+                                    Acc2#{Identifier => string2value(Str1, Type, Specs)};
+                                _ ->
+                                    case maps:find(Address, Payload) of
+                                        {ok, Value} ->
+                                            Str = re:replace(Collection, dgiot_utils:to_list(<<"%%", Identifier/binary>>), "(" ++ dgiot_utils:to_list(Value) ++ ")", [global, {return, list}]),
+                                            Str1 = re:replace(Str, "%s", "(" ++ dgiot_utils:to_list(Value) ++ ")", [global, {return, list}]),
+                                            Acc2#{Identifier => string2value(Str1, Type, Specs)};
+                                        _ -> Acc2
+                                    end
+                            end;
+                        _ ->
+                            Acc2
+                    end
+                            end, Acc1, Props)
+                        end, Ack, Dis);
         _Error ->
             Ack
     end.
@@ -207,6 +237,19 @@ string2value(Str) ->
     Bindings = erl_eval:new_bindings(),
     {value, Value, _} = erl_eval:exprs(Exprs, Bindings),
     Value.
+
+string2value(Str, Type, Specs) ->
+    Value = string2value(Str),
+    Type1 = list_to_binary(string:to_upper(binary_to_list(Type))),
+    case Type1 of
+        <<"INT">> ->
+            round(Value);
+        Type2 when Type2 == <<"FLOAT">>; Type2 == <<"DOUBLE">> ->
+            Precision = maps:get(<<"precision">>, Specs, 3),
+            dgiot_utils:to_float(Value, Precision);
+        _ ->
+            Value
+    end.
 
 save_pnque(DtuProductId, DtuAddr, ProductId, DevAddr) ->
     DtuId = dgiot_parse:get_deviceid(DtuProductId, DtuAddr),
