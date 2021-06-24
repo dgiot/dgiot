@@ -148,6 +148,20 @@
         description => #{
             zh => <<"指令模式:thing|instruct"/utf8>>
         }
+    },
+    <<"ico">> => #{
+        order => 102,
+        type => string,
+        required => false,
+        default => <<"http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_tech/zh/product/dgiot/channel/%E6%8C%87%E4%BB%A4%E4%BB%BB%E5%8A%A1%E5%9B%BE%E6%A0%87.png">>,
+        title => #{
+            en => <<"channel ICO">>,
+            zh => <<"通道ICO"/utf8>>
+        },
+        description => #{
+            en => <<"channel ICO">>,
+            zh => <<"通道ICO"/utf8>>
+        }
     }
 }).
 
@@ -158,31 +172,27 @@ start(ChannelId, ChannelArgs) ->
 init(?TYPE, ChannelId, Args) ->
     dgiot_data:init(?DGIOT_TASK),
     #{<<"product">> := Products} = Args,
-    [{ProductId, App} | _] =
-        lists:map(fun({_ProdcutId, #{<<"ACL">> := Acl}}) ->
-            Predicate = fun(E) ->
-                case E of
-                    <<"role:", _/binary>> -> true;
-                    _ -> false
-                end
-                        end,
-            [<<"role:", _App/binary>> | _] = lists:filter(Predicate, maps:keys(Acl)),
-            {_ProdcutId, _App}
-                  end, Products),
-
     State = #state{id = ChannelId, env = #{
-        <<"app">> => App,
-        <<"product">> => ProductId,
-        <<"args">> => maps:without([<<"product">>],Args)}
+        <<"products">> => Products,
+        <<"args">> => maps:without([<<"product">>], Args)}
     },
     {ok, State, []}.
 
-handle_init(#state{id = ChannelId, env = #{<<"app">> := App, <<"product">> := ProductId, <<"args">> := Args}} = State) ->
-    dgiot_data:set_consumer(<<"taskdelay/", ChannelId/binary>>, 100),
-    dgiot_task:load(Args#{
-        <<"app">> => App,
-        <<"product">> => ProductId,
-        <<"channel">> => ChannelId}),
+handle_init(#state{id = ChannelId, env = #{<<"products">> := Products, <<"args">> := Args}} = State) ->
+    lists:map(fun({ProductId, #{<<"ACL">> := Acl}}) ->
+        Predicate = fun(E) ->
+            case E of
+                <<"role:", _/binary>> -> true;
+                _ -> false
+            end
+                    end,
+        [<<"role:", App/binary>> | _] = lists:filter(Predicate, maps:keys(Acl)),
+        dgiot_data:set_consumer(<<"taskdelay/", ChannelId/binary>>, 100),
+        dgiot_task:load(Args#{
+            <<"app">> => App,
+            <<"product">> => ProductId,
+            <<"channel">> => ChannelId})
+              end, Products),
     {ok, State}.
 
 %% 通道消息处理,注意：进程池调用

@@ -239,7 +239,7 @@ format_channel(App, Type, Channel, Attributes) ->
     Channel#{
         cType => Type,
         app => App,
-        params => Params#{
+        params => maps:merge(#{
             <<"Size">> => #{
                 order => 100,
                 type => integer,
@@ -282,7 +282,7 @@ format_channel(App, Type, Channel, Attributes) ->
                     zh => <<"通道ICO"/utf8>>
                 }
             }
-        }
+        },Params)
     }.
 
 search_channel(Check, Acc0) ->
@@ -316,6 +316,11 @@ control_channel(ChannelId, Action) ->
             <<"enable">> ->
                 Topic = <<"global/dgiot">>,
                 Payload =  jsx:encode(#{<<"channelId">> => ChannelId, <<"enable">> =>true}),
+                dgiot_mqtt:publish(ChannelId,Topic,Payload),
+                true;
+            <<"update">> ->
+                Topic = <<"channel/", ChannelId/binary>>,
+                Payload =  jsx:encode(#{<<"channelId">> => ChannelId, <<"action">> => <<"update">>}),
                 dgiot_mqtt:publish(ChannelId,Topic,Payload),
                 true
         end,
