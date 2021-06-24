@@ -337,7 +337,7 @@
             "schema": {
               "$ref": "#/definitions/UpdateRule"
             },
-            "description": "规则引擎内容参数",
+            "description": "规则引擎内容参数"
           }
         ],
         "responses": {
@@ -375,7 +375,8 @@
           "Rule"
         ]
       }
-    },
+    }
+  },
     "/provider": {
       "get": {
         "summary": "获取acl编辑器提示语",
