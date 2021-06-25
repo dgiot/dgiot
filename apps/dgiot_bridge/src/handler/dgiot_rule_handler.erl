@@ -158,7 +158,7 @@ do_request(get_actions_id, #{<<"id">> := RuleID}, _Context, _Req) ->
 
 do_request(get_resources, _Args, _Context, _Req) ->
     {ok, #{data := Data} = Result} = emqx_rule_engine_api:list_resources(#{}, []),
-    {ok, Result#{data => Data ++ get_channel()}};
+    {ok, Result#{data => get_channel(Data)}};
 
 %% OperationId:post_rule_resource
 do_request(post_resources, Params, _Context, _Req) ->
@@ -201,7 +201,8 @@ do_request(_OperationId, _Args, _Context, _Req) ->
 %%            {error, Reason1}
 %%    end.
 
-get_channel() ->
+get_channel(Data) ->
+    ?LOG(error, "~p", [Data]),
     case dgiot_parse:query_object(<<"Channel">>, #{<<"keys">> => [<<"name">>]}) of
         {ok, #{<<"results">> := Results}} when length(Results) > 0 ->
             lists:foldl(fun(#{<<"objectId">> := ChannelId,<<"name">> := Name}, Acc) ->
