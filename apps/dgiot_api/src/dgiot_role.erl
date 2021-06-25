@@ -43,7 +43,6 @@
     get_rules_role/1
 ]).
 
-
 post_role(#{<<"tempname">> := TempName, <<"parent">> := Parent, <<"depname">> := DepName,
     <<"name">> := Name, <<"desc">> := Desc} = Body, SessionToken) ->
     case dgiot_parse:query_object(<<"Dict">>, #{<<"order">> => <<"updatedAt">>, <<"limit">> => 1, <<"where">> => #{<<"key">> => TempName}},
@@ -70,20 +69,64 @@ post_role(#{<<"tempname">> := TempName, <<"parent">> := Parent, <<"depname">> :=
                 },
                 <<"roles">> => [maps:get(<<"name">>, ParentInfo)]
             },
-            {ok, dgiot_install:generate_role([Role], [])};
+            create_role(Role);
         {error, What} ->
             {error, What}
+    end.
+
+create_role(#{<<"name">> := Name} = Role) ->
+    RoleId = dgiot_parse:get_roleid(Name),
+    case dgiot_parse:get_object(<<"_Role">>, RoleId) of
+        {error, _} ->
+            {ok, AppUser} = dgiot_parse_handler:create_user_for_app(Name),
+            ?LOG(info, "AppUser ~p ", [AppUser]),
+            NewUsers = maps:get(<<"users">>, Role, []) ++ [AppUser],
+            NewRole = Role#{
+                <<"users">> => dgiot_role:get_users_role(NewUsers),
+                <<"menus">> => dgiot_role:get_menus_role(maps:get(<<"menus">>, Role, [])),
+                <<"roles">> => dgiot_role:get_roles_role(maps:get(<<"roles">>, Role, [])),
+                <<"parent">> => dgiot_role:get_parent_role(maps:get(<<"roles">>, Role, [])),
+                <<"rules">> => dgiot_role:get_rules_role(maps:get(<<"rules">>, Role, []))
+            },
+            case dgiot_parse:create_object(<<"_Role">>, NewRole) of
+                {ok, R} ->
+                    {ok, R};
+                {error, Reason} ->
+                    {error, Reason}
+            end;
+        {ok, #{<<"objectId">> := RoleId}} ->
+            {error, #{<<"msg">> => <<"role is exist">>}}
     end.
 
 put_role(#{<<"objectId">> := RoleId} = Role, SessionToken) ->
     case dgiot_parse:get_object(<<"_Role">>, RoleId,
         [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
-        {ok, _} -> {ok, dgiot_install:generate_role([Role], [])};
+        {ok, _} ->
+            case dgiot_parse:get_object(<<"_Role">>, RoleId) of
+                {error, _} ->
+                    {error, #{<<"msg">> => <<"role is not exist">>}};
+                {ok, #{<<"objectId">> := RoleId}} ->
+                    NewRole = #{
+                        <<"users">> => dgiot_role:get_users_role(maps:get(<<"users">>, Role, [])),
+                        <<"menus">> => dgiot_role:get_menus_role(maps:get(<<"menus">>, Role, [])),
+                        <<"rules">> => dgiot_role:get_rules_role(maps:get(<<"rules">>, Role, []))
+                    },
+                    dgiot_role:remove_users_roles(RoleId),
+                    dgiot_role:remove_menus_role(RoleId),
+                    dgiot_role:remove_rules_role(RoleId),
+                    case dgiot_parse:update_object(<<"_Role">>, RoleId, NewRole) of
+                        {ok, R} ->
+                            {ok, R};
+                        {error, Reason} ->
+                            dgiot_parse:update_object(<<"_Role">>, RoleId, NewRole),
+                            {error, Reason}
+                    end
+            end;
         Error -> Error
     end.
 
 get_roletemp(FileName, TempName, SessionToken) ->
-    ?LOG(info,"FileName ~p", [FileName]),
+    ?LOG(info, "FileName ~p", [FileName]),
     case dgiot_parse:query_object(<<"Dict">>, #{
         <<"order">> => <<"updatedAt">>, <<"limit">> => 1,
         <<"where">> => #{<<"key">> => TempName}},
@@ -274,15 +317,15 @@ put_roleuser(#{<<"userid">> := UserId} = Body, SessionToken) ->
                 end;
             _ -> []
         end,
-    ?LOG(info,"Body ~p ", [Body]),
+    ?LOG(info, "Body ~p ", [Body]),
     R2 =
         case maps:is_key(<<"addfilter">>, Body) of
             true ->
                 AddFilter = maps:get(<<"addfilter">>, Body),
-                ?LOG(info,"AddFilter ~p ", [AddFilter]),
+                ?LOG(info, "AddFilter ~p ", [AddFilter]),
                 case dgiot_parse:query_object(<<"_Role">>, AddFilter, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
                     {ok, #{<<"results">> := AddRoles}} ->
-                        ?LOG(info,"AddRoles ~p ", [AddRoles]),
+                        ?LOG(info, "AddRoles ~p ", [AddRoles]),
                         lists:foldl(fun(#{<<"objectId">> := RoleId}, Acc1) ->
                             {_, R3} =
                                 dgiot_parse:update_object(<<"_Role">>, RoleId, #{<<"users">> => #{
@@ -296,7 +339,7 @@ put_roleuser(#{<<"userid">> := UserId} = Body, SessionToken) ->
                     _ -> []
                 end;
             Error ->
-                ?LOG(info,"Error ~p ", [Error]),
+                ?LOG(info, "Error ~p ", [Error]),
                 []
         end,
     {ok, #{<<"result">> => R1 ++ R2}}.
@@ -434,6 +477,7 @@ get_role(Name, SessionToken) ->
         _ -> {error, <<"not find">>}
     end.
 
+%% todo 后面优化懒加载
 get_roletree(SessionToken) ->
     case dgiot_parse:query_object(<<"_Role">>, #{}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
         {ok, #{<<"results">> := Roles}} when length(Roles) > 0 ->
@@ -502,7 +546,7 @@ get_parent_role(Parents) ->
                 <<"objectId">> => ObjectId
             };
         Other ->
-            ?LOG(info,"Other ~p", [Other]),
+            ?LOG(info, "Other ~p", [Other]),
             throw({error, Other})
     end.
 
@@ -515,10 +559,8 @@ remove_roles_role(RoleId) ->
         <<"key">> => <<"roles">>
     }},
     Query = #{<<"where">> => Where, <<"order">> => <<"-updatedAt">>},
-    ?LOG(info,"Query ~p", [Query]),
     case dgiot_parse:query_object(<<"_Role">>, Query) of
         {ok, #{<<"results">> := Results}} ->
-            ?LOG(info,"Results ~p", [Results]),
             Objects = lists:foldl(
                 fun(#{<<"objectId">> := ObjectId}, Acc) ->
                     Acc ++ [#{
@@ -527,15 +569,13 @@ remove_roles_role(RoleId) ->
                         <<"objectId">> => ObjectId
                     }]
                 end, [], Results),
-            ?LOG(info,"Objects ~p", [Objects]),
             case Objects of
                 [] -> pass;
                 _ ->
-                    R = dgiot_parse:update_object(<<"_Role">>, RoleId, #{<<"roles">> => #{
+                    dgiot_parse:update_object(<<"_Role">>, RoleId, #{<<"roles">> => #{
                         <<"__op">> => <<"RemoveRelation">>,
                         <<"objects">> => Objects}
-                    }),
-                    ?LOG(info,"R ~p", [R])
+                    })
             end;
         _ -> pass
     end.
@@ -569,7 +609,7 @@ get_roles_role(Parents) ->
                     }
             end;
         Other ->
-            ?LOG(info,"Other ~p", [Other]),
+            ?LOG(info, "Other ~p", [Other]),
             throw({error, Other})
     end.
 
@@ -595,11 +635,10 @@ remove_menus_role(RoleId) ->
             case Objects of
                 [] -> pass;
                 _ ->
-                    R = dgiot_parse:update_object(<<"_Role">>, RoleId, #{<<"menus">> => #{
+                    dgiot_parse:update_object(<<"_Role">>, RoleId, #{<<"menus">> => #{
                         <<"__op">> => <<"RemoveRelation">>,
                         <<"objects">> => Objects}
-                    }),
-                    ?LOG(info,"R ~p", [R])
+                    })
             end;
         _ -> pass
     end.
@@ -657,11 +696,10 @@ remove_users_roles(RoleId) ->
             case Objects of
                 [] -> pass;
                 _ ->
-                    R = dgiot_parse:update_object(<<"_Role">>, RoleId, #{<<"users">> => #{
+                    dgiot_parse:update_object(<<"_Role">>, RoleId, #{<<"users">> => #{
                         <<"__op">> => <<"RemoveRelation">>,
                         <<"objects">> => Objects}
-                    }),
-                    ?LOG(info,"R ~p", [R])
+                    })
             end;
         _ -> pass
     end.
@@ -694,8 +732,8 @@ get_users_role(Users) ->
                     }
             end;
         Other ->
-            ?LOG(info,"Other ~p", [Other]),
-            throw({error, Other})
+            ?LOG(info, "Other ~p", [Other]),
+            {error, Other}
     end.
 
 remove_rules_role(RoleId) ->
@@ -720,11 +758,10 @@ remove_rules_role(RoleId) ->
             case Objects of
                 [] -> pass;
                 _ ->
-                    R = dgiot_parse:update_object(<<"_Role">>, RoleId, #{<<"rules">> =>
+                    dgiot_parse:update_object(<<"_Role">>, RoleId, #{<<"rules">> =>
                     #{<<"__op">> => <<"RemoveRelation">>,
                         <<"objects">> => Objects}
-                    }),
-                    ?LOG(info,"R ~p", [R])
+                    })
             end;
         _ -> pass
     end.
@@ -757,21 +794,26 @@ get_rules_role([<<"*">>]) ->
                     }
             end;
         Other ->
-            ?LOG(info,"Other ~p", [Other]),
-            throw({error, Other})
+            ?LOG(info, "Other ~p", [Other]),
+            {error, Other}
     end;
 
 get_rules_role(Rules) ->
-    Where = #{<<"keys">> => [<<"name">>], <<"where">> => #{<<"name">> => #{<<"$in">> => Rules}}},
+    Where = #{<<"keys">> => [<<"name">>]},
     case dgiot_parse:query_object(<<"Permission">>, Where) of
         {ok, #{<<"results">> := Results}} ->
             Objects = lists:foldl(
-                fun(#{<<"objectId">> := ObjectId}, Acc) ->
-                    Acc ++ [#{
-                        <<"__type">> => <<"Pointer">>,
-                        <<"className">> => <<"Permission">>,
-                        <<"objectId">> => ObjectId
-                    }]
+                fun(#{<<"objectId">> := ObjectId, <<"name">> := Name}, Acc) ->
+                    case lists:member(Name, Rules) of
+                        true ->
+                            Acc ++ [#{
+                                <<"__type">> => <<"Pointer">>,
+                                <<"className">> => <<"Permission">>,
+                                <<"objectId">> => ObjectId
+                            }];
+                        false ->
+                            Acc
+                    end
                 end, [], Results),
             case Objects of
                 [] -> #{
@@ -789,6 +831,8 @@ get_rules_role(Rules) ->
                     }
             end;
         Other ->
-            ?LOG(info,"Other ~p", [Other]),
-            throw({error, Other})
+            ?LOG(info, "Other ~p", [Other]),
+            {error, Other}
     end.
+
+

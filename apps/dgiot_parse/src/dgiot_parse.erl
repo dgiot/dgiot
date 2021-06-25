@@ -81,6 +81,7 @@
     get_dictid/2,
     get_shapeid/2,
     get_instruct/3,
+    get_roleid/1,
     get_productid/3,
     subscribe/2,
     send_msg/3
@@ -135,6 +136,10 @@ get_deviceid(ProductId, DevAddr) ->
 
 get_instruct(DeviceId, Pn, Di) ->
     <<DId:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Instruct", DeviceId/binary, Pn/binary, Di/binary>>),
+    DId.
+
+get_roleid(Name) ->
+    <<DId:10/binary, _/binary>> = dgiot_utils:to_md5(<<"_Role", Name/binary>>),
     DId.
 
 get_productid(Category, DevType, Name) ->
@@ -225,6 +230,18 @@ get_objectid(Class, Map) ->
         <<"Crond">> ->
             Name = maps:get(<<"tid">>, Map, <<"">>),
             <<DId:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Crond", Name/binary>>),
+            Map#{
+                <<"objectId">> => DId
+            };
+        <<"_Role">> ->
+            Name = maps:get(<<"name">>, Map, <<"">>),
+            <<DId:10/binary, _/binary>> = dgiot_utils:to_md5(<<"_Role", Name/binary>>),
+            Map#{
+                <<"objectId">> => DId
+            };
+        <<"_User">> ->
+            Name = maps:get(<<"username">>, Map, <<"">>),
+            <<DId:10/binary, _/binary>> = dgiot_utils:to_md5(<<"_User", Name/binary>>),
             Map#{
                 <<"objectId">> => DId
             };
@@ -977,15 +994,20 @@ merge_table(Name, Class, NewFields, OldFields) ->
 handle_response(Result) ->
     Fun =
         fun(Res, Body) ->
-            case catch jsx:decode(Body, [{labels, binary}, return_maps]) of
-                {'EXIT', Reason} ->
-                    {error, Reason};
-                #{<<"code">> := Code, <<"error">> := #{<<"routine">> := Reason}} ->
-                    {error, #{<<"code">> => Code, <<"error">> => Reason}};
-                Map when map_size(Map) == 0 ->
-                    Res;
-                Map ->
-                    {Res, Map}
+            case jsx:is_json(Body) of
+                true ->
+                    case catch jsx:decode(Body, [{labels, binary}, return_maps]) of
+                        {'EXIT', Reason} ->
+                            {error, Reason};
+                        #{<<"code">> := Code, <<"error">> := #{<<"routine">> := Reason}} ->
+                            {error, #{<<"code">> => Code, <<"error">> => Reason}};
+                        Map when map_size(Map) == 0 ->
+                            Res;
+                        Map ->
+                            {Res, Map}
+                    end;
+                false ->
+                    Res
             end
         end,
     case Result of
