@@ -190,6 +190,33 @@
           "TOPO"
         ]
       }
+    },
+    "/devicedict": {
+      "get": {
+        "description": "查询设备参数字典",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "deviceid",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns instance data"
+          },
+          "404": {
+            "description": "object not found",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        },
+        "summary": "查询设备参数字典",
+        "tags": [
+          "TOPO"
+        ]
+      }
     }
   },
   "tags": [
