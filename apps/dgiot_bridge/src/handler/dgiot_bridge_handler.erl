@@ -17,6 +17,7 @@
 -module(dgiot_bridge_handler).
 -author("dgiot").
 -behavior(dgiot_rest).
+-dgiot_rest(all).
 -include_lib("dgiot/include/logger.hrl").
 
 %% API
@@ -32,7 +33,7 @@
 %%    dgiot_http_server:bind(<<"/swagger_bridge.json">>, ?MODULE, [], priv)
 swagger_bridge() ->
     [
-        dgiot_http_server:bind(<<"/swagger_decode.json">>, ?MODULE, [], priv)
+        dgiot_http_server:bind(<<"/swagger_bridge.json">>, ?MODULE, [], priv)
     ].
 
 
@@ -50,26 +51,26 @@ handle(OperationID, Args, Context, Req) ->
     Headers = #{},
     case catch do_request(OperationID, Args, Context, Req) of
         {ErrType, Reason} when ErrType == 'EXIT'; ErrType == error ->
-            ?LOG(info,"do request: ~p, ~p, ~p~n", [OperationID, Args, Reason]),
+            ?LOG(debug, "do request: ~p, ~p, ~p~n", [OperationID, Args, Reason]),
             Err = case is_binary(Reason) of
                       true -> Reason;
                       false -> list_to_binary(io_lib:format("~p", [Reason]))
                   end,
-            {500, Headers, #{ <<"error">> => Err }};
+            {500, Headers, #{<<"error">> => Err}};
         ok ->
-            dgiot_logger:debug("do request: ~p, ~p ->ok ~n", [OperationID, Args]),
+            ?LOG(debug, "do request: ~p, ~p ->ok ~n", [OperationID, Args]),
             {200, Headers, #{}, Req};
         {ok, Res} ->
-            dgiot_logger:debug("do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
+            ?LOG(debug, "do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
             {200, Headers, Res, Req};
         {Status, Res} ->
-            dgiot_logger:debug("do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
+            ?LOG(debug, "do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
             {Status, Headers, Res, Req};
         {Status, NewHeaders, Res} ->
-            dgiot_logger:debug("do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
+            ?LOG(debug, "do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
             {Status, maps:merge(Headers, NewHeaders), Res, Req};
         {Status, NewHeaders, Res, NewReq} ->
-            dgiot_logger:debug("do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
+            ?LOG(debug, "do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
             {Status, maps:merge(Headers, NewHeaders), Res, NewReq}
     end.
 
@@ -85,14 +86,14 @@ do_request(post_control_channel, #{<<"id">> := ChannelId, <<"action">> := Action
 %% Decoder 概要: 获取指令集 描述:根据产品ID关联的解码器获取指令集
 %% OperationId:get_cmd_productid
 %% 请求:GET /iotapi/cmd/:productId
-do_request(get_decoder_func_id, #{<<"id">> := Id }, _Context, _Req) ->
+do_request(get_decoder_func_id, #{<<"id">> := Id}, _Context, _Req) ->
     {200, dgiot_decoder:get_funcs(Id)};
 
 %% Decoder 概要: 新增解码器 描述:给产品新增解码器
 %% OperationId:post_classes_decoder_pid
 %% 请求:POST /iotapi/classes/Decoder/:pid
-do_request(post_classes_decoder, Data, #{ <<"user">> := #{<<"objectId">> := UserId}, <<"sessionToken">> := SessionToken }, _Req) ->
-    ACL = maps:get(<<"ACL">>, Data, #{ UserId => #{ <<"read">> => true, <<"write">> => true } }),
+do_request(post_classes_decoder, Data, #{<<"user">> := #{<<"objectId">> := UserId}, <<"sessionToken">> := SessionToken}, _Req) ->
+    ACL = maps:get(<<"ACL">>, Data, #{UserId => #{<<"read">> => true, <<"write">> => true}}),
     dgiot_parse:create_object(<<"Dict">>, #{
         <<"type">> => <<"decoder">>,
         <<"ACL">> => ACL,
@@ -102,7 +103,7 @@ do_request(post_classes_decoder, Data, #{ <<"user">> := #{<<"objectId">> := User
 %% Decoder 概要: 更新解码器 描述:根据ID更新解码器
 %% OperationId:put_classes_decoder_id
 %% 请求:PUT /iotapi/classes/Decoder/:id
-do_request(put_classes_decoder_id, #{ <<"id">> := Id } = Data, #{ <<"user">> := #{<<"objectId">> := _UserId}, <<"sessionToken">> := SessionToken }, _Req) ->
+do_request(put_classes_decoder_id, #{<<"id">> := Id} = Data, #{<<"user">> := #{<<"objectId">> := _UserId}, <<"sessionToken">> := SessionToken}, _Req) ->
     Data1 =
         case maps:get(<<"ACL">>, Data, no) of
             no -> #{};
@@ -114,7 +115,7 @@ do_request(put_classes_decoder_id, #{ <<"id">> := Id } = Data, #{ <<"user">> := 
     }, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
         {ok, Result} ->
             {ok, Result};
-        {error, #{ <<"error">> := #{ <<"coder">> := 101 } } = Result} ->
+        {error, #{<<"error">> := #{<<"coder">> := 101}} = Result} ->
             {404, Result};
         {error, Reason} ->
             {error, Reason}
@@ -123,11 +124,11 @@ do_request(put_classes_decoder_id, #{ <<"id">> := Id } = Data, #{ <<"user">> := 
 %% Decoder 概要: 获取解码器 描述:根据ID获取解码器
 %% OperationId:get_classes_decoder_id
 %% 请求:GET /iotapi/classes/Decoder/:id
-do_request(get_classes_decoder_id, #{ <<"id">> := Id }, #{ <<"sessionToken">> := Session }, _Req) ->
+do_request(get_classes_decoder_id, #{<<"id">> := Id}, #{<<"sessionToken">> := Session}, _Req) ->
     case dgiot_parse:get_object(<<"Dict">>, Id, [{"X-Parse-Session-Token", Session}], [{from, rest}]) of
         {ok, Result} ->
             {ok, Result};
-        {error, #{ <<"error">> := #{ <<"coder">> := 101 } } = Result} ->
+        {error, #{<<"error">> := #{<<"coder">> := 101}} = Result} ->
             {404, Result};
         {error, Reason} ->
             {error, Reason}
@@ -136,11 +137,11 @@ do_request(get_classes_decoder_id, #{ <<"id">> := Id }, #{ <<"sessionToken">> :=
 %% Decoder 概要: 删除解码器 描述:根据ID删除解码器
 %% OperationId:delete_classes_decoder_id
 %% 请求:DELETE /iotapi/classes/Decoder/:id
-do_request(delete_classes_decoder_id, #{ <<"id">> := Id }, #{ <<"sessionToken">> := Session }, _Req) ->
+do_request(delete_classes_decoder_id, #{<<"id">> := Id}, #{<<"sessionToken">> := Session}, _Req) ->
     case dgiot_parse:del_object(<<"Dict">>, Id, [{"X-Parse-Session-Token", Session}], [{from, rest}]) of
         {ok, Result} ->
             {ok, Result};
-        {error, #{ <<"error">> := #{ <<"coder">> := 101 } } = Result} ->
+        {error, #{<<"error">> := #{<<"coder">> := 101}} = Result} ->
             {404, Result};
         {error, Reason} ->
             {error, Reason}
@@ -157,10 +158,10 @@ do_request(get_classes_decoder, Args, #{<<"sessionToken">> := Session}, _Req) ->
                     _ when Key == <<"where">> ->
                         case Value of
                             undefined ->
-                                Acc#{ Key => #{ <<"type">> => <<"decoder">> } };
+                                Acc#{Key => #{<<"type">> => <<"decoder">>}};
                             _ ->
                                 Where = jsx:decode(Value, [{labels, binary}, return_maps]),
-                                Acc#{ Key => Where#{ <<"type">> => <<"decoder">> } }
+                                Acc#{Key => Where#{<<"type">> => <<"decoder">>}}
                         end;
                     undefined ->
                         Acc;
