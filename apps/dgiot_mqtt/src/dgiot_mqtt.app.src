@@ -1,8 +1,0 @@
-{application,shuwa_mqtt,
-             [{description,"数蛙MQTT工具"},
-              {vsn,"1.6.4"},
-              {applications,[kernel,stdlib]},
-              {modules,[]},
-              {env,[]},
-              {mod,{shuwa_mqtt_app,[]}},
-              {registered,[]}]}.
