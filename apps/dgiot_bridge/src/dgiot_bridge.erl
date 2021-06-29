@@ -188,7 +188,7 @@ load_channel() ->
                     Json = list_to_binary(Data),
                     case jsx:is_json(Json) andalso jsx:decode(Json, [{labels, binary}, return_maps]) of
                         false ->
-                            ?LOG(error,"~p is not json.", [Json]);
+                            ?LOG(error, "~p is not json.", [Json]);
                         Filter ->
                             start_channel(dgiot_bridge, Filter)
                     end
@@ -282,7 +282,7 @@ format_channel(App, Type, Channel, Attributes) ->
                     zh => <<"通道ICO"/utf8>>
                 }
             }
-        },Params)
+        }, Params)
     }.
 
 search_channel(Check, Acc0) ->
@@ -310,18 +310,18 @@ control_channel(ChannelId, Action) ->
         case Action of
             <<"disable">> ->
                 Topic = <<"channel/", ChannelId/binary>>,
-                Payload =  jsx:encode(#{<<"enable">> => false}),
-                dgiot_mqtt:publish(ChannelId,Topic,Payload),
+                Payload = jsx:encode(#{<<"enable">> => false}),
+                dgiot_mqtt:publish(ChannelId, Topic, Payload),
                 false;
             <<"enable">> ->
                 Topic = <<"global/dgiot">>,
-                Payload =  jsx:encode(#{<<"channelId">> => ChannelId, <<"enable">> =>true}),
-                dgiot_mqtt:publish(ChannelId,Topic,Payload),
+                Payload = jsx:encode(#{<<"channelId">> => ChannelId, <<"enable">> => true}),
+                dgiot_mqtt:publish(ChannelId, Topic, Payload),
                 true;
             <<"update">> ->
                 Topic = <<"channel/", ChannelId/binary>>,
-                Payload =  jsx:encode(#{<<"channelId">> => ChannelId, <<"action">> => <<"update">>}),
-                dgiot_mqtt:publish(ChannelId,Topic,Payload),
+                Payload = jsx:encode(#{<<"channelId">> => ChannelId, <<"action">> => <<"update">>}),
+                dgiot_mqtt:publish(ChannelId, Topic, Payload),
                 true
         end,
     Fun =
@@ -345,6 +345,7 @@ control_channel(ChannelId, Action) ->
         {error, Reason} ->
             {error, Reason}
     end.
+
 
 wait_request(Time, _) when Time =< 0 ->
     false;

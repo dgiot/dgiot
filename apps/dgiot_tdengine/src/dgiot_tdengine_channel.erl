@@ -56,7 +56,7 @@
         order => 2,
         type => integer,
         required => true,
-        default => 6020,
+        default => 6041,
         title => #{
             zh => <<"端口"/utf8>>
         },
@@ -122,6 +122,20 @@
         description => #{
             zh => <<"all:不指定操作系统，自动判断, windows:指定为windows系统，linux:指定为linux系统"/utf8>>
         }
+    },
+    <<"ico">> => #{
+        order => 102,
+        type => string,
+        required => false,
+        default => <<"http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_tech/zh/product/dgiot/channel/TD%E5%9B%BE%E6%A0%87.png">>,
+        title => #{
+            en => <<"channel ICO">>,
+            zh => <<"通道ICO"/utf8>>
+        },
+        description => #{
+            en => <<"channel ICO">>,
+            zh => <<"通道ICO"/utf8>>
+        }
     }
 }).
 
@@ -155,7 +169,7 @@ start(ChannelId, #{
 init(?TYPE, ChannelId, Config) ->
     case dgiot_bridge:get_products(ChannelId) of
         {ok, _, ProductIds} ->
-            ?LOG(info,"ProductIds ~p",[ProductIds]),
+            ?LOG(info, "ProductIds ~p", [ProductIds]),
             NewProducts = lists:foldl(fun(X, Acc) ->
                 Acc ++ dgiot_tdengine:get_products(X, ChannelId)
                                       end, [], ProductIds),
@@ -164,7 +178,7 @@ init(?TYPE, ChannelId, Config) ->
                 auto_save => application:get_env(dgiot_tdengine, cache_auto_save, 30000),
                 size => application:get_env(dgiot_tdengine, cache_max_size, 50000),
                 memory => application:get_env(dgiot_tdengine, cache_max_memory, 102400),
-                max_time =>  application:get_env(dgiot_tdengine, cache_max_time, 30),
+                max_time => application:get_env(dgiot_tdengine, cache_max_time, 30),
                 handle => {?MODULE, handle_save, [ChannelId]}
             }],
             State = #state{
@@ -186,18 +200,20 @@ handle_event(full, _From, #state{id = Channel}) ->
     ok;
 
 handle_event(EventType, Event, _State) ->
-    ?LOG(info,"channel ~p, ~p", [EventType, Event]),
+    ?LOG(info, "channel ~p, ~p", [EventType, Event]),
     ok.
 
 %% 规则引擎导入
 handle_message({rule, Msg, Context}, State) ->
+    ?LOG(info, "Msg ~p", [Msg]),
+    ?LOG(info, "Context ~p", [Context]),
     handle_message({data, Msg, Context}, State);
 
 %% 数据与产品，设备地址分离
 handle_message({data, Product, DevAddr, Data, Context}, State) ->
     case catch do_save([Product, DevAddr, Data, Context], State) of
         {Err, Reason} when Err == error; Err == 'EXIT' ->
-            ?LOG(error,"Save to Tdengine error, ~p, ~p", [Data, Reason]),
+            ?LOG(error, "Save to Tdengine error, ~p, ~p", [Data, Reason]),
             ok;
         {ok, NewState} ->
             {ok, NewState}
@@ -206,7 +222,7 @@ handle_message({data, Product, DevAddr, Data, Context}, State) ->
 handle_message(config, #state{env = Config} = State) ->
     {reply, {ok, Config}, State};
 handle_message(Message, #state{id = ChannelId, product = ProductId} = _State) ->
-    ?LOG(info,"Channel ~p, Product ~p, handle_message ~p", [ChannelId, ProductId, Message]),
+    ?LOG(info, "Channel ~p, Product ~p, handle_message ~p", [ChannelId, ProductId, Message]),
     ok.
 
 handle_save(Channel) ->
@@ -216,13 +232,13 @@ handle_save(Channel) ->
     ok.
 
 stop(ChannelType, ChannelId, _State) ->
-    ?LOG(info,"channel stop ~p,~p", [ChannelType, ChannelId]),
+    ?LOG(info, "channel stop ~p,~p", [ChannelType, ChannelId]),
     ok.
 
 do_save([ProductId, DevAddr, Data, _Context], #state{id = ChannelId} = State) ->
     case dgiot_bridge:get_product_info(ProductId) of
         {error, Reason} ->
-            ?LOG(error,"Save to tdengine error, ~p, ~p", [Data, Reason]);
+            ?LOG(error, "Save to tdengine error, ~p, ~p", [Data, Reason]);
         {ok, #{<<"thing">> := Properties}} ->
             Object = format_data(ProductId, DevAddr, Properties, Data),
             save_to_cache(ChannelId, Object)
@@ -237,16 +253,39 @@ format_data(ProductId, DevAddr, Properties, Data) ->
         Acc ++ [list_to_binary(string:to_lower(binary_to_list(X)))]
                          end, [], maps:keys(Values)),
     dgiot_data:insert({td, ProductId, DeviceId}, Values#{<<"createdat">> => dgiot_datetime:nowstamp()}),
+    Now = maps:get(<<"createdat">>, Data, now),
+    NewValues = get_values(ProductId, Values, Now),
+
     #{
         <<"db">> => ?Database(ProductId),
         <<"tableName">> => ?Table(DeviceId),
         <<"using">> => ?Table(ProductId),
         <<"tags">> => [?Table(DevAddr)],
         <<"fields">> => [<<"createdat">> | Fields],
-        <<"values">> => [
-            [maps:get(<<"createdat">>, Data,now) | [maps:get(Key, Values) || Key <- maps:keys(Values)]]
-        ]
+        <<"values">> => NewValues
     }.
+%% INSERT INTO _30a01ed480._a90437ec84 using _30a01ed480._30a01ed480 TAGS ('_862607057395773') VALUES (now,0.11,0,26,38,0.3,0.0,0.0,11.7,0,null,75,null) ;
+get_values(ProductId, Values, Now) ->
+    Values0 =
+        case dgiot_data:get({ProductId, describe_table}) of
+            Results when length(Results) > 0 ->
+                lists:foldl(fun(Column, Acc) ->
+                    case Column of
+                        #{<<"Note">> := <<"TAG">>} ->
+                            Acc;
+                        #{<<"Field">> := <<"createdat">>} ->
+                            Acc ++ dgiot_utils:to_list(Now);
+                        #{<<"Field">> := Field} ->
+                            Value = maps:get(Field, Values, null),
+                            Acc ++ "," ++ dgiot_utils:to_list(Value);
+                        _ ->
+                            Acc
+                    end
+                            end, " (", Results);
+            _ ->
+                " "
+        end,
+    list_to_binary(Values0 ++ ")").
 
 save_cache(Channel) ->
     Max = 50,
@@ -276,7 +315,7 @@ save_to_tdengine(Channel, Requests) ->
             save_to_cache(Channel, Requests),
             ok;
         {error, Reason} ->
-            ?LOG(error,"save cache,~p,~p~n", [Requests, Reason]),
+            ?LOG(error, "save cache,~p,~p~n", [Requests, Reason]),
             save_to_cache(Channel, Requests),
             ok
     end.
@@ -337,39 +376,39 @@ check_database(ChannelId, ProductIds, #{<<"database">> := DataBase, <<"keep">> :
             timer:sleep(5000),
             check_database(ChannelId, ProductIds, Config);
         {error, Reason} ->
-            ?LOG(error,"Check database Error, ChannelId:~p, ProductIds:~p, Reason:~p", [ChannelId, ProductIds, Reason]),
+            ?LOG(error, "Check database Error, ChannelId:~p, ProductIds:~p, Reason:~p", [ChannelId, ProductIds, Reason]),
             dgiot_bridge:send_log(ChannelId, "Check database Error, ChannelId:~p, ProductIds:~p, Reason:~p", [ChannelId, ProductIds, Reason]),
             timer:sleep(5000),
             check_database(ChannelId, ProductIds, Config);
-        {ok, _ } ->
-            ?LOG(info,"Check database ChannelId:~p, ProductIds:~p, Config:~p", [ChannelId, ProductIds, Config]),
+        {ok, _} ->
+            ?LOG(info, "Check database ChannelId:~p, ProductIds:~p, Config:~p", [ChannelId, ProductIds, Config]),
             create_table(ChannelId, ProductIds, Config)
     end.
 
 create_table(_, [], _) ->
     ok;
 create_table(ChannelId, [ProductId | ProductIds], Config) ->
-    ?LOG(info,"ProductId ~p ",[ProductId]),
+    ?LOG(info, "ProductId ~p ", [ProductId]),
     case dgiot_bridge:get_product_info(ProductId) of
         {ok, Product} ->
             case get_schema(ChannelId, Product) of
                 ignore ->
-                    ?LOG(error,"Create Table ignore, ChannelId:~p, ProductId:~p", [ChannelId, Product]);
+                    ?LOG(error, "Create Table ignore, ChannelId:~p, ProductId:~p", [ChannelId, Product]);
                 Schema ->
                     TableName = ?Table(ProductId),
                     case dgiot_tdengine:create_schemas(ChannelId, Schema#{
                         <<"tableName">> => TableName
                     }) of
                         {error, Reason} ->
-                            ?LOG(error,"Create Table[~s] Fail, Schema:~p, Reason:~p", [TableName, Schema, Reason]);
+                            ?LOG(error, "Create Table[~s] Fail, Schema:~p, Reason:~p", [TableName, Schema, Reason]);
                         {ok, #{<<"affected_rows">> := _}} ->
                             %% @todo 一个产品只能挂一个TDengine?
                             dgiot_data:insert({ProductId, ?TYPE}, ChannelId),
-                            ?LOG(info,"Create Table[~s] Succ, Schema:~p", [TableName, Schema])
+                            ?LOG(info, "Create Table[~s] Succ, Schema:~p", [TableName, Schema])
                     end
             end;
         {error, Reason} ->
-            ?LOG(error,"Create Table Error, ~p", [Reason])
+            ?LOG(error, "Create Table Error, ~p", [Reason])
     end,
     create_table(ChannelId, ProductIds, Config).
 
@@ -443,7 +482,7 @@ check_fields(Data, [#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> 
 
 check_field(Data, Props) when is_map(Data) ->
     check_field(maps:to_list(Data), Props);
-check_field(Data, #{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := Type} = DataType}) ->
+check_field(Data, #{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := Type, <<"specs">> := Specs} = DataType}) ->
     case proplists:get_value(Field, Data) of
         undefined ->
             undefined;
@@ -451,22 +490,21 @@ check_field(Data, #{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> :=
             Type1 = list_to_binary(string:to_upper(binary_to_list(Type))),
             NewValue =
                 case Type1 of
-                    _ when Type1 == <<"INT">>; Type1 == <<"DATE">>, is_list(Value) ->
+                    _ when Type1 == <<"INT">>; Type1 == <<"DATE">>; Type1 == <<"SHORT">>, is_list(Value) ->
                         round(dgiot_utils:to_int(Value));
                     _ when Type1 == <<"INT">>; Type1 == <<"DATE">>, is_float(Value) ->
                         round(Value);
                     _ when Type1 == <<"INT">>; Type1 == <<"DATE">> ->
                         Value;
                     _ when Type1 == <<"FLOAT">>; Type1 == <<"DOUBLE">> ->
-                        dgiot_utils:to_float(Value / 1, 3);
+                        Precision = maps:get(<<"precision">>, Specs, 3),
+                        dgiot_utils:to_float(Value / 1, Precision);
                     <<"BOOL">> ->
                         Value;
                     <<"STRING">> ->
                         unicode:characters_to_binary(unicode:characters_to_list((Value)));
                     <<"ENUM">> ->
-%%                        Value;
-                        #{<<"specs">> := Specs} = DataType,
-                        lists:member(Value, maps:keys(Specs));
+                        Value;
                     <<"STRUCT">> ->
                         Value
                 end,
@@ -502,13 +540,13 @@ run_sql(#{<<"driver">> := <<"HTTP">>, <<"url">> := Url, <<"username">> := UserNa
         {ok, Result} ->
             case maps:get(<<"channel">>, Context, <<"">>) of
                 <<"">> ->
-                    ?LOG(debug,"Execute ~p (~ts) ~p", [Url, unicode:characters_to_list(Sql), Result]);
+                    ?LOG(debug, "Execute ~p (~ts) ~p", [Url, unicode:characters_to_list(Sql), Result]);
                 ChannelId ->
                     dgiot_bridge:send_log(ChannelId, "Execute ~p (~ts) ~p", [Url, unicode:characters_to_list(Sql), jsx:encode(Result)])
             end,
             {ok, Result};
         {error, Reason} ->
-            ?LOG(info,"Execute Fail ~p (~ts) ~p", [Url, unicode:characters_to_list(Sql), Reason]),
+            ?LOG(info, "Execute Fail ~p (~ts) ~p", [Url, unicode:characters_to_list(Sql), Reason]),
             {error, Reason}
     end;
 run_sql(#{<<"driver">> := <<"JDBC">>, <<"url">> := _Url}, Action, Sql) when Action == execute_update; Action == execute_query ->

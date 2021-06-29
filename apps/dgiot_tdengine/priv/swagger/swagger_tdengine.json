@@ -59,7 +59,11 @@
             "description": "过滤条件，eg: {\"createdat\": {\"$gte\":\"now - 10d\"}}",
             "required": false,
             "type": "string",
-            "default": {"createdat":{"$gte":"now - 10d"}}
+            "default": {
+              "createdat": {
+                "$gte": "now - 10d"
+              }
+            }
           },
           {
             "in": "query",
@@ -149,6 +153,7 @@
             "name": "keys",
             "description": "需要显示的字段,加count(*)则结果里面会显示总记录数, last_row为获取最后一条记录, eg: username,email",
             "required": false,
+            "default": "",
             "type": "string"
           },
           {
@@ -182,41 +187,128 @@
         ]
       }
     },
-    "/device": {
-      "post": {
-        "summary": "查询设备时序数据",
-        "description": "查询设备时序数据",
+    "/echart/{deviceid}": {
+      "get": {
+        "summary": "获取当前设备时序数据图表",
+        "description": "获取当前设备数据图表，支持折线图，柱状图，饼图等",
         "parameters": [
           {
-            "in": "body",
-            "name": "filter",
-            "description": "查询条件",
+            "in": "path",
+            "name": "deviceid",
             "required": true,
-            "schema": {
-              "type": "object",
-              "properties": {
-                "order": {
-                  "description": "排序",
-                  "type": "string",
-                  "example": "-createdAt"
-                },
-                "include": {
-                  "description": "包含对象",
-                  "type": "string",
-                  "example": "product"
-                },
-                "where": {
-                  "description": "查询条件",
-                  "type": "object",
-                  "example": "{\"objectId\":{\"$in\":[\"689cc9c4a2\",\"cf3795a76a\"]}}"
-                }
-              }
-            }
+            "default": "a90437ec84",
+            "description": "设备ID",
+            "type": "string"
+          },
+          {
+            "in": "query",
+            "name": "starttime",
+            "description": "开始时间（时间戳毫秒）",
+            "default": "1610091977000",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "in": "query",
+            "name": "endtime",
+            "description": "结束时间（时间戳毫秒）",
+            "default": "1623138377000",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "in": "query",
+            "name": "interval",
+            "description": "统计间隔",
+            "enum": [
+              "1u",
+              "1a",
+              "1s",
+              "1m",
+              "1h",
+              "1d",
+              "1w",
+              "1n",
+              "1y"
+            ],
+            "default": "1m",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "in": "query",
+            "name": "keys",
+            "description": "需要显示的字段,加 * 则结果显示物模型所有字段",
+            "required": false,
+            "default": "*",
+            "type": "string"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "description": "limit, 显示多少条记录，显示100条记录 eg:100",
+            "required": false,
+            "default": 10,
+            "type": "integer"
+          },
+          {
+            "in": "query",
+            "name": "function",
+            "description": "聚合/计算函数",
+            "enum": [
+              "count",
+              "avg",
+              "sum",
+              "stddev",
+              "min",
+              "max",
+              "first",
+              "last"
+            ],
+            "default": "last",
+            "required": true,
+            "type": "string"
           }
         ],
         "responses": {
           "200": {
-            "description": "Returns success"
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "DBA"
+        ]
+      }
+    },
+    "/app/{deviceid}": {
+      "get": {
+        "summary": "获取当前设备最新时序数据卡片",
+        "description": "获取当前设备最新时序数据卡片",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "deviceid",
+            "required": true,
+            "default": "a90437ec84",
+            "description": "设备ID",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
           },
           "400": {
             "description": "Bad Request"

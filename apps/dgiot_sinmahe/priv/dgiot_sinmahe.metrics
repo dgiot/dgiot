@@ -1,0 +1,14 @@
+[
+  {
+    "name": "mqtt_online",
+    "help": "mqtt客户端在线数据统计",
+    "type": "gauge",
+    "labels": []
+  },
+  {
+    "name": "mqtt_recv",
+    "help": "mqtt客户端收包数据统计",
+    "type": "gauge",
+    "labels": []
+  }
+]

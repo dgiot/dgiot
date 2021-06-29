@@ -1,0 +1,20 @@
+{mapping, "iot_dgiot_sinmahe.iotserver", "dgiot_sinmahe.iotserver", [
+{default, ""},
+{datatype, string}
+]}.
+
+{mapping, "iot_dgiot_sinmahe.appid", "dgiot_sinmahe.appid", [
+  {default, ""},
+  {datatype, string}
+]}.
+
+{mapping, "iot_dgiot_sinmahe.appsecret", "dgiot_sinmahe.appsecret", [
+{default, ""},
+{datatype, string}
+]}.
+
+{mapping, "iot_dgiot_sinmahe.port", "dgiot_sinmahe.port", [
+{datatype, integer},
+{default, 4081}
+]}.
+

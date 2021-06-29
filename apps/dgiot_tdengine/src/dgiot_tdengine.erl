@@ -23,8 +23,8 @@
 -export([create_database/3, create_schemas/2, create_object/3, create_user/3, alter_user/3, delete_user/2, query_object/3, batch/2]).
 -export([create_database/2, create_schemas/1, create_object/2, create_user/2, alter_user/2, delete_user/1, query_object/2, batch/1, parse_batch/1]).
 -export([to_unixtime/1, get_channel/1]).
--export([get_product/2,get_products/2]).
--export([get_device/3, get_device/4,get_device/5, get_tddata/4, get_tddata/5]).
+-export([get_product/2, get_products/2, get_chartdata/3, get_appdata/3]).
+-export([get_device/3, get_device/4,get_device/5]).
 %% 引入执行函数
 -import(dgiot_tdengine_channel, [run_sql/3, transaction/2]).
 -export([test_product/0]).
@@ -90,6 +90,7 @@ get_products(ProductId, ChannelId) ->
             [ProductId]
     end.
 
+%% #{<<"keys">> => <<"last_row(*)">>, <<"limit">> => 1} 查询td最新的一条device
 get_device(ProductId, DevAddr, Query) ->
     case dgiot_data:get({ProductId, ?TYPE}) of
         not_find ->
@@ -177,76 +178,6 @@ get_device(Channel, ProductId, DeviceId, _DevAddr, Query) ->
     end.
 
 
-get_tddata(Channel, Acc, #{<<"objectId">> := DeviceId} = Device, #{<<"objectId">> := ProdcutId} = Product, DevAddr) ->
-    [Time, Data] =
-        case maps:get(<<"thing">>, Product, #{}) of
-            #{<<"properties">> := Properties} when length(Properties) > 0 ->
-                case dgiot_tdengine:get_device(Channel, ProdcutId, DeviceId, DeviceId, #{<<"keys">> => <<"last_row(*)">>, <<"limit">> => 1}) of
-                    {ok, #{<<"results">> := [Data1 | _]}} ->
-%%                        ?LOG(info,"Data1 ~p",[Data1]),
-                        [dgiot_tdengine:to_unixtime(maps:get(<<"createdat">>, Data1)), Data1];
-                    _ -> [0, #{}]
-                end;
-            _ ->
-                [0, #{}]
-        end,
-    TdData =
-        lists:foldl(fun(Y, Acc2) ->
-            #{
-                <<"objectId">> := SubDeviceId,
-                <<"devaddr">> := SubDtuAddr,
-                <<"product">> := #{<<"objectId">> := SubProductId}
-            } = Y,
-            case dgiot_tdengine:get_device(Channel, SubProductId, SubDeviceId, SubDtuAddr, #{<<"keys">> => <<"last_row(*)">>, <<"limit">> => 1}) of
-                {ok, #{<<"results">> := [Data2 | _]}} ->
-                    Acc2#{SubDeviceId => #{<<"productid">> => SubProductId, <<"deviceid">> => SubDeviceId, <<"data">> => maps:without([<<"createdat">>], Data2)}};
-                _ -> Acc2
-            end
-                    end, #{DeviceId => #{<<"productid">> => ProdcutId, <<"deviceid">> => DeviceId, <<"data">> => maps:without([<<"createdat">>], Data)}},
-            dgiot_device:get_sub_device(DevAddr)),
-    Acc ++ [Device#{<<"lasttime">> => Time, <<"swtopo">> => [], <<"tddata">> => maps:values(TdData)}].
-
-
-get_tddata(Channel, ProductId, DeviceId, Args) ->
-    Query = maps:without([<<"productid">>, <<"deviceid">>], Args),
-    case dgiot_data:get({tdengine_os, Channel}) of
-        <<"windows">> ->
-            Keys =
-                lists:foldl(fun(X, Acc) ->
-                    case X of
-                        <<"count(*)">> -> Acc ++ [<<"count(*)">>];
-                        <<"*">> -> Acc ++ [<<"values">>];
-                        _ -> Acc ++ [<<"values.", X/binary>>]
-                    end
-                            end, [], binary:split(maps:get(<<"keys">>, Args, <<"count(*)">>), <<$,>>, [global, trim])),
-            Query2 = Query#{<<"where">> => #{<<"product">> => ProductId,
-                <<"device">> => DeviceId}, <<"keys">> => Keys},
-            case dgiot_parse:query_object(<<"Timescale">>, Query2) of
-                {ok, #{<<"results">> := Results} = All} when length(Results) > 0 ->
-                    Data = lists:foldl(fun(X, Acc) ->
-                        Acc ++ [maps:get(<<"values">>, X)]
-                                       end, [], Results),
-                    {ok, All#{<<"results">> => Data}};
-                {ok, #{<<"results">> := Result}} ->
-                    {error, Result};
-                Error ->
-                    Error
-            end;
-        _ ->
-            Where = maps:get(<<"where">>, Args),
-            Query = maps:without([<<"productid">>, <<"deviceid">>], Args),
-            TableName = ?Table(DeviceId),
-            case dgiot_tdengine:query_object(Channel, TableName, Query#{
-                <<"db">> => ProductId,
-                <<"where">> => Where
-            }) of
-                {ok, Data} ->
-                    {ok, Data};
-                {error, Reason} ->
-                    {400, Reason}
-            end
-    end.
-
 get_channel(Session) ->
     Body = #{
         <<"keys">> => <<"objectId">>,
@@ -311,9 +242,56 @@ create_schemas(Channel, #{<<"tableName">> := TableName, <<"fields">> := Fields0}
                     _ ->
                         <<"CREATE TABLE IF NOT EXISTS ", DB1/binary, TableName/binary, " (", Fields/binary, ") TAGS (", TagFields/binary, ");">>
                 end,
+            alter_table(DB1, TableName, Context, Channel),
             run_sql(Context#{<<"channel">> => Channel}, execute_update, Sql)
         end).
 
+alter_table(DB1, TableName, Context, Channel) ->
+    Sql1 = <<"DESCRIBE ", DB1/binary, TableName/binary, ";">>,
+    case run_sql(Context#{<<"channel">> => Channel}, execute_query, Sql1) of
+        {ok, #{<<"results">> := Results}} when length(Results) > 0 ->
+            TdColumn =
+                lists:foldl(fun(Column, Acc) ->
+                    case Column of
+                        #{<<"Field">> := Identifier, <<"Type">> := Type} ->
+                            Acc#{Identifier => list_to_binary(string:to_lower(binary_to_list(Type)))};
+                        _ ->
+                            Acc
+                    end
+                            end, #{}, Results),
+%%            ?LOG(info,"TdColumn ~p", [TdColumn]),
+            <<"_", ProductId/binary>> = TableName,
+            case dgiot_parse:get_object(<<"Product">>, ProductId) of
+                {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
+                    lists:foldl(fun(Prop, _Acc1) ->
+                        case Prop of
+                            #{<<"dataType">> := #{<<"type">> := Type}, <<"identifier">> := Identifier} ->
+                                LowerIdentifier = list_to_binary(string:to_lower(binary_to_list(Identifier))),
+                                case maps:find(LowerIdentifier, TdColumn) of
+                                    error ->
+                                        AddSql =
+                                            case Type of
+                                                <<"enum">> ->
+                                                    <<"ALTER TABLE ", DB1/binary, TableName/binary, " ADD COLUMN ", LowerIdentifier/binary, " INT;">>;
+                                                _ ->
+                                                    <<"ALTER TABLE ", DB1/binary, TableName/binary, " ADD COLUMN ", LowerIdentifier/binary, " ", Type/binary, ";">>
+                                            end,
+%%                                        ?LOG(info,"AddSql ~p", [AddSql]),
+                                        run_sql(Context#{<<"channel">> => Channel}, execute_query, AddSql);
+                                    _ ->
+%%                                            todo   类型改变
+                                        pass
+                                end
+                        end
+                                end, #{}, Props),
+                    {ok, #{<<"results">> := Results2}} = run_sql(Context#{<<"channel">> => Channel}, execute_query, Sql1),
+                    dgiot_data:insert({ProductId, describe_table}, Results2);
+                _ ->
+                    pass
+            end;
+        _ ->
+            pass
+    end.
 
 %% 插入
 create_object(TableName, Object) ->
@@ -349,6 +327,98 @@ query_object(Channel, TableName, Query) ->
             run_sql(Context#{<<"channel">> => Channel}, execute_query, Sql)
         end).
 
+%% SELECT max(day_electricity) '时间' ,max(charge_current) '日期' FROM _2d26a94cf8._c5e1093e30 WHERE createdat >= now - 1h INTERVAL(1h) limit 10;
+get_chartdata(Channel, TableName, Query) ->
+    transaction(Channel,
+        fun(Context) ->
+            Database = maps:get(<<"db">>, Query),
+            Function = maps:get(<<"function">>, Query),
+            Keys = maps:get(<<"keys">>, Query),
+            Limit = format_limit(Query),
+            Interval = maps:get(<<"interval">>, Query),
+            Starttime = maps:get(<<"starttime">>, Query),
+            Endtime = maps:get(<<"endtime">>, Query),
+            {Names, Newkeys} = get_keys(Database, Function, Keys),
+            DB = format_db(?Database(Database)),
+            Tail = <<" where createdat >= ", Starttime/binary, " AND createdat <= ", Endtime/binary, " INTERVAL(", Interval/binary, ") ", Limit/binary, ";">>,
+            Sql = <<"SELECT ", Newkeys/binary, " FROM ", DB/binary, TableName/binary, Tail/binary>>,
+%%            ?LOG(info,"Sql ~p", [Sql]),
+            {Names, run_sql(Context#{<<"channel">> => Channel}, execute_query, Sql)}
+        end).
+
+%% SELECT last(*) FROM _2d26a94cf8._c5e1093e30;
+get_appdata(Channel, TableName, Query) ->
+    transaction(Channel,
+        fun(Context) ->
+            Database = maps:get(<<"db">>, Query),
+            {_Names, Newkeys} = get_keys(Database, <<"last">>, <<"*">>),
+            DB = format_db(?Database(Database)),
+            case size(Newkeys) > 0 of
+                true ->
+                    Sql = <<"SELECT last(createdat) createdat, ", Newkeys/binary, " FROM ", DB/binary, TableName/binary, ";">>,
+                    run_sql(Context#{<<"channel">> => Channel}, execute_query, Sql);
+                _ ->
+                    {error, #{<<"msg">> => <<"无物模型"/utf8>>}}
+            end
+        end).
+
+get_keys(ProductId, Function, <<"*">>) ->
+    case dgiot_device:lookup_prod(ProductId) of
+        {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
+            lists:foldl(fun(X, {Names, Acc}) ->
+                case X of
+                    #{<<"identifier">> := Identifier, <<"name">> := Name} ->
+                        case Acc of
+                            <<"">> ->
+                                {Names, <<Function/binary, "(", Identifier/binary, ") \'", Identifier/binary, "\'">>};
+                            _ ->
+                                {Names ++ [Name], <<Acc/binary, ", ", Function/binary, "(", Identifier/binary, ") \'", Identifier/binary, "\'">>}
+                        end;
+                    _ ->
+                        {Names, Acc}
+                end
+                        end, {[], <<"">>}, Props);
+        _ ->
+            {[], <<"">>}
+    end;
+
+get_keys(ProductId, Function, Keys) when Keys == undefined; Keys == <<>> ->
+    get_keys(ProductId, Function, <<"*">>);
+
+get_keys(ProductId, Function, Keys) ->
+    List =
+        case is_list(Keys) of
+            true -> Keys;
+            false -> re:split(Keys, <<",">>)
+        end,
+    Maps = get_prop(ProductId),
+    lists:foldl(fun(X, {Names, Acc}) ->
+        case maps:find(X, Maps) of
+            error ->
+                {Names, Acc};
+            Name ->
+                case Acc of
+                    <<"">> ->
+                        {Names, <<Function/binary, "(", X/binary, ") \'", X/binary, "\'">>};
+                    _ ->
+                        {Names ++ [Name], <<Acc/binary, ", ", Function/binary, "(", X/binary, ") \'", X/binary, "\'">>}
+                end
+        end
+                end, {[], <<"">>}, List).
+
+get_prop(ProductId) ->
+    case dgiot_device:lookup_prod(ProductId) of
+        {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
+            lists:foldl(fun(X, Acc) ->
+                case X of
+                    #{<<"identifier">> := Identifier, <<"name">> := Name} ->
+                        Acc#{Identifier => Name};
+                    _ -> Acc
+                end
+                        end, #{}, Props);
+        _ ->
+            #{}
+    end.
 
 batch(Batch) ->
     batch(?DEFAULT, Batch).
@@ -445,12 +515,8 @@ join_prepend(_Sep, [], _, _) -> [];
 join_prepend(Sep, [<<>> | T], true, F) -> join_prepend(Sep, T, true, F);
 join_prepend(Sep, [H | T], Trip, F) -> [Sep, F(H) | join_prepend(Sep, T, Trip, F)].
 
-
 format_value(V) when is_binary(V) -> <<"'", V/binary, "'">>;
 format_value(V) -> to_binary(V).
-
-format_column(V) -> to_binary(V).
-
 
 format_db(<<>>) -> <<>>;
 format_db(DB) -> <<DB/binary, ".">>.
@@ -463,27 +529,20 @@ format_using(DB, Table) ->
 format_tags(<<>>) -> <<>>;
 format_tags(Tags) -> <<" TAGS (", Tags/binary, ")">>.
 
-format_batch(#{<<"db">> := DB, <<"tableName">> := TableName, <<"fields">> := Fields0, <<"values">> := Values0} = Batch) ->
+format_batch(#{<<"db">> := DB, <<"tableName">> := TableName, <<"fields">> := _Fields0, <<"values">> := Values0} = Batch) ->
     Using = maps:get(<<"using">>, Batch, <<>>),
-    Fields = list_to_binary(join(",", Fields0, false, fun format_column/1)),
-    Values2 = [list_to_binary("(" ++ join(",", Values1, false, fun format_value/1) ++ ")") || Values1 <- Values0],
-    Values = list_to_binary(join(" ", Values2)),
     DB1 = format_db(DB),
     Using1 = format_using(DB, Using),
     Tags = maps:get(<<"tags">>, Batch, []),
     TagFields = format_tags(list_to_binary(join(",", Tags, false, fun format_value/1))),
-    <<DB1/binary, TableName/binary, Using1/binary, TagFields/binary, " (", Fields/binary, ") VALUES ", Values/binary>>;
+    <<DB1/binary, TableName/binary, Using1/binary, TagFields/binary, " VALUES ", Values0/binary>>;
 format_batch(#{<<"db">> := DB, <<"tableName">> := TableName, <<"values">> := Values0} = Batch) ->
     Using = maps:get(<<"using">>, Batch, <<>>),
-    Values2 = [list_to_binary("(" ++ join(",", Values1, false, fun format_value/1) ++ ")") || Values1 <- Values0],
-    Values = list_to_binary(join(" ", Values2)),
     DB1 = format_db(DB),
     Using1 = format_using(DB, Using),
     Tags = maps:get(<<"tags">>, Batch, []),
     TagFields = format_tags(list_to_binary(join(",", Tags, false, fun format_value/1))),
-    <<DB1/binary, TableName/binary, Using1/binary, TagFields/binary, " VALUES ", Values/binary>>.
-
-
+    <<DB1/binary, TableName/binary, Using1/binary, TagFields/binary, " VALUES ", Values0/binary>>.
 
 format_order([], Acc) -> Acc;
 format_order([<<"-", Field/binary>> | Other], Acc) ->
@@ -575,7 +634,11 @@ format_where(#{<<"where">> := Where0}) when Where0 =/= undefined, Where0 =/= <<>
     Where1 =
         case is_list(Where) of
             true ->
-                format_where(Where, []);
+                Where3 =
+                    lists:foldl(fun(X, Acc) ->
+                        Acc ++ maps:to_list(X)
+                                end, [], Where),
+                format_where(Where3, []);
             false when is_map(Where) ->
                 format_where(maps:to_list(Where), [])
         end,
@@ -587,7 +650,6 @@ format_where(#{<<"where">> := Where0}) when Where0 =/= undefined, Where0 =/= <<>
     end;
 format_where(_) ->
     <<>>.
-
 
 to_binary(V) when is_list(V) -> list_to_binary(V);
 to_binary(V) when is_integer(V) -> integer_to_binary(V);

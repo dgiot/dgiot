@@ -1,0 +1,199 @@
+{
+  "tags": [
+    {
+      "name": "Sinmahe",
+      "description": "新马赫"
+    }
+  ],
+  "definitions": {},
+  "paths": {
+    "/sinmahe_count": {
+      "get": {
+        "description": "获取新马赫设备统计数据",
+        "consumes": [
+          "*"
+        ],
+        "parameters": [
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns success",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "deviceInfo": {
+                  "description": "统计数据信息",
+                  "type": "object",
+                  "example": {"total": 10, "online": 10, "running": 10, "suspend": 10}
+                },
+                "devicedata": {
+                  "description": "位置信息",
+                  "type": "list",
+                  "example": [{"Lon": 32.12, "Lat": 120.34, "devaddr": 30001}]
+                },
+                "warnings": {
+                  "description": "告警信息",
+                  "type": "list",
+                  "example": [{"warnType": 6, "devaddr": 30001}]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "object not found",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "summary": "获取新马赫设备统计数据",
+        "tags": [
+          "Sinmahe"
+        ]
+      }
+    },
+    "/sinmahe_fault": {
+      "get": {
+        "description": "获取新马赫告警信息",
+        "parameters": [
+          {
+            "name": "FaultType",
+            "in": "query",
+            "type": "number",
+            "default": 1,
+            "description": "告警类型"
+          },
+          {
+            "name": "FaultLevel",
+            "in": "query",
+            "type": "number",
+            "default": 1,
+            "description": "告警等级"
+          },
+          {
+            "name": "FaultCode",
+            "in": "query",
+            "type": "number",
+            "default": 1,
+            "description": "告警代号"
+          },
+          {
+            "name": "FaultSrc",
+            "in": "query",
+            "type": "number",
+            "default": 0,
+            "description": "告警原因"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns success"
+          },
+          "404": {
+            "description": "object not found",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "summary": "获取新马赫告警信息",
+        "tags": [
+          "Sinmahe"
+        ]
+      },
+      "post": {
+        "description": "获取新马赫告警规则文件",
+        "consumes": [
+          "*"
+        ],
+        "parameters": [
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns success"
+          },
+          "404": {
+            "description": "object not found",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "summary": "获取新马赫告警规则文件",
+        "tags": [
+          "Sinmahe"
+        ]
+      }
+    },
+    "/control_device": {
+      "post": {
+        "description": "发送新马赫控制板控制信息",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "data",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "description": "命令类型",
+                  "type": "string",
+                  "example": "ControlParams",
+                  "required": true
+                },
+                "devaddr": {
+                  "description": "设备地址",
+                  "type": "string",
+                  "example": "30001"
+                },
+                "payload": {
+                  "description": "命令参数",
+                  "type": "object",
+                  "example": {"PowerOnCtrl":"1","PubFreq":23,"PubCtrl":"1","ParaGet":"0","FOTA":"0"}
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+            "200": {
+              "description": "Returns success"
+            },
+            "404": {
+                "description": "object not found",
+                "schema": {
+                    "$ref": "#/definitions/Error"
+                }
+            },
+            "400": {
+                "description": "Bad Request"
+            },
+            "500": {
+                "description": "Server Internal error"
+            }
+        },
+        "summary": "发送新马赫控制板控制信息",
+        "tags": ["Sinmahe"]
+      }
+    }
+  }
+}
