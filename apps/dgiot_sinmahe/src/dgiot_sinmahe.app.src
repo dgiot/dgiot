@@ -1,7 +1,0 @@
-{application,dgiot_sinmahe,
-             [{description,"dgiot_sinmahe"},
-              {vsn,"1.6.4"},
-              {modules,[]},
-              {registered,[dgiot_sinmahe_sup]},
-              {applications,[kernel,stdlib,dgiot]},
-              {mod,{dgiot_sinmahe_app,[]}}]}.
