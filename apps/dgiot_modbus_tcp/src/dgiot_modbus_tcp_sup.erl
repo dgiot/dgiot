@@ -1,5 +1,5 @@
 %%--------------------------------------------------------------------
-%% Copyright (c) 2020-2021 DGIOT Technologies Co., Ltd. All Rights Reserved.
+%% Copyright (c) 2016-2017 John liu <34489690@qq.com>.
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -14,30 +14,31 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
+%% @doc dgiot_modbus_tcp supervisor
+-module(dgiot_modbus_tcp_sup).
+-include("dgiot_modbus_tcp.hrl").
+-behaviour(supervisor).
 
--module(dgiot_bridge_app).
-
--behaviour(application).
--include_lib("dgiot/include/logger.hrl").
--emqx_plugin(?MODULE).
-
-%% Application callbacks
--export([start/2, stop/1]).
-
-%%====================================================================
 %% API
-%%====================================================================
+-export([start_link/0]).
 
-start(_StartType, _StartArgs) ->
-    {ok, Sup} = dgiot_bridge_sup:start_link(),
-    dgiot_bridge:start(),
-    {ok, Sup}.
+%% Supervisor callbacks
+-export([init/1]).
+
+%% Helper macro for declaring children of supervisor
+-define(CHILD(I, Type), {I, {I, start_link, []}, permanent, 5000, Type, [I]}).
 
 %%--------------------------------------------------------------------
-stop(_State) ->
-    ok.
+%% API functions
+%%--------------------------------------------------------------------
 
-%%====================================================================
-%% Internal functions
-%%====================================================================
+start_link() ->
+    supervisor:start_link({local, ?MODULE}, ?MODULE, []).
+
+%%--------------------------------------------------------------------
+%% Supervisor callbacks
+%%--------------------------------------------------------------------
+
+init([]) ->
+    {ok, { {one_for_one, 5, 10}, []}}.
 

@@ -190,10 +190,12 @@ load_channel() ->
                         false ->
                             ?LOG(error, "~p is not json.", [Json]);
                         Filter ->
+                            ?LOG(error, "Filter:~p", [Filter]),
                             start_channel(dgiot_bridge, Filter)
                     end
                 end, Filters);
-        _ ->
+        _Other ->
+            ?LOG(error, "_Other:~p", [_Other]),
             ok
     end.
 

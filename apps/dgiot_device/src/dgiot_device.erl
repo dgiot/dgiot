@@ -26,7 +26,7 @@
 
 %% 存储产品
 %%-define(SMART_PROD, mnesia_smartprod).
-%%-record(shuwa_prod, {
+%%-record(dgiot_prod, {
 %%    key,      % [ProductId], [产品ID]
 %%    product   % 产品基本数据,map类型
 %%}).
@@ -64,9 +64,9 @@ lookup_prod(ProductId) ->
     case dgiot_mnesia:lookup(ProductId) of
         {atomic, []} ->
             {error, not_find};
-        {aborted, Reason} ->
+        {error, Reason} ->
             {error, Reason};
-        {atomic, [{mnesia, _K, V}]} ->
+        {ok, [{mnesia, _K, V}]} ->
             {Product, _} = V,
             {ok, Product}
     end.

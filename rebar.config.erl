@@ -197,6 +197,8 @@ overlay_vars_rel(RelType) ->
         , {enable_plugin_dgiot_topo, true}
         , {enable_plugin_dgiot_opc, true}
         , {enable_plugin_dgiot_niisten, true}
+        , {enable_plugin_dgiot_modbus, true}
+        , {enable_plugin_dgiot_modbus_tcp, true}
         , {vm_args_file, VmArgs}
     ].
 
@@ -312,12 +314,13 @@ relx_plugin_apps_per_rel(cloud) ->
         , dgiot_tdengine
         , dgiot_evidence
         , dgiot_license
-        , dgiot_niisten
         , dgiot_task
         , dgiot_http
         , dgiot_topo
         , dgiot_opc
         , dgiot_niisten
+        , dgiot_modbus
+        , dgiot_modbus_tcp
     ];
 relx_plugin_apps_per_rel(edge) ->
     [].

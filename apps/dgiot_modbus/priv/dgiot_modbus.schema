@@ -1,0 +1,24 @@
+{mapping, "modbus.ip", "dgiot_modbus.ip", [
+  {default, "127.0.0.1"},
+  {datatype, [ip, string]}
+]}.
+
+{mapping, "modbus.port", "dgiot_modbus.port", [
+  {default, 502},
+  {datatype, integer}
+]}.
+
+{mapping, "modbus.protocol", "dgiot_modbus.protocol", [
+  {default, "tcp"},
+  {datatype, string}
+]}.
+
+{mapping, "modbus.unit_id", "dgiot_modbus.unit_id", [
+  {default, 255},
+  {datatype, integer}
+]}.
+
+{mapping, "modbus.callback", "dgiot_modbus.modbus_demo_callback", [
+  {default, "modbus_demo_callback"},
+  {datatype, string}
+]}.

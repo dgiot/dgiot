@@ -80,6 +80,7 @@ handle_info({start_channel, Module, #{<<"objectId">> := ChannelId, <<"type">> :=
     {noreply, State};
 
 handle_info(_Info, State) ->
+    ?LOG(error, "_Info ~p, State:~p", [_Info, State]),
     {noreply, State}.
 
 terminate(_Reason, _State) ->
@@ -153,7 +154,6 @@ do_handle(#{<<"channelId">> := ChannelId, <<"action">> := <<"start_logger">>} = 
     {ok, _Type, ProductIds} = dgiot_bridge:get_products(ChannelId),
     Fmt = "Channel[~s] is Running, Products:~s, Log is ~s",
     Args = [ChannelId, jsx:encode(ProductIds), true],
-    dgiot_logger:info(Fmt, Args),
     dgiot_data:insert(?ETS, {ChannelId, log}, NewFilter#{
         <<"time">> => dgiot_datetime:nowstamp()
     }),
