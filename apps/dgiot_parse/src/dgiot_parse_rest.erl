@@ -22,7 +22,7 @@
 -define(JSON_DECODE(Data), jsx:decode(Data, [{labels, binary}, return_maps])).
 -define(HTTPOption(Option), [{timeout, 60000}, {connect_timeout, 60000}] ++ Option).
 -define(REQUESTOption(Option), [{body_format, binary} | Option]).
--define(HEAD_CFG, [{"content-length", del}, {"referer", del}, {"user-agent", "SHUWA"}]).
+-define(HEAD_CFG, [{"content-length", del}, {"referer", del}, {"user-agent", "dgiot"}]).
 
 
 %% API

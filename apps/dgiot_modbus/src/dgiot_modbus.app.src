@@ -1,0 +1,8 @@
+{application, dgiot_modbus,
+    [{description, "数蛙工业MODBUS"},
+        {vsn, "1.6.4"},
+        {modules, []},
+        {registered, [dgiot_modbus_sup]},
+        {applications, [kernel, stdlib, dgiot]},
+        {mod, {dgiot_modbus_app, []}}
+    ]}.

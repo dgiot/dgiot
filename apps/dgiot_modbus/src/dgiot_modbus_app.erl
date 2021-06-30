@@ -14,30 +14,18 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
+-module(dgiot_modbus_app).
 
--module(dgiot_bridge_app).
+-emqx_plugin(?MODULE).
 
 -behaviour(application).
--include_lib("dgiot/include/logger.hrl").
--emqx_plugin(?MODULE).
+-include("dgiot_modbus.hrl").
 
 %% Application callbacks
 -export([start/2, stop/1]).
 
-%%====================================================================
-%% API
-%%====================================================================
-
 start(_StartType, _StartArgs) ->
-    {ok, Sup} = dgiot_bridge_sup:start_link(),
-    dgiot_bridge:start(),
-    {ok, Sup}.
+    dgiot_modbus_sup:start_link().
 
-%%--------------------------------------------------------------------
 stop(_State) ->
     ok.
-
-%%====================================================================
-%% Internal functions
-%%====================================================================
-

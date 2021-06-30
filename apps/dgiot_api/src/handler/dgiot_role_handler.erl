@@ -15,7 +15,7 @@
 %%--------------------------------------------------------------------
 
 -module(dgiot_role_handler).
--author("shuwa").
+-author("dgiot").
 -include_lib("dgiot/include/logger.hrl").
 -behavior(dgiot_rest).
 -dgiot_rest(all).

@@ -1,5 +1,5 @@
 %%--------------------------------------------------------------------
-%% Copyright (c) 2020-2021 DGIOT Technologies Co., Ltd. All Rights Reserved.
+%% Copyright (c) 2016-2017 John liu <34489690@qq.com>.
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -14,30 +14,21 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
-
--module(dgiot_bridge_app).
-
+%% @doc dgiot_modbus_tcp Application
+-module(dgiot_modbus_tcp_app).
 -behaviour(application).
--include_lib("dgiot/include/logger.hrl").
 -emqx_plugin(?MODULE).
 
 %% Application callbacks
 -export([start/2, stop/1]).
 
-%%====================================================================
-%% API
-%%====================================================================
-
-start(_StartType, _StartArgs) ->
-    {ok, Sup} = dgiot_bridge_sup:start_link(),
-    dgiot_bridge:start(),
-    {ok, Sup}.
 
 %%--------------------------------------------------------------------
+%% Application callbacks
+%%--------------------------------------------------------------------
+
+start(_StartType, _StartArgs) ->
+   dgiot_modbus_tcp_sup:start_link().
+
 stop(_State) ->
     ok.
-
-%%====================================================================
-%% Internal functions
-%%====================================================================
-
