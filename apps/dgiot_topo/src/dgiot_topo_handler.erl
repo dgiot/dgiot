@@ -133,6 +133,15 @@ do_request(get_devicedict, #{<<"deviceid">> := Deviceid}, #{<<"sessionToken">> :
             {error, []}
     end;
 
+%% 查询设备所拥有权限
+do_request(get_deviceacl, #{<<"deviceid">> := Deviceid}, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
+    case dgiot_parse:get_object(<<"Device">>, Deviceid, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+        {ok, #{<<"ACL">> := ACL}} ->
+            {ok, ACL};
+        _ ->
+            {error, []}
+    end;
+
 
 %%  服务器不支持的API接口
 do_request(_OperationId, _Args, _Context, _Req) ->
