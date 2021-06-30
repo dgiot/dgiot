@@ -26,6 +26,8 @@
 
  构建 *dgiot* 需要 Erlang/OTP R21+, Windows下用[msys64](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_release/dgiot_devtools.zip)开发
 
+![效果图.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/msys64.rar/%E6%95%88%E6%9E%9C%E5%9B%BE.png)
+
  +  国外下载源码
   ```bash
      git clone https://github.com/dgiot/dgiot_dashboard.git
