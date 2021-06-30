@@ -86,7 +86,7 @@
 
 mnesia(boot) ->
     ok = ekka_mnesia:create_table(?MNESIA_TAB, [
-        {type, bag},
+        {type, set},
         {ram_copies, [node()]},
         {record_name, mnesia},
         {attributes, record_info(fields, mnesia)},
