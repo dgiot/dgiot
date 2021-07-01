@@ -18,7 +18,6 @@
 -author("johnliu").
 -include("dgiot_task.hrl").
 -include_lib("dgiot/include/logger.hrl").
-
 -behaviour(gen_server).
 
 %% API
@@ -43,7 +42,11 @@ start_link(#{<<"channel">> := ChannelId, <<"dtuid">> := DtuId} = State) ->
             end;
         _Reason ->
             gen_server:start_link(?MODULE, [State], [])
-    end.
+    end;
+
+start_link(State) ->
+    ?LOG(error, "State ~p", [State]),
+    ok.
 
 stop(#{<<"channel">> := Channel, <<"dtuid">> := DtuId}) ->
     case dgiot_data:lookup(?DGIOT_TASK, {Channel, DtuId}) of
@@ -57,15 +60,11 @@ stop(#{<<"channel">> := Channel, <<"dtuid">> := DtuId}) ->
 %%%===================================================================
 init([#{<<"app">> := App, <<"channel">> := ChannelId, <<"dtuid">> := DtuId, <<"mode">> := Mode, <<"freq">> := Freq, <<"end_time">> := Endtime} = _Args]) ->
     dgiot_data:insert(?DGIOT_TASK, {ChannelId, DtuId}, self()),
-    Round = dgiot_data:get_consumer(<<"taskround/", ChannelId/binary, "/", DtuId/binary>>, 1),
-
+%%    Round = dgiot_data:get_consumer(<<"taskround/", ChannelId/binary, "/", DtuId/binary>>, 1),
     {ProductId, DevAddr} = dgiot_task:get_pnque(DtuId),
-
     DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
-
-%%    ?LOG(info,"dgiot_instruct:get_instruct( ~p , ~p , ~p , ~p", [ProductId, DeviceId, Round, Mode]),
-    Que = dgiot_instruct:get_instruct(ProductId, DeviceId, Round, dgiot_utils:to_atom(Mode)),
-%%    ?LOG(info,"Que ~p", [Que]),
+    Que = dgiot_instruct:get_instruct(ProductId, DeviceId, 1, dgiot_utils:to_atom(Mode)),
+%%    ?LOG(info, "Que ~p", [Que]),
     Tsendtime = dgiot_datetime:localtime_to_unixtime(dgiot_datetime:to_localtime(Endtime)),
     Nowstamp = dgiot_datetime:nowstamp(),
     case length(Que) of
@@ -74,22 +73,19 @@ init([#{<<"app">> := App, <<"channel">> := ChannelId, <<"dtuid">> := DtuId, <<"m
         _ ->
             case Tsendtime > Nowstamp of
                 true ->
-                    erlang:send_after(1000, self(), delay);
+                    erlang:send_after(1000, self(), retry);
                 false ->
                     erlang:send_after(300, self(), stop)
             end
     end,
-
     Topic = <<"thing/", ProductId/binary, "/", DevAddr/binary, "/post">>,
     dgiot_mqtt:subscribe(Topic),
-
     AppData = maps:get(<<"appdata">>, _Args, #{}),
-
     {ok, #task{mode = dgiot_utils:to_atom(Mode), app = App, dtuid = DtuId, product = ProductId, devaddr = DevAddr,
-        tid = ChannelId, firstid = DeviceId, que = Que, round = Round, appdata = AppData, ts = Nowstamp, freq = Freq, endtime = Tsendtime}};
+        tid = ChannelId, firstid = DeviceId, que = Que, round = 1, appdata = AppData, ts = Nowstamp, freq = Freq, endtime = Tsendtime}};
 
 init(A) ->
-    ?LOG(info, "A ~p ", [A]).
+    ?LOG(error, "A ~p ", [A]).
 
 handle_call(stop, _From, State) ->
     erlang:garbage_collect(self()),
@@ -105,16 +101,12 @@ handle_info({'EXIT', _From, Reason}, State) ->
     erlang:garbage_collect(self()),
     {stop, Reason, State};
 
-%% 延迟启动
-handle_info(delay, State) ->
-    erlang:send_after(100, self(), retry),
-    {noreply, State};
-
 handle_info(init, #task{dtuid = DtuId, mode = Mode, round = Round, ts = Oldstamp, freq = Freq, endtime = Tsendtime} = State) ->
     dgiot_datetime:now_secs(),
     {ProductId, DevAddr} = dgiot_task:get_pnque(DtuId),
     DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
-    Que = dgiot_instruct:get_instruct(ProductId, DeviceId, Round, dgiot_utils:to_atom(Mode)),
+    NewRound = Round + 1,
+    Que = dgiot_instruct:get_instruct(ProductId, DeviceId, NewRound, dgiot_utils:to_atom(Mode)),
     Nowstamp = dgiot_datetime:nowstamp(),
     Newfreq = Nowstamp - Oldstamp,
     case length(Que) of
@@ -125,20 +117,15 @@ handle_info(init, #task{dtuid = DtuId, mode = Mode, round = Round, ts = Oldstamp
                 true ->
                     case Newfreq > Freq of
                         true ->
-                            erlang:send_after(1000, self(), delay);
+                            erlang:send_after(1000, self(), retry);
                         false ->
-                            erlang:send_after((Freq - Newfreq) * 1000, self(), delay)
+                            erlang:send_after((Freq - Newfreq) * 1000, self(), retry)
                     end;
                 false ->
                     erlang:send_after(300, self(), stop)
             end
     end,
-    {noreply, State#task{product = ProductId, devaddr = DevAddr, firstid = DeviceId, que = Que, ts = Nowstamp}};
-
-%% 任务结束
-handle_info(retry, #task{que = Que} = State) when length(Que) == 0 ->
-    erlang:garbage_collect(self()),
-    {stop, normal, State};
+    {noreply, State#task{product = ProductId, devaddr = DevAddr, round = NewRound, firstid = DeviceId, que = Que, ts = Nowstamp}};
 
 %% 定时触发抄表指令
 handle_info(retry, State) ->
@@ -166,11 +153,20 @@ terminate(_Reason, _State) ->
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
+send_msg(#task{ref = Ref, que = Que} = State) when length(Que) == 0 ->
+    case Ref of
+        undefined ->
+            pass;
+        _ -> erlang:cancel_timer(Ref)
+    end,
+    get_next_pn(State);
 
 send_msg(#task{tid = Channel, product = Product, devaddr = DevAddr, ref = Ref, que = Que, appdata = AppData} = State) ->
     {InstructOrder, Interval, _, _, _, _, _, _, _} = lists:nth(1, Que),
     {NewCount, Payload, Dis} = lists:foldl(fun(X, {Count, Acc, Acc1}) ->
         case X of
+            {InstructOrder, _, _, _, _, _, error, _, _} ->
+                {Count + 1, Acc, Acc1};
             {InstructOrder, _, Identifier, Pn, Address, Command, Data, Protocol, _} ->
                 Payload1 = #{
                     <<"appdata">> => AppData,
@@ -193,13 +189,15 @@ send_msg(#task{tid = Channel, product = Product, devaddr = DevAddr, ref = Ref, q
     Topic = <<"thing/", Product/binary, "/", DevAddr/binary>>,
     dgiot_bridge:send_log(Channel, "to_dev=> ~ts: ~ts ~s ~p ", [unicode:characters_to_list(Topic), unicode:characters_to_list(Newpayload), ?FILE, ?LINE]),
     dgiot_mqtt:publish(Channel, Topic, Newpayload),
-    NewQue = lists:nthtail(NewCount, Que),
+%%    在超时期限内，回报文，就取消超时定时器
     case Ref of
         undefined ->
             pass;
         _ -> erlang:cancel_timer(Ref)
     end,
-    State#task{que = NewQue, dis = Dis, ref = erlang:send_after(Interval * 1000, self(), retry)}.
+    NewQue = lists:nthtail(NewCount, Que),
+    State#task{que = NewQue, dis = Dis, ref = erlang:send_after((Interval + 5) * 1000, self(), retry)}.
+
 
 get_next_pn(#task{mode = Mode, dtuid = DtuId, firstid = DeviceId, product = ProductId, devaddr = DevAddr, round = Round, ref = Ref} = State) ->
     save_td(State),
@@ -220,7 +218,7 @@ get_next_pn(#task{mode = Mode, dtuid = DtuId, firstid = DeviceId, product = Prod
             DeviceId ->
                 erlang:send_after(1000, self(), init);
             _ ->
-                erlang:send_after(1000, self(), retry)
+                erlang:send_after(2 * 1000, self(), retry)
         end,
     State#task{product = NextProductId, devaddr = NextDevAddr, que = Que, ack = #{}, ref = NewRef}.
 
@@ -229,9 +227,14 @@ save_td(#task{app = _App, tid = Channel, product = ProductId, devaddr = DevAddr,
     case length(maps:to_list(Data)) of
         0 -> pass;
         _ ->
-            Payload = jsx:encode(#{<<"thingdata">> => Data, <<"appdata">> => AppData}),
-            Topic = <<"topo/", ProductId/binary, "/", DevAddr/binary, "/post">>,
-            dgiot_mqtt:publish(ProductId, Topic, Payload),
-            dgiot_tdengine_adapter:save(ProductId, DevAddr, Data),
-            dgiot_bridge:send_log(Channel, "from_dev=> ~ts: ~ts ", [unicode:characters_to_list(Topic), unicode:characters_to_list(jsx:encode(Data))])
+            case lists:member(error, maps:values(Data)) of
+                false ->
+                    Payload = jsx:encode(#{<<"thingdata">> => Data, <<"appdata">> => AppData}),
+                    Topic = <<"topo/", ProductId/binary, "/", DevAddr/binary, "/post">>,
+                    dgiot_mqtt:publish(ProductId, Topic, Payload),
+                    dgiot_tdengine_adapter:save(ProductId, DevAddr, Data),
+                    dgiot_bridge:send_log(Channel, "from_dev=> ~ts: ~ts ", [unicode:characters_to_list(Topic), unicode:characters_to_list(jsx:encode(Data))]);
+                true ->
+                    pass
+            end
     end.

@@ -49,3 +49,4 @@ init_plugins() ->
     dgiot_data:insert({dgiot,sys_app},SysApp).
 
 
+

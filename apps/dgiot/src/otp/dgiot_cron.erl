@@ -20,11 +20,10 @@
 -include_lib("dgiot/include/logger.hrl").
 -export([test/0, childspec/1, childspec/2, do_task/2, change_time/2]).
 -export([start/1, start/2, start_timer/2, start_timer/3, handle_call/3, handle_info/2, get_next_time/3]).
--export([save/2, match_task/2,now/1,push/1]).
-
+-export([save/2, match_task/2, now/1, push/1, init_ets/0]).
+-dgiot_data("ets").
 -include_lib("eunit/include/eunit.hrl").
 start(Sup) ->
-    init_ets(),
     {ok, _} = start(Sup, ?DEFAULT_CRON).
 
 start(Sup, Name) ->
@@ -35,7 +34,7 @@ start_timer(StartTime, Callback) ->
     ID = dgiot_utils:guid(),
     start_timer(ID, StartTime, Callback).
 
-start_timer(ID, {{Y,M,D}, {H,N,S}}, Callback) ->
+start_timer(ID, {{Y, M, D}, {H, N, S}}, Callback) ->
     dgiot_cron:save(?DEFAULT_CRON, #{
         <<"id">> => ID,
         <<"start_time">> => {{Y, M, D}, {H, N, S}},
@@ -56,7 +55,7 @@ init_ets() ->
 
 %% 初始化数据,可以多共用一个
 init(Name) ->
-    shuwa_data:init(Name, [public, named_table, {write_concurrency, true}, {read_concurrency, true}]).
+    dgiot_data:init(Name, [public, named_table, {write_concurrency, true}, {read_concurrency, true}]).
 
 %% 返回任务进程描述，可以挂到sup下面
 childspec(Name) ->
@@ -99,11 +98,11 @@ save(_Name, #{<<"id">> := Id, <<"count">> := 0}) ->
 save(Name, Task) ->
     save(Name, Task, dgiot_datetime:nowstamp()).
 
-save(Name, #{ <<"id">> := Id, <<"start_time">> := {{_Y,M,D},{H,N,S}}} = Task, _) when
-    M == '_'; D == '_'; H == '_'; N == '_'; S =='_' ->
+save(Name, #{<<"id">> := Id, <<"start_time">> := {{_Y, M, D}, {H, N, S}}} = Task, _) when
+    M == '_'; D == '_'; H == '_'; N == '_'; S == '_' ->
     Enable = maps:get(<<"enable">>, Task, true),
     Count = maps:get(<<"count">>, Task, forever),
-    dgiot_data:insert(?CRON_DB, Id, Task#{ <<"name">> => Name, <<"count">> => Count, <<"enable">> => Enable });
+    dgiot_data:insert(?CRON_DB, Id, Task#{<<"name">> => Name, <<"count">> => Count, <<"enable">> => Enable});
 
 save(Name, #{<<"id">> := Id, <<"freq">> := Freq, <<"unit">> := Unit} = Task, Now) ->
     StartTime = maps:get(<<"start_time">>, Task, dgiot_datetime:unixtime_to_localtime(Now)),
@@ -238,7 +237,7 @@ do_task(Name, Now) ->
         fun({ID, Task}) ->
             case catch (run_task(Name, Task#{<<"id">> => ID, <<"run_time">> => Now})) of
                 {'EXIT', Reason} ->
-                    ?LOG(error,"Task execute error, ~p~n", [Reason]);
+                    ?LOG(error, "Task execute error, ~p~n", [Reason]);
                 _ ->
                     ok
             end
@@ -277,7 +276,7 @@ handle_info({change_time, Name, Sec}, #{<<"gettime">> := GetTimeFun} = State) ->
 
 
 change_task_by_time(Name, Sec, GetTimeFun) ->
-    ?LOG(info,"Task[~p], change time ~p~n", [Name, Sec]),
+    ?LOG(info, "Task[~p], change time ~p~n", [Name, Sec]),
     Fun = fun
               ({_ID, #{<<"name">> := NewName, <<"next_time">> := NextTime} = Task}) ->
                   case NextTime > GetTimeFun() of
@@ -300,7 +299,7 @@ test() ->
             fun(I) ->
                 dgiot_cron:save(<<"111111111111">>, #{
                     <<"callback">> => fun(_T) ->
-                        ?LOG(info,"~p ",[I]), ok end,
+                        ?LOG(info, "~p ", [I]), ok end,
                     <<"freq">> => I,
                     <<"unit">> => 5,
                     <<"id">> => I + 10000

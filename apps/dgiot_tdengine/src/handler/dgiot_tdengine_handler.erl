@@ -282,11 +282,6 @@ get_props(ProductId) ->
 get_chart(ProductId, Results, Names, Interval) ->
     Maps = get_prop(ProductId),
     Units = get_unit(ProductId),
-    ?LOG(info, "ProductId ~p", [ProductId]),
-    ?LOG(info, "Maps ~p", [Maps]),
-    ?LOG(info, "Units ~p", [Units]),
-    ?LOG(info, "Names ~p", [Names]),
-    ?LOG(info, "Interval ~p", [Interval]),
     NewMaps = maps:merge(#{<<"ts">> => <<"日期"/utf8>>}, Maps),
     Columns = [<<"日期"/utf8>>] ++ Names,
     Rows =
@@ -371,23 +366,30 @@ get_app(ProductId, Results) ->
                 end, [], Results).
 
 get_time(V, Interval) ->
+    NewV =
+        case binary:split(V, <<$.>>, [global, trim]) of
+            [NewV1, _] ->
+                NewV1;
+            _ ->
+                V
+        end,
     Size = erlang:size(Interval) - 1,
     <<_:Size/binary, Type/binary>> = Interval,
     case Type of
         <<"a">> ->
-            V;
+            NewV;
         <<"s">> ->
-            dgiot_datetime:format(dgiot_datetime:to_localtime(V), <<"DD HH:NN:SS">>);
+            dgiot_datetime:format(dgiot_datetime:to_localtime(NewV), <<"DD HH:NN:SS">>);
         <<"m">> ->
-            dgiot_datetime:format(dgiot_datetime:to_localtime(V), <<"MM-DD HH:NN">>);
+            dgiot_datetime:format(dgiot_datetime:to_localtime(NewV), <<"MM-DD HH:NN">>);
         <<"h">> ->
-            dgiot_datetime:format(dgiot_datetime:to_localtime(V), <<"MM-DD HH">>);
+            dgiot_datetime:format(dgiot_datetime:to_localtime(NewV), <<"MM-DD HH">>);
         <<"d">> ->
-            dgiot_datetime:format(dgiot_datetime:to_localtime(V), <<"YY-MM-DD">>);
+            dgiot_datetime:format(dgiot_datetime:to_localtime(NewV), <<"YY-MM-DD">>);
         <<"y">> ->
-            dgiot_datetime:format(dgiot_datetime:to_localtime(V), <<"YY">>);
+            dgiot_datetime:format(dgiot_datetime:to_localtime(NewV), <<"YY">>);
         _ ->
-            dgiot_datetime:format(dgiot_datetime:to_localtime(V), <<"YY-MM-DD HH:NN:SS">>)
+            dgiot_datetime:format(dgiot_datetime:to_localtime(NewV), <<"YY-MM-DD HH:NN:SS">>)
     end.
 
 do_channel(ProductId, Session, Fun) ->

@@ -27,7 +27,7 @@ start_link(Name) ->
 
 init([]) ->
     Child = [
-        {task_worker, {task_worker, start_link, []}, transient, 5000, worker, [dgiot_task_worker]}],
+        {dgiot_task_worker, {dgiot_task_worker, start_link, []}, transient, 5000, worker, [dgiot_task_worker]}],
     {ok, {{simple_one_for_one, 5, 10}, Child}}.
 
 

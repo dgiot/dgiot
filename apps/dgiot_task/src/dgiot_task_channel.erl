@@ -21,6 +21,9 @@
 -include_lib("dgiot/include/logger.hrl").
 -define(TYPE, <<"INSTRUCT">>).
 -record(state, {id, mod, product, env = #{}}).
+
+-dgiot_data("ets").
+-export([init_ets/0]).
 %% API
 -export([start/2]).
 
@@ -165,16 +168,20 @@
     }
 }).
 
+init_ets() ->
+    dgiot_data:init(?DGIOT_TASK),
+    dgiot_data:init(?DGIOT_PNQUE).
+
 start(ChannelId, ChannelArgs) ->
     dgiot_channelx:add(?TYPE, ChannelId, ?MODULE, ChannelArgs).
 
 %% 通道初始化
 init(?TYPE, ChannelId, Args) ->
-    dgiot_data:init(?DGIOT_TASK),
     #{<<"product">> := Products} = Args,
+    NewArgs = maps:without([<<"product">>], Args),
     State = #state{id = ChannelId, env = #{
         <<"products">> => Products,
-        <<"args">> => maps:without([<<"product">>], Args)}
+        <<"args">> => NewArgs}
     },
     {ok, State, []}.
 
@@ -195,6 +202,7 @@ handle_init(#state{id = ChannelId, env = #{<<"products">> := Products, <<"args">
         dgiot_data:insert({agrs, ProductId}, NewArgs),
         dgiot_task:load(NewArgs)
               end, Products),
+    dgiot_task:timing_start(Args#{<<"channel">> => ChannelId}),
     dgiot_parse:subscribe(<<"Device">>, delete),
     {ok, State}.
 
