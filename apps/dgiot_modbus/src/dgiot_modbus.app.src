@@ -1,5 +1,5 @@
 {application, dgiot_modbus,
-    [{description, "数蛙工业MODBUS"},
+    [{description, "DGIOT MODBUS"},
         {vsn, "1.6.4"},
         {modules, []},
         {registered, [dgiot_modbus_sup]},
