@@ -28,7 +28,8 @@
     string2value/1,
     string2value/3,
     save_pnque/4,
-    get_pnque/1
+    get_pnque/1,
+    del_pnque/1
 ]).
 
 %% 查询指标队列
@@ -39,7 +40,7 @@ load(#{
     <<"product">> := ProductId,
     <<"vcaddr">> := <<"all">>
 } = Args) ->
-%%    ?LOG(info,"Args ~p", [Args]),
+    ?LOG(info, "Args ~p", [Args]),
     Success = fun(Page) ->
         lists:map(fun(X) ->
             #{<<"objectId">> := DtuId, <<"devaddr">> := DtuAddr} = X,
@@ -83,6 +84,7 @@ start(#{
     end,
     Callback =
         fun(X) ->
+            ?LOG(info, "X ~p", [X]),
             #{<<"id">> := Id} = X,
             DeviceId =
                 case binary:split(Id, <<$/>>, [global, trim]) of
@@ -93,10 +95,10 @@ start(#{
                 end,
             case dgiot_task:get_pnque(DeviceId) of
                 not_find ->
-%%                    ?LOG(info,"task ~p",[DtuId]),
+                    ?LOG(info, "task ~p", [DtuId]),
                     {ok, X};
                 _ ->
-%%                    ?LOG(info,"task ~p",[Args]),
+                    ?LOG(info, "task ~p", [Args]),
                     {ok, supervisor:start_child(dgiot_task, [Args])}
             end
         end,
@@ -109,6 +111,7 @@ start(#{
         <<"callback">> => Callback
     },
     dgiot_cron:save(default_task, Task);
+
 
 start(_) ->
     ok.
@@ -254,6 +257,8 @@ string2value(Str, Type, Specs) ->
 save_pnque(DtuProductId, DtuAddr, ProductId, DevAddr) ->
     DtuId = dgiot_parse:get_deviceid(DtuProductId, DtuAddr),
     Topic = <<"thing/", ProductId/binary, "/", DevAddr/binary>>,
+    Args = dgiot_data:get({agrs, DtuProductId}),
+    load(Args),
     dgiot_mqtt:subscribe(Topic),
     case dgiot_data:get(?DGIOT_TASK, DtuId) of
         not_find ->
@@ -274,4 +279,13 @@ get_pnque(DtuId) ->
         _ ->
             not_find
     end.
-
+%% INSERT INTO _b8b630322d._4ad9ab0830 using _b8b630322d._b8b630322d TAGS ('_862607057395777') VALUES  (now,638,67,2.1,0.11,0,27,38,0.3,0.0,0.0,11.4,0);
+del_pnque(DtuId) ->
+    case dgiot_data:get(?DGIOT_TASK, DtuId) of
+        not_find ->
+            pass;
+        PnQue when length(PnQue) > 0 ->
+            dgiot_data:delete(?DGIOT_TASK, DtuId);
+        _ ->
+            pass
+    end.

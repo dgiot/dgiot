@@ -128,12 +128,11 @@ do_request(get_device_deviceid, #{<<"deviceid">> := DeviceId} = Args, #{<<"sessi
             end
     end;
 
-%% TDengine 概要: 获取当前产品下的所有设备数据图表 描述:获取当前产品下的所有设备数据图表
+%% TDengine 概要: 获取设备数据图表 描述:获取设备数据图表
 do_request(get_echart_deviceid, #{<<"deviceid">> := DeviceId} = Args, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
     case dgiot_tdengine:get_channel(SessionToken) of
         {error, Error} -> {error, Error};
         {ok, Channel} ->
-%%            ?LOG(info,"DeviceId ~p", [DeviceId]),
             case dgiot_parse:get_object(<<"Device">>, DeviceId) of
                 {ok, #{<<"objectId">> := DeviceId, <<"product">> := #{<<"objectId">> := ProductId}}} ->
                     get_chartdata(Channel, ProductId, DeviceId, Args);
@@ -283,6 +282,11 @@ get_props(ProductId) ->
 get_chart(ProductId, Results, Names, Interval) ->
     Maps = get_prop(ProductId),
     Units = get_unit(ProductId),
+    ?LOG(info, "ProductId ~p", [ProductId]),
+    ?LOG(info, "Maps ~p", [Maps]),
+    ?LOG(info, "Units ~p", [Units]),
+    ?LOG(info, "Names ~p", [Names]),
+    ?LOG(info, "Interval ~p", [Interval]),
     NewMaps = maps:merge(#{<<"ts">> => <<"日期"/utf8>>}, Maps),
     Columns = [<<"日期"/utf8>>] ++ Names,
     Rows =
@@ -304,6 +308,7 @@ get_chart(ProductId, Results, Names, Interval) ->
                           end, #{}, Line),
             Lines ++ [NewLine]
                     end, [], Results),
+    ?LOG(info, "Rows ~p", [Rows]),
     ChildRows = lists:foldl(fun(X, Acc1) ->
         Date = maps:get(<<"日期"/utf8>>, X),
         maps:fold(fun(K1, V1, Acc) ->
@@ -315,6 +320,7 @@ get_chart(ProductId, Results, Names, Interval) ->
             end
                   end, Acc1, maps:without([<<"日期"/utf8>>], X))
                             end, #{}, Rows),
+    ?LOG(info, "ChildRows ~p", [ChildRows]),
     Child =
         maps:fold(fun(K, V, Acc) ->
             Unit =
@@ -324,6 +330,7 @@ get_chart(ProductId, Results, Names, Interval) ->
                 end,
             Acc ++ [#{<<"columns">> => [<<"日期"/utf8>>, K], <<"rows">> => V, <<"unit">> => Unit}]
                   end, [], ChildRows),
+    ?LOG(info, "Child ~p", [Child]),
     #{<<"columns">> => Columns, <<"rows">> => Rows, <<"child">> => Child}.
 
 get_app(ProductId, Results) ->

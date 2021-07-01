@@ -27,7 +27,6 @@ rebar3.crashdump
 .DS_Store
 etc/gen.emqx.conf
 compile_commands.json
-cuttlefish
 xrefr
 *.coverdata
 etc/emqx.conf.rendered

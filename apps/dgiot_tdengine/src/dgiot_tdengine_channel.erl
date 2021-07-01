@@ -536,6 +536,7 @@ transaction(Channel, Fun) ->
 
 %% Action 用来区分数据库操作语句类型(DQL、DML、DDL、DCL)
 run_sql(#{<<"driver">> := <<"HTTP">>, <<"url">> := Url, <<"username">> := UserName, <<"password">> := Password} = Context, _Action, Sql) ->
+    ?LOG(info, " ~p, ~p, ~p, ~p", [Url, UserName, Password, Sql]),
     case dgiot_tdrestful:request(Url, UserName, Password, Sql) of
         {ok, Result} ->
             case maps:get(<<"channel">>, Context, <<"">>) of

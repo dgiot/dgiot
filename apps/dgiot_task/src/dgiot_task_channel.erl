@@ -188,26 +188,39 @@ handle_init(#state{id = ChannelId, env = #{<<"products">> := Products, <<"args">
                     end,
         [<<"role:", App/binary>> | _] = lists:filter(Predicate, maps:keys(Acl)),
         dgiot_data:set_consumer(<<"taskdelay/", ChannelId/binary>>, 100),
-        dgiot_task:load(Args#{
+        NewArgs = Args#{
             <<"app">> => App,
             <<"product">> => ProductId,
-            <<"channel">> => ChannelId})
+            <<"channel">> => ChannelId},
+        dgiot_data:insert({agrs, ProductId}, NewArgs),
+        dgiot_task:load(NewArgs)
               end, Products),
+    dgiot_parse:subscribe(<<"Device">>, delete),
     {ok, State}.
 
 %% 通道消息处理,注意：进程池调用
 handle_event(_EventId, Event, State) ->
-    ?LOG(info,"channel ~p", [Event]),
+    ?LOG(info, "channel ~p", [Event]),
     {ok, State}.
 
+handle_message({sync_parse, Args}, State) ->
+    case jsx:decode(Args, [return_maps]) of
+        #{<<"objectId">> := DtuId} ->
+%%            从队列删除该设备
+            dgiot_task:del_pnque(DtuId);
+        _ ->
+            pass
+    end,
+    {ok, State};
+
 handle_message(_Message, State) ->
-    ?LOG(info,"_Message ~p", [_Message]),
+    ?LOG(info, "_Message ~p", [_Message]),
     {ok, State}.
 
 stop(ChannelType, ChannelId, #state{env = #{<<"product">> := ProductId, <<"args">> := Args}} = _State) ->
     spawn(fun() ->
         dgiot_task:stop(Args#{<<"product">> => ProductId, <<"channel">> => ChannelId})
           end),
-    ?LOG(warning,"channel stop ~p,~p", [ChannelType, ChannelId]),
+    ?LOG(warning, "channel stop ~p,~p", [ChannelType, ChannelId]),
     ok.
 

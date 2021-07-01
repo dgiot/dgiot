@@ -42,7 +42,6 @@ start_link(#{<<"channel">> := ChannelId, <<"dtuid">> := DtuId} = State) ->
                     gen_server:start_link(?MODULE, [State], [])
             end;
         _Reason ->
-
             gen_server:start_link(?MODULE, [State], [])
     end.
 

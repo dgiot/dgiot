@@ -24,6 +24,7 @@
 
 -include_lib("eunit/include/eunit.hrl").
 start(Sup) ->
+    init_ets(),
     {ok, _} = start(Sup, ?DEFAULT_CRON).
 
 start(Sup, Name) ->
@@ -50,6 +51,12 @@ start_timer(ID, Secs, Callback) when is_integer(Secs) ->
         <<"callback">> => Callback
     }).
 
+init_ets() ->
+    init(?CRON_DB).
+
+%% 初始化数据,可以多共用一个
+init(Name) ->
+    shuwa_data:init(Name, [public, named_table, {write_concurrency, true}, {read_concurrency, true}]).
 
 %% 返回任务进程描述，可以挂到sup下面
 childspec(Name) ->
