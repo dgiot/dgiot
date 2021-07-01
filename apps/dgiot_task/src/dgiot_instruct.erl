@@ -199,7 +199,7 @@ get_instruct(ProductId, Round) ->
                         Data = maps:get(<<"data">>, DataForm, <<"null">>),
                         Control = maps:get(<<"control">>, DataForm, "%d"),
                         NewData = dgiot_task:get_control(Round, Data, Control),
-                        Strategy = dgiot_utils:to_int(maps:get(<<"strategy">>, DataForm, "20")),
+                        Strategy = dgiot_utils:to_int(maps:get(<<"strategy">>, DataForm, "2")),
                         Pn = maps:get(<<"slaveid">>, DataForm, Address),
                         BinRound = dgiot_utils:to_binary(Round),
                         case ThingRound of
@@ -224,7 +224,6 @@ get_instruct(ProductId, Round) ->
         _ ->
             []
     end.
-
 
 get_que(_ProductId, DeviceId, Round) ->
     case dgiot_data:get({instuct, DeviceId}) of

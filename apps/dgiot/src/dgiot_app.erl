@@ -25,6 +25,7 @@
 
 start(_StartType, _StartArgs) ->
     dgiot_data:init(),
+    dgiot_data:search_data(),
     start_mnesia(),
     dgiot:init_plugins(),
     {ok, Sup} = dgiot_sup:start_link(),
@@ -67,4 +68,4 @@ start_plugin(Sup) ->
             true -> Mod:start(Sup);
             false -> pass
         end
-              end, lists:ukeysort(1,NewAcc)).
+              end, lists:ukeysort(1, NewAcc)).
