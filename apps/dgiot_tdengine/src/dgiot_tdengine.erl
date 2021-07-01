@@ -342,7 +342,7 @@ get_chartdata(Channel, TableName, Query) ->
             DB = format_db(?Database(Database)),
             Tail = <<" where createdat >= ", Starttime/binary, " AND createdat <= ", Endtime/binary, " INTERVAL(", Interval/binary, ") ", Limit/binary, ";">>,
             Sql = <<"SELECT ", Newkeys/binary, " FROM ", DB/binary, TableName/binary, Tail/binary>>,
-%%            ?LOG(info,"Sql ~p", [Sql]),
+            ?LOG(error,"Sql ~p", [Sql]),
             {Names, run_sql(Context#{<<"channel">> => Channel}, execute_query, Sql)}
         end).
 

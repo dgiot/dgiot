@@ -22,7 +22,6 @@
 
 -export([
     init/1,
-    login/1,
     parse_frame/3,
     to_frame/1,
     build_req_message/1]
@@ -32,16 +31,16 @@
 
 init(State) ->
     State#{<<"req">> => [], <<"ts">> => dgiot_datetime:now_ms(), <<"interval">> => 300}.
-
-login(#{<<"devaddr">> := DTUAddr, <<"product">> := ProductId, <<"ip">> := Ip,
-    <<"channelId">> := ChannelId} = State) ->
-    Topic = <<ProductId/binary, "/", ChannelId/binary, "/", DTUAddr/binary>>,
-    dgiot_mqtt:subscribe(Topic),
-    dgiot_device:register(ProductId, DTUAddr, ChannelId, #{<<"ip">> => Ip}),
-    {ok, State};
-
-login(State) ->
-    {ok, State}.
+%%
+%%login(#{<<"devaddr">> := DTUAddr, <<"product">> := ProductId, <<"ip">> := Ip,
+%%    <<"channelId">> := ChannelId} = State) ->
+%%    Topic = <<ProductId/binary, "/", ChannelId/binary, "/", DTUAddr/binary>>,
+%%    dgiot_mqtt:subscribe(Topic),
+%%    dgiot_device:register(ProductId, DTUAddr, ChannelId, #{<<"ip">> => Ip}),
+%%    {ok, State};
+%%
+%%login(State) ->
+%%    {ok, State}.
 
 to_frame(#{
     <<"value">> := Data,
@@ -61,7 +60,7 @@ to_frame(#{
     <<"addr">> := SlaveId,
     <<"di">> := Address
 }) ->
-    case dgiot_device:lookup_hub(DtuAddr, SlaveId) of
+    case dgiot_device:lookup(DtuAddr, SlaveId) of
         {error, not_find} -> [];
         [ProductId, _DevAddr] ->
             encode_data(Value, Address, SlaveId, ProductId)
@@ -121,7 +120,7 @@ parse_frame(<<MbAddr:8, BadCode:8, ErrorCode:8, Crc:2/binary>> = Buff, Acc,
                         ?GATEWAY_TARGET_DEVICE_FAILED_TO_RESPOND -> {error, gateway_target_device_failed_to_respond};
                         _ -> {error, unknown_response_code}
                     end,
-            ?LOG(info,"DtuAddr ~p Modbus ~p, BadCode ~p, Error ~p", [DtuAddr, MbAddr, BadCode, Error]),
+            ?LOG(info, "DtuAddr ~p Modbus ~p, BadCode ~p, Error ~p", [DtuAddr, MbAddr, BadCode, Error]),
             {<<>>, Acc};
         false ->
             parse_frame(Buff, Acc, State)
@@ -138,7 +137,7 @@ parse_frame(<<SlaveId:8, _/binary>> = Buff, Acc, #{<<"dtuproduct">> := ProductId
 
 %% 传感器独立建产品，做为子设备挂载到dtu上面
 parse_frame(<<SlaveId:8, _/binary>> = Buff, Acc, #{<<"dtuaddr">> := DtuAddr, <<"slaveId">> := SlaveId, <<"address">> := Address} = State) ->
-    case dgiot_device:lookup_hub(DtuAddr, dgiot_utils:to_binary(SlaveId)) of
+    case dgiot_device:lookup(DtuAddr, dgiot_utils:to_binary(SlaveId)) of
         {error, _} ->
             [<<>>, Acc];
         [ProductId, _DevAddr] ->
@@ -386,7 +385,7 @@ modbus_encoder(ProductId, SlaveId, Address, Value) ->
                 end
                         end, [], Props);
         Error ->
-            ?LOG(info,"~p", [Error]),
+            ?LOG(info, "~p", [Error]),
             []
     end.
 
@@ -652,5 +651,5 @@ format_value(Buff, #{<<"dataForm">> := #{
 
 %% @todo 其它类型处理
 format_value(_, #{<<"identifier">> := Field}) ->
-    ?LOG(info,"Field ~p", [Field]),
+    ?LOG(info, "Field ~p", [Field]),
     throw({field_error, <<Field/binary, " is not validate">>}).
