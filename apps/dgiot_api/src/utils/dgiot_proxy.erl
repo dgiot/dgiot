@@ -229,15 +229,15 @@ post_hook(Resp, _State) ->
     Resp.
 
 get_wlanip() ->
-    case shuwa_data:get(wlanip) of
+    case dgiot_data:get(wlanip) of
         not_find ->
             inets:start(),
             Ip1 =
                 case httpc:request(get, {"http://whatismyip.akamai.com/", []}, [], []) of
-                    {ok, {_, _, IP}} -> shuwa_utils:to_binary(IP);
+                    {ok, {_, _, IP}} -> dgiot_utils:to_binary(IP);
                     _ -> <<"127.0.0.1">>
                 end,
-            shuwa_data:insert(wlanip, Ip1);
+            dgiot_data:insert(wlanip, Ip1);
         Ip ->
             Ip
     end.
