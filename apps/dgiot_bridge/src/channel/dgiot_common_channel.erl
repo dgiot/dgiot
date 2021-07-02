@@ -36,7 +36,22 @@
     }
 }).
 %% 注册通道参数
--params(#{}).
+-params(#{
+    <<"ico">> => #{
+        order => 102,
+        type => string,
+        required => false,
+        default => <<"http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/product/dgiot/channel/%E9%80%9A%E7%94%A8%E9%80%9A%E9%81%93%E5%9B%BE%E6%A0%87.png">>,
+        title => #{
+            en => <<"channel ICO">>,
+            zh => <<"通道ICO"/utf8>>
+        },
+        description => #{
+            en => <<"channel ICO">>,
+            zh => <<"通道ICO"/utf8>>
+        }
+    }
+}).
 
 
 start(ChannelId, ChannelArgs) ->
