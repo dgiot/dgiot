@@ -18,7 +18,7 @@
 -define(TYPE, <<"DGIOTOPC">>).
 -author("johnliu").
 -include_lib("dgiot/include/logger.hrl").
--record(state, {id, step , env = #{}}).
+-record(state, {id, step, env = #{}}).
 
 %% API
 -export([start/2]).
@@ -75,7 +75,7 @@
             en => <<"channel ICO">>,
             zh => <<"通道ICO"/utf8>>
         }
-}
+    }
 }).
 
 start(ChannelId, ChannelArgs) ->
@@ -106,11 +106,11 @@ handle_init(State) ->
 
 %% 通道消息处理,注意：进程池调用
 handle_event(EventId, Event, _State) ->
-    ?LOG(info,"channel ~p, ~p", [EventId, Event]),
+    ?LOG(info, "channel ~p, ~p", [EventId, Event]),
     ok.
 
 handle_message({sync_parse, Args}, State) ->
-    ?LOG(info,"sync_parse ~p", [Args]),
+    ?LOG(info, "sync_parse ~p", [Args]),
     {ok, State};
 
 handle_message(scan_opc, #state{env = Env} = State) ->
@@ -120,16 +120,16 @@ handle_message(scan_opc, #state{env = Env} = State) ->
 %% {"cmdtype":"read",  "opcserver": "ControlEase.OPC.2",   "group":"小闭式",  "items": "INSPEC.小闭式台位计测.U_OPC,INSPEC.小闭式台位计测.P_OPC,
 %%    INSPEC.小闭式台位计测.I_OPC,INSPEC.小闭式台位计测.DJZS_OPC,INSPEC.小闭式台位计测.SWD_OPC,
 %%    INSPEC.小闭式台位计测.DCLL_OPC,INSPEC.小闭式台位计测.JKYL_OPC,INSPEC.小闭式台位计测.CKYL_OPC","noitemid":"000"}
-handle_message(read_opc, #state{id = ChannelId, step = read_cycle ,env = #{<<"OPCSEVER">> := OpcServer, <<"productid">> := ProductId,<<"devaddr">> := DevAddr}} = State) ->
+handle_message(read_opc, #state{id = ChannelId, step = read_cycle, env = #{<<"OPCSEVER">> := OpcServer, <<"productid">> := ProductId, <<"devaddr">> := DevAddr}} = State) ->
     case dgiot_device:lookup_prod(ProductId) of
         {ok, #{<<"thing">> := #{<<"properties">> := Properties}}} ->
             Item = [maps:get(<<"dataForm">>, H) || H <- Properties],
-            Item2 =[maps:get(<<"address">>, H) || H <- Item],
+            Item2 = [maps:get(<<"address">>, H) || H <- Item],
             Identifier_item = [binary:bin_to_list(H) || H <- Item2],
             Instruct = [X ++ "," || X <- Identifier_item],
             Instruct1 = lists:droplast(lists:concat(Instruct)),
             Instruct2 = erlang:list_to_binary(Instruct1),
-            dgiot_opc:read_opc(ChannelId, OpcServer, DevAddr,Instruct2);
+            dgiot_opc:read_opc(ChannelId, OpcServer, DevAddr, Instruct2);
         _ ->
             pass
     end,
@@ -138,17 +138,17 @@ handle_message(read_opc, #state{id = ChannelId, step = read_cycle ,env = #{<<"OP
 %%{"status":0,"小闭式":{"INSPEC.小闭式台位计测.U_OPC":380,"INSPEC.小闭式台位计测.P_OPC":30}}
 handle_message({deliver, _Topic, Msg}, #state{id = ChannelId, step = scan, env = Env} = State) ->
     Payload = dgiot_mqtt:get_payload(Msg),
-    #{<<"OPCSEVER">> := OpcServer,<<"OPCGROUP">> := Group } = Env,
+    #{<<"OPCSEVER">> := OpcServer, <<"OPCGROUP">> := Group} = Env,
     dgiot_bridge:send_log(ChannelId, "from opc scan: ~p  ", [Payload]),
     case jsx:is_json(Payload) of
         false ->
             {ok, State};
         true ->
-            dgiot_opc:scan_opc_ack(Payload,OpcServer, Group),
+            dgiot_opc:scan_opc_ack(Payload, OpcServer, Group),
             {ok, State#state{step = pre_read}}
     end;
 
-handle_message({deliver, _Topic, Msg}, #state{ step = pre_read, env = Env} = State) ->
+handle_message({deliver, _Topic, Msg}, #state{step = pre_read, env = Env} = State) ->
     Payload = dgiot_mqtt:get_payload(Msg),
     #{<<"productid">> := ProductId} = Env,
     case jsx:is_json(Payload) of
@@ -158,8 +158,8 @@ handle_message({deliver, _Topic, Msg}, #state{ step = pre_read, env = Env} = Sta
             case jsx:decode(Payload, [return_maps]) of
                 #{<<"status">> := 0} = Map0 ->
                     [Map1 | _] = maps:values(maps:without([<<"status">>], Map0)),
-                    case maps:find(<<"status">>,Map1) of
-                        {ok,_} ->
+                    case maps:find(<<"status">>, Map1) of
+                        {ok, _} ->
                             [Map2 | _] = maps:values(maps:without([<<"status">>], Map1));
                         error ->
                             Map2 = Map1
@@ -167,25 +167,25 @@ handle_message({deliver, _Topic, Msg}, #state{ step = pre_read, env = Env} = Sta
                     end,
                     Data = maps:fold(fun(K, V, Acc) ->
                         case binary:split(K, <<$.>>, [global, trim]) of
-                            [_, _, Key1,Key2] ->
-                                Key3 =erlang:list_to_binary(binary:bin_to_list(Key1) ++ binary:bin_to_list(Key2)),
-                                Acc#{Key3 => V,Key1 =>Key1 };
-                            [_,_,_] ->
+                            [_, _, Key1, Key2] ->
+                                Key3 = erlang:list_to_binary(binary:bin_to_list(Key1) ++ binary:bin_to_list(Key2)),
+                                Acc#{Key3 => V, Key1 => Key1};
+                            [_, _, _] ->
                                 Acc#{K => K};
                             _ -> Acc
                         end
-                                      end, #{}, Map2),
+                                     end, #{}, Map2),
                     List_Data = maps:to_list(Data),
                     Need_update_list = dgiot_opc:create_changelist(List_Data),
                     Final_Properties = dgiot_opc:create_final_Properties(Need_update_list),
-                    Topo_para=lists:zip(Need_update_list,dgiot_opc:create_x_y(erlang:length(Need_update_list))),
+                    Topo_para = lists:zip(Need_update_list, dgiot_opc:create_x_y(erlang:length(Need_update_list))),
                     New_config = dgiot_opc:create_config(dgiot_opc:change_config(Topo_para)),
                     dgiot_product:load(ProductId),
                     case dgiot_device:lookup_prod(ProductId) of
                         {ok, #{<<"thing">> := #{<<"properties">> := Properties}}} ->
-                            case erlang:length(Properties)  of
+                            case erlang:length(Properties) of
                                 0 ->
-                                    dgiot_parse:update_object(<<"Product">>, ProductId, #{<<"config">> =>  New_config}),
+                                    dgiot_parse:update_object(<<"Product">>, ProductId, #{<<"config">> => New_config}),
                                     dgiot_parse:update_object(<<"Product">>, ProductId, #{<<"thing">> => #{<<"properties">> => Final_Properties}});
                                 _ ->
                                     pass
@@ -212,11 +212,11 @@ handle_message({deliver, _Topic, Msg}, #state{id = ChannelId, step = read, env =
     {ok, State#state{step = read_cycle}};
 
 handle_message(Message, State) ->
-    ?LOG(info,"channel ~p", [Message]),
+    ?LOG(info, "channel ~p", [Message]),
     {ok, State}.
 
 stop(ChannelType, ChannelId, _State) ->
-    ?LOG(info,"channel stop ~p,~p", [ChannelType, ChannelId]),
+    ?LOG(info, "channel stop ~p,~p", [ChannelType, ChannelId]),
     ok.
 
 get_product(ChannelId) ->

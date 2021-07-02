@@ -45,7 +45,7 @@ scan_opc(#{<<"OPCSEVER">> := OpcServer}) ->
     },
     dgiot_mqtt:publish(<<"opcserver">>, <<"dgiot_opc_da">>, jsx:encode(Payload)).
 
-read_opc(ChannelId, OpcServer, DevAddr,Instruct) ->
+read_opc(ChannelId, OpcServer, DevAddr, Instruct) ->
     Payload = #{
         <<"cmdtype">> => <<"read">>,
         <<"opcserver">> => OpcServer,
@@ -55,7 +55,7 @@ read_opc(ChannelId, OpcServer, DevAddr,Instruct) ->
     dgiot_bridge:send_log(ChannelId, "to_opc: ~p: ~p  ~ts ", [OpcServer, DevAddr, unicode:characters_to_list(Instruct)]),
     dgiot_mqtt:publish(<<"opcserver">>, <<"dgiot_opc_da">>, jsx:encode(Payload)).
 
-scan_opc_ack(Payload,OpcServer,DevAddr) ->            %%---------- 用以创建组态、物模型。
+scan_opc_ack(Payload, OpcServer, DevAddr) ->            %%---------- 用以创建组态、物模型。
     Map = jsx:decode(Payload, [return_maps]),
     Instruct = maps:fold(fun(K, V, Acc) ->
         IsSystem = lists:any(fun(E) ->
@@ -69,17 +69,17 @@ scan_opc_ack(Payload,OpcServer,DevAddr) ->            %%---------- 用以创建�
                     case X of
                         #{<<"ItemId">> := ItemId} ->
                             case binary:split(ItemId, <<$.>>, [global, trim]) of
-                                [_Project,_Device,Id] ->
+                                [_Project, _Device, Id] ->
                                     case binary:split(Id, <<$_>>, [global, trim]) of
                                         [Id] ->
-                                            get_instruct(Acc1,ItemId);
+                                            get_instruct(Acc1, ItemId);
                                         _ ->
                                             Acc1
                                     end;
-                                [_Project,_Device,_Id, Type] ->
-                                    case lists:member(Type, [ <<"_Description">>, <<"_RawDataType">>]) of
+                                [_Project, _Device, _Id, Type] ->
+                                    case lists:member(Type, [<<"_Description">>, <<"_RawDataType">>]) of
                                         true ->
-                                            get_instruct(Acc1,ItemId);
+                                            get_instruct(Acc1, ItemId);
                                         false ->
                                             Acc1
                                     end;
@@ -103,12 +103,12 @@ scan_opc_ack(Payload,OpcServer,DevAddr) ->            %%---------- 用以创建�
 
 
 
-get_instruct(Acc1,ItemId) ->
+get_instruct(Acc1, ItemId) ->
     case Acc1 of
         <<"">> ->
             ItemId;
         _ ->
-            <<Acc1/binary,",",ItemId/binary>>
+            <<Acc1/binary, ",", ItemId/binary>>
     end.
 
 read_opc_ack(Payload, ProductId, DeviceId, Devaddr) ->
@@ -128,56 +128,56 @@ read_opc_ack(Payload, ProductId, DeviceId, Devaddr) ->
             Data = maps:fold(fun(K, V, Acc) ->
                 case binary:split(K, <<$.>>, [global, trim]) of
                     [_, _, K1] ->
-                        Name=
+                        Name =
                             case dgiot_device:lookup_prod(ProductId) of
                                 {ok, #{<<"thing">> := #{<<"properties">> := Properties}}}
-->
-ALL_list= [{maps:get(<<"identifier">>, H),maps:get(<<"name">>, H)} || H <- Properties],
-proplists:get_value(K1,ALL_list);
-_ ->
-<<" ">> end,
+                                    ->
+                                    ALL_list = [{maps:get(<<"identifier">>, H), maps:get(<<"name">>, H)} || H <- Properties],
+                                    proplists:get_value(K1, ALL_list);
+                                _ ->
+                                    <<" ">> end,
 
-Unit=
-case dgiot_device:lookup_prod(ProductId) of
-{ok, #{<<"thing">> := #{<<"properties">> := Properties1}}}
-->
-ALL_list1= [{maps:get(<<"identifier">>, H),maps:get(<<"dataType">>, H)} || H <- Properties1],
-Map_datatype=proplists:get_value(K1,ALL_list1),
-Specs=maps:get(<<"specs">>,Map_datatype),
-maps:get(<<"unit">>,Specs);
-_ ->
-<<" ">> end,
+                        Unit =
+                            case dgiot_device:lookup_prod(ProductId) of
+                                {ok, #{<<"thing">> := #{<<"properties">> := Properties1}}}
+                                    ->
+                                    ALL_list1 = [{maps:get(<<"identifier">>, H), maps:get(<<"dataType">>, H)} || H <- Properties1],
+                                    Map_datatype = proplists:get_value(K1, ALL_list1),
+                                    Specs = maps:get(<<"specs">>, Map_datatype),
+                                    maps:get(<<"unit">>, Specs);
+                                _ ->
+                                    <<" ">> end,
 
-V1 = binary:bin_to_list(Name),
-V2 = dgiot_utils:to_list(V),
-V1_unit =dgiot_utils:to_list(Unit),
-V3 = V1 ++ ": " ++ V2 ++ " " ++ V1_unit ,
-Acc#{K => V3};
-_ -> Acc
-end
-end, #{}, Map2),
-Data2 = maps:fold(fun(K, V, Acc) ->
-case binary:split(K, <<$.>>, [global, trim]) of
-[_, _, K1] ->
-Acc#{K1 => V};
-_ -> Acc
-end
-end, #{}, Map2),
-dgiot_topo:push(ProductId, Devaddr, DeviceId, Data),
+                        V1 = binary:bin_to_list(Name),
+                        V2 = dgiot_utils:to_list(V),
+                        V1_unit = dgiot_utils:to_list(Unit),
+                        V3 = V1 ++ ": " ++ V2 ++ " " ++ V1_unit,
+                        Acc#{K => V3};
+                    _ -> Acc
+                end
+                             end, #{}, Map2),
+            Data2 = maps:fold(fun(K, V, Acc) ->
+                case binary:split(K, <<$.>>, [global, trim]) of
+                    [_, _, K1] ->
+                        Acc#{K1 => V};
+                    _ -> Acc
+                end
+                              end, #{}, Map2),
+            dgiot_topo:push(ProductId, Devaddr, DeviceId, Data),
 %%  -------------------------------- 设备上线状态修改
-case dgiot_data:get({dev, status, DeviceId}) of
-not_find ->
-dgiot_data:insert({dev, status, DeviceId}, self()),
-dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"status">> => <<"ONLINE">>});
-_ -> pass
+            case dgiot_data:get({dev, status, DeviceId}) of
+                not_find ->
+                    dgiot_data:insert({dev, status, DeviceId}, self()),
+                    dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"status">> => <<"ONLINE">>});
+                _ -> pass
 
-end,
+            end,
 %% --------------------------------  数据存TD库
-dgiot_tdengine_adapter:save(ProductId, Devaddr, Data2);
+            dgiot_tdengine_adapter:save(ProductId, Devaddr, Data2);
 
-_ ->
-pass
-end.
+        _ ->
+            pass
+    end.
 
 process_opc(ChannelId, Payload) ->
     [DevAddr | _] = maps:keys(Payload),
@@ -194,8 +194,8 @@ process_opc(ChannelId, Payload) ->
 
 
 %%scan后创建物模型
-create_Properties({Item,RawDataType,Description,Scan_instruct}) ->
-    DataType=
+create_Properties({Item, RawDataType, Description, Scan_instruct}) ->
+    DataType =
         case RawDataType of
             <<"Boolean">> ->
                 <<"bool">>;
@@ -249,12 +249,6 @@ create_Properties({Item,RawDataType,Description,Scan_instruct}) ->
 create_final_Properties(List) -> [create_Properties(X) || X <- List].
 
 
-
-
-
-
-
-
 %%%创建组态config
 create_config(List) ->
     #{<<"konva">> =>
@@ -283,7 +277,7 @@ create_config(List) ->
 
 
 
-create_lable({{_, _,Description,Scan_Instruct}, {X, Y}}) ->
+create_lable({{_, _, Description, Scan_Instruct}, {X, Y}}) ->
     #{<<"attrs">> =>
     #{
         <<"draggable">> => true,
@@ -291,7 +285,7 @@ create_lable({{_, _,Description,Scan_Instruct}, {X, Y}}) ->
         <<"fontFamily">> => <<"Calibri">>,
         <<"fontSize">> => 20,
         <<"id">> => Scan_Instruct,
-        <<"text">> =>Description , %% 太阳能板电压
+        <<"text">> => Description, %% 太阳能板电压
         <<"type">> => <<"text">>,
         <<"x">> => X,
         <<"y">> => Y},
@@ -309,15 +303,15 @@ create_x_y(0) -> [].
 
 
 create_changelist(List_Data) ->
-    Item = [{K,V}||{K,V} <- List_Data,jud1(K)],
-    RawDataType = [{K,V}||{K,V} <- List_Data,jud2(K)],
-    Description = [{K,V}||{K,V} <- List_Data,jud3(K)],
-    Scan_instruct = [{K,V}||{K,V} <- List_Data,jud4(K)],
+    Item = [{K, V} || {K, V} <- List_Data, jud1(K)],
+    RawDataType = [{K, V} || {K, V} <- List_Data, jud2(K)],
+    Description = [{K, V} || {K, V} <- List_Data, jud3(K)],
+    Scan_instruct = [{K, V} || {K, V} <- List_Data, jud4(K)],
 %%    ?LOG(info,"Scan_instruct:~p",[RawDataType]),
-    [{Item1,RawDataType1,Description1,Scan_instruct1}||{K1,Item1} <- Item,{K2,RawDataType1} <- RawDataType,{K3,Description1} <- Description,{K4,Scan_instruct1} <- Scan_instruct,jud(K1,K2,K3,K4)].
+    [{Item1, RawDataType1, Description1, Scan_instruct1} || {K1, Item1} <- Item, {K2, RawDataType1} <- RawDataType, {K3, Description1} <- Description, {K4, Scan_instruct1} <- Scan_instruct, jud(K1, K2, K3, K4)].
 
 jud1(X) ->
-    case binary:split(X, <<$_>>, [global, trim])  of
+    case binary:split(X, <<$_>>, [global, trim]) of
         [X] ->
             true;
         _ ->
@@ -325,33 +319,33 @@ jud1(X) ->
     end.
 
 jud2(X) ->
-    case binary:split(X, <<$_>>, [global, trim])  of
-        [_,<<"RawDataType">>] ->
+    case binary:split(X, <<$_>>, [global, trim]) of
+        [_, <<"RawDataType">>] ->
             true;
         _ ->
             false
     end.
 
 jud3(X) ->
-    case binary:split(X, <<$_>>, [global, trim])  of
-        [_,<<"Description">>] ->
+    case binary:split(X, <<$_>>, [global, trim]) of
+        [_, <<"Description">>] ->
             true;
         _ ->
             false
     end.
 
 jud4(X) ->
-    case binary:split(X, <<$.>>, [global, trim])  of
-        [_,_,_] ->
+    case binary:split(X, <<$.>>, [global, trim]) of
+        [_, _, _] ->
             true;
         _ ->
             false
     end.
 
-jud(K1,K2,K3,K4) ->
-    [Key2,_]= binary:split(K2, <<$_>>, [global, trim]),
-    [Key3,_]= binary:split(K3, <<$_>>, [global, trim]),
-    [_,_,Key4]= binary:split(K4, <<$.>>, [global, trim]),
+jud(K1, K2, K3, K4) ->
+    [Key2, _] = binary:split(K2, <<$_>>, [global, trim]),
+    [Key3, _] = binary:split(K3, <<$_>>, [global, trim]),
+    [_, _, Key4] = binary:split(K4, <<$.>>, [global, trim]),
 %%    ?LOG(info,"------------Key:~p",[Key4]),
     case Key2 == Key3 of
         true ->

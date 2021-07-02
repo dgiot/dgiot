@@ -19,11 +19,10 @@
 -include("dgiot_parse.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -behavior(dgiot_channelx).
-
+-dgiot_data("ets").
+-export([init_ets/0]).
 -export([get_config/0, get_config/1]).
-
 -export([start/0,start/2, init/3, handle_init/1, handle_event/3, handle_message/2, stop/3, handle_save/1]).
-
 -record(state, {channel, cfg}).
 
 %% 注册通道类型
@@ -127,6 +126,9 @@
     }
 }).
 
+init_ets() ->
+    dgiot_data:init(?DGIOT_PARSE_ETS).
+
 start() ->
     Cfg = #{
         <<"host">> => application:get_env(dgiot_parse, parse_server, not_find),
@@ -148,7 +150,6 @@ start(Channel, Cfg) ->
 init(?TYPE, Channel, Cfg) ->
     State = #state{channel = Channel, cfg = Cfg},
     dgiot_data:init(?CACHE(Channel)),
-    dgiot_data:init(?DGIOT_PARSE_ETS),
     Opts = [?CACHE(Channel), #{
         auto_save => application:get_env(dgiot_parse, cache_auto_save, 3000),
         size => application:get_env(dgiot_parse, cache_max_size, 50000),

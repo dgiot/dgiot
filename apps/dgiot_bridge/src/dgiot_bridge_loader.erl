@@ -25,20 +25,13 @@
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
-
 -define(SERVER, ?MODULE).
-
 -record(state, {success}).
-
 
 start(Name, Filter, Fun) ->
     case whereis(Name) of
         undefined ->
-            ChildSpec = {
-                Name,
-                {?MODULE, start_link, [Name, Filter, Fun]},
-                permanent, 5000, worker, [?MODULE]
-            },
+            ChildSpec = {Name, {?MODULE, start_link, [Name, Filter, Fun]}, permanent, 5000, worker, [?MODULE]},
             supervisor:start_child(dgiot_bridge_sup, ChildSpec);
         Pid ->
             case gen_server:call(Pid, {load, Filter, Fun}, 5000) of

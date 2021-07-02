@@ -18,6 +18,8 @@
 -author("kenneth").
 -include("dgiot_bridge.hrl").
 -include_lib("dgiot/include/logger.hrl").
+-dgiot_data("ets").
+-export([init_ets/0]).
 
 %% API
 -export([start/0, start_channel/2, register_channel/2, get_behaviour/1, start_channel/3, do_global_message/1]).
@@ -25,12 +27,18 @@
 -export([get_data/2, send_log/3, send_log/4, send_log/5]).
 -export([get_all_channel/0, control_channel/2]).
 
+init_ets() ->
+    dgiot_data:init(?DGIOT_BRIDGE),
+    register_all_channel(),
+    dgiot_hook:add(<<"global/dgiot">>, fun ?MODULE:do_global_message/1),
+    proc_lib:spawn_link(
+        fun() ->
+            timer:sleep(10000),
+            dgiot_bridge:start()
+        end).
 
 start() ->
-    dgiot_data:init(?ETS),
-    register_all_channel(),
-    load_channel(),
-    dgiot_hook:add(<<"global/dgiot">>, fun ?MODULE:do_global_message/1).
+    load_channel().
 
 start_channel(Name, Filter) ->
     dgiot_bridge_loader:start(Name, Filter,
@@ -43,11 +51,11 @@ start_channel(Name, Mod, Where) ->
 
 register_channel(CType, Mod) ->
     CType1 = list_to_binary(string:uppercase(binary_to_list(CType))),
-    dgiot_data:insert(?ETS, {CType1, behaviour}, Mod).
+    dgiot_data:insert(?DGIOT_BRIDGE, {CType1, behaviour}, Mod).
 
 get_behaviour(CType) ->
     CType1 = list_to_binary(string:uppercase(binary_to_list(CType))),
-    dgiot_data:lookup(?ETS, {CType1, behaviour}).
+    dgiot_data:lookup(?DGIOT_BRIDGE, {CType1, behaviour}).
 
 parse_frame(ProductId, Bin, State) ->
     apply_product(ProductId, parse_frame, [Bin, State]).
@@ -112,12 +120,12 @@ get_product_info(ProductId) ->
 
 
 get_products(ChannelId) ->
-    case ets:info(?ETS) of
+    case ets:info(?DGIOT_BRIDGE) of
         undefined ->
             application:start(dgiot_bridge);
         _ -> pass
     end,
-    case dgiot_data:lookup(?ETS, {ChannelId, productIds}) of
+    case dgiot_data:lookup(?DGIOT_BRIDGE, {ChannelId, productIds}) of
         {error, not_find} ->
             {error, not_find};
         {ok, {Type, ProductIds}} ->
@@ -151,7 +159,7 @@ send_log(ChannelId, Fmt, Args) ->
 
 
 get_data(ProductId, DevAddr) ->
-    dgiot_data:match(?ETS, {{ProductId, DevAddr, '_'}, '$1'}).
+    dgiot_data:match(?DGIOT_BRIDGE, {{ProductId, DevAddr, '_'}, '$1'}).
 
 
 %%====================================================================
@@ -160,7 +168,7 @@ get_data(ProductId, DevAddr) ->
 
 is_send_log(ChannelId, ProductId, DevAddr, Fun) ->
     Now = dgiot_datetime:nowstamp(),
-    case dgiot_data:lookup(?ETS, {ChannelId, log}) of
+    case dgiot_data:lookup(?DGIOT_BRIDGE, {ChannelId, log}) of
         {ok, #{<<"time">> := Time} = Filter} when Now =< Time + 10 * 60 ->
             case ProductId =/= undefined andalso maps:get(<<"productId">>, Filter, undefined) of
                 ProductId1 when ProductId1 == false; ProductId1 == undefined; ProductId1 == ProductId ->
@@ -174,7 +182,7 @@ is_send_log(ChannelId, ProductId, DevAddr, Fun) ->
                     ok
             end;
         {ok, _} ->
-            dgiot_data:delete(?ETS, {ChannelId, log}),
+            dgiot_data:delete(?DGIOT_BRIDGE, {ChannelId, log}),
             ok;
         {error, not_find} ->
             ok

@@ -16,6 +16,7 @@
 
 -module(dgiot_product).
 -author("kenneth").
+-include("dgiot_device.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -define(TYPE, <<"shadow">>).
 -define(CHANNEL, <<"product">>).
@@ -24,7 +25,7 @@
 -record(state, {}).
 
 -export([start/0, load/1, init/3, handle_event/3, handle_message/2, stop/3]).
--export([ add_device/2, local/1, save/1, query/1, synchronize_device/1]).
+-export([add_device/2, local/1, save/1, get/1, synchronize_device/1]).
 -export([add_handler/4, do_handler/3, del_handler/1]).
 -export([update_config/2, parse_frame/3, to_frame/2]).
 
@@ -55,7 +56,7 @@ handle_event(EventId, Event, _State) ->
 
 handle_message({load, ProductId, IsLoadDevice}, State) ->
     Reply =
-        case dgiot_product:query(ProductId) of
+        case dgiot_product:get(ProductId) of
             {ok, Product} ->
                 {ok, Product1} = dgiot_product:save(Product),
                 case IsLoadDevice of
@@ -139,20 +140,21 @@ save(Product) ->
     {ok, Product1}.
 
 local(ProductId) ->
-    case dgiot_data:lookup(?MODULE, ProductId) of
+    case dgiot_data:lookup(?DGIOT_PRODUCT, ProductId) of
         {ok, Product} ->
             {ok, Product};
         {error, not_find} ->
             {error, not_find}
     end.
 
-query(ProductId) ->
-    Query = #{
-        <<"where">> => #{
-            <<"objectId">> => ProductId
-        }
-    },
-    query_product(Query).
+get(ProductId) ->
+    Keys = [<<"nodeType">>, <<"thing">>, <<"dynamicReg">>, <<"topics">>, <<"ACL">>],
+    case dgiot_parse:get_object(<<"Product">>, ProductId) of
+        {ok, #{<<"results">> := Product}} ->
+            {ok, maps:with(Keys,Product)};
+        {error, Reason} ->
+            {error, Reason}
+    end.
 
 
 % 1.启动设备进程必需产品要先load过，否则禁止启动
@@ -171,7 +173,7 @@ add_device(ProductId, DevAddr) ->
         {error, not_find} ->
             {error, {product, not_find}};
         {ok, Product} ->
-            case dgiot_device:query(ProductId, DevAddr) of
+            case dgiot_device:get(ProductId, DevAddr) of
                 {ok, Device} ->
                     add_device(Product, Device);
                 {error, Reason} ->
@@ -183,23 +185,6 @@ add_device(ProductId, DevAddr) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
-
-query_product(Query) ->
-    Keys = [<<"nodeType">>, <<"thing">>, <<"dynamicReg">>, <<"topics">>, <<"ACL">>],
-    case dgiot_parse:query_object(<<"Product">>, Query#{
-        <<"limit">> => 1,
-        <<"keys">> => Keys
-    }) of
-        {ok, #{<<"results">> := [Product]}} ->
-            {ok, Product};
-        {ok, #{<<"results">> := []}} ->
-            {error, not_find};
-        {error, #{<<"error">> := Reason}} ->
-            {error, Reason};
-        {error, Reason} ->
-            {error, Reason}
-    end.
-
 format_product(#{<<"objectId">> := ProductId} = Product) ->
     Thing = maps:get(<<"thing">>, Product, #{}),
     Props = maps:get(<<"properties">>, Thing, []),
@@ -253,17 +238,16 @@ excute_handler(ProductId, [[ChannelId, Fun] | Actions], Message) when is_functio
     end,
     excute_handler(ProductId, Actions, Message).
 
-update_config(#{<<"config">> := Config, <<"name">> := ProductName} = Product, SessionToken) when is_map(Config) ->
-    case dgiot_parse:query_object(<<"Product">>, #{<<"where">> => #{<<"name">> => ProductName}},
-        [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
-        {ok, #{<<"results">> := [#{<<"objectId">> := ObjectId, <<"config">> := OldConfig, <<"thing">> := Thing} | _]}} ->
+update_config(#{<<"config">> := Config, <<"objectId">> := ProductId} = Product, SessionToken) when is_map(Config) ->
+    case dgiot_parse:query_object(<<"Product">>, ProductId, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+        {ok, #{<<"results">> := #{<<"objectId">> := ObjectId, <<"config">> := OldConfig, <<"thing">> := Thing}}} ->
             ControlList = get_control(Config, OldConfig),
             NewThing = update_thing(#{<<"config">> => Config#{<<"components">> => ControlList}, <<"thing">> => Thing}),
             {ok, R1} = dgiot_parse:update_object(<<"Product">>, ObjectId,
                 #{<<"config">> => Config#{<<"components">> => ControlList}, <<"thing">> => NewThing},
                 [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]),
             {update, R1#{<<"objectId">> => ObjectId}};
-        {ok, #{<<"results">> := [#{<<"objectId">> := ObjectId, <<"config">> := OldConfig} | _]}} ->
+        {ok, #{<<"results">> := #{<<"objectId">> := ObjectId, <<"config">> := OldConfig}}} ->
             {ok, R} = dgiot_parse:update_object(<<"Product">>, ObjectId,
                 #{<<"config">> => Config#{<<"components">> => get_control(Config, OldConfig)}},
                 [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]),
