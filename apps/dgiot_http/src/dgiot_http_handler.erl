@@ -16,10 +16,25 @@
 
 -module(dgiot_http_handler).
 -author("kenneth").
+-behavior(dgiot_rest).
+-dgiot_rest(all).
 -include_lib("dgiot/include/logger.hrl").
 
 %% API
 -export([do_request/4]).
+-export([swagger_http/0]).
+
+%% API描述
+%% 支持二种方式导入
+%% 示例:
+%% 1. Metadata为map表示的JSON,
+%%    dgiot_http_server:bind(<<"/http">>, ?MODULE, [], Metadata)
+%% 2. 从模块的priv/swagger/下导入
+%%    dgiot_http_server:bind(<<"/swagger_http.json">>, ?MODULE, [], priv)
+swagger_http() ->
+    [
+        dgiot_http_server:bind(<<"/swagger_http.json">>, ?MODULE, [], priv)
+    ].
 
 do_request(get_file_signature, Args, _Context, _Req) ->
     case maps:get(<<"type">>, Args, null) of
