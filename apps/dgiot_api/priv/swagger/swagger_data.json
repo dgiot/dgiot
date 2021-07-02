@@ -581,6 +581,60 @@
         ]
       }
     },
+    "/device": {
+      "post": {
+        "summary": "查询设备时序数据",
+        "description": "查询设备时序数据",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "filter",
+            "description": "查询条件",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "order": {
+                  "description": "排序",
+                  "type": "string",
+                  "example": "-createdAt"
+                },
+                "include": {
+                  "description": "包含对象",
+                  "type": "string",
+                  "example": "product"
+                },
+                "where": {
+                  "description": "查询条件",
+                  "type": "object",
+                  "example": "{\"objectId\":{\"$in\":[\"689cc9c4a2\",\"cf3795a76a\"]}}"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Device"
+        ]
+      }
+    },
     "/hash": {
       "post": {
         "summary": "获取类对象hash值",
