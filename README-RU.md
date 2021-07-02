@@ -6,7 +6,7 @@
 [![Docker Pulls](https://img.shields.io/docker/pulls/dgiot/dgiot)](https://hub.docker.com/r/dgiot/dgiot)
 [![Community](https://img.shields.io/badge/Community-DGIOT-yellow)](https://tech.iotn2n.com)
 
-[English](./README.md) | 简体中文 | [日本語](./README-JP.md) | [русский](./README-RU.md)
+[English](./README.md) | [简体中文](./README-CN.md) | [日本語](./README-JP.md) | [русский](./README-RU.md)
 
 *DGIOT*  is the first lightweight open source industrial IoT continuous integration platform in China
 
