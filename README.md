@@ -8,38 +8,38 @@
 
 [English](./README.md) | 简体中文 | [日本語](./README-JP.md) | [русский](./README-RU.md)
 
-*DGIOT*  是国内首款轻量级开源工业物联网持续集成平台
+*DGIOT*  is the first lightweight open source industrial IoT continuous integration platform in China
 
-数蛙团队2016年之前，在互联网和移动互联网爬坑多年，2016年开始进入物联网爬坑，希望通过这个开源平台把多年爬坑经验共享出来，让多学科交叉的工业互联网项目变得更简单。
-   + 让丰富工程人员可以通过视窗交互可以完成需求较简单的工业互联网项目
-   + 让广大的初级前端工程师通过serverless的方式可以承接需求较复杂的工业互联网项目
-   + 让Python、Java、Go、C初级后台工程师通过web编程开发通道来承接复杂的工业互联网项目
+Before 2016, the Shuwa team had been crawling on the Internet and the mobile Internet for many years. In 2016, it began to enter the Internet of Things crawling. It hopes to share many years of crawling experience through this open source platform and make multidisciplinary industrial Internet projects easier.
+   + Let rich engineers to complete industrial Internet projects with simpler requirements through window interaction
+   + Let the majority of junior front-end engineers to undertake industrial Internet projects with more complex requirements through the serverless method
+   + Let Python, Java, Go, C junior background engineers undertake complex industrial Internet projects through web programming development channels
 
-# 愿景
-  数蛙团队希望通过数蛙工业互联网持续集成平台达成下面一些愿景：
-  + 通过工程人员、前端工程师、初级后台工程师在不超过1个月的实际完成中小型的工业互联网项目
-  + 通过代码开源、软件免费、文档共享、技术认证、产品认证、运维托管等多种方式保证高质量的交付
-  + 技术领域专家不断持续集成业界优秀技术框架、业务领域专家不断持续优化业务模型和流程、构建多学科交叉的开放平台
-  + 物联网平台最终能够实现简洁易用，回归到工具化的本质
+# Vision
+  The DGIOT team hopes to achieve the following visions through the Shuwa Industrial Internet continuous integration platform
+  + Through engineers, front-end engineers, and junior back-office engineers to actually complete small and medium-sized industrial Internet projects in no more than 1 month
+  + Ensure high-quality delivery through multiple methods such as open source code, free software, document sharing, technical certification, product certification, operation and maintenance hosting, etc.
+  + Experts in the technical field continue to integrate the industry's excellent technical framework, and experts in the business field continue to optimize business models and processes, and build a multidisciplinary open platform
+  + The IoT platform can finally be simple and easy to use, returning to the essence of tooling
 
-# 构建
+# Building
 
- 构建 *dgiot* 需要 Erlang/OTP R21+, Windows下用[msys64](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/msys64.rar/msys64.rar)开发。下载后解压到D盘根目录，严格按照下图操作：
+ Bulid *dgiot* Need Erlang/OTP R21+, Windows download[msys64](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/msys64.rar/msys64.rar),After downloading, unzip it to the root directory of Disk D, and operate strictly in accordance with the following figure：
 ![效果图-1.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/msys64.rar/%E6%95%88%E6%9E%9C%E5%9B%BE-1.png)
 
- +  国外下载源码
+ +  Download source code abroad
   ```bash
      git clone https://github.com/dgiot/dgiot_dashboard.git
      git clone https://github.com/dgiot/dgiot.git
    ```
 
- +  国内下载源码
+ +  China download source code
    ```bash
      git clone https://gitee.com/dgiiot/dgiot_dashboard.git
      git clone https://gitee.com/dgiiot/dgiot.git
    ```
 
- +  国内Linux/Unix/Mac/windows 构建
+ +  China Linux/Unix/Mac/windows Build
   ```bash
     cd dgiot_dashboard
     git pull
@@ -56,45 +56,45 @@
  ```
   make DIAGNOSTIC=1
  ```
-*DGIOT* 启动，可以使用浏览器访问 http://localhost:5080 来查看 Dashboard。
+* DGIOT* starts, you can use a browser to visit http://localhost:5080 to view Dashboard.。
 
-- 新功能的完整列表，请参阅 [DGIOT Release Notes](https://github.com/dgiot/dgiot/releases)。
-- 获取更多信息，请访问 [DGIOT 官网](https://tech.iotn2n.com/)。
-- [安装部署](https://github.com/dgiot/dgiot_deploy)
+- For a complete list of new features, see [DGIOT Release Notes](https://github.com/dgiot/dgiot/releases)。
+- For more information, please visit [DGIOT Website](https://tech.iotn2n.com/)。
+- [Installation and deployment](https://github.com/dgiot/dgiot_deploy)
 
-## 社区
+## Community
 
 ### FAQ
 
-访问 [DGIOT FAQ](https://tech.iotn2n.com/zh/backend/) 以获取常见问题的帮助。
+Visit [DGIOT FAQ](https://tech.iotn2n.com/en/backend/) to get help on frequently asked questions
 
-### 问答
+### FAQ
 
 [GitHub Discussions](https://github.com/dgiot/dgiot_server/discussions)
-[DGIOT 中文问答社区](https://tech.iotn2n.com/)
+[DGIOT Chinese Q&A Community](https://tech.iotn2n.com/)
 
-### 参与设计
+### Involved in the design
 
-如果对 DGIOT 有改进建议，可以向[EIP](https://github.com/dgiot/eip) 提交 PR 和 ISSUE
+If you have suggestions for improvements to DGIOT, you can submit PR and ISSUE to [EIP](https://github.com/dgiot/eip)
 
-### 插件开发
+### Plug-in development
 
-如果想集成或开发你自己的插件，参考 [lib-extra/README.md](./lib-extra/README.md)
+If you want to integrate or develop your own plug-in, refer to [lib-extra/README.md](./lib-extra/README.md)
 
-欢迎你将任何 bug、问题和功能请求提交到 [dgiot/dgiot](https://github.com/dgiot/dgiot/issues)。
+You are welcome to submit any bugs, issues and feature requests to [dgiot/dgiot](https://github.com/dgiot/dgiot/issues)。
 
-### 关于我们
-| 联系方式       | 地址                                                                                      |
+### About Us
+| contact details       | address                                                                                      |
 | -------------- | ----------------------------------------------------------------------------------------- |
 | github         | [https://github.com/dgiot](https://github.com/dgiot?from=git)                             |
 | gitee          | [https://gitee.com/dgiot](https://gitee.com/dgiiot?from=git)                              |
-| 官网           | [https://www.iotn2n.com](https://www.iotn2n.com?from=git)                                 |
-| 博客           | [https://tech.iotn2n.com](https://tech.iotn2n.com?from=git)                               |
-| 物联网接入平台 | [https://dgiot.iotn2n.com](https://dgiot.iotn2n.com?from=git)                             |
-| 公众号         | ![qrcode.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/wechat/qrcode.png) |
+| Official website           | [https://www.iotn2n.com](https://www.iotn2n.com?from=git)                                 |
+| Blog           | [https://tech.iotn2n.com](https://tech.iotn2n.com?from=git)                               |
+| IoT access platform | [https://dgiot.iotn2n.com](https://dgiot.iotn2n.com?from=git)                             |
+| The public         | ![qrcode.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/wechat/qrcode.png) |
 
-### 联系我们
-你可通过以下途径与 DGIOT 社区及开发者联系:
+### Contact us
+You can contact the DGIOT community and developers through the following channels:
 - [Slack](https://slack-invite.dgiot.com)
 - [Twitter](https://twitter.com/dgiotTech)
 - [Facebook](https://www.facebook.com/dgiot)
@@ -102,12 +102,12 @@
 - [Weibo](https://weibo.com/dgiot)
 - [Blog](https://www.dgiot.cn/blog)
 
-## 预览地址
-[腾讯云预览地址](https://dgiotdashboard-8gb17b3673ff6cdd-1253666439.ap-shanghai.app.tcloudbase.com?ftom=git)
+## Preview address
+[Tencent Cloud preview address](https://dgiotdashboard-8gb17b3673ff6cdd-1253666439.ap-shanghai.app.tcloudbase.com?ftom=git)
 
-## 扫码预览
+## Scan code preview
 ![dgiot_dashboard.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/wechat/dgiot_dashboard.png)
 
 
-## 开源许可
+## Open source license
 Apache License 2.0, 详见 [LICENSE](./LICENSE)。
