@@ -20,9 +20,30 @@
 -include_lib("dgiot/include/dgiot_mnesia.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -define(TIMEOUT, 60000).
--export([create_device/1, create_device/2, get_sub_device/1, get_sub_device/2, query/2]).
--export([lookup/2, save_prod/2, lookup_prod/1]).
+-dgiot_data("ets").
+-export([init_ets/0]).
+-export([create_device/1, create_device/2, get_sub_device/1, get_sub_device/2, get/2]).
+-export([save/1, lookup/2, save_prod/2, lookup_prod/1]).
 -export([encode/1, decode/3]).
+
+init_ets() ->
+    dgiot_data:init(?DGIOT_PRODUCT),
+    ok.
+
+save(_Device) ->
+    ok.
+
+lookup(ProductId, DevAddr) ->
+    DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+    case dgiot_mnesia:lookup(DeviceId) of
+        {atomic, []} ->
+            {error, not_find};
+        {aborted, Reason} ->
+            {error, Reason};
+        {atomic, [{mnesia, _K, V}]} ->
+            {Device, _} = V,
+            {ok, Device}
+    end.
 
 %% 存储产品
 %%-define(SMART_PROD, mnesia_smartprod).
@@ -31,7 +52,7 @@
 %%    product   % 产品基本数据,map类型
 %%}).
 save_prod(ProductId, Product) ->
-    case dgiot_mnesia:insert(ProductId, {Product, node()}) of
+    case dgiot_data:insert(?DGIOT_PRODUCT,ProductId, {Product, node()}) of
         true -> ok;
         {error, Reason} ->
             {error, Reason}
@@ -61,26 +82,11 @@ save_prod(ProductId, Product) ->
 %%        <<"name">> => <<230,156,137,229,138,159,230,128,187,231,148,181,232,131,189>>,
 %%        <<"required">> => true},
 lookup_prod(ProductId) ->
-    case dgiot_mnesia:lookup(ProductId) of
-        {atomic, []} ->
-            {error, not_find};
-        {error, Reason} ->
-            {error, Reason};
-        {ok, [{mnesia, _K, V}]} ->
-            {Product, _} = V,
-            {ok, Product}
-    end.
-
-lookup(ProductId, DevAddr) ->
-    DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
-    case dgiot_mnesia:lookup(DeviceId) of
-        {atomic, []} ->
-            {error, not_find};
-        {aborted, Reason} ->
-            {error, Reason};
-        {atomic, [{mnesia, _K, V}]} ->
-            {Device, _} = V,
-            {ok, Device}
+    case dgiot_data:get(?DGIOT_PRODUCT,ProductId) of
+        not_find ->
+            not_find;
+        Value ->
+            {ok,Value}
     end.
 
 get_sub_device(DtuAddr) ->
@@ -191,25 +197,11 @@ create_device(#{
     end.
 
 
-query(ProductId, DevAddr) ->
+get(ProductId, DevAddr) ->
     Keys = [<<"objectId">>, <<"status">>, <<"isEnable">>],
-    Where = #{
-        <<"limit">> => 1,
-        <<"keys">> => Keys,
-        <<"order">> => <<"-updatedAt">>,
-        <<"where">> => #{
-            <<"devaddr">> => DevAddr,
-            <<"product">> => #{
-                <<"className">> => <<"Product">>,
-                <<"__type">> => <<"Pointer">>,
-                <<"objectId">> => ProductId
-            }
-        }
-    },
-    case dgiot_parse:query_object(<<"Device">>, Where) of
-        {ok, #{<<"results">> := []}} ->
-            {error, {device, not_find}};
-        {ok, #{<<"results">> := [Device]}} ->
+    DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+    case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+        {ok, #{<<"results">> := Device}} ->
             case maps:get(<<"isEnable">>, Device, false) of
                 false ->
                     {error, forbiden};

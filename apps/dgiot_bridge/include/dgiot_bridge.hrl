@@ -15,4 +15,4 @@
 %%--------------------------------------------------------------------
 
 -author("kenneth").
--define(ETS, dgiot_bridge).
+-define(DGIOT_BRIDGE, dgiot_bridge).

@@ -14,6 +14,8 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
+-define(DGIOT_PRODUCT, dgiot_product).
+
 -define(LOCAL, smartdev).
 -define(VCON, 0).
 -define(DEV, 1).

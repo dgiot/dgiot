@@ -13,10 +13,10 @@
 -include("dgiot.hrl").
 -include_lib("logger.hrl").
 -behaviour(gen_server).
--export([start_link/0, get_info/0, get_memory/0, get_cpu/0, get_ports/0, join/1, leave/1, get_nodes/0, get_nodes/1, choose_node/0]).
+-export([start_link/0, get_info/0, get_memory/0,get_memory/2, util_alloc/0, get_cpu/0, get_ports/0, join/1, leave/1, get_nodes/0, get_nodes/1, choose_node/0]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 -export([shutdown/1, reboot/0]).
--record(state, {  }).
+-record(state, {}).
 
 -define(UTIL_ALLOCATORS, [temp_alloc, eheap_alloc, binary_alloc, ets_alloc, driver_alloc, sl_alloc, ll_alloc, fix_alloc, std_alloc]).
 
@@ -63,7 +63,7 @@ get_nodes(Sort) ->
 choose_node() ->
     Desc =
         fun(#{total_memory := TotalMem1, used_memory := UserMem1, load15 := Load151},
-                #{total_memory := TotalMem2, used_memory := UserMem2, load15 := Load152}) ->
+            #{total_memory := TotalMem2, used_memory := UserMem2, load15 := Load152}) ->
             (TotalMem1 - UserMem1) / (1024 * 1024 * 1024 * Load151) >
                 (TotalMem2 - UserMem2) / (1024 * 1024 * 1024 * Load152)
         end,
@@ -74,12 +74,11 @@ choose_node() ->
             {ok, Node}
     end.
 
-
 start_link() ->
     gen_server:start_link(?MODULE, [], []).
 
 init([]) ->
-    State = #state{  },
+    State = #state{},
     register_service(State),
     dgiot_mqtt:subscribe(?GLOBAL_TOPIC),
     {ok, State}.
@@ -96,7 +95,7 @@ handle_info({deliver, Topic, Message}, State) ->
     {noreply, State};
 
 handle_info(register_service, State) ->
-%%    register_service(State),
+    register_service(State),
     {noreply, State};
 
 handle_info(_Info, State) ->
@@ -113,7 +112,7 @@ code_change(_OldVsn, State, _Extra) ->
 %%% Internal functions
 %%%===================================================================
 
-register_service(#state{  }) ->
+register_service(#state{}) ->
     try
         Info = get_info(),
         Now = dgiot_datetime:nowstamp(),
@@ -124,7 +123,7 @@ register_service(#state{  }) ->
         dgiot_mnesia:insert({node(), node}, Info#{pid => self(), update => Now})
     catch
         Err:Reason ->
-            ?LOG(error,"~p:~p", [Err, Reason])
+            ?LOG(error, "~p:~p", [Err, Reason])
     after
         erlang:send_after(60000, self(), register_service)
     end.
@@ -134,9 +133,9 @@ get_info() ->
     Memory = get_memory(),
     Map = get_cpu(),
     Map#{
-        allocated_memory => proplists:get_value(allocated, Memory),
-        total_memory => proplists:get_value(total_memory, Memory),
-        used_memory => proplists:get_value(used, Memory),
+        allocated_memory => proplists:get_value(allocated, Memory,0),
+        total_memory => proplists:get_value(total_memory, Memory,0),
+        used_memory => proplists:get_value(used, Memory,1),
         max_fds => proplists:get_value(max_fds, lists:usort(lists:flatten(erlang:system_info(check_io))))
     }.
 
@@ -156,8 +155,9 @@ get_ports() ->
 
 get_memory() ->
     Data = memsup:get_system_memory_data(),
-    [{Key, get_memory(Key, current)} || Key <- [used, allocated, unused, usage]] ++ erlang:memory() ++
-        [{total_memory, proplists:get_value(total_memory, Data)}].
+%%    [{Key, get_memory(Key, current)} || Key <- [used, allocated, unused, usage]] ++
+        erlang:memory()
+        ++ [{total_memory, proplists:get_value(total_memory, Data)}].
 
 get_memory(used, Keyword) ->
     lists:sum(lists:map(fun({_, Prop}) ->
@@ -232,9 +232,8 @@ format(Node, Info = #{memory_total := Total, memory_used := Used}) ->
     Info#{node => Node,
         is_current => Node == node(),
         memory_total => emqx_mgmt_util:kmg(Total),
-        memory_used  => emqx_mgmt_util:kmg(Used)
+        memory_used => emqx_mgmt_util:kmg(Used)
     }.
-
 
 
 %%ekka_callback(prepare) ->

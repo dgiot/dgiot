@@ -28,7 +28,6 @@
 
 -record(state, {childState, workerState, server, mod, type, id}).
 
-
 add(Sup, ServerName, ChannelType, ChannelId, Mod, ChannelArgs) ->
     Name = binary_to_atom(dgiot_channelx:get_name(ChannelType, ChannelId), utf8),
     dgiot_data:insert({channeltype,ChannelId},ChannelType),

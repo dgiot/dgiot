@@ -101,14 +101,14 @@ do_channel(_Type, CType, ChannelId, Products, Cfg) ->
             case erlang:function_exported(Mod, start, 2) of
                 true ->
                     ProductIds = do_product(ChannelId, Products),
-                    dgiot_data:insert(?ETS, {ChannelId, productIds}, {CType, ProductIds}),
+                    dgiot_data:insert(?DGIOT_BRIDGE, {ChannelId, productIds}, {CType, ProductIds}),
                     case Mod:start(ChannelId, Cfg#{<<"product">> => Products}) of
                         {ok, _} ->
                             dgiot_mqtt:subscribe(<<"channel/", ChannelId/binary, "/#">>),
                             dgiot_bridge:send_log(ChannelId, "Channel ~s is Install Protocol ~s", [ChannelId, jsx:encode(ProductIds)]),
                             ok;
                         {error, Reason} ->
-                            dgiot_data:delete(?ETS, {ChannelId, productIds}),
+                            dgiot_data:delete(?DGIOT_BRIDGE, {ChannelId, productIds}),
                             {error, Reason}
                     end;
                 false ->
@@ -122,7 +122,7 @@ do_handle(#{<<"channelId">> := ChannelId, <<"enable">> := false}) ->
     case dgiot_bridge:get_products(ChannelId) of
         {ok, CType, _ProductIds} ->
             dgiot_channelx:delete(CType, ChannelId),
-            dgiot_data:delete(?ETS, {ChannelId, productIds}),
+            dgiot_data:delete(?DGIOT_BRIDGE, {ChannelId, productIds}),
             ?LOG(info, "Channel[~s,~p] offline!", [CType, ChannelId]),
             dgiot_parse:update_object(<<"Channel">>, ChannelId, #{<<"status">> => <<"OFFLINE">>});
         _ ->
@@ -144,7 +144,7 @@ do_handle(#{<<"channelId">> := ChannelId, <<"action">> := <<"update">>}) ->
     dgiot_bridge_loader:load_channel([#{<<"objectId">> => ChannelId}],
         fun(#{<<"product">> := Products}) ->
             ProductIds = do_product(ChannelId, Products),
-            dgiot_data:insert(?ETS, {ChannelId, productIds}, {Type, ProductIds}),
+            dgiot_data:insert(?DGIOT_BRIDGE, {ChannelId, productIds}, {Type, ProductIds}),
             dgiot_bridge:send_log(ChannelId, "Channel ~s is Install Protocol ~s", [ChannelId, jsx:encode(ProductIds)])
         end);
 
@@ -154,7 +154,7 @@ do_handle(#{<<"channelId">> := ChannelId, <<"action">> := <<"start_logger">>} = 
     {ok, _Type, ProductIds} = dgiot_bridge:get_products(ChannelId),
     Fmt = "Channel[~s] is Running, Products:~s, Log is ~s",
     Args = [ChannelId, jsx:encode(ProductIds), true],
-    dgiot_data:insert(?ETS, {ChannelId, log}, NewFilter#{
+    dgiot_data:insert(?DGIOT_BRIDGE, {ChannelId, log}, NewFilter#{
         <<"time">> => dgiot_datetime:nowstamp()
     }),
     case Filter of
@@ -178,7 +178,7 @@ do_handle(#{<<"channelId">> := ChannelId, <<"action">> := <<"stop_logger">>} = F
         _ ->
             dgiot_bridge:send_log(ChannelId, Fmt, Args)
     end,
-    dgiot_data:delete(?ETS, {ChannelId, log}).
+    dgiot_data:delete(?DGIOT_BRIDGE, {ChannelId, log}).
 
 
 

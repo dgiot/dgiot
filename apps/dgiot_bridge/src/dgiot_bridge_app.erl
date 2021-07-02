@@ -30,7 +30,6 @@
 
 start(_StartType, _StartArgs) ->
     {ok, Sup} = dgiot_bridge_sup:start_link(),
-    dgiot_bridge:start(),
     {ok, Sup}.
 
 %%--------------------------------------------------------------------
