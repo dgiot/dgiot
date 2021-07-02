@@ -21,8 +21,8 @@
 -include_lib("dgiot/include/logger.hrl").
 
 %% API
--export([do_request/4]).
 -export([swagger_http/0]).
+-export([handle/4]).
 
 %% API描述
 %% 支持二种方式导入
@@ -35,6 +35,38 @@ swagger_http() ->
     [
         dgiot_http_server:bind(<<"/swagger_http.json">>, ?MODULE, [], priv)
     ].
+
+-spec handle(OperationID :: atom(), Args :: map(), Context :: map(), Req :: dgiot_req:req()) ->
+    {Status :: dgiot_req:http_status(), Body :: map()} |
+    {Status :: dgiot_req:http_status(), Headers :: map(), Body :: map()} |
+    {Status :: dgiot_req:http_status(), Headers :: map(), Body :: map(), Req :: dgiot_req:req()}.
+
+handle(OperationID, Args, Context, Req) ->
+    Headers = #{},
+    case catch do_request(OperationID, Args, Context, Req) of
+        {ErrType, Reason} when ErrType == 'EXIT'; ErrType == error ->
+            ?LOG(debug, "do request: ~p, ~p, ~p~n", [OperationID, Args, Reason]),
+            Err = case is_binary(Reason) of
+                      true -> Reason;
+                      false -> list_to_binary(io_lib:format("~p", [Reason]))
+                  end,
+            {500, Headers, #{<<"error">> => Err}};
+        ok ->
+            ?LOG(debug, "do request: ~p, ~p ->ok ~n", [OperationID, Args]),
+            {200, Headers, #{}, Req};
+        {ok, Res} ->
+            ?LOG(debug, "do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
+            {200, Headers, Res, Req};
+        {Status, Res} ->
+            ?LOG(debug, "do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
+            {Status, Headers, Res, Req};
+        {Status, NewHeaders, Res} ->
+            ?LOG(debug, "do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
+            {Status, maps:merge(Headers, NewHeaders), Res, Req};
+        {Status, NewHeaders, Res, NewReq} ->
+            ?LOG(debug, "do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
+            {Status, maps:merge(Headers, NewHeaders), Res, NewReq}
+    end.
 
 do_request(get_file_signature, Args, _Context, _Req) ->
     case maps:get(<<"type">>, Args, null) of
