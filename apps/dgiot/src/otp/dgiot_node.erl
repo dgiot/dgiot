@@ -117,8 +117,10 @@ register_service(#state{}) ->
         Info = get_info(),
         Now = dgiot_datetime:nowstamp(),
         maps:fold(
-            fun(Key, Value, _) ->
-                dgiot_metrics:gauge(dgiot_global, <<"node">>, [Key], Value)
+            fun(_Key, _Value, _) ->
+%%                dgiot_metrics:inc(dgiot, Key, Value),
+%%                dgiot_metrics:gauge(dgiot_global, <<"node">>, [Key], Value)
+            ok
             end, no, Info),
         dgiot_mnesia:insert({node(), node}, Info#{pid => self(), update => Now})
     catch
