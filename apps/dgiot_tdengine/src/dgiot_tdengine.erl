@@ -24,7 +24,7 @@
 -export([create_database/2, create_schemas/1, create_object/2, create_user/2, alter_user/2, delete_user/1, query_object/2, batch/1, parse_batch/1]).
 -export([to_unixtime/1, get_channel/1]).
 -export([get_product/2, get_products/2, get_chartdata/3, get_appdata/3]).
--export([get_device/3, get_device/4,get_device/5]).
+-export([get_device/3, get_device/4, get_device/5, get_keys/3]).
 %% 引入执行函数
 -import(dgiot_tdengine_channel, [run_sql/3, transaction/2]).
 -export([test_product/0]).
@@ -76,7 +76,7 @@ get_products(ProductId, ChannelId) ->
                             lists:foldl(fun(#{<<"product">> := Product}, Acc) ->
                                 #{<<"objectId">> := SubProductId} = Product,
                                 dgiot_product:load(SubProductId),
-                                ?LOG(info,"SubProductId ~p ChannelId ~p", [SubProductId, ChannelId]),
+                                ?LOG(info, "SubProductId ~p ChannelId ~p", [SubProductId, ChannelId]),
                                 dgiot_data:insert({SubProductId, ?TYPE}, ChannelId),
                                 Acc ++ [SubProductId]
                                         end, [], R);
@@ -94,9 +94,9 @@ get_products(ProductId, ChannelId) ->
 get_device(ProductId, DevAddr, Query) ->
     case dgiot_data:get({ProductId, ?TYPE}) of
         not_find ->
-            {error,<<"not find channel">>};
+            {error, <<"not find channel">>};
         ChannelId ->
-            DeviceId = dgiot_parse:get_deviceid(ProductId,  DevAddr),
+            DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
             TableName = ?Table(DeviceId),
             case dgiot_tdengine:query_object(ChannelId, TableName, Query#{<<"db">> => ProductId}) of
                 {ok, Data} ->
@@ -107,7 +107,7 @@ get_device(ProductId, DevAddr, Query) ->
     end.
 
 get_device(Channel, ProductId, DevAddr, Query) ->
-    DeviceId = dgiot_parse:get_deviceid(ProductId,  DevAddr),
+    DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
     TableName = ?Table(DeviceId),
     case dgiot_tdengine:query_object(Channel, TableName, Query#{<<"db">> => ProductId}) of
         {ok, Data} ->
@@ -342,7 +342,7 @@ get_chartdata(Channel, TableName, Query) ->
             DB = format_db(?Database(Database)),
             Tail = <<" where createdat >= ", Starttime/binary, " AND createdat <= ", Endtime/binary, " INTERVAL(", Interval/binary, ") ", Limit/binary, ";">>,
             Sql = <<"SELECT ", Newkeys/binary, " FROM ", DB/binary, TableName/binary, Tail/binary>>,
-            ?LOG(error,"Sql ~s", [Sql]),
+            ?LOG(error, "Sql ~s", [Sql]),
             {Names, run_sql(Context#{<<"channel">> => Channel}, execute_query, Sql)}
         end).
 
@@ -364,7 +364,7 @@ get_appdata(Channel, TableName, Query) ->
 
 get_keys(ProductId, Function, <<"*">>) ->
     case dgiot_device:lookup_prod(ProductId) of
-        {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
+        {ok, {#{<<"thing">> := #{<<"properties">> := Props}}}} ->
             lists:foldl(fun(X, {Names, Acc}) ->
                 case X of
                     #{<<"identifier">> := Identifier, <<"name">> := Name} ->
@@ -378,7 +378,8 @@ get_keys(ProductId, Function, <<"*">>) ->
                         {Names, Acc}
                 end
                         end, {[], <<"">>}, Props);
-        _ ->
+        _Other ->
+            ?LOG(info, "_Other ~p", [_Other]),
             {[], <<"">>}
     end;
 
@@ -583,12 +584,12 @@ format_keys(_) ->
 
 format_interval(#{<<"interval">> := Interval}) when Interval =/= undefined, is_integer(Interval) ->
     I = integer_to_binary(Interval),
-    <<"INTERVAL(", I/binary,")">>;
+    <<"INTERVAL(", I/binary, ")">>;
 format_interval(_) ->
     <<>>.
 
 format_fill(#{<<"fill">> := Value}) when Value =/= <<>>, Value =/= undefined ->
-    <<"FILL(", Value/binary,")">>;
+    <<"FILL(", Value/binary, ")">>;
 format_fill(_) ->
     <<>>.
 
@@ -628,9 +629,9 @@ format_where([{Field, Value} | Other], Acc) ->
 format_where(#{<<"where">> := Where0}) when Where0 =/= undefined, Where0 =/= <<>> ->
     Where =
         case jsx:is_json(Where0) of
-        true -> jsx:decode(Where0,[return_maps]);
-        fasle -> Where0
-    end,
+            true -> jsx:decode(Where0, [return_maps]);
+            fasle -> Where0
+        end,
     Where1 =
         case is_list(Where) of
             true ->

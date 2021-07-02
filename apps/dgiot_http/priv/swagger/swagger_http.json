@@ -11,14 +11,15 @@
   "paths": {
     "/wechat": {
       "get": {
+        "security": [],
         "description": "wechat登陆",
         "parameters": [
           {
-            "name": "openid",
+            "name": "jscode",
             "in": "query",
             "type": "string",
             "default": "JVANH8bf5n",
-            "description": "微信OpenId"
+            "description": "jscode"
           }
         ],
         "responses": {
@@ -44,12 +45,20 @@
         "description": "wechat绑定",
         "parameters": [
           {
-            "description": "Jscode",
             "in": "body",
-            "name": "jscode",
+            "name": "params",
+            "description": "参数",
             "required": true,
-            "type": "string",
-            "default":"JSCODE"
+            "schema": {
+              "type": "object",
+              "properties": {
+                "jscode": {
+                  "description": "jscode",
+                  "type": "string",
+                  "example": "jscode"
+                }
+              }
+            }
           }
         ],
         "responses": {

@@ -52,7 +52,7 @@ lookup(ProductId, DevAddr) ->
 %%    product   % 产品基本数据,map类型
 %%}).
 save_prod(ProductId, Product) ->
-    case dgiot_data:insert(?DGIOT_PRODUCT,ProductId, {Product, node()}) of
+    case dgiot_data:insert(?DGIOT_PRODUCT, ProductId, Product) of
         true -> ok;
         {error, Reason} ->
             {error, Reason}
@@ -82,11 +82,11 @@ save_prod(ProductId, Product) ->
 %%        <<"name">> => <<230,156,137,229,138,159,230,128,187,231,148,181,232,131,189>>,
 %%        <<"required">> => true},
 lookup_prod(ProductId) ->
-    case dgiot_data:get(?DGIOT_PRODUCT,ProductId) of
+    case dgiot_data:get(?DGIOT_PRODUCT, ProductId) of
         not_find ->
             not_find;
         Value ->
-            {ok,Value}
+            {ok, Value}
     end.
 
 get_sub_device(DtuAddr) ->
@@ -196,12 +196,11 @@ create_device(#{
             R
     end.
 
-
 get(ProductId, DevAddr) ->
     Keys = [<<"objectId">>, <<"status">>, <<"isEnable">>],
     DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
     case dgiot_parse:get_object(<<"Device">>, DeviceId) of
-        {ok, #{<<"results">> := Device}} ->
+        {ok, Device} ->
             case maps:get(<<"isEnable">>, Device, false) of
                 false ->
                     {error, forbiden};

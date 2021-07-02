@@ -32,7 +32,7 @@ start(Port, State) ->
 %%    {ok, TCPState}.
 
 init(#tcp{state = #state{id = ChannelId}} = TCPState) ->
-    ?LOG(info,"ChannelId ~p", [ChannelId]),
+    ?LOG(info, "ChannelId ~p", [ChannelId]),
     case dgiot_bridge:get_products(ChannelId) of
         {ok, _TYPE, _ProductIds} ->
             {ok, TCPState};
@@ -66,7 +66,7 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, state = #state{id = ChannelId, de
                     create_device(DeviceId, ProductId, Buff, DTUIP),
                     {noreply, TCPState#tcp{buff = <<>>, state = State#state{devaddr = Buff}}};
                 Error1 ->
-                    ?LOG(info,"Error1 ~p Buff ~p ", [Error1, dgiot_utils:to_list(Buff)]),
+                    ?LOG(info, "Error1 ~p Buff ~p ", [Error1, dgiot_utils:to_list(Buff)]),
                     {noreply, TCPState#tcp{buff = <<>>}}
             end
     end;
@@ -86,7 +86,7 @@ handle_info({tcp, Buff}, #tcp{state = #state{id = ChannelId, devaddr = DtuAddr, 
             dgiot_bridge:send_log(ChannelId, "end to_task: ~p: ~p ~n", [NewTopic, jsx:encode(Things)]),
             dgiot_mqtt:publish(DtuAddr, NewTopic, jsx:encode(Things));
         Other ->
-            ?LOG(info,"Other ~p", [Other]),
+            ?LOG(info, "Other ~p", [Other]),
             pass
     end,
     {noreply, TCPState#tcp{buff = <<>>, state = State#state{env = <<>>}}};
@@ -122,7 +122,7 @@ handle_info({deliver, _Topic, Msg}, #tcp{state = #state{id = ChannelId} = State}
 
 %% {stop, TCPState} | {stop, Reason} | {ok, TCPState} | ok | stop
 handle_info(_Info, TCPState) ->
-    ?LOG(info,"TCPState ~p", [TCPState]),
+    ?LOG(info, "TCPState ~p", [TCPState]),
     {noreply, TCPState}.
 
 handle_call(_Msg, _From, TCPState) ->
@@ -146,7 +146,7 @@ create_device(DeviceId, ProductId, DTUMAC, DTUIP) ->
     case dgiot_parse:get_object(<<"Product">>, ProductId) of
         {ok, #{<<"ACL">> := Acl, <<"devType">> := DevType}} ->
             case dgiot_parse:get_object(<<"Device">>, DeviceId) of
-                {ok, #{<<"results">> := [#{<<"devaddr">> := _GWAddr} | _] = _Result}} ->
+                {ok, #{<<"devaddr">> := _GWAddr}} ->
                     dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"ip">> => DTUIP, <<"status">> => <<"ONLINE">>}),
                     dgiot_task:save_pnque(ProductId, DTUMAC, ProductId, DTUMAC),
                     create_instruct(Acl, ProductId, DeviceId),
@@ -169,7 +169,7 @@ create_device(DeviceId, ProductId, DTUMAC, DTUIP) ->
                     {DeviceId, DTUMAC}
             end;
         Error2 ->
-            ?LOG(info,"Error2 ~p ", [Error2]),
+            ?LOG(info, "Error2 ~p ", [Error2]),
             {<<>>, <<>>}
     end.
 

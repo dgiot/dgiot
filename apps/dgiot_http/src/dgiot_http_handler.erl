@@ -74,13 +74,17 @@ do_request(get_file_signature, Args, _Context, _Req) ->
         _ -> {404, #{<<"code">> => 1001, <<"error">> => <<"not support this type">>}}
     end;
 
-%% iot_hub 概要: 查询平台api资源 描述:查询平台api资源
+%% iot_hub 概要: 查询平台api资源 描述:wechat登陆
 %% OperationId:post_login
 %% 请求:POST /iotapi/post_login
-do_request(get_wechat, #{<<"openid">> := Openid}, _Context, _Req) ->
-    dgiot_wechat:get_sns(Openid);
+do_request(get_wechat, #{<<"jscode">> := Jscode}, _Context, _Req) ->
+    dgiot_wechat:get_sns(Jscode);
 
+%% iot_hub 概要: 查询平台api资源 描述:wechat绑定
+%% OperationId:post_login
+%% 请求:POST /iotapi/post_login
 do_request(post_wechat, #{<<"jscode">> := JSCODE}, #{<<"sessionToken">> := SessionToken}, _Req) ->
+    ?LOG(info, "JSCODE ~p, SessionToken = ~p ", [JSCODE, SessionToken]),
     case dgiot_auth:get_session(SessionToken) of
         #{<<"objectId">> := UserId} ->
             dgiot_wechat:post_sns(UserId, JSCODE);
