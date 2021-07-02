@@ -57,7 +57,7 @@ get_opts(Path) ->
     Forward_Header = maps:get(<<"x-forwarded-for">>, Data, true),
     Hook = maps:get(<<"hook">>, Data, ?MODULE),
     [
-        {host, dgiot_utils:to_list(NewHost},
+        {host, dgiot_utils:to_list(NewHost)},
         {protocol, Protocol},
         {?FORWARD_HEADER, Forward_Header},
         {disable_proxy_headers, true},
