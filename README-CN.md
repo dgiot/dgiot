@@ -6,7 +6,7 @@
 [![Docker Pulls](https://img.shields.io/docker/pulls/dgiot/dgiot)](https://hub.docker.com/r/dgiot/dgiot)
 [![Community](https://img.shields.io/badge/Community-DGIOT-yellow)](https://tech.iotn2n.com)
 
-[English](./README.md) | 简体中文 | [日本語](./README-JP.md) | [русский](./README-RU.md)
+[English](./README.md) | [简体中文](./README-CN.md) | [日本語](./README-JP.md) | [русский](./README-RU.md)
 
 *DGIOT*  是国内首款轻量级开源工业物联网持续集成平台
 
