@@ -20,7 +20,7 @@
 -include_lib("dgiot/include/logger.hrl").
 
 -export([init/2]).
--export([pre_hook/1,post_hook/2]).
+-export([pre_hook/1, post_hook/2, get_wlanip/0]).
 
 %%%-------------------------------------------------------------------
 %%% COWBOY
@@ -50,12 +50,14 @@ get_opts(Path) ->
                 end;
             Data1 -> Data1
         end,
-    Host = dgiot_utils:to_list(maps:get(<<"host">>, Data, <<"www.iotn2n.com">>)),
+    Host = maps:get(<<"host">>, Data, <<"www.iotn2n.com">>),
+    Wlanip = get_wlanip(),
+    NewHost = re:replace(Host, <<"127.0.0.1">>, Wlanip, [global, {return, binary}]),
     Protocol = dgiot_utils:to_list(maps:get(<<"protocol">>, Data, <<"http">>)),
     Forward_Header = maps:get(<<"x-forwarded-for">>, Data, true),
     Hook = maps:get(<<"hook">>, Data, ?MODULE),
     [
-        {host, Host},
+        {host, dgiot_utils:to_list(NewHost},
         {protocol, Protocol},
         {?FORWARD_HEADER, Forward_Header},
         {disable_proxy_headers, true},
@@ -77,15 +79,15 @@ init(Req0, proxy) ->
     case httpc:request(Method, PreRequest, HTTPOptions, Options) of
         % We got a response from the remote server!
         {ok, Resp = {{_RespVersion, RespStatus, RespReason}, _RespHeaders, RespBody}} ->
-            ?LOG(info,"Proxy response: ~p ~s", [RespStatus, RespReason]),
+            ?LOG(info, "Proxy response: ~p ~s", [RespStatus, RespReason]),
             OkReq1 = cowboy_req:reply(RespStatus, response_headers(Resp, State), RespBody, Req1),
-            PostOkReq1 = Mod:post_hook(OkReq1,State),
+            PostOkReq1 = Mod:post_hook(OkReq1, State),
             {ok, PostOkReq1, State};
         % Proxy error (not error on remote server, actual e.g. network error)
         Error ->
-            ?LOG(error,"Proxy error: ~p", [Error]),
+            ?LOG(error, "Proxy error: ~p", [Error]),
             ErrReq1 = cowboy_req:reply(502, #{"content-type" => "text/plain"}, dump(Error), Req1),
-            PostErrReq1 = Mod:post_hook(ErrReq1,State),
+            PostErrReq1 = Mod:post_hook(ErrReq1, State),
             {ok, PostErrReq1, State}
     end.
 
@@ -223,5 +225,19 @@ dump(Term) ->
 pre_hook(Req) ->
     Req.
 
-post_hook(Resp,_State) ->
+post_hook(Resp, _State) ->
     Resp.
+
+get_wlanip() ->
+    case shuwa_data:get(wlanip) of
+        not_find ->
+            inets:start(),
+            Ip1 =
+                case httpc:request(get, {"http://whatismyip.akamai.com/", []}, [], []) of
+                    {ok, {_, _, IP}} -> shuwa_utils:to_binary(IP);
+                    _ -> <<"127.0.0.1">>
+                end,
+            shuwa_data:insert(wlanip, Ip1);
+        Ip ->
+            Ip
+    end.
