@@ -4,126 +4,110 @@
 [![Build Status](https://travis-ci.org/dgiot/dgiot.svg)](https://travis-ci.org/dgiot/dgiot)
 [![Coverage Status](https://coveralls.io/repos/github/dgiot/dgiot/badge.svg)](https://coveralls.io/github/dgiot/dgiot)
 [![Docker Pulls](https://img.shields.io/docker/pulls/dgiot/dgiot)](https://hub.docker.com/r/dgiot/dgiot)
-[![Slack Invite](<https://slack-invite.dgiot.com/badge.svg>)](https://slack-invite.dgiot.com)
-[![Community](https://img.shields.io/badge/Community-DGIOT%20X-yellow)](https://tech.iotn2n.com)
+[![Community](https://img.shields.io/badge/Community-DGIOT-yellow)](https://tech.iotn2n.com)
 
-[English](./README.md) | [简体中文](./README-CN.md) | 日本語 | [русский](./README-RU.md)
+[English](./README.md) | 简体中文 | [日本語](./README-JP.md) | [русский](./README-RU.md)
 
-*DGIOT* は、高い拡張性と可用性をもつ、分散型のMQTTブローカーです。数千万のクライアントを同時に処理するIoT、M2M、モバイルアプリケーション向けです。
+*DGIOT*  is the first lightweight open source industrial IoT continuous integration platform in China
 
-version 3.0 以降、*EMQ X* は MQTT V5.0 の仕様を完全にサポートしており、MQTT V3.1およびV3.1.1とも下位互換性があります。
-MQTT-SN、CoAP、LwM2M、WebSocket、STOMPなどの通信プロトコルをサポートしています。 MQTTの同時接続数は1つのクラスター上で1,000万以上にまでスケールできます。
+Before 2016, the Shuwa team had been crawling on the Internet and the mobile Internet for many years. In 2016, it began to enter the Internet of Things crawling. It hopes to share many years of crawling experience through this open source platform and make multidisciplinary industrial Internet projects easier.
+   + Let rich engineers to complete industrial Internet projects with simpler requirements through window interaction
+   + Let the majority of junior front-end engineers to undertake industrial Internet projects with more complex requirements through the serverless method
+   + Let Python, Java, Go, C junior background engineers undertake complex industrial Internet projects through web programming development channels
 
-- 新機能の一覧については、[EMQ Xリリースノート](https://github.com/emqx/emqx/releases)を参照してください。
-- 詳細はこちら[EMQ X公式ウェブサイト](https://www.emqx.io/)をご覧ください。
+# Vision
+  The DGIOT team hopes to achieve the following visions through the Shuwa Industrial Internet continuous integration platform
+  + Through engineers, front-end engineers, and junior back-office engineers to actually complete small and medium-sized industrial Internet projects in no more than 1 month
+  + Ensure high-quality delivery through multiple methods such as open source code, free software, document sharing, technical certification, product certification, operation and maintenance hosting, etc.
+  + Experts in the technical field continue to integrate the industry's excellent technical framework, and experts in the business field continue to optimize business models and processes, and build a multidisciplinary open platform
+  + The IoT platform can finally be simple and easy to use, returning to the essence of tooling
 
-## インストール
+# Building
 
-*EMQ X* はクロスプラットフォームで、Linux、Unix、macOS、Windowsをサポートしています。
-そのため、x86_64アーキテクチャサーバー、またはRaspberryPiなどのARMデバイスに *EMQ X* をデプロイすることもできます。
+ Bulid *dgiot* Need Erlang/OTP R21+, Windows download[msys64](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/msys64.rar/msys64.rar),After downloading, unzip it to the root directory of Disk D, and operate strictly in accordance with the following figure：
+![效果图-1.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/msys64.rar/%E6%95%88%E6%9E%9C%E5%9B%BE-1.png)
 
-Windows上における *EMQ X* のビルドと実行については、[Windows.md](./Windows.md)をご参照ください。
+ +  Download source code abroad
+  ```bash
+     git clone https://github.com/dgiot/dgiot_dashboard.git
+     git clone https://github.com/dgiot/dgiot.git
+   ```
 
-#### Docker イメージによる EMQ X のインストール
+ +  China download source code
+   ```bash
+     git clone https://gitee.com/dgiiot/dgiot_dashboard.git
+     git clone https://gitee.com/dgiiot/dgiot.git
+   ```
 
-```
-docker run -d --name emqx -p 1883:1883 -p 8083:8083 -p 8883:8883 -p 8084:8084 -p 18083:18083 emqx/emqx
-```
+ +  China Linux/Unix/Mac/windows Build
+  ```bash
+    cd dgiot_dashboard
+    git pull
+    yarn install
+    yarn build
+    cd ../dgiot
+    git pull
+    rm ./apps/dgiot_api/priv/www -rf
+    cp ../dgiot_dashboard/dist/ ./apps/dgiot_api/priv/www -rf
+    cp ../dgiot_dashboard/swagger ./apps/dgiot_api/priv/www/ -rf
+    make run
+ ```
++ Make Debug
+ ```
+  make DIAGNOSTIC=1
+ ```
+* DGIOT* starts, you can use a browser to visit http://localhost:5080 to view Dashboard.。
 
-#### バイナリパッケージによるインストール
+- For a complete list of new features, see [DGIOT Release Notes](https://github.com/dgiot/dgiot/releases)。
+- For more information, please visit [DGIOT Website](https://tech.iotn2n.com/)。
+- [Installation and deployment](https://github.com/dgiot/dgiot_deploy)
 
-それぞれのOSに対応したバイナリソフトウェアパッケージは、[EMQ Xのダウンロード](https://www.emqx.io/downloads)ページから取得できます。
-
-- [シングルノードインストール](https://docs.emqx.io/broker/latest/en/getting-started/installation.html)
-- [マルチノードインストール](https://docs.emqx.io/broker/latest/en/advanced/cluster.html)
-
-## ソースからビルド
-
-version 3.0 以降の *EMQ X* をビルドするには Erlang/OTP R21+ が必要です。
-
-version 4.3 以降の場合：
-
-```bash
-git clone https://github.com/emqx/emqx-rel.git
-cd emqx-rel
-make
-_build/emqx/rel/emqx/bin/emqx console
-```
-
-## クイックスタート
-
-emqx をソースコードからビルドした場合は、
-`cd _build/emqx/rel/emqx`でリリースビルドのディレクトリに移動してください。
-
-リリースパッケージからインストールした場合は、インストール先のルートディレクトリに移動してください。
-
-```
-# Start emqx
-./bin/emqx start
-
-# Check Status
-./bin/emqx_ctl status
-
-# Stop emqx
-./bin/emqx stop
-```
-
-*EMQ X* の起動後、ブラウザで http://localhost:18083 にアクセスするとダッシュボードが表示されます。
-
-## テスト
-
-### 全てのテストケースを実行する
-
-```
-make eunit ct
-```
-
-### common test の一部を実行する
-
-```bash
-make apps/emqx_bridge_mqtt-ct
-```
-
-### Dialyzer
-##### アプリケーションの型情報を解析する
-```
-make dialyzer
-```
-
-##### 特定のアプリケーションのみ解析する（アプリケーション名をコンマ区切りで入力）
-```
-DIALYZER_ANALYSE_APP=emqx_lwm2m,emqx_auth_jwt,emqx_auth_ldap make dialyzer
-```
-
-## コミュニティ
+## Community
 
 ### FAQ
 
-よくある質問については、[EMQ X FAQ](https://docs.emqx.io/broker/latest/en/faq/faq.html)をご確認ください。
+Visit [DGIOT FAQ](https://tech.iotn2n.com/en/backend/) to get help on frequently asked questions
 
-### 質問する
+### FAQ
 
-質問や知識共有の場として[GitHub Discussions](https://github.com/emqx/emqx/discussions)を用意しています。
+[GitHub Discussions](https://github.com/dgiot/dgiot_server/discussions)
+[DGIOT Chinese Q&A Community](https://tech.iotn2n.com/)
 
-### 提案
+### Involved in the design
 
-大規模な改善のご提案がある場合は、[EIP](https://github.com/emqx/eip)にPRをどうぞ。
+If you have suggestions for improvements to DGIOT, you can submit PR and ISSUE to [EIP](https://github.com/dgiot/eip)
 
-### 自作プラグイン
+### Plug-in development
 
-プラグインを自作することができます。[lib-extra/README.md](./lib-extra/README.md)をご確認ください。
+If you want to integrate or develop your own plug-in, refer to [lib-extra/README.md](./lib-extra/README.md)
+
+You are welcome to submit any bugs, issues and feature requests to [dgiot/dgiot](https://github.com/dgiot/dgiot/issues)。
+
+### About Us
+| contact details       | address                                                                                      |
+| -------------- | ----------------------------------------------------------------------------------------- |
+| github         | [https://github.com/dgiot](https://github.com/dgiot?from=git)                             |
+| gitee          | [https://gitee.com/dgiot](https://gitee.com/dgiiot?from=git)                              |
+| Official website           | [https://www.iotn2n.com](https://www.iotn2n.com?from=git)                                 |
+| Blog           | [https://tech.iotn2n.com](https://tech.iotn2n.com?from=git)                               |
+| IoT access platform | [https://dgiot.iotn2n.com](https://dgiot.iotn2n.com?from=git)                             |
+| The public         | ![qrcode.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/wechat/qrcode.png) |
+
+### Contact us
+You can contact the DGIOT community and developers through the following channels:
+- [Slack](https://slack-invite.dgiot.com)
+- [Twitter](https://twitter.com/dgiotTech)
+- [Facebook](https://www.facebook.com/dgiot)
+- [Reddit](https://www.reddit.com/r/dgiot/)
+- [Weibo](https://weibo.com/dgiot)
+- [Blog](https://www.dgiot.cn/blog)
+
+## Preview address
+[Tencent Cloud preview address](https://dgiotdashboard-8gb17b3673ff6cdd-1253666439.ap-shanghai.app.tcloudbase.com?ftom=git)
+
+## Scan code preview
+![dgiot_dashboard.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/wechat/dgiot_dashboard.png)
 
 
-## MQTTの仕様について
-
-下記のサイトで、MQTTのプロトコルについて学習・確認できます。
-
-[MQTT Version 3.1.1](https://docs.oasis-open.org/mqtt/mqtt/v3.1.1/os/mqtt-v3.1.1-os.html)
-
-[MQTT Version 5.0](https://docs.oasis-open.org/mqtt/mqtt/v5.0/cs02/mqtt-v5.0-cs02.html)
-
-[MQTT SN](http://mqtt.org/new/wp-content/uploads/2009/06/MQTT-SN_spec_v1.2.pdf)
-
-## License
-
-Apache License 2.0, see [LICENSE](https://github.com/emqx/MQTTX/blob/master/LICENSE).
+## Open source license
+Apache License 2.0, 详见 [LICENSE](./LICENSE)。
