@@ -82,6 +82,8 @@ init(Req0, proxy) ->
             ?LOG(info, "Proxy response: ~p ~s", [RespStatus, RespReason]),
             OkReq1 = cowboy_req:reply(RespStatus, response_headers(Resp, State), RespBody, Req1),
             PostOkReq1 = Mod:post_hook(OkReq1, State),
+            ?LOG(info, "OkReq1 ~p", [OkReq1]),
+            ?LOG(info, "PostOkReq1 ~p", [PostOkReq1]),
             {ok, PostOkReq1, State};
         % Proxy error (not error on remote server, actual e.g. network error)
         Error ->

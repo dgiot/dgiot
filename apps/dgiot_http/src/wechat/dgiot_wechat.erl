@@ -28,11 +28,12 @@
     get_sns/1
 ]).
 
-%%https://api.weixin.qq.com/sns/jscode2session?appid=APPID&secret=SECRET&js_code=JSCODE&grant_type=authorization_code
+%% https://api.weixin.qq.com/sns/jscode2session?appid=APPID&secret=SECRET&js_code=JSCODE&grant_type=authorization_code
+%% wechat绑定
 post_sns(UserId, JSCODE) ->
     inets:start(),
-    AppId = dgiot_utils:to_binary(dgiot:get_env(wechat_appid)),
-    Secret = dgiot_utils:to_binary(dgiot:get_env(wechat_secret)),
+    AppId = dgiot_utils:to_binary(application:get_env(dgiot_http, wechat_appid, <<"">>)),
+    Secret = dgiot_utils:to_binary(application:get_env(dgiot_http, wechat_secret, <<"">>)),
     Url = "https://api.weixin.qq.com/sns/jscode2session?appid=" ++ dgiot_utils:to_list(AppId) ++ "&secret=" ++ dgiot_utils:to_list(Secret) ++
         "&js_code=" ++ dgiot_utils:to_list(JSCODE) ++ "&grant_type=authorization_code",
     case httpc:request(Url) of
@@ -50,7 +51,7 @@ post_sns(UserId, JSCODE) ->
                                         Tag;
                                     _ -> #{}
                                 end,
-                            dgiot_parse:update_object(<<"_User">>, UserId, NewTag#{<<"wechat">> => #{<<"openid">> => OPENID}});
+                            dgiot_parse:update_object(<<"_User">>, UserId, NewTag#{<<"wechat">> => #{<<"wxopenid">> => OPENID}});
                         _Result ->
                             {error, <<"not find openid">>}
                     end;
@@ -60,14 +61,41 @@ post_sns(UserId, JSCODE) ->
             _Error
     end.
 
-get_sns(OPENID) ->
-    case dgiot_parse:query_object(<<"_User">>, #{<<"where">> => #{<<"tag.wxopenid">> => OPENID}}) of
-        {ok, #{<<"results">> := [#{<<"objectId">> := UserId, <<"username">> := Name} | _]}} ->
-            {ok, UserInfo} = dgiot_parse_handler:create_session(UserId, dgiot_auth:ttl(), Name),
-            {ok, UserInfo#{<<"openid">> => OPENID, <<"status">> => <<"bind">>}};
-        _ ->
-            {ok, #{<<"openid">> => OPENID, <<"status">> => <<"unbind">>}}
+%% wechat登陆
+get_sns(Jscode) ->
+    inets:start(),
+    AppId = dgiot_utils:to_binary(application:get_env(dgiot_http, wechat_appid, <<"">>)),
+    Secret = dgiot_utils:to_binary(application:get_env(dgiot_http, wechat_secret, <<"">>)),
+    Url = "https://api.weixin.qq.com/sns/jscode2session?appid=" ++ dgiot_utils:to_list(AppId) ++ "&secret=" ++ dgiot_utils:to_list(Secret) ++
+        "&js_code=" ++ dgiot_utils:to_list(Jscode) ++ "&grant_type=authorization_code",
+    case httpc:request(Url) of
+        {ok, {{_Version, 200, _ReasonPhrase}, _Headers, Body}} ->
+            Json = list_to_binary(Body),
+            ?LOG(info, "Json ~p", [Json]),
+            case jsx:is_json(Json) of
+                true ->
+                    case jsx:decode(Json, [{labels, binary}, return_maps]) of
+                        #{<<"openid">> := OPENID, <<"session_key">> := _SESSIONKEY} ->
+                            ?LOG(info, "~p ~p", [OPENID, _SESSIONKEY]),
+                            case dgiot_parse:query_object(<<"_User">>, #{<<"where">> => #{<<"tag.wxopenid">> => OPENID}}) of
+                                {ok, #{<<"results">> := [#{<<"objectId">> := UserId, <<"username">> := Name} | _]}} ->
+                                    {ok, UserInfo} = dgiot_parse_handler:create_session(UserId, dgiot_auth:ttl(), Name),
+                                    {ok, UserInfo#{<<"openid">> => OPENID, <<"status">> => <<"bind">>}};
+                                _ ->
+                                    {ok, #{<<"openid">> => OPENID, <<"status">> => <<"unbind">>}}
+                            end;
+                        _Result ->
+                            {error, <<"not find openid">>}
+                    end;
+                false -> {error, <<"not find openid">>}
+            end;
+        _Error ->
+            _Error
     end.
+
+
+
+
 
 
 

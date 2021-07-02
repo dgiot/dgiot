@@ -51,7 +51,7 @@ init(?TYPE, _ChannelId, _ChannelArgs) ->
 
 %% 通道消息处理,注意：进程池调用
 handle_event(EventId, Event, _State) ->
-    ?LOG(info,"channel ~p, ~p", [EventId, Event]),
+    ?LOG(info, "channel ~p, ~p", [EventId, Event]),
     ok.
 
 handle_message({load, ProductId, IsLoadDevice}, State) ->
@@ -80,11 +80,10 @@ handle_message(_Message, State) ->
     {ok, State}.
 
 stop(ChannelType, ChannelId, _) ->
-    ?LOG(error,"channel stop ~p,~p", [ChannelType, ChannelId]),
+    ?LOG(error, "channel stop ~p,~p", [ChannelType, ChannelId]),
     ok.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 
 
 %% 注册数据处理通道
@@ -136,7 +135,7 @@ save(Product) ->
     Product1 = format_product(Product),
     #{<<"productId">> := ProductId} = Product1,
     dgiot_data:insert(?MODULE, ProductId, Product1),
-    ?LOG(debug,"product ~p", [Product1]),
+    ?LOG(debug, "product ~p", [Product1]),
     {ok, Product1}.
 
 local(ProductId) ->
@@ -148,10 +147,10 @@ local(ProductId) ->
     end.
 
 get(ProductId) ->
-    Keys = [<<"nodeType">>, <<"thing">>, <<"dynamicReg">>, <<"topics">>, <<"ACL">>],
+    Keys = [<<"nodeType">>, <<"objectId">>, <<"thing">>, <<"dynamicReg">>, <<"topics">>, <<"ACL">>],
     case dgiot_parse:get_object(<<"Product">>, ProductId) of
-        {ok, #{<<"results">> := Product}} ->
-            {ok, maps:with(Keys,Product)};
+        {ok, Product} ->
+            {ok, maps:with(Keys, Product)};
         {error, Reason} ->
             {error, Reason}
     end.
@@ -209,9 +208,9 @@ load_device(_, []) -> ok;
 load_device(#{<<"productId">> := ProductId} = Product, [Device | Devices]) ->
     case add_device(Product, Device) of
         {ok, Pid} ->
-            ?LOG(debug,"ProductId:~p, DevAddr:~p -> ~p", [ProductId, Device, Pid]);
+            ?LOG(debug, "ProductId:~p, DevAddr:~p -> ~p", [ProductId, Device, Pid]);
         {error, Reason} ->
-            ?LOG(debug,"ProductId:~p, DevAddr:~p -> ~p", [ProductId, Device, Reason])
+            ?LOG(debug, "ProductId:~p, DevAddr:~p -> ~p", [ProductId, Device, Reason])
     end,
     load_device(Product, Devices).
 
@@ -224,7 +223,7 @@ excute_handler(ProductId, [[ChannelId, {channel, Type}] | Actions], Message) ->
 excute_handler(ProductId, [[ChannelId, {Mod, Fun, Args}] | Actions], Message) ->
     case catch apply(Mod, Fun, [ProductId, ChannelId, Message | Args]) of
         {'EXIT', Reason} ->
-            ?LOG(error,"do handler error, ~p ~p", [ProductId, Reason]);
+            ?LOG(error, "do handler error, ~p ~p", [ProductId, Reason]);
         _ ->
             ok
     end,
@@ -232,7 +231,7 @@ excute_handler(ProductId, [[ChannelId, {Mod, Fun, Args}] | Actions], Message) ->
 excute_handler(ProductId, [[ChannelId, Fun] | Actions], Message) when is_function(Fun) ->
     case catch Fun(ProductId, ChannelId, Message) of
         {'EXIT', Reason} ->
-            ?LOG(error,"do handler error, ~p ~p", [ProductId, Reason]);
+            ?LOG(error, "do handler error, ~p ~p", [ProductId, Reason]);
         _ ->
             ok
     end,
@@ -253,7 +252,7 @@ update_config(#{<<"config">> := Config, <<"objectId">> := ProductId} = Product, 
                 [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]),
             {update, R#{<<"objectId">> => ObjectId}};
         _ ->
-            ?LOG(info,"Product ~p", [Product]),
+            ?LOG(info, "Product ~p", [Product]),
             create_product(Product, SessionToken)
     end;
 

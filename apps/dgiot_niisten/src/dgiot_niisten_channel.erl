@@ -286,7 +286,7 @@ create_device(DeviceId, ProductId, DTUMAC, DTUIP) ->
     case dgiot_parse:get_object(<<"Product">>, ProductId) of
         {ok, #{<<"ACL">> := Acl, <<"devType">> := DevType}} ->
             case dgiot_parse:get_object(<<"Device">>, DeviceId) of
-                {ok, #{<<"results">> := [#{<<"devaddr">> := _GWAddr} | _] = _Result}} ->
+                {ok, #{<<"devaddr">> := _GWAddr}} ->
                     dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"ip">> => DTUIP, <<"status">> => <<"ONLINE">>}),
                     dgiot_task:save_pnque(ProductId, DTUMAC, ProductId, DTUMAC),
                     create_instruct(Acl, ProductId, DeviceId),

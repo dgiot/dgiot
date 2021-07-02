@@ -46,8 +46,8 @@ stop() ->
     emqx:unhook('client.disconnected', fun ?MODULE:on_client_disconnected/4),
     ok.
 
-on_client_authenticate(#{clientid := <<"swlic_", Key/binary>>, peerhost:= Peerhost, username := UserName, password := Password}, AuthResult, _Env) ->
-    ?LOG(info,"UserName ~p",[UserName]),
+on_client_authenticate(#{clientid := <<"swlic_", Key/binary>>, peerhost := Peerhost, username := UserName, password := Password}, AuthResult, _Env) ->
+    ?LOG(info, "UserName ~p", [UserName]),
     NewAuthResult =
         case dgiot_parse_handler:login_by_token(UserName, Password) of
             {ok, #{<<"objectId">> := UserObjectId, <<"sessionToken">> := Session}} ->
@@ -58,7 +58,7 @@ on_client_authenticate(#{clientid := <<"swlic_", Key/binary>>, peerhost:= Peerho
                             <<"public_ip">> => dgiot_utils:to_binary(inet:ntoa(Peerhost)),
                             <<"is_online">> => true});
                     _ ->
-                        {ok, #{<<"results">> := [#{<<"name">> := Title}]}} = dgiot_parse:get_object(<<"_Role">>, UserName),
+                        {ok, #{<<"name">> := Title}} = dgiot_parse:get_object(<<"_Role">>, UserName),
                         dgiot_parse:create_object(<<"License">>, #{
                             <<"ACL">> =>
                             #{UserObjectId => #{<<"read">> => true, <<"write">> => true}},
@@ -82,9 +82,9 @@ on_client_authenticate(#{clientid := <<"swlic_", Key/binary>>, peerhost:= Peerho
                     <<"objectid">> => UserObjectId,
                     <<"sessionToken">> => Session
                 },
-                ?LOG(info,"Args ~p",[Args]),
+                ?LOG(info, "Args ~p", [Args]),
                 supervisor:start_child(dgiot_license_install, [Args]),
-                ?LOG(info,"Args11 ~p",[Args]),
+                ?LOG(info, "Args11 ~p", [Args]),
                 AuthResult#{auth_result => success, anonymous => false};
             _ -> AuthResult#{auth_result => fail, anonymous => false}
         end,
@@ -151,9 +151,9 @@ handle_info({deliver, _Topic, Msg}, State) ->
     Payload = dgiot_mqtt:get_payload(Msg),
     case Payload of
         <<"iot">> ->
-            dgiot_install:start(#{product => Payload,webserver => #{name => dgiot_rest}});
+            dgiot_install:start(#{product => Payload, webserver => #{name => dgiot_rest}});
         APP ->
-            dgiot_install:start(#{product => APP,webserver => #{name => dgiot_rest}})
+            dgiot_install:start(#{product => APP, webserver => #{name => dgiot_rest}})
     end,
     {noreply, State};
 
@@ -169,7 +169,7 @@ code_change(_OldVsn, State, _Extra) ->
 
 %随机生成16位Key值
 random() ->
-    dgiot_license:to_md5(io_lib:format("~p",[erlang:make_ref()])).
+    dgiot_license:to_md5(io_lib:format("~p", [erlang:make_ref()])).
 
 get_license_host() ->
     dgiot_utils:get_wlanip().
@@ -260,7 +260,7 @@ generate_setup(FileName, License) ->
     {file, Here} = code:is_loaded(?MODULE),
     Dir = filename:dirname(filename:dirname(Here)),
     Root = dgiot_httpc:url_join([Dir, "/priv/"]),
-    ?LOG(info,"License ~p FileName ~p ~n", [License, FileName]),
+    ?LOG(info, "License ~p FileName ~p ~n", [License, FileName]),
     {ProductType, ProductVersion, Vars} =
         case dgiot_parse:query_object(<<"License">>, #{<<"where">> =>
         #{<<"license">> => License}}) of
@@ -270,7 +270,7 @@ generate_setup(FileName, License) ->
                 {<<"standard">>, <<"1.0.0">>, []}
         end,
     TplPath = Root ++ "setup_" ++ dgiot_utils:to_list(ProductType) ++ "_" ++ dgiot_utils:to_list(ProductVersion) ++ ".sh",
-    ?LOG(info,"Vars ~p",[Vars]),
+    ?LOG(info, "Vars ~p", [Vars]),
     case erlydtl:compile({file, TplPath}, dgiot_render, [{out_dir, false}]) of
         {ok, Render} ->
             {ok, IoList} = Render:render(Vars),
@@ -289,7 +289,7 @@ generate_update(FileName, License) ->
     {file, Here} = code:is_loaded(?MODULE),
     Dir = filename:dirname(filename:dirname(Here)),
     Root = dgiot_httpc:url_join([Dir, "/priv/"]),
-    ?LOG(info,"License ~p FileName ~p ~n", [License, FileName]),
+    ?LOG(info, "License ~p FileName ~p ~n", [License, FileName]),
     {ProductType, ProductVersion, Vars} =
         case dgiot_parse:query_object(<<"License">>, #{<<"where">> =>
         #{<<"license">> => License}}) of
