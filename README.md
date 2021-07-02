@@ -36,7 +36,7 @@
  +  国内下载源码
    ```bash
      git clone https://gitee.com/dgiiot/dgiot_dashboard.git
-     git clone https://github.com/dgiot/dgiot.git
+     git clone https://gitee.com/dgiiot/dgiot.git
    ```
 
  +  国内Linux/Unix/Mac/windows 构建
