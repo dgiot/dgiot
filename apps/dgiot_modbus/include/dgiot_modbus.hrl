@@ -1,3 +1,19 @@
+-define(DGIOT_MODBUS_TCP_DTU, dgiot_modbus_tcp_dtu_ets).
+-record(state, {
+    id,
+    devaddr = <<>>,
+    heartcount = 0,
+    regtype = <<>>,
+    head = "xxxxxx0eee",
+    len = 0,
+    app = <<>>,
+    product = <<>>,
+    deviceId = <<>>,
+    scale = 10,
+    temperature = 0,
+    env = <<>>
+}).
+
 -define(READ_DISCRETE_INPUTS, 2).
 -define(READ_COILS, 1).
 -define(WRITE_SINGLE_COIL, 5).

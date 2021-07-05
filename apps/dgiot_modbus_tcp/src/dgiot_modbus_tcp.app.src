@@ -1,7 +1,0 @@
-{application,dgiot_modbus_tcp,
-             [{description,"modbus_tcp"},
-              {vsn,"1.0.0"},
-              {modules,[]},
-              {registered,[dgiot_modbus_tcp_sup]},
-              {applications,[kernel,stdlib,dgiot]},
-              {mod,{dgiot_modbus_tcp_app,[]}}]}.

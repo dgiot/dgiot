@@ -90,13 +90,11 @@ timing_start(#{
     <<"end_time">> := End_time,
     <<"channel">> := Channel
 } = Args) ->
-    ?LOG(info, "Args ~p", [Args]),
     Callback =
         fun(_X) ->
             lists:map(fun(Y) ->
                 case Y of
                     {DtuId, _} ->
-                        ?LOG(info, "DtuId ~p", [DtuId]),
                         supervisor:start_child(dgiot_task, [Args#{<<"dtuid">> => DtuId}]);
                     _ ->
                         pass
