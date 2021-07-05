@@ -766,7 +766,6 @@ do_login(UserInfo) ->
 do_login(#{<<"objectId">> := UserId, <<"sessionToken">> := SessionToken} = UserInfo, TTL) ->
     case catch dgiot_parse:get_role(UserId, SessionToken) of
         {ok, #{<<"roles">> := Roles, <<"rules">> := Rules}} ->
-            ?LOG(info,"Roles ~p",[Roles]),
             NewRules =
                 lists:foldl(
                     fun(Rule, Acc) ->
