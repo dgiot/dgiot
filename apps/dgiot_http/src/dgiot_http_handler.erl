@@ -83,14 +83,30 @@ do_request(get_wechat, #{<<"jscode">> := Jscode}, _Context, _Req) ->
 %% iot_hub 概要: 查询平台api资源 描述:wechat绑定
 %% OperationId:post_login
 %% 请求:POST /iotapi/post_login
-do_request(post_wechat, #{<<"jscode">> := JSCODE}, #{<<"sessionToken">> := SessionToken}, _Req) ->
-    ?LOG(info, "JSCODE ~p, SessionToken = ~p ", [JSCODE, SessionToken]),
+do_request(post_wechat, #{<<"username">> := UserName, <<"password">> := Password, <<"openid">> := OpenId}, _Context, _Req) ->
+    ?LOG(info, "UserName ~p ", [UserName]),
+    dgiot_wechat:post_sns(UserName, Password, OpenId);
+
+%% iot_hub 概要: 查询平台api资源 描述:wechat解绑
+%% OperationId:post_login
+%% 请求:POST /iotapi/post_login
+do_request(get_wechat_unbind, _Args, #{<<"sessionToken">> := SessionToken}, _Req) ->
+    ?LOG(info, "SessionToken = ~p ", [SessionToken]),
     case dgiot_auth:get_session(SessionToken) of
         #{<<"objectId">> := UserId} ->
-            dgiot_wechat:post_sns(UserId, JSCODE);
+            dgiot_wechat:unbind_sns(UserId);
         _ ->
             {error, <<"Not Allowed.">>}
     end;
+
+%% iot_hub 概要: 查询平台api资源 描述:wechat解绑
+%% OperationId:post_login
+%% 请求:POST /iotapi/post_login
+do_request(get_wechat_index, _Args, #{<<"sessionToken">> := SessionToken}, _Req) ->
+    ?LOG(info, "SessionToken = ~p ", [SessionToken]),
+
+    dgiot_wechat:get_wechat_index(SessionToken);
+
 
 %%  服务器不支持的API接口
 do_request(OperationId, Args, _Context, _Req) ->
