@@ -13,18 +13,32 @@
 %% See the License for the specific language governing permissions and
 %% limitations under the License.
 %%--------------------------------------------------------------------
--module(license_trigger).
--author("kenneth").
+-module(dgiot_mqtt_sup).
+
+-behaviour(supervisor).
 
 %% API
--export([do/1]).
+-export([start_link/0]).
+
+%% Supervisor callbacks
+-export([init/1]).
+
+%% Helper macro for declaring children of supervisor
+-define(CHILD(I, Type, Args), {I, {I, start_link, Args}, permanent, 5000, Type, [I]}).
+
+%% ===================================================================
+%% API functions
+%% ===================================================================
+
+start_link() ->
+    supervisor:start_link({local, ?MODULE}, ?MODULE, []).
+
+%% ===================================================================
+%% Supervisor callbacks
+%% ===================================================================
 
 
-do(Req0) ->
-    {ok, Body, Req} = dgiot_req:read_body(Req0),
-    Data = jsx:decode(Body, [{labels, binary}, return_maps]),
-    io:format(" ~p~n", [Data]),
-    Req1 = dgiot_req:reply(500, #{
-        <<"content-type">> => <<"application/json; charset=utf-8">>
-    }, jsx:encode(#{error => <<>>}), Req),
-    {ok, Req1}.
+init([]) ->
+    Children = [],
+    {ok, {{one_for_one, 5, 10}, Children}}.
+

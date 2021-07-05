@@ -14,31 +14,41 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
-%% @doc dgiot_modbus_tcp supervisor
--module(dgiot_modbus_tcp_sup).
--include("dgiot_modbus_tcp.hrl").
+%% @doc dgiot_mqttc_sup
+-module(dgiot_mqttc_sup).
+
 -behaviour(supervisor).
 
 %% API
--export([start_link/0]).
+-export([start_link/2, start_sup/2]).
 
 %% Supervisor callbacks
 -export([init/1]).
 
 %% Helper macro for declaring children of supervisor
--define(CHILD(I, Type), {I, {I, start_link, []}, permanent, 5000, Type, [I]}).
+-define(CHILD(I, Type, Args), {I, {I, start_link, Args}, transient, 5000, Type, [I]}).
 
 %%--------------------------------------------------------------------
 %% API functions
 %%--------------------------------------------------------------------
 
-start_link() ->
-    supervisor:start_link({local, ?MODULE}, ?MODULE, []).
+start_link(Name, Mod) ->
+    supervisor:start_link({local, Name}, ?MODULE, [Mod]).
 
 %%--------------------------------------------------------------------
 %% Supervisor callbacks
 %%--------------------------------------------------------------------
 
-init([]) ->
-    {ok, { {one_for_one, 5, 10}, []}}.
+init([Mod]) ->
+    {ok, { {simple_one_for_one, 5, 10}, [?CHILD(Mod, worker, [])]}}.
+
+start_sup(Name, Mod) ->
+    case whereis(Name) of
+        undefined ->
+            Args = [Name, Mod],
+            supervisor:start_child(dgiot_mqttc_sup, {Name, {dgiot_mqttc_sup, start_link, Args}, permanent, 5000, supervisor, [Name]});
+        Pid ->
+            {ok, Pid}
+    end.
+
 

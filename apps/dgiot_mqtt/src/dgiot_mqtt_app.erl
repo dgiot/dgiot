@@ -13,18 +13,32 @@
 %% See the License for the specific language governing permissions and
 %% limitations under the License.
 %%--------------------------------------------------------------------
--module(license_trigger).
--author("kenneth").
 
-%% API
--export([do/1]).
+%% @doc
+%%
+%% dgiot_mqtt_app:
+%%
+%%
+%%
+%% @end
+-module(dgiot_mqtt_app).
+-emqx_plugin(?MODULE).
+-behaviour(application).
+-include("dgiot_mqtt.hrl").
+
+%% Application callbacks
+-export([start/2, stop/1]).
 
 
-do(Req0) ->
-    {ok, Body, Req} = dgiot_req:read_body(Req0),
-    Data = jsx:decode(Body, [{labels, binary}, return_maps]),
-    io:format(" ~p~n", [Data]),
-    Req1 = dgiot_req:reply(500, #{
-        <<"content-type">> => <<"application/json; charset=utf-8">>
-    }, jsx:encode(#{error => <<>>}), Req),
-    {ok, Req1}.
+%% ===================================================================
+%% Application callbacks
+%% ===================================================================
+
+start(_StartType, _StartArgs) ->
+    dgiot_data:init(?DGIOT_MQTT_WORK),
+    {ok, Sup} = dgiot_mqtt_sup:start_link(),
+    {ok, Sup}.
+
+
+stop(_State) ->
+    ok.

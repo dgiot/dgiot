@@ -51,23 +51,22 @@ handle(OperationID, Args, Context, Req) ->
     Headers = #{},
     case catch do_request(OperationID, Args, Context, Req) of
         {ErrType, Reason} when ErrType == 'EXIT'; ErrType == error ->
-            ?LOG(info,"do request: ~p, ~p, ~p~n", [OperationID, Args, Reason]),
+            ?LOG(debug,"do request: ~p, ~p, ~p~n", [OperationID, Args, Reason]),
             Err = case is_binary(Reason) of
                       true -> Reason;
                       false -> dgiot_utils:format("~p", [Reason])
                   end,
             {500, Headers, #{<<"error">> => Err}};
         ok ->
-           ?LOG(info,"do request: ~p, ~p ->ok ~n", [OperationID, Args]),
+           ?LOG(debug,"do request: ~p, ~p ->ok ~n", [OperationID, Args]),
             {200, Headers, #{}, Req};
         {ok, Res} ->
-           ?LOG(info,"do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
+           ?LOG(debug,"do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
             {200, Headers, Res, Req};
         {Status, Res} ->
-           ?LOG(info,"do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
             {Status, Headers, Res, Req};
         {Status, NewHeaders, Res} ->
-           ?LOG(info,"do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
+           ?LOG(debug,"do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
             {Status, maps:merge(Headers, NewHeaders), Res, Req}
     end.
 
@@ -80,34 +79,34 @@ handle(OperationID, Args, Context, Req) ->
 %% OperationId:post_login
 %% 请求:POST /iotapi/post_login
 do_request(post_login, #{<<"username">> := UserName, <<"password">> := Password}, _Context, _Req) ->
-    ?LOG(info,"UserName ~p ", [UserName]),
+    ?LOG(debug,"UserName ~p ", [UserName]),
     dgiot_parse_handler:login_by_account(UserName, Password);
 
 %% Role模版 概要: 导库 描述:json文件导库
 %% OperationId:post_role
 %% 请求:POST /iotapi/role
 do_request(post_role, #{<<"name">> := _Name, <<"tempname">> := _TempName} = Body, #{<<"sessionToken">> := SessionToken} = _Context, _Req0) ->
-    ?LOG(info,"Body ~p ", [Body]),
+    ?LOG(debug,"Body ~p ", [Body]),
     dgiot_role:post_role(Body, SessionToken);
 
 %% Role模版 概要: 导库 描述:json文件导库
 %% OperationId:delete_role
 %% 请求:DELETE /iotapi/role
 do_request(delete_role, #{<<"name">> := _Name, <<"tempname">> := _TempName} = Body,  _Context, _Req0) ->
-    ?LOG(info,"Body ~p ", [Body]);
+    ?LOG(debug,"Body ~p ", [Body]);
 
 %% Role模版 概要: 导库 描述:json文件导库
 %% OperationId:post_role
 %% 请求:POST /iotapi/role
 do_request(put_role, Body, #{<<"sessionToken">> := SessionToken} = _Context, _Req0) ->
-    ?LOG(info,"Body ~p ", [Body]),
+    ?LOG(debug,"Body ~p ", [Body]),
     dgiot_role:put_role(Body, SessionToken);
 
 %% Role 概要: 导库 描述:json文件导库
 %% OperationId:get_role
 %% 请求:GET /iotapi/role
 do_request(get_role, #{<<"name">> := Name} = Body, #{<<"sessionToken">> := SessionToken} = _Context, _Req0) ->
-    ?LOG(info,"Body ~p ", [Body]),
+    ?LOG(debug,"Body ~p ", [Body]),
     dgiot_role:get_role(Name, SessionToken);
 
 %% RoleUser 概要: 导库 描述:json文件导库
@@ -120,28 +119,28 @@ do_request(get_roleuser, #{<<"where">> := Where} = Filter, #{<<"sessionToken">> 
 %% OperationId:put_roleuser
 %% 请求:POST /iotapi/roleuser
 do_request(put_roleuser, Body, #{<<"sessionToken">> := SessionToken} = _Context, _Req0) ->
-    ?LOG(info,"Body ~p ", [Body]),
+    ?LOG(debug,"Body ~p ", [Body]),
     dgiot_role:put_roleuser(Body, SessionToken);
 
 %% Role模版 概要: 导库 描述:json文件导库
 %% OperationId:delete_roleuser
 %% 请求:POST /iotapi/roleuser
 do_request(delete_roleuser, Body, #{<<"sessionToken">> := SessionToken} = _Context, _Req0) ->
-    ?LOG(info,"Body ~p ", [Body]),
+    ?LOG(debug,"Body ~p ", [Body]),
     dgiot_role:del_roleuser(jsx:decode(Body, [return_maps]), SessionToken);
 
 %% Role模版 概要: 导库 描述:json文件导库
 %% OperationId:delete_roleuser
 %% 请求:POST /iotapi/roleuser
 do_request(post_roleuser, Body, #{<<"sessionToken">> := SessionToken} = _Context, _Req0) ->
-    ?LOG(info,"Body ~p ", [Body]),
+    ?LOG(debug,"Body ~p ", [Body]),
     dgiot_role:post_roleuser(Body, SessionToken);
 
 %% Role 概要: 导库 描述:json文件导库
 %% OperationId:get_roletree
 %% 请求:GET /iotapi/roletree
 do_request(get_roletree, _Body, #{<<"sessionToken">> := SessionToken} = _Context, _Req0) ->
-    ?LOG(info,"SessionToken ~p ", [SessionToken]),
+    ?LOG(debug,"SessionToken ~p ", [SessionToken]),
     dgiot_parse_handler:get_classtree(<<"_Role">>,<<"parent">>, #{}, SessionToken);
 %%    dgiot_role:get_roletree(SessionToken);
 
@@ -150,7 +149,7 @@ do_request(get_roletree, _Body, #{<<"sessionToken">> := SessionToken} = _Context
 %% 请求:GET /iotapi/roletemp
 do_request(get_roletemp, #{<<"name">> := Name} = Body,
         #{<<"sessionToken">> := SessionToken} = _Context, _Req0) ->
-    ?LOG(info,"Body ~p ", [Body]),
+    ?LOG(debug,"Body ~p ", [Body]),
     FileName = dgiot_utils:to_list(Name) ++ ".zip",
     case dgiot_role:get_roletemp(FileName, Name, SessionToken) of
         {ok, ZipFile} ->
@@ -167,20 +166,19 @@ do_request(get_roletemp, #{<<"name">> := Name} = Body,
 %% OperationId:post_roletemp
 %% 请求:POST /iotapi/roletemp
 do_request(post_roletemp, #{<<"name">> := Name, <<"tempname">> := TempName} = Body, #{<<"sessionToken">> := SessionToken} = _Context, _Req0) ->
-    ?LOG(info,"Body ~p ", [Body]),
-    R = dgiot_role:post_roletemp(Name, TempName, SessionToken),
-    ?LOG(info,"R ~p ", [R]),
-    R;
+    ?LOG(debug,"Body ~p ", [Body]),
+   dgiot_role:post_roletemp(Name, TempName, SessionToken);
+
 
 %% Role模版 概要: 导库 描述:json文件导库
 %% OperationId:post_roletemp
 %% 请求:POST /iotapi/roletemp
 do_request(put_roletemp, Body, #{<<"sessionToken">> := SessionToken} = _Context, _Req0) ->
-    ?LOG(info,"Body ~p ", [Body]),
+    ?LOG(debug,"Body ~p ", [Body]),
     dgiot_role:put_roletemp(Body, SessionToken);
 
 
 %%  服务器不支持的API接口
 do_request(_OperationId, _Args, _Context, _Req) ->
-    ?LOG(info,"_Args ~p", [_Args]),
+    ?LOG(debug,"_Args ~p", [_Args]),
     {error, <<"Not Allowed.">>}.

@@ -91,8 +91,9 @@ get_message(Selected, #{
         'Params' := _Params,
         'TopicTks' := TopicTks,
         'PayloadTks' := PayloadTks
-    }}) ->
-    #{
+    }} = Env) ->
+    NewEnv = maps:without([?BINDING_KEYS],Env),
+    NewEnv#{
         topic => emqx_rule_utils:proc_tmpl(TopicTks, Selected),
         payload => emqx_rule_utils:proc_tmpl(PayloadTks, Selected),
         timestamp => Timestamp
@@ -103,19 +104,20 @@ get_message(Selected, #{
         'Params' := _Params,
         'TopicTks' := TopicTks,
         'PayloadTks' := PayloadTks
-    }}) ->
-    #{
+    }} = Env) ->
+    NewEnv = maps:without([?BINDING_KEYS],Env),
+    NewEnv#{
         topic => emqx_rule_utils:proc_tmpl(TopicTks, Selected),
         payload => emqx_rule_utils:proc_tmpl(PayloadTks, Selected),
         timestamp => erlang:system_time(millisecond)
     };
 
-get_message(_Selected, _Envs = #{
+get_message(_Selected, Envs = #{
     topic := _Topic,
     headers := #{republish_by := ActId},
     ?BINDING_KEYS := #{'_Id' := ActId}
 }) ->
-    #{}.
+    maps:without([?BINDING_KEYS],Envs).
 
 republish(Selected, #{
     qos := QoS, flags := Flags, timestamp := Timestamp,

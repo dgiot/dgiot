@@ -1,5 +1,5 @@
 %%--------------------------------------------------------------------
-%% Copyright (c) 2020-2021 DGIOT Technologies Co., Ltd. All Rights Reserved.
+%% Copyright (c) 2016-2017 John liu <johnliu@iotn2n.com>.
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -13,18 +13,8 @@
 %% See the License for the specific language governing permissions and
 %% limitations under the License.
 %%--------------------------------------------------------------------
--module(license_trigger).
--author("kenneth").
 
-%% API
--export([do/1]).
+-define(DGIOT_MQTT_WORK, dgiot_mqtt_work).
+-define(GROUP_TOPIC(Di, Mid), <<"group/", Di/binary,"/",Mid/binary>>).
+-define(COMSUMER_KEY(Di), <<"comsumer/",Di/binary>>).
 
-
-do(Req0) ->
-    {ok, Body, Req} = dgiot_req:read_body(Req0),
-    Data = jsx:decode(Body, [{labels, binary}, return_maps]),
-    io:format(" ~p~n", [Data]),
-    Req1 = dgiot_req:reply(500, #{
-        <<"content-type">> => <<"application/json; charset=utf-8">>
-    }, jsx:encode(#{error => <<>>}), Req),
-    {ok, Req1}.
