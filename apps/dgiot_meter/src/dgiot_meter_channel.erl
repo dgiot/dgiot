@@ -161,8 +161,10 @@ handle_event(_EventId, _Event, State) ->
 % SELECT clientid, payload, topic FROM "meter"
 % SELECT clientid, disconnected_at FROM "$events/client_disconnected" WHERE username = 'dgiot'
 % SELECT clientid, connected_at FROM "$events/client_connected" WHERE username = 'dgiot'
-handle_message({rule, #{clientid := DevAddr, connected_at := _ConnectedAt}, #{peername := PeerName} = _Context}, State) ->
-    ?LOG(error,"DevAddr ~p PeerName ~p",[DevAddr,PeerName] ),
+handle_message({rule, #{clientid := DtuAddr, connected_at := _ConnectedAt}, #{peername := PeerName} = _Context}, #state{id = ChannelId} = State) ->
+    ?LOG(error,"DtuAddr ~p PeerName ~p",[DtuAddr,PeerName] ),
+    DTUIP = dgiot_utils:get_ip(PeerName),
+    dgiot_meter:create_dtu(DtuAddr, ChannelId, DTUIP),
     {ok, State};
 
 handle_message({rule, #{clientid := DevAddr, disconnected_at := _DisconnectedAt}, _Context}, State) ->
