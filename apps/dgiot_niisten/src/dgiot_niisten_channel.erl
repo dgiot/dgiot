@@ -116,6 +116,20 @@
         description => #{
             zh => <<"心跳周期"/utf8>>
         }
+    },
+    <<"ico">> => #{
+        order => 102,
+        type => string,
+        required => false,
+        default => <<"http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/product/dgiot/channel/niisten.jpg">>,
+        title => #{
+            en => <<"channel ICO">>,
+            zh => <<"通道ICO"/utf8>>
+        },
+        description => #{
+            en => <<"channel ICO">>,
+            zh => <<"通道ICO"/utf8>>
+        }
     }
 }).
 
@@ -154,6 +168,24 @@ handle_init(State) ->
 %% 通道消息处理,注意：进程池调用
 handle_event(_EventId, _Event, State) ->
     {ok, State}.
+
+
+% SELECT clientid, payload, topic FROM "BasicInformation"
+% SELECT clientid, payload, topic FROM "PeriodicInformation"
+% SELECT clientid, payload, topic FROM "FaultInformation"
+% SELECT clientid, disconnected_at FROM "$events/client_disconnected" WHERE username = 'sinmahe'
+% SELECT clientid, connected_at FROM "$events/client_connected" WHERE username = 'sinmahe'
+handle_message({rule, #{clientid := DevAddr, connected_at := _ConnectedAt}, #{peername := PeerName} = _Context}, State) ->
+    ?LOG(error,"DevAddr ~p PeerName ~p",[DevAddr,PeerName] ),
+    {ok, State};
+
+handle_message({rule, #{clientid := DevAddr, disconnected_at := _DisconnectedAt}, _Context}, State) ->
+    ?LOG(error,"DevAddr ~p ",[DevAddr] ),
+    {ok, State};
+
+handle_message({rule, #{clientid := DevAddr, payload := Payload, topic := _Topic}, _Msg}, #state{id = ChannelId} = State) ->
+    ?LOG(error,"DevAddr ~p Payload ~p ChannelId ~p",[DevAddr,Payload,ChannelId] ),
+    {ok, State};
 
 handle_message(_Message, State) ->
     {ok, State}.

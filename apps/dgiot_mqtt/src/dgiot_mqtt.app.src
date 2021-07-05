@@ -1,0 +1,8 @@
+{application,dgiot_mqtt,
+             [{description,"DGIOT MQTT"},
+              {vsn,"1.6.4"},
+              {applications,[kernel,stdlib]},
+              {modules,[]},
+              {env,[]},
+              {mod,{dgiot_mqtt_app,[]}},
+              {registered,[]}]}.
