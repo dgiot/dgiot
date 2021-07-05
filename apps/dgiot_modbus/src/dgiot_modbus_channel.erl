@@ -17,6 +17,7 @@
 -behavior(dgiot_channelx).
 -author("johnliu").
 -include("dgiot_modbus.hrl").
+-include_lib("dgiot/include/logger.hrl").
 -define(TYPE, <<"MODBUS">>).
 %% API
 -export([start/2]).
@@ -147,6 +148,21 @@ handle_init(State) ->
 %% 通道消息处理,注意：进程池调用
 handle_event(_EventId, _Event, State) ->
     {ok, State}.
+
+% SELECT clientid, payload, topic FROM "meter"
+% SELECT clientid, disconnected_at FROM "$events/client_disconnected" WHERE username = 'dgiot'
+% SELECT clientid, connected_at FROM "$events/client_connected" WHERE username = 'dgiot'
+handle_message({rule, #{clientid := DevAddr, connected_at := _ConnectedAt}, #{peername := PeerName} = _Context}, State) ->
+    ?LOG(error,"DevAddr ~p PeerName ~p",[DevAddr,PeerName] ),
+    {ok, State};
+
+handle_message({rule, #{clientid := DevAddr, disconnected_at := _DisconnectedAt}, _Context}, State) ->
+    ?LOG(error,"DevAddr ~p ",[DevAddr] ),
+    {ok, State};
+
+handle_message({rule, #{clientid := DevAddr, payload := Payload, topic := _Topic}, _Msg}, #state{id = ChannelId} = State) ->
+    ?LOG(error,"DevAddr ~p Payload ~p ChannelId ~p",[DevAddr,Payload,ChannelId] ),
+    {ok, State};
 
 handle_message(_Message, State) ->
     {ok, State}.
