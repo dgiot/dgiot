@@ -364,7 +364,7 @@ get_appdata(Channel, TableName, Query) ->
 
 get_keys(ProductId, Function, <<"*">>) ->
     case dgiot_device:lookup_prod(ProductId) of
-        {ok, {#{<<"thing">> := #{<<"properties">> := Props}}}} ->
+        {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
             lists:foldl(fun(X, {Names, Acc}) ->
                 case X of
                     #{<<"identifier">> := Identifier, <<"name">> := Name} ->
