@@ -198,6 +198,7 @@ overlay_vars_rel(RelType) ->
         , {enable_plugin_dgiot_opc, true}
         , {enable_plugin_dgiot_mqtt, true}
         , {enable_plugin_dgiot_niisten, true}
+        , {enable_plugin_dgiot_meter, true}
         , {enable_plugin_dgiot_modbus, true}
         , {enable_plugin_dgiot_modbus_tcp, true}
         , {vm_args_file, VmArgs}
@@ -323,6 +324,7 @@ relx_plugin_apps_per_rel(cloud) ->
         , dgiot_modbus
         , dgiot_modbus_tcp
         , dgiot_mqtt
+        , dgiot_meter
     ];
 relx_plugin_apps_per_rel(edge) ->
     [].
