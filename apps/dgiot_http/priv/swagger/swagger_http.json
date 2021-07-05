@@ -6,7 +6,6 @@
     }
   ],
   "definitions": {
-
   },
   "paths": {
     "/wechat": {
@@ -42,20 +41,34 @@
         ]
       },
       "post": {
+        "security": [],
+        "summary": "wechat绑定",
         "description": "wechat绑定",
+        "consumes": [
+          "text/plain"
+        ],
         "parameters": [
           {
             "in": "body",
-            "name": "params",
-            "description": "参数",
+            "name": "user",
             "required": true,
             "schema": {
               "type": "object",
               "properties": {
-                "jscode": {
-                  "description": "jscode",
+                "username": {
+                  "required": true,
                   "type": "string",
-                  "example": "jscode"
+                  "example": "dgiot_admin"
+                },
+                "password": {
+                  "required": true,
+                  "type": "string",
+                  "example": "dgiot_admin"
+                },
+                "openid": {
+                  "required": true,
+                  "type": "string",
+                  "example": "openIdopsKlr9NtrNqDC9oP8yHiE"
                 }
               }
             }
@@ -63,13 +76,72 @@
         ],
         "responses": {
           "200": {
-            "description": ""
+            "description": "Returns success"
+          },
+          "400": {
+            "description": "Bad Request"
           },
           "404": {
-            "description": ""
+            "description": "Forbidden",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "500": {
+            "description": "Server Internal error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
           }
         },
-        "summary": "wechat绑定",
+        "tags": [
+          "Wechat"
+        ]
+      }
+    },
+    "/wechat_unbind": {
+      "get": {
+        "description": "wechat解绑",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "summary": "wechat解绑",
+        "tags": [
+          "Wechat"
+        ]
+      }
+    },
+    "/wechat_index": {
+      "get": {
+        "description": "总控台",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "summary": "总控台",
         "tags": [
           "Wechat"
         ]
