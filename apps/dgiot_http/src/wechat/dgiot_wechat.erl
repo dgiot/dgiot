@@ -27,7 +27,9 @@
     post_sns/3,
     get_sns/1,
     unbind_sns/1,
-    get_wechat_index/1
+    get_wechat_index/1,
+    sendSubscribe/0,
+    sendTemplate/0
 ]).
 
 %% https://api.weixin.qq.com/sns/jscode2session?appid=APPID&secret=SECRET&js_code=JSCODE&grant_type=authorization_code
@@ -87,41 +89,91 @@ get_sns(Jscode) ->
             _Error
     end.
 
-
+%% 发送模板消息
 %% Data 消息内容
+%% templateId 模板消息编号
+%% touser     消息接收者openId
+%% POST https://api.weixin.qq.com/cgi-bin/message/wxopen/template/uniform_send?access_token=ACCESS_TOKEN
+sendTemplate() ->
+    AppId = dgiot_utils:to_binary(application:get_env(dgiot_http, wechat_appid, <<"">>)),
+    Secret = dgiot_utils:to_binary(application:get_env(dgiot_http, wechat_secret, <<"">>)),
+%%  "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=wx62de5b17388a361f&secret=bd71815d6ff657b0f8a0032848c9079b",
+    Url = "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=" ++ dgiot_utils:to_list(AppId) ++ "&secret=" ++ dgiot_utils:to_list(Secret),
+    case httpc:request(Url) of
+        {ok, {{_Version, 200, _ReasonPhrase}, _Headers, Body}} ->
+            Json = list_to_binary(Body),
+            case jsx:is_json(Json) of
+                true ->
+                    case jsx:decode(Json, [{labels, binary}, return_maps]) of
+                        #{<<"access_token">> := AccessToken, <<"expires_in">> := _ExpiresIn} ->
+                            TemplateUrl = "https://api.weixin.qq.com/cgi-bin/message/template/send?access_token=" ++ dgiot_utils:to_list(AccessToken),
+                            Data = #{<<"touser">> => <<"o_8aC4mM0KhYpIe7ddDV8_0NZUZY">>,
+                                <<"template_id">> => <<"ngqIpbwh8bUfcSsECmogfXcV14J0tQlEpBO27izEYtY">>,
+                                <<"url">> => <<"www.baidu.com">>,
+                                <<"data">> => #{<<"first">> => #{<<"value">> => <<"thing2">>, <<"color">> => <<"#173177">>},
+                                    <<"thing3">> => #{<<"value">> => <<"thing3">>, <<"color">> => <<"#173177">>},
+                                    <<"thing4">> => #{<<"value">> => <<"thing4">>, <<"color">> => <<"#173177">>},
+                                    <<"thing5">> => #{<<"value">> => <<"thing5">>, <<"color">> => <<"#173177">>},
+                                    <<"thing6">> => #{<<"value">> => <<"thing6">>, <<"color">> => <<"#173177">>}}},
+                            Data1 = dgiot_utils:to_list(Data),
+                            ?LOG(info, "SubscribeUrl ~s Data1 ~s", [TemplateUrl, Data1]),
+                            R = httpc:request(post, {TemplateUrl, [], "application/x-www-form-urlencoded", Data1}, [{timeout, 5000}, {connect_timeout, 10000}], [{body_format, binary}]),
+                            ?LOG(info, "~p", [R]);
+                        _Result ->
+                            {error, <<"not find access_token">>}
+                    end;
+                false -> {error, <<"not find access_token">>}
+            end;
+        _Error ->
+            _Error
+    end.
+
+%% 发送小程序订阅消息
+%% Data 小程序订阅消息内容
 %% page       要跳转到小程序的页面
 %% templateId 模板消息编号
 %% touser     消息接收者openId
 %% POST https://api.weixin.qq.com/cgi-bin/message/wxopen/template/uniform_send?access_token=ACCESS_TOKEN
-%%sendMessage(Data, Touser, Page, TemplateId) ->
-%%    AppId = dgiot_utils:to_binary(application:get_env(dgiot_http, wechat_appid, <<"">>)),
-%%    Secret = dgiot_utils:to_binary(application:get_env(dgiot_http, wechat_secret, <<"">>)),
-%%%%  "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=wx62de5b17388a361f&secret=bd71815d6ff657b0f8a0032848c9079b",
-%%    Url = "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=" ++ dgiot_utils:to_list(AppId) ++ "&secret=" ++ dgiot_utils:to_list(Secret),
-%%    case httpc:request(Url) of
-%%        {ok, {{_Version, 200, _ReasonPhrase}, _Headers, Body}} ->
-%%            Json = list_to_binary(Body),
-%%            case jsx:is_json(Json) of
-%%                true ->
-%%                    case jsx:decode(Json, [{labels, binary}, return_maps]) of
-%%                        #{<<"access_token">> := AccessToken, <<"expires_in">> := _ExpiresIn} ->
-%%                            TemplateUrl = "https://api.weixin.qq.com/cgi-bin/message/template/send?access_token=" + dgiot_utils:to_list(AccessToken),
-%%                            ?LOG(info, "~p ~p", [OPENID, _SESSIONKEY]);
-%%                        _Result ->
-%%                            {error, <<"not find access_token">>}
-%%                    end;
-%%                false -> {error, <<"not find access_token">>}
-%%            end;
-%%        _Error ->
-%%            _Error
-%%    end.
-
+sendSubscribe() ->
+    AppId = dgiot_utils:to_binary(application:get_env(dgiot_http, wechat_appid, <<"">>)),
+    Secret = dgiot_utils:to_binary(application:get_env(dgiot_http, wechat_secret, <<"">>)),
+%%  "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=wx62de5b17388a361f&secret=bd71815d6ff657b0f8a0032848c9079b",
+    Url = "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=" ++ dgiot_utils:to_list(AppId) ++ "&secret=" ++ dgiot_utils:to_list(Secret),
+    ?LOG(info, "Url ~s", [Url]),
+    case httpc:request(Url) of
+        {ok, {{_Version, 200, _ReasonPhrase}, _Headers, Body}} ->
+            Json = list_to_binary(Body),
+            case jsx:is_json(Json) of
+                true ->
+                    case jsx:decode(Json, [{labels, binary}, return_maps]) of
+                        #{<<"access_token">> := AccessToken, <<"expires_in">> := _ExpiresIn} ->
+                            SubscribeUrl = "https://api.weixin.qq.com/cgi-bin/message/subscribe/send?access_token=" ++ dgiot_utils:to_list(AccessToken),
+                            Subscribe = #{<<"touser">> => <<"o_8aC4mM0KhYpIe7ddDV8_0NZUZY">>,
+                                <<"template_id">> => <<"KX8VXrQ2-4jYG6IG0N60OzM6ouojaChl9QIGFaa795c">>,
+                                <<"page">> => <<"www.baidu.com">>,
+                                <<"miniprogram_state">> => <<"developer">>,
+                                <<"lang">> => <<"zh_CN">>,
+                                <<"data">> => #{<<"thing2">> => #{<<"value">> => <<"thing2">>},
+                                    <<"thing3">> => #{<<"value">> => <<"thing3">>},
+                                    <<"thing4">> => #{<<"value">> => <<"thing4">>},
+                                    <<"thing5">> => #{<<"value">> => <<"thing5">>},
+                                    <<"thing6">> => #{<<"value">> => <<"thing6">>}}},
+                            Data1 = dgiot_utils:to_list(Subscribe),
+                            ?LOG(info, "SubscribeUrl ~s Data1 ~s", [SubscribeUrl, Data1]),
+                            R = httpc:request(post, {SubscribeUrl, [], "application/x-www-form-urlencoded", Data1}, [{timeout, 5000}, {connect_timeout, 10000}], [{body_format, binary}]),
+                            ?LOG(info, "~p", [R]);
+                        _Result ->
+                            {error, <<"not find access_token">>}
+                    end;
+                false -> {error, <<"not find access_token">>}
+            end;
+        _Error ->
+            _Error
+    end.
 
 get_wechat_index(SessionToken) ->
     case dgiot_parse:query_object(<<"Device">>, #{<<"keys">> => [<<"count(*)">>], <<"limit">> => 1000}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
-        {ok, #{<<"count">> := Count, <<"results">> := Results} = R} ->
-            ?LOG(info, "Results ~p", [Results]),
-            ?LOG(info, "R ~p", [R]),
+        {ok, #{<<"count">> := Count, <<"results">> := Results}} ->
             {ONLINE, OFFLINE} =
                 lists:foldl(fun(X, {Online, Offline}) ->
                     case X of
