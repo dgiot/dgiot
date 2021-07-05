@@ -13,7 +13,7 @@
 %% See the License for the specific language governing permissions and
 %% limitations under the License.
 %%--------------------------------------------------------------------
--module(dgiot_modbus_tcp_handler).
+-module(dgiot_modbus_handler).
 -author("stoneliu").
 -behavior(dgiot_rest).
 -dgiot_rest(all).
@@ -32,7 +32,7 @@
 %%    dgiot_http_server:bind(<<"/swagger_feeders.json">>, ?MODULE, [], priv)
 swagger_modbus_tcp() ->
     [
-        dgiot_http_server:bind(<<"/swagger_modbus_tcp.json">>, ?MODULE, [], priv)
+        dgiot_http_server:bind(<<"/swagger_modbus.json">>, ?MODULE, [], priv)
     ].
 
 

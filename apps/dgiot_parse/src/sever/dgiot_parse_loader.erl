@@ -44,7 +44,6 @@ start(Name, Class, Query, PageSize, MaxTotal, Success) when is_binary(Name) ->
 start(_Name, _Class, _Query, PageIndex, PageSize, MaxTotal, _Success) when PageIndex == 0; PageSize == 0; MaxTotal == 0 ->
     ok;
 start(Name, Class, Query, PageIndex, PageSize, MaxTotal, Success) ->
-    ?LOG(error," Name ~p",[ Name]),
     case supervisor:start_child(dgiot_parse_loader_sup, [self(), Name, Class, Query, PageIndex, PageSize, MaxTotal, Success]) of
         {ok, _Pid} -> ok;
         {error, Reason} -> {error, Reason}
@@ -60,7 +59,6 @@ start_link(From, Name, Class, Query, PageIndex, PageSize, MaxPage, Success) ->
 %%%===================================================================
 
 init([From, Name, Class, Query, PageIndex, PageSize, MaxTotal, Success]) ->
-    ?LOG(error," From ~p",[ From]),
     erlang:send_after(1000, self(), start),
     {ok, #state{
         from = From,
@@ -149,10 +147,9 @@ load_page(#state{
                     LastCount = Total - LoadCount,
                     case LastCount =< 0 of
                         true ->
-                            ?LOG(info,"~s Load ~s [~p/~p] Index:~p", [Rate, Class, LoadCount, Total, PageIndex]),
                             self() ! complete;
                         false ->
-                            %?LOG(info,"~s Load ~s [~p/~p] Index:~p", [Rate, Class, LoadCount, Total, PageIndex]),
+                            ?LOG(info,"~s Load ~s [~p/~p] Index:~p", [Rate, Class, LoadCount, Total, PageIndex]),
                             case LastCount > PageSize of
                                 true ->
                                     load_page(State#state{page_index = PageIndex + 1});

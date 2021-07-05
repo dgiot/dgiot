@@ -13,11 +13,11 @@
 %% See the License for the specific language governing permissions and
 %% limitations under the License.
 %%--------------------------------------------------------------------
--module(dgiot_modbus_tcp_channel).
+-module(dgiot_modbus_channel).
 -behavior(dgiot_channelx).
 -author("johnliu").
--include("dgiot_modbus_tcp.hrl").
--define(TYPE, <<"MODBUS_TCP">>).
+-include("dgiot_modbus.hrl").
+-define(TYPE, <<"MODBUS">>).
 %% API
 -export([start/2]).
 
@@ -29,10 +29,10 @@
 -channel_type(#{
     type => 1,
     title => #{
-        zh => <<"MODBUS_TCP通道"/utf8>>
+        zh => <<"MODBUS通道"/utf8>>
     },
     description => #{
-        zh => <<"MODBUS_TCP通道"/utf8>>
+        zh => <<"MODBUS通道"/utf8>>
     }
 }).
 %% 注册通道参数
@@ -101,7 +101,7 @@
         order => 102,
         type => string,
         required => false,
-        default => <<"http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/product/dgiot/channel/MODBUS_TCP%E9%80%9A%E9%81%93.jpg">>,
+        default => <<"http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/product/dgiot/channel/modbus.png">>,
         title => #{
             en => <<"channel ICO">>,
             zh => <<"通道ICO"/utf8>>

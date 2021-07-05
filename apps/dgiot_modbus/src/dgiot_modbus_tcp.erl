@@ -15,7 +15,7 @@
 %%--------------------------------------------------------------------
 -module(dgiot_modbus_tcp).
 -author("stoneliu").
--include("dgiot_modbus_tcp.hrl").
+-include("dgiot_modbus.hrl").
 -include_lib("dgiot/include/dgiot_socket.hrl").
 -include_lib("dgiot/include/logger.hrl").
 

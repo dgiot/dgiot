@@ -169,7 +169,6 @@ start(ChannelId, #{
 init(?TYPE, ChannelId, Config) ->
     case dgiot_bridge:get_products(ChannelId) of
         {ok, _, ProductIds} ->
-            ?LOG(info, "ProductIds ~p", [ProductIds]),
             NewProducts = lists:foldl(fun(X, Acc) ->
                 Acc ++ dgiot_tdengine:get_products(X, ChannelId)
                                       end, [], ProductIds),
