@@ -272,10 +272,15 @@ sysc_rules() ->
                                 Actions = maps:get(<<"actions">>, NewRule),
                                 lists:foldl(fun(X, Acc) ->
                                     #{<<"params">> := #{<<"$resource">> := Resource}} = X,
-                                    <<"resource:", Channel/binary>> = Resource,
-                                    emqx_rule_engine_api:create_resource(#{},
-                                        [
-                                            {<<"id">>, Resource},
+                                    Channel =
+                                        case Resource of
+                                            <<"resource:", Channel1/binary>> ->
+                                                Channel1;
+                                            <<"channel:", Channel2/binary>> ->
+                                                Channel2
+                                        end,
+                                    emqx_rule_engine_api:create_resource(#{}, [
+                                            {<<"id">>, <<"resource:",Channel/binary>>},
                                             {<<"type">>, <<"dgiot_resource">>},
                                             {<<"config">>, [{<<"channel">>, Channel}]},
                                             {<<"description">>, Resource}
