@@ -146,6 +146,64 @@
           "Wechat"
         ]
       }
+    },
+    "/sendsubscribe": {
+      "post": {
+        "basePath": "/",
+        "description": "发送订阅消息",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "data",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "templateid": {
+                  "type": "string",
+                  "required": true,
+                  "example": "9Fmc0vtA7vnh_HtoVtXJy6Y4_GgjqM821MU8HzojUy8",
+                  "description": "模板id"
+                },
+                "page": {
+                  "type": "string",
+                  "example": "/index",
+                  "description": "跳转页面"
+                },
+                "miniprogramstate": {
+                  "type": "string",
+                  "required": true,
+                  "example": "formal",
+                  "description": "小程序类型"
+                },
+                "lang": {
+                  "type": "string",
+                  "required": true,
+                  "example": "zh_CN",
+                  "description": "语言类型"
+                },
+                "data": {
+                  "type": "object",
+                  "required": true,
+                  "example": "{}",
+                  "description": "模板内容"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "发送订阅消息",
+        "tags": [
+          "Wechat"
+        ]
+      }
     }
   }
 }

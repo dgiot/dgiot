@@ -28,7 +28,7 @@
     get_sns/1,
     unbind_sns/1,
     get_wechat_index/1,
-    sendSubscribe/0,
+    sendSubscribe/2,
     sendTemplate/0
 ]).
 
@@ -89,6 +89,84 @@ get_sns(Jscode) ->
             _Error
     end.
 
+%% 发送小程序订阅消息
+%% Data 小程序订阅消息内容
+%% page       要跳转到小程序的页面
+%% templateId 模板消息编号
+%% touser     消息接收者openId
+%% POST https://api.weixin.qq.com/cgi-bin/message/wxopen/template/uniform_send?access_token=ACCESS_TOKEN
+%% dgiot_wechat:sendSubscribe().
+sendSubscribe(UserId, #{<<"lang">> := Lang,
+    <<"miniprogramstate">> := Miniprogramstate,
+    <<"page">> := Page,
+    <<"templateid">> := Templateid,
+    <<"data">> := _Data} = _Args
+) ->
+    case dgiot_parse:get_object(<<"_User">>, UserId) of
+        {ok, #{<<"tag">> := #{<<"wechat">> := #{<<"openid">> := OpenId}}}} when size(OpenId) > 0 ->
+            AppId = dgiot_utils:to_binary(application:get_env(dgiot_http, wechat_appid, <<"">>)),
+            Secret = dgiot_utils:to_binary(application:get_env(dgiot_http, wechat_secret, <<"">>)),
+            Url = "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=" ++ dgiot_utils:to_list(AppId) ++ "&secret=" ++ dgiot_utils:to_list(Secret),
+            case httpc:request(Url) of
+                {ok, {{_Version, 200, _ReasonPhrase}, _Headers, Body}} ->
+                    Json = list_to_binary(Body),
+                    case jsx:is_json(Json) of
+                        true ->
+                            case jsx:decode(Json, [{labels, binary}, return_maps]) of
+                                #{<<"access_token">> := AccessToken, <<"expires_in">> := _ExpiresIn} ->
+                                    SubscribeUrl = "https://api.weixin.qq.com/cgi-bin/message/subscribe/send?access_token=" ++ dgiot_utils:to_list(AccessToken),
+                                    ?LOG(info, "SubscribeUrl ~p", [SubscribeUrl]),
+                                    Subscribe = #{<<"touser">> => OpenId,
+                                        <<"template_id">> => Templateid,
+                                        <<"page">> => Page,
+                                        <<"miniprogram_state">> => Miniprogramstate,
+                                        <<"lang">> => Lang,
+                                        <<"data">> =>
+                                        #{<<"thing1">> => #{<<"value">> => <<"太阳能控制器"/utf8>>},
+                                            <<"character_string8">> => #{<<"value">> => <<"0123456789">>},
+                                            <<"thing5">> => #{<<"value">> => <<"杭州 余杭区 良渚"/utf8>>},
+                                            <<"date4">> => #{<<"value">> => <<"2021年7月07日 15:30:30"/utf8>>},
+                                            <<"thing12">> => #{<<"value">> => <<"没电了"/utf8>>}}},
+                                    ?LOG(info, "Subscribe ~p", [Subscribe]),
+                                    Data1 = dgiot_utils:to_list(jsx:encode(Subscribe)),
+                                    R = httpc:request(post, {SubscribeUrl, [], "application/x-www-form-urlencoded", Data1}, [{timeout, 5000}, {connect_timeout, 10000}], [{body_format, binary}]),
+                                    ?LOG(info, "R ~p", [R]);
+                                _Result ->
+                                    {error, <<"not find access_token">>}
+                            end;
+                        false -> {error, <<"not find access_token">>}
+                    end;
+                _Error ->
+                    _Error
+            end;
+        _ -> {error, <<"user unbind openid">>}
+    end.
+
+%% 总控台
+get_wechat_index(SessionToken) ->
+    case dgiot_parse:query_object(<<"Device">>, #{<<"keys">> => [<<"count(*)">>], <<"limit">> => 1000}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+        {ok, #{<<"count">> := Count, <<"results">> := Results}} ->
+            {ONLINE, OFFLINE} =
+                lists:foldl(fun(X, {Online, Offline}) ->
+                    case X of
+                        #{<<"status">> := <<"ONLINE">>} ->
+                            {Online ++ [X], Offline};
+                        #{<<"status">> := <<"OFFLINE">>} ->
+                            {Online, Offline ++ [X]};
+                        _ ->
+                            {Online, Offline}
+                    end
+                            end, {[], []}, Results),
+            {ok, #{<<"deviceCount">> => Count, <<"devicelist">> => Results,
+                <<"onlineCount">> => length(ONLINE), <<"onlinelist">> => ONLINE,
+                <<"offlineCount">> => length(OFFLINE), <<"offlinelist">> => OFFLINE,
+                <<"panalarmDevice">> => 0, <<"unPanalarmDevice">> => 0,
+                <<"carousel">> => [#{<<"imgurl">> => <<"https://www.baidu.com/img/flexible/logo/pc/peak-result.png">>, <<"webUrl">> => <<"www.baidu.com">>}]}};
+        _ ->
+            pass
+    end.
+
+
 %% 发送模板消息
 %% Data 消息内容
 %% templateId 模板消息编号
@@ -127,73 +205,3 @@ sendTemplate() ->
         _Error ->
             _Error
     end.
-
-%% 发送小程序订阅消息
-%% Data 小程序订阅消息内容
-%% page       要跳转到小程序的页面
-%% templateId 模板消息编号
-%% touser     消息接收者openId
-%% POST https://api.weixin.qq.com/cgi-bin/message/wxopen/template/uniform_send?access_token=ACCESS_TOKEN
-sendSubscribe() ->
-    AppId = dgiot_utils:to_binary(application:get_env(dgiot_http, wechat_appid, <<"">>)),
-    Secret = dgiot_utils:to_binary(application:get_env(dgiot_http, wechat_secret, <<"">>)),
-%%  "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=wx62de5b17388a361f&secret=bd71815d6ff657b0f8a0032848c9079b",
-    Url = "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=" ++ dgiot_utils:to_list(AppId) ++ "&secret=" ++ dgiot_utils:to_list(Secret),
-    ?LOG(info, "Url ~s", [Url]),
-    case httpc:request(Url) of
-        {ok, {{_Version, 200, _ReasonPhrase}, _Headers, Body}} ->
-            Json = list_to_binary(Body),
-            case jsx:is_json(Json) of
-                true ->
-                    case jsx:decode(Json, [{labels, binary}, return_maps]) of
-                        #{<<"access_token">> := AccessToken, <<"expires_in">> := _ExpiresIn} ->
-                            SubscribeUrl = "https://api.weixin.qq.com/cgi-bin/message/subscribe/send?access_token=" ++ dgiot_utils:to_list(AccessToken),
-                            Subscribe = #{<<"touser">> => <<"o_8aC4mM0KhYpIe7ddDV8_0NZUZY">>,
-                                <<"template_id">> => <<"KX8VXrQ2-4jYG6IG0N60OzM6ouojaChl9QIGFaa795c">>,
-                                <<"page">> => <<"www.baidu.com">>,
-                                <<"miniprogram_state">> => <<"developer">>,
-                                <<"lang">> => <<"zh_CN">>,
-                                <<"data">> => #{<<"thing2">> => #{<<"value">> => <<"thing2">>},
-                                    <<"thing3">> => #{<<"value">> => <<"thing3">>},
-                                    <<"thing4">> => #{<<"value">> => <<"thing4">>},
-                                    <<"thing5">> => #{<<"value">> => <<"thing5">>},
-                                    <<"thing6">> => #{<<"value">> => <<"thing6">>}}},
-                            Data1 = dgiot_utils:to_list(Subscribe),
-                            ?LOG(info, "SubscribeUrl ~s Data1 ~s", [SubscribeUrl, Data1]),
-                            R = httpc:request(post, {SubscribeUrl, [], "application/x-www-form-urlencoded", Data1}, [{timeout, 5000}, {connect_timeout, 10000}], [{body_format, binary}]),
-                            ?LOG(info, "~p", [R]);
-                        _Result ->
-                            {error, <<"not find access_token">>}
-                    end;
-                false -> {error, <<"not find access_token">>}
-            end;
-        _Error ->
-            _Error
-    end.
-
-get_wechat_index(SessionToken) ->
-    case dgiot_parse:query_object(<<"Device">>, #{<<"keys">> => [<<"count(*)">>], <<"limit">> => 1000}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
-        {ok, #{<<"count">> := Count, <<"results">> := Results}} ->
-            {ONLINE, OFFLINE} =
-                lists:foldl(fun(X, {Online, Offline}) ->
-                    case X of
-                        #{<<"status">> := <<"ONLINE">>} ->
-                            {Online ++ [X], Offline};
-                        #{<<"status">> := <<"OFFLINE">>} ->
-                            {Online, Offline ++ [X]};
-                        _ ->
-                            {Online, Offline}
-                    end
-                            end, {[], []}, Results),
-            {ok, #{<<"deviceCount">> => Count, <<"devicelist">> => Results,
-                <<"onlineCount">> => length(ONLINE), <<"onlinelist">> => ONLINE,
-                <<"offlineCount">> => length(OFFLINE), <<"offlinelist">> => OFFLINE,
-                <<"panalarmDevice">> => 0, <<"unPanalarmDevice">> => 0,
-                <<"carousel">> => [#{<<"imgurl">> => <<"https://www.baidu.com/img/flexible/logo/pc/peak-result.png">>, <<"webUrl">> => <<"www.baidu.com">>}]}};
-        _ ->
-            pass
-    end.
-
-
-
-

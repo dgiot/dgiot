@@ -104,13 +104,22 @@ do_request(get_wechat_unbind, _Args, #{<<"sessionToken">> := SessionToken}, _Req
 %% 请求:POST /iotapi/post_login
 do_request(get_wechat_index, _Args, #{<<"sessionToken">> := SessionToken}, _Req) ->
     ?LOG(info, "SessionToken = ~p ", [SessionToken]),
-
     dgiot_wechat:get_wechat_index(SessionToken);
 
+%% iot_hub 概要: 查询平台api资源 描述:发送订阅消息
+%% OperationId:post_sendsubscribe
+%% 请求:POST /iotapi/post_sendsubscribe
+do_request(post_sendsubscribe, Args, #{<<"sessionToken">> := SessionToken}, _Req) ->
+    case dgiot_auth:get_session(SessionToken) of
+        #{<<"objectId">> := UserId} ->
+            dgiot_wechat:sendSubscribe(UserId, Args);
+        _ ->
+            {error, <<"Not Allowed.">>}
+    end;
 
 %%  服务器不支持的API接口
 do_request(OperationId, Args, _Context, _Req) ->
-    ?LOG(error, "do request ~p,~p~n", [OperationId, Args]),
+    ?LOG(error, "do request ~p, ~p~n", [OperationId, Args]),
     {error, <<"Not Allowed.">>}.
 
 
