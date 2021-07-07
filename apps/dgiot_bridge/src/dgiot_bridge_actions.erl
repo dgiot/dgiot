@@ -15,7 +15,8 @@
 %%--------------------------------------------------------------------
 
 -module(dgiot_bridge_actions).
--author("zwx").
+-author("johnliu").
+-include("dgiot_bridge.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -include_lib("emqx_rule_engine/include/rule_engine.hrl").
 -include_lib("emqx_rule_engine/include/rule_actions.hrl").
@@ -158,5 +159,4 @@ on_action_dgiot(Selected, Envs) ->
         not_find -> dgiot_mqtt:republish(Selected, Envs);
         _ -> pass
     end.
-
 

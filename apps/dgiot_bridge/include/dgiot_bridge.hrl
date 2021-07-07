@@ -16,3 +16,5 @@
 
 -author("kenneth").
 -define(DGIOT_BRIDGE, dgiot_bridge).
+-define(DGIOT_RUlES, dgiot_rules).
+

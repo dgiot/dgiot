@@ -20,6 +20,7 @@
 -include_lib("dgiot/include/logger.hrl").
 
 -export([
+    start_time/0,
     get_iso_8601/1,
     timezone/0,
     nowstamp/0,
@@ -98,6 +99,20 @@ timestamp() ->
 
 seed() ->
     rand:seed(exsplus, erlang:timestamp()).
+
+start_time() ->
+    case application:get_all_env(dgiot) of
+        Env when length(Env) == 0 ->
+            0;
+        _ ->
+            case dgiot_data:get(dgiot_system_startime) of
+                not_find ->
+                    dgiot_data:insert(dgiot_system_startime, dgiot_datetime:now_secs()),
+                    0;
+                Value ->
+                    dgiot_datetime:now_secs() - Value
+            end
+    end.
 
 now_secs() ->
     erlang:system_time(second).
@@ -225,7 +240,7 @@ day_from({Year, Month, Day}) ->
 day_from({{Year, Month, Day}, _}) ->
     day_from({Year, Month, Day});
 day_from(Arg) ->
-    ?LOG(error,"dgiot_datatime:day_from - bad arg [~p]", [Arg]),
+    ?LOG(error, "dgiot_datatime:day_from - bad arg [~p]", [Arg]),
     0.
 
 month_from() ->
@@ -242,7 +257,7 @@ month_from({Year, Month, _}) ->
 month_from({{Year, Month, _}, _}) ->
     month_from({Year, Month, 1});
 month_from(Arg) ->
-    ?LOG(error,"dgiot_datatime:month_from - bad arg [~p]", [Arg]),
+    ?LOG(error, "dgiot_datatime:month_from - bad arg [~p]", [Arg]),
     0.
 
 hour_from() ->
@@ -254,7 +269,7 @@ hour_from(Timestamp) when is_integer(Timestamp) ->
     [UniversalDatatime] = calendar:local_time_to_universal_time_dst({{Year, Month, Day}, {Hour, 0, 0}}),
     datetime_to_gregorian_ms(UniversalDatatime);
 hour_from(Arg) ->
-    ?LOG(error,"dgiot_datatime:month_from - bad arg [~p]", [Arg]),
+    ?LOG(error, "dgiot_datatime:month_from - bad arg [~p]", [Arg]),
     0.
 
 -spec timestamp_from(tuple()) -> integer().
@@ -277,7 +292,7 @@ timestamp_from({"hour", Datetime}) ->
 timestamp_from({<<"hour">>, Datetime}) ->
     hour_from(Datetime);
 timestamp_from(CycleDatetime) ->
-    ?LOG(error,"dgiot_datatime:timestamp_from - bad arg [~p]", [CycleDatetime]),
+    ?LOG(error, "dgiot_datatime:timestamp_from - bad arg [~p]", [CycleDatetime]),
     0.
 
 -spec datetime_to_gregorian_ms(tuple()) -> integer().

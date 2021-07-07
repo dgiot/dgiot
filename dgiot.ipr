@@ -74,6 +74,8 @@
     <mapping directory="$PROJECT_DIR$/_build/emqx/lib/cowboy" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/emqx/lib/cowlib" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/emqx/lib/cuttlefish" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/_build/emqx/lib/cuttlefish/_build/default/lib/getopt" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/_build/emqx/lib/cuttlefish/_build/escript/lib/getopt" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/emqx/lib/ecpool" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/emqx/lib/ehttpc" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/emqx/lib/ejdbc" vcs="Git" />
