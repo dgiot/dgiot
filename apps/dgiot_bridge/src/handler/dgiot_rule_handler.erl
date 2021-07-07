@@ -18,6 +18,7 @@
 -author("dgiot").
 -behavior(dgiot_rest).
 -dgiot_rest(all).
+-include("dgiot_bridge.hrl").
 -include_lib("emqx_rule_engine/include/rule_engine.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -define(ERR_UNKNOWN_COLUMN(COLUMN), list_to_binary(io_lib:format("Unknown Column: ~s", [(COLUMN)]))).
@@ -29,7 +30,7 @@
 
 %% API
 -export([swagger_rule/0]).
--export([handle/4]).
+-export([handle/4, sysc_rules/0]).
 
 %% API描述
 %% 支持二种方式导入
@@ -90,10 +91,8 @@ handle(OperationID, Args, Context, Req) ->
 %% Rule 概要: 获取acl编辑器提示语
 %% OperationId:get_provider
 %% 请求:GET /iotapi/provider}
-
 do_request(get_provider, #{<<"language">> := Language}, _Context, _Req) ->
     {ok, get_dictLanguage(Language)};
-
 
 %% Rule 概要: 获取规则引擎 描述:获取规则引擎
 %% OperationId:get_rule_id
@@ -101,17 +100,20 @@ do_request(get_provider, #{<<"language">> := Language}, _Context, _Req) ->
 do_request(get_rule_id, #{<<"id">> := RuleID}, _Context, _Req) ->
     emqx_rule_engine_api:show_rule(#{id => RuleID}, []);
 
-
 %% Rule 概要: 修改规则引擎 描述:修改规则引擎
 %% OperationId:put_rules_id
 %% 请求:PUT /iotapi/rule/:{id}
 do_request(put_rule_id, #{<<"id">> := RuleID} = Params, _Context, _Req) ->
-    emqx_rule_engine_api:update_rule(#{id => RuleID}, maps:to_list(maps:without([<<"id">>],Params)));
+    save_rule_to_dict(RuleID, Params),
+    emqx_rule_engine_api:update_rule(#{id => RuleID}, maps:to_list(maps:without([<<"id">>], Params)));
 
 %% Rule 概要: 删除规则引擎 描述:删除规则引擎
 %% OperationId:delete_rule_id
 %% 请求:DELETE /iotapi/rule/:{id}
 do_request(delete_rule_id, #{<<"id">> := RuleID}, _Context, _Req) ->
+    ObjectId = dgiot_parse:get_dictid(RuleID, <<"ruleengine">>),
+    dgiot_parse:del_object(<<"Dict">>, ObjectId),
+    dgiot_data:delete(?DGIOT_RUlES, RuleID),
     emqx_rule_engine_api:delete_rule(#{id => RuleID}, []);
 
 %% Rule 概要: 测试规则引擎 描述:测试规则引擎
@@ -123,7 +125,6 @@ do_request(post_rules, #{<<"test">> := <<"true">>} = Params, _Context, _Req) ->
 do_request(post_rules, Params, _Context, _Req) ->
     Actions = maps:get(<<"actions">>, Params),
     NewActions = lists:foldl(fun(X, Acc) ->
-        ?LOG(error, "X ~p ", [X]),
         #{<<"params">> := #{<<"$resource">> := Resource}} = X,
         <<"resource:", Channel/binary>> = Resource,
         emqx_rule_engine_api:create_resource(#{},
@@ -131,22 +132,27 @@ do_request(post_rules, Params, _Context, _Req) ->
                 {<<"id">>, Resource},
                 {<<"type">>, <<"dgiot_resource">>},
                 {<<"config">>, [{<<"channel">>, Channel}]},
-                {<<"description">>, Resource}]),
+                {<<"description">>, Resource}
+            ]),
         Acc ++ [X]
                              end, [], Actions),
-    ?LOG(error, "Params ~p ", [Params#{<<"actions">> => NewActions}]),
     R = emqx_rule_engine_api:create_rule(#{}, maps:to_list(Params#{<<"actions">> => NewActions})),
+    case R of
+        {ok, #{data := #{id := RuleID}}} ->
+            save_rule_to_dict(RuleID, Params#{<<"actions">> => NewActions});
+        _ -> pass
+    end,
     R;
 
 %% Rule 概要: 获取规则引擎列表 描述:获取规则引擎列表
 %% OperationId:get_rules
 %% 请求:GET /iotapi/rules
 do_request(get_rules, _Args, _Context, _Req) ->
+    dgiot_rule_handler:sysc_rules(),
     emqx_rule_engine_api:list_rules(#{}, []);
 
 %% OperationId:get_actions
-do_request(get_actions, Args, _Context, _Req) ->
-    ?LOG(info, "~p", [Args]),
+do_request(get_actions, _Args, _Context, _Req) ->
 %%    {ok, #{data := Data} = Result} = emqx_rule_engine_api:list_actions(#{}, []),
 %%    NewData =
 %%        lists:foldl(fun(X, Acc) ->
@@ -171,9 +177,7 @@ do_request(get_resources, _Args, _Context, _Req) ->
 
 %% OperationId:post_rule_resource
 do_request(post_resources, Params, _Context, _Req) ->
-    ?LOG(info, "Params ~p ", [Params]),
     Actions = maps:get(<<"actions">>, Params),
-    ?LOG(info, "Actions ~p ", [Actions]),
     lists:map(fun(Action) ->
         ?LOG(info, "Action ~p ", [Action])
               end, Actions),
@@ -194,27 +198,40 @@ do_request(get_resource_types, _Args, _Context, _Req) ->
 do_request(_OperationId, _Args, _Context, _Req) ->
     {error, <<"Not Allowed.">>}.
 
-%%save_rule_to_dict(Key, Params) ->
-%%    Dict = #{
-%%        <<"key">> => Key,
-%%        <<"type">> => <<"ruleengine">>,
-%%        <<"data">> => #{<<"rule">> => jsx:encode(Params)}
-%%    },
-%%    #{<<"objectId">> := ObjectId} = dgiot_parse:get_objectid(<<"Dict">>, Dict),
-%%    case dgiot_parse:create_object(<<"Dict">>, Dict#{<<"objectId">> => ObjectId}) of
-%%        {ok, #{<<"objectId">> := ObjectId}} ->
-%%            ?LOG(info,"ObjectId ~p",[ObjectId]),
-%%            {ok, #{<<"objectId">> => ObjectId}};
-%%        {error, Reason1} ->
-%%            ?LOG(info,"Reason1 ~p",[Reason1]),
-%%            {error, Reason1}
-%%    end.
+save_rule_to_dict(RuleID, Params) ->
+    Rule =
+        case emqx_rule_engine_api:show_rule(#{id => RuleID}, []) of
+            {ok, #{message := <<"Not Found">>}} ->
+                Params;
+            {ok, #{code := 0, data := Data}} ->
+                Nedata = maps:merge(Data, Params),
+                emqx_rule_engine_api:update_rule(#{id => RuleID}, maps:to_list(Nedata)),
+                Nedata
+        end,
+    Dict = #{
+        <<"key">> => RuleID,
+        <<"type">> => <<"ruleengine">>,
+        <<"data">> => #{<<"rule">> => jsx:encode(Rule)}
+    },
+    dgiot_data:insert(?DGIOT_RUlES, Dict),
+    ObjectId = dgiot_parse:get_dictid(RuleID, <<"ruleengine">>),
+    case dgiot_parse:get_object(<<"Dict">>, ObjectId) of
+        {ok, _} ->
+            dgiot_parse:update_object(<<"Dict">>, ObjectId, Dict);
+        _ ->
+            case dgiot_parse:create_object(<<"Dict">>, Dict) of
+                {ok, #{<<"objectId">> := ObjectId}} ->
+                    {ok, #{<<"objectId">> => ObjectId}};
+                {error, Reason1} ->
+                    ?LOG(info, "Reason1 ~p", [Reason1]),
+                    {error, Reason1}
+            end
+    end.
 
-get_channel(Data) ->
-    ?LOG(error, "~p", [Data]),
+get_channel(_Data) ->
     case dgiot_parse:query_object(<<"Channel">>, #{<<"keys">> => [<<"name">>]}) of
         {ok, #{<<"results">> := Results}} when length(Results) > 0 ->
-            lists:foldl(fun(#{<<"objectId">> := ChannelId,<<"name">> := Name}, Acc) ->
+            lists:foldl(fun(#{<<"objectId">> := ChannelId, <<"name">> := Name}, Acc) ->
                 Acc ++ [#{
                     <<"config">> => #{<<"channel">> => ChannelId},
                     <<"description">> => Name,
@@ -239,3 +256,44 @@ get_dictLanguage(Language) ->
         _ -> []
     end.
 
+
+sysc_rules() ->
+    case dgiot_datetime:start_time() < 15 of
+        true ->
+            pass;
+        false ->
+            case ets:tab2list(?DGIOT_RUlES) of
+                Result when length(Result) == 0 ->
+                    case dgiot_parse:query_object(<<"Dict">>, #{<<"where">> => #{<<"type">> => <<"ruleengine">>}}) of
+                        {ok, #{<<"results">> := Results}} when length(Results) > 0 ->
+                            lists:map(fun(#{<<"key">> := RuleID, <<"data">> := Data}) ->
+                                #{<<"rule">> := Rule} = Data,
+                                NewRule = jsx:decode(Rule, [return_maps]),
+                                Actions = maps:get(<<"actions">>, NewRule),
+                                lists:foldl(fun(X, Acc) ->
+                                    #{<<"params">> := #{<<"$resource">> := Resource}} = X,
+                                    <<"resource:", Channel/binary>> = Resource,
+                                    emqx_rule_engine_api:create_resource(#{},
+                                        [
+                                            {<<"id">>, Resource},
+                                            {<<"type">>, <<"dgiot_resource">>},
+                                            {<<"config">>, [{<<"channel">>, Channel}]},
+                                            {<<"description">>, Resource}
+                                        ]),
+                                    Acc ++ [X]
+                                            end, [], Actions),
+                                case emqx_rule_engine_api:show_rule(#{id => RuleID}, []) of
+                                    {ok, #{message := <<"Not Found">>}} ->
+                                        ?LOG(error, "NewRule ~p", [NewRule]),
+                                        emqx_rule_engine_api:create_rule(#{}, maps:to_list(NewRule#{<<"id">> => RuleID}));
+                                    _ ->
+                                        emqx_rule_engine_api:update_rule(#{id => RuleID}, maps:to_list(NewRule))
+                                end,
+                                dgiot_data:insert(RuleID, NewRule)
+                                      end, Results);
+                        _ -> pass
+                    end;
+                _ ->
+                    pass
+            end
+    end.

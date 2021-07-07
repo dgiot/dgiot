@@ -29,6 +29,7 @@
 
 init_ets() ->
     dgiot_data:init(?DGIOT_BRIDGE),
+    dgiot_data:init(?DGIOT_RUlES),
     register_all_channel(),
     dgiot_hook:add(<<"global/dgiot">>, fun ?MODULE:do_global_message/1),
     proc_lib:spawn_link(

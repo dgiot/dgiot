@@ -26,6 +26,7 @@
 start(_StartType, _StartArgs) ->
     dgiot_data:init(),
     dgiot_data:search_data(),
+    dgiot_datetime:start_time(),
     start_mnesia(),
     dgiot:init_plugins(),
     {ok, Sup} = dgiot_sup:start_link(),

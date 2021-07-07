@@ -380,14 +380,13 @@ check_database(ChannelId, ProductIds, #{<<"database">> := DataBase, <<"keep">> :
             timer:sleep(5000),
             check_database(ChannelId, ProductIds, Config);
         {ok, _} ->
-            ?LOG(info, "Check database ChannelId:~p, ProductIds:~p, Config:~p", [ChannelId, ProductIds, Config]),
+            ?LOG(debug, "Check database ChannelId:~p, ProductIds:~p, Config:~p", [ChannelId, ProductIds, Config]),
             create_table(ChannelId, ProductIds, Config)
     end.
 
 create_table(_, [], _) ->
     ok;
 create_table(ChannelId, [ProductId | ProductIds], Config) ->
-    ?LOG(info, "ProductId ~p ", [ProductId]),
     case dgiot_bridge:get_product_info(ProductId) of
         {ok, Product} ->
             case get_schema(ChannelId, Product) of
@@ -403,7 +402,7 @@ create_table(ChannelId, [ProductId | ProductIds], Config) ->
                         {ok, #{<<"affected_rows">> := _}} ->
                             %% @todo 一个产品只能挂一个TDengine?
                             dgiot_data:insert({ProductId, ?TYPE}, ChannelId),
-                            ?LOG(info, "Create Table[~s] Succ, Schema:~p", [TableName, Schema])
+                            ?LOG(debug, "Create Table[~s] Succ, Schema:~p", [TableName, Schema])
                     end
             end;
         {error, Reason} ->
@@ -535,7 +534,7 @@ transaction(Channel, Fun) ->
 
 %% Action 用来区分数据库操作语句类型(DQL、DML、DDL、DCL)
 run_sql(#{<<"driver">> := <<"HTTP">>, <<"url">> := Url, <<"username">> := UserName, <<"password">> := Password} = Context, _Action, Sql) ->
-    ?LOG(info, " ~p, ~p, ~p, ~p", [Url, UserName, Password, Sql]),
+    ?LOG(debug, " ~p, ~p, ~p, ~p", [Url, UserName, Password, Sql]),
     case dgiot_tdrestful:request(Url, UserName, Password, Sql) of
         {ok, Result} ->
             case maps:get(<<"channel">>, Context, <<"">>) of
