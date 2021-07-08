@@ -16,6 +16,7 @@
 
 %% @doc dlt645 Protocol Processor.
 -module(dlt645_proctol).
+-author("johnliu").
 
 -include_lib("dgiot_meter.hrl").
 -include_lib("dgiot/include/logger.hrl").

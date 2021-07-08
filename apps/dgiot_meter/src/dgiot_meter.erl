@@ -22,14 +22,15 @@
 -export([search_meter/1, search_meter/4]).
 -export([
     create_dtu/3,
-    create_meter/4
+    create_meter/4,
+    get_sub_device/1
 ]).
 
 -define(APP, ?MODULE).
 
 %%新设备
 create_dtu(DtuAddr, ChannelId, DTUIP) ->
-    ?LOG(info,"~p", [dgiot_data:get({dtu, ChannelId})]),
+    ?LOG(info, "~p", [dgiot_data:get({dtu, ChannelId})]),
     {ProductId, Acl, _Properties} = dgiot_data:get({dtu, ChannelId}),
     Requests = #{
         <<"devaddr">> => DtuAddr,
@@ -61,6 +62,16 @@ create_meter(MeterAddr, ChannelId, DTUIP, DtuAddr) ->
     dgiot_device:create_device(Requests),
     {DtuProductId, _, _} = dgiot_data:get({dtu, ChannelId}),
     dgiot_task:save_pnque(DtuProductId, DtuAddr, ProductId, MeterAddr).
+
+get_sub_device(DtuAddr) ->
+    Query = #{<<"keys">> => [<<"devaddr">>, <<"product">>],
+        <<"where">> => #{<<"route.", DtuAddr/binary>> => #{<<"$regex">> => <<".+">>}},
+        <<"order">> => <<"devaddr">>, <<"limit">> => 256},
+    case dgiot_parse:query_object(<<"Device">>, Query) of
+        {ok, #{<<"results">> := []}} -> [];
+        {ok, #{<<"results">> := List}} -> List;
+        _ -> []
+    end.
 
 parse_frame(dlt645, Buff, Opts) ->
     {Rest, Frames} = dlt645_decoder:parse_frame(Buff, Opts),
@@ -96,6 +107,17 @@ to_frame(#{
         <<"command">> => ?DLT645_MS_READ_DATA
     }).
 
+search_meter(tcp, _Ref, TCPState, 0) ->
+    Payload = dlt645_decoder:to_frame(#{
+        <<"msgtype">> => ?DLT645,
+        <<"addr">> => dlt645_proctol:reverse(<<16#AA, 16#AA, 16#AA, 16#AA, 16#AA, 16#AA>>),
+        <<"command">> => ?DLT645_MS_READ_DATA,
+        <<"di">> => dlt645_proctol:reverse(<<0, 0, 0, 0>>)
+    }),
+    ?LOG(info, "Payload ~p", [dgiot_utils:binary_to_hex(Payload)]),
+    dgiot_tcp_server:send(TCPState, Payload),
+    read_meter;
+
 search_meter(tcp, Ref, TCPState, 1) ->
     case Ref of
         undefined ->
@@ -111,18 +133,7 @@ search_meter(tcp, Ref, TCPState, 1) ->
         Payload ->
             dgiot_tcp_server:send(TCPState, Payload),
             {erlang:send_after(1500, self(), search_meter), search_meter, Payload}
-    end;
-
-search_meter(tcp, _Ref, TCPState, 0) ->
-    Payload = dlt645_decoder:to_frame(#{
-        <<"msgtype">> => ?DLT645,
-        <<"addr">> => dlt645_proctol:reverse(<<16#AA, 16#AA, 16#AA, 16#AA, 16#AA, 16#AA>>),
-        <<"command">> => ?DLT645_MS_READ_DATA,
-        <<"di">> => dlt645_proctol:reverse(<<0, 0, 0, 0>>)
-    }),
-    ?LOG(info,"Payload ~p", [dgiot_utils:binary_to_hex(Payload)]),
-    dgiot_tcp_server:send(TCPState, Payload),
-    read_meter.
+    end.
 
 search_meter(1) ->
     Flag =
