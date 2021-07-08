@@ -14,7 +14,7 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 -module(dlt645_decoder).
--author("weixingzheng").
+-author("johnliu").
 -include("dgiot_meter.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -protocol([?DLT645]).

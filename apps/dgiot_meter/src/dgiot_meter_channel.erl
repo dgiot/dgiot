@@ -109,6 +109,19 @@
             zh => <<"侦听端口"/utf8>>
         }
     },
+    <<"search">> => #{
+        order => 2,
+        type => enum,
+        required => false,
+        default => <<"quick"/utf8>>,
+        enum => [<<"nosearch">>, <<"quick">>, <<"normal">>],
+        title => #{
+            zh => <<"搜表模式"/utf8>>
+        },
+        description => #{
+            zh => <<"搜表模式:nosearch|quick|normal"/utf8>>
+        }
+    },
     <<"ico">> => #{
         order => 102,
         type => string,
@@ -132,19 +145,26 @@ start(ChannelId, ChannelArgs) ->
 %% 通道初始化
 init(?TYPE, ChannelId, #{
     <<"port">> := Port,
-    <<"product">> := Products}) ->
+    <<"product">> := Products,
+    <<"search">> := Search}) ->
     lists:map(fun(X) ->
         case X of
-            {ProductId, #{<<"ACL">> := Acl, <<"nodeType">> := 1, <<"thing">> := #{<<"properties">> := Properties}}} ->
+            {ProductId, #{<<"ACL">> := Acl, <<"nodeType">> := 1}} ->
+                {ok, #{<<"thing">> := #{<<"properties">> := Properties}}} = dgiot_device:lookup_prod(ProductId),
                 dgiot_data:insert({dtu, ChannelId}, {ProductId, Acl, Properties});
-            {ProductId, #{<<"ACL">> := Acl, <<"thing">> := #{<<"properties">> := Properties}}} ->
-                dgiot_data:insert({meter, ChannelId}, {ProductId, Acl, Properties})
+            {ProductId, #{<<"ACL">> := Acl}} ->
+                {ok, #{<<"thing">> := #{<<"properties">> := Properties}}} = dgiot_device:lookup_prod(ProductId),
+                dgiot_data:insert({meter, ChannelId}, {ProductId, Acl, Properties});
+            _ ->
+                ?LOG(info,"X ~p", [X]),
+                pass
         end
               end, Products),
     dgiot_metrics:start(dgiot_meter),
     dgiot_data:set_consumer(ChannelId, 20),
     State = #state{
-        id = ChannelId
+        id = ChannelId,
+        search = Search
     },
     {ok, State, dgiot_meter_tcp:start(Port, State)};
 
