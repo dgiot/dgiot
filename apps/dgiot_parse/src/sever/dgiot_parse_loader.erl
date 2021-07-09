@@ -82,7 +82,6 @@ handle_call(_Request, _From, State) ->
 handle_cast(_Request, State) ->
     {noreply, State}.
 
-
 handle_info(start, #state{ name = Name, class = Class, query = Query} = State) ->
 %%    ?LOG(error," State ~p",[ State]),
     case dgiot_parse:query_object(Name, Class, Query#{<<"limit">> => 0, <<"count">> => 1}) of
