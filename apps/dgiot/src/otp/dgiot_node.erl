@@ -122,7 +122,7 @@ register_service(#state{}) ->
 %%                dgiot_metrics:gauge(dgiot_global, <<"node">>, [Key], Value)
             ok
             end, no, Info),
-        dgiot_mnesia:insert({node(), node}, Info#{pid => self(), update => Now})
+        dgiot_data:insert({node(), node}, Info#{pid => self(), update => Now})
     catch
         Err:Reason ->
             ?LOG(error, "~p:~p", [Err, Reason])
