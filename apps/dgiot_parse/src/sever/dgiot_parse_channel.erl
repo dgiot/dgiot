@@ -22,7 +22,7 @@
 -dgiot_data("ets").
 -export([init_ets/0]).
 -export([get_config/0, get_config/1]).
--export([start/0,start/2, init/3, handle_init/1, handle_event/3, handle_message/2, stop/3, handle_save/1]).
+-export([start/0, start/2, init/3, handle_init/1, handle_event/3, handle_message/2, stop/3, handle_save/1]).
 -record(state, {channel, cfg}).
 
 %% 注册通道类型
@@ -127,7 +127,10 @@
 }).
 
 init_ets() ->
-    dgiot_data:init(?DGIOT_PARSE_ETS).
+    dgiot_data:init(?DGIOT_PARSE_ETS),
+    dgiot_data:init(?ROLE_USER_ETS),
+    dgiot_data:init(?ROLE_PARENT_ETS),
+    dgiot_data:init(?USER_ROLE_ETS).
 
 start() ->
     Cfg = #{
@@ -165,6 +168,7 @@ init(?TYPE, Channel, Cfg) ->
 
 %% 初始化池子
 handle_init(State) ->
+    dgiot_parse:load(),
     {ok, State}.
 
 handle_message(config, #state{cfg = Cfg} = State) ->

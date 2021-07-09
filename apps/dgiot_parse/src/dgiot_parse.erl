@@ -84,7 +84,11 @@
     get_roleid/1,
     get_productid/3,
     subscribe/2,
-    send_msg/3
+    send_msg/3,
+    load/0,
+    save_User_Role/2,
+    del_User_Role/2,
+    put_User_Role/3
 ]).
 
 subscribe(Table, Method) ->
@@ -1032,3 +1036,115 @@ test_graphql() ->
     },
 %%    {"operationName":"Health","variables":{},"query":"query Health {\n  health\n}\n"}
     graphql(Data).
+
+load() ->
+    Success = fun(Page) ->
+        lists:map(fun(X) ->
+            #{<<"objectId">> := RoleId, <<"parent">> := #{<<"objectId">> := ParentId}} = X,
+            dgiot_data:insert(?ROLE_PARENT_ETS, RoleId, ParentId),
+            role_ets(RoleId)
+                  end, Page)
+              end,
+    Query = #{<<"keys">> => <<"parent">>},
+    dgiot_parse_loader:start(<<"_Role">>, Query, 0, 10, 10000, Success).
+
+role_ets(RoleId) ->
+    UsersQuery =
+        #{<<"keys">> => <<"objectId">>,
+            <<"where">> => #{<<"$relatedTo">> => #{
+                <<"object">> => #{
+                    <<"__type">> => <<"Pointer">>,
+                    <<"className">> => <<"_Role">>,
+                    <<"objectId">> => RoleId},
+                <<"key">> => <<"users">>}
+            }},
+    case dgiot_parse:query_object(<<"_User">>, UsersQuery) of
+        {ok, #{<<"results">> := Users}} when length(Users) > 0 ->
+            UserIds =
+                lists:foldl(fun(#{<<"objectId">> := UserId}, Acc) ->
+                    save_RoleIds(UserId, RoleId),
+                    Acc ++ [UserId]
+                            end, [], Users),
+            dgiot_data:insert(?ROLE_USER_ETS, RoleId, UserIds);
+        _ -> pass
+    end.
+
+save_RoleIds(UserId, RoleId) ->
+    case dgiot_data:get(?USER_ROLE_ETS, UserId) of
+        not_find ->
+            dgiot_data:insert(?USER_ROLE_ETS, UserId, [RoleId]);
+        RoleIds ->
+            New_RoleIds = dgiot_utils:unique_2(RoleIds ++ [RoleId]),
+            dgiot_data:insert(?USER_ROLE_ETS, UserId, New_RoleIds)
+    end.
+
+
+save_User_Role(UserId, RoleId) ->
+    case dgiot_data:get(?USER_ROLE_ETS, UserId) of
+        not_find ->
+            dgiot_data:insert(?USER_ROLE_ETS, UserId, [RoleId]);
+        RoleIds ->
+            New_RoleIds = dgiot_utils:unique_2(RoleIds ++ [RoleId]),
+            dgiot_data:insert(?USER_ROLE_ETS, UserId, New_RoleIds)
+    end,
+
+    case dgiot_data:get(?ROLE_USER_ETS, RoleId) of
+        not_find ->
+            dgiot_data:insert(?ROLE_USER_ETS, RoleId, [UserId]);
+        UserIds ->
+            New_UserIds = dgiot_utils:unique_2(UserIds ++ [UserId]),
+            dgiot_data:insert(?ROLE_USER_ETS, RoleId, New_UserIds)
+    end.
+
+
+del_User_Role(UserId, RoleId) ->
+    case dgiot_data:get(?USER_ROLE_ETS, UserId) of
+        not_find ->
+            pass;
+        RoleIds when length(RoleIds) > 0 ->
+            dgiot_data:delete(?USER_ROLE_ETS, UserId);
+        _ ->
+            pass
+    end,
+    case dgiot_data:get(?ROLE_USER_ETS, RoleId) of
+        not_find ->
+            pass;
+        UserIds when length(UserIds) > 0 ->
+            New_UserIds = lists:delete(UserId, UserIds),
+            dgiot_data:insert(?ROLE_USER_ETS, RoleId, New_UserIds);
+        _ ->
+            pass
+    end.
+
+put_User_Role(UserId, OldRoleId, NewRoleId) ->
+    case dgiot_data:get(?USER_ROLE_ETS, UserId) of
+        not_find ->
+            pass;
+        RoleIds when length(RoleIds) > 0 ->
+            Old_RoleIds = lists:delete(OldRoleId, RoleIds),
+            New_RoleIds = dgiot_utils:unique_2(Old_RoleIds ++ [NewRoleId]),
+            dgiot_data:insert(?USER_ROLE_ETS, UserId, New_RoleIds);
+        _ ->
+            pass
+    end,
+    case dgiot_data:get(?ROLE_USER_ETS, OldRoleId) of
+        not_find ->
+            pass;
+        OldUserIds when length(OldUserIds) > 0 ->
+            Old_UserIds = lists:delete(UserId, OldUserIds),
+            dgiot_data:insert(?ROLE_USER_ETS, OldRoleId, Old_UserIds);
+        _ ->
+            pass
+    end,
+    case dgiot_data:get(?ROLE_USER_ETS, NewRoleId) of
+        not_find ->
+            pass;
+        NewUserIds when length(NewUserIds) > 0 ->
+            New_UserIds = dgiot_utils:unique_2(NewUserIds ++ [UserId]),
+            dgiot_data:insert(?ROLE_USER_ETS, NewRoleId, New_UserIds);
+        _ ->
+            pass
+    end.
+
+
+
