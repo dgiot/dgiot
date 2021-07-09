@@ -15,7 +15,6 @@
     {
       "name": "_Installation",
       "description": "部署"
-
     },
     {
       "name": "_Session",
@@ -91,18 +90,18 @@
     }
   ],
   "definitions": {
-    "Token":{
-      "type":"object",
-      "properties":{
+    "Token": {
+      "type": "object",
+      "properties": {
         "appid": {
           "description": "app secret",
           "type": "string",
-          "example":"gEsTiaPAjv"
+          "example": "gEsTiaPAjv"
         },
         "secret": {
           "description": "app secret",
           "type": "string",
-          "example":"VzY0Mjc5NDQxNTg1ODI4NDk1MzYx"
+          "example": "VzY0Mjc5NDQxNTg1ODI4NDk1MzYx"
         }
       }
     },
@@ -297,22 +296,22 @@
                 "username": {
                   "description": "用户名",
                   "type": "string",
-                  "example":"dgiot_user"
+                  "example": "dgiot_user"
                 },
                 "password": {
                   "description": "用户密码",
                   "type": "string",
-                  "example":"dgiot_pwd"
+                  "example": "dgiot_pwd"
                 },
                 "phone": {
                   "description": "手机号",
                   "type": "string",
-                  "example":"15268887220"
+                  "example": "15268887220"
                 },
                 "department": {
                   "description": "手机号",
                   "type": "string",
-                  "example":"IjOCg0BC0I"
+                  "example": "IjOCg0BC0I"
                 }
               }
             }
@@ -369,12 +368,12 @@
                 "username": {
                   "description": "用户名",
                   "type": "string",
-                  "example":"dgiot_user"
+                  "example": "dgiot_user"
                 },
                 "department": {
                   "description": "部门ID",
                   "type": "string",
-                  "example":"IjOCg0BC0I"
+                  "example": "IjOCg0BC0I"
                 }
               }
             }
@@ -382,7 +381,7 @@
         ],
         "responses": {
           "201": {
-            "description": "Returns success",
+            "description": "Returns success"
           },
           "400": {
             "description": "Bad Request"
@@ -413,12 +412,12 @@
                 "username": {
                   "description": "用户名",
                   "type": "string",
-                  "example":"dgiot_user"
+                  "example": "dgiot_user"
                 },
                 "department": {
                   "description": "部门ID",
                   "type": "string",
-                  "example":"IjOCg0BC0I"
+                  "example": "IjOCg0BC0I"
                 }
               }
             }
@@ -426,7 +425,7 @@
         ],
         "responses": {
           "201": {
-            "description": "Returns success",
+            "description": "Returns success"
           },
           "400": {
             "description": "Bad Request"
@@ -605,12 +604,12 @@
                 "desc": {
                   "description": "应用描述",
                   "type": "string",
-                  "example":"pump"
+                  "example": "pump"
                 },
                 "access_token": {
                   "description": "访问token",
                   "type": "string",
-                  "example":"QjEwMDczNjgxNTg1NzMxMjM0MjQ3"
+                  "example": "QjEwMDczNjgxNTg1NzMxMjM0MjQ3"
                 },
                 "expires_in": {
                   "description": "过期时间",
@@ -661,12 +660,12 @@
                 "desc": {
                   "description": "应用描述",
                   "type": "string",
-                  "example":"pump"
+                  "example": "pump"
                 },
                 "access_token": {
                   "description": "访问token",
                   "type": "string",
-                  "example":"QjEwMDczNjgxNTg1NzMxMjM0MjQ3"
+                  "example": "QjEwMDczNjgxNTg1NzMxMjM0MjQ3"
                 },
                 "expires_in": {
                   "description": "过期时间",
@@ -861,6 +860,50 @@
           },
           "401": {
             "description": "Unauthorized"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "_User"
+        ]
+      }
+    },
+    "/disableuser": {
+      "get": {
+        "summary": "禁用启用账号",
+        "description": "禁用启用账号",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "userid",
+            "required": true,
+            "description": "账号id",
+            "default": "2CCcv7e9ul",
+            "type": "string"
+          },
+          {
+            "in": "query",
+            "name": "action",
+            "required": true,
+            "description": "状态",
+            "default": "enable",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
           },
           "500": {
             "description": "Server Internal error"

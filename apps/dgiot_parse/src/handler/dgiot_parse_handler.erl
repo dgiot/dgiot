@@ -18,13 +18,14 @@
 -author("zwx").
 -behavior(dgiot_rest).
 -include_lib("dgiot/include/logger.hrl").
+-include("dgiot_parse.hrl").
 -dgiot_rest(all).
 -define(RE_OPTIONS, [global, {return, binary}]).
 
 %% API
 -export([swagger_parse/0, init/2, handle/4]).
 -export([login_by_account/2, login_by_token/2, login_by_mail_phone/1, set_cookies/3]).
--export([create_user_for_app/1, get_token/1, create_tree/2, get_classtree/4,create_session/3,add_acl/5]).
+-export([create_user_for_app/1, get_token/1, create_tree/2, get_classtree/4, create_session/3, add_acl/5]).
 
 %%%===================================================================
 %%% swagger Callback
@@ -51,7 +52,7 @@ check_parse(Tables, I) ->
                                 true ->
                                     case catch get_paths(Schema, Acc) of
                                         {'EXIT', Reason} ->
-                                            ?LOG(warning,"~p,~p~n", [Schema, Reason]),
+                                            ?LOG(warning, "~p,~p~n", [Schema, Reason]),
                                             Acc;
                                         NewAcc ->
                                             NewAcc
@@ -69,7 +70,7 @@ check_parse(Tables, I) ->
                 true ->
                     {error, Reason};
                 false ->
-                    ?LOG(error,"ParseServer is not health,~p!!!", [Reason]),
+                    ?LOG(error, "ParseServer is not health,~p!!!", [Reason]),
                     receive after 5000 -> check_parse(Tables, I + 1) end
             end
     end.
@@ -146,27 +147,49 @@ handle(post_token, #{<<"appid">> := AppId, <<"secret">> := Secret}, _Context, _R
     end;
 
 handle(post_user, #{<<"username">> := _UserName, <<"password">> := _Password} = Body, #{<<"sessionToken">> := SessionToken}, _Req) ->
-    ?LOG(info,"Body ~p", [Body]),
+    ?LOG(info, "Body ~p", [Body]),
     case create_user(Body, SessionToken) of
         {ok, Data} ->
+            dgiot_parse:load(),
             {200, Data};
         {error, Error} -> {error, Error}
     end;
 
 handle(delete_user, #{<<"username">> := _UserName} = Body, #{<<"sessionToken">> := SessionToken}, _Req) ->
-    ?LOG(info,"Body ~p", [Body]),
+    ?LOG(info, "Body ~p", [Body]),
     case delete_user(Body, SessionToken) of
         {ok, Data} ->
+            dgiot_parse:load(),
             {200, Data};
         {error, Error} -> {error, Error}
     end;
 
 handle(put_user, #{<<"username">> := _UserName} = Body, #{<<"sessionToken">> := SessionToken}, _Req) ->
-    ?LOG(info,"Body ~p", [Body]),
+    ?LOG(info, "Body ~p", [Body]),
     case put_user(Body, SessionToken) of
         {ok, Data} ->
+            dgiot_parse:load(),
             {200, Data};
-        {error, Error} -> {error, Error}
+        {error, Error} -> {500, Error}
+    end;
+
+%% IoTDevice 概要: 禁用账号
+%% OperationId: get_disableuser
+%% Disuserid 被禁用账号
+%% GET /token
+%% dgiot_parse:load().
+handle(get_disableuser, #{<<"userid">> := Disuserid, <<"action">> := Action} = _Body, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
+    ?LOG(info, "_Body ~p", [_Body]),
+    ?LOG(info, "SessionToken ~p", [SessionToken]),
+    case dgiot_auth:get_session(SessionToken) of
+        #{<<"objectId">> := UserId} ->
+            case disableusere(UserId, Disuserid, Action) of
+                {ok, Data} ->
+                    {200, Data};
+                {error, Error} -> {500, #{<<"code">> => 101, <<"error">> => Error}}
+            end;
+        _ ->
+            {500, <<"Not Allowed.">>}
     end;
 
 %% parse js的调用处理
@@ -253,7 +276,7 @@ do_request_before(<<"get_classes_navigation">>, Args, _Body, _Headers, Context, 
 
 % 创建应用
 do_request_before(<<"post_classes_app">>, _Args, #{<<"name">> := AppName} = Body, _Headers,
-        #{<<"sessionToken">> := SessionToken, <<"user">> := #{<<"objectId">> := UserId}}, _Req) ->
+    #{<<"sessionToken">> := SessionToken, <<"user">> := #{<<"objectId">> := UserId}}, _Req) ->
     Where = #{
         <<"limit">> => 1, <<"order">> => <<"-updatedAt">>,
         <<"where">> => #{<<"name">> => AppName}
@@ -300,8 +323,8 @@ do_request_before(<<"post_users">>, _Args, #{
     <<"username">> := UserName,
     <<"password">> := PassWord,
     <<"phone">> := Phone} = Body,
-        _Headers, _Context, _Req) ->
-    ?LOG(info,"Body ~p", [Body]),
+    _Headers, _Context, _Req) ->
+    ?LOG(info, "Body ~p", [Body]),
     Query = #{
         <<"order">> => <<"-updatedAt,-createdAt">>,
         <<"limit">> => 1,
@@ -315,7 +338,7 @@ do_request_before(<<"post_users">>, _Args, #{
                 <<"username">> => UserName,
                 <<"password">> => PassWord,
                 <<"phone">> => Phone},
-            ?LOG(info,"NewBody ~p ", [NewBody]),
+            ?LOG(info, "NewBody ~p ", [NewBody]),
             dgiot_parse:create_object(<<"_User">>, NewBody),
             {file, Here} = code:is_loaded(?MODULE),
             Dir = dgiot_httpc:url_join([filename:dirname(filename:dirname(Here)), "/priv/install/role/"]),
@@ -490,7 +513,7 @@ get_token_(App) ->
                 Error -> Error
             end;
         Err ->
-            ?LOG(error,"login by token: AppId:~p, Err ~p~n", [App, Err]),
+            ?LOG(error, "login by token: AppId:~p, Err ~p~n", [App, Err]),
             {error, #{<<"code">> => 101, <<"error">> => <<"AppId Or Secret not found.">>}}
     end.
 
@@ -523,7 +546,7 @@ create_user_for_app(App) ->
                         }}),
                     {ok, AppUser};
                 Error ->
-                    ?LOG(info,"Error ~p", [Error]),
+                    ?LOG(info, "Error ~p", [Error]),
                     Error
             end;
         Reason -> Reason
@@ -560,16 +583,17 @@ create_user(#{<<"username">> := UserName, <<"department">> := RoleId} = Body, Se
                                         <<"className">> => <<"_User">>,
                                         <<"objectId">> => UserId
                                     }]
-                                }});
+                                }}),
+                            dgiot_parse:save_User_Role(UserId, RoleId);
                         Error ->
-                            ?LOG(info,"Error ~p", [Error]),
+                            ?LOG(info, "Error ~p", [Error]),
                             Error
                     end;
                 {ok, #{<<"results">> := [_Info]}} ->
-                    ?LOG(info,"_Info ~p", [_Info]),
+                    ?LOG(info, "_Info ~p", [_Info]),
                     {error, <<"User exist  ", UserName/binary>>};
                 {error, Error} ->
-                    ?LOG(info,"Error ~p", [Error]),
+                    ?LOG(info, "Error ~p", [Error]),
                     {error, Error}
             end;
         _ -> {error, <<"token fail">>}
@@ -597,7 +621,8 @@ delete_user(#{<<"username">> := UserName, <<"department">> := RoleId}, SessionTo
                     R = lists:map(fun(#{<<"username">> := Name, <<"objectId">> := ObjectId}) ->
                         case Name of
                             UserName ->
-                                dgiot_parse:del_object(<<"_User">>, ObjectId);
+                                dgiot_parse:del_object(<<"_User">>, ObjectId),
+                                dgiot_parse:del_User_Role(ObjectId, RoleId);
                             _ -> pass
                         end
                                   end, Resulst),
@@ -632,11 +657,12 @@ put_user(#{<<"username">> := UserName, <<"department">> := RoleId} = Body, Sessi
                             UserName ->
                                 {ok, Result} = dgiot_parse:update_object(<<"_User">>, ObjectId,
                                     maps:without([<<"department">>], Body)),
+                                dgiot_parse:put_User_Role(ObjectId, RoleId, RoleId),
                                 Result;
                             _ -> Acc
                         end
                                     end, #{}, Resulst),
-                    ?LOG(info,"R ~p", [R]),
+                    ?LOG(info, "R ~p", [R]),
                     {ok, #{<<"result">> => R}};
                 _ -> {error, <<"not find user">>}
             end;
@@ -656,7 +682,7 @@ login_by_account(UserName, Password) ->
 %%[{"X-Parse-Session-Token", Session}], [{from, rest}])
 login_by_token(AppId, Secret) ->
     case dgiot_parse:get_object(<<"_Role">>, AppId) of
-        {ok, #{<<"name">> := Name, <<"tag">> := #{<<"appconfig">> := Config} }} ->
+        {ok, #{<<"name">> := Name, <<"tag">> := #{<<"appconfig">> := Config}}} ->
 
             case maps:find(<<"secret">>, Config) of
                 error ->
@@ -680,7 +706,7 @@ login_by_token(AppId, Secret) ->
                     {error, #{<<"code">> => 101, <<"error">> => <<"AppId Or Secret not found.">>}}
             end;
         Err ->
-            ?LOG(error,"login by token: AppId:~p, Secret:~p ~p~n", [AppId, Secret, Err]),
+            ?LOG(error, "login by token: AppId:~p, Secret:~p ~p~n", [AppId, Secret, Err]),
             {error, #{<<"code">> => 101, <<"error">> => <<"AppId Or Secret not found.">>}}
     end.
 
@@ -695,7 +721,7 @@ login_by_mail_phone(Account) ->
     },
     case dgiot_parse:query_object(<<"_User">>, Query) of
         {ok, #{<<"results">> := [Info]}} ->
-            ?LOG(info,"Info ~p", [Info]),
+            ?LOG(info, "Info ~p", [Info]),
             #{<<"objectId">> := UserId, <<"username">> := Desc} = Info,
             Data = #{<<"emailVerified">> => true, <<"phone">> => Account},
             case dgiot_parse:update_object(<<"_User">>, UserId, Data) of
@@ -756,7 +782,7 @@ create_session(UserId, TTL, Name) ->
         {error, #{<<"code">> := Code, <<"error">> := Err}} ->
             {error, #{<<"code">> => Code, <<"error">> => Err}};
         {error, Reason} ->
-            ?LOG(error,"refresh_token ~p, ~p~n", [UserId, Reason]),
+            ?LOG(error, "refresh_token ~p, ~p~n", [UserId, Reason]),
             {error, #{<<"code">> => 1, <<"error">> => <<"Internal server error.">>}}
     end.
 
@@ -778,7 +804,7 @@ do_login(#{<<"objectId">> := UserId, <<"sessionToken">> := SessionToken} = UserI
         {'EXIT', Reason} ->
             {error, #{<<"code">> => 1, <<"error">> => dgiot_utils:format("~p", [Reason])}};
         _Other ->
-            ?LOG(info,"_Other ~p",[_Other])
+            ?LOG(info, "_Other ~p", [_Other])
     end.
 
 add_acl(_, _, Records, _NewItems, Acc) when Records == [] ->
@@ -821,7 +847,7 @@ get_navigation(#{<<"user">> := #{<<"roles">> := Roles}}, Args) ->
         <<"path">> => <<"/classes/Menu">>,
         <<"body">> => Args#{
             <<"where">> => #{
-                <<"$relatedTo">> =>#{
+                <<"$relatedTo">> => #{
                     <<"key">> => <<"menus">>,
                     <<"object">> => #{<<"__type">> => <<"Pointer">>, <<"className">> => <<"_Role">>, <<"objectId">> => RoleId}
                 }
@@ -1033,7 +1059,6 @@ to_swagger_type(#{<<"type">> := <<"Array">>}) ->
 to_swagger_type(_) ->
     #{<<"type">> => <<"string">>}.
 
-
 get_paths(Schema, Acc) ->
     add_paths(Schema, Acc).
 
@@ -1058,7 +1083,6 @@ add_paths(#{<<"className">> := ClassName} = Schema, Acc) ->
             end, Tags, CTags)
     }.
 
-
 get_path(Tags, ClassName) ->
     {ok, Bin} = dgiot_swagger:load_schema(?MODULE, "swagger_parse_object.json", []),
     Data = re:replace(Bin, "\\{\\{className\\}\\}", ClassName, ?RE_OPTIONS),
@@ -1070,3 +1094,53 @@ get_path(Tags, ClassName) ->
         end,
     Data1 = re:replace(Data, "\\{\\{tag\\}\\}", Desc, ?RE_OPTIONS),
     jsx:decode(Data1, [{labels, binary}, return_maps]).
+
+disableusere(UserId, DisUserId, Action) ->
+    case find_role(UserId, DisUserId) of
+        false ->
+            {error, <<"do not have permission">>};
+        true ->
+            case Action of
+                <<"enable">> ->
+                    dgiot_parse:update_object(<<"_User">>, DisUserId, #{<<"emailVerified">> => true});
+                <<"disable">> ->
+                    dgiot_parse:update_object(<<"_User">>, DisUserId, #{<<"emailVerified">> => false})
+            end
+    end.
+
+find_role(UserId, DisUserId) ->
+    case UserId of
+        DisUserId ->
+            false;
+        _ ->
+            case dgiot_data:get(?USER_ROLE_ETS, UserId) of
+                not_find ->
+                    false;
+                RoleIds ->
+                    case dgiot_data:get(?USER_ROLE_ETS, DisUserId) of
+                        not_find ->
+                            false;
+                        DisRoleIds ->
+                            lists:foldl(fun(DisRoleId, _Acc) ->
+                                find_parent(RoleIds, DisRoleId)
+                                        end, <<>>, DisRoleIds)
+                    end
+
+            end
+    end.
+
+find_parent(RoleIds, DisRoleId) ->
+    case dgiot_data:get(?ROLE_PARENT_ETS, DisRoleId) of
+        not_find ->
+            fasle;
+        ParentId ->
+            case lists:member(ParentId, RoleIds) of
+                true ->
+                    true;
+                false ->
+                    find_parent(RoleIds, ParentId)
+            end
+    end.
+
+
+
