@@ -43,7 +43,11 @@
     select_limit/1,
     select_object/2,
     match_object/1,
-    match_object/2
+    match_object/2,
+    search/0,
+    search/1,
+    search/2,
+    search/3
 ]).
 
 -export([start_link/2]).
@@ -237,6 +241,54 @@ select_object(TB, Filter, Order) ->
         end,
     Result = mnesia:transaction(F),
     result(Result).
+
+search() ->
+    Fun = fun(X) ->
+        {_,K, V} = X,
+        ?LOG(error, "K ~p V ~p ", [K,V]),
+        true
+          end,
+    search(Fun).
+
+search(Fun) ->
+    search(?MNESIA_TAB, Fun).
+
+search(Name, Fun) ->
+    search(Name, Fun, #{<<"start">> => 0, <<"len">> => 1000000}).
+
+search(Name, Fun, Page) ->
+    ets:safe_fixtable(Name, true),
+    DataSet = search(Name, Fun, ets:first(Name), [], Page#{<<"current">> => 0}),
+    ets:safe_fixtable(Name, false),
+    DataSet.
+
+search(_, _, _, Acc, #{<<"len">> := Len}) when length(Acc) =:= Len ->
+    lists:reverse(Acc);
+
+search(_, _, '$end_of_table', Acc, _) ->
+    lists:reverse(Acc);
+
+search(Name, Fun, Key, Acc, Page = #{<<"start">> := Start, <<"current">> := Current}) ->
+    case ets:lookup(Name, Key) of
+        [Row | _] ->
+            case Fun(Row) of
+                true ->
+                    case Start =< Current of
+                        true ->
+                            search(Name, Fun, ets:next(Name, Key), [Row | Acc],
+                                Page#{<<"current">> => Current + 1});
+                        false ->
+                            search(Name, Fun, ets:next(Name, Key), Acc,
+                                Page#{<<"current">> => Current + 1})
+                    end;
+                false ->
+                    search(Name, Fun, ets:next(Name, Key), Acc,
+                        Page#{<<"current">> => Current})
+            end;
+        _ ->
+            search(Name, Fun, ets:next(Name, Key), Acc,
+                Page#{<<"current">> => Current + 1})
+    end.
 
 page(PageNo, PageSize, Filter, RowFun, Order) ->
     page(?MNESIA_TAB, PageNo, PageSize, Filter, RowFun, Order).
