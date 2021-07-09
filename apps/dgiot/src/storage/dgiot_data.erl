@@ -277,9 +277,6 @@ dets_search(Name, Fun, Key, Acc, Page = #{<<"start">> := Start, <<"current">> :=
                 Page#{<<"current">> => Current + 1})
     end.
 
-
-
-
 dets_loop(Name, Fun, Acc) ->
     dets:safe_fixtable(Name, true),
     dets_loop(Name, Fun, dets:first(Name), Acc),

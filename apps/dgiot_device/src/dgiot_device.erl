@@ -23,7 +23,7 @@
 -dgiot_data("ets").
 -export([init_ets/0]).
 -export([create_device/1, create_device/2, get_sub_device/1, get_sub_device/2, get/2]).
--export([save/1, save/2, save/3, lookup/1, lookup/2, save_prod/2, lookup_prod/1]).
+-export([save/1, save/2, save/3, lookup/1, lookup/2, delete/1, delete/2, save_prod/2, lookup_prod/1]).
 -export([encode/1, decode/3]).
 
 init_ets() ->
@@ -39,20 +39,20 @@ save(Device) ->
         lists:foldl(fun(X, Acc) ->
             Acc ++ [binary_to_atom(X)]
                     end, [], maps:keys(maps:get(<<"ACL">>, Device))),
-    dgiot_mnesia:insert(DeviceId, [node(), dgiot_datetime:now_ms(), {Latitude, Logitude}, Product, Acl]).
+    dgiot_mnesia:insert(DeviceId, {[dgiot_datetime:now_ms(), {Latitude, Logitude}, Product, Acl], node()}).
 
 save(ProductId, DevAddr) ->
     DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
     case lookup(DeviceId) of
-        {ok, [Node, _Ts, Location, Product, Acl]} ->
-            dgiot_mnesia:insert(DeviceId, [Node, dgiot_datetime:now_ms(), Location, Product, Acl]);
+        {ok, {[_Ts, Location, Product, Acl], Node}} ->
+            dgiot_mnesia:insert(DeviceId, {[dgiot_datetime:now_ms(), Location, Product, Acl], Node});
         _ -> pass
     end.
 
 save(DeviceId, Latitude, Logitude) ->
     case lookup(DeviceId) of
-        {ok, [Node, _Ts, _, Product, Acl]} ->
-            dgiot_mnesia:insert(DeviceId, [Node, dgiot_datetime:now_ms(), {Latitude, Logitude}, Product, Acl]);
+        {ok, {[_Ts, _, Product, Acl], Node}} ->
+            dgiot_mnesia:insert(DeviceId, {[dgiot_datetime:now_ms(), {Latitude, Logitude}, Product, Acl], Node});
         _ -> pass
     end.
 
@@ -77,6 +77,13 @@ lookup(ProductId, DevAddr) ->
             {Device, _} = V,
             {ok, Device}
     end.
+
+delete(DeviceId) ->
+    dgiot_mnesia:delete(DeviceId).
+
+delete(ProductId, DevAddr) ->
+    DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+    dgiot_mnesia:delete(DeviceId).
 
 %% 存储产品
 %%-define(SMART_PROD, mnesia_smartprod).
