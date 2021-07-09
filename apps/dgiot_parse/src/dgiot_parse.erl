@@ -83,6 +83,7 @@
     get_instruct/3,
     get_roleid/1,
     get_productid/3,
+    get_maintenanceid/2,
     subscribe/2,
     send_msg/3,
     load/0,
@@ -150,8 +151,21 @@ get_productid(Category, DevType, Name) ->
     <<Pid:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Product", Category/binary, DevType/binary, Name/binary>>),
     Pid.
 
+get_maintenanceid(Deviceid, Number) ->
+    <<Pid:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Maintenance", Deviceid/binary, Number/binary>>),
+    Pid.
+
 get_objectid(Class, Map) ->
     case Class of
+        <<"post_classes_maintenance">> ->
+            get_objectid(<<"Maintenance">>, Map);
+        <<"Maintenance">> ->
+            Deviceid = maps:get(<<"device">>, Map, <<"">>),
+            Number = maps:get(<<"number">>, Map, <<"">>),
+            <<Pid:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Maintenance", Deviceid/binary, Number/binary>>),
+            Map#{
+                <<"objectId">> => Pid
+            };
         <<"post_classes_product">> ->
             get_objectid(<<"Product">>, Map);
         <<"Product">> ->
