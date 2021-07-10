@@ -28,7 +28,7 @@
     spec/0, spec/1,
     delete/2, delete/3,
     status/1,
-    do_event/4, do_event/5,
+    do_event/3, do_event/4,  do_event/5,
     do_message/2, do_message/3, do_message/4,
     call/3, call/4, call2/3, call2/4,
     start_link/1]).
@@ -84,6 +84,14 @@ status(Id) ->
 
 name(Id) -> list_to_atom(lists:concat([?MODULE, "_", Id])).
 
+do_event(ChannelId, EventId, Event) ->
+    case dgiot_data:get({channeltype, ChannelId}) of
+        not_find ->
+            not_find;
+        ChannelType ->
+            do_event(ChannelType, ChannelId, EventId, Event, 5000)
+    end.
+
 do_event(ChannelType, ChannelId, EventId, Event) ->
     do_event(ChannelType, ChannelId, EventId, Event, 5000).
 do_event(ChannelType, ChannelId, EventId, Event, Timeout) ->
@@ -92,6 +100,7 @@ do_event(ChannelType, ChannelId, EventId, Event, Timeout) ->
         fun(Worker) ->
             Worker ! {event, Pool, EventId, Event}, ok
         end,
+    ?LOG(error, "EventId ~p", [EventId]),
     poolboy:transaction(Pool, Fun, Timeout).
 
 do_message(ChannelId, Message) ->

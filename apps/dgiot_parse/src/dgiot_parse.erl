@@ -160,7 +160,7 @@ get_objectid(Class, Map) ->
         <<"post_classes_maintenance">> ->
             get_objectid(<<"Maintenance">>, Map);
         <<"Maintenance">> ->
-            Deviceid = maps:get(<<"device">>, Map, <<"">>),
+            #{<<"objectId">> := Deviceid} = maps:get(<<"device">>, Map, <<"">>),
             Number = maps:get(<<"number">>, Map, <<"">>),
             <<Pid:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Maintenance", Deviceid/binary, Number/binary>>),
             Map#{

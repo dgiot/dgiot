@@ -151,12 +151,29 @@ on_action_create_dgiot(_Id, Params = #{
     ?LOG(error, " msg topic: ~p, payload: ~p", [TopicTks, PayloadTks]),
     Params.
 
+%% mqtt事件
+%%[ 'client.connected'
+%%, 'client.disconnected'
+%%, 'session.subscribed'
+%%, 'session.unsubscribed'
+%%, 'message.publish'
+%%, 'message.delivered'
+%%, 'message.acked'
+%%, 'message.dropped'
+%%]
 -spec on_action_dgiot(selected_data(), env_vars()) -> any().
-on_action_dgiot(Selected, Envs) ->
+on_action_dgiot(Selected, #{event := Event} = Envs) ->
     ChannelId = dgiot_mqtt:get_channel(Envs),
     Msg = dgiot_mqtt:get_message(Selected, Envs),
-    case dgiot_channelx:do_message(ChannelId, {rule, Msg, Selected}) of
-        not_find -> dgiot_mqtt:republish(Selected, Envs);
-        _ -> pass
+    case Event of
+        'message.publish' ->
+            case dgiot_channelx:do_message(ChannelId, {rule, Msg, Selected}) of
+                not_find -> dgiot_mqtt:republish(Selected, Envs);
+                _ -> pass
+            end;
+        EventId ->
+            dgiot_channelx:do_event(ChannelId, EventId, {rule, Msg, Selected})
     end.
+
+
 
