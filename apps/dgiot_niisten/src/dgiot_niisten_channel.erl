@@ -166,7 +166,8 @@ handle_init(State) ->
     {ok, State}.
 
 %% 通道消息处理,注意：进程池调用
-handle_event(_EventId, _Event, State) ->
+handle_event(EventId, Event, State) ->
+    ?LOG(error,"EventId ~p Event ~p",[EventId, Event] ),
     {ok, State}.
 
 
