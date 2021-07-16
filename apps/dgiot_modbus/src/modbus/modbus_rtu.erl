@@ -80,10 +80,8 @@ encode_data(Data, Address, SlaveId, ProductId) ->
                 <<"writeHregs">> -> ?FC_WRITE_HREGS; %%需要校验，写多个保持寄存器是什么状态
                 _ -> ?FC_READ_HREGS
             end,
-
         <<H:8, L:8>> = dgiot_utils:hex_to_binary(is16(Address)),
         <<Sh:8, Sl:8>> = dgiot_utils:hex_to_binary(is16(SlaveId)),
-
         RtuReq = #rtu_req{
             slaveId = Sh * 256 + Sl,
             funcode = dgiot_utils:to_int(FunCode),
@@ -93,11 +91,17 @@ encode_data(Data, Address, SlaveId, ProductId) ->
         Acc ++ [build_req_message(RtuReq)]
                 end, [], modbus_encoder(ProductId, SlaveId, Address, Data)).
 
+is16(<<"0X", Data/binary>>) when size(Data) == 4 ->
+    Data;
+
 is16(<<"0X", Data/binary>>) ->
     <<"00", Data/binary>>;
 
+is16(Data) when size(Data) > 1 ->
+    <<"00", Data/binary>>;
+
 is16(Data) ->
-    <<"00", Data/binary>>.
+    <<"000", Data/binary>>.
 
 %rtu modbus
 parse_frame(<<>>, Acc, _State) -> {<<>>, Acc};
@@ -147,7 +151,11 @@ parse_frame(<<SlaveId:8, _/binary>> = Buff, Acc, #{<<"dtuaddr">> := DtuAddr, <<"
                 [Buff, Acc] ->
                     {Buff, Acc}
             end
-    end.
+    end;
+%rtu modbus
+parse_frame(_Other, Acc, _State) ->
+    ?LOG(error, "_Other ~p", [_Other]),
+    {<<>>, Acc}.
 
 decode_data(Buff, ProductId, DtuAddr, Address, Acc) ->
     <<SlaveId:8, FunCode:8, ResponseData/binary>> = Buff,
@@ -369,18 +377,17 @@ modbus_decoder(ProductId, SlaveId, Address, Data) ->
     end.
 
 modbus_encoder(ProductId, SlaveId, Address, Value) ->
-    BinSlaveId = dgiot_utils:to_binary(SlaveId),
     case dgiot_device:lookup_prod(ProductId) of
         {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
             lists:foldl(fun(X, Acc) ->
                 case X of
                     #{<<"accessMode">> := <<"r">>, <<"dataForm">> := #{<<"address">> := Address, <<"protocol">> := <<"modbus">>,
-                        <<"data">> := Data, <<"slaveid">> := BinSlaveId, <<"operatetype">> := Operatetype}} ->
+                        <<"data">> := Data, <<"slaveid">> := SlaveId, <<"operatetype">> := Operatetype}} ->
                         Acc ++ [{<<"r">>, Data, Operatetype}];
                     #{<<"accessMode">> := Cmd, <<"dataForm">> := #{<<"address">> := Address, <<"protocol">> := <<"modbus">>,
-                        <<"data">> := _Quantity, <<"slaveid">> := BinSlaveId, <<"operatetype">> := Operatetype}} ->
+                        <<"data">> := _Quantity, <<"slaveid">> := SlaveId, <<"operatetype">> := Operatetype}} ->
                         Acc ++ [{Cmd, Value, Operatetype}];
-                    _ ->
+                    _Ot ->
                         Acc
                 end
                         end, [], Props);

@@ -152,7 +152,7 @@ handle(post_user, #{<<"username">> := _UserName, <<"password">> := _Password} = 
         {ok, Data} ->
             dgiot_parse:load(),
             {200, Data};
-        {error, Error} -> {error, Error}
+        {error, Error} -> {500, Error}
     end;
 
 handle(delete_user, #{<<"username">> := _UserName} = Body, #{<<"sessionToken">> := SessionToken}, _Req) ->
@@ -584,14 +584,15 @@ create_user(#{<<"username">> := UserName, <<"department">> := RoleId} = Body, Se
                                         <<"objectId">> => UserId
                                     }]
                                 }}),
-                            dgiot_parse:save_User_Role(UserId, RoleId);
+                            R = dgiot_parse:save_User_Role(UserId, RoleId),
+                            {ok, #{<<"result">> => R}};
                         Error ->
                             ?LOG(info, "Error ~p", [Error]),
-                            Error
+                            {error, Error}
                     end;
                 {ok, #{<<"results">> := [_Info]}} ->
                     ?LOG(info, "_Info ~p", [_Info]),
-                    {error, <<"User exist  ", UserName/binary>>};
+                    {error, #{<<"result">> => <<"User exist  ", UserName/binary>>}};
                 {error, Error} ->
                     ?LOG(info, "Error ~p", [Error]),
                     {error, Error}
@@ -888,6 +889,7 @@ get_classtree(ClassName, Parent, Filter, SessionToken) ->
                 lists:foldl(fun(Class, Acc) ->
                     NewClasse = Class#{
                         <<"label">> => maps:get(<<"name">>, Class, <<"label">>),
+                        <<"value">> => maps:get(<<"name">>, Class, <<"value">>),
                         Parent => maps:get(Parent, Class, <<"0">>)},
                     Acc ++ [maps:without([<<"createdAt">>, <<"updatedAt">>, <<"ACL">>], NewClasse)]
                             end, [], Classes),
@@ -904,6 +906,7 @@ get_classtree(ClassName, Parent, Filter, SessionToken) ->
                         <<"children">> => MoreTrees,
                         <<"name">> => <<"...">>,
                         <<"label">> => <<"...">>,
+                        <<"value">> => <<"...">>,
                         <<"icon">> => <<"More">>,
                         Parent => <<"0">>,
                         <<"url">> => <<"/more">>
@@ -1125,7 +1128,6 @@ find_role(UserId, DisUserId) ->
                                 find_parent(RoleIds, DisRoleId)
                                         end, <<>>, DisRoleIds)
                     end
-
             end
     end.
 

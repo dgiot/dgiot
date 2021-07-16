@@ -1,0 +1,181 @@
+{
+  "tags": [
+    {
+      "name": "Group",
+      "description": "组"
+    }
+  ],
+  "definitions": {},
+  "paths": {
+    "/group":{
+      "post": {
+      "description": "创建分组",
+      "parameters": [
+        {
+          "description": "创建分组,自动创建虚拟组设备，无物模型",
+          "in": "body",
+          "name": "group",
+          "required": true,
+          "schema": {
+            "properties": {
+              "name": {
+                "description": "组名",
+                "type": "string",
+                "example": "分组名"
+              },
+              "topo": {
+                "description": "组态文件名",
+                "type": "string",
+                "example": "group_topo"
+              },
+              "devType": {
+                "description": "设备类型",
+                "type": "string",
+                "example": "dgiot_iot_hub"
+              }
+            }
+          }
+        }
+      ],
+      "responses": {
+        "200": {
+          "description": "Returns operation status"
+        },
+        "400": {
+          "description": "Bad Request"
+        },
+        "403": {
+          "description": "Forbidden"
+        },
+        "500": {
+          "description": "Server Internal error"
+        }
+      },
+      "summary": "创建分组",
+      "tags": [
+        "Group"
+      ]
+    },
+      "get": {
+        "summary": "获取组信息",
+        "description": "获取组信息",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "description": "组地址",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Group"
+        ]
+      },
+      "put": {
+        "description": "关联组态控件与物模型",
+        "parameters": [
+          {
+            "description": "关联组态与物模型",
+            "in": "body",
+            "name": "thing",
+            "required": true,
+            "schema": {
+              "properties": {
+                "topo": {
+                  "description": "组态控件关联字段",
+                  "type": "object",
+                  "example": {"productid":"JVANH8bf5n","topoid":"330980"}
+                },
+                "thing": {
+                  "description": "物模型关联字段",
+                  "type": "object",
+                  "example": {"thingid":"ipjnGiLSt7","subprodid":"9c5930e565","subdevid":"5b1bc4cf52"}
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "summary": "关联组态与物模型",
+        "tags": [
+          "Group"
+        ]
+      },
+      "delete": {
+        "summary": "删除分组",
+        "description": "删除分组",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "data",
+            "description": "关联信息",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "description": "组名",
+                  "type": "string",
+                  "example": "分组名"
+                },
+                "devType": {
+                  "description": "组类型",
+                  "type": "string",
+                  "example": "dgiot_iot_group"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Returns success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Group"
+        ]
+      }
+    }
+  }
+}

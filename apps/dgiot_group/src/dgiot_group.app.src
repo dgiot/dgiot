@@ -1,0 +1,8 @@
+{application,dgiot_group,
+             [{description,"数蛙高并发任务管理"},
+              {vsn,"1.6.4"},
+              {applications,[kernel,stdlib]},
+              {modules,[]},
+              {env,[]},
+              {mod,{dgiot_group_app,[]}},
+              {registered,[]}]}.
