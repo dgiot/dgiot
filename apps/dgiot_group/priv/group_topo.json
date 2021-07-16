@@ -1,0 +1,50 @@
+{
+  "konva": {
+    "Stage": {
+      "attrs": {
+        "x": 6,
+        "y": 26,
+        "id": "container",
+        "width": 1667,
+        "height": 723,
+        "draggable": true
+      },
+      "children": [
+        {
+          "attrs": {
+            "id": "layer_040a1c7933"
+          },
+          "children": [
+            {
+              "attrs": {
+                "id": "switch",
+                "width": 2000,
+                "height": 2000
+              },
+              "children": [
+                {
+                  "attrs": {
+                    "x": 100,
+                    "y": 520,
+                    "id": "head",
+                    "fill": "#000000",
+                    "text": "分组",
+                    "type": "text",
+                    "fontSize": 20,
+                    "draggable": true,
+                    "fontFamily": "Calibri"
+                  },
+                  "className": "Text"
+                }
+              ],
+              "className": "Group"
+            }
+          ],
+          "className": "Layer"
+        }
+      ],
+      "className": "Stage"
+    },
+    "background": "http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/frontend/konva/assets/taiti.png"
+  }
+}

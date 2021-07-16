@@ -64,7 +64,7 @@ init([#{<<"app">> := App, <<"channel">> := ChannelId, <<"dtuid">> := DtuId, <<"m
     {ProductId, DevAddr} = dgiot_task:get_pnque(DtuId),
     DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
     Que = dgiot_instruct:get_instruct(ProductId, DeviceId, 1, dgiot_utils:to_atom(Mode)),
-%%    ?LOG(info, "Que ~p", [Que]),
+    ?LOG(info, "Que ~p", [Que]),
     Tsendtime = dgiot_datetime:localtime_to_unixtime(dgiot_datetime:to_localtime(Endtime)),
     Nowstamp = dgiot_datetime:nowstamp(),
     case length(Que) of
@@ -136,12 +136,15 @@ handle_info({deliver, _, Msg}, #task{tid = Channel, dis = Dis, product = Product
     Payload = jsx:decode(dgiot_mqtt:get_payload(Msg), [return_maps]),
     dgiot_bridge:send_log(Channel, "to_dev=> ~ts: ~ts ~s ~p ", [unicode:characters_to_list(dgiot_mqtt:get_topic(Msg)), unicode:characters_to_list(dgiot_mqtt:get_payload(Msg)), ?FILE, ?LINE]),
     NewAck = dgiot_task:get_collection(ProductId, Dis, Payload, Ack),
+    ?LOG(info, "NewAck ~p", [NewAck]),
     {noreply, get_next_pn(State#task{ack = NewAck})};
 
 %% ACK消息触发抄表指令
-handle_info({deliver, _, Msg}, #task{dis = Dis, product = ProductId, ack = Ack} = State) ->
+handle_info({deliver, _, Msg}, #task{tid = Channel, dis = Dis, product = ProductId, ack = Ack} = State) ->
     Payload = jsx:decode(dgiot_mqtt:get_payload(Msg), [return_maps]),
+    dgiot_bridge:send_log(Channel, "to_dev=> ~ts: ~ts ~s ~p ", [unicode:characters_to_list(dgiot_mqtt:get_topic(Msg)), unicode:characters_to_list(dgiot_mqtt:get_payload(Msg)), ?FILE, ?LINE]),
     NewAck = dgiot_task:get_collection(ProductId, Dis, Payload, Ack),
+    ?LOG(info, "NewAck ~p", [NewAck]),
     {noreply, send_msg(State#task{ack = NewAck})};
 
 handle_info(_Msg, State) ->
@@ -162,13 +165,27 @@ send_msg(#task{ref = Ref, que = Que} = State) when length(Que) == 0 ->
     get_next_pn(State);
 
 send_msg(#task{tid = Channel, product = Product, devaddr = DevAddr, ref = Ref, que = Que, appdata = AppData} = State) ->
-    {InstructOrder, Interval, _, _, _, _, _, _, _} = lists:nth(1, Que),
+    {InstructOrder, Interval, Identifier, Pn, Address, Command, Data, Protocol, _} = lists:nth(1, Que),
     {NewCount, Payload, Dis} = lists:foldl(fun(X, {Count, Acc, Acc1}) ->
         case X of
             {InstructOrder, _, _, _, _, _, error, _, _} ->
                 {Count + 1, Acc, Acc1};
-            {InstructOrder, _, Identifier, Pn, Address, Command, Data, Protocol, _} ->
+            {InstructOrder, _, Identifier1, Pn1, Address1, Command1, Data1, Protocol1, _} ->
                 Payload1 = #{
+                    <<"appdata">> => AppData,
+                    <<"thingdata">> => #{
+                        <<"product">> => Product,
+                        <<"devaddr">> => DevAddr,
+                        <<"pn">> => Pn1,
+                        <<"di">> => Address1,
+                        <<"command">> => Command1,
+                        <<"data">> => Data1,
+                        <<"protocol">> => Protocol1
+                    }
+                },
+                {Count + 1, Acc ++ [Payload1], Acc1 ++ [Identifier1]};
+            _ ->
+                Payload2 = #{
                     <<"appdata">> => AppData,
                     <<"thingdata">> => #{
                         <<"product">> => Product,
@@ -180,9 +197,7 @@ send_msg(#task{tid = Channel, product = Product, devaddr = DevAddr, ref = Ref, q
                         <<"protocol">> => Protocol
                     }
                 },
-                {Count + 1, Acc ++ [Payload1], Acc1 ++ [Identifier]};
-            _ ->
-                {Count, Acc, Acc1}
+                {Count, [Payload2], [Identifier]}
         end
                                            end, {0, [], []}, Que),
     Newpayload = jsx:encode(Payload),
@@ -224,6 +239,7 @@ get_next_pn(#task{mode = Mode, dtuid = DtuId, firstid = DeviceId, product = Prod
 
 save_td(#task{app = _App, tid = Channel, product = ProductId, devaddr = DevAddr, ack = Ack, appdata = AppData}) ->
     Data = dgiot_task:get_calculated(ProductId, Ack),
+    ?LOG(info, "Data ~p", [Data]),
     case length(maps:to_list(Data)) of
         0 -> pass;
         _ ->

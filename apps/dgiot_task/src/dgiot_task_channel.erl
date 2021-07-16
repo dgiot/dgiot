@@ -170,6 +170,7 @@
 
 init_ets() ->
     dgiot_data:init(?DGIOT_TASK),
+    dgiot_data:init(?TASK_ARGS),
     dgiot_data:init(?DGIOT_PNQUE).
 
 start(ChannelId, ChannelArgs) ->
@@ -199,7 +200,7 @@ handle_init(#state{id = ChannelId, env = #{<<"products">> := Products, <<"args">
             <<"app">> => App,
             <<"product">> => ProductId,
             <<"channel">> => ChannelId},
-        dgiot_data:insert({agrs, ProductId}, NewArgs),
+        dgiot_data:insert({?TASK_ARGS, ProductId}, NewArgs),
         dgiot_task:load(NewArgs)
               end, Products),
     dgiot_task:timing_start(Args#{<<"channel">> => ChannelId}),

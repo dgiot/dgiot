@@ -14,18 +14,18 @@
     }
   ],
   "definitions": {
-    "Token":{
-      "type":"object",
-      "properties":{
+    "Token": {
+      "type": "object",
+      "properties": {
         "appid": {
           "description": "app secret",
           "type": "string",
-          "example":"gEsTiaPAjv"
+          "example": "gEsTiaPAjv"
         },
         "secret": {
           "description": "app secret",
           "type": "string",
-          "example":"VzY0Mjc5NDQxNTg1ODI4NDk1MzYx"
+          "example": "VzY0Mjc5NDQxNTg1ODI4NDk1MzYx"
         }
       }
     }
@@ -48,13 +48,13 @@
                   "required": true,
                   "description": "类表名",
                   "type": "string",
-                  "example":"Device"
+                  "example": "Device"
                 },
                 "parent": {
                   "required": true,
                   "description": "父字段名",
                   "type": "string",
-                  "example":"parentId"
+                  "example": "parentId"
                 },
                 "filter": {
                   "description": "过滤条件 {\"keys\":[\"parentId\",\"name\"],\"where\":{\"$or\":[{\"parentId\":\"lgtDJDEZlW\"},{\"objectId\":\"lgtDJDEZlW\"}]}}",
@@ -147,7 +147,7 @@
                 "file": {
                   "description": "菜单配置文件",
                   "type": "string",
-                  "example":"menu.zip"
+                  "example": "menu.zip"
                 }
               }
             }
@@ -228,7 +228,7 @@
                 "path": {
                   "description": "文件路径",
                   "type": "string",
-                  "example":"/shapes/利欧泵业测试部/file.zip"
+                  "example": "/shapes/利欧泵业测试部/file.zip"
                 }
               }
             }
@@ -271,7 +271,11 @@
                 "files": {
                   "description": "文件列表",
                   "type": "array",
-                  "example":["/shapes/利欧泵业测试部/6.png","/shapes/利欧泵业测试部/1.png","/shapes/利欧泵业测试部/GBT 3216-2016 回转动力泵 水力性能验收试验 1、2级和3级.pdf"]
+                  "example": [
+                    "/shapes/利欧泵业测试部/6.png",
+                    "/shapes/利欧泵业测试部/1.png",
+                    "/shapes/利欧泵业测试部/GBT 3216-2016 回转动力泵 水力性能验收试验 1、2级和3级.pdf"
+                  ]
                 }
               }
             }
@@ -286,7 +290,7 @@
                 "file": {
                   "description": "下载地址",
                   "type": "string",
-                  "example":"http://127.0.0.1:1250/shapes/upload/app/1.png"
+                  "example": "http://127.0.0.1:1250/shapes/upload/app/1.png"
                 }
               }
             }
@@ -362,7 +366,7 @@
             "name": "classname",
             "description": "表名",
             "required": true,
-            "default":"Device",
+            "default": "Device",
             "type": "string"
           },
           {
@@ -385,7 +389,7 @@
                 "file": {
                   "description": "档案文件",
                   "type": "string",
-                  "example":"product.zip"
+                  "example": "product.zip"
                 }
               }
             }
@@ -424,36 +428,36 @@
                 "productid": {
                   "description": "产品标识",
                   "type": "string",
-                  "example":"9c5930e565"
+                  "example": "9c5930e565"
                 },
                 "item": {
                   "description": "物模型单项指标",
                   "type": "object",
                   "example": {
-                    "name":"出口压力",
-                    "dataForm":{
-                      "rate":1,
-                      "offset":0,
-                      "address":"0x0001",
-                      "slaveid":1,
-                      "protocol":"modbus",
-                      "quantity":2,
-                      "byteorder":"big",
-                      "operatetype":"holdingRegister",
-                      "originaltype":"int16"
+                    "name": "出口压力",
+                    "dataForm": {
+                      "rate": 1,
+                      "offset": 0,
+                      "address": "0x0001",
+                      "slaveid": 1,
+                      "protocol": "modbus",
+                      "quantity": 2,
+                      "byteorder": "big",
+                      "operatetype": "holdingRegister",
+                      "originaltype": "int16"
                     },
-                    "dataType":{
-                      "type":"float",
-                      "specs":{
-                        "max":500,
-                        "min":-500,
-                        "step":0.1,
-                        "unit":"MPa"
+                    "dataType": {
+                      "type": "float",
+                      "specs": {
+                        "max": 500,
+                        "min": -500,
+                        "step": 0.1,
+                        "unit": "MPa"
                       }
                     },
-                    "required":true,
-                    "accessMode":"r",
-                    "identifier":"pressure_out"
+                    "required": true,
+                    "accessMode": "r",
+                    "identifier": "pressure_out"
                   }
                 }
               }
@@ -512,7 +516,7 @@
                 "file": {
                   "description": "档案文件",
                   "type": "string",
-                  "example":"product.zip"
+                  "example": "product.zip"
                 }
               }
             }
@@ -558,7 +562,7 @@
                 "file": {
                   "description": "产品配置文件",
                   "type": "string",
-                  "example":"product.zip"
+                  "example": "product.zip"
                 }
               }
             }
@@ -645,7 +649,7 @@
             "in": "path",
             "name": "class",
             "required": true,
-            "default":"Device",
+            "default": "Device",
             "type": "string"
           },
           {
@@ -734,27 +738,27 @@
                 "srcClass": {
                   "description": "源类名",
                   "type": "string",
-                  "example":"_User"
+                  "example": "_User"
                 },
                 "srcId": {
                   "description": "源类对象",
                   "type": "string",
-                  "example":"hXc9BkGCOD"
+                  "example": "hXc9BkGCOD"
                 },
                 "destClass": {
                   "description": "目标类名",
                   "type": "string",
-                  "example":"_Role"
+                  "example": "_Role"
                 },
                 "destId": {
                   "description": "目标类对象",
                   "type": "string",
-                  "example":"0w66Wg1thM"
+                  "example": "0w66Wg1thM"
                 },
                 "destField": {
                   "description": "目标关联字段",
                   "type": "string",
-                  "example":"users"
+                  "example": "users"
                 }
               }
             }
@@ -793,27 +797,27 @@
                 "srcClass": {
                   "description": "源类名",
                   "type": "string",
-                  "example":"_User"
+                  "example": "_User"
                 },
                 "srcId": {
                   "description": "源类对象",
                   "type": "string",
-                  "example":"hXc9BkGCOD"
+                  "example": "hXc9BkGCOD"
                 },
                 "destClass": {
                   "description": "目标类名",
                   "type": "string",
-                  "example":"_Role"
+                  "example": "_Role"
                 },
                 "destId": {
                   "description": "目标类对象",
                   "type": "string",
-                  "example":"0w66Wg1thM"
+                  "example": "0w66Wg1thM"
                 },
                 "destField": {
                   "description": "目标关联字段",
                   "type": "string",
-                  "example":"users"
+                  "example": "users"
                 }
               }
             }
@@ -1021,6 +1025,64 @@
         },
         "tags": [
           "Data"
+        ]
+      }
+    },
+    "/adddevice": {
+      "post": {
+        "summary": "序列号添加设备",
+        "description": "序列号添加设备",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "data",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "devaddr": {
+                  "description": "设备编号",
+                  "type": "string",
+                  "example": "10002005291401001"
+                },
+                "productid": {
+                  "description": "产品id",
+                  "type": "string",
+                  "example": "3e854d0be3"
+                },
+                "longitude": {
+                  "description": "经度",
+                  "type": "string",
+                  "example": "120.161324"
+                },
+                "latitude": {
+                  "description": "纬度",
+                  "type": "string",
+                  "example": "30.262441"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Device"
         ]
       }
     }

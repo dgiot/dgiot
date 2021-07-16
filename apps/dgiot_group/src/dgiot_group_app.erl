@@ -14,9 +14,34 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
--author("johnliu").
+-module(dgiot_group_app).
 
--define(DGIOT_TASK, dgiot_task).
--define(TASK_ARGS, task_args).
--define(DGIOT_PNQUE, dgiot_pnque).
--define(TASK_NAME(Name), dgiot_utils:to_atom(lists:concat([dgiot_utils:to_atom(Name), "task"]))).
+-emqx_plugin(?MODULE).
+-include_lib("dgiot/include/logger.hrl").
+
+-behaviour(application).
+
+
+-include("dgiot_group.hrl").
+
+%% Application callbacks
+-export([start/2, stop/1]).
+
+
+%% ===================================================================
+%% Application callbacks
+%% ===================================================================
+
+start(_StartType, _StartArgs) ->
+    dgiot_metrics:start(dgiot_group),
+    dgiot_data:init(?dgiot_GROUP),
+    dgiot_data:init(?dgiot_GROUP_ROUTE),
+    dgiot_data:init(?dgiot_GROUP_TASK),
+    dgiot_data:init(?dgiot_GROUP_METER),
+    dgiot_data:init(?dgiot_GROUP_WORK),
+    {ok, Sup} = dgiot_group_sup:start_link(),
+    {ok, Sup}.
+
+
+stop(_State) ->
+    ok.

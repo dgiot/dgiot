@@ -52,23 +52,23 @@ handle(OperationID, Args, Context, Req) ->
     Headers = #{},
     case catch do_request(OperationID, Args, Context, Req) of
         {ErrType, Reason} when ErrType == 'EXIT'; ErrType == error ->
-            ?LOG(info,"do request: ~p, ~p, ~p~n", [OperationID, Args, Reason]),
+            ?LOG(info, "do request: ~p, ~p, ~p~n", [OperationID, Args, Reason]),
             Err = case is_binary(Reason) of
                       true -> Reason;
                       false -> dgiot_utils:format("~p", [Reason])
                   end,
             {500, Headers, #{<<"error">> => Err}};
         ok ->
-           ?LOG(error,"do request: ~p, ~p ->ok ~n", [OperationID, Args]),
+            ?LOG(error, "do request: ~p, ~p ->ok ~n", [OperationID, Args]),
             {200, Headers, #{}, Req};
         {ok, Res} ->
-           ?LOG(error,"do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
+            ?LOG(error, "do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
             {200, Headers, Res, Req};
         {Status, Res} ->
-           ?LOG(error,"do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
+            ?LOG(error, "do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
             {Status, Headers, Res, Req};
         {Status, NewHeaders, Res} ->
-           ?LOG(error,"do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
+            ?LOG(error, "do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
             {Status, maps:merge(Headers, NewHeaders), Res, Req}
     end.
 
@@ -81,7 +81,7 @@ handle(OperationID, Args, Context, Req) ->
 %% OperationId:post_upload
 %% 请求:POST /iotapi/upload
 do_request(post_upload, #{<<"file">> := FileInfo}, #{<<"user">> := #{<<"objectId">> := UserId}}, _Req) ->
-    ?LOG(info,"FileInfo ~p", [FileInfo]),
+    ?LOG(info, "FileInfo ~p", [FileInfo]),
     Key = dgiot_license:to_md5(jsx:encode(FileInfo#{node => node()})),
     case dgiot_parse:create_object(<<"Dict">>, #{
         <<"ACL">> => #{UserId => #{<<"read">> => true, <<"write">> => true}},
@@ -133,7 +133,7 @@ do_request(post_upload_token, #{<<"from">> := <<"fastdfs">>}, _Context, Req0) ->
                                         _ -> {200, <<"fail">>}
                                     end;
                                 _ ->
-                                    ?LOG(warning,"post_upload_token No Login ~p", [Info]),
+                                    ?LOG(warning, "post_upload_token No Login ~p", [Info]),
                                     {200, <<"fail">>}
                             end
                     end
@@ -166,7 +166,7 @@ do_request(post_graphql, Body, #{<<"sessionToken">> := SessionToken} = _Context,
 %% OperationId:post_product
 %% 请求:PUT /iotapi/put_thing
 do_request(put_thing, #{<<"productid">> := ProductId, <<"item">> := Item} = _Body,
-        #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
+    #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
     #{<<"identifier">> := Identifier} = Item,
     case dgiot_parse:get_object(<<"Product">>, ProductId, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
         {ok, #{<<"thing">> := Thing}} ->
@@ -189,7 +189,7 @@ do_request(put_thing, #{<<"productid">> := ProductId, <<"item">> := Item} = _Bod
 %% OperationId:post_product
 %% 请求:POST /iotapi/post_product
 do_request(post_product, #{<<"file">> := FileInfo, <<"appid">> := Appid} = _Body,
-        #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
+    #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
     case maps:get(<<"contentType">>, FileInfo, <<"unknow">>) of
         <<"application/x-zip-compressed">> -> post_product(FileInfo, Appid, SessionToken);
         <<"application/zip">> -> post_product(FileInfo, Appid, SessionToken);
@@ -231,6 +231,38 @@ do_request(post_device, Body, #{<<"sessionToken">> := SessionToken} = _Context, 
             end
     end;
 
+%% Device 概要: 查询设备 描述:查询设备时序数据
+%% OperationId:post_menus
+%% 请求:POST /iotapi/post_device
+do_request(post_adddevice, #{<<"devaddr">> := Devaddr, <<"productid">> := ProductId, <<"longitude">> := Longitude, <<"latitude">> := Latitude}, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
+    DeviceId = dgiot_parse:get_deviceid(ProductId, Devaddr),
+    case dgiot_auth:get_session(SessionToken) of
+        #{<<"ACL">> := Acl} ->
+            case dgiot_parse:get_object(<<"Product">>, ProductId) of
+                {ok, #{<<"devType">> := DevType, <<"name">> := ProductName}} ->
+                    case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+                        {ok, _Re} ->
+                            dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"ACL">> => Acl, <<"location">> => #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => dgiot_utils:to_float(Longitude), <<"latitude">> => dgiot_utils:to_float(Latitude)}});
+                        _R ->
+                            dgiot_device:create_device(#{
+                                <<"devaddr">> => Devaddr,
+                                <<"name">> => <<ProductName/binary, Devaddr/binary>>,
+                                <<"ip">> => <<>>,
+                                <<"isEnable">> => true,
+                                <<"product">> => ProductId,
+                                <<"ACL">> => Acl,
+                                <<"status">> => <<"ONLINE">>,
+                                <<"location">> => #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => dgiot_utils:to_float(Longitude), <<"latitude">> => dgiot_utils:to_float(Latitude)},
+                                <<"brand">> => ProductName,
+                                <<"devModel">> => DevType
+                            })
+                    end;
+                Error2 -> lager:info("Error2 ~p ", [Error2])
+            end;
+        _ ->
+            {error, <<"Not Allowed.">>}
+    end;
+
 %% Product 概要: 导库 描述:json文件导库
 %% OperationId:post_product
 %% 请求:POST /iotapi/post_product
@@ -259,7 +291,7 @@ do_request(post_hash_class, #{<<"class">> := Class} = Body, #{<<"sessionToken">>
 do_request(post_export_data, #{<<"classname">> := Name} = Body, #{<<"sessionToken">> := SessionToken} = _Context, _Req0) ->
     Filter = maps:without([<<"classname">>], Body),
     FileName = unicode:characters_to_list(Name) ++ ".zip",
-    ?LOG(info,"Name ~p Filter ~p ", [Name, Filter]),
+    ?LOG(info, "Name ~p Filter ~p ", [Name, Filter]),
     case get_class(Name, Filter, FileName, SessionToken) of
         {ok, ZipFile} ->
             Headers = #{
@@ -300,7 +332,7 @@ do_request(post_import_data, #{<<"className">> := Class, <<"file">> := FileInfo}
         {ok, Data} ->
             Fun =
                 fun(Res, Acc) ->
-                    ?LOG(info,"Res ~p", [Res]),
+                    ?LOG(info, "Res ~p", [Res]),
                     lists:concat([Acc, Res])
                 end,
             case dgiot_parse:import(Class, Data, 5000, Fun, []) of
@@ -346,7 +378,7 @@ do_request(post_import_file, #{<<"path">> := Path}, #{<<"sessionToken">> := Sess
         {ok, #{<<"results">> := [#{<<"name">> := AppName, <<"tag">> := #{<<"appconfig">> := Config}} | _]}} ->
             Root = unicode:characters_to_list(maps:get(<<"home">>, Config, <<"D:/dgiot/dgiot_data_center/datacenter/file/files">>)),
             [_, _, FileApp, FileName] = re:split(Path, <<"/">>),
-            ?LOG(info,"FileApp ~p", [FileApp]),
+            ?LOG(info, "FileApp ~p", [FileApp]),
             case AppName of
                 FileApp ->
                     NewPath = unicode:characters_to_list(FileApp) ++ "/" ++ unicode:characters_to_list(FileName),
@@ -368,8 +400,8 @@ do_request(post_import_file, #{<<"path">> := Path}, #{<<"sessionToken">> := Sess
 %% OperationId:post_menus
 %% 请求:POST /iotapi/post_menu
 do_request(post_menu, #{<<"file">> := FileInfo} = _Body,
-        #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
-    ?LOG(info,"FileInfo ~p", [FileInfo]),
+    #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
+    ?LOG(info, "FileInfo ~p", [FileInfo]),
     case maps:get(<<"contentType">>, FileInfo, <<"unknow">>) of
         <<"application/x-zip-compressed">> -> post_menu(FileInfo, SessionToken);
         <<"application/zip">> -> post_menu(FileInfo, SessionToken);
@@ -425,7 +457,7 @@ do_request(post_tree, #{<<"class">> := Class, <<"parent">> := Parent, <<"filter"
 
 %%  服务器不支持的API接口
 do_request(_OperationId, _Args, _Context, _Req) ->
-    ?LOG(info,"_Args ~p", [_Args]),
+    ?LOG(info, "_Args ~p", [_Args]),
     {error, <<"Not Allowed.">>}.
 
 get_class(Name, Filter, FileName, SessionToken) ->
