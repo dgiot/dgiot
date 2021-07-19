@@ -99,12 +99,27 @@ do_request(get_wechat_unbind, _Args, #{<<"sessionToken">> := SessionToken}, _Req
             {error, <<"Not Allowed.">>}
     end;
 
-%% iot_hub 概要: 查询平台api资源 描述:wechat解绑
+%% iot_hub 概要: 查询平台api资源 描述:总控台
 %% OperationId:post_login
 %% 请求:POST /iotapi/post_login
 do_request(get_wechat_index, _Args, #{<<"sessionToken">> := SessionToken}, _Req) ->
     ?LOG(info, "SessionToken = ~p ", [SessionToken]),
     dgiot_wechat:get_wechat_index(SessionToken);
+
+
+%% iot_hub 概要: 查询平台api资源 描述:设备地图
+%% OperationId:post_login
+%% 请求:POST /iotapi/post_login
+do_request(get_wechat_map, _Args, #{<<"sessionToken">> := SessionToken}, _Req) ->
+    ?LOG(info, "SessionToken = ~p ", [SessionToken]),
+    dgiot_wechat:get_wechat_map(SessionToken);
+
+%% iot_hub 概要: 查询平台api资源 描述:设备详情
+%% OperationId:post_login
+%% 请求:POST /iotapi/post_login
+do_request(get_device_info, #{<<"deviceid">> := Deviceid}, #{<<"sessionToken">> := SessionToken}, _Req) ->
+    ?LOG(info, "SessionToken = ~p ", [SessionToken]),
+    dgiot_wechat:get_device_info(Deviceid, SessionToken);
 
 %% iot_hub 概要: 查询平台api资源 描述:发送订阅消息
 %% OperationId:post_sendsubscribe
