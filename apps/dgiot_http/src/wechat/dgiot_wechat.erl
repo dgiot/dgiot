@@ -29,22 +29,31 @@
     unbind_sns/1,
     get_wechat_index/1,
     sendSubscribe/2,
-    sendTemplate/0
+    sendTemplate/0,
+    get_wechat_map/1,
+    get_device_info/2
 ]).
 
 %% https://api.weixin.qq.com/sns/jscode2session?appid=APPID&secret=SECRET&js_code=JSCODE&grant_type=authorization_code
 %% wechat绑定
 post_sns(UserName, Password, OpenId) ->
-    case dgiot_parse:login(UserName, Password) of
-        {ok, #{<<"objectId">> := _UserId, <<"tag">> := #{<<"wechat">> := #{<<"openid">> := OpenId}}}} when size(OpenId) > 0 ->
-            {error, <<"is bind">>};
-        {ok, #{<<"objectId">> := UserId, <<"tag">> := Tag, <<"username">> := Name}} ->
-            dgiot_parse:update_object(<<"_User">>, UserId, #{<<"tag">> => Tag#{<<"wechat">> => #{<<"openid">> => OpenId}}}),
-            {ok, UserInfo} = dgiot_parse_handler:create_session(UserId, dgiot_auth:ttl(), Name),
-            {ok, UserInfo};
-        {error, Msg} ->
-            {error, Msg}
+    case dgiot_parse:query_object(<<"_User">>, #{<<"where">> => #{<<"tag.wechat.openid">> => OpenId}}) of
+        {ok, #{<<"results">> := [#{<<"objectId">> := _UserId, <<"username">> := Name} | _]}} ->
+%%            {ok, UserInfo} = dgiot_parse_handler:create_session(UserId, dgiot_auth:ttl(), Name),
+            {error, <<OpenId/binary, " is bind ", Name/binary>>};
+        _ ->
+            case dgiot_parse:login(UserName, Password) of
+                {ok, #{<<"objectId">> := _UserId, <<"tag">> := #{<<"wechat">> := #{<<"openid">> := OPENID}}}} when size(OPENID) > 0 ->
+                    {error, <<UserName/binary, "is bind">>};
+                {ok, #{<<"objectId">> := UserId, <<"tag">> := Tag, <<"username">> := Name}} ->
+                    dgiot_parse:update_object(<<"_User">>, UserId, #{<<"tag">> => Tag#{<<"wechat">> => #{<<"openid">> => OpenId}}}),
+                    {ok, UserInfo} = dgiot_parse_handler:create_session(UserId, dgiot_auth:ttl(), Name),
+                    {ok, UserInfo};
+                {error, Msg} ->
+                    {error, Msg}
+            end
     end.
+
 
 %% wechat解绑
 unbind_sns(UserId) ->
@@ -163,7 +172,7 @@ get_wechat_index(SessionToken) ->
                 <<"panalarmDevice">> => 0, <<"unPanalarmDevice">> => 0,
                 <<"carousel">> => [#{<<"imgurl">> => <<"https://www.baidu.com/img/flexible/logo/pc/peak-result.png">>, <<"webUrl">> => <<"www.baidu.com">>}]}};
         _ ->
-            pass
+            {error, <<"no device">>}
     end.
 
 
@@ -204,4 +213,44 @@ sendTemplate() ->
             end;
         _Error ->
             _Error
+    end.
+
+get_wechat_map(SessionToken) ->
+    case dgiot_parse:query_object(<<"Device">>, #{<<"keys">> => [<<"count(*)">>], <<"limit">> => 1000}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+        {ok, #{<<"results">> := Results}} ->
+            NewResult =
+                lists:foldl(fun(X, Acc) ->
+                    case X of
+                        #{<<"objectId">> := ObjectId, <<"name">> := Name, <<"status">> := Status, <<"location">> := #{<<"latitude">> := Latitude, <<"longitude">> := Longitude}} ->
+                            Acc ++ [#{<<"id">> => ObjectId, <<"title">> => Name, <<"status">> => Status, <<"latitude">> => Latitude, <<"longitude">> => Longitude, <<"joinCluster">> => true}];
+                        _ ->
+                            Acc
+                    end
+                            end, [], Results),
+            {ok, #{<<"results">> => NewResult}};
+        _ ->
+            {error, <<"no device">>}
+    end.
+
+get_device_info(Deviceid, SessionToken) ->
+    case dgiot_parse:get_object(<<"Device">>, Deviceid, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+        {ok, #{<<"product">> := #{<<"objectId">> := ProductId}, <<"basedata">> := Basedata} = Result} ->
+            NewParams =
+                case dgiot_parse:get_object(<<"Product">>, ProductId) of
+                    {ok, #{<<"config">> := #{<<"basedate">> := #{<<"params">> := Params}}}} ->
+                        lists:foldl(fun(Param, Acc) ->
+                            Identifier = maps:get(<<"identifier">>, Param),
+                            case maps:find(Identifier, Basedata) of
+                                error ->
+                                    Acc;
+                                {ok, Value} ->
+                                    Acc ++ [Param#{<<"value">> => Value}]
+                            end
+                                    end, [], Params);
+                    _ ->
+                        []
+                end,
+            {ok, Result#{<<"params">> => NewParams}};
+        _ ->
+            {error, []}
     end.

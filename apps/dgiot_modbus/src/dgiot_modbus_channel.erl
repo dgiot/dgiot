@@ -74,7 +74,7 @@
             zh => <<"填写正则表达式匹配login"/utf8>>
         }
     },
-    <<"DTUTYPE">> => #{
+    <<"dtutype">> => #{
         order => 4,
         type => string,
         required => true,
@@ -123,7 +123,8 @@ init(?TYPE, ChannelId, #{
     <<"heartbeat">> := Heartbeat,
     <<"regtype">> := Type,
     <<"regular">> := Regular,
-    <<"product">> := Products
+    <<"product">> := Products,
+    <<"dtutype">> := Dtutype
 } = _Args) ->
     [{ProdcutId, App} | _] = get_app(Products),
     {Header, Len} = get_header(Regular),
@@ -133,7 +134,8 @@ init(?TYPE, ChannelId, #{
         head = Header,
         len = Len,
         app = App,
-        product = ProdcutId
+        product = ProdcutId,
+        dtutype = Dtutype
     },
 
     dgiot_data:insert({ChannelId, heartbeat}, {Heartbeat, Port}),
@@ -188,6 +190,7 @@ get_header(Regular) ->
     lists:foldl(fun(X, {Header, Len}) ->
         case X of
             "**" -> {Header, Len + length(X)};
+            "*" -> {Header, Len + length(X)};
             _ -> {Header ++ X, Len + length(X)}
         end
                 end, {[], 0},
