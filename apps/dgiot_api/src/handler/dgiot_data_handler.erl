@@ -257,7 +257,7 @@ do_request(post_adddevice, #{<<"devaddr">> := Devaddr, <<"productid">> := Produc
                                 <<"devModel">> => DevType
                             })
                     end;
-                Error2 -> lager:info("Error2 ~p ", [Error2])
+                Error2 -> ?LOG(info,"Error2 ~p ", [Error2])
             end;
         _ ->
             {error, <<"Not Allowed.">>}

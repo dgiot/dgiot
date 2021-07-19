@@ -33,12 +33,6 @@
 %% ===================================================================
 
 start(_StartType, _StartArgs) ->
-    dgiot_metrics:start(dgiot_group),
-    dgiot_data:init(?dgiot_GROUP),
-    dgiot_data:init(?dgiot_GROUP_ROUTE),
-    dgiot_data:init(?dgiot_GROUP_TASK),
-    dgiot_data:init(?dgiot_GROUP_METER),
-    dgiot_data:init(?dgiot_GROUP_WORK),
     {ok, Sup} = dgiot_group_sup:start_link(),
     {ok, Sup}.
 

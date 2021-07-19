@@ -1,5 +1,5 @@
 {application,dgiot_group,
-             [{description,"数蛙高并发任务管理"},
+             [{description,"DG-IOT Group"},
               {vsn,"1.6.4"},
               {applications,[kernel,stdlib]},
               {modules,[]},

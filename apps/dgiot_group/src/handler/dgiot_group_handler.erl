@@ -54,7 +54,7 @@ handle(OperationID, Args, Context, Req) ->
             ?LOG(info,"do request: ~p, ~p, ~p~n", [OperationID, Args, Reason]),
             Err = case is_binary(Reason) of
                       true -> Reason;
-                      false -> dgiot_framework:format("~p", [Reason])
+                      false -> dgiot_utils:format("~p", [Reason])
                   end,
             {500, Headers, #{<<"error">> => Err}};
         ok ->
@@ -225,8 +225,8 @@ put_group(#{<<"productid">> := ProductId, <<"topoid">> := TopoId, <<"thingid">> 
     end.
 
 post_group(Body, SessionToken) ->
-    HostName = dgiot_evidence:get_hostname(),
-    NatIP = dgiot_evidence:get_natip(),
+    HostName = dgiot_utils:get_hostname(),
+    NatIP = dgiot_utils:get_natip(),
     ComputerKey = dgiot_license:get_hardkey(),
     <<Addr:12/binary, _/binary>> = ComputerKey,
     ProductName = case maps:get(<<"name">>, Body, <<"">>) of
@@ -261,7 +261,7 @@ post_group(Body, SessionToken) ->
         <<"name">> => ProductName,
         <<"nodeType">> => 2}, SessionToken) of
         {_, #{<<"objectId">> := ProductId}} ->
-            <<NewAddr:12/binary, _/binary>> = dgiot_license:to_md5(<<ProductId/binary,Addr/binary>>),
+            <<NewAddr:12/binary, _/binary>> = dgiot_utils:to_md5(<<ProductId/binary,Addr/binary>>),
             dgiot_device:create_device(#{
                 <<"status">> => <<"ONLINE">>,
                 <<"devaddr">> => NewAddr,

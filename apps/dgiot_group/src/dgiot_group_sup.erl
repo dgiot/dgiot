@@ -45,10 +45,6 @@ start_link() ->
 
 init([]) ->
     Children = [
-        ?CHILD(group_task_sup, supervisor, [group_task]),
-        ?CHILD(group_schedule_sup, supervisor, [group_schedule]),
-        ?CHILD(group_loader, worker, []),
-        ?CHILD(group_gc, worker, [])
     ],
     {ok, {{one_for_one, 5, 10}, Children}}.
 
