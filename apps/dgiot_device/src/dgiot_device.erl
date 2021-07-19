@@ -33,7 +33,7 @@ init_ets() ->
 save(Device) ->
     DeviceId = maps:get(<<"objectId">>, Device),
     #{<<"objectId">> := ProductId} = maps:get(<<"product">>, Device),
-    #{<<"latitude">> := Latitude, <<"longitude">> := Logitude} = maps:get(<<"location">>, Device),
+    #{<<"latitude">> := Latitude, <<"longitude">> := Logitude} = maps:get(<<"location">>, Device,#{<<"latitude">> => 0, <<"longitude">>  => 0}),
     Product = binary_to_atom(ProductId),
     Acl =
         lists:foldl(fun(X, Acc) ->
