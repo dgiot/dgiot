@@ -1,4 +1,4 @@
-## dgiot_vconcentrator
+## dgiot_group
 
-dgiot_vconcentrator
+dgiot_group
 

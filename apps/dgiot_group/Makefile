@@ -13,10 +13,7 @@ DIALYZER_DIRS := ebin/
 DIALYZER_OPTS := --verbose --statistics -Werror_handling \
                  -Wrace_conditions #-Wunmatched_returns
 
-ERLC_OPTS += +'{parse_transform, lager_transform}'
-
-
 include erlang.mk
 
 app.shuwa_group::
-	./deps/cuttlefish/cuttlefish -l info -e etc/ -c etc/shuwa_group.conf -i priv/shuwa_group.schema -d data
+	./deps/cuttlefish/cuttlefish -l info -e etc/ -c etc/dgiot_group.conf -i priv/dgiot_group.schema -d data
