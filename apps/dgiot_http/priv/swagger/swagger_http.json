@@ -147,6 +147,62 @@
         ]
       }
     },
+    "/wechat_map": {
+      "get": {
+        "description": "设备地图",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "summary": "设备地图",
+        "tags": [
+          "Wechat"
+        ]
+      }
+    },
+    "/device_info": {
+      "get": {
+        "description": "设备详情",
+        "parameters": [
+          {
+            "name": "deviceid",
+            "in": "query",
+            "type": "string",
+            "default": "d357f550ca",
+            "description": "deviceid"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "summary": "设备详情",
+        "tags": [
+          "Wechat"
+        ]
+      }
+    },
     "/sendsubscribe": {
       "post": {
         "basePath": "/",
