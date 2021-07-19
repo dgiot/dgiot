@@ -34,13 +34,12 @@ save(Device) ->
     DeviceId = maps:get(<<"objectId">>, Device),
     #{<<"objectId">> := ProductId} = maps:get(<<"product">>, Device),
     #{<<"latitude">> := Latitude, <<"longitude">> := Logitude} = maps:get(<<"location">>, Device),
-    UpdatedAt = maps:get(<<"updatedAt">>, Device),
     Product = binary_to_atom(ProductId),
     Acl =
         lists:foldl(fun(X, Acc) ->
             Acc ++ [binary_to_atom(X)]
                     end, [], maps:keys(maps:get(<<"ACL">>, Device))),
-    dgiot_mnesia:insert(DeviceId, {[UpdatedAt, {Latitude, Logitude}, Product, Acl], node()}).
+    dgiot_mnesia:insert(DeviceId, {[dgiot_datetime:now_ms(), {Latitude, Logitude}, Product, Acl], node()}).
 
 save(ProductId, DevAddr) ->
     DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
