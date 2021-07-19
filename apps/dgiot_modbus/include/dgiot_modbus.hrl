@@ -11,7 +11,8 @@
     deviceId = <<>>,
     scale = 10,
     temperature = 0,
-    env = <<>>
+    env = <<>>,
+    dtutype = <<>>
 }).
 
 -define(READ_DISCRETE_INPUTS, 2).
