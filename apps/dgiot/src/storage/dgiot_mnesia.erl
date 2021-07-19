@@ -45,7 +45,6 @@
     match_object/1,
     match_object/2,
     search/0,
-    search/1,
     search/2,
     search/3
 ]).
@@ -244,50 +243,47 @@ select_object(TB, Filter, Order) ->
 
 search() ->
     Fun = fun(X) ->
-        {_,K, V} = X,
-        ?LOG(error, "K ~p V ~p ", [K,V]),
-        true
+        {_, K, V} = X,
+        #{K => V}
           end,
-    search(Fun).
+    search(Fun,#{<<"start">> => 0, <<"len">> => 5}).
 
-search(Fun) ->
-    search(?MNESIA_TAB, Fun).
-
-search(Name, Fun) ->
-    search(Name, Fun, #{<<"start">> => 0, <<"len">> => 1000000}).
+search(Fun,Page) ->
+    search(?MNESIA_TAB, Fun, Page).
 
 search(Name, Fun, Page) ->
     ets:safe_fixtable(Name, true),
-    DataSet = search(Name, Fun, ets:first(Name), [], Page#{<<"current">> => 0}),
+    DataSet = search(Name, Fun, ets:first(Name), [], Page#{<<"count">> => 0}),
     ets:safe_fixtable(Name, false),
     DataSet.
 
-search(_, _, _, Acc, #{<<"len">> := Len}) when length(Acc) =:= Len ->
-    lists:reverse(Acc);
+search(_, _, '$end_of_table', Acc, Page) ->
+    Page#{<<"data">> => lists:reverse(Acc), <<"len">> => length(Acc)};
 
-search(_, _, '$end_of_table', Acc, _) ->
-    lists:reverse(Acc);
-
-search(Name, Fun, Key, Acc, Page = #{<<"start">> := Start, <<"current">> := Current}) ->
+search(Name, Fun, Key, Acc, Page = #{<<"start">> := Start, <<"len">> := Len, <<"count">> := Count}) when Count >= Start, Count < Start + Len ->
     case ets:lookup(Name, Key) of
         [Row | _] ->
             case Fun(Row) of
-                true ->
-                    case Start =< Current of
-                        true ->
-                            search(Name, Fun, ets:next(Name, Key), [Row | Acc],
-                                Page#{<<"current">> => Current + 1});
-                        false ->
-                            search(Name, Fun, ets:next(Name, Key), Acc,
-                                Page#{<<"current">> => Current + 1})
-                    end;
                 false ->
-                    search(Name, Fun, ets:next(Name, Key), Acc,
-                        Page#{<<"current">> => Current})
+                    search(Name, Fun, ets:next(Name, Key), Acc, Page#{<<"count">> => Count});
+                Element ->
+                    search(Name, Fun, ets:next(Name, Key), [Element | Acc], Page#{<<"count">> => Count + 1})
             end;
         _ ->
-            search(Name, Fun, ets:next(Name, Key), Acc,
-                Page#{<<"current">> => Current + 1})
+            search(Name, Fun, ets:next(Name, Key), Acc, Page#{<<"count">> => Count})
+    end;
+
+search(Name, Fun, Key, Acc, Page = #{<<"count">> := Count}) ->
+    case ets:lookup(Name, Key) of
+        [Row | _] ->
+            case Fun(Row) of
+                false ->
+                    search(Name, Fun, ets:next(Name, Key), Acc, Page#{<<"count">> => Count});
+                _Element ->
+                    search(Name, Fun, ets:next(Name, Key), Acc, Page#{<<"count">> => Count + 1})
+            end;
+        _ ->
+            search(Name, Fun, ets:next(Name, Key), Acc, Page#{<<"count">> => Count})
     end.
 
 page(PageNo, PageSize, Filter, RowFun, Order) ->
