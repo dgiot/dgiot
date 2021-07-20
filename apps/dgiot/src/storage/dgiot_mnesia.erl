@@ -246,7 +246,7 @@ search() ->
         {_, K, V} = X,
         #{K => V}
           end,
-    search(Fun,#{<<"start">> => 0, <<"limit">> => 5}).
+    dgiot_mnesia:search(Fun,#{<<"start">> => 0, <<"limit">> => 5}).
 
 search(Fun,Page) ->
     search(?MNESIA_TAB, Fun, Page).
