@@ -99,7 +99,6 @@ init(?TYPE, ChannelId, ChannelArgs) ->
 handle_init(State) ->
     dgiot_mqtt:subscribe(<<"dgiot_opc_da_ack">>),
     dgiot_mqtt:subscribe(<<"dgiot_opc_da_scan">>),
-    dgiot_parse:subscribe(<<"Device">>, post),
 %%    erlang:send_after(1000 * 5, self(), scan_opc),
 %%    erlang:send_after(1000 * 10, self(), send_opc),
     {ok, State}.
@@ -108,10 +107,6 @@ handle_init(State) ->
 handle_event(EventId, Event, _State) ->
     ?LOG(info, "channel ~p, ~p", [EventId, Event]),
     ok.
-
-handle_message({sync_parse, Args}, State) ->
-    ?LOG(info, "sync_parse ~p", [Args]),
-    {ok, State};
 
 handle_message(scan_opc, #state{env = Env} = State) ->
     dgiot_opc:scan_opc(Env),
