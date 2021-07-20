@@ -79,7 +79,7 @@ request(Method, Header, Path0, Body, Options) ->
                         #{<<"count">> := Count} ->
                             handle_result(Fun(), #{<<"count">> => Count});
                         _ ->
-                            ?LOG(error,"count not find, ~p~n", [CountBody]),
+                            ?LOG(error, "count not find, ~p~n", [CountBody]),
                             handle_result(Fun(), #{})
                     end;
                 Other ->
@@ -93,6 +93,45 @@ request(Method, Header, Path0, Body, Options) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+
+save_cache(_, <<"/batch">>, #{<<"requests">> := Requests}) ->
+    lists:map(fun(X) ->
+        Method = maps:get(<<"method">>, X, <<"">>),
+        Path = maps:get(<<"path">>, X, <<"">>),
+        Body = maps:get(<<"body">>, X, #{}),
+        save_cache(Method, Path, Body)
+              end, Requests),
+    pass;
+
+save_cache('POST', Path, Device) ->
+    case Path of
+        <<"/classes/Device">> ->
+            Map = jsx:decode(Device, [{labels, binary}, return_maps]),
+            dgiot_device:post(Map);
+        _ ->
+            pass
+    end;
+
+save_cache('PUT', Path, Device) ->
+    case Path of
+        <<"/classes/Device/", ObjectId/binary>> ->
+            Map = jsx:decode(Device, [{labels, binary}, return_maps]),
+            dgiot_device:put(Map#{<<"objectId">> => ObjectId});
+        _ ->
+            pass
+    end;
+
+save_cache('DELETE', Path, Device) ->
+    case Path of
+        <<"/classes/Device/", ObjectId/binary>> ->
+            dgiot_device:delete(ObjectId);
+        _ ->
+            ?LOG(error, "Path ~p, Device ~p", [ Path, Device]),
+            pass
+    end;
+
+save_cache(_, _Path, _Device) ->
+    pass.
 
 
 to_list(V) when is_atom(V) -> atom_to_list(V);
@@ -275,15 +314,16 @@ encode_body(_Path, _Method, Map, _) ->
     jsx:encode(Map).
 
 do_request(Method, Path, Header, Data, Options) ->
-%%   ?LOG(info,"Method ~p, Path ~p, Data ~p, Options ~p",[Method, Path, Data, Options]),
     case httpc_request(Method, Path, Header, Data, [], [], Options) of
         {error, Reason} ->
             {error, Reason};
         {ok, StatusCode, Headers, ResBody} ->
             case do_request_after(Method, Path, Data, ResBody, Options) of
                 {ok, NewResBody} ->
+                    save_cache(Method, Path, Data),
                     {ok, StatusCode, Headers, NewResBody};
                 ignore ->
+                    save_cache(Method, Path, Data),
                     {ok, StatusCode, Headers, ResBody};
                 {error, Reason} ->
                     {error, Reason}
@@ -301,7 +341,6 @@ httpc_request(Method, Path, Header, Query, HttpOptions, ReqOptions, Options) whe
     #{<<"host">> := Host, <<"path">> := ParsePath} = proplists:get_value(cfg, Options),
     Url = dgiot_httpc:url_join([Host, ParsePath] ++ [<<Path/binary, Query/binary>>]),
     Request = {Url, Header},
-
     httpc_request(Method, Request, HttpOptions, ReqOptions);
 
 httpc_request(Method, Path, Header, Body, HttpOptions, ReqOptions, Options) when Method == 'POST'; Method == 'PUT' ->
@@ -387,7 +426,7 @@ handle_result(Result, Map) ->
 
 log(Method, {Url, Header}) ->
     IsLog = application:get_env(dgiot_parse, log, false),
-    IsLog andalso ?LOG(info,"~s ~s ~p", [method(Method), Url, Header]);
+    IsLog andalso ?LOG(info, "~s ~s ~p", [method(Method), Url, Header]);
 log(Method, {Url, Header, _, Body}) ->
     IsLog = application:get_env(dgiot_parse, log, false),
-    IsLog andalso ?LOG(info,"~s ~s Header:~p  Body:~p", [method(Method), Url, Header, Body]).
+    IsLog andalso ?LOG(info, "~s ~s Header:~p  Body:~p", [method(Method), Url, Header, Body]).

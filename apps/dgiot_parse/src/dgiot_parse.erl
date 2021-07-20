@@ -892,7 +892,6 @@ request(Name, Method, Header, Path0, Body, Options) ->
             {error, Reason}
     end.
 
-
 get_tables(Dirs) -> get_tables(Dirs, []).
 get_tables([], Acc) -> Acc;
 get_tables([Dir | Other], Acc) ->

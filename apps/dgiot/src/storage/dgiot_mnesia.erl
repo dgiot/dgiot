@@ -246,7 +246,7 @@ search() ->
         {_, K, V} = X,
         #{K => V}
           end,
-    search(Fun,#{<<"start">> => 0, <<"len">> => 5}).
+    search(Fun,#{<<"start">> => 0, <<"limit">> => 5}).
 
 search(Fun,Page) ->
     search(?MNESIA_TAB, Fun, Page).
@@ -258,9 +258,9 @@ search(Name, Fun, Page) ->
     DataSet.
 
 search(_, _, '$end_of_table', Acc, Page) ->
-    Page#{<<"data">> => lists:reverse(Acc), <<"len">> => length(Acc)};
+    Page#{<<"data">> => lists:reverse(Acc), <<"limit">> => length(Acc)};
 
-search(Name, Fun, Key, Acc, Page = #{<<"start">> := Start, <<"len">> := Len, <<"count">> := Count}) when Count >= Start, Count < Start + Len ->
+search(Name, Fun, Key, Acc, Page = #{<<"start">> := Start, <<"limit">> := Limit, <<"count">> := Count}) when Count >= Start, Count < Start + Limit ->
     case ets:lookup(Name, Key) of
         [Row | _] ->
             case Fun(Row) of
