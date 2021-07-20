@@ -38,3 +38,4 @@
 
 -define(DGIOT_TD_CH_WORK, dgiot_td_ch_work).
 -define(DGIOT_TD_CH_MODEL, dgiot_td_ch_model).
+-define(DGIOT_TD_THING_ETS, dgiot_td_thing_ets).
