@@ -33,20 +33,26 @@ init_ets() ->
 post(Device) ->
     DeviceId = maps:get(<<"objectId">>, Device),
     #{<<"objectId">> := ProductId} = maps:get(<<"product">>, Device),
-    #{<<"latitude">> := Latitude, <<"longitude">> := Logitude} = maps:get(<<"location">>, Device, #{<<"latitude">> => 0, <<"longitude">> => 0}),
+    #{<<"latitude">> := Latitude, <<"longitude">> := Logitude} =
+        maps:get(<<"location">>, Device, #{<<"latitude">> => 0, <<"longitude">> => 0}),
     Product = binary_to_atom(ProductId),
     Acl =
         lists:foldl(fun(X, Acc) ->
             Acc ++ [binary_to_atom(X)]
                     end, [], maps:keys(maps:get(<<"ACL">>, Device))),
-    dgiot_mnesia:insert(DeviceId, {[dgiot_datetime:now_ms(), {Latitude, Logitude}, Product, Acl], node()}).
+    DeviceId = maps:get(<<"objectId">>, Device),
+    Name = maps:get(<<"name">>, Device,<<"">>),
+    DevAddr = maps:get(<<"devaddr">>, Device,<<"">>),
+    Enable = maps:get(<<"isEnable">>, Device, false),
+    dgiot_mnesia:insert(DeviceId, {[dgiot_datetime:now_ms(), {Latitude, Logitude}, Product, Acl,Enable, Name, DevAddr], node()}).
 
 put(Device) ->
     DeviceId = maps:get(<<"objectId">>, Device),
     case lookup(DeviceId) of
-        {ok, {[_Ts, {OldLatitude, OldLogitude}, OldProduct, OldAcl], Node}} ->
+        {ok, {[_Ts, {OldLatitude, OldLogitude}, OldProduct, OldAcl, OldEnable, OldName, OldDevAddr], Node}} ->
             #{<<"objectId">> := ProductId} = maps:get(<<"product">>, Device, #{<<"objectId">> => atom_to_binary(OldProduct)}),
-            #{<<"latitude">> := Latitude, <<"longitude">> := Logitude} = maps:get(<<"location">>, Device, #{<<"latitude">> => OldLatitude, <<"longitude">> => OldLogitude}),
+            #{<<"latitude">> := Latitude, <<"longitude">> := Logitude} =
+                maps:get(<<"location">>, Device, #{<<"latitude">> => OldLatitude, <<"longitude">> => OldLogitude}),
             Product = binary_to_atom(ProductId),
             NewAcl =
                 case maps:find(<<"ACL">>, Device) of
@@ -64,49 +70,47 @@ put(Device) ->
                     _ ->
                         NewAcl
                 end,
-            dgiot_mnesia:insert(DeviceId, {[dgiot_datetime:now_ms(), {Latitude, Logitude}, Product, LastAcl], Node});
+            Name = maps:get(<<"name">>, Device,OldName),
+            DevAddr = maps:get(<<"devaddr">>, Device,OldDevAddr),
+            Enable = maps:get(<<"isEnable">>, Device, OldEnable),
+            dgiot_mnesia:insert(DeviceId, {[dgiot_datetime:now_ms(), {Latitude, Logitude}, Product, LastAcl,Enable, Name, DevAddr], Node});
         _ ->
-            #{<<"objectId">> := ProductId} = maps:get(<<"product">>, Device),
-            #{<<"latitude">> := Latitude, <<"longitude">> := Logitude} = maps:get(<<"location">>, Device, #{<<"latitude">> => 0, <<"longitude">> => 0}),
-            Product = binary_to_atom(ProductId),
-            Acl =
-                lists:foldl(fun(X, Acc) ->
-                    Acc ++ [binary_to_atom(X)]
-                            end, [], maps:keys(maps:get(<<"ACL">>, Device))),
-            dgiot_mnesia:insert(DeviceId, {[dgiot_datetime:now_ms(), {Latitude, Logitude}, Product, Acl], node()})
+            pass
     end.
 
 save(Device) ->
-    DeviceId = maps:get(<<"objectId">>, Device),
     #{<<"objectId">> := ProductId} = maps:get(<<"product">>, Device),
-    #{<<"latitude">> := Latitude, <<"longitude">> := Logitude} = maps:get(<<"location">>, Device, #{<<"latitude">> => 0, <<"longitude">> => 0}),
+    #{<<"latitude">> := Latitude, <<"longitude">> := Logitude} =
+        maps:get(<<"location">>, Device, #{<<"latitude">> => 0, <<"longitude">> => 0}),
     Product = binary_to_atom(ProductId),
     Acl =
         lists:foldl(fun(X, Acc) ->
             Acc ++ [binary_to_atom(X)]
                     end, [], maps:keys(maps:get(<<"ACL">>, Device))),
-    dgiot_mnesia:insert(DeviceId, {[dgiot_datetime:now_ms(), {Latitude, Logitude}, Product, Acl], node()}).
+    DeviceId = maps:get(<<"objectId">>, Device),
+    Name = maps:get(<<"name">>, Device,<<"">>),
+    DevAddr = maps:get(<<"devaddr">>, Device,<<"">>),
+    Enable = maps:get(<<"isEnable">>, Device, false),
+    dgiot_mnesia:insert(DeviceId, {[dgiot_datetime:now_ms(), {Latitude, Logitude}, Product, Acl, Enable, Name, DevAddr], node()}).
 
 save(DeviceId, Data) ->
     case lookup(DeviceId) of
-        {ok, {[_Ts, {OldLatitude, OldLogitude}, Product, Acl], Node}} ->
+        {ok, {[_Ts, {OldLatitude, OldLogitude}, Product, Acl,Enable, Name, DevAddr], Node}} ->
             Latitude = maps:get(<<"latitude">>, Data, OldLatitude),
             Logitude = maps:get(<<"longitude">>, Data, OldLogitude),
-            dgiot_mnesia:insert(DeviceId, {[dgiot_datetime:now_ms(), {Latitude, Logitude}, Product, Acl], Node});
+            dgiot_mnesia:insert(DeviceId, {[dgiot_datetime:now_ms(), {Latitude, Logitude}, Product, Acl,Enable, Name, DevAddr], Node});
         _ -> pass
     end.
 
 save(ProductId, DevAddr, Data) ->
     DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
     case lookup(DeviceId) of
-        {ok, {[_Ts, {OldLatitude, OldLogitude}, Product, Acl], Node}} ->
+        {ok, {[_Ts, {OldLatitude, OldLogitude}, Product, Acl,Enable, Name, DevAddr], Node}} ->
             Latitude = maps:get(<<"latitude">>, Data, OldLatitude),
             Logitude = maps:get(<<"longitude">>, Data, OldLogitude),
-            dgiot_mnesia:insert(DeviceId, {[dgiot_datetime:now_ms(), {Latitude, Logitude}, Product, Acl], Node});
+            dgiot_mnesia:insert(DeviceId, {[dgiot_datetime:now_ms(), {Latitude, Logitude}, Product, Acl, Enable, Name, DevAddr], Node});
         _ -> pass
     end.
-
-
 
 lookup(DeviceId) ->
     case dgiot_mnesia:lookup(DeviceId) of

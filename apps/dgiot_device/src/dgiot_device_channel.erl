@@ -54,6 +54,18 @@
             zh => <<"排序"/utf8>>
         }
     },
+    <<"offline">> => #{
+        order => 2,
+        type => integer,
+        required => true,
+        default => 60,
+        title => #{
+            zh => <<"离线超时时间(秒)"/utf8>>
+        },
+        description => #{
+            zh => <<"离线超时时间(秒)"/utf8>>
+        }
+    },
     <<"ico">> => #{
         order => 102,
         type => string,
@@ -82,7 +94,8 @@ init(?TYPE, ChannelId, Args) ->
     },
     {ok, State, []}.
 
-handle_init(#state{env = #{<<"order">> := Order}} = State) ->
+handle_init(#state{env = #{<<"order">> := Order, <<"offline">>:= OffLine}} = State) ->
+    dgiot_data:insert({device, offline},OffLine),
     Success = fun(Page) ->
         lists:map(fun(Device) ->
             dgiot_device:save(Device)
