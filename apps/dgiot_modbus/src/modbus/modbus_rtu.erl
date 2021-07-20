@@ -94,6 +94,9 @@ encode_data(Data, Address, SlaveId, ProductId) ->
 is16(<<"0X", Data/binary>>) when size(Data) == 4 ->
     Data;
 
+is16(<<"0X", Data/binary>>) when size(Data) > 4 ->
+    Data;
+
 is16(<<"0X", Data/binary>>) ->
     <<"00", Data/binary>>;
 
