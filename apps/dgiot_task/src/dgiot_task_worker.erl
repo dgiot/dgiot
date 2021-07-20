@@ -247,7 +247,8 @@ save_td(#task{app = _App, tid = Channel, product = ProductId, devaddr = DevAddr,
                 false ->
                     Payload = jsx:encode(#{<<"thingdata">> => Data, <<"appdata">> => AppData}),
                     Topic = <<"topo/", ProductId/binary, "/", DevAddr/binary, "/post">>,
-                    dgiot_mqtt:publish(ProductId, Topic, Payload),
+                    dgiot_mqtt:publish(DevAddr, Topic, Payload),
+                    dgiot_mqtt:publish(DevAddr, <<"报警">>, Data),
                     dgiot_tdengine_adapter:save(ProductId, DevAddr, Data),
                     dgiot_bridge:send_log(Channel, "from_dev=> ~ts: ~ts ", [unicode:characters_to_list(Topic), unicode:characters_to_list(jsx:encode(Data))]);
                 true ->
