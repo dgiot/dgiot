@@ -457,6 +457,7 @@ check_fields(Data, #{<<"properties">> := Props}) -> check_fields(Data, Props);
 check_fields(Data, Props) -> check_fields(Data, Props, #{}).
 check_fields(Data, Props, Acc) when Data == []; Props == [] -> Acc;
 check_fields(Data, [#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := Type} = DataType} = Prop | Other], Acc) ->
+    LowerField = list_to_binary(string:to_lower(binary_to_list(Field))),
     case check_field(Data, Prop) of
         undefined ->
             check_fields(Data, Other, Acc);
@@ -470,12 +471,13 @@ check_fields(Data, [#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> 
                                 undefined ->
                                     Acc1;
                                 Value1 ->
-                                    Acc1#{?Struct(Field, Field1) => Value1}
+                                    LowerField1 = list_to_binary(string:to_lower(binary_to_list(Field1))),
+                                    Acc1#{?Struct(LowerField, LowerField1) => Value1}
                             end
                         end, Acc, SubFields),
                     check_fields(Data, Other, Acc2);
                 _ ->
-                    check_fields(Data, Other, Acc#{Field => Value})
+                    check_fields(Data, Other, Acc#{LowerField => Value})
             end
     end.
 

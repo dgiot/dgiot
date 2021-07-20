@@ -275,8 +275,6 @@ string2value(Str, Type, Specs) ->
 save_pnque(DtuProductId, DtuAddr, ProductId, DevAddr) ->
     DtuId = dgiot_parse:get_deviceid(DtuProductId, DtuAddr),
     Topic = <<"thing/", ProductId/binary, "/", DevAddr/binary>>,
-    Args = dgiot_data:get({?TASK_ARGS, DtuProductId}),
-    supervisor:start_child(dgiot_task, [Args#{<<"dtuid">> => DtuId}]),
     dgiot_mqtt:subscribe(Topic),
     case dgiot_data:get(?DGIOT_PNQUE, DtuId) of
         not_find ->
@@ -284,7 +282,9 @@ save_pnque(DtuProductId, DtuAddr, ProductId, DevAddr) ->
         Pn_que ->
             New_Pn_que = dgiot_utils:unique_2(Pn_que ++ [{ProductId, DevAddr}]),
             dgiot_data:insert(?DGIOT_PNQUE, DtuId, New_Pn_que)
-    end.
+    end,
+    Args = dgiot_data:get({?TASK_ARGS, DtuProductId}),
+    supervisor:start_child(dgiot_task, [Args#{<<"dtuid">> => DtuId}]).
 
 get_pnque(DtuId) ->
     case dgiot_data:get(?DGIOT_PNQUE, DtuId) of
