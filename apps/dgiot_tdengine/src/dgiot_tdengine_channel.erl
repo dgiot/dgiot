@@ -22,6 +22,8 @@
 -include_lib("dgiot/include/logger.hrl").
 -author("kenneth").
 -record(state, {id, env, product, status}).
+-dgiot_data("ets").
+-export([init_ets/0]).
 %% API
 -export([start/2, transaction/2, run_sql/3, handle_save/1, save_to_cache/2]).
 -export([init/3, handle_event/3, handle_message/2, stop/3]).
@@ -139,6 +141,9 @@
     }
 }).
 
+init_ets() ->
+    dgiot_data:init(?DGIOT_TD_THING_ETS).
+
 start(ChannelId, #{
     <<"ip">> := Ip,
     <<"port">> := Port,
@@ -240,7 +245,7 @@ do_save([ProductId, DevAddr, Data, _Context], #state{id = ChannelId} = State) ->
             ?LOG(error, "Save to tdengine error, ~p, ~p", [Data, Reason]);
         {ok, #{<<"thing">> := Properties}} ->
             Object = format_data(ProductId, DevAddr, Properties, Data),
-            dgiot_device:save(ProductId,DevAddr,Data),
+            dgiot_device:save(ProductId, DevAddr, Data),
             save_to_cache(ChannelId, Object)
     end,
     {ok, State}.
@@ -255,7 +260,7 @@ format_data(ProductId, DevAddr, Properties, Data) ->
     dgiot_data:insert({td, ProductId, DeviceId}, Values#{<<"createdat">> => dgiot_datetime:nowstamp()}),
     Now = maps:get(<<"createdat">>, Data, now),
     NewValues = get_values(ProductId, Values, Now),
-
+    dgiot_data:insert(?DGIOT_TD_THING_ETS, DeviceId, Values),
     #{
         <<"db">> => ?Database(ProductId),
         <<"tableName">> => ?Table(DeviceId),
@@ -264,7 +269,7 @@ format_data(ProductId, DevAddr, Properties, Data) ->
         <<"fields">> => [<<"createdat">> | Fields],
         <<"values">> => NewValues
     }.
-%% INSERT INTO _30a01ed480._a90437ec84 using _30a01ed480._30a01ed480 TAGS ('_862607057395773') VALUES (now,0.11,0,26,38,0.3,0.0,0.0,11.7,0,null,75,null) ;
+%% INSERT INTO _30a01ed480._a90437ec84 using _30a01ed480._30a01ed480 TAGS ('_862607057395773') VALUES (now,0.11,0,26,38,0.3,0.0,0.0,11.7,0,null,75,null);
 get_values(ProductId, Values, Now) ->
     Values0 =
         case dgiot_data:get({ProductId, describe_table}) of
