@@ -94,18 +94,8 @@ init(?TYPE, ChannelId, Args) ->
     },
     {ok, State, []}.
 
-handle_init(#state{env = #{<<"order">> := Order, <<"offline">>:= OffLine}} = State) ->
-    dgiot_data:insert({device, offline},OffLine),
-    Success = fun(Page) ->
-        lists:map(fun(Device) ->
-            dgiot_device:save(Device)
-                  end, Page)
-              end,
-    Query = #{
-        <<"order">> => Order,
-        <<"where">> => #{}
-    },
-    dgiot_parse_loader:start(<<"Device">>, Query, 0, 100, 1000000, Success),
+handle_init(State) ->
+    erlang:send_after(300, self(), {message, <<"_Pool">>, load}),
     {ok, State}.
 
 %% 通道消息处理,注意：进程池调用
@@ -113,7 +103,13 @@ handle_event(_EventId, Event, State) ->
     ?LOG(info, "Channel ~p", [Event]),
     {ok, State}.
 
-handle_message(_Message, State) ->
+handle_message(load, #state{env = #{<<"order">> := Order, <<"offline">>:= OffLine}} = State) ->
+    dgiot_data:insert({device, offline}, OffLine),
+    dgiot_device:load_device(Order),
+    dgiot_parse:load_role(),
+    {ok, State};
+
+handle_message(_, State) ->
     {ok, State}.
 
 stop(ChannelType, ChannelId, _State) ->

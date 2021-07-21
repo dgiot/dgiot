@@ -86,7 +86,7 @@
     get_maintenanceid/2,
     subscribe/2,
     send_msg/3,
-    load/0,
+    load_role/0,
     save_User_Role/2,
     del_User_Role/2,
     put_User_Role/3
@@ -1050,7 +1050,7 @@ test_graphql() ->
 %%    {"operationName":"Health","variables":{},"query":"query Health {\n  health\n}\n"}
     graphql(Data).
 
-load() ->
+load_role() ->
     Success = fun(Page) ->
         lists:map(fun(X) ->
             #{<<"objectId">> := RoleId, <<"parent">> := #{<<"objectId">> := ParentId}} = X,
