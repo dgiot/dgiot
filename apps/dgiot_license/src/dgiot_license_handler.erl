@@ -196,6 +196,11 @@ do_request(get_iothub, #{<<"license">> := License, <<"addr">> := Addr} = Args, _
         end,
     {200, #{}, #{<<"result">> => Result, <<"status">> => Status}, Req};
 
+%% OperationId:get_table
+%% 请求:GET /iotapi/table
+do_request(get_table, _Args, _Context, _Req) -> dgiot_parse:get_schemas();
+
+
 do_request(get_iotapp, #{<<"license">> := License} = Args, _Context, Req) ->
     Key = dgiot_license:get_hardkey(),
     Type =
