@@ -130,7 +130,6 @@ synchronize_device(ProductId) ->
             {error, Reason}
     end.
 
-
 save(Product) ->
     Product1 = format_product(Product),
     #{<<"productId">> := ProductId} = Product1,

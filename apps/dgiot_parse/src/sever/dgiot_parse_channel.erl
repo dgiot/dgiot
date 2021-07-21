@@ -165,10 +165,8 @@ init(?TYPE, Channel, Cfg) ->
     ],
     {ok, State, Specs}.
 
-
 %% 初始化池子
 handle_init(State) ->
-    dgiot_parse:load(),
     {ok, State}.
 
 handle_message(config, #state{cfg = Cfg} = State) ->
