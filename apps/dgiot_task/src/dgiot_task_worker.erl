@@ -64,7 +64,7 @@ init([#{<<"app">> := App, <<"channel">> := ChannelId, <<"dtuid">> := DtuId, <<"m
     {ProductId, DevAddr} = dgiot_task:get_pnque(DtuId),
     DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
     Que = dgiot_instruct:get_instruct(ProductId, DeviceId, 1, dgiot_utils:to_atom(Mode)),
-    ?LOG(info, "Que ~p", [Que]),
+%%    ?LOG(info, "Que ~p", [Que]),
     Tsendtime = dgiot_datetime:localtime_to_unixtime(dgiot_datetime:to_localtime(Endtime)),
     Nowstamp = dgiot_datetime:nowstamp(),
     case length(Que) of
@@ -239,7 +239,7 @@ get_next_pn(#task{mode = Mode, dtuid = DtuId, firstid = DeviceId, product = Prod
 
 save_td(#task{app = _App, tid = Channel, product = ProductId, devaddr = DevAddr, ack = Ack, appdata = AppData}) ->
     Data = dgiot_task:get_calculated(ProductId, Ack),
-    ?LOG(info, "Data ~p", [Data]),
+%%    ?LOG(info, "Data ~p", [Data]),
     case length(maps:to_list(Data)) of
         0 -> pass;
         _ ->
@@ -248,8 +248,8 @@ save_td(#task{app = _App, tid = Channel, product = ProductId, devaddr = DevAddr,
                     Payload = jsx:encode(#{<<"thingdata">> => Data, <<"appdata">> => AppData}),
                     Topic = <<"topo/", ProductId/binary, "/", DevAddr/binary, "/post">>,
                     dgiot_mqtt:publish(DevAddr, Topic, Payload),
-                    dgiot_mqtt:publish(DevAddr, <<"报警">>, Data),
                     dgiot_tdengine_adapter:save(ProductId, DevAddr, Data),
+                    dgiot_mqtt:publish(DevAddr, <<"notification/", ProductId/binary, "/", DevAddr/binary, "/post">>, jsx:encode(Data)),
                     dgiot_bridge:send_log(Channel, "from_dev=> ~ts: ~ts ", [unicode:characters_to_list(Topic), unicode:characters_to_list(jsx:encode(Data))]);
                 true ->
                     pass
