@@ -27,7 +27,8 @@
     send/2,
     send/3,
     test_broadcast/0,
-    test_customizedcast/0
+    test_customizedcast/0,
+    add_notification/3
 ]).
 
 test_broadcast() ->
@@ -62,15 +63,15 @@ send(UserId, Type, Payload) ->
             case jsx:is_json(Body) of
                 true ->
                     R = jsx:decode(Body, [{labels, binary}, return_maps]),
-                    ?LOG(info,"~p",[R]),
+                    ?LOG(info, "~p", [R]),
                     R;
                 false ->
-                    ?LOG(info,"Body1 ~p ",[Body]),
-                    ?LOG(info,"Body ~p ",[unicode:characters_to_list(Body)]),
+                    ?LOG(info, "Body1 ~p ", [Body]),
+                    ?LOG(info, "Body ~p ", [unicode:characters_to_list(Body)]),
                     Body
             end;
         {error, Reason} ->
-            ?LOG(info,"Reason ~p", [Reason]),
+            ?LOG(info, "Reason ~p", [Reason]),
             {error, Reason}
     end.
 
@@ -179,3 +180,78 @@ post_notification(Notification) ->
             <<"objectId">> => UserId
         }
     }).
+
+add_notification(Ruleid, DevAddr, Payload) ->
+    case binary:split(Ruleid, <<$_>>, [global, trim]) of
+        [ProductId, _] ->
+            case dgiot_device:lookup(ProductId, DevAddr) of
+                {ok, {[_Ts, _, _, Acl, _, _, DevAddr], _}} ->
+                    Requests =
+                        lists:foldl(fun(X, Acc) ->
+                            BinX = atom_to_binary(X),
+                            case BinX of
+                                <<"role:", Name/binary>> ->
+                                    RoleId = dgiot_parse:get_roleid(Name),
+                                    UserIds = dgiot_parse:get_userids(RoleId),
+                                    lists:foldl(fun(X, Acc1) ->
+                                        Acc1 ++ [#{
+                                            <<"method">> => <<"post">>,
+                                            <<"path">> => <<"/classes/Notification">>,
+                                            <<"body">> => #{
+                                                <<"ACL">> => #{
+                                                    X => #{
+                                                        <<"read">> => true,
+                                                        <<"write">> => true
+                                                    }
+                                                },
+                                                <<"content">> => Payload,
+                                                <<"public">> => true,
+                                                <<"sender">> => #{
+                                                    <<"__type">> => <<"Pointer">>,
+                                                    <<"className">> => <<"_User">>,
+                                                    <<"objectId">> => <<"Klht7ERlYn">>
+                                                },
+                                                <<"type">> => Ruleid,
+                                                <<"user">> => #{
+                                                    <<"__type">> => <<"Pointer">>,
+                                                    <<"className">> => <<"_User">>,
+                                                    <<"objectId">> => X
+                                                }
+                                            }
+                                        }]
+                                                end, Acc, UserIds);
+                                <<"*">> ->
+                                    pass;
+                                UserId ->
+                                    Acc ++ [#{
+                                        <<"method">> => <<"post">>,
+                                        <<"path">> => <<"/classes/Notification">>,
+                                        <<"body">> => #{
+                                            <<"ACL">> => #{
+                                                UserId => #{
+                                                    <<"read">> => true,
+                                                    <<"write">> => true
+                                                }
+                                            },
+                                            <<"content">> => Payload,
+                                            <<"public">> => true,
+                                            <<"sender">> => #{
+                                                <<"__type">> => <<"Pointer">>,
+                                                <<"className">> => <<"_User">>,
+                                                <<"objectId">> => <<"Klht7ERlYn">>
+                                            },
+                                            <<"type">> => Ruleid,
+                                            <<"user">> => #{
+                                                <<"__type">> => <<"Pointer">>,
+                                                <<"className">> => <<"_User">>,
+                                                <<"objectId">> => UserId
+                                            }
+                                        }
+                                    }]
+                            end
+                                    end, [], Acl),
+                    dgiot_parse:batch(Requests);
+                _ ->
+                    pass
+            end
+    end.

@@ -89,7 +89,8 @@
     load_role/0,
     save_User_Role/2,
     del_User_Role/2,
-    put_User_Role/3
+    put_User_Role/3,
+    get_userids/1
 ]).
 
 subscribe(Table, Method) ->
@@ -1159,5 +1160,14 @@ put_User_Role(UserId, OldRoleId, NewRoleId) ->
             pass
     end.
 
+get_userids(Roleid) ->
+    case dgiot_data:get(?ROLE_USER_ETS, Roleid) of
+        not_find ->
+            [];
+        UserIds when length(UserIds) > 0 ->
+            UserIds;
+        _ ->
+            []
+    end.
 
 

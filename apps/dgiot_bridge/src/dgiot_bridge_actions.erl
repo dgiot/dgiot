@@ -167,6 +167,7 @@ on_action_dgiot(Selected, #{event := Event} = Envs) ->
     Msg = dgiot_mqtt:get_message(Selected, Envs),
     case Event of
         'message.publish' ->
+            post_rule(Msg),
             case dgiot_channelx:do_message(ChannelId, {rule, Msg, Selected}) of
                 not_find -> dgiot_mqtt:republish(Selected, Envs);
                 _ -> pass
@@ -175,5 +176,6 @@ on_action_dgiot(Selected, #{event := Event} = Envs) ->
             dgiot_channelx:do_event(ChannelId, EventId, {rule, Msg, Selected})
     end.
 
-
+post_rule(#{metadata := #{rule_id := <<"rule:Notification_", Ruleid/binary>>}, clientid := DevAddr, payload := Payload, topic := _Topic}) ->
+    dgiot_umeng:add_notification(Ruleid, DevAddr, Payload).
 
