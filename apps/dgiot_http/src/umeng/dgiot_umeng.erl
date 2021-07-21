@@ -193,13 +193,13 @@ add_notification(Ruleid, DevAddr, Payload) ->
                                 <<"role:", Name/binary>> ->
                                     RoleId = dgiot_parse:get_roleid(Name),
                                     UserIds = dgiot_parse:get_userids(RoleId),
-                                    lists:foldl(fun(X, Acc1) ->
+                                    lists:foldl(fun(Y, Acc1) ->
                                         Acc1 ++ [#{
                                             <<"method">> => <<"post">>,
                                             <<"path">> => <<"/classes/Notification">>,
                                             <<"body">> => #{
                                                 <<"ACL">> => #{
-                                                    X => #{
+                                                    Y => #{
                                                         <<"read">> => true,
                                                         <<"write">> => true
                                                     }
@@ -215,7 +215,7 @@ add_notification(Ruleid, DevAddr, Payload) ->
                                                 <<"user">> => #{
                                                     <<"__type">> => <<"Pointer">>,
                                                     <<"className">> => <<"_User">>,
-                                                    <<"objectId">> => X
+                                                    <<"objectId">> => Y
                                                 }
                                             }
                                         }]
