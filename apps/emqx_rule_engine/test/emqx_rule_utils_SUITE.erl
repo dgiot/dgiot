@@ -119,7 +119,7 @@ t_preproc_sql3(_) ->
 
 t_preproc_sql4(_) ->
     %% with apostrophes
-    %% https://github.com.cnpmjs.org/fastdgiot/emqx/issues/4135
+    %% https://gitee.com/fastdgiot/emqx/issues/4135
     Selected = #{a => <<"1''2">>, b => 1, c => 1.0,
                  d => #{d1 => <<"someone's phone">>}},
     ParamsTokens = emqx_rule_utils:preproc_tmpl(<<"a:${a},b:${b},c:${c},d:${d}">>),
@@ -128,7 +128,7 @@ t_preproc_sql4(_) ->
 
 t_preproc_sql5(_) ->
     %% with apostrophes for cassandra
-    %% https://github.com.cnpmjs.org/fastdgiot/emqx/issues/4148
+    %% https://gitee.com/fastdgiot/emqx/issues/4148
     Selected = #{a => <<"1''2">>, b => 1, c => 1.0,
                  d => #{d1 => <<"someone's phone">>}},
     ParamsTokens = emqx_rule_utils:preproc_tmpl(<<"a:${a},b:${b},c:${c},d:${d}">>),
