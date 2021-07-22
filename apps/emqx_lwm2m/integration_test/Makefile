@@ -44,8 +44,8 @@ case3:
 
 
 $(EMQ):
-	git clone https://github.com.cnpmjs.org/fastdgiot/emqx-enterprise-rel
-	git clone https://github.com.cnpmjs.org/fastdgiot/emqx-lwm2m.git
+	git clone https://gitee.com/fastdgiot/emqx-enterprise-rel
+	git clone https://gitee.com/fastdgiot/emqx-lwm2m.git
 	@echo "update emqx-lwm2m with this development code"
 	mv emqx-lwm2m  emqx_lwm2m
 	-rm -rf emqx_lwm2m/etc

@@ -6,7 +6,7 @@ f.close()
 if data.find("emqx-sn") < 0:
     f = open("emqx-rel/Makefile", "w")
     data = data.replace("emqx_auth_pgsql emqx_auth_mongo", "emqx_auth_pgsql emqx_auth_mongo emqx_sn")
-    data = data.replace("dep_emqx_auth_mongo", "dep_emqx_sn = git https://github.com.cnpmjs.org/fastdgiot/emqx-sn.git develop\ndep_emqx_auth_mongo")
+    data = data.replace("dep_emqx_auth_mongo", "dep_emqx_sn = git https://gitee.com/fastdgiot/emqx-sn.git develop\ndep_emqx_auth_mongo")
     f.write(data)
     f.close()
 
