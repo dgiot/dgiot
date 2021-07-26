@@ -32,6 +32,9 @@
 -boot_mnesia({mnesia, [boot]}).
 -copy_mnesia({mnesia, [copy]}).
 
+-dgiot_data("ets").
+-export([init_ets/0]).
+
 %% API
 -export([
     page/5,
@@ -46,7 +49,8 @@
     match_object/2,
     search/0,
     search/2,
-    search/3
+    search/3,
+    get/1
 ]).
 
 -export([start_link/2]).
@@ -83,6 +87,8 @@
     , code_change/3
 ]).
 
+init_ets() ->
+    dgiot_data:init(?MNESIA_INDEX).
 %%--------------------------------------------------------------------
 %% Mnesia bootstrap
 %%--------------------------------------------------------------------
@@ -94,9 +100,18 @@ mnesia(boot) ->
         {record_name, mnesia},
         {attributes, record_info(fields, mnesia)},
         {storage_properties, [{ets, [{read_concurrency, true},
+            {write_concurrency, true}]}]}]),
+    ok = ekka_mnesia:create_table(?MNESIA_ID, [
+        {type, set},
+        {ram_copies, [node()]},
+        {record_name, mnesia_id},
+        {attributes, record_info(fields, mnesia_id)},
+        {storage_properties, [{ets, [{read_concurrency, true},
             {write_concurrency, true}]}]}]);
+
 mnesia(copy) ->
-    ok = ekka_mnesia:copy_table(?MNESIA_TAB, ram_copies).
+    ok = ekka_mnesia:copy_table(?MNESIA_TAB, ram_copies),
+    ok = ekka_mnesia:copy_table(?MNESIA_ID, ram_copies).
 
 %%--------------------------------------------------------------------
 %% Start a Mnesia
@@ -138,12 +153,29 @@ insert(TB, Key, Value) ->
         _ ->
             pass
     end,
+    case dgiot_data:get(TB, Key) of
+        not_find ->
+            insert_(#mnesia{key = Key, value = Value});
+        _ -> pass
+    end,
     insert_(TB, #mnesia{key = Key, value = Value}).
 
 insert_(TAB, Record) ->
-    F = fun() -> mnesia:write(TAB, Record, write) end,
+    F = fun() ->
+        mnesia:write(TAB, Record, write)
+        end,
     Result = mnesia:transaction(F),
     result(Result).
+
+insert_(#mnesia{key = Key}) ->
+    Uid = mnesia:dirty_update_counter(mnesia_id, mnesia, 1),
+    dgiot_data:insert(?MNESIA_INDEX, Uid, Key).
+
+get(Index) ->
+    case dgiot_data:get(?MNESIA_INDEX, Index) of
+        not_find -> not_find;
+        Key -> dgiot_data:get(?MNESIA_TAB, Key)
+    end.
 
 delete(Key) ->
     delete(?MNESIA_TAB, Key).

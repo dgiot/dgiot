@@ -18,6 +18,8 @@
 
 %% ====  全局缓存表 ========
 -define(MNESIA_TAB, mnesia).
+-define(MNESIA_ID, mnesia_id).
+-define(MNESIA_INDEX, mnesia_index).
 
 %%--------------------------------------------------------------------
 %% Route
@@ -25,5 +27,7 @@
 
 -record(mnesia, {
     key :: binary() | list() | tuple(),
-    value  :: node() | {binary(), node()} | {map(), node()} | {list(), node()}
+    value  :: node()  | {binary(), node()} | { map(), node()} | {list(), node()} | {tuple(), node()}
 }).
+
+-record(mnesia_id, {table, uid}).

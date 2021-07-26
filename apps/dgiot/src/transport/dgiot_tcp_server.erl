@@ -42,7 +42,6 @@ child_spec(Mod, Port, State, Opts) ->
     RateLimit = proplists:get_value(rate_limit, Opts, DefRateLimit),
     Opts1 = lists:foldl(fun(Key, Acc) -> proplists:delete(Key, Acc) end, Opts, [active_n, rate_limit]),
     NewOpts = [{active_n, ActiveN}, {rate_limit, RateLimit}] ++ Opts1,
-    ?LOG(info,"TCP Server[~p]:Opts:~p,TCPOpts:~p", [Port, NewOpts, TCPOpts]),
     MFArgs = {?MODULE, start_link, [Mod, NewOpts, State]},
     esockd:child_spec(Name, Port, TCPOpts, MFArgs).
 
