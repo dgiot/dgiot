@@ -6,7 +6,7 @@ def change_makefile():
     f.close()
 
     if data.find("emqx_lwm2m") < 0:
-        data = data.replace("emqx_auth_pgsql emqx_auth_mongo", "emqx_auth_pgsql emqx_auth_mongo emqx_lwm2m\n\ndep_emqx_lwm2m = git https://github.com.cnpmjs.org/fastdgiot/emqx-lwm2m\n\n")
+        data = data.replace("emqx_auth_pgsql emqx_auth_mongo", "emqx_auth_pgsql emqx_auth_mongo emqx_lwm2m\n\ndep_emqx_lwm2m = git https://gitee.com/fastdgiot/emqx-lwm2m\n\n")
         f = open("emqx-rel/Makefile", "wb")
         f.write(data)
         f.close()

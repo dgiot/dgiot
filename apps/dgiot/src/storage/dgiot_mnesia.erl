@@ -132,6 +132,12 @@ insert(Key, Value) ->
     insert(?MNESIA_TAB, Key, Value).
 
 insert(TB, Key, Value) ->
+    case lookup(TB, Key) of
+        {ok, _} ->
+            delete(TB, Key);
+        _ ->
+            pass
+    end,
     insert_(TB, #mnesia{key = Key, value = Value}).
 
 insert_(TAB, Record) ->
@@ -246,9 +252,9 @@ search() ->
         {_, K, V} = X,
         #{K => V}
           end,
-    dgiot_mnesia:search(Fun,#{<<"start">> => 0, <<"limit">> => 5}).
+    dgiot_mnesia:search(Fun, #{<<"start">> => 0, <<"limit">> => 5}).
 
-search(Fun,Page) ->
+search(Fun, Page) ->
     search(?MNESIA_TAB, Fun, Page).
 
 search(Name, Fun, Page) ->

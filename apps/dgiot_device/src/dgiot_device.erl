@@ -23,7 +23,7 @@
 -dgiot_data("ets").
 -export([init_ets/0]).
 -export([create_device/1, create_device/2, get_sub_device/1, get_sub_device/2, get/2]).
--export([load_device/1, post/1, put/1, save/1, save/2, save/3, lookup/1, lookup/2, delete/1, delete/2, save_prod/2, lookup_prod/1]).
+-export([load_device/1, post/1, put/1, save/1, save/2, save/3, lookup/1, lookup/2, delete/1, delete/2, save_prod/2, lookup_prod/1, get_online/1]).
 -export([encode/1, decode/3]).
 
 init_ets() ->
@@ -328,4 +328,15 @@ decode([MsgType | Other], Bin, State) ->
         {error, _} ->
             %?LOG(error,"decode:~p, not this protocol:~p", [Bin, MsgType]),
             decode(Other, Bin, State)
+    end.
+
+
+get_online(DeviceId) ->
+    OffLine = dgiot_data:get({device, offline}),
+    Now = dgiot_datetime:now_ms(),
+    case lookup(DeviceId) of
+        {ok, {[Ts, _, _, _, _, _, _], _}} when Now - Ts < (OffLine * 1000) ->
+            true;
+        _ ->
+            false
     end.

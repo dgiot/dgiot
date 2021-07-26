@@ -19,7 +19,7 @@
 2. 将 `emqx-extension-hook` 重命名为 `emqx-exhook`
 
 
-旧版本的设计：[emqx-extension-hook design in v4.2.0](https://github.com.cnpmjs.org/fastdgiot/emqx-exhook/blob/v4.2.0/docs/design.md)
+旧版本的设计：[emqx-extension-hook design in v4.2.0](https://gitee.com/fastdgiot/emqx-exhook/blob/v4.2.0/docs/design.md)
 
 ## 设计
 

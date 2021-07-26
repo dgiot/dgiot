@@ -27,7 +27,7 @@
     build_req_message/1]
 ).
 
--export([modbus_encoder/4, modbus_decoder/4, is16/1]).
+-export([modbus_encoder/4, modbus_decoder/4, is16/1, set_params/2]).
 
 init(State) ->
     State#{<<"req">> => [], <<"ts">> => dgiot_datetime:now_ms(), <<"interval">> => 300}.
@@ -100,11 +100,71 @@ is16(<<"0X", Data/binary>>) when size(Data) > 4 ->
 is16(<<"0X", Data/binary>>) ->
     <<"00", Data/binary>>;
 
+is16(<<"00", Data/binary>>) when size(Data) == 2 ->
+    Data;
+
+is16(<<"256">>) ->
+    <<"0100">>;
+
 is16(Data) when size(Data) > 1 ->
     <<"00", Data/binary>>;
 
 is16(Data) ->
     <<"000", Data/binary>>.
+
+set_params(Basedata, ProductId) ->
+    case dgiot_parse:get_object(<<"Product">>, ProductId) of
+        {ok, #{<<"config">> := #{<<"basedate">> := #{<<"params">> := Params}}}} ->
+            Payloads =
+                lists:foldl(fun(X, Acc) ->
+                    case X of
+                        #{<<"identifier">> := Identifier,
+                            <<"protocol">> := <<"modbus">>,
+                            <<"slaveid">> := SlaveId,
+                            <<"address">> := Address,
+                            <<"operatetype">> := OperateType,
+                            <<"setting">> := <<"%s">>} ->
+                            case maps:find(Identifier, Basedata) of
+                                error ->
+                                    pass;
+                                {ok, Value} when erlang:byte_size(Value) == 0 ->
+                                    pass;
+                                {ok, Value} ->
+                                    FunCode =
+                                        case OperateType of
+                                            <<"readCoils">> -> ?FC_READ_COILS;
+                                            <<"readInputs">> -> ?FC_READ_INPUTS;
+                                            <<"readHregs">> -> ?FC_READ_HREGS;
+                                            <<"readIregs">> -> ?FC_READ_IREGS;
+                                            <<"writeCoil">> -> ?FC_WRITE_COIL;
+                                            <<"writeHreg">> -> ?FC_WRITE_COILS; %%需要校验，写多个线圈是什么状态
+                                            <<"writeCoils">> -> ?FC_WRITE_HREG;
+                                            <<"writeHregs">> -> ?FC_WRITE_HREGS; %%需要校验，写多个保持寄存器是什么状态
+                                            _ -> ?FC_READ_HREGS
+                                        end,
+                                    <<H:8, L:8>> = dgiot_utils:hex_to_binary(is16(Address)),
+                                    <<Sh:8, Sl:8>> = dgiot_utils:hex_to_binary(is16(SlaveId)),
+                                    RtuReq = #rtu_req{
+                                        slaveId = Sh * 256 + Sl,
+                                        funcode = dgiot_utils:to_int(FunCode),
+                                        address = H * 256 + L,
+                                        quality = dgiot_utils:to_int(Value)
+                                    },
+                                    Acc ++ [build_req_message(RtuReq)];
+                                _ ->
+                                    Acc
+                            end;
+                        _ ->
+                            ?LOG(info, "X ~p", [X]),
+                            Acc
+                    end
+                            end, [], Params),
+            ?LOG(info, "Payloads ~p", [Payloads]),
+            Payloads;
+        _ ->
+            ?LOG(info, "NoProduct: ~p", [ProductId]),
+            pass
+    end.
 
 %rtu modbus
 parse_frame(<<>>, Acc, _State) -> {<<>>, Acc};
