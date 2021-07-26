@@ -66,14 +66,14 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, state = #state{id = ChannelId, de
                     {DevId1, Devaddr1} ->
                         {DevId1, Devaddr1}
                 end,
-            Topic = <<"profile/", ProductId/binary, "/", DtuAddr/binary>>,
+            Topic = <<"profile/", ProductId/binary, "/", Devaddr/binary>>,
             dgiot_mqtt:subscribe(Topic),
             {noreply, TCPState#tcp{buff = <<>>, state = State#state{devaddr = Devaddr, deviceId = DevId}}};
         _Error ->
             case re:run(Buff, Head, [{capture, first, list}]) of
                 {match, [Head]} when length(List1) == Len ->
                     create_device(DeviceId, ProductId, Buff, DTUIP, Dtutype),
-                    Topic = <<"profile/", ProductId/binary, "/", DtuAddr/binary>>,
+                    Topic = <<"profile/", ProductId/binary, "/", Buff/binary>>,
                     dgiot_mqtt:subscribe(Topic),
                     {noreply, TCPState#tcp{buff = <<>>, state = State#state{devaddr = Buff}}};
                 Error1 ->
@@ -103,19 +103,18 @@ handle_info({tcp, Buff}, #tcp{state = #state{id = ChannelId, devaddr = DtuAddr, 
     end,
     {noreply, TCPState#tcp{buff = <<>>, state = State#state{env = <<>>}}};
 
-handle_info({deliver, Topic, Msg}, #tcp{state = #state{id = ChannelId} = State} = TCPState) ->
-    ?LOG(info, "Msg ~p", [Msg]),
+handle_info({deliver, _, Msg}, #tcp{state = #state{id = ChannelId} = State} = TCPState) ->
     Payload = dgiot_mqtt:get_payload(Msg),
+    Topic = dgiot_mqtt:get_topic(Msg),
     case jsx:is_json(Payload) of
         true ->
-            case binary:split(dgiot_mqtt:get_topic(Msg), <<$/>>, [global, trim]) of
+            case binary:split(Topic, <<$/>>, [global, trim]) of
                 [<<"profile">>, ProductId, _DtuAddr] ->
 %%                    设置参数
                     case Payload of
                         #{<<"_dgiotprotocol">> := <<"modbus">>} ->
                             Payloads = modbus_rtu:set_params(maps:without([<<"_dgiotprotocol">>], Payload), ProductId),
                             lists:map(fun(X) ->
-                                ?LOG(info, "X ~p", [X]),
                                 dgiot_tcp_server:send(TCPState, X)
                                       end, Payloads);
                         _ ->
@@ -175,12 +174,11 @@ handle_info({deliver, Topic, Msg}, #tcp{state = #state{id = ChannelId} = State} 
         false ->
             case binary:split(Topic, <<$/>>, [global, trim]) of
                 [<<"profile">>, ProductId, _DtuAddr] ->
-                    %%                    设置参数
+                    %% 设置参数
                     case Payload of
                         #{<<"_dgiotprotocol">> := <<"modbus">>} ->
                             Payloads = modbus_rtu:set_params(maps:without([<<"_dgiotprotocol">>], Payload), ProductId),
                             lists:map(fun(X) ->
-                                ?LOG(info, "X ~p", [X]),
                                 dgiot_tcp_server:send(TCPState, X)
                                       end, Payloads);
                         _ ->
