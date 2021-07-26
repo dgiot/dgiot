@@ -255,7 +255,7 @@ format_channel(App, Type, Channel, Attributes) ->
                 order => 100,
                 type => integer,
                 required => false,
-                default => 5,
+                default => 1,
                 title => #{
                     en => <<"Size">>,
                     zh => <<"池子大小"/utf8>>

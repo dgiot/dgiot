@@ -94,8 +94,7 @@ handle_init(#state{id = _ChannelId, env = #{<<"products">> := _Products, <<"args
     {ok, State}.
 
 %% 通道消息处理,注意：进程池调用
-handle_event(_EventId, Event, State) ->
-    ?LOG(info, "channel ~p", [Event]),
+handle_event(_EventId, _Event, State) ->
     {ok, State}.
 
 handle_message({check_profie, Args}, State) ->
@@ -108,7 +107,7 @@ handle_message({check_profie, Args}, State) ->
     {ok, State};
 
 handle_message({sync_parse, Args}, State) ->
-    ?LOG(info, "Args ~p", [jsx:decode(Args, [{labels, binary}, return_maps])]),
+%%    ?LOG(info, "Args ~p", [jsx:decode(Args, [{labels, binary}, return_maps])]),
     case jsx:decode(Args, [{labels, binary}, return_maps]) of
         #{<<"objectId">> := DeviceId, <<"profile">> := Profile, <<"devaddr">> := Devaddr, <<"product">> := #{<<"objectId">> := ProductId}} ->
             Modifyprofile = get_modifyprofile(DeviceId, Profile),
@@ -147,7 +146,7 @@ handle_message({sync_parse, Args}, State) ->
     {ok, State};
 
 handle_message(_Message, State) ->
-    ?LOG(info, "_Message ~p", [_Message]),
+%%    ?LOG(info, "_Message ~p", [_Message]),
     {ok, State}.
 
 stop(ChannelType, ChannelId, #state{env = #{<<"product">> := ProductId, <<"args">> := Args}} = _State) ->

@@ -160,7 +160,6 @@ init(?TYPE, ChannelId, #{
                 pass
         end
               end, Products),
-    dgiot_metrics:start(dgiot_meter),
     dgiot_data:set_consumer(ChannelId, 20),
     State = #state{
         id = ChannelId,

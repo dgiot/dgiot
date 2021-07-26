@@ -74,9 +74,10 @@ start(#{
     dgiot_data:set_consumer(<<"taskround/", Channel/binary, "/", DtuId/binary>>, 1000000),
     case dgiot_task:get_pnque(DtuId) of
         not_find ->
-            ?LOG(info, "not_find ~p", [DtuId]);
+%%            ?LOG(info, "not_find ~p", [DtuId]);
+            pass;
         _ ->
-            ?LOG(info, "find ~p", [Args]),
+%%            ?LOG(info, "find ~p", [Args]),
             supervisor:start_child(dgiot_task, [Args])
     end;
 
