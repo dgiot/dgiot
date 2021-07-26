@@ -235,22 +235,22 @@ get_wechat_map(SessionToken) ->
 get_device_info(Deviceid, SessionToken) ->
     case dgiot_parse:get_object(<<"Device">>, Deviceid, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
         {ok, #{<<"product">> := #{<<"objectId">> := ProductId}, <<"basedata">> := Basedata} = Result} ->
-            NewParams =
+            {NewParams, ProductName} =
                 case dgiot_parse:get_object(<<"Product">>, ProductId) of
-                    {ok, #{<<"config">> := #{<<"basedate">> := #{<<"params">> := Params}}}} ->
-                        lists:foldl(fun(Param, Acc) ->
+                    {ok, #{<<"config">> := #{<<"basedate">> := #{<<"params">> := Params}}, <<"name">> := Productname}} ->
+                        lists:foldl(fun(Param, {Acc, _Acc1}) ->
                             Identifier = maps:get(<<"identifier">>, Param),
                             case maps:find(Identifier, Basedata) of
                                 error ->
-                                    Acc;
+                                    {Acc, Productname};
                                 {ok, Value} ->
-                                    Acc ++ [Param#{<<"value">> => Value}]
+                                    {Acc ++ [Param#{<<"value">> => Value}], Productname}
                             end
-                                    end, [], Params);
+                                    end, {[], <<>>}, Params);
                     _ ->
-                        []
+                        {[], <<" ">>}
                 end,
-            {ok, Result#{<<"params">> => NewParams}};
+            {ok, Result#{<<"params">> => NewParams, <<"productname">> => ProductName}};
         _ ->
             {error, []}
     end.

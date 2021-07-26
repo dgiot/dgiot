@@ -42,7 +42,7 @@
 -define(FC_READ_IREGS,    16#04). %读输入寄存器
 
 -define(FC_WRITE_COIL,    16#05).  %写单个线圈寄存器
--define(FC_WRITE_HREG,    16#06).  %写单个保持寄存
+-define(FC_WRITE_HREG,    16#06).  %写单个保持寄存器
 -define(FC_WRITE_COILS,   16#0f).  %写多个线圈寄存器
 -define(FC_WRITE_HREGS,   16#10).  %写多个保持寄存器
 
