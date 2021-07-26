@@ -14,4 +14,4 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 -author("johnliu").
-
+-define(NOTIFICATION, dgiot_notification).

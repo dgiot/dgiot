@@ -8,7 +8,7 @@ do(_Dir, CONFIG) ->
     maybe_dump(Config ++ [{overrides, overrides()}] ++ coveralls() ++ config(HasElixir)).
 
 bcrypt() ->
-    {bcrypt, {git, "https://github.com.cnpmjs.org/fastdgiot/erlang-bcrypt.git", {branch, "0.6.0"}}}.
+    {bcrypt, {git, "https://gitee.com/fastdgiot/erlang-bcrypt.git", {branch, "0.6.0"}}}.
 
 deps(Config) ->
     {deps, OldDeps} = lists:keyfind(deps, 1, Config),
@@ -81,11 +81,11 @@ project_app_dirs() ->
     ["apps/*", alternative_lib_dir() ++ "/*", "."].
 
 plugins(HasElixir) ->
-    [{relup_helper, {git, "https://github.com.cnpmjs.org/fastdgiot/relup_helper", {tag, "2.0.0"}}}
-        , {er_coap_client, {git, "https://github.com.cnpmjs.org/fastdgiot/er_coap_client", {tag, "v1.0"}}}
+    [{relup_helper, {git, "https://gitee.com/fastdgiot/relup_helper", {tag, "2.0.0"}}}
+        , {er_coap_client, {git, "https://gitee.com/fastdgiot/er_coap_client", {tag, "v1.0"}}}
         %% emqx main project does not require port-compiler
         %% pin at root level for deterministic
-        , {pc, {git, "https://github.com.cnpmjs.org/fastdgiot/port_compiler.git", {tag, "v1.11.1"}}}
+        , {pc, {git, "https://gitee.com/fastdgiot/port_compiler.git", {tag, "v1.11.1"}}}
         | [rebar_mix || HasElixir]
     ]
     %% test plugins are concatenated to default profile plugins
@@ -94,12 +94,12 @@ plugins(HasElixir) ->
 
 test_plugins() ->
     [rebar3_proper,
-        {coveralls, {git, "https://github.com.cnpmjs.org/fastdgiot/coveralls-erl", {branch, "fix-git-info"}}}
+        {coveralls, {git, "https://gitee.com/fastdgiot/coveralls-erl", {branch, "fix-git-info"}}}
     ].
 
 test_deps() ->
     [{bbmustache, "1.10.0"}
-        , {emqx_ct_helpers, {git, "https://github.com.cnpmjs.org/fastdgiot/emqx-ct-helpers", {tag, "1.3.9"}}}
+        , {emqx_ct_helpers, {git, "https://gitee.com/fastdgiot/emqx-ct-helpers", {tag, "1.3.9"}}}
         , meck
     ].
 

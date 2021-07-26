@@ -150,7 +150,7 @@ handle(post_user, #{<<"username">> := _UserName, <<"password">> := _Password} = 
     ?LOG(info, "Body ~p", [Body]),
     case create_user(Body, SessionToken) of
         {ok, Data} ->
-            dgiot_parse:load(),
+            dgiot_parse:load_role(),
             {200, Data};
         {error, Error} -> {500, Error}
     end;
@@ -159,7 +159,7 @@ handle(delete_user, #{<<"username">> := _UserName} = Body, #{<<"sessionToken">> 
     ?LOG(info, "Body ~p", [Body]),
     case delete_user(Body, SessionToken) of
         {ok, Data} ->
-            dgiot_parse:load(),
+            dgiot_parse:load_role(),
             {200, Data};
         {error, Error} -> {error, Error}
     end;
@@ -168,7 +168,7 @@ handle(put_user, #{<<"username">> := _UserName} = Body, #{<<"sessionToken">> := 
     ?LOG(info, "Body ~p", [Body]),
     case put_user(Body, SessionToken) of
         {ok, Data} ->
-            dgiot_parse:load(),
+            dgiot_parse:load_role(),
             {200, Data};
         {error, Error} -> {500, Error}
     end;

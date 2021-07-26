@@ -22,7 +22,7 @@
 -author("jonhl").
 
 -include_lib("dgiot/include/logger.hrl").
-
+-include("dgiot_http.hrl").
 -export([
     send/2,
     send/3,
@@ -181,7 +181,33 @@ post_notification(Notification) ->
         }
     }).
 
-add_notification(Ruleid, DevAddr, Payload) ->
+add_notification(<<"start_", Ruleid/binary>>, DevAddr, Payload) ->
+    <<ProductId:10/binary, _/binary>> = Ruleid,
+    DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+    case dgiot_data:get(?NOTIFICATION, {DeviceId, Ruleid}) of
+        {start, _Time} ->
+            pass;
+        _ ->
+            save_notification(Ruleid, DevAddr, Payload#{<<"alertstatus">> => true})
+    end,
+    dgiot_data:insert(?NOTIFICATION, {DeviceId, Ruleid}, {start, dgiot_datetime:now_secs()});
+
+add_notification(<<"stop_", Ruleid/binary>>, DevAddr, Payload) ->
+    <<ProductId:10/binary, _/binary>> = Ruleid,
+    DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+    case dgiot_data:get(?NOTIFICATION, {DeviceId, Ruleid}) of
+        {stop, _Time} ->
+            pass;
+        _ ->
+            save_notification(Ruleid, DevAddr, Payload#{<<"alertstatus">> => false})
+    end,
+    dgiot_data:insert(?NOTIFICATION, {DeviceId, Ruleid}, {stop, dgiot_datetime:now_secs()});
+
+add_notification(Ruleid, _DevAddr, _Payload) ->
+    ?LOG(error, "Ruleid ~p", [Ruleid]),
+    ok.
+
+save_notification(Ruleid, DevAddr, Payload) ->
     case binary:split(Ruleid, <<$_>>, [global, trim]) of
         [ProductId, _] ->
             case dgiot_device:lookup(ProductId, DevAddr) of
@@ -191,40 +217,47 @@ add_notification(Ruleid, DevAddr, Payload) ->
                             BinX = atom_to_binary(X),
                             case BinX of
                                 <<"role:", Name/binary>> ->
-                                    RoleId = dgiot_parse:get_roleid(Name),
-                                    UserIds = dgiot_parse:get_userids(RoleId),
-                                    lists:foldl(fun(X, Acc1) ->
-                                        Acc1 ++ [#{
-                                            <<"method">> => <<"post">>,
-                                            <<"path">> => <<"/classes/Notification">>,
-                                            <<"body">> => #{
-                                                <<"ACL">> => #{
-                                                    X => #{
-                                                        <<"read">> => true,
-                                                        <<"write">> => true
+%%                                    RoleId = dgiot_parse:get_roleid(<<"dgiot">>),
+                                    case dgiot_parse:query_object(<<"_Role">>, #{<<"order">> => <<"updatedAt">>, <<"limit">> => 1,
+                                        <<"where">> => #{<<"name">> => Name}}) of
+                                        {ok, #{<<"results">> := [Role]}} ->
+                                            #{<<"objectId">> := RoleId} = Role,
+                                            UserIds = dgiot_parse:get_userids(RoleId),
+                                            lists:foldl(fun(X1, Acc1) ->
+                                                Acc1 ++ [#{
+                                                    <<"method">> => <<"POST">>,
+                                                    <<"path">> => <<"/classes/Notification">>,
+                                                    <<"body">> => #{
+                                                        <<"ACL">> => #{
+                                                            X1 => #{
+                                                                <<"read">> => true,
+                                                                <<"write">> => true
+                                                            }
+                                                        },
+                                                        <<"content">> => Payload,
+                                                        <<"public">> => true,
+                                                        <<"sender">> => #{
+                                                            <<"__type">> => <<"Pointer">>,
+                                                            <<"className">> => <<"_User">>,
+                                                            <<"objectId">> => <<"Klht7ERlYn">>
+                                                        },
+                                                        <<"type">> => Ruleid,
+                                                        <<"user">> => #{
+                                                            <<"__type">> => <<"Pointer">>,
+                                                            <<"className">> => <<"_User">>,
+                                                            <<"objectId">> => X1
+                                                        }
                                                     }
-                                                },
-                                                <<"content">> => Payload,
-                                                <<"public">> => true,
-                                                <<"sender">> => #{
-                                                    <<"__type">> => <<"Pointer">>,
-                                                    <<"className">> => <<"_User">>,
-                                                    <<"objectId">> => <<"Klht7ERlYn">>
-                                                },
-                                                <<"type">> => Ruleid,
-                                                <<"user">> => #{
-                                                    <<"__type">> => <<"Pointer">>,
-                                                    <<"className">> => <<"_User">>,
-                                                    <<"objectId">> => X
-                                                }
-                                            }
-                                        }]
-                                                end, Acc, UserIds);
+                                                }]
+                                                        end, Acc, UserIds);
+                                        _ ->
+                                            pass
+                                    end;
                                 <<"*">> ->
                                     pass;
                                 UserId ->
                                     Acc ++ [#{
-                                        <<"method">> => <<"post">>,
+                                        <<"method">> => <<"POST">>,
                                         <<"path">> => <<"/classes/Notification">>,
                                         <<"body">> => #{
                                             <<"ACL">> => #{
@@ -250,8 +283,11 @@ add_notification(Ruleid, DevAddr, Payload) ->
                                     }]
                             end
                                     end, [], Acl),
+                    ?LOG(info, "Requests ~p", [Requests]),
                     dgiot_parse:batch(Requests);
                 _ ->
                     pass
             end
     end.
+
+

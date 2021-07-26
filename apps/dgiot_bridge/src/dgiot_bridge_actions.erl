@@ -20,6 +20,7 @@
 -include_lib("dgiot/include/logger.hrl").
 -include_lib("emqx_rule_engine/include/rule_engine.hrl").
 -include_lib("emqx_rule_engine/include/rule_actions.hrl").
+
 -define(RESOURCE_TYPE_DGIOT, 'dgiot_resource').
 
 -define(RESOURCE_CONFIG_SPEC, #{
@@ -167,6 +168,7 @@ on_action_dgiot(Selected, #{event := Event} = Envs) ->
     Msg = dgiot_mqtt:get_message(Selected, Envs),
     case Event of
         'message.publish' ->
+            ?LOG(info, "Msg ~p", [Msg]),
             post_rule(Msg),
             case dgiot_channelx:do_message(ChannelId, {rule, Msg, Selected}) of
                 not_find -> dgiot_mqtt:republish(Selected, Envs);
@@ -176,6 +178,13 @@ on_action_dgiot(Selected, #{event := Event} = Envs) ->
             dgiot_channelx:do_event(ChannelId, EventId, {rule, Msg, Selected})
     end.
 
-post_rule(#{metadata := #{rule_id := <<"rule:Notification_", Ruleid/binary>>}, clientid := DevAddr, payload := Payload, topic := _Topic}) ->
-    dgiot_umeng:add_notification(Ruleid, DevAddr, Payload).
+post_rule(#{metadata := #{rule_id := <<"rule:Notification_", Ruleid/binary>>}, clientid := DevAddr, payload := Payload, topic := _Topic} = Msg) ->
+    ?LOG(info, "Msg ~p", [Msg]),
+    NewPayload = jsx:decode(Payload, [{labels, binary}, return_maps]),
+    dgiot_umeng:add_notification(Ruleid, DevAddr, NewPayload);
 
+
+
+
+post_rule(Msg) ->
+    ?LOG(error, "Msg ~p", [Msg]).

@@ -19,4 +19,6 @@
 -define(DGIOT_TASK, dgiot_task).
 -define(TASK_ARGS, task_args).
 -define(DGIOT_PNQUE, dgiot_pnque).
+-define(PROFILE, dgiot_profile).
+-define(MODIFYPROFILE, dgiot_modifyprofile).
 -define(TASK_NAME(Name), dgiot_utils:to_atom(lists:concat([dgiot_utils:to_atom(Name), "task"]))).

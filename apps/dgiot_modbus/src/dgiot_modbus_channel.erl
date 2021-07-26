@@ -155,15 +155,15 @@ handle_event(_EventId, _Event, State) ->
 % SELECT clientid, disconnected_at FROM "$events/client_disconnected" WHERE username = 'dgiot'
 % SELECT clientid, connected_at FROM "$events/client_connected" WHERE username = 'dgiot'
 handle_message({rule, #{clientid := DevAddr, connected_at := _ConnectedAt}, #{peername := PeerName} = _Context}, State) ->
-    ?LOG(error,"DevAddr ~p PeerName ~p",[DevAddr,PeerName] ),
+    ?LOG(error, "DevAddr ~p PeerName ~p", [DevAddr, PeerName]),
     {ok, State};
 
 handle_message({rule, #{clientid := DevAddr, disconnected_at := _DisconnectedAt}, _Context}, State) ->
-    ?LOG(error,"DevAddr ~p ",[DevAddr] ),
+    ?LOG(error, "DevAddr ~p ", [DevAddr]),
     {ok, State};
 
 handle_message({rule, #{clientid := DevAddr, payload := Payload, topic := _Topic}, _Msg}, #state{id = ChannelId} = State) ->
-    ?LOG(error,"DevAddr ~p Payload ~p ChannelId ~p",[DevAddr,Payload,ChannelId] ),
+    ?LOG(error, "DevAddr ~p Payload ~p ChannelId ~p", [DevAddr, Payload, ChannelId]),
     {ok, State};
 
 handle_message(_Message, State) ->

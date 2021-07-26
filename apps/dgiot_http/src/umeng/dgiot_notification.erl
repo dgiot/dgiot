@@ -17,11 +17,16 @@
 -module(dgiot_notification).
 -author("kenneth").
 -include_lib("dgiot/include/logger.hrl").
-
+-include("dgiot_http.hrl").
+-dgiot_data("ets").
+-export([init_ets/0]).
 %% API
 -export([send_sms/3, send_sms/4, send_sms/5]).
 
 -export([send_verification_code/2, check_verification_code/2]).
+
+init_ets() ->
+    dgiot_data:init(?NOTIFICATION).
 
 % 验证类消息
 send_verification_code(NationCode, Key) ->
@@ -87,11 +92,11 @@ send_sms(NationCode, Mobile, TplId, Params, Ext) ->
                         #{<<"result">> := 0, <<"ext">> := Ext} ->
                             {ok, Ext};
                         #{<<"errmsg">> := ErrMsg, <<"result">> := Code} ->
-                            ?LOG(error,"Send SMS ERROR: ~p->~ts, Request:~p~n", [list_to_binary(Url), unicode:characters_to_binary(ErrMsg), Body]),
+                            ?LOG(error, "Send SMS ERROR: ~p->~ts, Request:~p~n", [list_to_binary(Url), unicode:characters_to_binary(ErrMsg), Body]),
                             {error, #{code => Code, error => ErrMsg}}
                     end;
                 {Err, Reason} when Err == error; Err == 'EXIT' ->
-                    ?LOG(error,"Send SMS ERROR: ~p, ~p, ~p~n", [Url, Body, Reason]),
+                    ?LOG(error, "Send SMS ERROR: ~p, ~p, ~p~n", [Url, Body, Reason]),
                     {error, #{code => 1, error => list_to_binary(io_lib:format("~p", [Reason]))}}
             end;
         _ ->
