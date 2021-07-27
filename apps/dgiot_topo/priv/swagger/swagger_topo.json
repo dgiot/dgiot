@@ -21,6 +21,14 @@
             "required": false,
             "type": "string",
             "default": ""
+          },
+          {
+            "description": "终端类型",
+            "in": "query",
+            "name": "type",
+            "required": false,
+            "type": "string",
+            "default": "web"
           }
         ],
         "responses": {
