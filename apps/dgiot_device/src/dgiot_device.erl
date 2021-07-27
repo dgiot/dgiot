@@ -23,7 +23,7 @@
 -dgiot_data("ets").
 -export([init_ets/0]).
 -export([create_device/1, create_device/2, get_sub_device/1, get_sub_device/2, get/2]).
--export([load_device/1, post/1, put/1, save/1, save/2, save/3, lookup/1, lookup/2, delete/1, delete/2, save_prod/2, lookup_prod/1, get_online/1]).
+-export([load_device/1, sync_parse/1, post/1, put/1, save/1, save/2, save/3, lookup/1, lookup/2, delete/1, delete/2, save_prod/2, lookup_prod/1, get_online/1]).
 -export([encode/1, decode/3]).
 
 init_ets() ->
@@ -42,79 +42,69 @@ load_device(Order) ->
     },
     dgiot_parse_loader:start(<<"Device">>, Query, 0, 100, 1000000, Success).
 
-get_Acl(Device, OldAcl) ->
-    NewAcl =
-        case maps:find(<<"ACL">>, Device) of
-            error ->
-                OldAcl;
-            {ok, Acl} ->
-                lists:foldl(fun(X, Acc) ->
-                    Acc ++ [binary_to_atom(X)]
-                            end, [], maps:keys(Acl))
-        end,
-    case length(NewAcl) of
-        0 ->
-            OldAcl;
-        _ ->
-            NewAcl
-    end.
 post(Device) ->
     DeviceId = maps:get(<<"objectId">>, Device),
-    #{<<"objectId">> := ProductId} = maps:get(<<"product">>, Device),
-    #{<<"latitude">> := Latitude, <<"longitude">> := Logitude} =
-        maps:get(<<"location">>, Device, #{<<"latitude">> => 0, <<"longitude">> => 0}),
-    Product = binary_to_atom(ProductId),
-    DeviceId = maps:get(<<"objectId">>, Device),
-    Name = maps:get(<<"name">>, Device, <<"">>),
-    DevAddr = maps:get(<<"devaddr">>, Device, <<"">>),
-    Enable = maps:get(<<"isEnable">>, Device, false),
-    dgiot_mnesia:insert(DeviceId, {[dgiot_datetime:now_ms(), {Latitude, Logitude}, Product, get_Acl(Device, #{}), Enable, Name, DevAddr], node()}).
+    Status =
+        case maps:get(<<"status">>, Device, <<"OFFLINE">>) of
+            <<"OFFLINE">> -> false;
+            _ -> true
+        end,
+    dgiot_mnesia:insert(DeviceId, {[Status, dgiot_datetime:now_secs()], node()}).
 
 put(Device) ->
     DeviceId = maps:get(<<"objectId">>, Device),
     case lookup(DeviceId) of
-        {ok, {[_Ts, {OldLatitude, OldLogitude}, OldProduct, OldAcl, OldEnable, OldName, OldDevAddr], Node}} ->
-            #{<<"objectId">> := ProductId} = maps:get(<<"product">>, Device, #{<<"objectId">> => atom_to_binary(OldProduct)}),
-            #{<<"latitude">> := Latitude, <<"longitude">> := Logitude} =
-                maps:get(<<"location">>, Device, #{<<"latitude">> => OldLatitude, <<"longitude">> => OldLogitude}),
-            Product = binary_to_atom(ProductId),
-            Name = maps:get(<<"name">>, Device, OldName),
-            DevAddr = maps:get(<<"devaddr">>, Device, OldDevAddr),
-            Enable = maps:get(<<"isEnable">>, Device, OldEnable),
-            dgiot_mnesia:insert(DeviceId, {[dgiot_datetime:now_ms(), {Latitude, Logitude}, Product, get_Acl(Device, OldAcl), Enable, Name, DevAddr], Node});
+        {ok, {[Status, _], Node}} ->
+            dgiot_mnesia:insert(DeviceId, {[Status, dgiot_datetime:now_secs()], Node});
         _ ->
             pass
     end.
 
 save(Device) ->
-    #{<<"objectId">> := ProductId} = maps:get(<<"product">>, Device),
-    #{<<"latitude">> := Latitude, <<"longitude">> := Logitude} =
-        maps:get(<<"location">>, Device, #{<<"latitude">> => 0, <<"longitude">> => 0}),
-    Product = binary_to_atom(ProductId),
     DeviceId = maps:get(<<"objectId">>, Device),
-    Name = maps:get(<<"name">>, Device, <<"">>),
-    DevAddr = maps:get(<<"devaddr">>, Device, <<"">>),
-    Enable = maps:get(<<"isEnable">>, Device, false),
-    dgiot_mnesia:insert(DeviceId, {[dgiot_datetime:now_ms(), {Latitude, Logitude}, Product, get_Acl(Device, #{}), Enable, Name, DevAddr], node()}).
+    UpdatedAt =
+        case maps:get(<<"updatedAt">>, Device, dgiot_datetime:now_secs()) of
+            <<Data:10/binary, "T", Time:8/binary, _/binary>> ->
+                dgiot_datetime:to_unixtime(dgiot_datetime:to_localtime(<<Data/binary, " ", Time/binary>>));
+            Now -> Now
+        end,
+    Status =
+        case maps:get(<<"status">>, Device, <<"OFFLINE">>) of
+            <<"OFFLINE">> -> false;
+            _ -> true
+        end,
+    dgiot_mnesia:insert(DeviceId, {[Status, UpdatedAt], node()}).
 
-save(DeviceId, Data) ->
+save(DeviceId, _Data) ->
     case lookup(DeviceId) of
-        {ok, {[_Ts, {OldLatitude, OldLogitude}, Product, Acl, Enable, Name, DevAddr], Node}} ->
-            Latitude = maps:get(<<"latitude">>, Data, OldLatitude),
-            Logitude = maps:get(<<"longitude">>, Data, OldLogitude),
-            dgiot_mnesia:insert(DeviceId, {[dgiot_datetime:now_ms(), {Latitude, Logitude}, Product, Acl, Enable, Name, DevAddr], Node});
+        {ok, {[Status, _Now], Node}} ->
+            dgiot_mnesia:insert(DeviceId, {[Status, dgiot_datetime:now_secs()], Node});
         _ -> pass
     end.
 
-save(ProductId, DevAddr, Data) ->
+save(ProductId, DevAddr, _Data) ->
     DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
-    case lookup(DeviceId) of
-        {ok, {[_Ts, {OldLatitude, OldLogitude}, Product, Acl, Enable, Name, DevAddr], Node}} ->
-            Latitude = maps:get(<<"latitude">>, Data, OldLatitude),
-            Logitude = maps:get(<<"longitude">>, Data, OldLogitude),
-            dgiot_mnesia:insert(DeviceId, {[dgiot_datetime:now_ms(), {Latitude, Logitude}, Product, Acl, Enable, Name, DevAddr], Node});
-        _ -> pass
-    end.
+    save(DeviceId, _Data).
+
+sync_parse(OffLine) ->
+    Fun = fun(X) ->
+        {_, DeviceId, V} = X,
+        Now = dgiot_datetime:now_secs(),
+        case V of
+            {[true, Last], Node} when (Now - Last) > OffLine ->
+                case dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"status">> => <<"OFFLINE">>}) of
+                    {ok, _R} ->
+                        dgiot_mnesia:insert(DeviceId, {[false, Last], Node});
+                    _ ->
+                        pass
+                end,
+                timer:sleep(50);
+            _ ->
+                pass
+        end,
+        false
+          end,
+    dgiot_mnesia:search(Fun, #{<<"skip">> => 0, <<"limit">> => 1000000}).
 
 lookup(DeviceId) ->
     case dgiot_mnesia:lookup(DeviceId) of
