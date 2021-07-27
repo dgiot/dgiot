@@ -19,8 +19,12 @@
 -author("kenneth").
 -record(state, {id, client = disconnect}).
 -include_lib("dgiot/include/logger.hrl").
+-include("dgiot_mqtt.hrl").
 
 %% API
+-dgiot_data("ets").
+-export([init_ets/0]).
+
 -export([start/2]).
 -export([init/3, handle_event/3, handle_message/2, handle_init/1, stop/3]).
 -export([init/1, handle_info/2, handle_cast/2, handle_call/3, terminate/2, code_change/3]).
@@ -127,6 +131,8 @@
     }
 }).
 
+init_ets() ->
+    dgiot_data:init(?DGIOT_MQTT_WORK).
 
 start(ChannelId, ChannelArgs) ->
     dgiot_channelx:add(?TYPE, ChannelId, ?MODULE, ChannelArgs).
@@ -157,16 +163,16 @@ handle_init(State) ->
 
 %% 通道消息处理,注意：进程池调用
 handle_event(EventId, Event, _State) ->
-    ?LOG(info,"channel ~p, ~p", [EventId, Event]),
+    ?LOG(info, "channel ~p, ~p", [EventId, Event]),
     ok.
 
 handle_message(Message, State) ->
-    ?LOG(info,"channel ~p", [Message]),
+    ?LOG(info, "channel ~p", [Message]),
     {ok, State}.
 
 
-stop(ChannelType, ChannelId,_State) ->
-    ?LOG(info,"channel stop ~p,~p", [ChannelType, ChannelId]),
+stop(ChannelType, ChannelId, _State) ->
+    ?LOG(info, "channel stop ~p,~p", [ChannelType, ChannelId]),
     ok.
 
 
@@ -188,12 +194,12 @@ handle_info({connect, Client}, #state{id = ChannelId} = State) ->
                 _ ->
                     lists:map(fun(ProductId) ->
 %%                        dgiot_product:load(ProductId),
-                        emqtt:subscribe(Client, {<<"bridge/thing/", ProductId/binary,"/#">>, 1}),
+                        emqtt:subscribe(Client, {<<"bridge/thing/", ProductId/binary, "/#">>, 1}),
                         dgiot_mqtt:subscribe(<<"forward/thing/", ProductId/binary, "/+/post">>),
                         dgiot_mqtt:publish(ChannelId, <<"thing/", ProductId/binary>>, jsx:encode(#{<<"network">> => <<"connect">>}))
                               end, ProductIds)
             end,
-            ?LOG(info,"connect ~p sub ~n", [Client]);
+            ?LOG(info, "connect ~p sub ~n", [Client]);
         _ -> pass
     end,
     {noreply, State#state{client = Client}};
@@ -218,13 +224,13 @@ handle_info({publish, #{payload := Payload, topic := <<"bridge/", Topic/binary>>
 
 handle_info({deliver, _, Msg}, #state{client = Client} = State) ->
     case dgiot_mqtt:get_topic(Msg) of
-        <<"forward/", Topic/binary>> ->  emqtt:publish(Client, Topic, dgiot_mqtt:get_payload(Msg));
+        <<"forward/", Topic/binary>> -> emqtt:publish(Client, Topic, dgiot_mqtt:get_payload(Msg));
         _ -> pass
     end,
     {noreply, State};
 
 handle_info(Info, State) ->
-    ?LOG(info,"unkknow ~p~n", [Info]),
+    ?LOG(info, "unkknow ~p~n", [Info]),
     {noreply, State}.
 
 
