@@ -284,7 +284,7 @@ search() ->
         {_, K, V} = X,
         #{K => V}
           end,
-    dgiot_mnesia:search(Fun, #{<<"start">> => 0, <<"limit">> => 5}).
+    dgiot_mnesia:search(Fun, #{<<"skip">> => 0, <<"limit">> => 5}).
 
 search(Fun, Page) ->
     search(?MNESIA_TAB, Fun, Page).
@@ -298,7 +298,7 @@ search(Name, Fun, Page) ->
 search(_, _, '$end_of_table', Acc, Page) ->
     Page#{<<"data">> => lists:reverse(Acc), <<"limit">> => length(Acc)};
 
-search(Name, Fun, Key, Acc, Page = #{<<"start">> := Start, <<"limit">> := Limit, <<"count">> := Count}) when Count >= Start, Count < Start + Limit ->
+search(Name, Fun, Key, Acc, Page = #{<<"skip">> := Skip, <<"limit">> := Limit, <<"count">> := Count}) when Count >= Skip, Count < Skip + Limit ->
     case ets:lookup(Name, Key) of
         [Row | _] ->
             case Fun(Row) of

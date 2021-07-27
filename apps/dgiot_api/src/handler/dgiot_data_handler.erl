@@ -198,7 +198,7 @@ do_request(post_product, #{<<"file">> := FileInfo, <<"appid">> := Appid} = _Body
     end;
 
 %% Device 概要: 查询设备 描述:查询设备时序数据
-%% OperationId:post_menus
+%% OperationId:post_device
 %% 请求:POST /iotapi/post_device
 do_request(post_device, Body, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
     case dgiot_tdengine:get_channel(SessionToken) of
@@ -232,8 +232,8 @@ do_request(post_device, Body, #{<<"sessionToken">> := SessionToken} = _Context, 
     end;
 
 %% Device 概要: 查询设备 描述:查询设备时序数据
-%% OperationId:post_menus
-%% 请求:POST /iotapi/post_device
+%% OperationId:post_adddevice
+%% 请求:POST /iotapi/post_adddevice
 do_request(post_adddevice, #{<<"devaddr">> := Devaddr, <<"productid">> := ProductId, <<"longitude">> := Longitude, <<"latitude">> := Latitude}, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
     DeviceId = dgiot_parse:get_deviceid(ProductId, Devaddr),
     case dgiot_auth:get_session(SessionToken) of

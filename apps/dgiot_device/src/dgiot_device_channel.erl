@@ -66,6 +66,18 @@
             zh => <<"离线超时时间(秒)"/utf8>>
         }
     },
+    <<"checktime">> => #{
+        order => 3,
+        type => integer,
+        required => true,
+        default => 3,
+        title => #{
+            zh => <<"设备状态落库周期(分)"/utf8>>
+        },
+        description => #{
+            zh => <<"设备状态落库周期(分)"/utf8>>
+        }
+    },
     <<"ico">> => #{
         order => 102,
         type => string,
@@ -94,8 +106,9 @@ init(?TYPE, ChannelId, Args) ->
     },
     {ok, State, []}.
 
-handle_init(State) ->
+handle_init(#state{env = #{<<"checktime">>:= CheckTime}} = State) ->
     erlang:send_after(300, self(), {message, <<"_Pool">>, load}),
+    erlang:send_after(CheckTime * 60 * 1000, self(), {message, <<"_Pool">>, check}),
     {ok, State}.
 
 %% 通道消息处理,注意：进程池调用
@@ -109,9 +122,15 @@ handle_message(load, #state{env = #{<<"order">> := Order, <<"offline">>:= OffLin
     dgiot_parse:load_role(),
     {ok, State};
 
+handle_message(check, #state{env = #{<<"offline">>:= OffLine, <<"checktime">>:= CheckTime}} = State) ->
+    erlang:send_after(CheckTime * 60 * 1000, self(), {message, <<"_Pool">>, check}),
+    dgiot_device:sync_parse(OffLine),
+    {ok, State};
+
 handle_message(_, State) ->
     {ok, State}.
 
 stop(ChannelType, ChannelId, _State) ->
     ?LOG(warning, "Channel[~p,~p] stop", [ChannelType, ChannelId]),
     ok.
+

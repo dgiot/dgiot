@@ -154,6 +154,7 @@ unixtime_to_localtime(NowStamp) ->
 %%"2018-12-12 12:12:12" -> {{2018,12,12},{12,12,12}}
 %%"2018/12/12 12:12:12" -> {{2018,12,12},{12,12,12}}
 %%"12:12:12" -> {12,12,12}
+%%2021-07-22T12:26:53.216Z
 to_localtime(Time) when is_tuple(Time) ->
     Time;
 to_localtime(NowStamp) when is_integer(NowStamp) ->
