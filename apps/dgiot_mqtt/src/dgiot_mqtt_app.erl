@@ -24,7 +24,6 @@
 -module(dgiot_mqtt_app).
 -emqx_plugin(?MODULE).
 -behaviour(application).
--include("dgiot_mqtt.hrl").
 
 %% Application callbacks
 -export([start/2, stop/1]).
@@ -35,7 +34,6 @@
 %% ===================================================================
 
 start(_StartType, _StartArgs) ->
-    dgiot_data:init(?DGIOT_MQTT_WORK),
     {ok, Sup} = dgiot_mqtt_sup:start_link(),
     {ok, Sup}.
 
