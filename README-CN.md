@@ -43,7 +43,7 @@
   ```bash
     cd dgiot_dashboard
     git pull
-    yarn install
+    yarn dgiot:install
     yarn build
     cd ../dgiot
     git pull
