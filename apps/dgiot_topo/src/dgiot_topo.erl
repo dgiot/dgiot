@@ -14,6 +14,7 @@
 %%--------------------------------------------------------------------
 -module(dgiot_topo).
 -author("johnliu").
+-include_lib("dgiot/include/logger.hrl").
 
 -export([docroot/0, get_topo/2, send_topo/3, get_Product/0, get_name/3, put_topo/2, get_konva_thing/2, edit_konva/2, push/4]).
 
@@ -37,14 +38,13 @@ docroot() ->
 
 
 get_topo(Arg, _Context) ->
-    #{<<"productid">> := ProductId,
-        <<"devaddr">> := Devaddr
-    } = Arg,
+    #{<<"productid">> := ProductId, <<"devaddr">> := Devaddr} = Arg,
+    Type = maps:get(<<"type">>, Arg, <<"web">>),
     case dgiot_parse:get_object(<<"Product">>, ProductId) of
         {ok, #{<<"config">> := #{<<"konva">> := #{<<"Stage">> := #{<<"children">> := Children} = Stage} = Konva}}} when length(Children) > 0 ->
             case Devaddr of
                 undefined ->
-                    NewChildren1 = get_children(ProductId, Children, ProductId, <<"KonvatId">>, <<"Shapeid">>, <<"Identifier">>, <<"Name">>),
+                    NewChildren1 = get_children(Type, ProductId, Children, ProductId, <<"KonvatId">>, <<"Shapeid">>, <<"Identifier">>, <<"Name">>),
                     {ok, #{<<"code">> => 200, <<"message">> => <<"SUCCESS">>, <<"data">> => Konva#{<<"Stage">> => Stage#{<<"children">> => NewChildren1}}}};
                 _ ->
                     DeviceId = dgiot_parse:get_deviceid(ProductId, Devaddr),
@@ -54,7 +54,11 @@ get_topo(Arg, _Context) ->
                         _ ->
                             put({self(), td}, #{})
                     end,
-                    NewChildren1 = get_children(ProductId, Children, DeviceId, <<"KonvatId">>, <<"Shapeid">>, <<"Identifier">>, <<"Name">>),
+                    NewChildren1 = get_children(Type, ProductId, Children, DeviceId, <<"KonvatId">>, <<"Shapeid">>, <<"Identifier">>, <<"Name">>),
+                    case get(wechat) of
+                        undefined -> pass;
+                        List -> ?LOG(info,"List ~p",[List])
+                    end,
                     {ok, #{<<"code">> => 200, <<"message">> => <<"SUCCESS">>, <<"data">> => Konva#{<<"Stage">> => Stage#{<<"children">> => NewChildren1}}}}
             end;
         _ ->
@@ -68,7 +72,7 @@ get_konva_thing(Arg, _Context) ->
     case dgiot_parse:get_object(<<"Product">>, ProductId) of
         {ok, #{<<"config">> := #{<<"konva">> := #{<<"Stage">> := #{<<"children">> := Children}}}, <<"thing">> := #{<<"properties">> := Properties}}} ->
             put({self(), shapeids}, []),
-            get_children(ProductId, Children, ProductId, <<"KonvatId">>, <<"Shapeid">>, <<"Identifier">>, <<"Name">>),
+            get_children(<<"web">>,ProductId, Children, ProductId, <<"KonvatId">>, <<"Shapeid">>, <<"Identifier">>, <<"Name">>),
             Shapids = get({self(), shapeids}),
             Nobound =
                 lists:foldl(fun(Prop, Acc) ->
@@ -104,7 +108,7 @@ edit_konva(Arg, _Context) ->
     case dgiot_parse:get_object(<<"Product">>, ProductId) of
         {ok, #{<<"config">> := #{<<"konva">> := #{<<"Stage">> := #{<<"children">> := Children} = Stage} = Konva} = Config}} ->
             put({self(), shapeids}, []),
-            NewChildren = get_children(ProductId, Children, ProductId, ProductId, Shapeid, Identifier, Name),
+            NewChildren = get_children(<<"web">>,ProductId, Children, ProductId, ProductId, Shapeid, Identifier, Name),
             NewConfig = Config#{<<"konva">> => Konva#{<<"Stage">> => Stage#{<<"children">> => NewChildren}}},
             case dgiot_parse:update_object(<<"Product">>, ProductId, #{<<"config">> => NewConfig}) of
                 {ok, Message} ->
@@ -118,21 +122,21 @@ edit_konva(Arg, _Context) ->
             {ok, #{<<"code">> => 101, <<"message">> => <<ProductId/binary, " not found">>}}
     end.
 
-get_children(ProductId, Children, DeviceId, KonvatId, Shapeid, Identifier, Name) ->
+get_children(Type, ProductId, Children, DeviceId, KonvatId, Shapeid, Identifier, Name) ->
     lists:foldl(fun(X, Acc) ->
         #{<<"attrs">> := Attrs, <<"className">> := ClassName} = X,
         X1 =
             case maps:find(<<"children">>, X) of
                 error ->
-                    X#{<<"attrs">> => get_attrs(ProductId, ClassName, Attrs, DeviceId, KonvatId, Shapeid, Identifier, Name)};
+                    X#{<<"attrs">> => get_attrs(Type, ProductId, ClassName, Attrs, DeviceId, KonvatId, Shapeid, Identifier, Name)};
                 {ok, SubChildren} ->
-                    X#{<<"attrs">> => get_attrs(ProductId, ClassName, Attrs, DeviceId, KonvatId, Shapeid, Identifier, Name),
-                        <<"children">> => get_children(ProductId, SubChildren, DeviceId, KonvatId, Shapeid, Identifier, Name)}
+                    X#{<<"attrs">> => get_attrs(Type, ProductId, ClassName, Attrs, DeviceId, KonvatId, Shapeid, Identifier, Name),
+                        <<"children">> => get_children(Type, ProductId, SubChildren, DeviceId, KonvatId, Shapeid, Identifier, Name)}
             end,
         Acc ++ [X1]
                 end, [], Children).
 
-get_attrs(ProductId, ClassName, Attrs, DeviceId, KonvatId, Shapeid, Identifier, Name) ->
+get_attrs(Type, ProductId, ClassName, Attrs, DeviceId, KonvatId, Shapeid, Identifier, Name) ->
     case ClassName of
         <<"Layer">> ->
             Attrs;
@@ -147,7 +151,9 @@ get_attrs(ProductId, ClassName, Attrs, DeviceId, KonvatId, Shapeid, Identifier, 
                         KonvatId ->
                             case Id of
                                 Shapeid ->
-                                    Attrs#{<<"id">> => Identifier, <<"text">> => Name};
+                                    NewAttrs =  Attrs#{<<"id">> => Identifier, <<"text">> => Name},
+                                    save(Type, NewAttrs),
+                                    NewAttrs;
                                 _ ->
                                     Attrs
                             end;
@@ -171,10 +177,22 @@ get_attrs(ProductId, ClassName, Attrs, DeviceId, KonvatId, Shapeid, Identifier, 
                                         dgiot_utils:to_binary(Text1)
                                 end,
                             Unit = get_unit(ProductId, Id),
-
-                            Attrs#{<<"id">> => dgiot_parse:get_shapeid(DeviceId, Id), <<"text">> => <<Text/binary, " ", Unit/binary>>, <<"draggable">> => false}
+                            NewAttrs = Attrs#{<<"id">> => dgiot_parse:get_shapeid(DeviceId, Id), <<"text">> => <<Text/binary, " ", Unit/binary>>, <<"draggable">> => false},
+                            save(Type, NewAttrs),
+                            NewAttrs
                     end
             end
+    end.
+
+save(Type, NewAttrs) ->
+    case Type of
+        <<"wechat">> ->
+            case get(wechat) of
+                undefined -> put(wechat, [NewAttrs]);
+                List ->
+                    put(wechat, List ++ [NewAttrs])
+            end;
+        _ -> pass
     end.
 
 get_unit(ProductId, Id) ->
@@ -222,7 +240,7 @@ get_Product() ->
                             dgiot_data:insert({product, <<ProductId/binary, Identifier/binary>>}, {Name, Type, Unit}),
                             dgiot_data:insert({thing, <<ProductId/binary, Identifier/binary>>}, P)
                                   end, Properties),
-                        get_children(ProductId, Children, ProductId, <<"KonvatId">>, <<"Shapeid">>, <<"Identifier">>, <<"Name">>);
+                        get_children(<<"web">>, ProductId, Children, ProductId, <<"KonvatId">>, <<"Shapeid">>, <<"Identifier">>, <<"Name">>);
                     _ ->
                         pass
                 end
