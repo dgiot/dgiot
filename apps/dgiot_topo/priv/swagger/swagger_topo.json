@@ -23,7 +23,7 @@
             "default": ""
           },
           {
-            "description": "终端类型",
+            "description": "终端类型:web:wechat",
             "in": "query",
             "name": "type",
             "required": false,
