@@ -196,6 +196,7 @@ overlay_vars_rel(RelType) ->
         , {enable_plugin_dgiot_http, true}
         , {enable_plugin_dgiot_topo, true}
         , {enable_plugin_dgiot_opc, true}
+        , {enable_plugin_dgiot_meter, true}
         , {enable_plugin_dgiot_niisten, true}
         , {enable_plugin_dgiot_modbus, true}
         , {enable_plugin_dgiot_group, true}
@@ -318,6 +319,7 @@ relx_plugin_apps_per_rel(cloud) ->
         , dgiot_http
         , dgiot_topo
         , dgiot_opc
+        , dgiot_meter
         , dgiot_niisten
         , dgiot_modbus
         , dgiot_group
