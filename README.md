@@ -43,7 +43,7 @@ Before 2016, the Shuwa team had been crawling on the Internet and the mobile Int
   ```bash
     cd dgiot_dashboard
     git pull
-    yarn install
+    yarn dgiot:install
     yarn build
     cd ../dgiot
     git pull
