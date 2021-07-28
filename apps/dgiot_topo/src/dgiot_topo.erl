@@ -192,7 +192,9 @@ get_attrs(Type, ProductId, ClassName, Attrs, DeviceId, KonvatId, Shapeid, Identi
             end
     end.
 
-save(Type, NewAttrs) ->
+save(Type, Attrs) ->
+    AttrType = maps:get(<<"type">>,Attrs,<<"image">>),
+    NewAttrs = Attrs#{<<"type">> => AttrType},
     case Type of
         <<"wechat">> ->
             case get(wechat) of
