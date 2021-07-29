@@ -1,0 +1,10 @@
+{mapping, "iot_dgiot_matlab.listener", "dgiot_matlab.listener", [
+  {default, 51888},
+  {datatype, [integer, ip]}
+]}.
+
+
+{mapping, "iot_dgiot_matlab.heartbeat", "dgiot_matlab.heartbeat", [
+  {default, 180},
+  {datatype, integer}
+]}.
