@@ -28,7 +28,8 @@
     send/3,
     test_broadcast/0,
     test_customizedcast/0,
-    add_notification/3
+    add_notification/3,
+    sendSubscribe/2
 ]).
 
 test_broadcast() ->
@@ -210,6 +211,7 @@ add_notification(Ruleid, _DevAddr, _Payload) ->
 save_notification(Ruleid, DevAddr, Payload) ->
     case binary:split(Ruleid, <<$_>>, [global, trim]) of
         [ProductId, _] ->
+            DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
             case dgiot_device:lookup(ProductId, DevAddr) of
                 {ok, {[_, _, Acl], _}} ->
                     Requests =
@@ -223,40 +225,47 @@ save_notification(Ruleid, DevAddr, Payload) ->
                                         {ok, #{<<"results">> := [Role]}} ->
                                             #{<<"objectId">> := RoleId} = Role,
                                             UserIds = dgiot_parse:get_userids(RoleId),
-                                            lists:foldl(fun(X1, Acc1) ->
+                                            lists:foldl(fun(UserId, Acc1) ->
+                                                ObjectId = dgiot_parse:get_notificationid(Ruleid),
+                                                sendSubscribe(ObjectId, UserId),
                                                 Acc1 ++ [#{
+                                                    <<"objectId">> => ObjectId,
                                                     <<"method">> => <<"POST">>,
                                                     <<"path">> => <<"/classes/Notification">>,
                                                     <<"body">> => #{
                                                         <<"ACL">> => #{
-                                                            X1 => #{
+                                                            UserId => #{
                                                                 <<"read">> => true,
                                                                 <<"write">> => true
                                                             }
                                                         },
-                                                        <<"content">> => Payload,
+                                                        <<"content">> => Payload#{<<"_deviceid">> => DeviceId, <<"_productid">> => ProductId},
                                                         <<"public">> => true,
                                                         <<"sender">> => #{
                                                             <<"__type">> => <<"Pointer">>,
                                                             <<"className">> => <<"_User">>,
                                                             <<"objectId">> => <<"Klht7ERlYn">>
                                                         },
+                                                        <<"process">> => <<"">>,
                                                         <<"type">> => Ruleid,
                                                         <<"user">> => #{
                                                             <<"__type">> => <<"Pointer">>,
                                                             <<"className">> => <<"_User">>,
-                                                            <<"objectId">> => X1
+                                                            <<"objectId">> => UserId
                                                         }
                                                     }
                                                 }]
                                                         end, Acc, UserIds);
                                         _ ->
-                                            pass
+                                            Acc
                                     end;
                                 <<"*">> ->
-                                    pass;
+                                    Acc;
                                 UserId ->
+                                    ObjectId = dgiot_parse:get_notificationid(Ruleid),
+                                    sendSubscribe(ObjectId, UserId),
                                     Acc ++ [#{
+                                        <<"objectId">> => ObjectId,
                                         <<"method">> => <<"POST">>,
                                         <<"path">> => <<"/classes/Notification">>,
                                         <<"body">> => #{
@@ -266,7 +275,7 @@ save_notification(Ruleid, DevAddr, Payload) ->
                                                     <<"write">> => true
                                                 }
                                             },
-                                            <<"content">> => Payload,
+                                            <<"content">> => Payload#{<<"_deviceid">> => DeviceId, <<"_productid">> => ProductId},
                                             <<"public">> => true,
                                             <<"sender">> => #{
                                                 <<"__type">> => <<"Pointer">>,
@@ -290,4 +299,41 @@ save_notification(Ruleid, DevAddr, Payload) ->
             end
     end.
 
+sendSubscribe(NotificationId, UserId) ->
+    case dgiot_parse:get_object(<<"Notification">>, NotificationId) of
+        {ok, #{<<"type">> := Type, <<"content">> := Content}} ->
+            Result =
+                case binary:split(Type, <<$_>>, [global, trim]) of
+                    [ProductId, AlertId] ->
+                        dgiot_datetime:now_secs(),
+                        case dgiot_parse:get_object(<<"Product">>, ProductId) of
+                            {ok, #{<<"config">> := #{<<"parser">> := Parse}}} ->
+                                lists:foldl(fun(P, Par) ->
+                                    case P of
+                                        #{<<"uid">> := AlertId, <<"config">> := #{<<"formDesc">> := FormDesc}} ->
+                                            FormD =
+                                                maps:fold(fun(Key, Value1, Form) ->
+                                                    case maps:find(Key, Content) of
+                                                        {ok, Value} ->
+                                                            Form#{<<"thing15">> => Value};
+                                                        _ ->
+                                                            Default = maps:get(<<"default">>, Value1, <<>>),
+                                                            Form#{Key => Default}
+                                                    end
+                                                          end, #{<<"date4">> => dgiot_datetime:format("YYYY-MM-DD HH:NN")}, FormDesc),
+                                            Par#{<<"thing1">> => FormD};
+                                        _Oth ->
+                                            Par
+                                    end
+                                            end, #{}, Parse);
+                            _Other ->
+                                #{}
+                        end;
+                    _Other1 ->
+                        #{}
+                end,
+            dgiot_wechat:sendSubscribe(UserId, Result);
+        _ ->
+            pass
+    end.
 

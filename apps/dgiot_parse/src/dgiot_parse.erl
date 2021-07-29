@@ -90,7 +90,8 @@
     save_User_Role/2,
     del_User_Role/2,
     put_User_Role/3,
-    get_userids/1
+    get_userids/1,
+    get_notificationid/1
 ]).
 
 subscribe(Table, Method) ->
@@ -146,6 +147,11 @@ get_instruct(DeviceId, Pn, Di) ->
 
 get_roleid(Name) ->
     <<DId:10/binary, _/binary>> = dgiot_utils:to_md5(<<"_Role", Name/binary>>),
+    DId.
+
+get_notificationid(Type) ->
+    UUID = dgiot_utils:guid(),
+    <<DId:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Notification", Type/binary, UUID/binary>>),
     DId.
 
 get_productid(Category, DevType, Name) ->

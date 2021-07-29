@@ -140,7 +140,6 @@ handle_message({sync_parse, Args}, State) ->
                     pass
             end;
         _Other ->
-            ?LOG(info, "_Other ~p", [_Other]),
             pass
     end,
     {ok, State};

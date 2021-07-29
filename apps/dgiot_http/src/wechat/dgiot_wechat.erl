@@ -31,7 +31,8 @@
     sendSubscribe/2,
     sendTemplate/0,
     get_wechat_map/1,
-    get_device_info/2
+    get_device_info/2,
+    get_notification/6
 ]).
 
 %% https://api.weixin.qq.com/sns/jscode2session?appid=APPID&secret=SECRET&js_code=JSCODE&grant_type=authorization_code
@@ -105,12 +106,7 @@ get_sns(Jscode) ->
 %% touser     消息接收者openId
 %% POST https://api.weixin.qq.com/cgi-bin/message/wxopen/template/uniform_send?access_token=ACCESS_TOKEN
 %% dgiot_wechat:sendSubscribe().
-sendSubscribe(UserId, #{<<"lang">> := Lang,
-    <<"miniprogramstate">> := Miniprogramstate,
-    <<"page">> := Page,
-    <<"templateid">> := Templateid,
-    <<"data">> := _Data} = _Args
-) ->
+sendSubscribe(UserId, Data) ->
     case dgiot_parse:get_object(<<"_User">>, UserId) of
         {ok, #{<<"tag">> := #{<<"wechat">> := #{<<"openid">> := OpenId}}}} when size(OpenId) > 0 ->
             AppId = dgiot_utils:to_binary(application:get_env(dgiot_http, wechat_appid, <<"">>)),
@@ -126,16 +122,11 @@ sendSubscribe(UserId, #{<<"lang">> := Lang,
                                     SubscribeUrl = "https://api.weixin.qq.com/cgi-bin/message/subscribe/send?access_token=" ++ dgiot_utils:to_list(AccessToken),
                                     ?LOG(info, "SubscribeUrl ~p", [SubscribeUrl]),
                                     Subscribe = #{<<"touser">> => OpenId,
-                                        <<"template_id">> => Templateid,
-                                        <<"page">> => Page,
-                                        <<"miniprogram_state">> => Miniprogramstate,
-                                        <<"lang">> => Lang,
-                                        <<"data">> =>
-                                        #{<<"thing1">> => #{<<"value">> => <<"太阳能控制器"/utf8>>},
-                                            <<"character_string8">> => #{<<"value">> => <<"0123456789">>},
-                                            <<"thing5">> => #{<<"value">> => <<"杭州 余杭区 良渚"/utf8>>},
-                                            <<"date4">> => #{<<"value">> => <<"2021年7月07日 15:30:30"/utf8>>},
-                                            <<"thing12">> => #{<<"value">> => <<"没电了"/utf8>>}}},
+                                        <<"template_id">> => <<"9Fmc0vtA7vnh_HtoVtXJy_cRDOnIk1ubniO_Oe3WatU">>,
+                                        <<"page">> => <<>>,
+                                        <<"miniprogram_state">> => <<"formal">>,
+                                        <<"lang">> => <<"zh_CN">>,
+                                        <<"data">> => Data},
                                     ?LOG(info, "Subscribe ~p", [Subscribe]),
                                     Data1 = dgiot_utils:to_list(jsx:encode(Subscribe)),
                                     R = httpc:request(post, {SubscribeUrl, [], "application/x-www-form-urlencoded", Data1}, [{timeout, 5000}, {connect_timeout, 10000}], [{body_format, binary}]),
@@ -253,4 +244,70 @@ get_device_info(Deviceid, SessionToken) ->
             {ok, Result#{<<"params">> => NewParams, <<"productname">> => ProductName}};
         _ ->
             {error, []}
+    end.
+
+%% 告警列表
+%% dgiot_parse:query_object(<<"Notification">>, #{<<"keys">> => [<<"count(*)">>],<<"where">> => #{<<"type">> => #{<<"$regex">> => <<"c1e44b39f0">>}}}).
+get_notification(ProductId1, SessionToken, Order, Limit, Skip, Where) ->
+    Where1 =
+        case ProductId1 of
+            <<"all">> ->
+                Where;
+            ProductId2 ->
+                Where#{<<"type">> => #{<<"$regex">> => ProductId2}}
+        end,
+    case dgiot_parse:query_object(<<"Notification">>, #{<<"keys">> => [<<"count(*)">>], <<"order">> => Order, <<"limit">> => Limit, <<"skip">> => Skip, <<"where">> => Where1}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+        {ok, #{<<"count">> := Count, <<"results">> := Results}} ->
+            NewResult =
+                lists:foldl(fun(X, Acc) ->
+                    case X of
+                        #{<<"objectId">> := ObjectId, <<"type">> := Type, <<"public">> := Public, <<"content">> := Content, <<"process">> := Process, <<"createdAt">> := Createdat} ->
+                            Alertstatus = maps:get(<<"alertstatus">>, Content, true),
+                            DeviceId = maps:get(<<"_deviceid">>, Content, <<"">>),
+                            Result =
+                                case binary:split(Type, <<$_>>, [global, trim]) of
+                                    [ProductId, AlertId] ->
+                                        case dgiot_parse:get_object(<<"Product">>, ProductId) of
+                                            {ok, #{<<"name">> := ProductName, <<"config">> := #{<<"parser">> := Parse}}} ->
+                                                DeviceName =
+                                                    case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+                                                        {ok, #{<<"name">> := DeviceName1}} ->
+                                                            DeviceName1;
+                                                        _ ->
+                                                            ProductName
+                                                    end,
+                                                lists:foldl(fun(P, Par) ->
+                                                    case P of
+                                                        #{<<"uid">> := AlertId, <<"config">> := #{<<"formDesc">> := FormDesc}} ->
+                                                            FormD =
+                                                                maps:fold(fun(Key, Value1, Form) ->
+                                                                    case maps:find(Key, Content) of
+                                                                        {ok, Value} ->
+                                                                            Label = maps:get(<<"label">>, Value1),
+                                                                            Form ++ [#{Label => Value}];
+                                                                        _ ->
+                                                                            Label = maps:get(<<"label">>, Value1),
+                                                                            Default = maps:get(<<"default">>, Value1, <<>>),
+                                                                            Form ++ [#{Label => Default}]
+                                                                    end
+                                                                          end, [], FormDesc),
+                                                            Par#{<<"dynamicform">> => FormD};
+                                                        _Oth ->
+                                                            Par
+                                                    end
+                                                            end, #{<<"objectId">> => ObjectId, <<"alertstatus">> => Alertstatus, <<"productname">> => DeviceName, <<"process">> => Process, <<"Public">> => Public, <<"createdAt">> => Createdat}, Parse);
+                                            _Other ->
+                                                Acc
+                                        end;
+                                    _Other1 ->
+                                        Acc
+                                end,
+                            Acc ++ [Result];
+                        _Other2 ->
+                            Acc
+                    end
+                            end, [], Results),
+            {ok, #{<<"count">> => Count, <<"results">> => NewResult}};
+        _ ->
+            {error, <<"no device">>}
     end.

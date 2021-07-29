@@ -178,6 +178,7 @@ on_action_dgiot(Selected, #{event := Event} = Envs) ->
             dgiot_channelx:do_event(ChannelId, EventId, {rule, Msg, Selected})
     end.
 
+%% SELECT payload, payload.dump_energy as dump_energy, clientid, 'productid' as productid FROM "notification/c1e44b39f0/868615051803274/#" WHERE dump_energy < 90
 post_rule(#{metadata := #{rule_id := <<"rule:Notification_", Ruleid/binary>>}, clientid := DevAddr, payload := Payload, topic := _Topic} = Msg) ->
     ?LOG(info, "Msg ~p", [Msg]),
     NewPayload = jsx:decode(Payload, [{labels, binary}, return_maps]),

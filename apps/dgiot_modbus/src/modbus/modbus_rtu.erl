@@ -155,11 +155,9 @@ set_params(Basedata, ProductId) ->
                                     Acc
                             end;
                         _ ->
-                            ?LOG(info, "X ~p", [X]),
                             Acc
                     end
                             end, [], Params),
-            ?LOG(info, "Payloads ~p", [Payloads]),
             Payloads;
         _ ->
             ?LOG(info, "NoProduct: ~p", [ProductId]),
@@ -331,10 +329,13 @@ build_req_message(Req) when is_record(Req, rtu_req) ->
                 ValueBin = list_word16_to_binary([Req#rtu_req.quality]),
                 <<(Req#rtu_req.slaveId):8, (Req#rtu_req.funcode):8, (Req#rtu_req.address):16, ValueBin/binary>>;
             ?FC_WRITE_HREGS ->
-                Quantity = length(Req#rtu_req.quality),
-                ValuesBin = list_word16_to_binary(Req#rtu_req.quality),
-                ByteCount = length(binary_to_list(ValuesBin)),
-                <<(Req#rtu_req.slaveId):8, (Req#rtu_req.funcode):8, (Req#rtu_req.address):16, Quantity:16, ByteCount:8, ValuesBin/binary>>;
+%%                ValuesBin = list_word16_to_binary(Req#rtu_req.quality),
+%%                寄存器个数
+                Count = 1,
+%%                写入字节数
+                ByteCount = 2,
+%%                               01                        10                  01 00           00 01 02
+                <<(Req#rtu_req.slaveId):8, (Req#rtu_req.funcode):8, (Req#rtu_req.address):16, Count:16, ByteCount:8, (Req#rtu_req.quality):16>>;
             _ ->
                 erlang:error(function_not_implemented)
         end,

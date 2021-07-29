@@ -247,72 +247,76 @@ excute_handler(ProductId, [[ChannelId, Fun] | Actions], Message) when is_functio
     end,
     excute_handler(ProductId, Actions, Message).
 
-update_config(#{<<"config">> := Config, <<"objectId">> := ProductId} = Product, SessionToken) when is_map(Config) ->
-    case dgiot_parse:query_object(<<"Product">>, ProductId, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
-        {ok, #{<<"results">> := #{<<"objectId">> := ObjectId, <<"config">> := OldConfig, <<"thing">> := Thing}}} ->
-            ControlList = get_control(Config, OldConfig),
-            NewThing = update_thing(#{<<"config">> => Config#{<<"components">> => ControlList}, <<"thing">> => Thing}),
-            {ok, R1} = dgiot_parse:update_object(<<"Product">>, ObjectId,
-                #{<<"config">> => Config#{<<"components">> => ControlList}, <<"thing">> => NewThing},
-                [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]),
-            {update, R1#{<<"objectId">> => ObjectId}};
-        {ok, #{<<"results">> := #{<<"objectId">> := ObjectId, <<"config">> := OldConfig}}} ->
-            {ok, R} = dgiot_parse:update_object(<<"Product">>, ObjectId,
-                #{<<"config">> => Config#{<<"components">> => get_control(Config, OldConfig)}},
-                [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]),
-            {update, R#{<<"objectId">> => ObjectId}};
-        _ ->
-            ?LOG(info, "Product ~p", [Product]),
-            create_product(Product, SessionToken)
-    end;
+%%update_config(#{<<"config">> := Config, <<"objectId">> := ProductId} = Product, SessionToken) when is_map(Config) ->
+%%    case dgiot_parse:query_object(<<"Product">>, ProductId, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+%%        {ok, #{<<"results">> := #{<<"objectId">> := ObjectId, <<"config">> := OldConfig, <<"thing">> := Thing}}} ->
+%%%%            ControlList = get_control(Config, OldConfig),
+%%            NewThing = update_thing(#{<<"config">> => Config#{<<"components">> => ControlList}, <<"thing">> => Thing}),
+%%            {ok, R1} = dgiot_parse:update_object(<<"Product">>, ObjectId,
+%%                #{<<"config">> => Config#{<<"components">> => ControlList}, <<"thing">> => NewThing},
+%%                [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]),
+%%            {update, R1#{<<"objectId">> => ObjectId}};
+%%        {ok, #{<<"results">> := #{<<"objectId">> := ObjectId, <<"config">> := OldConfig}}} ->
+%%            {ok, R} = dgiot_parse:update_object(<<"Product">>, ObjectId,
+%%                #{<<"config">> => Config#{<<"components">> => get_control(Config, OldConfig)}},
+%%                [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]),
+%%            {update, R#{<<"objectId">> => ObjectId}};
+%%        _ ->
+%%            ?LOG(info, "Product ~p", [Product]),
+%%            create_product(Product, SessionToken)
+%%    end;
 
-update_config(_Other, _SessionToken) ->
-    #{}.
+update_config(Product, SessionToken) ->
+    create_product(Product, SessionToken).
 
-get_control(Config, OldConfig) ->
-    lists:foldl(fun(X, Acc) ->
-        case maps:with([<<"address">>, <<"name">>, <<"wumoxing">>, <<"style">>, <<"action">>, <<"dataBind">>], X) of
-            #{<<"address">> := Addr, <<"name">> := Name, <<"wumoxing">> := Wumoxing, <<"style">> := Style,
-                <<"action">> := Action, <<"dataBind">> := DataBind} ->
-                lists:foldl(fun(Y, Acc1) ->
-                    case Y of
-                        #{<<"name">> := Name, <<"address">> := Addr} ->
-                            Acc1 ++ [Y#{
-                                <<"wumoxing">> => Wumoxing,
-                                <<"style">> => Style,
-                                <<"action">> => Action,
-                                <<"dataBind">> => DataBind
-                            }];
-                        _ -> Acc1 ++ [Y]
-                    end
-                            end, [], Acc);
-            _ -> Acc
-        end
-                end, maps:get(<<"components">>, Config, []), maps:get(<<"components">>, OldConfig, [])).
 
-update_thing(#{<<"config">> := Config, <<"thing">> := Thing}) when is_map(Config); is_map(Thing) ->
-    NewPropes =
-        lists:foldl(
-            fun(X, Acc) ->
-                case maps:with([<<"address">>, <<"identifier">>, <<"wumoxing">>], X) of
-                    #{<<"address">> := Addr, <<"identifier">> := Quantity, <<"wumoxing">> := #{<<"identifier">> := Identifier}} ->
-%%                    ?LOG(info,"Addr ~p ,Quantity ~p ,Identifier ~p", [Addr, Quantity, Identifier]),
-                        lists:foldl(fun(Y, Acc1) ->
-                            case Y of
-                                #{<<"identifier">> := Identifier} ->
-                                    Acc1 ++ [Y#{<<"dataForm">> => #{
-                                        <<"address">> => Addr,
-                                        <<"quantity">> => Quantity}}];
-                                _ -> Acc1 ++ [Y]
-                            end
-                                    end, [], Acc);
-                    _ -> Acc
-                end
-            end, maps:get(<<"properties">>, Thing, []), maps:get(<<"components">>, Config, [])),
-    #{<<"properties">> => NewPropes};
+%%update_config(_Other, _SessionToken) ->
+%%    #{}.
 
-update_thing(_Other) ->
-    #{}.
+%%get_control(Config, OldConfig) ->
+%%    lists:foldl(fun(X, Acc) ->
+%%        case maps:with([<<"address">>, <<"name">>, <<"wumoxing">>, <<"style">>, <<"action">>, <<"dataBind">>], X) of
+%%            #{<<"address">> := Addr, <<"name">> := Name, <<"wumoxing">> := Wumoxing, <<"style">> := Style,
+%%                <<"action">> := Action, <<"dataBind">> := DataBind} ->
+%%                lists:foldl(fun(Y, Acc1) ->
+%%                    case Y of
+%%                        #{<<"name">> := Name, <<"address">> := Addr} ->
+%%                            Acc1 ++ [Y#{
+%%                                <<"wumoxing">> => Wumoxing,
+%%                                <<"style">> => Style,
+%%                                <<"action">> => Action,
+%%                                <<"dataBind">> => DataBind
+%%                            }];
+%%                        _ -> Acc1 ++ [Y]
+%%                    end
+%%                            end, [], Acc);
+%%            _ -> Acc
+%%        end
+%%                end, maps:get(<<"components">>, Config, []), maps:get(<<"components">>, OldConfig, [])).
+%%
+%%update_thing(#{<<"config">> := Config, <<"thing">> := Thing}) when is_map(Config); is_map(Thing) ->
+%%    NewPropes =
+%%        lists:foldl(
+%%            fun(X, Acc) ->
+%%                case maps:with([<<"address">>, <<"identifier">>, <<"wumoxing">>], X) of
+%%                    #{<<"address">> := Addr, <<"identifier">> := Quantity, <<"wumoxing">> := #{<<"identifier">> := Identifier}} ->
+%%%%                    ?LOG(info,"Addr ~p ,Quantity ~p ,Identifier ~p", [Addr, Quantity, Identifier]),
+%%                        lists:foldl(fun(Y, Acc1) ->
+%%                            case Y of
+%%                                #{<<"identifier">> := Identifier} ->
+%%                                    Acc1 ++ [Y#{<<"dataForm">> => #{
+%%                                        <<"address">> => Addr,
+%%                                        <<"quantity">> => Quantity}}];
+%%                                _ -> Acc1 ++ [Y]
+%%                            end
+%%                                    end, [], Acc);
+%%                    _ -> Acc
+%%                end
+%%            end, maps:get(<<"properties">>, Thing, []), maps:get(<<"components">>, Config, [])),
+%%    #{<<"properties">> => NewPropes};
+
+%%update_thing(_Other) ->
+%%    #{}.
 
 create_product(#{<<"name">> := ProductName, <<"devType">> := DevType,
     <<"category">> := Category} = Product, SessionToken) ->
