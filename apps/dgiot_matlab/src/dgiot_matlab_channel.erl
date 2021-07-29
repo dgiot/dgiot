@@ -116,9 +116,8 @@ init(?TYPE, ChannelId, #{
     <<"search">> := Search}) ->
     lists:map(fun(X) ->
         case X of
-            {ProductId, #{<<"ACL">> := Acl, <<"nodeType">> := 1}} ->
-                {ok, #{<<"thing">> := #{<<"properties">> := Properties}}} = dgiot_device:lookup_prod(ProductId),
-                dgiot_data:insert({matlab, ChannelId}, {ProductId, Acl, Properties});
+            {ProductId, #{<<"ACL">> := Acl, <<"nodeType">> := 1,<<"thing">> := Thing}} ->
+                dgiot_data:insert({matlab, ChannelId}, {ProductId, Acl, maps:get(<<"properties">>,Thing,[])});
             _ ->
                 ?LOG(info,"X ~p", [X]),
                 pass

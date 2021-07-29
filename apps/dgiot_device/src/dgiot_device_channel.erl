@@ -119,6 +119,7 @@ handle_event(_EventId, Event, State) ->
 handle_message(load, #state{env = #{<<"order">> := Order, <<"offline">>:= OffLine}} = State) ->
     dgiot_data:insert({device, offline}, OffLine),
     dgiot_device:load_device(Order),
+    dgiot_product:load(),
     dgiot_parse:load_role(),
     {ok, State};
 
