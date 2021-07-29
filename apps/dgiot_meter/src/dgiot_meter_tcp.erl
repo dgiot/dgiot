@@ -63,17 +63,17 @@ handle_info(search_meter, #tcp{state = #state{ref = Ref} = State} = TCPState) ->
 
 %%ACK报文触发搜表
 handle_info({tcp, Buff}, #tcp{socket = Socket, state = #state{id = ChannelId, dtuaddr = DtuAddr, ref = Ref, step = search_meter, search = Search} = State} = TCPState) ->
-    ?LOG(info,"from_dev: search_meter Buff ~p", [dgiot_utils:binary_to_hex(Buff)]),
-    ?LOG(info,"from_dev: parse_frame Buff ~p", [dgiot_meter:parse_frame(dlt645, Buff, [])]),
+    ?LOG(info, "from_dev: search_meter Buff ~p", [dgiot_utils:binary_to_hex(Buff)]),
+    ?LOG(info, "from_dev: parse_frame Buff ~p", [dgiot_meter:parse_frame(dlt645, Buff, [])]),
     {Rest, Frames} = dgiot_meter:parse_frame(dlt645, Buff, []),
     lists:map(fun(X) ->
         case X of
             #{<<"addr">> := Addr} ->
-                ?LOG(info,"from_dev: search_meter Addr ~p", [Addr]),
+                ?LOG(info, "from_dev: search_meter Addr ~p", [Addr]),
                 DTUIP = dgiot_utils:get_ip(Socket),
                 dgiot_meter:create_meter(dgiot_utils:binary_to_hex(Addr), ChannelId, DTUIP, DtuAddr);
             Other ->
-                ?LOG(info,"Other ~p", [Other]),
+                ?LOG(info, "Other ~p", [Other]),
                 pass %%异常报文丢弃
         end
               end, Frames),
@@ -92,23 +92,38 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, state = #state{id = ChannelId, dt
 
 %%接受抄表任务命令抄表
 handle_info({deliver, _Topic, Msg}, #tcp{state = #state{id = ChannelId, step = read_meter}} = TCPState) ->
-    dgiot_bridge:send_log(ChannelId, "Topic ~p Msg  ~p", [dgiot_mqtt:get_topic(Msg), dgiot_mqtt:get_payload(Msg)]),
-    case binary:split(dgiot_mqtt:get_topic(Msg), <<$/>>, [global, trim]) of
-        [<<"thing">>, _ProductId, _DevAddr] ->
-            [#{<<"thingdata">> := ThingData} | _] = jsx:decode(dgiot_mqtt:get_payload(Msg), [{labels, binary}, return_maps]),
-            Payload = dgiot_meter:to_frame(ThingData),
-            dgiot_bridge:send_log(ChannelId, "from_task: ~ts:  ~ts ", [_Topic, unicode:characters_to_list(dgiot_mqtt:get_payload(Msg))]),
-            ?LOG(info,"task->dev: Payload ~p", [dgiot_utils:binary_to_hex(Payload)]),
-            dgiot_tcp_server:send(TCPState, Payload);
-        _ ->
-            pass
+    Payload = dgiot_mqtt:get_payload(Msg),
+    dgiot_bridge:send_log(ChannelId, "Topic ~p Msg  ~p", [dgiot_mqtt:get_topic(Msg), Payload]),
+    case jsx:is_json(Payload) of
+        true ->
+            case binary:split(dgiot_mqtt:get_topic(Msg), <<$/>>, [global, trim]) of
+                [<<"thing">>, _ProductId, _DevAddr] ->
+                    [#{<<"thingdata">> := ThingData} | _] = jsx:decode(dgiot_mqtt:get_payload(Msg), [{labels, binary}, return_maps]),
+                    Payload = dgiot_meter:to_frame(ThingData),
+                    dgiot_bridge:send_log(ChannelId, "from_task: ~ts:  ~ts ", [_Topic, unicode:characters_to_list(dgiot_mqtt:get_payload(Msg))]),
+                    ?LOG(info, "task->dev: Payload ~p", [dgiot_utils:binary_to_hex(Payload)]),
+                    dgiot_tcp_server:send(TCPState, Payload);
+                [<<"profile">>, _ProductId, _DtuAddr] ->
+                    case Payload of
+                        #{<<"_dgiotprotocol">> := <<"hex">>} ->
+                            maps:fold(fun(_K, V, Acc) ->
+                                dgiot_tcp_server:send(TCPState, dgiot_utils:hex_to_binary(V)),
+                                Acc
+                                      end, #{}, maps:without([<<"_dgiotprotocol">>], Payload));
+                        _ ->
+                            pass
+                    end;
+                _ ->
+                    pass
+            end;
+        false -> pass
     end,
     {noreply, TCPState};
 
 %% 接收抄表任务的ACK报文
 handle_info({tcp, Buff}, #tcp{state = #state{id = ChannelId, step = read_meter}} = TCPState) ->
     dgiot_bridge:send_log(ChannelId, "from_dev:  ~p ", [dgiot_utils:binary_to_hex(Buff)]),
-    ?LOG(info,"Buff ~p", [dgiot_utils:binary_to_hex(Buff)]),
+    ?LOG(info, "Buff ~p", [dgiot_utils:binary_to_hex(Buff)]),
     {Rest, Frames} = dgiot_meter:parse_frame(dlt645, Buff, []),
     case Frames of
         [#{<<"addr">> := Addr, <<"value">> := Value} | _] ->
