@@ -211,7 +211,7 @@ save_notification(Ruleid, DevAddr, Payload) ->
     case binary:split(Ruleid, <<$_>>, [global, trim]) of
         [ProductId, _] ->
             case dgiot_device:lookup(ProductId, DevAddr) of
-                {ok, {[_Ts, _, _, Acl, _, _, DevAddr], _}} ->
+                {ok, {[_, _, Acl], _}} ->
                     Requests =
                         lists:foldl(fun(X, Acc) ->
                             BinX = atom_to_binary(X),
