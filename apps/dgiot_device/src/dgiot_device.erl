@@ -24,7 +24,7 @@
 -export([init_ets/0]).
 -export([create_device/1, create_device/2, get_sub_device/1, get_sub_device/2, get/2]).
 -export([load_device/1, sync_parse/1, post/1, put/1, save/1, save/2, save/3, lookup/1, lookup/2, delete/1, delete/2, save_prod/2, lookup_prod/1, get_online/1]).
--export([encode/1, decode/3]).
+-export([encode/1, decode/3, save_subdevice/2, get_subdevice/2]).
 
 init_ets() ->
     dgiot_data:init(?DGIOT_PRODUCT),
@@ -49,13 +49,18 @@ post(Device) ->
             <<"OFFLINE">> -> false;
             _ -> true
         end,
-    dgiot_mnesia:insert(DeviceId, {[Status, dgiot_datetime:now_secs()], node()}).
+    dgiot_mnesia:insert(DeviceId, {[Status, dgiot_datetime:now_secs(), get_acl(Device)], node()}).
 
 put(Device) ->
     DeviceId = maps:get(<<"objectId">>, Device),
     case lookup(DeviceId) of
-        {ok, {[Status, _], Node}} ->
-            dgiot_mnesia:insert(DeviceId, {[Status, dgiot_datetime:now_secs()], Node});
+        {ok, {[Status, _, Acl], Node}} ->
+            case maps:find(<<"ACL">>, Device) of
+                error ->
+                    dgiot_mnesia:insert(DeviceId, {[Status, dgiot_datetime:now_secs(), Acl], Node});
+                {ok, _} ->
+                    dgiot_mnesia:insert(DeviceId, {[Status, dgiot_datetime:now_secs(), get_acl(Device)], Node})
+            end;
         _ ->
             pass
     end.
@@ -73,12 +78,18 @@ save(Device) ->
             <<"OFFLINE">> -> false;
             _ -> true
         end,
-    dgiot_mnesia:insert(DeviceId, {[Status, UpdatedAt], node()}).
+    dgiot_mnesia:insert(DeviceId, {[Status, UpdatedAt, get_acl(Device)], node()}).
+
+get_acl(Device) ->
+    ACL = maps:get(<<"ACL">>, Device, #{}),
+    lists:foldl(fun(X, Acc) ->
+        Acc ++ [binary_to_atom(X)]
+                end, [], maps:keys(ACL)).
 
 save(DeviceId, _Data) ->
     case lookup(DeviceId) of
-        {ok, {[Status, _Now], Node}} ->
-            dgiot_mnesia:insert(DeviceId, {[Status, dgiot_datetime:now_secs()], Node});
+        {ok, {[Status, _Now, Acl], Node}} ->
+            dgiot_mnesia:insert(DeviceId, {[Status, dgiot_datetime:now_secs(), Acl], Node});
         _ -> pass
     end.
 
@@ -91,7 +102,7 @@ sync_parse(OffLine) ->
         {_, DeviceId, V} = X,
         Now = dgiot_datetime:now_secs(),
         case V of
-            {[true, Last], Node} when (Now - Last) > OffLine ->
+            {[true, Last, _], Node} when (Now - Last) > OffLine ->
                 case dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"status">> => <<"OFFLINE">>}) of
                     {ok, _R} ->
                         dgiot_mnesia:insert(DeviceId, {[false, Last], Node});
@@ -119,6 +130,15 @@ lookup(DeviceId) ->
 lookup(ProductId, DevAddr) ->
     DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
     lookup(DeviceId).
+
+save_subdevice({ProductId, DevAddr}, {DtuAddr, SlaveId}) ->
+    dgiot_data:insert({DtuAddr, SlaveId}, {ProductId, DevAddr}).
+
+
+get_subdevice(DtuAddr, SlaveId) ->
+%%    todo 返回productid,写对应save
+    dgiot_data:get({DtuAddr, SlaveId}).
+
 
 delete(DeviceId) ->
     dgiot_mnesia:delete(DeviceId).
@@ -325,7 +345,7 @@ get_online(DeviceId) ->
     OffLine = dgiot_data:get({device, offline}),
     Now = dgiot_datetime:now_ms(),
     case lookup(DeviceId) of
-        {ok, {[Ts, _, _, _, _, _, _], _}} when Now - Ts < (OffLine * 1000) ->
+        {ok, {[_, Ts, _], _}} when Now - Ts < (OffLine * 1000) ->
             true;
         _ ->
             false

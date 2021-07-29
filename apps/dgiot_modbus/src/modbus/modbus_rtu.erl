@@ -60,8 +60,8 @@ to_frame(#{
     <<"addr">> := SlaveId,
     <<"di">> := Address
 }) ->
-    case dgiot_device:lookup(DtuAddr, SlaveId) of
-        {error, not_find} -> [];
+    case dgiot_device:get_subdevice(DtuAddr, SlaveId) of
+        not_find -> [];
         [ProductId, _DevAddr] ->
             encode_data(Value, Address, SlaveId, ProductId)
     end.
@@ -204,8 +204,8 @@ parse_frame(<<SlaveId:8, _/binary>> = Buff, Acc, #{<<"dtuproduct">> := ProductId
 
 %% 传感器独立建产品，做为子设备挂载到dtu上面
 parse_frame(<<SlaveId:8, _/binary>> = Buff, Acc, #{<<"dtuaddr">> := DtuAddr, <<"slaveId">> := SlaveId, <<"address">> := Address} = State) ->
-    case dgiot_device:lookup(DtuAddr, dgiot_utils:to_binary(SlaveId)) of
-        {error, _} ->
+    case dgiot_device:get_subdevice(DtuAddr, dgiot_utils:to_binary(SlaveId)) of
+        not_find ->
             [<<>>, Acc];
         [ProductId, _DevAddr] ->
             case decode_data(Buff, ProductId, DtuAddr, Address, Acc) of
