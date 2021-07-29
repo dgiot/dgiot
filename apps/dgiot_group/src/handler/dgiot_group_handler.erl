@@ -22,7 +22,7 @@
 
 %% API
 -export([swagger_group/0]).
--export([handle/4]).
+-export([handle/4, post_group/2]).
 
 %% API描述
 %% 支持二种方式导入
@@ -51,23 +51,23 @@ handle(OperationID, Args, Context, Req) ->
     Headers = #{},
     case catch do_request(OperationID, Args, Context, Req) of
         {ErrType, Reason} when ErrType == 'EXIT'; ErrType == error ->
-            ?LOG(info,"do request: ~p, ~p, ~p~n", [OperationID, Args, Reason]),
+            ?LOG(info, "do request: ~p, ~p, ~p~n", [OperationID, Args, Reason]),
             Err = case is_binary(Reason) of
                       true -> Reason;
                       false -> dgiot_utils:format("~p", [Reason])
                   end,
             {500, Headers, #{<<"error">> => Err}};
         ok ->
-            ?LOG(debug,"do request: ~p, ~p ->ok ~n", [OperationID, Args]),
+            ?LOG(debug, "do request: ~p, ~p ->ok ~n", [OperationID, Args]),
             {200, Headers, #{}, Req};
         {ok, Res} ->
 %%            ?LOG(info,"do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
             {200, Headers, Res, Req};
         {Status, Res} ->
-            ?LOG(info,"do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
+            ?LOG(info, "do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
             {Status, Headers, Res, Req};
         {Status, NewHeaders, Res} ->
-            ?LOG(info,"do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
+            ?LOG(info, "do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
             {Status, maps:merge(Headers, NewHeaders), Res, Req}
     end.
 
@@ -79,14 +79,14 @@ handle(OperationID, Args, Context, Req) ->
 %% OperationId:get_group_id
 %% 请求:get /iotapi/get_group_id
 do_request(get_group_id, #{<<"id">> := Id},
-        #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
-    ?LOG(info,"Id ~p", [Id]),
-    case dgiot_parse:query_object(<<"Device">>, #{<<"limit">> => 1, <<"where">> => #{<<"product">> =>  Id}},
+    #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
+    ?LOG(info, "Id ~p", [Id]),
+    case dgiot_parse:query_object(<<"Device">>, #{<<"limit">> => 1, <<"where">> => #{<<"product">> => Id}},
         [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
         {ok, #{<<"results">> := [Device | _]}} ->
             #{<<"devaddr">> := Devaddr, <<"objectId">> := ParentId} = Device,
             Result =
-                lists:foldl(fun(#{<<"devaddr">> := SubDevAddr, <<"objectId">> := SubDeviceId, <<"product">>  := SubProduct}, Acc) ->
+                lists:foldl(fun(#{<<"devaddr">> := SubDevAddr, <<"objectId">> := SubDeviceId, <<"product">> := SubProduct}, Acc) ->
                     New = maps:with([<<"thing">>, <<"name">>], SubProduct),
                     Acc ++ [New#{
                         <<"parentid">> => ParentId,
@@ -103,14 +103,14 @@ do_request(get_group_id, #{<<"id">> := Id},
 %% OperationId:post_group
 %% 请求:post /iotapi/post_group
 do_request(put_group, #{<<"thing">> := Thing, <<"topo">> := Topo}, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
-    ?LOG(info,"Topo ~p Thing ~p ", [Topo, Thing]),
+    ?LOG(info, "Topo ~p Thing ~p ", [Topo, Thing]),
     put_group(maps:merge(Thing, Topo), SessionToken);
 
 %% group 概要: 标识采样点 描述:标识采样点
 %% OperationId:put_group
 %% 请求:put /iotapi/put_group
 do_request(post_group, #{<<"name">> := _Name, <<"devType">> := _DevType} = Body,
-        #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
+    #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
     post_group(Body, SessionToken);
 
 
@@ -118,7 +118,7 @@ do_request(post_group, #{<<"name">> := _Name, <<"devType">> := _DevType} = Body,
 %% OperationId:delete_group
 %% 请求:delete /iotapi/delete_group
 do_request(delete_group, #{<<"name">> := _Name, <<"devType">> := _DevType} = Body, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
-    ?LOG(info,"Body ~p ", [Body]),
+    ?LOG(info, "Body ~p ", [Body]),
     delete_group(Body, SessionToken);
 
 %%  服务器不支持的API接口
@@ -127,7 +127,7 @@ do_request(_OperationId, _Args, _Context, _Req) ->
 
 put_group(#{<<"productid">> := ProductId, <<"topoid">> := TopoId, <<"thingid">> := ThingId} = Payload, SessionToken) ->
     case dgiot_parse:get_object(<<"Product">>, ProductId, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
-        {ok, #{<<"config">> := Config, <<"thing">> := #{<<"properties">> := Properties}}}  when length(Properties) > 0 ->
+        {ok, #{<<"config">> := Config, <<"thing">> := #{<<"properties">> := Properties}}} when length(Properties) > 0 ->
             ControlList =
                 lists:foldl(fun(X, Acc) ->
                     case maps:with([<<"identifier">>, <<"style">>], X) of
@@ -220,7 +220,7 @@ put_group(#{<<"productid">> := ProductId, <<"topoid">> := TopoId, <<"thingid">> 
                 Error -> Error
             end;
         Return ->
-            ?LOG(info,"Return ~p", [Return]),
+            ?LOG(info, "Return ~p", [Return]),
             Return
     end.
 
@@ -230,17 +230,17 @@ post_group(Body, SessionToken) ->
     ComputerKey = dgiot_license:get_hardkey(),
     <<Addr:12/binary, _/binary>> = ComputerKey,
     ProductName = case maps:get(<<"name">>, Body, <<"">>) of
-                  <<"">> ->
-                      Addr;
-                  Name -> Name
-              end,
+                      <<"">> ->
+                          Addr;
+                      Name -> Name
+                  end,
     NewBody = maps:without([<<"topo">>], Body),
-    Topojson =
-        case maps:get(<<"topo">>, NewBody, <<"">>) of
-            <<"">> -> "group_topo";
-            Topo -> dgiot_utils:to_list(Topo)
-        end,
-    NewTopo = dgiot_license:load_config(?MODULE, Topojson),
+%%    Topojson =
+%%        case maps:get(<<"topo">>, NewBody, <<"">>) of
+%%            <<"">> -> "group_topo";
+%%            Topo -> dgiot_utils:to_list(Topo)
+%%        end,
+%%    NewTopo = dgiot_license:load_config(?MODULE, Topojson),
     Acl = case dgiot_auth:get_session(SessionToken) of
               #{<<"roles">> := Roles} = _User ->
                   [#{<<"name">> := Role} | _] = maps:values(Roles),
@@ -252,24 +252,24 @@ post_group(Body, SessionToken) ->
           end,
 
     case dgiot_product:update_config(NewBody#{
-        <<"desc">> => <<"数蛙设备分组"/utf8>>,
+        <<"desc">> => <<"DG-IoT设备分组"/utf8>>,
         <<"netType">> => <<"WIFI">>,
         <<"category">> => <<"IotHub">>,
-        <<"config">> => NewTopo,
+        <<"config">> => #{},
         <<"thing">> => #{},
         <<"ACL">> => Acl,
         <<"name">> => ProductName,
         <<"nodeType">> => 2}, SessionToken) of
         {_, #{<<"objectId">> := ProductId}} ->
-            <<NewAddr:12/binary, _/binary>> = dgiot_utils:to_md5(<<ProductId/binary,Addr/binary>>),
+            <<NewAddr:12/binary, _/binary>> = dgiot_utils:to_md5(<<ProductId/binary, Addr/binary>>),
             dgiot_device:create_device(#{
                 <<"status">> => <<"ONLINE">>,
                 <<"devaddr">> => NewAddr,
                 <<"name">> => HostName,
                 <<"ip">> => NatIP,
-                <<"brand">> => <<"数蛙分组设备"/utf8>>,
-                <<"devModel">> => <<"SW_IOT_GROUP">>,
-                <<"product">> =>  ProductId,
+                <<"brand">> => <<"DG-IoT分组设备"/utf8>>,
+                <<"devModel">> => <<"DGIOT_GROUP">>,
+                <<"product">> => ProductId,
                 <<"ACL">> => Acl}, SessionToken);
         Error ->
             Error

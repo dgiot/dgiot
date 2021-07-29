@@ -84,14 +84,12 @@ do_request(get_wechat, #{<<"jscode">> := Jscode}, _Context, _Req) ->
 %% OperationId:post_login
 %% 请求:POST /iotapi/post_login
 do_request(post_wechat, #{<<"username">> := UserName, <<"password">> := Password, <<"openid">> := OpenId}, _Context, _Req) ->
-    ?LOG(info, "UserName ~p ", [UserName]),
     dgiot_wechat:post_sns(UserName, Password, OpenId);
 
 %% iot_hub 概要: 查询平台api资源 描述:wechat解绑
 %% OperationId:post_login
 %% 请求:POST /iotapi/post_login
 do_request(get_wechat_unbind, _Args, #{<<"sessionToken">> := SessionToken}, _Req) ->
-    ?LOG(info, "SessionToken = ~p ", [SessionToken]),
     case dgiot_auth:get_session(SessionToken) of
         #{<<"objectId">> := UserId} ->
             dgiot_wechat:unbind_sns(UserId);
@@ -103,7 +101,6 @@ do_request(get_wechat_unbind, _Args, #{<<"sessionToken">> := SessionToken}, _Req
 %% OperationId:post_login
 %% 请求:POST /iotapi/post_login
 do_request(get_wechat_index, _Args, #{<<"sessionToken">> := SessionToken}, _Req) ->
-    ?LOG(info, "SessionToken = ~p ", [SessionToken]),
     dgiot_wechat:get_wechat_index(SessionToken);
 
 
@@ -111,15 +108,29 @@ do_request(get_wechat_index, _Args, #{<<"sessionToken">> := SessionToken}, _Req)
 %% OperationId:post_login
 %% 请求:POST /iotapi/post_login
 do_request(get_wechat_map, _Args, #{<<"sessionToken">> := SessionToken}, _Req) ->
-    ?LOG(info, "SessionToken = ~p ", [SessionToken]),
     dgiot_wechat:get_wechat_map(SessionToken);
 
 %% iot_hub 概要: 查询平台api资源 描述:设备详情
 %% OperationId:post_login
 %% 请求:POST /iotapi/post_login
 do_request(get_device_info, #{<<"deviceid">> := Deviceid}, #{<<"sessionToken">> := SessionToken}, _Req) ->
-    ?LOG(info, "SessionToken = ~p ", [SessionToken]),
     dgiot_wechat:get_device_info(Deviceid, SessionToken);
+
+%% iot_hub 概要: 查询平台api资源 描述:设备详情
+%% OperationId:post_login
+%% 请求:POST /iotapi/post_login
+do_request(get_notification, #{<<"productid">> := ProductId, <<"order">> := Order, <<"limit">> := Limit, <<"skip">> := Skip, <<"isprocess">> := Isprocess}, #{<<"sessionToken">> := SessionToken}, _Req) ->
+    ?LOG(info, "SessionToken = ~p ", [SessionToken]),
+    Where =
+        case Isprocess of
+            <<"true">> ->
+                #{<<"public">> => true};
+            <<"false">> ->
+                #{<<"public">> => false};
+            _ ->
+                #{}
+        end,
+    dgiot_wechat:get_notification(ProductId, SessionToken, Order, Limit, Skip, Where);
 
 %% iot_hub 概要: 查询平台api资源 描述:发送订阅消息
 %% OperationId:post_sendsubscribe

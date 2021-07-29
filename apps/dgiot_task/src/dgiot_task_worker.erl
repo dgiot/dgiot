@@ -165,41 +165,30 @@ send_msg(#task{ref = Ref, que = Que} = State) when length(Que) == 0 ->
     get_next_pn(State);
 
 send_msg(#task{tid = Channel, product = Product, devaddr = DevAddr, ref = Ref, que = Que, appdata = AppData} = State) ->
-    {InstructOrder, Interval, Identifier, Pn, Address, Command, Data, Protocol, _} = lists:nth(1, Que),
-    {NewCount, Payload, Dis} = lists:foldl(fun(X, {Count, Acc, Acc1}) ->
-        case X of
-            {InstructOrder, _, _, _, _, _, error, _, _} ->
-                {Count + 1, Acc, Acc1};
-            {InstructOrder, _, Identifier1, Pn1, Address1, Command1, Data1, Protocol1, _} ->
-                Payload1 = #{
-                    <<"appdata">> => AppData,
-                    <<"thingdata">> => #{
-                        <<"product">> => Product,
-                        <<"devaddr">> => DevAddr,
-                        <<"pn">> => Pn1,
-                        <<"di">> => Address1,
-                        <<"command">> => Command1,
-                        <<"data">> => Data1,
-                        <<"protocol">> => Protocol1
-                    }
-                },
-                {Count + 1, Acc ++ [Payload1], Acc1 ++ [Identifier1]};
-            _ ->
-                Payload2 = #{
-                    <<"appdata">> => AppData,
-                    <<"thingdata">> => #{
-                        <<"product">> => Product,
-                        <<"devaddr">> => DevAddr,
-                        <<"pn">> => Pn,
-                        <<"di">> => Address,
-                        <<"command">> => Command,
-                        <<"data">> => Data,
-                        <<"protocol">> => Protocol
-                    }
-                },
-                {Count, [Payload2], [Identifier]}
-        end
-                                           end, {0, [], []}, Que),
+    {InstructOrder, Interval, _, _, _, _, _, Protocol, _} = lists:nth(1, Que),
+    {NewCount, Payload, Dis} =
+        lists:foldl(fun(X, {Count, Acc, Acc1}) ->
+            case X of
+                {InstructOrder, _, _, _, _, _, error, _, _} ->
+                    {Count + 1, Acc, Acc1};
+                {InstructOrder, _, Identifier1, Pn1, Address1, Command1, Data1, Protocol, _} ->
+                    Payload1 = #{
+                        <<"appdata">> => AppData,
+                        <<"thingdata">> => #{
+                            <<"product">> => Product,
+                            <<"devaddr">> => DevAddr,
+                            <<"pn">> => Pn1,
+                            <<"di">> => Address1,
+                            <<"command">> => Command1,
+                            <<"data">> => Data1,
+                            <<"protocol">> => Protocol
+                        }
+                    },
+                    {Count + 1, Acc ++ [Payload1], Acc1 ++ [Identifier1]};
+                _ ->
+                    {Count, Acc, Acc1}
+            end
+                    end, {0, [], []}, Que),
     Newpayload = jsx:encode(Payload),
     Topic = <<"thing/", Product/binary, "/", DevAddr/binary>>,
     dgiot_bridge:send_log(Channel, "to_dev=> ~ts: ~ts ~s ~p ", [unicode:characters_to_list(Topic), unicode:characters_to_list(Newpayload), ?FILE, ?LINE]),
