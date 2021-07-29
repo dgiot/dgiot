@@ -1,0 +1,11 @@
+{application,dgiot_matlab,
+             [{description,"DGIOT MATLAB"},
+              {vsn,"4.0.0"},
+              {registered,[]},
+              {mod,{dgiot_matlab_app,[]}},
+              {applications,[kernel,stdlib]},
+              {env,[]},
+              {modules,[]},
+              {maintainers,[]},
+              {licenses,["Apache 2.0"]},
+              {links,[]}]}.

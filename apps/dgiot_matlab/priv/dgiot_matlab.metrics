@@ -1,0 +1,20 @@
+[
+  {
+    "name": "matlab_login",
+    "help": "服务收到登陆报文统计",
+    "type": "gauge",
+    "labels": []
+  },
+  {
+    "name": "matlab_login_ack",
+    "help": "服务发送注册报文统计",
+    "type": "gauge",
+    "labels": []
+  },
+  {
+    "name": "matlab_register",
+    "help": "服务收到注册报文统计",
+    "type": "gauge",
+       "labels": []
+     }
+]

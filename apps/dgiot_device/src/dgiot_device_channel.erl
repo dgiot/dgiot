@@ -106,9 +106,9 @@ init(?TYPE, ChannelId, Args) ->
     },
     {ok, State, []}.
 
-handle_init(#state{env = #{<<"checktime">>:= CheckTime}} = State) ->
+handle_init(State) ->
     erlang:send_after(300, self(), {message, <<"_Pool">>, load}),
-    erlang:send_after(CheckTime * 60 * 1000, self(), {message, <<"_Pool">>, check}),
+    erlang:send_after(3 * 60 * 1000, self(), {message, <<"_Pool">>, check}),
     {ok, State}.
 
 %% 通道消息处理,注意：进程池调用
