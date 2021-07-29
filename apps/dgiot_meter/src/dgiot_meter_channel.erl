@@ -147,7 +147,6 @@ init(?TYPE, ChannelId, #{
     <<"port">> := Port,
     <<"product">> := Products,
     <<"search">> := Search}) ->
-    ?LOG(error,"Products ~p", [Products]),
     lists:map(fun(X) ->
         case X of
             {ProductId, #{<<"ACL">> := Acl, <<"nodeType">> := 1,<<"thing">> := Thing}} ->
