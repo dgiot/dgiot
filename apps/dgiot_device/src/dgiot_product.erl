@@ -24,7 +24,7 @@
 -define(CONFIG(Key, Default), dgiot:get_env(dgiot_device, Key, Default)).
 -record(state, {}).
 
--export([start/0, load/1, init/3, handle_event/3, handle_message/2, stop/3]).
+-export([start/0, load/0, load/1, init/3, handle_event/3, handle_message/2, stop/3]).
 -export([add_device/2, local/1, save/1, get/1, synchronize_device/1]).
 -export([add_handler/4, do_handler/3, del_handler/1]).
 -export([update_config/2, parse_frame/3, to_frame/2]).
@@ -129,6 +129,17 @@ synchronize_device(ProductId) ->
         {error, Reason} ->
             {error, Reason}
     end.
+
+load() ->
+    Success = fun(Page) ->
+        lists:map(fun(Product) ->
+            dgiot_product:save(Product)
+                  end, Page)
+              end,
+    Query = #{
+        <<"where">> => #{}
+    },
+    dgiot_parse_loader:start(<<"Product">>, Query, 0, 100, 1000000, Success).
 
 save(Product) ->
     Product1 = format_product(Product),

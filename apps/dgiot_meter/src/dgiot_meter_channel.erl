@@ -147,14 +147,15 @@ init(?TYPE, ChannelId, #{
     <<"port">> := Port,
     <<"product">> := Products,
     <<"search">> := Search}) ->
+    ?LOG(error,"Products ~p", [Products]),
     lists:map(fun(X) ->
         case X of
-            {ProductId, #{<<"ACL">> := Acl, <<"nodeType">> := 1}} ->
-                {ok, #{<<"thing">> := #{<<"properties">> := Properties}}} = dgiot_device:lookup_prod(ProductId),
-                dgiot_data:insert({dtu, ChannelId}, {ProductId, Acl, Properties});
-            {ProductId, #{<<"ACL">> := Acl}} ->
-                {ok, #{<<"thing">> := #{<<"properties">> := Properties}}} = dgiot_device:lookup_prod(ProductId),
-                dgiot_data:insert({meter, ChannelId}, {ProductId, Acl, Properties});
+            {ProductId, #{<<"ACL">> := Acl, <<"nodeType">> := 1,<<"thing">> := Thing}} ->
+                dgiot_data:insert({dtu, ChannelId}, {ProductId, Acl, maps:get(<<"properties">>,Thing,[])});
+            {ProductId, #{<<"ACL">> := Acl,<<"thing">> := Thing}} ->
+                dgiot_product:load(ProductId),
+                {ok, #{<<"thing">> := Thing}} = dgiot_product:local(ProductId),
+                dgiot_data:insert({meter, ChannelId}, {ProductId, Acl, maps:get(<<"properties">>,Thing,[])});
             _ ->
                 ?LOG(info,"X ~p", [X]),
                 pass
