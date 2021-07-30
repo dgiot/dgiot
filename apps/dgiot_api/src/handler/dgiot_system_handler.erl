@@ -52,26 +52,26 @@ handle(OperationID, Args, Context, Req) ->
     Headers = #{},
     case catch do_request(OperationID, Args, Context, Req) of
         {ErrType, Reason} when ErrType == 'EXIT'; ErrType == error ->
-            ?LOG(debug,"do request: ~p, ~p, ~p~n", [OperationID, Args, Reason]),
+            ?LOG(debug, "do request: ~p, ~p, ~p~n", [OperationID, Args, Reason]),
             Err = case is_binary(Reason) of
                       true -> Reason;
                       false -> list_to_binary(io_lib:format("~p", [Reason]))
                   end,
             {500, Headers, #{<<"error">> => Err}};
         ok ->
-           ?LOG(debug,"do request: ~p, ~p ->ok ~n", [OperationID, Args]),
+            ?LOG(debug, "do request: ~p, ~p ->ok ~n", [OperationID, Args]),
             {200, Headers, #{}, Req};
         {ok, Res} ->
-           ?LOG(debug,"do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
+            ?LOG(debug, "do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
             {200, Headers, Res, Req};
         {Status, Res} ->
-           ?LOG(debug,"do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
+            ?LOG(debug, "do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
             {Status, Headers, Res, Req};
         {Status, NewHeaders, Res} ->
-           ?LOG(debug,"do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
+            ?LOG(debug, "do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
             {Status, maps:merge(Headers, NewHeaders), Res, Req};
         {Status, NewHeaders, Res, NewReq} ->
-           ?LOG(debug,"do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
+            ?LOG(debug, "do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
             {Status, maps:merge(Headers, NewHeaders), Res, NewReq}
     end.
 
@@ -107,7 +107,7 @@ do_request(post_generate_api, #{<<"mod">> := Mod, <<"type">> := <<"erlang">>} = 
 %% 请求:GET /iotapi/nodes
 do_request(get_nodes, _Args, _Context, _Req) ->
     Nodes = dgiot_node:get_nodes(),
-    {ok, #{ nodes => Nodes }};
+    {ok, #{nodes => Nodes}};
 
 %% System 概要: 统计获取 描述:调用Grafanfa查询曲线
 %% OperationId:get_chart_version
@@ -221,9 +221,8 @@ do_request(get_log_level, _Args, _Context, _Req) ->
 
 %%  服务器不支持的API接口
 do_request(OperationId, Args, _Context, _Req) ->
-    ?LOG(error,"do request ~p,~p~n", [OperationId, Args]),
+    ?LOG(error, "do request ~p,~p~n", [OperationId, Args]),
     {error, <<"Not Allowed.">>}.
-
 
 
 %%%===================================================================

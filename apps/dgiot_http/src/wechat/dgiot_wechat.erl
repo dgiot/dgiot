@@ -295,7 +295,7 @@ get_notification(ProductId1, SessionToken, Order, Limit, Skip, Where) ->
                                                         _Oth ->
                                                             Par
                                                     end
-                                                            end, #{<<"objectId">> => ObjectId, <<"alertstatus">> => Alertstatus, <<"productname">> => DeviceName, <<"process">> => Process, <<"Public">> => Public, <<"createdAt">> => Createdat}, Parse);
+                                                            end, #{<<"objectId">> => ObjectId, <<"alertstatus">> => Alertstatus, <<"productname">> => ProductName, <<"devicename">> => DeviceName, <<"process">> => Process, <<"Public">> => Public, <<"createdAt">> => Createdat}, Parse);
                                             _Other ->
                                                 Acc
                                         end;

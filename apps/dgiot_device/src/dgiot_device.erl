@@ -102,7 +102,7 @@ sync_parse(OffLine) ->
         {_, DeviceId, V} = X,
         Now = dgiot_datetime:now_secs(),
         case V of
-            {[true, Last, _], Node} when (Now - Last) > OffLine ->
+            {[true, Last, _], Node} when (Now - Last) > (OffLine * 1000) ->
                 case dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"status">> => <<"OFFLINE">>}) of
                     {ok, _R} ->
                         dgiot_mnesia:insert(DeviceId, {[false, Last], Node});
@@ -110,7 +110,7 @@ sync_parse(OffLine) ->
                         pass
                 end,
                 timer:sleep(50);
-            {[false, Last, _], Node} when (Now - Last) < OffLine ->
+            {[false, Last, _], Node} when (Now - Last) < (OffLine * 1000) ->
                 case dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"status">> => <<"ONLINE">>}) of
                     {ok, _R} ->
                         dgiot_mnesia:insert(DeviceId, {[true, Last], Node});
