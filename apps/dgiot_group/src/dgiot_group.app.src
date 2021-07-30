@@ -1,6 +1,6 @@
 {application,dgiot_group,
              [{description,"DG-IOT Group"},
-              {vsn,"1.6.4"},
+              {vsn, "4.3.0"},
               {applications,[kernel,stdlib]},
               {modules,[]},
               {env,[]},

@@ -1,6 +1,6 @@
 {application,dgiot_meter,
              [{description,"DGIOT METER"},
-              {vsn,"4.0.0"},
+              {vsn,"4.3.0"},
               {registered,[]},
               {mod,{dgiot_meter_app,[]}},
               {applications,[kernel,stdlib]},

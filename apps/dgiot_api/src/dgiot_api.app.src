@@ -1,6 +1,6 @@
 {application, dgiot_api,
     [{description, "DGIOT API"},
-        {vsn, "1.6.4"},
+        {vsn, "4.3.0"},
         {registered, []},
         {mod, {dgiot_api_app, []}},
         {applications,[kernel, stdlib, dgiot, dgiot_parse]},

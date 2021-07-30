@@ -1,6 +1,6 @@
 {application, dgiot_topo,
     [{description, "DGIOT TOPO"},
-        {vsn, "4.0.0"},
+        {vsn, "4.3.0"},
         {modules, []},
         {registered, [dgiot_topo_sup]},
         {applications, [kernel, stdlib, dgiot]},

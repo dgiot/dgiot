@@ -1,6 +1,6 @@
 {application, dgiot_modbus,
     [{description, "DGIOT MODBUS"},
-        {vsn, "1.6.4"},
+        {vsn, "4.3.0"},
         {modules, []},
         {registered, [dgiot_modbus_sup]},
         {applications, [kernel, stdlib, dgiot]},

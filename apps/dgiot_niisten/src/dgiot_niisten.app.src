@@ -1,6 +1,6 @@
 {application,dgiot_niisten,
              [{description,"dgiot_niisten"},
-              {vsn,"1.0.0"},
+              {vsn,"4.3.0"},
               {modules,[]},
               {registered,[dgiot_niisten_sup]},
               {applications,[kernel,stdlib,dgiot]},

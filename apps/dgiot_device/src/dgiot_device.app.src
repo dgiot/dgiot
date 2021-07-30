@@ -1,6 +1,6 @@
 {application,dgiot_device,
              [{description,"DGIOT DEVICE"},
-              {vsn,"1.6.4"},
+              {vsn, "4.3.0"},
               {modules,[]},
               {registered,[]},
               {applications,[kernel,stdlib,dgiot]},
