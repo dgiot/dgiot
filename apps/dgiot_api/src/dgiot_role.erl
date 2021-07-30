@@ -463,7 +463,14 @@ get_role(Name, SessionToken) ->
             Users =
                 case dgiot_parse:query_object(<<"_User">>, UsersQuery) of
                     {ok, #{<<"results">> := User}} when length(User) > 0 ->
-                        User;
+                       lists:foldl(fun(X,Acc)->
+                          case maps:get(<<"username">>,X) of
+                              <<"user_for_",_/binary>>->
+                                 Acc;
+                              _->
+                                  Acc++[X]
+                          end
+                                   end,[],User);
                     _ -> []
                 end,
 %%            ?LOG(info,"Users ~p", [Users]),

@@ -186,7 +186,7 @@ sendTemplate() ->
                         #{<<"access_token">> := AccessToken, <<"expires_in">> := _ExpiresIn} ->
                             TemplateUrl = "https://api.weixin.qq.com/cgi-bin/message/template/send?access_token=" ++ dgiot_utils:to_list(AccessToken),
                             Data = #{<<"touser">> => <<"o_8aC4mM0KhYpIe7ddDV8_0NZUZY">>,
-                                <<"template_id">> => <<"ngqIpbwh8bUfcSsECmogfXcV14J0tQlEpBO27izEYtY">>,
+                                <<"template_id">> => <<"">>,
                                 <<"url">> => <<"www.baidu.com">>,
                                 <<"data">> => #{<<"first">> => #{<<"value">> => <<"thing2">>, <<"color">> => <<"#173177">>},
                                     <<"thing3">> => #{<<"value">> => <<"thing3">>, <<"color">> => <<"#173177">>},

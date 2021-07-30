@@ -110,6 +110,14 @@ sync_parse(OffLine) ->
                         pass
                 end,
                 timer:sleep(50);
+            {[false, Last, _], Node} when (Now - Last) < OffLine ->
+                case dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"status">> => <<"ONLINE">>}) of
+                    {ok, _R} ->
+                        dgiot_mnesia:insert(DeviceId, {[true, Last], Node});
+                    _ ->
+                        pass
+                end,
+                timer:sleep(50);
             _ ->
                 pass
         end,
