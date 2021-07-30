@@ -298,7 +298,7 @@ build_req_message(Req) when is_record(Req, rtu_req) ->
         true -> ok
     end,
     if
-        (Req#rtu_req.quality < 1) or (Req#rtu_req.quality > 2000) ->
+        (Req#rtu_req.quality < 0) or (Req#rtu_req.quality > 2000) ->
             throw({argumentError, Req#rtu_req.quality});
         true -> ok
     end,
