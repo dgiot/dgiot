@@ -40,6 +40,8 @@ handle_info({tcp, DtuAddr}, #tcp{socket = Socket, state = #state{id = ChannelId,
     HexDtuAddr = dgiot_utils:binary_to_hex(DtuAddr),
     dgiot_meter:create_dtu(HexDtuAddr, ChannelId, DTUIP),
     {DtuProductId, _, _} = dgiot_data:get({dtu, ChannelId}),
+    Topic = <<"profile/", DtuProductId/binary, "/", DtuAddr/binary>>,
+    dgiot_mqtt:subscribe(Topic),
     {NewRef, NewStep} =
         case Search of
             <<"nosearch">> ->
