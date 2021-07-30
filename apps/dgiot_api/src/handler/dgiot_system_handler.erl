@@ -18,6 +18,7 @@
 -author("dgiot").
 -include_lib("dgiot/include/logger.hrl").
 -behavior(dgiot_rest).
+-dgiot_rest(all).
 -record(api, {authorize, base_path, check_request, check_response, consumes, description, method, operationid, path, produces, summary, tags, version}).
 
 %% API
@@ -80,7 +81,7 @@ handle(OperationID, Args, Context, Req) ->
 %%%===================================================================
 
 %% 产生handler代码
-do_request(generate_api, #{<<"mod">> := Mod, <<"type">> := <<"erlang">>} = Args, _Context, _Req) ->
+do_request(post_generate_api, #{<<"mod">> := Mod, <<"type">> := <<"erlang">>} = Args, _Context, _Req) ->
     SWSchema = maps:without([<<"mod">>, <<"type">>], Args),
     Module = list_to_atom(binary_to_list(<<"dgiot_", Mod/binary, "_handler">>)),
     Fun = fun(Source) -> format_val(Mod, Source) end,
@@ -261,9 +262,6 @@ generate_erl_packet(ZipFile, Mod, Src, Schema) ->
                     {error, Reason}
             end
     end.
-
-
-
 
 format_val(Mod, Schema) ->
     {file, Here} = code:is_loaded(?MODULE),
