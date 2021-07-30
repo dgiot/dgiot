@@ -1,6 +1,6 @@
 {application,dgiot_task,
              [{description,"DGIOT TASK"},
-              {vsn,"1.6.4"},
+              {vsn,"4.3.0"},
               {modules,[]},
               {registered,[dgiot_task_sup]},
               {applications,[kernel,stdlib,dgiot]},

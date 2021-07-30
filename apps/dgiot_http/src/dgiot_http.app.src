@@ -1,6 +1,6 @@
 {application, dgiot_http,
     [{description, "DGIOT HTTP"},
-        {vsn, "1.6.4"},
+        {vsn, "4.3.0"},
         {registered, []},
         {mod, {dgiot_http_app, []}},
         {applications,[kernel, stdlib, dgiot, dgiot_parse]},

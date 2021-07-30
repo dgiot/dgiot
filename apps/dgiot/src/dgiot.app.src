@@ -1,6 +1,6 @@
 {application, dgiot,
     [{description, "DGIOT"},
-        {vsn, "4.2"},
+        {vsn, "4.3.0"},
         {modules, []},
         {registered, [dgiot_sup]},
         {applications, [kernel, stdlib,prometheus]},
