@@ -58,7 +58,7 @@
         order => 2,
         type => integer,
         required => true,
-        default => 60,
+        default => 180,
         title => #{
             zh => <<"离线超时时间(秒)"/utf8>>
         },
