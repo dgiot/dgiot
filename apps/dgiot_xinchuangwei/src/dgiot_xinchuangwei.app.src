@@ -1,0 +1,7 @@
+{application,dgiot_xinchuangwei,
+             [{description,"DGIOT xinchuangwei"},
+              {vsn,"4.3.0"},
+              {modules,[]},
+              {registered,[dgiot_xinchuangwei_sup]},
+              {applications,[kernel,stdlib,dgiot]},
+              {mod,{dgiot_xinchuangwei_app,[]}}]}.

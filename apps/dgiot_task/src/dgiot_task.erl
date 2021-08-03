@@ -285,6 +285,7 @@ save_pnque(DtuProductId, DtuAddr, ProductId, DevAddr) ->
             dgiot_data:insert(?DGIOT_PNQUE, DtuId, New_Pn_que)
     end,
     Args = dgiot_data:get({?TASK_ARGS, DtuProductId}),
+    ?LOG(info, "Args ~p", [Args]),
     supervisor:start_child(dgiot_task, [Args#{<<"dtuid">> => DtuId}]).
 
 get_pnque(DtuId) ->
