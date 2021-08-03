@@ -126,9 +126,9 @@ set_params(Basedata, ProductId) ->
                             <<"setting">> := <<"%s">>} ->
                             case maps:find(Identifier, Basedata) of
                                 error ->
-                                    pass;
+                                    Acc;
                                 {ok, Value} when erlang:byte_size(Value) == 0 ->
-                                    pass;
+                                    Acc;
                                 {ok, Value} ->
                                     FunCode =
                                         case OperateType of

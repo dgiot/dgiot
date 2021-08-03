@@ -240,7 +240,7 @@ save_notification(Ruleid, DevAddr, Payload) ->
                                                             }
                                                         },
                                                         <<"content">> => Payload#{<<"_deviceid">> => DeviceId, <<"_productid">> => ProductId},
-                                                        <<"public">> => true,
+                                                        <<"public">> => false,
                                                         <<"sender">> => #{
                                                             <<"__type">> => <<"Pointer">>,
                                                             <<"className">> => <<"_User">>,
@@ -276,7 +276,7 @@ save_notification(Ruleid, DevAddr, Payload) ->
                                                 }
                                             },
                                             <<"content">> => Payload#{<<"_deviceid">> => DeviceId, <<"_productid">> => ProductId},
-                                            <<"public">> => true,
+                                            <<"public">> => false,
                                             <<"sender">> => #{
                                                 <<"__type">> => <<"Pointer">>,
                                                 <<"className">> => <<"_User">>,
@@ -302,6 +302,14 @@ save_notification(Ruleid, DevAddr, Payload) ->
 sendSubscribe(NotificationId, UserId) ->
     case dgiot_parse:get_object(<<"Notification">>, NotificationId) of
         {ok, #{<<"type">> := Type, <<"content">> := Content}} ->
+            DeviceId = maps:get(<<"_deviceid">>, Content, <<"">>),
+            DeviceName =
+                case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+                    {ok, #{<<"name">> := DeviceName1}} ->
+                        DeviceName1;
+                    _ ->
+                        <<"">>
+                end,
             Result =
                 case binary:split(Type, <<$_>>, [global, trim]) of
                     [ProductId, AlertId] ->
@@ -320,7 +328,7 @@ sendSubscribe(NotificationId, UserId) ->
                                                             Default = maps:get(<<"default">>, Value1, <<>>),
                                                             Form#{Key => Default}
                                                     end
-                                                          end, #{<<"date4">> => dgiot_datetime:format("YYYY-MM-DD HH:NN")}, FormDesc),
+                                                          end, #{<<"thing1">> => DeviceName, <<"date4">> => dgiot_datetime:format("YYYY-MM-DD HH:NN")}, FormDesc),
                                             Par#{<<"thing1">> => FormD};
                                         _Oth ->
                                             Par
