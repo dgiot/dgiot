@@ -24,8 +24,8 @@ Before 2016, the Shuwa team had been crawling on the Internet and the mobile Int
 
 # Building
 
- Bulid *DGIOT* Need Erlang/OTP R21+, Windows download[msys64](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/msys64.rar/msys64.rar),After downloading, unzip it to the root directory of Disk D, and operate strictly in accordance with the following figure：
-![效果图-1.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/msys64.rar/%E6%95%88%E6%9E%9C%E5%9B%BE-1.png)
+ Bulid *DGIOT* Need Erlang/OTP R21+, Windows download[msys64](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/msys64/msys64.rar),After downloading, unzip it to the root directory of Disk D, and operate strictly in accordance with the following figure：
+![效果图-1.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/msys64/%E6%95%88%E6%9E%9C%E5%9B%BE-1.png)
 
  +  Download source code abroad
   ```bash
