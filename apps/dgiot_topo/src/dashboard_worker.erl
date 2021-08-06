@@ -66,7 +66,7 @@ init([#{<<"data">> := Que, <<"sessionToken">> := SessionToken}]) ->
             Topic = <<"dashboard/", SessionToken/binary, "/heart">>,
             dgiot_mqtt:subscribe(Topic),
             erlang:send_after(30 * 1000, self(), heart),
-            erlang:send_after(1000, self(), retry)
+            erlang:send_after(100, self(), retry)
     end,
     {ok, #task{oldque = Que, newque = Que, freq = 1, sessiontoken = SessionToken}};
 
@@ -122,7 +122,7 @@ send_msg(#task{newque = Que} = State) ->
     Task = lists:nth(1, Que),
     dgiot_dashboard:do_task(Task, State),
     NewQue = lists:nthtail(1, Que),
-    erlang:send_after(3 * 1000, self(), retry),
+    erlang:send_after(300, self(), retry),
     State#task{newque = NewQue}.
 
 

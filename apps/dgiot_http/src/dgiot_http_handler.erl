@@ -123,10 +123,12 @@ do_request(get_notification, #{<<"productid">> := ProductId, <<"order">> := Orde
     ?LOG(info, "SessionToken = ~p ", [SessionToken]),
     Where =
         case Isprocess of
-            <<"true">> ->
-                #{<<"public">> => true};
-            <<"false">> ->
-                #{<<"public">> => false};
+            <<"0">> ->
+                #{<<"status">> => 0};
+            <<"1">> ->
+                #{<<"status">> => 1};
+            <<"2">> ->
+                #{<<"status">> => 2};
             _ ->
                 #{}
         end,
