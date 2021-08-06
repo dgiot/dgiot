@@ -201,7 +201,6 @@ overlay_vars_rel(RelType) ->
         , {enable_plugin_dgiot_niisten, true}
         , {enable_plugin_dgiot_modbus, true}
         , {enable_plugin_dgiot_group, true}
-        , {enable_plugin_dgiot_xinchuangwei, true}
         , {vm_args_file, VmArgs}
     ].
 
@@ -326,7 +325,6 @@ relx_plugin_apps_per_rel(cloud) ->
         , dgiot_niisten
         , dgiot_modbus
         , dgiot_group
-        , dgiot_xinchuangwei
     ];
 relx_plugin_apps_per_rel(edge) ->
     [].
