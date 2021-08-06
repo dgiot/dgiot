@@ -237,12 +237,27 @@ do_request(post_device, Body, #{<<"sessionToken">> := SessionToken} = _Context, 
 do_request(post_adddevice, #{<<"devaddr">> := Devaddr, <<"productid">> := ProductId, <<"longitude">> := Longitude, <<"latitude">> := Latitude}, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
     DeviceId = dgiot_parse:get_deviceid(ProductId, Devaddr),
     case dgiot_auth:get_session(SessionToken) of
-        #{<<"ACL">> := Acl} ->
+        #{<<"objectId">> := UserId} ->
+            Acl =
+                case dgiot_parse:get_roleids(UserId) of
+                    [RoleId | _] ->
+                        case dgiot_parse:get_object(<<"_Role">>, RoleId) of
+                            {error, _} ->
+                                #{<<"role:admin">> => #{<<"read">> => true, <<"write">> => true}};
+                            {ok, #{<<"ACL">> := Acl1}} ->
+                                Acl1;
+                            _ ->
+                                #{<<"role:admin">> => #{<<"read">> => true, <<"write">> => true}}
+                        end;
+                    _ ->
+                        #{<<"role:admin">> => #{<<"read">> => true, <<"write">> => true}}
+                end,
             case dgiot_parse:get_object(<<"Product">>, ProductId) of
                 {ok, #{<<"devType">> := DevType, <<"name">> := ProductName}} ->
                     case dgiot_parse:get_object(<<"Device">>, DeviceId) of
                         {ok, _Re} ->
-                            dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"ACL">> => Acl, <<"location">> => #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => dgiot_utils:to_float(Longitude), <<"latitude">> => dgiot_utils:to_float(Latitude)}});
+                            {_, Result} = dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"ACL">> => Acl, <<"location">> => #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => dgiot_utils:to_float(Longitude), <<"latitude">> => dgiot_utils:to_float(Latitude)}}),
+                            {ok, Result#{<<"objectId">> => DeviceId}};
                         _R ->
                             dgiot_device:create_device(#{
                                 <<"devaddr">> => Devaddr,
@@ -257,7 +272,7 @@ do_request(post_adddevice, #{<<"devaddr">> := Devaddr, <<"productid">> := Produc
                                 <<"devModel">> => DevType
                             })
                     end;
-                Error2 -> ?LOG(info,"Error2 ~p ", [Error2])
+                Error2 -> ?LOG(info, "Error2 ~p ", [Error2])
             end;
         _ ->
             {error, <<"Not Allowed.">>}

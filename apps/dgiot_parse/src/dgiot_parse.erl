@@ -91,6 +91,7 @@
     del_User_Role/2,
     put_User_Role/3,
     get_userids/1,
+    get_roleids/1,
     get_notificationid/1
 ]).
 
@@ -1176,4 +1177,14 @@ get_userids(Roleid) ->
             []
     end.
 
+
+get_roleids(Userid) ->
+    case dgiot_data:get(user_role_ets, Userid) of
+        not_find ->
+            [];
+        RoleIds when length(RoleIds) > 0 ->
+            RoleIds;
+        _ ->
+            []
+    end.
 

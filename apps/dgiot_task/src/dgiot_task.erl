@@ -284,9 +284,14 @@ save_pnque(DtuProductId, DtuAddr, ProductId, DevAddr) ->
             New_Pn_que = dgiot_utils:unique_2(Pn_que ++ [{ProductId, DevAddr}]),
             dgiot_data:insert(?DGIOT_PNQUE, DtuId, New_Pn_que)
     end,
-    Args = dgiot_data:get({?TASK_ARGS, DtuProductId}),
-    ?LOG(info, "Args ~p", [Args]),
-    supervisor:start_child(dgiot_task, [Args#{<<"dtuid">> => DtuId}]).
+    case dgiot_data:get({task_args, DtuProductId}) of
+        not_find ->
+            pass;
+        Args ->
+%%            ?LOG(info, "Args ~p", [Args]),
+            supervisor:start_child(dgiot_task, [Args#{<<"dtuid">> => DtuId}])
+    end.
+
 
 get_pnque(DtuId) ->
     case dgiot_data:get(?DGIOT_PNQUE, DtuId) of

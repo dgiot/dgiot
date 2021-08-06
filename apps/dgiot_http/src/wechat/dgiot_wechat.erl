@@ -123,11 +123,10 @@ sendSubscribe(UserId, Data) ->
                                     ?LOG(info, "SubscribeUrl ~p", [SubscribeUrl]),
                                     Subscribe = #{<<"touser">> => OpenId,
                                         <<"template_id">> => <<"9Fmc0vtA7vnh_HtoVtXJy_cRDOnIk1ubniO_Oe3WatU">>,
-                                        <<"page">> => <<>>,
+                                        <<"page">> => <<"pages/alarm/alarm">>,
                                         <<"miniprogram_state">> => <<"formal">>,
                                         <<"lang">> => <<"zh_CN">>,
                                         <<"data">> => Data},
-                                    ?LOG(info, "Subscribe ~p", [Subscribe]),
                                     Data1 = dgiot_utils:to_list(jsx:encode(Subscribe)),
                                     R = httpc:request(post, {SubscribeUrl, [], "application/x-www-form-urlencoded", Data1}, [{timeout, 5000}, {connect_timeout, 10000}], [{body_format, binary}]),
                                     ?LOG(info, "R ~p", [R]);
@@ -157,11 +156,39 @@ get_wechat_index(SessionToken) ->
                             {Online, Offline}
                     end
                             end, {[], []}, Results),
+            NotificationCount =
+                case dgiot_parse:query_object(<<"Notification">>, #{<<"keys">> => [<<"count(*)">>], <<"limit">> => 1}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+                    {ok, #{<<"count">> := NotCount, <<"results">> := _}} ->
+                        NotCount;
+                    _ ->
+                        0
+                end,
+            UnPanalarmCount =
+                case dgiot_parse:query_object(<<"Notification">>, #{<<"keys">> => [<<"count(*)">>], <<"limit">> => 1, <<"where">> => #{<<"status">> => 0}}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+                    {ok, #{<<"count">> := UnCount, <<"results">> := _}} ->
+                        UnCount;
+                    _ ->
+                        0
+                end,
+            Carousel =
+                case dgiot_parse:query_object(<<"Dict">>, #{<<"limit">> => 20, <<"where">> => #{<<"type">> => <<"57e4f8154e">>}}) of
+                    {ok, #{<<"results">> := Dicts}} ->
+                        lists:foldl(fun(X, Acc) ->
+                            case X of
+                                #{<<"data">> := #{<<"imgurl">> := Imgurl, <<"webUrl">> := WebUrl}} ->
+                                    Acc ++ [#{<<"imgurl">> => Imgurl, <<"webUrl">> => WebUrl}];
+                                _ ->
+                                    Acc
+                            end
+                                    end, [], Dicts);
+                    _ ->
+                        []
+                end,
             {ok, #{<<"deviceCount">> => Count, <<"devicelist">> => Results,
                 <<"onlineCount">> => length(ONLINE), <<"onlinelist">> => ONLINE,
                 <<"offlineCount">> => length(OFFLINE), <<"offlinelist">> => OFFLINE,
-                <<"panalarmDevice">> => 0, <<"unPanalarmDevice">> => 0,
-                <<"carousel">> => [#{<<"imgurl">> => <<"https://www.baidu.com/img/flexible/logo/pc/peak-result.png">>, <<"webUrl">> => <<"www.baidu.com">>}]}};
+                <<"notificationCount">> => NotificationCount, <<"unPanalarmCount">> => UnPanalarmCount,
+                <<"carousel">> => Carousel}};
         _ ->
             {error, <<"no device">>}
     end.
@@ -261,7 +288,7 @@ get_notification(ProductId1, SessionToken, Order, Limit, Skip, Where) ->
             NewResult =
                 lists:foldl(fun(X, Acc) ->
                     case X of
-                        #{<<"objectId">> := ObjectId, <<"type">> := Type, <<"public">> := Public, <<"content">> := Content, <<"process">> := Process, <<"createdAt">> := Createdat} ->
+                        #{<<"objectId">> := ObjectId, <<"type">> := Type, <<"public">> := Public, <<"status">> := Status, <<"content">> := Content, <<"process">> := Process, <<"createdAt">> := Createdat} ->
                             Alertstatus = maps:get(<<"alertstatus">>, Content, true),
                             DeviceId = maps:get(<<"_deviceid">>, Content, <<"">>),
                             Result =
@@ -295,7 +322,7 @@ get_notification(ProductId1, SessionToken, Order, Limit, Skip, Where) ->
                                                         _Oth ->
                                                             Par
                                                     end
-                                                            end, #{<<"objectId">> => ObjectId, <<"alertstatus">> => Alertstatus, <<"productname">> => ProductName, <<"devicename">> => DeviceName, <<"process">> => Process, <<"Public">> => Public, <<"createdAt">> => Createdat}, Parse);
+                                                            end, #{<<"objectId">> => ObjectId, <<"alertstatus">> => Alertstatus, <<"productname">> => ProductName, <<"devicename">> => DeviceName, <<"process">> => Process, <<"public">> => Public, <<"status">> => Status, <<"createdAt">> => Createdat}, Parse);
                                             _Other ->
                                                 Acc
                                         end;
