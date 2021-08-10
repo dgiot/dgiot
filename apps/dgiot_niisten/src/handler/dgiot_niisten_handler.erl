@@ -28,7 +28,7 @@
 %% 支持二种方式导入
 %% 示例:
 %% 1. Metadata为map表示的JSON,
-%%    dgiot_http_server:bind(<<"/pump">>, ?MODULE, [], Metadata)
+%%    dgiot_http_server:bind(<<"/niisten">>, ?MODULE, [], Metadata)
 %% 2. 从模块的priv/swagger/下导入
 %%    dgiot_http_server:bind(<<"/swagger_niisten.json">>, ?MODULE, [], priv)
 swagger_niisten() ->
@@ -78,9 +78,9 @@ handle(OperationID, Args, Context, Req) ->
 %%%===================================================================
 
 
-%% PumpTemplet 概要: 新增报告模板 描述:新增报告模板
-%% OperationId:post_pump_templet
-%% 请求:get /iotapi/pump/templet
+%% niisten 概要: 新增报告模板 描述:新增报告模板
+%% OperationId:post_niisten
+%% 请求:get /iotapi/niisten
 %%  服务器不支持的API接口
 do_request(_OperationId, _Args, _Context, _Req) ->
     {error, <<"Not Allowed.">>}.

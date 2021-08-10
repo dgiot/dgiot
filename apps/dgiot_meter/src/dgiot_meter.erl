@@ -22,6 +22,7 @@
 -export([search_meter/1, search_meter/4]).
 -export([
     create_dtu/3,
+    create_dtu/4,
     create_meter/4,
     get_sub_device/1
 ]).
@@ -29,6 +30,25 @@
 -define(APP, ?MODULE).
 
 %%新设备
+create_dtu(mqtt, DtuAddr, ProductId, DTUIP) ->
+    case dgiot_device:lookup_prod(ProductId) of
+        {ok, #{<<"ACL">> := Acl}} ->
+            Requests = #{
+                <<"devaddr">> => DtuAddr,
+                <<"name">> => <<"DTU_", DtuAddr/binary>>,
+                <<"ip">> => DTUIP,
+                <<"isEnable">> => true,
+                <<"product">> => ProductId,
+                <<"ACL">> => Acl,
+                <<"status">> => <<"ONLINE">>,
+                <<"brand">> => <<"DTU", DtuAddr/binary>>,
+                <<"devModel">> => <<"DTU_">>
+            },
+            dgiot_device:create_device(Requests);
+        _ ->
+            pass
+    end.
+
 create_dtu(DtuAddr, ChannelId, DTUIP) ->
     ?LOG(info, "~p", [dgiot_data:get({dtu, ChannelId})]),
     {ProductId, Acl, _Properties} = dgiot_data:get({dtu, ChannelId}),
