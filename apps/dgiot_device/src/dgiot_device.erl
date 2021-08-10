@@ -168,29 +168,6 @@ save_prod(ProductId, Product) ->
             {error, Reason}
     end.
 
-%%    #{<<"accessMode">> => <<"r">>,
-%%        <<"dataForm">> => #{
-%%            <<"address">> => <<"00000000">>,
-%%            <<"byteorder">> => <<"big">>,
-%%            <<"collection">> => <<"%s/1000">>,
-%%            <<"control">> => <<"%s">>,
-%%            <<"offset">> => 0,
-%%            <<"protocol">> => <<"DLT645">>,
-%%            <<"quantity">> => <<"528590">>,
-%%            <<"rate">> => 1,
-%%            <<"strategy">> => <<"10">>
-%%        },
-%%        <<"dataType">> => #{
-%%            <<"specs">> => #{
-%%                <<"max">> => 100000000,
-%%                <<"min">> => 0,
-%%                <<"step">> => 1,
-%%                <<"unit">> => <<"kWÂ·h">>},
-%%            <<"type">> => <<"int">>},
-%%        <<"identifier">> =>
-%%        <<"ActiveTotalEnergy">>,
-%%        <<"name">> => <<230,156,137,229,138,159,230,128,187,231,148,181,232,131,189>>,
-%%        <<"required">> => true},
 lookup_prod(ProductId) ->
     case dgiot_data:get(?DGIOT_PRODUCT, ProductId) of
         not_find ->
