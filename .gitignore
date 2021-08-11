@@ -51,3 +51,4 @@ rebar.conf.erl
 data/load_plugins.tmpl
 apps/dgiot_parse/etc/dgiot_parse.conf
 apps/dgiot_jieshun/
+apps/dgiot_http/etc/dgiot_http.conf
