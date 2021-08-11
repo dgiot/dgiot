@@ -82,6 +82,8 @@
     get_shapeid/2,
     get_instruct/3,
     get_roleid/1,
+    get_ruleid/1,
+    get_menuid/1,
     get_productid/3,
     get_maintenanceid/2,
     subscribe/2,
@@ -148,6 +150,14 @@ get_instruct(DeviceId, Pn, Di) ->
 
 get_roleid(Name) ->
     <<DId:10/binary, _/binary>> = dgiot_utils:to_md5(<<"_Role", Name/binary>>),
+    DId.
+
+get_ruleid(Name) ->
+    <<DId:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Permission", Name/binary>>),
+    DId.
+
+get_menuid(Name) ->
+    <<DId:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Menu", Name/binary>>),
     DId.
 
 get_notificationid(Type) ->
@@ -238,8 +248,7 @@ get_objectid(Class, Map) ->
             get_objectid(<<"Menu">>, Map);
         <<"Menu">> ->
             Name = maps:get(<<"name">>, Map, <<"">>),
-            Url = maps:get(<<"url">>, Map, <<"">>),
-            <<DId:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Menu", Name/binary, Url/binary>>),
+            <<DId:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Menu", Name/binary>>),
             Map#{
                 <<"objectId">> => DId
             };
@@ -652,11 +661,17 @@ get_role(Name, UserId, SessionToken) ->
                     end, [], RoleResults),
             case get_rules(Name, RoleIds, SessionToken) of
                 {ok, Rules} ->
-                    Info = #{
-                        <<"rules">> => Rules,
-                        <<"roles">> => Roles
-                    },
-                    {ok, Info};
+                    case get_menus(Name, RoleIds, SessionToken) of
+                        {ok, Menus} ->
+                            Info = #{
+                                <<"rules">> => Rules,
+                                <<"roles">> => Roles,
+                                <<"menus">> => Menus
+                            },
+                            {ok, Info};
+                        {error, Reason1} ->
+                            {error, Reason1}
+                    end;
                 {error, Reason} ->
                     {error, Reason}
             end;
@@ -665,7 +680,7 @@ get_role(Name, UserId, SessionToken) ->
     end.
 
 
-%% 根据角色获取权限
+%% 根据角色获取API权限
 get_rules(Name, RoleIds, SessionToken) ->
     Requests = [#{
         <<"method">> => <<"GET">>,
@@ -675,6 +690,42 @@ get_rules(Name, RoleIds, SessionToken) ->
             <<"where">> => #{
                 <<"$relatedTo">> => #{
                     <<"key">> => <<"rules">>,
+                    <<"object">> => #{
+                        <<"__type">> => <<"Pointer">>,
+                        <<"className">> => <<"_Role">>,
+                        <<"objectId">> => RoleId
+                    }
+                }
+            }
+        }
+    } || RoleId <- RoleIds],
+    case dgiot_parse:batch(Name, Requests, [{"X-Parse-Session-Token", binary_to_list(SessionToken)}], [{from, rest}]) of
+        {ok, Results1} ->
+            {ok, lists:foldr(
+                fun(#{<<"success">> := #{<<"results">> := R}}, Acc1) ->
+                    lists:foldr(fun(#{<<"name">> := Name1}, Acc2) ->
+                        case lists:member(Name, Acc2) of
+                            true ->
+                                Acc2;
+                            false ->
+                                [Name1 | Acc2]
+                        end
+                                end, Acc1, R)
+                end, [], Results1)};
+        {error, Reason} ->
+            {error, Reason}
+    end.
+
+%% 根据角色获取菜单权限
+get_menus(Name, RoleIds, SessionToken) ->
+    Requests = [#{
+        <<"method">> => <<"GET">>,
+        <<"path">> => <<"/classes/Menu">>,
+        <<"body">> => #{
+            <<"keys">> => [<<"name">>],
+            <<"where">> => #{
+                <<"$relatedTo">> => #{
+                    <<"key">> => <<"menus">>,
                     <<"object">> => #{
                         <<"__type">> => <<"Pointer">>,
                         <<"className">> => <<"_Role">>,
