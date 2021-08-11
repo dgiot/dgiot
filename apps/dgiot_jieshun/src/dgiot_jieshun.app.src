@@ -1,0 +1,12 @@
+{application, dgiot_jieshun,
+    [
+        {description, "DG-IoT捷顺"},
+        {vsn, "4.3.1"},
+        {modules, []},
+        {registered, [dgiot_jieshun_sup]},
+        {applications, [kernel, stdlib]},
+        {mod, {dgiot_jieshun_app, []}},
+        {env,[
+        ]}
+    ]
+}.
