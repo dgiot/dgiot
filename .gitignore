@@ -48,7 +48,7 @@ etc/*.seg
 _upgrade_base/
 rebar.conf
 rebar.conf.erl
-data/load_plugins.tmpl
+data/
 apps/dgiot_parse/etc/dgiot_parse.conf
 apps/dgiot_jieshun/
 apps/dgiot_http/etc/dgiot_http.conf
