@@ -790,16 +790,20 @@ create_session(UserId, TTL, Name) ->
 do_login(UserInfo) ->
     do_login(UserInfo, dgiot_auth:ttl()).
 
+
 do_login(#{<<"objectId">> := UserId, <<"sessionToken">> := SessionToken} = UserInfo, TTL) ->
     case catch dgiot_parse:get_role(UserId, SessionToken) of
-        {ok, #{<<"roles">> := Roles, <<"rules">> := Rules}} ->
+        {ok, #{<<"roles">> := Roles, <<"rules">> := Rules,<<"menus">> := Menus}} ->
             NewRules =
                 lists:foldl(
                     fun(Rule, Acc) ->
                         [Rule | lists:delete(Rule, Acc)]
                     end, Rules, [<<"GET_CLASSES_NAVIGATION">>, <<"GET_USERS_ME">>]),
-            dgiot_auth:put_session(UserInfo#{<<"roles">> => Roles, <<"rules">> => NewRules}, TTL),
-            {ok, maps:without([<<"_account_lockout_expires_at">>, <<"_failed_login_count">>, <<"_email_verify_token">>], UserInfo#{<<"roles">> => maps:values(Roles)})};
+            dgiot_auth:put_session(UserInfo#{<<"roles">> => Roles, <<"rules">> => NewRules, <<"menus">> => Menus}, TTL),
+            {ok, maps:without([<<"_account_lockout_expires_at">>, <<"_failed_login_count">>, <<"_email_verify_token">>], UserInfo#{
+                <<"rules">> => Rules,
+                <<"menus">> => Menus,
+                <<"roles">> => maps:values(Roles)})};
         {error, ErrMsg} ->
             {error, ErrMsg};
         {'EXIT', Reason} ->
@@ -807,6 +811,7 @@ do_login(#{<<"objectId">> := UserId, <<"sessionToken">> := SessionToken} = UserI
         _Other ->
             ?LOG(info, "_Other ~p", [_Other])
     end.
+
 
 add_acl(_, _, Records, _NewItems, Acc) when Records == [] ->
     Acc;
