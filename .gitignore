@@ -48,3 +48,4 @@ etc/*.seg
 _upgrade_base/
 rebar.conf
 rebar.conf.erl
+data/load_plugins.tmpl

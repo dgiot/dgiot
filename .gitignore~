@@ -46,4 +46,5 @@ dist.zip
 scripts/git-token
 etc/*.seg
 _upgrade_base/
-
+rebar.conf
+rebar.conf.erl
