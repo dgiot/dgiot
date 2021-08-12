@@ -1,0 +1,7 @@
+{application,dgiot_ffmpeg,
+             [{description,"DG-IoT FFMPEG"},
+              {vsn,"4.3.0"},
+              {modules,[]},
+              {registered,[dgiot_ffmpeg_sup]},
+              {applications,[kernel,stdlib,dgiot]},
+              {mod,{dgiot_ffmpeg_app,[]}}]}.

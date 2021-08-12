@@ -1,0 +1,141 @@
+{
+  "tags": [
+    {
+      "name": "FFMPEG",
+      "description": "视频"
+    }
+  ],
+  "definitions": {
+  },
+  "paths": {
+    "/ffmpeg": {
+      "put": {
+        "summary": "修改视频取证任务",
+        "description": "修改视频取证任务",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "data",
+            "description": "角色信息",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "description": "视频类型  ALL：所有类型，IPCRECORD:网络摄像头录播, IPCLIVE: 网络摄像头直播，SCREENRECORD：桌面录播，SCREENLIVE：桌面直播 ",
+                  "type": "string",
+                  "enum": [
+                    "ALL",
+                    "IPCRECORD",
+                    "IPCLIVE",
+                    "SCREENRECORD",
+                    "SCREENLIVE"
+                  ],
+                  "example":"ALL"
+                },
+                "devaddr": {
+                  "type": "string",
+                  "example":"28a68a908d8c",
+                  "description": "视频设备地址"
+                },
+                "product": {
+                  "type": "string",
+                  "example":"ipjnGiLSt7",
+                  "description": "视频设备类型"
+                },
+                "enable": {
+                  "description": "控制动作",
+                  "type": "boolean",
+                  "enum": [
+                    true,
+                    false
+                  ],
+                  "example":true
+                },
+                "interval": {
+                  "description": "单次任务直播或者录播时长，单位秒",
+                  "type": "number",
+                  "example": 30
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "FFMPEG"
+        ]
+      },
+      "get": {
+        "summary": "获取视频取证任务",
+        "description": "获取视频取证任务",
+        "parameters": [
+          {
+            "name": "type",
+            "in": "query",
+            "type": "string",
+            "enum": [
+              "ALL",
+              "IPCRECORD",
+              "IPCLIVE",
+              "SCREENRECORD",
+              "SCREENLIVE"
+            ],
+            "default": "ALL",
+            "description": "视频类型  ALL：所有类型，IPCRECORD:网络摄像头录播, IPCLIVE: 网络摄像头直播，SCREENRECORD：桌面录播，SCREENLIVE：桌面直播 "
+          },
+          {
+            "name": "devaddr",
+            "in": "query",
+            "type": "string",
+            "default": "28a68a908d8c",
+            "description": "视频设备地址"
+          },
+          {
+            "name": "product",
+            "in": "query",
+            "type": "string",
+            "default": "ipjnGiLSt7",
+            "description": "视频设备类型"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "FFMPEG"
+        ]
+      }
+    }
+  }
+}

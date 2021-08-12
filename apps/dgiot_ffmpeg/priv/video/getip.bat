@@ -1,0 +1,1 @@
+for/f "skip=3 tokens=1,* delims= "%%i in('arp -a')do ECHO IP：%%i
