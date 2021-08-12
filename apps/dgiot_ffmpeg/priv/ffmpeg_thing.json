@@ -1,0 +1,122 @@
+{
+  "properties": [
+    {
+      "name": "结束时间",
+      "dataForm": {
+        "rate": 1,
+        "offset": 0,
+        "address": "end",
+        "control": "%s",
+        "protocol": "normal",
+        "quantity": 36313589689,
+        "strategy": "20",
+        "byteorder": "big",
+        "collection": "%s"
+      },
+      "dataType": {
+        "type": "int",
+        "specs": {
+          "max": 36313589689,
+          "min": 0,
+          "step": 0.01,
+          "unit": ""
+        }
+      },
+      "required": true,
+      "accessMode": "r",
+      "identifier": "endtime"
+    },
+    {
+      "name": "开始时间",
+      "dataForm": {
+        "rate": 1,
+        "offset": 0,
+        "address": "begin",
+        "control": "%s",
+        "protocol": "normal",
+        "quantity": 33157916089,
+        "strategy": "20",
+        "byteorder": "big",
+        "collection": "%s"
+      },
+      "dataType": {
+        "type": "int",
+        "specs": {
+          "max": 33157916089,
+          "min": 0,
+          "step": 0,
+          "unit": "″"
+        }
+      },
+      "required": true,
+      "accessMode": "r",
+      "identifier": "startime"
+    },
+    {
+      "name": "视频宽度",
+      "dataForm": {
+        "rate": 1,
+        "offset": 0,
+        "address": "width",
+        "control": "%s",
+        "protocol": "normal",
+        "quantity": 1920,
+        "strategy": "20",
+        "byteorder": "big",
+        "collection": "%s"
+      },
+      "dataType": {
+        "type": "int",
+        "specs": {
+          "max": 1920,
+          "min": 0,
+          "step": 0,
+          "unit": ""
+        }
+      },
+      "required": true,
+      "accessMode": "r",
+      "identifier": "width"
+    },
+    {
+      "name": "视频高度",
+      "dataForm": {
+        "rate": 1,
+        "offset": 0,
+        "address": "height",
+        "control": "%s",
+        "protocol": "normal",
+        "quantity": 1080,
+        "strategy": "20",
+        "byteorder": "big",
+        "collection": "%s"
+      },
+      "dataType": {
+        "type": "int",
+        "specs": {
+          "max": 1080,
+          "min": 0,
+          "step": 0.01,
+          "unit": ""
+        }
+      },
+      "required": true,
+      "accessMode": "r",
+      "identifier": "height"
+    },
+    {
+      "name": "点播地址",
+      "dataForm": {
+        "address": "IPCMAC",
+        "quantity": "IPCIP"
+      },
+      "dataType": {
+        "size": 100,
+        "type": "string"
+      },
+      "required": true,
+      "accessMode": "r",
+      "identifier": "src"
+    }
+  ]
+}

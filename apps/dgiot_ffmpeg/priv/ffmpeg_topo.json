@@ -1,0 +1,103 @@
+{
+  "name": "摄像头网络",
+  "layer": {
+    "width": 800,
+    "height": 600,
+    "backColor": "#cfe8dcff",
+    "backgroundImage": "",
+    "widthHeightRatio": ""
+  },
+  "components": [
+    {
+      "name": "video2",
+      "type": "video",
+      "style": {
+        "url": "http://vfx.mtime.cn/Video/2019/03/21/mp4/190321153853126488.mp4",
+        "temp": {
+          "position": {
+            "x": -10,
+            "y": 70
+          }
+        },
+        "zIndex": 1,
+        "visible": true,
+        "position": {
+          "h": 451,
+          "w": 806,
+          "x": 1,
+          "y": 128
+        },
+        "backColor": "rgba(46,176,80,1)",
+        "transform": 0,
+        "borderColor": "#ccccccff",
+        "borderStyle": "solid",
+        "borderWidth": 0
+      },
+      "action": [],
+      "handle": "",
+      "dataBind": {
+        "sn": "",
+        "biz": "",
+        "title": "",
+        "queryParam": {}
+      },
+      "iconName": "ondemand_video",
+      "wumoxing": {
+        "value": [],
+        "identifier": "src"
+      },
+      "productId": "eaf3c56f4c",
+      "identifier": "d43bf1f7-ed8e-4089-a62f-98092b57f1bb"
+    },
+    {
+      "name": "image1",
+      "type": "image",
+      "style": {
+        "temp": {
+          "position": {
+            "x": 30,
+            "y": 20
+          }
+        },
+        "zIndex": 1,
+        "visible": true,
+        "position": {
+          "h": 42,
+          "w": 42,
+          "x": 29,
+          "y": 28
+        },
+        "backColor": "transparent",
+        "foreColor": "#000000",
+        "transform": 0,
+        "borderColor": "#ccccccff",
+        "borderStyle": "solid",
+        "borderWidth": 0
+      },
+      "action": [],
+      "handle": "",
+      "dataBind": {
+        "sn": "",
+        "biz": "",
+        "title": "",
+        "queryParam": {}
+      },
+      "dataType": "liveMonitor",
+      "iconName": "live_tv",
+      "wumoxing": {
+        "max": "",
+        "min": "",
+        "name": "",
+        "unit": "",
+        "value": "",
+        "identifier": ""
+      },
+      "productId": "",
+      "identifier": "a27e6c27-b9aa-4d9f-b470-8c8894060275",
+      "componentActionData": {
+        "step": 1,
+        "showItem": []
+      }
+    }
+  ]
+}

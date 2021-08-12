@@ -1,0 +1,14 @@
+{mapping, "ffmpeg.page_index", "dgiot_ffmpeg.page_index", [
+     {default, 1},
+     {datatype, integer}
+]}.
+
+{mapping, "ffmpeg.dev_total", "dgiot_ffmpeg.dev_total", [
+     {default, 5000},
+     {datatype, integer}
+]}.
+
+{mapping, "ffmpeg.page_size", "dgiot_ffmpeg.page_size", [
+     {default, 5000},
+     {datatype, integer}
+]}.
