@@ -114,6 +114,7 @@ parse_path(Mod, Path, Method, MethodInfo, SWSchema, Init) ->
         check_request => get_check_request(MethodInfo, SWSchema),
         check_response => get_check_response(MethodInfo, SWSchema)
     },
+    dgiot_data:insert(?DGIOT_SWAGGER, OperationId,get_check_request(MethodInfo, SWSchema)),
     RealPath = dgiot_httpc:url_join([BasePath, NewPath]),
     {ok, Id} = set_state(OperationId, Config#{logic_handler => Mod}),
     State = #{

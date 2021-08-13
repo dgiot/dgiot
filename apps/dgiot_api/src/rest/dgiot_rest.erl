@@ -40,6 +40,9 @@
 -export([handle_multipart/2]).
 -export([call/3]).
 
+-dgiot_data("ets").
+-export([init_ets/0]).
+
 -record(state, {
     operationid :: atom(),
     is_mock :: boolean(),
@@ -49,6 +52,7 @@
 
 -type state() :: state().
 -type response() :: {Result :: stop | binary(), dgiot_req:req(), state()}.
+
 
 %% Common handler callbacks.
 -callback init(Req :: dgiot_req:req(), Config :: map()) ->
@@ -293,6 +297,7 @@ do_request(Populated, Req0, State = #state{
     context = Context
 }) ->
     Args = [OperationID, Populated, Context, Req0],
+    ?LOG(info,"~p ~p",[OperationID,dgiot_data:get(?DGIOT_SWAGGER,OperationID)]),
     Result =
         case IsMock of
             true ->
@@ -399,3 +404,6 @@ call(Mod, Fun, Args) ->
         false ->
             no_call
     end.
+
+init_ets() ->
+    dgiot_data:init(?DGIOT_SWAGGER).
