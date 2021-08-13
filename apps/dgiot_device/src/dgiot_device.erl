@@ -340,24 +340,16 @@ get_online(DeviceId) ->
             false
     end.
 
-
-get_file(ProductId, DevAddr, Url1, Ext) ->
-
-    {file, Here} = code:is_loaded(?MODULE),
-    Root = dgiot_evidence:get_filehome(unicode:characters_to_list(Here)),
-    Name = dgiot_datetime:now_secs(),
-    Path = Root ++ "/" ++ dgiot_utils:to_list(Name) ++ Ext,
-    os:cmd("wget -c " ++ Url1 ++ " -O /" ++ Path),
-
-    AppName = get_appname(ProductId, DevAddr),
-    SessionToken = dgiot_parse_handler:get_token(AppName),
-    DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
-
-    inets:start(),
-    Url = get_url(AppName),
-    case file:read_file(Path) of
-        {ok, Stream} ->
-            FileName = dgiot_utils:to_binary(filename:basename(Path)),
+get_file(ProductId, DevAddr, FileUrl,  Ext) ->
+    Name = dgiot_datetime:now_microsecs(),
+    FileName = dgiot_utils:to_list(Name) ++ "." ++ Ext,
+    case ibrowse:send_req(FileUrl, [], get) of
+        {ok, "200", Header, Stream} ->
+            AppName = get_appname(ProductId, DevAddr),
+            SessionToken = dgiot_parse_handler:get_token(AppName),
+            DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+            inets:start(),
+            Url = get_url(AppName),
 
             Boundary = <<"-----------------------acebdf135724681">>,
             Header = <<"--", Boundary/binary, ?CRLF, "Content-Disposition: form-data;name=\"">>,
@@ -391,15 +383,15 @@ get_file(ProductId, DevAddr, Url1, Ext) ->
                 {ok, {{"HTTP/1.1", 200, "OK"}, _, Json}} ->
                     case jsx:decode(dgiot_utils:to_binary(Json), [{labels, binary}, return_maps]) of
                         #{<<"md5">> := _Md5} ->
-                            os:cmd("rm -rf /temp/" ++ dgiot_utils:to_list(Name) ++ ".jpg"),
-                            Name;
-                        Error1 -> Error1
+                            {ok,Name};
+                        Error1 ->
+                            Error1
                     end;
-                Error -> Error
+                Error ->
+                    Error
             end;
-        {error, Reason} ->
-            ?LOG(info, "Reason ~p ", [Reason]),
-            {error, Reason}
+        Error2 ->
+            Error2
     end.
 
 get_url(AppName) ->
