@@ -51,7 +51,7 @@ handle(OperationID, Args, Context, Req) ->
         {ErrType, Reason} when ErrType == 'EXIT'; ErrType == error ->
             Err = case is_binary(Reason) of
                       true -> Reason;
-                      false -> dgiot_framework:format("~p", [Reason])
+                      false -> dgiot_utils:format("~p", [Reason])
                   end,
             {500, Headers, #{<<"error">> => Err}};
         ok ->
@@ -122,7 +122,7 @@ get_ffmpeg(Type, DevAddr, Product, SessionToken) ->
                         <<"ALL">> -> Acc ++ [<<DevAddr1/binary, "/VIDEO">>, <<DevAddr1/binary, "/LIVEVIDEO">>];
                         _ -> Acc ++ [<<DevAddr1/binary, "/", Type/binary>>]
                     end
-                            end, Dis, dgiot_shadow:get_sub_device(DevAddr)),
+                            end, Dis, dgiot_device:get_sub_device(DevAddr)),
             dgiot_parse:query_object(<<"Instruct">>, #{
                 <<"keys">> => [<<"name">>, <<"di">>, <<"enable">>, <<"interval">>, <<"rotation">>],
                 <<"where">> => #{<<"di">> => #{<<"$in">> => dgiot_utils:unique_1(NewDis)}}},
@@ -162,7 +162,7 @@ put_ffmpeg(#{<<"type">> := Type, <<"devaddr">> := DevAddr, <<"product">> := Prod
                         <<"ALL">> -> Acc ++ [<<DevAddr1/binary, "/VIDEO">>, <<DevAddr1/binary, "/LIVEVIDEO">>];
                         _ -> Acc ++ [<<DevAddr1/binary, "/", Type/binary>>]
                     end
-                            end, Dis, dgiot_shadow:get_sub_device(DevAddr)),
+                            end, Dis, dgiot_device:get_sub_device(DevAddr)),
             case dgiot_parse:query_object(<<"Instruct">>, #{
                 <<"keys">> => [<<"name">>, <<"di">>, <<"enable">>, <<"interval">>, <<"rotation">>],
                 <<"where">> => #{<<"di">> => #{<<"$in">> => dgiot_utils:unique_1(NewDis)}}},

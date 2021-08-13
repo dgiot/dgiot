@@ -49,3 +49,4 @@
 %% 默认HTTP Server名称
 -define(WEBSERVER, dgiot_apihub).
 -define(APP, dgiot_api).
+-define(DGIOT_SWAGGER, dgiot_swagger).

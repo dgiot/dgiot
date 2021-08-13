@@ -257,6 +257,7 @@ relx_apps(ReleaseType) ->
         , ecpool
         , erlport
         , poolboy
+        , ibrowse
         , emqx
         , {mnesia, load}
         , {ekka, load}

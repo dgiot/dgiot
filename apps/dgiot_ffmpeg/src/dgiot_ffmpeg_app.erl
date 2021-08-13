@@ -28,4 +28,4 @@ start(_StartType, _StartArgs) ->
     dgiot_ffmpeg_sup:start_link().
 
 stop(_State) ->
-    dgiot_ffmpeg:unload().
+    ok.
