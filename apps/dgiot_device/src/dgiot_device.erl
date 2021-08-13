@@ -15,6 +15,7 @@
 %%--------------------------------------------------------------------
 
 -module(dgiot_device).
+-define(CRLF, "\r\n").
 -author("kenneth").
 -include("dgiot_device.hrl").
 -include_lib("dgiot/include/dgiot_mnesia.hrl").
@@ -24,7 +25,7 @@
 -export([init_ets/0]).
 -export([create_device/1, create_device/2, get_sub_device/1, get_sub_device/2, get/2]).
 -export([load_device/1, sync_parse/1, post/1, put/1, save/1, save/2, save/3, lookup/1, lookup/2, delete/1, delete/2, save_prod/2, lookup_prod/1, get_online/1]).
--export([encode/1, decode/3, save_subdevice/2, get_subdevice/2]).
+-export([encode/1, decode/3, save_subdevice/2, get_subdevice/2, get_file/4]).
 
 init_ets() ->
     dgiot_data:init(?DGIOT_PRODUCT),
@@ -227,6 +228,8 @@ create_device(#{
                     <<"className">> => <<"Product">>,
                     <<"objectId">> => ProductId
                 },
+                <<"location">> => maps:get(<<"location">>, Device, #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => 120.161324, <<"latitude">> => 30.262441}),
+                <<"basedata">> => maps:get(<<"basedata">>, Device, #{}),
                 <<"detail">> => #{
                     <<"desc">> => Name,
                     <<"brand">> => Brand,
@@ -261,6 +264,7 @@ create_device(#{
             Batch_name = dgiot_utils:to_list(Y) ++ dgiot_utils:to_list(M) ++ dgiot_utils:to_list(D),
             NewDevice = Device#{
                 <<"location">> => maps:get(<<"location">>, Device, #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => 120.161324, <<"latitude">> => 30.262441}),
+                <<"basedata">> => maps:get(<<"basedata">>, Device, #{}),
                 <<"isEnable">> => maps:get(<<"isEnable">>, Device, true),
                 <<"product">> => #{
                     <<"__type">> => <<"Pointer">>,
@@ -334,4 +338,89 @@ get_online(DeviceId) ->
             true;
         _ ->
             false
+    end.
+
+
+get_file(ProductId, DevAddr, Url1, Ext) ->
+
+    {file, Here} = code:is_loaded(?MODULE),
+    Root = dgiot_evidence:get_filehome(unicode:characters_to_list(Here)),
+    Name = dgiot_datetime:now_secs(),
+    Path = Root ++ "/" ++ dgiot_utils:to_list(Name) ++ Ext,
+    os:cmd("wget -c " ++ Url1 ++ " -O /" ++ Path),
+
+    AppName = get_appname(ProductId, DevAddr),
+    SessionToken = dgiot_parse_handler:get_token(AppName),
+    DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+
+    inets:start(),
+    Url = get_url(AppName),
+    case file:read_file(Path) of
+        {ok, Stream} ->
+            FileName = dgiot_utils:to_binary(filename:basename(Path)),
+
+            Boundary = <<"-----------------------acebdf135724681">>,
+            Header = <<"--", Boundary/binary, ?CRLF, "Content-Disposition: form-data;name=\"">>,
+
+            Data1 = <<"output\"", ?CRLF, ?CRLF, "json", ?CRLF>>,
+            ParamBody1 = <<Header/binary, Data1/binary>>,
+
+            Data2 = <<"scene\"", ?CRLF, ?CRLF, AppName/binary, ?CRLF>>,
+            ParamBody2 = <<Header/binary, Data2/binary>>,
+
+            Data3 = <<"path\"", ?CRLF, ?CRLF, DeviceId/binary, ?CRLF>>,
+            ParamBody3 = <<Header/binary, Data3/binary>>,
+
+            Data4 = <<"auth_token\"", ?CRLF, ?CRLF, SessionToken/binary, ?CRLF>>,
+            ParamBody4 = <<Header/binary, Data4/binary>>,
+
+            Data5 = <<"filename\"", ?CRLF, ?CRLF, FileName/binary, ?CRLF>>,
+            ParamBody5 = <<Header/binary, Data5/binary>>,
+
+            Tail = <<"--", Boundary/binary, "--", ?CRLF, ?CRLF>>,
+
+            FileBody = <<Header/binary, "file\"; filename=\"", FileName/binary, "\"", ?CRLF,
+                "Content-Type: application/octet-stream", ?CRLF, ?CRLF, Stream/binary, ?CRLF, Tail/binary>>,
+
+            ParamBody = <<ParamBody1/binary, ParamBody2/binary, ParamBody3/binary, ParamBody4/binary, ParamBody5/binary>>,
+
+            Body = <<ParamBody/binary, FileBody/binary>>,
+            Size = byte_size(Body),
+            ContentType = <<"multipart/form-data; boundary=", Boundary/binary>>,
+            case httpc:request(post, {dgiot_utils:to_list(Url), [{"Content-Length", integer_to_list(Size)}], binary_to_list(ContentType), Body}, [], []) of
+                {ok, {{"HTTP/1.1", 200, "OK"}, _, Json}} ->
+                    case jsx:decode(dgiot_utils:to_binary(Json), [{labels, binary}, return_maps]) of
+                        #{<<"md5">> := _Md5} ->
+                            os:cmd("rm -rf /temp/" ++ dgiot_utils:to_list(Name) ++ ".jpg"),
+                            Name;
+                        Error1 -> Error1
+                    end;
+                Error -> Error
+            end;
+        {error, Reason} ->
+            ?LOG(info, "Reason ~p ", [Reason]),
+            {error, Reason}
+    end.
+
+get_url(AppName) ->
+    Roleid = dgiot_parse:get_roleid(AppName),
+    case dgiot_parse:get_object(<<"_Role">>, Roleid) of
+        {ok, #{<<"tag">> := #{<<"appconfig">> := #{<<"file">> := Url}}}} ->
+            Url;
+        _ -> <<"">>
+    end.
+
+
+get_appname(ProductId, DevAddr) ->
+    case dgiot_device:lookup(ProductId, DevAddr) of
+        {ok, {[_, _, [Acl | _]], _}} ->
+            BinAcl = atom_to_binary(Acl),
+            case BinAcl of
+                <<"role:", Name/binary>> ->
+                    Name;
+                _ ->
+                    <<"admin">>
+            end;
+        _ ->
+            <<"admin">>
     end.

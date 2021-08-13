@@ -113,7 +113,8 @@ handle_info({deliver, _, Msg}, #tcp{state = #state{id = ChannelId} = State} = TC
 %%                    设置参数
                     case Payload of
                         #{<<"_dgiotprotocol">> := <<"modbus">>} ->
-                            Payloads = modbus_rtu:set_params(maps:without([<<"_dgiotprotocol">>], Payload), ProductId),                            lists:map(fun(X) ->
+                            Payloads = modbus_rtu:set_params(maps:without([<<"_dgiotprotocol">>], Payload), ProductId),
+                            lists:map(fun(X) ->
                                 dgiot_tcp_server:send(TCPState, X)
                                       end, Payloads);
                         _ ->
