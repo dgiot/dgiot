@@ -201,15 +201,15 @@ post(#{<<"id">> := ReportId, <<"scene">> := Scene, <<"md5">> := Md5, <<"original
     end;
 
 post(R) ->
-    ?LOG(info,"R ~p ", [R]).
+    ?LOG(info, "R ~p ", [R]).
 
 post_data(Class, FilePath) ->
-    ?LOG(info,"Class ~p, FilePath ~p", [Class, FilePath]),
+    ?LOG(info, "Class ~p, FilePath ~p", [Class, FilePath]),
     case file:read_file(FilePath) of
         {ok, Bin} ->
             case catch jsx:decode(Bin, [{labels, binary}, return_maps]) of
                 {'EXIT', Reason} ->
-                    ?LOG(info,"Reason ~p", [Reason]),
+                    ?LOG(info, "Reason ~p", [Reason]),
                     {error, Reason};
                 Data ->
                     Datas = lists:foldl(fun(X, Acc) ->
@@ -217,19 +217,19 @@ post_data(Class, FilePath) ->
                                         end, [], Data),
                     Fun =
                         fun(Res, Acc) ->
-                            ?LOG(info,"Res ~p", [Res]),
+                            ?LOG(info, "Res ~p", [Res]),
                             lists:concat([Acc, Res])
                         end,
                     case dgiot_parse:import(Class, Datas, 5000, Fun, []) of
                         {error, Reason1} ->
-                            ?LOG(info,"Reason1 ~p", [Reason1]),
+                            ?LOG(info, "Reason1 ~p", [Reason1]),
                             {error, Reason1};
                         Result ->
                             {ok, Result}
                     end
             end;
         {error, Reason2} ->
-            ?LOG(info,"Reason2 ~p", [Reason2]),
+            ?LOG(info, "Reason2 ~p", [Reason2]),
             {error, Reason2}
     end.
 
@@ -247,7 +247,7 @@ get_report_package(ReportId, Devices, Products, Evidence, Files, SessionToken) -
             Zipfile = unicode:characters_to_list(ReportId) ++ ".zip",
             ZipRoot = Root ++ "/" ++ AppList ++ "/" ++ ListNow,
             file:make_dir(ZipRoot),
-            ?LOG(info,"ZipRoot ~p", [ZipRoot]),
+            ?LOG(info, "ZipRoot ~p", [ZipRoot]),
             file:write_file(ZipRoot ++ "/Device.json", jsx:encode(Devices)),
             file:write_file(ZipRoot ++ "/Product.json", jsx:encode(Products)),
             file:write_file(ZipRoot ++ "/Evidence.json", jsx:encode(Evidence)),
@@ -269,10 +269,10 @@ get_report_package(ReportId, Devices, Products, Evidence, Files, SessionToken) -
                       {win32, _} -> "chcp 65001 && dgiot_zip zippath " ++ DestPath ++ " " ++ ZipRoot;
                       _ -> "zip  " ++ DestPath ++ " " ++ ZipRoot
                   end,
-            ?LOG(info,"DestPath ~p Url ~p", [DestPath, Url]),
+            ?LOG(info, "DestPath ~p Url ~p", [DestPath, Url]),
             os:cmd(Cmd),
             NewUrl = unicode:characters_to_binary(Url ++ AppList ++ "/" ++ Zipfile),
-            ?LOG(info,"NewUrl ~p", [NewUrl]),
+            ?LOG(info, "NewUrl ~p", [NewUrl]),
             {ok, #{
                 <<"url">> => NewUrl
             }};
@@ -381,7 +381,7 @@ upload(Path, SessionToken) ->
 
 upload(Path, AppName, SessionToken) ->
     inets:start(),
-    Url = get_url(AppName, SessionToken),
+    Url = get_url(AppName),
     case file:read_file(Path) of
         {ok, Stream} ->
             FileName = dgiot_utils:to_binary(filename:basename(Path)),
@@ -414,7 +414,6 @@ upload(Path, AppName, SessionToken) ->
             Body = <<ParamBody/binary, FileBody/binary>>,
             Size = byte_size(Body),
             ContentType = <<"multipart/form-data; boundary=", Boundary/binary>>,
-%%            ?LOG(info,"ParamBody ~p Url ~p", [ParamBody, Url]),
             case httpc:request(post, {dgiot_utils:to_list(Url), [{"Content-Length", integer_to_list(Size)}], binary_to_list(ContentType), Body}, [], []) of
                 {ok, {{"HTTP/1.1", 200, "OK"}, _, Json}} ->
                     case jsx:decode(dgiot_utils:to_binary(Json), [{labels, binary}, return_maps]) of
@@ -425,19 +424,14 @@ upload(Path, AppName, SessionToken) ->
                 Error -> Error
             end;
         {error, Reason} ->
-            ?LOG(info,"Reason ~p ", [Reason]),
+            ?LOG(info, "Reason ~p ", [Reason]),
             {error, Reason}
     end.
 
-get_url(AppName, SessionToken) ->
-    Query1 = #{
-        <<"keys">> => [<<"name">>, <<"tag">>],
-        <<"limit">> => 1,
-        <<"where">> => #{<<"name">> => AppName}},
-    case dgiot_parse:query_object(<<"_Role">>, Query1,
-        [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
-        {ok, #{<<"results">> := Apps}} when length(Apps) > 0 ->
-            [#{<<"tag">> := #{<<"appconfig">> := #{<<"file">> := Url}}} | _] = Apps,
+get_url(AppName) ->
+    Roleid = dgiot_parse:get_roleid(AppName),
+    case dgiot_parse:get_object(<<"_Role">>, Roleid) of
+        {ok, #{<<"tag">> := #{<<"appconfig">> := #{<<"file">> := Url}}}} ->
             Url;
         _ -> <<"">>
     end.
@@ -479,7 +473,7 @@ create_report(Config, DevType, Name, Num, Imagurl, WordUrl, SessionToken) ->
                     <<"children">> => [
                         #{
                             <<"attrs">> => #{
-                                <<"id">> => <<"group_",ProductId/binary>>,
+                                <<"id">> => <<"group_", ProductId/binary>>,
                                 <<"width">> => 2000,
                                 <<"height">> => 2000
                             },
@@ -553,7 +547,7 @@ get_capture(#{<<"productid">> := ProductId, <<"topoid">> := TopoId, <<"thingid">
                                 case Y of
                                     #{<<"identifier">> := TopoId,
                                         <<"address">> := Address} ->
-                                        ?LOG(info,"Address ~p", [Address]),
+                                        ?LOG(info, "Address ~p", [Address]),
                                         Acc1 ++ [X#{<<"dataForm">> => #{
                                             <<"address">> => Address,
                                             <<"quantity">> => TopoId}}];

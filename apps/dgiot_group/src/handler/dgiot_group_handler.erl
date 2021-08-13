@@ -225,7 +225,7 @@ put_group(#{<<"productid">> := ProductId, <<"topoid">> := TopoId, <<"thingid">> 
     end.
 
 post_group(Body, SessionToken) ->
-    HostName = dgiot_utils:get_hostname(),
+%%    HostName = dgiot_utils:get_hostname(),
     NatIP = dgiot_utils:get_natip(),
     ComputerKey = dgiot_license:get_hardkey(),
     <<Addr:12/binary, _/binary>> = ComputerKey,
@@ -265,7 +265,7 @@ post_group(Body, SessionToken) ->
             dgiot_device:create_device(#{
                 <<"status">> => <<"ONLINE">>,
                 <<"devaddr">> => NewAddr,
-                <<"name">> => HostName,
+                <<"name">> => ProductName,
                 <<"ip">> => NatIP,
                 <<"brand">> => <<"DG-IoT分组设备"/utf8>>,
                 <<"devModel">> => <<"DGIOT_GROUP">>,

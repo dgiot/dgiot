@@ -206,6 +206,18 @@ get_objectid(Class, Map) ->
             Map#{
                 <<"objectId">> => Did
             };
+        <<"post_classes_devicelog">> ->
+            get_objectid(<<"Devicelog">>, Map);
+        <<"Devicelog">> ->
+            Product = case maps:get(<<"product">>, Map) of
+                          #{<<"objectId">> := ProductId} -> ProductId;
+                          ProductId1 -> ProductId1
+                      end,
+            DevAddr = maps:get(<<"devaddr">>, Map, <<"">>),
+            <<Did:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Device", Product/binary, DevAddr/binary>>),
+            Map#{
+                <<"objectId">> => Did
+            };
         <<"post_classes_evidence">> ->
             get_objectid(<<"Evidence">>, Map);
         <<"Evidence">> ->
