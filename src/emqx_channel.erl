@@ -49,7 +49,10 @@
         ]).
 
 %% Export for emqx_sn
--export([do_deliver/2]).
+-export([ do_deliver/2
+        , ensure_keepalive/2
+        , clear_keepalive/1
+        ]).
 
 %% Exports for CT
 -export([set_field/3]).
@@ -404,7 +407,8 @@ handle_in(Packet = ?SUBSCRIBE_PACKET(PacketId, Properties, TopicFilters),
     case emqx_packet:check(Packet) of
         ok ->
             TopicFilters0 = parse_topic_filters(TopicFilters),
-            TupleTopicFilters0 = check_sub_acls(TopicFilters0, Channel),
+            TopicFilters1 = put_subid_in_subopts(Properties, TopicFilters0),
+            TupleTopicFilters0 = check_sub_acls(TopicFilters1, Channel),
             case emqx_zone:get_env(Zone, acl_deny_action, ignore) =:= disconnect andalso
                  lists:any(fun({_TopicFilter, ReasonCode}) ->
                                     ReasonCode =:= ?RC_NOT_AUTHORIZED
@@ -416,8 +420,7 @@ handle_in(Packet = ?SUBSCRIBE_PACKET(PacketId, Properties, TopicFilters),
                                       _Fun(lists:keyreplace(Key, 1, TupleList, Tuple), More);
                                 _Fun(TupleList, []) -> TupleList
                               end,
-                    TopicFilters1 = [ TopicFilter || {TopicFilter, 0} <- TupleTopicFilters0],
-                    TopicFilters2 = put_subid_in_subopts(Properties, TopicFilters1),
+                    TopicFilters2 = [ TopicFilter || {TopicFilter, 0} <- TupleTopicFilters0],
                     TopicFilters3 = run_hooks('client.subscribe',
                                               [ClientInfo, Properties],
                                               TopicFilters2),
@@ -1562,6 +1565,14 @@ ensure_keepalive_timer(Interval, Channel = #channel{clientinfo = #{zone := Zone}
     Keepalive = emqx_keepalive:init(round(timer:seconds(Interval) * Backoff)),
     ensure_timer(alive_timer, Channel#channel{keepalive = Keepalive}).
 
+clear_keepalive(Channel = #channel{timers = Timers}) ->
+    case maps:get(alive_timer, Timers, undefined) of
+        undefined ->
+            Channel;
+        TRef ->
+            emqx_misc:cancel_timer(TRef),
+            Channel#channel{timers = maps:without([alive_timer], Timers)}
+    end.
 %%--------------------------------------------------------------------
 %% Maybe Resume Session
 

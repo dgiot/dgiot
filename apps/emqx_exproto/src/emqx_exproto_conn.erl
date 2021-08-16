@@ -17,6 +17,7 @@
 %% TCP/TLS/UDP/DTLS Connection
 -module(emqx_exproto_conn).
 
+-include_lib("esockd/include/esockd.hrl").
 -include_lib("emqx/include/types.hrl").
 -include_lib("emqx/include/logger.hrl").
 
@@ -106,12 +107,8 @@ start_link(Socket = {udp, _SockPid, _Sock}, Peername, Options) ->
 %% tcp/ssl/dtls
 start_link(esockd_transport, Sock, Options) ->
     Socket = {esockd_transport, Sock},
-    case esockd_transport:peername(Sock) of
-        {ok, Peername} ->
-            Args = [self(), Socket, Peername, Options],
-            {ok, proc_lib:spawn_link(?MODULE, init, Args)};
-        R = {error, _} -> R
-    end.
+    Args = [self(), Socket, undefined, Options],
+    {ok, proc_lib:spawn_link(?MODULE, init, Args)}.
 
 %%--------------------------------------------------------------------
 %% API
@@ -170,6 +167,12 @@ stop(Pid) ->
 %% Wrapped funcs
 %%--------------------------------------------------------------------
 
+esockd_peername({udp, _SockPid, _Sock}, Peername) ->
+    Peername;
+esockd_peername({esockd_transport, Sock}, _Peername) ->
+    {ok, Peername} = esockd_transport:ensure_ok_or_exit(peername, [Sock]),
+    Peername.
+
 esockd_wait(Socket = {udp, _SockPid, _Sock}) ->
     {ok, Socket};
 esockd_wait({esockd_transport, Sock}) ->
@@ -195,7 +198,12 @@ esockd_ensure_ok_or_exit(Fun, {esockd_transport, Socket}) ->
 esockd_type({udp, _, _}) ->
     udp;
 esockd_type({esockd_transport, Socket}) ->
-    esockd_transport:type(Socket).
+    case esockd_transport:type(Socket) of
+        proxy ->
+            esockd_transport:type(Socket#proxy_socket.socket);
+        Type ->
+            Type
+    end.
 
 esockd_setopts({udp, _, _}, _) ->
     ok;
@@ -221,9 +229,10 @@ send(Data, #state{socket = {esockd_transport, Sock}}) ->
 -define(DEFAULT_IDLE_TIMEOUT, 30000).
 -define(DEFAULT_OOM_POLICY, #{max_heap_size => 4194304,message_queue_len => 32000}).
 
-init(Parent, WrappedSock, Peername, Options) ->
+init(Parent, WrappedSock, Peername0, Options) ->
     case esockd_wait(WrappedSock) of
         {ok, NWrappedSock} ->
+            Peername = esockd_peername(NWrappedSock, Peername0),
             run_loop(Parent, init_state(NWrappedSock, Peername, Options));
         {error, Reason} ->
             ok = esockd_close(WrappedSock),

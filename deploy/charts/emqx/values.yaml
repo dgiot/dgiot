@@ -14,6 +14,9 @@ image:
   # pullSecrets:
   # - myRegistryKeySecretName
 
+## Forces the recreation of pods during helm upgrades. This can be useful to update configuration values even if the container image did not change.
+recreatePods: false
+
 persistence:
   enabled: false
   size: 20Mi
@@ -143,6 +146,9 @@ service:
   ## - 10.10.10.0/24
   ##
   loadBalancerSourceRanges: []
+  ## Set the ExternalIPs
+  ##
+  externalIPs: []
   ## Provide any additional annotations which may be required. Evaluated as a template
   ##
   annotations: {}

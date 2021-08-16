@@ -29,7 +29,7 @@ case1:
 	libcoap/examples/coap-client -m put -e w123G45 "coap://127.0.0.1/mqtt/topic1?c=client2&u=mike&p=pw12"
 	sleep 6
 	python check_result.py  case1  case1_output.txt==w123G45
-
+	
 case2:
 	# subscribe to topic="x/y"
 	libcoap/examples/coap-client -m get -s 5  "coap://127.0.0.1/mqtt/x%2Fy?c=client3&u=tom&p=secret" > case2_output1.txt &

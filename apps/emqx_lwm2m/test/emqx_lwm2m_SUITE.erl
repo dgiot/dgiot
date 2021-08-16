@@ -40,6 +40,8 @@ all() ->
     , {group, test_grp_4_discover}
     , {group, test_grp_5_write_attr}
     , {group, test_grp_6_observe}
+    , {group, test_grp_8_object_19}
+    , {group, test_grp_bugs}
     ].
 
 suite() -> [{timetrap, {seconds, 90}}].
@@ -98,13 +100,16 @@ groups() ->
         ]},
         {test_grp_8_object_19, [RepeatOpt], [
             case80_specail_object_19_1_0_write,
-            case80_specail_object_19_0_0_notify,
-            case80_specail_object_19_0_0_response,
-            case80_normal_object_19_0_0_read
+            case80_specail_object_19_0_0_notify
+            %case80_specail_object_19_0_0_response,
+            %case80_normal_object_19_0_0_read
         ]},
         {test_grp_9_psm_queue_mode, [RepeatOpt], [
             case90_psm_mode,
             case90_queue_mode
+        ]},
+        {test_grp_bugs, [RepeatOpt], [
+            case_bug_emqx_4989
         ]}
     ].
 
@@ -143,6 +148,56 @@ end_per_testcase(_AllTestCase, Config) ->
 %%--------------------------------------------------------------------
 %% Cases
 %%--------------------------------------------------------------------
+
+case_bug_emqx_4989(Config) ->
+    %% https://github.com/emqx/emqx/issues/4989
+    % step 1, device register ...
+    Epn = "urn:oma:lwm2m:oma:3",
+    MsgId1 = 15,
+    UdpSock = ?config(sock, Config),
+    ObjectList = <<"</1>, </2>, </3/0>, </4>, </5>">>,
+    RespTopic = list_to_binary("lwm2m/"++Epn++"/up/resp"),
+    emqtt:subscribe(?config(emqx_c, Config), RespTopic, qos0),
+    timer:sleep(200),
+
+    std_register(UdpSock, Epn, ObjectList, MsgId1, RespTopic),
+
+    % step2,  send a WRITE command to device
+    CommandTopic = <<"lwm2m/", (list_to_binary(Epn))/binary, "/dn/dm">>,
+    CmdId = 307,
+    Command = #{<<"requestID">> => CmdId, <<"cacheID">> => CmdId,
+                <<"msgType">> => <<"write">>,
+                <<"data">> => #{
+                    <<"path">> => <<"/1/0/2">>,
+                    <<"type">> => <<"Integer">>,
+                    <<"value">> => 129
+                }
+               },
+    CommandJson = emqx_json:encode(Command),
+    test_mqtt_broker:publish(CommandTopic, CommandJson, 0),
+    timer:sleep(50),
+    Request2 = test_recv_coap_request(UdpSock),
+    #coap_message{method = Method2, options=Options2, payload=Payload2} = Request2,
+    Path2 = get_coap_path(Options2),
+    ?assertEqual(put, Method2),
+    ?assertEqual(<<"/1/0/2">>, Path2),
+    ?assertMatch([#{value := 129}], emqx_lwm2m_message:tlv_to_json(Path2, Payload2)),
+
+    timer:sleep(50),
+
+    test_send_coap_response(UdpSock, "127.0.0.1", ?PORT, {ok, changed}, #coap_content{}, Request2, true),
+    timer:sleep(100),
+
+    ReadResult = emqx_json:encode(#{
+                                <<"requestID">> => CmdId, <<"cacheID">> => CmdId,
+                                <<"data">> => #{
+                                    <<"reqPath">> => <<"/1/0/2">>,
+                                    <<"code">> => <<"2.04">>,
+                                    <<"codeMsg">> => <<"changed">>
+                                },
+                                <<"msgType">> => <<"write">>
+                            }),
+    ?assertEqual(ReadResult, test_recv_mqtt_response(RespTopic)).
 
 case01_register(Config) ->
     % ----------------------------------------
@@ -1663,7 +1718,7 @@ case80_specail_object_19_1_0_write(Config) ->
     Path2 = get_coap_path(Options2),
     ?assertEqual(put, Method2),
     ?assertEqual(<<"/19/1/0">>, Path2),
-    ?assertEqual(<<12345:32>>, Payload2),
+    ?assertEqual(<<3:2, 0:1, 0:2, 4:3, 0, 12345:32>>, Payload2),
     timer:sleep(50),
 
     test_send_coap_response(UdpSock, "127.0.0.1", ?PORT, {ok, changed}, #coap_content{}, Request2, true),
@@ -1672,6 +1727,7 @@ case80_specail_object_19_1_0_write(Config) ->
     ReadResult = emqx_json:encode(#{
                                 <<"requestID">> => CmdId, <<"cacheID">> => CmdId,
                                 <<"data">> => #{
+                                    <<"reqPath">> => <<"/19/1/0">>,
                                     <<"code">> => <<"2.04">>,
                                     <<"codeMsg">> => <<"changed">>
                                 },
@@ -1886,8 +1942,11 @@ std_register(UdpSock, Epn, ObjectList, MsgId1, RespTopic) ->
     timer:sleep(100).
 
 resolve_uri(Uri) ->
-    {ok, {Scheme, _UserInfo, Host, PortNo, Path, Query}} =
-        http_uri:parse(Uri, [{scheme_defaults, [{coap, ?DEFAULT_COAP_PORT}, {coaps, ?DEFAULT_COAPS_PORT}]}]),
+    {ok, #{scheme := Scheme,
+           host := Host,
+           port := PortNo,
+           path := Path} = URIMap} = emqx_http_lib:uri_parse(Uri),
+    Query = maps:get(query, URIMap, ""),
     {ok, PeerIP} = inet:getaddr(Host, inet),
     {Scheme, {PeerIP, PortNo}, split_path(Path), split_query(Query)}.
 
@@ -1896,7 +1955,7 @@ split_path([$/]) -> [];
 split_path([$/ | Path]) -> split_segments(Path, $/, []).
 
 split_query([]) -> [];
-split_query([$? | Path]) -> split_segments(Path, $&, []).
+split_query(Path) -> split_segments(Path, $&, []).
 
 split_segments(Path, Char, Acc) ->
     case string:rchr(Path, Char) of
@@ -1908,7 +1967,7 @@ split_segments(Path, Char, Acc) ->
     end.
 
 make_segment(Seg) ->
-    list_to_binary(http_uri:decode(Seg)).
+    list_to_binary(emqx_http_lib:uri_decode(Seg)).
 
 
 get_coap_path(Options) ->

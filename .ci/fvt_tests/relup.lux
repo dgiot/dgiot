@@ -1,3 +1,4 @@
+[config var=PROFILE]
 [config var=PACKAGE_PATH]
 [config var=BENCH_PATH]
 [config var=ONE_MORE_EMQX_PATH]
@@ -21,26 +22,32 @@
 
 [shell emqx]
     !cd $PACKAGE_PATH
-    !unzip -q -o emqx-ubuntu20.04-$(echo $old_vsn | sed  -r 's/[v|e]//g')-amd64.zip
+    !unzip -q -o $PROFILE-ubuntu20.04-$(echo $old_vsn | sed  -r 's/[v|e]//g')-amd64.zip
     ?SH-PROMPT
 
     !cd emqx
-    !sed -i 's|listener.wss.external[ \t]*=.*|listener.wss.external = 8085|g' etc/emqx.conf
-    !sed -i '/emqx_telemetry/d' data/loaded_plugins
+    !export EMQX_LOG__CONSOLE_HANDLER__ENABLE=true
+    !export EMQX_LOG__CONSOLE_HANDLER__LEVEL=debug
+    !export EMQX_LOG__PRIMARY_LEVEL=debug
+    !export EMQX_ZONES__DEFAULT__LISTENERS__MQTT_WSS__BIND="0.0.0.0:8085"
+
     !./bin/emqx start
     ?EMQ X .* is started successfully!
     ?SH-PROMPT
 
 [shell emqx2]
     !cd $PACKAGE_PATH
-    !cp -f $ONE_MORE_EMQX_PATH/one_more_emqx.sh .
-    !./one_more_emqx.sh emqx2
+    !cp -f $ONE_MORE_EMQX_PATH/one_more_$(echo $PROFILE | sed 's/-/_/g').sh .
+    !./one_more_$(echo $PROFILE | sed 's/-/_/g').sh emqx2
     ?SH-PROMPT
     !cd emqx2
 
-    !sed -i '/emqx_telemetry/d' data/loaded_plugins
+    !export EMQX_LOG__CONSOLE_HANDLER__ENABLE=true
+    !export EMQX_LOG__CONSOLE_HANDLER__LEVEL=debug
+    !export EMQX_LOG__PRIMARY_LEVEL=debug
+
     !./bin/emqx start
-    ?EMQ X (.*) is started successfully!
+    ?EMQ X .* is started successfully!
     ?SH-PROMPT
 
     !./bin/emqx_ctl cluster join emqx@127.0.0.1
@@ -71,15 +78,22 @@
 
 [shell bench]
     !cd $BENCH_PATH
-    !./emqtt_bench pub -c 10 -I 1000 -t t/%i -s 64 -L 600
+
+    !./emqtt_bench pub -c 10 -I 1000 -t t/%i -s 64 -L 300
     ???sent
 
 [shell emqx]
-    !cp -f ../emqx-ubuntu20.04-$VSN-amd64.zip releases/
-    !./bin/emqx install $VSN
+    !echo "" > log/emqx.log.1
     ?SH-PROMPT
-    !./bin/emqx versions |grep permanent | grep -oE "[0-9].[0-9].[0-9]"
-    ?$VSN
+
+    !cp -f ../$PROFILE-ubuntu20.04-$VSN-amd64.zip releases/
+
+    !./bin/emqx install $VSN
+    ?Made release permanent: "$VSN"
+    ?SH-PROMPT
+
+    !./bin/emqx versions |grep permanent
+    ?(.*)$VSN
     ?SH-PROMPT
 
     !./bin/emqx_ctl cluster status
@@ -87,14 +101,24 @@
     Cluster status: #{running_nodes => ['emqx2@127.0.0.1','emqx@127.0.0.1'],
                       stopped_nodes => []}
     """
+    ?SH-PROMPT
+
+    !./bin/emqx_ctl plugins list | grep emqx_management
+    ?Plugin\(emqx_management.*active=true\)
     ?SH-PROMPT
 
 [shell emqx2]
-    !cp -f ../emqx-ubuntu20.04-$VSN-amd64.zip releases/
-    !./bin/emqx install $VSN
+    !echo "" > log/emqx.log.1
     ?SH-PROMPT
-    !./bin/emqx versions |grep permanent | grep -oE "[0-9].[0-9].[0-9]"
-    ?$VSN
+
+    !cp -f ../$PROFILE-ubuntu20.04-$VSN-amd64.zip releases/
+
+    !./bin/emqx install $VSN
+    ?Made release permanent: "$VSN"
+    ?SH-PROMPT
+
+    !./bin/emqx versions |grep permanent
+    ?(.*)$VSN
     ?SH-PROMPT
 
     !./bin/emqx_ctl cluster status
@@ -102,13 +126,28 @@
     Cluster status: #{running_nodes => ['emqx2@127.0.0.1','emqx@127.0.0.1'],
                       stopped_nodes => []}
     """
+    ?SH-PROMPT
+
+    !./bin/emqx_ctl plugins list | grep emqx_management
+    ?Plugin\(emqx_management.*active=true\)
     ?SH-PROMPT
 
 [shell bench]
     ???publish complete
     ??SH-PROMPT:
+    !sleep 30
+    ?SH-PROMPT
+
+    !curl --user admin:public --silent --show-error http://localhost:8081/api/v4/rules | jq --raw-output ".data[0].metrics[] | select(.node==\"emqx@127.0.0.1\").matched"
+    ?300
+    ?SH-PROMPT
+
+    !curl --user admin:public --silent --show-error http://localhost:8081/api/v4/rules | jq --raw-output ".data[0].actions[0].metrics[] | select(.node==\"emqx@127.0.0.1\").success"
+    ?300
+    ?SH-PROMPT
+
     !curl http://127.0.0.1:8080/counter
-    ???{"data":600,"code":0}
+    ???{"data":300,"code":0}
     ?SH-PROMPT
 
 [shell emqx2]
