@@ -503,6 +503,7 @@ do_import_acl_mnesia(Acls) ->
     end.
 
 -ifdef(EMQX_ENTERPRISE).
+-dialyzer({nowarn_function, [import_modules/1]}).
 import_modules(Modules) ->
     case ets:info(emqx_modules) of
         undefined ->
@@ -514,7 +515,7 @@ import_modules(Modules) ->
                                <<"enabled">> := Enabled,
                                <<"created_at">> := CreatedAt,
                                <<"description">> := Description}) ->
-                            emqx_modules:import_module({Id, any_to_atom(Type), Config, Enabled, CreatedAt, Description})
+                            _ = emqx_modules:import_module({Id, any_to_atom(Type), Config, Enabled, CreatedAt, Description})
                          end, Modules)
     end.
 

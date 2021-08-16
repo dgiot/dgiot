@@ -1,17 +1,30 @@
 #!/bin/bash
 set -x -e -u
-export CODE_PATH=${CODE_PATH:-"/dgiot"}
-export EMQX_NAME=${EMQX_NAME:-"dgiot"}
+export CODE_PATH=${CODE_PATH:-"/emqx"}
+export EMQX_NAME=${EMQX_NAME:-"emqx"}
 export PACKAGE_PATH="${CODE_PATH}/_packages/${EMQX_NAME}"
-export RELUP_PACKAGE_PATH="${CODE_PATH}/relup_packages/${EMQX_NAME}"
+export RELUP_PACKAGE_PATH="${CODE_PATH}/_upgrade_base"
 # export EMQX_NODE_NAME="emqx-on-$(uname -m)@127.0.0.1"
 # export EMQX_NODE_COOKIE=$(date +%s%N)
+
+case "$(uname -m)" in
+    x86_64)
+        ARCH='amd64'
+        ;;
+    aarch64)
+        ARCH='arm64'
+        ;;
+    arm*)
+        ARCH=arm
+        ;;
+esac
+export ARCH
 
 emqx_prepare(){
     mkdir -p "${PACKAGE_PATH}"
 
     if [ ! -d "/paho-mqtt-testing" ]; then
-        git clone -b develop-4.0 https://github.com.cnpmjs.org/emqx/paho.mqtt.testing.git /paho-mqtt-testing
+        git clone -b develop-4.0 https://github.com/emqx/paho.mqtt.testing.git /paho-mqtt-testing
     fi
     pip3 install pytest
 }
@@ -31,7 +44,7 @@ emqx_test(){
                 echo "running ${packagename} start"
                 "${PACKAGE_PATH}"/emqx/bin/emqx start || ( tail "${PACKAGE_PATH}"/emqx/log/emqx.log.1 && exit 1 )
                 IDLE_TIME=0
-                while [ -z "$("${PACKAGE_PATH}"/emqx/bin/emqx_ctl status |grep 'is running'|awk '{print $1}')" ]
+                while ! "${PACKAGE_PATH}"/emqx/bin/emqx_ctl status | grep -qE 'Node\s.*@.*\sis\sstarted'
                 do
                     if [ $IDLE_TIME -gt 10 ]
                     then
@@ -103,7 +116,7 @@ running_test(){
 
     emqx start || ( tail /var/log/emqx/emqx.log.1 && exit 1 )
     IDLE_TIME=0
-    while [ -z "$(emqx_ctl status |grep 'is running'|awk '{print $1}')" ]
+    while ! emqx_ctl status | grep -qE 'Node\s.*@.*\sis\sstarted'
     do
         if [ $IDLE_TIME -gt 10 ]
         then
@@ -121,7 +134,7 @@ running_test(){
     || [ "$(sed -n '/^ID=/p' /etc/os-release | sed -r 's/ID=(.*)/\1/g' | sed 's/"//g')" = debian ] ;then
         service emqx start || ( tail /var/log/emqx/emqx.log.1 && exit 1 )
         IDLE_TIME=0
-        while [ -z "$(emqx_ctl status |grep 'is running'|awk '{print $1}')" ]
+        while ! emqx_ctl status | grep -E 'Node\s.*@.*\sis\sstarted'
         do
             if [ $IDLE_TIME -gt 10 ]
             then
@@ -136,26 +149,27 @@ running_test(){
 }
 
 relup_test(){
-    TARGET_VERSION="$1"
+    TARGET_VERSION="$("$CODE_PATH"/pkg-vsn.sh)"
     if [ -d "${RELUP_PACKAGE_PATH}" ];then
-        cd "${RELUP_PACKAGE_PATH }"
+        cd "${RELUP_PACKAGE_PATH}"
 
-        for var in "${EMQX_NAME}"-*-"$(uname -m)".zip;do
-            packagename=$(basename "${var}")
-            unzip "$packagename"
-            ./emqx/bin/emqx start || ( tail emqx/log/emqx.log.1 && exit 1 )
-            ./emqx/bin/emqx_ctl status
-            ./emqx/bin/emqx versions
-            cp "${PACKAGE_PATH}/${EMQX_NAME}"-*-"${TARGET_VERSION}-$(uname -m)".zip ./emqx/releases
-            ./emqx/bin/emqx install "${TARGET_VERSION}"
-            [ "$(./emqx/bin/emqx versions |grep permanent | grep -oE "[0-9].[0-9].[0-9]")" = "${TARGET_VERSION}" ] || exit 1
-            ./emqx/bin/emqx_ctl status
-            ./emqx/bin/emqx stop
-            rm -rf emqx
-        done
+        find . -maxdepth 1 -name "${EMQX_NAME}-*-${ARCH}.zip" |
+            while read -r pkg; do
+                packagename=$(basename "${pkg}")
+                unzip "$packagename"
+                ./emqx/bin/emqx start || ( tail emqx/log/emqx.log.1 && exit 1 )
+                ./emqx/bin/emqx_ctl status
+                ./emqx/bin/emqx versions
+                cp "${PACKAGE_PATH}/${EMQX_NAME}"-*-"${TARGET_VERSION}-${ARCH}".zip ./emqx/releases
+                ./emqx/bin/emqx install "${TARGET_VERSION}"
+                [ "$(./emqx/bin/emqx versions |grep permanent | awk '{print $2}')" = "${TARGET_VERSION}" ] || exit 1
+                ./emqx/bin/emqx_ctl status
+                ./emqx/bin/emqx stop
+                rm -rf emqx
+            done
    fi
 }
 
 emqx_prepare
 emqx_test
-# relup_test <TODO: parameterise relup target version>
+relup_test

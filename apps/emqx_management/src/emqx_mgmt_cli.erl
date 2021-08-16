@@ -116,13 +116,7 @@ mgmt(_) ->
 
 status([]) ->
     {InternalStatus, _ProvidedStatus} = init:get_status(),
-    emqx_ctl:print("Node ~p ~s is ~p~n", [node(), emqx_app:get_release(), InternalStatus]),
-    case lists:keysearch(?APP, 1, application:which_applications()) of
-        false ->
-            emqx_ctl:print("Application ~s is not running~n", [?APP]);
-        {value, {?APP, _Desc, Vsn}} ->
-            emqx_ctl:print("Application ~s ~s is running~n", [?APP, Vsn])
-    end;
+    emqx_ctl:print("Node ~p ~s is ~p~n", [node(), emqx_app:get_release(), InternalStatus]);
 status(_) ->
      emqx_ctl:usage("status", "Show broker status").
 
@@ -622,8 +616,18 @@ dump(_Table, _, '$end_of_table', Result) ->
     lists:reverse(Result);
 
 dump(Table, Tag, Key, Result) ->
-    PrintValue = [print({Tag, Record}) || Record <- ets:lookup(Table, Key)],
-    dump(Table, Tag, ets:next(Table, Key), [PrintValue | Result]).
+    Ls = lists:foldl(fun(Record, Acc) ->
+            try
+                [print({Tag, Record}) | Acc]
+            catch
+                Class : Reason : Stk ->
+                    logger:error("Failed to print ~p, error: {~p, ~p}. "
+                                 "Stacktrace: ~0p",
+                                 [Record, Class, Reason, Stk]),
+                    Acc
+            end
+         end, [], ets:lookup(Table, Key)),
+    dump(Table, Tag, ets:next(Table, Key), [lists:reverse(Ls) | Result]).
 
 print({_, []}) ->
     ok;
@@ -640,7 +644,7 @@ print({client, {ClientId, ChanPid}}) ->
     ClientInfo = maps:get(clientinfo, Attrs, #{}),
     ConnInfo = maps:get(conninfo, Attrs, #{}),
     Session = maps:get(session, Attrs, #{}),
-    Connected = case maps:get(conn_state, Attrs) of
+    Connected = case maps:get(conn_state, Attrs, undefined) of
                     connected -> true;
                     _ -> false
                 end,

@@ -1,13 +1,12 @@
 #!/bin/bash
 set -euo pipefail
 
-remote="refs/remote/$(git remote -v | grep fetch | grep 'dgiot/dgiot' | awk '{print $1}')"
-latest_release=$(git describe --tags "$(git rev-list --tags --max-count=1 --remotes="$remote")")
+latest_release=$(git describe --abbrev=0 --tags)
 
 bad_app_count=0
 
 while read -r app; do
-    if [ "$app" != "dgiot" ]; then
+    if [ "$app" != "emqx" ]; then
         app_path="$app"
     else
         app_path="."
@@ -30,5 +29,5 @@ done < <(./scripts/find-apps.sh)
 if [ $bad_app_count -gt 0 ]; then
     exit 1
 else
-    echo "apps version check successfully"
+    echo "apps version check successfully"       
 fi
