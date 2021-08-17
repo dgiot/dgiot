@@ -83,7 +83,7 @@
         order => 4,
         type => string,
         required => false,
-        default => <<"2020-05-28 10:35:10"/utf8>>,
+        default => <<"2025-05-28 10:35:10"/utf8>>,
         title => #{
             zh => <<"结束时间"/utf8>>
         },
@@ -95,7 +95,7 @@
         order => 5,
         type => integer,
         required => false,
-        default => 20,
+        default => 180,
         title => #{
             zh => <<"采集频率/秒"/utf8>>
         },

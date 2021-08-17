@@ -291,3 +291,4 @@ dets_loop(Name, Fun, Key, Acc) ->
             dets_loop(Name, Fun, dets:next(Name, Key), Acc);
         '$end_of_table' -> ok
     end.
+
