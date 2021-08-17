@@ -72,7 +72,7 @@ start(#{
 } = Args) ->
 %% 设备没上线则不加入到采集任务队列中
     dgiot_data:set_consumer(<<"taskround/", Channel/binary, "/", DtuId/binary>>, 1000000),
-    case dgiot_task:get_pnque(DtuId) of
+    case dgiot_task:get_pnque(<<"207636730b">>) of
         not_find ->
 %%            ?LOG(info, "not_find ~p", [DtuId]);
             pass;

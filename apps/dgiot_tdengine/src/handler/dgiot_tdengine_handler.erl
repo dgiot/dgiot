@@ -339,28 +339,29 @@ get_app(ProductId, Results) ->
                 error ->
                     Acc;
                 {ok, Name} ->
-                    {NewV, Unit, Ico} =
+                    {NewV, Unit, Ico, Devicetype} =
                         case maps:find(Name, Props) of
                             error ->
                                 {V, <<"">>, <<"">>};
                             {ok, #{<<"dataType">> := #{<<"type">> := Type, <<"specs">> := Specs}} = Prop} ->
+                                Devicetype1 = maps:get(<<"devicetype">>, Prop, <<"others">>),
                                 case Type of
                                     Type1 when Type1 == <<"enum">>; Type1 == <<"bool">> ->
                                         Value = maps:get(dgiot_utils:to_binary(V), Specs, V),
                                         Ico1 = maps:get(<<"ico">>, Prop, <<"">>),
-                                        {Value, <<"">>, Ico1};
+                                        {Value, <<"">>, Ico1, Devicetype1};
                                     Type2 when Type2 == <<"struct">> ->
                                         Ico1 = maps:get(<<"ico">>, Prop, <<"">>),
-                                        {V, <<"">>, Ico1};
+                                        {V, <<"">>, Ico1, Devicetype1};
                                     _ ->
                                         Unit1 = maps:get(<<"unit">>, Specs, <<"">>),
                                         Ico1 = maps:get(<<"ico">>, Prop, <<"">>),
-                                        {V, Unit1, Ico1}
+                                        {V, Unit1, Ico1, Devicetype1}
                                 end;
                             _ ->
-                                {V, <<"">>, <<"">>}
+                                {V, <<"">>, <<"">>, <<"">>}
                         end,
-                    Acc ++ [#{<<"name">> => Name, <<"number">> => NewV, <<"time">> => NewTime, <<"unit">> => Unit, <<"imgurl">> => Ico}]
+                    Acc ++ [#{<<"name">> => Name, <<"number">> => NewV, <<"time">> => NewTime, <<"unit">> => Unit, <<"imgurl">> => Ico, <<"devicetype">> => Devicetype}]
             end
                   end, [], R)
                 end, [], Results).

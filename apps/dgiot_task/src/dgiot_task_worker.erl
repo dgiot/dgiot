@@ -200,7 +200,7 @@ send_msg(#task{tid = Channel, product = Product, devaddr = DevAddr, ref = Ref, q
         _ -> erlang:cancel_timer(Ref)
     end,
     NewQue = lists:nthtail(NewCount, Que),
-    State#task{que = NewQue, dis = Dis, ref = erlang:send_after((Interval + 5) * 1000, self(), retry)}.
+    State#task{que = NewQue, dis = Dis, ref = erlang:send_after(Interval * 1000, self(), retry)}.
 
 
 get_next_pn(#task{mode = Mode, dtuid = DtuId, firstid = DeviceId, product = ProductId, devaddr = DevAddr, round = Round, ref = Ref} = State) ->
