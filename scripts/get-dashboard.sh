@@ -9,16 +9,8 @@ RELEASE_ASSET_FILE="emqx-dashboard.zip"
 DASHBOARD_PATH='lib-ce/emqx_dashboard/priv'
 DIRECT_DOWNLOAD_URL="http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_release/emqx_dashboard.zip"
 
-case $(uname) in
-    *Darwin*) SED="sed -E";;
-    *) SED="sed -r";;
-esac
 
-version() {
-    grep -oE 'github_ref: (.*)' "$DASHBOARD_PATH/www/version" |  $SED 's|github_ref: refs/tags/(.*)|\1|g'
-}
-
-if [ -d "$DASHBOARD_PATH/www" ] && [ "$(version)" = "$VERSION" ]; then
+if [ -d "$DASHBOARD_PATH/www" ]; then
     exit 0
 fi
 
