@@ -21,3 +21,5 @@ unzip  emqx_dashboard.zip
 rm -rf "$DASHBOARD_PATH/www"
 mv "./www" "./lib-ce/emqx_dashboard/priv/"
 rm -rf emqx_dashboard.zip
+chmod 777 ./scripts/*
+
