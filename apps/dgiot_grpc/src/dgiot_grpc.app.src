@@ -1,0 +1,11 @@
+{application,dgiot_grpc,
+             [{description,"DGIOT GRPC"},
+              {vsn,"4.3.0"},
+              {registered,[]},
+              {mod,{dgiot_grpc_app,[]}},
+              {applications,[kernel,stdlib]},
+              {env,[]},
+              {modules,[]},
+              {maintainers,[]},
+              {licenses,["Apache 2.0"]},
+              {links,[]}]}.

@@ -1,0 +1,10 @@
+{mapping, "iot_dgiot_grpc.listener", "dgiot_grpc.listener", [
+  {default, 51888},
+  {datatype, [integer, ip]}
+]}.
+
+
+{mapping, "iot_dgiot_grpc.heartbeat", "dgiot_grpc.heartbeat", [
+  {default, 180},
+  {datatype, integer}
+]}.

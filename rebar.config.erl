@@ -209,6 +209,7 @@ overlay_vars_rel(RelType) ->
         , {enable_plugin_dgiot_tdengine, true}
         , {enable_plugin_dgiot_task, true}
         , {enable_plugin_dgiot_http, true}
+        , {enable_plugin_dgiot_grpc, true}
         , {enable_plugin_dgiot_topo, true}
         , {enable_plugin_dgiot_opc, true}
         , {enable_plugin_dgiot_meter, true}
@@ -335,6 +336,7 @@ relx_plugin_apps_per_rel(cloud) ->
         , dgiot_license
         , dgiot_task
         , dgiot_http
+        , dgiot_grpc
         , dgiot_topo
         , dgiot_opc
         , dgiot_meter
