@@ -182,7 +182,7 @@ get_instruct(ProductId, DeviceId, Round, instruct) ->
     get_que(ProductId, DeviceId, Round).
 
 get_instruct(ProductId, Round) ->
-    case dgiot_device:lookup_prod(ProductId) of
+    case dgiot_product:lookup_prod(ProductId) of
         {ok, #{<<"thing">> := #{<<"properties">> := Props}}} when length(Props) > 0 ->
             {_, NewList} = lists:foldl(fun(X, Acc) ->
                 {Order, List} = Acc,
