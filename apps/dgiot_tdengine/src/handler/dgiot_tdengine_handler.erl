@@ -237,7 +237,7 @@ get_appdata(Channel, ProductId, DeviceId, _Args) ->
     end.
 
 get_prop(ProductId) ->
-    case dgiot_device:lookup_prod(ProductId) of
+    case dgiot_product:lookup_prod(ProductId) of
         {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
             lists:foldl(fun(X, Acc) ->
                 case X of
@@ -252,7 +252,7 @@ get_prop(ProductId) ->
 
 
 get_unit(ProductId) ->
-    case dgiot_device:lookup_prod(ProductId) of
+    case dgiot_product:lookup_prod(ProductId) of
         {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
             lists:foldl(fun(X, Acc) ->
                 case X of
@@ -266,7 +266,7 @@ get_unit(ProductId) ->
     end.
 
 get_props(ProductId) ->
-    case dgiot_device:lookup_prod(ProductId) of
+    case dgiot_product:lookup_prod(ProductId) of
         {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
             lists:foldl(fun(X, Acc) ->
                 case X of

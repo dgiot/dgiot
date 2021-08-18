@@ -116,7 +116,7 @@ handle_message(scan_opc, #state{env = Env} = State) ->
 %%    INSPEC.小闭式台位计测.I_OPC,INSPEC.小闭式台位计测.DJZS_OPC,INSPEC.小闭式台位计测.SWD_OPC,
 %%    INSPEC.小闭式台位计测.DCLL_OPC,INSPEC.小闭式台位计测.JKYL_OPC,INSPEC.小闭式台位计测.CKYL_OPC","noitemid":"000"}
 handle_message(read_opc, #state{id = ChannelId, step = read_cycle, env = #{<<"OPCSEVER">> := OpcServer, <<"productid">> := ProductId, <<"devaddr">> := DevAddr}} = State) ->
-    case dgiot_device:lookup_prod(ProductId) of
+    case dgiot_product:lookup_prod(ProductId) of
         {ok, #{<<"thing">> := #{<<"properties">> := Properties}}} ->
             Item = [maps:get(<<"dataForm">>, H) || H <- Properties],
             Item2 = [maps:get(<<"address">>, H) || H <- Item],
@@ -176,7 +176,7 @@ handle_message({deliver, _Topic, Msg}, #state{step = pre_read, env = Env} = Stat
                     Topo_para = lists:zip(Need_update_list, dgiot_opc:create_x_y(erlang:length(Need_update_list))),
                     New_config = dgiot_opc:create_config(dgiot_opc:change_config(Topo_para)),
                     dgiot_product:load(ProductId),
-                    case dgiot_device:lookup_prod(ProductId) of
+                    case dgiot_product:lookup_prod(ProductId) of
                         {ok, #{<<"thing">> := #{<<"properties">> := Properties}}} ->
                             case erlang:length(Properties) of
                                 0 ->

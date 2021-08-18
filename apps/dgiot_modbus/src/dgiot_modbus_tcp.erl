@@ -243,7 +243,7 @@ create_device(DeviceId, ProductId, DTUMAC, DTUIP, Dtutype) ->
     end.
 
 create_instruct(ACL, DtuProductId, DtuDevId) ->
-    case dgiot_device:lookup_prod(DtuProductId) of
+    case dgiot_product:lookup_prod(DtuProductId) of
         {ok, #{<<"thing">> := #{<<"properties">> := Properties}}} ->
             lists:map(fun(Y) ->
                 case Y of

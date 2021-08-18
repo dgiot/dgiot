@@ -108,6 +108,9 @@ save_cache('POST', Path, Device) ->
         <<"/classes/Device">> ->
             Map = jsx:decode(Device, [{labels, binary}, return_maps]),
             dgiot_device:post(Map);
+        <<"/classes/Product">> ->
+            Map = jsx:decode(Device, [{labels, binary}, return_maps]),
+            dgiot_product:save(Map);
         _ ->
             pass
     end;
@@ -117,6 +120,9 @@ save_cache('PUT', Path, Device) ->
         <<"/classes/Device/", ObjectId/binary>> ->
             Map = jsx:decode(Device, [{labels, binary}, return_maps]),
             dgiot_device:put(Map#{<<"objectId">> => ObjectId});
+        <<"/classes/Product/", ObjectId/binary>> ->
+            Map = jsx:decode(Device, [{labels, binary}, return_maps]),
+            dgiot_product:save_prod(ObjectId, Map);
         _ ->
             pass
     end;
@@ -125,8 +131,10 @@ save_cache('DELETE', Path, Device) ->
     case Path of
         <<"/classes/Device/", ObjectId/binary>> ->
             dgiot_device:delete(ObjectId);
+        <<"/classes/Product/", ObjectId/binary>> ->
+            dgiot_product:delete(ObjectId);
         _ ->
-            ?LOG(error, "Path ~p, Device ~p", [ Path, Device]),
+            ?LOG(error, "Path ~p, Device ~p", [Path, Device]),
             pass
     end;
 
@@ -320,9 +328,11 @@ do_request(Method, Path, Header, Data, Options) ->
         {ok, StatusCode, Headers, ResBody} ->
             case do_request_after(Method, Path, Data, ResBody, Options) of
                 {ok, NewResBody} ->
+                    ?LOG(info, "Path ~p", [Path]),
                     save_cache(Method, Path, Data),
                     {ok, StatusCode, Headers, NewResBody};
                 ignore ->
+                    ?LOG(info, "Path ~p", [Path]),
                     save_cache(Method, Path, Data),
                     {ok, StatusCode, Headers, ResBody};
                 {error, Reason} ->
@@ -375,6 +385,7 @@ do_request_after(Method0, Path, Data, ResBody, Options) ->
             _ ->
                 method(Method0, atom)
         end,
+%%    <<"/classes/Product/0a3e65869f">>
     {match, PathList} = re:run(Path, <<"([^/]+)">>, [global, {capture, all_but_first, binary}]),
     do_request_hook('after', lists:concat(PathList), Method, Data, ResBody).
 
@@ -383,6 +394,7 @@ do_request_hook(Type, [<<"classes">>, Class, ObjectId], Method, Data, Body) ->
 do_request_hook(Type, [<<"classes">>, Class], Method, Data, Body) ->
     do_hook({Class, Method}, [Type, Data, Body]);
 do_request_hook(_Type, _Paths, _Method, _Data, _Body) ->
+    ?LOG(info, "_Paths ~p", [_Paths]),
     ignore.
 do_hook(Key, Args) ->
     case catch dgiot_hook:run_hook(Key, Args) of

@@ -27,7 +27,7 @@
 -export([start/0, load/0, load/1, init/3, handle_event/3, handle_message/2, stop/3]).
 -export([add_device/2, local/1, save/1, get/1, synchronize_device/1]).
 -export([add_handler/4, do_handler/3, del_handler/1]).
--export([update_config/2, parse_frame/3, to_frame/2]).
+-export([update_config/2, parse_frame/3, to_frame/2, delete/1, save_prod/2, lookup_prod/1]).
 
 -export([create_product/2]).
 
@@ -40,7 +40,7 @@ start() ->
 load(ProductId) ->
     case dgiot_channelx:call(?TYPE, ?CHANNEL, {load, ProductId, true}) of
         {ok, Product} = Result ->
-            dgiot_device:save_prod(ProductId, Product),
+            dgiot_product:save_prod(ProductId, Product),
             Result;
         Error -> Error
     end.
@@ -141,10 +141,33 @@ load() ->
     },
     dgiot_parse_loader:start(<<"Product">>, Query, 0, 100, 1000000, Success).
 
+
+%% 存储产品
+%%-define(SMART_PROD, mnesia_smartprod).
+%%-record(dgiot_prod, {
+%%    key,      % [ProductId], [产品ID]
+%%    product   % 产品基本数据,map类型
+%%}).
+save_prod(ProductId, Product) ->
+    case dgiot_data:insert(?DGIOT_PRODUCT, ProductId, Product) of
+        true ->
+            ok;
+        {error, Reason} ->
+            {error, Reason}
+    end.
+
+lookup_prod(ProductId) ->
+    case dgiot_data:get(?DGIOT_PRODUCT, ProductId) of
+        not_find ->
+            not_find;
+        Value ->
+            {ok, Value}
+    end.
+
 save(Product) ->
     Product1 = format_product(Product),
     #{<<"productId">> := ProductId} = Product1,
-    dgiot_data:insert(?MODULE, ProductId, Product1),
+    dgiot_data:insert(?DGIOT_PRODUCT, ProductId, Product1),
     ?LOG(debug, "product ~p", [Product1]),
     {ok, Product1}.
 
@@ -155,6 +178,9 @@ local(ProductId) ->
         {error, not_find} ->
             {error, not_find}
     end.
+
+delete(ProductId) ->
+    dgiot_data:delete(?DGIOT_PRODUCT, ProductId).
 
 get(ProductId) ->
     Keys = [<<"nodeType">>, <<"objectId">>, <<"thing">>, <<"dynamicReg">>, <<"topics">>, <<"ACL">>],

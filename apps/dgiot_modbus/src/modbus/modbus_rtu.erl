@@ -409,7 +409,7 @@ list_word16_to_binary(Values) when is_list(Values) ->
     ).
 
 modbus_decoder(ProductId, SlaveId, Address, Data) ->
-    case dgiot_device:lookup_prod(ProductId) of
+    case dgiot_product:lookup_prod(ProductId) of
         {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
             lists:foldl(fun(X, Acc) ->
                 case X of
@@ -441,7 +441,7 @@ modbus_decoder(ProductId, SlaveId, Address, Data) ->
     end.
 
 modbus_encoder(ProductId, SlaveId, Address, Value) ->
-    case dgiot_device:lookup_prod(ProductId) of
+    case dgiot_product:lookup_prod(ProductId) of
         {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
             lists:foldl(fun(X, Acc) ->
                 case X of

@@ -231,6 +231,9 @@ save_td(#task{app = _App, tid = Channel, product = ProductId, devaddr = DevAddr,
         0 -> pass;
         _ ->
             Data = dgiot_task:get_calculated(ProductId, Ack),
+            ?LOG(info,"ProductId ~p",[ProductId]),
+            ?LOG(info,"Ack ~p ~t",[Ack]),
+            ?LOG(info,"Data ~p",[Data]),
             case length(maps:to_list(Data)) of
                 0 -> pass;
                 _ ->

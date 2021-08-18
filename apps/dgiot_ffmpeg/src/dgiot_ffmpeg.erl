@@ -263,7 +263,7 @@ get_ipc(DtuAddr) ->
                 end, #{}, dgiot_device:get_sub_device(DtuAddr)).
 
 create_instruct(ACL, ProductId, DeviceId, DevAddr) ->
-    case dgiot_device:lookup_prod(ProductId) of
+    case dgiot_product:lookup_prod(ProductId) of
         {ok, #{<<"thing">> := Thing}} ->
             #{<<"properties">> := Props} = Thing,
             NewProps =

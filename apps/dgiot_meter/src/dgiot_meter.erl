@@ -31,7 +31,7 @@
 
 %%新设备
 create_dtu(mqtt, DtuAddr, ProductId, DTUIP) ->
-    case dgiot_device:lookup_prod(ProductId) of
+    case dgiot_product:lookup_prod(ProductId) of
         {ok, #{<<"ACL">> := Acl}} ->
             Requests = #{
                 <<"devaddr">> => DtuAddr,

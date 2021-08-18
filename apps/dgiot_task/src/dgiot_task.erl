@@ -164,7 +164,7 @@ stop(#{
 
 %%获取计算值，必须返回物模型里面的数据表示，不能用寄存器地址
 get_calculated(ProductId, Ack) ->
-    case dgiot_device:lookup_prod(ProductId) of
+    case dgiot_product:lookup_prod(ProductId) of
         {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
             lists:foldl(fun(X, Acc) ->
                 case Acc of
@@ -192,7 +192,7 @@ get_calculated(ProductId, Ack) ->
 %%转换设备上报值，必须返回物模型里面的数据表示，不能用寄存器地址
 get_collection(ProductId, Dis, Payload, Ack) ->
 %%    ?LOG(info,"Payload ~p", [Payload]),
-    case dgiot_device:lookup_prod(ProductId) of
+    case dgiot_product:lookup_prod(ProductId) of
         {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
             lists:foldl(fun(Identifier, Acc1) ->
                 lists:foldl(fun(X, Acc2) ->
@@ -314,3 +314,7 @@ del_pnque(DtuId) ->
         _ ->
             pass
     end.
+
+
+
+
