@@ -148,13 +148,14 @@ load() ->
 %%    key,      % [ProductId], [产品ID]
 %%    product   % 产品基本数据,map类型
 %%}).
-save_prod(ProductId, Product) ->
-    case dgiot_data:insert(?DGIOT_PRODUCT, ProductId, Product) of
-        true ->
-            ok;
-        {error, Reason} ->
-            {error, Reason}
-    end.
+save_prod(ProductId, #{<<"thing">> := _thing} = Product) ->
+    dgiot_data:insert(?DGIOT_PRODUCT, ProductId, Product),
+    ?LOG(debug, "product ~p", [Product]),
+    {ok, Product};
+
+save_prod(_ProductId, _Product) ->
+    ?LOG(error, "product error ~p", [_Product]),
+    pass.
 
 lookup_prod(ProductId) ->
     case dgiot_data:get(?DGIOT_PRODUCT, ProductId) of
@@ -164,12 +165,16 @@ lookup_prod(ProductId) ->
             {ok, Value}
     end.
 
-save(Product) ->
+save(#{<<"thing">> := _thing} = Product) ->
     Product1 = format_product(Product),
     #{<<"productId">> := ProductId} = Product1,
     dgiot_data:insert(?DGIOT_PRODUCT, ProductId, Product1),
     ?LOG(debug, "product ~p", [Product1]),
-    {ok, Product1}.
+    {ok, Product1};
+
+save(_Product) ->
+    ?LOG(error, "product error ~p", [_Product]),
+    pass.
 
 local(ProductId) ->
     case dgiot_data:lookup(?DGIOT_PRODUCT, ProductId) of
@@ -183,7 +188,7 @@ delete(ProductId) ->
     dgiot_data:delete(?DGIOT_PRODUCT, ProductId).
 
 get(ProductId) ->
-    Keys = [<<"nodeType">>, <<"objectId">>, <<"thing">>, <<"dynamicReg">>, <<"topics">>, <<"ACL">>],
+    Keys = [<<"nodeType">>, <<"dynamicReg">>, <<"topics">>],
     case dgiot_parse:get_object(<<"Product">>, ProductId) of
         {ok, Product} ->
             {ok, maps:with(Keys, Product)};
@@ -377,4 +382,5 @@ parse_frame(ProductId, Bin, Opts) ->
 
 to_frame(ProductId, Msg) ->
     apply(binary_to_atom(ProductId, utf8), to_frame, [Msg]).
+
 

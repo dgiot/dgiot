@@ -26,7 +26,7 @@
 -export([init_ets/0]).
 %% API
 -export([start/2, transaction/2, run_sql/3, handle_save/1, save_to_cache/2]).
--export([init/3, handle_event/3, handle_message/2, stop/3]).
+-export([init/3, handle_event/3, handle_message/2, stop/3, handle_init/1]).
 -export([test/1]).
 
 %% 注册通道类型
@@ -172,31 +172,25 @@ start(ChannelId, #{
 
 %% 通道初始化
 init(?TYPE, ChannelId, Config) ->
-    case dgiot_bridge:get_products(ChannelId) of
-        {ok, _, ProductIds} ->
-            NewProducts = lists:foldl(fun(X, Acc) ->
-                Acc ++ dgiot_tdengine:get_products(X, ChannelId)
-                                      end, [], ProductIds),
-            do_check(ChannelId, dgiot_utils:unique_1(NewProducts), Config),
-            Opts = [?CACHE(ChannelId), #{
-                auto_save => application:get_env(dgiot_tdengine, cache_auto_save, 30000),
-                size => application:get_env(dgiot_tdengine, cache_max_size, 50000),
-                memory => application:get_env(dgiot_tdengine, cache_max_memory, 102400),
-                max_time => application:get_env(dgiot_tdengine, cache_max_time, 30),
-                handle => {?MODULE, handle_save, [ChannelId]}
-            }],
-            State = #state{
-                id = ChannelId,
-                env = Config,
-                product = dgiot_utils:unique_1(NewProducts)
-            },
-            Specs = [
-                {dgiot_dcache, {dgiot_dcache, start_link, Opts}, permanent, 5000, worker, [dgiot_dcache]}
-            ],
-            {ok, State, Specs};
-        {error, not_find} ->
-            {stop, not_find_product}
-    end.
+    Opts = [?CACHE(ChannelId), #{
+        auto_save => application:get_env(dgiot_tdengine, cache_auto_save, 30000),
+        size => application:get_env(dgiot_tdengine, cache_max_size, 50000),
+        memory => application:get_env(dgiot_tdengine, cache_max_memory, 102400),
+        max_time => application:get_env(dgiot_tdengine, cache_max_time, 30),
+        handle => {?MODULE, handle_save, [ChannelId]}
+    }],
+    State = #state{
+        id = ChannelId,
+        env = Config
+    },
+    Specs = [
+        {dgiot_dcache, {dgiot_dcache, start_link, Opts}, permanent, 5000, worker, [dgiot_dcache]}
+    ],
+    {ok, State, Specs}.
+
+handle_init(State) ->
+    erlang:send_after(5000, self(), init),
+    {ok, State}.
 
 %% 通道消息处理,注意：进程池调用
 handle_event(full, _From, #state{id = Channel}) ->
@@ -212,6 +206,19 @@ handle_message({rule, Msg, Context}, State) ->
     ?LOG(info, "Msg ~p", [Msg]),
     ?LOG(info, "Context ~p", [Context]),
     handle_message({data, Msg, Context}, State);
+
+
+handle_message(init, #state{id = ChannelId, env = Config} = State) ->
+    case dgiot_bridge:get_products(ChannelId) of
+        {ok, _, ProductIds} ->
+            NewProducts = lists:foldl(fun(X, Acc) ->
+                Acc ++ dgiot_tdengine:get_products(X, ChannelId)
+                                      end, [], ProductIds),
+            do_check(ChannelId, dgiot_utils:unique_1(NewProducts), Config),
+            {ok, State#state{product = NewProducts}};
+        {error, not_find} ->
+            {ok, State}
+    end;
 
 %% 数据与产品，设备地址分离
 handle_message({data, Product, DevAddr, Data, Context}, State) ->
@@ -319,15 +326,16 @@ save_to_tdengine(_, []) -> ok;
 save_to_tdengine(Channel, Requests) ->
     case dgiot_tdengine:batch(Channel, Requests) of
         {ok, _Results} ->
-            %?LOG(info,"Batch ~p-> ~p~n", [length(Requests), Results]),
+            ?LOG(info, "Batch ~p-> ~p~n", [length(Requests), _Results]),
             ok;
         {error, Reason} when Reason == timeout; Reason == disconnect ->
-            save_to_cache(Channel, Requests),
-            ok;
+            ?LOG(error, "save cache,~p,~p~n", [Requests, Reason]),
+%%            save_to_cache(Channel, Requests),
+            pass;
         {error, Reason} ->
             ?LOG(error, "save cache,~p,~p~n", [Requests, Reason]),
-            save_to_cache(Channel, Requests),
-            ok
+%%            save_to_cache(Channel, Requests),
+            pass
     end.
 
 
@@ -417,7 +425,7 @@ create_table(ChannelId, [ProductId | ProductIds], Config) ->
                     end
             end;
         {error, Reason} ->
-            ?LOG(error, "Create Table Error, ~p", [Reason])
+            ?LOG(error, "Create Table Error, ~p ~p", [Reason, ProductId])
     end,
     create_table(ChannelId, ProductIds, Config).
 
@@ -545,7 +553,6 @@ check_field(Data, #{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> :=
                     _ ->
                         Value
                 end,
-            ?LOG(info, "NewValue ~p", [NewValue]),
             case check_validate(NewValue, DataType) of
                 true ->
                     NewValue;

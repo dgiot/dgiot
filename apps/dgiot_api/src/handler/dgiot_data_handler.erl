@@ -52,23 +52,23 @@ handle(OperationID, Args, Context, Req) ->
     Headers = #{},
     case catch do_request(OperationID, Args, Context, Req) of
         {ErrType, Reason} when ErrType == 'EXIT'; ErrType == error ->
-            ?LOG(info, "do request: ~p, ~p, ~p~n", [OperationID, Args, Reason]),
+            ?LOG(debug, "do request: ~p, ~p, ~p~n", [OperationID, Args, Reason]),
             Err = case is_binary(Reason) of
                       true -> Reason;
                       false -> dgiot_utils:format("~p", [Reason])
                   end,
             {500, Headers, #{<<"error">> => Err}};
         ok ->
-            ?LOG(error, "do request: ~p, ~p ->ok ~n", [OperationID, Args]),
+            ?LOG(debug, "do request: ~p, ~p ->ok ~n", [OperationID, Args]),
             {200, Headers, #{}, Req};
         {ok, Res} ->
-            ?LOG(error, "do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
+            ?LOG(debug, "do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
             {200, Headers, Res, Req};
         {Status, Res} ->
-            ?LOG(error, "do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
+            ?LOG(debug, "do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
             {Status, Headers, Res, Req};
         {Status, NewHeaders, Res} ->
-            ?LOG(error, "do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
+            ?LOG(debug, "do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
             {Status, maps:merge(Headers, NewHeaders), Res, Req}
     end.
 
@@ -162,8 +162,39 @@ do_request(post_graphql, Body, #{<<"sessionToken">> := SessionToken} = _Context,
         Other -> Other
     end;
 
-%% Thing 概要: 导库 描述:json文件导库
-%% OperationId:post_product
+
+%% Thing 概要: 导库 描述:添加物模型
+%% OperationId:post_thing
+%% 请求:PUT /iotapi/post_thing
+do_request(post_thing, #{<<"productid">> := ProductId, <<"item">> := Item} = _Body,
+    #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
+    #{<<"identifier">> := Identifier} = Item,
+    case dgiot_parse:get_object(<<"Product">>, ProductId, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+        {ok, #{<<"thing">> := Thing}} ->
+            Properties = maps:get(<<"properties">>, Thing, []),
+            NewThing =
+                lists:foldl(fun(X, _Acc) ->
+                    case X of
+                        #{<<"identifier">> := Identifier} -> <<>>;
+                        _ -> Item
+                    end
+                            end, <<>>, Properties),
+            case NewThing of
+                <<>> ->
+                    {error, #{<<"code">> => 500, <<"msg">> => <<Identifier/binary, " already existed">>}};
+                X ->
+                    NewProperties = Properties ++ [X],
+                    dgiot_parse:update_object(<<"Product">>, ProductId,
+                        #{<<"thing">> => Thing#{<<"properties">> => NewProperties}},
+                        [{"X-Parse-Session-Token", SessionToken}], [{from, rest}])
+            end;
+        Error ->
+            {error, Error}
+    end;
+
+
+%% Thing 概要: 导库 描述:修改物模型
+%% OperationId:put_thing
 %% 请求:PUT /iotapi/put_thing
 do_request(put_thing, #{<<"productid">> := ProductId, <<"item">> := Item} = _Body,
     #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
@@ -171,17 +202,63 @@ do_request(put_thing, #{<<"productid">> := ProductId, <<"item">> := Item} = _Bod
     case dgiot_parse:get_object(<<"Product">>, ProductId, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
         {ok, #{<<"thing">> := Thing}} ->
             #{<<"properties">> := Properties} = Thing,
-            NewProperties = lists:foldl(fun(X, Acc) ->
-                case X of
-                    #{<<"identifier">> := Identifier} -> Acc ++ [Item];
-                    _ -> Acc ++ [X]
-                end
-                                        end, [], Properties),
+            NewProperties =
+                lists:foldl(fun(X, Acc) ->
+                    case X of
+                        #{<<"identifier">> := Identifier} ->
+                            Acc ++ [Item];
+                        _ ->
+                            Acc ++ [X]
+                    end
+                            end, [], Properties),
             dgiot_parse:update_object(<<"Product">>, ProductId,
                 #{<<"thing">> => Thing#{<<"properties">> => NewProperties}},
                 [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]);
         Error ->
-            Error
+            {error, Error}
+    end;
+
+%% Thing 概要: 导库 描述:删除物模型
+%% OperationId:put_thing
+%% 请求:PUT /iotapi/put_thing
+do_request(delete_thing, #{<<"productid">> := ProductId, <<"item">> := Item} = _Body,
+    #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
+    #{<<"identifier">> := Identifier} = Item,
+    case dgiot_parse:get_object(<<"Product">>, ProductId, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+        {ok, #{<<"thing">> := Thing}} ->
+            #{<<"properties">> := Properties} = Thing,
+            {Ids, NewProperties} =
+                lists:foldl(fun(X, {Ids1, Acc}) ->
+                    case X of
+                        #{<<"identifier">> := Identifier} ->
+                            {Ids1, Acc};
+                        #{<<"identifier">> := Identifier1, <<"dataForm">> := #{<<"collection">> := Collection}} ->
+                            case binary:match(Collection, [Identifier]) of
+                                nomatch ->
+                                    {Ids1, Acc ++ [X]};
+                                _ ->
+                                    case Ids1 of
+                                        [] ->
+                                            {Ids1 ++ [Identifier1], Acc};
+                                        _ ->
+                                            {Ids1 ++ [<<",", Identifier1/binary>>], Acc}
+                                    end
+                            end;
+                        _ ->
+                            {Ids1, Acc}
+                    end
+                            end, {[], []}, Properties),
+            case length(Ids) == 0 of
+                true ->
+                    dgiot_parse:update_object(<<"Product">>, ProductId,
+                        #{<<"thing">> => Thing#{<<"properties">> => NewProperties}},
+                        [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]);
+                false ->
+                    BinIds = dgiot_utils:to_binary(Ids),
+                    {error, #{<<"code">> => 500, <<"msg">> => <<BinIds/binary, " use ", Identifier/binary>>}}
+            end;
+        Error ->
+            {error, Error}
     end;
 
 

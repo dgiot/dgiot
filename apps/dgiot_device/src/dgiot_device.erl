@@ -100,21 +100,22 @@ save(ProductId, DevAddr, _Data) ->
 
 sync_parse(OffLine) ->
     Fun = fun(X) ->
+        ?LOG(debug, "X ~p", [X]),
         {_, DeviceId, V} = X,
         Now = dgiot_datetime:now_secs(),
         case V of
-            {[true, Last, _], Node} when (Now - Last) > (OffLine * 1000) ->
+            {[true, Last, Acl], Node} when (Now - Last) > OffLine ->
                 case dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"status">> => <<"OFFLINE">>}) of
                     {ok, _R} ->
-                        dgiot_mnesia:insert(DeviceId, {[false, Last], Node});
+                        dgiot_mnesia:insert(DeviceId, {[false, Last, Acl], Node});
                     _ ->
                         pass
                 end,
                 timer:sleep(50);
-            {[false, Last, _], Node} when (Now - Last) < (OffLine * 1000) ->
+            {[false, Last, Acl], Node} when (Now - Last) < OffLine ->
                 case dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"status">> => <<"ONLINE">>}) of
                     {ok, _R} ->
-                        dgiot_mnesia:insert(DeviceId, {[true, Last], Node});
+                        dgiot_mnesia:insert(DeviceId, {[true, Last, Acl], Node});
                     _ ->
                         pass
                 end,
@@ -340,7 +341,7 @@ get_online(DeviceId) ->
             false
     end.
 
-get_file(ProductId, DevAddr, FileUrl,  Ext) ->
+get_file(ProductId, DevAddr, FileUrl, Ext) ->
     Name = dgiot_datetime:now_microsecs(),
     FileName = dgiot_utils:to_list(Name) ++ "." ++ Ext,
     case ibrowse:send_req(FileUrl, [], get) of
@@ -383,7 +384,7 @@ get_file(ProductId, DevAddr, FileUrl,  Ext) ->
                 {ok, {{"HTTP/1.1", 200, "OK"}, _, Json}} ->
                     case jsx:decode(dgiot_utils:to_binary(Json), [{labels, binary}, return_maps]) of
                         #{<<"md5">> := _Md5} ->
-                            {ok,Name};
+                            {ok, Name};
                         Error1 ->
                             Error1
                     end;
