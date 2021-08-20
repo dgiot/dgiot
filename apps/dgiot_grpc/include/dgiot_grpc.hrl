@@ -13,15 +13,35 @@
 %% See the License for the specific language governing permissions and
 %% limitations under the License.
 %%--------------------------------------------------------------------
-
--define(METER, <<"METER">>).
--define(DLT645, <<"DLT645">>).
+-ifndef(DGIOT_GRPC_HRL).
+-define(DGIOT_GRPC_HRL, true).
 
 -record(state, {
     id,
-    env = #{},
-    dtuaddr = <<>>,
-    step = login,
-    ref = undefined,
-    search = <<"quick">>
+    env = #{}
 }).
+
+
+-define(ENABLED_HOOKS,
+    [ {'client.connect',      {dgiot_exhook_handler, on_client_connect,       []}}
+        , {'client.connack',      {dgiot_exhook_handler, on_client_connack,       []}}
+        , {'client.connected',    {dgiot_exhook_handler, on_client_connected,     []}}
+        , {'client.disconnected', {dgiot_exhook_handler, on_client_disconnected,  []}}
+        , {'client.authenticate', {dgiot_exhook_handler, on_client_authenticate,  []}}
+        , {'client.check_acl',    {dgiot_exhook_handler, on_client_check_acl,     []}}
+        , {'client.subscribe',    {dgiot_exhook_handler, on_client_subscribe,     []}}
+        , {'client.unsubscribe',  {dgiot_exhook_handler, on_client_unsubscribe,   []}}
+        , {'session.created',     {dgiot_exhook_handler, on_session_created,      []}}
+        , {'session.subscribed',  {dgiot_exhook_handler, on_session_subscribed,   []}}
+        , {'session.unsubscribed',{dgiot_exhook_handler, on_session_unsubscribed, []}}
+        , {'session.resumed',     {dgiot_exhook_handler, on_session_resumed,      []}}
+        , {'session.discarded',   {dgiot_exhook_handler, on_session_discarded,    []}}
+        , {'session.takeovered',  {dgiot_exhook_handler, on_session_takeovered,   []}}
+        , {'session.terminated',  {dgiot_exhook_handler, on_session_terminated,   []}}
+        , {'message.publish',     {dgiot_exhook_handler, on_message_publish,      []}}
+        , {'message.delivered',   {dgiot_exhook_handler, on_message_delivered,    []}}
+        , {'message.acked',       {dgiot_exhook_handler, on_message_acked,        []}}
+        , {'message.dropped',     {dgiot_exhook_handler, on_message_dropped,      []}}
+    ]).
+
+-endif.

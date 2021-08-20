@@ -78,10 +78,22 @@ start(ChannelId, ChannelArgs) ->
 init(?TYPE, ChannelId, #{
     <<"port">> := _Port,
     <<"product">> := _Products}) ->
-
     State = #state{
         id = ChannelId
     },
+%%    %% grpc server
+%%    Services = #{protos => [dgiot_exhook_pb],
+%%        services => #{
+%%            'dgiot.exhook.v1.HookProvider' => exhook_svr
+%%        }
+%%    },
+%%    Options = [],
+%%    {ok, Spec} = grpc:start_server(exhook_svr, 9000, Services, Options),
+%%    io:format("Start service exhook_svr on 9000 successfully!~n", []),
+%%    %% magic line
+%%    _ = exhook_svr:module_info(),
+%%    %% counter
+%%    ets:new(exhook_stats, [public, named_table, {write_concurrency, true}]),
     {ok, State, []};
 
 init(?TYPE, _ChannelId, _Args) ->
