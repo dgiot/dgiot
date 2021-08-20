@@ -9,7 +9,7 @@ The `emqx_exproto` extremly enhance the extensibility for EMQ X. It allow using 
 
 ## Architecture
 
-![EMQ X ExProto Arch](./docs/images/exproto-arch.jpg)
+![](./docs/images/exproto-arch.jpg)
 
 ## Usage
 

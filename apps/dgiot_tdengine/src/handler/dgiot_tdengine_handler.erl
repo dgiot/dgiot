@@ -22,7 +22,7 @@
 -include_lib("dgiot/include/logger.hrl").
 
 %% API
--export([swagger_tdengine/0]).
+-export([swagger_tdengine/0, get_props/1]).
 -export([handle/4]).
 
 
@@ -241,7 +241,7 @@ get_prop(ProductId) ->
         {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
             lists:foldl(fun(X, Acc) ->
                 case X of
-                    #{<<"identifier">> := Identifier, <<"name">> := Name} ->
+                    #{<<"identifier">> := Identifier, <<"name">> := Name, <<"isshow">> := true} ->
                         Acc#{Identifier => Name};
                     _ -> Acc
                 end
@@ -270,7 +270,7 @@ get_props(ProductId) ->
         {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
             lists:foldl(fun(X, Acc) ->
                 case X of
-                    #{<<"name">> := Name} ->
+                    #{<<"name">> := Name, <<"isshow">> := true} ->
                         Acc#{Name => X};
                     _ -> Acc
                 end
@@ -303,7 +303,7 @@ get_chart(ProductId, Results, Names, Interval) ->
                           end, #{}, Line),
             Lines ++ [NewLine]
                     end, [], Results),
-    ?LOG(info, "Rows ~p", [Rows]),
+    ?LOG(debug, "Rows ~p", [Rows]),
     ChildRows = lists:foldl(fun(X, Acc1) ->
         Date = maps:get(<<"日期"/utf8>>, X),
         maps:fold(fun(K1, V1, Acc) ->
@@ -315,7 +315,7 @@ get_chart(ProductId, Results, Names, Interval) ->
             end
                   end, Acc1, maps:without([<<"日期"/utf8>>], X))
                             end, #{}, Rows),
-    ?LOG(info, "ChildRows ~p", [ChildRows]),
+    ?LOG(debug, "ChildRows ~p", [ChildRows]),
     Child =
         maps:fold(fun(K, V, Acc) ->
             Unit =
@@ -325,7 +325,7 @@ get_chart(ProductId, Results, Names, Interval) ->
                 end,
             Acc ++ [#{<<"columns">> => [<<"日期"/utf8>>, K], <<"rows">> => V, <<"unit">> => Unit}]
                   end, [], ChildRows),
-    ?LOG(info, "Child ~p", [Child]),
+    ?LOG(debug, "Child ~p", [Child]),
     #{<<"columns">> => Columns, <<"rows">> => Rows, <<"child">> => Child}.
 
 get_app(ProductId, Results) ->
@@ -342,7 +342,7 @@ get_app(ProductId, Results) ->
                     {NewV, Unit, Ico, Devicetype} =
                         case maps:find(Name, Props) of
                             error ->
-                                {V, <<"">>, <<"">>};
+                                {V, <<"">>, <<"">>, <<"others">>};
                             {ok, #{<<"dataType">> := #{<<"type">> := Type, <<"specs">> := Specs}} = Prop} ->
                                 Devicetype1 = maps:get(<<"devicetype">>, Prop, <<"others">>),
                                 case Type of
@@ -359,7 +359,7 @@ get_app(ProductId, Results) ->
                                         {V, Unit1, Ico1, Devicetype1}
                                 end;
                             _ ->
-                                {V, <<"">>, <<"">>, <<"">>}
+                                {V, <<"">>, <<"">>, <<"others">>}
                         end,
                     Acc ++ [#{<<"name">> => Name, <<"number">> => NewV, <<"time">> => NewTime, <<"unit">> => Unit, <<"imgurl">> => Ico, <<"devicetype">> => Devicetype}]
             end

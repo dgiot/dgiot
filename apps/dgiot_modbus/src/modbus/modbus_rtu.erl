@@ -216,7 +216,7 @@ parse_frame(<<SlaveId:8, _/binary>> = Buff, Acc, #{<<"dtuaddr">> := DtuAddr, <<"
 %rtu modbus
 parse_frame(_Other, Acc, _State) ->
     ?LOG(error, "_Other ~p", [_Other]),
-    {<<>>, Acc}.
+    {error, Acc}.
 
 decode_data(Buff, ProductId, DtuAddr, Address, Acc) ->
     <<SlaveId:8, FunCode:8, ResponseData/binary>> = Buff,
