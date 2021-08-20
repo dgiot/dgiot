@@ -3,7 +3,7 @@
               {vsn,"4.3.0"},
               {registered,[]},
               {mod,{dgiot_grpc_app,[]}},
-              {applications,[kernel,stdlib]},
+              {applications,[kernel,stdlib,grpc]},
               {env,[]},
               {modules,[]},
               {maintainers,[]},
