@@ -199,7 +199,7 @@ add_notification(<<"stop_", Ruleid/binary>>, DevAddr, Payload) ->
     case dgiot_data:get(?NOTIFICATION, {DeviceId, Ruleid}) of
         {start, _Time} ->
             save_notification(Ruleid, DevAddr, Payload#{<<"alertstatus">> => false});
-        _->
+        _ ->
             pass
     end,
     dgiot_data:insert(?NOTIFICATION, {DeviceId, Ruleid}, {stop, dgiot_datetime:now_secs()});
@@ -323,7 +323,8 @@ sendSubscribe(Type, Content, UserId) ->
                                     maps:fold(fun(Key, Value1, Form) ->
                                         case maps:find(Key, Content) of
                                             {ok, Value} ->
-                                                Form#{<<"thing15">> => #{<<"value">> => Value}};
+                                                BinValue = dgiot_utils:to_binary(Value),
+                                                Form#{<<"thing15">> => #{<<"value">> => BinValue}};
                                             _ ->
                                                 Default = maps:get(<<"default">>, Value1, <<>>),
                                                 Form#{Key => #{<<"value">> => Default}}

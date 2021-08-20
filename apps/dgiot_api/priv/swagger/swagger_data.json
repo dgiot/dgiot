@@ -413,6 +413,90 @@
       }
     },
     "/thing": {
+      "post": {
+        "summary": "添加物模型",
+        "description": "添加物模型",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "data",
+            "description": "关联信息",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "productid": {
+                  "description": "产品标识",
+                  "type": "string",
+                  "example": "ed09e37bbb"
+                },
+                "item": {
+                  "description": "物模型单项指标",
+                  "type": "object",
+                  "example": {
+                    "name": "电压",
+                    "index": 11,
+                    "isshow": true,
+                    "dataForm": {
+                      "data": "1",
+                      "rate": 1,
+                      "order": 26,
+                      "round": "all",
+                      "offset": 0,
+                      "address": "0X0107",
+                      "control": "%d",
+                      "iscount": "0",
+                      "slaveid": "0X01",
+                      "protocol": "modbus",
+                      "strategy": "20",
+                      "collection": "%s*0.1",
+                      "countround": "all",
+                      "operatetype": "readHregs",
+                      "originaltype": "short16_AB",
+                      "countstrategy": 20,
+                      "countcollection": "%s"
+                    },
+                    "dataType": {
+                      "type": "float",
+                      "specs": {
+                        "max": 9999,
+                        "min": 0,
+                        "step": 0,
+                        "unit": "V",
+                        "precision": 2
+                      }
+                    },
+                    "required": true,
+                    "accessMode": "r",
+                    "devicetype": "控制器",
+                    "identifier": "voltage"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Product"
+        ]
+      },
       "put": {
         "summary": "修改物模型",
         "description": "修改物模型",
@@ -428,36 +512,132 @@
                 "productid": {
                   "description": "产品标识",
                   "type": "string",
-                  "example": "9c5930e565"
+                  "example": "ed09e37bbb"
                 },
                 "item": {
                   "description": "物模型单项指标",
                   "type": "object",
                   "example": {
-                    "name": "出口压力",
+                    "name": "电压",
+                    "index": 11,
+                    "isshow": true,
                     "dataForm": {
+                      "data": "1",
                       "rate": 1,
+                      "order": 26,
+                      "round": "all",
                       "offset": 0,
-                      "address": "0x0001",
-                      "slaveid": 1,
+                      "address": "0X0107",
+                      "control": "%d",
+                      "iscount": "0",
+                      "slaveid": "0X01",
                       "protocol": "modbus",
-                      "quantity": 2,
-                      "byteorder": "big",
-                      "operatetype": "holdingRegister",
-                      "originaltype": "int16"
+                      "strategy": "20",
+                      "collection": "%s*0.1",
+                      "countround": "all",
+                      "operatetype": "readHregs",
+                      "originaltype": "short16_AB",
+                      "countstrategy": 20,
+                      "countcollection": "%s"
                     },
                     "dataType": {
                       "type": "float",
                       "specs": {
-                        "max": 500,
-                        "min": -500,
-                        "step": 0.1,
-                        "unit": "MPa"
+                        "max": 9999,
+                        "min": 0,
+                        "step": 0,
+                        "unit": "V",
+                        "precision": 2
                       }
                     },
                     "required": true,
                     "accessMode": "r",
-                    "identifier": "pressure_out"
+                    "devicetype": "控制器",
+                    "identifier": "voltage"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Product"
+        ]
+      },
+      "delete": {
+        "summary": "删除物模型",
+        "description": "删除物模型",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "data",
+            "description": "关联信息",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "productid": {
+                  "description": "产品标识",
+                  "type": "string",
+                  "example": "ed09e37bbb"
+                },
+                "item": {
+                  "description": "物模型单项指标",
+                  "type": "object",
+                  "example": {
+                    "name": "电压",
+                    "index": 11,
+                    "isshow": true,
+                    "dataForm": {
+                      "data": "1",
+                      "rate": 1,
+                      "order": 26,
+                      "round": "all",
+                      "offset": 0,
+                      "address": "0X0107",
+                      "control": "%d",
+                      "iscount": "0",
+                      "slaveid": "0X01",
+                      "protocol": "modbus",
+                      "strategy": "20",
+                      "collection": "%s*0.1",
+                      "countround": "all",
+                      "operatetype": "readHregs",
+                      "originaltype": "short16_AB",
+                      "countstrategy": 20,
+                      "countcollection": "%s"
+                    },
+                    "dataType": {
+                      "type": "float",
+                      "specs": {
+                        "max": 9999,
+                        "min": 0,
+                        "step": 0,
+                        "unit": "V",
+                        "precision": 2
+                      }
+                    },
+                    "required": true,
+                    "accessMode": "r",
+                    "devicetype": "控制器",
+                    "identifier": "voltage"
                   }
                 }
               }

@@ -120,7 +120,7 @@ sendSubscribe(UserId, Data) ->
                             case jsx:decode(Json, [{labels, binary}, return_maps]) of
                                 #{<<"access_token">> := AccessToken, <<"expires_in">> := _ExpiresIn} ->
                                     SubscribeUrl = "https://api.weixin.qq.com/cgi-bin/message/subscribe/send?access_token=" ++ dgiot_utils:to_list(AccessToken),
-                                    ?LOG(info, "SubscribeUrl ~p", [SubscribeUrl]),
+                                    ?LOG(debug, "SubscribeUrl ~p", [SubscribeUrl]),
                                     Subscribe = #{<<"touser">> => OpenId,
                                         <<"template_id">> => <<"9Fmc0vtA7vnh_HtoVtXJy_cRDOnIk1ubniO_Oe3WatU">>,
                                         <<"page">> => <<"pages/alarm/alarm">>,
@@ -129,7 +129,7 @@ sendSubscribe(UserId, Data) ->
                                         <<"data">> => Data},
                                     Data1 = dgiot_utils:to_list(jsx:encode(Subscribe)),
                                     R = httpc:request(post, {SubscribeUrl, [], "application/x-www-form-urlencoded", Data1}, [{timeout, 5000}, {connect_timeout, 10000}], [{body_format, binary}]),
-                                    ?LOG(info, "R ~p", [R]);
+                                    ?LOG(debug, "R ~p", [R]);
                                 _Result ->
                                     {error, <<"not find access_token">>}
                             end;

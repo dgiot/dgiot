@@ -60,29 +60,32 @@ stop(#{<<"channel">> := Channel, <<"dtuid">> := DtuId}) ->
 %%%===================================================================
 init([#{<<"app">> := App, <<"channel">> := ChannelId, <<"dtuid">> := DtuId, <<"mode">> := Mode, <<"freq">> := Freq, <<"end_time">> := Endtime} = _Args]) ->
     dgiot_data:insert(?DGIOT_TASK, {ChannelId, DtuId}, self()),
-%%    Round = dgiot_data:get_consumer(<<"taskround/", ChannelId/binary, "/", DtuId/binary>>, 1),
-    {ProductId, DevAddr} = dgiot_task:get_pnque(DtuId),
-    DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
-    Que = dgiot_instruct:get_instruct(ProductId, DeviceId, 1, dgiot_utils:to_atom(Mode)),
-%%    ?LOG(info, "Que ~p", [Que]),
-    Tsendtime = dgiot_datetime:localtime_to_unixtime(dgiot_datetime:to_localtime(Endtime)),
-    Nowstamp = dgiot_datetime:nowstamp(),
-    case length(Que) of
-        0 ->
-            erlang:send_after(300, self(), stop);
-        _ ->
-            case Tsendtime > Nowstamp of
-                true ->
-                    erlang:send_after(1000, self(), retry);
-                false ->
-                    erlang:send_after(300, self(), stop)
-            end
-    end,
-    Topic = <<"thing/", ProductId/binary, "/", DevAddr/binary, "/post">>,
-    dgiot_mqtt:subscribe(Topic),
-    AppData = maps:get(<<"appdata">>, _Args, #{}),
-    {ok, #task{mode = dgiot_utils:to_atom(Mode), app = App, dtuid = DtuId, product = ProductId, devaddr = DevAddr,
-        tid = ChannelId, firstid = DeviceId, que = Que, round = 1, appdata = AppData, ts = Nowstamp, freq = Freq, endtime = Tsendtime}};
+    case dgiot_task:get_pnque(DtuId) of
+        not_find ->
+            ?LOG(info, "not_find ~p", [DtuId]),
+            pass;
+        {ProductId, DevAddr} ->
+            DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+            Que = dgiot_instruct:get_instruct(ProductId, DeviceId, 1, dgiot_utils:to_atom(Mode)),
+            Tsendtime = dgiot_datetime:localtime_to_unixtime(dgiot_datetime:to_localtime(Endtime)),
+            Nowstamp = dgiot_datetime:nowstamp(),
+            case length(Que) of
+                0 ->
+                    erlang:send_after(300, self(), stop);
+                _ ->
+                    case Tsendtime > Nowstamp of
+                        true ->
+                            erlang:send_after(1000, self(), retry);
+                        false ->
+                            erlang:send_after(300, self(), stop)
+                    end
+            end,
+            Topic = <<"thing/", ProductId/binary, "/", DevAddr/binary, "/post">>,
+            dgiot_mqtt:subscribe(Topic),
+            AppData = maps:get(<<"appdata">>, _Args, #{}),
+            {ok, #task{mode = dgiot_utils:to_atom(Mode), app = App, dtuid = DtuId, product = ProductId, devaddr = DevAddr,
+                tid = ChannelId, firstid = DeviceId, que = Que, round = 1, appdata = AppData, ts = Nowstamp, freq = Freq, endtime = Tsendtime}}
+    end;
 
 init(A) ->
     ?LOG(error, "A ~p ", [A]).
@@ -103,29 +106,34 @@ handle_info({'EXIT', _From, Reason}, State) ->
 
 handle_info(init, #task{dtuid = DtuId, mode = Mode, round = Round, ts = Oldstamp, freq = Freq, endtime = Tsendtime} = State) ->
     dgiot_datetime:now_secs(),
-    {ProductId, DevAddr} = dgiot_task:get_pnque(DtuId),
-    DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
-    NewRound = Round + 1,
-    Que = dgiot_instruct:get_instruct(ProductId, DeviceId, NewRound, dgiot_utils:to_atom(Mode)),
-    Nowstamp = dgiot_datetime:nowstamp(),
-    Newfreq = Nowstamp - Oldstamp,
-    case length(Que) of
-        0 ->
-            erlang:send_after(300, self(), stop);
-        _ ->
-            case Tsendtime > Nowstamp of
-                true ->
-                    case Newfreq > Freq of
+    case dgiot_task:get_pnque(DtuId) of
+        not_find ->
+            ?LOG(info, "not_find ~p", [DtuId]),
+            {noreply, State};
+        {ProductId, DevAddr} ->
+            DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+            NewRound = Round + 1,
+            Que = dgiot_instruct:get_instruct(ProductId, DeviceId, NewRound, dgiot_utils:to_atom(Mode)),
+            Nowstamp = dgiot_datetime:nowstamp(),
+            Newfreq = Nowstamp - Oldstamp,
+            case length(Que) of
+                0 ->
+                    erlang:send_after(300, self(), stop);
+                _ ->
+                    case Tsendtime > Nowstamp of
                         true ->
-                            erlang:send_after(1000, self(), retry);
+                            case Newfreq > Freq of
+                                true ->
+                                    erlang:send_after(1000, self(), retry);
+                                false ->
+                                    erlang:send_after((Freq - Newfreq) * 1000, self(), retry)
+                            end;
                         false ->
-                            erlang:send_after((Freq - Newfreq) * 1000, self(), retry)
-                    end;
-                false ->
-                    erlang:send_after(300, self(), stop)
-            end
-    end,
-    {noreply, State#task{product = ProductId, devaddr = DevAddr, round = NewRound, firstid = DeviceId, que = Que, ts = Nowstamp}};
+                            erlang:send_after(300, self(), stop)
+                    end
+            end,
+            {noreply, State#task{product = ProductId, devaddr = DevAddr, round = NewRound, firstid = DeviceId, que = Que, ts = Nowstamp}}
+    end;
 
 %% 定时触发抄表指令
 handle_info(retry, State) ->
@@ -136,7 +144,6 @@ handle_info({deliver, _, Msg}, #task{tid = Channel, dis = Dis, product = Product
     Payload = jsx:decode(dgiot_mqtt:get_payload(Msg), [return_maps]),
     dgiot_bridge:send_log(Channel, "to_dev=> ~ts: ~ts ~s ~p ", [unicode:characters_to_list(dgiot_mqtt:get_topic(Msg)), unicode:characters_to_list(dgiot_mqtt:get_payload(Msg)), ?FILE, ?LINE]),
     NewAck = dgiot_task:get_collection(ProductId, Dis, Payload, Ack),
-%%    ?LOG(info, "NewAck ~p", [NewAck]),
     {noreply, get_next_pn(State#task{ack = NewAck})};
 
 %% ACK消息触发抄表指令
@@ -144,7 +151,6 @@ handle_info({deliver, _, Msg}, #task{tid = Channel, dis = Dis, product = Product
     Payload = jsx:decode(dgiot_mqtt:get_payload(Msg), [return_maps]),
     dgiot_bridge:send_log(Channel, "to_dev=> ~ts: ~ts ~s ~p ", [unicode:characters_to_list(dgiot_mqtt:get_topic(Msg)), unicode:characters_to_list(dgiot_mqtt:get_payload(Msg)), ?FILE, ?LINE]),
     NewAck = dgiot_task:get_collection(ProductId, Dis, Payload, Ack),
-%%    ?LOG(info, "NewAck ~p", [NewAck]),
     {noreply, send_msg(State#task{ack = NewAck})};
 
 handle_info(_Msg, State) ->
@@ -231,9 +237,6 @@ save_td(#task{app = _App, tid = Channel, product = ProductId, devaddr = DevAddr,
         0 -> pass;
         _ ->
             Data = dgiot_task:get_calculated(ProductId, Ack),
-            ?LOG(info,"ProductId ~p",[ProductId]),
-            ?LOG(info,"Ack ~p ~t",[Ack]),
-            ?LOG(info,"Data ~p",[Data]),
             case length(maps:to_list(Data)) of
                 0 -> pass;
                 _ ->

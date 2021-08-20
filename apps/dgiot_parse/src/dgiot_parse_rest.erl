@@ -328,11 +328,9 @@ do_request(Method, Path, Header, Data, Options) ->
         {ok, StatusCode, Headers, ResBody} ->
             case do_request_after(Method, Path, Data, ResBody, Options) of
                 {ok, NewResBody} ->
-                    ?LOG(info, "Path ~p", [Path]),
                     save_cache(Method, Path, Data),
                     {ok, StatusCode, Headers, NewResBody};
                 ignore ->
-                    ?LOG(info, "Path ~p", [Path]),
                     save_cache(Method, Path, Data),
                     {ok, StatusCode, Headers, ResBody};
                 {error, Reason} ->
@@ -394,7 +392,6 @@ do_request_hook(Type, [<<"classes">>, Class, ObjectId], Method, Data, Body) ->
 do_request_hook(Type, [<<"classes">>, Class], Method, Data, Body) ->
     do_hook({Class, Method}, [Type, Data, Body]);
 do_request_hook(_Type, _Paths, _Method, _Data, _Body) ->
-    ?LOG(info, "_Paths ~p", [_Paths]),
     ignore.
 do_hook(Key, Args) ->
     case catch dgiot_hook:run_hook(Key, Args) of
