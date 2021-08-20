@@ -196,8 +196,8 @@ handle_message({deliver, _Topic, Msg},
                 <<"instruct">> => Instruct, <<"devaddr">> => DevAddr,
                 <<"ips">> => Ips
             },
-%%            ?LOG(info,"AppData ~p", [AppData]),
-%%            dgiot_ffmpeg:start_live(NewEnv),
+            ?LOG(info,"AppData ~p", [AppData]),
+            dgiot_ffmpeg:start_live(NewEnv),
             dgiot_ffmpeg:start_video(NewEnv),
             {ok, State};
         _ ->
