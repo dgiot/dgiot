@@ -17,6 +17,7 @@
 -module(dgiot_license).
 -author("johnliu").
 -include_lib("dgiot/include/logger.hrl").
+-logger_header("[dgiot]").
 
 -export([init/1
     , description/0

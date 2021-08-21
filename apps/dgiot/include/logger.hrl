@@ -44,7 +44,7 @@
 -define(LOG(Level, Format, Args),
         begin
           (logger:log(Level,#{},#{report_cb => fun(_) ->
-              {'$logger_header'() ++  "[~p:~p ~p] [~s:~p] " ++ (Format), ([?MODULE, ?FUNCTION_NAME, ?LINE, node(),self()] ++ Args)} end,
+              {'$logger_header'() ++ (Format), ( Args)} end,
                                   mfa => {?MODULE, ?FUNCTION_NAME, ?FUNCTION_ARITY},
                                   line => ?LINE}))
         end).
