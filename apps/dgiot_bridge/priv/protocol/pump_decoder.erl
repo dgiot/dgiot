@@ -322,7 +322,7 @@ send_frame(Addr, #{<<"send">> := Send} = State) ->
         end,
     case Result of
         ok ->
-            dgiot_logger:debug("send frame ~p~n", [Addr]),
+            emqx_logger:debug("send frame ~p~n", [Addr]),
             ok;
         {error, Reason} ->
             ?LOG(error,"send frame error, CMD:~p,~p~n", [Addr, Reason])

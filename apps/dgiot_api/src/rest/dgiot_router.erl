@@ -229,7 +229,6 @@ init(Req0, mod) ->
     {ok, Req, mod};
 
 init(Req, Opts) ->
-    ?LOG(error,"Opts ~p ",[Opts]),
     case dgiot_req:method(Req) of
         <<"OPTIONS">> ->
             case ?ACCESS_CONTROL_ALLOW_HEADERS of

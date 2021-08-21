@@ -15,7 +15,7 @@
 %%--------------------------------------------------------------------
 
 -module(emqx_exhook_sup).
-
+-include_lib("emqx/include/logger.hrl").
 -behaviour(supervisor).
 
 -export([ start_link/0
@@ -45,6 +45,7 @@ init([]) ->
         uri_string:uri_string(),
         grpc_client:options()) -> {ok, pid()} | {error, term()}.
 start_grpc_client_channel(Name, SvrAddr, Options) ->
+    ?LOG(info,"Name ~p , SvrAddr ~p , Options ~p",[Name, SvrAddr, Options]),
     grpc_client_sup:create_channel_pool(Name, SvrAddr, Options).
 
 -spec stop_grpc_client_channel(string()) -> ok.

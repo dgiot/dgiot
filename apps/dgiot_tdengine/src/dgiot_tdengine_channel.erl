@@ -410,7 +410,7 @@ create_table(ChannelId, [ProductId | ProductIds], Config) ->
         {ok, Product} ->
             case get_schema(ChannelId, Product) of
                 ignore ->
-                    ?LOG(error, "Create Table ignore, ChannelId:~p, ProductId:~p", [ChannelId, Product]);
+                    ?LOG(debug, "Create Table ignore, ChannelId:~p, ProductId:~p", [ChannelId, Product]);
                 Schema ->
                     TableName = ?Table(ProductId),
                     case dgiot_tdengine:create_schemas(ChannelId, Schema#{

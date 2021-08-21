@@ -41,52 +41,52 @@
 %%--------------------------------------------------------------------
 -spec(debug(unicode:chardata()) -> ok).
 debug(Msg) ->
-    dgiot_logger:debug(Msg).
+    emqx_logger:debug(Msg).
 
 -spec(debug(io:format(), [term()]) -> ok).
 debug(Format, Args) ->
-    dgiot_logger:debug(Format, Args).
+    emqx_logger:debug(Format, Args).
 
 -spec(debug(logger:metadata(), io:format(), [term()]) -> ok).
 debug(Metadata, Format, Args) when is_map(Metadata) ->
-    dgiot_logger:debug(Format, Args, Metadata).
+    emqx_logger:debug(Format, Args, Metadata).
 
 
 -spec(info(unicode:chardata()) -> ok).
 info(Msg) ->
-    dgiot_logger:info(Msg).
+    emqx_logger:info(Msg).
 
 -spec(info(io:format(), [term()]) -> ok).
 info(Format, Args) ->
-    dgiot_logger:info(Format, Args).
+    emqx_logger:info(Format, Args).
 
 -spec(info(logger:metadata(), io:format(), [term()]) -> ok).
 info(Metadata, Format, Args) when is_map(Metadata) ->
-    dgiot_logger:info(Format, Args, Metadata).
+    emqx_logger:info(Format, Args, Metadata).
 
 
 -spec(warning(unicode:chardata()) -> ok).
 warning(Msg) ->
-    dgiot_logger:warning(Msg).
+    emqx_logger:warning(Msg).
 
 -spec(warning(io:format(), [term()]) -> ok).
 warning(Format, Args) ->
-    dgiot_logger:warning(Format, Args).
+    emqx_logger:warning(Format, Args).
 
 -spec(warning(logger:metadata(), io:format(), [term()]) -> ok).
 warning(Metadata, Format, Args) when is_map(Metadata) ->
-    dgiot_logger:warning(Format, Args, Metadata).
+    emqx_logger:warning(Format, Args, Metadata).
 
 
 -spec(error(unicode:chardata()) -> ok).
 error(Msg) ->
-    dgiot_logger:error(Msg).
+    emqx_logger:error(Msg).
 -spec(error(io:format(), [term()]) -> ok).
 error(Format, Args) ->
-    dgiot_logger:error(Format, Args).
+    emqx_logger:error(Format, Args).
 -spec(error(logger:metadata(), io:format(), [term()]) -> ok).
 error(Metadata, Format, Args) when is_map(Metadata) ->
-    dgiot_logger:error(Format, Args, Metadata).
+    emqx_logger:error(Format, Args, Metadata).
 
 
 -spec(critical(unicode:chardata()) -> ok).
