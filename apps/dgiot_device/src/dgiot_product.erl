@@ -173,7 +173,7 @@ save(#{<<"thing">> := _thing} = Product) ->
     {ok, Product1};
 
 save(_Product) ->
-    ?LOG(error, "product error ~p", [_Product]),
+    ?LOG(debug, "product error ~p", [_Product]),
     pass.
 
 local(ProductId) ->

@@ -155,21 +155,21 @@ start(ChannelId, ChannelArgs) ->
 
 %% 通道初始化
 init(?TYPE, ChannelId, #{
-    <<"product">> := Products,
-    <<"IPCTYPE">> :=  IPCTYPE
+    <<"product">> := _Products,
+    <<"IPCTYPE">> :=  _IPCTYPE
 } = ChannelArgs) ->
-    Env = get_newenv(ChannelArgs),
-    [{ProductId, App} | _] = get_app(Products),
-    NewEnv = Env#{
-        <<"channelid">> => ChannelId,
-        <<"app">> => App,
-        <<"product">> => ProductId,
-        <<"IPCTYPE">> =>  IPCTYPE,
-        <<"ips">> => []
-    },
+    _Env = get_newenv(ChannelArgs),
+%%    [{ProductId, App} | _] = get_app(Products),
+%%    NewEnv = Env#{
+%%        <<"channelid">> => ChannelId,
+%%        <<"app">> => App,
+%%        <<"product">> => ProductId,
+%%        <<"IPCTYPE">> =>  IPCTYPE,
+%%        <<"ips">> => []
+%%    },
     State = #state{
         id = ChannelId,
-        env = NewEnv
+        env = []
     },
     {ok, State, []}.
 
@@ -204,12 +204,11 @@ handle_message({deliver, _Topic, Msg},
             {ok, State}
     end;
 
-handle_message(init, #state{env = Env} = State) ->
-    #{
-        <<"product">> := GwProductId,
-        <<"IPCMAC">> := Mac,
-        <<"IPCTYPE">> := IPCTYPE
-    } = Env,
+handle_message(init, #state{env = #{
+    <<"product">> := GwProductId,
+    <<"IPCMAC">> := Mac,
+    <<"IPCTYPE">> := IPCTYPE
+}  = Env} = State) ->
     dgiot_product:load(GwProductId),
     Filter = #{
         <<"where">> => #{<<"product">> => GwProductId},
@@ -254,17 +253,17 @@ stop(ChannelType, ChannelId, _State) ->
     ?LOG(error, "channel stop ~p,~p", [ChannelType, ChannelId]),
     ok.
 
-get_app(Products) ->
-    lists:map(fun({_ProdcutId, #{<<"ACL">> := Acl}}) ->
-        Predicate = fun(E) ->
-            case E of
-                <<"role:", _/binary>> -> true;
-                _ -> false
-            end
-                    end,
-        [<<"role:", _App/binary>> | _] = lists:filter(Predicate, maps:keys(Acl)),
-        {_ProdcutId, _App}
-              end, Products).
+%%get_app(Products) ->
+%%    lists:map(fun({_ProdcutId, #{<<"ACL">> := Acl}}) ->
+%%        Predicate = fun(E) ->
+%%            case E of
+%%                <<"role:", _/binary>> -> true;
+%%                _ -> false
+%%            end
+%%                    end,
+%%        [<<"role:", _App/binary>> | _] = lists:filter(Predicate, maps:keys(Acl)),
+%%        {_ProdcutId, _App}
+%%              end, Products).
 
 get_newenv(Args) ->
     maps:without([
