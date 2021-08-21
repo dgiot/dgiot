@@ -172,21 +172,23 @@ do_request(post_thing, #{<<"productid">> := ProductId, <<"item">> := Item} = _Bo
     case dgiot_parse:get_object(<<"Product">>, ProductId, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
         {ok, #{<<"thing">> := Thing}} ->
             Properties = maps:get(<<"properties">>, Thing, []),
-            NewThing =
-                lists:foldl(fun(X, _Acc) ->
+            {Ids, NewProperties} =
+                lists:foldl(fun(X, {Ids1, Acc}) ->
                     case X of
-                        #{<<"identifier">> := Identifier} -> <<>>;
-                        _ -> Item
+                        #{<<"identifier">> := Identifier} ->
+                            {Ids1 ++ [Identifier], Acc};
+                        _ ->
+                            {Ids1, Acc ++ [X]}
                     end
-                            end, <<>>, Properties),
-            case NewThing of
-                <<>> ->
-                    {error, #{<<"code">> => 500, <<"msg">> => <<Identifier/binary, " already existed">>}};
-                X ->
-                    NewProperties = Properties ++ [X],
-                    dgiot_parse:update_object(<<"Product">>, ProductId,
+                            end, {[], [Item]}, Properties),
+            case length(Ids) == 0 of
+                true ->
+                    {_, R} = dgiot_parse:update_object(<<"Product">>, ProductId,
                         #{<<"thing">> => Thing#{<<"properties">> => NewProperties}},
-                        [{"X-Parse-Session-Token", SessionToken}], [{from, rest}])
+                        [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]),
+                    {ok, R#{<<"code">> => 200}};
+                false ->
+                    {ok, #{<<"code">> => 204, <<"msg">> => <<Identifier/binary, " already existed">>}}
             end;
         Error ->
             {error, Error}
@@ -211,9 +213,10 @@ do_request(put_thing, #{<<"productid">> := ProductId, <<"item">> := Item} = _Bod
                             Acc ++ [X]
                     end
                             end, [], Properties),
-            dgiot_parse:update_object(<<"Product">>, ProductId,
+            {_, R} = dgiot_parse:update_object(<<"Product">>, ProductId,
                 #{<<"thing">> => Thing#{<<"properties">> => NewProperties}},
-                [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]);
+                [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]),
+            {ok, R#{<<"code">> => 200}};
         Error ->
             {error, Error}
     end;
@@ -250,12 +253,13 @@ do_request(delete_thing, #{<<"productid">> := ProductId, <<"item">> := Item} = _
                             end, {[], []}, Properties),
             case length(Ids) == 0 of
                 true ->
-                    dgiot_parse:update_object(<<"Product">>, ProductId,
+                    {_, R} = dgiot_parse:update_object(<<"Product">>, ProductId,
                         #{<<"thing">> => Thing#{<<"properties">> => NewProperties}},
-                        [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]);
+                        [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]),
+                    {ok, R#{<<"code">> => 200}};
                 false ->
                     BinIds = dgiot_utils:to_binary(Ids),
-                    {error, #{<<"code">> => 500, <<"msg">> => <<BinIds/binary, " use ", Identifier/binary>>}}
+                    {ok, #{<<"code">> => 204, <<"msg">> => <<BinIds/binary, " use ", Identifier/binary>>}}
             end;
         Error ->
             {error, Error}
