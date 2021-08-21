@@ -502,7 +502,7 @@ end}.
 
 %% @doc format logs as JSON objects
 {mapping, "log.formatter", "kernel.logger", [
-  {default, text},
+  {default, json},
   {datatype, {enum, [text, json]}}
 ]}.
 

@@ -18,6 +18,7 @@
 -module(dgiot_datetime).
 -author("johnliu").
 -include_lib("dgiot/include/logger.hrl").
+-logger_header("[dgiot]").
 
 -export([
     start_time/0,
