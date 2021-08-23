@@ -21,7 +21,7 @@
 -include_lib("dgiot/include/dgiot_socket.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -include("dgiot_grpc.hrl").
--define(TYPE, <<"GRPC">>).
+-define(TYPE, <<"GRPC_ClIENT">>).
 
 %% API
 -export([start/2]).
@@ -42,16 +42,53 @@
 }).
 %% 注册通道参数
 -params(#{
-    <<"port">> => #{
+    <<"scheme">> => #{
         order => 1,
-        type => integer,
+        type => string,
         required => true,
-        default => 61888,
+        default => <<"http">>,
         title => #{
-            zh => <<"端口"/utf8>>
+            zh => <<"通讯协议"/utf8>>
         },
         description => #{
-            zh => <<"侦听端口"/utf8>>
+            zh => <<"通讯协议"/utf8>>
+        }
+    },
+    <<"host">> => #{
+        order => 2,
+        type => string,
+        required => true,
+        default => <<"127.0.0.1">>,
+        title => #{
+            zh => <<"IP"/utf8>>
+        },
+        description => #{
+            zh => <<"grpc服务器IP"/utf8>>
+        }
+    },
+    <<"port">> => #{
+        order => 3,
+        type => integer,
+        required => true,
+        default => 7000,
+        title => #{
+            zh => <<"port"/utf8>>
+        },
+        description => #{
+            zh => <<"grpc服务器端口"/utf8>>
+        }
+    },
+    <<"model">> => #{
+        order => 2,
+        type => enum,
+        required => false,
+        default => <<"both"/utf8>>,
+        enum => [<<"both">>, <<"client">>, <<"server">>],
+        title => #{
+            zh => <<"启动模式"/utf8>>
+        },
+        description => #{
+            zh => <<"启动模式:both|client|server"/utf8>>
         }
     },
     <<"ico">> => #{
@@ -75,31 +112,30 @@ start(ChannelId, ChannelArgs) ->
     dgiot_channelx:add(?TYPE, ChannelId, ?MODULE, ChannelArgs).
 
 %% 通道初始化
-init(?TYPE, ChannelId, #{
-    <<"port">> := _Port,
-    <<"product">> := _Products}) ->
+init(?TYPE, ChannelId, Env) ->
     State = #state{
-        id = ChannelId
+        id = ChannelId,
+        env = Env
     },
-%%    %% grpc server
-%%    Services = #{protos => [dgiot_exhook_pb],
-%%        services => #{
-%%            'dgiot.exhook.v1.HookProvider' => exhook_svr
-%%        }
-%%    },
-%%    Options = [],
-%%    {ok, Spec} = grpc:start_server(exhook_svr, 9000, Services, Options),
-%%    io:format("Start service exhook_svr on 9000 successfully!~n", []),
-%%    %% magic line
-%%    _ = exhook_svr:module_info(),
-%%    %% counter
-%%    ets:new(exhook_stats, [public, named_table, {write_concurrency, true}]),
-    {ok, State, []};
-
-init(?TYPE, _ChannelId, _Args) ->
-    {ok, #{}, #{}}.
+    Port = maps:get(<<"port">>, Env),
+    Scheme = maps:get(<<"scheme">>, Env),
+    Host = dgiot_utils:to_list(maps:get(<<"host">>, Env)),
+    Opts0 = [{scheme, dgiot_utils:to_atom(Scheme)}, {host, Host}, {port, Port}],
+    case maps:get(<<"model">>, Env) of
+        <<"both">> ->
+            dgiot_grpc_server:start(ChannelId, Port, []),
+            application:ensure_all_started(emqx_hooks),
+            emqx_exhook:enable(ChannelId, Opts0);
+        <<"client">> ->
+            application:ensure_all_started(emqx_hooks),
+            emqx_exhook:enable(ChannelId, Opts0);
+        <<"server">> ->
+            dgiot_grpc_server:start(ChannelId, Port, [])
+    end,
+    {ok, State, []}.
 
 handle_init(State) ->
+    erlang:send_after(5000, self(), start),
     {ok, State}.
 
 %% 通道消息处理,注意：进程池调用
@@ -120,6 +156,9 @@ handle_event(EventId, Event, State) ->
     ?LOG(error, "EventId ~p Event ~p", [EventId, Event]),
     {ok, State}.
 
+handle_message(start, State) ->
+    {ok, State};
+
 % SELECT clientid, payload, topic FROM "meter"
 % SELECT clientid, disconnected_at FROM "$events/client_disconnected" WHERE username = 'dgiot'
 % SELECT clientid, connected_at FROM "$events/client_connected" WHERE username = 'dgiot'
@@ -134,5 +173,6 @@ handle_message({rule, #{clientid := DevAddr, payload := Payload, topic := _Topic
 handle_message(_Message, State) ->
     {ok, State}.
 
-stop(_ChannelType, _ChannelId, _State) ->
+stop(_ChannelType, ChannelId, _State) ->
+    emqx_exhook:disable(ChannelId),
     ok.

@@ -102,7 +102,7 @@ class HookProvider(exhook_pb2_grpc.HookProviderServicer):
     def OnMessagePublish(self, request, context):
         nmsg = request.message
         nmsg.payload = b"hardcode payload by exhook-svr-python111 :)"
-
+        print(nmsg.payload)
         reply = exhook_pb2.ValuedResponse(type="STOP_AND_RETURN", message=nmsg)
         return reply
 
