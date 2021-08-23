@@ -24,17 +24,20 @@
 
 -define(CNTER, emqx_exhook_counter).
 
--export([ start/2
-        , stop/1
-        , prep_stop/1
-        ]).
+-export([start/2
+    , stop/1
+    , prep_stop/1
+]).
 
 %% Internal export
--export([ load_server/2
-        , unload_server/1
-        , unload_exhooks/0
-        , init_hooks_cnter/0
-        ]).
+-export([
+    load_all_servers/0
+    , load_server/2
+    , unload_all_servers/0
+    , unload_server/1
+    , unload_exhooks/0
+    , init_hooks_cnter/0
+]).
 
 %%--------------------------------------------------------------------
 %% Application callbacks
@@ -47,7 +50,7 @@ start(_StartType, _StartArgs) ->
     init_hooks_cnter(),
 
     %% Load all dirvers
-    load_all_servers(),
+%%    load_all_servers(),
 
     %% Register CLI
     emqx_ctl:register_command(exhook, {emqx_exhook_cli, cli}, []),
@@ -69,7 +72,7 @@ stop(_State) ->
 load_all_servers() ->
     lists:foreach(fun({Name, Options}) ->
         load_server(Name, Options)
-    end, application:get_env(?APP, servers, [])).
+                  end, application:get_env(?APP, servers, [])).
 
 unload_all_servers() ->
     emqx_exhook:disable_all().
@@ -82,7 +85,7 @@ unload_server(Name) ->
 
 unload_exhooks() ->
     [emqx:unhook(Name, {M, F}) ||
-     {Name, {M, F, _A}} <- ?ENABLED_HOOKS].
+        {Name, {M, F, _A}} <- ?ENABLED_HOOKS].
 
 init_hooks_cnter() ->
     try
