@@ -122,8 +122,9 @@ set_params(Basedata, ProductId) ->
                             <<"protocol">> := <<"modbus">>,
                             <<"slaveid">> := SlaveId,
                             <<"address">> := Address,
+                            <<"bytes">> := _Bytes,
                             <<"operatetype">> := OperateType,
-                            <<"setting">> := <<"%s">>} ->
+                            <<"setting">> := Setting} ->
                             case maps:find(Identifier, Basedata) of
                                 error ->
                                     Acc;
@@ -144,11 +145,14 @@ set_params(Basedata, ProductId) ->
                                         end,
                                     <<H:8, L:8>> = dgiot_utils:hex_to_binary(is16(Address)),
                                     <<Sh:8, Sl:8>> = dgiot_utils:hex_to_binary(is16(SlaveId)),
+                                    Str1 = re:replace(Setting, "%s", "(" ++ dgiot_utils:to_list(Value) ++ ")", [global, {return, list}]),
+                                    Value1 = dgiot_utils:to_int(dgiot_task:string2value(Str1)),
+%%                                    NewBt = Bytes * 8,
                                     RtuReq = #rtu_req{
                                         slaveId = Sh * 256 + Sl,
                                         funcode = dgiot_utils:to_int(FunCode),
                                         address = H * 256 + L,
-                                        quality = dgiot_utils:to_int(Value)
+                                        quality = Value1
                                     },
                                     Acc ++ [build_req_message(RtuReq)];
                                 _ ->

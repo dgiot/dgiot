@@ -270,8 +270,8 @@ get_props(ProductId) ->
         {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
             lists:foldl(fun(X, Acc) ->
                 case X of
-                    #{<<"name">> := Name, <<"isshow">> := true} ->
-                        Acc#{Name => X};
+                    #{<<"identifier">> := Identifier, <<"isshow">> := true} ->
+                        Acc#{Identifier => X};
                     _ -> Acc
                 end
                         end, #{}, Props);
@@ -340,11 +340,12 @@ get_app(ProductId, Results) ->
                     Acc;
                 {ok, Name} ->
                     {NewV, Unit, Ico, Devicetype} =
-                        case maps:find(Name, Props) of
+                        case maps:find(K, Props) of
                             error ->
                                 {V, <<"">>, <<"">>, <<"others">>};
-                            {ok, #{<<"dataType">> := #{<<"type">> := Type, <<"specs">> := Specs}} = Prop} ->
+                            {ok, #{<<"dataType">> := #{<<"type">> := Type} = DataType} = Prop} ->
                                 Devicetype1 = maps:get(<<"devicetype">>, Prop, <<"others">>),
+                                Specs = maps:get(<<"specs">>, DataType, #{}),
                                 case Type of
                                     Type1 when Type1 == <<"enum">>; Type1 == <<"bool">> ->
                                         Value = maps:get(dgiot_utils:to_binary(V), Specs, V),

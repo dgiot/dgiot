@@ -76,7 +76,7 @@ get_products(ProductId, ChannelId) ->
                             lists:foldl(fun(#{<<"product">> := Product}, Acc) ->
                                 #{<<"objectId">> := SubProductId} = Product,
                                 dgiot_product:load(SubProductId),
-                                ?LOG(info, "SubProductId ~p ChannelId ~p", [SubProductId, ChannelId]),
+%%                                ?LOG(info, "SubProductId ~p ChannelId ~p", [SubProductId, ChannelId]),
                                 dgiot_data:insert({SubProductId, ?TYPE}, ChannelId),
                                 Acc ++ [SubProductId]
                                         end, [], R);

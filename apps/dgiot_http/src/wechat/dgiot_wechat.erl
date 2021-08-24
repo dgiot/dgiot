@@ -260,7 +260,7 @@ get_device_info(Deviceid, SessionToken) ->
                             Identifier = maps:get(<<"identifier">>, Param),
                             case maps:find(Identifier, Basedata) of
                                 error ->
-                                    {Acc, Productname};
+                                    {Acc ++ [Param#{<<"value">> => <<>>}], Productname};
                                 {ok, Value} ->
                                     {Acc ++ [Param#{<<"value">> => Value}], Productname}
                             end
@@ -318,7 +318,8 @@ get_notification(ProductId1, SessionToken, Order, Limit, Skip, Where) ->
                                                                             Form ++ [#{Label => Default}]
                                                                     end
                                                                           end, [], FormDesc),
-                                                            Par#{<<"dynamicform">> => FormD};
+                                                            Newdate = dgiot_datetime:format(dgiot_datetime:to_localtime(Createdat), <<"YY-MM-DD HH:NN:SS">>),
+                                                            Par#{<<"dynamicform">> => FormD ++ [#{<<"报警时间"/utf8>> => Newdate}]};
                                                         _Oth ->
                                                             Par
                                                     end
