@@ -160,6 +160,8 @@ to_localtime(Time) when is_tuple(Time) ->
     Time;
 to_localtime(NowStamp) when is_integer(NowStamp) ->
     unixtime_to_localtime(NowStamp);
+to_localtime(<<Y:4/bytes, "-", M:2/bytes, "-", D:2/bytes, "T", H:2/bytes, ":", N:2/bytes, ":", S:2/bytes, ".", _/binary>>) ->
+    {{to_int(Y), to_int(M), to_int(D)}, {to_int(H), to_int(N), to_int(S)}};
 to_localtime(DateTimeBin) when is_binary(DateTimeBin) ->
     to_localtime(to_list(DateTimeBin));
 to_localtime(DateTimeStr) when is_list(DateTimeStr) ->
@@ -180,7 +182,6 @@ to_localtime(DateTimeStr) when is_list(DateTimeStr) ->
             [Y, M, D] = tokens(Date, ["-", "/", "."]),
             [H, N, S] = tokens(Time, [":"]),
             {{to_int(Y), to_int(M), to_int(D)}, {to_int(H), to_int(N), to_int(S)}}
-
     end.
 
 format(Format) ->

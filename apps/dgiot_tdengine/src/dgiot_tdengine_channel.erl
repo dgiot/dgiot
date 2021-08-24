@@ -276,6 +276,7 @@ format_data(ProductId, DevAddr, Properties, Data) ->
         <<"fields">> => [<<"createdat">> | Fields],
         <<"values">> => NewValues
     }.
+
 %% INSERT INTO _30a01ed480._a90437ec84 using _30a01ed480._30a01ed480 TAGS ('_862607057395773') VALUES (now,0.11,0,26,38,0.3,0.0,0.0,11.7,0,null,75,null);
 get_values(ProductId, Values, Now) ->
     Values0 =
@@ -406,7 +407,7 @@ check_database(ChannelId, ProductIds, #{<<"database">> := DataBase, <<"keep">> :
 create_table(_, [], _) ->
     ok;
 create_table(ChannelId, [ProductId | ProductIds], Config) ->
-    case dgiot_bridge:get_product_info(ProductId) of
+    case dgiot_bridge:get_product_info(<<"476e36b65e">>) of
         {ok, Product} ->
             case get_schema(ChannelId, Product) of
                 ignore ->
@@ -465,6 +466,8 @@ get_schema(_ChannelId, Schema) ->
 %%  10	NCHAR       自定义    记录包含多字节字符在内的字符串，如中文字符。每个 nchar 字符占用 4 bytes 的存储空间。字符串两端使用单引号引用，字符串内的单引号需用转义字符 \’。nchar 使用时须指定字符串大小，类型为 nchar(10) 的列表示此列的字符串最多存储 10 个 nchar 字符，会固定占用 40 bytes 的空间。如果用户字符串长度超出声明长度，将会报错。
 get_field(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"int">>}}) ->
     {Field, #{<<"type">> => <<"INT">>}};
+get_field(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"image">>}}) ->
+    {Field, #{<<"type">> => <<"INT">>}};
 get_field(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"long">>}}) ->
     {Field, #{<<"type">> => <<"BIGINT">>}};
 get_field(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"float">>}}) ->
@@ -517,9 +520,16 @@ check_fields(Data, [#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> 
     end.
 
 check_field(Data, Props) when is_map(Data) ->
-    check_field(maps:to_list(Data), Props);
+    NewData =
+        maps:fold(fun(K, V, Acc) ->
+            NewK = list_to_binary(string:to_lower(binary_to_list(K))),
+            Acc#{NewK => V}
+                  end, #{}, Data),
+    check_field(maps:to_list(NewData), Props);
+
 check_field(Data, #{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := Type} = DataType}) ->
-    case proplists:get_value(Field, Data) of
+    NewField = list_to_binary(string:to_lower(binary_to_list(Field))),
+    case proplists:get_value(NewField, Data) of
         undefined ->
             undefined;
         Value ->
@@ -586,7 +596,7 @@ transaction(Channel, Fun) ->
 
 %% Action 用来区分数据库操作语句类型(DQL、DML、DDL、DCL)
 run_sql(#{<<"driver">> := <<"HTTP">>, <<"url">> := Url, <<"username">> := UserName, <<"password">> := Password} = Context, _Action, Sql) ->
-    ?LOG(debug, " ~p, ~p, ~p, ~p", [Url, UserName, Password, Sql]),
+    ?LOG(debug, " ~p, ~p, ~p, (~ts)", [Url, UserName, Password, unicode:characters_to_list(Sql)]),
     case dgiot_tdrestful:request(Url, UserName, Password, Sql) of
         {ok, Result} ->
             case maps:get(<<"channel">>, Context, <<"">>) of
