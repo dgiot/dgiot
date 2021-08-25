@@ -219,6 +219,11 @@ do_request(put_log_level, _Args, _Context, _Req) ->
 do_request(get_log_level, _Args, _Context, _Req) ->
     {error, <<"TO DO">>};
 
+%% System 概要: 获取App 描述:获取App
+do_request(get_app, _Args, _Context, _Req) ->
+    {ok, get_applist()};
+
+
 %%  服务器不支持的API接口
 do_request(OperationId, Args, _Context, _Req) ->
     ?LOG(error, "do request ~p,~p~n", [OperationId, Args]),
@@ -282,3 +287,28 @@ format_val(Mod, Schema) ->
         end, [], Paths),
     {Tpl, [{mod, Mod}, {apis, Apis}], [{api, record_info(fields, api)}]}.
 
+%% [{<<"appname">> => <<"ads">>,<<"modules">>=>[]}]
+get_applist() ->
+    Apps = code:all_loaded(),
+    lists:foldl(fun({Appname, AppPath}, Acc) ->
+        case atom_to_binary(Appname) of
+            <<"dgiot_", _/binary>> ->
+                case file:list_dir_all(filename:dirname(AppPath)) of
+                    {ok, Modules} ->
+                        NewModules =
+                            lists:foldl(fun(Mod, Mods) ->
+                                case binary:split(dgiot_utils:to_binary(Mod), <<$.>>, [global, trim]) of
+                                    [Module, <<"bean">>] ->
+                                        Mods ++ [Module];
+                                    _ ->
+                                        Mods
+                                end
+                                        end, [], Modules),
+                        Acc ++ [#{<<"appname">> => Appname, <<"modules">> => NewModules}];
+                    _ ->
+                        Acc
+                end;
+            _ ->
+                Acc
+        end
+                end, [], Apps).
