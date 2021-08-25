@@ -407,7 +407,7 @@ check_database(ChannelId, ProductIds, #{<<"database">> := DataBase, <<"keep">> :
 create_table(_, [], _) ->
     ok;
 create_table(ChannelId, [ProductId | ProductIds], Config) ->
-    case dgiot_bridge:get_product_info(ChannelId) of
+    case dgiot_bridge:get_product_info(ProductId) of
         {ok, Product} ->
             case get_schema(ChannelId, Product) of
                 ignore ->
