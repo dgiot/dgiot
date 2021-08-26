@@ -1367,28 +1367,8 @@ create_loglevel(LogLevel) ->
     LoglevelId = dgiot_parse:get_loglevelid(Name1, Type1),
     case dgiot_parse:get_object(<<"LogLevel">>, LoglevelId) of
         {ok, #{<<"objectId">> := LoglevelId, <<"type">> := Type, <<"name">> := Name, <<"level">> := Level}} ->
-            set_loglevel(Type, Name, Level),
+            dgiot_logger:set_loglevel(Type, Name, Level),
             {ok, #{<<"objectId">> => LoglevelId}};
         _ ->
             dgiot_parse:create_object(<<"LogLevel">>, LogLevel)
     end.
-
-%% 获取系统日志等级  emqx_logger:get_primary_log_level().
-%% 设置系统日志等级  emqx_logger:set_log_level(debug).
-
-%% 获取app日志等级  emqx_logger:get_primary_log_level().
-%% 设置app日志等级  logger:set_application_level(dgiot,debug).
-
-%% 获取module日志等级  logger:get_module_level(dgiot)
-%% 设置module日志等级  logger:set_module_level(dgiot,debug)
-set_loglevel(<<"system">>, <<"dgiot">>, Level) ->
-    emqx_logger:set_log_level(Level);
-
-set_loglevel(<<"app">>, Name, Level) ->
-    logger:set_application_level(Name, Level);
-
-set_loglevel(<<"module">>, Name, Level) ->
-    logger:set_module_level(Name, Level);
-
-set_loglevel(Type, _Name, _Level) ->
-    {error, <<Type/binary, " error">>}.
