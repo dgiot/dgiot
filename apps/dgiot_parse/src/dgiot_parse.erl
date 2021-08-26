@@ -26,6 +26,10 @@
     login/2,
     get_role/2,
     add_to_role/4,
+    load_role/0,
+    save_User_Role/2,
+    del_User_Role/2,
+    put_User_Role/3,
     create_session/3,
     check_session/1
 ]).
@@ -75,7 +79,6 @@
 ]).
 
 -export([
-    test_graphql/0,
     get_objectid/2,
     get_deviceid/2,
     get_dictid/2,
@@ -86,16 +89,18 @@
     get_menuid/1,
     get_productid/3,
     get_maintenanceid/2,
-    subscribe/2,
-    send_msg/3,
-    load_role/0,
-    save_User_Role/2,
-    del_User_Role/2,
-    put_User_Role/3,
+    get_articleid/2,
     get_userids/1,
     get_roleids/1,
     get_notificationid/1
 ]).
+
+-export([
+    test_graphql/0,
+    subscribe/2,
+    send_msg/3
+]).
+
 
 subscribe(Table, Method) ->
     case dgiot_data:get({sub, Table, Method}) of
@@ -173,8 +178,21 @@ get_maintenanceid(Deviceid, Number) ->
     <<Pid:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Maintenance", Deviceid/binary, Number/binary>>),
     Pid.
 
+get_articleid(ProjectId, Timestamp) ->
+    <<Pid:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Article", ProjectId/binary, Timestamp/binary>>),
+    Pid.
+
 get_objectid(Class, Map) ->
     case Class of
+        <<"post_classes_article">> ->
+            get_objectid(<<"Article">>, Map);
+        <<"Article">> ->
+            Timestamp = maps:get(<<"timestamp">>, Map, <<"">>),
+            ProjectId = maps:get(<<"projectId">>, Map, <<"">>),
+            <<Pid:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Article", ProjectId/binary, Timestamp/binary>>),
+            Map#{
+                <<"objectId">> => Pid
+            };
         <<"post_classes_maintenance">> ->
             get_objectid(<<"Maintenance">>, Map);
         <<"Maintenance">> ->

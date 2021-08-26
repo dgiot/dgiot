@@ -20,7 +20,10 @@
 -include_lib("dgiot/include/logger.hrl").
 -behavior(dgiot_channelx).
 -dgiot_data("ets").
--export([init_ets/0]).
+-export([
+    init_ets/0,
+    send/2]).
+
 -export([get_config/0, get_config/1]).
 -export([start/0, start/2, init/3, handle_init/1, handle_event/3, handle_message/2, stop/3, handle_save/1]).
 -record(state, {channel, cfg}).
@@ -132,6 +135,52 @@ init_ets() ->
     dgiot_data:init(?ROLE_PARENT_ETS),
     dgiot_data:init(?USER_ROLE_ETS).
 
+send(Meta, Payload) when is_list(Payload) ->
+    send(Meta, iolist_to_binary(Payload));
+
+send(#{error_logger := _Error_logger}, Payload) ->
+    case jsx:is_json(Payload) of
+        true ->
+            Map = jiffy:decode(Payload,[return_maps]),
+            NewMap = maps:with([<<"time">>, <<"pid">>,<<"msg">>, <<"mfa">>, <<"line">>, <<"level">>, <<"clientid">>, <<"topic">>, <<"peername">>], Map),
+            Mfa = maps:get(<<"mfa">>,Map,<<"all">>),
+            Topic = <<"$SYS/error_logger/",Mfa/binary>>,
+            dgiot_mqtt:publish(Mfa,Topic,Payload),
+            dgiot_parse_cache:save_to_cache(#{<<"method">> => <<"POST">>, <<"path">> => <<"/classes/Log">>,
+                <<"body">> => get_body(NewMap,  [error_logger])});
+        false ->
+            Topic1 = <<"$SYS/error_logger/all">>,
+            dgiot_mqtt:publish(self(),Topic1, Payload),
+            dgiot_parse_cache:save_to_cache(#{<<"method">> => <<"POST">>, <<"path">> => <<"/classes/Log">>,
+                <<"body">> => #{<<"type">> => <<"text">>, <<"domain">> => [error_logger], <<"msg">> => Payload}})
+    end;
+
+send(#{clientid := ClientId} = Meta, Payload) ->
+    send(Meta#{domain => [emqtt_tracelog]}, Payload, dgiot_utils:to_binary(ClientId ++ "/"));
+
+send(Meta, Payload) ->
+    send(Meta, Payload, <<"">>).
+
+send(Meta, Payload, ClientId) ->
+    Map = jiffy:decode(Payload, [return_maps]),
+    Mfa = maps:get(<<"mfa">>,Map,<<"all">>),
+    Domain = maps:get(domain, Meta, [public_log]),
+    Topic = <<"$SYS/log/", ClientId/binary, Mfa/binary>>,
+    dgiot_mqtt:publish(Mfa,Topic,jiffy:encode(Map#{<<"domain">> => Domain})),
+
+    NewMap = maps:with([<<"time">>, <<"pid">>,<<"msg">>, <<"mfa">>, <<"line">>, <<"level">>, <<"clientid">>, <<"topic">>, <<"peername">>], Map),
+    dgiot_parse_cache:save_to_cache(#{
+        <<"method">> => <<"POST">>,
+        <<"path">> => <<"/classes/Log">>,
+        <<"body">> => get_body(NewMap, Domain)}).
+
+get_body(#{<<"msg">> := Msg} = Map, Domain) when is_map(Msg) ->
+    Map#{<<"type">> => <<"json">>, <<"domain">> => Domain};
+get_body(Map, Domain)  ->
+    Map#{<<"type">> => <<"text">>, <<"domain">> => Domain}.
+
+
+
 start() ->
     Cfg = #{
         <<"host">> => application:get_env(dgiot_parse, parse_server, not_find),
@@ -153,6 +202,7 @@ start(Channel, Cfg) ->
 init(?TYPE, Channel, Cfg) ->
     State = #state{channel = Channel, cfg = Cfg},
     dgiot_data:init(?CACHE(Channel)),
+    emqx_hooks:add('logger.send', {?MODULE, send, []}),
     Opts = [?CACHE(Channel), #{
         auto_save => application:get_env(dgiot_parse, cache_auto_save, 3000),
         size => application:get_env(dgiot_parse, cache_max_size, 50000),

@@ -42,7 +42,7 @@ class HookProvider(exhook_pb2_grpc.HookProviderServicer):
                  exhook_pb2.HookSpec(name="session.takeovered"),
                  exhook_pb2.HookSpec(name="session.terminated"),
 
-                 exhook_pb2.HookSpec(name="message.publish"),
+                 exhook_pb2.HookSpec(name="message.publish",topics = ["test"]),
                  exhook_pb2.HookSpec(name="message.delivered"),
                  exhook_pb2.HookSpec(name="message.acked"),
                  exhook_pb2.HookSpec(name="message.dropped")

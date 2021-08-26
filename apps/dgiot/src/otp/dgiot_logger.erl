@@ -16,9 +16,11 @@
 
 -module(dgiot_logger).
 -author("johnliu").
+-include_lib("dgiot/include/logger.hrl").
 
+-export([test/0]).
 %% Logs
--export([ debug/1
+-export([debug/1
     , debug/2
     , debug/3
     , info/1
@@ -35,6 +37,10 @@
     , critical/3
 ]).
 
+test() ->
+    Test = <<"test">>,
+    ?MLOG(info, #{<<"test">> => Test}),
+    ?MLOG(info, #{<<"test">> => Test},['acl_test']).
 
 %%--------------------------------------------------------------------
 %% APIs
@@ -100,3 +106,4 @@ critical(Format, Args) ->
 -spec(critical(logger:metadata(), io:format(), [term()]) -> ok).
 critical(Metadata, Format, Args) when is_map(Metadata) ->
     logger:critical(Format, Args, Metadata).
+

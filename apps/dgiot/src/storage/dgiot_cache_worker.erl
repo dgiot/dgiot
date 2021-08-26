@@ -77,6 +77,7 @@ stop(NameOrPid) ->
 %%%===================================================================
 
 init(Opts) ->
+    ?LOG(info,"Opts ~p",[Opts]),
     MaxSize = proplists:get_value(ets_maxsize, Opts, 8 * 1024 * 1024),
     Threshold = proplists:get_value(ets_threshold, Opts, 0.85),
     CheckPid = proplists:get_value(checkpid, Opts),
