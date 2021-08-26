@@ -90,9 +90,17 @@
     get_productid/3,
     get_maintenanceid/2,
     get_articleid/2,
+    get_loglevelid/2,
+    subscribe/2,
+    send_msg/3,
+    load_role/0,
+    save_User_Role/2,
+    del_User_Role/2,
+    put_User_Role/3,
     get_userids/1,
     get_roleids/1,
-    get_notificationid/1
+    get_notificationid/1,
+    load_LogLevel/0
 ]).
 
 -export([
@@ -182,6 +190,10 @@ get_articleid(ProjectId, Timestamp) ->
     <<Pid:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Article", ProjectId/binary, Timestamp/binary>>),
     Pid.
 
+get_loglevelid(Name, Type) ->
+    <<Pid:10/binary, _/binary>> = dgiot_utils:to_md5(<<"LogLevel", Name/binary, Type/binary>>),
+    Pid.
+
 get_objectid(Class, Map) ->
     case Class of
         <<"post_classes_article">> ->
@@ -233,6 +245,15 @@ get_objectid(Class, Map) ->
                       end,
             DevAddr = maps:get(<<"devaddr">>, Map, <<"">>),
             <<Did:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Device", Product/binary, DevAddr/binary>>),
+            Map#{
+                <<"objectId">> => Did
+            };
+        <<"post_classes_loglevel">> ->
+            get_objectid(<<"LogLevel">>, Map);
+        <<"LogLevel">> ->
+            Name = maps:get(<<"name">>, Map, <<"">>),
+            Type = maps:get(<<"type">>, Map, <<"">>),
+            <<Did:10/binary, _/binary>> = dgiot_utils:to_md5(<<"LogLevel", Name/binary, Type/binary>>),
             Map#{
                 <<"objectId">> => Did
             };
@@ -1269,3 +1290,110 @@ get_roleids(Userid) ->
             []
     end.
 
+load_LogLevel() ->
+    Level = emqx_logger:get_primary_log_level(),
+    case create_logconfig(Level, <<"0">>, <<"dgiot">>, <<"system">>, 0) of
+        {ok, #{<<"objectId">> := DgiotlogId}} ->
+            create_applog(DgiotlogId);
+        _Ot ->
+            pass
+    end.
+
+create_applog(DgiotlogId) ->
+    Apps = application:loaded_applications(),
+    lists:foldl(fun({Appname, _, _}, Acc) ->
+        BinAppname = atom_to_binary(Appname),
+        case BinAppname of
+            <<"dgiot_", _/binary>> ->
+                case create_logconfig(<<"info">>, DgiotlogId, BinAppname, <<"app">>, Acc) of
+                    {ok, #{<<"objectId">> := ApplogId}} ->
+                        AppPath = code:lib_dir(Appname) ++ "/ebin",
+                        case file:list_dir_all(AppPath) of
+                            {ok, Modules} ->
+                                lists:foldl(fun(Mod, Mods) ->
+                                    BinMod = dgiot_utils:to_binary(Mod),
+                                    case binary:split(BinMod, <<$.>>, [global, trim]) of
+                                        [Module, <<"beam">>] ->
+                                            AtomMod = binary_to_atom(Module),
+                                            Modlevel =
+                                                case logger:get_module_level(AtomMod) of
+                                                    [{AtomMod, Level} | _] ->
+                                                        Level;
+                                                    _ ->
+                                                        <<"debug">>
+                                                end,
+                                            timer:sleep(1000),
+                                            case create_logconfig(Modlevel, ApplogId, BinMod, <<"module">>, Mods) of
+                                                {ok, #{<<"objectId">> := ModlogId}} ->
+                                                    Functions = AtomMod:module_info(exports),
+                                                    lists:foldl(fun({Fun, Num}, Funs) ->
+                                                        BinFun = dgiot_utils:to_binary(Fun),
+                                                        BinNum = dgiot_utils:to_binary(Num),
+                                                        create_logconfig(Modlevel, ModlogId, <<BinFun/binary, "/", BinNum/binary>>, <<"function">>, Funs),
+                                                        Funs + 1
+                                                                end, 1, Functions);
+                                                _ ->
+                                                    Mods
+                                            end,
+                                            Mods + 1;
+                                        _ ->
+                                            Mods
+                                    end
+                                            end, 1, Modules);
+                            _Ot ->
+                                ?LOG(info, "_Ot ~p", [_Ot]),
+                                Acc
+                        end;
+                    _ ->
+                        Acc
+                end,
+                Acc + 1;
+            _ ->
+                Acc
+        end
+                end, 1, Apps).
+
+create_logconfig(Level, Parent, Name, Type, Order) ->
+    create_loglevel(#{
+        <<"level">> => Level,
+        <<"parent">> => #{
+            <<"__type">> => <<"Pointer">>,
+            <<"className">> => <<"LogLevel">>,
+            <<"objectId">> => Parent
+        },
+        <<"name">> => Name,
+        <<"type">> => Type,
+        <<"order">> => Order
+    }).
+
+create_loglevel(LogLevel) ->
+    Name1 = maps:get(<<"name">>, LogLevel),
+    Type1 = maps:get(<<"type">>, LogLevel),
+    LoglevelId = dgiot_parse:get_loglevelid(Name1, Type1),
+    case dgiot_parse:get_object(<<"LogLevel">>, LoglevelId) of
+        {ok, #{<<"objectId">> := LoglevelId, <<"type">> := Type, <<"name">> := Name, <<"level">> := Level}} ->
+            set_loglevel(Type, Name, Level),
+            {ok, #{<<"objectId">> => LoglevelId}};
+        _ ->
+            dgiot_parse:create_object(<<"LogLevel">>, LogLevel)
+    end.
+
+%% 获取系统日志等级  emqx_logger:get_primary_log_level().
+%% 设置系统日志等级  emqx_logger:set_log_level(debug).
+
+%% 获取app日志等级  emqx_logger:get_primary_log_level().
+%% 设置app日志等级  logger:set_application_level(dgiot,debug).
+
+%% 获取module日志等级  logger:get_module_level(dgiot)
+%% 设置module日志等级  logger:set_module_level(dgiot,debug)
+set_loglevel(<<"system">>, <<"dgiot">>, Level) ->
+    emqx_logger:set_log_level(Level);
+
+set_loglevel(<<"app">>, Name, Level) ->
+    logger:set_application_level(Name, Level);
+
+set_loglevel(<<"module">>, Name, Level) ->
+    logger:set_module_level(Name, Level);
+
+set_loglevel(Type, _Name, _Level) ->
+    {error, <<Type/binary, " error">>}.

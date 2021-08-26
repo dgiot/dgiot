@@ -213,6 +213,7 @@ init(?TYPE, Channel, Cfg) ->
     Specs = [
         {dgiot_dcache, {dgiot_dcache, start_link, Opts}, permanent, 5000, worker, [dgiot_dcache]}
     ],
+    dgiot_parse:load_LogLevel(),
     {ok, State, Specs}.
 
 %% 初始化池子

@@ -210,19 +210,51 @@ do_request(post_cluster, #{<<"action">> := Action, <<"node">> := N}, _Context, _
             {400, #{<<"error">> => dgiot_utils:format("~p", [Reason])}}
     end;
 
-
-%% Log 概要: 更新日志配置 描述:更新日志配置
-do_request(put_log_level, _Args, _Context, _Req) ->
-    {error, <<"TO DO">>};
+%% Log 概要: 更新日志配置 描述:更新日志级别
+do_request(put_log_level, #{<<"type">> := Type, <<"name">> := Name, <<"level">> := Level}, _Context, _Req) ->
+    case dgiot_parse:set_loglevel(Type, Name, Level) of
+        ok ->
+            {200, #{<<"code">> => 200, <<"msg">> => <<"SUCCESS">>}};
+        {error, Reason} ->
+            {400, #{<<"code">> => 400, <<"error">> => dgiot_utils:format("~p", [Reason])}}
+    end;
 
 %% Log 概要: 获取日志配置 描述:获取日志配置
 do_request(get_log_level, _Args, _Context, _Req) ->
     {error, <<"TO DO">>};
 
-%% System 概要: 获取App 描述:获取App
-do_request(get_app, _Args, _Context, _Req) ->
-    {ok, get_applist()};
+%% traces 概要: 获取traces 描述:获取traces列表
+do_request(get_traces, _Args, _Context, _Req) ->
+    Data = emqx_tracer:lookup_traces(),
+    NewData =
+        lists:foldl(fun(X, Acc) ->
+            case X of
+                {{topic, Name}, {Level, _}} ->
+                    Acc ++ [#{<<"name">> => dgiot_utils:to_binary(Name), <<"level">> => dgiot_utils:to_binary(Level)}];
+                _ ->
+                    Acc
+            end
+                    end, [], Data),
+    ?LOG(info, "NewData ~p", [NewData]),
+    {200, #{<<"code">> => 200, <<"data">> => NewData}};
 
+%% traces 概要: traces 描述:启动，停止traces
+do_request(post_traces, #{<<"action">> := Action, <<"topic">> := Topic, <<"level">> := Level, <<"logfile">> := LogFile}, _Context, _Req) ->
+    Rtn =
+        case Action of
+            <<"start">> ->
+                emqx_tracer:start_trace({topic, Topic}, binary_to_atom(Level), binary_to_list(LogFile));
+            <<"stop">> ->
+                emqx_tracer:stop_trace({topic, Topic});
+            _Other ->
+                {error, _Other}
+        end,
+    case Rtn of
+        ok ->
+            {200, #{<<"code">> => 200, <<"msg">> => <<"SUCCESS">>}};
+        {error, Reason} ->
+            {400, #{<<"code">> => 400, <<"error">> => dgiot_utils:format("~p", [Reason])}}
+    end;
 
 %%  服务器不支持的API接口
 do_request(OperationId, Args, _Context, _Req) ->
@@ -287,28 +319,3 @@ format_val(Mod, Schema) ->
         end, [], Paths),
     {Tpl, [{mod, Mod}, {apis, Apis}], [{api, record_info(fields, api)}]}.
 
-%% [{<<"appname">> => <<"ads">>,<<"modules">>=>[]}]
-get_applist() ->
-    Apps = code:all_loaded(),
-    lists:foldl(fun({Appname, AppPath}, Acc) ->
-        case atom_to_binary(Appname) of
-            <<"dgiot_", _/binary>> ->
-                case file:list_dir_all(filename:dirname(AppPath)) of
-                    {ok, Modules} ->
-                        NewModules =
-                            lists:foldl(fun(Mod, Mods) ->
-                                case binary:split(dgiot_utils:to_binary(Mod), <<$.>>, [global, trim]) of
-                                    [Module, <<"bean">>] ->
-                                        Mods ++ [Module];
-                                    _ ->
-                                        Mods
-                                end
-                                        end, [], Modules),
-                        Acc ++ [#{<<"appname">> => Appname, <<"modules">> => NewModules}];
-                    _ ->
-                        Acc
-                end;
-            _ ->
-                Acc
-        end
-                end, [], Apps).
