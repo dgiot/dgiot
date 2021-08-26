@@ -212,7 +212,7 @@ do_request(post_cluster, #{<<"action">> := Action, <<"node">> := N}, _Context, _
 
 %% Log 概要: 更新日志配置 描述:更新日志级别
 do_request(put_log_level, #{<<"type">> := Type, <<"name">> := Name, <<"level">> := Level}, _Context, _Req) ->
-    case dgiot_parse:set_loglevel(Type, Name, Level) of
+    case dgiot_logger:set_loglevel(Type, Name, Level) of
         ok ->
             LoglevelId = dgiot_parse:get_loglevelid(Name, Type),
             dgiot_parse:update_object(<<"LogLevel">>, LoglevelId,#{<<"level">> => Level}),

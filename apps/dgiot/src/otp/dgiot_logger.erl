@@ -18,7 +18,10 @@
 -author("johnliu").
 -include_lib("dgiot/include/logger.hrl").
 
--export([send/2, test/0]).
+-export([
+    set_loglevel/3,
+    send/2,
+    test/0]).
 %% Logs
 -export([debug/1
     , debug/2
@@ -40,7 +43,7 @@
 test() ->
     Test = <<"test">>,
 %%    ?MLOG(info, #{<<"test">> => Test}),
-    ?MLOG(info, #{<<"test">> => Test},['acl_test']).
+    ?MLOG(info, #{<<"test">> => Test}, ['acl_test']).
 
 %%--------------------------------------------------------------------
 %% APIs
@@ -117,7 +120,7 @@ send(#{error_logger := _Error_logger}, Payload) ->
             Map = jiffy:decode(Payload, [return_maps]),
             Mfa = maps:get(<<"mfa">>, Map, <<"all">>),
             Line = get_line(Map),
-            Topic = <<"$SYS/log/", Mfa/binary,"/",Line/binary>>,
+            Topic = <<"$SYS/log/", Mfa/binary, "/", Line/binary>>,
             NewMap = maps:with([<<"time">>, <<"pid">>, <<"msg">>, <<"mfa">>, <<"line">>, <<"level">>, <<"clientid">>, <<"topic">>, <<"peername">>], Map),
             dgiot_mqtt:publish(Mfa, Topic, get_body(NewMap, [error_logger]));
         false ->
@@ -136,20 +139,20 @@ send(Meta, Payload) ->
     Mfa = maps:get(<<"mfa">>, Map, <<"all">>),
     Domain = maps:get(domain, Meta, [public_log]),
     TraceTopic =
-        case maps:find(<<"topic">>,Map) of
+        case maps:find(<<"topic">>, Map) of
             {ok, TraceTopic1} ->
                 <<TraceTopic1/binary, "/">>;
             _ -> <<"">>
         end,
     Topic =
-        case maps:find(<<"clientid">>,Map) of
+        case maps:find(<<"clientid">>, Map) of
             {ok, ClientId1} ->
                 <<"$SYS/trace/", TraceTopic/binary, ClientId1/binary>>;
             _ ->
                 Line = get_line(Map),
-                <<"$SYS/log/",Mfa/binary,"/",Line/binary>>
+                <<"$SYS/log/", Mfa/binary, "/", Line/binary>>
         end,
-        NewMap = maps:with([<<"time">>, <<"pid">>, <<"msg">>, <<"mfa">>, <<"line">>, <<"level">>, <<"clientid">>, <<"topic">>, <<"peername">>], Map),
+    NewMap = maps:with([<<"time">>, <<"pid">>, <<"msg">>, <<"mfa">>, <<"line">>, <<"level">>, <<"clientid">>, <<"topic">>, <<"peername">>], Map),
     dgiot_mqtt:publish(Mfa, Topic, jiffy:encode(get_body(NewMap, Domain))).
 
 get_body(#{<<"msg">> := Msg} = Map, Domain) when is_map(Msg) ->
@@ -158,9 +161,30 @@ get_body(Map, Domain) ->
     Map#{<<"type">> => <<"text">>, <<"domain">> => Domain}.
 
 
-get_line(Map)->
-    case maps:find(<<"line">>,Map) of
+get_line(Map) ->
+    case maps:find(<<"line">>, Map) of
         {ok, Line1} ->
             dgiot_utils:to_binary(Line1);
         _ -> <<"0">>
     end.
+
+
+%% 获取系统日志等级  emqx_logger:get_primary_log_level().
+%% 设置系统日志等级  emqx_logger:set_log_level(debug).
+
+%% 获取app日志等级  emqx_logger:get_primary_log_level().
+%% 设置app日志等级  logger:set_application_level(dgiot,debug).
+
+%% 获取module日志等级  logger:get_module_level(dgiot)
+%% 设置module日志等级  logger:set_module_level(dgiot,debug)
+set_loglevel(<<"system">>, <<"dgiot">>, Level) ->
+    emqx_logger:set_log_level(Level);
+
+set_loglevel(<<"app">>, Name, Level) ->
+    logger:set_application_level(Name, Level);
+
+set_loglevel(<<"module">>, Name, Level) ->
+    logger:set_module_level(Name, Level);
+
+set_loglevel(Type, _Name, _Level) ->
+    {error, <<Type/binary, " error">>}.
