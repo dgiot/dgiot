@@ -19,7 +19,6 @@
 -emqx_plugin(?MODULE).
 -behaviour(application).
 
--include("dgiot_ffmpeg.hrl").
 
 %% Application callbacks
 -export([start/2, stop/1]).

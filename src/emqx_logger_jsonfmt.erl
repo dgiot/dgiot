@@ -63,14 +63,9 @@ format(Msg, Meta, Config) ->
                 }
         end,
     Data = maps:without([report_cb], Data0),
-    Json = jiffy:encode(json_obj(Data, Config)),
-    Map = jiffy:decode(Json, [return_maps]),
-    Mfa = maps:get(<<"mfa">>, Map,<<"no">>),
-    Line = integer_to_binary(maps:get(<<"line">>, Map,0)),
-    Topic = <<"$SYS/log/", Mfa/binary, $/, Line/binary>>,
-    Msg1 = emqx_message:make(Mfa, 0, Topic, Json),
-    emqx_broker:publish(Msg1),
-    Json.
+    Payload = jiffy:encode(json_obj(Data, Config)),
+    emqx_hooks:run('logger.send',[Meta, Payload]),
+    Payload.
 
 format_msg({string, Chardata}, Meta, Config) ->
     format_msg({"~ts", [Chardata]}, Meta, Config);
@@ -81,6 +76,8 @@ format_msg({report, Report}, #{report_cb := Fun} = Meta, Config) when is_functio
     case Fun(Report) of
         {Format, Args} when is_list(Format), is_list(Args) ->
             format_msg({Format, Args}, maps:remove(report_cb, Meta), Config);
+        Map when is_map(Map) ->
+            Map;
         Other ->
             #{msg => "report_cb_bad_return"
                 , report_cb_fun => Fun
@@ -99,6 +96,8 @@ format_msg({report, Report}, #{report_cb := Fun}, Config) when is_function(Fun, 
                         , report_cb_return => Chardata
                     }
             end;
+        Map when is_map(Map) ->
+            Map;
         Other ->
             #{msg => "report_cb_bad_return"
                 , report_cb_fun => Fun

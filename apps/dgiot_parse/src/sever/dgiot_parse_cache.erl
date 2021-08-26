@@ -21,20 +21,7 @@
 
 -export([save_cache/1, save_to_cache/1, save_to_cache/2, save_test/1]).
 
--export([add_hook/2, do_hook/3]).
 
-add_hook(Class, Method) ->
-    dgiot_hook:add({Class, Method}, {?MODULE, do_hook}).
-
-do_hook(_TriggerName, _Path, Body) ->
-    case jsx:is_json(Body) of
-        true ->
-            Data = jsx:decode(Body, [return_maps]),
-            ?LOG(info,"_TriggerName ~p Data ~p", [_TriggerName,Data]);
-        false ->
-            pass
-    end,
-    {ok, Body}.
 
 %% 先缓存定时存库
 save_to_cache(Requests) ->
@@ -95,13 +82,14 @@ save_cache(Idx, Channel, Requests, Acc) ->
 
 save_to_parse(_, []) -> ok;
 save_to_parse(Channel, Requests) ->
-    case dgiot_parse:batch(Requests) of
+    case dgiot_parse:batch(Channel,Requests) of
         {ok, Results} ->
-            dgiot_metrics:inc(dgiot_parse, <<"parse_save_cache">>, length(Requests)),
+            dgiot_metrics:inc(dgiot_parse, <<"parse_save_success">>, length(Requests)),
             do_result(Requests, Results);
-        {error, Reason} ->
-            ?LOG(error,"save cache,~p,~p~n", [Requests, Reason]),
-            save_to_cache(Channel, Requests),
+        Result ->
+            log(Requests, Result),
+            dgiot_metrics:inc(dgiot_parse, <<"parse_save_fail">>, length(Requests)),
+%%            save_to_cache(Channel, Requests),
             ok
     end.
 
@@ -123,7 +111,7 @@ do_result([Request | Requests], [Result | Results]) ->
 
 log(_Request, #{<<"success">> := _}) -> ok;
 log(Request, #{<<"error">> := Error}) ->
-    ?LOG(error,"save ~p, cache,~p~n", [Request, Error]).
+    io:format("save ~p, cache,~p~n", [Request, Error]).
 
 
 save_test(Count) ->

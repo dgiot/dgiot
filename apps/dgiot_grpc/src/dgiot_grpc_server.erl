@@ -16,7 +16,7 @@
 
 -module(dgiot_grpc_server).
 
--behavior(emqx_exhook_v_1_hook_provider_bhvr).
+-behavior(dgiot_exhook_v_1_hook_provider_bhvr).
 -export([start/3]).
 
 %% gRPC server HookProvider callbacks
@@ -45,9 +45,9 @@
 
 start(Name, Port, Options) ->
 %% grpc server
-    Services = #{protos => [emqx_exhook_pb],
+    Services = #{protos => [dgiot_exhook_pb],
         services => #{
-            'emqx.exhook.v1.HookProvider' => dgiot_grpc_server
+            'dgiot.exhook.v1.HookProvider' => dgiot_grpc_server
         }
     },
 %%    Options = [],

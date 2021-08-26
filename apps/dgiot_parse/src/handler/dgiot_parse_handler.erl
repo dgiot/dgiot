@@ -920,7 +920,6 @@ get_classtree(ClassName, Parent, Filter, SessionToken) ->
         _ -> {error, <<"1 not find">>}
     end.
 
-
 create_tree(Items, Parent) ->
 %%    ?LOG(info,"Items ~p", [Items]),
     NewItems = lists:foldl(

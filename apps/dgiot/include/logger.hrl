@@ -1,21 +1,3 @@
-%%--------------------------------------------------------------------
-%% Copyright (c) 2020-2021 DGIOT Technologies Co., Ltd. All Rights Reserved.
-%%
-%% Licensed under the Apache License, Version 2.0 (the "License");
-%% you may not use this file except in compliance with the License.
-%% You may obtain a copy of the License at
-%%
-%%     http://www.apache.org/licenses/LICENSE-2.0
-%%
-%% Unless required by applicable law or agreed to in writing, software
-%% distributed under the License is distributed on an "AS IS" BASIS,
-%% WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-%% See the License for the specific language governing permissions and
-%% limitations under the License.
-%%--------------------------------------------------------------------
-
-%% debug | info | notice | warning | error | critical | alert | emergency
-
 -compile({parse_transform, emqx_logger}).
 
 -define(DEBUG(Format), ?LOG(debug, Format, [])).
@@ -42,10 +24,37 @@
 -define(LOG(Level, Format), ?LOG(Level, Format, [])).
 
 -define(LOG(Level, Format, Args),
-        begin
-          (logger:log(Level,#{},#{report_cb => fun(_) ->
-              {'$logger_header'() ++ (Format), ( Args)} end,
-                                  mfa => {?MODULE, ?FUNCTION_NAME, ?FUNCTION_ARITY},
-                                  line => ?LINE}))
-        end).
+    begin
+        (logger:log(Level, #{}, #{
+            report_cb => fun(_) -> {'$logger_header'() ++ (Format), (Args)} end,
+            domain => [public_dgiot],
+            mfa => {?MODULE, ?FUNCTION_NAME, ?FUNCTION_ARITY},
+            line => ?LINE}))
+    end).
 
+-define(LOG(Level, Format, Args, ACL),
+    begin
+        (logger:log(Level, #{}, #{
+            report_cb => fun(_) -> {'$logger_header'() ++ (Format), (Args)} end,
+            domain => ACL,
+            mfa => {?MODULE, ?FUNCTION_NAME, ?FUNCTION_ARITY},
+            line => ?LINE}))
+    end).
+
+-define(MLOG(Level, Map),
+    begin
+        (logger:log(Level, Map, #{
+            report_cb => fun(_) -> Map end,
+            domain => [publiclog],
+            mfa => {?MODULE, ?FUNCTION_NAME, ?FUNCTION_ARITY},
+            line => ?LINE}))
+    end).
+
+-define(MLOG(Level, Map, ACL),
+    begin
+        (logger:log(Level, Map, #{
+            report_cb => fun(_) -> Map end,
+            domain => ACL,
+            mfa => {?MODULE, ?FUNCTION_NAME, ?FUNCTION_ARITY},
+            line => ?LINE}))
+    end).
