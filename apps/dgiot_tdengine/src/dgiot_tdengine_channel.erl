@@ -193,8 +193,8 @@ handle_init(State) ->
     {ok, State}.
 
 %% 通道消息处理,注意：进程池调用
-handle_event(full, _From, #state{id = Channel}) ->
-    dgiot_dcache:save_to_disk(?CACHE(Channel)),
+handle_event(full, _From, #state{id = _Channel}) ->
+%%    dgiot_dcache:save_to_disk(?CACHE(Channel)),
     ok;
 
 handle_event(EventType, Event, _State) ->

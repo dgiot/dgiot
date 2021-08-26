@@ -18,7 +18,7 @@
 -author("johnliu").
 -include_lib("dgiot/include/logger.hrl").
 
--export([test/0]).
+-export([send/2, test/0]).
 %% Logs
 -export([debug/1
     , debug/2
@@ -39,7 +39,7 @@
 
 test() ->
     Test = <<"test">>,
-    ?MLOG(info, #{<<"test">> => Test}),
+%%    ?MLOG(info, #{<<"test">> => Test}),
     ?MLOG(info, #{<<"test">> => Test},['acl_test']).
 
 %%--------------------------------------------------------------------
@@ -107,3 +107,60 @@ critical(Format, Args) ->
 critical(Metadata, Format, Args) when is_map(Metadata) ->
     logger:critical(Format, Args, Metadata).
 
+
+send(Meta, Payload) when is_list(Payload) ->
+    send(Meta, iolist_to_binary(Payload));
+
+send(#{error_logger := _Error_logger}, Payload) ->
+    case jsx:is_json(Payload) of
+        true ->
+            Map = jiffy:decode(Payload, [return_maps]),
+            Mfa = maps:get(<<"mfa">>, Map, <<"all">>),
+            Line = get_line(Map),
+            Topic = <<"$SYS/log/", Mfa/binary,"/",Line/binary>>,
+            NewMap = maps:with([<<"time">>, <<"pid">>, <<"msg">>, <<"mfa">>, <<"line">>, <<"level">>, <<"clientid">>, <<"topic">>, <<"peername">>], Map),
+            dgiot_mqtt:publish(Mfa, Topic, get_body(NewMap, [error_logger]));
+        false ->
+            Topic1 = <<"$SYS/error_logger/all">>,
+            dgiot_mqtt:publish(self(), Topic1, Payload)
+    end;
+
+send(#{topic := _Topic} = Meta, Payload) ->
+    send(Meta#{domain => [topic_trace]}, Payload);
+
+send(#{clientid := _ClientId} = Meta, Payload) ->
+    send(Meta#{domain => [clientid_trace]}, Payload);
+
+send(Meta, Payload) ->
+    Map = jiffy:decode(Payload, [return_maps]),
+    Mfa = maps:get(<<"mfa">>, Map, <<"all">>),
+    Domain = maps:get(domain, Meta, [public_log]),
+    TraceTopic =
+        case maps:find(<<"topic">>,Map) of
+            {ok, TraceTopic1} ->
+                <<TraceTopic1/binary, "/">>;
+            _ -> <<"">>
+        end,
+    Topic =
+        case maps:find(<<"clientid">>,Map) of
+            {ok, ClientId1} ->
+                <<"$SYS/trace/", TraceTopic/binary, ClientId1/binary>>;
+            _ ->
+                Line = get_line(Map),
+                <<"$SYS/log/",Mfa/binary,"/",Line/binary>>
+        end,
+        NewMap = maps:with([<<"time">>, <<"pid">>, <<"msg">>, <<"mfa">>, <<"line">>, <<"level">>, <<"clientid">>, <<"topic">>, <<"peername">>], Map),
+    dgiot_mqtt:publish(Mfa, Topic, jiffy:encode(get_body(NewMap, Domain))).
+
+get_body(#{<<"msg">> := Msg} = Map, Domain) when is_map(Msg) ->
+    Map#{<<"type">> => <<"json">>, <<"domain">> => Domain};
+get_body(Map, Domain) ->
+    Map#{<<"type">> => <<"text">>, <<"domain">> => Domain}.
+
+
+get_line(Map)->
+    case maps:find(<<"line">>,Map) of
+        {ok, Line1} ->
+            dgiot_utils:to_binary(Line1);
+        _ -> <<"0">>
+    end.

@@ -43,16 +43,16 @@
 
 -define(MLOG(Level, Map),
     begin
-        (logger:log(Level, Map, #{
+        (logger:log(Level, #{}, #{
             report_cb => fun(_) -> Map end,
-            domain => [publiclog],
+            domain => [public_dgiot],
             mfa => {?MODULE, ?FUNCTION_NAME, ?FUNCTION_ARITY},
             line => ?LINE}))
     end).
 
 -define(MLOG(Level, Map, ACL),
     begin
-        (logger:log(Level, Map, #{
+        (logger:log(Level, #{}, #{
             report_cb => fun(_) -> Map end,
             domain => ACL,
             mfa => {?MODULE, ?FUNCTION_NAME, ?FUNCTION_ARITY},

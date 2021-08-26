@@ -69,6 +69,7 @@
     read_page/5,
     format_data/2,
     batch/1,
+    batch/2,
     batch/3,
     batch/4,
     import/5,
