@@ -183,7 +183,6 @@ init(Req0, {swagger, Name} = Opts) ->
 
 %% install
 init(Req0, install) ->
-    io:format("Req0 install ~p",[Req0]),
     Product = dgiot_req:binding(<<"Product">>, Req0),
     #{peer := {IpPeer, _}} = Req0,
     Req =
@@ -193,7 +192,6 @@ init(Req0, install) ->
                 {ok, Name} = dgiot_data:lookup({Port, httpd}),
                 case catch (dgiot_install:start(#{product => Product, webserver => Name})) of
                     {Type, Reason} when Type == 'EXIT'; Type == error ->
-                        ?LOG(info,"Reason ~p ", [Reason]),
                         dgiot_req:reply(500, ?HEADER#{
                             <<"content-type">> => <<"application/json; charset=utf-8">>
                         }, jsx:encode(#{error => list_to_binary(io_lib:format("~p", [Reason]))}), Req0);

@@ -320,9 +320,7 @@ generate_users(Result) ->
 
 %% 权限入库
 generate_rule(Result) ->
-    ?LOG(info,"Result ~p",[Result]),
     #{name := ServerName} = proplists:get_value(<<"webname">>, Result,  #{name => dgiot_rest}),
-    ?LOG(info,"ServerName ~p",[ServerName]),
     Rules =
         case dgiot_swagger:read(ServerName, #{}) of
             {ok, Schema} ->

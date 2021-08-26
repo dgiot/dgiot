@@ -63,14 +63,21 @@
         ]
       },
       "put": {
-        "summary": "更新日志配置",
-        "description": "更新日志配置",
+        "summary": "更新日志级别",
+        "description": "更新日志级别",
         "parameters": [
           {
             "in": "query",
-            "name": "Handle",
+            "name": "type",
             "type": "string",
-            "description": "日志模块",
+            "description": "日志类型",
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "name",
+            "type": "string",
+            "description": "模块名称",
             "required": true
           },
           {
@@ -295,7 +302,7 @@
                     },
                     "result": {
                       "type": "array",
-                      "items":{
+                      "items": {
                         "type": "string"
                       }
                     }
@@ -450,13 +457,70 @@
         ]
       }
     },
-    "/app": {
+    "/traces": {
       "get": {
-        "summary": "获取App",
-        "description": "获取App",
+        "summary": "traces列表",
+        "description": "获取traces列表",
         "parameters": [],
         "responses": {
-          "201": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "System"
+        ]
+      },
+      "post": {
+        "summary": "traces操作",
+        "description": "启动，停止traces",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "action": {
+                  "type": "string",
+                  "description": "操作类型",
+                  "example": "start"
+                },
+                "topic": {
+                  "type": "string",
+                  "description": "topic名称",
+                  "example": "test"
+                },
+                "level": {
+                  "type": "string",
+                  "description": "日志等级",
+                  "example": "info"
+                },
+                "logfile": {
+                  "type": "string",
+                  "description": "日志文件",
+                  "example": "test.txt"
+                }
+              }
+            },
+            "description": "相关参数",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
             "description": "Returns operation status"
           },
           "400": {
