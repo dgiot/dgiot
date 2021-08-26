@@ -22,7 +22,6 @@
 -export([save_cache/1, save_to_cache/1, save_to_cache/2, save_test/1]).
 
 
-
 %% 先缓存定时存库
 save_to_cache(Requests) ->
     save_to_cache(?DEFAULT, Requests).
@@ -112,7 +111,6 @@ do_result([Request | Requests], [Result | Results]) ->
 log(_Request, #{<<"success">> := _}) -> ok;
 log(Request, #{<<"error">> := Error}) ->
     io:format("save ~p, cache,~p~n", [Request, Error]).
-
 
 save_test(Count) ->
     [save_to_cache(#{

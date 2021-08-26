@@ -77,7 +77,6 @@ stop(NameOrPid) ->
 %%%===================================================================
 
 init(Opts) ->
-    ?LOG(info,"Opts ~p",[Opts]),
     MaxSize = proplists:get_value(ets_maxsize, Opts, 8 * 1024 * 1024),
     Threshold = proplists:get_value(ets_threshold, Opts, 0.85),
     CheckPid = proplists:get_value(checkpid, Opts),
@@ -117,7 +116,6 @@ handle_cast({delete, Key}, #cachestate{
 handle_cast(stop, #cachestate{
     cacheets = _ValueEts,
     checkpid = CheckPid} = State) ->
-    ?LOG(info,"clean check ~p", [CheckPid]),
     gen_server:cast(CheckPid, stop),
     {stop, normal, State};
 handle_cast(_Msg, State) ->
@@ -127,7 +125,6 @@ handle_info(_Msg, State) ->
     {noreply, State}.
 
 terminate(_Reason, #cachestate{cacheets = ValueEts}) ->
-    ?LOG(error,"cache terminates", []),
     ets:delete(ValueEts),
     ok.
 
@@ -150,7 +147,6 @@ check_memsize(ValueEts, Size) ->
     if
         ValueSize > Size -> over;
         true ->
-            %io:fwrite("ValueSize ~p <= Size ~p~n", [ValueSize, Size]),
             ok
     end.
 
@@ -158,7 +154,6 @@ shrink_table(ValueEts, CheckPid) ->
     Now = calendar:local_time(),
     CurrentTime = calendar:datetime_to_gregorian_seconds(Now),
     ExpiredKeys = gen_server:call(CheckPid, {shrink, CurrentTime}),
-    %io:fwrite("ExpiredKeys ~p~n", [ExpiredKeys]),
     lists:foreach(fun(K) ->
         ets:delete(ValueEts, K)
                   end, ExpiredKeys).
@@ -167,7 +162,6 @@ delete_light_items(ValueEts, ThresholdSize, CheckPid) ->
     case check_memsize(ValueEts, ThresholdSize) of
         over ->
             SortedKeys = gen_server:call(CheckPid, sortkey),
-            %io:fwrite("sorted ~p~n", [SortedKeys]),
             delete_items(CheckPid, ValueEts, ThresholdSize, SortedKeys);
         _ ->
             ok
@@ -176,7 +170,6 @@ delete_light_items(ValueEts, ThresholdSize, CheckPid) ->
 delete_items(_CheckPid, _ValueEts, _ThresholdSize, []) ->
     ok;
 delete_items(CheckPid, ValueEts, ThresholdSize, [{HeadKey, _} | Tail]) ->
-    %io:fwrite("cache ~p delete HEAD ~p~n", [self(), HeadKey]),
     ets:delete(ValueEts, HeadKey),
     gen_server:cast(CheckPid, {delete, HeadKey}),
     case check_memsize(ValueEts, ThresholdSize) of

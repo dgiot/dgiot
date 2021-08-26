@@ -13,13 +13,26 @@
 %% See the License for the specific language governing permissions and
 %% limitations under the License.
 %%--------------------------------------------------------------------
+%%ets表的底层是由哈希表实现的,不过ordered_set例外,它是由平衡二叉树实现的。 所以不管是插入还是查找,set的效率要比ordered_set高.采用set还是ordered_set取决于你的需求，
+%% 当你需要一个有序的集合时，显然应当采用ordered_set模式。
+%%
+%%duplicate_bag要比bag的效率要高, 因为bag要和原来的记录比较是否有相同的记录已经插入. 如果数据量很大,相同的记录越多,bag的效率就越差.
+%%
+%%一张ets表是由创建它的进程所拥有, 当此进程调用ets:delete或者进程终止的时候, ets表就会被删除.
+%%
+%%一般情况下, 插入一个元组到一张ets表中, 所有代表这个元组的结构都会被从process的堆栈中,复制到ets表中; 当查找一条记录时, 结果tuple从ets表中复制到进程的堆栈中。
+%%
+%%但是large binaries却不是这样! 它们被存入自已所拥有的off-heap area中。这个区域可以被多个process,ets表,和binaries所共享。它由引用计数的垃圾回收策略管理,
+%%这个策略会跟踪到底有多少个process/ets表/binaries引用了这个large binaries. 如果引用数为0的话, 此大型二进制数据就会被垃圾回收掉.
+%%
+%%看起来很复杂, 实际结论就是: 两进程间发送包含大型binary数据的消息其实费用很低, 往ets表插入binary类型元组也很划算。我们应该尽可能采用binaries来实现字符串或无类型的大数据块
 
 -module(dgiot_data).
 -author("johnliu").
 -include("dgiot_cron.hrl").
 
--export([init/0, init/1, init/2]).
--export([insert/2, save/2, delete/1, match/1, match_object/2, match_limit/2, match_safe_do/3, match_object/3, match_delete/1, select/2, lookup/1, page/6, destroy/1, update_counter/2]).
+-export([init/0, init/1, init/2, destroy/1]).
+-export([insert/2, save/2, delete/1, match/1, match_object/2, match_limit/2, match_safe_do/3, match_object/3, match_delete/1, select/2, lookup/1, page/6, update_counter/2]).
 -export([insert/3, delete/2, match/2, match/3, match_delete/2, match_limit/3, match_safe_do/4, lookup/2, search/2, search/3, dets_search/2, dets_search/3, loop/2, dets_loop/3, update_counter/3]).
 -export([set_consumer/2, set_consumer/3, get_consumer/2, get/1, get/2, clear/1,search_data/0]).
 -define(DB, dgiot_data).
@@ -62,6 +75,16 @@ init(Name, Options) ->
             ?ETS:new(Name, Options);
         _ ->
             Name
+    end.
+
+-spec(destroy(ets:tab()) -> ok).
+%% Delete the ets table.
+destroy(Tab) ->
+    case ?ETS:info(Tab, name) of
+        undefined -> ok;
+        Tab ->
+            ?ETS:delete(Tab),
+            ok
     end.
 
 insert(Key, Value) ->
@@ -142,9 +165,6 @@ page(Name, PageNo, PageSize, Filter, RowFun, Order) ->
     Result = dgiot_pager:page(ets:table(Name), Filter, PageNo, PageSize, RowFun, Order),
     {ok, Result}.
 
-
-destroy(Name) ->
-    ?ETS:delete(Name).
 
 select(Name, MatchSpec) ->
     ?ETS:select(Name, MatchSpec).

@@ -52,7 +52,6 @@ start(Name, Options) ->
 info(Name) ->
     ets:info(Name).
 
-
 insert(Objects) ->
     insert(?DCACHE, Objects).
 
