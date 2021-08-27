@@ -36,15 +36,15 @@
 -define(GATEWAY_TARGET_DEVICE_FAILED_TO_RESPOND, 11).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
--define(FC_READ_COILS,    16#01). %读线圈寄存器
--define(FC_READ_INPUTS,   16#02). %读离散输入寄存器
--define(FC_READ_HREGS,    16#03). %读保持寄存器
--define(FC_READ_IREGS,    16#04). %读输入寄存器
+-define(FC_READ_COILS, 16#01). %读线圈寄存器
+-define(FC_READ_INPUTS, 16#02). %读离散输入寄存器
+-define(FC_READ_HREGS, 16#03). %读保持寄存器
+-define(FC_READ_IREGS, 16#04). %读输入寄存器
 
--define(FC_WRITE_COIL,    16#05).  %写单个线圈寄存器
--define(FC_WRITE_HREG,    16#06).  %写单个保持寄存器
--define(FC_WRITE_COILS,   16#0f).  %写多个线圈寄存器
--define(FC_WRITE_HREGS,   16#10).  %写多个保持寄存器
+-define(FC_WRITE_COIL, 16#05).  %写单个线圈寄存器
+-define(FC_WRITE_HREG, 16#06).  %写单个保持寄存器
+-define(FC_WRITE_COILS, 16#0f).  %写多个线圈寄存器
+-define(FC_WRITE_HREGS, 16#10).  %写多个保持寄存器
 
 %%_____________________________________________
 %%表2 ModBus功能码与数据类型对应表              |
@@ -60,9 +60,9 @@
 %%|16   |写   |整型、字符型、状态字、浮点型      |
 %%——————————————————————————————————————————————
 
--record(rtu_req, {slaveId, funcode, address, quality}).
+-record(rtu_req, {slaveId, funcode, address, registersnumber, dataByteSize, quality}).
 -record(rtu_pdu, {slaveId, funcode, dataByteSize, data}).
--record(tcp_request, {sock, tid = 1, address = 1, function, start, data }).
+-record(tcp_request, {sock, tid = 1, address = 1, function, start, data}).
 
 -record(tcp_request1, {
     id,
