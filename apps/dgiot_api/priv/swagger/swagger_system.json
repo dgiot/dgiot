@@ -67,24 +67,29 @@
         "description": "更新日志级别",
         "parameters": [
           {
-            "in": "query",
-            "name": "type",
-            "type": "string",
-            "description": "日志类型",
-            "required": true
-          },
-          {
-            "in": "query",
-            "name": "name",
-            "type": "string",
-            "description": "模块名称",
-            "required": true
-          },
-          {
-            "in": "query",
-            "name": "level",
-            "type": "string",
-            "description": "日志级别",
+            "in": "body",
+            "name": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "description": "日志类型",
+                  "example": "system"
+                },
+                "name": {
+                  "type": "string",
+                  "description": "模块名称",
+                  "example": "dgiot"
+                },
+                "level": {
+                  "type": "string",
+                  "description": "日志级别",
+                  "example": "info"
+                }
+              }
+            },
+            "description": "相关参数",
             "required": true
           }
         ],
@@ -457,10 +462,10 @@
         ]
       }
     },
-    "/traces": {
+    "/trace": {
       "get": {
-        "summary": "traces列表",
-        "description": "获取traces列表",
+        "summary": "trace列表",
+        "description": "获取trace列表",
         "parameters": [],
         "responses": {
           "200": {
@@ -484,8 +489,8 @@
         ]
       },
       "post": {
-        "summary": "traces操作",
-        "description": "启动，停止traces",
+        "summary": "trace操作",
+        "description": "启动，停止trace",
         "parameters": [
           {
             "in": "body",

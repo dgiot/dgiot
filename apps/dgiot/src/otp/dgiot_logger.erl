@@ -178,13 +178,13 @@ get_line(Map) ->
 %% 获取module日志等级  logger:get_module_level(dgiot)
 %% 设置module日志等级  logger:set_module_level(dgiot,debug)
 set_loglevel(<<"system">>, <<"dgiot">>, Level) ->
-    emqx_logger:set_log_level(Level);
+    emqx_logger:set_log_level(binary_to_atom(Level));
 
 set_loglevel(<<"app">>, Name, Level) ->
-    logger:set_application_level(Name, Level);
+    logger:set_application_level(binary_to_atom(Name), binary_to_atom(Level));
 
 set_loglevel(<<"module">>, Name, Level) ->
-    logger:set_module_level(Name, Level);
+    logger:set_module_level(binary_to_atom(Name), binary_to_atom(Level));
 
 set_loglevel(Type, _Name, _Level) ->
     {error, <<Type/binary, " error">>}.
