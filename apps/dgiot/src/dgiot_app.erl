@@ -26,7 +26,6 @@
 start(_StartType, _StartArgs) ->
     dgiot_data:init(),
     dgiot_data:search_data(),
-    emqx_hooks:add('logger.send', {dgiot_logger, send, []}),
     dgiot_datetime:start_time(),
     start_mnesia(),
     dgiot:init_plugins(),
