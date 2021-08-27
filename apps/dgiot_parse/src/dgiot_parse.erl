@@ -1289,7 +1289,30 @@ load_LogLevel() ->
     Level = emqx_logger:get_primary_log_level(),
     case create_logconfig(Level, <<"0">>, <<"dgiot">>, <<"system">>, 0) of
         {ok, #{<<"objectId">> := DgiotlogId}} ->
-            create_applog(DgiotlogId);
+            case create_logconfig(Level, DgiotlogId, <<"dgiot_handle">>, <<"dgiot_handle">>, 2) of
+                {ok, #{<<"objectId">> := HandlogId}} ->
+                    case dgiot_parse:query_object(<<"LogLevel">>, #{<<"where">> => #{<<"parent">> => HandlogId, <<"type">> => <<"trace">>}}) of
+                        {ok, #{<<"results">> := Results}} ->
+                            lists:foldl(fun(X, _Acc) ->
+                                case X of
+                                    #{<<"name">> := Name, <<"level">> := Level, <<"type">> := <<"trace">>} ->
+                                        emqx_tracer:start_trace({topic, Name}, binary_to_atom(Level), "text.txt");
+                                    _ ->
+                                        pass
+                                end
+                                        end, <<>>, Results);
+                        _ ->
+                            pass
+                    end;
+                _ ->
+                    pass
+            end,
+            case create_logconfig(Level, DgiotlogId, <<"dgiot_app">>, <<"dgiot_app">>, 1) of
+                {ok, #{<<"objectId">> := ApplogId}} ->
+                    create_applog(ApplogId);
+                _ ->
+                    pass
+            end;
         _Ot ->
             pass
     end.
@@ -1317,8 +1340,7 @@ create_applog(DgiotlogId) ->
                                                     _ ->
                                                         <<"debug">>
                                                 end,
-                                            timer:sleep(1000),
-                                            case create_logconfig(Modlevel, ApplogId, BinMod, <<"module">>, Mods) of
+                                            case create_logconfig(Modlevel, ApplogId, Module, <<"module">>, Mods) of
                                                 {ok, #{<<"objectId">> := ModlogId}} ->
                                                     Functions = AtomMod:module_info(exports),
                                                     lists:foldl(fun({Fun, Num}, Funs) ->

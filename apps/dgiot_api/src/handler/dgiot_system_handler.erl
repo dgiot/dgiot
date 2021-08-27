@@ -215,7 +215,7 @@ do_request(put_log_level, #{<<"type">> := Type, <<"name">> := Name, <<"level">> 
     case dgiot_logger:set_loglevel(Type, Name, Level) of
         ok ->
             LoglevelId = dgiot_parse:get_loglevelid(Name, Type),
-            dgiot_parse:update_object(<<"LogLevel">>, LoglevelId,#{<<"level">> => Level}),
+            dgiot_parse:update_object(<<"LogLevel">>, LoglevelId, #{<<"level">> => Level}),
             {200, #{<<"code">> => 200, <<"msg">> => <<"SUCCESS">>}};
         {error, Reason} ->
             {400, #{<<"code">> => 400, <<"error">> => dgiot_utils:format("~p", [Reason])}}
@@ -226,7 +226,7 @@ do_request(get_log_level, _Args, _Context, _Req) ->
     {error, <<"TO DO">>};
 
 %% traces 概要: 获取traces 描述:获取traces列表
-do_request(get_traces, _Args, _Context, _Req) ->
+do_request(get_trace, _Args, _Context, _Req) ->
     Data = emqx_tracer:lookup_traces(),
     NewData =
         lists:foldl(fun(X, Acc) ->
@@ -237,11 +237,10 @@ do_request(get_traces, _Args, _Context, _Req) ->
                     Acc
             end
                     end, [], Data),
-    ?LOG(info, "NewData ~p", [NewData]),
     {200, #{<<"code">> => 200, <<"data">> => NewData}};
 
 %% traces 概要: traces 描述:启动，停止traces
-do_request(post_traces, #{<<"action">> := Action, <<"topic">> := Topic, <<"level">> := Level, <<"logfile">> := LogFile}, _Context, _Req) ->
+do_request(post_trace, #{<<"action">> := Action, <<"topic">> := Topic, <<"level">> := Level, <<"logfile">> := LogFile}, _Context, _Req) ->
     Rtn =
         case Action of
             <<"start">> ->
