@@ -122,7 +122,7 @@ set_params(Basedata, ProductId) ->
                             <<"protocol">> := <<"modbus">>,
                             <<"slaveid">> := SlaveId,
                             <<"address">> := Address,
-                            <<"bytes">> := _Bytes,
+                            <<"bytes">> := Bytes,
                             <<"operatetype">> := OperateType,
                             <<"setting">> := Setting} ->
                             case maps:find(Identifier, Basedata) of
@@ -148,10 +148,13 @@ set_params(Basedata, ProductId) ->
                                     Str1 = re:replace(Setting, "%s", "(" ++ dgiot_utils:to_list(Value) ++ ")", [global, {return, list}]),
                                     Value1 = dgiot_utils:to_int(dgiot_task:string2value(Str1)),
 %%                                    NewBt = Bytes * 8,
+                                    Registersnumber = maps:get(<<"registersnumber">>, X, <<"1">>),
                                     RtuReq = #rtu_req{
                                         slaveId = Sh * 256 + Sl,
                                         funcode = dgiot_utils:to_int(FunCode),
                                         address = H * 256 + L,
+                                        registersnumber = dgiot_utils:to_int(Registersnumber),
+                                        dataByteSize = dgiot_utils:to_int(Bytes),
                                         quality = Value1
                                     },
                                     Acc ++ [build_req_message(RtuReq)];
@@ -335,11 +338,11 @@ build_req_message(Req) when is_record(Req, rtu_req) ->
             ?FC_WRITE_HREGS ->
 %%                ValuesBin = list_word16_to_binary(Req#rtu_req.quality),
 %%                寄存器个数
-                Count = 1,
+%%                Count = 1,
 %%                写入字节数
-                ByteCount = 2,
+%%                ByteCount = 2,
 %%                               01                        10                  01 00           00 01 02
-                <<(Req#rtu_req.slaveId):8, (Req#rtu_req.funcode):8, (Req#rtu_req.address):16, Count:16, ByteCount:8, (Req#rtu_req.quality):16>>;
+                <<(Req#rtu_req.slaveId):8, (Req#rtu_req.funcode):8, (Req#rtu_req.address):16, (Req#rtu_req.registersnumber):16, (Req#rtu_req.dataByteSize):8, (Req#rtu_req.quality):16>>;
             _ ->
                 erlang:error(function_not_implemented)
         end,

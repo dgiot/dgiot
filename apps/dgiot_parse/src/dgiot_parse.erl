@@ -1291,7 +1291,7 @@ load_LogLevel() ->
         {ok, #{<<"objectId">> := DgiotlogId}} ->
             case create_logconfig(Level, DgiotlogId, <<"dgiot_handle">>, <<"dgiot_handle">>, 2) of
                 {ok, #{<<"objectId">> := HandlogId}} ->
-                    case dgiot_parse:query_object(<<"LogLevel">>, #{<<"where">> => #{<<"parent">> => HandlogId, <<"type">> => <<"trace">>}}) of
+                    case dgiot_parse:query_object(<<"LogLevel">>, #{<<"where">> => #{<<"parent">> => HandlogId, <<"type">> => <<"trace">>, <<"Subscribed">> => true}}) of
                         {ok, #{<<"results">> := Results}} ->
                             lists:foldl(fun(X, _Acc) ->
                                 case X of
