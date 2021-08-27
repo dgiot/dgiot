@@ -64,7 +64,7 @@ format(Msg, Meta, Config) ->
         end,
     Data = maps:without([report_cb], Data0),
     Payload = jiffy:encode(json_obj(Data, Config)),
-%%    emqx_hooks:run('logger.send',[Meta, Payload]),
+    emqx_hooks:run('logger.send',[Meta, Payload]),
     Payload.
 
 format_msg({string, Chardata}, Meta, Config) ->

@@ -137,9 +137,8 @@ init([Name, Options]) ->
     end,
     put(last, erlang:system_time(second)),
     load_from_dets(Name),
-    save_to_dets(Options),
+%%    save_to_dets(Options),
     {ok, #state{name = Name, opts = Options}}.
-
 
 handle_call({insert, Objects}, _From, State) ->
     Reply = insert(State#state.name, Objects),
@@ -171,9 +170,9 @@ handle_cast(_Msg, State) ->
     {noreply, State}.
 
 
-handle_info(save_to_dets, #state{opts = Options} = State) ->
+handle_info(save_to_dets, #state{opts = _Options} = State) ->
     check_save(State),
-    save_to_dets(Options),
+%%    save_to_dets(Options),
     {noreply, State};
 
 handle_info(save, State) ->

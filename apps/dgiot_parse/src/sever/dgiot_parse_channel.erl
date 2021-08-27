@@ -21,8 +21,8 @@
 -behavior(dgiot_channelx).
 -dgiot_data("ets").
 -export([
-    init_ets/0
-]).
+    init_ets/0,
+    send/2]).
 
 -export([get_config/0, get_config/1]).
 -export([start/0, start/2, init/3, handle_init/1, handle_event/3, handle_message/2, stop/3, handle_save/1]).
@@ -129,11 +129,6 @@
     }
 }).
 
-init_ets() ->
-    dgiot_data:init(?DGIOT_PARSE_ETS),
-    dgiot_data:init(?ROLE_USER_ETS),
-    dgiot_data:init(?ROLE_PARENT_ETS),
-    dgiot_data:init(?USER_ROLE_ETS).
 
 start() ->
     Cfg = #{
@@ -155,7 +150,6 @@ start(Channel, Cfg) ->
 %% 通道初始化
 init(?TYPE, Channel, Cfg) ->
     State = #state{channel = Channel, cfg = Cfg},
-    dgiot_data:init(?CACHE(Channel)),
     Opts = [?CACHE(Channel), #{
         auto_save => application:get_env(dgiot_parse, cache_auto_save, 3000),
         size => application:get_env(dgiot_parse, cache_max_size, 50000),
@@ -166,24 +160,22 @@ init(?TYPE, Channel, Cfg) ->
     Specs = [
         {dgiot_dcache, {dgiot_dcache, start_link, Opts}, permanent, 5000, worker, [dgiot_dcache]}
     ],
-    dgiot_parse:load_LogLevel(),
     {ok, State, Specs}.
 
 %% 初始化池子
 handle_init(State) ->
+    emqx_hooks:add('logger.send', {?MODULE, send, []}),
     {ok, State}.
 
 handle_message(config, #state{cfg = Cfg} = State) ->
-    %%            dgiot_parse_cache:save_to_cache(#{<<"method">> => <<"POST">>, <<"path">> => <<"/classes/Log">>,
-%%                <<"body">> => get_body(NewMap, [error_logger])});
     {reply, {ok, Cfg}, State};
 
 handle_message(_Message, State) ->
     {ok, State}.
 
 %% 通道消息处理,注意：进程池调用
-handle_event(full, _From, #state{channel = _Channel}) ->
-%%    dgiot_dcache:save_to_disk(?CACHE(Channel)),
+handle_event(full, _From, #state{channel = Channel}) ->
+    dgiot_dcache:save_to_disk(?CACHE(Channel)),
     ok;
 
 handle_event(_EventId, _Event, _State) ->
@@ -203,3 +195,57 @@ get_config() ->
 
 get_config(Channel) ->
     dgiot_channelx:call(?TYPE, Channel, config).
+
+
+init_ets() ->
+    dgiot_data:init(?DGIOT_PARSE_ETS),
+    dgiot_data:init(?ROLE_USER_ETS),
+    dgiot_data:init(?ROLE_PARENT_ETS),
+    dgiot_data:init(?USER_ROLE_ETS).
+
+send(Meta, Payload) when is_list(Payload) ->
+    send(Meta, iolist_to_binary(Payload));
+
+send(#{error_logger := _Error_logger, mfa := {M, F, A}} = _Meta, Payload) ->
+    Mfa = <<(atom_to_binary(M, utf8))/binary, $/, (atom_to_binary(F, utf8))/binary, $/, (integer_to_binary(A))/binary>>,
+    Topic = <<"logger_trace/", Mfa/binary>>,
+    dgiot_mqtt:publish(Mfa, Topic, Payload),
+    dgiot_parse_cache:save_to_cache(#{<<"method">> => <<"POST">>, <<"path">> => <<"/classes/Log">>, <<"body">> => Payload});
+
+send(#{mfa := _MFA} = _Meta, Payload) ->
+    Map = jiffy:decode(Payload, [return_maps]),
+    Mfa = dgiot_utils:to_binary(maps:get(<<"mfa">>, Map, <<"all">>)),
+    TraceTopic =
+        case maps:find(<<"topic">>, Map) of
+            {ok, TraceTopic1} ->
+                <<TraceTopic1/binary, "/">>;
+            _ -> <<"">>
+        end,
+    Topic =
+        case maps:find(<<"clientid">>, Map) of
+            {ok, ClientId1} ->
+                <<"logger_trace/trace/", TraceTopic/binary, ClientId1/binary>>;
+            _ ->
+                Line =
+                    case maps:find(<<"line">>, Map) of
+                        {ok, Line1} ->
+                            dgiot_utils:to_binary(Line1);
+                        _ ->
+                            <<"0">>
+                    end,
+                <<"logger_trace/log/", Mfa/binary, "/", Line/binary>>
+        end,
+    dgiot_mqtt:publish(Mfa, Topic, Payload),
+    dgiot_parse_cache:save_to_cache(#{
+        <<"method">> => <<"POST">>,
+        <<"path">> => <<"/classes/Log">>,
+        <<"body">> => get_body(Map)});
+
+send(_Meta, Payload) ->
+    dgiot_mqtt:publish(<<"all">>, <<"logger_trace/other">>, Payload),
+    ok.
+
+get_body(#{<<"msg">> := Msg} = Map) when is_map(Msg) ->
+    Map#{<<"type">> => <<"json">>, <<"msg">> => jiffy:encode(Msg)};
+get_body(Map) ->
+    Map#{<<"type">> => <<"text">>}.
