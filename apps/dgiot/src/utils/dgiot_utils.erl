@@ -735,6 +735,13 @@ get_ipbymac(Mac) ->
         _ -> <<"">>
     end.
 
+get_ip({A, B, C, D}) ->
+    Ip = to_list(A) ++ "." ++
+        to_list(B) ++ "." ++
+        to_list(C) ++ "." ++
+        to_list(D),
+    to_binary(Ip);
+
 get_ip(Socket) ->
     {ok, {{A, B, C, D}, _Port}} = esockd_transport:peername(Socket),
     Ip = to_list(A) ++ "." ++

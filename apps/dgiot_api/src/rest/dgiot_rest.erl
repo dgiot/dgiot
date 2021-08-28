@@ -38,7 +38,7 @@
 %% Handlers
 -export([handle_request/2]).
 -export([handle_multipart/2]).
--export([call/3]).
+-export([call/4]).
 
 -dgiot_data("ets").
 -export([init_ets/0]).
@@ -78,9 +78,9 @@ init(Req, #{logic_handler := LogicHandler} = Map) ->
     Method = dgiot_req:method(Req),
     case Method of
         <<"OPTIONS">> ->
-            default_init(#{ operationid => options }, State, Req);
+            default_init(#{operationid => options}, State, Req);
         _ ->
-            case call(LogicHandler, init, [Req, Map]) of
+            case call(LogicHandler, init, [Req, Map], Req) of
                 {no_call, Req1} ->
                     Index = maps:get(Method, Map),
                     {ok, {_, Config}} = dgiot_router:get_state(Index),
@@ -128,7 +128,7 @@ allowed_methods(Req, State = #state{operationid = OperationId}) ->
         Req :: dgiot_req:req(),
         State :: state()
     }.
-is_authorized(Req0, #state{ operationid = options } = State) ->
+is_authorized(Req0, #state{operationid = options} = State) ->
     case ?ACCESS_CONTROL_ALLOW_HEADERS of
         false ->
             dgiot_req:reply(403, ?HEADER, <<>>, Req0);
@@ -297,13 +297,13 @@ do_request(Populated, Req0, State = #state{
     context = Context
 }) ->
     Args = [OperationID, Populated, Context, Req0],
-    ?LOG(debug,"~p ~p",[OperationID,dgiot_data:get(?DGIOT_SWAGGER,OperationID)]),
+    ?LOG(debug, "~p ~p", [OperationID, dgiot_data:get(?DGIOT_SWAGGER, OperationID)]),
     Result =
         case IsMock of
             true ->
-                call(LogicHandler, mock, Args);
+                call(LogicHandler, mock, Args, Req0);
             false ->
-                call(LogicHandler, handle, Args)
+                call(LogicHandler, handle, Args, Req0)
         end,
     case Result of
         no_call when IsMock ->
@@ -329,7 +329,7 @@ handle_multipart({data, Name}, Req, Acc, State) ->
     {ok, Data, Req1} = cowboy_req:read_part_body(Req),
     handle_multipart(Req1, Acc#{Name => Data}, State);
 handle_multipart({file, Name, Filename, ContentType}, Req, Acc, State) ->
-    DocRoot = list_to_binary(dgiot_http_server:get_env(?APP,docroot)),
+    DocRoot = list_to_binary(dgiot_http_server:get_env(?APP, docroot)),
     {{Y, M, D}, {H, N, S}} = calendar:local_time(),
     Now = list_to_binary(lists:concat([Y, M, D, H, N, S])),
     Exe = filename:extension(Filename),
@@ -356,7 +356,7 @@ handle_multipart({file, Name, Filename, ContentType}, Req, Acc, State) ->
 
 
 do_authorized(LogicHandler, OperationID, Args, Req) ->
-    case call(LogicHandler, check_auth, [OperationID, Args, Req]) of
+    case call(LogicHandler, check_auth, [OperationID, Args, Req], Req) of
         no_call ->
             dgiot_auth:check_auth(OperationID, Args, Req);
         {true, NContext, Req1} ->
@@ -366,12 +366,12 @@ do_authorized(LogicHandler, OperationID, Args, Req) ->
         {false, Err, Req1} ->
             {false, Err, Req1};
         {switch_handler, NLogicHandler, Req1} ->
-            call(NLogicHandler, check_auth, [OperationID, Args, Req1])
+            call(NLogicHandler, check_auth, [OperationID, Args, Req1], Req1)
     end.
 
 default_mock_handler(_OperationID, _Populated, Context, Req) ->
     Response = maps:get(check_response, Context, #{}),
-    ?LOG(info,"do mock:~p~n", [Response]),
+    ?LOG(info, "do mock:~p~n", [Response]),
     dgiot_mock:do_mock(Response, Req).
 
 
@@ -386,7 +386,7 @@ do_response(Status, Headers, Body, Req0, State) when is_binary(Body) ->
             true ->
                 case application:get_env(?APP, developer_mode, false) of
                     true ->
-                        ?LOG(info,"Response 500:~p~n", [Body]),
+                        ?LOG(info, "Response 500:~p~n", [Body]),
                         dgiot_req:reply(Status, NewHeaders, Body, Req0);
                     false ->
                         Res = #{<<"error">> => <<"Server Internal error">>},
@@ -397,13 +397,50 @@ do_response(Status, Headers, Body, Req0, State) when is_binary(Body) ->
         end,
     {stop, Req, State}.
 
-call(Mod, Fun, Args) ->
+call(Mod, Fun, Args, Req) ->
     case erlang:function_exported(Mod, Fun, length(Args)) of
         true ->
-            apply(Mod, Fun, Args);
+            {Time, Result} = timer:tc(Mod, Fun, Args),
+            get_log(Req, Time, Result),
+            Result;
         false ->
+            BinMod = dgiot_utils:to_binary(Mod),
+            BinFun = dgiot_utils:to_binary(Fun),
+            BinLen = dgiot_utils:to_binary(length(Args)),
+            get_log(Req, 0, {not_fun, <<BinMod/binary, ":", BinFun/binary, "/", BinLen/binary, " no_call">>}),
             no_call
     end.
 
 init_ets() ->
     dgiot_data:init(?DGIOT_SWAGGER).
+
+get_log(#{peer := {PeerName, _}} = Req, Time, Result) ->
+    Ip = dgiot_utils:get_ip(PeerName),
+    SessionToken = maps:get(<<"sessionToken">>, Req, <<"">>),
+    NewReq = maps:with([method, path], Req),
+    Username =
+        case dgiot_auth:get_session(SessionToken) of
+            #{<<"username">> := Name} ->
+                dgiot_utils:to_binary(Name);
+            _ ->
+                <<"">>
+        end,
+    {Code, Reason} =
+        case Result of
+            {200, _} ->
+                {200, <<"success">>};
+            {not_fun, Msg} ->
+                {<<"not_fun">>, Msg};
+            {no_call, _} ->
+                {<<"no_call">>, <<"no_call">>};
+            no_call ->
+                {<<"no_call">>, <<"no_call">>};
+            _ ->
+                {<<"error">>, <<"error">>}
+        end,
+    ?MLOG(info, NewReq#{<<"code">> => Code, <<"reason">> => Reason, <<"ip">> => Ip, <<"username">> => Username, <<"elapsedtime">> => Time}, ['parse_api']);
+
+get_log(Req, _, _) ->
+    ?LOG(info, "Req22222 ~p", [Req]).
+
+
