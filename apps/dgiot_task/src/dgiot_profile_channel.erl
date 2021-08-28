@@ -111,6 +111,7 @@ handle_message({sync_parse, Args}, State) ->
     case jsx:decode(Args, [{labels, binary}, return_maps]) of
         #{<<"objectId">> := DeviceId, <<"profile">> := Profile, <<"devaddr">> := Devaddr, <<"product">> := #{<<"objectId">> := ProductId}} ->
             Modifyprofile = get_modifyprofile(DeviceId, Profile),
+
 %%            设置参数
             case dgiot_device:get_online(DeviceId) of
                 true ->

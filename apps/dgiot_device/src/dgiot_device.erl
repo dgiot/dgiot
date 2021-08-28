@@ -45,22 +45,23 @@ load_device(Order) ->
 
 post(Device) ->
     DeviceId = maps:get(<<"objectId">>, Device),
+    DeviceName = maps:get(<<"name">>, Device),
     Status =
         case maps:get(<<"status">>, Device, <<"OFFLINE">>) of
             <<"OFFLINE">> -> false;
             _ -> true
         end,
-    dgiot_mnesia:insert(DeviceId, {[Status, dgiot_datetime:now_secs(), get_acl(Device)], node()}).
+    dgiot_mnesia:insert(DeviceId, {[Status, dgiot_datetime:now_secs(), get_acl(Device), DeviceName], node()}).
 
 put(Device) ->
     DeviceId = maps:get(<<"objectId">>, Device),
     case lookup(DeviceId) of
-        {ok, {[Status, _, Acl], Node}} ->
+        {ok, {[Status, _, Acl, DeviceName], Node}} ->
             case maps:find(<<"ACL">>, Device) of
                 error ->
-                    dgiot_mnesia:insert(DeviceId, {[Status, dgiot_datetime:now_secs(), Acl], Node});
+                    dgiot_mnesia:insert(DeviceId, {[Status, dgiot_datetime:now_secs(), Acl, DeviceName], Node});
                 {ok, _} ->
-                    dgiot_mnesia:insert(DeviceId, {[Status, dgiot_datetime:now_secs(), get_acl(Device)], Node})
+                    dgiot_mnesia:insert(DeviceId, {[Status, dgiot_datetime:now_secs(), get_acl(Device), DeviceName], Node})
             end;
         _ ->
             pass
@@ -68,6 +69,7 @@ put(Device) ->
 
 save(Device) ->
     DeviceId = maps:get(<<"objectId">>, Device),
+    DeviceName = maps:get(<<"name">>, Device),
     UpdatedAt =
         case maps:get(<<"updatedAt">>, Device, dgiot_datetime:now_secs()) of
             <<Data:10/binary, "T", Time:8/binary, _/binary>> ->
@@ -79,7 +81,7 @@ save(Device) ->
             <<"OFFLINE">> -> false;
             _ -> true
         end,
-    dgiot_mnesia:insert(DeviceId, {[Status, UpdatedAt, get_acl(Device)], node()}).
+    dgiot_mnesia:insert(DeviceId, {[Status, UpdatedAt, get_acl(Device), DeviceName], node()}).
 
 get_acl(Device) ->
     ACL = maps:get(<<"ACL">>, Device, #{}),
@@ -89,8 +91,8 @@ get_acl(Device) ->
 
 save(DeviceId, _Data) ->
     case lookup(DeviceId) of
-        {ok, {[Status, _Now, Acl], Node}} ->
-            dgiot_mnesia:insert(DeviceId, {[Status, dgiot_datetime:now_secs(), Acl], Node});
+        {ok, {[Status, _Now, Acl, DeviceName], Node}} ->
+            dgiot_mnesia:insert(DeviceId, {[Status, dgiot_datetime:now_secs(), Acl, DeviceName], Node});
         _ -> pass
     end.
 
@@ -100,22 +102,23 @@ save(ProductId, DevAddr, _Data) ->
 
 sync_parse(OffLine) ->
     Fun = fun(X) ->
-        ?LOG(debug, "X ~p", [X]),
         {_, DeviceId, V} = X,
         Now = dgiot_datetime:now_secs(),
         case V of
-            {[true, Last, Acl], Node} when (Now - Last) > OffLine ->
+            {[true, Last, Acl, DeviceName], Node} when (Now - Last) > OffLine ->
                 case dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"status">> => <<"OFFLINE">>}) of
                     {ok, _R} ->
-                        dgiot_mnesia:insert(DeviceId, {[false, Last, Acl], Node});
+                        ?MLOG(info, #{<<"Device">> => DeviceId, <<"DeviceName">> => DeviceName, <<"status">> => <<"OFFLINE">>}, ['device_log']),
+                        dgiot_mnesia:insert(DeviceId, {[false, Last, Acl, DeviceName], Node});
                     _ ->
                         pass
                 end,
                 timer:sleep(50);
-            {[false, Last, Acl], Node} when (Now - Last) < OffLine ->
+            {[false, Last, Acl, DeviceName], Node} when (Now - Last) < OffLine ->
                 case dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"status">> => <<"ONLINE">>}) of
                     {ok, _R} ->
-                        dgiot_mnesia:insert(DeviceId, {[true, Last, Acl], Node});
+                        ?MLOG(info, #{<<"Device">> => DeviceId, <<"DeviceName">> => DeviceName, <<"status">> => <<"ONLINE">>}, ['device_log']),
+                        dgiot_mnesia:insert(DeviceId, {[true, Last, Acl, DeviceName], Node});
                     _ ->
                         pass
                 end,
@@ -335,7 +338,7 @@ get_online(DeviceId) ->
     OffLine = dgiot_data:get({device, offline}),
     Now = dgiot_datetime:now_ms(),
     case lookup(DeviceId) of
-        {ok, {[_, Ts, _], _}} when Now - Ts < (OffLine * 1000) ->
+        {ok, {[_, Ts, _, _], _}} when Now - Ts < (OffLine * 1000) ->
             true;
         _ ->
             false
@@ -406,7 +409,7 @@ get_url(AppName) ->
 
 get_appname(ProductId, DevAddr) ->
     case dgiot_device:lookup(ProductId, DevAddr) of
-        {ok, {[_, _, [Acl | _]], _}} ->
+        {ok, {[_, _, [Acl | _], _], _}} ->
             BinAcl = atom_to_binary(Acl),
             case BinAcl of
                 <<"role:", Name/binary>> ->
