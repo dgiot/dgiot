@@ -20,7 +20,7 @@
 -include("dgiot.hrl").
 -behaviour(gen_server).
 
--export([search/1, search/2, info/1, incr/2, incr/3, insert/2, loop/1, lookup/2, match_delete/2, match/2, delete/2, start_link/1, start_link/2]).
+-export([save/1, search/1, search/2, info/1, incr/2, incr/3, insert/2, loop/1, lookup/2, match_delete/2, match/2, delete/2, start_link/1, start_link/2]).
 -export([start/0, start/1, start/2, insert/1, lookup/1, loop/2, match_delete/1, match/1, delete/1, save_to_disk/1]).
 
 % gen_server callbacks
@@ -56,7 +56,9 @@ insert(Objects) ->
     insert(?DCACHE, Objects).
 
 insert(Name, {Key, Value}) ->
-    dgiot_data:insert(Name, Key, Value).
+    dgiot_data:insert(Name, Key, Value);
+insert(Name,  Value) ->
+    dgiot_data:insert(Name, dgiot_data:get_consumer(Name,1), Value).
 
 match(Pattern) ->
     match(?DCACHE, Pattern).
@@ -123,6 +125,7 @@ init([Options]) ->
         Info ->
             dgiot_data:init(?DCACHE, Info)
     end,
+    dgiot_data:set_consumer(?DCACHE,100000000),
     put(last, erlang:system_time(second)),
     load_from_dets(?DCACHE),
     save_to_dets(Options),
@@ -135,9 +138,10 @@ init([Name, Options]) ->
         Info ->
             dgiot_data:init(Name, Info)
     end,
+    dgiot_data:set_consumer(Name,100000000),
     put(last, erlang:system_time(second)),
     load_from_dets(Name),
-%%    save_to_dets(Options),
+    save_to_dets(Options),
     {ok, #state{name = Name, opts = Options}}.
 
 handle_call({insert, Objects}, _From, State) ->
@@ -168,7 +172,6 @@ handle_call(_Request, _From, State) ->
 
 handle_cast(_Msg, State) ->
     {noreply, State}.
-
 
 handle_info(save_to_dets, #state{opts = _Options} = State) ->
     check_save(State),
@@ -245,6 +248,9 @@ do_save(#state{name = Name, opts = Options}) ->
                     erlang:send_after(5000, self(), {save_gc, Pid})
             end
     end.
+
+save(Name) ->
+    Name ! save.
 
 save_to_dets(Options) ->
     Time = maps:get(auto_save, Options, 30000),

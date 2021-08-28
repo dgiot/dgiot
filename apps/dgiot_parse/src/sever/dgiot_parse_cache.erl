@@ -19,27 +19,17 @@
 -include("dgiot_parse.hrl").
 -include_lib("dgiot/include/logger.hrl").
 
--export([save_cache/1, save_to_cache/1, save_to_cache/2, save_test/1]).
+-export([do_save/1, save_to_cache/1, save_to_cache/2, save_test/1]).
 
 
 %% 先缓存定时存库
 save_to_cache(Requests) ->
     save_to_cache(?DEFAULT, Requests).
 save_to_cache(Channel, Requests) when is_list(Requests) ->
-    ETS = ?CACHE(Channel),
-    timer:sleep(2),
-    Key = erlang:system_time(millisecond),
-    NewRequest =
-        case dgiot_dcache:lookup(ETS, Key) of
-            {ok, Acc} ->
-                lists:foldl(fun(Request, Acc1) -> [Request | Acc1] end, Acc, Requests);
-            {error, not_find} ->
-                Requests
-        end,
-    dgiot_dcache:insert(?CACHE(Channel), {Key, NewRequest}),
+    dgiot_dcache:insert(?CACHE(Channel), Requests),
     case check_cache(Channel) of
         true ->
-            dgiot_channelx:do_event(?TYPE, Channel, full, self()),
+            dgiot_dcache:save(?CACHE(Channel)),
             ok;
         false ->
             ok
@@ -61,14 +51,14 @@ check_cache(Channel) ->
             Size >= MaxSize orelse Memory >= MaxMemory
     end.
 
-save_cache(Channel) ->
+do_save(Channel) ->
     Fun =
         fun({Idx, Requests}, Acc) ->
-            save_cache(Idx, Channel, Requests, Acc)
+            do_save(Idx, Channel, Requests, Acc)
         end,
     save_to_parse(Channel, dgiot_dcache:search(?CACHE(Channel), Fun)).
 
-save_cache(Idx, Channel, Requests, Acc) ->
+do_save(Idx, Channel, Requests, Acc) ->
     true = dgiot_dcache:delete(?CACHE(Channel), Idx),
     NewRequests = lists:foldl(fun(Request, Acc1) -> [Request | Acc1] end, Acc, Requests),
     case length(NewRequests) < 1000 of
@@ -88,6 +78,7 @@ save_to_parse(Channel, Requests) ->
         Result ->
             log(Requests, Result),
             dgiot_metrics:inc(dgiot_parse, <<"parse_save_fail">>, length(Requests)),
+%%            错误报文应该丢弃，不是所有报文都应该重新缓存
 %%            save_to_cache(Channel, Requests),
             ok
     end.
