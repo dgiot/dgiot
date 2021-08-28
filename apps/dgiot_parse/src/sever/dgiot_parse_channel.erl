@@ -173,19 +173,11 @@ handle_message(config, #state{cfg = Cfg} = State) ->
 handle_message(_Message, State) ->
     {ok, State}.
 
-%% 通道消息处理,注意：进程池调用
-handle_event(full, _From, #state{channel = Channel}) ->
-    dgiot_dcache:save_to_disk(?CACHE(Channel)),
-    ok;
-
 handle_event(_EventId, _Event, _State) ->
     ok.
 
 handle_save(Channel) ->
-%%    {Time, _} = timer:tc(fun() -> save_cache(Channel) end),
-%%    ?LOG(info,"save:~p~n", [Time / 1000000]),
-    dgiot_parse_cache:save_cache(Channel),
-    ok.
+    dgiot_parse_cache:do_save(Channel).
 
 stop(_ChannelType, _ChannelId, _State) ->
     ok.
@@ -242,7 +234,7 @@ send(#{mfa := _MFA} = _Meta, Payload) ->
         <<"body">> => get_body(Map)});
 
 send(_Meta, Payload) ->
-    dgiot_mqtt:publish(<<"all">>, <<"logger_trace/other">>, Payload),
+    dgiot_mqtt:publish(<<"logger_trace_other">>, <<"logger_trace/other">>, Payload),
     ok.
 
 get_body(#{<<"msg">> := Msg} = Map) when is_map(Msg) ->

@@ -20,7 +20,7 @@
 
 -export([
     set_loglevel/3,
-    test/0]).
+    test/1]).
 %% Logs
 -export([debug/1
     , debug/2
@@ -39,10 +39,13 @@
     , critical/3
 ]).
 
-test() ->
-    Test = <<"test">>,
+test(N) ->
+%%    Test = <<"test">>,
 %%    ?MLOG(info, #{<<"test">> => Test}),
-    ?MLOG(info, #{<<"test">> => Test}, ['acl_test']).
+    lists:map(fun(X) ->
+        timer:sleep(2),
+    ?MLOG(info, #{<<"test">> => X, <<"time">> => dgiot_datetime:now_microsecs()}, ['acl_test'])
+        end,lists:seq(1,N)).
 
 %%--------------------------------------------------------------------
 %% APIs
