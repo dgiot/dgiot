@@ -140,8 +140,6 @@ init(Req, {index, DocRoot}) ->
 
 %% hand swagger.json
 init(Req0, swagger_list) ->
-    io:format("Req0 swagger ~p",[Req0]),
-    ?LOG(error,"Req0 ~p ",[Req0]),
     Req =
         case dgiot_swagger:list() of
             {ok, List} ->
@@ -165,9 +163,7 @@ init(Req0, swagger_list) ->
     {ok, Req, swagger_list};
 
 init(Req0, {swagger, Name} = Opts) ->
-    io:format("Req0 swagger  ~p",[Req0]),
     Config = dgiot_req:parse_qs(Req0, [{return, map}]),
-    ?LOG(error,"Config ~p ",[Config]),
     Req =
         case dgiot_swagger:read(Name, Config) of
             {ok, Schema} ->
@@ -209,8 +205,6 @@ init(Req0, install) ->
 
 %% 所有服务器回调总入口
 init(Req0, mod) ->
-    io:format("Req0 mod ~p",[Req0]),
-    ?LOG(error,"Req0 ~p",[Req0]),
     Mod = dgiot_req:binding(<<"Mod">>, Req0),
     Fun = dgiot_req:binding(<<"Fun">>, Req0),
     ?LOG(error,"Mod ~p Fun ~p",[Mod,Fun]),
