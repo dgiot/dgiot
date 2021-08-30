@@ -200,10 +200,10 @@ send(Meta, Payload) when is_list(Payload) ->
 
 send(#{error_logger := _Error_logger, mfa := {M, F, A}} = _Meta, Payload) ->
     Mfa = <<(atom_to_binary(M, utf8))/binary, $/, (atom_to_binary(F, utf8))/binary, $/, (integer_to_binary(A))/binary>>,
-    Topic = <<"logger_trace/", Mfa/binary>>,
+    Topic = <<"logger_trace/error/", Mfa/binary>>,
     dgiot_mqtt:publish(Mfa, Topic, Payload),
     Map = jiffy:decode(Payload, [return_maps]),
-    NewMap = maps:with([<<"time">>, <<"pid">>, <<"msg">>, <<"mfa">>, <<"line">>, <<"level">>, <<"clientid">>, <<"topic">>, <<"peername">>],Map),
+    NewMap = maps:with([<<"domain">>,<<"time">>, <<"pid">>, <<"msg">>, <<"mfa">>, <<"line">>, <<"level">>, <<"clientid">>, <<"topic">>, <<"peername">>],Map),
     dgiot_parse_cache:save_to_cache(#{<<"method">> => <<"POST">>,
         <<"path">> => <<"/classes/Log">>,
         <<"body">> => get_body(NewMap)});
@@ -232,7 +232,7 @@ send(#{mfa := _MFA} = _Meta, Payload) ->
                 <<"logger_trace/log/", Mfa/binary, "/", Line/binary>>
         end,
     dgiot_mqtt:publish(Mfa, Topic, Payload),
-    NewMap = maps:with([<<"time">>, <<"pid">>, <<"msg">>, <<"mfa">>, <<"line">>, <<"level">>, <<"clientid">>, <<"topic">>, <<"peername">>],Map),
+    NewMap = maps:with([<<"domain">>,<<"time">>, <<"pid">>, <<"msg">>, <<"mfa">>, <<"line">>, <<"level">>, <<"clientid">>, <<"topic">>, <<"peername">>],Map),
     dgiot_parse_cache:save_to_cache(#{
         <<"method">> => <<"POST">>,
         <<"path">> => <<"/classes/Log">>,

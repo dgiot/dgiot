@@ -42,9 +42,10 @@
 -define(LOG(Level, Format), ?LOG(Level, Format, [])).
 
 -define(LOG(Level, Format, Args),
-        begin
-          (logger:log(Level,#{},#{report_cb => fun(_) -> {'$logger_header'()++(Format), (Args)} end,
-                                  mfa => {?MODULE, ?FUNCTION_NAME, ?FUNCTION_ARITY},
-                                  line => ?LINE}))
-        end).
+    begin
+        (logger:log(Level, #{}, #{report_cb => fun(_) -> {'$logger_header'() ++ (Format), (Args)} end,
+            domain => [emqx_public],
+            mfa => {?MODULE, ?FUNCTION_NAME, ?FUNCTION_ARITY},
+            line => ?LINE}))
+    end).
 

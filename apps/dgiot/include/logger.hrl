@@ -27,7 +27,7 @@
     begin
         (logger:log(Level, #{}, #{
             report_cb => fun(_) -> {'$logger_header'() ++ (Format), (Args)} end,
-            domain => [public_dgiot],
+            domain => [dgiot_public],
             mfa => {?MODULE, ?FUNCTION_NAME, ?FUNCTION_ARITY},
             line => ?LINE}))
     end).
@@ -45,7 +45,7 @@
     begin
         (logger:log(Level, #{}, #{
             report_cb => fun(_) -> Map end,
-            domain => [public_dgiot],
+            domain => [dgiot_public],
             mfa => {?MODULE, ?FUNCTION_NAME, ?FUNCTION_ARITY},
             line => ?LINE}))
     end).
