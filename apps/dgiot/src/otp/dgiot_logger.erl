@@ -41,11 +41,11 @@
 
 test(N) ->
 %%    Test = <<"test">>,
-    ?MLOG(info, #{<<"test">> => test}),
+    ?MLOG(info, #{<<"test">> => <<"中文"/utf8>>}),
     ?MLOG(info, #{test1 => test1}),
     lists:map(fun(X) ->
         timer:sleep(2),
-    ?MLOG(info, #{<<"test">> => X, <<"time">> => dgiot_datetime:now_microsecs()}, ['acl_test'])
+    ?MLOG(info, #{<<"test">> => X, <<"name">> => <<"中文"/utf8>>, <<"time">> => dgiot_datetime:now_microsecs()}, ['acl_test'])
         end,lists:seq(1,N)).
 
 %%--------------------------------------------------------------------

@@ -83,7 +83,6 @@ init(Req0, Map) ->
             Method = maps:get(<<"_method">>, RecvMap, dgiot_req:method(Req)),
             Index = maps:get(Method, Map),
             {ok, {_, Config}} = dgiot_router:get_state(Index),
-            emqx_logger:debug("Parse js call ~p,~p~n", [Config, RecvMap]),
             OperationId = maps:get(operationid, Config, not_allowed),
             Produces = maps:get(produces, Config, []),
             %% 鉴权时，我们使用的是cookies，parse js放在body里面
