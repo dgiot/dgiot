@@ -38,10 +38,10 @@
 %% Handlers
 -export([handle_request/2]).
 -export([handle_multipart/2]).
--export([call/4]).
+-export([call/3]).
 
 -dgiot_data("ets").
--export([init_ets/0]).
+-export([init_ets/0,get_log/4]).
 
 -record(state, {
     operationid :: atom(),
@@ -80,7 +80,7 @@ init(Req, #{logic_handler := LogicHandler} = Map) ->
         <<"OPTIONS">> ->
             default_init(#{operationid => options}, State, Req);
         _ ->
-            case call(LogicHandler, init, [Req, Map], Req) of
+            case call(LogicHandler, init, [Req, Map]) of
                 {no_call, Req1} ->
                     Index = maps:get(Method, Map),
                     {ok, {_, Config}} = dgiot_router:get_state(Index),
@@ -301,9 +301,9 @@ do_request(Populated, Req0, State = #state{
     Result =
         case IsMock of
             true ->
-                call(LogicHandler, mock, Args, Req0);
+                call(LogicHandler, mock, Args);
             false ->
-                call(LogicHandler, handle, Args, Req0)
+                call(LogicHandler, handle, Args)
         end,
     case Result of
         no_call when IsMock ->
@@ -356,7 +356,7 @@ handle_multipart({file, Name, Filename, ContentType}, Req, Acc, State) ->
 
 
 do_authorized(LogicHandler, OperationID, Args, Req) ->
-    case call(LogicHandler, check_auth, [OperationID, Args, Req], Req) of
+    case call(LogicHandler, check_auth, [OperationID, Args, Req]) of
         no_call ->
             dgiot_auth:check_auth(OperationID, Args, Req);
         {true, NContext, Req1} ->
@@ -366,7 +366,7 @@ do_authorized(LogicHandler, OperationID, Args, Req) ->
         {false, Err, Req1} ->
             {false, Err, Req1};
         {switch_handler, NLogicHandler, Req1} ->
-            call(NLogicHandler, check_auth, [OperationID, Args, Req1], Req1)
+            call(NLogicHandler, check_auth, [OperationID, Args, Req1])
     end.
 
 default_mock_handler(_OperationID, _Populated, Context, Req) ->
@@ -397,50 +397,56 @@ do_response(Status, Headers, Body, Req0, State) when is_binary(Body) ->
         end,
     {stop, Req, State}.
 
-call(Mod, Fun, Args, Req) ->
+call(Mod, Fun, Args) ->
     case erlang:function_exported(Mod, Fun, length(Args)) of
         true ->
             {Time, Result} = timer:tc(Mod, Fun, Args),
-            get_log(Req, Time, Result),
+            get_log(Fun, Args, Time, Result),
             Result;
         false ->
-            BinMod = dgiot_utils:to_binary(Mod),
-            BinFun = dgiot_utils:to_binary(Fun),
-            BinLen = dgiot_utils:to_binary(length(Args)),
-            get_log(Req, 0, {not_fun, <<BinMod/binary, ":", BinFun/binary, "/", BinLen/binary, " no_call">>}),
             no_call
     end.
 
 init_ets() ->
     dgiot_data:init(?DGIOT_SWAGGER).
 
-get_log(#{peer := {PeerName, _}} = Req, Time, Result) ->
-    Ip = dgiot_utils:get_ip(PeerName),
-    SessionToken = maps:get(<<"sessionToken">>, Req, <<"">>),
-    NewReq = maps:with([method, path], Req),
+get_log(handle, [_OperationID, Body, #{<<"sessionToken">> := SessionToken} = _Context, Req], Time, Result)
+    when is_map(Body) ->
     Username =
         case dgiot_auth:get_session(SessionToken) of
-            #{<<"username">> := Name} ->
-                dgiot_utils:to_binary(Name);
-            _ ->
-                <<"">>
+            #{<<"username">> := Name} -> Name;
+            _ -> <<"">>
         end,
+    log(Req, Time, Result, Body#{<<"username">> => Username});
+get_log(check_auth, [_OperationID, Args, Req], Time, Result) ->
+    log(Req, Time, Result, Args);
+get_log(_Fun, _, _, _) ->
+    pass.
+
+log(#{peer := {PeerName, _}} = Req, Time, Result, Map) when is_map(Map) ->
+    Ip = dgiot_utils:get_ip(PeerName),
+    NewReq = maps:with([method, path], Req),
+    UserName = maps:get(<<"username">>, Map, <<"">>),
+    Body = maps:without([<<"username">>, <<"password">>], Map),
     {Code, Reason} =
         case Result of
             {200, _} ->
                 {200, <<"success">>};
-            {not_fun, Msg} ->
-                {<<"not_fun">>, Msg};
-            {no_call, _} ->
-                {<<"no_call">>, <<"no_call">>};
-            no_call ->
-                {<<"no_call">>, <<"no_call">>};
             _ ->
                 {<<"error">>, <<"error">>}
         end,
-    ?MLOG(info, NewReq#{<<"code">> => Code, <<"reason">> => Reason, <<"ip">> => Ip, <<"username">> => Username, <<"elapsedtime">> => Time}, ['parse_api']);
+    ?MLOG(info, NewReq#{
+        <<"code">> => Code,
+        <<"reason">> => Reason,
+        <<"ip">> => Ip,
+        <<"username">> => UserName,
+        <<"body">> => Body,
+        <<"elapsedtime">> => Time},
+        ['parse_api']);
 
-get_log(Req, _, _) ->
-    ?LOG(info, "Req22222 ~p", [Req]).
+log(_Req, _Time, _Result, _Map) ->
+    pass.
+
+
 
 

@@ -120,7 +120,6 @@ is_authorized(OperationID, Token, Req) ->
             put_session(UserInfo#{<<"sessionToken">> => Token}, ttl()),
             %% 检查操作权限
             Action = list_to_binary(string:to_upper(atom_to_list(OperationID))),
-%%            ?LOG(info,"Action ~p Rules ~p",[Action, Rules]),
             case lists:member(Action, Rules) of
                 false ->
                     {forbidden, #{<<"code">> => 119, <<"error">> => <<Action/binary, " Forbidden">>}, Req};
