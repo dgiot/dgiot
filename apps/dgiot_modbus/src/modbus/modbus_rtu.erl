@@ -114,7 +114,7 @@ is16(Data) ->
 
 set_params(Basedata, ProductId, DevAddr) ->
     case dgiot_parse:get_object(<<"Product">>, ProductId) of
-        {ok, #{<<"config">> := #{<<"basedate">> := #{<<"params">> := Params}}}} ->
+        {ok, #{<<"name">> := Productname, <<"config">> := #{<<"basedate">> := #{<<"params">> := Params}}}} ->
             Payloads =
                 lists:foldl(fun(X, Acc) ->
                     case X of
@@ -166,7 +166,7 @@ set_params(Basedata, ProductId, DevAddr) ->
                                             _ ->
                                                 <<"">>
                                         end,
-                                    ?MLOG(info, #{<<"device">> => DeviceId, <<"devicename">> => DeviceName, <<"status">> => <<"ONLINE">>, <<"thingname">> => Name, <<"protocol">> => <<"modbus">>, <<"identifier">> => Identifier, <<"value">> => Value1}, ['device_log']),
+                                    ?MLOG(info, #{<<"device">> => DeviceId, <<"devaddr">> => DevAddr, <<"devicename">> => DeviceName, <<"productname">> => Productname, <<"status">> => <<"ONLINE">>, <<"thingname">> => Name, <<"protocol">> => <<"modbus">>, <<"identifier">> => Identifier, <<"value">> => Value1}, ['device_log']),
                                     Acc ++ [build_req_message(RtuReq)];
                                 _ ->
                                     Acc
