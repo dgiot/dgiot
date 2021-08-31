@@ -109,11 +109,11 @@ handle_info({deliver, _, Msg}, #tcp{state = #state{id = ChannelId} = State} = TC
     case jsx:is_json(Payload) of
         true ->
             case binary:split(Topic, <<$/>>, [global, trim]) of
-                [<<"profile">>, ProductId, _DtuAddr] ->
+                [<<"profile">>, ProductId, DtuAddr] ->
 %%                    设置参数
                     case Payload of
                         #{<<"_dgiotprotocol">> := <<"modbus">>} ->
-                            Payloads = modbus_rtu:set_params(maps:without([<<"_dgiotprotocol">>], Payload), ProductId),
+                            Payloads = modbus_rtu:set_params(maps:without([<<"_dgiotprotocol">>], Payload), ProductId, DtuAddr),
                             lists:map(fun(X) ->
                                 dgiot_tcp_server:send(TCPState, X)
                                       end, Payloads);
@@ -173,11 +173,11 @@ handle_info({deliver, _, Msg}, #tcp{state = #state{id = ChannelId} = State} = TC
             end;
         false ->
             case binary:split(Topic, <<$/>>, [global, trim]) of
-                [<<"profile">>, ProductId, _DtuAddr] ->
+                [<<"profile">>, ProductId, DevAddr] ->
                     %% 设置参数
                     case Payload of
                         #{<<"_dgiotprotocol">> := <<"modbus">>} ->
-                            Payloads = modbus_rtu:set_params(maps:without([<<"_dgiotprotocol">>], Payload), ProductId),
+                            Payloads = modbus_rtu:set_params(maps:without([<<"_dgiotprotocol">>], Payload), ProductId, DevAddr),
                             lists:map(fun(X) ->
                                 dgiot_tcp_server:send(TCPState, X)
                                       end, Payloads);
