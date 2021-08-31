@@ -310,6 +310,11 @@
                   "type": "string",
                   "example": "dgiot_user"
                 },
+                "department": {
+                  "description": "部门id",
+                  "type": "string",
+                  "example": "a46c243b51"
+                },
                 "password": {
                   "description": "用户密码",
                   "type": "string",

@@ -27,7 +27,7 @@
     build_req_message/1]
 ).
 
--export([modbus_encoder/4, modbus_decoder/4, is16/1, set_params/2]).
+-export([modbus_encoder/4, modbus_decoder/4, is16/1, set_params/3]).
 
 init(State) ->
     State#{<<"req">> => [], <<"ts">> => dgiot_datetime:now_ms(), <<"interval">> => 300}.
@@ -112,7 +112,7 @@ is16(Data) when size(Data) > 1 ->
 is16(Data) ->
     <<"000", Data/binary>>.
 
-set_params(Basedata, ProductId) ->
+set_params(Basedata, ProductId, DevAddr) ->
     case dgiot_parse:get_object(<<"Product">>, ProductId) of
         {ok, #{<<"config">> := #{<<"basedate">> := #{<<"params">> := Params}}}} ->
             Payloads =
@@ -124,7 +124,8 @@ set_params(Basedata, ProductId) ->
                             <<"address">> := Address,
                             <<"bytes">> := Bytes,
                             <<"operatetype">> := OperateType,
-                            <<"setting">> := Setting} ->
+                            <<"setting">> := Setting,
+                            <<"name">> := Name} ->
                             case maps:find(Identifier, Basedata) of
                                 error ->
                                     Acc;
@@ -157,6 +158,15 @@ set_params(Basedata, ProductId) ->
                                         dataByteSize = dgiot_utils:to_int(Bytes),
                                         quality = Value1
                                     },
+                                    DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+                                    DeviceName =
+                                        case dgiot_device:lookup(DeviceId) of
+                                            {ok, {[_, _, _, DeviceName1], _}} ->
+                                                DeviceName1;
+                                            _ ->
+                                                <<"">>
+                                        end,
+                                    ?MLOG(info, #{<<"Device">> => DeviceId, <<"DeviceName">> => DeviceName, <<"status">> => <<"ONLINE">>, <<"name">> => Name, <<"protocol">> => <<"modbus">>, <<"identifier">> => Identifier, <<"value">> => Value1}, ['device_log']),
                                     Acc ++ [build_req_message(RtuReq)];
                                 _ ->
                                     Acc
