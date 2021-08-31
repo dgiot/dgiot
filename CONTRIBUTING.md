@@ -59,6 +59,20 @@ Must be one of the following:
 - **ci**: Changes provided by DevOps for CI purposes.
 - **revert**: Reverts a previous commit.
 
++ commit 常用 type
++ type	含义
++ feat	新功能
++ fix	修复 bug
++ docs	修改文档
++ style	代码格式修改
++ refactor	重构（即不是新增功能，也不是修复 bug）
++ perf	更改代码以提高性能
++ test	增加测试
++ build	构建过程或辅助工具的变动
++ ci	修改项目持续集成流程
++ chore	其他类型的提交
++ revert	恢复上一次提交
+
 ### Scope
 
 There are no predefined scopes for this repository. A custom scope can be provided for clarity.
