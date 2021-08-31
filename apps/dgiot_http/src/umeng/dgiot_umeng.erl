@@ -29,6 +29,7 @@
     test_broadcast/0,
     test_customizedcast/0,
     add_notification/3,
+    save_devicestatus/2,
     sendSubscribe/3
 ]).
 
@@ -342,3 +343,104 @@ sendSubscribe(Type, Content, UserId) ->
         end,
     dgiot_wechat:sendSubscribe(UserId, Result).
 
+save_devicestatus(DeviceId, Status) ->
+    DeviceName =
+        case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+            {ok, #{<<"name">> := DeviceName1}} ->
+                DeviceName1;
+            _ ->
+                <<"">>
+        end,
+    Ruleid = <<DeviceId/binary, "_status">>,
+    case dgiot_device:lookup(DeviceId) of
+        {ok, {[_, _, Acl, _], _}} ->
+            Requests =
+                lists:foldl(fun(X, Acc) ->
+                    BinX = atom_to_binary(X),
+                    case BinX of
+                        <<"role:", Name/binary>> ->
+                            case dgiot_parse:query_object(<<"_Role">>, #{<<"order">> => <<"updatedAt">>, <<"limit">> => 1,
+                                <<"where">> => #{<<"name">> => Name}}) of
+                                {ok, #{<<"results">> := [Role]}} ->
+                                    #{<<"objectId">> := RoleId} = Role,
+                                    UserIds = dgiot_parse:get_userids(RoleId),
+                                    lists:foldl(fun(UserId, Acc1) ->
+                                        ObjectId = dgiot_parse:get_notificationid(Ruleid),
+                                        Content = #{<<"_deviceid">> => DeviceId, <<"status">> => Status},
+                                        Result = #{<<"thing1">> => #{<<"value">> => DeviceName},
+                                            <<"date4">> => #{<<"value">> => dgiot_datetime:format("YYYY-MM-DD HH:NN")},
+                                            <<"thing12">> => #{<<"value">> => <<"设备离线"/utf8>>}},
+                                        dgiot_wechat:sendSubscribe(UserId, Result),
+                                        Acc1 ++ [#{
+                                            <<"method">> => <<"POST">>,
+                                            <<"path">> => <<"/classes/Notification">>,
+                                            <<"body">> => #{
+                                                <<"objectId">> => ObjectId,
+                                                <<"ACL">> => #{
+                                                    UserId => #{
+                                                        <<"read">> => true,
+                                                        <<"write">> => true
+                                                    }
+                                                },
+                                                <<"content">> => Content,
+                                                <<"public">> => false,
+                                                <<"status">> => 0,
+                                                <<"sender">> => #{
+                                                    <<"__type">> => <<"Pointer">>,
+                                                    <<"className">> => <<"_User">>,
+                                                    <<"objectId">> => <<"Klht7ERlYn">>
+                                                },
+                                                <<"process">> => <<"">>,
+                                                <<"type">> => Ruleid,
+                                                <<"user">> => #{
+                                                    <<"__type">> => <<"Pointer">>,
+                                                    <<"className">> => <<"_User">>,
+                                                    <<"objectId">> => UserId
+                                                }
+                                            }
+                                        }]
+                                                end, Acc, UserIds);
+                                _ ->
+                                    Acc
+                            end;
+                        <<"*">> ->
+                            Acc;
+                        UserId ->
+                            ObjectId = dgiot_parse:get_notificationid(Ruleid),
+                            Result = #{<<"thing1">> => #{<<"value">> => DeviceName},
+                                <<"date4">> => #{<<"value">> => dgiot_datetime:format("YYYY-MM-DD HH:NN")},
+                                <<"thing12">> => #{<<"value">> => <<"设备离线"/utf8>>}},
+                            dgiot_wechat:sendSubscribe(UserId, Result),
+                            Acc ++ [#{
+                                <<"method">> => <<"POST">>,
+                                <<"path">> => <<"/classes/Notification">>,
+                                <<"body">> => #{
+                                    <<"objectId">> => ObjectId,
+                                    <<"ACL">> => #{
+                                        UserId => #{
+                                            <<"read">> => true,
+                                            <<"write">> => true
+                                        }
+                                    },
+                                    <<"content">> => #{<<"_deviceid">> => DeviceId, <<"status">> => Status},
+                                    <<"public">> => false,
+                                    <<"status">> => 0,
+                                    <<"sender">> => #{
+                                        <<"__type">> => <<"Pointer">>,
+                                        <<"className">> => <<"_User">>,
+                                        <<"objectId">> => <<"Klht7ERlYn">>
+                                    },
+                                    <<"type">> => Ruleid,
+                                    <<"user">> => #{
+                                        <<"__type">> => <<"Pointer">>,
+                                        <<"className">> => <<"_User">>,
+                                        <<"objectId">> => UserId
+                                    }
+                                }
+                            }]
+                    end
+                            end, [], Acl),
+            dgiot_parse:batch(Requests);
+        _ ->
+            pass
+    end.
