@@ -388,3 +388,11 @@ load_config(File) ->
 get_instance() ->
     [_Name, Instance] = string:tokens(atom_to_list(node()), "@"),
     Instance.
+
+%% curl -X PUT -d '{"id": "node-exporter","name": "node-exporter-172.30.12.167","address": "172.30.12.167","port": 9100,"tags": ["test"],"checks": [{"http": "http://172.30.12.167:9100/metrics", "interval": "5s"}]}'  http://127.0.0.1:8500/v1/agent/service/register
+%%post_consul() ->
+%%    ok.
+
+%% curl -X PUT http://127.0.0.1:8500/v1/agent/service/deregister/node-exporter
+%%delete_consul() ->
+%%    ok.
