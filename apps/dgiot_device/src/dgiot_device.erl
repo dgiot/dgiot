@@ -108,7 +108,7 @@ sync_parse(OffLine) ->
             {[true, Last, Acl, DeviceName], Node} when (Now - Last) > OffLine ->
                 case dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"status">> => <<"OFFLINE">>}) of
                     {ok, _R} ->
-                        ?MLOG(info, #{<<"Device">> => DeviceId, <<"DeviceName">> => DeviceName, <<"status">> => <<"OFFLINE">>}, ['device_log']),
+                        ?MLOG(info, #{<<"deviceid">> => DeviceId, <<"devicename">> => DeviceName, <<"status">> => <<"OFFLINE">>}, ['device_log']),
                         dgiot_mnesia:insert(DeviceId, {[false, Last, Acl, DeviceName], Node});
                     _ ->
                         pass
@@ -117,7 +117,7 @@ sync_parse(OffLine) ->
             {[false, Last, Acl, DeviceName], Node} when (Now - Last) < OffLine ->
                 case dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"status">> => <<"ONLINE">>}) of
                     {ok, _R} ->
-                        ?MLOG(info, #{<<"Device">> => DeviceId, <<"DeviceName">> => DeviceName, <<"status">> => <<"ONLINE">>}, ['device_log']),
+                        ?MLOG(info, #{<<"deviceid">> => DeviceId, <<"devicename">> => DeviceName, <<"status">> => <<"ONLINE">>}, ['device_log']),
                         dgiot_mnesia:insert(DeviceId, {[true, Last, Acl, DeviceName], Node});
                     _ ->
                         pass
