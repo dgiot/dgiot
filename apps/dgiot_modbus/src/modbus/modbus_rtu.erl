@@ -166,7 +166,7 @@ set_params(Basedata, ProductId, DevAddr) ->
                                             _ ->
                                                 <<"">>
                                         end,
-                                    ?MLOG(info, #{<<"Device">> => DeviceId, <<"DeviceName">> => DeviceName, <<"status">> => <<"ONLINE">>, <<"name">> => Name, <<"protocol">> => <<"modbus">>, <<"identifier">> => Identifier, <<"value">> => Value1}, ['device_log']),
+                                    ?MLOG(info, #{<<"device">> => DeviceId, <<"devicename">> => DeviceName, <<"status">> => <<"ONLINE">>, <<"thingname">> => Name, <<"protocol">> => <<"modbus">>, <<"identifier">> => Identifier, <<"value">> => Value1}, ['device_log']),
                                     Acc ++ [build_req_message(RtuReq)];
                                 _ ->
                                     Acc

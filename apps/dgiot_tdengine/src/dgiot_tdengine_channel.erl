@@ -261,9 +261,11 @@ do_save([ProductId, DevAddr, Data, _Context], #state{id = ChannelId} = State) ->
 format_data(ProductId, DevAddr, Properties, Data) ->
     DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
     Values = check_fields(Data, Properties),
-    Fields = lists:foldl(fun(X, Acc) ->
-        Acc ++ [list_to_binary(string:to_lower(binary_to_list(X)))]
-                         end, [], maps:keys(Values)),
+%%    Fields = lists:foldl(fun(X, Acc) ->
+%%        Acc ++ [list_to_binary(string:to_lower(binary_to_list(X)))]
+%%                         end, [], maps:keys(Values)),
+    Fields = get_fields(ProductId),
+
     dgiot_data:insert({td, ProductId, DeviceId}, Values#{<<"createdat">> => dgiot_datetime:nowstamp()}),
     Now = maps:get(<<"createdat">>, Data, now),
     NewValues = get_values(ProductId, Values, Now),
@@ -273,11 +275,11 @@ format_data(ProductId, DevAddr, Properties, Data) ->
         <<"tableName">> => ?Table(DeviceId),
         <<"using">> => ?Table(ProductId),
         <<"tags">> => [?Table(DevAddr)],
-        <<"fields">> => [<<"createdat">> | Fields],
+        <<"fields">> => Fields,
         <<"values">> => NewValues
     }.
 
-%% INSERT INTO _30a01ed480._a90437ec84 using _30a01ed480._30a01ed480 TAGS ('_862607057395773') VALUES (now,0.11,0,26,38,0.3,0.0,0.0,11.7,0,null,75,null);
+%% INSERT INTO _173acf2f85._af6d16f9ba using _173acf2f85._173acf2f85 TAGS ('_KOHbyuiJilnsdD') VALUES (now,null,null,null,null);
 get_values(ProductId, Values, Now) ->
     Values0 =
         case dgiot_data:get({ProductId, describe_table}) of
@@ -294,7 +296,7 @@ get_values(ProductId, Values, Now) ->
                                 {NewValue, text} ->
                                     Acc ++ ",\'" ++ dgiot_utils:to_list(NewValue) ++ "\'";
                                 _ ->
-                                    Acc ++ "," ++ dgiot_utils:to_list(Value)
+                                    Acc ++ "," ++ dgiot_utils:to_list(null)
                             end;
                         _ ->
                             Acc
@@ -304,6 +306,22 @@ get_values(ProductId, Values, Now) ->
                 " "
         end,
     list_to_binary(Values0 ++ ")").
+
+
+get_fields(ProductId) ->
+    case dgiot_data:get({ProductId, describe_table}) of
+        Results when length(Results) > 0 ->
+            lists:foldl(fun(Column, Acc) ->
+                case Column of
+                    #{<<"Field">> := Field} ->
+                        Acc ++ [Field];
+                    _ ->
+                        Acc
+                end
+                        end, [], Results);
+        _ ->
+            []
+    end.
 
 save_cache(Channel) ->
     Max = 50,

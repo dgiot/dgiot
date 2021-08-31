@@ -109,9 +109,9 @@ handle_message({check_profie, Args}, State) ->
 handle_message({sync_parse, Args}, State) ->
 %%    ?LOG(info, "Args ~p", [jsx:decode(Args, [{labels, binary}, return_maps])]),
     case jsx:decode(Args, [{labels, binary}, return_maps]) of
-        #{<<"objectId">> := DeviceId, <<"profile">> := Profile, <<"devaddr">> := Devaddr, <<"product">> := #{<<"objectId">> := ProductId}} ->
+        #{<<"profile">> := Profile, <<"devaddr">> := Devaddr, <<"product">> := #{<<"objectId">> := ProductId}} ->
+            DeviceId = dgiot_parse:get_deviceid(ProductId, Devaddr),
             Modifyprofile = get_modifyprofile(DeviceId, Profile),
-
 %%            设置参数
             case dgiot_device:get_online(DeviceId) of
                 true ->
