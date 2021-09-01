@@ -75,16 +75,14 @@ save_to_parse(Channel, Requests) ->
         {ok, Results} ->
             dgiot_metrics:inc(dgiot_parse, <<"parse_save_success">>, length(Requests)),
             do_result(Requests, Results);
-        #{<<"code">> := 105,<<"error">> := _Error} ->
-            io:format("_Error ~p ~n",[_Error]),
-            pass;
+        %%  错误报文应该丢弃，不是所有报文都应该重新缓存
+        #{<<"code">> := 100,<<"error">> := _Error} ->
+            dgiot_metrics:inc(dgiot_parse, <<"parse_save_fail">>, length(Requests)),
+            save_to_cache(Channel, Requests);
         Result ->
-            io:format("Result ~p ~n",[Result]),
             log(Requests, Result),
             dgiot_metrics:inc(dgiot_parse, <<"parse_save_fail">>, length(Requests)),
-%%            错误报文应该丢弃，不是所有报文都应该重新缓存
-            save_to_cache(Channel, Requests),
-            ok
+            save_to_cache(Channel, Requests)
     end.
 
 do_result([], []) ->

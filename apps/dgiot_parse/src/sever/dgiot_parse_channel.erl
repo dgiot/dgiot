@@ -242,7 +242,10 @@ send(_Meta, Payload) ->
     dgiot_mqtt:publish(<<"logger_trace_other">>, <<"logger_trace/other">>, Payload),
     ok.
 
-get_body(#{<<"msg">> := Msg} = Map) when is_map(Msg) ->
+get_body(#{<<"msg">> := Msg,<<"clientid">> := _} = Map) when is_map(Msg) ->
     Map#{<<"type">> => <<"json">>, <<"msg">> => jiffy:encode(Msg)};
+get_body(#{<<"msg">> := Msg} = Map) when is_map(Msg) ->
+    ClientId = maps:get(<<"clientid">>,Map,<<"">>),
+    Map#{<<"type">> => <<"json">>, <<"clientid">> => ClientId, <<"msg">> => jiffy:encode(Msg)};
 get_body(Map) ->
     Map#{<<"type">> => <<"text">>}.
