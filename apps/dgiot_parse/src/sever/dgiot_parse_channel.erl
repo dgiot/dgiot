@@ -203,7 +203,7 @@ send(#{error_logger := _Error_logger, mfa := {M, F, A}} = _Meta, Payload) ->
     Topic = <<"logger_trace/error/", Mfa/binary>>,
     dgiot_mqtt:publish(Mfa, Topic, Payload),
     Map = jiffy:decode(Payload, [return_maps]),
-    NewMap = maps:with([<<"domain">>,<<"time">>, <<"pid">>, <<"msg">>, <<"mfa">>, <<"line">>, <<"level">>, <<"clientid">>, <<"topic">>, <<"peername">>],Map),
+    NewMap = maps:with([<<"domain">>, <<"time">>, <<"pid">>, <<"msg">>, <<"mfa">>, <<"line">>, <<"level">>, <<"clientid">>, <<"topic">>, <<"peername">>], Map),
     dgiot_parse_cache:save_to_cache(#{<<"method">> => <<"POST">>,
         <<"path">> => <<"/classes/Log">>,
         <<"body">> => get_body(NewMap)});
@@ -232,7 +232,7 @@ send(#{mfa := _MFA} = _Meta, Payload) ->
                 <<"logger_trace/log/", Mfa/binary, "/", Line/binary>>
         end,
     dgiot_mqtt:publish(Mfa, Topic, Payload),
-    NewMap = maps:with([<<"domain">>,<<"time">>, <<"pid">>, <<"msg">>, <<"mfa">>, <<"line">>, <<"level">>, <<"clientid">>, <<"topic">>, <<"peername">>],Map),
+    NewMap = maps:with([<<"domain">>, <<"time">>, <<"pid">>, <<"msg">>, <<"mfa">>, <<"line">>, <<"level">>, <<"clientid">>, <<"topic">>, <<"peername">>], Map),
     dgiot_parse_cache:save_to_cache(#{
         <<"method">> => <<"POST">>,
         <<"path">> => <<"/classes/Log">>,
@@ -242,10 +242,26 @@ send(_Meta, Payload) ->
     dgiot_mqtt:publish(<<"logger_trace_other">>, <<"logger_trace/other">>, Payload),
     ok.
 
-get_body(#{<<"msg">> := Msg,<<"clientid">> := _} = Map) when is_map(Msg) ->
-    Map#{<<"type">> => <<"json">>, <<"msg">> => jiffy:encode(Msg)};
+get_body(#{<<"msg">> := Msg, <<"clientid">> := _} = Map) when is_map(Msg) ->
+    DefaultACL = #{<<"role:admin">> => #{
+        <<"read">> => true,
+        <<"write">> => true}
+    },
+    ACl = maps:get(<<"ACL">>, Msg, DefaultACL),
+    NewMsg = maps:without([<<"ACL">>], Msg),
+    Map#{<<"type">> => <<"json">>, <<"ACL">> => ACl, <<"msg">> => jiffy:encode(NewMsg)};
 get_body(#{<<"msg">> := Msg} = Map) when is_map(Msg) ->
-    ClientId = maps:get(<<"clientid">>,Map,<<"">>),
-    Map#{<<"type">> => <<"json">>, <<"clientid">> => ClientId, <<"msg">> => jiffy:encode(Msg)};
+    ClientId = maps:get(<<"clientid">>, Map, <<"">>),
+    DefaultACL = #{<<"role:admin">> => #{
+        <<"read">> => true,
+        <<"write">> => true}
+    },
+    ACl = maps:get(<<"ACL">>, Msg, DefaultACL),
+    NewMsg = maps:without([<<"ACL">>], Map),
+    Map#{<<"type">> => <<"json">>, <<"clientid">> => ClientId, <<"ACL">> => ACl, <<"msg">> => jiffy:encode(NewMsg)};
 get_body(Map) ->
-    Map#{<<"type">> => <<"text">>}.
+    Map#{<<"type">> => <<"text">>,
+        <<"ACL">> => #{<<"role:admin">> => #{
+            <<"read">> => true,
+            <<"write">> => true}
+        }}.
