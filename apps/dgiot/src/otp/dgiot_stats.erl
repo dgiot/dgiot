@@ -389,6 +389,32 @@ get_instance() ->
     [_Name, Instance] = string:tokens(atom_to_list(node()), "@"),
     Instance.
 
+%%{
+%%"ID": "node-exporter",
+%%"Name": "node-exporter-172.30.12.167",
+%%"Tags": [
+%%"test"
+%%],
+%%"Address": "172.30.12.167",
+%%"Port": 9100,
+%%"Meta": {
+%%"app": "spring-boot",
+%%"team": "appgroup",
+%%"project": "bigdata"
+%%},
+%%"EnableTagOverride": false,
+%%"Check": {
+%%"HTTP": "http://172.30.12.167:9100/metrics",
+%%"Interval": "10s"
+%%},
+%%"Weights": {
+%%"Passing": 10,
+%%"Warning": 1
+%%}
+%%}
+
+%%./consul agent -server -bootstrap-expect 1 -data-dir=/tmp/consul -node=n1 -bind=127.0.0.1 -client=0.0.0.0 -ui
+
 %% curl -X PUT -d '{"id": "node-exporter","name": "node-exporter-172.30.12.167","address": "172.30.12.167","port": 9100,"tags": ["test"],"checks": [{"http": "http://172.30.12.167:9100/metrics", "interval": "5s"}]}'  http://127.0.0.1:8500/v1/agent/service/register
 %%post_consul() ->
 %%    ok.
@@ -396,3 +422,6 @@ get_instance() ->
 %% curl -X PUT http://127.0.0.1:8500/v1/agent/service/deregister/node-exporter
 %%delete_consul() ->
 %%    ok.
+
+%% 动态添加面板
+%%curl -i -X POST -H "Authorization: Bearer your-api-key" -H "Accept: application/json" -H "Content-Type: application/json" -k -v  http://your_grafana:3000/api/dashboards/db -d '{ "dashboard": { "id": null, "title": "api-test", "tags": [ "templated" ], "timezone": "browser", "rows": [ { } ], "schemaVersion": 6, "version": 0 }, "overwrite": false }'
