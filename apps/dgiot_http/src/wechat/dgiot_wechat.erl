@@ -127,7 +127,7 @@ sendSubscribe(UserId, Data) ->
                                         <<"miniprogram_state">> => <<"formal">>,
                                         <<"lang">> => <<"zh_CN">>,
                                         <<"data">> => Data},
-                                    Data1 = dgiot_utils:to_list(jsx:encode(Subscribe)),
+                                    Data1 = dgiot_utils:to_list(jiffy:encode(Subscribe)),
                                     R = httpc:request(post, {SubscribeUrl, [], "application/x-www-form-urlencoded", Data1}, [{timeout, 5000}, {connect_timeout, 10000}], [{body_format, binary}]),
                                     ?LOG(debug, "R ~p", [R]);
                                 _Result ->
@@ -291,18 +291,27 @@ get_notification(ProductId1, SessionToken, Order, Limit, Skip, Where) ->
                         #{<<"objectId">> := ObjectId, <<"type">> := Type, <<"public">> := Public, <<"status">> := Status, <<"content">> := Content, <<"process">> := Process, <<"createdAt">> := Createdat} ->
                             Alertstatus = maps:get(<<"alertstatus">>, Content, true),
                             DeviceId = maps:get(<<"_deviceid">>, Content, <<"">>),
+                            Productid = maps:get(<<"_productid">>, Content, <<"">>),
+                            DeviceName =
+                                case dgiot_device:lookup(DeviceId) of
+                                    {ok, {[_, _, _, DeviceName1, _, _], _}} ->
+                                        DeviceName1;
+                                    _ ->
+                                        <<"">>
+                                end,
+                            Newdate = dgiot_datetime:format(dgiot_datetime:to_localtime(Createdat), <<"YY-MM-DD HH:NN:SS">>),
                             Result =
                                 case binary:split(Type, <<$_>>, [global, trim]) of
+                                    [Productid, <<"status">>] ->
+                                        case dgiot_parse:get_object(<<"Product">>, Productid) of
+                                            {ok, #{<<"name">> := ProductName}} ->
+                                                #{<<"objectId">> => ObjectId, <<"dynamicform">> => [#{<<"报警内容"/utf8>> => <<"设备离线"/utf8>>}, #{<<"离线时间"/utf8>> => Newdate}], <<"alertstatus">> => Alertstatus, <<"productname">> => ProductName, <<"devicename">> => DeviceName, <<"process">> => Process, <<"public">> => Public, <<"status">> => Status, <<"createdAt">> => Createdat};
+                                            _ ->
+                                                Acc
+                                        end;
                                     [ProductId, AlertId] ->
                                         case dgiot_parse:get_object(<<"Product">>, ProductId) of
-                                            {ok, #{<<"name">> := ProductName, <<"config">> := #{<<"parser">> := Parse}}} ->
-                                                DeviceName =
-                                                    case dgiot_parse:get_object(<<"Device">>, DeviceId) of
-                                                        {ok, #{<<"name">> := DeviceName1}} ->
-                                                            DeviceName1;
-                                                        _ ->
-                                                            ProductName
-                                                    end,
+                                            {ok, #{<<"name">> := ProductName, <<"config">> := #{<<"parser">> := Parser}}} ->
                                                 lists:foldl(fun(P, Par) ->
                                                     case P of
                                                         #{<<"uid">> := AlertId, <<"config">> := #{<<"formDesc">> := FormDesc}} ->
@@ -318,18 +327,18 @@ get_notification(ProductId1, SessionToken, Order, Limit, Skip, Where) ->
                                                                             Form ++ [#{Label => Default}]
                                                                     end
                                                                           end, [], FormDesc),
-                                                            Newdate = dgiot_datetime:format(dgiot_datetime:to_localtime(Createdat), <<"YY-MM-DD HH:NN:SS">>),
                                                             Par#{<<"dynamicform">> => FormD ++ [#{<<"报警时间"/utf8>> => Newdate}]};
                                                         _Oth ->
                                                             Par
                                                     end
-                                                            end, #{<<"objectId">> => ObjectId, <<"alertstatus">> => Alertstatus, <<"productname">> => ProductName, <<"devicename">> => DeviceName, <<"process">> => Process, <<"public">> => Public, <<"status">> => Status, <<"createdAt">> => Createdat}, Parse);
+                                                            end, #{<<"objectId">> => ObjectId, <<"alertstatus">> => Alertstatus, <<"productname">> => ProductName, <<"devicename">> => DeviceName, <<"process">> => Process, <<"public">> => Public, <<"status">> => Status, <<"createdAt">> => Createdat}, Parser);
                                             _Other ->
                                                 Acc
                                         end;
                                     _Other1 ->
                                         Acc
                                 end,
+                            ?LOG(info, "Result ~p", [Result]),
                             Acc ++ [Result];
                         _Other2 ->
                             Acc

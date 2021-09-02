@@ -119,7 +119,7 @@ critical(Metadata, Format, Args) when is_map(Metadata) ->
 %% 设置app日志等级  logger:set_application_level(dgiot,debug).
 
 %% 获取module日志等级  logger:get_module_level(dgiot)
-%% 设置module日志等级  logger:set_module_level(dgiot,debug)
+%% 设置module日志等级  logger:set_module_level(dgiot_wechat,debug)
 set_loglevel(<<"system">>, <<"dgiot">>, Level) ->
 
     emqx_logger:set_log_level(dgiot_utils:to_atom(Level));
