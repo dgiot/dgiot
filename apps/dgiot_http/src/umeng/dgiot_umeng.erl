@@ -214,7 +214,7 @@ save_notification(Ruleid, DevAddr, Payload) ->
         [ProductId, _] ->
             DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
             case dgiot_device:lookup(ProductId, DevAddr) of
-                {ok, {[_, _, Acl, _], _}} ->
+                {ok, {[_, _, Acl, _, _, _], _}} ->
                     Requests =
                         lists:foldl(fun(X, Acc) ->
                             BinX = atom_to_binary(X),
@@ -305,12 +305,13 @@ save_notification(Ruleid, DevAddr, Payload) ->
 
 sendSubscribe(Type, Content, UserId) ->
     DeviceId = maps:get(<<"_deviceid">>, Content, <<"">>),
-    DeviceName =
+    {DeviceName, _Address} =
         case dgiot_parse:get_object(<<"Device">>, DeviceId) of
-            {ok, #{<<"name">> := DeviceName1}} ->
-                DeviceName1;
+            {ok, #{<<"name">> := DeviceName1, <<"detail">> := Detail}} ->
+                Address1 = maps:get(<<"address">>, Detail, <<"">>),
+                {DeviceName1, Address1};
             _ ->
-                <<"">>
+                {<<"">>, <<"">>}
         end,
     Result =
         case binary:split(Type, <<$_>>, [global, trim]) of
@@ -330,7 +331,7 @@ sendSubscribe(Type, Content, UserId) ->
                                                 Default = maps:get(<<"default">>, Value1, <<>>),
                                                 Form#{Key => #{<<"value">> => Default}}
                                         end
-                                              end, #{<<"thing1">> => #{<<"value">> => DeviceName}, <<"date4">> => #{<<"value">> => dgiot_datetime:format("YYYY-MM-DD HH:NN")}}, FormDesc);
+                                              end, #{<<"thing1">> => #{<<"value">> => DeviceName}, <<"date4">> => #{<<"value">> => dgiot_datetime:format("YYYY-MM-DD HH:NN:SS")}}, FormDesc);
                                 _Oth ->
                                     Par
                             end
@@ -343,17 +344,20 @@ sendSubscribe(Type, Content, UserId) ->
         end,
     dgiot_wechat:sendSubscribe(UserId, Result).
 
+%% dgiot_umeng:save_devicestatus(<<"5adc65e32e">>, <<"OFFLINE">>).
 save_devicestatus(DeviceId, Status) ->
-    DeviceName =
+    {DeviceName, Address} =
         case dgiot_parse:get_object(<<"Device">>, DeviceId) of
-            {ok, #{<<"name">> := DeviceName1}} ->
-                DeviceName1;
+            {ok, #{<<"name">> := DeviceName1, <<"detail">> := Detail}} ->
+                Address1 = maps:get(<<"address">>, Detail, <<"">>),
+                {DeviceName1, Address1};
             _ ->
-                <<"">>
+                {<<"">>, <<"">>}
         end,
-    Ruleid = <<DeviceId/binary, "_status">>,
+
     case dgiot_device:lookup(DeviceId) of
-        {ok, {[_, _, Acl, _], _}} ->
+        {ok, {[_, _, Acl, _, Devaddr, ProductId], _}} ->
+            Ruleid = <<ProductId/binary, "_status">>,
             Requests =
                 lists:foldl(fun(X, Acc) ->
                     BinX = atom_to_binary(X),
@@ -366,10 +370,12 @@ save_devicestatus(DeviceId, Status) ->
                                     UserIds = dgiot_parse:get_userids(RoleId),
                                     lists:foldl(fun(UserId, Acc1) ->
                                         ObjectId = dgiot_parse:get_notificationid(Ruleid),
-                                        Content = #{<<"_deviceid">> => DeviceId, <<"status">> => Status},
+                                        Content = #{<<"_deviceid">> => DeviceId, <<"_productid">> => ProductId, <<"status">> => Status},
                                         Result = #{<<"thing1">> => #{<<"value">> => DeviceName},
-                                            <<"date4">> => #{<<"value">> => dgiot_datetime:format("YYYY-MM-DD HH:NN")},
-                                            <<"thing12">> => #{<<"value">> => <<"设备离线"/utf8>>}},
+                                            <<"date4">> => #{<<"value">> => dgiot_datetime:format("YYYY-MM-DD HH:NN:SS")},
+                                            <<"thing15">> => #{<<"value">> => <<"设备离线"/utf8>>},
+                                            <<"thing5">> => #{<<"value">> => Address},
+                                            <<"thing12">> => #{<<"value">> => <<Devaddr/binary, "离线"/utf8>>}},
                                         dgiot_wechat:sendSubscribe(UserId, Result),
                                         Acc1 ++ [#{
                                             <<"method">> => <<"POST">>,
@@ -408,8 +414,10 @@ save_devicestatus(DeviceId, Status) ->
                         UserId ->
                             ObjectId = dgiot_parse:get_notificationid(Ruleid),
                             Result = #{<<"thing1">> => #{<<"value">> => DeviceName},
-                                <<"date4">> => #{<<"value">> => dgiot_datetime:format("YYYY-MM-DD HH:NN")},
-                                <<"thing12">> => #{<<"value">> => <<"设备离线"/utf8>>}},
+                                <<"date4">> => #{<<"value">> => dgiot_datetime:format("YYYY-MM-DD HH:NN:SS")},
+                                <<"thing15">> => #{<<"value">> => <<"设备离线"/utf8>>},
+                                <<"thing5">> => #{<<"value">> => Address},
+                                <<"thing12">> => #{<<"value">> => <<Devaddr/binary, "离线"/utf8>>}},
                             dgiot_wechat:sendSubscribe(UserId, Result),
                             Acc ++ [#{
                                 <<"method">> => <<"POST">>,
@@ -422,7 +430,7 @@ save_devicestatus(DeviceId, Status) ->
                                             <<"write">> => true
                                         }
                                     },
-                                    <<"content">> => #{<<"_deviceid">> => DeviceId, <<"status">> => Status},
+                                    <<"content">> => #{<<"_deviceid">> => DeviceId, <<"_productid">> => ProductId, <<"status">> => Status},
                                     <<"public">> => false,
                                     <<"status">> => 0,
                                     <<"sender">> => #{

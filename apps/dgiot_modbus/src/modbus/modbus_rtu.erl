@@ -161,12 +161,20 @@ set_params(Basedata, ProductId, DevAddr) ->
                                     DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
                                     DeviceName =
                                         case dgiot_device:lookup(DeviceId) of
-                                            {ok, {[_, _, _, DeviceName1], _}} ->
+                                            {ok, {[_, _, _, DeviceName1, _, _], _}} ->
                                                 DeviceName1;
                                             _ ->
                                                 <<"">>
                                         end,
-                                    ?MLOG(info, #{<<"device">> => DeviceId, <<"devaddr">> => DevAddr, <<"devicename">> => DeviceName, <<"productname">> => Productname, <<"status">> => <<"ONLINE">>, <<"thingname">> => Name, <<"protocol">> => <<"modbus">>, <<"identifier">> => Identifier, <<"value">> => Value1}, ['device_log']),
+                                    Sessiontoken = maps:get(<<"sessiontoken">>, Basedata, <<"">>),
+                                    {Username, Acl} =
+                                        case dgiot_auth:get_session(Sessiontoken) of
+                                            #{<<"username">> := Name1, <<"ACL">> := Acl1} ->
+                                                {Name1, Acl1};
+                                            _ ->
+                                                {<<"">>, #{}}
+                                        end,
+                                    ?MLOG(info, #{<<"clientid">> => DeviceId, <<"username">> => Username, <<"status">> => <<"ONLINE">>, <<"ACL">> => Acl, <<"devaddr">> => DevAddr, <<"productid">> => ProductId, <<"devicename">> => DeviceName, <<"productname">> => Productname, <<"thingname">> => Name, <<"protocol">> => <<"modbus">>, <<"identifier">> => Identifier, <<"value">> => Value1}, ['device_log']),
                                     Acc ++ [build_req_message(RtuReq)];
                                 _ ->
                                     Acc

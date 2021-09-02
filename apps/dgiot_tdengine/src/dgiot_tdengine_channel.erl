@@ -296,7 +296,7 @@ get_values(ProductId, Values, Now) ->
                                 {NewValue, text} ->
                                     Acc ++ ",\'" ++ dgiot_utils:to_list(NewValue) ++ "\'";
                                 _ ->
-                                    Acc ++ "," ++ dgiot_utils:to_list(null)
+                                    Acc ++ "," ++ dgiot_utils:to_list(Value)
                             end;
                         _ ->
                             Acc

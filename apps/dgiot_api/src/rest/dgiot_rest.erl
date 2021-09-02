@@ -41,7 +41,7 @@
 -export([call/3]).
 
 -dgiot_data("ets").
--export([init_ets/0,get_log/4]).
+-export([init_ets/0, get_log/4]).
 
 -record(state, {
     operationid :: atom(),
@@ -412,12 +412,12 @@ init_ets() ->
 
 get_log(handle, [_OperationID, Body, #{<<"sessionToken">> := SessionToken} = _Context, Req], Time, Result)
     when is_map(Body) ->
-    Username =
+    {Username, Acl} =
         case dgiot_auth:get_session(SessionToken) of
-            #{<<"username">> := Name} -> Name;
-            _ -> <<"">>
+            #{<<"username">> := Name, <<"ACL">> := Acl1} -> {Name, Acl1};
+            _ -> {<<"">>, #{}}
         end,
-    log(Req, Time, Result, Body#{<<"username">> => Username});
+    log(Req, Time, Result, Body#{<<"username">> => Username, <<"ACL">> => Acl});
 get_log(check_auth, [_OperationID, Args, Req], Time, Result) ->
     log(Req, Time, Result, Args);
 get_log(_Fun, _, _, _) ->
@@ -430,7 +430,7 @@ log(#{peer := {PeerName, _}} = Req, Time, Result, Map) when is_map(Map) ->
     Body = maps:without([<<"username">>, <<"password">>], Map),
     {Code, Reason} =
         case Result of
-            {200, _} ->
+            {200, _, _, _} ->
                 {200, <<"success">>};
             _ ->
                 {<<"error">>, <<"error">>}

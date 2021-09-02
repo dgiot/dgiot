@@ -251,14 +251,15 @@ get_body(#{<<"msg">> := Msg, <<"clientid">> := _} = Map) when is_map(Msg) ->
     NewMsg = maps:without([<<"ACL">>], Msg),
     Map#{<<"type">> => <<"json">>, <<"ACL">> => ACl, <<"msg">> => jiffy:encode(NewMsg)};
 get_body(#{<<"msg">> := Msg} = Map) when is_map(Msg) ->
-    ClientId = maps:get(<<"clientid">>, Map, <<"">>),
+    Devaddr = maps:get(<<"devaddr">>, Msg, <<"">>),
+    ProductId = maps:get(<<"productid">>, Msg, <<"">>),
     DefaultACL = #{<<"role:admin">> => #{
         <<"read">> => true,
         <<"write">> => true}
     },
     ACl = maps:get(<<"ACL">>, Msg, DefaultACL),
-    NewMsg = maps:without([<<"ACL">>], Map),
-    Map#{<<"type">> => <<"json">>, <<"clientid">> => ClientId, <<"ACL">> => ACl, <<"msg">> => jiffy:encode(NewMsg)};
+    NewMsg = maps:without([<<"ACL">>], Msg),
+    Map#{<<"type">> => <<"json">>, <<"devaddr">> => Devaddr, <<"productid">> => ProductId, <<"ACL">> => ACl, <<"msg">> => jiffy:encode(NewMsg)};
 get_body(Map) ->
     Map#{<<"type">> => <<"text">>,
         <<"ACL">> => #{<<"role:admin">> => #{

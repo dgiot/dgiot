@@ -322,11 +322,20 @@ encode_body(_Path, _Method, Map, _) ->
     jsx:encode(Map).
 
 do_request(Method, Path, Header, Data, Options) ->
+    Sessiontoken = proplists:get_value("sessiontoken", Header, ""),
+    NewData =
+        case jsx:is_json(Data) of
+            true ->
+                Data1 = jsx:decode(Data, [{labels, binary}, return_maps]),
+                jsx:encode(Data1#{<<"sessiontoken">> => dgiot_utils:to_binary(Sessiontoken)});
+            false ->
+                Data
+        end,
     case httpc_request(Method, Path, Header, Data, [], [], Options) of
         {error, Reason} ->
             {error, Reason};
         {ok, StatusCode, Headers, ResBody} ->
-            case do_request_after(Method, Path, Data, ResBody, Options) of
+            case do_request_after(Method, Path, NewData, ResBody, Options) of
                 {ok, NewResBody} ->
                     save_cache(Method, Path, Data),
                     {ok, StatusCode, Headers, NewResBody};
