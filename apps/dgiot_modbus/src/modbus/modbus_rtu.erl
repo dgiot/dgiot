@@ -174,7 +174,7 @@ set_params(Basedata, ProductId, DevAddr) ->
                                             _ ->
                                                 {<<"">>, #{}}
                                         end,
-                                    ?MLOG(info, #{<<"clientid">> => DeviceId, <<"username">> => Username, <<"status">> => <<"ONLINE">>, <<"ACL">> => Acl, <<"devaddr">> => DevAddr, <<"productid">> => ProductId, <<"devicename">> => DeviceName, <<"productname">> => Productname, <<"thingname">> => Name, <<"protocol">> => <<"modbus">>, <<"identifier">> => Identifier, <<"value">> => Value1}, ['device_log']),
+                                    ?MLOG(info, #{<<"clientid">> => DeviceId, <<"username">> => Username, <<"status">> => <<"ONLINE">>, <<"ACL">> => Acl, <<"devaddr">> => DevAddr, <<"productid">> => ProductId, <<"devicename">> => DeviceName, <<"productname">> => Productname, <<"thingname">> => Name, <<"protocol">> => <<"modbus">>, <<"identifier">> => Identifier, <<"value">> => Value1}, ['device_operationlog']),
                                     Acc ++ [build_req_message(RtuReq)];
                                 _ ->
                                     Acc

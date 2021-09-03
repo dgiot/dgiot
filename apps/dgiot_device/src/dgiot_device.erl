@@ -111,7 +111,14 @@ sync_parse(OffLine) ->
             {[true, Last, Acl, DeviceName, Devaddr, ProductId], Node} when (Now - Last) > OffLine ->
                 case dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"status">> => <<"OFFLINE">>}) of
                     {ok, _R} ->
-                        ?MLOG(info, #{<<"clientid">> => DeviceId, <<"devaddr">> => Devaddr, <<"productid">> => ProductId, <<"devicename">> => DeviceName, <<"status">> => <<"下线"/utf8>>}, ['device_log']),
+                        Productname =
+                            case dgiot_parse:get_object(<<"Product">>, ProductId) of
+                                {ok, #{<<"name">> := Productname1}} ->
+                                    Productname1;
+                                _ ->
+                                    <<"">>
+                            end,
+                        ?MLOG(info, #{<<"clientid">> => DeviceId, <<"devaddr">> => Devaddr, <<"productid">> => ProductId, <<"productname">> => Productname, <<"devicename">> => DeviceName, <<"status">> => <<"下线"/utf8>>}, ['device_statuslog']),
 %%                        dgiot_umeng:save_devicestatus(DeviceId, <<"OFFLINE">>),
                         dgiot_mnesia:insert(DeviceId, {[false, Last, Acl, DeviceName, ProductId], Node});
                     _ ->
@@ -121,7 +128,14 @@ sync_parse(OffLine) ->
             {[false, Last, Acl, DeviceName, Devaddr, ProductId], Node} when (Now - Last) < OffLine ->
                 case dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"status">> => <<"ONLINE">>}) of
                     {ok, _R} ->
-                        ?MLOG(info, #{<<"clientid">> => DeviceId, <<"devaddr">> => Devaddr, <<"productid">> => ProductId, <<"devicename">> => DeviceName, <<"status">> => <<"上线"/utf8>>}, ['device_log']),
+                        Productname =
+                            case dgiot_parse:get_object(<<"Product">>, ProductId) of
+                                {ok, #{<<"name">> := Productname1}} ->
+                                    Productname1;
+                                _ ->
+                                    <<"">>
+                            end,
+                        ?MLOG(info, #{<<"clientid">> => DeviceId, <<"devaddr">> => Devaddr, <<"productid">> => ProductId, <<"productname">> => Productname, <<"devicename">> => DeviceName, <<"status">> => <<"上线"/utf8>>}, ['device_statuslog']),
                         dgiot_mnesia:insert(DeviceId, {[true, Last, Acl, DeviceName, Devaddr, ProductId], Node});
                     _ ->
                         pass
@@ -340,9 +354,9 @@ decode([MsgType | Other], Bin, State) ->
 
 get_online(DeviceId) ->
     OffLine = dgiot_data:get({device, offline}),
-    Now = dgiot_datetime:now_ms(),
+    Now = dgiot_datetime:now_secs(),
     case lookup(DeviceId) of
-        {ok, {[_, Ts, _, _, _, _], _}} when Now - Ts < (OffLine * 1000) ->
+        {ok, {[_, Ts, _, _, _, _], _}} when Now - Ts < OffLine ->
             true;
         _ ->
             false
