@@ -260,11 +260,14 @@ do_save([ProductId, DevAddr, Data, _Context], #state{id = ChannelId} = State) ->
 %% 产品，设备地址与数据分离，推荐
 format_data(ProductId, DevAddr, Properties, Data) ->
     DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+    ?LOG(info, "DeviceIddfasfasfdasdfdafsa ~p~n ", [DeviceId]),
     Values = check_fields(Data, Properties),
+    ?LOG(info, "Values ~p~n ", [Values]),
 %%    Fields = lists:foldl(fun(X, Acc) ->
 %%        Acc ++ [list_to_binary(string:to_lower(binary_to_list(X)))]
 %%                         end, [], maps:keys(Values)),
     Fields = get_fields(ProductId),
+    ?LOG(info, "Fields ~p~n ", [Fields]),
 
     dgiot_data:insert({td, ProductId, DeviceId}, Values#{<<"createdat">> => dgiot_datetime:nowstamp()}),
     Now = maps:get(<<"createdat">>, Data, now),
@@ -614,7 +617,7 @@ transaction(Channel, Fun) ->
 
 %% Action 用来区分数据库操作语句类型(DQL、DML、DDL、DCL)
 run_sql(#{<<"driver">> := <<"HTTP">>, <<"url">> := Url, <<"username">> := UserName, <<"password">> := Password} = Context, _Action, Sql) ->
-    ?LOG(debug, " ~p, ~p, ~p, (~ts)", [Url, UserName, Password, unicode:characters_to_list(Sql)]),
+    ?LOG(info, " ~p, ~p, ~p, (~ts)", [Url, UserName, Password, unicode:characters_to_list(Sql)]),
     case dgiot_tdrestful:request(Url, UserName, Password, Sql) of
         {ok, Result} ->
             case maps:get(<<"channel">>, Context, <<"">>) of

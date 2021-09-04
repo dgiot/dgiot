@@ -218,8 +218,7 @@ create_device(DeviceId, ProductId, DTUMAC, DTUIP, Dtutype) ->
                 {ok, #{<<"devaddr">> := _GWAddr}} ->
                     dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"ip">> => DTUIP, <<"status">> => <<"ONLINE">>}),
                     dgiot_task:save_pnque(ProductId, DTUMAC, ProductId, DTUMAC),
-                    create_instruct(Acl, ProductId, DeviceId),
-                    {DeviceId, DTUMAC};
+                    create_instruct(Acl, ProductId, DeviceId);
                 _ ->
                     dgiot_device:create_device(#{
                         <<"devaddr">> => DTUMAC,
@@ -234,9 +233,17 @@ create_device(DeviceId, ProductId, DTUMAC, DTUIP, Dtutype) ->
                         <<"devModel">> => DevType
                     }),
                     dgiot_task:save_pnque(ProductId, DTUMAC, ProductId, DTUMAC),
-                    create_instruct(Acl, ProductId, DeviceId),
-                    {DeviceId, DTUMAC}
-            end;
+                    create_instruct(Acl, ProductId, DeviceId)
+            end,
+            Productname =
+                case dgiot_parse:get_object(<<"Product">>, ProductId) of
+                    {ok, #{<<"name">> := Productname1}} ->
+                        Productname1;
+                    _ ->
+                        <<"">>
+                end,
+            ?MLOG(info, #{<<"clientid">> => DeviceId, <<"devaddr">> => DTUMAC, <<"productid">> => ProductId, <<"productname">> => Productname, <<"devicename">> => <<Dtutype/binary, DTUMAC/binary>>, <<"status">> => <<"上线"/utf8>>}, ['device_statuslog']),
+            {DeviceId, DTUMAC};
         Error2 ->
             ?LOG(info, "Error2 ~p ", [Error2]),
             {<<>>, <<>>}
