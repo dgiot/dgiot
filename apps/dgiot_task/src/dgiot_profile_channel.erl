@@ -161,7 +161,7 @@ stop(ChannelType, ChannelId, #state{env = #{<<"product">> := ProductId, <<"args"
 
 
 get_modifyprofile(DeviceId, Profile) ->
-    case dgiot_data:get(?PROFILE, DeviceId) of
+    case dgiot_data:get(dgiot_profile, <<"b3de3bd7a9">>) of
         not_find ->
             dgiot_data:insert(?PROFILE, DeviceId, Profile),
             Profile;
