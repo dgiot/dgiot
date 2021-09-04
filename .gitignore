@@ -50,7 +50,6 @@ rebar.conf
 rebar.conf.erl
 ci.sh
 node_modules/
-data/
 apps/dgiot_parse/etc/dgiot_parse.conf
 apps/dgiot_jieshun/
 apps/dgiot_mingcheng/
