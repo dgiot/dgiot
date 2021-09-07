@@ -1,5 +1,10 @@
 %% dgiot_stats config
 
+{mapping, "datetime.timezone", "dgiot.datetime_timezone", [
+{default, 8},
+{datatype, integer}
+]}.
+
 {mapping, "statsd.prometheus_server", "dgiot.prometheus_server", [
 {default, "http://127.0.0.1:9090"},
 {datatype, string}

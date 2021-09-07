@@ -305,17 +305,24 @@ save_notification(Ruleid, DevAddr, Payload) ->
 
 sendSubscribe(Type, Content, UserId) ->
     DeviceId = maps:get(<<"_deviceid">>, Content, <<"">>),
-    {DeviceName, _Address} =
+    {Devaddr, _Address} =
         case dgiot_parse:get_object(<<"Device">>, DeviceId) of
-            {ok, #{<<"name">> := DeviceName1, <<"detail">> := Detail}} ->
-                Address1 = maps:get(<<"address">>, Detail, <<"">>),
-                {DeviceName1, Address1};
+            {ok, #{<<"devadr">> := Devaddr1, <<"detail">> := Detail}} ->
+                Address1 = maps:get(<<"address">>, Detail, <<"无位置"/utf8>>),
+                {Devaddr1, Address1};
             _ ->
-                {<<"">>, <<"">>}
+                {<<"">>, <<"无位置"/utf8>>}
         end,
     Result =
         case binary:split(Type, <<$_>>, [global, trim]) of
             [ProductId, AlertId] ->
+                Productname =
+                    case dgiot_parse:get_object(<<"Product">>, ProductId) of
+                        {ok, #{<<"name">> := Productname1}} ->
+                            Productname1;
+                        _ ->
+                            <<" ">>
+                    end,
                 dgiot_datetime:now_secs(),
                 case dgiot_parse:get_object(<<"Product">>, ProductId) of
                     {ok, #{<<"config">> := #{<<"parser">> := Parse}}} ->
@@ -328,10 +335,16 @@ sendSubscribe(Type, Content, UserId) ->
                                                 BinValue = dgiot_utils:to_binary(Value),
                                                 Form#{<<"thing15">> => #{<<"value">> => BinValue}};
                                             _ ->
-                                                Default = maps:get(<<"default">>, Value1, <<>>),
-                                                Form#{Key => #{<<"value">> => Default}}
+                                                case Key of
+                                                    <<"thing12">> ->
+                                                        Default = maps:get(<<"default">>, Value1, <<>>),
+                                                        Form#{Key => #{<<"value">> => <<Devaddr/binary, Default/binary>>}};
+                                                    _ ->
+                                                        Default = maps:get(<<"default">>, Value1, <<>>),
+                                                        Form#{Key => #{<<"value">> => Default}}
+                                                end
                                         end
-                                              end, #{<<"thing1">> => #{<<"value">> => DeviceName}, <<"date4">> => #{<<"value">> => dgiot_datetime:format("YYYY-MM-DD HH:NN:SS")}}, FormDesc);
+                                              end, #{<<"thing1">> => #{<<"value">> => Productname}, <<"date4">> => #{<<"value">> => dgiot_datetime:format("YYYY-MM-DD HH:NN:SS")}}, FormDesc);
                                 _Oth ->
                                     Par
                             end
@@ -346,18 +359,25 @@ sendSubscribe(Type, Content, UserId) ->
 
 %% dgiot_umeng:save_devicestatus(<<"5adc65e32e">>, <<"OFFLINE">>).
 save_devicestatus(DeviceId, Status) ->
-    {DeviceName, Address} =
+    {_DeviceName, Address} =
         case dgiot_parse:get_object(<<"Device">>, DeviceId) of
             {ok, #{<<"name">> := DeviceName1, <<"detail">> := Detail}} ->
-                Address1 = maps:get(<<"address">>, Detail, <<"">>),
+                Address1 = maps:get(<<"address">>, Detail, <<"无位置"/utf8>>),
                 {DeviceName1, Address1};
             _ ->
-                {<<"">>, <<"">>}
+                {<<" ">>, <<"无位置"/utf8>>}
         end,
 
     case dgiot_device:lookup(DeviceId) of
         {ok, {[_, _, Acl, _, Devaddr, ProductId], _}} ->
             Ruleid = <<ProductId/binary, "_status">>,
+            Productname =
+                case dgiot_parse:get_object(<<"Product">>, ProductId) of
+                    {ok, #{<<"name">> := Productname1}} ->
+                        Productname1;
+                    _ ->
+                        <<" ">>
+                end,
             Requests =
                 lists:foldl(fun(X, Acc) ->
                     BinX = atom_to_binary(X),
@@ -371,7 +391,7 @@ save_devicestatus(DeviceId, Status) ->
                                     lists:foldl(fun(UserId, Acc1) ->
                                         ObjectId = dgiot_parse:get_notificationid(Ruleid),
                                         Content = #{<<"_deviceid">> => DeviceId, <<"_productid">> => ProductId, <<"status">> => Status},
-                                        Result = #{<<"thing1">> => #{<<"value">> => DeviceName},
+                                        Result = #{<<"thing1">> => #{<<"value">> => Productname},
                                             <<"date4">> => #{<<"value">> => dgiot_datetime:format("YYYY-MM-DD HH:NN:SS")},
                                             <<"thing15">> => #{<<"value">> => <<"设备离线"/utf8>>},
                                             <<"thing5">> => #{<<"value">> => Address},
@@ -413,7 +433,7 @@ save_devicestatus(DeviceId, Status) ->
                             Acc;
                         UserId ->
                             ObjectId = dgiot_parse:get_notificationid(Ruleid),
-                            Result = #{<<"thing1">> => #{<<"value">> => DeviceName},
+                            Result = #{<<"thing1">> => #{<<"value">> => Productname},
                                 <<"date4">> => #{<<"value">> => dgiot_datetime:format("YYYY-MM-DD HH:NN:SS")},
                                 <<"thing15">> => #{<<"value">> => <<"设备离线"/utf8>>},
                                 <<"thing5">> => #{<<"value">> => Address},

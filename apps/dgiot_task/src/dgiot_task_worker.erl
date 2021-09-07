@@ -242,12 +242,13 @@ save_td(#task{app = _App, tid = Channel, product = ProductId, devaddr = DevAddr,
                 _ ->
                     case lists:member(error, maps:values(Data)) of
                         false ->
+                            DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
                             Payload = jsx:encode(#{<<"thingdata">> => Data, <<"appdata">> => AppData}),
                             Topic = <<"topo/", ProductId/binary, "/", DevAddr/binary, "/post">>,
-                            dgiot_mqtt:publish(DevAddr, Topic, Payload),
+                            dgiot_mqtt:publish(DeviceId, Topic, Payload),
                             dgiot_tdengine_adapter:save(ProductId, DevAddr, Data),
                             NotificationTopic = <<"notification/", ProductId/binary, "/", DevAddr/binary, "/post">>,
-                            dgiot_mqtt:publish(DevAddr, NotificationTopic, jsx:encode(Data)),
+                            dgiot_mqtt:publish(DeviceId, NotificationTopic, jsx:encode(Data)),
                             dgiot_bridge:send_log(Channel, "from_Notification=> ~ts: ~ts ", [unicode:characters_to_list(NotificationTopic), unicode:characters_to_list(jsx:encode(Data))]);
                         true ->
                             pass
