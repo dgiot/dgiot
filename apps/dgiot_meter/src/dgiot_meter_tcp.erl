@@ -132,7 +132,8 @@ handle_info({tcp, Buff}, #tcp{state = #state{id = ChannelId, step = read_meter}}
             case dgiot_data:get({meter, ChannelId}) of
                 {ProductId, _ACL, _Properties} -> DevAddr = dgiot_utils:binary_to_hex(Addr),
                     Topic = <<"thing/", ProductId/binary, "/", DevAddr/binary, "/post">>,
-                    dgiot_mqtt:publish(DevAddr, Topic, jsx:encode(Value));
+                    DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+                    dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(Value));
                 _ -> pass
             end;
         _ -> pass

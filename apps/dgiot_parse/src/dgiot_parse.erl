@@ -1289,24 +1289,7 @@ load_LogLevel() ->
     Level = emqx_logger:get_primary_log_level(),
     case create_logconfig(Level, <<"0">>, <<"dgiot">>, <<"system">>, 0, <<"logger_trace/log/#">>) of
         {ok, #{<<"objectId">> := DgiotlogId}} ->
-            case create_logconfig(Level, DgiotlogId, <<"dgiot_handle">>, <<"dgiot_handle">>, 2, <<"logger_trace/trace/#">>) of
-                {ok, #{<<"objectId">> := HandlogId}} ->
-                    case dgiot_parse:query_object(<<"LogLevel">>, #{<<"where">> => #{<<"parent">> => HandlogId, <<"type">> => <<"trace">>, <<"Subscribed">> => true}}) of
-                        {ok, #{<<"results">> := Results}} ->
-                            lists:foldl(fun(X, _Acc) ->
-                                case X of
-                                    #{<<"name">> := Name, <<"level">> := Level, <<"type">> := <<"trace">>} ->
-                                        emqx_tracer:start_trace({topic, Name}, binary_to_atom(Level), "text.txt");
-                                    _ ->
-                                        pass
-                                end
-                                        end, <<>>, Results);
-                        _ ->
-                            pass
-                    end;
-                _ ->
-                    pass
-            end,
+            create_logconfig(Level, DgiotlogId, <<"dgiot_handle">>, <<"dgiot_handle">>, 2, <<"logger_trace/trace/#">>),
             case create_logconfig(Level, DgiotlogId, <<"dgiot_app">>, <<"dgiot_app">>, 1, <<"logger_trace/log/#">>) of
                 {ok, #{<<"objectId">> := ApplogId}} ->
                     create_applog(ApplogId);

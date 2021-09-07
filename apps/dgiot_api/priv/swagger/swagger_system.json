@@ -503,20 +503,30 @@
                   "description": "操作类型",
                   "example": "start"
                 },
-                "topic": {
+                "tracetype": {
                   "type": "string",
-                  "description": "topic名称",
-                  "example": "test"
+                  "description": "trace类型 topic,clientid",
+                  "example": "clientid"
+                },
+                "handle": {
+                  "type": "string",
+                  "description": "handle",
+                  "example": "c1e5fe9676"
+                },
+                "deviceid": {
+                  "type": "string",
+                  "description": "设备id",
+                  "example": "c1e5fe9676"
+                },
+                "order": {
+                  "type": "int",
+                  "description": "排序",
+                  "example": 1
                 },
                 "level": {
                   "type": "string",
                   "description": "日志等级",
                   "example": "info"
-                },
-                "logfile": {
-                  "type": "string",
-                  "description": "日志文件",
-                  "example": "test.txt"
                 }
               }
             },

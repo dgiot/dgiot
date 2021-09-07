@@ -292,12 +292,13 @@ get_notification(ProductId1, SessionToken, Order, Limit, Skip, Where) ->
                             Alertstatus = maps:get(<<"alertstatus">>, Content, true),
                             DeviceId = maps:get(<<"_deviceid">>, Content, <<"">>),
                             Productid = maps:get(<<"_productid">>, Content, <<"">>),
-                            DeviceName =
-                                case dgiot_device:lookup(DeviceId) of
-                                    {ok, {[_, _, _, DeviceName1, _, _], _}} ->
-                                        DeviceName1;
+                            {DeviceName, Devaddr, Address} =
+                                case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+                                    {ok, #{<<"name">> := DeviceName1, <<"devaddr">> := Devaddr1, <<"detail">> := Detail}} ->
+                                        Address1 = maps:get(<<"address">>, Detail, <<"无位置"/utf8>>),
+                                        {DeviceName1, Devaddr1, Address1};
                                     _ ->
-                                        <<"">>
+                                        {<<"">>, <<"">>, <<"无位置"/utf8>>}
                                 end,
                             Newdate = dgiot_datetime:format(dgiot_datetime:to_localtime(Createdat), <<"YY-MM-DD HH:NN:SS">>),
                             Result =
@@ -305,7 +306,7 @@ get_notification(ProductId1, SessionToken, Order, Limit, Skip, Where) ->
                                     [Productid, <<"status">>] ->
                                         case dgiot_parse:get_object(<<"Product">>, Productid) of
                                             {ok, #{<<"name">> := ProductName}} ->
-                                                #{<<"objectId">> => ObjectId, <<"dynamicform">> => [#{<<"报警内容"/utf8>> => <<"设备离线"/utf8>>}, #{<<"离线时间"/utf8>> => Newdate}], <<"alertstatus">> => Alertstatus, <<"productname">> => ProductName, <<"devicename">> => DeviceName, <<"process">> => Process, <<"public">> => Public, <<"status">> => Status, <<"createdAt">> => Createdat};
+                                                #{<<"objectId">> => ObjectId, <<"dynamicform">> => [#{<<"设备编号"/utf8>> => Devaddr}, #{<<"设备地址"/utf8>> => Address}, #{<<"报警内容"/utf8>> => <<"设备"/utf8, DeviceName/binary, "离线"/utf8>>}, #{<<"离线时间"/utf8>> => Newdate}], <<"alertstatus">> => Alertstatus, <<"productname">> => ProductName, <<"devicename">> => DeviceName, <<"process">> => Process, <<"content">> => Content, <<"public">> => Public, <<"status">> => Status, <<"createdAt">> => Createdat};
                                             _ ->
                                                 Acc
                                         end;

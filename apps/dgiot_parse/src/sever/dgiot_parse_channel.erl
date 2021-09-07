@@ -208,19 +208,21 @@ send(#{error_logger := _Error_logger, mfa := {M, F, A}} = _Meta, Payload) ->
         <<"path">> => <<"/classes/Log">>,
         <<"body">> => get_body(NewMap)});
 
-send(#{mfa := _MFA} = _Meta, Payload) ->
+send(#{mfa := _MFA} = Meta, Payload) ->
     Map = jiffy:decode(Payload, [return_maps]),
     Mfa = dgiot_utils:to_binary(maps:get(<<"mfa">>, Map, <<"all">>)),
     TraceTopic =
-        case maps:find(<<"topic">>, Map) of
+        case maps:find(topic, Meta) of
             {ok, TraceTopic1} ->
-                <<TraceTopic1/binary, "/">>;
+                BinTraceTopic = dgiot_utils:to_binary(TraceTopic1),
+                <<"/", BinTraceTopic/binary>>;
             _ -> <<"">>
         end,
     Topic =
-        case maps:find(<<"clientid">>, Map) of
+        case maps:find(clientid, Meta) of
             {ok, ClientId1} ->
-                <<"logger_trace/trace/", TraceTopic/binary, ClientId1/binary>>;
+                BinClientId = dgiot_utils:to_binary(ClientId1),
+                <<"logger_trace/trace/", BinClientId/binary, TraceTopic/binary>>;
             _ ->
                 Line =
                     case maps:find(<<"line">>, Map) of
