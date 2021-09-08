@@ -99,10 +99,9 @@ else
   echo " osinfo: ${osinfo}"
   echo " This is an officially unverified linux system,"
   echo " if there are any problems with the installation and operation, "
-  echo " please feel free to contact taosdata.com for support."
+  echo " please feel free to contact www.iotn2n.com for support."
   os_type=1
 fi
-
 
 # =============================  get input parameters =================================================
 # dgiot_install.sh -v [single | cluster] -d [prod.iotn2n.com | your_domain_name] -s [dgiot_36 | dgiot_n]
