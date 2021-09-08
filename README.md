@@ -60,7 +60,14 @@ Before 2016, the Shuwa team had been crawling on the Internet and the mobile Int
 
 - For a complete list of new features, see [DGIOT Release Notes](https://github.com/dgiot/dgiot/releases)。
 - For more information, please visit [DGIOT Website](https://tech.iotn2n.com/)。
-- [Installation and deployment](https://github.com/dgiot/dgiot_deploy)
+- Installation and deployment
+**centos 7.6**
+```
+ yum install git
+ git clone https://gitee.com/dgiiot/dgiot.git
+ cd dgiot
+ sh dgiot_install.sh
+```
 
 ## Community
 
