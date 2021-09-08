@@ -66,9 +66,8 @@ function funCommitMessage() {
   })
 }
 function funShell() {
-  shell.exec('git stash')
   shell.exec('git pull')
-  shell.exec('git add -A')
+  shell.exec('git add -A .')
   shell.exec(`git commit -m ${commitType}: &{commitMsg}`)
   shell.exec('git push')
   shell.exec('git status')
