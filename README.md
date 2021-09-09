@@ -67,7 +67,7 @@ Before 2016, the Shuwa team had been crawling on the Internet and the mobile Int
 
 
 ```
-wget https://cdn.jsdelivr.net/gh/dgiot/dgiot@master/dgiot_install.sh  && sh dgiot_install.sh
+wget -q https://gitee.com/dgiiot/dgiot/raw/master/dgiot_install.sh  && sh dgiot_install.sh
 ```
 
 ## Community
