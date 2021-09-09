@@ -661,7 +661,7 @@ function install_erlang_otp() {
 
 function update_dgiot() {
   if [ ! -f ${script_dir}/${dgiot}.tar.gz ]; then
-    wget $fileserver/${dgiot}.tar.gz -O ${script_dir}/${dgiot}.tar.gz
+    wget $fileserver/${dgiot}.tar.gz -O ${script_dir}/${dgiot}.tar.gz &> /dev/null
   fi
   cd ${script_dir}
   tar xf ${dgiot}.tar.gz
@@ -679,12 +679,12 @@ function update_dgiot() {
 
 function install_dgiot() {
   if [ ! -f ${script_dir}/${dgiot}.tar.gz ]; then
-    wget $fileserver/${dgiot}.tar.gz -O ${script_dir}/${dgiot}.tar.gz
+    wget $fileserver/${dgiot}.tar.gz -O ${script_dir}/${dgiot}.tar.gz &> /dev/null
   fi
   cd ${script_dir}
   tar xf ${dgiot}.tar.gz
 
-  #5.4 parse 连接 配置
+  #修改 dgiot_parse 连接 配置
   ${csudo} bash -c  "sed -i '/^parse.parse_server/cparse.parse_server = http://127.0.0.1:1337' ${script_dir}/dgiot/etc/plugins/dgiot_parse.conf"
   ${csudo} bash -c  "sed -i '/^parse.parse_path/cparse.parse_path = /parse/'  ${script_dir}/dgiot/etc/plugins/dgiot_parse.conf"
   ${csudo} bash -c  "sed -i '/^parse.parse_appid/cparse.parse_appid = ${parse_appid}' ${script_dir}/dgiot/etc/plugins/dgiot_parse.conf"
@@ -692,9 +692,8 @@ function install_dgiot() {
   ${csudo} bash -c  "sed -i '/^parse.parse_js_key/cparse.parse_js_key = ${parse_javascript}' ${script_dir}/dgiot/etc/plugins/dgiot_parse.conf"
   ${csudo} bash -c  "sed -i '/^parse.parse_rest_key/cparse.parse_rest_key = ${parse_restapi}' ${script_dir}/dgiot/etc/plugins/dgiot_parse.conf"
 
-  #5.6 修改emq.conf
-  ${csudo} bash -c  "sed -i '/^node.name/cnode.name = dgiot@${wlanip}' ${script_dir}/dgiot/etc/emqx.conf"
-  ${csudo} bash -c  "sed -i 's!{{domain_name}}!${domain_name}!g'  ${script_dir}/dgiot/etc/emqx.conf"
+  # 修改dgiot.conf
+   ${csudo} bash -c  "sed -i '/^parse.parse_server/cparse.parse_server = http://127.0.0.1:1337' ${script_dir}/dgiot/etc/plugins/dgiot_parse.conf"
 
   cat > ${script_dir}/dgiot/data/loaded_plugins << "EOF"
   {emqx_management, true}.
@@ -875,6 +874,10 @@ function install_nginx() {
     if [ ! -f ${script_dir}/nginx.conf ]; then
        wget $fileserver/nginx.conf -O ${script_dir}/nginx.conf &> /dev/null
     fi
+    if [ -f ${script_dir}/prod.iotn2n.com.zip ]; then
+       wget $fileserver/prod.iotn2n.com.zip &> /dev/null
+    fi
+
     rm  /etc/nginx/nginx.conf -rf
     cp ${script_dir}/nginx.conf /etc/nginx/nginx.conf -rf
     sed -i "s!{{domain_name}}!${domain_name}!g"  /etc/nginx/nginx.conf
