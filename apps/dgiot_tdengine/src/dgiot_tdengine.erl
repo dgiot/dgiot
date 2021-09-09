@@ -273,6 +273,14 @@ alter_table(DB1, TableName, Context, Channel) ->
                                             case Type of
                                                 <<"enum">> ->
                                                     <<"ALTER TABLE ", DB1/binary, TableName/binary, " ADD COLUMN ", LowerIdentifier/binary, " INT;">>;
+                                                <<"file">> ->
+                                                    <<"ALTER TABLE ", DB1/binary, TableName/binary, " ADD COLUMN ", LowerIdentifier/binary, " NCHAR(10);">>;
+                                                <<"text">> ->
+                                                    <<"ALTER TABLE ", DB1/binary, TableName/binary, " ADD COLUMN ", LowerIdentifier/binary, " NCHAR(10);">>;
+                                                <<"url">> ->
+                                                    <<"ALTER TABLE ", DB1/binary, TableName/binary, " ADD COLUMN ", LowerIdentifier/binary, " NCHAR(10);">>;
+                                                <<"geopoint">> ->
+                                                    <<"ALTER TABLE ", DB1/binary, TableName/binary, " ADD COLUMN ", LowerIdentifier/binary, " NCHAR(20);">>;
                                                 _ ->
                                                     <<"ALTER TABLE ", DB1/binary, TableName/binary, " ADD COLUMN ", LowerIdentifier/binary, " ", Type/binary, ";">>
                                             end,

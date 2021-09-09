@@ -261,9 +261,7 @@ do_request(post_trace, #{<<"action">> := Action, <<"tracetype">> := Tracetype, <
                             <<"topic">> => Handle,
                             <<"path">> => <<"tracelog/", Handle/binary, ".txt">>
                         }),
-                        D = emqx_tracer:start_trace({dgiot_utils:to_atom(Tracetype), Handle}, dgiot_utils:to_atom(Level), get_tracelog(<<Handle/binary, ".txt">>)),
-                        ?LOG(info, "D ~p", [D]),
-                        D;
+                        emqx_tracer:start_trace({dgiot_utils:to_atom(Tracetype), Handle}, dgiot_utils:to_atom(Level), get_tracelog(<<Handle/binary, ".txt">>));
                     <<"stop">> ->
                         LoglevelId = dgiot_parse:get_loglevelid(Handle, <<"trace">>),
                         dgiot_parse:del_object(<<"LogLevel">>, LoglevelId),
@@ -271,7 +269,6 @@ do_request(post_trace, #{<<"action">> := Action, <<"tracetype">> := Tracetype, <
                     _Other ->
                         {error, _Other}
                 end,
-            ?LOG(info, "Rtn ~p~n", [Rtn]),
             case Rtn of
                 ok ->
                     {200, #{<<"code">> => 200, <<"msg">> => <<"SUCCESS">>}};

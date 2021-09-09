@@ -229,7 +229,7 @@ get_appdata(Channel, ProductId, DeviceId, _Args) ->
             TableName = ?Table(DeviceId),
             case dgiot_tdengine:get_appdata(Channel, TableName, #{<<"db">> => ProductId}) of
                 {ok, #{<<"results">> := Results}} ->
-                    Chartdata = get_app(ProductId, Results),
+                    Chartdata = get_app(ProductId, Results, DeviceId),
                     {ok, #{<<"data">> => Chartdata}};
                 {error, Reason} ->
                     {400, Reason}
@@ -328,7 +328,7 @@ get_chart(ProductId, Results, Names, Interval) ->
     ?LOG(debug, "Child ~p", [Child]),
     #{<<"columns">> => Columns, <<"rows">> => Rows, <<"child">> => Child}.
 
-get_app(ProductId, Results) ->
+get_app(ProductId, Results, DeviceId) ->
     Maps = get_prop(ProductId),
     Props = get_props(ProductId),
     lists:foldl(fun(R, _Acc) ->
@@ -354,6 +354,31 @@ get_app(ProductId, Results) ->
                                     Type2 when Type2 == <<"struct">> ->
                                         Ico1 = maps:get(<<"ico">>, Prop, <<"">>),
                                         {V, <<"">>, Ico1, Devicetype1};
+                                    Type3 when Type3 == <<"geopoint">> ->
+                                        Ico1 = maps:get(<<"ico">>, Prop, <<"">>),
+                                        Addr =
+                                            case binary:split(V, <<$_>>, [global, trim]) of
+                                                [Longitude, Latitude] ->
+                                                    case dgiot_gps:get_baidu_addr(Longitude, Latitude) of
+                                                        #{<<"baiduaddr">> := #{<<"formatted_address">> := FormattedAddress}} ->
+                                                            case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+                                                                {ok, #{<<"location">> := #{<<"__type">> := <<"GeoPoint">>, <<"longitude">> := Longitude, <<"latitude">> := Latitude}}} ->
+                                                                    pass;
+                                                                {ok, #{<<"detail">> := Detail}} ->
+                                                                    dgiot_parse:update_object(<<"Device">>, DeviceId, #{
+                                                                        <<"location">> => #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => Longitude, <<"latitude">> => Latitude},
+                                                                        <<"detail">> => Detail#{<<"address">> => FormattedAddress}});
+                                                                _ ->
+                                                                    pass
+                                                            end,
+                                                            FormattedAddress;
+                                                        _ ->
+                                                            <<"[", Longitude/binary, ",", Latitude/binary, "]经纬度解析错误"/utf8>>
+                                                    end;
+                                                _ ->
+                                                    <<"[", V/binary, "]经纬度解析错误"/utf8>>
+                                            end,
+                                        {Addr, <<"">>, Ico1, Devicetype1};
                                     _ ->
                                         Unit1 = maps:get(<<"unit">>, Specs, <<"">>),
                                         Ico1 = maps:get(<<"ico">>, Prop, <<"">>),

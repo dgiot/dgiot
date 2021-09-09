@@ -494,6 +494,11 @@ modbus_encoder(ProductId, SlaveId, Address, Value) ->
 %% 0x78  |  0x56  |  0x34  |  0x12
 
 format_value(Buff, #{
+    <<"dataType">> := #{<<"type">> := <<"geopoint">>, <<"gpstype">> := <<"NMEA0183">>}}) ->
+    {Longitude, Latitude} = dgiot_gps:nmea0183_frame(Buff),
+    {<<Longitude/binary, "_", Latitude/binary>>, <<"Rest">>};
+
+format_value(Buff, #{
     <<"accessMode">> := <<"rw">>,
     <<"dataForm">> := DataForm} = X) ->
     format_value(Buff, X#{<<"accessMode">> => <<"r">>,
