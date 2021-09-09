@@ -60,13 +60,19 @@ Before 2016, the Shuwa team had been crawling on the Internet and the mobile Int
 
 - For a complete list of new features, see [DGIOT Release Notes](https://github.com/dgiot/dgiot/releases)。
 - For more information, please visit [DGIOT Website](https://tech.iotn2n.com/)。
-- Installation and deployment
- **centos 7.6**
+
+## Installation and deployment
+
+ + **centos 7.6**
+
+**China**
 ```
- yum install git
- git clone https://gitee.com/dgiiot/dgiot.git
- cd dgiot
- sh dgiot_install.sh
+wget https://gitee.com/dgiiot/dgiot/blob/master/dgiot_install.sh  && sh dgiot_install.sh
+```
+
+ **default**
+```
+wget https://github.com/dgiot/dgiot/blob/master/dgiot_install.sh  && sh dgiot_install.sh
 ```
 
 ## Community
