@@ -68,9 +68,11 @@ function funCommitMessage() {
 function funShell() {
   shell.exec('git pull')
   try {
+    logs(chalk.green('changelog start'))
     shell.exec('rimraf CHANGELOG.md && conventional-changelog -p angular -i CHANGELOG.md -r 0 -s')
+    logs(chalk.green('changelog end'))
   }catch{
-    console.log(e.toString())
+    logs(chalk.red('changelog error'))
   }
   shell.exec('git add -A .')
   shell.exec(`git commit -m ${commitType}: &{commitMsg}`)
