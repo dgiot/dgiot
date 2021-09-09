@@ -65,14 +65,8 @@ Before 2016, the Shuwa team had been crawling on the Internet and the mobile Int
 
  + **centos 7.6**
 
-**China**
 ```
-wget https://gitee.com/dgiiot/dgiot/blob/master/dgiot_install.sh  && sh dgiot_install.sh
-```
-
- **default**
-```
-wget https://github.com/dgiot/dgiot/blob/master/dgiot_install.sh  && sh dgiot_install.sh
+wget https://cdn.jsdelivr.net/gh/dgiot/dgiot@master/dgiot_install.sh  && sh dgiot_install.sh
 ```
 
 ## Community
