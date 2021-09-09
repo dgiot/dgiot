@@ -60,14 +60,19 @@ DG-IoT团队2016年之前，在互联网和移动互联网爬坑多年，2016年
 
 - 新功能的完整列表，请参阅 [DGIOT Release Notes](https://github.com/dgiot/dgiot/releases)。
 - 获取更多信息，请访问 [DGIOT 官网](https://tech.iotn2n.com/)。
-- 一键部署
 
-  **centos 7.6**
+## 一键部署
+
+ + **centos 7.6**
+
+ **国外**
 ```
- yum install git
- git clone https://gitee.com/dgiiot/dgiot.git
- cd dgiot
- sh dgiot_install.sh
+wget https://github.com/dgiot/dgiot/blob/master/dgiot_install.sh  && sh dgiot_install.sh
+```
+
+ **中国**
+```
+wget https://gitee.com/dgiiot/dgiot/blob/master/dgiot_install.sh  && sh dgiot_install.sh
 ```
 
 ## 社区
