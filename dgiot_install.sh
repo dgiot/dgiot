@@ -693,7 +693,7 @@ function install_dgiot() {
   ${csudo} bash -c  "sed -i '/^parse.parse_rest_key/cparse.parse_rest_key = ${parse_restapi}' ${script_dir}/dgiot/etc/plugins/dgiot_parse.conf"
 
   # 修改dgiot.conf
-   ${csudo} bash -c  "sed -i '/^parse.parse_server/cparse.parse_server = http://127.0.0.1:1337' ${script_dir}/dgiot/etc/plugins/dgiot_parse.conf"
+  ${csudo} bash -c "sed -i 's!{{domain_name}}!${domain_name}!g' ${script_dir}/dgiot/etc/emqx.conf"
 
   cat > ${script_dir}/dgiot/data/loaded_plugins << "EOF"
   {emqx_management, true}.
@@ -875,7 +875,7 @@ function install_nginx() {
        wget $fileserver/nginx.conf -O ${script_dir}/nginx.conf &> /dev/null
     fi
     if [ -f ${script_dir}/prod.iotn2n.com.zip ]; then
-       wget $fileserver/prod.iotn2n.com.zip &> /dev/null
+       wget $fileserver/prod.iotn2n.com.zip -O ${script_dir}/prod.iotn2n.com.zip  &> /dev/null
     fi
 
     rm  /etc/nginx/nginx.conf -rf
