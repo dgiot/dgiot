@@ -71,5 +71,10 @@ function funShell() {
   shell.exec(`git commit -m ${commitType}: &{commitMsg}`)
   shell.exec('git push')
   shell.exec('git status')
+  try {
+    shell.exec('conventional-changelog -p angular -i CHANGELOG.md -r 0 -s')
+  }catch{
+    console.log(e.toString())
+  }
 }
 rimLog('CHANGELOG.md')
