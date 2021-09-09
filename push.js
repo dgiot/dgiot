@@ -9,15 +9,15 @@ const shell = require('shelljs')
 const inquirer = require('inquirer')
 let commitType,
   commitMsg = ''
-function rimLog(file) {
-  const dirPath = path.resolve(__dirname, `${file}`)
-  rimraf(dirPath, (err) => {
-    if (err) {
-      throw err
-    } else logs(chalk.red(`${dirPath} File has been deleted`))
-  })
-  funCommitType()
-}
+// function rimLog(file) {
+//   const dirPath = path.resolve(__dirname, `${file}`)
+//   rimraf(dirPath, (err) => {
+//     if (err) {
+//       throw err
+//     } else logs(chalk.red(`${dirPath} File has been deleted`))
+//   })
+//   funCommitType()
+// }
 function funCommitType() {
   const promptList = [
     {
@@ -77,6 +77,8 @@ function funShell() {
   shell.exec('git add -A .')
   shell.exec(`git commit -m ${commitType}: &{commitMsg}`)
   shell.exec('git push')
-  shell.exec('git status')
 }
-rimLog('CHANGELOG.md')
+
+funCommitType()
+
+// rimLog('CHANGELOG.md')
