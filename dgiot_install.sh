@@ -335,11 +335,13 @@ function install_postgres() {
 
   ### 创建目录和用户,以及配置环境变化
   echo -e "${GREEN}create postgres user and group ${NC}"
-  set -u
-  ${csudo} userdel postgres  &> /dev/null
-  ${csudo} groupadd postgres  &> /dev/null
-  ${csudo} useradd -g postgres postgres  &> /dev/null
-  set -e
+  egrep "^postgres" /etc/passwd >/dev/null
+  if [ $? -eq 0 ]; then
+      echo -e "${GREEN} postgres user and group exist ${NC}"
+  else
+      ${csudo} groupadd postgres  &> /dev/null
+      ${csudo} useradd -g postgres postgres  &> /dev/null
+  fi
 
   ###  密码设置在引号内输入自己的密码
   echo ${pg_pwd} | passwd --stdin postgres
@@ -357,11 +359,12 @@ function install_postgres() {
   echo -e  "`date +%F_%T`: ${GREEN} configure postgres${NC}"
   ./configure --prefix=/usr/local/pgsql/12 --with-pgport=7432 --enable-nls --with-python --with-tcl --with-gssapi --with-icu --with-openssl --with-pam --with-ldap --with-systemd --with-libxml --with-libxslt &> /dev/null
 
+  echo -e  "`date +%F_%T`: ${GREEN} make install postgres${NC}"
   make install -j${processor}  &> /dev/null
 
   ### 添加pg_stat_statements数据库监控插件
   cd ${script_dir}/postgresql-12.0/contrib/pg_stat_statements/
-  echo -e  "`date +%F_%T`: ${GREEN} make pg_stat_statements ${NC}"
+  echo -e  "`date +%F_%T`: ${GREEN} make install pg_stat_statements ${NC}"
   make install -j${processor}  &> /dev/null
   sleep 5
 
