@@ -890,10 +890,10 @@ set -e
 echo -e "`date +%F_%T`: ${GREEN}dgiot  $verType deploy  start${NC}"
 if [ "$verType" == "single" ]; then
     # Install server and client
-    if [ -x ${install_dir}/dgiot ]; then
-      update_flag=1
-      update_dgiot
-    else
+#    if [ -x ${install_dir}/dgiot ]; then
+#      update_flag=1
+#      update_dgiot
+#    else
       pre_install
       clean_services
       deploy_postgres
@@ -906,7 +906,7 @@ if [ "$verType" == "single" ]; then
       install_prometheus
       install_grafana
       install_nginx
-    fi
+#    fi
 elif [ "$verType" == "cluster" ]; then
     # todo
     if [ -x ${install_dir}/dgiot ]; then
