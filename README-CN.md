@@ -65,14 +65,8 @@ DG-IoT团队2016年之前，在互联网和移动互联网爬坑多年，2016年
 
  + **centos 7.6**
 
- **国外**
 ```
-wget https://github.com/dgiot/dgiot/blob/master/dgiot_install.sh  && sh dgiot_install.sh
-```
-
- **中国**
-```
-wget https://gitee.com/dgiiot/dgiot/blob/master/dgiot_install.sh  && sh dgiot_install.sh
+wget https://cdn.jsdelivr.net/gh/dgiot/dgiot@master/dgiot_install.sh  && sh dgiot_install.sh
 ```
 
 ## 社区
