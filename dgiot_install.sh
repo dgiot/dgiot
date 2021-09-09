@@ -435,7 +435,7 @@ EOF
 ### 2.1.4 安装部署postgres
 function deploy_postgres() {
   clean_service dgiot_pg_writer
-  #install_postgres
+  install_postgres
   init_postgres_database
   DATA_DIR="${install_dir}/dgiot_pg_writer/data"
   install_service dgiot_pg_writer "notify" "/usr/local/pgsql/12/bin/postgres -D ${DATA_DIR}" "postgres" "DATA_DIR=${DATA_DIR}"
