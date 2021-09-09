@@ -200,6 +200,15 @@ get_collection(ProductId, Dis, Payload, Ack) ->
                             Acc2;
                         _ ->
                             case X of
+                                #{<<"dataForm">> := #{<<"strategy">> := Strategy},
+                                    <<"dataType">> := #{<<"type">> := <<"geopoint">>},
+                                    <<"identifier">> := Identifier} when Strategy =/= <<"计算值"/utf8>> ->
+                                    case maps:find(Identifier, Payload) of
+                                        {ok, Value} ->
+                                            Acc2#{Identifier => Value};
+                                        _ ->
+                                            Acc2#{Identifier => <<"">>}
+                                    end;
                                 #{<<"dataForm">> := #{<<"address">> := Address, <<"strategy">> := Strategy, <<"collection">> := Collection},
                                     <<"dataType">> := #{<<"type">> := Type, <<"specs">> := Specs},
                                     <<"identifier">> := Identifier} when Strategy =/= <<"计算值"/utf8>> ->

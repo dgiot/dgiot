@@ -406,20 +406,21 @@ check_init(ChannelId, ProductIds, Config) ->
 
 check_database(ChannelId, ProductIds, #{<<"database">> := DataBase, <<"keep">> := Keep} = Config) ->
     case dgiot_tdengine:create_database(ChannelId, DataBase, Keep) of
+        {ok, _} ->
+            ?LOG(debug, "Check database ChannelId:~p, ProductIds:~p, Config:~p", [ChannelId, ProductIds, Config]),
+            create_table(ChannelId, ProductIds, Config);
         {error, <<"channel not find">>} ->
             ok;
         {error, #{<<"code">> := 10, <<"desc">> := <<"authentication failure">>}} ->
             dgiot_bridge:send_log(ChannelId, "Check database Error, ChannelId:~p, ProductIds:~p, Reason:authentication failure", [ChannelId, ProductIds]),
             timer:sleep(5000),
             check_database(ChannelId, ProductIds, Config);
-        {error, Reason} ->
-            ?LOG(error, "Check database Error, ChannelId:~p, ProductIds:~p, Reason:~p", [ChannelId, ProductIds, Reason]),
-            dgiot_bridge:send_log(ChannelId, "Check database Error, ChannelId:~p, ProductIds:~p, Reason:~p", [ChannelId, ProductIds, Reason]),
-            timer:sleep(5000),
-            check_database(ChannelId, ProductIds, Config);
-        {ok, _} ->
-            ?LOG(debug, "Check database ChannelId:~p, ProductIds:~p, Config:~p", [ChannelId, ProductIds, Config]),
-            create_table(ChannelId, ProductIds, Config)
+        _ ->
+%%            ?LOG(error, "Check database Error, ChannelId:~p, ProductIds:~p, Reason:~p", [ChannelId, ProductIds, Reason]),
+%%            dgiot_bridge:send_log(ChannelId, "Check database Error, ChannelId:~p, ProductIds:~p, Reason:~p", [ChannelId, ProductIds, Reason]),
+%%            timer:sleep(5000),
+%%            check_database(ChannelId, ProductIds, Config)
+            ok
     end.
 
 create_table(_, [], _) ->
@@ -502,6 +503,9 @@ get_field(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"stri
 get_field(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"text">>} = Spec}) ->
     Size = integer_to_binary(min(maps:get(<<"size">>, Spec, 10), 200)),
     {Field, #{<<"type">> => <<"NCHAR(", Size/binary, ")">>}};
+get_field(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"geopoint">>} = Spec}) ->
+    Size = integer_to_binary(min(maps:get(<<"size">>, Spec, 20), 200)),
+    {Field, #{<<"type">> => <<"NCHAR(", Size/binary, ")">>}};
 get_field(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"enum">>, <<"specs">> := _Specs}}) ->
 %%    Size = integer_to_binary(maps:size(Specs)),
     {Field, #{<<"type">> => <<"INT">>}};
@@ -567,6 +571,8 @@ check_field(Data, #{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> :=
                     <<"BOOL">> ->
                         Value;
                     <<"TEXT">> ->
+                        {unicode:characters_to_binary(unicode:characters_to_list((Value))), text};
+                    <<"GEOPOINT">> ->
                         {unicode:characters_to_binary(unicode:characters_to_list((Value))), text};
 %%                    <<"ENUM">> ->
 %%%%                        Specs = maps:get(<<"specs">>, DataType, #{}),

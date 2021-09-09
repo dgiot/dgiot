@@ -34,7 +34,8 @@
     out_of_china/2,
     get_baidu_gps/2,
     get_deng_gps/2,
-    generate_random_gps/3
+    generate_random_gps/3,
+    nmea0183_frame/1
 ]).
 
 %%// 定义一些常量
@@ -251,9 +252,9 @@ get_baidu_gps(LonDeg, LatDeg) ->
     [dgiot_utils:to_float(Bd_lng, 6), dgiot_utils:to_float(Bd_lat - 0.0002, 6)].
 
 %%http://lbsyun.baidu.com/index.php?title=webapi/guide/webservice-geocoding-abroad
-%<<"http://api.map.baidu.com/reverse_geocoding/v3/?ak=fnc5Z92jC7CwfBGz8Dk66E9sXEIYZ6TG&output=json&coordtype=wgs84ll&location=31.555,120.455">>.
+%<<"http://api.map.baidu.com/reverse_geocoding/v3/?ak=fnc5Z92jC7CwfBGz8Dk66E9sXEIYZ6TG&output=json&coordtype=wgs84ll&location=30.26626,119.60223">>.
 get_baidu_addr(LonDeg, LatDeg) ->
-    AppKey = dgiot:get_env(baidumap_appkey),
+    AppKey = dgiot_utils:to_binary(application:get_env(dgiot_http, baidumap_appkey, <<"">>)),
     get_baidu_addr(AppKey, "wgs84ll", LonDeg, LatDeg).
 
 get_baidu_addr(AK, Coordtype, Lng, Lat) ->
@@ -294,4 +295,23 @@ generate_random_gps(Base_log, Base_lat, Radius) ->
 %%    # 这里是想保留14位小数
 %%    loga = '%.14f' % longitude
 %%    lata = '%.14f' % latitude
-   {Longitude, Latitude}.
+    {Longitude, Latitude}.
+
+%% <<"$GNRMC,", Data:60/binary, "*", _Checksum:2/binary, _/binary>> = <<"$GNRMC,034918.00,A,3015.97544,N,11936.13370,E,000.0,000.0,180821,OK*06">>
+nmea0183_frame(<<"$GNRMC,", Data:60/binary, "*", _Checksum:2/binary, _/binary>>) ->
+%%    <<_Utc:9/binary, ",", _PositioningState:1/binary, ",", Latitude:10/binary, ",", _Latitudedirection:1/binary, ",", Longitude:11/binary, ",", _Longitudedirection:1/binary, ",", Speed:5/binary, ",", Course:5/binary, ",", Date:6/binary, ",", Tianxian:2/binary>> = Data,
+    <<_Utc:9/binary, ",", _PositioningState:1/binary, ",", LatDu1:2/binary, LatFen1:8/binary, ",", _Latitudedirection:1/binary, ",", LongDu1:3/binary, LongFen1:8/binary, ",", _Longitudedirection:1/binary, _/binary>> = Data,
+
+    LatDu = dgiot_utils:to_float(LatDu1),
+    LatFen = dgiot_utils:to_float(LatFen1),
+    Latitude = dgiot_utils:to_float(LatDu + LatFen / 60, 5),
+
+    LongDu = dgiot_utils:to_float(LongDu1),
+    LongFen = dgiot_utils:to_float(LongFen1),
+    Longitude = dgiot_utils:to_float(LongDu + LongFen / 60, 5),
+
+    {dgiot_utils:to_binary(Longitude), dgiot_utils:to_binary(Latitude)};
+
+nmea0183_frame(Buff) ->
+    ?LOG(info, "Buff ~p~n", [Buff]),
+    <<"">>.

@@ -86,18 +86,6 @@
             zh => <<"控制器厂商"/utf8>>
         }
     },
-    <<"heartbeat">> => #{
-        order => 5,
-        type => integer,
-        required => true,
-        default => 10,
-        title => #{
-            zh => <<"心跳周期"/utf8>>
-        },
-        description => #{
-            zh => <<"心跳周期"/utf8>>
-        }
-    },
     <<"ico">> => #{
         order => 102,
         type => string,
@@ -120,7 +108,6 @@ start(ChannelId, ChannelArgs) ->
 %% 通道初始化
 init(?TYPE, ChannelId, #{
     <<"port">> := Port,
-    <<"heartbeat">> := Heartbeat,
     <<"regtype">> := Type,
     <<"regular">> := Regular,
     <<"product">> := Products,
@@ -138,7 +125,7 @@ init(?TYPE, ChannelId, #{
         dtutype = Dtutype
     },
 
-    dgiot_data:insert({ChannelId, heartbeat}, {Heartbeat, Port}),
+%%    dgiot_data:insert({ChannelId, heartbeat}, {Heartbeat, Port}),
     {ok, State, dgiot_modbus_tcp:start(Port, State)};
 
 init(?TYPE, _ChannelId, _Args) ->
