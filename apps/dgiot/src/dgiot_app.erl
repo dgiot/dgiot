@@ -32,6 +32,7 @@ start(_StartType, _StartArgs) ->
     {ok, Sup} = dgiot_sup:start_link(),
     start_plugin(Sup),
     dgiot_metrics:start(dgiot),
+    dgiot_pushgateway:start_link(),
     {ok, Sup}.
 
 stop(_State) ->

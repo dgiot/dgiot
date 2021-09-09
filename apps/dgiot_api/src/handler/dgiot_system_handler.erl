@@ -109,7 +109,7 @@ do_request(get_nodes, _Args, _Context, _Req) ->
     Nodes = dgiot_node:get_nodes(),
     {ok, #{nodes => Nodes}};
 
-%% System 概要: 统计获取 描述:调用Grafanfa查询曲线
+%% System 概要: 统计获取 描述:Promethus查询曲线
 %% OperationId:get_chart_version
 %% 请求:GET /iotapi/chart/:version
 do_request(get_chart_version, #{<<"query">> := Query, <<"start">> := Start, <<"end">> := End, <<"step">> := Step} = Args, _Context, _Req) ->

@@ -1,11 +1,11 @@
--module(dgiot_push_client).
+-module(dgiot_pushgateway).
 
 -include("dgiot.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -behaviour(gen_server).
 
 %% Interface
--export([start_link/1]).
+-export([start_link/0, start_link/1]).
 
 %% Internal Exports
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, code_change/3, terminate/2]).
@@ -14,6 +14,10 @@
 
 -record(state, {push_gateway, timer, interval}).
 
+start_link() ->
+    PushGateway = dgiot:get_env(push_gateway),
+    Interval = dgiot:get_env(interval, 5000),
+    gen_server:start_link({local, ?MODULE}, ?MODULE, [PushGateway, Interval], []).
 
 start_link(PushGateway) ->
     Interval = dgiot:get_env(interval, 5000),
