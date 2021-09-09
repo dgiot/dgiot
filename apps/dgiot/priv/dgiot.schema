@@ -15,6 +15,11 @@
 {datatype, string}
 ]}.
 
+{mapping, "statsd.push_task", "dgiot.push_task", [
+{default, "disable"},
+{datatype, string}
+]}.
+
 {mapping, "statsd.interval", "dgiot.interval", [
 {default, 5000},
 {datatype, integer}

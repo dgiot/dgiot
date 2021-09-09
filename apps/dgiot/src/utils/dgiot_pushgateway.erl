@@ -15,9 +15,15 @@
 -record(state, {push_gateway, timer, interval}).
 
 start_link() ->
-    PushGateway = dgiot:get_env(push_gateway),
+    PushGateway = dgiot:get_env(push_gateway,"http://127.0.0.1:9091"),
     Interval = dgiot:get_env(interval, 5000),
-    gen_server:start_link({local, ?MODULE}, ?MODULE, [PushGateway, Interval], []).
+    Push_task = dgiot:get_env(push_task,"disable"),
+    case Push_task of
+        "enable" ->
+            gen_server:start_link({local, ?MODULE}, ?MODULE, [PushGateway, Interval], []);
+        _ -> pass
+    end.
+
 
 start_link(PushGateway) ->
     Interval = dgiot:get_env(interval, 5000),
@@ -25,7 +31,7 @@ start_link(PushGateway) ->
 
 init([PushGateway, Interval]) ->
     Ref = erlang:start_timer(Interval, self(), ?TIMER_MSG),
-    {ok, #state{timer = Ref,  push_gateway = PushGateway, interval = Interval}}.
+    {ok, #state{timer = Ref, push_gateway = PushGateway, interval = Interval}}.
 
 handle_call(_Msg, _From, State) ->
     {noreply, State}.
@@ -37,7 +43,7 @@ handle_info({timeout, R, ?TIMER_MSG}, S = #state{interval = I, timer = R, push_g
     Fun =
         fun({Registry, Instance, Data}, Acc) ->
             push_to_gateway(Uri, Registry, Instance, Data),
-            [{Registry, Instance}|Acc]
+            [{Registry, Instance} | Acc]
         end,
     catch dgiot_stats:metrics(Fun, []),
     {noreply, S#state{timer = erlang:start_timer(I, self(), ?TIMER_MSG)}};
@@ -64,10 +70,10 @@ push_to_gateway(Uri, Registry, Instance, Data) ->
                         true ->
                             ok;
                         _ ->
-                            put(is_log, true), ?LOG(error,"push to ~s error, reason:~p~n", [Uri, Reason])
+                            put(is_log, true), ?LOG(error, "push to ~s error, reason:~p~n", [Uri, Reason])
                     end;
                 _ ->
-                    ?LOG(error,"push to ~s error, reason:~p~n", [Uri, Reason])
+                    ?LOG(error, "push to ~s error, reason:~p~n", [Uri, Reason])
             end
     end.
 
