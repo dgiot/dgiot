@@ -24,7 +24,7 @@ DG-IoT团队2016年之前，在互联网和移动互联网爬坑多年，2016年
 
 # 构建
 
- 构建 *dgiot* 需要 Erlang/OTP R21+, Windows下用[msys64](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/msys64/msys64.zip)开发。下载后解压到D盘根目录，严格按照下图操作：
+ 构建 *dgiot* 需要 Erlang/OTP R21+, Windows下用 [msys64](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/msys64/msys64.zip)开发。下载后解压到D盘根目录，严格按照下图操作：
 ![效果图-1.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/msys64/%E6%95%88%E6%9E%9C%E5%9B%BE-1.png)
 
  +  国外下载源码
