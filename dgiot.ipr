@@ -28,9 +28,6 @@
       <module fileurl="file://$PROJECT_DIR$/dgiot.iml" filepath="$PROJECT_DIR$/dgiot.iml" />
     </modules>
   </component>
-  <component name="ProjectPlainTextFileTypeManager">
-    <file url="file://$PROJECT_DIR$/apps/dgiot/src/otp/dgiot_mqtt_log_h.erl" />
-  </component>
   <component name="ProjectRootManager" version="2" project-jdk-name="Erlang 23" project-jdk-type="Erlang SDK">
     <output url="file://$PROJECT_DIR$/out" />
   </component>
@@ -121,8 +118,11 @@
     <mapping directory="$PROJECT_DIR$/_build/emqx/plugins/pc" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/emqx/plugins/relup_helper" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/apps/dgiot_ffmpeg" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/apps/dgiot_jieshun" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/apps/dgiot_meter" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/apps/dgiot_mingcheng" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/apps/dgiot_sinmahe" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/apps/dgiot_xinchuangwei" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/apps/shuwa_mqtt" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/emqx-extension-examples" vcs="Git" />
   </component>

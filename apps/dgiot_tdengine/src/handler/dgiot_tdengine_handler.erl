@@ -330,7 +330,7 @@ get_chart(ProductId, Results, Names, Interval) ->
 
 get_app(ProductId, Results, DeviceId) ->
     Maps = get_prop(ProductId),
-    Props = get_props(ProductId),
+    Props = get_props(<<"4f0931b623">>),
     lists:foldl(fun(R, _Acc) ->
         Time = maps:get(<<"createdat">>, R),
         NewTime = get_time(Time, <<"111">>),
@@ -356,8 +356,9 @@ get_app(ProductId, Results, DeviceId) ->
                                         {V, <<"">>, Ico1, Devicetype1};
                                     Type3 when Type3 == <<"geopoint">> ->
                                         Ico1 = maps:get(<<"ico">>, Prop, <<"">>),
+                                        BinV = dgiot_utils:to_binary(V),
                                         Addr =
-                                            case binary:split(V, <<$_>>, [global, trim]) of
+                                            case binary:split(BinV, <<$_>>, [global, trim]) of
                                                 [Longitude, Latitude] ->
                                                     case dgiot_gps:get_baidu_addr(Longitude, Latitude) of
                                                         #{<<"baiduaddr">> := #{<<"formatted_address">> := FormattedAddress}} ->
@@ -376,9 +377,14 @@ get_app(ProductId, Results, DeviceId) ->
                                                             <<"[", Longitude/binary, ",", Latitude/binary, "]经纬度解析错误"/utf8>>
                                                     end;
                                                 _ ->
-                                                    <<"[", V/binary, "]经纬度解析错误"/utf8>>
+                                                    <<"无GPS信息"/utf8>>
                                             end,
                                         {Addr, <<"">>, Ico1, Devicetype1};
+                                    Type4 when Type4 == <<"float">>; Type4 == <<"double">> ->
+                                        Unit1 = maps:get(<<"unit">>, Specs, <<"">>),
+                                        Precision = maps:get(<<"precision">>, Specs, 3),
+                                        Ico1 = maps:get(<<"ico">>, Prop, <<"">>),
+                                        {dgiot_utils:to_float(V, Precision), Unit1, Ico1, Devicetype1};
                                     _ ->
                                         Unit1 = maps:get(<<"unit">>, Specs, <<"">>),
                                         Ico1 = maps:get(<<"ico">>, Prop, <<"">>),

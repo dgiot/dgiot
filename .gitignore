@@ -55,4 +55,5 @@ apps/dgiot_parse/etc/dgiot_parse.conf
 apps/dgiot_jieshun/
 apps/dgiot_mingcheng/
 apps/dgiot_xinchuangwei/
+apps/dgiot_shouyincheng/
 apps/dgiot_http/etc/dgiot_http.conf
