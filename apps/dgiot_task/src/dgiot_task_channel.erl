@@ -17,6 +17,7 @@
 -module(dgiot_task_channel).
 -behavior(dgiot_channelx).
 -author("jonhliu").
+-include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
 -include("dgiot_task.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -define(TYPE, <<"INSTRUCT">>).
@@ -31,9 +32,10 @@
 -export([init/3, handle_init/1, handle_event/3, handle_message/2, stop/3]).
 
 %% 注册通道类型
--channel(?TYPE).
 -channel_type(#{
-    type => 1,
+
+    cType => ?TYPE,
+    type => ?BACKEND_CHL,
     title => #{
         zh => <<"指令任务通道"/utf8>>
     },

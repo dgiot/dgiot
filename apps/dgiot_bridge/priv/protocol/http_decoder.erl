@@ -17,6 +17,7 @@
 -author("kenneth").
 -behavior(dgiot_decoder).
 -export([handle_info/2]).
+-include_lib("dgiot/include/logger.hrl").
 
 
 handle_info({http, Req}, State) ->

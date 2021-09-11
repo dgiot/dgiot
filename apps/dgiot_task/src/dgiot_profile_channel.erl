@@ -18,6 +18,7 @@
 -behavior(dgiot_channelx).
 -author("jonhliu").
 -include("dgiot_task.hrl").
+-include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -define(TYPE, <<"PROFILE">>).
 -record(state, {id, mod, product, env = #{}}).
@@ -31,9 +32,11 @@
 -export([init/3, handle_init/1, handle_event/3, handle_message/2, stop/3]).
 
 %% 注册通道类型
--channel(?TYPE).
+
 -channel_type(#{
-    type => 1,
+
+    cType => ?TYPE,
+    type => ?BACKEND_CHL,
     title => #{
         zh => <<"配置同步通道"/utf8>>
     },

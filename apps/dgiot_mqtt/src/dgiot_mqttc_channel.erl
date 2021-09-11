@@ -18,6 +18,7 @@
 -define(TYPE, <<"MQTTC">>).
 -author("kenneth").
 -record(state, {id, client = disconnect}).
+-include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -include("dgiot_mqtt.hrl").
 
@@ -31,9 +32,10 @@
 
 
 %% 注册通道类型
--channel(?TYPE).
 -channel_type(#{
-    type => 2,
+
+    cType => ?TYPE,
+    type => ?BRIDGE_CHL,
     title => #{
         zh => <<"MQTT资源通道"/utf8>>
     },

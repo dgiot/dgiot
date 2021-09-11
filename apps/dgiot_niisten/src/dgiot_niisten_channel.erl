@@ -17,6 +17,7 @@
 -module(dgiot_niisten_channel).
 -behavior(dgiot_channelx).
 -author("johnliu").
+-include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
 -include_lib("dgiot/include/dgiot_socket.hrl").
 -include("dgiot_niisten.hrl").
 -include_lib("dgiot/include/logger.hrl").
@@ -45,9 +46,10 @@
 -export([init/1, handle_info/2, handle_cast/2, handle_call/3, terminate/2, code_change/3]).
 
 %% 注册通道类型
--channel(?TYPE).
 -channel_type(#{
-    type => 1,
+
+    cType => ?TYPE,
+    type => ?PROTOCOL_CHL,
     title => #{
         zh => <<"NIISTEN通道"/utf8>>
     },

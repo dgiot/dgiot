@@ -17,8 +17,11 @@
 -module(dgiot_tcp_channel).
 -behavior(dgiot_channelx).
 -author("kenneth").
+-include("dgiot_bridge.hrl").
 -include_lib("dgiot/include/dgiot_socket.hrl").
 -include_lib("dgiot/include/logger.hrl").
+
+
 -define(TYPE, <<"TCP">>).
 -define(MAX_BUFF_SIZE, 1024).
 -record(state, {id, mod, product, env = #{}, buff_size = 1024000}).
@@ -30,12 +33,10 @@
 %% TCP callback
 -export([init/1, handle_info/2, handle_cast/2, handle_call/3, terminate/2, code_change/3]).
 
-
-
 %% 注册通道类型
--channel(?TYPE).
 -channel_type(#{
-    type => 1,
+    cType => ?TYPE,
+    type => ?PROTOCOL_CHL,
     title => #{
         zh => <<"TCP采集通道"/utf8>>
     },

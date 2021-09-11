@@ -19,6 +19,7 @@
 -author("kenneth").
 -include_lib("dgiot/include/dgiot_socket.hrl").
 -include_lib("dgiot/include/logger.hrl").
+-include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
 -define(TYPE, <<"DEVICE">>).
 -define(MAX_BUFF_SIZE, 1024).
 -record(state, {id, mod, product, env = #{}}).
@@ -30,9 +31,11 @@
 
 
 %% 注册通道类型
--channel(?TYPE).
 -channel_type(#{
-    type => 1,
+
+    cType => ?TYPE,
+    type => ?BACKEND_CHL,
+    priority => 1,
     title => #{
         zh => <<"Device缓存通道"/utf8>>
     },

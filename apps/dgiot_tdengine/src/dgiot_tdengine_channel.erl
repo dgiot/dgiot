@@ -18,6 +18,7 @@
 -author("kenneth").
 -behavior(dgiot_channelx).
 -define(CACHE(Channel), binary_to_atom(<<?TYPE/binary, Channel/binary>>, utf8)).
+-include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
 -include("dgiot_tdengine.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -author("kenneth").
@@ -30,9 +31,9 @@
 -export([test/1]).
 
 %% 注册通道类型
--channel(?TYPE).
 -channel_type(#{
-    type => 2,
+    cType => ?TYPE,
+    type => ?BACKEND_CHL,
     title => #{
         zh => <<"TD资源通道"/utf8>>
     },

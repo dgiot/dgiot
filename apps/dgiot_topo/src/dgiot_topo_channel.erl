@@ -17,6 +17,7 @@
 -behavior(dgiot_channelx).
 -define(TYPE, <<"DGIOTTOPO">>).
 -author("johnliu").
+-include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
 -include_lib("dgiot/include/logger.hrl").
 
 -record(state, {id, env = #{}}).
@@ -27,9 +28,9 @@
 
 
 %% 注册通道类型
--channel(?TYPE).
 -channel_type(#{
-    type => 1,
+    cType => ?TYPE,
+    type => ?BACKEND_CHL,
     title => #{
         zh => <<"TOPO组态通道"/utf8>>
     },

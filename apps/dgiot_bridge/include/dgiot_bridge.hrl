@@ -17,4 +17,10 @@
 -author("kenneth").
 -define(DGIOT_BRIDGE, dgiot_bridge).
 -define(DGIOT_RUlES, dgiot_rules).
+%% CHANNEL TYPE
+-define(PROTOCOL_CHL, 1).
+-define(BRIDGE_CHL, 2).
+-define(BACKEND_CHL, 3).
+-define(FEATURE_CHL, 4).
+-define(AUTH_CHL, 5).
 

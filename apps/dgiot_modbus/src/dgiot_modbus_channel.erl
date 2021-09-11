@@ -16,6 +16,7 @@
 -module(dgiot_modbus_channel).
 -behavior(dgiot_channelx).
 -author("johnliu").
+-include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
 -include("dgiot_modbus.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -define(TYPE, <<"MODBUS">>).
@@ -26,9 +27,10 @@
 -export([init/3, handle_init/1, handle_event/3, handle_message/2, stop/3]).
 
 %% 注册通道类型
--channel(?TYPE).
 -channel_type(#{
-    type => 1,
+
+    cType => ?TYPE,
+    type => ?PROTOCOL_CHL,
     title => #{
         zh => <<"MODBUS通道"/utf8>>
     },

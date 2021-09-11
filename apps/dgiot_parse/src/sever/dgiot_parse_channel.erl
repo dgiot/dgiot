@@ -16,6 +16,7 @@
 
 -module(dgiot_parse_channel).
 -author("kenneth").
+-include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
 -include("dgiot_parse.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -behavior(dgiot_channelx).
@@ -31,6 +32,7 @@
 %% 注册通道类型
 -channel(?TYPE).
 -channel_type(#{
+    cType => ?BACKEND_CHL,
     type => 1,
     title => #{
         zh => <<"Parser Server存储通道"/utf8>>
