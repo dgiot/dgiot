@@ -16,9 +16,11 @@
 
 -module(dgiot_http_channel).
 -behavior(dgiot_channelx).
+-include("dgiot_bridge.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -define(TYPE, <<"HTTP">>).
 -author("kenneth").
+
 -record(state, {id, env}).
 %% API
 -export([start/2]).
@@ -28,9 +30,9 @@
 
 
 %% 注册通道类型
--channel(?TYPE).
 -channel_type(#{
-    type => 1,
+    cType => ?TYPE,
+    type => ?PROTOCOL_CHL,
     title => #{
         zh => <<"HTTP采集通道"/utf8>>
     },

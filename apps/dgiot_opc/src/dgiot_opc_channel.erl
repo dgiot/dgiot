@@ -17,6 +17,7 @@
 -behavior(dgiot_channelx).
 -define(TYPE, <<"DGIOTOPC">>).
 -author("johnliu").
+-include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -record(state, {id, step, env = #{}}).
 
@@ -26,9 +27,10 @@
 
 
 %% 注册通道类型
--channel(?TYPE).
 -channel_type(#{
-    type => 1,
+
+    cType => ?TYPE,
+    type => ?PROTOCOL_CHL,
     title => #{
         zh => <<"OPC采集通道"/utf8>>
     },

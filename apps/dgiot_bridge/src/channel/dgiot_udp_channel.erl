@@ -17,6 +17,7 @@
 -module(dgiot_udp_channel).
 -behavior(dgiot_channelx).
 -include_lib("dgiot/include/logger.hrl").
+-include("dgiot_bridge.hrl").
 -define(TYPE, <<"UDP">>).
 -author("kenneth").
 -record(state, {id, ip, port, transport, env, product, log}).
@@ -28,9 +29,9 @@
 
 
 %% 注册通道类型
--channel(?TYPE).
 -channel_type(#{
-    type => 1,
+    cType => ?TYPE,
+    type => ?PROTOCOL_CHL,
     title => #{
         zh => <<"UDP采集通道"/utf8>>
     },

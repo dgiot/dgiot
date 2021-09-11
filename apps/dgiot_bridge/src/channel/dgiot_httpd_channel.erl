@@ -18,6 +18,7 @@
 -behavior(dgiot_channelx).
 -include_lib("dgiot/include/logger.hrl").
 -define(TYPE, <<"HTTPD">>).
+-include("dgiot_bridge.hrl").
 -author("kenneth").
 -record(state, {id, env}).
 %% API
@@ -28,8 +29,8 @@
 
 
 %% 注册通道类型
--channel(?TYPE).
 -channel_type(#{
+    cType => ?TYPE,
     type => 1,
     title => #{
         zh => <<"HTTPD采集通道"/utf8>>

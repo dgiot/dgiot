@@ -16,6 +16,7 @@
 -module(dgiot_ffmpeg_channel).
 -behavior(dgiot_channelx).
 -author("johnliu").
+-include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
 -include("dgiot_ffmpeg.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -define(TYPE, <<"FFMPEG">>).
@@ -26,9 +27,10 @@
 %% Channel callback
 -export([init/3, handle_init/1, handle_event/3, handle_message/2, stop/3]).
 
--channel(?TYPE).
 -channel_type(#{
-    type => 2,
+
+    cType => ?TYPE,
+    type => ?BRIDGE_CHL,
     title => #{
         zh => <<"视频采集资源通道"/utf8>>
     },

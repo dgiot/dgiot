@@ -18,6 +18,7 @@
 -author("kenneth").
 -include("dgiot_bridge.hrl").
 -include_lib("dgiot/include/logger.hrl").
+
 -dgiot_data("ets").
 -export([init_ets/0]).
 
@@ -25,7 +26,7 @@
 -export([start/0, start_channel/2, register_channel/2, get_behaviour/1, start_channel/3, do_global_message/1]).
 -export([get_product_info/1, get_products/1, apply_channel/5, apply_product/3, parse_frame/3, to_frame/3]).
 -export([get_data/2, send_log/3, send_log/4, send_log/5]).
--export([get_all_channel/0, control_channel/2]).
+-export([get_all_channel/0, control_channel/2, list/0]).
 
 init_ets() ->
     dgiot_data:init(?DGIOT_BRIDGE),
@@ -51,11 +52,11 @@ start_channel(Name, Mod, Where) ->
 
 
 register_channel(CType, Mod) ->
-    CType1 = list_to_binary(string:uppercase(binary_to_list(CType))),
+    CType1 = list_to_binary(string:uppercase(dgiot_utils:to_list(CType))),
     dgiot_data:insert(?DGIOT_BRIDGE, {CType1, behaviour}, Mod).
 
 get_behaviour(CType) ->
-    CType1 = list_to_binary(string:uppercase(binary_to_list(CType))),
+    CType1 = list_to_binary(string:uppercase(dgiot_utils:to_list(CType))),
     dgiot_data:lookup(?DGIOT_BRIDGE, {CType1, behaviour}).
 
 parse_frame(ProductId, Bin, State) ->
@@ -225,30 +226,25 @@ do_global_message([Msg]) ->
 
 
 register_all_channel() ->
-    Fun =
-        fun(_App, {Type, Mod}, Acc) ->
-            register_channel(Type, Mod),
-            [Type | Acc]
-        end,
-    search_channel(Fun, []).
+    lists:map(fun({_, Channel_type}) ->
+        Mod = maps:get(mod, Channel_type),
+        CType = maps:get(cType, Channel_type),
+        register_channel(CType, Mod)
+              end,  list()).
 
 get_all_channel() ->
-    Fun =
-        fun(App, {Type, Mod}, Acc) ->
-            Attributes = Mod:module_info(attributes),
-            case proplists:get_value(channel_type, Attributes) of
-                undefined ->
-                    Acc;
-                [Channel] ->
-                    [format_channel(App, Type, Channel, Attributes) | Acc]
-            end
-        end,
-    search_channel(Fun, []).
+    lists:foldl(fun({_, Channel_type}, Acc) ->
+        App = maps:get(app, Channel_type),
+        Mod = maps:get(mod, Channel_type),
+        CType = maps:get(cType, Channel_type),
+        Attributes = Mod:module_info(attributes),
+        [format_channel(App, CType, Channel_type, Attributes) | Acc]
+                end, [], list()).
 
-format_channel(App, Type, Channel, Attributes) ->
+format_channel(App, CType, Channel_type, Attributes) ->
     [Params] = proplists:get_value(params, Attributes, [#{}]),
-    Channel#{
-        cType => Type,
+    Channel_type#{
+        cType => CType,
         app => App,
         params => maps:merge(#{
             <<"Size">> => #{
@@ -296,25 +292,22 @@ format_channel(App, Type, Channel, Attributes) ->
         }, Params)
     }.
 
-search_channel(Check, Acc0) ->
+list() ->
     Fun =
-        fun({App, _Vsn, Mod}, Acc) ->
+        fun({App, Vsn, Mod}, Acc) ->
             case code:is_loaded(Mod) == false of
                 true ->
                     Acc;
                 false ->
-                    case [{Type, Mod} || {channel, [Type]} <- Mod:module_info(attributes)] of
+                    case [Channel || {channel_type, [Channel]} <- Mod:module_info(attributes)] of
                         [] ->
                             Acc;
-                        Mods ->
-                            lists:foldl(
-                                fun(Mod1, Acc1) ->
-                                    Check(App, Mod1, Acc1)
-                                end, Acc, Mods)
+                        [Channel|_] ->
+                            [{maps:get(priority, Channel, 255), Channel#{app => App, mod => Mod, vsn => Vsn}}] ++ Acc
                     end
             end
         end,
-    dgiot_plugin:check_module(Fun, Acc0).
+    lists:sort(dgiot_plugin:check_module(Fun, [])).
 
 control_channel(ChannelId, Action) ->
     IsEnable =
