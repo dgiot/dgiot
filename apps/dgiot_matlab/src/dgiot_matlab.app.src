@@ -1,11 +1,15 @@
-{application,dgiot_matlab,
-             [{description,"DGIOT MATLAB"},
-              {vsn,"4.3.0"},
-              {registered,[]},
-              {mod,{dgiot_matlab_app,[]}},
-              {applications,[kernel,stdlib]},
-              {env,[]},
-              {modules,[]},
-              {maintainers,[]},
-              {licenses,["Apache 2.0"]},
-              {links,[]}]}.
+{application, dgiot_matlab,
+    [{description, "DGIOT MATLAB"},
+        {vsn, "4.3.0"},
+        {registered, []},
+        {mod, {dgiot_matlab_app, []}},
+        {applications, [kernel, stdlib]},
+        {env, []},
+        {modules, []},
+        {licenses, ["Apache-2.0"]},
+        {maintainers, ["DG-IoT Team"]},
+        {links, [{"Homepage", "https://www.iotn2n.com/"},
+            {"Github", "https://github.com/dgiot/dgiot"}
+        ]}
+    ]
+}.

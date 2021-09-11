@@ -1,11 +1,14 @@
-{application,dgiot_grpc,
-             [{description,"DGIOT GRPC"},
-              {vsn,"4.3.0"},
-              {registered,[]},
-              {mod,{dgiot_grpc_app,[]}},
-              {applications,[kernel,stdlib,grpc]},
-              {env,[]},
-              {modules,[]},
-              {maintainers,[]},
-              {licenses,["Apache 2.0"]},
-              {links,[]}]}.
+{application, dgiot_grpc,
+    [{description, "DGIOT GRPC"},
+        {vsn, "4.3.0"},
+        {registered, []},
+        {mod, {dgiot_grpc_app, []}},
+        {applications, [kernel, stdlib, grpc, dgiot]},
+        {env, []},
+        {modules, []},
+        {licenses, ["Apache-2.0"]},
+        {maintainers, ["DG-IoT Team"]},
+        {links, [{"Homepage", "https://www.iotn2n.com/"},
+            {"Github", "https://github.com/dgiot/dgiot"}
+        ]}
+    ]}.

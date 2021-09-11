@@ -1,7 +1,14 @@
-{application,dgiot_task,
-             [{description,"DGIOT TASK"},
-              {vsn,"4.3.0"},
-              {modules,[]},
-              {registered,[dgiot_task_sup]},
-              {applications,[kernel,stdlib,dgiot]},
-              {mod,{dgiot_task_app,[]}}]}.
+{application, dgiot_task,
+    [{description, "DGIOT TASK"},
+        {vsn, "4.3.0"},
+        {modules, []},
+        {registered, [dgiot_task_sup]},
+        {applications, [kernel, stdlib, dgiot]},
+        {mod, {dgiot_task_app, []}},
+        {licenses, ["Apache-2.0"]},
+        {maintainers, ["DG-IoT Team"]},
+        {links, [{"Homepage", "https://www.iotn2n.com/"},
+            {"Github", "https://github.com/dgiot/dgiot"}
+        ]}
+    ]
+}.

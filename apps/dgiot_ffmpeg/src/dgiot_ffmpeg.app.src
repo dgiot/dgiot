@@ -1,7 +1,14 @@
-{application,dgiot_ffmpeg,
-             [{description,"DG-IoT FFMPEG"},
-              {vsn,"4.3.0"},
-              {modules,[]},
-              {registered,[dgiot_ffmpeg_sup]},
-              {applications,[kernel,stdlib,dgiot]},
-              {mod,{dgiot_ffmpeg_app,[]}}]}.
+{application, dgiot_ffmpeg,
+    [{description, "DG-IoT FFMPEG"},
+        {vsn, "4.3.0"},
+        {modules, []},
+        {registered, [dgiot_ffmpeg_sup]},
+        {applications, [kernel, stdlib, dgiot]},
+        {mod, {dgiot_ffmpeg_app, []}},
+        {licenses, ["Apache-2.0"]},
+        {maintainers, ["DG-IoT Team"]},
+        {links, [{"Homepage", "https://www.iotn2n.com/"},
+            {"Github", "https://github.com/dgiot/dgiot"}
+        ]}
+    ]
+}.
