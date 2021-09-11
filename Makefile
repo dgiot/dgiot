@@ -10,11 +10,7 @@ ifeq ($(OS),Windows_NT)
 	export REBAR_COLOR=none
 endif
 
-ifeq ($(OS),Windows_NT)
-		GET_DASHBOARD=$(SCRIPTS)/get-windashboard.sh
-	else
-	  	GET_DASHBOARD=$(SCRIPTS)/get-dashboard.sh
-	endif
+GET_DASHBOARD=$(SCRIPTS)/get-dashboard.sh
 
 PROFILE ?= emqx
 REL_PROFILES := emqx emqx-edge

@@ -1,9 +1,10 @@
-# [](https://github.com/dgiot/dgiot/compare/v4.3.1...v) (2021-09-09)
+# [](https://github.com/dgiot/dgiot/compare/v4.3.1...v) (2021-09-11)
 
 
 ### Bug Fixes
 
 * addtd files ([c91a199](https://github.com/dgiot/dgiot/commit/c91a1993cd06777eb9304a07068ef1000f20aa00))
+* device_card ([50914b4](https://github.com/dgiot/dgiot/commit/50914b4bbefb9fcdf5049d5c4a36cac21819786f))
 * devicelog ([e747cee](https://github.com/dgiot/dgiot/commit/e747cee225e37f1050026781fe89418b19dadc7e))
 * igore rebar.config ([5e61214](https://github.com/dgiot/dgiot/commit/5e61214789aa382f6a8be126830b14c3c834a1cc))
 * parse.conf ([488c12e](https://github.com/dgiot/dgiot/commit/488c12e793fa2b94acfa01d0585072ca3a47d275))
