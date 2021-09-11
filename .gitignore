@@ -50,6 +50,7 @@ rebar.config
 rebar.config.erl
 data/
 ci.sh
+*.ipr
 node_modules/
 */apps/dgiot_parse/etc/dgiot_parse.conf
 */apps/dgiot_jieshun/
