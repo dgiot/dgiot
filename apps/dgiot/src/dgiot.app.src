@@ -1,7 +1,15 @@
 {application, dgiot,
-    [{description, "DGIOT"},
+    [
+        {description, "DGIOT"},
         {vsn, "4.3.0"},
         {modules, []},
         {registered, [dgiot_sup]},
         {applications, [kernel, stdlib,prometheus]},
-        {mod, {dgiot_app, []}}]}.
+        {mod, {dgiot_app, []}},
+        {licenses, ["Apache-2.0"]},
+        {maintainers, ["DG-IoT Team"]},
+        {links, [{"Homepage", "https://www.iotn2n.com/"},
+            {"Github", "https://github.com/dgiot/dgiot"}
+        ]}
+    ]
+}.

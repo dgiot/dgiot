@@ -1,8 +1,15 @@
-{application,dgiot_mqtt,
-             [{description,"DGIOT MQTT"},
-              {vsn,"4.3.0"},
-              {applications,[kernel,stdlib]},
-              {modules,[]},
-              {env,[]},
-              {mod,{dgiot_mqtt_app,[]}},
-              {registered,[]}]}.
+{application, dgiot_mqtt,
+    [{description, "DGIOT MQTT"},
+        {vsn, "4.3.0"},
+        {applications, [kernel, stdlib, dgiot]},
+        {modules, []},
+        {env, []},
+        {mod, {dgiot_mqtt_app, []}},
+        {registered, []},
+        {licenses, ["Apache-2.0"]},
+        {maintainers, ["DG-IoT Team"]},
+        {links, [{"Homepage", "https://www.iotn2n.com/"},
+            {"Github", "https://github.com/dgiot/dgiot"}
+        ]}
+    ]
+}.

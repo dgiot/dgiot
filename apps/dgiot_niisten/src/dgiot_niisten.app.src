@@ -1,7 +1,14 @@
-{application,dgiot_niisten,
-             [{description,"dgiot_niisten"},
-              {vsn,"4.3.0"},
-              {modules,[]},
-              {registered,[dgiot_niisten_sup]},
-              {applications,[kernel,stdlib,dgiot]},
-              {mod,{dgiot_niisten_app,[]}}]}.
+{application, dgiot_niisten,
+    [{description, "dgiot_niisten"},
+        {vsn, "4.3.0"},
+        {modules, []},
+        {registered, [dgiot_niisten_sup]},
+        {applications, [kernel, stdlib, dgiot]},
+        {mod, {dgiot_niisten_app, []}},
+        {licenses, ["Apache-2.0"]},
+        {maintainers, ["DG-IoT Team"]},
+        {links, [{"Homepage", "https://www.iotn2n.com/"},
+            {"Github", "https://github.com/dgiot/dgiot"}
+        ]}
+    ]
+}.

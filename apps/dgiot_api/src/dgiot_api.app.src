@@ -6,6 +6,9 @@
         {applications,[kernel, stdlib, dgiot, dgiot_parse]},
         {env, []},
         {modules, []},
-        {licenses, ["Apache 2.0"]},
-        {links, []}
+        {licenses, ["Apache-2.0"]},
+        {maintainers, ["DG-IoT Team"]},
+        {links, [{"Homepage", "https://www.iotn2n.com/"},
+            {"Github", "https://github.com/dgiot/dgiot"}
+        ]}
     ]}.
