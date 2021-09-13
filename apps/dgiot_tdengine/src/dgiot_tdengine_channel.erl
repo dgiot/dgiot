@@ -505,7 +505,7 @@ get_field(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"text
     Size = integer_to_binary(min(maps:get(<<"size">>, Spec, 10), 200)),
     {Field, #{<<"type">> => <<"NCHAR(", Size/binary, ")">>}};
 get_field(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"geopoint">>} = Spec}) ->
-    Size = integer_to_binary(min(maps:get(<<"size">>, Spec, 20), 200)),
+    Size = integer_to_binary(min(maps:get(<<"size">>, Spec, 30), 200)),
     {Field, #{<<"type">> => <<"NCHAR(", Size/binary, ")">>}};
 get_field(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"enum">>, <<"specs">> := _Specs}}) ->
 %%    Size = integer_to_binary(maps:size(Specs)),

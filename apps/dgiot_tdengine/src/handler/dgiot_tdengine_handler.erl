@@ -330,7 +330,7 @@ get_chart(ProductId, Results, Names, Interval) ->
 
 get_app(ProductId, Results, DeviceId) ->
     Maps = get_prop(ProductId),
-    Props = get_props(<<"4f0931b623">>),
+    Props = get_props(ProductId),
     lists:foldl(fun(R, _Acc) ->
         Time = maps:get(<<"createdat">>, R),
         NewTime = get_time(Time, <<"111">>),

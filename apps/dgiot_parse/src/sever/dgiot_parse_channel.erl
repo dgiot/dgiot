@@ -32,8 +32,9 @@
 %% 注册通道类型
 -channel(?TYPE).
 -channel_type(#{
-    cType => ?BACKEND_CHL,
-    type => 1,
+    cType => ?TYPE,
+    type => ?BACKEND_CHL,
+    priority => 1,
     title => #{
         zh => <<"Parser Server存储通道"/utf8>>
     },

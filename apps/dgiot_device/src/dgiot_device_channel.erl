@@ -32,10 +32,9 @@
 
 %% 注册通道类型
 -channel_type(#{
-
     cType => ?TYPE,
     type => ?BACKEND_CHL,
-    priority => 1,
+    priority => 2,
     title => #{
         zh => <<"Device缓存通道"/utf8>>
     },

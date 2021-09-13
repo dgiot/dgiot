@@ -666,7 +666,7 @@ get_tddata(Channel, Acc, #{<<"objectId">> := DeviceId} = Device, #{<<"objectId">
             #{<<"properties">> := Properties} when length(Properties) > 0 ->
                 case dgiot_tdengine:get_device(Channel, ProdcutId, DeviceId, DeviceId, #{<<"keys">> => <<"last_row(*)">>, <<"limit">> => 1}) of
                     {ok, #{<<"results">> := [Data1 | _]}} ->
-%%                        lager:info("Data1 ~p",[Data1]),
+%%                        ?LOG(info,"Data1 ~p",[Data1]),
                         [dgiot_tdengine:to_unixtime(maps:get(<<"createdat">>, Data1)), Data1];
                     _ -> [0, #{}]
                 end;
