@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 // install: yarn global add  rimraf   chalk   shelljs  inquirer
 // use: node push.js or ./push.js
-const rimraf = require('rimraf')
+// const rimraf = require('rimraf')
 const logs = console.log
-const path = require('path')
+// const path = require('path')
 const chalk = require('chalk')
 const shell = require('shelljs')
 const inquirer = require('inquirer')

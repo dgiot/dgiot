@@ -102,12 +102,14 @@ You are welcome to submit any bugs, issues and feature requests to [dgiot/dgiot]
 
 ### Contact us
 You can contact the DGIOT community and developers through the following channels:
-- [Slack](https://slack-invite.dgiot.com)
-- [Twitter](https://twitter.com/dgiotTech)
-- [Facebook](https://www.facebook.com/dgiot)
-- [Reddit](https://www.reddit.com/r/dgiot/)
-- [Weibo](https://weibo.com/dgiot)
-- [Blog](https://www.dgiot.cn/blog)
+- [official](https://www.iotn2n.com)
+- [ask](https://ask.iotn2n.com/)
+- [Blog](https://tech.iotn2n.com)
+- [Twitter](https://twitter.com/)
+- [Facebook](https://www.facebook.com/)
+- [Reddit](https://www.reddit.com/)
+- [Weibo](https://weibo.com)
+
 
 ## Preview address
 [Tencent Cloud preview address](https://dgiotdashboard-8gb17b3673ff6cdd-1253666439.ap-shanghai.app.tcloudbase.com?ftom=git)

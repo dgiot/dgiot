@@ -102,12 +102,14 @@ wget -q https://gitee.com/dgiiot/dgiot/raw/master/dgiot_install.sh  && sh dgiot_
 
 ### 联系我们
 你可通过以下途径与 DGIOT 社区及开发者联系:
-- [Slack](https://slack-invite.dgiot.com)
-- [Twitter](https://twitter.com/dgiotTech)
-- [Facebook](https://www.facebook.com/dgiot)
-- [Reddit](https://www.reddit.com/r/dgiot/)
-- [Weibo](https://weibo.com/dgiot)
-- [Blog](https://www.dgiot.cn/blog)
+- [official](https://www.iotn2n.com)
+- [ask](https://ask.iotn2n.com/)
+- [Blog](https://tech.iotn2n.com)
+- [Twitter](https://twitter.com/)
+- [Facebook](https://www.facebook.com/)
+- [Reddit](https://www.reddit.com/)
+- [Weibo](https://weibo.com)
+
 
 ## 预览地址
 [腾讯云预览地址](https://dgiotdashboard-8gb17b3673ff6cdd-1253666439.ap-shanghai.app.tcloudbase.com?ftom=git)
