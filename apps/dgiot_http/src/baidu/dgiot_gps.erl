@@ -304,11 +304,11 @@ nmea0183_frame(<<"$GNRMC,", Data:60/binary, "*", _Checksum:2/binary, _/binary>>)
 
     LatDu = dgiot_utils:to_float(LatDu1),
     LatFen = dgiot_utils:to_float(LatFen1),
-    Latitude = dgiot_utils:to_float(LatDu + LatFen / 60, 5),
+    Latitude = dgiot_utils:to_float(LatDu + LatFen / 60, 9),
 
     LongDu = dgiot_utils:to_float(LongDu1),
     LongFen = dgiot_utils:to_float(LongFen1),
-    Longitude = dgiot_utils:to_float(LongDu + LongFen / 60, 5),
+    Longitude = dgiot_utils:to_float(LongDu + LongFen / 60, 9),
 
     {dgiot_utils:to_binary(Longitude), dgiot_utils:to_binary(Latitude)};
 

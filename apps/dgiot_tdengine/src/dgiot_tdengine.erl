@@ -280,7 +280,7 @@ alter_table(DB1, TableName, Context, Channel) ->
                                                 <<"url">> ->
                                                     <<"ALTER TABLE ", DB1/binary, TableName/binary, " ADD COLUMN ", LowerIdentifier/binary, " NCHAR(10);">>;
                                                 <<"geopoint">> ->
-                                                    <<"ALTER TABLE ", DB1/binary, TableName/binary, " ADD COLUMN ", LowerIdentifier/binary, " NCHAR(20);">>;
+                                                    <<"ALTER TABLE ", DB1/binary, TableName/binary, " ADD COLUMN ", LowerIdentifier/binary, " NCHAR(30);">>;
                                                 _ ->
                                                     <<"ALTER TABLE ", DB1/binary, TableName/binary, " ADD COLUMN ", LowerIdentifier/binary, " ", Type/binary, ";">>
                                             end,
