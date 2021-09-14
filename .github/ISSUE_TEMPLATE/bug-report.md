@@ -12,7 +12,7 @@ assignees: tigercl
 
 **Environment**:
 
-- EMQ X version (e.g. `emqx_ctl status`): 
+- dgiot version (e.g. `dgiot_ctl status`): 
 - Hardware configuration (e.g. `lscpu`):
 - OS (e.g. `cat /etc/os-release`):
 - Kernel (e.g. `uname -a`):
