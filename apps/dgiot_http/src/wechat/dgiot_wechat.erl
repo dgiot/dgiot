@@ -240,7 +240,8 @@ get_wechat_map(SessionToken) ->
                 lists:foldl(fun(X, Acc) ->
                     case X of
                         #{<<"objectId">> := ObjectId, <<"name">> := Name, <<"status">> := Status, <<"location">> := #{<<"latitude">> := Latitude, <<"longitude">> := Longitude}} ->
-                            Acc ++ [#{<<"id">> => ObjectId, <<"title">> => Name, <<"status">> => Status, <<"latitude">> => Latitude, <<"longitude">> => Longitude, <<"joinCluster">> => true}];
+                            [GcLongitude, GcLatitude] = dgiot_gps:wgs84togcj02(Longitude, Latitude, -0.00014, -0.0013),
+                            Acc ++ [#{<<"id">> => ObjectId, <<"title">> => Name, <<"status">> => Status, <<"latitude">> => GcLatitude, <<"longitude">> => GcLongitude, <<"joinCluster">> => true}];
                         _ ->
                             Acc
                     end

@@ -307,7 +307,7 @@ sendSubscribe(Type, Content, UserId) ->
     DeviceId = maps:get(<<"_deviceid">>, Content, <<"">>),
     {Devaddr, _Address} =
         case dgiot_parse:get_object(<<"Device">>, DeviceId) of
-            {ok, #{<<"devadr">> := Devaddr1, <<"detail">> := Detail}} ->
+            {ok, #{<<"devaddr">> := Devaddr1, <<"detail">> := Detail}} ->
                 Address1 = maps:get(<<"address">>, Detail, <<"无位置"/utf8>>),
                 {Devaddr1, Address1};
             _ ->
@@ -316,13 +316,13 @@ sendSubscribe(Type, Content, UserId) ->
     Result =
         case binary:split(Type, <<$_>>, [global, trim]) of
             [ProductId, AlertId] ->
-                Productname =
-                    case dgiot_parse:get_object(<<"Product">>, ProductId) of
-                        {ok, #{<<"name">> := Productname1}} ->
-                            Productname1;
-                        _ ->
-                            <<" ">>
-                    end,
+%%                Productname =
+%%                    case dgiot_parse:get_object(<<"Product">>, ProductId) of
+%%                        {ok, #{<<"name">> := Productname1}} ->
+%%                            Productname1;
+%%                        _ ->
+%%                            <<" ">>
+%%                    end,
                 dgiot_datetime:now_secs(),
                 case dgiot_parse:get_object(<<"Product">>, ProductId) of
                     {ok, #{<<"config">> := #{<<"parser">> := Parse}}} ->
@@ -335,16 +335,10 @@ sendSubscribe(Type, Content, UserId) ->
                                                 BinValue = dgiot_utils:to_binary(Value),
                                                 Form#{<<"thing15">> => #{<<"value">> => BinValue}};
                                             _ ->
-                                                case Key of
-                                                    <<"thing12">> ->
-                                                        Default = maps:get(<<"default">>, Value1, <<>>),
-                                                        Form#{Key => #{<<"value">> => <<Devaddr/binary, Default/binary>>}};
-                                                    _ ->
-                                                        Default = maps:get(<<"default">>, Value1, <<>>),
-                                                        Form#{Key => #{<<"value">> => Default}}
-                                                end
+                                                Default = maps:get(<<"default">>, Value1, <<>>),
+                                                Form#{Key => #{<<"value">> => Default}}
                                         end
-                                              end, #{<<"thing1">> => #{<<"value">> => Productname}, <<"date4">> => #{<<"value">> => dgiot_datetime:format("YYYY-MM-DD HH:NN:SS")}}, FormDesc);
+                                              end, #{<<"thing1">> => #{<<"value">> => Devaddr}, <<"date4">> => #{<<"value">> => dgiot_datetime:format("YYYY-MM-DD HH:NN:SS")}}, FormDesc);
                                 _Oth ->
                                     Par
                             end

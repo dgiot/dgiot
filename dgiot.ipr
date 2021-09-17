@@ -122,6 +122,7 @@
     <mapping directory="$PROJECT_DIR$/apps/dgiot_meter" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/apps/dgiot_mingcheng" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/apps/dgiot_sinmahe" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/apps/dgiot_system_urban_fire" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/apps/dgiot_xinchuangwei" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/apps/shuwa_mqtt" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/emqx-extension-examples" vcs="Git" />
