@@ -385,6 +385,7 @@ get_parity(Data) when is_list(Data) ->
     lists:foldl(
         fun(X, Sum) ->
             ((X rem 256) + Sum) rem 256
+
         end, 0, Data).
 
 %%    CRC-16/MODBUS 算法：

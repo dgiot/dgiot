@@ -1,0 +1,8 @@
+{application, dgiot_gb26875,
+    [{description, "DGIOT GB26875"},
+        {vsn, "4.3.0"},
+        {modules, []},
+        {registered, [dgiot_gb26875_sup]},
+        {applications, [kernel, stdlib, dgiot]},
+        {mod, {dgiot_gb26875_app, []}}
+    ]}.

@@ -53,7 +53,7 @@
         }
     },
     <<"BRIDGEURL">> => #{
-        order => 1,
+        order => 2,
         type => string,
         required => true,
         default => <<"http://127.0.0.1:5080"/utf8>>,
@@ -62,6 +62,21 @@
         },
         description => #{
             zh => <<"桥接地址"/utf8>>
+        }
+    },
+    <<"OFFSET">> => #{
+        order => 3,
+        type => string,
+        required => true,
+        default => <<"WGS:0,0.0012;GCJ-02:0,0.0012;BD-09:0,-0.0012"/utf8>>,
+        title => #{
+            zh => <<"经纬度纠偏系数"/utf8>>
+        },
+        description => #{
+            zh => <<"WGS:国际上通用的地心坐标系。目前的设备包含GPS芯片获取的经纬度一般为WGS84地理坐标系。谷歌卫星地图使用的就是WGS-84标准。
+                  GCJ-02：国家测绘局的一套标准GCJ-02(国测局)，在WGS的基础上进行加密偏移。谷歌街道地图、腾讯、高德地图使用该标准。
+                   BD-09：百度在GCJ-02的基础上又进行了加密处理，形成了百度独有的BD-09坐标系。
+                   格式：(WGS:Lonoffset,Latoffset;GCJ-02:Lonoffset,Latoffset;BD-09:Lonoffset,Latoffset;...)"/utf8>>
         }
     },
     <<"ico">> => #{
@@ -103,7 +118,7 @@ handle_init(#state{env = #{productids := ProductIds}} = State) ->
 
 %% 通道消息处理,注意：进程池调用
 handle_event(EventId, Event, _State) ->
-    ?LOG(info,"channel ~p, ~p", [EventId, Event]),
+    ?LOG(info, "channel ~p, ~p", [EventId, Event]),
     ok.
 
 handle_message({deliver, _Topic, Msg}, #state{id = ChannelId} = State) ->
@@ -117,17 +132,17 @@ handle_message({deliver, _Topic, Msg}, #state{id = ChannelId} = State) ->
             Thingdata = maps:get(<<"thingdata">>, Data, #{}),
             dgiot_topo:send_topo(ProductId, DeviceId, Thingdata);
         Other ->
-            ?LOG(info,"Other ~p", [Other]),
+            ?LOG(info, "Other ~p", [Other]),
             pass
     end,
     {ok, State};
 
 handle_message(Message, State) ->
-    ?LOG(info,"channel ~p", [Message]),
+    ?LOG(info, "channel ~p", [Message]),
     {ok, State}.
 
 stop(ChannelType, ChannelId, _State) ->
-    ?LOG(info,"channel stop ~p,~p", [ChannelType, ChannelId]),
+    ?LOG(info, "channel stop ~p,~p", [ChannelType, ChannelId]),
     ok.
 
 get_prodcutids(Products) ->

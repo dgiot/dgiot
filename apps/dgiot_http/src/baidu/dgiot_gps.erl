@@ -19,6 +19,18 @@
 %**
 %* Created by Wandergis on 2015/7/8.
 %* 提供了百度坐标（BD-09）、国测局坐标（火星坐标，GCJ-02）、和 WGS-84 坐标系之间的转换
+%*  WGS:国际上通用的地心坐标系。目前的设备包含GPS芯片获取的经纬度一般为WGS84地理坐标系。
+%*
+%*  谷歌卫星地图使用的就是WGS-84标准。
+%*
+%*  GCJ-02：国家测绘局的一套标准GCJ-02(国测局)，在WGS的基础上进行加密偏移。
+%*
+%*  谷歌街道地图、腾讯、高德地图使用该标准。
+%*
+%*  BD-09：百度在GCJ-02的基础上又进行了加密处理，形成了百度独有的BD-09坐标系。
+%*  ————————————————
+%*  版权声明：本文为CSDN博主「ZLZQ_Yuan」的原创文章，遵循CC 4.0 BY-SA版权协议，转载请附上原文出处链接及本声明。
+%*  原文链接：https://blog.csdn.net/ZLZQ_Yuan/article/details/106410998
 %*/
 
 -module(dgiot_gps).
@@ -28,11 +40,13 @@
     bd09togcj02/2,
     gcj02tobd09/2,
     wgs84togcj02/2,
+    wgs84togcj02/4,
     gcj02towgs84/2,
     get_baidu_addr/4,
     get_baidu_addr/2,
     out_of_china/2,
     get_baidu_gps/2,
+    get_baidu_gps/4,
     get_deng_gps/2,
     generate_random_gps/3,
     nmea0183_frame/1
@@ -143,6 +157,25 @@ wgs84togcj02(Lng, Lat) ->
             [Mglng, Mglat]
     end.
 
+wgs84togcj02(Lng, Lat, Lonoffset, Latoffset) ->
+    case out_of_china(Lng, Lat) of
+        true -> [Lng, Lat];
+        false ->
+            Dlat = transformlat(Lng - 105.0, Lat - 35.0),
+            Dlng = transformlng(Lng - 105.0, Lat - 35.0),
+            Radlat = Lat / 180.0 * ?PI,
+            Magic = math:sin(Radlat),
+            Magic1 = 1 - ?EE * Magic * Magic,
+            Sqrtmagic = math:sqrt(Magic1),
+            Dlat1 = (Dlat * 180.0) / ((?A * (1 - ?EE)) / (Magic * Sqrtmagic) * ?PI),
+            Dlng1 = (Dlng * 180.0) / (?A / Sqrtmagic * math:cos(Radlat) * ?PI),
+            Mglat = Lat + Dlat1,
+            Mglng = Lng + Dlng1,
+            NewMglat = dgiot_utils:to_float(Mglat, 6),
+            NewMglng = dgiot_utils:to_float(Mglng, 6),
+            [NewMglng + Lonoffset, NewMglat + Latoffset]
+    end.
+
 %% **
 %* GCJ-02 转换为 WGS-84
 %* @param lng
@@ -251,6 +284,11 @@ get_baidu_gps(LonDeg, LatDeg) ->
     [Bd_lng, Bd_lat] = gcj02tobd09(Mglng, Mglat),
     [dgiot_utils:to_float(Bd_lng, 6), dgiot_utils:to_float(Bd_lat - 0.0002, 6)].
 
+get_baidu_gps(LonDeg, LatDeg, Lonoffset, Latoffset) ->
+    [Mglng, Mglat] = wgs84togcj02(LonDeg, LatDeg),
+    [Bd_lng, Bd_lat] = gcj02tobd09(Mglng, Mglat),
+    [dgiot_utils:to_float(Bd_lng + Lonoffset, 6), dgiot_utils:to_float(Bd_lat + Latoffset, 6)].
+
 %%http://lbsyun.baidu.com/index.php?title=webapi/guide/webservice-geocoding-abroad
 %<<"http://api.map.baidu.com/reverse_geocoding/v3/?ak=fnc5Z92jC7CwfBGz8Dk66E9sXEIYZ6TG&output=json&coordtype=wgs84ll&location=30.26626,119.60223">>.
 get_baidu_addr(LonDeg, LatDeg) ->
@@ -300,15 +338,17 @@ generate_random_gps(Base_log, Base_lat, Radius) ->
 %% <<"$GNRMC,", Data:60/binary, "*", _Checksum:2/binary, _/binary>> = <<"$GNRMC,034918.00,A,3015.97544,N,11936.13370,E,000.0,000.0,180821,OK*06">>
 nmea0183_frame(<<"$GNRMC,", Data:60/binary, "*", _Checksum:2/binary, _/binary>>) ->
 %%    <<_Utc:9/binary, ",", _PositioningState:1/binary, ",", Latitude:10/binary, ",", _Latitudedirection:1/binary, ",", Longitude:11/binary, ",", _Longitudedirection:1/binary, ",", Speed:5/binary, ",", Course:5/binary, ",", Date:6/binary, ",", Tianxian:2/binary>> = Data,
-    <<_Utc:9/binary, ",", _PositioningState:1/binary, ",", LatDu1:2/binary, LatFen1:8/binary, ",", _Latitudedirection:1/binary, ",", LongDu1:3/binary, LongFen1:8/binary, ",", _Longitudedirection:1/binary, _/binary>> = Data,
+    <<_Utc:9/binary, ",", _PositioningState:1/binary, ",", Lat:10/binary, ",", _Latitudedirection:1/binary, ",", Lng:11/binary, ",", _Longitudedirection:1/binary, _/binary>> = Data,
 
-    LatDu = dgiot_utils:to_float(LatDu1),
-    LatFen = dgiot_utils:to_float(LatFen1),
-    Latitude = dgiot_utils:to_float(LatDu + LatFen / 60, 9),
+%%    LatDu = dgiot_utils:to_float(LatDu1),
+%%    LatFen = dgiot_utils:to_float(LatFen1),
+%%    Latitude = dgiot_utils:to_float(LatDu + LatFen / 60, 9),
+%%
+%%    LongDu = dgiot_utils:to_float(LongDu1),
+%%    LongFen = dgiot_utils:to_float(LongFen1),
+%%    Longitude = dgiot_utils:to_float(LongDu + LongFen / 60, 9),
 
-    LongDu = dgiot_utils:to_float(LongDu1),
-    LongFen = dgiot_utils:to_float(LongFen1),
-    Longitude = dgiot_utils:to_float(LongDu + LongFen / 60, 9),
+    [Longitude, Latitude] = get_deng_gps(dgiot_utils:to_float(Lng), dgiot_utils:to_float(Lat)),
 
     {dgiot_utils:to_binary(Longitude), dgiot_utils:to_binary(Latitude)};
 
