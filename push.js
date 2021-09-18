@@ -75,7 +75,7 @@ function funShell() {
     logs(chalk.red('changelog error'))
   }
   shell.exec('git add -A .')
-  shell.exec(`git commit -m ${commitType}:  &{commitMsg}`)
+  shell.exec(`git commit -m ${commitType}: ${commitMsg}`)
   shell.exec('git push')
 }
 
