@@ -57,3 +57,5 @@ apps/dgiot_jieshun/
 apps/dgiot_mingcheng/
 apps/dgiot_xinchuangwei/
 apps/dgiot_http/etc/dgiot_http.conf
+node_modules/
+package-lock.json
