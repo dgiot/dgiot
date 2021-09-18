@@ -8,6 +8,15 @@
 
 [English](./README.md) | [简体中文](./README-CN.md) | [日本語](./README-JP.md) | [русский](./README-RU.md)
 
+## 快速体验
+|        |                                                                                       |
+| -------------- | ----------------------------------------------------------------------------------------- |
+| 账号         | dgiot_admin                            |
+| 密码          | dgiot_admin                             |
+|小程序 | ![dgiot小程序](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_release/dgiot_wechat.jpg)                             |
+|管理后台|![dgiot_dashboard.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_release/dgiot_dashboard.png)|
+
+
 *DGIOT*  是国内首款轻量级开源工业物联网持续集成平台
 
 DG-IoT团队2016年之前，在互联网和移动互联网爬坑多年，2016年开始进入物联网爬坑，希望通过这个开源平台把多年爬坑经验共享出来，让多学科交叉的工业互联网项目变得更简单。
@@ -109,14 +118,6 @@ wget -q https://gitee.com/dgiiot/dgiot/raw/master/dgiot_install.sh  && sh dgiot_
 - [Facebook](https://www.facebook.com/)
 - [Reddit](https://www.reddit.com/)
 - [Weibo](https://weibo.com)
-
-
-## 预览地址
-[腾讯云预览地址](https://dgiotdashboard-8gb17b3673ff6cdd-1253666439.ap-shanghai.app.tcloudbase.com?ftom=git)
-
-## 扫码预览
-![dgiot_dashboard.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/wechat/dgiot_dashboard.png)
-
 
 ## 开源许可
 Apache License 2.0, 详见 [LICENSE](./LICENSE)。
