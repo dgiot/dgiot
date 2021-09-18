@@ -20,6 +20,7 @@ Each commit message consists of a **header**, a **body** and a **footer**. The h
 ```
 
 
+
 The **header** with **type** is mandatory. The **scope** of the header is optional. This repository has no predefined scopes. A custom scope can be used for clarity if desired.
 
 Any line of the commit message cannot be longer 100 characters! This allows the message to be easier to read on GitHub as well as in various git tools.
