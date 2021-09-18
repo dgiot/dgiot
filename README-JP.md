@@ -7,38 +7,38 @@
 
 [English](./README.md) | [简体中文](./README-CN.md) | [日本語](./README-JP.md) | [русский](./README-RU.md)
 
-*DGIOT*  is the first lightweight open source industrial IoT continuous integration platform in China
+*DGIOT*  は中国で最初の軽量オープンソース産業用IoT継続的インテグレーションプラットフォームです 
 
-Before 2016, the Shuwa team had been crawling on the Internet and the mobile Internet for many years. In 2016, it began to enter the Internet of Things crawling. It hopes to share many years of crawling experience through this open source platform and make multidisciplinary industrial Internet projects easier.
-   + Let rich engineers to complete industrial Internet projects with simpler requirements through window interaction
-   + Let the majority of junior front-end engineers to undertake industrial Internet projects with more complex requirements through the serverless method
-   + Let Python, Java, Go, C junior background engineers undertake complex industrial Internet projects through web programming development channels
+2016年以前、Shuwaチームはインターネットとモバイルインターネットを長年にわたってクロールしていました。 2016年には、モノのインターネットのクロールに参入し始めました。 このオープンソースプラットフォームを通じて長年のクロール経験を共有し、学際的な産業用インターネットプロジェクトを容易にすることを望んでいます。
+   + 金持ちのエンジニアがウィンドウの相互作用を通じて、より簡単な要件で産業用インターネットプロジェクトを完了できるようにします
+   + ジュニアフロントエンドエンジニアの大多数に、サーバーレス方式を介してより複雑な要件を持つ産業用インターネットプロジェクトを実施させます
+   + Python、Java、Go、Cのジュニアバックグラウンドエンジニアが、Webプログラミング開発チャネルを通じて複雑な産業用インターネットプロジェクトに着手できるようにします
 
 # Vision
-  The DGIOT team hopes to achieve the following visions through the Shuwa Industrial Internet continuous integration platform
-  + Through engineers, front-end engineers, and junior back-office engineers to actually complete small and medium-sized industrial Internet projects in no more than 1 month
-  + Ensure high-quality delivery through multiple methods such as open source code, free software, document sharing, technical certification, product certification, operation and maintenance hosting, etc.
-  + Experts in the technical field continue to integrate the industry's excellent technical framework, and experts in the business field continue to optimize business models and processes, and build a multidisciplinary open platform
-  + The IoT platform can finally be simple and easy to use, returning to the essence of tooling
+  DGIOTチームは、Shuwa IndustrialInternet継続的インテグレーションプラットフォームを通じて次のビジョンを達成したいと考えています。
+  +エンジニア、フロントエンドエンジニア、およびジュニアバックオフィスエンジニアを通じて、実際に中小規模の産業用インターネットプロジェクトを1か月以内に完了します。
+   +オープンソースコード、無料ソフトウェア、ドキュメント共有、技術認証、製品認証、運用および保守ホスティングなどの複数の方法を通じて、高品質の配信を保証します。
+   +技術分野の専門家は、業界の優れた技術フレームワークを統合し続け、ビジネス分野の専門家は、ビジネスモデルとプロセスを最適化し、学際的なオープンプラットフォームを構築し続けます。
+   + IoTプラットフォームはついにシンプルで使いやすくなり、ツールの本質に戻ります
 
 # Building
 
- Bulid *DGIOT* Need Erlang/OTP R21+, Windows download [msys64](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/msys64/msys64.zip),After downloading, unzip it to the root directory of Disk D, and operate strictly in accordance with the following figure：
+ Bulid *DGIOT* Need Erlang/OTP R21+, Windows download [msys64](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/msys64/msys64.zip),ダウンロード後、ディスクDのルートディレクトリに解凍し、次の図に従って厳密に操作してください。
 ![效果图-1.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/msys64/%E6%95%88%E6%9E%9C%E5%9B%BE-1.png)
 
- +  Download source code abroad
+ +  海外でソースコードをダウンロードする
   ```bash
      git clone https://github.com/dgiot/dgiot_dashboard.git
      git clone https://github.com/dgiot/dgiot.git
    ```
 
- +  China download source code
+ +  中国のダウンロードソースコード
    ```bash
      git clone https://gitee.com/dgiiot/dgiot_dashboard.git
      git clone https://gitee.com/dgiiot/dgiot.git
    ```
 
- +  China Linux/Unix/Mac/windows Build
+ +  中国Linux / Unix / Mac / windowsビルド
   ```bash
     cd dgiot_dashboard
     git pull
