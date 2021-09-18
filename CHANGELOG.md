@@ -4,6 +4,7 @@
 ### Bug Fixes
 
 * shouyinchengchannel cType ([442bee6](https://github.com/dgiot/dgiot/commit/442bee6c8a104ea9e5c588de549899436a0c99bd))
+* test ([cf09d38](https://github.com/dgiot/dgiot/commit/cf09d384cbae75e22a7332145bf6173c9de6d397))
 
 
 
