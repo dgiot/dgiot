@@ -1,4 +1,13 @@
-# [](https://github.com/dgiot/dgiot/compare/v4.3.1...v) (2021-09-11)
+# [](https://github.com/dgiot/dgiot/compare/v4.3.2...v) (2021-09-18)
+
+
+### Bug Fixes
+
+* shouyinchengchannel cType ([442bee6](https://github.com/dgiot/dgiot/commit/442bee6c8a104ea9e5c588de549899436a0c99bd))
+
+
+
+## [4.3.2](https://github.com/dgiot/dgiot/compare/v4.3.1...v4.3.2) (2021-09-13)
 
 
 ### Bug Fixes
