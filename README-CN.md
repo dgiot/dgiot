@@ -9,12 +9,11 @@
 [English](./README.md) | [简体中文](./README-CN.md) | [日本語](./README-JP.md) | [русский](./README-RU.md)
 
 ## 快速体验
-|        |                                                                                       |
-| -------------- | ----------------------------------------------------------------------------------------- |
-| 账号         | dgiot_admin                            |
-| 密码          | dgiot_admin                             |
-|小程序 | ![dgiot小程序](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_release/dgiot_wechat.jpg)                             |
-|管理后台|![dgiot_dashboard.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_release/dgiot_dashboard.png)|
+|              |                      |    |    |
+| -------------- | ------------------ |-----|---|
+| 账号     | dgiot_admin                            |密码 |dgiot_admin|
+| 小程序  | ![dgiot小程序](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_release/dgiot_wechat.jpg)|管理后台 | ![dgiot_dashboard.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_release/dgiot_dashboard.png)|
+
 
 
 *DGIOT*  是国内首款轻量级开源工业物联网持续集成平台
