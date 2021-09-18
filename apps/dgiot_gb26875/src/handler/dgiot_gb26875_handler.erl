@@ -77,6 +77,22 @@ handle(OperationID, Args, Context, Req) ->
 %%%===================================================================
 
 
+%% System 概要: 获取设备信息 描述:解码建筑消防设施部件状态
+%% OperationId:get_decoder
+%% 请求:POST /iotapi/get_decoder
+do_request(get_decoder, #{<<"buff">> := Buff}, _Context, _Req) ->
+    dgiot_gb26875_decoder:parse_frame(dgiot_utils:hex_to_binary(Buff), #{});
+
+
+%% System 概要: 获取设备信息 描述:编码建筑消防设施部件状态
+%% OperationId:get_encoder
+%% 请求:POST /iotapi/get_encoder
+do_request(post_encoder, Body, _Context, _Req) ->
+    io:format("Body ~p~n", [Body]),
+    R = dgiot_gb26875_decoder:to_frame(Body),
+    {ok, R};
+
+
 %% PumpTemplet 概要: 新增报告模板 描述:新增报告模板
 %% OperationId:post_pump_templet
 %% 请求:get /iotapi/pump/templet

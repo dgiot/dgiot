@@ -84,7 +84,8 @@ get_sns(Jscode) ->
                         #{<<"openid">> := OPENID, <<"session_key">> := _SESSIONKEY} ->
                             ?LOG(info, "~p ~p", [OPENID, _SESSIONKEY]),
                             case dgiot_parse:query_object(<<"_User">>, #{<<"where">> => #{<<"tag.wechat.openid">> => OPENID}}) of
-                                {ok, #{<<"results">> := [#{<<"objectId">> := UserId, <<"username">> := Name} | _]}} ->
+                                {ok, #{<<"results">> := Results}} when length(Results) > 0 ->
+                                    [#{<<"objectId">> := UserId, <<"username">> := Name} | _] = Results,
                                     {ok, UserInfo} = dgiot_parse_handler:create_session(UserId, dgiot_auth:ttl(), Name),
                                     {ok, UserInfo#{<<"openid">> => OPENID, <<"status">> => <<"bind">>}};
                                 _ ->

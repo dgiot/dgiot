@@ -33,7 +33,7 @@
 %% 注册通道类型
 -channel_type(#{
     cType => ?TYPE,
-    type => ?BACKEND_CHL,
+    type => ?BRIDGE_CHL,
     title => #{
         zh => <<"TD资源通道"/utf8>>
     },

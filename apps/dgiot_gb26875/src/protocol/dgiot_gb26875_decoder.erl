@@ -53,7 +53,7 @@ parse_frame(<<"@@", Header:22/binary, Length:16/little-integer, Tail/binary>> = 
                                 <<"target">> => dgiot_utils:binary_to_hex(reverse(Destination))
                             },
                             <<"action">> => Action,
-                            <<"appdata">> => Appdata
+                            <<"appdata">> => dgiot_utils:binary_to_hex(Appdata)
                         }, decoder_appdata(dgiot_utils:to_int(dgiot_utils:binary_to_hex(Type)), dgiot_utils:to_int(dgiot_utils:binary_to_hex(Len)), Bodys)), Rest};
                     false ->
                         {Acc, <<>>}
@@ -128,7 +128,7 @@ decoder_appdata(?TYPE_UP_RUNNING_STATUS, {<<Type:8, Addr:8, Type2:8, Addr2:4/bin
         <<"addr">> => dgiot_utils:binary_to_hex(reverse(Addr2))
     },
         <<"flag">> => dgiot_utils:binary_to_hex(reverse(Flag)),
-        <<"description">> => Description
+        <<"description">> => dgiot_utils:binary_to_hex(Description)
     }, Timestamp);
 
 %%decoder_appdata(?TYPE_UP_ANALOG_QUANTITY, Len, Body) ->
@@ -288,7 +288,8 @@ encoder_infodata(#{<<"runningstatus">> := Bodys}) ->
             Time = set_time(Body),
             ReverseAddr2 = reverse(dgiot_utils:hex_to_binary(Addr2)),
             ReverseFlag = reverse(dgiot_utils:hex_to_binary(Flag)),
-            {<<Acc/binary, Type:8, Addr:8, Type2:8, ReverseAddr2/binary, ReverseFlag/binary, Description/binary, Time/binary>>, Time}
+            HexDescription = dgiot_utils:hex_to_binary(Description),
+            {<<Acc/binary, Type:8, Addr:8, Type2:8, ReverseAddr2/binary, ReverseFlag/binary, HexDescription/binary, Time/binary>>, Time}
                     end, {<<>>, <<>>}, Bodys),
     {<<"runningstatus">>, Infodata, Time1};
 
