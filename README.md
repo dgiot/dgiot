@@ -48,7 +48,6 @@ Before 2016, the Shuwa team had been crawling on the Internet and the mobile Int
     git pull
     rm ./apps/dgiot_api/priv/www -rf
     cp ../dgiot_dashboard/dist/ ./apps/dgiot_api/priv/www -rf
-    cp ../dgiot_dashboard/swagger ./apps/dgiot_api/priv/www/ -rf
     make run
  ```
 + Make Debug
