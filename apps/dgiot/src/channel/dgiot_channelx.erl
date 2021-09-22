@@ -75,8 +75,7 @@ spec() ->
 
 
 spec(SerName) ->
-    dgiot_pool_sup:spec(SerName).
-%%    {dgiot_channelx_mgr, {dgiot_channelx_mgr, start_link, [SerName]}, permanent, 5000, supervisor, [dgiot_channelx_mgr]}.
+    {dgiot_channelx_mgr, {dgiot_channelx_mgr, start_link, [SerName]}, permanent, 5000, supervisor, [dgiot_channelx_mgr]}.
 
 status(Pid) when is_pid(Pid) ->
     gen_statem:call(Pid, status);

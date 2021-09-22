@@ -78,6 +78,7 @@ handle(OperationID, Args, Context, Req) ->
 %%%===================================================================
 %%% 内部函数 Version:API版本
 %%%===================================================================
+
 do_request(post_control_channel, #{<<"id">> := ChannelId, <<"action">> := Action}, _Context, _Req)
     when Action == <<"enable">>; Action == <<"disable">>; Action == <<"update">> ->
     dgiot_bridge:control_channel(ChannelId, Action);

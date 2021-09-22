@@ -120,7 +120,6 @@ init([ChannelType, ChannelId, Mod]) ->
     case dgiot_data:lookup({Name, channel}) of
         {ok, {_, ChannelArgs}} ->
             Size = maps:get(<<"Size">>, ChannelArgs, 5),
-
             MaxOverFlow = maps:get(<<"MaxOverFlow">>, ChannelArgs, 10),
             PoolArgs = [
                 {name, {local, Name}},
