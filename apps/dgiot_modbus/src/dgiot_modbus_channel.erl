@@ -115,7 +115,15 @@ init(?TYPE, ChannelId, #{
     <<"product">> := Products,
     <<"dtutype">> := Dtutype
 } = _Args) ->
-    [{ProdcutId, App} | _] = get_app(Products),
+    {ProdcutId, App} =
+        case get_app(Products) of
+            [{ProdcutId1, App1} | _] ->
+                {ProdcutId1, App1};
+            [] ->
+                {<<>>, <<>>};
+            _ ->
+                {<<>>, <<>>}
+        end,
     {Header, Len} = get_header(Regular),
     State = #state{
         id = ChannelId,

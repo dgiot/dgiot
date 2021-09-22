@@ -120,14 +120,14 @@ get_deviceid(ProdcutId, DevAddr) ->
 
 create_device(DeviceId, ProductId, DTUMAC, DTUIP, Dtutype) ->
     case dgiot_parse:get_object(<<"Product">>, ProductId) of
-        {ok, #{<<"ACL">> := Acl, <<"devType">> := DevType}} ->
+        {ok, #{<<"ACL">> := Acl, <<"devType">> := DevType,<<"name">> := ProductName}} ->
             case dgiot_parse:get_object(<<"Device">>, DeviceId) of
                 {ok, #{<<"devaddr">> := _GWAddr}} ->
                     dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"ip">> => DTUIP, <<"status">> => <<"ONLINE">>});
                 _ ->
                     dgiot_device:create_device(#{
                         <<"devaddr">> => DTUMAC,
-                        <<"name">> => <<Dtutype/binary, DTUMAC/binary>>,
+                        <<"name">> => <<ProductName/binary, DTUMAC/binary>>,
                         <<"ip">> => DTUIP,
                         <<"isEnable">> => true,
                         <<"product">> => ProductId,

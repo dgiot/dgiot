@@ -55,7 +55,7 @@
             "description": ""
           }
         },
-        "summary": "解码",
+        "summary": "编码",
         "tags": [
           "gb26875"
         ]

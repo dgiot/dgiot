@@ -90,7 +90,7 @@ do_request(get_decoder, #{<<"buff">> := Buff}, _Context, _Req) ->
 do_request(post_encoder, Body, _Context, _Req) ->
     io:format("Body ~p~n", [Body]),
     R = dgiot_gb26875_decoder:to_frame(Body),
-    {ok, R};
+    {ok, #{<<"buff">> => dgiot_utils:binary_to_hex(R)}};
 
 
 %% PumpTemplet 概要: 新增报告模板 描述:新增报告模板
