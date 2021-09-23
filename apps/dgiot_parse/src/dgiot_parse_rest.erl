@@ -67,6 +67,31 @@ request(Method, Header, Path0, Body, Options) ->
                         end,
                     do_request(Method, NewPath, NewHeads, Query, Options);
                 _ when Method == 'POST'; Method == 'PUT' ->
+                    case to_binary(Path) of
+                        <<"/classes/Product">> when Method == 'POST' ->
+                            case Body of
+                                #{<<"objectId">> := ProductId, <<"channel">> := Channel} ->
+                                    TdchannelId = maps:get(<<"tdchannel">>, Channel, <<"">>),
+                                    TaskchannelId = maps:get(<<"taskchannel">>, Channel, <<"">>),
+                                    Otherchannel = maps:get(<<"otherchannel">>, Channel, []),
+                                    channel_add_prduct_relation(Otherchannel ++ [TdchannelId] ++ [TaskchannelId], ProductId);
+                                _ ->
+                                    pass
+                            end;
+                        <<"/classes/Product/", ProductId/binary>> when Method == 'PUT' ->
+                            case Body of
+                                #{<<"channel">> := Channel} ->
+                                    channel_delete_prduct_relation(ProductId),
+                                    TdchannelId = maps:get(<<"tdchannel">>, Channel, <<"">>),
+                                    TaskchannelId = maps:get(<<"taskchannel">>, Channel, <<"">>),
+                                    Otherchannel = maps:get(<<"otherchannel">>, Channel, []),
+                                    channel_add_prduct_relation(Otherchannel ++ [TdchannelId] ++ [TaskchannelId], ProductId);
+                                _ ->
+                                    pass
+                            end;
+                        _ ->
+                            pass
+                    end,
                     do_request(Method, to_binary(Path), NewHeads, NewBody1, Options)
             end
         end,
@@ -448,3 +473,44 @@ log(Method, {Url, Header}) ->
 log(Method, {Url, Header, _, Body}) ->
     IsLog = application:get_env(dgiot_parse, log, false),
     IsLog andalso ?LOG(info, "~s ~s Header:~p  Body:~p", [method(Method), Url, Header, Body]).
+
+
+
+channel_add_prduct_relation(ChannelIds, ProductId) ->
+    Map =
+        #{<<"product">> =>
+        #{
+            <<"__op">> => <<"AddRelation">>,
+            <<"objects">> => [
+                #{
+                    <<"__type">> => <<"Pointer">>,
+                    <<"className">> => <<"Product">>,
+                    <<"objectId">> => ProductId
+                }
+            ]
+        }
+        },
+    lists:map(fun(ChannelId) when size(ChannelId) > 0 ->
+        dgiot_parse:update_object(<<"Channel">>, ChannelId, Map)
+              end, ChannelIds).
+
+channel_delete_prduct_relation(ProductId) ->
+    Map =
+        #{<<"product">> => #{
+            <<"__op">> => <<"RemoveRelation">>,
+            <<"objects">> => [
+                #{
+                    <<"__type">> => <<"Pointer">>,
+                    <<"className">> => <<"Product">>,
+                    <<"objectId">> => ProductId
+                }
+            ]}
+        },
+    case dgiot_parse:query_object(<<"Channel">>, #{<<"where">> => #{<<"product">> => #{<<"__type">> => <<"Pointer">>, <<"className">> => <<"Product">>, <<"objectId">> => ProductId}}, <<"limit">> => 20}) of
+        {ok, #{<<"results">> := Results}} when length(Results) > 0 ->
+            lists:foldl(fun(#{<<"objectId">> := ChannelId}, _Acc) ->
+                dgiot_parse:update_object(<<"Channel">>, ChannelId, Map)
+                        end, [], Results);
+        _ ->
+            []
+    end.

@@ -38,22 +38,22 @@
 %% https://api.weixin.qq.com/sns/jscode2session?appid=APPID&secret=SECRET&js_code=JSCODE&grant_type=authorization_code
 %% wechat绑定
 post_sns(UserName, Password, OpenId) ->
-    case dgiot_parse:query_object(<<"_User">>, #{<<"where">> => #{<<"tag.wechat.openid">> => OpenId}}) of
-        {ok, #{<<"results">> := [#{<<"objectId">> := _UserId, <<"username">> := Name} | _]}} ->
+%%    case dgiot_parse:query_object(<<"_User">>, #{<<"where">> => #{<<"tag.wechat.openid">> => OpenId}}) of
+%%        {ok, #{<<"results">> := [#{<<"objectId">> := _UserId, <<"username">> := Name} | _]}} ->
 %%            {ok, UserInfo} = dgiot_parse_handler:create_session(UserId, dgiot_auth:ttl(), Name),
-            {error, <<OpenId/binary, " is bind ", Name/binary>>};
-        _ ->
-            case dgiot_parse:login(UserName, Password) of
+%%            {error, <<OpenId/binary, " is bind ", Name/binary>>};
+%%        _ ->
+    case dgiot_parse:login(UserName, Password) of
 %%                {ok, #{<<"objectId">> := _UserId, <<"tag">> := #{<<"wechat">> := #{<<"openid">> := OPENID}}}} when size(OPENID) > 0 ->
 %%                    {error, <<UserName/binary, "is bind">>};
-                {ok, #{<<"objectId">> := UserId, <<"tag">> := Tag, <<"username">> := Name}} ->
-                    dgiot_parse:update_object(<<"_User">>, UserId, #{<<"tag">> => Tag#{<<"wechat">> => #{<<"openid">> => OpenId}}}),
-                    {ok, UserInfo} = dgiot_parse_handler:create_session(UserId, dgiot_auth:ttl(), Name),
-                    {ok, UserInfo};
-                {error, Msg} ->
-                    {error, Msg}
-            end
+        {ok, #{<<"objectId">> := UserId, <<"tag">> := Tag, <<"username">> := Name}} ->
+            dgiot_parse:update_object(<<"_User">>, UserId, #{<<"tag">> => Tag#{<<"wechat">> => #{<<"openid">> => OpenId}}}),
+            {ok, UserInfo} = dgiot_parse_handler:create_session(UserId, dgiot_auth:ttl(), Name),
+            {ok, UserInfo};
+        {error, Msg} ->
+            {error, Msg}
     end.
+%%    end.
 
 
 %% wechat解绑
