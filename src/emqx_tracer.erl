@@ -72,10 +72,14 @@ trace(publish, #message{topic = <<"logger_trace", _/binary>>}) ->
     ignore;
 trace(publish, #message{from = From, topic = Topic, payload = Payload})
     when is_binary(From); is_atom(From) ->
-    ?LOG(info, "From ~p", From),
-    emqx_logger:info(#{topic => Topic,
-        mfa => {?MODULE, ?FUNCTION_NAME, ?FUNCTION_ARITY}},
-        "PUBLISH to ~s: ~0p ~p", [Topic, Payload, From]).
+    case check_trace(From, Topic) of
+        true ->
+            emqx_logger:info(#{topic => Topic,
+                mfa => {?MODULE, ?FUNCTION_NAME, ?FUNCTION_ARITY}},
+                "PUBLISH to ~s: ~0p ~p", [Topic, Payload, From]);
+        _ ->
+            ignore
+    end.
 
 %% @doc Start to trace clientid or topic.
 -spec(start_trace(trace_who(), logger:level() | all, string()) -> ok | {error, term()}).
@@ -111,7 +115,6 @@ lookup_traces() ->
     lists:foldl(fun filter_traces/2, [], emqx_logger:get_log_handlers(started)).
 
 install_trace_handler(Who, Level, LogFile) ->
-    ?LOG(info, "Who1 ~p", [Who]),
     case logger:add_handler(handler_id(Who), logger_disk_log_h,
         #{level => Level,
             formatter => ?FORMAT,
@@ -128,7 +131,6 @@ install_trace_handler(Who, Level, LogFile) ->
     end.
 
 uninstall_trance_handler(Who) ->
-    ?LOG(info, "Who2 ~p", [Who]),
     case logger:remove_handler(handler_id(Who)) of
         ok ->
             ?LOG(info, "Stop trace for ~p", [Who]);
@@ -172,3 +174,20 @@ handler_name(Bin) ->
 
 hashstr(Bin) ->
     binary_to_list(emqx_misc:bin2hexstr_A_F(Bin)).
+
+
+check_trace(From, Topic) ->
+    Client_trace_id = handler_id({clientid, From}),
+    Topic_trace_id = handler_id({topic, Topic}),
+    Handler_ids = logger:get_handler_ids(),
+    case lists:member(Client_trace_id, Handler_ids) of
+        true ->
+            true;
+        false ->
+            case lists:member(Topic_trace_id, Handler_ids) of
+                true ->
+                    true;
+                false ->
+                    false
+            end
+    end.
