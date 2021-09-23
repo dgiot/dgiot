@@ -68,7 +68,7 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, state = #state{id = ChannelId, de
                 end,
             Topic = <<"profile/", ProductId/binary, "/", Devaddr/binary>>,
             dgiot_mqtt:subscribe(Topic),
-            {noreply, TCPState#tcp{buff = <<>>, state = State#state{devaddr = Devaddr, deviceId = DevId}}};
+            {noreply, TCPState#tcp{buff = <<>>, register = true, clientid = DevId, state = State#state{devaddr = Devaddr, deviceId = DevId}}};
         _Error ->
             case re:run(Buff, Head, [{capture, first, list}]) of
                 {match, [Head]} when length(List1) == Len ->

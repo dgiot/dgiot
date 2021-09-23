@@ -248,7 +248,7 @@ format_channel(App, CType, Channel_type, Attributes) ->
         app => App,
         params => maps:merge(#{
             <<"Size">> => #{
-                order => 100,
+                order => 1,
                 type => integer,
                 required => false,
                 default => 1,
