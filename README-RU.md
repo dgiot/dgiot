@@ -10,36 +10,36 @@
 
 *DGIOT*  is the first lightweight open source industrial IoT continuous integration platform in China
 
-Before 2016, the Shuwa team had been crawling on the Internet and the mobile Internet for many years. In 2016, it began to enter the Internet of Things crawling. It hopes to share many years of crawling experience through this open source platform and make multidisciplinary industrial Internet projects easier.
-   + Let rich engineers to complete industrial Internet projects with simpler requirements through window interaction
-   + Let the majority of junior front-end engineers to undertake industrial Internet projects with more complex requirements through the serverless method
-   + Let Python, Java, Go, C junior background engineers undertake complex industrial Internet projects through web programming development channels
+До 2016 года команда Shuwa много лет ползла по Интернету и мобильному Интернету. В 2016 году он начал ползать в Интернет вещей. Он надеется поделиться многолетним опытом сканирования с помощью этой платформы с открытым исходным кодом и упростить многопрофильные промышленные интернет-проекты.
+   + Позвольте богатым инженерам выполнять промышленные интернет-проекты с более простыми требованиями через оконное взаимодействие
+   + Позвольте большинству младших интерфейсных инженеров выполнять промышленные интернет-проекты с более сложными требованиями бессерверным методом
+   + Позвольте младшим инженерам Python, Java, Go и C выполнять сложные промышленные интернет-проекты через каналы разработки веб-программирования
 
-# Vision
-  The DGIOT team hopes to achieve the following visions through the Shuwa Industrial Internet continuous integration platform
-  + Through engineers, front-end engineers, and junior back-office engineers to actually complete small and medium-sized industrial Internet projects in no more than 1 month
-  + Ensure high-quality delivery through multiple methods such as open source code, free software, document sharing, technical certification, product certification, operation and maintenance hosting, etc.
-  + Experts in the technical field continue to integrate the industry's excellent technical framework, and experts in the business field continue to optimize business models and processes, and build a multidisciplinary open platform
-  + The IoT platform can finally be simple and easy to use, returning to the essence of tooling
+# Зрение
+  Команда DGIOT надеется достичь следующих видений с помощью платформы непрерывной интеграции Shuwa Industrial Internet.
+  + Через инженеров, интерфейсных инженеров и младших инженеров бэк-офиса для фактического завершения малых и средних промышленных интернет-проектов не более чем за 1 месяц
+  + Обеспечение высококачественной доставки с помощью различных методов, таких как открытый исходный код, бесплатное программное обеспечение, совместное использование документов, техническая сертификация, сертификация продукции, хостинг для эксплуатации и обслуживания и т. Д.
+  + Эксперты в технической области продолжают интегрировать превосходную техническую базу отрасли, а эксперты в области бизнеса продолжают оптимизировать бизнес-модели и процессы и создавать междисциплинарную открытую платформу
+  + Платформа IoT, наконец, может быть простой и удобной в использовании, возвращаясь к сути инструментов
 
-# Building
+# Строительство
 
- Bulid *DGIOT* Need Erlang/OTP R21+, Windows download [msys64](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/msys64/msys64.zip),After downloading, unzip it to the root directory of Disk D, and operate strictly in accordance with the following figure：
+  Bulid * DGIOT * Требуется Erlang / OTP R21 +, загрузка Windows [msys64] (http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/msys64/msys64.zip), После загрузки распакуйте его в корневой каталог диска D, и работайте строго в соответствии со следующим рисунком ：
 ![效果图-1.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/msys64/%E6%95%88%E6%9E%9C%E5%9B%BE-1.png)
 
- +  Download source code abroad
++ Скачать исходный код за границу
   ```bash
      git clone https://github.com/dgiot/dgiot_dashboard.git
      git clone https://github.com/dgiot/dgiot.git
    ```
 
- +  China download source code
++ Китай скачать исходный код
    ```bash
      git clone https://gitee.com/dgiiot/dgiot_dashboard.git
      git clone https://gitee.com/dgiiot/dgiot.git
    ```
 
- +  China Linux/Unix/Mac/windows Build
++ Китайская Linux / Unix / Mac / Windows Build
   ```bash
     cd dgiot_dashboard
     git pull
@@ -58,9 +58,9 @@ Before 2016, the Shuwa team had been crawling on the Internet and the mobile Int
  ```
  *DGIOT* start, you can use a browser to visit http://localhost:5080 to view Dashboard.。
 
-- For a complete list of new features, see [DGIOT Release Notes](https://github.com/dgiot/dgiot/releases)。
-- For more information, please visit [DGIOT Website](https://tech.iotn2n.com/)。
-## Installation and deployment
+- Полный список новых функций см. [DGIOT Release Notes](https://github.com/dgiot/dgiot/releases)。
+- Для получения дополнительной информации, пожалуйста, посетите [DGIOT Website](https://tech.iotn2n.com/)。
+## Установка и развертывание
 
  + **centos 7.6**
 
@@ -68,7 +68,7 @@ Before 2016, the Shuwa team had been crawling on the Internet and the mobile Int
 wget -q https://gitee.com/dgiiot/dgiot/raw/master/dgiot_install.sh  && sh dgiot_install.sh
 ```
 
-## Community
+## Сообщество
 
 ### FAQ
 
@@ -79,18 +79,18 @@ Visit [DGIOT FAQ](https://tech.iotn2n.com/en/backend/) to get help on frequently
 [GitHub Discussions](https://github.com/dgiot/dgiot_server/discussions)
 [DGIOT Chinese Q&A Community](https://tech.iotn2n.com/)
 
-### Involved in the design
+### Участвовал в дизайне
 
-If you have suggestions for improvements to DGIOT, you can submit PR and ISSUE to [EIP](https://github.com/dgiot/eip)
+Если у вас есть предложения по улучшению DGIOT, вы можете отправить PR и ISSUE на [EIP](https://github.com/dgiot/eip)
 
 ### Plug-in development
 
-If you want to integrate or develop your own plug-in, refer to [lib-extra/README.md](./lib-extra/README.md)
+Если вы хотите интегрировать или разработать собственный плагин, обратитесь к [lib-extra/README.md](./lib-extra/README.md)
 
-You are welcome to submit any bugs, issues and feature requests to [dgiot/dgiot](https://github.com/dgiot/dgiot/issues)。
+Вы можете отправлять любые ошибки, проблемы и запросы функций по адресу [dgiot/dgiot](https://github.com/dgiot/dgiot/issues)。
 
-### About Us
-| contact details       | address                                                                                      |
+### О нас
+| Контактная информация      | адрес                                                                                   |
 | -------------- | ----------------------------------------------------------------------------------------- |
 | github         | [https://github.com/dgiot](https://github.com/dgiot?from=git)                             |
 | gitee          | [https://gitee.com/dgiot](https://gitee.com/dgiiot?from=git)                              |
@@ -99,8 +99,8 @@ You are welcome to submit any bugs, issues and feature requests to [dgiot/dgiot]
 | IoT access platform | [https://dgiot.iotn2n.com](https://dgiot.iotn2n.com?from=git)                             |
 | The public         | ![qrcode.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/wechat/qrcode.png) |
 
-### Contact us
-You can contact the DGIOT community and developers through the following channels:
+### Связаться с нами
+Вы можете связаться с сообществом DGIOT и разработчиками по следующим каналам:
 - [official](https://www.iotn2n.com)
 - [ask](https://ask.iotn2n.com/)
 - [Blog](https://tech.iotn2n.com)
@@ -110,12 +110,12 @@ You can contact the DGIOT community and developers through the following channel
 - [Weibo](https://weibo.com)
 
 
-## Preview address
+## Адрес для предварительного просмотра
 [Tencent Cloud preview address](https://dgiotdashboard-8gb17b3673ff6cdd-1253666439.ap-shanghai.app.tcloudbase.com?ftom=git)
 
-## Scan code preview
+## Предварительный просмотр кода сканирования
 ![dgiot_dashboard.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/wechat/dgiot_dashboard.png)
 
 
-## Open source license
-Apache License 2.0, 详见 [LICENSE](./LICENSE)。
+## Лицензия с открытым исходным кодом
+Apache License 2.0, Смотрите подробности [LICENSE](./LICENSE)。
