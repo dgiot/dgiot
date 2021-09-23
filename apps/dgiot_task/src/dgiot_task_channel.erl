@@ -35,7 +35,7 @@
 -channel_type(#{
 
     cType => ?TYPE,
-    type => ?BACKEND_CHL,
+    type => ?BRIDGE_CHL,
     title => #{
         zh => <<"指令任务通道"/utf8>>
     },

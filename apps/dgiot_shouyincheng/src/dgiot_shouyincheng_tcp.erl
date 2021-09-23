@@ -81,12 +81,8 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, state = #state{id = ChannelId, de
 %% 3D302E30303030203D302E303030303530303138200D0A
 handle_info({tcp, Buff}, #tcp{state = #state{id = ChannelId, devaddr = DevAddr, product = ProductId} = State} = TCPState) ->
     dgiot_bridge:send_log(ChannelId, "revice from  ~p", [Buff]),
-    ?LOG(info, "revice from ~p~n", [Buff]),
-    ?LOG(info, "Devaddr ~p~n", [DevAddr]),
-    ?LOG(info, "DtuProductId ~p~n", [ProductId]),
     case dgiot_shouyincheng:parse_frame(Buff, State) of
         {params, Data} ->
-            ?LOG(info, "Data  ~p~n", [Data]),
             dgiot_tdengine_adapter:save(ProductId, DevAddr, Data);
         _ ->
             pass

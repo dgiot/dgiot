@@ -100,7 +100,7 @@ do_event(ChannelType, ChannelId, EventId, Event, Timeout) ->
         fun(Worker) ->
             Worker ! {event, Pool, EventId, Event}, ok
         end,
-    ?LOG(error, "EventId ~p", [EventId]),
+%%    ?LOG(error, "EventId ~p", [EventId]),
     poolboy:transaction(Pool, Fun, Timeout).
 
 do_message(ChannelId, Message) ->

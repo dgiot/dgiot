@@ -30,7 +30,7 @@
 -channel_type(#{
 
     cType => ?TYPE,
-    type => ?BRIDGE_CHL,
+    type => ?PROTOCOL_CHL,
     title => #{
         zh => <<"视频采集资源通道"/utf8>>
     },

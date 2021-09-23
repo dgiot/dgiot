@@ -346,7 +346,7 @@ save_to_tdengine(_, []) -> ok;
 save_to_tdengine(Channel, Requests) ->
     case dgiot_tdengine:batch(Channel, Requests) of
         {ok, _Results} ->
-            ?LOG(info, "Batch ~p-> ~p~n", [length(Requests), _Results]),
+%%            ?LOG(info, "Batch ~p-> ~p~n", [length(Requests), _Results]),
             ok;
         {error, Reason} when Reason == timeout; Reason == disconnect ->
             ?LOG(error, "save cache,~p,~p~n", [Requests, Reason]),
