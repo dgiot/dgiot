@@ -20,5 +20,7 @@
     socket,
     log = false, % 是否日志, log = file, log = {Mod, Fun}
     buff = <<>>,
-    state % 自定义字段
+    state, % 自定义字段
+    register = fasle,  %  false | true 是否注册成功
+    clientid = <<>>
 }).

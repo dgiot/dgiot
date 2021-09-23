@@ -99,6 +99,28 @@ handle_info({tcp_passive, _Sock}, State) ->
     ok = activate_socket(NState),
     {noreply, NState};
 
+%% add register function
+handle_info({tcp, Sock, Data}, #state{mod = Mod, child = #tcp{register = false, buff = Buff, socket = Sock} = ChildState} = State) ->
+    Binary = iolist_to_binary(Data),
+    NewBin =
+        case binary:referenced_byte_size(Binary) of
+            Large when Large > 2 * byte_size(Binary) ->
+                binary:copy(Binary);
+            _ ->
+                Binary
+        end,
+    write_log(ChildState#tcp.log, <<"RECV">>, NewBin),
+    Cnt = byte_size(NewBin),
+    NewChildState = ChildState#tcp{buff = <<>>},
+    case Mod:handle_info({tcp, <<Buff/binary, NewBin/binary>>}, NewChildState) of
+        {noreply, #tcp{register = true, clientid = ClientId, buff = Buff, socket = Sock} = NewChild} ->
+            dgiot_cm:register_channel(ClientId, self(), #{conn_mod => Mod}),
+            {noreply, State#state{child = NewChild, incoming_bytes = Cnt}, hibernate};
+        {noreply,  NewChild} ->
+            {noreply, State#state{child = NewChild, incoming_bytes = Cnt}, hibernate};
+        {stop, Reason, NewChild} ->
+            {stop, Reason, State#state{child = NewChild}}
+    end;
 
 handle_info({tcp, Sock, Data}, #state{mod = Mod, child = #tcp{buff = Buff, socket = Sock} = ChildState} = State) ->
     Binary = iolist_to_binary(Data),
@@ -119,11 +141,17 @@ handle_info({tcp, Sock, Data}, #state{mod = Mod, child = #tcp{buff = Buff, socke
             {stop, Reason, State#state{child = NewChild}}
     end;
 
+handle_info({shutdown, Reason}, #state{child = #tcp{clientid = CliendId, register = true} = ChildState} = State) ->
+    ?LOG(error,"shutdown, ~p, ~p~n", [Reason, ChildState#tcp.state]),
+    dgiot_cm:unregister_channel(CliendId),
+    write_log(ChildState#tcp.log, <<"ERROR">>, list_to_binary(io_lib:format("~w", [Reason]))),
+    {stop, normal, State#state{child = ChildState#tcp{socket = undefined}}};
 
 handle_info({shutdown, Reason}, #state{child = ChildState} = State) ->
     ?LOG(error,"shutdown, ~p, ~p~n", [Reason, ChildState#tcp.state]),
     write_log(ChildState#tcp.log, <<"ERROR">>, list_to_binary(io_lib:format("~w", [Reason]))),
     {stop, normal, State#state{child = ChildState#tcp{socket = undefined}}};
+
 
 handle_info({tcp_error, _Sock, Reason}, #state{child = ChildState} = State) ->
     ?LOG(error,"tcp_error, ~p, ~p~n", [Reason, ChildState#tcp.state]),
@@ -140,8 +168,6 @@ handle_info({tcp_closed, Sock}, #state{mod = Mod, child = #tcp{socket = Sock} = 
             {stop, normal, State#state{child = NewChild#tcp{socket = undefined}}}
     end;
 
-
-
 handle_info(Info, #state{mod = Mod, child = ChildState} = State) ->
     case Mod:handle_info(Info, ChildState) of
         {noreply, NewChildState} ->
@@ -149,6 +175,10 @@ handle_info(Info, #state{mod = Mod, child = ChildState} = State) ->
         {stop, Reason, NewChildState} ->
             {stop, Reason, State#state{child = NewChildState}}
     end.
+
+terminate(Reason, #state{mod = Mod, child = #tcp{clientid = CliendId, register = true} = ChildState}) ->
+    dgiot_cm:unregister_channel(CliendId),
+    Mod:terminate(Reason, ChildState);
 
 terminate(Reason, #state{mod = Mod, child = ChildState}) ->
     Mod:terminate(Reason, ChildState).
