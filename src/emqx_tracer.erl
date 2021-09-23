@@ -72,7 +72,7 @@ trace(publish, #message{topic = <<"logger_trace", _/binary>>}) ->
     ignore;
 trace(publish, #message{from = From, topic = Topic, payload = Payload})
     when is_binary(From); is_atom(From) ->
-    io:format("From ~p", From),
+    ?LOG(info, "From ~p", From),
     emqx_logger:info(#{topic => Topic,
         mfa => {?MODULE, ?FUNCTION_NAME, ?FUNCTION_ARITY}},
         "PUBLISH to ~s: ~0p ~p", [Topic, Payload, From]).
@@ -111,7 +111,7 @@ lookup_traces() ->
     lists:foldl(fun filter_traces/2, [], emqx_logger:get_log_handlers(started)).
 
 install_trace_handler(Who, Level, LogFile) ->
-    io:format("Who1 ~p", Who),
+    ?LOG(info, "Who1 ~p", [Who]),
     case logger:add_handler(handler_id(Who), logger_disk_log_h,
         #{level => Level,
             formatter => ?FORMAT,
@@ -128,7 +128,7 @@ install_trace_handler(Who, Level, LogFile) ->
     end.
 
 uninstall_trance_handler(Who) ->
-    io:format("Who2 ~p", Who),
+    ?LOG(info, "Who2 ~p", [Who]),
     case logger:remove_handler(handler_id(Who)) of
         ok ->
             ?LOG(info, "Stop trace for ~p", [Who]);
