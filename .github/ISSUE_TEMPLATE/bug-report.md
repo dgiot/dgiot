@@ -3,7 +3,7 @@ name: Bug Report
 about: Create a report to help us improve
 title: ''
 labels: Support
-assignees: tigercl
+assignees: h7ml
 
 ---
 
