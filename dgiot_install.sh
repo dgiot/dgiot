@@ -307,6 +307,41 @@ function install_service1() {
   ${csudo} systemctl start $1 &> /dev/null
   echo -e  "`date +%F_%T`: ${GREEN} systemctl start $1${NC}"
 }
+
+# $1:service  $2:Type  $3:ExecStart
+function install_service2() {
+  service_config="${service_dir}/$1.service"
+  echo -e  "`date +%F_%T`: ${GREEN} build ${service_config}${NC}"
+  ${csudo} bash -c "echo '[Unit]'                             > ${service_config}"
+  ${csudo} bash -c "echo 'Description=$1 server'              >> ${service_config}"
+  ${csudo} bash -c "echo 'After=network-online.target'        >> ${service_config}"
+  ${csudo} bash -c "echo 'Wants=network-online.target'        >> ${service_config}"
+  ${csudo} bash -c "echo                                      >> ${service_config}"
+  ${csudo} bash -c "echo '[Service]'                          >> ${service_config}"
+  ${csudo} bash -c "echo 'Type=$2'                            >> ${service_config}"
+  ${csudo} bash -c "echo 'ExecStart=$3'                        >> ${service_config}"
+  ${csudo} bash -c "echo 'KillMode=mixed'                      >> ${service_config}"
+  ${csudo} bash -c "echo 'KillSignal=SIGINT'                   >> ${service_config}"
+  ${csudo} bash -c "echo 'TimeoutSec=300'                      >> ${service_config}"
+  ${csudo} bash -c "echo 'OOMScoreAdjust=-1000'                >> ${service_config}"
+  ${csudo} bash -c "echo 'TimeoutStopSec=1000000s'             >> ${service_config}"
+  ${csudo} bash -c "echo 'LimitNOFILE=infinity'                >> ${service_config}"
+  ${csudo} bash -c "echo 'LimitNPROC=infinity'                 >> ${service_config}"
+  ${csudo} bash -c "echo 'LimitCORE=infinity'                  >> ${service_config}"
+  ${csudo} bash -c "echo 'TimeoutStartSec=0'                   >> ${service_config}"
+  ${csudo} bash -c "echo 'StandardOutput=null'                 >> ${service_config}"
+  ${csudo} bash -c "echo 'Restart=always'                      >> ${service_config}"
+  ${csudo} bash -c "echo 'StartLimitBurst=3'                   >> ${service_config}"
+  ${csudo} bash -c "echo 'StartLimitInterval=60s'              >> ${service_config}"
+  ${csudo} bash -c "echo                                       >> ${service_config}"
+  ${csudo} bash -c "echo '[Install]'                           >> ${service_config}"
+  ${csudo} bash -c "echo 'WantedBy=multi-user.target'          >> ${service_config}"
+
+  ${csudo} systemctl daemon-reload &> /dev/null
+  ${csudo} systemctl enable $1 &> /dev/null
+  ${csudo} systemctl start $1 &> /dev/null
+  echo -e  "`date +%F_%T`: ${GREEN} systemctl start $1${NC}"
+}
 ##---------------------------------------------------------------##
 #2 部署档案数据库
 ## 2.1 部署postgres数据库
@@ -538,8 +573,8 @@ function deploy_parse_server() {
   install_parse_server
   install_dgiot_redis
   parsehome="${install_dir}/dgiot_parse_server"
-  install_service "dgiot_parse_server" "simple" "${parsehome}/script/node/bin/node  ${parsehome}/server/index.js"
-  install_service "dgiot_redis" "simple" "${parsehome}/script/redis/src/redis-server ${parsehome}/script/redis.conf"
+  install_service2 "dgiot_parse_server" "simple" "${parsehome}/script/node/bin/node  ${parsehome}/server/index.js"
+  install_service2 "dgiot_redis" "simple" "${parsehome}/script/redis/src/redis-server ${parsehome}/script/redis.conf"
 }
 
 #3 部署时序数据服务
@@ -598,7 +633,7 @@ function install_dgiot_tdengine_mqtt() {
   rm ${script_dir}/mosquitto-1.6.7/ -rf
   wget ${fileserver}/dgiot_tdengine_mqtt -O /usr/sbin/dgiot_tdengine_mqtt &> /dev/null
   chmod 777 /usr/sbin/dgiot_tdengine_mqtt
-  install_service dgiot_tdengine_mqtt "simple" "/usr/sbin/dgiot_tdengine_mqtt 127.0.0.1"
+  install_service2 dgiot_tdengine_mqtt "simple" "/usr/sbin/dgiot_tdengine_mqtt 127.0.0.1"
 }
 
 #4 安装文件数据服务器
@@ -750,7 +785,7 @@ function install_node_exporter() {
 
   tar -zxvf node_exporter-0.18.1.linux-amd64.tar.gz
   mv ${script_dir}/node_exporter-0.18.1.linux-amd64/ ${install_dir}/
-  install_service node_exporter "simple" "/usr/local/bin/node_exporter"
+  install_service2 node_exporter "simple" "/usr/local/bin/node_exporter"
 }
 
 ##6.2 install postgres exporter
@@ -805,7 +840,7 @@ function install_postgres_exporter() {
   tar xvf postgres_exporter-0.10.0.linux-amd64.tar.gz  &> /dev/null
   mv ${script_dir}/postgres_exporter-0.10.0.linux-amd64/ ${install_dir}/
   export  DATA_SOURCE_NAME=postgresql://postgres:postgres@127.0.0.1:7432/parse?sslmode=disable
-  install_service postgres_exporter "simple" "${install_dir}/postgres_exporter --extend.query-path='${install_dir}/queries.yaml'"
+  install_service2 postgres_exporter "simple" "${install_dir}/postgres_exporter --extend.query-path='${install_dir}/queries.yaml'"
 }
 
 ##6.3 安装prometheus-2.17.1.linux-amd64.tar.gz
@@ -824,8 +859,8 @@ function install_prometheus() {
   fi
 
   mv ${script_dir}/prometheus-2.17.1.linux-amd64/  ${install_dir}/
-  install_service pushgateway "simple" "${install_dir}/prometheus-2.17.1.linux-amd64/pushgateway"
-  install_service prometheus "simple" "${install_dir}/prometheus-2.17.1.linux-amd64/prometheus \
+  install_service2 pushgateway "simple" "${install_dir}/prometheus-2.17.1.linux-amd64/pushgateway"
+  install_service2 prometheus "simple" "${install_dir}/prometheus-2.17.1.linux-amd64/prometheus \
     --config.file=${install_dir}/prometheus-2.17.1.linux-amd64/prometheus.yml \
     --storage.tsdb.path=${install_dir}/prometheus-2.17.1.linux-amd64/data"
 }
@@ -862,7 +897,7 @@ function install_grafana() {
   mv ${script_dir}/grafana-7.1.1/  ${install_dir}/
   grafanahome=${install_dir}/grafana-7.1.1
   ${csudo} bash -c  "sed -i '/^plugins/cplugins = ${install_dir}/grafana-7.1.1/data/plugins/'  ${install_dir}/grafana-7.1.1/conf/defaults.ini"
-  install_service grafana-server "simple" "${grafanahome}/bin/grafana-server --config=${grafanahome}/conf/defaults.ini  --homepath=${grafanahome}"
+  install_service2 grafana-server "simple" "${grafanahome}/bin/grafana-server --config=${grafanahome}/conf/defaults.ini  --homepath=${grafanahome}"
 }
 
 function install_nginx() {
