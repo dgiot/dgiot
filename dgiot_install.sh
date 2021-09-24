@@ -104,12 +104,12 @@ else
 fi
 
 # =============================  get input parameters =================================================
-# dgiot_install.sh -v [single | cluster] -d [prod.iotn2n.com | your_domain_name] -s [dgiot_36 | dgiot_n]
+# dgiot_install.sh -v [single | cluster] -d [prod.iotn2n.com | your_domain_name] -s [dgiot_44 | dgiot_n]
 
 # set parameters by default value
 verType=single        # [single | cluster]
 domain_name="prod.iotn2n.com" #[prod.iotn2n.com | your_domain_name]
-dgiot="dgiot_36"   #[dgiot_36 | dgiot_n]
+dgiot="dgiot_44"   #[dgiot_44 | dgiot_n]
 while getopts "h:v:d:s:" arg
 do
   case $arg in
@@ -131,7 +131,7 @@ do
       domain_name=$(echo $OPTARG)
       ;;
     h)
-      echo "Usage: `basename $0` -v [single | cluster] -s [dgiot_36 | dgiot_n] -d [prod.iotn2n.com | your_domain_name]"
+      echo "Usage: `basename $0` -v [single | cluster] -s [dgiot_44 | dgiot_n] -d [prod.iotn2n.com | your_domain_name]"
       exit 0
       ;;
     ?) #unknow option
