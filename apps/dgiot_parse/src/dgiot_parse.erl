@@ -219,6 +219,25 @@ get_objectid(Class, Map) ->
             Map#{
                 <<"objectId">> => Pid
             };
+        <<"post_classes_producttemplet">> ->
+            get_objectid(<<"ProductTemplet">>, Map);
+        <<"ProductTemplet">> ->
+            NetType = maps:get(<<"netType">>, Map, <<"">>),
+            Category = maps:get(<<"category">>, Map, <<"">>),
+            Name = maps:get(<<"name">>, Map, <<"">>),
+            <<Pid:10/binary, _/binary>> = dgiot_utils:to_md5(<<"ProductTemplet", Category/binary, NetType/binary, Name/binary>>),
+            Map#{
+                <<"objectId">> => Pid
+            };
+        <<"post_classes_category">> ->
+            get_objectid(<<"Category">>, Map);
+        <<"Category">> ->
+            Type = maps:get(<<"type">>, Map, <<"">>),
+            Name = maps:get(<<"name">>, Map, <<"">>),
+            <<Pid:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Category", Type/binary, Name/binary>>),
+            Map#{
+                <<"objectId">> => Pid
+            };
         <<"post_classes_device">> ->
             get_objectid(<<"Device">>, Map);
         <<"Device">> ->
