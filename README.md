@@ -98,6 +98,7 @@ You are welcome to submit any bugs, issues and feature requests to [dgiot/dgiot]
 | Blog           | [https://tech.iotn2n.com](https://tech.iotn2n.com?from=git)                               |
 | IoT access platform | [https://dgiot.iotn2n.com](https://dgiot.iotn2n.com?from=git)                             |
 | The public         | ![qrcode.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/wechat/qrcode.png) |
+|QQ group             | 346566935   |
 
 ### Contact us
 You can contact the DGIOT community and developers through the following channels:
