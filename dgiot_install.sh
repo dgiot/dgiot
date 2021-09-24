@@ -729,7 +729,7 @@ function install_dgiot() {
   ${csudo} bash -c  "sed -i '/^parse.parse_rest_key/cparse.parse_rest_key = ${parse_restapi}' ${script_dir}/dgiot/etc/plugins/dgiot_parse.conf"
 
   # 修改dgiot.conf
-  ${csudo} bash -c "sed -i 's!{{domain_name}}!${domain_name}!g' ${script_dir}/dgiot/etc/emqx.conf"
+  ${csudo} bash -c "sed -i 's!/etc/ssl/certs/domain_name!/etc/ssl/certs/${domain_name}!g' ${script_dir}/dgiot/etc/emqx.conf"
 
   cat > ${script_dir}/dgiot/data/loaded_plugins << "EOF"
   {emqx_management, true}.
