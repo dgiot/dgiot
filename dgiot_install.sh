@@ -335,6 +335,7 @@ function install_postgres() {
 
   ### 创建目录和用户,以及配置环境变化
   echo -e "${GREEN}create postgres user and group ${NC}"
+  set +uxe
   egrep "^postgres" /etc/passwd >/dev/null
   if [ $? -eq 0 ]; then
       echo -e "${GREEN} postgres user and group exist ${NC}"
@@ -354,7 +355,7 @@ function install_postgres() {
 
   tar xvf postgresql-12.0.tar.gz &> /dev/null
   cd postgresql-12.0
-
+  set -ue
   yum_install_postgres
   echo -e  "`date +%F_%T`: ${GREEN} configure postgres${NC}"
   ./configure --prefix=/usr/local/pgsql/12 --with-pgport=7432 --enable-nls --with-python --with-tcl --with-gssapi --with-icu --with-openssl --with-pam --with-ldap --with-systemd --with-libxml --with-libxslt &> /dev/null
@@ -874,8 +875,8 @@ function install_nginx() {
     if [ ! -f ${script_dir}/nginx.conf ]; then
        wget $fileserver/nginx.conf -O ${script_dir}/nginx.conf &> /dev/null
     fi
-    if [ -f ${script_dir}/prod.iotn2n.com.zip ]; then
-       wget $fileserver/prod.iotn2n.com.zip -O ${script_dir}/prod.iotn2n.com.zip  &> /dev/null
+    if [ -f ${script_dir}/${domain_name}.zip ]; then
+       wget $fileserver/${domain_name}.zip -O ${script_dir}/${domain_name}.zip  &> /dev/null
     fi
 
     rm  /etc/nginx/nginx.conf -rf

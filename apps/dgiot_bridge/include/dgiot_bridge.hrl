@@ -23,4 +23,5 @@
 -define(BACKEND_CHL, 3).
 -define(FEATURE_CHL, 4).
 -define(AUTH_CHL, 5).
+-define(defult_CHL, 5).
 
