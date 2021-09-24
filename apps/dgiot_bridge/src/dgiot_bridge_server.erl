@@ -60,8 +60,8 @@ handle_info({deliver, _, Msg}, State) ->
                     do_handle(Message#{<<"channelId">> => ChannelId});
                 {match, [[<<"channel">>], [ChannelId], [ProductId]]} ->
                     do_handle(Message#{<<"channelId">> => ChannelId, <<"productId">> => ProductId});
-                {match, [[<<"channel">>], [ChannelId], [ProductId], [DeviceId]]} ->
-                    do_handle(Message#{<<"channelId">> => ChannelId, <<"productId">> => ProductId, <<"devaddr">> => DeviceId});
+                {match, [[<<"channel">>], [ChannelId], [ProductId], [Devaddr]]} ->
+                    do_handle(Message#{<<"channelId">> => ChannelId, <<"productId">> => ProductId, <<"devaddr">> => Devaddr});
                 _ ->
                     ?LOG(error, "~p, Payload:~p", [Topic, Payload])
             end

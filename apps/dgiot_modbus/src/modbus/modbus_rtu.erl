@@ -75,8 +75,8 @@ encode_data(Data, Address, SlaveId, ProductId) ->
                 <<"readHregs">> -> ?FC_READ_HREGS;
                 <<"readIregs">> -> ?FC_READ_IREGS;
                 <<"writeCoil">> -> ?FC_WRITE_COIL;
-                <<"writeHreg">> -> ?FC_WRITE_COILS; %%需要校验，写多个线圈是什么状态
-                <<"writeCoils">> -> ?FC_WRITE_HREG;
+                <<"writeHreg">> -> ?FC_WRITE_HREG; %%需要校验，写多个线圈是什么状态
+                <<"writeCoils">> -> ?FC_WRITE_COILS;
                 <<"writeHregs">> -> ?FC_WRITE_HREGS; %%需要校验，写多个保持寄存器是什么状态
                 _ -> ?FC_READ_HREGS
             end,
