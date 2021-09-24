@@ -154,7 +154,7 @@ send_log(ChannelId, ProductId, Fmt, Args) ->
 send_log(ChannelId, Fmt, Args) ->
     is_send_log(ChannelId, undefined, undefined,
         fun() ->
-            Topic = <<"log/channel/", ChannelId/binary>>,
+            Topic = <<"log/channel/", ChannelId/binary, "/channelid">>,
             Payload = io_lib:format("[~s]~p " ++ Fmt, [node(), self() | Args]),
             dgiot_mqtt:publish(ChannelId, Topic, unicode:characters_to_binary(Payload))
         end).
@@ -230,7 +230,7 @@ register_all_channel() ->
         Mod = maps:get(mod, Channel_type),
         CType = maps:get(cType, Channel_type),
         register_channel(CType, Mod)
-              end,  list()).
+              end, list()).
 
 get_all_channel() ->
     lists:foldl(fun({_, Channel_type}, Acc) ->
@@ -302,7 +302,7 @@ list() ->
                     case [Channel || {channel_type, [Channel]} <- Mod:module_info(attributes)] of
                         [] ->
                             Acc;
-                        [Channel|_] ->
+                        [Channel | _] ->
                             [{maps:get(priority, Channel, 255), Channel#{app => App, mod => Mod, vsn => Vsn}}] ++ Acc
                     end
             end
