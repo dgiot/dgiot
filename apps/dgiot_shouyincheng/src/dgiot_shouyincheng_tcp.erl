@@ -80,7 +80,7 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, state = #state{id = ChannelId, de
 
 %% 3D302E30303030203D302E303030303530303138200D0A
 handle_info({tcp, Buff}, #tcp{state = #state{id = ChannelId, devaddr = DevAddr, product = ProductId} = State} = TCPState) ->
-    dgiot_bridge:send_log(ChannelId, "revice from  ~p", [Buff]),
+    dgiot_bridge:send_log(ChannelId, ProductId, DevAddr, "revice from  ~p", [Buff]),
     case dgiot_shouyincheng:parse_frame(Buff, State) of
         {params, Data} ->
             dgiot_tdengine_adapter:save(ProductId, DevAddr, Data);
@@ -116,7 +116,7 @@ get_deviceid(ProdcutId, DevAddr) ->
 
 create_device(DeviceId, ProductId, DTUMAC, DTUIP, Dtutype) ->
     case dgiot_parse:get_object(<<"Product">>, ProductId) of
-        {ok, #{<<"ACL">> := Acl, <<"devType">> := DevType,<<"name">> := ProductName}} ->
+        {ok, #{<<"ACL">> := Acl, <<"devType">> := DevType, <<"name">> := ProductName}} ->
             case dgiot_parse:get_object(<<"Device">>, DeviceId) of
                 {ok, #{<<"devaddr">> := _GWAddr}} ->
                     dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"ip">> => DTUIP, <<"status">> => <<"ONLINE">>});

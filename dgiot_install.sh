@@ -477,7 +477,7 @@ function deploy_postgres() {
   install_postgres
   init_postgres_database
   DATA_DIR="${install_dir}/dgiot_pg_writer/data"
-  install_service dgiot_pg_writer "notify" "/usr/local/pgsql/12/bin/postgres -D ${DATA_DIR}" "postgres" "DATA_DIR=${DATA_DIR}"
+  install_service1 dgiot_pg_writer "notify" "/usr/local/pgsql/12/bin/postgres -D ${DATA_DIR}" "postgres" "DATA_DIR=${DATA_DIR}"
   sleep 2
   psql -U postgres -c "CREATE USER  repl WITH PASSWORD '${pg_pwd}' REPLICATION;" &> /dev/null
   echo -e  "`date +%F_%T`: ${GREEN} deploy postgres success${NC}"
