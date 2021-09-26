@@ -159,9 +159,9 @@ do_handle(#{<<"channelId">> := ChannelId, <<"action">> := <<"start_logger">>} = 
     }),
     case Filter of
         #{<<"devaddr">> := Addr, <<"productId">> := ProductId} ->
-            dgiot_bridge:send_log(ChannelId, ProductId, Addr, Fmt, Args);
+            dgiot_bridge:send_log(ChannelId, ProductId, Addr, "Channel[~s] is Running, ProductId:~s, devaddr:~s, Log is ~s", [ChannelId, ProductId, Addr, true]);
         #{<<"productId">> := ProductId} ->
-            dgiot_bridge:send_log(ChannelId, ProductId, Fmt, Args);
+            dgiot_bridge:send_log(ChannelId, ProductId, "Channel[~s] is Running, ProductId:~s, Log is ~s", [ChannelId, ProductId, true]);
         _ ->
             dgiot_bridge:send_log(ChannelId, Fmt, Args)
     end;
