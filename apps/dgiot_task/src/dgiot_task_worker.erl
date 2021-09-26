@@ -142,14 +142,14 @@ handle_info(retry, State) ->
 %% 任务结束
 handle_info({deliver, _, Msg}, #task{tid = Channel, dis = Dis, product = ProductId, devaddr = DevAddr, ack = Ack, que = Que} = State) when length(Que) == 0 ->
     Payload = jsx:decode(dgiot_mqtt:get_payload(Msg), [return_maps]),
-    dgiot_bridge:send_log(Channel, ProductId, DevAddr, "to_dev=> ~ts: ~ts ~s ~p ", [unicode:characters_to_list(dgiot_mqtt:get_topic(Msg)), unicode:characters_to_list(dgiot_mqtt:get_payload(Msg)), ?FILE, ?LINE]),
+    dgiot_bridge:send_log(Channel, ProductId, DevAddr, "to_dev=> ~s ~p  ~ts: ~ts ", [?FILE, ?LINE, unicode:characters_to_list(dgiot_mqtt:get_topic(Msg)), unicode:characters_to_list(dgiot_mqtt:get_payload(Msg))]),
     NewAck = dgiot_task:get_collection(ProductId, Dis, Payload, Ack),
     {noreply, get_next_pn(State#task{ack = NewAck})};
 
 %% ACK消息触发抄表指令
 handle_info({deliver, _, Msg}, #task{tid = Channel, dis = Dis, product = ProductId, devaddr = DevAddr, ack = Ack} = State) ->
     Payload = jsx:decode(dgiot_mqtt:get_payload(Msg), [return_maps]),
-    dgiot_bridge:send_log(Channel, ProductId, DevAddr, "to_dev=> ~ts: ~ts ~s ~p ", [unicode:characters_to_list(dgiot_mqtt:get_topic(Msg)), unicode:characters_to_list(dgiot_mqtt:get_payload(Msg)), ?FILE, ?LINE]),
+    dgiot_bridge:send_log(Channel, ProductId, DevAddr, "to_dev=> ~s ~p ~ts: ~ts", [?FILE, ?LINE, unicode:characters_to_list(dgiot_mqtt:get_topic(Msg)), unicode:characters_to_list(dgiot_mqtt:get_payload(Msg))]),
     NewAck = dgiot_task:get_collection(ProductId, Dis, Payload, Ack),
     {noreply, send_msg(State#task{ack = NewAck})};
 
@@ -197,7 +197,7 @@ send_msg(#task{tid = Channel, product = Product, devaddr = DevAddr, ref = Ref, q
                     end, {0, [], []}, Que),
     Newpayload = jsx:encode(Payload),
     Topic = <<"thing/", Product/binary, "/", DevAddr/binary>>,
-    dgiot_bridge:send_log(Channel, Product, DevAddr, "to_dev=> ~ts: ~ts ~s ~p ", [unicode:characters_to_list(Topic), unicode:characters_to_list(Newpayload), ?FILE, ?LINE]),
+    dgiot_bridge:send_log(Channel, Product, DevAddr, "to_dev=> ~s ~p ~ts: ~ts", [?FILE, ?LINE, unicode:characters_to_list(Topic), unicode:characters_to_list(Newpayload)]),
     dgiot_mqtt:publish(Channel, Topic, Newpayload),
 %%    在超时期限内，回报文，就取消超时定时器
     case Ref of
@@ -236,6 +236,7 @@ save_td(#task{app = _App, tid = Channel, product = ProductId, devaddr = DevAddr,
     case length(maps:to_list(Ack)) of
         0 -> pass;
         _ ->
+            dgiot_bridge:send_log(Channel, ProductId, DevAddr, "save_td=> ~s ~p ~p: ~ts ", [?FILE, ?LINE, ProductId, unicode:characters_to_list(jsx:encode(Ack))]),
             Data = dgiot_task:get_calculated(ProductId, Ack),
             case length(maps:to_list(Data)) of
                 0 -> pass;
@@ -249,7 +250,7 @@ save_td(#task{app = _App, tid = Channel, product = ProductId, devaddr = DevAddr,
                             dgiot_tdengine_adapter:save(ProductId, DevAddr, Data),
                             NotificationTopic = <<"notification/", ProductId/binary, "/", DevAddr/binary, "/post">>,
                             dgiot_mqtt:publish(DeviceId, NotificationTopic, jsx:encode(Data)),
-                            dgiot_bridge:send_log(Channel, ProductId, DevAddr, "from_Notification=> ~ts: ~ts ", [unicode:characters_to_list(NotificationTopic), unicode:characters_to_list(jsx:encode(Data))]);
+                            dgiot_bridge:send_log(Channel, ProductId, DevAddr, "from_Notification=> ~s ~p ~ts: ~ts ", [?FILE, ?LINE, unicode:characters_to_list(NotificationTopic), unicode:characters_to_list(jsx:encode(Data))]);
                         true ->
                             pass
                     end
