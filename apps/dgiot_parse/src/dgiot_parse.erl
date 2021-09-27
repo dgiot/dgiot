@@ -232,9 +232,9 @@ get_objectid(Class, Map) ->
         <<"post_classes_category">> ->
             get_objectid(<<"Category">>, Map);
         <<"Category">> ->
-            Type = maps:get(<<"type">>, Map, <<"">>),
+            Level = dgiot_utils:to_binary(maps:get(<<"level">>, Map, 1)),
             Name = maps:get(<<"name">>, Map, <<"">>),
-            <<Pid:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Category", Type/binary, Name/binary>>),
+            <<Pid:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Category", Level/binary, Name/binary>>),
             Map#{
                 <<"objectId">> => Pid
             };
