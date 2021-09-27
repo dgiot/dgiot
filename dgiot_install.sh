@@ -477,7 +477,7 @@ function deploy_postgres() {
   install_postgres
   init_postgres_database
   DATA_DIR="${install_dir}/dgiot_pg_writer/data"
-  install_service1 dgiot_pg_writer "notify" "/usr/local/pgsql/12/bin/postgres -D ${DATA_DIR}" "postgres" "DATA_DIR=${DATA_DIR}"
+  install_service dgiot_pg_writer "notify" "/usr/local/pgsql/12/bin/postgres -D ${DATA_DIR}" "postgres" "DATA_DIR=${DATA_DIR}"
   sleep 2
   psql -U postgres -c "CREATE USER  repl WITH PASSWORD '${pg_pwd}' REPLICATION;" &> /dev/null
   echo -e  "`date +%F_%T`: ${GREEN} deploy postgres success${NC}"
@@ -910,10 +910,9 @@ function install_nginx() {
     if [ ! -f ${script_dir}/nginx.conf ]; then
        wget $fileserver/nginx.conf -O ${script_dir}/nginx.conf &> /dev/null
     fi
-    if [ -f ${script_dir}/${domain_name}.zip ]; then
+    if [ ! -f ${script_dir}/${domain_name}.zip ]; then
        wget $fileserver/${domain_name}.zip -O ${script_dir}/${domain_name}.zip  &> /dev/null
     fi
-
     rm  /etc/nginx/nginx.conf -rf
     cp ${script_dir}/nginx.conf /etc/nginx/nginx.conf -rf
     sed -i "s!{{domain_name}}!${domain_name}!g"  /etc/nginx/nginx.conf
