@@ -18,7 +18,7 @@ DG-IoT OPC通道与[DG-IoT桥接服务工具](http://dgiot-1253666439.cos.ap-sha
 
 
 # 指令集编排
-DG-IoTOPC通道将自动处理扫描的点位信息，生成读取指定点位有效信息的指令集，通过该指令集读取OPC数据。
+DG-IoT OPC通道将自动处理扫描的点位信息，生成读取指定点位有效信息的指令集，通过该指令集读取OPC数据。
 
 # 组态交互关联物模型
 当OPC采集通道成功采集到OPC数据时，若该产品没有物模型，通道会自动生成与OPC信息对应的物模型。
@@ -38,6 +38,9 @@ DG-IoTOPC通道将自动处理扫描的点位信息，生成读取指定点位�
 ![TD通道日志.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/blog/study/opc/TD%E9%80%9A%E9%81%93%E6%97%A5%E5%BF%97.png)
 
 具体使用操作以及更多信息可见[DG-IoT操作手册](https://tech.iotn2n.com/w/docs/details?id=9)
+
+# 插件集成
+ 请见 https://github.com/dgiot/dgiot/tree/master/apps/dgiot_opc
 
 
 
