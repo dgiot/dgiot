@@ -1,3 +1,34 @@
+## [4.3.3](https://github.com/dgiot/dgiot/compare/v4.3.4...v4.3.3) (2021-09-28)
+
+
+### Bug Fixes
+
+* channel_log ([1e37058](https://github.com/dgiot/dgiot/commit/1e3705876eb905cab215085e7341e050ce822170))
+* task_worker bug ([0396163](https://github.com/dgiot/dgiot/commit/039616312126d24e36b03cf339e0e6ffb6f3aa13))
+
+
+
+## [4.3.4](https://github.com/dgiot/dgiot/compare/v4.3.3...v4.3.4) (2021-09-24)
+
+
+### Bug Fixes
+
+* channel log,install.sh ([9fcc72c](https://github.com/dgiot/dgiot/commit/9fcc72ccd7dc4f2b67b744bf4ccb393142022bc0))
+* dgiot_install.sh ([84564e8](https://github.com/dgiot/dgiot/commit/84564e85abb245c68249e288510357743c0e96eb))
+* install.sh ([44fd008](https://github.com/dgiot/dgiot/commit/44fd008e3f60169cf0f67ea873f7a899d29eba01))
+* Repair channel loading failed ([1898ebe](https://github.com/dgiot/dgiot/commit/1898ebea684ca1c9cebf4bf00742ea11689145ee))
+
+
+### Features
+
+* add dgiot wechat ([dd6d76d](https://github.com/dgiot/dgiot/commit/dd6d76d921fcaf4722d3985ea1c69c0d9f5a23ea))
+* add mqtt trace ([6100f50](https://github.com/dgiot/dgiot/commit/6100f500ed25126034270a9bd4afdc838f9d687e))
+* add tcp socket register_channel fucntion ([28a8676](https://github.com/dgiot/dgiot/commit/28a8676552ae4226aa6d3fc1fd31812396527d1f))
+* apps/dgiot_gb26875:Urban fire remote monitoring system gb26875 protocol analysis channel ([c38b9b9](https://github.com/dgiot/dgiot/commit/c38b9b9ca730c97cb7d0bbccbf3d2cc1297f606f))
+* Fix script invalidation problem ([f68a3f0](https://github.com/dgiot/dgiot/commit/f68a3f0c85edcff49c10b209d854a2a2cfe75c73))
+
+
+
 ## [4.3.3](https://github.com/dgiot/dgiot/compare/v4.3.2...v4.3.3) (2021-09-18)
 
 
