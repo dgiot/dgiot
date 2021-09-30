@@ -19,9 +19,9 @@
 
 -behaviour(gen_server).
 
--include("dgiot.hrl").
--include("logger.hrl").
--include("types.hrl").
+-include_lib("dgiot/include/dgiot.hrl").
+-include_lib("dgiot/include/logger.hrl").
+-include_lib("dgiot/include/types.hrl").
 
 -logger_header("[CM]").
 
@@ -39,10 +39,10 @@
         , set_chan_info/2
         ]).
 
-%%-export([ get_chan_stats/1
-%%        , get_chan_stats/2
-%%        , set_chan_stats/2
-%%        ]).
+-export([ get_chan_stats/1
+        , get_chan_stats/2
+        , set_chan_stats/2
+        ]).
 
 -export([get_chann_conn_mod/2]).
 
@@ -71,7 +71,7 @@
         ]).
 
 %% Internal export
-%%-export([stats_fun/0]).
+-export([stats_fun/0]).
 
 -type(chan_pid() :: pid()).
 
@@ -80,11 +80,11 @@
 -define(CHAN_CONN_TAB, dgiot_channel_conn).
 -define(CHAN_INFO_TAB, dgiot_channel_info).
 
-%%-define(CHAN_STATS,
-%%        [{?CHAN_TAB, 'channels.count', 'channels.max'},
-%%         {?CHAN_TAB, 'sessions.count', 'sessions.max'},
-%%         {?CHAN_CONN_TAB, 'connections.count', 'connections.max'}
-%%        ]).
+-define(CHAN_STATS,
+        [{?CHAN_TAB, 'channels.count', 'channels.max'},
+         {?CHAN_TAB, 'sessions.count', 'sessions.max'},
+         {?CHAN_CONN_TAB, 'connections.count', 'connections.max'}
+        ]).
 
 %% Batch drain
 -define(BATCH_SIZE, 100000).
@@ -173,6 +173,36 @@ set_chan_info(ChannelId, Info) when is_binary(ChannelId) ->
         error:badarg -> false
     end.
 
+%% @doc Get channel's stats.
+-spec(get_chan_stats(dgiot_types:clientid()) -> maybe(dgiot_types:stats())).
+get_chan_stats(ClientId) ->
+    with_channel(ClientId, fun(ChanPid) -> get_chan_stats(ClientId, ChanPid) end).
+
+-spec(get_chan_stats(dgiot_types:clientid(), chan_pid())
+        -> maybe(dgiot_types:stats())).
+get_chan_stats(ClientId, ChanPid) when node(ChanPid) == node() ->
+    Chan = {ClientId, ChanPid},
+    try ets:lookup_element(?CHAN_INFO_TAB, Chan, 3)
+    catch
+        error:badarg -> undefined
+    end;
+get_chan_stats(ClientId, ChanPid) ->
+    rpc_call(node(ChanPid), get_chan_stats, [ClientId, ChanPid]).
+
+%% @doc Set channel's stats.
+-spec(set_chan_stats(dgiot_types:clientid(), dgiot_types:stats()) -> boolean()).
+set_chan_stats(ClientId, Stats) when is_binary(ClientId) ->
+    set_chan_stats(ClientId, self(), Stats).
+
+-spec(set_chan_stats(dgiot_types:clientid(), chan_pid(), dgiot_types:stats())
+        -> boolean()).
+set_chan_stats(ClientId, ChanPid, Stats) ->
+    Chan = {ClientId, ChanPid},
+    try ets:update_element(?CHAN_INFO_TAB, Chan, {3, Stats})
+    catch
+        error:badarg -> false
+    end.
+
 with_channel(ClientId, Fun) ->
     case lookup_channels(ClientId) of
         []    -> undefined;
@@ -222,7 +252,7 @@ init([]) ->
     ok = dgiot_tables:new(?CHAN_TAB, [bag, {read_concurrency, true}|TabOpts]),
     ok = dgiot_tables:new(?CHAN_CONN_TAB, [bag | TabOpts]),
     ok = dgiot_tables:new(?CHAN_INFO_TAB, [set, compressed | TabOpts]),
-%%    ok = dgiot_stats:update_interval(chan_stats, fun ?MODULE:stats_fun/0),
+    ok = dgiot_stats:update_interval(chan_stats, fun ?MODULE:stats_fun/0),
     {ok, #{chan_pmon => dgiot_pmon:new()}}.
 
 handle_call(Req, _From, State) ->
@@ -248,8 +278,7 @@ handle_info(Info, State) ->
     {noreply, State}.
 
 terminate(_Reason, _State) ->
-%%    dgiot_stats:cancel_update(chan_stats).
-      ok.
+    dgiot_stats:cancel_update(chan_stats).
 
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
@@ -261,14 +290,14 @@ code_change(_OldVsn, State, _Extra) ->
 clean_down({ChanPid, ClientId}) ->
     do_unregister_channel({ClientId, ChanPid}).
 
-%%stats_fun() ->
-%%    lists:foreach(fun update_stats/1, ?CHAN_STATS).
-%%
-%%update_stats({Tab, Stat, MaxStat}) ->
-%%    case ets:info(Tab, size) of
-%%        undefined -> ok;
-%%        Size -> dgiot_stats:setstat(Stat, MaxStat, Size)
-%%    end.
+stats_fun() ->
+    lists:foreach(fun update_stats/1, ?CHAN_STATS).
+
+update_stats({Tab, Stat, MaxStat}) ->
+    case ets:info(Tab, size) of
+        undefined -> ok;
+        Size -> dgiot_stats:setstat(Stat, MaxStat, Size)
+    end.
 
 get_chann_conn_mod(ClientId, ChanPid) when node(ChanPid) == node() ->
     Chan = {ClientId, ChanPid},

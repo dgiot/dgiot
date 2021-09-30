@@ -28,7 +28,6 @@
 
 %% 注册通道类型
 -channel_type(#{
-
     cType => ?TYPE,
     type => ?PROTOCOL_CHL,
     title => #{

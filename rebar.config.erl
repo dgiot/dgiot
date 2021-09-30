@@ -270,6 +270,7 @@ relx_apps(ReleaseType) ->
         , runtime_tools
         , cuttlefish
         , jsx
+        , jesse
         , odbc
         , erlydtl
         , ejdbc

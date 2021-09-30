@@ -227,18 +227,18 @@ validate(Rule = {<<"pattern">>, Pattern}, Name, Value) ->
             validation_error(Rule, Name, Err)
     end;
 
-validate(schema, _Schema, _Data) ->
-    ok;
-%%    case jesse:validate_with_schema(Schema, Data) of
-%%        {error, [{schema_invalid, _, Reason}]} ->
-%%            ?LOG(error,"validate_with_schema ~p,~p,~p~n", [Schema, Data, Reason]),
-%%            validation_error(schema, schema, schema_invalid);
-%%        {error, [{data_invalid, _, Error, _, Names}]} ->
-%%            ?LOG(error,"validate_with_schema ~p,~p,~p~n", [Schema, Data, Error]),
-%%            validation_error(schema, Names, Error);
-%%        {ok, _} ->
-%%            ok
-%%    end;
+%% https://json-schema.org/
+validate(schema, Schema, Data) ->
+    case jesse:validate_with_schema(Schema, Data) of
+        {error, [{schema_invalid, _, Reason}]} ->
+            ?LOG(error,"validate_with_schema ~p,~p,~p~n", [Schema, Data, Reason]),
+            validation_error(schema, schema, schema_invalid);
+        {error, [{data_invalid, _, Error, _, Names}]} ->
+            ?LOG(error,"validate_with_schema ~p,~p,~p~n", [Schema, Data, Error]),
+            validation_error(schema, Names, Error);
+        {ok, _} ->
+            ok
+    end;
 
 validate(Rule, Name, _Value) ->
     Err = io_lib:format("Can't validate ~p with ~p", [Name, Rule]),

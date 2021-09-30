@@ -1,10 +1,15 @@
-## [4.3.3](https://github.com/dgiot/dgiot/compare/v4.3.4...v4.3.3) (2021-09-28)
+# [](https://github.com/dgiot/dgiot/compare/v4.3.4...v) (2021-09-30)
 
 
 ### Bug Fixes
 
 * channel_log ([1e37058](https://github.com/dgiot/dgiot/commit/1e3705876eb905cab215085e7341e050ce822170))
 * task_worker bug ([0396163](https://github.com/dgiot/dgiot/commit/039616312126d24e36b03cf339e0e6ffb6f3aa13))
+
+
+### Performance Improvements
+
+* add dgiot topo readme" ([e6623c1](https://github.com/dgiot/dgiot/commit/e6623c1b69b56a62635dd886a5374ad29171e6fd))
 
 
 

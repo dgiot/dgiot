@@ -75,7 +75,7 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, state = #state{id = ChannelId, de
                     Topic = <<"profile/", ProductId/binary, "/", Buff/binary>>,
                     dgiot_bridge:send_log(ChannelId, ProductId, Buff, "DTU revice from  ~p", [dgiot_utils:binary_to_hex(Buff)]),
                     dgiot_mqtt:subscribe(Topic),
-                    {noreply, TCPState#tcp{buff = <<>>, state = State#state{devaddr = Buff}}};
+                    {noreply, TCPState#tcp{buff = <<>>, register = true, clientid = DeviceId, state = State#state{devaddr = Buff}}};
                 Error1 ->
                     ?LOG(info, "Error1 ~p Buff ~p ", [Error1, dgiot_utils:to_list(Buff)]),
                     {noreply, TCPState#tcp{buff = <<>>}}
