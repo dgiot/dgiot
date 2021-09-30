@@ -53,7 +53,7 @@ start_link(Transport, Sock, Mod, Opts, State) ->
 init(Mod, Transport, Opts, Sock0, State) ->
     case Transport:wait(Sock0) of
         {ok, Sock} ->
-            ChildState = #tcp{socket = Sock, transport = Transport, state = State},
+            ChildState = #tcp{socket = Sock, register = false, transport = Transport, state = State},
             case Mod:init(ChildState) of
                 {ok, NewChildState} ->
                     GState = #state{
@@ -71,7 +71,6 @@ init(Mod, Transport, Opts, Sock0, State) ->
         {error, Reason} ->
             {stop, Reason}
     end.
-
 
 handle_call(Request, From, #state{mod = Mod, child = ChildState} = State) ->
     case Mod:handle_call(Request, From, ChildState) of
@@ -115,6 +114,7 @@ handle_info({tcp, Sock, Data}, #state{mod = Mod, child = #tcp{register = false, 
     case Mod:handle_info({tcp, <<Buff/binary, NewBin/binary>>}, NewChildState) of
         {noreply, #tcp{register = true, clientid = ClientId, buff = Buff, socket = Sock} = NewChild} ->
             dgiot_cm:register_channel(ClientId, self(), #{conn_mod => Mod}),
+            dgiot_cm:set_chan_info(ClientId, #{conn_mod => Mod}),
             {noreply, State#state{child = NewChild, incoming_bytes = Cnt}, hibernate};
         {noreply,  NewChild} ->
             {noreply, State#state{child = NewChild, incoming_bytes = Cnt}, hibernate};
@@ -132,6 +132,7 @@ handle_info({tcp, Sock, Data}, #state{mod = Mod, child = #tcp{buff = Buff, socke
                 Binary
         end,
     write_log(ChildState#tcp.log, <<"RECV">>, NewBin),
+    ?LOG(info,"ChildState ~p",[ChildState]),
     Cnt = byte_size(NewBin),
     NewChildState = ChildState#tcp{buff = <<>>},
     case Mod:handle_info({tcp, <<Buff/binary, NewBin/binary>>}, NewChildState) of

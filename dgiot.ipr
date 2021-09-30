@@ -59,6 +59,7 @@
     <mapping directory="$PROJECT_DIR$/_build/default/lib/luerl" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/default/lib/lwm2m_coap" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/default/lib/minirest" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/_build/default/lib/mria" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/default/lib/pbkdf2" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/default/lib/poolboy" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/default/lib/prometheus" vcs="Git" />
@@ -101,6 +102,7 @@
     <mapping directory="$PROJECT_DIR$/_build/emqx/lib/luerl" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/emqx/lib/lwm2m_coap" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/emqx/lib/minirest" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/_build/emqx/lib/mria" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/emqx/lib/pbkdf2" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/emqx/lib/poolboy" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/emqx/lib/prometheus" vcs="Git" />
