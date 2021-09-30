@@ -270,8 +270,8 @@ relx_apps(ReleaseType) ->
         , runtime_tools
         , cuttlefish
         , jsx
-        , odbc
         , jesse
+        , odbc
         , erlydtl
         , ejdbc
         , ecpool
@@ -541,4 +541,3 @@ list_dir(Dir) ->
 ee_profiles(_Vsn) -> [].
 ee_etc_overlay(_) -> [].
 ee_overlay_vars(_PkgType) -> [].
-
