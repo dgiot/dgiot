@@ -123,49 +123,53 @@ handle_info({deliver, _, Msg}, #tcp{state = #state{id = ChannelId} = State} = TC
                     end,
                     {noreply, TCPState};
                 [<<"thing">>, _ProductId, DevAddr] ->
-                    [#{<<"thingdata">> := ThingData} | _] = jsx:decode(Payload, [{labels, binary}, return_maps]),
-%%                    ?LOG(error, "ThingData ~p", [ThingData]),
-                    case ThingData of
-                        #{<<"command">> := <<"r">>,
-                            <<"data">> := Value,
-                            <<"di">> := Di,
-                            <<"pn">> := SlaveId,
-                            <<"product">> := ProductId,
-                            <<"protocol">> := <<"modbus">>
-                        } ->
-                            Datas = modbus_rtu:to_frame(#{
-                                <<"addr">> => SlaveId,
-                                <<"value">> => Value,
-                                <<"productid">> => ProductId,
-                                <<"di">> => Di}),
+
+                    case jsx:decode(Payload, [{labels, binary}, return_maps]) of
+                        [#{<<"thingdata">> := ThingData} | _] ->
+                            case ThingData of
+                                #{<<"command">> := <<"r">>,
+                                    <<"data">> := Value,
+                                    <<"di">> := Di,
+                                    <<"pn">> := SlaveId,
+                                    <<"product">> := ProductId,
+                                    <<"protocol">> := <<"modbus">>
+                                } ->
+                                    Datas = modbus_rtu:to_frame(#{
+                                        <<"addr">> => SlaveId,
+                                        <<"value">> => Value,
+                                        <<"productid">> => ProductId,
+                                        <<"di">> => Di}),
 %%                            ?LOG(error, "Datas ~p", [Datas]),
-                            lists:map(fun(X) ->
-                                dgiot_bridge:send_log(ChannelId, ProductId, DevAddr, " to_device: ~p [~p] ", [DevAddr, dgiot_utils:binary_to_hex(X)]),
-                                dgiot_tcp_server:send(TCPState, X),
-                                timer:sleep(1000)
-                                      end, Datas),
-                            {noreply, TCPState#tcp{state = State#state{env = #{product => ProductId, pn => SlaveId, di => Di}}}};
-                        #{<<"command">> := <<"rw">>,
-                            <<"data">> := Value,
-                            <<"di">> := Di,
-                            <<"pn">> := SlaveId,
-                            <<"product">> := ProductId,
-                            <<"protocol">> := <<"modbus">>
-                        } ->
-                            Datas = modbus_rtu:to_frame(#{
-                                <<"addr">> => SlaveId,
-                                <<"value">> => Value,
-                                <<"productid">> => ProductId,
-                                <<"di">> => Di}),
+                                    lists:map(fun(X) ->
+                                        dgiot_bridge:send_log(ChannelId, ProductId, DevAddr, " to_device: ~p [~p] ", [DevAddr, dgiot_utils:binary_to_hex(X)]),
+                                        dgiot_tcp_server:send(TCPState, X),
+                                        timer:sleep(1000)
+                                              end, Datas),
+                                    {noreply, TCPState#tcp{state = State#state{env = #{product => ProductId, pn => SlaveId, di => Di}}}};
+                                #{<<"command">> := <<"rw">>,
+                                    <<"data">> := Value,
+                                    <<"di">> := Di,
+                                    <<"pn">> := SlaveId,
+                                    <<"product">> := ProductId,
+                                    <<"protocol">> := <<"modbus">>
+                                } ->
+                                    Datas = modbus_rtu:to_frame(#{
+                                        <<"addr">> => SlaveId,
+                                        <<"value">> => Value,
+                                        <<"productid">> => ProductId,
+                                        <<"di">> => Di}),
 %%                    ?LOG(error, "Datas ~p", [Datas]),
-                            lists:map(fun(X) ->
-                                dgiot_bridge:send_log(ChannelId, ProductId, DevAddr, "to_device: ~p [~p] ", [DevAddr, dgiot_utils:binary_to_hex(X)]),
-                                dgiot_tcp_server:send(TCPState, X),
-                                timer:sleep(1000)
-                                      end, Datas),
-                            {noreply, TCPState#tcp{state = State#state{env = #{product => ProductId, pn => SlaveId, di => Di}}}};
-                        _Ot ->
-                            ?LOG(error, "_Ot ~p", [_Ot]),
+                                    lists:map(fun(X) ->
+                                        dgiot_bridge:send_log(ChannelId, ProductId, DevAddr, "to_device: ~p [~p] ", [DevAddr, dgiot_utils:binary_to_hex(X)]),
+                                        dgiot_tcp_server:send(TCPState, X),
+                                        timer:sleep(1000)
+                                              end, Datas),
+                                    {noreply, TCPState#tcp{state = State#state{env = #{product => ProductId, pn => SlaveId, di => Di}}}};
+                                _Ot ->
+                                    ?LOG(error, "_Ot ~p", [_Ot]),
+                                    {noreply, TCPState}
+                            end;
+                        _ ->
                             {noreply, TCPState}
                     end;
                 _Other ->
