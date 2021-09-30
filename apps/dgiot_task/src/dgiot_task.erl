@@ -205,8 +205,11 @@ get_collection(ProductId, Dis, Payload, Ack) ->
                                     <<"identifier">> := Identifier} when Strategy =/= <<"计算值"/utf8>> ->
                                     case maps:find(Identifier, Payload) of
                                         {ok, Value} ->
+                                            Addr = dgiot_topo:get_gpsaddr(Value),
+                                            dgiot_data:insert({topogps, dgiot_parse:get_shapeid(ProductId, Identifier)}, Addr),
                                             Acc2#{Identifier => Value};
                                         _ ->
+                                            dgiot_data:insert({topogps, dgiot_parse:get_shapeid(ProductId, Identifier)}, <<"无GPS信息"/utf8>>),
                                             Acc2#{Identifier => <<"">>}
                                     end;
                                 #{<<"dataForm">> := #{<<"address">> := Address, <<"strategy">> := Strategy, <<"collection">> := Collection},

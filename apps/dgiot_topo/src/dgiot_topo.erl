@@ -16,7 +16,7 @@
 -author("johnliu").
 -include_lib("dgiot/include/logger.hrl").
 
--export([docroot/0, get_topo/2, send_topo/3, get_Product/0, get_name/3, put_topo/2, get_konva_thing/2, edit_konva/2, push/4]).
+-export([docroot/0, get_topo/2, send_topo/3, get_Product/0, get_name/3, put_topo/2, get_konva_thing/2, edit_konva/2, push/4, get_gpsaddr/1]).
 
 docroot() ->
     {file, Here} = code:is_loaded(?MODULE),
@@ -52,7 +52,7 @@ get_topo(Arg, _Context) ->
                     end;
                 _ ->
                     DeviceId = dgiot_parse:get_deviceid(ProductId, Devaddr),
-                    case dgiot_tdengine:get_device(ProductId, Devaddr, #{<<"keys">> => <<"last_row(*)">>, <<"limit">> => 1}) of
+                    case dgiot_tdengine:get_device(<<"09d0bbcf44">>, <<"9CA525B343F0">>, #{<<"keys">> => <<"last_row(*)">>, <<"limit">> => 1}) of
                         {ok, #{<<"results">> := [Result | _]}} ->
                             put({self(), td}, Result);
                         _ ->
@@ -177,14 +177,27 @@ get_attrs(Type, ProductId, ClassName, Attrs, DeviceId, KonvatId, Shapeid, Identi
                         _ ->
                             Id = maps:get(<<"id">>, Attrs),
                             Result = get({self(), td}),
+                            Unit = get_unit(ProductId, Id),
                             Text =
                                 case maps:find(Id, Result) of
                                     error ->
-                                        <<"0">>;
+                                        Text2 = maps:get(<<"text">>, Attrs, <<"">>),
+                                        case dgiot_data:get({toponotext, ProductId}) of
+                                            not_find ->
+                                                dgiot_data:insert({toponotext, ProductId}, [#{<<"id">> => dgiot_parse:get_shapeid(DeviceId, Id), <<"text">> => <<Text2/binary, " ", Unit/binary>>, <<"type">> => Type}]);
+                                            Topo ->
+                                                New_Topo = dgiot_utils:unique_2(Topo ++ [#{<<"id">> => dgiot_parse:get_shapeid(DeviceId, Id), <<"text">> => <<Text2/binary, " ", Unit/binary>>, <<"type">> => Type}]),
+                                                dgiot_data:insert({toponotext, ProductId}, New_Topo)
+                                        end,
+                                        Text2;
                                     {ok, Text1} ->
-                                        dgiot_utils:to_binary(Text1)
+                                        case dgiot_data:get({topogps, dgiot_parse:get_shapeid(ProductId, Id)}) of
+                                            not_find ->
+                                                dgiot_utils:to_binary(Text1);
+                                            Gpsaddr ->
+                                                Gpsaddr
+                                        end
                                 end,
-                            Unit = get_unit(ProductId, Id),
                             NewAttrs = Attrs#{<<"id">> => dgiot_parse:get_shapeid(DeviceId, Id), <<"text">> => <<Text/binary, " ", Unit/binary>>, <<"draggable">> => false},
                             save(Type, NewAttrs),
                             NewAttrs
@@ -193,7 +206,7 @@ get_attrs(Type, ProductId, ClassName, Attrs, DeviceId, KonvatId, Shapeid, Identi
     end.
 
 save(Type, Attrs) ->
-    AttrType = maps:get(<<"type">>,Attrs,<<"image">>),
+    AttrType = maps:get(<<"type">>, Attrs, <<"image">>),
     NewAttrs = Attrs#{<<"type">> => AttrType},
     case Type of
         <<"wechat">> ->
@@ -275,6 +288,11 @@ send_topo(ProductId, DeviceId, Payload) ->
 
 
 get_optshape(ProductId, DeviceId, Payload) ->
+    Topo =
+        case dgiot_data:get({toponotext, ProductId}) of
+            not_find -> [];
+            Topo1 -> Topo1
+        end,
     Shape =
         maps:fold(fun(K, V, Acc) ->
             Type =
@@ -284,10 +302,16 @@ get_optshape(ProductId, DeviceId, Payload) ->
                     Type1 ->
                         Type1
                 end,
+            BinV =
+                case dgiot_data:get({topogps, dgiot_parse:get_shapeid(ProductId, K)}) of
+                    not_find ->
+                        dgiot_utils:to_binary(V);
+                    Gpsaddr ->
+                        Gpsaddr
+                end,
             Unit = get_unit(ProductId, K),
-            BinV = dgiot_utils:to_binary(V),
             Acc ++ [#{<<"id">> => dgiot_parse:get_shapeid(DeviceId, K), <<"text">> => <<BinV/binary, " ", Unit/binary>>, <<"type">> => Type}]
-                  end, [], Payload),
+                  end, Topo, Payload),
     base64:encode(jsx:encode(#{<<"konva">> => Shape})).
 
 push(ProductId, Devaddr, DeviceId, Payload) ->
@@ -298,3 +322,17 @@ push(ProductId, Devaddr, DeviceId, Payload) ->
     Data1 = dgiot_utils:to_list(jsx:encode(Data)),
     httpc:request(post, {Url1, [], "application/json", Data1}, [], []).
 
+
+get_gpsaddr(V) ->
+    BinV = dgiot_utils:to_binary(V),
+    case binary:split(BinV, <<$_>>, [global, trim]) of
+        [Longitude, Latitude] ->
+            case dgiot_gps:get_baidu_addr(Longitude, Latitude) of
+                #{<<"baiduaddr">> := #{<<"formatted_address">> := FormattedAddress}} ->
+                    FormattedAddress;
+                _ ->
+                    <<"[", Longitude/binary, ",", Latitude/binary, "]经纬度解析错误"/utf8>>
+            end;
+        _ ->
+            <<"无GPS信息"/utf8>>
+    end.
