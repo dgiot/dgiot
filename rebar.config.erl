@@ -271,6 +271,7 @@ relx_apps(ReleaseType) ->
         , cuttlefish
         , jsx
         , odbc
+        , jesse
         , erlydtl
         , ejdbc
         , ecpool
