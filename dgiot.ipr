@@ -17,11 +17,9 @@
   <component name="InspectionProjectProfileManager">
     <profile version="1.0">
       <option name="myName" value="Project Default" />
+      <inspection_tool class="ErlangIncludeDirectories" enabled="false" level="WARNING" enabled_by_default="false" />
     </profile>
     <version value="1.0" />
-  </component>
-  <component name="ProjectDictionaryState">
-    <dictionary name="jonhl" />
   </component>
   <component name="ProjectModuleManager">
     <modules>
@@ -55,11 +53,11 @@
     <mapping directory="$PROJECT_DIR$/_build/default/lib/grpc_plugin" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/default/lib/gun" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/default/lib/ibrowse" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/_build/default/lib/jesse" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/default/lib/jiffy" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/default/lib/luerl" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/default/lib/lwm2m_coap" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/default/lib/minirest" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/_build/default/lib/mria" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/default/lib/pbkdf2" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/default/lib/poolboy" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/default/lib/prometheus" vcs="Git" />
@@ -79,8 +77,6 @@
     <mapping directory="$PROJECT_DIR$/_build/emqx/lib/cowboy" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/emqx/lib/cowlib" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/emqx/lib/cuttlefish" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/_build/emqx/lib/cuttlefish/_build/default/lib/getopt" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/_build/emqx/lib/cuttlefish/_build/escript/lib/getopt" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/emqx/lib/ecpool" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/emqx/lib/ehttpc" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/emqx/lib/ejdbc" vcs="Git" />
@@ -98,11 +94,11 @@
     <mapping directory="$PROJECT_DIR$/_build/emqx/lib/grpc_plugin" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/emqx/lib/gun" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/emqx/lib/ibrowse" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/_build/emqx/lib/jesse" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/emqx/lib/jiffy" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/emqx/lib/luerl" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/emqx/lib/lwm2m_coap" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/emqx/lib/minirest" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/_build/emqx/lib/mria" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/emqx/lib/pbkdf2" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/emqx/lib/poolboy" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/emqx/lib/prometheus" vcs="Git" />
@@ -119,14 +115,5 @@
     <mapping directory="$PROJECT_DIR$/_build/emqx/plugins/grpc_plugin" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/emqx/plugins/pc" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/emqx/plugins/relup_helper" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/apps/dgiot_ffmpeg" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/apps/dgiot_jieshun" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/apps/dgiot_meter" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/apps/dgiot_mingcheng" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/apps/dgiot_sinmahe" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/apps/dgiot_system_urban_fire" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/apps/dgiot_xinchuangwei" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/apps/shuwa_mqtt" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/emqx-extension-examples" vcs="Git" />
   </component>
 </project>
