@@ -21,10 +21,22 @@
 -include_lib("dgiot/include/dgiot_socket.hrl").
 -include_lib("dgiot/include/logger.hrl").
 
-
 -define(TYPE, <<"TCP">>).
 -define(MAX_BUFF_SIZE, 1024).
--record(state, {id, mod, product, env = #{}, buff_size = 1024000}).
+-record(state, {
+    id,
+    buff_size = 1024000,
+    devaddr = <<>>,
+    heartcount = 0,
+    head = "xxxxxx0eee",
+    len = 0,
+    app = <<>>,
+    product = <<>>,
+    deviceId = <<>>,
+    env = #{},
+    dtutype = <<>>
+}).
+
 %% API
 -export([start/2]).
 
@@ -58,16 +70,28 @@
             zh => <<"侦听端口"/utf8>>
         }
     },
-    <<"buff_size">> => #{
+    <<"login">> => #{
         order => 2,
-        type => integer,
-        required => false,
-        default => 1024000,
+        type => string,
+        required => true,
+        default => <<"9C-A5-**-**-**-**">>,
         title => #{
-            zh => <<"缓存限定"/utf8>>
+            zh => <<"登录报文帧头"/utf8>>
         },
         description => #{
-            zh => <<"设置缓存限定"/utf8>>
+            zh => <<"填写正则表达式匹配login报文, 9C-A5标识设备类型，**-**-**-**为设备地址,中杆会自动去除"/utf8>>
+        }
+    },
+    <<"dtutype">> => #{
+        order => 3,
+        type => string,
+        required => true,
+        default => <<"dgiot">>,
+        title => #{
+            zh => <<"控制器厂商"/utf8>>
+        },
+        description => #{
+            zh => <<"控制器厂商与设备类型一起组合生成产品ID"/utf8>>
         }
     },
     <<"ico">> => #{
@@ -90,36 +114,39 @@
 start(ChannelId, ChannelArgs) ->
     dgiot_channelx:add(?TYPE, ChannelId, ?MODULE, ChannelArgs).
 
-
 %% 通道初始化
-init(?TYPE, ChannelId, #{<<"port">> := Port, <<"behaviour">> := Mod} = Args) ->
+init(?TYPE, ChannelId, #{
+    <<"port">> := Port,
+    <<"login">> := Login,
+    <<"dtutype">> := Dtutype
+} = Args) ->
+    {Header, Len} = get_header(Login),
     State = #state{
         id = ChannelId,
-        mod = Mod,
+        head = Header,
+        len = Len,
+        dtutype = Dtutype,
         buff_size = maps:get(<<"buff_size">>, Args, 1024000)
     },
     {ok, State, dgiot_tcp_server:child_spec(?MODULE, Port, State)}.
-
 
 handle_init(State) ->
     {ok, State}.
 
 %% 通道消息处理,注意：进程池调用
 handle_event(_EventId, Event, State) ->
-    ?LOG(info,"Channel ~p", [Event]),
+    ?LOG(info, "Channel ~p", [Event]),
     {ok, State}.
 
 handle_message(Message, State) ->
-    ?LOG(info,"Channel ~p", [Message]),
+    ?LOG(info, "Channel ~p", [Message]),
     {ok, State}.
 
 stop(ChannelType, ChannelId, _State) ->
-    ?LOG(warning,"Channel[~p,~p] stop", [ChannelType, ChannelId]),
+    ?LOG(warning, "Channel[~p,~p] stop", [ChannelType, ChannelId]),
     ok.
 
-
 %% =======================
-
 %% {ok, State} | {stop, Reason}
 init(#tcp{state = #state{id = ChannelId} = State} = TCPState) ->
     case dgiot_bridge:get_products(ChannelId) of
@@ -137,20 +164,28 @@ init(#tcp{state = #state{id = ChannelId} = State} = TCPState) ->
             {stop, not_find_channel}
     end.
 
-
 handle_info({deliver, _, Msg}, TCPState) ->
     Payload = dgiot_mqtt:get_payload(Msg),
     Topic = dgiot_mqtt:get_topic(Msg),
-    case jsx:is_json(Payload) of
-        true ->
-            case jsx:decode(Payload, [{labels, binary}, return_maps]) of
-                #{<<"cmd">> := <<"send">>} = Cmd ->
-                    handle_info(Cmd, TCPState);
-                Info ->
-                    handle_info({mqtt, Topic, Info}, TCPState)
-            end;
-        false ->
-            handle_info({mqtt, Topic, Payload}, TCPState)
+    case binary:split(Topic, <<$/>>, [global, trim]) of
+        [<<"transparent">>, _DeviceId] ->
+            dgiot_tcp_server:send(TCPState, Payload),
+            {noreply, TCPState};
+        [<<"transparent">>, _DeviceId, <<"hex">>] ->
+            dgiot_tcp_server:send(TCPState, dgiot_utils:hex_to_binary(Payload)),
+            {noreply, TCPState};
+        _ ->
+            case jsx:is_json(Payload) of
+                true ->
+                    case jsx:decode(Payload, [{labels, binary}, return_maps]) of
+                        #{<<"cmd">> := <<"send">>} = Cmd ->
+                            handle_info(Cmd, TCPState);
+                        Info ->
+                            handle_info({mqtt, Topic, Info}, TCPState)
+                    end;
+                false ->
+                    handle_info({mqtt, Topic, Payload}, TCPState)
+            end
     end;
 
 %% 对于TCP转一道，向下发的命令
@@ -168,16 +203,38 @@ handle_info(#{<<"cmd">> := <<"send">>} = Cmd, #tcp{state = #state{id = ChannelId
             {noreply, NewTCPState}
     end;
 
-handle_info({tcp, Buff}, #tcp{state = #state{id = ChannelId, mod = Module, product = Product}} = TCPState) ->
+handle_info({tcp, Buff}, #tcp{socket = Socket, state = #state{id = ChannelId, devaddr = <<>>, head = Head, len = Len, product = Products, dtutype = Dtutype} = State} = TCPState) ->
+    DTUIP = dgiot_utils:get_ip(Socket),
+    case check_login(Head, Len, Buff) of
+        <<>> ->
+            {noreply, TCPState#tcp{buff = <<>>}};
+        DtuAddr ->
+            NewProductId = get_productid(ChannelId, Products, Head, Dtutype),
+            DeviceId = dgiot_parse:get_deviceid(NewProductId, DtuAddr),
+            case create_device(DeviceId, NewProductId, DtuAddr, DTUIP, Dtutype) of
+                {<<>>, <<>>} ->
+                    {noreply, TCPState#tcp{buff = <<>>}};
+                {_, _} ->
+                    sub_topic(DeviceId),
+                    NewProducts = dgiot_utils:unique_1(Products ++ [NewProductId]),
+                    dgiot_bridge:send_log(ChannelId, NewProductId, DtuAddr, "DTU revice from  ~p", [DtuAddr]),
+                    {noreply, TCPState#tcp{buff = <<>>, register = true, clientid = DeviceId,
+                        state = State#state{devaddr = DtuAddr, product = NewProducts, deviceId = DeviceId}}}
+            end
+    end;
+
+handle_info({tcp, Buff}, #tcp{state = #state{id = ChannelId, product = Product, deviceId = DeviceId}} = TCPState) ->
+    pub_topic(DeviceId, Buff),
     case decode(Buff, Product, TCPState) of
         {ok, [], NewTCPState} ->
-            {noreply, NewTCPState};
+            {noreply, NewTCPState#tcp{buff = <<>>}};
         {ok, Frames, #tcp{state = #state{product = ProductId}} = NewTCPState} ->
             dgiot_bridge:send_log(ChannelId, ProductId, "~s", [jsx:encode(Frames)]),
-            Module:do(ChannelId, ProductId, Frames),
-            handle_frames(Frames, NewTCPState);
-        {stop, Reason} ->
-            {stop, Reason, TCPState}
+%%            Module:do(ChannelId, ProductId, Frames),
+            handle_frames(Frames, NewTCPState),
+            {noreply, NewTCPState#tcp{buff = <<>>}};
+        {stop, _Reason} ->
+            {noreply, TCPState#tcp{buff = <<>>}}
     end;
 
 %% {stop, TCPState} | {stop, Reason} | {ok, TCPState} | ok | stop
@@ -272,3 +329,131 @@ handle_frames([Frame | Frames], TCPState) ->
 
 update_state(Env, #tcp{state = State} = TCPState) ->
     TCPState#tcp{state = State#state{env = maps:without([<<"send">>], Env)}}.
+
+
+create_device(DeviceId, ProductId, DTUMAC, DTUIP, Dtutype) ->
+    case dgiot_parse:get_object(<<"Product">>, ProductId) of
+        {ok, #{<<"ACL">> := Acl, <<"devType">> := DevType}} ->
+            case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+                {ok, #{<<"devaddr">> := _GWAddr}} ->
+                    dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"ip">> => DTUIP, <<"status">> => <<"ONLINE">>}),
+                    dgiot_task:save_pnque(ProductId, DTUMAC, ProductId, DTUMAC),
+                    create_instruct(Acl, ProductId, DeviceId);
+                _ ->
+                    dgiot_device:create_device(#{
+                        <<"devaddr">> => DTUMAC,
+                        <<"name">> => <<Dtutype/binary, DTUMAC/binary>>,
+                        <<"ip">> => DTUIP,
+                        <<"isEnable">> => true,
+                        <<"product">> => ProductId,
+                        <<"ACL">> => Acl,
+                        <<"status">> => <<"ONLINE">>,
+                        <<"location">> => #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => 120.161324, <<"latitude">> => 30.262441},
+                        <<"brand">> => Dtutype,
+                        <<"devModel">> => DevType
+                    }),
+                    dgiot_task:save_pnque(ProductId, DTUMAC, ProductId, DTUMAC),
+                    create_instruct(Acl, ProductId, DeviceId)
+            end,
+            Productname =
+                case dgiot_parse:get_object(<<"Product">>, ProductId) of
+                    {ok, #{<<"name">> := Productname1}} ->
+                        Productname1;
+                    _ ->
+                        <<"">>
+                end,
+            ?MLOG(info, #{<<"clientid">> => DeviceId, <<"devaddr">> => DTUMAC, <<"productid">> => ProductId, <<"productname">> => Productname, <<"devicename">> => <<Dtutype/binary, DTUMAC/binary>>, <<"status">> => <<"上线"/utf8>>}, ['device_statuslog']),
+            {DeviceId, DTUMAC};
+        Error2 ->
+            ?LOG(info, "Error2 ~p ", [Error2]),
+            {<<>>, <<>>}
+    end.
+
+create_instruct(ACL, DtuProductId, DtuDevId) ->
+    case dgiot_product:lookup_prod(DtuProductId) of
+        {ok, #{<<"thing">> := #{<<"properties">> := Properties}}} ->
+            lists:map(fun(Y) ->
+                case Y of
+                    #{<<"dataForm">> := #{<<"slaveid">> := 256}} ->   %%不做指令
+                        pass;
+                    #{<<"dataForm">> := #{<<"slaveid">> := SlaveId}} ->
+                        Pn = dgiot_utils:to_binary(SlaveId),
+%%                        ?LOG(info,"DtuProductId ~p DtuDevId ~p Pn ~p ACL ~p", [DtuProductId, DtuDevId, Pn, ACL]),
+%%                        ?LOG(info,"Y ~p", [Y]),
+                        dgiot_instruct:create(DtuProductId, DtuDevId, Pn, ACL, <<"all">>, #{<<"properties">> => [Y]});
+                    _ -> pass
+                end
+                      end, Properties);
+        _ -> pass
+    end.
+
+
+get_header(Regular) ->
+    lists:foldl(fun(X, {Header, Len}) ->
+        case X of
+            "**" -> {Header, Len + length(X)};
+            "*" -> {Header, Len + length(X)};
+            _ -> {Header ++ X, Len + length(X)}
+        end
+                end, {[], 0},
+        re:split(dgiot_utils:to_list(Regular), "-", [{return, list}])).
+
+get_productid(ChannelId, Products, Head, Dtutype) ->
+    NewProductId = dgiot_parse:get_productid(<<"DGIOTHUB"/utf8>>, dgiot_utils:to_binary(Head), dgiot_utils:to_binary(Dtutype)),
+    case lists:member(NewProductId, Products) of
+        false ->
+            {ok, Acl} = dgiot_bridge:get_acl(ChannelId),
+            case dgiot_parse:get_object(<<"Product">>, NewProductId) of
+                {ok, _} ->
+                    pass;
+                _ ->
+                    Product = #{
+                        <<"name">> => dgiot_utils:to_binary(Dtutype),
+                        <<"devType">> => dgiot_utils:to_binary(Head),
+                        <<"category">> => <<"DGIOTHUB"/utf8>>,
+                        <<"ACL">> => Acl,
+                        <<"netType">> => <<"NB-IOT">>,
+                        <<"nodeType">> => 3,
+                        <<"config">> => #{},
+                        <<"thing">> => #{},
+                        <<"productSecret">> => dgiot_utils:random()
+                    },
+                    ?LOG(info, "Product ~p", [Product]),
+                    dgiot_parse:create_object(<<"Product">>, Product),
+                    pass
+            end;
+        true ->
+            pass
+    end,
+    NewProductId.
+
+check_login(Head, Len, Addr) ->
+    HexAddr = dgiot_utils:binary_to_hex(Addr),
+    HexList = dgiot_utils:to_list(HexAddr),
+    List = dgiot_utils:to_list(Addr),
+    case re:run(HexAddr, Head, [{capture, first, list}]) of
+        {match, [Head]} when length(HexList) == Len ->
+            HexAddr;
+        _Error ->
+            case re:run(Addr, Head, [{capture, first, list}]) of
+                {match, [Head]} when length(List) == Len ->
+                    Addr;
+                _Error1 ->
+                    <<>>
+            end
+    end.
+
+
+sub_topic(DeviceId) ->
+    Topic = <<"profile/", DeviceId/binary>>,
+    dgiot_mqtt:subscribe(Topic),
+    Topic1 = <<"transparent/", DeviceId/binary>>,
+    dgiot_mqtt:subscribe(Topic1),
+    Topic2 = <<"transparent/", DeviceId/binary, "/hex">>,
+    dgiot_mqtt:subscribe(Topic2).
+
+pub_topic(DeviceId, Payload) ->
+    Topic1 = <<"transparent/", DeviceId/binary, "/post">>,
+    dgiot_mqtt:publish(DeviceId, Topic1, Payload),
+    Topic2 = <<"transparent/", DeviceId/binary, "/post/hex">>,
+    dgiot_mqtt:publish(DeviceId, Topic2, dgiot_utils:binary_to_hex(Payload)).

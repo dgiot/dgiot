@@ -157,8 +157,6 @@ start_load_channel(Pid, PageSize, MaxTotal, #{<<"where">> := Where}) ->
     }).
 
 
-
-
 %%load_protocol() ->
 %%    {file, Here} = code:is_loaded(?MODULE),
 %%    Dir = filename:dirname(filename:dirname(Here)),

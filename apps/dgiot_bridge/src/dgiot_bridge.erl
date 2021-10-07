@@ -24,7 +24,7 @@
 
 %% API
 -export([start/0, start_channel/2, register_channel/2, get_behaviour/1, start_channel/3, do_global_message/1]).
--export([get_product_info/1, get_products/1, apply_channel/5, apply_product/3, parse_frame/3, to_frame/3]).
+-export([get_product_info/1, get_products/1, get_acl/1, apply_channel/5, apply_product/3, parse_frame/3, to_frame/3]).
 -export([get_data/2, send_log/3, send_log/4, send_log/5]).
 -export([get_all_channel/0, control_channel/2, list/0]).
 
@@ -135,6 +135,19 @@ get_products(ChannelId) ->
     end.
 
 
+get_acl(ChannelId) ->
+    case ets:info(?DGIOT_BRIDGE) of
+        undefined ->
+            application:start(dgiot_bridge);
+        _ -> pass
+    end,
+    case dgiot_data:lookup(?DGIOT_BRIDGE, {ChannelId, acl}) of
+        {error, not_find} ->
+            {error, not_find};
+        {ok, ACL} ->
+            {ok, ACL}
+    end.
+
 send_log(ChannelId, ProductId, DevAddr, Fmt, Args) ->
     is_send_log(ChannelId, ProductId, DevAddr,
         fun() ->
@@ -223,7 +236,6 @@ do_global_message([Msg]) ->
         _ ->
             ok
     end.
-
 
 register_all_channel() ->
     lists:map(fun({_, Channel_type}) ->

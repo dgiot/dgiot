@@ -68,9 +68,10 @@ handle_info({deliver, _, Msg}, State) ->
     end,
     {noreply, State};
 
-handle_info({start_channel, Module, #{<<"objectId">> := ChannelId, <<"type">> := Type, <<"cType">> := CType, <<"product">> := Products, <<"config">> := Cfg}}, State) ->
+handle_info({start_channel, Module, #{<<"objectId">> := ChannelId, <<"ACL">> := Acl, <<"type">> := Type, <<"cType">> := CType, <<"product">> := Products, <<"config">> := Cfg}}, State) ->
     ChannelType = list_to_binary(string:uppercase(binary_to_list(CType))),
     Behaviour = binary_to_atom(list_to_binary(io_lib:format("~s", [Module])), utf8),
+    dgiot_data:insert(?DGIOT_BRIDGE, {ChannelId, acl}, Acl),
     case do_channel(Type, ChannelType, ChannelId, Products, Cfg#{<<"behaviour">> => Behaviour}) of
         ok ->
             do_handle(#{<<"channelId">> => ChannelId, <<"enable">> => true});
