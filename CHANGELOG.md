@@ -7,6 +7,11 @@
 * task_worker bug ([0396163](https://github.com/dgiot/dgiot/commit/039616312126d24e36b03cf339e0e6ffb6f3aa13))
 
 
+### Features
+
+* add tcp transparent ([b1f091c](https://github.com/dgiot/dgiot/commit/b1f091cba9fa143fcc8040a6fa8848ac89412e96))
+
+
 ### Performance Improvements
 
 * add dgiot topo readme" ([e6623c1](https://github.com/dgiot/dgiot/commit/e6623c1b69b56a62635dd886a5374ad29171e6fd))

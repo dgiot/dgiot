@@ -217,7 +217,7 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, state = #state{id = ChannelId, de
                 {_, _} ->
                     sub_topic(DeviceId),
                     NewProducts = dgiot_utils:unique_1(Products ++ [NewProductId]),
-                    dgiot_bridge:send_log(ChannelId, NewProductId, DtuAddr, "DTU revice from  ~p", [DtuAddr]),
+                    dgiot_bridge:send_log(ChannelId, NewProductId, DtuAddr, "DeviceId ~p DTU revice from  ~p", [DeviceId,DtuAddr]),
                     {noreply, TCPState#tcp{buff = <<>>, register = true, clientid = DeviceId,
                         state = State#state{devaddr = DtuAddr, product = NewProducts, deviceId = DeviceId}}}
             end
