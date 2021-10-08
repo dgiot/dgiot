@@ -49,7 +49,6 @@ child_spec(Mod, Port, State, Opts) ->
 start_link(Transport, Sock, Mod, Opts, State) ->
     {ok, proc_lib:spawn_link(?MODULE, init, [Mod, Transport, Opts, Sock, State])}.
 
-
 init(Mod, Transport, Opts, Sock0, State) ->
     case Transport:wait(Sock0) of
         {ok, Sock} ->
@@ -63,6 +62,7 @@ init(Mod, Transport, Opts, Sock0, State) ->
                         rate_limit = rate_limit(proplists:get_value(rate_limit, Opts)),
                         child = NewChildState
                     },
+                    dgiot_metrics:inc(dgiot_bridge,<<"tcp_server">>,1),
                     ok = activate_socket(GState),
                     gen_server:enter_loop(?MODULE, [], GState);
                 {error, Reason} ->
@@ -100,6 +100,7 @@ handle_info({tcp_passive, _Sock}, State) ->
 
 %% add register function
 handle_info({tcp, Sock, Data}, #state{mod = Mod, child = #tcp{register = false, buff = Buff, socket = Sock} = ChildState} = State) ->
+    dgiot_metrics:inc(dgiot_bridge,<<"tcp_server_recv">>,1),
     Binary = iolist_to_binary(Data),
     NewBin =
         case binary:referenced_byte_size(Binary) of
@@ -114,7 +115,6 @@ handle_info({tcp, Sock, Data}, #state{mod = Mod, child = #tcp{register = false, 
     case Mod:handle_info({tcp, <<Buff/binary, NewBin/binary>>}, NewChildState) of
         {noreply, #tcp{register = true, clientid = ClientId, buff = Buff, socket = Sock} = NewChild} ->
             dgiot_cm:register_channel(ClientId, self(), #{conn_mod => Mod}),
-            dgiot_cm:set_chan_info(ClientId, #{conn_mod => Mod}),
             {noreply, State#state{child = NewChild, incoming_bytes = Cnt}, hibernate};
         {noreply,  NewChild} ->
             {noreply, State#state{child = NewChild, incoming_bytes = Cnt}, hibernate};
@@ -123,6 +123,7 @@ handle_info({tcp, Sock, Data}, #state{mod = Mod, child = #tcp{register = false, 
     end;
 
 handle_info({tcp, Sock, Data}, #state{mod = Mod, child = #tcp{buff = Buff, socket = Sock} = ChildState} = State) ->
+    dgiot_metrics:inc(dgiot_bridge,<<"tcp_server_recv">>,1),
     Binary = iolist_to_binary(Data),
     NewBin =
         case binary:referenced_byte_size(Binary) of
@@ -179,9 +180,11 @@ handle_info(Info, #state{mod = Mod, child = ChildState} = State) ->
 
 terminate(Reason, #state{mod = Mod, child = #tcp{clientid = CliendId, register = true} = ChildState}) ->
     dgiot_cm:unregister_channel(CliendId),
+    dgiot_metrics:dec(dgiot_bridge,<<"tcp_server">>,1),
     Mod:terminate(Reason, ChildState);
 
 terminate(Reason, #state{mod = Mod, child = ChildState}) ->
+    dgiot_metrics:dec(dgiot_bridge,<<"tcp_server">>,1),
     Mod:terminate(Reason, ChildState).
 
 code_change(OldVsn, #state{mod = Mod, child = ChildState} = State, Extra) ->
@@ -193,10 +196,13 @@ code_change(OldVsn, #state{mod = Mod, child = ChildState} = State, Extra) ->
 %%%===================================================================
 
 send(#tcp{transport = Transport, socket = Socket, log = Log}, Payload) ->
+    dgiot_metrics:inc(dgiot_bridge, <<"tcp_server_send">>, 1),
     write_log(Log, <<"SEND">>, Payload),
     case Socket == undefined of
-        true -> {error, disconnected};
-        false -> Transport:send(Socket, Payload)
+        true ->
+            {error, disconnected};
+        false ->
+            Transport:send(Socket, Payload)
     end.
 
 rate_limit({Rate, Burst}) ->
