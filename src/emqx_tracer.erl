@@ -21,16 +21,6 @@
 
 -logger_header("[Tracer]").
 
-%% Mnesia bootstrap
--export([mnesia/1]).
--define(EMQX_CLIENT_TRACE, emqx_client_trace).
--define(EMQX_TOPIC_TRACE, emqx_topic_trace).
--record(?EMQX_CLIENT_TRACE, {key :: binary(), value}).
--record(?EMQX_TOPIC_TRACE, {key :: binary(), value}).
-
--boot_mnesia({mnesia, [boot]}).
--copy_mnesia({mnesia, [copy]}).
-
 %% APIs
 -export([trace/2
     , start_trace/3
@@ -82,12 +72,7 @@ trace(publish, #message{topic = <<"logger_trace", _/binary>>}) ->
     ignore;
 trace(publish, #message{from = From, topic = Topic, payload = Payload})
     when is_binary(From); is_atom(From) ->
-    case check_trace(From, Topic) of
-        true ->
-            emqx_logger:info(#{topic => Topic, mfa => {?MODULE, ?FUNCTION_NAME, ?FUNCTION_ARITY}}, " ~0p ~p", [Payload]);
-        _ ->
-            ignore
-    end.
+    emqx_hooks:run('mqtt_publish.trace',[From, Topic, Payload]).
 
 %% @doc Start to trace clientid or topic.
 -spec(start_trace(trace_who(), logger:level() | all, string()) -> ok | {error, term()}).
@@ -132,7 +117,6 @@ install_trace_handler(Who, Level, LogFile) ->
                 {fun filter_by_meta_key/2, Who}}]})
     of
         ok ->
-            add_trace(Who),
             ?LOG(info, "Start trace for ~p", [Who]);
         {error, Reason} ->
             ?LOG(error, "Start trace for ~p failed, error: ~p", [Who, Reason]),
@@ -142,7 +126,6 @@ install_trace_handler(Who, Level, LogFile) ->
 uninstall_trance_handler(Who) ->
     case logger:remove_handler(handler_id(Who)) of
         ok ->
-            del_trace(Who),
             ?LOG(info, "Stop trace for ~p", [Who]);
         {error, Reason} ->
             ?LOG(error, "Stop trace for ~p failed, error: ~p", [Who, Reason]),
@@ -184,76 +167,3 @@ handler_name(Bin) ->
 
 hashstr(Bin) ->
     binary_to_list(emqx_misc:bin2hexstr_A_F(Bin)).
-
-
-%% @doc Create or replicate topics table.
--spec(mnesia(boot | copy) -> ok).
-mnesia(boot) ->
-    %% Optimize storage
-    StoreProps = [{ets, [{read_concurrency, true},
-        {write_concurrency, true}
-    ]}],
-    ok = ekka_mnesia:create_table(?EMQX_TOPIC_TRACE, [
-        {ram_copies, [node()]},
-        {record_name, ?EMQX_TOPIC_TRACE},
-        {attributes, record_info(fields, ?EMQX_TOPIC_TRACE)},
-        {type, ordered_set},
-        {storage_properties, StoreProps}]),
-    ok = ekka_mnesia:create_table(?EMQX_CLIENT_TRACE, [
-        {ram_copies, [node()]},
-        {record_name, ?EMQX_CLIENT_TRACE},
-        {attributes, record_info(fields, ?EMQX_CLIENT_TRACE)},
-        {type, ordered_set},
-        {storage_properties, StoreProps}]);
-mnesia(copy) ->
-    %% Copy topics table
-    ok = ekka_mnesia:copy_table(?EMQX_TOPIC_TRACE, ram_copies),
-    ok = ekka_mnesia:copy_table(?EMQX_CLIENT_TRACE, ram_copies).
-
-add_trace({Type, Id}) when is_list(Id) ->
-    add_trace({Type, list_to_binary(Id)});
-add_trace({Type, Id}) when is_atom(Id) ->
-    add_trace({Type, atom_to_binary(Id)});
-add_trace({clientid, ClientId}) ->
-    ets:insert(?EMQX_CLIENT_TRACE, {ClientId, clientid});
-add_trace({topic, TopicFilter}) ->
-    ets:insert(?EMQX_TOPIC_TRACE, {TopicFilter, topic});
-add_trace(_) ->
-    ignore.
-
-del_trace({Type, Id}) when is_list(Id) ->
-    del_trace({Type, list_to_binary(Id)});
-del_trace({Type, Id}) when is_atom(Id) ->
-    del_trace({Type, atom_to_binary(Id)});
-del_trace({clientid, ClientId}) ->
-    ets:delete_object(?EMQX_CLIENT_TRACE, {ClientId,clientid});
-del_trace({topic, TopicFilter}) ->
-    ets:delete_object(?EMQX_TOPIC_TRACE, {TopicFilter,topic});
-del_trace(_) ->
-    ignore.
-
-get_trace({Type, Id}) when is_list(Id) ->
-    get_trace({Type, list_to_binary(Id)});
-get_trace({Type, Id}) when is_atom(Id) ->
-    get_trace({Type, atom_to_binary(Id)});
-get_trace({clientid, ClientId}) ->
-    ets:member(?EMQX_CLIENT_TRACE, {ClientId, clientid});
-get_trace({topic, Topic}) ->
-    lists:any(fun({TopicFilter, _}) ->
-        emqx_topic:match(Topic, TopicFilter)
-              end, ets:tab2list(?EMQX_TOPIC_TRACE));
-get_trace(_) ->
-    false.
-
-check_trace(From, Topic) ->
-    case get_trace({clientid, From}) of
-        true ->
-            true;
-        false ->
-            case get_trace({topic, Topic}) of
-                true ->
-                    true;
-                false ->
-                    false
-            end
-    end.

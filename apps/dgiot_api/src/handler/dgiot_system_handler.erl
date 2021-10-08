@@ -240,43 +240,21 @@ do_request(get_trace, _Args, _Context, _Req) ->
     {200, #{<<"code">> => 200, <<"data">> => NewData}};
 
 %% traces 概要: traces 描述:启动，停止traces
-do_request(post_trace, #{<<"action">> := Action, <<"tracetype">> := Tracetype, <<"handle">> := Handle, <<"deviceid">> := DeviceId, <<"order">> := Order, <<"level">> := Level}, _Context, _Req) ->
-    case length(emqx_tracer:lookup_traces()) > 10 of
-        false ->
-            Rtn =
-                case Action of
-                    <<"start">> ->
-                        {ok, #{<<"results">> := [#{<<"objectId">> := HandleId} | _]}} = dgiot_parse:query_object(<<"LogLevel">>, #{<<"where">> => #{<<"name">> => <<"dgiot_handle">>, <<"type">> => <<"dgiot_handle">>}}),
-                        dgiot_parse:create_object(<<"LogLevel">>, #{
-                            <<"level">> => Level,
-                            <<"parent">> => #{
-                                <<"__type">> => <<"Pointer">>,
-                                <<"className">> => <<"LogLevel">>,
-                                <<"objectId">> => HandleId
-                            },
-                            <<"name">> => Handle,
-                            <<"deviceid">> => DeviceId,
-                            <<"type">> => <<"trace">>,
-                            <<"order">> => Order,
-                            <<"topic">> => Handle,
-                            <<"path">> => <<"tracelog/", Handle/binary, ".txt">>
-                        }),
-                        emqx_tracer:start_trace({dgiot_utils:to_atom(Tracetype), Handle}, dgiot_utils:to_atom(Level), get_tracelog(<<Handle/binary, ".txt">>));
-                    <<"stop">> ->
-                        LoglevelId = dgiot_parse:get_loglevelid(Handle, <<"trace">>),
-                        dgiot_parse:del_object(<<"LogLevel">>, LoglevelId),
-                        emqx_tracer:stop_trace({dgiot_utils:to_atom(Tracetype), Handle});
-                    _Other ->
-                        {error, _Other}
-                end,
-            case Rtn of
-                ok ->
-                    {200, #{<<"code">> => 200, <<"msg">> => <<"SUCCESS">>}};
-                {error, Reason} ->
-                    {400, #{<<"code">> => 400, <<"error">> => dgiot_utils:format("~p", [Reason])}}
-            end;
-        true ->
-            {400, #{<<"code">> => 400, <<"error">> => <<"trace超出限制了，限制10个"/utf8>>}}
+do_request(post_trace, #{<<"action">> := Action, <<"tracetype">> := Tracetype, <<"handle">> := Handle}, _Context, _Req) ->
+    Rtn =
+        case Action of
+            <<"start">> ->
+                dgiot_tracer:add_trace({dgiot_utils:to_atom(Tracetype), Handle});
+            <<"stop">> ->
+                dgiot_tracer:del_trace({dgiot_utils:to_atom(Tracetype), Handle});
+            _Other ->
+                {error, _Other}
+        end,
+    case Rtn of
+        ok ->
+            {200, #{<<"code">> => 200, <<"msg">> => <<"SUCCESS">>}};
+        {error, Reason} ->
+            {400, #{<<"code">> => 400, <<"error">> => dgiot_utils:format("~p", [Reason])}}
     end;
 
 
@@ -342,9 +320,3 @@ format_val(Mod, Schema) ->
                 end, Acc, Methods)
         end, [], Paths),
     {Tpl, [{mod, Mod}, {apis, Apis}], [{api, record_info(fields, api)}]}.
-
-get_tracelog(Handle) ->
-    {file, Here} = code:is_loaded(?MODULE),
-    Dir = filename:dirname(filename:dirname(Here)),
-    Filename = filename:join([Dir, "priv/www/tracelog/", Handle]),
-    dgiot_utils:to_list(Filename).

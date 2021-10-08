@@ -168,6 +168,7 @@ init(?TYPE, Channel, Cfg) ->
 %% 初始化池子
 handle_init(State) ->
     emqx_hooks:add('logger.send', {?MODULE, send, []}),
+    emqx_hooks:add('mqtt_publish.trace', {dgiot_tracer, check_trace, []}),
     {ok, State}.
 
 handle_message(config, #state{cfg = Cfg} = State) ->
