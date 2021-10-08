@@ -77,6 +77,7 @@ do_request(Url, Authorization, Sql) ->
         {ok, {{_HTTPVersion, StatusCode, _ReasonPhrase}, _Headers, Body}} ->
             format_body(StatusCode, Body, Formatter);
         {error, {failed_connect, _}} ->
+            dgiot_metrics:inc(dgiot_tdengine,<<"tdengine_save_failed">>,1),
             {error, disconnect};
         {'EXIT', {noproc, {gen_server, call, [_ | _]}}} ->
             {error, <<"httpc_not_start">>};
@@ -92,6 +93,7 @@ format_body(_StatusCode, #{
     <<"head">> := [<<"affected_rows">>],
     <<"data">> := [[AffectedRows]]
 }, _Formatter) ->
+    dgiot_metrics:inc(dgiot_tdengine, <<"tdengine_save_success">>, 1),
     {ok, #{<<"affected_rows">> => AffectedRows}};
 
 format_body(_StatusCode, #{

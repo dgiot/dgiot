@@ -11,6 +11,7 @@
 ### Features
 
 * add task metircs ([79cfd2d](https://github.com/dgiot/dgiot/commit/79cfd2dc45e8a396dff7351eaf40ab5e07be83c5))
+* add tcp metircs ([f8e19b1](https://github.com/dgiot/dgiot/commit/f8e19b1b241200b5d1324d689f4e2d9536e74a4d))
 * add tcp transparent ([b1f091c](https://github.com/dgiot/dgiot/commit/b1f091cba9fa143fcc8040a6fa8848ac89412e96))
 
 
