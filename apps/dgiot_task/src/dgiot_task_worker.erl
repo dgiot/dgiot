@@ -83,6 +83,7 @@ init([#{<<"app">> := App, <<"channel">> := ChannelId, <<"dtuid">> := DtuId, <<"m
             Topic = <<"thing/", ProductId/binary, "/", DevAddr/binary, "/post">>,
             dgiot_mqtt:subscribe(Topic),
             AppData = maps:get(<<"appdata">>, _Args, #{}),
+            dgiot_metrics:inc(dgiot_task,<<"task">>,1),
             {ok, #task{mode = dgiot_utils:to_atom(Mode), app = App, dtuid = DtuId, product = ProductId, devaddr = DevAddr,
                 tid = ChannelId, firstid = DeviceId, que = Que, round = 1, appdata = AppData, ts = Nowstamp, freq = Freq, endtime = Tsendtime}}
     end;
@@ -144,6 +145,7 @@ handle_info({deliver, _, Msg}, #task{tid = Channel, dis = Dis, product = Product
     Payload = jsx:decode(dgiot_mqtt:get_payload(Msg), [return_maps]),
     dgiot_bridge:send_log(Channel, ProductId, DevAddr, "to_dev=> ~s ~p  ~ts: ~ts ", [?FILE, ?LINE, unicode:characters_to_list(dgiot_mqtt:get_topic(Msg)), unicode:characters_to_list(dgiot_mqtt:get_payload(Msg))]),
     NewAck = dgiot_task:get_collection(ProductId, Dis, Payload, Ack),
+    dgiot_metrics:inc(dgiot_task,<<"task_recv">>,1),
     {noreply, get_next_pn(State#task{ack = NewAck})};
 
 %% ACK消息触发抄表指令
@@ -151,12 +153,14 @@ handle_info({deliver, _, Msg}, #task{tid = Channel, dis = Dis, product = Product
     Payload = jsx:decode(dgiot_mqtt:get_payload(Msg), [return_maps]),
     dgiot_bridge:send_log(Channel, ProductId, DevAddr, "to_dev=> ~s ~p ~ts: ~ts", [?FILE, ?LINE, unicode:characters_to_list(dgiot_mqtt:get_topic(Msg)), unicode:characters_to_list(dgiot_mqtt:get_payload(Msg))]),
     NewAck = dgiot_task:get_collection(ProductId, Dis, Payload, Ack),
+    dgiot_metrics:inc(dgiot_task,<<"task_recv">>,1),
     {noreply, send_msg(State#task{ack = NewAck})};
 
 handle_info(_Msg, State) ->
     {noreply, State}.
 
 terminate(_Reason, _State) ->
+    dgiot_metrics:dec(dgiot_task,<<"task">>,1),
     ok.
 
 code_change(_OldVsn, State, _Extra) ->
@@ -199,13 +203,14 @@ send_msg(#task{tid = Channel, product = Product, devaddr = DevAddr, ref = Ref, q
     Topic = <<"thing/", Product/binary, "/", DevAddr/binary>>,
     dgiot_bridge:send_log(Channel, Product, DevAddr, "to_dev=> ~s ~p ~ts: ~ts", [?FILE, ?LINE, unicode:characters_to_list(Topic), unicode:characters_to_list(Newpayload)]),
     dgiot_mqtt:publish(Channel, Topic, Newpayload),
-%%    在超时期限内，回报文，就取消超时定时器
+%%  在超时期限内，回报文，就取消超时定时器
     case Ref of
         undefined ->
             pass;
         _ -> erlang:cancel_timer(Ref)
     end,
     NewQue = lists:nthtail(NewCount, Que),
+    dgiot_metrics:inc(dgiot_task,<<"task_send">>,1),
     State#task{que = NewQue, dis = Dis, ref = erlang:send_after(Interval * 1000, self(), retry)}.
 
 
@@ -219,7 +224,8 @@ get_next_pn(#task{mode = Mode, dtuid = DtuId, firstid = DeviceId, product = Prod
     NextTopic = <<"thing/", NextProductId/binary, "/", NextDevAddr/binary, "/post">>,
     dgiot_mqtt:subscribe(NextTopic),
     case Ref of
-        undefined -> pass;
+        undefined ->
+            pass;
         _ -> erlang:cancel_timer(Ref)
     end,
     timer:sleep(200),
@@ -234,12 +240,14 @@ get_next_pn(#task{mode = Mode, dtuid = DtuId, firstid = DeviceId, product = Prod
 
 save_td(#task{app = _App, tid = Channel, product = ProductId, devaddr = DevAddr, ack = Ack, appdata = AppData}) ->
     case length(maps:to_list(Ack)) of
-        0 -> pass;
+        0 ->
+            pass;
         _ ->
             dgiot_bridge:send_log(Channel, ProductId, DevAddr, "save_td=> ~s ~p ~p: ~ts ", [?FILE, ?LINE, ProductId, unicode:characters_to_list(jsx:encode(Ack))]),
             Data = dgiot_task:get_calculated(ProductId, Ack),
             case length(maps:to_list(Data)) of
-                0 -> pass;
+                0 ->
+                    pass;
                 _ ->
                     case lists:member(error, maps:values(Data)) of
                         false ->
@@ -248,6 +256,7 @@ save_td(#task{app = _App, tid = Channel, product = ProductId, devaddr = DevAddr,
                             Topic = <<"topo/", ProductId/binary, "/", DevAddr/binary, "/post">>,
                             dgiot_mqtt:publish(DeviceId, Topic, Payload),
                             dgiot_tdengine_adapter:save(ProductId, DevAddr, Data),
+                            dgiot_metrics:inc(dgiot_task,<<"task_save">>,1),
                             NotificationTopic = <<"notification/", ProductId/binary, "/", DevAddr/binary, "/post">>,
                             dgiot_mqtt:publish(DeviceId, NotificationTopic, jsx:encode(Data)),
                             dgiot_bridge:send_log(Channel, ProductId, DevAddr, "from_Notification=> ~s ~p ~ts: ~ts ", [?FILE, ?LINE, unicode:characters_to_list(NotificationTopic), unicode:characters_to_list(jsx:encode(Data))]);
