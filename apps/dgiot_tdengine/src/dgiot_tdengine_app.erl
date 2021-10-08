@@ -30,6 +30,7 @@
 %%====================================================================
 
 start(_StartType, _StartArgs) ->
+    dgiot_metrics:start(dgiot_tdengine),
     dgiot_tdengine_sup:start_link().
 
 %%--------------------------------------------------------------------

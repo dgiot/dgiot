@@ -187,9 +187,11 @@ init(?TYPE, ChannelId, Config) ->
     Specs = [
         {dgiot_dcache, {dgiot_dcache, start_link, Opts}, permanent, 5000, worker, [dgiot_dcache]}
     ],
+    dgiot_metrics:dec(dgiot_tdengine,<<"tdengine">>,1000),
     {ok, State, Specs}.
 
 handle_init(State) ->
+    dgiot_metrics:inc(dgiot_tdengine,<<"tdengine">>,1),
     erlang:send_after(5000, self(), init),
     {ok, State}.
 
@@ -223,6 +225,7 @@ handle_message(init, #state{id = ChannelId, env = Config} = State) ->
 
 %% 数据与产品，设备地址分离
 handle_message({data, Product, DevAddr, Data, Context}, State) ->
+    dgiot_metrics:inc(dgiot_tdengine,<<"tdengine_recv">>,1),
     case catch do_save([Product, DevAddr, Data, Context], State) of
         {Err, Reason} when Err == error; Err == 'EXIT' ->
             ?LOG(error, "Save to Tdengine error, ~p, ~p", [Data, Reason]),

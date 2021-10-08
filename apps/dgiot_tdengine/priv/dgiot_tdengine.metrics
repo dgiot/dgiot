@@ -1,0 +1,26 @@
+[
+  {
+    "name": "tdengine",
+    "help": "tdengine运行示例数统计",
+    "type": "gauge",
+    "labels": []
+  },
+  {
+    "name": "tdengine_recv",
+    "help": "tdengine收包数统计",
+    "type": "gauge",
+    "labels": []
+  },
+  {
+    "name": "tdengine_save_success",
+     "help": "tdengine存包成功数统计",
+     "type": "gauge",
+     "labels": []
+  },
+   {
+      "name": "tdengine_save_failed",
+       "help": "tdengine存包失败数统计",
+       "type": "gauge",
+       "labels": []
+    }
+]
