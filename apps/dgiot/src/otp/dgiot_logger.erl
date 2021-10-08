@@ -63,7 +63,6 @@ debug(Format, Args) ->
 debug(Metadata, Format, Args) when is_map(Metadata) ->
     emqx_logger:debug(Format, Args, Metadata).
 
-
 -spec(info(unicode:chardata()) -> ok).
 info(Msg) ->
     emqx_logger:info(Msg).
@@ -121,7 +120,6 @@ critical(Metadata, Format, Args) when is_map(Metadata) ->
 %% 获取module日志等级  logger:get_module_level(dgiot)
 %% 设置module日志等级  logger:set_module_level(dgiot_wechat,debug)
 set_loglevel(<<"system">>, <<"dgiot">>, Level) ->
-
     emqx_logger:set_log_level(dgiot_utils:to_atom(Level));
 
 set_loglevel(<<"app">>, Name, Level) ->
