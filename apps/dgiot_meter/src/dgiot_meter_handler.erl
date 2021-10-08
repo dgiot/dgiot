@@ -17,7 +17,8 @@
 -author("johnliu").
 -behavior(dgiot_rest).
 -include_lib("dgiot/include/logger.hrl").
-
+-include("dgiot_meter.hrl").
+-dgiot_rest(all).
 %% API
 -export([swagger_meter/0]).
 -export([handle/4, check_auth/3]).
@@ -57,16 +58,16 @@ handle(OperationID, Args, Context, Req) ->
                   end,
             {500, Headers, #{<<"error">> => Err}};
         ok ->
-            ?LOG(debug,"do request: ~p, ~p ->ok ~n", [OperationID, Args]),
+            ?LOG(debug, "do request: ~p, ~p ->ok ~n", [OperationID, Args]),
             {200, Headers, #{}, Req};
         {ok, Res} ->
-            ?LOG(debug,"do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
+            ?LOG(debug, "do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
             {200, Headers, Res, Req};
         {Status, Res} ->
-            ?LOG(debug,"do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
+            ?LOG(debug, "do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
             {Status, Headers, Res, Req};
         {Status, NewHeaders, Res} ->
-            ?LOG(debug,"do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
+            ?LOG(debug, "do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
             {Status, maps:merge(Headers, NewHeaders), Res, Req}
     end.
 
@@ -75,14 +76,58 @@ handle(OperationID, Args, Context, Req) ->
 %%% 内部函数 Version:API版本
 %%%===================================================================
 
+
+%% TDengine 概要: 获取当前产品下的所有设备数据 描述:获取当前产品下的所有设备数据
+%% OperationId:get_td_cid_pid
+%% 请求:GET /iotapi/td/prodcut/:productId
+do_request(get_meter_ctrl, #{
+    <<"pid">> := ProductId,
+    <<"devaddr">> := DevAddr,
+    <<"ctrlflag">> := CtrlFlag,
+    <<"devpass">> := DevPass
+}, _Context, Req0) ->
+    get_meter_ctrl(Req0, ProductId, DevAddr, CtrlFlag, DevPass);
+
+do_request(get_meter_ctrl_status, #{
+    <<"pid">> := ProductId,
+    <<"ctrlflag">> := CtrlFlag,
+    <<"devaddr">> := DevAddr
+}, _Context, _Req) ->
+    TopicCtrl = <<"thingctrl/", ProductId/binary, "/", DevAddr/binary>>,
+    ThingData = #{<<"devaddr">> => DevAddr, <<"ctrlflag">> => CtrlFlag, <<"apiname">> => get_meter_ctrl_status},
+    Payload = [#{<<"appdata">> => #{}, <<"thingdata">> => ThingData}],
+    dgiot_mqtt:publish(DevAddr, TopicCtrl, jsx:encode(Payload));
+
+
 %%  服务器不支持的API接口
 do_request(_OperationId, _Args, _Context, _Req) ->
-    ?LOG(info,"_OperationId:~p~n", [_OperationId]),
+    ?LOG(info, "_OperationId:~p~n", [_OperationId]),
     {error, <<"Not Allowed.">>}.
 
-
-
-
+get_meter_ctrl(Req0, ProductId, DevAddr, CtrlFlag, DevPass) ->
+    Sendtopic = <<"thingctrl/", ProductId/binary, "/", DevAddr/binary>>,
+    ThingData = #{<<"devaddr">> => DevAddr, <<"ctrlflag">> => CtrlFlag, <<"devpass">> => DevPass, <<"apiname">> => get_meter_ctrl},
+    Payload = [#{<<"pid">> => self(),<<"appdata">> => #{}, <<"thingdata">> => ThingData}],
+    case dgiot_mqtt:has_routes(Sendtopic) of
+        true ->
+            dgiot_mqtt:publish(DevAddr, Sendtopic, jsx:encode(Payload)),
+            receive
+                {ctrl_meter, Msg} ->
+                    Resp = cowboy_req:reply(200, #{<<"content-type">> => <<"application/json">>}, jsx:encode(Msg), Req0),
+                    {ok, Resp};
+                {error} ->
+                    Resp = cowboy_req:reply(200, #{<<"content-type">> => <<"text/plain">>}, <<"CTRL_METER_FAILED">>, Req0),
+                    {ok, Resp}
+            after 10000 ->
+                Resp = cowboy_req:reply(200, #{
+                    <<"content-type">> => <<"text/plain">>
+                }, <<"CTRL_METER_TIMEOUT">>, Req0),
+                {ok, Resp}
+            end;
+        false ->
+            Resp = cowboy_req:reply(200, #{<<"content-type">> => <<"text/plain">>}, <<"METER_OFFLINE">>, Req0),
+            {ok, Resp}
+    end.
 
 
 
