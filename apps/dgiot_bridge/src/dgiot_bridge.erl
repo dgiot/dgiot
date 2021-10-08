@@ -44,7 +44,8 @@ start() ->
 
 start_channel(Name, Filter) ->
     dgiot_bridge_loader:start(Name, Filter,
-        fun(Module, Channel) -> dgiot_bridge_server ! {start_channel, Module, Channel}
+        fun(Module, Channel) ->
+            dgiot_bridge_server ! {start_channel, Module, Channel}
         end).
 
 start_channel(Name, Mod, Where) ->
@@ -205,7 +206,7 @@ is_send_log(ChannelId, ProductId, DevAddr, Fun) ->
 
 load_channel() ->
     case application:get_env(dgiot_bridge, filters) of
-        {ok, Filters} when length(Filters) > 0 ->
+        {ok, Filters} when length(Filters) > 0  ->
             lists:foreach(
                 fun(Data) ->
                     Json = list_to_binary(Data),
@@ -213,7 +214,7 @@ load_channel() ->
                         false ->
                             ?LOG(error, "~p is not json.", [Json]);
                         Filter ->
-                            ?LOG(error, "Filter:~p", [Filter]),
+                            ?LOG(error, "Filter: ~p", [Filter]),
                             start_channel(dgiot_bridge, Filter)
                     end
                 end, Filters);

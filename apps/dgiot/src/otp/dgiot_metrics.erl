@@ -31,7 +31,6 @@
 -export([init/2]).
 init(Req0, ?MODULE) ->
     Registry = dgiot_req:binding(<<"Registry">>, Req0),
-    ?LOG(info,"Registry ~p", [Registry]),
     Data = dgiot_stats:metrics(Registry),
     Req = cowboy_req:reply(200, #{
         <<"content-type">> => <<"text/plain">>

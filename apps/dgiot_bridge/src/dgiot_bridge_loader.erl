@@ -29,11 +29,13 @@
 -record(state, {success}).
 
 start(Name, Filter, Fun) ->
+    ?LOG(info,"Name ~p , Filter ~p , Fun ~p",[Name, Filter, Fun]),
     case whereis(Name) of
         undefined ->
             ChildSpec = {Name, {?MODULE, start_link, [Name, Filter, Fun]}, permanent, 5000, worker, [?MODULE]},
             supervisor:start_child(dgiot_bridge_sup, ChildSpec);
         Pid ->
+            ?LOG(info,"Filter ~p",[Filter]),
             case gen_server:call(Pid, {load, Filter, Fun}, 5000) of
                 ok ->
                     {ok, Pid};

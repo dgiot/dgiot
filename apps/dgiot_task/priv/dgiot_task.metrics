@@ -8,19 +8,19 @@
   {
     "name": "task_send",
     "help": "任务通道发包数据统计",
-    "type": "counter",
+    "type": "gauge",
     "labels": []
   },
   {
     "name": "task_recv",
     "help": "任务通道收包数据统计",
-    "type": "counter",
+    "type": "gauge",
     "labels": []
   },
   {
     "name": "task_save",
      "help": "任务通道存包数据统计",
-     "type": "counter",
+     "type": "gauge",
      "labels": []
   }
 ]
