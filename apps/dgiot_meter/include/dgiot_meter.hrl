@@ -14,8 +14,20 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
+% 使用说明:
+% --------------------------------------------------------------------
+% 在 dgiot_task文件 save_pnque(DtuProductId, DtuAddr, ProductId, DevAddr) 函数,用于注册电表的远程控制的topic
+% timer:sleep(500),
+% TopicCtrl = <<"thingctrl/", ProductId/binary, "/", DevAddr/binary>>,
+% dgiot_mqtt:subscribe(TopicCtrl),
+% timer:sleep(500),
+% TopicStatus = <<"thing/", ProductId/binary, "/", DevAddr/binary, "/status">>,
+% dgiot_mqtt:subscribe(TopicStatus),
+% --------------------------------------------------------------------
+
 -define(METER, <<"METER">>).
 -define(DLT645, <<"DLT645">>).
+-define(DLT376, <<"DLT376">>).
 
 -record(state, {
     id,
@@ -23,10 +35,19 @@
     dtuaddr = <<>>,
     step = login,
     ref = undefined,
-    search = <<"quick">>
+    search = <<"quick">>,
+    protocol = dlt645
 }).
 
 %% Internal Header File
+
+%% @doc dlt376 COMMAND.
+-define(DLT376_MS_READ_DATA,     16#5B).
+-define(DLT376_MS_READ_DATA_AFN,     16#0C).
+-define(DLT376_MS_CONVERT_SEND_AFN,     16#10).  %透明转发
+-define(DLT376_MS_CTRL_DEV,     16#5A).
+-define(DLT376_MS_CTRL_DEV_AFN,     16#05).
+
 
 %% @doc dlt645 COMMAND.
 -define(DLT645_MS_BROADCAST_DATA,     16#08).

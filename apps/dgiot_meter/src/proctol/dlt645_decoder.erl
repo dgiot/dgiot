@@ -20,7 +20,7 @@
 -protocol([?DLT645]).
 
 %% API
--export([parse_frame/2, to_frame/1, test/0, parse_value/2]).
+-export([parse_frame/2, to_frame/1, test/0, parse_value/2,binary_to_dtime_dlt645_bcd/1]).
 
 parse_frame(Buff, Opts) ->
     parse_frame(Buff, [], Opts).
@@ -81,7 +81,7 @@ parse_userzone(UserZone, #{<<"msgtype">> := ?DLT645} = Frame, _Opts) ->
 
 %% 组装成封包
 to_frame(#{
-    <<"msgtype">> := ?DLT645,
+    % <<"msgtype">> := ?DLT645,
     <<"command">> := C,
     <<"addr">> := Addr
 } = Msg) ->
@@ -152,11 +152,13 @@ check_Command(State = #{<<"command">> := 16#C1, <<"data">> := <<Data/binary>>}) 
 % -define(DLT645_MS_FORCE_EVENT_NAME,        <<"1C">>).
 % -define(DLT645_SM_FORCE_EVENT_NORM_NAME,   <<"9C">>).
 % -define(DLT645_SM_FORCE_EVENT_ERRO_NAME,   <<"DC">>).
+% 远程开闸、拉闸 返回正常
 check_Command(State = #{<<"command">> := 16#9C}) ->
     State#{
 
     };
 
+% 远程开闸、拉闸 返回正常
 check_Command(State = #{<<"command">> := 16#DC}) ->
     State#{
 
@@ -206,6 +208,29 @@ parse_value(Di, Data) ->
             {ValueMap, Diff, SendDi};
         _ -> {#{}, Diff, SendDi}
     end.
+
+%返回数据转化成时间（时间戳（单位：秒））如1554282344
+binary_to_dtime_dlt645_bcd(BinValue) ->
+    RValue = 
+        case BinValue of 
+            <<S1:4,S2:4,MT1:4,MT2:4,H1:4,H2:4,D1:4,D2:4,M1:4,M2:4,Y1:4,Y2:4,_/binary>> ->
+                Year = 2 * 1000 + Y1 * 10 + Y2 ,
+                Month = M1 * 10 + M2,
+                Day = D1 * 10 + D2,
+                Hour = H1 * 10 + H2,
+                Minite = MT1 * 10 + MT2,
+                Second = S1 * 10 + S2,
+                case Year of 
+                    2000 ->
+                        0;
+                    _ ->
+                        Value = calendar:datetime_to_gregorian_seconds({{Year,Month,Day},{Hour,Minite,Second}})-719528*24*3600-8*3600,
+                        Value
+                end;
+            _ ->
+                0
+        end,
+    RValue.
 
 test() ->
     B1 = <<12, 16#68, 16#01, 16#00, 16#00, 16#00, 16#00, 16#00, 16#68, 16#91, 16#08, 16#33, 16#33, 16#3D, 16#33, 16#33, 16#33, 16#33, 16#33, 16#0C, 16#16,

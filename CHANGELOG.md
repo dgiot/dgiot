@@ -1,8 +1,9 @@
-# [](https://github.com/dgiot/dgiot/compare/v4.3.4...v) (2021-10-07)
+# [](https://github.com/dgiot/dgiot/compare/v4.3.4...v) (2021-10-08)
 
 
 ### Bug Fixes
 
+* add device log ([f3b173c](https://github.com/dgiot/dgiot/commit/f3b173c3f146e1ddf21038b5026dfd08ae93c95f))
 * channel_log ([1e37058](https://github.com/dgiot/dgiot/commit/1e3705876eb905cab215085e7341e050ce822170))
 * task_worker bug ([0396163](https://github.com/dgiot/dgiot/commit/039616312126d24e36b03cf339e0e6ffb6f3aa13))
 
