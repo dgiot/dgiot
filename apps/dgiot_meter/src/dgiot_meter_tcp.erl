@@ -115,6 +115,125 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, state = #state{id = ChannelId, dt
             end
     end;
 
+handle_info({tcp, Buff}, #tcp{state = #state{id = ChannelId, protocol = Protocol, step = _Step}} = TCPState) ->
+    case Protocol of
+        ?DLT376 ->
+            dgiot_bridge:send_log(ChannelId, "from_dev:  ~p ", [dgiot_utils:binary_to_hex(Buff)]),
+            {Rest, Frames} = dgiot_meter:parse_frame(?DLT376, Buff, []),
+            case Frames of
+                % 返回抄表数据
+                [#{<<"di">> := <<16#01, 16#01, 16#01, 16#10>>, <<"addr">> := Addr, <<"value">> := Value} | _] ->
+                    case dgiot_data:get({meter, ChannelId}) of
+                        {ProductId, _ACL, _Properties} -> DevAddr = dgiot_utils:binary_to_hex(Addr),
+                            Topic = <<"thing/", ProductId/binary, "/", Addr/binary, "/post">>,  % 发送给mqtt进行数据存储
+                            DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+                            dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(Value));
+                        _ -> pass
+                    end;
+                % 返回读取上次合闸时间
+                [#{<<"di">> := <<16#1E, 16#00, 16#01, 16#01>>, <<"addr">> := Addr, <<"value">> := Value} | _] ->
+                    case dgiot_data:get({meter, ChannelId}) of
+                        {ProductId, _ACL, _Properties} -> DevAddr = dgiot_utils:binary_to_hex(Addr),
+                            Topic = <<"thing/", ProductId/binary, "/", Addr/binary, "/status">>,
+                            DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+                            dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(Value));
+                        _ -> pass
+                    end;
+                % 返回读取上次拉闸时间
+                [#{<<"di">> := <<16#1D, 16#00, 16#01, 16#01>>, <<"addr">> := Addr, <<"value">> := Value} | _] ->
+                    case dgiot_data:get({meter, ChannelId}) of
+                        {ProductId, _ACL, _Properties} -> DevAddr = dgiot_utils:binary_to_hex(Addr),
+                            Topic = <<"thing/", ProductId/binary, "/", Addr/binary, "/status">>,
+                            DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+                            dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(Value));
+                        _ -> pass
+                    end;
+                % 拉闸，合闸成功
+                [#{<<"di">> := <<16#FE, 16#FE, 16#FE, 16#FE>>, <<"addr">> := Addr, <<"value">> := Value} | _] ->
+                    case dgiot_data:get({meter, ChannelId}) of
+                        {ProductId, _ACL, _Properties} -> DevAddr = dgiot_utils:binary_to_hex(Addr),
+                            Topic = <<"thing/", ProductId/binary, "/", Addr/binary, "/status">>,
+                            DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+                            dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(Value));
+                        _ -> pass
+                    end;
+                % 拉闸，合闸失败
+                [#{<<"di">> := <<16#FE, 16#FE, 16#FE, 16#FD>>, <<"addr">> := Addr, <<"value">> := Value} | _] ->
+                    case dgiot_data:get({meter, ChannelId}) of
+                        {ProductId, _ACL, _Properties} -> DevAddr = dgiot_utils:binary_to_hex(Addr),
+                            Topic = <<"thing/", ProductId/binary, "/", Addr/binary, "/status">>,
+                            DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+                            dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(Value));
+                        _ -> pass
+                    end;
+                _ -> pass
+            end,
+            {noreply, TCPState#tcp{buff = Rest}};
+        ?DLT645 ->
+            {Rest, Frames} = dgiot_meter:parse_frame(?DLT645, Buff, []),
+            dgiot_bridge:send_log(ChannelId, "from_dev: Rest ~p Frames ~p ", [Rest, Frames]),
+            % ?LOG(info, "GGM 245 Frames ~p", [Frames]),
+            case Frames of
+                % 查询上一次合闸时间返回
+                [#{<<"command">> := 16#91, <<"di">> := <<16#1E, 16#00, 16#01, 16#01>>, <<"addr">> := Addr, <<"data">> := Value} | _] ->
+                    case dgiot_data:get({meter, ChannelId}) of
+                        {ProductId, _ACL, _Properties} -> DevAddr = dgiot_utils:binary_to_hex(Addr),
+                            Topic = <<"thing/", ProductId/binary, "/", DevAddr/binary, "/status">>,
+                            Di = <<16#1E, 16#00, 16#01, 16#01>>,
+                            DValue = #{dgiot_utils:to_hex(Di) => dlt645_decoder:binary_to_dtime_dlt645_bcd(Value)},
+                            DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+                            dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(DValue));
+                        _ -> pass
+                    end;
+                % 查询上一次拉闸时间返回
+                [#{<<"command">> := 16#91, <<"di">> := <<16#1D, 16#00, 16#01, 16#01>>, <<"addr">> := Addr, <<"data">> := Value} | _] ->
+                    case dgiot_data:get({meter, ChannelId}) of
+                        {ProductId, _ACL, _Properties} -> DevAddr = dgiot_utils:binary_to_hex(Addr),
+                            Topic = <<"thing/", ProductId/binary, "/", DevAddr/binary, "/status">>,
+                            Di = <<16#1D, 16#00, 16#01, 16#01>>,
+                            DValue = #{dgiot_utils:to_hex(Di) => dlt645_decoder:binary_to_dtime_dlt645_bcd(Value)},
+                            DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+                            dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(DValue));
+                        _ -> pass
+                    end;
+                % 拉闸，合闸成功
+                [#{<<"command">> := 16#9C, <<"addr">> := Addr} | _] ->
+                    case dgiot_data:get({meter, ChannelId}) of
+                        {ProductId, _ACL, _Properties} -> DevAddr = dgiot_utils:binary_to_hex(Addr),
+                            Topic = <<"thing/", ProductId/binary, "/", DevAddr/binary, "/status">>,
+                            Di = <<16#FE, 16#FE, 16#FE, 16#FE>>,
+                            DValue = #{dgiot_utils:to_hex(Di) => 0},
+                            DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+                            dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(DValue));
+                        _ -> pass
+                    end;
+                % 拉闸，合闸失败
+                [#{<<"command">> := 16#DC, <<"addr">> := Addr, <<"data">> := Value} | _] ->
+                    case dgiot_data:get({meter, ChannelId}) of
+                        {ProductId, _ACL, _Properties} -> DevAddr = dgiot_utils:binary_to_hex(Addr),
+                            Topic = <<"thing/", ProductId/binary, "/", DevAddr/binary, "/status">>,
+                            Di = <<16#FE, 16#FE, 16#FE, 16#FD>>,
+                            DValue = #{dgiot_utils:to_hex(Di) => dgiot_utils:to_hex(Value)},
+                            DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+                            dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(DValue));
+                        _ -> pass
+                    end;
+                % 抄表数据返回
+                [#{<<"command">> := 16#91, <<"di">> := _Di, <<"addr">> := Addr, <<"value">> := Value} | _] ->
+                    case dgiot_data:get({meter, ChannelId}) of
+                        {ProductId, _ACL, _Properties} -> DevAddr = dgiot_utils:binary_to_hex(Addr),
+                            Topic = <<"thing/", ProductId/binary, "/", DevAddr/binary, "/post">>,
+                            DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+                            dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(Value));
+                        _ -> pass
+                    end;
+                _ -> pass
+            end,
+            {noreply, TCPState#tcp{buff = Rest}};
+        _ ->
+            {noreply, TCPState#tcp{buff = <<0, 0, 0, 0, 0, 0, 0, 0>>}}
+    end;
+
 %%接受抄表任务命令抄表(下发指令)
 handle_info({deliver, _Topic, Msg}, #tcp{state = #state{id = _ChannelId}} = TCPState) ->
     Payload = dgiot_mqtt:get_payload(Msg),
@@ -212,125 +331,6 @@ handle_info({deliver, _Topic, Msg}, #tcp{state = #state{id = _ChannelId}} = TCPS
     end,
     {noreply, TCPState};
 
-
-handle_info({tcp, Buff}, #tcp{state = #state{id = ChannelId, protocol = Protocol, step = _Step}} = TCPState) ->
-    case Protocol of
-        ?DLT376 ->
-            dgiot_bridge:send_log(ChannelId, "from_dev:  ~p ", [dgiot_utils:binary_to_hex(Buff)]),
-            {Rest, Frames} = dgiot_meter:parse_frame(?DLT376, Buff, []),
-            case Frames of
-                % 返回抄表数据
-                [#{<<"di">> := <<16#01, 16#01, 16#01, 16#10>>, <<"addr">> := Addr, <<"value">> := Value} | _] ->
-                    case dgiot_data:get({meter, ChannelId}) of
-                        {ProductId, _ACL, _Properties} -> DevAddr = dgiot_utils:binary_to_hex(Addr),
-                            Topic = <<"thing/", ProductId/binary, "/", Addr/binary, "/post">>,  % 发送给mqtt进行数据存储
-                            DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
-                            dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(Value));
-                        _ -> pass
-                    end;
-                % 返回读取上次合闸时间
-                [#{<<"di">> := <<16#1E, 16#00, 16#01, 16#01>>, <<"addr">> := Addr, <<"value">> := Value} | _] ->
-                    case dgiot_data:get({meter, ChannelId}) of
-                        {ProductId, _ACL, _Properties} -> DevAddr = dgiot_utils:binary_to_hex(Addr),
-                            Topic = <<"thing/", ProductId/binary, "/", Addr/binary, "/status">>,
-                            DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
-                            dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(Value));
-                        _ -> pass
-                    end;
-                % 返回读取上次拉闸时间
-                [#{<<"di">> := <<16#1D, 16#00, 16#01, 16#01>>, <<"addr">> := Addr, <<"value">> := Value} | _] ->
-                    case dgiot_data:get({meter, ChannelId}) of
-                        {ProductId, _ACL, _Properties} -> DevAddr = dgiot_utils:binary_to_hex(Addr),
-                            Topic = <<"thing/", ProductId/binary, "/", Addr/binary, "/status">>,
-                            DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
-                            dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(Value));
-                        _ -> pass
-                    end;
-                % 拉闸，合闸成功
-                [#{<<"di">> := <<16#FE, 16#FE, 16#FE, 16#FE>>, <<"addr">> := Addr, <<"value">> := Value} | _] ->
-                    case dgiot_data:get({meter, ChannelId}) of
-                        {ProductId, _ACL, _Properties} -> DevAddr = dgiot_utils:binary_to_hex(Addr),
-                            Topic = <<"thing/", ProductId/binary, "/", Addr/binary, "/status">>,
-                            DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
-                            dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(Value));
-                        _ -> pass
-                    end;
-                % 拉闸，合闸失败
-                [#{<<"di">> := <<16#FE, 16#FE, 16#FE, 16#FD>>, <<"addr">> := Addr, <<"value">> := Value} | _] ->
-                    case dgiot_data:get({meter, ChannelId}) of
-                        {ProductId, _ACL, _Properties} -> DevAddr = dgiot_utils:binary_to_hex(Addr),
-                            Topic = <<"thing/", ProductId/binary, "/", Addr/binary, "/status">>,
-                            DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
-                            dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(Value));
-                        _ -> pass
-                    end;
-                _ -> pass
-            end,
-            {noreply, TCPState#tcp{buff = Rest}};
-        ?DLT645 ->
-            dgiot_bridge:send_log(ChannelId, "from_dev:  ~p ", [dgiot_utils:binary_to_hex(Buff)]),
-            {Rest, Frames} = dgiot_meter:parse_frame(?DLT645, Buff, []),
-            % ?LOG(info, "GGM 245 Frames ~p", [Frames]),
-            case Frames of
-                % 抄表数据返回
-                [#{<<"command">> := 16#91, <<"di">> := <<16#00, 16#00, 16#00, 16#00>>, <<"addr">> := Addr, <<"value">> := Value} | _] ->
-                    case dgiot_data:get({meter, ChannelId}) of
-                        {ProductId, _ACL, _Properties} -> DevAddr = dgiot_utils:binary_to_hex(Addr),
-                            Topic = <<"thing/", ProductId/binary, "/", DevAddr/binary, "/post">>,
-                            DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
-                            dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(Value));
-                        _ -> pass
-                    end;
-                % 查询上一次合闸时间返回
-                [#{<<"command">> := 16#91, <<"di">> := <<16#1E, 16#00, 16#01, 16#01>>, <<"addr">> := Addr, <<"data">> := Value} | _] ->
-                    case dgiot_data:get({meter, ChannelId}) of
-                        {ProductId, _ACL, _Properties} -> DevAddr = dgiot_utils:binary_to_hex(Addr),
-                            Topic = <<"thing/", ProductId/binary, "/", DevAddr/binary, "/status">>,
-                            Di = <<16#1E, 16#00, 16#01, 16#01>>,
-                            DValue = #{dgiot_utils:to_hex(Di) => dlt645_decoder:binary_to_dtime_dlt645_bcd(Value)},
-                            DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
-                            dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(DValue));
-                        _ -> pass
-                    end;
-                % 查询上一次拉闸时间返回
-                [#{<<"command">> := 16#91, <<"di">> := <<16#1D, 16#00, 16#01, 16#01>>, <<"addr">> := Addr, <<"data">> := Value} | _] ->
-                    case dgiot_data:get({meter, ChannelId}) of
-                        {ProductId, _ACL, _Properties} -> DevAddr = dgiot_utils:binary_to_hex(Addr),
-                            Topic = <<"thing/", ProductId/binary, "/", DevAddr/binary, "/status">>,
-                            Di = <<16#1D, 16#00, 16#01, 16#01>>,
-                            DValue = #{dgiot_utils:to_hex(Di) => dlt645_decoder:binary_to_dtime_dlt645_bcd(Value)},
-                            DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
-                            dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(DValue));
-                        _ -> pass
-                    end;
-                % 拉闸，合闸成功
-                [#{<<"command">> := 16#9C, <<"addr">> := Addr} | _] ->
-                    case dgiot_data:get({meter, ChannelId}) of
-                        {ProductId, _ACL, _Properties} -> DevAddr = dgiot_utils:binary_to_hex(Addr),
-                            Topic = <<"thing/", ProductId/binary, "/", DevAddr/binary, "/status">>,
-                            Di = <<16#FE, 16#FE, 16#FE, 16#FE>>,
-                            DValue = #{dgiot_utils:to_hex(Di) => 0},
-                            DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
-                            dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(DValue));
-                        _ -> pass
-                    end;
-                % 拉闸，合闸失败
-                [#{<<"command">> := 16#DC, <<"addr">> := Addr, <<"data">> := Value} | _] ->
-                    case dgiot_data:get({meter, ChannelId}) of
-                        {ProductId, _ACL, _Properties} -> DevAddr = dgiot_utils:binary_to_hex(Addr),
-                            Topic = <<"thing/", ProductId/binary, "/", DevAddr/binary, "/status">>,
-                            Di = <<16#FE, 16#FE, 16#FE, 16#FD>>,
-                            DValue = #{dgiot_utils:to_hex(Di) => dgiot_utils:to_hex(Value)},
-                            DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
-                            dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(DValue));
-                        _ -> pass
-                    end;
-                _ -> pass
-            end,
-            {noreply, TCPState#tcp{buff = Rest}};
-        _ ->
-            {noreply, TCPState#tcp{buff = <<0, 0, 0, 0, 0, 0, 0, 0>>}}
-    end;
 
 %% 异常报文丢弃
 %% {stop, TCPState} | {stop, Reason} | {ok, TCPState} | ok | stop
