@@ -147,6 +147,7 @@ to_binary(V) when is_atom(V) -> to_binary(atom_to_list(V));
 to_binary(V) when is_list(V) -> list_to_binary(V);
 to_binary(V) when is_integer(V) -> integer_to_binary(V);
 to_binary(V) when is_binary(V) -> V;
+to_binary(V) when is_pid(V) -> to_binary(pid_to_list(V));
 to_binary(V) -> to_binary(io_lib:format("~p", [V])).
 
 
