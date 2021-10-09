@@ -95,7 +95,7 @@ check_trace(From, Topic,Payload) ->
     case get_trace({clientid, From}) of
         true ->
             BinClientId = dgiot_utils:to_binary(From),
-            dgiot_mqtt:publish(self(), <<"logger_trace/trace/", BinClientId/binary, Topic/binary>>, Payload);
+            dgiot_mqtt:publish(self(), <<"logger_trace/trace/", BinClientId/binary,"/", Topic/binary>>, Payload);
         false ->
             case get_trace({topic, Topic}) of
                 true ->
