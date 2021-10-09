@@ -244,6 +244,7 @@ do_request(post_trace, #{<<"action">> := Action, <<"tracetype">> := Tracetype, <
     Rtn =
         case Action of
             <<"start">> ->
+                ?LOG(info,"Tracetype ~p, Handle ~p",[Tracetype,Handle]),
                 dgiot_tracer:add_trace({dgiot_utils:to_atom(Tracetype), Handle});
             <<"stop">> ->
                 dgiot_tracer:del_trace({dgiot_utils:to_atom(Tracetype), Handle});
@@ -251,7 +252,7 @@ do_request(post_trace, #{<<"action">> := Action, <<"tracetype">> := Tracetype, <
                 {error, _Other}
         end,
     case Rtn of
-        ok ->
+        true ->
             {200, #{<<"code">> => 200, <<"msg">> => <<"SUCCESS">>}};
         {error, Reason} ->
             {400, #{<<"code">> => 400, <<"error">> => dgiot_utils:format("~p", [Reason])}}
