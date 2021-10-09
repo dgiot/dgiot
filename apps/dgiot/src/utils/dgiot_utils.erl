@@ -95,6 +95,7 @@
     , random/0
     , get_hostname/0
     , get_ip/1
+    , get_port/1
     , get_natip/0
     , get_wlanip/0
     , get_computerconfig/0
@@ -756,6 +757,10 @@ get_ip(Socket) ->
         to_list(C) ++ "." ++
         to_list(D),
     to_binary(Ip).
+
+get_port(Socket) ->
+    {ok, {{_A, _B, _C, _D}, Port}} = esockd_transport:peername(Socket),
+    Port.
 
 %%re:run(os:cmd("chcp 65001 & arp -a"),
 %%<<"([\\d]{1,3}\\.[\\d]{1,3}\\.[\\d]{1,3}\\.[\\d]{1,3}).*?([\\S]{2}-[\\S]{2}-[\\S]{2}-[\\S]{2}-[\\S]{2}-[\\S]{2})">>,
