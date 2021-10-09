@@ -83,23 +83,23 @@ get_trace({Type, Id}) when is_list(Id) ->
 get_trace({Type, Id}) when is_atom(Id) ->
     get_trace({Type, atom_to_binary(Id)});
 get_trace({clientid, ClientId}) ->
-   ets:member(?DGIOT_CLIENT_TRACE, ClientId);
+    ets:member(?DGIOT_CLIENT_TRACE, ClientId);
 get_trace({topic, Topic}) ->
-    lists:any(fun({emqx_topic_trace,TopicFilter, _}) ->
+    lists:any(fun({emqx_topic_trace, TopicFilter, _}) ->
         emqx_topic:match(Topic, TopicFilter)
               end, ets:tab2list(?DGIOT_TOPIC_TRACE));
 get_trace(_) ->
     false.
 
-check_trace(From, Topic,Payload) ->
+check_trace(From, Topic, Payload) ->
     case get_trace({clientid, From}) of
         true ->
             BinClientId = dgiot_utils:to_binary(From),
-            dgiot_mqtt:publish(self(), <<"logger_trace/trace/", BinClientId/binary,"/", Topic/binary>>, Payload);
+            dgiot_mqtt:publish(self(), <<"logger_trace/trace/", BinClientId/binary, "/", Topic/binary>>, Payload);
         false ->
             case get_trace({topic, Topic}) of
                 true ->
-                    dgiot_mqtt:publish(self(),  <<"logger_trace/trace/", Topic/binary>>, Payload);
+                    dgiot_mqtt:publish(self(), <<"logger_trace/trace/", Topic/binary>>, Payload);
                 false ->
                     false
             end
@@ -122,7 +122,7 @@ insert(?DGIOT_CLIENT_TRACE, Key, Value) ->
     end,
     case get(?DGIOT_CLIENT_TRACE, Key) of
         not_find ->
-            insert_(?DGIOT_CLIENT_TRACE,#?DGIOT_CLIENT_TRACE{key = Key, value = Value});
+            insert_(?DGIOT_CLIENT_TRACE, #?DGIOT_CLIENT_TRACE{key = Key, value = Value});
         _ -> pass
     end,
     insert_(?DGIOT_CLIENT_TRACE, #?DGIOT_CLIENT_TRACE{key = Key, value = Value});
@@ -136,7 +136,7 @@ insert(?DGIOT_TOPIC_TRACE, Key, Value) ->
     end,
     case get(?DGIOT_TOPIC_TRACE, Key) of
         not_find ->
-            insert_(?DGIOT_TOPIC_TRACE,#?DGIOT_TOPIC_TRACE{key = Key, value = Value});
+            insert_(?DGIOT_TOPIC_TRACE, #?DGIOT_TOPIC_TRACE{key = Key, value = Value});
         _ -> pass
     end,
     insert_(?DGIOT_TOPIC_TRACE, #?DGIOT_TOPIC_TRACE{key = Key, value = Value}).

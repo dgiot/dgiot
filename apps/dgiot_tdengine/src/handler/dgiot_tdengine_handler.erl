@@ -374,7 +374,7 @@ get_app(ProductId, Results, DeviceId) ->
                                                             end,
                                                             FormattedAddress;
                                                         _ ->
-                                                            <<"[", Longitude/binary, ",", Latitude/binary, "]经纬度解析错误"/utf8>>
+                                                            <<"[", BinV/binary, "]经纬度解析错误"/utf8>>
                                                     end;
                                                 _ ->
                                                     <<"无GPS信息"/utf8>>

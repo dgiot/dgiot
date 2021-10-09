@@ -28,6 +28,7 @@
 %%--------------------------------------------------------------------
 
 start(_StartType, _StartArgs) ->
+    dgiot_metrics:start(dgiot_meter),
     {ok, Sup} = dgiot_meter_sup:start_link(),
     {ok, Sup}.
 
