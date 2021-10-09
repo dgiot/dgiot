@@ -6,6 +6,7 @@
 * add device log ([f3b173c](https://github.com/dgiot/dgiot/commit/f3b173c3f146e1ddf21038b5026dfd08ae93c95f))
 * channel_log ([1e37058](https://github.com/dgiot/dgiot/commit/1e3705876eb905cab215085e7341e050ce822170))
 * fix mqtt trace bug ([1a53ebe](https://github.com/dgiot/dgiot/commit/1a53ebec4ecf68ad2e19c14d43ed47fbcbed1754))
+* post trace failed ([544eed5](https://github.com/dgiot/dgiot/commit/544eed54b1798fe799f885f5af99a06582fa115b))
 * task_worker bug ([0396163](https://github.com/dgiot/dgiot/commit/039616312126d24e36b03cf339e0e6ffb6f3aa13))
 
 
