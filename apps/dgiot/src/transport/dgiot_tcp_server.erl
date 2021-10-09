@@ -116,7 +116,7 @@ handle_info({tcp, Sock, Data}, #state{mod = Mod, child = #tcp{register = false, 
             dgiot_cm:register_channel(ClientId, self(), #{conn_mod => Mod}),
             Ip = dgiot_utils:get_ip(Sock),
             Port = dgiot_utils:get_port(Sock),
-            dgiot_cm:insert_channel_info(ClientId,#{ip => Ip, port => Port,online => dgiot_datetime:now_microsecs()},[{tcp_recv, 1}]),
+            dgiot_cm:insert_channel_info(ClientId, #{ip => Ip, port => Port, online => dgiot_datetime:now_microsecs()}, [{tcp_recv, 1}]),
             {noreply, State#state{child = NewChild, incoming_bytes = Cnt}, hibernate};
         {noreply, NewChild} ->
             {noreply, State#state{child = NewChild, incoming_bytes = Cnt}, hibernate};
@@ -139,9 +139,9 @@ handle_info({tcp, Sock, Data}, #state{mod = Mod, child = #tcp{buff = Buff, socke
     Cnt = byte_size(NewBin),
     NewChildState = ChildState#tcp{buff = <<>>},
     case NewChildState of
-        #tcp{clientid = CliendId, register = true}->
-            dgiot_tracer:check_trace(CliendId, CliendId, Binary);
-        _->
+        #tcp{clientid = CliendId, register = true} ->
+            dgiot_tracer:check_trace(CliendId, CliendId, Binary, ?MODULE, ?LINE);
+        _ ->
             pass
     end,
     case Mod:handle_info({tcp, <<Buff/binary, NewBin/binary>>}, NewChildState) of
@@ -204,7 +204,7 @@ code_change(OldVsn, #state{mod = Mod, child = ChildState} = State, Extra) ->
 %%%===================================================================
 
 send(#tcp{clientid = CliendId, register = true, transport = Transport, socket = Socket, log = Log}, Payload) ->
-    dgiot_tracer:check_trace(CliendId, CliendId, Payload),
+    dgiot_tracer:check_trace(CliendId, CliendId, Payload, ?MODULE, ?LINE),
     dgiot_metrics:inc(dgiot_bridge, <<"tcp_server_send">>, 1),
     write_log(Log, <<"SEND">>, Payload),
     case Socket == undefined of

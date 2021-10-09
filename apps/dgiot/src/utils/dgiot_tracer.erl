@@ -19,7 +19,8 @@
 -export([
     add_trace/1,
     del_trace/1,
-    check_trace/3
+    check_trace/3,
+    check_trace/5
 ]).
 
 %% Mnesia bootstrap
@@ -91,11 +92,16 @@ get_trace({topic, Topic}) ->
 get_trace(_) ->
     false.
 
+check_trace(From, Topic, Payload, Module, Line) ->
+    Msg = #{<<"msg">> => Payload, <<"topic">> => Topic, <<"time">> => dgiot_datetime:now_secs(),
+        <<"pid">> => dgiot_utils:to_binary(self()), <<"peername">> => From, <<"mfa">> => Module, <<"line">> => Line},
+    check_trace(From, Topic, jsx:encode(Msg)).
+
 check_trace(From, Topic, Payload) ->
     case get_trace({clientid, From}) of
         true ->
             BinClientId = dgiot_utils:to_binary(From),
-            dgiot_mqtt:publish(self(), <<"logger_trace/trace/", BinClientId/binary, "/", Topic/binary>>, Payload);
+            dgiot_mqtt:publish(From, <<"logger_trace/trace/", BinClientId/binary, "/", Topic/binary>>, Payload);
         false ->
             case get_trace({topic, Topic}) of
                 true ->
