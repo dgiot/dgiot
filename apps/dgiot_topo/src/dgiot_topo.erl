@@ -52,7 +52,7 @@ get_topo(Arg, _Context) ->
                     end;
                 _ ->
                     DeviceId = dgiot_parse:get_deviceid(ProductId, Devaddr),
-                    case dgiot_tdengine:get_device(<<"09d0bbcf44">>, <<"9CA525B343F0">>, #{<<"keys">> => <<"last_row(*)">>, <<"limit">> => 1}) of
+                    case dgiot_tdengine:get_device(ProductId, Devaddr, #{<<"keys">> => <<"last_row(*)">>, <<"limit">> => 1}) of
                         {ok, #{<<"results">> := [Result | _]}} ->
                             put({self(), td}, Result);
                         _ ->
@@ -331,7 +331,7 @@ get_gpsaddr(V) ->
                 #{<<"baiduaddr">> := #{<<"formatted_address">> := FormattedAddress}} ->
                     FormattedAddress;
                 _ ->
-                    <<"[", Longitude/binary, ",", Latitude/binary, "]经纬度解析错误"/utf8>>
+                    <<"[", BinV/binary, "]经纬度解析错误"/utf8>>
             end;
         _ ->
             <<"无GPS信息"/utf8>>
