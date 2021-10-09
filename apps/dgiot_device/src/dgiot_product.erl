@@ -58,17 +58,21 @@ handle_message({load, ProductId, IsLoadDevice}, State) ->
     Reply =
         case dgiot_product:get(ProductId) of
             {ok, Product} ->
-                {ok, Product1} = dgiot_product:save(Product),
-                case IsLoadDevice of
-                    true ->
-                        case dgiot_product:synchronize_device(ProductId) of
-                            ok ->
-                                {ok, Product1};
-                            {error, Why} ->
-                                {error, Why}
+                case dgiot_product:save(Product) of
+                    {ok, Product1} ->
+                        case IsLoadDevice of
+                            true ->
+                                case dgiot_product:synchronize_device(ProductId) of
+                                    ok ->
+                                        {ok, Product1};
+                                    {error, Why} ->
+                                        {error, Why}
+                                end;
+                            false ->
+                                {ok, Product1}
                         end;
-                    false ->
-                        {ok, Product1}
+                    _ ->
+                        pass
                 end;
             {error, Reason} ->
                 {error, Reason}
