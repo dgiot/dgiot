@@ -139,7 +139,7 @@ handle_info({tcp, Sock, Data}, #state{mod = Mod, child = #tcp{buff = Buff, socke
     NewChildState = ChildState#tcp{buff = <<>>},
     case NewChildState of
         #tcp{clientid = CliendId, register = true} ->
-            dgiot_tracer:check_trace(CliendId, CliendId, Binary, ?MODULE, ?LINE);
+            dgiot_tracer:check_trace(CliendId, CliendId, dgiot_utils:binary_to_hex(Binary), ?MODULE, ?LINE);
         _ ->
             pass
     end,
@@ -202,10 +202,9 @@ code_change(OldVsn, #state{mod = Mod, child = ChildState} = State, Extra) ->
 %%% Internal functions
 %%%===================================================================
 
-send(#tcp{clientid = CliendId, register = true, transport = Transport, socket = Socket, log = Log}, Payload) ->
-    dgiot_tracer:check_trace(CliendId, CliendId, Payload, ?MODULE, ?LINE),
+send(#tcp{clientid = CliendId, register = true, transport = Transport, socket = Socket}, Payload) ->
+    dgiot_tracer:check_trace(CliendId, CliendId, dgiot_utils:binary_to_hex(Payload), ?MODULE, ?LINE),
     dgiot_metrics:inc(dgiot_bridge, <<"tcp_server_send">>, 1),
-    write_log(Log, <<"SEND">>, Payload),
     case Socket == undefined of
         true ->
             {error, disconnected};
@@ -213,16 +212,14 @@ send(#tcp{clientid = CliendId, register = true, transport = Transport, socket = 
             Transport:send(Socket, Payload)
     end;
 
-send(#tcp{transport = Transport, socket = Socket, log = Log}, Payload) ->
+send(#tcp{transport = Transport, socket = Socket}, Payload) ->
     dgiot_metrics:inc(dgiot_bridge, <<"tcp_server_send">>, 1),
-    write_log(Log, <<"SEND">>, Payload),
     case Socket == undefined of
         true ->
             {error, disconnected};
         false ->
             Transport:send(Socket, Payload)
     end.
-
 
 rate_limit({Rate, Burst}) ->
     esockd_rate_limit:new(Rate, Burst).

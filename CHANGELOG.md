@@ -21,6 +21,7 @@
 * add tcp transparent ([b1f091c](https://github.com/dgiot/dgiot/commit/b1f091cba9fa143fcc8040a6fa8848ac89412e96))
 * add tdengie metrics ([c38b046](https://github.com/dgiot/dgiot/commit/c38b046f1939bf6d59a106a62b2b1f3c86a89127))
 * add trace log, Modify meter channel ([d4b9fd7](https://github.com/dgiot/dgiot/commit/d4b9fd758e2ca2643bdf5c560aa32ff441fac22f))
+* add transparent log ([b432ce6](https://github.com/dgiot/dgiot/commit/b432ce6c13e3b1664685d74a6e5c08b73be987de))
 * trace ([1eadb3a](https://github.com/dgiot/dgiot/commit/1eadb3acd12b3b6c7c818771999f2b5c3fc8b9a7))
 
 
