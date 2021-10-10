@@ -168,7 +168,7 @@ init(?TYPE, Channel, Cfg) ->
 %% 初始化池子
 handle_init(State) ->
     emqx_hooks:add('logger.send', {?MODULE, send, []}),
-    emqx_hooks:add('mqtt_publish.trace', {dgiot_tracer, check_trace, []}),
+    emqx_hooks:add('mqtt_publish.trace', {dgiot_tracer, check_trace, [?MODULE, ?LINE]}),
     {ok, State}.
 
 handle_message(config, #state{cfg = Cfg} = State) ->
@@ -259,13 +259,11 @@ get_body(#{<<"msg">> := Msg, <<"clientid">> := _} = Map) when is_map(Msg) ->
 get_body(#{<<"msg">> := Msg} = Map) when is_map(Msg) ->
     Devaddr = maps:get(<<"devaddr">>, Msg, <<"">>),
     ProductId = maps:get(<<"productid">>, Msg, <<"">>),
-    DefaultACL = #{<<"role:admin">> => #{
-        <<"read">> => true,
-        <<"write">> => true}
-    },
+    DeviceId = maps:get(<<"deviceid">>, Msg, <<"">>),
+    DefaultACL = dgiot_device:get_acl(DeviceId),
     ACl = maps:get(<<"ACL">>, Msg, DefaultACL),
     NewMsg = maps:without([<<"ACL">>], Msg),
-    Map#{<<"type">> => <<"json">>, <<"devaddr">> => Devaddr, <<"productid">> => ProductId, <<"ACL">> => ACl, <<"msg">> => jiffy:encode(NewMsg)};
+    Map#{<<"type">> => <<"json">>, <<"devaddr">> => Devaddr, <<"productid">> => ProductId, <<"deviceid">> => DeviceId, <<"ACL">> => ACl, <<"msg">> => jiffy:encode(NewMsg)};
 get_body(Map) ->
     Map#{<<"type">> => <<"text">>,
         <<"ACL">> => #{<<"role:admin">> => #{

@@ -25,7 +25,7 @@
 -export([init_ets/0]).
 -export([create_device/1, create_device/2, get_sub_device/1, get_sub_device/2, get/2]).
 -export([load_device/1, sync_parse/1, post/1, put/1, save/1, save/2, save/3, lookup/1, lookup/2, delete/1, delete/2, save_prod/2, lookup_prod/1, get_online/1]).
--export([encode/1, decode/3, save_subdevice/2, get_subdevice/2, get_file/4]).
+-export([encode/1, decode/3, save_subdevice/2, get_subdevice/2, get_file/4, get_acl/1]).
 
 init_ets() ->
     dgiot_data:init(?DGIOT_PRODUCT),
@@ -89,11 +89,36 @@ save(Device) ->
         end,
     dgiot_mnesia:insert(DeviceId, {[Status, UpdatedAt, get_acl(Device), DeviceName, Devaddr, ProductId], node()}).
 
-get_acl(Device) ->
+get_acl(Device) when is_map(Device) ->
     ACL = maps:get(<<"ACL">>, Device, #{}),
     lists:foldl(fun(X, Acc) ->
         Acc ++ [binary_to_atom(X)]
-                end, [], maps:keys(ACL)).
+                end, [], maps:keys(ACL));
+
+get_acl(DeviceId) when is_binary(DeviceId) ->
+    case lookup(DeviceId) of
+        {ok, {[_, _, [Acl | _], _, _, _], _}} ->
+            BinAcl = atom_to_binary(Acl),
+            #{BinAcl => #{
+                <<"read">> => true,
+                <<"write">> => true}
+            };
+        _ ->
+            #{<<"*">> => #{
+                <<"read">> => true},
+                <<"role:admin">> => #{
+                    <<"read">> => true,
+                    <<"write">> => true}
+            }
+    end;
+
+get_acl(_DeviceId) ->
+    #{<<"*">> => #{
+        <<"read">> => true},
+        <<"role:admin">> => #{
+            <<"read">> => true,
+            <<"write">> => true}
+    }.
 
 save(DeviceId, _Data) ->
     case lookup(DeviceId) of
@@ -121,7 +146,7 @@ sync_parse(OffLine) ->
                                 _ ->
                                     <<"">>
                             end,
-                        ?MLOG(info, #{<<"clientid">> => DeviceId, <<"devaddr">> => Devaddr, <<"productid">> => ProductId, <<"productname">> => Productname, <<"devicename">> => DeviceName, <<"status">> => <<"下线"/utf8>>}, ['device_statuslog']),
+                        ?MLOG(info, #{<<"deviceid">> => DeviceId, <<"devaddr">> => Devaddr, <<"productid">> => ProductId, <<"productname">> => Productname, <<"devicename">> => DeviceName, <<"status">> => <<"下线"/utf8>>}, ['device_statuslog']),
                         dgiot_umeng:save_devicestatus(DeviceId, <<"OFFLINE">>),
                         dgiot_mnesia:insert(DeviceId, {[false, Last, Acl, DeviceName, Devaddr, ProductId], Node});
                     _ ->
@@ -138,7 +163,7 @@ sync_parse(OffLine) ->
                                 _ ->
                                     <<"">>
                             end,
-                        ?MLOG(info, #{<<"clientid">> => DeviceId, <<"devaddr">> => Devaddr, <<"productid">> => ProductId, <<"productname">> => Productname, <<"devicename">> => DeviceName, <<"status">> => <<"上线"/utf8>>}, ['device_statuslog']),
+                        ?MLOG(info, #{<<"deviceid">> => DeviceId, <<"devaddr">> => Devaddr, <<"productid">> => ProductId, <<"productname">> => Productname, <<"devicename">> => DeviceName, <<"status">> => <<"上线"/utf8>>}, ['device_statuslog']),
                         dgiot_mnesia:insert(DeviceId, {[true, Last, Acl, DeviceName, Devaddr, ProductId], Node});
                     _ ->
                         pass
