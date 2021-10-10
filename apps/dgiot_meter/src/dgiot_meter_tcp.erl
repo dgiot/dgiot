@@ -36,28 +36,34 @@ init(TCPState) ->
     {ok, TCPState}.
 
 %%设备登录报文，登陆成功后，开始搜表
-%
-handle_info({tcp, DtuAddr}, #tcp{socket = Socket, state = #state{id = ChannelId, dtuaddr = <<>>, search = Search} = State} = TCPState) ->
+handle_info({tcp, Buff}, #tcp{socket = Socket, state = #state{id = ChannelId, dtuaddr = <<>>, search = Search} = State} = TCPState) ->
+    ?LOG(info,"Buff ~p",[Buff]),
     DTUIP = dgiot_utils:get_ip(Socket),
-    {_, [Acc | _]} = dlt376_decoder:parse_frame(DtuAddr, []),
-    #{<<"msgtype">> := Protocol} = Acc,
+    {Protocol, DtuAddr} =
+        case Buff of
+            <<16#68, _:4/bytes, 16#68,_A1:8/bytes,_Rest/binary>> ->
+                {_, [Acc | _]} = dlt376_decoder:parse_frame(Buff, []),
+                #{<<"msgtype">> := Protocol1,<<"addr">> := MeterAddr} = Acc,
+                dgiot_meter:create_meter4G(MeterAddr, ChannelId, DTUIP),
+                {Protocol1, MeterAddr};
+            _ ->
+                {?DLT645, Buff}
+        end,
     case Protocol of
         ?DLT376 ->
-            #{<<"addr">> := MeterAddr} = Acc,
-            dgiot_meter:create_meter4G(MeterAddr, ChannelId, DTUIP),
             {ProductId, _, _} = dgiot_data:get({meter, ChannelId}),
             {DtuProductId, _, _} = dgiot_data:get({dtu, ChannelId}),
-            Topic = <<"thing/", ProductId/binary, "/", MeterAddr/binary>>,
+            Topic = <<"thing/", ProductId/binary, "/", DtuAddr/binary>>,
             dgiot_mqtt:subscribe(Topic),  %为这个设备订阅一个mqtt
-            dgiot_bridge:send_log(ChannelId, ProductId, DtuAddr, "from dev ~p (登录)", [dgiot_utils:binary_to_hex(DtuAddr)]),
+            dgiot_bridge:send_log(ChannelId, ProductId, DtuAddr, "from dev ~p (登录)", [dgiot_utils:binary_to_hex(Buff)]),
             {NewRef, NewStep} = {undefined, read_meter},
             DtuId = dgiot_parse:get_deviceid(DtuProductId, DtuAddr),
             dgiot_metrics:inc(dgiot_meter, <<"dtu_online">>, 1),
-            {noreply, TCPState#tcp{buff = <<>>, register = true, clientid = DtuId, state = State#state{dtuaddr = MeterAddr, protocol = ?DLT376, ref = NewRef, step = NewStep}}};
+            {noreply, TCPState#tcp{buff = <<>>, register = true, clientid = DtuId, state = State#state{dtuaddr = DtuAddr, protocol = ?DLT376, ref = NewRef, step = NewStep}}};
         ?DLT645 ->
             dgiot_meter:create_dtu(DtuAddr, ChannelId, DTUIP),
             {DtuProductId, _, _} = dgiot_data:get({dtu, ChannelId}),
-            Topic = <<"profile/", DtuProductId/binary, "/", DtuAddr/binary>>,
+            Topic = <<"profile/", DtuProductId/binary,"/", DtuAddr/binary>>,
             dgiot_mqtt:subscribe(Topic),
             {NewRef, NewStep} =
                 case Search of
@@ -75,10 +81,7 @@ handle_info({tcp, DtuAddr}, #tcp{socket = Socket, state = #state{id = ChannelId,
             dgiot_bridge:send_log(ChannelId, DtuProductId, DtuAddr, "from dev ~p (登录)", [dgiot_utils:binary_to_hex(DtuAddr)]),
             DtuId = dgiot_parse:get_deviceid(DtuProductId, DtuAddr),
             dgiot_metrics:inc(dgiot_meter, <<"dtu_online">>, 1),
-            {noreply, TCPState#tcp{buff = <<>>, register = true, clientid = DtuId, state = State#state{dtuaddr = DtuAddr, protocol = ?DLT645, ref = NewRef, step = NewStep}}};
-        _ ->
-            ?LOG(info, "GGM 334 dgiot_meter_tcp, handle_info (登录失败) ~p", [dgiot_utils:binary_to_hex(DtuAddr)]),
-            dgiot_utils:binary_to_hex(DtuAddr)
+            {noreply, TCPState#tcp{buff = <<>>, register = true, clientid = DtuId, state = State#state{dtuaddr = DtuAddr, protocol = ?DLT645, ref = NewRef, step = NewStep}}}
     end;
 
 %%定时器触发搜表

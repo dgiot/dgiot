@@ -1,10 +1,11 @@
-# [](https://github.com/dgiot/dgiot/compare/v4.3.4...v) (2021-10-09)
+# [](https://github.com/dgiot/dgiot/compare/v4.3.4...v) (2021-10-10)
 
 
 ### Bug Fixes
 
 * add device log ([f3b173c](https://github.com/dgiot/dgiot/commit/f3b173c3f146e1ddf21038b5026dfd08ae93c95f))
 * channel_log ([1e37058](https://github.com/dgiot/dgiot/commit/1e3705876eb905cab215085e7341e050ce822170))
+* dtl645 parse_frame ([13348c8](https://github.com/dgiot/dgiot/commit/13348c823d4c31884e8d76160f5b93aa6e0b2391))
 * fix mqtt trace bug ([1a53ebe](https://github.com/dgiot/dgiot/commit/1a53ebec4ecf68ad2e19c14d43ed47fbcbed1754))
 * post trace failed ([544eed5](https://github.com/dgiot/dgiot/commit/544eed54b1798fe799f885f5af99a06582fa115b))
 * publish topic error ([b3ab5fc](https://github.com/dgiot/dgiot/commit/b3ab5fcc4ac52467a192a3ea685d1a155b314445))
@@ -14,9 +15,11 @@
 ### Features
 
 * add task metircs ([79cfd2d](https://github.com/dgiot/dgiot/commit/79cfd2dc45e8a396dff7351eaf40ab5e07be83c5))
+* add tcp connect info ([39a1cc9](https://github.com/dgiot/dgiot/commit/39a1cc93ecf25796eabca67aac1789258dc58037))
 * add tcp metircs ([f8e19b1](https://github.com/dgiot/dgiot/commit/f8e19b1b241200b5d1324d689f4e2d9536e74a4d))
 * add tcp transparent ([b1f091c](https://github.com/dgiot/dgiot/commit/b1f091cba9fa143fcc8040a6fa8848ac89412e96))
 * add tdengie metrics ([c38b046](https://github.com/dgiot/dgiot/commit/c38b046f1939bf6d59a106a62b2b1f3c86a89127))
+* trace ([1eadb3a](https://github.com/dgiot/dgiot/commit/1eadb3acd12b3b6c7c818771999f2b5c3fc8b9a7))
 
 
 ### Performance Improvements
