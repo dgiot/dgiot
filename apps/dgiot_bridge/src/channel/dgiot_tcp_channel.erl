@@ -168,13 +168,8 @@ handle_info({deliver, _, Msg}, TCPState) ->
     Payload = dgiot_mqtt:get_payload(Msg),
     Topic = dgiot_mqtt:get_topic(Msg),
     case binary:split(Topic, <<$/>>, [global, trim]) of
-        [<<"transparent">>, DeviceId] ->
-            save_log(DeviceId,Payload),
-            dgiot_tcp_server:send(TCPState, Payload),
-            {noreply, TCPState};
         [<<"transparent">>, DeviceId, <<"hex">>] ->
             save_log(DeviceId,Payload),
-            ?MLOG(info, #{<<"clientid">> => DeviceId, <<"msg">> => Payload}, ['device_statuslog']),
             dgiot_tcp_server:send(TCPState, dgiot_utils:hex_to_binary(Payload)),
             {noreply, TCPState};
         _ ->
@@ -365,7 +360,7 @@ create_device(DeviceId, ProductId, DTUMAC, DTUIP, Dtutype) ->
                     _ ->
                         <<"">>
                 end,
-            ?MLOG(info, #{<<"clientid">> => DeviceId, <<"devaddr">> => DTUMAC, <<"productid">> => ProductId, <<"productname">> => Productname, <<"devicename">> => <<Dtutype/binary, DTUMAC/binary>>, <<"status">> => <<"上线"/utf8>>}, ['device_statuslog']),
+            ?MLOG(info, #{<<"deviceid">> => DeviceId, <<"devaddr">> => DTUMAC, <<"productid">> => ProductId, <<"productname">> => Productname, <<"devicename">> => <<Dtutype/binary, DTUMAC/binary>>, <<"status">> => <<"上线"/utf8>>}, ['device_statuslog']),
             {DeviceId, DTUMAC};
         Error2 ->
             ?LOG(info, "Error2 ~p ", [Error2]),
@@ -454,8 +449,6 @@ sub_topic(DeviceId) ->
     dgiot_mqtt:subscribe(Topic2).
 
 pub_topic(DeviceId, Payload) ->
-    Topic1 = <<"transparent/", DeviceId/binary, "/post">>,
-    dgiot_mqtt:publish(DeviceId, Topic1, Payload),
     Topic2 = <<"transparent/", DeviceId/binary, "/post/hex">>,
     save_log(DeviceId, dgiot_utils:binary_to_hex(Payload)),
     dgiot_mqtt:publish(DeviceId, Topic2, dgiot_utils:binary_to_hex(Payload)).
@@ -464,6 +457,6 @@ pub_topic(DeviceId, Payload) ->
 save_log(DeviceId,Payload) ->
     case dgiot_device:lookup(DeviceId) of
         {ok,{[true,_,_,DeviceName, Devaddr, ProductId],_}} ->
-            ?MLOG(info, #{<<"clientid">> => DeviceId, <<"devaddr">> => Devaddr, <<"productid">> => ProductId, <<"devicename">> => DeviceName, <<"msg">> => Payload}, ['device_statuslog']);
+            ?MLOG(info, #{<<"deviceid">> => DeviceId, <<"devaddr">> => Devaddr, <<"productid">> => ProductId, <<"devicename">> => DeviceName, <<"msg">> => Payload}, ['transparent']);
         _ -> pass
     end.

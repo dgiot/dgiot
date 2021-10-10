@@ -135,7 +135,6 @@ handle_info({tcp, Sock, Data}, #state{mod = Mod, child = #tcp{buff = Buff, socke
                 Binary
         end,
     write_log(ChildState#tcp.log, <<"RECV">>, NewBin),
-    ?LOG(info, "ChildState ~p", [ChildState]),
     Cnt = byte_size(NewBin),
     NewChildState = ChildState#tcp{buff = <<>>},
     case NewChildState of
