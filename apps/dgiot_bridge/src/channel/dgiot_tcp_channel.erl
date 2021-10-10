@@ -168,8 +168,8 @@ handle_info({deliver, _, Msg}, TCPState) ->
     Payload = dgiot_mqtt:get_payload(Msg),
     Topic = dgiot_mqtt:get_topic(Msg),
     case binary:split(Topic, <<$/>>, [global, trim]) of
-        [<<"thing">>, ProductId,DevAddr,<<"tcp">>, <<"hex">>] ->
-            DeviceId = dgiot_parse:get_deviceid(ProductId,DevAddr),
+        [<<"thing">>, ProductId, DevAddr, <<"tcp">>, <<"hex">>] ->
+            DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
             dgiot_device:save_log(DeviceId, Payload, ['tcp_send']),
             dgiot_tcp_server:send(TCPState, dgiot_utils:hex_to_binary(dgiot_utils:trim_string(Payload))),
             {noreply, TCPState};
@@ -214,16 +214,15 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, state = #state{id = ChannelId, de
                 {<<>>, <<>>} ->
                     {noreply, TCPState#tcp{buff = <<>>}};
                 {_, _} ->
-                    dgiot_device:sub_topic(DeviceId,<<"tcp/hex">>),
                     NewProducts = dgiot_utils:unique_1(Products ++ [NewProductId]),
-                    dgiot_bridge:send_log(ChannelId, NewProductId, DtuAddr, "DeviceId ~p DTU revice from  ~p", [DeviceId,DtuAddr]),
+                    dgiot_bridge:send_log(ChannelId, NewProductId, DtuAddr, "DeviceId ~p DTU revice from  ~p", [DeviceId, DtuAddr]),
                     {noreply, TCPState#tcp{buff = <<>>, register = true, clientid = DeviceId,
                         state = State#state{devaddr = DtuAddr, product = NewProducts, deviceId = DeviceId}}}
             end
     end;
 
 handle_info({tcp, Buff}, #tcp{state = #state{id = ChannelId, product = Products, deviceId = DeviceId}} = TCPState) ->
-    dgiot_device:save_log(DeviceId,dgiot_utils:binary_to_hex(dgiot_utils:to_binary(Buff)),['tcp_receive']),
+    dgiot_device:save_log(DeviceId, dgiot_utils:binary_to_hex(Buff), ['tcp_receive']),
     case decode(Buff, Products, TCPState) of
         {ok, [], NewTCPState} ->
             {noreply, NewTCPState#tcp{buff = <<>>}};
@@ -329,7 +328,6 @@ handle_frames([Frame | Frames], TCPState) ->
 update_state(Env, #tcp{state = State} = TCPState) ->
     TCPState#tcp{state = State#state{env = maps:without([<<"send">>], Env)}}.
 
-
 create_device(DeviceId, ProductId, DTUMAC, DTUIP, Dtutype) ->
     case dgiot_parse:get_object(<<"Product">>, ProductId) of
         {ok, #{<<"ACL">> := Acl, <<"devType">> := DevType}} ->
@@ -362,11 +360,14 @@ create_device(DeviceId, ProductId, DTUMAC, DTUIP, Dtutype) ->
                         <<"">>
                 end,
             ?MLOG(info, #{<<"deviceid">> => DeviceId, <<"devaddr">> => DTUMAC, <<"productid">> => ProductId, <<"productname">> => Productname, <<"devicename">> => <<Dtutype/binary, DTUMAC/binary>>}, ['online']),
+            dgiot_device:sub_topic(DeviceId, <<"tcp/hex">>),
+            dgiot_device:save_log(DeviceId, dgiot_utils:binary_to_hex(DTUMAC), ['tcp_receive']),
             {DeviceId, DTUMAC};
         Error2 ->
             ?LOG(info, "Error2 ~p ", [Error2]),
             {<<>>, <<>>}
     end.
+
 
 create_instruct(ACL, DtuProductId, DtuDevId) ->
     case dgiot_product:lookup_prod(DtuProductId) of

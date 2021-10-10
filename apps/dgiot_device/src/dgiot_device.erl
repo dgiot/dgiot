@@ -467,22 +467,23 @@ get_appname(ProductId, DevAddr) ->
             <<"admin">>
     end.
 
-save_log(DeviceId,Payload,Domain) ->
+save_log(DeviceId, Payload, Domain) ->
     case dgiot_device:lookup(DeviceId) of
-        {ok,{[true,_,_,DeviceName, Devaddr, ProductId],_}} ->
+        {ok,{[_,_,_,DeviceName, Devaddr, ProductId],_}} ->
             ?MLOG(info, #{
                 <<"deviceid">> => DeviceId,
                 <<"devaddr">> => Devaddr,
                 <<"productid">> => ProductId,
                 <<"devicename">> => DeviceName,
                 <<"msg">> => Payload}, Domain);
-        _ -> pass
+        _ ->
+            pass
     end.
 
 sub_topic(DeviceId,Type) ->
     case dgiot_device:lookup(DeviceId) of
-        {ok,{[true,_,_,_DeviceName, Devaddr, ProductId],_}} ->
-            Topic2 = <<"thing/", ProductId/binary,"/",Devaddr/binary, "/", Type/binary>>,
-            dgiot_mqtt:subscribe(Topic2);
+        {ok,{[_, _, _, _DeviceName, Devaddr, ProductId],_}} ->
+            Topic = <<"thing/", ProductId/binary,"/",Devaddr/binary, "/", Type/binary>>,
+            dgiot_mqtt:subscribe(Topic);
         _ -> pass
     end.

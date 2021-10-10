@@ -18,6 +18,7 @@
 * add tcp channel device log ([c74b246](https://github.com/dgiot/dgiot/commit/c74b246443244f981e847bcb1f559f7ec4d2d375))
 * add tcp connect info ([39a1cc9](https://github.com/dgiot/dgiot/commit/39a1cc93ecf25796eabca67aac1789258dc58037))
 * add tcp metircs ([f8e19b1](https://github.com/dgiot/dgiot/commit/f8e19b1b241200b5d1324d689f4e2d9536e74a4d))
+* add tcp save log ([868c8d0](https://github.com/dgiot/dgiot/commit/868c8d09e732ca3872ffe4ef5149263c2d5e97ae))
 * add tcp transparent ([b1f091c](https://github.com/dgiot/dgiot/commit/b1f091cba9fa143fcc8040a6fa8848ac89412e96))
 * add tdengie metrics ([c38b046](https://github.com/dgiot/dgiot/commit/c38b046f1939bf6d59a106a62b2b1f3c86a89127))
 * add trace log, Modify meter channel ([d4b9fd7](https://github.com/dgiot/dgiot/commit/d4b9fd758e2ca2643bdf5c560aa32ff441fac22f))
