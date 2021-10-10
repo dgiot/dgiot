@@ -168,9 +168,10 @@ handle_info({deliver, _, Msg}, TCPState) ->
     Payload = dgiot_mqtt:get_payload(Msg),
     Topic = dgiot_mqtt:get_topic(Msg),
     case binary:split(Topic, <<$/>>, [global, trim]) of
-        [<<"transparent">>, DeviceId, <<"hex">>] ->
-            save_log(DeviceId,Payload),
-            dgiot_tcp_server:send(TCPState, dgiot_utils:hex_to_binary(Payload)),
+        [<<"thing">>, ProductId,DevAddr,<<"tcp">>, <<"hex">>] ->
+            DeviceId = dgiot_parse:get_deviceid(ProductId,DevAddr),
+            dgiot_device:save_log(DeviceId, Payload, ['tcp_send']),
+            dgiot_tcp_server:send(TCPState, dgiot_utils:hex_to_binary(dgiot_utils:trim_string(Payload))),
             {noreply, TCPState};
         _ ->
             case jsx:is_json(Payload) of
@@ -213,7 +214,7 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, state = #state{id = ChannelId, de
                 {<<>>, <<>>} ->
                     {noreply, TCPState#tcp{buff = <<>>}};
                 {_, _} ->
-                    sub_topic(DeviceId),
+                    dgiot_device:sub_topic(DeviceId,<<"tcp/hex">>),
                     NewProducts = dgiot_utils:unique_1(Products ++ [NewProductId]),
                     dgiot_bridge:send_log(ChannelId, NewProductId, DtuAddr, "DeviceId ~p DTU revice from  ~p", [DeviceId,DtuAddr]),
                     {noreply, TCPState#tcp{buff = <<>>, register = true, clientid = DeviceId,
@@ -222,7 +223,7 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, state = #state{id = ChannelId, de
     end;
 
 handle_info({tcp, Buff}, #tcp{state = #state{id = ChannelId, product = Products, deviceId = DeviceId}} = TCPState) ->
-    pub_topic(DeviceId, Buff),
+    dgiot_device:save_log(DeviceId,dgiot_utils:binary_to_hex(dgiot_utils:to_binary(Buff)),['tcp_receive']),
     case decode(Buff, Products, TCPState) of
         {ok, [], NewTCPState} ->
             {noreply, NewTCPState#tcp{buff = <<>>}};
@@ -360,7 +361,7 @@ create_device(DeviceId, ProductId, DTUMAC, DTUIP, Dtutype) ->
                     _ ->
                         <<"">>
                 end,
-            ?MLOG(info, #{<<"deviceid">> => DeviceId, <<"devaddr">> => DTUMAC, <<"productid">> => ProductId, <<"productname">> => Productname, <<"devicename">> => <<Dtutype/binary, DTUMAC/binary>>, <<"status">> => <<"上线"/utf8>>}, ['device_statuslog']),
+            ?MLOG(info, #{<<"deviceid">> => DeviceId, <<"devaddr">> => DTUMAC, <<"productid">> => ProductId, <<"productname">> => Productname, <<"devicename">> => <<Dtutype/binary, DTUMAC/binary>>}, ['online']),
             {DeviceId, DTUMAC};
         Error2 ->
             ?LOG(info, "Error2 ~p ", [Error2]),
@@ -414,7 +415,6 @@ get_productid(ChannelId, Products, Head, Dtutype) ->
                         <<"thing">> => #{},
                         <<"productSecret">> => dgiot_utils:random()
                     },
-                    ?LOG(info, "Product ~p", [Product]),
                     dgiot_parse:create_object(<<"Product">>, Product),
                     pass
             end;
@@ -437,26 +437,4 @@ check_login(Head, Len, Addr) ->
                 _Error1 ->
                     <<>>
             end
-    end.
-
-
-sub_topic(DeviceId) ->
-    Topic = <<"profile/", DeviceId/binary>>,
-    dgiot_mqtt:subscribe(Topic),
-    Topic1 = <<"transparent/", DeviceId/binary>>,
-    dgiot_mqtt:subscribe(Topic1),
-    Topic2 = <<"transparent/", DeviceId/binary, "/hex">>,
-    dgiot_mqtt:subscribe(Topic2).
-
-pub_topic(DeviceId, Payload) ->
-    Topic2 = <<"transparent/", DeviceId/binary, "/post/hex">>,
-    save_log(DeviceId, dgiot_utils:binary_to_hex(Payload)),
-    dgiot_mqtt:publish(DeviceId, Topic2, dgiot_utils:binary_to_hex(Payload)).
-
-
-save_log(DeviceId,Payload) ->
-    case dgiot_device:lookup(DeviceId) of
-        {ok,{[true,_,_,DeviceName, Devaddr, ProductId],_}} ->
-            ?MLOG(info, #{<<"deviceid">> => DeviceId, <<"devaddr">> => Devaddr, <<"productid">> => ProductId, <<"devicename">> => DeviceName, <<"msg">> => Payload}, ['transparent']);
-        _ -> pass
     end.

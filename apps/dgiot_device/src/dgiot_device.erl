@@ -25,7 +25,7 @@
 -export([init_ets/0]).
 -export([create_device/1, create_device/2, get_sub_device/1, get_sub_device/2, get/2]).
 -export([load_device/1, sync_parse/1, post/1, put/1, save/1, save/2, save/3, lookup/1, lookup/2, delete/1, delete/2, save_prod/2, lookup_prod/1, get_online/1]).
--export([encode/1, decode/3, save_subdevice/2, get_subdevice/2, get_file/4, get_acl/1]).
+-export([encode/1, decode/3, save_subdevice/2, get_subdevice/2, get_file/4, get_acl/1, save_log/3,sub_topic/2]).
 
 init_ets() ->
     dgiot_data:init(?DGIOT_PRODUCT),
@@ -465,4 +465,24 @@ get_appname(ProductId, DevAddr) ->
             end;
         _ ->
             <<"admin">>
+    end.
+
+save_log(DeviceId,Payload,Domain) ->
+    case dgiot_device:lookup(DeviceId) of
+        {ok,{[true,_,_,DeviceName, Devaddr, ProductId],_}} ->
+            ?MLOG(info, #{
+                <<"deviceid">> => DeviceId,
+                <<"devaddr">> => Devaddr,
+                <<"productid">> => ProductId,
+                <<"devicename">> => DeviceName,
+                <<"msg">> => Payload}, Domain);
+        _ -> pass
+    end.
+
+sub_topic(DeviceId,Type) ->
+    case dgiot_device:lookup(DeviceId) of
+        {ok,{[true,_,_,_DeviceName, Devaddr, ProductId],_}} ->
+            Topic2 = <<"thing/", ProductId/binary,"/",Devaddr/binary, "/", Type/binary>>,
+            dgiot_mqtt:subscribe(Topic2);
+        _ -> pass
     end.
