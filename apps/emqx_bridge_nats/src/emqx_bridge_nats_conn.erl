@@ -9,7 +9,7 @@
 
 connect(Opts) ->
     case emqx_bridge_nats_driver:start_link(Opts) of
-        {ok, Pid} -> 
+        {ok, Pid} ->
             {ok, Pid};
         {error, Reason} ->
             ?LOG(error, "[NATS] Can't connect to NATS server: ~p", [Reason]),

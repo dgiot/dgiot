@@ -6,7 +6,7 @@
 -include("emqx_bridge_nats.hrl").
 
 -export([load/1, unload/0]).
-% 
+%
 -export([on_client_connected/3,
          on_client_disconnected/4,
          on_client_authenticate/3,

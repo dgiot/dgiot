@@ -21,7 +21,7 @@ start_link(Opts) ->
 
 init(Opts) ->
     case nats:connect(list_to_binary(proplists:get_value(address,  Opts)), proplists:get_value(port,  Opts)) of
-        {ok, Conn} -> 
+        {ok, Conn} ->
             {ok, #state{conn = Conn}};
         {error, Reason} ->
             ?LOG(error, "[NATS] Can't connect to NATS server: ~p", [Reason]),
