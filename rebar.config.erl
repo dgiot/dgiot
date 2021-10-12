@@ -318,6 +318,7 @@ relx_plugin_apps(ReleaseType) ->
         , emqx_rule_engine
         , emqx_sasl
         , emqx_exhook
+        , emqx_bridge_nats
     ]
     ++ [emqx_telemetry || not is_enterprise()]
         ++ relx_plugin_apps_per_rel(ReleaseType)

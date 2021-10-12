@@ -1,0 +1,14 @@
+%%-*- mode: erlang -*-
+%%--------------------------------------------------------------------
+%% Bridges
+%%--------------------------------------------------------------------
+
+{mapping, "bridge.nats.address", "emqx_bridge_nats.address", [
+  {datatype, string},
+  {default, "127.0.0.1"}
+]}.
+
+{mapping, "bridge.nats.port", "emqx_bridge_nats.port", [
+  {datatype, integer},
+  {default, 4222}
+]}.
