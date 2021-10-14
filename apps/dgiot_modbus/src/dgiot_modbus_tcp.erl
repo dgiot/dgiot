@@ -67,7 +67,8 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, state = #state{id = ChannelId, de
             Topic = <<"profile/", ProductId/binary, "/", Devaddr/binary>>,
             dgiot_bridge:send_log(ChannelId, ProductId, Devaddr, "DTU revice from  ~p", [dgiot_utils:binary_to_hex(Buff)]),
             dgiot_mqtt:subscribe(Topic),
-            {noreply, TCPState#tcp{buff = <<>>, register = true, clientid = DevId, state = State#state{devaddr = Devaddr, deviceId = DevId}}};
+            DtuId = dgiot_parse:get_deviceid(ProductId, DtuAddr),
+            {noreply, TCPState#tcp{buff = <<>>, register = true, clientid = DtuId, state = State#state{devaddr = Devaddr, deviceId = DevId}}};
         _Error ->
             case re:run(Buff, Head, [{capture, first, list}]) of
                 {match, [Head]} when length(List1) == Len ->
@@ -75,7 +76,8 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, state = #state{id = ChannelId, de
                     Topic = <<"profile/", ProductId/binary, "/", Buff/binary>>,
                     dgiot_bridge:send_log(ChannelId, ProductId, Buff, "DTU revice from  ~p", [dgiot_utils:binary_to_hex(Buff)]),
                     dgiot_mqtt:subscribe(Topic),
-                    {noreply, TCPState#tcp{buff = <<>>, register = true, clientid = DeviceId, state = State#state{devaddr = Buff}}};
+                    DtuId = dgiot_parse:get_deviceid(ProductId, DtuAddr),
+                    {noreply, TCPState#tcp{buff = <<>>, register = true, clientid = DtuId, state = State#state{devaddr = Buff}}};
                 Error1 ->
                     ?LOG(info, "Error1 ~p Buff ~p ", [Error1, dgiot_utils:to_list(Buff)]),
                     {noreply, TCPState#tcp{buff = <<>>}}

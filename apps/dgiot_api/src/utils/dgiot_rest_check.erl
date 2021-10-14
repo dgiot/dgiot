@@ -25,6 +25,7 @@
 %%%===================================================================
 
 check_request(Context, Req) ->
+
     Params = maps:get(check_request, Context, []),
     check_request_params(Params, Req, #{}).
 
@@ -154,6 +155,14 @@ validate(Rule = {<<"type">>, <<"datetime">>}, Name, Value) ->
             validation_error(Rule, Name, Err)
     end;
 
+validate(Rule = {<<"type">>, <<"GeoPoint">>}, Name, Value) ->
+    case is_map(Value) of
+        true -> ok;
+        false ->
+            Err = <<"value:", Value/binary, " is not GeoPoint.">>,
+            validation_error(Rule, Name, Err)
+    end;
+
 validate(Rule = {<<"enum">>, Values}, Name, Value) ->
     Err = <<"value:", Value/binary, " is not enum.">>,
     try
@@ -233,9 +242,10 @@ validate(schema, Schema, Data) ->
         {error, [{schema_invalid, _, Reason}]} ->
             ?LOG(error,"validate_with_schema ~p,~p,~p~n", [Schema, Data, Reason]),
             validation_error(schema, schema, schema_invalid);
-        {error, [{data_invalid, _, Error, _, Names}]} ->
+        {error, [{data_invalid, _, Error, _, _Names}]} ->
             ?LOG(error,"validate_with_schema ~p,~p,~p~n", [Schema, Data, Error]),
-            validation_error(schema, Names, Error);
+%%            validation_error(schema, Names, Error);
+            ok;
         {ok, _} ->
             ok
     end;

@@ -191,12 +191,13 @@ get_attrs(Type, ProductId, ClassName, Attrs, DeviceId, KonvatId, Shapeid, Identi
                                         end,
                                         Text2;
                                     {ok, Text1} ->
-                                        case dgiot_data:get({topogps, dgiot_parse:get_shapeid(ProductId, Id)}) of
-                                            not_find ->
-                                                dgiot_utils:to_binary(Text1);
-                                            Gpsaddr ->
-                                                Gpsaddr
-                                        end
+%%                                        case dgiot_data:get({topogps, dgiot_parse:get_shapeid(ProductId, Id)}) of
+%%                                            not_find ->
+%%                                                dgiot_utils:to_binary(Text1);
+%%                                            Gpsaddr ->
+%%                                                Gpsaddr
+%%                                        end
+                                        get_value(ProductId, Id, Text1)
                                 end,
                             NewAttrs = Attrs#{<<"id">> => dgiot_parse:get_shapeid(DeviceId, Id), <<"text">> => <<Text/binary, " ", Unit/binary>>, <<"draggable">> => false},
                             save(Type, NewAttrs),
@@ -302,17 +303,41 @@ get_optshape(ProductId, DeviceId, Payload) ->
                     Type1 ->
                         Type1
                 end,
-            BinV =
-                case dgiot_data:get({topogps, dgiot_parse:get_shapeid(ProductId, K)}) of
-                    not_find ->
-                        dgiot_utils:to_binary(V);
-                    Gpsaddr ->
-                        Gpsaddr
-                end,
+            BinV = get_value(ProductId, K, V),
             Unit = get_unit(ProductId, K),
             Acc ++ [#{<<"id">> => dgiot_parse:get_shapeid(DeviceId, K), <<"text">> => <<BinV/binary, " ", Unit/binary>>, <<"type">> => Type}]
                   end, Topo, Payload),
     base64:encode(jsx:encode(#{<<"konva">> => Shape})).
+
+get_value(ProductId, K, V) ->
+    Props = dgiot_tdengine_handler:get_props(ProductId),
+    case maps:find(K, Props) of
+        error ->
+            dgiot_utils:to_binary(V);
+        {ok, #{<<"dataType">> := #{<<"type">> := Type} = DataType}} ->
+            Specs = maps:get(<<"specs">>, DataType, #{}),
+            case Type of
+                Type1 when Type1 == <<"enum">>; Type1 == <<"bool">> ->
+                    Value = maps:get(dgiot_utils:to_binary(V), Specs, V),
+                    dgiot_utils:to_binary(Value);
+                Type3 when Type3 == <<"geopoint">> ->
+                    Addr =
+                        case dgiot_data:get({topogps, dgiot_parse:get_shapeid(ProductId, K)}) of
+                            not_find ->
+                                dgiot_utils:to_binary(V);
+                            Gpsaddr ->
+                                Gpsaddr
+                        end,
+                    dgiot_utils:to_binary(Addr);
+                Type4 when Type4 == <<"float">>; Type4 == <<"double">> ->
+                    Precision = maps:get(<<"precision">>, Specs, 3),
+                    dgiot_utils:to_binary(dgiot_utils:to_float(V, Precision));
+                _ ->
+                    dgiot_utils:to_binary(V)
+            end;
+        _ ->
+            dgiot_utils:to_binary(V)
+    end.
 
 push(ProductId, Devaddr, DeviceId, Payload) ->
     Base64 = get_optshape(ProductId, DeviceId, Payload),
