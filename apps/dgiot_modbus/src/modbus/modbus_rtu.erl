@@ -190,7 +190,7 @@ set_params(Basedata, ProductId, DevAddr) ->
     end.
 
 %rtu modbus
-parse_frame(<<>>, Acc, _State) -> {<<>>, Acc};
+ parse_frame(<<>>, Acc, _State) -> {<<>>, Acc};
 
 parse_frame(<<MbAddr:8, BadCode:8, ErrorCode:8, Crc:2/binary>> = Buff, Acc,
     #{<<"addr">> := DtuAddr} = State) ->
