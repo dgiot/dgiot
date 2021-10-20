@@ -1,4 +1,13 @@
-# [](https://github.com/dgiot/dgiot/compare/v4.3.4...v) (2021-10-10)
+# [](https://github.com/dgiot/dgiot/compare/v4.3.5...v) (2021-10-20)
+
+
+### Features
+
+* rm esports ([c33dedd](https://github.com/dgiot/dgiot/commit/c33dedd1340ad0b3fbd00f4a74a6d62678a4ef76))
+
+
+
+## [4.3.5](https://github.com/dgiot/dgiot/compare/v4.3.4...v4.3.5) (2021-10-15)
 
 
 ### Bug Fixes
@@ -10,6 +19,7 @@
 * post trace failed ([544eed5](https://github.com/dgiot/dgiot/commit/544eed54b1798fe799f885f5af99a06582fa115b))
 * publish topic error ([b3ab5fc](https://github.com/dgiot/dgiot/commit/b3ab5fcc4ac52467a192a3ea685d1a155b314445))
 * task_worker bug ([0396163](https://github.com/dgiot/dgiot/commit/039616312126d24e36b03cf339e0e6ffb6f3aa13))
+* tcp save device log ([ef4a240](https://github.com/dgiot/dgiot/commit/ef4a24066fe31ad823a79a9546d991a4ca043a3c))
 
 
 ### Features
