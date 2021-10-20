@@ -479,7 +479,7 @@ function deploy_postgres() {
   DATA_DIR="${install_dir}/dgiot_pg_writer/data"
   install_service dgiot_pg_writer "notify" "/usr/local/pgsql/12/bin/postgres -D ${DATA_DIR}" "postgres" "DATA_DIR=${DATA_DIR}"
   sleep 2
-  psql -U postgres -c "CREATE USER  repl WITH PASSWORD '${pg_pwd}' REPLICATION;" &> /dev/null
+  sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -c "CREATE USER  repl WITH PASSWORD '${pg_pwd}' REPLICATION;" &> /dev/null
   echo -e  "`date +%F_%T`: ${GREEN} deploy postgres success${NC}"
 }
 
@@ -549,14 +549,14 @@ function install_parse_server() {
   cd ${script_dir}
 
   echo -e "`date +%F_%T`: ${GREEN} create ${parseconfig} success${NC}"
-  psql -U postgres -c "ALTER USER postgres WITH PASSWORD '${pg_pwd}';"  &> /dev/null
-  retval=`psql -U postgres -c "SELECT datname FROM pg_database WHERE datistemplate = false;"`
+  sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -c "ALTER USER postgres WITH PASSWORD '${pg_pwd}';"  &> /dev/null
+  retval=`sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -c "SELECT datname FROM pg_database WHERE datistemplate = false;"`
   if [[ $retval == *"parse"* ]]; then
-     pg_dump -F p -f  ${backup_dir}/dgiot_parse_server/parse_4.0_backup.sql -C -E  UTF8 -h 127.0.0.1 -U postgres parse &> /dev/null
-     psql -U postgres -c "DROP DATABASE parse;" &> /dev/null
+     sudo -u postgres /usr/local/pgsql/12/bin/pg_dump -F p -f  ${backup_dir}/dgiot_parse_server/parse_4.0_backup.sql -C -E  UTF8 -h 127.0.0.1 -U postgres parse &> /dev/null
+     sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -c "DROP DATABASE parse;" &> /dev/null
   fi
-  psql -U postgres -c "CREATE DATABASE parse;" &> /dev/null
-  psql -U postgres -f ${install_dir}/dgiot_parse_server/parse_4.0.sql parse &> /dev/null
+  sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -c "CREATE DATABASE parse;" &> /dev/null
+  sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -f ${install_dir}/dgiot_parse_server/parse_4.0.sql parse &> /dev/null
   echo -e "`date +%F_%T`: ${GREEN}install parse_server success${NC}"
   }
 
@@ -794,15 +794,15 @@ function install_postgres_exporter() {
     wget ${fileserver}/postgres_exporter-0.10.0.linux-amd64.tar.gz -O ${script_dir}/postgres_exporter-0.10.0.linux-amd64.tar.gz &> /dev/null
   fi
 
-  retval=`psql -U postgres -d parse -c "SELECT * FROM pg_available_extensions;"`
+  retval=`sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -d parse -c "SELECT * FROM pg_available_extensions;"`
   if [[ $retval == *"pg_stat_statements"* ]]; then
       echo -e "`date +%F_%T`: ${GREEN}pg_stat_statements has installed${NC}"
   else
-    psql -U postgres -d parse -c "CREATE EXTENSION pg_stat_statements SCHEMA public;"
-    psql -U postgres -d parse -c "CREATE USER postgres_exporter PASSWORD 'password';"
-    psql -U postgres -d parse -c "ALTER USER postgres_exporter SET SEARCH_PATH TO postgres_exporter,pg_catalog;"
-    psql -U postgres -d parse -c "CREATE SCHEMA postgres_exporter AUTHORIZATION postgres_exporter;"
-    psql -U postgres -d parse -c "CREATE FUNCTION postgres_exporter.f_select_pg_stat_activity()
+    sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -d parse -c "CREATE EXTENSION pg_stat_statements SCHEMA public;"
+    sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -d parse -c "CREATE USER postgres_exporter PASSWORD 'password';"
+    sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -d parse -c "ALTER USER postgres_exporter SET SEARCH_PATH TO postgres_exporter,pg_catalog;"
+    sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -d parse -c "CREATE SCHEMA postgres_exporter AUTHORIZATION postgres_exporter;"
+    sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -d parse -c "CREATE FUNCTION postgres_exporter.f_select_pg_stat_activity()
     RETURNS setof pg_catalog.pg_stat_activity
     LANGUAGE sql
     SECURITY DEFINER
@@ -810,7 +810,7 @@ function install_postgres_exporter() {
     SELECT * from pg_catalog.pg_stat_activity;
     \$\$;"
 
-    psql -U postgres -d parse -c "CREATE FUNCTION postgres_exporter.f_select_pg_stat_replication()
+    sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -d parse -c "CREATE FUNCTION postgres_exporter.f_select_pg_stat_replication()
     RETURNS setof pg_catalog.pg_stat_replication
     LANGUAGE sql
     SECURITY DEFINER
@@ -818,16 +818,16 @@ function install_postgres_exporter() {
       SELECT * from pg_catalog.pg_stat_replication;
     \$\$;"
 
-    psql -U postgres -d parse -c "CREATE VIEW postgres_exporter.pg_stat_replication
+    sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -d parse -c "CREATE VIEW postgres_exporter.pg_stat_replication
     AS
       SELECT * FROM postgres_exporter.f_select_pg_stat_replication();"
 
-    psql -U postgres -d parse -c "CREATE VIEW postgres_exporter.pg_stat_activity
+    sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -d parse -c "CREATE VIEW postgres_exporter.pg_stat_activity
     AS
       SELECT * FROM postgres_exporter.f_select_pg_stat_activity();"
 
-    psql -U postgres -d parse -c "GRANT SELECT ON postgres_exporter.pg_stat_replication TO postgres_exporter;"
-    psql -U postgres -d parse -c "GRANT SELECT ON postgres_exporter.pg_stat_activity TO postgres_exporter;"
+    sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -d parse -c "GRANT SELECT ON postgres_exporter.pg_stat_replication TO postgres_exporter;"
+    sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -d parse -c "GRANT SELECT ON postgres_exporter.pg_stat_activity TO postgres_exporter;"
   fi
 
   systemctl restart dgiot_pg_writer
