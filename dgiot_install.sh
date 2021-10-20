@@ -109,7 +109,7 @@ fi
 # set parameters by default value
 verType=single        # [single | cluster]
 domain_name="prod.iotn2n.com" #[prod.iotn2n.com | your_domain_name]
-dgiot="dgiot_44"   #[dgiot_44 | dgiot_n]
+dgiot="dgiot_53"   #[dgiot_53 | dgiot_n]
 while getopts "h:v:d:s:" arg
 do
   case $arg in
