@@ -123,9 +123,9 @@ do
       ;;
     d)
       echo "Please ensure that the certificate file has been placed in ${script_dir}"
-      echo -e  "`date +%F_%T`: ${GREEN} Please ensure that the certificate file has been placed in `pwd`${NC}"
+      echo -e  "`date +%F_%T` $LINENO: ${GREEN} Please ensure that the certificate file has been placed in `pwd`${NC}"
       if [ ! -f  ${script_dir}/${domain_name}.zip  ]; then
-        echo -e  "`date +%F_%T`: ${RED} ${script_dir}/${domain_name}.zip cert file not exist ${NC}"
+        echo -e  "`date +%F_%T` $LINENO: ${RED} ${script_dir}/${domain_name}.zip cert file not exist ${NC}"
         exit 1
       fi
       domain_name=$(echo $OPTARG)
@@ -176,11 +176,11 @@ function get_processor() {
 
 function get_wanip() {
   wlanip=`curl whatismyip.akamai.com`
-  echo -e  "`date +%F_%T`: ${GREEN} wlanip: ${wlanip}${NC}"
+  echo -e  "`date +%F_%T` $LINENO: ${GREEN} wlanip: ${wlanip}${NC}"
 }
 
 function get_lanip() {
-  lanip=$(ip address |grep inet |grep -v inet6 |grep -v 127.0.0.1 |awk '{print $2}' |awk -F "/" '{print $1}') ||:
+  lanip=$(/sbin/ifconfig eth0 | sed -nr 's/.*inet (addr:)?(([0-9]*\.){3}[0-9]*).*/\2/p')
   if [ -z "$lanip" ]; then
     lanip=$(ifconfig |grep inet |grep -v inet6 |grep -v 127.0.0.1 |awk '{print $2}' |awk -F ":" '{print $2}') ||:
   fi
@@ -188,7 +188,7 @@ function get_lanip() {
   if [ -z "$lanip" ]; then
     lanip="127.0.0.1"
   fi
-  echo -e  "`date +%F_%T`: ${GREEN} lanip: ${lanip}${NC}"
+  echo -e  "`date +%F_%T` $LINENO: ${GREEN} lanip: ${lanip}${NC}"
 }
 
 function kill_process() {
@@ -215,7 +215,7 @@ function clean_services(){
 
 function clean_service() {
   if systemctl is-active --quiet $1; then
-        echo -e  "`date +%F_%T`: ${GREEN} $1 is running, stopping it...${NC}"
+        echo -e  "`date +%F_%T` $LINENO: ${GREEN} $1 is running, stopping it...${NC}"
         ${csudo} systemctl stop $1 &> /dev/null || echo &> /dev/null
     fi
   ${csudo} systemctl disable $1 &> /dev/null || echo &> /dev/null
@@ -225,7 +225,7 @@ function clean_service() {
 # $1:service  $2:Type  $3:ExecStart  $4:User  $5:Environment  $6:ExecStop
 function install_service() {
   service_config="${service_dir}/$1.service"
-  echo -e  "`date +%F_%T`: ${GREEN} build ${service_config}${NC}"
+  echo -e  "`date +%F_%T` $LINENO: ${GREEN} build ${service_config}${NC}"
   ${csudo} bash -c "echo '[Unit]'                             > ${service_config}"
   ${csudo} bash -c "echo 'Description=$1 server'              >> ${service_config}"
   ${csudo} bash -c "echo 'After=network-online.target'        >> ${service_config}"
@@ -264,13 +264,13 @@ function install_service() {
   ${csudo} systemctl daemon-reload  &> /dev/null
   ${csudo} systemctl enable $1 &> /dev/null
   ${csudo} systemctl start $1 &> /dev/null
-  echo -e  "`date +%F_%T`: ${GREEN} systemctl start $1${NC}"
+  echo -e  "`date +%F_%T` $LINENO: ${GREEN} systemctl start $1${NC}"
 }
 
 # $1:service  $2:Type  $3:ExecStart  $4:Environment $5:WorkingDirectory
 function install_service1() {
   service_config="${service_dir}/$1.service"
-  echo -e  "`date +%F_%T`: ${GREEN} build ${service_config}${NC}"
+  echo -e  "`date +%F_%T` $LINENO: ${GREEN} build ${service_config}${NC}"
   ${csudo} bash -c "echo '[Unit]'                             > ${service_config}"
   ${csudo} bash -c "echo 'Description=$1 server'              >> ${service_config}"
   ${csudo} bash -c "echo 'After=network-online.target'        >> ${service_config}"
@@ -305,13 +305,13 @@ function install_service1() {
   ${csudo} systemctl daemon-reload &> /dev/null
   ${csudo} systemctl enable $1 &> /dev/null
   ${csudo} systemctl start $1 &> /dev/null
-  echo -e  "`date +%F_%T`: ${GREEN} systemctl start $1${NC}"
+  echo -e  "`date +%F_%T` $LINENO: ${GREEN} systemctl start $1${NC}"
 }
 
 # $1:service  $2:Type  $3:ExecStart
 function install_service2() {
   service_config="${service_dir}/$1.service"
-  echo -e  "`date +%F_%T`: ${GREEN} build ${service_config}${NC}"
+  echo -e  "`date +%F_%T` $LINENO: ${GREEN} build ${service_config}${NC}"
   ${csudo} bash -c "echo '[Unit]'                             > ${service_config}"
   ${csudo} bash -c "echo 'Description=$1 server'              >> ${service_config}"
   ${csudo} bash -c "echo 'After=network-online.target'        >> ${service_config}"
@@ -340,14 +340,14 @@ function install_service2() {
   ${csudo} systemctl daemon-reload &> /dev/null
   ${csudo} systemctl enable $1 &> /dev/null
   ${csudo} systemctl start $1 &> /dev/null
-  echo -e  "`date +%F_%T`: ${GREEN} systemctl start $1${NC}"
+  echo -e  "`date +%F_%T` $LINENO: ${GREEN} systemctl start $1${NC}"
 }
 ##---------------------------------------------------------------##
 #2 部署档案数据库
 ## 2.1 部署postgres数据库
 ### 2.1.1 环境准备，根据自身需要，减少或者增加
 function yum_install_postgres() {
-  echo -e  "${GREEN} yum install postgres${NC}"
+  echo -e  "`date +%F_%T` $LINENO: yum install postgres${NC}"
   yum install -y wget git &> /dev/null
   ${csudo} yum install -y gcc gcc-c++  epel-release &> /dev/null
   ${csudo} yum install -y llvm5.0 llvm5.0-devel &> /dev/null
@@ -362,18 +362,18 @@ function yum_install_postgres() {
 
 ### 2.1.2 编译安装postgres
 function install_postgres() {
-  echo -e "`date +%F_%T`: ${GREEN}install_postgres${NC}"
+  echo -e "`date +%F_%T` $LINENO: ${GREEN}install_postgres${NC}"
   ##下载软件
   if [ ! -f ${script_dir}/postgresql-12.0.tar.gz ]; then
       ${csudo} wget ${fileserver}/postgresql-12.0.tar.gz -O ${script_dir}/postgresql-12.0.tar.gz &> /dev/null
   fi
 
   ### 创建目录和用户,以及配置环境变化
-  echo -e "${GREEN}create postgres user and group ${NC}"
+  echo -e "`date +%F_%T` $LINENO: ${GREEN}create postgres user and group ${NC}"
   set +uxe
   egrep "^postgres" /etc/passwd >/dev/null
   if [ $? -eq 0 ]; then
-      echo -e "${GREEN} postgres user and group exist ${NC}"
+      echo -e "`date +%F_%T` $LINENO: ${GREEN} postgres user and group exist ${NC}"
   else
       ${csudo} groupadd postgres  &> /dev/null
       ${csudo} useradd -g postgres postgres  &> /dev/null
@@ -389,40 +389,40 @@ function install_postgres() {
   fi
 
   tar xvf postgresql-12.0.tar.gz &> /dev/null
-  cd postgresql-12.0
+  cd ./postgresql-12.0/
   set -ue
   yum_install_postgres
-  echo -e  "`date +%F_%T`: ${GREEN} configure postgres${NC}"
+  echo -e  "`date +%F_%T` $LINENO: ${GREEN} configure postgres${NC}"
   ./configure --prefix=/usr/local/pgsql/12 --with-pgport=7432 --enable-nls --with-python --with-tcl --with-gssapi --with-icu --with-openssl --with-pam --with-ldap --with-systemd --with-libxml --with-libxslt &> /dev/null
 
-  echo -e  "`date +%F_%T`: ${GREEN} make install postgres${NC}"
+  echo -e  "`date +%F_%T` $LINENO: ${GREEN} make install postgres${NC}"
   make install -j${processor}  &> /dev/null
 
   ### 添加pg_stat_statements数据库监控插件
-  cd ${script_dir}/postgresql-12.0/contrib/pg_stat_statements/
-  echo -e  "`date +%F_%T`: ${GREEN} make install pg_stat_statements ${NC}"
+  cd  ${script_dir}/postgresql-12.0/contrib/pg_stat_statements/
+  echo -e  "`date +%F_%T` $LINENO: ${GREEN} make install pg_stat_statements ${NC}"
   make install -j${processor}  &> /dev/null
   sleep 5
 
   rm ${script_dir}/postgresql-12.0 -rf
-  cd ${script_dir}
-  echo -e "`date +%F_%T`: ${GREEN}build postgres sueccess${NC}"
+  cd ${script_dir}/
+  echo -e "`date +%F_%T` $LINENO: ${GREEN}build postgres sueccess${NC}"
 }
 
 function init_postgres_database(){
   ### 2.1.4.搭建主数据库
   if [ -d ${install_dir}/dgiot_pg_writer ]; then
-    ${csudo} mv ${install_dir}/dgiot_pg_writer/ ${backup_dir}/
+    mv ${install_dir}/dgiot_pg_writer/ ${backup_dir}/
   fi
 
   mkdir ${install_dir}/dgiot_pg_writer/data -p
   mkdir ${install_dir}/dgiot_pg_writer/archivedir -p
   chown -R postgres:postgres ${install_dir}/dgiot_pg_writer
-
-  echo -e "`date +%F_%T`: ${GREEN}initdb postgres${NC}"
+  cd ${install_dir}/dgiot_pg_writer/
   sudo -u postgres /usr/local/pgsql/12/bin/initdb -D ${install_dir}/dgiot_pg_writer/data/ -U postgres --locale=en_US.UTF8 -E UTF8 &> /dev/null
   ${csudo} bash -c "cp ${install_dir}/dgiot_pg_writer/data/{pg_hba.conf,pg_hba.conf.bak}"
   ${csudo} bash -c "cp ${install_dir}/dgiot_pg_writer/data/{postgresql.conf,postgresql.conf.bak}"
+  echo -e "`date +%F_%T` $LINENO: ${GREEN}initdb postgres success${NC}"
 
   ### 2.1.5 配置postgresql.conf
   postgresql_conf="${install_dir}/dgiot_pg_writer/data/postgresql.conf"
@@ -468,7 +468,7 @@ function init_postgres_database(){
 EOF
   archivedir="${install_dir}/dgiot_pg_writer/archivedir"
   echo "  archive_command = 'test ! -f ${archivedir}/%f && cp %p ${archivedir}/%f'" >>  ${postgresql_conf}
-  echo -e  "`date +%F_%T`: ${GREEN} ${postgresql_conf}${NC}"
+  echo -e  "`date +%F_%T` $LINENO: ${GREEN} ${postgresql_conf}${NC}"
 }
 
 ### 2.1.4 安装部署postgres
@@ -480,7 +480,7 @@ function deploy_postgres() {
   install_service dgiot_pg_writer "notify" "/usr/local/pgsql/12/bin/postgres -D ${DATA_DIR}" "postgres" "DATA_DIR=${DATA_DIR}"
   sleep 2
   sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -c "CREATE USER  repl WITH PASSWORD '${pg_pwd}' REPLICATION;" &> /dev/null
-  echo -e  "`date +%F_%T`: ${GREEN} deploy postgres success${NC}"
+  echo -e  "`date +%F_%T` $LINENO: ${GREEN} deploy postgres success${NC}"
 }
 
 ## 2.2 部署parse server
@@ -525,7 +525,7 @@ function install_parse_server() {
   ${csudo} bash -c "echo  'REDIS_SOCKET = redis://127.0.0.1:16379/0'                       >> ${parseconfig}"
   ${csudo} bash -c "echo  'REDIS_CACHE = redis://127.0.0.1:16379/1'                        >> ${parseconfig}"
   ${csudo} bash -c "echo  '# 邮箱配置'                                                      >> ${parseconfig}"
-  ${csudo} bash -c "echo  'EMAIL_FROM_ADDRESS = lsxredrain@163.com'                           >> ${parseconfig}"
+  ${csudo} bash -c "echo  'EMAIL_FROM_ADDRESS = lsxredrain@163.com'                         >> ${parseconfig}"
   ${csudo} bash -c "echo  'EMAIL_FROM_NAME = 系统通知'                                      >> ${parseconfig}"
   ${csudo} bash -c "echo  'EMAIL_SENDMAIL = true'                                           >> ${parseconfig}"
   ${csudo} bash -c "echo  'EMAIL_SMTP_HOST = smtp.163.com'                                  >> ${parseconfig}"
@@ -546,9 +546,9 @@ function install_parse_server() {
   ${csudo} bash -c "echo  '# 会话配置'                                                       >> ${parseconfig}"
   ${csudo} bash -c "echo  'SESSION_LENGTH = 604800'                                          >> ${parseconfig}"
 
-  cd ${script_dir}
+  cd ${script_dir}/
 
-  echo -e "`date +%F_%T`: ${GREEN} create ${parseconfig} success${NC}"
+  echo -e "`date +%F_%T` $LINENO: ${GREEN} create ${parseconfig} success${NC}"
   sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -c "ALTER USER postgres WITH PASSWORD '${pg_pwd}';"  &> /dev/null
   retval=`sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -c "SELECT datname FROM pg_database WHERE datistemplate = false;"`
   if [[ $retval == *"parse"* ]]; then
@@ -557,14 +557,14 @@ function install_parse_server() {
   fi
   sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -c "CREATE DATABASE parse;" &> /dev/null
   sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -f ${install_dir}/dgiot_parse_server/parse_4.0.sql parse &> /dev/null
-  echo -e "`date +%F_%T`: ${GREEN}install parse_server success${NC}"
+  echo -e "`date +%F_%T` $LINENO: ${GREEN}install parse_server success${NC}"
   }
 
 function install_dgiot_redis() {
   ### 2.2.3 部署dgiot_redis缓存服务
   cd ${install_dir}/dgiot_parse_server/script/redis/
   make -j${processor} &> /dev/null
-  cd ${script_dir}
+  cd ${script_dir}/
 }
 
 function deploy_parse_server() {
@@ -572,9 +572,11 @@ function deploy_parse_server() {
   clean_service dgiot_redis
   install_parse_server
   install_dgiot_redis
+  echo -e "`date +%F_%T` $LINENO: ${GREEN}install install_dgiot_redis success${NC}"
   parsehome="${install_dir}/dgiot_parse_server"
-  install_service2 "dgiot_parse_server" "simple" "${parsehome}/script/node/bin/node  ${parsehome}/server/index.js"
   install_service2 "dgiot_redis" "simple" "${parsehome}/script/redis/src/redis-server ${parsehome}/script/redis.conf"
+  install_service2 "dgiot_parse_server" "simple" "${parsehome}/script/node/bin/node  ${parsehome}/server/index.js"
+
 }
 
 #3 部署时序数据服务
@@ -590,7 +592,7 @@ function deploy_tdengine_server() {
     wget ${fileserver}/TDengine-server-2.0.20.13.tar.gz -O ${script_dir}/TDengine-server-2.0.20.13.tar.gz &> /dev/null
   fi
 
-  cd ${script_dir}
+  cd ${script_dir}/
   if [ -f ${script_dir}/TDengine-server-2.0.20.13 ]; then
     rm -rf ${script_dir}/TDengine-server-2.0.20.13/
   fi
@@ -618,7 +620,7 @@ function install_dgiot_tdengine_mqtt() {
   if [ -d ${script_dir}/mosquitto-1.6.7/ ]; then
      rm ${script_dir}/mosquitto-1.6.7/ -rf
   fi
-  cd  ${script_dir}
+  cd  ${script_dir}/
   tar xvf mosquitto-1.6.7.tar.gz &> /dev/null
   cd  ${script_dir}/mosquitto-1.6.7
   if [ -f /usr/lib/libmosquitto.so.1 ]; then
@@ -631,7 +633,13 @@ function install_dgiot_tdengine_mqtt() {
   ldconfig
   cd  ${script_dir}/
   rm ${script_dir}/mosquitto-1.6.7/ -rf
-  wget ${fileserver}/dgiot_tdengine_mqtt -O /usr/sbin/dgiot_tdengine_mqtt &> /dev/null
+  #wget ${fileserver}/dgiot_tdengine_mqtt -O /usr/sbin/dgiot_tdengine_mqtt &> /dev/null
+  rm ${script_dir}/dgiot_tdengine_mqtt/ -rf
+  rm /usr/sbin/dgiot_tdengine_mqtt -rf
+  git clone https://gitee.com/dgiiot/dgiot_tdengine_mqtt.git &> /dev/null
+  cd ${script_dir}/dgiot_tdengine_mqtt/c/
+  make &> /dev/null
+  cp ${script_dir}/dgiot_tdengine_mqtt/c/dgiot_tdengine_mqtt /usr/sbin/dgiot_tdengine_mqtt
   chmod 777 /usr/sbin/dgiot_tdengine_mqtt
   install_service2 dgiot_tdengine_mqtt "simple" "/usr/sbin/dgiot_tdengine_mqtt 127.0.0.1"
 }
@@ -648,11 +656,11 @@ function install_go_fastdfs() {
   fi
   cd ${script_dir}/
   tar xvf go_fastdfs.tar.gz  &> /dev/null
-  cd ${script_dir}/go_fastdfs
+  cd ${script_dir}/go_fastdfs/
   chmod 777 ${script_dir}/go_fastdfs/file
   mv ${script_dir}/go_fastdfs ${install_dir}
-  sed -i "s!{{ip}}!${lanip}!g"  ${install_dir}/go_fastdfs/cfg.json
-  sed -i "s!{{port}}!1250!g"  ${install_dir}/go_fastdfs/cfg.json
+  ${csudo} bash -c "sed -i 's!{{ip}}!${lanip}!g'  ${install_dir}/go_fastdfs/cfg.json"
+  ${csudo} bash -c "sed -i 's/{{port}}/1250/g'  ${install_dir}/go_fastdfs/cfg.json"
   if [ -f ${install_dir}/go_fastdfs/conf/ ]; then
     rm ${install_dir}/go_fastdfs/conf/ -rf
   fi
@@ -664,7 +672,7 @@ function install_go_fastdfs() {
 
 
 function yum_install_erlang_otp {
-  echo -e "`date +%F_%T`: ${GREEN}yum_install_erlang_otp${NC}"
+  echo -e "`date +%F_%T` $LINENO: ${GREEN}yum_install_erlang_otp${NC}"
   yum install -y make gcc gcc-c++ &> /dev/null
   yum install -y kernel-devel m4 ncurses-devel &> /dev/null
   yum install -y libstdc++-devel openssl-devel &> /dev/null
@@ -676,30 +684,31 @@ function yum_install_erlang_otp {
 # 5.1 安装erlang/otp环境
 function install_erlang_otp() {
   yum_install_erlang_otp
+  echo -e "`date +%F_%T` $LINENO: ${GREEN}install_erlang_otp${NC}"
   if [ ! -f ${script_dir}/otp_src_23.0.tar.gz ]; then
     wget ${fileserver}/otp_src_23.0.tar.gz -O ${script_dir}/otp_src_23.0.tar.gz &> /dev/null
   fi
   if [ -d ${install_dir}/otp_src_23.0/ ]; then
     rm ${script_dir}/otp_src_23.0 -rf
   fi
-  cd ${script_dir}
+  cd ${script_dir}/
   tar xf otp_src_23.0.tar.gz &> /dev/null
 
   cd ${script_dir}/otp_src_23.0/
-  echo -e "`date +%F_%T`: ${GREEN}otp configure${NC}"
+  echo -e "`date +%F_%T` $LINENO: ${GREEN}otp configure${NC}"
   ./configure &> /dev/null
-  echo -e "`date +%F_%T`: ${GREEN}otp make install${NC}"
+  echo -e "`date +%F_%T` $LINENO: ${GREEN}otp make install${NC}"
   make install &> /dev/null
-  cd ${script_dir}
+  cd ${script_dir}/
   rm ${script_dir}/otp_src_23.0 -rf
-  echo -e "`date +%F_%T`: ${GREEN}install erlang otp success${NC}"
+  echo -e "`date +%F_%T` $LINENO: ${GREEN}install erlang otp success${NC}"
 }
 
 function update_dgiot() {
   if [ ! -f ${script_dir}/${dgiot}.tar.gz ]; then
     wget $fileserver/${dgiot}.tar.gz -O ${script_dir}/${dgiot}.tar.gz &> /dev/null
   fi
-  cd ${script_dir}
+  cd ${script_dir}/
   tar xf ${dgiot}.tar.gz
   rm   ${script_dir}/dgiot/etc/plugins/dgiot_parse.conf -rf
   cp   ${install_dir}/dgiot/etc/plugins/dgiot_parse.conf ${script_dir}/dgiot/etc/plugins/dgiot_parse.conf
@@ -717,19 +726,20 @@ function install_dgiot() {
   if [ ! -f ${script_dir}/${dgiot}.tar.gz ]; then
     wget $fileserver/${dgiot}.tar.gz -O ${script_dir}/${dgiot}.tar.gz &> /dev/null
   fi
-  cd ${script_dir}
+  cd ${script_dir}/
   tar xf ${dgiot}.tar.gz
-
+  echo -e "`date +%F_%T` $LINENO: ${GREEN}install_dgiot dgiot_parse${NC}"
   #修改 dgiot_parse 连接 配置
-  ${csudo} bash -c  "sed -i '/^parse.parse_server/cparse.parse_server = http://127.0.0.1:1337' ${script_dir}/dgiot/etc/plugins/dgiot_parse.conf"
-  ${csudo} bash -c  "sed -i '/^parse.parse_path/cparse.parse_path = /parse/'  ${script_dir}/dgiot/etc/plugins/dgiot_parse.conf"
-  ${csudo} bash -c  "sed -i '/^parse.parse_appid/cparse.parse_appid = ${parse_appid}' ${script_dir}/dgiot/etc/plugins/dgiot_parse.conf"
-  ${csudo} bash -c  "sed -i '/^parse.parse_master_key/cparse.parse_master_key = ${parse_master}' ${script_dir}/dgiot/etc/plugins/dgiot_parse.conf"
-  ${csudo} bash -c  "sed -i '/^parse.parse_js_key/cparse.parse_js_key = ${parse_javascript}' ${script_dir}/dgiot/etc/plugins/dgiot_parse.conf"
-  ${csudo} bash -c  "sed -i '/^parse.parse_rest_key/cparse.parse_rest_key = ${parse_restapi}' ${script_dir}/dgiot/etc/plugins/dgiot_parse.conf"
+  ${csudo} bash -c  "sed -ri '/^parse.parse_server/cparse.parse_server = http://127.0.0.1:1337' ${script_dir}/dgiot/etc/plugins/dgiot_parse.conf"
+  ${csudo} bash -c  "sed -ri '/^parse.parse_path/cparse.parse_path = /parse/'  ${script_dir}/dgiot/etc/plugins/dgiot_parse.conf"
+  ${csudo} bash -c  "sed -ri '/^parse.parse_appid/cparse.parse_appid = ${parse_appid}' ${script_dir}/dgiot/etc/plugins/dgiot_parse.conf"
+  ${csudo} bash -c  "sed -ri '/^parse.parse_master_key/cparse.parse_master_key = ${parse_master}' ${script_dir}/dgiot/etc/plugins/dgiot_parse.conf"
+  ${csudo} bash -c  "sed -ri '/^parse.parse_js_key/cparse.parse_js_key = ${parse_javascript}' ${script_dir}/dgiot/etc/plugins/dgiot_parse.conf"
+  ${csudo} bash -c  "sed -ri '/^parse.parse_rest_key/cparse.parse_rest_key = ${parse_restapi}' ${script_dir}/dgiot/etc/plugins/dgiot_parse.conf"
 
+  echo -e "`date +%F_%T` $LINENO: ${GREEN}install_dgiot dgiot${NC}"
   # 修改dgiot.conf
-  ${csudo} bash -c "sed -i 's!/etc/ssl/certs/domain_name!/etc/ssl/certs/${domain_name}!g' ${script_dir}/dgiot/etc/emqx.conf"
+  ${csudo} bash -c "sed -ri 's!/etc/ssl/certs/domain_name!/etc/ssl/certs/${domain_name}!g' ${script_dir}/dgiot/etc/emqx.conf"
 
   cat > ${script_dir}/dgiot/data/loaded_plugins << "EOF"
   {emqx_management, true}.
@@ -768,7 +778,6 @@ EOF
   mv ${script_dir}/dgiot  ${install_dir}/
 
   install_service "dgiot" "forking" "/bin/sh ${install_dir}/dgiot/bin/emqx start"  "root" "HOME=${install_dir}/dgiot/erts-11.0" "/bin/sh /data/dgiot/bin/emqx stop"
-
 }
 
 #6 运维监控
@@ -796,7 +805,7 @@ function install_postgres_exporter() {
 
   retval=`sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -d parse -c "SELECT * FROM pg_available_extensions;"`
   if [[ $retval == *"pg_stat_statements"* ]]; then
-      echo -e "`date +%F_%T`: ${GREEN}pg_stat_statements has installed${NC}"
+      echo -e "`date +%F_%T` $LINENO: ${GREEN}pg_stat_statements has installed${NC}"
   else
     sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -d parse -c "CREATE EXTENSION pg_stat_statements SCHEMA public;"
     sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -d parse -c "CREATE USER postgres_exporter PASSWORD 'password';"
@@ -849,7 +858,7 @@ function install_prometheus() {
      wget $fileserver/prometheus-2.17.1.linux-amd64.tar.gz -O ${script_dir}/prometheus-2.17.1.linux-amd64.tar.gz &> /dev/null
   fi
 
-  cd ${script_dir}
+  cd ${script_dir}/
   tar -zxvf prometheus-2.17.1.linux-amd64.tar.gz &> /dev/null
 
   if [ -d ${install_dir}/prometheus-2.17.1.linux-amd64/ ]; then
@@ -866,7 +875,7 @@ function install_prometheus() {
 }
 
 function  yum_install_grafana() {
-  echo -e "`date +%F_%T`: ${GREEN}yum_install_grafana${NC}"
+  echo -e "`date +%F_%T` $LINENO: ${GREEN}yum_install_grafana${NC}"
   yum install -y libXcomposite libXdamage libXtst cups libXScrnSaver &> /dev/null
   yum install -y pango atk adwaita-cursor-theme adwaita-icon-theme &> /dev/null
   yum install -y at at-spi2-atk at-spi2-core cairo-gobject colord-libs &> /dev/null
@@ -876,7 +885,7 @@ function  yum_install_grafana() {
   yum install -y json-glib libappindicator-gtk3 libdbusmenu libdbusmenu-gtk3 libepoxy &> /dev/null
   yum install -y liberation-fonts liberation-narrow-fonts liberation-sans-fonts liberation-serif-fonts &> /dev/null
   yum install -y libgusb libindicator-gtk3 libmodman libproxy libsoup libwayland-cursor libwayland-egl &> /dev/null
-  yum install -y  libxkbcommon m4 mailx nettle patch psmisc redhat-lsb-core redhat-lsb-submod-security &> /dev/null
+  yum install -y libxkbcommon m4 mailx nettle patch psmisc redhat-lsb-core redhat-lsb-submod-security &> /dev/null
   yum install -y rest spax time trousers xdg-utils xkeyboard-config alsa-lib &> /dev/null
 }
 ###6.3.4 安装grafana-7.1.1.tar.gz
@@ -891,18 +900,18 @@ function install_grafana() {
     clean_service grafana-server
      mv ${install_dir}/grafana-7.1.1/  ${backup_dir}/grafana-7.1.1/
   fi
-  cd ${script_dir}
+  cd ${script_dir}/
   tar xvf grafana-7.1.1.tar.gz &> /dev/null
 
   mv ${script_dir}/grafana-7.1.1/  ${install_dir}/
   grafanahome=${install_dir}/grafana-7.1.1
-  ${csudo} bash -c  "sed -i '/^plugins/cplugins = ${install_dir}/grafana-7.1.1/data/plugins/'  ${install_dir}/grafana-7.1.1/conf/defaults.ini"
+  ${csudo} bash -c  "sed -ri '/^plugins/cplugins = ${install_dir}/grafana-7.1.1/data/plugins/'  ${install_dir}/grafana-7.1.1/conf/defaults.ini"
   install_service2 grafana-server "simple" "${grafanahome}/bin/grafana-server --config=${grafanahome}/conf/defaults.ini  --homepath=${grafanahome}"
 }
 
 function install_nginx() {
     if systemctl is-active --quiet nginx; then
-        echo -e  "`date +%F_%T`: ${GREEN} nginx is running, stopping it...${NC}"
+        echo -e  "`date +%F_%T` $LINENO: ${GREEN} nginx is running, stopping it...${NC}"
         rpm -e nginx
     fi
     ${csudo} rpm -Uvh http://nginx.org/packages/centos/7/noarch/RPMS/nginx-release-centos-7-0.el7.ngx.noarch.rpm --force &> /dev/null
@@ -915,9 +924,10 @@ function install_nginx() {
     fi
     rm  /etc/nginx/nginx.conf -rf
     cp ${script_dir}/nginx.conf /etc/nginx/nginx.conf -rf
+    echo -e "`date +%F_%T` $LINENO: ${GREEN} ${domain_name} ${NC}"
     sed -i "s!{{domain_name}}!${domain_name}!g"  /etc/nginx/nginx.conf
     sed -i "s!{{install_dir}}!${install_dir}!g"  /etc/nginx/nginx.conf
-    echo -e "`date +%F_%T`: ${GREEN}${install_dir}${NC}"
+    echo -e "`date +%F_%T` $LINENO:  ${GREEN} ${install_dir} ${NC}"
     if [ -f ${script_dir}/${domain_name}.zip ]; then
       unzip -o ${domain_name}.zip -d /etc/ssl/certs/ &> /dev/null
     fi
@@ -928,13 +938,13 @@ function install_nginx() {
 
 set -e
 #set -x
-echo -e "`date +%F_%T`: ${GREEN}dgiot  $verType deploy  start${NC}"
+echo -e "`date +%F_%T` $LINENO: ${GREEN}dgiot  $verType deploy  start${NC}"
 if [ "$verType" == "single" ]; then
     # Install server and client
-    if [ -x ${install_dir}/dgiot ]; then
-      update_flag=1
-      update_dgiot
-    else
+#    if [ -x ${install_dir}/dgiot ]; then
+#      update_flag=1
+#      update_dgiot
+#    else
       pre_install
       clean_services
       deploy_postgres
@@ -947,7 +957,7 @@ if [ "$verType" == "single" ]; then
       install_prometheus
       install_grafana
       install_nginx
-    fi
+#    fi
 elif [ "$verType" == "cluster" ]; then
     # todo
     if [ -x ${install_dir}/dgiot ]; then
@@ -959,4 +969,4 @@ elif [ "$verType" == "cluster" ]; then
 else
     echo  "please input correct verType"
 fi
-echo -e "`date +%F_%T`: ${GREEN}dgiot  $verType deploy  end${NC}"
+echo -e "`date +%F_%T` $LINENO: ${GREEN}dgiot  $verType deploy  end${NC}"
