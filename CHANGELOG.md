@@ -1,4 +1,9 @@
-# [](https://github.com/dgiot/dgiot/compare/v4.3.5...v) (2021-10-20)
+# [](https://github.com/dgiot/dgiot/compare/v4.3.5...v) (2021-10-21)
+
+
+### Bug Fixes
+
+* install centos 7.9 ([16028f4](https://github.com/dgiot/dgiot/commit/16028f4c201920cf7c62a21176a9a492fc97f6aa))
 
 
 ### Features
