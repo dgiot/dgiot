@@ -66,19 +66,20 @@ to_frame(#{
             encode_data(Value, Address, SlaveId, ProductId)
     end.
 
+%% Quality 读的时候代表寄存器个数，16位的寄存器，一个寄存器表示两个字节，写的时候代表实际下发值
 encode_data(Data, Address, SlaveId, ProductId) ->
     lists:foldl(fun({_Cmd, Quality, OperateType}, Acc) ->
-        FunCode =
+        {FunCode, NewQuality} =
             case OperateType of
-                <<"readCoils">> -> ?FC_READ_COILS;
-                <<"readInputs">> -> ?FC_READ_INPUTS;
-                <<"readHregs">> -> ?FC_READ_HREGS;
-                <<"readIregs">> -> ?FC_READ_IREGS;
-                <<"writeCoil">> -> ?FC_WRITE_COIL;
-                <<"writeHreg">> -> ?FC_WRITE_HREG; %%需要校验，写多个线圈是什么状态
-                <<"writeCoils">> -> ?FC_WRITE_COILS;
-                <<"writeHregs">> -> ?FC_WRITE_HREGS; %%需要校验，写多个保持寄存器是什么状态
-                _ -> ?FC_READ_HREGS
+                <<"readCoils">> -> {?FC_READ_COILS, dgiot_utils:to_int(dgiot_utils:to_int(Quality) / 2)};
+                <<"readInputs">> -> {?FC_READ_INPUTS, dgiot_utils:to_int(dgiot_utils:to_int(Quality) / 2)};
+                <<"readHregs">> -> {?FC_READ_HREGS, dgiot_utils:to_int(dgiot_utils:to_int(Quality) / 2)};
+                <<"readIregs">> -> {?FC_READ_IREGS, dgiot_utils:to_int(dgiot_utils:to_int(Quality) / 2)};
+                <<"writeCoil">> -> {?FC_WRITE_COIL, dgiot_utils:to_int(Quality)};
+                <<"writeHreg">> -> {?FC_WRITE_HREG, dgiot_utils:to_int(Quality)}; %%需要校验，写多个线圈是什么状态
+                <<"writeCoils">> -> {?FC_WRITE_COILS, dgiot_utils:to_int(Quality)};
+                <<"writeHregs">> -> {?FC_WRITE_HREGS, dgiot_utils:to_int(Quality)}; %%需要校验，写多个保持寄存器是什么状态
+                _ -> {?FC_READ_HREGS, dgiot_utils:to_int(dgiot_utils:to_int(Quality) / 2)}
             end,
         <<H:8, L:8>> = dgiot_utils:hex_to_binary(is16(Address)),
         <<Sh:8, Sl:8>> = dgiot_utils:hex_to_binary(is16(SlaveId)),
@@ -86,7 +87,7 @@ encode_data(Data, Address, SlaveId, ProductId) ->
             slaveId = Sh * 256 + Sl,
             funcode = dgiot_utils:to_int(FunCode),
             address = H * 256 + L,
-            quality = dgiot_utils:to_int(Quality)
+            quality = NewQuality
         },
         Acc ++ [build_req_message(RtuReq)]
                 end, [], modbus_encoder(ProductId, SlaveId, Address, Data)).
@@ -190,7 +191,7 @@ set_params(Basedata, ProductId, DevAddr) ->
     end.
 
 %rtu modbus
- parse_frame(<<>>, Acc, _State) -> {<<>>, Acc};
+parse_frame(<<>>, Acc, _State) -> {<<>>, Acc};
 
 parse_frame(<<MbAddr:8, BadCode:8, ErrorCode:8, Crc:2/binary>> = Buff, Acc,
     #{<<"addr">> := DtuAddr} = State) ->
@@ -557,7 +558,7 @@ format_value(Buff, #{<<"dataForm">> := #{
     IntLen = dgiot_utils:to_int(Len),
     Size = max(4, IntLen) * 8,
     <<H:2/binary, L:2/binary, Rest/binary>> = Buff,
-    <<Value:Size/signed-big-integer>> = <<H:2/binary, L:2/binary>>,
+    <<Value:Size/integer>> = <<H/binary, L/binary>>,
     {Value, Rest};
 
 format_value(Buff, #{<<"dataForm">> := #{
@@ -567,7 +568,7 @@ format_value(Buff, #{<<"dataForm">> := #{
     IntLen = dgiot_utils:to_int(Len),
     Size = max(4, IntLen) * 8,
     <<H:2/binary, L:2/binary, Rest/binary>> = Buff,
-    <<Value:Size/signed-little-integer>> = <<L:2/binary, H:2/binary>>,
+    <<Value:Size/integer>> = <<L/binary, H/binary>>,
     {Value, Rest};
 
 format_value(Buff, #{<<"dataForm">> := #{
@@ -577,7 +578,7 @@ format_value(Buff, #{<<"dataForm">> := #{
     IntLen = dgiot_utils:to_int(Len),
     Size = max(4, IntLen) * 8,
     <<H:2/binary, L:2/binary, Rest/binary>> = Buff,
-    <<Value:Size/unsigned-big-integer>> = <<H:2/binary, L:2/binary>>,
+    <<Value:Size/integer>> = <<H/binary, L/binary>>,
     {Value, Rest};
 
 format_value(Buff, #{<<"dataForm">> := #{
@@ -587,7 +588,7 @@ format_value(Buff, #{<<"dataForm">> := #{
     IntLen = dgiot_utils:to_int(Len),
     Size = max(4, IntLen) * 8,
     <<H:2/binary, L:2/binary, Rest/binary>> = Buff,
-    <<Value:Size/unsigned-little-integer>> = <<L:2/binary, H:2/binary>>,
+    <<Value:Size/integer>> = <<L/binary, H/binary>>,
     {Value, Rest};
 
 format_value(Buff, #{<<"dataForm">> := #{
@@ -597,7 +598,7 @@ format_value(Buff, #{<<"dataForm">> := #{
     IntLen = dgiot_utils:to_int(Len),
     Size = max(4, IntLen) * 8,
     <<H:2/binary, L:2/binary, Rest/binary>> = Buff,
-    <<Value:Size/unsigned-big-float>> = <<H:2/binary, L:2/binary>>,
+    <<Value:Size/float>> = <<H/binary, L/binary>>,
     {Value, Rest};
 
 format_value(Buff, #{<<"dataForm">> := #{
@@ -607,148 +608,8 @@ format_value(Buff, #{<<"dataForm">> := #{
     IntLen = dgiot_utils:to_int(Len),
     Size = max(4, IntLen) * 8,
     <<H:2/binary, L:2/binary, Rest/binary>> = Buff,
-    <<Value:Size/unsigned-little-float>> = <<L:2/binary, H:2/binary>>,
+    <<Value:Size/float>> = <<L/binary, H/binary>>,
     {Value, Rest};
-
-%%
-%%format_value(Buff, #{<<"dataForm">> := #{
-%%    <<"quantity">> := Len,
-%%    <<"byteorder">> := <<"big">>,
-%%    <<"originaltype">> := <<"uint16">>
-%%}}) ->
-%%    Size = max(2, Len) * 8,
-%%    <<Value:Size/unsigned-big-integer, Rest/binary>> = Buff,
-%%    {Value, Rest};
-%%
-%%format_value(Buff, #{<<"dataForm">> := #{
-%%    <<"quantity">> := Len,
-%%    <<"byteorder">> := <<"little">>,
-%%    <<"originaltype">> := <<"uint16">>}}) ->
-%%    Size = max(2, Len) * 8,
-%%    <<Value:Size/unsigned-little-integer, Rest/binary>> = Buff,
-%%    {Value, Rest};
-%%
-%%format_value(Buff, #{<<"dataForm">> := #{
-%%    <<"quantity">> := Len,
-%%    <<"byteorder">> := <<"big">>,
-%%    <<"originaltype">> := <<"int16">>}}) ->
-%%    Size = max(2, Len) * 8,
-%%    <<Value:Size/signed-big-integer, Rest/binary>> = Buff,
-%%    {Value, Rest};
-%%
-%%format_value(Buff, #{<<"dataForm">> := #{
-%%    <<"quantity">> := Len,
-%%    <<"byteorder">> := <<"little">>,
-%%    <<"originaltype">> := <<"int16">>}}) ->
-%%    Size = max(2, Len) * 8,
-%%    <<Value:Size/signed-little-integer, Rest/binary>> = Buff,
-%%    {Value, Rest};
-%%
-%%format_value(Buff, #{<<"dataForm">> := #{
-%%    <<"quantity">> := Len,
-%%    <<"byteorder">> := <<"big">>,
-%%    <<"originaltype">> := <<"uint32">>}
-%%}) ->
-%%    Size = max(4, Len) * 8,
-%%    <<H:2/binary, L:2/binary, Rest/binary>> = Buff,
-%%    <<Value:Size/unsigned-big-integer>> = <<H:2/binary, L:2/binary>>,
-%%    {Value, Rest};
-%%
-%%format_value(Buff, #{<<"dataForm">> := #{
-%%    <<"quantity">> := Len,
-%%    <<"byteorder">> := <<"little">>,
-%%    <<"originaltype">> := <<"uint32">>}
-%%}) ->
-%%    Size = max(4, Len) * 8,
-%%    <<H:2/binary, L:2/binary, Rest/binary>> = Buff,
-%%    <<Value:Size/unsigned-big-integer>> = <<L:2/binary, H:2/binary>>,
-%%    {Value, Rest};
-%%
-%%format_value(Buff, #{<<"dataForm">> := #{
-%%    <<"quantity">> := Len,
-%%    <<"byteorder">> := <<"big">>,
-%%    <<"originaltype">> := <<"int32">>}
-%%}) ->
-%%    Size = max(4, Len) * 8,
-%%    <<H:2/binary, L:2/binary, Rest/binary>> = Buff,
-%%    <<Value:Size/signed-big-integer>> = <<H:2/binary, L:2/binary>>,
-%%    {Value, Rest};
-%%
-%%format_value(Buff, #{<<"dataForm">> := #{
-%%    <<"quantity">> := Len,
-%%    <<"byteorder">> := <<"little">>,
-%%    <<"originaltype">> := <<"int32">>}}) ->
-%%    Size = max(4, Len) * 8,
-%%    <<H:2/binary, L:2/binary, Rest/binary>> = Buff,
-%%    <<Value:Size/signed-big-integer>> = <<L:2/binary, H:2/binary>>,
-%%    {Value, Rest};
-%%
-%%format_value(Buff, #{<<"dataForm">> := #{
-%%    <<"quantity">> := Len,
-%%    <<"byteorder">> := <<"big">>,
-%%    <<"originaltype">> := <<"float">>}}) ->
-%%    Size = max(4, Len) * 8,
-%%    <<H:2/binary, L:2/binary, Rest/binary>> = Buff,
-%%    <<Value:Size/unsigned-big-float>> = <<H:2/binary, L:2/binary>>,
-%%    {Value, Rest};
-%%
-%%format_value(Buff, #{<<"dataForm">> := #{
-%%    <<"quantity">> := Len,
-%%    <<"byteorder">> := <<"little">>,
-%%    <<"originaltype">> := <<"float">>}}) ->
-%%    Size = max(4, Len) * 8,
-%%    <<H:2/binary, L:2/binary, Rest/binary>> = Buff,
-%%    <<Value:Size/unsigned-big-float>> = <<L:2/binary, H:2/binary>>,
-%%    {Value, Rest};
-%%
-%%format_value(Buff, #{<<"dataForm">> := #{
-%%    <<"quantity">> := Len,
-%%    <<"byteorder">> := <<"big">>,
-%%    <<"originaltype">> := <<"double">>}}) ->
-%%    Size = max(4, Len) * 8,
-%%    <<H:2/binary, L:2/binary, Rest/binary>> = Buff,
-%%    <<Value:Size/unsigned-big-float>> = <<H:2/binary, L:2/binary>>,
-%%    {Value, Rest};
-%%
-%%format_value(Buff, #{<<"dataForm">> := #{
-%%    <<"quantity">> := Len,
-%%    <<"byteorder">> := <<"little">>,
-%%    <<"originaltype">> := <<"double">>}}) ->
-%%    Size = max(4, Len) * 8,
-%%    <<H:2/binary, L:2/binary, Rest/binary>> = Buff,
-%%    <<Value:Size/unsigned-big-float>> = <<L:2/binary, H:2/binary>>,
-%%    {Value, Rest};
-%%
-%%format_value(Buff, #{<<"dataForm">> := #{
-%%    <<"quantity">> := Len,
-%%    <<"byteorder">> := <<"big">>,
-%%    <<"originaltype">> := <<"string">>}}) ->
-%%    Size = Len * 8,
-%%    <<H:2/binary, L:2/binary, Rest/binary>> = Buff,
-%%    <<Value:Size/big-binary>> = <<H:2/binary, L:2/binary>>,
-%%    {Value, Rest};
-%%
-%%format_value(Buff, #{<<"dataForm">> := #{
-%%    <<"quantity">> := Len,
-%%    <<"byteorder">> := <<"little">>,
-%%    <<"originaltype">> := <<"string">>}}) ->
-%%    Size = Len * 8,
-%%    <<H:2/binary, L:2/binary, Rest/binary>> = Buff,
-%%    <<Value:Size/big-binary>> = <<L:2/binary, H:2/binary>>,
-%%    {Value, Rest};
-%%
-%%%% customized data（按大端顺序返回hex data）
-%%format_value(Buff, #{<<"dataForm">> := #{
-%%    <<"quantity">> := Len,
-%%    <<"byteorder">> := <<"big">>}}) ->
-%%    <<Value:Len/big-binary, Rest/binary>> = Buff,
-%%    {Value, Rest};
-%%
-%%format_value(Buff, #{<<"dataForm">> := #{
-%%    <<"quantity">> := Len,
-%%    <<"byteorder">> := <<"little">>}}) ->
-%%    <<Value:Len/little-binary, Rest/binary>> = Buff,
-%%    {Value, Rest};
 
 %% @todo 其它类型处理
 format_value(_, #{<<"identifier">> := Field}) ->
