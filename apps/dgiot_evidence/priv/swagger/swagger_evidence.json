@@ -739,6 +739,139 @@
           "Evidence"
         ]
       }
+    },
+    "/file_reload": {
+      "post": {
+        "summary": "配置管理API",
+        "description": "配置管理API",
+        "consumes": [
+          "*"
+        ],
+        "parameters": [
+          {
+            "name": "action",
+            "in": "query",
+            "required": true,
+            "description": "set(修改参数),get获取参数,reload重新加载参数",
+            "type": "number",
+            "enum": [
+              "set",
+              "get",
+              "reload"
+            ]
+          },
+          {
+            "description": "json参数",
+            "in": "body",
+            "name": "cfg",
+            "schema": {
+              "properties": {
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "summary": "配置管理API",
+        "tags": [
+          "go-fastdfs"
+        ]
+      }
+    },
+    "/file_stat": {
+      "get": {
+        "description": "文件统计信息",
+        "parameters": [
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "summary": "文件统计信息",
+        "tags": [
+          "go-fastdfs"
+        ]
+      }
+    },
+    "/list_dir": {
+      "get": {
+        "description": "获取文件列表",
+        "parameters": [
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "summary": "获取文件列表",
+        "tags": [
+          "go-fastdfs"
+        ]
+      }
+    },
+    "/file_info": {
+      "get": {
+        "description": "获取文件信息",
+        "parameters": [
+          {
+            "description": "文件路径",
+            "in": "query",
+            "name": "path",
+            "required": true,
+            "default": "files/dgiot_file/user/profile/Klht7ERlYn.jpeg",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "summary": "获取文件信息",
+        "tags": [
+          "go-fastdfs"
+        ]
+      }
     }
   }
 }

@@ -72,9 +72,9 @@ handle(OperationID, Args, Context, Req) ->
 %%% 内部函数 Version:API版本
 %%%===================================================================
 do_request(post_evidence, Args, #{<<"sessionToken">> := SessionToken} = _Context, Req) ->
-    ?LOG(info,"Args ~p ", [Args]),
+    ?LOG(info, "Args ~p ", [Args]),
     Host = dgiot_req:host(Req),
-    ?LOG(info,"Host ~p ", [Host]),
+    ?LOG(info, "Host ~p ", [Host]),
     case dgiot_evidence:post(Args#{<<"ip">> => Host, <<"sessionToken">> => SessionToken}) of
         {ok, Result} ->
             {200, Result};
@@ -83,7 +83,7 @@ do_request(post_evidence, Args, #{<<"sessionToken">> := SessionToken} = _Context
     end;
 
 do_request(put_evidence, #{<<"status">> := Status} = Args, #{<<"sessionToken">> := SessionToken} = _Context, Req) ->
-    ?LOG(info,"Status ~p ", [Status]),
+    ?LOG(info, "Status ~p ", [Status]),
     Host = dgiot_req:host(Req),
     dgiot_evidence:put(Args#{<<"ip">> => Host}, SessionToken);
 
@@ -114,7 +114,7 @@ do_request(get_bed, #{<<"id">> := Id} = _Args, #{<<"sessionToken">> := SessionTo
 %% OperationId:post_bed
 %% 请求:POST /iotapi/bed
 do_request(post_bed, #{<<"datatype">> := <<"liveMonitor">>} = Body, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
-    ?LOG(info,"Body ~p", [Body]),
+    ?LOG(info, "Body ~p", [Body]),
     case dgiot_auth:get_session(SessionToken) of
         #{<<"roles">> := Roles} ->
             [#{<<"alias">> := _AppId, <<"name">> := _AppName} | _] = maps:values(Roles);
@@ -134,17 +134,17 @@ do_request(post_bed, _Body, #{<<"sessionToken">> := SessionToken} = _Context, _R
 %% OperationId:post_reporttemp
 %% 请求:put /iotapi/reporttemp
 do_request(put_reporttemp, #{<<"nodeType">> := _NodeType, <<"devType">> := _DevType} = Body,
-        #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
-    ?LOG(info,"Body ~p ", [Body]),
+    #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
+    ?LOG(info, "Body ~p ", [Body]),
     R = dgiot_product:create_product(Body, SessionToken),
-    ?LOG(info,"R ~p ", [R]),
+    ?LOG(info, "R ~p ", [R]),
     R;
 
 %% DB 概要: 导入质检报告模版 描述:word/pdf质检报告
 %% OperationId:reporttemp
 %% 请求:POST /iotapi/reporttemp
 do_request(post_reporttemp, #{<<"name">> := Name, <<"devType">> := DevType, <<"config">> := Config, <<"file">> := FileInfo},
-        #{<<"sessionToken">> := SessionToken} = _Context, Req) ->
+    #{<<"sessionToken">> := SessionToken} = _Context, Req) ->
     Neconfig = jsx:decode(Config, [{labels, binary}, return_maps]),
     DataResult =
         case maps:get(<<"contentType">>, FileInfo, <<"unknow">>) of
@@ -154,7 +154,7 @@ do_request(post_reporttemp, #{<<"name">> := Name, <<"devType">> := DevType, <<"c
                     ContentType =:= <<"application/pdf">> ->
                 FullPath = maps:get(<<"fullpath">>, FileInfo),
                 Uri = "http://" ++ dgiot_utils:to_list(dgiot_req:host(Req)) ++ ":" ++ dgiot_utils:to_list(dgiot_req:port(Req)),
-                {ok, #{<<"result">> => do_report(Neconfig, DevType, Name, SessionToken, FullPath,Uri)}};
+                {ok, #{<<"result">> => do_report(Neconfig, DevType, Name, SessionToken, FullPath, Uri)}};
             ContentType ->
                 {error, <<"contentType error, contentType:", ContentType/binary>>}
         end,
@@ -168,7 +168,7 @@ do_request(post_reporttemp, #{<<"name">> := Name, <<"devType">> := DevType, <<"c
 %% OperationId:get_report
 %% 请求:GET /iotapi/report
 do_request(get_report, #{<<"id">> := Id} = Body, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
-    ?LOG(info,"Body ~p ", [Body]),
+    ?LOG(info, "Body ~p ", [Body]),
     get_report(Id, SessionToken);
 
 %% evidence 概要: 增加取证报告 描述:新增取证报告
@@ -176,7 +176,7 @@ do_request(get_report, #{<<"id">> := Id} = Body, #{<<"sessionToken">> := Session
 %% 请求:POST /iotapi/report
 do_request(post_report, #{<<"name">> := _Name, <<"devType">> := _DevType,
     <<"basedata">> := _Basedata} = Body, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
-    ?LOG(info,"Body ~p ", [Body]),
+    ?LOG(info, "Body ~p ", [Body]),
     post_report(Body, SessionToken);
 
 
@@ -190,7 +190,7 @@ do_request(put_report, #{<<"path">> := Path} = _Body, #{<<"sessionToken">> := Se
 %% OperationId:DELETE_REPORT_REPORTID
 %% 请求:GET /iotapi/report
 do_request(delete_report_reportid, #{<<"reportId">> := ReportId} = _Args,
-        #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
+    #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
     delete_report(ReportId, SessionToken);
 
 
@@ -210,6 +210,30 @@ do_request(post_point, Body, #{<<"sessionToken">> := SessionToken} = _Context, _
 do_request(get_capture, Args, _Context, _Req) ->
     dgiot_evidence:get_capture(Args);
 
+%% evidence 概要: 配置管理API 描述:配置管理API
+%% OperationId:post_reload
+%% 请求:GET /iotapi/reload
+do_request(post_file_reload, #{<<"action">> := Action, <<"cfg">> := Cfg} = _Body, _Context, _Req) ->
+    dgiot_evidence:file_reload(Action, Cfg);
+
+%% evidence 概要: 文件统计信息 描述:文件统计信息
+%% OperationId:get_list_dir
+%% 请求:GET /iotapi/list_dir
+do_request(get_file_stat, _Body, _Context, _Req) ->
+    dgiot_evidence:file_stat();
+
+%% evidence 概要: 获取文件列表 描述:获取文件列表
+%% OperationId:get_list_dir
+%% 请求:GET /iotapi/list_dir
+do_request(get_list_dir, _Body, _Context, _Req) ->
+    dgiot_evidence:list_dir();
+
+%% evidence 概要: 获取文件信息 描述:获取文件信息
+%% OperationId:get_file_info
+%% 请求:GET /iotapi/file_info
+do_request(get_file_info, #{<<"path">> := Path} = _Body, _Context, _Req) ->
+    dgiot_evidence:file_info(Path);
+
 %%  服务器不支持的API接口
 do_request(_OperationId, _Args, _Context, _Req) ->
     {error, <<"Not Allowed.">>}.
@@ -220,7 +244,7 @@ do_report(Config, DevType, Name, SessionToken, FullPath, Uri) ->
             Url = cow_uri:urlencode(base64:encode(Content)),
             WordPreview = Uri ++ "/dgiotproxy/dgiot_report/onlinePreview?url=" ++ dgiot_utils:to_list(Url) ++ "&officePreviewType=image",
             List = dgiot_html:find(WordPreview, {<<"img">>, {<<"class">>, <<"my-photo">>}}, <<"data-src">>),
-            WordUrl = Uri ++ "/dgiotproxy/dgiot_report/wordServer/"  ++ dgiot_utils:to_list(filename:basename(FullPath)),
+            WordUrl = Uri ++ "/dgiotproxy/dgiot_report/wordServer/" ++ dgiot_utils:to_list(filename:basename(FullPath)),
             lists:foldl(fun(ImageUrl, Acc) ->
                 case binary:split(filename:basename(ImageUrl), <<$.>>, [global, trim]) of
                     [<<"0">>, _] ->
@@ -245,7 +269,7 @@ post_point(#{
             <<"original.index">> => #{<<"$regex">> => Index}}]
         }
     },
-    ?LOG(info,"Query ~p", [Query]),
+    ?LOG(info, "Query ~p", [Query]),
     case dgiot_parse:query_object(<<"Evidence">>, Query,
         [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
         {ok, #{<<"count">> := Count, <<"results">> := Result}} when Count > 0 ->
@@ -266,7 +290,7 @@ post_point(#{
     case dgiot_parse:query_object(<<"Evidence">>, Query1,
         [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
         {ok, #{<<"count">> := Count1, <<"results">> := Result1}} when Count1 > 0 ->
-            ?LOG(info,"Result1 ~p", [Result1]),
+            ?LOG(info, "Result1 ~p", [Result1]),
             lists:map(fun(#{<<"objectId">> := ObjectId, <<"original">> := Original}) ->
                 dgiot_parse:update_object(<<"Evidence">>, ObjectId,
                     #{<<"original">> => Original#{<<"index">> => Index}},
@@ -333,7 +357,7 @@ get_point(#{
             <<"original.index">> => #{<<"$regex">> => <<".+">>}}]
         }
     },
-    ?LOG(info,"Query ~p", [Query]),
+    ?LOG(info, "Query ~p", [Query]),
     case dgiot_parse:query_object(<<"Evidence">>, Query,
         [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
         {ok, #{<<"count">> := Count, <<"results">> := Result}} when Count > 0 ->
@@ -353,7 +377,7 @@ get_point(#{
             <<"original.index">> => Index}]
         }
     },
-    ?LOG(info,"Query ~p", [Query]),
+    ?LOG(info, "Query ~p", [Query]),
     case dgiot_parse:query_object(<<"Evidence">>, Query,
         [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
         {ok, #{<<"count">> := Count, <<"results">> := Result}} when Count > 0 ->
@@ -401,7 +425,7 @@ get_bed(Id, SessionToken) ->
                         <<"where">> => #{<<"route.", DtuAddr/binary>> => #{<<"$regex">> => <<".+">>}},
                         <<"order">> => <<"devaddr">>, <<"limit">> => 256,
                         <<"include">> => <<"product">>},
-                    ?LOG(info,"Query ~p ", [Query]),
+                    ?LOG(info, "Query ~p ", [Query]),
                     dgiot_parse:query_object(<<"Device">>, Query, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]);
                 R1 ->
                     R1
@@ -476,7 +500,7 @@ put_report(Path, SessionToken) ->
 
 
 get_report(Id, SessionToken) ->
-    ?LOG(info,"Id ~p SessionToken ~p", [Id, SessionToken]),
+    ?LOG(info, "Id ~p SessionToken ~p", [Id, SessionToken]),
     case dgiot_parse:query_object(<<"Device">>, #{
         <<"where">> => #{<<"$or">> => [#{<<"objectId">> => Id}, #{<<"parentId">> => Id}]}}) of
         {ok, #{<<"results">> := Devices}} ->
@@ -584,20 +608,20 @@ post_report(#{<<"name">> := Name, <<"devType">> := DevType,
                                         <<"__type">> => <<"Pointer">>,
                                         <<"className">> => <<"Device">>,
                                         <<"objectId">> => ParentId}}),
-                                ?LOG(info,"R0 ~p", [R0]),
+                                ?LOG(info, "R0 ~p", [R0]),
                                 Sum + 1
                                         end, 1, Products),
                             {ok, #{<<"result">> => <<"success">>}};
                         _R1 ->
-                            ?LOG(info,"R1 ~p", [_R1]),
+                            ?LOG(info, "R1 ~p", [_R1]),
                             {error, <<"report exist">>}
                     end;
                 _R2 ->
-                    ?LOG(info,"R2 ~p", [_R2]),
+                    ?LOG(info, "R2 ~p", [_R2]),
                     {error, <<"report exist">>}
             end;
         _R3 ->
-            ?LOG(info,"R3 ~p", [_R3]),
+            ?LOG(info, "R3 ~p", [_R3]),
             {error, <<"report exist">>}
     end.
 
