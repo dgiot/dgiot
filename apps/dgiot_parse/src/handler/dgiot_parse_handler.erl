@@ -145,6 +145,18 @@ handle(post_token, #{<<"appid">> := AppId, <<"secret">> := Secret}, _Context, _R
         {error, Err} -> {500, Err}
     end;
 
+%% IoTDevice 概要: 获取应用token 描述:更新token
+%% OperationId: put_token
+%% PUT /token
+handle(put_token, #{<<"appid">> := AppId, <<"secret">> := Secret}, _Context, _Req) ->
+    case login_by_token(AppId, Secret) of
+        {ok, UserInfo} ->
+            {200, maps:with([<<"access_token">>, <<"expires_in">>, <<"desc">>, <<"name">>], UserInfo)};
+        {error, #{<<"code">> := 101} = Err} ->
+            {404, Err};
+        {error, Err} -> {500, Err}
+    end;
+
 handle(post_user, #{<<"username">> := _UserName, <<"password">> := _Password} = Body, #{<<"sessionToken">> := SessionToken}, _Req) ->
     ?LOG(info, "Body ~p", [Body]),
     case create_user(Body, SessionToken) of
@@ -683,7 +695,6 @@ login_by_account(UserName, Password) ->
 login_by_token(AppId, Secret) ->
     case dgiot_parse:get_object(<<"_Role">>, AppId) of
         {ok, #{<<"name">> := Name, <<"tag">> := #{<<"appconfig">> := Config}}} ->
-
             case maps:find(<<"secret">>, Config) of
                 error ->
                     {error, #{<<"code">> => 101, <<"error">> => <<"AppId Or Secret not found.">>}};
