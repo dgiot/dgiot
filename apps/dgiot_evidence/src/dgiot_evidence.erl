@@ -33,10 +33,10 @@
 -export([
     upload/3,
     upload/2,
-    delete/2,
+    delete_file/2,
     file_reload/2,
     file_stat/0,
-    list_dir/0,
+    list_dir/1,
     file_info/1,
     create_report/7,
     get_capture/1,
@@ -424,24 +424,48 @@ upload(Path, AppName, SessionToken) ->
                     case jsx:decode(dgiot_utils:to_binary(Json), [{labels, binary}, return_maps]) of
                         #{<<"md5">> := _Md5} = Data ->
                             {ok, Data};
-                        Error1 -> Error1
+                        Error1 -> {ok, Error1}
                     end;
-                Error -> Error
+                Error -> {error, Error}
             end;
         {error, Reason} ->
             ?LOG(info, "Reason ~p ", [Reason]),
             {error, Reason}
     end.
 
-file_reload(Action, Cfg) ->
-    case httpc:request(get, {["http://127.0.0.1:1250/reload?action=" + Action + "&cfg=" + jsx:encode(Cfg)], []}, [], []) of
+delete_file(Path, SessionToken) ->
+    Url = "http://127.0.0.1:1250/delete?auth_token=" ++ dgiot_utils:to_list(SessionToken) ++ "&path=" ++ dgiot_utils:to_list(Path),
+    case httpc:request(get, {[Url], []}, [], []) of
         {ok, {{"HTTP/1.1", 200, "OK"}, _, Json}} ->
             case jsx:decode(dgiot_utils:to_binary(Json), [{labels, binary}, return_maps]) of
                 #{<<"status">> := <<"ok">>} = Data ->
                     {ok, Data};
-                Error1 -> Error1
+                Error1 ->
+                    {ok, Error1}
             end;
-        Error -> Error
+        Error ->
+            {error, Error}
+    end.
+
+file_reload(Action, Body) ->
+    Url =
+        case Action of
+            <<"set">> ->
+                Cfg = maps:get(<<"cfg">>, Body, #{}),
+                "http://127.0.0.1:1250/reload?action=set&cfg=" ++ jsx:encode(Cfg);
+            <<"reload">> ->
+                "http://127.0.0.1:1250/reload?action=reload";
+            _ ->
+                "http://127.0.0.1:1250/reload?action=get"
+        end,
+    case httpc:request(get, {[Url], []}, [], []) of
+        {ok, {{"HTTP/1.1", 200, "OK"}, _, Json}} ->
+            case jsx:decode(dgiot_utils:to_binary(Json), [{labels, binary}, return_maps]) of
+                #{<<"status">> := <<"ok">>} = Data ->
+                    {ok, Data};
+                Error1 -> {ok, Error1}
+            end;
+        Error -> {error, Error}
     end.
 
 
@@ -451,51 +475,31 @@ file_stat() ->
             case jsx:decode(dgiot_utils:to_binary(Json), [{labels, binary}, return_maps]) of
                 #{<<"status">> := <<"ok">>} = Data ->
                     {ok, Data};
-                Error1 -> Error1
+                Error1 -> {ok, Error1}
             end;
-        Error -> Error
+        Error -> {error, Error}
     end.
 
-list_dir() ->
-    case httpc:request(get, {["http://127.0.0.1:1250/list_dir?dir=dgiot_file/user/profile"], []}, [], []) of
+list_dir(Path) ->
+    case httpc:request(get, {["http://127.0.0.1:1250/list_dir?dir=" ++ dgiot_utils:to_list(Path)], []}, [], []) of
         {ok, {{"HTTP/1.1", 200, "OK"}, _, Json}} ->
             case jsx:decode(dgiot_utils:to_binary(Json), [{labels, binary}, return_maps]) of
                 #{<<"status">> := <<"ok">>} = Data ->
                     {ok, Data};
-                Error1 -> Error1
+                Error1 -> {ok, Error1}
             end;
-        Error -> Error
+        Error -> {error, Error}
     end.
 
 file_info(Path) ->
-    case httpc:request(get, {["http://127.0.0.1:1250/get_file_info?path=" + Path], []}, [], []) of
+    case httpc:request(get, {["http://127.0.0.1:1250/get_file_info?path=" ++ dgiot_utils:to_list(Path)], []}, [], []) of
         {ok, {{"HTTP/1.1", 200, "OK"}, _, Json}} ->
             case jsx:decode(dgiot_utils:to_binary(Json), [{labels, binary}, return_maps]) of
                 #{<<"status">> := <<"ok">>} = Data ->
                     {ok, Data};
-                Error1 -> Error1
+                Error1 -> {ok, Error1}
             end;
-        Error -> Error
-    end.
-
-delete(Path, SessionToken) ->
-    Path = <<"files/dgiot_file/user/profile/Klht7ERlYn.jpeg">>,
-    SessionToken = <<"r:f3a8503a0f265e3fc7bdcb73268d2eab">>,
-    Url = "http://127.0.0.1:1250/delete",
-
-    Body2 = #{<<"auth_token">> => SessionToken, <<"path">> => Path},
-
-%%    Url2 = "http://127.0.0.1/delete/files/dgiot_file/user/profile/Klht7ERlYn.jpeg",
-%%    AuthHeader = [{"auth_token", "r:f3a8503a0f265e3fc7bdcb73268d2eab"}],
-    httpc:request(get, {["http://127.0.0.1:1250/reload?action=get"], []}, [], []),
-    case httpc:request(get, {Url, [], "application/json", jsx:encode(Body2)}, [], []) of
-        {ok, {{"HTTP/1.1", 200, "OK"}, _, Json}} ->
-            case jsx:decode(dgiot_utils:to_binary(Json), [{labels, binary}, return_maps]) of
-                #{<<"md5">> := _Md5} = Data ->
-                    {ok, Data};
-                Error1 -> Error1
-            end;
-        Error -> Error
+        Error -> {error, Error}
     end.
 
 get_url(AppName) ->

@@ -213,8 +213,8 @@ do_request(get_capture, Args, _Context, _Req) ->
 %% evidence 概要: 配置管理API 描述:配置管理API
 %% OperationId:post_reload
 %% 请求:GET /iotapi/reload
-do_request(post_file_reload, #{<<"action">> := Action, <<"cfg">> := Cfg} = _Body, _Context, _Req) ->
-    dgiot_evidence:file_reload(Action, Cfg);
+do_request(post_file_reload, #{<<"action">> := Action} = Body, _Context, _Req) ->
+    dgiot_evidence:file_reload(Action, Body);
 
 %% evidence 概要: 文件统计信息 描述:文件统计信息
 %% OperationId:get_list_dir
@@ -225,14 +225,20 @@ do_request(get_file_stat, _Body, _Context, _Req) ->
 %% evidence 概要: 获取文件列表 描述:获取文件列表
 %% OperationId:get_list_dir
 %% 请求:GET /iotapi/list_dir
-do_request(get_list_dir, _Body, _Context, _Req) ->
-    dgiot_evidence:list_dir();
+do_request(get_list_dir, #{<<"path">> := Path} = _Body, _Context, _Req) ->
+    dgiot_evidence:list_dir(Path);
 
 %% evidence 概要: 获取文件信息 描述:获取文件信息
 %% OperationId:get_file_info
 %% 请求:GET /iotapi/file_info
 do_request(get_file_info, #{<<"path">> := Path} = _Body, _Context, _Req) ->
     dgiot_evidence:file_info(Path);
+
+%% evidence 概要: 删除文件 描述:删除文件
+%% OperationId:delete_file
+%% 请求:GET /iotapi/delete_file
+do_request(delete_file_info, #{<<"path">> := Path} = _Body, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
+    dgiot_evidence:delete_file(Path, SessionToken);
 
 %%  服务器不支持的API接口
 do_request(_OperationId, _Args, _Context, _Req) ->
