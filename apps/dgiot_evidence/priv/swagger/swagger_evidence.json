@@ -3,6 +3,10 @@
     {
       "name": "Evidence",
       "description": "证据"
+    },
+    {
+      "name": "go-fastdfs",
+      "description": "文件服务器"
     }
   ],
   "definitions": {
@@ -744,19 +748,16 @@
       "post": {
         "summary": "配置管理API",
         "description": "配置管理API",
-        "consumes": [
-          "*"
-        ],
         "parameters": [
           {
-            "name": "action",
             "in": "query",
+            "name": "action",
             "required": true,
             "description": "set(修改参数),get获取参数,reload重新加载参数",
-            "type": "number",
+            "type": "string",
             "enum": [
-              "set",
               "get",
+              "set",
               "reload"
             ]
           },
@@ -792,9 +793,9 @@
     },
     "/file_stat": {
       "get": {
+        "summary": "文件统计信息",
         "description": "文件统计信息",
-        "parameters": [
-        ],
+        "parameters": [],
         "responses": {
           "200": {
             "description": "Returns operation status"
@@ -809,7 +810,6 @@
             "description": "Server Internal error"
           }
         },
-        "summary": "文件统计信息",
         "tags": [
           "go-fastdfs"
         ]
@@ -817,8 +817,17 @@
     },
     "/list_dir": {
       "get": {
+        "summary": "获取文件列表",
         "description": "获取文件列表",
         "parameters": [
+          {
+            "description": "文件夹路径",
+            "in": "query",
+            "name": "path",
+            "required": true,
+            "default": "dgiot_file/user/profile",
+            "type": "string"
+          }
         ],
         "responses": {
           "200": {
@@ -834,7 +843,6 @@
             "description": "Server Internal error"
           }
         },
-        "summary": "获取文件列表",
         "tags": [
           "go-fastdfs"
         ]
@@ -842,6 +850,7 @@
     },
     "/file_info": {
       "get": {
+        "summary": "获取文件信息",
         "description": "获取文件信息",
         "parameters": [
           {
@@ -867,7 +876,37 @@
             "description": "Server Internal error"
           }
         },
-        "summary": "获取文件信息",
+        "tags": [
+          "go-fastdfs"
+        ]
+      },
+      "delete": {
+        "summary": "删除文件",
+        "description": "删除文件",
+        "parameters": [
+          {
+            "description": "文件路径",
+            "in": "query",
+            "name": "path",
+            "required": true,
+            "default": "files/dgiot_file/user/profile/Klht7ERlYn.jpeg",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
         "tags": [
           "go-fastdfs"
         ]
