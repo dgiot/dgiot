@@ -109,7 +109,7 @@ fi
 # set parameters by default value
 verType=single        # [single | cluster]
 domain_name="prod.iotn2n.com" #[prod.iotn2n.com | your_domain_name]
-dgiot="dgiot_53"   #[dgiot_53 | dgiot_n]
+dgiot="dgiot_55"   #[dgiot_55 | dgiot_n]
 while getopts "h:v:d:s:" arg
 do
   case $arg in
@@ -661,6 +661,7 @@ function install_go_fastdfs() {
   mv ${script_dir}/go_fastdfs ${install_dir}
   ${csudo} bash -c "sed -i 's!{{ip}}!${lanip}!g'  ${install_dir}/go_fastdfs/cfg.json"
   ${csudo} bash -c "sed -i 's/{{port}}/1250/g'  ${install_dir}/go_fastdfs/cfg.json"
+  ${csudo} bash -c "sed -i 's/{{domain_name}}/${domain_name}/g'  ${install_dir}/go_fastdfs/cfg.json"
   if [ -f ${install_dir}/go_fastdfs/conf/ ]; then
     rm ${install_dir}/go_fastdfs/conf/ -rf
   fi
@@ -941,10 +942,10 @@ set -e
 echo -e "`date +%F_%T` $LINENO: ${GREEN}dgiot  $verType deploy  start${NC}"
 if [ "$verType" == "single" ]; then
     # Install server and client
-#    if [ -x ${install_dir}/dgiot ]; then
-#      update_flag=1
-#      update_dgiot
-#    else
+    if [ -x ${install_dir}/dgiot ]; then
+      update_flag=1
+      update_dgiot
+    else
       pre_install
       clean_services
       deploy_postgres
@@ -957,7 +958,7 @@ if [ "$verType" == "single" ]; then
       install_prometheus
       install_grafana
       install_nginx
-#    fi
+    fi
 elif [ "$verType" == "cluster" ]; then
     # todo
     if [ -x ${install_dir}/dgiot ]; then
