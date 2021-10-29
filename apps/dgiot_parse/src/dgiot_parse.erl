@@ -214,18 +214,19 @@ get_objectid(Class, Map) ->
         <<"Product">> ->
             DevType = maps:get(<<"devType">>, Map, <<"">>),
             Category = maps:get(<<"category">>, Map, <<"">>),
+            Categoryid = maps:get(<<"objectId">>, Category, <<"">>),
             Name = maps:get(<<"name">>, Map, <<"">>),
-            <<Pid:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Product", Category/binary, DevType/binary, Name/binary>>),
+            <<Pid:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Product", Categoryid/binary, DevType/binary, Name/binary>>),
             Map#{
                 <<"objectId">> => Pid
             };
         <<"post_classes_producttemplet">> ->
             get_objectid(<<"ProductTemplet">>, Map);
         <<"ProductTemplet">> ->
-            NetType = maps:get(<<"netType">>, Map, <<"">>),
             Category = maps:get(<<"category">>, Map, <<"">>),
+            Categoryid = maps:get(<<"objectId">>, Category, <<"">>),
             Name = maps:get(<<"name">>, Map, <<"">>),
-            <<Pid:10/binary, _/binary>> = dgiot_utils:to_md5(<<"ProductTemplet", Category/binary, NetType/binary, Name/binary>>),
+            <<Pid:10/binary, _/binary>> = dgiot_utils:to_md5(<<"ProductTemplet", Categoryid/binary, Name/binary>>),
             Map#{
                 <<"objectId">> => Pid
             };
