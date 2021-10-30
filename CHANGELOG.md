@@ -1,4 +1,4 @@
-# [](https://github.com/dgiot/dgiot/compare/v4.3.5...v) (2021-10-21)
+# [](https://github.com/dgiot/dgiot/compare/v4.3.5...v) (2021-10-30)
 
 
 ### Bug Fixes
@@ -8,6 +8,11 @@
 
 ### Features
 
+* centos 7.9 ([a7e56a6](https://github.com/dgiot/dgiot/commit/a7e56a630e22db7a1e8513c96ec58f3127a6cd7c))
+* device_card ([6c54a07](https://github.com/dgiot/dgiot/commit/6c54a07013fb7b9b92e5ddaf498471488b1341a7))
+* go-fastdfs Api ([c4ad4e4](https://github.com/dgiot/dgiot/commit/c4ad4e4ed5be37b0b9c3abb7211746c38d26cf96))
+* go-fastdfs Api ([3160613](https://github.com/dgiot/dgiot/commit/316061335e7c96bcea36d6d55da6cbc3d76931e9))
+* modbus_rtu:format_value() ([af12dda](https://github.com/dgiot/dgiot/commit/af12dda71f09fe506288627bd430768d8b4bbcdc))
 * rm esports ([c33dedd](https://github.com/dgiot/dgiot/commit/c33dedd1340ad0b3fbd00f4a74a6d62678a4ef76))
 
 

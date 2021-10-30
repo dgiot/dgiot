@@ -73,6 +73,8 @@
     , hash_2/4
     , squotes_wrapped/1
     , round/2
+    , split_list/5
+    , read/3
     , read_from_csv/2
     , read_csv/3
     , rate/2
@@ -486,6 +488,45 @@ round(Num, Len) ->
     NewLen = min(308, Len),
     N = math:pow(10, NewLen),
     round(Num * N) / N.
+
+read(Path, Fun, Acc) ->
+    case file:open(Path, [read]) of
+        {ok, IoDevice} ->
+            R = read_line(IoDevice, Fun, Acc),
+            file:close(IoDevice),
+            R;
+        {error, Reason} ->
+            {error, Reason}
+    end.
+read_line(IoDevice, Fun, Acc) ->
+    case file:read_line(IoDevice) of
+        {ok, Row} ->
+            read_line(IoDevice, Fun, Acc ++ [Fun(Row)]);
+        eof ->
+            Acc;
+        {error, _Reason} ->
+            Acc
+    end.
+
+split_list(_Start, _End, _Flag, [], Result) ->
+    Result;
+split_list(Start, End, Flag, [Row | Acc], Result) ->
+    case re:run(Row, Start, [{capture, first, list}]) of
+        {match, [_]} ->
+            split_list(Start, End, true, Acc, Result);
+        _ ->
+            case re:run(Row, End, [{capture, first, list}]) of
+                {match, [_]} ->
+                    Result;
+                _ ->
+                    case Flag of
+                        true ->
+                            split_list(Start, End, Flag, Acc, Result ++ [Row]);
+                        _ ->
+                            split_list(Start, End, Flag, Acc, Result)
+                    end
+            end
+    end.
 
 read_from_csv(Path, Fun) ->
     case file:open(Path, [read]) of
