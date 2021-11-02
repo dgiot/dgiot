@@ -29,7 +29,7 @@
 
 %% session 期限
 ttl() ->
-    application:get_env(dgiot, session_expiration, 1800).
+    application:get_env(dgiot_api, session_expiration, 86400).
 
 %%%===================================================================
 %%% default check auth Callback
