@@ -30,6 +30,7 @@
     test_customizedcast/0,
     add_notification/3,
     save_devicestatus/2,
+    save_notification/3,
     sendSubscribe/3
 ]).
 
@@ -213,7 +214,7 @@ save_notification(Ruleid, DevAddr, Payload) ->
     case binary:split(Ruleid, <<$_>>, [global, trim]) of
         [ProductId, _] ->
             DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
-            case dgiot_device:lookup(ProductId, DevAddr) of
+            case dgiot_device:lookup(DeviceId) of
                 {ok, {[_, _, Acl, _, _, _], _}} ->
                     Requests =
                         lists:foldl(fun(X, Acc) ->
@@ -263,7 +264,34 @@ save_notification(Ruleid, DevAddr, Payload) ->
                                             Acc
                                     end;
                                 <<"*">> ->
-                                    Acc;
+                                    ObjectId = dgiot_parse:get_notificationid(Ruleid),
+                                    Acc ++ [#{
+                                        <<"method">> => <<"POST">>,
+                                        <<"path">> => <<"/classes/Notification">>,
+                                        <<"body">> => #{
+                                            <<"objectId">> => ObjectId,
+                                            <<"ACL">> => #{
+                                                <<"*">> => #{
+                                                    <<"read">> => true,
+                                                    <<"write">> => true
+                                                }
+                                            },
+                                            <<"content">> => Payload#{<<"_deviceid">> => DeviceId, <<"_productid">> => ProductId},
+                                            <<"public">> => false,
+                                            <<"status">> => 0,
+                                            <<"sender">> => #{
+                                                <<"__type">> => <<"Pointer">>,
+                                                <<"className">> => <<"_User">>,
+                                                <<"objectId">> => <<"Klht7ERlYn">>
+                                            },
+                                            <<"type">> => Ruleid,
+                                            <<"user">> => #{
+                                                <<"__type">> => <<"Pointer">>,
+                                                <<"className">> => <<"_User">>,
+                                                <<"objectId">> => <<"">>
+                                            }
+                                        }
+                                    }];
                                 UserId ->
                                     ObjectId = dgiot_parse:get_notificationid(Ruleid),
                                     Content = Payload#{<<"_deviceid">> => DeviceId, <<"_productid">> => ProductId},
@@ -300,7 +328,9 @@ save_notification(Ruleid, DevAddr, Payload) ->
                     dgiot_parse:batch(Requests);
                 _ ->
                     pass
-            end
+            end;
+        _ ->
+            pass
     end.
 
 sendSubscribe(Type, Content, UserId) ->

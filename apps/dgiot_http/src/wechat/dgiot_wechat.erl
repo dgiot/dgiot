@@ -46,10 +46,9 @@ post_sns(UserName, Password, OpenId) ->
     case dgiot_parse:login(UserName, Password) of
 %%                {ok, #{<<"objectId">> := _UserId, <<"tag">> := #{<<"wechat">> := #{<<"openid">> := OPENID}}}} when size(OPENID) > 0 ->
 %%                    {error, <<UserName/binary, "is bind">>};
-        {ok, #{<<"objectId">> := UserId, <<"tag">> := Tag, <<"username">> := Name}} ->
+        {ok, #{<<"objectId">> := UserId, <<"tag">> := Tag} = UserInfo} ->
             dgiot_parse:update_object(<<"_User">>, UserId, #{<<"tag">> => Tag#{<<"wechat">> => #{<<"openid">> => OpenId}}}),
-            {ok, UserInfo} = dgiot_parse_handler:create_session(UserId, dgiot_auth:ttl(), Name),
-            {ok, UserInfo};
+            {ok, UserInfo#{<<"tag">> => Tag#{<<"wechat">> => #{<<"openid">> => OpenId}}}};
         {error, Msg} ->
             {error, Msg}
     end.

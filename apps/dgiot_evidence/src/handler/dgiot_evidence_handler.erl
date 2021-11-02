@@ -270,7 +270,7 @@ do_report(Config, DevType, Name, SessionToken, FullPath, Uri) ->
             []
     end.
 
-get_paper(ProductId, FileInfo) ->
+get_paper(_ProductId, FileInfo) ->
     Path = maps:get(<<"fullpath">>, FileInfo),
     Fun = fun(Row) ->
         Map = jiffy:encode(#{<<"1">> => dgiot_utils:to_binary(Row)}),
@@ -278,8 +278,8 @@ get_paper(ProductId, FileInfo) ->
         V
           end,
     List = dgiot_utils:read(Path, Fun, []),
-    Title = lists:nth(1, List),
-    DeviceId = dgiot_parse:get_deviceid(ProductId, dgiot_utils:to_md5(Title)),
+%%    Title = lists:nth(1, List),
+%    DeviceId = dgiot_parse:get_deviceid(ProductId, dgiot_utils:to_md5(Title)),
     Single = dgiot_utils:split_list(<<"一、单选题"/utf8>>, <<"二、多选题"/utf8>>, false, List, []),
     Multiple = dgiot_utils:split_list(<<"二、多选题"/utf8>>, <<"三、判断题"/utf8>>, false, List, []),
     Judge = dgiot_utils:split_list(<<"三、判断题"/utf8>>, <<"四、案例题"/utf8>>, false, List, []),
@@ -289,8 +289,8 @@ get_paper(ProductId, FileInfo) ->
     {Multiple_question, _} = get_simple(Multiple, {[], #{}}),
     {Judge_question, _} = get_simple(Judge, {[], #{}}),
     Paper = Single_question ++ Multiple_question ++ Judge_question ++ Cases1,
-    create_device(DeviceId, ProductId, Title, Paper),
-    #{  <<"objectId">> => DeviceId,
+%    create_device(DeviceId, ProductId, Title, Paper),
+    #{
         <<"paper">> => Paper
     }.
 
@@ -355,30 +355,30 @@ get_case([Row | List], {Title, Acc}, Result) ->
             get_case(List, {Title, Acc ++ [Row]}, Result)
     end.
 
-create_device(DeviceId, ProductId, Devaddr, Paper) ->
-    case dgiot_parse:get_object(<<"Product">>, ProductId) of
-        {ok, #{<<"ACL">> := Acl, <<"devType">> := DevType}} ->
-            case dgiot_parse:get_object(<<"Device">>, DeviceId) of
-                {ok, #{<<"devaddr">> := _GWAddr}} ->
-                    dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"basedata">> => #{<<"paper">> => Paper}, <<"status">> => <<"ONLINE">>});
-                _ ->
-                    dgiot_device:create_device(#{
-                        <<"devaddr">> => dgiot_utils:to_md5(Devaddr),
-                        <<"name">> => Devaddr,
-                        <<"isEnable">> => true,
-                        <<"product">> => ProductId,
-                        <<"ACL">> => Acl,
-                        <<"status">> => <<"ONLINE">>,
-                        <<"location">> => #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => 120.161324, <<"latitude">> => 30.262441},
-                        <<"brand">> => DevType,
-                        <<"devModel">> => DevType,
-                        <<"basedata">> =>  #{<<"paper">> => Paper}
-                    })
-            end;
-        Error2 ->
-            ?LOG(info, "Error2 ~p ", [Error2]),
-            pass
-    end.
+%%create_device(DeviceId, ProductId, Devaddr, Paper) ->
+%%    case dgiot_parse:get_object(<<"Product">>, ProductId) of
+%%        {ok, #{<<"ACL">> := Acl, <<"devType">> := DevType}} ->
+%%            case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+%%                {ok, #{<<"devaddr">> := _GWAddr}} ->
+%%                    dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"basedata">> => #{<<"paper">> => Paper}, <<"status">> => <<"ONLINE">>});
+%%                _ ->
+%%                    dgiot_device:create_device(#{
+%%                        <<"devaddr">> => dgiot_utils:to_md5(Devaddr),
+%%                        <<"name">> => Devaddr,
+%%                        <<"isEnable">> => true,
+%%                        <<"product">> => ProductId,
+%%                        <<"ACL">> => Acl,
+%%                        <<"status">> => <<"ONLINE">>,
+%%                        <<"location">> => #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => 120.161324, <<"latitude">> => 30.262441},
+%%                        <<"brand">> => DevType,
+%%                        <<"devModel">> => DevType,
+%%                        <<"basedata">> =>  #{<<"paper">> => Paper}
+%%                    })
+%%            end;
+%%        Error2 ->
+%%            ?LOG(info, "Error2 ~p ", [Error2]),
+%%            pass
+%%    end.
 
 post_point(#{
     <<"reportid">> := ReportId,

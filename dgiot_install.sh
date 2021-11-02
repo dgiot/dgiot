@@ -150,17 +150,17 @@ function pre_install() {
   get_processor
 
   ## 1.4 关闭防火墙，selinux
-  #systemctl stop firewalld && sudo systemctl disable firewalld
-  #sed -ri s/SELINUX=enforcing/SELINUX=disabled/g /etc/selinux/config
-  #setenforce 0
+  systemctl stop firewalld && sudo systemctl disable firewalld
+  sed -ri s/SELINUX=enforcing/SELINUX=disabled/g /etc/selinux/config
+  setenforce 0
 
   ## 1.5 配置阿里云yum源
   mv /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.bak
   curl -o /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-7.repo
 
   ## 1.6 echo "isntalling tools"
-  #yum -y install vim net-tools wget ntpdate
-  #yum -y groupinstall "Development Tools"
+  yum -y install vim net-tools wget ntpdate
+  yum -y groupinstall "Development Tools"
 
   ## 1.7 时间同步
   echo "*/10 * * * * /usr/sbin/ntpdate ntp.aliyun.com > /dev/null 2>&1" >>/etc/crontab
