@@ -35,6 +35,42 @@ docroot() ->
 %%<<"v_out">> => 0.0,<<"v_solarpanel">> => 0.3}]}}
 
 
+%%get_topo(Arg, _Context) ->
+%%    #{<<"productid">> := ProductId, <<"devaddr">> := Devaddr} = Arg,
+%%    Type = maps:get(<<"type">>, Arg, <<"web">>),
+%%    case dgiot_parse:get_object(<<"Product">>, ProductId) of
+%%        {ok, #{<<"config">> := #{<<"konva">> := #{<<"Stage">> := #{<<"children">> := Children} = Stage} = Konva}}} when length(Children) > 0 ->
+%%            case Devaddr of
+%%                undefined ->
+%%                    NewChildren1 = get_children(Type, ProductId, Children, ProductId, <<"KonvatId">>, <<"Shapeid">>, <<"Identifier">>, <<"Name">>),
+%%                    List = get_wechat(),
+%%                    case Type of
+%%                        <<"wechat">> ->
+%%                            {ok, #{<<"code">> => 200, <<"message">> => <<"SUCCESS">>, <<"data">> => List}};
+%%                        _ ->
+%%                            {ok, #{<<"code">> => 200, <<"message">> => <<"SUCCESS">>, <<"data">> => Konva#{<<"Stage">> => Stage#{<<"children">> => NewChildren1}}}}
+%%                    end;
+%%                _ ->
+%%                    DeviceId = dgiot_parse:get_deviceid(ProductId, Devaddr),
+%%                    case dgiot_tdengine:get_device(ProductId, Devaddr, #{<<"keys">> => <<"last_row(*)">>, <<"limit">> => 1}) of
+%%                        {ok, #{<<"results">> := [Result | _]}} ->
+%%                            put({self(), td}, Result);
+%%                        _ ->
+%%                            put({self(), td}, #{})
+%%                    end,
+%%                    NewChildren1 = get_children(Type, ProductId, Children, DeviceId, <<"KonvatId">>, <<"Shapeid">>, <<"Identifier">>, <<"Name">>),
+%%                    List = get_wechat(),
+%%                    case Type of
+%%                        <<"wechat">> ->
+%%                            {ok, #{<<"code">> => 200, <<"message">> => <<"SUCCESS">>, <<"data">> => List}};
+%%                        _ ->
+%%                            {ok, #{<<"code">> => 200, <<"message">> => <<"SUCCESS">>, <<"data">> => Konva#{<<"Stage">> => Stage#{<<"children">> => NewChildren1}}}}
+%%                    end
+%%            end;
+%%        _ ->
+%%            {ok, #{<<"code">> => 204, <<"message">> => <<"没有组态"/utf8>>}}
+%%    end.
+
 get_topo(Arg, _Context) ->
     #{<<"productid">> := ProductId, <<"devaddr">> := Devaddr} = Arg,
     Type = maps:get(<<"type">>, Arg, <<"web">>),
@@ -42,13 +78,13 @@ get_topo(Arg, _Context) ->
         {ok, #{<<"config">> := #{<<"konva">> := #{<<"Stage">> := #{<<"children">> := Children} = Stage} = Konva}}} when length(Children) > 0 ->
             case Devaddr of
                 undefined ->
-                    NewChildren1 = get_children(Type, ProductId, Children, ProductId, <<"KonvatId">>, <<"Shapeid">>, <<"Identifier">>, <<"Name">>),
+                    get_children(Type, ProductId, Children, ProductId, <<"KonvatId">>, <<"Shapeid">>, <<"Identifier">>, <<"Name">>),
                     List = get_wechat(),
                     case Type of
                         <<"wechat">> ->
                             {ok, #{<<"code">> => 200, <<"message">> => <<"SUCCESS">>, <<"data">> => List}};
                         _ ->
-                            {ok, #{<<"code">> => 200, <<"message">> => <<"SUCCESS">>, <<"data">> => Konva#{<<"Stage">> => Stage#{<<"children">> => NewChildren1}}}}
+                            {ok, #{<<"code">> => 200, <<"message">> => <<"SUCCESS">>, <<"data">> => Konva#{<<"Stage">> => Stage}}}
                     end;
                 _ ->
                     DeviceId = dgiot_parse:get_deviceid(ProductId, Devaddr),
@@ -131,38 +167,55 @@ edit_konva(Arg, _Context) ->
 get_children(Type, ProductId, Children, DeviceId, KonvatId, Shapeid, Identifier, Name) ->
     lists:foldl(fun(X, Acc) ->
         #{<<"attrs">> := Attrs, <<"className">> := ClassName} = X,
-        X1 =
-            case maps:find(<<"children">>, X) of
+        X1 = get_attrs(Type, ProductId, ClassName, Attrs, DeviceId, KonvatId, Shapeid, Identifier, Name, X),
+        X2 =
+            case maps:find(<<"children">>, X1) of
                 error ->
-                    X#{<<"attrs">> => get_attrs(Type, ProductId, ClassName, Attrs, DeviceId, KonvatId, Shapeid, Identifier, Name)};
+                    X1;
                 {ok, SubChildren} ->
-                    X#{<<"attrs">> => get_attrs(Type, ProductId, ClassName, Attrs, DeviceId, KonvatId, Shapeid, Identifier, Name),
-                        <<"children">> => get_children(Type, ProductId, SubChildren, DeviceId, KonvatId, Shapeid, Identifier, Name)}
+                    X1#{<<"children">> => get_children(Type, ProductId, SubChildren, DeviceId, KonvatId, Shapeid, Identifier, Name)}
             end,
-        Acc ++ [X1]
+        Acc ++ [X2]
                 end, [], Children).
 
-get_attrs(Type, ProductId, ClassName, Attrs, DeviceId, KonvatId, Shapeid, Identifier, Name) ->
+get_attrs(Type, ProductId, ClassName, Attrs, DeviceId, KonvatId, Shapeid, Identifier, Name, X) ->
     case ClassName of
         <<"Layer">> ->
-            Attrs;
+            X;
         <<"Group">> ->
-            Attrs;
-        _ ->
+            X;
+        <<"Text">> ->
+            X;
+        <<"Label">> ->
             case maps:find(<<"id">>, Attrs) of
                 error ->
-                    Attrs;
+                    X;
                 {ok, Id} ->
                     case ProductId of
                         KonvatId ->
                             case Id of
                                 Shapeid ->
-                                    NewAttrs = Attrs#{<<"id">> => Identifier, <<"text">> => Name},
+                                    #{<<"children">> := Children} = X,
+                                    ?LOG(info, "Children ~p~n", [Children]),
+                                    NewChildren =
+                                        lists:foldl(fun(Child, Acc) ->
+                                            NewChild =
+                                                case Child of
+                                                    #{<<"attrs">> := ChildAttrs, <<"className">> := <<"Text">>} ->
+                                                        ?LOG(info, "ChildAttrs ~p~n", [ChildAttrs]),
+                                                        Child#{<<"attrs">> => ChildAttrs#{<<"id">> => <<ProductId/binary, "_", Identifier/binary, "_text">>, <<"text">> => Name}};
+                                                    _ ->
+                                                        Child
+                                                end,
+                                            Acc ++ [NewChild]
+                                                    end, [], Children),
+                                    ?LOG(info, "NewChildren ~p~n", [NewChildren]),
+                                    NewAttrs = Attrs#{<<"id">> => <<ProductId/binary, "_", Identifier/binary>>},
                                     save(Type, NewAttrs),
-                                    NewAttrs;
+                                    X#{<<"attrs">> => NewAttrs, <<"children">> => NewChildren};
                                 _ ->
                                     save(Type, Attrs),
-                                    Attrs
+                                    X
                             end;
                         DeviceId ->
                             case get({self(), shapeids}) of
@@ -173,13 +226,13 @@ get_attrs(Type, ProductId, ClassName, Attrs, DeviceId, KonvatId, Shapeid, Identi
                             end,
                             dgiot_data:insert({shapetype, dgiot_parse:get_shapeid(ProductId, Id)}, ClassName),
                             save(Type, Attrs),
-                            Attrs;
+                            X#{<<"attrs">> => Attrs};
                         _ ->
-                            Id = maps:get(<<"id">>, Attrs),
+                            <<_:88, Identifier1/binary>> = Id,
                             Result = get({self(), td}),
-                            Unit = get_unit(ProductId, Id),
+                            Unit = get_unit(ProductId, Identifier1),
                             Text =
-                                case maps:find(Id, Result) of
+                                case maps:find(Identifier1, Result) of
                                     error ->
                                         Text2 = maps:get(<<"text">>, Attrs, <<"">>),
                                         case dgiot_data:get({toponotext, ProductId}) of
@@ -191,19 +244,27 @@ get_attrs(Type, ProductId, ClassName, Attrs, DeviceId, KonvatId, Shapeid, Identi
                                         end,
                                         Text2;
                                     {ok, Text1} ->
-%%                                        case dgiot_data:get({topogps, dgiot_parse:get_shapeid(ProductId, Id)}) of
-%%                                            not_find ->
-%%                                                dgiot_utils:to_binary(Text1);
-%%                                            Gpsaddr ->
-%%                                                Gpsaddr
-%%                                        end
-                                        get_value(ProductId, Id, Text1)
+                                        get_value(ProductId, Identifier1, Text1)
                                 end,
-                            NewAttrs = Attrs#{<<"id">> => dgiot_parse:get_shapeid(DeviceId, Id), <<"text">> => <<Text/binary, " ", Unit/binary>>, <<"draggable">> => false},
+                            #{<<"children">> := Children} = X,
+                            NewChildren =
+                                lists:foldl(fun(Child, Acc) ->
+                                    NewChild =
+                                        case Child of
+                                            #{<<"attrs">> := #{<<"id">> := ChildId} = Childattrs, <<"className">> := <<"Text">>} ->
+                                                Child#{<<"attrs">> => Childattrs#{<<"id">> => dgiot_parse:get_shapeid(DeviceId, ChildId), <<"text">> => Text, <<"draggable">> => false}};
+                                            _ ->
+                                                Child
+                                        end,
+                                    Acc ++ [NewChild]
+                                            end, [], Children),
+                            NewAttrs = Attrs#{<<"id">> => dgiot_parse:get_shapeid(DeviceId, Id), <<"draggable">> => false},
                             save(Type, NewAttrs),
-                            NewAttrs
+                            X#{<<"attrs">> => NewAttrs, <<"children">> => NewChildren}
                     end
-            end
+            end;
+        _ ->
+            X
     end.
 
 save(Type, Attrs) ->
