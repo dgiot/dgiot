@@ -151,7 +151,7 @@ do_request(put_reporttemp, #{<<"nodeType">> := _NodeType, <<"devType">> := _DevT
 %% OperationId:reporttemp
 %% 请求:POST /iotapi/reporttemp
 do_request(post_reporttemp, #{<<"name">> := Name, <<"devType">> := DevType, <<"config">> := Config, <<"file">> := FileInfo},
-    #{<<"sessionToken">> := SessionToken} = _Context, Req) ->
+    #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
     Neconfig = jsx:decode(Config, [{labels, binary}, return_maps]),
     DataResult =
         case maps:get(<<"contentType">>, FileInfo, <<"unknow">>) of
@@ -160,8 +160,9 @@ do_request(post_reporttemp, #{<<"name">> := Name, <<"devType">> := DevType, <<"c
                     ContentType =:= <<"application/vnd.openxmlformats-officedocument.wordprocessingml.document">> orelse
                     ContentType =:= <<"application/pdf">> ->
                 FullPath = maps:get(<<"fullpath">>, FileInfo),
-                Uri = "http://" ++ dgiot_utils:to_list(dgiot_req:host(Req)) ++ ":" ++ dgiot_utils:to_list(dgiot_req:port(Req)),
-                {ok, #{<<"result">> => do_report(Neconfig, DevType, Name, SessionToken, FullPath, Uri)}};
+                Uri = dgiot_device:get_url(<<"admin">>),
+%%                Uri = "http://" ++ dgiot_utils:to_list(dgiot_req:host(Req)) ++ ":" ++ dgiot_utils:to_list(dgiot_req:port(Req)),
+                {ok, #{<<"result">> => do_report(Neconfig, DevType, Name, SessionToken, FullPath, dgiot_utils:to_list(Uri))}};
             ContentType ->
                 {error, <<"contentType error, contentType:", ContentType/binary>>}
         end,
@@ -252,21 +253,41 @@ do_request(_OperationId, _Args, _Context, _Req) ->
     {error, <<"Not Allowed.">>}.
 
 do_report(Config, DevType, Name, SessionToken, FullPath, Uri) ->
-    case dgiot_httpc:upload(Uri ++ "/dgiotproxy/dgiot_report/fileUpload", dgiot_utils:to_list(FullPath)) of
-        #{<<"content">> := Content, <<"success">> := true} ->
+    case dgiot_httpc:fileUpload("http://192.168.0.183:5094/WordController/fileUpload", dgiot_utils:to_list(FullPath)) of
+        {ok, #{<<"content">> := Content, <<"success">> := true}} ->
             Url = cow_uri:urlencode(base64:encode(Content)),
-            WordPreview = Uri ++ "/dgiotproxy/dgiot_report/onlinePreview?url=" ++ dgiot_utils:to_list(Url) ++ "&officePreviewType=image",
+            WordPreview = "http://192.168.0.183:5094/onlinePreview?url=" ++ dgiot_utils:to_list(Url) ++ "&officePreviewType=image",
             List = dgiot_html:find(WordPreview, {<<"img">>, {<<"class">>, <<"my-photo">>}}, <<"data-src">>),
-            WordUrl = Uri ++ "/dgiotproxy/dgiot_report/wordServer/" ++ dgiot_utils:to_list(filename:basename(FullPath)),
+            WordUrl = Uri ++ "/wordServer/" ++ dgiot_utils:to_list(filename:basename(FullPath)),
+%%            List = dgiot_html:find("http://192.168.0.183:5094/2021119145841/0.jpg", {<<"img">>, {<<"src">>, <<"http://220.185.155.218:5094/2021119145841/0.jpg">>}}, <<"width">>),
+            CategoryId = maps:get(<<"category">>, Config, <<"d6ad425529">>),
+            ProductParentId =
+                case dgiot_parse:create_object(<<"Product">>, #{
+                    <<"name">> => Name,
+                    <<"devType">> => DevType,
+                    <<"desc">> => <<"0">>,
+                    <<"nodeType">> => 1,
+                    <<"category">> => #{<<"objectId">> => CategoryId, <<"__type">> => <<"Pointer">>, <<"className">> => <<"Category">>},
+                    <<"config">> => Config,
+                    <<"thing">> => #{},
+                    <<"ACL">> => #{<<"role:admin">> => #{<<"read">> => true, <<"write">> => true}},
+                    <<"productSecret">> => license_loader:random(),
+                    <<"dynamicReg">> => true}) of
+                    {_, #{<<"objectId">> := ProductId}} ->
+                        ProductId;
+                    _ ->
+                        dgiot_parse:get_productid(CategoryId, DevType, Name)
+                end,
             lists:foldl(fun(ImageUrl, Acc) ->
+                StrImageUrl = dgiot_utils:to_list(ImageUrl),
+                NewImageUrl = re:replace(StrImageUrl, "192.168.0.183", "pump.dgiotcloud.com", [global, {return, list}]),
                 case binary:split(filename:basename(ImageUrl), <<$.>>, [global, trim]) of
-                    [<<"0">>, _] ->
-                        Acc ++ [dgiot_evidence:create_report(Config, DevType, Name, <<"0">>, ImageUrl, WordUrl, SessionToken)];
                     [Index, _] ->
-                        Acc ++ [dgiot_evidence:create_report(Config, DevType, Name, Index, ImageUrl, WordUrl, SessionToken)]
+                        Acc ++ [dgiot_evidence:create_report(ProductParentId, Config, DevType, Name, Index, NewImageUrl, WordUrl, SessionToken)]
                 end
                         end, [], List);
-        _ ->
+        _Oth ->
+            io:format("_Oth ~p~n", [_Oth]),
             []
     end.
 
@@ -311,10 +332,12 @@ get_simple([Row | List], {Acc, Map}) ->
         <<"F."/utf8, _Result/binary>> ->
             get_simple(List, {Acc, Map#{<<"F"/utf8>> => Row}});
         <<"答案："/utf8, Result/binary>> ->
-            R = re:replace(Result, <<"\n">>, <<>>, [{return, binary}]),
+            R1 = re:replace(Result, <<"\n">>, <<>>, [{return, binary}]),
+            R = re:replace(R1, <<" ">>, <<>>, [{return, binary}]),
             get_simple(List, {Acc ++ [Map#{<<"Answer"/utf8>> => R}], #{}});
         <<"答案:"/utf8, Result/binary>> ->
-            R = re:replace(Result, <<"\n">>, <<>>, [{return, binary}]),
+            R1 = re:replace(Result, <<"\n">>, <<>>, [{return, binary}]),
+            R = re:replace(R1, <<" ">>, <<>>, [{return, binary}]),
             get_simple(List, {Acc ++ [Map#{<<"Answer"/utf8>> => R}], #{}});
         <<"\n"/utf8, _/binary>> ->
             get_simple(List, {Acc, Map});

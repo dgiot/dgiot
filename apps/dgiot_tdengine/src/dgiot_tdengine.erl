@@ -281,6 +281,10 @@ alter_table(DB1, TableName, Context, Channel) ->
                                                     <<"ALTER TABLE ", DB1/binary, TableName/binary, " ADD COLUMN ", LowerIdentifier/binary, " NCHAR(10);">>;
                                                 <<"geopoint">> ->
                                                     <<"ALTER TABLE ", DB1/binary, TableName/binary, " ADD COLUMN ", LowerIdentifier/binary, " NCHAR(30);">>;
+                                                <<"image">> ->
+                                                    <<"ALTER TABLE ", DB1/binary, TableName/binary, " ADD COLUMN ", LowerIdentifier/binary, " BIGINT;">>;
+                                                 <<"date">> ->
+                                                    <<"ALTER TABLE ", DB1/binary, TableName/binary, " ADD COLUMN ", LowerIdentifier/binary, " TIMESTAMP;">>;
                                                 _ ->
                                                     <<"ALTER TABLE ", DB1/binary, TableName/binary, " ADD COLUMN ", LowerIdentifier/binary, " ", Type/binary, ";">>
                                             end,

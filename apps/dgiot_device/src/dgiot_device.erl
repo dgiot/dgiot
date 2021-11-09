@@ -25,7 +25,7 @@
 -export([init_ets/0]).
 -export([create_device/1, create_device/2, get_sub_device/1, get_sub_device/2, get/2]).
 -export([load_device/1, sync_parse/1, post/1, put/1, save/1, save/2, save/3, lookup/1, lookup/2, delete/1, delete/2, save_prod/2, lookup_prod/1, get_online/1]).
--export([encode/1, decode/3, save_subdevice/2, get_subdevice/2, get_file/4, get_acl/1, save_log/3,sub_topic/2]).
+-export([encode/1, decode/3, save_subdevice/2, get_subdevice/2, get_file/4, get_acl/1, save_log/3, sub_topic/2, get_url/1, get_appname/1]).
 
 init_ets() ->
     dgiot_data:init(?DGIOT_PRODUCT),
@@ -392,15 +392,17 @@ get_online(DeviceId) ->
 
 get_file(ProductId, DevAddr, FileUrl, Ext) ->
     Name = dgiot_datetime:now_microsecs(),
-    FileName = dgiot_utils:to_list(Name) ++ "." ++ Ext,
-    case ibrowse:send_req(FileUrl, [], get) of
-        {ok, "200", Header, Stream} ->
-            AppName = get_appname(ProductId, DevAddr),
-            SessionToken = dgiot_parse_handler:get_token(AppName),
+    FileName = dgiot_utils:to_list(Name) ++ "." ++ dgiot_utils:to_list(Ext),
+    BinFileName = dgiot_utils:to_binary(FileName),
+    case ibrowse:send_req(dgiot_utils:to_list(FileUrl), [], get) of
+        {ok, "200", _Header1, Stream} ->
             DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+            AppName = get_appname(DeviceId),
+            SessionToken = dgiot_parse_handler:get_token(AppName),
             inets:start(),
             Url = get_url(AppName),
 
+            NewUrl = <<Url/binary, "/upload">>,
             Boundary = <<"-----------------------acebdf135724681">>,
             Header = <<"--", Boundary/binary, ?CRLF, "Content-Disposition: form-data;name=\"">>,
 
@@ -410,26 +412,28 @@ get_file(ProductId, DevAddr, FileUrl, Ext) ->
             Data2 = <<"scene\"", ?CRLF, ?CRLF, AppName/binary, ?CRLF>>,
             ParamBody2 = <<Header/binary, Data2/binary>>,
 
-            Data3 = <<"path\"", ?CRLF, ?CRLF, DeviceId/binary, ?CRLF>>,
+            Data3 = <<"path\"", ?CRLF, ?CRLF, "dgiot_file/", DeviceId/binary, ?CRLF>>,
             ParamBody3 = <<Header/binary, Data3/binary>>,
 
             Data4 = <<"auth_token\"", ?CRLF, ?CRLF, SessionToken/binary, ?CRLF>>,
             ParamBody4 = <<Header/binary, Data4/binary>>,
 
-            Data5 = <<"filename\"", ?CRLF, ?CRLF, FileName/binary, ?CRLF>>,
+            Data5 = <<"filename\"", ?CRLF, ?CRLF, BinFileName/binary, ?CRLF>>,
             ParamBody5 = <<Header/binary, Data5/binary>>,
 
             Tail = <<"--", Boundary/binary, "--", ?CRLF, ?CRLF>>,
 
-            FileBody = <<Header/binary, "file\"; filename=\"", FileName/binary, "\"", ?CRLF,
-                "Content-Type: application/octet-stream", ?CRLF, ?CRLF, Stream/binary, ?CRLF, Tail/binary>>,
+            Binstream = dgiot_utils:to_binary(Stream),
+
+            FileBody = <<Header/binary, "file\"; filename=\"", BinFileName/binary, "\"", ?CRLF,
+                "Content-Type: application/octet-stream", ?CRLF, ?CRLF, Binstream/binary, ?CRLF, Tail/binary>>,
 
             ParamBody = <<ParamBody1/binary, ParamBody2/binary, ParamBody3/binary, ParamBody4/binary, ParamBody5/binary>>,
 
             Body = <<ParamBody/binary, FileBody/binary>>,
             Size = byte_size(Body),
             ContentType = <<"multipart/form-data; boundary=", Boundary/binary>>,
-            case httpc:request(post, {dgiot_utils:to_list(Url), [{"Content-Length", integer_to_list(Size)}], binary_to_list(ContentType), Body}, [], []) of
+            case httpc:request(post, {dgiot_utils:to_list(NewUrl), [{"Content-Length", integer_to_list(Size)}], binary_to_list(ContentType), Body}, [], []) of
                 {ok, {{"HTTP/1.1", 200, "OK"}, _, Json}} ->
                     case jsx:decode(dgiot_utils:to_binary(Json), [{labels, binary}, return_maps]) of
                         #{<<"md5">> := _Md5} ->
@@ -448,13 +452,13 @@ get_url(AppName) ->
     Roleid = dgiot_parse:get_roleid(AppName),
     case dgiot_parse:get_object(<<"_Role">>, Roleid) of
         {ok, #{<<"tag">> := #{<<"appconfig">> := #{<<"file">> := Url}}}} ->
-            Url;
+            <<Url/binary>>;
         _ -> <<"">>
     end.
 
 
-get_appname(ProductId, DevAddr) ->
-    case dgiot_device:lookup(ProductId, DevAddr) of
+get_appname(DeviceId) ->
+    case dgiot_device:lookup(DeviceId) of
         {ok, {[_, _, [Acl | _], _, _, _], _}} ->
             BinAcl = atom_to_binary(Acl),
             case BinAcl of
@@ -469,7 +473,7 @@ get_appname(ProductId, DevAddr) ->
 
 save_log(DeviceId, Payload, Domain) ->
     case dgiot_device:lookup(DeviceId) of
-        {ok,{[_,_,_,DeviceName, Devaddr, ProductId],_}} ->
+        {ok, {[_, _, _, DeviceName, Devaddr, ProductId], _}} ->
             ?MLOG(info, #{
                 <<"deviceid">> => DeviceId,
                 <<"devaddr">> => Devaddr,
@@ -480,10 +484,10 @@ save_log(DeviceId, Payload, Domain) ->
             pass
     end.
 
-sub_topic(DeviceId,Type) ->
+sub_topic(DeviceId, Type) ->
     case dgiot_device:lookup(DeviceId) of
-        {ok,{[_, _, _, _DeviceName, Devaddr, ProductId],_}} ->
-            Topic = <<"thing/", ProductId/binary,"/",Devaddr/binary, "/", Type/binary>>,
+        {ok, {[_, _, _, _DeviceName, Devaddr, ProductId], _}} ->
+            Topic = <<"thing/", ProductId/binary, "/", Devaddr/binary, "/", Type/binary>>,
             dgiot_mqtt:subscribe(Topic);
         _ -> pass
     end.
