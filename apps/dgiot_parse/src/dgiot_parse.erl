@@ -31,7 +31,8 @@
     del_User_Role/2,
     put_User_Role/3,
     create_session/3,
-    check_session/1
+    check_session/1,
+    refresh_session/1
 ]).
 -export([
     health/0,
@@ -92,6 +93,7 @@
     get_maintenanceid/2,
     get_articleid/2,
     get_loglevelid/2,
+    get_sessionId/1,
     get_userids/1,
     get_roleids/1,
     get_notificationid/1,
@@ -189,6 +191,10 @@ get_loglevelid(Name, Type) ->
     <<Pid:10/binary, _/binary>> = dgiot_utils:to_md5(<<"LogLevel", Name/binary, Type/binary>>),
     Pid.
 
+get_sessionId(SessionToken) ->
+    <<Pid:10/binary, _/binary>> = dgiot_utils:to_md5(<<"_Session", SessionToken/binary>>),
+    Pid.
+
 get_objectid(Class, Map) ->
     case Class of
         <<"post_classes_article">> ->
@@ -259,7 +265,8 @@ get_objectid(Class, Map) ->
                           ProductId1 -> ProductId1
                       end,
             DevAddr = maps:get(<<"devaddr">>, Map, <<"">>),
-            <<Did:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Device", Product/binary, DevAddr/binary>>),
+            Createtime = maps:get(<<"createtime">>, Map, <<"">>),
+            <<Did:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Device", Product/binary, DevAddr/binary, Createtime/binary>>),
             Map#{
                 <<"objectId">> => Did
             };
@@ -637,7 +644,9 @@ create_session(Name, UserId, SessionToken, TTL) ->
     case get_object(Name, <<"_User">>, binary:replace(UserId, <<" ">>, <<>>, [global])) of
         {ok, #{<<"objectId">> := UserId} = UserInfo} ->
             Now = dgiot_datetime:nowstamp() + dgiot_utils:to_int(TTL) - 8 * 60 * 60,
+            SessionId = dgiot_parse:get_sessionId(SessionToken),
             Map = #{
+                <<"objectId">> => SessionId,
                 <<"sessionToken">> => SessionToken,
                 <<"restricted">> => false,
                 <<"installationId">> => <<>>,
@@ -696,6 +705,16 @@ check_session(Name, Token) ->
         {error, Reason} ->
             {error, Reason}
     end.
+
+refresh_session(Token) ->
+    SessionId = get_sessionId(Token),
+    Now = dgiot_datetime:nowstamp() + dgiot_auth:ttl(),
+    dgiot_parse:update_object(<<"_Session">>, SessionId, #{
+        <<"expiresAt">> => #{
+            <<"__type">> => <<"Date">>,
+            <<"iso">> => dgiot_datetime:format(Now, <<"YY-MM-DDTHH:NN:SS.000Z">>)
+        }
+    }).
 
 
 %% 查取角色

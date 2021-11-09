@@ -490,7 +490,7 @@ get_schema(_ChannelId, Schema) ->
 get_field(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"int">>}}) ->
     {Field, #{<<"type">> => <<"INT">>}};
 get_field(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"image">>}}) ->
-    {Field, #{<<"type">> => <<"INT">>}};
+    {Field, #{<<"type">> => <<"BIGINT">>}};
 get_field(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"long">>}}) ->
     {Field, #{<<"type">> => <<"BIGINT">>}};
 get_field(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"float">>}}) ->
@@ -505,10 +505,10 @@ get_field(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"stri
     Size = integer_to_binary(min(maps:get(<<"size">>, Spec, 10), 200)),
     {Field, #{<<"type">> => <<"NCHAR(", Size/binary, ")">>}};
 get_field(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"text">>} = Spec}) ->
-    Size = integer_to_binary(min(maps:get(<<"size">>, Spec, 10), 200)),
+    Size = integer_to_binary(min(maps:get(<<"size">>, Spec, 50), 200)),
     {Field, #{<<"type">> => <<"NCHAR(", Size/binary, ")">>}};
 get_field(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"geopoint">>} = Spec}) ->
-    Size = integer_to_binary(min(maps:get(<<"size">>, Spec, 30), 200)),
+    Size = integer_to_binary(min(maps:get(<<"size">>, Spec, 50), 200)),
     {Field, #{<<"type">> => <<"NCHAR(", Size/binary, ")">>}};
 get_field(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"enum">>, <<"specs">> := _Specs}}) ->
 %%    Size = integer_to_binary(maps:size(Specs)),

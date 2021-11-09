@@ -145,6 +145,12 @@ handle(post_token, #{<<"appid">> := AppId, <<"secret">> := Secret}, _Context, _R
         {error, Err} -> {500, Err}
     end;
 
+%% IoTDevice 概要: 获取应用token 描述:Token查询
+%% OperationId: post_token
+%% POST /token
+handle(put_token, _Body, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
+    dgiot_parse:refresh_session(SessionToken);
+
 %% IoTDevice 概要: 获取应用token 描述:更新token
 %% OperationId: put_token
 %% PUT /token
@@ -803,7 +809,7 @@ do_login(UserInfo) ->
 
 do_login(#{<<"objectId">> := UserId, <<"sessionToken">> := SessionToken} = UserInfo, TTL) ->
     case catch dgiot_parse:get_role(UserId, SessionToken) of
-        {ok, #{<<"roles">> := Roles, <<"rules">> := Rules,<<"menus">> := Menus}} ->
+        {ok, #{<<"roles">> := Roles, <<"rules">> := Rules, <<"menus">> := Menus}} ->
             NewRules =
                 lists:foldl(
                     fun(Rule, Acc) ->

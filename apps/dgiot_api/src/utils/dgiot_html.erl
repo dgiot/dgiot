@@ -666,6 +666,8 @@ find_qgt(Bin, S = #decoder{offset = O}) ->
         %% <<_:O/binary, C, _/binary>> ->
         %%     find_qgt(Bin, ?INC_CHAR(S, C));
         <<_:O/binary>> ->
+            S;
+        _ ->
             S
     end.
 

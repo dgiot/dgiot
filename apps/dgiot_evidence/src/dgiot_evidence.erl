@@ -38,7 +38,7 @@
     file_stat/0,
     list_dir/1,
     file_info/1,
-    create_report/7,
+    create_report/8,
     get_capture/1,
     get_report_package/6,
     post_data/2,
@@ -520,65 +520,58 @@ get_app(SessionToken) ->
         _ -> <<"">>
     end.
 
-create_report(Config, DevType, Name, Num, Imagurl, WordUrl, SessionToken) ->
-    ProductName = <<Name/binary, Num/binary>>,
-    Id = dgiot_parse:get_productid(<<"Evidence">>, DevType, <<Name/binary, "0">>),
-    ProductId = dgiot_parse:get_productid(<<"Evidence">>, DevType, <<Name/binary, Num/binary>>),
-    NodeType =
-        case Num of
-            <<"0">> -> 1;
-            _ -> 0
-        end,
+create_report(ProductParentId, Config, DevType, Name, Num, Imagurl, WordUrl, SessionToken) ->
+    CategoryId = maps:get(<<"category">>, Config, <<"d6ad425529">>),
+    NewNum = dgiot_utils:to_binary(dgiot_utils:to_int(Num) + 1),
+    ProductName = <<Name/binary, NewNum/binary>>,
+    NodeType = 0,
     NewConfig = maps:merge(#{<<"konva">> => #{
-        <<"Stage">> => #{
-            <<"attrs">> => #{
-                <<"x">> => -525,
-                <<"y">> => -35,
-                <<"id">> => <<"stage_", ProductId/binary>>,
-                <<"width">> => 1667,
-                <<"height">> => 379,
-                <<"draggable">> => true
-            },
+        <<"Stage">> => #{<<"attrs">> => #{
+            <<"width">> => 1200,
+            <<"height">> => 700},
+            <<"className">> => <<"Stage">>,
             <<"children">> => [
-                #{
-                    <<"attrs">> => #{
-                        <<"id">> => <<"imagelayer_", ProductId/binary>>
-                    },
+                #{<<"attrs">> => #{
+                    <<"id">> => <<"Layer_Thing">>},
+                    <<"className">> => <<"Layer">>,
                     <<"children">> => [
-                        #{
-                            <<"attrs">> => #{
-                                <<"id">> => <<"group_", ProductId/binary>>,
-                                <<"width">> => 2000,
-                                <<"height">> => 2000
-                            },
+                        #{<<"attrs">> => #{
+                            <<"id">> => <<"bg">>,
+                            <<"type">> => <<"bg-image">>,
+                            <<"width">> => 1200,
+                            <<"height">> => 700,
+                            <<"src">> => dgiot_utils:to_binary(Imagurl)},
+                            <<"className">> => <<"Image">>},
+                        #{<<"attrs">> =>
+                        #{<<"id">> => <<"_flow">>,
+                            <<"name">> => <<"thing">>,
+                            <<"x">> => 100, <<"y">> => 100},
+                            <<"className">> => <<"Label">>,
                             <<"children">> => [
-                                #{
-                                    <<"attrs">> => #{
-                                        <<"id">> => <<"image_", ProductId/binary>>,
-                                        <<"source">> => Imagurl
-                                    },
-                                    <<"className">> => <<"Image">>
-                                }
-                            ],
-                            <<"className">> => <<"Group">>
-                        }
-                    ],
-                    <<"className">> => <<"Layer">>
-                }
-            ],
-            <<"className">> => <<"Stage">>
-        }
-    }}, Config),
-    case dgiot_product:create_product(#{<<"config">> => NewConfig#{
-        <<"id">> => Id,
-        <<"reporttemp">> => dgiot_utils:to_binary(WordUrl)
-    }, <<"thing">> => #{},
+                                #{<<"attrs">> => #{
+                                    <<"draggable">> => true,
+                                    <<"name">> => <<"dblclick">>,
+                                    <<"width">> => 72.04296875,
+                                    <<"height">> => 48.8},
+                                    <<"className">> => <<"Tag">>}]}]}]}}}, Config),
+    case dgiot_product:create_product(#{
+        <<"config">> => NewConfig#{
+            <<"reporttemp">> => dgiot_utils:to_binary(WordUrl)
+        },
+        <<"thing">> => #{},
+        <<"icon">> => dgiot_utils:to_binary(Imagurl),
         <<"nodeType">> => NodeType,
         <<"devType">> => DevType,
-        <<"desc">> => Num,
-        <<"name">> => ProductName,
-        <<"category">> => <<"Evidence">>}, SessionToken) of
-        {ok, Result} ->
+        <<"desc">> => NewNum,
+        <<"category">> => #{<<"objectId">> => CategoryId, <<"__type">> => <<"Pointer">>, <<"className">> => <<"Category">>},
+        <<"name">> => ProductName}, SessionToken) of
+        {ok, #{<<"objectId">> := ObjectId} = Result} ->
+            dgiot_parse:update_object(<<"Product">>, ProductParentId, #{<<"children">> => #{
+                <<"__op">> => <<"AddRelation">>,
+                <<"objects">> => [#{
+                    <<"__type">> => <<"Pointer">>,
+                    <<"className">> => <<"Product">>,
+                    <<"objectId">> => ObjectId}]}}),
             #{ProductName => Result};
         {error, Error} ->
             #{ProductName => Error}

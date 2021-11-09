@@ -339,21 +339,21 @@ get_app(ProductId, Results, DeviceId) ->
                 error ->
                     Acc;
                 {ok, Name} ->
-                    {NewV, Unit, Ico, Devicetype} =
+                    {Type, NewV, Unit, Ico, Devicetype} =
                         case maps:find(K, Props) of
                             error ->
                                 {V, <<"">>, <<"">>, <<"others">>};
-                            {ok, #{<<"dataType">> := #{<<"type">> := Type} = DataType} = Prop} ->
+                            {ok, #{<<"dataType">> := #{<<"type">> := Typea} = DataType} = Prop} ->
                                 Devicetype1 = maps:get(<<"devicetype">>, Prop, <<"others">>),
                                 Specs = maps:get(<<"specs">>, DataType, #{}),
-                                case Type of
+                                case Typea of
                                     Type1 when Type1 == <<"enum">>; Type1 == <<"bool">> ->
                                         Value = maps:get(dgiot_utils:to_binary(V), Specs, V),
                                         Ico1 = maps:get(<<"ico">>, Prop, <<"">>),
-                                        {Value, <<"">>, Ico1, Devicetype1};
+                                        {Type1, Value, <<"">>, Ico1, Devicetype1};
                                     Type2 when Type2 == <<"struct">> ->
                                         Ico1 = maps:get(<<"ico">>, Prop, <<"">>),
-                                        {V, <<"">>, Ico1, Devicetype1};
+                                        {Type2, V, <<"">>, Ico1, Devicetype1};
                                     Type3 when Type3 == <<"geopoint">> ->
                                         Ico1 = maps:get(<<"ico">>, Prop, <<"">>),
                                         BinV = dgiot_utils:to_binary(V),
@@ -379,21 +379,40 @@ get_app(ProductId, Results, DeviceId) ->
                                                 _ ->
                                                     <<"无GPS信息"/utf8>>
                                             end,
-                                        {Addr, <<"">>, Ico1, Devicetype1};
+                                        {Type3, Addr, <<"">>, Ico1, Devicetype1};
                                     Type4 when Type4 == <<"float">>; Type4 == <<"double">> ->
                                         Unit1 = maps:get(<<"unit">>, Specs, <<"">>),
                                         Precision = maps:get(<<"precision">>, Specs, 3),
                                         Ico1 = maps:get(<<"ico">>, Prop, <<"">>),
-                                        {dgiot_utils:to_float(V, Precision), Unit1, Ico1, Devicetype1};
+                                        {Type4, dgiot_utils:to_float(V, Precision), Unit1, Ico1, Devicetype1};
+                                    Type5 when Type5 == <<"image">> ->
+                                        AppName = dgiot_device:get_appname(DeviceId),
+                                        Url = dgiot_device:get_url(AppName),
+                                        Unit1 = maps:get(<<"unit">>, Specs, <<"">>),
+                                        Ico1 = maps:get(<<"ico">>, Prop, <<"">>),
+                                        Imagevalue = maps:get(<<"imagevalue">>, DataType, <<"">>),
+                                        BinV = dgiot_utils:to_binary(V),
+                                        {Type5, <<Url/binary, "/dgiot_file/", DeviceId/binary, "/", BinV/binary, ".", Imagevalue/binary>>, Unit1, Ico1, Devicetype1};
+                                    Type6 when Type6 == <<"date">> ->
+                                        V1 =
+                                        case V of
+                                            <<"1970-01-01 08:00:00.000">> ->
+                                                <<"--">>;
+                                            _->
+                                                V
+                                        end,
+                                        Unit1 = maps:get(<<"unit">>, Specs, <<"">>),
+                                        Ico1 = maps:get(<<"ico">>, Prop, <<"">>),
+                                        {Type6, V1, Unit1, Ico1, Devicetype1};
                                     _ ->
                                         Unit1 = maps:get(<<"unit">>, Specs, <<"">>),
                                         Ico1 = maps:get(<<"ico">>, Prop, <<"">>),
-                                        {V, Unit1, Ico1, Devicetype1}
+                                        {Typea, V, Unit1, Ico1, Devicetype1}
                                 end;
                             _ ->
-                                {V, <<"">>, <<"">>, <<"others">>}
+                                {<<"others">>, V, <<"">>, <<"">>, <<"others">>}
                         end,
-                    Acc ++ [#{<<"name">> => Name, <<"number">> => NewV, <<"time">> => NewTime, <<"unit">> => Unit, <<"imgurl">> => Ico, <<"devicetype">> => Devicetype}]
+                    Acc ++ [#{<<"name">> => Name, <<"type">> => Type, <<"number">> => NewV, <<"time">> => NewTime, <<"unit">> => Unit, <<"imgurl">> => Ico, <<"devicetype">> => Devicetype}]
             end
                   end, [], R)
                 end, [], Results).

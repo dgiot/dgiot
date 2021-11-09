@@ -708,6 +708,34 @@
         "tags": [
           "_User"
         ]
+      },
+      "put": {
+        "summary": "刷新Token",
+        "description": "刷新Token",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Returns success",
+            "schema": {
+              "$ref": "#/definitions/Token"
+            }
+          },
+          "404": {
+            "description": "object not found",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "_User"
+        ]
       }
     },
     "/classes/Navigation": {
