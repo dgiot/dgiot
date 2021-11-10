@@ -152,15 +152,15 @@ function pre_install() {
   ## 1.4 关闭防火墙，selinux
   systemctl stop firewalld && sudo systemctl disable firewalld
   sed -ri s/SELINUX=enforcing/SELINUX=disabled/g /etc/selinux/config
-  setenforce 0
+  #  setenforce 0
 
   ## 1.5 配置阿里云yum源
   mv /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.bak
-  curl -o /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-7.repo
+  curl -o /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-7.repo &> /dev/null
 
   ## 1.6 echo "isntalling tools"
-  yum -y install vim net-tools wget ntpdate
-  yum -y groupinstall "Development Tools"
+  yum -y install vim net-tools wget ntpdate &> /dev/null
+  yum -y groupinstall "Development Tools" &> /dev/null
 
   ## 1.7 时间同步
   echo "*/10 * * * * /usr/sbin/ntpdate ntp.aliyun.com > /dev/null 2>&1" >>/etc/crontab
@@ -347,7 +347,7 @@ function install_service2() {
 ## 2.1 部署postgres数据库
 ### 2.1.1 环境准备，根据自身需要，减少或者增加
 function yum_install_postgres() {
-  echo -e  "`date +%F_%T` $LINENO: yum install postgres${NC}"
+  echo -e  "`date +%F_%T` $LINENO: ${GREEN} yum install postgres${NC}"
   yum install -y wget git &> /dev/null
   ${csudo} yum install -y gcc gcc-c++  epel-release &> /dev/null
   ${csudo} yum install -y llvm5.0 llvm5.0-devel &> /dev/null
@@ -362,14 +362,14 @@ function yum_install_postgres() {
 
 ### 2.1.2 编译安装postgres
 function install_postgres() {
-  echo -e "`date +%F_%T` $LINENO: ${GREEN}install_postgres${NC}"
+  echo -e "`date +%F_%T` $LINENO: ${GREEN} install_postgres${NC}"
   ##下载软件
   if [ ! -f ${script_dir}/postgresql-12.0.tar.gz ]; then
       ${csudo} wget ${fileserver}/postgresql-12.0.tar.gz -O ${script_dir}/postgresql-12.0.tar.gz &> /dev/null
   fi
 
   ### 创建目录和用户,以及配置环境变化
-  echo -e "`date +%F_%T` $LINENO: ${GREEN}create postgres user and group ${NC}"
+  echo -e "`date +%F_%T` $LINENO: ${GREEN} create postgres user and group ${NC}"
   set +uxe
   egrep "^postgres" /etc/passwd >/dev/null
   if [ $? -eq 0 ]; then
@@ -406,7 +406,7 @@ function install_postgres() {
 
   rm ${script_dir}/postgresql-12.0 -rf
   cd ${script_dir}/
-  echo -e "`date +%F_%T` $LINENO: ${GREEN}build postgres sueccess${NC}"
+  echo -e "`date +%F_%T` $LINENO: ${GREEN} build postgres sueccess${NC}"
 }
 
 function init_postgres_database(){
@@ -422,7 +422,7 @@ function init_postgres_database(){
   sudo -u postgres /usr/local/pgsql/12/bin/initdb -D ${install_dir}/dgiot_pg_writer/data/ -U postgres --locale=en_US.UTF8 -E UTF8 &> /dev/null
   ${csudo} bash -c "cp ${install_dir}/dgiot_pg_writer/data/{pg_hba.conf,pg_hba.conf.bak}"
   ${csudo} bash -c "cp ${install_dir}/dgiot_pg_writer/data/{postgresql.conf,postgresql.conf.bak}"
-  echo -e "`date +%F_%T` $LINENO: ${GREEN}initdb postgres success${NC}"
+  echo -e "`date +%F_%T` $LINENO: ${GREEN} initdb postgres success${NC}"
 
   ### 2.1.5 配置postgresql.conf
   postgresql_conf="${install_dir}/dgiot_pg_writer/data/postgresql.conf"
@@ -557,7 +557,7 @@ function install_parse_server() {
   fi
   sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -c "CREATE DATABASE parse;" &> /dev/null
   sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -f ${install_dir}/dgiot_parse_server/parse_4.0.sql parse &> /dev/null
-  echo -e "`date +%F_%T` $LINENO: ${GREEN}install parse_server success${NC}"
+  echo -e "`date +%F_%T` $LINENO: ${GREEN} install parse_server success${NC}"
   }
 
 function install_dgiot_redis() {
@@ -572,7 +572,7 @@ function deploy_parse_server() {
   clean_service dgiot_redis
   install_parse_server
   install_dgiot_redis
-  echo -e "`date +%F_%T` $LINENO: ${GREEN}install install_dgiot_redis success${NC}"
+  echo -e "`date +%F_%T` $LINENO: ${GREEN} install install_dgiot_redis success${NC}"
   parsehome="${install_dir}/dgiot_parse_server"
   install_service2 "dgiot_redis" "simple" "${parsehome}/script/redis/src/redis-server ${parsehome}/script/redis.conf"
   install_service2 "dgiot_parse_server" "simple" "${parsehome}/script/node/bin/node  ${parsehome}/server/index.js"
@@ -673,7 +673,7 @@ function install_go_fastdfs() {
 
 
 function yum_install_erlang_otp {
-  echo -e "`date +%F_%T` $LINENO: ${GREEN}yum_install_erlang_otp${NC}"
+  echo -e "`date +%F_%T` $LINENO: ${GREEN} yum_install_erlang_otp${NC}"
   yum install -y make gcc gcc-c++ &> /dev/null
   yum install -y kernel-devel m4 ncurses-devel &> /dev/null
   yum install -y libstdc++-devel openssl-devel &> /dev/null
@@ -685,7 +685,7 @@ function yum_install_erlang_otp {
 # 5.1 安装erlang/otp环境
 function install_erlang_otp() {
   yum_install_erlang_otp
-  echo -e "`date +%F_%T` $LINENO: ${GREEN}install_erlang_otp${NC}"
+  echo -e "`date +%F_%T` $LINENO: ${GREEN} install_erlang_otp${NC}"
   if [ ! -f ${script_dir}/otp_src_23.0.tar.gz ]; then
     wget ${fileserver}/otp_src_23.0.tar.gz -O ${script_dir}/otp_src_23.0.tar.gz &> /dev/null
   fi
@@ -696,13 +696,13 @@ function install_erlang_otp() {
   tar xf otp_src_23.0.tar.gz &> /dev/null
 
   cd ${script_dir}/otp_src_23.0/
-  echo -e "`date +%F_%T` $LINENO: ${GREEN}otp configure${NC}"
+  echo -e "`date +%F_%T` $LINENO: ${GREEN} otp configure${NC}"
   ./configure &> /dev/null
-  echo -e "`date +%F_%T` $LINENO: ${GREEN}otp make install${NC}"
+  echo -e "`date +%F_%T` $LINENO: ${GREEN} otp make install${NC}"
   make install &> /dev/null
   cd ${script_dir}/
   rm ${script_dir}/otp_src_23.0 -rf
-  echo -e "`date +%F_%T` $LINENO: ${GREEN}install erlang otp success${NC}"
+  echo -e "`date +%F_%T` $LINENO: ${GREEN} install erlang otp success${NC}"
 }
 
 function update_dgiot() {
@@ -729,7 +729,7 @@ function install_dgiot() {
   fi
   cd ${script_dir}/
   tar xf ${dgiot}.tar.gz
-  echo -e "`date +%F_%T` $LINENO: ${GREEN}install_dgiot dgiot_parse${NC}"
+  echo -e "`date +%F_%T` $LINENO: ${GREEN} install_dgiot dgiot_parse${NC}"
   #修改 dgiot_parse 连接 配置
   ${csudo} bash -c  "sed -ri '/^parse.parse_server/cparse.parse_server = http://127.0.0.1:1337' ${script_dir}/dgiot/etc/plugins/dgiot_parse.conf"
   ${csudo} bash -c  "sed -ri '/^parse.parse_path/cparse.parse_path = /parse/'  ${script_dir}/dgiot/etc/plugins/dgiot_parse.conf"
@@ -738,7 +738,7 @@ function install_dgiot() {
   ${csudo} bash -c  "sed -ri '/^parse.parse_js_key/cparse.parse_js_key = ${parse_javascript}' ${script_dir}/dgiot/etc/plugins/dgiot_parse.conf"
   ${csudo} bash -c  "sed -ri '/^parse.parse_rest_key/cparse.parse_rest_key = ${parse_restapi}' ${script_dir}/dgiot/etc/plugins/dgiot_parse.conf"
 
-  echo -e "`date +%F_%T` $LINENO: ${GREEN}install_dgiot dgiot${NC}"
+  echo -e "`date +%F_%T` $LINENO: ${GREEN} install_dgiot dgiot${NC}"
   # 修改dgiot.conf
   ${csudo} bash -c "sed -ri 's!/etc/ssl/certs/domain_name!/etc/ssl/certs/${domain_name}!g' ${script_dir}/dgiot/etc/emqx.conf"
 
@@ -806,7 +806,7 @@ function install_postgres_exporter() {
 
   retval=`sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -d parse -c "SELECT * FROM pg_available_extensions;"`
   if [[ $retval == *"pg_stat_statements"* ]]; then
-      echo -e "`date +%F_%T` $LINENO: ${GREEN}pg_stat_statements has installed${NC}"
+      echo -e "`date +%F_%T` $LINENO: ${GREEN} pg_stat_statements has installed${NC}"
   else
     sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -d parse -c "CREATE EXTENSION pg_stat_statements SCHEMA public;"
     sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -d parse -c "CREATE USER postgres_exporter PASSWORD 'password';"
@@ -876,7 +876,7 @@ function install_prometheus() {
 }
 
 function  yum_install_grafana() {
-  echo -e "`date +%F_%T` $LINENO: ${GREEN}yum_install_grafana${NC}"
+  echo -e "`date +%F_%T` $LINENO: ${GREEN} yum_install_grafana${NC}"
   yum install -y libXcomposite libXdamage libXtst cups libXScrnSaver &> /dev/null
   yum install -y pango atk adwaita-cursor-theme adwaita-icon-theme &> /dev/null
   yum install -y at at-spi2-atk at-spi2-core cairo-gobject colord-libs &> /dev/null
@@ -939,7 +939,7 @@ function install_nginx() {
 
 set -e
 #set -x
-echo -e "`date +%F_%T` $LINENO: ${GREEN}dgiot  $verType deploy  start${NC}"
+echo -e "`date +%F_%T` $LINENO: ${GREEN} dgiot  $verType deploy  start${NC}"
 if [ "$verType" == "single" ]; then
     # Install server and client
     if [ -x ${install_dir}/dgiot ]; then
@@ -970,4 +970,4 @@ elif [ "$verType" == "cluster" ]; then
 else
     echo  "please input correct verType"
 fi
-echo -e "`date +%F_%T` $LINENO: ${GREEN}dgiot  $verType deploy  end${NC}"
+echo -e "`date +%F_%T` $LINENO: ${GREEN} dgiot  $verType deploy  end${NC}"

@@ -2,11 +2,11 @@
   "tags": [
     {
       "name": "Evidence",
-      "description": "证据"
+      "description": "证据管理"
     },
     {
-      "name": "go-fastdfs",
-      "description": "文件服务器"
+      "name": "Data",
+      "description": "数据管理"
     }
   ],
   "definitions": {
@@ -831,7 +831,7 @@
         },
         "summary": "配置管理API",
         "tags": [
-          "go-fastdfs"
+          "Data"
         ]
       }
     },
@@ -855,7 +855,7 @@
           }
         },
         "tags": [
-          "go-fastdfs"
+          "Data"
         ]
       }
     },
@@ -888,7 +888,7 @@
           }
         },
         "tags": [
-          "go-fastdfs"
+          "Data"
         ]
       }
     },
@@ -921,7 +921,7 @@
           }
         },
         "tags": [
-          "go-fastdfs"
+          "Data"
         ]
       },
       "delete": {
@@ -952,7 +952,7 @@
           }
         },
         "tags": [
-          "go-fastdfs"
+          "Data"
         ]
       }
     }

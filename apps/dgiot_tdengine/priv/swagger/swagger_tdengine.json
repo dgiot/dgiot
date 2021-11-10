@@ -1,8 +1,8 @@
 {
   "tags": [
     {
-      "name": "DBA",
-      "description": "数据库"
+      "name": "Data",
+      "description": "数据管理"
     }
   ],
   "definitions": {
@@ -108,7 +108,7 @@
           }
         },
         "tags": [
-          "DBA"
+          "Data"
         ]
       }
     },
@@ -183,7 +183,7 @@
           }
         },
         "tags": [
-          "DBA"
+          "Data"
         ]
       }
     },
@@ -288,7 +288,7 @@
           }
         },
         "tags": [
-          "DBA"
+          "Data"
         ]
       }
     },
@@ -324,7 +324,7 @@
           }
         },
         "tags": [
-          "DBA"
+          "Data"
         ]
       }
     }
