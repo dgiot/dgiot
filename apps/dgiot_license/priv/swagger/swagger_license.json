@@ -2,7 +2,7 @@
   "tags": [
     {
       "name": "License",
-      "description": "授权"
+      "description": "授权管理"
     }
   ],
   "definitions": {
@@ -345,7 +345,7 @@
           }
         },
         "tags": [
-          "DBA"
+          "Data"
         ]
       }
     },

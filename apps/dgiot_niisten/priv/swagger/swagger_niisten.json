@@ -2,10 +2,5 @@
   "definitions": {},
   "paths": {
   },
-  "tags": [
-    {
-      "description": "dgiot_niisten",
-      "name": "dgiot_niisten"
-    }
-  ]
+  "tags": []
 }

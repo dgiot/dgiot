@@ -2,7 +2,7 @@
   "tags": [
     {
       "name": "Rule",
-      "description": "规则引擎"
+      "description": "规则管理"
     }
   ],
   "definitions": {

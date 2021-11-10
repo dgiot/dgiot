@@ -1,104 +1,20 @@
 {
   "tags": [
     {
+      "name": "Project",
+      "description": "项目管理"
+    },
+    {
+      "name": "Data",
+      "description": "数据管理"
+    },
+    {
       "name": "_User",
-      "description": "用户"
-    },
-    {
-      "name": "Permission",
-      "description": "权限"
-    },
-    {
-      "name": "_Role",
-      "description": "角色"
-    },
-    {
-      "name": "_Installation",
-      "description": "部署"
-    },
-    {
-      "name": "_Session",
-      "description": "会话"
-    },
-    {
-      "name": "Product",
-      "description": "产品"
+      "description": "用户管理"
     },
     {
       "name": "Menu",
-      "description": "菜单"
-    },
-    {
-      "name": "App",
-      "description": "应用"
-    },
-    {
-      "name": "Project",
-      "description": "项目"
-    },
-    {
-      "name": "Device",
-      "description": "设备"
-    },
-    {
-      "name": "Notification",
-      "description": "通知"
-    },
-    {
-      "name": "Dict",
-      "description": "字典"
-    },
-    {
-      "name": "Channel",
-      "description": "通道"
-    },
-    {
-      "name": "Crond",
-      "description": "任务"
-    },
-    {
-      "name": "Instruct",
-      "description": "指令"
-    },
-    {
-      "name": "Tag",
-      "description": "标签"
-    },
-    {
-      "name": "Evidence",
-      "description": "证据"
-    },
-    {
-      "name": "License",
-      "description": "授权"
-    },
-    {
-      "name": "View",
-      "description": "视图"
-    },
-    {
-      "name": "DBA",
-      "description": "数据库"
-    },
-    {
-      "name": "FFMPEG",
-      "description": "视频"
-    },
-    {
-      "name": "Timescale",
-      "description": "时序"
-    },
-    {
-      "name": "TOPO",
-      "description": "组态"
-    },
-    {
-      "name": "Maintenance",
-      "description": "工单"
-    },
-    {
-      "name": "Python",
-      "description": "Python"
+      "description": "菜单管理"
     }
   ],
   "definitions": {

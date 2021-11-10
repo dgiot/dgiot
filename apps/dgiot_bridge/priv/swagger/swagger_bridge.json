@@ -2,7 +2,7 @@
   "tags": [
     {
       "name": "Decoder",
-      "description": "解码器"
+      "description": "解码管理"
     }
   ],
   "definitions": {

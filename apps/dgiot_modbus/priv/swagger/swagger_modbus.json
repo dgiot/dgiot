@@ -2,10 +2,5 @@
   "definitions": {},
   "paths": {
   },
-  "tags": [
-    {
-      "description": "dgiot_modbus",
-      "name": "dgiot_modbus"
-    }
-  ]
+  "tags": []
 }

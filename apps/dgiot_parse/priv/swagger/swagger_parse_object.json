@@ -1,24 +1,120 @@
 {
   "tags": [
     {
-      "name": "{{className}}",
-      "description": "{{tag}}管理"
+      "name": "_User",
+      "description": "用户管理"
     },
     {
-      "name": "Menu",
-      "description": "菜单"
+      "name": "Permission",
+      "description": "权限管理"
+    },
+    {
+      "name": "_Role",
+      "description": "角色管理"
+    },
+    {
+      "name": "_Installation",
+      "description": "部署管理"
+    },
+    {
+      "name": "_Session",
+      "description": "会话管理"
     },
     {
       "name": "Product",
-      "description": "产品"
+      "description": "产品管理"
+    },
+    {
+      "name": "Menu",
+      "description": "菜单管理"
+    },
+    {
+      "name": "App",
+      "description": "应用管理"
+    },
+    {
+      "name": "Project",
+      "description": "项目管理"
     },
     {
       "name": "Device",
-      "description": "设备"
+      "description": "设备管理"
+    },
+    {
+      "name": "Notification",
+      "description": "通知管理"
+    },
+    {
+      "name": "Dict",
+      "description": "字典管理"
+    },
+    {
+      "name": "Channel",
+      "description": "通道管理"
     },
     {
       "name": "Crond",
-      "description": "任务"
+      "description": "任务管理"
+    },
+    {
+      "name": "Instruct",
+      "description": "指令管理"
+    },
+    {
+      "name": "Tag",
+      "description": "标签管理"
+    },
+    {
+      "name": "Evidence",
+      "description": "证据管理"
+    },
+    {
+      "name": "License",
+      "description": "授权管理"
+    },
+    {
+      "name": "View",
+      "description": "视图管理"
+    },
+    {
+      "name": "Data",
+      "description": "数据管理"
+    },
+    {
+      "name": "FFMPEG",
+      "description": "视频管理"
+    },
+    {
+      "name": "Timescale",
+      "description": "时序管理"
+    },
+    {
+      "name": "TOPO",
+      "description": "组态管理"
+    },
+    {
+      "name": "Maintenance",
+      "description": "工单管理"
+    },
+    {
+      "name": "LogLevel",
+      "description": "日志级别"
+    },
+    {
+      "name": "Log",
+      "description": "操作日志"
+    },
+    {
+      "name": "Devicelog",
+      "description": "设备日志"
+    },
+    {
+      "name": "ProductTemplet",
+      "description": "产品模板"
+    },
+    {
+      "name": "Category",
+      "description": "品类管理"
     }
   ],
   "paths": {
