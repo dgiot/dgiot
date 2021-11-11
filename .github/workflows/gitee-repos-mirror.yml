@@ -25,4 +25,4 @@ jobs:
         timeout: '1h'
         debug: true
         force_update: true
-        black_list: "issue-generator"
+        black_list: "issue-generator,dgiot-dashboard"
