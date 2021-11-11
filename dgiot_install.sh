@@ -109,7 +109,7 @@ fi
 # set parameters by default value
 verType=single        # [single | cluster]
 domain_name="prod.iotn2n.com" #[prod.iotn2n.com | your_domain_name]
-dgiot="dgiot_58"   #[dgiot_58 | dgiot_n]
+dgiot="dgiot_68"   #[dgiot_68 | dgiot_n]
 while getopts "h:v:d:s:" arg
 do
   case $arg in
@@ -669,6 +669,20 @@ function install_go_fastdfs() {
   cp ${install_dir}/go_fastdfs/cfg.json  ${install_dir}/go_fastdfs/conf/cfg.json
   go_fastdhome=${install_dir}/go_fastdfs
   install_service1 gofastdfs "simple" "${install_dir}/go_fastdfs/file ${go_fastdhome}" "GO_FASTDFS_DIR=${go_fastdhome}" "${go_fastdhome}"
+
+  if [ ! -f ${script_dir}/dgiot_dashboard.zip ]; then
+    wget ${fileserver}/dgiot_dashboard.zip -O ${script_dir}/dgiot_dashboard.zip &> /dev/null
+  fi
+  cd ${script_dir}/
+  unzip dgiot_file.zip &> /dev/null
+  mv ${script_dir}/dgiot_file ${install_dir}/go_fastdfs/files
+
+    if [ ! -f ${script_dir}/dgiot_file.zip ]; then
+    wget ${fileserver}/dgiot_file.zip -O ${script_dir}/dgiot_file.zip &> /dev/null
+  fi
+  cd ${script_dir}/
+  unzip dgiot_file.zip &> /dev/null
+  mv ${script_dir}/dgiot_file ${install_dir}/go_fastdfs/files
 }
 
 
