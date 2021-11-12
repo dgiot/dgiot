@@ -540,7 +540,7 @@ create_report(ProductParentId, Config, DevType, Name, Num, Imagurl, WordUrl, Ses
                             <<"type">> => <<"bg-image">>,
                             <<"width">> => 1200,
                             <<"height">> => 700,
-                            <<"src">> => dgiot_utils:to_binary(Imagurl)},
+                            <<"src">> => Imagurl},
                             <<"className">> => <<"Image">>},
                         #{<<"attrs">> =>
                         #{<<"id">> => <<"_flow">>,
@@ -559,7 +559,7 @@ create_report(ProductParentId, Config, DevType, Name, Num, Imagurl, WordUrl, Ses
             <<"reporttemp">> => dgiot_utils:to_binary(WordUrl)
         },
         <<"thing">> => #{},
-        <<"icon">> => dgiot_utils:to_binary(Imagurl),
+        <<"icon">> => Imagurl,
         <<"nodeType">> => NodeType,
         <<"devType">> => DevType,
         <<"desc">> => NewNum,

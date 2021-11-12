@@ -151,7 +151,7 @@ do_request(put_reporttemp, #{<<"nodeType">> := _NodeType, <<"devType">> := _DevT
 %% OperationId:reporttemp
 %% 请求:POST /iotapi/reporttemp
 do_request(post_reporttemp, #{<<"name">> := Name, <<"devType">> := DevType, <<"config">> := Config, <<"file">> := FileInfo},
-    #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
+    #{<<"sessionToken">> := SessionToken} = _Context, #{headers := #{<<"origin">> := Uri}} = _Req) ->
     Neconfig = jsx:decode(Config, [{labels, binary}, return_maps]),
     DataResult =
         case maps:get(<<"contentType">>, FileInfo, <<"unknow">>) of
@@ -160,7 +160,6 @@ do_request(post_reporttemp, #{<<"name">> := Name, <<"devType">> := DevType, <<"c
                     ContentType =:= <<"application/vnd.openxmlformats-officedocument.wordprocessingml.document">> orelse
                     ContentType =:= <<"application/pdf">> ->
                 FullPath = maps:get(<<"fullpath">>, FileInfo),
-                Uri = dgiot_device:get_url(<<"admin">>),
 %%                Uri = "http://" ++ dgiot_utils:to_list(dgiot_req:host(Req)) ++ ":" ++ dgiot_utils:to_list(dgiot_req:port(Req)),
                 {ok, #{<<"result">> => do_report(Neconfig, DevType, Name, SessionToken, FullPath, dgiot_utils:to_list(Uri))}};
             ContentType ->
@@ -253,13 +252,12 @@ do_request(_OperationId, _Args, _Context, _Req) ->
     {error, <<"Not Allowed.">>}.
 
 do_report(Config, DevType, Name, SessionToken, FullPath, Uri) ->
-    case dgiot_httpc:fileUpload("http://192.168.0.183:5094/WordController/fileUpload", dgiot_utils:to_list(FullPath)) of
+    case dgiot_httpc:fileUpload(Uri ++ "/WordController/fileUpload", dgiot_utils:to_list(FullPath)) of
         {ok, #{<<"content">> := Content, <<"success">> := true}} ->
             Url = cow_uri:urlencode(base64:encode(Content)),
-            WordPreview = "http://192.168.0.183:5094/onlinePreview?url=" ++ dgiot_utils:to_list(Url) ++ "&officePreviewType=image",
+            WordPreview = Uri ++ "/onlinePreview?url=" ++ dgiot_utils:to_list(Url) ++ "&officePreviewType=image",
             List = dgiot_html:find(WordPreview, {<<"img">>, {<<"class">>, <<"my-photo">>}}, <<"data-src">>),
             WordUrl = Uri ++ "/wordServer/" ++ dgiot_utils:to_list(filename:basename(FullPath)),
-%%            List = dgiot_html:find("http://192.168.0.183:5094/2021119145841/0.jpg", {<<"img">>, {<<"src">>, <<"http://220.185.155.218:5094/2021119145841/0.jpg">>}}, <<"width">>),
             CategoryId = maps:get(<<"category">>, Config, <<"d6ad425529">>),
             ProductParentId =
                 case dgiot_parse:create_object(<<"Product">>, #{
@@ -279,8 +277,8 @@ do_report(Config, DevType, Name, SessionToken, FullPath, Uri) ->
                         dgiot_parse:get_productid(CategoryId, DevType, Name)
                 end,
             lists:foldl(fun(ImageUrl, Acc) ->
-                StrImageUrl = dgiot_utils:to_list(ImageUrl),
-                NewImageUrl = re:replace(StrImageUrl, "192.168.0.183", "pump.dgiotcloud.com", [global, {return, list}]),
+%%                <<"https://192.168.0.183:5094/wordServer/20211112142832/1.jpg">>
+                NewImageUrl = dgiot_utils:get_url_path(ImageUrl),
                 case binary:split(filename:basename(ImageUrl), <<$.>>, [global, trim]) of
                     [Index, _] ->
                         Acc ++ [dgiot_evidence:create_report(ProductParentId, Config, DevType, Name, Index, NewImageUrl, WordUrl, SessionToken)]
