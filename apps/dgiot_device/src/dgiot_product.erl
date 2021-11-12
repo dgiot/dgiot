@@ -158,7 +158,6 @@ save_prod(ProductId, #{<<"thing">> := _thing} = Product) ->
     {ok, Product};
 
 save_prod(_ProductId, _Product) ->
-    ?LOG(error, "product error ~p", [_Product]),
     pass.
 
 lookup_prod(ProductId) ->

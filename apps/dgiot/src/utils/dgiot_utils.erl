@@ -108,6 +108,7 @@
     , get_ipv4/1
     , get_ipv6/1
     , trim_string/1
+    , get_url_path/1
 ]).
 
 -define(TIMEZONE, + 8).
@@ -867,3 +868,19 @@ trim_string(Str) when is_list(Str) ->
 
 trim_string(Str, Ret) ->
     re:replace(Str, "^[\s\x{3000}]+|[\s\x{3000}]+$", "", [global, {return, Ret}, unicode]).
+
+
+get_url_path(Url) when is_list(Url) ->
+    get_url_path(to_binary(Url));
+
+get_url_path(<<"http://", Rest/binary>>) ->
+    url_path(to_list(Rest));
+
+get_url_path(<<"https://", Rest/binary>>) ->
+    url_path(to_list(Rest)).
+
+url_path(Url) ->
+%%    "192.168.0.183:5094/wordServer/20211112142832/1.jpg",
+    {match, [{Start, _Len}]} = re:run(Url, <<"\/">>),
+    to_binary(string:substr(Url, Start + 1, length(Url))).
+

@@ -662,6 +662,7 @@ function install_go_fastdfs() {
   ${csudo} bash -c "sed -i 's!{{ip}}!${lanip}!g'  ${install_dir}/go_fastdfs/cfg.json"
   ${csudo} bash -c "sed -i 's/{{port}}/1250/g'  ${install_dir}/go_fastdfs/cfg.json"
   ${csudo} bash -c "sed -i 's/{{domain_name}}/${domain_name}/g'  ${install_dir}/go_fastdfs/cfg.json"
+
   if [ -f ${install_dir}/go_fastdfs/conf/ ]; then
     rm ${install_dir}/go_fastdfs/conf/ -rf
   fi
@@ -670,19 +671,24 @@ function install_go_fastdfs() {
   go_fastdhome=${install_dir}/go_fastdfs
   install_service1 gofastdfs "simple" "${install_dir}/go_fastdfs/file ${go_fastdhome}" "GO_FASTDFS_DIR=${go_fastdhome}" "${go_fastdhome}"
 
-  if [ ! -f ${script_dir}/dgiot_dashboard.zip ]; then
-    wget ${fileserver}/dgiot_dashboard.zip -O ${script_dir}/dgiot_dashboard.zip &> /dev/null
+  if [ ! -f ${install_dir}/go_fastdfs/files ]; then
+    mkdir ${install_dir}/go_fastdfs/files
   fi
-  cd ${script_dir}/
-  unzip dgiot_dashboard.zip &> /dev/null
-  mv ${script_dir}/dgiot_dashboard ${install_dir}/go_fastdfs/files
 
   if [ ! -f ${script_dir}/dgiot_file.zip ]; then
     wget ${fileserver}/dgiot_file.zip -O ${script_dir}/dgiot_file.zip &> /dev/null
   fi
   cd ${script_dir}/
   unzip dgiot_file.zip &> /dev/null
-  mv ${script_dir}/dgiot_file ${install_dir}/go_fastdfs/files
+  mv ${script_dir}/dgiot_file ${install_dir}/go_fastdfs/files/
+
+  if [ ! -f ${script_dir}/dgiot_dashboard.zip ]; then
+    wget ${fileserver}/dgiot_dashboard.zip -O ${script_dir}/dgiot_dashboard.zip &> /dev/null
+  fi
+  cd ${script_dir}/
+  unzip dgiot_dashboard.zip &> /dev/null
+  mv ${script_dir}/dgiot_dashboard ${install_dir}/go_fastdfs/files/
+
 }
 
 
