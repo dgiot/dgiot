@@ -671,7 +671,7 @@ function install_go_fastdfs() {
   go_fastdhome=${install_dir}/go_fastdfs
   install_service1 gofastdfs "simple" "${install_dir}/go_fastdfs/file ${go_fastdhome}" "GO_FASTDFS_DIR=${go_fastdhome}" "${go_fastdhome}"
 
-  if [ ! -f ${install_dir}/go_fastdfs/files ]; then
+  if [ ! -x ${install_dir}/go_fastdfs/files ]; then
     mkdir ${install_dir}/go_fastdfs/files
   fi
 
