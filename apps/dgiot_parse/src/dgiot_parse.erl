@@ -197,6 +197,14 @@ get_sessionId(SessionToken) ->
 
 get_objectid(Class, Map) ->
     case Class of
+        <<"post_classes_session">> ->
+            get_objectid(<<"Session">>, Map);
+        <<"Session">> ->
+            SessionToken = maps:get(<<"sessionToken">>, Map, <<"">>),
+            <<Pid:10/binary, _/binary>> = dgiot_utils:to_md5(<<"_Session", SessionToken/binary>>),
+            Map#{
+                <<"objectId">> => Pid
+            };
         <<"post_classes_article">> ->
             get_objectid(<<"Article">>, Map);
         <<"Article">> ->

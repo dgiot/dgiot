@@ -145,11 +145,16 @@ handle(post_token, #{<<"appid">> := AppId, <<"secret">> := Secret}, _Context, _R
         {error, Err} -> {500, Err}
     end;
 
-%% IoTDevice 概要: 获取应用token 描述:Token查询
-%% OperationId: post_token
+%% IoTDevice 概要: 刷新Token 描述:刷新Token
+%% OperationId: get_refresh_session
 %% POST /token
-handle(put_token, _Body, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
-    dgiot_parse:refresh_session(SessionToken);
+handle(get_refresh_session, _Body, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
+    case dgiot_parse:refresh_session(SessionToken) of
+        {ok, Ref} ->
+            {200, Ref};
+        {error, Err} ->
+            {500, Err}
+    end;
 
 %% IoTDevice 概要: 获取应用token 描述:更新token
 %% OperationId: put_token
@@ -690,8 +695,9 @@ put_user(#{<<"username">> := UserName, <<"department">> := RoleId} = Body, Sessi
 %% 用户名和密码登录
 login_by_account(UserName, Password) ->
     case dgiot_parse:login(UserName, Password) of
-        {ok, UserInfo} ->
-            do_login(UserInfo);
+        {ok, #{<<"objectId">> := UserId} = _UserInfo} ->
+            create_session(UserId, dgiot_auth:ttl(), UserName);
+%%            do_login(UserInfo);
         {error, Msg} ->
             {error, Msg}
     end.
