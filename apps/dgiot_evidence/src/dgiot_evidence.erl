@@ -525,10 +525,10 @@ create_report(ProductParentId, Config, DevType, Name, Num, Imagurl, WordUrl, Ses
     NewNum = dgiot_utils:to_binary(dgiot_utils:to_int(Num) + 1),
     ProductName = <<Name/binary, NewNum/binary>>,
     NodeType = 0,
-    NewConfig = maps:merge(#{<<"konva">> => #{
+    NewConfig = maps:merge(Config, #{<<"konva">> => #{
         <<"Stage">> => #{<<"attrs">> => #{
-            <<"width">> => 1200,
-            <<"height">> => 700},
+            <<"width">> => 800,
+            <<"height">> => 1000},
             <<"className">> => <<"Stage">>,
             <<"children">> => [
                 #{<<"attrs">> => #{
@@ -538,8 +538,8 @@ create_report(ProductParentId, Config, DevType, Name, Num, Imagurl, WordUrl, Ses
                         #{<<"attrs">> => #{
                             <<"id">> => <<"bg">>,
                             <<"type">> => <<"bg-image">>,
-                            <<"width">> => 1200,
-                            <<"height">> => 700,
+                            <<"width">> => 660,
+                            <<"height">> => 935,
                             <<"src">> => Imagurl},
                             <<"className">> => <<"Image">>},
                         #{<<"attrs">> =>
@@ -553,7 +553,7 @@ create_report(ProductParentId, Config, DevType, Name, Num, Imagurl, WordUrl, Ses
                                     <<"name">> => <<"dblclick">>,
                                     <<"width">> => 72.04296875,
                                     <<"height">> => 48.8},
-                                    <<"className">> => <<"Tag">>}]}]}]}}}, Config),
+                                    <<"className">> => <<"Tag">>}]}]}]}}}),
     case dgiot_product:create_product(#{
         <<"config">> => NewConfig#{
             <<"reporttemp">> => dgiot_utils:to_binary(WordUrl)
