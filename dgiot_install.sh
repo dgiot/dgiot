@@ -682,6 +682,13 @@ function install_go_fastdfs() {
   unzip dgiot_file.zip &> /dev/null
   mv ${script_dir}/dgiot_file ${install_dir}/go_fastdfs/files/
 
+  if [ ! -f ${script_dir}/dgiot_swagger.zip ]; then
+    wget ${fileserver}/dgiot_swagger.zip -O ${script_dir}/dgiot_swagger.zip &> /dev/null
+  fi
+  cd ${script_dir}/
+  unzip dgiot_swagger.zip &> /dev/null
+  mv ${script_dir}/dgiot_swagger ${install_dir}/go_fastdfs/files/
+
   if [ ! -f ${script_dir}/dgiot_dashboard.zip ]; then
     wget ${fileserver}/dgiot_dashboard.zip -O ${script_dir}/dgiot_dashboard.zip &> /dev/null
   fi

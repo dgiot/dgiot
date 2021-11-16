@@ -83,7 +83,8 @@
 -export([
     get_objectid/2,
     get_deviceid/2,
-    get_dictid/2,
+    get_dictid/3,
+    get_viewid/3,
     get_shapeid/2,
     get_instruct/3,
     get_roleid/1,
@@ -144,9 +145,14 @@ get_shapeid(DeviceId, Identifier) ->
     <<ShapeId:10/binary, _/binary>> = dgiot_utils:to_md5(<<DeviceId/binary, Identifier/binary, "dgiottopo">>),
     ShapeId.
 
-get_dictid(Key, Type) ->
+get_dictid(Key, Type, Class) ->
     #{<<"objectId">> := DeviceId} =
-        dgiot_parse:get_objectid(<<"Dict">>, #{<<"key">> => Key, <<"type">> => Type}),
+        dgiot_parse:get_objectid(<<"Dict">>, #{<<"key">> => Key, <<"type">> => Type, <<"class">> => Class}),
+    DeviceId.
+
+get_viewid(Key, Type, Class) ->
+    #{<<"objectId">> := DeviceId} =
+        dgiot_parse:get_objectid(<<"View">>, #{<<"key">> => Key, <<"type">> => Type, <<"class">> => Class}),
     DeviceId.
 
 get_deviceid(ProductId, DevAddr) ->
@@ -311,9 +317,20 @@ get_objectid(Class, Map) ->
         <<"Dict">> ->
             Key = maps:get(<<"key">>, Map, <<"">>),
             Type = maps:get(<<"type">>, Map, <<"">>),
-            <<DId:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Dict", Key/binary, Type/binary>>),
+            Class1 = maps:get(<<"class">>, Map, <<"">>),
+            <<DId:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Dict", Class1/binary, Key/binary, Type/binary>>),
             Map#{
                 <<"objectId">> => DId
+            };
+        <<"post_classes_view">> ->
+            get_objectid(<<"View">>, Map);
+        <<"View">> ->
+            Key = maps:get(<<"key">>, Map, <<"">>),
+            Type = maps:get(<<"type">>, Map, <<"">>),
+            Class2 = maps:get(<<"class">>, Map, <<"">>),
+            <<VId:10/binary, _/binary>> = dgiot_utils:to_md5(<<"View", Class2/binary, Key/binary, Type/binary>>),
+            Map#{
+                <<"objectId">> => VId
             };
         <<"post_classes_instruct">> ->
             get_objectid(<<"Instruct">>, Map);

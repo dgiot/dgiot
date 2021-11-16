@@ -259,13 +259,16 @@ do_report(Config, DevType, Name, SessionToken, FullPath, Uri) ->
             List = dgiot_html:find(WordPreview, {<<"img">>, {<<"class">>, <<"my-photo">>}}, <<"data-src">>),
             WordUrl = Uri ++ "/wordServer/" ++ dgiot_utils:to_list(filename:basename(FullPath)),
             CategoryId = maps:get(<<"category">>, Config, <<"d6ad425529">>),
+            Producttempid = maps:get(<<"producttemplet">>, Config, <<"">>),
             ProductParentId =
                 case dgiot_parse:create_object(<<"Product">>, #{
                     <<"name">> => Name,
                     <<"devType">> => DevType,
                     <<"desc">> => <<"0">>,
                     <<"nodeType">> => 1,
+                    <<"netType">> => <<"Evidence">>,
                     <<"category">> => #{<<"objectId">> => CategoryId, <<"__type">> => <<"Pointer">>, <<"className">> => <<"Category">>},
+                    <<"producttemplet">> => #{<<"objectId">> => Producttempid, <<"__type">> => <<"Pointer">>, <<"className">> => <<"ProductTemplet">>},
                     <<"config">> => Config,
                     <<"thing">> => #{},
                     <<"ACL">> => #{<<"role:admin">> => #{<<"read">> => true, <<"write">> => true}},
