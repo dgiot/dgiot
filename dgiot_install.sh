@@ -9,7 +9,7 @@ wlanip=""
 serverFqdn=""
 processor=1
 # -----------------------Variables definition---------------------
-fileserver="http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_release/v4.4.0"
+fileserver="https://dgiot-release-1306147891.cos.ap-nanjing.myqcloud.com/v4.4.0"
 updateserver="http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_release/update"
 #https://bcrypt-generator.com/
 pg_pwd=`openssl rand -hex 8 | md5sum | cut -f1 -d ' '`
