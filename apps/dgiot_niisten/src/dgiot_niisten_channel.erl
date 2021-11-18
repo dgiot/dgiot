@@ -242,7 +242,7 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, state = #state{id = ChannelId, de
 
 handle_info({tcp, Buff}, #tcp{state = #state{id = ChannelId, devaddr = _DtuAddr, env = #{product := _ProductId, pn := _Pn, di := _Di}, product = _DtuProductId} = State} = TCPState) ->
     dgiot_bridge:send_log(ChannelId, "revice from  ~p", [dgiot_utils:binary_to_hex(Buff)]),
-%%    case modbus_rtu:parse_frame(Buff, [], #{
+%%    case modbus_rtu:parse_frame(Buff, #{}, #{
 %%        <<"dtuproduct">> => ProductId,
 %%        <<"channel">> => ChannelId,
 %%        <<"dtuaddr">> => DtuAddr,

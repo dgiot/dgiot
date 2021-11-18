@@ -266,6 +266,7 @@ do_report(Config, DevType, Name, SessionToken, FullPath, Uri) ->
                     <<"devType">> => DevType,
                     <<"desc">> => <<"0">>,
                     <<"nodeType">> => 1,
+                    <<"channel">> => #{<<"type">> => 1, <<"tdchannel">> => <<"24b9b4bc50">>, <<"taskchannel">> => <<"0edaeb918e">>, <<"otherchannel">> => [<<"11ed8ad9f2">>]},
                     <<"netType">> => <<"Evidence">>,
                     <<"category">> => #{<<"objectId">> => CategoryId, <<"__type">> => <<"Pointer">>, <<"className">> => <<"Category">>},
                     <<"producttemplet">> => #{<<"objectId">> => Producttempid, <<"__type">> => <<"Pointer">>, <<"className">> => <<"ProductTemplet">>},

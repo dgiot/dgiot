@@ -111,7 +111,7 @@ do_request(put_rule_id, #{<<"id">> := RuleID} = Params, _Context, _Req) ->
 %% OperationId:delete_rule_id
 %% 请求:DELETE /iotapi/rule/:{id}
 do_request(delete_rule_id, #{<<"id">> := RuleID}, _Context, _Req) ->
-    ObjectId = dgiot_parse:get_dictid(RuleID, <<"ruleengine">>),
+    ObjectId = dgiot_parse:get_dictid(RuleID, <<"ruleengine">>, <<"Rule">>, <<"Rule">>),
     dgiot_parse:del_object(<<"Dict">>, ObjectId),
     dgiot_data:delete(?DGIOT_RUlES, RuleID),
     emqx_rule_engine_api:delete_rule(#{id => RuleID}, []);
@@ -214,7 +214,7 @@ save_rule_to_dict(RuleID, Params) ->
         <<"data">> => #{<<"rule">> => jsx:encode(Rule)}
     },
     dgiot_data:insert(?DGIOT_RUlES, Dict),
-    ObjectId = dgiot_parse:get_dictid(RuleID, <<"ruleengine">>),
+    ObjectId = dgiot_parse:get_dictid(RuleID, <<"ruleengine">>, <<"Rule">>, <<"Rule">>),
     case dgiot_parse:get_object(<<"Dict">>, ObjectId) of
         {ok, _} ->
             dgiot_parse:update_object(<<"Dict">>, ObjectId, Dict);
@@ -247,7 +247,7 @@ get_channel(_Data) ->
 %%Acc ++ [maps:with([<<"name">>, <<"value">>, <<"caption">>, <<"meta">>, <<"type">>, <<"score">>], Data)] %% with 只取需要的字段
 %% ;结尾是分支 .结尾是结束
 get_dictLanguage(Language) ->
-    Type = dgiot_parse:get_dictid(Language, <<"dict_template">>),
+    Type = dgiot_parse:get_dictid(Language, <<"dict_template">>, <<"Dict">>, <<"Dict">>),
     case dgiot_parse:query_object(<<"Dict">>, #{<<"where">> => #{<<"type">> => Type}}) of
         {ok, #{<<"results">> := Results}} when length(Results) > 0 ->
             lists:foldl(fun(#{<<"data">> := Data}, Acc) ->
@@ -255,7 +255,6 @@ get_dictLanguage(Language) ->
                         end, [], Results);
         _ -> []
     end.
-
 
 sysc_rules() ->
     case dgiot_datetime:start_time() < 15 of

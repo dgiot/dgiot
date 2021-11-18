@@ -88,7 +88,7 @@ handle_info({tcp, Buff}, #tcp{state = #state{id = ChannelId, devaddr = DtuAddr, 
     dgiot_bridge:send_log(ChannelId, ProductId, DtuAddr, "DtuAddr ~p revice from  ~p", [DtuAddr, dgiot_utils:binary_to_hex(Buff)]),
     <<H:8, L:8>> = dgiot_utils:hex_to_binary(modbus_rtu:is16(Di)),
     <<Sh:8, Sl:8>> = dgiot_utils:hex_to_binary(modbus_rtu:is16(Pn)),
-    case modbus_rtu:parse_frame(Buff, [], #{
+    case modbus_rtu:parse_frame(Buff, #{}, #{
         <<"dtuproduct">> => ProductId,
         <<"channel">> => ChannelId,
         <<"dtuaddr">> => DtuAddr,

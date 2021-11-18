@@ -254,12 +254,13 @@ post_group(Body, SessionToken) ->
     case dgiot_product:update_config(NewBody#{
         <<"desc">> => <<"DG-IoT设备分组"/utf8>>,
         <<"netType">> => <<"WIFI">>,
-        <<"category">> => <<"IotHub">>,
+        <<"category">> => #{<<"objectId">> => <<"e5a9059441">>, <<"__type">> => <<"Pointer">>, <<"className">> => <<"Category">>},
         <<"config">> => #{},
+        <<"channel">> => #{<<"type">> => 1, <<"tdchannel">> => <<"24b9b4bc50">>, <<"taskchannel">> => <<"0edaeb918e">>, <<"otherchannel">> => [<<"11ed8ad9f2">>]},
         <<"thing">> => #{},
         <<"ACL">> => Acl,
         <<"name">> => ProductName,
-        <<"nodeType">> => 2}, SessionToken) of
+        <<"nodeType">> => 1}, SessionToken) of
         {_, #{<<"objectId">> := ProductId}} ->
             <<NewAddr:12/binary, _/binary>> = dgiot_utils:to_md5(<<ProductId/binary, Addr/binary>>),
             dgiot_device:create_device(#{

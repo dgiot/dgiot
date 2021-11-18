@@ -522,7 +522,6 @@ get_app(SessionToken) ->
 
 create_report(ProductParentId, Config, DevType, Name, Num, Imagurl, WordUrl, SessionToken) ->
     CategoryId = maps:get(<<"category">>, Config, <<"d6ad425529">>),
-    Producttempid = maps:get(<<"producttemplet">>, Config, <<"">>),
     NewNum = dgiot_utils:to_binary(dgiot_utils:to_int(Num) + 1),
     ProductName = <<Name/binary, NewNum/binary>>,
     NodeType = 0,
@@ -554,8 +553,8 @@ create_report(ProductParentId, Config, DevType, Name, Num, Imagurl, WordUrl, Ses
         <<"netType">> => <<"Evidence">>,
         <<"devType">> => DevType,
         <<"desc">> => NewNum,
+        <<"channel">> => #{<<"type">> => 1, <<"tdchannel">> => <<"24b9b4bc50">>, <<"taskchannel">> => <<"0edaeb918e">>, <<"otherchannel">> => [<<"11ed8ad9f2">>]},
         <<"category">> => #{<<"objectId">> => CategoryId, <<"__type">> => <<"Pointer">>, <<"className">> => <<"Category">>},
-        <<"producttemplet">> => #{<<"objectId">> => Producttempid, <<"__type">> => <<"Pointer">>, <<"className">> => <<"ProductTemplet">>},
         <<"name">> => ProductName}, SessionToken) of
         {ok, #{<<"objectId">> := ObjectId} = Result} ->
             dgiot_parse:update_object(<<"Product">>, ProductParentId, #{<<"children">> => #{
