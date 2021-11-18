@@ -12,8 +12,9 @@ processor=1
 fileserver="https://dgiot-release-1306147891.cos.ap-nanjing.myqcloud.com/v4.4.0"
 updateserver="http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_release/update"
 #https://bcrypt-generator.com/
+yum install -y openssl openssl-devel &> /dev/null
+yum install -y libstdc++-devel openssl-devel &> /dev/null
 pg_pwd=`openssl rand -hex 8 | md5sum | cut -f1 -d ' '`
-
 parse_user=dgiot
 parse_pwd=`openssl rand -hex 8 | md5sum | cut -f1 -d ' '`
 parse_appid=`openssl rand -hex 8 | md5sum | cut -f1 -d ' '`
@@ -211,6 +212,7 @@ function clean_services(){
   clean_service pushgateway
   clean_service node_exporter
   clean_service postgres_exporter
+  clean_service nginx
 }
 
 function clean_service() {
@@ -354,7 +356,6 @@ function yum_install_postgres() {
   ${csudo} yum install -y clang libicu-devel perl-ExtUtils-Embed &> /dev/null
   ${csudo} yum install -y readline readline-devel &> /dev/null
   ${csudo} yum install -y zlib zlib-devel &> /dev/null
-  ${csudo} yum install -y openssl openssl-devel &> /dev/null
   ${csudo} yum install -y pam-devel libxml2-devel libxslt-devel &> /dev/null
   ${csudo} yum install -y  openldap-devel systemd-devel &> /dev/null
   ${csudo} yum install -y tcl-devel python-devel &> /dev/null
@@ -703,7 +704,6 @@ function yum_install_erlang_otp {
   echo -e "`date +%F_%T` $LINENO: ${GREEN} yum_install_erlang_otp${NC}"
   yum install -y make gcc gcc-c++ &> /dev/null
   yum install -y kernel-devel m4 ncurses-devel &> /dev/null
-  yum install -y libstdc++-devel openssl-devel &> /dev/null
   yum install  -y unixODBC unixODBC-devel &> /dev/null
   yum install -y libtool-ltdl libtool-ltdl-devel &> /dev/null
 
@@ -938,6 +938,7 @@ function install_grafana() {
 }
 
 function install_nginx() {
+    clean_service nginx
     if systemctl is-active --quiet nginx; then
         echo -e  "`date +%F_%T` $LINENO: ${GREEN} nginx is running, stopping it...${NC}"
         rpm -e nginx

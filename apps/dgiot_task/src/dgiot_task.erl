@@ -164,6 +164,8 @@ stop(#{
 
 %%获取计算值，必须返回物模型里面的数据表示，不能用寄存器地址
 get_calculated(ProductId, Ack) ->
+    io:format("ProductId ~p~n", [ProductId]),
+    io:format("Ack ~p~n", [Ack]),
     case dgiot_product:lookup_prod(ProductId) of
         {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
             lists:foldl(fun(X, Acc) ->
@@ -179,7 +181,12 @@ get_calculated(ProductId, Ack) ->
                                     Str = re:replace(Acc2, dgiot_utils:to_list(<<"%%", K/binary>>), "(" ++ dgiot_utils:to_list(V) ++ ")", [global, {return, list}]),
                                     re:replace(Str, "%s", "(" ++ dgiot_utils:to_list(V) ++ ")", [global, {return, list}])
                                                  end, dgiot_utils:to_list(Collection), Ack),
-                                Acc#{Identifier => string2value(Str1, Type, Specs)};
+                                case string2value(Str1, Type, Specs) of
+                                    error ->
+                                        maps:without([Identifier], Acc);
+                                    Value1 ->
+                                        Acc#{Identifier => Value1}
+                                end;
                             _ ->
                                 Acc
                         end
@@ -210,7 +217,7 @@ get_collection(ProductId, Dis, Payload, Ack) ->
                                             Acc2#{Identifier => Value};
                                         _ ->
                                             dgiot_data:insert({topogps, dgiot_parse:get_shapeid(ProductId, Identifier)}, <<"无GPS信息"/utf8>>),
-                                            Acc2#{Identifier => <<"">>}
+                                            Acc2
                                     end;
                                 #{<<"dataForm">> := #{<<"address">> := Address, <<"strategy">> := Strategy, <<"collection">> := Collection},
                                     <<"dataType">> := #{<<"type">> := Type, <<"specs">> := Specs},
@@ -219,13 +226,23 @@ get_collection(ProductId, Dis, Payload, Ack) ->
                                         {ok, Value} ->
                                             Str = re:replace(Collection, dgiot_utils:to_list(<<"%%", Identifier/binary>>), "(" ++ dgiot_utils:to_list(Value) ++ ")", [global, {return, list}]),
                                             Str1 = re:replace(Str, "%s", "(" ++ dgiot_utils:to_list(Value) ++ ")", [global, {return, list}]),
-                                            Acc2#{Identifier => string2value(Str1, Type, Specs)};
+                                            case string2value(Str1, Type, Specs) of
+                                                error ->
+                                                    maps:without([Identifier], Acc2);
+                                                Value1 ->
+                                                    Acc2#{Identifier => Value1}
+                                            end;
                                         _ ->
                                             case maps:find(Address, Payload) of
                                                 {ok, Value} ->
                                                     Str = re:replace(Collection, dgiot_utils:to_list(<<"%%", Identifier/binary>>), "(" ++ dgiot_utils:to_list(Value) ++ ")", [global, {return, list}]),
                                                     Str1 = re:replace(Str, "%s", "(" ++ dgiot_utils:to_list(Value) ++ ")", [global, {return, list}]),
-                                                    Acc2#{Identifier => string2value(Str1, Type, Specs)};
+                                                    case string2value(Str1, Type, Specs) of
+                                                        error ->
+                                                            maps:without([Identifier], Acc2);
+                                                        Value1 ->
+                                                            Acc2#{Identifier => Value1}
+                                                    end;
                                                 _ -> Acc2
                                             end
                                     end;

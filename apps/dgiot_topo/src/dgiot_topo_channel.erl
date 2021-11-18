@@ -114,12 +114,55 @@ init(?TYPE, ChannelId, #{<<"product">> := Products, <<"BRIDGEURL">> := Bridgeurl
 %% 初始化池子
 handle_init(#state{env = #{productids := ProductIds}} = State) ->
     [dgiot_mqtt:subscribe(<<"topo/", ProductId/binary, "/#">>) || ProductId <- ProductIds],
+    dgiot_parse:subscribe(<<"Product">>, post),
     {ok, State}.
 
 %% 通道消息处理,注意：进程池调用
 handle_event(EventId, Event, _State) ->
     ?LOG(info, "channel ~p, ~p", [EventId, Event]),
     ok.
+handle_message({sync_parse, Args}, State) ->
+%%    io:format("Args ~p~n", [jsx:decode(Args, [{labels, binary}, return_maps])]),
+    case jsx:decode(Args, [{labels, binary}, return_maps]) of
+        #{<<"producttemplet">> := #{<<"className">> := <<"ProductTemplet">>, <<"objectId">> := ProducttempletId, <<"__type">> := <<"Pointer">>}, <<"objectId">> := ObjectId} ->
+            case dgiot_parse:query_object(<<"Dict">>, #{<<"where">> => #{<<"key">> => ProducttempletId, <<"class">> => <<"ProductTemplet">>}}) of
+                {ok, #{<<"results">> := Dicts}} ->
+                    DictRequests =
+                        lists:foldl(fun(Dict, Acc) ->
+                            NewDict = maps:without([<<"createdAt">>, <<"objectId">>, <<"updatedAt">>], Dict),
+                            Acc ++ [#{
+                                <<"method">> => <<"POST">>,
+                                <<"path">> => <<"/classes/Dict">>,
+                                <<"body">> => NewDict#{
+                                    <<"key">> => ObjectId,
+                                    <<"class">> => <<"Product">>}
+                            }]
+                                    end, [], Dicts),
+                    dgiot_parse:batch(DictRequests);
+                _ ->
+                    pass
+            end,
+            case dgiot_parse:query_object(<<"View">>, #{<<"where">> => #{<<"key">> => ProducttempletId, <<"class">> => <<"ProductTemplet">>}}) of
+                {ok, #{<<"results">> := Views}} ->
+                    ViewRequests =
+                        lists:foldl(fun(View, Acc) ->
+                            NewDict = maps:without([<<"createdAt">>, <<"objectId">>, <<"updatedAt">>], View),
+                            Acc ++ [#{
+                                <<"method">> => <<"POST">>,
+                                <<"path">> => <<"/classes/View">>,
+                                <<"body">> => NewDict#{
+                                    <<"key">> => ObjectId,
+                                    <<"class">> => <<"Product">>}
+                            }]
+                                    end, [], Views),
+                    dgiot_parse:batch(ViewRequests);
+                _ ->
+                    pass
+            end;
+        _ ->
+            pass
+    end,
+    {ok, State};
 
 handle_message({deliver, _Topic, Msg}, #state{id = ChannelId} = State) ->
     Payload = dgiot_mqtt:get_payload(Msg),

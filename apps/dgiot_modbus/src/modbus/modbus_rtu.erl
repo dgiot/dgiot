@@ -27,7 +27,7 @@
     build_req_message/1]
 ).
 
--export([modbus_encoder/4, modbus_decoder/4, is16/1, set_params/3]).
+-export([modbus_encoder/4, modbus_decoder/5, is16/1, set_params/3]).
 
 init(State) ->
     State#{<<"req">> => [], <<"ts">> => dgiot_datetime:now_ms(), <<"interval">> => 300}.
@@ -212,7 +212,7 @@ parse_frame(<<MbAddr:8, BadCode:8, ErrorCode:8, Crc:2/binary>> = Buff, Acc,
                         _ -> {error, unknown_response_code}
                     end,
             ?LOG(info, "DtuAddr ~p Modbus ~p, BadCode ~p, Error ~p", [DtuAddr, MbAddr, BadCode, Error]),
-            {<<>>, Acc};
+            {<<>>, #{}};
         false ->
             parse_frame(Buff, Acc, State)
     end;
@@ -273,8 +273,7 @@ decode_data(Buff, ProductId, DtuAddr, Address, Acc) ->
             CheckCrc = dgiot_utils:crc16(CheckBuf),
             case CheckCrc =:= Crc of
                 true ->
-                    Acc1 = Acc ++ modbus_decoder(ProductId, SlaveId, Address, UserZone),
-                    {Rest1, Acc1};
+                    {Rest1, modbus_decoder(ProductId, SlaveId, Address, UserZone, Acc)};
                 false ->
                     {Rest1, Acc}
             end;
@@ -300,8 +299,7 @@ get_write(ResponseData, SlaveId, FunCode, _DtuAddr, ProductId, Address, Acc) ->
     CheckCrc = dgiot_utils:crc16(CheckBuf),
     case CheckCrc =:= Crc of
         true ->
-            Acc1 = Acc ++ modbus_decoder(ProductId, SlaveId, Address, UserZone),
-            {<<>>, Acc1};
+            {<<>>, modbus_decoder(ProductId, SlaveId, Address, UserZone, Acc)};
         false ->
             {<<>>, Acc}
     end.
@@ -434,7 +432,7 @@ list_word16_to_binary(Values) when is_list(Values) ->
         )
     ).
 
-modbus_decoder(ProductId, SlaveId, Address, Data) ->
+modbus_decoder(ProductId, SlaveId, Address, Data, Acc1) ->
     case dgiot_product:lookup_prod(ProductId) of
         {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
             lists:foldl(fun(X, Acc) ->
@@ -462,8 +460,8 @@ modbus_decoder(ProductId, SlaveId, Address, Data) ->
                     _ ->
                         Acc
                 end
-                        end, #{}, Props);
-        _ -> []
+                        end, Acc1, Props);
+        _ -> #{}
     end.
 
 modbus_encoder(ProductId, SlaveId, Address, Value) ->
