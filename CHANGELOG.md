@@ -1,4 +1,4 @@
-# [](https://github.com/dgiot/dgiot/compare/v4.3.5...v) (2021-10-30)
+# [4.3.6](https://github.com/dgiot/dgiot/compare/v4.3.5...v) (2021-10-30)
 
 
 ### Bug Fixes
