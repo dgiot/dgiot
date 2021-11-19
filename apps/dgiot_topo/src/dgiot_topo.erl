@@ -72,39 +72,64 @@ docroot() ->
 %%    end.
 
 get_topo(Arg, _Context) ->
-    #{<<"productid">> := ProductId, <<"devaddr">> := Devaddr} = Arg,
+    #{<<"productid">> := ProductId, <<"devaddr">> := Devaddr, <<"viewid">> := ViewId} = Arg,
     Type = maps:get(<<"type">>, Arg, <<"web">>),
-    case dgiot_parse:get_object(<<"Product">>, ProductId) of
-        {ok, #{<<"config">> := #{<<"konva">> := #{<<"Stage">> := #{<<"children">> := Children} = Stage} = Konva}}} when length(Children) > 0 ->
-            case Devaddr of
-                undefined ->
-                    get_children(Type, ProductId, Children, ProductId, <<"KonvatId">>, <<"Shapeid">>, <<"Identifier">>, <<"Name">>),
-                    List = get_wechat(),
-                    case Type of
-                        <<"wechat">> ->
-                            {ok, #{<<"code">> => 200, <<"message">> => <<"SUCCESS">>, <<"data">> => List}};
-                        _ ->
-                            {ok, #{<<"code">> => 200, <<"message">> => <<"SUCCESS">>, <<"data">> => Konva#{<<"Stage">> => Stage}}}
-                    end;
+    case ViewId of
+        undefined ->
+            case dgiot_parse:query_object(<<"View">>, #{<<"where">> => #{<<"key">> => ProductId, <<"type">> => <<"topo">>, <<"class">> => <<"Product">>}}) of
+                {ok, #{<<"results">> := Views}} ->
+                    NewStage =
+                        lists:foldl(fun(View, Acc) ->
+                            case View of
+                                #{<<"data">> := #{<<"konva">> := #{<<"Stage">> := #{<<"children">> := Children}}}} when length(Children) > 0 ->
+                                    NewView = get_view(View, Devaddr, ProductId, Type),
+                                    Acc ++ [NewView];
+                                _ ->
+                                    Acc
+                            end
+                                    end, [], Views),
+                    {ok, #{<<"code">> => 200, <<"message">> => <<"SUCCESS">>, <<"data">> => NewStage}};
                 _ ->
-                    DeviceId = dgiot_parse:get_deviceid(ProductId, Devaddr),
-                    case dgiot_tdengine:get_device(ProductId, Devaddr, #{<<"keys">> => <<"last_row(*)">>, <<"limit">> => 1}) of
-                        {ok, #{<<"results">> := [Result | _]}} ->
-                            put({self(), td}, Result);
-                        _ ->
-                            put({self(), td}, #{})
-                    end,
-                    NewChildren1 = get_children(Type, ProductId, Children, DeviceId, <<"KonvatId">>, <<"Shapeid">>, <<"Identifier">>, <<"Name">>),
-                    List = get_wechat(),
-                    case Type of
-                        <<"wechat">> ->
-                            {ok, #{<<"code">> => 200, <<"message">> => <<"SUCCESS">>, <<"data">> => List}};
-                        _ ->
-                            {ok, #{<<"code">> => 200, <<"message">> => <<"SUCCESS">>, <<"data">> => Konva#{<<"Stage">> => Stage#{<<"children">> => NewChildren1}}}}
-                    end
+                    {ok, #{<<"code">> => 204, <<"message">> => <<"没有组态"/utf8>>}}
             end;
         _ ->
-            {ok, #{<<"code">> => 204, <<"message">> => <<"没有组态"/utf8>>}}
+            case dgiot_parse:get_object(<<"View">>, ViewId) of
+                {ok, #{<<"data">> := #{<<"konva">> := #{<<"Stage">> := #{<<"children">> := Children}}}} = View} when length(Children) > 0 ->
+                    NewView = get_view(View, Devaddr, ProductId, Type),
+                    {ok, #{<<"code">> => 200, <<"message">> => <<"SUCCESS">>, <<"data">> => NewView}};
+                _ ->
+                    {ok, #{<<"code">> => 204, <<"message">> => <<"没有组态"/utf8>>}}
+            end
+    end.
+
+get_view(View, Devaddr, ProductId, Type) ->
+    #{<<"data">> := #{<<"konva">> := #{<<"Stage">> := #{<<"children">> := Children} = Stage} = Konva}} = View,
+    case Devaddr of
+        undefined ->
+            get_children(Type, ProductId, Children, ProductId, <<"KonvatId">>, <<"Shapeid">>, <<"Identifier">>, <<"Name">>),
+            List = get_wechat(),
+            case Type of
+                <<"wechat">> ->
+                    List;
+                _ ->
+                    Konva#{<<"Stage">> => Stage}
+            end;
+        _ ->
+            DeviceId = dgiot_parse:get_deviceid(ProductId, Devaddr),
+            case dgiot_tdengine:get_device(ProductId, Devaddr, #{<<"keys">> => <<"last_row(*)">>, <<"limit">> => 1}) of
+                {ok, #{<<"results">> := [Result | _]}} ->
+                    put({self(), td}, Result);
+                _ ->
+                    put({self(), td}, #{})
+            end,
+            NewChildren1 = get_children(Type, ProductId, Children, DeviceId, <<"KonvatId">>, <<"Shapeid">>, <<"Identifier">>, <<"Name">>),
+            List = get_wechat(),
+            case Type of
+                <<"wechat">> ->
+                    List;
+                _ ->
+                    Konva#{<<"Stage">> => Stage#{<<"children">> => NewChildren1}}
+            end
     end.
 
 get_konva_thing(Arg, _Context) ->

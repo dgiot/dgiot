@@ -15,6 +15,13 @@
             "default": ""
           },
           {
+            "description": "视图ObjectId",
+            "in": "query",
+            "name": "viewid",
+            "type": "string",
+            "default": ""
+          },
+          {
             "description": "设备编号",
             "in": "query",
             "name": "devaddr",
