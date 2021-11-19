@@ -353,11 +353,11 @@ update_config(Product, SessionToken) ->
 %%    #{}.
 
 create_product(#{<<"name">> := ProductName, <<"devType">> := DevType,
-    <<"category">> := Category} = Product, SessionToken) ->
+    <<"category">> := #{<<"objectId">> := CategoryId, <<"__type">> := <<"Pointer">>, <<"className">> := <<"Category">>}} = Product, SessionToken) ->
     case dgiot_parse:query_object(<<"Product">>, #{<<"where">> => #{
         <<"name">> => ProductName,
         <<"devType">> => DevType,
-        <<"category">> => Category
+        <<"category">> => CategoryId
     }},
         [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
         {ok, #{<<"results">> := [#{<<"objectId">> := ObjectId} | _]}} ->

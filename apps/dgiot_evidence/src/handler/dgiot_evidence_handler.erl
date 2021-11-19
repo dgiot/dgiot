@@ -181,14 +181,14 @@ do_request(get_report, #{<<"id">> := Id} = Body, #{<<"sessionToken">> := Session
 %% evidence 概要: 增加取证报告 描述:新增取证报告
 %% OperationId:post_report
 %% 请求:POST /iotapi/report
-do_request(post_report, #{<<"name">> := _Name, <<"devType">> := _DevType,
+do_request(post_report, #{<<"name">> := _Name, <<"product">> := _ProductId,
     <<"basedata">> := _Basedata} = Body, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
-    ?LOG(info, "Body ~p ", [Body]),
+%%    ?LOG(info, "Body ~p ", [Body]),
     post_report(Body, SessionToken);
 
 
-%% evidence 概要: 增加取证报告 描述:新增取证报告
-%% OperationId:post_report
+%% evidence 概要: 修改取证报告 描述:修改取证报告
+%% OperationId:put_report
 %% 请求:PUT /iotapi/report
 do_request(put_report, #{<<"path">> := Path} = _Body, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
     put_report(Path, SessionToken);
@@ -261,7 +261,7 @@ do_report(Config, DevType, Name, SessionToken, FullPath, Uri) ->
             CategoryId = maps:get(<<"category">>, Config, <<"d6ad425529">>),
             Producttempid = maps:get(<<"producttemplet">>, Config, <<"">>),
             ProductParentId =
-                case dgiot_parse:create_object(<<"Product">>, #{
+                case dgiot_product:create_product(#{
                     <<"name">> => Name,
                     <<"devType">> => DevType,
                     <<"desc">> => <<"0">>,
@@ -272,9 +272,8 @@ do_report(Config, DevType, Name, SessionToken, FullPath, Uri) ->
                     <<"producttemplet">> => #{<<"objectId">> => Producttempid, <<"__type">> => <<"Pointer">>, <<"className">> => <<"ProductTemplet">>},
                     <<"config">> => Config,
                     <<"thing">> => #{},
-                    <<"ACL">> => #{<<"role:admin">> => #{<<"read">> => true, <<"write">> => true}},
                     <<"productSecret">> => license_loader:random(),
-                    <<"dynamicReg">> => true}) of
+                    <<"dynamicReg">> => true}, SessionToken) of
                     {_, #{<<"objectId">> := ProductId}} ->
                         ProductId;
                     _ ->
@@ -285,7 +284,7 @@ do_report(Config, DevType, Name, SessionToken, FullPath, Uri) ->
                 NewImageUrl = dgiot_utils:get_url_path(ImageUrl),
                 case binary:split(filename:basename(ImageUrl), <<$.>>, [global, trim]) of
                     [Index, _] ->
-                        Acc ++ [dgiot_evidence:create_report(ProductParentId, Config, DevType, Name, Index, NewImageUrl, WordUrl, SessionToken)]
+                        Acc ++ [dgiot_evidence:create_report(ProductParentId, Config, Index, NewImageUrl, WordUrl, SessionToken)]
                 end
                         end, [], List);
         _Oth ->
@@ -707,18 +706,14 @@ get_report(Id, SessionToken) ->
         Error -> Error
     end.
 
-post_report(#{<<"name">> := Name, <<"devType">> := DevType,
-    <<"basedata">> := Basedata}, SessionToken) ->
-    case dgiot_parse:query_object(<<"Product">>, #{<<"order">> => <<"desc">>, <<"limit">> => 1,
-        <<"where">> => #{<<"devType">> => DevType, <<"nodeType">> => 1, <<"desc">> => <<"0">>}},
-        [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
-        {ok, #{<<"results">> := [#{<<"ACL">> := Acl,
-            <<"config">> := Config, <<"objectId">> := ProductId} | _]}} ->
+post_report(#{<<"name">> := Name, <<"product">> := ProductId, <<"basedata">> := Basedata}, SessionToken) ->
+    case dgiot_parse:get_object(<<"Product">>, ProductId, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+        {ok, #{<<"ACL">> := Acl, <<"objectId">> := ProductId}} ->
             case dgiot_parse:query_object(<<"Device">>, #{<<"where">> => #{<<"name">> => Name, <<"product">> => ProductId}},
                 [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
                 {ok, #{<<"results">> := Results}} when length(Results) == 0 ->
                     <<DtuAddr:12/binary, _/binary>> = license_loader:random(),
-                    {ok, #{<<"objectId">> := ParentId}} =
+                    {ok, #{<<"objectId">> := DeviceId}} =
                         dgiot_device:create_device(#{
                             <<"devaddr">> => DtuAddr,
                             <<"name">> => Name,
@@ -728,37 +723,22 @@ post_report(#{<<"name">> := Name, <<"devType">> := DevType,
                             <<"status">> => <<"ONLINE">>,
                             <<"brand">> => <<"数蛙桌面采集网关"/utf8>>,
                             <<"devModel">> => <<"SW_WIN_CAPTURE">>,
-                            <<"basedata">> => maps:merge(Config, Basedata)
+                            <<"basedata">> => Basedata
                         }),
-                    case dgiot_parse:query_object(<<"Product">>, #{<<"order">> => <<"desc">>, <<"where">> => #{
-                        <<"devType">> => DevType, <<"nodeType">> => 0}}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
-                        {ok, #{<<"results">> := Products}} ->
-                            lists:foldl(fun(X, Sum) ->
-                                #{
-                                    <<"config">> := Config1,
-                                    <<"desc">> := Desc,
-                                    <<"ACL">> := Acl1,
-                                    <<"objectId">> := ObjectId
-                                } = X,
-                                <<Addr:12/binary, _/binary>> = dgiot_license:to_md5(license_loader:random()),
-                                R0 = dgiot_device:create_device(#{
-                                    <<"devaddr">> => Addr,
-                                    <<"name">> => <<Name/binary, "_", Desc/binary, ""/utf8>>,
-                                    <<"ip">> => <<"">>,
-                                    <<"product">> => ObjectId,
-                                    <<"ACL">> => Acl1,
-                                    <<"basedata">> => Config1#{<<"index">> => Sum},
-                                    <<"route">> => #{DtuAddr => Addr},
-                                    <<"status">> => <<"ONLINE">>,
-                                    <<"brand">> => <<"数蛙桌面采集网关"/utf8>>,
-                                    <<"devModel">> => <<"SW_WIN_CAPTURE">>,
-                                    <<"parentId">> => #{
-                                        <<"__type">> => <<"Pointer">>,
-                                        <<"className">> => <<"Device">>,
-                                        <<"objectId">> => ParentId}}),
-                                ?LOG(info, "R0 ~p", [R0]),
-                                Sum + 1
-                                        end, 1, Products),
+                    case dgiot_parse:query_object(<<"View">>, #{<<"where">> => #{<<"key">> => ProductId, <<"class">> => <<"Product">>}}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+                        {ok, #{<<"results">> := Views}} ->
+                            ViewRequests =
+                                lists:foldl(fun(View, Acc) ->
+                                    NewDict = maps:without([<<"createdAt">>, <<"objectId">>, <<"updatedAt">>], View),
+                                    Acc ++ [#{
+                                        <<"method">> => <<"POST">>,
+                                        <<"path">> => <<"/classes/View">>,
+                                        <<"body">> => NewDict#{
+                                            <<"key">> => DeviceId,
+                                            <<"class">> => <<"Device">>}
+                                    }]
+                                            end, [], Views),
+                            dgiot_parse:batch(ViewRequests),
                             {ok, #{<<"result">> => <<"success">>}};
                         _R1 ->
                             ?LOG(info, "R1 ~p", [_R1]),

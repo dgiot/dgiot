@@ -148,7 +148,7 @@ handle(post_token, #{<<"appid">> := AppId, <<"secret">> := Secret}, _Context, _R
 %% IoTDevice 概要: 刷新Token 描述:刷新Token
 %% OperationId: get_refresh_session
 %% POST /token
-handle(get_refresh_session, _Body, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
+handle(get_refresh_session, #{<<"sessionToken">> := SessionToken}, _Context, _Req) ->
     case dgiot_parse:refresh_session(SessionToken) of
         {ok, Ref} ->
             {200, Ref};

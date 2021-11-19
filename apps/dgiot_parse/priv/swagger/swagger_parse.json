@@ -626,11 +626,19 @@
         ]
       }
     },
-    "/refresh_session": {
+    "/refresh_session/{sessionToken}": {
       "get": {
         "summary": "刷新Token",
         "description": "刷新Token",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "sessionToken",
+            "in": "path",
+            "description": "sessionToken",
+            "required": true,
+            "type": "string"
+          }
+        ],
         "responses": {
           "200": {
             "description": ""

@@ -260,7 +260,7 @@ post_group(Body, SessionToken) ->
         <<"thing">> => #{},
         <<"ACL">> => Acl,
         <<"name">> => ProductName,
-        <<"nodeType">> => 1}, SessionToken) of
+        <<"nodeType">> => 2}, SessionToken) of
         {_, #{<<"objectId">> := ProductId}} ->
             <<NewAddr:12/binary, _/binary>> = dgiot_utils:to_md5(<<ProductId/binary, Addr/binary>>),
             dgiot_device:create_device(#{
