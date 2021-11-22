@@ -130,10 +130,14 @@ handle_message({sync_parse, Args}, State) ->
                     DictRequests =
                         lists:foldl(fun(Dict, Acc) ->
                             NewDict = maps:without([<<"createdAt">>, <<"objectId">>, <<"updatedAt">>], Dict),
+                            Type = maps:get(<<"type">>, Dict, <<"">>),
+                            Title = maps:get(<<"title">>, Dict, <<"">>),
+                            DictId = dgiot_parse:get_dictid(ObjectId, Type, <<"Product">>, Title),
                             Acc ++ [#{
                                 <<"method">> => <<"POST">>,
                                 <<"path">> => <<"/classes/Dict">>,
                                 <<"body">> => NewDict#{
+                                    <<"objectId">> => DictId,
                                     <<"key">> => ObjectId,
                                     <<"class">> => <<"Product">>}
                             }]
@@ -147,10 +151,16 @@ handle_message({sync_parse, Args}, State) ->
                     ViewRequests =
                         lists:foldl(fun(View, Acc) ->
                             NewDict = maps:without([<<"createdAt">>, <<"objectId">>, <<"updatedAt">>], View),
+                            Type = maps:get(<<"type">>, View, <<"">>),
+
+
+                            Title = maps:get(<<"title">>, View, <<"">>),
+                            DictId = dgiot_parse:get_viewid(ObjectId, Type, <<"Product">>, Title),
                             Acc ++ [#{
                                 <<"method">> => <<"POST">>,
                                 <<"path">> => <<"/classes/View">>,
                                 <<"body">> => NewDict#{
+                                    <<"objectId">> => DictId,
                                     <<"key">> => ObjectId,
                                     <<"class">> => <<"Product">>}
                             }]
