@@ -318,7 +318,7 @@ get_objectid(Class, Map) ->
             Key = maps:get(<<"key">>, Map, <<"">>),
             Type = maps:get(<<"type">>, Map, <<"">>),
             Class1 = maps:get(<<"class">>, Map, <<"">>),
-            Title = maps:get(<<"Title">>, Map, <<"">>),
+            Title = maps:get(<<"title">>, Map, <<"">>),
             <<DId:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Dict", Class1/binary, Key/binary, Type/binary,Title/binary>>),
             Map#{
                 <<"objectId">> => DId

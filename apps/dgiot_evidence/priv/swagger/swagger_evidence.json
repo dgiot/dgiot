@@ -336,15 +336,15 @@
                   "type": "string",
                   "example": "离心泵取证报告"
                 },
-                "devType": {
-                  "description": "报告产品类型",
+                "product": {
+                  "description": "报告模板id",
                   "type": "string",
-                  "example": "dgiot_pump_report"
+                  "example": "6c7347b2d1"
                 },
                 "basedata": {
                   "description": "报告描述信息",
                   "type": "object",
-                  "example": {"name":"image0","identifier":"a28b138a-0f31-fe7d-cadc-0be47faf8a8d"}
+                  "example": {"starttime":"1637251200000","endtime":"1637942400000","bedname":"南方泵业台体"}
                 }
               }
             }
