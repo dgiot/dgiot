@@ -172,33 +172,31 @@ get(#{<<"reportId">> := ReportId}, SessionToken) ->
 
 
 
-post(#{<<"id">> := ReportId, <<"scene">> := Scene, <<"md5">> := Md5, <<"original">> := Original,
+post(#{<<"id">> := ReportId, <<"objetcId">> := ObjetcId, <<"ukey">> := UKey, <<"timestamp">> := Timestamp, <<"md5">> := Md5, <<"original">> := Original,
     <<"sessionToken">> := SessionToken}) ->
-    Map = signData(Md5),
-    #{
-        <<"timestamp">> := Timestamp,
-        <<"cmd">> := <<"signData">>,
-        <<"data">> := #{<<"ukey">> := UKey, <<"SignData">> := SignData}
-    } = Map,
-    case UKey == <<>> orelse SignData == <<>> of
+    Payload = jsx:encode(#{<<"md5">> => Md5}),
+    UkeyProductId = <<"3f95880e09">>,
+    Topic = <<"/", UkeyProductId/binary, "/", UKey/binary, "/properties/read">>,
+    dgiot_mqtt:publish(UKey, Topic, Payload),
+    case UKey == <<>> of
         true ->
-            {error, <<"SignData Fail">>};
+            {error, <<"UKey Fail">>};
         false ->
             case dgiot_auth:get_session(SessionToken) of
                 #{<<"roles">> := Roles} = _User ->
                     [#{<<"name">> := Role} | _] = maps:values(Roles),
                     Evidence = #{
+                        <<"objetcId">> => ObjetcId,
                         <<"ACL">> => #{<<"role:", Role/binary>> => #{
                             <<"read">> => true,
                             <<"write">> => true}
                         },
                         <<"reportId">> => ReportId,
-                        <<"scene">> => Scene,
+                        <<"scene">> => Role,
                         <<"original">> => Original#{<<"status">> => <<"未审核"/utf8>>},
                         <<"md5">> => Md5,
                         <<"timestamp">> => Timestamp,
-                        <<"ukey">> => UKey,
-                        <<"signData">> => SignData
+                        <<"ukey">> => UKey
                     },
                     dgiot_parse:create_object(<<"Evidence">>, Evidence);
                 _ -> {error, <<"SignData Fail">>}

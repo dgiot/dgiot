@@ -478,7 +478,7 @@
         "description": "存证",
         "parameters": [
           {
-            "description": "书证号",
+            "description": "报告号",
             "in": "query",
             "name": "id",
             "required": true,
@@ -492,25 +492,25 @@
             "required": true,
             "schema": {
               "properties": {
+                "ukey": {
+                  "description": "ukey",
+                  "type": "string",
+                  "example": "74C800E00055C08D"
+                },
                 "timestamp": {
                   "description": "取证时间",
                   "type": "string",
-                  "example": "2020-04-14 18:12:10"
+                  "example": "1637563568"
                 },
                 "original": {
                   "description": "原件",
                   "type": "object",
-                  "example": {"name":"image0","identifier":"a28b138a-0f31-fe7d-cadc-0be47faf8a8d"}
+                  "example": {"type":"image","controlid":"controlid", "taskid": "taskid"}
                 },
                 "md5": {
                   "description": "校验码",
                   "type": "string",
                   "example": "e9d737315a867b1bd15864d74a4054b9"
-                },
-                "scene": {
-                  "description": "取证现场",
-                  "type": "string",
-                  "example": "tyApRskkxw"
                 }
               }
             }
