@@ -71,7 +71,7 @@ handle(OperationID, Args, Context, Req) ->
 %%%===================================================================
 %%% 内部函数 Version:API版本
 %%%===================================================================
-do_request(post_evidence, Args, #{<<"sessionToken">> := SessionToken} = _Context, Req) ->
+do_request(post_evidence, Args, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
     ?LOG(info, "Args ~p ", [Args]),
     case dgiot_evidence:post(Args#{<<"sessionToken">> => SessionToken}) of
         {ok, Result} ->
