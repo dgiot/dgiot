@@ -73,9 +73,7 @@ handle(OperationID, Args, Context, Req) ->
 %%%===================================================================
 do_request(post_evidence, Args, #{<<"sessionToken">> := SessionToken} = _Context, Req) ->
     ?LOG(info, "Args ~p ", [Args]),
-    Host = dgiot_req:host(Req),
-    ?LOG(info, "Host ~p ", [Host]),
-    case dgiot_evidence:post(Args#{<<"ip">> => Host, <<"sessionToken">> => SessionToken}) of
+    case dgiot_evidence:post(Args#{<<"sessionToken">> => SessionToken}) of
         {ok, Result} ->
             {200, Result};
         {error, Reason} ->
