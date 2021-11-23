@@ -74,18 +74,18 @@ request(Method, Header, Path0, Body, Options) ->
                                     TdchannelId = maps:get(<<"tdchannel">>, Channel, <<"">>),
                                     TaskchannelId = maps:get(<<"taskchannel">>, Channel, <<"">>),
                                     Otherchannel = maps:get(<<"otherchannel">>, Channel, []),
-                                    channel_add_prduct_relation(Otherchannel ++ [TdchannelId] ++ [TaskchannelId], ProductId);
+                                    channel_add_product_relation(Otherchannel ++ [TdchannelId] ++ [TaskchannelId], ProductId);
                                 _ ->
                                     pass
                             end;
                         <<"/classes/Product/", ProductId/binary>> when Method == 'PUT' ->
                             case Body of
                                 #{<<"channel">> := Channel} ->
-                                    channel_delete_prduct_relation(ProductId),
+                                    channel_delete_product_relation(ProductId),
                                     TdchannelId = maps:get(<<"tdchannel">>, Channel, <<"">>),
                                     TaskchannelId = maps:get(<<"taskchannel">>, Channel, <<"">>),
                                     Otherchannel = maps:get(<<"otherchannel">>, Channel, []),
-                                    channel_add_prduct_relation(Otherchannel ++ [TdchannelId] ++ [TaskchannelId], ProductId);
+                                    channel_add_product_relation(Otherchannel ++ [TdchannelId] ++ [TaskchannelId], ProductId);
                                 _ ->
                                     pass
                             end;
@@ -476,7 +476,7 @@ log(Method, {Url, Header, _, Body}) ->
 
 
 
-channel_add_prduct_relation(ChannelIds, ProductId) ->
+channel_add_product_relation(ChannelIds, ProductId) ->
     Map =
         #{<<"product">> =>
         #{
@@ -494,7 +494,7 @@ channel_add_prduct_relation(ChannelIds, ProductId) ->
         dgiot_parse:update_object(<<"Channel">>, ChannelId, Map)
               end, ChannelIds).
 
-channel_delete_prduct_relation(ProductId) ->
+channel_delete_product_relation(ProductId) ->
     Map =
         #{<<"product">> => #{
             <<"__op">> => <<"RemoveRelation">>,

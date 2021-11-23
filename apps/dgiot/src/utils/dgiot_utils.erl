@@ -883,4 +883,3 @@ url_path(Url) ->
 %%    "192.168.0.183:5094/wordServer/20211112142832/1.jpg",
     {match, [{Start, _Len}]} = re:run(Url, <<"\/">>),
     to_binary(string:substr(Url, Start + 1, length(Url))).
-

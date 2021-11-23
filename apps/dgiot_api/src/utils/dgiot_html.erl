@@ -97,7 +97,8 @@ save({Type, Attrs, _}) ->
                 false ->
                     pass
             end;
-        _ -> pass
+        _ ->
+            pass
     end;
 
 save(_) ->

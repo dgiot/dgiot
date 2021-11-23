@@ -1,8 +1,0 @@
-{application, dgiot_shouyincheng,
-    [{description, "DGIOT SHOUYINCHENG"},
-        {vsn, "4.3.0"},
-        {modules, []},
-        {registered, [dgiot_shouyincheng_sup]},
-        {applications, [kernel, stdlib, dgiot]},
-        {mod, {dgiot_shouyincheng_app, []}}
-    ]}.

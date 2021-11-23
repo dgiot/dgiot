@@ -77,6 +77,8 @@
     <mapping directory="$PROJECT_DIR$/_build/emqx/lib/cowboy" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/emqx/lib/cowlib" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/emqx/lib/cuttlefish" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/_build/emqx/lib/cuttlefish/_build/default/lib/getopt" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/_build/emqx/lib/cuttlefish/_build/escript/lib/getopt" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/emqx/lib/ecpool" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/emqx/lib/ehttpc" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/emqx/lib/ejdbc" vcs="Git" />
@@ -115,6 +117,7 @@
     <mapping directory="$PROJECT_DIR$/_build/emqx/plugins/grpc_plugin" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/emqx/plugins/pc" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/emqx/plugins/relup_helper" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/apps/dgiot_amis_server" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/apps/dgiot_esports" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/apps/dgiot_jieshun" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/apps/dgiot_mingcheng" vcs="Git" />
