@@ -3,6 +3,7 @@
 
 ### Features
 
+* add dgiot_image ([c52dd70](https://github.com/dgiot/dgiot/commit/c52dd7007227963a7b1f455a0e22959fe6d2e00d))
 * evidence_topo ([9e5a5f6](https://github.com/dgiot/dgiot/commit/9e5a5f6f147775ab470dca016027b733554e5a91))
 * post_evidence ([3f927bc](https://github.com/dgiot/dgiot/commit/3f927bcc06093fffe28b7749440ad95dd00c683d))
 * post_evidence ([8d109b0](https://github.com/dgiot/dgiot/commit/8d109b0bfd5cefadc8c0dff787690a29c9417980))
