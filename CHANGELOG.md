@@ -1,14 +1,59 @@
-# [4.3.6](https://github.com/dgiot/dgiot/compare/v4.3.5...v) (2021-10-30)
+# [](https://github.com/dgiot/dgiot/compare/v4.3.9...v) (2021-11-23)
+
+
+### Features
+
+* evidence_topo ([9e5a5f6](https://github.com/dgiot/dgiot/commit/9e5a5f6f147775ab470dca016027b733554e5a91))
+* post_evidence ([3f927bc](https://github.com/dgiot/dgiot/commit/3f927bcc06093fffe28b7749440ad95dd00c683d))
+* post_evidence ([8d109b0](https://github.com/dgiot/dgiot/commit/8d109b0bfd5cefadc8c0dff787690a29c9417980))
+
+
+
+## [4.3.9](https://github.com/dgiot/dgiot/compare/v4.3.8...v4.3.9) (2021-11-19)
+
+
+### Features
+
+* evidence_category ([d495519](https://github.com/dgiot/dgiot/commit/d495519c4d07b0e008e97319e04830cd40afe58e))
+* refresh_session ([c56a594](https://github.com/dgiot/dgiot/commit/c56a5940e3a954a694d52c0edc0ffd2075bb1736))
+* sync_dict,view ([170e2d1](https://github.com/dgiot/dgiot/commit/170e2d1f93b43506c70d7672a1ce809f8f0ff77b))
+
+
+
+## [4.3.8](https://github.com/dgiot/dgiot/compare/v4.3.7...v4.3.8) (2021-11-12)
+
+
+### Features
+
+* dgiot_install 68 ([63abd74](https://github.com/dgiot/dgiot/commit/63abd74fffdd592cdb56b2d09c26ff4af43ceaf1))
+* do_report ([974baad](https://github.com/dgiot/dgiot/commit/974baadcda32ecccd1fe03505347b910c649e5ea))
+
+
+
+## [4.3.7](https://github.com/dgiot/dgiot/compare/v4.3.6...v4.3.7) (2021-11-10)
+
+
+### Features
+
+* Modify swagger ([d4175a8](https://github.com/dgiot/dgiot/commit/d4175a8138cd778b29b8a2d8869c201eb1a9d383))
+* reporttemplate ([3cc8a70](https://github.com/dgiot/dgiot/commit/3cc8a705d2b7ab9e27195f94a5554b29502d2dd6))
+
+
+
+## [4.3.6](https://github.com/dgiot/dgiot/compare/v4.3.5...v4.3.6) (2021-11-04)
 
 
 ### Bug Fixes
 
+* get_env ([58e2d52](https://github.com/dgiot/dgiot/commit/58e2d52212b9f859f4195023e432837d74545fc0))
 * install centos 7.9 ([16028f4](https://github.com/dgiot/dgiot/commit/16028f4c201920cf7c62a21176a9a492fc97f6aa))
 
 
 ### Features
 
+* add post testpaper ([b7ad572](https://github.com/dgiot/dgiot/commit/b7ad572265deafa0c479817dfb46c9967b03917e))
 * centos 7.9 ([a7e56a6](https://github.com/dgiot/dgiot/commit/a7e56a630e22db7a1e8513c96ec58f3127a6cd7c))
+* Configuration modification Label ([b71b0c2](https://github.com/dgiot/dgiot/commit/b71b0c2094f5e184efbe86f6eeecea594676a7be))
 * device_card ([6c54a07](https://github.com/dgiot/dgiot/commit/6c54a07013fb7b9b92e5ddaf498471488b1341a7))
 * go-fastdfs Api ([c4ad4e4](https://github.com/dgiot/dgiot/commit/c4ad4e4ed5be37b0b9c3abb7211746c38d26cf96))
 * go-fastdfs Api ([3160613](https://github.com/dgiot/dgiot/commit/316061335e7c96bcea36d6d55da6cbc3d76931e9))
