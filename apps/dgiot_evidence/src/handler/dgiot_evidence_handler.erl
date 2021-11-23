@@ -250,41 +250,36 @@ do_request(_OperationId, _Args, _Context, _Req) ->
     {error, <<"Not Allowed.">>}.
 
 do_report(Config, DevType, Name, SessionToken, FullPath, Uri) ->
-    case dgiot_httpc:fileUpload(Uri ++ "/WordController/fileUpload", dgiot_utils:to_list(FullPath)) of
-        {ok, #{<<"content">> := Content, <<"success">> := true}} ->
-            Url = cow_uri:urlencode(base64:encode(Content)),
-            WordPreview = Uri ++ "/onlinePreview?url=" ++ dgiot_utils:to_list(Url) ++ "&officePreviewType=image",
-            List = dgiot_html:find(WordPreview, {<<"img">>, {<<"class">>, <<"my-photo">>}}, <<"data-src">>),
-            WordUrl = Uri ++ "/wordServer/" ++ dgiot_utils:to_list(filename:basename(FullPath)),
-            CategoryId = maps:get(<<"category">>, Config, <<"d6ad425529">>),
-            Producttempid = maps:get(<<"producttemplet">>, Config, <<"">>),
-            ProductParentId =
-                case dgiot_product:create_product(#{
-                    <<"name">> => Name,
-                    <<"devType">> => DevType,
-                    <<"desc">> => <<"0">>,
-                    <<"nodeType">> => 1,
-                    <<"channel">> => #{<<"type">> => 1, <<"tdchannel">> => <<"24b9b4bc50">>, <<"taskchannel">> => <<"0edaeb918e">>, <<"otherchannel">> => [<<"11ed8ad9f2">>]},
-                    <<"netType">> => <<"Evidence">>,
-                    <<"category">> => #{<<"objectId">> => CategoryId, <<"__type">> => <<"Pointer">>, <<"className">> => <<"Category">>},
-                    <<"producttemplet">> => #{<<"objectId">> => Producttempid, <<"__type">> => <<"Pointer">>, <<"className">> => <<"ProductTemplet">>},
-                    <<"config">> => Config,
-                    <<"thing">> => #{},
-                    <<"productSecret">> => license_loader:random(),
-                    <<"dynamicReg">> => true}, SessionToken) of
-                    {_, #{<<"objectId">> := ProductId}} ->
-                        ProductId;
-                    _ ->
-                        dgiot_parse:get_productid(CategoryId, DevType, Name)
-                end,
-            lists:foldl(fun(ImageUrl, Acc) ->
-%%                <<"https://192.168.0.183:5094/wordServer/20211112142832/1.jpg">>
-                NewImageUrl = dgiot_utils:get_url_path(ImageUrl),
+    CategoryId = maps:get(<<"category">>, Config, <<"d6ad425529">>),
+    Producttempid = maps:get(<<"producttemplet">>, Config, <<"">>),
+    ProductParentId =
+        case dgiot_product:create_product(#{
+            <<"name">> => Name,
+            <<"devType">> => DevType,
+            <<"desc">> => <<"0">>,
+            <<"nodeType">> => 1,
+            <<"channel">> => #{<<"type">> => 1, <<"tdchannel">> => <<"24b9b4bc50">>, <<"taskchannel">> => <<"0edaeb918e">>, <<"otherchannel">> => [<<"11ed8ad9f2">>]},
+            <<"netType">> => <<"Evidence">>,
+            <<"category">> => #{<<"objectId">> => CategoryId, <<"__type">> => <<"Pointer">>, <<"className">> => <<"Category">>},
+            <<"producttemplet">> => #{<<"objectId">> => Producttempid, <<"__type">> => <<"Pointer">>, <<"className">> => <<"ProductTemplet">>},
+            <<"config">> => Config,
+            <<"thing">> => #{},
+            <<"productSecret">> => license_loader:random(),
+            <<"dynamicReg">> => true}, SessionToken) of
+            {_, #{<<"objectId">> := ProductId}} ->
+                ProductId;
+            _ ->
+                dgiot_parse:get_productid(CategoryId, DevType, Name)
+        end,
+    case dgiot_httpc:fileUpload(Uri ++ "/WordController/fileUpload", dgiot_utils:to_list(FullPath), Producttempid) of
+        {ok, #{<<"code">> := 0, <<"msg">> := <<"SUCCESS">>, <<"path">> := WordPath, <<"images">> := Images}} ->
+            lists:foldl(fun(Image, Acc) ->
+                #{<<"heigh">> := Heigh, <<"url">> := ImageUrl, <<"width">> := Width} = Image,
                 case binary:split(filename:basename(ImageUrl), <<$.>>, [global, trim]) of
                     [Index, _] ->
-                        Acc ++ [dgiot_evidence:create_report(ProductParentId, Config, Index, NewImageUrl, WordUrl, SessionToken)]
+                        Acc ++ [dgiot_evidence:create_report(ProductParentId, Config, Index, ImageUrl, Heigh, Width, WordPath, SessionToken)]
                 end
-                        end, [], List);
+                        end, [], Images);
         _Oth ->
             io:format("_Oth ~p~n", [_Oth]),
             []

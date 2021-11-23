@@ -211,7 +211,10 @@
                 "config": {
                   "description": "模版描述信息",
                   "type": "object",
-                  "example": {"name":"image0","identifier":"a28b138a-0f31-fe7d-cadc-0be47faf8a8d"}
+                  "example": {
+                    "name": "image0",
+                    "identifier": "a28b138a-0f31-fe7d-cadc-0be47faf8a8d"
+                  }
                 }
               }
             }
@@ -260,7 +263,10 @@
             "in": "formData",
             "description": "报告其他信息",
             "type": "object",
-            "example": {"client":"离心泵","identifier":"a28b138a-0f31-fe7d-cadc-0be47faf8a8d"}
+            "example": {
+              "client": "离心泵",
+              "identifier": "a28b138a-0f31-fe7d-cadc-0be47faf8a8d"
+            }
           },
           {
             "name": "file",
@@ -344,7 +350,11 @@
                 "basedata": {
                   "description": "报告描述信息",
                   "type": "object",
-                  "example": {"starttime":"1637251200000","endtime":"1637942400000","bedname":"南方泵业台体"}
+                  "example": {
+                    "starttime": "1637251200000",
+                    "endtime": "1637942400000",
+                    "bedname": "南方泵业台体"
+                  }
                 }
               }
             }
@@ -384,7 +394,7 @@
                 "path": {
                   "description": "文件路径",
                   "type": "string",
-                  "example":"/shapes/利欧泵业测试部/5a27bcd88f.zip"
+                  "example": "/shapes/利欧泵业测试部/5a27bcd88f.zip"
                 }
               }
             }
@@ -483,7 +493,7 @@
             "name": "id",
             "required": true,
             "type": "string",
-            "default":"IMAWAarmTP"
+            "default": "IMAWAarmTP"
           },
           {
             "description": "电子数据",
@@ -505,7 +515,11 @@
                 "original": {
                   "description": "原件",
                   "type": "object",
-                  "example": {"type":"image","controlid":"controlid", "taskid": "taskid"}
+                  "example": {
+                    "type": "image",
+                    "controlid": "controlid",
+                    "taskid": "taskid"
+                  }
                 },
                 "md5": {
                   "description": "校验码",
@@ -548,22 +562,22 @@
                 "reportId": {
                   "description": "报告Id",
                   "type": "string",
-                  "example":"d3f9a0a820"
+                  "example": "d3f9a0a820"
                 },
                 "type": {
                   "description": "批处理类型：single或者all",
                   "type": "string",
-                  "example":"single"
+                  "example": "single"
                 },
                 "objectId": {
                   "description": "书证号",
                   "type": "string",
-                  "example":"83f990a820"
+                  "example": "83f990a820"
                 },
                 "status": {
                   "description": "审核状态",
                   "type": "string",
-                  "example":"未审核",
+                  "example": "未审核",
                   "required": true
                 }
               }
@@ -754,12 +768,12 @@
                   "type": "number",
                   "example": 1
                 },
-                "begin":{
+                "begin": {
                   "description": "开始时间",
                   "type": "number",
                   "example": 1591609983
                 },
-                "end":{
+                "end": {
                   "description": "开始时间",
                   "type": "number",
                   "example": 1591609983
