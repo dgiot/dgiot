@@ -371,10 +371,11 @@ post_roleuser(#{<<"userid">> := UserId} = Body, SessionToken) ->
 
 del_roleuser(#{<<"userid">> := UserId} = Body, SessionToken) ->
     R1 =
-        case maps:is_key(<<"delfilter">>, Body) of
-            true ->
-                DelFilter = maps:get(<<"delfilter">>, Body),
-                case dgiot_parse:query_object(<<"_Role">>, DelFilter, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+        case maps:find(<<"filter">>, Body) of
+            error ->
+                [];
+            {ok, Filter} ->
+                case dgiot_parse:query_object(<<"_Role">>, jsx:decode(Filter, [{labels, binary}, return_maps]), [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
                     {ok, #{<<"results">> := DelRoles}} ->
                         lists:foldl(
                             fun(#{<<"objectId">> := RoleId}, Acc) ->
@@ -392,8 +393,7 @@ del_roleuser(#{<<"userid">> := UserId} = Body, SessionToken) ->
                                 Acc ++ [#{<<"del">> => R0}]
                             end, [], DelRoles);
                     _ -> []
-                end;
-            _ -> []
+                end
         end,
     {ok, #{<<"result">> => R1}}.
 
@@ -463,14 +463,14 @@ get_role(Name, SessionToken) ->
             Users =
                 case dgiot_parse:query_object(<<"_User">>, UsersQuery) of
                     {ok, #{<<"results">> := User}} when length(User) > 0 ->
-                       lists:foldl(fun(X,Acc)->
-                          case maps:get(<<"username">>,X) of
-                              <<"user_for_",_/binary>>->
-                                 Acc;
-                              _->
-                                  Acc++[X]
-                          end
-                                   end,[],User);
+                        lists:foldl(fun(X, Acc) ->
+                            case maps:get(<<"username">>, X) of
+                                <<"user_for_", _/binary>> ->
+                                    Acc;
+                                _ ->
+                                    Acc ++ [X]
+                            end
+                                    end, [], User);
                     _ -> []
                 end,
 %%            ?LOG(info,"Users ~p", [Users]),

@@ -38,7 +38,7 @@
     file_stat/0,
     list_dir/1,
     file_info/1,
-    create_report/6,
+    create_report/8,
     get_capture/1,
     get_report_package/6,
     post_data/2,
@@ -518,15 +518,14 @@ get_app(SessionToken) ->
         _ -> <<"">>
     end.
 
-create_report(ProductParentId, Config, Num, Imagurl, WordUrl, SessionToken) ->
-    NewNum = dgiot_utils:to_binary(dgiot_utils:to_int(Num) + 1),
+create_report(ProductParentId, Config, Num, Imagurl, Heigh, Width, WordUrl, SessionToken) ->
     NewConfig = maps:merge(Config, #{
         <<"icon">> => Imagurl,
         <<"konva">> => #{
             <<"Stage">> => #{
                 <<"attrs">> => #{
-                    <<"width">> => 595,
-                    <<"height">> => 842},
+                    <<"width">> => Width,
+                    <<"height">> => Heigh},
                 <<"className">> => <<"Stage">>,
                 <<"children">> => [#{
                     <<"attrs">> => #{
@@ -536,12 +535,12 @@ create_report(ProductParentId, Config, Num, Imagurl, WordUrl, SessionToken) ->
                         <<"attrs">> => #{
                             <<"id">> => <<"bg">>,
                             <<"type">> => <<"bg-image">>,
-                            <<"width">> => 595,
-                            <<"height">> => 842,
+                            <<"width">> => Width,
+                            <<"height">> => Heigh,
                             <<"src">> => Imagurl},
                         <<"className">> => <<"Image">>}]}]}}}),
     dgiot_parse:create_object(<<"View">>, #{
-        <<"title">> => NewNum,
+        <<"title">> => Num,
         <<"key">> => ProductParentId,
         <<"type">> => <<"topo">>,
         <<"class">> => <<"Product">>,

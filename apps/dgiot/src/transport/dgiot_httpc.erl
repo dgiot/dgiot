@@ -18,7 +18,7 @@
 -include_lib("dgiot/include/logger.hrl").
 -author("johnliu").
 -export([url_join/1, qs/1, urldecode/1, urlencode/1]).
--export([upload/2, download/2, get_category/2, get_categorys/0, fileUpload/2]).
+-export([upload/2, download/2, get_category/2, get_categorys/0, fileUpload/3]).
 
 -define(CRLF, "\r\n").
 upload(Url, Path) ->
@@ -51,29 +51,37 @@ upload(Url, Path) ->
             {error, Reason}
     end.
 
-fileUpload(Url, Path) ->
+fileUpload(Url, Path, Producttempid) ->
     case file:read_file(Path) of
         {ok, Stream} ->
             FileName = dgiot_utils:to_binary(filename:basename(Path)),
-            Boundary = <<"----WebKitFormBoundaryPs0yRvKAsnNnI4uA">>,
+            Boundary = <<"----WebKitFormBoundaryCEh4tVfSNDV7cY9B">>,
             Header = <<"--", Boundary/binary, "\r\n", "Content-Disposition: form-data;name=\"file\"; filename=\"", FileName/binary, "\"", "\r\n">>,
 
-            Tail = <<"--", Boundary/binary, "--", "\r\n", "\r\n">>,
+            FileBody = <<"Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document", "\r\n", "\r\n",
+                Stream/binary, "\r\n">>,
 
-            FileBody = <<Header/binary, "Content-Type: application/vnd.openxmlformats-officedocument.wordprocessingml.document", "\r\n", "\r\n",
-                Stream/binary, "\r\n", Tail/binary>>,
+            FilenameBody = <<"--", Boundary/binary, "\r\n", "Content-Disposition: form-data; name=\"filename\"", "\r\n", "\r\n", Producttempid/binary, "\r\n">>,
 
-            Body = <<FileBody/binary>>,
+            PathBody = <<"--", Boundary/binary, "\r\n", "Content-Disposition: form-data; name=\"path\"", "\r\n", "\r\n", "dgiot_file/product/topo", "\r\n">>,
+
+            Tail = <<"--", Boundary/binary, "--">>,
+
+            Body = <<Header/binary, FileBody/binary, FilenameBody/binary, PathBody/binary, Tail/binary>>,
+
             Size = byte_size(Body),
             ContentType = <<"multipart/form-data; boundary=", Boundary/binary>>,
+
             case httpc:request(post, {dgiot_utils:to_list(Url), [{"Content-Length", integer_to_list(Size)}], binary_to_list(ContentType), Body}, [], []) of
                 {ok, {{"HTTP/1.1", 200, "OK"}, _, Json}} ->
                     case jsx:decode(dgiot_utils:to_binary(Json), [{labels, binary}, return_maps]) of
-                        #{<<"content">> := _content} = Data ->
+                        #{<<"msg">> := <<"SUCCESS">>, <<"code">> := 0} = Data ->
                             {ok, Data};
-                        Error1 -> Error1
+                        Error1 ->
+                            Error1
                     end;
-                Error -> Error
+                Error ->
+                    Error
             end;
         {error, Reason} ->
             ?LOG(info, "Reason ~p ", [Reason]),
