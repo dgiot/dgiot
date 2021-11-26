@@ -179,11 +179,16 @@ handle(post_user, #{<<"username">> := _UserName, <<"password">> := _Password} = 
 
 handle(delete_user, #{<<"username">> := _UserName} = Body, #{<<"sessionToken">> := SessionToken}, _Req) ->
     ?LOG(info, "Body ~p", [Body]),
-    case delete_user(Body, SessionToken) of
-        {ok, Data} ->
-            dgiot_parse:load_role(),
-            {200, Data};
-        {error, Error} -> {error, Error}
+    case _UserName of
+        <<"dgiot_admin">> ->
+            {ok, #{<<"code">> => 401, <<"msg">> => <<"dgiot_admin PROHIBITED DELETE">>}};
+        _ ->
+            case delete_user(Body, SessionToken) of
+                {ok, Data} ->
+                    dgiot_parse:load_role(),
+                    {200, Data};
+                {error, Error} -> {error, Error}
+            end
     end;
 
 handle(put_user, #{<<"username">> := _UserName} = Body, #{<<"sessionToken">> := SessionToken}, _Req) ->
@@ -596,7 +601,15 @@ create_user(#{<<"username">> := UserName, <<"department">> := RoleId} = Body, Se
                                     <<"read">> => true,
                                     <<"write">> => true
                                 }},
-                                <<"emailVerified">> => true}),
+                                <<"emailVerified">> => true,
+                                <<"roles">> => #{
+                                    <<"__op">> => <<"AddRelation">>,
+                                    <<"objects">> => [#{
+                                        <<"__type">> => <<"Pointer">>,
+                                        <<"className">> => <<"_Role">>,
+                                        <<"objectId">> => RoleId
+                                    }]
+                                }}),
                             dgiot_parse:update_object(<<"_Role">>, RoleId, #{
                                 <<"users">> => #{
                                     <<"__op">> => <<"AddRelation">>,

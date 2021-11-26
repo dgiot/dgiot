@@ -27,7 +27,8 @@
     get_ukey/0,
     signData/1,
     verifySignData/3,
-    readCert/0
+    readCert/0,
+    update_view/5
 ]).
 
 -export([
@@ -612,4 +613,85 @@ get_capture(#{<<"productid">> := ProductId, <<"topoid">> := TopoId, <<"thingid">
             end;
         Return ->
             Return
+    end.
+
+update_view(Index, ImageUrl, Heigh, Width, TaskId) ->
+    Viewid = dgiot_parse:get_viewid(TaskId, <<"topo">>, <<"Device">>, Index),
+    case dgiot_parse:get_object(<<"View">>, Viewid) of
+        {ok, #{<<"data">> := #{<<"konva">> := Konva} = Data}} ->
+            NewKonva = update_bgimage(Konva, ImageUrl, Heigh, Width),
+            #{
+                <<"method">> => <<"PUT">>,
+                <<"path">> => <<"/classes/View">>,
+                <<"body">> => #{
+                    <<"objectId">> => Viewid,
+                    <<"data">> => Data#{
+                        <<"icon">> => ImageUrl,
+                        <<"konva">> => NewKonva
+                    }}
+            };
+        _ ->
+            Data = #{
+                <<"icon">> => ImageUrl,
+                <<"konva">> => #{
+                    <<"Stage">> => #{
+                        <<"attrs">> => #{
+                            <<"width">> => Width,
+                            <<"height">> => Heigh},
+                        <<"className">> => <<"Stage">>,
+                        <<"children">> => [#{
+                            <<"attrs">> => #{
+                                <<"id">> => <<"Layer_Thing">>},
+                            <<"className">> => <<"Layer">>,
+                            <<"children">> => [#{
+                                <<"attrs">> => #{
+                                    <<"id">> => <<"bg">>,
+                                    <<"type">> => <<"bg-image">>,
+                                    <<"width">> => Width,
+                                    <<"height">> => Heigh,
+                                    <<"src">> => ImageUrl},
+                                <<"className">> => <<"Image">>}]}]}}},
+            #{<<"method">> => <<"POST">>,
+                <<"path">> => <<"/classes/View">>,
+                <<"body">> => #{
+                    <<"objectId">> => Viewid,
+                    <<"title">> => Index,
+                    <<"key">> => TaskId,
+                    <<"type">> => <<"topo">>,
+                    <<"class">> => <<"Device">>,
+                    <<"data">> => Data}
+            }
+    end.
+
+update_bgimage(#{<<"Stage">> := #{<<"children">> := Children} = Stage} = Konva, ImageUrl, Heigh, Width) ->
+    NewChildren = get_children(Children, ImageUrl, Heigh, Width),
+    Konva#{<<"Stage">> => Stage#{<<"children">> := NewChildren}}.
+
+get_children(Children, ImageUrl, Heigh, Width) ->
+    lists:foldl(fun(X, Acc) ->
+        #{<<"attrs">> := Attrs, <<"className">> := ClassName} = X,
+        X1 = get_attrs(Attrs, ImageUrl, Heigh, Width, ClassName, X),
+        X2 =
+            case maps:find(<<"children">>, X1) of
+                error ->
+                    X1;
+                {ok, SubChildren} ->
+                    X1#{<<"children">> => get_children(SubChildren, ImageUrl, Heigh, Width)}
+            end,
+        Acc ++ [X2]
+                end, [], Children).
+
+get_attrs(Attrs, ImageUrl, Heigh, Width, ClassName, X) ->
+    case ClassName of
+        <<"Image">> ->
+            case maps:find(<<"type">>, Attrs) of
+                error ->
+                    X;
+                {ok, <<"bg-image">>} ->
+                    X#{<<"attrs">> => Attrs#{<<"src">> => ImageUrl, <<"width">> => Width, <<"height">> => Heigh}};
+                _ ->
+                    X
+            end;
+        _ ->
+            X
     end.

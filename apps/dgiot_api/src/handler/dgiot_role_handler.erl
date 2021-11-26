@@ -98,9 +98,13 @@ do_request(delete_role, #{<<"name">> := _Name, <<"tempname">> := _TempName} = Bo
 %% Role模版 概要: 导库 描述:json文件导库
 %% OperationId:post_role
 %% 请求:POST /iotapi/role
-do_request(put_role, Body, #{<<"sessionToken">> := SessionToken} = _Context, _Req0) ->
+do_request(put_role, #{<<"menus">> := Menus, <<"rules">> := Rules} = Body, #{<<"sessionToken">> := SessionToken} = _Context, _Req0) when length(Menus) > 0 andalso length(Rules) > 0 ->
     ?LOG(debug, "Body ~p ", [Body]),
     dgiot_role:put_role(Body, SessionToken);
+
+do_request(put_role, _Body, #{<<"sessionToken">> := _SessionToken} = _Context, _Req0) ->
+    ?LOG(debug, "Body ~p ", [_Body]),
+    {ok, #{<<"code">> => 401, <<"msg">> => <<"Menus or Rules is empty">>}};
 
 %% Role 概要: 导库 描述:json文件导库
 %% OperationId:get_role
@@ -118,16 +122,30 @@ do_request(get_roleuser, #{<<"where">> := Where} = Filter, #{<<"sessionToken">> 
 %% Role模版 概要: 导库 描述:json文件导库
 %% OperationId:put_roleuser
 %% 请求:POST /iotapi/roleuser
-do_request(put_roleuser, Body, #{<<"sessionToken">> := SessionToken} = _Context, _Req0) ->
-    ?LOG(debug, "Body ~p ", [Body]),
-    dgiot_role:put_roleuser(Body, SessionToken);
+do_request(put_roleuser, #{<<"userid">> := UserId} = Body, #{<<"sessionToken">> := SessionToken} = _Context, _Req0) ->
+%%    ?LOG(debug, "Body ~p ", [Body]),
+    case UserId of
+        <<"Klht7ERlYn">> ->
+            {ok, #{<<"code">> => 401, <<"result">> => <<"dgiot_admin Cannot be transferred">>}};
+        <<"lerYRy2jsh">> ->
+            {ok, #{<<"code">> => 401, <<"result">> => <<"dgiot_admin Cannot be transferred">>}};
+        _ ->
+            dgiot_role:put_roleuser(Body, SessionToken)
+    end;
 
 %% Role模版 概要: 导库 描述:json文件导库
 %% OperationId:delete_roleuser
 %% 请求:POST /iotapi/roleuser
-do_request(delete_roleuser, Body, #{<<"sessionToken">> := SessionToken} = _Context, _Req0) ->
+do_request(delete_roleuser, #{<<"userid">> := UserId} = Body, #{<<"sessionToken">> := SessionToken} = _Context, _Req0) ->
 %%    io:format("Body ~p~n", [Body]),
-    dgiot_role:del_roleuser(Body, SessionToken);
+    case UserId of
+        <<"Klht7ERlYn">> ->
+            {ok, #{<<"code">> => 401, <<"result">> => <<"dgiot_admin Cannot be Resignation">>}};
+        <<"lerYRy2jsh">> ->
+            {ok, #{<<"code">> => 401, <<"result">> => <<"dgiot_admin Cannot be Resignation">>}};
+        _ ->
+            dgiot_role:del_roleuser(Body, SessionToken)
+    end;
 
 %% Role模版 概要: 导库 描述:json文件导库
 %% OperationId:delete_roleuser

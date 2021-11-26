@@ -121,6 +121,7 @@ handle_init(#state{env = #{productids := ProductIds}} = State) ->
 handle_event(EventId, Event, _State) ->
     ?LOG(info, "channel ~p, ~p", [EventId, Event]),
     ok.
+
 handle_message({sync_parse, Args}, State) ->
 %%    io:format("Args ~p~n", [jsx:decode(Args, [{labels, binary}, return_maps])]),
     case jsx:decode(Args, [{labels, binary}, return_maps]) of
@@ -152,8 +153,6 @@ handle_message({sync_parse, Args}, State) ->
                         lists:foldl(fun(View, Acc) ->
                             NewDict = maps:without([<<"createdAt">>, <<"objectId">>, <<"updatedAt">>], View),
                             Type = maps:get(<<"type">>, View, <<"">>),
-
-
                             Title = maps:get(<<"title">>, View, <<"">>),
                             DictId = dgiot_parse:get_viewid(ObjectId, Type, <<"Product">>, Title),
                             Acc ++ [#{

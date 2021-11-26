@@ -63,7 +63,7 @@ fileUpload(Url, Path, Producttempid) ->
 
             FilenameBody = <<"--", Boundary/binary, "\r\n", "Content-Disposition: form-data; name=\"filename\"", "\r\n", "\r\n", Producttempid/binary, "\r\n">>,
 
-            PathBody = <<"--", Boundary/binary, "\r\n", "Content-Disposition: form-data; name=\"path\"", "\r\n", "\r\n", "dgiot_file/product/topo", "\r\n">>,
+            PathBody = <<"--", Boundary/binary, "\r\n", "Content-Disposition: form-data; name=\"path\"", "\r\n", "\r\n", "dgiot_file/product/topo/", Producttempid/binary, "\r\n">>,
 
             Tail = <<"--", Boundary/binary, "--">>,
 

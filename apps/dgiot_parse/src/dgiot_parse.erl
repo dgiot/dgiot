@@ -150,9 +150,9 @@ get_dictid(Key, Type, Class, Title) ->
         dgiot_parse:get_objectid(<<"Dict">>, #{<<"key">> => Key, <<"type">> => Type, <<"class">> => Class, <<"title">> => Title}),
     DeviceId.
 
-get_viewid(Key, Type, Class,Title) ->
+get_viewid(Key, Type, Class, Title) ->
     #{<<"objectId">> := DeviceId} =
-        dgiot_parse:get_objectid(<<"View">>, #{<<"key">> => Key, <<"type">> => Type, <<"class">> => Class,<<"title">> => Title}),
+        dgiot_parse:get_objectid(<<"View">>, #{<<"key">> => Key, <<"type">> => Type, <<"class">> => Class, <<"title">> => Title}),
     DeviceId.
 
 get_deviceid(ProductId, DevAddr) ->
@@ -319,7 +319,7 @@ get_objectid(Class, Map) ->
             Type = maps:get(<<"type">>, Map, <<"">>),
             Class1 = maps:get(<<"class">>, Map, <<"">>),
             Title = maps:get(<<"title">>, Map, <<"">>),
-            <<DId:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Dict", Class1/binary, Key/binary, Type/binary,Title/binary>>),
+            <<DId:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Dict", Class1/binary, Key/binary, Type/binary, Title/binary>>),
             Map#{
                 <<"objectId">> => DId
             };
@@ -330,7 +330,7 @@ get_objectid(Class, Map) ->
             Type = maps:get(<<"type">>, Map, <<"">>),
             Class2 = maps:get(<<"class">>, Map, <<"">>),
             Title = maps:get(<<"title">>, Map, <<"">>),
-            <<VId:10/binary, _/binary>> = dgiot_utils:to_md5(<<"View", Class2/binary, Key/binary, Type/binary,Title/binary>>),
+            <<VId:10/binary, _/binary>> = dgiot_utils:to_md5(<<"View", Class2/binary, Key/binary, Type/binary, Title/binary>>),
             Map#{
                 <<"objectId">> => VId
             };
