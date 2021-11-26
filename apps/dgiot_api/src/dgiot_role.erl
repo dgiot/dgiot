@@ -107,11 +107,11 @@ put_role(#{<<"objectId">> := RoleId} = Role, SessionToken) ->
                     {error, #{<<"msg">> => <<"role is not exist">>}};
                 {ok, #{<<"objectId">> := RoleId}} ->
                     NewRole = #{
-                        <<"users">> => dgiot_role:get_users_role(maps:get(<<"users">>, Role, [])),
+%%                        <<"users">> => dgiot_role:get_users_role(maps:get(<<"users">>, Role, [])),
                         <<"menus">> => dgiot_role:get_menus_role(maps:get(<<"menus">>, Role, [])),
                         <<"rules">> => dgiot_role:get_rules_role(maps:get(<<"rules">>, Role, []))
                     },
-                    dgiot_role:remove_users_roles(RoleId),
+%%                    dgiot_role:remove_users_roles(RoleId),
                     dgiot_role:remove_menus_role(RoleId),
                     dgiot_role:remove_rules_role(RoleId),
                     case dgiot_parse:update_object(<<"_Role">>, RoleId, NewRole) of

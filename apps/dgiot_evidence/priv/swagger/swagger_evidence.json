@@ -345,9 +345,14 @@
                 "product": {
                   "description": "报告模板id",
                   "type": "string",
-                  "example": "6c7347b2d1"
+                  "example": "9fa3bba25a"
                 },
-                "basedata": {
+                "parentId": {
+                  "description": "台体id",
+                  "type": "string",
+                  "example": "3448b83c11"
+                },
+                "profile": {
                   "description": "报告描述信息",
                   "type": "object",
                   "example": {
@@ -967,6 +972,42 @@
         },
         "tags": [
           "Data"
+        ]
+      }
+    },
+    "/generatereport": {
+      "post": {
+        "summary": "生成报告",
+        "description": "生成报告",
+        "parameters": [
+          {
+            "description": "任务ID",
+            "in": "query",
+            "name": "id",
+            "default": "7613908c4c",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "consumes": [
+          "*"
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Evidence"
         ]
       }
     }

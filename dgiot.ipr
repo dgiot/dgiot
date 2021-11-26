@@ -18,6 +18,19 @@
     <profile version="1.0">
       <option name="myName" value="Project Default" />
       <inspection_tool class="ErlangIncludeDirectories" enabled="false" level="WARNING" enabled_by_default="false" />
+      <inspection_tool class="PyUnresolvedReferencesInspection" enabled="true" level="WARNING" enabled_by_default="true">
+        <option name="ignoredIdentifiers">
+          <list>
+            <option value="apps.dgiot_grpc.priv.example.python3.demo.emqx" />
+            <option value="apps.dgiot_grpc.priv.example.python3.demo.print" />
+            <option value="apps.dgiot_grpc.priv.example.python3.demo.bytes" />
+            <option value="apps.dgiot_grpc.priv.example.python3.demo.any" />
+            <option value="apps.dgiot_grpc.priv.example.python3.demo.str" />
+            <option value="apps.dgiot_grpc.priv.example.python3.demo.list" />
+            <option value="apps.dgiot_grpc.priv.example.python3.demo.driver" />
+          </list>
+        </option>
+      </inspection_tool>
     </profile>
     <version value="1.0" />
   </component>

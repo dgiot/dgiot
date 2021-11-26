@@ -136,7 +136,7 @@ do_request(post_testpaper, #{<<"productid">> := Productid, <<"file">> := FileInf
     {ok, get_paper(Productid, FileInfo)};
 
 %% evidence 概要: 增加取证报告模版 描述:新增取证报告模版
-%% OperationId:post_reporttemp
+%% OperationId:put_reporttemp
 %% 请求:put /iotapi/reporttemp
 do_request(put_reporttemp, #{<<"nodeType">> := _NodeType, <<"devType">> := _DevType} = Body,
     #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
@@ -169,6 +169,132 @@ do_request(post_reporttemp, #{<<"name">> := Name, <<"devType">> := DevType, <<"c
         Error -> Error
     end;
 
+%% DB 概要: 生成报告 描述:生成报告
+%% OperationId:generatereport
+%% 请求:POST /iotapi/generatereport
+do_request(post_generatereport, #{<<"id">> := TaskId}, #{<<"sessionToken">> := _SessionToken} = _Context, #{headers := #{<<"origin">> := Uri}} = _Req) ->
+    case dgiot_parse:get_object(<<"Device">>, TaskId) of
+        {ok, #{<<"name">> := TaskName, <<"basedata">> := Basedata, <<"profile">> := #{<<"reporttemp">> := Reporttemp} = Profile,
+            <<"product">> := #{<<"__type">> := <<"Pointer">>, <<"className">> := <<"Product">>, <<"objectId">> := ProductId},
+            <<"parentId">> := #{<<"__type">> := <<"Pointer">>, <<"className">> := <<"Device">>, <<"objectId">> := _ParentId}
+        }} ->
+            DictId = dgiot_parse:get_dictid(ProductId, <<"word">>, <<"Product">>, <<"worddict">>),
+            case dgiot_parse:get_object(<<"Dict">>, DictId) of
+                {ok, #{<<"data">> := #{<<"params">> := Params}}} ->
+                    Worddatas =
+                        lists:foldl(fun(Param, Acc) ->
+                            Sources = maps:get(<<"sources">>, Param, <<"">>),
+                            Type = maps:get(<<"type">>, Param, <<"">>),
+                            Identifier = maps:get(<<"identifier">>, Param, <<"">>),
+                            Row = maps:get(<<"row">>, Param, 1),
+                            Column = maps:get(<<"column">>, Param, 1),
+                            Value = maps:get(Identifier, Basedata, <<"">>),
+                            case Sources of
+                                <<"amis">> ->
+                                    case Type of
+                                        <<"text">> ->
+                                            Acc ++ [#{
+                                                <<"type">> => <<"text">>,
+                                                <<"source">> => Sources,
+                                                <<"name">> => Identifier,
+                                                <<"value">> => Value}];
+                                        <<"image">> ->
+                                            Acc ++ [#{
+                                                <<"type">> => <<"image">>,
+                                                <<"source">> => Sources,
+                                                <<"name">> => Identifier,
+                                                <<"url">> => Value,
+                                                <<"width">> => 600,
+                                                <<"height">> => 330
+                                            }];
+                                        _ ->
+                                            Acc
+                                    end;
+                                _ ->
+                                    case Type of
+                                        <<"text">> ->
+                                            Acc ++ [#{
+                                                <<"type">> => <<"text">>,
+                                                <<"source">> => Sources,
+                                                <<"name">> => Identifier,
+                                                <<"value">> => Value}];
+                                        <<"dynamicTable">> ->
+                                            Tabledata = [
+                                                <<"10,0,0.784,12.593,2850,0,0.107162,0,12.593,0.784,0">>,
+                                                <<"9,2.11,0.882,11.706,2850,0,0.098424,2.11,11.706,0.882,7.64">>,
+                                                <<"8,4.15,0.882,11.127,2850,0,0.092627,4.15,11.127,0.882,14.29">>,
+                                                <<"7,6.22,0.98,10.607,2850,0,0.087323,6.22,10.607,0.98,18.38">>,
+                                                <<"6,8.02,1.078,10.187,2850,0,0.082954,8.02,10.187,1.078,20.69">>,
+                                                <<"5,10.04,1.078,9.537,2850,0,0.076222,10.04,9.537,1.078,24.25">>,
+                                                <<"4,11.88,1.176,8.813,2850,0,0.068725,11.88,8.813,1.176,24.3">>,
+                                                <<"3,13.93,1.176,7.745,2850,0,0.057743,13.93,7.745,1.176,25.05">>,
+                                                <<"2,15.92,1.176,6.558,2850,0,0.04552,15.92,6.558,1.176,24.24">>,
+                                                <<"1,21.33,1.196,4.021,2850,0,0.01866,21.33,4.021,1.196,19.59">>],
+                                            Acc ++ [#{
+                                                <<"type">> => <<"dynamicTable">>,
+                                                <<"source">> => Sources,
+                                                <<"tablerow">> => Row,
+                                                <<"tablecolumn">> => Column,
+                                                <<"name">> => Identifier,
+                                                <<"data">> => Tabledata
+                                            }];
+                                        <<"image">> ->
+                                            PythonBody = #{<<"name">> => <<TaskId/binary, ".png">>, <<"path">> => <<"/data/dgiot/go_fastdfs/files/dgiot_file/pump_pytoh/">>},
+                                            Imagepath = base64:decode(os:cmd("python3 /data/dgiot/dgiot/lib/dgiot_evidence-4.3.0/priv/python/drawxnqx.py " ++ dgiot_utils:to_list(base64:encode(jsx:encode(PythonBody))))),
+                                            Repath = re:replace(dgiot_utils:to_list(Imagepath), "/data/dgiot/go_fastdfs/files", "", [global, {return, binary}, unicode]),
+                                            Acc ++ [#{
+                                                <<"type">> => <<"image">>,
+                                                <<"source">> => Sources,
+                                                <<"name">> => Identifier,
+                                                <<"url">> => <<Uri/binary, Repath/binary>>,
+                                                <<"width">> => 600,
+                                                <<"height">> => 330
+                                            }];
+                                        _ ->
+                                            Acc
+                                    end
+                            end
+                                    end, [], Params),
+                    Body = #{
+                        <<"datas">> => Worddatas,
+                        <<"templateUrl">> => <<Uri/binary, Reporttemp/binary>>,
+                        <<"wordName">> => TaskName,
+                        <<"path">> => <<"dgiot_file/device/topo/", TaskId/binary>>
+                    },
+%%                    (post, {dgiot_utils:to_list(Url), [{"Content-Length", integer_to_list(Size)}], binary_to_list(ContentType), Body}, [], []),
+                    StrUri = dgiot_utils:to_list(Uri),
+                    Url = StrUri ++ "/WordController/replaceWord",
+                    case httpc:request(post, {Url, [], "application/json", jsx:encode(Body)}, [], []) of
+                        {ok, {{"HTTP/1.1", 200, "OK"}, _, Json}} ->
+                            case jsx:decode(dgiot_utils:to_binary(Json), [{labels, binary}, return_maps]) of
+                                #{<<"code">> := 0, <<"msg">> := <<"SUCCESS">>, <<"path">> := WordPath} = Data ->
+                                    Images = maps:get(<<"images">>, Data, []),
+                                    ViewRequests =
+                                        lists:foldl(fun(Image, Acc) ->
+                                            #{<<"heigh">> := Heigh, <<"url">> := ImageUrl, <<"width">> := Width} = Image,
+                                            case binary:split(filename:basename(ImageUrl), <<$.>>, [global, trim]) of
+                                                [Index, _] ->
+                                                    Acc ++ [dgiot_evidence:update_view(Index, ImageUrl, Heigh, Width, TaskId)];
+                                                _ ->
+                                                    Acc
+                                            end
+                                                    end, [], Images),
+                                    dgiot_parse:batch(ViewRequests),
+                                    dgiot_parse:update_object(<<"Device">>, TaskId, #{<<"profile">> => Profile#{<<"generatedreport">> => WordPath, <<"generatedtime">> => dgiot_datetime:now_secs()}}),
+                                    {ok, maps:without([<<"images">>], Data)};
+                                Error1 ->
+                                    Error1
+                            end;
+                        Error ->
+                            Error
+                    end;
+                _Oth ->
+                    _Oth
+            end;
+        _Oth1 ->
+            _Oth1
+    end;
+
 %% evidence 概要: 增加取证报告 描述:新增取证报告
 %% OperationId:get_report
 %% 请求:GET /iotapi/report
@@ -180,7 +306,7 @@ do_request(get_report, #{<<"id">> := Id} = Body, #{<<"sessionToken">> := Session
 %% OperationId:post_report
 %% 请求:POST /iotapi/report
 do_request(post_report, #{<<"name">> := _Name, <<"product">> := _ProductId,
-    <<"basedata">> := _Basedata} = Body, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
+    <<"profile">> := _Profile} = Body, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
 %%    ?LOG(info, "Body ~p ", [Body]),
     post_report(Body, SessionToken);
 
@@ -252,34 +378,34 @@ do_request(_OperationId, _Args, _Context, _Req) ->
 do_report(Config, DevType, Name, SessionToken, FullPath, Uri) ->
     CategoryId = maps:get(<<"category">>, Config, <<"d6ad425529">>),
     Producttempid = maps:get(<<"producttemplet">>, Config, <<"">>),
-    ProductParentId =
-        case dgiot_product:create_product(#{
-            <<"name">> => Name,
-            <<"devType">> => DevType,
-            <<"desc">> => <<"0">>,
-            <<"nodeType">> => 1,
-            <<"channel">> => #{<<"type">> => 1, <<"tdchannel">> => <<"24b9b4bc50">>, <<"taskchannel">> => <<"0edaeb918e">>, <<"otherchannel">> => [<<"11ed8ad9f2">>]},
-            <<"netType">> => <<"Evidence">>,
-            <<"category">> => #{<<"objectId">> => CategoryId, <<"__type">> => <<"Pointer">>, <<"className">> => <<"Category">>},
-            <<"producttemplet">> => #{<<"objectId">> => Producttempid, <<"__type">> => <<"Pointer">>, <<"className">> => <<"ProductTemplet">>},
-            <<"config">> => Config,
-            <<"thing">> => #{},
-            <<"productSecret">> => license_loader:random(),
-            <<"dynamicReg">> => true}, SessionToken) of
-            {_, #{<<"objectId">> := ProductId}} ->
-                ProductId;
-            _ ->
-                dgiot_parse:get_productid(CategoryId, DevType, Name)
-        end,
     case dgiot_httpc:fileUpload(Uri ++ "/WordController/fileUpload", dgiot_utils:to_list(FullPath), Producttempid) of
         {ok, #{<<"code">> := 0, <<"msg">> := <<"SUCCESS">>, <<"path">> := WordPath, <<"images">> := Images}} ->
-            lists:foldl(fun(Image, Acc) ->
-                #{<<"heigh">> := Heigh, <<"url">> := ImageUrl, <<"width">> := Width} = Image,
-                case binary:split(filename:basename(ImageUrl), <<$.>>, [global, trim]) of
-                    [Index, _] ->
-                        Acc ++ [dgiot_evidence:create_report(ProductParentId, Config, Index, ImageUrl, Heigh, Width, WordPath, SessionToken)]
-                end
-                        end, [], Images);
+            case dgiot_product:create_product(#{
+                <<"name">> => Name,
+                <<"devType">> => DevType,
+                <<"desc">> => <<"0">>,
+                <<"nodeType">> => 1,
+                <<"channel">> => #{<<"type">> => 1, <<"tdchannel">> => <<"24b9b4bc50">>, <<"taskchannel">> => <<"0edaeb918e">>, <<"otherchannel">> => [<<"11ed8ad9f2">>]},
+                <<"netType">> => <<"Evidence">>,
+                <<"category">> => #{<<"objectId">> => CategoryId, <<"__type">> => <<"Pointer">>, <<"className">> => <<"Category">>},
+                <<"producttemplet">> => #{<<"objectId">> => Producttempid, <<"__type">> => <<"Pointer">>, <<"className">> => <<"ProductTemplet">>},
+                <<"config">> => Config#{<<"reporttemp">> => WordPath},
+                <<"thing">> => #{},
+                <<"productSecret">> => license_loader:random(),
+                <<"dynamicReg">> => true}, SessionToken) of
+                {_, #{<<"objectId">> := ProductId}} ->
+                    lists:foldl(fun(Image, Acc) ->
+                        #{<<"heigh">> := Heigh, <<"url">> := ImageUrl, <<"width">> := Width} = Image,
+                        case binary:split(filename:basename(ImageUrl), <<$.>>, [global, trim]) of
+                            [Index, _] ->
+                                Acc ++ [dgiot_evidence:create_report(ProductId, Config, Index, ImageUrl, Heigh, Width, WordPath, SessionToken)];
+                            _ ->
+                                Acc
+                        end
+                                end, [], Images);
+                _ ->
+                    []
+            end;
         _Oth ->
             io:format("_Oth ~p~n", [_Oth]),
             []
@@ -699,9 +825,10 @@ get_report(Id, SessionToken) ->
         Error -> Error
     end.
 
-post_report(#{<<"name">> := Name, <<"product">> := ProductId, <<"basedata">> := Basedata}, SessionToken) ->
+post_report(#{<<"name">> := Name, <<"product">> := ProductId, <<"parentId">> := ParentId, <<"profile">> := Profile}, SessionToken) ->
     case dgiot_parse:get_object(<<"Product">>, ProductId, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
-        {ok, #{<<"ACL">> := Acl, <<"objectId">> := ProductId}} ->
+        {ok, #{<<"ACL">> := Acl, <<"objectId">> := ProductId, <<"config">> := Config}} ->
+            WordPath = maps:get(<<"reporttemp">>, Config, <<"">>),
             case dgiot_parse:query_object(<<"Device">>, #{<<"where">> => #{<<"name">> => Name, <<"product">> => ProductId}},
                 [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
                 {ok, #{<<"results">> := Results}} when length(Results) == 0 ->
@@ -710,23 +837,32 @@ post_report(#{<<"name">> := Name, <<"product">> := ProductId, <<"basedata">> := 
                         dgiot_device:create_device(#{
                             <<"devaddr">> => DtuAddr,
                             <<"name">> => Name,
-                            <<"ip">> => <<"">>,
                             <<"product">> => ProductId,
                             <<"ACL">> => Acl,
                             <<"status">> => <<"ONLINE">>,
                             <<"brand">> => <<"数蛙桌面采集网关"/utf8>>,
                             <<"devModel">> => <<"SW_WIN_CAPTURE">>,
-                            <<"basedata">> => Basedata
+                            <<"basedata">> => #{},
+                            <<"profile">> => Profile#{<<"reporttemp">> => WordPath},
+                            <<"parentId">> => #{
+                                <<"__type">> => <<"Pointer">>,
+                                <<"className">> => <<"Device">>,
+                                <<"objectId">> => ParentId
+                            }
                         }),
                     case dgiot_parse:query_object(<<"View">>, #{<<"where">> => #{<<"key">> => ProductId, <<"class">> => <<"Product">>}}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
                         {ok, #{<<"results">> := Views}} ->
                             ViewRequests =
                                 lists:foldl(fun(View, Acc) ->
-                                    NewDict = maps:without([<<"createdAt">>, <<"objectId">>, <<"updatedAt">>], View),
+                                    NewView = maps:without([<<"createdAt">>, <<"objectId">>, <<"updatedAt">>], View),
+                                    Type = maps:get(<<"type">>, View, <<"">>),
+                                    Title = maps:get(<<"title">>, View, <<"">>),
+                                    Viewid = dgiot_parse:get_viewid(DeviceId, Type, <<"Device">>, Title),
                                     Acc ++ [#{
                                         <<"method">> => <<"POST">>,
                                         <<"path">> => <<"/classes/View">>,
-                                        <<"body">> => NewDict#{
+                                        <<"body">> => NewView#{
+                                            <<"objectId">> => Viewid,
                                             <<"key">> => DeviceId,
                                             <<"class">> => <<"Device">>}
                                     }]
