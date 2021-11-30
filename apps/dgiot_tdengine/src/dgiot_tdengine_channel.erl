@@ -187,12 +187,13 @@ init(?TYPE, ChannelId, Config) ->
     Specs = [
         {dgiot_dcache, {dgiot_dcache, start_link, Opts}, permanent, 5000, worker, [dgiot_dcache]}
     ],
-    dgiot_metrics:dec(dgiot_tdengine,<<"tdengine">>,1000),
+    dgiot_metrics:dec(dgiot_tdengine, <<"tdengine">>, 1000),
     {ok, State, Specs}.
 
 handle_init(State) ->
-    dgiot_metrics:inc(dgiot_tdengine,<<"tdengine">>,1),
+    dgiot_metrics:inc(dgiot_tdengine, <<"tdengine">>, 1),
     erlang:send_after(5000, self(), init),
+    dgiot_parse:subscribe(<<"product_id">>, delete),
     {ok, State}.
 
 %% 通道消息处理,注意：进程池调用
@@ -203,6 +204,44 @@ handle_event(full, _From, #state{id = Channel}) ->
 handle_event(EventType, Event, _State) ->
     ?LOG(info, "channel ~p, ~p", [EventType, Event]),
     ok.
+
+handle_message({sync_parse, Args}, State) ->
+%%    io:format("ProductArgs ~p~n", [jsx:decode(Args, [{labels, binary}, return_maps])]),
+    case jsx:decode(Args, [return_maps]) of
+        #{<<"objectId">> := ProductId} ->
+            case dgiot_parse:query_object(<<"Dict">>, #{<<"where">> => #{<<"key">> => ProductId, <<"class">> => <<"Product">>}}) of
+                {ok, #{<<"results">> := Dicts}} ->
+                    DictRequests =
+                        lists:foldl(fun(#{<<"objectId">> := DictId}, Acc) ->
+                            Acc ++ [#{
+                                <<"method">> => <<"DELETE">>,
+                                <<"path">> => <<"/classes/Dict/", DictId/binary>>,
+                                <<"body">> => #{}
+                            }]
+                                    end, [], Dicts),
+                    dgiot_parse:batch(DictRequests);
+                _ ->
+                    pass
+            end,
+            case dgiot_parse:query_object(<<"View">>, #{<<"where">> => #{<<"key">> => ProductId, <<"class">> => <<"Product">>}}) of
+                {ok, #{<<"results">> := Views}} ->
+                    ViewRequests =
+                        lists:foldl(fun(#{<<"objectId">> := ViewId}, Acc) ->
+                            Acc ++ [#{
+                                <<"method">> => <<"DELETE">>,
+                                <<"path">> => <<"/classes/View/", ViewId/binary>>,
+                                <<"body">> => #{}
+                            }]
+                                    end, [], Views),
+                    io:format("ViewRequests ~p~n", [ViewRequests]),
+                    dgiot_parse:batch(ViewRequests);
+                _ ->
+                    pass
+            end;
+        _ ->
+            pass
+    end,
+    {ok, State};
 
 %% 规则引擎导入
 handle_message({rule, Msg, Context}, State) ->
@@ -225,7 +264,7 @@ handle_message(init, #state{id = ChannelId, env = Config} = State) ->
 
 %% 数据与产品，设备地址分离
 handle_message({data, Product, DevAddr, Data, Context}, State) ->
-    dgiot_metrics:inc(dgiot_tdengine,<<"tdengine_recv">>,1),
+    dgiot_metrics:inc(dgiot_tdengine, <<"tdengine_recv">>, 1),
     case catch do_save([Product, DevAddr, Data, Context], State) of
         {Err, Reason} when Err == error; Err == 'EXIT' ->
             ?LOG(error, "Save to Tdengine error, ~p, ~p", [Data, Reason]),

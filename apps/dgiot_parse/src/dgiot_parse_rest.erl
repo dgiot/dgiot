@@ -26,7 +26,7 @@
 
 
 %% API
--export([request/5, method/1, method/2]).
+-export([request/5, method/1, method/2, do_hook/2]).
 
 %%%===================================================================
 %%% API
