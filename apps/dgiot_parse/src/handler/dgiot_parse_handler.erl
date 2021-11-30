@@ -473,6 +473,12 @@ do_request_after(<<"get_login">>, 200, ResHeaders, ResBody, Context, Req) ->
         {error, ErrMsg} ->
             {500, ErrMsg}
     end;
+%% delete_classes_product_id
+%% delete_classes_device_id
+do_request_after(<<"delete_classes_", _OperationID/binary>>, 200, ResHeaders, ResBody, _Context, #{bindings := #{id := ObjectId}} = Req) ->
+    dgiot_parse_rest:do_hook({_OperationID, delete}, ['after', <<"{\"objectId\" : \"", ObjectId/binary, "\"}">>, <<"">>]),
+    {200, ResHeaders, ResBody, Req};
+
 
 do_request_after(_OperationID, StatusCode, ResHeaders, ResBody, _Context, Req) ->
     {StatusCode, ResHeaders, ResBody, Req}.
@@ -608,8 +614,8 @@ create_user(#{<<"username">> := UserName, <<"department">> := RoleId} = Body, Se
                                         <<"__type">> => <<"Pointer">>,
                                         <<"className">> => <<"_Role">>,
                                         <<"objectId">> => RoleId
-                                    }]
-                                }}),
+                                    }]}
+                            }),
                             dgiot_parse:update_object(<<"_Role">>, RoleId, #{
                                 <<"users">> => #{
                                     <<"__op">> => <<"AddRelation">>,

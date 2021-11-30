@@ -154,12 +154,12 @@ handle_message({sync_parse, Args}, State) ->
                             NewDict = maps:without([<<"createdAt">>, <<"objectId">>, <<"updatedAt">>], View),
                             Type = maps:get(<<"type">>, View, <<"">>),
                             Title = maps:get(<<"title">>, View, <<"">>),
-                            DictId = dgiot_parse:get_viewid(ObjectId, Type, <<"Product">>, Title),
+                            ViewId = dgiot_parse:get_viewid(ObjectId, Type, <<"Product">>, Title),
                             Acc ++ [#{
                                 <<"method">> => <<"POST">>,
                                 <<"path">> => <<"/classes/View">>,
                                 <<"body">> => NewDict#{
-                                    <<"objectId">> => DictId,
+                                    <<"objectId">> => ViewId,
                                     <<"key">> => ObjectId,
                                     <<"class">> => <<"Product">>}
                             }]

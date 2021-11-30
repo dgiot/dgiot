@@ -377,8 +377,9 @@ do_request(_OperationId, _Args, _Context, _Req) ->
 
 do_report(Config, DevType, Name, SessionToken, FullPath, Uri) ->
     CategoryId = maps:get(<<"category">>, Config, <<"d6ad425529">>),
+    ProductId = dgiot_parse:get_productid(CategoryId, DevType, Name),
     Producttempid = maps:get(<<"producttemplet">>, Config, <<"">>),
-    case dgiot_httpc:fileUpload(Uri ++ "/WordController/fileUpload", dgiot_utils:to_list(FullPath), Producttempid) of
+    case dgiot_httpc:fileUpload(Uri ++ "/WordController/fileUpload", dgiot_utils:to_list(FullPath), ProductId) of
         {ok, #{<<"code">> := 0, <<"msg">> := <<"SUCCESS">>, <<"path">> := WordPath, <<"images">> := Images}} ->
             case dgiot_product:create_product(#{
                 <<"name">> => Name,
@@ -403,12 +404,13 @@ do_report(Config, DevType, Name, SessionToken, FullPath, Uri) ->
                                 Acc
                         end
                                 end, [], Images);
-                _ ->
-                    []
+                _Oth1 ->
+                    io:format("_Oth1 ~p~n", [_Oth1]),
+                    _Oth1
             end;
         _Oth ->
             io:format("_Oth ~p~n", [_Oth]),
-            []
+            _Oth
     end.
 
 get_paper(_ProductId, FileInfo) ->
@@ -850,7 +852,7 @@ post_report(#{<<"name">> := Name, <<"product">> := ProductId, <<"parentId">> := 
                                 <<"objectId">> => ParentId
                             }
                         }),
-                    case dgiot_parse:query_object(<<"View">>, #{<<"where">> => #{<<"key">> => ProductId, <<"class">> => <<"Product">>}}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+                    case dgiot_parse:query_object(<<"View">>, #{<<"order">> => <<"createdAt">>, <<"where">> => #{<<"key">> => ProductId, <<"class">> => <<"Product">>}}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
                         {ok, #{<<"results">> := Views}} ->
                             ViewRequests =
                                 lists:foldl(fun(View, Acc) ->

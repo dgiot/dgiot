@@ -181,8 +181,8 @@ get_notificationid(Type) ->
     <<DId:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Notification", Type/binary, UUID/binary>>),
     DId.
 
-get_productid(Category, DevType, Name) ->
-    <<Pid:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Product", Category/binary, DevType/binary, Name/binary>>),
+get_productid(Categoryid, DevType, Name) ->
+    <<Pid:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Product", Categoryid/binary, DevType/binary, Name/binary>>),
     Pid.
 
 get_maintenanceid(Deviceid, Number) ->

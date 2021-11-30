@@ -206,7 +206,7 @@ handle_init(#state{id = ChannelId, env = #{<<"products">> := Products, <<"args">
         dgiot_task:load(NewArgs)
               end, Products),
     dgiot_task:timing_start(Args#{<<"channel">> => ChannelId}),
-    dgiot_parse:subscribe(<<"Device">>, delete),
+    dgiot_parse:subscribe(<<"device_id">>, delete),
     {ok, State}.
 
 %% 通道消息处理,注意：进程池调用
@@ -215,10 +215,39 @@ handle_event(_EventId, Event, State) ->
     {ok, State}.
 
 handle_message({sync_parse, Args}, State) ->
+%%    io:format("DeviceArgs ~p~n", [jsx:decode(Args, [{labels, binary}, return_maps])]),
     case jsx:decode(Args, [return_maps]) of
         #{<<"objectId">> := DtuId} ->
 %%            从队列删除该设备
-            dgiot_task:del_pnque(DtuId);
+            dgiot_task:del_pnque(DtuId),
+            case dgiot_parse:query_object(<<"Dict">>, #{<<"where">> => #{<<"key">> => DtuId, <<"class">> => <<"Device">>}}) of
+                {ok, #{<<"results">> := Dicts}} ->
+                    DictRequests =
+                        lists:foldl(fun(#{<<"objectId">> := DictId}, Acc) ->
+                            Acc ++ [#{
+                                <<"method">> => <<"DELETE">>,
+                                <<"path">> => <<"/classes/Dict/", DictId/binary>>,
+                                <<"body">> => #{}
+                            }]
+                                    end, [], Dicts),
+                    dgiot_parse:batch(DictRequests);
+                _ ->
+                    pass
+            end,
+            case dgiot_parse:query_object(<<"View">>, #{<<"where">> => #{<<"key">> => DtuId, <<"class">> => <<"Device">>}}) of
+                {ok, #{<<"results">> := Views}} ->
+                    ViewRequests =
+                        lists:foldl(fun(#{<<"objectId">> := ViewId}, Acc) ->
+                            Acc ++ [#{
+                                <<"method">> => <<"DELETE">>,
+                                <<"path">> => <<"/classes/View/", ViewId/binary>>,
+                                <<"body">> => #{}
+                            }]
+                                    end, [], Views),
+                    dgiot_parse:batch(ViewRequests);
+                _ ->
+                    pass
+            end;
         _ ->
             pass
     end,
