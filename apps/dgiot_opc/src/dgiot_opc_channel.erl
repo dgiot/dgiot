@@ -99,7 +99,7 @@ start(ChannelId, ChannelArgs) ->
 
 %% 通道初始化
 init(?TYPE, ChannelId, ChannelArgs) ->
-    {ProductId, Deviceinfo_list}= get_product(ChannelId), %Deviceinfo_list = [{DeviceId1,Devaddr1},{DeviceId2,Devaddr2}...]
+    {ProductId, Deviceinfo_list} = get_product(ChannelId), %Deviceinfo_list = [{DeviceId1,Devaddr1},{DeviceId2,Devaddr2}...]
     State = #state{
         id = ChannelId,
         env = ChannelArgs#{
