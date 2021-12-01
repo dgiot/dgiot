@@ -944,7 +944,7 @@ function install_nginx() {
         rpm -e nginx
     fi
     ${csudo} rpm -Uvh http://nginx.org/packages/centos/7/noarch/RPMS/nginx-release-centos-7-0.el7.ngx.noarch.rpm --force &> /dev/null
-    ${csudo} yum install -y nginx &> /dev/null
+    ${csudo} yum install -y nginx-1.20.1 &> /dev/null
     if [ ! -f ${script_dir}/nginx.conf ]; then
        wget $fileserver/nginx.conf -O ${script_dir}/nginx.conf &> /dev/null
     fi

@@ -208,6 +208,7 @@ save_rule_to_dict(RuleID, Params) ->
                 emqx_rule_engine_api:update_rule(#{id => RuleID}, maps:to_list(Nedata)),
                 Nedata
         end,
+%%    todo class title key type 多个channel 存多条dict ,title都用RuleID
     Dict = #{
         <<"key">> => RuleID,
         <<"type">> => <<"ruleengine">>,
