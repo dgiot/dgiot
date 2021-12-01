@@ -75,9 +75,9 @@ do_request(post_evidence, Args, #{<<"sessionToken">> := SessionToken} = _Context
     ?LOG(info, "Args ~p ", [Args]),
     case dgiot_evidence:post(Args#{<<"sessionToken">> => SessionToken}) of
         {ok, Result} ->
-            {200, Result};
+            {ok, Result};
         {error, Reason} ->
-            {error, Reason}
+            {500, Reason}
     end;
 
 do_request(put_evidence, #{<<"status">> := Status} = Args, #{<<"sessionToken">> := SessionToken} = _Context, Req) ->
@@ -178,7 +178,7 @@ do_request(post_generatereport, #{<<"id">> := TaskId}, #{<<"sessionToken">> := _
             <<"product">> := #{<<"__type">> := <<"Pointer">>, <<"className">> := <<"Product">>, <<"objectId">> := _ProductId},
             <<"parentId">> := #{<<"__type">> := <<"Pointer">>, <<"className">> := <<"Device">>, <<"objectId">> := _ParentId}
         }} ->
-            DictId = dgiot_parse:get_dictid(TaskId, <<"word">>, <<"Device">>, <<"worddict">>),
+            DictId = dgiot_parse:get_dictid(<<"710b9eb8ee">>, <<"word">>, <<"Device">>, <<"worddict">>),
             case dgiot_parse:get_object(<<"Dict">>, DictId) of
                 {ok, #{<<"data">> := #{<<"params">> := Params}}} ->
                     Worddatas =
@@ -204,8 +204,8 @@ do_request(post_generatereport, #{<<"id">> := TaskId}, #{<<"sessionToken">> := _
                                                 <<"source">> => Sources,
                                                 <<"name">> => Identifier,
                                                 <<"url">> => Value,
-                                                <<"width">> => 600,
-                                                <<"height">> => 330
+                                                <<"width">> => 500,
+                                                <<"height">> => 230
                                             }];
                                         _ ->
                                             Acc
@@ -213,6 +213,7 @@ do_request(post_generatereport, #{<<"id">> := TaskId}, #{<<"sessionToken">> := _
                                 _ ->
                                     case Type of
                                         <<"text">> ->
+
                                             Acc ++ [#{
                                                 <<"type">> => <<"text">>,
                                                 <<"source">> => Sources,

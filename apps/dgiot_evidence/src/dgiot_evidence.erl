@@ -173,9 +173,7 @@ get(#{<<"reportId">> := ReportId}, SessionToken) ->
         Error -> Error
     end.
 
-
-
-post(#{<<"id">> := ReportId, <<"objetcId">> := ObjetcId, <<"ukey">> := UKey, <<"timestamp">> := Timestamp, <<"md5">> := Md5, <<"original">> := Original,
+post(#{<<"id">> := ReportId, <<"objectId">> := ObjectId, <<"ukey">> := UKey, <<"timestamp">> := Timestamp, <<"md5">> := Md5, <<"original">> := Original,
     <<"sessionToken">> := SessionToken}) ->
     Payload = jsx:encode(#{<<"md5">> => Md5}),
     UkeyProductId = <<"3f95880e09">>,
@@ -189,7 +187,7 @@ post(#{<<"id">> := ReportId, <<"objetcId">> := ObjetcId, <<"ukey">> := UKey, <<"
                 #{<<"roles">> := Roles} = _User ->
                     [#{<<"name">> := Role} | _] = maps:values(Roles),
                     Evidence = #{
-                        <<"objetcId">> => ObjetcId,
+                        <<"objectId">> => ObjectId,
                         <<"ACL">> => #{<<"role:", Role/binary>> => #{
                             <<"read">> => true,
                             <<"write">> => true}
@@ -202,12 +200,13 @@ post(#{<<"id">> := ReportId, <<"objetcId">> := ObjetcId, <<"ukey">> := UKey, <<"
                         <<"ukey">> => UKey
                     },
                     dgiot_parse:create_object(<<"Evidence">>, Evidence);
-                _ -> {error, <<"SignData Fail">>}
+                _ -> {error, #{<<"code">> => 500, <<"msg">> => <<"SignData Fail">>}}
             end
     end;
 
 post(R) ->
-    ?LOG(info, "R ~p ", [R]).
+    io:format("R ~p~n", [R]),
+    {error, #{<<"code">> => 406, <<"msg">> => <<"Requested format not available">>}}.
 
 post_data(Class, FilePath) ->
     ?LOG(info, "Class ~p, FilePath ~p", [Class, FilePath]),
