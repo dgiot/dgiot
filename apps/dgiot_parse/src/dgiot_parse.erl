@@ -763,7 +763,7 @@ get_role(Name, UserId, SessionToken) ->
             Roles =
                 lists:foldr(
                     fun(#{<<"objectId">> := RoleId, <<"name">> := Name1, <<"alias">> := Alias, <<"org_type">> := Org_type} = X, Acc) ->
-                        Role = #{<<"name">> => Name1, <<"alias">> => Alias, <<"org_type">> => Org_type, <<"tag">> => maps:get(<<"tag">>, X, #{})},
+                        Role = #{<<"objectId">> => RoleId, <<"name">> => Name1, <<"alias">> => Alias, <<"org_type">> => Org_type, <<"tag">> => maps:get(<<"tag">>, X, #{})},
                         Acc#{RoleId => Role}
                     end, #{}, RoleResults),
             RoleIds =

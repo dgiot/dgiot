@@ -24,7 +24,7 @@
 -export([create_database/2, create_schemas/1, create_object/2, create_user/2, alter_user/2, delete_user/1, query_object/2, batch/1, parse_batch/1]).
 -export([to_unixtime/1, get_channel/1]).
 -export([get_product/2, get_products/2, get_chartdata/3, get_appdata/3]).
--export([get_device/3, get_device/4, get_device/5, get_keys/3]).
+-export([get_device/3, get_device/4, get_device/5, get_keys/3, get_reportdata/3]).
 %% 引入执行函数
 -import(dgiot_tdengine_channel, [run_sql/3, transaction/2]).
 -export([test_product/0]).
@@ -283,7 +283,7 @@ alter_table(DB1, TableName, Context, Channel) ->
                                                     <<"ALTER TABLE ", DB1/binary, TableName/binary, " ADD COLUMN ", LowerIdentifier/binary, " NCHAR(30);">>;
                                                 <<"image">> ->
                                                     <<"ALTER TABLE ", DB1/binary, TableName/binary, " ADD COLUMN ", LowerIdentifier/binary, " BIGINT;">>;
-                                                 <<"date">> ->
+                                                <<"date">> ->
                                                     <<"ALTER TABLE ", DB1/binary, TableName/binary, " ADD COLUMN ", LowerIdentifier/binary, " TIMESTAMP;">>;
                                                 _ ->
                                                     <<"ALTER TABLE ", DB1/binary, TableName/binary, " ADD COLUMN ", LowerIdentifier/binary, " ", Type/binary, ";">>
@@ -432,6 +432,21 @@ get_prop(ProductId) ->
         _ ->
             #{}
     end.
+
+%% select flow, head, effect, power from _09d0bbcf44._47d9172bf1 where createdat >= 1635581932000 AND createdat <= 1638260333000 order by createdat asc;
+get_reportdata(Channel, TableName, Query) ->
+    transaction(Channel,
+        fun(Context) ->
+            Database = maps:get(<<"db">>, Query),
+            Keys = maps:get(<<"keys">>, Query),
+            Starttime = maps:get(<<"starttime">>, Query),
+            Endtime = maps:get(<<"endtime">>, Query),
+            DB = format_db(?Database(Database)),
+            Tail = <<" where createdat >= ", Starttime/binary, " AND createdat <= ", Endtime/binary, " order by createdat asc;">>,
+            Sql = <<"SELECT ", Keys/binary, " FROM ", DB/binary, TableName/binary, Tail/binary>>,
+            ?LOG(error, "Sql ~s", [Sql]),
+            run_sql(Context#{<<"channel">> => Channel}, execute_query, Sql)
+        end).
 
 batch(Batch) ->
     batch(?DEFAULT, Batch).
