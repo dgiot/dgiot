@@ -14,7 +14,7 @@
    + ジュニアフロントエンドエンジニアの大多数に、サーバーレス方式を介してより複雑な要件を持つ産業用インターネットプロジェクトを実施させます
    + Python、Java、Go、Cのジュニアバックグラウンドエンジニアが、Webプログラミング開発チャネルを通じて複雑な産業用インターネットプロジェクトに着手できるようにします
 
-# Vision
+# ヴィジョン
   DGIOTチームは、Shuwa IndustrialInternet継続的インテグレーションプラットフォームを通じて次のビジョンを達成したいと考えています。
   +エンジニア、フロントエンドエンジニア、およびジュニアバックオフィスエンジニアを通じて、実際に中小規模の産業用インターネットプロジェクトを1か月以内に完了します。
    +オープンソースコード、無料ソフトウェア、ドキュメント共有、技術認証、製品認証、運用および保守ホスティングなどの複数の方法を通じて、高品質の配信を保証します。
@@ -60,7 +60,7 @@
 - For a complete list of new features, see [DGIOT Release Notes](https://github.com/dgiot/dgiot/releases)。
 - For more information, please visit [DGIOT Website](https://tech.iotn2n.com/)。
 
-## Installation and deployment
+## インストールと展開
 
  + **centos 7.6**
 
@@ -68,7 +68,7 @@
 wget -q https://gitee.com/dgiiot/dgiot/raw/master/dgiot_install.sh  && sh dgiot_install.sh
 ```
 
-## Community
+## コミュニティ
 
 ### FAQ
 
@@ -79,17 +79,17 @@ Visit [DGIOT FAQ](https://tech.iotn2n.com/en/backend/) to get help on frequently
 [GitHub Discussions](https://github.com/dgiot/dgiot_server/discussions)
 [DGIOT Chinese Q&A Community](https://tech.iotn2n.com/)
 
-### Involved in the design
+### デザインに関わっている
 
 If you have suggestions for improvements to DGIOT, you can submit PR and ISSUE to [EIP](https://github.com/dgiot/eip)
 
-### Plug-in development
+### プラグイン開発
 
 If you want to integrate or develop your own plug-in, refer to [lib-extra/README.md](./lib-extra/README.md)
 
 You are welcome to submit any bugs, issues and feature requests to [dgiot/dgiot](https://github.com/dgiot/dgiot/issues)。
 
-### About Us
+### 私たちに関しては
 | contact details       | address                                                                                      |
 | -------------- | ----------------------------------------------------------------------------------------- |
 | github         | [https://github.com/dgiot](https://github.com/dgiot?from=git)                             |
@@ -99,7 +99,7 @@ You are welcome to submit any bugs, issues and feature requests to [dgiot/dgiot]
 | IoT access platform | [https://dgiot.iotn2n.com](https://dgiot.iotn2n.com?from=git)                             |
 | The public         | ![qrcode.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/wechat/qrcode.png) |
 
-### Contact us
+### お問い合わせ
 You can contact the DGIOT community and developers through the following channels:
 - [official](https://www.iotn2n.com)
 - [ask](https://ask.iotn2n.com/)
@@ -110,12 +110,12 @@ You can contact the DGIOT community and developers through the following channel
 - [Weibo](https://weibo.com)
 
 
-## Preview address
+## プレビューアドレス
 [Tencent Cloud preview address](https://dgiotdashboard-8gb17b3673ff6cdd-1253666439.ap-shanghai.app.tcloudbase.com?ftom=git)
 
-## Scan code preview
+## スキャンコードのプレビュー
 ![dgiot_dashboard.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/wechat/dgiot_dashboard.png)
 
 
-## Open source license
+## オープンソースライセンス
 Apache License 2.0, 详见 [LICENSE](./LICENSE)。
