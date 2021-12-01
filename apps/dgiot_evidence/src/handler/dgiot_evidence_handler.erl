@@ -175,10 +175,10 @@ do_request(post_reporttemp, #{<<"name">> := Name, <<"devType">> := DevType, <<"c
 do_request(post_generatereport, #{<<"id">> := TaskId}, #{<<"sessionToken">> := _SessionToken} = _Context, #{headers := #{<<"origin">> := Uri}} = _Req) ->
     case dgiot_parse:get_object(<<"Device">>, TaskId) of
         {ok, #{<<"name">> := TaskName, <<"basedata">> := Basedata, <<"profile">> := #{<<"reporttemp">> := Reporttemp} = Profile,
-            <<"product">> := #{<<"__type">> := <<"Pointer">>, <<"className">> := <<"Product">>, <<"objectId">> := ProductId},
+            <<"product">> := #{<<"__type">> := <<"Pointer">>, <<"className">> := <<"Product">>, <<"objectId">> := _ProductId},
             <<"parentId">> := #{<<"__type">> := <<"Pointer">>, <<"className">> := <<"Device">>, <<"objectId">> := _ParentId}
         }} ->
-            DictId = dgiot_parse:get_dictid(ProductId, <<"word">>, <<"Product">>, <<"worddict">>),
+            DictId = dgiot_parse:get_dictid(TaskId, <<"word">>, <<"Device">>, <<"worddict">>),
             case dgiot_parse:get_object(<<"Dict">>, DictId) of
                 {ok, #{<<"data">> := #{<<"params">> := Params}}} ->
                     Worddatas =
@@ -219,6 +219,12 @@ do_request(post_generatereport, #{<<"id">> := TaskId}, #{<<"sessionToken">> := _
                                                 <<"name">> => Identifier,
                                                 <<"value">> => Value}];
                                         <<"dynamicTable">> ->
+%%                                            采样参数
+%%                                            Parameter = maps:get(<<"parameter">>, Param, <<"flow">>),
+%%                                            采样个数
+%%                                            Samplingnumber = maps:get(<<"samplingnumber">>, Param, <<"flow">>),
+%%                                            获取表格数据
+%%                                            dgiot_evidence:get_Tabledata(ParentId, SessionToken, Parameter, Samplingnumber),
                                             Tabledata = [
                                                 <<"10,0,0.784,12.593,2850,0,0.107162,0,12.593,0.784,0">>,
                                                 <<"9,2.11,0.882,11.706,2850,0,0.098424,2.11,11.706,0.882,7.64">>,
@@ -267,7 +273,7 @@ do_request(post_generatereport, #{<<"id">> := TaskId}, #{<<"sessionToken">> := _
                     case httpc:request(post, {Url, [], "application/json", jsx:encode(Body)}, [], []) of
                         {ok, {{"HTTP/1.1", 200, "OK"}, _, Json}} ->
                             case jsx:decode(dgiot_utils:to_binary(Json), [{labels, binary}, return_maps]) of
-                                #{<<"code">> := 0, <<"msg">> := <<"SUCCESS">>, <<"path">> := WordPath} = Data ->
+                                #{<<"code">> := 200, <<"msg">> := <<"SUCCESS">>, <<"path">> := WordPath} = Data ->
                                     Images = maps:get(<<"images">>, Data, []),
                                     ViewRequests =
                                         lists:foldl(fun(Image, Acc) ->
@@ -282,17 +288,17 @@ do_request(post_generatereport, #{<<"id">> := TaskId}, #{<<"sessionToken">> := _
                                     dgiot_parse:batch(ViewRequests),
                                     dgiot_parse:update_object(<<"Device">>, TaskId, #{<<"profile">> => Profile#{<<"generatedreport">> => WordPath, <<"generatedtime">> => dgiot_datetime:now_secs()}}),
                                     {ok, maps:without([<<"images">>], Data)};
-                                Error1 ->
-                                    Error1
+                                _Error1 ->
+                                    {ok, _Error1}
                             end;
-                        Error ->
-                            Error
+                        _Error ->
+                            {ok, #{<<"code">> => 500, <<"msg">> => <<"生成报告失败"/utf8>>}}
                     end;
                 _Oth ->
-                    _Oth
+                    {ok, #{<<"code">> => 500, <<"msg">> => <<"检测任务没有字典"/utf8>>}}
             end;
         _Oth1 ->
-            _Oth1
+            {ok, #{<<"code">> => 500, <<"msg">> => <<"找不到该检测任务"/utf8>>}}
     end;
 
 %% evidence 概要: 增加取证报告 描述:新增取证报告
@@ -869,12 +875,33 @@ post_report(#{<<"name">> := Name, <<"product">> := ProductId, <<"parentId">> := 
                                             <<"class">> => <<"Device">>}
                                     }]
                                             end, [], Views),
-                            dgiot_parse:batch(ViewRequests),
-                            {ok, #{<<"result">> => <<"success">>}};
+                            dgiot_parse:batch(ViewRequests);
                         _R1 ->
-                            ?LOG(info, "R1 ~p", [_R1]),
-                            {error, <<"report exist">>}
-                    end;
+                            ?LOG(info, "R1 ~p", [_R1])
+                    end,
+                    case dgiot_parse:query_object(<<"Dict">>, #{<<"order">> => <<"createdAt">>, <<"where">> => #{<<"key">> => ProductId, <<"class">> => <<"Product">>}}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+                        {ok, #{<<"results">> := Dicts}} ->
+                            DictRequests =
+                                lists:foldl(fun(Dict, Acc) ->
+                                    NewDict = maps:without([<<"createdAt">>, <<"objectId">>, <<"updatedAt">>], Dict),
+                                    Type = maps:get(<<"type">>, Dict, <<"">>),
+                                    Title = maps:get(<<"title">>, Dict, <<"">>),
+                                    Dictid = dgiot_parse:get_dictid(DeviceId, Type, <<"Device">>, Title),
+                                    Acc ++ [#{
+                                        <<"method">> => <<"POST">>,
+                                        <<"path">> => <<"/classes/Dict">>,
+                                        <<"body">> => NewDict#{
+                                            <<"objectId">> => Dictid,
+                                            <<"key">> => DeviceId,
+                                            <<"class">> => <<"Device">>}
+                                    }]
+                                            end, [], Dicts),
+                            io:format("DictRequests ~p~n",[DictRequests]),
+                            dgiot_parse:batch(DictRequests);
+                        _R3 ->
+                            ?LOG(info, "R1 ~p", [_R3])
+                    end,
+                    {ok, #{<<"result">> => <<"success">>}};
                 _R2 ->
                     ?LOG(info, "R2 ~p", [_R2]),
                     {error, <<"report exist">>}

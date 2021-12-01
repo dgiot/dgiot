@@ -44,13 +44,15 @@
     get_report_package/6,
     post_data/2,
     get_filehome/1,
-    test/0
+    test/0,
+    get_Tabledata/4
 ]).
 
 %%--------------------------------------------------------------------
 %% Auth Module Callbacks
 %%--------------------------------------------------------------------
-
+-define(PRE, <<"_">>).
+-define(Table(Name), <<?PRE/binary, Name/binary>>).
 init({}) ->
     {ok, #{}}.
 
@@ -695,3 +697,46 @@ get_attrs(Attrs, ImageUrl, Heigh, Width, ClassName, X) ->
         _ ->
             X
     end.
+
+
+get_Tabledata(ParentId, SessionToken, Parameter, Samplingnumber) ->
+    case dgiot_tdengine:get_channel(SessionToken) of
+        {error, Error} ->
+            {error, Error};
+        {ok, Channel} ->
+            Query = #{
+                <<"keys">> => Parameter,
+                <<"starttime">> => Parameter,
+                <<"endtime">> => Parameter,
+                <<"db">> => ParentId
+            },
+            TableName = ?Table(<<"DeviceId">>),
+            case dgiot_tdengine:get_reportdata(Channel, TableName, Query) of
+                {ok, #{<<"results">> := Results}} ->
+                    io:format("Results ~p~n", [Results]),
+                    get_Tablelist(Parameter, Samplingnumber, Results),
+
+                    {ok, #{<<"results">> => Results}};
+                Reason ->
+                    Reason
+            end
+    end.
+
+
+%%   Query = #{<<"db">> => <<"09d0bbcf44">>,
+%%   <<"endtime">> => <<"1638260333000">>,
+%%   <<"keys">> => <<"flow,head,effect,power">>,
+
+%%   <<"starttime">> => <<"1635581932000">>}.
+%%   {ok, #{<<"results">> := Results}} = dgiot_tdengine:get_reportdata(<<"24b9b4bc50">>, <<"_47d9172bf1">>, Query).
+get_Tablelist(Parameter, _Samplingnumber, Results) ->
+    Parameter = <<"flow,head,effect,power">>,
+    Keys = binary:split(Parameter, <<$,>>, [global, trim]),
+    lists:foldl(fun(Key, Acc) ->
+        Values =
+            lists:foldl(fun(Result, Acc2) ->
+                Value = maps:get(Key, Result, <<"0">>),
+                Acc2 ++ [Value]
+                        end, [], Results),
+        Acc#{Key => Values}
+                end, #{}, Keys).
