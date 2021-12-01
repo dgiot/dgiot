@@ -1,4 +1,4 @@
-## dgiot_vconcentrator
+## dgiot_mqtt
 
-dgiot_vconcentrator
+dgiot_mqtt
 
