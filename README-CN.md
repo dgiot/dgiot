@@ -7,28 +7,25 @@
 
 [English](./README.md) | [简体中文](./README-CN.md) | [日本語](./README-JP.md) | [русский](./README-RU.md)
 
-## DG-IoT简介
-DG-IoT是是国内首款轻量级开源工业物联网持续集成平台。
-DG-IoT团队2016年之前，在互联网和移动互联网爬坑多年，2016年开始进入物联网爬坑，希望通过这个开源平台把多年爬坑经验共享出来，让多学科交叉的工业互联网项目变得更简单。
+# DG-IoT简介
+DG-IoT是是国内首款轻量级开源工业物联网持续集成平台，平台完全开源。
    + 让丰富工程人员可以通过视窗交互可以完成需求较简单的工业互联网项目
    + 让广大的初级前端工程师通过serverless的方式可以承接需求较复杂的工业互联网项目
    + 让Python、Java、Go、C初级后台工程师通过web编程开发通道来承接复杂的工业互联网项目
 
-## 业务架构
-![dgiot_func](https://user-images.githubusercontent.com/51999461/144348648-b5342597-750b-4372-83c5-3668407b665e.png)
+## 核心特色
++ 前后端完全开源
++ 轻量级快速部署
++ 千万级长连接承载，电信级稳定性
++ 物模型-规则引擎-数据通道-组态页面全流程低代码开发
++ 多行业工业协议兼容
 
 ## 快速体验
-|小程序|电脑端|账号|密码|
+|小程序|[电脑端](https://prod.iotn2n.com/)|账号|密码|
 |---|---|---|---|
 | ![dgiot小程序](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_release/dgiot_wechat.jpg) |![dgiot_dashboard.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_release/dgiot_dashboard.png) |dgiot_admin|dgiot_admin|
 
-## 愿景
-  DG-IoT团队希望通过DG-IoT工业互联网持续集成平台达成下面一些愿景：
-  + 通过工程人员、前端工程师、初级后台工程师在不超过1个月的实际完成中小型的工业互联网项目
-  + 通过代码开源、软件免费、文档共享、技术认证、产品认证、运维托管等多种方式保证高质量的交付
-  + 技术领域专家不断持续集成业界优秀技术框架、业务领域专家不断持续优化业务模型和流程、构建多学科交叉的开放平台
-  + 物联网平台最终能够实现简洁易用，回归到工具化的本质
-
+<!--  -->
 
 # 构建
 
@@ -76,7 +73,7 @@ DG-IoT团队2016年之前，在互联网和移动互联网爬坑多年，2016年
 ```
 wget -q https://gitee.com/dgiiot/dgiot/raw/master/dgiot_install.sh  && sh dgiot_install.sh
 ```
-
+# 社区
 ## 关于我们
 | 联系方式       | 地址                                                         |
 | -------------- | ------------------------------------------------------------ |
@@ -86,7 +83,6 @@ wget -q https://gitee.com/dgiiot/dgiot/raw/master/dgiot_install.sh  && sh dgiot_
 | 博客           | [https://tech.iotn2n.com](https://tech.iotn2n.com?from=git)  |
 | 物联网接入平台 | [https://dgiot.iotn2n.com](https://dgiot.iotn2n.com?from=git) |
 | QQ群         | [346566935](https://jq.qq.com/?_wv=1027&k=LipWZvDe/) |
-| 微信群         | |
 | 公众号         |  ![qrcode.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/wechat/qrcode.png)|
 
 ## 参与设计
