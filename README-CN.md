@@ -34,8 +34,7 @@ DG-IoT是是国内首款轻量级开源工业物联网持续集成平台，我�
 | 博客           | [https://tech.iotn2n.com](https://tech.iotn2n.com?from=git)  |
 | 物联网接入平台 | [https://dgiot.iotn2n.com](https://dgiot.iotn2n.com?from=git) |
 | QQ群         | [346566935](https://jq.qq.com/?_wv=1027&k=LipWZvDe/) |
-| 微信群         |![QQ截图20211203164223](https://user-images.githubusercontent.com/51999461/144572670-0566f13e-7917-4a9f-bb0e-3222f2c58770.png)
- |
+| 微信群         |![image](https://user-images.githubusercontent.com/51999461/144572983-16bf3223-a00b-4cd6-9446-cb652f81c8af.png)|
 | 公众号         |  ![qrcode.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/wechat/qrcode.png)|
 
 
