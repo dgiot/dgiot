@@ -29,7 +29,7 @@ DG-IoT是是国内首款轻量级开源工业物联网持续集成平台，我�
 + 物模型-规则引擎-数据通道-组态页面全流程低代码开发
 + 多行业工业协议兼容
 
-# 业务交互
+# 系统架构
 
 ![](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/msys64/%E4%B8%9A%E5%8A%A1%E4%BA%A4%E4%BA%92%E5%9B%BE.jpg)
 
