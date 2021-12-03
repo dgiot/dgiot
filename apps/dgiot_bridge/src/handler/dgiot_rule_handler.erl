@@ -30,7 +30,7 @@
 
 %% API
 -export([swagger_rule/0]).
--export([handle/4, sysc_rules/0]).
+-export([handle/4, sysc_rules/0, save_rule_to_dict/2]).
 
 %% API描述
 %% 支持二种方式导入
@@ -210,6 +210,8 @@ save_rule_to_dict(RuleID, Params) ->
         end,
 %%    todo class title key type 多个channel 存多条dict ,title都用RuleID
     Dict = #{
+        <<"class">> => <<"Rule">>,
+        <<"title">> => <<"Rule">>,
         <<"key">> => RuleID,
         <<"type">> => <<"ruleengine">>,
         <<"data">> => #{<<"rule">> => jsx:encode(Rule)}
@@ -280,11 +282,11 @@ sysc_rules() ->
                                                 Channel2
                                         end,
                                     emqx_rule_engine_api:create_resource(#{}, [
-                                            {<<"id">>, <<"resource:",Channel/binary>>},
-                                            {<<"type">>, <<"dgiot_resource">>},
-                                            {<<"config">>, [{<<"channel">>, Channel}]},
-                                            {<<"description">>, Resource}
-                                        ]),
+                                        {<<"id">>, <<"resource:", Channel/binary>>},
+                                        {<<"type">>, <<"dgiot_resource">>},
+                                        {<<"config">>, [{<<"channel">>, Channel}]},
+                                        {<<"description">>, Resource}
+                                    ]),
                                     Acc ++ [X]
                                             end, [], Actions),
                                 case emqx_rule_engine_api:show_rule(#{id => RuleID}, []) of

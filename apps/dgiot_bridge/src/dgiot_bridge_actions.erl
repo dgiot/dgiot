@@ -166,9 +166,10 @@ on_action_create_dgiot(_Id, Params = #{
 on_action_dgiot(Selected, #{event := Event} = Envs) ->
     ChannelId = dgiot_mqtt:get_channel(Envs),
     Msg = dgiot_mqtt:get_message(Selected, Envs),
+%%    io:format("Event = ~p.~n", [Event]),
+%%    io:format("Msg = ~p.~n", [Msg]),
     case Event of
         'message.publish' ->
-%%            ?LOG(info, "Msg ~p", [Msg]),
             post_rule(Msg),
             case dgiot_channelx:do_message(ChannelId, {rule, Msg, Selected}) of
                 not_find -> dgiot_mqtt:republish(Selected, Envs);
@@ -185,4 +186,4 @@ post_rule(#{metadata := #{rule_id := <<"rule:Notification_", Ruleid/binary>>}, c
     dgiot_umeng:add_notification(Ruleid, DevAddr, NewPayload);
 
 post_rule(Msg) ->
-    ?LOG(error, "Msg ~p", [Msg]).
+    io:format("~s ~p Msg = ~p.~n", [?FILE, ?LINE, Msg]).
