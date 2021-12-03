@@ -33,6 +33,11 @@ DG-IoT是是国内首款轻量级开源工业物联网持续集成平台，我�
 
 ![](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/msys64/%E4%B8%9A%E5%8A%A1%E4%BA%A4%E4%BA%92%E5%9B%BE.jpg)
 
+## 快速体验
+|小程序|[电脑端](https://prod.iotn2n.com/)|账号|密码|
+|---|---|---|---|
+| ![dgiot小程序](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_release/dgiot_wechat.jpg) |![dgiot_dashboard.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_release/dgiot_dashboard.png) |dgiot_admin|dgiot_admin|
+
 ## 社区
 | 联系方式       | 地址                                                         |
 | -------------- | ------------------------------------------------------------ |
@@ -45,13 +50,6 @@ DG-IoT是是国内首款轻量级开源工业物联网持续集成平台，我�
 | 微信群         |![image](https://user-images.githubusercontent.com/51999461/144572983-16bf3223-a00b-4cd6-9446-cb652f81c8af.png)|
 | 公众号         |  ![qrcode.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/wechat/qrcode.png)|
 
-
-## 快速体验
-|小程序|[电脑端](https://prod.iotn2n.com/)|账号|密码|
-|---|---|---|---|
-| ![dgiot小程序](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_release/dgiot_wechat.jpg) |![dgiot_dashboard.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_release/dgiot_dashboard.png) |dgiot_admin|dgiot_admin|
-
-<!--  -->
 
 # 构建
 
