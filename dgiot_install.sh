@@ -33,7 +33,6 @@ script_dir=$(dirname $(readlink -f "$0"))
 install_dir="/data/dgiot"
 backup_dir=${install_dir}/${randtime}
 mkdir ${backup_dir} -p
-
 #service path
 service_dir="/lib/systemd/system"
 
@@ -262,7 +261,6 @@ function install_service() {
   ${csudo} bash -c "echo                                       >> ${service_config}"
   ${csudo} bash -c "echo '[Install]'                           >> ${service_config}"
   ${csudo} bash -c "echo 'WantedBy=multi-user.target'          >> ${service_config}"
-
   ${csudo} systemctl daemon-reload  &> /dev/null
   ${csudo} systemctl enable $1 &> /dev/null
   ${csudo} systemctl start $1 &> /dev/null
@@ -303,7 +301,6 @@ function install_service1() {
   ${csudo} bash -c "echo                                       >> ${service_config}"
   ${csudo} bash -c "echo '[Install]'                           >> ${service_config}"
   ${csudo} bash -c "echo 'WantedBy=multi-user.target'          >> ${service_config}"
-
   ${csudo} systemctl daemon-reload &> /dev/null
   ${csudo} systemctl enable $1 &> /dev/null
   ${csudo} systemctl start $1 &> /dev/null
@@ -338,7 +335,6 @@ function install_service2() {
   ${csudo} bash -c "echo                                       >> ${service_config}"
   ${csudo} bash -c "echo '[Install]'                           >> ${service_config}"
   ${csudo} bash -c "echo 'WantedBy=multi-user.target'          >> ${service_config}"
-
   ${csudo} systemctl daemon-reload &> /dev/null
   ${csudo} systemctl enable $1 &> /dev/null
   ${csudo} systemctl start $1 &> /dev/null
@@ -405,8 +401,8 @@ function install_postgres() {
   make install -j${processor}  &> /dev/null
   sleep 5
 
-  rm ${script_dir}/postgresql-12.0 -rf
   cd ${script_dir}/
+  rm ${script_dir}/postgresql-12.0 -rf
   echo -e "`date +%F_%T` $LINENO: ${GREEN} build postgres sueccess${NC}"
 }
 
@@ -550,8 +546,8 @@ function install_parse_server() {
   cd ${script_dir}/
 
   echo -e "`date +%F_%T` $LINENO: ${GREEN} create ${parseconfig} success${NC}"
-  sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -c "ALTER USER postgres WITH PASSWORD '${pg_pwd}';"  &> /dev/null
-  retval=`sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -c "SELECT datname FROM pg_database WHERE datistemplate = false;"`
+  sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -c "ALTER USER postgres WITH PASSWORD '${pg_pwd}';" &> /dev/null
+  retval=`sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -c "SELECT datname FROM pg_database WHERE datistemplate = false;" &> /dev/null`
   if [[ $retval == *"parse"* ]]; then
      sudo -u postgres /usr/local/pgsql/12/bin/pg_dump -F p -f  ${backup_dir}/dgiot_parse_server/parse_4.0_backup.sql -C -E  UTF8 -h 127.0.0.1 -U postgres parse &> /dev/null
      sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -c "DROP DATABASE parse;" &> /dev/null
@@ -604,6 +600,7 @@ function deploy_tdengine_server() {
   mkdir ${install_dir}/taos/data/ -p
   echo | /bin/sh install.sh &> /dev/null
   ldconfig
+  cd ${script_dir}/
   rm ${script_dir}/TDengine-server-2.0.20.13 -rf
   ${csudo} bash -c "echo 'logDir                    ${install_dir}/taos/log/'   > /etc/taos/taos.cfg"
   ${csudo} bash -c "echo 'dataDir                   ${install_dir}/taos/data/'   >> /etc/taos/taos.cfg"
@@ -698,7 +695,6 @@ function install_go_fastdfs() {
   mv ${script_dir}/dgiot_dashboard ${install_dir}/go_fastdfs/files/
 
 }
-
 
 function yum_install_erlang_otp {
   echo -e "`date +%F_%T` $LINENO: ${GREEN} yum_install_erlang_otp${NC}"
@@ -831,21 +827,21 @@ function install_postgres_exporter() {
     wget ${fileserver}/postgres_exporter-0.10.0.linux-amd64.tar.gz -O ${script_dir}/postgres_exporter-0.10.0.linux-amd64.tar.gz &> /dev/null
   fi
 
-  retval=`sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -d parse -c "SELECT * FROM pg_available_extensions;"`
+  retval=`sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -d parse -c "SELECT * FROM pg_available_extensions;" &> /dev/null`
   if [[ $retval == *"pg_stat_statements"* ]]; then
       echo -e "`date +%F_%T` $LINENO: ${GREEN} pg_stat_statements has installed${NC}"
   else
-    sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -d parse -c "CREATE EXTENSION pg_stat_statements SCHEMA public;"
-    sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -d parse -c "CREATE USER postgres_exporter PASSWORD 'password';"
-    sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -d parse -c "ALTER USER postgres_exporter SET SEARCH_PATH TO postgres_exporter,pg_catalog;"
-    sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -d parse -c "CREATE SCHEMA postgres_exporter AUTHORIZATION postgres_exporter;"
+    sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -d parse -c "CREATE EXTENSION pg_stat_statements SCHEMA public;" &> /dev/null
+    sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -d parse -c "CREATE USER postgres_exporter PASSWORD 'password';" &> /dev/null
+    sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -d parse -c "ALTER USER postgres_exporter SET SEARCH_PATH TO postgres_exporter,pg_catalog;" &> /dev/null
+    sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -d parse -c "CREATE SCHEMA postgres_exporter AUTHORIZATION postgres_exporter;" &> /dev/null
     sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -d parse -c "CREATE FUNCTION postgres_exporter.f_select_pg_stat_activity()
     RETURNS setof pg_catalog.pg_stat_activity
     LANGUAGE sql
     SECURITY DEFINER
     AS \$\$
     SELECT * from pg_catalog.pg_stat_activity;
-    \$\$;"
+    \$\$;" &> /dev/null
 
     sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -d parse -c "CREATE FUNCTION postgres_exporter.f_select_pg_stat_replication()
     RETURNS setof pg_catalog.pg_stat_replication
@@ -853,18 +849,18 @@ function install_postgres_exporter() {
     SECURITY DEFINER
     AS \$\$
       SELECT * from pg_catalog.pg_stat_replication;
-    \$\$;"
+    \$\$;" &> /dev/null
 
     sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -d parse -c "CREATE VIEW postgres_exporter.pg_stat_replication
     AS
-      SELECT * FROM postgres_exporter.f_select_pg_stat_replication();"
+      SELECT * FROM postgres_exporter.f_select_pg_stat_replication();" &> /dev/null
 
     sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -d parse -c "CREATE VIEW postgres_exporter.pg_stat_activity
     AS
-      SELECT * FROM postgres_exporter.f_select_pg_stat_activity();"
+      SELECT * FROM postgres_exporter.f_select_pg_stat_activity();" &> /dev/null
 
-    sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -d parse -c "GRANT SELECT ON postgres_exporter.pg_stat_replication TO postgres_exporter;"
-    sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -d parse -c "GRANT SELECT ON postgres_exporter.pg_stat_activity TO postgres_exporter;"
+    sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -d parse -c "GRANT SELECT ON postgres_exporter.pg_stat_replication TO postgres_exporter;" &> /dev/null
+    sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -d parse -c "GRANT SELECT ON postgres_exporter.pg_stat_activity TO postgres_exporter;" &> /dev/null
   fi
 
   systemctl restart dgiot_pg_writer
@@ -956,18 +952,19 @@ function install_nginx() {
     echo -e "`date +%F_%T` $LINENO: ${GREEN} ${domain_name} ${NC}"
     sed -i "s!{{domain_name}}!${domain_name}!g"  /etc/nginx/nginx.conf
     sed -i "s!{{install_dir}}!${install_dir}!g"  /etc/nginx/nginx.conf
-    echo -e "`date +%F_%T` $LINENO:  ${GREEN} ${install_dir} ${NC}"
+    echo -e "`date +%F_%T` $LINENO: ${GREEN} ${install_dir} ${NC}"
     if [ -f ${script_dir}/${domain_name}.zip ]; then
       unzip -o ${domain_name}.zip -d /etc/ssl/certs/ &> /dev/null
     fi
-    systemctl start nginx.service
-    systemctl enable nginx.service
+    systemctl start nginx.service &> /dev/null
+    systemctl enable nginx.service &> /dev/null
 }
+
 ## ==============================Main program starts from here============================
 
 set -e
 #set -x
-echo -e "`date +%F_%T` $LINENO: ${GREEN} dgiot  $verType deploy  start${NC}"
+echo -e "`date +%F_%T` $LINENO: ${GREEN} dgiot $verType deploy start${NC}"
 if [ "$verType" == "single" ]; then
     # Install server and client
     if [ -x ${install_dir}/dgiot ]; then
@@ -998,4 +995,5 @@ elif [ "$verType" == "cluster" ]; then
 else
     echo  "please input correct verType"
 fi
-echo -e "`date +%F_%T` $LINENO: ${GREEN} dgiot  $verType deploy  end${NC}"
+
+echo -e "`date +%F_%T` $LINENO: ${GREEN} dgiot $verType deploy end${NC}"

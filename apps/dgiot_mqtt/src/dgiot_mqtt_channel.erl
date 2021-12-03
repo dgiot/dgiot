@@ -124,8 +124,8 @@ handle_event('client.disconnected', {rule, #{clientid := DeviceId, disconnected_
 
 %% 通道消息处理,注意：进程池调用
 handle_event(_EventId, _Event, State) ->
-    io:format("_EventId = ~p.~n", [_EventId]),
-    io:format("_Event = ~p.~n", [_Event]),
+    io:format("~s ~p _EventId = ~p.~n", [?FILE, ?LINE, _EventId]),
+    io:format("~s ~p _Event = ~p.~n", [?FILE, ?LINE, _Event]),
     {ok, State}.
 
 handle_message({rule, #{clientid := _DeviceId, username := ProductId, payload := Payload, topic := Topic, peerhost := Peerhost} = Msg, _Context}, State) ->
