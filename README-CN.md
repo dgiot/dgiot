@@ -25,6 +25,18 @@ DG-IoT是是国内首款轻量级开源工业物联网持续集成平台，我�
 + 物模型-规则引擎-数据通道-组态页面全流程低代码开发
 + 多行业工业协议兼容
 
+## 社区
+| 联系方式       | 地址                                                         |
+| -------------- | ------------------------------------------------------------ |
+| github         | [https://github.com/dgiot](https://github.com/dgiot?from=git) |
+| gitee          | [https://gitee.com/dgiot](https://gitee.com/dgiiot?from=git) |
+| 官网           | [https://www.iotn2n.com](https://www.iotn2n.com?from=git)    |
+| 博客           | [https://tech.iotn2n.com](https://tech.iotn2n.com?from=git)  |
+| 物联网接入平台 | [https://dgiot.iotn2n.com](https://dgiot.iotn2n.com?from=git) |
+| QQ群         | [346566935](https://jq.qq.com/?_wv=1027&k=LipWZvDe/) |
+| 微信群         |![QQ截图20211203164223](https://user-images.githubusercontent.com/51999461/144572670-0566f13e-7917-4a9f-bb0e-3222f2c58770.png)
+ |
+| 公众号         |  ![qrcode.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/wechat/qrcode.png)|
 
 
 ## 快速体验
@@ -80,17 +92,6 @@ DG-IoT是是国内首款轻量级开源工业物联网持续集成平台，我�
 ```
 wget -q https://gitee.com/dgiiot/dgiot/raw/master/dgiot_install.sh  && sh dgiot_install.sh
 ```
-# 社区
-## 关于我们
-| 联系方式       | 地址                                                         |
-| -------------- | ------------------------------------------------------------ |
-| github         | [https://github.com/dgiot](https://github.com/dgiot?from=git) |
-| gitee          | [https://gitee.com/dgiot](https://gitee.com/dgiiot?from=git) |
-| 官网           | [https://www.iotn2n.com](https://www.iotn2n.com?from=git)    |
-| 博客           | [https://tech.iotn2n.com](https://tech.iotn2n.com?from=git)  |
-| 物联网接入平台 | [https://dgiot.iotn2n.com](https://dgiot.iotn2n.com?from=git) |
-| QQ群         | [346566935](https://jq.qq.com/?_wv=1027&k=LipWZvDe/) |
-| 公众号         |  ![qrcode.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/wechat/qrcode.png)|
 
 ## 参与设计
 
