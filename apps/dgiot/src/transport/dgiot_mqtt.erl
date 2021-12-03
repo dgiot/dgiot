@@ -85,6 +85,12 @@ get_channel(#{
 get_channel(_) ->
     <<"">>.
 
+get_message(_Selected, #{
+    timestamp := _Timestamp,
+    topic := _Topic,
+    payload := _Payload} = Envs) ->
+    maps:without([?BINDING_KEYS], Envs);
+
 get_message(Selected, #{
     timestamp := Timestamp,
     ?BINDING_KEYS := #{
@@ -92,7 +98,7 @@ get_message(Selected, #{
         'TopicTks' := TopicTks,
         'PayloadTks' := PayloadTks
     }} = Env) ->
-    NewEnv = maps:without([?BINDING_KEYS],Env),
+    NewEnv = maps:without([?BINDING_KEYS], Env),
     NewEnv#{
         topic => emqx_rule_utils:proc_tmpl(TopicTks, Selected),
         payload => emqx_rule_utils:proc_tmpl(PayloadTks, Selected),
@@ -105,7 +111,7 @@ get_message(Selected, #{
         'TopicTks' := TopicTks,
         'PayloadTks' := PayloadTks
     }} = Env) ->
-    NewEnv = maps:without([?BINDING_KEYS],Env),
+    NewEnv = maps:without([?BINDING_KEYS], Env),
     NewEnv#{
         topic => emqx_rule_utils:proc_tmpl(TopicTks, Selected),
         payload => emqx_rule_utils:proc_tmpl(PayloadTks, Selected),
@@ -117,7 +123,7 @@ get_message(_Selected, Envs = #{
     headers := #{republish_by := ActId},
     ?BINDING_KEYS := #{'_Id' := ActId}
 }) ->
-    maps:without([?BINDING_KEYS],Envs).
+    maps:without([?BINDING_KEYS], Envs).
 
 republish(Selected, #{
     qos := QoS, flags := Flags, timestamp := Timestamp,

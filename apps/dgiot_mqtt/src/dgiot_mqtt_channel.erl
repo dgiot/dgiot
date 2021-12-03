@@ -17,7 +17,7 @@
 -behavior(dgiot_channelx).
 -define(TYPE, <<"MQTT">>).
 -author("johnliu").
--record(state, {id, auth = <<"ProductSecret"/utf8>>}).
+-record(state, {id, auth = <<"ProductSecret"/utf8>>, devaddr, deviceId}).
 -include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
 -include_lib("dgiot/include/logger.hrl").
 
@@ -27,7 +27,6 @@
 
 %% 注册通道类型
 -channel_type(#{
-
     cType => ?TYPE,
     type => ?PROTOCOL_CHL,
     title => #{
@@ -44,7 +43,7 @@
         type => string,
         required => true,
         default => <<"ProductSecret"/utf8>>,
-        enum => [<<"ProductSecret">>, <<"DeviceSecret"/utf8>>, <<"DeviceCert"/utf8>>],
+        enum => [<<"ProductSecret"/utf8>>, <<"DeviceSecret"/utf8>>, <<"DeviceCert"/utf8>>],
         title => #{
             zh => <<"设备授权"/utf8>>
         },
@@ -68,20 +67,24 @@
     }
 }).
 
+
 start(ChannelId, ChannelArgs) ->
     dgiot_channelx:add(?TYPE, ChannelId, ?MODULE, ChannelArgs).
 
 %% 通道初始化
 init(?TYPE, ChannelId, #{
-    <<"port">> := Port,
     <<"product">> := Products,
     <<"auth">> := Auth}) ->
+%%    io:format("Products = ~p.~n", [Products]),
     lists:map(fun(X) ->
         case X of
-            {ProductId, #{<<"ACL">> := Acl, <<"nodeType">> := 1,<<"thing">> := Thing}} ->
-                dgiot_data:insert({mqttd, ChannelId}, {ProductId, Acl, maps:get(<<"properties">>,Thing,[])});
+            {ProductId, #{<<"ACL">> := Acl, <<"thing">> := Thing}} ->
+                dgiot_data:insert({mqttd, ProductId}, {Acl, maps:get(<<"properties">>, Thing, [])});
+%%            创建连接规则
+%%            创建断开连接规则
+%%            创建上传数据规则
             _ ->
-                ?LOG(info,"X ~p", [X]),
+                io:format("dgiot_mqtt_channel:init 87 X = ~p.~n", [X]),
                 pass
         end
               end, Products),
@@ -90,33 +93,58 @@ init(?TYPE, ChannelId, #{
         id = ChannelId,
         auth = Auth
     },
-    {ok, State, dgiot_matlab_tcp:start(Port, State)};
+%%    dgiot_matlab_tcp:start(Port, State)
+    {ok, State};
 
 init(?TYPE, _ChannelId, _Args) ->
-    {ok, #{}, #{}}.
+    {ok, #{}}.
 
 handle_init(State) ->
-    {ok, State}.
-
-%% 通道消息处理,注意：进程池调用
-handle_event(_EventId, _Event, State) ->
     {ok, State}.
 
 % SELECT clientid, payload, topic FROM "meter"
 % SELECT clientid, disconnected_at FROM "$events/client_disconnected" WHERE username = 'dgiot'
 % SELECT clientid, connected_at FROM "$events/client_connected" WHERE username = 'dgiot'
-handle_message({rule, #{clientid := DtuAddr, connected_at := _ConnectedAt}, #{peername := PeerName} = _Context}, #state{id = ChannelId} = State) ->
-    ?LOG(error,"DtuAddr ~p PeerName ~p",[DtuAddr,PeerName] ),
-    DTUIP = dgiot_utils:get_ip(PeerName),
-    dgiot_matlab:create_matlab(DtuAddr, ChannelId, DTUIP),
+handle_event('client.connected', {rule, #{clientid := DevId, connected_at := _ConnectedAt, peername := PeerName}, _Context}, #state{id = _ChannelId} = State) ->
+    [DTUIP, _] = binary:split(PeerName, <<$:>>, [global, trim]),
+    updat_device(DevId, DTUIP, <<"ONLINE">>),
     {ok, State};
 
-handle_message({rule, #{clientid := DevAddr, disconnected_at := _DisconnectedAt}, _Context}, State) ->
-    ?LOG(error,"DevAddr ~p ",[DevAddr] ),
+
+handle_event('client.disconnected', {rule, #{clientid := DeviceId, disconnected_at := _DisconnectedAt, peername := PeerName}, _Context}, State) ->
+    [DTUIP, _] = binary:split(PeerName, <<$:>>, [global, trim]),
+    updat_device(DeviceId, DTUIP, <<"OFFLINE">>),
     {ok, State};
 
-handle_message({rule, #{clientid := DevAddr, payload := Payload, topic := _Topic}, _Msg}, #state{id = ChannelId} = State) ->
-    ?LOG(error,"DevAddr ~p Payload ~p ChannelId ~p",[DevAddr,Payload,ChannelId] ),
+%% 通道消息处理,注意：进程池调用
+handle_event(_EventId, _Event, State) ->
+    io:format("_EventId = ~p.~n", [_EventId]),
+    io:format("_Event = ~p.~n", [_Event]),
+    {ok, State}.
+
+handle_message({rule, #{clientid := _DeviceId, username := ProductId, payload := Payload, topic := Topic, peerhost := Peerhost} = Msg, _Context}, State) ->
+    io:format("Msg = ~p.~n", [Msg]),
+    case jsx:is_json(Payload) of
+        true ->
+            case binary:split(Topic, <<$/>>, [global, trim]) of
+%%                     /ecfd3a227c/6C4B909AF64A/metadata/derived  派生物模型上报
+                [<<>>, ProductId, DtuAddr, <<"metadata">>, <<"derived">>] ->
+                    create_device(ProductId, DtuAddr, Peerhost),
+                    case jsx:decode(Payload, [{labels, binary}, return_maps]) of
+                        #{<<"timestamp">> := _Timestamp,
+                            <<"metadata">> := Metadata,
+                            <<"all">> := _All} when is_map(Metadata) ->
+                            io:format("Metadata = ~p.~n", [Metadata]),
+                            dgiot_tdengine_adapter:save(ProductId, DtuAddr, Metadata);
+                        _ ->
+                            pass
+                    end;
+                _ ->
+                    pass
+            end;
+        _ ->
+            pass
+    end,
     {ok, State};
 
 handle_message(_Message, State) ->
@@ -124,3 +152,31 @@ handle_message(_Message, State) ->
 
 stop(_ChannelType, _ChannelId, _State) ->
     ok.
+
+%% 更新设备
+updat_device(DeviceId, DTUIP, Status) ->
+    case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+        {ok, _Result} ->
+            Body = #{
+                <<"ip">> => DTUIP,
+                <<"status">> => Status},
+            dgiot_parse:update_object(<<"Device">>, DeviceId, Body);
+        _R ->
+            pass
+    end.
+
+%%新设备
+create_device(ProductId, DtuAddr, DTUIP) ->
+    {Acl, _Properties} = dgiot_data:get({mqttd, ProductId}),
+    Requests = #{
+        <<"devaddr">> => DtuAddr,
+        <<"name">> => <<"MATLAB_", DtuAddr/binary>>,
+        <<"ip">> => DTUIP,
+        <<"isEnable">> => true,
+        <<"product">> => ProductId,
+        <<"ACL">> => Acl,
+        <<"status">> => <<"ONLINE">>,
+        <<"brand">> => <<"MATLAB", DtuAddr/binary>>,
+        <<"devModel">> => <<"MATLAB">>
+    },
+    dgiot_device:create_device(Requests).
