@@ -30,7 +30,7 @@ DG-IoT是是国内首款轻量级开源工业物联网持续集成平台，我�
 + 多行业工业协议兼容
 
 ## 一键部署
-+ **centos 7.6**
++ **centos 7.6/7.9** 推荐腾讯云和阿里云
 ```
 wget -q https://gitee.com/dgiiot/dgiot/raw/master/dgiot_install.sh  && sh dgiot_install.sh
 ```
