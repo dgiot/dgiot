@@ -35,9 +35,7 @@ DG-IoT是是国内首款轻量级开源工业物联网持续集成平台，我�
 wget -q https://gitee.com/dgiiot/dgiot/raw/master/dgiot_install.sh  && sh dgiot_install.sh
 ```
 # 业务交互
-
-![](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/msys64/%E4%B8%9A%E5%8A%A1%E4%BA%A4%E4%BA%92.jpg)
-
+![](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/msys64/bus_arch.jpg)
 ## 快速体验
 |小程序|[电脑端](https://prod.iotn2n.com/)|账号|密码|
 |---|---|---|---|
