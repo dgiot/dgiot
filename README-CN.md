@@ -4,9 +4,8 @@
 [![Docker Pulls](https://img.shields.io/docker/pulls/dgiot/dgiot)](https://hub.docker.com/r/dgiot/dgiot)
 [![Community](https://img.shields.io/badge/Community-DGIOT-yellow)](https://tech.iotn2n.com)
 [![QQ群346566935](https://img.shields.io/badge/QQ群-346566935-brightgreen)](https://jq.qq.com/?_wv=1027&k=LipWZvDe)
-
 [English](./README.md) | [简体中文](./README-CN.md) | [日本語](./README-JP.md) | [русский](./README-RU.md)
-
+[github](https://github.com/dgiot?from=git)|[gitee](https://www.iotn2n.com?from=git)|[Web](https://www.iotn2n.com?from=git)|[Blog](https://tech.iotn2n.com?from=git)|[Demo](https://prod.iotn2n.com?from=git)|
 # DG-IoT简介
 DG-IoT是是国内首款轻量级开源工业物联网持续集成平台，我们致力于：
    + 让丰富工程人员可以通过视窗交互可以完成需求较简单的工业互联网项目
@@ -34,40 +33,23 @@ wget -q https://gitee.com/dgiiot/dgiot/raw/master/dgiot_install.sh  && sh dgiot_
 # 业务交互
 ![](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/msys64/dgiot_arch.jpg)
 ## 快速体验
-|小程序|[电脑端](https://prod.iotn2n.com/)|账号|密码|
-|---|---|---|---|
-| ![dgiot小程序](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_release/dgiot_wechat.jpg) |![dgiot_dashboard.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_release/dgiot_dashboard.png) |dgiot_admin|dgiot_admin|
-
-## 社区
-| 联系方式       | 地址                                                         |
-| -------------- | ------------------------------------------------------------ |
-| github         | [https://github.com/dgiot](https://github.com/dgiot?from=git) |
-| gitee          | [https://gitee.com/dgiot](https://gitee.com/dgiiot?from=git) |
-| 官网           | [https://www.iotn2n.com](https://www.iotn2n.com?from=git)    |
-| 博客           | [https://tech.iotn2n.com](https://tech.iotn2n.com?from=git)  |
-| 物联网接入平台 | [https://dgiot.iotn2n.com](https://dgiot.iotn2n.com?from=git) |
-| QQ群         | [346566935](https://jq.qq.com/?_wv=1027&k=LipWZvDe/) |
-| 微信群         |![image](https://user-images.githubusercontent.com/51999461/144572983-16bf3223-a00b-4cd6-9446-cb652f81c8af.png)|
-| 公众号         |  ![qrcode.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/wechat/qrcode.png)|
-
+|关注社区|[验收demon](https://prod.iotn2n.com/)|账号|密码|
+|---|---|---|---|---|
+|![image](https://user-images.githubusercontent.com/51999461/144572983-16bf3223-a00b-4cd6-9446-cb652f81c8af.png)| ![dgiot小程序](http://dgiot-1253666439.cos.ap-shanghai-|![qrcode.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/wechat/qrcode.png)|fsi.myqcloud.com/dgiot_release/dgiot_wechat.jpg) |![dgiot_dashboard.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_release/dgiot_dashboard.png) |dgiot_admin|dgiot_admin|
 
 # 构建
-
  构建 *dgiot* 需要 Erlang/OTP R21+, Windows下用 [msys64](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/msys64/msys64.zip)开发。下载后解压到D盘根目录，严格按照下图操作：
 ![效果图-1.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/msys64/%E6%95%88%E6%9E%9C%E5%9B%BE-1.png)
-
  +  国外下载源码
   ```bash
      git clone https://github.com/dgiot/dgiot_dashboard.git
      git clone https://github.com/dgiot/dgiot.git
    ```
-
  +  国内下载源码
    ```bash
      git clone https://gitee.com/dgiiot/dgiot_dashboard.git
      git clone https://gitee.com/dgiiot/dgiot.git
    ```
-
  +  国内Linux/Unix/Mac/windows 构建
   ```bash
     cd dgiot_dashboard
