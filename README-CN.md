@@ -21,7 +21,7 @@ DG-IoT是国内首款轻量级开源工业物联网平台，我们致力于提�
 + 物模型-规则引擎-数据通道-组态页面全流程可视化低代码开发
 + 多行业工业协议兼容
 ## 快速体验
-|微信群|公众号|[电脑端](https://prod.iotn2n.com/)|小程序|账号|密码|
+|微信群|公众号|小程序|[电脑端](https://prod.iotn2n.com/)|账号|密码|
 |---|---|---|---|---|---|
 |![](https://user-images.githubusercontent.com/51999461/144572983-16bf3223-a00b-4cd6-9446-cb652f81c8af.png)|![](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_release/dgiot_wechat.jpg)|![](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/wechat/qrcode.png)|![](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_release/dgiot_dashboard.png) |dgiot_admin|dgiot_admin|
 ## 一键部署
