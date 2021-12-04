@@ -22,7 +22,7 @@ DG-IoT是是国内首款轻量级完全开源工业物联网的平台，我们�
 + 物模型-规则引擎-数据通道-组态页面全流程可视化低代码开发
 + 多行业工业协议兼容
 ## 快速体验
-|扫描关注|[快速体验](https://prod.iotn2n.com/)|账号|密码|
+|扫码关注|[快速体验](https://prod.iotn2n.com/)|账号|密码|
 |---|---|---|---|
 |![](https://user-images.githubusercontent.com/51999461/144572983-16bf3223-a00b-4cd6-9446-cb652f81c8af.png)|![](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_release/dgiot_wechat.jpg)|dgiot_admin|dgiot_admin|
 |![](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/wechat/qrcode.png)|![](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_release/dgiot_dashboard.png) |dgiot_admin|dgiot_admin|
@@ -32,7 +32,7 @@ DG-IoT是是国内首款轻量级完全开源工业物联网的平台，我们�
 wget -q https://gitee.com/dgiiot/dgiot/raw/master/dgiot_install.sh  && sh dgiot_install.sh
 ```
 ## 构建
- 构建 *dgiot* 需要 Erlang/OTP R21+, Windows下用 [msys64](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/msys64/msys64.zip)开发。下载后解压到D盘根目录，严格按照下图操作：
+ 构建 *dgiot* 需要 Erlang/OTP R23+, Windows下用 [msys64](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/msys64/msys64.zip)开发。下载后解压到D盘根目录，严格按照下图操作：
 ![效果图-1.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/msys64/%E6%95%88%E6%9E%9C%E5%9B%BE-1.png)
  +  国外下载源码
   ```bash
