@@ -12,7 +12,7 @@ DG-IoT是是国内首款轻量级完全开源工业物联网的平台，我们�
 + 系统集成商：海量设备接入、多型号设备与传感器支持二次开发、一键式部署，私有化灵活部署、低成本（降90%成本）
 + 工业设备制造商：海量设备上线运维，不受公有云限制，低成本，短周期自建平台，私有化部署，数据安全
 + 开源平台开发者：利用开源平台，快速直接承接项目，可利用平台丰富的已支持设备和场景，集成和兼容各种最优开源工具
-# 核心功能
+## 业务架构
 ![](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/msys64/dgiot_arch.jpg)
 ## 核心特色
 + 前后端[完全开源](https://github.com/dgiot/dgiot/blob/master/Platform-service.md) ，无收费商业版
@@ -30,7 +30,7 @@ DG-IoT是是国内首款轻量级完全开源工业物联网的平台，我们�
 ```
 wget -q https://gitee.com/dgiiot/dgiot/raw/master/dgiot_install.sh  && sh dgiot_install.sh
 ```
-# 构建
+## 构建
  构建 *dgiot* 需要 Erlang/OTP R21+, Windows下用 [msys64](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/msys64/msys64.zip)开发。下载后解压到D盘根目录，严格按照下图操作：
 ![效果图-1.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/msys64/%E6%95%88%E6%9E%9C%E5%9B%BE-1.png)
  +  国外下载源码
