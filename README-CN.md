@@ -7,7 +7,7 @@
 [English](./README.md) | [简体中文](./README-CN.md) | [日本語](./README-JP.md) | [русский](./README-RU.md)
 [github](https://github.com/dgiot?from=git)|[gitee](https://www.iotn2n.com?from=git)|[Web](https://www.iotn2n.com?from=git)|[Blog](https://tech.iotn2n.com?from=git)|[Demo](https://prod.iotn2n.com?from=git)|
 ## DG-IoT简介
-DG-IoT是是国内首款轻量级开源工业物联网持续集成平台，我们致力于：
+DG-IoT是是国内首款轻量级完全开源工业物联网的平台，我们致力于提供四类物联网解决方案：
 + 国企研究院：平台代码开源，无版权产权困扰，国产无“卡脖”之忧。
 + 系统集成商：海量设备接入、多型号设备与传感器支持二次开发、一键式部署，私有化灵活部署、低成本（降90%成本）
 + 工业设备制造商：海量设备上线运维，不受公有云限制，低成本，短周期自建平台，私有化部署，数据安全
