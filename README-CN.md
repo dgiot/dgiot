@@ -6,14 +6,8 @@
 [![QQ群346566935](https://img.shields.io/badge/QQ群-346566935-brightgreen)](https://jq.qq.com/?_wv=1027&k=LipWZvDe)
 [English](./README.md) | [简体中文](./README-CN.md) | [日本語](./README-JP.md) | [русский](./README-RU.md)
 [github](https://github.com/dgiot?from=git)|[gitee](https://www.iotn2n.com?from=git)|[Web](https://www.iotn2n.com?from=git)|[Blog](https://tech.iotn2n.com?from=git)|[Demo](https://prod.iotn2n.com?from=git)|
-# DG-IoT简介
+## DG-IoT简介
 DG-IoT是是国内首款轻量级开源工业物联网持续集成平台，我们致力于：
-   + 让丰富工程人员可以通过视窗交互可以完成需求较简单的工业互联网项目
-   + 让广大的初级前端工程师通过serverless的方式可以承接需求较复杂的工业互联网项目
-   + 让Python、Java、Go、C初级后台工程师通过web编程开发通道来承接复杂的工业互联网项目
-   + 前后端完全开源，极大节约用户成本，缩减物联网平台开发周期
-   + 支持私有化一键式部署，快速拥有自己的物联网平台
-## 面向用户
 + 国企研究院：平台代码开源，无版权产权困扰，国产无“卡脖”之忧。
 + 系统集成商：海量设备接入、多型号设备与传感器支持二次开发、一键式部署，私有化灵活部署、低成本（降90%成本）
 + 工业设备制造商：海量设备上线运维，不受公有云限制，低成本，短周期自建平台，私有化部署，数据安全
@@ -22,9 +16,9 @@ DG-IoT是是国内首款轻量级开源工业物联网持续集成平台，我�
 ![](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/msys64/dgiot_arch.jpg)
 ## 核心特色
 + 前后端[完全开源](https://github.com/dgiot/dgiot/blob/master/Platform-service.md) ，无收费商业版
-+ 轻量级快速部署
++ 支持私有化一键式部署，快速拥有自己的轻量级物联网平台
 + 千万级长连接承载，电信级稳定性
-+ 物模型-规则引擎-数据通道-组态页面全流程低代码开发
++ 物模型-规则引擎-数据通道-组态页面全流程可视化低代码开发
 + 多行业工业协议兼容
 ## 快速体验
 |扫描关注|[快速体验](https://prod.iotn2n.com/)|账号|密码|
