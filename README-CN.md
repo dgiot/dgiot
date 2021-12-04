@@ -20,18 +20,17 @@ DG-IoT是是国内首款轻量级开源工业物联网持续集成平台，我�
 + 开源平台开发者：利用开源平台，快速直接承接项目，可利用平台丰富的已支持设备和场景，集成和兼容各种最优开源工具
 # 业务交互
 ![](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/msys64/dgiot_arch.jpg)
-## 快速体验
-|扫描关注|[快速体验](https://prod.iotn2n.com/)|账号|密码|
-|---|---|---|---|
-|![](https://user-images.githubusercontent.com/51999461/144572983-16bf3223-a00b-4cd6-9446-cb652f81c8af.png)|![](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_release/dgiot_wechat.jpg)|dgiot_admin|dgiot_admin|
-|![](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/wechat/qrcode.png)|![](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_release/dgiot_dashboard.png) |dgiot_admin|dgiot_admin|
 ## 核心特色
 + 前后端[完全开源](https://github.com/dgiot/dgiot/blob/master/Platform-service.md) ，无收费商业版
 + 轻量级快速部署
 + 千万级长连接承载，电信级稳定性
 + 物模型-规则引擎-数据通道-组态页面全流程低代码开发
 + 多行业工业协议兼容
-
+## 快速体验
+|扫描关注|[快速体验](https://prod.iotn2n.com/)|账号|密码|
+|---|---|---|---|
+|![](https://user-images.githubusercontent.com/51999461/144572983-16bf3223-a00b-4cd6-9446-cb652f81c8af.png)|![](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_release/dgiot_wechat.jpg)|dgiot_admin|dgiot_admin|
+|![](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/wechat/qrcode.png)|![](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_release/dgiot_dashboard.png) |dgiot_admin|dgiot_admin|
 ## 一键部署
 + **centos 7.6/7.9** 推荐使用腾讯云和阿里云
 ```
