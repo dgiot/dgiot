@@ -29,9 +29,17 @@ DG-IoT是是国内首款轻量级开源工业物联网持续集成平台，我�
 + 物模型-规则引擎-数据通道-组态页面全流程低代码开发
 + 多行业工业协议兼容
 
+## 一键部署
+
+ + **centos 7.6**
+
+```
+wget -q https://gitee.com/dgiiot/dgiot/raw/master/dgiot_install.sh  && sh dgiot_install.sh
+```
+
 # 业务交互
 
-![](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/msys64/%E4%B8%9A%E5%8A%A1%E4%BA%A4%E4%BA%92.jpg)
+![](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/msys64/%E4%B8%9A%E5%8A%A1%E6%9E%B6%E6%9E%84.jpg)
 
 ## 快速体验
 |小程序|[电脑端](https://prod.iotn2n.com/)|账号|密码|
@@ -89,14 +97,6 @@ DG-IoT是是国内首款轻量级开源工业物联网持续集成平台，我�
 
 - 新功能的完整列表，请参阅 [DGIOT Release Notes](https://github.com/dgiot/dgiot/releases)。
 - 获取更多信息，请访问 [DGIOT 官网](https://tech.iotn2n.com/)。
-
-## 一键部署
-
- + **centos 7.6**
-
-```
-wget -q https://gitee.com/dgiiot/dgiot/raw/master/dgiot_install.sh  && sh dgiot_install.sh
-```
 
 ## 参与设计
 
