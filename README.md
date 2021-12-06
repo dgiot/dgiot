@@ -109,9 +109,6 @@ You are welcome to submit any bugs, issues and feature requests to [dgiot/dgiot]
 ## Preview address
 [Tencent Cloud preview address](https://dgiotdashboard-8gb17b3673ff6cdd-1253666439.ap-shanghai.app.tcloudbase.com?ftom=git)
 
-## Scan code preview
-![dgiot_dashboard.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/wechat/dgiot_dashboard.png)
-
 
 ## Open source license
 Apache License 2.0, 详见 [LICENSE](./LICENSE)。
