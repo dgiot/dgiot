@@ -320,6 +320,53 @@
           "Wechat"
         ]
       }
+    },
+    "/jwtlogin": {
+      "get": {
+        "security": [],
+        "description": "jwt回调地址",
+        "parameters": [
+          {
+            "name": "id_token",
+            "in": "query",
+            "type": "string",
+            "default": "JVANH8bf5n",
+            "description": "id_token"
+          },
+          {
+            "name": "redirect_url",
+            "in": "query",
+            "type": "string",
+            "default": "https://dgiiot.gitee.io/government/",
+            "description": "redirect_url"
+          },
+          {
+            "name": "target_url",
+            "in": "query",
+            "type": "string",
+            "default": "https://dgiiot.gitee.io/government/",
+            "description": "target_url"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "summary": "wechat登陆",
+        "tags": [
+          "Wechat"
+        ]
+      }
     }
   }
 }
