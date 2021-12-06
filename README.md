@@ -1,4 +1,4 @@
-#  DGIOT
+#  DGIOT Lightweight industrial IoT open source platform
 
 [![GitHub Release](https://img.shields.io/github/release/dgiot/dgiot?color=brightgreen)](https://github.com/dgiot/dgiot/releases)
 [![Build Status](https://travis-ci.org/dgiot/dgiot.svg)](https://travis-ci.org/dgiot/dgiot)
@@ -8,6 +8,7 @@
 
 
 [English](./README.md) | [简体中文](./README-CN.md) | [日本語](./README-JP.md) | [русский](./README-RU.md)
+[github](https://github.com/dgiot?from=git)|[gitee](https://www.iotn2n.com?from=git)|[Official website](https://www.iotn2n.com?from=git)|[Blog](https://tech.iotn2n.com?from=git)|[Experience](https://prod.iotn2n.com?from=git)|
 
 *DGIOT*  is the first lightweight open source industrial IoT continuous integration platform in China
 
@@ -16,13 +17,14 @@ Before 2016, the Shuwa team had been crawling on the Internet and the mobile Int
    + Let the majority of junior front-end engineers to undertake industrial Internet projects with more complex requirements through the serverless method
    + Let Python, Java, Go, C junior background engineers undertake complex industrial Internet projects through web programming development channels
 
-# Vision
-  The DGIOT team hopes to achieve the following visions through the Shuwa Industrial Internet continuous integration platform
-  + Through engineers, front-end engineers, and junior back-office engineers to actually complete small and medium-sized industrial Internet projects in no more than 1 month
-  + Ensure high-quality delivery through multiple methods such as open source code, free software, document sharing, technical certification, product certification, operation and maintenance hosting, etc.
-  + Experts in the technical field continue to integrate the industry's excellent technical framework, and experts in the business field continue to optimize business models and processes, and build a multidisciplinary open platform
-  + The IoT platform can finally be simple and easy to use, returning to the essence of tooling
-
+# Business architecture
+  ![](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/msys64/dgiot_arch_msg.jpg)
+# Core features
++ The front and back ends are completely open source, no-charge commercial version
++ Support privatization one-click deployment, quickly own your own lightweight IoT platform
++ Carrying over tens of millions of long connections, carrier-class stability
++ Object model-rule engine-data channel-configuration page full-process visualization low-code development
++ Multi-industry industrial protocol compatibility
 # Building
 
  Bulid *DGIOT* Need Erlang/OTP R21+, Windows download  [msys64.zip](https://dgiot-dev-1306147891.cos.ap-nanjing.myqcloud.com/msys64/msys64.zip)    ,After downloading, unzip it to the root directory of Disk D, and operate strictly in accordance with the following figure：
@@ -102,15 +104,7 @@ You are welcome to submit any bugs, issues and feature requests to [dgiot/dgiot]
 | The public         | ![qrcode.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/wechat/qrcode.png) |
 |QQ group             | 346566935   |
 
-### Contact us
-You can contact the DGIOT community and developers through the following channels:
-- [official](https://www.iotn2n.com)
-- [ask](https://ask.iotn2n.com/)
-- [Blog](https://tech.iotn2n.com)
-- [Twitter](https://twitter.com/)
-- [Facebook](https://www.facebook.com/)
-- [Reddit](https://www.reddit.com/)
-- [Weibo](https://weibo.com)
+
 
 ## Preview address
 [Tencent Cloud preview address](https://dgiotdashboard-8gb17b3673ff6cdd-1253666439.ap-shanghai.app.tcloudbase.com?ftom=git)
