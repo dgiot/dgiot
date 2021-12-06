@@ -40,7 +40,8 @@
     , create_upload_image/0
     , url_generator/4
     , get_play_info/1
-    , get_iso_8601/1]).
+    , get_iso_8601/1
+    , jwtlogin/3]).
 
 -define(EXPIRE, 300).
 
@@ -134,7 +135,7 @@ real_url_generator(AppName, StreamName, EndTime, Head, Key) ->
     Uid = "0",
     Plaintxt1 = lists:concat(["/", AppName, "/", StreamName]),
     Plaintxt2 = lists:concat([EndTime, "-", Rand, "-", Uid, "-"]),
-    ?LOG(info,"~p", [Plaintxt1 ++ "-" ++ Plaintxt2 ++ Key]),
+    ?LOG(info, "~p", [Plaintxt1 ++ "-" ++ Plaintxt2 ++ Key]),
     Live = crypto:hash(md5, Plaintxt1 ++ "-" ++ Plaintxt2 ++ Key),
     dgiot_utils:to_binary(Head ++ Plaintxt1 ++
         "?auth_key=" ++ Plaintxt2 ++ string:to_lower(dgiot_utils:to_list(dgiot_utils:binary_to_hex(Live)))).
@@ -170,6 +171,18 @@ oss_signature(VerB, Expire, Bucket, ObjectName) ->
     LineBreak = "\n",
     String = lists:concat([dgiot_utils:to_list(VerB), LineBreak, LineBreak, LineBreak, dgiot_utils:to_list(Expire), LineBreak, "/", dgiot_utils:to_list(Bucket), "/", dgiot_utils:to_list(ObjectName)]),
     http_uri:encode(dgiot_utils:to_list(base64:encode(crypto:hmac(sha, dgiot_utils:to_list(?AccessKeySecret), String)))).
+
+
+jwtlogin(Idtoken, Target_url, Redirect_url) ->
+    Path = code:priv_dir(dgiot_http),
+    {ok, PublcPem} = file:read_file(Path ++ "/jwt/jwt_public_key_pkc8.pem"),
+    {ok, TokenData} = jwerl:verify(Idtoken, rs256, PublcPem),
+    {ok, #{<<"username">> => <<"dgiot_admin">>,
+        <<"state">> => TokenData,
+        <<"error">> => <<"0">>,
+        <<"errorMes">> => <<"operation success">>,
+        <<"target_url">> => Target_url,
+        <<"redirect_url">> => Redirect_url}}.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%aliyun_test%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

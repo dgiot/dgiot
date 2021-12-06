@@ -145,6 +145,28 @@ handle_message({rule, #{clientid := _DeviceId, username := ProductId, payload :=
                         _ ->
                             pass
                     end;
+%%%%                扫描子设备: /{productId}/{deviceAddr}/scan/{protocol}
+%%                [<<>>, ProductId, DtuAddr, <<"scan">>, <<"OPC_DA">>] ->
+%%                    case jsx:decode(Payload, [{labels, binary}, return_maps]) of
+%%                        #{} ->
+%%                            opc_da;
+%%                        _ ->
+%%                            pass
+%%                    end;
+%%                [<<>>, ProductId, DtuAddr, <<"scan">>, <<"OPC_UA">>] ->
+%%                    case jsx:decode(Payload, [{labels, binary}, return_maps]) of
+%%                        #{} ->
+%%                            opc_ua;
+%%                        _ ->
+%%                            pass
+%%                    end;
+%%                [<<>>, ProductId, DtuAddr, <<"scan">>, <<"PLC">>] ->
+%%                    case jsx:decode(Payload, [{labels, binary}, return_maps]) of
+%%                        #{} ->
+%%                            plc;
+%%                        _ ->
+%%                            pass
+%%                    end;
                 _ ->
                     pass
             end;
