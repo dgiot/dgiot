@@ -34,20 +34,20 @@ wget -q https://gitee.com/dgiiot/dgiot/raw/master/dgiot_install.sh  && sh dgiot_
 ![效果图-1.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/msys64/%E6%95%88%E6%9E%9C%E5%9B%BE-1.png)
  +  国外下载源码
   ```bash
-     git clone https://github.com/dgiot/dgiot_dashboard.git
+     git clone https://github.com/dgiot/dgiot-dashboard.git
      git clone https://github.com/dgiot/dgiot.git
    ```
  +  国内下载源码
    ```bash
-     git clone https://gitee.com/dgiiot/dgiot_dashboard.git
+     git clone https://gitee.com/dgiiot/dgiot-dashboard.git
      git clone https://gitee.com/dgiiot/dgiot.git
    ```
  +  国内Linux/Unix/Mac/windows 构建
   ```bash
     cd dgiot_dashboard
     git pull
-    yarn dgiot:install
-    yarn build
+    pnpm install
+    pnpm build
     cd ../dgiot
     git pull
     rm ./apps/dgiot_api/priv/www -rf
