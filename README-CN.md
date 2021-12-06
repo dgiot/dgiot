@@ -59,7 +59,7 @@ wget -q https://gitee.com/dgiiot/dgiot/raw/master/dgiot_install.sh  && sh dgiot_
  ```
   make DIAGNOSTIC=1
  ```
-*DGIOT* 启动，可以使用浏览器访问 http://localhost:5080 来查看 Dashboard。
+*DGIOT* 启动，可以使用浏览器访问 http://localhost:80 来查看 Dashboard。
 
 - 新功能的完整列表，请参阅 [DGIOT Release Notes](https://github.com/dgiot/dgiot/releases)。
 - 获取更多信息，请访问 [DGIOT 官网](https://tech.iotn2n.com/)。
