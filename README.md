@@ -30,13 +30,13 @@ Before 2016, the Shuwa team had been crawling on the Internet and the mobile Int
 
  +  Download source code abroad
   ```bash
-     git clone https://github.com/dgiot/dgiot_dashboard.git
+     git clone https://github.com/dgiot/dgiot-dashboard.git
      git clone https://github.com/dgiot/dgiot.git
    ```
 
  +  China download source code
    ```bash
-     git clone https://gitee.com/dgiiot/dgiot_dashboard.git
+     git clone https://gitee.com/dgiiot/dgiot-dashboard.git
      git clone https://gitee.com/dgiiot/dgiot.git
    ```
 
@@ -44,8 +44,8 @@ Before 2016, the Shuwa team had been crawling on the Internet and the mobile Int
   ```bash
     cd dgiot_dashboard
     git pull
-    yarn dgiot:install
-    yarn build
+    pnpm install
+    pnpm build
     cd ../dgiot
     git pull
     rm ./apps/dgiot_api/priv/www -rf
