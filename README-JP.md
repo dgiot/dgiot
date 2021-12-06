@@ -55,7 +55,7 @@
  ```
   make DIAGNOSTIC=1
  ```
- *DGIOT* start, you can use a browser to visit http://localhost:5080 to view Dashboard.。
+ *DGIOT* start, you can use a browser to visit  http://localhost to view Dashboard.。
 
 - For a complete list of new features, see [DGIOT Release Notes](https://github.com/dgiot/dgiot/releases)。
 - For more information, please visit [DGIOT Website](https://tech.iotn2n.com/)。
