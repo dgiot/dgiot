@@ -10,18 +10,18 @@
 [github](https://github.com/dgiot?from=git)|[gitee](https://www.iotn2n.com?from=git)|[官网](https://www.iotn2n.com?from=git)|[博客](https://tech.iotn2n.com?from=git)|[体验](https://prod.iotn2n.com?from=git)|
 ## DG-IoT简介
 DG-IoT是国内首款轻量级开源工业物联网平台，我们致力于提供四类物联网解决方案：
-+ ** <font size=10>国企/研究院</font> **：平台代码开源，无版权产权困扰，国产无“卡脖”之忧。
++ **国企/研究院**：平台代码开源，无版权产权困扰，国产无“卡脖”之忧。
 + **系统集成商**：通用设备海量接入、定制设备二次开发、30分钟一键式私有化快速部署，低成本（降90%成本）
 + **工业设备制造商**：海量设备上线运维，不受公有云限制，低成本，短周期自建平台，私有化部署，数据安全
 + **开源平台开发者**：一键式开发环境，集成和兼容各种最优开源工具，快速承接物联网项目
 ## 业务架构
-![](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/msys64/dgiot_arch_msg.jpg)
+![image](https://user-images.githubusercontent.com/51999461/145026404-c1c6f508-d259-419e-982b-b99341a31ca2.png)
 ## 核心特色
-+ 完全开源：前后端[完全开源](./Platform-service.md)，无收费商业版
-+ 快速部署：30分钟私有化[一键式部署](https://gitee.com/dgiiot/dgiot/wikis/DG-IoT%E7%89%A9%E8%81%94%E7%BD%91%E6%89%8B%E5%86%8C/%E7%AE%80%E4%BB%8B/%E5%AE%89%E8%A3%85%E9%83%A8%E7%BD%B2)，快速拥有自己的物联网平台
-+ 专业可靠：千万级长连接承载，电信级稳定性
-+ 兼容并包：兼容工业领域多行业的常见协议类型
-+ 全流程低代码：物模型-规则引擎-数据通道-组态页面全流程可视化低代码开发
++ **完全开源**：前后端[完全开源](./Platform-service.md)，无收费商业版
++ **快速部署**：30分钟私有化[一键式部署](https://gitee.com/dgiiot/dgiot/wikis/DG-IoT%E7%89%A9%E8%81%94%E7%BD%91%E6%89%8B%E5%86%8C/%E7%AE%80%E4%BB%8B/%E5%AE%89%E8%A3%85%E9%83%A8%E7%BD%B2)，快速拥有自己的物联网平台
++ **专业可靠**：千万级长连接承载，电信级稳定性
++ **兼容并包**：兼容工业领域多行业的常见协议类型
++ **全流程低代码**：物模型-规则引擎-数据通道-组态页面全流程可视化低代码开发
 
 ## 快速体验
 |微信群|小程序|公众号|[电脑端](https://prod.iotn2n.com/)|账号|密码|
