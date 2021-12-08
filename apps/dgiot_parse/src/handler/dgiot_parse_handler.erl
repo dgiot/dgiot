@@ -25,7 +25,7 @@
 %% API
 -export([swagger_parse/0, init/2, handle/4]).
 -export([login_by_account/2, login_by_token/2, login_by_mail_phone/1, set_cookies/3]).
--export([create_user_for_app/1, get_token/1, create_tree/2, get_classtree/4, create_session/3, add_acl/5]).
+-export([create_user_for_app/1, get_token/1, create_tree/2, get_classtree/4, create_session/3, add_acl/5, create_user/2]).
 
 %%%===================================================================
 %%% swagger Callback

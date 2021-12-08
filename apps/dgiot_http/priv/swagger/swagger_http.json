@@ -3,6 +3,10 @@
     {
       "name": "Wechat",
       "description": "微信适配"
+    },
+    {
+      "name": "aliyun",
+      "description": "阿里云适配"
     }
   ],
   "definitions": {
@@ -332,20 +336,6 @@
             "type": "string",
             "default": "JVANH8bf5n",
             "description": "id_token"
-          },
-          {
-            "name": "redirect_url",
-            "in": "query",
-            "type": "string",
-            "default": "https://dgiiot.gitee.io/government/",
-            "description": "redirect_url"
-          },
-          {
-            "name": "target_url",
-            "in": "query",
-            "type": "string",
-            "default": "https://dgiiot.gitee.io/government/",
-            "description": "target_url"
           }
         ],
         "responses": {
@@ -362,9 +352,9 @@
             "description": "Server Internal error"
           }
         },
-        "summary": "wechat登陆",
+        "summary": "jwt回调",
         "tags": [
-          "Wechat"
+          "aliyun"
         ]
       }
     }
