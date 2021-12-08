@@ -7,7 +7,7 @@
 
 [English](./README.md) | [中文](./README-CN.md) | [日本語](./README-JP.md) | [русский](./README-RU.md)|
 
-[github](https://github.com/dgiot?from=git)|[gitee](https://www.iotn2n.com?from=git)|[官网](https://www.iotn2n.com?from=git)|[博客](https://tech.iotn2n.com?from=git)|[体验](https://prod.iotn2n.com?from=git)|
+[github](https://github.com/dgiot?from=git)|[gitee](https://www.iotn2n.com?from=git)|[官网](https://www.iotn2n.com?from=git)|[博客](https://tech.iotn2n.com?from=git)|[体验](https://prod.iotn2n.com?from=git)|[微信群](#jump)
 ## DG-IoT简介
 DG-IoT是国内首款轻量级开源工业物联网平台，我们致力于提供四类物联网解决方案：
 + **国企/研究院**：平台代码开源，无版权产权困扰，国产无“卡脖”之忧。
@@ -24,7 +24,7 @@ DG-IoT是国内首款轻量级开源工业物联网平台，我们致力于提�
 + **全流程低代码**：物模型-规则引擎-数据通道-组态页面全流程可视化低代码开发
 
 ## 快速体验
-|微信群|小程序|公众号|[电脑端](https://prod.iotn2n.com/)|账号|密码|
+|<span id="jump"> 微信群 </span>|小程序|公众号|[电脑端](https://prod.iotn2n.com/)|账号|密码|
 |---|---|---|---|---|---|
 |![](https://user-images.githubusercontent.com/51999461/144572983-16bf3223-a00b-4cd6-9446-cb652f81c8af.png)|![](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_release/dgiot_wechat.jpg)|![](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/wechat/qrcode.png)|![](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_release/dgiot_dashboard.png) |dgiot_admin|dgiot_admin|
 ## 一键部署
