@@ -74,11 +74,11 @@ do_request(get_file_signature, Args, _Context, _Req) ->
         _ -> {404, #{<<"code">> => 1001, <<"error">> => <<"not support this type">>}}
     end;
 
-%% iot_hub 概要: 查询平台api资源 描述:wechat登陆
-%% OperationId:post_login
-%% 请求:POST /iotapi/post_login
-do_request(get_jwtlogin, #{<<"id_token">> := Idtoken, <<"target_url">> := Target_url, <<"redirect_url">> := Redirect_url}, _Context, _Req) ->
-    dgiot_aliyun_auth:jwtlogin(Idtoken, Target_url, Redirect_url);
+%% iot_hub 概要: 查询平台api资源 描述:jwt回调
+%% OperationId:get_jwtlogin
+%% 请求:POST /iotapi/get_jwtlogin
+do_request(get_jwtlogin, #{<<"id_token">> := Idtoken}, _Context, _Req) ->
+    dgiot_aliyun_auth:jwtlogin(Idtoken);
 
 %% iot_hub 概要: 查询平台api资源 描述:wechat登陆
 %% OperationId:post_login

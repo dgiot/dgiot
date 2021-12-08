@@ -247,7 +247,13 @@ do_request(post_generatereport, #{<<"id">> := TaskId}, #{<<"sessionToken">> := _
                                             }];
                                         <<"image">> ->
                                             PythonBody = #{<<"name">> => <<TaskId/binary, ".png">>, <<"path">> => <<"/data/dgiot/go_fastdfs/files/dgiot_file/pump_pytoh/">>},
-                                            Imagepath = base64:decode(os:cmd("python3 /data/dgiot/dgiot/lib/dgiot_evidence-4.3.0/priv/python/drawxnqx.py " ++ dgiot_utils:to_list(base64:encode(jsx:encode(PythonBody))))),
+                                            Imagepath =
+                                                case catch base64:decode(os:cmd("python3 /data/dgiot/dgiot/lib/dgiot_evidence-4.3.0/priv/python/drawxnqx.py " ++ dgiot_utils:to_list(base64:encode(jsx:encode(PythonBody))))) of
+                                                    {'EXIT', _Error} ->
+                                                        <<"">>;
+                                                    Path ->
+                                                        Path
+                                                end,
                                             Repath = re:replace(dgiot_utils:to_list(Imagepath), "/data/dgiot/go_fastdfs/files", "", [global, {return, binary}, unicode]),
                                             Acc ++ [#{
                                                 <<"type">> => <<"image">>,
@@ -897,7 +903,7 @@ post_report(#{<<"name">> := Name, <<"product">> := ProductId, <<"parentId">> := 
                                             <<"class">> => <<"Device">>}
                                     }]
                                             end, [], Dicts),
-                            io:format("DictRequests ~p~n",[DictRequests]),
+                            io:format("DictRequests ~p~n", [DictRequests]),
                             dgiot_parse:batch(DictRequests);
                         _R3 ->
                             ?LOG(info, "R1 ~p", [_R3])

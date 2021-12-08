@@ -41,7 +41,7 @@
     , url_generator/4
     , get_play_info/1
     , get_iso_8601/1
-    , jwtlogin/3]).
+    , jwtlogin/1]).
 
 -define(EXPIRE, 300).
 
@@ -173,17 +173,85 @@ oss_signature(VerB, Expire, Bucket, ObjectName) ->
     http_uri:encode(dgiot_utils:to_list(base64:encode(crypto:hmac(sha, dgiot_utils:to_list(?AccessKeySecret), String)))).
 
 
-jwtlogin(Idtoken, Target_url, Redirect_url) ->
+jwtlogin(Idtoken) ->
     Path = code:priv_dir(dgiot_http),
     {ok, PublcPem} = file:read_file(Path ++ "/jwt/jwt_public_key_pkc8.pem"),
-    {ok, TokenData} = jwerl:verify(Idtoken, rs256, PublcPem),
-    {ok, #{<<"username">> => <<"dgiot_admin">>,
-        <<"state">> => TokenData,
-        <<"error">> => <<"0">>,
-        <<"errorMes">> => <<"operation success">>,
-        <<"target_url">> => Target_url,
-        <<"redirect_url">> => Redirect_url}}.
-
+    Algorithm = dgiot_utils:to_atom(application:get_env(dgiot_http, jwt_algorithm, <<"rs256">>)),
+    case catch jwerl:verify(Idtoken, Algorithm, PublcPem) of
+        {'EXIT', _Error} ->
+            {ok, #{<<"code">> => 500, <<"msg">> => <<"operation error">>}};
+        {ok, #{<<"udAccountUuid">> := UdAccountUuid, username := Username} = TokenData} ->
+            Mobile = maps:get(<<"mobile">>, TokenData, <<"">>),
+            Email = maps:get(email, TokenData, <<Mobile/binary, "@email.com">>),
+            Name = maps:get(name, TokenData, Username),
+            UserBody = #{
+                <<"email">> => Email,
+                <<"emailVerified">> => true,
+                <<"nick">> => Name,
+                <<"password">> => UdAccountUuid,
+                <<"phone">> => Mobile,
+                <<"username">> => Username,
+                <<"tag">> => #{
+                    <<"companyinfo">> => #{
+                        <<"Copyright">> => <<"© 2017-2021 温岭水泵远程检测中心 Corporation, All Rights Reserved"/utf8>>,
+                        <<"backgroundimage">> => <<"/dgiot_file/user/profile/Klht7ERlYn_companyinfo_backgroundimage.jpg?timestamp=1636974751417">>,
+                        <<"logo">> => <<"/group1/default/20211019/18/33/4/微信图片_20210705103613.jpg"/utf8>>,
+                        <<"name">> => <<"温岭水泵远程检测中心"/utf8>>,
+                        <<"title">> => <<"欢迎登录温岭水泵远程检测中心"/utf8>>,
+                        <<"_mimg">> => <<"/dgiot_file/user/profile/Klht7ERlYn_companyinfo__mimg.jpeg?timestamp=1635245663651">>,
+                        <<"_pcimg">> => <<"/dgiot_file/user/profile/Klht7ERlYn_companyinfo__pcimg.jpeg?timestamp=1635245685140">>
+                    },
+                    <<"theme">> => #{
+                        <<"columnStyle">> => <<"horizontal">>,
+                        <<"fixedHeader">> => true,
+                        <<"layout">> => <<"horizontal">>,
+                        <<"pictureSwitch">> => true,
+                        <<"showFullScreen">> => true,
+                        <<"showLanguage">> => true,
+                        <<"showNotice">> => false,
+                        <<"showProgressBar">> => true,
+                        <<"showRefresh">> => true,
+                        <<"showSearch">> => false,
+                        <<"showTabs">> => true,
+                        <<"showTabsBarIcon">> => false,
+                        <<"showTheme">> => true,
+                        <<"showThemeSetting">> => true,
+                        <<"tabsBarStyle">> => <<"smart">>,
+                        <<"themeName">> => <<"default">>
+                    },
+                    <<"userinfo">> => #{
+                        <<"avatar">> => <<"/dgiot_file/user/profile/Klht7ERlYn_userinfo_avatar.png?timestamp=1637914878741">>,
+                        <<"phone">> => Mobile,
+                        <<"sex">> => "男"
+                    },
+                    <<"jwt">> => TokenData}},
+            SessionToken = dgiot_parse_handler:get_token(<<228, 186, 167, 228, 184, 154, 229, 164, 167, 232, 132, 145, 231, 148, 168, 230, 136, 183>>),
+            case dgiot_parse:query_object(<<"_User">>, #{<<"where">> => #{<<"username">> => Username}}) of
+                {ok, #{<<"results">> := Results}} when length(Results) == 0 ->
+                    case dgiot_parse:get_object(<<"_Role">>, <<"f897518198">>) of
+                        {ok, #{<<"objectId">> := RoleId, <<"name">> := Appname}} ->
+                            SessionToken1 = dgiot_parse_handler:get_token(Appname),
+                            dgiot_parse_handler:create_user(UserBody#{<<"department">> => RoleId}, SessionToken1);
+                        _ ->
+                            Body = #{<<"tempname">> => <<"产业大脑用户"/utf8>>, <<"parent">> => <<"a46c243b51">>, <<"depname">> => <<"产业大脑用户"/utf8>>,
+                                <<"name">> => <<228, 186, 167, 228, 184, 154, 229, 164, 167, 232, 132, 145, 231, 148, 168, 230, 136, 183>>, <<"desc">> => <<"产业大脑用户"/utf8>>},
+                            SessionToken2 = dgiot_parse_handler:get_token(<<"admin">>),
+                            Department =
+                                case dgiot_role:post_role(Body, SessionToken2) of
+                                    {ok, #{<<"objectId">> := RoleId}} ->
+                                        RoleId;
+                                    _ ->
+                                        <<"a46c243b51">>
+                                end,
+                            dgiot_parse_handler:create_user(UserBody#{<<"department">> => Department}, SessionToken2)
+                    end;
+                {ok, #{<<"results">> := [#{<<"objectId">> := UserId, <<"tag">> := Tag} | _]}} ->
+                    dgiot_parse:update_object(<<"_User">>, UserId, #{<<"tag">> => Tag#{<<"jwt">> => TokenData}})
+            end,
+            {ok, #{<<"code">> => 200, <<"username">> => Username, <<"state">> => TokenData, <<"msg">> => <<"operation success">>, <<"sessionToken">> => SessionToken}};
+        _Error ->
+            {ok, #{<<"code">> => 500, <<"msg">> => <<"operation error">>}}
+    end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%aliyun_test%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%test_get_play_info() ->
