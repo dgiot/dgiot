@@ -178,7 +178,7 @@ do_request(post_generatereport, #{<<"id">> := TaskId}, #{<<"sessionToken">> := _
             <<"product">> := #{<<"__type">> := <<"Pointer">>, <<"className">> := <<"Product">>, <<"objectId">> := _ProductId},
             <<"parentId">> := #{<<"__type">> := <<"Pointer">>, <<"className">> := <<"Device">>, <<"objectId">> := _ParentId}
         }} ->
-            DictId = dgiot_parse:get_dictid(<<"710b9eb8ee">>, <<"word">>, <<"Device">>, <<"worddict">>),
+            DictId = dgiot_parse:get_dictid(TaskId, <<"word">>, <<"Device">>, <<"worddict">>),
             case dgiot_parse:get_object(<<"Dict">>, DictId) of
                 {ok, #{<<"data">> := #{<<"params">> := Params}}} ->
                     Worddatas =
