@@ -248,7 +248,14 @@ jwtlogin(Idtoken) ->
                 {ok, #{<<"results">> := [#{<<"objectId">> := UserId, <<"tag">> := Tag} | _]}} ->
                     dgiot_parse:update_object(<<"_User">>, UserId, #{<<"tag">> => Tag#{<<"jwt">> => TokenData}})
             end,
-            {ok, #{<<"code">> => 200, <<"username">> => Username, <<"state">> => TokenData, <<"msg">> => <<"operation success">>, <<"sessionToken">> => SessionToken}};
+            UserInfo =
+                case dgiot_parse:login(Username, UdAccountUuid) of
+                    {ok, #{<<"objectId">> := _UserId} = UserInfo1} ->
+                        UserInfo1;
+                    {error, _Msg} ->
+                        #{}
+                end,
+            {ok, #{<<"code">> => 200, <<"username">> => Username, <<"userinfo">> => UserInfo, <<"state">> => TokenData, <<"msg">> => <<"operation success">>, <<"sessionToken">> => SessionToken}};
         _Error ->
             {ok, #{<<"code">> => 500, <<"msg">> => <<"operation error">>}}
     end.
