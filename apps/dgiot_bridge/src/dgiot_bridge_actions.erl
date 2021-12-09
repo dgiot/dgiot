@@ -186,4 +186,5 @@ post_rule(#{metadata := #{rule_id := <<"rule:Notification_", Ruleid/binary>>}, c
     dgiot_umeng:add_notification(Ruleid, DevAddr, NewPayload);
 
 post_rule(Msg) ->
-    io:format("~s ~p Msg = ~p.~n", [?FILE, ?LINE, Msg]).
+%%    io:format("~s ~p Msg = ~p.~n", [?FILE, ?LINE, Msg]),
+    ?LOG(error, "~s ~p Msg = ~p.~n", [?FILE, ?LINE, Msg]).

@@ -623,7 +623,7 @@ update_view(Index, ImageUrl, Heigh, Width, TaskId) ->
             NewKonva = update_bgimage(Konva, ImageUrl, Heigh, Width),
             #{
                 <<"method">> => <<"PUT">>,
-                <<"path">> => <<"/classes/View">>,
+                <<"path">> => <<"/classes/View/", Viewid/binary>>,
                 <<"body">> => #{
                     <<"objectId">> => Viewid,
                     <<"data">> => Data#{

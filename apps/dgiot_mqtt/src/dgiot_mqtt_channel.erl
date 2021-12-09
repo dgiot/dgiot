@@ -87,7 +87,7 @@ init(?TYPE, ChannelId, #{
                 DisRawsql = <<"SELECT clientid, disconnected_at FROM \"$events/client_disconnected\" WHERE username = '", ProductId/binary, "'">>,
                 create_rules(<<"rule:disconnected_", ProductId/binary>>, ChannelId, <<"断开连接规则"/utf8>>, DisRawsql),
 %%              创建上传数据规则
-                RepRawsql = <<"SELECT payload.msg as msg,clientid,'", ProductId/binary, "' as productid FROM \"/", ProductId/binary, "/#\" WHERE username = '", ProductId/binary, "'">>,
+                RepRawsql = <<"SELECT payload.msg as msg,clientid,'", ProductId/binary, "' as productid FROM \"/thing/", ProductId/binary, "/#\" WHERE username = '", ProductId/binary, "'">>,
                 create_rules(<<"rule:thingreport_", ProductId/binary>>, ChannelId, <<"派生物模型上报规则"/utf8>>, RepRawsql);
             _ ->
                 io:format("~s ~p X = ~p.~n", [?FILE, ?LINE, X]),
@@ -111,9 +111,9 @@ handle_init(State) ->
 % SELECT clientid, payload, topic FROM "meter"
 % SELECT clientid, disconnected_at FROM "$events/client_disconnected" WHERE username = 'dgiot'
 % SELECT clientid, connected_at FROM "$events/client_connected" WHERE username = 'dgiot'
-handle_event('client.connected', {rule, #{clientid := DevId, connected_at := _ConnectedAt, peername := PeerName}, _Context}, #state{id = _ChannelId} = State) ->
+handle_event('client.connected', {rule, #{clientid := DeviceId, connected_at := _ConnectedAt, peername := PeerName}, _Context}, #state{id = _ChannelId} = State) ->
     [DTUIP, _] = binary:split(PeerName, <<$:>>, [global, trim]),
-    updat_device(DevId, DTUIP, <<"ONLINE">>),
+    updat_device(DeviceId, DTUIP, <<"ONLINE">>),
     {ok, State};
 
 
@@ -135,14 +135,26 @@ handle_message({rule, #{clientid := _DeviceId, username := ProductId, payload :=
             case binary:split(Topic, <<$/>>, [global, trim]) of
 %%                     /ecfd3a227c/6C4B909AF64A/metadata/derived  派生物模型上报
                 [<<>>, ProductId, DtuAddr, <<"metadata">>, <<"derived">>] ->
-                    create_device(ProductId, DtuAddr, Peerhost),
+                    create_device(ProductId, DtuAddr, <<"MATLAB_", DtuAddr/binary>>, Peerhost),
                     case jsx:decode(Payload, [{labels, binary}, return_maps]) of
                         #{<<"timestamp">> := _Timestamp,
                             <<"metadata">> := Metadata,
                             <<"all">> := _All} when is_map(Metadata) ->
                             io:format("~s ~p Metadata = ~p.~n", [?FILE, ?LINE, Metadata]),
                             dgiot_tdengine_adapter:save(ProductId, DtuAddr, Metadata);
-                        _ ->
+                        _Other1 ->
+                            io:format("~s ~p error: ~p~n", [?FILE, ?LINE, _Other1]),
+                            pass
+                    end;
+                [<<>>, <<"thing">>, ProductId1, DtuAddr1, <<"up">>] ->
+%%                    create_device(ProductId, DtuAddr, Peerhost),
+                    case jsx:decode(Payload, [{labels, binary}, return_maps]) of
+                        #{<<"id">> := Devaddr, <<"name">> := Name, <<"messageid">> := Messageid, <<"events">> := #{<<"id">> := <<"login">>, <<"value">> := #{<<"ip">> := Ip}}} = Data ->
+                            create_device(ProductId, Devaddr, Name, Ip),
+                            NotificationTopic = <<"/thing/", ProductId1/binary, "/", DtuAddr1/binary, "/down">>,
+                            dgiot_mqtt:publish(Devaddr, NotificationTopic, jsx:encode(Data#{<<"replyid">> => Messageid, <<"events">> => #{<<"id">> => <<"replylogin">>, <<"value">> => <<"success">>}}));
+                        _Other ->
+                            io:format("~s ~p error: ~p~n", [?FILE, ?LINE, _Other]),
                             pass
                     end;
 %%%%                扫描子设备: /{productId}/{deviceAddr}/scan/{protocol}
@@ -167,10 +179,12 @@ handle_message({rule, #{clientid := _DeviceId, username := ProductId, payload :=
 %%                        _ ->
 %%                            pass
 %%                    end;
-                _ ->
+                _Error ->
+                    io:format("~s ~p error: ~p~n", [?FILE, ?LINE, _Error]),
                     pass
             end;
-        _ ->
+        _Error1 ->
+            io:format("~s ~p error: ~p~n", [?FILE, ?LINE, _Error1]),
             pass
     end,
     {ok, State};
@@ -195,11 +209,11 @@ updat_device(DeviceId, DTUIP, Status) ->
     end.
 
 %%新设备
-create_device(ProductId, DtuAddr, DTUIP) ->
+create_device(ProductId, DtuAddr, Name, DTUIP) ->
     {Acl, _Properties} = dgiot_data:get({mqttd, ProductId}),
     Requests = #{
         <<"devaddr">> => DtuAddr,
-        <<"name">> => <<"MATLAB_", DtuAddr/binary>>,
+        <<"name">> => Name,
         <<"ip">> => DTUIP,
         <<"isEnable">> => true,
         <<"product">> => ProductId,
@@ -222,10 +236,10 @@ create_rules(RuleID, ChannelId, Description, Rawsql) ->
         <<"actions">> => [#{<<"name">> => <<"dgiot">>, <<"fallbacks">> => [],
             <<"params">> => #{
                 <<"$resource">> => <<"resource:", ChannelId/binary>>,
-                <<"channel">> => <<"数蛙物联网通道">>,
+                <<"channel">> => <<"数蛙物联网通道"/utf8>>,
                 <<"payload_tmpl">> => <<"${payload}">>,
                 <<"target_qos">> => 0,
-                <<"target_topic">> => <<"/${productid}/#">>
+                <<"target_topic">> => <<"/thing/${productid}/#">>
             }}],
         <<"enabled">> => true,
         <<"ctx">> => #{
