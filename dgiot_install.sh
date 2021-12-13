@@ -348,7 +348,7 @@ function yum_install_postgres() {
   echo -e  "`date +%F_%T` $LINENO: ${GREEN} yum install postgres${NC}"
   yum install -y wget git &> /dev/null
   ${csudo} yum install -y gcc gcc-c++  epel-release &> /dev/null
-  ${csudo} yum install -y llvm ~ llvm ~-devel &> /dev/null
+  ${csudo} yum install -y llvm llvm-devel &> /dev/null
   ${csudo} yum install -y clang libicu-devel perl-ExtUtils-Embed &> /dev/null
   ${csudo} yum install -y readline readline-devel &> /dev/null
   ${csudo} yum install -y zlib zlib-devel &> /dev/null
