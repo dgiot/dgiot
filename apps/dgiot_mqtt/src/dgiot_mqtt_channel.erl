@@ -82,13 +82,16 @@ init(?TYPE, ChannelId, #{
                 dgiot_data:insert({mqttd, ProductId}, {Acl, maps:get(<<"properties">>, Thing, [])}),
 %%              创建连接规则
                 ConRawsql = <<"SELECT clientid, connected_at FROM \"$events/client_connected\" WHERE username = '", ProductId/binary, "'">>,
-                create_rules(<<"rule:connected_", ProductId/binary>>, ChannelId, <<"创建连接规则"/utf8>>, ConRawsql),
+                create_rules(<<"rule:connected_", ProductId/binary>>, ChannelId, <<"创建连接规则"/utf8>>, ConRawsql, <<"/${productid}/#">>),
 %%              创建断开连接规则
                 DisRawsql = <<"SELECT clientid, disconnected_at FROM \"$events/client_disconnected\" WHERE username = '", ProductId/binary, "'">>,
-                create_rules(<<"rule:disconnected_", ProductId/binary>>, ChannelId, <<"断开连接规则"/utf8>>, DisRawsql),
+                create_rules(<<"rule:disconnected_", ProductId/binary>>, ChannelId, <<"断开连接规则"/utf8>>, DisRawsql, <<"/${productid}/#">>),
 %%              创建上传数据规则
                 RepRawsql = <<"SELECT payload.msg as msg,clientid,'", ProductId/binary, "' as productid FROM \"/thing/", ProductId/binary, "/#\" WHERE username = '", ProductId/binary, "'">>,
-                create_rules(<<"rule:thingreport_", ProductId/binary>>, ChannelId, <<"派生物模型上报规则"/utf8>>, RepRawsql);
+                create_rules(<<"rule:thingreport_", ProductId/binary>>, ChannelId, <<"物模型上报规则"/utf8>>, RepRawsql, <<"/thing/${productid}/#">>),
+                %%              创建上传数据规则
+                MetaRawsql = <<"SELECT payload.msg as msg,clientid,'", ProductId/binary, "' as productid FROM \"/", ProductId/binary, "/#\" WHERE username = '", ProductId/binary, "'">>,
+                create_rules(<<"rule:metadata_", ProductId/binary>>, ChannelId, <<"派生物模型上报规则"/utf8>>, MetaRawsql, <<"/${productid}/#">>);
             _ ->
                 io:format("~s ~p X = ~p.~n", [?FILE, ?LINE, X]),
                 pass
@@ -157,6 +160,21 @@ handle_message({rule, #{clientid := _DeviceId, username := ProductId, payload :=
                             io:format("~s ~p error: ~p~n", [?FILE, ?LINE, _Other]),
                             pass
                     end;
+                [<<>>, ProductId, DtuAddr, <<"topo">>, _GroupName, <<"post">>] ->
+                    create_device(ProductId, DtuAddr, <<"MATLAB_", DtuAddr/binary>>, Peerhost),
+                    case jsx:decode(Payload, [{labels, binary}, return_maps]) of
+                        #{<<"timestamp">> := _Timestamp,
+                            <<"deviceAddr">> := _DeviceAddr,
+                            <<"properties">> := Properties} when is_map(Properties) ->
+                            io:format("~s ~p Metadata = ~p.~n", [?FILE, ?LINE, Properties]),
+                            NewProperties = get_properties(ProductId, Properties),
+                            io:format("~s ~p NewProperties: ~p~n", [?FILE, ?LINE, NewProperties]),
+                            dgiot_tdengine_adapter:save(ProductId, DtuAddr, NewProperties);
+                        _Other1 ->
+                            io:format("~s ~p error: ~p~n", [?FILE, ?LINE, _Other1]),
+                            pass
+                    end;
+
 %%%%                扫描子设备: /{productId}/{deviceAddr}/scan/{protocol}
 %%                [<<>>, ProductId, DtuAddr, <<"scan">>, <<"OPC_DA">>] ->
 %%                    case jsx:decode(Payload, [{labels, binary}, return_maps]) of
@@ -224,7 +242,7 @@ create_device(ProductId, DtuAddr, Name, DTUIP) ->
     },
     dgiot_device:create_device(Requests).
 
-create_rules(RuleID, ChannelId, Description, Rawsql) ->
+create_rules(RuleID, ChannelId, Description, Rawsql, Target_topic) ->
     emqx_rule_engine_api:create_resource(#{},
         [
             {<<"id">>, <<"resource:", ChannelId/binary>>},
@@ -239,7 +257,7 @@ create_rules(RuleID, ChannelId, Description, Rawsql) ->
                 <<"channel">> => <<"数蛙物联网通道"/utf8>>,
                 <<"payload_tmpl">> => <<"${payload}">>,
                 <<"target_qos">> => 0,
-                <<"target_topic">> => <<"/thing/${productid}/#">>
+                <<"target_topic">> => Target_topic
             }}],
         <<"enabled">> => true,
         <<"ctx">> => #{
@@ -266,4 +284,28 @@ create_rules(RuleID, ChannelId, Description, Rawsql) ->
                     dgiot_rule_handler:save_rule_to_dict(RuleID, Params);
                 _ -> pass
             end
+    end.
+
+
+get_properties(ProductId, Properties) ->
+    case dgiot_product:lookup_prod(ProductId) of
+        {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
+            lists:foldl(fun(X, Acc) ->
+                case X of
+                    #{<<"identifier">> := Identifier,
+                        <<"dataType">> := #{<<"type">> := _Type, <<"das">> := Das}} ->
+                        maps:fold(fun(PK, PV, _Acc3) ->
+                            case lists:member(PK, Das) of
+                                true ->
+                                    Acc#{Identifier => PV};
+                                _ ->
+                                    Acc
+                            end
+                                  end, Acc, Properties);
+                    _ ->
+                        Acc
+                end
+                        end, #{}, Props);
+        _Error ->
+            Properties
     end.

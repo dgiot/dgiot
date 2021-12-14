@@ -76,18 +76,18 @@ get_topo(Arg, _Context) ->
     Type = maps:get(<<"type">>, Arg, <<"web">>),
     case ViewId of
         undefined ->
-            case dgiot_parse:query_object(<<"View">>, #{<<"where">> => #{<<"key">> => ProductId, <<"type">> => <<"topo">>, <<"class">> => <<"Product">>}}) of
-                {ok, #{<<"results">> := Views}} ->
+            case dgiot_parse:query_object(<<"View">>, #{<<"limit">> => 1, <<"where">> => #{<<"key">> => ProductId, <<"type">> => <<"topo">>, <<"class">> => <<"Product">>}}) of
+                {ok, #{<<"results">> := Views}} when length(Views) > 0 ->
                     NewStage =
                         lists:foldl(fun(View, Acc) ->
                             case View of
-                                #{<<"data">> := #{<<"konva">> := #{<<"Stage">> := #{<<"children">> := Children}}}} when length(Children) > 0 ->
+                                #{<<"objectId">> := _ViewId1, <<"data">> := #{<<"konva">> := #{<<"Stage">> := #{<<"children">> := Children}}}} when length(Children) > 0 ->
                                     NewView = get_view(View, Devaddr, ProductId, Type),
-                                    Acc ++ [NewView];
+                                    NewView;
                                 _ ->
                                     Acc
                             end
-                                    end, [], Views),
+                                    end, #{}, Views),
                     {ok, #{<<"code">> => 200, <<"message">> => <<"SUCCESS">>, <<"data">> => NewStage}};
                 _ ->
                     {ok, #{<<"code">> => 204, <<"message">> => <<"没有组态"/utf8>>}}
