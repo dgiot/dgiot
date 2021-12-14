@@ -225,7 +225,7 @@ jwtlogin(Idtoken) ->
                         <<"sex">> => "男"
                     },
                     <<"jwt">> => TokenData}},
-            SessionToken = dgiot_parse_handler:get_token(<<228, 186, 167, 228, 184, 154, 229, 164, 167, 232, 132, 145, 231, 148, 168, 230, 136, 183>>),
+            _SessionToken = dgiot_parse_handler:get_token(<<228, 186, 167, 228, 184, 154, 229, 164, 167, 232, 132, 145, 231, 148, 168, 230, 136, 183>>),
             case dgiot_parse:query_object(<<"_User">>, #{<<"where">> => #{<<"username">> => Username}}) of
                 {ok, #{<<"results">> := Results}} when length(Results) == 0 ->
                     case dgiot_parse:get_object(<<"_Role">>, <<"f897518198">>) of
@@ -249,13 +249,13 @@ jwtlogin(Idtoken) ->
                     dgiot_parse:update_object(<<"_User">>, UserId, #{<<"tag">> => Tag#{<<"jwt">> => TokenData}})
             end,
             UserInfo =
-                case dgiot_parse:login(Username, UdAccountUuid) of
+                case dgiot_parse_handler:login_by_account(Username, UdAccountUuid) of
                     {ok, #{<<"objectId">> := _UserId} = UserInfo1} ->
                         UserInfo1;
                     {error, _Msg} ->
                         #{}
                 end,
-            {ok, #{<<"code">> => 200, <<"username">> => Username, <<"userinfo">> => UserInfo, <<"state">> => TokenData, <<"msg">> => <<"operation success">>, <<"sessionToken">> => SessionToken}};
+            {ok, UserInfo#{<<"code">> => 200, <<"username">> => Username, <<"state">> => TokenData, <<"msg">> => <<"operation success">>}};
         _Error ->
             {ok, #{<<"code">> => 500, <<"msg">> => <<"operation error">>}}
     end.

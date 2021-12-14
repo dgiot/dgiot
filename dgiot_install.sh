@@ -747,6 +747,7 @@ function update_dgiot() {
 }
 
 function install_dgiot() {
+  make_ssl
   if [ ! -f ${script_dir}/${dgiot}.tar.gz ]; then
     wget $fileserver/${dgiot}.tar.gz -O ${script_dir}/${dgiot}.tar.gz &> /dev/null
   fi
@@ -958,6 +959,29 @@ function install_nginx() {
     fi
     systemctl start nginx.service &> /dev/null
     systemctl enable nginx.service &> /dev/null
+}
+
+function make_ssl() {
+    if [ ! -d /etc/ssl/dgiot/ ]; then
+      mkdir -p /etc/ssl/dgiot/
+      cd /etc/ssl/dgiot/
+
+      # 生成自签名的CA key和证书
+      openssl genrsa -out ca.key 2048
+      openssl req -x509 -new -nodes -key ca.key -sha256 -days 3650 -subj "/CN=${wlanip}" -out ca.pem
+
+      # 生成服务器端的key和证书
+      openssl genrsa -out server.key 2048
+      openssl req -new -key ./server.key -out server.csr -subj "/CN=0.0.0.0"
+      openssl x509 -req -in ./server.csr -CA ca.pem -CAkey ca.key -CAcreateserial -out server.pem -days 3650 -sha256
+
+      # 生成客户端key和证书
+      openssl genrsa -out client.key 2048
+      openssl req -new -key ./client.key -out client.csr -subj "/CN=0.0.0.0"
+      openssl x509 -req -in ./client.csr -CA ca.pem -CAkey ca.key -CAcreateserial -out client.pem -days 3650 -sha256
+
+      cd ${script_dir}/
+    fi
 }
 
 ## ==============================Main program starts from here============================

@@ -932,7 +932,7 @@ import(Name, Class, [Data | Other], Count, Requests, Fun, Acc) when length(Reque
         NewRequests = [#{
             <<"method">> => <<"POST">>,
             <<"path">> => <<"classes/", Class/binary>>,
-            <<"body">> => format_data(Class, Data)
+            <<"body">> => Data
         } | Requests],
         import(Name, Class, Other, Count, NewRequests, Fun, Acc)
     catch
