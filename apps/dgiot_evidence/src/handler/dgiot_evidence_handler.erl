@@ -227,16 +227,16 @@ do_request(post_generatereport, #{<<"id">> := TaskId}, #{<<"sessionToken">> := _
 %%                                            获取表格数据
 %%                                            dgiot_evidence:get_Tabledata(ParentId, SessionToken, Parameter, Samplingnumber),
                                             Tabledata = [
-                                                <<"10,0,0.784,12.593,2850,0,0.107162,0,12.593,0.784,0">>,
-                                                <<"9,2.11,0.882,11.706,2850,0,0.098424,2.11,11.706,0.882,7.64">>,
-                                                <<"8,4.15,0.882,11.127,2850,0,0.092627,4.15,11.127,0.882,14.29">>,
-                                                <<"7,6.22,0.98,10.607,2850,0,0.087323,6.22,10.607,0.98,18.38">>,
-                                                <<"6,8.02,1.078,10.187,2850,0,0.082954,8.02,10.187,1.078,20.69">>,
-                                                <<"5,10.04,1.078,9.537,2850,0,0.076222,10.04,9.537,1.078,24.25">>,
-                                                <<"4,11.88,1.176,8.813,2850,0,0.068725,11.88,8.813,1.176,24.3">>,
-                                                <<"3,13.93,1.176,7.745,2850,0,0.057743,13.93,7.745,1.176,25.05">>,
-                                                <<"2,15.92,1.176,6.558,2850,0,0.04552,15.92,6.558,1.176,24.24">>,
-                                                <<"1,21.33,1.196,4.021,2850,0,0.01866,21.33,4.021,1.196,19.59">>],
+                                                <<"10,0,2.254,28.86,2900,0,0.266537,0,28.86,2.254,0">>,
+                                                <<"9,5.13,2.548,27.941,2900,0,0.257272,5.13,27.941,2.548,15.35">>,
+                                                <<"8,10.19,2.764,26.545,2900,0,0.242822,10.19,26.545,2.764,26.71">>,
+                                                <<"7,15.52,2.94,24.639,2900,0,0.222779,15.52,24.639,2.94,35.5">>,
+                                                <<"6,20.25,3.136,22.969,2900,0,0.204725,20.25,22.969,3.136,40.48">>,
+                                                <<"5,25.05,3.234,20.726,2900,0,0.180568,25.05,20.726,3.234,43.81">>,
+                                                <<"4,30.09,3.43,18.289,2900,0,0.153912,30.09,18.289,3.43,43.78">>,
+                                                <<"3,35.29,3.528,15.25,2900,0,0.120728,35.29,15.25,3.528,41.63">>,
+                                                <<"2,40.66,3.704,12.29,2900,0,0.087646,40.66,12.29,3.704,36.81">>,
+                                                <<"1,46.62,3.763,8.411,2900,0,0.044432,46.62,8.411,3.763,28.44">>],
                                             Acc ++ [#{
                                                 <<"type">> => <<"dynamicTable">>,
                                                 <<"source">> => Sources,
@@ -246,20 +246,20 @@ do_request(post_generatereport, #{<<"id">> := TaskId}, #{<<"sessionToken">> := _
                                                 <<"data">> => Tabledata
                                             }];
                                         <<"image">> ->
-                                            PythonBody = #{<<"name">> => <<TaskId/binary, ".png">>, <<"path">> => <<"/data/dgiot/go_fastdfs/files/dgiot_file/pump_pytoh/">>},
-                                            Imagepath =
-                                                case catch base64:decode(os:cmd("python3 /data/dgiot/dgiot/lib/dgiot_evidence-4.3.0/priv/python/drawxnqx.py " ++ dgiot_utils:to_list(base64:encode(jsx:encode(PythonBody))))) of
-                                                    {'EXIT', _Error} ->
-                                                        <<"">>;
-                                                    Path ->
-                                                        Path
-                                                end,
-                                            Repath = re:replace(dgiot_utils:to_list(Imagepath), "/data/dgiot/go_fastdfs/files", "", [global, {return, binary}, unicode]),
+%%                                            PythonBody = #{<<"name">> => <<TaskId/binary, ".png">>, <<"path">> => <<"/data/dgiot/go_fastdfs/files/dgiot_file/pump_pytoh/">>},
+%%                                            Imagepath =
+%%                                                case catch base64:decode(os:cmd("python3 /data/dgiot/dgiot/lib/dgiot_evidence-4.3.0/priv/python/drawxnqx.py " ++ dgiot_utils:to_list(base64:encode(jsx:encode(PythonBody))))) of
+%%                                                    {'EXIT', _Error} ->
+%%                                                        <<"">>;
+%%                                                    Path ->
+%%                                                        Path
+%%                                                end,
+%%                                            Repath = re:replace(dgiot_utils:to_list(Imagepath), "/data/dgiot/go_fastdfs/files", "", [global, {return, binary}, unicode]),
                                             Acc ++ [#{
                                                 <<"type">> => <<"image">>,
                                                 <<"source">> => Sources,
                                                 <<"name">> => Identifier,
-                                                <<"url">> => <<Uri/binary, Repath/binary>>,
+                                                <<"url">> => <<"https://pump.dgiotcloud.com/dgiot_file/device/1639483984.jpg">>,
                                                 <<"width">> => 600,
                                                 <<"height">> => 330
                                             }];
