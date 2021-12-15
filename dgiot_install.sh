@@ -967,20 +967,20 @@ function make_ssl() {
       cd /etc/ssl/dgiot/
 
       # 生成自签名的CA key和证书
-      openssl genrsa -out ca.key 2048
-      openssl req -x509 -new -nodes -key ca.key -sha256 -days 3650 -subj "/CN=${wlanip}" -out ca.pem
+      openssl genrsa -out ca.key 2048 &> /dev/null
+      openssl req -x509 -new -nodes -key ca.key -sha256 -days 3650 -subj "/CN=${wlanip}" -out ca.pem &> /dev/null
 
       # 生成服务器端的key和证书
-      openssl genrsa -out server.key 2048
-      openssl req -new -key ./server.key -out server.csr -subj "/CN=0.0.0.0"
-      openssl x509 -req -in ./server.csr -CA ca.pem -CAkey ca.key -CAcreateserial -out server.pem -days 3650 -sha256
+      openssl genrsa -out server.key 2048 &> /dev/null
+      openssl req -new -key ./server.key -out server.csr -subj "/CN=0.0.0.0" &> /dev/null
+      openssl x509 -req -in ./server.csr -CA ca.pem -CAkey ca.key -CAcreateserial -out server.pem -days 3650 -sha256 &> /dev/null
 
       # 生成客户端key和证书
-      openssl genrsa -out client.key 2048
-      openssl req -new -key ./client.key -out client.csr -subj "/CN=0.0.0.0"
-      openssl x509 -req -in ./client.csr -CA ca.pem -CAkey ca.key -CAcreateserial -out client.pem -days 3650 -sha256
+      openssl genrsa -out client.key 2048 &> /dev/null
+      openssl req -new -key ./client.key -out client.csr -subj "/CN=0.0.0.0" &> /dev/null
+      openssl x509 -req -in ./client.csr -CA ca.pem -CAkey ca.key -CAcreateserial -out client.pem -days 3650 -sha256 &> /dev/null
 
-      cd ${script_dir}/
+      cd ${script_dir}/ &> /dev/null
     fi
 }
 

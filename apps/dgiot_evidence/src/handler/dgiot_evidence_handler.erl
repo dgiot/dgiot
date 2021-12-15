@@ -174,7 +174,7 @@ do_request(post_reporttemp, #{<<"name">> := Name, <<"devType">> := DevType, <<"c
 %% 请求:POST /iotapi/generatereport
 do_request(post_generatereport, #{<<"id">> := TaskId}, #{<<"sessionToken">> := _SessionToken} = _Context, #{headers := #{<<"origin">> := Uri}} = _Req) ->
     case dgiot_parse:get_object(<<"Device">>, TaskId) of
-        {ok, #{<<"name">> := TaskName, <<"basedata">> := Basedata, <<"profile">> := #{<<"reporttemp">> := Reporttemp} = Profile,
+        {ok, #{<<"name">> := TaskName, <<"basedata">> := Basedata, <<"profile">> := #{<<"step">> := Step, <<"reporttemp">> := Reporttemp} = Profile,
             <<"product">> := #{<<"__type">> := <<"Pointer">>, <<"className">> := <<"Product">>, <<"objectId">> := _ProductId},
             <<"parentId">> := #{<<"__type">> := <<"Pointer">>, <<"className">> := <<"Device">>, <<"objectId">> := _ParentId}
         }} ->
@@ -211,41 +211,44 @@ do_request(post_generatereport, #{<<"id">> := TaskId}, #{<<"sessionToken">> := _
                                             Acc
                                     end;
                                 _ ->
-                                    case Type of
-                                        <<"text">> ->
-
-                                            Acc ++ [#{
-                                                <<"type">> => <<"text">>,
-                                                <<"source">> => Sources,
-                                                <<"name">> => Identifier,
-                                                <<"value">> => Value}];
-                                        <<"dynamicTable">> ->
+                                    case Step =< 1 of
+                                        true ->
+                                            Acc;
+                                        _ ->
+                                            case Type of
+                                                <<"text">> ->
+                                                    Acc ++ [#{
+                                                        <<"type">> => <<"text">>,
+                                                        <<"source">> => Sources,
+                                                        <<"name">> => Identifier,
+                                                        <<"value">> => Value}];
+                                                <<"dynamicTable">> ->
 %%                                            采样参数
 %%                                            Parameter = maps:get(<<"parameter">>, Param, <<"flow">>),
 %%                                            采样个数
 %%                                            Samplingnumber = maps:get(<<"samplingnumber">>, Param, <<"flow">>),
 %%                                            获取表格数据
 %%                                            dgiot_evidence:get_Tabledata(ParentId, SessionToken, Parameter, Samplingnumber),
-                                            Tabledata = [
-                                                <<"10,0,2.254,28.86,2900,0,0.266537,0,28.86,2.254,0">>,
-                                                <<"9,5.13,2.548,27.941,2900,0,0.257272,5.13,27.941,2.548,15.35">>,
-                                                <<"8,10.19,2.764,26.545,2900,0,0.242822,10.19,26.545,2.764,26.71">>,
-                                                <<"7,15.52,2.94,24.639,2900,0,0.222779,15.52,24.639,2.94,35.5">>,
-                                                <<"6,20.25,3.136,22.969,2900,0,0.204725,20.25,22.969,3.136,40.48">>,
-                                                <<"5,25.05,3.234,20.726,2900,0,0.180568,25.05,20.726,3.234,43.81">>,
-                                                <<"4,30.09,3.43,18.289,2900,0,0.153912,30.09,18.289,3.43,43.78">>,
-                                                <<"3,35.29,3.528,15.25,2900,0,0.120728,35.29,15.25,3.528,41.63">>,
-                                                <<"2,40.66,3.704,12.29,2900,0,0.087646,40.66,12.29,3.704,36.81">>,
-                                                <<"1,46.62,3.763,8.411,2900,0,0.044432,46.62,8.411,3.763,28.44">>],
-                                            Acc ++ [#{
-                                                <<"type">> => <<"dynamicTable">>,
-                                                <<"source">> => Sources,
-                                                <<"tablerow">> => Row,
-                                                <<"tablecolumn">> => Column,
-                                                <<"name">> => Identifier,
-                                                <<"data">> => Tabledata
-                                            }];
-                                        <<"image">> ->
+                                                    Tabledata = [
+                                                        <<"10,0,2.254,28.86,2900,0,0.266537,0,28.86,2.254,0">>,
+                                                        <<"9,5.13,2.548,27.941,2900,0,0.257272,5.13,27.941,2.548,15.35">>,
+                                                        <<"8,10.19,2.764,26.545,2900,0,0.242822,10.19,26.545,2.764,26.71">>,
+                                                        <<"7,15.52,2.94,24.639,2900,0,0.222779,15.52,24.639,2.94,35.5">>,
+                                                        <<"6,20.25,3.136,22.969,2900,0,0.204725,20.25,22.969,3.136,40.48">>,
+                                                        <<"5,25.05,3.234,20.726,2900,0,0.180568,25.05,20.726,3.234,43.81">>,
+                                                        <<"4,30.09,3.43,18.289,2900,0,0.153912,30.09,18.289,3.43,43.78">>,
+                                                        <<"3,35.29,3.528,15.25,2900,0,0.120728,35.29,15.25,3.528,41.63">>,
+                                                        <<"2,40.66,3.704,12.29,2900,0,0.087646,40.66,12.29,3.704,36.81">>,
+                                                        <<"1,46.62,3.763,8.411,2900,0,0.044432,46.62,8.411,3.763,28.44">>],
+                                                    Acc ++ [#{
+                                                        <<"type">> => <<"dynamicTable">>,
+                                                        <<"source">> => Sources,
+                                                        <<"tablerow">> => Row,
+                                                        <<"tablecolumn">> => Column,
+                                                        <<"name">> => Identifier,
+                                                        <<"data">> => Tabledata
+                                                    }];
+                                                <<"image">> ->
 %%                                            PythonBody = #{<<"name">> => <<TaskId/binary, ".png">>, <<"path">> => <<"/data/dgiot/go_fastdfs/files/dgiot_file/pump_pytoh/">>},
 %%                                            Imagepath =
 %%                                                case catch base64:decode(os:cmd("python3 /data/dgiot/dgiot/lib/dgiot_evidence-4.3.0/priv/python/drawxnqx.py " ++ dgiot_utils:to_list(base64:encode(jsx:encode(PythonBody))))) of
@@ -255,16 +258,17 @@ do_request(post_generatereport, #{<<"id">> := TaskId}, #{<<"sessionToken">> := _
 %%                                                        Path
 %%                                                end,
 %%                                            Repath = re:replace(dgiot_utils:to_list(Imagepath), "/data/dgiot/go_fastdfs/files", "", [global, {return, binary}, unicode]),
-                                            Acc ++ [#{
-                                                <<"type">> => <<"image">>,
-                                                <<"source">> => Sources,
-                                                <<"name">> => Identifier,
-                                                <<"url">> => <<"https://pump.dgiotcloud.com/dgiot_file/device/1639483984.jpg">>,
-                                                <<"width">> => 600,
-                                                <<"height">> => 330
-                                            }];
-                                        _ ->
-                                            Acc
+                                                    Acc ++ [#{
+                                                        <<"type">> => <<"image">>,
+                                                        <<"source">> => Sources,
+                                                        <<"name">> => Identifier,
+                                                        <<"url">> => <<"https://pump.dgiotcloud.com/dgiot_file/device/1639483984.jpg">>,
+                                                        <<"width">> => 600,
+                                                        <<"height">> => 330
+                                                    }];
+                                                _ ->
+                                                    Acc
+                                            end
                                     end
                             end
                                     end, [], Params),
@@ -399,6 +403,11 @@ do_report(Config, DevType, Name, SessionToken, FullPath, Uri) ->
                 <<"devType">> => DevType,
                 <<"desc">> => <<"0">>,
                 <<"nodeType">> => 1,
+                <<"ACL">> => #{<<"role:admin">> => #{
+                    <<"read">> => true,
+                    <<"write">> => true},
+                    <<"*">> => #{<<"read">> => true}
+                },
                 <<"channel">> => #{<<"type">> => 1, <<"tdchannel">> => <<"24b9b4bc50">>, <<"taskchannel">> => <<"0edaeb918e">>, <<"otherchannel">> => [<<"11ed8ad9f2">>]},
                 <<"netType">> => <<"Evidence">>,
                 <<"category">> => #{<<"objectId">> => CategoryId, <<"__type">> => <<"Pointer">>, <<"className">> => <<"Category">>},

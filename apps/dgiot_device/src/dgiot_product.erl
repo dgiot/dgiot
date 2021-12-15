@@ -364,12 +364,13 @@ create_product(#{<<"name">> := ProductName, <<"devType">> := DevType,
             dgiot_parse:update_object(<<"Product">>, ObjectId, Product,
                 [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]);
         _ ->
+            ACL = maps:get(<<"ACL">>, Product, #{}),
             case dgiot_auth:get_session(SessionToken) of
                 #{<<"roles">> := Roles} = _User ->
                     [#{<<"name">> := Role} | _] = maps:values(Roles),
                     dgiot_parse:create_object(<<"Product">>,
                         Product#{
-                            <<"ACL">> => #{<<"role:", Role/binary>> => #{
+                            <<"ACL">> => ACL#{<<"role:", Role/binary>> => #{
                                 <<"read">> => true,
                                 <<"write">> => true}
                             },
