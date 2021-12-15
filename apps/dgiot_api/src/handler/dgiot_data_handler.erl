@@ -408,7 +408,7 @@ do_request(post_import_data, #{<<"className">> := Class, <<"file">> := FileInfo}
                     ?LOG(info, "Res ~p", [Res]),
                     lists:concat([Acc, Res])
                 end,
-            case dgiot_parse:import(Class, Data, 5000, Fun, []) of
+            case dgiot_parse:import(Class, Data, length(Data), Fun, []) of
                 {error, Reason1} ->
                     {error, Reason1};
                 Result ->
@@ -538,7 +538,7 @@ get_class(Name, Filter, FileName, SessionToken) ->
         [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
         {ok, #{<<"results">> := Data}} ->
             NewData = lists:foldl(fun(X, Acc) ->
-                Acc ++ [maps:without([<<"createdAt">>, <<"updatedAt">>], X)]
+                Acc ++ [maps:without([<<"createdAt">>, <<"updatedAt">>, <<"children">>], X)]
                                   end, [], Data),
             BinFile = unicode:characters_to_binary(jsx:encode(NewData)),
             case zip:create(FileName, [{"data.json", BinFile}], [memory]) of
