@@ -127,12 +127,10 @@ handle_event('client.disconnected', {rule, #{clientid := DeviceId, disconnected_
 
 %% 通道消息处理,注意：进程池调用
 handle_event(_EventId, _Event, State) ->
-    io:format("~s ~p _EventId = ~p.~n", [?FILE, ?LINE, _EventId]),
-    io:format("~s ~p _Event = ~p.~n", [?FILE, ?LINE, _Event]),
     {ok, State}.
 
-handle_message({rule, #{clientid := _DeviceId, username := ProductId, payload := Payload, topic := Topic, peerhost := Peerhost} = Msg, _Context}, State) ->
-    io:format("~s ~p Msg = ~p.~n", [?FILE, ?LINE, Msg]),
+handle_message({rule, #{clientid := _DeviceId, username := ProductId, payload := Payload, topic := Topic, peerhost := Peerhost}, _Context}, State) ->
+%%    io:format("~s ~p Msg = ~p.~n", [?FILE, ?LINE, Msg]),
     case jsx:is_json(Payload) of
         true ->
             case binary:split(Topic, <<$/>>, [global, trim]) of
@@ -143,7 +141,7 @@ handle_message({rule, #{clientid := _DeviceId, username := ProductId, payload :=
                         #{<<"timestamp">> := _Timestamp,
                             <<"metadata">> := Metadata,
                             <<"all">> := _All} when is_map(Metadata) ->
-                            io:format("~s ~p Metadata = ~p.~n", [?FILE, ?LINE, Metadata]),
+%%                            io:format("~s ~p Metadata = ~p.~n", [?FILE, ?LINE, Metadata]),
                             dgiot_tdengine_adapter:save(ProductId, DtuAddr, Metadata);
                         _Other1 ->
                             io:format("~s ~p error: ~p~n", [?FILE, ?LINE, _Other1]),
@@ -161,15 +159,14 @@ handle_message({rule, #{clientid := _DeviceId, username := ProductId, payload :=
                             pass
                     end;
                 [<<>>, ProductId, DtuAddr, <<"topo">>, _GroupName, <<"post">>] ->
-                    create_device(ProductId, DtuAddr, <<"MATLAB_", DtuAddr/binary>>, Peerhost),
+                    create_device(ProductId, DtuAddr, <<"OPC_", DtuAddr/binary>>, Peerhost),
                     case jsx:decode(Payload, [{labels, binary}, return_maps]) of
                         #{<<"timestamp">> := _Timestamp,
                             <<"deviceAddr">> := _DeviceAddr,
                             <<"properties">> := Properties} when is_map(Properties) ->
-                            io:format("~s ~p Metadata = ~p.~n", [?FILE, ?LINE, Properties]),
-                            NewProperties = get_properties(ProductId, Properties),
-                            io:format("~s ~p NewProperties: ~p~n", [?FILE, ?LINE, NewProperties]),
-                            dgiot_tdengine_adapter:save(ProductId, DtuAddr, NewProperties);
+%%                            io:format("~s ~p Metadata = ~p.~n", [?FILE, ?LINE, Properties]),
+                            dgiot_task:save_pnque(ProductId, DtuAddr, ProductId, DtuAddr),
+                            dgiot_opc:send_properties(ProductId, DtuAddr, Properties);
                         _Other1 ->
                             io:format("~s ~p error: ~p~n", [?FILE, ?LINE, _Other1]),
                             pass
@@ -237,7 +234,7 @@ create_device(ProductId, DtuAddr, Name, DTUIP) ->
         <<"product">> => ProductId,
         <<"ACL">> => Acl,
         <<"status">> => <<"ONLINE">>,
-        <<"brand">> => <<"MATLAB", DtuAddr/binary>>,
+        <<"brand">> => Name,
         <<"devModel">> => <<"MATLAB">>
     },
     dgiot_device:create_device(Requests).
@@ -286,26 +283,3 @@ create_rules(RuleID, ChannelId, Description, Rawsql, Target_topic) ->
             end
     end.
 
-
-get_properties(ProductId, Properties) ->
-    case dgiot_product:lookup_prod(ProductId) of
-        {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
-            lists:foldl(fun(X, Acc) ->
-                case X of
-                    #{<<"identifier">> := Identifier,
-                        <<"dataType">> := #{<<"type">> := _Type, <<"das">> := Das}} ->
-                        maps:fold(fun(PK, PV, _Acc3) ->
-                            case lists:member(PK, Das) of
-                                true ->
-                                    Acc#{Identifier => PV};
-                                _ ->
-                                    Acc
-                            end
-                                  end, Acc, Properties);
-                    _ ->
-                        Acc
-                end
-                        end, #{}, Props);
-        _Error ->
-            Properties
-    end.

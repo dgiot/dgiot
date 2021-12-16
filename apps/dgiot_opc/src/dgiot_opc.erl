@@ -27,7 +27,8 @@
     create_final_Properties/1,
     create_x_y/1,
     change_config/1,
-    create_config/1
+    create_config/1,
+    send_properties/3
 ]).
 
 
@@ -38,14 +39,14 @@
 %%"cmdtype":"scan",
 %%"opcserver":"Kepware.KEPServerEX.V6"
 %%}
-scan_opc(#{<<"OPCSEVER">> := OpcServer,<<"Topic">> := Topic }) ->
+scan_opc(#{<<"OPCSEVER">> := OpcServer, <<"Topic">> := Topic}) ->
     Payload = #{
         <<"cmdtype">> => <<"scan">>,
         <<"opcserver">> => OpcServer
     },
     dgiot_mqtt:publish(<<"opcserver">>, Topic, jsx:encode(Payload)).
 
-read_opc(ChannelId, OpcServer,Topic, Instruct) ->
+read_opc(ChannelId, OpcServer, Topic, Instruct) ->
     Payload = #{
         <<"cmdtype">> => <<"read">>,
         <<"opcserver">> => OpcServer,
@@ -54,9 +55,9 @@ read_opc(ChannelId, OpcServer,Topic, Instruct) ->
     dgiot_bridge:send_log(ChannelId, "to_opc: ~p: ~p  ~ts ", [OpcServer, unicode:characters_to_list(Instruct)]),
     dgiot_mqtt:publish(<<"opcserver">>, Topic, jsx:encode(Payload)).
 
-scan_opc_ack(Payload,OpcServer,Topic,Group,ProductId) ->            %%---------- 用以创建组态、物模型。
+scan_opc_ack(Payload, OpcServer, Topic, Group, ProductId) ->            %%---------- 用以创建组态、物模型。
     Map = jsx:decode(Payload, [return_maps]),
-    {ok,#{<<"name">> :=ProductName}} = dgiot_parse:get_object(<<"Product">>,ProductId),
+    {ok, #{<<"name">> := ProductName}} = dgiot_parse:get_object(<<"Product">>, ProductId),
     Instruct = maps:fold(fun(K, V, Acc) ->
         IsSystem = lists:any(fun(E) ->
             lists:member(E, [<<"_System">>, <<"_Statistics">>, <<"_ThingWorx">>, <<"_DataLogger">>])
@@ -69,12 +70,12 @@ scan_opc_ack(Payload,OpcServer,Topic,Group,ProductId) ->            %%----------
                     case X of
                         #{<<"ItemId">> := ItemId} ->
                             case binary:split(ItemId, <<$.>>, [global, trim]) of
-                                [Project,_Device,Id] ->
+                                [Project, _Device, Id] ->
                                     case Project == ProductName of
                                         true ->
                                             case binary:split(Id, <<$_>>, [global, trim]) of
                                                 [Id] ->
-                                                    get_instruct(Acc1,ItemId);
+                                                    get_instruct(Acc1, ItemId);
                                                 _ ->
                                                     Acc1
                                             end;
@@ -82,12 +83,12 @@ scan_opc_ack(Payload,OpcServer,Topic,Group,ProductId) ->            %%----------
                                             Acc1
                                     end;
 
-                                [Project,_Device,_Id, Type] ->
+                                [Project, _Device, _Id, Type] ->
                                     case Project == ProductName of
                                         true ->
-                                            case lists:member(Type, [ <<"_Description">>, <<"_RawDataType">>]) of
+                                            case lists:member(Type, [<<"_Description">>, <<"_RawDataType">>]) of
                                                 true ->
-                                                    get_instruct(Acc1,ItemId);
+                                                    get_instruct(Acc1, ItemId);
                                                 false ->
                                                     Acc1
                                             end;
@@ -112,12 +113,12 @@ scan_opc_ack(Payload,OpcServer,Topic,Group,ProductId) ->            %%----------
     dgiot_mqtt:publish(<<"opcserver">>, Topic, jsx:encode(Payload1)).
 
 
-get_instruct(Acc1,ItemId) ->
+get_instruct(Acc1, ItemId) ->
     case Acc1 of
         <<"">> ->
             ItemId;
         _ ->
-            <<Acc1/binary,",",ItemId/binary>>
+            <<Acc1/binary, ",", ItemId/binary>>
     end.
 
 read_opc_ack(Payload, ProductId, {DeviceId, Devaddr}) ->
@@ -125,13 +126,13 @@ read_opc_ack(Payload, ProductId, {DeviceId, Devaddr}) ->
         #{<<"status">> := 0} = Map0 -> %% opc read的情况
             [Map1 | _] = maps:values(maps:without([<<"status">>], Map0)),
             Map2 = case maps:find(<<"status">>, Map1) of
-                {ok, _} ->
-                    [Map3 | _] = maps:values(maps:without([<<"status">>], Map1)),
-                       Map3;
-                error ->
-                    Map1
+                       {ok, _} ->
+                           [Map3 | _] = maps:values(maps:without([<<"status">>], Map1)),
+                           Map3;
+                       error ->
+                           Map1
 
-            end,
+                   end,
 
             %%  -------------------------------- 组态数据传递
             dgiot_product:load(ProductId),
@@ -140,30 +141,30 @@ read_opc_ack(Payload, ProductId, {DeviceId, Devaddr}) ->
                     [_, DeviceName1, K1] ->
                         case Devaddr == DeviceName1 of
                             true ->
-                                Name=
+                                Name =
                                     case dgiot_device:lookup_prod(ProductId) of
                                         {ok, #{<<"thing">> := #{<<"properties">> := Properties}}}
                                             ->
-                                            ALL_list= [{maps:get(<<"identifier">>, H),maps:get(<<"name">>, H)} || H <- Properties],
-                                            proplists:get_value(K1,ALL_list);
+                                            ALL_list = [{maps:get(<<"identifier">>, H), maps:get(<<"name">>, H)} || H <- Properties],
+                                            proplists:get_value(K1, ALL_list);
                                         _ ->
                                             <<" ">>
                                     end,
-                                Unit=
+                                Unit =
                                     case dgiot_device:lookup_prod(ProductId) of
                                         {ok, #{<<"thing">> := #{<<"properties">> := Properties1}}}
                                             ->
-                                            ALL_list1= [{maps:get(<<"identifier">>, H),maps:get(<<"dataType">>, H)} || H <- Properties1],
-                                            Map_datatype=proplists:get_value(K1,ALL_list1),
-                                            Specs=maps:get(<<"specs">>,Map_datatype),
-                                            maps:get(<<"unit">>,Specs);
+                                            ALL_list1 = [{maps:get(<<"identifier">>, H), maps:get(<<"dataType">>, H)} || H <- Properties1],
+                                            Map_datatype = proplists:get_value(K1, ALL_list1),
+                                            Specs = maps:get(<<"specs">>, Map_datatype),
+                                            maps:get(<<"unit">>, Specs);
                                         _ ->
                                             <<" ">>
                                     end,
                                 V1 = binary:bin_to_list(Name),
                                 V2 = dgiot_utils:to_list(V),
-                                V1_unit =dgiot_utils:to_list(Unit),
-                                V3 = V1 ++ ": " ++ V2 ++ " " ++ V1_unit ,
+                                V1_unit = dgiot_utils:to_list(Unit),
+                                V3 = V1 ++ ": " ++ V2 ++ " " ++ V1_unit,
                                 Acc#{K => V3};
                             _ ->
                                 Acc
@@ -179,20 +180,20 @@ read_opc_ack(Payload, ProductId, {DeviceId, Devaddr}) ->
                                 Acc#{K1 => V};
                             _ ->
                                 Acc
-                            end;
+                        end;
                     _ -> Acc
                 end
                               end, #{}, Map2),
             try dgiot_topo:push(ProductId, Devaddr, DeviceId, Data)
-            catch  _:_ ->
-                ?LOG(info,"{ TOPO PUSH ERROR},dgiot_topo:push(~p, ~p, ~p, ~p)",[ProductId, Devaddr, DeviceId, Data])
+            catch _:_ ->
+                ?LOG(info, "{ TOPO PUSH ERROR},dgiot_topo:push(~p, ~p, ~p, ~p)", [ProductId, Devaddr, DeviceId, Data])
             after
                 pass
             end,
             %% --------------------------------  数据存TD库
             try dgiot_tdengine_adapter:save(ProductId, Devaddr, Data2)
             catch _:_ ->
-                ?LOG(info,"{ TD SAVE ERROR },dgiot_tdengine_adapter:save(~p, ~p, ~p)",[ProductId, Devaddr, Data2])
+                ?LOG(info, "{ TD SAVE ERROR },dgiot_tdengine_adapter:save(~p, ~p, ~p)", [ProductId, Devaddr, Data2])
             after
                 pass
             end,
@@ -224,8 +225,8 @@ process_opc(ChannelId, Payload) ->
 
 
 %%scan后创建物模型
-create_Properties({Item,RawDataType,Description}) ->
-    DataType=
+create_Properties({Item, RawDataType, Description}) ->
+    DataType =
         case RawDataType of
             <<"Boolean">> ->
                 <<"bool">>;
@@ -281,10 +282,6 @@ create_final_Properties(List) -> [create_Properties(X) || X <- List].
 
 
 
-
-
-
-
 %%%创建组态config
 create_config(List) ->
     #{<<"konva">> =>
@@ -313,7 +310,7 @@ create_config(List) ->
 
 
 
-create_lable({{Item, _,Description}, {X, Y}}) ->
+create_lable({{Item, _, Description}, {X, Y}}) ->
     #{<<"attrs">> =>
     #{
         <<"draggable">> => true,
@@ -321,7 +318,7 @@ create_lable({{Item, _,Description}, {X, Y}}) ->
         <<"fontFamily">> => <<"Calibri">>,
         <<"fontSize">> => 20,
         <<"id">> => Item,
-        <<"text">> =>Description , %% 太阳能板电压
+        <<"text">> => Description, %% 太阳能板电压
         <<"type">> => <<"text">>,
         <<"x">> => X,
         <<"y">> => Y},
@@ -339,17 +336,17 @@ create_x_y(0) -> [].
 
 
 create_changelist(List_Data) ->
-    Item = [{K,V}||{K,V} <- List_Data,jud1(K)],
-    RawDataType = [{K,V}||{K,V} <- List_Data,jud2(K)],
-    Description = [{K,V}||{K,V} <- List_Data,jud3(K)],
+    Item = [{K, V} || {K, V} <- List_Data, jud1(K)],
+    RawDataType = [{K, V} || {K, V} <- List_Data, jud2(K)],
+    Description = [{K, V} || {K, V} <- List_Data, jud3(K)],
 %%    Scan_instruct = [{K,V}||{K,V} <- List_Data,jud4(K)],
 %%    ?LOG(info,"Scan_instruct:~p",[RawDataType]),
-    List =[{Item1,RawDataType1,Description1}||{K1,Item1} <- Item,{K2,RawDataType1} <- RawDataType,{K3,Description1} <- Description,jud(K1,K2,K3)],
-    List1=lists:usort(List),
+    List = [{Item1, RawDataType1, Description1} || {K1, Item1} <- Item, {K2, RawDataType1} <- RawDataType, {K3, Description1} <- Description, jud(K1, K2, K3)],
+    List1 = lists:usort(List),
     List1.
 
 jud1(X) ->
-    case binary:split(X, <<$_>>, [global, trim])  of
+    case binary:split(X, <<$_>>, [global, trim]) of
         [X] ->
             true;
         _ ->
@@ -357,16 +354,16 @@ jud1(X) ->
     end.
 
 jud2(X) ->
-    case binary:split(X, <<$_>>, [global, trim])  of
-        [_,<<"RawDataType">>] ->
+    case binary:split(X, <<$_>>, [global, trim]) of
+        [_, <<"RawDataType">>] ->
             true;
         _ ->
             false
     end.
 
 jud3(X) ->
-    case binary:split(X, <<$_>>, [global, trim])  of
-        [_,<<"Description">>] ->
+    case binary:split(X, <<$_>>, [global, trim]) of
+        [_, <<"Description">>] ->
             true;
         _ ->
             false
@@ -380,9 +377,9 @@ jud3(X) ->
 %%            false
 %%    end.
 
-jud(K1,K2,K3) ->
-    [Key2,_]= binary:split(K2, <<$_>>, [global, trim]),
-    [Key3,_]= binary:split(K3, <<$_>>, [global, trim]),
+jud(K1, K2, K3) ->
+    [Key2, _] = binary:split(K2, <<$_>>, [global, trim]),
+    [Key3, _] = binary:split(K3, <<$_>>, [global, trim]),
 %%    [_,_,Key4]= binary:split(K4, <<$.>>, [global, trim]),
 %%    ?LOG(info,"------------Key:~p",[Key4]),
     case Key2 == Key3 of
@@ -395,4 +392,35 @@ jud(K1,K2,K3) ->
             end;
         false ->
             false
+    end.
+
+
+
+send_properties(ProductId, DtuAddr, Properties) ->
+    NewProperties = get_properties(ProductId, Properties),
+    NewTopic = <<"thing/", ProductId/binary, "/", DtuAddr/binary, "/post">>,
+    DeviceId = dgiot_parse:get_deviceid(ProductId, DtuAddr),
+    dgiot_mqtt:publish(DeviceId, NewTopic, jsx:encode(NewProperties)).
+
+get_properties(ProductId, Properties) ->
+    case dgiot_product:lookup_prod(ProductId) of
+        {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
+            lists:foldl(fun(X, Acc) ->
+                case X of
+                    #{<<"identifier">> := Identifier,
+                        <<"dataType">> := #{<<"type">> := _Type, <<"das">> := Das}} ->
+                        maps:fold(fun(PK, PV, _Acc3) ->
+                            case lists:member(PK, Das) of
+                                true ->
+                                    Acc#{Identifier => PV};
+                                _ ->
+                                    Acc
+                            end
+                                  end, Acc, Properties);
+                    _ ->
+                        Acc
+                end
+                        end, #{}, Props);
+        _Error ->
+            Properties
     end.
