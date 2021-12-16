@@ -137,6 +137,7 @@
     <mapping directory="$PROJECT_DIR$/_build/emqx/plugins/relup_helper" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/apps/dgiot_amis_server" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/apps/dgiot_esports" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/apps/dgiot_iq60" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/apps/dgiot_jieshun" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/apps/dgiot_mingcheng" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/apps/dgiot_xinchuangwei" vcs="Git" />
