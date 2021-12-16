@@ -109,7 +109,7 @@ fi
 # set parameters by default value
 verType=single        # [single | cluster]
 domain_name="prod.iotn2n.com" #[prod.iotn2n.com | your_domain_name]
-dgiot="dgiot_95"  #[dgiot_95 | dgiot_n]
+dgiot="dgiot_102"  #[dgiot_102 | dgiot_n]
 while getopts "h:v:d:s:" arg
 do
   case $arg in
@@ -131,7 +131,7 @@ do
       domain_name=$(echo $OPTARG)
       ;;
     h)
-      echo "Usage: `basename $0` -v [single | cluster] -s [dgiot_95 | dgiot_n] -d [prod.iotn2n.com | your_domain_name]"
+      echo "Usage: `basename $0` -v [single | cluster] -s [dgiot_102 | dgiot_n] -d [prod.iotn2n.com | your_domain_name]"
       exit 0
       ;;
     ?) #unknow option
@@ -348,7 +348,7 @@ function yum_install_postgres() {
   echo -e  "`date +%F_%T` $LINENO: ${GREEN} yum install postgres${NC}"
   yum install -y wget git &> /dev/null
   ${csudo} yum install -y gcc gcc-c++  epel-release &> /dev/null
-  ${csudo} yum install -y llvm llvm-devel &> /dev/null
+  # ${csudo} yum install -y llvm llvm-devel &> /dev/null
   ${csudo} yum install -y clang libicu-devel perl-ExtUtils-Embed &> /dev/null
   ${csudo} yum install -y readline readline-devel &> /dev/null
   ${csudo} yum install -y zlib zlib-devel &> /dev/null
