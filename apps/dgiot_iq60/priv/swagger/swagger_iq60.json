@@ -1,0 +1,126 @@
+{
+  "tags": [
+    {
+      "name": "METER",
+      "description": "电力抄表"
+    }
+  ],
+  "definitions": {
+  },
+  "paths": {
+    "/meter_ctrl": {
+      "get": {
+        "security": [],
+        "summary": "对远程电表进行关闸/合闸(重要：接口调用后间隔15秒以上，避免对同一终端设备频繁操作)",
+        "description": "对远程电表进行关闸/合闸",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "pid",
+            "required": false,
+            "description": "产品ID",
+            "type": "string",
+            "default": "3ea14b556a"
+          },
+          {
+            "in": "query",
+            "name": "devaddr",
+            "description": "设备地址",
+            "required": true,
+            "type": "string",
+            "default": "000003146332"
+          },
+          {
+            "in": "query",
+            "name": "ctrlflag",
+            "description": "=ture合闸, =false 开闸",
+            "required": true,
+            "type": "boolean",
+            "default": true
+          },
+          {
+            "in": "query",
+            "name": "devpass",
+            "description": "终端设备密码",
+            "required": true,
+            "type": "string",
+            "default": "000000"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "METER"
+        ]
+      }
+    },
+    "/meter_ctrl_status": {
+      "get": {
+        "security": [],
+        "summary": "查询拉闸/合闸的状态(重要：接口调用后间隔15秒以上，避免对同一终端设备频繁操作)",
+        "description": "返回上次拉闸/合闸的时间，连接mqtt服务（连接信息：ws://121.40.78.136:8083/mqtt）<br>订阅topic：thing/productid/devid/status(如 thing/3ea14b556a/000003146332/status) 获取结果<br> 订阅mqtt主题之后，收到格式 ：<br>{\"1D000101\":1632549207}（上次电表跳闸时间）<br> {\"1E000101\":1632549176}(上次电表合闸时间)<br> {\"FEFEFEFE\":0} 合闸、跳闸成功",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "pid",
+            "required": false,
+            "description": "产品ID",
+            "type": "string",
+            "default": "3ea14b556a"
+          },
+          {
+            "in": "query",
+            "name": "ctrlflag",
+            "description": "=ture合闸, =false 开闸",
+            "required": true,
+            "type": "boolean",
+            "default": true
+          },
+          {
+            "in": "query",
+            "name": "devaddr",
+            "description": "设备地址",
+            "required": true,
+            "type": "string",
+            "default": "000003146332"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "METER"
+        ]
+      }
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{mapping, "iot_dgiot_iq60.listener", "dgiot_iq60.listener", [
+  {default, 51888},
+  {datatype, [integer, ip]}
+]}.
+
+
+{mapping, "iot_dgiot_iq60.heartbeat", "dgiot_iq60.heartbeat", [
+  {default, 180},
+  {datatype, integer}
+]}.
