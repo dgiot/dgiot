@@ -79,10 +79,10 @@ get_products(ProductId, ChannelId) ->
 %%                                ?LOG(info, "SubProductId ~p ChannelId ~p", [SubProductId, ChannelId]),
                                 dgiot_data:insert({SubProductId, ?TYPE}, ChannelId),
                                 Acc ++ [SubProductId]
-                                        end, [], R);
-                        _ -> []
+                                        end, [ProductId], R);
+                        _ -> [ProductId]
                     end;
-                _ -> []
+                _ -> [ProductId]
             end;
         _ ->
             dgiot_product:load(ProductId),

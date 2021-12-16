@@ -87,7 +87,7 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, state = #state{id = ChannelId, de
 handle_info({tcp, Buff}, #tcp{state = #state{id = ChannelId, devaddr = DtuAddr, env = #{product := ProductId, pn := Pn, di := Di}, product = DtuProductId} = State} = TCPState) ->
     dgiot_bridge:send_log(ChannelId, ProductId, DtuAddr, "[DtuAddr:~p] returns [~p] to Channel", [DtuAddr, dgiot_utils:binary_to_hex(Buff)]),
     <<H:8, L:8>> = dgiot_utils:hex_to_binary(modbus_rtu:is16(Di)),
-    <<Sh:8, Sl:8>> = dgiot_utils:hex_to_binary(modbus_rtu:is16(Pn)),
+    <<Sh:8, Sl :8>> = dgiot_utils:hex_to_binary(modbus_rtu:is16(Pn)),
     case modbus_rtu:parse_frame(Buff, #{}, #{
         <<"dtuproduct">> => ProductId,
         <<"channel">> => ChannelId,
