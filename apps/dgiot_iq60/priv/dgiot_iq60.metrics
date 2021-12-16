@@ -1,0 +1,44 @@
+[
+  {
+    "name": "dtu_online",
+    "help": "dtu在线数量",
+    "type": "gauge",
+    "labels": []
+  },
+  {
+    "name": "tcp_send",
+    "help": "TCP采集通道发包数",
+    "type": "gauge",
+    "labels": []
+  },
+  {
+    "name": "mqtt_send",
+    "help": "MQTT任务通道发包数",
+    "type": "gauge",
+    "labels": []
+  },
+  {
+    "name": "tcp_revc",
+    "help": "TCP采集通道收包数",
+    "type": "gauge",
+       "labels": []
+  },
+  {
+    "name": "mqtt_revc",
+    "help": "MQTT任务通道收包数",
+    "type": "gauge",
+       "labels": []
+  },
+  {
+    "name": "meter_register",
+    "help": "电表注册成功数量",
+    "type": "gauge",
+       "labels": []
+  },
+  {
+    "name": "search_meter",
+    "help": "搜表次数",
+    "type": "gauge",
+       "labels": []
+  }
+]
