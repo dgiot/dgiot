@@ -164,8 +164,6 @@ stop(#{
 
 %%获取计算值，必须返回物模型里面的数据表示，不能用寄存器地址
 get_calculated(ProductId, Ack) ->
-    io:format("ProductId ~p~n", [ProductId]),
-    io:format("Ack ~p~n", [Ack]),
     case dgiot_product:lookup_prod(ProductId) of
         {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
             lists:foldl(fun(X, Acc) ->
@@ -196,6 +194,63 @@ get_calculated(ProductId, Ack) ->
             Ack
     end.
 
+%% 主动上报 dis为[]
+get_collection(ProductId, [], Payload, Ack) ->
+    case dgiot_product:lookup_prod(ProductId) of
+        {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
+                lists:foldl(fun(X, Acc2) ->
+                    case Acc2 of
+                        error ->
+                            Acc2;
+                        _ ->
+                            case X of
+                                #{<<"dataForm">> := #{<<"strategy">> := Strategy},
+                                    <<"dataType">> := #{<<"type">> := <<"geopoint">>},
+                                    <<"identifier">> := Identifier} when Strategy =/= <<"计算值"/utf8>> ->
+                                    case maps:find(Identifier, Payload) of
+                                        {ok, Value} ->
+                                            Addr = dgiot_topo:get_gpsaddr(Value),
+                                            dgiot_data:insert({topogps, dgiot_parse:get_shapeid(ProductId, Identifier)}, Addr),
+                                            Acc2#{Identifier => Value};
+                                        _ ->
+                                            dgiot_data:insert({topogps, dgiot_parse:get_shapeid(ProductId, Identifier)}, <<"无GPS信息"/utf8>>),
+                                            Acc2
+                                    end;
+                                #{<<"dataForm">> := #{<<"address">> := Address, <<"strategy">> := Strategy, <<"collection">> := Collection},
+                                    <<"dataType">> := #{<<"type">> := Type, <<"specs">> := Specs},
+                                    <<"identifier">> := Identifier} when Strategy =/= <<"计算值"/utf8>> ->
+                                    case maps:find(Identifier, Payload) of
+                                        {ok, Value} ->
+                                            Str = re:replace(Collection, dgiot_utils:to_list(<<"%%", Identifier/binary>>), "(" ++ dgiot_utils:to_list(Value) ++ ")", [global, {return, list}]),
+                                            Str1 = re:replace(Str, "%s", "(" ++ dgiot_utils:to_list(Value) ++ ")", [global, {return, list}]),
+                                            case string2value(Str1, Type, Specs) of
+                                                error ->
+                                                    maps:without([Identifier], Acc2);
+                                                Value1 ->
+                                                    Acc2#{Identifier => Value1}
+                                            end;
+                                        _ ->
+                                            case maps:find(Address, Payload) of
+                                                {ok, Value} ->
+                                                    Str = re:replace(Collection, dgiot_utils:to_list(<<"%%", Identifier/binary>>), "(" ++ dgiot_utils:to_list(Value) ++ ")", [global, {return, list}]),
+                                                    Str1 = re:replace(Str, "%s", "(" ++ dgiot_utils:to_list(Value) ++ ")", [global, {return, list}]),
+                                                    case string2value(Str1, Type, Specs) of
+                                                        error ->
+                                                            maps:without([Identifier], Acc2);
+                                                        Value1 ->
+                                                            Acc2#{Identifier => Value1}
+                                                    end;
+                                                _ -> Acc2
+                                            end
+                                    end;
+                                _ ->
+                                    Acc2
+                            end
+                    end
+                            end, Ack, Props);
+        _Error ->
+            Ack
+    end;
 %%转换设备上报值，必须返回物模型里面的数据表示，不能用寄存器地址
 get_collection(ProductId, Dis, Payload, Ack) ->
     case dgiot_product:lookup_prod(ProductId) of

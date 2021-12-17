@@ -27,7 +27,7 @@
 -export([init/1, handle_call/3, handle_cast/2,
     handle_info/2, terminate/2, code_change/3, stop/1]).
 
--record(task, {mode = thing, tid, app, firstid, dtuid, product, devaddr, dis, que, round, ref, ack = #{}, appdata = #{}, ts = 0, endtime = 0, freq = 0}).
+-record(task, {mode = thing, tid, app, firstid, dtuid, product, devaddr, dis = [], que, round, ref, ack = #{}, appdata = #{}, ts = 0, endtime = 0, freq = 0}).
 %%%===================================================================
 %%% API
 %%%===================================================================
@@ -143,7 +143,7 @@ handle_info(retry, State) ->
 %% 任务结束
 handle_info({deliver, _, Msg}, #task{tid = Channel, dis = Dis, product = ProductId, devaddr = DevAddr, ack = Ack, que = Que} = State) when length(Que) == 0 ->
     Payload = jsx:decode(dgiot_mqtt:get_payload(Msg), [return_maps]),
-    dgiot_bridge:send_log(Channel, ProductId, DevAddr, "to_dev=> ~s ~p  ~ts: ~ts ", [?FILE, ?LINE, unicode:characters_to_list(dgiot_mqtt:get_topic(Msg)), unicode:characters_to_list(dgiot_mqtt:get_payload(Msg))]),
+    dgiot_bridge:send_log(Channel, ProductId, DevAddr, "~s ~p  ~ts: ~ts ", [?FILE, ?LINE, unicode:characters_to_list(dgiot_mqtt:get_topic(Msg)), unicode:characters_to_list(dgiot_mqtt:get_payload(Msg))]),
     NewAck = dgiot_task:get_collection(ProductId, Dis, Payload, Ack),
     dgiot_metrics:inc(dgiot_task, <<"task_recv">>, 1),
     {noreply, get_next_pn(State#task{ack = NewAck})};
@@ -236,7 +236,7 @@ get_next_pn(#task{mode = Mode, dtuid = DtuId, firstid = DeviceId, product = Prod
             _ ->
                 erlang:send_after(2 * 1000, self(), retry)
         end,
-    State#task{product = NextProductId, devaddr = NextDevAddr, que = Que, ack = #{}, ref = NewRef}.
+    State#task{product = NextProductId, devaddr = NextDevAddr, que = Que, dis = [], ack = #{}, ref = NewRef}.
 
 save_td(#task{app = _App, tid = Channel, product = ProductId, devaddr = DevAddr, ack = Ack, appdata = AppData}) ->
     case length(maps:to_list(Ack)) of
@@ -250,7 +250,7 @@ save_td(#task{app = _App, tid = Channel, product = ProductId, devaddr = DevAddr,
                     pass;
                 _ ->
                     DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
-                    Payload = jsx:encode(#{<<"thingdata">> => Data, <<"appdata">> => AppData}),
+                    Payload = jsx:encode(#{<<"thingdata">> => Data, <<"appdata">> => AppData, <<"timestamp">> => dgiot_datetime:now_ms()}),
                     Topic = <<"topo/", ProductId/binary, "/", DevAddr/binary, "/post">>,
                     dgiot_mqtt:publish(DeviceId, Topic, Payload),
                     dgiot_tdengine_adapter:save(ProductId, DevAddr, Data),
