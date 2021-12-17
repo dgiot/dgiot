@@ -400,6 +400,7 @@ send_properties(ProductId, DtuAddr, Properties) ->
     NewProperties = get_properties(ProductId, Properties),
     NewTopic = <<"thing/", ProductId/binary, "/", DtuAddr/binary, "/post">>,
     DeviceId = dgiot_parse:get_deviceid(ProductId, DtuAddr),
+    io:format("~s ~p NewProperties = ~p.~n", [?FILE, ?LINE, NewProperties]),
     dgiot_mqtt:publish(DeviceId, NewTopic, jsx:encode(NewProperties)).
 
 get_properties(ProductId, Properties) ->
@@ -409,12 +410,12 @@ get_properties(ProductId, Properties) ->
                 case X of
                     #{<<"identifier">> := Identifier,
                         <<"dataType">> := #{<<"type">> := _Type, <<"das">> := Das}} ->
-                        maps:fold(fun(PK, PV, _Acc3) ->
+                        maps:fold(fun(PK, PV, Acc1) ->
                             case lists:member(PK, Das) of
                                 true ->
-                                    Acc#{Identifier => PV};
+                                    Acc1#{Identifier => PV};
                                 _ ->
-                                    Acc
+                                    Acc1
                             end
                                   end, Acc, Properties);
                     _ ->
