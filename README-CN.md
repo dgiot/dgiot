@@ -22,7 +22,10 @@ DG-IoT是国内首款轻量级开源工业物联网平台，我们致力于提�
 + **专业可靠**：千万级长连接承载，电信级稳定性
 + **兼容并包**：兼容工业领域多行业的常见协议类型
 + **全流程低代码**：物模型-规则引擎-数据通道-组态页面全流程可视化低代码开发
-
+## 行业案例
++ [能源行业](https://gitee.com/dgiiot/dgiot/wikis/%E8%A1%8C%E4%B8%9A%E6%A1%88%E4%BE%8B/%E8%83%BD%E6%BA%90%E8%A1%8C%E4%B8%9A?sort_id=4971731)
++ [工业设备行业](https://gitee.com/dgiiot/dgiot/wikis/%E8%A1%8C%E4%B8%9A%E6%A1%88%E4%BE%8B/%E5%B7%A5%E4%B8%9A%E8%AE%BE%E5%A4%87%E8%A1%8C%E4%B8%9A)
++ [交通行业](https://gitee.com/dgiiot/dgiot/wikis/%E8%A1%8C%E4%B8%9A%E6%A1%88%E4%BE%8B/%E4%BA%A4%E9%80%9A%E8%A1%8C%E4%B8%9A)
 ## 快速体验与微信群
 |<span id="jump">技术支持微信群</span>|小程序|公众号|[电脑端](https://prod.iotn2n.com/)|账号|密码|
 |---|---|---|---|---|---|
