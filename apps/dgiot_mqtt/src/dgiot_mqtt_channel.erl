@@ -158,11 +158,11 @@ handle_message({rule, #{clientid := _DeviceId, username := ProductId, payload :=
                             io:format("~s ~p error: ~p~n", [?FILE, ?LINE, _Other]),
                             pass
                     end;
-                [<<>>, ProductId, DtuAddr, <<"topo">>, _GroupName, <<"post">>] ->
+                [<<>>, ProductId, DtuAddr, <<"/report/opc/properties">>] ->
                     create_device(ProductId, DtuAddr, <<"OPC_", DtuAddr/binary>>, Peerhost),
                     case jsx:decode(Payload, [{labels, binary}, return_maps]) of
                         #{<<"timestamp">> := _Timestamp,
-                            <<"deviceAddr">> := _DeviceAddr,
+                            <<"deviceId">> := _DeviceId,
                             <<"properties">> := Properties} when is_map(Properties) ->
 %%                            io:format("~s ~p Metadata = ~p.~n", [?FILE, ?LINE, Properties]),
                             dgiot_task:save_pnque(ProductId, DtuAddr, ProductId, DtuAddr),

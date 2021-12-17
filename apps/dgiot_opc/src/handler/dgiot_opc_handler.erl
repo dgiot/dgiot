@@ -75,7 +75,30 @@ handle(OperationID, Args, Context, Req) ->
 %%%===================================================================
 %%% 内部函数 Version:API版本
 %%%===================================================================
-
+do_request(post_head, #{<<"items">> := Items, <<"productid">> := ProductId}, _Context, _Req) ->
+    Head =
+        case dgiot_product:lookup_prod(ProductId) of
+            {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
+                lists:foldl(fun(Item, Acc) ->
+                    lists:foldl(fun(Prop, Acc1) ->
+                        case Prop of
+                            #{<<"name">> := Name, <<"identifier">> := Identifier,
+                                <<"dataType">> := #{<<"type">> := _Type, <<"das">> := Das}} ->
+                                case lists:member(Item, Das) of
+                                    true ->
+                                        Acc1#{Identifier => Name};
+                                    _ ->
+                                        Acc1
+                                end;
+                            _ ->
+                                Acc1
+                        end
+                                end, Acc, Props)
+                            end, #{}, Items);
+            _Error ->
+                #{}
+        end,
+    {ok, #{<<"code">> => 200, <<"head">> => Head}};
 
 %%  服务器不支持的API接口
 do_request(_OperationId, _Args, _Context, _Req) ->
