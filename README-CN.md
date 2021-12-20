@@ -30,12 +30,22 @@ DG-IoT是国内首款轻量级开源工业物联网平台，我们致力于提�
 |<span id="jump">技术支持微信群</span>|小程序|公众号|[电脑端](https://prod.iotn2n.com/)|账号|密码|
 |---|---|---|---|---|---|
 |![image](https://user-images.githubusercontent.com/51999461/146475486-d1835fd5-9c43-4521-a49a-42a168dd9bb7.png)|![](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_release/dgiot_wechat.jpg)|![](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/wechat/qrcode.png)|![](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_release/dgiot_dashboard.png) |dgiot_admin|dgiot_admin|
-## 一键部署与一键更新
+## 系统部署
 + **centos 7.6/7.9** 推荐使用腾讯云和阿里云部署，具体操作[点击这里](https://gitee.com/dgiiot/dgiot/wikis/DG-IoT%E7%89%A9%E8%81%94%E7%BD%91%E6%89%8B%E5%86%8C/%E7%AE%80%E4%BB%8B/%E5%AE%89%E8%A3%85%E9%83%A8%E7%BD%B2)
+### 一键部署
 ```
 wget -q https://gitee.com/dgiiot/dgiot/raw/master/dgiot_install.sh  && sh dgiot_install.sh
 ```
-
+### 版本更新
+```
+sh dgiot_install.sh -s {版本}
+```
+[版本列表](https://gitee.com/dgiiot/dgiot/wikis/DG-IoT%E7%89%A9%E8%81%94%E7%BD%91%E6%89%8B%E5%86%8C/%E7%AE%80%E4%BB%8B/%E7%89%88%E6%9C%AC%E5%88%97%E8%A1%A8)点此查看
+### 证书安装
+```
+sh dgiot_install.sh -d {域名}
+```
+[证书](https://gitee.com/dgiiot/dgiot/wikis/DG-IoT%E7%89%A9%E8%81%94%E7%BD%91%E6%89%8B%E5%86%8C/%E7%AE%80%E4%BB%8B/%E8%AF%81%E4%B9%A6%E9%83%A8%E7%BD%B2)
 ## 构建
  构建 *dgiot* 需要 Erlang/OTP R23+, Windows下用 [msys64](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/msys64/msys64.zip)开发。下载后解压到D盘根目录，严格按照下图操作：
 ![效果图-1.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/msys64/%E6%95%88%E6%9E%9C%E5%9B%BE-1.png)
