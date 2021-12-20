@@ -46,14 +46,14 @@ Before 2016, the Shuwa team had been crawling on the Internet and the mobile Int
 
  +  China Linux/Unix/Mac/windows Build
   ```bash
-    cd dgiot_dashboard
+    cd dgiot-dashboard
     git pull
     pnpm install
     pnpm build
     cd ../dgiot
     git pull
     rm ./apps/dgiot_api/priv/www -rf
-    cp ../dgiot_dashboard/dist/ ./apps/dgiot_api/priv/www -rf
+    cp ../dgiot-dashboard/dist/ ./apps/dgiot_api/priv/www -rf
     make run
  ```
 + Make Debug
