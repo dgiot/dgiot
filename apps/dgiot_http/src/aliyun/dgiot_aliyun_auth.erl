@@ -228,7 +228,7 @@ jwtlogin(Idtoken) ->
                                 <<"sex">> => "男"
                             },
                             <<"jwt">> => TokenData}},
-                    _SessionToken = dgiot_parse_handler:get_token(<<228, 186, 167, 228, 184, 154, 229, 164, 167, 232, 132, 145, 231, 148, 168, 230, 136, 183>>),
+                    _SessionToken = dgiot_parse_handler:get_token(<<230,181,153,233,135,140,229,138,158,228,186,167,228,184,154,229,164,167,232,132,145>>),
                     case dgiot_parse:query_object(<<"_User">>, #{<<"where">> => #{<<"username">> => Username}}) of
                         {ok, #{<<"results">> := Results}} when length(Results) == 0 ->
                             case dgiot_parse:get_object(<<"_Role">>, <<"f897518198">>) of
@@ -236,8 +236,8 @@ jwtlogin(Idtoken) ->
                                     SessionToken1 = dgiot_parse_handler:get_token(Appname),
                                     dgiot_parse_handler:create_user(UserBody#{<<"department">> => RoleId}, SessionToken1);
                                 _ ->
-                                    Body = #{<<"tempname">> => <<"产业大脑用户"/utf8>>, <<"parent">> => <<"a46c243b51">>, <<"depname">> => <<"产业大脑用户"/utf8>>,
-                                        <<"name">> => <<228, 186, 167, 228, 184, 154, 229, 164, 167, 232, 132, 145, 231, 148, 168, 230, 136, 183>>, <<"desc">> => <<"产业大脑用户"/utf8>>},
+                                    Body = #{<<"tempname">> => <<"浙里办产业大脑"/utf8>>, <<"parent">> => <<"a46c243b51">>, <<"depname">> => <<"浙里办产业大脑"/utf8>>,
+                                        <<"name">> => <<230,181,153,233,135,140,229,138,158,228,186,167,228,184,154,229,164,167,232,132,145>>, <<"desc">> => <<"浙里办产业大脑"/utf8>>},
                                     SessionToken2 = dgiot_parse_handler:get_token(<<"admin">>),
                                     Department =
                                         case dgiot_role:post_role(Body, SessionToken2) of
