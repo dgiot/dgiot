@@ -98,7 +98,8 @@
     get_userids/1,
     get_roleids/1,
     get_notificationid/1,
-    load_LogLevel/0
+    load_LogLevel/0,
+    get_evidenceId/2
 ]).
 
 -export([
@@ -200,6 +201,10 @@ get_loglevelid(Name, Type) ->
 get_sessionId(SessionToken) ->
     <<Pid:10/binary, _/binary>> = dgiot_utils:to_md5(<<"_Session", SessionToken/binary>>),
     Pid.
+
+get_evidenceId(Ukey, TimeStamp) ->
+    <<EId:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Evidence", Ukey/binary, TimeStamp/binary>>),
+    EId.
 
 get_objectid(Class, Map) ->
     case Class of

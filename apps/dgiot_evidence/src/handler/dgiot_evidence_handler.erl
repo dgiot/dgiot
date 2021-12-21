@@ -22,7 +22,7 @@
 
 %% API
 -export([swagger_system/0]).
--export([handle/4]).
+-export([handle/4, arrtojsonlist/1, python_drawxnqx/2]).
 
 %% API描述
 %% 支持二种方式导入
@@ -229,6 +229,14 @@ do_request(post_generatereport, #{<<"id">> := TaskId}, #{<<"sessionToken">> := _
 %%                                            Samplingnumber = maps:get(<<"samplingnumber">>, Param, <<"flow">>),
 %%                                            获取表格数据
 %%                                            dgiot_evidence:get_Tabledata(ParentId, SessionToken, Parameter, Samplingnumber),
+                                                    Repath =
+                                                        case dgiot_parse:query_object(<<"Evidence">>, #{<<"limit">> => 1, <<"where">> => #{<<"reportId">> => TaskId, <<"original.type">> => <<"avgs">>, <<"original.taskid">> => TaskId}}) of
+                                                            {ok, #{<<"results">> := Results}} when length(Results) > 0 ->
+                                                                [#{<<"original">> := #{<<"path">> := Path}} | _] = Results,
+                                                                Path;
+                                                            _ ->
+                                                                <<"">>
+                                                        end,
                                                     Tabledata = [
                                                         <<"10,0,2.254,28.86,2900,0,0.266537,0,28.86,2.254,0">>,
                                                         <<"9,5.13,2.548,27.941,2900,0,0.257272,5.13,27.941,2.548,15.35">>,
@@ -240,6 +248,14 @@ do_request(post_generatereport, #{<<"id">> := TaskId}, #{<<"sessionToken">> := _
                                                         <<"3,35.29,3.528,15.25,2900,0,0.120728,35.29,15.25,3.528,41.63">>,
                                                         <<"2,40.66,3.704,12.29,2900,0,0.087646,40.66,12.29,3.704,36.81">>,
                                                         <<"1,46.62,3.763,8.411,2900,0,0.044432,46.62,8.411,3.763,28.44">>],
+                                                    _Avgdatas =
+                                                        case dgiot_parse:query_object(<<"Evidence">>, #{<<"limit">> => 1, <<"where">> => #{<<"reportId">> => TaskId, <<"original.type">> => <<"avgs">>, <<"original.taskid">> => TaskId}}) of
+                                                            {ok, #{<<"results">> := Results}} when length(Results) > 0 ->
+                                                                [#{<<"original">> := #{<<"avgs">> := Avgs}} | _] = Results,
+                                                                Avgs;
+                                                            _ ->
+                                                                <<"">>
+                                                        end,
                                                     Acc ++ [#{
                                                         <<"type">> => <<"dynamicTable">>,
                                                         <<"source">> => Sources,
@@ -249,20 +265,19 @@ do_request(post_generatereport, #{<<"id">> := TaskId}, #{<<"sessionToken">> := _
                                                         <<"data">> => Tabledata
                                                     }];
                                                 <<"image">> ->
-%%                                            PythonBody = #{<<"name">> => <<TaskId/binary, ".png">>, <<"path">> => <<"/data/dgiot/go_fastdfs/files/dgiot_file/pump_pytoh/">>},
-%%                                            Imagepath =
-%%                                                case catch base64:decode(os:cmd("python3 /data/dgiot/dgiot/lib/dgiot_evidence-4.3.0/priv/python/drawxnqx.py " ++ dgiot_utils:to_list(base64:encode(jsx:encode(PythonBody))))) of
-%%                                                    {'EXIT', _Error} ->
-%%                                                        <<"">>;
-%%                                                    Path ->
-%%                                                        Path
-%%                                                end,
-%%                                            Repath = re:replace(dgiot_utils:to_list(Imagepath), "/data/dgiot/go_fastdfs/files", "", [global, {return, binary}, unicode]),
+                                                    Repath =
+                                                        case dgiot_parse:query_object(<<"Evidence">>, #{<<"limit">> => 1, <<"where">> => #{<<"reportId">> => TaskId, <<"original.type">> => <<"avgs">>, <<"original.taskid">> => TaskId}}) of
+                                                            {ok, #{<<"results">> := Results}} when length(Results) > 0 ->
+                                                                [#{<<"original">> := #{<<"path">> := Path}} | _] = Results,
+                                                                Path;
+                                                            _ ->
+                                                                <<"">>
+                                                        end,
                                                     Acc ++ [#{
                                                         <<"type">> => <<"image">>,
                                                         <<"source">> => Sources,
                                                         <<"name">> => Identifier,
-                                                        <<"url">> => <<"https://pump.dgiotcloud.com/dgiot_file/device/1639483984.jpg">>,
+                                                        <<"url">> => Repath,
                                                         <<"width">> => 600,
                                                         <<"height">> => 330
                                                     }];
@@ -311,6 +326,61 @@ do_request(post_generatereport, #{<<"id">> := TaskId}, #{<<"sessionToken">> := _
         _Oth1 ->
             {ok, #{<<"code">> => 500, <<"msg">> => <<"找不到该检测任务"/utf8>>}}
     end;
+
+%% evidence 概要: 调用python画性能曲线图
+%% OperationId:post_drawxnqx
+%% 请求:GET /iotapi/drawxnqx
+do_request(post_drawxnqx, #{<<"taskid">> := TaskId, <<"data">> := Data}, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
+%%    io:format("~s ~p Data = ~p.~n", [?FILE, ?LINE, Data]),
+    NewData = arrtojsonlist(Data),
+    AvgData =
+        maps:fold(fun(K, V, Avg) ->
+            SumV =
+                lists:foldl(fun(V1, VSum) ->
+                    VSum + V1
+                            end, 0, V),
+            Avg#{K => dgiot_utils:to_float(SumV / length(Data), 3)}
+                  end, #{}, maps:without([<<"timestamp">>], NewData)),
+    {NewEvidenceId, NewOriginal} =
+        case dgiot_parse:query_object(<<"Evidence">>, #{<<"limit">> => 1, <<"where">> => #{<<"reportId">> => TaskId, <<"original.type">> => <<"avgs">>, <<"original.taskid">> => TaskId}}) of
+            {ok, #{<<"results">> := Results}} when length(Results) > 0 ->
+                [#{<<"objectId">> := EvidenceId, <<"original">> := #{<<"avgs">> := Avgs} = Original} | _] = Results,
+                OldAvgs = Avgs ++ [AvgData],
+                Path = python_drawxnqx(TaskId, arrtojsonlist(OldAvgs)),
+                dgiot_parse:update_object(<<"Evidence">>, EvidenceId, #{<<"original">> => Original#{<<"path">> => Path, <<"avgs">> => Avgs ++ [AvgData]}}),
+                {EvidenceId, Original};
+            _ ->
+                case dgiot_auth:get_session(SessionToken) of
+                    #{<<"roles">> := Roles} ->
+                        OldAvgs = [AvgData],
+                        Path = python_drawxnqx(TaskId, arrtojsonlist(OldAvgs)),
+                        [#{<<"name">> := Role} | _] = maps:values(Roles),
+                        TimeStamp = dgiot_utils:to_binary(dgiot_datetime:now_ms()),
+                        Ukey = dgiot_utils:to_binary(dgiot_datetime:now_secs()),
+                        EvidenceId = dgiot_parse:get_evidenceId(Ukey, TimeStamp),
+                        Original = #{<<"taskid">> => TaskId, <<"avgs">> => OldAvgs, <<"type">> => <<"avgs">>, <<"path">> => Path},
+                        Evidence = #{
+                            <<"objectId">> => EvidenceId,
+                            <<"ACL">> => #{<<"role:", Role/binary>> => #{
+                                <<"read">> => true,
+                                <<"write">> => true}
+                            },
+                            <<"reportId">> => TaskId,
+                            <<"scene">> => Role,
+                            <<"timestamp">> => TimeStamp,
+                            <<"ukey">> => Ukey,
+                            <<"original">> => Original
+                        },
+                        dgiot_parse:create_object(<<"Evidence">>, Evidence),
+                        {EvidenceId, Original};
+                    _Other ->
+                        io:format("~s ~p _Other = ~p.~n", [?FILE, ?LINE, _Other]),
+                        OldAvgs = [AvgData],
+                        Path = python_drawxnqx(TaskId, arrtojsonlist(OldAvgs)),
+                        {<<"">>, #{<<"avgs">> => OldAvgs, <<"path">> => Path}}
+                end
+        end,
+    {ok, #{<<"code">> => 200, <<"evidenceid">> => NewEvidenceId, <<"original">> => NewOriginal}};
 
 %% evidence 概要: 增加取证报告 描述:新增取证报告
 %% OperationId:get_report
@@ -851,18 +921,23 @@ get_report(Id, SessionToken) ->
 
 post_report(#{<<"name">> := Name, <<"product">> := ProductId, <<"parentId">> := ParentId, <<"profile">> := Profile}, SessionToken) ->
     case dgiot_parse:get_object(<<"Product">>, ProductId, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
-        {ok, #{<<"ACL">> := Acl, <<"objectId">> := ProductId, <<"config">> := Config}} ->
+        {ok, #{<<"objectId">> := ProductId, <<"config">> := Config}} ->
             WordPath = maps:get(<<"reporttemp">>, Config, <<"">>),
             case dgiot_parse:query_object(<<"Device">>, #{<<"where">> => #{<<"name">> => Name, <<"product">> => ProductId}},
                 [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
                 {ok, #{<<"results">> := Results}} when length(Results) == 0 ->
+                    #{<<"roles">> := Roles} = dgiot_auth:get_session(SessionToken),
+                    [#{<<"name">> := Role} | _] = maps:values(Roles),
                     <<DtuAddr:12/binary, _/binary>> = license_loader:random(),
                     {ok, #{<<"objectId">> := DeviceId}} =
                         dgiot_device:create_device(#{
                             <<"devaddr">> => DtuAddr,
                             <<"name">> => Name,
                             <<"product">> => ProductId,
-                            <<"ACL">> => Acl,
+                            <<"ACL">> => #{<<"role:", Role/binary>> => #{
+                                <<"read">> => true,
+                                <<"write">> => true}
+                            },
                             <<"status">> => <<"ONLINE">>,
                             <<"brand">> => <<"数蛙桌面采集网关"/utf8>>,
                             <<"devModel">> => <<"SW_WIN_CAPTURE">>,
@@ -928,3 +1003,27 @@ post_report(#{<<"name">> := Name, <<"product">> := ProductId, <<"parentId">> := 
     end.
 
 
+arrtojsonlist(Data) when length(Data) > 0 ->
+    [Da | _] = Data,
+    Keys = maps:keys(Da),
+    lists:foldl(fun(Key, Acc) ->
+        Values =
+            lists:foldl(fun(X, Acc1) ->
+                Acc1 ++ [maps:get(Key, X, 0)]
+                        end, [], Data),
+        Acc#{Key => Values}
+                end, #{}, Keys);
+
+arrtojsonlist(_Data) ->
+    #{}.
+
+python_drawxnqx(TaskId, NewData) ->
+    PythonBody = #{<<"name">> => <<TaskId/binary, ".png">>, <<"data">> => NewData, <<"path">> => <<"/data/dgiot/go_fastdfs/files/dgiot_file/pump_pytoh/">>},
+    Imagepath =
+        case catch base64:decode(os:cmd("python3 /data/dgiot/dgiot/lib/dgiot_evidence-4.3.0/priv/python/drawxnqx.py " ++ dgiot_utils:to_list(base64:encode(jsx:encode(PythonBody))))) of
+            {'EXIT', _Error} ->
+                <<"">>;
+            Path ->
+                Path
+        end,
+    re:replace(dgiot_utils:to_list(Imagepath), "/data/dgiot/go_fastdfs/files", "", [global, {return, binary}, unicode]).

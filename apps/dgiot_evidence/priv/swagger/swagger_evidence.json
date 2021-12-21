@@ -1010,6 +1010,53 @@
           "Evidence"
         ]
       }
+    },
+    "/drawxnqx": {
+      "post": {
+        "description": "生成性能曲线图",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "data",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "taskid": {
+                  "required": true,
+                  "type": "string",
+                  "example": "ecfd3a227c"
+                },
+                "data": {
+                  "required": true,
+                  "type": "object",
+                  "example": [{"current":125,"flow":12,"power":10,"vol":220,"timestamp":"2021-12-20 17:23:53"},
+                    {"current":120,"flow":9,"power":10,"vol":220,"timestamp":"2021-12-20 17:23:53"},
+                    {"current":132,"flow":5,"power":10,"vol":220,"timestamp":"2021-12-20 17:23:53"}]
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "summary": "生成性能曲线图",
+        "tags": [
+          "Evidence"
+        ]
+      }
     }
   }
 }
