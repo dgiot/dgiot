@@ -51,54 +51,67 @@ create_dtu(mqtt, DtuAddr, ProductId, DTUIP) ->
     end.
 
 create_dtu(DtuAddr, ChannelId, DTUIP) ->
-    ?LOG(info, "~p", [dgiot_data:get({dtu, ChannelId})]),
-    {ProductId, Acl, _Properties} = dgiot_data:get({dtu, ChannelId}),
-    Requests = #{
-        <<"devaddr">> => DtuAddr,
-        <<"name">> => <<"DTU_", DtuAddr/binary>>,
-        <<"ip">> => DTUIP,
-        <<"isEnable">> => true,
-        <<"product">> => ProductId,
-        <<"ACL">> => Acl,
-        <<"status">> => <<"ONLINE">>,
-        <<"brand">> => <<"DTU", DtuAddr/binary>>,
-        <<"devModel">> => <<"DTU_">>
-    },
-    dgiot_device:create_device(Requests).
+    case dgiot_data:get({dtu, ChannelId}) of
+        {ProductId, Acl, _Properties} ->
+            Requests = #{
+                <<"devaddr">> => DtuAddr,
+                <<"name">> => <<"DTU_", DtuAddr/binary>>,
+                <<"ip">> => DTUIP,
+                <<"isEnable">> => true,
+                <<"product">> => ProductId,
+                <<"ACL">> => Acl,
+                <<"status">> => <<"ONLINE">>,
+                <<"brand">> => <<"DTU", DtuAddr/binary>>,
+                <<"devModel">> => <<"DTU_">>
+            },
+            dgiot_device:create_device(Requests);
+        _ -> pass
+    end.
+
 
 create_meter(MeterAddr, ChannelId, DTUIP, DtuAddr) ->
-    {ProductId, ACL, _Properties} = dgiot_data:get({meter, ChannelId}),
-    Requests = #{
-        <<"devaddr">> => MeterAddr,
-        <<"name">> => <<"Meter_", MeterAddr/binary>>,
-        <<"ip">> => DTUIP,
-        <<"isEnable">> => true,
-        <<"product">> => ProductId,
-        <<"ACL">> => ACL,
-        <<"route">> => #{DtuAddr => MeterAddr},
-        <<"status">> => <<"ONLINE">>,
-        <<"brand">> => <<"Meter", MeterAddr/binary>>,
-        <<"devModel">> => <<"Meter">>
-    },
-    dgiot_device:create_device(Requests),
-    {DtuProductId, _, _} = dgiot_data:get({dtu, ChannelId}),
-    dgiot_task:save_pnque(DtuProductId, DtuAddr, ProductId, MeterAddr).
+    case dgiot_data:get({meter, ChannelId}) of
+        {ProductId, ACL, _Properties} ->
+            Requests = #{
+                <<"devaddr">> => MeterAddr,
+                <<"name">> => <<"Meter_", MeterAddr/binary>>,
+                <<"ip">> => DTUIP,
+                <<"isEnable">> => true,
+                <<"product">> => ProductId,
+                <<"ACL">> => ACL,
+                <<"route">> => #{DtuAddr => MeterAddr},
+                <<"status">> => <<"ONLINE">>,
+                <<"brand">> => <<"Meter", MeterAddr/binary>>,
+                <<"devModel">> => <<"Meter">>
+            },
+            dgiot_device:create_device(Requests),
+            {DtuProductId, _, _} = dgiot_data:get({dtu, ChannelId}),
+            dgiot_task:save_pnque(DtuProductId, DtuAddr, ProductId, MeterAddr);
+        _ ->
+            pass
+    end.
+
 
 create_meter4G(MeterAddr, ChannelId, DTUIP) ->
-    {ProductId, ACL, _Properties} = dgiot_data:get({meter, ChannelId}),
-    Requests = #{
-        <<"devaddr">> => MeterAddr,
-        <<"name">> => <<"Meter_", MeterAddr/binary>>,
-        <<"ip">> => DTUIP,
-        <<"isEnable">> => true,
-        <<"product">> => ProductId,
-        <<"ACL">> => ACL,
-        <<"status">> => <<"ONLINE">>,
-        <<"brand">> => <<"Meter", MeterAddr/binary>>,
-        <<"devModel">> => <<"Meter">>
-    },
-    dgiot_device:create_device(Requests),
-    dgiot_task:save_pnque(ProductId, MeterAddr, ProductId, MeterAddr).
+    case dgiot_data:get({meter, ChannelId}) of
+        {ProductId, ACL, _Properties} ->
+            Requests = #{
+                <<"devaddr">> => MeterAddr,
+                <<"name">> => <<"Meter_", MeterAddr/binary>>,
+                <<"ip">> => DTUIP,
+                <<"isEnable">> => true,
+                <<"product">> => ProductId,
+                <<"ACL">> => ACL,
+                <<"status">> => <<"ONLINE">>,
+                <<"brand">> => <<"Meter", MeterAddr/binary>>,
+                <<"devModel">> => <<"Meter">>
+            },
+            dgiot_device:create_device(Requests),
+            dgiot_task:save_pnque(ProductId, MeterAddr, ProductId, MeterAddr);
+        _ ->
+            pass
+    end.
+
 
 get_sub_device(DtuAddr) ->
     Query = #{<<"keys">> => [<<"devaddr">>, <<"product">>],
@@ -159,17 +172,17 @@ to_frame(#{
 
 % DLT645 组装电表控制指令
 to_frame(#{
-        <<"devaddr">> := Addr,
-        <<"ctrlflag">> := CtrlFlag,
-        <<"protocol">> := ?DLT645,
-        <<"devpass">> := DevPass,
-        <<"apiname">> := get_meter_ctrl
+    <<"devaddr">> := Addr,
+    <<"ctrlflag">> := CtrlFlag,
+    <<"protocol">> := ?DLT645,
+    <<"devpass">> := DevPass,
+    <<"apiname">> := get_meter_ctrl
 } = Frame) ->
-    case CtrlFlag of 
+    case CtrlFlag of
         true ->
             PassGrade = <<"02">>,
-            Di = <<(dgiot_utils:hex_to_binary(DevPass))/binary,(dgiot_utils:hex_to_binary(PassGrade))/binary>>,
-            Data= <<"111111111C00010101010133">>,
+            Di = <<(dgiot_utils:hex_to_binary(DevPass))/binary, (dgiot_utils:hex_to_binary(PassGrade))/binary>>,
+            Data = <<"111111111C00010101010133">>,
             dlt645_decoder:to_frame(Frame#{
                 <<"msgtype">> => ?DLT645,
                 <<"addr">> => dlt645_proctol:reverse(dgiot_utils:hex_to_binary(Addr)),
@@ -179,7 +192,7 @@ to_frame(#{
             });
         false ->
             PassGrade = <<"02">>,
-            Di = <<(dgiot_utils:hex_to_binary(DevPass))/binary,(dgiot_utils:hex_to_binary(PassGrade))/binary>>,
+            Di = <<(dgiot_utils:hex_to_binary(DevPass))/binary, (dgiot_utils:hex_to_binary(PassGrade))/binary>>,
             Data = <<"111111111A00010101010133">>,
             dlt645_decoder:to_frame(Frame#{
                 <<"msgtype">> => ?DLT645,
@@ -192,15 +205,15 @@ to_frame(#{
 
 % DLT376 远程电表控制（透明转发）
 to_frame(#{
-        <<"devaddr">> := DevAddr,
-        <<"ctrlflag">> := CtrlFlag,
-        <<"devpass">> := DevPass,
-        <<"protocol">> := ?DLT376,
-        <<"apiname">> := get_meter_ctrl
+    <<"devaddr">> := DevAddr,
+    <<"ctrlflag">> := CtrlFlag,
+    <<"devpass">> := DevPass,
+    <<"protocol">> := ?DLT376,
+    <<"apiname">> := get_meter_ctrl
 } = Frame) ->
     Di = <<"00000100">>,
-    Data= <<16#02,16#6B,16#64,16#64,16#1C,16#00>>,
-    Data2 = <<16#00,16#00,16#00,16#00,16#00,16#00,16#00,16#00,16#00,16#00,16#00,16#00,16#00,16#00,16#00,16#00>>,
+    Data = <<16#02, 16#6B, 16#64, 16#64, 16#1C, 16#00>>,
+    Data2 = <<16#00, 16#00, 16#00, 16#00, 16#00, 16#00, 16#00, 16#00, 16#00, 16#00, 16#00, 16#00, 16#00, 16#00, 16#00, 16#00>>,
     CtrlPayload = to_frame(Frame#{
         <<"protocol">> => ?DLT645,
         <<"devaddr">> => DevAddr,
@@ -208,7 +221,7 @@ to_frame(#{
         <<"devpass">> => DevPass,
         <<"apiname">> => get_meter_ctrl
     }),
-    DataNew = <<Data/binary,CtrlPayload/binary,Data2/binary>>,
+    DataNew = <<Data/binary, CtrlPayload/binary, Data2/binary>>,
     % ?LOG(info, "GGM 230 to_frame, DataNew ~p~n~n~n",[dgiot_utils:binary_to_hex(DataNew)]),
     RetPlayload = dlt376_decoder:to_frame(Frame#{
         <<"msgtype">> => ?DLT376,
@@ -223,12 +236,12 @@ to_frame(#{
 
 % DLT645 组装电表获取上次拉闸合闸的时间
 to_frame(#{
-        <<"devaddr">> := DevAddr,
-        <<"ctrlflag">> := CtrlFlag,
-        <<"protocol">> := ?DLT645,
-        <<"apiname">> := get_meter_ctrl_status
+    <<"devaddr">> := DevAddr,
+    <<"ctrlflag">> := CtrlFlag,
+    <<"protocol">> := ?DLT645,
+    <<"apiname">> := get_meter_ctrl_status
 } = Frame) ->
-    case CtrlFlag of 
+    case CtrlFlag of
         true ->
             Di = <<"1E000101">>,
             dlt645_decoder:to_frame(Frame#{
@@ -251,21 +264,21 @@ to_frame(#{
 
 % DLT376 组装电表获取上次拉闸合闸的时间（透明转发）
 to_frame(#{
-        <<"devaddr">> := DevAddr,
-        <<"ctrlflag">> := CtrlFlag,
-        <<"protocol">> := ?DLT376,
-        <<"apiname">> := get_meter_ctrl_status
+    <<"devaddr">> := DevAddr,
+    <<"ctrlflag">> := CtrlFlag,
+    <<"protocol">> := ?DLT376,
+    <<"apiname">> := get_meter_ctrl_status
 } = Frame) ->
     Di = <<"00000100">>,
-    Data= <<16#02,16#6B,16#64,16#64,16#10,16#00>>,
-    Data2 = <<16#00,16#00,16#00,16#00,16#00,16#00,16#00,16#00,16#00,16#00,16#00,16#00,16#00,16#00,16#00,16#00>>,
+    Data = <<16#02, 16#6B, 16#64, 16#64, 16#10, 16#00>>,
+    Data2 = <<16#00, 16#00, 16#00, 16#00, 16#00, 16#00, 16#00, 16#00, 16#00, 16#00, 16#00, 16#00, 16#00, 16#00, 16#00, 16#00>>,
     CtrlPayload = to_frame(Frame#{
         <<"devaddr">> := DevAddr,
         <<"ctrlflag">> := CtrlFlag,
         <<"protocol">> := ?DLT645,
         <<"apiname">> := get_meter_ctrl_status
     }),
-    DataNew = <<Data/binary,CtrlPayload/binary,Data2/binary>>,
+    DataNew = <<Data/binary, CtrlPayload/binary, Data2/binary>>,
     % ?LOG(info, "GGM 260 to_frame, DataNew ~p,~n~n~n",[dgiot_utils:binary_to_hex(CtrlPayload)]),
     RetPlayload = dlt376_decoder:to_frame(Frame#{
         <<"msgtype">> => ?DLT376,
