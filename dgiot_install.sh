@@ -155,8 +155,10 @@ function pre_install() {
   #  setenforce 0
 
   ## 1.5 配置阿里云yum源
-  mv /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.bak
-  curl -o /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-7.repo &> /dev/null
+  if [ -f /etc/yum.repos.d/CentOS-Base.repo ]; then
+     mv /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.bak
+     curl -o /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-7.repo &> /dev/null
+  fi
 
   ## 1.6 echo "isntalling tools"
   yum -y install vim net-tools wget ntpdate &> /dev/null

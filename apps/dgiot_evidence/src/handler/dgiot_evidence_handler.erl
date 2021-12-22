@@ -223,20 +223,6 @@ do_request(post_generatereport, #{<<"id">> := TaskId}, #{<<"sessionToken">> := _
                                                         <<"name">> => Identifier,
                                                         <<"value">> => Value}];
                                                 <<"dynamicTable">> ->
-%%                                            采样参数
-%%                                            Parameter = maps:get(<<"parameter">>, Param, <<"flow">>),
-%%                                            采样个数
-%%                                            Samplingnumber = maps:get(<<"samplingnumber">>, Param, <<"flow">>),
-%%                                            获取表格数据
-%%                                            dgiot_evidence:get_Tabledata(ParentId, SessionToken, Parameter, Samplingnumber),
-                                                    Repath =
-                                                        case dgiot_parse:query_object(<<"Evidence">>, #{<<"limit">> => 1, <<"where">> => #{<<"reportId">> => TaskId, <<"original.type">> => <<"avgs">>, <<"original.taskid">> => TaskId}}) of
-                                                            {ok, #{<<"results">> := Results}} when length(Results) > 0 ->
-                                                                [#{<<"original">> := #{<<"path">> := Path}} | _] = Results,
-                                                                Path;
-                                                            _ ->
-                                                                <<"">>
-                                                        end,
                                                     Tabledata = [
                                                         <<"10,0,2.254,28.86,2900,0,0.266537,0,28.86,2.254,0">>,
                                                         <<"9,5.13,2.548,27.941,2900,0,0.257272,5.13,27.941,2.548,15.35">>,
@@ -248,14 +234,14 @@ do_request(post_generatereport, #{<<"id">> := TaskId}, #{<<"sessionToken">> := _
                                                         <<"3,35.29,3.528,15.25,2900,0,0.120728,35.29,15.25,3.528,41.63">>,
                                                         <<"2,40.66,3.704,12.29,2900,0,0.087646,40.66,12.29,3.704,36.81">>,
                                                         <<"1,46.62,3.763,8.411,2900,0,0.044432,46.62,8.411,3.763,28.44">>],
-                                                    _Avgdatas =
-                                                        case dgiot_parse:query_object(<<"Evidence">>, #{<<"limit">> => 1, <<"where">> => #{<<"reportId">> => TaskId, <<"original.type">> => <<"avgs">>, <<"original.taskid">> => TaskId}}) of
-                                                            {ok, #{<<"results">> := Results}} when length(Results) > 0 ->
-                                                                [#{<<"original">> := #{<<"avgs">> := Avgs}} | _] = Results,
-                                                                Avgs;
-                                                            _ ->
-                                                                <<"">>
-                                                        end,
+%%                                                    _Avgdatas =
+%%                                                        case dgiot_parse:query_object(<<"Evidence">>, #{<<"limit">> => 1, <<"where">> => #{<<"reportId">> => TaskId, <<"original.type">> => <<"avgs">>, <<"original.taskid">> => TaskId}}) of
+%%                                                            {ok, #{<<"results">> := Results}} when length(Results) > 0 ->
+%%                                                                [#{<<"original">> := #{<<"avgs">> := Avgs}} | _] = Results,
+%%                                                                Avgs;
+%%                                                            _ ->
+%%                                                                <<"">>
+%%                                                        end,
                                                     Acc ++ [#{
                                                         <<"type">> => <<"dynamicTable">>,
                                                         <<"source">> => Sources,
@@ -345,19 +331,32 @@ do_request(post_drawxnqx, #{<<"taskid">> := TaskId, <<"data">> := Data}, #{<<"se
         case dgiot_parse:query_object(<<"Evidence">>, #{<<"limit">> => 1, <<"where">> => #{<<"reportId">> => TaskId, <<"original.type">> => <<"avgs">>, <<"original.taskid">> => TaskId}}) of
             {ok, #{<<"results">> := Results}} when length(Results) > 0 ->
                 [#{<<"objectId">> := EvidenceId, <<"original">> := #{<<"avgs">> := Avgs} = Original} | _] = Results,
-                OldAvgs = Avgs ++ [AvgData],
+                OldAvgs =
+                    case maps:keys(AvgData) of
+                        Keys when length(Keys) == 0 ->
+                            [];
+                        _ ->
+                            Avgs ++ [AvgData]
+                    end,
                 Path = python_drawxnqx(TaskId, arrtojsonlist(OldAvgs)),
-                dgiot_parse:update_object(<<"Evidence">>, EvidenceId, #{<<"original">> => Original#{<<"path">> => Path, <<"avgs">> => Avgs ++ [AvgData]}}),
-                {EvidenceId, Original};
+                NewOriginal1 = Original#{<<"path">> => Path, <<"avgs">> => OldAvgs},
+                dgiot_parse:update_object(<<"Evidence">>, EvidenceId, #{<<"original">> => NewOriginal1}),
+                {EvidenceId, NewOriginal1};
             _ ->
                 case dgiot_auth:get_session(SessionToken) of
                     #{<<"roles">> := Roles} ->
-                        OldAvgs = [AvgData],
+                        OldAvgs =
+                            case maps:keys(AvgData) of
+                                Keys when length(Keys) == 0 ->
+                                    [];
+                                _ ->
+                                    [AvgData]
+                            end,
                         Path = python_drawxnqx(TaskId, arrtojsonlist(OldAvgs)),
                         [#{<<"name">> := Role} | _] = maps:values(Roles),
-                        TimeStamp = dgiot_utils:to_binary(dgiot_datetime:now_ms()),
+                        TimeStamp = dgiot_datetime:now_ms(),
                         Ukey = dgiot_utils:to_binary(dgiot_datetime:now_secs()),
-                        EvidenceId = dgiot_parse:get_evidenceId(Ukey, TimeStamp),
+                        EvidenceId = dgiot_parse:get_evidenceId(Ukey, dgiot_utils:to_binary(TimeStamp)),
                         Original = #{<<"taskid">> => TaskId, <<"avgs">> => OldAvgs, <<"type">> => <<"avgs">>, <<"path">> => Path},
                         Evidence = #{
                             <<"objectId">> => EvidenceId,
@@ -375,7 +374,13 @@ do_request(post_drawxnqx, #{<<"taskid">> := TaskId, <<"data">> := Data}, #{<<"se
                         {EvidenceId, Original};
                     _Other ->
                         io:format("~s ~p _Other = ~p.~n", [?FILE, ?LINE, _Other]),
-                        OldAvgs = [AvgData],
+                        OldAvgs =
+                            case maps:keys(AvgData) of
+                                Keys when length(Keys) == 0 ->
+                                    [];
+                                _ ->
+                                    [AvgData]
+                            end,
                         Path = python_drawxnqx(TaskId, arrtojsonlist(OldAvgs)),
                         {<<"">>, #{<<"avgs">> => OldAvgs, <<"path">> => Path}}
                 end
