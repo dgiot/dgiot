@@ -31,7 +31,6 @@ start(Port, State) ->
 %% tcp server start
 %% {ok, State} | {stop, Reason}
 init(TCPState) ->
-
     dgiot_metrics:inc(dgiot_meter, <<"dtu_login">>, 1),
     {ok, TCPState}.
 
