@@ -16,7 +16,7 @@
 -author("johnliu").
 -include_lib("dgiot/include/logger.hrl").
 
--export([docroot/0, get_topo/2, send_topo/3, get_Product/0, get_name/3, put_topo/2, get_konva_thing/2, edit_konva/2, push/4, get_gpsaddr/1]).
+-export([docroot/0, get_topo/2, send_topo/3, send_realtimedata/3, get_Product/0, get_name/3, put_topo/2, get_konva_thing/2, edit_konva/2, push/4, get_gpsaddr/1]).
 
 docroot() ->
     {file, Here} = code:is_loaded(?MODULE),
@@ -373,7 +373,6 @@ send_topo(ProductId, DeviceId, Payload) ->
     Pubtopic = <<"thing/", DeviceId/binary, "/post">>,
     dgiot_mqtt:publish(self(), Pubtopic, Base64).
 
-
 get_optshape(ProductId, DeviceId, Payload) ->
     Topo =
         case dgiot_data:get({toponotext, ProductId}) of
@@ -446,4 +445,126 @@ get_gpsaddr(V) ->
             end;
         _ ->
             <<"无GPS信息"/utf8>>
+    end.
+
+send_realtimedata(ProductId, DeviceId, Payload) ->
+    Base64 = get_realtimedata(ProductId, DeviceId, Payload),
+    Pubtopic = <<"thing/", DeviceId/binary, "/realtimedata/post">>,
+    dgiot_mqtt:publish(self(), Pubtopic, Base64).
+
+get_realtimedata(ProductId, DeviceId, Payload) ->
+    Maps = get_prop(ProductId),
+    Props = get_props(ProductId),
+    Data =
+        maps:fold(fun(K, V, Acc) ->
+            Time = dgiot_datetime:now_secs(),
+            NewTime = dgiot_tdengine_handler:get_time(dgiot_utils:to_binary(Time), <<"111">>),
+            case maps:find(K, Maps) of
+                error ->
+                    Acc;
+                {ok, Name} ->
+                    {Type, NewV, Unit, Ico, Devicetype} =
+                        case maps:find(K, Props) of
+                            error ->
+                                {V, <<"">>, <<"">>, <<"others">>};
+                            {ok, #{<<"dataType">> := #{<<"type">> := Typea} = DataType} = Prop} ->
+                                Devicetype1 = maps:get(<<"devicetype">>, Prop, <<"others">>),
+                                Specs = maps:get(<<"specs">>, DataType, #{}),
+                                case Typea of
+                                    Type1 when Type1 == <<"enum">>; Type1 == <<"bool">> ->
+                                        Value = maps:get(dgiot_utils:to_binary(V), Specs, V),
+                                        Ico1 = maps:get(<<"ico">>, Prop, <<"">>),
+                                        {Type1, Value, <<"">>, Ico1, Devicetype1};
+                                    Type2 when Type2 == <<"struct">> ->
+                                        Ico1 = maps:get(<<"ico">>, Prop, <<"">>),
+                                        {Type2, V, <<"">>, Ico1, Devicetype1};
+                                    Type3 when Type3 == <<"geopoint">> ->
+                                        Ico1 = maps:get(<<"ico">>, Prop, <<"">>),
+                                        BinV = dgiot_utils:to_binary(V),
+                                        Addr =
+                                            case binary:split(BinV, <<$_>>, [global, trim]) of
+                                                [Longitude, Latitude] ->
+                                                    case dgiot_gps:get_baidu_addr(Longitude, Latitude) of
+                                                        #{<<"baiduaddr">> := #{<<"formatted_address">> := FormattedAddress}} ->
+                                                            case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+                                                                {ok, #{<<"location">> := #{<<"__type">> := <<"GeoPoint">>, <<"longitude">> := Longitude, <<"latitude">> := Latitude}}} ->
+                                                                    pass;
+                                                                {ok, #{<<"detail">> := Detail}} ->
+                                                                    dgiot_parse:update_object(<<"Device">>, DeviceId, #{
+                                                                        <<"location">> => #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => Longitude, <<"latitude">> => Latitude},
+                                                                        <<"detail">> => Detail#{<<"address">> => FormattedAddress}});
+                                                                _ ->
+                                                                    pass
+                                                            end,
+                                                            FormattedAddress;
+                                                        _ ->
+                                                            <<"[", BinV/binary, "]经纬度解析错误"/utf8>>
+                                                    end;
+                                                _ ->
+                                                    <<"无GPS信息"/utf8>>
+                                            end,
+                                        {Type3, Addr, <<"">>, Ico1, Devicetype1};
+                                    Type4 when Type4 == <<"float">>; Type4 == <<"double">> ->
+                                        Unit1 = maps:get(<<"unit">>, Specs, <<"">>),
+                                        Precision = maps:get(<<"precision">>, Specs, 3),
+                                        Ico1 = maps:get(<<"ico">>, Prop, <<"">>),
+                                        {Type4, dgiot_utils:to_float(V, Precision), Unit1, Ico1, Devicetype1};
+                                    Type5 when Type5 == <<"image">> ->
+                                        AppName = dgiot_device:get_appname(DeviceId),
+                                        Url = dgiot_device:get_url(AppName),
+                                        Unit1 = maps:get(<<"unit">>, Specs, <<"">>),
+                                        Ico1 = maps:get(<<"ico">>, Prop, <<"">>),
+                                        Imagevalue = maps:get(<<"imagevalue">>, DataType, <<"">>),
+                                        BinV = dgiot_utils:to_binary(V),
+                                        {Type5, <<Url/binary, "/dgiot_file/", DeviceId/binary, "/", BinV/binary, ".", Imagevalue/binary>>, Unit1, Ico1, Devicetype1};
+                                    Type6 when Type6 == <<"date">> ->
+                                        V1 =
+                                            case V of
+                                                <<"1970-01-01 08:00:00.000">> ->
+                                                    <<"--">>;
+                                                _ ->
+                                                    V
+                                            end,
+                                        Unit1 = maps:get(<<"unit">>, Specs, <<"">>),
+                                        Ico1 = maps:get(<<"ico">>, Prop, <<"">>),
+                                        {Type6, V1, Unit1, Ico1, Devicetype1};
+                                    _ ->
+                                        Unit1 = maps:get(<<"unit">>, Specs, <<"">>),
+                                        Ico1 = maps:get(<<"ico">>, Prop, <<"">>),
+                                        {Typea, V, Unit1, Ico1, Devicetype1}
+                                end;
+                            _ ->
+                                {<<"others">>, V, <<"">>, <<"">>, <<"others">>}
+                        end,
+                    Acc ++ [#{<<"name">> => Name, <<"type">> => Type, <<"number">> => NewV, <<"time">> => NewTime, <<"unit">> => Unit, <<"imgurl">> => Ico, <<"devicetype">> => Devicetype}]
+            end
+                  end, [], Payload),
+    base64:encode(jsx:encode(#{<<"data">> => Data})).
+
+get_prop(ProductId) ->
+    case dgiot_product:lookup_prod(ProductId) of
+        {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
+            lists:foldl(fun(X, Acc) ->
+                case X of
+                    #{<<"identifier">> := Identifier, <<"name">> := Name, <<"isshow">> := true} ->
+                        Acc#{Identifier => Name};
+                    _ -> Acc
+                end
+                        end, #{}, Props);
+        _ ->
+            #{}
+    end.
+
+get_props(ProductId) ->
+    case dgiot_product:lookup_prod(ProductId) of
+        {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
+            lists:foldl(fun(X, Acc) ->
+                case X of
+                    #{<<"identifier">> := Identifier, <<"isshow">> := true} ->
+                        Acc#{Identifier => X};
+                    _ -> Acc
+                end
+                        end, #{}, Props);
+        _ ->
+            #{}
     end.

@@ -984,7 +984,6 @@ post_report(#{<<"name">> := Name, <<"product">> := ProductId, <<"parentId">> := 
                                             <<"class">> => <<"Device">>}
                                     }]
                                             end, [], Dicts),
-                            io:format("DictRequests ~p~n", [DictRequests]),
                             dgiot_parse:batch(DictRequests);
                         _R3 ->
                             ?LOG(info, "R1 ~p", [_R3])
@@ -1015,6 +1014,8 @@ arrtojsonlist(_Data) ->
     #{}.
 
 python_drawxnqx(TaskId, NewData) ->
+    io:format("~s ~p TaskId = ~p.~n", [?FILE, ?LINE, TaskId]),
+    io:format("~s ~p NewData = ~p.~n", [?FILE, ?LINE, NewData]),
     PythonBody = #{<<"name">> => <<TaskId/binary, ".png">>, <<"data">> => NewData, <<"path">> => <<"/data/dgiot/go_fastdfs/files/dgiot_file/pump_pytoh/">>},
     Imagepath =
         case catch base64:decode(os:cmd("python3 /data/dgiot/dgiot/lib/dgiot_evidence-4.3.0/priv/python/drawxnqx.py " ++ dgiot_utils:to_list(base64:encode(jsx:encode(PythonBody))))) of
