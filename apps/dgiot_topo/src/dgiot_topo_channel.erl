@@ -207,7 +207,9 @@ handle_message({deliver, _Topic, Msg}, #state{id = ChannelId} = State) ->
             Data = jsx:decode(Payload, [{labels, binary}, return_maps]),
             DeviceId = dgiot_parse:get_deviceid(ProductId, DtuAddr),
             Thingdata = maps:get(<<"thingdata">>, Data, #{}),
-            dgiot_topo:send_topo(ProductId, DeviceId, Thingdata);
+            dgiot_topo:send_topo(ProductId, DeviceId, Thingdata),
+%%            发送实时数据
+            dgiot_topo:send_realtimedata(ProductId, DeviceId, Thingdata);
         Other ->
             ?LOG(info, "Other ~p", [Other]),
             pass

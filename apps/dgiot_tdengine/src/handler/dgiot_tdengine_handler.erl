@@ -22,7 +22,7 @@
 -include_lib("dgiot/include/logger.hrl").
 
 %% API
--export([swagger_tdengine/0, get_props/1]).
+-export([swagger_tdengine/0, get_props/1, get_time/2]).
 -export([handle/4]).
 
 
@@ -395,12 +395,12 @@ get_app(ProductId, Results, DeviceId) ->
                                         {Type5, <<Url/binary, "/dgiot_file/", DeviceId/binary, "/", BinV/binary, ".", Imagevalue/binary>>, Unit1, Ico1, Devicetype1};
                                     Type6 when Type6 == <<"date">> ->
                                         V1 =
-                                        case V of
-                                            <<"1970-01-01 08:00:00.000">> ->
-                                                <<"--">>;
-                                            _->
-                                                V
-                                        end,
+                                            case V of
+                                                <<"1970-01-01 08:00:00.000">> ->
+                                                    <<"--">>;
+                                                _ ->
+                                                    V
+                                            end,
                                         Unit1 = maps:get(<<"unit">>, Specs, <<"">>),
                                         Ico1 = maps:get(<<"ico">>, Prop, <<"">>),
                                         {Type6, V1, Unit1, Ico1, Devicetype1};
