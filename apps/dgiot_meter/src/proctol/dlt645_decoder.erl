@@ -20,7 +20,14 @@
 -protocol([?DLT645]).
 
 %% API
--export([parse_frame/2, to_frame/1, test/0, parse_value/2,binary_to_dtime_dlt645_bcd/1]).
+-export([
+    parse_frame/2,
+    to_frame/1,
+    test/0,
+    parse_value/2,
+    binary_to_dtime_dlt645_bcd/1,
+    process_message/2
+]).
 
 parse_frame(Buff, Opts) ->
     parse_frame(Buff, [], Opts).
@@ -32,7 +39,7 @@ parse_frame(<<16#68, Rest/binary>> = Bin, Acc, _Opts) when byte_size(Rest) =< 9 
     {Bin, Acc};
 
 parse_frame(<<16#FE, 16#FE, 16#FE, 16#FE, Buff/binary>>, Acc, Opts) ->
-    ?LOG(info,"Buff ~p", [dgiot_utils:binary_to_hex(Buff)]),
+    ?LOG(info, "Buff ~p", [dgiot_utils:binary_to_hex(Buff)]),
     parse_frame(Buff, Acc, Opts);
 
 %% DLT645协议
@@ -54,7 +61,7 @@ parse_frame(<<16#68, Addr:6/bytes, 16#68, C:8, Len:8, Rest/binary>> = Bin, Acc, 
                                 },
                                 case catch (parse_userzone(UserZone, Frame, Opts)) of
                                     {'EXIT', Reason} ->
-                                        ?LOG(warning,"UserZone error,UserZone:~p, Reason:~p~n", [dgiot_utils:binary_to_hex(UserZone), Reason]),
+                                        ?LOG(warning, "UserZone error,UserZone:~p, Reason:~p~n", [dgiot_utils:binary_to_hex(UserZone), Reason]),
                                         Acc;
                                     NewFrame ->
                                         Acc ++ [NewFrame]
@@ -211,26 +218,84 @@ parse_value(Di, Data) ->
 
 %返回数据转化成时间（时间戳（单位：秒））如1554282344
 binary_to_dtime_dlt645_bcd(BinValue) ->
-    RValue = 
-        case BinValue of 
-            <<S1:4,S2:4,MT1:4,MT2:4,H1:4,H2:4,D1:4,D2:4,M1:4,M2:4,Y1:4,Y2:4,_/binary>> ->
-                Year = 2 * 1000 + Y1 * 10 + Y2 ,
+    RValue =
+        case BinValue of
+            <<S1:4, S2:4, MT1:4, MT2:4, H1:4, H2:4, D1:4, D2:4, M1:4, M2:4, Y1:4, Y2:4, _/binary>> ->
+                Year = 2 * 1000 + Y1 * 10 + Y2,
                 Month = M1 * 10 + M2,
                 Day = D1 * 10 + D2,
                 Hour = H1 * 10 + H2,
                 Minite = MT1 * 10 + MT2,
                 Second = S1 * 10 + S2,
-                case Year of 
+                case Year of
                     2000 ->
                         0;
                     _ ->
-                        Value = calendar:datetime_to_gregorian_seconds({{Year,Month,Day},{Hour,Minite,Second}})-719528*24*3600-8*3600,
+                        Value = calendar:datetime_to_gregorian_seconds({{Year, Month, Day}, {Hour, Minite, Second}}) - 719528 * 24 * 3600 - 8 * 3600,
                         Value
                 end;
             _ ->
                 0
         end,
     RValue.
+
+process_message(Frames, ChannelId) ->
+    case Frames of
+        % 查询上一次合闸时间返回
+        [#{<<"command">> := 16#91, <<"di">> := <<16#1E, 16#00, 16#01, 16#01>>, <<"addr">> := Addr, <<"data">> := Value} | _] ->
+            case dgiot_data:get({meter, ChannelId}) of
+                {ProductId, _ACL, _Properties} -> DevAddr = dgiot_utils:binary_to_hex(Addr),
+                    Topic = <<"thing/", ProductId/binary, "/", DevAddr/binary, "/status">>,
+                    Di = <<16#1E, 16#00, 16#01, 16#01>>,
+                    DValue = #{dgiot_utils:to_hex(Di) => dlt645_decoder:binary_to_dtime_dlt645_bcd(Value)},
+                    DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+                    dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(DValue));
+                _ -> pass
+            end;
+        % 查询上一次拉闸时间返回
+        [#{<<"command">> := 16#91, <<"di">> := <<16#1D, 16#00, 16#01, 16#01>>, <<"addr">> := Addr, <<"data">> := Value} | _] ->
+            case dgiot_data:get({meter, ChannelId}) of
+                {ProductId, _ACL, _Properties} -> DevAddr = dgiot_utils:binary_to_hex(Addr),
+                    Topic = <<"thing/", ProductId/binary, "/", DevAddr/binary, "/status">>,
+                    Di = <<16#1D, 16#00, 16#01, 16#01>>,
+                    DValue = #{dgiot_utils:to_hex(Di) => dlt645_decoder:binary_to_dtime_dlt645_bcd(Value)},
+                    DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+                    dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(DValue));
+                _ -> pass
+            end;
+        % 拉闸，合闸成功
+        [#{<<"command">> := 16#9C, <<"addr">> := Addr} | _] ->
+            case dgiot_data:get({meter, ChannelId}) of
+                {ProductId, _ACL, _Properties} -> DevAddr = dgiot_utils:binary_to_hex(Addr),
+                    Topic = <<"thing/", ProductId/binary, "/", DevAddr/binary, "/status">>,
+                    Di = <<16#FE, 16#FE, 16#FE, 16#FE>>,
+                    DValue = #{dgiot_utils:to_hex(Di) => 0},
+                    DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+                    dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(DValue));
+                _ -> pass
+            end;
+        % 拉闸，合闸失败
+        [#{<<"command">> := 16#DC, <<"addr">> := Addr, <<"data">> := Value} | _] ->
+            case dgiot_data:get({meter, ChannelId}) of
+                {ProductId, _ACL, _Properties} -> DevAddr = dgiot_utils:binary_to_hex(Addr),
+                    Topic = <<"thing/", ProductId/binary, "/", DevAddr/binary, "/status">>,
+                    Di = <<16#FE, 16#FE, 16#FE, 16#FD>>,
+                    DValue = #{dgiot_utils:to_hex(Di) => dgiot_utils:to_hex(Value)},
+                    DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+                    dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(DValue));
+                _ -> pass
+            end;
+        % 抄表数据返回
+        [#{<<"command">> := 16#91, <<"di">> := _Di, <<"addr">> := Addr, <<"value">> := Value} | _] ->
+            case dgiot_data:get({meter, ChannelId}) of
+                {ProductId, _ACL, _Properties} -> DevAddr = dgiot_utils:binary_to_hex(Addr),
+                    Topic = <<"thing/", ProductId/binary, "/", DevAddr/binary, "/post">>,
+                    DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+                    dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(Value));
+                _ -> pass
+            end;
+        _ -> pass
+    end.
 
 test() ->
     B1 = <<12, 16#68, 16#01, 16#00, 16#00, 16#00, 16#00, 16#00, 16#68, 16#91, 16#08, 16#33, 16#33, 16#3D, 16#33, 16#33, 16#33, 16#33, 16#33, 16#0C, 16#16,
