@@ -117,7 +117,7 @@
     },
     <<"os">> => #{
         order => 7,
-        type => string,
+        type => enum,
         default => <<"linux"/utf8>>,
         enum => [<<"linux">>, <<"windows">>, <<"all">>],
         title => #{
