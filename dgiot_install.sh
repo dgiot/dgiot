@@ -1006,8 +1006,8 @@ if [ "$verType" == "single" ]; then
       install_go_fastdfs      # 文件数据
       install_erlang_otp
       install_dgiot
-      install_prometheus
-      install_grafana
+      #install_prometheus #占用资源较多，先去除
+      #install_grafana    #占用资源较多，先去除
       install_nginx
     fi
 elif [ "$verType" == "cluster" ]; then
