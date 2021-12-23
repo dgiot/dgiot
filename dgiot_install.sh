@@ -122,13 +122,13 @@ do
       dgiot=$(echo $OPTARG)
       ;;
     d)
+      domain_name=$(echo $OPTARG)
       echo "Please ensure that the certificate file has been placed in ${script_dir}"
       echo -e  "`date +%F_%T` $LINENO: ${GREEN} Please ensure that the certificate file has been placed in `pwd`${NC}"
       if [ ! -f  ${script_dir}/${domain_name}.zip  ]; then
         echo -e  "`date +%F_%T` $LINENO: ${RED} ${script_dir}/${domain_name}.zip cert file not exist ${NC}"
         exit 1
       fi
-      domain_name=$(echo $OPTARG)
       ;;
     h)
       echo "Usage: `basename $0` -v [single | cluster] -s [dgiot_102 | dgiot_n] -d [prod.iotn2n.com | your_domain_name]"
