@@ -229,22 +229,11 @@ do_request(post_generatereport, #{<<"id">> := TaskId}, #{<<"sessionToken">> := _
                                                                 [#{<<"original">> := #{<<"avgs">> := Avgs}} | _] = Results,
                                                                 Avgs;
                                                             _ ->
-                                                                <<"">>
+                                                                []
                                                         end,
                                                     %% 采样参数
                                                     Parameter = maps:get(<<"parameter">>, Param, <<"flow,power,head,ratedspeed,pressure_in,pressure_out,conversion_flow,conversion_head,conversion_power,effect">>),
                                                     {Tabledata, _} = dgiot_evidence:get_Tabledata(Parameter, Avgdatas),
-%%                                                    Tabledata = [
-%%                                                        <<"10,0,2.254,28.86,2900,0,0.266537,0,28.86,2.254,0">>,
-%%                                                        <<"9,5.13,2.548,27.941,2900,0,0.257272,5.13,27.941,2.548,15.35">>,
-%%                                                        <<"8,10.19,2.764,26.545,2900,0,0.242822,10.19,26.545,2.764,26.71">>,
-%%                                                        <<"7,15.52,2.94,24.639,2900,0,0.222779,15.52,24.639,2.94,35.5">>,
-%%                                                        <<"6,20.25,3.136,22.969,2900,0,0.204725,20.25,22.969,3.136,40.48">>,
-%%                                                        <<"5,25.05,3.234,20.726,2900,0,0.180568,25.05,20.726,3.234,43.81">>,
-%%                                                        <<"4,30.09,3.43,18.289,2900,0,0.153912,30.09,18.289,3.43,43.78">>,
-%%                                                        <<"3,35.29,3.528,15.25,2900,0,0.120728,35.29,15.25,3.528,41.63">>,
-%%                                                        <<"2,40.66,3.704,12.29,2900,0,0.087646,40.66,12.29,3.704,36.81">>,
-%%                                                        <<"1,46.62,3.763,8.411,2900,0,0.044432,46.62,8.411,3.763,28.44">>],
                                                     Acc ++ [#{
                                                         <<"type">> => <<"dynamicTable">>,
                                                         <<"source">> => Sources,
@@ -341,6 +330,7 @@ do_request(post_drawxnqx, #{<<"taskid">> := TaskId, <<"data">> := Data}, #{<<"se
                         _ ->
                             Avgs ++ [AvgData]
                     end,
+                io:fomart("OldAvgs ~p~n", [OldAvgs]),
                 Path = python_drawxnqx(TaskId, arrtojsonlist(OldAvgs)),
                 NewOriginal1 = Original#{<<"path">> => Path, <<"avgs">> => OldAvgs},
                 dgiot_parse:update_object(<<"Evidence">>, EvidenceId, #{<<"original">> => NewOriginal1}),
@@ -1026,6 +1016,8 @@ arrtojsonlist(_Data) ->
     #{}.
 
 python_drawxnqx(TaskId, NewData) ->
+    io:fomart("TaskId ~s~p", [TaskId]),
+    io:fomart("NewData ~s~p", [NewData]),
     PythonBody = #{<<"name">> => <<TaskId/binary, ".png">>, <<"data">> => NewData, <<"path">> => <<"/data/dgiot/go_fastdfs/files/dgiot_file/pump_pytoh/">>},
     Imagepath =
         case catch base64:decode(os:cmd("python3 /data/dgiot/dgiot/lib/dgiot_evidence-4.3.0/priv/python/drawxnqx.py " ++ dgiot_utils:to_list(base64:encode(jsx:encode(PythonBody))))) of
