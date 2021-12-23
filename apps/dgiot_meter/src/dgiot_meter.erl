@@ -65,7 +65,8 @@ create_dtu(DtuAddr, ChannelId, DTUIP) ->
                 <<"devModel">> => <<"DTU_">>
             },
             dgiot_device:create_device(Requests);
-        _ -> pass
+        _ ->
+            pass
     end.
 
 
@@ -93,7 +94,7 @@ create_meter(MeterAddr, ChannelId, DTUIP, DtuAddr) ->
 
 
 create_meter4G(MeterAddr, ChannelId, DTUIP) ->
-    case dgiot_data:get({meter, ChannelId}) of
+    case dgiot_data:get({dtu, ChannelId}) of
         {ProductId, ACL, _Properties} ->
             Requests = #{
                 <<"devaddr">> => MeterAddr,

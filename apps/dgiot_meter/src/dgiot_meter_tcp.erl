@@ -36,13 +36,14 @@ init(TCPState) ->
 
 %%设备登录报文，登陆成功后，开始搜表
 handle_info({tcp, Buff}, #tcp{socket = Socket, state = #state{id = ChannelId, dtuaddr = <<>>, search = Search} = State} = TCPState) ->
-    ?LOG(info,"Buff ~p",[Buff]),
     DTUIP = dgiot_utils:get_ip(Socket),
     NewBuff =
         case is_binary(Buff) of
                   true -> dgiot_utils:binary_to_hex(Buff);
                   false -> Buff
               end,
+    {DtuProductId, _, _} = dgiot_data:get({dtu, ChannelId}),
+    dgiot_bridge:send_log(ChannelId, DtuProductId, NewBuff, "Login ~p ", [NewBuff]),
     {Protocol, DtuAddr} =
         case Buff of
             <<16#68, _:4/bytes, 16#68,_A1:8/bytes,_Rest/binary>> ->
@@ -55,11 +56,10 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, state = #state{id = ChannelId, dt
         end,
     case Protocol of
         ?DLT376 ->
-            {ProductId, _, _} = dgiot_data:get({meter, ChannelId}),
-            {DtuProductId, _, _} = dgiot_data:get({dtu, ChannelId}),
+            {ProductId, _, _} = dgiot_data:get({dtu, ChannelId}),
             Topic = <<"thing/", ProductId/binary, "/", DtuAddr/binary>>,
             dgiot_mqtt:subscribe(Topic),  %为这个设备订阅一个mqtt
-            dgiot_bridge:send_log(ChannelId, ProductId, DtuAddr, "from dev ~p (登录)", [dgiot_utils:binary_to_hex(Buff)]),
+            dgiot_bridge:send_log(ChannelId, ProductId, DtuAddr, "from dev ~p login", [dgiot_utils:binary_to_hex(Buff)]),
             {NewRef, NewStep} = {undefined, read_meter},
             DtuId = dgiot_parse:get_deviceid(DtuProductId, DtuAddr),
             dgiot_metrics:inc(dgiot_meter, <<"dtu_online">>, 1),
