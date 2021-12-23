@@ -200,7 +200,7 @@ handle_message({sync_parse, Args}, State) ->
 
 handle_message({deliver, _Topic, Msg}, #state{id = ChannelId} = State) ->
     Payload = dgiot_mqtt:get_payload(Msg),
-    dgiot_bridge:send_log(ChannelId, "Topic ~p DTU revice from  ~p", [dgiot_mqtt:get_topic(Msg), dgiot_utils:binary_to_hex(Payload)]),
+    dgiot_bridge:send_log(ChannelId, "Topic ~p DTU revice from  ~s", [dgiot_mqtt:get_topic(Msg), Payload]),
     case binary:split(dgiot_mqtt:get_topic(Msg), <<$/>>, [global, trim]) of
 %%接收task汇聚过来的整个dtu物模型采集的数据 发送组态
         [<<"topo">>, ProductId, DtuAddr, <<"post">>] ->
