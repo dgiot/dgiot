@@ -31,31 +31,28 @@
 
 
 binary_to_hex(Id) ->
-    << <<Y>> || <<X:4>> <= Id, Y <- integer_to_list(X,16)>>.
+    <<<<Y>> || <<X:4>> <= Id, Y <- integer_to_list(X, 16)>>.
 
 % binary 相连接
-concrat_binary( Acc,<<>>) -> Acc;
-concrat_binary(Acc,<<H:1/binary,Rest/binary >> ) ->
-  concrat_binary(<<Acc/binary , H/binary>>,Rest).
+concrat_binary(Acc, <<>>) -> Acc;
+concrat_binary(Acc, <<H:1/binary, Rest/binary>>) ->
+    concrat_binary(<<Acc/binary, H/binary>>, Rest).
 
 
-split_head_bytes(<<Head:2/binary,Rest/binary>>) ->
-    {Head,Rest}.
+split_head_bytes(<<Head:2/binary, Rest/binary>>) ->
+    {Head, Rest}.
 
 
 % 把地址转化成binary
-encode_of_addr(A1,A2) ->
-    AA = concrat_binary(dlt645_proctol:reverse(A1),dlt645_proctol:reverse(A2)),
-    AA1 = concrat_binary(<<16#00,16#00>>,AA),
+encode_of_addr(A1, A2) ->
+    AA = concrat_binary(dlt645_proctol:reverse(A1), dlt645_proctol:reverse(A2)),
+    AA1 = concrat_binary(<<16#00, 16#00>>, AA),
     AA1.
 
 %把binary转化成地址
 decode_of_addr(A) ->
-    {_,Rest} = split_head_bytes(A),
-    {A1,A2} = split_head_bytes(Rest),
-    AA = concrat_binary(dlt645_proctol:reverse(A1),dlt645_proctol:reverse(A2)),
-    AA1 = concrat_binary(AA,<<16#14>>),
+    {_, Rest} = split_head_bytes(A),
+    {A1, A2} = split_head_bytes(Rest),
+    AA = concrat_binary(dlt645_proctol:reverse(A1), dlt645_proctol:reverse(A2)),
+    AA1 = concrat_binary(AA, <<16#14>>),
     AA1.
-
-
-

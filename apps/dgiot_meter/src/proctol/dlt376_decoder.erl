@@ -20,7 +20,11 @@
 -protocol([?DLT376]).
 
 %% API
--export([parse_frame/2, to_frame/1,  parse_value/2]).
+-export([
+    parse_frame/2,
+    to_frame/1,
+    parse_value/2,
+    process_message/2]).
 
 
 parse_frame(Buff, Opts) ->
@@ -43,14 +47,14 @@ parse_frame(<<Rest/binary>> = Bin, Acc, _Opts) when byte_size(Rest) == 15 ->
 parse_frame(<<16#68, _:16, L2_low:6, _:2,L2_high:8, 16#68, C:8, A1:2/bytes,A2:2/bytes,A3:1/bytes, AFN:8, SEQ:8,Rest/binary>> = Bin, Acc, Opts) ->
     Len = L2_high * 255 + L2_low,
     DLen = Len -8,
-    case byte_size(Rest) -2 >= DLen of 
+    case byte_size(Rest) -2 >= DLen of
         true ->
-            case Rest of 
+            case Rest of
                 <<UserZone:DLen/bytes, Crc:8, 16#16, Rest1/binary>> ->
-                    CheckBuf = <<C:8, A1:2/bytes,A2:2/bytes,A3:1/bytes, AFN:8, SEQ:8, UserZone/binary>>,   
+                    CheckBuf = <<C:8, A1:2/bytes,A2:2/bytes,A3:1/bytes, AFN:8, SEQ:8, UserZone/binary>>,
                     CheckCrc = dgiot_utils:get_parity(CheckBuf),
                     % BinA = dgiot_utils:to_binary(A),
-                    Acc1 = 
+                    Acc1 =
                         case CheckCrc =:= Crc of
                             true ->
                                 Frame = #{
@@ -77,7 +81,7 @@ parse_frame(<<16#68, _:16, L2_low:6, _:2,L2_high:8, 16#68, C:8, A1:2/bytes,A2:2/
             end;
         false ->
             {Bin, Acc}
-    end;  
+    end;
 
 parse_frame(<<_:8, Rest/binary>>, Acc, Opts) when byte_size(Rest) > 50 ->
     parse_frame(Rest, Acc, Opts);
@@ -121,7 +125,7 @@ check_Command(State = #{<<"command">> := 16#C9, <<"afn">> := 16#02}) ->
 % DLT376 抄表返回的数据
 check_Command(State = #{<<"command">> := 16#88, <<"afn">> := 16#0C}) ->
     Data = maps:get(<<"data">>, State, <<>>),
-    case Data of 
+    case Data of
         <<Di:4/bytes,DTime:5/bytes,DNum:1/bytes,DValue:5/bytes,_/bytes>> ->
             % {Value, Diff, TopicDI} = parse_value(dlt645_proctol:reverse(Di), Bin),
             State1 = #{
@@ -139,14 +143,14 @@ check_Command(State = #{<<"command">> := 16#88, <<"afn">> := 16#0C}) ->
 % DLT376 穿透转发返回
 check_Command(State = #{<<"command">> := 16#88, <<"afn">> := 16#10}) ->
     Data = maps:get(<<"data">>, State, <<>>),
-    case Data of 
+    case Data of
         <<_:4/bytes,_:1/bytes,DLen2:8,DLen1:8,Rest/bytes>> ->
             DLen = DLen1 * 255 + DLen2,
-            case Rest of 
+            case Rest of
                 <<DValue:DLen/bytes,_/bytes>> ->
                     {_, Frames} = dlt645_decoder:parse_frame(DValue, []),
                     ?LOG(warning,"GGM 160 check_Command:~p", [Frames]),
-                    case Frames of 
+                    case Frames of
                         % 拉闸、合闸返回成功
                         [#{<<"command">>:=16#9C} | _] ->
                             Di = <<16#FE,16#FE,16#FE,16#FE>>,
@@ -188,7 +192,7 @@ check_Command(State = #{<<"command">> := 16#88, <<"afn">> := 16#10}) ->
                     end;
                 _->
                     pass
-            end;  
+            end;
         _ ->
             State
     end;
@@ -199,8 +203,8 @@ check_Command(State) ->
 
 % DLT376协议中把二进制转化成float
 binary_to_value_dlt376_bcd(BinValue) ->
-    RValue = 
-        case BinValue of 
+    RValue =
+        case BinValue of
             <<Vf3:4,Vf4:4,Vf1:4,Vf2:4,V2:4,V1:4,V4:4,V3:4,V6:4,V5:4,_/binary>> ->
                 Value = V6 * 100000 + V5 * 10000 + V4 * 1000 + V3 * 100 + V2 * 10 + V1 + Vf1 * 0.1 + Vf2 * 0.01 + Vf3 * 0.001 + Vf4 * 0.0001,
                 Value;
@@ -248,6 +252,57 @@ parse_value(Di, Data) ->
                 end,
             {ValueMap, Diff, SendDi};
         _ -> {#{}, Diff, SendDi}
+    end.
+
+
+process_message(Frames,ChannelId) ->
+    case Frames of
+        % 返回抄表数据
+        [#{<<"di">> := <<16#01, 16#01, 16#01, 16#10>>, <<"addr">> := Addr, <<"value">> := Value} | _] ->
+            case dgiot_data:get({meter, ChannelId}) of
+                {ProductId, _ACL, _Properties} -> DevAddr = dgiot_utils:binary_to_hex(Addr),
+                    Topic = <<"thing/", ProductId/binary, "/", Addr/binary, "/post">>,  % 发送给mqtt进行数据存储
+                    DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+                    dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(Value));
+                _ -> pass
+            end;
+        % 返回读取上次合闸时间
+        [#{<<"di">> := <<16#1E, 16#00, 16#01, 16#01>>, <<"addr">> := Addr, <<"value">> := Value} | _] ->
+            case dgiot_data:get({meter, ChannelId}) of
+                {ProductId, _ACL, _Properties} -> DevAddr = dgiot_utils:binary_to_hex(Addr),
+                    Topic = <<"thing/", ProductId/binary, "/", Addr/binary, "/status">>,
+                    DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+                    dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(Value));
+                _ -> pass
+            end;
+        % 返回读取上次拉闸时间
+        [#{<<"di">> := <<16#1D, 16#00, 16#01, 16#01>>, <<"addr">> := Addr, <<"value">> := Value} | _] ->
+            case dgiot_data:get({meter, ChannelId}) of
+                {ProductId, _ACL, _Properties} -> DevAddr = dgiot_utils:binary_to_hex(Addr),
+                    Topic = <<"thing/", ProductId/binary, "/", Addr/binary, "/status">>,
+                    DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+                    dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(Value));
+                _ -> pass
+            end;
+        % 拉闸，合闸成功
+        [#{<<"di">> := <<16#FE, 16#FE, 16#FE, 16#FE>>, <<"addr">> := Addr, <<"value">> := Value} | _] ->
+            case dgiot_data:get({meter, ChannelId}) of
+                {ProductId, _ACL, _Properties} -> DevAddr = dgiot_utils:binary_to_hex(Addr),
+                    Topic = <<"thing/", ProductId/binary, "/", Addr/binary, "/status">>,
+                    DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+                    dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(Value));
+                _ -> pass
+            end;
+        % 拉闸，合闸失败
+        [#{<<"di">> := <<16#FE, 16#FE, 16#FE, 16#FD>>, <<"addr">> := Addr, <<"value">> := Value} | _] ->
+            case dgiot_data:get({meter, ChannelId}) of
+                {ProductId, _ACL, _Properties} -> DevAddr = dgiot_utils:binary_to_hex(Addr),
+                    Topic = <<"thing/", ProductId/binary, "/", Addr/binary, "/status">>,
+                    DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+                    dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(Value));
+                _ -> pass
+            end;
+        _ -> pass
     end.
 
 % test() ->
