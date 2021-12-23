@@ -38,11 +38,16 @@ init(TCPState) ->
 handle_info({tcp, Buff}, #tcp{socket = Socket, state = #state{id = ChannelId, dtuaddr = <<>>, search = Search} = State} = TCPState) ->
     ?LOG(info,"Buff ~p",[Buff]),
     DTUIP = dgiot_utils:get_ip(Socket),
+    NewBuff =
+        case is_binary(Buff) of
+                  true -> dgiot_utils:binary_to_hex(Buff);
+                  false -> Buff
+              end,
     {Protocol, DtuAddr} =
         case Buff of
             <<16#68, _:4/bytes, 16#68,_A1:8/bytes,_Rest/binary>> ->
-                {_, [Acc | _]} = dlt376_decoder:parse_frame(Buff, []),
-                #{<<"msgtype">> := Protocol1,<<"addr">> := MeterAddr} = Acc,
+                {_, [Acc | _]} = dlt376_decoder:parse_frame(NewBuff, []),
+                #{<<"msgtype">> := Protocol1, <<"addr">> := MeterAddr} = Acc,
                 dgiot_meter:create_meter4G(MeterAddr, ChannelId, DTUIP),
                 {Protocol1, MeterAddr};
             _ ->

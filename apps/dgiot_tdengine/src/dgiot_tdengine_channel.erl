@@ -118,7 +118,8 @@
     <<"os">> => #{
         order => 7,
         type => string,
-        default => <<"all">>,
+        default => <<"linux"/utf8>>,
+        enum => [<<"linux">>, <<"windows">>, <<"all">>],
         title => #{
             zh => <<"指定操作系统"/utf8>>
         },
