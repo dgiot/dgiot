@@ -39,7 +39,6 @@ parse_frame(<<16#68, Rest/binary>> = Bin, Acc, _Opts) when byte_size(Rest) =< 9 
     {Bin, Acc};
 
 parse_frame(<<16#FE, 16#FE, 16#FE, 16#FE, Buff/binary>>, Acc, Opts) ->
-    ?LOG(info, "Buff ~p", [dgiot_utils:binary_to_hex(Buff)]),
     parse_frame(Buff, Acc, Opts);
 
 %% DLT645协议
