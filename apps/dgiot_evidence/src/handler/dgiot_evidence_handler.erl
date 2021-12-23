@@ -330,7 +330,6 @@ do_request(post_drawxnqx, #{<<"taskid">> := TaskId, <<"data">> := Data}, #{<<"se
                         _ ->
                             Avgs ++ [AvgData]
                     end,
-                io:fomart("OldAvgs ~p~n", [OldAvgs]),
                 Path = python_drawxnqx(TaskId, arrtojsonlist(OldAvgs)),
                 NewOriginal1 = Original#{<<"path">> => Path, <<"avgs">> => OldAvgs},
                 dgiot_parse:update_object(<<"Evidence">>, EvidenceId, #{<<"original">> => NewOriginal1}),
@@ -1016,8 +1015,6 @@ arrtojsonlist(_Data) ->
     #{}.
 
 python_drawxnqx(TaskId, NewData) ->
-    io:fomart("TaskId ~s~p", [TaskId]),
-    io:fomart("NewData ~s~p", [NewData]),
     PythonBody = #{<<"name">> => <<TaskId/binary, ".png">>, <<"data">> => NewData, <<"path">> => <<"/data/dgiot/go_fastdfs/files/dgiot_file/pump_pytoh/">>},
     Imagepath =
         case catch base64:decode(os:cmd("python3 /data/dgiot/dgiot/lib/dgiot_evidence-4.3.0/priv/python/drawxnqx.py " ++ dgiot_utils:to_list(base64:encode(jsx:encode(PythonBody))))) of
