@@ -109,7 +109,7 @@ fi
 # set parameters by default value
 verType=single        # [single | cluster]
 domain_name="prod.iotn2n.com" #[prod.iotn2n.com | your_domain_name]
-dgiot="dgiot_102"  #[dgiot_102 | dgiot_n]
+dgiot="dgiot_112"  #[dgiot_112 | dgiot_n]
 while getopts "h:v:d:s:" arg
 do
   case $arg in
@@ -131,7 +131,7 @@ do
       fi
       ;;
     h)
-      echo "Usage: `basename $0` -v [single | cluster] -s [dgiot_102 | dgiot_n] -d [prod.iotn2n.com | your_domain_name]"
+      echo "Usage: `basename $0` -v [single | cluster] -s [dgiot_112 | dgiot_n] -d [prod.iotn2n.com | your_domain_name]"
       exit 0
       ;;
     ?) #unknow option
