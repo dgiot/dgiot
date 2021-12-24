@@ -24,7 +24,7 @@
 # Building
 
  Bulid *DGIOT* Need Erlang/OTP R21+, Windows download [msys64](https://dgiotdev-1308220533.cos.ap-nanjing.myqcloud.com/msys64.zip),ダウンロード後、ディスクDのルートディレクトリに解凍し、次の図に従って厳密に操作してください。
-![效果图-1.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/msys64/%E6%95%88%E6%9E%9C%E5%9B%BE-1.png)
+![dgiotdevtools.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/dgiotdevtools.png)
 
  +  海外でソースコードをダウンロードする
   ```bash
