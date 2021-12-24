@@ -28,9 +28,9 @@ DG-IoT是国内首款轻量级开源工业物联网平台，我们致力于提�
 + [工业设备行业](https://gitee.com/dgiiot/dgiot/wikis/%E8%A1%8C%E4%B8%9A%E6%A1%88%E4%BE%8B/%E5%B7%A5%E4%B8%9A%E8%AE%BE%E5%A4%87%E8%A1%8C%E4%B8%9A)
 + [交通行业](https://gitee.com/dgiiot/dgiot/wikis/%E8%A1%8C%E4%B8%9A%E6%A1%88%E4%BE%8B/%E4%BA%A4%E9%80%9A%E8%A1%8C%E4%B8%9A)
 ## 快速体验与微信群
-|<span id="jump">技术支持微信群</span>|小程序|公众号|[电脑端](https://prod.iotn2n.com/)|账号|密码|
+|<span id="jump">技术支持微信群2群</span>|小程序|公众号|[电脑端](https://prod.iotn2n.com/)|账号|密码|
 |---|---|---|---|---|---|
-|![image](https://user-images.githubusercontent.com/51999461/146475486-d1835fd5-9c43-4521-a49a-42a168dd9bb7.png)|![](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_release/dgiot_wechat.jpg)|![](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/wechat/qrcode.png)|![](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_release/dgiot_dashboard.png) |dgiot_admin|dgiot_admin|
+|![image](https://user-images.githubusercontent.com/51999461/147313158-ac48ad72-e799-4d64-81f9-60527c63d271.png)|![](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_release/dgiot_wechat.jpg)|![](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/wechat/qrcode.png)|![](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_release/dgiot_dashboard.png) |dgiot_admin|dgiot_admin|
 ## 系统部署
 + **centos 7.6/7.9** 推荐使用腾讯云和阿里云部署，具体操作[点击这里](https://gitee.com/dgiiot/dgiot/wikis/DG-IoT%E7%89%A9%E8%81%94%E7%BD%91%E6%89%8B%E5%86%8C/%E7%AE%80%E4%BB%8B/%E5%AE%89%E8%A3%85%E9%83%A8%E7%BD%B2)
 ### 一键部署
