@@ -49,7 +49,7 @@ sh dgiot_install.sh -d {域名}
 [证书](https://gitee.com/dgiiot/dgiot/wikis/DG-IoT%E7%89%A9%E8%81%94%E7%BD%91%E6%89%8B%E5%86%8C/%E7%AE%80%E4%BB%8B/%E8%AF%81%E4%B9%A6%E9%83%A8%E7%BD%B2)
 ## 构建
  构建 *dgiot* 需要 Erlang/OTP R23+, Windows下用 [msys64](https://dgiotdev-1308220533.cos.ap-nanjing.myqcloud.com/msys64.zip)开发。下载后解压到D盘根目录，严格按照下图操作：
-![效果图-1.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/msys64/%E6%95%88%E6%9E%9C%E5%9B%BE-1.png)
+![dgiotdevtools.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/dgiotdevtools.png)
  +  国外下载源码
   ```bash
      git clone https://github.com/dgiot/dgiot-dashboard.git
