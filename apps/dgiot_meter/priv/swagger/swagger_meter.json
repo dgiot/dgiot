@@ -73,7 +73,7 @@
       "get": {
         "security": [],
         "summary": "查询拉闸/合闸的状态(重要：接口调用后间隔15秒以上，避免对同一终端设备频繁操作)",
-        "description": "返回上次拉闸/合闸的时间，连接mqtt服务（连接信息：ws://121.40.78.136:8083/mqtt）<br>订阅topic：thing/productid/devid/status(如 thing/3ea14b556a/000003146332/status) 获取结果<br> 订阅mqtt主题之后，收到格式 ：<br>{\"1D000101\":1632549207}（上次电表跳闸时间）<br> {\"1E000101\":1632549176}(上次电表合闸时间)<br> {\"FEFEFEFE\":0} 合闸、跳闸成功",
+        "description": "返回上次拉闸/合闸的时间，连接mqtt服务（连接信息：ws://prod.iotn2n.com:8083/mqtt）<br>订阅topic：thing/productid/devid/status(如 thing/3ea14b556a/000003146332/status) 获取结果<br> 订阅mqtt主题之后，收到格式 ：<br>{\"1D000101\":1632549207}（上次电表跳闸时间）<br> {\"1E000101\":1632549176}(上次电表合闸时间)<br> {\"FEFEFEFE\":0} 合闸、跳闸成功",
         "parameters": [
           {
             "in": "query",

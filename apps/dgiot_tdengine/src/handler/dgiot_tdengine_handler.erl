@@ -232,7 +232,8 @@ get_appdata(Channel, ProductId, DeviceId, _Args) ->
                     Chartdata = get_app(ProductId, Results, DeviceId),
                     {ok, #{<<"data">> => Chartdata}};
                 {error, _Reason} ->
-                    {ok, #{<<"code">> => 400, <<"msg">> => <<"no data">>}}
+                    Chartdata = get_app(ProductId, [#{}], DeviceId),
+                    {ok, #{<<"data">> => Chartdata}}
             end
     end.
 
@@ -328,36 +329,33 @@ get_chart(ProductId, Results, Names, Interval) ->
     ?LOG(debug, "Child ~p", [Child]),
     #{<<"columns">> => Columns, <<"rows">> => Rows, <<"child">> => Child}.
 
+
 get_app(ProductId, Results, DeviceId) ->
-    Maps = get_prop(ProductId),
-    Props = get_props(ProductId),
-    lists:foldl(fun(R, _Acc) ->
-        Time = maps:get(<<"createdat">>, R),
-        NewTime = get_time(Time, <<"111">>),
-        maps:fold(fun(K, V, Acc) ->
-            case maps:find(K, Maps) of
-                error ->
-                    Acc;
-                {ok, Name} ->
-                    {Type, NewV, Unit, Ico, Devicetype} =
-                        case maps:find(K, Props) of
-                            error ->
-                                {V, <<"">>, <<"">>, <<"others">>};
-                            {ok, #{<<"dataType">> := #{<<"type">> := Typea} = DataType} = Prop} ->
-                                Devicetype1 = maps:get(<<"devicetype">>, Prop, <<"others">>),
-                                Specs = maps:get(<<"specs">>, DataType, #{}),
-                                case Typea of
-                                    Type1 when Type1 == <<"enum">>; Type1 == <<"bool">> ->
-                                        Value = maps:get(dgiot_utils:to_binary(V), Specs, V),
-                                        Ico1 = maps:get(<<"ico">>, Prop, <<"">>),
-                                        {Type1, Value, <<"">>, Ico1, Devicetype1};
-                                    Type2 when Type2 == <<"struct">> ->
-                                        Ico1 = maps:get(<<"ico">>, Prop, <<"">>),
-                                        {Type2, V, <<"">>, Ico1, Devicetype1};
-                                    Type3 when Type3 == <<"geopoint">> ->
-                                        Ico1 = maps:get(<<"ico">>, Prop, <<"">>),
-                                        BinV = dgiot_utils:to_binary(V),
-                                        Addr =
+    [Result | _] = Results,
+    case dgiot_product:lookup_prod(ProductId) of
+        {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
+            lists:foldl(fun(X, Acc) ->
+                case X of
+                    #{<<"name">> := Name, <<"identifier">> := Identifier, <<"isshow">> := true, <<"dataType">> := #{<<"type">> := Typea} = DataType} ->
+                        Time = maps:get(<<"createdat">>, Result, dgiot_datetime:now_secs()),
+                        NewTime = dgiot_tdengine_handler:get_time(dgiot_utils:to_binary(Time), <<"111">>),
+                        Devicetype = maps:get(<<"devicetype">>, X, <<"others">>),
+                        Ico = maps:get(<<"ico">>, X, <<"">>),
+                        Specs = maps:get(<<"specs">>, DataType, #{}),
+                        Unit = maps:get(<<"unit">>, Specs, <<"">>),
+                        NewV =
+                            case maps:find(Identifier, Result) of
+                                error ->
+                                    <<"--">>;
+                                {ok, V} ->
+                                    case Typea of
+                                        Type1 when Type1 == <<"enum">>; Type1 == <<"bool">> ->
+                                            Value = maps:get(dgiot_utils:to_binary(V), Specs, V),
+                                            Value;
+                                        Type2 when Type2 == <<"struct">> ->
+                                            V;
+                                        Type3 when Type3 == <<"geopoint">> ->
+                                            BinV = dgiot_utils:to_binary(V),
                                             case binary:split(BinV, <<$_>>, [global, trim]) of
                                                 [Longitude, Latitude] ->
                                                     case dgiot_gps:get_baidu_addr(Longitude, Latitude) of
@@ -378,44 +376,123 @@ get_app(ProductId, Results, DeviceId) ->
                                                     end;
                                                 _ ->
                                                     <<"无GPS信息"/utf8>>
-                                            end,
-                                        {Type3, Addr, <<"">>, Ico1, Devicetype1};
-                                    Type4 when Type4 == <<"float">>; Type4 == <<"double">> ->
-                                        Unit1 = maps:get(<<"unit">>, Specs, <<"">>),
-                                        Precision = maps:get(<<"precision">>, Specs, 3),
-                                        Ico1 = maps:get(<<"ico">>, Prop, <<"">>),
-                                        {Type4, dgiot_utils:to_float(V, Precision), Unit1, Ico1, Devicetype1};
-                                    Type5 when Type5 == <<"image">> ->
-                                        AppName = dgiot_device:get_appname(DeviceId),
-                                        Url = dgiot_device:get_url(AppName),
-                                        Unit1 = maps:get(<<"unit">>, Specs, <<"">>),
-                                        Ico1 = maps:get(<<"ico">>, Prop, <<"">>),
-                                        Imagevalue = maps:get(<<"imagevalue">>, DataType, <<"">>),
-                                        BinV = dgiot_utils:to_binary(V),
-                                        {Type5, <<Url/binary, "/dgiot_file/", DeviceId/binary, "/", BinV/binary, ".", Imagevalue/binary>>, Unit1, Ico1, Devicetype1};
-                                    Type6 when Type6 == <<"date">> ->
-                                        V1 =
+                                            end;
+                                        Type4 when Type4 == <<"float">>; Type4 == <<"double">> ->
+                                            Precision = maps:get(<<"precision">>, Specs, 3),
+                                            dgiot_utils:to_float(V, Precision);
+                                        Type5 when Type5 == <<"image">> ->
+                                            AppName = dgiot_device:get_appname(DeviceId),
+                                            Url = dgiot_device:get_url(AppName),
+                                            Imagevalue = maps:get(<<"imagevalue">>, DataType, <<"">>),
+                                            BinV = dgiot_utils:to_binary(V),
+                                            <<Url/binary, "/dgiot_file/", DeviceId/binary, "/", BinV/binary, ".", Imagevalue/binary>>;
+                                        Type6 when Type6 == <<"date">> ->
                                             case V of
                                                 <<"1970-01-01 08:00:00.000">> ->
                                                     <<"--">>;
                                                 _ ->
                                                     V
-                                            end,
-                                        Unit1 = maps:get(<<"unit">>, Specs, <<"">>),
-                                        Ico1 = maps:get(<<"ico">>, Prop, <<"">>),
-                                        {Type6, V1, Unit1, Ico1, Devicetype1};
-                                    _ ->
-                                        Unit1 = maps:get(<<"unit">>, Specs, <<"">>),
-                                        Ico1 = maps:get(<<"ico">>, Prop, <<"">>),
-                                        {Typea, V, Unit1, Ico1, Devicetype1}
-                                end;
-                            _ ->
-                                {<<"others">>, V, <<"">>, <<"">>, <<"others">>}
-                        end,
-                    Acc ++ [#{<<"name">> => Name, <<"type">> => Type, <<"number">> => NewV, <<"time">> => NewTime, <<"unit">> => Unit, <<"imgurl">> => Ico, <<"devicetype">> => Devicetype}]
-            end
-                  end, [], R)
-                end, [], Results).
+                                            end;
+                                        _ ->
+                                            V
+                                    end
+                            end,
+                        Acc ++ [#{<<"name">> => Name, <<"type">> => Typea, <<"number">> => NewV, <<"time">> => NewTime, <<"unit">> => Unit, <<"imgurl">> => Ico, <<"devicetype">> => Devicetype}];
+                    _ -> Acc
+                end
+                        end, [], Props);
+        _ ->
+            []
+    end.
+
+%%get_app(ProductId, Results, DeviceId) ->
+%%    Maps = get_prop(ProductId),
+%%    Props = get_props(ProductId),
+%%    lists:foldl(fun(R, _Acc) ->
+%%        Time = maps:get(<<"createdat">>, R),
+%%        NewTime = get_time(Time, <<"111">>),
+%%        maps:fold(fun(K, V, Acc) ->
+%%            case maps:find(K, Maps) of
+%%                error ->
+%%                    Acc;
+%%                {ok, Name} ->
+%%                    {Type, NewV, Unit, Ico, Devicetype} =
+%%                        case maps:find(K, Props) of
+%%                            error ->
+%%                                {<<"">>, V, <<"">>, <<"">>, <<"others">>};
+%%                            {ok, #{<<"dataType">> := #{<<"type">> := Typea} = DataType} = Prop} ->
+%%                                Devicetype1 = maps:get(<<"devicetype">>, Prop, <<"others">>),
+%%                                Specs = maps:get(<<"specs">>, DataType, #{}),
+%%                                case Typea of
+%%                                    Type1 when Type1 == <<"enum">>; Type1 == <<"bool">> ->
+%%                                        Value = maps:get(dgiot_utils:to_binary(V), Specs, V),
+%%                                        Ico1 = maps:get(<<"ico">>, Prop, <<"">>),
+%%                                        {Type1, Value, <<"">>, Ico1, Devicetype1};
+%%                                    Type2 when Type2 == <<"struct">> ->
+%%                                        Ico1 = maps:get(<<"ico">>, Prop, <<"">>),
+%%                                        {Type2, V, <<"">>, Ico1, Devicetype1};
+%%                                    Type3 when Type3 == <<"geopoint">> ->
+%%                                        Ico1 = maps:get(<<"ico">>, Prop, <<"">>),
+%%                                        BinV = dgiot_utils:to_binary(V),
+%%                                        Addr =
+%%                                            case binary:split(BinV, <<$_>>, [global, trim]) of
+%%                                                [Longitude, Latitude] ->
+%%                                                    case dgiot_gps:get_baidu_addr(Longitude, Latitude) of
+%%                                                        #{<<"baiduaddr">> := #{<<"formatted_address">> := FormattedAddress}} ->
+%%                                                            case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+%%                                                                {ok, #{<<"location">> := #{<<"__type">> := <<"GeoPoint">>, <<"longitude">> := Longitude, <<"latitude">> := Latitude}}} ->
+%%                                                                    pass;
+%%                                                                {ok, #{<<"detail">> := Detail}} ->
+%%                                                                    dgiot_parse:update_object(<<"Device">>, DeviceId, #{
+%%                                                                        <<"location">> => #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => Longitude, <<"latitude">> => Latitude},
+%%                                                                        <<"detail">> => Detail#{<<"address">> => FormattedAddress}});
+%%                                                                _ ->
+%%                                                                    pass
+%%                                                            end,
+%%                                                            FormattedAddress;
+%%                                                        _ ->
+%%                                                            <<"[", BinV/binary, "]经纬度解析错误"/utf8>>
+%%                                                    end;
+%%                                                _ ->
+%%                                                    <<"无GPS信息"/utf8>>
+%%                                            end,
+%%                                        {Type3, Addr, <<"">>, Ico1, Devicetype1};
+%%                                    Type4 when Type4 == <<"float">>; Type4 == <<"double">> ->
+%%                                        Unit1 = maps:get(<<"unit">>, Specs, <<"">>),
+%%                                        Precision = maps:get(<<"precision">>, Specs, 3),
+%%                                        Ico1 = maps:get(<<"ico">>, Prop, <<"">>),
+%%                                        {Type4, dgiot_utils:to_float(V, Precision), Unit1, Ico1, Devicetype1};
+%%                                    Type5 when Type5 == <<"image">> ->
+%%                                        AppName = dgiot_device:get_appname(DeviceId),
+%%                                        Url = dgiot_device:get_url(AppName),
+%%                                        Unit1 = maps:get(<<"unit">>, Specs, <<"">>),
+%%                                        Ico1 = maps:get(<<"ico">>, Prop, <<"">>),
+%%                                        Imagevalue = maps:get(<<"imagevalue">>, DataType, <<"">>),
+%%                                        BinV = dgiot_utils:to_binary(V),
+%%                                        {Type5, <<Url/binary, "/dgiot_file/", DeviceId/binary, "/", BinV/binary, ".", Imagevalue/binary>>, Unit1, Ico1, Devicetype1};
+%%                                    Type6 when Type6 == <<"date">> ->
+%%                                        V1 =
+%%                                            case V of
+%%                                                <<"1970-01-01 08:00:00.000">> ->
+%%                                                    <<"--">>;
+%%                                                _ ->
+%%                                                    V
+%%                                            end,
+%%                                        Unit1 = maps:get(<<"unit">>, Specs, <<"">>),
+%%                                        Ico1 = maps:get(<<"ico">>, Prop, <<"">>),
+%%                                        {Type6, V1, Unit1, Ico1, Devicetype1};
+%%                                    _ ->
+%%                                        Unit1 = maps:get(<<"unit">>, Specs, <<"">>),
+%%                                        Ico1 = maps:get(<<"ico">>, Prop, <<"">>),
+%%                                        {Typea, V, Unit1, Ico1, Devicetype1}
+%%                                end;
+%%                            _ ->
+%%                                {<<"others">>, V, <<"">>, <<"">>, <<"others">>}
+%%                        end,
+%%                    Acc ++ [#{<<"name">> => Name, <<"type">> => Type, <<"number">> => NewV, <<"time">> => NewTime, <<"unit">> => Unit, <<"imgurl">> => Ico, <<"devicetype">> => Devicetype}]
+%%            end
+%%                  end, [], R)
+%%                end, [], Results).
 
 get_time(V, Interval) ->
     NewV =
