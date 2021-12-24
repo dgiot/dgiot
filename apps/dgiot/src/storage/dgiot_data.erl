@@ -31,7 +31,7 @@
 -author("johnliu").
 -include("dgiot_cron.hrl").
 
--export([init/0, init/1, init/2, destroy/1,size/1]).
+-export([init/0, init/1, init/2, destroy/1, size/1]).
 -export([insert/2, save/2, delete/1, match/1, match_object/2, match_limit/2, match_safe_do/3, match_object/3, match_delete/1, select/2, lookup/1, page/6, update_counter/2]).
 -export([insert/3, delete/2, match/2, match/3, match_delete/2, match_limit/3, match_safe_do/4, lookup/2, search/2, search/3, dets_search/2, dets_search/3, loop/2, dets_loop/3, update_counter/3]).
 -export([set_consumer/2, set_consumer/3, get_consumer/2, get/1, get/2, clear/1, search_data/0]).
@@ -99,57 +99,102 @@ insert(Name, Key, Value) ->
     save(Name, {Key, Value}).
 
 save(Name, Value) ->
-    ?ETS:insert(Name, Value).
+    case safe(Name) of
+        false ->
+            ets_not_find;
+        _ ->
+            ?ETS:insert(Name, Value)
+    end.
 
 
 delete(Key) ->
     delete(?DB, Key).
 delete(Name, Key) ->
-    ?ETS:delete(Name, Key).
+    case safe(Name) of
+        false ->
+            pass;
+        _ ->
+            ?ETS:delete(Name, Key)
+    end.
 
 
 lookup(Key) ->
     lookup(?DB, Key).
 lookup(Name, Key) ->
-    case ?ETS:lookup(Name, Key) of
-        [] -> {error, not_find};
-        [{Key, Value} | _] -> {ok, Value};
-        [Value | _] -> {ok, Value}
+    case safe(Name) of
+        false ->
+            {error, not_find};
+        _ ->
+            case ?ETS:lookup(Name, Key) of
+                [] -> {error, not_find};
+                [{Key, Value} | _] -> {ok, Value};
+                [Value | _] -> {ok, Value}
+            end
     end.
 
 get(Key) ->
     get(?DB, Key).
 get(Name, Key) ->
-    case ?ETS:lookup(Name, Key) of
-        [] -> not_find;
-        [{Key, Value} | _] -> Value;
-        [Value | _] -> Value
+    case safe(Name) of
+        false ->
+            not_find;
+        _ ->
+            case ?ETS:lookup(Name, Key) of
+                [] -> not_find;
+                [{Key, Value} | _] -> Value;
+                [Value | _] -> Value
+            end
     end.
 
 match(Pattern) ->
     match(?DB, Pattern).
 match(Name, Pattern) ->
-    case ?ETS:match(Name, Pattern) of
-        [] -> {error, empty};
-        Matchs -> {ok, Matchs}
+    case safe(Name) of
+        false ->
+            {error, empty};
+        _ ->
+            case ?ETS:match(Name, Pattern) of
+                [] -> {error, empty};
+                Matchs -> {ok, Matchs}
+            end
     end.
 
 match(Name, Pattern, Limit) ->
-    ?ETS:match(Name, Pattern, Limit).
+    case safe(Name) of
+        false ->
+            {error, empty};
+        _ ->
+            ?ETS:match(Name, Pattern, Limit)
+    end.
 
 match_delete(Pattern) ->
     match_delete(?DB, Pattern).
 match_delete(Name, Pattern) ->
-    ?ETS:match_delete(Name, Pattern).
+    case safe(Name) of
+        false ->
+            ets_not_find;
+        _ ->
+            ?ETS:match_delete(Name, Pattern)
+    end.
 
 match_limit(Pattern, Limit) ->
     match_limit(?DB, Pattern, Limit).
 
 match_limit(Name, Pattern, Limit) ->
-    ?ETS:match(Name, Pattern, Limit).
+    case safe(Name) of
+        false ->
+            ets_not_find;
+        _ ->
+            ?ETS:match(Name, Pattern, Limit)
+    end.
 
 match_object(Name, Pattern) ->
-    ?ETS:match_object(Name, Pattern).
+    case safe(Name) of
+        false ->
+            ets_not_find;
+        _ ->
+            ?ETS:match_object(Name, Pattern)
+    end.
 
 match_object(Name, Pattern, RowFun) ->
     Rows = match_object(Name, Pattern),
@@ -173,22 +218,37 @@ page(Name, PageNo, PageSize, Filter, RowFun, Order) ->
 
 
 select(Name, MatchSpec) ->
-    ?ETS:select(Name, MatchSpec).
+    case safe(Name) of
+        false ->
+            ets_not_find;
+        _ ->
+            ?ETS:select(Name, MatchSpec)
+    end.
 
 
 loop(Name, Fun) ->
-    ?ETS:safe_fixtable(Name, true),
-    loop(Name, Fun, ?ETS:first(Name)),
-    ?ETS:safe_fixtable(Name, false).
+    case safe(Name) of
+        false ->
+            ok;
+        _ ->
+            ?ETS:safe_fixtable(Name, true),
+            loop(Name, Fun, ?ETS:first(Name)),
+            ?ETS:safe_fixtable(Name, false)
+    end.
 
 loop(_, _, '$end_of_table') ->
     ok;
 loop(Name, Fun, Key) ->
-    case ?ETS:lookup(Name, Key) of
-        [{Key, Value} | _] ->
-            Fun({Key, Value}),
-            loop(Name, Fun, ?ETS:next(Name, Key));
-        '$end_of_table' -> ok
+    case safe(Name) of
+        false ->
+            ok;
+        _ ->
+            case ?ETS:lookup(Name, Key) of
+                [{Key, Value} | _] ->
+                    Fun({Key, Value}),
+                    loop(Name, Fun, ?ETS:next(Name, Key));
+                '$end_of_table' -> ok
+            end
     end.
 
 
@@ -259,12 +319,22 @@ set_consumer(Key, Threshold) ->
     set_consumer(Key, 0, Threshold).
 
 set_consumer(Key, Init, Threshold) ->
-    ?ETS:insert(?CONSUMER, {{Key, threshold}, Threshold}),
-    ?ETS:insert(?CONSUMER, {Key, Init}).
+    case safe(?CONSUMER) of
+        false ->
+            pass;
+        _ ->
+            ?ETS:insert(?CONSUMER, {{Key, threshold}, Threshold}),
+            ?ETS:insert(?CONSUMER, {Key, Init})
+    end.
 
 
 get_consumer(Key, Incr) ->
-    ?ETS:update_counter(?CONSUMER, Key, {2, Incr, ?ETS:lookup_element(?CONSUMER, {Key, threshold}, 2), 1}).
+    case safe(?CONSUMER) of
+        false ->
+            ets_not_find;
+        _ ->
+            ?ETS:update_counter(?CONSUMER, Key, {2, Incr, ?ETS:lookup_element(?CONSUMER, {Key, threshold}, 2), 1})
+    end.
 
 dets_search(Name, Fun) ->
     dets_search(Name, Fun, #{<<"start">> => 0, <<"len">> => 1000000}).
@@ -318,3 +388,10 @@ dets_loop(Name, Fun, Key, Acc) ->
         '$end_of_table' -> ok
     end.
 
+safe(Name) ->
+    case ?ETS:info(Name) of
+        undefined ->
+            false;
+        _ ->
+            true
+    end.

@@ -24,7 +24,7 @@
 -dgiot_data("ets").
 -export([init_ets/0]).
 -export([create_device/1, create_device/2, get_sub_device/1, get_sub_device/2, get/2]).
--export([load_device/1, sync_parse/1, post/1, put/1, save/1, save/2, save/3, lookup/1, lookup/2, delete/1, delete/2, save_prod/2, lookup_prod/1, get_online/1]).
+-export([load_device/1, sync_parse/1, post/1, put/1, save/1, online/1, offline/1, offline_child/1, save/2, lookup/1, lookup/2, delete/1, delete/2, save_prod/2, lookup_prod/1, get_online/1]).
 -export([encode/1, decode/3, save_subdevice/2, get_subdevice/2, get_file/4, get_acl/1, save_log/3, sub_topic/2, get_url/1, get_appname/1]).
 
 init_ets() ->
@@ -120,16 +120,36 @@ get_acl(_DeviceId) ->
             <<"write">> => true}
     }.
 
-save(DeviceId, _Data) ->
+online(DeviceId) ->
     case lookup(DeviceId) of
         {ok, {[_, _Now, Acl, DeviceName, Devaddr, ProductId], Node}} ->
             dgiot_mnesia:insert(DeviceId, {[true, dgiot_datetime:now_secs(), Acl, DeviceName, Devaddr, ProductId], Node});
         _ -> pass
     end.
 
-save(ProductId, DevAddr, _Data) ->
+offline(DeviceId) ->
+    case lookup(DeviceId) of
+        {ok, {[_, _Now, Acl, DeviceName, Devaddr, ProductId], Node}} ->
+            dgiot_mnesia:insert(DeviceId, {[true, _Now - 7200, Acl, DeviceName, Devaddr, ProductId], Node}),
+            offline_child(DeviceId);
+        _ -> pass
+    end.
+
+offline_child(DeviceId) ->
+    case dgiot_task:get_pnque(DeviceId) of
+        not_find ->
+            pass;
+        List ->
+            F =
+                fun(ProductId, DevAddr) ->
+                    offline(dgiot_parse:get_deviceid(ProductId, DevAddr))
+                end,
+            [F(ProductId, DevAddr) || {ProductId, DevAddr} <- List]
+    end.
+
+save(ProductId, DevAddr) ->
     DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
-    save(DeviceId, _Data).
+    online(DeviceId).
 
 sync_parse(OffLine) ->
     Fun = fun(X) ->
@@ -148,7 +168,7 @@ sync_parse(OffLine) ->
                             end,
                         ?MLOG(info, #{<<"deviceid">> => DeviceId, <<"devaddr">> => Devaddr, <<"productid">> => ProductId, <<"productname">> => Productname, <<"devicename">> => DeviceName, <<"status">> => <<"下线"/utf8>>}, ['device_statuslog']),
                         dgiot_umeng:save_devicestatus(DeviceId, <<"OFFLINE">>),
-                        dgiot_mnesia:insert(DeviceId, {[false, Last, Acl, DeviceName, Devaddr, ProductId], Node});
+                        dgiot_mnesia:insert(DeviceId, {[false, Now, Acl, DeviceName, Devaddr, ProductId], Node});
                     _ ->
                         pass
                 end,
@@ -164,7 +184,7 @@ sync_parse(OffLine) ->
                                     <<"">>
                             end,
                         ?MLOG(info, #{<<"deviceid">> => DeviceId, <<"devaddr">> => Devaddr, <<"productid">> => ProductId, <<"productname">> => Productname, <<"devicename">> => DeviceName, <<"status">> => <<"上线"/utf8>>}, ['device_statuslog']),
-                        dgiot_mnesia:insert(DeviceId, {[true, Last, Acl, DeviceName, Devaddr, ProductId], Node});
+                        dgiot_mnesia:insert(DeviceId, {[true, Now, Acl, DeviceName, Devaddr, ProductId], Node});
                     _ ->
                         pass
                 end,

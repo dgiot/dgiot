@@ -382,7 +382,7 @@ get_keys(ProductId, Function, <<"*">>) ->
                     #{<<"identifier">> := Identifier, <<"name">> := Name} ->
                         case Acc of
                             <<"">> ->
-                                {Names, <<Function/binary, "(", Identifier/binary, ") \'", Identifier/binary, "\'">>};
+                                {Names ++ [Name], <<Function/binary, "(", Identifier/binary, ") \'", Identifier/binary, "\'">>};
                             _ ->
                                 {Names ++ [Name], <<Acc/binary, ", ", Function/binary, "(", Identifier/binary, ") \'", Identifier/binary, "\'">>}
                         end;

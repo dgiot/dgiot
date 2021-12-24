@@ -139,6 +139,7 @@ handle_info({tcp, Sock, Data}, #state{mod = Mod, child = #tcp{buff = Buff, socke
     NewChildState = ChildState#tcp{buff = <<>>},
     case NewChildState of
         #tcp{clientid = CliendId, register = true} ->
+            dgiot_device:online(CliendId),
             dgiot_tracer:check_trace(CliendId, CliendId, dgiot_utils:binary_to_hex(Binary), ?MODULE, ?LINE);
         _ ->
             pass
@@ -153,6 +154,7 @@ handle_info({tcp, Sock, Data}, #state{mod = Mod, child = #tcp{buff = Buff, socke
 handle_info({shutdown, Reason}, #state{child = #tcp{clientid = CliendId, register = true} = ChildState} = State) ->
     ?LOG(error, "shutdown, ~p, ~p~n", [Reason, ChildState#tcp.state]),
     dgiot_cm:unregister_channel(CliendId),
+    dgiot_device:offline(CliendId),
     write_log(ChildState#tcp.log, <<"ERROR">>, list_to_binary(io_lib:format("~w", [Reason]))),
     {stop, normal, State#state{child = ChildState#tcp{socket = undefined}}};
 
