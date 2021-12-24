@@ -216,8 +216,8 @@ get_chartdata(Channel, ProductId, DeviceId, Args) ->
                 {Names, {ok, #{<<"results">> := Results}}} ->
                     Chartdata = get_chart(ProductId, Results, Names, Interval),
                     {ok, #{<<"chartData">> => Chartdata}};
-                {_, {error, Reason}} ->
-                    {404, Reason}
+                _ ->
+                    {ok, #{<<"code">> => 400, <<"msg">> => <<"no data">>}}
             end
     end.
 
@@ -231,8 +231,8 @@ get_appdata(Channel, ProductId, DeviceId, _Args) ->
                 {ok, #{<<"results">> := Results}} ->
                     Chartdata = get_app(ProductId, Results, DeviceId),
                     {ok, #{<<"data">> => Chartdata}};
-                {error, Reason} ->
-                    {400, Reason}
+                {error, _Reason} ->
+                    {ok, #{<<"code">> => 400, <<"msg">> => <<"no data">>}}
             end
     end.
 
