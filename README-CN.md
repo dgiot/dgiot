@@ -16,7 +16,7 @@ DG-IoT是国内首款轻量级开源工业物联网平台，我们致力于提�
 + **开源平台开发者**：一键式开发环境，集成和兼容各种最优开源工具，快速承接物联网项目
 + **垂直领域物联网平台**：快速部署私有化平台，千万级承载，运营级底座，全开放扩展
 ## 业务架构
-![image](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/msys64/dgiot_arch_msg.jpg)
+![业务架构图.jpg](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/%E4%B8%9A%E5%8A%A1%E6%9E%B6%E6%9E%84%E5%9B%BE.jpg)
 ## 核心特色
 + **完全开源**：前后端[完全开源](./Platform-service.md)，无收费商业版
 + **快速部署**：30分钟私有化[一键式部署](https://gitee.com/dgiiot/dgiot/wikis/DG-IoT%E7%89%A9%E8%81%94%E7%BD%91%E6%89%8B%E5%86%8C/%E7%AE%80%E4%BB%8B/%E5%AE%89%E8%A3%85%E9%83%A8%E7%BD%B2)，快速拥有自己的物联网平台
