@@ -24,7 +24,7 @@
 
 # Строительство
 
-  Bulid * DGIOT * Требуется Erlang / OTP R21 +, загрузка Windows [msys64] (https://dgiotdev-1308220533.cos.ap-nanjing.myqcloud.com/msys64.zip), После загрузки распакуйте его в корневой каталог диска D, и работайте строго в соответствии со следующим рисунком ：
+  Bulid * DGIOT * Требуется Erlang / OTP R21 +, загрузка Windows [msys64](https://dgiotdev-1308220533.cos.ap-nanjing.myqcloud.com/msys64.zip), После загрузки распакуйте его в корневой каталог диска D, и работайте строго в соответствии со следующим рисунком ：
 ![dgiotdevtools.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/dgiotdevtools.png)
 
 + Скачать исходный код за границу
