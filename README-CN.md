@@ -27,6 +27,13 @@ DG-IoT是国内首款轻量级开源工业物联网平台，我们致力于提�
 + [能源行业](https://gitee.com/dgiiot/dgiot/wikis/%E8%A1%8C%E4%B8%9A%E6%A1%88%E4%BE%8B/%E8%83%BD%E6%BA%90%E8%A1%8C%E4%B8%9A?sort_id=4971731)
 + [工业设备行业](https://gitee.com/dgiiot/dgiot/wikis/%E8%A1%8C%E4%B8%9A%E6%A1%88%E4%BE%8B/%E5%B7%A5%E4%B8%9A%E8%AE%BE%E5%A4%87%E8%A1%8C%E4%B8%9A)
 + [交通行业](https://gitee.com/dgiiot/dgiot/wikis/%E8%A1%8C%E4%B8%9A%E6%A1%88%E4%BE%8B/%E4%BA%A4%E9%80%9A%E8%A1%8C%E4%B8%9A)
+## 实战教程
+  + [Mqtt设备接入](https://gitee.com/dgiiot/dgiot/wikis/%E5%AE%9E%E6%88%98%E6%8E%A5%E5%85%A5/MQTT%E8%AE%BE%E5%A4%87%E6%8E%A5%E5%85%A5)
+  + [电能表接入](https://gitee.com/dgiiot/dgiot/wikis/%E5%AE%9E%E6%88%98%E6%8E%A5%E5%85%A5/%E7%94%B5%E8%A1%A8%E6%8E%A5%E5%85%A5/%E6%A6%82%E8%BF%B0)
+  + ModBus设备接入
+  + OPC设备接入
+  + BacNet设备接入
+  + PLC设接入
 ## 快速体验与微信群
 |<span id="jump">技术支持微信群2群</span>|小程序|公众号|[电脑端](https://prod.iotn2n.com/)|账号|密码|
 |---|---|---|---|---|---|
