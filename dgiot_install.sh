@@ -993,19 +993,20 @@ function make_ssl() {
 }
 
 function devops() {
-    export PATH=$PATH:/usr/local/bin:${script_dir}/node-v16.5.0-linux-x64/bin/
+    file=$0
+    script_dir=${file%/*}
+    ## 关闭dgiot
     count=`ps -ef |grep beam.smp |grep -v "grep" |wc -l`
     if [ 0 == $count ];then
        echo $count
       else
        killall -9 beam.smp
     fi
-
-    if [ ! -d /${script_dir}/node-v16.5.0-linux-x64/bin/ ]; then
-      if [ ! -f /data/dgiot/node-v16.5.0-linux-x64.tar.xz ]; then
-        wget https://dgiotdev-1308220533.cos.ap-nanjing.myqcloud.com/node-v16.5.0-linux-x64.tar.xz
-        tar xvf node-v16.5.0-linux-x64.tar.xz
-        npm install pnpm -g
+    cd ${script_dir}/
+    if [ ! -d ${script_dir}/node-v16.5.0-linux-x64/bin/ ]; then
+      if [ ! -f ${script_dir}/node-v16.5.0-linux-x64.tar.gz ]; then
+        wget https://dgiotdev-1308220533.cos.ap-nanjing.myqcloud.com/node-v16.5.0-linux-x64.tar.gz &> /dev/null
+        tar xvf node-v16.5.0-linux-x64.tar.gz &> /dev/null
       fi
     fi
 
@@ -1019,17 +1020,16 @@ function devops() {
     #git checkout v4.0.0
 
     rm ${script_dir}/dgiot_dashboard/dist/ -rf
-    pnpm config set registry https://registry.npmmirror.com
-    pnpm i --frozen-lockfile
-    pnpm build
+    ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm config set registry https://registry.npmmirror.com
+    ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm i --frozen-lockfile
+    ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm build
 
     #2. 更新最新的后端代码
+    cd ${script_dir}/
     if [ ! -d ${script_dir}/dgiot/ ]; then
-      git clone https://gitee.com/dgiiot/dgiot.git dgiot
+      git clone https://gitee.com/dgiiot/dgiot.git
     fi
 
-    git reset --hard
-    git pull
     cd ${script_dir}/dgiot/
     git reset --hard
     git pull
@@ -1038,9 +1038,14 @@ function devops() {
     rm ${script_dir}/dgiot/emqx/rel -rf
 
     rm ${script_dir}/dgiot/rebar.config  -rf
-    rm ${script_dir}/dgiot/apps/$plugin/ -rf
     cd ${script_dir}/dgiot/apps/
-    git clone root@git.iotn2n.com:dgiot/$plugin.git
+    if [ ! -d ${script_dir}/dgiot/apps/$plugin/ ]; then
+      git clone root@git.iotn2n.com:dgiot/$plugin.git
+    fi
+    cd ${script_dir}/$plugin/
+    git reset --hard
+    git pull
+
     cp ${script_dir}/dgiot/apps/$plugin/conf/rebar.config ${script_dir}/dgiot/rebar.config  -rf
     rm ${script_dir}/dgiot/rebar.config.erl  -rf
     cp ${script_dir}/dgiot/apps/$plugin/conf/rebar.config.erl ${script_dir}/dgiot/rebar.config.erl  -rf
