@@ -104,13 +104,14 @@ else
 fi
 
 # =============================  get input parameters =================================================
-# dgiot_install.sh -v [single | cluster] -d [prod.iotn2n.com | your_domain_name] -s [dgiot_44 | dgiot_n]
+# dgiot_install.sh -v [single | cluster | devops] -d [prod.iotn2n.com | your_domain_name] -s [dgiot_44 | dgiot_n] -p [dgiot | dgiot_your_plugin]
 
 # set parameters by default value
-verType=single        # [single | cluster]
+verType=single        # [single | cluster | devops]
 domain_name="prod.iotn2n.com" #[prod.iotn2n.com | your_domain_name]
-dgiot="dgiot_112"  #[dgiot_112 | dgiot_n]
-while getopts "h:v:d:s:" arg
+software="dgiot_112"  #[dgiot_112 | dgiot_n]
+plugin="dgiot" #[dgiot | dgiot_your_plugin]
+while getopts "h:v:d:s:p:" arg
 do
   case $arg in
     v)
@@ -118,8 +119,8 @@ do
       verType=$(echo $OPTARG)
       ;;
     s)
-      echo "dgiot=$OPTARG"
-      dgiot=$(echo $OPTARG)
+      echo "software=$OPTARG"
+      software=$(echo $OPTARG)
       ;;
     d)
       domain_name=$(echo $OPTARG)
@@ -130,8 +131,13 @@ do
         exit 1
       fi
       ;;
+    p)
+      echo "plugin=$OPTARG"
+      plugin=$(echo $OPTARG)
+      verType="devops"
+      ;;
     h)
-      echo "Usage: `basename $0` -v [single | cluster] -s [dgiot_112 | dgiot_n] -d [prod.iotn2n.com | your_domain_name]"
+      echo "Usage: `basename $0` -v [single | cluster] -s [dgiot_112 | dgiot_n] -d [prod.iotn2n.com | your_domain_name] -p [dgiot | dgiot_your_plugin]"
       exit 0
       ;;
     ?) #unknow option
@@ -671,8 +677,8 @@ function install_go_fastdfs() {
   go_fastdhome=${install_dir}/go_fastdfs
   install_service1 gofastdfs "simple" "${install_dir}/go_fastdfs/file ${go_fastdhome}" "GO_FASTDFS_DIR=${go_fastdhome}" "${go_fastdhome}"
 
-  if [ ! -d ${install_dir}/go_fastdfs/files ]; then
-    mkdir ${install_dir}/go_fastdfs/files
+  if [ ! -d ${install_dir}/go_fastdfs/files/ ]; then
+    mkdir -p ${install_dir}/go_fastdfs/files/
   fi
 
   if [ ! -f ${script_dir}/dgiot_file.zip ]; then
@@ -731,11 +737,11 @@ function install_erlang_otp() {
 }
 
 function update_dgiot() {
-  if [ ! -f ${script_dir}/${dgiot}.tar.gz ]; then
-    wget $fileserver/${dgiot}.tar.gz -O ${script_dir}/${dgiot}.tar.gz &> /dev/null
+  if [ ! -f ${script_dir}/${software}.tar.gz ]; then
+    wget $fileserver/${software}.tar.gz -O ${script_dir}/${software}.tar.gz &> /dev/null
   fi
   cd ${script_dir}/
-  tar xf ${dgiot}.tar.gz
+  tar xf ${software}.tar.gz
   rm   ${script_dir}/dgiot/etc/plugins/dgiot_parse.conf -rf
   cp   ${install_dir}/dgiot/etc/plugins/dgiot_parse.conf ${script_dir}/dgiot/etc/plugins/dgiot_parse.conf
   cp   ${install_dir}/dgiot/etc/emqx.conf ${script_dir}/dgiot/etc/emqx.conf
@@ -750,11 +756,11 @@ function update_dgiot() {
 
 function install_dgiot() {
   make_ssl
-  if [ ! -f ${script_dir}/${dgiot}.tar.gz ]; then
-    wget $fileserver/${dgiot}.tar.gz -O ${script_dir}/${dgiot}.tar.gz &> /dev/null
+  if [ ! -f ${script_dir}/${software}.tar.gz ]; then
+    wget $fileserver/${software}.tar.gz -O ${script_dir}/${software}.tar.gz &> /dev/null
   fi
   cd ${script_dir}/
-  tar xf ${dgiot}.tar.gz
+  tar xf ${software}.tar.gz
   echo -e "`date +%F_%T` $LINENO: ${GREEN} install_dgiot dgiot_parse${NC}"
   #修改 dgiot_parse 连接 配置
   ${csudo} bash -c  "sed -ri '/^parse.parse_server/cparse.parse_server = http://127.0.0.1:1337' ${script_dir}/dgiot/etc/plugins/dgiot_parse.conf"
@@ -986,6 +992,79 @@ function make_ssl() {
     fi
 }
 
+  function devops() {
+    export PATH=$PATH:/usr/local/bin:${script_dir}/node-v16.5.0-linux-x64/bin/
+    count=`ps -ef |grep beam.smp |grep -v "grep" |wc -l`
+    if [ 0 == $count ];then
+       echo $count
+      else
+       killall -9 beam.smp
+    fi
+
+    if [ ! -d /${script_dir}/node-v16.5.0-linux-x64/bin/ ]; then
+      if [ ! -f /data/dgiot/node-v16.5.0-linux-x64.tar.xz ]; then
+        wget https://dgiotdev-1308220533.cos.ap-nanjing.myqcloud.com/node-v16.5.0-linux-x64.tar.xz
+        tar xvf node-v16.5.0-linux-x64.tar.xz
+        npm install pnpm -g
+      fi
+    fi
+
+    if [ ! -d ${script_dir}/dgiot_dashboard/ ]; then
+      git clone https://gitee.com/dgiiot/dgiot-dashboard.git dgiot_dashboard
+    fi
+
+    cd ${script_dir}/dgiot_dashboard
+    git reset --hard
+    git pull
+    #git checkout v4.0.0
+
+    rm ${script_dir}/dgiot_dashboard/dist/ -rf
+    pnpm config set registry https://registry.npmmirror.com
+    pnpm i --frozen-lockfile
+    pnpm build
+
+    #2. 更新最新的后端代码
+    if [ ! -d ${script_dir}/dgiot/ ]; then
+      git clone https://gitee.com/dgiiot/dgiot.git dgiot
+    fi
+
+    git reset --hard
+    git pull
+    cd ${script_dir}/dgiot/
+    git reset --hard
+    git pull
+    rm ${script_dir}/dgiot/apps/dgiot_api/priv/www -rf
+    cp ${script_dir}/dgiot_dashboard/dist/ ${script_dir}/dgiot/apps/dgiot_api/priv/www -rf
+    rm ${script_dir}/dgiot/emqx/rel -rf
+    if [ "$plugin" != "dgiot" ]; then
+      rm ${script_dir}/dgiot/rebar.config  -rf
+      rm ${script_dir}/dgiot/apps/$plugin/ -rf
+      cd ${script_dir}/dgiot/apps/
+      git clone root@git.iotn2n.com:dgiot/$plugin.git
+      cp ${script_dir}/dgiot/apps/$plugin/conf/rebar.config ${script_dir}/dgiot/rebar.config  -rf
+      rm ${script_dir}/dgiot/rebar.config.erl  -rf
+      cp ${script_dir}/dgiot/apps/$plugin/conf/rebar.config.erl ${script_dir}/dgiot/rebar.config.erl  -rf
+      rm ${script_dir}/dgiot/data/loaded_plugins.tmpl -rf
+      cp ${script_dir}/dgiot/apps/$plugin/conf/loaded_plugins.tmpl ${script_dir}/dgiot/data/loaded_plugins.tmpl
+      rm ${script_dir}/dgiot/apps/dgiot_parse/etc/dgiot_parse.conf -rf
+      cp ${script_dir}/dgiot/apps/$plugin/conf/dgiot_parse.conf ${script_dir}/dgiot/apps/dgiot_parse/etc/dgiot_parse.conf -rf
+    fi
+    rm ${script_dir}/dgiot/apps/dgiot_http/etc/dgiot_http.conf -rf
+    cp ${script_dir}/dgiot/apps/$plugin/conf/dgiot_http.conf ${script_dir}/dgiot/apps/dgiot_http/etc/dgiot_http.conf -rf
+    cd ${script_dir}/dgiot
+    make
+
+    mv ${script_dir}/dgiot/_build/emqx/rel/emqx/ ${script_dir}/dgiot/_build/emqx/rel/dgiot
+    cd ${script_dir}/dgiot/_build/emqx/rel
+
+    tar czf $1.tar.gz ./dgiot
+    rm ./dgiot -rf
+    if [ ! -d /opt/ci/dgiot_dashboard/ ]; then
+      mkdir -p /data/file/files/package/
+    fi
+    cp ./$1.tar.gz /data/file/files/package/
+}
+
 ## ==============================Main program starts from here============================
 
 set -e
@@ -1018,6 +1097,8 @@ elif [ "$verType" == "cluster" ]; then
     else
       install_update_dgiot_cluster
     fi
+elif [ "$verType" == "devops" ]; then
+    devops
 else
     echo  "please input correct verType"
 fi
