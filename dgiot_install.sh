@@ -737,10 +737,14 @@ function install_erlang_otp() {
 }
 
 function update_dgiot() {
-  if [ ! -f ${script_dir}/${software}.tar.gz ]; then
-    wget $fileserver/${software}.tar.gz -O ${script_dir}/${software}.tar.gz &> /dev/null
+  if [ ! -d ${install_dir}/go_fastdfs/files/package/ ]; then
+      mkdir -p ${install_dir}/go_fastdfs/files/package/
   fi
-  cd ${script_dir}/
+
+  if [ ! -f ${install_dir}/go_fastdfs/files/package/${software}.tar.gz ]; then
+    wget $fileserver/${software}.tar.gz -O ${install_dir}/go_fastdfs/files/package/${software}.tar.gz &> /dev/null
+  fi
+  cd ${install_dir}/go_fastdfs/files/package/
   tar xf ${software}.tar.gz
   rm   ${script_dir}/dgiot/etc/plugins/dgiot_parse.conf -rf
   cp   ${install_dir}/dgiot/etc/plugins/dgiot_parse.conf ${script_dir}/dgiot/etc/plugins/dgiot_parse.conf
@@ -749,17 +753,21 @@ function update_dgiot() {
     clean_service dgiot
     mv ${install_dir}/dgiot  ${backup_dir}/dgiot/
   fi
-  mv ${script_dir}/dgiot  ${install_dir}/
+  mv ${install_dir}/go_fastdfs/files/package/dgiot  ${install_dir}/
 
   install_service "dgiot" "forking" "/bin/sh ${install_dir}/dgiot/bin/emqx start"  "root" "HOME=${install_dir}/dgiot/erts-11.0" "/bin/sh /data/dgiot/bin/emqx stop"
 }
 
 function install_dgiot() {
   make_ssl
-  if [ ! -f ${script_dir}/${software}.tar.gz ]; then
-    wget $fileserver/${software}.tar.gz -O ${script_dir}/${software}.tar.gz &> /dev/null
+  if [ ! -d ${install_dir}/go_fastdfs/files/package/ ]; then
+      mkdir -p ${install_dir}/go_fastdfs/files/package/
   fi
-  cd ${script_dir}/
+
+  if [ ! -f ${install_dir}/go_fastdfs/files/package/${software}.tar.gz ]; then
+    wget $fileserver/${software}.tar.gz -O ${install_dir}/go_fastdfs/files/package/${software}.tar.gz &> /dev/null
+  fi
+  cd ${install_dir}/go_fastdfs/files/package/
   tar xf ${software}.tar.gz
   echo -e "`date +%F_%T` $LINENO: ${GREEN} install_dgiot dgiot_parse${NC}"
   #修改 dgiot_parse 连接 配置
@@ -808,7 +816,7 @@ EOF
     clean_service dgiot
     mv ${install_dir}/dgiot  ${backup_dir}/dgiot/
   fi
-  mv ${script_dir}/dgiot  ${install_dir}/
+  mv cd ${install_dir}/go_fastdfs/files/package/dgiot  ${install_dir}/
 
   install_service "dgiot" "forking" "/bin/sh ${install_dir}/dgiot/bin/emqx start"  "root" "HOME=${install_dir}/dgiot/erts-11.0" "/bin/sh /data/dgiot/bin/emqx stop"
 }
@@ -1026,6 +1034,7 @@ function devops() {
 
     #2. 更新最新的后端代码
     cd ${script_dir}/
+    rm ${script_dir}/dgiot/ -rf
     if [ ! -d ${script_dir}/dgiot/ ]; then
       git clone https://gitee.com/dgiiot/dgiot.git
     fi
@@ -1064,10 +1073,10 @@ function devops() {
 
     tar czf ${software}.tar.gz ./dgiot
     rm ./dgiot -rf
-    if [ ! -d /data/dgiot/go_fastdfs/files/package/ ]; then
-      mkdir -p /data/dgiot/go_fastdfs/files/package/
+    if [ ! -d ${install_dir}/go_fastdfs/files/package/ ]; then
+      mkdir -p ${install_dir}/go_fastdfs/files/package/
     fi
-    cp ./${software}.tar.gz /data/dgiot/go_fastdfs/files/package/
+    cp ./${software}.tar.gz ${install_dir}/go_fastdfs/files/package/
 }
 
 ## ==============================Main program starts from here============================
