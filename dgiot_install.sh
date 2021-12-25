@@ -992,7 +992,7 @@ function make_ssl() {
     fi
 }
 
-  function devops() {
+function devops() {
     export PATH=$PATH:/usr/local/bin:${script_dir}/node-v16.5.0-linux-x64/bin/
     count=`ps -ef |grep beam.smp |grep -v "grep" |wc -l`
     if [ 0 == $count ];then
@@ -1036,19 +1036,19 @@ function make_ssl() {
     rm ${script_dir}/dgiot/apps/dgiot_api/priv/www -rf
     cp ${script_dir}/dgiot_dashboard/dist/ ${script_dir}/dgiot/apps/dgiot_api/priv/www -rf
     rm ${script_dir}/dgiot/emqx/rel -rf
-    if [ "$plugin" != "dgiot" ]; then
-      rm ${script_dir}/dgiot/rebar.config  -rf
-      rm ${script_dir}/dgiot/apps/$plugin/ -rf
-      cd ${script_dir}/dgiot/apps/
-      git clone root@git.iotn2n.com:dgiot/$plugin.git
-      cp ${script_dir}/dgiot/apps/$plugin/conf/rebar.config ${script_dir}/dgiot/rebar.config  -rf
-      rm ${script_dir}/dgiot/rebar.config.erl  -rf
-      cp ${script_dir}/dgiot/apps/$plugin/conf/rebar.config.erl ${script_dir}/dgiot/rebar.config.erl  -rf
-      rm ${script_dir}/dgiot/data/loaded_plugins.tmpl -rf
-      cp ${script_dir}/dgiot/apps/$plugin/conf/loaded_plugins.tmpl ${script_dir}/dgiot/data/loaded_plugins.tmpl
-      rm ${script_dir}/dgiot/apps/dgiot_parse/etc/dgiot_parse.conf -rf
-      cp ${script_dir}/dgiot/apps/$plugin/conf/dgiot_parse.conf ${script_dir}/dgiot/apps/dgiot_parse/etc/dgiot_parse.conf -rf
-    fi
+
+    rm ${script_dir}/dgiot/rebar.config  -rf
+    rm ${script_dir}/dgiot/apps/$plugin/ -rf
+    cd ${script_dir}/dgiot/apps/
+    git clone root@git.iotn2n.com:dgiot/$plugin.git
+    cp ${script_dir}/dgiot/apps/$plugin/conf/rebar.config ${script_dir}/dgiot/rebar.config  -rf
+    rm ${script_dir}/dgiot/rebar.config.erl  -rf
+    cp ${script_dir}/dgiot/apps/$plugin/conf/rebar.config.erl ${script_dir}/dgiot/rebar.config.erl  -rf
+    rm ${script_dir}/dgiot/data/loaded_plugins.tmpl -rf
+    cp ${script_dir}/dgiot/apps/$plugin/conf/loaded_plugins.tmpl ${script_dir}/dgiot/data/loaded_plugins.tmpl
+    rm ${script_dir}/dgiot/apps/dgiot_parse/etc/dgiot_parse.conf -rf
+    cp ${script_dir}/dgiot/apps/$plugin/conf/dgiot_parse.conf ${script_dir}/dgiot/apps/dgiot_parse/etc/dgiot_parse.conf -rf
+
     rm ${script_dir}/dgiot/apps/dgiot_http/etc/dgiot_http.conf -rf
     cp ${script_dir}/dgiot/apps/$plugin/conf/dgiot_http.conf ${script_dir}/dgiot/apps/dgiot_http/etc/dgiot_http.conf -rf
     cd ${script_dir}/dgiot
@@ -1057,12 +1057,12 @@ function make_ssl() {
     mv ${script_dir}/dgiot/_build/emqx/rel/emqx/ ${script_dir}/dgiot/_build/emqx/rel/dgiot
     cd ${script_dir}/dgiot/_build/emqx/rel
 
-    tar czf $1.tar.gz ./dgiot
+    tar czf ${software}.tar.gz ./dgiot
     rm ./dgiot -rf
-    if [ ! -d /opt/ci/dgiot_dashboard/ ]; then
-      mkdir -p /data/file/files/package/
+    if [ ! -d /data/dgiot/go_fastdfs/files/package/ ]; then
+      mkdir -p /data/dgiot/go_fastdfs/files/package/
     fi
-    cp ./$1.tar.gz /data/file/files/package/
+    cp ./${software}.tar.gz /data/dgiot/go_fastdfs/files/package/
 }
 
 ## ==============================Main program starts from here============================
