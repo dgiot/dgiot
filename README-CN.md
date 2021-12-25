@@ -37,6 +37,19 @@ DG-IoT是国内首款轻量级开源工业物联网平台，我们致力于提�
 |![image](https://user-images.githubusercontent.com/51999461/147313158-ac48ad72-e799-4d64-81f9-60527c63d271.png)|![](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_release/dgiot_wechat.jpg)|![](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/wechat/qrcode.png)|![](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_release/dgiot_dashboard.png) |dgiot_admin|dgiot_admin|
 
 ### 产品服务
+|   |   | | |
+| -----| ------ |------- |------- |
+| 内容  |  服务等级 |服务收费| 服务方式 |
+| 一键脚本部署  | 自助  |  免费 | 点击查看脚本 |
+| 一键脚本开发  | 自助 |  免费 | 点击查看脚本 |
+| 设备接入教程  | 自助 |  免费 | 点击查看教程 |
+| 脚本使用指导  | 半小时   |  百元级 | 远程支持 |
+| 设备接入指导  | 半天 | 千元级 | 远程支持 |
+| 项目经理培训  | 三天 | 数千元级 | 线下培训 |
+| 应用开发培训  | 三周 | 万元级 | 线下培训 |
+| 业务模拟压测  | 一月 | 数万元级 | 7 X 24 小时VIP服务 |
+| 企业设备管控  | 一年 | 十万元级 | 5 X 8 小时VIP服务 |
+| 设备运营平台  | 一年 | 数十万元级 | 7 X 24 小时VIP服务 |
 
 ## 系统部署
 + **centos 7.6/7.9** 推荐使用腾讯云和阿里云部署，具体操作[点击这里](https://gitee.com/dgiiot/dgiot/wikis/DG-IoT%E7%89%A9%E8%81%94%E7%BD%91%E6%89%8B%E5%86%8C/%E7%AE%80%E4%BB%8B/%E5%AE%89%E8%A3%85%E9%83%A8%E7%BD%B2)
