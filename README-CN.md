@@ -36,7 +36,7 @@ DG-IoT是国内首款轻量级开源工业物联网平台，我们致力于提�
 |---|---|---|---|---|---|
 |![image](https://user-images.githubusercontent.com/51999461/147313158-ac48ad72-e799-4d64-81f9-60527c63d271.png)|![](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_release/dgiot_wechat.jpg)|![](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/wechat/qrcode.png)|![](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_release/dgiot_dashboard.png) |dgiot_admin|dgiot_admin|
 
-### 产品服务
+### 服务支持
 |   |   | | |
 | -----| ------ |------- |------- |
 | 内容  |  服务等级 |服务收费| 服务方式 |
