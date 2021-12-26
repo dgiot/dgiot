@@ -47,7 +47,7 @@ wget -q https://gitee.com/dgiiot/dgiot/raw/master/dgiot_install.sh  && sh dgiot_
 |内容  |  脚本 | 说明 |
 | 版本更新  | sh dgiot_install.sh -s {版本} | [版本列表](https://gitee.com/dgiiot/dgiot/wikis/%E4%BA%A7%E5%93%81%E6%89%8B%E5%86%8C/%E4%BA%A7%E5%93%81%E7%AE%80%E4%BB%8B/%E7%89%88%E6%9C%AC%E5%88%97%E8%A1%A8)|
 | 证书安装  | sh dgiot_install.sh -d {域名} | [证书制作](https://gitee.com/dgiiot/dgiot/wikis/%E4%BA%A7%E5%93%81%E6%89%8B%E5%86%8C/%E4%BA%A7%E5%93%81%E7%AE%80%E4%BB%8B/%E5%AE%89%E8%A3%85%E9%83%A8%E7%BD%B2)|
-| 本地构建  | sh dgiot_install.sh -v devops -s {版本} -p {插件名称} | 一键式插件定制开发 |
+| 本地构建  | sh dgiot_install.sh -v devops -s {版本} -p {插件名称} | [插件开发](https://gitee.com/dgiiot/dgiot/wikis/%E5%BC%80%E5%8F%91%E6%8C%87%E5%8D%97/%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91/%E6%A6%82%E8%BF%B0) |
 
 ## 服务支持
  数字化需求日益增长与企业缺钱缺人缺经验的矛盾日益突出，为此dgiot坚持代码开源，产品免费，持续改善物联网服务性价比，同时倡议：
