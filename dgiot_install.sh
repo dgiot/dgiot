@@ -782,7 +782,7 @@ function install_dgiot() {
   # 修改dgiot.conf
   ${csudo} bash -c "sed -ri 's!/etc/ssl/certs/domain_name!/etc/ssl/certs/${domain_name}!g' ${install_dir}/go_fastdfs/files/package/dgiot/etc/emqx.conf"
 
-  cat > ${script_dir}/dgiot/data/loaded_plugins << "EOF"
+  cat > ${install_dir}/go_fastdfs/files/package/dgiot/data/loaded_plugins << "EOF"
   {emqx_management, true}.
   {emqx_dashboard, true}.
   {emqx_modules, false}.
