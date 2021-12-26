@@ -46,7 +46,7 @@ wget -q https://gitee.com/dgiiot/dgiot/raw/master/dgiot_install.sh  && sh dgiot_
 | -----| ------ |------ |
 |内容  |  脚本 | 说明 |
 | 版本更新  | sh dgiot_install.sh -s {版本} | [版本列表](https://gitee.com/dgiiot/dgiot/wikis/DG-IoT%E7%89%A9%E8%81%94%E7%BD%91%E6%89%8B%E5%86%8C/%E7%AE%80%E4%BB%8B/%E7%89%88%E6%9C%AC%E5%88%97%E8%A1%A8)|
-| 证书安装  | sh dgiot_install.sh -d {域名} | [证书制作](https://gitee.com/dgiiot/dgiot/wikis/DG-IoT%E7%89%A9%E8%81%94%E7%BD%91%E6%89%8B%E5%86%8C/%E7%AE%80%E4%BB%8B/%E8%AF%81%E4%B9%A6%E9%83%A8%E7%BD%B2)|
+| 证书安装  | sh dgiot_install.sh -d {域名} | [证书制作](https://gitee.com/dgiiot/dgiot/wikis/%E4%BA%A7%E5%93%81%E6%89%8B%E5%86%8C/%E4%BA%A7%E5%93%81%E7%AE%80%E4%BB%8B/%E5%AE%89%E8%A3%85%E9%83%A8%E7%BD%B2)|
 | 本地构建  | sh dgiot_install.sh -v devops -s {版本} -p {插件名称} | 一键式插件定制开发 |
 
 ## 服务支持
