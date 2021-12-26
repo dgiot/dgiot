@@ -29,6 +29,7 @@ DG-IoT是国内首款轻量级开源工业物联网平台，我们致力于提�
 | [智能工业](https://gitee.com/dgiiot/dgiot/wikis/%E8%A1%8C%E4%B8%9A%E6%A1%88%E4%BE%8B/%E5%B7%A5%E4%B8%9A%E8%AE%BE%E5%A4%87%E8%A1%8C%E4%B8%9A)  | [Mqtt设备接入](https://gitee.com/dgiiot/dgiot/wikis/%E5%AE%9E%E6%88%98%E6%8E%A5%E5%85%A5/MQTT%E8%AE%BE%E5%A4%87%E6%8E%A5%E5%85%A5)| 工地电梯远程管控 |
 | [智慧交通](https://gitee.com/dgiiot/dgiot/wikis/%E8%A1%8C%E4%B8%9A%E6%A1%88%E4%BE%8B/%E4%BA%A4%E9%80%9A%E8%A1%8C%E4%B8%9A)  |[Modbus设备接入](https://gitee.com/dgiiot/dgiot/wikis/%E5%AE%9E%E6%88%98%E6%8E%A5%E5%85%A5/Modbus%E8%AE%BE%E5%A4%87%E6%8E%A5%E5%85%A5?sort_id=5023597)|高速公路隧道设备检测   |
 |[智慧检测](https://gitee.com/dgiiot/dgiot/wikis/%E8%A1%8C%E4%B8%9A%E6%A1%88%E4%BE%8B/%E6%99%BA%E6%85%A7%E6%A3%80%E6%B5%8B)|[OPC设备接入](https://gitee.com/dgiiot/dgiot/wikis/%E5%AE%9E%E6%88%98%E6%8E%A5%E5%85%A5/OPC%E8%AE%BE%E5%A4%87%E6%8E%A5%E5%85%A5/%E6%A6%82%E8%BF%B0)|浙里办水泵远程检测|
+|[智慧物流]|[Zetag设备接入]|[千万级物流Zetag标签压测](https://gitee.com/dgiiot/dgiot/wikis/%E5%8E%8B%E6%B5%8B%E6%8A%A5%E5%91%8A/1500%E4%B8%87Zetag%E6%A0%87%E7%AD%BE%E7%89%A9%E6%B5%81%E5%85%A8%E4%B8%9A%E5%8A%A1%E5%8E%8B%E6%B5%8B)|
 |[智慧园区](https://gitee.com/dgiiot/dgiot/wikis/%E8%A1%8C%E4%B8%9A%E6%A1%88%E4%BE%8B/%E6%99%BA%E6%85%A7%E5%9B%AD%E5%8C%BA)|[云云对接](https://gitee.com/dgiiot/dgiot/wikis/%E5%AE%9E%E6%88%98%E6%8E%A5%E5%85%A5/%E4%BA%91%E4%BA%91%E5%AF%B9%E6%8E%A5/%E6%A6%82%E8%BF%B0)|智慧场馆|
 
 ## 快速体验与微信群
