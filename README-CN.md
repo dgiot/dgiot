@@ -65,7 +65,7 @@ wget -q https://gitee.com/dgiiot/dgiot/raw/master/dgiot_install.sh  && sh dgiot_
 | 设备接入指导  | 半天 | 千元级 | 远程VIP服务 |
 | 项目经理培训  | 三天 | 数千元级 | 线下培训服务 |
 | 应用开发培训  | 三周 | 万元级 | 线下培训服务 |
-| 业务模拟压测  | 一月 | 万元级 | 7 X 24 小时VIP服务 |
+| [业务模拟压测](https://gitee.com/dgiiot/dgiot/wikis/%E4%BA%A7%E5%93%81%E6%89%8B%E5%86%8C/%E4%BA%91%E5%8E%8B%E6%B5%8B/%E4%BA%A7%E5%93%81%E5%8A%9F%E8%83%BD)  | 一月 | 万元级 | 7 X 24 小时VIP服务 |
 | 企业设备管控  | 一年 | 十万元级 | 5 X 8 小时VIP服务 |
 | 行业运营平台  | 一年 | 面谈 | 7 X 24 小时VIP服务 |
 
