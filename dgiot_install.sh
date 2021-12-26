@@ -747,13 +747,13 @@ function update_dgiot() {
   cd ${install_dir}/go_fastdfs/files/package/
   tar xf ${software}.tar.gz
   rm   ${script_dir}/dgiot/etc/plugins/dgiot_parse.conf -rf
-  cp   ${install_dir}/dgiot/etc/plugins/dgiot_parse.conf ${script_dir}/dgiot/etc/plugins/dgiot_parse.conf
-  cp   ${install_dir}/dgiot/etc/emqx.conf ${script_dir}/dgiot/etc/emqx.conf
+  cp   ${install_dir}/dgiot/etc/plugins/dgiot_parse.conf ${install_dir}/go_fastdfs/files/package/dgiot/etc/plugins/dgiot_parse.conf
+  cp   ${install_dir}/dgiot/etc/emqx.conf ${install_dir}/go_fastdfs/files/package/dgiot/etc/emqx.conf
   if [ -d ${install_dir}/dgiot/ ]; then
     clean_service dgiot
     mv ${install_dir}/dgiot  ${backup_dir}/dgiot/
   fi
-  mv ${install_dir}/go_fastdfs/files/package/dgiot  ${install_dir}/
+  mv ${install_dir}/go_fastdfs/files/package/dgiot/  ${install_dir}/
 
   install_service "dgiot" "forking" "/bin/sh ${install_dir}/dgiot/bin/emqx start"  "root" "HOME=${install_dir}/dgiot/erts-11.0" "/bin/sh /data/dgiot/bin/emqx stop"
 }
@@ -771,16 +771,16 @@ function install_dgiot() {
   tar xf ${software}.tar.gz
   echo -e "`date +%F_%T` $LINENO: ${GREEN} install_dgiot dgiot_parse${NC}"
   #修改 dgiot_parse 连接 配置
-  ${csudo} bash -c  "sed -ri '/^parse.parse_server/cparse.parse_server = http://127.0.0.1:1337' ${script_dir}/dgiot/etc/plugins/dgiot_parse.conf"
-  ${csudo} bash -c  "sed -ri '/^parse.parse_path/cparse.parse_path = /parse/'  ${script_dir}/dgiot/etc/plugins/dgiot_parse.conf"
-  ${csudo} bash -c  "sed -ri '/^parse.parse_appid/cparse.parse_appid = ${parse_appid}' ${script_dir}/dgiot/etc/plugins/dgiot_parse.conf"
-  ${csudo} bash -c  "sed -ri '/^parse.parse_master_key/cparse.parse_master_key = ${parse_master}' ${script_dir}/dgiot/etc/plugins/dgiot_parse.conf"
-  ${csudo} bash -c  "sed -ri '/^parse.parse_js_key/cparse.parse_js_key = ${parse_javascript}' ${script_dir}/dgiot/etc/plugins/dgiot_parse.conf"
-  ${csudo} bash -c  "sed -ri '/^parse.parse_rest_key/cparse.parse_rest_key = ${parse_restapi}' ${script_dir}/dgiot/etc/plugins/dgiot_parse.conf"
+  ${csudo} bash -c  "sed -ri '/^parse.parse_server/cparse.parse_server = http://127.0.0.1:1337' ${install_dir}/go_fastdfs/files/package/dgiot/etc/plugins/dgiot_parse.conf"
+  ${csudo} bash -c  "sed -ri '/^parse.parse_path/cparse.parse_path = /parse/'  ${install_dir}/go_fastdfs/files/package/dgiot/etc/plugins/dgiot_parse.conf"
+  ${csudo} bash -c  "sed -ri '/^parse.parse_appid/cparse.parse_appid = ${parse_appid}' ${install_dir}/go_fastdfs/files/package/dgiot/etc/plugins/dgiot_parse.conf"
+  ${csudo} bash -c  "sed -ri '/^parse.parse_master_key/cparse.parse_master_key = ${parse_master}' ${install_dir}/go_fastdfs/files/package/dgiot/etc/plugins/dgiot_parse.conf"
+  ${csudo} bash -c  "sed -ri '/^parse.parse_js_key/cparse.parse_js_key = ${parse_javascript}' ${install_dir}/go_fastdfs/files/package/dgiot/etc/plugins/dgiot_parse.conf"
+  ${csudo} bash -c  "sed -ri '/^parse.parse_rest_key/cparse.parse_rest_key = ${parse_restapi}' ${install_dir}/go_fastdfs/files/package/dgiot/etc/plugins/dgiot_parse.conf"
 
   echo -e "`date +%F_%T` $LINENO: ${GREEN} install_dgiot dgiot${NC}"
   # 修改dgiot.conf
-  ${csudo} bash -c "sed -ri 's!/etc/ssl/certs/domain_name!/etc/ssl/certs/${domain_name}!g' ${script_dir}/dgiot/etc/emqx.conf"
+  ${csudo} bash -c "sed -ri 's!/etc/ssl/certs/domain_name!/etc/ssl/certs/${domain_name}!g' ${install_dir}/go_fastdfs/files/package/dgiot/etc/emqx.conf"
 
   cat > ${script_dir}/dgiot/data/loaded_plugins << "EOF"
   {emqx_management, true}.
@@ -816,7 +816,7 @@ EOF
     clean_service dgiot
     mv ${install_dir}/dgiot  ${backup_dir}/dgiot/
   fi
-  mv cd ${install_dir}/go_fastdfs/files/package/dgiot  ${install_dir}/
+  mv  ${install_dir}/go_fastdfs/files/package/dgiot  ${install_dir}/
 
   install_service "dgiot" "forking" "/bin/sh ${install_dir}/dgiot/bin/emqx start"  "root" "HOME=${install_dir}/dgiot/erts-11.0" "/bin/sh /data/dgiot/bin/emqx stop"
 }
