@@ -1,0 +1,8 @@
+[
+  {
+    "name": "ip_online",
+    "help": "ip在线数量",
+    "type": "gauge",
+    "labels": []
+  }
+]

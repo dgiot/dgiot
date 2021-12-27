@@ -222,6 +222,7 @@ overlay_vars_rel(RelType) ->
         , {enable_plugin_dgiot_gb26875, true}
         , {enable_plugin_dgiot_mqtt, true}
         , {enable_plugin_dgiot_iq60, true}
+        , {enable_plugin_dgiot_location, true}
         , {vm_args_file, VmArgs}
     ].
 
@@ -273,6 +274,7 @@ relx_apps(ReleaseType) ->
         , jsx
         , jesse
         , jwerl
+        , locus
         , odbc
         , erlydtl
         , ejdbc
@@ -355,6 +357,7 @@ relx_plugin_apps_per_rel(cloud) ->
         , dgiot_gb26875
         , dgiot_mqtt
         , dgiot_iq60
+        , dgiot_location
     ];
 relx_plugin_apps_per_rel(edge) ->
     [].
