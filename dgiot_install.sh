@@ -1049,8 +1049,6 @@ function make_ssl() {
 }
 
 function devops() {
-    file=$0
-    script_dir=${file%/*}
     ## 关闭dgiot
     count=`ps -ef |grep beam.smp |grep -v "grep" |wc -l`
     if [ 0 == $count ];then
@@ -1067,7 +1065,7 @@ function devops() {
     fi
 
     if [ ! -d ${script_dir}/dgiot_dashboard/ ]; then
-      git clone https://gitee.com/dgiiot/dgiot-dashboard.git dgiot_dashboard
+      git clone https://gitee.com/dgiiot/dgiot-dashboard.git dgiot_dashboard &> /dev/null
     fi
 
     cd ${script_dir}/dgiot_dashboard
