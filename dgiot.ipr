@@ -72,6 +72,7 @@
     <mapping directory="$PROJECT_DIR$/_build/default/lib/jesse" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/default/lib/jiffy" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/default/lib/jwerl" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/_build/default/lib/locus" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/default/lib/luerl" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/default/lib/lwm2m_coap" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/default/lib/minirest" vcs="Git" />
@@ -116,6 +117,7 @@
     <mapping directory="$PROJECT_DIR$/_build/emqx/lib/jesse" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/emqx/lib/jiffy" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/emqx/lib/jwerl" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/_build/emqx/lib/locus" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/emqx/lib/luerl" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/emqx/lib/lwm2m_coap" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/emqx/lib/minirest" vcs="Git" />

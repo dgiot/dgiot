@@ -1,8 +1,8 @@
 {
   "tags": [
     {
-      "name": "METER",
-      "description": "电力抄表"
+      "name": "Location",
+      "description": "位置定位"
     }
   ],
   "definitions": {

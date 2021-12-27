@@ -1,0 +1,15 @@
+{application, dgiot_location,
+    [{description, "DGIOT LOCATION"},
+        {vsn, "4.3.0"},
+        {registered, []},
+        {mod, {dgiot_location_app, []}},
+        {applications, [kernel, stdlib]},
+        {env, []},
+        {modules, []},
+        {licenses, ["Apache-2.0"]},
+        {maintainers, ["DGIOT Team"]},
+        {links, [{"Homepage", "https://www.iotn2n.com/"},
+            {"Github", "https://github.com/dgiot/dgiot"}
+        ]}
+    ]
+}.
