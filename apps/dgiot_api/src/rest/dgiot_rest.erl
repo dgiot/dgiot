@@ -423,8 +423,9 @@ get_log(check_auth, [_OperationID, Args, Req], Time, Result) ->
 get_log(_Fun, _, _, _) ->
     pass.
 
-log(#{peer := {PeerName, _}} = Req, Time, Result, Map) when is_map(Map) ->
+log(#{peer := {PeerName, _}, headers := Headers} = Req, Time, Result, Map) when is_map(Map) ->
     Ip = dgiot_utils:get_ip(PeerName),
+    RealIp = maps:get(<<"x-real-ip">>, Headers, Ip),
     NewReq = maps:with([method, path], Req),
     UserName = maps:get(<<"username">>, Map, <<"">>),
     Body = maps:without([<<"username">>, <<"password">>], Map),
@@ -438,7 +439,7 @@ log(#{peer := {PeerName, _}} = Req, Time, Result, Map) when is_map(Map) ->
     ?MLOG(info, NewReq#{
         <<"code">> => Code,
         <<"reason">> => Reason,
-        <<"ip">> => Ip,
+        <<"ip">> => RealIp,
         <<"username">> => UserName,
         <<"body">> => Body,
         <<"elapsedtime">> => Time},
