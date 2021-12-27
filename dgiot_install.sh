@@ -977,6 +977,54 @@ function install_nginx() {
     systemctl enable nginx.service &> /dev/null
 }
 
+function build_nginx() {
+    clean_service nginx
+    if systemctl is-active --quiet nginx; then
+        echo -e  "`date +%F_%T` $LINENO: ${GREEN} nginx is running, stopping it...${NC}"
+        rpm -e nginx
+    fi
+    ### 创建目录和用户,以及配置环境变化
+    echo -e "`date +%F_%T` $LINENO: ${GREEN} create nginx user and group ${NC}"  &> /dev/null
+    set +uxe
+    egrep "^nginx" /etc/passwd >/dev/null
+    if [ $? -eq 0 ]; then
+        echo -e "`date +%F_%T` $LINENO: ${GREEN} nginx user and group exist ${NC}"  &> /dev/null
+    else
+        ${csudo} groupadd nginx  &> /dev/null
+        ${csudo} useradd -g nginx nginx  &> /dev/null
+    fi
+    ### install nginx
+    yum -y install pcre-devel &> /dev/null
+    yum install openssl-devel &> /dev/null
+    if [ ! -f ${script_dir}/nginx-1.20.1.tar.gz ]; then
+       wget https://dgiot-release-1306147891.cos.ap-nanjing.myqcloud.com/v4.4.0/nginx-1.20.1.tar.gz -O ${script_dir}/nginx-1.20.1.tar.gz  &> /dev/null
+    fi
+    cd ${script_dir}/
+    tar xvf nginx-1.20.1.tar.gz &> /dev/null
+    cd ${script_dir}/nginx-1.20.1
+    ./configure --prefix=/data/dgiot/nginx  --with-http_realip_module --with-http_ssl_module &> /dev/null
+    make &> /dev/null
+    make install &> /dev/nulldddddddd
+
+    if [ ! -f ${script_dir}/nginx.conf ]; then
+       wget $fileserver/nginx.conf -O ${script_dir}/nginx.conf &> /dev/null
+    fi
+    if [ ! -f ${script_dir}/${domain_name}.zip ]; then
+       wget $fileserver/${domain_name}.zip -O ${script_dir}/${domain_name}.zip  &> /dev/null
+    fi
+    rm  /data/dgiot/nginx/conf/nginx.conf -rf
+    cp ${script_dir}/nginx.conf /data/dgiot/nginx/conf/nginx.conf -rf
+    echo -e "`date +%F_%T` $LINENO: ${GREEN} ${domain_name} ${NC}"
+    sed -i "s!{{domain_name}}!${domain_name}!g"  /data/dgiot/nginx/conf/nginx.conf
+    sed -i "s!{{install_dir}}!${install_dir}!g"  /data/dgiot/nginx/conf/nginx.conf
+    echo -e "`date +%F_%T` $LINENO: ${GREEN} ${install_dir} ${NC}"
+    if [ -f ${script_dir}/${domain_name}.zip ]; then
+      echo -e "`date +%F_%T` $LINENO: ${GREEN} ${script_dir}/${domain_name}.zip ${NC}"
+      unzip -o ${script_dir}/${domain_name}.zip -d /etc/ssl/certs/ &> /dev/null
+    fi
+    install_service2 "nginx" "forking" "/data/dgiot/nginx/sbin/nginx"
+}
+
 function make_ssl() {
     if [ ! -d /etc/ssl/dgiot/ ]; then
       mkdir -p /etc/ssl/dgiot/
@@ -1101,7 +1149,8 @@ if [ "$verType" == "single" ]; then
       install_dgiot
       #install_prometheus #占用资源较多，先去除
       #install_grafana    #占用资源较多，先去除
-      install_nginx
+      #install_nginx
+      build_nginx
     fi
 elif [ "$verType" == "cluster" ]; then
     # todo
