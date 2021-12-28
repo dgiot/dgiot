@@ -1096,8 +1096,6 @@ function build_dashboard() {
     else
       ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm build
     fi
-
-
   }
 function devops() {
     ## 关闭dgiot
