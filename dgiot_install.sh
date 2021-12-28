@@ -1070,6 +1070,15 @@ function devops() {
       if [ ! -f ${script_dir}/node-v16.5.0-linux-x64.tar.gz ]; then
         wget https://dgiotdev-1308220533.cos.ap-nanjing.myqcloud.com/node-v16.5.0-linux-x64.tar.gz &> /dev/null
         tar xvf node-v16.5.0-linux-x64.tar.gz &> /dev/null
+        if [ ! -f usr/bin/node ]; then
+         rm /usr/bin/node -rf
+        fi
+        ln -s ${script_dir}/node-v16.5.0-linux-x64/bin/node /usr/bin/node
+        ${script_dir}/node-v16.5.0-linux-x64/bin/npm i -g pnpm --registry=https://registry.npmmirror.com
+        ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm config set registry https://registry.npmmirror.com
+        ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm add -g pnpm to update
+        ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm -v
+        ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm get registry
       fi
     fi
 
@@ -1084,11 +1093,9 @@ function devops() {
 
     export PATH=$PATH:/usr/local/bin:${script_dir}/node-v16.5.0-linux-x64/bin/
     rm ${script_dir}/dgiot_dashboard/dist/ -rf
-    ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm config set registry https://registry.cnpmmirror.com
-    #${script_dir}/node-v16.5.0-linux-x64/bin/yarn install
-    ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm i
+    ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm add -g pnpm
+    ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm install
     ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm build
-
 
     #2. 更新最新的后端代码
     cd ${script_dir}/
@@ -1141,8 +1148,8 @@ function devops() {
 
 set -e
 #set -x
-echo -e "`date +%F_%T` $LINENO: ${GREEN} dgiot $verType deploy start${NC}"
-if [ "$verType" == "single" ]; then
+echo -e "`date +%F_%T` $LINENO: ${GREEN} dgiot ${verType} deploy start${NC}"
+if [ "${verType}" == "single" ]; then
     # Install server and client
     if [ -x ${install_dir}/dgiot ]; then
       update_flag=1
@@ -1162,18 +1169,19 @@ if [ "$verType" == "single" ]; then
       #install_nginx
       build_nginx
     fi
-elif [ "$verType" == "cluster" ]; then
+elif [ "${verType}" == "cluster" ]; then
     # todo
     if [ -x ${install_dir}/dgiot ]; then
       update_flag=1
-      update_dgiot_cluster
+      #update_dgiot_cluster
     else
-      install_update_dgiot_cluster
+      echo  "install_update_dgiot_cluster"
+      #install_update_dgiot_cluster
     fi
-elif [ "$verType" == "devops" ]; then
+elif [ "${verType}" == "devops" ]; then
     devops
 else
     echo  "please input correct verType"
 fi
 
-echo -e "`date +%F_%T` $LINENO: ${GREEN} dgiot $verType deploy end${NC}"
+echo -e "`date +%F_%T` $LINENO: ${GREEN} dgiot ${verType} deploy end${NC}"
