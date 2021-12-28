@@ -1108,6 +1108,10 @@ function devops() {
     git reset --hard
     git pull
     rm ${script_dir}/dgiot/apps/dgiot_api/priv/www -rf
+    # 如果打包失败,则使用github 上的打包好的文件、文件夹名dist
+    if [ ! -d ${script_dir}/dgiot_dashboard/dist ]; then
+        git clone -b gh-pages https://github.com.cnpmjs.org/dgiot/dgiot-dashboard.git dist
+    fi
     cp ${script_dir}/dgiot_dashboard/dist/ ${script_dir}/dgiot/apps/dgiot_api/priv/www -rf
     rm ${script_dir}/dgiot/emqx/rel -rf
 
