@@ -310,26 +310,20 @@ do_request(post_generatereport, #{<<"id">> := TaskId}, #{<<"sessionToken">> := _
 %% 请求:GET /iotapi/drawxnqx
 do_request(post_drawxnqx, #{<<"taskid">> := TaskId, <<"data">> := Data}, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
 %%    io:format("~s ~p Data = ~p.~n", [?FILE, ?LINE, Data]),
-    NewData = arrtojsonlist(Data),
-    AvgData =
-        maps:fold(fun(K, V, Avg) ->
-            SumV =
-                lists:foldl(fun(V1, VSum) ->
-                    VSum + V1
-                            end, 0, V),
-            Avg#{K => dgiot_utils:to_float(SumV / length(Data), 3)}
-                  end, #{}, maps:without([<<"timestamp">>], NewData)),
+%%    NewData = arrtojsonlist(Data),
+%%    AvgData =
+%%        maps:fold(fun(K, V, Avg) ->
+%%            SumV =
+%%                lists:foldl(fun(V1, VSum) ->
+%%                    VSum + V1
+%%                            end, 0, V),
+%%            Avg#{K => dgiot_utils:to_float(SumV / length(Data), 3)}
+%%                  end, #{}, maps:without([<<"timestamp">>], NewData)),
     {NewEvidenceId, NewOriginal} =
         case dgiot_parse:query_object(<<"Evidence">>, #{<<"limit">> => 1, <<"where">> => #{<<"reportId">> => TaskId, <<"original.type">> => <<"avgs">>, <<"original.taskid">> => TaskId}}) of
             {ok, #{<<"results">> := Results}} when length(Results) > 0 ->
                 [#{<<"objectId">> := EvidenceId, <<"original">> := #{<<"avgs">> := Avgs} = Original} | _] = Results,
-                OldAvgs =
-                    case maps:keys(AvgData) of
-                        Keys when length(Keys) == 0 ->
-                            [];
-                        _ ->
-                            Avgs ++ [AvgData]
-                    end,
+                OldAvgs = Avgs ++ Data,
                 Path = python_drawxnqx(TaskId, arrtojsonlist(OldAvgs)),
                 NewOriginal1 = Original#{<<"path">> => Path, <<"avgs">> => OldAvgs},
                 dgiot_parse:update_object(<<"Evidence">>, EvidenceId, #{<<"original">> => NewOriginal1}),
@@ -337,19 +331,12 @@ do_request(post_drawxnqx, #{<<"taskid">> := TaskId, <<"data">> := Data}, #{<<"se
             _ ->
                 case dgiot_auth:get_session(SessionToken) of
                     #{<<"roles">> := Roles} ->
-                        OldAvgs =
-                            case maps:keys(AvgData) of
-                                Keys when length(Keys) == 0 ->
-                                    [];
-                                _ ->
-                                    [AvgData]
-                            end,
-                        Path = python_drawxnqx(TaskId, arrtojsonlist(OldAvgs)),
+                        Path = python_drawxnqx(TaskId, arrtojsonlist(Data)),
                         [#{<<"name">> := Role} | _] = maps:values(Roles),
                         TimeStamp = dgiot_datetime:now_ms(),
                         Ukey = dgiot_utils:to_binary(dgiot_datetime:now_secs()),
                         EvidenceId = dgiot_parse:get_evidenceId(Ukey, dgiot_utils:to_binary(TimeStamp)),
-                        Original = #{<<"taskid">> => TaskId, <<"avgs">> => OldAvgs, <<"type">> => <<"avgs">>, <<"path">> => Path},
+                        Original = #{<<"taskid">> => TaskId, <<"avgs">> => Data, <<"type">> => <<"avgs">>, <<"path">> => Path},
                         Evidence = #{
                             <<"objectId">> => EvidenceId,
                             <<"ACL">> => #{<<"role:", Role/binary>> => #{
@@ -366,15 +353,8 @@ do_request(post_drawxnqx, #{<<"taskid">> := TaskId, <<"data">> := Data}, #{<<"se
                         {EvidenceId, Original};
                     _Other ->
                         io:format("~s ~p _Other = ~p.~n", [?FILE, ?LINE, _Other]),
-                        OldAvgs =
-                            case maps:keys(AvgData) of
-                                Keys when length(Keys) == 0 ->
-                                    [];
-                                _ ->
-                                    [AvgData]
-                            end,
-                        Path = python_drawxnqx(TaskId, arrtojsonlist(OldAvgs)),
-                        {<<"">>, #{<<"avgs">> => OldAvgs, <<"path">> => Path}}
+                        Path = python_drawxnqx(TaskId, arrtojsonlist(Data)),
+                        {<<"">>, #{<<"avgs">> => Data, <<"path">> => Path}}
                 end
         end,
     {ok, #{<<"code">> => 200, <<"evidenceid">> => NewEvidenceId, <<"original">> => NewOriginal}};
