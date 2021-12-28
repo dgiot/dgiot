@@ -1099,8 +1099,7 @@ function build_dashboard() {
   }
 function devops() {
     ## 关闭dgiot
-    clean_services
-
+    clean_service dgiot
     count=`ps -ef |grep beam.smp |grep -v "grep" |wc -l`
     if [ 0 == $count ];then
        echo $count
