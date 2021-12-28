@@ -685,13 +685,18 @@ function install_go_fastdfs() {
     wget ${fileserver}/dgiot_file.zip -O ${script_dir}/dgiot_file.zip &> /dev/null
   fi
   cd ${script_dir}/
+  if [ -d ${script_dir}/dgiot_file/ ]; then
+    rm ${script_dir}/dgiot_file/ -rf
+  fi
   unzip dgiot_file.zip &> /dev/null
   mv ${script_dir}/dgiot_file ${install_dir}/go_fastdfs/files/
 
   if [ ! -f ${script_dir}/dgiot_swagger.zip ]; then
     wget ${fileserver}/dgiot_swagger.zip -O ${script_dir}/dgiot_swagger.zip &> /dev/null
   fi
-  cd ${script_dir}/
+  if [ -d ${script_dir}/dgiot_swagger/ ]; then
+    rm ${script_dir}/dgiot_swagger/ -rf
+  fi
   unzip dgiot_swagger.zip &> /dev/null
   mv ${script_dir}/dgiot_swagger ${install_dir}/go_fastdfs/files/
 
@@ -699,7 +704,11 @@ function install_go_fastdfs() {
     wget ${fileserver}/dgiot_dashboard.zip -O ${script_dir}/dgiot_dashboard.zip &> /dev/null
   fi
   cd ${script_dir}/
+  if [ -d ${script_dir}/dgiot_dashboard/ ]; then
+    rm ${script_dir}/dgiot_dashboard/ -rf
+  fi
   unzip dgiot_dashboard.zip &> /dev/null
+
   mv ${script_dir}/dgiot_dashboard ${install_dir}/go_fastdfs/files/
 
 }
@@ -1065,7 +1074,7 @@ function devops() {
     fi
 
     if [ ! -d ${script_dir}/dgiot_dashboard/ ]; then
-      git clone https://gitee.com/dgiiot/dgiot-dashboard.git dgiot_dashboard &> /dev/null
+      git clone https://gitee.com/dgiiot/dgiot-dashboard.git dgiot_dashboard
     fi
 
     cd ${script_dir}/dgiot_dashboard
@@ -1073,10 +1082,13 @@ function devops() {
     git pull
     #git checkout v4.0.0
 
+    export PATH=$PATH:/usr/local/bin:${script_dir}/node-v16.5.0-linux-x64/bin/
     rm ${script_dir}/dgiot_dashboard/dist/ -rf
-    ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm config set registry https://registry.npmmirror.com
-    ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm i --frozen-lockfile
+    ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm config set registry https://registry.cnpmmirror.com
+    #${script_dir}/node-v16.5.0-linux-x64/bin/yarn install
+    ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm i
     ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm build
+
 
     #2. 更新最新的后端代码
     cd ${script_dir}/
