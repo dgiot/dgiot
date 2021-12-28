@@ -1089,12 +1089,14 @@ function build_dashboard() {
     ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm add -g pnpm
     ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm install
     ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm run fix-memory-limit
-    ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm build
-
-    if [ ! -d ${script_dir}/dgiot_dashboard/dist/ ]; then
-      rm ${script_dir}/dgiot/apps/dgiot_api/priv/www -rf
-      cp ${script_dir}/dgiot_dashboard/dist/ ${script_dir}/dgiot/apps/dgiot_api/priv/www/ -rf
+    cpucount=`cat /proc/cpuinfo| grep "physical id"| sort| uniq| wc -l`
+    if [ 1 == ${cpucount} ];then
+      echo -e "`date +%F_%T` $LINENO: ${GREEN} cpucore = 1 not build dgiot_dashboard${NC}"
+      git clone -b gh-pages https://github.com.cnpmjs.org/dgiot/dgiot-dashboard.git dist
+    else
+      ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm build
     fi
+
 
   }
 function devops() {
@@ -1116,12 +1118,11 @@ function devops() {
     if [ ! -d ${script_dir}/dgiot/ ]; then
       git clone https://gitee.com/dgiiot/dgiot.git
     fi
+    build_dashboard
 
-    cpucount=`cat /proc/cpuinfo| grep "physical id"| sort| uniq| wc -l`
-    if [ 1 == ${cpucount} ];then
-      echo -e "`date +%F_%T` $LINENO: ${GREEN} cpucore = 1 not build dgiot_dashboard${NC}"
-    else
-      build_dashboard
+    if [ -d ${script_dir}/dgiot_dashboard/dist/ ]; then
+      rm ${script_dir}/dgiot/apps/dgiot_api/priv/www -rf
+      cp ${script_dir}/dgiot_dashboard/dist/ ${script_dir}/dgiot/apps/dgiot_api/priv/www/ -rf
     fi
 
     cd ${script_dir}/dgiot/
@@ -1137,6 +1138,7 @@ function devops() {
     if [ ! -d ${script_dir}/dgiot/apps/$plugin/ ]; then
       git clone root@git.iotn2n.com:dgiot/$plugin.git
     fi
+
     cd ${script_dir}/$plugin/
     git reset --hard
     git pull
