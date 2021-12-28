@@ -681,33 +681,33 @@ function install_go_fastdfs() {
     mkdir -p ${install_dir}/go_fastdfs/files/
   fi
 
-  if [ ! -f ${script_dir}/dgiot_file.zip ]; then
-    wget ${fileserver}/dgiot_file.zip -O ${script_dir}/dgiot_file.zip &> /dev/null
+  if [ ! -f ${script_dir}/dgiot_file.tar.gz ]; then
+    wget ${fileserver}/dgiot_file.tar.gz -O ${script_dir}/dgiot_file.tar.gz &> /dev/null
   fi
   cd ${script_dir}/
   if [ -d ${script_dir}/dgiot_file/ ]; then
     rm ${script_dir}/dgiot_file/ -rf
   fi
-  unzip dgiot_file.zip &> /dev/null
+  tar xf dgiot_file.tar.gz &> /dev/null
   mv ${script_dir}/dgiot_file ${install_dir}/go_fastdfs/files/
 
-  if [ ! -f ${script_dir}/dgiot_swagger.zip ]; then
-    wget ${fileserver}/dgiot_swagger.zip -O ${script_dir}/dgiot_swagger.zip &> /dev/null
+  if [ ! -f ${script_dir}/dgiot_swagger.tar.gz ]; then
+    wget ${fileserver}/dgiot_swagger.tar.gz -O ${script_dir}/dgiot_swagger.tar.gz &> /dev/null
   fi
   if [ -d ${script_dir}/dgiot_swagger/ ]; then
     rm ${script_dir}/dgiot_swagger/ -rf
   fi
-  unzip dgiot_swagger.zip &> /dev/null
+  tar xf dgiot_swagger.tar.gz &> /dev/null
   mv ${script_dir}/dgiot_swagger ${install_dir}/go_fastdfs/files/
 
-  if [ ! -f ${script_dir}/dgiot_dashboard.zip ]; then
-    wget ${fileserver}/dgiot_dashboard.zip -O ${script_dir}/dgiot_dashboard.zip &> /dev/null
+  if [ ! -f ${script_dir}/dgiot_dashboard.tar.gz ]; then
+    wget ${fileserver}/dgiot_dashboard.tar.gz -O ${script_dir}/dgiot_dashboard.tar.gz &> /dev/null
   fi
   cd ${script_dir}/
   if [ -d ${script_dir}/dgiot_dashboard/ ]; then
     rm ${script_dir}/dgiot_dashboard/ -rf
   fi
-  unzip dgiot_dashboard.zip &> /dev/null
+  tar xf dgiot_dashboard.tar.gz &> /dev/null
 
   mv ${script_dir}/dgiot_dashboard ${install_dir}/go_fastdfs/files/
 
