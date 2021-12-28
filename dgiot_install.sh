@@ -1057,16 +1057,9 @@ function make_ssl() {
     fi
 }
 
-function devops() {
-    ## 关闭dgiot
-    count=`ps -ef |grep beam.smp |grep -v "grep" |wc -l`
-    if [ 0 == $count ];then
-       echo $count
-      else
-       killall -9 beam.smp
-    fi
-    cd ${script_dir}/
-    if [ ! -d ${script_dir}/node-v16.5.0-linux-x64/bin/ ]; then
+
+function build_dashboard() {
+  if [ ! -d ${script_dir}/node-v16.5.0-linux-x64/bin/ ]; then
       if [ ! -f ${script_dir}/node-v16.5.0-linux-x64.tar.gz ]; then
         wget https://dgiotdev-1308220533.cos.ap-nanjing.myqcloud.com/node-v16.5.0-linux-x64.tar.gz &> /dev/null
         tar xvf node-v16.5.0-linux-x64.tar.gz &> /dev/null
@@ -1095,7 +1088,27 @@ function devops() {
     rm ${script_dir}/dgiot_dashboard/dist/ -rf
     ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm add -g pnpm
     ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm install
+    ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm run fix-memory-limit
     ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm build
+
+    if [ ! -d ${script_dir}/dgiot_dashboard/dist/ ]; then
+      rm ${script_dir}/dgiot/apps/dgiot_api/priv/www -rf
+      cp ${script_dir}/dgiot_dashboard/dist/ ${script_dir}/dgiot/apps/dgiot_api/priv/www/ -rf
+    fi
+
+  }
+function devops() {
+    ## 关闭dgiot
+    clean_services
+
+    count=`ps -ef |grep beam.smp |grep -v "grep" |wc -l`
+    if [ 0 == $count ];then
+       echo $count
+      else
+       killall -9 beam.smp
+    fi
+
+    cd ${script_dir}/
 
     #2. 更新最新的后端代码
     cd ${script_dir}/
@@ -1104,12 +1117,20 @@ function devops() {
       git clone https://gitee.com/dgiiot/dgiot.git
     fi
 
+    cpucount=`cat /proc/cpuinfo| grep "physical id"| sort| uniq| wc -l`
+    if [ 1 == ${cpucount} ];then
+      echo -e "`date +%F_%T` $LINENO: ${GREEN} cpucore = 1 not build dgiot_dashboard${NC}"
+    else
+      build_dashboard
+    fi
+
     cd ${script_dir}/dgiot/
     git reset --hard
     git pull
-    rm ${script_dir}/dgiot/apps/dgiot_api/priv/www -rf
-    cp ${script_dir}/dgiot_dashboard/dist/ ${script_dir}/dgiot/apps/dgiot_api/priv/www -rf
-    rm ${script_dir}/dgiot/emqx/rel -rf
+
+    if [ ! -d ${script_dir}/dgiot/emqx/rel/ ]; then
+      rm ${script_dir}/dgiot/emqx/rel -rf
+    fi
 
     rm ${script_dir}/dgiot/rebar.config  -rf
     cd ${script_dir}/dgiot/apps/
