@@ -155,7 +155,6 @@ handle_message({rule, #{clientid := _DeviceId, username := ProductId, payload :=
                             io:format("~s ~p error: ~p~n", [?FILE, ?LINE, _Other1]),
                             pass
                     end;
-
 %%%%                扫描子设备: /{productId}/{deviceAddr}/scan/{protocol}
 %%                [<<>>, ProductId, DtuAddr, <<"scan">>, <<"OPC_DA">>] ->
 %%                    case jsx:decode(Payload, [{labels, binary}, return_maps]) of
