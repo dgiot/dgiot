@@ -415,7 +415,7 @@ get_properties(ProductId, Properties) ->
                                 true ->
                                     Acc1#{Identifier => PV};
                                 _ ->
-                                    Acc1
+                                    Acc1#{PK => PV}
                             end
                                   end, Acc, Properties);
                     _ ->
