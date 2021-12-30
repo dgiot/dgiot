@@ -350,12 +350,12 @@ get_Product() ->
                 case X of
                     #{<<"objectId">> := ProductId, <<"config">> := #{<<"konva">> := #{<<"Stage">> := #{<<"children">> := Children}}}, <<"thing">> := #{<<"properties">> := Properties}} ->
                         lists:map(fun(P) ->
-                            DataType = maps:get(<<"dataType">>, P),
-                            Type = maps:get(<<"type">>, DataType),
-                            Specs = maps:get(<<"specs">>, DataType),
+                            DataType = maps:get(<<"dataType">>, P, #{}),
+                            Type = maps:get(<<"type">>, DataType, <<"">>),
+                            Specs = maps:get(<<"specs">>, DataType, #{}),
                             Unit = maps:get(<<"unit">>, Specs, <<"">>),
-                            Identifier = maps:get(<<"identifier">>, P),
-                            Name = maps:get(<<"name">>, P),
+                            Identifier = maps:get(<<"identifier">>, P, <<"">>),
+                            Name = maps:get(<<"name">>, P, <<"">>),
                             dgiot_data:insert({product, <<ProductId/binary, Identifier/binary>>}, {Name, Type, Unit}),
                             dgiot_data:insert({thing, <<ProductId/binary, Identifier/binary>>}, P)
                                   end, Properties),
