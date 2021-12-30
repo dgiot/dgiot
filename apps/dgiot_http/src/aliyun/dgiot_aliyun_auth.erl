@@ -180,13 +180,14 @@ jwtlogin(Idtoken) ->
     Md5Idtoken = dgiot_utils:to_md5(Idtoken),
     case dgiot_data:get({userinfo, Md5Idtoken}) of
         not_find ->
+%        使用公钥解析Id_token
             case catch jwerl:verify(Idtoken, Algorithm, PublcPem) of
                 {'EXIT', _Error} ->
                     {ok, #{<<"code">> => 500, <<"msg">> => <<"operation error">>}};
                 {ok, #{<<"udAccountUuid">> := UdAccountUuid, username := Username} = TokenData} ->
-                    Mobile = maps:get(<<"mobile">>, TokenData, <<"">>),
-                    Email = maps:get(email, TokenData, <<Mobile/binary, "@email.com">>),
-                    Name = maps:get(name, TokenData, Username),
+                    Mobile = dgiot_utils:to_binary(maps:get(<<"mobile">>, TokenData, <<"">>)),
+                    Email = dgiot_utils:to_binary(maps:get(email, TokenData, <<Mobile/binary, "@email.com">>)),
+                    Name = dgiot_utils:to_binary(maps:get(name, TokenData, Username)),
                     UserBody = #{
                         <<"email">> => Email,
                         <<"emailVerified">> => true,
@@ -229,18 +230,30 @@ jwtlogin(Idtoken) ->
                             },
                             <<"jwt">> => TokenData}},
                     SessionToken = dgiot_parse_handler:get_token(<<230, 181, 153, 233, 135, 140, 229, 138, 158, 228, 186, 167, 228, 184, 154, 229, 164, 167, 232, 132, 145>>),
+%                   用户匹配查找
                     case dgiot_parse:query_object(<<"_User">>, #{<<"where">> => #{<<"username">> => Username}}) of
                         {ok, #{<<"results">> := Results}} when length(Results) == 0 ->
                             dgiot_parse_handler:create_user(UserBody#{<<"department">> => <<"459e01521c">>}, SessionToken);
                         {ok, #{<<"results">> := [#{<<"objectId">> := UserId, <<"tag">> := Tag} | _]}} ->
                             dgiot_parse:update_object(<<"_User">>, UserId, #{<<"tag">> => Tag#{<<"jwt">> => TokenData}})
                     end,
+%                   验证账户登录获取用户信息
                     UserInfo =
                         case dgiot_parse_handler:login_by_account(Username, UdAccountUuid) of
                             {ok, #{<<"objectId">> := _UserId} = UserInfo1} ->
                                 UserInfo1#{<<"code">> => 200, <<"username">> => Username, <<"state">> => TokenData, <<"msg">> => <<"operation success">>};
                             {error, _Msg} ->
-                                #{<<"code">> => 200, <<"username">> => Username, <<"state">> => TokenData, <<"msg">> => <<"operation success">>}
+                                UserInfo2 =
+                                    case dgiot_parse:query_object(<<"_User">>, #{<<"where">> => #{<<"username">> => Username}}) of
+                                        {ok, #{<<"results">> := Results1}} when length(Results1) == 0 ->
+                                            UserInfo3 = UserBody#{<<"department">> => <<"459e01521c">>},
+                                            dgiot_parse_handler:create_user(UserInfo3, SessionToken),
+                                            UserInfo3;
+                                        {ok, #{<<"results">> := [#{<<"objectId">> := UserId1, <<"tag">> := Tag1} = UserInfo1 | _]}} ->
+                                            dgiot_parse:update_object(<<"_User">>, UserId1, #{<<"tag">> => Tag1#{<<"jwt">> => TokenData}}),
+                                            UserInfo1
+                                    end,
+                                UserInfo2#{<<"code">> => 200, <<"username">> => Username, <<"state">> => TokenData, <<"msg">> => <<"operation success">>}
                         end,
                     dgiot_data:insert({userinfo, Md5Idtoken}, {UserInfo, Username, UdAccountUuid}),
                     {ok, UserInfo};

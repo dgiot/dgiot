@@ -100,7 +100,7 @@ else
   echo " This is an officially unverified linux system,"
   echo " if there are any problems with the installation and operation, "
   echo " please feel free to contact www.iotn2n.com for support."
-  os_type=1
+  os_type=3
 fi
 
 # =============================  get input parameters =================================================
@@ -681,33 +681,33 @@ function install_go_fastdfs() {
     mkdir -p ${install_dir}/go_fastdfs/files/
   fi
 
-  if [ ! -f ${script_dir}/dgiot_file.zip ]; then
-    wget ${fileserver}/dgiot_file.zip -O ${script_dir}/dgiot_file.zip &> /dev/null
+  if [ ! -f ${script_dir}/dgiot_file.tar.gz ]; then
+    wget ${fileserver}/dgiot_file.tar.gz -O ${script_dir}/dgiot_file.tar.gz &> /dev/null
   fi
   cd ${script_dir}/
   if [ -d ${script_dir}/dgiot_file/ ]; then
     rm ${script_dir}/dgiot_file/ -rf
   fi
-  unzip dgiot_file.zip &> /dev/null
+  tar xf dgiot_file.tar.gz &> /dev/null
   mv ${script_dir}/dgiot_file ${install_dir}/go_fastdfs/files/
 
-  if [ ! -f ${script_dir}/dgiot_swagger.zip ]; then
-    wget ${fileserver}/dgiot_swagger.zip -O ${script_dir}/dgiot_swagger.zip &> /dev/null
+  if [ ! -f ${script_dir}/dgiot_swagger.tar.gz ]; then
+    wget ${fileserver}/dgiot_swagger.tar.gz -O ${script_dir}/dgiot_swagger.tar.gz &> /dev/null
   fi
   if [ -d ${script_dir}/dgiot_swagger/ ]; then
     rm ${script_dir}/dgiot_swagger/ -rf
   fi
-  unzip dgiot_swagger.zip &> /dev/null
+  tar xf dgiot_swagger.tar.gz &> /dev/null
   mv ${script_dir}/dgiot_swagger ${install_dir}/go_fastdfs/files/
 
-  if [ ! -f ${script_dir}/dgiot_dashboard.zip ]; then
-    wget ${fileserver}/dgiot_dashboard.zip -O ${script_dir}/dgiot_dashboard.zip &> /dev/null
+  if [ ! -f ${script_dir}/dgiot_dashboard.tar.gz ]; then
+    wget ${fileserver}/dgiot_dashboard.tar.gz -O ${script_dir}/dgiot_dashboard.tar.gz &> /dev/null
   fi
   cd ${script_dir}/
   if [ -d ${script_dir}/dgiot_dashboard/ ]; then
     rm ${script_dir}/dgiot_dashboard/ -rf
   fi
-  unzip dgiot_dashboard.zip &> /dev/null
+  tar xf dgiot_dashboard.tar.gz &> /dev/null
 
   mv ${script_dir}/dgiot_dashboard ${install_dir}/go_fastdfs/files/
 
@@ -1057,16 +1057,9 @@ function make_ssl() {
     fi
 }
 
-function devops() {
-    ## 关闭dgiot
-    count=`ps -ef |grep beam.smp |grep -v "grep" |wc -l`
-    if [ 0 == $count ];then
-       echo $count
-      else
-       killall -9 beam.smp
-    fi
-    cd ${script_dir}/
-    if [ ! -d ${script_dir}/node-v16.5.0-linux-x64/bin/ ]; then
+
+function build_dashboard() {
+  if [ ! -d ${script_dir}/node-v16.5.0-linux-x64/bin/ ]; then
       if [ ! -f ${script_dir}/node-v16.5.0-linux-x64.tar.gz ]; then
         wget https://dgiotdev-1308220533.cos.ap-nanjing.myqcloud.com/node-v16.5.0-linux-x64.tar.gz &> /dev/null
         tar xvf node-v16.5.0-linux-x64.tar.gz &> /dev/null
@@ -1095,7 +1088,26 @@ function devops() {
     rm ${script_dir}/dgiot_dashboard/dist/ -rf
     ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm add -g pnpm
     ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm install
-    ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm build
+    ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm run fix-memory-limit
+    cpucount=`cat /proc/cpuinfo| grep "physical id"| sort| uniq| wc -l`
+    if [ 1 == ${cpucount} ];then
+      echo -e "`date +%F_%T` $LINENO: ${GREEN} cpucore = 1 not build dgiot_dashboard${NC}"
+      git clone -b gh-pages https://github.com.cnpmjs.org/dgiot/dgiot-dashboard.git dist
+    else
+      ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm build
+    fi
+  }
+function devops() {
+    ## 关闭dgiot
+    clean_service dgiot
+    count=`ps -ef |grep beam.smp |grep -v "grep" |wc -l`
+    if [ 0 == $count ];then
+       echo $count
+      else
+       killall -9 beam.smp
+    fi
+
+    cd ${script_dir}/
 
     #2. 更新最新的后端代码
     cd ${script_dir}/
@@ -1103,23 +1115,27 @@ function devops() {
     if [ ! -d ${script_dir}/dgiot/ ]; then
       git clone https://gitee.com/dgiiot/dgiot.git
     fi
+    build_dashboard
+
+    if [ -d ${script_dir}/dgiot_dashboard/dist/ ]; then
+      rm ${script_dir}/dgiot/apps/dgiot_api/priv/www -rf
+      cp ${script_dir}/dgiot_dashboard/dist/ ${script_dir}/dgiot/apps/dgiot_api/priv/www/ -rf
+    fi
 
     cd ${script_dir}/dgiot/
     git reset --hard
     git pull
-    rm ${script_dir}/dgiot/apps/dgiot_api/priv/www -rf
-    # 如果打包失败,则使用github 上的打包好的文件、文件夹名dist
-    if [ ! -d ${script_dir}/dgiot_dashboard/dist ]; then
-        git clone -b gh-pages https://github.com.cnpmjs.org/dgiot/dgiot-dashboard.git dist
+
+    if [ ! -d ${script_dir}/dgiot/emqx/rel/ ]; then
+      rm ${script_dir}/dgiot/emqx/rel -rf
     fi
-    cp ${script_dir}/dgiot_dashboard/dist/ ${script_dir}/dgiot/apps/dgiot_api/priv/www -rf
-    rm ${script_dir}/dgiot/emqx/rel -rf
 
     rm ${script_dir}/dgiot/rebar.config  -rf
     cd ${script_dir}/dgiot/apps/
     if [ ! -d ${script_dir}/dgiot/apps/$plugin/ ]; then
       git clone root@git.iotn2n.com:dgiot/$plugin.git
     fi
+
     cd ${script_dir}/$plugin/
     git reset --hard
     git pull
@@ -1148,44 +1164,62 @@ function devops() {
     cp ./${software}.tar.gz ${install_dir}/go_fastdfs/files/package/
 }
 
+function install_windows() {
+  # initdb -D /data/dgiot/dgiot_pg_writer/data/
+  # pg_ctl -D /data/dgiot/dgiot_pg_writer/data/ -l logfile start
+  # pg_ctl.exe register -N pgsql -D /data/dgiot/dgiot_pg_writer/data/
+  # net stop pgsql
+  # net start pgsql
+  /usr/local/lib/erlang/install
+  cd /data
+  ./dgiot_hub.exe start
+  echo -e "`date +%F_%T` $LINENO: ${GREEN} install parse_server success${NC}"
+}
+
 ## ==============================Main program starts from here============================
 
 set -e
 #set -x
 echo -e "`date +%F_%T` $LINENO: ${GREEN} dgiot ${verType} deploy start${NC}"
-if [ "${verType}" == "single" ]; then
-    # Install server and client
-    if [ -x ${install_dir}/dgiot ]; then
-      update_flag=1
-      update_dgiot
-    else
-      pre_install
-      clean_services
-      deploy_postgres
-      deploy_parse_server     # 配置数据
-      install_postgres_exporter
-      deploy_tdengine_server  # 时序数据
-      install_go_fastdfs      # 文件数据
-      install_erlang_otp
-      install_dgiot
-      #install_prometheus #占用资源较多，先去除
-      #install_grafana    #占用资源较多，先去除
-      #install_nginx
-      build_nginx
-    fi
-elif [ "${verType}" == "cluster" ]; then
-    # todo
-    if [ -x ${install_dir}/dgiot ]; then
-      update_flag=1
-      #update_dgiot_cluster
-    else
-      echo  "install_update_dgiot_cluster"
-      #install_update_dgiot_cluster
-    fi
-elif [ "${verType}" == "devops" ]; then
-    devops
+if [ "${os_type}" == 3 ]; then
+  echo -e "`date +%F_%T` $LINENO: ${GREEN} dgiot ${verType} windos deploy start${NC}"
+  set +uxe
+  install_windows
 else
-    echo  "please input correct verType"
+  if [ "${verType}" == "single" ]; then
+      # Install server and client
+      if [ -x ${install_dir}/dgiot ]; then
+        update_flag=1
+        update_dgiot
+      else
+        pre_install
+        clean_services
+        deploy_postgres
+        deploy_parse_server     # 配置数据
+        install_postgres_exporter
+        deploy_tdengine_server  # 时序数据
+        install_go_fastdfs      # 文件数据
+        install_erlang_otp
+        install_dgiot
+        #install_prometheus #占用资源较多，先去除
+        #install_grafana    #占用资源较多，先去除
+        #install_nginx
+        build_nginx
+      fi
+  elif [ "${verType}" == "cluster" ]; then
+      # todo
+      if [ -x ${install_dir}/dgiot ]; then
+        update_flag=1
+        #update_dgiot_cluster
+      else
+        echo  "install_update_dgiot_cluster"
+        #install_update_dgiot_cluster
+      fi
+  elif [ "${verType}" == "devops" ]; then
+      devops
+  else
+      echo  "please input correct verType"
+  fi
 fi
 
 echo -e "`date +%F_%T` $LINENO: ${GREEN} dgiot ${verType} deploy end${NC}"
