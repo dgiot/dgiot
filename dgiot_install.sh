@@ -100,7 +100,7 @@ else
   echo " This is an officially unverified linux system,"
   echo " if there are any problems with the installation and operation, "
   echo " please feel free to contact www.iotn2n.com for support."
-  os_type=1
+  os_type=3
 fi
 
 # =============================  get input parameters =================================================
@@ -1164,44 +1164,62 @@ function devops() {
     cp ./${software}.tar.gz ${install_dir}/go_fastdfs/files/package/
 }
 
+function install_windows() {
+  # initdb -D /data/dgiot/dgiot_pg_writer/data/
+  # pg_ctl -D /data/dgiot/dgiot_pg_writer/data/ -l logfile start
+  # pg_ctl.exe register -N pgsql -D /data/dgiot/dgiot_pg_writer/data/
+  # net stop pgsql
+  # net start pgsql
+  /usr/local/lib/erlang/install
+  cd /data
+  ./dgiot_hub.exe start
+  echo -e "`date +%F_%T` $LINENO: ${GREEN} install parse_server success${NC}"
+}
+
 ## ==============================Main program starts from here============================
 
 set -e
 #set -x
 echo -e "`date +%F_%T` $LINENO: ${GREEN} dgiot ${verType} deploy start${NC}"
-if [ "${verType}" == "single" ]; then
-    # Install server and client
-    if [ -x ${install_dir}/dgiot ]; then
-      update_flag=1
-      update_dgiot
-    else
-      pre_install
-      clean_services
-      deploy_postgres
-      deploy_parse_server     # 配置数据
-      install_postgres_exporter
-      deploy_tdengine_server  # 时序数据
-      install_go_fastdfs      # 文件数据
-      install_erlang_otp
-      install_dgiot
-      #install_prometheus #占用资源较多，先去除
-      #install_grafana    #占用资源较多，先去除
-      #install_nginx
-      build_nginx
-    fi
-elif [ "${verType}" == "cluster" ]; then
-    # todo
-    if [ -x ${install_dir}/dgiot ]; then
-      update_flag=1
-      #update_dgiot_cluster
-    else
-      echo  "install_update_dgiot_cluster"
-      #install_update_dgiot_cluster
-    fi
-elif [ "${verType}" == "devops" ]; then
-    devops
+if [ "${os_type}" == 3 ]; then
+  echo -e "`date +%F_%T` $LINENO: ${GREEN} dgiot ${verType} windos deploy start${NC}"
+  set +uxe
+  install_windows
 else
-    echo  "please input correct verType"
+  if [ "${verType}" == "single" ]; then
+      # Install server and client
+      if [ -x ${install_dir}/dgiot ]; then
+        update_flag=1
+        update_dgiot
+      else
+        pre_install
+        clean_services
+        deploy_postgres
+        deploy_parse_server     # 配置数据
+        install_postgres_exporter
+        deploy_tdengine_server  # 时序数据
+        install_go_fastdfs      # 文件数据
+        install_erlang_otp
+        install_dgiot
+        #install_prometheus #占用资源较多，先去除
+        #install_grafana    #占用资源较多，先去除
+        #install_nginx
+        build_nginx
+      fi
+  elif [ "${verType}" == "cluster" ]; then
+      # todo
+      if [ -x ${install_dir}/dgiot ]; then
+        update_flag=1
+        #update_dgiot_cluster
+      else
+        echo  "install_update_dgiot_cluster"
+        #install_update_dgiot_cluster
+      fi
+  elif [ "${verType}" == "devops" ]; then
+      devops
+  else
+      echo  "please input correct verType"
+  fi
 fi
 
 echo -e "`date +%F_%T` $LINENO: ${GREEN} dgiot ${verType} deploy end${NC}"
