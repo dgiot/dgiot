@@ -4,10 +4,11 @@
 [![Build Status](https://travis-ci.org/dgiot/dgiot.svg)](https://travis-ci.org/dgiot/dgiot)
 [![Docker Pulls](https://img.shields.io/docker/pulls/dgiot/dgiot)](https://hub.docker.com/r/dgiot/dgiot)
 [![Community](https://img.shields.io/badge/Community-DGIOT-yellow)](https://tech.iotn2n.com)
-
+[![star](https://gitee.com/dgiiot/dgiot/badge/star.svg?theme=gvp)](https://gitee.com/dgiiot/dgiot/stargazers)
+[![dgiot/Gitee Feedback](https://gitee.com/dgiiot/dgiot/widgets/widget_card.svg?colors=colors=ffffff,1e252b,323d47,455059,d7deea,99a0ae)](https://gitee.com/dgiiot/dgiot)
 [English](./README.md) | [简体中文](./README-CN.md) | [日本語](./README-JP.md) | [русский](./README-RU.md)
 
-*DGIOT*  は中国で最初の軽量オープンソース産業用IoT継続的インテグレーションプラットフォームです 
+*DGIOT*  は中国で最初の軽量オープンソース産業用IoT継続的インテグレーションプラットフォームです
 
 2016年以前、Shuwaチームはインターネットとモバイルインターネットを長年にわたってクロールしていました。 2016年には、モノのインターネットのクロールに参入し始めました。 このオープンソースプラットフォームを通じて長年のクロール経験を共有し、学際的な産業用インターネットプロジェクトを容易にすることを望んでいます。
    + 金持ちのエンジニアがウィンドウの相互作用を通じて、より簡単な要件で産業用インターネットプロジェクトを完了できるようにします
