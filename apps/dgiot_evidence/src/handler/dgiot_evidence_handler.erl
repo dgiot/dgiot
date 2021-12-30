@@ -994,9 +994,12 @@ arrtojsonlist(_Data) ->
     #{}.
 
 python_drawxnqx(TaskId, NewData) ->
-    PythonBody = #{<<"name">> => <<TaskId/binary, ".png">>, <<"data">> => NewData, <<"path">> => <<"/data/dgiot/go_fastdfs/files/dgiot_file/pump_pytoh/">>},
+    Path = code:priv_dir(dgiot_evidence),
+    Python3path = Path ++ "/python/drawxnqx.py ",
+    Filepath = application:get_env(dgiot_evidence, gofastdfs_path, <<"/data/dgiot/go_fastdfs/files/dgiot_file/pump_pytoh/">>),
+    PythonBody = #{<<"name">> => <<TaskId/binary, ".png">>, <<"data">> => NewData, <<"path">> => Filepath},
     Imagepath =
-        case catch base64:decode(os:cmd("python3 /data/dgiot/dgiot/lib/dgiot_evidence-4.3.0/priv/python/drawxnqx.py " ++ dgiot_utils:to_list(base64:encode(jsx:encode(PythonBody))))) of
+        case catch base64:decode(os:cmd("python3 "++ Python3path ++ dgiot_utils:to_list(base64:encode(jsx:encode(PythonBody))))) of
             {'EXIT', _Error} ->
                 <<"">>;
             Path ->

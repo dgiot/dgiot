@@ -240,7 +240,7 @@ get_collection(ProductId, [], Payload, Ack) ->
                                                     Value1 ->
                                                         Acc2#{Identifier => Value1}
                                                 end;
-                                            _ -> Acc2#{Identifier => 0}
+                                            _ -> Acc2
                                         end
                                 end;
                             _ ->

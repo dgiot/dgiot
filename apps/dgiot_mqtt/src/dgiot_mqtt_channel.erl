@@ -86,9 +86,6 @@ init(?TYPE, ChannelId, #{
 %%              创建断开连接规则
                 DisRawsql = <<"SELECT clientid, disconnected_at FROM \"$events/client_disconnected\" WHERE username = '", ProductId/binary, "'">>,
                 create_rules(<<"rule:disconnected_", ProductId/binary>>, ChannelId, <<"断开连接规则"/utf8>>, DisRawsql, <<"/${productid}/#">>),
-%%              创建上传数据规则
-                RepRawsql = <<"SELECT payload.msg as msg,clientid,'", ProductId/binary, "' as productid FROM \"/thing/", ProductId/binary, "/#\" WHERE username = '", ProductId/binary, "'">>,
-                create_rules(<<"rule:thingreport_", ProductId/binary>>, ChannelId, <<"物模型上报规则"/utf8>>, RepRawsql, <<"/thing/${productid}/#">>),
                 %%              创建上传数据规则
                 MetaRawsql = <<"SELECT payload.msg as msg,clientid,'", ProductId/binary, "' as productid FROM \"/", ProductId/binary, "/#\" WHERE username = '", ProductId/binary, "'">>,
                 create_rules(<<"rule:metadata_", ProductId/binary>>, ChannelId, <<"派生物模型上报规则"/utf8>>, MetaRawsql, <<"/${productid}/#">>);
@@ -147,17 +144,6 @@ handle_message({rule, #{clientid := _DeviceId, username := ProductId, payload :=
                             io:format("~s ~p error: ~p~n", [?FILE, ?LINE, _Other1]),
                             pass
                     end;
-                [<<>>, <<"thing">>, ProductId1, DtuAddr1, <<"up">>] ->
-%%                    create_device(ProductId, DtuAddr, Peerhost),
-                    case jsx:decode(Payload, [{labels, binary}, return_maps]) of
-                        #{<<"id">> := Devaddr, <<"name">> := Name, <<"messageid">> := Messageid, <<"events">> := #{<<"id">> := <<"login">>, <<"value">> := #{<<"ip">> := Ip}}} = Data ->
-                            create_device(ProductId, Devaddr, Name, Ip),
-                            NotificationTopic = <<"/thing/", ProductId1/binary, "/", DtuAddr1/binary, "/down">>,
-                            dgiot_mqtt:publish(Devaddr, NotificationTopic, jsx:encode(Data#{<<"replyid">> => Messageid, <<"events">> => #{<<"id">> => <<"replylogin">>, <<"value">> => <<"success">>}}));
-                        _Other ->
-                            io:format("~s ~p error: ~p~n", [?FILE, ?LINE, _Other]),
-                            pass
-                    end;
                 [<<>>, ProductId, DtuAddr, <<"report">>, <<"opc">>, <<"properties">>] ->
                     create_device(ProductId, DtuAddr, <<"OPC_", DtuAddr/binary>>, Peerhost),
                     case jsx:decode(Payload, [{labels, binary}, return_maps]) of
@@ -169,7 +155,6 @@ handle_message({rule, #{clientid := _DeviceId, username := ProductId, payload :=
                             io:format("~s ~p error: ~p~n", [?FILE, ?LINE, _Other1]),
                             pass
                     end;
-
 %%%%                扫描子设备: /{productId}/{deviceAddr}/scan/{protocol}
 %%                [<<>>, ProductId, DtuAddr, <<"scan">>, <<"OPC_DA">>] ->
 %%                    case jsx:decode(Payload, [{labels, binary}, return_maps]) of
