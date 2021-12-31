@@ -39,9 +39,11 @@ DG-IoT是国内首款轻量级开源工业物联网平台，我们致力于提�
  <span id="jump">技术支持微信群2群</span>   
  ![image](https://user-images.githubusercontent.com/51999461/147809135-43c1f653-5b9a-4301-afe8-b6504b4df59e.png)
  
-点此[电脑端](https://prod.iotn2n.com/)体验
+ [QQ群346566935](https://jq.qq.com/?_wv=1027&k=LipWZvDe)
+ 
+点此[电脑端](https://prod.iotn2n.com/)或者输入https://prod.iotn2n.com体验
 
-账号/密码 : dgiot_admin 
+账号/密码 : dgiot_admin/dgiot_admin
 
 ## 系统部署
 + **centos 7.6/7.9** 推荐使用腾讯云和阿里云部署，具体操作[点击这里](https://gitee.com/dgiiot/dgiot/wikis/DG-IoT%E7%89%A9%E8%81%94%E7%BD%91%E6%89%8B%E5%86%8C/%E7%AE%80%E4%BB%8B/%E5%AE%89%E8%A3%85%E9%83%A8%E7%BD%B2)
