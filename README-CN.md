@@ -36,8 +36,12 @@ DG-IoT是国内首款轻量级开源工业物联网平台，我们致力于提�
 |[智慧园区](https://gitee.com/dgiiot/dgiot/wikis/%E8%A1%8C%E4%B8%9A%E6%A1%88%E4%BE%8B/%E6%99%BA%E6%85%A7%E5%9B%AD%E5%8C%BA)|[云云对接](https://gitee.com/dgiiot/dgiot/wikis/%E5%AE%9E%E6%88%98%E6%8E%A5%E5%85%A5/%E4%BA%91%E4%BA%91%E5%AF%B9%E6%8E%A5/%E6%A6%82%E8%BF%B0)|智慧场馆|
 
 ## 快速体验与微信群
- <span id="jump">技术支持微信群2群</span>   ![099841396edc2d96695aa3cd64dcef8](https://user-images.githubusercontent.com/51999461/147809003-9118d7f4-fcb1-4cee-9930-b1a6d5c5f59f.jpg)
-[电脑端](https://prod.iotn2n.com/)体验————账号/密码 : dgiot_admin 
+ <span id="jump">技术支持微信群2群</span>   
+ ![image](https://user-images.githubusercontent.com/51999461/147809135-43c1f653-5b9a-4301-afe8-b6504b4df59e.png)
+ 
+点此[电脑端](https://prod.iotn2n.com/)体验
+
+账号/密码 : dgiot_admin 
 
 ## 系统部署
 + **centos 7.6/7.9** 推荐使用腾讯云和阿里云部署，具体操作[点击这里](https://gitee.com/dgiiot/dgiot/wikis/DG-IoT%E7%89%A9%E8%81%94%E7%BD%91%E6%89%8B%E5%86%8C/%E7%AE%80%E4%BB%8B/%E5%AE%89%E8%A3%85%E9%83%A8%E7%BD%B2)
