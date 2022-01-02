@@ -200,6 +200,7 @@ overlay_vars_rel(RelType) ->
         , {enable_plugin_emqx_retainer, true}
         , {enable_plugin_emqx_telemetry, true}
         , {enable_plugin_emqx_exhook, true}
+       , {enable_plugin_emqx_auth_mnesia, true}
         , {enable_plugin_dgiot, true}
         , {enable_plugin_dgiot_bridge, true}
         , {enable_plugin_dgiot_parse, true}
@@ -322,6 +323,7 @@ relx_plugin_apps(ReleaseType) ->
         , emqx_rule_engine
         , emqx_sasl
         , emqx_exhook
+       , emqx_auth_mnesia
     ]
     ++ [emqx_telemetry || not is_enterprise()]
         ++ relx_plugin_apps_per_rel(ReleaseType)
@@ -335,6 +337,7 @@ relx_plugin_apps_per_rel(cloud) ->
         , emqx_exproto
         , emqx_prometheus
         , emqx_psk_file
+        , emqx_auth_mnesia
         , dgiot
         , dgiot_parse
         , dgiot_api

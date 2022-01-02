@@ -57,7 +57,7 @@
                          type => string,
                          default => <<"5s">>,
                          title => #{en => <<"Request Timeout">>,
-                                    zh => <<"请求超时时间时间"/utf8>>},
+                                    zh => <<"请求超时时间"/utf8>>},
                          description => #{en => <<"Request Timeout In Seconds">>,
                                           zh => <<"请求超时时间"/utf8>>}},
     pool_size => #{order => 4,
@@ -67,35 +67,42 @@
                    description => #{en => <<"Connection Pool">>,
                                     zh => <<"连接池大小"/utf8>>}
                 },
-    cacertfile => #{order => 5,
+    enable_pipelining => #{order => 5,
+                           type => boolean,
+                           default => true,
+                           title => #{en => <<"Enable Pipelining">>, zh => <<"Enable Pipelining"/utf8>>},
+                           description => #{en => <<"Whether to enable HTTP Pipelining">>,
+                                            zh => <<"是否开启 HTTP Pipelining"/utf8>>}
+                },
+    cacertfile => #{order => 6,
                     type => file,
                     default => <<"">>,
                     title => #{en => <<"CA Certificate File">>,
                                zh => <<"CA 证书文件"/utf8>>},
                     description => #{en => <<"CA Certificate file">>,
                                      zh => <<"CA 证书文件"/utf8>>}},
-    keyfile => #{order => 6,
+    keyfile => #{order => 7,
                  type => file,
                  default => <<"">>,
                  title =>#{en => <<"SSL Key">>,
                            zh => <<"SSL Key"/utf8>>},
                  description => #{en => <<"Your ssl keyfile">>,
                                   zh => <<"SSL 私钥"/utf8>>}},
-    certfile => #{order => 7,
+    certfile => #{order => 8,
                   type => file,
                   default => <<"">>,
                   title => #{en => <<"SSL Cert">>,
                              zh => <<"SSL Cert"/utf8>>},
                   description => #{en => <<"Your ssl certfile">>,
                                    zh => <<"SSL 证书"/utf8>>}},
-    verify => #{order => 8,
+    verify => #{order => 9,
                 type => boolean,
                 default => false,
                 title => #{en => <<"Verify Server Certfile">>,
                            zh => <<"校验服务器证书"/utf8>>},
                 description => #{en => <<"Whether to verify the server certificate. By default, the client will not verify the server's certificate. If verification is required, please set it to true.">>,
                                  zh => <<"是否校验服务器证书。 默认客户端不会去校验服务器的证书，如果需要校验，请设置成true。"/utf8>>}},
-    server_name_indication => #{order => 9,
+    server_name_indication => #{order => 10,
                                 type => string,
                                 title => #{en => <<"Server Name Indication">>,
                                            zh => <<"服务器名称指示"/utf8>>},
@@ -254,19 +261,19 @@ on_action_data_to_webserver(Selected, _Envs =
     NBody = format_msg(BodyTokens, Selected),
     NPath = emqx_rule_utils:proc_tmpl(PathTokens, Selected),
     Req = create_req(Method, NPath, Headers, NBody),
-    case ehttpc:request(ehttpc_pool:pick_worker(Pool, ClientID), Method, Req, RequestTimeout) of
+    case ehttpc:request({Pool, ClientID}, Method, Req, RequestTimeout) of
         {ok, StatusCode, _} when StatusCode >= 200 andalso StatusCode < 300 ->
             emqx_rule_metrics:inc_actions_success(Id);
         {ok, StatusCode, _, _} when StatusCode >= 200 andalso StatusCode < 300 ->
             emqx_rule_metrics:inc_actions_success(Id);
         {ok, StatusCode, _} ->
-            ?LOG(warning, "[WebHook Action] HTTP request failed with status code: ~p", [StatusCode]),
+            ?LOG(warning, "HTTP request failed with path: ~p status code: ~p", [NPath, StatusCode]),
             emqx_rule_metrics:inc_actions_error(Id);
         {ok, StatusCode, _, _} ->
-            ?LOG(warning, "[WebHook Action] HTTP request failed with status code: ~p", [StatusCode]),
+            ?LOG(warning, "HTTP request failed with path: ~p status code: ~p", [NPath, StatusCode]),
             emqx_rule_metrics:inc_actions_error(Id);
         {error, Reason} ->
-            ?LOG(error, "[WebHook Action] HTTP request error: ~p", [Reason]),
+            ?LOG(error, "HTTP request failed path: ~p error: ~p", [NPath, Reason]),
             emqx_rule_metrics:inc_actions_error(Id)
     end.
 
@@ -286,28 +293,33 @@ create_req(_, Path, Headers, Body) ->
   {Path, Headers, Body}.
 
 parse_action_params(Params = #{<<"url">> := URL}) ->
-    try
-        {ok, #{path := CommonPath}} = emqx_http_lib:uri_parse(URL),
-        Method = method(maps:get(<<"method">>, Params, <<"POST">>)),
-        Headers = headers(maps:get(<<"headers">>, Params, undefined)),
-        NHeaders = ensure_content_type_header(Headers, Method),
-        #{method => Method,
-          path => path(filename:join(CommonPath, maps:get(<<"path">>, Params, <<>>))),
-          headers => NHeaders,
-          body => maps:get(<<"body">>, Params, <<>>),
-          request_timeout => cuttlefish_duration:parse(str(maps:get(<<"request_timeout">>, Params, <<"5s">>))),
-          pool => maps:get(<<"pool">>, Params)}
-    catch _:_ ->
-        throw({invalid_params, Params})
-    end.
+    {ok, #{path := CommonPath}} = emqx_http_lib:uri_parse(URL),
+    Method = method(maps:get(<<"method">>, Params, <<"POST">>)),
+    Headers = headers(maps:get(<<"headers">>, Params, undefined)),
+    NHeaders = ensure_content_type_header(Headers, Method),
+    #{method => Method,
+      path => merge_path(CommonPath, maps:get(<<"path">>, Params, <<>>)),
+      headers => NHeaders,
+      body => maps:get(<<"body">>, Params, <<>>),
+      request_timeout => cuttlefish_duration:parse(str(maps:get(<<"request_timeout">>, Params, <<"5s">>))),
+      pool => maps:get(<<"pool">>, Params)}.
 
 ensure_content_type_header(Headers, Method) when Method =:= post orelse Method =:= put ->
     Headers;
 ensure_content_type_header(Headers, _Method) ->
     lists:keydelete("content-type", 1, Headers).
 
-path(<<>>) -> <<"/">>;
-path(Path) -> Path.
+merge_path(CommonPath, <<>>) ->
+    l2b(CommonPath);
+merge_path(CommonPath, Path0) ->
+    case emqx_http_lib:uri_parse(Path0) of
+        {ok, #{path := Path1, 'query' := Query0}} ->
+            Path2 = l2b(filename:join(CommonPath, Path1)),
+            Query = l2b(Query0),
+            <<Path2/binary, "?", Query/binary>>;
+        {ok, #{path := Path1}} ->
+            l2b(filename:join(CommonPath, Path1))
+    end.
 
 method(GET) when GET == <<"GET">>; GET == <<"get">> -> get;
 method(POST) when POST == <<"POST">>; POST == <<"post">> -> post;
@@ -333,16 +345,18 @@ pool_opts(Params = #{<<"url">> := URL}, ResId) ->
         cuttlefish_duration:parse(str(maps:get(<<"connect_timeout">>, Params, <<"5s">>))),
     TransportOpts0 =
         case Scheme =:= https of
-            true  -> [get_ssl_opts(Params, ResId)];
+            true  -> get_ssl_opts(Params, ResId);
             false -> []
         end,
     TransportOpts = emqx_misc:ipv6_probe(TransportOpts0),
+    EnablePipelining = maps:get(<<"enable_pipelining">>, Params, true),
     Opts = case Scheme =:= https  of
                true  -> [{transport_opts, TransportOpts}, {transport, ssl}];
                false -> [{transport_opts, TransportOpts}]
            end,
     [{host, Host},
      {port, Port},
+     {enable_pipelining, EnablePipelining},
      {pool_size, PoolSize},
      {pool_type, hash},
      {connect_timeout, ConnectTimeout},
@@ -353,7 +367,7 @@ pool_name(ResId) ->
     list_to_atom("webhook:" ++ str(ResId)).
 
 get_ssl_opts(Opts, ResId) ->
-    [{ssl, true}, {ssl_opts, emqx_plugin_libs_ssl:save_files_return_opts(Opts, "rules", ResId)}].
+    emqx_plugin_libs_ssl:save_files_return_opts(Opts, "rules", ResId).
 
 test_http_connect(Conf) ->
     Url = fun() -> maps:get(<<"url">>, Conf) end,
@@ -369,3 +383,5 @@ test_http_connect(Conf) ->
            ?LOG(error, "check http_connectivity failed: ~p, ~0p", [Conf, {Err, Reason, ST}]),
            false
     end.
+l2b(L) when is_list(L) -> iolist_to_binary(L);
+l2b(Any) -> Any.
