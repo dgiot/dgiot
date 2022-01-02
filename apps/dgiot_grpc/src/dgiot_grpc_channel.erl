@@ -120,17 +120,17 @@ init(?TYPE, ChannelId, Env) ->
         env = Env
     },
     Port = maps:get(<<"port">>, Env),
-    Scheme = maps:get(<<"scheme">>, Env),
-    Host = dgiot_utils:to_list(maps:get(<<"host">>, Env)),
-    Opts0 = [{scheme, dgiot_utils:to_atom(Scheme)}, {host, Host}, {port, Port}],
+%%    Scheme = maps:get(<<"scheme">>, Env),
+%%    Host = dgiot_utils:to_list(maps:get(<<"host">>, Env)),
+    %%Opts0 = [{scheme, dgiot_utils:to_atom(Scheme)}, {host, Host}, {port, Port}],
     case maps:get(<<"model">>, Env) of
         <<"both">> ->
             dgiot_grpc_server:start(ChannelId, Port, []),
-            application:ensure_all_started(emqx_hooks),
-            emqx_exhook:enable(ChannelId, Opts0);
+            application:ensure_all_started(emqx_hooks);
+            %%emqx_exhook:enable(ChannelId, Opts0);
         <<"client">> ->
-            application:ensure_all_started(emqx_hooks),
-            emqx_exhook:enable(ChannelId, Opts0);
+            application:ensure_all_started(emqx_hooks);
+            %%emqx_exhook:enable(ChannelId, Opts0);
         <<"server">> ->
             dgiot_grpc_server:start(ChannelId, Port, [])
     end,

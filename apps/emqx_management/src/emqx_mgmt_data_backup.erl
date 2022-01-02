@@ -118,18 +118,18 @@ export_auth_mnesia() ->
     end.
 
 export_acl_mnesia() ->
-    case ets:info(emqx_acl) of
+    case ets:info(emqx_acl2) of
         undefined -> [];
         _ ->
-            lists:map(fun({_, Filter, Action, Access, CreatedAt}) ->
-                          Filter1 = case Filter of
-                              {{Type, TypeValue}, Topic} ->
+            lists:map(fun({Login, Topic, Action, Access, CreatedAt}) ->
+                          Filter1 = case Login of
+                              {Type, TypeValue} ->
                                   [{type, Type}, {type_value, TypeValue}, {topic, Topic}];
-                              {Type, Topic} ->
+                              Type ->
                                   [{type, Type}, {topic, Topic}]
                           end,
                           Filter1 ++ [{action, Action}, {access, Access}, {created_at, CreatedAt}]
-                      end, ets:tab2list(emqx_acl))
+                      end, emqx_acl_mnesia_db:all_acls_export())
     end.
 
 -ifdef(EMQX_ENTERPRISE).
@@ -185,6 +185,7 @@ confs_to_binary(Confs) ->
 
 -endif.
 
+-dialyzer([{nowarn_function, [import_rules/1, import_rule/1]}]).
 import_rule(#{<<"id">> := RuleId,
               <<"rawsql">> := RawSQL,
               <<"actions">> := Actions,
@@ -195,9 +196,11 @@ import_rule(#{<<"id">> := RuleId,
              actions => map_to_actions(Actions),
              enabled => Enabled,
              description => Desc},
-    try emqx_rule_engine:create_rule(Rule)
-    catch throw:{resource_not_initialized, _ResId} ->
-        emqx_rule_engine:create_rule(Rule#{enabled => false})
+    case emqx_rule_engine:create_rule(Rule) of
+        {ok, _} -> ok;
+        {error, _} ->
+            _ = emqx_rule_engine:create_rule(Rule#{enabled => false}),
+            ok
     end.
 
 map_to_actions(Maps) ->
@@ -470,10 +473,9 @@ do_import_auth_mnesia(Auths) ->
     end.
 
 do_import_acl_mnesia_by_old_data(Acls) ->
-    case ets:info(emqx_acl) of
+    case ets:info(emqx_acl2) of
         undefined -> ok;
         _ ->
-            CreatedAt = erlang:system_time(millisecond),
             lists:foreach(fun(#{<<"login">> := Login,
                                 <<"topic">> := Topic,
                                 <<"allow">> := Allow,
@@ -482,11 +484,11 @@ do_import_acl_mnesia_by_old_data(Acls) ->
                                          true -> allow;
                                          false -> deny
                                      end,
-                            mnesia:dirty_write({emqx_acl, {{get_old_type(), Login}, Topic}, any_to_atom(Action), Allow1, CreatedAt})
+                            emqx_acl_mnesia_db:add_acl({get_old_type(), Login}, Topic, any_to_atom(Action), Allow1)
                           end, Acls)
     end.
 do_import_acl_mnesia(Acls) ->
-    case ets:info(emqx_acl) of
+    case ets:info(emqx_acl2) of
         undefined -> ok;
         _ ->
             lists:foreach(fun(Map = #{<<"action">> := Action,
@@ -498,7 +500,7 @@ do_import_acl_mnesia(Acls) ->
                                 Value ->
                                     {any_to_atom(maps:get(<<"type">>, Map)), Value}
                             end,
-                            emqx_acl_mnesia_cli:add_acl(Login, Topic, any_to_atom(Action), any_to_atom(Access))
+                            emqx_acl_mnesia_db:add_acl(Login, Topic, any_to_atom(Action), any_to_atom(Access))
                           end, Acls)
     end.
 

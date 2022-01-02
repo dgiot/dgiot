@@ -1,6 +1,6 @@
 {application, emqx_management,
  [{description, "EMQ X Management API and CLI"},
-  {vsn, "4.3.5"}, % strict semver, bump manually!
+  {vsn, "4.3.8"}, % strict semver, bump manually!
   {modules, []},
   {registered, [emqx_management_sup]},
   {applications, [kernel,stdlib,minirest]},
@@ -9,6 +9,6 @@
   {licenses, ["Apache-2.0"]},
   {maintainers, ["EMQ X Team <contact@emqx.io>"]},
   {links, [{"Homepage", "https://emqx.io/"},
-           {"Github", "https://gitee.com/fastdgiot/emqx-management"}
+           {"Github", "https://github.com/emqx/emqx-management"}
           ]}
  ]}.

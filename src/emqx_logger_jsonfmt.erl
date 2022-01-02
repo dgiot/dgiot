@@ -37,30 +37,30 @@
 
 -export_type([config/0]).
 
--elvis([{elvis_style, no_nested_try_catch, #{ignore => [emqx_logger_jsonfmt]}}]).
+-elvis([{elvis_style, no_nested_try_catch, #{ ignore => [emqx_logger_jsonfmt]}}]).
 
--type config() :: #{depth => pos_integer() | unlimited,
-report_cb => logger:report_cb(),
-single_line => boolean()}.
+-type config() :: #{depth       => pos_integer() | unlimited,
+                    report_cb   => logger:report_cb(),
+                    single_line => boolean()}.
 
 -define(IS_STRING(String), (is_list(String) orelse is_binary(String))).
 
 -spec format(logger:log_event(), config()) -> iodata().
 format(#{level := Level, msg := Msg, meta := Meta}, Config0) when is_map(Config0) ->
     Config = add_default_config(Config0),
-    [format(Msg, Meta#{level => Level}, Config), "\n"].
+    [format(Msg, Meta#{level => Level}, Config) , "\n"].
 
 format(Msg, Meta, Config) ->
     Data0 =
         try Meta#{msg => format_msg(Msg, Meta, Config)}
         catch
             C:R:S ->
-                Meta#{msg => "emqx_logger_jsonfmt_format_error"
-                    , fmt_raw_input => Msg
-                    , fmt_error => C
-                    , fmt_reason => R
-                    , fmt_stacktrace => S
-                }
+                Meta#{ msg => "emqx_logger_jsonfmt_format_error"
+                     , fmt_raw_input => Msg
+                     , fmt_error => C
+                     , fmt_reason => R
+                     , fmt_stacktrace => S
+                     }
         end,
     Data = maps:without([report_cb], Data0),
     Payload = jiffy:encode(json_obj(Data, Config)),
@@ -70,7 +70,7 @@ format(Msg, Meta, Config) ->
 format_msg({string, Chardata}, Meta, Config) ->
     format_msg({"~ts", [Chardata]}, Meta, Config);
 format_msg({report, _} = Msg, Meta, #{report_cb := Fun} = Config)
-    when is_function(Fun, 1); is_function(Fun, 2) ->
+  when is_function(Fun,1); is_function(Fun,2) ->
     format_msg(Msg, Meta#{report_cb => Fun}, maps:remove(report_cb, Config));
 format_msg({report, Report}, #{report_cb := Fun} = Meta, Config) when is_function(Fun, 1) ->
     case Fun(Report) of
@@ -79,10 +79,10 @@ format_msg({report, Report}, #{report_cb := Fun} = Meta, Config) when is_functio
         Map when is_map(Map) ->
             Map;
         Other ->
-            #{msg => "report_cb_bad_return"
-                , report_cb_fun => Fun
-                , report_cb_return => Other
-            }
+            #{ msg => "report_cb_bad_return"
+             , report_cb_fun => Fun
+             , report_cb_return => Other
+             }
     end;
 format_msg({report, Report}, #{report_cb := Fun}, Config) when is_function(Fun, 2) ->
     case Fun(Report, maps:with([depth, single_line], Config)) of
@@ -91,30 +91,30 @@ format_msg({report, Report}, #{report_cb := Fun}, Config) when is_function(Fun, 
                 unicode:characters_to_binary(Chardata, utf8)
             catch
                 _:_ ->
-                    #{msg => "report_cb_bad_return"
-                        , report_cb_fun => Fun
-                        , report_cb_return => Chardata
-                    }
+                    #{ msg => "report_cb_bad_return"
+                     , report_cb_fun => Fun
+                     , report_cb_return => Chardata
+                     }
             end;
         Map when is_map(Map) ->
             Map;
         Other ->
-            #{msg => "report_cb_bad_return"
-                , report_cb_fun => Fun
-                , report_cb_return => Other
-            }
+            #{ msg => "report_cb_bad_return"
+             , report_cb_fun => Fun
+             , report_cb_return => Other
+             }
     end;
 format_msg({Fmt, Args}, _Meta, Config) ->
     do_format_msg(Fmt, Args, Config).
 
 do_format_msg(Format0, Args, #{depth := Depth,
-    single_line := SingleLine
-}) ->
+                               single_line := SingleLine
+                              }) ->
     Format1 = io_lib:scan_format(Format0, Args),
     Format = reformat(Format1, Depth, SingleLine),
     Text0 = io_lib:build_text(Format, []),
     Text = case SingleLine of
-               true -> re:replace(Text0, ",?\r?\n\s*", ", ", [{return, list}, global, unicode]);
+               true -> re:replace(Text0, ",?\r?\n\s*",", ", [{return, list}, global, unicode]);
                false -> Text0
            end,
     trim(unicode:characters_to_binary(Text, utf8)).
@@ -130,7 +130,7 @@ reformat([#{control_char := C} = M | T], Depth, true) when C =:= $p ->
     [limit_depth(M#{width => 0}, Depth) | reformat(T, Depth, true)];
 reformat([#{control_char := C} = M | T], Depth, true) when C =:= $P ->
     [M#{width => 0} | reformat(T, Depth, true)];
-reformat([#{control_char := C} = M | T], Depth, Single) when C =:= $p; C =:= $w ->
+reformat([#{control_char := C}=M | T], Depth, Single) when C =:= $p; C =:= $w ->
     [limit_depth(M, Depth) | reformat(T, Depth, Single)];
 reformat([H | T], Depth, Single) ->
     [H | reformat(T, Depth, Single)];
@@ -138,7 +138,7 @@ reformat([], _, _) ->
     [].
 
 limit_depth(M0, unlimited) -> M0;
-limit_depth(#{control_char := C0, args := Args} = M0, Depth) ->
+limit_depth(#{control_char:=C0, args:=Args}=M0, Depth) ->
     C = C0 - ($a - $A), %To uppercase.
     M0#{control_char := C, args := Args ++ [Depth]}.
 
@@ -184,7 +184,7 @@ json(P, C) when is_port(P) -> json(port_to_list(P), C);
 json(F, C) when is_function(F) -> json(erlang:fun_to_list(F), C);
 json(B, Config) when is_binary(B) ->
     best_effort_unicode(B, Config);
-json(L, Config) when is_list(L), is_integer(hd(L)) ->
+json(L, Config) when is_list(L), is_integer(hd(L))->
     best_effort_unicode(L, Config);
 json(M, Config) when is_list(M), is_tuple(hd(M)), tuple_size(hd(M)) =:= 2 ->
     best_effort_json_obj(M, Config);
@@ -196,8 +196,8 @@ json(Term, Config) ->
     do_format_msg("~p", [Term], Config).
 
 json_obj(Data, Config) ->
-    maps:fold(fun(K, V, D) ->
-        json_kv(K, V, D, Config)
+    maps:fold(fun (K, V, D) ->
+                      json_kv(K, V, D, Config)
               end, maps:new(), Data).
 
 json_kv(mfa, {M, F, A}, Data, _Config) -> %% emqx/snabbkaffe
@@ -232,43 +232,43 @@ json_key(Term) ->
 no_crash_test_() ->
     Opts = [{numtests, 1000}, {to_file, user}],
     {timeout, 30,
-        fun() -> ?assert(proper:quickcheck(t_no_crash(), Opts)) end}.
+     fun() -> ?assert(proper:quickcheck(t_no_crash(), Opts)) end}.
 
 t_no_crash() ->
     ?FORALL({Level, Report, Meta, Config},
-        {p_level(), p_report(), p_meta(), p_config()},
-        t_no_crash_run(Level, Report, Meta, Config)).
+            {p_level(), p_report(), p_meta(), p_config()},
+            t_no_crash_run(Level, Report, Meta, Config)).
 
 t_no_crash_run(Level, Report, {undefined, Meta}, Config) ->
     t_no_crash_run(Level, Report, maps:from_list(Meta), Config);
 t_no_crash_run(Level, Report, {ReportCb, Meta}, Config) ->
     t_no_crash_run(Level, Report, maps:from_list([{report_cb, ReportCb} | Meta]), Config);
 t_no_crash_run(Level, Report, Meta, Config) ->
-    Input = #{level => Level
-        , msg => {report, Report}
-        , meta => filter(Meta)
-    },
+    Input = #{ level => Level
+             , msg => {report, Report}
+             , meta => filter(Meta)
+             },
     _ = format(Input, maps:from_list(Config)),
     true.
 
 %% assume top level Report and Meta are sane
 filter(Map) ->
     Keys = lists:filter(
-        fun(K) ->
-            try json_key(K), true
-            catch throw : {badkey, _} -> false
-            end
-        end, maps:keys(Map)),
+             fun(K) ->
+                     try json_key(K), true
+                     catch throw : {badkey, _} -> false
+                     end
+             end, maps:keys(Map)),
     maps:with(Keys, Map).
 
 p_report_cb() ->
-    proper_types:oneof([fun ?MODULE:report_cb_1/1
-        , fun ?MODULE:report_cb_2/2
-        , fun ?MODULE:report_cb_crash/2
-        , fun logger:format_otp_report/1
-        , fun logger:format_report/1
-        , format_report_undefined
-    ]).
+    proper_types:oneof([ fun ?MODULE:report_cb_1/1
+                       , fun ?MODULE:report_cb_2/2
+                       , fun ?MODULE:report_cb_crash/2
+                       , fun logger:format_otp_report/1
+                       , fun logger:format_report/1
+                       , format_report_undefined
+                       ]).
 
 report_cb_1(Input) -> {"~p", [Input]}.
 
@@ -279,8 +279,8 @@ report_cb_crash(_Input, _Config) -> error(report_cb_crash).
 p_kvlist() ->
     proper_types:list({
         proper_types:oneof([proper_types:atom(),
-            proper_types:binary()
-        ]), proper_types:term()}).
+                            proper_types:binary()
+                           ]), proper_types:term()}).
 
 %% meta type is 2-tuple, report_cb type, and some random key value pairs
 p_meta() ->
@@ -294,8 +294,8 @@ p_level() -> proper_types:oneof([info, debug, error, warning, foobar]).
 
 p_config() ->
     proper_types:shrink_list(
-        [{depth, p_limit()}
-            , {single_line, proper_types:boolean()}
-        ]).
+      [ {depth, p_limit()}
+      , {single_line, proper_types:boolean()}
+      ]).
 
 -endif.

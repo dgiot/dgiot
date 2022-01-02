@@ -157,7 +157,7 @@ on_action_republish(Selected, _Envs = #{
                 'TargetQoS' := TargetQoS,
                 'TopicTks' := TopicTks,
                 'PayloadTks' := PayloadTks
-            } }) ->
+            }}) ->
     ?LOG(debug, "[republish] republish to: ~p, Payload: ~p",
         [TargetTopic, Selected]),
     increase_and_publish(ActId,

@@ -32,6 +32,12 @@
                      conn_mod => emqx_connection,
                      receive_maximum => 100}}).
 
+-define(WAIT(PATTERN, TIMEOUT, RET),
+        fun() ->
+                receive PATTERN -> RET
+                after TIMEOUT -> error({timeout, ?LINE}) end
+        end()).
+
 %%--------------------------------------------------------------------
 %% CT callbacks
 %%--------------------------------------------------------------------
@@ -141,11 +147,8 @@ t_open_session_race_condition(_) ->
                      end
                    end,
     N = 1000,
-    [spawn(
-      fun() ->
-              spawn(OpenASession),
-              spawn(OpenASession)
-      end) || _ <- lists:seq(1, N)],
+    Pids = lists:flatten([[spawn_monitor(OpenASession), spawn_monitor(OpenASession)] ||
+                          _ <- lists:seq(1, N)]),
 
     WaitingRecv = fun _Wr(N1, N2, 0) ->
                           {N1, N2};
@@ -158,35 +161,120 @@ t_open_session_race_condition(_) ->
 
     {Succeeded, Failed} = WaitingRecv(0, 0, 2 * N),
     ct:pal("Race condition status: succeeded=~p failed=~p~n", [Succeeded, Failed]),
+    ?assertEqual(2 * N, length(Pids)),
+    WaitForDowns =
+        fun _Wd([{Pid, _Ref}]) -> Pid;
+            _Wd(Pids0) ->
+                receive
+                    {'DOWN', DownRef, process, DownPid, _} ->
+                        ?assert(lists:member({DownPid, DownRef}, Pids0)),
+                        _Wd(lists:delete({DownPid, DownRef}, Pids0))
+                after
+                    10000 ->
+                        exit(timeout)
+                end
+        end,
+    Winner = WaitForDowns(Pids),
 
     ?assertMatch([_], ets:lookup(emqx_channel, ClientId)),
-    [Pid] = emqx_cm:lookup_channels(ClientId),
-    ?assertMatch([_], ets:lookup(emqx_channel_conn, {ClientId, Pid})),
+    ?assertEqual([Winner], emqx_cm:lookup_channels(ClientId)),
+    ?assertMatch([_], ets:lookup(emqx_channel_conn, {ClientId, Winner})),
     ?assertMatch([_], ets:lookup(emqx_channel_registry, ClientId)),
 
-    exit(Pid, kill),
-    timer:sleep(100), %% TODO deterministic
+    exit(Winner, kill),
+    receive {'DOWN', _, process, Winner, _} -> ok end,
+    ignored = gen_server:call(emqx_cm, ignore, infinity), %% sync
     ?assertEqual([], emqx_cm:lookup_channels(ClientId)).
 
-t_discard_session(_) ->
+t_kick_session_discard_normal(_) ->
+    test_kick_session(discard, normal).
+
+t_kick_session_discard_shutdown(_) ->
+    test_kick_session(discard, shutdown).
+
+t_kick_session_discard_shutdown_with_reason(_) ->
+    test_kick_session(discard, {shutdown, discard}).
+
+t_kick_session_discard_timeout(_) ->
+    test_kick_session(discard, timeout).
+
+t_kick_session_discard_noproc(_) ->
+    test_kick_session(discard, noproc).
+
+t_kick_session_kick_normal(_) ->
+    test_kick_session(discard, normal).
+
+t_kick_session_kick_shutdown(_) ->
+    test_kick_session(discard, shutdown).
+
+t_kick_session_kick_shutdown_with_reason(_) ->
+    test_kick_session(discard, {shutdown, discard}).
+
+t_kick_session_kick_timeout(_) ->
+    test_kick_session(discard, timeout).
+
+t_kick_session_kick_noproc(_) ->
+    test_kick_session(discard, noproc).
+
+test_kick_session(Action, Reason) ->
     ClientId = rand_client_id(),
     #{conninfo := ConnInfo} = ?ChanInfo,
-    ok = emqx_cm:register_channel(ClientId, self(), ConnInfo),
+    FakeSessionFun =
+        fun Loop() ->
+                     receive
+                         {'$gen_call', From, A} when A =:= kick orelse
+                                                     A =:= discard ->
+                             case Reason of
+                                 normal ->
+                                     gen_server:reply(From, ok);
+                                 timeout ->
+                                     %% no response to the call
+                                     Loop();
+                                 _ ->
+                                     exit(Reason)
+                             end;
+                         Msg ->
+                             ct:pal("(~p) fake_session_discarded ~p", [Action, Msg]),
+                             Loop()
+                     end
+        end,
+    {Pid1, _} = spawn_monitor(FakeSessionFun),
+    {Pid2, _} = spawn_monitor(FakeSessionFun),
+    ok = emqx_cm:register_channel(ClientId, Pid1, ConnInfo),
+    ok = emqx_cm:register_channel(ClientId, Pid1, ConnInfo),
+    ok = emqx_cm:register_channel(ClientId, Pid2, ConnInfo),
+    ?assertEqual([Pid1, Pid2], lists:sort(emqx_cm:lookup_channels(ClientId))),
+    case Reason of
+        noproc -> exit(Pid1, kill), exit(Pid2, kill);
+        _ -> ok
+    end,
+    ok = case Action of
+             kick -> emqx_cm:kick_session(ClientId);
+             discard -> emqx_cm:discard_session(ClientId)
+         end,
+    case Reason =:= timeout orelse Reason =:= noproc of
+        true ->
+            ?assertEqual(killed, ?WAIT({'DOWN', _, process, Pid1, R}, 2_000, R)),
+            ?assertEqual(killed, ?WAIT({'DOWN', _, process, Pid2, R}, 2_000, R));
+        false ->
+            ?assertEqual(Reason, ?WAIT({'DOWN', _, process, Pid1, R}, 2_000, R)),
+            ?assertEqual(Reason, ?WAIT({'DOWN', _, process, Pid2, R}, 2_000, R))
+    end,
+    ok = flush_emqx_pool(),
+    ?assertEqual([], emqx_cm:lookup_channels(ClientId)).
 
-    ok = meck:new(emqx_connection, [passthrough, no_history]),
-    ok = meck:expect(emqx_connection, call, fun(_, _) -> ok end),
-    ok = meck:expect(emqx_connection, call, fun(_, _, _) -> ok end),
-    ok = emqx_cm:discard_session(ClientId),
-    ok = emqx_cm:register_channel(ClientId, self(), ConnInfo),
-    ok = emqx_cm:discard_session(ClientId),
-    ok = emqx_cm:unregister_channel(ClientId),
-    ok = emqx_cm:register_channel(ClientId, self(), ConnInfo),
-    ok = emqx_cm:discard_session(ClientId),
-    ok = meck:expect(emqx_connection, call, fun(_, _) -> error(testing) end),
-    ok = meck:expect(emqx_connection, call, fun(_, _, _) -> error(testing) end),
-    ok = emqx_cm:discard_session(ClientId),
-    ok = emqx_cm:unregister_channel(ClientId),
-    ok = meck:unload(emqx_connection).
+%% Channel deregistration is delegated to emqx_pool as a sync tasks.
+%% The emqx_pool is pool of workers, and there is no way to know
+%% which worker was picked for the last deregistration task.
+%% This help function creates a large enough number of async tasks
+%% to sync with the pool workers.
+%% The number of tasks should be large enough to ensure all workers have
+%% the chance to work on at least one of the tasks.
+flush_emqx_pool() ->
+    Self = self(),
+    L = lists:seq(1, 1000),
+    lists:foreach(fun(I) -> emqx_pool:async_submit(fun() -> Self ! {done, I} end, []) end, L),
+    lists:foreach(fun(I) -> receive {done, I} -> ok end end, L).
 
 t_discard_session_race(_) ->
     ClientId = rand_client_id(),
@@ -218,27 +306,6 @@ t_takeover_session(_) ->
     timer:sleep(100),
     {ok, emqx_connection, _, test} = emqx_cm:takeover_session(<<"clientid">>),
     emqx_cm:unregister_channel(<<"clientid">>).
-
-t_kick_session(_) ->
-    Info = #{conninfo := ConnInfo} = ?ChanInfo,
-    ok = meck:new(emqx_connection, [passthrough, no_history]),
-    ok = meck:expect(emqx_connection, call, fun(_, _) -> test end),
-    ok = meck:expect(emqx_connection, call, fun(_, _, _) -> test end),
-    {error, not_found} = emqx_cm:kick_session(<<"clientid">>),
-    ok = emqx_cm:register_channel(<<"clientid">>, self(), ConnInfo),
-    ok = emqx_cm:insert_channel_info(<<"clientid">>, Info, []),
-    test = emqx_cm:kick_session(<<"clientid">>),
-    erlang:spawn_link(
-        fun() ->
-            ok = emqx_cm:register_channel(<<"clientid">>, self(), ConnInfo),
-            ok = emqx_cm:insert_channel_info(<<"clientid">>, Info, []),
-
-            timer:sleep(1000)
-        end),
-    ct:sleep(100),
-    test = emqx_cm:kick_session(<<"clientid">>),
-    ok = emqx_cm:unregister_channel(<<"clientid">>),
-    ok = meck:unload(emqx_connection).
 
 t_all_channels(_) ->
     ?assertEqual(true, is_list(emqx_cm:all_channels())).

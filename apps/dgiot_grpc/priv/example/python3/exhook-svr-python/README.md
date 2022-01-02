@@ -4,7 +4,7 @@ This is a demo server written in python for exhook
 
 ## Prerequisites
 
-- [Python](https://www.python.org) 3.5 or higher
+- [Python]() 3.5 or higher
 - pip version 9.0.1 or higher
 
 ## Run
