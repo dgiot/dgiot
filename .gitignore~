@@ -46,8 +46,6 @@ dist.zip
 scripts/git-token
 etc/*.seg
 _upgrade_base/
-./rebar.config
-./rebar.config.erl
 data/
 ci.sh
 *.ipr
