@@ -99,6 +99,7 @@ inject(Profile) ->
 %% list the profile/lib dir to get all apps
 list_apps(LibDir) ->
   Apps = filelib:wildcard("*", LibDir),
+  io:format(standard_error, "~p", [Profile]),
   lists:foldl(fun(App, Acc) -> [App || is_app(LibDir, App)] ++ Acc end, [], Apps).
 
 is_app(_LibDir, "." ++ _) -> false; %% ignore hidden dir
