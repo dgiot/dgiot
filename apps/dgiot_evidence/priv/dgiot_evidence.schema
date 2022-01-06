@@ -3,6 +3,6 @@
 %%--------------------------------------------------------------------
 
 {mapping, "gofastdfs.path", "dgiot_evidence.gofastdfs_path", [
-{default, "/data/dgiot/go_fastdfs/files/dgiot_file/pump_pytoh/"},
+{default, "/data/dgiot/go_fastdfs/files/dgiot_file/pump_python/"},
 {datatype, string}
 ]}.

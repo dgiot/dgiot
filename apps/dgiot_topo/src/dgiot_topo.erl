@@ -81,9 +81,11 @@ get_topo(Arg, _Context) ->
                     NewStage =
                         lists:foldl(fun(View, Acc) ->
                             case View of
-                                #{<<"objectId">> := _ViewId1, <<"data">> := #{<<"konva">> := #{<<"Stage">> := #{<<"children">> := Children}}}} when length(Children) > 0 ->
+                                #{<<"objectId">> := ViewId1, <<"data">> := #{<<"konva">> := #{<<"Stage">> := #{<<"children">> := Children}}}} when length(Children) > 0 ->
                                     NewView = get_view(View, Devaddr, ProductId, Type),
-                                    NewView;
+                                    NewView#{<<"viewid">> => ViewId1};
+                                #{<<"objectId">> := ViewId2} ->
+                                    Acc#{<<"viewid">> => ViewId2};
                                 _ ->
                                     Acc
                             end
@@ -96,7 +98,7 @@ get_topo(Arg, _Context) ->
             case dgiot_parse:get_object(<<"View">>, ViewId) of
                 {ok, #{<<"data">> := #{<<"konva">> := #{<<"Stage">> := #{<<"children">> := Children}}}} = View} when length(Children) > 0 ->
                     NewView = get_view(View, Devaddr, ProductId, Type),
-                    {ok, #{<<"code">> => 200, <<"message">> => <<"SUCCESS">>, <<"data">> => NewView}};
+                    {ok, #{<<"code">> => 200, <<"message">> => <<"SUCCESS">>, <<"data">> => NewView#{<<"viewid">> => ViewId}}};
                 _ ->
                     {ok, #{<<"code">> => 204, <<"message">> => <<"没有组态"/utf8>>}}
             end
@@ -134,37 +136,62 @@ get_view(View, Devaddr, ProductId, Type) ->
 
 get_konva_thing(Arg, _Context) ->
     #{<<"productid">> := ProductId,
-        <<"shapeid">> := Shapeid
+        <<"shapeid">> := Shapeid,
+        <<"viewid">> := ViewId
     } = Arg,
-    case dgiot_parse:get_object(<<"Product">>, ProductId) of
-        {ok, #{<<"config">> := #{<<"konva">> := #{<<"Stage">> := #{<<"children">> := Children}}}, <<"thing">> := #{<<"properties">> := Properties}}} ->
-            put({self(), shapeids}, []),
-            get_children(<<"web">>, ProductId, Children, ProductId, <<"KonvatId">>, <<"Shapeid">>, <<"Identifier">>, <<"Name">>),
-            Shapids = get({self(), shapeids}),
-            Nobound =
-                lists:foldl(fun(Prop, Acc) ->
-                    Identifier = maps:get(<<"identifier">>, Prop),
-                    case lists:member(Identifier, Shapids) of
-                        false ->
-                            Acc ++ [Prop];
-                        true ->
-                            Acc
-                    end
-                            end, [], Properties),
-            KonvaThing =
-                lists:foldl(fun(Prop, Acc) ->
-                    Identifier = maps:get(<<"identifier">>, Prop),
-                    case Shapeid of
-                        Identifier ->
-                            Prop;
-                        _ ->
-                            Acc
-                    end
-                            end, #{}, Properties),
-            {ok, #{<<"code">> => 200, <<"message">> => <<"SUCCESS">>, <<"data">> => #{<<"nobound">> => Nobound, <<"konvathing">> => KonvaThing}}};
+    Children =
+        case ViewId of
+            undefined ->
+                case dgiot_parse:query_object(<<"View">>, #{<<"limit">> => 1, <<"where">> => #{<<"key">> => ProductId, <<"type">> => <<"topo">>, <<"class">> => <<"Product">>}}) of
+                    {ok, #{<<"results">> := Views}} when length(Views) > 0 ->
+                        [#{<<"data">> := #{<<"konva">> := #{<<"Stage">> := #{<<"children">> := Children1}}}} | _] = Views,
+                        Children1;
+                    _ ->
+                        []
+                end;
+            _ ->
+                case dgiot_parse:get_object(<<"View">>, ViewId) of
+                    {ok, #{<<"data">> := #{<<"konva">> := #{<<"Stage">> := #{<<"children">> := Children2}}}}} when length(Children2) > 0 ->
+                        Children2;
+                    _ ->
+                        []
+                end
+        end,
+    case length(Children) > 0 of
+        true ->
+            case dgiot_parse:get_object(<<"Product">>, ProductId) of
+                {ok, #{<<"thing">> := #{<<"properties">> := Properties}}} ->
+                    put({self(), shapeids}, []),
+                    get_children(<<"web">>, ProductId, Children, ProductId, <<"KonvatId">>, <<"Shapeid">>, <<"Identifier">>, <<"Name">>),
+                    Shapids = get({self(), shapeids}),
+                    Nobound =
+                        lists:foldl(fun(Prop, Acc) ->
+                            Identifier = maps:get(<<"identifier">>, Prop),
+                            case lists:member(Identifier, Shapids) of
+                                false ->
+                                    Acc ++ [Prop];
+                                true ->
+                                    Acc
+                            end
+                                    end, [], Properties),
+                    KonvaThing =
+                        lists:foldl(fun(Prop, Acc) ->
+                            Identifier = maps:get(<<"identifier">>, Prop),
+                            case Shapeid of
+                                Identifier ->
+                                    Prop;
+                                _ ->
+                                    Acc
+                            end
+                                    end, #{}, Properties),
+                    {ok, #{<<"code">> => 200, <<"message">> => <<"SUCCESS">>, <<"data">> => #{<<"nobound">> => Nobound, <<"konvathing">> => KonvaThing}}};
+                _ ->
+                    {ok, #{<<"code">> => 204, <<"message">> => <<"没有组态"/utf8>>}}
+            end;
         _ ->
             {ok, #{<<"code">> => 204, <<"message">> => <<"没有组态"/utf8>>}}
     end.
+
 
 edit_konva(Arg, _Context) ->
     #{<<"productid">> := ProductId,
@@ -172,21 +199,42 @@ edit_konva(Arg, _Context) ->
         <<"identifier">> := Identifier,
         <<"name">> := Name
     } = Arg,
-    case dgiot_parse:get_object(<<"Product">>, ProductId) of
-        {ok, #{<<"config">> := #{<<"konva">> := #{<<"Stage">> := #{<<"children">> := Children} = Stage} = Konva} = Config}} ->
-            put({self(), shapeids}, []),
-            NewChildren = get_children(<<"web">>, ProductId, Children, ProductId, ProductId, Shapeid, Identifier, Name),
-            NewConfig = Config#{<<"konva">> => Konva#{<<"Stage">> => Stage#{<<"children">> => NewChildren}}},
-            case dgiot_parse:update_object(<<"Product">>, ProductId, #{<<"config">> => NewConfig}) of
-                {ok, Message} ->
-                    {ok, #{<<"code">> => 200, <<"message">> => Message}};
-                {error, Message} ->
-                    {ok, Message};
+    case maps:find(<<"viewid">>, Arg) of
+        error ->
+            case dgiot_parse:query_object(<<"View">>, #{<<"limit">> => 1, <<"where">> => #{<<"key">> => ProductId, <<"type">> => <<"topo">>, <<"class">> => <<"Product">>}}) of
+                {ok, #{<<"results">> := Views}} when length(Views) > 0 ->
+                    [#{<<"objectId">> := ViewId1, <<"data">> := #{<<"konva">> := #{<<"Stage">> := #{<<"children">> := Children1} = Stage} = Konva} = Data} | _] = Views,
+                    put({self(), shapeids}, []),
+                    NewChildren = get_children(<<"web">>, ProductId, Children1, ProductId, ProductId, Shapeid, Identifier, Name),
+                    NewData = Data#{<<"konva">> => Konva#{<<"Stage">> => Stage#{<<"children">> => NewChildren}}},
+                    case dgiot_parse:update_object(<<"View">>, ViewId1, #{<<"data">> => NewData}) of
+                        {ok, Message} ->
+                            {ok, #{<<"code">> => 200, <<"message">> => Message}};
+                        {error, Message} ->
+                            {ok, Message};
+                        _ ->
+                            {ok, #{<<"code">> => 500, <<"message">> => <<"error">>}}
+                    end;
                 _ ->
-                    {ok, #{<<"code">> => 500, <<"message">> => <<"error">>}}
+                    {ok, #{<<"code">> => 101, <<"message">> => <<ProductId/binary, " not found">>}}
             end;
-        _ ->
-            {ok, #{<<"code">> => 101, <<"message">> => <<ProductId/binary, " not found">>}}
+        {ok, ViewId} ->
+            case dgiot_parse:get_object(<<"View">>, ViewId) of
+                {ok, #{<<"data">> := #{<<"konva">> := #{<<"Stage">> := #{<<"children">> := Children2} = Stage} = Konva} = Data}} when length(Children2) > 0 ->
+                    put({self(), shapeids}, []),
+                    NewChildren = get_children(<<"web">>, ProductId, Children2, ProductId, ProductId, Shapeid, Identifier, Name),
+                    NewData = Data#{<<"konva">> => Konva#{<<"Stage">> => Stage#{<<"children">> => NewChildren}}},
+                    case dgiot_parse:update_object(<<"View">>, ViewId, #{<<"data">> => NewData}) of
+                        {ok, Message} ->
+                            {ok, #{<<"code">> => 200, <<"message">> => Message}};
+                        {error, Message} ->
+                            {ok, Message};
+                        _ ->
+                            {ok, #{<<"code">> => 500, <<"message">> => <<"error">>}}
+                    end;
+                _ ->
+                    {ok, #{<<"code">> => 101, <<"message">> => <<ProductId/binary, " not found">>}}
+            end
     end.
 
 get_children(Type, ProductId, Children, DeviceId, KonvatId, Shapeid, Identifier, Name) ->

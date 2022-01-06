@@ -1,0 +1,7 @@
+%%-*- mode: erlang -*-
+%% dgiot_mqtt config mapping
+
+{mapping, "auth.password_hash", "dgiot_mqtt.password_hash", [
+  {default, sha256},
+  {datatype, {enum, [plain, md5, sha, sha256, sha512]}}
+]}.
