@@ -23,39 +23,39 @@
 
 -logger_header("[Hooks]").
 
--export([ start_link/0
-        , stop/0
-        ]).
+-export([start_link/0
+    , stop/0
+]).
 
 %% Hooks API
--export([ add/2
-        , add/3
-        , add/4
-        , put/2
-        , del/2
-        , run/2
-        , run_fold/3
-        , lookup/1
-        ]).
+-export([add/2
+    , add/3
+    , add/4
+    , put/2
+    , del/2
+    , run/2
+    , run_fold/3
+    , lookup/1
+]).
 
--export([ callback_action/1
-        , callback_filter/1
-        , callback_priority/1
-        ]).
+-export([callback_action/1
+    , callback_filter/1
+    , callback_priority/1
+]).
 
 %% gen_server Function Exports
--export([ init/1
-        , handle_call/3
-        , handle_cast/2
-        , handle_info/2
-        , terminate/2
-        , code_change/3
-        ]).
+-export([init/1
+    , handle_call/3
+    , handle_cast/2
+    , handle_info/2
+    , terminate/2
+    , code_change/3
+]).
 
--export_type([ hookpoint/0
-             , action/0
-             , filter/0
-             ]).
+-export_type([hookpoint/0
+    , action/0
+    , filter/0
+]).
 
 %% Multiple callbacks can be registered on a hookpoint.
 %% The execution order depends on the priority value:
@@ -70,15 +70,15 @@
 -type(filter() :: function() | mfargs()).
 
 -record(callback, {
-          action :: action(),
-          filter :: maybe(filter()),
-          priority :: integer()
-         }).
+    action :: action(),
+    filter :: maybe(filter()),
+    priority :: integer()
+}).
 
 -record(hook, {
-          name :: hookpoint(),
-          callbacks :: list(#callback{})
-         }).
+    name :: hookpoint(),
+    callbacks :: list(#callback{})
+}).
 
 -define(TAB, ?MODULE).
 -define(SERVER, ?MODULE).
@@ -86,7 +86,7 @@
 -spec(start_link() -> startlink_ret()).
 start_link() ->
     gen_server:start_link({local, ?SERVER},
-                          ?MODULE, [], [{hibernate_after, 1000}]).
+        ?MODULE, [], [{hibernate_after, 1000}]).
 
 -spec(stop() -> ok).
 stop() ->
@@ -103,7 +103,7 @@ callback_action(#callback{action = A}) -> A.
 callback_filter(#callback{filter = F}) -> F.
 
 %% @doc Get callback priority.
-callback_priority(#callback{priority= P}) -> P.
+callback_priority(#callback{priority = P}) -> P.
 
 %%--------------------------------------------------------------------
 %% Hooks API
@@ -117,7 +117,7 @@ add(HookPoint, Action) when is_function(Action); is_tuple(Action) ->
     add(HookPoint, #callback{action = Action, priority = 0}).
 
 -spec(add(hookpoint(), action(), filter() | integer() | list())
-      -> ok_or_error(already_exists)).
+        -> ok_or_error(already_exists)).
 add(HookPoint, Action, InitArgs) when is_function(Action), is_list(InitArgs) ->
     add(HookPoint, #callback{action = {Action, InitArgs}, priority = 0});
 add(HookPoint, Action, Filter) when is_function(Filter); is_tuple(Filter) ->
@@ -126,7 +126,7 @@ add(HookPoint, Action, Priority) when is_integer(Priority) ->
     add(HookPoint, #callback{action = Action, priority = Priority}).
 
 -spec(add(hookpoint(), action(), filter(), integer())
-      -> ok_or_error(already_exists)).
+        -> ok_or_error(already_exists)).
 add(HookPoint, Action, Filter, Priority) when is_integer(Priority) ->
     add(HookPoint, #callback{action = Action, filter = Filter, priority = Priority}).
 
@@ -144,12 +144,12 @@ del(HookPoint, Action) ->
     gen_server:cast(?SERVER, {del, HookPoint, Action}).
 
 %% @doc Run hooks.
--spec(run(atom(), list(Arg::term())) -> ok).
+-spec(run(atom(), list(Arg :: term())) -> ok).
 run(HookPoint, Args) ->
     do_run(lookup(HookPoint), Args).
 
 %% @doc Run hooks with Accumulator.
--spec(run_fold(atom(), list(Arg::term()), Acc::term()) -> Acc::term()).
+-spec(run_fold(atom(), list(Arg :: term()), Acc :: term()) -> Acc :: term()).
 run_fold(HookPoint, Args, Acc) ->
     do_run_fold(lookup(HookPoint), Args, Acc).
 
@@ -171,9 +171,9 @@ do_run_fold([#callback{action = Action, filter = Filter} | Callbacks], Args, Acc
         %% stop the hook chain
         stop -> Acc;
         %% stop the hook chain with NewAcc
-        {stop, NewAcc}   -> NewAcc;
+        {stop, NewAcc} -> NewAcc;
         %% continue the hook chain with NewAcc
-        {ok, NewAcc}   -> do_run_fold(Callbacks, Args, NewAcc);
+        {ok, NewAcc} -> do_run_fold(Callbacks, Args, NewAcc);
         %% continue the hook chain, in following cases:
         %%   - the filter validation failed with 'false'
         %%   - the callback returns any term other than 'stop' or {'stop', NewAcc}
@@ -182,12 +182,14 @@ do_run_fold([#callback{action = Action, filter = Filter} | Callbacks], Args, Acc
 do_run_fold([], _Args, Acc) ->
     Acc.
 
--spec(filter_passed(filter(), Args::term()) -> true | false).
+-spec(filter_passed(filter(), Args :: term()) -> true | false).
 filter_passed(undefined, _Args) -> true;
 filter_passed(Filter, Args) ->
     execute(Filter, Args).
 
 safe_execute(Fun, Args) ->
+%%    io:format("Fun = ~p.~n", [Fun]),
+%%    io:format("Args = ~p.~n", [Args]),
     try execute(Fun, Args) of
         Result -> Result
     catch
@@ -268,10 +270,10 @@ add_callback(C, Callbacks) ->
     add_callback(C, Callbacks, []).
 
 add_callback(C, [], Acc) ->
-    lists:reverse([C|Acc]);
-add_callback(C1 = #callback{priority = P1}, [C2 = #callback{priority = P2}|More], Acc)
+    lists:reverse([C | Acc]);
+add_callback(C1 = #callback{priority = P1}, [C2 = #callback{priority = P2} | More], Acc)
     when P1 =< P2 ->
-    add_callback(C1, More, [C2|Acc]);
+    add_callback(C1, More, [C2 | Acc]);
 add_callback(C1, More, Acc) ->
     lists:append(lists:reverse(Acc), [C1 | More]).
 

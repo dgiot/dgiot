@@ -124,59 +124,80 @@ def draw(flow1, head1, headparameters, power1, powerparameters, effect, effectpa
     nm = math.ceil(max(effect))
     nmin = math.floor(min(effect))
 
-    fig = plt.figure(1)
+    fig = plt.figure(figsize=(9, 5))
     host = HostAxes(fig, [0.15, 0.1, 0.65, 0.8])
     par1 = ParasiteAxes(host, sharex=host)
     par2 = ParasiteAxes(host, sharex=host)
     host.parasites.append(par1)
     host.parasites.append(par2)
-    host.set_ylabel('扬程')
-    host.set_xlabel('流量')
+    host.set_ylabel('效率(E)(%)', color="blue")
+    host.set_xlabel('流量(Q)(m3/h)')
     host.axis['right'].set_visible(False)
     par1.axis['right'].set_visible(True)
-    par1.set_ylabel('功率')
+    par1.set_ylabel('功率(P)(kW)', color="red")
 
     par1.axis['right'].major_ticklabels.set_visible(True)
     par1.axis['right'].label.set_visible(True)
 
-    par2.set_ylabel('扬程')
+    par2.set_ylabel('效率(E)(%)', color="blue")
     offset = (60, 0)
     new_axisline = par2._grid_helper.new_fixed_axis
     par2.axis['right2'] = new_axisline(loc='right', axes=par2, offset=offset)
     fig.add_axes(host)
-    host.set_xlim(0, fm + 1)
+    # host.set_xlim(0, fm + 1)
+    plt.xticks(range(0, fm + 1, 1))
     host.set_ylim(0, hm + 5)
 
-    host.set_xlabel('流量')
-    host.set_ylabel('功率')
-    host.set_ylabel('效率')
+    host.set_xlabel('流量(Q)(m3/h)')
+    host.set_ylabel('功率(P)(kW)', color="red")
+    host.set_ylabel('扬程(H)(m)', color="black")
     x = np.linspace(0, fm, 500)
     y = headparameters[0] * x ** 2 + headparameters[1] * x + headparameters[2]
     p1, = host.plot(x, y, label="HQ拟合曲线", color="black")
-    host.scatter(flow1, head1, label="HQ离散数据")
+    host.scatter(flow1, head1, c='k', label="HQ离散数据")
     x1 = np.linspace(0, fm, 500)
     y1 = powerparameters[0] * x ** 2 + powerparameters[1] * x + powerparameters[2]
     p2, = par1.plot(x, y1, label="PQ拟合曲线", color="red")
-    par1.scatter(flow1, power1, label="PQ离散数据")
+    par1.scatter(flow1, power1, c='r', label="PQ离散数据")
     x2 = np.linspace(0, fm, 500)
     y2 = effectparameters[0] * x ** 2 + effectparameters[1] * x + effectparameters[2]
     p3, = par2.plot(x, y2, label="EQ拟合曲线", color="blue")
-    par2.scatter(flow1, effect, label="EQ离散数据")
+    par2.scatter(flow1, effect, c='b', label="EQ离散数据")
     par1.set_ylim(0, pm * 2)
     par2.set_ylim(0, nm + 5)
-    host.legend()
+    # host.legend()
     par2.axis['right2'].major_ticklabels.set_color(p3.get_color())  # 刻度值颜色
     par2.axis['right2'].set_axisline_style('-|>', size=1.5)  # 轴的形状色
+
+    par1.axis['right'].major_ticklabels.set_color(p2.get_color())  # 刻度值颜色
+
+    if 'dgiot_testing_equipment_flowSet' in params:
+        flowSet = float(params['dgiot_testing_equipment_flowSet'])
+        if flowSet > 1 and flowSet < math.ceil(max(flow1)):
+            par2.axvline(flowSet, color='orange')
+            x_begin = flowSet - 0.5
+            x_end = flowSet + 0.5
+            fepoints = [t for t in zip(flow1, effect) if x_begin <= t[0] <= x_end]
+            fhpoints = [t for t in zip(flow1, head1) if x_begin <= t[0] <= x_end]
+            fppoints = [t for t in zip(flow1, power1) if x_begin <= t[0] <= x_end]
+            par2.text(fepoints[0][0], fepoints[0][1] + 0.5,
+                      ("流量" + str(fepoints[0][0]) + " m3/h", "效率" + str(fepoints[0][1]) + " %"),
+                      ha='center', color='b')
+            host.text(fhpoints[0][0], fhpoints[0][1] + 1,
+                      ("流量" + str(fhpoints[0][0]) + " m3/h", "扬程" + str(fhpoints[0][1]) + " m"),
+                      ha='center', color='k')
+            par1.text(fppoints[0][0], fppoints[0][1] + 0.1,
+                      ("流量" + str(fppoints[0][0]) + " m3/h", "功率" + str(fppoints[0][1]) + " kW"),
+                      ha='center', color='r')
 
     # 解决使用matplotliblib画图的时候出现中文或者是负号无法显示的情况
     mpl.rcParams['font.sans-serif'] = ['SimHei']
     mpl.rcParams['axes.unicode_minus'] = False
 
     plt.title("性能曲线拟合数据")
-    plt.legend(loc="best")
+    plt.legend(loc=9, bbox_to_anchor=(-0.142, 1.1), borderaxespad=0., fontsize=8)
     # 获取当前时间
     # localtime = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
-
     filename = params['path'] + params['name']
     # print(filename)
     plt.savefig(filename)
