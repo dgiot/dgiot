@@ -111,9 +111,7 @@ def calculate(data_x, parameters):
         datay.append(parameters[2] + parameters[1] * x + parameters[0] * x * x)
     return datay
 
-
 """完成函数的绘制"""
-
 
 def draw(flow1, head1, headparameters, power1, powerparameters, effect, effectparameters, params):
     fm = math.ceil(max(flow1))
@@ -144,8 +142,8 @@ def draw(flow1, head1, headparameters, power1, powerparameters, effect, effectpa
     new_axisline = par2._grid_helper.new_fixed_axis
     par2.axis['right2'] = new_axisline(loc='right', axes=par2, offset=offset)
     fig.add_axes(host)
-    # host.set_xlim(0, fm + 1)
-    plt.xticks(range(0, fm + 1, 1))
+    host.set_xlim(0, fm + 1)
+    # plt.xticks(range(0, fm + 1, 1))
     host.set_ylim(0, hm + 5)
 
     host.set_xlabel('流量(Q)(m3/h)')
@@ -170,16 +168,16 @@ def draw(flow1, head1, headparameters, power1, powerparameters, effect, effectpa
     par2.axis['right2'].set_axisline_style('-|>', size=1.5)  # 轴的形状色
 
     par1.axis['right'].major_ticklabels.set_color(p2.get_color())  # 刻度值颜色
-
     if 'dgiot_testing_equipment_flowSet' in params:
         flowSet = float(params['dgiot_testing_equipment_flowSet'])
-        if flowSet > 1 and flowSet < math.ceil(max(flow1)):
-            par2.axvline(flowSet, color='orange')
-            x_begin = flowSet - 0.5
-            x_end = flowSet + 0.5
-            fepoints = [t for t in zip(flow1, effect) if x_begin <= t[0] <= x_end]
-            fhpoints = [t for t in zip(flow1, head1) if x_begin <= t[0] <= x_end]
-            fppoints = [t for t in zip(flow1, power1) if x_begin <= t[0] <= x_end]
+        par2.axvline(flowSet, color='orange')
+        flowSetclose = find_close(flow1, flowSet)
+        x_begin = flowSetclose
+        x_end = flowSetclose
+        fepoints = [t for t in zip(flow1, effect) if x_begin <= t[0] <= x_end]
+        fhpoints = [t for t in zip(flow1, head1) if x_begin <= t[0] <= x_end]
+        fppoints = [t for t in zip(flow1, power1) if x_begin <= t[0] <= x_end]
+        if len(fepoints) > 0:
             par2.text(fepoints[0][0], fepoints[0][1] + 0.5,
                       ("流量" + str(fepoints[0][0]) + " m3/h", "效率" + str(fepoints[0][1]) + " %"),
                       ha='center', color='b')
@@ -204,6 +202,25 @@ def draw(flow1, head1, headparameters, power1, powerparameters, effect, effectpa
     # plt.show()
     return (filename)
 
+def find_close(arr, e):
+    low = 0
+    high = len(arr) - 1
+    idx = -1
+
+    while low <= high:
+        mid = int((low + high) / 2)
+        if e == arr[mid] or mid == low:
+            idx = mid
+            break
+        elif e > arr[mid]:
+            low = mid
+        elif e < arr[mid]:
+            high = mid
+
+    if idx + 1 < len(arr) and abs(e - arr[idx]) > abs(e - arr[idx + 1]):
+        idx += 1
+
+    return arr[idx]
 
 def main(argv):
     params = json.loads(base64.b64decode(argv).decode("utf-8"))
