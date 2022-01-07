@@ -1710,6 +1710,7 @@ case80_specail_object_19_1_0_write(Config) ->
                     <<"value">> => base64:encode(<<12345:32>>)
                 }
                },
+
     CommandJson = emqx_json:encode(Command),
     test_mqtt_broker:publish(CommandTopic, CommandJson, 0),
     timer:sleep(50),

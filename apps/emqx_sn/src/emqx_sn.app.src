@@ -1,6 +1,6 @@
 {application, emqx_sn,
  [{description, "EMQ X MQTT-SN Plugin"},
-  {vsn, "4.3.0"}, % strict semver, bump manually!
+  {vsn, "4.3.4"}, % strict semver, bump manually!
   {modules, []},
   {registered, []},
   {applications, [kernel,stdlib,esockd]},
@@ -9,6 +9,6 @@
   {licenses, ["Apache-2.0"]},
   {maintainers, ["EMQ X Team <contact@emqx.io>"]},
   {links, [{"Homepage", "https://emqx.io/"},
-           {"Github", "https://gitee.com/fastdgiot/emqx-sn"}
+           {"Github", "https://github.com/emqx/emqx-sn"}
           ]}
  ]}.

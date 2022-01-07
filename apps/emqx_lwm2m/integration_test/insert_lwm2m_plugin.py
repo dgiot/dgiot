@@ -25,27 +25,28 @@ def change_makefile():
                 '\n    {copy, "deps/emqx_lwm2m/lwm2m_xml", "etc/"},')
         f.write(data)
         f.close()
-
-
-
+        
+        
+        
 def change_lwm2m_config():
     f = open("emqx-rel/deps/emqx_lwm2m/etc/emqx_lwm2m.conf", "rb")
     data = f.read()
     f.close()
-
+    
     if data.find("5683") > 0:
         data = data.replace("5683", "5683")
         f = open("emqx-rel/deps/emqx_lwm2m/etc/emqx_lwm2m.conf", "wb")
         f.write(data)
         f.close()
-
-
+    
+    
 
 def main():
     change_makefile()
     change_lwm2m_config()
-
-
+    
+    
 if __name__ == "__main__":
     main()
-
+    
+    

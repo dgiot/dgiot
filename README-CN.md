@@ -4,6 +4,8 @@
 [![Docker Pulls](https://img.shields.io/docker/pulls/dgiot/dgiot)](https://hub.docker.com/r/dgiot/dgiot)
 [![Community](https://img.shields.io/badge/Community-DGIOT-yellow)](https://tech.iotn2n.com)
 [![QQ群346566935](https://img.shields.io/badge/QQ群-346566935-brightgreen)](https://jq.qq.com/?_wv=1027&k=LipWZvDe)
+[![star](https://gitee.com/dgiiot/dgiot/badge/star.svg?theme=gvp)](https://gitee.com/dgiiot/dgiot/stargazers)
+[![dgiot/Gitee Feedback](https://gitee.com/dgiiot/dgiot/widgets/widget_card.svg?colors=colors=ffffff,1e252b,323d47,455059,d7deea,99a0ae)](https://gitee.com/dgiiot/dgiot)
 
 [English](./README.md) | [中文](./README-CN.md) | [日本語](./README-JP.md) | [русский](./README-RU.md)|
 [github](https://github.com/dgiot?from=git)|[gitee](https://www.iotn2n.com?from=git)|[官网](https://www.iotn2n.com?from=git)|[博客](https://tech.iotn2n.com?from=git)|[体验](https://prod.iotn2n.com?from=git)|[微信群](#jump)
@@ -34,9 +36,14 @@ DG-IoT是国内首款轻量级开源工业物联网平台，我们致力于提�
 |[智慧园区](https://gitee.com/dgiiot/dgiot/wikis/%E8%A1%8C%E4%B8%9A%E6%A1%88%E4%BE%8B/%E6%99%BA%E6%85%A7%E5%9B%AD%E5%8C%BA)|[云云对接](https://gitee.com/dgiiot/dgiot/wikis/%E5%AE%9E%E6%88%98%E6%8E%A5%E5%85%A5/%E4%BA%91%E4%BA%91%E5%AF%B9%E6%8E%A5/%E6%A6%82%E8%BF%B0)|智慧场馆|
 
 ## 快速体验与微信群
-|<span id="jump">技术支持微信群2群</span>|小程序|公众号|[电脑端](https://prod.iotn2n.com/)|账号|密码|
-|---|---|---|---|---|---|
-|![image](https://user-images.githubusercontent.com/51999461/147313158-ac48ad72-e799-4d64-81f9-60527c63d271.png)|![](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_release/dgiot_wechat.jpg)|![](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/wechat/qrcode.png)|![](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_release/dgiot_dashboard.png) |dgiot_admin|dgiot_admin|
+ <span id="jump">技术支持微信群2群</span>   
+ ![image](https://user-images.githubusercontent.com/51999461/147809135-43c1f653-5b9a-4301-afe8-b6504b4df59e.png)
+ 
+ [QQ群346566935](https://jq.qq.com/?_wv=1027&k=LipWZvDe)
+ 
+点此[电脑端](https://prod.iotn2n.com/)或者输入https://prod.iotn2n.com体验
+
+账号/密码 : dgiot_admin/dgiot_admin
 
 ## 系统部署
 + **centos 7.6/7.9** 推荐使用腾讯云和阿里云部署，具体操作[点击这里](https://gitee.com/dgiiot/dgiot/wikis/DG-IoT%E7%89%A9%E8%81%94%E7%BD%91%E6%89%8B%E5%86%8C/%E7%AE%80%E4%BB%8B/%E5%AE%89%E8%A3%85%E9%83%A8%E7%BD%B2)
@@ -55,7 +62,7 @@ wget -q https://gitee.com/dgiiot/dgiot/raw/master/dgiot_install.sh  && sh dgiot_
  + 欢迎dgiot用户多尝试自助服务，多参与社区建设，多提issue，多在qq或者微信上反馈真实的物联网需求，助力提升社区服务品质
  + 欢迎dgiot先来者可以为后来者提供系统部署，插件开发和设备接入等指导服务，一起提供更多优质VIP服务，构建可持续的社区生态
  + dgiot团队在保守用户商业机密的前提下，将持续提炼行业业务需求和物联网平台运维经验，把行业真需求和一线经验沉淀到社区生态中
- 
+
 |   |   | | |
 | -----| ------ |------- |------- |
 | 内容  |  服务等级 |服务收费| 服务方式 |

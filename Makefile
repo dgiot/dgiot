@@ -1,11 +1,11 @@
 $(shell $(CURDIR)/scripts/git-hooks-init.sh)
-REBAR_VERSION = 3.14.3-emqx-7
+REBAR_VERSION = 3.14.3-emqx-8
 REBAR = $(CURDIR)/rebar3
 BUILD = $(CURDIR)/build
 SCRIPTS = $(CURDIR)/scripts
 export PKG_VSN ?= $(shell $(CURDIR)/pkg-vsn.sh)
 export EMQX_DESC ?= EMQ X
-export EMQX_CE_DASHBOARD_VERSION ?= v4.3.8
+export EMQX_CE_DASHBOARD_VERSION ?= v4.3.3
 ifeq ($(OS),Windows_NT)
 	export REBAR_COLOR=none
 endif
@@ -93,8 +93,10 @@ $(REL_PROFILES:%=%): $(REBAR) get-dashboard
 clean: $(PROFILES:%=clean-%)
 $(PROFILES:%=clean-%):
 	@if [ -d _build/$(@:clean-%=%) ]; then \
+		rm rebar.lock \
 		rm -rf _build/$(@:clean-%=%)/rel; \
 		find _build/$(@:clean-%=%) -name '*.beam' -o -name '*.so' -o -name '*.app' -o -name '*.appup' -o -name '*.o' -o -name '*.d' -type f | xargs rm -f; \
+		find _build/$(@:clean-%=%) -type l -delete; \
 	fi
 
 .PHONY: clean-all
@@ -103,6 +105,7 @@ clean-all:
 
 .PHONY: deps-all
 deps-all: $(REBAR) $(PROFILES:%=deps-%)
+	@make clean # ensure clean at the end
 
 ## deps-<profile> is used in CI scripts to download deps and the
 ## share downloads between CI steps and/or copied into containers
@@ -110,6 +113,7 @@ deps-all: $(REBAR) $(PROFILES:%=deps-%)
 .PHONY: $(PROFILES:%=deps-%)
 $(PROFILES:%=deps-%): $(REBAR) get-dashboard
 	@$(REBAR) as $(@:deps-%=%) get-deps
+	@rm -f rebar.lock
 
 .PHONY: xref
 xref: $(REBAR)

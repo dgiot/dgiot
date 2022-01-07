@@ -8,9 +8,6 @@ set -euo pipefail
 # ensure dir
 cd -P -- "$(dirname -- "$0")/.."
 
-echo "find suite"
-exit 0
-
 TESTDIR="test"
 if [ "$1" != "emqx" ]; then
     TESTDIR="$1/test"
