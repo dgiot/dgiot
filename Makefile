@@ -1,11 +1,11 @@
 $(shell $(CURDIR)/scripts/git-hooks-init.sh)
-REBAR_VERSION = 3.14.3-emqx-8
+REBAR_VERSION = 3.14.3-emqx-7
 REBAR = $(CURDIR)/rebar3
 BUILD = $(CURDIR)/build
 SCRIPTS = $(CURDIR)/scripts
 export PKG_VSN ?= $(shell $(CURDIR)/pkg-vsn.sh)
 export EMQX_DESC ?= EMQ X
-export EMQX_CE_DASHBOARD_VERSION ?= v4.3.3
+export EMQX_CE_DASHBOARD_VERSION ?= v4.3.8
 ifeq ($(OS),Windows_NT)
 	export REBAR_COLOR=none
 endif
@@ -13,14 +13,14 @@ endif
 GET_DASHBOARD=$(SCRIPTS)/get-dashboard.sh
 LENGTH=$#
 
-ifeq ($#,1)
-	ifeq ($1, ci)
-			GET_DASHBOARD=$(SCRIPTS)/pre-ci.sh
-		else
-			GET_DASHBOARD=$(SCRIPTS)/get-dashboard.sh
-		endif
-	else
-	  	GET_DASHBOARD=$(SCRIPTS)/get-dashboard.sh
+ifeq ($(LENGTH),1)
+  ifeq ($1, ci)
+	GET_DASHBOARD=$(SCRIPTS)/pre-ci.sh
+  else
+	GET_DASHBOARD=$(SCRIPTS)/get-dashboard.sh
+  endif
+  else
+	GET_DASHBOARD=$(SCRIPTS)/get-dashboard.sh
 endif
 
 PROFILE ?= emqx
