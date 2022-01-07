@@ -76,29 +76,37 @@ handle(OperationID, Args, Context, Req) ->
 %%% 内部函数 Version:API版本
 %%%===================================================================
 do_request(post_head, #{<<"items">> := Items, <<"productid">> := ProductId}, _Context, _Req) ->
-    Head =
+    {Head, Table} =
         case dgiot_product:lookup_prod(ProductId) of
             {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
-                lists:foldl(fun(Item, Acc) ->
-                    lists:foldl(fun(Prop, Acc1) ->
-                        case Prop of
-                            #{<<"name">> := Name, <<"identifier">> := Identifier,
-                                <<"dataType">> := #{<<"type">> := _Type, <<"das">> := Das}} ->
+                lists:foldl(fun(Prop, {Acc1, Acc2}) ->
+                    case Prop of
+                        #{<<"name">> := Name, <<"identifier">> := Identifier,
+                            <<"dataType">> := #{<<"type">> := _Type, <<"das">> := Das} = DataType} ->
+                            Specs = maps:get(<<"specs">>, DataType, #{}),
+                            Unit =
+                                case maps:find(<<"unit">>, Specs) of
+                                    error ->
+                                        <<>>;
+                                    {ok, Un} ->
+                                        <<"(", Un/binary, ")">>
+                                end,
+                            lists:foldl(fun(Item, {Acc, Acc3}) ->
                                 case lists:member(Item, Das) of
                                     true ->
-                                        Acc1#{Identifier => Name};
+                                        {Acc#{Identifier => <<Name/binary, Unit/binary>>}, Acc3 ++ [#{<<"prop">> => Identifier, <<"label">> => <<Name/binary, Unit/binary>>}]};
                                     _ ->
-                                        Acc1
-                                end;
-                            _ ->
-                                Acc1
-                        end
-                                end, Acc, Props)
-                            end, #{}, Items);
+                                        {Acc, Acc3}
+                                end
+                                        end, {Acc1, Acc2}, Items);
+                        _ ->
+                            {Acc1, Acc2}
+                    end
+                            end, {#{}, [#{<<"prop">> => <<"timestamp">>, <<"label">> => <<"时间"/utf8>>}]}, Props);
             _Error ->
                 #{}
         end,
-    {ok, #{<<"code">> => 200, <<"head">> => Head}};
+    {ok, #{<<"code">> => 200, <<"head">> => Head, <<"table">> => Table}};
 
 %%  服务器不支持的API接口
 do_request(_OperationId, _Args, _Context, _Req) ->

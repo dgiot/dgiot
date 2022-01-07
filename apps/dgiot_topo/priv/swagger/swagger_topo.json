@@ -112,6 +112,13 @@
             "default": ""
           },
           {
+            "description": "视图ObjectId",
+            "in": "query",
+            "name": "viewid",
+            "type": "string",
+            "default": ""
+          },
+          {
             "description": "shapeid",
             "in": "query",
             "name": "shapeid",
@@ -147,6 +154,10 @@
               "properties": {
                 "productid": {
                   "type": "string"
+                },
+                "viewid": {
+                  "type": "string",
+                  "example": ""
                 },
                 "shapeid": {
                   "type": "string"

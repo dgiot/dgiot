@@ -109,7 +109,7 @@ fi
 # set parameters by default value
 verType=single        # [single | cluster | devops]
 domain_name="prod.iotn2n.com" #[prod.iotn2n.com | your_domain_name]
-software="dgiot_136"  #[dgiot_136 | dgiot_n]
+software="dgiot_156"  #[dgiot_156 | dgiot_n]
 plugin="dgiot" #[dgiot | dgiot_your_plugin]
 while getopts "h:v:d:s:p:" arg
 do
@@ -137,7 +137,7 @@ do
       verType="devops"
       ;;
     h)
-      echo "Usage: `basename $0` -v [single | cluster] -s [dgiot_136 | dgiot_n] -d [prod.iotn2n.com | your_domain_name] -p [dgiot | dgiot_your_plugin]"
+      echo "Usage: `basename $0` -v [single | cluster] -s [dgiot_156 | dgiot_n] -d [prod.iotn2n.com | your_domain_name] -p [dgiot | dgiot_your_plugin]"
       exit 0
       ;;
     ?) #unknow option
@@ -694,6 +694,7 @@ function install_go_fastdfs() {
   if [ ! -f ${script_dir}/dgiot_swagger.tar.gz ]; then
     wget ${fileserver}/dgiot_swagger.tar.gz -O ${script_dir}/dgiot_swagger.tar.gz &> /dev/null
   fi
+
   if [ -d ${script_dir}/dgiot_swagger/ ]; then
     rm ${script_dir}/dgiot_swagger/ -rf
   fi

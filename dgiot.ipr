@@ -149,6 +149,24 @@
     <mapping directory="$PROJECT_DIR$/apps/dgiot_lamp" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/apps/dgiot_mingcheng" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/apps/dgiot_xinchuangwei" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/apps/emqx_auth_mnesia" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/apps/emqx_bridge_mqtt" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/apps/emqx_coap" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/apps/emqx_exhook" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/apps/emqx_exproto" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/apps/emqx_lua_hook" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/apps/emqx_lwm2m" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/apps/emqx_management" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/apps/emqx_prometheus" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/apps/emqx_psk_file" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/apps/emqx_recon" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/apps/emqx_retainer" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/apps/emqx_rule_engine" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/apps/emqx_sasl" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/apps/emqx_sn" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/apps/emqx_stomp" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/apps/emqx_web_hook" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/dgiot-dashboard" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/dist" vcs="Git" />
   </component>
 </project>
