@@ -1,13 +1,16 @@
 .eunit
 test-data/
+deps
 !deps/.placeholder
 _build/
 www/
 *.o
+*.beam
 *.plt
 *.iml
 *.iws
 erl_crash.dump
+ebin
 !ebin/.placeholder
 .concrete/DEV_MODE
 .rebar
@@ -22,11 +25,13 @@ eunit.coverdata
 test/ct.cover.spec
 ct.coverdata
 .idea/
+_build
 .rebar3
 rebar3.crashdump
 .DS_Store
 etc/gen.emqx.conf
 compile_commands.json
+cuttlefish
 xrefr
 *.coverdata
 etc/emqx.conf.rendered
@@ -52,11 +57,25 @@ data/
 ci.sh
 *.ipr
 node_modules/
+apps/emqx_*
 apps/dgiot_parse/etc/dgiot_parse.conf
 apps/dgiot_jieshun/
 apps/dgiot_mingcheng/
 apps/dgiot_xinchuangwei/
 apps/dgiot_esports/
 apps/dgiot_http/etc/dgiot_http.conf
+apps/emqx_*
 node_modules/
 package-lock.json
+erlang_ls.config
+.els_cache/
+# VSCode files
+.vs/
+.vscode/
+# Emacs Backup files
+*~
+# Emacs temporary files
+.#*
+*#
+# For direnv
+.envrc
