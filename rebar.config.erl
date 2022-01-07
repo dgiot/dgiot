@@ -319,13 +319,8 @@ relx_plugin_apps(ReleaseType) ->
         , emqx_recon
         , emqx_rule_engine
         , emqx_sasl
-<<<<<<< HEAD
-%%        , emqx_exhook
-       , emqx_auth_mnesia
-=======
         , emqx_exhook
         , emqx_auth_mnesia
->>>>>>> f5b55f5735c94ec9573668b5d56b78a8eef2e8f7
     ]
     ++ [emqx_telemetry || not is_enterprise()]
         ++ relx_plugin_apps_per_rel(ReleaseType)
