@@ -63,6 +63,7 @@ apps/dgiot_mingcheng/
 apps/dgiot_xinchuangwei/
 apps/dgiot_esports/
 apps/dgiot_http/etc/dgiot_http.conf
+apps/emqx_*
 node_modules/
 package-lock.json
 erlang_ls.config
