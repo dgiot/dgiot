@@ -167,7 +167,12 @@ get_konva_thing(Arg, _Context) ->
                     Nobound =
                         lists:foldl(fun(Prop, Acc) ->
                             Identifier = maps:get(<<"identifier">>, Prop),
-                            case lists:member(Identifier, Shapids) of
+                            NewIdentifier = <<ProductId/binary, "_", Identifier/binary, "_text">>,
+                            io:format("self()1 ~p~n", [self()]),
+                            io:format("self()2 ~p~n", [self()]),
+                            io:format("NewIdentifier ~p~n", [NewIdentifier]),
+                            io:format("Shapids ~p~n", [Shapids]),
+                            case lists:member(NewIdentifier, Shapids) of
                                 false ->
                                     Acc ++ [Prop];
                                 true ->
@@ -257,9 +262,9 @@ get_attrs(Type, ProductId, ClassName, Attrs, DeviceId, KonvatId, Shapeid, Identi
             X;
         <<"Group">> ->
             X;
-        <<"Text">> ->
-            X;
         <<"Label">> ->
+            X;
+        <<"Text">> ->
             case maps:find(<<"id">>, Attrs) of
                 error ->
                     X;
@@ -269,20 +274,20 @@ get_attrs(Type, ProductId, ClassName, Attrs, DeviceId, KonvatId, Shapeid, Identi
                             case Id of
                                 Shapeid ->
                                     #{<<"children">> := Children} = X,
-                                    ?LOG(info, "Children ~p~n", [Children]),
+%%                                    ?LOG(info, "Children ~p~n", [Children]),
                                     NewChildren =
                                         lists:foldl(fun(Child, Acc) ->
                                             NewChild =
                                                 case Child of
                                                     #{<<"attrs">> := ChildAttrs, <<"className">> := <<"Text">>} ->
-                                                        ?LOG(info, "ChildAttrs ~p~n", [ChildAttrs]),
+%%                                                        ?LOG(info, "ChildAttrs ~p~n", [ChildAttrs]),
                                                         Child#{<<"attrs">> => ChildAttrs#{<<"id">> => <<ProductId/binary, "_", Identifier/binary, "_text">>, <<"text">> => Name}};
                                                     _ ->
                                                         Child
                                                 end,
                                             Acc ++ [NewChild]
                                                     end, [], Children),
-                                    ?LOG(info, "NewChildren ~p~n", [NewChildren]),
+%%                                    ?LOG(info, "NewChildren ~p~n", [NewChildren]),
                                     NewAttrs = Attrs#{<<"id">> => <<ProductId/binary, "_", Identifier/binary>>},
                                     save(Type, NewAttrs),
                                     X#{<<"attrs">> => NewAttrs, <<"children">> => NewChildren};
@@ -438,7 +443,7 @@ get_optshape(ProductId, DeviceId, Payload) ->
                 end,
             BinV = get_value(ProductId, K, V),
             Unit = get_unit(ProductId, K),
-            Acc ++ [#{<<"id">> => dgiot_parse:get_shapeid(DeviceId, K), <<"text">> => <<BinV/binary, " ", Unit/binary>>, <<"type">> => Type}]
+            Acc ++ [#{<<"id">> => dgiot_parse:get_shapeid(DeviceId, <<ProductId/binary, "_", K/binary, "_text">>), <<"text">> => <<BinV/binary, " ", Unit/binary>>, <<"type">> => Type}]
                   end, Topo, Payload),
     base64:encode(jsx:encode(#{<<"konva">> => Shape})).
 
