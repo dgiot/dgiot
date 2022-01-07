@@ -44,13 +44,14 @@
 -record(state, {}).
 
 start() ->
-    Env = #{},
-    emqx:hook('client.authenticate', fun ?MODULE:on_client_authenticate/3, [Env]),
-    emqx:hook('client.disconnected', fun ?MODULE:on_client_disconnected/4, [Env]).
+%%    Env = #{},
+%%    emqx:hook('client.authenticate', fun ?MODULE:on_client_authenticate/3, [Env]),
+%%    emqx:hook('client.disconnected', fun ?MODULE:on_client_disconnected/4, [Env]).
+    ok.
 
 stop() ->
-    emqx:unhook('client.authenticate', fun ?MODULE:on_client_authenticate/3),
-    emqx:unhook('client.disconnected', fun ?MODULE:on_client_disconnected/4),
+%%    emqx:unhook('client.authenticate', fun ?MODULE:on_client_authenticate/3),
+%%    emqx:unhook('client.disconnected', fun ?MODULE:on_client_disconnected/4),
     ok.
 
 on_client_authenticate(#{clientid := <<"swlic_", Key/binary>>, peerhost := Peerhost, username := UserName, password := Password}, AuthResult, _Env) ->

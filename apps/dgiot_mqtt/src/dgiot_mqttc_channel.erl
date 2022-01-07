@@ -33,9 +33,8 @@
 
 %% 注册通道类型
 -channel_type(#{
-
     cType => ?TYPE,
-    type => ?BRIDGE_CHL,
+    type => ?PROTOCOL_CHL,
     title => #{
         zh => <<"MQTT资源通道"/utf8>>
     },

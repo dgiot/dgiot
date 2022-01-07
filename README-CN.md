@@ -37,7 +37,12 @@ DG-IoT是国内首款轻量级开源工业物联网平台，我们致力于提�
 
 ## 快速体验与微信群
  <span id="jump">技术支持微信群2群</span>   
+<<<<<<< HEAD
  ![image](https://user-images.githubusercontent.com/51999461/147809135-43c1f653-5b9a-4301-afe8-b6504b4df59e.png)
+=======
+![image](https://user-images.githubusercontent.com/51999461/148480986-371d10aa-68d7-4254-a136-54bb8249cfd6.png)
+
+>>>>>>> f5b55f5735c94ec9573668b5d56b78a8eef2e8f7
  
  [QQ群346566935](https://jq.qq.com/?_wv=1027&k=LipWZvDe)
  
@@ -53,7 +58,7 @@ wget -q https://gitee.com/dgiiot/dgiot/raw/master/dgiot_install.sh  && sh dgiot_
 |   |   | |
 | -----| ------ |------ |
 |内容  |  脚本 | 说明 |
-| 版本更新  | sh dgiot_install.sh -s {版本} | [版本列表](https://gitee.com/dgiiot/dgiot/wikis/%E4%BA%A7%E5%93%81%E6%89%8B%E5%86%8C/%E4%BA%A7%E5%93%81%E7%AE%80%E4%BB%8B/%E7%89%88%E6%9C%AC%E5%88%97%E8%A1%A8)|
+| 版本更新  | sh dgiot_install.sh -s {版本} | [版本列表](https://gitee.com/dgiiot/dgiot/wikis/%E4%BA%A7%E5%93%81%E6%89%8B%E5%86%8C/%E4%BA%A7%E5%93%81%E7%AE%80%E4%BB%8B/%E7%B3%BB%E7%BB%9F%E9%83%A8%E7%BD%B2/%E7%89%88%E6%9C%AC%E5%88%97%E8%A1%A8)|
 | 证书安装  | sh dgiot_install.sh -d {域名} | [证书制作](https://gitee.com/dgiiot/dgiot/wikis/%E4%BA%A7%E5%93%81%E6%89%8B%E5%86%8C/%E4%BA%A7%E5%93%81%E7%AE%80%E4%BB%8B/%E5%AE%89%E8%A3%85%E9%83%A8%E7%BD%B2)|
 | 本地构建  | sh dgiot_install.sh -v devops -s {版本} -p {插件名称} | [插件开发](https://gitee.com/dgiiot/dgiot/wikis/%E5%BC%80%E5%8F%91%E6%8C%87%E5%8D%97/%E6%8F%92%E4%BB%B6%E5%BC%80%E5%8F%91/%E6%A6%82%E8%BF%B0) |
 

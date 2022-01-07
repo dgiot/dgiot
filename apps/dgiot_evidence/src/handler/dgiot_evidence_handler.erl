@@ -204,14 +204,14 @@ do_request(post_generatereport, #{<<"id">> := TaskId}, #{<<"sessionToken">> := _
                                                 <<"source">> => Sources,
                                                 <<"name">> => Identifier,
                                                 <<"url">> => Value,
-                                                <<"width">> => 500,
-                                                <<"height">> => 230
+                                                <<"width">> => 600,
+                                                <<"height">> => 360
                                             }];
                                         _ ->
                                             Acc
                                     end;
                                 _ ->
-                                    case Step =< 1 of
+                                    case Step =< 0 of
                                         true ->
                                             Acc;
                                         _ ->
@@ -232,7 +232,7 @@ do_request(post_generatereport, #{<<"id">> := TaskId}, #{<<"sessionToken">> := _
                                                                 []
                                                         end,
                                                     %% 采样参数
-                                                    Parameter = maps:get(<<"parameter">>, Param, <<"flow,power,head,ratedspeed,pressure_in,pressure_out,conversion_flow,conversion_head,conversion_power,effect">>),
+                                                    Parameter = maps:get(<<"parameter">>, Param, <<"flow,power,head,rotate,pressure_in,pressure_out,conversion_flow,conversion_head,conversion_power,effect">>),
                                                     {Tabledata, _} = dgiot_evidence:get_Tabledata(Parameter, Avgdatas),
                                                     Acc ++ [#{
                                                         <<"type">> => <<"dynamicTable">>,
@@ -240,7 +240,7 @@ do_request(post_generatereport, #{<<"id">> := TaskId}, #{<<"sessionToken">> := _
                                                         <<"tablerow">> => Row,
                                                         <<"tablecolumn">> => Column,
                                                         <<"name">> => Identifier,
-                                                        <<"data">> => Tabledata
+                                                        <<"data">> => lists:reverse(Tabledata)
                                                     }];
                                                 <<"image">> ->
                                                     Repath =
@@ -255,9 +255,9 @@ do_request(post_generatereport, #{<<"id">> := TaskId}, #{<<"sessionToken">> := _
                                                         <<"type">> => <<"image">>,
                                                         <<"source">> => Sources,
                                                         <<"name">> => Identifier,
-                                                        <<"url">> => Repath,
+                                                        <<"url">> => <<Uri/binary, Repath/binary>>,
                                                         <<"width">> => 600,
-                                                        <<"height">> => 330
+                                                        <<"height">> => 360
                                                     }];
                                                 _ ->
                                                     Acc
@@ -309,16 +309,8 @@ do_request(post_generatereport, #{<<"id">> := TaskId}, #{<<"sessionToken">> := _
 %% OperationId:post_drawxnqx
 %% 请求:GET /iotapi/drawxnqx
 do_request(post_drawxnqx, #{<<"taskid">> := TaskId, <<"data">> := Data}, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
-%%    io:format("~s ~p Data = ~p.~n", [?FILE, ?LINE, Data]),
-%%    NewData = arrtojsonlist(Data),
-%%    AvgData =
-%%        maps:fold(fun(K, V, Avg) ->
-%%            SumV =
-%%                lists:foldl(fun(V1, VSum) ->
-%%                    VSum + V1
-%%                            end, 0, V),
-%%            Avg#{K => dgiot_utils:to_float(SumV / length(Data), 3)}
-%%                  end, #{}, maps:without([<<"timestamp">>], NewData)),
+%%    dgiot_testing_equipment_flowSet
+%%    TaskId = ,
     {NewEvidenceId, NewOriginal} =
         case dgiot_parse:query_object(<<"Evidence">>, #{<<"limit">> => 1, <<"where">> => #{<<"reportId">> => TaskId, <<"original.type">> => <<"avgs">>, <<"original.taskid">> => TaskId}}) of
             {ok, #{<<"results">> := Results}} when length(Results) > 0 ->
@@ -979,6 +971,7 @@ post_report(#{<<"name">> := Name, <<"product">> := ProductId, <<"parentId">> := 
     end.
 
 
+
 arrtojsonlist(Data) when length(Data) > 0 ->
     [Da | _] = Data,
     Keys = maps:keys(Da),
@@ -994,15 +987,23 @@ arrtojsonlist(_Data) ->
     #{}.
 
 python_drawxnqx(TaskId, NewData) ->
+%%    io:format("NewData ~p~n",[NewData]),
+    Dgiot_testing_equipment_flowSet =
+        case dgiot_parse:get_object(<<"Device">>, TaskId) of
+            {ok, #{<<"basedata">> := BaseData}} ->
+                dgiot_utils:to_float(maps:get(<<"dgiot_testing_equipment_flowSet">>, BaseData, <<>>));
+            _ ->
+                0
+        end,
     Path = code:priv_dir(dgiot_evidence),
     Python3path = Path ++ "/python/drawxnqx.py ",
-    Filepath = application:get_env(dgiot_evidence, gofastdfs_path, <<"/data/dgiot/go_fastdfs/files/dgiot_file/pump_pytoh/">>),
-    PythonBody = #{<<"name">> => <<TaskId/binary, ".png">>, <<"data">> => NewData, <<"path">> => Filepath},
+    Filepath = application:get_env(dgiot_evidence, gofastdfs_path, <<"/data/dgiot/go_fastdfs/files/dgiot_file/pump_python/">>),
+    PythonBody = #{<<"name">> => <<TaskId/binary, ".png">>, <<"data">> => NewData, <<"path">> => Filepath, <<"dgiot_testing_equipment_flowSet">> => Dgiot_testing_equipment_flowSet},
     Imagepath =
-        case catch base64:decode(os:cmd("python3 "++ Python3path ++ dgiot_utils:to_list(base64:encode(jsx:encode(PythonBody))))) of
+        case catch base64:decode(os:cmd("python3 " ++ Python3path ++ dgiot_utils:to_list(base64:encode(jsx:encode(PythonBody))))) of
             {'EXIT', _Error} ->
                 <<"">>;
-            Path ->
-                Path
+            NewPath ->
+                NewPath
         end,
     re:replace(dgiot_utils:to_list(Imagepath), "/data/dgiot/go_fastdfs/files", "", [global, {return, binary}, unicode]).
