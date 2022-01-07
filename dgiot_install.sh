@@ -694,6 +694,7 @@ function install_go_fastdfs() {
   if [ ! -f ${script_dir}/dgiot_swagger.tar.gz ]; then
     wget ${fileserver}/dgiot_swagger.tar.gz -O ${script_dir}/dgiot_swagger.tar.gz &> /dev/null
   fi
+
   if [ -d ${script_dir}/dgiot_swagger/ ]; then
     rm ${script_dir}/dgiot_swagger/ -rf
   fi
