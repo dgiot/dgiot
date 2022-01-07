@@ -7,8 +7,7 @@ set -euo pipefail
 
 # ensure dir
 cd -P -- "$(dirname -- "$0")/.."
-echo "find props"
-exit 0
+
 BASEDIR="."
 if [ "$1" != "emqx" ]; then
     BASEDIR="$1"

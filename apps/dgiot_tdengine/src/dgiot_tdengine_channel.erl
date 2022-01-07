@@ -678,9 +678,10 @@ run_sql(#{<<"driver">> := <<"HTTP">>, <<"url">> := Url, <<"username">> := UserNa
             ?LOG(info, "Execute Fail ~p (~ts) ~p", [Url, unicode:characters_to_list(Sql), Reason]),
             {error, Reason}
     end;
-run_sql(#{<<"driver">> := <<"JDBC">>, <<"url">> := _Url}, Action, Sql) when Action == execute_update; Action == execute_query ->
+run_sql(#{<<"driver">> := <<"JDBC">>, <<"url">> := _Url}, Action, _Sql) when Action == execute_update; Action == execute_query ->
 %%    ?LOG(info,"Execute ~p (~p) ~p", [Url, byte_size(Sql), Sql]),
-    apply(ejdbc, Action, [<<"com.taosdata.jdbc.TSDBDriver">>, Sql]).
+%%    apply(ejdbc, Action, [<<"com.taosdata.jdbc.TSDBDriver">>, Sql]).
+     ok.
 
 
 %% 先缓存定时存库

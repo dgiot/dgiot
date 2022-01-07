@@ -139,7 +139,8 @@ handle_message({rule, #{clientid := _DeviceId, username := ProductId, payload :=
                             <<"metadata">> := Metadata,
                             <<"all">> := _All} when is_map(Metadata) ->
 %%                            io:format("~s ~p Metadata = ~p.~n", [?FILE, ?LINE, Metadata]),
-                            dgiot_tdengine_adapter:save(ProductId, DtuAddr, Metadata);
+                            dgiot_task:save_pnque(ProductId, DtuAddr, ProductId, DtuAddr),
+                            dgiot_opc:send_properties(ProductId, DtuAddr, Metadata);
                         _Other1 ->
                             io:format("~s ~p error: ~p~n", [?FILE, ?LINE, _Other1]),
                             pass

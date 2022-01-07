@@ -22,35 +22,35 @@
 -logger_header("[Tracer]").
 
 %% APIs
--export([trace/2
-    , start_trace/3
-    , lookup_traces/0
-    , stop_trace/1
-]).
+-export([ trace/2
+        , start_trace/3
+        , lookup_traces/0
+        , stop_trace/1
+        ]).
 
 -type(trace_who() :: {clientid | topic, binary()}).
 
 -define(TRACER, ?MODULE).
 -define(FORMAT, {logger_formatter,
-    #{template =>
-    [time, " [", level, "] ",
-        {clientid,
-            [{peername,
-                [clientid, "@", peername, " "],
-                [clientid, " "]}],
-            [{peername,
-                [peername, " "],
-                []}]},
-        msg, "\n"],
-        single_line => false
-    }}).
--define(TOPIC_TRACE_ID(T), "trace_topic_" ++ T).
--define(CLIENT_TRACE_ID(C), "trace_clientid_" ++ C).
+                  #{template =>
+                      [time, " [", level, "] ",
+                       {clientid,
+                          [{peername,
+                              [clientid, "@", peername, " "],
+                              [clientid, " "]}],
+                          [{peername,
+                              [peername, " "],
+                              []}]},
+                       msg, "\n"],
+                    single_line => false
+                   }}).
+-define(TOPIC_TRACE_ID(T), "trace_topic_"++T).
+-define(CLIENT_TRACE_ID(C), "trace_clientid_"++C).
 -define(TOPIC_TRACE(T), {topic, T}).
 -define(CLIENT_TRACE(C), {clientid, C}).
 
 -define(IS_LOG_LEVEL(L),
-    L =:= emergency orelse
+        L =:= emergency orelse
         L =:= alert orelse
         L =:= critical orelse
         L =:= error orelse
@@ -85,14 +85,14 @@ start_trace(Who, Level, LogFile) ->
             try logger:compare_levels(Level, PrimaryLevel) of
                 lt ->
                     {error,
-                        io_lib:format("Cannot trace at a log level (~s) "
-                        "lower than the primary log level (~s)",
-                            [Level, PrimaryLevel])};
+                     io_lib:format("Cannot trace at a log level (~s) "
+                                   "lower than the primary log level (~s)",
+                                   [Level, PrimaryLevel])};
                 _GtOrEq ->
                     install_trace_handler(Who, Level, LogFile)
             catch
                 _:Error ->
-                    {error, Error}
+                {error, Error}
             end;
         false -> {error, {invalid_log_level, Level}}
     end.
@@ -109,12 +109,12 @@ lookup_traces() ->
 
 install_trace_handler(Who, Level, LogFile) ->
     case logger:add_handler(handler_id(Who), logger_disk_log_h,
-        #{level => Level,
-            formatter => ?FORMAT,
-            config => #{type => halt, file => LogFile},
-            filter_default => stop,
-            filters => [{meta_key_filter,
-                {fun filter_by_meta_key/2, Who}}]})
+                            #{level => Level,
+                              formatter => ?FORMAT,
+                              config => #{type => halt, file => LogFile},
+                              filter_default => stop,
+                              filters => [{meta_key_filter,
+                                          {fun filter_by_meta_key/2, Who}}]})
     of
         ok ->
             ?LOG(info, "Start trace for ~p", [Who]);
@@ -134,7 +134,7 @@ uninstall_trance_handler(Who) ->
 
 filter_traces(#{id := Id, level := Level, dst := Dst}, Acc) ->
     case atom_to_list(Id) of
-        ?TOPIC_TRACE_ID(T) ->
+        ?TOPIC_TRACE_ID(T)->
             [{?TOPIC_TRACE(T), {Level, Dst}} | Acc];
         ?CLIENT_TRACE_ID(C) ->
             [{?CLIENT_TRACE(C), {Level, Dst}} | Acc];

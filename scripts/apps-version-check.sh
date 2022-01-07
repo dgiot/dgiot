@@ -18,9 +18,18 @@ while read -r app; do
         changed="$(git diff --name-only "$latest_release"...HEAD \
                     -- "$app_path/src" \
                     -- "$app_path/priv" \
-                    -- "$app_path/c_src" | wc -l)"
+                    -- "$app_path/c_src" | { grep -v -E 'appup\.src' || true; } | wc -l)"
         if [ "$changed" -gt 0 ]; then
             echo "$src_file needs a vsn bump"
+            bad_app_count=$(( bad_app_count + 1))
+        elif [[ ${app_path} = *emqx_dashboard* ]]; then
+            ## emqx_dashboard is ensured to be upgraded after all other plugins
+            ## at the end of its appup instructions, there is the final instruction
+            ## {apply, {emqx_plugins, load, []}
+            ## since we don't know which plugins are stopped during the upgrade
+            ## for safty, we just force a dashboard version bump for each and every release
+            ## even if there is nothing changed in the app
+            echo "$src_file needs a vsn bump to ensure plugins loaded after upgrade"
             bad_app_count=$(( bad_app_count + 1))
         fi
     fi
@@ -29,5 +38,5 @@ done < <(./scripts/find-apps.sh)
 if [ $bad_app_count -gt 0 ]; then
     exit 1
 else
-    echo "apps version check successfully"       
+    echo "apps version check successfully"
 fi

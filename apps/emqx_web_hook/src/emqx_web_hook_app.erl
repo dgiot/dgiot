@@ -42,10 +42,10 @@ stop(_State) ->
 translate_env() ->
     {ok, URL} = application:get_env(?APP, url),
     {ok, #{host := Host,
-           path := Path0,
            port := Port,
-           scheme := Scheme}} = emqx_http_lib:uri_parse(URL),
-    Path = path(Path0),
+           scheme := Scheme} = URIMap} = emqx_http_lib:uri_parse(URL),
+    Path = path(URIMap),
+    {ok, EnablePipelining} = application:get_env(?APP, enable_pipelining),
     PoolSize = application:get_env(?APP, pool_size, 32),
     MoreOpts = case Scheme of
                    http ->
@@ -64,7 +64,7 @@ translate_env() ->
                                  SNI0 -> SNI0
                              end,
                        TLSOpts = lists:filter(fun({_K, V}) ->
-                                                V /= <<>> andalso V /= undefined andalso V /= "" andalso true
+                                                V /= <<>> andalso V /= undefined andalso V /= ""
                                               end, [{keyfile, KeyFile},
                                                     {certfile, CertFile},
                                                     {cacertfile, CACertFile},
@@ -78,6 +78,7 @@ translate_env() ->
                 end,
     PoolOpts = [{host, Host},
                 {port, Port},
+                {enable_pipelining, EnablePipelining},
                 {pool_size, PoolSize},
                 {pool_type, hash},
                 {connect_timeout, 5000},
@@ -89,9 +90,13 @@ translate_env() ->
     NHeaders = set_content_type(Headers),
     application:set_env(?APP, headers, NHeaders).
 
-path("") ->
+path(#{path := "", 'query' := Query}) ->
+    "?" ++ Query;
+path(#{path := Path, 'query' := Query}) ->
+    Path ++ "?" ++ Query;
+path(#{path := ""}) ->
     "/";
-path(Path) ->
+path(#{path := Path}) ->
     Path.
 
 set_content_type(Headers) ->

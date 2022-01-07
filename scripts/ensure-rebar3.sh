@@ -10,6 +10,7 @@ cd -P -- "$(dirname -- "${BASH_SOURCE[0]}")/.."
 DOWNLOAD_URL='https://github.com/emqx/rebar3/releases/download'
 
 download() {
+    echo "${DOWNLOAD_URL}/${VERSION}/rebar3"
     curl -f -L "${DOWNLOAD_URL}/${VERSION}/rebar3" -o ./rebar3
 }
 
@@ -21,8 +22,10 @@ version() {
 }
 
 if [ -f 'rebar3' ] && [ "$(version)" = "$VERSION" ]; then
-    exit 0
+  echo $(version)
+  exit 0
 fi
 
+echo download
 download
 chmod +x ./rebar3

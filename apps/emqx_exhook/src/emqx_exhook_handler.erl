@@ -192,8 +192,7 @@ on_message_publish(Message) ->
                    fun emqx_exhook_handler:merge_responsed_message/2) of
         {StopOrOk, #{message := NMessage}} ->
             {StopOrOk, assign_to_message(NMessage, Message)};
-        _ ->
-            {ok, Message}
+        _ -> {ok, Message}
     end.
 
 on_message_dropped(#message{topic = <<"$SYS/", _/binary>>}, _By, _Reason) ->
@@ -303,9 +302,7 @@ merge_responsed_bool(Req, #{type := Type, value := {bool_result, NewBool}})
     NReq = Req#{result => NewBool},
     case Type of
         'CONTINUE' -> {ok, NReq};
-        'STOP_AND_RETURN' ->
-            ?LOG(error,"NReq ~p",[NReq]),
-            {stop, NReq}
+        'STOP_AND_RETURN' -> {stop, NReq}
     end;
 merge_responsed_bool(_Req, Resp) ->
     ?LOG(warning, "Unknown responsed value ~0p to merge to callback chain", [Resp]),
@@ -317,9 +314,7 @@ merge_responsed_message(Req, #{type := Type, value := {message, NMessage}}) ->
     NReq = Req#{message => NMessage},
     case Type of
         'CONTINUE' -> {ok, NReq};
-        'STOP_AND_RETURN' ->
-            ?LOG(error,"NReq ~p",[NReq]),
-            {stop, NReq}
+        'STOP_AND_RETURN' -> {stop, NReq}
     end;
 merge_responsed_message(_Req, Resp) ->
     ?LOG(warning, "Unknown responsed value ~0p to merge to callback chain", [Resp]),

@@ -15,7 +15,7 @@
 %%--------------------------------------------------------------------
 
 -module(emqx_exhook_sup).
--include_lib("emqx/include/logger.hrl").
+
 -behaviour(supervisor).
 
 -export([ start_link/0
@@ -26,6 +26,14 @@
         , stop_grpc_client_channel/1
         ]).
 
+-define(CHILD(Mod, Type, Args),
+            #{ id => Mod
+             , start => {Mod, start_link, Args}
+             , type => Type
+             , shutdown => 15000
+             }
+       ).
+
 %%--------------------------------------------------------------------
 %%  Supervisor APIs & Callbacks
 %%--------------------------------------------------------------------
@@ -34,7 +42,23 @@ start_link() ->
     supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
 init([]) ->
-    {ok, {{one_for_one, 10, 100}, []}}.
+    Mngr = ?CHILD(emqx_exhook_mngr, worker,
+                  [servers(), auto_reconnect(), request_options()]),
+    {ok, {{one_for_one, 10, 100}, [Mngr]}}.
+
+servers() ->
+    env(servers, []).
+
+auto_reconnect() ->
+    env(auto_reconnect, 60000).
+
+request_options() ->
+    #{timeout => env(request_timeout, 5000),
+      request_failed_action => env(request_failed_action, deny)
+     }.
+
+env(Key, Def) ->
+    application:get_env(emqx_exhook, Key, Def).
 
 %%--------------------------------------------------------------------
 %% APIs
@@ -45,7 +69,6 @@ init([]) ->
         uri_string:uri_string(),
         grpc_client:options()) -> {ok, pid()} | {error, term()}.
 start_grpc_client_channel(Name, SvrAddr, Options) ->
-    ?LOG(info,"Name ~p , SvrAddr ~p , Options ~p",[Name, SvrAddr, Options]),
     grpc_client_sup:create_channel_pool(Name, SvrAddr, Options).
 
 -spec stop_grpc_client_channel(string()) -> ok.

@@ -21,12 +21,12 @@
 
 %% metadata fields which we do not wish to merge into log data
 -define(WITHOUT_MERGE,
-    [report_cb % just a callback
+        [ report_cb % just a callback
         , time      % formatted as a part of templated message
         , peername  % formatted as a part of templated message
         , clientid  % formatted as a part of templated message
         , gl        % not interesting
-    ]).
+        ]).
 
 check_config(X) -> logger_formatter:check_config(X).
 
@@ -34,7 +34,7 @@ format(#{msg := Msg0, meta := Meta} = Event, Config) ->
     Msg = maybe_merge(Msg0, Meta),
     logger_formatter:format(Event#{msg := Msg}, Config).
 
-maybe_merge({report, Report}, Meta) ->
+maybe_merge({report, Report}, Meta) when is_map(Report) ->
     {report, maps:merge(Report, filter(Meta))};
 maybe_merge(Report, _Meta) ->
     Report.
