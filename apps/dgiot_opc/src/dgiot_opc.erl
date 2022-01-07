@@ -409,7 +409,8 @@ get_properties(ProductId, Properties) ->
             lists:foldl(fun(X, Acc) ->
                 case X of
                     #{<<"identifier">> := Identifier,
-                        <<"dataType">> := #{<<"type">> := _Type, <<"das">> := Das}} ->
+                        <<"dataType">> := DataType} ->
+                        Das = maps:get(<<"das">>, DataType, []),
                         maps:fold(fun(PK, PV, Acc1) ->
                             case lists:member(PK, Das) of
                                 true ->
