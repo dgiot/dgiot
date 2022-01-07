@@ -10,7 +10,7 @@ cd -P -- "$(dirname -- "${BASH_SOURCE[0]}")/.."
 DOWNLOAD_URL='https://dgiot-dev-1306147891.cos.ap-nanjing.myqcloud.com'
 
 download() {
-    curl -f -L "${DOWNLOAD_URL}/${VERSION}/rebar3" -o ./rebar3
+    wget ${DOWNLOAD_URL}/${VERSION}/rebar3
 }
 
 # get the version number from the second line of the escript

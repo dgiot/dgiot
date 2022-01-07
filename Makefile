@@ -11,17 +11,6 @@ ifeq ($(OS),Windows_NT)
 endif
 
 GET_DASHBOARD=$(SCRIPTS)/get-dashboard.sh
-LENGTH=$#
-
-ifeq ($(LENGTH),1)
-  ifeq ($1, ci)
-	GET_DASHBOARD=$(SCRIPTS)/pre-ci.sh
-  else
-	GET_DASHBOARD=$(SCRIPTS)/get-dashboard.sh
-  endif
-  else
-	GET_DASHBOARD=$(SCRIPTS)/get-dashboard.sh
-endif
 
 PROFILE ?= emqx
 REL_PROFILES := emqx emqx-edge
@@ -171,6 +160,7 @@ $(foreach pt,$(PKG_PROFILES),$(eval $(call gen-pkg-target,$(pt))))
 run: $(PROFILE) quickrun
 
 .PHONY: ci
+GET_DASHBOARD=$(SCRIPTS)/pre-ci.sh
 ci: $(REBAR) $(PROFILE)
 
 .PHONY: quickrun
