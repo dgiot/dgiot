@@ -272,7 +272,7 @@ create_rules(RuleID, ChannelId, Description, Rawsql, Target_topic) ->
 
 
 load_auth_hook() ->
-    emqx:hook('client.authenticate', fun dgiot_mqtt_auth:check/3, []).
+    emqx:hook('client.authenticate', fun dgiot_mqtt_auth:check/3, [#{hash_type => plain}]).
 
 load_acl_hook() ->
     emqx:hook('client.check_acl', fun dgiot_mqtt_acl:check_acl/5, [#{}]).
