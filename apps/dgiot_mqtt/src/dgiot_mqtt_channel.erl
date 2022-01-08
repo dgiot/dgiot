@@ -117,12 +117,14 @@ handle_init(State) ->
 handle_event('client.connected', {rule, #{clientid := DeviceId, connected_at := _ConnectedAt, peername := PeerName}, _Context}, #state{id = _ChannelId} = State) ->
     [DTUIP, _] = binary:split(PeerName, <<$:>>, [global, trim]),
     updat_device(DeviceId, DTUIP, <<"ONLINE">>),
+    dgiot_device:online(DeviceId),
     {ok, State};
 
 
 handle_event('client.disconnected', {rule, #{clientid := DeviceId, disconnected_at := _DisconnectedAt, peername := PeerName}, _Context}, State) ->
     [DTUIP, _] = binary:split(PeerName, <<$:>>, [global, trim]),
     updat_device(DeviceId, DTUIP, <<"OFFLINE">>),
+    dgiot_device:offline(DeviceId),
     {ok, State};
 
 %% 通道消息处理,注意：进程池调用
