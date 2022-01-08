@@ -32,9 +32,8 @@
 ]).
 
 
-check(ClientInfo = #{clientid := _Clientid
-    , password := NPassword
-}, AuthResult, #{hash_type := HashType}) ->
+check(ClientInfo = #{clientid := _Clientid,
+    password := NPassword}, AuthResult, #{hash_type := HashType}) ->
     _Username = maps:get(username, ClientInfo, undefined),
     List = [],
     case match_password(NPassword, HashType, List) of
@@ -42,7 +41,6 @@ check(ClientInfo = #{clientid := _Clientid
 %%           ?LOG(error, "[Mnesia] Auth from mnesia failed: ~p", [ClientInfo]),
             {stop, AuthResult#{anonymous => false, auth_result => password_error}};
         _ ->
-
             {stop, AuthResult#{anonymous => false, auth_result => success}}
     end.
 

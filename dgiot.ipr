@@ -42,7 +42,7 @@
       <module fileurl="file://$PROJECT_DIR$/dgiot.iml" filepath="$PROJECT_DIR$/dgiot.iml" />
     </modules>
   </component>
-  <component name="ProjectRootManager" version="2" languageLevel="JDK_11" project-jdk-name="Erlang23" project-jdk-type="Erlang SDK">
+  <component name="ProjectRootManager" version="2" languageLevel="JDK_11" project-jdk-name="Erlang 23" project-jdk-type="Erlang SDK">
     <output url="file://$PROJECT_DIR$/out" />
   </component>
   <component name="VcsDirectoryMappings">
@@ -57,6 +57,7 @@
     <mapping directory="$PROJECT_DIR$/_build/default/lib/ejdbc" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/default/lib/ekka" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/default/lib/emqtt" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/_build/default/lib/emqx_rule_engine" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/default/lib/eredis" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/default/lib/eredis_cluster" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/_build/default/lib/erlport" vcs="Git" />

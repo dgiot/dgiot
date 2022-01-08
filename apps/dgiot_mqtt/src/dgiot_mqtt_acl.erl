@@ -26,7 +26,6 @@
 
 check_acl(ClientInfo = #{ clientid := _Clientid }, PubSub, Topic, _NoMatchAction, _Params) ->
     _Username = maps:get(username, ClientInfo, undefined),
-
     Acls = [],
     case match(ClientInfo, PubSub, Topic, Acls) of
         allow ->
