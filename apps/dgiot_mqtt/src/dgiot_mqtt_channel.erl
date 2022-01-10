@@ -76,8 +76,8 @@ start(ChannelId, ChannelArgs) ->
 init(?TYPE, ChannelId, #{
     <<"product">> := Products,
     <<"auth">> := Auth}) ->
-    load_auth_hook(),
-    load_acl_hook(),
+%%    load_auth_hook(),
+%%    load_acl_hook(),
 %%    io:format("Products = ~p.~n", [Products]),
     lists:map(fun(X) ->
         case X of
@@ -273,8 +273,8 @@ create_rules(RuleID, ChannelId, Description, Rawsql, Target_topic) ->
     end.
 
 
-load_auth_hook() ->
-    emqx:hook('client.authenticate', fun dgiot_mqtt_auth:check/3, [#{hash_type => plain}]).
-
-load_acl_hook() ->
-    emqx:hook('client.check_acl', fun dgiot_mqtt_acl:check_acl/5, [#{}]).
+%%load_auth_hook() ->
+%%    emqx:hook('client.authenticate', fun dgiot_mqtt_auth:check/3, [#{hash_type => plain}]).
+%%
+%%load_acl_hook() ->
+%%    emqx:hook('client.check_acl', fun dgiot_mqtt_acl:check_acl/5, [#{}]).
