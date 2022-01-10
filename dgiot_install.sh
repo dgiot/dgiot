@@ -12,6 +12,7 @@ processor=1
 fileserver="https://dgiot-release-1306147891.cos.ap-nanjing.myqcloud.com/v4.4.0"
 updateserver="http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_release/update"
 #https://bcrypt-generator.com/
+yum install -y glibc-headers &> /dev/null
 yum install -y openssl openssl-devel &> /dev/null
 yum install -y libstdc++-devel openssl-devel &> /dev/null
 pg_pwd=`openssl rand -hex 8 | md5sum | cut -f1 -d ' '`
