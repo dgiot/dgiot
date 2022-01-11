@@ -18,7 +18,7 @@ DG-IoT是国内首款轻量级开源工业物联网平台，我们致力于提�
 
 ## 快速体验与微信群
  <span id="jump">技术支持微信群2群</span>
-![image](https://user-images.githubusercontent.com/51999461/148872294-764a0e36-6b66-49fa-8224-b71b5ea48419.png)
+![image](https://user-images.githubusercontent.com/51999461/148872364-3999b7f0-17c7-47ec-8a98-3f410ab5b58e.png)
 
 
  [QQ群346566935](https://jq.qq.com/?_wv=1027&k=LipWZvDe)
