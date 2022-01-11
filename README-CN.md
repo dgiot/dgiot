@@ -6,7 +6,6 @@
 [![QQ群346566935](https://img.shields.io/badge/QQ群-346566935-brightgreen)](https://jq.qq.com/?_wv=1027&k=LipWZvDe)
 [![star](https://gitee.com/dgiiot/dgiot/badge/star.svg?theme=gvp)](https://gitee.com/dgiiot/dgiot/stargazers)
 
-
 [English](./README.md) | [中文](./README-CN.md) | [日本語](./README-JP.md) | [русский](./README-RU.md)|
 [github](https://github.com/dgiot?from=git)|[gitee](https://www.iotn2n.com?from=git)|[官网](https://www.iotn2n.com?from=git)|[博客](https://tech.iotn2n.com?from=git)|[体验](https://prod.iotn2n.com?from=git)|[微信群](#jump)
 ## DG-IoT简介
@@ -16,8 +15,18 @@ DG-IoT是国内首款轻量级开源工业物联网平台，我们致力于提�
 + **工业设备制造商**：海量设备上线运维，不受公有云限制，低成本，短周期自建平台，私有化部署，数据安全
 + **开源平台开发者**：一键式开发环境，集成和兼容各种最优开源工具，快速承接物联网项目
 + **垂直领域物联网平台**：快速部署私有化平台，千万级承载，运营级底座，全开放扩展
-## 业务架构
-![业务架构图.jpg](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/%E4%B8%9A%E5%8A%A1%E6%9E%B6%E6%9E%84%E5%9B%BE.jpg)
+
+## 快速体验与微信群
+ <span id="jump">技术支持微信群2群</span>
+ ![image](https://user-images.githubusercontent.com/51999461/147809135-43c1f653-5b9a-4301-afe8-b6504b4df59e.png)
+
+ [QQ群346566935](https://jq.qq.com/?_wv=1027&k=LipWZvDe)
+
+点此[电脑端](https://prod.iotn2n.com/)或者输入https://prod.iotn2n.com体验
+
+账号/密码 : dgiot_admin/dgiot_admin
+
+
 ## 核心特色
 + **完全开源**：前后端完全开源，无收费商业版
 + **快速部署**：30分钟私有化[一键式部署](https://gitee.com/dgiiot/dgiot/wikis/%E4%BA%A7%E5%93%81%E6%89%8B%E5%86%8C/%E4%BA%A7%E5%93%81%E7%AE%80%E4%BB%8B/%E5%AE%89%E8%A3%85%E9%83%A8%E7%BD%B2)，快速拥有自己的物联网平台
@@ -35,15 +44,8 @@ DG-IoT是国内首款轻量级开源工业物联网平台，我们致力于提�
 |[智慧物流](https://gitee.com/dgiiot/dgiot/wikis/%E8%A1%8C%E4%B8%9A%E6%A1%88%E4%BE%8B/%E6%99%BA%E6%85%A7%E7%89%A9%E6%B5%81)|[Zeta设备接入](https://gitee.com/dgiiot/dgiot/wikis/%E5%AE%9E%E6%88%98%E6%8E%A5%E5%85%A5/Zeta%E8%AE%BE%E5%A4%87%E6%8E%A5%E5%85%A5/%E6%A6%82%E8%BF%B0)|[千万级物流Zetag标签压测](https://gitee.com/dgiiot/dgiot/wikis/%E5%8E%8B%E6%B5%8B%E6%8A%A5%E5%91%8A/1500%E4%B8%87Zetag%E6%A0%87%E7%AD%BE%E7%89%A9%E6%B5%81%E5%85%A8%E4%B8%9A%E5%8A%A1%E5%8E%8B%E6%B5%8B)|
 |[智慧园区](https://gitee.com/dgiiot/dgiot/wikis/%E8%A1%8C%E4%B8%9A%E6%A1%88%E4%BE%8B/%E6%99%BA%E6%85%A7%E5%9B%AD%E5%8C%BA)|[云云对接](https://gitee.com/dgiiot/dgiot/wikis/%E5%AE%9E%E6%88%98%E6%8E%A5%E5%85%A5/%E4%BA%91%E4%BA%91%E5%AF%B9%E6%8E%A5/%E6%A6%82%E8%BF%B0)|智慧场馆|
 
-## 快速体验与微信群
- <span id="jump">技术支持微信群2群</span>
- ![image](https://user-images.githubusercontent.com/51999461/147809135-43c1f653-5b9a-4301-afe8-b6504b4df59e.png)
-
- [QQ群346566935](https://jq.qq.com/?_wv=1027&k=LipWZvDe)
-
-点此[电脑端](https://prod.iotn2n.com/)或者输入https://prod.iotn2n.com体验
-
-账号/密码 : dgiot_admin/dgiot_admin
+## 业务架构
+![业务架构图.jpg](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/%E4%B8%9A%E5%8A%A1%E6%9E%B6%E6%9E%84%E5%9B%BE.jpg)
 
 ## 系统部署
 + **centos 7.6/7.9** 推荐使用腾讯云和阿里云部署，具体操作[点击这里](https://gitee.com/dgiiot/dgiot/wikis/DG-IoT%E7%89%A9%E8%81%94%E7%BD%91%E6%89%8B%E5%86%8C/%E7%AE%80%E4%BB%8B/%E5%AE%89%E8%A3%85%E9%83%A8%E7%BD%B2)
