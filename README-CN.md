@@ -24,7 +24,8 @@ DG-IoT是国内首款轻量级开源工业物联网平台，我们致力于提�
 
 点此[电脑端](https://prod.iotn2n.com/)或者输入https://prod.iotn2n.com体验
 
-账号/密码 : dgiot_admin/dgiot_admin
+账号：dgiot_admin
+密码：dgiot_admin
 
 
 ## 核心特色
