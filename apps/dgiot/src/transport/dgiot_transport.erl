@@ -55,9 +55,46 @@ get_opts(tcp, _Port) ->
         {max_connections, 1000000},
         {max_conn_rate, {1000, 1}}
     ],
+    {ok, 10, {1024, 4096}, Opts};
+
+%% 获取连接配置
+get_opts(udp, _Port) ->
+    TCPOpts = [
+        {backlog, 512},
+        {keepalive, true},
+        {send_timeout, 15000},
+        {send_timeout_close, true},
+        {nodelay, true},
+        {reuseaddr, true},
+        binary,
+        {packet, raw},
+        {exit_on_close, true}
+    ],
+    Opts = [
+        {udp_options, TCPOpts},
+        {acceptors, 16},
+        {max_connections, 1000000},
+        {max_conn_rate, {1000, 1}}
+    ],
     {ok, 10, {1024, 4096}, Opts}.
 
 get_opts(tcp, App, _Port) ->
+    Opts = application:get_env(App, listeners, ?OPTS),
+    TCPOpts = proplists:get_value(tcp_options, Opts, ?SOCKOPTS) ++ [binary, {packet, raw}, {exit_on_close, true}],
+    MaxConnections = proplists:get_value(max_connections, Opts, 1024000),
+    MaxConnRate = proplists:get_value(max_conn_rate, Opts, 1024000),
+    Acceptors = proplists:get_value(acceptors, Opts, 16),
+    NewOpts = esockd:parse_opt([
+        {tcp_options, TCPOpts},
+        {acceptors, Acceptors},
+        {max_connections, MaxConnections},
+        {max_conn_rate, MaxConnRate}
+    ]),
+    ActiveN = proplists:get_value(active_n, Opts, 100),
+    RateLimit = proplists:get_value(rate_limit, Opts, {1024, 4096}),
+    {ok, ActiveN, RateLimit, NewOpts};
+
+get_opts(udp, App, _Port) ->
     Opts = application:get_env(App, listeners, ?OPTS),
     TCPOpts = proplists:get_value(tcp_options, Opts, ?SOCKOPTS) ++ [binary, {packet, raw}, {exit_on_close, true}],
     MaxConnections = proplists:get_value(max_connections, Opts, 1024000),
