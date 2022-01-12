@@ -105,10 +105,10 @@ else
 fi
 
 # =============================  get input parameters =================================================
-# dgiot_install.sh -v [single | cluster | devops] -d [prod.iotn2n.com | your_domain_name] -s [dgiot_44 | dgiot_n] -p [dgiot | dgiot_your_plugin]
+# dgiot_install.sh -v [single | cluster | devops | ci] -d [prod.iotn2n.com | your_domain_name] -s [dgiot_44 | dgiot_n] -p [dgiot | dgiot_your_plugin]
 
 # set parameters by default value
-verType=single        # [single | cluster | devops]
+verType=single        # [single | cluster | devops | ci]
 domain_name="prod.iotn2n.com" #[prod.iotn2n.com | your_domain_name]
 software="dgiot_187"  #[dgiot_187 | dgiot_n]
 plugin="dgiot" #[dgiot | dgiot_your_plugin]
@@ -135,10 +135,9 @@ do
     p)
       echo "plugin=$OPTARG"
       plugin=$(echo $OPTARG)
-      verType="devops"
       ;;
     h)
-      echo "Usage: `basename $0` -v [single | cluster] -s [dgiot_187 | dgiot_n] -d [prod.iotn2n.com | your_domain_name] -p [dgiot | dgiot_your_plugin]"
+      echo "Usage: `basename $0` -v [single | cluster | devops | ci] -s [dgiot_187 | dgiot_n] -d [prod.iotn2n.com | your_domain_name] -p [dgiot | your_dgiot_plugin]"
       exit 0
       ;;
     ?) #unknow option
@@ -1090,16 +1089,20 @@ function build_dashboard() {
     rm ${script_dir}/dgiot_dashboard/dist/ -rf
     ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm add -g pnpm
     ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm install
-    ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm run fix-memory-limit
-    cpucount=`cat /proc/cpuinfo| grep "physical id"| sort| uniq| wc -l`
-    if [ 1 == ${cpucount} ];then
+    #${script_dir}/node-v16.5.0-linux-x64/bin/pnpm run fix-memory-limit
+    cpucount=`cat /proc/cpuinfo| grep 'cpu cores'| uniq |awk '{print $4}'`
+    if [ ${cpucount} -gt 1 ];then
+      ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm build
+      sh ${script_dir}/dgiot_dashboard/config/lite/lite.sh
+      ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm build
+      echo "not build"
+    else
       echo -e "`date +%F_%T` $LINENO: ${GREEN} cpucore = 1 not build dgiot_dashboard${NC}"
       git clone -b gh-pages https://github.com.cnpmjs.org/dgiot/dgiot-dashboard.git dist
-    else
-      ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm build
     fi
   }
-function devops() {
+
+function pre_build_dgiot() {
     ## 关闭dgiot
     clean_service dgiot
     count=`ps -ef |grep beam.smp |grep -v "grep" |wc -l`
@@ -1111,17 +1114,18 @@ function devops() {
 
     cd ${script_dir}/
 
-    #2. 更新最新的后端代码
-    cd ${script_dir}/
-    rm ${script_dir}/dgiot/ -rf
-    if [ ! -d ${script_dir}/dgiot/ ]; then
-      git clone https://gitee.com/dgiiot/dgiot.git
+    rm ${script_dir}/dgiot/apps/dgiot_api/priv/www -rf
+    mkdir -p ${script_dir}/dgiot/apps/dgiot_api/priv/www/
+    if [ -d ${script_dir}/dgiot_dashboard/lite/ ]; then
+      cp ${script_dir}/dgiot_dashboard/lite/ ${script_dir}/dgiot/apps/dgiot_api/priv/www/ -rf
     fi
-    build_dashboard
 
-    if [ -d ${script_dir}/dgiot_dashboard/dist/ ]; then
-      rm ${script_dir}/dgiot/apps/dgiot_api/priv/www -rf
-      cp ${script_dir}/dgiot_dashboard/dist/ ${script_dir}/dgiot/apps/dgiot_api/priv/www/ -rf
+    if [ -d ${script_dir}/dgiot_dashboard/dev/ ]; then
+      cp ${script_dir}/dgiot_dashboard/dev/ ${script_dir}/dgiot/apps/dgiot_api/priv/www/ -rf
+    fi
+
+    if [ -f ${script_dir}/dgiot_dashboard/config/index.html ]; then
+      cp ${script_dir}/dgiot_dashboard/config/index.html ${script_dir}/dgiot/apps/dgiot_api/priv/www/ -rf
     fi
 
     cd ${script_dir}/dgiot/
@@ -1134,6 +1138,7 @@ function devops() {
 
     rm ${script_dir}/dgiot/rebar.config  -rf
     cd ${script_dir}/dgiot/apps/
+    rm ${script_dir}/dgiot/apps/$plugin/ -rf
     if [ ! -d ${script_dir}/dgiot/apps/$plugin/ ]; then
       git clone root@git.iotn2n.com:dgiot/$plugin.git
     fi
@@ -1153,8 +1158,9 @@ function devops() {
     rm ${script_dir}/dgiot/apps/dgiot_http/etc/dgiot_http.conf -rf
     cp ${script_dir}/dgiot/apps/$plugin/conf/dgiot_http.conf ${script_dir}/dgiot/apps/dgiot_http/etc/dgiot_http.conf -rf
     cd ${script_dir}/dgiot
-    make
+  }
 
+function post_build_dgiot() {
     mv ${script_dir}/dgiot/_build/emqx/rel/emqx/ ${script_dir}/dgiot/_build/emqx/rel/dgiot
     cd ${script_dir}/dgiot/_build/emqx/rel
 
@@ -1164,7 +1170,22 @@ function devops() {
       mkdir -p ${install_dir}/go_fastdfs/files/package/
     fi
     cp ./${software}.tar.gz ${install_dir}/go_fastdfs/files/package/
+  }
+
+function devops() {
+    build_dashboard
+    pre_build_dgiot
+    make
+    post_build_dgiot
 }
+
+function ci() {
+    build_dashboard
+    pre_build_dgiot
+    make ci
+    post_build_dgiot
+}
+
 
 function install_windows() {
   # initdb -D /data/dgiot/dgiot_pg_writer/data/
@@ -1219,9 +1240,11 @@ else
       fi
   elif [ "${verType}" == "devops" ]; then
       devops
+  elif [ "${verType}" == "ci" ]; then
+      ci
   else
       echo  "please input correct verType"
   fi
 fi
 
-echo -e "`date +%F_%T` $LINENO: ${GREEN} dgiot ${verType} deploy end${NC}"
+echo -e "`date +%F_%T` $LINENO: ${GREEN} dgiot ${verType} deploy success end${NC}"
