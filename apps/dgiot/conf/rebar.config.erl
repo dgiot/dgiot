@@ -199,7 +199,7 @@ overlay_vars_rel(RelType) ->
         , {enable_plugin_emqx_recon, true}
         , {enable_plugin_emqx_retainer, true}
         , {enable_plugin_emqx_telemetry, true}
-        , {enable_plugin_emqx_exhook, true}
+%%        , {enable_plugin_emqx_exhook, true}
        , {enable_plugin_emqx_auth_mnesia, true}
         , {enable_plugin_dgiot, true}
         , {enable_plugin_dgiot_bridge, true}
@@ -223,7 +223,6 @@ overlay_vars_rel(RelType) ->
         , {enable_plugin_dgiot_gb26875, true}
         , {enable_plugin_dgiot_mqtt, true}
         , {enable_plugin_dgiot_iq60, true}
-        , {enable_plugin_dgiot_location, true}
         , {vm_args_file, VmArgs}
     ].
 
@@ -275,10 +274,8 @@ relx_apps(ReleaseType) ->
         , jsx
         , jesse
         , jwerl
-        , locus
         , odbc
         , erlydtl
-        , ejdbc
         , ecpool
         , erlport
         , poolboy
@@ -315,15 +312,15 @@ relx_plugin_apps(ReleaseType) ->
         , emqx_management
         , emqx_dashboard
         , emqx_bridge_mqtt
-        , emqx_sn
-        , emqx_coap
-        , emqx_stomp
-        , emqx_web_hook
+%%        , emqx_sn
+%%        , emqx_coap
+%%        , emqx_stomp
+%%        , emqx_web_hook
         , emqx_recon
         , emqx_rule_engine
         , emqx_sasl
         , emqx_exhook
-       , emqx_auth_mnesia
+        , emqx_auth_mnesia
     ]
     ++ [emqx_telemetry || not is_enterprise()]
         ++ relx_plugin_apps_per_rel(ReleaseType)
@@ -360,7 +357,6 @@ relx_plugin_apps_per_rel(cloud) ->
         , dgiot_gb26875
         , dgiot_mqtt
         , dgiot_iq60
-        , dgiot_location
     ];
 relx_plugin_apps_per_rel(edge) ->
     [].
