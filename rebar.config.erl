@@ -223,7 +223,6 @@ overlay_vars_rel(RelType) ->
         , {enable_plugin_dgiot_gb26875, true}
         , {enable_plugin_dgiot_mqtt, true}
         , {enable_plugin_dgiot_iq60, true}
-        , {enable_plugin_dgiot_esports, true}
         , {vm_args_file, VmArgs}
     ].
 
@@ -358,7 +357,6 @@ relx_plugin_apps_per_rel(cloud) ->
         , dgiot_gb26875
         , dgiot_mqtt
         , dgiot_iq60
-        , dgiot_esports
     ];
 relx_plugin_apps_per_rel(edge) ->
     [].
