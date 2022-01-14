@@ -28,6 +28,7 @@
 -record(udp, {
     transport,
     socket,
+    sock,
     log = false, % 是否日志, log = file, log = {Mod, Fun}
     buff = <<>>,
     state, % 自定义字段

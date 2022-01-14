@@ -18,17 +18,20 @@
 -author("johnliu").
 -include("dgiot_socket.hrl").
 -include_lib("dgiot/include/logger.hrl").
+-define(MAX_MESSAGE_ID, 65535). % 16-bit number
 
 %% API
--export([start_link/5, child_spec/3, child_spec/4, send/2]).
+-export([start_link/5, child_spec/3, send/2]).
 
 %% gen_server callbacks
--export([init/5, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
-
+-export([init/5, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3, esockd_send/3, esockd_send_ok/3]).
+-define(VERSION, 1).
 -define(SERVER, ?MODULE).
+-record(coap_message, {type, method, id, token = <<>>, options = [], payload = <<>>}).
 
--record(state, {mod, conn_state, active_n, incoming_bytes = 0, rate_limit, limit_timer, child = #udp{}}).
-
+%%-record(state, {mod, sock, chid, tokens, msgid_token, trans, nextmid, options, conn_state, active_n, incoming_bytes = 0, rate_limit, limit_timer, child = #udp{}}).
+-record(state, {sock, chid, responder, options, mod, incoming_bytes = 0, child = #udp{}}).
+%%-record(state, {sock, chid, tokens, msgid_token, trans, nextmid, responder, options}).
 -define(SOCKOPTS, [binary, {reuseaddr, true}]).
 
 child_spec(Mod, Port, State) ->
@@ -45,30 +48,41 @@ child_spec(Mod, Port, State, Opts) ->
     MFArgs = {?MODULE, start_link, [Mod, NewOpts, State]},
     esockd:udp_child_spec(Name, Port, UDPOpts, MFArgs).
 
-start_link(Transport, Sock, Mod, Opts, State) ->
-    {ok, proc_lib:spawn_link(?MODULE, init, [Mod, Transport, Opts, Sock, State])}.
+%% udp
+start_link(Socket = {udp, _SockPid, _Sock}, Sock, Mod, Opts, State) ->
+    {ok, proc_lib:spawn_link(?MODULE, init, [Mod, Socket, Sock, Opts, State])};
+%% dtls
+start_link(esockd_transport, RawSock, Mod, Opts, State) ->
+    Socket = {esockd_transport, RawSock},
+    case esockd_transport:peername(RawSock) of
+        {ok, Peername} ->
+            {ok, proc_lib:spawn_link(?MODULE, init, [Mod, Socket, Peername, Opts, State])};
+        R = {error, _} -> R
+    end.
 
-init(Mod, Transport, Opts, Sock0, State) ->
-    case Transport:wait(Sock0) of
-        {ok, Sock} ->
-            ChildState = #udp{socket = Sock, register = false, transport = Transport, state = State},
+init(Mod, Socket, Sock, Opts, State) ->
+    process_flag(trap_exit, true),
+    case esockd_wait(Socket) of
+        {ok, NSocket} ->
+            ChildState = #udp{socket = Socket, sock = Sock, register = false, transport = esockd_transport, state = State},
             case Mod:init(ChildState) of
                 {ok, NewChildState} ->
                     GState = #state{
+                        sock = NSocket,
+                        chid = Sock,
+                        options = Opts,
                         mod = Mod,
-                        conn_state = running,
-                        active_n = proplists:get_value(active_n, Opts, 8),
-                        rate_limit = rate_limit(proplists:get_value(rate_limit, Opts)),
                         child = NewChildState
                     },
                     dgiot_metrics:inc(dgiot_bridge, <<"udp_server">>, 1),
-                    ok = activate_socket(GState),
                     gen_server:enter_loop(?MODULE, [], GState);
                 {error, Reason} ->
-                    {stop, Reason}
+                    _ = esockd_close(Socket),
+                    exit_on_sock_error(Reason)
             end;
         {error, Reason} ->
-            {stop, Reason}
+            _ = esockd_close(Socket),
+            exit_on_sock_error(Reason)
     end.
 
 handle_call(Request, From, #state{mod = Mod, child = ChildState} = State) ->
@@ -87,18 +101,15 @@ handle_cast(Msg, #state{mod = Mod, child = ChildState} = State) ->
             {stop, Reason, State#state{child = NewChildState}}
     end.
 
-handle_info(activate_socket, State) ->
-    NewState = State#state{limit_timer = undefined, conn_state = running},
-    ok = activate_socket(NewState),
-    {noreply, NewState, hibernate};
+handle_info({datagram, _SockPid, Data}, State) ->
+    handle_info({udp, _SockPid, Data}, State);
 
-handle_info({udp_passive, _Sock}, State) ->
-    NState = ensure_rate_limit(State),
-    ok = activate_socket(NState),
-    {noreply, NState};
+
+handle_info({ssl, _RawSock, Data}, State) ->
+    handle_info({ssl, _RawSock, Data}, State);
 
 %% add register function
-handle_info({udp, Sock, Data}, #state{mod = Mod, child = #udp{register = false, buff = Buff, socket = Sock} = ChildState} = State) ->
+handle_info({udp, _SockPid, Data}, #state{mod = Mod, child = #udp{register = false, buff = Buff, socket = Sock} = ChildState} = State) ->
     dgiot_metrics:inc(dgiot_bridge, <<"udp_server_recv">>, 1),
     Binary = iolist_to_binary(Data),
     NewBin =
@@ -151,21 +162,17 @@ handle_info({udp, Sock, Data}, #state{mod = Mod, child = #udp{buff = Buff, socke
             {stop, Reason, State#state{child = NewChild}}
     end;
 
-handle_info({datagram, _Server, Data0},  #state{mod = _Mod, child = #udp{buff = _Buff, socket = _Sock} = _ChildState} = State) ->
-    _Data = iolist_to_binary(Data0),
-    {noreply, State};
-
 handle_info({shutdown, Reason}, #state{child = #udp{clientid = CliendId, register = true} = ChildState} = State) ->
-    ?LOG(error, "shutdown, ~p, ~p~n", [Reason, ChildState#tcp.state]),
+    ?LOG(error, "shutdown, ~p, ~p~n", [Reason, ChildState#udp.state]),
     dgiot_cm:unregister_channel(CliendId),
     dgiot_device:offline(CliendId),
     write_log(ChildState#udp.log, <<"ERROR">>, list_to_binary(io_lib:format("~w", [Reason]))),
     {stop, normal, State#state{child = ChildState#udp{socket = undefined}}};
 
 handle_info({shutdown, Reason}, #state{child = ChildState} = State) ->
-    ?LOG(error, "shutdown, ~p, ~p~n", [Reason, ChildState#tcp.state]),
-    write_log(ChildState#tcp.log, <<"ERROR">>, list_to_binary(io_lib:format("~w", [Reason]))),
-    {stop, normal, State#state{child = ChildState#tcp{socket = undefined}}};
+    ?LOG(error, "shutdown, ~p, ~p~n", [Reason, ChildState#udp.state]),
+    write_log(ChildState#udp.log, <<"ERROR">>, list_to_binary(io_lib:format("~w", [Reason]))),
+    {stop, normal, State#state{child = ChildState#udp{socket = undefined}}};
 
 
 handle_info({udp_error, _Sock, Reason}, #state{child = ChildState} = State) ->
@@ -174,8 +181,8 @@ handle_info({udp_error, _Sock, Reason}, #state{child = ChildState} = State) ->
     {stop, {shutdown, Reason}, State};
 
 handle_info({udp_closed, Sock}, #state{mod = Mod, child = #udp{socket = Sock} = ChildState} = State) ->
-    write_log(ChildState#udp.log, <<"ERROR">>, <<"tcp_closed">>),
-    ?LOG(error, "udp_closed ~p", [ChildState#tcp.state]),
+    write_log(ChildState#udp.log, <<"ERROR">>, <<"udp_closed">>),
+    ?LOG(error, "udp_closed ~p", [ChildState#udp.state]),
     case Mod:handle_info(udp_closed, ChildState) of
         {noreply, NewChild} ->
             {stop, normal, State#state{child = NewChild#udp{socket = undefined}}};
@@ -189,7 +196,25 @@ handle_info(Info, #state{mod = Mod, child = ChildState} = State) ->
             {noreply, State#state{child = NewChildState}, hibernate};
         {stop, Reason, NewChildState} ->
             {stop, Reason, State#state{child = NewChildState}}
-    end.
+    end;
+
+handle_info({timeout, _TrId, _Event}, State) ->
+    {noreply, State, hibernate};
+
+handle_info({request_complete, #coap_message{token = _Token, id = _Id}}, State) ->
+    {noreply, State, hibernate};
+
+handle_info({'EXIT', Resp, Reason}, State = #state{responder = Resp}) ->
+    logger:info("channel received exit from responder: ~p, reason: ~p", [Resp, Reason]),
+    {stop, Reason, State};
+
+handle_info({'EXIT', _Pid, _Reason}, State = #state{}) ->
+    logger:error("channel received exit from stranger: ~p, reason: ~p", [_Pid, _Reason]),
+    {noreply, State, hibernate};
+
+handle_info(Info, State) ->
+    logger:warning("unexpected massage ~p~n", [Info]),
+    {noreply, State, hibernate}.
 
 terminate(Reason, #state{mod = Mod, child = #udp{clientid = CliendId, register = true} = ChildState}) ->
     dgiot_cm:unregister_channel(CliendId),
@@ -203,6 +228,12 @@ terminate(Reason, #state{mod = Mod, child = ChildState}) ->
 code_change(OldVsn, #state{mod = Mod, child = ChildState} = State, Extra) ->
     {ok, NewChildState} = Mod:code_change(OldVsn, ChildState, Extra),
     {ok, State#state{child = NewChildState}}.
+
+%%--------------------------------------------------------------------
+%% Handle datagram
+%%--------------------------------------------------------------------
+
+
 
 %%%===================================================================
 %%% Internal functions
@@ -227,39 +258,46 @@ send(#udp{transport = Transport, socket = Socket}, Payload) ->
             Transport:send(Socket, Payload)
     end.
 
-rate_limit({Rate, Burst}) ->
-    esockd_rate_limit:new(Rate, Burst).
+%%--------------------------------------------------------------------
+%% Wrapped codes for esockd udp/dtls
 
-activate_socket(#state{conn_state = blocked}) ->
-    ok;
-activate_socket(#state{child = #udp{transport = Transport, socket = Socket}, active_n = N}) ->
-    TrueOrN =
-        case Transport:is_ssl(Socket) of
-            true -> true; %% Cannot set '{active, N}' for SSL:(
-            false -> N
-        end,
-    case Transport:setopts(Socket, [{active, TrueOrN}]) of
-        ok -> ok;
-        {error, Reason} ->
-            self() ! {shutdown, Reason},
-            ok
+-spec exit_on_sock_error(_) -> no_return().
+exit_on_sock_error(Reason) when Reason =:= einval;
+    Reason =:= enotconn;
+    Reason =:= closed ->
+    erlang:exit(normal);
+exit_on_sock_error(timeout) ->
+    erlang:exit({shutdown, ssl_upgrade_timeout});
+exit_on_sock_error(Reason) ->
+    erlang:exit({shutdown, Reason}).
+
+esockd_wait(Socket = {udp, _SockPid, _Sock}) ->
+    {ok, Socket};
+esockd_wait({esockd_transport, Sock}) ->
+    case esockd_transport:wait(Sock) of
+        {ok, NSock} -> {ok, {esockd_transport, NSock}};
+        R = {error, _} -> R
     end.
 
-ensure_rate_limit(State) ->
-    case esockd_rate_limit:check(State#state.incoming_bytes, State#state.rate_limit) of
-        {0, RateLimit} ->
-            State#state{incoming_bytes = 0, rate_limit = RateLimit};
-        {Pause, RateLimit} ->
-            %?LOG(info,"[~p] ensure_rate_limit :~p", [Pause, ensure_rate_limit]),
-            TRef = erlang:send_after(Pause, self(), activate_socket),
-            State#state{conn_state = blocked, incoming_bytes = 0, rate_limit = RateLimit, limit_timer = TRef}
-    end.
+esockd_send_ok(Socket, Dest, Data) ->
+    _ = esockd_send(Socket, Dest, Data),
+    ok.
+
+esockd_send({udp, _SockPid, Sock}, {Ip, Port}, Data) ->
+    gen_udp:send(Sock, Ip, Port, Data);
+esockd_send({esockd_transport, Sock}, {_Ip, _Port}, Data) ->
+    esockd_transport:async_send(Sock, Data).
+
+esockd_close({udp, _SockPid, Sock}) ->
+    gen_udp:close(Sock);
+esockd_close({esockd_transport, Sock}) ->
+    esockd_transport:fast_close(Sock).
 
 
 write_log(file, Type, Buff) ->
     [Pid] = io_lib:format("~p", [self()]),
     Date = dgiot_datetime:format("YYYY-MM-DD"),
-    Path = <<"log/udp_server/", Date/binary, ".txt">>,
+    Path = <<"log/tcp_server/", Date/binary, ".txt">>,
     filelib:ensure_dir(Path),
     Time = dgiot_datetime:format("HH:NN:SS " ++ Pid),
     Data = case Type of

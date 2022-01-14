@@ -615,7 +615,7 @@ check_field(Data, #{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> :=
                     <<"BOOL">> ->
                         Value;
                     <<"TEXT">> ->
-                        {unicode:characters_to_binary(unicode:characters_to_list((Value))), text};
+                        {unicode:characters_to_binary(unicode:characters_to_list((dgiot_utils:to_binary(Value)))), text};
                     <<"GEOPOINT">> ->
                         {unicode:characters_to_binary(unicode:characters_to_list((Value))), text};
 %%                    <<"ENUM">> ->
@@ -681,7 +681,7 @@ run_sql(#{<<"driver">> := <<"HTTP">>, <<"url">> := Url, <<"username">> := UserNa
 run_sql(#{<<"driver">> := <<"JDBC">>, <<"url">> := _Url}, Action, _Sql) when Action == execute_update; Action == execute_query ->
 %%    ?LOG(info,"Execute ~p (~p) ~p", [Url, byte_size(Sql), Sql]),
 %%    apply(ejdbc, Action, [<<"com.taosdata.jdbc.TSDBDriver">>, Sql]).
-     ok.
+    ok.
 
 
 %% 先缓存定时存库

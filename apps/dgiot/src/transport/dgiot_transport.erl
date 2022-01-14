@@ -59,19 +59,12 @@ get_opts(tcp, _Port) ->
 
 %% 获取连接配置
 get_opts(udp, _Port) ->
-    TCPOpts = [
-        {backlog, 512},
-        {keepalive, true},
-        {send_timeout, 15000},
-        {send_timeout_close, true},
-        {nodelay, true},
-        {reuseaddr, true},
-        binary,
-        {packet, raw},
-        {exit_on_close, true}
+    UDPOpts = [
+        {reuseaddr, true}
     ],
     Opts = [
-        {udp_options, TCPOpts},
+        {udp_options, UDPOpts},
+        {access_rules, [{allow, all}]},
         {acceptors, 16},
         {max_connections, 1000000},
         {max_conn_rate, {1000, 1}}
