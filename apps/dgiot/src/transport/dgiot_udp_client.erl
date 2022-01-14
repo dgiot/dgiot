@@ -20,26 +20,19 @@
 -include_lib("dgiot/include/logger.hrl").
 -behaviour(gen_server).
 %% API
--export([start_link/6, start_link/4, start_link/5, start_link/3, start_link/7, send/2]).
+-export([start_link/4, start_link/5, start_link/3, send/2]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 -record(state, {host, port, child = #udp{}, mod, reconnect_times, reconnect_sleep = 30}).
 -define(TIMEOUT, 10000).
 -define(UDP_OPTIONS, [binary, {active, once}, {packet, raw}, {reuseaddr, false}, {send_timeout, ?TIMEOUT}]).
 
-
 start_link(Mod, Host, Port) ->
     start_link(Mod, Host, Port, undefined).
 
 start_link(Mod, Host, Port, Args) ->
-    start_link(Mod, Host, Port, max, 30, Args).
+    start_link(undefined, Mod, Host, Port, Args).
 
 start_link(Name, Mod, Host, Port, Args) ->
-    start_link(Name, Mod, Host, Port, max, 30, Args).
-
-start_link(Mod, Host, Port, ReconnectTimes, ReconnectSleep, Args) ->
-    start_link(undefined, Mod, Host, Port, ReconnectTimes, ReconnectSleep, Args).
-
-start_link(Name, Mod, Host, Port, ReconnectTimes, ReconnectSleep, Args) ->
     Ip =
         case is_binary(Host) of
             true -> binary_to_list(Host);
@@ -57,9 +50,7 @@ start_link(Name, Mod, Host, Port, ReconnectTimes, ReconnectSleep, Args) ->
     State = #state{
         mod = Mod,
         host = Ip,
-        port = Port1,
-        reconnect_times = ReconnectTimes, %% 重连次数
-        reconnect_sleep = ReconnectSleep  %% 重连间隔
+        port = Port1
     },
     case Name of
         undefined ->
