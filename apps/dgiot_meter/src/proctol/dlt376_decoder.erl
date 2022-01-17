@@ -44,7 +44,8 @@ parse_frame(<<Rest/binary>> = Bin, Acc, _Opts) when byte_size(Rest) == 15 ->
 
 %% DLT376协议
 %% 68 32 00 32 00 68 C9 14 03 32 63 00 02 73 00 00 01 00 EB 16
-parse_frame(<<16#68, _:16, L2_low:6, _:2,L2_high:8, 16#68, C:8, A1:2/bytes,A2:2/bytes,A3:1/bytes, AFN:8, SEQ:8,Rest/binary>> = Bin, Acc, Opts) ->
+%% 68 32 00 32 00 68 C9 00 10 01 00 00 02 70 00 00 01 00 4D 16
+parse_frame(<<16#68, _:16, L2_low:6, _:2, L2_high:8, 16#68, C:8, A1:2/bytes, A2:2/bytes, A3:1/bytes, AFN:8, SEQ:8,Rest/binary>> = Bin, Acc, Opts) ->
     Len = L2_high * 255 + L2_low,
     DLen = Len -8,
     case byte_size(Rest) -2 >= DLen of
