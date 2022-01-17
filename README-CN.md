@@ -79,12 +79,12 @@ wget -q https://gitee.com/dgiiot/dgiot/raw/master/dgiot_install.sh  && sh dgiot_
 ![dgiotdevtools.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/dgiotdevtools.png)
  +  国外下载源码
   ```bash
-     git clone https://github.com/dgiot/dgiot-dashboard.git
+     git clone -b master https://github.com/dgiot/dgiot-dashboard.git
      git clone https://github.com/dgiot/dgiot.git
    ```
  +  国内下载源码
    ```bash
-     git clone https://gitee.com/dgiiot/dgiot-dashboard.git
+     git clone -b master https://gitee.com/dgiiot/dgiot-dashboard.git
      git clone https://gitee.com/dgiiot/dgiot.git
    ```
  +  国内Linux/Unix/Mac/windows 构建
