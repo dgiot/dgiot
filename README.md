@@ -35,13 +35,13 @@ Before 2016, the Shuwa team had been crawling on the Internet and the mobile Int
 
  +  Download source code abroad
   ```bash
-     git clone https://github.com/dgiot/dgiot-dashboard.git
+     git clone -b master https://github.com/dgiot/dgiot-dashboard.git
      git clone https://github.com/dgiot/dgiot.git
    ```
 
  +  China download source code
    ```bash
-     git clone https://gitee.com/dgiiot/dgiot-dashboard.git
+     git clone -b master https://gitee.com/dgiiot/dgiot-dashboard.git
      git clone https://gitee.com/dgiiot/dgiot.git
    ```
 
