@@ -1077,6 +1077,7 @@ function build_dashboard() {
     fi
 
     rm  ${script_dir}/dgiot_dashboard/ -rf
+    cd  ${script_dir}/
     if [ ! -d ${script_dir}/dgiot_dashboard/ ]; then
       git clone -b master https://gitee.com/dgiiot/dgiot-dashboard.git dgiot_dashboard
     fi
