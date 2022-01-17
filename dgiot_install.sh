@@ -163,7 +163,7 @@ function pre_install() {
   ## 1.5 配置阿里云yum源
   if [ -f /etc/yum.repos.d/CentOS-Base.repo ]; then
      mv /etc/yum.repos.d/CentOS-Base.repo /etc/yum.repos.d/CentOS-Base.repo.bak
-     curl -o /etc/yum.repos.d/CentOS-Base.repo http://mirrors.aliyun.com/repo/Centos-7.repo &> /dev/null
+     curl -o /etc/yum.repos.d/CentOS-Base.repo https://dgiot-release-1306147891.cos.ap-nanjing.myqcloud.com/v4.4.0/Centos-7.repo &> /dev/null
   fi
 
   ## 1.6 echo "isntalling tools"
