@@ -1116,7 +1116,6 @@ function pre_build_dgiot() {
 
     cd ${script_dir}/
 
-
     if [ ! -d ${script_dir}/dgiot/ ]; then
       git clone root@git.iotn2n.com:dgiot/dgiot.git
     fi
@@ -1126,9 +1125,10 @@ function pre_build_dgiot() {
     git pull
 
     rm ${script_dir}/dgiot/apps/dgiot_api/priv/www/ -rf
-    rm ${script_dir}/dgiot/emqx/rel/ -rf
+    rm ${script_dir}/dgiot/_build/emqx/rel/ -rf
     rm ${script_dir}/dgiot/emqx/lib/dgiot_api/ -rf
     mkdir -p ${script_dir}/dgiot/apps/dgiot_api/priv/www/
+
     if [ -d ${script_dir}/dgiot_dashboard/lite/ ]; then
       cp ${script_dir}/dgiot_dashboard/lite/ ${script_dir}/dgiot/apps/dgiot_api/priv/www/ -rf
     fi
