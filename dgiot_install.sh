@@ -1114,6 +1114,14 @@ function pre_build_dgiot() {
 
     cd ${script_dir}/
 
+    if [ ! -d ${script_dir}/dgiot/ ]; then
+      git clone root@git.iotn2n.com:dgiot/dgiot.git
+    fi
+
+    cd ${script_dir}/dgiot/
+    git reset --hard
+    git pull
+
     rm ${script_dir}/dgiot/apps/dgiot_api/priv/www -rf
     mkdir -p ${script_dir}/dgiot/apps/dgiot_api/priv/www/
     if [ -d ${script_dir}/dgiot_dashboard/lite/ ]; then
@@ -1128,18 +1136,12 @@ function pre_build_dgiot() {
       cp ${script_dir}/dgiot_dashboard/config/index.html ${script_dir}/dgiot/apps/dgiot_api/priv/www/ -rf
     fi
 
-    cd ${script_dir}/dgiot/
-    git reset --hard
-    git pull
-
     if [ ! -d ${script_dir}/dgiot/emqx/rel/ ]; then
       rm ${script_dir}/dgiot/emqx/rel -rf
     fi
 
-    rm ${script_dir}/dgiot/rebar.config  -rf
-    cd ${script_dir}/dgiot/apps/
-    rm ${script_dir}/dgiot/apps/$plugin/ -rf
     if [ ! -d ${script_dir}/dgiot/apps/$plugin/ ]; then
+      cd ${script_dir}/dgiot/apps/
       git clone root@git.iotn2n.com:dgiot/$plugin.git
     fi
 
@@ -1147,6 +1149,7 @@ function pre_build_dgiot() {
     git reset --hard
     git pull
 
+    rm ${script_dir}/dgiot/rebar.config  -rf
     cp ${script_dir}/dgiot/apps/$plugin/conf/rebar.config ${script_dir}/dgiot/rebar.config  -rf
     rm ${script_dir}/dgiot/rebar.config.erl  -rf
     cp ${script_dir}/dgiot/apps/$plugin/conf/rebar.config.erl ${script_dir}/dgiot/rebar.config.erl  -rf
@@ -1194,7 +1197,9 @@ function install_windows() {
   # net stop pgsql
   # net start pgsql
   /usr/local/lib/erlang/install
-  cd /data
+  cd /data/bin/
+  wget ${fileserver}/parse_4.0.sql.tar.gz -O /data/bin/parse_4.0.sql.tar.gz &> /dev/null
+  tar xvf parse_4.0.sql.tar.gz &> /dev/null
   ./dgiot_hub.exe start
   echo -e "`date +%F_%T` $LINENO: ${GREEN} install parse_server success${NC}"
 }
