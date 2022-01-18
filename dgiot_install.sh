@@ -1181,7 +1181,7 @@ function post_build_dgiot() {
   }
 
 function devops() {
-#    build_dashboard
+    build_dashboard
     pre_build_dgiot
     make
     post_build_dgiot
