@@ -1014,7 +1014,7 @@ function build_nginx() {
     cd ${script_dir}/nginx-1.20.1
     ./configure --prefix=/data/dgiot/nginx  --with-http_realip_module --with-http_ssl_module --with-http_gzip_static_module &> /dev/null
     make &> /dev/null
-    make install &> /dev/nulldddddddd
+    make install &> /dev/null
 
     if [ ! -f ${script_dir}/nginx.conf ]; then
        wget $fileserver/nginx.conf -O ${script_dir}/nginx.conf &> /dev/null
@@ -1181,7 +1181,7 @@ function post_build_dgiot() {
   }
 
 function devops() {
-    build_dashboard
+#    build_dashboard
     pre_build_dgiot
     make
     post_build_dgiot
