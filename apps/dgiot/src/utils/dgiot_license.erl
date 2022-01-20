@@ -184,7 +184,8 @@ check_plugin(Name) ->
         <<"dgiot_apihub">> ->
             true;
         <<"dgiot_", _/binary>> ->
-            dgiot_license:check();
+%%            dgiot_license:check();
+            true;
         _ ->
             true
     end.
