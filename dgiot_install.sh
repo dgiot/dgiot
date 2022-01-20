@@ -105,14 +105,15 @@ else
 fi
 
 # =============================  get input parameters =================================================
-# dgiot_install.sh -v [single | cluster | devops | ci] -d [prod.iotn2n.com | your_domain_name] -s [dgiot_44 | dgiot_n] -p [dgiot | dgiot_your_plugin]
+# dgiot_install.sh -v [single | cluster | devops | ci] -d [prod.iotn2n.com | your_domain_name] -s [dgiot_44 | dgiot_n] -p [dgiot | dgiot_your_plugin] -m [dgiotmd5]
 
 # set parameters by default value
 verType=single        # [single | cluster | devops | ci]
 domain_name="prod.iotn2n.com" #[prod.iotn2n.com | your_domain_name]
-software="dgiot_187"  #[dgiot_187 | dgiot_n]
+software="dgiot_235"  #[dgiot_235 | dgiot_n]
 plugin="dgiot" #[dgiot | dgiot_your_plugin]
-while getopts "h:v:d:s:p:" arg
+dgiotmd5="d5b66c5fac523aa165c3c75d15565aef"
+while getopts "h:v:d:s:p:m:" arg
 do
   case $arg in
     v)
@@ -122,6 +123,10 @@ do
     s)
       echo "software=$OPTARG"
       software=$(echo $OPTARG)
+      ;;
+    m)
+      echo "dgiotmd5=$OPTARG"
+      dgiotmd5=$(echo $OPTARG)
       ;;
     d)
       domain_name=$(echo $OPTARG)
@@ -137,7 +142,7 @@ do
       plugin=$(echo $OPTARG)
       ;;
     h)
-      echo "Usage: `basename $0` -v [single | cluster | devops | ci] -s [dgiot_187 | dgiot_n] -d [prod.iotn2n.com | your_domain_name] -p [dgiot | your_dgiot_plugin]"
+      echo "Usage: `basename $0` -v [single | cluster | devops | ci] -s [dgiot_235 | dgiot_n] -d [prod.iotn2n.com | your_domain_name] -p [dgiot | your_dgiot_plugin]"
       exit 0
       ;;
     ?) #unknow option
@@ -710,7 +715,7 @@ function install_go_fastdfs() {
   fi
   tar xf dgiot_dashboard.tar.gz &> /dev/null
 
-  mv ${script_dir}/dgiot_dashboard ${install_dir}/go_fastdfs/files/
+  mv ${script_dir}/dgiot_dashboard ${install_dir}/go_fastdfs/files/ &> /dev/null
 
 }
 
@@ -747,14 +752,25 @@ function install_erlang_otp() {
 }
 
 function update_dgiot() {
+#  dgiot
   if [ ! -d ${install_dir}/go_fastdfs/files/package/ ]; then
       mkdir -p ${install_dir}/go_fastdfs/files/package/
   fi
-
-  if [ ! -f ${install_dir}/go_fastdfs/files/package/${software}.tar.gz ]; then
-    wget $fileserver/${software}.tar.gz -O ${install_dir}/go_fastdfs/files/package/${software}.tar.gz &> /dev/null
-  fi
   cd ${install_dir}/go_fastdfs/files/package/
+  if [ -f ${software}.tar.gz ]; then
+    md5=`md5sum ${software}.tar.gz |cut -d ' ' -f1`
+    if [ "${md5}" != "${dgiotmd5}" ]; then
+      rm -rf ${software}.tar.gz
+    fi
+  fi
+  if [ ! -f ${software}.tar.gz ]; then
+    wget ${fileserver}/${software}.tar.gz &> /dev/null
+    md51=`md5sum ${software}.tar.gz |cut -d ' ' -f1`
+    if [ "${md51}" != "${dgiotmd5}" ]; then
+      echo -e "`date +%F_%T` $LINENO: ${RED} download ${software} failed${NC}"
+      exit 1
+    fi
+  fi
   tar xf ${software}.tar.gz
   rm   ${script_dir}/dgiot/etc/plugins/dgiot_parse.conf -rf
   cp   ${install_dir}/dgiot/etc/plugins/dgiot_parse.conf ${install_dir}/go_fastdfs/files/package/dgiot/etc/plugins/dgiot_parse.conf
@@ -768,6 +784,28 @@ function update_dgiot() {
   install_service "dgiot" "forking" "/bin/sh ${install_dir}/dgiot/bin/emqx start"  "root" "HOME=${install_dir}/dgiot/erts-11.0" "/bin/sh /data/dgiot/bin/emqx stop"
 }
 
+function update_dashboard() {
+  #  dgiot_dashboard
+  cd ${install_dir}/go_fastdfs/files/
+  if [ -f dgiot_dashboard.tar.gz ]; then
+    dashboardmd5=`md5sum dgiot_dashboard.tar.gz |cut -d ' ' -f1`
+    if [ "${dashboardmd5}" != "f5e355d000e231e72c2c5fd619d576d3" ]; then
+      rm -rf dgiot_dashboard.tar.gz &> /dev/null
+    fi
+  fi
+  if [ ! -f dgiot_dashboard.tar.gz ]; then
+    wget ${fileserver}/dgiot_dashboard.tar.gz &> /dev/null
+    dashboardmd52=`md5sum dgiot_dashboard.tar.gz |cut -d ' ' -f1`
+    if [ "${dashboardmd52}" != "f5e355d000e231e72c2c5fd619d576d3" ]; then
+      echo -e "`date +%F_%T` $LINENO: ${RED} download dgiot_dashboard.tar.gz failed${NC}"
+      exit 1
+    fi
+  fi
+  if [ -d dgiot_dashboard/ ]; then
+    mv dgiot_dashboard/ ${backup_dir}/
+  fi
+  tar xf dgiot_dashboard.tar.gz &> /dev/null
+}
 function install_dgiot() {
   make_ssl
   if [ ! -d ${install_dir}/go_fastdfs/files/package/ ]; then
@@ -775,7 +813,7 @@ function install_dgiot() {
   fi
 
   if [ ! -f ${install_dir}/go_fastdfs/files/package/${software}.tar.gz ]; then
-    wget $fileserver/${software}.tar.gz -O ${install_dir}/go_fastdfs/files/package/${software}.tar.gz &> /dev/null
+    wget ${fileserver}/${software}.tar.gz -O ${install_dir}/go_fastdfs/files/package/${software}.tar.gz &> /dev/null
   fi
   cd ${install_dir}/go_fastdfs/files/package/
   tar xf ${software}.tar.gz
@@ -1058,7 +1096,6 @@ function make_ssl() {
     fi
 }
 
-
 function build_dashboard() {
   if [ ! -d ${script_dir}/node-v16.5.0-linux-x64/bin/ ]; then
       if [ ! -f ${script_dir}/node-v16.5.0-linux-x64.tar.gz ]; then
@@ -1088,7 +1125,8 @@ function build_dashboard() {
     #git checkout v4.0.0
 
     export PATH=$PATH:/usr/local/bin:${script_dir}/node-v16.5.0-linux-x64/bin/
-    rm ${script_dir}/dgiot_dashboard/dist/ -rf
+    rm ${script_dir}/dgiot_dashboard/dev/ -rf
+    rm ${script_dir}/dgiot_dashboard/lite/ -rf
     ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm add -g pnpm
     ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm install
     #${script_dir}/node-v16.5.0-linux-x64/bin/pnpm run fix-memory-limit
@@ -1100,7 +1138,7 @@ function build_dashboard() {
       echo "not build"
     else
       echo -e "`date +%F_%T` $LINENO: ${GREEN} cpucore = 1 not build dgiot_dashboard${NC}"
-      git clone -b gh-pages https://github.com.cnpmjs.org/dgiot/dgiot-dashboard.git dist
+      git clone -b www https://gitee.com/dgiiot/dgiot-dashboard.git dev
     fi
   }
 
@@ -1224,12 +1262,13 @@ else
       if [ -x ${install_dir}/dgiot ]; then
         update_flag=1
         update_dgiot
+        update_dashboard
       else
         pre_install
         clean_services
         deploy_postgres
         deploy_parse_server     # 配置数据
-        install_postgres_exporter
+        #install_postgres_exporter  #占用资源较多，先去除
         deploy_tdengine_server  # 时序数据
         install_go_fastdfs      # 文件数据
         install_erlang_otp
