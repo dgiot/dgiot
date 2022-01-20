@@ -96,15 +96,14 @@ wget -q https://gitee.com/dgiiot/dgiot/raw/master/dgiot_install.sh  && sh dgiot_
     cd ../dgiot
     git pull
     rm ./apps/dgiot_api/priv/www -rf
-    cp ../dgiot-dashboarddist/ ./apps/dgiot_api/priv/www -rf
-    cp ../dgiot-dashboard/swagger ./apps/dgiot_api/priv/www/ -rf
+    cp ../dgiot-dashboard/dev/ ./apps/dgiot_api/priv/www -rf
     make run
  ```
 + Make Debug
  ```
   make DIAGNOSTIC=1
  ```
-*DGIOT* 启动，可以使用浏览器访问 http://localhost:80 来查看 Dashboard。
+*DGIOT* 启动，可以使用浏览器访问 http://localhost:80/dev 来查看 Dashboard。
 
 - 新功能的完整列表，请参阅 [DGIOT Release Notes](https://github.com/dgiot/dgiot/releases)。
 - 获取更多信息，请访问 [DGIOT 官网](https://tech.iotn2n.com/)。
