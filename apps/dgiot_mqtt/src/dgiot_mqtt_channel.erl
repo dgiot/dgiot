@@ -102,6 +102,8 @@ init(?TYPE, ChannelId, #{
         id = ChannelId,
         auth = Auth
     },
+    dgiot_rule_handler:sysc_rules(),
+    emqx_rule_engine_api:list_rules(#{}, []),
 %%    dgiot_matlab_tcp:start(Port, State)
     {ok, State};
 
@@ -138,7 +140,7 @@ handle_message({rule, #{clientid := _DeviceId, username := ProductId, payload :=
             case binary:split(Topic, <<$/>>, [global, trim]) of
 %%                     /ecfd3a227c/6C4B909AF64A/metadata/derived  派生物模型上报
                 [<<>>, ProductId, DtuAddr, <<"metadata">>, <<"derived">>] ->
-                    create_device(ProductId, DtuAddr, <<"MATLAB_", DtuAddr/binary>>, Peerhost),
+                    create_device(ProductId, DtuAddr, <<"MQTT_", DtuAddr/binary>>, Peerhost),
                     case jsx:decode(Payload, [{labels, binary}, return_maps]) of
                         #{<<"timestamp">> := _Timestamp,
                             <<"metadata">> := Metadata,
