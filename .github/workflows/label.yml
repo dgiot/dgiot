@@ -21,4 +21,3 @@ jobs:
       with:
         file: CHANGELOG.md
         repo-token: "${{ secrets.GITHUB_TOKEN }}"
-    - uses: rhysd/changelog-from-release/action@v2
