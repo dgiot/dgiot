@@ -155,7 +155,7 @@ done
 ## 1.3. 部署前处理
 function pre_install() {
   # 网络检查pre_install
-  ping -c2 baidu.com
+  ping -c2 baidu.com &> /dev/null
   get_lanip
   get_wanip
   get_processor
@@ -170,8 +170,8 @@ function pre_install() {
      curl -o /etc/yum.repos.d/CentOS-Base.repo https://dgiot-release-1306147891.cos.ap-nanjing.myqcloud.com/v4.4.0/CentOS-Base.repo &> /dev/null
   fi
 
-  ## 1.6 echo "isntalling tools"
-  echo -e  "`date +%F_%T` $LINENO: ${GREEN} isntalling tools${NC}"
+  ## 1.6 echo "installing tools"
+  echo -e  "`date +%F_%T` $LINENO: ${GREEN} installing tools${NC}"
   yum -y install vim net-tools wget ntpdate &> /dev/null
   yum -y groupinstall "Development Tools" &> /dev/null
 
