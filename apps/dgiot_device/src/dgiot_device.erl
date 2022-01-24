@@ -59,8 +59,8 @@ post(Device) ->
 put(Device) ->
     DeviceId = maps:get(<<"objectId">>, Device),
     case lookup(DeviceId) of
-        {ok, #{<<"status">> := Status, <<"acl">> := Acl,
-            <<"devaddr">> := Devaddr, <<"productid">> := ProductId, <<"devicesecret">> := DeviceSecret, <<"node">> := Node}} ->
+        {ok, #{<<"status">> := Status, <<"acl">> := Acl, <<"devaddr">> := Devaddr,
+            <<"productid">> := ProductId, <<"devicesecret">> := DeviceSecret, <<"node">> := Node}} ->
             case maps:find(<<"ACL">>, Device) of
                 error ->
                     dgiot_mnesia:insert(DeviceId, {[Status, dgiot_datetime:now_secs(), Acl, Devaddr, ProductId, DeviceSecret], Node});
@@ -76,8 +76,7 @@ save(Device) ->
     Devaddr = maps:get(<<"devaddr">>, Device),
     Product = maps:get(<<"product">>, Device),
     ProductId = maps:get(<<"objectId">>, Product),
-    <<DeviceSecretdefult:10/binary, _/binary>> = dgiot_utils:to_md5(dgiot_utils:random()),
-    DeviceSecret = maps:get(<<"devicesecret">>, Device, DeviceSecretdefult),
+    DeviceSecret = maps:get(<<"deviceSecret">>, Device, <<"DeviceSecretdefult">>),
     UpdatedAt =
         case maps:get(<<"updatedAt">>, Device, dgiot_datetime:now_secs()) of
             <<Data:10/binary, "T", Time:8/binary, _/binary>> ->
