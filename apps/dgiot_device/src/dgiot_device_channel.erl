@@ -109,7 +109,7 @@ init(?TYPE, ChannelId, Args) ->
     {ok, State, []}.
 
 handle_init(State) ->
-    erlang:send_after(300, self(), {message, <<"_Pool">>, load}),
+    erlang:send_after(500, self(), {message, <<"_Pool">>, load}),
     erlang:send_after(3 * 60 * 1000, self(), {message, <<"_Pool">>, check}),
     {ok, State}.
 

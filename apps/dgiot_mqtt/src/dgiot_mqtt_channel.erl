@@ -76,8 +76,6 @@ start(ChannelId, ChannelArgs) ->
 init(?TYPE, ChannelId, #{
     <<"product">> := Products,
     <<"auth">> := Auth}) ->
-%%    load_auth_hook(),
-%%    load_acl_hook(),
 %%    io:format("Products = ~p.~n", [Products]),
     lists:map(fun(X) ->
         case X of
@@ -104,7 +102,6 @@ init(?TYPE, ChannelId, #{
     },
     dgiot_rule_handler:sysc_rules(),
     emqx_rule_engine_api:list_rules(#{}, []),
-%%    dgiot_matlab_tcp:start(Port, State)
     {ok, State};
 
 init(?TYPE, _ChannelId, _Args) ->
@@ -273,10 +270,3 @@ create_rules(RuleID, ChannelId, Description, Rawsql, Target_topic) ->
                 _ -> pass
             end
     end.
-
-
-%%load_auth_hook() ->
-%%    emqx:hook('client.authenticate', fun dgiot_mqtt_auth:check/3, [#{hash_type => plain}]).
-%%
-%%load_acl_hook() ->
-%%    emqx:hook('client.check_acl', fun dgiot_mqtt_acl:check_acl/5, [#{}]).

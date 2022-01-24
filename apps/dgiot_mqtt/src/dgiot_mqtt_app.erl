@@ -22,11 +22,13 @@
 %%
 %% @end
 -module(dgiot_mqtt_app).
--emqx_plugin(?MODULE).
+-emqx_plugin(auth).
 -behaviour(application).
 
 %% Application callbacks
--export([start/2, stop/1]).
+-export([start/2,
+    prep_stop/1,
+    stop/1]).
 
 
 %% ===================================================================
@@ -35,8 +37,21 @@
 
 start(_StartType, _StartArgs) ->
     {ok, Sup} = dgiot_mqtt_sup:start_link(),
+    _ = load_auth_hook(),
+    _ = load_acl_hook(),
     {ok, Sup}.
 
 
 stop(_State) ->
     ok.
+
+prep_stop(State) ->
+    emqx:unhook('client.authenticate', fun dgiot_mqtt_auth:check/3),
+    emqx:unhook('client.check_acl', fun dgiot_mqtt_acl:check_acl/5),
+    State.
+
+load_auth_hook() ->
+    emqx:hook('client.authenticate', fun dgiot_mqtt_auth:check/3, [#{hash_type => plain}]).
+
+load_acl_hook() ->
+    emqx:hook('client.check_acl', fun dgiot_mqtt_acl:check_acl/5, [#{}]).

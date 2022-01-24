@@ -31,50 +31,47 @@
     , description/0
 ]).
 
+check(#{username := Username}, AuthResult, _)
+    when Username == <<"anonymous">> orelse Username == undefined orelse Username == <<>> ->
+    io:format("~s ~p Username: ~p~n", [?FILE, ?LINE, Username]),
+    {stop, AuthResult#{anonymous => true, auth_result => success}};
 
-check(ClientInfo = #{clientid := _Clientid,
-    password := NPassword}, AuthResult, #{hash_type := HashType}) ->
-    _Username = maps:get(username, ClientInfo, undefined),
-    List = [],
-    case match_password(NPassword, HashType, List) of
-        false ->
-%%           ?LOG(error, "[Mnesia] Auth from mnesia failed: ~p", [ClientInfo]),
-            {stop, AuthResult#{anonymous => false, auth_result => password_error}};
+%% 当 clientid 和 password 为token 且相等的时候为用户登录
+check(#{clientid := Token, username := UserId, password := Token}, AuthResult, #{hash_type := _HashType}) ->
+    io:format("~s ~p UserId: ~p~n", [?FILE, ?LINE, UserId]),
+    case dgiot_auth:get_session(Token) of
+        #{<<"objectId">> := UserId} ->
+            {stop, AuthResult#{anonymous => false, auth_result => success}};
         _ ->
-            {stop, AuthResult#{anonymous => false, auth_result => success}}
-    end.
+            {stop, AuthResult#{anonymous => false, auth_result => password_error}}
+    end;
+
+%% ClientID 为deviceID 或者 deviceAddr Username 为 ProductID
+%% 1、 尝试1型1密认证
+%% 2、 尝试ClientID 为deviceID的1机1密认证
+%% 3、 尝试ClientID 为deviceAddr的1机1密认证
+check(#{clientid := ClientId, username := ProductID, password := Password}, AuthResult, #{hash_type := _HashType}) ->
+    io:format("~s ~p ProductID: ~p ClientId ~p Password ~p ~n", [?FILE, ?LINE, ProductID, ClientId, Password]),
+    case dgiot_product:lookup_prod(ProductID) of
+        {ok, #{<<"productSecret">> := Password}} ->
+            {stop, AuthResult#{anonymous => false, auth_result => success}};
+        _ ->
+            case dgiot_device:lookup(ClientId) of
+                {ok, #{<<"devicesecret">> := Password}} ->
+                    {stop, AuthResult#{anonymous => false, auth_result => success}};
+                _ ->
+                    DeviceID = dgiot_parse:get_deviceid(ProductID, ClientId),
+                    case dgiot_device:lookup(DeviceID) of
+                        {ok, #{<<"devicesecret">> := Password, <<"devaddr">>  := ClientId}} ->
+                            {stop, AuthResult#{anonymous => false, auth_result => success}};
+                        _ ->
+                            {stop, AuthResult#{anonymous => false, auth_result => password_error}}
+                    end
+            end
+    end;
+
+check(#{username := Username}, AuthResult, _) ->
+    io:format("~s ~p Username: ~p~n", [?FILE, ?LINE, Username]),
+    {stop, AuthResult#{anonymous => false, auth_result => password_error}}.
 
 description() -> "Authentication with Mnesia".
-
-
-match_password(Password, HashType, HashList) ->
-    lists:any(
-        fun(Secret) ->
-            case is_salt_hash(Secret, HashType) of
-                true ->
-                    <<Salt:4/binary, Hash/binary>> = Secret,
-                    Hash =:= hash(Password, Salt, HashType);
-                _ ->
-                    Secret =:= hash(Password, HashType)
-            end
-        end, HashList).
-
-hash(undefined, HashType) ->
-    hash(<<>>, HashType);
-hash(Password, HashType) ->
-    emqx_passwd:hash(HashType, Password).
-
-hash(undefined, SaltBin, HashType) ->
-    hash(<<>>, SaltBin, HashType);
-hash(Password, SaltBin, HashType) ->
-    emqx_passwd:hash(HashType, <<SaltBin/binary, Password/binary>>).
-
-is_salt_hash(_, plain) ->
-    true;
-is_salt_hash(Secret, HashType) ->
-    not (byte_size(Secret) == len(HashType)).
-
-len(md5) -> 32;
-len(sha) -> 40;
-len(sha256) -> 64;
-len(sha512) -> 128.

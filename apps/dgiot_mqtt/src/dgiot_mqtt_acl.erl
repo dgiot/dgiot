@@ -20,56 +20,88 @@
 
 %% ACL Callbacks
 -export([
-        check_acl/5
-        , description/0
-       ]).
+    check_acl/5
+    , description/0
+]).
 
-check_acl(ClientInfo = #{ clientid := _Clientid }, PubSub, Topic, _NoMatchAction, _Params) ->
+check_acl(ClientInfo, PubSub, <<"$dg/", _/binary>> = Topic, _NoMatchAction, _Params) ->
+    io:format("~s ~p Topic: ~p _NoMatchAction ~p ~n", [?FILE, ?LINE, Topic, _NoMatchAction]),
     _Username = maps:get(username, ClientInfo, undefined),
-    Acls = [],
-    case match(ClientInfo, PubSub, Topic, Acls) of
+    case do_check(ClientInfo, PubSub, Topic) of
         allow ->
-            ok;
-%%            {stop, allow};
+            {stop, allow};
         deny ->
-%%            {stop, deny};
-              {stop, allow};
+            {stop, deny};
         _ ->
             ok
-    end.
+    end;
 
-description() -> "Acl with Mnesia".
+check_acl(_ClientInfo, _PubSub, _Topic, _NoMatchAction, _Params) ->
+    ok.
+
+description() -> "Acl with Dlink".
 
 %%--------------------------------------------------------------------
 %% Internal functions
 %%-------------------------------------------------------------------
 
-match(_ClientInfo,  _PubSub, _Topic, []) ->
-    nomatch;
-match(ClientInfo, PubSub, Topic, [ {_, ACLTopic, Action, Access, _} | Acls]) ->
-    case match_actions(PubSub, Action) andalso match_topic(ClientInfo, Topic, ACLTopic) of
-        true -> Access;
-        false -> match(ClientInfo, PubSub, Topic, Acls)
+%% 用户订阅 "$dg/user/deviceid/#"
+do_check(#{clientid := ClientID, username := Username} = _ClientInfo, subscribe, <<"$dg/user/", DeviceInfo/binary>> = Topic)
+    when ClientID =/= undefined ->
+    io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, Topic]),
+    [DeviceID | _] = binary:split(DeviceInfo, <<"/">>),
+    %% 此时的ClientID为 Token
+    case check_device_acl(ClientID, DeviceID, Username) of
+        ok ->
+            allow;
+        _ ->
+            deny
+    end;
+
+%%"$dg/device/productid/devaddr/#"
+do_check(#{clientid := ClientID} = _ClientInfo, subscribe, <<"$dg/device/", DeviceInfo/binary>> = Topic) ->
+    io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, Topic]),
+    [ProuctID, Devaddr | _] = binary:split(DeviceInfo, <<"/">>, [global]),
+    DeviceID = dgiot_parse:get_deviceid(ProuctID, Devaddr),
+    case ClientID == DeviceID of
+        true ->
+            allow;
+        _ ->
+            deny
+    end;
+
+%%"$dg/thing/deviceid/#"
+%%"$dg/thing/productid/devaddr/#"
+do_check(#{clientid := ClientID, username := UserId} = _ClientInfo, publish, <<"$dg/thing/", DeviceInfo/binary>> = Topic)
+    when ClientID =/= undefined ->
+    io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, Topic]),
+    [Id, Devaddr | _] = binary:split(DeviceInfo, <<"/">>, [global]),
+    %% 先判断clientid为Token
+    case check_device_acl(ClientID, Id, UserId) of
+        ok ->
+            allow;
+        _ ->
+            DeviceID = dgiot_parse:get_deviceid(Id, Devaddr),
+            case ClientID == DeviceID of
+                true ->
+                    allow;
+                _ ->
+                    deny
+            end
+    end;
+
+do_check(_ClientInfo, _PubSub, Topic) ->
+    io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, Topic]),
+    deny.
+
+check_device_acl(Token, DeviceID, UserId) ->
+    case dgiot_auth:get_session(Token) of
+        #{<<"objectId">> := UserId, <<"ACL">> := Acl} ->
+            case dgiot_device:get_acl(DeviceID) of
+                Acl ->
+                    ok;
+                _ ->
+                    deny
+            end;
+        _ -> deny
     end.
-
-match_topic(ClientInfo, Topic, ACLTopic) when is_binary(Topic) ->
-    emqx_topic:match(Topic, feed_var(ClientInfo, ACLTopic)).
-
-match_actions(subscribe, sub) -> true;
-match_actions(publish, pub) -> true;
-match_actions(_, _) -> false.
-
-feed_var(ClientInfo, Pattern) ->
-    feed_var(ClientInfo, emqx_topic:words(Pattern), []).
-feed_var(_ClientInfo, [], Acc) ->
-    emqx_topic:join(lists:reverse(Acc));
-feed_var(ClientInfo = #{clientid := undefined}, [<<"%c">>|Words], Acc) ->
-    feed_var(ClientInfo, Words, [<<"%c">>|Acc]);
-feed_var(ClientInfo = #{clientid := ClientId}, [<<"%c">>|Words], Acc) ->
-    feed_var(ClientInfo, Words, [ClientId |Acc]);
-feed_var(ClientInfo = #{username := undefined}, [<<"%u">>|Words], Acc) ->
-    feed_var(ClientInfo, Words, [<<"%u">>|Acc]);
-feed_var(ClientInfo = #{username := Username}, [<<"%u">>|Words], Acc) ->
-    feed_var(ClientInfo, Words, [Username|Acc]);
-feed_var(ClientInfo, [W|Words], Acc) ->
-    feed_var(ClientInfo, Words, [W|Acc]).

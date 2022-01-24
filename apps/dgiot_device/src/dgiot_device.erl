@@ -45,18 +45,16 @@ load_device(Order) ->
 
 post(Device) ->
     DeviceId = maps:get(<<"objectId">>, Device),
-    DeviceName = maps:get(<<"name">>, Device),
     Devaddr = maps:get(<<"devaddr">>, Device),
     Product = maps:get(<<"product">>, Device),
     ProductId = maps:get(<<"objectId">>, Product),
-    <<DeviceSecretdefult:10/binary, _/binary>> = dgiot_utils:to_md5(dgiot_utils:random()),
-    DeviceSecret = maps:get(<<"deviceSecret">>, Device, DeviceSecretdefult),
+    DeviceSecret = maps:get(<<"deviceSecret">>, Device, <<"DeviceSecretdefault">>),
     Status =
         case maps:get(<<"status">>, Device, <<"OFFLINE">>) of
             <<"OFFLINE">> -> false;
             _ -> true
         end,
-    dgiot_mnesia:insert(DeviceId, {[Status, dgiot_datetime:now_secs(), get_acl(Device), DeviceName, Devaddr, ProductId, DeviceSecret], node()}).
+    dgiot_mnesia:insert(DeviceId, {[Status, dgiot_datetime:now_secs(), get_acl(Device), Devaddr, ProductId, DeviceSecret], node()}).
 
 put(Device) ->
     DeviceId = maps:get(<<"objectId">>, Device),
@@ -75,12 +73,11 @@ put(Device) ->
 
 save(Device) ->
     DeviceId = maps:get(<<"objectId">>, Device),
-    DeviceName = maps:get(<<"name">>, Device, <<"">>),
     Devaddr = maps:get(<<"devaddr">>, Device),
     Product = maps:get(<<"product">>, Device),
     ProductId = maps:get(<<"objectId">>, Product),
     <<DeviceSecretdefult:10/binary, _/binary>> = dgiot_utils:to_md5(dgiot_utils:random()),
-    DeviceSecret = maps:get(<<"deviceSecret">>, Device, DeviceSecretdefult),
+    DeviceSecret = maps:get(<<"devicesecret">>, Device, DeviceSecretdefult),
     UpdatedAt =
         case maps:get(<<"updatedAt">>, Device, dgiot_datetime:now_secs()) of
             <<Data:10/binary, "T", Time:8/binary, _/binary>> ->
@@ -92,7 +89,7 @@ save(Device) ->
             <<"OFFLINE">> -> false;
             _ -> true
         end,
-    dgiot_mnesia:insert(DeviceId, {[Status, UpdatedAt, get_acl(Device), DeviceName, Devaddr, ProductId, DeviceSecret], node()}).
+    dgiot_mnesia:insert(DeviceId, {[Status, UpdatedAt, get_acl(Device), Devaddr, ProductId, DeviceSecret], node()}).
 
 get_acl(Device) when is_map(Device) ->
     ACL = maps:get(<<"ACL">>, Device, #{}),
@@ -163,7 +160,7 @@ sync_parse(OffLine) ->
         {_, DeviceId, V} = X,
         Now = dgiot_datetime:now_secs(),
         case V of
-            {[_, Last, Acl, DeviceName, Devaddr, ProductId, DeviceSecret], Node} when (Now - Last) < 0 ->
+            {[_, Last, Acl,  Devaddr, ProductId, DeviceSecret], Node} when (Now - Last) < 0 ->
                 case dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"status">> => <<"ONLINE">>}) of
                     {ok, _R} ->
                         Productname =
@@ -173,13 +170,13 @@ sync_parse(OffLine) ->
                                 _ ->
                                     <<"">>
                             end,
-                        ?MLOG(info, #{<<"deviceid">> => DeviceId, <<"devaddr">> => Devaddr, <<"productid">> => ProductId, <<"productname">> => Productname, <<"devicename">> => DeviceName, <<"status">> => <<"上线"/utf8>>}, ['device_statuslog']),
-                        dgiot_mnesia:insert(DeviceId, {[true, Now, Acl, DeviceName, Devaddr, ProductId, DeviceSecret], Node});
+                        ?MLOG(info, #{<<"deviceid">> => DeviceId, <<"devaddr">> => Devaddr, <<"productid">> => ProductId, <<"productname">> => Productname,  <<"status">> => <<"上线"/utf8>>}, ['device_statuslog']),
+                        dgiot_mnesia:insert(DeviceId, {[true, Now, Acl, Devaddr, ProductId, DeviceSecret], Node});
                     _ ->
                         pass
                 end,
                 timer:sleep(50);
-            {[true, Last, Acl, DeviceName, Devaddr, ProductId, DeviceSecret], Node} when (Now - Last) > OffLine ->
+            {[true, Last, Acl,  Devaddr, ProductId, DeviceSecret], Node} when (Now - Last) > OffLine ->
                 case dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"status">> => <<"OFFLINE">>}) of
                     {ok, _R} ->
                         Productname =
@@ -189,14 +186,14 @@ sync_parse(OffLine) ->
                                 _ ->
                                     <<"">>
                             end,
-                        ?MLOG(info, #{<<"deviceid">> => DeviceId, <<"devaddr">> => Devaddr, <<"productid">> => ProductId, <<"productname">> => Productname, <<"devicename">> => DeviceName, <<"status">> => <<"下线"/utf8>>}, ['device_statuslog']),
+                        ?MLOG(info, #{<<"deviceid">> => DeviceId, <<"devaddr">> => Devaddr, <<"productid">> => ProductId, <<"productname">> => Productname,  <<"status">> => <<"下线"/utf8>>}, ['device_statuslog']),
                         dgiot_umeng:save_devicestatus(DeviceId, <<"OFFLINE">>),
-                        dgiot_mnesia:insert(DeviceId, {[false, Last, Acl, DeviceName, Devaddr, ProductId, DeviceSecret], Node});
+                        dgiot_mnesia:insert(DeviceId, {[false, Last, Acl, Devaddr, ProductId, DeviceSecret], Node});
                     _ ->
                         pass
                 end,
                 timer:sleep(50);
-            {[false, Last, Acl, DeviceName, Devaddr, ProductId, DeviceSecret], Node} when (Now - Last) < OffLine ->
+            {[false, Last, Acl, Devaddr, ProductId, DeviceSecret], Node} when (Now - Last) < OffLine ->
                 case dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"status">> => <<"ONLINE">>}) of
                     {ok, _R} ->
                         Productname =
@@ -206,8 +203,8 @@ sync_parse(OffLine) ->
                                 _ ->
                                     <<"">>
                             end,
-                        ?MLOG(info, #{<<"deviceid">> => DeviceId, <<"devaddr">> => Devaddr, <<"productid">> => ProductId, <<"productname">> => Productname, <<"devicename">> => DeviceName, <<"status">> => <<"上线"/utf8>>}, ['device_statuslog']),
-                        dgiot_mnesia:insert(DeviceId, {[true, Last, Acl, DeviceName, Devaddr, ProductId, DeviceSecret], Node});
+                        ?MLOG(info, #{<<"deviceid">> => DeviceId, <<"devaddr">> => Devaddr, <<"productid">> => ProductId, <<"productname">> => Productname,  <<"status">> => <<"上线"/utf8>>}, ['device_statuslog']),
+                        dgiot_mnesia:insert(DeviceId, {[true, Last, Acl, Devaddr, ProductId, DeviceSecret], Node});
                     _ ->
                         pass
                 end,
