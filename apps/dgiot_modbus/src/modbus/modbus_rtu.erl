@@ -27,7 +27,7 @@
     build_req_message/1]
 ).
 
--export([modbus_encoder/4, modbus_decoder/5, is16/1, set_params/3]).
+-export([modbus_encoder/4, modbus_decoder/5, is16/1, set_params/3, decode_data/4, decode_data/5]).
 
 init(State) ->
     State#{<<"req">> => [], <<"ts">> => dgiot_datetime:now_ms(), <<"interval">> => 300}.
@@ -160,13 +160,6 @@ set_params(Basedata, ProductId, DevAddr) ->
                                         quality = Value1
                                     },
                                     DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
-                                    DeviceName =
-                                        case dgiot_device:lookup(DeviceId) of
-                                            {ok, {[_, _, _, DeviceName1, _, _], _}} ->
-                                                DeviceName1;
-                                            _ ->
-                                                <<"">>
-                                        end,
                                     Sessiontoken = maps:get(<<"sessiontoken">>, Basedata, <<"">>),
                                     {Username, Acl} =
                                         case dgiot_auth:get_session(Sessiontoken) of
@@ -175,7 +168,12 @@ set_params(Basedata, ProductId, DevAddr) ->
                                             _ ->
                                                 {<<"">>, #{}}
                                         end,
-                                    ?MLOG(info, #{<<"clientid">> => DeviceId, <<"username">> => Username, <<"status">> => <<"ONLINE">>, <<"ACL">> => Acl, <<"devaddr">> => DevAddr, <<"productid">> => ProductId, <<"devicename">> => DeviceName, <<"productname">> => Productname, <<"thingname">> => Name, <<"protocol">> => <<"modbus">>, <<"identifier">> => Identifier, <<"value">> => Value1}, ['device_operationlog']),
+                                    ?MLOG(info, #{<<"clientid">> => DeviceId, <<"username">> => Username,
+                                        <<"status">> => <<"ONLINE">>, <<"ACL">> => Acl,
+                                        <<"devaddr">> => DevAddr, <<"productid">> => ProductId,
+                                        <<"productname">> => Productname, <<"thingname">> => Name,
+                                        <<"protocol">> => <<"modbus">>, <<"identifier">> => Identifier, <<"value">> => Value1},
+                                        ['device_operationlog']),
                                     Acc ++ [build_req_message(RtuReq)];
                                 _ ->
                                     Acc
@@ -217,6 +215,16 @@ parse_frame(<<MbAddr:8, BadCode:8, ErrorCode:8, Crc:2/binary>> = Buff, Acc,
             parse_frame(Buff, Acc, State)
     end;
 
+%% modbustcp
+%% Buff = <<"000100000006011000000001">>,
+parse_frame(<<_TransactionId:16, _ProtocolId:16, Size:16, _ResponseData:Size/bytes>> = Buff, Acc, #{<<"dtuproduct">> := ProductId, <<"dtuaddr">> := DtuAddr} = State) ->
+    case decode_data(Buff, ProductId, DtuAddr, Acc) of
+        {Rest1, Acc1} ->
+            parse_frame(Rest1, Acc1, State);
+        [Buff, Acc] ->
+            [Buff, Acc]
+    end;
+
 %% 传感器直接做为dtu物模型的一个指标
 parse_frame(<<SlaveId:8, _/binary>> = Buff, Acc, #{<<"dtuproduct">> := ProductId, <<"slaveId">> := SlaveId, <<"dtuaddr">> := DtuAddr, <<"address">> := Address} = State) ->
     case decode_data(Buff, ProductId, DtuAddr, Address, Acc) of
@@ -243,6 +251,9 @@ parse_frame(<<SlaveId:8, _/binary>> = Buff, Acc, #{<<"dtuaddr">> := DtuAddr, <<"
 parse_frame(_Other, Acc, _State) ->
     ?LOG(error, "_Other ~p", [_Other]),
     {error, Acc}.
+
+decode_data(<<TransactionId:16, _ProtocolId:16, _Size1:16, Address:8, _FunCode:8, Data/binary>>, ProductId, _DtuAddr, Acc) ->
+    {<<>>, modbus_tcp_decoder(ProductId, TransactionId, Address, Data, Acc)}.
 
 decode_data(Buff, ProductId, DtuAddr, Address, Acc) ->
     <<SlaveId:8, FunCode:8, ResponseData/binary>> = Buff,
@@ -431,6 +442,38 @@ list_word16_to_binary(Values) when is_list(Values) ->
             Values
         )
     ).
+
+modbus_tcp_decoder(ProductId, TransactionId, Address, Data, Acc1) ->
+    case dgiot_product:lookup_prod(ProductId) of
+        {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
+            lists:foldl(fun(X, Acc) ->
+                case X of
+                    #{<<"identifier">> := Identifier,
+                        <<"dataForm">> := #{
+                            <<"slaveid">> := OldSlaveid,
+                            <<"address">> := OldAddress,
+                            <<"protocol">> := <<"modbus">>
+                        }} ->
+                        <<H:8, L:8>> = dgiot_utils:hex_to_binary(modbus_rtu:is16(OldSlaveid)),
+                        <<Sh:8, Sl:8>> = dgiot_utils:hex_to_binary(modbus_rtu:is16(OldAddress)),
+                        NewSlaveid = H * 256 + L,
+                        NewAddress = Sh * 256 + Sl,
+                        case {TransactionId, Address} of
+                            {NewSlaveid, NewAddress} ->
+                                case format_value(Data, X) of
+                                    {Value, _Rest} ->
+                                        Acc#{Identifier => Value};
+                                    _ -> Acc
+                                end;
+                            _ ->
+                                Acc
+                        end;
+                    _ ->
+                        Acc
+                end
+                        end, Acc1, Props);
+        _ -> #{}
+    end.
 
 modbus_decoder(ProductId, SlaveId, Address, Data, Acc1) ->
     case dgiot_product:lookup_prod(ProductId) of

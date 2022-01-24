@@ -228,7 +228,7 @@ get_appdata(Channel, ProductId, DeviceId, _Args) ->
         _ ->
             TableName = ?Table(DeviceId),
             case dgiot_tdengine:get_appdata(Channel, TableName, #{<<"db">> => ProductId}) of
-                {ok, #{<<"results">> := Results}} when length(Results) > 0->
+                {ok, #{<<"results">> := Results}} when length(Results) > 0 ->
                     Chartdata = get_app(ProductId, Results, DeviceId),
                     {ok, #{<<"data">> => Chartdata}};
                 _ ->

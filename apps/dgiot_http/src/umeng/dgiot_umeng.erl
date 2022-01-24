@@ -215,7 +215,7 @@ save_notification(Ruleid, DevAddr, Payload) ->
         [ProductId, _] ->
             DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
             case dgiot_device:lookup(DeviceId) of
-                {ok, {[_, _, Acl, _, _, _], _}} ->
+                {ok, #{<<"acl">> := Acl}} ->
                     Requests =
                         lists:foldl(fun(X, Acc) ->
                             BinX = atom_to_binary(X),
@@ -393,7 +393,7 @@ save_devicestatus(DeviceId, Status) ->
         end,
 
     case dgiot_device:lookup(DeviceId) of
-        {ok, {[_, _, Acl, _, Devaddr, ProductId], _}} ->
+        {ok, #{<<"acl">> := Acl, <<"devaddr">> := Devaddr, <<"productid">> := ProductId}} ->
             Ruleid = <<ProductId/binary, "_status">>,
             Productname =
                 case dgiot_parse:get_object(<<"Product">>, ProductId) of
