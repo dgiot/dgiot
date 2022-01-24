@@ -401,7 +401,7 @@ get_Product() ->
         {ok, #{<<"results">> := Results}} ->
             lists:foldl(fun(X, _Acc) ->
                 case X of
-                    #{<<"objectId">> := ProductId, <<"config">> := #{<<"konva">> := #{<<"Stage">> := #{<<"children">> := Children}}}, <<"thing">> := #{<<"properties">> := Properties}} ->
+                    #{<<"objectId">> := ProductId, <<"thing">> := #{<<"properties">> := Properties}} ->
                         lists:map(fun(P) ->
                             DataType = maps:get(<<"dataType">>, P, #{}),
                             Type = maps:get(<<"type">>, DataType, <<"">>),
@@ -412,7 +412,15 @@ get_Product() ->
                             dgiot_data:insert({product, <<ProductId/binary, Identifier/binary>>}, {Name, Type, Unit}),
                             dgiot_data:insert({thing, <<ProductId/binary, Identifier/binary>>}, P)
                                   end, Properties),
-                        get_children(<<"web">>, ProductId, Children, ProductId, <<"KonvatId">>, <<"Shapeid">>, <<"Identifier">>, <<"Name">>);
+                        case dgiot_parse:query_object(<<"View">>, #{<<"limit">> => 1, <<"where">> => #{<<"key">> => ProductId, <<"type">> => <<"topo">>, <<"class">> => <<"Product">>}}) of
+                            {ok, #{<<"results">> := Views}} when length(Views) > 0 ->
+                                lists:foldl(fun(View, _Acc1) ->
+                                    #{<<"data">> := #{<<"konva">> := #{<<"Stage">> := #{<<"children">> := Children}}}} = View,
+                                    get_children(<<"web">>, ProductId, Children, ProductId, <<"KonvatId">>, <<"Shapeid">>, <<"Identifier">>, <<"Name">>)
+                                           end, #{}, Views);
+                            _ ->
+                                pass
+                        end;
                     _ ->
                         pass
                 end
