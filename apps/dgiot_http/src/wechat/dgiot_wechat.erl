@@ -293,55 +293,50 @@ get_notification(ProductId1, SessionToken, Order, Limit, Skip, Where) ->
                             Alertstatus = maps:get(<<"alertstatus">>, Content, true),
                             DeviceId = maps:get(<<"_deviceid">>, Content, <<"">>),
                             Productid = maps:get(<<"_productid">>, Content, <<"">>),
-                            {DeviceName, Devaddr, Address} =
-                                case dgiot_parse:get_object(<<"Device">>, DeviceId) of
-                                    {ok, #{<<"name">> := DeviceName1, <<"devaddr">> := Devaddr1, <<"detail">> := Detail}} ->
-                                        Address1 = maps:get(<<"address">>, Detail, <<"无位置"/utf8>>),
-                                        {DeviceName1, Devaddr1, Address1};
-                                    _ ->
-                                        {<<"">>, <<"">>, <<"无位置"/utf8>>}
-                                end,
-                            Newdate = dgiot_datetime:format(dgiot_datetime:to_localtime(Createdat), <<"YY-MM-DD HH:NN:SS">>),
-                            Result =
-                                case binary:split(Type, <<$_>>, [global, trim]) of
-                                    [Productid, <<"status">>] ->
-                                        case dgiot_parse:get_object(<<"Product">>, Productid) of
-                                            {ok, #{<<"name">> := ProductName}} ->
-                                                #{<<"objectId">> => ObjectId, <<"dynamicform">> => [#{<<"设备编号"/utf8>> => Devaddr}, #{<<"设备地址"/utf8>> => Address}, #{<<"报警内容"/utf8>> => <<"设备"/utf8, DeviceName/binary, "离线"/utf8>>}, #{<<"离线时间"/utf8>> => Newdate}], <<"alertstatus">> => Alertstatus, <<"productname">> => ProductName, <<"devicename">> => DeviceName, <<"process">> => Process, <<"content">> => Content, <<"public">> => Public, <<"status">> => Status, <<"createdAt">> => Createdat};
-                                            _ ->
-                                                Acc
-                                        end;
-                                    [ProductId, AlertId] ->
-                                        case dgiot_parse:get_object(<<"Product">>, ProductId) of
-                                            {ok, #{<<"name">> := ProductName, <<"config">> := #{<<"parser">> := Parser}}} ->
-                                                lists:foldl(fun(P, Par) ->
-                                                    case P of
-                                                        #{<<"uid">> := AlertId, <<"config">> := #{<<"formDesc">> := FormDesc}} ->
-                                                            FormD =
-                                                                maps:fold(fun(Key, Value1, Form) ->
-                                                                    case maps:find(Key, Content) of
-                                                                        {ok, Value} ->
-                                                                            Label = maps:get(<<"label">>, Value1),
-                                                                            Form ++ [#{Label => Value}];
-                                                                        _ ->
-                                                                            Label = maps:get(<<"label">>, Value1),
-                                                                            Default = maps:get(<<"default">>, Value1, <<>>),
-                                                                            Form ++ [#{Label => Default}]
-                                                                    end
-                                                                          end, [], FormDesc),
-                                                            Par#{<<"dynamicform">> => FormD ++ [#{<<"报警时间"/utf8>> => Newdate}]};
-                                                        _Oth ->
-                                                            Par
-                                                    end
-                                                            end, #{<<"objectId">> => ObjectId, <<"alertstatus">> => Alertstatus, <<"productname">> => ProductName, <<"devicename">> => DeviceName, <<"process">> => Process, <<"public">> => Public, <<"status">> => Status, <<"createdAt">> => Newdate}, Parser);
-                                            _Other ->
-                                                Acc
-                                        end;
-                                    _Other1 ->
-                                        Acc
-                                end,
-                            ?LOG(info, "Result ~p", [Result]),
-                            Acc ++ [Result];
+                            case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+                                {ok, #{<<"name">> := DeviceName, <<"devaddr">> := Devaddr, <<"detail">> := Detail}} ->
+                                    Address = maps:get(<<"address">>, Detail, <<"无位置"/utf8>>),
+                                    Newdate = dgiot_datetime:format(dgiot_datetime:to_localtime(Createdat), <<"YY-MM-DD HH:NN:SS">>),
+                                    case binary:split(Type, <<$_>>, [global, trim]) of
+                                        [Productid, <<"status">>] ->
+                                            case dgiot_parse:get_object(<<"Product">>, Productid) of
+                                                {ok, #{<<"name">> := ProductName}} ->
+                                                    Acc ++ [#{<<"objectId">> => ObjectId, <<"dynamicform">> => [#{<<"设备编号"/utf8>> => Devaddr}, #{<<"设备地址"/utf8>> => Address}, #{<<"报警内容"/utf8>> => <<"设备"/utf8, DeviceName/binary, "离线"/utf8>>}, #{<<"离线时间"/utf8>> => Newdate}], <<"alertstatus">> => Alertstatus, <<"productname">> => ProductName, <<"devicename">> => DeviceName, <<"process">> => Process, <<"content">> => Content, <<"public">> => Public, <<"status">> => Status, <<"createdAt">> => Createdat}];
+                                                _ ->
+                                                    Acc
+                                            end;
+                                        [ProductId, AlertId] ->
+                                            case dgiot_parse:get_object(<<"Product">>, ProductId) of
+                                                {ok, #{<<"name">> := ProductName, <<"config">> := #{<<"parser">> := Parser}}} ->
+                                                    lists:foldl(fun(P, Par) ->
+                                                        case P of
+                                                            #{<<"uid">> := AlertId, <<"config">> := #{<<"formDesc">> := FormDesc}} ->
+                                                                FormD =
+                                                                    maps:fold(fun(Key, Value1, Form) ->
+                                                                        case maps:find(Key, Content) of
+                                                                            {ok, Value} ->
+                                                                                Label = maps:get(<<"label">>, Value1),
+                                                                                Form ++ [#{Label => Value}];
+                                                                            _ ->
+                                                                                Label = maps:get(<<"label">>, Value1),
+                                                                                Default = maps:get(<<"default">>, Value1, <<>>),
+                                                                                Form ++ [#{Label => Default}]
+                                                                        end
+                                                                              end, [], FormDesc),
+                                                                Acc ++ [Par#{<<"dynamicform">> => FormD ++ [#{<<"报警时间"/utf8>> => Newdate}]}];
+                                                            _Oth ->
+                                                                Acc ++ [Par]
+                                                        end
+                                                                end, #{<<"objectId">> => ObjectId, <<"alertstatus">> => Alertstatus, <<"productname">> => ProductName, <<"devicename">> => DeviceName, <<"process">> => Process, <<"public">> => Public, <<"status">> => Status, <<"createdAt">> => Newdate}, Parser);
+                                                _Other ->
+                                                    Acc
+                                            end;
+                                        _Other1 ->
+                                            Acc
+                                    end;
+                                _ ->
+                                    Acc
+                            end;
                         _Other2 ->
                             Acc
                     end
