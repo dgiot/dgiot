@@ -168,10 +168,6 @@ get_konva_thing(Arg, _Context) ->
                         lists:foldl(fun(Prop, Acc) ->
                             Identifier = maps:get(<<"identifier">>, Prop),
                             NewIdentifier = <<ProductId/binary, "_", Identifier/binary, "_text">>,
-                            io:format("self()1 ~p~n", [self()]),
-                            io:format("self()2 ~p~n", [self()]),
-                            io:format("NewIdentifier ~p~n", [NewIdentifier]),
-                            io:format("Shapids ~p~n", [Shapids]),
                             case lists:member(NewIdentifier, Shapids) of
                                 false ->
                                     Acc ++ [Prop];
@@ -191,10 +187,10 @@ get_konva_thing(Arg, _Context) ->
                                     end, #{}, Properties),
                     {ok, #{<<"code">> => 200, <<"message">> => <<"SUCCESS">>, <<"data">> => #{<<"nobound">> => Nobound, <<"konvathing">> => KonvaThing}}};
                 _ ->
-                    {ok, #{<<"code">> => 204, <<"message">> => <<"没有组态"/utf8>>}}
+                    {ok, #{<<"code">> => 200, <<"message">> => <<"SUCCESS">>, <<"data">> => #{<<"nobound">> => #{}, <<"konvathing">> => #{}}}}
             end;
         _ ->
-            {ok, #{<<"code">> => 204, <<"message">> => <<"没有组态"/utf8>>}}
+            {ok, #{<<"code">> => 200, <<"message">> => <<"SUCCESS">>, <<"data">> => #{<<"nobound">> => #{}, <<"konvathing">> => #{}}}}
     end.
 
 
@@ -273,24 +269,9 @@ get_attrs(Type, ProductId, ClassName, Attrs, DeviceId, KonvatId, Shapeid, Identi
                         KonvatId ->
                             case Id of
                                 Shapeid ->
-                                    #{<<"children">> := Children} = X,
-%%                                    ?LOG(info, "Children ~p~n", [Children]),
-                                    NewChildren =
-                                        lists:foldl(fun(Child, Acc) ->
-                                            NewChild =
-                                                case Child of
-                                                    #{<<"attrs">> := ChildAttrs, <<"className">> := <<"Text">>} ->
-%%                                                        ?LOG(info, "ChildAttrs ~p~n", [ChildAttrs]),
-                                                        Child#{<<"attrs">> => ChildAttrs#{<<"id">> => <<ProductId/binary, "_", Identifier/binary, "_text">>, <<"text">> => Name}};
-                                                    _ ->
-                                                        Child
-                                                end,
-                                            Acc ++ [NewChild]
-                                                    end, [], Children),
-%%                                    ?LOG(info, "NewChildren ~p~n", [NewChildren]),
-                                    NewAttrs = Attrs#{<<"id">> => <<ProductId/binary, "_", Identifier/binary>>},
+                                    NewAttrs = Attrs#{<<"id">> => <<ProductId/binary, "_", Identifier/binary, "_text">>, <<"text">> => Name},
                                     save(Type, NewAttrs),
-                                    X#{<<"attrs">> => NewAttrs, <<"children">> => NewChildren};
+                                    X#{<<"attrs">> => NewAttrs};
                                 _ ->
                                     save(Type, Attrs),
                                     X
@@ -324,21 +305,9 @@ get_attrs(Type, ProductId, ClassName, Attrs, DeviceId, KonvatId, Shapeid, Identi
                                     {ok, Text1} ->
                                         get_value(ProductId, Identifier1, Text1)
                                 end,
-                            #{<<"children">> := Children} = X,
-                            NewChildren =
-                                lists:foldl(fun(Child, Acc) ->
-                                    NewChild =
-                                        case Child of
-                                            #{<<"attrs">> := #{<<"id">> := ChildId} = Childattrs, <<"className">> := <<"Text">>} ->
-                                                Child#{<<"attrs">> => Childattrs#{<<"id">> => dgiot_parse:get_shapeid(DeviceId, ChildId), <<"text">> => Text, <<"draggable">> => false}};
-                                            _ ->
-                                                Child
-                                        end,
-                                    Acc ++ [NewChild]
-                                            end, [], Children),
-                            NewAttrs = Attrs#{<<"id">> => dgiot_parse:get_shapeid(DeviceId, Id), <<"draggable">> => false},
+                            NewAttrs = Attrs#{<<"id">> => dgiot_parse:get_shapeid(DeviceId, Id), <<"text">> => Text, <<"draggable">> => false},
                             save(Type, NewAttrs),
-                            X#{<<"attrs">> => NewAttrs, <<"children">> => NewChildren}
+                            X#{<<"attrs">> => NewAttrs}
                     end
             end;
         _ ->
@@ -417,7 +386,7 @@ get_Product() ->
                                 lists:foldl(fun(View, _Acc1) ->
                                     #{<<"data">> := #{<<"konva">> := #{<<"Stage">> := #{<<"children">> := Children}}}} = View,
                                     get_children(<<"web">>, ProductId, Children, ProductId, <<"KonvatId">>, <<"Shapeid">>, <<"Identifier">>, <<"Name">>)
-                                           end, #{}, Views);
+                                            end, #{}, Views);
                             _ ->
                                 pass
                         end;

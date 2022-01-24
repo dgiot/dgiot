@@ -191,9 +191,34 @@ function get_wanip() {
 }
 
 function get_lanip() {
-  lanip=$(/sbin/ifconfig eth0 | sed -nr 's/.*inet (addr:)?(([0-9]*\.){3}[0-9]*).*/\2/p')
+  for nic in $(ls /sys/class/net) ; do
+    # shellcheck disable=SC1073
+    # echo -e  "`date +%F_%T` $LINENO: ${GREEN} nic: ${nic}${NC}"
+    # ingore docker ip
+    if [ "${nic}" == "*docker*" ]; then
+      continue
+    fi
+
+     # ingore lo ip
+    if [ "${nic}" == "lo" ]; then
+      continue
+    fi
+
+     # ingore bridge ip
+    if [ "${nic}" == "*br-*" ]; then
+      continue
+    fi
+
+    tmpip=$(/sbin/ifconfig ${nic} | sed -nr 's/.*inet (addr:)?(([0-9]*\.){3}[0-9]*).*/\2/p')
+    if [ -z "$tmpip" ]; then
+      continue
+    fi
+
+    lanip=$tmpip
+  done
+
   if [ -z "$lanip" ]; then
-    lanip=$(ifconfig |grep inet |grep -v inet6 |grep -v 127.0.0.1 |awk '{print $2}' |awk -F ":" '{print $2}') ||:
+    lanip=$(/sbin/ifconfig |grep inet |grep -v inet6 |grep -v 127.0.0.1 |awk '{print $2}' |awk -F ":" '{print $2}') ||:
   fi
 
   if [ -z "$lanip" ]; then
