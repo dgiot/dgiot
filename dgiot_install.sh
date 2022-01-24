@@ -1,9 +1,7 @@
 #!/bin/bash
 # This file is used to install dgiot on linux systems. The operating system
 # is required to use systemd to manage services at boot
-
 export PATH=$PATH:/usr/local/bin
-
 lanip=""
 wlanip=""
 serverFqdn=""

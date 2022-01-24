@@ -26,3 +26,13 @@
 
 ## 室内定位
  通室内定位设备定位，需要专用的定位网关和设备，定位精度可以到米级，投资巨大
+
+## 离线地图
+
+https://github.com/dxxzst/OfflineMap
+
+### 地图瓦片下载工具及配置
+
++ 工具下载地址：https://pan.baidu.com/s/1miMF9nM
+
++ 工具开源地址：https://github.com/luxiaoxun/MapDownloader
