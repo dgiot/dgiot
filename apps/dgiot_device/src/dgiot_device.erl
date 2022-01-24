@@ -156,7 +156,7 @@ sync_parse(OffLine) ->
         {_, DeviceId, V} = X,
         Now = dgiot_datetime:now_secs(),
         case V of
-            {[_, Last, Acl, DeviceName, Devaddr, ProductId], Node} when (Now - Last) < 0  ->
+            {[_, Last, Acl, DeviceName, Devaddr, ProductId], Node} when (Now - Last) < 0 ->
                 case dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"status">> => <<"ONLINE">>}) of
                     {ok, _R} ->
                         Productname =
@@ -336,7 +336,8 @@ create_device(#{
     <<"devModel">> := DevModel,
     <<"name">> := Name,
     <<"devaddr">> := DevAddr,
-    <<"product">> := ProductId} = Device) ->
+    <<"product">> := ProductId,
+    <<"ACL">> := Acl} = Device) ->
     #{<<"objectId">> := DeviceId} = dgiot_parse:get_objectid(<<"Device">>, #{<<"product">> => ProductId, <<"devaddr">> => DevAddr}),
     case dgiot_parse:get_object(<<"Device">>, DeviceId) of
         {ok, Result} ->
@@ -357,6 +358,7 @@ create_device(#{
                     <<"className">> => <<"Product">>,
                     <<"objectId">> => ProductId
                 },
+                <<"ACL">> => maps:without([<<"*">>], Acl),
                 <<"detail">> => #{
                     <<"desc">> => Name,
                     <<"brand">> => Brand,
