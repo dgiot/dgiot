@@ -16,14 +16,9 @@
 
 -module(dgiot_mqtt_auth).
 
-%%-include("emqx_auth_mnesia.hrl").
-%%
-%%-include_lib("emqx/include/emqx.hrl").
-%%-include_lib("emqx/include/logger.hrl").
-%%-include_lib("emqx/include/types.hrl").
-%%
-%%-include_lib("stdlib/include/ms_transform.hrl").
-%%
+-include_lib("dgiot/include/logger.hrl").
+-include("dgiot_mqtt.hrl").
+
 -define(TABLE, emqx_user).
 %% Auth callbacks
 -export([
@@ -34,7 +29,7 @@
 check(#{username := Username}, AuthResult, _)
     when Username == <<"anonymous">> orelse Username == undefined orelse Username == <<>> ->
     io:format("~s ~p Username: ~p~n", [?FILE, ?LINE, Username]),
-    {stop, AuthResult#{anonymous => true, auth_result => success}};
+    {ok, AuthResult#{anonymous => true, auth_result => success}};
 
 %% 当 clientid 和 password 为token 且相等的时候为用户登录
 check(#{clientid := Token, username := UserId, password := Token}, AuthResult, #{hash_type := _HashType}) ->

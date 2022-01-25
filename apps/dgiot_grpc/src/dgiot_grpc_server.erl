@@ -78,7 +78,7 @@ on_provider_loaded(_Req, Md) ->
         #{name => <<"message.publish">>},
         #{name => <<"message.delivered">>},
         #{name => <<"message.acked">>}
-        %#{name => <<"message.dropped">>}
+        #{name => <<"message.dropped">>}
     ]}, Md}.
 -spec on_provider_unloaded(dgiot_exhook_pb:provider_unloaded_request(), grpc:metadata())
         -> {ok, dgiot_exhook_pb:empty_success(), grpc:metadata()}

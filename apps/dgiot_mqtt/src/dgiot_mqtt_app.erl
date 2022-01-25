@@ -39,6 +39,7 @@ start(_StartType, _StartArgs) ->
     {ok, Sup} = dgiot_mqtt_sup:start_link(),
     _ = load_auth_hook(),
     _ = load_acl_hook(),
+%%    _ = load_publish_hook(),
     {ok, Sup}.
 
 
@@ -48,6 +49,7 @@ stop(_State) ->
 prep_stop(State) ->
     emqx:unhook('client.authenticate', fun dgiot_mqtt_auth:check/3),
     emqx:unhook('client.check_acl', fun dgiot_mqtt_acl:check_acl/5),
+%%    emqx:unhook('message.publish', fun dgiot_mqtt_message:on_message_publish/3),
     State.
 
 load_auth_hook() ->
@@ -55,3 +57,8 @@ load_auth_hook() ->
 
 load_acl_hook() ->
     emqx:hook('client.check_acl', fun dgiot_mqtt_acl:check_acl/5, [#{}]).
+
+%%load_publish_hook() ->
+%%    emqx:hook('message.publish', fun dgiot_mqtt_message:on_message_publish/3, [#{}]).
+
+

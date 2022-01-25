@@ -1,7 +1,7 @@
 {application, dgiot_mqtt,
     [{description, "DGIOT MQTT"},
         {vsn, "4.3.0"},
-        {applications, [kernel, stdlib, dgiot]},
+        {applications, [kernel, stdlib, grpc, dgiot]},
         {modules, []},
         {env, []},
         {mod, {dgiot_mqtt_app, []}},

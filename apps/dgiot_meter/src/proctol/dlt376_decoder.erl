@@ -47,24 +47,27 @@ parse_frame(<<Rest/binary>> = Bin, Acc, _Opts) when byte_size(Rest) == 15 ->
 %% 68 32 00 32 00 68 C9 00 10 01 00 00 02 70 00 00 01 00 4D 16
 parse_frame(<<16#68, _:16, L2_low:6, _:2, L2_high:8, 16#68, C:8, A1:2/bytes, A2:2/bytes, A3:1/bytes, AFN:8, SEQ:8,Rest/binary>> = Bin, Acc, Opts) ->
     Len = L2_high * 255 + L2_low,
-    DLen = Len -8,
+    DLen = Len - 8,
     case byte_size(Rest) -2 >= DLen of
         true ->
             case Rest of
                 <<UserZone:DLen/bytes, Crc:8, 16#16, Rest1/binary>> ->
                     CheckBuf = <<C:8, A1:2/bytes,A2:2/bytes,A3:1/bytes, AFN:8, SEQ:8, UserZone/binary>>,
                     CheckCrc = dgiot_utils:get_parity(CheckBuf),
+                    <<_Tpv:1, _FIRN:2, CON:1, _:4>> = <<SEQ:8>>,
                     % BinA = dgiot_utils:to_binary(A),
                     Acc1 =
                         case CheckCrc =:= Crc of
                             true ->
                                 Frame = #{
                                     % <<"addr">> => <<"16#00,16#00",dlt645_proctol:reverse(A1)/binary,dlt645_proctol:reverse(A2)/binary>>,
-                                    <<"addr">> => dgiot_utils:binary_to_hex(dlt376_proctol:encode_of_addr(A1,A2)), %dlt376_proctol:concrat_binary(dlt645_proctol:reverse(A1),dlt645_proctol:reverse(A2)),
+                                    <<"addr">> => dgiot_utils:binary_to_hex(dlt376_proctol:encode_of_addr(A1,A2)),
                                     <<"command">> => C,
                                     <<"afn">> => AFN,
                                     <<"datalen">> => DLen,
-                                    <<"msgtype">> => ?DLT376
+                                    <<"msgtype">> => ?DLT376,
+                                    <<"con">> => CON,
+                                    <<"concentrator">> => <<A1:2/bytes,A2:2/bytes,A3:1/bytes>>
                                 },
                                 case catch (parse_userzone(UserZone, Frame, Opts)) of
                                     {'EXIT', Reason} ->
@@ -97,31 +100,42 @@ parse_userzone(UserZone, #{<<"msgtype">> := ?DLT376} = Frame, _Opts) ->
 to_frame(#{
     % <<"msgtype">> := ?DLT376,
     <<"command">> := C,
-    <<"addr">> := Addr,
+%%    <<"addr">> := Addr,  %%?? Addr是6位字符
+    <<"concentrator">> := Addr,
     <<"afn">> := AFN
-} = Msg) ->
+    } = Msg) ->
     {ok, UserZone} = get_userzone(Msg),
     Len = (byte_size(UserZone) + 8) * 4 + 2,
-    Crc = dgiot_utils:get_parity(<<C:8, Addr:5/bytes, AFN:8, 16#71, UserZone/binary>>),
+    Crc = dgiot_utils:get_parity(<<C:8, Addr:5/bytes, AFN:8, 16#61, UserZone/binary>>),
     <<
         16#68,
-        Len:8,
-        16#00,
-        Len:8,
-        16#00,
+        Len:16/little,
+        Len:16/little,
         16#68,
         C:8,
         Addr:5/bytes,
         AFN:8,
-        16#71,
+        16#61,
         UserZone/binary,
         Crc:8,
         16#16
     >>.
 
-% DLT376 链路检测，心跳数据
-check_Command(State = #{<<"command">> := 16#C9, <<"afn">> := 16#02}) ->
-    State;
+% DLT376 链路检测，登录
+check_Command(State = #{<<"afn">> := 16#02, <<"data">> := <<16#00, 16#00, 16#01, 16#00, _Version/binary>>}) ->
+    Frame = to_frame(State#{<<"command">> => 11,
+        <<"afn">> => 0,
+        <<"di">> => <<"00000400">>,
+        <<"data">> => <<"020000010000">>}),
+    State#{<<"frame">> => Frame};
+
+% DLT376 链路检测，心跳
+check_Command(State = #{<<"afn">> := 16#02, <<"data">> := <<16#00, 16#00, 16#04, 16#00, _Time/binary>>}) ->
+    Frame = to_frame(State#{<<"command">> => 11,
+        <<"afn">> => 0,
+        <<"di">> => <<"00000400">>,
+        <<"data">> => <<"020000040000">>}),
+    State#{<<"frame">> => Frame};
 
 % DLT376 抄表返回的数据
 check_Command(State = #{<<"command">> := 16#88, <<"afn">> := 16#0C}) ->
@@ -140,9 +154,27 @@ check_Command(State = #{<<"command">> := 16#88, <<"afn">> := 16#0C}) ->
         _ ->
             State
     end;
+    
+% DLT376 抄表返回的数据
+check_Command(State = #{<<"afn">> := 16#0C}) ->
+    Data = maps:get(<<"data">>, State, <<>>),
+    case Data of
+        <<Di:4/bytes,DTime:5/bytes,DNum:1/bytes,DValue:5/bytes,_/bytes>> ->
+            State1 = #{
+                <<"di">> => Di,
+                <<"time">> =>dgiot_utils:to_hex(DTime),
+                <<"valuenum">> => DNum,
+                <<"value">> => #{dgiot_utils:to_hex(Di)=>binary_to_value_dlt376_bcd(DValue)},
+                <<"addr">> => maps:get(<<"addr">>, State, <<>>)
+            },
+            State1;
+        _ ->
+            State
+    end;
 
 % DLT376 穿透转发返回
-check_Command(State = #{<<"command">> := 16#88, <<"afn">> := 16#10}) ->
+% check_Command(State = #{<<"command">> := 16#88, <<"afn">> := 16#10}) ->
+check_Command(State = #{<<"afn">> := 16#10}) ->
     Data = maps:get(<<"data">>, State, <<>>),
     case Data of
         <<_:4/bytes,_:1/bytes,DLen2:8,DLen1:8,Rest/bytes>> ->
@@ -153,11 +185,11 @@ check_Command(State = #{<<"command">> := 16#88, <<"afn">> := 16#10}) ->
                     ?LOG(warning,"GGM 160 check_Command:~p", [Frames]),
                     case Frames of
                         % 拉闸、合闸返回成功
-                        [#{<<"command">>:=16#9C} | _] ->
+                        [#{<<"command">> := 16#9C} | _] ->
                             Di = <<16#FE,16#FE,16#FE,16#FE>>,
                             State1 = #{
                                 <<"di">> => Di,%不做处理
-                                <<"value">> =>  #{dgiot_utils:to_hex(Di)=>0 },
+                                <<"value">> =>  #{dgiot_utils:to_hex(Di) => 0 },
                                 <<"addr">> => maps:get(<<"addr">>, State, <<>>)
                             },
                             State1;
