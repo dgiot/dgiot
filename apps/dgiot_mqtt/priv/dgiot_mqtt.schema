@@ -5,3 +5,14 @@
   {default, sha256},
   {datatype, {enum, [plain, md5, sha, sha256, sha512]}}
 ]}.
+
+{mapping, "iot_dgiot_mqtt.listener", "dgiot_mqtt.listener", [
+{default, 31888},
+{datatype, [integer, ip]}
+]}.
+
+
+{mapping, "iot_dgiot_mqtt.heartbeat", "dgiot_mqtt.heartbeat", [
+{default, 180},
+{datatype, integer}
+]}.

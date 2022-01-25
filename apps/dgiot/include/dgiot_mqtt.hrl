@@ -15,6 +15,45 @@
 %%--------------------------------------------------------------------
 -author("johnliu").
 
+-ifndef(DGIOT_MQTT_HRL).
+-define(DGIOT_MQTT_HRL, true).
+
+%%--------------------------------------------------------------------
+%% Common
+%%--------------------------------------------------------------------
+
+-define(Otherwise, true).
+
+%%--------------------------------------------------------------------
+%% Banner
+%%--------------------------------------------------------------------
+
+-define(PROTOCOL_VERSION, "MQTT/5.0").
+
+-define(ERTS_MINIMUM_REQUIRED, "10.0").
+
+%%--------------------------------------------------------------------
+%% Configs
+%%--------------------------------------------------------------------
+
+-define(NO_PRIORITY_TABLE, none).
+
+%%--------------------------------------------------------------------
+%% Topics' prefix: $SYS | $queue | $share
+%%--------------------------------------------------------------------
+
+%% System topic
+-define(SYSTOP, <<"$SYS/">>).
+
+%% Queue topic
+-define(QUEUE,  <<"$queue/">>).
+
+%%--------------------------------------------------------------------
+%% Message and Delivery
+%%--------------------------------------------------------------------
+
+-record(subscription, {topic, subid, subopts}).
+
 %% See 'Application Message' in MQTT Version 5.0
 -record(message, {
     %% Global unique message ID
@@ -24,15 +63,15 @@
     %% Message from
     from :: atom() | binary(),
     %% Message flags
-    flags = #{} :: dgiot_types:flags(),
+    flags = #{} :: emqx_types:flags(),
     %% Message headers. May contain any metadata. e.g. the
     %% protocol version number, username, peerhost or
     %% the PUBLISH properties (MQTT 5.0).
-    headers = #{} :: dgiot_types:headers(),
+    headers = #{} :: emqx_types:headers(),
     %% Topic that the message is published to
-    topic :: dgiot_types:topic(),
+    topic :: emqx_types:topic(),
     %% Message Payload
-    payload :: dgiot_types:payload(),
+    payload :: emqx_types:payload(),
     %% Timestamp (Unit: millisecond)
     timestamp :: integer()
 }).
@@ -41,3 +80,56 @@
     sender  :: pid(),      %% Sender of the delivery
     message :: #message{}  %% The message delivered
 }).
+
+%%--------------------------------------------------------------------
+%% Route
+%%--------------------------------------------------------------------
+
+-record(route, {
+    topic :: binary(),
+    dest  :: node() | {binary(), node()}
+}).
+
+%%--------------------------------------------------------------------
+%% Plugin
+%%--------------------------------------------------------------------
+
+-record(plugin, {
+    name           :: atom(),
+    dir            :: string() | undefined,
+    descr          :: string(),
+    vendor         :: string() | undefined,
+    active = false :: boolean(),
+    info   = #{}   :: map(),
+    type           :: atom()
+}).
+
+%%--------------------------------------------------------------------
+%% Command
+%%--------------------------------------------------------------------
+
+-record(command, {
+    name      :: atom(),
+    action    :: atom(),
+    args = [] :: list(),
+    opts = [] :: list(),
+    usage     :: string(),
+    descr     :: string()
+}).
+
+%%--------------------------------------------------------------------
+%% Banned
+%%--------------------------------------------------------------------
+
+-record(banned, {
+    who    :: {clientid,  binary()}
+    | {peerhost, inet:ip_address()}
+    | {username,   binary()}
+    | {ip_address, inet:ip_address()},
+    by     :: binary(),
+    reason :: binary(),
+    at     :: integer(),
+    until  :: integer()
+}).
+
+-endif.

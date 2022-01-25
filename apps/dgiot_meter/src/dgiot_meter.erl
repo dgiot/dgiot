@@ -115,7 +115,7 @@ create_meter4G(MeterAddr, ChannelId, DTUIP) ->
 
 
 get_sub_device(DtuAddr) ->
-    Query = #{<<"keys">> => [<<"devaddr">>, <<"product">>],
+    Query = #{<<"keys">> => [<<"devaddr">>, <<"product">>,<<"route">>],
         <<"where">> => #{<<"route.", DtuAddr/binary>> => #{<<"$regex">> => <<".+">>}},
         <<"order">> => <<"devaddr">>, <<"limit">> => 256},
     case dgiot_parse:query_object(<<"Device">>, Query) of
@@ -132,7 +132,6 @@ parse_frame(?DLT645, Buff, Opts) ->
 
 parse_frame(?DLT376, Buff, Opts) ->
     {Rest, Frames} = dlt376_decoder:parse_frame(Buff, Opts),
-    % ?LOG(warning,"GGM 170 dgiot_meter parse_frame:~p", [Frames]),
     {Rest, lists:foldl(fun(X, Acc) ->
         Acc ++ [maps:without([<<"diff">>, <<"send_di">>], X)]
                        end, [], Frames)}.
@@ -309,7 +308,7 @@ search_meter(tcp, _Ref, TCPState, 0) ->
         <<"msgtype">> => ?DLT645,
         <<"addr">> => dlt645_proctol:reverse(<<16#AA, 16#AA, 16#AA, 16#AA, 16#AA, 16#AA>>),
         <<"command">> => ?DLT645_MS_READ_DATA,
-        <<"di">> => dlt645_proctol:reverse(<<0, 0, 0, 0>>)
+        <<"di">> => dlt645_proctol:reverse(<<0, 0, 0, 0>>)  %%组合有功
     }),
     ?LOG(info, "Payload ~p", [dgiot_utils:binary_to_hex(Payload)]),
     dgiot_tcp_server:send(TCPState, Payload),
@@ -357,7 +356,7 @@ search_meter(1) ->
                 <<"msgtype">> => ?DLT645,
                 <<"addr">> => <<Flag:8, 16#AA, 16#AA, 16#AA, 16#AA, 16#AA>>,
                 <<"command">> => ?DLT645_MS_READ_DATA,
-                <<"di">> => dlt645_proctol:reverse(<<0, 0, 0, 0>>)})
+                <<"di">> => dlt645_proctol:reverse(<<0, 0, 0, 0>>)})   %%组合有功
     end;
 
 search_meter(_) ->

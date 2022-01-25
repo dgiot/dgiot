@@ -26,6 +26,7 @@
 % --------------------------------------------------------------------
 
 -define(METER, <<"METER">>).
+-define(CONCENTRATOR, <<"CONCENTRATOR">>).
 -define(DLT645, <<"DLT645">>).
 -define(DLT376, <<"DLT376">>).
 
@@ -40,6 +41,77 @@
 }).
 
 %% Internal Header File
+
+%DIR define
+-define(DIR_DOWN,   0).
+-define(DIR_UP,     1).
+
+%PRM define
+-define(PRM_SLAVER,  0).
+-define(PRM_MASTER,  1).
+
+%FCB define
+-define(FCB_FALSE,  0).
+-define(FCB_TRUE,   1).
+
+%ACD define
+-define(ACD_FALSE,  0).
+-define(ACD_TRUE,   1).
+
+%FCV define
+-define(FCV_FALSE,  0).
+-define(FCV_TRUE,   1).
+
+%FIRN define
+-define(FIRN_MULTI_MID,  0).
+-define(FIRN_MULTI_END,  1).
+-define(FIRN_MULTI_FIR,  2).
+-define(FIRN_SINGLE,     3).
+
+%CON define
+-define(CON_FALSE,  0).
+-define(CON_TRUE,   1).
+
+%TPV define
+-define(TPV_FALSE,  0).
+-define(TPV_TRUE,   1).
+
+%AFN define
+-define(AFN_CONFIRM_OR_DENY,    16#00).
+-define(AFN_RESET_COMMAND,      16#01).
+-define(AFN_LINK_CHECK,         16#02).
+-define(AFN_RELAY_COMMAND,      16#03).
+-define(AFN_WRITE_PARAM,        16#04).
+-define(AFN_CONTROL_COMMAND,    16#05).
+-define(AFN_IDENTITI_PSW,       16#06).
+-define(AFN_CASCADE_REPORT,     16#08).
+-define(AFN_TERMINAL_PARAM,     16#09).
+-define(AFN_READ_PARAM,         16#0A).
+-define(AFN_GW_TASK_DATA,       16#1B).
+-define(AFN_READ_CURRENT_DATA,  16#0C).
+-define(AFN_READ_HISTORY_DATA,  16#0D).
+-define(AFN_READ_EVENT_RECORD,  16#0E).
+-define(AFN_READ_FILE_TRANSFER, 16#0F).
+-define(AFN_RELAY_TRANSFER,     16#10).
+-define(AFN_READ_TASK_DATA,     16#12).
+-define(AFN_READ_WARN_DATA,     16#13).
+-define(AFN_CASCADE_COMMAND,    16#14).
+-define(AFN_USER_DEFINE_DATA,   16#15).
+
+%LFN define
+-define(LFN_SLAVER_CON,                   0).
+-define(LFN_SLAVER_RESP_USERDATA,         8).
+-define(LFN_SLAVER_RESP_NODATA,           9).
+-define(LFN_SLAVER_REQ_AND_RESP_LIKN,     11).
+
+-define(LFN_MASTER_CONFIRM,                0).
+-define(LFN_MASTER_SEND_AND_CON,           1).
+-define(LFN_MASTER_SEND_AND_NOASWER,       4).
+-define(LFN_MASTER_REQ_AND_RESP_LIKN,      9).
+-define(LFN_MASTER_REQ_AND_RESP_1,         10).
+-define(LFN_MASTER_REQ_AND_RESP_2,         11).
+
+
 
 %% @doc dlt376 COMMAND.
 -define(DLT376_MS_READ_DATA,     16#5B).

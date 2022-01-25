@@ -50,6 +50,7 @@ start_client_sup(ChannleId, Opts0) ->
         {error, _Reason, _} -> []
     end.
 
+
 %% @private
 channel_opts( #{
     <<"scheme">> := Scheme,
