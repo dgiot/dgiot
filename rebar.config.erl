@@ -199,8 +199,6 @@ overlay_vars_rel(RelType) ->
         , {enable_plugin_emqx_recon, true}
         , {enable_plugin_emqx_retainer, true}
         , {enable_plugin_emqx_telemetry, true}
-%%        , {enable_plugin_emqx_exhook, true}
-       , {enable_plugin_emqx_auth_mnesia, true}
         , {enable_plugin_dgiot, true}
         , {enable_plugin_dgiot_bridge, true}
         , {enable_plugin_dgiot_parse, true}
@@ -211,7 +209,6 @@ overlay_vars_rel(RelType) ->
         , {enable_plugin_dgiot_tdengine, true}
         , {enable_plugin_dgiot_task, true}
         , {enable_plugin_dgiot_http, true}
-        , {enable_plugin_dgiot_grpc, true}
         , {enable_plugin_dgiot_topo, true}
         , {enable_plugin_dgiot_opc, true}
         , {enable_plugin_dgiot_meter, true}
@@ -221,7 +218,7 @@ overlay_vars_rel(RelType) ->
         , {enable_plugin_dgiot_group, true}
         , {enable_plugin_dgiot_ffmpeg, true}
         , {enable_plugin_dgiot_gb26875, true}
-        , {enable_plugin_dgiot_mqtt, true}
+        , {enable_plugin_dgiot_dlink, true}
         , {enable_plugin_dgiot_iq60, true}
         , {vm_args_file, VmArgs}
     ].
@@ -276,8 +273,8 @@ relx_apps(ReleaseType) ->
         , jwerl
         , odbc
         , erlydtl
-        , ecpool
         , erlport
+        , ecpool
         , poolboy
         , ibrowse
         , emqx
@@ -312,10 +309,6 @@ relx_plugin_apps(ReleaseType) ->
         , emqx_management
         , emqx_dashboard
         , emqx_bridge_mqtt
-%%        , emqx_sn
-%%        , emqx_coap
-%%        , emqx_stomp
-%%        , emqx_web_hook
         , emqx_recon
         , emqx_rule_engine
         , emqx_sasl
@@ -331,7 +324,6 @@ relx_plugin_apps_per_rel(cloud) ->
     [emqx_lwm2m
         , emqx_lua_hook
         , emqx_exhook
-        , emqx_exproto
         , emqx_prometheus
         , emqx_psk_file
         , emqx_auth_mnesia
@@ -345,7 +337,6 @@ relx_plugin_apps_per_rel(cloud) ->
         , dgiot_license
         , dgiot_task
         , dgiot_http
-        , dgiot_grpc
         , dgiot_topo
         , dgiot_opc
         , dgiot_meter
@@ -355,7 +346,7 @@ relx_plugin_apps_per_rel(cloud) ->
         , dgiot_group
         , dgiot_ffmpeg
         , dgiot_gb26875
-        , dgiot_mqtt
+        , dgiot_dlink
         , dgiot_iq60
     ];
 relx_plugin_apps_per_rel(edge) ->

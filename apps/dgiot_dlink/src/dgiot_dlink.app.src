@@ -1,0 +1,15 @@
+{application, dgiot_dlink,
+    [{description, "DGIOT Dlink"},
+        {vsn, "4.3.0"},
+        {applications, [kernel, stdlib, grpc, dgiot]},
+        {modules, []},
+        {env, []},
+        {mod, {dgiot_dlink_app, []}},
+        {registered, []},
+        {licenses, ["Apache-2.0"]},
+        {maintainers, ["DG-IoT Team"]},
+        {links, [{"Homepage", "https://www.iotn2n.com/"},
+            {"Github", "https://github.com/dgiot/dgiot"}
+        ]}
+    ]
+}.
