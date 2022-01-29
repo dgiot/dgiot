@@ -191,7 +191,7 @@ delete(ProductId) ->
     dgiot_data:delete(?DGIOT_PRODUCT, ProductId).
 
 get(ProductId) ->
-    Keys = [<<"nodeType">>, <<"dynamicReg">>, <<"topics">>],
+    Keys = [<<"ACL">>, <<"status">>, <<"nodeType">>, <<"dynamicReg">>, <<"topics">>, <<"productSecret">>],
     case dgiot_parse:get_object(<<"Product">>, ProductId) of
         {ok, Product} ->
             {ok, maps:with(Keys, Product)};
@@ -231,7 +231,7 @@ add_device(ProductId, DevAddr) ->
 format_product(#{<<"objectId">> := ProductId} = Product) ->
     Thing = maps:get(<<"thing">>, Product, #{}),
     Props = maps:get(<<"properties">>, Thing, []),
-    Keys = [<<"ACL">>, <<"status">>, <<"nodeType">>, <<"dynamicReg">>, <<"topics">>],
+    Keys = [<<"ACL">>, <<"status">>, <<"nodeType">>, <<"dynamicReg">>, <<"topics">>, <<"productSecret">>],
     Map = maps:with(Keys, Product),
     Map#{
         <<"productId">> => ProductId,

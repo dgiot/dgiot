@@ -47,10 +47,6 @@ get_apps() {
       git clone  -b "v4.3.10" "https://gitee.com/fastdgiot/emqx-exhook.git"  emqx_exhook
     fi
 
-     if [ ! -d "emqx_exproto/" ]; then
-      git clone  -b "v4.3.10" "https://gitee.com/fastdgiot/emqx-exproto.git"  emqx_exproto
-    fi
-
     if [ ! -d "emqx_auth_mnesia/" ]; then
       git clone  -b "v4.3.10" "https://gitee.com/fastdgiot/emqx-auth-mnesia.git"  emqx_auth_mnesia
     fi
