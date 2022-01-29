@@ -65,3 +65,22 @@ Dlink RunTime                             Third-party Decode/Encode
 |                        |                 |        |          |
 +========================+                 +========+==========+
 ```
+### gRPC
+
+For instructions on how to use the language-specific gRPC runtime for a project,
+please refer to these documents
+
+- [C++](https://github.com/fastdgiot/grpc/tree/master/src/cpp): follow the instructions under the `src/cpp` directory
+- [C#](https://github.com/fastdgiot/grpc/tree/master/src/csharp): NuGet package `Grpc`
+- [Dart](https://github.com/grpc/grpc-dart): pub package `grpc`
+- [Go](https://github.com/grpc/grpc-go): `go get google.golang.org/grpc`
+- [Java](https://github.com/grpc/grpc-java): Use JARs from Maven Central
+  Repository
+- [Kotlin](https://github.com/grpc/grpc-kotlin): Use JARs from Maven Central
+  Repository
+- [Node](https://github.com/grpc/grpc-node): `npm install grpc`
+- [Objective-C](https://github.com/fastdgiot/grpc/tree/master/src/objective-c): Add `gRPC-ProtoRPC` dependency to podspec
+- [PHP](https://github.com/fastdgiot/grpc/tree/master/src/php): `pecl install grpc`
+- [Python](https://github.com/fastdgiot/grpc/tree/master/src/python/grpcio): `pip install grpcio`
+- [Ruby](https://github.com/fastdgiot/grpc/tree/master/src/ruby): `gem install grpc`
+- [WebJS](https://github.com/grpc/grpc-web): follow the grpc-web instructions
