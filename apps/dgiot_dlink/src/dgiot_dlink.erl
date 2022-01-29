@@ -21,7 +21,7 @@
 
 start() ->
     Services = #{protos => [dgiot_dlink_pb],
-        services => #{'Greeter' => dgiot_greeter_svr}
+        services => #{'Dlink' => dgiot_dlink_server}
     },
     {ok, _} = grpc:start_server(server, 30051, Services, []).
 
@@ -36,5 +36,5 @@ logout() ->
     _ = grpc_client_sup:stop_channel_pool(channel).
 
 send() ->
-    dgiot_greeter_client:say_hello(#{name => <<"Xiao Ming">>}, #{channel => channel}).
+    dgiot_dlink_client:say_hello(#{name => <<"Xiao Ming">>}, #{channel => channel}).
 

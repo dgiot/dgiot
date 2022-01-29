@@ -4,14 +4,14 @@
 syntax = "proto3";
 
 option java_multiple_files = true;
-option java_package = "io.grpc.examples.helloworld";
-option java_outer_classname = "HelloWorldProto";
-option objc_class_prefix = "HLW";
+option java_package = "io.grpc.examples.dlink";
+option java_outer_classname = "DlinkProto";
+option objc_class_prefix = "dlink";
 
 package dgiot;
 
-// The greeting service definition.
-service Greeter {
+// The dlink service definition.
+service Dlink {
   // Sends a greeting
   rpc SayHello (HelloRequest) returns (HelloReply) {}
 }

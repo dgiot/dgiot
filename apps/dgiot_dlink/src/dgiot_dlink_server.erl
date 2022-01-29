@@ -14,9 +14,9 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
--module(dgiot_greeter_svr).
+-module(dgiot_dlink_server).
 
--behavior(dgiot_greeter_bhvr).
+-behavior(dgiot_dlink_bhvr).
 
 -compile(export_all).
 -compile(nowarn_export_all).
