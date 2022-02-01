@@ -275,6 +275,8 @@ relx_apps(ReleaseType) ->
         , erlydtl
         , erlport
         , ecpool
+        , grpc
+        , gpb
         , poolboy
         , ibrowse
         , emqx

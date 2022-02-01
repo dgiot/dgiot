@@ -26,3 +26,24 @@
 
 say_hello(_Req = #{name := Name}, _Md) ->
     {ok, #{message => <<"Hi, ", Name/binary, "~">>}, _Md}.
+
+-spec check(grpc_health_pb:health_check_request(), grpc:metadata())
+            -> {ok, grpc_health_pb:health_check_response(), grpc:metadata()}
+        | {error, grpc_stream:error_response()}.
+
+check(#{service := _Service}, _Md) ->
+    %% TODO: How to get the Service running status?
+    {ok, #{status => 'SERVING'}, _Md}.
+
+-spec watch(grpc_stream:stream(), grpc:metadata())
+            -> {ok, grpc_stream:stream()}.
+watch(Stream, _Md) ->
+    %% TODO: How to get the Service running status?
+    {eos, [#{service := _Service}], NStream} = grpc_stream:recv(Stream),
+    RelpyLp = fun _Lp() ->
+        grpc_stream:reply(NStream, [#{status => 'SERVING'}]),
+        timer:sleep(15000),
+        _Lp()
+              end,
+    RelpyLp(),
+    {ok, NStream}.

@@ -13,30 +13,28 @@
 %% See the License for the specific language governing permissions and
 %% limitations under the License.
 %%--------------------------------------------------------------------
-%% https://doc.oschina.net/grpc
-%% https://www.grpc.io/docs/
 
--module(dgiot_dlink).
+-module(dgiot_dlink_test).
 
 -compile(export_all).
 -compile(nowarn_export_all).
 
-start(Server) ->
+start() ->
     Services = #{protos => [dgiot_dlink_pb],
         services => #{'dgiot.Dlink' => dgiot_dlink_server}
     },
-    {ok, _} = grpc:start_server(Server, 30051, Services, []).
+    {ok, _} = grpc:start_server(server, 30051, Services, []).
 
-stop(Server) ->
-    _ = grpc:stop_server(Server).
+stop() ->
+    _ = grpc:stop_server(server).
 
-login(ClinetId) ->
+login() ->
     SvrAddr =  "http://127.0.0.1:30051",
-    {ok, _} = grpc_client_sup:create_channel_pool(ClinetId, SvrAddr, #{}).
+    {ok, _} = grpc_client_sup:create_channel_pool(channel, SvrAddr, #{}).
 
-logout(ClinetId) ->
-    _ = grpc_client_sup:stop_channel_pool(ClinetId).
+logout() ->
+    _ = grpc_client_sup:stop_channel_pool(channel).
 
-send(ClinetId) ->
-    dgiot_dlink_client:say_hello(#{name => <<"Xiao Ming">>}, #{channel => ClinetId}).
+send() ->
+    dgiot_dlink_client:say_hello(#{name => <<"Xiao Ming">>}, #{channel => channel}).
 
