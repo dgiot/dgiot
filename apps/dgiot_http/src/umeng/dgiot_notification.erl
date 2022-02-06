@@ -23,6 +23,8 @@
 %% API
 -export([send_sms/3, send_sms/4, send_sms/5]).
 
+-export([send_email/1, test_email/0]).
+
 -export([send_verification_code/2, check_verification_code/2]).
 
 init_ets() ->
@@ -102,3 +104,45 @@ send_sms(NationCode, Mobile, TplId, Params, Ext) ->
         _ ->
             {error, #{code => 1, error => <<"NationCode is illegality">>}}
     end.
+
+test_email() ->
+    Map   = #{
+        <<"from">> => <<"dgiot@163.com">>,
+        <<"to">> =>   [<<"3333333@qq.com">>],
+        <<"subject">> => <<"测试邮件"/utf8>>,
+        <<"fromdes">> => <<"dgiot开源物联网 <dgiot@163.com>"/utf8>>,
+        <<"todes">> => <<"dgiot用户 <34489690@qq.com>"/utf8>>,
+        <<"data">> => <<"dgiot邮件 中文测试 欢迎访问 https://github.com/dgiot "/utf8>>,
+        <<"relay">> => <<"smtp.163.com">>,
+        <<"username">> => <<"dgiot@163.com">>,
+        <<"password">> => <<"yourstmppassword">>
+    },
+    send_email(Map).
+
+%%-type options() :: [{ssl, boolean()} |
+%%{tls, always | never | if_available} |
+%%{tls_options, list()} | % ssl:option() / ssl:tls_client_option()
+%%{sockopts, [gen_tcp:connect_option()]} |
+%%{port, inet:port_number()} |
+%%{timeout, timeout()} |
+%%{relay, inet:ip_address() | inet:hostname()} |
+%%{no_mx_lookups, boolean()} |
+%%{auth, always | never | if_available} |
+%%{hostname, string()} |
+%%{retries, non_neg_integer()} |
+%%{username, string()} |
+%%{password, string()} |
+%%{trace_fun, fun( (Fmt :: string(), Args :: [any()]) -> any() )}].
+
+send_email(Email) ->
+    From = maps:get(<<"from">>,Email,<<"dgiot@163.com">>),
+    To = maps:get(<<"to">>,Email, [<<"3333333@qq.com">>]),
+    Subject =  maps:get(<<"subject">>, Email, <<"测试邮件"/utf8>>),
+    FromDes  = maps:get(<<"fromdes">>, Email, <<"dgiot开源物联网 <dgiot@163.com>"/utf8>>),
+    ToDes  = maps:get(<<"todes">>, Email, <<"dgiot用户 <3333333@qq.com>"/utf8>>),
+    Data = maps:get(<<"data">>, Email, <<"dgiot邮件 中文测试 欢迎访问 https://github.com/dgiot "/utf8>>),
+    BodyBin = <<"Subject: ", Subject/binary, "\r\n", "From: ", FromDes/binary, "\r\n", "To:", ToDes/binary, "\r\n\r\n", Data/binary>>,
+    Relay = maps:get(<<"relay">>, Email, <<"smtp.163.com">>),
+    UserName = maps:get(<<"username">>,Email, <<"dgiot@163.com">>),
+    PassWord = maps:get(<<"password">>, Email, <<"yourstmppassword">>),
+    gen_smtp_client:send({From, To, BodyBin}, [{relay, Relay}, {username, UserName}, {password, PassWord}]).

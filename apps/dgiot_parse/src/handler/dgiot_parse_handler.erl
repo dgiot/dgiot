@@ -169,7 +169,6 @@ handle(put_token, #{<<"appid">> := AppId, <<"secret">> := Secret}, _Context, _Re
     end;
 
 handle(post_user, #{<<"username">> := _UserName, <<"password">> := _Password} = Body, #{<<"sessionToken">> := SessionToken}, _Req) ->
-    ?LOG(info, "Body ~p", [Body]),
     case create_user(Body, SessionToken) of
         {ok, Data} ->
             dgiot_parse:load_role(),
@@ -178,7 +177,6 @@ handle(post_user, #{<<"username">> := _UserName, <<"password">> := _Password} = 
     end;
 
 handle(delete_user, #{<<"username">> := _UserName} = Body, #{<<"sessionToken">> := SessionToken}, _Req) ->
-    ?LOG(info, "Body ~p", [Body]),
     case _UserName of
         <<"dgiot_admin">> ->
             {ok, #{<<"code">> => 401, <<"msg">> => <<"dgiot_admin PROHIBITED DELETE">>}};
@@ -192,7 +190,6 @@ handle(delete_user, #{<<"username">> := _UserName} = Body, #{<<"sessionToken">> 
     end;
 
 handle(put_user, #{<<"username">> := _UserName} = Body, #{<<"sessionToken">> := SessionToken}, _Req) ->
-    ?LOG(info, "Body ~p", [Body]),
     case put_user(Body, SessionToken) of
         {ok, Data} ->
             dgiot_parse:load_role(),
