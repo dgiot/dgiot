@@ -233,7 +233,7 @@ do_request(post_generatereport, #{<<"id">> := TaskId}, #{<<"sessionToken">> := _
                                                         end,
                                                     %% 采样参数
                                                     Parameter = maps:get(<<"parameter">>, Param, <<"flow,power,head,rotate,pressure_in,pressure_out,conversion_flow,conversion_head,conversion_power,effect">>),
-                                                    {Tabledata, _} = dgiot_evidence:get_Tabledata(Parameter, Avgdatas),
+                                                    {Tabledata, _} = dgiot_evidence:get_tabledata(Parameter, Avgdatas),
                                                     Acc ++ [#{
                                                         <<"type">> => <<"dynamicTable">>,
                                                         <<"source">> => Sources,

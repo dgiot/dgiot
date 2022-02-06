@@ -45,7 +45,7 @@
     post_data/2,
     get_filehome/1,
     test/0,
-    get_Tabledata/2
+    get_tabledata/2
 ]).
 
 %%--------------------------------------------------------------------
@@ -697,7 +697,7 @@ get_attrs(Attrs, ImageUrl, Heigh, Width, ClassName, X) ->
             X
     end.
 
-get_Tabledata(Parameter, Avgdatas) ->
+get_tabledata(Parameter, Avgdatas) ->
     Keys = binary:split(Parameter, <<$,>>, [global, trim]),
     lists:foldl(fun(Avg, {Acc1, Num}) ->
         Data =
