@@ -345,7 +345,6 @@ relx_plugin_apps_per_rel(cloud) ->
         , dgiot_license
         , dgiot_task
         , dgiot_http
-        , dgiot_grpc
         , dgiot_topo
         , dgiot_opc
         , dgiot_meter
