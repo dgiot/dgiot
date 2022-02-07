@@ -211,7 +211,6 @@ overlay_vars_rel(RelType) ->
         , {enable_plugin_dgiot_tdengine, true}
         , {enable_plugin_dgiot_task, true}
         , {enable_plugin_dgiot_http, true}
-        , {enable_plugin_dgiot_grpc, true}
         , {enable_plugin_dgiot_topo, true}
         , {enable_plugin_dgiot_opc, true}
         , {enable_plugin_dgiot_meter, true}

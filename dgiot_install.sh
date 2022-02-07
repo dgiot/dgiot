@@ -871,7 +871,6 @@ function install_dgiot() {
   {dgiot_task, true}.
   {dgiot_http, true}.
   {dgiot_ffmpeg, true}.
-  {dgiot_grpc, true}.
   {dgiot_license, true}.
   {dgiot_topo, true}.
   {dgiot_opc, true}.
