@@ -28,7 +28,6 @@ record_route(Stream, _Md) ->
         case grpc_stream:recv(St) of
             {more, Reqs, NSt} ->
                 ?LOG("~p: ~0p~n", [?FUNCTION_NAME, Reqs]),
-
                 _Lp(NSt, Acc ++ Reqs);
             {eos, Reqs, NSt} ->
                 ?LOG("~p: ~0p~n", [?FUNCTION_NAME, Reqs]),
