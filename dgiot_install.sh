@@ -1159,7 +1159,6 @@ function build_dashboard() {
       fi
     fi
 
-    rm  ${script_dir}/dgiot_dashboard/ -rf
     cd  ${script_dir}/
     if [ ! -d ${script_dir}/dgiot_dashboard/ ]; then
       git clone -b master https://gitee.com/dgiiot/dgiot-dashboard.git dgiot_dashboard
@@ -1171,20 +1170,18 @@ function build_dashboard() {
     #git checkout v4.0.0
 
     export PATH=$PATH:/usr/local/bin:${script_dir}/node-v16.5.0-linux-x64/bin/
-    rm ${script_dir}/dgiot_dashboard/dev/ -rf
-    rm ${script_dir}/dgiot_dashboard/lite/ -rf
+    rm ${script_dir}/dgiot_dashboard/dist/ -rf
     ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm add -g pnpm
-    ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm install
+    ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm install --no-frozen-lockfile
     #${script_dir}/node-v16.5.0-linux-x64/bin/pnpm run fix-memory-limit
     cpucount=`cat /proc/cpuinfo| grep 'cpu cores'| uniq |awk '{print $4}'`
     if [ ${cpucount} -gt 1 ];then
       ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm build
-      sh ${script_dir}/dgiot_dashboard/config/lite/lite.sh
-      ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm build
       echo "not build"
     else
       echo -e "`date +%F_%T` $LINENO: ${GREEN} cpucore = 1 not build dgiot_dashboard${NC}"
-      git clone -b www https://gitee.com/dgiiot/dgiot-dashboard.git dev
+      git clone -b www https://gitee.com/dgiiot/dgiot-dashboard.git dist
+      rm ./dist/.git -rf
     fi
   }
 
@@ -1213,12 +1210,8 @@ function pre_build_dgiot() {
     rm ${script_dir}/dgiot/emqx/lib/dgiot_api/ -rf
     mkdir -p ${script_dir}/dgiot/apps/dgiot_api/priv/www/
 
-    if [ -d ${script_dir}/dgiot_dashboard/lite/ ]; then
-      cp ${script_dir}/dgiot_dashboard/lite/ ${script_dir}/dgiot/apps/dgiot_api/priv/www/ -rf
-    fi
-
-    if [ -d ${script_dir}/dgiot_dashboard/dev/ ]; then
-      cp ${script_dir}/dgiot_dashboard/dev/ ${script_dir}/dgiot/apps/dgiot_api/priv/www/ -rf
+    if [ -d ${script_dir}/dgiot_dashboard/dist ]; then
+      cp ${script_dir}/dgiot_dashboard/dist/ ${script_dir}/dgiot/apps/dgiot_api/priv/www/ -rf
     fi
 
     if [ -f ${script_dir}/dgiot_dashboard/config/index.html ]; then
@@ -1263,6 +1256,7 @@ function post_build_dgiot() {
     fi
     cp ./${software}.tar.gz ${install_dir}/go_fastdfs/files/package/
   }
+
 
 function devops() {
     build_dashboard
