@@ -633,26 +633,27 @@ function deploy_tdengine_server() {
     mv ${install_dir}/taos/ ${backup_dir}/taos/
   fi
 
-  if [ ! -f ${script_dir}/TDengine-server-2.0.20.13.tar.gz ]; then
-    wget ${fileserver}/TDengine-server-2.0.20.13.tar.gz -O ${script_dir}/TDengine-server-2.0.20.13.tar.gz &> /dev/null
+  if [ ! -f ${script_dir}/TDengine-server-2.4.0.4-Linux-x64.tar.gz ]; then
+    wget ${fileserver}/TDengine-server-2.4.0.4-Linux-x64.tar.gz -O ${script_dir}/TDengine-server-2.4.0.4-Linux-x64.tar.gz &> /dev/null
   fi
 
   cd ${script_dir}/
-  if [ -f ${script_dir}/TDengine-server-2.0.20.13 ]; then
-    rm -rf ${script_dir}/TDengine-server-2.0.20.13/
+  if [ -f ${script_dir}/TDengine-server-2.4.0.4 ]; then
+    rm -rf ${script_dir}/TDengine-server-2.4.0.4/
   fi
 
-  tar xf TDengine-server-2.0.20.13.tar.gz
-  cd ${script_dir}/TDengine-server-2.0.20.13/
+  tar xf TDengine-server-2.4.0.4-Linux-x64.tar.gz
+  cd ${script_dir}/TDengine-server-2.4.0.4/
   mkdir ${install_dir}/taos/log/ -p
   mkdir ${install_dir}/taos/data/ -p
   echo | /bin/sh install.sh &> /dev/null
   ldconfig
   cd ${script_dir}/
-  rm ${script_dir}/TDengine-server-2.0.20.13 -rf
+  rm ${script_dir}/TDengine-server-2.4.0.4 -rf
   ${csudo} bash -c "echo 'logDir                    ${install_dir}/taos/log/'   > /etc/taos/taos.cfg"
   ${csudo} bash -c "echo 'dataDir                   ${install_dir}/taos/data/'   >> /etc/taos/taos.cfg"
   systemctl start taosd
+  systemctl start taosadapter
   install_dgiot_tdengine_mqtt
 }
 
@@ -817,6 +818,14 @@ function update_dgiot() {
   mv ${install_dir}/go_fastdfs/files/package/dgiot/  ${install_dir}/
 
   install_service "dgiot" "forking" "/bin/sh ${install_dir}/dgiot/bin/emqx start"  "root" "HOME=${install_dir}/dgiot/erts-11.0" "/bin/sh /data/dgiot/bin/emqx stop"
+}
+
+
+function update_tdengine_server() {
+  version=$(taos --v |awk '{print $2}') ||:
+  if [ "${version}" != "2.4.0.4" ]; then
+    deploy_tdengine_server
+  fi
 }
 
 function update_dashboard() {
@@ -1300,6 +1309,7 @@ else
         update_flag=1
         update_dgiot
         update_dashboard
+        update_tdengine_server
       else
         pre_install
         clean_services
