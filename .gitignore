@@ -76,6 +76,5 @@ erlang_ls.config
 *~
 # Emacs temporary files
 .#*
-*#
 # For direnv
 .envrc
