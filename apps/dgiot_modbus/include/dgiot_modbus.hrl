@@ -12,7 +12,8 @@
     scale = 10,
     temperature = 0,
     env = <<>>,
-    dtutype = <<>>
+    dtutype = <<>>,
+    hb = 60
 }).
 
 -define(READ_DISCRETE_INPUTS, 2).
