@@ -27,7 +27,31 @@
 -export([get_device/3, get_device/4, get_device/5, get_keys/3, get_reportdata/3]).
 %% 引入执行函数
 -import(dgiot_tdengine_channel, [run_sql/3, transaction/2]).
--export([test_product/0]).
+-export([test_product/0, test/0, test_alter/0]).
+
+test() ->
+    dgiot_tdrestful:request(<<"http://127.0.0.1:6041/rest/sql">>, <<"root">>, <<"taosdata">>, <<"create database test_alter;">>),
+    TAGS1 =
+        lists:foldl(fun(X, Acc) ->
+            Binx = dgiot_utils:to_binary(X),
+            case Acc of
+                <<>> ->
+                    <<"tag", Binx/binary, " NCHAR(10)">>;
+                _ ->
+                    <<Acc/binary, ", tag", Binx/binary, " NCHAR(10)">>
+            end
+                    end, <<>>, lists:seq(1, 128)),
+    dgiot_tdrestful:request(<<"http://127.0.0.1:6041/rest/sql/test_alter">>, <<"root">>, <<"taosdata">>,
+        <<"CREATE STABLE test_alter(ts timestamp, speed int) TAGS (", TAGS1/binary, ");">>).
+
+test_alter() ->
+    lists:map(fun(X) ->
+        Binx = dgiot_utils:to_binary(X),
+        Sql = <<"ALTER STABLE test_alter ADD COLUMN field", Binx/binary, " int;">>,
+        io:format("Sql ~p~n", [Sql]),
+        dgiot_tdrestful:request(<<"http://127.0.0.1:6041/rest/sql/test_alter">>, <<"root">>, <<"taosdata">>, Sql),
+        timer:sleep(100)
+              end, lists:seq(1, 4096)).
 
 to_unixtime(Time) when is_integer(Time) ->
     Time;
