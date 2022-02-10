@@ -1167,22 +1167,13 @@ function build_dashboard() {
     cd ${script_dir}/dgiot_dashboard
     git reset --hard
     git pull
-    #git checkout v4.0.0
 
     export PATH=$PATH:/usr/local/bin:${script_dir}/node-v16.5.0-linux-x64/bin/
     rm ${script_dir}/dgiot_dashboard/dist/ -rf
     ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm add -g pnpm
     ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm install --no-frozen-lockfile
-    #${script_dir}/node-v16.5.0-linux-x64/bin/pnpm run fix-memory-limit
-    cpucount=`cat /proc/cpuinfo| grep 'cpu cores'| uniq |awk '{print $4}'`
-    if [ ${cpucount} -gt 1 ];then
-      ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm build
-      echo "not build"
-    else
-      echo -e "`date +%F_%T` $LINENO: ${GREEN} cpucore = 1 not build dgiot_dashboard${NC}"
-      git clone -b www https://gitee.com/dgiiot/dgiot-dashboard.git dist
-      rm ./dist/.git -rf
-    fi
+    ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm build
+    echo "not build"
   }
 
 function pre_build_dgiot() {
