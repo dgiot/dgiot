@@ -94,6 +94,12 @@ elif  echo $osinfo | grep -qwi "centos" ; then
 elif echo $osinfo | grep -qwi "fedora" ; then
 #  echo "This is fedora system"
   os_type=2
+elif echo $osinfo | grep -qwi "Amazon" ; then
+#  echo "This is Amazon system"
+  os_type=2
+elif echo $osinfo | grep -qwi "Red" ; then
+#  echo "This is Red Hat system"
+  os_type=2
 else
   echo " osinfo: ${osinfo}"
   echo " This is an officially unverified linux system,"
@@ -159,9 +165,15 @@ function pre_install() {
   get_processor
 
   ## 1.4 关闭防火墙，selinux
-  systemctl stop firewalld && sudo systemctl disable firewalld
+  if systemctl is-active --quiet firewalld; then
+        echo -e  "`date +%F_%T` $LINENO: ${GREEN} firewalld is running, stopping it...${NC}"
+        ${csudo} systemctl stop firewalld $1 &> /dev/null || echo &> /dev/null
+        ${csudo} systemctl disable firewalld $1 &> /dev/null || echo &> /dev/null
+  fi
+
+   #  setenforce 0
   sed -ri s/SELINUX=enforcing/SELINUX=disabled/g /etc/selinux/config
-  #  setenforce 0
+
 
   ## 1.5 配置yum源
   if [ ! -f /etc/yum.repos.d/CentOS-Base.repo ]; then
@@ -1132,6 +1144,9 @@ function build_dashboard() {
         ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm add -g pnpm to update
         ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm -v
         ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm get registry
+        sudo /bin/dd if=/dev/zero of=/var/swap.1 bs=1M count=1024
+        sudo /sbin/mkswap /var/swap.1
+        sudo /sbin/swapon /var/swap.1
       fi
     fi
 
