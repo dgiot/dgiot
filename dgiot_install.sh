@@ -114,9 +114,9 @@ fi
 # set parameters by default value
 verType=single        # [single | cluster | devops | ci]
 domain_name="prod.iotn2n.com" #[prod.iotn2n.com | your_domain_name]
-software="dgiot_254"  #[dgiot_254 | dgiot_n]
+software="dgiot_280"  #[dgiot_280 | dgiot_n]
 plugin="dgiot" #[dgiot | dgiot_your_plugin]
-dgiotmd5="b70d95592f0a65c8ba896e451e892ccc"
+dgiotmd5="642cb947f7d69e29029a20bb184883d7"
 while getopts "h:v:d:s:p:m:" arg
 do
   case $arg in
@@ -146,7 +146,7 @@ do
       plugin=$(echo $OPTARG)
       ;;
     h)
-      echo "Usage: `basename $0` -v [single | cluster | devops | ci] -s [dgiot_254 | dgiot_n] -d [prod.iotn2n.com | your_domain_name] -p [dgiot | your_dgiot_plugin]"
+      echo "Usage: `basename $0` -v [single | cluster | devops | ci] -s [dgiot_280 | dgiot_n] -d [prod.iotn2n.com | your_domain_name] -p [dgiot | your_dgiot_plugin]"
       exit 0
       ;;
     ?) #unknow option
@@ -390,10 +390,12 @@ function install_service2() {
 }
 ##---------------------------------------------------------------##
 #2 部署档案数据库
+
 ## 2.1 部署postgres数据库
 ### 2.1.1 环境准备，根据自身需要，减少或者增加
 function yum_install_postgres() {
   echo -e  "`date +%F_%T` $LINENO: ${GREEN} yum install postgres${NC}"
+  yum_install_git
   yum install -y wget git &> /dev/null
   ${csudo} yum install -y gcc gcc-c++  epel-release &> /dev/null
   # ${csudo} yum install -y llvm llvm-devel &> /dev/null
@@ -629,7 +631,7 @@ function deploy_parse_server() {
 function deploy_tdengine_server() {
   ### 1.2.4 下载TDengine-server
   if [ -f ${install_dir}/taos ]; then
-     clean_service "taosd"
+    clean_service "taosd"
     mv ${install_dir}/taos/ ${backup_dir}/taos/
   fi
 
@@ -654,6 +656,7 @@ function deploy_tdengine_server() {
   ${csudo} bash -c "echo 'dataDir                   ${install_dir}/taos/data/'   >> /etc/taos/taos.cfg"
   systemctl start taosd
   systemctl start taosadapter
+  echo -e "`date +%F_%T` $LINENO: ${GREEN} tdengine_server start success${NC}"
   install_dgiot_tdengine_mqtt
 }
 
@@ -755,6 +758,31 @@ function install_go_fastdfs() {
 
 }
 
+function yum_install_git {
+rm /etc/yum.repos.d/wandisco-git.repo -rf
+cat > /etc/yum.repos.d/wandisco-git.repo << "EOF"
+[wandisco-git]
+name=Wandisco GIT Repository
+baseurl=http://opensource.wandisco.com/centos/7/git/$basearch/
+enabled=1
+gpgcheck=1
+gpgkey=http://opensource.wandisco.com/RPM-GPG-KEY-WANdisco
+EOF
+sudo rpm --import http://opensource.wandisco.com/RPM-GPG-KEY-WANdisco &> /dev/null
+yum remove -y git &> /dev/null
+}
+
+function yum_install_jenkins {
+  echo -e "`date +%F_%T` $LINENO: ${GREEN} yum_install_jenkins${NC}"
+  ${csudo}  wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo  &> /dev/null
+  ${csudo}  rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io.key  &> /dev/null
+  ${csudo} yum install epel-release # repository that provides 'daemonize'
+  ${csudo} yum install java-11-openjdk-devel  &> /dev/null
+  ${csudo} yum install jenkins  &> /dev/null
+  # https://www.jenkins.io/doc/book/installing/linux/
+}
+
+
 function yum_install_erlang_otp {
   echo -e "`date +%F_%T` $LINENO: ${GREEN} yum_install_erlang_otp${NC}"
   yum install -y make gcc gcc-c++ &> /dev/null
@@ -833,14 +861,14 @@ function update_dashboard() {
   cd ${install_dir}/go_fastdfs/files/
   if [ -f dgiot_dashboard.tar.gz ]; then
     dashboardmd5=`md5sum dgiot_dashboard.tar.gz |cut -d ' ' -f1`
-    if [ "${dashboardmd5}" != "f5e355d000e231e72c2c5fd619d576d3" ]; then
+    if [ "${dashboardmd5}" != "68f5e1c369e07e23e98d48dbb6e36a48" ]; then
       rm -rf dgiot_dashboard.tar.gz &> /dev/null
     fi
   fi
   if [ ! -f dgiot_dashboard.tar.gz ]; then
     wget ${fileserver}/dgiot_dashboard.tar.gz &> /dev/null
     dashboardmd52=`md5sum dgiot_dashboard.tar.gz |cut -d ' ' -f1`
-    if [ "${dashboardmd52}" != "f5e355d000e231e72c2c5fd619d576d3" ]; then
+    if [ "${dashboardmd52}" != "68f5e1c369e07e23e98d48dbb6e36a48" ]; then
       echo -e "`date +%F_%T` $LINENO: ${RED} download dgiot_dashboard.tar.gz failed${NC}"
       exit 1
     fi
@@ -1197,18 +1225,14 @@ function pre_build_dgiot() {
     git pull
 
     rm ${script_dir}/dgiot/_build/emqx/rel/ -rf
-    rm ${script_dir}/dgiot/emqx/lib/dgiot_api/ -rf
 
     if [ -d ${script_dir}/dgiot_dashboard/dist ]; then
+      rm ${script_dir}/dgiot/_build/emqx/lib/dgiot_api -rf
       rm ${script_dir}/dgiot/apps/dgiot_api/priv/www/ -rf
-      cp ${script_dir}/dgiot_dashboard/dist/ ${script_dir}/dgiot/apps/dgiot_api/priv/www/ -rf
+      cp ${script_dir}/dgiot_dashboard/dist/  ${script_dir}/dgiot/apps/dgiot_api/priv/www -rf
     fi
 
-    if [ -f ${script_dir}/dgiot_dashboard/config/index.html ]; then
-      cp ${script_dir}/dgiot_dashboard/config/index.html ${script_dir}/dgiot/apps/dgiot_api/priv/www/ -rf
-    fi
-
-    if [ ! -d ${script_dir}/dgiot/emqx/rel/ ]; then
+    if [ -d ${script_dir}/dgiot/emqx/rel/ ]; then
       rm ${script_dir}/dgiot/emqx/rel -rf
     fi
 
