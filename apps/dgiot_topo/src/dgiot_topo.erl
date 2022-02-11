@@ -287,7 +287,13 @@ get_attrs(Type, ProductId, ClassName, Attrs, DeviceId, KonvatId, Shapeid, Identi
                             save(Type, Attrs),
                             X#{<<"attrs">> => Attrs};
                         _ ->
-                            <<_:88, Identifier1/binary>> = Id,
+                            Identifier1 =
+                                case binary:split(Id, <<$_>>, [global, trim]) of
+                                    [ProductId, Identifier2, _] ->
+                                        Identifier2;
+                                    _ ->
+                                        <<"">>
+                                end,
                             Result = get({self(), td}),
                             Unit = get_unit(ProductId, Identifier1),
                             Text =
