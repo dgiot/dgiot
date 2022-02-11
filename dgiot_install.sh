@@ -395,7 +395,7 @@ function install_service2() {
 ### 2.1.1 环境准备，根据自身需要，减少或者增加
 function yum_install_postgres() {
   echo -e  "`date +%F_%T` $LINENO: ${GREEN} yum install postgres${NC}"
-  yum_install_git
+  #yum_install_git #占用资源较多，先去除
   yum install -y wget git &> /dev/null
   ${csudo} yum install -y gcc gcc-c++  epel-release &> /dev/null
   # ${csudo} yum install -y llvm llvm-devel &> /dev/null
