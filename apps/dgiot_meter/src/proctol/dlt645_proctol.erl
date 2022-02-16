@@ -35,6 +35,7 @@
 
 binary_to_hex(Id) ->
     << <<Y>> || <<X:4>> <= Id, Y <- integer_to_list(X,16)>>.
+
 reverse(Bin) -> reverse(Bin, <<>>).
 reverse(<<>>, Acc) -> Acc;
 reverse(<<H:1/binary, Rest/binary>>, Acc) ->

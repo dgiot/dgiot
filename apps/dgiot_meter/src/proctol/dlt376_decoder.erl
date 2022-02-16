@@ -24,7 +24,9 @@
     parse_frame/2,
     to_frame/1,
     parse_value/2,
-    process_message/2]).
+    process_message/2,
+    process_message/3,
+    check_Command/1]).
 
 
 parse_frame(Buff, Opts) ->
@@ -45,14 +47,14 @@ parse_frame(<<Rest/binary>> = Bin, Acc, _Opts) when byte_size(Rest) == 15 ->
 %% DLT376协议
 %% 68 32 00 32 00 68 C9 14 03 32 63 00 02 73 00 00 01 00 EB 16
 %% 68 32 00 32 00 68 C9 00 10 01 00 00 02 70 00 00 01 00 4D 16
-parse_frame(<<16#68, _:16, L2_low:6, _:2, L2_high:8, 16#68, C:8, A1:2/bytes, A2:2/bytes, A3:1/bytes, AFN:8, SEQ:8,Rest/binary>> = Bin, Acc, Opts) ->
-    Len = L2_high * 255 + L2_low,
+parse_frame(<<16#68, _:16, L2_low:6, _:2, L2_high:8, 16#68, C:8, A1:2/binary, A2:2/binary, A3:1/binary, AFN:8, SEQ:8,Rest/binary>> = Bin, Acc, Opts) ->
+    Len = L2_high * 64 + L2_low,
     DLen = Len - 8,
     case byte_size(Rest) -2 >= DLen of
         true ->
             case Rest of
-                <<UserZone:DLen/bytes, Crc:8, 16#16, Rest1/binary>> ->
-                    CheckBuf = <<C:8, A1:2/bytes,A2:2/bytes,A3:1/bytes, AFN:8, SEQ:8, UserZone/binary>>,
+                <<UserZone:DLen/binary, Crc:8, 16#16, Rest1/binary>> ->
+                    CheckBuf = <<C:8, A1:2/binary, A2:2/binary, A3:1/binary, AFN:8, SEQ:8, UserZone/binary>>,
                     CheckCrc = dgiot_utils:get_parity(CheckBuf),
                     <<_Tpv:1, _FIRN:2, CON:1, _:4>> = <<SEQ:8>>,
                     % BinA = dgiot_utils:to_binary(A),
@@ -67,7 +69,7 @@ parse_frame(<<16#68, _:16, L2_low:6, _:2, L2_high:8, 16#68, C:8, A1:2/bytes, A2:
                                     <<"datalen">> => DLen,
                                     <<"msgtype">> => ?DLT376,
                                     <<"con">> => CON,
-                                    <<"concentrator">> => <<A1:2/bytes,A2:2/bytes,A3:1/bytes>>
+                                    <<"concentrator">> => <<A1:2/binary,A2:2/binary,A3:1/binary>>
                                 },
                                 case catch (parse_userzone(UserZone, Frame, Opts)) of
                                     {'EXIT', Reason} ->
@@ -93,35 +95,18 @@ parse_frame(<<_:8, Rest/binary>>, Acc, Opts) when byte_size(Rest) > 50 ->
 parse_frame(<<Rest/binary>>, Acc, _Opts) ->
     {Rest, Acc}.
 
+
+
 parse_userzone(UserZone, #{<<"msgtype">> := ?DLT376} = Frame, _Opts) ->
     check_Command(Frame#{<<"data">> => UserZone}).
 
-%% 组装成封包
-to_frame(#{
-    % <<"msgtype">> := ?DLT376,
-    <<"command">> := C,
-%%    <<"addr">> := Addr,  %%?? Addr是6位字符
-    <<"concentrator">> := Addr,
-    <<"afn">> := AFN
-    } = Msg) ->
-    {ok, UserZone} = get_userzone(Msg),
-    Len = (byte_size(UserZone) + 8) * 4 + 2,
-    Crc = dgiot_utils:get_parity(<<C:8, Addr:5/bytes, AFN:8, 16#61, UserZone/binary>>),
-    <<
-        16#68,
-        Len:16/little,
-        Len:16/little,
-        16#68,
-        C:8,
-        Addr:5/bytes,
-        AFN:8,
-        16#61,
-        UserZone/binary,
-        Crc:8,
-        16#16
-    >>.
 
-% DLT376 链路检测，登录
+
+% GW1376.1 确认报文
+check_Command(State = #{<<"afn">> := 16#00}) ->
+    State;
+
+% GW1376.1 链路检测，登录
 check_Command(State = #{<<"afn">> := 16#02, <<"data">> := <<16#00, 16#00, 16#01, 16#00, _Version/binary>>}) ->
     Frame = to_frame(State#{<<"command">> => 11,
         <<"afn">> => 0,
@@ -129,7 +114,7 @@ check_Command(State = #{<<"afn">> := 16#02, <<"data">> := <<16#00, 16#00, 16#01,
         <<"data">> => <<"020000010000">>}),
     State#{<<"frame">> => Frame};
 
-% DLT376 链路检测，心跳
+% GW1376.1 链路检测，心跳
 check_Command(State = #{<<"afn">> := 16#02, <<"data">> := <<16#00, 16#00, 16#04, 16#00, _Time/binary>>}) ->
     Frame = to_frame(State#{<<"command">> => 11,
         <<"afn">> => 0,
@@ -137,25 +122,17 @@ check_Command(State = #{<<"afn">> := 16#02, <<"data">> := <<16#00, 16#00, 16#04,
         <<"data">> => <<"020000040000">>}),
     State#{<<"frame">> => Frame};
 
-% DLT376 抄表返回的数据
-check_Command(State = #{<<"command">> := 16#88, <<"afn">> := 16#0C}) ->
-    Data = maps:get(<<"data">>, State, <<>>),
+% GW1376.1 读取集中器已存的电表信息
+check_Command(State = #{<<"afn">> := 16#0A, <<"data">> := Data}) ->
     case Data of
-        <<Di:4/bytes,DTime:5/bytes,DNum:1/bytes,DValue:5/bytes,_/bytes>> ->
-            % {Value, Diff, TopicDI} = parse_value(dlt645_proctol:reverse(Di), Bin),
-            State1 = #{
-                <<"di">> => Di,
-                <<"time">> =>dgiot_utils:to_hex(DTime),
-                <<"valuenum">> => DNum,
-                <<"value">> => #{dgiot_utils:to_hex(Di)=>binary_to_value_dlt376_bcd(DValue) },
-                <<"addr">> => maps:get(<<"addr">>, State, <<>>)
-            },
-            State1;
+        <<Di:4/bytes,Num:16/little,Rest/binary>> ->
+            Value = disassemble(Num, Rest),
+            State#{<<"di">> => Di, <<"value">> => Value};
         _ ->
             State
     end;
-    
-% DLT376 抄表返回的数据
+
+% GW1376.1 抄表返回的数据
 check_Command(State = #{<<"afn">> := 16#0C}) ->
     Data = maps:get(<<"data">>, State, <<>>),
     case Data of
@@ -173,58 +150,64 @@ check_Command(State = #{<<"afn">> := 16#0C}) ->
     end;
 
 % DLT376 穿透转发返回
-% check_Command(State = #{<<"command">> := 16#88, <<"afn">> := 16#10}) ->
 check_Command(State = #{<<"afn">> := 16#10}) ->
     Data = maps:get(<<"data">>, State, <<>>),
     case Data of
-        <<_:4/bytes,_:1/bytes,DLen2:8,DLen1:8,Rest/bytes>> ->
-            DLen = DLen1 * 255 + DLen2,
+       % <<_:4/bytes,_:1/bytes,DLen2:8,DLen1:8,Rest/bytes>> ->
+        %DLen = DLen1 * 255 + DLen2,
+        <<_Di:4/bytes,_PassWay:1/bytes,DLen:16/little,Rest/bytes>> ->
             case Rest of
-                <<DValue:DLen/bytes,_/bytes>> ->
+                <<DValue:DLen/bytes, _/bytes>> ->
                     {_, Frames} = dlt645_decoder:parse_frame(DValue, []),
-                    ?LOG(warning,"GGM 160 check_Command:~p", [Frames]),
+                    %% #{<<"addr">>, <<"command">>, <<"msgtype">>, <<"di">>, <<"data">>, <<"value">>, <<"diff">>, <<"send_di">>}
+
+                    ?LOG(warning,"GGM 160 check_Command:~p~n", [Frames]),
                     case Frames of
                         % 拉闸、合闸返回成功
                         [#{<<"command">> := 16#9C} | _] ->
                             Di = <<16#FE,16#FE,16#FE,16#FE>>,
-                            State1 = #{
+                            #{
                                 <<"di">> => Di,%不做处理
                                 <<"value">> =>  #{dgiot_utils:to_hex(Di) => 0 },
                                 <<"addr">> => maps:get(<<"addr">>, State, <<>>)
-                            },
-                            State1;
+                            };
                         % 拉闸、合闸返回失败
-                        [#{<<"command">>:=16#DC,<<"data">> := VData} | _] ->
+                        [#{<<"command">> := 16#DC, <<"data">> := VData} | _] ->
                             Di = <<16#FE,16#FE,16#FE,16#FD>>,
-                            State1 = #{
+                            #{
                                 <<"di">> => Di,%不做处理
                                 <<"value">> =>  #{dgiot_utils:to_hex(Di)=>dgiot_utils:to_hex(VData) },
                                 <<"addr">> => maps:get(<<"addr">>, State, <<>>)
-                            },
-                            State1;
+                            };
                         % 查询上一次合闸时间返回
                         [#{<<"command">>:=16#91,<<"di">> := <<16#1E,16#00,16#01,16#01>>,<<"data">> := VData} | _] ->
                             Di = <<16#1E,16#00,16#01,16#01>>,
-                            State1 = #{
+                            #{
                                 <<"di">> => Di,
-                                <<"value">> =>  #{dgiot_utils:to_hex(Di)=>dlt645_decoder:binary_to_dtime_dlt645_bcd(VData) },
+                                <<"value">> =>  #{dgiot_utils:to_hex(Di) => dlt645_decoder:binary_to_dtime_dlt645_bcd(VData)},
                                 <<"addr">> => maps:get(<<"addr">>, State, <<>>)
-                            },
-                            State1;
+                            };
                         % 查询上一次拉闸时间返回
                         [#{<<"command">>:=16#91,<<"di">> := <<16#1D,16#00,16#01,16#01>>,<<"data">> := VData} | _] ->
                             Di = <<16#1D,16#00,16#01,16#01>>,
-                            State1 = #{
+                            #{
                                 <<"di">> => Di,
-                                <<"value">> =>  #{dgiot_utils:to_hex(Di)=>dlt645_decoder:binary_to_dtime_dlt645_bcd(VData) },
+                                <<"value">> =>  #{dgiot_utils:to_hex(Di) => dlt645_decoder:binary_to_dtime_dlt645_bcd(VData)},
                                 <<"addr">> => maps:get(<<"addr">>, State, <<>>)
-                            },
-                            State1;
+                            };
+                        %%[#{<<"addr">> => <<65,85,104,0,0,71>>,<<"command">> => 145,<<"data">> => <<66,0,0,0>>,<<"di">> => <<0,1,0,0>>,<<"diff">> => 0,<<"msgtype">> => <<"DLT645">>,<<"send_di">> => <<"00000100">>,<<"value">> => #{<<"00010000">> => 0.42}}]
+                        [#{<<"command">> := 16#91, <<"addr">> := Addr, <<"di">> := Di, <<"value">> := Value} | _] ->
+                            #{
+                                <<"di">> => Di,
+                                <<"value">> => Value,
+                                <<"addr">> => maps:get(<<"addr">>, State, <<>>),
+                                <<"meter">> => dgiot_utils:binary_to_hex(Addr)
+                            };
                         _ ->
-                            pass
+                            State
                     end;
                 _->
-                    pass
+                    State
             end;
         _ ->
             State
@@ -232,6 +215,31 @@ check_Command(State = #{<<"afn">> := 16#10}) ->
 
 check_Command(State) ->
     State.
+
+%% 组装成封包
+to_frame(#{
+    % <<"msgtype">> := ?DLT376,
+    <<"command">> := C,
+%%    <<"addr">> := Addr,  %%?? Addr是6位字符
+    <<"concentrator">> := Addr,
+    <<"afn">> := AFN
+} = Msg) ->
+    {ok, UserZone} = get_userzone(Msg),
+    Len = (byte_size(UserZone) + 8) * 4 + 2,
+    Crc = dgiot_utils:get_parity(<<C:8, Addr:5/bytes, AFN:8, 16#61, UserZone/binary>>),
+    <<
+        16#68,
+        Len:16/little,
+        Len:16/little,
+        16#68,
+        C:8,
+        Addr:5/bytes,
+        AFN:8,
+        16#61,
+        UserZone/binary,
+        Crc:8,
+        16#16
+    >>.
 
 
 % DLT376协议中把二进制转化成float
@@ -288,17 +296,8 @@ parse_value(Di, Data) ->
     end.
 
 
-process_message(Frames,ChannelId) ->
+process_message(Frames, ChannelId) ->
     case Frames of
-        % 返回抄表数据
-        [#{<<"di">> := <<16#01, 16#01, 16#01, 16#10>>, <<"addr">> := Addr, <<"value">> := Value} | _] ->
-            case dgiot_data:get({meter, ChannelId}) of
-                {ProductId, _ACL, _Properties} -> DevAddr = dgiot_utils:binary_to_hex(Addr),
-                    Topic = <<"thing/", ProductId/binary, "/", Addr/binary, "/post">>,  % 发送给mqtt进行数据存储
-                    DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
-                    dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(Value));
-                _ -> pass
-            end;
         % 返回读取上次合闸时间
         [#{<<"di">> := <<16#1E, 16#00, 16#01, 16#01>>, <<"addr">> := Addr, <<"value">> := Value} | _] ->
             case dgiot_data:get({meter, ChannelId}) of
@@ -335,16 +334,62 @@ process_message(Frames,ChannelId) ->
                     dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(Value));
                 _ -> pass
             end;
+        % 返回抄表数据
+        [#{<<"di">> := <<16#01, 16#01, 16#01, 16#10>>, <<"addr">> := Addr, <<"value">> := Value} | _] ->
+            case dgiot_data:get({meter, ChannelId}) of
+                {ProductId, _ACL, _Properties} -> DevAddr = dgiot_utils:binary_to_hex(Addr),
+                    Topic = <<"thing/", ProductId/binary, "/", Addr/binary, "/post">>,  % 发送给mqtt进行数据存储
+                    DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+                    dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(Value));
+                _ -> pass
+            end;
+        %[#{<<"addr">> => <<"330100480000">>,<<"meter">> => <<>>, <<"di">> => <<0,1,0,0>>, <<"value">> => #{<<"00010000">> => 0}}]
+        [#{<<"di">> := <<16#00, 16#01, 16#00, 16#00>>, <<"meter">> := MAddr, <<"value">> := Value} | _] ->
+            case dgiot_data:get({meter, ChannelId}) of
+                {ProductId, _ACL, _Properties} ->
+                    %DevAddr = dgiot_utils:binary_to_hex(Addr),
+                    Topic = <<"thing/", ProductId/binary, "/", MAddr/binary, "/post">>,  % 发送给mqtt进行数据存储
+                    DeviceId = dgiot_parse:get_deviceid(ProductId, MAddr),
+                    dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(Value));
+                _ -> pass
+            end;
         _ -> pass
     end.
 
-% test() ->
-%     B1 = <<12, 16#68, 16#01, 16#00, 16#00, 16#00, 16#00, 16#00, 16#68, 16#91, 16#08, 16#33, 16#33, 16#3D, 16#33, 16#33, 16#33, 16#33, 16#33, 16#0C, 16#16,
-%         1, 3, 36,
-%         16#68, 16#18, 16#00, 16#18, 16#00, 16#68, 16#88, 16#00, 16#31, 16#07, 16#02, 16#00, 16#00, 16#01, 16#0c, 16#64, 16#00, 16#00, 16#00, 16#00, 16#01, 16#01, 16#58, 16#23, 16#10, 16#03, 16#16, 16#93, 16#99, 16#02, 16#07, 16#16,
-%         16#68, 16#90, 16#F0, 16#55, 16#00, 16#87>>,
-%     {Rest, Frames} = parse_frame(B1, [], #{<<"vcaddr">> => <<"003107020000">>}),
-%     io:format("Rest:~p~n", [Frames]),
-%     B2 = <<16#00, 16#68, 16#12, 16#09, 16#00, 16#40, 16#01, 16#02, 16#00, 16#07, 16#00, 16#18, 16#11, 16#18, 16#D2, 16#16>>,
-%     {Rest2, Frames2} = parse_frame(<<Rest/binary, B2/binary>>, [], #{vcaddr => <<"00310702">>}),
-%     io:format("Rest:~p, Frames:~p~n", [Rest2, Frames2]).
+process_message(Frames, ChannelId, DTUIP) ->
+    [#{<<"afn">> := 16#0A, <<"di">> := <<16#00,16#00,16#02,16#01>>, <<"addr">> := DevAddr, <<"value">> := Value} | _] = Frames,
+    lists:map(fun(#{<<"addr">> := MeterAddr}) ->
+        MAddr = dgiot_utils:binary_to_hex(MeterAddr),
+        dgiot_meter:create_meter(MAddr, ChannelId, DTUIP, DevAddr)
+              end, Value).
+
+disassemble(Num, Rest) ->
+    disassemble(Num, Rest, []).
+
+disassemble(0, _, Acc) ->
+    Acc;
+disassemble(Num, Rest, Acc) ->
+    <<_:2/binary, Pn:16/little, _:2/binary, Addr:6/binary, Psw:6/binary, _:2/binary, Collect:6/binary, _:1/binary, Rest1/binary>> = Rest,
+    A = #{<<"pn">> => Pn,
+        <<"da">> => pn_da(Pn),
+        <<"addr">> => dlt645_proctol:reverse(Addr),
+        <<"psw">> => Psw,
+        <<"collect">> => Collect},
+    case lists:member(A, Acc) of
+        true -> disassemble(Num - 1, Rest1, Acc);
+        _ -> disassemble(Num - 1, Rest1, Acc ++ [A])
+    end.
+
+pn_da(Pn) ->
+    Da2 = Pn rem 8,
+    Di1 = (Pn div 8) + 1,
+    case Da2 of
+        1 -> <<16#01, Di1:8>>;
+        2 -> <<16#02, Di1:8>>;
+        3 -> <<16#04, Di1:8>>;
+        4 -> <<16#08, Di1:8>>;
+        5 -> <<16#10, Di1:8>>;
+        6 -> <<16#20, Di1:8>>;
+        7 -> <<16#40, Di1:8>>;
+        0 -> <<16#80, Di1:8>>
+    end.
