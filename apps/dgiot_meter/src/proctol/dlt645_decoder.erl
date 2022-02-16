@@ -42,7 +42,7 @@ parse_frame(<<16#FE, 16#FE, 16#FE, 16#FE, Buff/binary>>, Acc, Opts) ->
     parse_frame(Buff, Acc, Opts);
 
 %% DLT645协议
-%% 68 684107000016046891093333333333333333369A16
+%% 68 41 07 00 00 16 04 68 91 09 33 33 33 33 33 33 33 33 36 9A 16
 parse_frame(<<16#68, Addr:6/bytes, 16#68, C:8, Len:8, Rest/binary>> = Bin, Acc, Opts) ->
     case byte_size(Rest) - 2 >= Len of
         true ->
@@ -82,34 +82,18 @@ parse_frame(<<_:8, Rest/binary>>, Acc, Opts) when byte_size(Rest) > 50 ->
 parse_frame(<<Rest/binary>>, Acc, _Opts) ->
     {Rest, Acc}.
 
+
 parse_userzone(UserZone, #{<<"msgtype">> := ?DLT645} = Frame, _Opts) ->
     check_Command(Frame#{<<"data">> => UserZone}).
 
-%% 组装成封包
-to_frame(#{
-    % <<"msgtype">> := ?DLT645,
-    <<"command">> := C,
-    <<"addr">> := Addr
-} = Msg) ->
-    {ok, UserZone} = get_userzone(Msg),
-    Len = byte_size(UserZone),
-    Crc = dgiot_utils:get_parity(<<16#68, Addr:6/bytes, 16#68, C:8, Len:8, UserZone/binary>>),
-    <<
-        16#68,
-        Addr:6/bytes,
-        16#68,
-        C:8,
-        Len:8,
-        UserZone/binary,
-        Crc:8,
-        16#16
-    >>.
 
 check_Command(State = #{<<"command">> := 16#11, <<"data">> := <<DataIndex:4/binary, Data/binary>>}) ->
     State#{
         <<"di">> => list_to_binary(dgiot_utils:sub_33h(DataIndex)),
         <<"data">> => list_to_binary(dgiot_utils:sub_33h(Data))
     };
+
+%% #{<<"addr">>, <<"command">>, <<"msgtype">>, <<"di">>, <<"data">>, <<"value">>, <<"diff">>, <<"send_di">>}
 check_Command(State = #{<<"command">> := 16#91, <<"data">> := <<DataIndex:4/binary, Data/binary>>}) ->
     Di = list_to_binary(dgiot_utils:sub_33h(DataIndex)),
     Bin = list_to_binary(dgiot_utils:sub_33h(Data)),
@@ -160,15 +144,11 @@ check_Command(State = #{<<"command">> := 16#C1, <<"data">> := <<Data/binary>>}) 
 % -define(DLT645_SM_FORCE_EVENT_ERRO_NAME,   <<"DC">>).
 % 远程开闸、拉闸 返回正常
 check_Command(State = #{<<"command">> := 16#9C}) ->
-    State#{
-
-    };
+    State;
 
 % 远程开闸、拉闸 返回正常
 check_Command(State = #{<<"command">> := 16#DC}) ->
-    State#{
-
-    };
+    State;
 
 check_Command(State) ->
     State.
@@ -295,6 +275,28 @@ process_message(Frames, ChannelId) ->
             end;
         _ -> pass
     end.
+
+
+%% 组装成封包
+to_frame(#{
+    % <<"msgtype">> := ?DLT645,
+    <<"command">> := C,
+    <<"addr">> := Addr
+} = Msg) ->
+    {ok, UserZone} = get_userzone(Msg),
+    Len = byte_size(UserZone),
+    Crc = dgiot_utils:get_parity(<<16#68, Addr:6/bytes, 16#68, C:8, Len:8, UserZone/binary>>),
+    <<
+        16#68,
+        Addr:6/bytes,
+        16#68,
+        C:8,
+        Len:8,
+        UserZone/binary,
+        Crc:8,
+        16#16
+    >>.
+
 
 test() ->
     B1 = <<12, 16#68, 16#01, 16#00, 16#00, 16#00, 16#00, 16#00, 16#68, 16#91, 16#08, 16#33, 16#33, 16#3D, 16#33, 16#33, 16#33, 16#33, 16#33, 16#0C, 16#16,

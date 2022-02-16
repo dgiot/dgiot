@@ -1198,7 +1198,7 @@ function build_dashboard() {
 
     export PATH=$PATH:/usr/local/bin:${script_dir}/node-v16.5.0-linux-x64/bin/
     rm ${script_dir}/dgiot_dashboard/dist/ -rf
-    ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm add -g pnpm
+    #${script_dir}/node-v16.5.0-linux-x64/bin/pnpm add -g pnpm
     ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm install --no-frozen-lockfile
     ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm build
     echo "not build"
@@ -1236,8 +1236,12 @@ function pre_build_dgiot() {
       rm ${script_dir}/dgiot/emqx/rel -rf
     fi
 
-    if [ ! -d ${script_dir}/dgiot/apps/$plugin/ ]; then
-      cd ${script_dir}/dgiot/apps/
+    if [ ! -d ${script_dir}/$plugin/ ]; then
+      git clone https://gitee.com/dgiiot/dgiot.git $plugin
+    fi
+
+    if [ ! -d ${script_dir}/$plugin/apps/$plugin/ ]; then
+      cd ${script_dir}/$plugin/apps/
       git clone root@git.iotn2n.com:dgiot/$plugin.git
     fi
 
@@ -1245,23 +1249,23 @@ function pre_build_dgiot() {
     git reset --hard
     git pull
 
-    rm ${script_dir}/dgiot/rebar.config  -rf
-    cp ${script_dir}/dgiot/apps/$plugin/conf/rebar.config ${script_dir}/dgiot/rebar.config  -rf
-    rm ${script_dir}/dgiot/rebar.config.erl  -rf
-    cp ${script_dir}/dgiot/apps/$plugin/conf/rebar.config.erl ${script_dir}/dgiot/rebar.config.erl  -rf
-    rm ${script_dir}/dgiot/data/loaded_plugins.tmpl -rf
-    cp ${script_dir}/dgiot/apps/$plugin/conf/loaded_plugins.tmpl ${script_dir}/dgiot/data/loaded_plugins.tmpl
-    rm ${script_dir}/dgiot/apps/dgiot_parse/etc/dgiot_parse.conf -rf
-    cp ${script_dir}/dgiot/apps/$plugin/conf/dgiot_parse.conf ${script_dir}/dgiot/apps/dgiot_parse/etc/dgiot_parse.conf -rf
+    rm ${script_dir}/$plugin/rebar.config  -rf
+    cp ${script_dir}/$plugin/apps/$plugin/conf/rebar.config ${script_dir}/$plugin/rebar.config  -rf
+    rm ${script_dir}/$plugin/rebar.config.erl  -rf
+    cp ${script_dir}/$plugin/apps/$plugin/conf/rebar.config.erl ${script_dir}/$plugin/rebar.config.erl  -rf
+    rm ${script_dir}/$plugin/data/loaded_plugins.tmpl -rf
+    cp ${script_dir}/$plugin/apps/$plugin/conf/loaded_plugins.tmpl ${script_dir}/$plugin/data/loaded_plugins.tmpl
+    rm ${script_dir}/$plugin/apps/dgiot_parse/etc/dgiot_parse.conf -rf
+    cp ${script_dir}/$plugin/apps/$plugin/conf/dgiot_parse.conf ${script_dir}/$plugin/apps/dgiot_parse/etc/dgiot_parse.conf -rf
 
-    rm ${script_dir}/dgiot/apps/dgiot_http/etc/dgiot_http.conf -rf
-    cp ${script_dir}/dgiot/apps/$plugin/conf/dgiot_http.conf ${script_dir}/dgiot/apps/dgiot_http/etc/dgiot_http.conf -rf
-    cd ${script_dir}/dgiot
+    rm ${script_dir}/$plugin/apps/dgiot_http/etc/dgiot_http.conf -rf
+    cp ${script_dir}/$plugin/apps/$plugin/conf/dgiot_http.conf ${script_dir}/$plugin/apps/dgiot_http/etc/dgiot_http.conf -rf
+    cd ${script_dir}/$plugin/
   }
 
 function post_build_dgiot() {
-    mv ${script_dir}/dgiot/_build/emqx/rel/emqx/ ${script_dir}/dgiot/_build/emqx/rel/dgiot
-    cd ${script_dir}/dgiot/_build/emqx/rel
+    mv ${script_dir}/$plugin/_build/emqx/rel/emqx/ ${script_dir}/$plugin/_build/emqx/rel/dgiot
+    cd ${script_dir}/$plugin/_build/emqx/rel
 
     tar czf ${software}.tar.gz ./dgiot
     rm ./dgiot -rf

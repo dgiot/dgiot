@@ -93,22 +93,22 @@ create_meter(MeterAddr, ChannelId, DTUIP, DtuAddr) ->
     end.
 
 
-create_meter4G(MeterAddr, ChannelId, DTUIP) ->
+create_meter4G(DevAddr, ChannelId, DTUIP) ->
     case dgiot_data:get({dtu, ChannelId}) of
         {ProductId, ACL, _Properties} ->
             Requests = #{
-                <<"devaddr">> => MeterAddr,
-                <<"name">> => <<"Meter_", MeterAddr/binary>>,
+                <<"devaddr">> => DevAddr,
+                <<"name">> => <<"Concentrator_", DevAddr/binary>>,
                 <<"ip">> => DTUIP,
                 <<"isEnable">> => true,
                 <<"product">> => ProductId,
                 <<"ACL">> => ACL,
                 <<"status">> => <<"ONLINE">>,
-                <<"brand">> => <<"Meter", MeterAddr/binary>>,
-                <<"devModel">> => <<"Meter">>
+                <<"brand">> => <<"Concentrator", DevAddr/binary>>,
+                <<"devModel">> => <<"Concentrator">>
             },
-            dgiot_device:create_device(Requests),
-            dgiot_task:save_pnque(ProductId, MeterAddr, ProductId, MeterAddr);
+            dgiot_device:create_device(Requests);
+%%            dgiot_task:save_pnque(ProductId, DevAddr, ProductId, DevAddr);
         _ ->
             pass
     end.
