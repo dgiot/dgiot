@@ -128,6 +128,7 @@ stop(#{
             dgiot_cron:save(default_task, #{
                 <<"id">> => <<"task/", Channel/binary, "/", DtuId/binary>>,
                 <<"count">> => 0}),
+            del_pnque(DtuId),
             dgiot_task_worker:stop(#{<<"channel">> => Channel, <<"dtuid">> => DtuId})
                   end, Page)
               end,
@@ -153,6 +154,7 @@ stop(#{
             dgiot_cron:save(default_task, #{
                 <<"id">> => <<"task/", Channel/binary, "/", DtuId/binary>>,
                 <<"count">> => 0}),
+            del_pnque(DtuId),
             dgiot_task_worker:stop(#{<<"channel">> => Channel, <<"dtuid">> => DtuId})
                   end, Page)
               end,
