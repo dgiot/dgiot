@@ -82,34 +82,23 @@
 start(ChannelId, ChannelArgs) ->
     dgiot_channelx:add(?TYPE, ChannelId, ?MODULE, ChannelArgs).
 
-
 %% 通道初始化
 init(?TYPE, ChannelId, Args) ->
     #{<<"product">> := Products,
         <<"ip">> := Ip,
         <<"port">> := Port} = Args,
-    {ProductId, _App} =
-        case get_app(Products) of
-            [{ProdcutId1, App1} | _] ->
-                {ProdcutId1, App1};
-            [] ->
-                {<<>>, <<>>};
-            _ ->
-                {<<>>, <<>>}
-        end,
-    dgiot_modbusc_tcp:start_connect(#{
-        <<"auto_reconnect">> => 10,
-        <<"reconnect_times">> => 3,
-        <<"ip">> => Ip,
-        <<"port">> => Port,
-        <<"productid">> => ProductId,
-        <<"hb">> => 60
-    }),
-    State = #state{
-        id = ChannelId,
-        product = ProductId
-    },
-    {ok, State, []}.
+    lists:map(fun({ProductId, #{<<"ACL">> := _Acl}}) ->
+        dgiot_modbusc_tcp:start_connect(#{
+            <<"auto_reconnect">> => 10,
+            <<"reconnect_times">> => 3,
+            <<"ip">> => Ip,
+            <<"port">> => Port,
+            <<"productid">> => ProductId,
+            <<"channelid">> => ChannelId,
+            <<"hb">> => 10
+        })
+              end, Products),
+    {ok, #state{id = ChannelId}, []}.
 
 handle_init(State) ->
     {ok, State}.
@@ -167,17 +156,17 @@ stop(ChannelType, ChannelId, _State) ->
 %%    end.
 
 
-get_app(Products) ->
-    lists:map(fun({ProdcutId, #{<<"ACL">> := Acl}}) ->
-        Predicate = fun(E) ->
-            case E of
-                <<"role:", _/binary>> -> true;
-                _ -> false
-            end
-                    end,
-        [<<"role:", App/binary>> | _] = lists:filter(Predicate, maps:keys(Acl)),
-        {ProdcutId, App}
-              end, Products).
+%%get_app(Products) ->
+%%    lists:map(fun({ProdcutId, #{<<"ACL">> := Acl}}) ->
+%%        Predicate = fun(E) ->
+%%            case E of
+%%                <<"role:", _/binary>> -> true;
+%%                _ -> false
+%%            end
+%%                    end,
+%%        [<<"role:", App/binary>> | _] = lists:filter(Predicate, maps:keys(Acl)),
+%%        {ProdcutId, App}
+%%              end, Products).
 
 
 

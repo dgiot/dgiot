@@ -32,6 +32,7 @@
 %%% API
 %%%===================================================================
 start_link(#{<<"channel">> := ChannelId, <<"dtuid">> := DtuId} = State) ->
+%%    io:format("State = ~p.~n", [State]),
     case dgiot_data:lookup(?DGIOT_TASK, {ChannelId, DtuId}) of
         {ok, Pid} when is_pid(Pid) ->
             case is_process_alive(Pid) of
@@ -66,7 +67,7 @@ init([#{<<"app">> := App, <<"channel">> := ChannelId, <<"dtuid">> := DtuId, <<"m
             pass;
         {ProductId, DevAddr} ->
             DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
-            Que = dgiot_instruct:get_instruct(ProductId, DeviceId, 1, dgiot_utils:to_atom(Mode)),
+            Que = dgiot_instruct:get_instruct(ProductId, DeviceId, 1, dgiot_utils:to_atom(thing)),
             Tsendtime = dgiot_datetime:localtime_to_unixtime(dgiot_datetime:to_localtime(Endtime)),
             Nowstamp = dgiot_datetime:nowstamp(),
             case length(Que) of
@@ -107,6 +108,7 @@ handle_info({'EXIT', _From, Reason}, State) ->
 
 handle_info(init, #task{dtuid = DtuId, mode = Mode, round = Round, ts = Oldstamp, freq = Freq, endtime = Tsendtime} = State) ->
     dgiot_datetime:now_secs(),
+%%    io:format("~s ~p DtuId = ~p.~n", [?FILE, ?LINE, DtuId]),
     case dgiot_task:get_pnque(DtuId) of
         not_find ->
             ?LOG(info, "not_find ~p", [DtuId]),
@@ -175,6 +177,7 @@ send_msg(#task{ref = Ref, que = Que} = State) when length(Que) == 0 ->
     get_next_pn(State);
 
 send_msg(#task{tid = Channel, product = Product, devaddr = DevAddr, ref = Ref, que = Que, appdata = AppData} = State) ->
+%%    io:format("~s ~p State = ~p.~n", [?FILE, ?LINE, State]),
     {InstructOrder, Interval, _, _, _, _, _, Protocol, _} = lists:nth(1, Que),
     {NewCount, Payload, Dis} =
         lists:foldl(fun(X, {Count, Acc, Acc1}) ->
