@@ -553,7 +553,7 @@ format_value(Buff, #{<<"dataForm">> := #{
 }}) ->
     IntLen = dgiot_utils:to_int(Len),
     Size = max(2, IntLen) * 8,
-    <<Value:Size, Rest/binary>> = Buff,
+    <<Value:Size/binary, Rest/binary>> = Buff,
     {Value, Rest};
 
 format_value(Buff, #{<<"dataForm">> := #{
