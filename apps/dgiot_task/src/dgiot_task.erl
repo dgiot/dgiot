@@ -371,7 +371,7 @@ save_pnque(DtuProductId, DtuAddr, ProductId, DevAddr) ->
         not_find ->
             pass;
         Args ->
-%%            ?LOG(info, "Args ~p", [Args]),
+%%            io:format("Args ~p.~n", [Args]),
             supervisor:start_child(dgiot_task, [Args#{<<"dtuid">> => DtuId}])
     end.
 
