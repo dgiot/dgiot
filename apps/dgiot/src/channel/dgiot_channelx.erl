@@ -235,6 +235,8 @@ handle_info(Info, State) ->
             {stop, Reason, State};
         {Err, Reason} when Err == 'EXIT'; Err == error ->
             ?LOG(error, "do_message, ~p,~p", [Info, Reason]),
+            {noreply, State};
+        _->
             {noreply, State}
     end.
 

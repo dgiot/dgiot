@@ -450,19 +450,23 @@ modbus_tcp_decoder(ProductId, TransactionId, Address, Data, Acc1) ->
                 case X of
                     #{<<"identifier">> := Identifier,
                         <<"dataForm">> := #{
+                            <<"strategy">> := Strategy,
                             <<"slaveid">> := OldSlaveid,
                             <<"address">> := OldAddress,
                             <<"protocol">> := <<"modbus">>
-                        }} ->
+                        }} when Strategy =/= <<"计算值"/utf8>> ->
                         <<H:8, L:8>> = dgiot_utils:hex_to_binary(modbus_rtu:is16(OldSlaveid)),
                         <<Sh:8, Sl:8>> = dgiot_utils:hex_to_binary(modbus_rtu:is16(OldAddress)),
                         NewSlaveid = H * 256 + L,
                         NewAddress = Sh * 256 + Sl,
                         case {TransactionId, Address} of
                             {NewSlaveid, NewAddress} ->
+%%                                case format_value(Data, X, Props) of
                                 case format_value(Data, X) of
                                     {Value, _Rest} ->
                                         Acc#{Identifier => Value};
+                                    {map, Value, _Rest} ->
+                                        maps:merge(Acc, Value);
                                     _ -> Acc
                                 end;
                             _ ->
@@ -552,8 +556,8 @@ format_value(Buff, #{<<"dataForm">> := #{
     <<"originaltype">> := <<"bit">>
 }}) ->
     IntLen = dgiot_utils:to_int(Len),
-    Size = max(2, IntLen) * 2,
-    <<Value:Size/binary, Rest/binary>> = dgiot_utils:binary_to_hex(Buff),
+    Size = max(2, IntLen) * 8,
+    <<Value:Size, Rest/binary>> = Buff,
     {Value, Rest};
 
 format_value(Buff, #{<<"dataForm">> := #{

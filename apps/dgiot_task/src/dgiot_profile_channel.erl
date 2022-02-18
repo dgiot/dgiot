@@ -109,8 +109,31 @@ handle_message({check_profie, Args}, State) ->
     erlang:send_after(1000 * 30, self(), {message, <<"_Pool">>, check_profile}),
     {ok, State};
 
+handle_message({sync_parse, Args, ObjectId}, State) ->
+    case jsx:decode(Args, [{labels, binary}, return_maps]) of
+        #{<<"profile">> := _Profile, <<"devaddr">> := _Devaddr, <<"product">> := #{<<"objectId">> := _ProductId}} ->
+            handle_message({sync_parse, Args}, State);
+        #{<<"profile">> := Profile} ->
+            io:format("~s ~p ObjectId = ~p.~n", [?FILE, ?LINE, ObjectId]),
+            case dgiot_device:lookup(dgiot_utils:to_binary(ObjectId)) of
+                {ok, #{<<"devaddr">> := Devaddr, <<"productid">> := ProductId}} ->
+                    NewArgs = jsx:encode(#{<<"profile">> => Profile, <<"devaddr">> => Devaddr, <<"product">> => #{<<"objectId">> => ProductId}}),
+                    handle_message({sync_parse, NewArgs}, State);
+                _ ->
+                    case dgiot_parse:get_object(<<"Device">>, ObjectId) of
+                        {ok, Device} ->
+                            NewArgs = jsx:encode(Device#{<<"profile">> => Profile}),
+                            handle_message({sync_parse, NewArgs}, State);
+                        _ ->
+                            pass
+                    end
+            end;
+        _ ->
+            pass
+    end;
+
 handle_message({sync_parse, Args}, State) ->
-%%    ?LOG(info, "Args ~p", [jsx:decode(Args, [{labels, binary}, return_maps])]),
+    io:format("~s ~p Args = ~p.~n", [?FILE, ?LINE, jsx:decode(Args, [{labels, binary}, return_maps])]),
     case jsx:decode(Args, [{labels, binary}, return_maps]) of
         #{<<"profile">> := Profile, <<"devaddr">> := Devaddr, <<"product">> := #{<<"objectId">> := ProductId}} = Arg ->
             Sessiontoken = maps:get(<<"sessiontoken">>, Arg, <<"">>),
@@ -150,7 +173,6 @@ handle_message({sync_parse, Args}, State) ->
             pass
     end,
     {ok, State};
-
 handle_message(_Message, State) ->
 %%    ?LOG(info, "_Message ~p", [_Message]),
     {ok, State}.
@@ -164,7 +186,7 @@ stop(ChannelType, ChannelId, #state{env = #{<<"product">> := ProductId, <<"args"
 
 
 get_modifyprofile(DeviceId, Profile) ->
-    case dgiot_data:get(dgiot_profile, <<"b3de3bd7a9">>) of
+    case dgiot_data:get(?PROFILE, DeviceId) of
         not_find ->
             dgiot_data:insert(?PROFILE, DeviceId, Profile),
             Profile;
