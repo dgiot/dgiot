@@ -283,7 +283,7 @@ get_props(ProductId) ->
 get_chart(ProductId, Results, Names, Interval) ->
     Maps = get_prop(ProductId),
     Units = get_unit(ProductId),
-    NewMaps = maps:merge(#{<<"ts">> => <<"日期"/utf8>>}, Maps),
+    NewMaps = maps:merge(#{<<"createdat">> => <<"日期"/utf8>>}, Maps),
     Columns = [<<"日期"/utf8>>] ++ Names,
     Rows =
         lists:foldl(fun(Line, Lines) ->
