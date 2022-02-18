@@ -114,7 +114,7 @@ handle_message({sync_parse, Args, ObjectId}, State) ->
         #{<<"profile">> := _Profile, <<"devaddr">> := _Devaddr, <<"product">> := #{<<"objectId">> := _ProductId}} ->
             handle_message({sync_parse, Args}, State);
         #{<<"profile">> := Profile} ->
-            io:format("~s ~p ObjectId = ~p.~n", [?FILE, ?LINE, ObjectId]),
+%%            io:format("~s ~p ObjectId = ~p.~n", [?FILE, ?LINE, ObjectId]),
             case dgiot_device:lookup(dgiot_utils:to_binary(ObjectId)) of
                 {ok, #{<<"devaddr">> := Devaddr, <<"productid">> := ProductId}} ->
                     NewArgs = jsx:encode(#{<<"profile">> => Profile, <<"devaddr">> => Devaddr, <<"product">> => #{<<"objectId">> => ProductId}}),
@@ -133,7 +133,7 @@ handle_message({sync_parse, Args, ObjectId}, State) ->
     end;
 
 handle_message({sync_parse, Args}, State) ->
-    io:format("~s ~p Args = ~p.~n", [?FILE, ?LINE, jsx:decode(Args, [{labels, binary}, return_maps])]),
+%%    io:format("~s ~p Args = ~p.~n", [?FILE, ?LINE, jsx:decode(Args, [{labels, binary}, return_maps])]),
     case jsx:decode(Args, [{labels, binary}, return_maps]) of
         #{<<"profile">> := Profile, <<"devaddr">> := Devaddr, <<"product">> := #{<<"objectId">> := ProductId}} = Arg ->
             Sessiontoken = maps:get(<<"sessiontoken">>, Arg, <<"">>),
