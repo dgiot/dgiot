@@ -146,7 +146,7 @@ handle_info(retry, State) ->
 handle_info({deliver, _, Msg}, #task{tid = Channel, dis = Dis, product = ProductId, devaddr = DevAddr, ack = Ack, que = Que} = State) when length(Que) == 0 ->
     Payload = jsx:decode(dgiot_mqtt:get_payload(Msg), [return_maps]),
     dgiot_bridge:send_log(Channel, ProductId, DevAddr, "~s ~p  ~ts: ~ts ", [?FILE, ?LINE, unicode:characters_to_list(dgiot_mqtt:get_topic(Msg)), unicode:characters_to_list(dgiot_mqtt:get_payload(Msg))]),
-    NewAck = dgiot_task:get_collection(ProductId, Dis, Payload, Ack),
+    NewAck = dgiot_task:get_collection(ProductId, Dis, Payload, maps:merge(Ack, Payload)),
     dgiot_metrics:inc(dgiot_task, <<"task_recv">>, 1),
     {noreply, get_next_pn(State#task{ack = NewAck})};
 
@@ -246,8 +246,8 @@ save_td(#task{app = _App, tid = Channel, product = ProductId, devaddr = DevAddr,
         0 ->
             pass;
         _ ->
-            dgiot_bridge:send_log(Channel, ProductId, DevAddr, "save_td=> ~s ~p ~p: ~ts ", [?FILE, ?LINE, ProductId, unicode:characters_to_list(jsx:encode(Ack))]),
             Data = dgiot_task:get_calculated(ProductId, Ack),
+            dgiot_bridge:send_log(Channel, ProductId, DevAddr, "save_td=> ~s ~p ~p: ~ts ", [?FILE, ?LINE, ProductId, unicode:characters_to_list(jsx:encode(Data))]),
             case length(maps:to_list(Data)) of
                 0 ->
                     pass;

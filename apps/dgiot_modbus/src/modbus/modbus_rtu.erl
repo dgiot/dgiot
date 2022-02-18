@@ -461,8 +461,7 @@ modbus_tcp_decoder(ProductId, TransactionId, Address, Data, Acc1) ->
                         NewAddress = Sh * 256 + Sl,
                         case {TransactionId, Address} of
                             {NewSlaveid, NewAddress} ->
-%%                                case format_value(Data, X, Props) of
-                                case format_value(Data, X) of
+                                case format_value(Data, X, Props) of
                                     {Value, _Rest} ->
                                         Acc#{Identifier => Value};
                                     {map, Value, _Rest} ->
@@ -486,20 +485,24 @@ modbus_decoder(ProductId, SlaveId, Address, Data, Acc1) ->
                 case X of
                     #{<<"identifier">> := Identifier,
                         <<"dataForm">> := #{
+                            <<"strategy">> := Strategy,
                             <<"slaveid">> := OldSlaveid,
                             <<"address">> := OldAddress,
                             <<"protocol">> := <<"modbus">>
-                        }} ->
+                        }} when Strategy =/= <<"计算值"/utf8>> ->
                         <<H:8, L:8>> = dgiot_utils:hex_to_binary(modbus_rtu:is16(OldSlaveid)),
                         <<Sh:8, Sl:8>> = dgiot_utils:hex_to_binary(modbus_rtu:is16(OldAddress)),
                         NewSlaveid = H * 256 + L,
                         NewAddress = Sh * 256 + Sl,
                         case {SlaveId, Address} of
                             {NewSlaveid, NewAddress} ->
-                                case format_value(Data, X) of
+                                case format_value(Data, X, Props) of
+                                    {map, Value} ->
+                                        maps:merge(Acc, Value);
                                     {Value, _Rest} ->
                                         Acc#{Identifier => Value};
-                                    _ -> Acc
+                                    _A ->
+                                        Acc
                                 end;
                             _ ->
                                 Acc
@@ -540,30 +543,64 @@ modbus_encoder(ProductId, SlaveId, Address, Value) ->
 %% 0x78  |  0x56  |  0x34  |  0x12
 
 format_value(Buff, #{
-    <<"dataType">> := #{<<"type">> := <<"geopoint">>, <<"gpstype">> := <<"NMEA0183">>}}) ->
+    <<"dataType">> := #{<<"type">> := <<"geopoint">>, <<"gpstype">> := <<"NMEA0183">>}}, _Props) ->
     {Longitude, Latitude} = dgiot_gps:nmea0183_frame(Buff),
     {<<Longitude/binary, "_", Latitude/binary>>, <<"Rest">>};
 
 format_value(Buff, #{
     <<"accessMode">> := <<"rw">>,
-    <<"dataForm">> := DataForm} = X) ->
+    <<"dataForm">> := DataForm} = X, _Props) ->
     format_value(Buff, X#{<<"accessMode">> => <<"r">>,
         <<"dataForm">> => DataForm#{<<"data">> => byte_size(Buff)}
-    });
+    }, _Props);
 
-format_value(Buff, #{<<"dataForm">> := #{
-    <<"data">> := Len,
-    <<"originaltype">> := <<"bit">>
-}}) ->
-    IntLen = dgiot_utils:to_int(Len),
-    Size = max(2, IntLen) * 8,
-    <<Value:Size, Rest/binary>> = Buff,
-    {Value, Rest};
+format_value(Buff, #{<<"identifier">> := BitIdentifier,
+    <<"dataForm">> := #{
+        <<"originaltype">> := <<"bit">>
+    }}, Props) ->
+    Values =
+        lists:foldl(fun(X, Acc) ->
+            case X of
+                #{<<"identifier">> := Identifier,
+                    <<"dataForm">> := #{
+                        <<"slaveid">> := BitIdentifier,
+                        <<"address">> := Offset,
+                        <<"data">> := Len,
+                        <<"protocol">> := <<"modbus">>,
+                        <<"strategy">> := <<"计算值"/utf8>>
+                    }} ->
+                    IntOffset = dgiot_utils:to_int(Offset),
+                    IntLen = dgiot_utils:to_int(Len),
+                    Value =
+                        case IntOffset of
+                            0 ->
+                                <<V:IntLen/binary, _/binary>> = Buff,
+                                case format_value(V, X, Props) of
+                                    {Value1, _Rest} ->
+                                        Value1;
+                                    _ ->
+                                        V
+                                end;
+                            _ ->
+                                <<_:IntOffset/binary, V:IntLen/binary, _/binary>> = Buff,
+                                case format_value(V, X, Props) of
+                                    {Value1, _Rest} ->
+                                        Value1;
+                                    _ ->
+                                        V
+                                end
+                        end,
+                    Acc#{Identifier => Value};
+                _ ->
+                    Acc
+            end
+                    end, #{}, Props),
+    {map, Values};
 
 format_value(Buff, #{<<"dataForm">> := #{
     <<"data">> := Len,
     <<"originaltype">> := <<"short16_AB">>
-}}) ->
+}}, _Props) ->
     IntLen = dgiot_utils:to_int(Len),
     Size = max(2, IntLen) * 8,
     <<Value:Size/signed-big-integer, Rest/binary>> = Buff,
@@ -572,7 +609,7 @@ format_value(Buff, #{<<"dataForm">> := #{
 format_value(Buff, #{<<"dataForm">> := #{
     <<"data">> := Len,
     <<"originaltype">> := <<"short16_BA">>
-}}) ->
+}}, _Props) ->
     IntLen = dgiot_utils:to_int(Len),
     Size = max(2, IntLen) * 8,
     <<Value:Size/signed-little-integer, Rest/binary>> = Buff,
@@ -581,7 +618,7 @@ format_value(Buff, #{<<"dataForm">> := #{
 format_value(Buff, #{<<"dataForm">> := #{
     <<"data">> := Len,
     <<"originaltype">> := <<"ushort16_AB">>
-}}) ->
+}}, _Props) ->
     IntLen = dgiot_utils:to_int(Len),
     Size = max(2, IntLen) * 8,
     <<Value:Size/unsigned-big-integer, Rest/binary>> = Buff,
@@ -590,7 +627,7 @@ format_value(Buff, #{<<"dataForm">> := #{
 format_value(Buff, #{<<"dataForm">> := #{
     <<"data">> := Len,
     <<"originaltype">> := <<"ushort16_BA">>
-}}) ->
+}}, _Props) ->
     IntLen = dgiot_utils:to_int(Len),
     Size = max(2, IntLen) * 8,
     <<Value:Size/unsigned-little-integer, Rest/binary>> = Buff,
@@ -599,7 +636,7 @@ format_value(Buff, #{<<"dataForm">> := #{
 format_value(Buff, #{<<"dataForm">> := #{
     <<"data">> := Len,
     <<"originaltype">> := <<"long32_ABCD">>
-}}) ->
+}}, _Props) ->
     IntLen = dgiot_utils:to_int(Len),
     Size = max(4, IntLen) * 8,
     <<H:2/binary, L:2/binary, Rest/binary>> = Buff,
@@ -609,7 +646,7 @@ format_value(Buff, #{<<"dataForm">> := #{
 format_value(Buff, #{<<"dataForm">> := #{
     <<"data">> := Len,
     <<"originaltype">> := <<"long32_CDAB">>
-}}) ->
+}}, _Props) ->
     IntLen = dgiot_utils:to_int(Len),
     Size = max(4, IntLen) * 8,
     <<H:2/binary, L:2/binary, Rest/binary>> = Buff,
@@ -619,7 +656,7 @@ format_value(Buff, #{<<"dataForm">> := #{
 format_value(Buff, #{<<"dataForm">> := #{
     <<"data">> := Len,
     <<"originaltype">> := <<"ulong32_ABCD">>
-}}) ->
+}}, _Props) ->
     IntLen = dgiot_utils:to_int(Len),
     Size = max(4, IntLen) * 8,
     <<H:2/binary, L:2/binary, Rest/binary>> = Buff,
@@ -629,7 +666,7 @@ format_value(Buff, #{<<"dataForm">> := #{
 format_value(Buff, #{<<"dataForm">> := #{
     <<"data">> := Len,
     <<"originaltype">> := <<"ulong32_CDAB">>
-}}) ->
+}}, _Props) ->
     IntLen = dgiot_utils:to_int(Len),
     Size = max(4, IntLen) * 8,
     <<H:2/binary, L:2/binary, Rest/binary>> = Buff,
@@ -639,7 +676,7 @@ format_value(Buff, #{<<"dataForm">> := #{
 format_value(Buff, #{<<"dataForm">> := #{
     <<"data">> := Len,
     <<"originaltype">> := <<"float32_ABCD">>
-}}) ->
+}}, _Props) ->
     IntLen = dgiot_utils:to_int(Len),
     Size = max(4, IntLen) * 8,
     <<H:2/binary, L:2/binary, Rest/binary>> = Buff,
@@ -649,7 +686,7 @@ format_value(Buff, #{<<"dataForm">> := #{
 format_value(Buff, #{<<"dataForm">> := #{
     <<"data">> := Len,
     <<"originaltype">> := <<"float32_CDAB">>
-}}) ->
+}}, _Props) ->
     IntLen = dgiot_utils:to_int(Len),
     Size = max(4, IntLen) * 8,
     <<H:2/binary, L:2/binary, Rest/binary>> = Buff,
@@ -657,6 +694,6 @@ format_value(Buff, #{<<"dataForm">> := #{
     {Value, Rest};
 
 %% @todo 其它类型处理
-format_value(_, #{<<"identifier">> := Field}) ->
+format_value(_, #{<<"identifier">> := Field}, _Props) ->
     ?LOG(info, "Field ~p", [Field]),
     throw({field_error, <<Field/binary, " is not validate">>}).
