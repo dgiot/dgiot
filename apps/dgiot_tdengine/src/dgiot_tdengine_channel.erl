@@ -499,7 +499,16 @@ get_schema(_ChannelId, Schema) ->
             ignore;
         Thing ->
             Properties = maps:get(<<"properties">>, Thing, []),
-            case lists:flatten([get_field(Property) || Property <- Properties]) of
+            Result =
+                lists:foldl(fun(Property, Acc) ->
+                    case get_field(Property) of
+                        pass ->
+                            Acc;
+                        V ->
+                            Acc ++ [V]
+                    end
+                            end, [], Properties),
+            case lists:flatten(Result) of
                 [] ->
                     ignore;
                 Columns ->
@@ -527,6 +536,8 @@ get_schema(_ChannelId, Schema) ->
 %%  8	TINYINT     1        单字节整型，范围 [-127, 127], -128 用于 NULL
 %%  9	BOOL       	1        布尔型，{true, false}
 %%  10	NCHAR       自定义    记录包含多字节字符在内的字符串，如中文字符。每个 nchar 字符占用 4 bytes 的存储空间。字符串两端使用单引号引用，字符串内的单引号需用转义字符 \’。nchar 使用时须指定字符串大小，类型为 nchar(10) 的列表示此列的字符串最多存储 10 个 nchar 字符，会固定占用 40 bytes 的空间。如果用户字符串长度超出声明长度，将会报错。
+get_field(#{<<"isshow">> := false}) ->
+    pass;
 get_field(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"int">>}}) ->
     {Field, #{<<"type">> => <<"INT">>}};
 get_field(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"image">>}}) ->
@@ -674,8 +685,10 @@ run_sql(#{<<"driver">> := <<"HTTP">>, <<"url">> := Url, <<"username">> := UserNa
                     dgiot_bridge:send_log(ChannelId, "Execute ~p (~ts) ~p", [Url, unicode:characters_to_list(Sql), jsx:encode(Result)])
             end,
             {ok, Result};
+        {error, #{<<"code">> := 896} = Reason} ->
+            {ok, Reason#{<<"affected_rows">> => 0}};
         {error, Reason} ->
-            ?LOG(info, "Execute Fail ~p (~ts) ~p", [Url, unicode:characters_to_list(Sql), Reason]),
+            ?LOG(error, "Execute Fail ~p (~ts) ~p", [Url, unicode:characters_to_list(Sql), Reason]),
             {error, Reason}
     end;
 run_sql(#{<<"driver">> := <<"JDBC">>, <<"url">> := _Url}, Action, _Sql) when Action == execute_update; Action == execute_query ->

@@ -289,7 +289,7 @@ alter_table(DB1, TableName, Context, Channel) ->
                 {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
                     lists:foldl(fun(Prop, _Acc1) ->
                         case Prop of
-                            #{<<"dataType">> := #{<<"type">> := Type}, <<"identifier">> := Identifier} ->
+                            #{<<"dataType">> := #{<<"type">> := Type}, <<"identifier">> := Identifier, <<"isshow">> := true} ->
                                 LowerIdentifier = list_to_binary(string:to_lower(binary_to_list(Identifier))),
                                 case maps:find(LowerIdentifier, TdColumn) of
                                     error ->
@@ -317,7 +317,9 @@ alter_table(DB1, TableName, Context, Channel) ->
                                     _ ->
 %%                                            todo   类型改变
                                         pass
-                                end
+                                end;
+                            _ ->
+                                pass
                         end
                                 end, #{}, Props),
                     {ok, #{<<"results">> := Results2}} = run_sql(Context#{<<"channel">> => Channel}, execute_query, Sql1),
@@ -403,7 +405,7 @@ get_keys(ProductId, Function, <<"*">>) ->
         {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
             lists:foldl(fun(X, {Names, Acc}) ->
                 case X of
-                    #{<<"identifier">> := Identifier, <<"name">> := Name} ->
+                    #{<<"identifier">> := Identifier, <<"name">> := Name, <<"isshow">> := true} ->
                         case Acc of
                             <<"">> ->
                                 {Names ++ [Name], <<Function/binary, "(", Identifier/binary, ") \'", Identifier/binary, "\'">>};
