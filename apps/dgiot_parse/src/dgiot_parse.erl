@@ -105,7 +105,8 @@
 -export([
     test_graphql/0,
     subscribe/2,
-    send_msg/3
+    send_msg/3,
+    send_msg/4
 ]).
 
 
@@ -121,8 +122,8 @@ subscribe(Table, Method) ->
             [_, Data, _Body] ->
                 dgiot_parse:send_msg(Table, Method, Data),
                 {ok, Data};
-            [_, _ObjectId, Data, _Body] ->
-                dgiot_parse:send_msg(Table, Method, Data),
+            [_, ObjectId, Data, _Body] ->
+                dgiot_parse:send_msg(Table, Method, Data, ObjectId),
                 {ok, Data};
             _ ->
                 {ok, []}
@@ -135,6 +136,18 @@ send_msg(Table, Method, Args) ->
         case is_process_alive(Pid) of
             true ->
                 Pid ! {sync_parse, Args},
+                Acc ++ [Pid];
+            false ->
+                Acc
+        end
+                       end, [], dgiot_data:get({sub, Table, Method})),
+    dgiot_data:insert({sub, Table, Method}, Pids).
+
+send_msg(Table, Method, Args, ObjectId) ->
+    Pids = lists:foldl(fun(Pid, Acc) ->
+        case is_process_alive(Pid) of
+            true ->
+                Pid ! {sync_parse, Args, ObjectId},
                 Acc ++ [Pid];
             false ->
                 Acc
