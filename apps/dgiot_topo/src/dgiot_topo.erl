@@ -287,9 +287,10 @@ get_attrs(Type, ProductId, ClassName, Attrs, DeviceId, KonvatId, Shapeid, Identi
                             save(Type, Attrs),
                             X#{<<"attrs">> => Attrs};
                         _ ->
+                            Len = size(Id) - 16,
                             Identifier1 =
-                                case binary:split(Id, <<$_>>, [global, trim]) of
-                                    [ProductId, Identifier2, _] ->
+                                case Id of
+                                    <<_:10/binary, "_", Identifier2:Len/binary, "_text">> ->
                                         Identifier2;
                                     _ ->
                                         <<"">>
