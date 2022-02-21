@@ -143,25 +143,28 @@ handle_message({sync_parse, Args}, State) ->
             case dgiot_device:get_online(DeviceId) of
                 true ->
                     case dgiot_parse:get_object(<<"Product">>, ProductId) of
-                        {ok, #{<<"config">> := #{<<"basedate">> := #{<<"params">> := Params}}}} ->
-                            lists:foldl(fun(X, _Acc) ->
-                                case X of
-                                    #{<<"identifier">> := Identifier, <<"protocol">> := Proctol} ->
-                                        case maps:find(Identifier, Modifyprofile) of
-                                            {ok, V} ->
-                                                Topic = <<"profile/", ProductId/binary, "/", Devaddr/binary>>,
-                                                Payload = #{
-                                                    <<"_dgiotprotocol">> => Proctol,
-                                                    <<"sessiontoken">> => Sessiontoken,
-                                                    Identifier => V
-                                                },
-                                                dgiot_mqtt:publish(DeviceId, Topic, Payload),
-                                                timer:sleep(1000);
-                                            _ ->
-                                                pass
-                                        end
-                                end
-                                        end, [], Params),
+                        {ok, #{<<"thing">> := #{<<"properties">> := Properties}}} ->
+                            NewPayLoad =
+                                lists:foldl(fun(X, Acc) ->
+                                    case X of
+                                        #{<<"identifier">> := Identifier, <<"accessMode">> := <<"w">>, <<"dataForm">> := DataForm} ->
+                                            case maps:find(Identifier, Modifyprofile) of
+                                                {ok, V} ->
+                                                    Acc#{
+                                                        Identifier => #{
+                                                            <<"sessiontoken">> => Sessiontoken,
+                                                            <<"value">> => V,
+                                                            <<"dataForm">> => DataForm
+                                                        }};
+                                                _ ->
+                                                    Acc
+                                            end;
+                                        _ -> Acc
+                                    end
+                                            end, #{}, Properties),
+                            Topic = <<"profile/", ProductId/binary, "/", Devaddr/binary>>,
+                            dgiot_mqtt:publish(DeviceId, Topic, NewPayLoad),
+                            io:format("~s ~p NewPayLoad = ~p.~n", [?FILE, ?LINE, NewPayLoad]),
                             dgiot_data:insert(?PROFILE, DeviceId, Profile);
                         false ->
                             dgiot_data:insert(?MODIFYPROFILE, DeviceId, {Modifyprofile, ProductId, Devaddr})
@@ -173,6 +176,7 @@ handle_message({sync_parse, Args}, State) ->
             pass
     end,
     {ok, State};
+
 handle_message(_Message, State) ->
 %%    ?LOG(info, "_Message ~p", [_Message]),
     {ok, State}.
