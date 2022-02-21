@@ -140,7 +140,6 @@ parse_frame(?DLT376, Buff, Opts) ->
 to_frame(#{
     <<"devaddr">> := Addr,
     <<"di">> := Di,
-    <<"command">> := <<"r">>,
     <<"protocol">> := ?DLT376,
     <<"data">> := <<"null">>
 } = Frame) ->
@@ -157,7 +156,6 @@ to_frame(#{
 to_frame(#{
     <<"devaddr">> := Addr,
     <<"di">> := Di,
-    <<"command">> := <<"r">>,
     <<"protocol">> := ?DLT645,
     <<"data">> := <<"null">>
 } = Frame) ->
@@ -293,8 +291,7 @@ to_frame(#{
 to_frame(#{
     <<"devaddr">> := Addr,
     <<"di">> := Di,
-    <<"protocol">> := ?DLT645,
-    <<"command">> := <<"r">>
+    <<"protocol">> := ?DLT645
 } = Frame) ->
     dlt645_decoder:to_frame(Frame#{
         <<"msgtype">> => ?DLT645,
