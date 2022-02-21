@@ -59,10 +59,14 @@
     },
     <<"type">> => #{
         order => 2,
-        type => string,
+        type => enum,
         required => true,
-        default => <<"byte"/utf8>>,
-        enum => [<<"byte"/utf8>>, <<"little"/utf8>>, <<"bit"/utf8>>],
+        default => #{<<"value">> => <<"byte">>, <<"label">> => <<"byte">>},
+        enum => [
+            #{<<"value">> => <<"byte">>, <<"label">> => <<"byte">>},
+            #{<<"value">> => <<"little">>, <<"label">> => <<"little">>},
+            #{<<"value">> => <<"bit">>, <<"label">> => <<"bit">>}
+        ],
         title => #{
             zh => <<"数据类型"/utf8>>
         },
@@ -74,27 +78,12 @@
         order => 3,
         type => integer,
         required => true,
-        default => <<"byte"/utf8>>,
-        enum => [<<"byte"/utf8>>, <<"little"/utf8>>, <<"bit"/utf8>>],
+        default => 2,
         title => #{
             zh => <<"长度"/utf8>>
         },
         description => #{
             zh => <<"长度"/utf8>>
-        }
-    },
-    <<"ico">> => #{
-        order => 102,
-        type => string,
-        required => false,
-        default => <<"http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/product/dgiot/channel/MQTT.png">>,
-        title => #{
-            en => <<"protocol ICO">>,
-            zh => <<"协议ICO"/utf8>>
-        },
-        description => #{
-            en => <<"protocol ICO">>,
-            zh => <<"协议ICO"/utf8>>
         }
     }
 }).

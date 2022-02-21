@@ -46,11 +46,23 @@
 %% 注册协议参数
 -params(#{
     <<"originaltype">> => #{
-        order => 2,
-        type => string,
+        order => 1,
+        type => enum,
         required => true,
-        default => <<"short16_AB"/utf8>>,
-        enum => [<<"short16_AB"/utf8>>],
+        default => #{<<"value">> => <<"bit">>, <<"label">> => <<"位"/utf8>>},
+        enum => [
+            #{<<"value">> => <<"bit">>, <<"label">> => <<"位"/utf8>>},
+            #{<<"value">> => <<"short16_AB">>, <<"label">> => <<"16位 有符号(AB)"/utf8>>},
+            #{<<"value">> => <<"short16_BA">>, <<"label">> => <<"16位 有符号(BA)"/utf8>>},
+            #{<<"value">> => <<"ushort16_AB">>, <<"label">> => <<"16位 无符号(AB)"/utf8>>},
+            #{<<"value">> => <<"ushort16_BA">>, <<"label">> => <<"16位 无符号(BA)"/utf8>>},
+            #{<<"value">> => <<"long32_ABCD">>, <<"label">> => <<"32位 有符号(ABCD)"/utf8>>},
+            #{<<"value">> => <<"long32_CDAB">>, <<"label">> => <<"32位 有符号(CDAB)"/utf8>>},
+            #{<<"value">> => <<"ulong32_ABCD">>, <<"label">> => <<"32位 无符号(ABCD)"/utf8>>},
+            #{<<"value">> => <<"ulong32_CDAB">>, <<"label">> => <<"32位 无符号(CDAB)"/utf8>>},
+            #{<<"value">> => <<"float32_ABCD">>, <<"label">> => <<"32位 浮点数(ABCD)"/utf8>>},
+            #{<<"value">> => <<"float32_CDAB">>, <<"label">> => <<"32位 浮点数(CDAB)"/utf8>>}
+        ],
         title => #{
             zh => <<"数据格式"/utf8>>
         },
@@ -59,7 +71,7 @@
         }
     },
     <<"slaveid">> => #{
-        order => 1,
+        order => 2,
         type => string,
         required => true,
         default => <<"0000"/utf8>>,
@@ -71,20 +83,28 @@
         }
     },
     <<"operatetype">> => #{
-        order => 2,
-        type => string,
+        order => 3,
+        type => enum,
         required => true,
-        default => <<"byte"/utf8>>,
-        enum => [<<"byte"/utf8>>, <<"little"/utf8>>, <<"bit"/utf8>>],
+        default => #{<<"value">> => <<"readCoils">>, <<"label">> => <<"0X01:读线圈寄存器"/utf8>>},
+        enum => [#{<<"value">> => <<"readCoils">>, <<"label">> => <<"0X01:读线圈寄存器"/utf8>>},
+            #{<<"value">> => <<"readInputs">>, <<"label">> => <<"0X02:读离散输入寄存器"/utf8>>},
+            #{<<"value">> => <<"readHregs">>, <<"label">> => <<"0X03:读保持寄存器"/utf8>>},
+            #{<<"value">> => <<"readIregs">>, <<"label">> => <<"0X04:读输入寄存器"/utf8>>},
+            #{<<"value">> => <<"writeCoil">>, <<"label">> => <<"0X05:写单个线圈寄存器"/utf8>>},
+            #{<<"value">> => <<"writeHreg">>, <<"label">> => <<"0X06:写单个保持寄存器"/utf8>>},
+            #{<<"value">> => <<"writeCoils">>, <<"label">> => <<"0X0f:写多个线圈寄存器"/utf8>>},
+            #{<<"value">> => <<"writeHregs">>, <<"label">> => <<"0X10:写多个保持寄存器"/utf8>>}
+        ],
         title => #{
-            zh => <<"数据类型"/utf8>>
+            zh => <<"寄存器状态"/utf8>>
         },
         description => #{
-            zh => <<"数据类型"/utf8>>
+            zh => <<"寄存器状态"/utf8>>
         }
     },
     <<"address">> => #{
-        order => 2,
+        order => 4,
         type => string,
         required => true,
         default => <<"0X00"/utf8>>,
@@ -95,8 +115,8 @@
             zh => <<"寄存器地址:(16进制加0X,例如:0X10,否在是10进制)"/utf8>>
         }
     },
-    <<"offset">> => #{
-        order => 3,
+    <<"data">> => #{
+        order => 5,
         type => integer,
         required => true,
         default => <<"2"/utf8>>,
@@ -208,80 +228,76 @@ is16(Data) when size(Data) > 1 ->
 is16(Data) ->
     <<"000", Data/binary>>.
 
-set_params(Basedata, ProductId, DevAddr) ->
-    case dgiot_parse:get_object(<<"Product">>, ProductId) of
-        {ok, #{<<"name">> := Productname, <<"config">> := #{<<"basedate">> := #{<<"params">> := Params}}}} ->
-            Payloads =
-                lists:foldl(fun(X, Acc) ->
-                    case X of
-                        #{<<"identifier">> := Identifier,
-                            <<"protocol">> := <<"modbus">>,
-                            <<"slaveid">> := SlaveId,
-                            <<"address">> := Address,
-                            <<"bytes">> := Bytes,
-                            <<"operatetype">> := OperateType,
-                            <<"setting">> := Setting,
-                            <<"name">> := Name} ->
-                            case maps:find(Identifier, Basedata) of
-                                error ->
-                                    Acc;
-                                {ok, Value} when erlang:byte_size(Value) == 0 ->
-                                    Acc;
-                                {ok, Value} ->
-                                    FunCode =
-                                        case OperateType of
-                                            <<"readCoils">> -> ?FC_READ_COILS;
-                                            <<"readInputs">> -> ?FC_READ_INPUTS;
-                                            <<"readHregs">> -> ?FC_READ_HREGS;
-                                            <<"readIregs">> -> ?FC_READ_IREGS;
-                                            <<"writeCoil">> -> ?FC_WRITE_COIL;
-                                            <<"writeHreg">> -> ?FC_WRITE_HREG;
-                                            <<"writeCoils">> -> ?FC_WRITE_COILS; %%需要校验，写多个线圈是什么状态
-                                            <<"writeHregs">> -> ?FC_WRITE_HREGS; %%需要校验，写多个保持寄存器是什么状态
-                                            _ -> ?FC_READ_HREGS
-                                        end,
-                                    <<H:8, L:8>> = dgiot_utils:hex_to_binary(is16(Address)),
-                                    <<Sh:8, Sl:8>> = dgiot_utils:hex_to_binary(is16(SlaveId)),
-                                    Str1 = re:replace(Setting, "%s", "(" ++ dgiot_utils:to_list(Value) ++ ")", [global, {return, list}]),
-                                    Value1 = dgiot_utils:to_int(dgiot_task:string2value(Str1)),
+set_params(Payload, ProductId, DevAddr) ->
+    SortPayload = lists:sort(maps:keys(Payload)),
+    Payloads =
+        lists:foldl(fun(X, Acc) ->
+            case maps:find(X, Payload) of
+                {ok, #{<<"dataForm">> := #{<<"protocol">> := <<"modbus">>,
+                    <<"slaveid">> := SlaveId,
+                    <<"address">> := Address,
+                    <<"bytes">> := Bytes,
+                    <<"operatetype">> := OperateType,
+                    <<"name">> := Name,
+                    <<"Productname">> := Productname,
+                    <<"Identifier">> := Identifier,
+                    <<"control">> := Setting} = _DataForm} = Data} ->
+                    case maps:find(<<"value">>, Data) of
+                        error ->
+                            Acc;
+                        {ok, Value} when erlang:byte_size(Value) == 0 ->
+                            Acc;
+                        {ok, Value} ->
+                            FunCode =
+                                case OperateType of
+                                    <<"readCoils">> -> ?FC_READ_COILS;
+                                    <<"readInputs">> -> ?FC_READ_INPUTS;
+                                    <<"readHregs">> -> ?FC_READ_HREGS;
+                                    <<"readIregs">> -> ?FC_READ_IREGS;
+                                    <<"writeCoil">> -> ?FC_WRITE_COIL;
+                                    <<"writeHreg">> -> ?FC_WRITE_HREG;
+                                    <<"writeCoils">> -> ?FC_WRITE_COILS; %%需要校验，写多个线圈是什么状态
+                                    <<"writeHregs">> -> ?FC_WRITE_HREGS; %%需要校验，写多个保持寄存器是什么状态
+                                    _ -> ?FC_READ_HREGS
+                                end,
+                            <<H:8, L:8>> = dgiot_utils:hex_to_binary(is16(Address)),
+                            <<Sh:8, Sl:8>> = dgiot_utils:hex_to_binary(is16(SlaveId)),
+                            Str1 = re:replace(Setting, "%s", "(" ++ dgiot_utils:to_list(Value) ++ ")", [global, {return, list}]),
+                            Value1 = dgiot_utils:to_int(dgiot_task:string2value(Str1)),
 %%                                    NewBt = Bytes * 8,
-                                    Registersnumber = maps:get(<<"registersnumber">>, X, <<"1">>),
-                                    RtuReq = #rtu_req{
-                                        slaveId = Sh * 256 + Sl,
-                                        funcode = dgiot_utils:to_int(FunCode),
-                                        address = H * 256 + L,
-                                        registersnumber = dgiot_utils:to_int(Registersnumber),
-                                        dataByteSize = dgiot_utils:to_int(Bytes),
-                                        quality = Value1
-                                    },
-                                    DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
-                                    Sessiontoken = maps:get(<<"sessiontoken">>, Basedata, <<"">>),
-                                    {Username, Acl} =
-                                        case dgiot_auth:get_session(Sessiontoken) of
-                                            #{<<"username">> := Name1, <<"ACL">> := Acl1} ->
-                                                {Name1, Acl1};
-                                            _ ->
-                                                {<<"">>, #{}}
-                                        end,
-                                    ?MLOG(info, #{<<"clientid">> => DeviceId, <<"username">> => Username,
-                                        <<"status">> => <<"ONLINE">>, <<"ACL">> => Acl,
-                                        <<"devaddr">> => DevAddr, <<"productid">> => ProductId,
-                                        <<"productname">> => Productname, <<"thingname">> => Name,
-                                        <<"protocol">> => <<"modbus">>, <<"identifier">> => Identifier, <<"value">> => Value1},
-                                        ['device_operationlog']),
-                                    Acc ++ [build_req_message(RtuReq)];
-                                _ ->
-                                    Acc
-                            end;
+                            Registersnumber = maps:get(<<"registersnumber">>, X, <<"1">>),
+                            RtuReq = #rtu_req{
+                                slaveId = Sh * 256 + Sl,
+                                funcode = dgiot_utils:to_int(FunCode),
+                                address = H * 256 + L,
+                                registersnumber = dgiot_utils:to_int(Registersnumber),
+                                dataByteSize = dgiot_utils:to_int(Bytes),
+                                quality = Value1
+                            },
+                            DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+                            Sessiontoken = maps:get(<<"sessiontoken">>, Data, <<"">>),
+                            {Username, Acl} =
+                                case dgiot_auth:get_session(Sessiontoken) of
+                                    #{<<"username">> := Name1, <<"ACL">> := Acl1} ->
+                                        {Name1, Acl1};
+                                    _ ->
+                                        {<<"">>, #{}}
+                                end,
+                            ?MLOG(info, #{<<"clientid">> => DeviceId, <<"username">> => Username,
+                                <<"status">> => <<"ONLINE">>, <<"ACL">> => Acl,
+                                <<"devaddr">> => DevAddr, <<"productid">> => ProductId,
+                                <<"productname">> => Productname, <<"thingname">> => Name,
+                                <<"protocol">> => <<"modbus">>, <<"identifier">> => Identifier, <<"value">> => Value1},
+                                ['device_operationlog']),
+                            Acc ++ [build_req_message(RtuReq)];
                         _ ->
                             Acc
-                    end
-                            end, [], Params),
-            Payloads;
-        _ ->
-            ?LOG(info, "NoProduct: ~p", [ProductId]),
-            pass
-    end.
+                    end;
+                _ ->
+                    Acc
+            end
+                    end, [], SortPayload),
+    Payloads.
 
 %rtu modbus
 parse_frame(<<>>, Acc, _State) -> {<<>>, Acc};

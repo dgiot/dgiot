@@ -325,6 +325,88 @@
         ]
       }
     },
+    "/sendemail": {
+      "post": {
+        "basePath": "/",
+        "description": "发送邮件",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "data",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "from": {
+                  "type": "string",
+                  "required": true,
+                  "example": "18257190166@163.com",
+                  "description": "发件人邮箱"
+                },
+                "to": {
+                  "type": "array",
+                  "example": ["463544084@qq.com"],
+                  "description": "收件人邮箱"
+                },
+                "subject": {
+                  "type": "string",
+                  "required": true,
+                  "example": "测试邮件",
+                  "description": "主题"
+                },
+                "fromdes": {
+                  "type": "string",
+                  "required": true,
+                  "example": "18257190166@163.com",
+                  "description": "发件人描述"
+                },
+                "todes": {
+                  "type": "string",
+                  "required": true,
+                  "example": "463544084@qq.com",
+                  "description": "收件人描述"
+                },
+                "data": {
+                  "type": "string",
+                  "required": true,
+                  "example": "发件内容",
+                  "description": "发件内容"
+                },
+                "relay": {
+                  "type": "string",
+                  "required": true,
+                  "example": "smtp.163.com",
+                  "description": "中转服务"
+                },
+                "username": {
+                  "type": "string",
+                  "required": true,
+                  "example": "18257190166@163.com",
+                  "description": "发件人邮箱账户"
+                },
+                "password": {
+                  "type": "string",
+                  "required": true,
+                  "example": "ALRFYEVAFSITDXSX",
+                  "description": "密钥"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "发送邮件",
+        "tags": [
+          "Wechat"
+        ]
+      }
+    },
     "/jwtlogin": {
       "get": {
         "security": [],

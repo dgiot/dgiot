@@ -107,15 +107,15 @@ send_sms(NationCode, Mobile, TplId, Params, Ext) ->
 
 test_email() ->
     Map   = #{
-        <<"from">> => <<"dgiot@163.com">>,
-        <<"to">> =>   [<<"3333333@qq.com">>],
+        <<"from">> => <<"18257190166@163.com">>,
+        <<"to">> =>   [<<"463544084@qq.com">>],
         <<"subject">> => <<"测试邮件"/utf8>>,
-        <<"fromdes">> => <<"dgiot开源物联网 <dgiot@163.com>"/utf8>>,
-        <<"todes">> => <<"dgiot用户 <34489690@qq.com>"/utf8>>,
-        <<"data">> => <<"dgiot邮件 中文测试 欢迎访问 https://github.com/dgiot "/utf8>>,
+        <<"fromdes">> => <<"徐 <18257190166@163.com>"/utf8>>,
+        <<"todes">> => <<"唐 <463544084@qq.com>"/utf8>>,
+        <<"data">> => <<"唐 中文测试 欢迎访问 https://github.com/dgiot "/utf8>>,
         <<"relay">> => <<"smtp.163.com">>,
-        <<"username">> => <<"dgiot@163.com">>,
-        <<"password">> => <<"yourstmppassword">>
+        <<"username">> => <<"18257190166@163.com">>,
+        <<"password">> => <<"ALRFYEVAFSITDXSX">>
     },
     send_email(Map).
 

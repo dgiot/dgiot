@@ -32,7 +32,8 @@
     sendTemplate/0,
     get_wechat_map/1,
     get_device_info/2,
-    get_notification/6
+    get_notification/6,
+    sendSubscribe_test/2
 ]).
 
 %% https://api.weixin.qq.com/sns/jscode2session?appid=APPID&secret=SECRET&js_code=JSCODE&grant_type=authorization_code
@@ -130,6 +131,56 @@ sendSubscribe(UserId, Data) ->
                                     Data1 = dgiot_utils:to_list(jiffy:encode(Subscribe)),
                                     R = httpc:request(post, {SubscribeUrl, [], "application/x-www-form-urlencoded", Data1}, [{timeout, 5000}, {connect_timeout, 10000}], [{body_format, binary}]),
                                     ?LOG(debug, "R ~p", [R]);
+                                _Result ->
+                                    {error, <<"not find access_token">>}
+                            end;
+                        false -> {error, <<"not find access_token">>}
+                    end;
+                _Error ->
+                    _Error
+            end;
+        _ -> {error, <<"user unbind openid">>}
+    end.
+
+%% 发送小程序订阅消息
+%% Data 小程序订阅消息内容
+%% page       要跳转到小程序的页面
+%% templateId 模板消息编号
+%% touser     消息接收者openId
+%% POST https://api.weixin.qq.com/cgi-bin/message/wxopen/template/uniform_send?access_token=ACCESS_TOKEN
+%% dgiot_wechat:sendSubscribe().
+sendSubscribe_test(UserId,  #{<<"data">> := Data,
+                              <<"lang">> := Lang,
+                              <<"miniprogramstate">> := Miniprogramstate,
+                              <<"page">> := Page,
+                              <<"templateid">> := Templateid} = Args) ->
+                                  io:format("~s ~p Args = ~p.~n", [?FILE, ?LINE, Args]),
+    case dgiot_parse:get_object(<<"_User">>, UserId) of
+        {ok, #{<<"tag">> := #{<<"wechat">> := #{<<"openid">> := OpenId}}}} when size(OpenId) > 0 ->
+            AppId = dgiot_utils:to_binary(application:get_env(dgiot_http, wechat_appid, <<"">>)),
+            Secret = dgiot_utils:to_binary(application:get_env(dgiot_http, wechat_secret, <<"">>)),
+            io:format("~s ~p AppId = ~p.~n", [?FILE, ?LINE, AppId]),
+            Url = "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=" ++ dgiot_utils:to_list(AppId) ++ "&secret=" ++ dgiot_utils:to_list(Secret),
+            case httpc:request(Url) of
+                {ok, {{_Version, 200, _ReasonPhrase}, _Headers, Body}} ->
+                    Json = list_to_binary(Body),
+                    case jsx:is_json(Json) of
+                        true ->
+                            case jsx:decode(Json, [{labels, binary}, return_maps]) of
+                                #{<<"access_token">> := AccessToken, <<"expires_in">> := _ExpiresIn} ->
+                                    SubscribeUrl = "https://api.weixin.qq.com/cgi-bin/message/subscribe/send?access_token=" ++ dgiot_utils:to_list(AccessToken),
+                                    ?LOG(debug, "SubscribeUrl ~p", [SubscribeUrl]),
+                                    Subscribe = #{<<"touser">> => OpenId,
+                                        <<"template_id">> => Templateid,
+                                        <<"page">> => Page,
+                                        <<"miniprogram_state">> => Miniprogramstate,
+                                        <<"lang">> => Lang,
+                                        <<"data">> => Data},
+                                    Data1 = dgiot_utils:to_list(jiffy:encode(Subscribe)),
+                                    io:format("~s ~p SubscribeUrl = ~p.~n", [?FILE, ?LINE, SubscribeUrl]),
+                                    io:format("~s ~p Subscribe = ~p.~n", [?FILE, ?LINE, Subscribe]),
+                                    R = httpc:request(post, {SubscribeUrl, [], "application/x-www-form-urlencoded", Data1}, [{timeout, 5000}, {connect_timeout, 10000}], [{body_format, binary}]),
+                                    io:format("~s ~p R = ~p.~n", [?FILE, ?LINE, R]);
                                 _Result ->
                                     {error, <<"not find access_token">>}
                             end;
