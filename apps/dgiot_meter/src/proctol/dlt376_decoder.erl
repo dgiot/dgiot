@@ -72,7 +72,7 @@
     },
     <<"type">> => #{
         order => 3,
-        type => string,
+        type => enum,
         required => true,
         default => #{<<"value">> => <<"byte">>, <<"label">> => <<"byte">>},
         enum => [
@@ -500,11 +500,11 @@ pn_to_da(Pn) ->
 %%<<"sessiontoken">> => <<>>}}
 
 frame_write_param(#{<<"concentrator">> := ConAddr, <<"payload">> := Frame}) ->
-    SortFrame = lists:sort(maps:keys(Frame)),
-    io:format("~s ~p SortFrame   ~p.~n", [?FILE, ?LINE, SortFrame]),
+    Length = length(maps:keys(Frame)),
+    io:format("~s ~p SortFrame   ~p.~n", [?FILE, ?LINE, Length]),
     {BitList, Afn, Da, Fn} =
-        lists:map(fun(X, {Acc, A, D, F}) ->
-            case maps:find(X, Frame) of
+        lists:map(fun(Index, {Acc, A, D, F}) ->
+            case maps:find(Index, Frame) of
                 {ok, #{<<"dataForm">> := #{<<"afn">> := AFN, <<"di">> := FN, <<"length">> := Len, <<"type">> := Type} = DataForm} = Data} ->
                     DA = dgiot_utils:binary_to_hex(pn_to_da(to_integer(maps:get(<<"da">>, DataForm, 0)))),
                     case Type of
@@ -525,7 +525,7 @@ frame_write_param(#{<<"concentrator">> := ConAddr, <<"payload">> := Frame}) ->
                 _ ->
                     {Acc, A, D, F}
             end
-                  end, {[], 0, <<>>, <<>>}, SortFrame),
+                  end, {[], 0, <<>>, <<>>}, lists:seq(1, Length)),
     io:format("~s ~p BitList   ~p.~n", [?FILE, ?LINE, BitList]),
     UserZone = <<<<V:BitLen>> || {V, BitLen} <- BitList>>,
     io:format("~s ~p UserZone  ~p.~n", [?FILE, ?LINE, UserZone]),
@@ -579,13 +579,13 @@ add_to_userzone(UserZone, _Afn, _Fn) ->
 
 
 concentrator_to_addr(ConAddr) when byte_size(ConAddr) == 6 ->
-    <<A11:2/bytes, A22:2/bytes, _/bytes>> = ConAddr,
+    <<_:2/bytes, A11:2/bytes, A22:2/bytes>> = ConAddr,
     A1 = dlt645_proctol:reverse(A11),
     A2 = dlt645_proctol:reverse(A22),
     A3 = <<16#02>>,
     <<A1:2/bytes, A2:2/bytes, A3:1/bytes>>;
 concentrator_to_addr(ConAddr) when byte_size(ConAddr) == 12 ->
-    <<A11:2/bytes, A22:2/bytes, _/bytes>> = dgiot_utils:hex_to_binary(ConAddr),
+    <<_:2/bytes, A11:2/bytes, A22:2/bytes>> = dgiot_utils:hex_to_binary(ConAddr),
     A1 = dlt645_proctol:reverse(A11),
     A2 = dlt645_proctol:reverse(A22),
     A3 = <<16#02>>,
