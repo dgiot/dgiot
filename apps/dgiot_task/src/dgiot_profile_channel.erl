@@ -147,11 +147,11 @@ handle_message({sync_parse, Args}, State) ->
                             NewPayLoad =
                                 lists:foldl(fun(X, Acc) ->
                                     case X of
-                                        #{<<"identifier">> := Identifier, <<"accessMode">> := <<"w">>, <<"dataForm">> := DataForm} ->
+                                        #{<<"identifier">> := Identifier, <<"accessMode">> := <<"w">>, <<"dataForm">> := #{<<"_dlinkindex">> := Index} = DataForm} ->
                                             case maps:find(Identifier, Modifyprofile) of
                                                 {ok, V} ->
                                                     Acc#{
-                                                        Identifier => #{
+                                                        Index => #{
                                                             <<"sessiontoken">> => Sessiontoken,
                                                             <<"value">> => V,
                                                             <<"dataForm">> => DataForm

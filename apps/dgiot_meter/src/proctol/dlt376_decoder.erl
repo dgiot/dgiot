@@ -46,20 +46,8 @@
 }).
 %% 注册协议参数
 -params(#{
-    <<"index">> => #{
-        order => 1,
-        type => string,
-        required => true,
-        default => <<"00"/utf8>>,
-        title => #{
-            zh => <<"报文序号"/utf8>>
-        },
-        description => #{
-            zh => <<"报文序号"/utf8>>
-        }
-    },
     <<"afn">> => #{
-        order => 2,
+        order => 1,
         type => string,
         required => true,
         default => <<"00"/utf8>>,
@@ -71,7 +59,7 @@
         }
     },
     <<"di">> => #{
-        order => 3,
+        order => 2,
         type => string,
         required => true,
         default => <<"0000"/utf8>>,
@@ -83,7 +71,7 @@
         }
     },
     <<"type">> => #{
-        order => 4,
+        order => 3,
         type => string,
         required => true,
         default => <<"byte"/utf8>>,
@@ -96,11 +84,10 @@
         }
     },
     <<"length">> => #{
-        order => 5,
+        order => 4,
         type => integer,
         required => true,
-        default => <<"byte"/utf8>>,
-        enum => [<<"byte"/utf8>>, <<"little"/utf8>>, <<"bit"/utf8>>],
+        default => 2,
         title => #{
             zh => <<"长度"/utf8>>
         },
@@ -522,35 +509,35 @@ pn_to_da(Pn) ->
 %%<<"bytes">> => <<"4">>},
 %%<<"sessiontoken">> => <<>>}}
 
-frame_write_param(#{<<"concentrator">> := ConAddr, <<"basedata">> := Frame}) ->
+frame_write_param(#{<<"concentrator">> := ConAddr, <<"payload">> := Frame}) ->
     SortFrame = lists:sort(maps:keys(Frame)),
     io:format("~s ~p SortFrame   ~p.~n", [?FILE, ?LINE, SortFrame]),
     {BitList, Afn, Da, Fn} =
-        lists:foldl(fun(X, {Acc, A, D, F}) ->
+        lists:map(fun(X, {Acc, A, D, F}) ->
             case maps:find(X, Frame) of
-                {ok, #{<<"dataForm">> := #{<<"afn">> := AFN, <<"di">> := FN, <<"length">> := Len, <<"type">> := Type}} = Data} ->
-                    DA = dgiot_utils:binary_to_hex(pn_to_da(to_integer(maps:get(<<"da">>, Data, 0)))),
+                {ok, #{<<"dataForm">> := #{<<"afn">> := AFN, <<"di">> := FN, <<"length">> := Len, <<"type">> := Type} = DataForm} = Data} ->
+                    DA = dgiot_utils:binary_to_hex(pn_to_da(to_integer(maps:get(<<"da">>, DataForm, 0)))),
                     case Type of
                         <<"bytes">> ->
-                            Value = maps:get(X, Data),
+                            Value = maps:get(<<"value">>, Data),
                             Value1 = dlt645_proctol:reverse(dgiot_utils:hex_to_binary(Value)),
                             {Acc ++ get_values(Value1), AFN, DA, FN};
                         <<"little">> ->
-                            Value = to_integer(maps:get(X, Data)),
+                            Value = to_integer(maps:get(<<"value">>, Data)),
                             L = to_integer(Len),
                             Len1 = L * 8,
                             {Acc ++ [get_values(<<Value:Len1/little>>)], AFN, DA, FN};
                         <<"bit">> ->
-                            Value = to_integer(maps:get(X, Data)),
+                            Value = to_integer(maps:get(<<"value">>, Data)),
                             L = to_integer(Len),
                             {Acc ++ [{Value, L}], AFN, DA, FN}
                     end;
                 _ ->
                     {Acc, A, D, F}
             end
-                    end, {[], 0, <<>>, <<>>}, SortFrame),
+                  end, {[], 0, <<>>, <<>>}, SortFrame),
     io:format("~s ~p BitList   ~p.~n", [?FILE, ?LINE, BitList]),
-    UserZone = <<<<V:Len>> || {V, Len} <- BitList>>,
+    UserZone = <<<<V:BitLen>> || {V, BitLen} <- BitList>>,
     io:format("~s ~p UserZone  ~p.~n", [?FILE, ?LINE, UserZone]),
     UserData = add_to_userzone(UserZone, Afn, Fn),
     dlt376_decoder:to_frame(#{<<"command">> => 16#4B,

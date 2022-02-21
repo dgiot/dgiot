@@ -186,7 +186,7 @@ sync_parse(OffLine) ->
                                     <<"">>
                             end,
                         ?MLOG(info, #{<<"deviceid">> => DeviceId, <<"devaddr">> => Devaddr, <<"productid">> => ProductId, <<"productname">> => Productname,  <<"status">> => <<"下线"/utf8>>}, ['device_statuslog']),
-                        dgiot_umeng:save_devicestatus(DeviceId, <<"OFFLINE">>),
+%%                        dgiot_umeng:save_devicestatus(DeviceId, <<"OFFLINE">>),
                         dgiot_mnesia:insert(DeviceId, {[false, Last, Acl, Devaddr, ProductId, DeviceSecret], Node});
                     _ ->
                         pass
