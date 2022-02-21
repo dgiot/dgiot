@@ -46,8 +46,20 @@
 }).
 %% 注册协议参数
 -params(#{
-    <<"afn">> => #{
+    <<"index">> => #{
         order => 1,
+        type => string,
+        required => true,
+        default => <<"00"/utf8>>,
+        title => #{
+            zh => <<"报文序号"/utf8>>
+        },
+        description => #{
+            zh => <<"报文序号"/utf8>>
+        }
+    },
+    <<"afn">> => #{
+        order => 2,
         type => string,
         required => true,
         default => <<"00"/utf8>>,
@@ -59,7 +71,7 @@
         }
     },
     <<"di">> => #{
-        order => 2,
+        order => 3,
         type => string,
         required => true,
         default => <<"0000"/utf8>>,
@@ -71,7 +83,7 @@
         }
     },
     <<"type">> => #{
-        order => 3,
+        order => 4,
         type => string,
         required => true,
         default => <<"byte"/utf8>>,
@@ -84,7 +96,7 @@
         }
     },
     <<"length">> => #{
-        order => 4,
+        order => 5,
         type => integer,
         required => true,
         default => <<"byte"/utf8>>,
