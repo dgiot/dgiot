@@ -231,7 +231,7 @@ handle_info({deliver, _Topic, Msg}, #tcp{state = #state{id = _ChannelId, protoco
                             io:format("~s ~p ProData ~p  Protocol ~p~n", [?FILE, ?LINE, Payload, Protocol]),
                             case Protocol of
                                 ?DLT376 ->
-                                    Payload2 = dlt376_decoder:frame_write_param(#{<<"concentrator">> => DevAddr, <<"payload">> => Payload}),
+                                    Payload2 = dlt376_decoder:frame_write_param(#{<<"concentrator">> => DevAddr, <<"payload">> => jsx:decode(Payload)}),
                                     ?LOG(info, "Payload2:~p ~n~n", [dgiot_utils:binary_to_hex(Payload2)]),
                                     dgiot_tcp_server:send(TCPState, Payload2);
                                 ?DLT645 ->

@@ -61,7 +61,7 @@
         order => 2,
         type => enum,
         required => true,
-        default => #{<<"value">> => <<"byte">>, <<"label">> => <<"byte">>},
+        default => <<"byte"/utf8>>,
         enum => [
             #{<<"value">> => <<"byte">>, <<"label">> => <<"byte">>},
             #{<<"value">> => <<"little">>, <<"label">> => <<"little">>},
