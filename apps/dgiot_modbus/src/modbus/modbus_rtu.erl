@@ -29,6 +29,101 @@
 
 -export([modbus_encoder/4, modbus_decoder/5, is16/1, set_params/3, decode_data/4, decode_data/5]).
 
+-define(TYPE, ?MODBUS_RTU).
+
+%% 注册协议类型
+-protocol_type(#{
+    cType => ?TYPE,
+    type => <<"energy">>,
+    colum => 10,
+    title => #{
+        zh => <<"MODBUS RTU协议"/utf8>>
+    },
+    description => #{
+        zh => <<"MODBUS RTU协议"/utf8>>
+    }
+}).
+%% 注册协议参数
+-params(#{
+    <<"originaltype">> => #{
+        order => 2,
+        type => string,
+        required => true,
+        default => <<"short16_AB"/utf8>>,
+        enum => [<<"short16_AB"/utf8>>],
+        title => #{
+            zh => <<"数据格式"/utf8>>
+        },
+        description => #{
+            zh => <<"数据格式"/utf8>>
+        }
+    },
+    <<"slaveid">> => #{
+        order => 1,
+        type => string,
+        required => true,
+        default => <<"0000"/utf8>>,
+        title => #{
+            zh => <<"从机地址"/utf8>>
+        },
+        description => #{
+            zh => <<"从机地址(16进制加0X,例如:0X10,否在是10进制)"/utf8>>
+        }
+    },
+    <<"operatetype">> => #{
+        order => 2,
+        type => string,
+        required => true,
+        default => <<"byte"/utf8>>,
+        enum => [<<"byte"/utf8>>, <<"little"/utf8>>, <<"bit"/utf8>>],
+        title => #{
+            zh => <<"数据类型"/utf8>>
+        },
+        description => #{
+            zh => <<"数据类型"/utf8>>
+        }
+    },
+    <<"address">> => #{
+        order => 2,
+        type => string,
+        required => true,
+        default => <<"0X00"/utf8>>,
+        title => #{
+            zh => <<"寄存器地址"/utf8>>
+        },
+        description => #{
+            zh => <<"寄存器地址:(16进制加0X,例如:0X10,否在是10进制)"/utf8>>
+        }
+    },
+    <<"offset">> => #{
+        order => 3,
+        type => integer,
+        required => true,
+        default => <<"2"/utf8>>,
+        title => #{
+            zh => <<"数据长度(字节)"/utf8>>
+        },
+        description => #{
+            zh => <<"数据长度(字节)"/utf8>>
+        }
+    },
+    <<"ico">> => #{
+        order => 102,
+        type => string,
+        required => false,
+        default => <<"http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/product/dgiot/channel/MQTT.png">>,
+        title => #{
+            en => <<"protocol ICO">>,
+            zh => <<"协议ICO"/utf8>>
+        },
+        description => #{
+            en => <<"protocol ICO">>,
+            zh => <<"协议ICO"/utf8>>
+        }
+    }
+}).
+
+
 init(State) ->
     State#{<<"req">> => [], <<"ts">> => dgiot_datetime:now_ms(), <<"interval">> => 300}.
 %%
