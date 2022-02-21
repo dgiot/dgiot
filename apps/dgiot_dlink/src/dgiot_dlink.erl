@@ -79,18 +79,16 @@ format_protocol(App, CType, Channel_type, Attributes) ->
         cType => CType,
         app => App,
         params => maps:merge(#{
-            <<"ico">> => #{
-                order => 102,
-                type => string,
-                required => false,
-                default => <<"http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/logo/logo.png">>,
+            <<"_dlinkindex">> => #{
+                order => 103,
+                type => integer,
+                required => true,
+                default => 0,
                 title => #{
-                    en => <<"protocol ICO">>,
-                    zh => <<"协议ICO"/utf8>>
+                    zh => <<"报文序号"/utf8>>
                 },
                 description => #{
-                    en => <<"protocol ICO">>,
-                    zh => <<"协议ICO"/utf8>>
+                    zh => <<"报文序号"/utf8>>
                 }
             }
         }, Params)
