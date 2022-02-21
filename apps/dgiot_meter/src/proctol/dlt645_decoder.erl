@@ -29,6 +29,76 @@
     process_message/2
 ]).
 
+-define(TYPE, ?DLT645).
+
+%% 注册协议类型
+-protocol_type(#{
+    cType => ?TYPE,
+    type => <<"energy">>,
+    colum => 10,
+    title => #{
+        zh => <<"DLT645协议"/utf8>>
+    },
+    description => #{
+        zh => <<"DLT645协议"/utf8>>
+    }
+}).
+%% 注册协议参数
+-params(#{
+    <<"di">> => #{
+        order => 1,
+        type => string,
+        required => true,
+        default => <<"0000"/utf8>>,
+        title => #{
+            zh => <<"信息标识"/utf8>>
+        },
+        description => #{
+            zh => <<"信息标识"/utf8>>
+        }
+    },
+    <<"type">> => #{
+        order => 2,
+        type => string,
+        required => true,
+        default => <<"byte"/utf8>>,
+        enum => [<<"byte"/utf8>>, <<"little"/utf8>>, <<"bit"/utf8>>],
+        title => #{
+            zh => <<"数据类型"/utf8>>
+        },
+        description => #{
+            zh => <<"数据类型"/utf8>>
+        }
+    },
+    <<"length">> => #{
+        order => 3,
+        type => integer,
+        required => true,
+        default => <<"byte"/utf8>>,
+        enum => [<<"byte"/utf8>>, <<"little"/utf8>>, <<"bit"/utf8>>],
+        title => #{
+            zh => <<"长度"/utf8>>
+        },
+        description => #{
+            zh => <<"长度"/utf8>>
+        }
+    },
+    <<"ico">> => #{
+        order => 102,
+        type => string,
+        required => false,
+        default => <<"http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/product/dgiot/channel/MQTT.png">>,
+        title => #{
+            en => <<"protocol ICO">>,
+            zh => <<"协议ICO"/utf8>>
+        },
+        description => #{
+            en => <<"protocol ICO">>,
+            zh => <<"协议ICO"/utf8>>
+        }
+    }
+}).
+
 parse_frame(Buff, Opts) ->
     parse_frame(Buff, [], Opts).
 

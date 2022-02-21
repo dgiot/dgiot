@@ -46,7 +46,7 @@ split_head_bytes(<<Head:2/binary, Rest/binary>>) ->
 % 把地址转化成binary
 encode_of_addr(A1, A2) ->
     AA = concrat_binary(dlt645_proctol:reverse(A1), dlt645_proctol:reverse(A2)),
-    AA1 = concrat_binary(AA, <<16#00, 16#00>>),
+    AA1 = concrat_binary(<<16#00, 16#00>>, AA), %%<<16#00, 16#00>>添加在前还是在后有没有区别
     AA1.
 
 %把binary转化成地址

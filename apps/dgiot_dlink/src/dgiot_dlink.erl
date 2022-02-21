@@ -63,3 +63,52 @@ test()->
     ?LOG(info, "~p" , [Cmd]),
     os:cmd(Cmd),
     ok.
+
+get_all_protocol() ->
+    lists:foldl(fun({_, Channel_type}, Acc) ->
+        App = maps:get(app, Channel_type),
+        Mod = maps:get(mod, Channel_type),
+        CType = maps:get(cType, Channel_type),
+        Attributes = Mod:module_info(attributes),
+        [format_protocol(App, CType, Channel_type, Attributes) | Acc]
+                end, [], list()).
+
+format_protocol(App, CType, Channel_type, Attributes) ->
+    [Params] = proplists:get_value(params, Attributes, [#{}]),
+    Channel_type#{
+        cType => CType,
+        app => App,
+        params => maps:merge(#{
+            <<"ico">> => #{
+                order => 102,
+                type => string,
+                required => false,
+                default => <<"http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/logo/logo.png">>,
+                title => #{
+                    en => <<"protocol ICO">>,
+                    zh => <<"协议ICO"/utf8>>
+                },
+                description => #{
+                    en => <<"protocol ICO">>,
+                    zh => <<"协议ICO"/utf8>>
+                }
+            }
+        }, Params)
+    }.
+
+list() ->
+    Fun =
+        fun({App, Vsn, Mod}, Acc) ->
+            case code:is_loaded(Mod) == false of
+                true ->
+                    Acc;
+                false ->
+                    case [Channel || {protocol_type, [Channel]} <- Mod:module_info(attributes)] of
+                        [] ->
+                            Acc;
+                        [Channel | _] ->
+                            [{maps:get(priority, Channel, 255), Channel#{app => App, mod => Mod, vsn => Vsn}}] ++ Acc
+                    end
+            end
+        end,
+    lists:sort(dgiot_plugin:check_module(Fun, [])).

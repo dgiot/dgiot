@@ -1,0 +1,45 @@
+{
+  "tags": [
+    {
+      "name": "Dlink",
+      "description": "Dlink解码器"
+    },
+    {
+      "name": "Protocol",
+      "description": "Dlink协议"
+    }
+  ],
+  "definitions": {
+
+  },
+  "paths": {
+    "/protocol": {
+      "get": {
+        "summary": "获取协议列表",
+        "description": "获取协议列表",
+        "parameters": [
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Protocol"
+        ]
+      }
+    }
+  }
+}
