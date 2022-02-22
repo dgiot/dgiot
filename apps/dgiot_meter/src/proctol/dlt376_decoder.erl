@@ -288,6 +288,33 @@ check_Command(State = #{<<"afn">> := 16#10}) ->
 check_Command(State) ->
     State.
 
+to_frame(#{
+    % <<"msgtype">> := ?DLT376,
+    <<"command">> := C,
+%%    <<"addr">> := Addr,  %%?? Addr是6位字符
+    <<"concentrator">> := Addr,
+    <<"afn">> := AFN
+} = Msg) when AFN == 1 orelse AFN == 4 orelse AFN == 5 orelse AFN == 6 orelse AFN == 10 ->
+    {ok, UserZone} = get_userzone(Msg),
+    %%    todo 密码应该是从密码机传递过来
+    Pwd = <<16#00, 16#00, 16#00, 16#00, 16#00, 16#00, 16#00, 16#00, 16#00, 16#00, 16#00, 16#00, 16#00, 16#00, 16#00, 16#00>>,
+    UserData = <<UserZone/bytes, Pwd/bytes>>,
+    Len = (byte_size(UserData) + 8) * 4 + 2,
+    Crc = dgiot_utils:get_parity(<<C:8, Addr:5/bytes, AFN:8, 16#61, UserData/binary>>),
+    <<
+        16#68,
+        Len:16/little,
+        Len:16/little,
+        16#68,
+        C:8,
+        Addr:5/bytes,
+        AFN:8,
+        16#61,
+        UserData/binary,
+        Crc:8,
+        16#16
+    >>;
+
 %% 组装成封包
 to_frame(#{
     % <<"msgtype">> := ?DLT376,
@@ -498,29 +525,32 @@ pn_to_da(Pn) ->
 %%#{<<"byteType">> => <<"bit">>,
 %%<<"bytes">> => <<"4">>},
 %%<<"sessiontoken">> => <<>>}}
-
+%% ConAddr = <<"000033010048">>,
 frame_write_param(#{<<"concentrator">> := ConAddr, <<"payload">> := Frame}) ->
     Length = length(maps:keys(Frame)),
     io:format("~s ~p SortFrame   ~p.~n", [?FILE, ?LINE, Length]),
     {BitList, Afn, Da, Fn} =
-        lists:map(fun(Index, {Acc, A, D, F}) ->
-            case maps:find(Index, Frame) of
-                {ok, #{<<"dataForm">> := #{<<"afn">> := AFN, <<"di">> := FN, <<"length">> := Len, <<"type">> := Type} = DataForm} = Data} ->
-                    DA = dgiot_utils:binary_to_hex(pn_to_da(to_integer(maps:get(<<"da">>, DataForm, 0)))),
+        lists:foldl(fun(Index, {Acc, A, D, F}) ->
+            case maps:find(dgiot_utils:to_binary(Index), Frame) of
+                {ok, #{<<"value">> := Value, <<"dataForm">> := #{<<"afn">> := AFN, <<"da">> := Da, <<"di">> := FN, <<"length">> := Len, <<"type">> := Type} = _DataForm}} ->
+                    io:format("~s ~p Value ~p. Da ~p FN ~p ~n", [?FILE, ?LINE, Value, Da,FN]),
+                    DA = dgiot_utils:binary_to_hex(pn_to_da(Da)),
                     case Type of
                         <<"bytes">> ->
-                            Value = maps:get(<<"value">>, Data),
-                            Value1 = dlt645_proctol:reverse(dgiot_utils:hex_to_binary(Value)),
-                            {Acc ++ get_values(Value1), AFN, DA, FN};
+                            NewValue = dlt645_proctol:reverse(dgiot_utils:hex_to_binary(Value)),
+                            io:format("~s ~p NewValue   ~p.~n", [?FILE, ?LINE, NewValue]),
+                            {get_values(Acc,NewValue), AFN, DA, FN};
                         <<"little">> ->
-                            Value = to_integer(maps:get(<<"value">>, Data)),
-                            L = to_integer(Len),
+                            NewValue = dgiot_utils:to_int(Value),
+                            L = dgiot_utils:to_int(Len),
                             Len1 = L * 8,
-                            {Acc ++ [get_values(<<Value:Len1/little>>)], AFN, DA, FN};
+                            io:format("~s ~p NewValue   ~p.~n", [?FILE, ?LINE, NewValue]),
+                            {get_values(Acc,<<NewValue:Len1/little>>), AFN, DA, FN};
                         <<"bit">> ->
-                            Value = to_integer(maps:get(<<"value">>, Data)),
-                            L = to_integer(Len),
-                            {Acc ++ [{Value, L}], AFN, DA, FN}
+                            NewValue = dgiot_utils:to_int(Value),
+                            L = dgiot_utils:to_int(Len),
+                            io:format("~s ~p NewValue   ~p.~n", [?FILE, ?LINE, NewValue]),
+                            {Acc ++ [{NewValue, L}], AFN, DA, FN}
                     end;
                 _ ->
                     {Acc, A, D, F}
@@ -528,19 +558,19 @@ frame_write_param(#{<<"concentrator">> := ConAddr, <<"payload">> := Frame}) ->
                   end, {[], 0, <<>>, <<>>}, lists:seq(1, Length)),
     io:format("~s ~p BitList   ~p.~n", [?FILE, ?LINE, BitList]),
     UserZone = <<<<V:BitLen>> || {V, BitLen} <- BitList>>,
-    io:format("~s ~p UserZone  ~p.~n", [?FILE, ?LINE, UserZone]),
+    io:format("~s ~p UserZone  ~p. Afn ~p ~n", [?FILE, ?LINE, UserZone,Afn]),
     UserData = add_to_userzone(UserZone, Afn, Fn),
     dlt376_decoder:to_frame(#{<<"command">> => 16#4B,
         <<"concentrator">> => concentrator_to_addr(ConAddr),
-        <<"afn">> => to_integer(Afn),
+        <<"afn">> => dgiot_utils:to_int(Afn),
 %%        <<"da">> => Da,
         <<"di">> => <<Da/bytes, Fn/bytes>>,
         <<"data">> => dgiot_utils:binary_to_hex(UserData)}).
 
-get_values(Data) ->
-    lists:foldl(fun(V, Acc) ->
-        Acc ++ [{V, 8}]
-                end, binary_to_list(Data), []).
+get_values(Acc, Data) ->
+    lists:foldl(fun(V, Acc1) ->
+        Acc1 ++ [{V, 8}]
+                end, Acc, binary_to_list(Data)).
 
 %%frame_write_param(#{<<"concentrator">> := ConAddr, <<"basedata">> := Data}) ->
 %%    ZZXH = to_integer(maps:get(<<"zzxh">>, Data, <<"2040">>)),
@@ -572,11 +602,8 @@ get_values(Data) ->
 %%        <<"di">> => <<16#02, 16#01>>,
 %%        <<"data">> => UserZone}).
 
-add_to_userzone(UserZone, Afn, Fn) when Afn == 16#04 orelse Fn == <<"0201">> ->
-    <<16#01, 16#00, UserZone/bytes>>;
 add_to_userzone(UserZone, _Afn, _Fn) ->
     UserZone.
-
 
 concentrator_to_addr(ConAddr) when byte_size(ConAddr) == 6 ->
     <<_:2/bytes, A11:2/bytes, A22:2/bytes>> = ConAddr,
@@ -593,10 +620,3 @@ concentrator_to_addr(ConAddr) when byte_size(ConAddr) == 12 ->
 concentrator_to_addr(_ConAddr) ->
     <<16#00, 16#00, 16#00, 16#00, 16#00>>.
 
-
-to_integer(Hex) when is_integer(Hex) ->
-    Hex;
-to_integer(Hex) when is_binary(Hex) ->
-    binary_to_integer(Hex);
-to_integer(Hex) when is_list(Hex) ->
-    list_to_integer(Hex).
