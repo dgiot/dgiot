@@ -126,20 +126,6 @@
         description => #{
             zh => <<"数据长度(字节)"/utf8>>
         }
-    },
-    <<"ico">> => #{
-        order => 102,
-        type => string,
-        required => false,
-        default => <<"http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/product/dgiot/channel/MQTT.png">>,
-        title => #{
-            en => <<"protocol ICO">>,
-            zh => <<"协议ICO"/utf8>>
-        },
-        description => #{
-            en => <<"protocol ICO">>,
-            zh => <<"协议ICO"/utf8>>
-        }
     }
 }).
 
