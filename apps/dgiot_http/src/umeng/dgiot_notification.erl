@@ -136,7 +136,8 @@ test_email() ->
 
 send_email(Email) ->
     From = maps:get(<<"from">>,Email,<<"dgiot@163.com">>),
-    To = maps:get(<<"to">>,Email, [<<"3333333@qq.com">>]),
+    To = maps:get(<<"to">>,Email, <<"3333333@qq.com">>),
+    ArrTo = binary:split(To, <<$,>>, [global, trim]),
     Subject =  maps:get(<<"subject">>, Email, <<"测试邮件"/utf8>>),
     FromDes  = maps:get(<<"fromdes">>, Email, <<"dgiot开源物联网 <dgiot@163.com>"/utf8>>),
     ToDes  = maps:get(<<"todes">>, Email, <<"dgiot用户 <3333333@qq.com>"/utf8>>),
@@ -145,4 +146,4 @@ send_email(Email) ->
     Relay = maps:get(<<"relay">>, Email, <<"smtp.163.com">>),
     UserName = maps:get(<<"username">>,Email, <<"dgiot@163.com">>),
     PassWord = maps:get(<<"password">>, Email, <<"yourstmppassword">>),
-    gen_smtp_client:send({From, To, BodyBin}, [{relay, Relay}, {username, UserName}, {password, PassWord}]).
+    gen_smtp_client:send({From, ArrTo, BodyBin}, [{relay, Relay}, {username, UserName}, {password, PassWord}]).

@@ -215,10 +215,10 @@ is16(Data) ->
     <<"000", Data/binary>>.
 
 set_params(Payload, ProductId, DevAddr) ->
-    SortPayload = lists:sort(maps:keys(Payload)),
+    Length = length(maps:keys(Payload)),
     Payloads =
-        lists:foldl(fun(X, Acc) ->
-            case maps:find(X, Payload) of
+        lists:foldl(fun(Index, Acc) ->
+            case maps:find(dgiot_utils:to_int(Index), Payload) of
                 {ok, #{<<"dataForm">> := #{<<"protocol">> := <<"modbus">>,
                     <<"slaveid">> := SlaveId,
                     <<"address">> := Address,
@@ -227,7 +227,7 @@ set_params(Payload, ProductId, DevAddr) ->
                     <<"name">> := Name,
                     <<"Productname">> := Productname,
                     <<"Identifier">> := Identifier,
-                    <<"control">> := Setting} = _DataForm} = Data} ->
+                    <<"control">> := Setting} = DataForm} = Data} ->
                     case maps:find(<<"value">>, Data) of
                         error ->
                             Acc;
@@ -251,7 +251,7 @@ set_params(Payload, ProductId, DevAddr) ->
                             Str1 = re:replace(Setting, "%s", "(" ++ dgiot_utils:to_list(Value) ++ ")", [global, {return, list}]),
                             Value1 = dgiot_utils:to_int(dgiot_task:string2value(Str1)),
 %%                                    NewBt = Bytes * 8,
-                            Registersnumber = maps:get(<<"registersnumber">>, X, <<"1">>),
+                            Registersnumber = maps:get(<<"registersnumber">>, DataForm, <<"1">>),
                             RtuReq = #rtu_req{
                                 slaveId = Sh * 256 + Sl,
                                 funcode = dgiot_utils:to_int(FunCode),
@@ -282,7 +282,7 @@ set_params(Payload, ProductId, DevAddr) ->
                 _ ->
                     Acc
             end
-                    end, [], SortPayload),
+                    end, [], lists:seq(1, Length)),
     Payloads.
 
 %rtu modbus

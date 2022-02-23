@@ -138,8 +138,7 @@ handle_message({sync_parse, Args}, State) ->
         #{<<"profile">> := Profile, <<"devaddr">> := Devaddr, <<"product">> := #{<<"objectId">> := ProductId}} = Arg ->
             Sessiontoken = maps:get(<<"sessiontoken">>, Arg, <<"">>),
             DeviceId = dgiot_parse:get_deviceid(ProductId, Devaddr),
-           Modifyprofile = Profile,
-%% get_modifyprofile(DeviceId, Profile),
+%%            Modifyprofile = get_modifyprofile(DeviceId, Profile),
 %%            设置参数
             case dgiot_device:get_online(DeviceId) of
                 true ->
@@ -149,7 +148,7 @@ handle_message({sync_parse, Args}, State) ->
                                 lists:foldl(fun(X, Acc) ->
                                     case X of
                                         #{<<"identifier">> := Identifier, <<"accessMode">> := <<"rw">>, <<"dataForm">> := #{<<"_dlinkindex">> := Index} = DataForm} ->
-                                            case maps:find(Identifier, Modifyprofile) of
+                                            case maps:find(Identifier, Profile) of
                                                 {ok, V} ->
                                                     Acc#{
                                                         Index => #{
@@ -165,10 +164,10 @@ handle_message({sync_parse, Args}, State) ->
                                             end, #{}, Properties),
                             Topic = <<"profile/", ProductId/binary, "/", Devaddr/binary>>,
                             dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(NewPayLoad)),
-%%                            io:format("~s ~p NewPayLoad = ~p.~n", [?FILE, ?LINE, jsx:encode(NewPayLoad)]),
+                            io:format("~s ~p NewPayLoad = ~p.~n", [?FILE, ?LINE, NewPayLoad]),
                             dgiot_data:insert(?PROFILE, DeviceId, Profile);
                         false ->
-                            dgiot_data:insert(?MODIFYPROFILE, DeviceId, {Modifyprofile, ProductId, Devaddr})
+                            dgiot_data:insert(?MODIFYPROFILE, DeviceId, {Profile, ProductId, Devaddr})
                     end;
                 _ ->
                     pass
@@ -190,7 +189,7 @@ stop(ChannelType, ChannelId, #state{env = #{<<"product">> := ProductId, <<"args"
     ok.
 
 
-%%get_modifyprofile(DeviceId, Profile) ->
+%%get_modifyprofile(_DeviceId, Profile) ->
 %%    case dgiot_data:get(?PROFILE, DeviceId) of
 %%        not_find ->
 %%            dgiot_data:insert(?PROFILE, DeviceId, Profile),

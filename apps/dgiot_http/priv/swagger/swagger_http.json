@@ -344,8 +344,8 @@
                 },
                 "to": {
                   "type": "array",
-                  "example": ["463544084@qq.com"],
-                  "description": "收件人邮箱"
+                  "example": "463544084@qq.com,46354408412@qq.com",
+                  "description": "收件人邮箱,多个按','分隔"
                 },
                 "subject": {
                   "type": "string",
@@ -437,6 +437,151 @@
         "summary": "jwt回调",
         "tags": [
           "aliyun"
+        ]
+      }
+    },
+    "/maintenance": {
+      "post": {
+        "basePath": "/",
+        "description": "创建工单",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "data",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "type": {
+                  "type": "string",
+                  "required": true,
+                  "example": "故障工单",
+                  "description": "工单类型"
+                },
+                "productid": {
+                  "type": "string",
+                  "required": true,
+                  "example": "8e5d6be6ac",
+                  "description": "产品id"
+                },
+                "productname": {
+                  "type": "string",
+                  "required": true,
+                  "example": "电表",
+                  "description": "产品名称"
+                },
+                "deviceid": {
+                  "type": "string",
+                  "required": true,
+                  "example": "8d7bdaff69",
+                  "description": "设备id"
+                },
+                "devicename": {
+                  "type": "string",
+                  "required": true,
+                  "example": "电表_001",
+                  "description": "设备名称"
+                },
+                "description": {
+                  "type": "string",
+                  "required": true,
+                  "example": "电表跳闸断电",
+                  "description": "工单描述"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "创建工单",
+        "tags": [
+          "Wechat"
+        ]
+      }
+    },
+    "/operations": {
+      "get": {
+        "summary": "获取运维管理列表",
+        "description": "获取运维管理列表",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Wechat"
+        ]
+      },
+      "post": {
+        "basePath": "/",
+        "description": "修改运维管理列表",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "data",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "data": {
+                  "type": "object",
+                  "example": {
+                    "巡检": {
+                      "巡检时长": "1小时",
+                      "巡检状态": "当日已巡检",
+                      "当月巡检次数": "15次"
+                    },
+                    "报修": {
+                      "报修地点": "201空调机组间",
+                      "报修时间": "2022/2/3",
+                      "报修状态": "未完成",
+                      "报修设备": "1号空调"
+                    },
+                    "空间管理": {
+                      "VIP上座率": "0%",
+                      "商业区出租率": "75%",
+                      "竞技场状态": "未开启",
+                      "观众席上座率": "0%"
+                    },
+                    "维保": {
+                      "年维保频率": "2次",
+                      "维保周期": "6个月",
+                      "维保时间": "2022/2/1",
+                      "维保设备": "1号电梯"
+                    },
+                    "资产": {
+                      "园区面积": "26W平方米",
+                      "固定资产": "未知",
+                      "建筑面积": "8W平方米",
+                      "流动资产": "未知"
+                    }
+                  },
+                  "description": "运维数据"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "修改运维管理列表",
+        "tags": [
+          "Wechat"
         ]
       }
     }
