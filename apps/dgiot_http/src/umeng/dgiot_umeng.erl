@@ -31,7 +31,9 @@
     add_notification/3,
     save_devicestatus/2,
     save_notification/3,
-    sendSubscribe/3
+    sendSubscribe/3,
+    create_maintenance/2,
+    get_operations/0
 ]).
 
 test_broadcast() ->
@@ -496,3 +498,105 @@ save_devicestatus(DeviceId, Status) ->
         _ ->
             pass
     end.
+
+create_maintenance(SessionToken, Info) ->
+    <<Number:10/binary, _/binary>> = dgiot_utils:random(),
+    Timestamp = dgiot_datetime:format(dgiot_datetime:to_localtime(dgiot_datetime:now_secs()), <<"YY-MM-DD HH:NN:SS">>),
+    Username =
+        case dgiot_auth:get_session(SessionToken) of
+            #{<<"nick">> := Nick} ->
+                Nick;
+            _ ->
+                <<"">>
+        end,
+    DeviceId = maps:get(<<"deviceid">>, Info, <<"8d7bdaff69">>),
+    Acl =
+        case dgiot_device:lookup(DeviceId) of
+            {ok, #{<<"acl">> := Acl1}} ->
+                NewAcl1 =
+                    lists:foldl(fun(X, Acc) ->
+                        Acc#{atom_to_binary(X) => #{<<"read">> => true, <<"write">> => true}}
+                                end, #{}, Acl1),
+                NewAcl1;
+            _ ->
+                #{<<"admin">> => #{<<"read">> => true, <<"write">> => true}}
+        end,
+    Body = #{
+        <<"number">> => Number,
+        <<"type">> => maps:get(<<"type">>, Info, <<"故障工单"/utf8>>),
+        <<"status">> => 0,
+        <<"ACL">> => Acl,
+        <<"info">> => Info#{
+            <<"timeline">> => [
+                #{
+                    <<"timestamp">> => Timestamp,
+                    <<"h4">> => <<"生成工单"/utf8>>,
+                    <<"p">> => <<Username/binary, "新建工单"/utf8>>
+                }
+            ],
+            <<"createdname">> => Username
+        },
+        <<"device">> => #{
+            <<"objectId">> => DeviceId,
+            <<"__type">> => <<"Pointer">>,
+            <<"className">> => <<"Device">>
+        }
+    },
+    dgiot_parse:create_object(<<"Maintenance">>, Body,
+        [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]).
+
+
+%% 运维管理
+get_operations() ->
+    #{
+        <<"巡检"/utf8>> => #{
+            <<"巡检状态"/utf8>> => <<"当日已巡检"/utf8>>, %% 当日未巡检，巡检中
+            <<"巡检时长"/utf8>> => <<"1小时"/utf8>>,
+            <<"当月巡检次数"/utf8>> => <<"15次"/utf8>>
+        },
+        <<"报修"/utf8>> => #{
+            <<"报修设备"/utf8>> => <<"1号空调"/utf8>>,
+            <<"报修地点"/utf8>> => <<"201空调机组间"/utf8>>,
+            <<"报修时间"/utf8>> => <<"2022/2/3"/utf8>>,
+            <<"报修状态"/utf8>> => <<"未完成"/utf8>>
+        },
+        <<"维保"/utf8>> => #{
+            <<"维保设备"/utf8>> => <<"1号电梯"/utf8>>,
+            <<"维保时间"/utf8>> => <<"2022/2/1"/utf8>>,
+            <<"维保周期"/utf8>> => <<"6个月"/utf8>>,
+            <<"年维保频率"/utf8>> => <<"2次"/utf8>>
+        },
+        <<"资产"/utf8>> => #{
+            <<"园区面积"/utf8>> => <<"26W平方米"/utf8>>,
+            <<"建筑面积"/utf8>> => <<"8W平方米"/utf8>>,
+            <<"固定资产"/utf8>> => <<"未知"/utf8>>,
+            <<"流动资产"/utf8>> => <<"未知"/utf8>>
+        },
+        <<"空间管理"/utf8>> => #{
+            <<"竞技场状态"/utf8>> => <<"未开启"/utf8>>,
+            <<"观众席上座率"/utf8>> => <<"0%"/utf8>>,
+            <<"VIP上座率"/utf8>> => <<"0%"/utf8>>,
+            <<"商业区出租率"/utf8>> => <<"75%"/utf8>>
+        }
+    }.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

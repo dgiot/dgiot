@@ -151,16 +151,38 @@ do_request(post_sendsubscribe, Args, #{<<"sessionToken">> := SessionToken}, _Req
             {error, <<"Not Allowed.">>}
     end;
 
-%% iot_hub 概要: 查询平台api资源 描述:发送订阅消息
+%% iot_hub 概要: 查询平台api资源 描述:发送邮件
 %% OperationId:post_sendsubscribe
 %% 请求:POST /iotapi/post_sendsubscribe
 do_request(post_sendemail, Args, #{<<"sessionToken">> := _SessionToken}, _Req) ->
     case dgiot_notification:send_email(Args) of
         {ok, _R} ->
-            {ok, <<"send success">>};
+            {ok, #{<<"msg">> => <<"send success">>}};
         _Ot ->
-            {error, <<"send fail">>}
+            {error, #{<<"msg">> => <<"send fail">>}}
     end;
+
+%% iot_hub 概要: 查询平台api资源 描述:创建工单
+%% OperationId:post_maintenance
+%% 请求:POST /iotapi/post_maintenance
+do_request(post_maintenance, Args, #{<<"sessionToken">> := SessionToken}, _Req) ->
+    dgiot_umeng:create_maintenance(SessionToken, Args);
+
+%% iot_hub 概要: 获取运维管理列表 描述:获取运维管理列表
+%% OperationId:get_operations
+%% 请求:POST /iotapi/get_operations
+do_request(get_operations, _Args, #{<<"sessionToken">> := _SessionToken}, _Req) ->
+    Data = dgiot_umeng:get_operations(),
+    {ok, #{<<"data">> => Data}};
+
+
+%% iot_hub 概要: 查询平台api资源 描述:创建工单
+%% OperationId:post_operations
+%% 请求:POST /iotapi/post_operations
+do_request(post_operations, Args, #{<<"sessionToken">> := _SessionToken}, _Req) ->
+%%    dgiot_mqtt:publish(<<"">>, <<"">>, jsx:decode(Args)),
+    {ok, #{<<"msg">> => <<"modify successfully">>, <<"data">> => Args}};
+
 
 %%  服务器不支持的API接口
 do_request(OperationId, Args, _Context, _Req) ->

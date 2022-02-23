@@ -114,7 +114,7 @@ handle_info({deliver, _, Msg}, #tcp{state = #state{id = ChannelId} = State} = TC
             case binary:split(Topic, <<$/>>, [global, trim]) of
                 [<<"profile">>, ProductId, DtuAddr] ->
 %%                    设置参数
-                    Payloads = modbus_rtu:set_params(Payload, ProductId, DtuAddr),
+                    Payloads = modbus_rtu:set_params(jsx:decode(Payload), ProductId, DtuAddr),
                     lists:map(fun(X) ->
                         dgiot_tcp_server:send(TCPState, X)
                               end, Payloads),
