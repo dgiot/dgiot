@@ -97,7 +97,7 @@ wget -qO dgiot_install.sh https://gitee.com/dgiiot/dgiot/raw/master/dgiot_instal
     cd ../dgiot
     git pull
     rm ./apps/dgiot_api/priv/www -rf
-    cp ../dgiot-dashboard/dev/ ./apps/dgiot_api/priv/www -rf
+    cp ../dgiot-dashboard/dist/ ./apps/dgiot_api/priv/www -rf
     make run
  ```
 + Make Debug
