@@ -72,11 +72,11 @@
     },
     <<"type">> => #{
         order => 3,
-        type => enum,
+        type => string,
         required => true,
-        default => #{<<"value">> => <<"byte">>, <<"label">> => <<"byte">>},
+        default => #{<<"value">> => <<"bytes">>, <<"label">> => <<"bytes">>},
         enum => [
-            #{<<"value">> => <<"byte">>, <<"label">> => <<"byte">>},
+            #{<<"value">> => <<"bytes">>, <<"label">> => <<"bytes">>},
             #{<<"value">> => <<"little">>, <<"label">> => <<"little">>},
             #{<<"value">> => <<"bit">>, <<"label">> => <<"bit">>}
         ],
@@ -532,7 +532,7 @@ frame_write_param(#{<<"concentrator">> := ConAddr, <<"payload">> := Frame}) ->
     {BitList, Afn, Da, Fn} =
         lists:foldl(fun(Index, {Acc, A, D, F}) ->
             case maps:find(dgiot_utils:to_binary(Index), Frame) of
-                {ok, #{<<"value">> := Value, <<"dataForm">> := #{<<"afn">> := AFN, <<"da">> := Da, <<"di">> := FN, <<"length">> := Len, <<"type">> := Type} = _DataForm}} ->
+                {ok, #{<<"value">> := Value, <<"dataSource">> := #{<<"afn">> := AFN, <<"da">> := Da, <<"di">> := FN, <<"length">> := Len, <<"type">> := Type} = _DataForm}} ->
                     io:format("~s ~p Value ~p. Da ~p FN ~p ~n", [?FILE, ?LINE, Value, Da,FN]),
                     DA = dgiot_utils:binary_to_hex(pn_to_da(Da)),
                     case Type of

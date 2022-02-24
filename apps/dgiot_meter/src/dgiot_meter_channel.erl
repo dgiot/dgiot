@@ -156,7 +156,16 @@ init(?TYPE, ChannelId, #{
             {ProductId, #{<<"ACL">> := Acl, <<"nodeType">> := 3, <<"thing">> := Thing}} ->
                 dgiot_data:insert({dtu, ChannelId}, {ProductId, Acl, maps:get(<<"properties">>, Thing, [])});
             {ProductId, #{<<"ACL">> := Acl, <<"thing">> := Thing}} ->
-                dgiot_data:insert({meter, ChannelId}, {ProductId, Acl, maps:get(<<"properties">>, Thing, [])});
+                Props = maps:get(<<"properties">>, Thing, []),
+                dgiot_data:insert({meter, ChannelId}, {ProductId, Acl, Props}),
+                lists:map(fun(Prop) ->
+                    case Prop of
+                        #{<<"identifier">> := Identifier, <<"dataSource">> := #{<<"di">> := Di}} ->
+                            dgiot_data:insert({protocol, Di, ProductId}, Identifier);
+                        _ ->
+                            pass
+                    end
+                          end, Props);
             _ ->
                 pass
         end

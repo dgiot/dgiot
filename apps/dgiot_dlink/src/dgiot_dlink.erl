@@ -23,6 +23,37 @@
 
 -include_lib("dgiot/include/logger.hrl").
 
+-define(TYPE, <<"DLINK">>).
+
+%% 注册协议类型
+-protocol_type(#{
+    cType => ?TYPE,
+    type => <<"DLINK">>,
+    colum => 10,
+    title => #{
+        zh => <<"DLINK协议"/utf8>>
+    },
+    description => #{
+        zh => <<"DLINK协议"/utf8>>
+    }
+}).
+%% 注册协议参数
+-params(#{
+    <<"dis">> => #{
+        order => 1,
+        type => string,
+        allowCreate => true,
+        required => true,
+        default => <<"00"/utf8>>,
+        title => #{
+            zh => <<"数据标识"/utf8>>
+        },
+        description => #{
+            zh => <<"数据标识"/utf8>>
+        }
+    }
+}).
+
 start(Server) ->
     Services = #{protos => [dgiot_dlink_pb],
         services => #{'dgiot.Dlink' => dgiot_dlink_server}

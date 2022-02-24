@@ -77,7 +77,7 @@ create(ProductId, DeviceId, Pn, ACL, Rotation, #{<<"properties">> := Props}) ->
                         end
                 end;
             Other ->
-                ?LOG(info,"Other ~p", [Other]),
+                ?LOG(info, "Other ~p", [Other]),
                 pass
         end
               end, Props).
@@ -192,7 +192,7 @@ get_instruct(ProductId, Round) ->
                     #{<<"dataForm">> := #{<<"strategy">> := <<"主动上报"/utf8>>}} ->
                         Acc;
                     #{<<"accessMode">> := AccessMode, <<"identifier">> := Identifier,
-                        <<"dataForm">> := #{<<"address">> := Address, <<"protocol">> := Protocol} = DataForm} ->
+                        <<"dataForm">> := DataForm, <<"dataSource">> := DataSource} ->
                         Protocol = maps:get(<<"protocol">>, DataForm, <<"">>),
                         ThingRound = maps:get(<<"round">>, DataForm, <<"all">>),
                         InstructOrder = maps:get(<<"order">>, DataForm, Order),
@@ -200,18 +200,17 @@ get_instruct(ProductId, Round) ->
                         Control = maps:get(<<"control">>, DataForm, "%d"),
                         NewData = dgiot_task:get_control(Round, Data, Control),
                         Strategy = dgiot_utils:to_int(maps:get(<<"strategy">>, DataForm, "2")),
-                        Pn = maps:get(<<"slaveid">>, DataForm, Address),
                         BinRound = dgiot_utils:to_binary(Round),
                         case ThingRound of
                             <<"all">> ->
-                                {Order + 1, List ++ [{InstructOrder, Strategy, Identifier, Pn, Address, AccessMode, NewData, Protocol, ThingRound}]};
+                                {Order + 1, List ++ [{InstructOrder, Strategy, Identifier, AccessMode, NewData, Protocol, DataSource, ThingRound}]};
                             BinRound ->
-                                {Order + 1, List ++ [{InstructOrder, Strategy, Identifier, Pn, Address, AccessMode, NewData, Protocol, ThingRound}]};
+                                {Order + 1, List ++ [{InstructOrder, Strategy, Identifier, AccessMode, NewData, Protocol, DataSource, ThingRound}]};
                             Rounds ->
                                 RoundList = binary:split(Rounds, <<",">>, [global]),
                                 case lists:member(BinRound, RoundList) of
                                     true ->
-                                        {Order + 1, List ++ [{InstructOrder, Strategy, Identifier, Pn, Address, AccessMode, NewData, Protocol, ThingRound}]};
+                                        {Order + 1, List ++ [{InstructOrder, Strategy, Identifier, AccessMode, NewData, Protocol, DataSource, ThingRound}]};
                                     false ->
                                         Acc
                                 end

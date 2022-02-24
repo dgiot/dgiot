@@ -124,43 +124,33 @@ handle_info({deliver, _, Msg}, #tcp{state = #state{id = ChannelId} = State} = TC
                         [#{<<"thingdata">> := ThingData} | _] ->
                             case ThingData of
                                 #{<<"command">> := <<"r">>,
-                                    <<"data">> := Value,
-                                    <<"di">> := Di,
-                                    <<"pn">> := SlaveId,
                                     <<"product">> := ProductId,
-                                    <<"protocol">> := <<"modbus">>
+                                    <<"protocol">> := <<"modbus">>,
+                                    <<"dataSource">> := #{
+                                        <<"slaveid">> := SlaveId,
+                                        <<"address">> := Address} = DataSource
                                 } ->
-                                    Datas = modbus_rtu:to_frame(#{
-                                        <<"addr">> => SlaveId,
-                                        <<"value">> => Value,
-                                        <<"productid">> => ProductId,
-                                        <<"di">> => Di}),
-%%                            ?LOG(error, "Datas ~p", [Datas]),
+                                    Datas = modbus_rtu:to_frame(DataSource#{<<"productid">> => ProductId}),
                                     lists:map(fun(X) ->
                                         dgiot_bridge:send_log(ChannelId, ProductId, DevAddr, "Channel sends [~p] to [DtuAddr:~p]", [dgiot_utils:binary_to_hex(X), DevAddr]),
                                         dgiot_tcp_server:send(TCPState, X),
                                         timer:sleep(1000)
                                               end, Datas),
-                                    {noreply, TCPState#tcp{state = State#state{env = #{product => ProductId, pn => SlaveId, di => Di}}}};
+                                    {noreply, TCPState#tcp{state = State#state{env = #{product => ProductId, pn => SlaveId, di => Address}}}};
                                 #{<<"command">> := <<"rw">>,
-                                    <<"data">> := Value,
-                                    <<"di">> := Di,
-                                    <<"pn">> := SlaveId,
                                     <<"product">> := ProductId,
-                                    <<"protocol">> := <<"modbus">>
+                                    <<"protocol">> := <<"modbus">>,
+                                    <<"dataSource">> := #{
+                                        <<"slaveid">> := SlaveId,
+                                        <<"address">> := Address} = DataSource
                                 } ->
-                                    Datas = modbus_rtu:to_frame(#{
-                                        <<"addr">> => SlaveId,
-                                        <<"value">> => Value,
-                                        <<"productid">> => ProductId,
-                                        <<"di">> => Di}),
-%%                    ?LOG(error, "Datas ~p", [Datas]),
+                                    Datas = modbus_rtu:to_frame(#{DataSource#{<<"productid">> => ProductId}}),
                                     lists:map(fun(X) ->
                                         dgiot_bridge:send_log(ChannelId, ProductId, DevAddr, "Channel sends [~p] to [DtuAddr:~p]", [dgiot_utils:binary_to_hex(X), DevAddr]),
                                         dgiot_tcp_server:send(TCPState, X),
                                         timer:sleep(1000)
                                               end, Datas),
-                                    {noreply, TCPState#tcp{state = State#state{env = #{product => ProductId, pn => SlaveId, di => Di}}}};
+                                    {noreply, TCPState#tcp{state = State#state{env = #{product => ProductId, pn => SlaveId, di => Address}}}};
                                 _Ot ->
                                     ?LOG(error, "_Ot ~p", [_Ot]),
                                     {noreply, TCPState}

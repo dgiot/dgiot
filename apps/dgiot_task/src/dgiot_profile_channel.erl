@@ -147,14 +147,14 @@ handle_message({sync_parse, Args}, State) ->
                             NewPayLoad =
                                 lists:foldl(fun(X, Acc) ->
                                     case X of
-                                        #{<<"identifier">> := Identifier, <<"accessMode">> := <<"rw">>, <<"dataForm">> := #{<<"_dlinkindex">> := Index} = DataForm} ->
+                                        #{<<"identifier">> := Identifier, <<"accessMode">> := <<"rw">>, <<"dataSource">> := #{<<"_dlinkindex">> := Index} = DataSource} ->
                                             case maps:find(Identifier, Profile) of
                                                 {ok, V} ->
                                                     Acc#{
                                                         Index => #{
                                                             <<"sessiontoken">> => Sessiontoken,
                                                             <<"value">> => V,
-                                                            <<"dataForm">> => DataForm
+                                                            <<"dataSource">> => DataSource
                                                         }};
                                                 _ ->
                                                     Acc

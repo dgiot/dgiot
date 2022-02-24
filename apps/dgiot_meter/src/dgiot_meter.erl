@@ -86,6 +86,8 @@ create_meter(MeterAddr, ChannelId, DTUIP, DtuAddr) ->
                 <<"devModel">> => <<"Meter">>
             },
             dgiot_device:create_device(Requests),
+            Topic = <<"profile/", ProductId/binary, "/", MeterAddr/binary>>,
+            dgiot_mqtt:subscribe(Topic),
             {DtuProductId, _, _} = dgiot_data:get({dtu, ChannelId}),
             dgiot_task:save_pnque(DtuProductId, DtuAddr, ProductId, MeterAddr);
         _ ->
@@ -115,7 +117,7 @@ create_meter4G(DevAddr, ChannelId, DTUIP) ->
 
 
 get_sub_device(DtuAddr) ->
-    Query = #{<<"keys">> => [<<"devaddr">>, <<"product">>,<<"route">>],
+    Query = #{<<"keys">> => [<<"devaddr">>, <<"product">>, <<"route">>],
         <<"where">> => #{<<"route.", DtuAddr/binary>> => #{<<"$regex">> => <<".+">>}},
         <<"order">> => <<"devaddr">>, <<"limit">> => 256},
     case dgiot_parse:query_object(<<"Device">>, Query) of
@@ -139,9 +141,10 @@ parse_frame(?DLT376, Buff, Opts) ->
 % DLT376发送抄数指令
 to_frame(#{
     <<"devaddr">> := Addr,
-    <<"di">> := Di,
     <<"protocol">> := ?DLT376,
-    <<"data">> := <<"null">>
+    <<"dataSource">> := #{
+        <<"di">> := Di
+    }
 } = Frame) ->
     dlt376_decoder:to_frame(Frame#{
         <<"msgtype">> => ?DLT376,
@@ -155,9 +158,10 @@ to_frame(#{
 % DLT645 组装电表抄表指令
 to_frame(#{
     <<"devaddr">> := Addr,
-    <<"di">> := Di,
     <<"protocol">> := ?DLT645,
-    <<"data">> := <<"null">>
+    <<"dataSource">> := #{
+        <<"di">> := Di
+    }
 } = Frame) ->
     dlt645_decoder:to_frame(Frame#{
         <<"msgtype">> => ?DLT645,
@@ -290,15 +294,20 @@ to_frame(#{
 
 to_frame(#{
     <<"devaddr">> := Addr,
-    <<"di">> := Di,
-    <<"protocol">> := ?DLT645
+    <<"protocol">> := ?DLT645,
+    <<"dataSource">> := #{
+        <<"di">> := Di
+    }
 } = Frame) ->
     dlt645_decoder:to_frame(Frame#{
         <<"msgtype">> => ?DLT645,
         <<"addr">> => dlt645_proctol:reverse(dgiot_utils:hex_to_binary(Addr)),
         <<"di">> => dlt645_proctol:reverse(dgiot_utils:hex_to_binary(Di)),
         <<"command">> => ?DLT645_MS_READ_DATA
-    }).
+    });
+
+to_frame(Frame) ->
+    io:format("~s ~p Error Frame = ~p.~n", [?FILE, ?LINE, Frame]).
 
 search_meter(tcp, _Ref, TCPState, 0) ->
     Payload = dlt645_decoder:to_frame(#{
