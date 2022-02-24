@@ -144,7 +144,7 @@ handle_info({deliver, _, Msg}, #tcp{state = #state{id = ChannelId} = State} = TC
                                         <<"slaveid">> := SlaveId,
                                         <<"address">> := Address} = DataSource
                                 } ->
-                                    Datas = modbus_rtu:to_frame(#{DataSource#{<<"productid">> => ProductId}}),
+                                    Datas = modbus_rtu:to_frame(DataSource#{<<"productid">> => ProductId}),
                                     lists:map(fun(X) ->
                                         dgiot_bridge:send_log(ChannelId, ProductId, DevAddr, "Channel sends [~p] to [DtuAddr:~p]", [dgiot_utils:binary_to_hex(X), DevAddr]),
                                         dgiot_tcp_server:send(TCPState, X),
