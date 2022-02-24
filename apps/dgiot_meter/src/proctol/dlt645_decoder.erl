@@ -26,7 +26,8 @@
     test/0,
     parse_value/2,
     binary_to_dtime_dlt645_bcd/1,
-    process_message/2
+    process_message/2,
+    frame_write_param/1
 ]).
 
 -define(TYPE, ?DLT645).
@@ -45,8 +46,20 @@
 }).
 %% 注册协议参数
 -params(#{
-    <<"di">> => #{
+    <<"afn">> => #{
         order => 1,
+        type => string,
+        required => true,
+        default => <<"00"/utf8>>,
+        title => #{
+            zh => <<"功能码"/utf8>>
+        },
+        description => #{
+            zh => <<"功能码"/utf8>>
+        }
+    },
+    <<"di">> => #{
+        order => 2,
         type => string,
         required => true,
         default => <<"0000"/utf8>>,
@@ -54,16 +67,16 @@
             zh => <<"信息标识"/utf8>>
         },
         description => #{
-            zh => <<"信息标识"/utf8>>
+            zh => <<"信息标识 di"/utf8>>
         }
     },
     <<"type">> => #{
-        order => 2,
-        type => enum,
+        order => 3,
+        type => string,
         required => true,
-        default => <<"byte"/utf8>>,
+        default => #{<<"value">> => <<"bytes">>, <<"label">> => <<"bytes">>},
         enum => [
-            #{<<"value">> => <<"byte">>, <<"label">> => <<"byte">>},
+            #{<<"value">> => <<"bytes">>, <<"label">> => <<"bytes">>},
             #{<<"value">> => <<"little">>, <<"label">> => <<"little">>},
             #{<<"value">> => <<"bit">>, <<"label">> => <<"bit">>}
         ],
@@ -75,7 +88,7 @@
         }
     },
     <<"length">> => #{
-        order => 3,
+        order => 4,
         type => integer,
         required => true,
         default => 2,
@@ -356,6 +369,60 @@ to_frame(#{
         16#16
     >>.
 
+frame_write_param(#{<<"meter">> := MeterAddr, <<"payload">> := Frame}) ->
+    Addr = dlt645_proctol:reverse(dgiot_utils:hex_to_binary(MeterAddr)),
+    Length = length(maps:keys(Frame)),
+    io:format("~s ~p SortFrame   ~p.~n", [?FILE, ?LINE, Length]),
+    {BitList, Afn} =
+        lists:foldl(fun(Index, {Acc, A}) ->
+            case maps:find(dgiot_utils:to_binary(Index), Frame) of
+                {ok, #{<<"value">> := Value, <<"dataSource">> := #{<<"afn">> := AFN, <<"length">> := Len, <<"type">> := Type}}} ->
+                    io:format("~s ~p Value ~p.", [?FILE, ?LINE, Value]),
+                    case Type of
+                        <<"bytes">> ->
+                            NewValue = dgiot_utils:hex_to_binary(Value),
+                            io:format("~s ~p NewValue   ~p.~n", [?FILE, ?LINE, NewValue]),
+                            {get_values(Acc, NewValue), dgiot_utils:hex_to_binary(AFN)};
+                        <<"little">> ->
+                            NewValue = dgiot_utils:to_int(Value),
+                            L = dgiot_utils:to_int(Len),
+                            Len1 = L * 8,
+                            io:format("~s ~p NewValue   ~p.~n", [?FILE, ?LINE, NewValue]),
+                            {get_values(Acc, <<NewValue:Len1/little>>), dgiot_utils:hex_to_binary(AFN)};
+                        <<"bit">> ->
+                            NewValue = dgiot_utils:to_int(Value),
+                            L = dgiot_utils:to_int(Len),
+                            io:format("~s ~p NewValue   ~p.~n", [?FILE, ?LINE, NewValue]),
+                            {Acc ++ [{NewValue, L}], dgiot_utils:hex_to_binary(AFN)};
+                        _ ->
+                            {Acc, A}
+                    end;
+                _ ->
+                    {Acc, A}
+            end
+                    end, {[], 0}, lists:seq(1, Length)),
+    io:format("~s ~p BitList   ~p.~n", [?FILE, ?LINE, BitList]),
+    UserZone = <<<<V:BitLen>> || {V, BitLen} <- BitList>>,
+    UserZone33 = list_to_binary(dgiot_utils:add_33h(UserZone)),
+    Len = byte_size(UserZone),
+    io:format("~s ~p UserZone  ~p", [?FILE, ?LINE, UserZone]),
+    io:format("~s ~p Addr  ~p. Afn ~p ~n", [?FILE, ?LINE, Addr, Afn]),
+    Crc = dgiot_utils:get_parity(<<16#68, Addr/binary, 16#68, Afn/binary, Len:8, UserZone33/binary>>),
+    <<
+        16#68,
+        Addr/binary,
+        16#68,
+        Afn/binary,
+        Len:8,
+        UserZone33/binary,
+        Crc:8,
+        16#16
+    >>.
+
+get_values(Acc, Data) ->
+    lists:foldl(fun(V, Acc1) ->
+        Acc1 ++ [{V, 8}]
+                end, Acc, binary_to_list(Data)).
 
 test() ->
     B1 = <<12, 16#68, 16#01, 16#00, 16#00, 16#00, 16#00, 16#00, 16#68, 16#91, 16#08, 16#33, 16#33, 16#3D, 16#33, 16#33, 16#33, 16#33, 16#33, 16#0C, 16#16,

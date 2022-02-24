@@ -146,7 +146,16 @@ handle_info(retry, State) ->
 handle_info({deliver, _, Msg}, #task{tid = Channel, dis = Dis, product = ProductId, devaddr = DevAddr, ack = Ack, que = Que} = State) when length(Que) == 0 ->
     Payload = jsx:decode(dgiot_mqtt:get_payload(Msg), [return_maps]),
     dgiot_bridge:send_log(Channel, ProductId, DevAddr, "~s ~p  ~ts: ~ts ", [?FILE, ?LINE, unicode:characters_to_list(dgiot_mqtt:get_topic(Msg)), unicode:characters_to_list(dgiot_mqtt:get_payload(Msg))]),
-    NewAck = dgiot_task:get_collection(ProductId, Dis, Payload, maps:merge(Ack, Payload)),
+    NewPayload =
+        maps:fold(fun(K, V, Acc) ->
+            case dgiot_data:get({protocol, K, ProductId}) of
+                not_find ->
+                    Acc#{K => V};
+                Identifier ->
+                    Acc#{Identifier => V}
+            end
+                  end, #{}, Payload),
+    NewAck = dgiot_task:get_collection(ProductId, Dis, NewPayload, maps:merge(Ack, NewPayload)),
     dgiot_metrics:inc(dgiot_task, <<"task_recv">>, 1),
     {noreply, get_next_pn(State#task{ack = NewAck})};
 
@@ -154,7 +163,16 @@ handle_info({deliver, _, Msg}, #task{tid = Channel, dis = Dis, product = Product
 handle_info({deliver, _, Msg}, #task{tid = Channel, dis = Dis, product = ProductId, devaddr = DevAddr, ack = Ack} = State) ->
     Payload = jsx:decode(dgiot_mqtt:get_payload(Msg), [return_maps]),
     dgiot_bridge:send_log(Channel, ProductId, DevAddr, "to_dev=> ~s ~p ~ts: ~ts", [?FILE, ?LINE, unicode:characters_to_list(dgiot_mqtt:get_topic(Msg)), unicode:characters_to_list(dgiot_mqtt:get_payload(Msg))]),
-    NewAck = dgiot_task:get_collection(ProductId, Dis, Payload, Ack),
+    NewPayload =
+        maps:fold(fun(K, V, Acc) ->
+            case dgiot_data:get({protocol, K, ProductId}) of
+                not_find ->
+                    Acc#{K => V};
+                Identifier ->
+                    Acc#{Identifier => V}
+            end
+                  end, #{}, Payload),
+    NewAck = dgiot_task:get_collection(ProductId, Dis, NewPayload, maps:merge(Ack, NewPayload)),
     dgiot_metrics:inc(dgiot_task, <<"task_recv">>, 1),
     {noreply, send_msg(State#task{ack = NewAck})};
 
@@ -178,23 +196,21 @@ send_msg(#task{ref = Ref, que = Que} = State) when length(Que) == 0 ->
 
 send_msg(#task{tid = Channel, product = Product, devaddr = DevAddr, ref = Ref, que = Que, appdata = AppData} = State) ->
 %%    io:format("~s ~p State = ~p.~n", [?FILE, ?LINE, State]),
-    {InstructOrder, Interval, _, _, _, _, _, Protocol, _} = lists:nth(1, Que),
+    {InstructOrder, Interval, _, _, _, Protocol, _, _} = lists:nth(1, Que),
     {NewCount, Payload, Dis} =
         lists:foldl(fun(X, {Count, Acc, Acc1}) ->
             case X of
-                {InstructOrder, _, _, _, _, _, error, _, _} ->
+                {InstructOrder, _, _, _, error, _, _, _} ->
                     {Count + 1, Acc, Acc1};
-                {InstructOrder, _, Identifier1, Pn1, Address1, Command1, Data1, Protocol, _} ->
+                {InstructOrder, _, Identifier1, AccessMode, _Data1, Protocol, DataSource, _} ->
                     Payload1 = #{
                         <<"appdata">> => AppData,
                         <<"thingdata">> => #{
                             <<"product">> => Product,
                             <<"devaddr">> => DevAddr,
-                            <<"pn">> => Pn1,
-                            <<"di">> => Address1,
-                            <<"command">> => Command1,
-                            <<"data">> => Data1,
-                            <<"protocol">> => Protocol
+                            <<"command">> => AccessMode,
+                            <<"protocol">> => Protocol,
+                            <<"dataSource">> => DataSource
                         }
                     },
                     {Count + 1, Acc ++ [Payload1], Acc1 ++ [Identifier1]};

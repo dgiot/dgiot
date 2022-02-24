@@ -304,7 +304,7 @@
                 "data": {
                   "type": "object",
                   "required": true,
-                  "example": "{}",
+                  "example": {},
                   "description": "模板内容"
                 }
               }

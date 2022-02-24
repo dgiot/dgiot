@@ -47,7 +47,7 @@
 -params(#{
     <<"originaltype">> => #{
         order => 1,
-        type => enum,
+        type => string,
         required => true,
         default => #{<<"value">> => <<"bit">>, <<"label">> => <<"位"/utf8>>},
         enum => [
@@ -84,7 +84,7 @@
     },
     <<"operatetype">> => #{
         order => 3,
-        type => enum,
+        type => string,
         required => true,
         default => #{<<"value">> => <<"readCoils">>, <<"label">> => <<"0X01:读线圈寄存器"/utf8>>},
         enum => [#{<<"value">> => <<"readCoils">>, <<"label">> => <<"0X01:读线圈寄存器"/utf8>>},
@@ -144,10 +144,10 @@ init(State) ->
 %%    {ok, State}.
 
 to_frame(#{
-    <<"value">> := Data,
-    <<"addr">> := SlaveId,
+    <<"data">> := Data,
+    <<"slaveid">> := SlaveId,
     <<"productid">> := ProductId,
-    <<"di">> := Address
+    <<"address">> := Address
 }) ->
     encode_data(Data, Address, SlaveId, ProductId);
 
@@ -156,10 +156,10 @@ to_frame(#{
 %%<<"addr">> => SlaveId,
 %%<<"di">> => Address
 to_frame(#{
-    <<"value">> := Value,
+    <<"data">> := Value,
     <<"gateway">> := DtuAddr,
-    <<"addr">> := SlaveId,
-    <<"di">> := Address
+    <<"slaveid">> := SlaveId,
+    <<"address">> := Address
 }) ->
     case dgiot_device:get_subdevice(DtuAddr, SlaveId) of
         not_find -> [];
@@ -219,10 +219,11 @@ set_params(Payload, ProductId, DevAddr) ->
     Payloads =
         lists:foldl(fun(Index, Acc) ->
             case maps:find(dgiot_utils:to_int(Index), Payload) of
-                {ok, #{<<"dataForm">> := #{<<"protocol">> := <<"modbus">>,
+                {ok, #{<<"dataForm">> := #{
+                    <<"protocol">> := <<"modbus">>,
                     <<"slaveid">> := SlaveId,
                     <<"address">> := Address,
-                    <<"bytes">> := Bytes,
+                    <<"data">> := Bytes,
                     <<"operatetype">> := OperateType,
                     <<"name">> := Name,
                     <<"Productname">> := Productname,
