@@ -27,7 +27,7 @@
     build_req_message/1]
 ).
 
--export([modbus_encoder/4, modbus_decoder/5, is16/1, set_params/3, decode_data/4, decode_data/5]).
+-export([modbus_encoder/4, modbus_decoder/5, is16/1, set_params/3, decode_data/5]).
 
 -define(TYPE, ?MODBUS_RTU).
 
@@ -115,8 +115,20 @@
             zh => <<"寄存器地址:(16进制加0X,例如:0X10,否在是10进制)"/utf8>>
         }
     },
-    <<"data">> => #{
+    <<"registersnumber">> => #{
         order => 5,
+        type => string,
+        required => true,
+        default => <<"1">>,
+        title => #{
+            zh => <<"寄存器个数"/utf8>>
+        },
+        description => #{
+            zh => <<"寄存器个数"/utf8>>
+        }
+    },
+    <<"data">> => #{
+        order => 6,
         type => integer,
         required => true,
         default => <<"2"/utf8>>,
@@ -218,17 +230,20 @@ set_params(Payload, ProductId, DevAddr) ->
     Length = length(maps:keys(Payload)),
     Payloads =
         lists:foldl(fun(Index, Acc) ->
-            case maps:find(dgiot_utils:to_int(Index), Payload) of
-                {ok, #{<<"dataForm">> := #{
-                    <<"protocol">> := <<"modbus">>,
-                    <<"slaveid">> := SlaveId,
-                    <<"address">> := Address,
-                    <<"data">> := Bytes,
-                    <<"operatetype">> := OperateType,
+            case maps:find(dgiot_utils:to_binary(Index), Payload) of
+                {ok, #{
+                    <<"identifier">> := Identifier,
                     <<"name">> := Name,
-                    <<"Productname">> := Productname,
-                    <<"Identifier">> := Identifier,
-                    <<"control">> := Setting} = DataForm} = Data} ->
+                    <<"productname">> := Productname,
+                    <<"dataForm">> := #{
+                        <<"protocol">> := <<"MODBUSRTU">>,
+                        <<"control">> := Setting},
+                    <<"dataSource">> := #{
+                        <<"slaveid">> := SlaveId,
+                        <<"address">> := Address,
+                        <<"data">> := Bytes,
+                        <<"operatetype">> := OperateType} = DataSource
+                } = Data} ->
                     case maps:find(<<"value">>, Data) of
                         error ->
                             Acc;
@@ -249,10 +264,10 @@ set_params(Payload, ProductId, DevAddr) ->
                                 end,
                             <<H:8, L:8>> = dgiot_utils:hex_to_binary(is16(Address)),
                             <<Sh:8, Sl:8>> = dgiot_utils:hex_to_binary(is16(SlaveId)),
-                            Str1 = re:replace(Setting, "%s", "(" ++ dgiot_utils:to_list(Value) ++ ")", [global, {return, list}]),
+                            Str1 = re:replace(Setting, "%d", "(" ++ dgiot_utils:to_list(Value) ++ ")", [global, {return, list}]),
                             Value1 = dgiot_utils:to_int(dgiot_task:string2value(Str1)),
 %%                                    NewBt = Bytes * 8,
-                            Registersnumber = maps:get(<<"registersnumber">>, DataForm, <<"1">>),
+                            Registersnumber = maps:get(<<"registersnumber">>, DataSource, <<"1">>),
                             RtuReq = #rtu_req{
                                 slaveId = Sh * 256 + Sl,
                                 funcode = dgiot_utils:to_int(FunCode),
@@ -313,16 +328,6 @@ parse_frame(<<MbAddr:8, BadCode:8, ErrorCode:8, Crc:2/binary>> = Buff, Acc,
             parse_frame(Buff, Acc, State)
     end;
 
-%% modbustcp
-%% Buff = <<"000100000006011000000001">>,
-parse_frame(<<_TransactionId:16, _ProtocolId:16, Size:16, _ResponseData:Size/bytes>> = Buff, Acc, #{<<"dtuproduct">> := ProductId, <<"dtuaddr">> := DtuAddr} = State) ->
-    case decode_data(Buff, ProductId, DtuAddr, Acc) of
-        {Rest1, Acc1} ->
-            parse_frame(Rest1, Acc1, State);
-        [Buff, Acc] ->
-            [Buff, Acc]
-    end;
-
 %% 传感器直接做为dtu物模型的一个指标
 parse_frame(<<SlaveId:8, _/binary>> = Buff, Acc, #{<<"dtuproduct">> := ProductId, <<"slaveId">> := SlaveId, <<"dtuaddr">> := DtuAddr, <<"address">> := Address} = State) ->
     case decode_data(Buff, ProductId, DtuAddr, Address, Acc) of
@@ -349,9 +354,6 @@ parse_frame(<<SlaveId:8, _/binary>> = Buff, Acc, #{<<"dtuaddr">> := DtuAddr, <<"
 parse_frame(_Other, Acc, _State) ->
     ?LOG(error, "_Other ~p", [_Other]),
     {error, Acc}.
-
-decode_data(<<TransactionId:16, _ProtocolId:16, _Size1:16, Address:8, _FunCode:8, Data/binary>>, ProductId, _DtuAddr, Acc) ->
-    {<<>>, modbus_tcp_decoder(ProductId, TransactionId, Address, Data, Acc)}.
 
 decode_data(Buff, ProductId, DtuAddr, Address, Acc) ->
     <<SlaveId:8, FunCode:8, ResponseData/binary>> = Buff,
@@ -541,41 +543,6 @@ list_word16_to_binary(Values) when is_list(Values) ->
         )
     ).
 
-modbus_tcp_decoder(ProductId, TransactionId, Address, Data, Acc1) ->
-    case dgiot_product:lookup_prod(ProductId) of
-        {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
-            lists:foldl(fun(X, Acc) ->
-                case X of
-                    #{<<"identifier">> := Identifier,
-                        <<"dataForm">> := #{
-                            <<"strategy">> := Strategy,
-                            <<"slaveid">> := OldSlaveid,
-                            <<"address">> := OldAddress,
-                            <<"protocol">> := <<"modbus">>
-                        }} when Strategy =/= <<"计算值"/utf8>> ->
-                        <<H:8, L:8>> = dgiot_utils:hex_to_binary(modbus_rtu:is16(OldSlaveid)),
-                        <<Sh:8, Sl:8>> = dgiot_utils:hex_to_binary(modbus_rtu:is16(OldAddress)),
-                        NewSlaveid = H * 256 + L,
-                        NewAddress = Sh * 256 + Sl,
-                        case {TransactionId, Address} of
-                            {NewSlaveid, NewAddress} ->
-                                case format_value(Data, X, Props) of
-                                    {Value, _Rest} ->
-                                        Acc#{Identifier => Value};
-                                    {map, Value, _Rest} ->
-                                        maps:merge(Acc, Value);
-                                    _ -> Acc
-                                end;
-                            _ ->
-                                Acc
-                        end;
-                    _ ->
-                        Acc
-                end
-                        end, Acc1, Props);
-        _ -> #{}
-    end.
-
 modbus_decoder(ProductId, SlaveId, Address, Data, Acc1) ->
     case dgiot_product:lookup_prod(ProductId) of
         {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
@@ -584,10 +551,11 @@ modbus_decoder(ProductId, SlaveId, Address, Data, Acc1) ->
                     #{<<"identifier">> := Identifier,
                         <<"dataForm">> := #{
                             <<"strategy">> := Strategy,
+                            <<"protocol">> := <<"MODBUSRTU">>},
+                        <<"dataSource">> := #{
                             <<"slaveid">> := OldSlaveid,
-                            <<"address">> := OldAddress,
-                            <<"protocol">> := <<"modbus">>
-                        }} when Strategy =/= <<"计算值"/utf8>> ->
+                            <<"address">> := OldAddress}
+                    } when Strategy =/= <<"计算值"/utf8>> ->
                         <<H:8, L:8>> = dgiot_utils:hex_to_binary(modbus_rtu:is16(OldSlaveid)),
                         <<Sh:8, Sl:8>> = dgiot_utils:hex_to_binary(modbus_rtu:is16(OldAddress)),
                         NewSlaveid = H * 256 + L,
@@ -617,11 +585,15 @@ modbus_encoder(ProductId, SlaveId, Address, Value) ->
         {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
             lists:foldl(fun(X, Acc) ->
                 case X of
-                    #{<<"accessMode">> := <<"r">>, <<"dataForm">> := #{<<"address">> := Address, <<"protocol">> := <<"modbus">>,
-                        <<"data">> := Data, <<"slaveid">> := SlaveId, <<"operatetype">> := Operatetype}} ->
+                    #{<<"accessMode">> := <<"r">>,
+                        <<"dataSource">> := #{<<"address">> := Address, <<"data">> := Data, <<"slaveid">> := SlaveId, <<"operatetype">> := Operatetype},
+                        <<"dataForm">> := #{<<"protocol">> := <<"MODBUSRTU">>}
+                    } ->
                         Acc ++ [{<<"r">>, Data, Operatetype}];
-                    #{<<"accessMode">> := Cmd, <<"dataForm">> := #{<<"address">> := Address, <<"protocol">> := <<"modbus">>,
-                        <<"data">> := _Quantity, <<"slaveid">> := SlaveId, <<"operatetype">> := Operatetype}} ->
+                    #{<<"accessMode">> := Cmd,
+                        <<"dataSource">> := #{<<"address">> := Address, <<"data">> := _Quantity, <<"slaveid">> := SlaveId, <<"operatetype">> := Operatetype},
+                        <<"dataForm">> := #{<<"protocol">> := <<"MODBUSRTU">>}
+                    } ->
                         Acc ++ [{Cmd, Value, Operatetype}];
                     _Ot ->
                         Acc
@@ -647,13 +619,13 @@ format_value(Buff, #{
 
 format_value(Buff, #{
     <<"accessMode">> := <<"rw">>,
-    <<"dataForm">> := DataForm} = X, _Props) ->
+    <<"dataSource">> := DataSource} = X, _Props) ->
     format_value(Buff, X#{<<"accessMode">> => <<"r">>,
-        <<"dataForm">> => DataForm#{<<"data">> => byte_size(Buff)}
+        <<"dataForm">> => DataSource#{<<"data">> => byte_size(Buff)}
     }, _Props);
 
 format_value(Buff, #{<<"identifier">> := BitIdentifier,
-    <<"dataForm">> := #{
+    <<"dataSource">> := #{
         <<"originaltype">> := <<"bit">>
     }}, Props) ->
     Values =
@@ -661,12 +633,13 @@ format_value(Buff, #{<<"identifier">> := BitIdentifier,
             case X of
                 #{<<"identifier">> := Identifier,
                     <<"dataForm">> := #{
+                        <<"protocol">> := <<"MODBUSRTU">>,
+                        <<"strategy">> := <<"计算值"/utf8>>},
+                    <<"dataSource">> := #{
                         <<"slaveid">> := BitIdentifier,
                         <<"address">> := Offset,
-                        <<"data">> := Len,
-                        <<"protocol">> := <<"modbus">>,
-                        <<"strategy">> := <<"计算值"/utf8>>
-                    }} ->
+                        <<"data">> := Len}
+                } ->
                     IntOffset = dgiot_utils:to_int(Offset),
                     IntLen = dgiot_utils:to_int(Len),
                     Value =
@@ -695,7 +668,7 @@ format_value(Buff, #{<<"identifier">> := BitIdentifier,
                     end, #{}, Props),
     {map, Values};
 
-format_value(Buff, #{<<"dataForm">> := #{
+format_value(Buff, #{<<"dataSource">> := #{
     <<"data">> := Len,
     <<"originaltype">> := <<"short16_AB">>
 }}, _Props) ->
@@ -704,7 +677,7 @@ format_value(Buff, #{<<"dataForm">> := #{
     <<Value:Size/signed-big-integer, Rest/binary>> = Buff,
     {Value, Rest};
 
-format_value(Buff, #{<<"dataForm">> := #{
+format_value(Buff, #{<<"dataSource">> := #{
     <<"data">> := Len,
     <<"originaltype">> := <<"short16_BA">>
 }}, _Props) ->
@@ -713,7 +686,7 @@ format_value(Buff, #{<<"dataForm">> := #{
     <<Value:Size/signed-little-integer, Rest/binary>> = Buff,
     {Value, Rest};
 
-format_value(Buff, #{<<"dataForm">> := #{
+format_value(Buff, #{<<"dataSource">> := #{
     <<"data">> := Len,
     <<"originaltype">> := <<"ushort16_AB">>
 }}, _Props) ->
@@ -722,7 +695,7 @@ format_value(Buff, #{<<"dataForm">> := #{
     <<Value:Size/unsigned-big-integer, Rest/binary>> = Buff,
     {Value, Rest};
 
-format_value(Buff, #{<<"dataForm">> := #{
+format_value(Buff, #{<<"dataSource">> := #{
     <<"data">> := Len,
     <<"originaltype">> := <<"ushort16_BA">>
 }}, _Props) ->
@@ -731,7 +704,7 @@ format_value(Buff, #{<<"dataForm">> := #{
     <<Value:Size/unsigned-little-integer, Rest/binary>> = Buff,
     {Value, Rest};
 
-format_value(Buff, #{<<"dataForm">> := #{
+format_value(Buff, #{<<"dataSource">> := #{
     <<"data">> := Len,
     <<"originaltype">> := <<"long32_ABCD">>
 }}, _Props) ->
@@ -741,7 +714,7 @@ format_value(Buff, #{<<"dataForm">> := #{
     <<Value:Size/integer>> = <<H/binary, L/binary>>,
     {Value, Rest};
 
-format_value(Buff, #{<<"dataForm">> := #{
+format_value(Buff, #{<<"dataSource">> := #{
     <<"data">> := Len,
     <<"originaltype">> := <<"long32_CDAB">>
 }}, _Props) ->
@@ -751,7 +724,7 @@ format_value(Buff, #{<<"dataForm">> := #{
     <<Value:Size/integer>> = <<L/binary, H/binary>>,
     {Value, Rest};
 
-format_value(Buff, #{<<"dataForm">> := #{
+format_value(Buff, #{<<"dataSource">> := #{
     <<"data">> := Len,
     <<"originaltype">> := <<"ulong32_ABCD">>
 }}, _Props) ->
@@ -761,7 +734,7 @@ format_value(Buff, #{<<"dataForm">> := #{
     <<Value:Size/integer>> = <<H/binary, L/binary>>,
     {Value, Rest};
 
-format_value(Buff, #{<<"dataForm">> := #{
+format_value(Buff, #{<<"dataSource">> := #{
     <<"data">> := Len,
     <<"originaltype">> := <<"ulong32_CDAB">>
 }}, _Props) ->
@@ -771,7 +744,7 @@ format_value(Buff, #{<<"dataForm">> := #{
     <<Value:Size/integer>> = <<L/binary, H/binary>>,
     {Value, Rest};
 
-format_value(Buff, #{<<"dataForm">> := #{
+format_value(Buff, #{<<"dataSource">> := #{
     <<"data">> := Len,
     <<"originaltype">> := <<"float32_ABCD">>
 }}, _Props) ->
@@ -781,7 +754,7 @@ format_value(Buff, #{<<"dataForm">> := #{
     <<Value:Size/float>> = <<H/binary, L/binary>>,
     {Value, Rest};
 
-format_value(Buff, #{<<"dataForm">> := #{
+format_value(Buff, #{<<"dataSource">> := #{
     <<"data">> := Len,
     <<"originaltype">> := <<"float32_CDAB">>
 }}, _Props) ->

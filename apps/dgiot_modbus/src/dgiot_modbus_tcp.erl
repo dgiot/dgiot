@@ -51,6 +51,7 @@ init(#tcp{state = #state{id = ChannelId}} = TCPState) ->
 handle_info({tcp, Buff}, #tcp{socket = Socket, state = #state{id = ChannelId, devaddr = <<>>, head = Head, len = Len, product = ProductId, dtutype = Dtutype} = State} = TCPState) ->
     DTUIP = dgiot_utils:get_ip(Socket),
     DtuAddr = dgiot_utils:binary_to_hex(Buff),
+    dgiot_bridge:send_log(ChannelId, ProductId, DtuAddr, "DTU login:[~p] DtuAddr:[~p]", [Buff, DtuAddr]),
     List = dgiot_utils:to_list(DtuAddr),
     List1 = dgiot_utils:to_list(Buff),
     #{<<"objectId">> := DeviceId} =
@@ -65,7 +66,6 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, state = #state{id = ChannelId, de
                         {DevId1, Devaddr1}
                 end,
             Topic = <<"profile/", ProductId/binary, "/", Devaddr/binary>>,
-            dgiot_bridge:send_log(ChannelId, ProductId, Devaddr, "DTU login:[~p] DtuAddr:[~p]", [Buff, dgiot_utils:binary_to_hex(Buff)]),
             dgiot_mqtt:subscribe(Topic),
             DtuId = dgiot_parse:get_deviceid(ProductId, DtuAddr),
             {noreply, TCPState#tcp{buff = <<>>, register = true, clientid = DtuId, state = State#state{devaddr = Devaddr, deviceId = DevId}}};
@@ -74,7 +74,6 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, state = #state{id = ChannelId, de
                 {match, [Head]} when length(List1) == Len ->
                     create_device(DeviceId, ProductId, Buff, DTUIP, Dtutype),
                     Topic = <<"profile/", ProductId/binary, "/", Buff/binary>>,
-                    dgiot_bridge:send_log(ChannelId, ProductId, Buff, "DTU login:[~p] DtuAddr:[~p]", [Buff, dgiot_utils:binary_to_hex(Buff)]),
                     dgiot_mqtt:subscribe(Topic),
                     DtuId = dgiot_parse:get_deviceid(ProductId, DtuAddr),
                     {noreply, TCPState#tcp{buff = <<>>, register = true, clientid = DtuId, state = State#state{devaddr = Buff}}};
@@ -114,8 +113,9 @@ handle_info({deliver, _, Msg}, #tcp{state = #state{id = ChannelId} = State} = TC
             case binary:split(Topic, <<$/>>, [global, trim]) of
                 [<<"profile">>, ProductId, DtuAddr] ->
 %%                    设置参数
-                    Payloads = modbus_rtu:set_params(jsx:decode(Payload), ProductId, DtuAddr),
+                    Payloads = modbus_rtu:set_params(Payload, ProductId, DtuAddr),
                     lists:map(fun(X) ->
+                        dgiot_bridge:send_log(ChannelId, ProductId, DtuAddr, "Channel set_params [~p] to [DtuAddr:~p]", [dgiot_utils:binary_to_hex(X), DtuAddr]),
                         dgiot_tcp_server:send(TCPState, X)
                               end, Payloads),
                     {noreply, TCPState};
@@ -125,7 +125,7 @@ handle_info({deliver, _, Msg}, #tcp{state = #state{id = ChannelId} = State} = TC
                             case ThingData of
                                 #{<<"command">> := <<"r">>,
                                     <<"product">> := ProductId,
-                                    <<"protocol">> := <<"modbus">>,
+                                    <<"protocol">> := <<"MODBUSRTU">>,
                                     <<"dataSource">> := #{
                                         <<"slaveid">> := SlaveId,
                                         <<"address">> := Address} = DataSource
@@ -139,7 +139,7 @@ handle_info({deliver, _, Msg}, #tcp{state = #state{id = ChannelId} = State} = TC
                                     {noreply, TCPState#tcp{state = State#state{env = #{product => ProductId, pn => SlaveId, di => Address}}}};
                                 #{<<"command">> := <<"rw">>,
                                     <<"product">> := ProductId,
-                                    <<"protocol">> := <<"modbus">>,
+                                    <<"protocol">> := <<"MODBUSRTU">>,
                                     <<"dataSource">> := #{
                                         <<"slaveid">> := SlaveId,
                                         <<"address">> := Address} = DataSource
@@ -166,16 +166,11 @@ handle_info({deliver, _, Msg}, #tcp{state = #state{id = ChannelId} = State} = TC
             case binary:split(Topic, <<$/>>, [global, trim]) of
                 [<<"profile">>, ProductId, DevAddr] ->
                     %% 设置参数
-                    case Payload of
-                        #{<<"_dgiotprotocol">> := <<"modbus">>} ->
-                            Payloads = modbus_rtu:set_params(maps:without([<<"_dgiotprotocol">>], Payload), ProductId, DevAddr),
-                            lists:map(fun(X) ->
-                                dgiot_bridge:send_log(ChannelId, ProductId, DevAddr, "Channel sends [~p] to [DtuAddr:~p]", [dgiot_utils:binary_to_hex(X), DevAddr]),
-                                dgiot_tcp_server:send(TCPState, X)
-                                      end, Payloads);
-                        _ ->
-                            pass
-                    end,
+                    Payloads = modbus_rtu:set_params(jsx:decode(Payload), ProductId, DevAddr),
+                    lists:map(fun(X) ->
+                        dgiot_bridge:send_log(ChannelId, ProductId, DevAddr, "Channel set_params [~p] to [DtuAddr:~p]", [dgiot_utils:binary_to_hex(X), DevAddr]),
+                        dgiot_tcp_server:send(TCPState, X)
+                              end, Payloads),
                     {noreply, TCPState};
                 _ ->
                     {noreply, TCPState}
@@ -246,9 +241,9 @@ create_instruct(ACL, DtuProductId, DtuDevId) ->
         {ok, #{<<"thing">> := #{<<"properties">> := Properties}}} ->
             lists:map(fun(Y) ->
                 case Y of
-                    #{<<"dataForm">> := #{<<"slaveid">> := 256}} ->   %%不做指令
+                    #{<<"dataSource">> := #{<<"slaveid">> := 256}} ->   %%不做指令
                         pass;
-                    #{<<"dataForm">> := #{<<"slaveid">> := SlaveId}} ->
+                    #{<<"dataSource">> := #{<<"slaveid">> := SlaveId}} ->
                         Pn = dgiot_utils:to_binary(SlaveId),
 %%                        ?LOG(info,"DtuProductId ~p DtuDevId ~p Pn ~p ACL ~p", [DtuProductId, DtuDevId, Pn, ACL]),
 %%                        ?LOG(info,"Y ~p", [Y]),

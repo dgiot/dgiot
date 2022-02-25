@@ -164,7 +164,7 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, state = #state{id = ChannelId, pr
     DTUIP = dgiot_utils:get_ip(Socket),
     case Protocol of
         ?DLT376 ->
-            dgiot_bridge:send_log(ChannelId, "from_dev:  ~p ", [dgiot_utils:binary_to_hex(Buff)]),
+            dgiot_bridge:send_log(ChannelId, "DLT376 from_dev:  ~p ", [dgiot_utils:binary_to_hex(Buff)]),
             {Rest, Frames} = dgiot_meter:parse_frame(?DLT376, Buff, []),
             ?LOG(info, "Frames ~p~n", [Frames]), %[#{<<"addr">> => <<"330100480000">>,<<"di">> => <<0,1,0,0>>,<<"value">> => #{<<"00010000">> => 0}}]
             case Frames of
@@ -177,8 +177,8 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, state = #state{id = ChannelId, pr
             end,
             {noreply, TCPState#tcp{buff = Rest}};
         ?DLT645 ->
+            dgiot_bridge:send_log(ChannelId, "DLT645 from_dev: ~p ", [dgiot_utils:binary_to_hex(Buff)]),
             {Rest, Frames} = dgiot_meter:parse_frame(?DLT645, Buff, []),
-            dgiot_bridge:send_log(ChannelId, "from_dev: Rest ~p Frames ~p ", [Rest, Frames]),
             dlt645_decoder:process_message(Frames, ChannelId),
             {noreply, TCPState#tcp{buff = Rest}};
         _ ->
@@ -197,7 +197,7 @@ handle_info({retry, Concentrator}, TCPState) ->
     {noreply, TCPState};
 
 %%接受抄表任务命令抄表(下发指令)
-handle_info({deliver, _Topic, Msg}, #tcp{state = #state{id = _ChannelId, protocol = Protocol}} = TCPState) ->
+handle_info({deliver, _Topic, Msg}, #tcp{state = #state{id = ChannelId, protocol = Protocol}} = TCPState) ->
     Payload = dgiot_mqtt:get_payload(Msg),
 %%    ?LOG(info, "Payload  ~p ~n~n", [Payload]),
     dgiot_metrics:inc(dgiot_meter, <<"mqtt_revc">>, 1),
@@ -206,30 +206,31 @@ handle_info({deliver, _Topic, Msg}, #tcp{state = #state{id = _ChannelId, protoco
 %%            Load = binary:split(dgiot_mqtt:get_topic(Msg), <<$/>>, [global, trim]),
 %%            ?LOG(info, "Load ~p ~n", [Load]),    [<<\"profile\">>,<<\"ecfbf67dd7\">>,<<\"330100480000\">>]
             case binary:split(dgiot_mqtt:get_topic(Msg), <<$/>>, [global, trim]) of
-                [<<"thing">>, ProductId, DevAddr] ->
+                [<<"thing">>, _ProductId, _DevAddr] ->
 %%                    #tcp{state = #state{protocol = Protocol}} = TCPState,
                     case Protocol of
                         ?DLT376 ->
-                            Route = dgiot_data:get({concentrator, ProductId, DevAddr}),
+%%                            Route = dgiot_data:get({concentrator, ProductId, DevAddr}),
                             [#{<<"thingdata">> := ThingData} | _] = jsx:decode(dgiot_mqtt:get_payload(Msg), [{labels, binary}, return_maps]),
                             Payload1 = dgiot_meter:to_frame(ThingData),  %%DLT645协议，需要透传转发
-                            ?LOG(info, "Route ~p     DevAddr:~p     Payload1:~p ~n~n", [Route, DevAddr, dgiot_utils:binary_to_hex(Payload1)]),
+%%                            ?LOG(info, "Route ~p     DevAddr:~p     Payload1:~p ~n~n", [Route, DevAddr, dgiot_utils:binary_to_hex(Payload1)]),
                             HexPayload = dgiot_utils:binary_to_hex(Payload1),
                             Payload2 = dlt376_decoder:to_frame(#{<<"afn">> => 16#10,
                                 <<"command">> => 16#4A,
                                 <<"concentrator">> => <<16#01, 16#33, 16#48, 16#00, 16#00>>,
                                 <<"di">> => <<"00000100">>,
                                 <<"data">> => <<"026B81801000", HexPayload/binary, "00000000000000000000000000000000">>}),
-                            ?LOG(info, "Payload2:~p ~n~n", [dgiot_utils:binary_to_hex(Payload2)]),
+%%                            ?LOG(info, "Payload2:~p ~n~n", [dgiot_utils:binary_to_hex(Payload2)]),
+                            dgiot_bridge:send_log(ChannelId, "DLT376 send=> ~s ~p  ~p", [?FILE, ?LINE, dgiot_utils:binary_to_hex(Payload2)]),
                             dgiot_tcp_server:send(TCPState, Payload2);
                         ?DLT645 ->
                             [#{<<"thingdata">> := ThingData} | _] = jsx:decode(dgiot_mqtt:get_payload(Msg), [{labels, binary}, return_maps]),
                             Payload1 = dgiot_meter:to_frame(ThingData),
-%%                            io:format("~s ~p DLT645 Payload1 = ~p.~n", [?FILE, ?LINE, Payload1]),
+                            dgiot_bridge:send_log(ChannelId, "DLT645 send=> ~s ~p  ~p", [?FILE, ?LINE, dgiot_utils:binary_to_hex(Payload1)]),
                             dgiot_tcp_server:send(TCPState, Payload1)
                     end;
-                [<<"profile">>, _ProductId, DevAddr] ->   %%[<<"profile">>,<<"ecfbf67dd7">>,<<"330100480000">>
-%%                            io:format("~s ~p ProData ~p  Protocol ~p~n", [?FILE, ?LINE, Payload, Protocol]),
+                [<<"profile">>, ProductId, DevAddr] ->
+                    dgiot_umeng:send_message_to3D(ProductId, DevAddr, jsx:decode(Payload)),
                     case Protocol of
                         ?DLT376 ->
                             Payload2 = dlt376_decoder:frame_write_param(#{<<"concentrator">> => DevAddr, <<"payload">> => jsx:decode(Payload)}),

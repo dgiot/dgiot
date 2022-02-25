@@ -33,7 +33,8 @@
     save_notification/3,
     sendSubscribe/3,
     create_maintenance/2,
-    get_operations/0
+    get_operations/0,
+    send_message_to3D/3
 ]).
 
 test_broadcast() ->
@@ -499,6 +500,53 @@ save_devicestatus(DeviceId, Status) ->
             pass
     end.
 
+%%SELECT payload, payload.1.value as value, clientid, 'e636739559' as productid FROM "profile/e636739559/#" WHERE value = '02000000000000001A00000000250222'
+send_message_to3D(ProductId, DevAddr, Payload) ->
+    Deviceid = dgiot_parse:get_deviceid(ProductId, DevAddr),
+    DeviceName =
+        case dgiot_parse:get_object(<<"Device">>, Deviceid) of
+            {ok, #{<<"name">> := Name}} ->
+                Name;
+            _ ->
+                <<"电表_001"/utf8>>
+        end,
+    ProductName =
+        case dgiot_parse:get_object(<<"Product">>, ProductId) of
+            {ok, #{<<"name">> := Name1}} ->
+                Name1;
+            _ ->
+                <<"电表"/utf8>>
+        end,
+    Topic = <<"/devWar/up">>,
+    <<Number:10/binary, _/binary>> = dgiot_utils:random(),
+    Timestamp = dgiot_datetime:format(dgiot_datetime:to_localtime(dgiot_datetime:now_secs()), <<"YY-MM-DD HH:NN:SS">>),
+    Data = #{
+        <<"id">> => Number,
+        <<"deviceid">> => Deviceid,
+        <<"devicename">> => DeviceName,
+        <<"status">> => <<"拉闸"/utf8>>,
+        <<"content">> => <<"电表拉闸断电"/utf8>>,
+        <<"time">> => Timestamp,
+        <<"data ">> => #{
+            <<"id">> => Number,
+            <<"deviceid">> => Deviceid,
+            <<"devicename">> => DeviceName,
+            <<"productid">> => ProductId,
+            <<"productname">> => ProductName,
+            <<"type">> => <<"故障工单"/utf8>>,
+            <<"description">> => <<"电表拉闸断电"/utf8>>
+        }
+    },
+    case Payload of
+%%        拉闸 <<"02000000000000001A00000000250222">>
+        #{<<"1">> := #{<<"value">> := <<"02000000000000001A", _/binary>>}} ->
+            dgiot_mqtt:publish(Deviceid, Topic, jsx:encode(Data));
+        #{<<"4">> := #{<<"value">> := <<"1A">>}} ->
+            dgiot_mqtt:publish(Deviceid, Topic, jsx:encode(Data));
+        _ ->
+            pass
+    end.
+
 create_maintenance(SessionToken, Info) ->
     <<Number:10/binary, _/binary>> = dgiot_utils:random(),
     Timestamp = dgiot_datetime:format(dgiot_datetime:to_localtime(dgiot_datetime:now_secs()), <<"YY-MM-DD HH:NN:SS">>),
@@ -522,7 +570,7 @@ create_maintenance(SessionToken, Info) ->
                 #{<<"admin">> => #{<<"read">> => true, <<"write">> => true}}
         end,
     Body = #{
-        <<"number">> => Number,
+        <<"number">> => maps:get(<<"id">>, Info, Number),
         <<"type">> => maps:get(<<"type">>, Info, <<"故障工单"/utf8>>),
         <<"status">> => 0,
         <<"ACL">> => Acl,
@@ -542,9 +590,49 @@ create_maintenance(SessionToken, Info) ->
             <<"className">> => <<"Device">>
         }
     },
+    send_gdmessage(DeviceId, #{
+        <<"character_string9">> => #{<<"value">> => maps:get(<<"id">>, Info, Number)},
+        <<"thing2">> => #{<<"value">> => maps:get(<<"devicename">>, Info, <<"电表_001"/utf8>>)},
+        <<"thing3">> => #{<<"value">> => maps:get(<<"type">>, Info, <<"故障工单"/utf8>>)},
+        <<"thing12">> => #{<<"value">> => maps:get(<<"description">>, Info, <<"电表拉闸断电"/utf8>>)},
+        <<"date5">> => #{<<"value">> => Timestamp}
+    }),
     dgiot_parse:create_object(<<"Maintenance">>, Body,
         [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]).
 
+
+send_gdmessage(DeviceId, Data) ->
+    Result = #{<<"data">> => Data,
+        <<"lang">> => <<"zh_CN">>,
+        <<"miniprogramstate">> => <<"formal">>,
+        <<"page">> => <<"pages/alarm/alarm">>,
+        <<"templateid">> => <<"wFe8o5L65ZwoQQyzEpR1hhCbvlXHN4ehtFSd_BT_6ZY">>},
+    case dgiot_device:lookup(DeviceId) of
+        {ok, #{<<"acl">> := Acl}} ->
+            lists:map(fun(X) ->
+                BinX = atom_to_binary(X),
+                case BinX of
+                    <<"role:", Name/binary>> ->
+                        case dgiot_parse:query_object(<<"_Role">>, #{<<"order">> => <<"updatedAt">>, <<"limit">> => 1,
+                            <<"where">> => #{<<"name">> => Name}}) of
+                            {ok, #{<<"results">> := [Role]}} ->
+                                #{<<"objectId">> := RoleId} = Role,
+                                UserIds = dgiot_parse:get_userids(RoleId),
+                                lists:map(fun(UserId) ->
+                                    dgiot_wechat:sendSubscribe_test(UserId, Result)
+                                          end, UserIds);
+                            _ ->
+                                pass
+                        end;
+                    <<"*">> ->
+                        pass;
+                    UserId ->
+                        dgiot_wechat:sendSubscribe_test(UserId, Result)
+                end
+                      end, Acl);
+        _ ->
+            pass
+    end.
 
 %% 运维管理
 get_operations() ->

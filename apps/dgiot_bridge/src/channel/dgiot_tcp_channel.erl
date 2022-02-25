@@ -374,9 +374,9 @@ create_instruct(ACL, DtuProductId, DtuDevId) ->
         {ok, #{<<"thing">> := #{<<"properties">> := Properties}}} ->
             lists:map(fun(Y) ->
                 case Y of
-                    #{<<"dataForm">> := #{<<"slaveid">> := 256}} ->   %%不做指令
+                    #{<<"dataSource">> := #{<<"slaveid">> := 256}} ->   %%不做指令
                         pass;
-                    #{<<"dataForm">> := #{<<"slaveid">> := SlaveId}} ->
+                    #{<<"dataSource">> := #{<<"slaveid">> := SlaveId}} ->
                         Pn = dgiot_utils:to_binary(SlaveId),
                         dgiot_instruct:create(DtuProductId, DtuDevId, Pn, ACL, <<"all">>, #{<<"properties">> => [Y]});
                     _ -> pass
