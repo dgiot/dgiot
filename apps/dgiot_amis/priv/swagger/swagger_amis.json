@@ -1,0 +1,45 @@
+{
+  "definitions": {},
+  "paths": {
+  },
+  "tags": [
+    {
+      "description": "低代码",
+      "name": "AMIS"
+    }
+  ],
+  "paths": {
+    "/amis": {
+      "get": {
+        "description": "amis测试",
+        "parameters": [
+          {
+            "name": "deviceid",
+            "in": "query",
+            "type": "string",
+            "default": "b1002a0317",
+            "description": "设备Id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "summary": "amis测试",
+        "tags": [
+          "AMIS"
+        ]
+      }
+    }
+  }
+}
