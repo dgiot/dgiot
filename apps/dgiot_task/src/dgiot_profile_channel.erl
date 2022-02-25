@@ -143,18 +143,22 @@ handle_message({sync_parse, Args}, State) ->
             case dgiot_device:get_online(DeviceId) of
                 true ->
                     case dgiot_parse:get_object(<<"Product">>, ProductId) of
-                        {ok, #{<<"thing">> := #{<<"properties">> := Properties}}} ->
+                        {ok, #{<<"name">> := ProductName, <<"thing">> := #{<<"properties">> := Properties}}} ->
                             NewPayLoad =
                                 lists:foldl(fun(X, Acc) ->
                                     case X of
-                                        #{<<"identifier">> := Identifier, <<"accessMode">> := <<"rw">>, <<"dataSource">> := #{<<"_dlinkindex">> := Index} = DataSource} ->
+                                        #{<<"identifier">> := Identifier, <<"name">> := Name, <<"accessMode">> := <<"rw">>, <<"dataForm">> := DataForm, <<"dataSource">> := #{<<"_dlinkindex">> := Index} = DataSource} ->
                                             case maps:find(Identifier, Profile) of
                                                 {ok, V} ->
                                                     Acc#{
                                                         Index => #{
                                                             <<"sessiontoken">> => Sessiontoken,
                                                             <<"value">> => V,
-                                                            <<"dataSource">> => DataSource
+                                                            <<"identifier">> => Identifier,
+                                                            <<"name">> => Name,
+                                                            <<"productname">> => ProductName,
+                                                            <<"dataSource">> => DataSource,
+                                                            <<"dataForm">> => DataForm
                                                         }};
                                                 _ ->
                                                     Acc

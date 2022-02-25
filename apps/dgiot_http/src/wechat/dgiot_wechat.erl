@@ -149,17 +149,17 @@ sendSubscribe(UserId, Data) ->
 %% touser     消息接收者openId
 %% POST https://api.weixin.qq.com/cgi-bin/message/wxopen/template/uniform_send?access_token=ACCESS_TOKEN
 %% dgiot_wechat:sendSubscribe().
-sendSubscribe_test(UserId,  #{<<"data">> := Data,
-                              <<"lang">> := Lang,
-                              <<"miniprogramstate">> := Miniprogramstate,
-                              <<"page">> := Page,
-                              <<"templateid">> := Templateid} = Args) ->
-                                  io:format("~s ~p Args = ~p.~n", [?FILE, ?LINE, Args]),
+sendSubscribe_test(UserId, #{<<"data">> := Data,
+    <<"lang">> := Lang,
+    <<"miniprogramstate">> := Miniprogramstate,
+    <<"page">> := Page,
+    <<"templateid">> := Templateid} = Args) ->
+    io:format("~s ~p Args = ~p.~n", [?FILE, ?LINE, Args]),
     case dgiot_parse:get_object(<<"_User">>, UserId) of
         {ok, #{<<"tag">> := #{<<"wechat">> := #{<<"openid">> := OpenId}}}} when size(OpenId) > 0 ->
             AppId = dgiot_utils:to_binary(application:get_env(dgiot_http, wechat_appid, <<"">>)),
             Secret = dgiot_utils:to_binary(application:get_env(dgiot_http, wechat_secret, <<"">>)),
-            io:format("~s ~p AppId = ~p.~n", [?FILE, ?LINE, AppId]),
+%%            io:format("~s ~p AppId = ~p.~n", [?FILE, ?LINE, AppId]),
             Url = "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=" ++ dgiot_utils:to_list(AppId) ++ "&secret=" ++ dgiot_utils:to_list(Secret),
             case httpc:request(Url) of
                 {ok, {{_Version, 200, _ReasonPhrase}, _Headers, Body}} ->
@@ -177,7 +177,7 @@ sendSubscribe_test(UserId,  #{<<"data">> := Data,
                                         <<"lang">> => Lang,
                                         <<"data">> => Data},
                                     Data1 = dgiot_utils:to_list(jiffy:encode(Subscribe)),
-                                    io:format("~s ~p SubscribeUrl = ~p.~n", [?FILE, ?LINE, SubscribeUrl]),
+%%                                    io:format("~s ~p SubscribeUrl = ~p.~n", [?FILE, ?LINE, SubscribeUrl]),
                                     io:format("~s ~p Subscribe = ~p.~n", [?FILE, ?LINE, Subscribe]),
                                     R = httpc:request(post, {SubscribeUrl, [], "application/x-www-form-urlencoded", Data1}, [{timeout, 5000}, {connect_timeout, 10000}], [{body_format, binary}]),
                                     io:format("~s ~p R = ~p.~n", [?FILE, ?LINE, R]);
