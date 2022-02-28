@@ -13,7 +13,7 @@
 %% See the License for the specific language governing permissions and
 %% limitations under the License.
 %%--------------------------------------------------------------------
--module(dgiot_amis_handler).
+-module(dgiot_bamis_handler).
 -author("johnliu").
 -behavior(dgiot_rest).
 -dgiot_rest(all).

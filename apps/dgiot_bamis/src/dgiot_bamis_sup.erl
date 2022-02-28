@@ -14,8 +14,8 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
-%% @doc dgiot_amis supervisor
--module(dgiot_amis_sup).
+%% @doc dgiot_bamis supervisor
+-module(dgiot_bamis_sup).
 
 -behaviour(supervisor).
 

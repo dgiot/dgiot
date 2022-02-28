@@ -1,5 +1,5 @@
 
--module(dgiot_amis_SUITE).
+-module(dgiot_bamis_SUITE).
 
 -compile(export_all).
 
