@@ -219,7 +219,7 @@ overlay_vars_rel(RelType) ->
         , {enable_plugin_dgiot_ffmpeg, true}
         , {enable_plugin_dgiot_gb26875, true}
         , {enable_plugin_dgiot_dlink, true}
-        , {enable_plugin_dgiot_amis, true}
+        , {enable_plugin_dgiot_bamis, true}
         , {enable_plugin_dgiot_iq60, true}
         , {vm_args_file, VmArgs}
     ].
@@ -351,7 +351,7 @@ relx_plugin_apps_per_rel(cloud) ->
         , dgiot_ffmpeg
         , dgiot_gb26875
         , dgiot_dlink
-        , dgiot_amis
+        , dgiot_bamis
         , dgiot_iq60
     ];
 relx_plugin_apps_per_rel(edge) ->

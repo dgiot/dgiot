@@ -14,22 +14,28 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
-%% @doc dgiot_amis Application
--module(dgiot_amis_app).
--emqx_plugin(?MODULE).
--behaviour(application).
+%% @doc dgiot_bamis Protocol
+-module(dgiot_bamis).
+-include("dgiot_bamis.hrl").
+-include_lib("dgiot/include/logger.hrl").
+-export([
+    create_amis/3
+]).
 
-%% Application callbacks
--export([start/2, stop/1]).
+-define(APP, ?MODULE).
 
-
-%%--------------------------------------------------------------------
-%% Application callbacks
-%%--------------------------------------------------------------------
-
-start(_StartType, _StartArgs) ->
-    {ok, Sup} = dgiot_amis_sup:start_link(),
-    {ok, Sup}.
-
-stop(_State) ->
-    ok.
+%%新设备
+create_amis(DtuAddr, ChannelId, DTUIP) ->
+    {ProductId, Acl, _Properties} = dgiot_data:get({amis, ChannelId}),
+    Requests = #{
+        <<"devaddr">> => DtuAddr,
+        <<"name">> => <<"AMIS_", DtuAddr/binary>>,
+        <<"ip">> => DTUIP,
+        <<"isEnable">> => true,
+        <<"product">> => ProductId,
+        <<"ACL">> => Acl,
+        <<"status">> => <<"ONLINE">>,
+        <<"brand">> => <<"AMIS", DtuAddr/binary>>,
+        <<"devModel">> => <<"AMIS">>
+    },
+    dgiot_device:create_device(Requests).

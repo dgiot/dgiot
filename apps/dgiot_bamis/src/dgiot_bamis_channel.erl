@@ -15,13 +15,13 @@
 %%--------------------------------------------------------------------
 
 
--module(dgiot_amis_channel).
+-module(dgiot_bamis_channel).
 -behavior(dgiot_channelx).
 -author("johnliu").
 -include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
 -include_lib("dgiot/include/dgiot_socket.hrl").
 -include_lib("dgiot/include/logger.hrl").
--include("dgiot_amis.hrl").
+-include("dgiot_bamis.hrl").
 -define(TYPE, <<"AMIS">>).
 -define(MAX_BUFF_SIZE, 1024).
 
@@ -112,7 +112,7 @@ handle_event(_EventId, _Event, State) ->
 handle_message({rule, #{clientid := DtuAddr, connected_at := _ConnectedAt}, #{peername := PeerName} = _Context}, #state{id = ChannelId} = State) ->
     ?LOG(error,"DtuAddr ~p PeerName ~p",[DtuAddr,PeerName] ),
     DTUIP = dgiot_utils:get_ip(PeerName),
-    dgiot_amis:create_amis(DtuAddr, ChannelId, DTUIP),
+    dgiot_bamis:create_amis(DtuAddr, ChannelId, DTUIP),
     {ok, State};
 
 handle_message({rule, #{clientid := DevAddr, disconnected_at := _DisconnectedAt}, _Context}, State) ->
