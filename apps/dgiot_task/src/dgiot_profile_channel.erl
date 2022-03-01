@@ -168,7 +168,7 @@ handle_message({sync_parse, Args}, State) ->
                                             end, #{}, Properties),
                             Topic = <<"profile/", ProductId/binary, "/", Devaddr/binary>>,
                             dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(NewPayLoad)),
-                            io:format("~s ~p NewPayLoad = ~p.~n", [?FILE, ?LINE, NewPayLoad]),
+%%                            io:format("~s ~p NewPayLoad = ~p.~n", [?FILE, ?LINE, NewPayLoad]),
                             dgiot_data:insert(?PROFILE, DeviceId, Profile);
                         false ->
                             dgiot_data:insert(?MODIFYPROFILE, DeviceId, {Profile, ProductId, Devaddr})

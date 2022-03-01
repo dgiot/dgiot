@@ -54,5 +54,5 @@ decode_of_addr(A) ->
     {_, Rest} = split_head_bytes(A),
     {A1, A2} = split_head_bytes(Rest),
     AA = concrat_binary(dlt645_proctol:reverse(A1), dlt645_proctol:reverse(A2)),
-    AA1 = concrat_binary(AA, <<16#14>>),
+    AA1 = concrat_binary(AA, <<16#F2>>),
     AA1.

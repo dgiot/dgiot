@@ -162,6 +162,13 @@ do_request(post_sendemail, Args, #{<<"sessionToken">> := _SessionToken}, _Req) -
             {error, #{<<"msg">> => <<"send fail">>}}
     end;
 
+%% iot_hub 概要: 查询平台api资源 描述:工单结束发送
+%% OperationId:get_maintenancefinish
+%% 请求:POST /iotapi/get_maintenancefinish
+do_request(get_maintenancefinish, #{<<"number">> := Number}, #{<<"sessionToken">> := _SessionToken}, _Req) ->
+    Topic = <<"/workOrderCompletion/up">>,
+    dgiot_mqtt:publish(Number, Topic, jsx:encode(#{<<"id">> => Number}));
+
 %% iot_hub 概要: 查询平台api资源 描述:创建工单
 %% OperationId:post_maintenance
 %% 请求:POST /iotapi/post_maintenance
