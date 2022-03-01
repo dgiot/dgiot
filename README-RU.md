@@ -51,6 +51,11 @@
     cp ../dgiot_dashboard/dist/ ./apps/dgiot_api/priv/www -rf
     cp ../dgiot_dashboard/swagger ./apps/dgiot_api/priv/www/ -rf
     make run
+    cd ./apps/dgiot_api/priv/www
+    wget https://dgiot-release-1306147891.cos.ap-nanjing.myqcloud.com/v4.4.0/dgiot_dashboard.tar.gz &> /dev/null
+    tar xf dgiot_dashboard.tar.gz &> /dev/null
+    wget https://dgiot-release-1306147891.cos.ap-nanjing.myqcloud.com/v4.4.0/dgiot_file.tar.gz &> /dev/null
+    tar xf dgiot_file.tar.gz &> /dev/null
  ```
 + Make Debug
  ```

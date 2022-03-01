@@ -32,7 +32,7 @@
 %%    dgiot_http_server:bind(<<"/swagger_amis.json">>, ?MODULE, [], priv)
 swagger_amis() ->
     [
-        dgiot_http_server:bind(<<"/swagger_amis.json">>, ?MODULE, [], priv)
+        dgiot_http_server:bind(<<"/swagger_bamis.json">>, ?MODULE, [], priv)  %需要于priv/swagger/目录下放置swagger.json文件名保持一致
     ].
 
 
@@ -85,6 +85,56 @@ do_request(get_amis, #{<<"deviceid">> := Deviceid}, _Context, _Req) ->
             {ok, #{}}
     end;
 
+%% iot_hub 概要: 查询amis设备
+%% OperationId:get_amis
+%% 请求:POST /iotapi/get_amis_device
+do_request(get_amis_device, #{<<"deviceid">> := Deviceid}, _Context, _Req) ->
+    case dgiot_parse:get_object(<<"Device">>, Deviceid) of
+        {ok, info} ->
+            {ok, info};
+        _ ->
+            {ok, #{}}
+    end;
+
+%% Role模版 概要: 修改amis设备
+%% OperationId:put_amis_device
+%% 请求:POST /iotapi/put_amis_device
+do_request(put_amis_device, #{<<"objectId">> := Deviceid} = Body, #{<<"sessionToken">> := SessionToken} = _Context, _Req0) ->
+%%    io:format("Body ~p~n", [Body]),
+    case Deviceid of
+        <<"Klht7ERlYn">> ->
+            {ok, #{<<"code">> => 401, <<"result">> => <<"dgiot_admin Cannot be Resignation">>}};
+        <<"lerYRy2jsh">> ->
+            {ok, #{<<"code">> => 401, <<"result">> => <<"dgiot_admin Cannot be Resignation">>}};
+        _ ->
+            dgiot_bamis:put_amis_device(Body, SessionToken,_Context)
+    end;
+
+%% iot_hub 概要: 删除amis设备
+%% OperationId:del_amis_device
+%% 请求:POST /iotapi/del_amis_device
+do_request(delete_amis_device, #{<<"deviceid">> := Deviceid} = _Body, _Context, _Req) ->
+    case Deviceid of
+        <<"Klht7ERlYn">> ->
+            {ok, #{<<"code">> => 401, <<"result">> => <<"dgiot_admin Cannot be Resignation">>}};
+        <<"lerYRy2jsh">> ->
+            {ok, #{<<"code">> => 401, <<"result">> => <<"dgiot_admin Cannot be Resignation">>}};
+        _ ->
+            dgiot_bamis:del_amis_device(Deviceid)
+    end;
+
+
+
+%% iot_hub 概要: 创建amis设备
+%% OperationId:created_amis_device
+%% 请求:POST /iotapi/created_amis_device
+do_request(post_amis_device, #{<<"deviceid">> := Deviceid, <<"ChannelId">> := ChannelId,<<"DTUIP">> := DTUIP} = _Body,_Context, _Req) ->
+    case Deviceid of
+        <<"test">> ->
+            {ok, #{<<"code">> => test, <<"result">> => <<"you input test">>}};
+        _ ->
+        {ok, dgiot_bamis:created_amis_device(Deviceid,ChannelId,DTUIP)}
+    end;
 
 %%  服务器不支持的API接口
 do_request(_OperationId, _Args, _Context, _Req) ->

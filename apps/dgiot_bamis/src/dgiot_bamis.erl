@@ -18,11 +18,46 @@
 -module(dgiot_bamis).
 -include("dgiot_bamis.hrl").
 -include_lib("dgiot/include/logger.hrl").
+-include_lib("dgiot/include/dgiot_mnesia.hrl").
 -export([
-    create_amis/3
+    create_amis/3,
+    put_amis_device/3,
+    del_amis_device/1,
+    created_amis_device/3
 ]).
 
 -define(APP, ?MODULE).
+del_amis_device(DeviceId) ->
+    dgiot_mnesia:delete(DeviceId).
+%%修改设备
+put_amis_device(put_amis_device, #{<<"objectId">> := Deviceid} = Body, SessionToken) ->
+    case dgiot_parse:get_object(<<"Device">>, Deviceid,
+        [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+        {ok, #{<<"data">> := OldRole}} ->
+            dgiot_parse:update_object(<<"Device">>, Deviceid, #{
+                <<"data">> => maps:without([
+                    <<"parent">>,
+                    <<"createdAt">>,
+                    <<"updatedAt">>], maps:merge(OldRole, Body))},
+                [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]);
+        Error -> Error
+    end.
+
+%%新设备
+created_amis_device(DtuAddr, ChannelId, DTUIP) ->
+    {ProductId, Acl, _Properties} = dgiot_data:get({amis, ChannelId}),
+    Requests = #{
+        <<"devaddr">> => DtuAddr,
+        <<"name">> => <<"AMIS_", DtuAddr/binary>>,
+        <<"ip">> => DTUIP,
+        <<"isEnable">> => true,
+        <<"product">> => ProductId,
+        <<"ACL">> => Acl,
+        <<"status">> => <<"ONLINE">>,
+        <<"brand">> => <<"AMIS", DtuAddr/binary>>,
+        <<"devModel">> => <<"AMIS">>
+    },
+    dgiot_device:create_device(Requests).
 
 %%新设备
 create_amis(DtuAddr, ChannelId, DTUIP) ->
