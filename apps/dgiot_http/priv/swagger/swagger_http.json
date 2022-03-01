@@ -486,6 +486,12 @@
                   "required": true,
                   "example": "电表跳闸断电",
                   "description": "工单描述"
+                },
+                "id": {
+                  "type": "string",
+                  "required": true,
+                  "example": "7c9odaff69",
+                  "description": "工单编号"
                 }
               }
             }
@@ -500,6 +506,38 @@
           }
         },
         "summary": "创建工单",
+        "tags": [
+          "Wechat"
+        ]
+      }
+    },
+    "/maintenancefinish": {
+      "get": {
+        "description": "工单结束发送",
+        "parameters": [
+          {
+            "name": "number",
+            "in": "query",
+            "type": "string",
+            "default": "1646117781",
+            "description": "工单编号"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "summary": "工单结束发送",
         "tags": [
           "Wechat"
         ]

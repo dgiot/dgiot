@@ -527,7 +527,7 @@ send_message_to3D(ProductId, DevAddr, Payload) ->
         <<"status">> => <<"拉闸"/utf8>>,
         <<"content">> => <<"电表拉闸断电"/utf8>>,
         <<"time">> => Timestamp,
-        <<"data ">> => #{
+        <<"data">> => #{
             <<"id">> => Number,
             <<"deviceid">> => Deviceid,
             <<"devicename">> => DeviceName,
@@ -575,6 +575,10 @@ create_maintenance(SessionToken, Info) ->
         <<"status">> => 0,
         <<"ACL">> => Acl,
         <<"info">> => Info#{
+            <<"step1">> => #{},
+            <<"step2">> => #{},
+            <<"step3">> => #{},
+            <<"step4">> => #{},
             <<"timeline">> => [
                 #{
                     <<"timestamp">> => Timestamp,

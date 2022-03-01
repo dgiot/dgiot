@@ -165,7 +165,7 @@ handle_info({deliver, _, Msg}, #task{tid = Channel, dis = Dis, product = Product
     dgiot_bridge:send_log(Channel, ProductId, DevAddr, "to_dev=> ~s ~p ~ts: ~ts", [?FILE, ?LINE, unicode:characters_to_list(dgiot_mqtt:get_topic(Msg)), unicode:characters_to_list(dgiot_mqtt:get_payload(Msg))]),
     NewPayload =
         maps:fold(fun(K, V, Acc) ->
-            case dgiot_data:get({protocol, K, ProductId}) of
+            case dgiot_data:get({protocol, <<"01010110">>, <<"ecfbf67dd7">>}) of
                 not_find ->
                     Acc#{K => V};
                 Identifier ->

@@ -152,7 +152,17 @@ init(?TYPE, ChannelId, #{
     lists:map(fun(X) ->
         case X of
             {ProductId, #{<<"ACL">> := Acl, <<"nodeType">> := 1, <<"thing">> := Thing}} ->
-                dgiot_data:insert({dtu, ChannelId}, {ProductId, Acl, maps:get(<<"properties">>, Thing, [])});
+%%                dgiot_data:insert({dtu, ChannelId}, {ProductId, Acl, maps:get(<<"properties">>, Thing, [])}),
+                Props = maps:get(<<"properties">>, Thing, []),
+                dgiot_data:insert({dtu, ChannelId}, {ProductId, Acl, Props}),
+                lists:map(fun(Prop) ->
+                    case Prop of
+                        #{<<"identifier">> := Identifier, <<"dataSource">> := #{<<"da">> := Da, <<"dt">> := Dt}} ->
+                            dgiot_data:insert({protocol, <<Da/binary, Dt/binary>>, ProductId}, Identifier);
+                        _ ->
+                            pass
+                    end
+                          end, Props);
             {ProductId, #{<<"ACL">> := Acl, <<"nodeType">> := 3, <<"thing">> := Thing}} ->
                 dgiot_data:insert({dtu, ChannelId}, {ProductId, Acl, maps:get(<<"properties">>, Thing, [])});
             {ProductId, #{<<"ACL">> := Acl, <<"thing">> := Thing}} ->
@@ -162,6 +172,8 @@ init(?TYPE, ChannelId, #{
                     case Prop of
                         #{<<"identifier">> := Identifier, <<"dataSource">> := #{<<"di">> := Di}} ->
                             dgiot_data:insert({protocol, Di, ProductId}, Identifier);
+                        #{<<"identifier">> := Identifier, <<"dataSource">> := #{<<"da">> := Da, <<"dt">> := Dt}} ->
+                            dgiot_data:insert({protocol, <<Da/binary, Dt/binary>>, ProductId}, Identifier);
                         _ ->
                             pass
                     end

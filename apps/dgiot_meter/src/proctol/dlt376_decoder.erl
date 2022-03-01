@@ -52,26 +52,38 @@
         required => true,
         default => <<"00"/utf8>>,
         title => #{
-            zh => <<"功能码"/utf8>>
+            zh => <<"功能码(afn)"/utf8>>
         },
         description => #{
-            zh => <<"功能码"/utf8>>
+            zh => <<"功能码(afn)"/utf8>>
         }
     },
-    <<"di">> => #{
+    <<"da">> => #{
         order => 2,
         type => string,
         required => true,
         default => <<"0000"/utf8>>,
         title => #{
-            zh => <<"信息标识"/utf8>>
+            zh => <<"信息点(da)"/utf8>>
         },
         description => #{
-            zh => <<"信息标识"/utf8>>
+            zh => <<"信息点(da)"/utf8>>
+        }
+    },
+    <<"dt">> => #{
+        order => 3,
+        type => string,
+        required => true,
+        default => <<"0000"/utf8>>,
+        title => #{
+            zh => <<"信息类(dt)"/utf8>>
+        },
+        description => #{
+            zh => <<"信息类(dt)"/utf8>>
         }
     },
     <<"type">> => #{
-        order => 3,
+        order => 4,
         type => string,
         required => true,
         default => #{<<"value">> => <<"bytes">>, <<"label">> => <<"bytes">>},
@@ -88,7 +100,7 @@
         }
     },
     <<"length">> => #{
-        order => 4,
+        order => 5,
         type => integer,
         required => true,
         default => 2,
@@ -288,11 +300,35 @@ check_Command(State = #{<<"afn">> := 16#10}) ->
 check_Command(State) ->
     State.
 
+%% 组装成封包
+to_frame(#{
+    <<"command">> := C,
+    <<"addr">> := Addr,
+    <<"afn">> := AFN,
+    <<"da">> := Da,
+    <<"dt">> := Dt
+} = _Msg) ->
+%%    {ok, UserZone} = get_userzone(Msg),
+    Da2 = dgiot_utils:hex_to_binary(Da),
+    Dt2 = dgiot_utils:hex_to_binary(Dt),
+    UserZone = <<C:8, Addr:5/bytes, AFN:8, 16#61, Da2/binary, Dt2/binary>>,
+    Len = byte_size(UserZone) * 4 + 2,
+    Crc = dgiot_utils:get_parity(UserZone),
+    <<
+        16#68,
+        Len:16/little,
+        Len:16/little,
+        16#68,
+        UserZone/binary,
+        Crc:8,
+        16#16
+    >>;
+
 to_frame(#{
     % <<"msgtype">> := ?DLT376,
     <<"command">> := C,
 %%    <<"addr">> := Addr,  %%?? Addr是6位字符
-    <<"concentrator">> := Addr,
+    <<"addr">> := Addr,
     <<"afn">> := AFN
 } = Msg) when AFN == 1 orelse AFN == 4 orelse AFN == 5 orelse AFN == 6 orelse AFN == 10 ->
     {ok, UserZone} = get_userzone(Msg),
@@ -323,8 +359,10 @@ to_frame(#{
     <<"concentrator">> := Addr,
     <<"afn">> := AFN
 } = Msg) ->
+    io:format("~s ~p Msg = ~p.~n", [?FILE, ?LINE, Msg]),
     {ok, UserZone} = get_userzone(Msg),
-    Len = (byte_size(UserZone) + 8) * 4 + 2,
+    UserZone1 = <<C:8, Addr:5/bytes, AFN:8, 16#61, UserZone/binary>>,
+    Len = byte_size(UserZone1) * 4 + 2,
     Crc = dgiot_utils:get_parity(<<C:8, Addr:5/bytes, AFN:8, 16#61, UserZone/binary>>),
     <<
         16#68,
@@ -338,8 +376,10 @@ to_frame(#{
         UserZone/binary,
         Crc:8,
         16#16
-    >>.
+    >>;
 
+to_frame(Msg) ->
+    io:format("~s ~p to_frame = ~p.~n", [?FILE, ?LINE, Msg]).
 
 % DLT376协议中把二进制转化成float
 binary_to_value_dlt376_bcd(BinValue) ->
@@ -455,6 +495,21 @@ process_message(Frames, ChannelId) ->
         _ -> pass
     end.
 
+
+process_message(?DLT376, Frames, ChannelId) ->
+    case Frames of
+        [#{<<"di">> := <<16#01, 16#01, 16#01, 16#10>>, <<"addr">> := Addr, <<"value">> := Value} | _] ->
+            case dgiot_data:get({dtu, ChannelId}) of
+                {ProductId, _ACL, _Properties} -> DevAddr = dgiot_utils:binary_to_hex(Addr),
+                    Topic = <<"thing/", ProductId/binary, "/", Addr/binary, "/post">>,  % 发送给mqtt进行数据存储
+                    DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+                    dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(Value));
+                _ -> pass
+            end;
+        _ ->
+            pass
+    end;
+
 process_message(Frames, ChannelId, DTUIP) ->
     [#{<<"afn">> := 16#0A, <<"di">> := <<16#00, 16#00, 16#02, 16#01>>, <<"addr">> := DevAddr, <<"value">> := Value} | _] = Frames,
     lists:map(fun(#{<<"addr">> := MeterAddr}) ->
@@ -532,20 +587,20 @@ frame_write_param(#{<<"concentrator">> := ConAddr, <<"payload">> := Frame}) ->
     {BitList, Afn, Da, Fn} =
         lists:foldl(fun(Index, {Acc, A, D, F}) ->
             case maps:find(dgiot_utils:to_binary(Index), Frame) of
-                {ok, #{<<"value">> := Value, <<"dataSource">> := #{<<"afn">> := AFN, <<"da">> := Da, <<"di">> := FN, <<"length">> := Len, <<"type">> := Type} = _DataForm}} ->
-                    io:format("~s ~p Value ~p. Da ~p FN ~p ~n", [?FILE, ?LINE, Value, Da,FN]),
+                {ok, #{<<"value">> := Value, <<"dataSource">> := #{<<"afn">> := AFN, <<"da">> := Da, <<"dt">> := FN, <<"length">> := Len, <<"type">> := Type} = _DataForm}} ->
+                    io:format("~s ~p Value ~p. Da ~p FN ~p ~n", [?FILE, ?LINE, Value, Da, FN]),
                     DA = dgiot_utils:binary_to_hex(pn_to_da(Da)),
                     case Type of
                         <<"bytes">> ->
                             NewValue = dlt645_proctol:reverse(dgiot_utils:hex_to_binary(Value)),
                             io:format("~s ~p NewValue   ~p.~n", [?FILE, ?LINE, NewValue]),
-                            {get_values(Acc,NewValue), AFN, DA, FN};
+                            {get_values(Acc, NewValue), AFN, DA, FN};
                         <<"little">> ->
                             NewValue = dgiot_utils:to_int(Value),
                             L = dgiot_utils:to_int(Len),
                             Len1 = L * 8,
                             io:format("~s ~p NewValue   ~p.~n", [?FILE, ?LINE, NewValue]),
-                            {get_values(Acc,<<NewValue:Len1/little>>), AFN, DA, FN};
+                            {get_values(Acc, <<NewValue:Len1/little>>), AFN, DA, FN};
                         <<"bit">> ->
                             NewValue = dgiot_utils:to_int(Value),
                             L = dgiot_utils:to_int(Len),
@@ -555,15 +610,14 @@ frame_write_param(#{<<"concentrator">> := ConAddr, <<"payload">> := Frame}) ->
                 _ ->
                     {Acc, A, D, F}
             end
-                  end, {[], 0, <<>>, <<>>}, lists:seq(1, Length)),
+                    end, {[], 0, <<>>, <<>>}, lists:seq(1, Length)),
     io:format("~s ~p BitList   ~p.~n", [?FILE, ?LINE, BitList]),
     UserZone = <<<<V:BitLen>> || {V, BitLen} <- BitList>>,
-    io:format("~s ~p UserZone  ~p. Afn ~p ~n", [?FILE, ?LINE, UserZone,Afn]),
+    io:format("~s ~p UserZone  ~p. Afn ~p ~n", [?FILE, ?LINE, UserZone, Afn]),
     UserData = add_to_userzone(UserZone, Afn, Fn),
     dlt376_decoder:to_frame(#{<<"command">> => 16#4B,
-        <<"concentrator">> => concentrator_to_addr(ConAddr),
+        <<"addr">> => concentrator_to_addr(ConAddr),
         <<"afn">> => dgiot_utils:to_int(Afn),
-%%        <<"da">> => Da,
         <<"di">> => <<Da/bytes, Fn/bytes>>,
         <<"data">> => dgiot_utils:binary_to_hex(UserData)}).
 

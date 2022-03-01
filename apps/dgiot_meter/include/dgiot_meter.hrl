@@ -114,7 +114,7 @@
 
 
 %% @doc dlt376 COMMAND.
--define(DLT376_MS_READ_DATA,     16#5B).
+-define(DLT376_MS_READ_DATA,     16#4B).
 -define(DLT376_MS_READ_DATA_AFN,     16#0C).
 -define(DLT376_MS_CONVERT_SEND_AFN,     16#10).  %透明转发
 -define(DLT376_MS_CTRL_DEV,     16#5A).

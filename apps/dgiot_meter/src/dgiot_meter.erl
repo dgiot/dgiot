@@ -109,8 +109,8 @@ create_meter4G(DevAddr, ChannelId, DTUIP) ->
                 <<"brand">> => <<"Concentrator", DevAddr/binary>>,
                 <<"devModel">> => <<"Concentrator">>
             },
-            dgiot_device:create_device(Requests);
-%%            dgiot_task:save_pnque(ProductId, DevAddr, ProductId, DevAddr);
+            dgiot_device:create_device(Requests),
+            dgiot_task:save_pnque(ProductId, DevAddr, ProductId, DevAddr);
         _ ->
             pass
     end.
@@ -143,14 +143,16 @@ to_frame(#{
     <<"devaddr">> := Addr,
     <<"protocol">> := ?DLT376,
     <<"dataSource">> := #{
-        <<"di">> := Di
+        <<"da">> := Da,
+        <<"dt">> := Dt
     }
 } = Frame) ->
     dlt376_decoder:to_frame(Frame#{
         <<"msgtype">> => ?DLT376,
         <<"addr">> => dlt376_proctol:decode_of_addr(dgiot_utils:hex_to_binary(Addr)),
         <<"data">> => <<>>,
-        <<"di">> => Di,
+        <<"da">> => Da,
+        <<"dt">> => Dt,
         <<"command">> => ?DLT376_MS_READ_DATA,
         <<"afn">> => ?DLT376_MS_READ_DATA_AFN
     });
