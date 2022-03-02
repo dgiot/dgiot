@@ -74,6 +74,23 @@ handle(OperationID, Args, Context, Req) ->
 %%% 内部函数 Version:API版本
 %%%===================================================================
 
+
+%%%===================================================================
+%%% 所有配置在 amis 组件中的接口，都要符合下面的返回格式
+%% 适配amis接口参数
+%% {
+%%   "status": 0,
+%%   "msg": "",
+%%   "data": {
+%%     ...其他字段
+%%   }
+%% }
+%% status: 返回 0，表示当前接口正确返回，否则按错误请求处理；
+%% msg: 返回接口处理信息，主要用于表单提交或请求失败时的 toast 显示；
+%% data: 必须返回一个具有 key-value 结构的对象。
+%% https://aisuda.bce.baidu.com/amis/zh-CN/docs/types/api#%E6%8E%A5%E5%8F%A3%E8%BF%94%E5%9B%9E%E6%A0%BC%E5%BC%8F-%E9%87%8D%E8%A6%81-
+%%%===================================================================
+
 %% iot_hub 概要: 查询平台api资源 描述:总控台
 %% OperationId:get_amis
 %% 请求:POST /iotapi/get_amis
@@ -82,7 +99,7 @@ do_request(get_amis, #{<<"deviceid">> := Deviceid}, _Context, _Req) ->
         {ok, #{<<"profile">> := Profile}} ->
             {ok, Profile};
         _ ->
-            {ok, #{}}
+            {error, #{}}
     end;
 
 %% iot_hub 概要: 查询amis设备
@@ -90,51 +107,48 @@ do_request(get_amis, #{<<"deviceid">> := Deviceid}, _Context, _Req) ->
 %% 请求:POST /iotapi/get_amis_device
 do_request(get_amis_device, #{<<"deviceid">> := Deviceid}, _Context, _Req) ->
     case dgiot_parse:get_object(<<"Device">>, Deviceid) of
-        {ok, info} ->
-            {ok, info};
+        {ok, Info} ->
+            {ok, Info};
         _ ->
-            {ok, #{}}
+            {error, #{<<"code">> => 404, <<"result">> => <<"deviec info null">>}}
     end;
 
 %% Role模版 概要: 修改amis设备
 %% OperationId:put_amis_device
 %% 请求:POST /iotapi/put_amis_device
-do_request(put_amis_device, #{<<"objectId">> := Deviceid} = Body, #{<<"sessionToken">> := SessionToken} = _Context, _Req0) ->
+do_request(put_amis_device, #{<<"objectId">> := Deviceid} = _Body,_Context, _Req0) ->
 %%    io:format("Body ~p~n", [Body]),
-    case Deviceid of
-        <<"Klht7ERlYn">> ->
-            {ok, #{<<"code">> => 401, <<"result">> => <<"dgiot_admin Cannot be Resignation">>}};
-        <<"lerYRy2jsh">> ->
-            {ok, #{<<"code">> => 401, <<"result">> => <<"dgiot_admin Cannot be Resignation">>}};
+    case dgiot_bamis:put_amis_device(Deviceid) of
+        {ok, Info} ->
+            {ok, Info};
         _ ->
-            dgiot_bamis:put_amis_device(Body, SessionToken,_Context)
+            {error, #{<<"code">> => 404, <<"result">> => <<"device info null">>}}
     end;
-
 %% iot_hub 概要: 删除amis设备
 %% OperationId:del_amis_device
 %% 请求:POST /iotapi/del_amis_device
-do_request(delete_amis_device, #{<<"deviceid">> := Deviceid} = _Body, _Context, _Req) ->
-    case Deviceid of
-        <<"Klht7ERlYn">> ->
-            {ok, #{<<"code">> => 401, <<"result">> => <<"dgiot_admin Cannot be Resignation">>}};
-        <<"lerYRy2jsh">> ->
-            {ok, #{<<"code">> => 401, <<"result">> => <<"dgiot_admin Cannot be Resignation">>}};
-        _ ->
-            dgiot_bamis:del_amis_device(Deviceid)
+do_request(delete_amis_device, #{<<"deviceid">> := DeviceId} = _Body,  #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
+    case dgiot_parse:del_object(<<"Device">>,DeviceId,[{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+     ok ->
+        {ok, #{
+            <<"status">> => 200,
+            <<"msg">> => "delete success"
+        }};
+    _ ->
+        {ok,  #{  <<"status">> => 200,  <<"msg">> => "delete error" }}
     end;
-
-
 
 %% iot_hub 概要: 创建amis设备
 %% OperationId:created_amis_device
 %% 请求:POST /iotapi/created_amis_device
 do_request(post_amis_device, #{<<"deviceid">> := Deviceid, <<"ChannelId">> := ChannelId,<<"DTUIP">> := DTUIP} = _Body,_Context, _Req) ->
-    case Deviceid of
-        <<"test">> ->
-            {ok, #{<<"code">> => test, <<"result">> => <<"you input test">>}};
+    case dgiot_bamis:created_amis_device(Deviceid,ChannelId,DTUIP) of
+        {ok, Info} ->
+            {ok, Info};
         _ ->
-        {ok, dgiot_bamis:created_amis_device(Deviceid,ChannelId,DTUIP)}
+            {error, #{<<"code">> => 404, <<"result">> => <<"device info null">>}}
     end;
+
 
 %%  服务器不支持的API接口
 do_request(_OperationId, _Args, _Context, _Req) ->
