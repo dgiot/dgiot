@@ -28,6 +28,7 @@
     process_message/2,
     process_message/3,
     check_Command/1,
+    more_Check_Command/2,
     frame_write_param/1]).
 
 -define(TYPE, ?DLT376).
@@ -220,7 +221,7 @@ check_Command(State = #{<<"afn">> := 16#0A, <<"data">> := Data}) ->
 check_Command(State = #{<<"afn">> := 16#0C}) ->
     Data = maps:get(<<"data">>, State, <<>>),
     case Data of
-        <<Di:4/bytes, DTime:5/bytes, DNum:1/bytes, DValue:5/bytes, _/bytes>> ->
+        <<Di:4/bytes, DTime:5/bytes, DNum:1/bytes, DValue:5/bytes, Rest1/bytes>> ->
             State1 = #{
                 <<"di">> => Di,
                 <<"time">> => dgiot_utils:to_hex(DTime),
@@ -228,7 +229,14 @@ check_Command(State = #{<<"afn">> := 16#0C}) ->
                 <<"value">> => #{dgiot_utils:to_hex(Di) => binary_to_value_dlt376_bcd(DValue)},
                 <<"addr">> => maps:get(<<"addr">>, State, <<>>)
             },
-            State1;
+%%            费率长度
+            Ratelen = dgiot_utils:to_int(dgiot_utils:binary_to_hex(DNum)) * 5,
+            case Rest1 of
+                <<_:Ratelen/bytes, Rest2/bytes>> ->
+                    more_Check_Command(State1, Rest2);
+                _ ->
+                    State1
+            end;
         _ ->
             State
     end;
@@ -299,6 +307,29 @@ check_Command(State = #{<<"afn">> := 16#10}) ->
 
 check_Command(State) ->
     State.
+
+% GW1376.1 抄集中器多个电表返回的数据
+more_Check_Command(#{<<"value">> := Value} = State, Rest) ->
+    io:format("~s ~p State = ~p.~n", [?FILE, ?LINE, State]),
+    io:format("~s ~p Rest = ~p.~n", [?FILE, ?LINE, dgiot_utils:binary_to_hex(Rest)]),
+    case Rest of
+        <<Di:4/bytes, _DTime:5/bytes, DNum:1/bytes, DValue:5/bytes, Rest1/bytes>> ->
+            State1 = State#{
+                <<"value">> => Value#{
+                    dgiot_utils:to_hex(Di) => binary_to_value_dlt376_bcd(DValue)
+                }
+            },
+%%            费率长度
+            Ratelen = dgiot_utils:to_int(dgiot_utils:binary_to_hex(DNum)) * 5,
+            case Rest1 of
+                <<_:Ratelen/bytes, Rest2/bytes>> ->
+                    more_Check_Command(State1, Rest2);
+                _ ->
+                    State1
+            end;
+        _ ->
+            State
+    end.
 
 %% 组装成封包
 to_frame(#{
