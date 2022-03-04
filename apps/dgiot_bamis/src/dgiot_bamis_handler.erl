@@ -22,7 +22,6 @@
 %% API
 -export([swagger_amis/0]).
 -export([handle/4]).
-
 %% API描述
 %% 支持二种方式导入
 %% 示例:
@@ -149,17 +148,46 @@ do_request(post_amis_device, #{<<"deviceid">> := Deviceid, <<"ChannelId">> := Ch
             {error, #{<<"code">> => 404, <<"result">> => <<"device info null">>}}
     end;
 
+do_request(post_update_product,  _Body,_Context, _Req) ->
+    case dgiot_parse:query_object(<<"Product">>, #{<<"where">>=>#{}}) of
+        {ok,#{<<"results">> := Products}}->
+            io:format("~s ~p Products = ~p.~n", [?FILE, ?LINE, Products]),
+            lists:foldl(fun(Product, _Acc) ->
+                case Product of
+                    #{<<"objectId">>:=ProductId,<<"thing">> := #{<<"properties">> := Properties} =_Thing} ->
+                        NewProperties =
+                        lists:foldl(fun(X, Acc) ->
+                            case X of
+                                #{<<"dataForm">> := #{<<"protocol">> := <<"modbus">>,<<"data">> := Data,<<"address">> := Address,
+                                    <<"slaveid">> := Slaveid,<<"operatetype">> := Operatetype,<<"originaltype">> := Originaltype} = DataForm}->
+                                    Acc++[X#{
+                                        <<"dataForm">> => maps:without([<<"address">>,<<"data">>,<<"slaveid">>,<<"operatetype">>,<<"originaltype">>],
+                                            DataForm#{<<"protocol">> => <<"MODBUSRTU">>}),
+                                        <<"dataSource">> => #{
+                                            <<"data">> => Data,
+                                            <<"address">> => Address,
+                                            <<"slaveid">> => Slaveid,
+                                            <<"_dlinkindex">> => 0,
+                                            <<"operatetype">> => Operatetype,
+                                            <<"originaltype">> => Originaltype,
+                                            <<"registersnumber">> => 0
+                                        }
+                                    }];
+                                _->
+                                  Acc++[X]
+                            end
+                                    end, [], Properties),
+                        dgiot_parse:update_object(<<"Product">>,ProductId,#{<<"thing">> => #{<<"properties">>=>NewProperties}});
+                       _->
+    pass
+                end
+                        end,[],Products);
+        _Error ->
+            {error, #{<<"code">> => 404, <<"result">> => <<"device info null">>}}
+    end;
+
 
 %%  服务器不支持的API接口
 do_request(_OperationId, _Args, _Context, _Req) ->
     ?LOG(info,"_OperationId:~p~n", [_OperationId]),
     {error, <<"Not Allowed.">>}.
-
-
-
-
-
-
-
-
-
