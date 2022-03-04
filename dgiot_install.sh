@@ -861,14 +861,14 @@ function update_dashboard() {
   cd ${install_dir}/go_fastdfs/files/
   if [ -f dgiot_dashboard.tar.gz ]; then
     dashboardmd5=`md5sum dgiot_dashboard.tar.gz |cut -d ' ' -f1`
-    if [ "${dashboardmd5}" != "68f5e1c369e07e23e98d48dbb6e36a48" ]; then
+    if [ "${dashboardmd5}" != "62855d53c8b8d4be0c7acedcacb84236" ]; then
       rm -rf dgiot_dashboard.tar.gz &> /dev/null
     fi
   fi
   if [ ! -f dgiot_dashboard.tar.gz ]; then
     wget ${fileserver}/dgiot_dashboard.tar.gz &> /dev/null
     dashboardmd52=`md5sum dgiot_dashboard.tar.gz |cut -d ' ' -f1`
-    if [ "${dashboardmd52}" != "68f5e1c369e07e23e98d48dbb6e36a48" ]; then
+    if [ "${dashboardmd52}" != "62855d53c8b8d4be0c7acedcacb84236" ]; then
       echo -e "`date +%F_%T` $LINENO: ${RED} download dgiot_dashboard.tar.gz failed${NC}"
       exit 1
     fi
