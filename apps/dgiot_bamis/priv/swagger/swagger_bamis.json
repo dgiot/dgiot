@@ -198,6 +198,40 @@
           "AMIS"
         ]
       }
+    },
+    "/update_product": {
+      "post": {
+        "security": [],
+        "description": "更新设备数据",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "data",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "summary": "更新设备数据",
+        "tags": [
+          "AMIS"
+        ]
+      }
     }
   }
 }
