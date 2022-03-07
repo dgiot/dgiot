@@ -1216,15 +1216,24 @@ function pre_build_dgiot() {
 
     cd ${script_dir}/
 
-    if [ ! -d ${script_dir}/dgiot/ ]; then
-      git clone root@git.iotn2n.com:dgiot/dgiot.git
+    if [ ! -d ${script_dir}/$plugin/ ]; then
+      git clone https://gitee.com/dgiiot/dgiot.git  $plugin
     fi
 
-    cd ${script_dir}/dgiot/
+    cd ${script_dir}/$plugin/
     git reset --hard
     git pull
 
-    rm ${script_dir}/dgiot/_build/emqx/rel/ -rf
+    if [ $plugin == 'dgiot' ]; then
+        echo "dgiot plugin"
+      else
+        cd ${script_dir}/$plugin/apps/
+        rm $plugin -rf
+        git clone root@git.iotn2n.com:dgiot/$plugin.git
+    fi
+
+    cd ${script_dir}
+    rm ${script_dir}/$plugin/_build/emqx/rel/ -rf
 
     if [ -d ${script_dir}/dgiot_dashboard/dist ]; then
       rm ${script_dir}/$plugin/_build/emqx/lib/dgiot_api -rf
@@ -1235,19 +1244,6 @@ function pre_build_dgiot() {
     if [ -d ${script_dir}/dgiot/emqx/rel/ ]; then
       rm ${script_dir}/dgiot/emqx/rel -rf
     fi
-
-    if [ ! -d ${script_dir}/$plugin/ ]; then
-      git clone https://gitee.com/dgiiot/dgiot.git $plugin
-    fi
-
-    if [ ! -d ${script_dir}/$plugin/apps/$plugin/ ]; then
-      cd ${script_dir}/$plugin/apps/
-      git clone root@git.iotn2n.com:dgiot/$plugin.git
-    fi
-
-    cd ${script_dir}/$plugin/
-    git reset --hard
-    git pull
 
     rm ${script_dir}/$plugin/rebar.config  -rf
     cp ${script_dir}/$plugin/apps/$plugin/conf/rebar.config ${script_dir}/$plugin/rebar.config  -rf
