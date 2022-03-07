@@ -45,7 +45,6 @@ rebar.config.rendered
 rebar.lock
 .stamp
 tmp/
-/data/loaded_plugins.tmpl
 _packages
 elvis
 emqx_dialyzer_*_plt
