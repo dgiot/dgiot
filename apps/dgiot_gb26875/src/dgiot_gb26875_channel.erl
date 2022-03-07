@@ -19,7 +19,7 @@
 -include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
 -include("dgiot_gb26875.hrl").
 -include_lib("dgiot/include/logger.hrl").
--define(TYPE, <<"GB26875">>).
+-define(TYPE, <<"gb26875">>).
 %% API
 -export([start/2]).
 
@@ -31,10 +31,10 @@
     cType => ?TYPE,
     type => ?PROTOCOL_CHL,
     title => #{
-        zh => <<"GB26875采集通道"/utf8>>
+        zh => <<"GB26875"/utf8>>
     },
     description => #{
-        zh => <<"GB26875采集通道"/utf8>>
+        zh => <<"gb26875"/utf8>>
     }
 }).
 %% 注册通道参数
@@ -43,7 +43,7 @@
         order => 1,
         type => integer,
         required => true,
-        default => 20110,
+        default => 7533,
         title => #{
             zh => <<"端口"/utf8>>
         },
@@ -51,47 +51,23 @@
             zh => <<"侦听端口"/utf8>>
         }
     },
-    <<"regtype">> => #{
+    <<"dtutype">> => #{
         order => 2,
         type => string,
         required => true,
-        default => <<"上传Mac"/utf8>>,
+        default => <<"消防电子"/utf8>>,
         title => #{
-            zh => <<"注册类型"/utf8>>
+            zh => <<"消防电子"/utf8>>
         },
         description => #{
-            zh => <<"上传Mac"/utf8>>
-        }
-    },
-    <<"regular">> => #{
-        order => 3,
-        type => string,
-        required => true,
-        default => <<"9C-A5-25-**-**-**">>,
-        title => #{
-            zh => <<"登录报文帧头"/utf8>>
-        },
-        description => #{
-            zh => <<"填写正则表达式匹配login"/utf8>>
-        }
-    },
-    <<"dtutype">> => #{
-        order => 4,
-        type => string,
-        required => true,
-        default => <<"usr">>,
-        title => #{
-            zh => <<"控制器厂商"/utf8>>
-        },
-        description => #{
-            zh => <<"控制器厂商"/utf8>>
+            zh => <<"消防电子"/utf8>>
         }
     },
     <<"ico">> => #{
         order => 102,
         type => string,
         required => false,
-        default => <<"http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/product/dgiot/channel/GB26875.png">>,
+        default => <<"http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/product/dgiot/channel/modbus.png">>,
         title => #{
             en => <<"channel ICO">>,
             zh => <<"通道ICO"/utf8>>
@@ -109,24 +85,17 @@ start(ChannelId, ChannelArgs) ->
 %% 通道初始化
 init(?TYPE, ChannelId, #{
     <<"port">> := Port,
-    <<"regtype">> := Type,
-    <<"regular">> := Regular,
     <<"product">> := Products,
     <<"dtutype">> := Dtutype
 } = _Args) ->
     [{ProdcutId, App} | _] = get_app(Products),
-    {Header, Len} = get_header(Regular),
     State = #state{
         id = ChannelId,
-        regtype = Type,
-        head = Header,
-        len = Len,
         app = App,
         product = ProdcutId,
         dtutype = Dtutype
     },
 
-%%    dgiot_data:insert({ChannelId, heartbeat}, {Heartbeat, Port}),
     {ok, State, dgiot_gb26875_tcp:start(Port, State)};
 
 init(?TYPE, _ChannelId, _Args) ->
@@ -172,14 +141,3 @@ get_app(Products) ->
         {ProdcutId, App}
               end, Products).
 
-
-
-get_header(Regular) ->
-    lists:foldl(fun(X, {Header, Len}) ->
-        case X of
-            "**" -> {Header, Len + length(X)};
-            "*" -> {Header, Len + length(X)};
-            _ -> {Header ++ X, Len + length(X)}
-        end
-                end, {[], 0},
-        re:split(dgiot_utils:to_list(Regular), "-", [{return, list}])).

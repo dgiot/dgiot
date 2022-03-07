@@ -115,9 +115,9 @@ do_request(get_amis_device, #{<<"deviceid">> := Deviceid}, _Context, _Req) ->
 %% Role模版 概要: 修改amis设备
 %% OperationId:put_amis_device
 %% 请求:POST /iotapi/put_amis_device
-do_request(put_amis_device, #{<<"objectId">> := Deviceid} = _Body,_Context, _Req0) ->
+do_request(put_amis_device, Body, #{<<"sessionToken">> := SessionToken}, _Req0) ->
 %%    io:format("Body ~p~n", [Body]),
-    case dgiot_bamis:put_amis_device(Deviceid) of
+    case dgiot_bamis:put_amis_device(Body, SessionToken) of
         {ok, Info} ->
             {ok, Info};
         _ ->

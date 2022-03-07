@@ -20,7 +20,7 @@
 -include_lib("dgiot/include/logger.hrl").
 -export([
     create_amis/3,
-    put_amis_device/3,
+    put_amis_device/2,
     del_amis_device/1,
     created_amis_device/3
 ]).
@@ -29,7 +29,7 @@
 del_amis_device(DeviceId) ->
     dgiot_device:delete(DeviceId).
 %%修改设备
-put_amis_device(put_amis_device, #{<<"objectId">> := Deviceid} = Body, SessionToken) ->
+put_amis_device( #{<<"objectId">> := Deviceid} = Body, SessionToken) ->
     case dgiot_parse:get_object(<<"Device">>, Deviceid,
         [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
         {ok, #{<<"data">> := OldRole}} ->
