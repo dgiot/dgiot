@@ -1,18 +1,18 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "数蛙IOT API",
-    "description": "数蛙物联网平台API接口, 高并发全连接物联网平台,支持私有云部署的全开放的IoT产品全生命周期管理平台",
+    "title": "dgiot api",
+    "description": "dgiot物联网平台API接口, 高并发全连接物联网平台,支持私有云部署的全开放的IoT产品全生命周期管理平台",
     "version": "1.4.1",
     "termsOfService": "http://www.iotn2n.com",
     "contact": {
       "name": "技术支持",
-      "email": "service@iotn2n.com"
+      "qq群": "34489690@qq.com"
     }
   },
   "externalDocs": {
     "description": "在线文档",
-    "url": "http://www.iotn2n.com/doc/"
+    "url": "https://gitee.com/dgiiot/dgiot/wikis"
   },
   "schemes": [
     "http",
