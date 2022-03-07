@@ -196,7 +196,7 @@ get_instruct(ProductId, Round) ->
                         Protocol = maps:get(<<"protocol">>, DataForm, <<"">>),
                         ThingRound = maps:get(<<"round">>, DataForm, <<"all">>),
                         InstructOrder = maps:get(<<"order">>, DataForm, Order),
-                        Data = maps:get(<<"data">>, DataForm, <<"null">>),
+                        Data = maps:get(<<"data">>, DataSource, <<"0">>),
                         Control = maps:get(<<"control">>, DataForm, "%d"),
                         NewData = dgiot_task:get_control(Round, Data, Control),
                         Strategy = dgiot_utils:to_int(maps:get(<<"strategy">>, DataForm, "2")),

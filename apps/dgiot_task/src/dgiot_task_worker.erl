@@ -143,38 +143,52 @@ handle_info(retry, State) ->
     {noreply, send_msg(State)};
 
 %% 任务结束
-handle_info({deliver, _, Msg}, #task{tid = Channel, dis = Dis, product = ProductId, devaddr = DevAddr, ack = Ack, que = Que} = State) when length(Que) == 0 ->
+handle_info({deliver, _, Msg}, #task{tid = Channel, dis = Dis, product = ProductId1, devaddr = DevAddr1, ack = Ack, que = Que} = State) when length(Que) == 0 ->
     Payload = jsx:decode(dgiot_mqtt:get_payload(Msg), [return_maps]),
-    dgiot_bridge:send_log(Channel, ProductId, DevAddr, "~s ~p  ~ts: ~ts ", [?FILE, ?LINE, unicode:characters_to_list(dgiot_mqtt:get_topic(Msg)), unicode:characters_to_list(dgiot_mqtt:get_payload(Msg))]),
-    NewPayload =
-        maps:fold(fun(K, V, Acc) ->
-            case dgiot_data:get({protocol, K, ProductId}) of
-                not_find ->
-                    Acc#{K => V};
-                Identifier ->
-                    Acc#{Identifier => V}
-            end
-                  end, #{}, Payload),
-    NewAck = dgiot_task:get_collection(ProductId, Dis, NewPayload, maps:merge(Ack, NewPayload)),
-    dgiot_metrics:inc(dgiot_task, <<"task_recv">>, 1),
-    {noreply, get_next_pn(State#task{ack = NewAck})};
+    case binary:split(dgiot_mqtt:get_topic(Msg), <<$/>>, [global, trim]) of
+        [<<"thing">>, ProductId, DevAddr, <<"post">>] ->
+            dgiot_bridge:send_log(Channel, ProductId, DevAddr, "~s ~p  ~ts: ~ts ", [?FILE, ?LINE, unicode:characters_to_list(dgiot_mqtt:get_topic(Msg)), unicode:characters_to_list(dgiot_mqtt:get_payload(Msg))]),
+            io:format("~s ~p DevAddr ~p => ProductId ~p => Payload ~p.~n", [?FILE, ?LINE, DevAddr, ProductId, Payload]),
+            NewPayload =
+                maps:fold(fun(K, V, Acc) ->
+                    case dgiot_data:get({protocol, K, ProductId}) of
+                        not_find ->
+                            Acc#{K => V};
+                        Identifier ->
+                            Acc#{Identifier => V}
+                    end
+                          end, #{}, Payload),
+            NewAck = dgiot_task:get_collection(ProductId, Dis, NewPayload, maps:merge(Ack, NewPayload)),
+            dgiot_metrics:inc(dgiot_task, <<"task_recv">>, 1),
+            io:format("~s ~p DevAddr ~p => NewAck = ~p.~n", [?FILE, ?LINE, DevAddr, NewAck]),
+            {noreply, get_next_pn(State#task{ack = NewAck, product = ProductId, devaddr = DevAddr})};
+        _ ->
+            io:format("~s ~p DevAddr ~p => ProductId ~p => Payload ~p.~n", [?FILE, ?LINE, DevAddr1, ProductId1, Payload]),
+            {noreply, get_next_pn(State#task{ack = Ack})}
+    end;
+
 
 %% ACK消息触发抄表指令
 handle_info({deliver, _, Msg}, #task{tid = Channel, dis = Dis, product = ProductId, devaddr = DevAddr, ack = Ack} = State) ->
     Payload = jsx:decode(dgiot_mqtt:get_payload(Msg), [return_maps]),
-    dgiot_bridge:send_log(Channel, ProductId, DevAddr, "to_dev=> ~s ~p ~ts: ~ts", [?FILE, ?LINE, unicode:characters_to_list(dgiot_mqtt:get_topic(Msg)), unicode:characters_to_list(dgiot_mqtt:get_payload(Msg))]),
-    NewPayload =
-        maps:fold(fun(K, V, Acc) ->
-            case dgiot_data:get({protocol, K, ProductId}) of
-                not_find ->
-                    Acc#{K => V};
-                Identifier ->
-                    Acc#{Identifier => V}
-            end
-                  end, #{}, Payload),
-    NewAck = dgiot_task:get_collection(ProductId, Dis, NewPayload, maps:merge(Ack, NewPayload)),
     dgiot_metrics:inc(dgiot_task, <<"task_recv">>, 1),
-    {noreply, send_msg(State#task{ack = NewAck})};
+    case binary:split(dgiot_mqtt:get_topic(Msg), <<$/>>, [global, trim]) of
+        [<<"thing">>, ProductId, DevAddr, <<"post">>] ->
+            dgiot_bridge:send_log(Channel, ProductId, DevAddr, "~s ~p  ~ts: ~ts ", [?FILE, ?LINE, unicode:characters_to_list(dgiot_mqtt:get_topic(Msg)), unicode:characters_to_list(dgiot_mqtt:get_payload(Msg))]),
+            NewPayload =
+                maps:fold(fun(K, V, Acc) ->
+                    case dgiot_data:get({protocol, K, ProductId}) of
+                        not_find ->
+                            Acc#{K => V};
+                        Identifier ->
+                            Acc#{Identifier => V}
+                    end
+                          end, #{}, Payload),
+            NewAck = dgiot_task:get_collection(ProductId, Dis, NewPayload, maps:merge(Ack, NewPayload)),
+            {noreply, send_msg(State#task{ack = NewAck, product = ProductId, devaddr = DevAddr})};
+        _ ->
+            {noreply, send_msg(State#task{ack = Ack})}
+    end;
 
 handle_info(_Msg, State) ->
     {noreply, State}.
@@ -202,7 +216,7 @@ send_msg(#task{tid = Channel, product = Product, devaddr = DevAddr, ref = Ref, q
             case X of
                 {InstructOrder, _, _, _, error, _, _, _} ->
                     {Count + 1, Acc, Acc1};
-                {InstructOrder, _, Identifier1, AccessMode, _Data1, Protocol, DataSource, _} ->
+                {InstructOrder, _, Identifier1, AccessMode, NewData, Protocol, DataSource, _} ->
                     Payload1 = #{
                         <<"appdata">> => AppData,
                         <<"thingdata">> => #{
@@ -210,7 +224,7 @@ send_msg(#task{tid = Channel, product = Product, devaddr = DevAddr, ref = Ref, q
                             <<"devaddr">> => DevAddr,
                             <<"command">> => AccessMode,
                             <<"protocol">> => Protocol,
-                            <<"dataSource">> => DataSource
+                            <<"dataSource">> => DataSource#{<<"data">> => NewData}
                         }
                     },
                     {Count + 1, Acc ++ [Payload1], Acc1 ++ [Identifier1]};
@@ -263,7 +277,7 @@ save_td(#task{app = _App, tid = Channel, product = ProductId, devaddr = DevAddr,
             pass;
         _ ->
             Data = dgiot_task:get_calculated(ProductId, Ack),
-            dgiot_bridge:send_log(Channel, ProductId, DevAddr, "save_td=> ~s ~p ~p: ~ts ", [?FILE, ?LINE, ProductId, unicode:characters_to_list(jsx:encode(Data))]),
+            dgiot_bridge:send_log(Channel, ProductId, DevAddr, "save_td=> ~s ~p ProductId ~p DevAddr ~p : ~ts ", [?FILE, ?LINE, ProductId, DevAddr, unicode:characters_to_list(jsx:encode(Data))]),
             case length(maps:to_list(Data)) of
                 0 ->
                     pass;

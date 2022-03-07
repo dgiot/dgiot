@@ -51,7 +51,7 @@
             "description": "需要显示的字段,加count(*)则结果里面会显示总记录数, last_row为获取最后一条记录, tbname,为设备字段, eg: username,email",
             "required": false,
             "type": "string",
-            "default":"last_row(*)"
+            "default": "last_row(*)"
           },
           {
             "in": "query",
@@ -79,7 +79,7 @@
             "description": "聚合时间段: 10a",
             "required": false,
             "type": "string",
-            "default":"10a"
+            "default": "10a"
           },
           {
             "in": "query",
@@ -160,7 +160,7 @@
             "in": "query",
             "name": "where",
             "description": "过滤条件，eg: {\"createdat\": {\"$gte\":\"now - 10d\"}}",
-            "default":"{\"createdat\":{\"$gte\":\"now - 10d\"}}",
+            "default": "{\"createdat\":{\"$gte\":\"now - 10d\"}}",
             "required": false,
             "type": "string"
           }
@@ -303,6 +303,13 @@
             "required": true,
             "default": "a90437ec84",
             "description": "设备ID",
+            "type": "string"
+          },
+          {
+            "in": "query",
+            "name": "keys",
+            "description": "需要显示的字段, eg: username,email",
+            "required": false,
             "type": "string"
           }
         ],

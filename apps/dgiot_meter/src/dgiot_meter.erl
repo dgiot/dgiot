@@ -23,8 +23,9 @@
 -export([
     create_dtu/3,
     create_dtu/4,
-    create_meter/4,
+    create_meter/5,
     create_meter4G/3,
+    create_meter4G/6,
     get_sub_device/1
 ]).
 
@@ -70,7 +71,7 @@ create_dtu(DtuAddr, ChannelId, DTUIP) ->
     end.
 
 
-create_meter(MeterAddr, ChannelId, DTUIP, DtuAddr) ->
+create_meter(MeterAddr, ChannelId, DTUIP, DtuId, DtuAddr) ->
     case dgiot_data:get({meter, ChannelId}) of
         {ProductId, ACL, _Properties} ->
             Requests = #{
@@ -81,8 +82,43 @@ create_meter(MeterAddr, ChannelId, DTUIP, DtuAddr) ->
                 <<"product">> => ProductId,
                 <<"ACL">> => ACL,
                 <<"route">> => #{DtuAddr => MeterAddr},
+                <<"parentId">> => #{
+                    <<"className">> => <<"Device">>,
+                    <<"objectId">> => DtuId,
+                    <<"__type">> => <<"Pointer">>
+                },
                 <<"status">> => <<"ONLINE">>,
                 <<"brand">> => <<"Meter", MeterAddr/binary>>,
+                <<"devModel">> => <<"Meter">>
+            },
+            dgiot_device:create_device(Requests),
+            Topic = <<"profile/", ProductId/binary, "/", MeterAddr/binary>>,
+            dgiot_mqtt:subscribe(Topic),
+            {DtuProductId, _, _} = dgiot_data:get({dtu, ChannelId}),
+            dgiot_task:save_pnque(DtuProductId, DtuAddr, ProductId, MeterAddr);
+        _ ->
+            pass
+    end.
+
+
+create_meter4G(MeterAddr, MDa, ChannelId, DTUIP, DtuId, DtuAddr) ->
+    case dgiot_data:get({meter, ChannelId}) of
+        {ProductId, ACL, _Properties} ->
+            Requests = #{
+                <<"devaddr">> => MeterAddr,
+                <<"name">> => <<"Meter_", MDa/binary>>,
+                <<"ip">> => DTUIP,
+                <<"isEnable">> => true,
+                <<"product">> => ProductId,
+                <<"ACL">> => ACL,
+                <<"route">> => #{DtuAddr => MDa},
+                <<"parentId">> => #{
+                    <<"className">> => <<"Device">>,
+                    <<"objectId">> => DtuId,
+                    <<"__type">> => <<"Pointer">>
+                },
+                <<"status">> => <<"ONLINE">>,
+                <<"brand">> => <<"Meter_", MDa/binary>>,
                 <<"devModel">> => <<"Meter">>
             },
             dgiot_device:create_device(Requests),
@@ -143,10 +179,12 @@ to_frame(#{
     <<"devaddr">> := Addr,
     <<"protocol">> := ?DLT376,
     <<"dataSource">> := #{
+        <<"afn">> := Afn,
         <<"da">> := Da,
         <<"dt">> := Dt
     }
 } = Frame) ->
+    <<Afn2:8>> = dgiot_utils:hex_to_binary(Afn),
     dlt376_decoder:to_frame(Frame#{
         <<"msgtype">> => ?DLT376,
         <<"addr">> => dlt376_proctol:decode_of_addr(dgiot_utils:hex_to_binary(Addr)),
@@ -154,7 +192,7 @@ to_frame(#{
         <<"da">> => Da,
         <<"dt">> => Dt,
         <<"command">> => ?DLT376_MS_READ_DATA,
-        <<"afn">> => ?DLT376_MS_READ_DATA_AFN
+        <<"afn">> => Afn2
     });
 
 % DLT645 组装电表抄表指令

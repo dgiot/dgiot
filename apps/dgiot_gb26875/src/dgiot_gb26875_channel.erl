@@ -19,7 +19,7 @@
 -include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
 -include("dgiot_gb26875.hrl").
 -include_lib("dgiot/include/logger.hrl").
--define(TYPE, <<"gb26875">>).
+-define(TYPE, <<"GB26875">>).
 %% API
 -export([start/2]).
 
@@ -31,10 +31,10 @@
     cType => ?TYPE,
     type => ?PROTOCOL_CHL,
     title => #{
-        zh => <<"GB26875"/utf8>>
+        zh => <<"GB26875采集通道"/utf8>>
     },
     description => #{
-        zh => <<"gb26875"/utf8>>
+        zh => <<"GB26875采集通道"/utf8>>
     }
 }).
 %% 注册通道参数
@@ -91,7 +91,7 @@
         order => 102,
         type => string,
         required => false,
-        default => <<"http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/product/dgiot/channel/modbus.png">>,
+        default => <<"http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/product/dgiot/channel/GB26875.png">>,
         title => #{
             en => <<"channel ICO">>,
             zh => <<"通道ICO"/utf8>>

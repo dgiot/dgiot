@@ -397,7 +397,7 @@ get_app(ProductId, Results, DeviceId) ->
                                             V
                                     end
                             end,
-                        Acc ++ [#{<<"name">> => Name, <<"type">> => Typea, <<"number">> => NewV, <<"time">> => NewTime, <<"unit">> => Unit, <<"imgurl">> => Ico, <<"devicetype">> => Devicetype}];
+                        Acc ++ [#{<<"identifier">> => Identifier, <<"name">> => Name, <<"type">> => Typea, <<"number">> => NewV, <<"time">> => NewTime, <<"unit">> => Unit, <<"imgurl">> => Ico, <<"devicetype">> => Devicetype}];
                     _ -> Acc
                 end
                         end, [], Props);
