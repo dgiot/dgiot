@@ -291,7 +291,7 @@ sysc_rules() ->
                                             end, [], Actions),
                                 case emqx_rule_engine_api:show_rule(#{id => RuleID}, []) of
                                     {ok, #{message := <<"Not Found">>}} ->
-                                        ?LOG(error, "NewRule ~p", [NewRule]),
+                                        ?LOG(debug, "NewRule ~p", [NewRule]),
                                         emqx_rule_engine_api:create_rule(#{}, maps:to_list(NewRule#{<<"id">> => RuleID}));
                                     _ ->
                                         emqx_rule_engine_api:update_rule(#{id => RuleID}, maps:to_list(NewRule))

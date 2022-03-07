@@ -120,7 +120,7 @@
 
 -spec(on_resource_create(binary(), map()) -> map()).
 on_resource_create(ResId, Conf) ->
-    ?LOG(error, "ResId ~p, Conf ~p", [ResId, Conf]),
+    ?LOG(debug, "ResId ~p, Conf ~p", [ResId, Conf]),
     ChannelId = maps:get(<<"channel">>, Conf, <<"">>),
     #{<<"channel">> => ChannelId}.
 
@@ -129,7 +129,7 @@ on_get_resource_status(_ResId, _Conf) ->
     #{is_alive => true}.
 
 on_resource_destroy(ResId, Conf) ->
-    ?LOG(error, "on_resource_destroy ~p,~p", [ResId, Conf]),
+    ?LOG(debug, "on_resource_destroy ~p,~p", [ResId, Conf]),
     case catch emqx_rule_registry:remove_resource(ResId) of
         {'EXIT', {{throw, {dependency_exists, {rule, RuleId}}}, _}} ->
             ok = emqx_rule_registry:remove_rule(RuleId),
@@ -149,7 +149,7 @@ on_action_create_dgiot(_Id, Params = #{
 }) ->
     TopicTks = emqx_rule_utils:preproc_tmpl(TargetTopic),
     PayloadTks = emqx_rule_utils:preproc_tmpl(PayloadTmpl),
-    ?LOG(error, " msg topic: ~p, payload: ~p", [TopicTks, PayloadTks]),
+    ?LOG(debug, " msg topic: ~p, payload: ~p", [TopicTks, PayloadTks]),
     Params.
 
 %% mqtt事件
@@ -193,4 +193,4 @@ post_rule(#{metadata := #{rule_id := <<"rule:profile_", Ruleid/binary>>}, client
 
 post_rule(Msg) ->
 %%    io:format("~s ~p Msg = ~p.~n", [?FILE, ?LINE, Msg]),
-    ?LOG(error, "~s ~p Msg = ~p.~n", [?FILE, ?LINE, Msg]).
+    ?LOG(debug, "~s ~p Msg = ~p.~n", [?FILE, ?LINE, Msg]).
