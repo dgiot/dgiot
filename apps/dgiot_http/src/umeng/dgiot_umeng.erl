@@ -550,12 +550,12 @@ send_message_to3D(ProductId, DevAddr, Payload) ->
 create_maintenance(SessionToken, Info) ->
     <<Number:10/binary, _/binary>> = dgiot_utils:random(),
     Timestamp = dgiot_datetime:format(dgiot_datetime:to_localtime(dgiot_datetime:now_secs()), <<"YY-MM-DD HH:NN:SS">>),
-    Username =
+    {Username, UserId, UserPhone} =
         case dgiot_auth:get_session(SessionToken) of
-            #{<<"nick">> := Nick} ->
-                Nick;
+            #{<<"nick">> := Nick, <<"objectId">> := UserId1, <<"phone">> := UserPhone1} ->
+                {Nick, UserId1, UserPhone1};
             _ ->
-                <<"">>
+                {<<"">>, <<"">>, <<"">>}
         end,
     DeviceId = maps:get(<<"deviceid">>, Info, <<"8d7bdaff69">>),
     Acl =
@@ -567,13 +567,13 @@ create_maintenance(SessionToken, Info) ->
                                 end, #{}, Acl1),
                 NewAcl1;
             _ ->
-                #{<<"admin">> => #{<<"read">> => true, <<"write">> => true}}
+                #{<<"role:admin">> => #{<<"read">> => true, <<"write">> => true}}
         end,
     Body = #{
         <<"number">> => maps:get(<<"id">>, Info, Number),
         <<"type">> => maps:get(<<"type">>, Info, <<"故障工单"/utf8>>),
-        <<"status">> => 0,
-        <<"ACL">> => Acl,
+        <<"status">> => 1,
+        <<"ACL">> => Acl#{<<"role:", UserId/binary>> => #{<<"read">> => true, <<"write">> => true}},
         <<"info">> => Info#{
             <<"step1">> => #{},
             <<"step2">> => #{},
@@ -583,10 +583,18 @@ create_maintenance(SessionToken, Info) ->
                 #{
                     <<"timestamp">> => Timestamp,
                     <<"h4">> => <<"生成工单"/utf8>>,
-                    <<"p">> => <<Username/binary, "新建工单"/utf8>>
+                    <<"p">> => <<"管理员 新建工单"/utf8>>
+                },
+                #{
+                    <<"timestamp">> => Timestamp,
+                    <<"h4">> => <<"生成工单"/utf8>>,
+                    <<"p">> => <<"管理员 分配给 "/utf8, Username/binary>>
                 }
             ],
-            <<"createdname">> => Username
+            <<"createdname">> => <<"管理员"/utf8>>,
+            <<"receiveuseid">> => UserId,
+            <<"receiveusername">> => Username,
+            <<"receiveuserphone">> => UserPhone
         },
         <<"device">> => #{
             <<"objectId">> => DeviceId,

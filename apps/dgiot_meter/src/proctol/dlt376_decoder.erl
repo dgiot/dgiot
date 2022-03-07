@@ -27,9 +27,12 @@
     parse_value/2,
     process_message/2,
     process_message/3,
+    process_message/4,
     check_Command/1,
     more_Check_Command/2,
-    frame_write_param/1]).
+    frame_write_param/1,
+    send_childvalue/2,
+    pn_to_da/1]).
 
 -define(TYPE, ?DLT376).
 
@@ -217,20 +220,79 @@ check_Command(State = #{<<"afn">> := 16#0A, <<"data">> := Data}) ->
             State
     end;
 
-% GW1376.1 抄表返回的数据
+% GW1376.1 抄表返回的数据 16#0C 正向有功
 check_Command(State = #{<<"afn">> := 16#0C}) ->
     Data = maps:get(<<"data">>, State, <<>>),
     case Data of
-        <<Di:4/bytes, DTime:5/bytes, DNum:1/bytes, DValue:5/bytes, Rest1/bytes>> ->
+        <<Da:2/bytes, Dt:2/bytes, DTime:5/bytes, DNum:1/bytes, Rest1/bytes>> ->
+            BinDi = dgiot_utils:to_hex(<<Da:2/bytes, Dt:2/bytes>>),
+            BinDa = dgiot_utils:to_hex(Da),
+            BinDt = dgiot_utils:to_hex(Dt),
+            case dgiot_utils:to_hex(DTime) of
+                <<"EEEEEEEEEE">> ->
+                    State1 = #{
+                        <<"afn">> => 16#0C,
+                        <<"di">> => <<Da:2/bytes, Dt:2/bytes>>,
+                        <<"time">> => dgiot_datetime:now_secs(),
+                        <<"valuenum">> => DNum,
+                        <<"addr">> => maps:get(<<"addr">>, State, <<>>),
+                        <<"value">> => #{},
+                        <<"childvalue">> => #{}
+                    },
+                    %%            费率长度
+                    Ratelen = dgiot_utils:to_int(dgiot_utils:binary_to_hex(DNum)) * 5,
+                    {NewState1, NewRest1} =
+                        case Rest1 of
+                            <<_DValue:5/bytes, Rates:Ratelen/bytes, Rest2/bytes>> ->
+%%                            解析值和费率
+                                State2 = decoder_value_Rate(1, BinDi, BinDa, BinDt, 0, Rates, State1),
+                                {State2, Rest2};
+                            _ ->
+                                {State1, Rest1}
+                        end,
+                    more_Check_Command(NewState1, NewRest1);
+                _ ->
+                    State1 = #{
+                        <<"afn">> => 16#0C,
+                        <<"di">> => <<Da:2/bytes, Dt:2/bytes>>,
+                        <<"time">> => dgiot_utils:to_hex(DTime),
+                        <<"valuenum">> => DNum,
+                        <<"addr">> => maps:get(<<"addr">>, State, <<>>),
+                        <<"value">> => #{},
+                        <<"childvalue">> => #{}
+                    },
+                    %%            费率长度
+                    Ratelen = dgiot_utils:to_int(dgiot_utils:binary_to_hex(DNum)) * 5,
+                    {NewState1, NewRest1} =
+                        case Rest1 of
+                            <<DValue:5/bytes, Rates:Ratelen/bytes, Rest2/bytes>> ->
+%%                            解析值和费率
+                                State2 = decoder_value_Rate(1, BinDi, BinDa, BinDt, DValue, Rates, State1),
+                                {State2, Rest2};
+                            _ ->
+                                {State1, Rest1}
+                        end,
+                    more_Check_Command(NewState1, NewRest1)
+            end;
+        _ ->
+            State
+    end;
+
+% GW1376.1 抄表返回的数据 16#0D 日正向有功
+check_Command(State = #{<<"afn">> := 16#0D}) ->
+    Data = maps:get(<<"data">>, State, <<>>),
+    case Data of
+        <<Dat:4/bytes, DTime:3/bytes, DNum:1/bytes, DValue:4/bytes, Rest1/bytes>> ->
             State1 = #{
-                <<"di">> => Di,
+                <<"afn">> => 16#0D,
+                <<"di">> => Dat,
                 <<"time">> => dgiot_utils:to_hex(DTime),
                 <<"valuenum">> => DNum,
-                <<"value">> => #{dgiot_utils:to_hex(Di) => binary_to_value_dlt376_bcd(DValue)},
+                <<"value">> => #{dgiot_utils:to_hex(Dat) => binary_to_value_dlt376_bcd(DValue)},
                 <<"addr">> => maps:get(<<"addr">>, State, <<>>)
             },
 %%            费率长度
-            Ratelen = dgiot_utils:to_int(dgiot_utils:binary_to_hex(DNum)) * 5,
+            Ratelen = dgiot_utils:to_int(dgiot_utils:binary_to_hex(DNum)) * 4,
             case Rest1 of
                 <<_:Ratelen/bytes, Rest2/bytes>> ->
                     more_Check_Command(State1, Rest2);
@@ -309,18 +371,53 @@ check_Command(State) ->
     State.
 
 % GW1376.1 抄集中器多个电表返回的数据
-more_Check_Command(#{<<"value">> := Value} = State, Rest) ->
-    io:format("~s ~p State = ~p.~n", [?FILE, ?LINE, State]),
-    io:format("~s ~p Rest = ~p.~n", [?FILE, ?LINE, dgiot_utils:binary_to_hex(Rest)]),
+more_Check_Command(#{<<"afn">> := 16#0C} = State, Rest) ->
     case Rest of
-        <<Di:4/bytes, _DTime:5/bytes, DNum:1/bytes, DValue:5/bytes, Rest1/bytes>> ->
-            State1 = State#{
-                <<"value">> => Value#{
-                    dgiot_utils:to_hex(Di) => binary_to_value_dlt376_bcd(DValue)
-                }
+        <<Da:2/bytes, Dt:2/bytes, DTime:5/bytes, DNum:1/bytes, Rest1/bytes>> ->
+            BinDi = dgiot_utils:to_hex(<<Da:2/bytes, Dt:2/bytes>>),
+            BinDa = dgiot_utils:to_hex(Da),
+            BinDt = dgiot_utils:to_hex(Dt),
+            case dgiot_utils:to_hex(DTime) of
+                <<"EEEEEEEEEE">> ->
+                    %%            费率长度
+                    Ratelen = dgiot_utils:to_int(dgiot_utils:binary_to_hex(DNum)) * 5,
+                    {NewState1, NewRest1} =
+                        case Rest1 of
+                            <<_DValue:5/bytes, Rates:Ratelen/bytes, Rest2/bytes>> ->
+%%                            解析值和费率
+                                State2 = decoder_value_Rate(1, BinDi, BinDa, BinDt, 0, Rates, State),
+                                {State2, Rest2};
+                            _ ->
+                                {State, Rest1}
+                        end,
+                    more_Check_Command(NewState1, NewRest1);
+                _ ->
+                    %%            费率长度
+                    Ratelen = dgiot_utils:to_int(dgiot_utils:binary_to_hex(DNum)) * 5,
+                    {NewState1, NewRest1} =
+                        case Rest1 of
+                            <<DValue:5/bytes, Rates:Ratelen/bytes, Rest2/bytes>> ->
+%%                            解析值和费率
+                                State2 = decoder_value_Rate(1, BinDi, BinDa, BinDt, DValue, Rates, State),
+                                {State2, Rest2};
+                            _ ->
+                                {State, Rest1}
+                        end,
+                    more_Check_Command(NewState1, NewRest1)
+            end;
+        _ ->
+            State
+    end;
+
+%% 日正向有功
+more_Check_Command(#{<<"afn">> := 16#0D, <<"value">> := Value} = State, Rest) ->
+    case Rest of
+        <<Dat:4/bytes, _DTime:3/bytes, DNum:1/bytes, DValue:4/bytes, Rest1/bytes>> ->
+            State1 = State#{<<"value">> => Value#{
+                dgiot_utils:to_hex(Dat) => binary_to_value_dlt376_bcd(DValue)}
             },
 %%            费率长度
-            Ratelen = dgiot_utils:to_int(dgiot_utils:binary_to_hex(DNum)) * 5,
+            Ratelen = dgiot_utils:to_int(dgiot_utils:binary_to_hex(DNum)) * 4,
             case Rest1 of
                 <<_:Ratelen/bytes, Rest2/bytes>> ->
                     more_Check_Command(State1, Rest2);
@@ -351,6 +448,25 @@ to_frame(#{
         Len:16/little,
         16#68,
         UserZone/binary,
+        Crc:8,
+        16#16
+    >>;
+
+to_frame(#{
+    <<"command">> := C,
+    <<"addr">> := Addr,
+    <<"afn">> := AFN
+} = Msg) when AFN == 1 orelse AFN == 4 orelse AFN == 5 orelse AFN == 6 orelse AFN == 10 ->
+    {ok, UserZone} = get_userzone(Msg),
+    UserData = <<C:8, Addr:5/bytes, AFN:8, 16#61, UserZone/binary>>,
+    Len = byte_size(UserData) * 4 + 2,
+    Crc = dgiot_utils:get_parity(<<C:8, Addr:5/bytes, AFN:8, 16#61, UserZone/binary>>),
+    <<
+        16#68,
+        Len:16/little,
+        Len:16/little,
+        16#68,
+        UserData/binary,
         Crc:8,
         16#16
     >>;
@@ -410,7 +526,8 @@ to_frame(#{
     >>;
 
 to_frame(Msg) ->
-    io:format("~s ~p to_frame = ~p.~n", [?FILE, ?LINE, Msg]).
+    io:format("~s ~p to_frame = ~p.~n", [?FILE, ?LINE, Msg]),
+    <<>>.
 
 % DLT376协议中把二进制转化成float
 binary_to_value_dlt376_bcd(BinValue) ->
@@ -529,24 +646,53 @@ process_message(Frames, ChannelId) ->
 
 process_message(?DLT376, Frames, ChannelId) ->
     case Frames of
-        [#{<<"di">> := <<16#01, 16#01, 16#01, 16#10>>, <<"addr">> := Addr, <<"value">> := Value} | _] ->
+        [#{<<"addr">> := DevAddr, <<"value">> := Value, <<"childvalue">> := ChildValue} | _] ->
             case dgiot_data:get({dtu, ChannelId}) of
-                {ProductId, _ACL, _Properties} -> DevAddr = dgiot_utils:binary_to_hex(Addr),
-                    Topic = <<"thing/", ProductId/binary, "/", Addr/binary, "/post">>,  % 发送给mqtt进行数据存储
+                {ProductId, _ACL, _Properties} ->
+                    Topic = <<"thing/", ProductId/binary, "/", DevAddr/binary, "/post">>,  % 发送给mqtt进行数据存储
                     DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
-                    dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(Value));
+                    dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(Value)),
+                    timer:sleep(1 * 1000),
+                    send_childvalue(DeviceId, ChildValue);
                 _ -> pass
             end;
         _ ->
             pass
-    end;
+    end.
 
-process_message(Frames, ChannelId, DTUIP) ->
+process_message(Frames, ChannelId, DTUIP, DtuId) ->
     [#{<<"afn">> := 16#0A, <<"di">> := <<16#00, 16#00, 16#02, 16#01>>, <<"addr">> := DevAddr, <<"value">> := Value} | _] = Frames,
-    lists:map(fun(#{<<"addr">> := MeterAddr}) ->
+    lists:map(fun(#{<<"addr">> := MeterAddr, <<"da">> := Da}) ->
         MAddr = dgiot_utils:binary_to_hex(MeterAddr),
-        dgiot_meter:create_meter(MAddr, ChannelId, DTUIP, DevAddr)
+        dgiot_data:insert({metetda, MAddr}, dgiot_utils:to_binary(Da)),
+        dgiot_meter:create_meter4G(MAddr, dgiot_utils:to_binary(Da), ChannelId, DTUIP, DtuId, DevAddr),
+        timer:sleep(1 * 1000)
               end, Value).
+
+send_childvalue(DeviceId, ChildValue) ->
+    case dgiot_parse:query_object(<<"Device">>, #{<<"where">> => #{<<"parentId">> => DeviceId}}) of
+        {ok, #{<<"results">> := ChildDevices}} ->
+            lists:foldl(fun(#{<<"devaddr">> := Devaddr, <<"product">> := #{<<"objectId">> := ProductId}}, _Acc) ->
+                case dgiot_data:get({metetda, Devaddr}) of
+                    not_find ->
+                        pass;
+                    Da ->
+                        DA = dgiot_utils:binary_to_hex(dlt376_decoder:pn_to_da(dgiot_utils:to_int(Da))),
+                        case maps:find(DA, ChildValue) of
+                            error ->
+                                pass;
+                            {ok, Value} ->
+                                Topic = <<"thing/", ProductId/binary, "/", Devaddr/binary, "/post">>,  % 发送给mqtt进行数据存储
+                                DeviceId1 = dgiot_parse:get_deviceid(ProductId, Devaddr),
+                                dgiot_mqtt:publish(DeviceId1, Topic, jsx:encode(Value)),
+                                timer:sleep(1 * 1000)
+                        end
+                end
+                        end, #{}, ChildDevices);
+        _ ->
+            pass
+
+    end.
 
 disassemble(Num, Rest) ->
     disassemble(Num, Rest, []).
@@ -556,7 +702,7 @@ disassemble(0, _, Acc) ->
 disassemble(Num, Rest, Acc) ->
     <<_:2/binary, Pn:16/little, _:2/binary, Addr:6/binary, Psw:6/binary, _:2/binary, Collect:6/binary, _:1/binary, Rest1/binary>> = Rest,
     A = #{<<"pn">> => Pn,
-        <<"da">> => pn_to_da(Pn),
+        <<"da">> => Pn,
         <<"addr">> => dlt645_proctol:reverse(Addr),
         <<"psw">> => Psw,
         <<"collect">> => Collect},
@@ -567,6 +713,11 @@ disassemble(Num, Rest, Acc) ->
 
 pn_to_da(Pn) when Pn == 0 ->
     <<16#00, 16#00>>;
+
+
+pn_to_da(Pn) when (Pn rem 8) == 0 ->
+    Di1 = Pn div 8,
+    <<16#80, Di1:8>>;
 
 pn_to_da(Pn) ->
     Da2 = Pn rem 8,
@@ -705,3 +856,40 @@ concentrator_to_addr(ConAddr) when byte_size(ConAddr) == 12 ->
 concentrator_to_addr(_ConAddr) ->
     <<16#00, 16#00, 16#00, 16#00, 16#00>>.
 
+decoder_value_Rate(Index, BinDi, BinDa, BinDt, DValue, Rates, #{<<"afn">> := 16#0C, <<"value">> := _Value, <<"childvalue">> := ChildValue} = State) ->
+    NewBinDa =
+        case maps:find(BinDa, ChildValue) of
+            error ->
+                #{};
+            {ok, BinDa1} ->
+                BinDa1
+        end,
+    BinIndex = dgiot_utils:to_binary(Index),
+    case Rates of
+        <<Rate:5/bytes, RateRest/bytes>> ->
+            NewRate =
+                case DValue of
+                    0 ->
+                        0;
+                    _ ->
+                        Rate
+                end,
+            State1 = State#{
+%%                <<"value">> => Value#{
+%%                    <<BinDi/binary, "">> => binary_to_value_dlt376_bcd(DValue),
+%%                    <<BinDi/binary, "0", BinIndex/binary>> => binary_to_value_dlt376_bcd(NewRate)
+%%                },
+                <<"childvalue">> => ChildValue#{
+                    <<BinDa/binary, "">> => NewBinDa#{
+                        <<"0000", BinDt/binary>> => binary_to_value_dlt376_bcd(DValue),
+                        <<"0000", BinDt/binary, "0", BinIndex/binary>> => binary_to_value_dlt376_bcd(NewRate)
+                    }
+                }
+            },
+            decoder_value_Rate(Index + 1, BinDi, BinDa, BinDt, DValue, RateRest, State1);
+        _ ->
+            State
+    end;
+
+decoder_value_Rate(_Index, _BinDi, _BinDa, _BinDt, _DValue, _Rates, State) ->
+    State.
