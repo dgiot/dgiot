@@ -114,9 +114,9 @@ fi
 # set parameters by default value
 verType=single        # [single | cluster | devops | ci]
 domain_name="prod.iotn2n.com" #[prod.iotn2n.com | your_domain_name]
-software="dgiot_n33"  #[dgiot_n33 | dgiot_n]
+software="dgiot_n62"  #[dgiot_n62 | dgiot_n]
 plugin="dgiot" #[dgiot | dgiot_your_plugin]
-dgiotmd5="26599c0d5d94575bd1b04109aba3b1cb"
+dgiotmd5="71e0211861b647b1c6816ce81f26f52f"
 while getopts "h:v:d:s:p:m:" arg
 do
   case $arg in
@@ -146,7 +146,7 @@ do
       plugin=$(echo $OPTARG)
       ;;
     h)
-      echo "Usage: `basename $0` -v [single | cluster | devops | ci] -s [dgiot_n33 | dgiot_n] -d [prod.iotn2n.com | your_domain_name] -p [dgiot | your_dgiot_plugin]"
+      echo "Usage: `basename $0` -v [single | cluster | devops | ci] -s [dgiot_n62 | dgiot_n] -d [prod.iotn2n.com | your_domain_name] -p [dgiot | your_dgiot_plugin]"
       exit 0
       ;;
     ?) #unknow option
