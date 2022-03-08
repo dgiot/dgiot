@@ -660,7 +660,6 @@ process_message(Frames, ChannelId, DTUIP, DtuId) ->
     [#{<<"afn">> := 16#0A, <<"di">> := <<16#00, 16#00, 16#02, 16#01>>, <<"addr">> := DevAddr, <<"value">> := Value} | _] = Frames,
     lists:map(fun(#{<<"addr">> := MeterAddr, <<"da">> := Da}) ->
         MAddr = dgiot_utils:binary_to_hex(MeterAddr),
-        dgiot_data:insert({metetda, MAddr}, dgiot_utils:to_binary(Da)),
         dgiot_meter:create_meter4G(MAddr, dgiot_utils:to_binary(Da), ChannelId, DTUIP, DtuId, DevAddr),
         timer:sleep(1 * 1000)
               end, Value).
@@ -668,11 +667,11 @@ process_message(Frames, ChannelId, DTUIP, DtuId) ->
 send_childvalue(DeviceId, ChildValue) ->
     case dgiot_parse:query_object(<<"Device">>, #{<<"where">> => #{<<"parentId">> => DeviceId}}) of
         {ok, #{<<"results">> := ChildDevices}} ->
-            lists:foldl(fun(#{<<"devaddr">> := Devaddr, <<"product">> := #{<<"objectId">> := ProductId}}, _Acc) ->
-                case dgiot_data:get({metetda, Devaddr}) of
+            lists:foldl(fun(#{<<"objectId">> := ChildId, <<"devaddr">> := Devaddr, <<"product">> := #{<<"objectId">> := ProductId}}, _Acc) ->
+                case dgiot_data:get({metetda, ChildId}) of
                     not_find ->
                         pass;
-                    Da ->
+                    {Da, _Dtuaddr} ->
                         DA = dgiot_utils:binary_to_hex(dlt376_decoder:pn_to_da(dgiot_utils:to_int(Da))),
                         case maps:find(DA, ChildValue) of
                             error ->
@@ -761,6 +760,7 @@ pn_to_da(Pn) ->
 %% ConAddr = <<"000033010048">>,
 frame_write_param(#{<<"concentrator">> := ConAddr, <<"payload">> := Frame}) ->
     Length = length(maps:keys(Frame)),
+%%    io:format("~s ~p SortFrame   ~p.~n", [?FILE, ?LINE, Length]),
     {BitList, Afn, Da, Fn} =
         lists:foldl(fun(Index, {Acc, A, D, F}) ->
             case maps:find(dgiot_utils:to_binary(Index), Frame) of
@@ -770,7 +770,9 @@ frame_write_param(#{<<"concentrator">> := ConAddr, <<"payload">> := Frame}) ->
                     {Acc, A, D, F}
             end
                     end, {[], 0, <<>>, <<>>}, lists:seq(1, Length)),
+%%    io:format("~s ~p BitList = ~p.~n", [?FILE, ?LINE, BitList]),
     UserZone = <<<<V:BitLen>> || {V, BitLen} <- BitList>>,
+%%    io:format("~s ~p UserZone  ~p. Afn ~p ~n", [?FILE, ?LINE, dgiot_utils:binary_to_hex(UserZone), Afn]),
     UserData = add_to_userzone(UserZone, Afn, Fn),
     dlt376_decoder:to_frame(#{<<"command">> => 16#4B,
         <<"addr">> => concentrator_to_addr(ConAddr),

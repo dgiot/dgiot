@@ -24,7 +24,8 @@
     createsub/6,
     create/6,
     create_group/7,
-    get_instruct/4
+    get_instruct/4,
+    get_child_instruct/3
 ]).
 
 createsub(ProductId, DeviceId, DtuAddr, ACL, Rotation, #{<<"parentDtu">> := ParentDtu}) ->
@@ -220,6 +221,16 @@ get_instruct(ProductId, Round) ->
                 end
                                        end, {1, []}, Props),
             lists:keysort(1, NewList);
+        _ ->
+            []
+    end.
+
+get_child_instruct(DeviceId, Round, thing) ->
+    case dgiot_parse:query_object(<<"Device">>, #{<<"where">> => #{<<"parentId">> => DeviceId}}) of
+        {ok, #{<<"results">> := ChildDevices}} ->
+            lists:foldl(fun(#{<<"product">> := #{<<"objectId">> := ProductId}}, Acc) ->
+                Acc ++ dgiot_instruct:get_instruct(ProductId, DeviceId, Round, thing)
+                        end, [], ChildDevices);
         _ ->
             []
     end.

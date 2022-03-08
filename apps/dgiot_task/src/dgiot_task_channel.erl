@@ -262,5 +262,11 @@ stop(_ChannelType, ChannelId, #state{env = #{<<"product">> := ProductId, <<"args
         dgiot_task:stop(Args#{<<"product">> => ProductId, <<"channel">> => ChannelId})
           end),
 %%    ?LOG(warning, "channel stop ~p,~p", [ChannelType, ChannelId]),
+    ok;
+
+
+stop(_ChannelType, _ChannelId, _State) ->
+
     ok.
+
 
