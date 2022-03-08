@@ -823,6 +823,70 @@
           "Rule"
         ]
       }
+    },
+    "/rulesql": {
+      "post": {
+        "summary": "生成规则sql",
+        "description": "生成规则sql",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "data",
+            "required": true,
+            "description": "规则引擎配置",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "trigger": {
+                  "type": "string",
+                  "description": "触发规则（device/cron）",
+                  "example": "device"
+                },
+                "productid": {
+                  "type": "string",
+                  "description": "产品id",
+                  "example": "e66f9a2fdb"
+                },
+                "devaddr": {
+                  "type": "string",
+                  "description": "设备地址",
+                  "example": "f851f03e35"
+                },
+                "method": {
+                  "type": "string",
+                  "description": "触发方法 （property/happening/offline）",
+                  "example": "property"
+                },
+                "cron": {
+                  "type": "string",
+                  "description": "cron 表达式",
+                  "example": "0 23 * * *"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Rule"
+        ]
+      }
     }
   }
 }
