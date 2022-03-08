@@ -66,20 +66,17 @@ init([#{<<"app">> := App, <<"channel">> := ChannelId, <<"dtuid">> := DtuId, <<"m
             ?LOG(info, "not_find ~p", [DtuId]),
             pass;
         {ProductId, DevAddr} ->
+%%            io:format("~s ~p DtuId = ~p.~n", [?FILE, ?LINE, DtuId]),
             DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
-            Que = dgiot_instruct:get_instruct(ProductId, DeviceId, 1, dgiot_utils:to_atom(thing)),
+            Que = dgiot_instruct:get_instruct(ProductId, DeviceId, 1, dgiot_utils:to_atom(Mode)),
+%%            ChildQue = dgiot_instruct:get_child_instruct(DeviceId, 1, dgiot_utils:to_atom(Mode)),
             Tsendtime = dgiot_datetime:localtime_to_unixtime(dgiot_datetime:to_localtime(Endtime)),
             Nowstamp = dgiot_datetime:nowstamp(),
-            case length(Que) of
-                0 ->
-                    erlang:send_after(300, self(), stop);
-                _ ->
-                    case Tsendtime > Nowstamp of
-                        true ->
-                            erlang:send_after(1000, self(), retry);
-                        false ->
-                            erlang:send_after(300, self(), stop)
-                    end
+            case Tsendtime > Nowstamp of
+                true ->
+                    erlang:send_after(1000, self(), retry);
+                false ->
+                    erlang:send_after(300, self(), stop)
             end,
             Topic = <<"thing/", ProductId/binary, "/", DevAddr/binary, "/post">>,
             dgiot_mqtt:subscribe(Topic),
@@ -106,6 +103,10 @@ handle_info({'EXIT', _From, Reason}, State) ->
     erlang:garbage_collect(self()),
     {stop, Reason, State};
 
+handle_info(stop, State) ->
+    erlang:garbage_collect(self()),
+    {stop, normal, State};
+
 handle_info(init, #task{dtuid = DtuId, mode = Mode, round = Round, ts = Oldstamp, freq = Freq, endtime = Tsendtime} = State) ->
     dgiot_datetime:now_secs(),
 %%    io:format("~s ~p DtuId = ~p.~n", [?FILE, ?LINE, DtuId]),
@@ -119,21 +120,16 @@ handle_info(init, #task{dtuid = DtuId, mode = Mode, round = Round, ts = Oldstamp
             Que = dgiot_instruct:get_instruct(ProductId, DeviceId, NewRound, dgiot_utils:to_atom(Mode)),
             Nowstamp = dgiot_datetime:nowstamp(),
             Newfreq = Nowstamp - Oldstamp,
-            case length(Que) of
-                0 ->
-                    erlang:send_after(300, self(), stop);
-                _ ->
-                    case Tsendtime > Nowstamp of
+            case Tsendtime > Nowstamp of
+                true ->
+                    case Newfreq > Freq of
                         true ->
-                            case Newfreq > Freq of
-                                true ->
-                                    erlang:send_after(1000, self(), retry);
-                                false ->
-                                    erlang:send_after((Freq - Newfreq) * 1000, self(), retry)
-                            end;
+                            erlang:send_after(1000, self(), retry);
                         false ->
-                            erlang:send_after(300, self(), stop)
-                    end
+                            erlang:send_after((Freq - Newfreq) * 1000, self(), retry)
+                    end;
+                false ->
+                    erlang:send_after(300, self(), stop)
             end,
             {noreply, State#task{product = ProductId, devaddr = DevAddr, round = NewRound, firstid = DeviceId, que = Que, ts = Nowstamp}}
     end;

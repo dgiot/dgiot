@@ -100,7 +100,6 @@ create_meter(MeterAddr, ChannelId, DTUIP, DtuId, DtuAddr) ->
             pass
     end.
 
-
 create_meter4G(MeterAddr, MDa, ChannelId, DTUIP, DtuId, DtuAddr) ->
     case dgiot_data:get({meter, ChannelId}) of
         {ProductId, ACL, _Properties} ->
@@ -122,6 +121,8 @@ create_meter4G(MeterAddr, MDa, ChannelId, DTUIP, DtuId, DtuAddr) ->
                 <<"devModel">> => <<"Meter">>
             },
             dgiot_device:create_device(Requests),
+            DeviceId = dgiot_parse:get_deviceid(ProductId, MeterAddr),
+            dgiot_data:insert({metetda, DeviceId}, {dgiot_utils:to_binary(MDa), DtuAddr}),
             Topic = <<"profile/", ProductId/binary, "/", MeterAddr/binary>>,
             dgiot_mqtt:subscribe(Topic),
             {DtuProductId, _, _} = dgiot_data:get({dtu, ChannelId}),
@@ -129,7 +130,6 @@ create_meter4G(MeterAddr, MDa, ChannelId, DTUIP, DtuId, DtuAddr) ->
         _ ->
             pass
     end.
-
 
 create_meter4G(DevAddr, ChannelId, DTUIP) ->
     case dgiot_data:get({dtu, ChannelId}) of
