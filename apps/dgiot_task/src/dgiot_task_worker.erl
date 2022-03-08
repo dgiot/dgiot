@@ -143,12 +143,12 @@ handle_info(retry, State) ->
     {noreply, send_msg(State)};
 
 %% 任务结束
-handle_info({deliver, _, Msg}, #task{tid = Channel, dis = Dis, product = ProductId1, devaddr = DevAddr1, ack = Ack, que = Que} = State) when length(Que) == 0 ->
+handle_info({deliver, _, Msg}, #task{tid = Channel, dis = Dis, product = _ProductId1, devaddr = _DevAddr1, ack = Ack, que = Que} = State) when length(Que) == 0 ->
     Payload = jsx:decode(dgiot_mqtt:get_payload(Msg), [return_maps]),
     case binary:split(dgiot_mqtt:get_topic(Msg), <<$/>>, [global, trim]) of
         [<<"thing">>, ProductId, DevAddr, <<"post">>] ->
             dgiot_bridge:send_log(Channel, ProductId, DevAddr, "~s ~p  ~ts: ~ts ", [?FILE, ?LINE, unicode:characters_to_list(dgiot_mqtt:get_topic(Msg)), unicode:characters_to_list(dgiot_mqtt:get_payload(Msg))]),
-            io:format("~s ~p DevAddr ~p => ProductId ~p => Payload ~p.~n", [?FILE, ?LINE, DevAddr, ProductId, Payload]),
+%%            io:format("~s ~p DevAddr ~p => ProductId ~p => Payload ~p.~n", [?FILE, ?LINE, DevAddr, ProductId, Payload]),
             NewPayload =
                 maps:fold(fun(K, V, Acc) ->
                     case dgiot_data:get({protocol, K, ProductId}) of
@@ -160,10 +160,10 @@ handle_info({deliver, _, Msg}, #task{tid = Channel, dis = Dis, product = Product
                           end, #{}, Payload),
             NewAck = dgiot_task:get_collection(ProductId, Dis, NewPayload, maps:merge(Ack, NewPayload)),
             dgiot_metrics:inc(dgiot_task, <<"task_recv">>, 1),
-            io:format("~s ~p DevAddr ~p => NewAck = ~p.~n", [?FILE, ?LINE, DevAddr, NewAck]),
+%%            io:format("~s ~p DevAddr ~p => NewAck = ~p.~n", [?FILE, ?LINE, DevAddr, NewAck]),
             {noreply, get_next_pn(State#task{ack = NewAck, product = ProductId, devaddr = DevAddr})};
         _ ->
-            io:format("~s ~p DevAddr ~p => ProductId ~p => Payload ~p.~n", [?FILE, ?LINE, DevAddr1, ProductId1, Payload]),
+%%            io:format("~s ~p DevAddr ~p => ProductId ~p => Payload ~p.~n", [?FILE, ?LINE, DevAddr1, ProductId1, Payload]),
             {noreply, get_next_pn(State#task{ack = Ack})}
     end;
 
