@@ -158,10 +158,8 @@ init(?TYPE, ChannelId, #{
                 lists:map(fun(Prop) ->
                     case Prop of
                         #{<<"identifier">> := Identifier, <<"dataSource">> := #{<<"da">> := Da, <<"dt">> := Dt}} ->
-                            io:format("~s ~p ProductId ~p => Identifier ~p => dadt = ~p.~n", [?FILE, ?LINE, ProductId, Identifier, <<Da/binary, Dt/binary>>]),
                             dgiot_data:insert({protocol, <<Da/binary, Dt/binary>>, ProductId}, Identifier);
                         _ ->
-                            io:format("~s ~p Prop = ~p.~n", [?FILE, ?LINE, Prop]),
                             pass
                     end
                           end, Props);

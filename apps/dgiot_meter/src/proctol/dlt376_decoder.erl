@@ -472,9 +472,7 @@ to_frame(#{
     >>;
 
 to_frame(#{
-    % <<"msgtype">> := ?DLT376,
     <<"command">> := C,
-%%    <<"addr">> := Addr,  %%?? Addr是6位字符
     <<"addr">> := Addr,
     <<"afn">> := AFN
 } = Msg) when AFN == 1 orelse AFN == 4 orelse AFN == 5 orelse AFN == 6 orelse AFN == 10 ->
@@ -500,13 +498,11 @@ to_frame(#{
 
 %% 组装成封包
 to_frame(#{
-    % <<"msgtype">> := ?DLT376,
     <<"command">> := C,
-%%    <<"addr">> := Addr,  %%?? Addr是6位字符
     <<"concentrator">> := Addr,
     <<"afn">> := AFN
 } = Msg) ->
-    io:format("~s ~p Msg = ~p.~n", [?FILE, ?LINE, Msg]),
+%%    io:format("~s ~p Msg = ~p.~n", [?FILE, ?LINE, Msg]),
     {ok, UserZone} = get_userzone(Msg),
     UserZone1 = <<C:8, Addr:5/bytes, AFN:8, 16#61, UserZone/binary>>,
     Len = byte_size(UserZone1) * 4 + 2,
@@ -765,37 +761,16 @@ pn_to_da(Pn) ->
 %% ConAddr = <<"000033010048">>,
 frame_write_param(#{<<"concentrator">> := ConAddr, <<"payload">> := Frame}) ->
     Length = length(maps:keys(Frame)),
-    io:format("~s ~p SortFrame   ~p.~n", [?FILE, ?LINE, Length]),
     {BitList, Afn, Da, Fn} =
         lists:foldl(fun(Index, {Acc, A, D, F}) ->
             case maps:find(dgiot_utils:to_binary(Index), Frame) of
-                {ok, #{<<"value">> := Value, <<"dataSource">> := #{<<"afn">> := AFN, <<"da">> := Da, <<"dt">> := FN, <<"length">> := Len, <<"type">> := Type} = _DataForm}} ->
-                    io:format("~s ~p Value ~p. Da ~p FN ~p ~n", [?FILE, ?LINE, Value, Da, FN]),
-                    DA = dgiot_utils:binary_to_hex(pn_to_da(Da)),
-                    case Type of
-                        <<"bytes">> ->
-                            NewValue = dlt645_proctol:reverse(dgiot_utils:hex_to_binary(Value)),
-                            io:format("~s ~p NewValue   ~p.~n", [?FILE, ?LINE, NewValue]),
-                            {get_values(Acc, NewValue), AFN, DA, FN};
-                        <<"little">> ->
-                            NewValue = dgiot_utils:to_int(Value),
-                            L = dgiot_utils:to_int(Len),
-                            Len1 = L * 8,
-                            io:format("~s ~p NewValue   ~p.~n", [?FILE, ?LINE, NewValue]),
-                            {get_values(Acc, <<NewValue:Len1/little>>), AFN, DA, FN};
-                        <<"bit">> ->
-                            NewValue = dgiot_utils:to_int(Value),
-                            L = dgiot_utils:to_int(Len),
-                            io:format("~s ~p NewValue   ~p.~n", [?FILE, ?LINE, NewValue]),
-                            {Acc ++ [{NewValue, L}], AFN, DA, FN}
-                    end;
+                {ok, #{<<"value">> := Value, <<"dataSource">> := DataSource}} ->
+                    get_bitlist(Value, DataSource, Acc);
                 _ ->
                     {Acc, A, D, F}
             end
                     end, {[], 0, <<>>, <<>>}, lists:seq(1, Length)),
-    io:format("~s ~p BitList   ~p.~n", [?FILE, ?LINE, BitList]),
     UserZone = <<<<V:BitLen>> || {V, BitLen} <- BitList>>,
-    io:format("~s ~p UserZone  ~p. Afn ~p ~n", [?FILE, ?LINE, UserZone, Afn]),
     UserData = add_to_userzone(UserZone, Afn, Fn),
     dlt376_decoder:to_frame(#{<<"command">> => 16#4B,
         <<"addr">> => concentrator_to_addr(ConAddr),
@@ -808,35 +783,25 @@ get_values(Acc, Data) ->
         Acc1 ++ [{V, 8}]
                 end, Acc, binary_to_list(Data)).
 
-%%frame_write_param(#{<<"concentrator">> := ConAddr, <<"basedata">> := Data}) ->
-%%    ZZXH = to_integer(maps:get(<<"zzxh">>, Data, <<"2040">>)),
-%%    CLDH = to_integer(maps:get(<<"cldh">>, Data, <<"2040">>)),
-%%    BTL = to_integer(maps:get(<<"btl">>, Data, <<"3">>)),
-%%    TXDKH = to_integer(maps:get(<<"txdkh">>, Data, <<"2">>)),
-%%    TXXY = to_integer(maps:get(<<"txxy">>, Data, <<"30">>)),
-%%    DBDZ = to_device(maps:get(<<"dbdz">>, Data, <<"000000000000">>)),
-%%    TXMM = to_device(maps:get(<<"txmm">>, Data, <<"000000000000">>)),
-%%    CJQ = to_device(maps:get(<<"cjq">>, Data, <<"000000000000">>)),
-%%    DNFLS = to_integer(maps:get(<<"dnfls">>, Data, <<"4">>)),
-%%    YHLX = to_integer(maps:get(<<"yhlx">>, Data, <<"5">>)),
-%%    DBLX = to_integer(maps:get(<<"dblx">>, Data, <<"1">>)),
-%%    UserZone = <<16#01, 16#00,
-%%        ZZXH:16/little,
-%%        CLDH:16/little,
-%%        BTL:3, TXDKH:5,
-%%        TXXY:8,
-%%        DBDZ:6/bytes,
-%%        TXMM:6/bytes,
-%%        DNFLS:8,
-%%        16#0B,
-%%        CJQ:6/bytes,
-%%        YHLX:4, DBLX:1>>,
-%%    dlt376_decoder:to_frame(#{<<"command">> => 16#4B,
-%%        <<"concentrator">> => ConAddr,
-%%        <<"afn">> => 16#04,
-%%        <<"da">> => <<16#00, 16#00>>,
-%%        <<"di">> => <<16#02, 16#01>>,
-%%        <<"data">> => UserZone}).
+%% 下发指令
+get_bitlist(Value, #{<<"afn">> := AFN, <<"da">> := DA, <<"dt">> := FN, <<"length">> := Len, <<"type">> := Type}, Acc) ->
+    case Type of
+        <<"bytes">> ->
+            NewValue = dlt645_proctol:reverse(dgiot_utils:hex_to_binary(Value)),
+%%            io:format("~s ~p NewValue   ~p.~n", [?FILE, ?LINE, dgiot_utils:binary_to_hex(NewValue)]),
+            {get_values(Acc, NewValue), AFN, DA, FN};
+        <<"little">> ->
+            NewValue = dgiot_utils:to_int(Value),
+            L = dgiot_utils:to_int(Len),
+            Len1 = L * 8,
+%%            io:format("~s ~p NewValue   ~p.~n", [?FILE, ?LINE, dgiot_utils:binary_to_hex(NewValue)]),
+            {get_values(Acc, <<NewValue:Len1/little>>), AFN, DA, FN};
+        <<"bit">> ->
+            NewValue = dgiot_utils:to_int(Value),
+            L = dgiot_utils:to_int(Len),
+%%            io:format("~s ~p NewValue   ~p.~n", [?FILE, ?LINE, dgiot_utils:binary_to_hex(NewValue)]),
+            {Acc ++ [{NewValue, L}], AFN, DA, FN}
+    end.
 
 add_to_userzone(UserZone, _Afn, _Fn) ->
     UserZone.
@@ -856,7 +821,7 @@ concentrator_to_addr(ConAddr) when byte_size(ConAddr) == 12 ->
 concentrator_to_addr(_ConAddr) ->
     <<16#00, 16#00, 16#00, 16#00, 16#00>>.
 
-decoder_value_Rate(Index, BinDi, BinDa, BinDt, DValue, Rates, #{<<"afn">> := 16#0C, <<"value">> := _Value, <<"childvalue">> := ChildValue} = State) ->
+decoder_value_Rate(Index, BinDi, BinDa, BinDt, DValue, Rates, #{<<"afn">> := 16#0C, <<"value">> := Value, <<"childvalue">> := ChildValue} = State) ->
     NewBinDa =
         case maps:find(BinDa, ChildValue) of
             error ->
@@ -875,10 +840,10 @@ decoder_value_Rate(Index, BinDi, BinDa, BinDt, DValue, Rates, #{<<"afn">> := 16#
                         Rate
                 end,
             State1 = State#{
-%%                <<"value">> => Value#{
-%%                    <<BinDi/binary, "">> => binary_to_value_dlt376_bcd(DValue),
-%%                    <<BinDi/binary, "0", BinIndex/binary>> => binary_to_value_dlt376_bcd(NewRate)
-%%                },
+                <<"value">> => Value#{
+                    <<BinDi/binary, "">> => binary_to_value_dlt376_bcd(DValue),
+                    <<BinDi/binary, "0", BinIndex/binary>> => binary_to_value_dlt376_bcd(NewRate)
+                },
                 <<"childvalue">> => ChildValue#{
                     <<BinDa/binary, "">> => NewBinDa#{
                         <<"0000", BinDt/binary>> => binary_to_value_dlt376_bcd(DValue),
