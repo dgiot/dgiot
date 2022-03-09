@@ -191,6 +191,14 @@
         "description": "启动任务",
         "parameters": [
           {
+            "name": "dashboardId",
+            "description": "大屏ID",
+            "in": "query",
+            "required": true,
+            "type": "string",
+            "default": "32511dbfe5"
+          },
+          {
             "in": "body",
             "name": "data",
             "required": true,

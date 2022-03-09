@@ -54,21 +54,22 @@ stop(#{<<"sessionToken">> := SessionToken}) ->
         _Reason ->
             ok
     end.
+
 %%%===================================================================
 %%% gen_server callbacks
 %%%===================================================================
-init([#{<<"data">> := Que, <<"sessionToken">> := SessionToken}]) ->
+init([#{<<"data">> := Que, <<"dashboardId">> := DashboardId, <<"sessionToken">> := SessionToken}]) ->
     dgiot_data:insert({dashboard, SessionToken}, self()),
     case length(Que) of
         0 ->
             erlang:send_after(300, self(), stop);
         _ ->
-            Topic = <<"dashboard/", SessionToken/binary, "/heart">>,
-            dgiot_mqtt:subscribe(Topic),
-            erlang:send_after(30 * 1000, self(), heart),
+%%            Topic = <<"dashboard/", SessionToken/binary, "/heart">>,
+%%            dgiot_mqtt:subscribe(Topic),
+%%            erlang:send_after(30 * 1000, self(), heart),
             erlang:send_after(100, self(), retry)
     end,
-    {ok, #task{oldque = Que, newque = Que, freq = 1, sessiontoken = SessionToken}};
+    {ok, #task{oldque = Que, newque = Que, freq = 1, dashboardId = DashboardId, sessiontoken = SessionToken}};
 
 init(A) ->
     ?LOG(info, "A ~p ", [A]).
@@ -92,16 +93,13 @@ handle_info(retry, #task{newque = Que} = State) when length(Que) == 0 ->
     erlang:garbage_collect(self()),
     {stop, normal, State};
 
-%% 定时触发抄表指令
 handle_info(retry, State) ->
     {noreply, send_msg(State)};
 
-%% 定时触发抄表指令
 handle_info(heart, #task{heart = Heart} = State) when Heart < 4 ->
     erlang:send_after(30 * 1000, self(), heart),
     {noreply, State#task{heart = Heart + 1}};
 
-%% 定时触发抄表指令
 handle_info(heart, State) ->
     {stop, normal, State};
 
