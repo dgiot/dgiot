@@ -102,10 +102,9 @@ do_check(#{clientid := ClientID} = _ClientInfo, subscribe, <<"$dg/channel/", Dev
 %% "$dg/dashboard/{dashboardId}/{productId}/{deviceId}"
 do_check(#{clientid := ClientID} = _ClientInfo, subscribe, <<"$dg/dashboard/", DeviceInfo/binary>> = Topic) ->
     io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, Topic]),
-    [ProuctID, Devaddr | _] = binary:split(DeviceInfo, <<"/">>, [global]),
-    DeviceID = dgiot_parse:get_deviceid(ProuctID, Devaddr),
-    case ClientID == DeviceID of
-        true ->
+    [DashboardId | _] = binary:split(DeviceInfo, <<"/">>, [global]),
+    case dgiot_parse:get_object(<<"View">>, DashboardId, [{"X-Parse-Session-Token", ClientID}], [{from, rest}]) of
+        {ok, _} ->
             allow;
         _ ->
             deny
