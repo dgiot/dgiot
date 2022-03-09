@@ -357,7 +357,7 @@ put_topo(Arg, _Context) ->
         <<"base64">> := Base64
     } = Arg,
     DeviceId = dgiot_parse:get_deviceid(ProductId, Devaddr),
-    Pubtopic = <<"thing/", DeviceId/binary, "/post">>,
+    Pubtopic = <<"$dg/konva/", DeviceId/binary, "/properties/report">>,
     dgiot_mqtt:publish(self(), Pubtopic, Base64),
     {ok, <<"Success">>}.
 
@@ -486,7 +486,7 @@ get_gpsaddr(V) ->
 
 send_realtimedata(ProductId, DeviceId, Payload) ->
     Base64 = get_realtimedata(ProductId, DeviceId, Payload),
-    Pubtopic = <<"thing/", DeviceId/binary, "/realtimedata/post">>,
+    Pubtopic = <<"$dg/user/", DeviceId/binary, "/properties/report">>,
     dgiot_mqtt:publish(self(), Pubtopic, Base64).
 
 get_realtimedata(ProductId, DeviceId, Payload) ->

@@ -493,36 +493,47 @@ create_table(ChannelId, [ProductId | ProductIds], Config) ->
     end,
     create_table(ChannelId, ProductIds, Config).
 
+%% TDengine参数限制与保留关键字
+%% https://www.taosdata.com/docs/cn/v2.0/administrator#keywords
 get_schema(_ChannelId, Schema) ->
     case maps:get(<<"thing">>, Schema, <<>>) of
         <<>> ->
             ignore;
         Thing ->
-            Properties = maps:get(<<"properties">>, Thing, []),
-            Result =
-                lists:foldl(fun(Property, Acc) ->
-                    case get_field(Property) of
-                        pass ->
-                            Acc;
-                        V ->
-                            Acc ++ [V]
-                    end
-                            end, [], Properties),
-            case lists:flatten(Result) of
-                [] ->
+            {Columns, Tags} = get_field_tag(Thing),
+            case length(Columns) of
+                0 ->
                     ignore;
-                Columns ->
-                    AddrSize = integer_to_binary(50),
+                _ ->
                     #{
                         <<"fields">> => Columns,
-                        <<"tags">> => [
-                            {
-                                <<"devaddr">>, #{<<"type">> => <<"NCHAR(", AddrSize/binary, ")">>}
-                            }
-                        ]
+                        <<"tags">> => Tags
                     }
             end
     end.
+
+get_field_tag(Thing) ->
+    Properties = maps:get(<<"properties">>, Thing, []),
+    Tags = maps:get(<<"tags">>, Thing, []),
+    Columns =
+        lists:foldl(fun(Property, Acc) ->
+            case get_field(Property) of
+                pass ->
+                    Acc;
+                V ->
+                    Acc ++ [V]
+            end
+                    end, [], Properties),
+    Tags =
+        lists:foldl(fun(Tag, Acc) ->
+            case get_field(Tag) of
+                pass ->
+                    Acc;
+                V ->
+                    Acc ++ [V]
+            end
+                    end, [{<<"devaddr">>, #{<<"type">> => <<"NCHAR(50)">>}}], Tags),
+    {lists:flatten(Columns), lists:flatten(Tags)}.
 
 %%  https://www.taosdata.com/cn/documentation/taos-sql#data-type
 %%  #	类型       	Bytes    说明

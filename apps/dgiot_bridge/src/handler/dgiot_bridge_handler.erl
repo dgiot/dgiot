@@ -78,9 +78,8 @@ handle(OperationID, Args, Context, Req) ->
 %%%===================================================================
 %%% 内部函数 Version:API版本
 %%%===================================================================
-
 do_request(post_control_channel, #{<<"id">> := ChannelId, <<"action">> := Action}, _Context, _Req)
-    when Action == <<"enable">>; Action == <<"disable">>; Action == <<"update">> ->
+    when Action == <<"enable">>; Action == <<"disable">>; Action == <<"update">>; Action == <<"start_logger">>; Action == <<"stop_logger">> ->
     dgiot_bridge:control_channel(ChannelId, Action);
 
 %% Decoder 概要: 获取指令集 描述:根据产品ID关联的解码器获取指令集

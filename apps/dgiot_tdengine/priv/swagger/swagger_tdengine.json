@@ -3,6 +3,10 @@
     {
       "name": "Data",
       "description": "数据管理"
+    },
+    {
+      "name": "DGIOT",
+      "description": "基础接口"
     }
   ],
   "definitions": {
@@ -108,7 +112,7 @@
           }
         },
         "tags": [
-          "Data"
+          "DGIOT"
         ]
       }
     },
@@ -183,7 +187,7 @@
           }
         },
         "tags": [
-          "Data"
+          "DGIOT"
         ]
       }
     },
@@ -288,7 +292,7 @@
           }
         },
         "tags": [
-          "Data"
+          "DGIOT"
         ]
       }
     },
@@ -331,7 +335,7 @@
           }
         },
         "tags": [
-          "Data"
+          "DGIOT"
         ]
       }
     }

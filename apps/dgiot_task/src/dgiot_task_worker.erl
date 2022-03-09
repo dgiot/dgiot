@@ -27,7 +27,7 @@
 -export([init/1, handle_call/3, handle_cast/2,
     handle_info/2, terminate/2, code_change/3, stop/1]).
 
--record(task, {mode = thing, tid, app, firstid, dtuid, product, devaddr, dis = [], que, round, ref, ack = #{}, appdata = #{}, ts = 0, endtime = 0, freq = 0}).
+-record(task, {mode = thing, tid, app, firstid, dtuid, product, devaddr, dis = [], que, round, ref, ack = #{}, appdata = #{}, ts = 0, endtime = 0, freq = 0, interval = 5}).
 %%%===================================================================
 %%% API
 %%%===================================================================
@@ -165,7 +165,7 @@ handle_info({deliver, _, Msg}, #task{tid = Channel, dis = Dis, product = _Produc
 
 
 %% ACK消息触发抄表指令
-handle_info({deliver, _, Msg}, #task{tid = Channel, dis = Dis, product = ProductId, devaddr = DevAddr, ack = Ack} = State) ->
+handle_info({deliver, _, Msg}, #task{tid = Channel, dis = Dis, product = _ProductId1, devaddr = _DevAddr1, ack = Ack} = State) ->
     Payload = jsx:decode(dgiot_mqtt:get_payload(Msg), [return_maps]),
     dgiot_metrics:inc(dgiot_task, <<"task_recv">>, 1),
     case binary:split(dgiot_mqtt:get_topic(Msg), <<$/>>, [global, trim]) of
@@ -240,16 +240,18 @@ send_msg(#task{tid = Channel, product = Product, devaddr = DevAddr, ref = Ref, q
     end,
     NewQue = lists:nthtail(NewCount, Que),
     dgiot_metrics:inc(dgiot_task, <<"task_send">>, 1),
-    State#task{que = NewQue, dis = Dis, ref = erlang:send_after(Interval * 1000, self(), retry)}.
+
+    State#task{que = NewQue, dis = Dis, ref = erlang:send_after(Interval * 1000, self(), retry), interval = Interval}.
 
 
-get_next_pn(#task{mode = Mode, dtuid = DtuId, firstid = DeviceId, product = ProductId, devaddr = DevAddr, round = Round, ref = Ref} = State) ->
+get_next_pn(#task{tid = Channel, mode = Mode, dtuid = DtuId, firstid = DeviceId, product = _ProductId, devaddr = _DevAddr, round = Round, ref = Ref, interval = Interval} = State) ->
     save_td(State),
-    Topic = <<"thing/", ProductId/binary, "/", DevAddr/binary, "/post">>,
-    dgiot_mqtt:unsubscribe(Topic),
+%%    Topic = <<"thing/", ProductId/binary, "/", DevAddr/binary, "/post">>,
+%%    dgiot_mqtt:unsubscribe(Topic),
     {NextProductId, NextDevAddr} = dgiot_task:get_pnque(DtuId),
     NextDeviceId = dgiot_parse:get_deviceid(NextProductId, NextDevAddr),
-    Que = dgiot_instruct:get_instruct(NextProductId, DeviceId, Round, Mode),
+    Que = dgiot_instruct:get_instruct(NextProductId, NextDeviceId, Round, Mode),
+    dgiot_bridge:send_log(Channel, NextProductId, NextDevAddr, "to_dev=> ~s ~p NextProductId ~p NextDevAddr ~p NextDeviceId ~p", [?FILE, ?LINE, NextProductId, NextDevAddr, NextDeviceId]),
     NextTopic = <<"thing/", NextProductId/binary, "/", NextDevAddr/binary, "/post">>,
     dgiot_mqtt:subscribe(NextTopic),
     case Ref of
@@ -263,7 +265,7 @@ get_next_pn(#task{mode = Mode, dtuid = DtuId, firstid = DeviceId, product = Prod
             DeviceId ->
                 erlang:send_after(1000, self(), init);
             _ ->
-                erlang:send_after(2 * 1000, self(), retry)
+                erlang:send_after(Interval * 1000, self(), retry)
         end,
     State#task{product = NextProductId, devaddr = NextDevAddr, que = Que, dis = [], ack = #{}, ref = NewRef}.
 
