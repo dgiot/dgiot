@@ -41,15 +41,14 @@
 
  +  中国Linux / Unix / Mac / windowsビルド
   ```bash
-    cd dgiot_dashboard
+    cd dgiot-dashboard
     git pull
-    yarn dgiot:install
-    yarn build
+    pnpm install
+    pnpm build
     cd ../dgiot
     git pull
     rm ./apps/dgiot_api/priv/www -rf
-    cp ../dgiot_dashboard/dist/ ./apps/dgiot_api/priv/www -rf
-    cp ../dgiot_dashboard/swagger ./apps/dgiot_api/priv/www/ -rf
+    cp ../dgiot-dashboard/dist/ ./apps/dgiot_api/priv/www -rf
     make run
     cd ./apps/dgiot_api/priv/www
     wget https://dgiot-release-1306147891.cos.ap-nanjing.myqcloud.com/v4.4.0/dgiot_dashboard.tar.gz &> /dev/null

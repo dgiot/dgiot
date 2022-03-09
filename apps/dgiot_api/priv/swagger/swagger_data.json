@@ -413,6 +413,46 @@
       }
     },
     "/thing": {
+      "get": {
+        "summary": "查询物模型",
+        "description": "查询物模型",
+        "parameters": [
+          {
+            "name": "productid",
+            "in": "query",
+            "type": "string",
+            "default": "8ecadfebe1",
+            "description": "产品id"
+          },
+          {
+            "name": "moduleType",
+            "in": "query",
+            "type": "string",
+            "default": "properties",
+            "description": "属性类型"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Product"
+        ]
+      },
       "post": {
         "summary": "添加物模型",
         "description": "添加物模型",
@@ -518,6 +558,7 @@
                   "description": "物模型单项指标",
                   "type": "object",
                   "example": {
+                    "moduleType": "properties",
                     "name": "电压",
                     "index": 11,
                     "isshow": true,
@@ -605,6 +646,7 @@
                     "name": "电压",
                     "index": 11,
                     "isshow": true,
+                    "moduleType": "properties",
                     "dataForm": {
                       "data": "1",
                       "rate": 1,
