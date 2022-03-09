@@ -152,7 +152,7 @@ get_acl(ChannelId) ->
 send_log(ChannelId, ProductId, DevAddr, Fmt, Args) ->
     is_send_log(ChannelId, ProductId, DevAddr,
         fun() ->
-            Topic = <<"log/channel/", ChannelId/binary, "/", ProductId/binary, "/", DevAddr/binary>>,
+            Topic = <<"$dg/channel/", ChannelId/binary, "/", ProductId/binary, "/", DevAddr/binary>>,
             Payload = io_lib:format("[~s]~p " ++ Fmt, [node(), self() | Args]),
             dgiot_mqtt:publish(ChannelId, Topic, unicode:characters_to_binary(Payload))
         end).
@@ -160,7 +160,7 @@ send_log(ChannelId, ProductId, DevAddr, Fmt, Args) ->
 send_log(ChannelId, ProductId, Fmt, Args) ->
     is_send_log(ChannelId, ProductId, undefined,
         fun() ->
-            Topic = <<"log/channel/", ChannelId/binary, "/", ProductId/binary>>,
+            Topic = <<"$dg/channel/", ChannelId/binary, "/", ProductId/binary>>,
             Payload = io_lib:format("[~s]~p " ++ Fmt, [node(), self() | Args]),
             dgiot_mqtt:publish(ChannelId, Topic, unicode:characters_to_binary(Payload))
         end).
@@ -168,7 +168,7 @@ send_log(ChannelId, ProductId, Fmt, Args) ->
 send_log(ChannelId, Fmt, Args) ->
     is_send_log(ChannelId, undefined, undefined,
         fun() ->
-            Topic = <<"log/channel/", ChannelId/binary, "/channelid">>,
+            Topic = <<"$dg/channel/", ChannelId/binary, "/channelid">>,
             Payload = io_lib:format("[~s]~p " ++ Fmt, [node(), self() | Args]),
             dgiot_mqtt:publish(ChannelId, Topic, unicode:characters_to_binary(Payload))
         end).
@@ -338,6 +338,16 @@ control_channel(ChannelId, Action) ->
             <<"update">> ->
                 Topic = <<"channel/", ChannelId/binary>>,
                 Payload = jsx:encode(#{<<"channelId">> => ChannelId, <<"action">> => <<"update">>}),
+                dgiot_mqtt:publish(ChannelId, Topic, Payload),
+                true;
+            <<"start_logger">> ->
+                Topic = <<"channel/", ChannelId/binary>>,
+                Payload = jsx:encode(#{<<"channelId">> => ChannelId, <<"action">> => <<"start_logger">>}),
+                dgiot_mqtt:publish(ChannelId, Topic, Payload),
+                true;
+            <<"stop_logger">> ->
+                Topic = <<"channel/", ChannelId/binary>>,
+                Payload = jsx:encode(#{<<"channelId">> => ChannelId, <<"action">> => <<"stop_logger">>}),
                 dgiot_mqtt:publish(ChannelId, Topic, Payload),
                 true
         end,

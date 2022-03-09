@@ -68,8 +68,8 @@ do_check(#{clientid := ClientID} = _ClientInfo, subscribe, <<"$dg/device/", Devi
             deny
     end;
 
-%%"$dg/thing/deviceid/#"
-%%"$dg/thing/productid/devaddr/#"
+%% "$dg/thing/deviceid/#"
+%% "$dg/thing/productid/devaddr/#"
 do_check(#{clientid := ClientID, username := UserId} = _ClientInfo, publish, <<"$dg/thing/", DeviceInfo/binary>> = Topic)
     when ClientID =/= undefined ->
     io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, Topic]),
@@ -86,6 +86,29 @@ do_check(#{clientid := ClientID, username := UserId} = _ClientInfo, publish, <<"
                 _ ->
                     deny
             end
+    end;
+
+%% "$dg/channel/{channelId}/{productId}/{deviceId}"
+do_check(#{clientid := ClientID} = _ClientInfo, subscribe, <<"$dg/channel/", DeviceInfo/binary>> = Topic) ->
+    io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, Topic]),
+    [ChannelId | _] = binary:split(DeviceInfo, <<"/">>, [global]),
+    case dgiot_parse:get_object(<<"Channel">>, ChannelId, [{"X-Parse-Session-Token", ClientID}], [{from, rest}]) of
+        {ok, _} ->
+            allow;
+        _ ->
+            deny
+    end;
+
+%% "$dg/dashboard/{dashboardId}/{productId}/{deviceId}"
+do_check(#{clientid := ClientID} = _ClientInfo, subscribe, <<"$dg/dashboard/", DeviceInfo/binary>> = Topic) ->
+    io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, Topic]),
+    [ProuctID, Devaddr | _] = binary:split(DeviceInfo, <<"/">>, [global]),
+    DeviceID = dgiot_parse:get_deviceid(ProuctID, Devaddr),
+    case ClientID == DeviceID of
+        true ->
+            allow;
+        _ ->
+            deny
     end;
 
 do_check(_ClientInfo, _PubSub, Topic) ->

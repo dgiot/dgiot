@@ -3,6 +3,10 @@
     {
       "name": "_Role",
       "description": "角色"
+    },
+    {
+      "name": "DGIOT",
+      "description": "基础接口"
     }
   ],
   "definitions": {
@@ -74,7 +78,7 @@
           }
         },
         "tags": [
-          "_Role"
+          "DGIOT"
         ]
       }
     },
