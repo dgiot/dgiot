@@ -45,19 +45,18 @@
     git pull
     pnpm install
     pnpm build
-    cd ../dgiot
-    git pull
-
-    rm ./apps/dgiot_api/priv/www -rf
-    cp ../dgiot-dashboard/dist/ ./apps/dgiot_api/priv/www -rf
-    make run
-    cd ./apps/dgiot_api/priv/www
+    cd ./dist/
     wget https://dgiot-release-1306147891.cos.ap-nanjing.myqcloud.com/v4.4.0/dgiot_dashboard.tar.gz &> /dev/null
     tar xf dgiot_dashboard.tar.gz &> /dev/null
     wget https://dgiot-release-1306147891.cos.ap-nanjing.myqcloud.com/v4.4.0/dgiot_file.tar.gz &> /dev/null
     tar xf dgiot_file.tar.gz &> /dev/null
     wget https://dgiot-release-1306147891.cos.ap-nanjing.myqcloud.com/v4.4.0/dgiot_swagger.tar.gz &> /dev/null
     tar xf dgiot_swagger.tar.gz &> /dev/null
+    cd ../../dgiot
+    git pull
+    rm ./apps/dgiot_api/priv/www -rf
+    cp ../dgiot-dashboard/dist/ ./apps/dgiot_api/priv/www -rf
+    make run
  ```
 + Make Debug
  ```
