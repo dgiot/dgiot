@@ -30,7 +30,7 @@
 
 %% API
 -export([swagger_rule/0]).
--export([handle/4, sysc_rules/0, save_rule_to_dict/2, device_sql/3]).
+-export([handle/4, sysc_rules/0, save_rule_to_dict/2, device_sql/4]).
 
 %% API描述
 %% 支持二种方式导入
@@ -171,20 +171,8 @@ do_request(get_actions, _Args, _Context, _Req) ->
 %% Rule 概要: 生成sql参数
 %% OperationId:post_rulesql
 %% 请求:POST /iotapi/rulesql
-do_request(post_rulesql, #{<<"productid">> := ProductId, <<"devaddr">> := DevAddr, <<"trigger">> := Trigger} = Params,
-    _Context, _Req) ->
-    io:format("Params: ~p~n", [Params]),
-    case Trigger of
-        <<"device">> ->
-            device_sql(ProductId, DevAddr, {});
-        %% 设备触发时的查询逻辑
-        <<"cron">> ->
-            {ok, #{<<"productid">> => ProductId, <<"devaddr">> => DevAddr,
-                <<"message">> => <<"cron触发,暂不处理"/utf8>>, <<"cron">> => maps:get(<<"cron">>, Params)}};
-        _ ->
-            {ok, #{<<"productid">> => ProductId, <<"devaddr">> => DevAddr,
-                <<"message">> => <<"其他触发方式,暂未处理该逻辑"/utf8>>, <<"trigger">> => Trigger}}
-    end;
+do_request(post_rulesql, #{<<"select">> := Select, <<"from">> := From, <<"where">> := Where, <<"method">> := Method}, _Context, _Req) ->
+    device_sql(Select, From, Where, Method);
 
 
 do_request(get_actions_id, #{<<"id">> := RuleID}, _Context, _Req) ->
@@ -217,35 +205,58 @@ do_request(get_resource_types, _Args, _Context, _Req) ->
 do_request(_OperationId, _Args, _Context, _Req) ->
     {error, <<"Not Allowed.">>}.
 
+%%getSelect(#{<<"mqttEvent">> := MqttEvent,<<"mqttEvent">> := MqttEvent}->Select) ->
+
 
 %% 根据设备条件生成sql模板
-%% ProductId 产品id
-%% DeviceId 设备id
-%% Rule 生成sql的规则
-device_sql(ProductId, Devaddr, _Rule) ->
-    %% 生成sql参数
-%%    Data5 = <<"filename\"", "\r\n", "\r\n", FileName/binary, "\r\n">>,
+%% Select
+%% From
+%% Where
+
+device_sql(Select, From, Where, _Method) ->
+    %%
+    %% 生成sql Where参数
+%%    WhereTpl = [#{<<"identifier">> => <<"flow">>, <<"operator">> => <<"==">>, <<"value">> => <<"test">>},
+%%        #{<<"identifier">> => <<"temp">>, <<"operator">> => <<"==">>, <<"value">> => <<"test">>},
+%%        #{<<"identifier">> => <<"flow">>, <<"operator">> => <<"==">>, <<"value">> => <<"test">>}],
+%%    Select = <<"sql">>,
+    SelectTpl = lists:foldl(fun(X, Acc) ->
+        case X of
+            #{<<"identifier">> := Id, <<"operator">> := Op, <<"value">> := Value} ->
+                case Acc of
+                    <<"">> ->
+                        <<Id/binary, " ", Op/binary, " ", Value/binary>>;
+                    _ ->
+                        <<Acc/binary, " , ", Id/binary, " ", Op/binary, " ", Value/binary>>
+                end;
+            _ -> Acc
+        end
+                         end, <<"">>, Select),
+    TopicTpl = case From of
+                #{<<"productid">> :=ProductId,<<"devaddr">> := Devaddr} ->
+                    <<"     thing/", ProductId/binary, Devaddr/binary, "/#", "\r\n">>;
+                    _ ->  <<"     thing/", "/test/#", "\r\n">>
+            end,
+    WhereSql = lists:foldl(fun(X, Acc) ->
+        case X of
+            #{<<"identifier">> := Id, <<"operator">> := Op, <<"value">> := Value} ->
+                case Acc of
+                    <<"">> ->
+                        <<Id/binary, " ", Op/binary, " ", Value/binary>>;
+                    _ ->
+                        <<Acc/binary, " , ", Id/binary, " ", Op/binary, " ", Value/binary>>
+                end;
+            _ -> Acc
+        end
+                           end, <<"">>, Where),
     DefaultSql = <<"SELECT\"", "\r\n",
-        "payload.msg as msg,clientid,", "\r\n",
-        ProductId/binary, "' as productid FROM'", "\r\n",
-        "thing/", ProductId/binary, Devaddr/binary, "/#", "\r\n",
-        "WHERE", "\r\n",
-        "msg = hello", ProductId/binary, ""
+        "     payload.msg as msg,clientid,", "\r\n     ",
+        SelectTpl/binary,
+           TopicTpl/binary,
+        "  WHERE", "\r\n",
+        WhereSql/binary
     >>,
-    MetaRawsql = DefaultSql,
-%%        case dgiot_parse:get_object(<<"Product">>, ProductId) of
-%%            {ok, #{<<"objectId">> := ProductId}} ->
-%%                case DeviceId of
-%%                    %% device 如果是# tpoic则设置为通配符
-%%                    <<"#">> ->
-%%                        DefaultSql;
-%%                    _ -> %% 处理device 不为 0 和# 的情况
-%%
-%%                end;
-%%            _ ->
-%%                DefaultSql
-%%        end,
-    {ok, #{<<"template">> => MetaRawsql}}.
+    {ok, #{<<"template">> => DefaultSql}}.
 
 %% 根据cron表达式生成sql模板
 
