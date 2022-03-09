@@ -104,6 +104,8 @@ wget -qO dgiot_install.sh https://gitee.com/dgiiot/dgiot/raw/master/dgiot_instal
     tar xf dgiot_dashboard.tar.gz &> /dev/null
     wget https://dgiot-release-1306147891.cos.ap-nanjing.myqcloud.com/v4.4.0/dgiot_file.tar.gz &> /dev/null
     tar xf dgiot_file.tar.gz &> /dev/null
+    wget https://dgiot-release-1306147891.cos.ap-nanjing.myqcloud.com/v4.4.0/dgiot_swagger.tar.gz &> /dev/null
+    tar xf dgiot_swagger.tar.gz &> /dev/null
  ```
 + Make Debug
  ```
