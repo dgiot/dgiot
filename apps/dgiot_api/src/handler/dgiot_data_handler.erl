@@ -649,7 +649,7 @@ putTing(ProductId, Item, SessionToken) ->
             {error, Error}
     end.
 
-%% Thing 概要: 导库 描述:更新模型
+%% Thing 概要: 导库 描述:删除模型
 %% OperationId:delete_thing
 %% 请求:DELETE /iotapi/delete_thing
 deleteThing(ProductId, SessionToken, Item) ->
@@ -657,8 +657,8 @@ deleteThing(ProductId, SessionToken, Item) ->
     ModuleType = maps:get(<<"moduleType">>, Item, <<"properties">>),
     case dgiot_parse:get_object(<<"Product">>, ProductId, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
         {ok, #{<<"thing">> := Thing}} ->
-            #{<<"properties">> := Properties} = Thing,
-            {Ids, NewProperties} =
+            Modules = maps:get(ModuleType, Thing),
+            {Ids, NewModules} =
                 lists:foldl(fun(X, {Ids1, Acc}) ->
                     case X of
                         #{<<"identifier">> := Identifier} ->
@@ -676,13 +676,13 @@ deleteThing(ProductId, SessionToken, Item) ->
                                     end
                             end;
                         _ ->
-                            {Ids1, Acc}
+                            {Ids1, Acc ++ [X]}
                     end
-                            end, {[], []}, Properties),
+                            end, {[], []}, Modules),
             case length(Ids) == 0 of
                 true ->
                     {_, R} = dgiot_parse:update_object(<<"Product">>, ProductId,
-                        #{<<"thing">> => Thing#{ModuleType => NewProperties}},
+                        #{<<"thing">> => Thing#{ModuleType => NewModules}},
                         [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]),
                     {ok, R#{<<"code">> => 200}};
                 false ->
