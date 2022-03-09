@@ -599,9 +599,9 @@ postThing(ProductId, Item, SessionToken) ->
     case dgiot_parse:get_object(<<"Product">>, ProductId, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
         {ok, #{<<"thing">> := Thing}} ->
             ModuleType = maps:get(<<"moduleType">>, Item, <<"properties">>),
-            Properties = maps:get(<<"properties">>, Thing, []),
+            Modules = maps:get(ModuleType, Thing, []),
             #{<<"identifier">> := Identifier} = Item,
-            {Ids, NewProperties} =
+            {Ids, NewModules} =
                 lists:foldl(fun(X, {Ids1, Acc}) ->
                     case X of
                         #{<<"identifier">> := Identifier} ->
@@ -609,11 +609,11 @@ postThing(ProductId, Item, SessionToken) ->
                         _ ->
                             {Ids1, Acc ++ [X]}
                     end
-                            end, {[], [Item]}, Properties),
+                            end, {[], [Item]}, Modules),
             case length(Ids) == 0 of
                 true ->
                     {_, R} = dgiot_parse:update_object(<<"Product">>, ProductId,
-                        #{<<"thing">> => Thing#{ModuleType => NewProperties}},
+                        #{<<"thing">> => Thing#{ModuleType => NewModules}},
                         [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]),
                     {ok, R#{<<"code">> => 200}};
                 false ->
@@ -631,8 +631,8 @@ putTing(ProductId, Item, SessionToken) ->
     #{<<"identifier">> := Identifier} = Item,
     case dgiot_parse:get_object(<<"Product">>, ProductId, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
         {ok, #{<<"thing">> := Thing}} ->
-            Properties = maps:get(ModuleType, Thing, []),
-            NewProperties =
+            Modules = maps:get(ModuleType, Thing, []),
+            NewModules =
                 lists:foldl(fun(X, Acc) ->
                     case X of
                         #{<<"identifier">> := Identifier} ->
@@ -640,9 +640,9 @@ putTing(ProductId, Item, SessionToken) ->
                         _ ->
                             Acc ++ [X]
                     end
-                            end, [], Properties),
+                            end, [], Modules),
             {_, R} = dgiot_parse:update_object(<<"Product">>, ProductId,
-                #{<<"thing">> => Thing#{ModuleType => NewProperties}},
+                #{<<"thing">> => Thing#{ModuleType => NewModules}},
                 [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]),
             {ok, R#{<<"code">> => 200}};
         Error ->
