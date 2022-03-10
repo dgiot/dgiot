@@ -141,3 +141,39 @@ list() ->
             end
         end,
     lists:sort(dgiot_plugin:check_module(Fun, [])).
+
+getTopic()->
+     #{
+        <<"basic">> => [
+            #{
+                <<"topic">> => <<"$dg/user/${deviceid}/post">>,
+                <<"type">> => <<"sub">>,
+                <<"desc">> => <<"设备属性上报"/utf8>>,
+                <<"isdef">> => true,
+                <<"category">> => <<"OTA 升级"/utf8>>
+            },
+            #{
+                <<"topic">> => <<"$dg/thing/${deviceid}/">>,
+                <<"type">> => <<"pub">>,
+                <<"desc">> => <<"消息下发"/utf8>>,
+                <<"isdef">> => true,
+                <<"category">> => <<"OTA 升级"/utf8>>
+            }
+            ],
+        <<"thing">> => [
+            #{
+                <<"topic">> => <<"$dg/user/${deviceid}/post">>,
+                <<"type">> => <<"sub'">>,
+                <<"desc">> => <<"设备属性上报"/utf8>>,
+                <<"isdef">> => true,
+                <<"category">> => <<"属性上报"/utf8>>
+            },
+            #{
+                <<"topic">> => <<"$dg/thing/${deviceid}/">>,
+                <<"type">> => <<"pub">>,
+                <<"desc">> => <<"消息下发"/utf8>>,
+                <<"isdef">> => true,
+                <<"category">> => <<"属性上报"/utf8>>
+            }
+            ]
+    }.

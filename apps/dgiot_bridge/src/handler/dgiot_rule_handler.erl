@@ -220,23 +220,13 @@ device_sql(Select, From, Where, _Method) ->
 %%        #{<<"identifier">> => <<"temp">>, <<"operator">> => <<"==">>, <<"value">> => <<"test">>},
 %%        #{<<"identifier">> => <<"flow">>, <<"operator">> => <<"==">>, <<"value">> => <<"test">>}],
 %%    Select = <<"sql">>,
-    SelectTpl = lists:foldl(fun(X, Acc) ->
-        case X of
-            #{<<"identifier">> := Id, <<"operator">> := Op, <<"value">> := Value} ->
-                case Acc of
-                    <<"">> ->
-                        <<Id/binary, " ", Op/binary, " ", Value/binary>>;
-                    _ ->
-                        <<Acc/binary, " , ", Id/binary, " ", Op/binary, " ", Value/binary>>
-                end;
-            _ -> Acc
-        end
-                         end, <<"">>, Select),
+
+    SelectTpl = getSelect(Select, <<"">>),
     TopicTpl = case From of
-                #{<<"productid">> :=ProductId,<<"devaddr">> := Devaddr} ->
-                    <<"     thing/", ProductId/binary, Devaddr/binary, "/#", "\r\n">>;
-                    _ ->  <<"     thing/", "/test/#", "\r\n">>
-            end,
+                   #{<<"productid">> := ProductId, <<"devaddr">> := Devaddr} ->
+                       <<"     thing/", ProductId/binary, Devaddr/binary, "/#", "\r\n">>;
+                   _ -> <<"     thing/", "/test/#", "\r\n">>
+               end,
     WhereSql = lists:foldl(fun(X, Acc) ->
         case X of
             #{<<"identifier">> := Id, <<"operator">> := Op, <<"value">> := Value} ->
@@ -252,7 +242,8 @@ device_sql(Select, From, Where, _Method) ->
     DefaultSql = <<"SELECT\"", "\r\n",
         "     payload.msg as msg,clientid,", "\r\n     ",
         SelectTpl/binary,
-           TopicTpl/binary,
+        "      FROM ", "\r\n     ",
+        TopicTpl/binary,
         "  WHERE", "\r\n",
         WhereSql/binary
     >>,
@@ -368,3 +359,27 @@ sysc_rules() ->
                     pass
             end
     end.
+
+%%
+%%
+getSelect(#{<<"payload">> := Payload} = Select, Acc1) ->
+    NewAcc = lists:foldl(fun(Id, Acc) ->
+        case Acc of
+            <<"">> ->
+                <<"payload.", Id/binary, "  as ", Id/binary>>;
+            _ ->
+                <<Acc/binary, " , ", "payload.", Id/binary, "  as ", Id/binary>>
+        end
+
+                         end, Acc1, Payload),
+    getSelect(maps:without([<<"payload">>], Select), NewAcc);
+
+getSelect(Select, Acc1) ->
+    lists:foldl(fun(Id, Acc) ->
+        case Acc of
+            <<"">> ->
+                <<Id/binary>>;
+            _ ->
+                <<Acc/binary, " , ", Id/binary>>
+        end
+                end, Acc1, lists:flatten(maps:values(Select))).

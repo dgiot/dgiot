@@ -70,13 +70,23 @@ handle(OperationID, Args, Context, Req) ->
 %%%===================================================================
 %%% 内部函数 Version:API版本
 %%%===================================================================
-%%  视频取证的API接口
-%% Proctol 概要: 获取视频取证任务信息 描述:json文件导库
+%% Proctol 概要: 获取Dlink协议列表
 %% OperationId:protocol
 %% 请求:GET /iotapi/protocol
 do_request(get_protocol, _Body, #{<<"sessionToken">> := _SessionToken} = _Context, _Req) ->
     Protocols = dgiot_dlink:get_all_protocol(),
     {200, Protocols};
+
+%%%===================================================================
+%%% 内部函数 Version:API版本
+%%%===================================================================
+%% Proctol 概要: 获取Dlink topic列表
+%% OperationId:topic
+%% 请求:GET /iotapi/topic
+do_request(get_topic, _Body, #{<<"sessionToken">> := _SessionToken} = _Context, _Req) ->
+    Topics = dgiot_dlink:getTopic(),
+    {200, Topics};
+
 
 do_request(_OperationId, _Args, _Context, _Req) ->
     {error, <<"Not Allowed.">>}.
