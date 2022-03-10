@@ -116,10 +116,6 @@ do_request(post_konva_thing, Arg, Context, _Req) ->
             {400, Reason}
     end;
 
-do_request(post_dashboard, Arg, Context, _Req) ->
-    dgiot_dashboard:post_dashboard(Arg, Context),
-    {200, <<"success">>};
-
 do_request(get_devicedict, #{<<"deviceid">> := Deviceid}, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
 %%    case dgiot_parse:get_object(<<"Device">>, <<"566cf263dc">>, [{"X-Parse-Session-Token", <<"r:e53794ae4bb367b13f73ddd5891e2755">>}], [{from, rest}]) of
     case dgiot_parse:get_object(<<"Device">>, Deviceid, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
