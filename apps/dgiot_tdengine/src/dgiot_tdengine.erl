@@ -388,8 +388,9 @@ get_chartdata(Channel, TableName, Query) ->
 get_appdata(Channel, TableName, Query) ->
     transaction(Channel,
         fun(Context) ->
-            Database = maps:get(<<"db">>, Query),
-            {_Names, Newkeys} = get_keys(Database, <<"last">>, <<"*">>),
+            Database = maps:get(<<"db">>, Query, <<"">>),
+            Keys = maps:get(<<"keys">>, Query, <<"*">>),
+            {_Names, Newkeys} = get_keys(Database, <<"last">>, Keys),
             DB = format_db(?Database(Database)),
             case size(Newkeys) > 0 of
                 true ->

@@ -1286,6 +1286,11 @@ function ci() {
     post_build_dgiot
 }
 
+function install_dotnet() {
+   sudo rpm -Uvh https://packages.microsoft.com/config/centos/7/packages-microsoft-prod.rpm
+   sudo yum install dotnet-sdk-5.0
+}
+
 
 function install_windows() {
   # initdb -D /data/dgiot/dgiot_pg_writer/data/

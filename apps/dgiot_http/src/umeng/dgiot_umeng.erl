@@ -527,6 +527,7 @@ send_message_to3D(ProductId, DevAddr, Payload) ->
         <<"status">> => <<"拉闸"/utf8>>,
         <<"content">> => <<"电表拉闸断电"/utf8>>,
         <<"time">> => Timestamp,
+        <<"level">> => <<"一级"/utf8>>,
         <<"data">> => #{
             <<"id">> => Number,
             <<"deviceid">> => Deviceid,

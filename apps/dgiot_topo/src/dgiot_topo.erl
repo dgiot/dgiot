@@ -407,7 +407,7 @@ get_Product() ->
 
 send_topo(ProductId, DeviceId, Payload) ->
     Base64 = get_optshape(ProductId, DeviceId, Payload),
-    Pubtopic = <<"thing/", DeviceId/binary, "/post">>,
+    Pubtopic = <<"$dg/konva/", DeviceId/binary, "/properties/report">>,
     dgiot_mqtt:publish(self(), Pubtopic, Base64).
 
 get_optshape(ProductId, DeviceId, Payload) ->
