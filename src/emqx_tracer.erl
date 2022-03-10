@@ -70,6 +70,9 @@ trace(publish, #message{topic = <<"$SYS/", _/binary>>}) ->
 trace(publish, #message{topic = <<"logger_trace", _/binary>>}) ->
     %% Do not trace '$SYS' publish
     ignore;
+trace(publish, #message{topic = <<"$dg/trace", _/binary>>}) ->
+    %% Do not trace '$SYS' publish
+    ignore;
 trace(publish, #message{from = From, topic = Topic, payload = Payload})
     when is_binary(From); is_atom(From) ->
     emqx_hooks:run('mqtt_publish.trace',[From, Topic, Payload]).
