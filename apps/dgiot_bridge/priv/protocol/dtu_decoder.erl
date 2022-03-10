@@ -54,7 +54,7 @@ handle_info({message, #{<<"cmd">> := <<"LOGIN">>, <<"addr">> := Addr}}, #{<<"pro
     Auto andalso erlang:send_after(5000, self(), check),
     {ok, State#{<<"addr">> => Addr}};
 
-handle_info({message, #{<<"cmd">> := <<"HEART">>}}, #{ <<"addr">> := Addr, <<"productId">> := ProductId, <<"channelId">> := ChannelId, <<"auto">>:= Auto} = State) ->
+handle_info({message, #{<<"cmd">> := <<"HEART">>}}, #{ <<"addr">> := Addr, <<"productId">> := ProductId, <<"channelId">> := ChannelId} = State) ->
     dgiot_bridge:send_log(ChannelId, ProductId, "DTU ~p HEART", [Addr]),
     {ok, State};
 
