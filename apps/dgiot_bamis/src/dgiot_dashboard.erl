@@ -96,7 +96,7 @@ do_task(#{<<"dataType">> := <<"card">>, <<"vuekey">> := Vuekey, <<"table">> := T
                     _ ->
                         base64:encode(jsx:encode(#{<<"dataType">> => <<"card">>, <<"vuekey">> => Vuekey, <<"table">> => Table, <<"value">> => NewResults}))
                 end,
-            Topic = <<"$dg/dashboard/", DashboardId/binary, "/post">>,
+            Topic = <<"$dg/dashboard/", DashboardId/binary, "/report">>,
             dgiot_mqtt:publish(self(), Topic, Base64);
         _ ->
             pass
