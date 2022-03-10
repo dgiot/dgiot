@@ -40,13 +40,17 @@ child_spec(Mod, Port, State) ->
 child_spec(Mod, Port, State, Opts) ->
     Name = Mod,
     ok = esockd:start(),
-    {ok, DefActiveN, DefRateLimit, UDPOpts} = dgiot_transport:get_opts(udp, Port),
-    ActiveN = proplists:get_value(active_n, Opts, DefActiveN),
-    RateLimit = proplists:get_value(rate_limit, Opts, DefRateLimit),
-    Opts1 = lists:foldl(fun(Key, Acc) -> proplists:delete(Key, Acc) end, Opts, [active_n, rate_limit]),
-    NewOpts = [{active_n, ActiveN}, {rate_limit, RateLimit}] ++ Opts1,
-    MFArgs = {?MODULE, start_link, [Mod, NewOpts, State]},
-    esockd:udp_child_spec(Name, Port, UDPOpts, MFArgs).
+    case dgiot_transport:get_opts(udp, Port) of
+        {ok, DefActiveN, DefRateLimit, UDPOpts} ->
+            ActiveN = proplists:get_value(active_n, Opts, DefActiveN),
+            RateLimit = proplists:get_value(rate_limit, Opts, DefRateLimit),
+            Opts1 = lists:foldl(fun(Key, Acc) -> proplists:delete(Key, Acc) end, Opts, [active_n, rate_limit]),
+            NewOpts = [{active_n, ActiveN}, {rate_limit, RateLimit}] ++ Opts1,
+            MFArgs = {?MODULE, start_link, [Mod, NewOpts, State]},
+            esockd:udp_child_spec(Name, Port, UDPOpts, MFArgs);
+        _ ->
+            []
+    end.
 
 %% udp
 start_link(Socket = {udp, _SockPid, _Sock}, Sock, Mod, Opts, State) ->
@@ -232,7 +236,6 @@ code_change(OldVsn, #state{mod = Mod, child = ChildState} = State, Extra) ->
 %%--------------------------------------------------------------------
 %% Handle datagram
 %%--------------------------------------------------------------------
-
 
 
 %%%===================================================================

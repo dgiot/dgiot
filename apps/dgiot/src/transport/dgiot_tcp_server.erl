@@ -37,13 +37,17 @@ child_spec(Mod, Port, State) ->
 child_spec(Mod, Port, State, Opts) ->
     Name = Mod,
     ok = esockd:start(),
-    {ok, DefActiveN, DefRateLimit, TCPOpts} = dgiot_transport:get_opts(tcp, Port),
-    ActiveN = proplists:get_value(active_n, Opts, DefActiveN),
-    RateLimit = proplists:get_value(rate_limit, Opts, DefRateLimit),
-    Opts1 = lists:foldl(fun(Key, Acc) -> proplists:delete(Key, Acc) end, Opts, [active_n, rate_limit]),
-    NewOpts = [{active_n, ActiveN}, {rate_limit, RateLimit}] ++ Opts1,
-    MFArgs = {?MODULE, start_link, [Mod, NewOpts, State]},
-    esockd:child_spec(Name, Port, TCPOpts, MFArgs).
+    case dgiot_transport:get_opts(tcp, Port) of
+        {ok, DefActiveN, DefRateLimit, TCPOpts} ->
+            ActiveN = proplists:get_value(active_n, Opts, DefActiveN),
+            RateLimit = proplists:get_value(rate_limit, Opts, DefRateLimit),
+            Opts1 = lists:foldl(fun(Key, Acc) -> proplists:delete(Key, Acc) end, Opts, [active_n, rate_limit]),
+            NewOpts = [{active_n, ActiveN}, {rate_limit, RateLimit}] ++ Opts1,
+            MFArgs = {?MODULE, start_link, [Mod, NewOpts, State]},
+            esockd:child_spec(Name, Port, TCPOpts, MFArgs);
+        _ ->
+            []
+    end.
 
 start_link(Transport, Sock, Mod, Opts, State) ->
     {ok, proc_lib:spawn_link(?MODULE, init, [Mod, Transport, Opts, Sock, State])}.
