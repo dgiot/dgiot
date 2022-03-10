@@ -43,6 +43,7 @@
     },
     "/topic": {
       "get": {
+        "security": [],
         "summary": "获取topic列表",
         "description": "获取topic列表",
         "parameters": [

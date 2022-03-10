@@ -83,7 +83,7 @@ do_request(get_protocol, _Body, #{<<"sessionToken">> := _SessionToken} = _Contex
 %% Proctol 概要: 获取Dlink topic列表
 %% OperationId:topic
 %% 请求:GET /iotapi/topic
-do_request(get_topic, _Body, #{<<"sessionToken">> := _SessionToken} = _Context, _Req) ->
+do_request(get_topic, _Body, _Context, _Req) ->
     Topics = dgiot_dlink:getTopic(),
     {200, Topics};
 
