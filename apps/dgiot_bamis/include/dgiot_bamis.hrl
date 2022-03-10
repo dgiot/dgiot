@@ -23,3 +23,5 @@
     ref = undefined,
     search = <<"quick">>
 }).
+-record(task, {oldque = [], newque = [], freq = 0, heart = 0, dashboardId = <<>>, sessiontoken = <<>>}).
+

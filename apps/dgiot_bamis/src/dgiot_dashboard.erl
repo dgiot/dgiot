@@ -14,7 +14,7 @@
 %%--------------------------------------------------------------------
 -module(dgiot_dashboard).
 -author("stoneliu").
--include("dgiot_topo.hrl").
+-include("dgiot_bamis.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -export([post_dashboard/2, do_task/2]).
 
