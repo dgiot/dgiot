@@ -14,7 +14,7 @@
 %%--------------------------------------------------------------------
 -module(dashboard_worker).
 -author("johnliu").
--include("dgiot_topo.hrl").
+-include("dgiot_bamis.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -behaviour(gen_server).
 
