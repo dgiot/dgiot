@@ -98,7 +98,7 @@ get_acl(Device) when is_map(Device) ->
 
 get_acl(DeviceId) when is_binary(DeviceId) ->
     case lookup(DeviceId) of
-        {ok, #{<<"acl">> := Acl}} ->
+        {ok, #{<<"acl">> := [Acl | _]}} ->
             BinAcl = atom_to_binary(Acl),
             #{BinAcl => #{
                 <<"read">> => true,
@@ -504,7 +504,7 @@ get_url(AppName) ->
 
 get_appname(DeviceId) ->
     case dgiot_device:lookup(DeviceId) of
-        {ok, #{<<"acl">> := Acl}} ->
+        {ok, #{<<"acl">> := [Acl | _]}} ->
             BinAcl = atom_to_binary(Acl),
             case BinAcl of
                 <<"role:", Name/binary>> ->

@@ -524,7 +524,7 @@ get_field_tag(Thing) ->
                     Acc ++ [V]
             end
                     end, [], Properties),
-    Tags =
+    NewTags =
         lists:foldl(fun(Tag, Acc) ->
             case get_field(Tag) of
                 pass ->
@@ -533,7 +533,7 @@ get_field_tag(Thing) ->
                     Acc ++ [V]
             end
                     end, [{<<"devaddr">>, #{<<"type">> => <<"NCHAR(50)">>}}], Tags),
-    {lists:flatten(Columns), lists:flatten(Tags)}.
+    {lists:flatten(Columns), lists:flatten(NewTags)}.
 
 %%  https://www.taosdata.com/cn/documentation/taos-sql#data-type
 %%  #	类型       	Bytes    说明
