@@ -90,6 +90,13 @@ handle(OperationID, Args, Context, Req) ->
 %% https://aisuda.bce.baidu.com/amis/zh-CN/docs/types/api#%E6%8E%A5%E5%8F%A3%E8%BF%94%E5%9B%9E%E6%A0%BC%E5%BC%8F-%E9%87%8D%E8%A6%81-
 %%%===================================================================
 
+%% iot_hub 概要: 大屏数据任务推送 描述:启动任务推送大屏数据
+%% OperationId:post_dashboard
+%% 请求:POST /iotapi/post_dashboard
+do_request(post_dashboard, Arg, Context, _Req) ->
+    dgiot_dashboard:post_dashboard(Arg, Context),
+    {200, <<"success">>};
+
 %% iot_hub 概要: 查询平台api资源 描述:总控台
 %% OperationId:get_amis
 %% 请求:POST /iotapi/get_amis
