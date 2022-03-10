@@ -248,7 +248,7 @@ handle_info({deliver, _Topic, Msg}, #tcp{state = #state{id = ChannelId, protocol
                                     DA = dgiot_utils:binary_to_hex(dlt376_decoder:pn_to_da(dgiot_utils:to_int(Da))),
                                     [#{<<"thingdata">> := #{<<"dataSource">> := DataSource} = ThingData} | _] = jsx:decode(dgiot_mqtt:get_payload(Msg), [{labels, binary}, return_maps]),
                                     Payload1 = dgiot_meter:to_frame(ThingData#{<<"devaddr">> => Dtuaddr, <<"dataSource">> => DataSource#{<<"da">> => DA}}),
-                                    dgiot_bridge:send_log(ChannelId, ChannelId, ProductId, DevAddr, " ~s ~p DLT376 send to DevAddr ~p => ~p", [?FILE, ?LINE, DevAddr, dgiot_utils:binary_to_hex(Payload1)]),
+                                    dgiot_bridge:send_log(ChannelId, ProductId, DevAddr, " ~s ~p DLT376 send to DevAddr ~p => ~p", [?FILE, ?LINE, DevAddr, dgiot_utils:binary_to_hex(Payload1)]),
                                     dgiot_tcp_server:send(TCPState, Payload1)
                             end;
                         ?DLT645 ->
