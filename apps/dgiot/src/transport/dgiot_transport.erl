@@ -37,7 +37,7 @@
 
 
 %% 获取连接配置
-get_opts(tcp, _Port) ->
+get_opts(tcp, Port) ->
     TCPOpts = [
         {backlog, 512},
         {keepalive, true},
@@ -55,10 +55,15 @@ get_opts(tcp, _Port) ->
         {max_connections, 1000000},
         {max_conn_rate, {1000, 1}}
     ],
-    {ok, 10, {1024, 4096}, Opts};
+    case dgiot_utils:check_port(Port) of
+        false ->
+            {ok, 10, {1024, 4096}, Opts};
+        _ ->
+            {error, 10, {1024, 4096}, Opts}
+    end;
 
 %% 获取连接配置
-get_opts(udp, _Port) ->
+get_opts(udp, Port) ->
     UDPOpts = [
         {reuseaddr, true}
     ],
@@ -69,7 +74,12 @@ get_opts(udp, _Port) ->
         {max_connections, 1000000},
         {max_conn_rate, {1000, 1}}
     ],
-    {ok, 10, {1024, 4096}, Opts}.
+    case dgiot_utils:check_port(Port) of
+        false ->
+            {ok, 10, {1024, 4096}, Opts};
+        _ ->
+            {error, 10, {1024, 4096}, Opts}
+    end.
 
 get_opts(tcp, App, _Port) ->
     Opts = application:get_env(App, listeners, ?OPTS),
