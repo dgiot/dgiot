@@ -109,6 +109,8 @@
     , get_ipv6/1
     , trim_string/1
     , get_url_path/1
+    , get_ports/0
+    , check_port/1
 ]).
 
 -define(TIMEZONE, + 8).
@@ -890,3 +892,23 @@ url_path(Url) ->
 %%    "192.168.0.183:5094/wordServer/20211112142832/1.jpg",
     {match, [{Start, _Len}]} = re:run(Url, <<"\/">>),
     to_binary(string:substr(Url, Start + 1, length(Url))).
+
+get_ports() ->
+    lists:foldl(fun(X, Acc) ->
+        case inet:port(X) of
+            {ok, Port} ->
+                Acc ++ [Port];
+            _ ->
+                Acc
+        end
+                end, [], erlang:ports()).
+
+check_port(Port) ->
+    lists:any(fun(X) ->
+        case inet:port(X) of
+            {ok, Port} ->
+                true;
+            _ ->
+                false
+        end
+              end, erlang:ports()).
