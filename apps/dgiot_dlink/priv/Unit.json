@@ -1,0 +1,460 @@
+{
+  "UnifyUnitSpecsDTO": [
+    {
+      "Symbol": "ml/min",
+      "Name": "滴速"
+    },
+    {
+      "Symbol": "mmHg",
+      "Name": "血压"
+    },
+    {
+      "Symbol": "mmol/L",
+      "Name": "血糖"
+    },
+    {
+      "Symbol": "mm/s",
+      "Name": "毫米每秒"
+    },
+    {
+      "Symbol": "turn/m",
+      "Name": "转每分钟"
+    },
+    {
+      "Symbol": "count",
+      "Name": "次"
+    },
+    {
+      "Symbol": "gear",
+      "Name": "档"
+    },
+    {
+      "Symbol": "stepCount",
+      "Name": "步"
+    },
+    {
+      "Symbol": "Nm3/h",
+      "Name": "标准立方米每小时"
+    },
+    {
+      "Symbol": "kV",
+      "Name": "千伏"
+    },
+    {
+      "Symbol": "kVA",
+      "Name": "千伏安"
+    },
+    {
+      "Symbol": "kVar",
+      "Name": "千乏"
+    },
+    {
+      "Symbol": "uw/cm2",
+      "Name": "微瓦每平方厘米"
+    },
+    {
+      "Symbol": "只",
+      "Name": "只"
+    },
+    {
+      "Symbol": "%RH",
+      "Name": "相对湿度"
+    },
+    {
+      "Symbol": "m³/s",
+      "Name": "立方米每秒"
+    },
+    {
+      "Symbol": "kg/s",
+      "Name": "公斤每秒"
+    },
+    {
+      "Symbol": "r/min",
+      "Name": "转每分钟"
+    },
+    {
+      "Symbol": "t/h",
+      "Name": "吨每小时"
+    },
+    {
+      "Symbol": "KCL/h",
+      "Name": "千卡每小时"
+    },
+    {
+      "Symbol": "L/s",
+      "Name": "升每秒"
+    },
+    {
+      "Symbol": "Mpa",
+      "Name": "兆帕"
+    },
+    {
+      "Symbol": "m³/h",
+      "Name": "立方米每小时"
+    },
+    {
+      "Symbol": "kvarh",
+      "Name": "千乏时"
+    },
+    {
+      "Symbol": "μg/L",
+      "Name": "微克每升"
+    },
+    {
+      "Symbol": "kcal",
+      "Name": "千卡路里"
+    },
+    {
+      "Symbol": "GB",
+      "Name": "吉字节"
+    },
+    {
+      "Symbol": "MB",
+      "Name": "兆字节"
+    },
+    {
+      "Symbol": "KB",
+      "Name": "千字节"
+    },
+    {
+      "Symbol": "B",
+      "Name": "字节"
+    },
+    {
+      "Symbol": "μg/(d㎡·d)",
+      "Name": "微克每平方分米每天"
+    },
+    {
+      "Symbol": "",
+      "Name": "无"
+    },
+    {
+      "Symbol": "ppm",
+      "Name": "百万分率"
+    },
+    {
+      "Symbol": "pixel",
+      "Name": "像素"
+    },
+    {
+      "Symbol": "Lux",
+      "Name": "照度"
+    },
+    {
+      "Symbol": "grav",
+      "Name": "重力加速度"
+    },
+    {
+      "Symbol": "dB",
+      "Name": "分贝"
+    },
+    {
+      "Symbol": "%",
+      "Name": "百分比"
+    },
+    {
+      "Symbol": "lm",
+      "Name": "流明"
+    },
+    {
+      "Symbol": "bit",
+      "Name": "比特"
+    },
+    {
+      "Symbol": "g/mL",
+      "Name": "克每毫升"
+    },
+    {
+      "Symbol": "g/L",
+      "Name": "克每升"
+    },
+    {
+      "Symbol": "mg/L",
+      "Name": "毫克每升"
+    },
+    {
+      "Symbol": "μg/m³",
+      "Name": "微克每立方米"
+    },
+    {
+      "Symbol": "mg/m³",
+      "Name": "毫克每立方米"
+    },
+    {
+      "Symbol": "g/m³",
+      "Name": "克每立方米"
+    },
+    {
+      "Symbol": "kg/m³",
+      "Name": "千克每立方米"
+    },
+    {
+      "Symbol": "nF",
+      "Name": "纳法"
+    },
+    {
+      "Symbol": "pF",
+      "Name": "皮法"
+    },
+    {
+      "Symbol": "μF",
+      "Name": "微法"
+    },
+    {
+      "Symbol": "F",
+      "Name": "法拉"
+    },
+    {
+      "Symbol": "Ω",
+      "Name": "欧姆"
+    },
+    {
+      "Symbol": "μA",
+      "Name": "微安"
+    },
+    {
+      "Symbol": "mA",
+      "Name": "毫安"
+    },
+    {
+      "Symbol": "kA",
+      "Name": "千安"
+    },
+    {
+      "Symbol": "A",
+      "Name": "安培"
+    },
+    {
+      "Symbol": "mV",
+      "Name": "毫伏"
+    },
+    {
+      "Symbol": "V",
+      "Name": "伏特"
+    },
+    {
+      "Symbol": "ms",
+      "Name": "毫秒"
+    },
+    {
+      "Symbol": "s",
+      "Name": "秒"
+    },
+    {
+      "Symbol": "min",
+      "Name": "分钟"
+    },
+    {
+      "Symbol": "h",
+      "Name": "小时"
+    },
+    {
+      "Symbol": "day",
+      "Name": "日"
+    },
+    {
+      "Symbol": "week",
+      "Name": "周"
+    },
+    {
+      "Symbol": "month",
+      "Name": "月"
+    },
+    {
+      "Symbol": "year",
+      "Name": "年"
+    },
+    {
+      "Symbol": "kn",
+      "Name": "节"
+    },
+    {
+      "Symbol": "km/h",
+      "Name": "千米每小时"
+    },
+    {
+      "Symbol": "m/s",
+      "Name": "米每秒"
+    },
+    {
+      "Symbol": "″",
+      "Name": "秒"
+    },
+    {
+      "Symbol": "′",
+      "Name": "分"
+    },
+    {
+      "Symbol": "°",
+      "Name": "度"
+    },
+    {
+      "Symbol": "rad",
+      "Name": "弧度"
+    },
+    {
+      "Symbol": "Hz",
+      "Name": "赫兹"
+    },
+    {
+      "Symbol": "μW",
+      "Name": "微瓦"
+    },
+    {
+      "Symbol": "mW",
+      "Name": "毫瓦"
+    },
+    {
+      "Symbol": "kW",
+      "Name": "千瓦特"
+    },
+    {
+      "Symbol": "W",
+      "Name": "瓦特"
+    },
+    {
+      "Symbol": "cal",
+      "Name": "卡路里"
+    },
+    {
+      "Symbol": "kW·h",
+      "Name": "千瓦时"
+    },
+    {
+      "Symbol": "Wh",
+      "Name": "瓦时"
+    },
+    {
+      "Symbol": "eV",
+      "Name": "电子伏"
+    },
+    {
+      "Symbol": "kJ",
+      "Name": "千焦"
+    },
+    {
+      "Symbol": "J",
+      "Name": "焦耳"
+    },
+    {
+      "Symbol": "℉",
+      "Name": "华氏度"
+    },
+    {
+      "Symbol": "K",
+      "Name": "开尔文"
+    },
+    {
+      "Symbol": "t",
+      "Name": "吨"
+    },
+    {
+      "Symbol": "°C",
+      "Name": "摄氏度"
+    },
+    {
+      "Symbol": "mPa",
+      "Name": "毫帕"
+    },
+    {
+      "Symbol": "hPa",
+      "Name": "百帕"
+    },
+    {
+      "Symbol": "kPa",
+      "Name": "千帕"
+    },
+    {
+      "Symbol": "Pa",
+      "Name": "帕斯卡"
+    },
+    {
+      "Symbol": "mg",
+      "Name": "毫克"
+    },
+    {
+      "Symbol": "g",
+      "Name": "克"
+    },
+    {
+      "Symbol": "kg",
+      "Name": "千克"
+    },
+    {
+      "Symbol": "N",
+      "Name": "牛"
+    },
+    {
+      "Symbol": "mL",
+      "Name": "毫升"
+    },
+    {
+      "Symbol": "L",
+      "Name": "升"
+    },
+    {
+      "Symbol": "mm³",
+      "Name": "立方毫米"
+    },
+    {
+      "Symbol": "cm³",
+      "Name": "立方厘米"
+    },
+    {
+      "Symbol": "km³",
+      "Name": "立方千米"
+    },
+    {
+      "Symbol": "m³",
+      "Name": "立方米"
+    },
+    {
+      "Symbol": "h㎡",
+      "Name": "公顷"
+    },
+    {
+      "Symbol": "c㎡",
+      "Name": "平方厘米"
+    },
+    {
+      "Symbol": "m㎡",
+      "Name": "平方毫米"
+    },
+    {
+      "Symbol": "k㎡",
+      "Name": "平方千米"
+    },
+    {
+      "Symbol": "㎡",
+      "Name": "平方米"
+    },
+    {
+      "Symbol": "nm",
+      "Name": "纳米"
+    },
+    {
+      "Symbol": "μm",
+      "Name": "微米"
+    },
+    {
+      "Symbol": "mm",
+      "Name": "毫米"
+    },
+    {
+      "Symbol": "cm",
+      "Name": "厘米"
+    },
+    {
+      "Symbol": "dm",
+      "Name": "分米"
+    },
+    {
+      "Symbol": "km",
+      "Name": "千米"
+    },
+    {
+      "Symbol": "m",
+      "Name": "米"
+    }
+  ]
+}

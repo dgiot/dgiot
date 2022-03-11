@@ -77,16 +77,12 @@ do_request(get_protocol, _Body, #{<<"sessionToken">> := _SessionToken} = _Contex
     Protocols = dgiot_dlink:get_all_protocol(),
     {200, Protocols};
 
-%%%===================================================================
-%%% 内部函数 Version:API版本
-%%%===================================================================
-%% Proctol 概要: 获取Dlink topic列表
-%% OperationId:topic
-%% 请求:GET /iotapi/topic
-do_request(get_topic, _Body, _Context, _Req) ->
-    Topics = dgiot_dlink:getTopic(),
-    {200, Topics};
-
+%% Proctol 概要: 获取Dlink json信息
+%% OperationId:dlinkjson
+%% 请求:GET /iotapi/dlinkjson
+do_request(get_dlinkjson, #{<<"type">> := Type}, _Context, _Req) ->
+    DlinkJson = dgiot_dlink:getJson(<<Type/binary, ".json">>),
+    {200, DlinkJson};
 
 do_request(_OperationId, _Args, _Context, _Req) ->
     {error, <<"Not Allowed.">>}.
