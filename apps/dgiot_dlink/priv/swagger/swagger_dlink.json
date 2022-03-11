@@ -10,7 +10,6 @@
     }
   ],
   "definitions": {
-
   },
   "paths": {
     "/protocol": {
@@ -41,12 +40,24 @@
         ]
       }
     },
-    "/topic": {
+    "/dlinkjson": {
       "get": {
         "security": [],
-        "summary": "获取topic列表",
-        "description": "获取topic列表",
+        "summary": "获取json信息",
+        "description": "获取json信息",
         "parameters": [
+          {
+            "in": "query",
+            "name": "type",
+            "type": "string",
+            "description": "Topic/Dashboard/Unit",
+            "required": true,
+            "enum": [
+              "Topic",
+              "Dashboard",
+              "Unit"
+            ]
+          }
         ],
         "responses": {
           "200": {

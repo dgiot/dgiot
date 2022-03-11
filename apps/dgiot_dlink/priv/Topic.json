@@ -1,0 +1,34 @@
+{
+  "basic": [
+    {
+      "category": "OTA 升级",
+      "desc": "设备属性上报",
+      "isdef": true,
+      "topic": "$dg/user/${deviceid}/post",
+      "type": "sub"
+    },
+    {
+      "category": "OTA 升级",
+      "desc": "消息下发",
+      "isdef": true,
+      "topic": "$dg/thing/${deviceid}/",
+      "type": "pub"
+    }
+  ],
+  "thing": [
+    {
+      "category": "属性上报",
+      "desc": "设备属性上报",
+      "isdef": true,
+      "topic": "$dg/user/${deviceid}/post",
+      "type": "sub'"
+    },
+    {
+      "category": "属性上报",
+      "desc": "消息下发",
+      "isdef": true,
+      "topic": "$dg/thing/${deviceid}/",
+      "type": "pub"
+    }
+  ]
+}
