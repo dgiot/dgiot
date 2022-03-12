@@ -106,7 +106,8 @@
     test_graphql/0,
     subscribe/2,
     send_msg/3,
-    send_msg/4
+    send_msg/4,
+    log/1
 ]).
 
 
@@ -1371,10 +1372,10 @@ get_roleids(Userid) ->
 
 load_LogLevel() ->
     Level = emqx_logger:get_primary_log_level(),
-    case create_logconfig(Level, <<"0">>, <<"dgiot">>, <<"system">>, 0, <<"logger_trace/log/#">>) of
+    case create_logconfig(Level, <<"0">>, <<"dgiot">>, <<"system">>, 0, <<"$dgiot/log/#">>) of
         {ok, #{<<"objectId">> := DgiotlogId}} ->
-            create_logconfig(Level, DgiotlogId, <<"dgiot_handle">>, <<"dgiot_handle">>, 2, <<"logger_trace/trace/#">>),
-            case create_logconfig(Level, DgiotlogId, <<"dgiot_app">>, <<"dgiot_app">>, 1, <<"logger_trace/log/#">>) of
+            create_logconfig(Level, DgiotlogId, <<"dgiot_handle">>, <<"dgiot_handle">>, 2, <<"$dgiot/trace/#">>),
+            case create_logconfig(Level, DgiotlogId, <<"dgiot_app">>, <<"dgiot_app">>, 1, <<"$dgiot/log/#">>) of
                 {ok, #{<<"objectId">> := ApplogId}} ->
                     create_applog(ApplogId);
                 _ ->
@@ -1390,7 +1391,7 @@ create_applog(DgiotlogId) ->
         BinAppname = atom_to_binary(Appname),
         case BinAppname of
             <<"dgiot_", _/binary>> ->
-                case create_logconfig(<<"info">>, DgiotlogId, BinAppname, <<"app">>, Acc, <<"logger_trace/log/", BinAppname/binary, "/#">>) of
+                case create_logconfig(<<"info">>, DgiotlogId, BinAppname, <<"app">>, Acc, <<"$dgiot/log/", BinAppname/binary, "/#">>) of
                     {ok, #{<<"objectId">> := ApplogId}} ->
                         AppPath = code:lib_dir(Appname) ++ "/ebin",
                         case file:list_dir_all(AppPath) of
@@ -1407,13 +1408,13 @@ create_applog(DgiotlogId) ->
                                                     _ ->
                                                         <<"debug">>
                                                 end,
-                                            case create_logconfig(Modlevel, ApplogId, Module, <<"module">>, Mods, <<"logger_trace/log/", Module/binary, "/#">>) of
+                                            case create_logconfig(Modlevel, ApplogId, Module, <<"module">>, Mods, <<"$dgiot/log/", Module/binary, "/#">>) of
                                                 {ok, #{<<"objectId">> := ModlogId}} ->
                                                     Functions = AtomMod:module_info(exports),
                                                     lists:foldl(fun({Fun, Num}, Funs) ->
                                                         BinFun = dgiot_utils:to_binary(Fun),
                                                         BinNum = dgiot_utils:to_binary(Num),
-                                                        create_logconfig(Modlevel, ModlogId, <<BinFun/binary, "/", BinNum/binary>>, <<"function">>, Funs, <<"logger_trace/log/", Module/binary, "/", BinFun/binary, "/", BinNum/binary, "/#">>),
+                                                        create_logconfig(Modlevel, ModlogId, <<BinFun/binary, "/", BinNum/binary>>, <<"function">>, Funs, <<"$dgiot/log/", Module/binary, "/", BinFun/binary, "/", BinNum/binary, "/#">>),
                                                         Funs + 1
                                                                 end, 1, Functions);
                                                 _ ->
@@ -1462,3 +1463,8 @@ create_loglevel(LogLevel) ->
         _ ->
             dgiot_parse:create_object(<<"LogLevel">>, LogLevel)
     end.
+
+log(Map) ->
+%%    io:format("~p ~n",[Map]),
+%%    io:format("~p ~n",[jiffy:encode(Map)]),
+    Map.

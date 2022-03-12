@@ -44,9 +44,9 @@ description() -> "Acl with Dlink".
 %%-------------------------------------------------------------------
 
 %% 用户订阅 "$dg/user/deviceid/#"
-do_check(#{clientid := ClientID, username := Username} = _ClientInfo, subscribe, <<"$dg/user/", DeviceInfo/binary>> = Topic)
+do_check(#{clientid := ClientID, username := Username} = _ClientInfo, subscribe, <<"$dg/user/", DeviceInfo/binary>> = _Topic)
     when ClientID =/= undefined ->
-    io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, Topic]),
+%%    io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, _Topic]),
     [DeviceID | _] = binary:split(DeviceInfo, <<"/">>),
     %% 此时的ClientID为 Token
     case check_device_acl(ClientID, DeviceID, Username) of
@@ -57,8 +57,8 @@ do_check(#{clientid := ClientID, username := Username} = _ClientInfo, subscribe,
     end;
 
 %%"$dg/device/productid/devaddr/#"
-do_check(#{clientid := ClientID} = _ClientInfo, subscribe, <<"$dg/device/", DeviceInfo/binary>> = Topic) ->
-    io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, Topic]),
+do_check(#{clientid := ClientID} = _ClientInfo, subscribe, <<"$dg/device/", DeviceInfo/binary>> = _Topic) ->
+%%    io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, _Topic]),
     [ProuctID, Devaddr | _] = binary:split(DeviceInfo, <<"/">>, [global]),
     DeviceID = dgiot_parse:get_deviceid(ProuctID, Devaddr),
     case ClientID == DeviceID of
@@ -70,9 +70,9 @@ do_check(#{clientid := ClientID} = _ClientInfo, subscribe, <<"$dg/device/", Devi
 
 %% "$dg/thing/deviceid/#"
 %% "$dg/thing/productid/devaddr/#"
-do_check(#{clientid := ClientID, username := UserId} = _ClientInfo, publish, <<"$dg/thing/", DeviceInfo/binary>> = Topic)
+do_check(#{clientid := ClientID, username := UserId} = _ClientInfo, publish, <<"$dg/thing/", DeviceInfo/binary>> = _Topic)
     when ClientID =/= undefined ->
-    io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, Topic]),
+%%    io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, _Topic]),
     [Id, Devaddr | _] = binary:split(DeviceInfo, <<"/">>, [global]),
     %% 先判断clientid为Token
     case check_device_acl(ClientID, Id, UserId) of
@@ -89,8 +89,8 @@ do_check(#{clientid := ClientID, username := UserId} = _ClientInfo, publish, <<"
     end;
 
 %% "$dg/channel/{channelId}/{productId}/{deviceId}"
-do_check(#{clientid := ClientID} = _ClientInfo, subscribe, <<"$dg/channel/", DeviceInfo/binary>> = Topic) ->
-    io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, Topic]),
+do_check(#{clientid := ClientID} = _ClientInfo, subscribe, <<"$dg/channel/", DeviceInfo/binary>> = _Topic) ->
+%%    io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, _Topic]),
     [ChannelId | _] = binary:split(DeviceInfo, <<"/">>, [global]),
     case dgiot_parse:get_object(<<"Channel">>, ChannelId, [{"X-Parse-Session-Token", ClientID}], [{from, rest}]) of
         {ok, _} ->
@@ -100,8 +100,8 @@ do_check(#{clientid := ClientID} = _ClientInfo, subscribe, <<"$dg/channel/", Dev
     end;
 
 %% "$dg/dashboard/{dashboardId}/report"
-do_check(#{clientid := ClientID} = _ClientInfo, subscribe, <<"$dg/dashboard/", DeviceInfo/binary>> = Topic) ->
-    io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, Topic]),
+do_check(#{clientid := ClientID} = _ClientInfo, subscribe, <<"$dg/dashboard/", DeviceInfo/binary>> = _Topic) ->
+%%    io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, _Topic]),
     [DashboardId | _] = binary:split(DeviceInfo, <<"/">>, [global]),
     case dgiot_parse:get_object(<<"View">>, DashboardId, [{"X-Parse-Session-Token", ClientID}], [{from, rest}]) of
         {ok, _} ->
@@ -111,8 +111,8 @@ do_check(#{clientid := ClientID} = _ClientInfo, subscribe, <<"$dg/dashboard/", D
     end;
 
 %% "$dg/trace/{DeviceId}/{Topic}"
-do_check(#{clientid := ClientID, username := Username} = _ClientInfo, subscribe, <<"$dg/trace/", DeviceInfo/binary>> = Topic) ->
-    io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, Topic]),
+do_check(#{clientid := ClientID, username := Username} = _ClientInfo, subscribe, <<"$dg/trace/", DeviceInfo/binary>> = _Topic) ->
+%%    io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, _Topic]),
     [DeviceId | _] = binary:split(DeviceInfo, <<"/">>, [global]),
     case check_device_acl(ClientID, DeviceId, Username) of
         ok ->
@@ -121,8 +121,8 @@ do_check(#{clientid := ClientID, username := Username} = _ClientInfo, subscribe,
             deny
     end;
 
-do_check(_ClientInfo, _PubSub, Topic) ->
-    io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, Topic]),
+do_check(_ClientInfo, _PubSub, _Topic) ->
+%%    io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, _Topic]),
     deny.
 
 check_device_acl(Token, DeviceID, UserId) ->

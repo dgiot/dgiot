@@ -35,8 +35,10 @@ start_link(Mod, Host, Port, Args) ->
 start_link(Name, Mod, Host, Port, Args) ->
     Ip =
         case is_binary(Host) of
-            true -> binary_to_list(Host);
-            false -> Host
+            true ->
+                binary_to_list(Host);
+            false ->
+                Host
         end,
     Port1 =
         case Port of
@@ -61,9 +63,11 @@ start_link(Name, Mod, Host, Port, Args) ->
 
 
 init([#state{mod = Mod} = State, Args]) ->
+    io:format("State ~p ~n",[State]),
+    io:format("Args ~p ~n",[Args]),
     Transport = gen_udp,
     Child = #udp{transport = Transport, socket = undefined},
-    case Mod:init(Child#udp{state = Args}) of
+    case Mod:do_init(Child#udp{state = Args}) of
         {ok, ChildState} ->
             NewState = State#state{
                 child = ChildState
@@ -213,13 +217,13 @@ do_connect(Sleep, #state{child = UDPState} = State) ->
 connect(Client, #state{host = Host, port = Port, reconnect_times = Times, reconnect_sleep = Sleep, child = #udp{transport = Transport}} = State) ->
     case is_process_alive(Client) of
         true ->
-            %% ?LOG(info,"CONNECT ~s:~p ~p", [Host, Port, Times]),
+             ?LOG(info,"CONNECT ~s:~p ~p", [Host, Port, Times]),
             case Transport:connect(Host, Port, ?UDP_OPTIONS, ?TIMEOUT) of
                 {ok, Socket} ->
                     case catch gen_server:call(Client, {connection_ready, Socket}, 50000) of
                         ok ->
                             inet:setopts(Socket, [{active, once}]),
-                            Transport:controlling_process(Socket, Client);
+                            gen_udp:controlling_process(Socket, Client);
                         _ ->
                             ok
                     end;

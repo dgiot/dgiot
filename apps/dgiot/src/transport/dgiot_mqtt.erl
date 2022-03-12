@@ -22,7 +22,8 @@
 -include_lib("emqx_rule_engine/include/rule_engine.hrl").
 -include_lib("emqx_rule_engine/include/rule_actions.hrl").
 
--export([has_routes/1
+-export([
+    has_routes/1
     , subscribe/1
     , unsubscribe/1
     , publish/3

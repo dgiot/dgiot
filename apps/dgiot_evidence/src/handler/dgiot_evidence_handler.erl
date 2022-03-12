@@ -344,7 +344,6 @@ do_request(post_drawxnqx, #{<<"taskid">> := TaskId, <<"data">> := Data}, #{<<"se
                         dgiot_parse:create_object(<<"Evidence">>, Evidence),
                         {EvidenceId, Original};
                     _Other ->
-                        io:format("~s ~p _Other = ~p.~n", [?FILE, ?LINE, _Other]),
                         Path = python_drawxnqx(TaskId, arrtojsonlist(Data)),
                         {<<"">>, #{<<"avgs">> => Data, <<"path">> => Path}}
                 end
@@ -466,11 +465,9 @@ do_report(Config, DevType, Name, SessionToken, FullPath, Uri) ->
                         end
                                 end, [], Images);
                 _Oth1 ->
-                    io:format("_Oth1 ~p~n", [_Oth1]),
                     _Oth1
             end;
         _Oth ->
-            io:format("_Oth ~p~n", [_Oth]),
             _Oth
     end.
 

@@ -433,6 +433,10 @@ log(#{peer := {PeerName, _}, headers := Headers} = Req, Time, Result, Map) when 
         case Result of
             {200, _, _, _} ->
                 {200, <<"success">>};
+            {200, _, _} ->
+                {200, <<"success2">>};
+            {200, _} ->
+                {200, <<"success3">>};
             _ ->
                 {<<"error">>, <<"error">>}
         end,

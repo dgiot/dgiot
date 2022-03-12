@@ -25,3 +25,5 @@
 -define(AUTH_CHL, 5).
 -define(defult_CHL, 5).
 
+-define(DGIOT_UDPC_WORK, dgiot_udpc_work).
+
