@@ -83,7 +83,7 @@
         order => 102,
         type => string,
         required => false,
-        default => <<"http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/product/dgiot/channel/TOPO%E7%BB%84%E6%80%81%E9%80%9A%E9%81%93%E5%9B%BE%E6%A0%87.png">>,
+        default => <<"http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/product/dgiot/channel/TOPOIcon.png">>,
         title => #{
             en => <<"channel ICO">>,
             zh => <<"通道ICO"/utf8>>

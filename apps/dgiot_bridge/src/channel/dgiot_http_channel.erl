@@ -70,7 +70,7 @@
         order => 102,
         type => string,
         required => false,
-        default => <<"http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/product/dgiot/channel/Http%E9%87%87%E9%9B%86%E5%9B%BE%E6%A0%87.png">>,
+        default => <<"http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/product/dgiot/channel/HTTP-collection.png">>,
         title => #{
             en => <<"channel ICO">>,
             zh => <<"通道ICO"/utf8>>
@@ -90,7 +90,7 @@ start(ChannelId, ChannelArgs) ->
 init(?TYPE, ChannelId, #{<<"port">> := Port} = ChannelArgs) ->
     State = #state{
         id = ChannelId,
-        env = maps:without([<<"port">>,<<"path">>,<<"product">>,<<"behaviour">>], ChannelArgs)
+        env = maps:without([<<"port">>, <<"path">>, <<"product">>, <<"behaviour">>], ChannelArgs)
     },
     Name = dgiot_channelx:get_name(?TYPE, ChannelId),
     Opts = [
@@ -112,7 +112,7 @@ init(?TYPE, ChannelId, #{<<"port">> := Port} = ChannelArgs) ->
         ]}
     ]),
     CowboyOpts = #{
-        env =>#{
+        env => #{
             dispatch => Dispatch
         }
     },
@@ -122,21 +122,21 @@ init(?TYPE, ChannelId, #{<<"port">> := Port} = ChannelArgs) ->
 
 %% 通道消息处理,注意：进程池调用
 handle_event(EventId, Event, _State) ->
-    ?LOG(info,"channel ~p, ~p", [EventId, Event]),
+    ?LOG(info, "channel ~p, ~p", [EventId, Event]),
     ok.
 
 handle_message(Message, State) ->
-    ?LOG(info,"channel ~p ~p", [Message]),
+    ?LOG(info, "channel ~p ~p", [Message]),
     {ok, State}.
 
 stop(ChannelType, ChannelId, _State) ->
-    ?LOG(info,"channel stop ~p,~p", [ChannelType, ChannelId]),
+    ?LOG(info, "channel stop ~p,~p", [ChannelType, ChannelId]),
     ok.
 
 
 %% ====== http callback ======
 
-init(Req, #state{ id = ChannelId, env = Env} = State) ->
+init(Req, #state{id = ChannelId, env = Env} = State) ->
     {ok, _Type, ProductIds} = dgiot_bridge:get_products(ChannelId),
     case dgiot_bridge:apply_channel(ChannelId, ProductIds, handle_info, [{http, Req}], Env) of
         {ok, NewEnv} ->

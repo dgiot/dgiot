@@ -57,7 +57,7 @@
         order => 102,
         type => string,
         required => false,
-        default => <<"http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/product/dgiot/channel/UDP%E5%9B%BE%E6%A0%87.png">>,
+        default => <<"http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/product/dgiot/channel/UdpIcon.png">>,
         title => #{
             en => <<"channel ICO">>,
             zh => <<"通道ICO"/utf8>>
@@ -93,16 +93,16 @@ init(?TYPE, ChannelId, #{<<"port">> := Port} = _ChannelArgs) ->
 
 
 handle_event(EventType, Event, _State) ->
-    ?LOG(info,"channel ~p, ~p", [EventType, Event]),
+    ?LOG(info, "channel ~p, ~p", [EventType, Event]),
     ok.
 
 
-handle_message(Message, #state{ id = ChannelId, product = ProductId } = State) ->
-    ?LOG(info,"Channel ~p, Product ~p, handle_message ~p", [ChannelId, ProductId, Message]),
+handle_message(Message, #state{id = ChannelId, product = ProductId} = State) ->
+    ?LOG(info, "Channel ~p, Product ~p, handle_message ~p", [ChannelId, ProductId, Message]),
     do_product(handle_info, [Message], State).
 
 stop(ChannelType, ChannelId, _) ->
-    ?LOG(info,"channel stop ~p,~p", [ChannelType, ChannelId]),
+    ?LOG(info, "channel stop ~p,~p", [ChannelType, ChannelId]),
     ok.
 
 %% =============
@@ -127,7 +127,7 @@ handle_info({datagram, _Server, Data0}, #state{env = OldEnv, log = Log} = State)
     Env = OldEnv#{
         <<"send">> => send_fun(State)
     },
-    case do_product(handle_info, [{udp, Data}], State#state{ env = Env }) of
+    case do_product(handle_info, [{udp, Data}], State#state{env = Env}) of
         {ok, NewState} ->
             {noreply, NewState};
         {stop, Reason, NewState} ->

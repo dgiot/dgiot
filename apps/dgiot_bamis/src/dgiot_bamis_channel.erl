@@ -60,7 +60,7 @@
         order => 102,
         type => string,
         required => false,
-        default => <<"http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/product/dgiot/channel/amis.jpg">>,
+        default => <<"http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/product/dgiot/channel/amis.png">>,
         title => #{
             en => <<"channel ICO">>,
             zh => <<"通道ICO"/utf8>>
@@ -82,10 +82,10 @@ init(?TYPE, ChannelId, #{
     <<"search">> := Search}) ->
     lists:map(fun(X) ->
         case X of
-            {ProductId, #{<<"ACL">> := Acl, <<"nodeType">> := 1,<<"thing">> := Thing}} ->
-                dgiot_data:insert({amis, ChannelId}, {ProductId, Acl, maps:get(<<"properties">>,Thing,[])});
+            {ProductId, #{<<"ACL">> := Acl, <<"nodeType">> := 1, <<"thing">> := Thing}} ->
+                dgiot_data:insert({amis, ChannelId}, {ProductId, Acl, maps:get(<<"properties">>, Thing, [])});
             _ ->
-                ?LOG(info,"X ~p", [X]),
+                ?LOG(info, "X ~p", [X]),
                 pass
         end
               end, Products),
@@ -110,17 +110,17 @@ handle_event(_EventId, _Event, State) ->
 % SELECT clientid, disconnected_at FROM "$events/client_disconnected" WHERE username = 'dgiot'
 % SELECT clientid, connected_at FROM "$events/client_connected" WHERE username = 'dgiot'
 handle_message({rule, #{clientid := DtuAddr, connected_at := _ConnectedAt}, #{peername := PeerName} = _Context}, #state{id = ChannelId} = State) ->
-    ?LOG(error,"DtuAddr ~p PeerName ~p",[DtuAddr,PeerName] ),
+    ?LOG(error, "DtuAddr ~p PeerName ~p", [DtuAddr, PeerName]),
     DTUIP = dgiot_utils:get_ip(PeerName),
     dgiot_bamis:create_amis(DtuAddr, ChannelId, DTUIP),
     {ok, State};
 
 handle_message({rule, #{clientid := DevAddr, disconnected_at := _DisconnectedAt}, _Context}, State) ->
-    ?LOG(error,"DevAddr ~p ",[DevAddr] ),
+    ?LOG(error, "DevAddr ~p ", [DevAddr]),
     {ok, State};
 
 handle_message({rule, #{clientid := DevAddr, payload := Payload, topic := _Topic}, _Msg}, #state{id = ChannelId} = State) ->
-    ?LOG(error,"DevAddr ~p Payload ~p ChannelId ~p",[DevAddr,Payload,ChannelId] ),
+    ?LOG(error, "DevAddr ~p Payload ~p ChannelId ~p", [DevAddr, Payload, ChannelId]),
     {ok, State};
 
 handle_message(_Message, State) ->
