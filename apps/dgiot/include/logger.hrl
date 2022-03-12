@@ -58,3 +58,20 @@
             mfa => {?MODULE, ?FUNCTION_NAME, ?FUNCTION_ARITY},
             line => ?LINE}))
     end).
+
+-define(PLOG(Level, Map),
+    begin
+        (dgiot_parse:log(#{
+            <<"pid">> => erlang:pid_to_list(self()),
+            <<"time">> => dgiot_datetime:now_microsecs(),
+            <<"node">> => node(),
+            <<"type">> => <<"json">>,
+            <<"level">> => Level,
+            <<"msg">> => Map,
+            <<"module">> => ?MODULE,
+            <<"function">> => ?FUNCTION_NAME,
+            <<"funtion_arity">> => ?FUNCTION_ARITY,
+            <<"file">> => ?FILE,
+            <<"line">> => ?LINE
+        }))
+    end).

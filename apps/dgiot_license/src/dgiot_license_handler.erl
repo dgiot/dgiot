@@ -57,7 +57,7 @@ handle(OperationID, Args, Context, Req) ->
                   end,
             {500, Headers, #{<<"error">> => Err}};
         ok ->
-%%            lager:debug("do request: ~p, ~p ->ok ~n", [OperationID, Args]),
+%%           ?LOG(info,"do request: ~p, ~p ->ok ~n", [OperationID, Args]),
             {200, Headers, #{}, Req};
         {ok, Res} ->
 %%            ?LOG(info,"do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),

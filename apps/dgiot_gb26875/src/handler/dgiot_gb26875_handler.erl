@@ -88,7 +88,6 @@ do_request(get_decoder, #{<<"buff">> := Buff}, _Context, _Req) ->
 %% OperationId:get_encoder
 %% 请求:POST /iotapi/get_encoder
 do_request(post_encoder, Body, _Context, _Req) ->
-    io:format("Body ~p~n", [Body]),
     R = dgiot_gb26875_decoder:to_frame(Body),
     {ok, #{<<"buff">> => dgiot_utils:binary_to_hex(R)}};
 

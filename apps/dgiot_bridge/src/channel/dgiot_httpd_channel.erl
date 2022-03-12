@@ -89,7 +89,7 @@ start(ChannelId, ChannelArgs) ->
 init(?TYPE, ChannelId, #{<<"port">> := Port} = ChannelArgs) ->
     State = #state{
         id = ChannelId,
-        env = maps:without([<<"port">>, <<"path">>, <<"product">>, <<"behaviour">>], ChannelArgs)
+        env = maps:without([<<"port">>,<<"path">>,<<"product">>,<<"behaviour">>], ChannelArgs)
     },
     Name = dgiot_channelx:get_name(?TYPE, ChannelId),
     Opts = [

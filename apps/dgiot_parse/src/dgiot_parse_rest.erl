@@ -118,7 +118,6 @@ request(Method, Header, Path0, Body, Options) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
-
 save_cache(_, <<"/batch">>, #{<<"requests">> := Requests}) ->
     lists:map(fun(X) ->
         Method = maps:get(<<"method">>, X, <<"">>),
@@ -473,8 +472,6 @@ log(Method, {Url, Header}) ->
 log(Method, {Url, Header, _, Body}) ->
     IsLog = application:get_env(dgiot_parse, log, false),
     IsLog andalso ?LOG(info, "~s ~s Header:~p  Body:~p", [method(Method), Url, Header, Body]).
-
-
 
 channel_add_product_relation(ChannelIds, ProductId) ->
     Map =
