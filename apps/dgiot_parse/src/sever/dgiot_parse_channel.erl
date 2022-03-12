@@ -120,7 +120,7 @@
         order => 102,
         type => string,
         required => false,
-        default => <<"http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/product/dgiot/channel/parser%20sever%E5%9B%BE%E6%A0%87.jpg">>,
+        default => <<"http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/product/dgiot/channel/parserIcon.jpg">>,
         title => #{
             en => <<"channel ICO">>,
             zh => <<"通道ICO"/utf8>>

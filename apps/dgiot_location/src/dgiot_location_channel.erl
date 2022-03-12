@@ -59,7 +59,7 @@
         order => 102,
         type => string,
         required => false,
-        default => <<"http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/product/dgiot/channel/%E4%BD%8D%E7%BD%AE%E5%AE%9A%E4%BD%8D%E9%80%9A%E9%81%93.jpg">>,
+        default => <<"http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/product/dgiot/channel/location.jpg">>,
         title => #{
             en => <<"channel ICO">>,
             zh => <<"通道ICO"/utf8>>
