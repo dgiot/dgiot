@@ -109,17 +109,17 @@ handle_cast(Msg, #state{mod = Mod, child = ChildState} = State) ->
 
 %% 连接次数为0了
 handle_info(do_connect, State) ->
-    %?LOG(info,"CONNECT CLOSE ~s:~p", [State#state.host, State#state.port]),
+    ?LOG(info,"CONNECT CLOSE ~s:~p", [State#state.host, State#state.port]),
     {stop, normal, State};
 
 %% 连接次数为0了
 handle_info(connect_stop, State) ->
-    %?LOG(info,"CONNECT CLOSE ~s:~p", [State#state.host, State#state.port]),
+    ?LOG(info,"CONNECT CLOSE ~s:~p", [State#state.host, State#state.port]),
     {stop, normal, State};
 
 handle_info({connection_ready, Socket}, #state{mod = Mod, child = ChildState} = State) ->
     NewChildState = ChildState#tcp{socket = Socket},
-%%    ?LOG(info,"connection_ready ~p~n", [Socket]),
+    ?LOG(info,"connection_ready ~p~n", [Socket]),
     case Mod:handle_info(connection_ready, NewChildState) of
         {noreply, NewChildState1} ->
             inet:setopts(Socket, [{active, once}]),
@@ -129,6 +129,7 @@ handle_info({connection_ready, Socket}, #state{mod = Mod, child = ChildState} = 
     end;
 
 handle_info({tcp, Socket, Binary}, State) ->
+    ?LOG(info,"Binary ~p~n", [Binary]),
     #state{mod = Mod, child = #tcp{socket = Socket} = ChildState} = State,
     NewBin =
         case binary:referenced_byte_size(Binary) of
@@ -219,16 +220,16 @@ do_connect(Sleep, #state{child = TCPState} = State) ->
         end),
     NewState.
 
-connect(Client, #state{host = Host, port = Port, reconnect_times = Times, reconnect_sleep = Sleep, child = #tcp{transport = Transport}} = State) ->
+connect(Client, #state{host = Host, port = Port, reconnect_times = Times, reconnect_sleep = Sleep} = State) ->
     case is_process_alive(Client) of
         true ->
-            %% ?LOG(info,"CONNECT ~s:~p ~p", [Host, Port, Times]),
-            case Transport:connect(Host, Port, ?TCP_OPTIONS, ?TIMEOUT) of
+            ?LOG(info,"CONNECT ~s: ~p  ~p", [Host, Port, Times]),
+            case gen_tcp:connect(Host, Port, ?TCP_OPTIONS, ?TIMEOUT) of
                 {ok, Socket} ->
                     case catch gen_server:call(Client, {connection_ready, Socket}, 50000) of
                         ok ->
                             inet:setopts(Socket, [{active, once}]),
-                            Transport:controlling_process(Socket, Client);
+                            gen_tcp:controlling_process(Socket, Client);
                         _ ->
                             ok
                     end;

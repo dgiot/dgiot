@@ -51,6 +51,7 @@ init(TCPState) ->
     {ok, TCPState}.
 
 handle_info(connection_ready, TCPState) ->
+    io:format("~s ~p State ~p ~n",[?FILE,?LINE, TCPState]),
     rand:seed(exs1024),
     Time = erlang:round(rand:uniform() * 1 + 1) * 1000,
     erlang:send_after(Time, self(), login),

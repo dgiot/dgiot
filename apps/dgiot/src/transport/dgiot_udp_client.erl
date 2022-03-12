@@ -24,7 +24,8 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 -record(state, {host, port, child = #udp{}, mod, reconnect_times, reconnect_sleep = 30}).
 -define(TIMEOUT, 10000).
--define(UDP_OPTIONS, [binary, {active, once}, {packet, raw}, {reuseaddr, false}, {send_timeout, ?TIMEOUT}]).
+%%-define(UDP_OPTIONS, [binary, {active, once}, {packet, raw}, {reuseaddr, false}, {send_timeout, ?TIMEOUT}]).
+-define(UDP_OPTIONS, [binary, {reuseaddr, true}]).
 
 start_link(Mod, Host, Port) ->
     start_link(Mod, Host, Port, undefined).
@@ -63,11 +64,11 @@ start_link(Name, Mod, Host, Port, Args) ->
 
 
 init([#state{mod = Mod} = State, Args]) ->
-    io:format("State ~p ~n",[State]),
-    io:format("Args ~p ~n",[Args]),
+    io:format("State ~p ~n", [State]),
+    io:format("Args ~p ~n", [Args]),
     Transport = gen_udp,
     Child = #udp{transport = Transport, socket = undefined},
-    case Mod:do_init(Child#udp{state = Args}) of
+    case Mod:init(Child#udp{state = Args}) of
         {ok, ChildState} ->
             NewState = State#state{
                 child = ChildState
@@ -104,17 +105,17 @@ handle_cast(Msg, #state{mod = Mod, child = ChildState} = State) ->
 
 %% 连接次数为0了
 handle_info(do_connect, State) ->
-    %?LOG(info,"CONNECT CLOSE ~s:~p", [State#state.host, State#state.port]),
+    ?LOG(info, "do_connect ~s:~p", [State#state.host, State#state.port]),
     {stop, normal, State};
 
 %% 连接次数为0了
 handle_info(connect_stop, State) ->
-    %?LOG(info,"CONNECT CLOSE ~s:~p", [State#state.host, State#state.port]),
+    ?LOG(info, "CONNECT CLOSE ~s:~p", [State#state.host, State#state.port]),
     {stop, normal, State};
 
 handle_info({connection_ready, Socket}, #state{mod = Mod, child = ChildState} = State) ->
+    ?LOG(info, "connection_ready ~p~n", [Socket]),
     NewChildState = ChildState#udp{socket = Socket},
-%%    ?LOG(info,"connection_ready ~p~n", [Socket]),
     case Mod:handle_info(connection_ready, NewChildState) of
         {noreply, NewChildState1} ->
             inet:setopts(Socket, [{active, once}]),
@@ -123,7 +124,17 @@ handle_info({connection_ready, Socket}, #state{mod = Mod, child = ChildState} = 
             {stop, Reason, State#state{child = NewChildState1}}
     end;
 
+handle_info({datagram, _SockPid, Data}, State) ->
+    ?LOG(info, "Data ~p~n", [Data]),
+    handle_info({udp, _SockPid, Data}, State);
+
+handle_info({ssl, _RawSock, Data}, State) ->
+    handle_info({ssl, _RawSock, Data}, State);
+
+%%handle_info({udp, _UdpId, Ip, Port, Msg},
+%%        #megaco_udp{serialize = true} = UdpRec) ->
 handle_info({udp, Socket, Binary}, State) ->
+    ?LOG(info, "Binary ~p~n", [Binary]),
     #state{mod = Mod, child = #udp{socket = Socket} = ChildState} = State,
     NewBin =
         case binary:referenced_byte_size(Binary) of
@@ -171,6 +182,7 @@ handle_info({Closed, _Sock}, #state{mod = Mod, child = #udp{transport = Transpor
     end;
 
 handle_info(Info, #state{mod = Mod, child = ChildState} = State) ->
+    ?LOG(info, "Info ~p~n", [Info]),
     case Mod:handle_info(Info, ChildState) of
         {noreply, NewChildState} ->
             {noreply, State#state{child = NewChildState}, hibernate};
@@ -214,38 +226,43 @@ do_connect(Sleep, #state{child = UDPState} = State) ->
         end),
     NewState.
 
-connect(Client, #state{host = Host, port = Port, reconnect_times = Times, reconnect_sleep = Sleep, child = #udp{transport = Transport}} = State) ->
+connect(Client, #state{host = Host, port = Port, reconnect_times = Times, reconnect_sleep = Sleep} = State) ->
     case is_process_alive(Client) of
         true ->
-             ?LOG(info,"CONNECT ~s:~p ~p", [Host, Port, Times]),
-            case Transport:connect(Host, Port, ?UDP_OPTIONS, ?TIMEOUT) of
+            ?LOG(info, "CONNECT ~s:~p ~p", [Host, Port, Times]),
+            case gen_udp:open(0, [binary, {reuseaddr, true}]) of
                 {ok, Socket} ->
-                    case catch gen_server:call(Client, {connection_ready, Socket}, 50000) of
+                    %% Trigger the udp_passive event
+                    ?LOG(info, "Sock  ~p", [Socket]),
+                    case gen_udp:connect(Socket, dgiot_utils:to_list(Host), Port) of
                         ok ->
-                            inet:setopts(Socket, [{active, once}]),
-                            gen_udp:controlling_process(Socket, Client);
-                        _ ->
-                            ok
+                            ?LOG(info, "Socket  ~p", [Socket]),
+                            case catch gen_server:call(Client, {connection_ready, Socket}, 5000) of
+                                ok ->
+                                    ?LOG(info, "Socket  ~p", [Socket]),
+                                    inet:setopts(Socket, [{active, once}]),
+                                    gen_udp:controlling_process(Socket, Client);
+                                _ ->
+                                    ok
+                            end;
+                        {error, Reason} ->
+                            case is_integer(Times) of
+                                true when Times - 1 > 0 ->
+                                    Client ! {connection_error, Reason},
+                                    timer:sleep(Sleep * 1000),
+                                    connect(Client, State#state{reconnect_times = Times - 1});
+                                false when is_atom(Times) ->
+                                    Client ! {connection_error, Reason},
+                                    timer:sleep(Sleep * 1000),
+                                    connect(Client, State);
+                                _ ->
+                                    Client ! connect_stop
+                            end
                     end;
-                {error, Reason} ->
-                    case is_integer(Times) of
-                        true when Times - 1 > 0 ->
-                            Client ! {connection_error, Reason},
-                            timer:sleep(Sleep * 1000),
-                            connect(Client, State#state{reconnect_times = Times - 1});
-                        false when is_atom(Times) ->
-                            Client ! {connection_error, Reason},
-                            timer:sleep(Sleep * 1000),
-                            connect(Client, State);
-                        _ ->
-                            Client ! connect_stop
-                    end
-            end;
-        false ->
-            ok
+                _ ->
+                    pass
+            end
     end.
-
-
 
 write_log(file, Type, Buff) ->
     [Pid] = io_lib:format("~p", [self()]),
