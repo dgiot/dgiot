@@ -224,29 +224,28 @@ device_sql(Select, From, Where, _Method) ->
     SelectTpl = getSelect(Select, <<"">>),
     TopicTpl = case From of
                    #{<<"productid">> := ProductId, <<"devaddr">> := Devaddr} ->
-                       <<"     thing/", ProductId/binary, Devaddr/binary, "/#", "\r\n">>;
-                   _ -> <<"     thing/", "/test/#", "\r\n">>
+                       <<"thing/", ProductId/binary, Devaddr/binary, "/#">>;
+                   _ ->
+                       <<"thing/", "test/#">>
                end,
     WhereSql = lists:foldl(fun(X, Acc) ->
         case X of
             #{<<"identifier">> := Id, <<"operator">> := Op, <<"value">> := Value} ->
                 case Acc of
                     <<"">> ->
-                        <<Id/binary, " ", Op/binary, " ", Value/binary>>;
+                        <<Id/binary, "    ", Op/binary, " ", Value/binary>>;
                     _ ->
-                        <<Acc/binary, " , ", Id/binary, " ", Op/binary, " ", Value/binary>>
+                        <<Acc/binary, ", \r\n    ", Id/binary, " ", Op/binary, " ", Value/binary>>
                 end;
             _ -> Acc
         end
                            end, <<"">>, Where),
-    DefaultSql = <<"SELECT\"", "\r\n",
-        "     payload.msg as msg,clientid,", "\r\n     ",
-        SelectTpl/binary,
-        "      FROM ", "\r\n     ",
-        TopicTpl/binary,
-        "  WHERE", "\r\n",
-        WhereSql/binary
-    >>,
+    DefaultSql = <<"SELECT", "\r\n",
+        SelectTpl/binary, "\r\n",
+        "FROM ", "\r\n",
+        "   \"", TopicTpl/binary, "\"", "\r\n",
+        "WHERE", "\r\n     ",
+        WhereSql/binary>>,
     {ok, #{<<"template">> => DefaultSql}}.
 
 %% 根据cron表达式生成sql模板
@@ -366,9 +365,9 @@ getSelect(#{<<"payload">> := Payload} = Select, Acc1) ->
     NewAcc = lists:foldl(fun(Id, Acc) ->
         case Acc of
             <<"">> ->
-                <<"payload.", Id/binary, "  as ", Id/binary>>;
+                <<"    payload.", Id/binary, "  as ", Id/binary>>;
             _ ->
-                <<Acc/binary, " , ", "payload.", Id/binary, "  as ", Id/binary>>
+                <<Acc/binary, ",\r\n", "    payload.", Id/binary, "  as ", Id/binary, "\r\n     ">>
         end
 
                          end, Acc1, Payload),
