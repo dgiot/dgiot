@@ -1,0 +1,112 @@
+{
+  "math": [
+    {
+      "key": "abs",
+      "value": "绝对值",
+      "params": "被操作数",
+      "return": "绝对值"
+    },
+    {
+      "key": "abs",
+      "value": "绝对值",
+      "params": "被操作数",
+      "return": "绝对值"
+    }
+  ],
+  "type": [
+    {
+      "key": "is_null",
+      "value": "判断变量是否为空值",
+      "params": "Data",
+      "return": "Boolean 类型的数据。如果为空值(undefined) 则返回 true，否则返回 false"
+    }
+  ],
+  "type2function": [
+    {
+      "type": "str",
+      "value": "将数据转换为 String 类型",
+      "params": "Date",
+      "return": "String 类型的数据。无法转换将会导致 SQL 匹配失败"
+    }
+  ],
+  "string": [
+    {
+      "key": "lower",
+      "value": "转为小写",
+      "params": "原字符串",
+      "return": "小写字符串"
+    }
+  ],
+  "Map": [
+    {
+      "key": "map_get",
+      "value": "取 Map 中某个 Key 的值，如果没有则返回空值",
+      "params": "1. Key 2. Map",
+      "return": "Map 中某个 Key 的值。支持嵌套的 Key，比如 \"a.b.c\""
+    },
+    {
+      "key2": "map_get",
+      "value": "取 Map 中某个 Key 的值，如果没有则返回指定默认值",
+      "params": "1. Key 2. Map 3. Default Value",
+      "return": "Map 中某个 Key 的值。支持嵌套的 Key，比如 \"a.b.c\""
+    },
+    {
+      "key3": "map_put",
+      "value": "向 Map 中插入值",
+      "params": "1. Key 2. Value 3. Map",
+      "return": "插入后的 Map。支持嵌套的 Key，比如 \"a.b.c\""
+    }
+  ],
+  "array": [
+    {
+      "key": "nth",
+      "value": "取第 n 个元素，下标从 1 开始",
+      "params": "原数组",
+      "return": "第 n 个元素"
+    }
+  ],
+  "hash": [
+    {
+      "key": "md5",
+      "value": "求MD5值",
+      "params": "数据",
+      "return": "MD5 值"
+    }
+  ],
+  "Bit": [
+    {
+      "key": "subbits",
+      "value": "从二进制数据的起始位置获取指定长度的比特位, 然后转换为无符号整型 (大端)",
+      "params": "1. 二进制数据 2. 要获取的长度(bits)",
+      "return": "无符号整数",
+      "拓展": [
+        {
+          "key": "subbits",
+          "value": "从二进制数据的起始位置获取指定长度的比特位, 然后转换为无符号整型 (大端)",
+          "params": "1. 二进制数据 2. 要获取的长度(bits)",
+          "return": "无符号整数"
+        },
+        {
+          "key": "subbits",
+          "value": "从二进制数据的指定下标位置获取指定长度的比特位, 然后转换为无符号整型 (大端). 下标是从 1 开始的",
+          "params": "1. 二进制数据 2. 起始位置的下标 3. 要获取的长度(bits)",
+          "return": "无符号整数"
+        },
+        {
+          "key": "subbits",
+          "value": "从从二进制数据的指定下标位置获取指定长度的比特位, 然后按照给定的参数转换为想要的数据类型. 下标是从 1 开始的",
+          "params": "1. 二进制数据 2. 起始位置的下标 3. 要获取的长度(bits) 4. 数据类型，可选值：'integer', 'float', 'bits' 5. 符号类型, 只对整型数据有效, 可选值：'unsigned', 'signed', 6. 大端还是小端, 只对整型数据有效, 可选值：'big', 'little'",
+          "return": "无符号整数"
+        }
+      ]
+    }
+  ],
+  "codecs": [
+    {
+      "key": "base64_encode",
+      "value": "BASE64 编码",
+      "params": "要编码的二进制数据",
+      "return": "Base64 编码的字符串"
+    }
+  ]
+}
