@@ -56,7 +56,8 @@
             "enum": [
               "Topic",
               "Dashboard",
-              "Unit"
+              "Unit",
+              "rule-engine"
             ]
           }
         ],
