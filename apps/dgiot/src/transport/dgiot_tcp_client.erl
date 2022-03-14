@@ -40,20 +40,8 @@ start_link(Mod, Host, Port, ReconnectTimes, ReconnectSleep, Args) ->
     start_link(undefined, Mod, Host, Port, ReconnectTimes, ReconnectSleep, Args).
 
 start_link(Name, Mod, Host, Port, ReconnectTimes, ReconnectSleep, Args) ->
-    Ip =
-        case is_binary(Host) of
-            true -> binary_to_list(Host);
-            false -> Host
-        end,
-    Port1 =
-        case Port of
-            _ when is_binary(Port) ->
-                binary_to_integer(Port);
-            _ when is_list(Port) ->
-                list_to_integer(Port);
-            _ when is_integer(Port) ->
-                Port
-        end,
+    Ip = dgiot_utils:to_list(Host),
+    Port1 = dgiot_utils:to_int(Port),
     State = #state{
         mod = Mod,
         host = Ip,
@@ -138,7 +126,6 @@ handle_info({tcp, Socket, Binary}, State) ->
             _ ->
                 Binary
         end,
-    write_log(ChildState#tcp.log, <<"RECV">>, NewBin),
     case Mod:handle_info({tcp, NewBin}, ChildState) of
         {noreply, NewChildState} ->
             inet:setopts(ChildState#tcp.socket, [{active, once}]),
@@ -147,13 +134,11 @@ handle_info({tcp, Socket, Binary}, State) ->
             {stop, Reason, State#state{child = NewChildState}}
     end;
 
-handle_info({tcp_error, _Socket, Reason}, #state{child = ChildState} = State) ->
-    write_log(ChildState#tcp.log, <<"ERROR">>, list_to_binary(io_lib:format("~p", [Reason]))),
+handle_info({tcp_error, _Socket, _Reason}, #state{child = _ChildState} = State) ->
     {noreply, State, hibernate};
 
 handle_info({Closed, _Sock}, #state{mod = Mod, child = #tcp{transport = Transport, socket = Socket} = ChildState} = State) when Closed == tcp_closed ->
     Transport:close(Socket),
-    write_log(ChildState#tcp.log, <<"ERROR">>, <<"tcp_closed">>),
     case Mod:handle_info(Closed, ChildState) of
         {noreply, NewChildState} ->
             NewState = State#state{child = NewChildState#tcp{socket = undefined}},
@@ -195,9 +180,7 @@ code_change(OldVsn, #state{mod = Mod, child = ChildState} = State, Extra) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
-
-send(#tcp{transport = Transport, socket = Socket, log = Log}, Payload) ->
-    write_log(Log, <<"SEND">>, Payload),
+send(#tcp{transport = Transport, socket = Socket, log = _Log}, Payload) ->
     case Socket == undefined of
         true ->
             {error, disconnected};
@@ -251,23 +234,3 @@ connect(Client, #state{host = Host, port = Port, reconnect_times = Times, reconn
             ok
     end.
 
-
-
-write_log(file, Type, Buff) ->
-    [Pid] = io_lib:format("~p", [self()]),
-    Date = dgiot_datetime:format("YYYY-MM-DD"),
-    Path = <<"log/tcp_client/", Date/binary, ".txt">>,
-    filelib:ensure_dir(Path),
-    Time = dgiot_datetime:format("HH:NN:SS " ++ Pid),
-    Data = case Type of
-               <<"ERROR">> -> Buff;
-               _ -> <<<<Y>> || <<X:4>> <= Buff, Y <- integer_to_list(X, 16)>>
-           end,
-    file:write_file(Path, <<Time/binary, " ", Type/binary, " ", Data/binary, "\r\n">>, [append]),
-    ok;
-write_log({Mod, Fun}, Type, Buff) ->
-    catch apply(Mod, Fun, [Type, Buff]);
-write_log(Fun, Type, Buff) when is_function(Fun) ->
-    catch Fun(Type, Buff);
-write_log(_, _, _) ->
-    ok.

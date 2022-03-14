@@ -376,10 +376,10 @@ create_product(#{<<"name">> := ProductName, <<"devType">> := DevType,
                             },
                             <<"productSecret">> => dgiot_utils:random()},
                         [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]);
-                Err -> {400, Err}
+                Err ->
+                    {400, Err}
             end
     end.
-
 
 parse_frame(ProductId, Bin, Opts) ->
     apply(binary_to_atom(ProductId, utf8), parse_frame, [Bin, Opts]).

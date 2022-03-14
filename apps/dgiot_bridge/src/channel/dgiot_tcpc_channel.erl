@@ -18,7 +18,7 @@
 -include("dgiot_bridge.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -define(TYPE, <<"TCPC">>).
--record(state, {id}).
+-record(state, {id, env}).
 %% API
 -export([
     start/2
@@ -122,20 +122,17 @@ start(ChannelId, ChannelArgs) ->
 
 %% 通道初始化
 init(?TYPE, ChannelId, Args) ->
-    #{<<"product">> := Product,
-        <<"ip">> := Ip,
-        <<"port">> := Port} = Args,
-    lists:map(fun({ProductId, _Opt}) ->
-        start_timer(5000, fun() ->
-            start_client(ProductId, Ip, Port, Args)
-                          end)
-              end, Product),
     State = #state{
-        id = ChannelId
+        id = ChannelId,
+        env = Args
     },
     {ok, State, []}.
 
-handle_init(State) ->
+handle_init(#state{env = Args} = State) ->
+    #{<<"product">> := Products, <<"ip">> := Ip, <<"port">> := Port} = Args,
+    lists:map(fun({ProductId, _Opt}) ->
+        start_client(ProductId, Ip, Port, Args)
+              end, Products),
     {ok, State}.
 
 %% 通道消息处理,注意：进程池调用
@@ -153,34 +150,24 @@ stop(ChannelType, ChannelId, _State) ->
 start_client(ProductId, Ip, Port,
         #{<<"page_index">> := PageIndex, <<"page_size">> := PageSize, <<"total">> := Total}) ->
     Success = fun(Page) ->
-        lists:map(fun(#{<<"devaddr">> := DevAddr} = _X) ->
-            dgiot_tcpc_worker:start_connect(#{
-                <<"auto_reconnect">> => 10,
-                <<"reconnect_times">> => 3,
-                <<"ip">> => Ip,
-                <<"port">> => Port,
-                <<"productid">> => ProductId,
-                <<"hb">> => 60,
-                <<"devaddr">> => DevAddr
-            })
+        lists:map(fun(X) ->
+            case X of
+                #{<<"devaddr">> := DevAddr} ->
+                    dgiot_tcpc_worker:start_connect(#{
+                        <<"auto_reconnect">> => 10,
+                        <<"reconnect_times">> => 3,
+                        <<"ip">> => Ip,
+                        <<"port">> => Port,
+                        <<"productid">> => ProductId,
+                        <<"hb">> => 60,
+                        <<"devaddr">> => DevAddr
+                    });
+                _ ->
+                    ok
+            end
                   end, Page)
               end,
     Query = #{
-        <<"keys">> => [<<"devaddr">>],
-        <<"order">> => <<"devaddr">>,
         <<"where">> => #{<<"product">> => ProductId}
     },
-    dgiot_parse_loader:start(<<"Devcie">>, Query, PageIndex, PageSize, Total, Success).
-
-start_timer(Time, Fun) ->
-    spawn(fun() ->
-        timer(Time, Fun)
-          end).
-
-timer(Time, Fun) ->
-    receive
-        cancel ->
-            void
-    after Time ->
-        Fun()
-    end.
+    dgiot_parse_loader:start(<<"Device">>, Query, PageIndex, PageSize, Total, Success).

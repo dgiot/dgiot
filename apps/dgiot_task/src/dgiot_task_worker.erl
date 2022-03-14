@@ -108,7 +108,6 @@ handle_info(stop, State) ->
     {stop, normal, State};
 
 handle_info(init, #task{dtuid = DtuId, mode = Mode, round = Round, ts = Oldstamp, freq = Freq, endtime = Tsendtime} = State) ->
-    dgiot_datetime:now_secs(),
 %%    io:format("~s ~p DtuId = ~p.~n", [?FILE, ?LINE, DtuId]),
     case dgiot_task:get_pnque(DtuId) of
         not_find ->

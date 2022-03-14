@@ -83,7 +83,6 @@ handle_cast(_Request, State) ->
     {noreply, State}.
 
 handle_info(start, #state{ name = Name, class = Class, query = Query} = State) ->
-%%    ?LOG(error," State ~p",[ State]),
     case dgiot_parse:query_object(Name, Class, Query#{<<"limit">> => 0, <<"count">> => 1}) of
         {error, _Reason} ->
             erlang:send_after(3000, self(), start),
@@ -105,10 +104,8 @@ handle_info(complete, #state{from = _From} = State) ->
 handle_info(_Info, State) ->
     {noreply, State}.
 
-
 terminate(_Reason, _State) ->
     ok.
-
 
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.

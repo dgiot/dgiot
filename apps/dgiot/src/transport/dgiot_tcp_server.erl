@@ -167,7 +167,6 @@ handle_info({shutdown, Reason}, #state{child = ChildState} = State) ->
     write_log(ChildState#tcp.log, <<"ERROR">>, list_to_binary(io_lib:format("~w", [Reason]))),
     {stop, normal, State#state{child = ChildState#tcp{socket = undefined}}};
 
-
 handle_info({tcp_error, _Sock, Reason}, #state{child = ChildState} = State) ->
     ?LOG(error, "tcp_error, ~p, ~p~n", [Reason, ChildState#tcp.state]),
     write_log(ChildState#tcp.log, <<"ERROR">>, list_to_binary(io_lib:format("~w", [Reason]))),

@@ -440,7 +440,7 @@ log(#{peer := {PeerName, _}, headers := Headers} = Req, Time, Result, Map) when 
             _ ->
                 {<<"error">>, <<"error">>}
         end,
-    ?MLOG(info, NewReq#{
+    ?MLOG(debug, NewReq#{
         <<"code">> => Code,
         <<"reason">> => Reason,
         <<"ip">> => RealIp,
