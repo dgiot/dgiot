@@ -24,8 +24,8 @@
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 -record(state, {host, port, child = #udp{}, mod, reconnect_times, reconnect_sleep = 30}).
 -define(TIMEOUT, 10000).
-%%-define(UDP_OPTIONS, [binary, {active, once}, {packet, raw}, {reuseaddr, false}, {send_timeout, ?TIMEOUT}]).
--define(UDP_OPTIONS, [binary, {reuseaddr, true}]).
+-define(UDP_OPTIONS, [binary, {active, once}, {packet, raw}, {reuseaddr, true}, {send_timeout, ?TIMEOUT}]).
+%%-define(UDP_OPTIONS, [binary, {reuseaddr, true}]).
 
 start_link(Mod, Host, Port) ->
     start_link(Mod, Host, Port, undefined).
@@ -34,22 +34,8 @@ start_link(Mod, Host, Port, Args) ->
     start_link(undefined, Mod, Host, Port, Args).
 
 start_link(Name, Mod, Host, Port, Args) ->
-    Ip =
-        case is_binary(Host) of
-            true ->
-                binary_to_list(Host);
-            false ->
-                Host
-        end,
-    Port1 =
-        case Port of
-            _ when is_binary(Port) ->
-                binary_to_integer(Port);
-            _ when is_list(Port) ->
-                list_to_integer(Port);
-            _ when is_integer(Port) ->
-                Port
-        end,
+    Ip = dgiot_utils:to_list(Host),
+    Port1 = dgiot_utils:to_int(Port),
     State = #state{
         mod = Mod,
         host = Ip,
@@ -59,13 +45,10 @@ start_link(Name, Mod, Host, Port, Args) ->
         undefined ->
             gen_server:start_link(?MODULE, [State, Args], []);
         _ ->
-            gen_server:start_link({local, Name}, ?MODULE, [State, Args], [])
+            gen_server:start_link({local, list_to_atom(dgiot_utils:to_list(Name))}, ?MODULE, [State, Args], [])
     end.
 
-
 init([#state{mod = Mod} = State, Args]) ->
-    io:format("State ~p ~n", [State]),
-    io:format("Args ~p ~n", [Args]),
     Transport = gen_udp,
     Child = #udp{transport = Transport, socket = undefined},
     case Mod:init(Child#udp{state = Args}) of
@@ -76,9 +59,13 @@ init([#state{mod = Mod} = State, Args]) ->
             {ok, do_connect(false, NewState), hibernate};
         {stop, Reason} ->
             {stop, Reason}
-    end.
+    end;
+
+init(_Other) ->
+    pass.
 
 handle_call({connection_ready, Socket}, _From, #state{mod = Mod, child = ChildState} = State) ->
+    ?LOG(info, "connection_ready ~p~n", [Socket]),
     NewChildState = ChildState#udp{socket = Socket},
     case Mod:handle_info(connection_ready, NewChildState) of
         {noreply, NewChildState1} ->
@@ -124,15 +111,9 @@ handle_info({connection_ready, Socket}, #state{mod = Mod, child = ChildState} = 
             {stop, Reason, State#state{child = NewChildState1}}
     end;
 
-handle_info({datagram, _SockPid, Data}, State) ->
-    ?LOG(info, "Data ~p~n", [Data]),
-    handle_info({udp, _SockPid, Data}, State);
-
 handle_info({ssl, _RawSock, Data}, State) ->
     handle_info({ssl, _RawSock, Data}, State);
 
-%%handle_info({udp, _UdpId, Ip, Port, Msg},
-%%        #megaco_udp{serialize = true} = UdpRec) ->
 handle_info({udp, Socket, Binary}, State) ->
     ?LOG(info, "Binary ~p~n", [Binary]),
     #state{mod = Mod, child = #udp{socket = Socket} = ChildState} = State,
@@ -143,7 +124,6 @@ handle_info({udp, Socket, Binary}, State) ->
             _ ->
                 Binary
         end,
-    write_log(ChildState#udp.log, <<"RECV">>, NewBin),
     case Mod:handle_info({udp, NewBin}, ChildState) of
         {noreply, NewChildState} ->
             inet:setopts(ChildState#udp.socket, [{active, once}]),
@@ -152,13 +132,11 @@ handle_info({udp, Socket, Binary}, State) ->
             {stop, Reason, State#state{child = NewChildState}}
     end;
 
-handle_info({udp_error, _Socket, Reason}, #state{child = ChildState} = State) ->
-    write_log(ChildState#udp.log, <<"ERROR">>, list_to_binary(io_lib:format("~p", [Reason]))),
+handle_info({udp_error, _Socket, _Reason}, #state{child = _ChildState} = State) ->
     {noreply, State, hibernate};
 
 handle_info({Closed, _Sock}, #state{mod = Mod, child = #udp{transport = Transport, socket = Socket} = ChildState} = State) when Closed == udp_closed ->
     Transport:close(Socket),
-    write_log(ChildState#udp.log, <<"ERROR">>, <<"udp_closed">>),
     case Mod:handle_info(Closed, ChildState) of
         {noreply, NewChildState} ->
             NewState = State#state{child = NewChildState#udp{socket = undefined}},
@@ -201,9 +179,7 @@ code_change(OldVsn, #state{mod = Mod, child = ChildState} = State, Extra) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
-
-send(#udp{transport = Transport, socket = Socket, log = Log}, Payload) ->
-    write_log(Log, <<"SEND">>, Payload),
+send(#udp{transport = Transport, socket = Socket, log = _Log}, Payload) ->
     case Socket == undefined of
         true ->
             {error, disconnected};
@@ -233,13 +209,10 @@ connect(Client, #state{host = Host, port = Port, reconnect_times = Times, reconn
             case gen_udp:open(0, [binary, {reuseaddr, true}]) of
                 {ok, Socket} ->
                     %% Trigger the udp_passive event
-                    ?LOG(info, "Sock  ~p", [Socket]),
                     case gen_udp:connect(Socket, dgiot_utils:to_list(Host), Port) of
                         ok ->
-                            ?LOG(info, "Socket  ~p", [Socket]),
                             case catch gen_server:call(Client, {connection_ready, Socket}, 5000) of
                                 ok ->
-                                    ?LOG(info, "Socket  ~p", [Socket]),
                                     inet:setopts(Socket, [{active, once}]),
                                     gen_udp:controlling_process(Socket, Client);
                                 _ ->
@@ -263,22 +236,3 @@ connect(Client, #state{host = Host, port = Port, reconnect_times = Times, reconn
                     pass
             end
     end.
-
-write_log(file, Type, Buff) ->
-    [Pid] = io_lib:format("~p", [self()]),
-    Date = dgiot_datetime:format("YYYY-MM-DD"),
-    Path = <<"log/udp_client/", Date/binary, ".txt">>,
-    filelib:ensure_dir(Path),
-    Time = dgiot_datetime:format("HH:NN:SS " ++ Pid),
-    Data = case Type of
-               <<"ERROR">> -> Buff;
-               _ -> <<<<Y>> || <<X:4>> <= Buff, Y <- integer_to_list(X, 16)>>
-           end,
-    file:write_file(Path, <<Time/binary, " ", Type/binary, " ", Data/binary, "\r\n">>, [append]),
-    ok;
-write_log({Mod, Fun}, Type, Buff) ->
-    catch apply(Mod, Fun, [Type, Buff]);
-write_log(Fun, Type, Buff) when is_function(Fun) ->
-    catch Fun(Type, Buff);
-write_log(_, _, _) ->
-    ok.
