@@ -7,10 +7,136 @@
       "return": "绝对值"
     },
     {
-      "key": "abs",
-      "value": "绝对值",
+      "key": "cos",
+      "value": "余弦",
       "params": "被操作数",
-      "return": "绝对值"
+      "return": "余弦值"
+    },
+    {
+      "key": "cosh",
+      "value": "双曲余弦",
+      "params": "被操作数",
+      "return": "双曲余弦值"
+    },
+    {
+      "key": "acos",
+      "value": "反余弦",
+      "params": "被操作数",
+      "return": "反余弦值"
+    },
+    {
+      "key": "acosh",
+      "value": "反双曲余弦",
+      "params": "被操作数",
+      "return": "反双曲余弦值"
+    },
+    {
+      "key": "sin",
+      "value": "正弦",
+      "params": "被操作数",
+      "return": "正弦值"
+    },
+    {
+      "key": "sinh",
+      "value": "双曲正弦",
+      "params": "被操作数",
+      "return": "双曲正弦值"
+    },
+    {
+      "key": "asin",
+      "value": "反正弦",
+      "params": "被操作数",
+      "return": "值"
+    },
+    {
+      "key": "asinh",
+      "value": "反双曲正弦",
+      "params": "被操作数",
+      "return": "反双曲正弦值"
+    },
+    {
+      "key": "tan",
+      "value": "",
+      "params": "被操作数",
+      "return": "正切值"
+    },
+    {
+      "key": "tanh",
+      "value": "双曲正切",
+      "params": "被操作数",
+      "return": "双曲正切值"
+    },
+    {
+      "key": "atan",
+      "value": "反正切",
+      "params": "被操作数",
+      "return": "反正切值"
+    },
+    {
+      "key": "atanh",
+      "value": "反双曲正切",
+      "params": "被操作数",
+      "return": "反双曲正切值"
+    },
+    {
+      "key": "ceil",
+      "value": "上取整",
+      "params": "被操作数",
+      "return": "整数值"
+    },
+    {
+      "key": "floor",
+      "value": "下取整",
+      "params": "被操作数",
+      "return": "整数值"
+    },
+    {
+      "key": "round",
+      "value": "四舍五入",
+      "params": "被操作数",
+      "return": "整数值"
+    },
+    {
+      "key": "exp",
+      "value": "幂运算",
+      "params": "被操作数",
+      "return": "e的x次幂"
+    },
+    {
+      "key": "power",
+      "value": "指数运算",
+      "params": "1. 左操作数x 2. 右操作数y",
+      "return": "x的y次方"
+    },
+    {
+      "key": "sqrt",
+      "value": "平方根运算",
+      "params": "被操作数",
+      "return": "平方根"
+    },
+    {
+      "key": "fmod",
+      "value": "负点数取模函数",
+      "params": "1. 左操作数 2. 右操作数",
+      "return": "模"
+    },
+    {
+      "key": "log",
+      "value": "以 e 为底对数",
+      "params": "被操作数",
+      "return": "模"
+    },
+    {
+      "key": "log10",
+      "value": "以 10 为底对数",
+      "params": "被操作数",
+      "return": "模"
+    },
+    {
+      "key": "log2",
+      "value": "以 2 为底对数",
+      "params": "被操作数",
+      "return": "模"
     }
   ],
   "type": [
@@ -19,6 +145,54 @@
       "value": "判断变量是否为空值",
       "params": "Data",
       "return": "Boolean 类型的数据。如果为空值(undefined) 则返回 true，否则返回 false"
+    },
+    {
+      "key": "is_not_null",
+      "value": "判断变量是否为非空值",
+      "params": "Data",
+      "return": "Boolean 类型的数据。如果为空值(undefined) 则返回 false，否则返回 true"
+    },
+    {
+      "key": "is_str",
+      "value": "判断变量是否为 String 类型",
+      "params": "Data",
+      "return": "Boolean 类型的数据"
+    },
+    {
+      "key": "is_bool",
+      "value": "判断变量是否为 Boolean 类型",
+      "params": "Data",
+      "return": "Boolean 类型的数据"
+    },
+    {
+      "key": "is_int",
+      "value": "判断变量是否为 Integer 类型",
+      "params": "Data",
+      "return": "Boolean 类型的数据"
+    },
+    {
+      "key": "is_float",
+      "value": "判断变量是否为 Float 类型",
+      "params": "Data",
+      "return": "Boolean 类型的数据"
+    },
+    {
+      "key": "is_num",
+      "value": "判断变量是否为数字类型，包括 Integer 和 Float 类型",
+      "params": "Data",
+      "return": "Boolean 类型的数据"
+    },
+    {
+      "key": "is_map",
+      "value": "判断变量是否为 Map 类型",
+      "params": "Data",
+      "return": "Boolean 类型的数据"
+    },
+    {
+      "key": "is_array",
+      "value": "判断变量是否为 Array 类型",
+      "params": "Data",
+      "return": "Boolean 类型的数据"
     }
   ],
   "type2function": [
@@ -27,6 +201,36 @@
       "value": "将数据转换为 String 类型",
       "params": "Date",
       "return": "String 类型的数据。无法转换将会导致 SQL 匹配失败"
+    },
+    {
+      "key": "str_utf8",
+      "value": "将数据转换为 UTF-8 String 类型",
+      "params": "Data",
+      "return": "UTF-8 String 类型的数据。无法转换将会导致 SQL 匹配失败"
+    },
+    {
+      "key": "bool",
+      "value": "将数据转换为 Boolean 类型",
+      "params": "Data",
+      "return": "Boolean 类型的数据。无法转换将会导致 SQL 匹配失败"
+    },
+    {
+      "key": "int",
+      "value": "将数据转换为整数类型",
+      "params": "Data",
+      "return": "整数类型的数据。无法转换将会导致 SQL 匹配失败"
+    },
+    {
+      "key": "float",
+      "value": "将数据转换为浮点型类型",
+      "params": "Data",
+      "return": "浮点型类型的数据。无法转换将会导致 SQL 匹配失败"
+    },
+    {
+      "key": "map",
+      "value": "将数据转换为 Map 类型",
+      "params": "Data",
+      "return": "Map 类型的数据。无法转换将会导致 SQL 匹配失败"
     }
   ],
   "string": [
@@ -34,7 +238,225 @@
       "key": "lower",
       "value": "转为小写",
       "params": "原字符串",
-      "return": "小写字符串"
+      "return": "小写字符串",
+      "example": ["lower('AbC') = 'abc'","lower('abc') = 'abc'"]
+    },
+    {
+      "key": "upper",
+      "value": "转为大写",
+      "params": "原字符串",
+      "return": "大写字符串",
+      "example": ["upper('AbC') = 'ABC'","lower('ABC') = 'ABC'"]
+    },
+    {
+      "key": "trim",
+      "value": "去掉左右空格",
+      "params": "原字符串",
+      "return": "去掉空格后的字符串",
+      "example": ["trim(' hello ') = 'hello'"]
+    },
+    {
+      "key": "ltrim",
+      "value": "去掉左空格",
+      "params": "原字符串",
+      "return": "去掉空格后的字符串",
+      "example": ["ltrim(' hello ') = 'hello'"]
+    },
+    {
+      "key": "rtrim",
+      "value": "去掉右空格",
+      "params": "原字符串",
+      "return": "去掉空格后的字符串",
+      "example": ["rtrim(' hello ') = 'hello'"]
+    },
+    {
+      "key": "reverse",
+      "value": "字符串反转",
+      "params": "原字符串",
+      "return": "翻转后的字符串",
+      "example": ["reverse('hello') = 'olleh'"]
+    },
+    {
+      "key": "strlen",
+      "value": "取字符串长度",
+      "params": "原字符串",
+      "return": "整数值，字符长度",
+      "example": ["strlen('hello') = 5"]
+    },
+    {
+      "key": "substr",
+      "value": "取字符的子串",
+      "params": "1. 原字符串 2. 起始位置. 注意: 下标从 0 开始",
+      "return": "子串",
+      "example": ["substr('abcdef', 2) = 'cdef'"]
+    },
+    {
+      "key": "substr",
+      "value": "取字符的子串",
+      "params": "1. 原字符串 2. 起始位置 3. 要取出的子串长度. 注意: 下标从 0 开始",
+      "return": "子串",
+      "example": ["substr('abcdef', 2, 3) = 'cde'"]
+    },
+    {
+      "key": "split",
+      "value": "字符串分割",
+      "params": "1. 原字符串 2. 分割符子串",
+      "return": "分割后的字符串数组",
+      "example": ["split('a/b/ c', '/') = ['a', 'b', ' c']"]
+    },
+    {
+      "key": "split",
+      "value": "字符串分割, 只查找左边第一个分隔符",
+      "params": "1. 原字符串 2. 分割符子串 3. 'leading'",
+      "return": "分割后的字符串数组",
+      "example": ["split('a/b/ c', '/', 'leading') = ['a', 'b/ c']"]
+    },
+    {
+      "key": "split",
+      "value": "字符串分割, 只查找右边第一个分隔符",
+      "params": "1. 原字符串 2. 分割符子串 3. 'leading'",
+      "return": "分割后的字符串数组",
+      "example": ["split('a/b/ c', '/', 'trailing') = ['a/b', ' c']"]
+    },
+    {
+      "key": "concat",
+      "value": "字符串拼接",
+      "params": "1. 左字符串 2. 右符子串",
+      "return": "拼接后的字符串",
+      "example": ["concat('a', '/bc') = 'a/bc'","'a' + '/bc' = 'a/bc'"]
+    },
+    {
+      "key": "tokens",
+      "value": "字符串分解(按照指定字符串符分解)",
+      "params": "1. 输入字符串 2. 分割符或字符串",
+      "return": "分解后的字符串数组",
+      "example": ["tokens(' a/b/ c', '/') = [' a', 'b', ' c']",",tokens(' a/b/ c', '/ ') = ['a', 'b', 'c']",",tokens(' a/b/ c\n', '/ ') = ['a', 'b', 'c\n']"]
+    },
+    {
+      "key": "tokens",
+      "value": "字符串分解(按照指定字符串和换行符分解)",
+      "params": "1. 输入字符串 2. 分割符或字符串 3. 'nocrlf'",
+      "return": "分解后的字符串数组",
+      "example": ["tokens(' a/b/ c\\n', '/ ', 'nocrlf') = ['a', 'b', 'c']","tokens(' a/b/ c\\r\\n', '/ ', 'nocrlf') = ['a', 'b', 'c']"]
+    },
+    {
+      "key": "sprintf",
+      "value": "字符串格式化, 格式字符串的用法详见 https://erlang.org/doc/man/io.html#fwrite-1 里的 Format 部分",
+      "params": "1. 格式字符串 2,3,4... 参数列表。参数个数不定",
+      "return": "分解后的字符串数组",
+      "example": ["sprintf('hello, ~s!', 'steve') = 'hello, steve!'","sprintf('count: ~p~n', 100) = 'count: 100\\n'"]
+    },
+    {
+      "key": "pad",
+      "value": "字符串补足长度，补空格，从尾部补足",
+      "params": "1. 原字符串 2. 字符总长度",
+      "return": "补足后的字符串",
+      "example": ["pad('abc', 5) = 'abc '"]
+    },
+    {
+      "key": "pad",
+      "value": "字符串补足长度，补空格，从尾部补足",
+      "params": "原字符串",
+      "return": "补足后的字符串",
+      "example": ["pad('abc', 5, 'trailing') = 'abc '"]
+    },
+    {
+      "key": "pad",
+      "value": "字符串补足长度，补空格，从两边补足",
+      "params": "1. 原字符串 2. 字符总长度 3. 'both'",
+      "return": "补足后的字符串",
+      "example": ["pad('abc', 5, 'both') = ' abc '"]
+    },
+    {
+      "key": "pad",
+      "value": "字符串补足长度，补空格，从头部补足",
+      "params": "1. 原字符串 2. 字符总长度 3. 'leading'",
+      "return": "补足后的字符串",
+      "example": ["pad('abc', 5, 'leading') = ' abc'"]
+    },
+    {
+      "key": "pad",
+      "value": "字符串补足长度，补指定字符，从尾部补足",
+      "params": "1. 原字符串 2. 字符总长度 3. 'trailing' 4. 指定用于补足的字符",
+      "return": "补足后的字符串",
+      "example": ["pad('abc', 5, 'trailing', '*') = 'abc**'","pad('abc', 5, 'trailing', '*#') = 'abc*#*#'"]
+    },
+    {
+      "key": "pad",
+      "value": "字符串补足长度，补指定字符，从两边补足",
+      "params": "1. 原字符串 2. 字符总长度 3. 'both' 4. 指定用于补足的字符",
+      "return": "补足后的字符串",
+      "example": ["pad('abc', 5, 'both', '*') = '*abc*'","pad('abc', 5, 'both', '*#') = '*#abc*#'"]
+    },
+    {
+      "key": "pad",
+      "value": "字符串补足长度，补指定字符，从头部补足",
+      "params": "1. 原字符串 2. 字符总长度 3. 'leading' 4. 指定用于补足的字符",
+      "return": "补足后的字符串",
+      "example": ["pad('abc', 5, 'leading', '*') = '**abc'","pad('abc', 5, 'leading', '*#') = '*#*#abc'"]
+    },
+    {
+      "key": "replace",
+      "value": "替换字符串中的某子串，查找所有匹配子串替换",
+      "params": "1. 原字符串 2. 要被替换的子串 3. 指定用于替换的字符串",
+      "return": "替换后的字符串",
+      "example": ["replace('ababef', 'ab', 'cd') = 'cdcdef'"]
+    },
+    {
+      "key": "replace",
+      "value": "替换字符串中的某子串，查找所有匹配子串替换",
+      "params": "1. 原字符串 2. 要被替换的子串 3. 指定用于替换的字符串 4. 'all'",
+      "return": "替换后的字符串",
+      "example": ["replace('ababef', 'ab', 'cd', 'all') = 'cdcdef'"]
+    },
+    {
+      "key": "replace",
+      "value": "替换字符串中的某子串，从尾部查找第一个匹配子串替换",
+      "params": "1. 原字符串 2. 要被替换的子串 3. 指定用于替换的字符串 4. 'trailing'",
+      "return": "替换后的字符串",
+      "example": ["replace('ababef', 'ab', 'cd', 'trailing') = 'abcdef'"]
+    },
+    {
+      "key": "replace",
+      "value": "判断字符串是否与某正则表达式匹配",
+      "params": "1. 原字符串 2. 正则表达式",
+      "return": "true 或 false",
+      "example": ["replace('ababef', 'ab', 'cd', 'leading') = 'cdabef'"]
+    },
+    {
+      "key": "regex_replace",
+      "value": "替换字符串中匹配到某正则表达式的子串",
+      "params": "1. 原字符串 2. 正则表达式 3. 指定用于替换的字符串",
+      "return": "替换后的字符串",
+      "example": ["regex_replace('ab1cd3ef', '[1-9]', '[&]') = 'ab[1]cd[3]ef'","regex_replace('ccefacef', 'c+', ':') = ':efa:ef'"]
+    },
+    {
+      "key": "ascii",
+      "value": "返回字符对应的 ASCII 码",
+      "params": "字符",
+      "return": "整数值，字符对应的 ASCII 码",
+      "example": ["ascii('a') = 97"]
+    },
+    {
+      "key": "find",
+      "value": "查找并返回字符串中的某个子串，从头部查找",
+      "params": "1. 原字符串 2. 要查找的子串",
+      "return": "查抄到的子串，如找不到则返回空字符串",
+      "example": ["find('eeabcabcee', 'abc') = 'abcabcee'"]
+    },
+    {
+      "key": "查找并返回字符串中的某个子串，从头部查找",
+      "value": "转为大写",
+      "params": "1. 原字符串 2. 要查找的子串 3. 'leading'",
+      "return": "查抄到的子串，如找不到则返回空字符串",
+      "example": ["find('eeabcabcee', 'abc', 'leading') = 'abcabcee'"]
+    },
+    {
+      "key": "find",
+      "value": "查找并返回字符串中的某个子串，从尾部查找",
+      "params": "1. 原字符串 2. 要查找的子串 3. 'trailing'",
+      "return": "查抄到的子串，如找不到则返回空字符串",
+      "example": ["find('eeabcabcee', 'abc', 'trailing') = 'abcee'"]
     }
   ],
   "Map": [
@@ -63,6 +485,36 @@
       "value": "取第 n 个元素，下标从 1 开始",
       "params": "原数组",
       "return": "第 n 个元素"
+    },{
+      "key": "length",
+      "value": "获取数组的长度",
+      "params": "原数组",
+      "return": "第 n 个元素"
+    },{
+      "key": "nth",
+      "value": "取第 n 个元素，下标从 1 开始",
+      "params": "原数组",
+      "return": "子数组"
+    },{
+      "key": "sublist",
+      "value": "取第 n 个元素，下标从 1 开始",
+      "params": "原数组",
+      "return": "子数组"
+    },{
+      "key": "first",
+      "value": "取第 1 个元素。下标从 1 开始",
+      "params": "原数组",
+      "return": "第 1 个元素"
+    },{
+      "key": "last",
+      "value": "取最后一个元素",
+      "params": "原数组",
+      "return": "最后一个元素"
+    },{
+      "key": "contains",
+      "value": "判断数据是否在数组里面",
+      "params": "1. 数据 2. 原数组",
+      "return": "Boolean 值"
     }
   ],
   "hash": [
@@ -71,6 +523,16 @@
       "value": "求MD5值",
       "params": "数据",
       "return": "MD5 值"
+    }, {
+      "key": "sha",
+      "value": "求 SHA 值",
+      "params": "数据",
+      "return": "SHA 值"
+    }, {
+      "key": "sha256",
+      "value": "求 SHA256 值",
+      "params": "数据",
+      "return": "SHA256 值"
     }
   ],
   "Bit": [
@@ -84,19 +546,22 @@
           "key": "subbits",
           "value": "从二进制数据的起始位置获取指定长度的比特位, 然后转换为无符号整型 (大端)",
           "params": "1. 二进制数据 2. 要获取的长度(bits)",
-          "return": "无符号整数"
+          "return": "无符号整数",
+          "example": ["subbits(payload, 10)"]
         },
         {
           "key": "subbits",
           "value": "从二进制数据的指定下标位置获取指定长度的比特位, 然后转换为无符号整型 (大端). 下标是从 1 开始的",
           "params": "1. 二进制数据 2. 起始位置的下标 3. 要获取的长度(bits)",
-          "return": "无符号整数"
+          "return": "无符号整数",
+          "example": ["subbits(payload, 1, 10)"]
         },
         {
           "key": "subbits",
           "value": "从从二进制数据的指定下标位置获取指定长度的比特位, 然后按照给定的参数转换为想要的数据类型. 下标是从 1 开始的",
           "params": "1. 二进制数据 2. 起始位置的下标 3. 要获取的长度(bits) 4. 数据类型，可选值：'integer', 'float', 'bits' 5. 符号类型, 只对整型数据有效, 可选值：'unsigned', 'signed', 6. 大端还是小端, 只对整型数据有效, 可选值：'big', 'little'",
-          "return": "无符号整数"
+          "return": "无符号整数",
+          "example": ["subbits(payload, 1, 10, 'integer', 'signed', 'big')"]
         }
       ]
     }
@@ -107,6 +572,31 @@
       "value": "BASE64 编码",
       "params": "要编码的二进制数据",
       "return": "Base64 编码的字符串"
+    }, {
+      "key": "base64_decode",
+      "value": "BASE64 编码",
+      "params": "Base64 编码的字符串",
+      "return": "解码后的二进制数据"
+    }, {
+      "key": "json_encode",
+      "value": "JSON 编码",
+      "params": "要转成 JSON 的数据结构",
+      "return": "解码后的数据结构"
+    }, {
+      "key": "json_decode",
+      "value": "JSON 编码",
+      "params": "要解码的 JSON 字符串",
+      "return": "解码后的数据结构"
+    }, {
+      "key": "bin2hexstr",
+      "value": "二进制数据转为 Hex 字符串",
+      "params": "二进制数据",
+      "return": "Hex 字符串"
+    }, {
+      "key": "hexstr2bin",
+      "value": "Hex 字符串转为二进制数据",
+      "params": "Hex 字符串",
+      "return": "二进制数据"
     }
   ]
 }
