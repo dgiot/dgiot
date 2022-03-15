@@ -27,7 +27,120 @@
     build_req_message/1]
 ).
 
--export([modbus_encoder/4, modbus_decoder/5, is16/1, set_params/3, decode_data/4]).
+-export([modbus_encoder/4, is16/1, set_params/3, decode_data/4]).
+
+-define(TYPE, ?MODBUS_TCP).
+
+%% 注册协议参数
+-params(#{
+    <<"originaltype">> => #{
+        order => 1,
+        type => string,
+        required => true,
+        default => #{<<"value">> => <<"bit">>, <<"label">> => <<"位"/utf8>>},
+        enum => [
+            #{<<"value">> => <<"bit">>, <<"label">> => <<"位"/utf8>>},
+            #{<<"value">> => <<"short16_AB">>, <<"label">> => <<"16位 有符号(AB)"/utf8>>},
+            #{<<"value">> => <<"short16_BA">>, <<"label">> => <<"16位 有符号(BA)"/utf8>>},
+            #{<<"value">> => <<"ushort16_AB">>, <<"label">> => <<"16位 无符号(AB)"/utf8>>},
+            #{<<"value">> => <<"ushort16_BA">>, <<"label">> => <<"16位 无符号(BA)"/utf8>>},
+            #{<<"value">> => <<"long32_ABCD">>, <<"label">> => <<"32位 有符号(ABCD)"/utf8>>},
+            #{<<"value">> => <<"long32_CDAB">>, <<"label">> => <<"32位 有符号(CDAB)"/utf8>>},
+            #{<<"value">> => <<"ulong32_ABCD">>, <<"label">> => <<"32位 无符号(ABCD)"/utf8>>},
+            #{<<"value">> => <<"ulong32_CDAB">>, <<"label">> => <<"32位 无符号(CDAB)"/utf8>>},
+            #{<<"value">> => <<"float32_ABCD">>, <<"label">> => <<"32位 浮点数(ABCD)"/utf8>>},
+            #{<<"value">> => <<"float32_CDAB">>, <<"label">> => <<"32位 浮点数(CDAB)"/utf8>>}
+        ],
+        title => #{
+            zh => <<"数据格式"/utf8>>
+        },
+        description => #{
+            zh => <<"数据格式"/utf8>>
+        }
+    },
+    <<"slaveid">> => #{
+        order => 2,
+        type => string,
+        required => true,
+        default => <<"0000"/utf8>>,
+        title => #{
+            zh => <<"从机地址"/utf8>>
+        },
+        description => #{
+            zh => <<"从机地址(16进制加0X,例如:0X10,否在是10进制)"/utf8>>
+        }
+    },
+    <<"operatetype">> => #{
+        order => 3,
+        type => string,
+        required => true,
+        default => #{<<"value">> => <<"readCoils">>, <<"label">> => <<"0X01:读线圈寄存器"/utf8>>},
+        enum => [#{<<"value">> => <<"readCoils">>, <<"label">> => <<"0X01:读线圈寄存器"/utf8>>},
+            #{<<"value">> => <<"readInputs">>, <<"label">> => <<"0X02:读离散输入寄存器"/utf8>>},
+            #{<<"value">> => <<"readHregs">>, <<"label">> => <<"0X03:读保持寄存器"/utf8>>},
+            #{<<"value">> => <<"readIregs">>, <<"label">> => <<"0X04:读输入寄存器"/utf8>>},
+            #{<<"value">> => <<"writeCoil">>, <<"label">> => <<"0X05:写单个线圈寄存器"/utf8>>},
+            #{<<"value">> => <<"writeHreg">>, <<"label">> => <<"0X06:写单个保持寄存器"/utf8>>},
+            #{<<"value">> => <<"writeCoils">>, <<"label">> => <<"0X0f:写多个线圈寄存器"/utf8>>},
+            #{<<"value">> => <<"writeHregs">>, <<"label">> => <<"0X10:写多个保持寄存器"/utf8>>}
+        ],
+        title => #{
+            zh => <<"寄存器状态"/utf8>>
+        },
+        description => #{
+            zh => <<"寄存器状态"/utf8>>
+        }
+    },
+    <<"address">> => #{
+        order => 4,
+        type => string,
+        required => true,
+        default => <<"0X00"/utf8>>,
+        title => #{
+            zh => <<"寄存器地址"/utf8>>
+        },
+        description => #{
+            zh => <<"寄存器地址:原数据地址(16进制加0X,例如:0X10,否在是10进制)"/utf8>>
+        }
+    },
+    <<"registersnumber">> => #{
+        order => 5,
+        type => string,
+        required => true,
+        default => <<"1">>,
+        title => #{
+            zh => <<"寄存器个数"/utf8>>
+        },
+        description => #{
+            zh => <<"寄存器个数(多个寄存器个数)"/utf8>>
+        }
+    },
+    <<"data">> => #{
+        order => 6,
+        type => integer,
+        required => true,
+        default => <<"2"/utf8>>,
+        title => #{
+            zh => <<"数据长度(字节)"/utf8>>
+        },
+        description => #{
+            zh => <<"数据长度(字节)"/utf8>>
+        }
+    }
+}).
+
+%% 注册协议类型
+-protocol_type(#{
+    cType => ?TYPE,
+    type => <<"energy">>,
+    colum => 10,
+    title => #{
+        zh => <<"MODBUS TCP协议"/utf8>>
+    },
+    description => #{
+        zh => <<"MODBUS TCP协议"/utf8>>
+    }
+}).
 
 init(State) ->
     State#{<<"req">> => [], <<"ts">> => dgiot_datetime:now_ms(), <<"interval">> => 300}.
@@ -43,10 +156,10 @@ init(State) ->
 %%    {ok, State}.
 
 to_frame(#{
-    <<"value">> := Data,
-    <<"addr">> := SlaveId,
+    <<"data">> := Data,
+    <<"slaveid">> := SlaveId,
     <<"productid">> := ProductId,
-    <<"di">> := Address
+    <<"address">> := Address
 }) ->
     encode_data(Data, Address, SlaveId, ProductId);
 
@@ -55,10 +168,10 @@ to_frame(#{
 %%<<"addr">> => SlaveId,
 %%<<"di">> => Address
 to_frame(#{
-    <<"value">> := Value,
+    <<"data">> := Value,
     <<"gateway">> := DtuAddr,
-    <<"addr">> := SlaveId,
-    <<"di">> := Address
+    <<"slaveid">> := SlaveId,
+    <<"address">> := Address
 }) ->
     case dgiot_device:get_subdevice(DtuAddr, SlaveId) of
         not_find -> [];
@@ -113,80 +226,80 @@ is16(Data) when size(Data) > 1 ->
 is16(Data) ->
     <<"000", Data/binary>>.
 
-set_params(Basedata, ProductId, DevAddr) ->
-    case dgiot_parse:get_object(<<"Product">>, ProductId) of
-        {ok, #{<<"name">> := Productname, <<"config">> := #{<<"basedate">> := #{<<"params">> := Params}}}} ->
-            Payloads =
-                lists:foldl(fun(X, Acc) ->
-                    case X of
-                        #{<<"identifier">> := Identifier,
-                            <<"protocol">> := <<"modbusTcp">>,
-                            <<"slaveid">> := SlaveId,
-                            <<"address">> := Address,
-                            <<"bytes">> := Bytes,
-                            <<"operatetype">> := OperateType,
-                            <<"setting">> := Setting,
-                            <<"name">> := Name} ->
-                            case maps:find(Identifier, Basedata) of
-                                error ->
-                                    Acc;
-                                {ok, Value} when erlang:byte_size(Value) == 0 ->
-                                    Acc;
-                                {ok, Value} ->
-                                    FunCode =
-                                        case OperateType of
-                                            <<"readCoils">> -> ?FC_READ_COILS;
-                                            <<"readInputs">> -> ?FC_READ_INPUTS;
-                                            <<"readHregs">> -> ?FC_READ_HREGS;
-                                            <<"readIregs">> -> ?FC_READ_IREGS;
-                                            <<"writeCoil">> -> ?FC_WRITE_COIL;
-                                            <<"writeHreg">> -> ?FC_WRITE_HREG;
-                                            <<"writeCoils">> -> ?FC_WRITE_COILS; %%需要校验，写多个线圈是什么状态
-                                            <<"writeHregs">> -> ?FC_WRITE_HREGS; %%需要校验，写多个保持寄存器是什么状态
-                                            _ -> ?FC_READ_HREGS
-                                        end,
-                                    <<H:8, L:8>> = dgiot_utils:hex_to_binary(is16(Address)),
-                                    <<Sh:8, Sl:8>> = dgiot_utils:hex_to_binary(is16(SlaveId)),
-                                    Str1 = re:replace(Setting, "%s", "(" ++ dgiot_utils:to_list(Value) ++ ")", [global, {return, list}]),
-                                    Value1 = dgiot_utils:to_int(dgiot_task:string2value(Str1)),
+set_params(Payload, ProductId, DevAddr) ->
+    Length = length(maps:keys(Payload)),
+    Payloads =
+        lists:foldl(fun(Index, Acc) ->
+            case maps:find(dgiot_utils:to_binary(Index), Payload) of
+                {ok, #{
+                    <<"identifier">> := Identifier,
+                    <<"name">> := Name,
+                    <<"productname">> := Productname,
+                    <<"dataForm">> := #{
+                        <<"protocol">> := <<"MODBUSRTU">>,
+                        <<"control">> := Setting},
+                    <<"dataSource">> := #{
+                        <<"slaveid">> := SlaveId,
+                        <<"address">> := Address,
+                        <<"data">> := Bytes,
+                        <<"operatetype">> := OperateType} = DataSource
+                } = Data} ->
+                    case maps:find(<<"value">>, Data) of
+                        error ->
+                            Acc;
+                        {ok, Value} when erlang:byte_size(Value) == 0 ->
+                            Acc;
+                        {ok, Value} ->
+                            FunCode =
+                                case OperateType of
+                                    <<"readCoils">> -> ?FC_READ_COILS;
+                                    <<"readInputs">> -> ?FC_READ_INPUTS;
+                                    <<"readHregs">> -> ?FC_READ_HREGS;
+                                    <<"readIregs">> -> ?FC_READ_IREGS;
+                                    <<"writeCoil">> -> ?FC_WRITE_COIL;
+                                    <<"writeHreg">> -> ?FC_WRITE_HREG;
+                                    <<"writeCoils">> -> ?FC_WRITE_COILS; %%需要校验，写多个线圈是什么状态
+                                    <<"writeHregs">> -> ?FC_WRITE_HREGS; %%需要校验，写多个保持寄存器是什么状态
+                                    _ -> ?FC_READ_HREGS
+                                end,
+                            <<H:8, L:8>> = dgiot_utils:hex_to_binary(is16(Address)),
+                            <<Sh:8, Sl:8>> = dgiot_utils:hex_to_binary(is16(SlaveId)),
+                            Str1 = re:replace(Setting, "%d", "(" ++ dgiot_utils:to_list(Value) ++ ")", [global, {return, list}]),
+                            Value1 = dgiot_utils:to_int(dgiot_task:string2value(Str1)),
 %%                                    NewBt = Bytes * 8,
-                                    Registersnumber = maps:get(<<"registersnumber">>, X, <<"1">>),
-                                    RtuReq = #rtu_req{
-                                        slaveId = Sh * 256 + Sl,
-                                        funcode = dgiot_utils:to_int(FunCode),
-                                        address = H * 256 + L,
-                                        registersnumber = dgiot_utils:to_int(Registersnumber),
-                                        dataByteSize = dgiot_utils:to_int(Bytes),
-                                        quality = Value1
-                                    },
-                                    DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
-                                    Sessiontoken = maps:get(<<"sessiontoken">>, Basedata, <<"">>),
-                                    {Username, Acl} =
-                                        case dgiot_auth:get_session(Sessiontoken) of
-                                            #{<<"username">> := Name1, <<"ACL">> := Acl1} ->
-                                                {Name1, Acl1};
-                                            _ ->
-                                                {<<"">>, #{}}
-                                        end,
-                                    ?MLOG(info, #{<<"clientid">> => DeviceId, <<"username">> => Username,
-                                        <<"status">> => <<"ONLINE">>, <<"ACL">> => Acl,
-                                        <<"devaddr">> => DevAddr, <<"productid">> => ProductId,
-                                        <<"productname">> => Productname, <<"thingname">> => Name,
-                                        <<"protocol">> => <<"modbusTcp">>, <<"identifier">> => Identifier, <<"value">> => Value1},
-                                        ['device_operationlog']),
-                                    Acc ++ [build_req_message(RtuReq)];
-                                _ ->
-                                    Acc
-                            end;
+                            Registersnumber = maps:get(<<"registersnumber">>, DataSource, <<"1">>),
+                            RtuReq = #rtu_req{
+                                slaveId = Sh * 256 + Sl,
+                                funcode = dgiot_utils:to_int(FunCode),
+                                address = H * 256 + L,
+                                registersnumber = dgiot_utils:to_int(Registersnumber),
+                                dataByteSize = dgiot_utils:to_int(Bytes),
+                                quality = Value1
+                            },
+                            DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+                            Sessiontoken = maps:get(<<"sessiontoken">>, Data, <<"">>),
+                            {Username, Acl} =
+                                case dgiot_auth:get_session(Sessiontoken) of
+                                    #{<<"username">> := Name1, <<"ACL">> := Acl1} ->
+                                        {Name1, Acl1};
+                                    _ ->
+                                        {<<"">>, #{}}
+                                end,
+                            ?MLOG(info, #{<<"clientid">> => DeviceId, <<"username">> => Username,
+                                <<"status">> => <<"ONLINE">>, <<"ACL">> => Acl,
+                                <<"devaddr">> => DevAddr, <<"productid">> => ProductId,
+                                <<"productname">> => Productname, <<"thingname">> => Name,
+                                <<"protocol">> => <<"modbus">>, <<"identifier">> => Identifier, <<"value">> => Value1},
+                                ['device_operationlog']),
+                            Acc ++ [build_req_message(RtuReq)];
                         _ ->
                             Acc
-                    end
-                            end, [], Params),
-            Payloads;
-        _ ->
-            ?LOG(info, "NoProduct: ~p", [ProductId]),
-            pass
-    end.
+                    end;
+                _ ->
+                    Acc
+            end
+                    end, [], lists:seq(1, Length)),
+    Payloads.
 
 %rtu modbus
 parse_frame(<<>>, Acc, _State) -> {<<>>, Acc};
@@ -366,10 +479,12 @@ modbus_tcp_decoder(ProductId, Slaveid, Address, Data, Acc1) ->
                 case X of
                     #{<<"identifier">> := Identifier,
                         <<"dataForm">> := #{
+                            <<"strategy">> := Strategy,
+                            <<"protocol">> := <<"MODBUSTCP">>},
+                        <<"dataSource">> := #{
                             <<"slaveid">> := OldSlaveid,
-                            <<"address">> := OldAddress,
-                            <<"protocol">> := <<"modbusTcp">>
-                        }} ->
+                            <<"address">> := OldAddress}
+                    } when Strategy =/= <<"计算值"/utf8>> ->
                         <<H:8, L:8>> = dgiot_utils:hex_to_binary(modbus_rtu:is16(OldSlaveid)),
                         <<Sh:8, Sl:8>> = dgiot_utils:hex_to_binary(modbus_rtu:is16(OldAddress)),
                         NewSlaveid = H * 256 + L,
@@ -391,48 +506,20 @@ modbus_tcp_decoder(ProductId, Slaveid, Address, Data, Acc1) ->
         _ -> #{}
     end.
 
-modbus_decoder(ProductId, SlaveId, Address, Data, Acc1) ->
-    case dgiot_product:lookup_prod(ProductId) of
-        {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
-            lists:foldl(fun(X, Acc) ->
-                case X of
-                    #{<<"identifier">> := Identifier,
-                        <<"dataForm">> := #{
-                            <<"slaveid">> := OldSlaveid,
-                            <<"address">> := OldAddress,
-                            <<"protocol">> := <<"modbusTcp">>
-                        }} ->
-                        <<H:8, L:8>> = dgiot_utils:hex_to_binary(modbus_rtu:is16(OldSlaveid)),
-                        <<Sh:8, Sl:8>> = dgiot_utils:hex_to_binary(modbus_rtu:is16(OldAddress)),
-                        NewSlaveid = H * 256 + L,
-                        NewAddress = Sh * 256 + Sl,
-                        case {SlaveId, Address} of
-                            {NewSlaveid, NewAddress} ->
-                                case format_value(Data, X) of
-                                    {Value, _Rest} ->
-                                        Acc#{Identifier => Value};
-                                    _ -> Acc
-                                end;
-                            _ ->
-                                Acc
-                        end;
-                    _ ->
-                        Acc
-                end
-                        end, Acc1, Props);
-        _ -> #{}
-    end.
-
 modbus_encoder(ProductId, SlaveId, Address, Value) ->
     case dgiot_product:lookup_prod(ProductId) of
         {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
             lists:foldl(fun(X, Acc) ->
                 case X of
-                    #{<<"accessMode">> := <<"r">>, <<"dataForm">> := #{<<"address">> := Address, <<"protocol">> := <<"modbusTcp">>,
-                        <<"data">> := Data, <<"slaveid">> := SlaveId, <<"operatetype">> := Operatetype}} ->
+                    #{<<"accessMode">> := <<"r">>,
+                        <<"dataSource">> := #{<<"address">> := Address, <<"data">> := Data, <<"slaveid">> := SlaveId, <<"operatetype">> := Operatetype},
+                        <<"dataForm">> := #{<<"protocol">> := <<"MODBUSTCP">>}
+                    } ->
                         Acc ++ [{<<"r">>, Data, Operatetype}];
-                    #{<<"accessMode">> := Cmd, <<"dataForm">> := #{<<"address">> := Address, <<"protocol">> := <<"modbusTcp">>,
-                        <<"data">> := _Quantity, <<"slaveid">> := SlaveId, <<"operatetype">> := Operatetype}} ->
+                    #{<<"accessMode">> := Cmd,
+                        <<"dataSource">> := #{<<"address">> := Address, <<"data">> := _Quantity, <<"slaveid">> := SlaveId, <<"operatetype">> := Operatetype},
+                        <<"dataForm">> := #{<<"protocol">> := <<"MODBUSTCP">>}
+                    } ->
                         Acc ++ [{Cmd, Value, Operatetype}];
                     _Ot ->
                         Acc
@@ -458,12 +545,12 @@ format_value(Buff, #{
 
 format_value(Buff, #{
     <<"accessMode">> := <<"rw">>,
-    <<"dataForm">> := DataForm} = X) ->
+    <<"dataSource">> := DataSource} = X) ->
     format_value(Buff, X#{<<"accessMode">> => <<"r">>,
-        <<"dataForm">> => DataForm#{<<"data">> => byte_size(Buff)}
+        <<"dataSource">> => DataSource#{<<"data">> => byte_size(Buff)}
     });
 
-format_value(Buff, #{<<"dataForm">> := #{
+format_value(Buff, #{<<"dataSource">> := #{
     <<"data">> := Len,
     <<"originaltype">> := <<"bit">>
 }}) ->
@@ -472,7 +559,7 @@ format_value(Buff, #{<<"dataForm">> := #{
     <<Value:Size, Rest/binary>> = Buff,
     {Value, Rest};
 
-format_value(Buff, #{<<"dataForm">> := #{
+format_value(Buff, #{<<"dataSource">> := #{
     <<"data">> := Len,
     <<"originaltype">> := <<"short16_AB">>
 }}) ->
@@ -481,7 +568,7 @@ format_value(Buff, #{<<"dataForm">> := #{
     <<Value:Size/signed-big-integer, Rest/binary>> = Buff,
     {Value, Rest};
 
-format_value(Buff, #{<<"dataForm">> := #{
+format_value(Buff, #{<<"dataSource">> := #{
     <<"data">> := Len,
     <<"originaltype">> := <<"short16_BA">>
 }}) ->
@@ -490,7 +577,7 @@ format_value(Buff, #{<<"dataForm">> := #{
     <<Value:Size/signed-little-integer, Rest/binary>> = Buff,
     {Value, Rest};
 
-format_value(Buff, #{<<"dataForm">> := #{
+format_value(Buff, #{<<"dataSource">> := #{
     <<"data">> := Len,
     <<"originaltype">> := <<"ushort16_AB">>
 }}) ->
@@ -499,7 +586,7 @@ format_value(Buff, #{<<"dataForm">> := #{
     <<Value:Size/unsigned-big-integer, Rest/binary>> = Buff,
     {Value, Rest};
 
-format_value(Buff, #{<<"dataForm">> := #{
+format_value(Buff, #{<<"dataSource">> := #{
     <<"data">> := Len,
     <<"originaltype">> := <<"ushort16_BA">>
 }}) ->
@@ -508,7 +595,7 @@ format_value(Buff, #{<<"dataForm">> := #{
     <<Value:Size/unsigned-little-integer, Rest/binary>> = Buff,
     {Value, Rest};
 
-format_value(Buff, #{<<"dataForm">> := #{
+format_value(Buff, #{<<"dataSource">> := #{
     <<"data">> := Len,
     <<"originaltype">> := <<"long32_ABCD">>
 }}) ->
@@ -518,7 +605,7 @@ format_value(Buff, #{<<"dataForm">> := #{
     <<Value:Size/integer>> = <<H/binary, L/binary>>,
     {Value, Rest};
 
-format_value(Buff, #{<<"dataForm">> := #{
+format_value(Buff, #{<<"dataSource">> := #{
     <<"data">> := Len,
     <<"originaltype">> := <<"long32_CDAB">>
 }}) ->
@@ -528,7 +615,7 @@ format_value(Buff, #{<<"dataForm">> := #{
     <<Value:Size/integer>> = <<L/binary, H/binary>>,
     {Value, Rest};
 
-format_value(Buff, #{<<"dataForm">> := #{
+format_value(Buff, #{<<"dataSource">> := #{
     <<"data">> := Len,
     <<"originaltype">> := <<"ulong32_ABCD">>
 }}) ->
@@ -538,7 +625,7 @@ format_value(Buff, #{<<"dataForm">> := #{
     <<Value:Size/integer>> = <<H/binary, L/binary>>,
     {Value, Rest};
 
-format_value(Buff, #{<<"dataForm">> := #{
+format_value(Buff, #{<<"dataSource">> := #{
     <<"data">> := Len,
     <<"originaltype">> := <<"ulong32_CDAB">>
 }}) ->
@@ -548,7 +635,7 @@ format_value(Buff, #{<<"dataForm">> := #{
     <<Value:Size/integer>> = <<L/binary, H/binary>>,
     {Value, Rest};
 
-format_value(Buff, #{<<"dataForm">> := #{
+format_value(Buff, #{<<"dataSource">> := #{
     <<"data">> := Len,
     <<"originaltype">> := <<"float32_ABCD">>
 }}) ->
@@ -558,7 +645,7 @@ format_value(Buff, #{<<"dataForm">> := #{
     <<Value:Size/float>> = <<H/binary, L/binary>>,
     {Value, Rest};
 
-format_value(Buff, #{<<"dataForm">> := #{
+format_value(Buff, #{<<"dataSource">> := #{
     <<"data">> := Len,
     <<"originaltype">> := <<"float32_CDAB">>
 }}) ->

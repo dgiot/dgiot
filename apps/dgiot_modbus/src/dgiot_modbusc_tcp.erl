@@ -108,56 +108,43 @@ handle_info({deliver, _, Msg}, #tcp{state = #state{id = ChannelId} = State} = TC
             case binary:split(Topic, <<$/>>, [global, trim]) of
                 [<<"profile">>, ProductId, DtuAddr] ->
 %%                    设置参数
-                    case Payload of
-                        #{<<"_dgiotprotocol">> := <<"modbus">>} ->
-                            Payloads = modbus_tcp:set_params(maps:without([<<"_dgiotprotocol">>], Payload), ProductId, DtuAddr),
-                            lists:map(fun(X) ->
-                                dgiot_tcp_server:send(TCPState, X)
-                                      end, Payloads);
-                        _ ->
-                            pass
-                    end,
+                    Payloads = modbus_tcp:set_params(jsx:decode(Payload), ProductId, DtuAddr),
+                    lists:map(fun(X) ->
+                        dgiot_tcp_server:send(TCPState, X)
+                              end, Payloads),
                     {noreply, TCPState};
                 [<<"thing">>, ProductId, DevAddr] ->
                     case jsx:decode(Payload, [{labels, binary}, return_maps]) of
                         [#{<<"thingdata">> := ThingData} | _] ->
                             case ThingData of
                                 #{<<"command">> := <<"r">>,
-                                    <<"data">> := Value,
-                                    <<"di">> := Di,
-                                    <<"pn">> := SlaveId,
                                     <<"product">> := ProductId,
-                                    <<"protocol">> := <<"modbusTcp">>
+                                    <<"protocol">> := <<"MODBUSTCP">>,
+                                    <<"dataSource">> := #{
+                                        <<"slaveid">> := SlaveId,
+                                        <<"address">> := Address} = DataSource
                                 } ->
-                                    Datas = modbus_tcp:to_frame(#{
-                                        <<"addr">> => SlaveId,
-                                        <<"value">> => Value,
-                                        <<"productid">> => ProductId,
-                                        <<"di">> => Di}),
+                                    Datas = modbus_tcp:to_frame(DataSource#{<<"productid">> => ProductId}),
                                     lists:map(fun(X) ->
                                         dgiot_bridge:send_log(ChannelId, ProductId, DevAddr, "Channel sends [~p] to [DtuAddr:~p]", [dgiot_utils:binary_to_hex(X), DevAddr]),
                                         dgiot_tcp_server:send(TCPState, X),
                                         timer:sleep(1000)
                                               end, Datas),
-                                    {noreply, TCPState#tcp{state = State#state{env = #{product => ProductId, pn => SlaveId, di => Di}}}};
+                                    {noreply, TCPState#tcp{state = State#state{env = #{product => ProductId, pn => SlaveId, di => Address}}}};
                                 #{<<"command">> := <<"rw">>,
-                                    <<"data">> := Value,
-                                    <<"di">> := Di,
-                                    <<"pn">> := SlaveId,
                                     <<"product">> := ProductId,
-                                    <<"protocol">> := <<"modbusTcp">>
+                                    <<"protocol">> := <<"MODBUSTCP">>,
+                                    <<"dataSource">> := #{
+                                        <<"slaveid">> := SlaveId,
+                                        <<"address">> := Address} = DataSource
                                 } ->
-                                    Datas = modbus_tcp:to_frame(#{
-                                        <<"addr">> => SlaveId,
-                                        <<"value">> => Value,
-                                        <<"productid">> => ProductId,
-                                        <<"di">> => Di}),
+                                    Datas = modbus_tcp:to_frame(DataSource#{<<"productid">> => ProductId}),
                                     lists:map(fun(X) ->
                                         dgiot_bridge:send_log(ChannelId, ProductId, DevAddr, "Channel sends [~p] to [DtuAddr:~p]", [dgiot_utils:binary_to_hex(X), DevAddr]),
                                         dgiot_tcp_server:send(TCPState, X),
                                         timer:sleep(1000)
                                               end, Datas),
-                                    {noreply, TCPState#tcp{state = State#state{env = #{product => ProductId, pn => SlaveId, di => Di}}}};
+                                    {noreply, TCPState#tcp{state = State#state{env = #{product => ProductId, pn => SlaveId, di => Address}}}};
                                 _Ot ->
                                     io:format("~s ~p _Ot = ~p.~n", [?FILE, ?LINE, _Ot]),
                                     {noreply, TCPState}
@@ -174,16 +161,10 @@ handle_info({deliver, _, Msg}, #tcp{state = #state{id = ChannelId} = State} = TC
             case binary:split(Topic, <<$/>>, [global, trim]) of
                 [<<"profile">>, ProductId, DevAddr] ->
                     %% 设置参数
-                    case Payload of
-                        #{<<"_dgiotprotocol">> := <<"modbus">>} ->
-                            Payloads = modbus_tcp:set_params(maps:without([<<"_dgiotprotocol">>], Payload), ProductId, DevAddr),
-                            lists:map(fun(X) ->
-                                dgiot_bridge:send_log(ChannelId, ProductId, DevAddr, "Channel sends [~p] to [DtuAddr:~p]", [dgiot_utils:binary_to_hex(X), DevAddr]),
-                                dgiot_tcp_server:send(TCPState, X)
-                                      end, Payloads);
-                        _ ->
-                            pass
-                    end,
+                    Payloads = modbus_tcp:set_params(jsx:decode(Payload), ProductId, DevAddr),
+                    lists:map(fun(X) ->
+                        dgiot_tcp_server:send(TCPState, X)
+                              end, Payloads),
                     {noreply, TCPState};
                 _ ->
                     {noreply, TCPState}

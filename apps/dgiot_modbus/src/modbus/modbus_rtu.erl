@@ -621,7 +621,7 @@ format_value(Buff, #{
     <<"accessMode">> := <<"rw">>,
     <<"dataSource">> := DataSource} = X, _Props) ->
     format_value(Buff, X#{<<"accessMode">> => <<"r">>,
-        <<"dataForm">> => DataSource#{<<"data">> => byte_size(Buff)}
+        <<"dataSource">> => DataSource#{<<"data">> => byte_size(Buff)}
     }, _Props);
 
 format_value(Buff, #{<<"identifier">> := BitIdentifier,
