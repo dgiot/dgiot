@@ -1,0 +1,14 @@
+[
+  {
+    "name": "parse_save_success",
+    "help": "parse成功统计",
+    "type": "gauge",
+    "labels": []
+  },
+  {
+      "name": "parse_save_fail",
+      "help": "parse失败统计",
+      "type": "gauge",
+      "labels": []
+    }
+]

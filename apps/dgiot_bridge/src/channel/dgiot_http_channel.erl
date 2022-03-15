@@ -19,7 +19,7 @@
 -include("dgiot_bridge.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -define(TYPE, <<"HTTP">>).
--author("kenneth").
+-author("johnliu").
 
 -record(state, {id, env}).
 %% API

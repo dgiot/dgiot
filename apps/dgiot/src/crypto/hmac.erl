@@ -14,31 +14,28 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
-
--module(dgiot_bridge_app).
-
--behaviour(application).
+-module(hmac).
+-author("johnliu").
 -include_lib("dgiot/include/logger.hrl").
--emqx_plugin(?MODULE).
-
-%% Application callbacks
--export([start/2, stop/1]).
-
-%%====================================================================
 %% API
-%%====================================================================
+-export([encode/3, sign/3]).
 
-start(_StartType, _StartArgs) ->
-    {ok, Sup} = dgiot_bridge_sup:start_link(),
-    dgiot_metrics:start(dgiot_parse),
-    dgiot_metrics:start(dgiot_bridge),
-    {ok, Sup}.
+%% Type : sha sha256
+encode(Type, Key, Data) ->
+%%    B = crypto:hmac(Type, Key, Data),
+    B = crypto:mac(hmac, Type, Key, Data),
+    Len = byte_size(B) * 8,
+    <<Mac:Len/integer>> = B,
+    integer_to_binary(Mac, 16).
 
-%%--------------------------------------------------------------------
-stop(_State) ->
-    ok.
-
-%%====================================================================
-%% Internal functions
-%%====================================================================
-
+sign(Count, ApId, KI) ->
+    Count1 = list_to_binary(io_lib:format("~8.10.0B", [Count])),
+    KI1 = dgiot_utils:binary_to_hex(KI),
+    B = <<Count1/binary, ApId/binary, KI1/binary>>,
+    case catch dgiot_utils:binary_to_hex(crypto:hash(sha256, dgiot_utils:hex_to_binary(B))) of
+        {'EXIT', Reason} ->
+            ?LOG(info, "Count:~p, ApId:~p, KI:~p ~p", [Count, ApId, KI, Reason]),
+            throw({error, Reason});
+        V ->
+            V
+    end.
