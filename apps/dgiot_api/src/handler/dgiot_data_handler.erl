@@ -600,6 +600,7 @@ postThing(ProductId, Item, SessionToken) ->
         {ok, #{<<"thing">> := Thing}} ->
             ModuleType = maps:get(<<"moduleType">>, Item, <<"properties">>),
             Modules = maps:get(ModuleType, Thing, []),
+            io:format("~p~n", [Modules]),
             #{<<"identifier">> := Identifier} = Item,
             {Ids, NewModules} =
                 lists:foldl(fun(X, {Ids1, Acc}) ->
@@ -610,13 +611,13 @@ postThing(ProductId, Item, SessionToken) ->
                             {Ids1, Acc ++ [X]}
                     end
                             end, {[], [Item]}, Modules),
-            case length(Ids) == 0 of
-                true ->
+            case length(Ids) of
+                0 ->
                     {_, R} = dgiot_parse:update_object(<<"Product">>, ProductId,
                         #{<<"thing">> => Thing#{ModuleType => NewModules}},
                         [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]),
                     {ok, R#{<<"code">> => 200}};
-                false ->
+                _ ->
                     {ok, #{<<"code">> => 204, <<"msg">> => <<Identifier/binary, " already existed">>}}
             end;
         Error ->
