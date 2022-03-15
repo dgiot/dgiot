@@ -147,21 +147,22 @@ stop(ChannelType, ChannelId, _State) ->
     ?LOG(warning, "channel stop ~p,~p", [ChannelType, ChannelId]),
     ok.
 
-start_client(ProductId, Ip, Port,
+start_client(ProductId, _Ip, _Port,
         #{<<"page_index">> := PageIndex, <<"page_size">> := PageSize, <<"total">> := Total}) ->
     Success = fun(Page) ->
         lists:map(fun(X) ->
             case X of
-                #{<<"devaddr">> := DevAddr} ->
-                    dgiot_httpc_worker:start_connect(#{
-                        <<"auto_reconnect">> => 10,
-                        <<"reconnect_times">> => 3,
-                        <<"ip">> => Ip,
-                        <<"port">> => Port,
-                        <<"productid">> => ProductId,
-                        <<"hb">> => 60,
-                        <<"devaddr">> => DevAddr
-                    });
+                #{<<"devaddr">> := _DevAddr} ->
+                    ok;
+%%                    dgiot_httpc_worker:start_connect(#{
+%%                        <<"auto_reconnect">> => 10,
+%%                        <<"reconnect_times">> => 3,
+%%                        <<"ip">> => Ip,
+%%                        <<"port">> => Port,
+%%                        <<"productid">> => ProductId,
+%%                        <<"hb">> => 60,
+%%                        <<"devaddr">> => DevAddr
+%%                    });
                 _ ->
                     ok
             end

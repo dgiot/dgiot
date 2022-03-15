@@ -18,7 +18,7 @@
 -include_lib("dgiot/include/logger.hrl").
 -author("johnliu").
 -export([url_join/1, qs/1, urldecode/1, urlencode/1]).
--export([upload/2, download/2, get_category/2, get_categorys/0, fileUpload/3]).
+-export([upload/2, download/2, fileUpload/3]).
 
 -define(CRLF, "\r\n").
 upload(Url, Path) ->
