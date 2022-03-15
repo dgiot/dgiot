@@ -26,7 +26,7 @@
 -record(state, {
     productid,
     devaddr,
-    hb = 60
+    hb = 10
 }).
 
 start_connect(#{
@@ -43,7 +43,7 @@ start_connect(#{
         devaddr = DevAddr,
         hb = HB
     },
-    dgiot_tcp_client:start_link(?MODULE, Ip, Port, Recon, ReTimes, State).
+    dgiot_tcp_client:start_link(DevAddr, ?MODULE, Ip, Port, Recon, ReTimes, State).
 
 init(TCPState) ->
     {ok, TCPState}.
@@ -51,6 +51,8 @@ init(TCPState) ->
 handle_info(connection_ready, TCPState) ->
     rand:seed(exs1024),
     Time = erlang:round(rand:uniform() * 1 + 1) * 1000,
+    ?LOG(info,"Time ~p ",[Time]),
+    dgiot_tcp_client:send(TCPState, <<"login">>),
     erlang:send_after(Time, self(), login),
     {noreply, TCPState};
 
@@ -61,11 +63,13 @@ handle_info(login, #tcp{state = #state{productid = ProductId, devaddr = DevAddr,
     Topic = <<"mock/", ProductId/binary, "/", DevAddr/binary>>,
     dgiot_mqtt:subscribe(Topic),
     erlang:send_after(Hb * 1000, self(), heartbeat),
+    ?LOG(info,"~p ",[<<"login">>]),
     dgiot_tcp_client:send(TCPState, <<"login">>),
     {noreply, TCPState};
 
 handle_info(heartbeat, #tcp{state = #state{devaddr = _DevAddr, hb = Hb} = _State} = TCPState) ->
     erlang:send_after(Hb * 1000, self(), heartbeat),
+    ?LOG(info,"~p ",[<<"heartbeat">>]),
     dgiot_tcp_client:send(TCPState, <<"heartbeat">>),
     {noreply, TCPState};
 

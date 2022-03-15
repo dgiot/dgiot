@@ -99,18 +99,23 @@ do_channel(_Type, CType, ChannelId, Products, Cfg) ->
         {error, not_find} ->
             {error, {CType, unknow}};
         {ok, Mod} ->
-            case erlang:function_exported(Mod, start, 2) of
+            case erlang:module_loaded(Mod) of
                 true ->
-                    ProductIds = do_product(ChannelId, Products),
-                    dgiot_data:insert(?DGIOT_BRIDGE, {ChannelId, productIds}, {CType, ProductIds}),
-                    case Mod:start(ChannelId, Cfg#{<<"product">> => Products}) of
-                        {ok, _} ->
-                            dgiot_mqtt:subscribe(<<"channel/", ChannelId/binary, "/#">>),
-                            dgiot_bridge:send_log(ChannelId, "Channel ~s is Install Protocol ~s", [ChannelId, jsx:encode(ProductIds)]),
-                            ok;
-                        {error, Reason} ->
-                            dgiot_data:delete(?DGIOT_BRIDGE, {ChannelId, productIds}),
-                            {error, Reason}
+                    case erlang:function_exported(Mod, start, 2) of
+                        true ->
+                            ProductIds = do_product(ChannelId, Products),
+                            dgiot_data:insert(?DGIOT_BRIDGE, {ChannelId, productIds}, {CType, ProductIds}),
+                            case Mod:start(ChannelId, Cfg#{<<"product">> => Products}) of
+                                {ok, _} ->
+                                    dgiot_mqtt:subscribe(<<"channel/", ChannelId/binary, "/#">>),
+                                    dgiot_bridge:send_log(ChannelId, "Channel ~s is Install Protocol ~s", [ChannelId, jsx:encode(ProductIds)]),
+                                    ok;
+                                {error, Reason} ->
+                                    dgiot_data:delete(?DGIOT_BRIDGE, {ChannelId, productIds}),
+                                    {error, Reason}
+                            end;
+                        false ->
+                            {error, {Mod, start_error}}
                     end;
                 false ->
                     {error, {Mod, start_error}}

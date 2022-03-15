@@ -53,11 +53,12 @@ start_link(Name, Mod, Host, Port, ReconnectTimes, ReconnectSleep, Args) ->
         undefined ->
             gen_server:start_link(?MODULE, [State, Args], []);
         _ ->
-            gen_server:start_link({local, Name}, ?MODULE, [State, Args], [])
+            gen_server:start_link({local, list_to_atom(dgiot_utils:to_list(Name))}, ?MODULE, [State, Args], [])
     end.
 
 
 init([#state{mod = Mod} = State, Args]) ->
+    ?LOG(info,"Args ~p ",[Args]),
     Transport = gen_tcp,
     Child = #tcp{transport = Transport, socket = undefined},
     case Mod:init(Child#tcp{state = Args}) of
@@ -206,10 +207,9 @@ do_connect(Sleep, #state{child = TCPState} = State) ->
 connect(Client, #state{host = Host, port = Port, reconnect_times = Times, reconnect_sleep = Sleep} = State) ->
     case is_process_alive(Client) of
         true ->
-            ?LOG(info,"CONNECT ~s: ~p  ~p", [Host, Port, Times]),
             case gen_tcp:connect(Host, Port, ?TCP_OPTIONS, ?TIMEOUT) of
                 {ok, Socket} ->
-                    case catch gen_server:call(Client, {connection_ready, Socket}, 50000) of
+                    case catch gen_server:call(Client, {connection_ready, Socket}, 5000) of
                         ok ->
                             inet:setopts(Socket, [{active, once}]),
                             gen_tcp:controlling_process(Socket, Client);

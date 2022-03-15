@@ -171,17 +171,23 @@ start_link([Mod, State]) ->
 %%%===================================================================
 
 init([Mod, ChildState]) ->
-    case erlang:function_exported(Mod, handle_init, 1) of
+    case erlang:module_loaded(Mod) of
         true ->
-            case Mod:handle_init(ChildState) of
-                {ok, NewChildState} ->
-                    {ok, #state{childState = NewChildState, mod = Mod}};
-                {stop, Reason} ->
-                    {stop, Reason}
+            case erlang:function_exported(Mod, handle_init, 1) of
+                true ->
+                    case Mod:handle_init(ChildState) of
+                        {ok, NewChildState} ->
+                            {ok, #state{childState = NewChildState, mod = Mod}};
+                        {stop, Reason} ->
+                            {stop, Reason}
+                    end;
+                false ->
+                    {ok, #state{childState = ChildState, mod = Mod}}
             end;
         false ->
-            {ok, #state{childState = ChildState, mod = Mod}}
+            {stop, <<"module not exist">>}
     end.
+
 
 handle_call(Request, _From, State) ->
     case catch handle_message(Request, State) of
