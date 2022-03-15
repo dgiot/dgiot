@@ -105,18 +105,22 @@ apply_channel(ChannelId, ProductId, Fun, Args, Env) ->
 
 apply_product(ProductId, Fun, Args) ->
     Mod = binary_to_atom(ProductId, utf8),
-    case erlang:function_exported(Mod, Fun, length(Args)) of
+    case erlang:module_loaded(Mod) of
         true ->
-            case catch apply(Mod, Fun, Args) of
-                {'EXIT', Reason} ->
-                    {error, Reason};
-                Result ->
-                    Result
+            case erlang:function_exported(Mod, Fun, length(Args)) of
+                true ->
+                    case catch apply(Mod, Fun, Args) of
+                        {'EXIT', Reason} ->
+                            {error, Reason};
+                        Result ->
+                            Result
+                    end;
+                false ->
+                    {error, function_not_exported}
             end;
         false ->
             {error, function_not_exported}
     end.
-
 
 get_product_info(ProductId) ->
     dgiot_product:local(ProductId).

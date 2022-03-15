@@ -67,7 +67,9 @@ start_plugin(Sup) ->
     lists:map(fun(X) ->
         {_Order, Mod} = X,
         case erlang:function_exported(Mod, start, 1) of
-            true -> Mod:start(Sup);
-            false -> pass
+            true ->
+                Mod:start(Sup);
+            false ->
+                pass
         end
               end, lists:ukeysort(1, NewAcc)).

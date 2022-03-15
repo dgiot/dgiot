@@ -85,7 +85,6 @@
 start(ChannelId, ChannelArgs) ->
     dgiot_channelx:add(?TYPE, ChannelId, ?MODULE, ChannelArgs).
 
-
 %% 通道初始化
 init(?TYPE, ChannelId, #{<<"port">> := Port} = ChannelArgs) ->
     State = #state{
@@ -133,14 +132,12 @@ stop(ChannelType, ChannelId, _State) ->
     ?LOG(info,"channel stop ~p,~p", [ChannelType, ChannelId]),
     ok.
 
-
 %% ====== http callback ======
-
 init(Req, #state{ id = ChannelId, env = Env} = State) ->
     {ok, _Type, ProductIds} = dgiot_bridge:get_products(ChannelId),
     case dgiot_bridge:apply_channel(ChannelId, ProductIds, handle_info, [{http, Req}], Env) of
         {ok, NewEnv} ->
-            Req1 = cowboy_req:reply(200, #{}, <<>>, Req),
+            Req1 = cowboy_req:reply(200, #{}, <<"code not exist">>, Req),
             {ok, Req1, State#state{env = NewEnv}};
         {reply, _ProductId, {HTTPCode, Reply}, NewEnv} ->
             Req1 = cowboy_req:reply(HTTPCode, #{}, Reply, Req),

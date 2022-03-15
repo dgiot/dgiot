@@ -398,13 +398,18 @@ do_response(Status, Headers, Body, Req0, State) when is_binary(Body) ->
     {stop, Req, State}.
 
 call(Mod, Fun, Args) ->
-    case erlang:function_exported(Mod, Fun, length(Args)) of
+    case erlang:module_loaded(Mod) of
         true ->
-            {Time, Result} = timer:tc(Mod, Fun, Args),
-            get_log(Fun, Args, Time, Result),
-            Result;
+            case erlang:function_exported(Mod, Fun, length(Args)) of
+                true ->
+                    {Time, Result} = timer:tc(Mod, Fun, Args),
+                    get_log(Fun, Args, Time, Result),
+                    Result;
+                false ->
+                    no_call
+            end;
         false ->
-            no_call
+            no_module
     end.
 
 init_ets() ->
