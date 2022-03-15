@@ -1,0 +1,36 @@
+{
+  "properties": [
+    {
+      "identifier": "GeoLocation",
+      "dataType": {
+        "type": "struct",
+        "specs": [
+          {
+            "identifier": "Longitude",
+            "dataType": {
+              "type": "double"
+            }
+          },
+          {
+            "identifier": "Latitude",
+            "dataType": {
+              "type": "double"
+            }
+          },
+          {
+            "identifier": "Altitude",
+            "dataType": {
+              "type": "double"
+            }
+          },
+          {
+            "identifier": "CoordinateSystem",
+            "dataType": {
+              "type": "enum"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
