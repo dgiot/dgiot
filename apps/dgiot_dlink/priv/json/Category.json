@@ -1,0 +1,2409 @@
+{
+  "code": "200",
+  "data": {
+    "RequestId": "F7D68863-9B7D-5533-A8EE-4D9BFCDCF3B8",
+    "Data": {
+      "CategoryInfo": [
+        {
+          "SuperId": 0,
+          "CategoryKey": "SmartCity",
+          "CategoryName": "智能城市",
+          "Id": 1
+        },
+        {
+          "SuperId": 1,
+          "CategoryKey": "PublicService",
+          "CategoryName": "公共服务",
+          "Id": 2
+        },
+        {
+          "SuperId": 2,
+          "CategoryKey": "Lighting",
+          "CategoryName": "路灯照明",
+          "Id": 3
+        },
+        {
+          "SuperId": 1,
+          "CategoryKey": "EnergyMangement",
+          "CategoryName": "能源管理",
+          "Id": 15
+        },
+        {
+          "SuperId": 1,
+          "CategoryKey": "EnvironmentalPerception",
+          "CategoryName": "环境感知",
+          "Id": 16
+        },
+        {
+          "SuperId": 1,
+          "CategoryKey": "FireSafety",
+          "CategoryName": "消防安全",
+          "Id": 17
+        },
+        {
+          "SuperId": 1,
+          "CategoryKey": "Farming",
+          "CategoryName": "种植养殖",
+          "Id": 18
+        },
+        {
+          "SuperId": 1,
+          "CategoryKey": "SmartBuilding",
+          "CategoryName": "智能楼宇",
+          "Id": 19
+        },
+        {
+          "SuperId": 15,
+          "CategoryKey": "ElectricityMeter",
+          "CategoryName": "电表",
+          "Id": 20
+        },
+        {
+          "SuperId": 15,
+          "CategoryKey": "WaterMeter",
+          "CategoryName": "水表",
+          "Id": 21
+        },
+        {
+          "SuperId": 16,
+          "CategoryKey": "AirConditioner",
+          "CategoryName": "空调",
+          "Id": 22
+        },
+        {
+          "SuperId": 16,
+          "CategoryKey": "EnvironmentMonitor",
+          "CategoryName": "环境监测设备",
+          "Id": 23
+        },
+        {
+          "SuperId": 17,
+          "CategoryKey": "SecurityGateway",
+          "CategoryName": "安防监测网关",
+          "Id": 24
+        },
+        {
+          "SuperId": 17,
+          "CategoryKey": "SmokeDetector",
+          "CategoryName": "烟雾探测器",
+          "Id": 25
+        },
+        {
+          "SuperId": 19,
+          "CategoryKey": "BlueToothScale",
+          "CategoryName": "蓝牙秤",
+          "Id": 28
+        },
+        {
+          "SuperId": 16,
+          "CategoryKey": "ActivityDetectionEquipment",
+          "CategoryName": "活动检测设备",
+          "Id": 31
+        },
+        {
+          "SuperId": 19,
+          "CategoryKey": "LightingFacility",
+          "CategoryName": "灯光设备",
+          "Id": 32
+        },
+        {
+          "SuperId": 16,
+          "CategoryKey": "AirCollect",
+          "CategoryName": "大气监测设备",
+          "Id": 33
+        },
+        {
+          "SuperId": 17,
+          "CategoryKey": "AcoustoOpticalarm",
+          "CategoryName": "声光报警设备",
+          "Id": 34
+        },
+        {
+          "SuperId": 19,
+          "CategoryKey": "DrinkingFoundation",
+          "CategoryName": "饮水机",
+          "Id": 35
+        },
+        {
+          "SuperId": 18,
+          "CategoryKey": "SmartSprinklerTerminal",
+          "CategoryName": "喷灌智能终端",
+          "Id": 36
+        },
+        {
+          "SuperId": 17,
+          "CategoryKey": "ManholeCover",
+          "CategoryName": "井盖",
+          "Id": 38
+        },
+        {
+          "SuperId": 18,
+          "CategoryKey": "AgriculturalMonitor",
+          "CategoryName": "农业监控设备",
+          "Id": 40
+        },
+        {
+          "SuperId": 0,
+          "CategoryKey": "SmartLife",
+          "CategoryName": "智能生活",
+          "Id": 41
+        },
+        {
+          "SuperId": 41,
+          "CategoryKey": "HomeSecurity",
+          "CategoryName": "家居安防",
+          "Id": 42
+        },
+        {
+          "SuperId": 42,
+          "CategoryKey": "GasDetector",
+          "CategoryName": "燃气报警器",
+          "Id": 43
+        },
+        {
+          "SuperId": 42,
+          "CategoryKey": "WaterDetector",
+          "CategoryName": "水浸报警器",
+          "Id": 44
+        },
+        {
+          "SuperId": 0,
+          "CategoryKey": "SmartIndustry",
+          "CategoryName": "智能工业",
+          "Id": 45
+        },
+        {
+          "SuperId": 45,
+          "CategoryKey": "TextileIndustry",
+          "CategoryName": "纺织业",
+          "Id": 46
+        },
+        {
+          "SuperId": 45,
+          "CategoryKey": "PharmaceuticalManufacturing",
+          "CategoryName": "医药制造业",
+          "Id": 47
+        },
+        {
+          "SuperId": 45,
+          "CategoryKey": "PlasticProductsIndustry",
+          "CategoryName": "塑料制品业",
+          "Id": 48
+        },
+        {
+          "SuperId": 45,
+          "CategoryKey": "MetalProductsIndustry",
+          "CategoryName": "金属制品业",
+          "Id": 49
+        },
+        {
+          "SuperId": 45,
+          "CategoryKey": "ChemicalFiberManufacturing",
+          "CategoryName": "化学纤维制造业",
+          "Id": 50
+        },
+        {
+          "SuperId": 42,
+          "CategoryKey": "IRDetector",
+          "CategoryName": "红外探测器",
+          "Id": 51
+        },
+        {
+          "SuperId": 42,
+          "CategoryKey": "DoorContact",
+          "CategoryName": "门磁传感器",
+          "Id": 52
+        },
+        {
+          "SuperId": 42,
+          "CategoryKey": "SmokeAlarm",
+          "CategoryName": "烟雾报警器",
+          "Id": 53
+        },
+        {
+          "SuperId": 41,
+          "CategoryKey": "Environment",
+          "CategoryName": "环境电器",
+          "Id": 54
+        },
+        {
+          "SuperId": 54,
+          "CategoryKey": "Fan",
+          "CategoryName": "风扇",
+          "Id": 55
+        },
+        {
+          "SuperId": 54,
+          "CategoryKey": "Humidifier",
+          "CategoryName": "加湿器",
+          "Id": 56
+        },
+        {
+          "SuperId": 54,
+          "CategoryKey": "Heater",
+          "CategoryName": "取暖器",
+          "Id": 57
+        },
+        {
+          "SuperId": 41,
+          "CategoryKey": "Electrical&Lighting",
+          "CategoryName": "电工照明",
+          "Id": 58
+        },
+        {
+          "SuperId": 58,
+          "CategoryKey": "Light",
+          "CategoryName": "灯",
+          "Id": 59
+        },
+        {
+          "SuperId": 58,
+          "CategoryKey": "Outlet",
+          "CategoryName": "插座",
+          "Id": 60
+        },
+        {
+          "SuperId": 58,
+          "CategoryKey": "Curtain",
+          "CategoryName": "窗帘",
+          "Id": 61
+        },
+        {
+          "SuperId": 54,
+          "CategoryKey": "Airbox",
+          "CategoryName": "空气盒子",
+          "Id": 62
+        },
+        {
+          "SuperId": 41,
+          "CategoryKey": "MajorAppliance",
+          "CategoryName": "大家电",
+          "Id": 63
+        },
+        {
+          "SuperId": 63,
+          "CategoryKey": "Fridge",
+          "CategoryName": "冰箱",
+          "Id": 64
+        },
+        {
+          "SuperId": 54,
+          "CategoryKey": "Dehumidifier",
+          "CategoryName": "除湿器",
+          "Id": 65
+        },
+        {
+          "SuperId": 41,
+          "CategoryKey": "KitchenAppliance",
+          "CategoryName": "厨房电器",
+          "Id": 66
+        },
+        {
+          "SuperId": 66,
+          "CategoryKey": "KitchenVentilator",
+          "CategoryName": "油烟机",
+          "Id": 67
+        },
+        {
+          "SuperId": 41,
+          "CategoryKey": "Health",
+          "CategoryName": "个护健康",
+          "Id": 68
+        },
+        {
+          "SuperId": 68,
+          "CategoryKey": "FootBath",
+          "CategoryName": "足浴盆",
+          "Id": 69
+        },
+        {
+          "SuperId": 58,
+          "CategoryKey": "WindowLinearActuator",
+          "CategoryName": "推窗器",
+          "Id": 70
+        },
+        {
+          "SuperId": 58,
+          "CategoryKey": "WallSwitch",
+          "CategoryName": "入墙开关",
+          "Id": 71
+        },
+        {
+          "SuperId": 54,
+          "CategoryKey": "FAU",
+          "CategoryName": "新风机",
+          "Id": 72
+        },
+        {
+          "SuperId": 68,
+          "CategoryKey": "ElectricBlanket",
+          "CategoryName": "电热毯",
+          "Id": 73
+        },
+        {
+          "SuperId": 54,
+          "CategoryKey": "FloorHeating",
+          "CategoryName": "地暖",
+          "Id": 74
+        },
+        {
+          "SuperId": 63,
+          "CategoryKey": "ElectricWaterHeater",
+          "CategoryName": "电热水器",
+          "Id": 75
+        },
+        {
+          "SuperId": 2,
+          "CategoryKey": "Locater",
+          "CategoryName": "车辆定位卡",
+          "Id": 76
+        },
+        {
+          "SuperId": 17,
+          "CategoryKey": "LaserScanner",
+          "CategoryName": "激光探测仪",
+          "Id": 77
+        },
+        {
+          "SuperId": 41,
+          "CategoryKey": "Others",
+          "CategoryName": "其它",
+          "Id": 78
+        },
+        {
+          "SuperId": 78,
+          "CategoryKey": "BathHeater",
+          "CategoryName": "浴霸",
+          "Id": 79
+        },
+        {
+          "SuperId": 66,
+          "CategoryKey": "Stove",
+          "CategoryName": "燃气灶",
+          "Id": 80
+        },
+        {
+          "SuperId": 63,
+          "CategoryKey": "GasWaterHeater",
+          "CategoryName": "燃气热水器",
+          "Id": 81
+        },
+        {
+          "SuperId": 54,
+          "CategoryKey": "WaterPurifier",
+          "CategoryName": "净水器",
+          "Id": 82
+        },
+        {
+          "SuperId": 54,
+          "CategoryKey": "AirPurifier",
+          "CategoryName": "空气净化器",
+          "Id": 83
+        },
+        {
+          "SuperId": 63,
+          "CategoryKey": "AirConditioning",
+          "CategoryName": "空调机",
+          "Id": 84
+        },
+        {
+          "SuperId": 68,
+          "CategoryKey": "Wristband",
+          "CategoryName": "手环",
+          "Id": 85
+        },
+        {
+          "SuperId": 0,
+          "CategoryKey": "LinkEdge",
+          "CategoryName": "边缘计算",
+          "Id": 87
+        },
+        {
+          "SuperId": 87,
+          "CategoryKey": "gateway",
+          "CategoryName": "边缘网关",
+          "Id": 88
+        },
+        {
+          "SuperId": 87,
+          "CategoryKey": "other",
+          "CategoryName": "其他设备",
+          "Id": 89
+        },
+        {
+          "SuperId": 68,
+          "CategoryKey": "Bed",
+          "CategoryName": "床",
+          "Id": 92
+        },
+        {
+          "SuperId": 78,
+          "CategoryKey": "Airer",
+          "CategoryName": "晾衣杆",
+          "Id": 95
+        },
+        {
+          "SuperId": 78,
+          "CategoryKey": "Bathtub",
+          "CategoryName": "浴缸",
+          "Id": 96
+        },
+        {
+          "SuperId": 78,
+          "CategoryKey": "ShowerRoom",
+          "CategoryName": "淋浴房",
+          "Id": 97
+        },
+        {
+          "SuperId": 78,
+          "CategoryKey": "Sauna",
+          "CategoryName": "干蒸房",
+          "Id": 98
+        },
+        {
+          "SuperId": 78,
+          "CategoryKey": "ToiletSeat",
+          "CategoryName": "马桶",
+          "Id": 99
+        },
+        {
+          "SuperId": 42,
+          "CategoryKey": "WaterMonitor",
+          "CategoryName": "用水监控器",
+          "Id": 100
+        },
+        {
+          "SuperId": 0,
+          "CategoryKey": "linkbusiness",
+          "CategoryName": "商业共享",
+          "Id": 102
+        },
+        {
+          "SuperId": 102,
+          "CategoryKey": "retail",
+          "CategoryName": "零售设备",
+          "Id": 103
+        },
+        {
+          "SuperId": 102,
+          "CategoryKey": "sharing",
+          "CategoryName": "共享租赁服务",
+          "Id": 104
+        },
+        {
+          "SuperId": 103,
+          "CategoryKey": "Juicer",
+          "CategoryName": "果汁机",
+          "Id": 105
+        },
+        {
+          "SuperId": 41,
+          "CategoryKey": "Networking",
+          "CategoryName": "网络设备",
+          "Id": 106
+        },
+        {
+          "SuperId": 106,
+          "CategoryKey": "GeneralGateway",
+          "CategoryName": "网关",
+          "Id": 107
+        },
+        {
+          "SuperId": 103,
+          "CategoryKey": "Water purifier",
+          "CategoryName": "净水机",
+          "Id": 109
+        },
+        {
+          "SuperId": 103,
+          "CategoryKey": "Ice cream machine",
+          "CategoryName": "冰淇淋机",
+          "Id": 110
+        },
+        {
+          "SuperId": 103,
+          "CategoryKey": "Coffee machine",
+          "CategoryName": "咖啡机",
+          "Id": 111
+        },
+        {
+          "SuperId": 103,
+          "CategoryKey": "Containers",
+          "CategoryName": "售货柜",
+          "Id": 112
+        },
+        {
+          "SuperId": 103,
+          "CategoryKey": "Grab the doll machine",
+          "CategoryName": "抓娃娃机",
+          "Id": 113
+        },
+        {
+          "SuperId": 104,
+          "CategoryKey": "Massage chair",
+          "CategoryName": "按摩椅",
+          "Id": 114
+        },
+        {
+          "SuperId": 104,
+          "CategoryKey": "Shared washing machine",
+          "CategoryName": "共享洗衣机",
+          "Id": 115
+        },
+        {
+          "SuperId": 54,
+          "CategoryKey": "AromaDiffuser",
+          "CategoryName": "香薰机",
+          "Id": 116
+        },
+        {
+          "SuperId": 0,
+          "CategoryKey": "SmartTemplate",
+          "CategoryName": "智能模板",
+          "Id": 117
+        },
+        {
+          "SuperId": 117,
+          "CategoryKey": "WifiTemplate",
+          "CategoryName": "Wifi功能模板",
+          "Id": 118
+        },
+        {
+          "SuperId": 117,
+          "CategoryKey": "ZigbeeTemplate",
+          "CategoryName": "Zigbee功能模板",
+          "Id": 119
+        },
+        {
+          "SuperId": 42,
+          "CategoryKey": "SmartDoor",
+          "CategoryName": "智能门锁",
+          "Id": 120
+        },
+        {
+          "SuperId": 104,
+          "CategoryKey": "Charging pile",
+          "CategoryName": "充电桩",
+          "Id": 121
+        },
+        {
+          "SuperId": 42,
+          "CategoryKey": "IlluminationSensor",
+          "CategoryName": "光照度传感器",
+          "Id": 122
+        },
+        {
+          "SuperId": 58,
+          "CategoryKey": "SceneSwitch",
+          "CategoryName": "场景开关",
+          "Id": 123
+        },
+        {
+          "SuperId": 42,
+          "CategoryKey": "Siren",
+          "CategoryName": "声光报警器",
+          "Id": 124
+        },
+        {
+          "SuperId": 66,
+          "CategoryKey": "DishWasher",
+          "CategoryName": "洗碗机",
+          "Id": 125
+        },
+        {
+          "SuperId": 66,
+          "CategoryKey": "BreakingMachine",
+          "CategoryName": "破壁机",
+          "Id": 130
+        },
+        {
+          "SuperId": 66,
+          "CategoryKey": "MicrowaveOven",
+          "CategoryName": "微波炉",
+          "Id": 131
+        },
+        {
+          "SuperId": 66,
+          "CategoryKey": "RiceCooker",
+          "CategoryName": "电饭煲",
+          "Id": 132
+        },
+        {
+          "SuperId": 16,
+          "CategoryKey": "PHSensor",
+          "CategoryName": "酸碱度监测",
+          "Id": 133
+        },
+        {
+          "SuperId": 16,
+          "CategoryKey": "DOSensor",
+          "CategoryName": "溶解氧监测",
+          "Id": 134
+        },
+        {
+          "SuperId": 17,
+          "CategoryKey": "GasLeakAlarm",
+          "CategoryName": "燃气泄漏报警器",
+          "Id": 135
+        },
+        {
+          "SuperId": 17,
+          "CategoryKey": "FireButton",
+          "CategoryName": "消防手报",
+          "Id": 136
+        },
+        {
+          "SuperId": 17,
+          "CategoryKey": "WaterPressureSensor",
+          "CategoryName": "水压传感器",
+          "Id": 137
+        },
+        {
+          "SuperId": 2,
+          "CategoryKey": "WaterloggingSensor",
+          "CategoryName": "水浸检测",
+          "Id": 138
+        },
+        {
+          "SuperId": 2,
+          "CategoryKey": "ManholesCoverShiftDetection",
+          "CategoryName": "井盖移位检测",
+          "Id": 139
+        },
+        {
+          "SuperId": 2,
+          "CategoryKey": "GarbageOverflowingDetection",
+          "CategoryName": "垃圾满溢检测",
+          "Id": 140
+        },
+        {
+          "SuperId": 2,
+          "CategoryKey": "GeomagneticSensor",
+          "CategoryName": "地磁检测器",
+          "Id": 141
+        },
+        {
+          "SuperId": 2,
+          "CategoryKey": "InfraredDetectors",
+          "CategoryName": "红外体征探测器",
+          "Id": 142
+        },
+        {
+          "SuperId": 2,
+          "CategoryKey": "ActiveInfraredIntrusionDetectors",
+          "CategoryName": "红外对射探测器",
+          "Id": 143
+        },
+        {
+          "SuperId": 2,
+          "CategoryKey": "UnmannedAerialVehicle",
+          "CategoryName": "无人机",
+          "Id": 144
+        },
+        {
+          "SuperId": 2,
+          "CategoryKey": "DoorSensor",
+          "CategoryName": "门磁",
+          "Id": 145
+        },
+        {
+          "SuperId": 66,
+          "CategoryKey": "MilkModulator",
+          "CategoryName": "调奶器",
+          "Id": 146
+        },
+        {
+          "SuperId": 68,
+          "CategoryKey": "Threadmill",
+          "CategoryName": "跑步机",
+          "Id": 147
+        },
+        {
+          "SuperId": 42,
+          "CategoryKey": "Camera",
+          "CategoryName": "摄像头",
+          "Id": 148
+        },
+        {
+          "SuperId": 42,
+          "CategoryKey": "Doorbell",
+          "CategoryName": "门铃",
+          "Id": 150
+        },
+        {
+          "SuperId": 42,
+          "CategoryKey": "DoorViewer",
+          "CategoryName": "猫眼",
+          "Id": 151
+        },
+        {
+          "SuperId": 45,
+          "CategoryKey": "electricmeter",
+          "CategoryName": "电力仪表",
+          "Id": 152
+        },
+        {
+          "SuperId": 2,
+          "CategoryKey": "IntelligentBroadcast",
+          "CategoryName": "智能广播",
+          "Id": 153
+        },
+        {
+          "SuperId": 66,
+          "CategoryKey": "SoyMilkMaker",
+          "CategoryName": "豆浆机",
+          "Id": 154
+        },
+        {
+          "SuperId": 68,
+          "CategoryKey": "ECGCard",
+          "CategoryName": "心电卡",
+          "Id": 155
+        },
+        {
+          "SuperId": 68,
+          "CategoryKey": "Thermometer",
+          "CategoryName": "体温计",
+          "Id": 156
+        },
+        {
+          "SuperId": 78,
+          "CategoryKey": "PetFeeder",
+          "CategoryName": "宠物喂食机",
+          "Id": 157
+        },
+        {
+          "SuperId": 54,
+          "CategoryKey": "RobotCleaner",
+          "CategoryName": "扫地机器人",
+          "Id": 158
+        },
+        {
+          "SuperId": 2,
+          "CategoryKey": "BroadcastController",
+          "CategoryName": "广播主机",
+          "Id": 159
+        },
+        {
+          "SuperId": 2,
+          "CategoryKey": "Flowmeter",
+          "CategoryName": "流量计",
+          "Id": 160
+        },
+        {
+          "SuperId": 2,
+          "CategoryKey": "RemoteTerminalUnit",
+          "CategoryName": "远程监测终端",
+          "Id": 161
+        },
+        {
+          "SuperId": 2,
+          "CategoryKey": "SignalCollector",
+          "CategoryName": "游乐设备信号采集器",
+          "Id": 162
+        },
+        {
+          "SuperId": 68,
+          "CategoryKey": "BodyFatScale",
+          "CategoryName": "体脂秤",
+          "Id": 163
+        },
+        {
+          "SuperId": 2,
+          "CategoryKey": "ConversionGateway",
+          "CategoryName": "通用网关",
+          "Id": 164
+        },
+        {
+          "SuperId": 2,
+          "CategoryKey": "FaceRecognition",
+          "CategoryName": "人脸识别门禁",
+          "Id": 165
+        },
+        {
+          "SuperId": 42,
+          "CategoryKey": "WarningGW",
+          "CategoryName": "报警网关",
+          "Id": 166
+        },
+        {
+          "SuperId": 42,
+          "CategoryKey": "CircuitBreaker",
+          "CategoryName": "断路器",
+          "Id": 167
+        },
+        {
+          "SuperId": 66,
+          "CategoryKey": "PressureCooker",
+          "CategoryName": "电压力锅",
+          "Id": 168
+        },
+        {
+          "SuperId": 68,
+          "CategoryKey": "Washer",
+          "CategoryName": "洗衣机",
+          "Id": 169
+        },
+        {
+          "SuperId": 68,
+          "CategoryKey": "IntelligentMassageChair",
+          "CategoryName": "智能按摩椅",
+          "Id": 170
+        },
+        {
+          "SuperId": 42,
+          "CategoryKey": "FaceRecognitionCapabilityModel",
+          "CategoryName": "人脸识别能力模型",
+          "Id": 171
+        },
+        {
+          "SuperId": 66,
+          "CategoryKey": "ElectricKettle",
+          "CategoryName": "电水壶",
+          "Id": 172
+        },
+        {
+          "SuperId": 106,
+          "CategoryKey": "NAS",
+          "CategoryName": "网络存储器",
+          "Id": 173
+        },
+        {
+          "SuperId": 2,
+          "CategoryKey": "ElevatorCollectingBox",
+          "CategoryName": "电梯集采盒",
+          "Id": 174
+        },
+        {
+          "SuperId": 66,
+          "CategoryKey": "HealthPreservingPot",
+          "CategoryName": "养生壶",
+          "Id": 175
+        },
+        {
+          "SuperId": 66,
+          "CategoryKey": "BreadMachine",
+          "CategoryName": "面包机",
+          "Id": 176
+        },
+        {
+          "SuperId": 2,
+          "CategoryKey": "ArcExtinguishing",
+          "CategoryName": "电弧灭弧",
+          "Id": 177
+        },
+        {
+          "SuperId": 2,
+          "CategoryKey": "ElevatorStatusSensor",
+          "CategoryName": "电梯门体状态探测传感器",
+          "Id": 178
+        },
+        {
+          "SuperId": 2,
+          "CategoryKey": "ElevatorPositionSensor",
+          "CategoryName": "电梯平层位置探测传感器",
+          "Id": 179
+        },
+        {
+          "SuperId": 2,
+          "CategoryKey": "ElevatorBodySensor",
+          "CategoryName": "电梯人体探测传感器",
+          "Id": 180
+        },
+        {
+          "SuperId": 2,
+          "CategoryKey": "ElevatorAccelerationSensor",
+          "CategoryName": "电梯加速度探测传感器",
+          "Id": 181
+        },
+        {
+          "SuperId": 2,
+          "CategoryKey": "TiltSensor",
+          "CategoryName": "倾角传感器",
+          "Id": 182
+        },
+        {
+          "SuperId": 19,
+          "CategoryKey": "AttendanceMachine",
+          "CategoryName": "考勤机",
+          "Id": 183
+        },
+        {
+          "SuperId": 42,
+          "CategoryKey": "OutdoorStation",
+          "CategoryName": "门口机",
+          "Id": 184
+        },
+        {
+          "SuperId": 2,
+          "CategoryKey": "Counter",
+          "CategoryName": "无人货柜",
+          "Id": 185
+        },
+        {
+          "SuperId": 42,
+          "CategoryKey": "AlarmSwitch",
+          "CategoryName": "报警开关",
+          "Id": 186
+        },
+        {
+          "SuperId": 16,
+          "CategoryKey": "TemperatureHumidityDetector",
+          "CategoryName": "温湿度检测",
+          "Id": 187
+        },
+        {
+          "SuperId": 2,
+          "CategoryKey": "MicrowaveDetector",
+          "CategoryName": "微波人体探测器",
+          "Id": 189
+        },
+        {
+          "SuperId": 0,
+          "CategoryKey": "CustomCategory",
+          "CategoryName": "自定义品类",
+          "Id": 190
+        },
+        {
+          "SuperId": 58,
+          "CategoryKey": "SmartElectricityMeter",
+          "CategoryName": "智能电表",
+          "Id": 191
+        },
+        {
+          "SuperId": 58,
+          "CategoryKey": "SmartWaterMeter",
+          "CategoryName": "智能水表",
+          "Id": 192
+        },
+        {
+          "SuperId": 42,
+          "CategoryKey": "PressureAlarm",
+          "CategoryName": "压力报警器",
+          "Id": 193
+        },
+        {
+          "SuperId": 42,
+          "CategoryKey": "LiquidLevelAlarm",
+          "CategoryName": "液位传感器",
+          "Id": 194
+        },
+        {
+          "SuperId": 2,
+          "CategoryKey": "ParkingLock",
+          "CategoryName": "地锁",
+          "Id": 195
+        },
+        {
+          "SuperId": 16,
+          "CategoryKey": "WaterMonitoring",
+          "CategoryName": "水质检测终端",
+          "Id": 196
+        },
+        {
+          "SuperId": 66,
+          "CategoryKey": "CapsuleCoffeeMachine",
+          "CategoryName": "胶囊咖啡机",
+          "Id": 197
+        },
+        {
+          "SuperId": 42,
+          "CategoryKey": "TempHumiUnit",
+          "CategoryName": "温湿度采集单元",
+          "Id": 198
+        },
+        {
+          "SuperId": 42,
+          "CategoryKey": "HazardWarningLamp",
+          "CategoryName": "危险报警器",
+          "Id": 199
+        },
+        {
+          "SuperId": 16,
+          "CategoryKey": "liquidometer",
+          "CategoryName": "液位计",
+          "Id": 200
+        },
+        {
+          "SuperId": 2,
+          "CategoryKey": "InternetProtocolCamera",
+          "CategoryName": "网络摄像机",
+          "Id": 201
+        },
+        {
+          "SuperId": 15,
+          "CategoryKey": "GasMeter",
+          "CategoryName": "燃气表",
+          "Id": 202
+        },
+        {
+          "SuperId": 16,
+          "CategoryKey": "EnvironmentalNoiseMonitor",
+          "CategoryName": "环境噪音监测",
+          "Id": 203
+        },
+        {
+          "SuperId": 16,
+          "CategoryKey": "DustMonitor",
+          "CategoryName": "扬尘监测",
+          "Id": 204
+        },
+        {
+          "SuperId": 2,
+          "CategoryKey": "AlarmButton",
+          "CategoryName": "手动求救报警",
+          "Id": 205
+        },
+        {
+          "SuperId": 63,
+          "CategoryKey": "Television",
+          "CategoryName": "电视机",
+          "Id": 206
+        },
+        {
+          "SuperId": 2,
+          "CategoryKey": "ChargingPile",
+          "CategoryName": "非机动车充电桩",
+          "Id": 207
+        },
+        {
+          "SuperId": 66,
+          "CategoryKey": "InductionCooker",
+          "CategoryName": "电磁炉",
+          "Id": 208
+        },
+        {
+          "SuperId": 2,
+          "CategoryKey": "Locator",
+          "CategoryName": "定位器",
+          "Id": 209
+        },
+        {
+          "SuperId": 2,
+          "CategoryKey": "DisplacementMonitor",
+          "CategoryName": "位移监控器",
+          "Id": 210
+        },
+        {
+          "SuperId": 66,
+          "CategoryKey": "AutomaticCooker",
+          "CategoryName": "烹饪机器人",
+          "Id": 211
+        },
+        {
+          "SuperId": 0,
+          "CategoryKey": "SOCSmartLife",
+          "CategoryName": "智能生活SOC",
+          "Id": 213
+        },
+        {
+          "SuperId": 213,
+          "CategoryKey": "SOCOutlet",
+          "CategoryName": "SoC插座",
+          "Id": 214
+        },
+        {
+          "SuperId": 214,
+          "CategoryKey": "SingleSlotOutlet",
+          "CategoryName": "SoC单孔插座",
+          "Id": 215
+        },
+        {
+          "SuperId": 68,
+          "CategoryKey": "Sphygmomanometer",
+          "CategoryName": "电子血压计",
+          "Id": 216
+        },
+        {
+          "SuperId": 42,
+          "CategoryKey": "ParkingDetector",
+          "CategoryName": "车位检测器",
+          "Id": 217
+        },
+        {
+          "SuperId": 42,
+          "CategoryKey": "ParkingLotBarrier",
+          "CategoryName": "车位锁",
+          "Id": 218
+        },
+        {
+          "SuperId": 66,
+          "CategoryKey": "Oven",
+          "CategoryName": "烤箱",
+          "Id": 219
+        },
+        {
+          "SuperId": 17,
+          "CategoryKey": "SmartFireHydrants",
+          "CategoryName": "智能消防栓",
+          "Id": 220
+        },
+        {
+          "SuperId": 45,
+          "CategoryKey": "ImageCaptureDevice",
+          "CategoryName": "图像采集设备",
+          "Id": 221
+        },
+        {
+          "SuperId": 0,
+          "CategoryKey": "ElectricPower",
+          "CategoryName": "智能电力",
+          "Id": 222
+        },
+        {
+          "SuperId": 2,
+          "CategoryKey": "OffVoltageMonitor",
+          "CategoryName": "断电监控",
+          "Id": 223
+        },
+        {
+          "SuperId": 78,
+          "CategoryKey": "ElectricMotorcycle",
+          "CategoryName": "电动摩托车",
+          "Id": 224
+        },
+        {
+          "SuperId": 66,
+          "CategoryKey": "Sterilizer",
+          "CategoryName": "消毒柜",
+          "Id": 225
+        },
+        {
+          "SuperId": 66,
+          "CategoryKey": "FoodDispenser",
+          "CategoryName": "取餐柜",
+          "Id": 227
+        },
+        {
+          "SuperId": 78,
+          "CategoryKey": "PricingScale",
+          "CategoryName": "计价秤",
+          "Id": 228
+        },
+        {
+          "SuperId": 58,
+          "CategoryKey": "Scene",
+          "CategoryName": "场景面板",
+          "Id": 231
+        },
+        {
+          "SuperId": 66,
+          "CategoryKey": "EmbeddedSteamer",
+          "CategoryName": "嵌入式电蒸箱",
+          "Id": 233
+        },
+        {
+          "SuperId": 78,
+          "CategoryKey": "Audio",
+          "CategoryName": "音箱",
+          "Id": 234
+        },
+        {
+          "SuperId": 42,
+          "CategoryKey": "VibrationSensor",
+          "CategoryName": "震动传感器",
+          "Id": 235
+        },
+        {
+          "SuperId": 2,
+          "CategoryKey": "ElectricSafetyDetector",
+          "CategoryName": "用电安全探测器",
+          "Id": 236
+        },
+        {
+          "SuperId": 42,
+          "CategoryKey": "TitrantPump",
+          "CategoryName": "滴定泵",
+          "Id": 237
+        },
+        {
+          "SuperId": 63,
+          "CategoryKey": "AirEnergyHeater",
+          "CategoryName": "空气能热水器",
+          "Id": 238
+        },
+        {
+          "SuperId": 66,
+          "CategoryKey": "TeaBar",
+          "CategoryName": "茶吧机",
+          "Id": 239
+        },
+        {
+          "SuperId": 2,
+          "CategoryKey": "CuttingMachine",
+          "CategoryName": "裁床",
+          "Id": 240
+        },
+        {
+          "SuperId": 0,
+          "CategoryKey": "SmartAgriculture",
+          "CategoryName": "智能农业",
+          "Id": 241
+        },
+        {
+          "SuperId": 241,
+          "CategoryKey": "Plant",
+          "CategoryName": "种植",
+          "Id": 242
+        },
+        {
+          "SuperId": 241,
+          "CategoryKey": "Forestry",
+          "CategoryName": "林业",
+          "Id": 243
+        },
+        {
+          "SuperId": 241,
+          "CategoryKey": "Stockbreeding",
+          "CategoryName": "畜牧",
+          "Id": 244
+        },
+        {
+          "SuperId": 241,
+          "CategoryKey": "Aquatic",
+          "CategoryName": "水产",
+          "Id": 245
+        },
+        {
+          "SuperId": 58,
+          "CategoryKey": "ThreePhaseMeter",
+          "CategoryName": "三相电表",
+          "Id": 247
+        },
+        {
+          "SuperId": 106,
+          "CategoryKey": "HomeLinkEdgeGateway",
+          "CategoryName": "全屋边缘网关",
+          "Id": 248
+        },
+        {
+          "SuperId": 66,
+          "CategoryKey": "WallHungGasBoiler",
+          "CategoryName": "壁挂炉",
+          "Id": 249
+        },
+        {
+          "SuperId": 58,
+          "CategoryKey": "CeilingFanLamp",
+          "CategoryName": "吊扇灯",
+          "Id": 250
+        },
+        {
+          "SuperId": 241,
+          "CategoryKey": "WindSensor",
+          "CategoryName": "风速传感器",
+          "Id": 251
+        },
+        {
+          "SuperId": 241,
+          "CategoryKey": "SolubleSensor",
+          "CategoryName": "可溶性盐传感器",
+          "Id": 252
+        },
+        {
+          "SuperId": 241,
+          "CategoryKey": "DioxideDetector",
+          "CategoryName": "二氧化碳检测器",
+          "Id": 253
+        },
+        {
+          "SuperId": 241,
+          "CategoryKey": "FlowDetection",
+          "CategoryName": "营养液流速监测器",
+          "Id": 254
+        },
+        {
+          "SuperId": 241,
+          "CategoryKey": "PHDetector",
+          "CategoryName": "酸碱度检测计",
+          "Id": 255
+        },
+        {
+          "SuperId": 241,
+          "CategoryKey": "ToxicGas",
+          "CategoryName": "有害气体检测器",
+          "Id": 256
+        },
+        {
+          "SuperId": 241,
+          "CategoryKey": "LightEnsor",
+          "CategoryName": "光照传感器",
+          "Id": 257
+        },
+        {
+          "SuperId": 0,
+          "CategoryKey": "Building",
+          "CategoryName": "智慧建筑",
+          "Id": 258
+        },
+        {
+          "SuperId": 258,
+          "CategoryKey": "FaceServer",
+          "CategoryName": "人脸门禁",
+          "Id": 259
+        },
+        {
+          "SuperId": 258,
+          "CategoryKey": "ParkOverAll",
+          "CategoryName": "道闸一体机",
+          "Id": 260
+        },
+        {
+          "SuperId": 258,
+          "CategoryKey": "ParkMagnetism",
+          "CategoryName": "地磁车位监测器",
+          "Id": 261
+        },
+        {
+          "SuperId": 258,
+          "CategoryKey": "EnvSensor",
+          "CategoryName": "九合一环境传感器",
+          "Id": 262
+        },
+        {
+          "SuperId": 258,
+          "CategoryKey": "ParkHDDetectMachine",
+          "CategoryName": "车位传感器",
+          "Id": 263
+        },
+        {
+          "SuperId": 241,
+          "CategoryKey": "PigDataReader",
+          "CategoryName": "猪参数采集器",
+          "Id": 264
+        },
+        {
+          "SuperId": 19,
+          "CategoryKey": "epd_table",
+          "CategoryName": "电子纸桌签",
+          "Id": 265
+        },
+        {
+          "SuperId": 242,
+          "CategoryKey": "SideWindow",
+          "CategoryName": "侧窗",
+          "Id": 266
+        },
+        {
+          "SuperId": 242,
+          "CategoryKey": "WaterAndFertilizerMachine",
+          "CategoryName": "水肥一体机",
+          "Id": 267
+        },
+        {
+          "SuperId": 242,
+          "CategoryKey": "CarbonDioxideGeneratingDevice",
+          "CategoryName": "二氧化碳发生装置",
+          "Id": 268
+        },
+        {
+          "SuperId": 242,
+          "CategoryKey": "FillLight",
+          "CategoryName": "补光灯",
+          "Id": 269
+        },
+        {
+          "SuperId": 242,
+          "CategoryKey": "HotAirBlower",
+          "CategoryName": "热风机",
+          "Id": 270
+        },
+        {
+          "SuperId": 242,
+          "CategoryKey": "GroundSourceHeatPump",
+          "CategoryName": "地源热泵",
+          "Id": 271
+        },
+        {
+          "SuperId": 242,
+          "CategoryKey": "WetCurtain",
+          "CategoryName": "湿帘",
+          "Id": 272
+        },
+        {
+          "SuperId": 242,
+          "CategoryKey": "InnerInsulationCurtain",
+          "CategoryName": "内保温帘幕",
+          "Id": 273
+        },
+        {
+          "SuperId": 242,
+          "CategoryKey": "OutsideShadeCurtain",
+          "CategoryName": "外遮荫帘幕",
+          "Id": 274
+        },
+        {
+          "SuperId": 242,
+          "CategoryKey": "CirculatingFan",
+          "CategoryName": "环流风机",
+          "Id": 275
+        },
+        {
+          "SuperId": 242,
+          "CategoryKey": "SideFan",
+          "CategoryName": "侧风机",
+          "Id": 276
+        },
+        {
+          "SuperId": 242,
+          "CategoryKey": "SkyWindow",
+          "CategoryName": "天窗",
+          "Id": 277
+        },
+        {
+          "SuperId": 87,
+          "CategoryKey": "VisionAccessNode",
+          "CategoryName": "摄像头边缘节点\t",
+          "Id": 278
+        },
+        {
+          "SuperId": 258,
+          "CategoryKey": "ParkWNC",
+          "CategoryName": "超声车位检测器",
+          "Id": 279
+        },
+        {
+          "SuperId": 258,
+          "CategoryKey": "FeatureCamera",
+          "CategoryName": "特征摄像头",
+          "Id": 280
+        },
+        {
+          "SuperId": 258,
+          "CategoryKey": "BrushFace",
+          "CategoryName": "扫脸娃娃机",
+          "Id": 281
+        },
+        {
+          "SuperId": 258,
+          "CategoryKey": "PeopleFlow",
+          "CategoryName": "客流量传感器",
+          "Id": 282
+        },
+        {
+          "SuperId": 258,
+          "CategoryKey": "FaceIdentification",
+          "CategoryName": "客群识别设备",
+          "Id": 283
+        },
+        {
+          "SuperId": 258,
+          "CategoryKey": "TicketMachine",
+          "CategoryName": "停车小票机设备",
+          "Id": 284
+        },
+        {
+          "SuperId": 241,
+          "CategoryKey": "SmartHives",
+          "CategoryName": "智能蜂箱",
+          "Id": 285
+        },
+        {
+          "SuperId": 78,
+          "CategoryKey": "EpdTable",
+          "CategoryName": "电子标签",
+          "Id": 286
+        },
+        {
+          "SuperId": 78,
+          "CategoryKey": "LocalControlCenter",
+          "CategoryName": "中控屏",
+          "Id": 287
+        },
+        {
+          "SuperId": 78,
+          "CategoryKey": "IRRemoteController",
+          "CategoryName": "红外遥控器",
+          "Id": 288
+        },
+        {
+          "SuperId": 241,
+          "CategoryKey": "Register",
+          "CategoryName": "寄存器",
+          "Id": 289
+        },
+        {
+          "SuperId": 258,
+          "CategoryKey": "QuickAccessDoor",
+          "CategoryName": "速通门",
+          "Id": 290
+        },
+        {
+          "SuperId": 258,
+          "CategoryKey": "FingerPrintDoor",
+          "CategoryName": "指纹门禁",
+          "Id": 291
+        },
+        {
+          "SuperId": 258,
+          "CategoryKey": "ParkLed",
+          "CategoryName": "余位显示屏",
+          "Id": 292
+        },
+        {
+          "SuperId": 258,
+          "CategoryKey": "GuideScreen",
+          "CategoryName": "导购屏",
+          "Id": 293
+        },
+        {
+          "SuperId": 258,
+          "CategoryKey": "GovernmentLed",
+          "CategoryName": "路政设备",
+          "Id": 294
+        },
+        {
+          "SuperId": 78,
+          "CategoryKey": "Watch",
+          "CategoryName": "手表",
+          "Id": 295
+        },
+        {
+          "SuperId": 16,
+          "CategoryKey": "PreciseTimeSpaceCamera",
+          "CategoryName": "精准时空摄像头",
+          "Id": 296
+        },
+        {
+          "SuperId": 241,
+          "CategoryKey": "SmartPatrol",
+          "CategoryName": "智能巡护",
+          "Id": 297
+        },
+        {
+          "SuperId": 241,
+          "CategoryKey": "EnvironmentMonitoring",
+          "CategoryName": "环境监测",
+          "Id": 298
+        },
+        {
+          "SuperId": 42,
+          "CategoryKey": "Cateyecamera",
+          "CategoryName": "猫眼摄像头",
+          "Id": 299
+        },
+        {
+          "SuperId": 0,
+          "CategoryKey": "campus",
+          "CategoryName": "智能园区",
+          "Id": 301
+        },
+        {
+          "SuperId": 258,
+          "CategoryKey": "N4DeviceType",
+          "CategoryName": "N4设备",
+          "Id": 302
+        },
+        {
+          "SuperId": 258,
+          "CategoryKey": "Car_Detector_Cam",
+          "CategoryName": "车牌抓拍",
+          "Id": 304
+        },
+        {
+          "SuperId": 301,
+          "CategoryKey": "loraLight",
+          "CategoryName": "lora单灯",
+          "Id": 305
+        },
+        {
+          "SuperId": 301,
+          "CategoryKey": "Gatewaycampus",
+          "CategoryName": "网关-园区",
+          "Id": 306
+        },
+        {
+          "SuperId": 301,
+          "CategoryKey": "Soilsensor",
+          "CategoryName": "土壤传感器",
+          "Id": 307
+        },
+        {
+          "SuperId": 258,
+          "CategoryKey": "capture",
+          "CategoryName": "车牌抓拍-ib",
+          "Id": 308
+        },
+        {
+          "SuperId": 301,
+          "CategoryKey": "Curtainswitch",
+          "CategoryName": "单路窗帘开关",
+          "Id": 309
+        },
+        {
+          "SuperId": 301,
+          "CategoryKey": "Sceneswitch2",
+          "CategoryName": "场景面板开关",
+          "Id": 310
+        },
+        {
+          "SuperId": 18,
+          "CategoryKey": "irrigation",
+          "CategoryName": "灌溉系统",
+          "Id": 311
+        },
+        {
+          "SuperId": 78,
+          "CategoryKey": "Teatable",
+          "CategoryName": "茶台",
+          "Id": 312
+        },
+        {
+          "SuperId": 78,
+          "CategoryKey": "IntelligentCurtain",
+          "CategoryName": "智能窗帘",
+          "Id": 313
+        },
+        {
+          "SuperId": 301,
+          "CategoryKey": "MeteorologicalStation",
+          "CategoryName": "气象站监控仪",
+          "Id": 314
+        },
+        {
+          "SuperId": 301,
+          "CategoryKey": "CurrentTemperature",
+          "CategoryName": "室内温度传感器",
+          "Id": 315
+        },
+        {
+          "SuperId": 301,
+          "CategoryKey": "PowerSwitch2",
+          "CategoryName": "入墙开关2",
+          "Id": 316
+        },
+        {
+          "SuperId": 106,
+          "CategoryKey": "VOCSensor",
+          "CategoryName": "VOC感应器",
+          "Id": 319
+        },
+        {
+          "SuperId": 66,
+          "CategoryKey": "Ice_machine",
+          "CategoryName": "制冰机",
+          "Id": 320
+        },
+        {
+          "SuperId": 58,
+          "CategoryKey": "Metering_socket",
+          "CategoryName": "带计量功能插座",
+          "Id": 322
+        },
+        {
+          "SuperId": 58,
+          "CategoryKey": "Lamp",
+          "CategoryName": "灯控开关",
+          "Id": 323
+        },
+        {
+          "SuperId": 42,
+          "CategoryKey": "Curtain_motor",
+          "CategoryName": "窗帘电机",
+          "Id": 324
+        },
+        {
+          "SuperId": 58,
+          "CategoryKey": "Dimming_panel",
+          "CategoryName": "家居调光面板",
+          "Id": 325
+        },
+        {
+          "SuperId": 54,
+          "CategoryKey": "air_sensor",
+          "CategoryName": "环境检测盒子",
+          "Id": 326
+        },
+        {
+          "SuperId": 68,
+          "CategoryKey": "Smart_Neck_Massage",
+          "CategoryName": "智能颈部按摩仪",
+          "Id": 327
+        },
+        {
+          "SuperId": 68,
+          "CategoryKey": "SmartBoxingTarget",
+          "CategoryName": "智能拳靶",
+          "Id": 328
+        },
+        {
+          "SuperId": 68,
+          "CategoryKey": "SmartCleanFace",
+          "CategoryName": "智能洁面仪",
+          "Id": 329
+        },
+        {
+          "SuperId": 106,
+          "CategoryKey": "water_logging",
+          "CategoryName": "水浸传感器",
+          "Id": 330
+        },
+        {
+          "SuperId": 106,
+          "CategoryKey": "Smoke_sensor",
+          "CategoryName": "烟感传感器",
+          "Id": 331
+        },
+        {
+          "SuperId": 42,
+          "CategoryKey": "emergency_button",
+          "CategoryName": "紧急按钮",
+          "Id": 332
+        },
+        {
+          "SuperId": 45,
+          "CategoryKey": "Gas meter manufacturing",
+          "CategoryName": "气表制造",
+          "Id": 335
+        },
+        {
+          "SuperId": 335,
+          "CategoryKey": "AirCompressorMachine",
+          "CategoryName": "空压机",
+          "Id": 336
+        },
+        {
+          "SuperId": 335,
+          "CategoryKey": "Spraying",
+          "CategoryName": "喷涂处理",
+          "Id": 337
+        },
+        {
+          "SuperId": 335,
+          "CategoryKey": "GlueSprayingMachine",
+          "CategoryName": "涂胶机",
+          "Id": 338
+        },
+        {
+          "SuperId": 335,
+          "CategoryKey": "PunchingMachine",
+          "CategoryName": "冲压机",
+          "Id": 339
+        },
+        {
+          "SuperId": 301,
+          "CategoryKey": "Temperatureandhumiditysensor",
+          "CategoryName": "室内温湿度监测设备",
+          "Id": 340
+        },
+        {
+          "SuperId": 301,
+          "CategoryKey": "Airconditionerthermostat",
+          "CategoryName": "空调温控器",
+          "Id": 341
+        },
+        {
+          "SuperId": 301,
+          "CategoryKey": "MAXHUB",
+          "CategoryName": "会议平板",
+          "Id": 342
+        },
+        {
+          "SuperId": 2,
+          "CategoryKey": "WiFiProbeCollector",
+          "CategoryName": "WiFi探针采集器",
+          "Id": 343
+        },
+        {
+          "SuperId": 45,
+          "CategoryKey": "Platinum_Temperature",
+          "CategoryName": "铂电阻温度传感器",
+          "Id": 344
+        },
+        {
+          "SuperId": 301,
+          "CategoryKey": "CoSee",
+          "CategoryName": "大屏投放终端",
+          "Id": 345
+        },
+        {
+          "SuperId": 16,
+          "CategoryKey": "Seeper",
+          "CategoryName": "易涝点监测设备",
+          "Id": 347
+        },
+        {
+          "SuperId": 16,
+          "CategoryKey": "ManholeLevel",
+          "CategoryName": "窨井液位监测设备",
+          "Id": 348
+        },
+        {
+          "SuperId": 16,
+          "CategoryKey": "RainGauge",
+          "CategoryName": "雨量计",
+          "Id": 349
+        },
+        {
+          "SuperId": 16,
+          "CategoryKey": "FlowRate",
+          "CategoryName": "流速液位监测设备",
+          "Id": 350
+        },
+        {
+          "SuperId": 87,
+          "CategoryKey": "AlgorithmManagerPlatform",
+          "CategoryName": "视频内容分析",
+          "Id": 351
+        },
+        {
+          "SuperId": 2,
+          "CategoryKey": "Collision data collection",
+          "CategoryName": "行车碰撞数据采集",
+          "Id": 352
+        },
+        {
+          "SuperId": 2,
+          "CategoryKey": "Drivingbehavior",
+          "CategoryName": "驾驶行为数据采集",
+          "Id": 353
+        },
+        {
+          "SuperId": 2,
+          "CategoryKey": "Logisticsmonitoring",
+          "CategoryName": "仓储运输环境检测设备",
+          "Id": 354
+        },
+        {
+          "SuperId": 78,
+          "CategoryKey": "FishTank",
+          "CategoryName": "鱼缸",
+          "Id": 355
+        },
+        {
+          "SuperId": 106,
+          "CategoryKey": "Currentdetectingsensor",
+          "CategoryName": "单向电流检测传感器",
+          "Id": 356
+        },
+        {
+          "SuperId": 106,
+          "CategoryKey": "Tracker",
+          "CategoryName": "定位终端",
+          "Id": 357
+        },
+        {
+          "SuperId": 258,
+          "CategoryKey": "IB_Lock ",
+          "CategoryName": "锁",
+          "Id": 358
+        },
+        {
+          "SuperId": 301,
+          "CategoryKey": "ParkChannel",
+          "CategoryName": "社区车行停车通道",
+          "Id": 359
+        },
+        {
+          "SuperId": 301,
+          "CategoryKey": "ParkArea",
+          "CategoryName": "社区车行停车区域",
+          "Id": 360
+        },
+        {
+          "SuperId": 301,
+          "CategoryKey": "SmartWaterFlowMeter",
+          "CategoryName": "智能水流量计",
+          "Id": 361
+        },
+        {
+          "SuperId": 301,
+          "CategoryKey": "SmartGasFlowMeter",
+          "CategoryName": "智能燃气流量计",
+          "Id": 362
+        },
+        {
+          "SuperId": 301,
+          "CategoryKey": "MultifunctionElectricityMeter",
+          "CategoryName": "多功能电表",
+          "Id": 363
+        },
+        {
+          "SuperId": 301,
+          "CategoryKey": "QrCodeAccess",
+          "CategoryName": "二维码门禁",
+          "Id": 364
+        },
+        {
+          "SuperId": 68,
+          "CategoryKey": "TowelRack",
+          "CategoryName": "毛巾架",
+          "Id": 365
+        },
+        {
+          "SuperId": 66,
+          "CategoryKey": "Airfryer",
+          "CategoryName": "空气炸锅",
+          "Id": 366
+        },
+        {
+          "SuperId": 66,
+          "CategoryKey": "WaterSoftener",
+          "CategoryName": "软水机",
+          "Id": 367
+        },
+        {
+          "SuperId": 258,
+          "CategoryKey": "MeterElec_Dlt645",
+          "CategoryName": "DLT645电表",
+          "Id": 406
+        },
+        {
+          "SuperId": 66,
+          "CategoryKey": "NoodleMaker",
+          "CategoryName": "面条机",
+          "Id": 407
+        },
+        {
+          "SuperId": 301,
+          "CategoryKey": "PasswordAccess",
+          "CategoryName": "密码门禁",
+          "Id": 408
+        },
+        {
+          "SuperId": 301,
+          "CategoryKey": "CardAccess",
+          "CategoryName": "刷卡门禁",
+          "Id": 409
+        },
+        {
+          "SuperId": 258,
+          "CategoryKey": "SmartDoorIntercoms",
+          "CategoryName": "门禁对讲机",
+          "Id": 413
+        },
+        {
+          "SuperId": 78,
+          "CategoryKey": "SensorSignalCollector",
+          "CategoryName": "传感器信号采集器",
+          "Id": 415
+        },
+        {
+          "SuperId": 78,
+          "CategoryKey": "HVACExtController",
+          "CategoryName": "HVAC外接控制器",
+          "Id": 416
+        },
+        {
+          "SuperId": 78,
+          "CategoryKey": "BackgroundMusicController",
+          "CategoryName": "背景音乐控制器",
+          "Id": 418
+        },
+        {
+          "SuperId": 301,
+          "CategoryKey": "ParkingSpace",
+          "CategoryName": "停车车位",
+          "Id": 431
+        },
+        {
+          "SuperId": 301,
+          "CategoryKey": "ParkingArea",
+          "CategoryName": "停车区域",
+          "Id": 432
+        },
+        {
+          "SuperId": 301,
+          "CategoryKey": "ParkingBarrier",
+          "CategoryName": "停车道闸",
+          "Id": 433
+        },
+        {
+          "SuperId": 301,
+          "CategoryKey": "ParkingLot",
+          "CategoryName": "停车场",
+          "Id": 434
+        },
+        {
+          "SuperId": 78,
+          "CategoryKey": "AutoDoor",
+          "CategoryName": "自动门",
+          "Id": 437
+        },
+        {
+          "SuperId": 258,
+          "CategoryKey": "EFence",
+          "CategoryName": "电子围栏",
+          "Id": 438
+        },
+        {
+          "SuperId": 78,
+          "CategoryKey": "MosquitoLamp",
+          "CategoryName": "灭蚊器",
+          "Id": 563
+        },
+        {
+          "SuperId": 78,
+          "CategoryKey": "LawnMower",
+          "CategoryName": "割草机",
+          "Id": 675
+        },
+        {
+          "SuperId": 301,
+          "CategoryKey": "HIKVISIONEdgeServer",
+          "CategoryName": "海康边缘服务器",
+          "Id": 678
+        },
+        {
+          "SuperId": 78,
+          "CategoryKey": "Relay",
+          "CategoryName": "继电器",
+          "Id": 2143
+        },
+        {
+          "SuperId": 66,
+          "CategoryKey": "IntegratedStove",
+          "CategoryName": "集成灶",
+          "Id": 2184
+        },
+        {
+          "SuperId": 66,
+          "CategoryKey": "IceCreamMaker",
+          "CategoryName": "冰激凌机",
+          "Id": 2187
+        },
+        {
+          "SuperId": 54,
+          "CategoryKey": "VoiceTemperatureControlPanel",
+          "CategoryName": "语音温控面板",
+          "Id": 2188
+        },
+        {
+          "SuperId": 68,
+          "CategoryKey": "SmartPillow",
+          "CategoryName": "智能枕",
+          "Id": 2189
+        },
+        {
+          "SuperId": 17,
+          "CategoryKey": "FireDoor",
+          "CategoryName": "防火门",
+          "Id": 2192
+        },
+        {
+          "SuperId": 78,
+          "CategoryKey": "Dryer",
+          "CategoryName": "干衣机",
+          "Id": 2193
+        },
+        {
+          "SuperId": 17,
+          "CategoryKey": "EmergencyLight",
+          "CategoryName": "应急照明灯",
+          "Id": 2194
+        },
+        {
+          "SuperId": 17,
+          "CategoryKey": "FireWaterCannon",
+          "CategoryName": "智能消防水炮",
+          "Id": 2195
+        },
+        {
+          "SuperId": 17,
+          "CategoryKey": "FireCannon",
+          "CategoryName": "智能消防炮",
+          "Id": 2196
+        },
+        {
+          "SuperId": 2,
+          "CategoryKey": "SmartDustbin",
+          "CategoryName": "智能垃圾桶",
+          "Id": 2197
+        },
+        {
+          "SuperId": 17,
+          "CategoryKey": "PressureBlower",
+          "CategoryName": "正压送风机",
+          "Id": 2198
+        },
+        {
+          "SuperId": 17,
+          "CategoryKey": "FlowIndicator",
+          "CategoryName": "水流指示器",
+          "Id": 2199
+        },
+        {
+          "SuperId": 17,
+          "CategoryKey": "ElectricValve",
+          "CategoryName": "电动阀",
+          "Id": 2200
+        },
+        {
+          "SuperId": 17,
+          "CategoryKey": "ExhaustWindow",
+          "CategoryName": "电动排烟窗",
+          "Id": 2201
+        },
+        {
+          "SuperId": 17,
+          "CategoryKey": "EmerBroadcasting",
+          "CategoryName": "应急广播",
+          "Id": 2202
+        },
+        {
+          "SuperId": 17,
+          "CategoryKey": "FireValve",
+          "CategoryName": "防火阀",
+          "Id": 2203
+        },
+        {
+          "SuperId": 258,
+          "CategoryKey": "SmartElevator",
+          "CategoryName": "智能电梯",
+          "Id": 2215
+        },
+        {
+          "SuperId": 78,
+          "CategoryKey": "SmartGasMeter",
+          "CategoryName": "智能燃气表",
+          "Id": 2216
+        },
+        {
+          "SuperId": 258,
+          "CategoryKey": "ElectricVehicleChargingStation",
+          "CategoryName": "电动汽车充电站",
+          "Id": 2221
+        },
+        {
+          "SuperId": 301,
+          "CategoryKey": "ElevatorController",
+          "CategoryName": "梯控",
+          "Id": 2224
+        },
+        {
+          "SuperId": 66,
+          "CategoryKey": "FoodDehydrator",
+          "CategoryName": "食物烘干机",
+          "Id": 2226
+        },
+        {
+          "SuperId": 68,
+          "CategoryKey": "MoxibustionApparatus",
+          "CategoryName": "艾灸仪",
+          "Id": 2227
+        },
+        {
+          "SuperId": 258,
+          "CategoryKey": "VREquipment",
+          "CategoryName": "智能VR类设备",
+          "Id": 2228
+        },
+        {
+          "SuperId": 78,
+          "CategoryKey": "IntelligentLitterBox",
+          "CategoryName": "智能猫砂盆",
+          "Id": 2229
+        },
+        {
+          "SuperId": 42,
+          "CategoryKey": "NVR",
+          "CategoryName": "网络硬盘录像机",
+          "Id": 2242
+        },
+        {
+          "SuperId": 78,
+          "CategoryKey": "SmartWasteSortingDustBin",
+          "CategoryName": "智能分类垃圾桶",
+          "Id": 2243
+        },
+        {
+          "SuperId": 66,
+          "CategoryKey": "GrainMill",
+          "CategoryName": "谷物碾磨机",
+          "Id": 2254
+        },
+        {
+          "SuperId": 78,
+          "CategoryKey": "ShowerHead",
+          "CategoryName": "花洒",
+          "Id": 2261
+        },
+        {
+          "SuperId": 301,
+          "CategoryKey": "QrCodeAccessControl",
+          "CategoryName": "二维码门禁机",
+          "Id": 2262
+        },
+        {
+          "SuperId": 2,
+          "CategoryKey": "ActiveVehMaintenance",
+          "CategoryName": "车辆主动维护",
+          "Id": 2263
+        },
+        {
+          "SuperId": 2,
+          "CategoryKey": "SmartTox",
+          "CategoryName": "智能车机",
+          "Id": 2264
+        },
+        {
+          "SuperId": 2,
+          "CategoryKey": "SmartRearviewMirror",
+          "CategoryName": "智能后视镜",
+          "Id": 2265
+        },
+        {
+          "SuperId": 301,
+          "CategoryKey": "VideoIntercomDoor",
+          "CategoryName": "可视对讲机门口机",
+          "Id": 2268
+        },
+        {
+          "SuperId": 301,
+          "CategoryKey": "BluetoothAccess",
+          "CategoryName": "蓝牙门禁",
+          "Id": 2269
+        },
+        {
+          "SuperId": 78,
+          "CategoryKey": "Projector",
+          "CategoryName": "投影仪",
+          "Id": 2291
+        },
+        {
+          "SuperId": 87,
+          "CategoryKey": "FaceRecognizeDevice",
+          "CategoryName": "人脸识别机",
+          "Id": 2294
+        },
+        {
+          "SuperId": 301,
+          "CategoryKey": "AdvertTerminal",
+          "CategoryName": "广告屏",
+          "Id": 2296
+        },
+        {
+          "SuperId": 241,
+          "CategoryKey": "FarmRecorder",
+          "CategoryName": "农田记录仪",
+          "Id": 2298
+        },
+        {
+          "SuperId": 78,
+          "CategoryKey": "ToiletLid",
+          "CategoryName": "马桶盖",
+          "Id": 2300
+        },
+        {
+          "SuperId": 78,
+          "CategoryKey": "Faucet",
+          "CategoryName": "龙头",
+          "Id": 2306
+        },
+        {
+          "SuperId": 58,
+          "CategoryKey": "Breaker",
+          "CategoryName": "通断器",
+          "Id": 2310
+        },
+        {
+          "SuperId": 46,
+          "CategoryKey": "Inverter",
+          "CategoryName": "变频器",
+          "Id": 2311
+        },
+        {
+          "SuperId": 46,
+          "CategoryKey": "ServoDriver",
+          "CategoryName": "伺服驱动器",
+          "Id": 2312
+        },
+        {
+          "SuperId": 78,
+          "CategoryKey": "LiftTable",
+          "CategoryName": "升降桌",
+          "Id": 2313
+        },
+        {
+          "SuperId": 301,
+          "CategoryKey": "MultiAccessControl",
+          "CategoryName": "多功能门禁",
+          "Id": 2317
+        },
+        {
+          "SuperId": 78,
+          "CategoryKey": "MechanicalControlValve",
+          "CategoryName": "机械控制阀",
+          "Id": 2318
+        },
+        {
+          "SuperId": 42,
+          "CategoryKey": "VideoDoorbell",
+          "CategoryName": "可视门铃",
+          "Id": 2322
+        },
+        {
+          "SuperId": 102,
+          "CategoryKey": "DigitalShop",
+          "CategoryName": "数字门店",
+          "Id": 2328
+        },
+        {
+          "SuperId": 2328,
+          "CategoryKey": "SpeechHelper",
+          "CategoryName": "语音助手",
+          "Id": 2329
+        },
+        {
+          "SuperId": 301,
+          "CategoryKey": "MultiParkingCamera",
+          "CategoryName": "多功能停车摄像头",
+          "Id": 2712
+        },
+        {
+          "SuperId": 16,
+          "CategoryKey": "AnaerobicPoo",
+          "CategoryName": "厌氧池",
+          "Id": 2743
+        },
+        {
+          "SuperId": 16,
+          "CategoryKey": "AnoxicPooAnoxicPool",
+          "CategoryName": "缺氧池缺氧池",
+          "Id": 2744
+        },
+        {
+          "SuperId": 16,
+          "CategoryKey": "AerobicPool",
+          "CategoryName": "好氧池",
+          "Id": 2745
+        },
+        {
+          "SuperId": 16,
+          "CategoryKey": "RegulatorPool",
+          "CategoryName": "调节池调节池",
+          "Id": 2746
+        },
+        {
+          "SuperId": 16,
+          "CategoryKey": "SecondSedimentationPool",
+          "CategoryName": "二沉池",
+          "Id": 2747
+        },
+        {
+          "SuperId": 16,
+          "CategoryKey": "ContactOxidationPool",
+          "CategoryName": "接触氧化池",
+          "Id": 2748
+        },
+        {
+          "SuperId": 16,
+          "CategoryKey": "PumpValve",
+          "CategoryName": "泵阀",
+          "Id": 2749
+        },
+        {
+          "SuperId": 16,
+          "CategoryKey": "PressurePump",
+          "CategoryName": "加压泵",
+          "Id": 2750
+        }
+      ]
+    },
+    "Code": "",
+    "Success": true
+  },
+  "httpStatusCode": "200",
+  "requestId": "F7D68863-9B7D-5533-A8EE-4D9BFCDCF3B8",
+  "successResponse": true
+}

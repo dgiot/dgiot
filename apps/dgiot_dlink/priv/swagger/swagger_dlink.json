@@ -10,7 +10,6 @@
     }
   ],
   "definitions": {
-
   },
   "paths": {
     "/protocol": {
@@ -57,7 +56,11 @@
               "Topic",
               "Dashboard",
               "Unit",
-              "rule-engine"
+              "rule-engine",
+              "Category",
+              "thing",
+              "thing-tsl",
+              "thing-lite"
             ]
           }
         ],

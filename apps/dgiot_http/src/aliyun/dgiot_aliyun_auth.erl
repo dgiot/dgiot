@@ -44,7 +44,9 @@
     , jwtlogin/1
     , get_categorys/0
     , get_category/2
-    ]).
+    , get_ListAllCategoryConsole/0
+    , getCookie/0
+]).
 
 -define(EXPIRE, 300).
 
@@ -291,6 +293,18 @@ get_category(Cookie, CategoryType) ->
             {error, Reason}
     end.
 
+get_ListAllCategoryConsole() ->
+    Url = "https://iot.console.aliyun.com/data/api.json?_action=ListAllCategoryConsole",
+    {ok, Cookie} = dgiot_aliyun_auth:getCookie(),
+    Body = <<>>,
+    case httpc:request(post, {Url, [{"Cookie", binary_to_list(Cookie)}], "application/x-www-form-urlencoded; charset=UTF-8", Body}, [{timeout, 5000}], [{body_format, binary}]) of
+        {ok, {{_HTTPVersion, 200, _ReasonPhrase}, _Headers, Bin}} ->
+            #{<<"data">> := #{<<"Data">> := #{<<"AbilityInfo">> := AbilityInfo}}} = jsx:decode(Bin, [{labels, binary}, return_maps]),
+            {ok, AbilityInfo};
+        {error, Reason} ->
+            {error, Reason}
+    end.
+
 try_get_category(Cookie, Type) ->
     case get_category(Cookie, Type) of
         {ok, AbilityInfo} ->
@@ -299,10 +313,11 @@ try_get_category(Cookie, Type) ->
         _ ->
             try_get_category(Cookie, Type)
     end.
-
 get_categorys() ->
-    {ok, Cookie} = file:read_file("cookie.txt"),
-    {ok, #{<<"results">> := Datas}} = dgiot_parse:query_object(<<"Datas">>, #{<<"where">> => #{<<"type">> => <<"abilityInfo">>}}),
+    {ok, Cookie} = getCookie(),
+    dgiot_utils:format("~p", [Cookie]),
+%%    Cookie = <<"cna=DkBtGsN+XnYCAbeeROWKLCR7; channel=bFSTcHN2%2FxDYyijD%2BCLV4vIbsjGrZmztkHbkOTlwi3XiByQoZantQxAb%2BJ2GoQuH%2B29TdmEmtrQ0HnRwogpg6w%3D%3D; aliyun_choice=CN; aliyun_lang=zh; _uab_collina=164489179900937299843432; _umdata=G14CFDB599B535EFC844DE670F61AE64E512C36; changelog_date=1624579200000; session-lead-visited/6049b3869191edede7ffbb6f=false; currentRegionId=cn-shanghai; iot_regionid=cn-shanghai; login_aliyunid="w4c****@qq.com"; login_aliyunid_csrf=_csrf_tk_1073347328016184; login_aliyunid_pk=1357932084858144; aliyun_country=CN; aliyun_site=CN; iot_instanceid=W3siMTg3OTUwMDk5ODMyOTIxMCI6ImlvdC0wNnowMGlpODZ1NzRsOGEifSx7IjEzNTc5MzIwODQ4NTgxNDQiOiIifV0=; serviceUnitCode=; tfstk=cIiFB3i9NHKEh-EWkkZyOoPgYBBNawHnEGyb-2BD5GIczpa3gsAPwRV9DRy5Q_4h.; l=eBEPbk1cg73PjQ5oBOfwhurza77tdIRfguPzaNbMiOCP94sW5zDCW60Y8m9XCnGVnsQDR3lrOrBaBcLSoy4EC85Hah5eMjVtndLh.; isg=BKSkOzNEmid0_e2xCeufrYWRdaKWPcin8WoDkr7FFm8yaUUz5knPNo-DKcHxsQD_">>
+    {ok, #{<<"results">> := Datas}} = dgiot_parse:query_object(<<"Dict">>, #{<<"where">> => #{<<"type">> => <<"abilityInfo">>}}),
     A = lists:foldl(
         fun(#{<<"data">> := #{<<"CategoryType">> := Type}}, Acc) ->
             case get(Type) of
@@ -324,3 +339,19 @@ get_categorys() ->
             end
         end, [], Datas),
     file:write_file("AbilityInfo.json", jsx:encode(A)).
+
+%%
+%% @description: 读取文件并返回
+%%
+getCookie() ->
+    {file, Here} = code:is_loaded(?MODULE),
+    Dir = filename:dirname(filename:dirname(Here)),
+    Path = dgiot_httpc:url_join([Dir, "/priv/", dgiot_utils:to_list("cookie.txt")]),
+    case catch file:read_file(Path) of
+        {Err, Reason} when Err == 'EXIT'; Err == error ->
+            ?LOG(error, "read  Path,~p error,~p ~n", [Path, Reason]),
+            {error, Reason};
+        {ok, Bin} ->
+            {ok, Bin}
+    end.
+
