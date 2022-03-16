@@ -25,8 +25,6 @@
 %% Supervisor callbacks
 -export([init/1]).
 
--define(CHILD(I, Type, Args), {I, {I, start_link, Args}, permanent, 5000, Type, [I]}).
-
 %%--------------------------------------------------------------------
 %% API functions
 %%--------------------------------------------------------------------
@@ -39,8 +37,5 @@ start_link() ->
 %%--------------------------------------------------------------------
 
 init([]) ->
-    Children = [
-        ?CHILD(dashboard_sup, supervisor, [dashboard_task])
-    ],
-    {ok, {{one_for_one, 5, 10}, Children}}.
+    {ok, {{one_for_one, 5, 10}, []}}.
 
