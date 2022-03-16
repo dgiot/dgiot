@@ -70,7 +70,7 @@ handle_info(login, #udp{state = #state{productid = ProductId, devaddr = DevAddr,
 
 handle_info(heartbeat, #udp{state = #state{devaddr = _DevAddr, hb = Hb} = _State} = UDPState) ->
     erlang:send_after(Hb * 1000, self(), heartbeat),
-    io:format("~s ~p herart ~p ~n",[?FILE,?LINE, <<"heartbeat">>]),
+%%    io:format("~s ~p herart ~p ~n",[?FILE,?LINE, <<"heartbeat">>]),
     dgiot_udp_client:send(UDPState, <<"heartbeat">>),
     {noreply, UDPState};
 
