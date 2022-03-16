@@ -69,7 +69,7 @@ handle_info(login, #tcp{state = #state{productid = ProductId, devaddr = DevAddr,
 
 handle_info(heartbeat, #tcp{state = #state{devaddr = _DevAddr, hb = Hb} = _State} = TCPState) ->
     erlang:send_after(Hb * 1000, self(), heartbeat),
-    ?LOG(info,"~p ",[<<"heartbeat">>]),
+%%    ?LOG(info,"~p ",[<<"heartbeat">>]),
     dgiot_tcp_client:send(TCPState, <<"heartbeat">>),
     {noreply, TCPState};
 
