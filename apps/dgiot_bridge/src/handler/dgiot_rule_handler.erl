@@ -216,8 +216,9 @@ do_request(_OperationId, _Args, _Context, _Req) ->
 
 sql_tpl(Trigger, Condition, Action) ->
     FROM = generateFrom(Trigger),
-    WHERE = generateWhere(Condition,Trigger,FROM),
-    {200, #{<<"code">> => 200, <<"Action">> => Action, <<"TopicTpl">> => FROM,<<"WHERE">> => WHERE}}.
+    WHERE = generateWhere(Condition, Trigger, FROM),
+    SELECT = generateSelect(Condition, Trigger, Action),
+%%    {200, #{<<"code">> => 200, <<"Action">> => Action, <<"TopicTpl">> => FROM, <<"WHERE">> => WHERE}}.
 
 %%    WhereSql = lists:foldl(fun(X, Acc) ->
 %%        case X of
@@ -231,13 +232,13 @@ sql_tpl(Trigger, Condition, Action) ->
 %%            _ -> Acc
 %%        end
 %%                           end, <<"">>, Where),
-%%    DefaultSql = <<"SELECT", "\r\n",
-%%        SelectTpl/binary, "\r\n",
-%%        "FROM ", "\r\n",
-%%        "   \"", TopicTpl/binary, "\"", "\r\n",
-%%        "WHERE", "\r\n     ",
-%%        WhereSql/binary>>,
-%%    {ok, #{<<"template">> => DefaultSql}}.
+    DefaultSql = <<"SELECT", "\r\n",
+        SELECT/binary, "\r\n",
+        "FROM ", "\r\n",
+        "   \"", FROM/binary, "\"", "\r\n",
+        "WHERE", "\r\n     ",
+        WHERE/binary>>,
+    {ok, #{<<"template">> => DefaultSql}}.
 
 %% 根据设备条件生成sql模板
 %% Select
@@ -485,14 +486,85 @@ generateFrom(Trigger) ->
             <<"$dg/user/", "test/#">>
     end.
 
+generateSelect(_Condition, _Trigger, _FROM) ->
+    <<"SELECT">>.
 
-generateWhere(Condition,Trigger,FROM) ->
-    lists:foldl(fun(Id, Acc) ->
-        case Acc of
-            <<"">> ->
-                <<"    payload.", Id/binary, "  = ", Id/binary>>;
+generateWhere(Condition, _Trigger, _FROM) ->
+    io:format("Condition ~p", [Condition]),
+    io:format("_Trigger ~p", [_Trigger]),
+    io:format("_FROM ~p", [_FROM]),
+%%    Condition: [
+%%        {
+%%            label: '状态持续时长判断',
+%%            value: 'condition/device/stateContinue',
+%%            },
+%%        {
+%%            label: '设备状态',
+%%            value: 'condition/device/deviceState',
+%%            },
+%%        { label: '时间范围', value: 'condition/device/time' },
+%%        // { label: '设备属性值', value: 'condition/device/property' },
+%%    ],
+    L1 = lists:foldl(fun(Item, Acc) ->
+        case Item of
+            #{<<"uri">> := <<"condition/device/deviceState">>, <<"params">> := Params} ->
+                CompareValue = maps:get(<<"compareValue">>, Params, <<"0">>),
+                CompareType = maps:get(<<"compareType">>, Params, <<"=">>),
+                PropertyName = maps:get(<<"propertyName">>, Params, <<"test">>),
+                DeviceState = <<PropertyName/binary, "  ", CompareType/binary, "  ", CompareValue/binary>>,
+                case Acc of
+                    <<"">> ->
+                        DeviceState;
+                    _ ->
+                        <<Acc/binary, ",\r\n   ", DeviceState/binary>>
+                end;
             _ ->
-                <<Acc/binary, " and \r\n   ", "    payload.", Id/binary, "  = ", Id/binary>>
+                Acc
         end
+                     end, <<"">>, maps:get(<<"items">>, Condition, [])),
+    L2 = lists:foldl(fun(Item, Acc) ->
+        case Item of
+            #{<<"uri">> := <<"condition/device/stateContinue">>, <<"params">> := #{
+                <<"state">> := State, <<"times">> := Times}} ->
+                Continue = <<State/binary, "=     ", Times/binary>>,
+                case Acc of
+                    <<"">> ->
+                        Continue;
+                    _ ->
+                        <<Acc/binary, ",\r\n   ", Continue/binary>>
+                end;
+            _ ->
+                Acc
+        end
+                     end, L1, maps:get(<<"items">>, Condition, [])),
 
-                         end, "", Condition).
+    lists:foldl(fun(Item, Acc) ->
+        case Item of
+            #{<<"uri">> := <<"condition/device/time">>, <<"params">> := #{<<"time">> := Time}} ->
+                {TimesStart, TimesEnd} =
+                    lists:foldl(fun(X, Acc1) ->
+                        case X of
+                            {Start, End} ->
+                                IntStart = dgiot_utils:to_int(Start),
+                                IntEnd = dgiot_utils:to_int(End),
+                                case IntStart > IntEnd of
+                                    true ->
+                                        {dgiot_utils:to_binary(End), dgiot_utils:to_binary(Start)};
+                                    false ->
+                                        {dgiot_utils:to_binary(Start), dgiot_utils:to_binary(End)}
+                                end;
+                            _ ->
+                                Acc1
+                        end
+                                end, {<<"1646064000000">>, <<"1649088000000">>}, Time),
+                TimesLg = <<"timestamp  <     ", TimesStart/binary, ", \r\n   ", "timestamp >     ", TimesEnd/binary>>,
+                case Acc of
+                    <<"">> ->
+                        TimesLg;
+                    _ ->
+                        <<Acc/binary, " , ", TimesLg/binary>>
+                end;
+            _ ->
+                Acc
+        end
+                end, L2, maps:get(<<"items">>, Condition, [])).
