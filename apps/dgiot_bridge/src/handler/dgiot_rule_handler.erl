@@ -171,8 +171,13 @@ do_request(get_actions, _Args, _Context, _Req) ->
 %% Rule 概要: 生成sql参数
 %% OperationId:post_rulesql
 %% 请求:POST /iotapi/rulesql
-do_request(post_rulesql, #{<<"select">> := Select, <<"from">> := From, <<"where">> := Where, <<"method">> := Method}, _Context, _Req) ->
-    device_sql(Select, From, Where, Method);
+%%do_request(post_rulesql, #{<<"select">> := Select, <<"from">> := From, <<"where">> := Where, <<"method">> := Method}, _Context, _Req) ->
+%%    device_sql(Select, From, Where, Method);
+
+do_request(post_rulesql, #{<<"trigger">> := Trigger, <<"condition">> := Condition, <<"action">> := Action}, _Context, _Req) ->
+%%    device_sql(Select, From, Where, Method);
+    sql_tpl(Trigger, Condition, Action);
+
 
 
 do_request(get_actions_id, #{<<"id">> := RuleID}, _Context, _Req) ->
@@ -208,6 +213,32 @@ do_request(_OperationId, _Args, _Context, _Req) ->
 %%getSelect(#{<<"mqttEvent">> := MqttEvent,<<"mqttEvent">> := MqttEvent}->Select) ->
 
 
+
+sql_tpl(Trigger, Condition, Action) ->
+    FROM = generateFrom(Trigger),
+    WHERE = generateWhere(Condition,Trigger,FROM),
+    {200, #{<<"code">> => 200, <<"Action">> => Action, <<"TopicTpl">> => FROM,<<"WHERE">> => WHERE}}.
+
+%%    WhereSql = lists:foldl(fun(X, Acc) ->
+%%        case X of
+%%            #{<<"identifier">> := Id, <<"operator">> := Op, <<"value">> := Value} ->
+%%                case Acc of
+%%                    <<"">> ->
+%%                        <<Id/binary, "  ", Op/binary, "  ", Value/binary>>;
+%%                    _ ->
+%%                        <<Acc/binary, ", \r\n   ", Id/binary, "  ", Op/binary, "  ", Value/binary>>
+%%                end;
+%%            _ -> Acc
+%%        end
+%%                           end, <<"">>, Where),
+%%    DefaultSql = <<"SELECT", "\r\n",
+%%        SelectTpl/binary, "\r\n",
+%%        "FROM ", "\r\n",
+%%        "   \"", TopicTpl/binary, "\"", "\r\n",
+%%        "WHERE", "\r\n     ",
+%%        WhereSql/binary>>,
+%%    {ok, #{<<"template">> => DefaultSql}}.
+
 %% 根据设备条件生成sql模板
 %% Select
 %% From
@@ -224,7 +255,12 @@ device_sql(Select, From, Where, _Method) ->
     SelectTpl = getSelect(Select, <<"">>),
     TopicTpl = case From of
                    #{<<"productid">> := ProductId, <<"devaddr">> := Devaddr} ->
-                       <<"thing/", ProductId/binary, Devaddr/binary, "/#">>;
+                       case Devaddr of
+                           <<"#">> ->
+                               <<"$dg/user/", ProductId/binary, "/", Devaddr/binary>>;
+                           _ ->
+                               <<"$dg/user/", ProductId/binary, "/", Devaddr/binary, "/#">>
+                       end;
                    _ ->
                        <<"thing/", "test/#">>
                end,
@@ -233,9 +269,9 @@ device_sql(Select, From, Where, _Method) ->
             #{<<"identifier">> := Id, <<"operator">> := Op, <<"value">> := Value} ->
                 case Acc of
                     <<"">> ->
-                        <<Id/binary, "    ", Op/binary, " ", Value/binary>>;
+                        <<Id/binary, "  ", Op/binary, "  ", Value/binary>>;
                     _ ->
-                        <<Acc/binary, ", \r\n    ", Id/binary, " ", Op/binary, " ", Value/binary>>
+                        <<Acc/binary, ", \r\n   ", Id/binary, "  ", Op/binary, "  ", Value/binary>>
                 end;
             _ -> Acc
         end
@@ -367,7 +403,7 @@ getSelect(#{<<"payload">> := Payload} = Select, Acc1) ->
             <<"">> ->
                 <<"    payload.", Id/binary, "  as ", Id/binary>>;
             _ ->
-                <<Acc/binary, ",\r\n", "    payload.", Id/binary, "  as ", Id/binary, "\r\n     ">>
+                <<Acc/binary, ", \r\n   ", "    payload.", Id/binary, "  as ", Id/binary>>
         end
 
                          end, Acc1, Payload),
@@ -382,3 +418,81 @@ getSelect(Select, Acc1) ->
                 <<Acc/binary, " , ", Id/binary>>
         end
                 end, Acc1, lists:flatten(maps:values(Select))).
+
+generateFrom(Trigger) ->
+%%    Trigger: [
+%%        {
+%%            label: '设备属性触发',
+%%            value: 'trigger/product/property',
+%%            },
+%%        {
+%%            label: '设备事件触发',
+%%            value: 'trigger/product/event',
+%%            },
+%%        {
+%%            label: 'mqtt事件触发',
+%%            value: 'trigger/mqtt/event',
+%%            },
+%%        {
+%%            label: '定时触发',
+%%            value: 'trigger/timer',
+%%            },
+%%        ],
+%%
+    Firstfrom = lists:nth(1, maps:get(<<"items">>, Trigger)),
+    Uri = maps:get(<<"uri">>, Firstfrom),
+    Params = maps:get(<<"params">>, Firstfrom, #{}),
+    case Uri of
+        <<"trigger/product/property">> ->
+            case Params of
+                #{<<"productKey">> := ProductId, <<"deviceName">> := Devaddr} ->
+                    case Devaddr of
+                        <<"">> ->
+                            <<"$dg/user/", ProductId/binary, "/", Devaddr/binary>>;
+                        _ ->
+                            <<"$dg/user/", ProductId/binary, "/", Devaddr/binary, "/#">>
+                    end;
+                _ ->
+                    <<"$dg/user/", "test/#">>
+            end;
+        <<"trigger/product/event">> ->
+            case Params of
+                #{<<"productKey">> := ProductId, <<"deviceName">> := Devaddr} ->
+                    case Devaddr of
+                        <<"">> ->
+                            <<"$dg/user/", ProductId/binary, "/", Devaddr/binary>>;
+                        _ ->
+                            <<"$dg/user/", ProductId/binary, "/", Devaddr/binary, "/#">>
+                    end;
+                _ ->
+                    <<"$dg/user/", "test/#">>
+            end;
+        <<"trigger/mqtt/event">> ->
+            case Params of
+                #{<<"productKey">> := ProductId} ->
+                    case ProductId of
+                        <<"">> ->
+                            <<"$events/", ProductId/binary>>;
+                        _ ->
+                            <<"$events/", "test/#">>
+                    end;
+                _ ->
+                    <<"$dg/user/", "test/#">>
+            end;
+        <<"trigger/timer">> ->
+            <<"$dg/user/", "test/#">>;
+        _ ->
+            <<"$dg/user/", "test/#">>
+    end.
+
+
+generateWhere(Condition,Trigger,FROM) ->
+    lists:foldl(fun(Id, Acc) ->
+        case Acc of
+            <<"">> ->
+                <<"    payload.", Id/binary, "  = ", Id/binary>>;
+            _ ->
+                <<Acc/binary, " and \r\n   ", "    payload.", Id/binary, "  = ", Id/binary>>
+        end
+
+                         end, "", Condition).
