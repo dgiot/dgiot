@@ -1,0 +1,134 @@
+{
+  "erlOperator": [
+    ">",
+    ">=",
+    "<",
+    "<=",
+    "==",
+    "=:=",
+    "/=",
+    "=/=",
+    "!=",
+    "in"
+  ],
+  "mqttEvent": [
+    {
+      "label": "消息投递",
+      "value": "message_delivered"
+    },
+    {
+      "label": "消息确认",
+      "value": "message_acked"
+    },
+    {
+      "label": "消息丢弃",
+      "value": "message_dropped"
+    },
+    {
+      "label": "连接完成",
+      "value": "client_connected"
+    },
+    {
+      "label": "连接断开",
+      "value": "client_disconnected"
+    },
+    {
+      "label": "订阅",
+      "value": "session_subscribed"
+    },
+    {
+      "label": "取消订阅",
+      "value": "session_unsubscribed"
+    }
+  ],
+  "mqttConfig": [
+    {
+      "label": "消息目的 Client ID",
+      "value": "clientid"
+    },
+    {
+      "label": "终端连接完成时间 (s)",
+      "value": "connected_at"
+    },
+    {
+      "label": "MQTT 消息 ID",
+      "value": "id"
+    },
+    {
+      "label": "用户名",
+      "value": "username"
+    },
+    {
+      "label": "客户端地址",
+      "value": "peerhost"
+    },
+    {
+      "label": "MQTT topic",
+      "value": "topic"
+    },
+    {
+      "label": "MQTT qos",
+      "value": "qos"
+    },
+    {
+      "label": "MQTT flags",
+      "value": "flags"
+    },
+    {
+      "label": "事件触发时间 (ms)",
+      "value": "timestamp"
+    },
+    {
+      "label": "PUBLISH 消息到达 Broker 的时间 (ms)",
+      "value": "publish_received_at"
+    },
+    {
+      "label": "事件触发节点",
+      "value": "node"
+    }
+  ],
+  "line": [
+    {
+      "label": "设备在线",
+      "value": "online"
+    },
+    {
+      "label": "设备离线",
+      "value": "line"
+    }
+  ],
+  "Product": [],
+  "Device": [],
+  "Condition": [
+    {
+      "label": "状态持续时长判断",
+      "value": "condition/device/stateContinue"
+    },
+    {
+      "label": "设备状态",
+      "value": "condition/device/deviceState"
+    },
+    {
+      "label": "时间范围",
+      "value": "condition/device/time"
+    }
+  ],
+  "Trigger": [
+    {
+      "label": "设备属性触发",
+      "value": "trigger/product/property"
+    },
+    {
+      "label": "设备事件触发",
+      "value": "trigger/product/event"
+    },
+    {
+      "label": "mqtt事件触发",
+      "value": "trigger/mqtt/event"
+    },
+    {
+      "label": "定时触发",
+      "value": "trigger/timer"
+    }
+  ]
+}

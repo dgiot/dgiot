@@ -29,7 +29,7 @@
 -protocol_type(#{
     cType => ?TYPE,
     type => <<"DLINK">>,
-    colum => 10,
+    colum => 3,
     title => #{
         zh => <<"DLINK协议"/utf8>>
     },
@@ -38,18 +38,59 @@
     }
 }).
 %% 注册协议参数
--params(#{
+-params (#{
     <<"dis">> => #{
         order => 1,
-        type => string,
+        type => object,
         allowCreate => true,
         required => true,
-        default => <<"00"/utf8>>,
+        default => [
+            #{<<"value">> => "lable", <<"name">> => <<"key">>},
+            #{<<"value">> => "lable", <<"name">> => <<"key">>}
+        ],
         title => #{
             zh => <<"数据标识"/utf8>>
         },
         description => #{
             zh => <<"数据标识"/utf8>>
+        },
+        <<"table">> => #{
+            <<"key">> => #{
+                order => 2,
+                type => string,
+                required => true,
+                default => <<"0000"/utf8>>,
+                title => #{
+                    zh => <<"从机地址"/utf8>>
+                },
+                description => #{
+                    zh => <<"从机地址(16进制加0X,例如:0X10,否在是10进制)"/utf8>>
+                }
+            },
+            <<"value">> => #{
+                order => 2,
+                type => string,
+                required => true,
+                default => <<"0000"/utf8>>,
+                title => #{
+                    zh => <<"从机地址"/utf8>>
+                },
+                description => #{
+                    zh => <<"从机地址(16进制加0X,例如:0X10,否在是10进制)"/utf8>>
+                }
+            },
+            <<"type">> => #{
+                order => 2,
+                type => string,
+                required => true,
+                default => <<"0000"/utf8>>,
+                title => #{
+                    zh => <<"从机地址"/utf8>>
+                },
+                description => #{
+                    zh => <<"从机地址(16进制加0X,例如:0X10,否在是10进制)"/utf8>>
+                }
+            }
         }
     }
 }).
