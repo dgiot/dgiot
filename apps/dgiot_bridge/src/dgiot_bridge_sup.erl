@@ -25,7 +25,7 @@
 -export([init/1]).
 
 -define(SERVER, ?MODULE).
-
+-define(CHILD(I, Type, Args), {I, {I, start_link, Args}, permanent, 5000, Type, [I]}).
 %%====================================================================
 %% API functions
 %%====================================================================
@@ -42,7 +42,9 @@ start_link() ->
 %% Before OTP 18 tuples must be used to specify a child. e.g.
 %% Child :: {Id,StartFunc,Restart,Shutdown,Type,Modules}
 init([]) ->
-    Children = [{dgiot_bridge_server, {dgiot_bridge_server, start_link, []}, transient, 5000, worker, [dgiot_bridge_server]}
+    Children = [
+        {dgiot_bridge_server, {dgiot_bridge_server, start_link, []}, transient, 5000, worker, [dgiot_bridge_server]},
+        ?CHILD(dgiot_httpc_sup, supervisor, [dgiot_httpc])
     ],
     {ok, {{one_for_one, 0, 1}, Children}}.
 

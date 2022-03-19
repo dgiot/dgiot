@@ -40,28 +40,16 @@
 }).
 %% 注册通道参数
 -params(#{
-    <<"ip">> => #{
+    <<"url">> => #{
         order => 1,
         type => string,
         required => true,
-        default => <<"127.0.0.1"/utf8>>,
+        default => <<"http://127.0.0.1:5080"/utf8>>,
         title => #{
             zh => <<"服务器地址"/utf8>>
         },
         description => #{
             zh => <<"服务器地址"/utf8>>
-        }
-    },
-    <<"port">> => #{
-        order => 2,
-        type => integer,
-        required => true,
-        default => 8080,
-        title => #{
-            zh => <<"端口"/utf8>>
-        },
-        description => #{
-            zh => <<"端口"/utf8>>
         }
     },
     <<"page_index">> => #{
@@ -128,10 +116,10 @@ init(?TYPE, ChannelId, Args) ->
     },
     {ok, State, []}.
 
-handle_init(#state{env = Args} = State) ->
-    #{<<"product">> := Products, <<"ip">> := Ip, <<"port">> := Port} = Args,
+handle_init(#state{id = ChannelId, env = Args} = State) ->
+    #{<<"product">> := Products, <<"url">> := Url} = Args,
     lists:map(fun({ProductId, _Opt}) ->
-        start_client(ProductId, Ip, Port, Args)
+        start_client(ChannelId, ProductId, Url, Args)
               end, Products),
     {ok, State}.
 
@@ -147,22 +135,19 @@ stop(ChannelType, ChannelId, _State) ->
     ?LOG(warning, "channel stop ~p,~p", [ChannelType, ChannelId]),
     ok.
 
-start_client(ProductId, _Ip, _Port,
-        #{<<"page_index">> := PageIndex, <<"page_size">> := PageSize, <<"total">> := Total}) ->
+start_client(ChannelId, ProductId, Url, #{<<"page_index">> := PageIndex,
+    <<"page_size">> := PageSize, <<"total">> := Total}) ->
     Success = fun(Page) ->
         lists:map(fun(X) ->
             case X of
-                #{<<"devaddr">> := _DevAddr} ->
-                    ok;
-%%                    dgiot_httpc_worker:start_connect(#{
-%%                        <<"auto_reconnect">> => 10,
-%%                        <<"reconnect_times">> => 3,
-%%                        <<"ip">> => Ip,
-%%                        <<"port">> => Port,
-%%                        <<"productid">> => ProductId,
-%%                        <<"hb">> => 60,
-%%                        <<"devaddr">> => DevAddr
-%%                    });
+                #{<<"devaddr">> := DevAddr} ->
+                    ?LOG(info,"DevAddr ~p",[DevAddr]),
+                    dgiot_httpc_worker:start(#{
+                        <<"url">> => Url,
+                        <<"channelid">> => ChannelId,
+                        <<"productid">> => ProductId,
+                        <<"devaddr">> => DevAddr
+                    });
                 _ ->
                     ok
             end

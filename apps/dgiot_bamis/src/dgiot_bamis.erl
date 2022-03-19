@@ -28,6 +28,7 @@
 -define(APP, ?MODULE).
 del_amis_device(DeviceId) ->
     dgiot_device:delete(DeviceId).
+
 %%修改设备
 put_amis_device( #{<<"objectId">> := Deviceid} = Body, SessionToken) ->
     case dgiot_parse:get_object(<<"Device">>, Deviceid,

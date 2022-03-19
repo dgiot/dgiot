@@ -37,7 +37,6 @@ add(HookType, Key, Fun) ->
     end,
     dgiot_data:insert(dgiot_hook, Hooks#{ Key => New }).
 
-
 remove(Key) ->
     Hooks = get_hooks(),
 	NewHooks = maps:remove(Key, Hooks),

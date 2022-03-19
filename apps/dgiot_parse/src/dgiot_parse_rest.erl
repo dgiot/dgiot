@@ -39,7 +39,6 @@ method(Method, atom) ->
 method(Method, binary) ->
     list_to_binary(string:to_lower(to_list(Method))).
 
-
 request(Method, Header, Path0, Body, Options) when is_binary(Method) ->
     NewMethod = list_to_atom(string:to_upper(binary_to_list(Method))),
     request(NewMethod, Header, Path0, Body, Options);
@@ -416,7 +415,6 @@ do_request_after(Method0, Path, Data, ResBody, Options) ->
             _ ->
                 method(Method0, atom)
         end,
-%%    <<"/classes/Product/0a3e65869f">>
     {match, PathList} = re:run(Path, <<"([^/]+)">>, [global, {capture, all_but_first, binary}]),
     do_request_hook('after', lists:concat(PathList), Method, Data, ResBody).
 
@@ -443,7 +441,6 @@ do_hook(Key, Args) ->
 list_join([], Sep) when is_list(Sep) -> [];
 list_join([H | T], Sep) ->
     to_list(H) ++ lists:append([Sep ++ to_list(X) || X <- T]).
-
 
 handle_result(Result) ->
     handle_result(Result, no).
