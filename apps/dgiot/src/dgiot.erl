@@ -17,7 +17,7 @@
 -module(dgiot).
 -author("johnliu").
 -include("dgiot.hrl").
--export([get_env/1,get_env/2, get_env/3, init_plugins/0]).
+-export([get_env/1,get_env/2, get_env/3, init_plugins/0, child_spec/2]).
 
 %%--------------------------------------------------------------------
 %% API
@@ -50,3 +50,20 @@ init_plugins() ->
 
 
 
+child_spec(Mod, supervisor) ->
+    #{id => Mod,
+        start => {Mod, start_link, []},
+        restart => permanent,
+        shutdown => infinity,
+        type => supervisor,
+        modules => [Mod]
+    };
+
+child_spec(Mod, worker) ->
+    #{id => Mod,
+        start => {Mod, start_link, []},
+        restart => permanent,
+        shutdown => 15000,
+        type => worker,
+        modules => [Mod]
+    }.

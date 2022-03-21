@@ -18,11 +18,12 @@
 -behaviour(gen_server).
 -include_lib("dgiot/include/logger.hrl").
 %% API
--export([start_link/1]).
+-export([start_link/1,
+    childSpec/0,
+    start/1]).
 
 %% gen_server callbacks
 -export([
-    start/1,
     init/1,
     handle_call/3,
     handle_cast/2,
@@ -31,12 +32,18 @@
     code_change/3]).
 
 -define(SERVER, ?MODULE).
+-define(CHILD(I, Type, Args), {I, {I, start_link, Args}, permanent, 5000, Type, [I]}).
 
 -record(state, {tid, id, page = 1, token, refreshtoken, sleep = 12}).
 
 %%%===================================================================
 %%% API
 %%%===================================================================
+childSpec() ->
+    [
+        ?CHILD(dgiot_httpc_sup, supervisor, [dgiot_httpc])
+    ].
+
 start(Args) ->
     supervisor:start_child(dgiot_httpc, [Args]).
 
@@ -73,26 +80,26 @@ handle_cast(_Request, State) ->
 
 handle_info(start, #state{tid = Tid, sleep = Sleep} = State) ->
     Url = "http://127.0.0.1:5080/iotapi/login",
-    Headers =  [
+    Headers = [
         {"accept", "application/json"},
         {"Content-Type", "text/plain"}
     ],
     Content = "text/plain",
     Body = dgiot_json:encode(#{
         <<"password">> => <<"dgiot_dev">>,
-        <<"username">> =>  <<"dgiot_dev">>
+        <<"username">> => <<"dgiot_dev">>
     }),
     case dgiot_http_client:request(post, {Url, Headers, Content, Body}) of
-        {ok,R} ->
+        {ok, R} ->
             case jsx:is_json(dgiot_utils:to_binary(R)) of
                 true ->
                     Bin = dgiot_utils:to_binary(R),
-                    ?LOG(info, "R1 ~p ",[maps:get(<<"username">>, jsx:decode(Bin, [{labels, binary}, return_maps]),<<"">>)]);
+                    ?LOG(info, "R1 ~p ", [maps:get(<<"username">>, jsx:decode(Bin, [{labels, binary}, return_maps]), <<"">>)]);
                 _ ->
-                    ?LOG(info, "R2 ~s ",[R])
+                    ?LOG(info, "R2 ~s ", [R])
             end;
         {error, Reason} ->
-            ?LOG(info,"Reason ~p ",[Reason])
+            ?LOG(info, "Reason ~p ", [Reason])
     end,
     erlang:send_after(Sleep * 1000, self(), start),
     {noreply, State#state{tid = Tid}};
