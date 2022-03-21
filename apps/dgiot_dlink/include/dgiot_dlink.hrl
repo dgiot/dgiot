@@ -16,4 +16,3 @@
 
 -define(GROUP_TOPIC(Di, Mid), <<"group/", Di/binary,"/",Mid/binary>>).
 -define(COMSUMER_KEY(Di), <<"comsumer/",Di/binary>>).
-

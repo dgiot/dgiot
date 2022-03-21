@@ -43,8 +43,7 @@ start_link() ->
 %% Child :: {Id,StartFunc,Restart,Shutdown,Type,Modules}
 init([]) ->
     Children = [
-        {dgiot_bridge_server, {dgiot_bridge_server, start_link, []}, transient, 5000, worker, [dgiot_bridge_server]},
-        ?CHILD(dgiot_httpc_sup, supervisor, [dgiot_httpc])
+        {dgiot_bridge_server, {dgiot_bridge_server, start_link, []}, transient, 5000, worker, [dgiot_bridge_server]}
     ],
     {ok, {{one_for_one, 0, 1}, Children}}.
 

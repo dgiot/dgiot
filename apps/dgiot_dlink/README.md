@@ -55,8 +55,19 @@ Dlink协议是针对物联网开发领域设计的一种数据交换规范，数
 | 通道设置 |$dg/channel/{channelId}/commands/request_id={request_id}|用户|平台|
 | 通道设置 |$dg/channel/{channelId}/commands/response/request_id={request_id}|平台|用户|
 | 大屏消息 |$dg/dashboard/{dashboardId}/{productId}/{deviceId}|平台|用户|
+| 云云对接 |$dg/bridge/{bridgetopic}|平台|平台|
 
 ## payload设计
+
+## 通道接入
+### http server
+### http client
+### mqtt client
+### mqtt bridge
+### tpc server
+### tcp client
+### udp server
+### udp client
 
 + 支持grpc多语言编解码
 
