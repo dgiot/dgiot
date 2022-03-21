@@ -1276,9 +1276,9 @@ function pre_build_dgiot() {
       cp ${script_dir}/dgiot_dashboard/dist/  ${script_dir}/$plugin/apps/dgiot_api/priv/www -rf
     fi
 
-    if [ -d ${script_dir}/dgiot_dashboard_lite/dist ]; then
-      cp ${script_dir}/dgiot_dashboard_lite/dist/  ${script_dir}/$plugin/apps/dgiot_api/priv/www/lite -rf
-    fi
+    #if [ -d ${script_dir}/dgiot_dashboard_lite/dist ]; then
+    #  cp ${script_dir}/dgiot_dashboard_lite/dist/  ${script_dir}/$plugin/apps/dgiot_api/priv/www/lite -rf
+    # fi
 
     if [ -d ${script_dir}/dgiot/emqx/rel/ ]; then
       rm ${script_dir}/dgiot/emqx/rel -rf
@@ -1313,7 +1313,7 @@ function post_build_dgiot() {
 
 function devops() {
     build_dashboard
-    build_dashboard_lite
+    #build_dashboard_lite
     pre_build_dgiot
     make
     post_build_dgiot
@@ -1321,7 +1321,7 @@ function devops() {
 
 function ci() {
     build_dashboard
-    build_dashboard_lite
+    # build_dashboard_lite
     pre_build_dgiot
     make ci
     post_build_dgiot
