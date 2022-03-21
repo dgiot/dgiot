@@ -18,9 +18,8 @@
 -define(TYPE, <<"MQTTC">>).
 -author("kenneth").
 -record(state, {id, client = disconnect}).
--include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
+-include("dgiot_bridge.hrl").
 -include_lib("dgiot/include/logger.hrl").
--include("dgiot_dlink.hrl").
 
 %% API
 -dgiot_data("ets").
@@ -28,8 +27,8 @@
 
 -export([start/2]).
 -export([init/3, handle_event/3, handle_message/2, handle_init/1, stop/3]).
--export([init/1, handle_info/2, handle_cast/2, handle_call/3, terminate/2, code_change/3]).
 
+-define(DGIOT_MQTT_WORK, dgiot_mqtt_work).
 
 %% 注册通道类型
 -channel_type(#{
@@ -140,23 +139,10 @@ start(ChannelId, ChannelArgs) ->
 
 %% 通道初始化
 init(?TYPE, ChannelId, ChannelArgs) ->
-    Options = [
-        {host, binary_to_list(maps:get(<<"address">>, ChannelArgs))},
-        {port, maps:get(<<"port">>, ChannelArgs)},
-        {clientid, ChannelId},
-        {ssl, maps:get(<<"ssl">>, ChannelArgs, false)},
-        {username, binary_to_list(maps:get(<<"username">>, ChannelArgs))},
-        {password, binary_to_list(maps:get(<<"password">>, ChannelArgs))},
-        {clean_start, maps:get(<<"clean_start">>, ChannelArgs, false)}
-    ],
-
     State = #state{
         id = ChannelId
     },
-    Specs = [
-        {dgiot_mqtt_client, {dgiot_mqtt_client, start_link, [?MODULE, [State], Options]}, permanent, 5000, worker, [dgiot_mqtt_client]}
-    ],
-    {ok, State, Specs}.
+    {ok, State, dgiot_mqttc_worker:childSpec(ChannelId, State, ChannelArgs)}.
 
 %% 初始化池子
 handle_init(State) ->
@@ -175,70 +161,3 @@ handle_message(Message, State) ->
 stop(ChannelType, ChannelId, _State) ->
     ?LOG(info, "channel stop ~p,~p", [ChannelType, ChannelId]),
     ok.
-
-
-%% mqtt client hook
-init([State]) ->
-    {ok, State#state{}}.
-
-handle_call(_Request, _From, State) ->
-    {reply, ok, State}.
-
-handle_cast(_Request, State) ->
-    {noreply, State}.
-
-handle_info({connect, Client}, #state{id = ChannelId} = State) ->
-    emqtt:subscribe(Client, {<<"bridge/#">>, 1}),
-    case dgiot_bridge:get_products(ChannelId) of
-        {ok, _Type, ProductIds} ->
-            case ProductIds of
-                [] -> pass;
-                _ ->
-                    lists:map(fun(ProductId) ->
-%%                      dgiot_product:load(ProductId),
-                        emqtt:subscribe(Client, {<<"bridge/thing/", ProductId/binary, "/#">>, 1}),
-                        dgiot_mqtt:subscribe(<<"forward/thing/", ProductId/binary, "/+/post">>),
-                        dgiot_mqtt:publish(ChannelId, <<"thing/", ProductId/binary>>, jsx:encode(#{<<"network">> => <<"connect">>}))
-                              end, ProductIds)
-            end,
-            ?LOG(info, "connect ~p sub ~n", [Client]);
-        _ -> pass
-    end,
-    {noreply, State#state{client = Client}};
-
-handle_info(disconnect, #state{id = ChannelId} = State) ->
-    case dgiot_bridge:get_products(ChannelId) of
-        {ok, _Type, ProductIds} ->
-            case ProductIds of
-                [] -> pass;
-                _ ->
-                    lists:map(fun(ProductId) ->
-                        dgiot_mqtt:publish(ChannelId, <<"thing/", ProductId/binary>>, jsx:encode(#{<<"network">> => <<"disconnect">>}))
-                              end, ProductIds)
-            end;
-        _ -> pass
-    end,
-    {noreply, State#state{client = disconnect}};
-
-handle_info({publish, #{payload := Payload, topic := <<"bridge/", Topic/binary>>} = _Msg}, #state{id = ChannelId} = State) ->
-    dgiot_mqtt:publish(ChannelId, Topic, Payload),
-    {noreply, State};
-
-handle_info({deliver, _, Msg}, #state{client = Client} = State) ->
-    case dgiot_mqtt:get_topic(Msg) of
-        <<"forward/", Topic/binary>> ->
-            emqtt:publish(Client, Topic, dgiot_mqtt:get_payload(Msg));
-        _ -> pass
-    end,
-    {noreply, State};
-
-handle_info(Info, State) ->
-    ?LOG(info, "unkknow ~p~n", [Info]),
-    {noreply, State}.
-
-
-terminate(_Reason, _State) ->
-    ok.
-
-code_change(_OldVsn, State, _Extra) ->
-    {ok, State}.

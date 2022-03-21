@@ -14,7 +14,6 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
--define(DGIOT_MQTT_WORK, dgiot_mqtt_work).
 -define(GROUP_TOPIC(Di, Mid), <<"group/", Di/binary,"/",Mid/binary>>).
 -define(COMSUMER_KEY(Di), <<"comsumer/",Di/binary>>).
 

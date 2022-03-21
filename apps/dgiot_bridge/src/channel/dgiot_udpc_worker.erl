@@ -18,11 +18,14 @@
 -author("johnliu").
 -include_lib("dgiot/include/dgiot_socket.hrl").
 -include_lib("dgiot/include/logger.hrl").
+
 %% API
 -export([init/1, handle_info/2, terminate/2]).
 -export([start_connect/1]).
 
 -define(MAX_BUFF_SIZE, 10 * 1024).
+-define(DGIOT_UDPC_WORK, dgiot_udpc_work).
+
 -record(state, {
     productid,
     devaddr,
