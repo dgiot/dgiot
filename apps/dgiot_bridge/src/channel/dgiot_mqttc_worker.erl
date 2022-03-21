@@ -21,17 +21,19 @@
 
 -export([childSpec/3, init/1, handle_info/2, handle_cast/2, handle_call/3, terminate/2, code_change/3]).
 
-childSpec(ChannelId, State, ChannelArgs) ->
+-define(CHILD(I, Type, Args), {I, {I, start_link, Args}, permanent, 5000, Type, [I]}).
+
+childSpec(ClientID, State, ChannelArgs) ->
     Options = [
         {host, binary_to_list(maps:get(<<"address">>, ChannelArgs))},
         {port, maps:get(<<"port">>, ChannelArgs)},
-        {clientid, ChannelId},
+        {clientid, ClientID},
         {ssl, maps:get(<<"ssl">>, ChannelArgs, false)},
         {username, binary_to_list(maps:get(<<"username">>, ChannelArgs))},
         {password, binary_to_list(maps:get(<<"password">>, ChannelArgs))},
         {clean_start, maps:get(<<"clean_start">>, ChannelArgs, false)}
     ],
-    [{dgiot_mqtt_client, {dgiot_mqtt_client, start_link, [?MODULE, [State], Options]}, permanent, 5000, worker, [dgiot_mqtt_client]}].
+    [?CHILD(dgiot_mqtt_client, worker,[?MODULE, [State], Options])].
 
 %% mqtt client hook
 init([State]) ->

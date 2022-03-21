@@ -25,12 +25,11 @@
 -export([childSpec/3,
     init/2]).
 
-childSpec(Type, ChannelId, #{<<"port">> := Port} = ChannelArgs) ->
+childSpec(Name, ChannelId, #{<<"port">> := Port} = ChannelArgs) ->
     State = #state{
         id = ChannelId,
         env = maps:without([<<"port">>,<<"path">>,<<"product">>,<<"behaviour">>], ChannelArgs)
     },
-    Name = dgiot_channelx:get_name(Type, ChannelId),
     Opts = [
         {ip, {0, 0, 0, 0}},
         {port, Port}

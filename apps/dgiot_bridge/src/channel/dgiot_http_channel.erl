@@ -88,7 +88,8 @@ init(?TYPE, ChannelId, ChannelArgs) ->
         id = ChannelId,
         env = maps:without([<<"port">>,<<"path">>,<<"product">>,<<"behaviour">>], ChannelArgs)
     },
-    {ok, State, dgiot_http_worker:childSpec(?TYPE, ChannelId, ChannelArgs)}.
+    Name = dgiot_channelx:get_name(?TYPE, ChannelId),
+    {ok, State, dgiot_http_worker:childSpec(Name, ChannelId, ChannelArgs)}.
 
 
 %% 通道消息处理,注意：进程池调用
