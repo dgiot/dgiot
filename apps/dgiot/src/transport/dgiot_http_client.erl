@@ -39,7 +39,8 @@
     set_url/2,
     get_sign/3,
     get_sign/4,
-    getToken/1
+    getToken/1,
+    format_json/1
 ]).
 
 get(Name, Path) ->

@@ -84,7 +84,13 @@ handle_info(start, #state{tid = Tid, sleep = Sleep} = State) ->
     }),
     case dgiot_http_client:request(post, {Url, Headers, Content, Body}) of
         {ok,R} ->
-            ?LOG(info,"R ~p ",[R]);
+            case jsx:is_json(dgiot_utils:to_binary(R)) of
+                true ->
+                    Bin = dgiot_utils:to_binary(R),
+                    io:format("R1 ~p ",[maps:get(<<"username">>, jsx:decode(Bin, [{labels, binary}, return_maps]),<<"">>)]);
+                _ ->
+                    io:format("R2 ~s ",[R])
+            end;
         {error, Reason} ->
             ?LOG(info,"Reason ~p ",[Reason])
     end,
