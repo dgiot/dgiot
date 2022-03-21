@@ -34,12 +34,12 @@
 %% 注册通道类型
 -channel_type(#{
     cType => ?TYPE,
-    type => ?PROTOCOL_CHL,
+    type => ?BRIDGE_CHL,
     title => #{
-        zh => <<"MQTT资源通道"/utf8>>
+        zh => <<"MQTT桥接通道"/utf8>>
     },
     description => #{
-        zh => <<"MQTT资源通道"/utf8>>
+        zh => <<"MQTT桥接通道"/utf8>>
     }
 }).
 %% 注册通道参数
@@ -72,7 +72,7 @@
         order => 3,
         type => string,
         required => true,
-        default => <<"test"/utf8>>,
+        default => <<"anonymous"/utf8>>,
         title => #{
             zh => <<"用户名"/utf8>>
         },
@@ -93,7 +93,7 @@
         }
     },
     <<"ssl">> => #{
-        order => 6,
+        order => 5,
         type => boolean,
         required => true,
         default => false,
@@ -105,7 +105,7 @@
         }
     },
     <<"clean_start">> => #{
-        order => 7,
+        order => 6,
         type => boolean,
         required => true,
         default => false,
@@ -188,13 +188,14 @@ handle_cast(_Request, State) ->
     {noreply, State}.
 
 handle_info({connect, Client}, #state{id = ChannelId} = State) ->
+    emqtt:subscribe(Client, {<<"bridge/#">>, 1}),
     case dgiot_bridge:get_products(ChannelId) of
         {ok, _Type, ProductIds} ->
             case ProductIds of
                 [] -> pass;
                 _ ->
                     lists:map(fun(ProductId) ->
-%%                        dgiot_product:load(ProductId),
+%%                      dgiot_product:load(ProductId),
                         emqtt:subscribe(Client, {<<"bridge/thing/", ProductId/binary, "/#">>, 1}),
                         dgiot_mqtt:subscribe(<<"forward/thing/", ProductId/binary, "/+/post">>),
                         dgiot_mqtt:publish(ChannelId, <<"thing/", ProductId/binary>>, jsx:encode(#{<<"network">> => <<"connect">>}))
@@ -225,7 +226,8 @@ handle_info({publish, #{payload := Payload, topic := <<"bridge/", Topic/binary>>
 
 handle_info({deliver, _, Msg}, #state{client = Client} = State) ->
     case dgiot_mqtt:get_topic(Msg) of
-        <<"forward/", Topic/binary>> -> emqtt:publish(Client, Topic, dgiot_mqtt:get_payload(Msg));
+        <<"forward/", Topic/binary>> ->
+            emqtt:publish(Client, Topic, dgiot_mqtt:get_payload(Msg));
         _ -> pass
     end,
     {noreply, State};

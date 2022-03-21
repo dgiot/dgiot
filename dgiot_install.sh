@@ -1167,6 +1167,41 @@ function make_ssl() {
     fi
 }
 
+function build_dashboard_lite() {
+  if [ ! -d ${script_dir}/node-v16.5.0-linux-x64/bin/ ]; then
+      if [ ! -f ${script_dir}/node-v16.5.0-linux-x64.tar.gz ]; then
+        wget https://dgiotdev-1308220533.cos.ap-nanjing.myqcloud.com/node-v16.5.0-linux-x64.tar.gz &> /dev/null
+        tar xvf node-v16.5.0-linux-x64.tar.gz &> /dev/null
+        if [ ! -f usr/bin/node ]; then
+         rm /usr/bin/node -rf
+        fi
+        ln -s ${script_dir}/node-v16.5.0-linux-x64/bin/node /usr/bin/node
+        ${script_dir}/node-v16.5.0-linux-x64/bin/npm i -g yarn --registry=https://registry.npmmirror.com
+        ${script_dir}/node-v16.5.0-linux-x64/bin/yarn config set registry https://registry.npmmirror.com
+        ${script_dir}/node-v16.5.0-linux-x64/bin/yarn -v
+        ${script_dir}/node-v16.5.0-linux-x64/bin/yarn get registry
+        sudo /bin/dd if=/dev/zero of=/var/swap.1 bs=1M count=1024
+        sudo /sbin/mkswap /var/swap.1
+        sudo /sbin/swapon /var/swap.1
+      fi
+    fi
+
+    cd  ${script_dir}/
+    if [ ! -d ${script_dir}/dgiot_dashboard_lite/ ]; then
+      git clone -b master https://gitee.com/dgiiot/dgiot-dashboard-lite.git dgiot_dashboard_lite
+    fi
+
+    cd ${script_dir}/dgiot_dashboard_lite
+    git reset --hard
+    git pull
+
+    export PATH=$PATH:/usr/local/bin:${script_dir}/node-v16.5.0-linux-x64/bin/
+    rm ${script_dir}/dgiot_dashboard_lite/dist/ -rf
+    ${script_dir}/node-v16.5.0-linux-x64/bin/yarn install
+    ${script_dir}/node-v16.5.0-linux-x64/bin/yarn build
+    echo "not build"
+  }
+
 function build_dashboard() {
   if [ ! -d ${script_dir}/node-v16.5.0-linux-x64/bin/ ]; then
       if [ ! -f ${script_dir}/node-v16.5.0-linux-x64.tar.gz ]; then
@@ -1241,6 +1276,10 @@ function pre_build_dgiot() {
       cp ${script_dir}/dgiot_dashboard/dist/  ${script_dir}/$plugin/apps/dgiot_api/priv/www -rf
     fi
 
+    if [ -d ${script_dir}/dgiot_dashboard_lite/dist ]; then
+      cp ${script_dir}/dgiot_dashboard_lite/dist/  ${script_dir}/$plugin/apps/dgiot_api/priv/www/lite -rf
+    fi
+
     if [ -d ${script_dir}/dgiot/emqx/rel/ ]; then
       rm ${script_dir}/dgiot/emqx/rel -rf
     fi
@@ -1274,6 +1313,7 @@ function post_build_dgiot() {
 
 function devops() {
     build_dashboard
+    build_dashboard_lite
     pre_build_dgiot
     make
     post_build_dgiot
@@ -1281,6 +1321,7 @@ function devops() {
 
 function ci() {
     build_dashboard
+    build_dashboard_lite
     pre_build_dgiot
     make ci
     post_build_dgiot
