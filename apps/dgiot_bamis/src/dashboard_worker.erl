@@ -42,7 +42,6 @@ start_link(#{<<"sessionToken">> := SessionToken} = State) ->
             gen_server:start_link(?MODULE, [State], [])
     end;
 
-
 start_link(State) ->
     ?LOG(info, "State ~p", [State]),
     ok.
@@ -62,14 +61,25 @@ init([#{<<"data">> := Que, <<"dashboardId">> := DashboardId, <<"sessionToken">> 
     dgiot_data:insert({dashboard, SessionToken}, self()),
     case length(Que) of
         0 ->
-            erlang:send_after(300, self(), stop);
+            erlang:send_after(3000, self(), stop);
         _ ->
 %%            Topic = <<"dashboard/", SessionToken/binary, "/heart">>,
 %%            dgiot_mqtt:subscribe(Topic),
 %%            erlang:send_after(30 * 1000, self(), heart),
-            erlang:send_after(100, self(), retry)
+            erlang:send_after(1000, self(), retry)
     end,
     {ok, #task{oldque = Que, newque = Que, freq = 1, dashboardId = DashboardId, sessiontoken = SessionToken}};
+
+init([#{<<"data">> := Que, <<"sessionToken">> := SessionToken}]) ->
+    io:format("dashboard_worker_init ~p ~n",[Que]),
+    dgiot_data:insert({dashboard, SessionToken}, self()),
+    case length(Que) of
+        0 ->
+            erlang:send_after(3000, self(), stop);
+        _ ->
+            erlang:send_after(1000, self(), retry)
+    end,
+    {ok, #task{oldque = Que, newque = Que, freq = 1, sessiontoken = SessionToken}};
 
 init(A) ->
     ?LOG(info, "A ~p ", [A]).
@@ -116,12 +126,9 @@ terminate(_Reason, _State) ->
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
-send_msg(#task{newque = Que} = State) ->
+send_msg(#task{newque = Que} =State ) ->
     Task = lists:nth(1, Que),
     dgiot_dashboard:do_task(Task, State),
     NewQue = lists:nthtail(1, Que),
-    erlang:send_after(300, self(), retry),
+    erlang:send_after(3000, self(), retry),
     State#task{newque = NewQue}.
-
-
-

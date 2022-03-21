@@ -45,4 +45,3 @@ init([]) ->
         ?CHILD(dashboard_sup, supervisor, [dashboard_task])
     ],
     {ok, { {one_for_all, 5, 10}, Children}}.
-
