@@ -53,8 +53,22 @@
         description => #{
             zh => <<"数据标识"/utf8>>
         },
-        <<"table">> => #{
-            <<"key">> => #{
+        <<"table">> => [
+             #{
+                 key =>  <<"data">>,
+                 order => 2,
+                 type => integer,
+                 required => true,
+                 default => <<"2"/utf8>>,
+                 title => #{
+                     zh => <<"数据长度(字节)"/utf8>>
+                 },
+                 description => #{
+                     zh => <<"数据长度(字节)"/utf8>>
+                 }
+            },
+            #{
+                key =>  <<"key">>,
                 order => 2,
                 type => string,
                 required => true,
@@ -66,31 +80,33 @@
                     zh => <<"从机地址(16进制加0X,例如:0X10,否在是10进制)"/utf8>>
                 }
             },
-            <<"value">> => #{
-                order => 2,
+            #{
+                key => <<"type">>,
+                order => 3,
                 type => string,
                 required => true,
-                default => <<"0000"/utf8>>,
+                default => #{<<"value">> => <<"bit">>, <<"label">> => <<"位"/utf8>>},
+                enum => [
+                    #{<<"value">> => <<"bit">>, <<"label">> => <<"位"/utf8>>},
+                    #{<<"value">> => <<"short16_AB">>, <<"label">> => <<"16位 有符号(AB)"/utf8>>},
+                    #{<<"value">> => <<"short16_BA">>, <<"label">> => <<"16位 有符号(BA)"/utf8>>},
+                    #{<<"value">> => <<"ushort16_AB">>, <<"label">> => <<"16位 无符号(AB)"/utf8>>},
+                    #{<<"value">> => <<"ushort16_BA">>, <<"label">> => <<"16位 无符号(BA)"/utf8>>},
+                    #{<<"value">> => <<"long32_ABCD">>, <<"label">> => <<"32位 有符号(ABCD)"/utf8>>},
+                    #{<<"value">> => <<"long32_CDAB">>, <<"label">> => <<"32位 有符号(CDAB)"/utf8>>},
+                    #{<<"value">> => <<"ulong32_ABCD">>, <<"label">> => <<"32位 无符号(ABCD)"/utf8>>},
+                    #{<<"value">> => <<"ulong32_CDAB">>, <<"label">> => <<"32位 无符号(CDAB)"/utf8>>},
+                    #{<<"value">> => <<"float32_ABCD">>, <<"label">> => <<"32位 浮点数(ABCD)"/utf8>>},
+                    #{<<"value">> => <<"float32_CDAB">>, <<"label">> => <<"32位 浮点数(CDAB)"/utf8>>}
+                ],
                 title => #{
-                    zh => <<"从机地址"/utf8>>
+                    zh => <<"数据格式"/utf8>>
                 },
                 description => #{
-                    zh => <<"从机地址(16进制加0X,例如:0X10,否在是10进制)"/utf8>>
-                }
-            },
-            <<"type">> => #{
-                order => 2,
-                type => string,
-                required => true,
-                default => <<"0000"/utf8>>,
-                title => #{
-                    zh => <<"从机地址"/utf8>>
-                },
-                description => #{
-                    zh => <<"从机地址(16进制加0X,例如:0X10,否在是10进制)"/utf8>>
+                    zh => <<"数据格式"/utf8>>
                 }
             }
-        }
+        ]
     }
 }).
 
