@@ -39,6 +39,59 @@
 }).
 %% 注册通道参数
 -params(#{
+    <<"header">> => #{
+        order => 1,
+        type => object,
+        allowCreate => true,
+        required => true,
+        default => [
+            #{<<"value">> => "lable", <<"name">> => <<"key">>}
+        ],
+        title => #{
+            zh => <<"数据标识"/utf8>>
+        },
+        description => #{
+            zh => <<"数据标识"/utf8>>
+        },
+        <<"table">> => #{
+            <<"key">> => #{
+                order => 2,
+                type => string,
+                required => true,
+                default => <<"0000"/utf8>>,
+                title => #{
+                    zh => <<"从机地址"/utf8>>
+                },
+                description => #{
+                    zh => <<"从机地址(16进制加0X,例如:0X10,否在是10进制)"/utf8>>
+                }
+            },
+            <<"value">> => #{
+                order => 2,
+                type => string,
+                required => true,
+                default => <<"0000"/utf8>>,
+                title => #{
+                    zh => <<"从机地址"/utf8>>
+                },
+                description => #{
+                    zh => <<"从机地址(16进制加0X,例如:0X10,否在是10进制)"/utf8>>
+                }
+            },
+            <<"type">> => #{
+                order => 2,
+                type => string,
+                required => true,
+                default => <<"0000"/utf8>>,
+                title => #{
+                    zh => <<"从机地址"/utf8>>
+                },
+                description => #{
+                    zh => <<"从机地址(16进制加0X,例如:0X10,否在是10进制)"/utf8>>
+                }
+            }
+        }
+    },
     <<"port">> => #{
         order => 1,
         type => integer,
