@@ -26,9 +26,6 @@
 -export([start/2]).
 -export([init/3, handle_event/3, handle_message/2, stop/3]).
 
--export([init/2]).
-
-
 %% 注册通道类型
 -channel_type(#{
     cType => ?TYPE,
@@ -86,37 +83,12 @@ start(ChannelId, ChannelArgs) ->
     dgiot_channelx:add(?TYPE, ChannelId, ?MODULE, ChannelArgs).
 
 %% 通道初始化
-init(?TYPE, ChannelId, #{<<"port">> := Port} = ChannelArgs) ->
+init(?TYPE, ChannelId, ChannelArgs) ->
     State = #state{
         id = ChannelId,
         env = maps:without([<<"port">>,<<"path">>,<<"product">>,<<"behaviour">>], ChannelArgs)
     },
-    Name = dgiot_channelx:get_name(?TYPE, ChannelId),
-    Opts = [
-        {ip, {0, 0, 0, 0}},
-        {port, Port}
-    ],
-    SSL = maps:with([<<"cacertfile">>, <<"certfile">>, <<"keyfile">>], ChannelArgs),
-    {Transport, TransportOpts} =
-        case maps:to_list(SSL) of
-            [] ->
-                {ranch_tcp, Opts};
-            SslOpts = [_ | _] ->
-                {ranch_ssl, Opts ++ SslOpts}
-        end,
-    Route = get_route(maps:get(<<"path">>, ChannelArgs, <<>>)),
-    Dispatch = cowboy_router:compile([
-        {'_', [
-            {Route, ?MODULE, State}
-        ]}
-    ]),
-    CowboyOpts = #{
-        env =>#{
-            dispatch => Dispatch
-        }
-    },
-    ChildSpec = ranch:child_spec(Name, 300, Transport, TransportOpts, cowboy_clear, CowboyOpts),
-    {ok, State, ChildSpec}.
+    {ok, State, dgiot_http_worker:childSpec(?TYPE, ChannelId, ChannelArgs)}.
 
 
 %% 通道消息处理,注意：进程池调用
@@ -131,25 +103,3 @@ handle_message(Message, State) ->
 stop(ChannelType, ChannelId, _State) ->
     ?LOG(info,"channel stop ~p,~p", [ChannelType, ChannelId]),
     ok.
-
-%% ====== http callback ======
-init(Req, #state{ id = ChannelId, env = Env} = State) ->
-    {ok, _Type, ProductIds} = dgiot_bridge:get_products(ChannelId),
-    case dgiot_bridge:apply_channel(ChannelId, ProductIds, handle_info, [{http, Req}], Env) of
-        {ok, NewEnv} ->
-            Req1 = cowboy_req:reply(200, #{}, <<"code not exist">>, Req),
-            {ok, Req1, State#state{env = NewEnv}};
-        {reply, _ProductId, {HTTPCode, Reply}, NewEnv} ->
-            Req1 = cowboy_req:reply(HTTPCode, #{}, Reply, Req),
-            {ok, Req1, State#state{env = NewEnv}};
-        {reply, _ProductId, {HTTPCode, Header, Reply}, NewEnv} ->
-            Req1 = cowboy_req:reply(HTTPCode, Header, Reply, Req),
-            {ok, Req1, State#state{env = NewEnv}}
-    end.
-
-get_route(<<"http://", Path>>) ->
-    get_route(Path);
-get_route(Path) when is_binary(Path) ->
-    binary_to_list(Path);
-get_route(_) ->
-    "/[...]".
