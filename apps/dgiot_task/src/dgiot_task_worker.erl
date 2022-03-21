@@ -21,16 +21,21 @@
 -behaviour(gen_server).
 
 %% API
--export([start_link/1]).
+-export([childSpec/1, start_link/1]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2,
     handle_info/2, terminate/2, code_change/3, stop/1]).
 
 -record(task, {mode = thing, tid, app, firstid, dtuid, product, devaddr, dis = [], que, round, ref, ack = #{}, appdata = #{}, ts = 0, endtime = 0, freq = 0, interval = 5}).
+-define(CHILD(I, Type, Args), {I, {I, start_link, Args}, permanent, 5000, Type, [I]}).
+
 %%%===================================================================
 %%% API
 %%%===================================================================
+childSpec(ChannelID) ->
+    ?CHILD(task_sup, supervisor, [?TASK_SUP(ChannelID)]).
+
 start_link(#{<<"channel">> := ChannelId, <<"dtuid">> := DtuId} = State) ->
 %%    io:format("State = ~p.~n", [State]),
     case dgiot_data:lookup(?DGIOT_TASK, {ChannelId, DtuId}) of
@@ -56,6 +61,7 @@ stop(#{<<"channel">> := Channel, <<"dtuid">> := DtuId}) ->
         _Reason ->
             ok
     end.
+
 %%%===================================================================
 %%% gen_server callbacks
 %%%===================================================================

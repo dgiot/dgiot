@@ -17,10 +17,14 @@
 -author("johnliu").
 -behaviour(gen_server).
 -include_lib("dgiot/include/logger.hrl").
+-include("dgiot_bridge.hrl").
 %% API
--export([start_link/1,
-    childSpec/0,
-    start/1]).
+-export([
+    childSpec/1,
+    start/1,
+    start_link/1
+
+]).
 
 %% gen_server callbacks
 -export([
@@ -39,13 +43,11 @@
 %%%===================================================================
 %%% API
 %%%===================================================================
-childSpec() ->
-    [
-        ?CHILD(dgiot_httpc_sup, supervisor, [dgiot_httpc])
-    ].
+childSpec(ChannelId) ->
+    [?CHILD(dgiot_httpc_sup, supervisor, [?DGIOT_SUP(ChannelId)])].
 
-start(Args) ->
-    supervisor:start_child(dgiot_httpc, [Args]).
+start(#{ <<"channelid">> := ChannelId} = Args) ->
+    supervisor:start_child(?DGIOT_SUP(ChannelId), [Args]).
 
 start_link(#{
     <<"channelid">> := ChannelId,

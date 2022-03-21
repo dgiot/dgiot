@@ -78,7 +78,7 @@ start(#{
             pass;
         _ ->
 %%            ?LOG(info, "find ~p", [Args]),
-            supervisor:start_child(dgiot_task, [Args])
+            supervisor:start_child(?TASK_SUP(Channel), [Args])
     end;
 
 start(_) ->
@@ -96,7 +96,7 @@ timing_start(#{
             lists:map(fun(Y) ->
                 case Y of
                     {DtuId, _} ->
-                        supervisor:start_child(dgiot_task, [Args#{<<"dtuid">> => DtuId}]);
+                        supervisor:start_child(?TASK_SUP(Channel), [Args#{<<"dtuid">> => DtuId}]);
                     _ ->
                         pass
                 end

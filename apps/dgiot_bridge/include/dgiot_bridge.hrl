@@ -24,4 +24,5 @@
 -define(FEATURE_CHL, 4).
 -define(AUTH_CHL, 5).
 -define(defult_CHL, 5).
+-define(DGIOT_SUP(Name), dgiot_utils:to_atom(lists:concat(["dgiot_sup", dgiot_utils:to_atom(Name)]))).
 

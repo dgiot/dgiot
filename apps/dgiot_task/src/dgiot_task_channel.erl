@@ -186,7 +186,7 @@ init(?TYPE, ChannelId, Args) ->
         <<"products">> => Products,
         <<"args">> => NewArgs}
     },
-    {ok, State, []}.
+    {ok, State, dgiot_task_worker:childSpec(ChannelId)}.
 
 handle_init(#state{id = ChannelId, env = #{<<"products">> := Products, <<"args">> := Args}} = State) ->
     lists:map(fun({ProductId, #{<<"ACL">> := Acl}}) ->
