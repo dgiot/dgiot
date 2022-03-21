@@ -1,7 +1,7 @@
 {application, dgiot_bamis,
     [{description, "DGIOT AMIS"},
         {vsn, "4.3.0"},
-        {registered, []},
+        {registered, [dgiot_bamis_sup]},
         {mod, {dgiot_bamis_app, []}},
         {applications, [kernel, stdlib, dgiot_api]},
         {env, []},
