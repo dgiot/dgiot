@@ -114,7 +114,7 @@ init(?TYPE, ChannelId, Args) ->
         id = ChannelId,
         env = Args
     },
-    {ok, State, dgiot_httpc_worker:childSpec()}.
+    {ok, State, dgiot_httpc_worker:childSpec(ChannelId)}.
 
 handle_init(#state{id = ChannelId, env = Args} = State) ->
     #{<<"product">> := Products, <<"url">> := Url} = Args,

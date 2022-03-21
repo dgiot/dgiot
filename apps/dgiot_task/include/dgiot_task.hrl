@@ -22,3 +22,4 @@
 -define(PROFILE, dgiot_profile).
 -define(MODIFYPROFILE, dgiot_modifyprofile).
 -define(TASK_NAME(Name), dgiot_utils:to_atom(lists:concat([dgiot_utils:to_atom(Name), "task"]))).
+-define(TASK_SUP(Name), dgiot_utils:to_atom(lists:concat(["dgiot_task_sup", dgiot_utils:to_atom(Name)]))).

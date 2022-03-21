@@ -33,7 +33,6 @@ start_link() ->
 
 init([]) ->
     Children = [
-        ?CHILD(task_sup, supervisor, [dgiot_task]),
         ?CHILD(task_loader, worker, [])
     ],
     {ok, {{one_for_one, 5, 10}, Children}}.
