@@ -45,7 +45,7 @@
         allowCreate => true,
         required => true,
         default => [
-            #{<<"value">> => "lable", <<"name">> => <<"key">>}
+            #{<<"value">> => <<"lable">>, <<"name">> => <<"key">>}
         ],
         title => #{
             zh => <<"数据标识"/utf8>>
