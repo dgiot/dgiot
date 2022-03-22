@@ -372,9 +372,9 @@ save_pnque(DtuProductId, DtuAddr, ProductId, DevAddr) ->
     case dgiot_data:get({task_args, DtuProductId}) of
         not_find ->
             pass;
-        Args ->
+        #{<<"channel">> := Channel} = Args ->
 %%            io:format("Args ~p.~n", [Args]),
-            supervisor:start_child(dgiot_task, [Args#{<<"dtuid">> => DtuId}])
+            supervisor:start_child(?TASK_SUP(Channel), [Args#{<<"dtuid">> => DtuId}])
     end.
 
 

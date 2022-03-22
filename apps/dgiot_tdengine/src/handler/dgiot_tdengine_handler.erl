@@ -368,71 +368,108 @@ get_app(ProductId, Results, DeviceId, Args) ->
     Props = get_Props(ProductId, Keys),
     lists:foldl(fun(X, Acc) ->
         case X of
-            #{<<"name">> := Name, <<"identifier">> := Identifier, <<"isshow">> := true, <<"dataType">> := #{<<"type">> := Typea} = DataType} ->
+            #{<<"name">> := Name, <<"identifier">> := Identifier, <<"dataForm">> := #{<<"protocol">> := Protocol}, <<"dataSource">> := DataSource, <<"dataType">> := #{<<"type">> := Typea} = DataType} ->
                 Time = maps:get(<<"createdat">>, Result, dgiot_datetime:now_secs()),
                 NewTime = dgiot_tdengine_handler:get_time(dgiot_utils:to_binary(Time), <<"111">>),
                 Devicetype = maps:get(<<"devicetype">>, X, <<"others">>),
                 Ico = maps:get(<<"ico">>, X, <<"">>),
                 Specs = maps:get(<<"specs">>, DataType, #{}),
                 Unit = maps:get(<<"unit">>, Specs, <<"">>),
-                NewV =
-                    case maps:find(Identifier, Result) of
-                        error ->
-                            <<"--">>;
-                        {ok, V} ->
-                            case Typea of
-                                Type1 when Type1 == <<"enum">>; Type1 == <<"bool">> ->
-                                    Value = maps:get(dgiot_utils:to_binary(V), Specs, V),
-                                    Value;
-                                Type2 when Type2 == <<"struct">> ->
-                                    V;
-                                Type3 when Type3 == <<"geopoint">> ->
-                                    BinV = dgiot_utils:to_binary(V),
-                                    case binary:split(BinV, <<$_>>, [global, trim]) of
-                                        [Longitude, Latitude] ->
-                                            case dgiot_gps:get_baidu_addr(Longitude, Latitude) of
-                                                #{<<"baiduaddr">> := #{<<"formatted_address">> := FormattedAddress}} ->
-                                                    case dgiot_parse:get_object(<<"Device">>, DeviceId) of
-                                                        {ok, #{<<"location">> := #{<<"__type">> := <<"GeoPoint">>, <<"longitude">> := Longitude, <<"latitude">> := Latitude}}} ->
-                                                            pass;
-                                                        {ok, #{<<"detail">> := Detail}} ->
-                                                            dgiot_parse:update_object(<<"Device">>, DeviceId, #{
-                                                                <<"location">> => #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => Longitude, <<"latitude">> => Latitude},
-                                                                <<"detail">> => Detail#{<<"address">> => FormattedAddress}});
-                                                        _ ->
-                                                            pass
-                                                    end,
-                                                    FormattedAddress;
-                                                _ ->
-                                                    <<"[", BinV/binary, "]经纬度解析错误"/utf8>>
-                                            end;
-                                        _ ->
-                                            <<"无GPS信息"/utf8>>
-                                    end;
-                                Type4 when Type4 == <<"float">>; Type4 == <<"double">> ->
-                                    Precision = maps:get(<<"precision">>, Specs, 3),
-                                    dgiot_utils:to_float(V, Precision);
-                                Type5 when Type5 == <<"image">> ->
-                                    AppName = dgiot_device:get_appname(DeviceId),
-                                    Url = dgiot_device:get_url(AppName),
-                                    Imagevalue = maps:get(<<"imagevalue">>, DataType, <<"">>),
-                                    BinV = dgiot_utils:to_binary(V),
-                                    <<Url/binary, "/dgiot_file/", DeviceId/binary, "/", BinV/binary, ".", Imagevalue/binary>>;
-                                Type6 when Type6 == <<"date">> ->
-                                    case V of
-                                        <<"1970-01-01 08:00:00.000">> ->
-                                            <<"--">>;
-                                        _ ->
-                                            V
-                                    end;
-                                _ ->
-                                    V
-                            end
-                    end,
-                Acc ++ [#{<<"identifier">> => Identifier, <<"name">> => Name, <<"type">> => Typea, <<"number">> => NewV, <<"time">> => NewTime, <<"unit">> => Unit, <<"imgurl">> => Ico, <<"devicetype">> => Devicetype}];
-            _ -> Acc
+                case do_hook({Protocol, Identifier}, DataSource#{<<"deviceid">> => DeviceId}) of
+                    ignore ->
+                        NewV =
+                            case maps:find(Identifier, Result) of
+                                error ->
+                                    <<"--">>;
+                                {ok, V} ->
+                                    check_field(Typea, V, #{<<"datatype">> => DataType, <<"specs">> => Specs, <<"deviceid">> => DeviceId})
+                            end,
+                        Acc ++ [#{<<"identifier">> => Identifier, <<"name">> => Name,
+                            <<"type">> => Typea, <<"number">> => NewV,
+                            <<"time">> => NewTime, <<"unit">> => Unit,
+                            <<"imgurl">> => Ico, <<"devicetype">> => Devicetype}];
+                    {error, _Reason} ->
+                        Acc;
+                    V ->
+                        NewV = check_field(Typea, V, #{<<"datatype">> => DataType, <<"specs">> => Specs, <<"deviceid">> => DeviceId}),
+                        Acc ++ [#{<<"identifier">> => Identifier, <<"name">> => Name,
+                            <<"type">> => Typea, <<"number">> => NewV,
+                            <<"time">> => NewTime, <<"unit">> => Unit,
+                            <<"imgurl">> => Ico, <<"devicetype">> => Devicetype}]
+                end;
+            _ ->
+                Acc
         end
                 end, [], Props).
+
+do_hook(Key, Args) ->
+    io:format("~s ~p Key = ~p.~n", [?FILE, ?LINE, Key]),
+    io:format("~s ~p Args = ~p.~n", [?FILE, ?LINE, Args]),
+    case catch dgiot_hook:run_hook(Key, Args) of
+        {'EXIT', Reason} ->
+            {error, Reason};
+        {error, not_find} ->
+            ignore;
+        {ok, []} ->
+            ignore;
+        {ok, [{error, Reason} | _]} ->
+            {error, Reason};
+        {ok, [Rtn | _]} ->
+            Rtn
+    end.
+
+check_field(Typea, V, #{<<"specs">> := Specs}) when Typea == <<"enum">>; Typea == <<"bool">> ->
+    maps:get(dgiot_utils:to_binary(V), Specs, V);
+
+check_field(<<"struct">>, V, _) ->
+    V;
+
+check_field(<<"geopoint">>, V, #{<<"deviceid">> := DeviceId}) ->
+    BinV = dgiot_utils:to_binary(V),
+    case binary:split(BinV, <<$_>>, [global, trim]) of
+        [Longitude, Latitude] ->
+            case dgiot_gps:get_baidu_addr(Longitude, Latitude) of
+                #{<<"baiduaddr">> := #{<<"formatted_address">> := FormattedAddress}} ->
+                    case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+                        {ok, #{<<"location">> := #{<<"__type">> := <<"GeoPoint">>, <<"longitude">> := Longitude, <<"latitude">> := Latitude}}} ->
+                            pass;
+                        {ok, #{<<"detail">> := Detail}} ->
+                            dgiot_parse:update_object(<<"Device">>, DeviceId, #{
+                                <<"location">> => #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => Longitude, <<"latitude">> => Latitude},
+                                <<"detail">> => Detail#{<<"address">> => FormattedAddress}});
+                        _ ->
+                            pass
+                    end,
+                    FormattedAddress;
+                _ ->
+                    <<"[", BinV/binary, "]经纬度解析错误"/utf8>>
+            end;
+        _ ->
+            <<"无GPS信息"/utf8>>
+    end;
+
+check_field(Typea, V, #{<<"specs">> := Specs}) when Typea == <<"float">>; Typea == <<"double">> ->
+    Precision = maps:get(<<"precision">>, Specs, 3),
+    dgiot_utils:to_float(V, Precision);
+
+check_field(<<"image">>, V, #{<<"datatype">> := DataType, <<"deviceid">> := DeviceId}) ->
+    AppName = dgiot_device:get_appname(DeviceId),
+    Url = dgiot_device:get_url(AppName),
+    Imagevalue = maps:get(<<"imagevalue">>, DataType, <<"">>),
+    BinV = dgiot_utils:to_binary(V),
+    <<Url/binary, "/dgiot_file/", DeviceId/binary, "/", BinV/binary, ".", Imagevalue/binary>>;
+
+check_field(<<"date">>, V, _) ->
+    case V of
+        <<"1970-01-01 08:00:00.000">> ->
+            <<"--">>;
+        _ ->
+            V
+    end;
+
+check_field(_Typea, V, _) ->
+    V.
+
 
 %%get_app(ProductId, Results, DeviceId) ->
 %%    Maps = get_prop(ProductId),
