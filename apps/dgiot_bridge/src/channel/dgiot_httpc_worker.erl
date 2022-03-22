@@ -38,7 +38,7 @@
 -define(SERVER, ?MODULE).
 -define(CHILD(I, Type, Args), {I, {I, start_link, Args}, permanent, 5000, Type, [I]}).
 
--record(state, {tid, id, page = 1, token, refreshtoken, sleep = 12}).
+-record(state, {tid, id, page = 1, token, refreshtoken, sleep = 12,head,body,path,method}).
 
 %%%===================================================================
 %%% API
@@ -67,12 +67,17 @@ start_link(#{
 init([#{
     <<"channelid">> := ChannelId,
     <<"productid">> := ProductId,
-    <<"devaddr">> := DevAddr
+    <<"devaddr">> := DevAddr,
+    <<"body">> := Body,
+    <<"head">> := Heads
 }]) ->
     DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
     dgiot_data:insert({ChannelId, DeviceId, httpc}, self()),
     erlang:send_after(10000, self(), start),
-    {ok, #state{tid = ChannelId, id = DeviceId}}.
+    {ok, #state{tid = ChannelId, id = DeviceId}};
+
+init(Args) ->
+    io:format("dgiot_httpc_worker:init:~p~n", [Args]).
 
 handle_call(_Request, _From, State) ->
     {reply, ok, State}.
