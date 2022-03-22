@@ -369,6 +369,7 @@ create_device(#{
                     <<"desc">> => Name,
                     <<"brand">> => Brand,
                     <<"devModel">> => DevModel,
+                    <<"address">> => maps:get(<<"address">>, Device, <<"">>),
                     <<"batchId">> => #{
                         <<"batch_name">> => dgiot_utils:to_binary(Batch_name),
                         <<"createdtime">> => dgiot_datetime:now_secs()
