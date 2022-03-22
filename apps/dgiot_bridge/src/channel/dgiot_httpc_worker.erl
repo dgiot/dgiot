@@ -23,7 +23,14 @@
     childSpec/1,
     start/1,
     start_link/1
+]).
 
+-export([
+    set_url/2,
+    set_method/2,
+    set_contenttype/2,
+    set_header/2,
+    set_body/2
 ]).
 
 %% gen_server callbacks
@@ -45,14 +52,14 @@
 childSpec(ChannelId) ->
     [?CHILD(dgiot_httpc_sup, supervisor, [?DGIOT_SUP(ChannelId)])].
 
-start(#{ <<"channelid">> := ChannelId} = Args) ->
+start(#{<<"channelid">> := ChannelId} = Args) ->
     supervisor:start_child(?DGIOT_SUP(ChannelId), [Args]).
 
 start_link(#{
     <<"channelid">> := ChannelId,
     <<"productid">> := ProductId,
     <<"devaddr">> := DevAddr
-} = Args) ->
+}) ->
     DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
     case dgiot_data:lookup({ChannelId, DeviceId, httpc}) of
         {ok, Pid} when is_pid(Pid) ->
@@ -61,7 +68,8 @@ start_link(#{
             ok
     end,
     Server = list_to_atom(lists:concat([httpc, dgiot_utils:to_list(ChannelId), dgiot_utils:to_list(DeviceId)])),
-    gen_server:start_link({local, Server}, ?MODULE, [Args], []).
+    gen_server:start_link({local, Server}, ?MODULE,
+        [#{<<"channelid">> => ChannelId, <<"productid">> => ProductId, <<"devaddr">> => DevAddr}], []).
 
 init([#{
     <<"channelid">> := ChannelId,
@@ -83,24 +91,18 @@ handle_cast(_Request, State) ->
     {noreply, State}.
 
 handle_info(start, #state{tid = Tid, sleep = Sleep} = State) ->
-    Url = "http://127.0.0.1:5080/iotapi/login",
-    Headers = [
-        {"accept", "application/json"},
-        {"Content-Type", "text/plain"}
-    ],
-    Content = "text/plain",
-    Body = dgiot_json:encode(#{
-        <<"password">> => <<"dgiot_dev">>,
-        <<"username">> => <<"dgiot_dev">>
-    }),
-    case dgiot_http_client:request(post, {Url, Headers, Content, Body}) of
+    Url = get_url(Tid),
+    Headers = get_header(Tid),
+    ContentHeader = get_contenttype(Tid),
+    Body = dgiot_json:encode(get_body(Tid)),
+    case dgiot_http_client:request(get_method(Tid), {Url, Headers, ContentHeader, Body}) of
         {ok, R} ->
             case jsx:is_json(dgiot_utils:to_binary(R)) of
                 true ->
                     Bin = dgiot_utils:to_binary(R),
                     ?LOG(info, "R1 ~p ", [maps:get(<<"username">>, jsx:decode(Bin, [{labels, binary}, return_maps]), <<"">>)]);
                 _ ->
-                    ?LOG(info, "R2 ~s ", [R])
+                    io:format("~s ~p R2 ~s ", [?FILE, ?LINE, R])
             end;
         {error, Reason} ->
             ?LOG(info, "Reason ~p ", [Reason])
@@ -117,3 +119,51 @@ terminate(_Reason, #state{tid = Tid, id = Id} = _State) ->
 
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
+
+set_method(ChannelId, Args) ->
+    Method = dgiot_utils:to_list(maps:get(<<"method">>, Args)),
+    dgiot_data:insert({ChannelId, ?MODULE, method}, dgiot_utils:to_atom(string:to_lower(Method))).
+
+get_method(ChannelId) ->
+    dgiot_data:get({ChannelId, ?MODULE, method}).
+
+set_url(ChannelId, Args) ->
+    dgiot_data:insert({ChannelId, ?MODULE, url}, dgiot_utils:to_list(maps:get(<<"url">>, Args))).
+
+get_url(ChannelId) ->
+    dgiot_data:get({ChannelId, ?MODULE, url}).
+
+set_contenttype(ChannelId, Args) ->
+    dgiot_data:insert({ChannelId, ?MODULE, contenttype}, dgiot_utils:to_list(maps:get(<<"contenttype">>, Args))).
+
+get_contenttype(ChannelId) ->
+    dgiot_data:get({ChannelId, ?MODULE, contenttype}).
+
+set_header(ChannelId, Args) ->
+    Header = lists:foldl(fun(X, Acc) ->
+        case X of
+            #{<<"key">> := Key, <<"value">> := Value} ->
+                Acc ++ [{dgiot_utils:to_list(Key), dgiot_utils:to_list(Value)}];
+            _ ->
+                Acc
+        end
+                         end, [], maps:get(<<"header">>, Args)),
+    dgiot_data:insert({ChannelId, ?MODULE, header}, Header).
+
+get_header(ChannelId) ->
+    dgiot_data:get({ChannelId, ?MODULE, header}).
+
+set_body(ChannelId, Args) ->
+    Body = lists:foldl(fun(X, Acc) ->
+        case X of
+            #{<<"key">> := Key, <<"value">> := Value} ->
+                Acc#{Key => Value};
+            _ ->
+                Acc
+        end
+                       end, #{}, maps:get(<<"body">>, Args)),
+    io:format("Body ~p", [Body]),
+    dgiot_data:insert({ChannelId, ?MODULE, body}, Body).
+
+get_body(ChannelId) ->
+    dgiot_data:get({ChannelId, ?MODULE, body}).

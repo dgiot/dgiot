@@ -68,7 +68,7 @@
         },
         <<"table">> => #{
             <<"key">> => #{
-                key => <<"type">>,
+                key => <<"key">>,
                 order => 1,
                 type => string,
                 required => true,
@@ -117,10 +117,10 @@
             #{<<"value">> => <<"CONNECT">>, <<"label">> => <<"CONNECT"/utf8>>},
             #{<<"value">> => <<"OPTIONS">>, <<"label">> => <<"OPTIONS"/utf8>>},
             #{<<"value">> => <<"TRACE">>, <<"label">> => <<"TRACE"/utf8>>},
-            #{<<"value">> => <<"CUSTON">>, <<"label">> => <<"CUSTON"/utf8>>}
+            #{<<"value">> => <<"CUSTOM">>, <<"label">> => <<"CUSTOM"/utf8>>}
         ],
         default => [
-            #{<<"value">> => "GET", <<"name">> => <<"GET">>}
+            #{<<"value">> => "GET", <<"label">> => <<"GET">>}
         ],
         title => #{
             zh => <<"请求方法"/utf8>>
@@ -134,9 +134,6 @@
         type => object,
         allowCreate => true,
         required => true,
-        default => [
-            #{<<"value">> => "lable", <<"name">> => <<"key">>}
-        ],
         title => #{
             zh => <<"请求参数"/utf8>>
         },
@@ -172,8 +169,23 @@
             }
         }
     },
-    <<"page_index">> => #{
+    <<"contenttype">> => #{
         order => 7,
+        type => string,
+        required => false,
+        default => #{<<"value">> => <<"text/plain">>, <<"label">> => <<"text/plain"/utf8>>},
+        enum => [
+            #{<<"value">> => <<"text/plain">>, <<"label">> => <<"text/plain"/utf8>>}
+        ],
+        title => #{
+            zh => <<"起始记录号"/utf8>>
+        },
+        description => #{
+            zh => <<"起始记录号"/utf8>>
+        }
+    },
+    <<"page_index">> => #{
+        order => 8,
         type => integer,
         required => false,
         default => 1,
@@ -185,7 +197,7 @@
         }
     },
     <<"page_size">> => #{
-        order => 8,
+        order => 9,
         type => integer,
         required => false,
         default => 1,
@@ -197,7 +209,7 @@
         }
     },
     <<"total">> => #{
-        order => 9,
+        order => 10,
         type => integer,
         required => false,
         default => 1,
@@ -212,7 +224,7 @@
         order => 102,
         type => string,
         required => false,
-        default => <<"http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/product/dgiot/channel/TcpIcon.jpeg">>,
+        default => <<"http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/product/dgiot/channel/HTTP-collection.png">>,
         title => #{
             en => <<"channel ICO">>,
             zh => <<"通道ICO"/utf8>>
@@ -234,12 +246,17 @@ init(?TYPE, ChannelId, Args) ->
         id = ChannelId,
         env = Args
     },
+    dgiot_httpc_worker:set_url(ChannelId, Args),
+    dgiot_httpc_worker:set_method(ChannelId, Args),
+    dgiot_httpc_worker:set_contenttype(ChannelId, Args),
+    dgiot_httpc_worker:set_header(ChannelId, Args),
+    dgiot_httpc_worker:set_body(ChannelId, Args),
     {ok, State, dgiot_httpc_worker:childSpec(ChannelId)}.
 
 handle_init(#state{id = ChannelId, env = Args} = State) ->
-    #{<<"product">> := Products, <<"url">> := Url} = Args,
+    #{<<"product">> := Products} = Args,
     lists:map(fun({ProductId, _Opt}) ->
-        start_client(ChannelId, ProductId, Url, Args)
+        start_client(ChannelId, ProductId, Args)
               end, Products),
     {ok, State}.
 
@@ -255,15 +272,14 @@ stop(ChannelType, ChannelId, _State) ->
     ?LOG(warning, "channel stop ~p,~p", [ChannelType, ChannelId]),
     ok.
 
-start_client(ChannelId, ProductId, Url, #{<<"page_index">> := PageIndex,
-    <<"page_size">> := PageSize, <<"total">> := Total}) ->
+start_client(ChannelId, ProductId, #{<<"page_index">> := PageIndex,
+    <<"page_size">> := PageSize, <<"total">> := Total} ) ->
     Success = fun(Page) ->
         lists:map(fun(X) ->
             case X of
                 #{<<"devaddr">> := DevAddr} ->
-                    ?LOG(info,"DevAddr ~p",[DevAddr]),
+                    ?LOG(info, "DevAddr ~p", [DevAddr]),
                     dgiot_httpc_worker:start(#{
-                        <<"url">> => Url,
                         <<"channelid">> => ChannelId,
                         <<"productid">> => ProductId,
                         <<"devaddr">> => DevAddr
