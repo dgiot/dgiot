@@ -137,7 +137,8 @@ binary_to_hex(Id) ->
     <<<<Y>> || <<X:4>> <= Id, Y <- integer_to_list(X, 16)>>.
 
 hex_to_binary(Id) ->
-    <<<<Z>> || <<X:8, Y:8>> <= Id, Z <- [binary_to_integer(<<X, Y>>, 16)]>>.
+    NewId = re:replace(Id, " ", "", [global, {return, binary}, unicode]),
+    <<<<Z>> || <<X:8, Y:8>> <= NewId, Z <- [binary_to_integer(<<X, Y>>, 16)]>>.
 
 
 to_md5(V) when is_binary(V); is_list(V) ->
