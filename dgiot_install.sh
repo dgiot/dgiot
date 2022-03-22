@@ -1261,7 +1261,7 @@ function pre_build_dgiot() {
 
     if [ $plugin == 'dgiot' ]; then
         echo "dgiot plugin"
-      else
+    else
         cd ${script_dir}/$plugin/apps/
         rm $plugin -rf
         git clone root@git.iotn2n.com:dgiot/$plugin.git
@@ -1278,7 +1278,7 @@ function pre_build_dgiot() {
 
     #if [ -d ${script_dir}/dgiot_dashboard_lite/dist ]; then
     #  cp ${script_dir}/dgiot_dashboard_lite/dist/  ${script_dir}/$plugin/apps/dgiot_api/priv/www/lite -rf
-    # fi
+    #fi
 
     if [ -d ${script_dir}/dgiot/emqx/rel/ ]; then
       rm ${script_dir}/dgiot/emqx/rel -rf
