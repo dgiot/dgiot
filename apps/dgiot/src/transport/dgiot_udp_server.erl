@@ -68,7 +68,7 @@ init(Mod, Socket, Sock, Opts, State) ->
     process_flag(trap_exit, true),
     case esockd_wait(Socket) of
         {ok, NSocket} ->
-            ChildState = #udp{socket = Socket, sock = Sock, register = false, transport = esockd_transport, state = State},
+            ChildState = #udp{socket = Socket, sock = Sock, register = false, transport = gen_udp, state = State},
             case Mod:init(ChildState) of
                 {ok, NewChildState} ->
                     GState = #state{
@@ -114,7 +114,7 @@ handle_info({ssl, _RawSock, Data}, State) ->
     handle_info({ssl, _RawSock, Data}, State);
 
 %% add register function
-handle_info({udp, _SockPid, Data}, #state{mod = Mod, child = #udp{register = false, buff = Buff, socket = Sock} = ChildState} = State) ->
+handle_info({datagram, _SockPid, Data}, #state{mod = Mod, child = #udp{register = false, buff = Buff, socket = Sock} = ChildState} = State) ->
     dgiot_metrics:inc(dgiot_bridge, <<"udp_server_recv">>, 1),
     Binary = iolist_to_binary(Data),
     NewBin =
@@ -139,7 +139,7 @@ handle_info({udp, _SockPid, Data}, #state{mod = Mod, child = #udp{register = fal
             {stop, Reason, State#state{child = NewChild}}
     end;
 
-handle_info({udp, Sock, Data}, #state{mod = Mod, child = #udp{buff = Buff, socket = Sock} = ChildState} = State) ->
+handle_info({datagram, Sock, Data}, #state{mod = Mod, child = #udp{buff = Buff, socket = Sock} = ChildState} = State) ->
     dgiot_metrics:inc(dgiot_bridge, <<"udp_server_recv">>, 1),
     Binary = iolist_to_binary(Data),
     NewBin =
@@ -188,6 +188,7 @@ handle_info({udp_closed, Sock}, #state{mod = Mod, child = #udp{socket = Sock} = 
     end;
 
 handle_info(Info, #state{mod = Mod, child = ChildState} = State) ->
+    io:format("~s ~p Info: ~p~n", [?FILE, ?LINE, Info]),
     case Mod:handle_info(Info, ChildState) of
         {noreply, NewChildState} ->
             {noreply, State#state{child = NewChildState}, hibernate};
@@ -235,23 +236,25 @@ code_change(OldVsn, #state{mod = Mod, child = ChildState} = State, Extra) ->
 %%% Internal functions
 %%%===================================================================
 
-send(#udp{clientid = CliendId, register = true, transport = Transport, socket = Socket}, Payload) ->
+send(#udp{clientid = CliendId, register = true, transport = Transport, socket = Socket, sock = Sock}, Payload) ->
     dgiot_tracer:check_trace(CliendId, CliendId, dgiot_utils:binary_to_hex(Payload), ?MODULE, ?LINE),
     dgiot_metrics:inc(dgiot_bridge, <<"udp_server_send">>, 1),
     case Socket == undefined of
         true ->
             {error, disconnected};
         false ->
-            Transport:send(Socket, Payload)
+            esockd_send_ok(Transport, Socket, Sock, Payload)
+%%            Transport:send(Socket, Payload)
     end;
 
-send(#udp{transport = Transport, socket = Socket}, Payload) ->
+send(#udp{transport = Transport, socket = Socket, sock = Sock}, Payload) ->
     dgiot_metrics:inc(dgiot_bridge, <<"udp_server_send">>, 1),
     case Socket == undefined of
         true ->
             {error, disconnected};
         false ->
-            Transport:send(Socket, Payload)
+%%            Transport:send(Socket, Payload)
+            esockd_send_ok(Transport, Socket, Sock, Payload)
     end.
 
 %%--------------------------------------------------------------------
@@ -273,6 +276,13 @@ esockd_wait({esockd_transport, Sock}) ->
         {ok, NSock} -> {ok, {esockd_transport, NSock}};
         R = {error, _} -> R
     end.
+
+
+esockd_send_ok(Transport, {udp, _SockPid, Sock}, {Ip, Port}, Data) ->
+    Transport:send(Sock, Ip, Port, Data);
+
+esockd_send_ok(Transport, {esockd_transport, Sock}, {_Ip, _Port}, Data) ->
+    Transport:async_send(Sock, Data).
 
 esockd_send_ok(Socket, Dest, Data) ->
     _ = esockd_send(Socket, Dest, Data),

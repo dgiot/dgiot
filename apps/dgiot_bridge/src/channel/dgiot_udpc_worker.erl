@@ -31,7 +31,9 @@
     devaddr,
     hb = 60,
     auto_reconnect = 30,
-    reconnect_times = 3
+    reconnect_times = 3,
+    login = <<"login">>,
+    module = dgiot_sonbs
 }).
 
 start_connect(#{
@@ -41,16 +43,23 @@ start_connect(#{
     <<"ip">> := Ip,
     <<"productid">> := ProductId,
     <<"hb">> := HB,
-    <<"devaddr">> := DevAddr
+    <<"login">> := Login,
+    <<"module">> := Module
 }) ->
     State = #state{
         productid = ProductId,
-        devaddr = DevAddr,
         hb = HB,
         auto_reconnect = Recon,
-        reconnect_times = ReTimes
+        reconnect_times = ReTimes,
+        login = Login,
+        module = dgiot_utils:to_atom(Module)
     },
-    dgiot_udp_client:start_link(DevAddr, ?MODULE, Ip, Port, State).
+    io:format("~s ~p MODULE = ~p.~n", [?FILE, ?LINE, ?MODULE]),
+    io:format("~s ~p Ip = ~p.~n", [?FILE, ?LINE, Ip]),
+    io:format("~s ~p Port = ~p.~n", [?FILE, ?LINE, Port]),
+    io:format("~s ~p State = ~p.~n", [?FILE, ?LINE, State]),
+
+    dgiot_udp_client:start_link(?MODULE, Ip, Port, State).
 
 init(UDPState) ->
     {ok, UDPState}.
@@ -64,21 +73,22 @@ handle_info(connection_ready, UDPState) ->
 handle_info(udp_closed, UDPState) ->
     {noreply, UDPState};
 
-handle_info(login, #udp{state = #state{productid = ProductId, devaddr = DevAddr, hb = Hb} = _State} = UDPState) ->
-    Topic = <<"mock/", ProductId/binary, "/", DevAddr/binary>>,
-    dgiot_mqtt:subscribe(Topic),
+handle_info(login, #udp{state = #state{productid = _ProductId, hb = Hb, login = Login} = _State} = UDPState) ->
+    io:format("~s ~p UDPState ~p ~n", [?FILE, ?LINE, UDPState]),
+%%    Topic = <<"mock/", ProductId/binary, "/", DevAddr/binary>>,
+%%    dgiot_mqtt:subscribe(Topic),
     erlang:send_after(Hb * 1000, self(), heartbeat),
-    dgiot_udp_client:send(UDPState, <<"login">>),
+    dgiot_udp_client:send(UDPState, Login),
     {noreply, UDPState};
 
-handle_info(heartbeat, #udp{state = #state{devaddr = _DevAddr, hb = Hb} = _State} = UDPState) ->
+handle_info(heartbeat, #udp{state = #state{hb = Hb, login = Login} = _State} = UDPState) ->
     erlang:send_after(Hb * 1000, self(), heartbeat),
-%%    io:format("~s ~p herart ~p ~n",[?FILE,?LINE, <<"heartbeat">>]),
-    dgiot_udp_client:send(UDPState, <<"heartbeat">>),
+    io:format("~s ~p herart ~p ~n", [?FILE, ?LINE, Login]),
+    dgiot_udp_client:send(UDPState, Login),
     {noreply, UDPState};
 
-handle_info({udp, Buff}, #udp{state = #state{productid = ProductId} = _State} = UDPState) ->
-    io:format("Buff ~p , ProductId ~p ~n ",[Buff, ProductId]),
+handle_info({udp, Buff}, #udp{state = #state{productid = ProductId, module = Module} = _State} = UDPState) ->
+    Module:parse_frame(Buff, #{}, #{<<"productid">> => ProductId}),
     {noreply, UDPState};
 
 handle_info({deliver, _Topic, Msg}, #udp{state = State} = UDPState) ->

@@ -26,10 +26,10 @@
 
 -define(EMPTY_USERNAME, <<"">>).
 
-on_message_publish(Message = #message{from = ClientId, topic = <<"$dg/",_Rest/binary>>}, _State) ->
+on_message_publish(Message = #message{from = _ClientId, topic = <<"$dg/",_Rest/binary>>}, _State) ->
 %%    Topic = <<"$dg/",Rest/binary>>,
 %%    Username = maps:get(username, Headers, ?EMPTY_USERNAME),
-    io:format("~s ~p ClientId: ~p~n", [?FILE, ?LINE, ClientId]),
+%%    io:format("~s ~p ClientId: ~p~n", [?FILE, ?LINE, ClientId]),
     {ok, Message};
 
 on_message_publish(Message, _State) ->

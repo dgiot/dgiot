@@ -23,8 +23,7 @@
 -record(state, {id, ip, port, transport, env, product, log}).
 %% API
 -export([start/2]).
--export([init/3, handle_event/3, handle_message/2, stop/3]).
--export([start_link/3, do_init/1, handle_cast/2, handle_call/3, handle_info/2, terminate/2, code_change/3]).
+-export([init/3, handle_init/1, handle_event/3, handle_message/2, stop/3]).
 -define(SOCKOPTS, [binary, {reuseaddr, true}]).
 
 
@@ -83,19 +82,25 @@ init(?TYPE, ChannelId, #{<<"port">> := Port} = _ChannelArgs) ->
                 env = #{},
                 product = ProductIds
             },
-            Name = dgiot_channelx:get_name(?TYPE, ChannelId),
-            MFArgs = {?MODULE, start_link, [State]},
-            ChildSpec = esockd:udp_child_spec(binary_to_atom(Name, utf8), Port, [{udp_options, ?SOCKOPTS}], MFArgs),
+%%            Name = dgiot_channelx:get_name(?TYPE, ChannelId),
+%%            MFArgs = {?MODULE, start_link, [State]},
+%%            ChildSpec = esockd:udp_child_spec(binary_to_atom(Name, utf8), Port, [{udp_options, ?SOCKOPTS}], MFArgs),
+            ChildSpec = dgiot_udp_worker:child_spec(Port, State),
             {ok, State, ChildSpec};
         {error, not_find} ->
             {stop, not_find_product}
-    end.
+    end;
 
+init(?TYPE, _ChannelId, _Args) ->
+    io:format("~s ~p _Args: ~p~n", [?FILE, ?LINE, _Args]),
+    {ok, #{}, #{}}.
 
-handle_event(EventType, Event, _State) ->
-    ?LOG(info, "channel ~p, ~p", [EventType, Event]),
-    ok.
+handle_init(State) ->
+    {ok, State}.
 
+%% 通道消息处理,注意：进程池调用
+handle_event(_EventId, _Event, State) ->
+    {ok, State}.
 
 handle_message(Message, #state{id = ChannelId, product = ProductId} = State) ->
     ?LOG(info, "Channel ~p, Product ~p, handle_message ~p", [ChannelId, ProductId, Message]),
@@ -104,55 +109,6 @@ handle_message(Message, #state{id = ChannelId, product = ProductId} = State) ->
 stop(ChannelType, ChannelId, _) ->
     ?LOG(info, "channel stop ~p,~p", [ChannelType, ChannelId]),
     ok.
-
-%% =============
-%% eSockd Callbacks
-start_link(Transport, {Ip, Port}, State) ->
-    {ok, proc_lib:spawn_link(?MODULE, do_init, [State#state{
-        transport = Transport, ip = Ip, port = Port,
-        log = log_fun(State#state.id)
-    }])}.
-
-do_init(#state{id = ChannelId} = State) ->
-    case do_product(init, [ChannelId], State) of
-        {ok, NewState} ->
-            gen_server:enter_loop(?MODULE, [], NewState);
-        {stop, Reason, NewState1} ->
-            {stop, Reason, NewState1}
-    end.
-
-handle_info({datagram, _Server, Data0}, #state{env = OldEnv, log = Log} = State) ->
-    Data = iolist_to_binary(Data0),
-    Log(<<"RECV">>, Data),
-    Env = OldEnv#{
-        <<"send">> => send_fun(State)
-    },
-    case do_product(handle_info, [{udp, Data}], State#state{env = Env}) of
-        {ok, NewState} ->
-            {noreply, NewState};
-        {stop, Reason, NewState} ->
-            {stop, Reason, NewState}
-    end;
-
-handle_info(Info, State) ->
-    case do_product(handle_info, [Info], State) of
-        {ok, NewState} ->
-            {noreply, NewState};
-        {stop, Reason, NewState} ->
-            {stop, Reason, NewState}
-    end.
-
-handle_call(_Msg, _From, State) ->
-    {reply, ok, State}.
-
-handle_cast(_Msg, State) ->
-    {noreply, State}.
-
-terminate(_Reason, _State) ->
-    ok.
-
-code_change(_OldVsn, State, _Extra) ->
-    {ok, State}.
 
 
 do_product(Fun, Args, #state{id = ChannelId, env = Env, product = ProductIds} = State) ->
@@ -170,19 +126,5 @@ update_state(Env, State) ->
     State#state{env = maps:without([<<"send">>], Env)}.
 
 
-log_fun(ChannelId) ->
-    fun(Type, Buff) ->
-        Data =
-            case Type of
-                <<"ERROR">> -> Buff;
-                _ -> <<<<Y>> || <<X:4>> <= Buff, Y <- integer_to_list(X, 16)>>
-            end,
-        dgiot_bridge:send_log(ChannelId, "~s", [<<Type/binary, " ", Data/binary>>])
-    end.
 
-send_fun(#state{ip = Ip, port = Port, transport = {udp, _Server, Sock}}) ->
-    fun(Payload) ->
-        % _Server ! {datagram, {Ip, Port}, Payload},
-        gen_udp:send(Sock, Ip, Port, Payload)
-    end.
 
