@@ -57,6 +57,6 @@ load_nif() ->
     end.
 
 test() ->
-    {ok, M} = conv("gbk", "utf-8", unicode:characters_to_binary(<<"在线"/utf8>>)),
-    {ok, DevAddr} = conv("utf-8", "gbk", M),
+    {ok, M} = iconverl:conv("gbk", "utf-8", unicode:characters_to_binary(<<"在线"/utf8>>)),
+    {ok, DevAddr} = iconverl:conv("utf-8", "gbk", M),
     io:format("DevAddr ~p ",[ unicode:characters_to_list(DevAddr)]).
