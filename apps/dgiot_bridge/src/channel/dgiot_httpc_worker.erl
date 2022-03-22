@@ -38,8 +38,7 @@
 -define(SERVER, ?MODULE).
 -define(CHILD(I, Type, Args), {I, {I, start_link, Args}, permanent, 5000, Type, [I]}).
 
--record(state, {tid, id, page = 1, token, refreshtoken, sleep = 12,head,body,path,method}).
-
+-record(state, {tid, id, page = 1, token, refreshtoken, sleep = 12}).
 %%%===================================================================
 %%% API
 %%%===================================================================
@@ -67,9 +66,7 @@ start_link(#{
 init([#{
     <<"channelid">> := ChannelId,
     <<"productid">> := ProductId,
-    <<"devaddr">> := DevAddr,
-    <<"body">> := Body,
-    <<"head">> := Heads
+    <<"devaddr">> := DevAddr
 }]) ->
     DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
     dgiot_data:insert({ChannelId, DeviceId, httpc}, self()),
