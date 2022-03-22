@@ -48,16 +48,15 @@ conv(To, From, Binary) ->
 %% -------------------------------------------------------------------------
 %% on_load callback
 %% -------------------------------------------------------------------------
-
 load_nif() ->
     case os:type() of
         {win32, _} ->
             ok;
         _ ->
-            erlang:load_nif(filename:join(code:priv_dir(dgiot), iconverl), 0)
+            erlang:load_nif(filename:join(code:priv_dir(dgiot), iconv), 0)
     end.
 
 test() ->
-    {ok, M} = dgiot_iconverl:conv("gbk", "utf-8", unicode:characters_to_binary(<<"在线"/utf8>>)),
-    {ok, DevAddr} = dgiot_iconverl:conv("utf-8", "gbk", M),
-    io:format("DevAddr ~p ",[ DevAddr]).
+    {ok, M} = iconverl:conv("gbk", "utf-8", unicode:characters_to_binary(<<"在线"/utf8>>)),
+    {ok, DevAddr} = iconverl:conv("utf-8", "gbk", M),
+    io:format("DevAddr ~p ",[ unicode:characters_to_binary(DevAddr)]).
