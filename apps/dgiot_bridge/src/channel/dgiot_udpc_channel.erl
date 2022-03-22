@@ -64,40 +64,41 @@
             zh => <<"端口"/utf8>>
         }
     },
-    <<"page_index">> => #{
-        order => 3,
-        type => integer,
-        required => false,
-        default => 1,
+    <<"login">> => #{
+        order => 2,
+        type => string,
+        required => true,
+        default => <<"ALLSTATUS;">>,
         title => #{
-            zh => <<"起始记录号"/utf8>>
+            zh => <<"登录报文"/utf8>>
         },
         description => #{
-            zh => <<"起始记录号"/utf8>>
+            zh => <<"登录报文"/utf8>>
         }
     },
-    <<"page_size">> => #{
-        order => 4,
-        type => integer,
+    <<"module">> => #{
+        order => 9,
+        type => enum,
         required => false,
-        default => 1,
+        default => <<"dgiot_sonbs"/utf8>>,
+        enum => [<<"dgiot_sonbs">>],
         title => #{
-            zh => <<"每页记录数"/utf8>>
+            zh => <<"module"/utf8>>
         },
         description => #{
-            zh => <<"每页记录数"/utf8>>
+            zh => <<"module"/utf8>>
         }
     },
-    <<"total">> => #{
-        order => 5,
+    <<"hb">> => #{
+        order => 2,
         type => integer,
-        required => false,
-        default => 1,
+        required => true,
+        default => 60,
         title => #{
-            zh => <<"总计页数"/utf8>>
+            zh => <<"心跳"/utf8>>
         },
         description => #{
-            zh => <<"总计页数"/utf8>>
+            zh => <<"心跳"/utf8>>
         }
     },
     <<"ico">> => #{
@@ -149,28 +150,43 @@ stop(ChannelType, ChannelId, _State) ->
     ?LOG(warning, "channel stop ~p,~p", [ChannelType, ChannelId]),
     ok.
 
-start_client(ProductId, Ip, Port,
-        #{<<"page_index">> := PageIndex, <<"page_size">> := PageSize, <<"total">> := Total}) ->
-    Success = fun(Page) ->
-        lists:map(fun(X) ->
-            case X of
-                #{<<"devaddr">> := DevAddr} ->
-                    dgiot_udpc_worker:start_connect(#{
-                        <<"auto_reconnect">> => 10,
-                        <<"reconnect_times">> => 3,
-                        <<"ip">> => Ip,
-                        <<"port">> => Port,
-                        <<"productid">> => ProductId,
-                        <<"hb">> => 60,
-                        <<"devaddr">> => DevAddr
-                    });
-            _ ->
-                 ok
-            end
-                  end, Page)
-              end,
 
-    Query = #{
-        <<"where">> => #{<<"product">> => ProductId}
-    },
-    dgiot_parse_loader:start(<<"Device">>, Query, PageIndex, PageSize, Total, Success).
+start_client(ProductId, Ip, Port,
+    #{<<"hb">> := Hb, <<"login">> := Login, <<"module">> := Module}) ->
+    dgiot_udpc_worker:start_connect(#{
+        <<"auto_reconnect">> => 10,
+        <<"reconnect_times">> => 3,
+        <<"ip">> => Ip,
+        <<"port">> => Port,
+        <<"productid">> => ProductId,
+        <<"hb">> => Hb,
+        <<"login">> => Login,
+        <<"module">> => Module
+    }).
+
+%%start_client(ProductId, Ip, Port,
+%%    #{<<"page_index">> := PageIndex, <<"page_size">> := PageSize, <<"total">> := Total, <<"hb">> := Hb, <<"login">> := Login, <<"module">> := Module}) ->
+%%    Success = fun(Page) ->
+%%        lists:map(fun(X) ->
+%%            case X of
+%%                #{<<"devaddr">> := DevAddr} ->
+%%                    dgiot_udpc_worker:start_connect(#{
+%%                        <<"auto_reconnect">> => 10,
+%%                        <<"reconnect_times">> => 3,
+%%                        <<"ip">> => Ip,
+%%                        <<"port">> => Port,
+%%                        <<"productid">> => ProductId,
+%%                        <<"hb">> => Hb,
+%%                        <<"devaddr">> => DevAddr,
+%%                        <<"login">> => Login,
+%%                        <<"module">> => Module
+%%                    });
+%%                _ ->
+%%                    ok
+%%            end
+%%                  end, Page)
+%%              end,
+%%    Query = #{
+%%        <<"where">> => #{<<"product">> => ProductId}
+%%    },
+%%    dgiot_parse_loader:start(<<"Device">>, Query, PageIndex, PageSize, Total, Success).

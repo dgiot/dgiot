@@ -114,8 +114,9 @@ handle_info({connection_ready, Socket}, #state{mod = Mod, child = ChildState} = 
 handle_info({ssl, _RawSock, Data}, State) ->
     handle_info({ssl, _RawSock, Data}, State);
 
-handle_info({udp, Socket, Binary}, State) ->
-    ?LOG(info, "Binary ~p~n", [Binary]),
+handle_info({udp, Socket, _Ip, _Port, Binary}, State) ->
+    io:format("~s ~p Binary: ~p~n", [?FILE, ?LINE, Binary]),
+    io:format("~s ~p State: ~p~n", [?FILE, ?LINE, State]),
     #state{mod = Mod, child = #udp{socket = Socket} = ChildState} = State,
     NewBin =
         case binary:referenced_byte_size(Binary) of
@@ -160,7 +161,6 @@ handle_info({Closed, _Sock}, #state{mod = Mod, child = #udp{transport = Transpor
     end;
 
 handle_info(Info, #state{mod = Mod, child = ChildState} = State) ->
-    ?LOG(info, "Info ~p~n", [Info]),
     case Mod:handle_info(Info, ChildState) of
         {noreply, NewChildState} ->
             {noreply, State#state{child = NewChildState}, hibernate};
