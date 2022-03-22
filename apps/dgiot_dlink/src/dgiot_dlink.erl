@@ -74,10 +74,10 @@
                 required => true,
                 default => <<"0000"/utf8>>,
                 title => #{
-                    zh => <<"从机地址"/utf8>>
+                    zh => <<"数据标识"/utf8>>
                 },
                 description => #{
-                    zh => <<"从机地址(16进制加0X,例如:0X10,否在是10进制)"/utf8>>
+                    zh => <<"数据标识"/utf8>>
                 }
             },
             #{
