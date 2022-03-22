@@ -198,6 +198,7 @@ overlay_vars_rel(RelType) ->
         , {enable_plugin_emqx_modules, false} %% modules is not a plugin in ce
         , {enable_plugin_emqx_recon, true}
         , {enable_plugin_emqx_retainer, true}
+        , {enable_plugin_emqx_web_hook, true}
         , {enable_plugin_emqx_telemetry, true}
         , {enable_plugin_dgiot, true}
         , {enable_plugin_dgiot_bridge, true}
@@ -317,6 +318,7 @@ relx_plugin_apps(ReleaseType) ->
         , emqx_rule_engine
         , emqx_sasl
         , emqx_exhook
+        , emqx_web_hook
         , emqx_auth_mnesia
     ]
     ++ [emqx_telemetry || not is_enterprise()]
