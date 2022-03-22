@@ -52,8 +52,128 @@
             zh => <<"服务器地址"/utf8>>
         }
     },
-    <<"page_index">> => #{
+    <<"header">> => #{
+        order => 2,
+        type => object,
+        allowCreate => true,
+        required => true,
+        default => [
+            #{<<"value">> => "lable", <<"name">> => <<"key">>}
+        ],
+        title => #{
+            zh => <<"请求头"/utf8>>
+        },
+        description => #{
+            zh => <<"请求头"/utf8>>
+        },
+        <<"table">> => #{
+            <<"key">> => #{
+                key => <<"type">>,
+                order => 1,
+                type => string,
+                required => true,
+                default => #{<<"value">> => <<"Content-Type">>, <<"label">> => <<"Content-Type"/utf8>>},
+                enum => [
+                    #{<<"value">> => <<"accept">>, <<"label">> => <<"accept"/utf8>>},
+                    #{<<"value">> => <<"Content-Type">>, <<"label">> => <<"Content-Type"/utf8>>}
+                ],
+                title => #{
+                    zh => <<"请求头"/utf8>>
+                },
+                description => #{
+                    zh => <<"请求头"/utf8>>
+                }
+            },
+            <<"value">> => #{
+                key => <<"value">>,
+                order => 2,
+                type => string,
+                required => true,
+                default => #{<<"value">> => <<"accept">>, <<"label">> => <<"application/json"/utf8>>},
+                enum => [
+                    #{<<"value">> => <<"application/json">>, <<"label">> => <<"application/json"/utf8>>},
+                    #{<<"value">> => <<"text/plain">>, <<"label">> => <<"text/plain"/utf8>>}
+                ],
+                title => #{
+                    zh => <<"请求头参数"/utf8>>
+                },
+                description => #{
+                    zh => <<"请求头参数"/utf8>>
+                }
+            }
+        }
+    },
+    <<"method">> => #{
         order => 3,
+        type => string,
+        required => true,
+        enum => [
+            #{<<"value">> => <<"GET">>, <<"label">> => <<"GET"/utf8>>},
+            #{<<"value">> => <<"POST">>, <<"label">> => <<"POST"/utf8>>},
+            #{<<"value">> => <<"PUT">>, <<"label">> => <<"PUT"/utf8>>},
+            #{<<"value">> => <<"PATCH">>, <<"label">> => <<"PATCH"/utf8>>},
+            #{<<"value">> => <<"DELETE">>, <<"label">> => <<"DELETE"/utf8>>},
+            #{<<"value">> => <<"HARD">>, <<"label">> => <<"HARD"/utf8>>},
+            #{<<"value">> => <<"CONNECT">>, <<"label">> => <<"CONNECT"/utf8>>},
+            #{<<"value">> => <<"OPTIONS">>, <<"label">> => <<"OPTIONS"/utf8>>},
+            #{<<"value">> => <<"TRACE">>, <<"label">> => <<"TRACE"/utf8>>},
+            #{<<"value">> => <<"CUSTON">>, <<"label">> => <<"CUSTON"/utf8>>}
+        ],
+        default => [
+            #{<<"value">> => "GET", <<"name">> => <<"GET">>}
+        ],
+        title => #{
+            zh => <<"请求方法"/utf8>>
+        },
+        description => #{
+            zh => <<"请求方法"/utf8>>
+        }
+    },
+    <<"body">> => #{
+        order => 4,
+        type => object,
+        allowCreate => true,
+        required => true,
+        default => [
+            #{<<"value">> => "lable", <<"name">> => <<"key">>}
+        ],
+        title => #{
+            zh => <<"请求参数"/utf8>>
+        },
+        description => #{
+            zh => <<"请求参数"/utf8>>
+        },
+        <<"table">> => #{
+            <<"key">> => #{
+                key => <<"key">>,
+                order => 1,
+                type => string,
+                required => true,
+                default => <<"">>,
+                title => #{
+                    zh => <<"参数名称"/utf8>>
+                },
+                description => #{
+                    zh => <<"参数名称"/utf8>>
+                }
+            },
+            <<"value">> => #{
+                key => <<"value">>,
+                order => 2,
+                type => string,
+                required => true,
+                default => <<"">>,
+                title => #{
+                    zh => <<"参数值"/utf8>>
+                },
+                description => #{
+                    zh => <<"参数值"/utf8>>
+                }
+            }
+        }
+    },
+    <<"page_index">> => #{
+        order => 7,
         type => integer,
         required => false,
         default => 1,
@@ -65,7 +185,7 @@
         }
     },
     <<"page_size">> => #{
-        order => 4,
+        order => 8,
         type => integer,
         required => false,
         default => 1,
@@ -77,7 +197,7 @@
         }
     },
     <<"total">> => #{
-        order => 5,
+        order => 9,
         type => integer,
         required => false,
         default => 1,
