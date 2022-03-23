@@ -18,12 +18,6 @@
 -behaviour(gen_server).
 -include_lib("dgiot/include/logger.hrl").
 -include("dgiot_bridge.hrl").
-%% API
--export([
-    childSpec/1,
-    start/1,
-    start_link/1
-]).
 
 -export([
     set_url/2,
@@ -35,6 +29,7 @@
 
 %% gen_server callbacks
 -export([
+    start_link/1,
     init/1,
     handle_call/3,
     handle_cast/2,
@@ -43,17 +38,11 @@
     code_change/3]).
 
 -define(SERVER, ?MODULE).
--define(CHILD(I, Type, Args), {I, {I, start_link, Args}, permanent, 5000, Type, [I]}).
 
 -record(state, {tid, pid, did, token, sleep = 12}).
 %%%===================================================================
 %%% API
 %%%===================================================================
-childSpec(ChannelId) ->
-    [?CHILD(dgiot_httpc_sup, supervisor, [?DGIOT_SUP(ChannelId)])].
-
-start(#{<<"channelid">> := ChannelId} = Args) ->
-    supervisor:start_child(?DGIOT_SUP(ChannelId), [Args]).
 
 start_link(#{
     <<"channelid">> := ChannelId,
