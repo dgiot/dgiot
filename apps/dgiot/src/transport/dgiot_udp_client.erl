@@ -115,8 +115,6 @@ handle_info({ssl, _RawSock, Data}, State) ->
     handle_info({ssl, _RawSock, Data}, State);
 
 handle_info({udp, Socket, _Ip, _Port, Binary}, State) ->
-    io:format("~s ~p Binary: ~p~n", [?FILE, ?LINE, Binary]),
-    io:format("~s ~p State: ~p~n", [?FILE, ?LINE, State]),
     #state{mod = Mod, child = #udp{socket = Socket} = ChildState} = State,
     NewBin =
         case binary:referenced_byte_size(Binary) of
