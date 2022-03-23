@@ -45,7 +45,7 @@
 -define(SERVER, ?MODULE).
 -define(CHILD(I, Type, Args), {I, {I, start_link, Args}, permanent, 5000, Type, [I]}).
 
--record(state, {tid, id, page = 1, token, refreshtoken, sleep = 12}).
+-record(state, {tid, pid, did, token, sleep = 12}).
 %%%===================================================================
 %%% API
 %%%===================================================================
@@ -78,8 +78,9 @@ init([#{
 }]) ->
     DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
     dgiot_data:insert({ChannelId, DeviceId, httpc}, self()),
-    erlang:send_after(10000, self(), start),
-    {ok, #state{tid = ChannelId, id = DeviceId}};
+    erlang:send_after(10000, self(), retry),
+    erlang:send_after(10 * 1000, self(), retry),
+    {ok, #state{tid = ChannelId, pid = ProductId, did = DeviceId}};
 
 init(Args) ->
     io:format("dgiot_httpc_worker:init:~p~n", [Args]).
@@ -90,7 +91,7 @@ handle_call(_Request, _From, State) ->
 handle_cast(_Request, State) ->
     {noreply, State}.
 
-handle_info(start, #state{tid = Tid, sleep = Sleep} = State) ->
+handle_info(retry, #state{tid = Tid, sleep = Sleep} = State) ->
     Url = get_url(Tid),
     Headers = get_header(Tid),
     ContentHeader = get_contenttype(Tid),
@@ -107,13 +108,21 @@ handle_info(start, #state{tid = Tid, sleep = Sleep} = State) ->
         {error, Reason} ->
             ?LOG(info, "Reason ~p ", [Reason])
     end,
-    erlang:send_after(Sleep * 1000, self(), start),
+    erlang:send_after(Sleep * 1000, self(), retry),
     {noreply, State#state{tid = Tid}};
+
+handle_info(refreshtoken, #state{pid = ProductId} = State) ->
+    case dgiot_hook:run_hook({httpc, refreshtoken, ProductId}, State) of
+        {ok, NewState} ->
+            {noreply, NewState};
+        _ ->
+            {noreply, State}
+    end;
 
 handle_info(_Info, State) ->
     {noreply, State}.
 
-terminate(_Reason, #state{tid = Tid, id = Id} = _State) ->
+terminate(_Reason, #state{tid = Tid, did = Id} = _State) ->
     dgiot_data:delete({Tid, Id, httpc}),
     ok.
 

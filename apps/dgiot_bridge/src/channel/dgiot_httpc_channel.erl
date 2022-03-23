@@ -133,7 +133,6 @@
         order => 4,
         type => object,
         allowCreate => true,
-        required => true,
         title => #{
             zh => <<"请求参数"/utf8>>
         },
@@ -145,7 +144,6 @@
                 key => <<"key">>,
                 order => 1,
                 type => string,
-                required => true,
                 default => <<"">>,
                 title => #{
                     zh => <<"参数名称"/utf8>>
@@ -158,7 +156,6 @@
                 key => <<"value">>,
                 order => 2,
                 type => string,
-                required => true,
                 default => <<"">>,
                 title => #{
                     zh => <<"参数值"/utf8>>
