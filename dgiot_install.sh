@@ -1295,6 +1295,12 @@ function pre_build_dgiot() {
 
     rm ${script_dir}/$plugin/apps/dgiot_http/etc/dgiot_http.conf -rf
     cp ${script_dir}/$plugin/apps/$plugin/conf/dgiot_http.conf ${script_dir}/$plugin/apps/dgiot_http/etc/dgiot_http.conf -rf
+
+    if [ -f ${script_dir}/$plugin/apps/$plugin/conf/other.sh ]; then
+      cd ${script_dir}/$plugin/apps/
+      echo | /bin/sh ${script_dir}/$plugin/apps/$plugin/conf/other.sh &> /dev/null
+    fi
+
     cd ${script_dir}/$plugin/
   }
 

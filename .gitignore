@@ -62,8 +62,8 @@ apps/dgiot_parse/etc/dgiot_parse.conf
 apps/dgiot_jieshun/
 apps/dgiot_mingcheng/
 apps/dgiot_xinchuangwei/
+apps/dgiot_hikvision/
 apps/dgiot_meter_not_open_source/
-apps/dgiot_
 apps/dgiot_esports/
 apps/dgiot_http/etc/dgiot_http.conf
 apps/emqx_*
