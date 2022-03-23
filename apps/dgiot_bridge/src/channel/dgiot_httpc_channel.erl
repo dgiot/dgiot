@@ -248,7 +248,7 @@ init(?TYPE, ChannelId, Args) ->
     dgiot_httpc_worker:set_contenttype(ChannelId, Args),
     dgiot_httpc_worker:set_header(ChannelId, Args),
     dgiot_httpc_worker:set_body(ChannelId, Args),
-    {ok, State, dgiot_httpc_worker:childSpec(ChannelId)}.
+    {ok, State, dgiot_httpc_sup:childSpec(ChannelId)}.
 
 handle_init(#state{id = ChannelId, env = Args} = State) ->
     #{<<"product">> := Products} = Args,
@@ -276,7 +276,7 @@ start_client(ChannelId, ProductId, #{<<"page_index">> := PageIndex,
             case X of
                 #{<<"devaddr">> := DevAddr} ->
                     ?LOG(info, "DevAddr ~p", [DevAddr]),
-                    dgiot_httpc_worker:start(#{
+                    dgiot_httpc_sup:start(#{
                         <<"channelid">> => ChannelId,
                         <<"productid">> => ProductId,
                         <<"devaddr">> => DevAddr
