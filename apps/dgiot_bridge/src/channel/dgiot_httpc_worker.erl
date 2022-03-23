@@ -20,11 +20,18 @@
 -include("dgiot_bridge.hrl").
 
 -export([
-    set_url/2,
+    set_host/2,
+    get_host/1,
+    set_path/2,
+    get_path/1,
     set_method/2,
+    get_method/1,
     set_contenttype/2,
+    get_contenttype/1,
     set_header/2,
-    set_body/2
+    get_header/1,
+    set_body/2,
+    get_body/1
 ]).
 
 %% gen_server callbacks
@@ -39,7 +46,7 @@
 
 -define(SERVER, ?MODULE).
 
--record(state, {tid, pid, did, token, sleep = 12}).
+-record(state, {tid, pid, did, token, freq = 12}).
 %%%===================================================================
 %%% API
 %%%===================================================================
@@ -48,7 +55,7 @@ start_link(#{
     <<"channelid">> := ChannelId,
     <<"productid">> := ProductId,
     <<"devaddr">> := DevAddr
-}) ->
+} = Args) ->
     DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
     case dgiot_data:lookup({ChannelId, DeviceId, httpc}) of
         {ok, Pid} when is_pid(Pid) ->
@@ -57,19 +64,18 @@ start_link(#{
             ok
     end,
     Server = list_to_atom(lists:concat([httpc, dgiot_utils:to_list(ChannelId), dgiot_utils:to_list(DeviceId)])),
-    gen_server:start_link({local, Server}, ?MODULE,
-        [#{<<"channelid">> => ChannelId, <<"productid">> => ProductId, <<"devaddr">> => DevAddr}], []).
+    gen_server:start_link({local, Server}, ?MODULE, [Args], []).
 
 init([#{
     <<"channelid">> := ChannelId,
     <<"productid">> := ProductId,
-    <<"devaddr">> := DevAddr
+    <<"devaddr">> := DevAddr,
+    <<"freq">> := Freq
 }]) ->
     DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
     dgiot_data:insert({ChannelId, DeviceId, httpc}, self()),
-    erlang:send_after(10000, self(), retry),
-    erlang:send_after(10 * 1000, self(), retry),
-    {ok, #state{tid = ChannelId, pid = ProductId, did = DeviceId}};
+    erlang:send_after(Freq * 1000, self(), toke),
+    {ok, #state{tid = ChannelId, pid = ProductId, did = DeviceId, freq = Freq}};
 
 init(Args) ->
     io:format("dgiot_httpc_worker:init:~p~n", [Args]).
@@ -80,28 +86,40 @@ handle_call(_Request, _From, State) ->
 handle_cast(_Request, State) ->
     {noreply, State}.
 
-handle_info(retry, #state{tid = Tid, sleep = Sleep} = State) ->
-    Url = get_url(Tid),
-    Headers = get_header(Tid),
-    ContentHeader = get_contenttype(Tid),
-    Body = dgiot_json:encode(get_body(Tid)),
-    case dgiot_http_client:request(get_method(Tid), {Url, Headers, ContentHeader, Body}) of
-        {ok, R} ->
-            case jsx:is_json(dgiot_utils:to_binary(R)) of
-                true ->
-                    Bin = dgiot_utils:to_binary(R),
-                    ?LOG(info, "R1 ~p ", [maps:get(<<"username">>, jsx:decode(Bin, [{labels, binary}, return_maps]), <<"">>)]);
-                _ ->
-                    io:format("~s ~p R2 ~s ", [?FILE, ?LINE, R])
-            end;
+handle_info(token, #state{pid = ProductId, freq = Freq} = State) ->
+    erlang:send_after(Freq * 10*  1000, self(), reshtoken),
+    erlang:send_after(Freq * 1000, self(), capture),
+    case dgiot_hook:run_hook({httpc, token, ProductId}, State) of
+        {ok, NewState} ->
+            {noreply, NewState};
+        _ ->
+            {noreply, State}
+    end;
+
+handle_info(capture, #state{tid = Tid, pid = ProductId, freq = Freq} = State) ->
+    {Method, Request} =
+        case dgiot_hook:run_hook({httpc, do_before, ProductId}, State) of
+            {ok, {NewMethod, NewRequest}} ->
+                {NewMethod, NewRequest};
+            _ ->
+                Url = get_host(Tid) ++ get_path(Tid),
+                Headers = get_header(Tid),
+                ContentHeader = get_contenttype(Tid),
+                Body = dgiot_json:encode(get_body(Tid)),
+                get_method(Tid), {Url, Headers, ContentHeader, Body}
+        end,
+    case dgiot_http_client:request(Method, Request) of
+        {ok, Result} ->
+            ?LOG(info, "Result ~p ", [Result]),
+            dgiot_hook:run_hook({httpc, do_after, ProductId}, {Result, State});
         {error, Reason} ->
             ?LOG(info, "Reason ~p ", [Reason])
     end,
-    erlang:send_after(Sleep * 1000, self(), retry),
-    {noreply, State#state{tid = Tid}};
+    erlang:send_after(Freq * 1000, self(), capture),
+    {noreply, State};
 
-handle_info(refreshtoken, #state{pid = ProductId} = State) ->
-    case dgiot_hook:run_hook({httpc, refreshtoken, ProductId}, State) of
+handle_info(reshtoken, #state{pid = ProductId} = State) ->
+    case dgiot_hook:run_hook({httpc, reshtoken, ProductId}, State) of
         {ok, NewState} ->
             {noreply, NewState};
         _ ->
@@ -125,10 +143,16 @@ set_method(ChannelId, Args) ->
 get_method(ChannelId) ->
     dgiot_data:get({ChannelId, ?MODULE, method}).
 
-set_url(ChannelId, Args) ->
-    dgiot_data:insert({ChannelId, ?MODULE, url}, dgiot_utils:to_list(maps:get(<<"url">>, Args))).
+set_host(ChannelId, Args) ->
+    dgiot_data:insert({ChannelId, ?MODULE, url}, dgiot_utils:to_list(maps:get(<<"host">>, Args))).
 
-get_url(ChannelId) ->
+get_host(ChannelId) ->
+    dgiot_data:get({ChannelId, ?MODULE, url}).
+
+set_path(ChannelId, Args) ->
+    dgiot_data:insert({ChannelId, ?MODULE, url}, dgiot_utils:to_list(maps:get(<<"path">>, Args))).
+
+get_path(ChannelId) ->
     dgiot_data:get({ChannelId, ?MODULE, url}).
 
 set_contenttype(ChannelId, Args) ->
@@ -160,7 +184,6 @@ set_body(ChannelId, Args) ->
                 Acc
         end
                        end, #{}, maps:get(<<"body">>, Args)),
-    io:format("Body ~p", [Body]),
     dgiot_data:insert({ChannelId, ?MODULE, body}, Body).
 
 get_body(ChannelId) ->
