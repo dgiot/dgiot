@@ -1,0 +1,34 @@
+{
+  "ico": "http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/product/dgiot/channel/TcpIcon.jpeg",
+  "host": "http://127.0.0.1:5080",
+  "path": "/iotapi/login",
+  "Size": 1,
+  "body": [
+    {
+      "key": "password",
+      "value": "dgiot_dev"
+    },
+    {
+      "key": "username",
+      "value": "dgiot_dev"
+    }
+  ],
+  "total": 1,
+  "header": [
+    {
+      "key": "Content-Type",
+      "value": "text/plain"
+    },
+    {
+      "key": "accept",
+      "value": "application/json"
+    }
+  ],
+  "method": "POST",
+  "contenttype": "text/plain",
+  "freq": 10,
+  "page_size": 1,
+  "page_index": 1,
+  "MaxOverFlow": 10,
+  "applicationtText": "运维部"
+}

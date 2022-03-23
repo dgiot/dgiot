@@ -40,7 +40,7 @@
 }).
 %% 注册通道参数
 -params(#{
-    <<"url">> => #{
+    <<"host">> => #{
         order => 1,
         type => string,
         required => true,
@@ -50,6 +50,18 @@
         },
         description => #{
             zh => <<"服务器地址"/utf8>>
+        }
+    },
+    <<"path">> => #{
+        order => 1,
+        type => string,
+        required => true,
+        default => <<"/iotapi/login"/utf8>>,
+        title => #{
+            zh => <<"请求路径"/utf8>>
+        },
+        description => #{
+            zh => <<"请求路径"/utf8>>
         }
     },
     <<"header">> => #{
@@ -181,8 +193,20 @@
             zh => <<"起始记录号"/utf8>>
         }
     },
-    <<"page_index">> => #{
+    <<"freq">> => #{
         order => 8,
+        type => integer,
+        required => false,
+        default => 180,
+        title => #{
+            zh => <<"采集频率/秒"/utf8>>
+        },
+        description => #{
+            zh => <<"采集频率/秒"/utf8>>
+        }
+    },
+    <<"page_index">> => #{
+        order => 9,
         type => integer,
         required => false,
         default => 1,
@@ -194,7 +218,7 @@
         }
     },
     <<"page_size">> => #{
-        order => 9,
+        order => 10,
         type => integer,
         required => false,
         default => 1,
@@ -206,7 +230,7 @@
         }
     },
     <<"total">> => #{
-        order => 10,
+        order => 11,
         type => integer,
         required => false,
         default => 1,
@@ -243,7 +267,8 @@ init(?TYPE, ChannelId, Args) ->
         id = ChannelId,
         env = Args
     },
-    dgiot_httpc_worker:set_url(ChannelId, Args),
+    dgiot_httpc_worker:set_host(ChannelId, Args),
+    dgiot_httpc_worker:set_path(ChannelId, Args),
     dgiot_httpc_worker:set_method(ChannelId, Args),
     dgiot_httpc_worker:set_contenttype(ChannelId, Args),
     dgiot_httpc_worker:set_header(ChannelId, Args),
@@ -269,17 +294,17 @@ stop(ChannelType, ChannelId, _State) ->
     ?LOG(warning, "channel stop ~p,~p", [ChannelType, ChannelId]),
     ok.
 
-start_client(ChannelId, ProductId, #{<<"page_index">> := PageIndex,
+start_client(ChannelId, ProductId, #{<<"freq">> := Freq , <<"page_index">> := PageIndex,
     <<"page_size">> := PageSize, <<"total">> := Total} ) ->
     Success = fun(Page) ->
         lists:map(fun(X) ->
             case X of
                 #{<<"devaddr">> := DevAddr} ->
-                    ?LOG(info, "DevAddr ~p", [DevAddr]),
                     dgiot_httpc_sup:start(#{
                         <<"channelid">> => ChannelId,
                         <<"productid">> => ProductId,
-                        <<"devaddr">> => DevAddr
+                        <<"devaddr">> => DevAddr,
+                        <<"freq">> => Freq
                     });
                 _ ->
                     ok
