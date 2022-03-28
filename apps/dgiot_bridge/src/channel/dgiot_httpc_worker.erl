@@ -18,8 +18,10 @@
 -behaviour(gen_server).
 -include_lib("dgiot/include/logger.hrl").
 -include("dgiot_bridge.hrl").
-
+-define(CRLF, "\r\n").
 -export([
+    test1/1,
+    test/1,
     set_host/2,
     get_host/1,
     set_path/2,
@@ -87,7 +89,7 @@ handle_cast(_Request, State) ->
     {noreply, State}.
 
 handle_info(token, #state{pid = ProductId, freq = Freq} = State) ->
-    erlang:send_after(Freq * 10*  1000, self(), reshtoken),
+    erlang:send_after(Freq * 10 * 1000, self(), reshtoken),
     erlang:send_after(Freq * 1000, self(), capture),
     case dgiot_hook:run_hook({httpc, token, ProductId}, State) of
         {ok, NewState} ->
@@ -188,3 +190,75 @@ set_body(ChannelId, Args) ->
 
 get_body(ChannelId) ->
     dgiot_data:get({ChannelId, ?MODULE, body}).
+
+test1(SessionId) ->
+    Host = "127.0.0.1:8090",
+    Url = "http://" ++ Host ++ "/project/accesspointgroup/GetAllDevices",
+%%    SessionId = get_SessionId(),
+    Body = <<"----------------------------323091708878914445963306", ?CRLF,
+        "Content-Disposition: form-data; name=\"page\"", ?CRLF, ?CRLF,
+        "1", ?CRLF,
+        "----------------------------323091708878914445963306", ?CRLF,
+        "Content-Disposition: form-data; name=\"rows\"", ?CRLF, ?CRLF,
+        "200", ?CRLF,
+        "----------------------------323091708878914445963306--",?CRLF>>,
+    Size = byte_size(Body),
+    io:format("Size ~p ~n", [Size]),
+    Headers = [
+        {"cookie", "ASP.NET_SessionId=" ++ SessionId},
+        {"Accept", "application/json, text/javascript, */*; q=0.01"},
+        {"User-Agent", "Content-Length"},
+        {"Postman-Token", "78ff7879-35e9-4e0a-be65-6651a2783b89"},
+        {"Accept-Encoding", "gzip, deflate"},
+        {"Connection", "keep-alive"},
+        {"Content-Length", Size}
+    ],
+    ContentType = "multipart/form-data; boundary=--------------------------323091708878914445963306",
+    Request = {Url, Headers, ContentType, Body},
+    io:format(" ~p ~n", [Request]),
+    case dgiot_http_client:request(post, Request) of
+        {ok, {{"HTTP/1.1", 200, "OK"}, _, Data}} ->
+            BinData = dgiot_utils:to_binary(Data),
+            case jsx:is_json(BinData) of
+                true ->
+                    ?LOG(info, "Data ~p ", [jsx:decode(BinData, [{labels, binary}, return_maps])]);
+                _ ->
+                    io:format("33  ~p ~n", [BinData])
+            end;
+        Other ->
+            io:format("~p ~n", [Other])
+    end.
+
+
+test(SessionId) ->
+    Host = "127.0.0.1:8090",
+    Url = "http://" ++ Host ++ "/project/accesspointgroup/GetAllDevices",
+%%    SessionId = get_SessionId(),
+    Body = "page=1&rows=10",
+    Size = length(Body),
+    io:format("Size ~p ~n", [Size]),
+    Headers = [
+        {"Content-Length", Size},
+        {"Accept", "application/json, text/javascript, */*; q=0.01"},
+        {"X-Requested-With", "XMLHttpRequest"},
+        {"User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.82 Safari/537.36"},
+        {"Accept-Encoding", "gzip, deflate"},
+        {"Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6"},
+        {"cookie", "ASP.NET_SessionId=" ++ SessionId},
+        {"Connection", "keep-alive"}
+    ],
+    ContentType = "application/x-www-form-urlencoded; charset=UTF-8",
+    Request = {Url, Headers, ContentType, Body},
+    io:format(" ~p ~n", [Request]),
+    case dgiot_http_client:request(post, Request) of
+        {ok, {{"HTTP/1.1", 200, "OK"}, _, Data}} ->
+            BinData = dgiot_utils:to_binary(Data),
+            case jsx:is_json(BinData) of
+                true ->
+                    ?LOG(info, "Data ~p ", [jsx:decode(BinData, [{labels, binary}, return_maps])]);
+                _ ->
+                    io:format("33  ~p ~n", [BinData])
+            end;
+        Other ->
+            io:format("~p ~n", [Other])
+    end.
