@@ -204,7 +204,7 @@ get_cookie() ->
 test1(SessionId) ->
     Host = "127.0.0.1:8090",
     Url = "http://" ++ Host ++ "/GetAllDevices",
-    SessionId = get_SessionId(),
+    SessionId = get_cookie(),
     Body = <<"----------------------------323091708878914445963306", ?CRLF,
         "Content-Disposition: form-data; name=\"page\"", ?CRLF, ?CRLF,
         "1", ?CRLF,
@@ -243,7 +243,7 @@ test1(SessionId) ->
 test(SessionId) ->
     Host = "127.0.0.1:8090",
     Url = "http://" ++ Host ++ "/GetAllDevices",
-%%    SessionId = get_SessionId(),
+    SessionId = get_cookie(),
     Body = "page=1&rows=10",
     Size = length(Body),
     io:format("Size ~p ~n", [Size]),
