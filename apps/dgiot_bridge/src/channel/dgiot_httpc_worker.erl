@@ -20,6 +20,7 @@
 -include("dgiot_bridge.hrl").
 -define(CRLF, "\r\n").
 -export([
+    get_cookie/0,
     test1/1,
     test/1,
     set_host/2,
@@ -191,21 +192,30 @@ set_body(ChannelId, Args) ->
 get_body(ChannelId) ->
     dgiot_data:get({ChannelId, ?MODULE, body}).
 
+get_cookie() ->
+    Pids = dgiot_utils:to_binary(os:cmd("ps -ef | grep \"chrome\" | grep -v \"grep\" | awk '{print $2}'")),
+    lists:map(fun(X) ->
+        os:cmd("kill -9 " ++ binary_to_list(X))
+              end, binary:split(Pids, <<$\n>>, [global, trim])),
+    Path = code:priv_dir(?MODULE),
+    Python3path = Path ++ "/capture/getcookie.py ",
+    os:cmd("python3 " ++ Python3path).
+
 test1(SessionId) ->
     Host = "127.0.0.1:8090",
-    Url = "http://" ++ Host ++ "/project/accesspointgroup/GetAllDevices",
-%%    SessionId = get_SessionId(),
+    Url = "http://" ++ Host ++ "/GetAllDevices",
+    SessionId = get_SessionId(),
     Body = <<"----------------------------323091708878914445963306", ?CRLF,
         "Content-Disposition: form-data; name=\"page\"", ?CRLF, ?CRLF,
         "1", ?CRLF,
         "----------------------------323091708878914445963306", ?CRLF,
         "Content-Disposition: form-data; name=\"rows\"", ?CRLF, ?CRLF,
         "200", ?CRLF,
-        "----------------------------323091708878914445963306--",?CRLF>>,
+        "----------------------------323091708878914445963306--", ?CRLF>>,
     Size = byte_size(Body),
     io:format("Size ~p ~n", [Size]),
     Headers = [
-        {"cookie", "ASP.NET_SessionId=" ++ SessionId},
+        {"cookie", "SessionId=" ++ SessionId},
         {"Accept", "application/json, text/javascript, */*; q=0.01"},
         {"User-Agent", "Content-Length"},
         {"Postman-Token", "78ff7879-35e9-4e0a-be65-6651a2783b89"},
@@ -232,7 +242,7 @@ test1(SessionId) ->
 
 test(SessionId) ->
     Host = "127.0.0.1:8090",
-    Url = "http://" ++ Host ++ "/project/accesspointgroup/GetAllDevices",
+    Url = "http://" ++ Host ++ "/GetAllDevices",
 %%    SessionId = get_SessionId(),
     Body = "page=1&rows=10",
     Size = length(Body),
@@ -244,7 +254,7 @@ test(SessionId) ->
         {"User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/99.0.4844.82 Safari/537.36"},
         {"Accept-Encoding", "gzip, deflate"},
         {"Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6"},
-        {"cookie", "ASP.NET_SessionId=" ++ SessionId},
+        {"cookie", "SessionId=" ++ SessionId},
         {"Connection", "keep-alive"}
     ],
     ContentType = "application/x-www-form-urlencoded; charset=UTF-8",
