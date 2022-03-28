@@ -1,14 +1,1 @@
-{
-  "0 debug pnpm:scope": {
-    "selected": 1
-  },
-  "1 error pnpm": {
-    "code": "ERR_PNPM_NO_IMPORTER_MANIFEST_FOUND",
-    "err": {
-      "name": "pnpm",
-      "message": "No package.json (or package.yaml, or package.json5) was found in \"D:\\msys64\\home\\h7ml\\dgiot\\dgiot\".",
-      "code": "ERR_PNPM_NO_IMPORTER_MANIFEST_FOUND",
-      "stack": "pnpm: No package.json (or package.yaml, or package.json5) was found in \"D:\\msys64\\home\\h7ml\\dgiot\\dgiot\".\n    at readProjectManifest (D:\\software\\nodejs\\node_global\\node_modules\\pnpm\\dist\\pnpm.cjs:19808:13)\n    at async Object.readProjectManifestOnly (D:\\software\\nodejs\\node_global\\node_modules\\pnpm\\dist\\pnpm.cjs:19812:28)\n    at async readProjectManifestOnly (D:\\software\\nodejs\\node_global\\node_modules\\pnpm\\dist\\pnpm.cjs:43711:24)\n    at async Object.handler (D:\\software\\nodejs\\node_global\\node_modules\\pnpm\\dist\\pnpm.cjs:177889:24)\n    at async D:\\software\\nodejs\\node_global\\node_modules\\pnpm\\dist\\pnpm.cjs:182165:21\n    at async run (D:\\software\\nodejs\\node_global\\node_modules\\pnpm\\dist\\pnpm.cjs:182139:34)\n    at async runPnpm (D:\\software\\nodejs\\node_global\\node_modules\\pnpm\\dist\\pnpm.cjs:182358:5)\n    at async D:\\software\\nodejs\\node_global\\node_modules\\pnpm\\dist\\pnpm.cjs:182350:7"
-    }
-  }
-}
+{}
