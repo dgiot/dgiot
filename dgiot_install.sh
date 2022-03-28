@@ -1333,8 +1333,31 @@ function ci() {
     post_build_dgiot
 }
 
+function install_python() {
+   yum -y groupinstall "Development tools"
+   yum -y install zlib-devel bzip2-devel openssl-devel ncurses-devel sqlite-devel readline-devel tk-devel gdbm-devel db4-devel libpcap-devel xz-devel
+   yum install libffi-devel -y
+   wget https://dgiot-release-1306147891.cos.ap-nanjing.myqcloud.com/v4.4.0/Python-3.7.1.tar.xz
+   tar -xvf Python-3.7.1.tar.xz
+   cd Python-3.7.1/
+   ./configure --prefix=/usr/local/python3  &&  make  &&  make install
+   ln -s /usr/local/python3/bin/python3 /usr/bin/python3
+   ln -s /usr/local/python3/bin/pip3 /usr/bin/pip3
+   pip3 install --upgrade pip
+}
+
+function install_selenium() {
+   wget https://dgiot-release-1306147891.cos.ap-nanjing.myqcloud.com/v4.4.0/install-google-chrome.sh
+   sh ./install-google-chrome.sh
+   pip3 install selenium
+   wget https://dgiot-release-1306147891.cos.ap-nanjing.myqcloud.com/v4.4.0/chromedriver_linux64.zip
+   unzip chromedriver_linux64.zip
+   rm /usr/bin/chromedriver -rf
+   mv chromedriver /usr/bin/
+}
+
 function install_dotnet() {
-   sudo rpm -Uvh https://packages.microsoft.com/config/centos/7/packages-microsoft-prod.rpm
+   sudo rpm -Uvh https://dgiot-release-1306147891.cos.ap-nanjing.myqcloud.com/v4.4.0/packages-microsoft-prod.rpm
    sudo yum install -y dotnet-sdk-5.0
 }
 
