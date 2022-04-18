@@ -1,0 +1,28 @@
+name: Gitee repos mirror periodic job
+
+on:
+  push:
+  watch:
+    types: started
+  schedule:
+    - cron: "0 23 * * *"
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+    - name: Mirror the Github organization repos to Gitee.
+      uses: Yikun/hub-mirror-action@v1.0
+      with:
+        src: github/dgiot
+        dst: gitee/dgiiot
+        dst_key: ${{ secrets.PRIVATE_KEY }}
+        dst_token:  ${{ secrets.TOKEN }}
+        account_type: org
+        timeout: '1h'
+        debug: true
+        force_update: true
+        black_list: "issue-generator,dgiot-dashboard"
