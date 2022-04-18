@@ -7,11 +7,12 @@
     product = <<>>,
     deviceId = <<>>,
     env = <<>>,
-    dtutype = <<>>
+    devtype = <<>>
 }).
 
 -define(GB26875, <<"gb26875">>).
-
+-define(GB26875_ETS, gb26875_ets).
+%%6.6 表2
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% 命令
 -define(COMMAND_RESERVED(Name), lists:member(Name, [0 |lists:seq(7, 127)]).            % 预留
@@ -23,22 +24,22 @@
 -define(COMMAND_DENY, 6).               % 否认        对控制命令和发送信息的否认回答
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% 类型标志定义表 8.1.1
-%% 类型标志为l字节二进制数，取值范围0～255，类型标志见表3。
--define(CLASS_UP_SYSTEM_STATE, 1).        %  8．2．1．1 4个字节, 上传建筑消防设施系统状态
--define(CLASS_UP_RUNNING_STATUS, 2).          % 上传建筑消防设施部件运行状态
--define(CLASS_UP_ANALOG_QUANTITY, 3).            % 上传建筑消防设施部件模拟量值
--define(CLASS_UP_OPERATING_INFORMATION, 4).            % 上传建筑消防设施操作信息
--define(CLASS_UP_SOFTWARE_VERSION, 5).           % 上传建筑消防设施软件版本
--define(CLASS_UP_SYSTEM_CONFIGURATION, 6).               % 上传建筑消防设施系统配置情况
--define(CLASS_UP_PARTS_CONFIGURATION, 7).               % 上传建筑消防设施部件配置情况
--define(CLASS_UP_SYSTEM_TIME, 8).               % 上传建筑消防设施系统时间
+%% 信息体类型标志定义表 8.1.1 表3
+%% 信息类型标志为l字节二进制数，取值范围0～255，信息体类型标志见表3。
+-define(CLASS_UP_SYSTEM_STATE, 1).                %  8.2.1.1   4个字节,  上传建筑消防设施系统状态
+-define(CLASS_UP_RUNNING_STATUS, 2).              %  8.3.1.2   40个字节, 上传建筑消防设施部件运行状态
+-define(CLASS_UP_ANALOG_QUANTITY, 3).             %  8.3.1.3   10个字节, 上传建筑消防设施部件模拟量值
+-define(CLASS_UP_OPERATING_INFORMATION, 4).       %  8.3.1.4   2个字节， 上传建筑消防设施操作信息记录
+-define(CLASS_UP_SOFTWARE_VERSION, 5).            %  8.3.1.5   4个字节， 上传建筑消防设施软件版本
+-define(CLASS_UP_SYSTEM_CONFIGURATION, 6).        %  8.3.1.6   1+ L个字节,  上传建筑消防设施系统配置情况
+-define(CLASS_UP_EQUIPMENT_CONFIGURATION, 7).     %  8.3.1.7   38个字节, 上传建筑消防设施部件配置情况
+-define(CLASS_UP_SYSTEM_TIME, 8).                 %  8.3.1.8   2个字节,  上传建筑消防设施系统时间
 -define(CLASS_UP_RESERVED(Name), lists:member(Name, [22, 23, 27 | lists:seq(9, 20)] | lists:seq(29, 60)] ).
--define(CLASS_UP_USERDEV_RUNINFO, 21).               % 上传用户信息传输装置运行状态
--define(CLASS_UP_USERDEV_OPINFO, 24).               % 上传用户信息传输装置操作信息
--define(CLASS_UP_USERDEV_SOFTVER, 25).               % 上传用户信息传输装置软件版本
--define(CLASS_UP_USERDEV_CONFIG, 26).               % 上传用户信息传输装置配置情况
--define(CLASS_UP_USERDEV_SYSTIME, 28).               % 上传用户信息传输装置系统时间
+-define(CLASS_UP_USERDEV_RUNINFO, 21).            %  8.3.1.9   1个字节,  上传用户信息传输装置运行状态
+-define(CLASS_UP_USERDEV_OPINFO, 24).             %  8.3.1.10  2个字节,  上传用户信息传输装置操作信息记录
+-define(CLASS_UP_USERDEV_SOFTVER, 25).            %  8.3.1.11  2个字节， 上传用户信息传输装置软件版本
+-define(CLASS_UP_USERDEV_CONFIG, 26).             %  8.3.1.12  1 +L字节  上传用户信息传输装置配置情况
+-define(CLASS_UP_USERDEV_SYSTIME, 28).            %  8.3.1.13  0字节,    上传用户信息传输装置系统时间
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

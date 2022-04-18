@@ -1,0 +1,17 @@
+{application, dgiot_mysql,
+ [{description, "MYSQL数据库"},
+  {vsn, "4.5.0"},
+  {registered, []},
+  {mod, {dgiot_mysql_app, []}},
+  {applications,
+   [kernel,
+    stdlib,
+    mysql
+   ]},
+  {env,[]},
+  {modules, []},
+
+  {maintainers, []},
+  {licenses, ["Apache 2.0"]},
+  {links, []}
+ ]}.

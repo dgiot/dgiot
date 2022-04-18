@@ -25,12 +25,13 @@
     get_control/3,
     get_collection/4,
     get_calculated/2,
-    string2value/1,
+    string2value/2,
     string2value/3,
     save_pnque/4,
     get_pnque/1,
     del_pnque/1,
-    timing_start/1
+    timing_start/1,
+    save_td/4
 ]).
 
 %% 查询指标队列
@@ -321,10 +322,18 @@ get_control(Round, Data, Control) ->
         Data ->
             Str = re:replace(dgiot_utils:to_list(Control), "%d", "(" ++ dgiot_utils:to_list(Data) ++ ")", [global, {return, list}]),
             Str1 = re:replace(Str, "%r", "(" ++ dgiot_utils:to_list(Round) ++ ")", [global, {return, list}]),
-            dgiot_task:string2value(Str1)
+            dgiot_task:string2value(Str1, <<"type">>)
     end.
 
-string2value(Str) ->
+string2value(Str, <<"TEXT">>) when is_list(Str) ->
+    %% eralng语法中. 表示事务结束
+    case string:find(Str, "%%") of
+        nomatch ->
+            Str;
+        _ -> error
+    end;
+
+string2value(Str, _) ->
     %% eralng语法中. 表示事务结束
     case string:find(Str, "%%") of
         nomatch ->
@@ -341,11 +350,11 @@ string2value(Str) ->
     end.
 
 string2value(Str, Type, Specs) ->
-    case string2value(Str) of
+    Type1 = list_to_binary(string:to_upper(binary_to_list(Type))),
+    case string2value(Str, Type1) of
         error ->
             error;
         Value ->
-            Type1 = list_to_binary(string:to_upper(binary_to_list(Type))),
             case Type1 of
                 <<"INT">> ->
                     round(Value);
@@ -401,5 +410,12 @@ del_pnque(DtuId) ->
     end.
 
 
-
-
+save_td(ProductId, DevAddr, Data, AppData) ->
+    DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+    Payload = jsx:encode(#{<<"thingdata">> => Data, <<"appdata">> => AppData, <<"timestamp">> => dgiot_datetime:now_ms()}),
+    Topic = <<"topo/", ProductId/binary, "/", DevAddr/binary, "/post">>,
+    dgiot_mqtt:publish(DeviceId, Topic, Payload),
+    dgiot_tdengine_adapter:save(ProductId, DevAddr, Data),
+    dgiot_metrics:inc(dgiot_task, <<"task_save">>, 1),
+    NotificationTopic = <<"notification/", ProductId/binary, "/", DevAddr/binary, "/post">>,
+    dgiot_mqtt:publish(DevAddr, NotificationTopic, jsx:encode(Data)).

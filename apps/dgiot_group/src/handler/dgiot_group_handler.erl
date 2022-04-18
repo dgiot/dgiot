@@ -250,20 +250,23 @@ post_group(Body, SessionToken) ->
                   };
               Err -> {400, Err}
           end,
-
-    case dgiot_product:update_config(NewBody#{
+    Body1 = NewBody#{
         <<"desc">> => <<"DG-IoT设备分组"/utf8>>,
         <<"netType">> => <<"WIFI">>,
         <<"category">> => #{<<"objectId">> => <<"e5a9059441">>, <<"__type">> => <<"Pointer">>, <<"className">> => <<"Category">>},
         <<"config">> => #{},
+%%        为什么以下id写死呀？
         <<"channel">> => #{<<"type">> => 1, <<"tdchannel">> => <<"24b9b4bc50">>, <<"taskchannel">> => <<"0edaeb918e">>, <<"otherchannel">> => [<<"11ed8ad9f2">>]},
         <<"thing">> => #{},
         <<"ACL">> => Acl,
         <<"name">> => ProductName,
-        <<"nodeType">> => 2}, SessionToken) of
+        <<"nodeType">> => 2},
+    io:format("NewBody ~p~n", [Body1]),
+
+    case dgiot_product:update_config(Body1, SessionToken) of
         {_, #{<<"objectId">> := ProductId}} ->
             <<NewAddr:12/binary, _/binary>> = dgiot_utils:to_md5(<<ProductId/binary, Addr/binary>>),
-            dgiot_device:create_device(#{
+            CreateArgs = #{
                 <<"status">> => <<"ONLINE">>,
                 <<"devaddr">> => NewAddr,
                 <<"name">> => ProductName,
@@ -271,7 +274,9 @@ post_group(Body, SessionToken) ->
                 <<"brand">> => <<"DG-IoT分组设备"/utf8>>,
                 <<"devModel">> => <<"DGIOT_GROUP">>,
                 <<"product">> => ProductId,
-                <<"ACL">> => Acl}, SessionToken);
+                <<"ACL">> => Acl},
+            io:format("CreateArgs ~p~n", [CreateArgs]),
+            dgiot_device:create_device(CreateArgs, SessionToken);
         Error ->
             Error
     end.

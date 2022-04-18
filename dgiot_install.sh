@@ -2,168 +2,129 @@
 # This file is used to install dgiot on linux systems. The operating system
 # is required to use systemd to manage services at boot
 export PATH=$PATH:/usr/local/bin
-lanip=""
-wlanip=""
-serverFqdn=""
-processor=1
-# -----------------------Variables definition---------------------
-fileserver="https://dgiot-release-1306147891.cos.ap-nanjing.myqcloud.com/v4.4.0"
-updateserver="http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_release/update"
+
+function help() {
+  echo "Usage: `basename $0` -v [single | cluster | devops | ci] -s [dgiot_n] -p [your_dgiot_plugin] -d [your_domain_name] -m [dgiotmd5] -e [pg_eip] -a [pg_auth]"
+  exit 0
+}
+
+function check_os_type() {
+  # get the operating system type for using the corresponding init file
+  # ubuntu/debian(deb), centos/fedora(rpm), others: opensuse, redhat, ..., no verification
+  #osinfo=$(awk -F= '/^NAME/{print $2}' /etc/os-release)
+  if [[ -e /etc/os-release ]]; then
+    osinfo=$(cat /etc/os-release | grep "NAME" | cut -d '"' -f2)   ||:
+  else
+    osinfo=""
+  fi
+  echo "osinfo: ${osinfo}"
+  os_type=0
+  if echo $osinfo | grep -qwi "ubuntu" ; then
+  #  echo "This is ubuntu system"
+    os_type=1
+  elif echo $osinfo | grep -qwi "debian" ; then
+  #  echo "This is debian system"
+    os_type=1
+  elif echo $osinfo | grep -qwi "Kylin" ; then
+  #  echo "This is Kylin system"
+    os_type=1
+  elif  echo $osinfo | grep -qwi "centos" ; then
+  #  echo "This is centos system"
+    os_type=2
+  elif echo $osinfo | grep -qwi "fedora" ; then
+  #  echo "This is fedora system"
+    os_type=2
+  elif echo $osinfo | grep -qwi "Amazon" ; then
+  #  echo "This is Amazon system"
+    os_type=2
+  elif echo $osinfo | grep -qwi "Red" ; then
+  #  echo "This is Red Hat system"
+    os_type=2
+  else
+    echo " osinfo: ${osinfo}"
+    echo " This is an officially unverified linux system,"
+    echo " if there are any problems with the installation and operation, "
+    echo " please feel free to contact www.iotn2n.com for support."
+    os_type=3
+  fi
+}
+
+function dgiot_shell() {
+  # Color setting
+  RED='\033[0;31m'
+  GREEN='\033[1;32m'
+  GREEN_DARK='\033[0;32m'
+  GREEN_UNDERLINE='\033[4;32m'
+  NC='\033[0m'
+  script_dir=$(dirname $(readlink -f "$0"))
+  csudo=""
+  if command -v sudo > /dev/null; then
+      csudo="sudo"
+  fi
+}
+
+function dgiot_fqdn() {
+  lanip=""
+  wlanip=""
+  serverFqdn=""
+  dgiot_data=""
+  # 网络检查pre_install
+  get_lanip
+  get_wanip
+  # 获取进程数
+  get_processor
+}
+
+function install_openssl() {
+  yum install -y glibc-headers &> /dev/null
+  yum install -y openssl openssl-devel &> /dev/null
+  yum install -y libstdc++-devel openssl-devel &> /dev/null
+}
+
+# rand password
 #https://bcrypt-generator.com/
-yum install -y glibc-headers &> /dev/null
-yum install -y openssl openssl-devel &> /dev/null
-yum install -y libstdc++-devel openssl-devel &> /dev/null
-pg_pwd=`openssl rand -hex 8 | md5sum | cut -f1 -d ' '`
-parse_user=dgiot
-parse_pwd=`openssl rand -hex 8 | md5sum | cut -f1 -d ' '`
-parse_appid=`openssl rand -hex 8 | md5sum | cut -f1 -d ' '`
-parse_master=`openssl rand -hex 8 | md5sum | cut -f1 -d ' '`
-parse_readonly_master=`openssl rand -hex 8 | md5sum | cut -f1 -d ' '`
-parse_file=`openssl rand -hex 8 | md5sum | cut -f1 -d ' '`
-parse_client=`openssl rand -hex 8 | md5sum | cut -f1 -d ' '`
-parse_javascript=`openssl rand -hex 8 | md5sum | cut -f1 -d ' '`
-parse_restapi=`openssl rand -hex 8 | md5sum | cut -f1 -d ' '`
-parse_dotnet=`openssl rand -hex 8 | md5sum | cut -f1 -d ' '`
-parse_webhook=`openssl rand -hex 8 | md5sum | cut -f1 -d ' '`
+function dgiot_password() {
+  install_openssl
+  pg_pwd=`openssl rand -hex 8 | md5sum | cut -f1 -d ' '`
+  parse_user=dgiot
+  parse_pwd=`openssl rand -hex 8 | md5sum | cut -f1 -d ' '`
+  parse_appid=`openssl rand -hex 8 | md5sum | cut -f1 -d ' '`
+  parse_master=`openssl rand -hex 8 | md5sum | cut -f1 -d ' '`
+  parse_readonly_master=`openssl rand -hex 8 | md5sum | cut -f1 -d ' '`
+  parse_file=`openssl rand -hex 8 | md5sum | cut -f1 -d ' '`
+  parse_client=`openssl rand -hex 8 | md5sum | cut -f1 -d ' '`
+  parse_javascript=`openssl rand -hex 8 | md5sum | cut -f1 -d ' '`
+  parse_restapi=`openssl rand -hex 8 | md5sum | cut -f1 -d ' '`
+  parse_dotnet=`openssl rand -hex 8 | md5sum | cut -f1 -d ' '`
+  parse_webhook=`openssl rand -hex 8 | md5sum | cut -f1 -d ' '`
+}
 
-randtime=`date +%F_%T`
-script_dir=$(dirname $(readlink -f "$0"))
-#install path
-install_dir="/data/dgiot"
-backup_dir=${install_dir}/${randtime}
-mkdir ${backup_dir} -p
-#service path
-service_dir="/lib/systemd/system"
+function dgiot_path() {
+  # package from path
+  fileserver="https://dgiot-release-1306147891.cos.ap-nanjing.myqcloud.com/v4.4.0"
+  updateserver="http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_release/update"
 
-# Color setting
-RED='\033[0;31m'
-GREEN='\033[1;32m'
-GREEN_DARK='\033[0;32m'
-GREEN_UNDERLINE='\033[4;32m'
-NC='\033[0m'
+  #install path
+  install_dir="/data/dgiot"
 
-csudo=""
-if command -v sudo > /dev/null; then
-    csudo="sudo"
-fi
+  #backup path
+  randtime=`date +%F_%T`
+  backup_dir=${install_dir}/${randtime}
+  mkdir ${backup_dir} -p
 
-prompt_force=0
-update_flag=0
-initd_mod=0
-service_mod=2
-if pidof systemd &> /dev/null; then
-    service_mod=0
-elif $(which service &> /dev/null); then
-    service_mod=1
-    service_config_dir="/etc/init.d"
-    if $(which chkconfig &> /dev/null); then
-         initd_mod=1
-    elif $(which insserv &> /dev/null); then
-        initd_mod=2
-    elif $(which update-rc.d &> /dev/null); then
-        initd_mod=3
-    else
-        service_mod=2
-    fi
-else
-    service_mod=2
-fi
+   #service path
+  service_dir="/lib/systemd/system"
+}
 
-# get the operating system type for using the corresponding init file
-# ubuntu/debian(deb), centos/fedora(rpm), others: opensuse, redhat, ..., no verification
-#osinfo=$(awk -F= '/^NAME/{print $2}' /etc/os-release)
-if [[ -e /etc/os-release ]]; then
-  osinfo=$(cat /etc/os-release | grep "NAME" | cut -d '"' -f2)   ||:
-else
-  osinfo=""
-fi
-echo "osinfo: ${osinfo}"
-os_type=0
-if echo $osinfo | grep -qwi "ubuntu" ; then
-#  echo "This is ubuntu system"
-  os_type=1
-elif echo $osinfo | grep -qwi "debian" ; then
-#  echo "This is debian system"
-  os_type=1
-elif echo $osinfo | grep -qwi "Kylin" ; then
-#  echo "This is Kylin system"
-  os_type=1
-elif  echo $osinfo | grep -qwi "centos" ; then
-#  echo "This is centos system"
-  os_type=2
-elif echo $osinfo | grep -qwi "fedora" ; then
-#  echo "This is fedora system"
-  os_type=2
-elif echo $osinfo | grep -qwi "Amazon" ; then
-#  echo "This is Amazon system"
-  os_type=2
-elif echo $osinfo | grep -qwi "Red" ; then
-#  echo "This is Red Hat system"
-  os_type=2
-else
-  echo " osinfo: ${osinfo}"
-  echo " This is an officially unverified linux system,"
-  echo " if there are any problems with the installation and operation, "
-  echo " please feel free to contact www.iotn2n.com for support."
-  os_type=3
-fi
-
-# =============================  get input parameters =================================================
-# dgiot_install.sh -v [single | cluster | devops | ci] -d [prod.iotn2n.com | your_domain_name] -s [dgiot_44 | dgiot_n] -p [dgiot | dgiot_your_plugin] -m [dgiotmd5]
-
-# set parameters by default value
-verType=single        # [single | cluster | devops | ci]
-domain_name="prod.iotn2n.com" #[prod.iotn2n.com | your_domain_name]
-software="dgiot_n62"  #[dgiot_n62 | dgiot_n]
-plugin="dgiot" #[dgiot | dgiot_your_plugin]
-dgiotmd5="71e0211861b647b1c6816ce81f26f52f"
-while getopts "h:v:d:s:p:m:" arg
-do
-  case $arg in
-    v)
-      echo "verType=$OPTARG"
-      verType=$(echo $OPTARG)
-      ;;
-    s)
-      echo "software=$OPTARG"
-      software=$(echo $OPTARG)
-      ;;
-    m)
-      echo "dgiotmd5=$OPTARG"
-      dgiotmd5=$(echo $OPTARG)
-      ;;
-    d)
-      domain_name=$(echo $OPTARG)
-      echo "Please ensure that the certificate file has been placed in ${script_dir}"
-      echo -e  "`date +%F_%T` $LINENO: ${GREEN} Please ensure that the certificate file has been placed in `pwd`${NC}"
-      if [ ! -f  ${script_dir}/${domain_name}.zip  ]; then
-        echo -e  "`date +%F_%T` $LINENO: ${RED} ${script_dir}/${domain_name}.zip cert file not exist ${NC}"
-        exit 1
-      fi
-      ;;
-    p)
-      echo "plugin=$OPTARG"
-      plugin=$(echo $OPTARG)
-      ;;
-    h)
-      echo "Usage: `basename $0` -v [single | cluster | devops | ci] -s [dgiot_n62 | dgiot_n] -d [prod.iotn2n.com | your_domain_name] -p [dgiot | your_dgiot_plugin]"
-      exit 0
-      ;;
-    ?) #unknow option
-      echo "unkonw argument"
-      exit 1
-      ;;
-  esac
-done
+function dgiot_auto_variables() {
+  # ============================= get auto variables =================================================
+  dgiot_path
+  dgiot_fqdn
+  dgiot_password
+}
 
 ## 1.3. 部署前处理
 function pre_install() {
-  # 网络检查pre_install
-  ping -c2 baidu.com &> /dev/null
-  get_lanip
-  get_wanip
-  get_processor
-
   ## 1.4 关闭防火墙，selinux
   if systemctl is-active --quiet firewalld; then
         echo -e  "`date +%F_%T` $LINENO: ${GREEN} firewalld is running, stopping it...${NC}"
@@ -171,9 +132,8 @@ function pre_install() {
         ${csudo} systemctl disable firewalld $1 &> /dev/null || echo &> /dev/null
   fi
 
-   #  setenforce 0
+  #  setenforce 0
   sed -ri s/SELINUX=enforcing/SELINUX=disabled/g /etc/selinux/config
-
 
   ## 1.5 配置yum源
   if [ ! -f /etc/yum.repos.d/CentOS-Base.repo ]; then
@@ -198,6 +158,7 @@ function get_processor() {
 }
 
 function get_wanip() {
+  ping -c2 baidu.com &> /dev/null
   wlanip=`curl whatismyip.akamai.com`
   echo -e  "`date +%F_%T` $LINENO: ${GREEN} wlanip: ${wlanip}${NC}"
 }
@@ -211,7 +172,7 @@ function get_lanip() {
       continue
     fi
 
-     # ingore lo ip
+    # ingore lo ip
     if [ "${nic}" == "lo" ]; then
       continue
     fi
@@ -290,7 +251,7 @@ function install_service() {
   if [ ! x"$5" = x ]; then
     ${csudo} bash -c "echo 'Environment=$5'                   >> ${service_config}"
   fi
-  if [[ -$# -eq 6 ]]; then
+  if [ -$# -eq 6 ]; then
     ${csudo} bash -c "echo 'ExecStop=$6'                       >> ${service_config}"
   fi
   ${csudo} bash -c "echo 'KillMode=mixed'                      >> ${service_config}"
@@ -388,6 +349,26 @@ function install_service2() {
   ${csudo} systemctl start $1 &> /dev/null
   echo -e  "`date +%F_%T` $LINENO: ${GREEN} systemctl start $1${NC}"
 }
+
+find_in_file() {
+  grep "$1" "$2" > /dev/null
+  return $?
+}
+
+### set host
+set_host()
+{
+  IP=$1
+  HOST=$2
+
+  RECORD="${IP} ${HOST}"
+
+  find_in_file "${RECORD}" /etc/hosts
+  if [ $? -ne 0 ]; then
+    echo ${RECORD} >> /etc/hosts
+  fi
+}
+
 ##---------------------------------------------------------------##
 #2 部署档案数据库
 
@@ -515,6 +496,9 @@ function init_postgres_database(){
 EOF
   archivedir="${install_dir}/dgiot_pg_writer/archivedir"
   echo "  archive_command = 'test ! -f ${archivedir}/%f && cp %p ${archivedir}/%f'" >>  ${postgresql_conf}
+  pg_hba_conf="${install_dir}/dgiot_pg_writer/data/pg_hba.conf"
+  # METHOD "trust", "reject","md5","password","scram-sha-256","gss","sspi","ident","peer","pam","ldap","radius","cert"
+  ${csudo} bash -c "echo 'host    all             all             ${pg_eip}/24           password'    >> ${pg_hba_conf}"
   echo -e  "`date +%F_%T` $LINENO: ${GREEN} ${postgresql_conf}${NC}"
 }
 
@@ -528,6 +512,23 @@ function deploy_postgres() {
   sleep 2
   sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -c "CREATE USER  repl WITH PASSWORD '${pg_pwd}' REPLICATION;" &> /dev/null
   echo -e  "`date +%F_%T` $LINENO: ${GREEN} deploy postgres success${NC}"
+}
+
+function restore_parse_data() {
+  ### 下载dgiot_parse_server初始数据
+  wget ${fileserver}/parse_4.0.sql.tar.gz -O ${install_dir}/dgiot_pg_writer/parse_4.0.sql.tar.gz &> /dev/null
+  cd ${install_dir}/dgiot_pg_writer/
+  tar xvf parse_4.0.sql.tar.gz &> /dev/null
+
+  sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -c "ALTER USER postgres WITH PASSWORD '${pg_pwd}';" &> /dev/null
+  retval=`sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -c "SELECT datname FROM pg_database WHERE datistemplate = false;" &> /dev/null`
+  if [[ $retval == *"parse"* ]]; then
+     sudo -u postgres /usr/local/pgsql/12/bin/pg_dump -F p -f  ${backup_dir}/dgiot_pg_writer/parse_4.0_backup.sql -C -E  UTF8 -h 127.0.0.1 -U postgres parse &> /dev/null
+     sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -c "DROP DATABASE parse;" &> /dev/null
+  fi
+  sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -c "CREATE DATABASE parse;" &> /dev/null
+  sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -f ${install_dir}/dgiot_pg_writer/parse_4.0.sql parse &> /dev/null
+  echo -e "`date +%F_%T` $LINENO: ${GREEN} restore parse data success${NC}"
 }
 
 ## 2.2 部署parse server
@@ -548,10 +549,6 @@ function install_parse_server() {
   cd ${script_dir}/
   tar xf dgiot_parse_server.tar.gz
   mv ./dgiot_parse_server ${install_dir}/dgiot_parse_server
-  ### 下载dgiot_parse_server初始数据
-  wget ${fileserver}/parse_4.0.sql.tar.gz -O ${install_dir}/dgiot_parse_server/parse_4.0.sql.tar.gz &> /dev/null
-  cd ${install_dir}/dgiot_parse_server/
-  tar xvf parse_4.0.sql.tar.gz &> /dev/null
 
   ###  配置dgiot_parse_server配置参数
   parseconfig=${install_dir}/dgiot_parse_server/script/.env
@@ -568,7 +565,7 @@ function install_parse_server() {
   ${csudo} bash -c "echo  'DASHBOARD_PASS = ${parse_pwd}'                                  >> ${parseconfig}"
   ${csudo} bash -c "echo  'DASHBOARD_ENCPASS = false'                                      >> ${parseconfig}"
   ${csudo} bash -c "echo  '# 数据配置'                                                     >> ${parseconfig}"
-  ${csudo} bash -c "echo  'DATABASE = postgres://postgres:${pg_pwd}@127.0.0.1:7432/parse'  >> ${parseconfig}"
+  ${csudo} bash -c "echo  'DATABASE = postgres://postgres:${pg_auth}@${pg_eip}:7432/parse'  >> ${parseconfig}"
   ${csudo} bash -c "echo  'REDIS_SOCKET = redis://127.0.0.1:16379/0'                       >> ${parseconfig}"
   ${csudo} bash -c "echo  'REDIS_CACHE = redis://127.0.0.1:16379/1'                        >> ${parseconfig}"
   ${csudo} bash -c "echo  '# 邮箱配置'                                                      >> ${parseconfig}"
@@ -592,18 +589,9 @@ function install_parse_server() {
   ${csudo} bash -c "echo  'KEY_WEBHOOK = ${parse_webhook}'                                   >> ${parseconfig}"
   ${csudo} bash -c "echo  '# 会话配置'                                                       >> ${parseconfig}"
   ${csudo} bash -c "echo  'SESSION_LENGTH = 604800'                                          >> ${parseconfig}"
+  echo -e "`date +%F_%T` $LINENO: ${GREEN} create ${parseconfig} success${NC}"
 
   cd ${script_dir}/
-
-  echo -e "`date +%F_%T` $LINENO: ${GREEN} create ${parseconfig} success${NC}"
-  sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -c "ALTER USER postgres WITH PASSWORD '${pg_pwd}';" &> /dev/null
-  retval=`sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -c "SELECT datname FROM pg_database WHERE datistemplate = false;" &> /dev/null`
-  if [[ $retval == *"parse"* ]]; then
-     sudo -u postgres /usr/local/pgsql/12/bin/pg_dump -F p -f  ${backup_dir}/dgiot_parse_server/parse_4.0_backup.sql -C -E  UTF8 -h 127.0.0.1 -U postgres parse &> /dev/null
-     sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -c "DROP DATABASE parse;" &> /dev/null
-  fi
-  sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -c "CREATE DATABASE parse;" &> /dev/null
-  sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -f ${install_dir}/dgiot_parse_server/parse_4.0.sql parse &> /dev/null
   echo -e "`date +%F_%T` $LINENO: ${GREEN} install parse_server success${NC}"
   }
 
@@ -656,6 +644,7 @@ function deploy_tdengine_server() {
   ${csudo} bash -c "echo 'dataDir                   ${install_dir}/taos/data/'   >> /etc/taos/taos.cfg"
   systemctl start taosd
   systemctl start taosadapter
+  ${csudo} systemctl enable taosadapter &> /dev/null
   echo -e "`date +%F_%T` $LINENO: ${GREEN} tdengine_server start success${NC}"
   install_dgiot_tdengine_mqtt
 }
@@ -755,7 +744,17 @@ function install_go_fastdfs() {
   tar xf dgiot_dashboard.tar.gz &> /dev/null
 
   mv ${script_dir}/dgiot_dashboard ${install_dir}/go_fastdfs/files/ &> /dev/null
+}
 
+#4 安装文件数据服务器
+function install_word_report() {
+  clean_service dgiot_report
+  if [ ! -f ${script_dir}/dgiot_report.tar.gz ]; then
+    wget ${fileserver}/dgiot_report.tar.gz -O ${script_dir}/dgiot_report.tar.gz &> /dev/null
+    tar xf dgiot_report.tar.gz &> /dev/null
+  fi
+  # $1:service  $2:Type  $3:ExecStart  $4:User  $5:Environment  $6:ExecStop
+  install_service  dgiot_report "simple"  "${install_dir}/dgiot_report/bin/startup.sh"  "root" "test=1" "${install_dir}/dgiot_report/bin/shutdown.sh"
 }
 
 function yum_install_git {
@@ -789,8 +788,8 @@ function yum_install_erlang_otp {
   yum install -y kernel-devel m4 ncurses-devel &> /dev/null
   yum install  -y unixODBC unixODBC-devel &> /dev/null
   yum install -y libtool-ltdl libtool-ltdl-devel &> /dev/null
-
 }
+
 #5. 部署应用服务器
 # 5.1 安装erlang/otp环境
 function install_erlang_otp() {
@@ -848,7 +847,6 @@ function update_dgiot() {
   install_service "dgiot" "forking" "/bin/sh ${install_dir}/dgiot/bin/emqx start"  "root" "HOME=${install_dir}/dgiot/erts-11.0" "/bin/sh /data/dgiot/bin/emqx stop"
 }
 
-
 function update_tdengine_server() {
   version=$(taos --v |awk '{print $2}') ||:
   if [ "${version}" != "2.4.0.4" ]; then
@@ -861,14 +859,14 @@ function update_dashboard() {
   cd ${install_dir}/go_fastdfs/files/
   if [ -f dgiot_dashboard.tar.gz ]; then
     dashboardmd5=`md5sum dgiot_dashboard.tar.gz |cut -d ' ' -f1`
-    if [ "${dashboardmd5}" != "62855d53c8b8d4be0c7acedcacb84236" ]; then
+    if [ "${dashboardmd5}" != "0ce4c4824fb2dcd8db38825c75d361d0" ]; then
       rm -rf dgiot_dashboard.tar.gz &> /dev/null
     fi
   fi
   if [ ! -f dgiot_dashboard.tar.gz ]; then
     wget ${fileserver}/dgiot_dashboard.tar.gz &> /dev/null
     dashboardmd52=`md5sum dgiot_dashboard.tar.gz |cut -d ' ' -f1`
-    if [ "${dashboardmd52}" != "62855d53c8b8d4be0c7acedcacb84236" ]; then
+    if [ "${dashboardmd52}" != "0ce4c4824fb2dcd8db38825c75d361d0" ]; then
       echo -e "`date +%F_%T` $LINENO: ${RED} download dgiot_dashboard.tar.gz failed${NC}"
       exit 1
     fi
@@ -878,6 +876,7 @@ function update_dashboard() {
   fi
   tar xf dgiot_dashboard.tar.gz &> /dev/null
 }
+
 function install_dgiot() {
   make_ssl
   if [ ! -d ${install_dir}/go_fastdfs/files/package/ ]; then
@@ -952,9 +951,10 @@ function install_node_exporter() {
     mv ${install_dir}/node_exporter-0.18.1.linux-amd64/ ${backup_dir}/
   fi
 
-  tar -zxvf node_exporter-0.18.1.linux-amd64.tar.gz
+  tar -zxvf node_exporter-0.18.1.linux-amd64.tar.gz &> /dev/null
   mv ${script_dir}/node_exporter-0.18.1.linux-amd64/ ${install_dir}/
-  install_service2 node_exporter "simple" "/usr/local/bin/node_exporter"
+  install_service2 node_exporter "simple" "${install_dir}/node_exporter-0.18.1.linux-amd64/node_exporter"
+  cd ${script_dir}
 }
 
 ##6.2 install postgres exporter
@@ -1069,33 +1069,6 @@ function install_grafana() {
   install_service2 grafana-server "simple" "${grafanahome}/bin/grafana-server --config=${grafanahome}/conf/defaults.ini  --homepath=${grafanahome}"
 }
 
-function install_nginx() {
-    clean_service nginx
-    if systemctl is-active --quiet nginx; then
-        echo -e  "`date +%F_%T` $LINENO: ${GREEN} nginx is running, stopping it...${NC}"
-        rpm -e nginx
-    fi
-    ${csudo} rpm -Uvh http://nginx.org/packages/centos/7/noarch/RPMS/nginx-release-centos-7-0.el7.ngx.noarch.rpm --force &> /dev/null
-    ${csudo} yum install -y nginx-1.20.1 &> /dev/null
-    if [ ! -f ${script_dir}/nginx.conf ]; then
-       wget $fileserver/nginx.conf -O ${script_dir}/nginx.conf &> /dev/null
-    fi
-    if [ ! -f ${script_dir}/${domain_name}.zip ]; then
-       wget $fileserver/${domain_name}.zip -O ${script_dir}/${domain_name}.zip  &> /dev/null
-    fi
-    rm  /etc/nginx/nginx.conf -rf
-    cp ${script_dir}/nginx.conf /etc/nginx/nginx.conf -rf
-    echo -e "`date +%F_%T` $LINENO: ${GREEN} ${domain_name} ${NC}"
-    sed -i "s!{{domain_name}}!${domain_name}!g"  /etc/nginx/nginx.conf
-    sed -i "s!{{install_dir}}!${install_dir}!g"  /etc/nginx/nginx.conf
-    echo -e "`date +%F_%T` $LINENO: ${GREEN} ${install_dir} ${NC}"
-    if [ -f ${script_dir}/${domain_name}.zip ]; then
-      unzip -o ${domain_name}.zip -d /etc/ssl/certs/ &> /dev/null
-    fi
-    systemctl start nginx.service &> /dev/null
-    systemctl enable nginx.service &> /dev/null
-}
-
 function build_nginx() {
     clean_service nginx
     if systemctl is-active --quiet nginx; then
@@ -1121,7 +1094,7 @@ function build_nginx() {
     cd ${script_dir}/
     tar xvf nginx-1.20.1.tar.gz &> /dev/null
     cd ${script_dir}/nginx-1.20.1
-    ./configure --prefix=/data/dgiot/nginx  --with-http_realip_module --with-http_ssl_module --with-http_gzip_static_module &> /dev/null
+    ./configure --prefix=/data/dgiot/nginx --with-http_realip_module --with-http_ssl_module --with-http_gzip_static_module &> /dev/null
     make &> /dev/null
     make install &> /dev/null
 
@@ -1188,7 +1161,7 @@ function build_dashboard_lite() {
 
     cd  ${script_dir}/
     if [ ! -d ${script_dir}/dgiot_dashboard_lite/ ]; then
-      git clone -b master https://gitee.com/dgiiot/dgiot-dashboard-lite.git dgiot_dashboard_lite
+      git clone -b master https://gitee.com/dgiiot/dgiot-amis-dashboard.git dgiot_dashboard_lite
     fi
 
     cd ${script_dir}/dgiot_dashboard_lite
@@ -1199,7 +1172,7 @@ function build_dashboard_lite() {
     rm ${script_dir}/dgiot_dashboard_lite/dist/ -rf
     ${script_dir}/node-v16.5.0-linux-x64/bin/yarn install
     ${script_dir}/node-v16.5.0-linux-x64/bin/yarn build
-    echo "not build"
+    echo "build_dashboard_lite "
   }
 
 function build_dashboard() {
@@ -1236,7 +1209,7 @@ function build_dashboard() {
     #${script_dir}/node-v16.5.0-linux-x64/bin/pnpm add -g pnpm
     ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm install --no-frozen-lockfile
     ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm build
-    echo "not build"
+    echo "build_dashboard"
   }
 
 function pre_build_dgiot() {
@@ -1276,9 +1249,9 @@ function pre_build_dgiot() {
       cp ${script_dir}/dgiot_dashboard/dist/  ${script_dir}/$plugin/apps/dgiot_api/priv/www -rf
     fi
 
-    #if [ -d ${script_dir}/dgiot_dashboard_lite/dist ]; then
-    #  cp ${script_dir}/dgiot_dashboard_lite/dist/  ${script_dir}/$plugin/apps/dgiot_api/priv/www/lite -rf
-    #fi
+    if [ -d ${script_dir}/dgiot_dashboard_lite/dist ]; then
+      cp ${script_dir}/dgiot_dashboard_lite/dist/  ${script_dir}/$plugin/apps/dgiot_api/priv/www/dgiot-amis-dashboard -rf
+    fi
 
     if [ -d ${script_dir}/dgiot/emqx/rel/ ]; then
       rm ${script_dir}/dgiot/emqx/rel -rf
@@ -1316,21 +1289,19 @@ function post_build_dgiot() {
     cp ./${software}.tar.gz ${install_dir}/go_fastdfs/files/package/
   }
 
-
-function devops() {
-    build_dashboard
-    #build_dashboard_lite
-    pre_build_dgiot
-    make
-    post_build_dgiot
-}
-
-function ci() {
-    build_dashboard
-    # build_dashboard_lite
-    pre_build_dgiot
-    make ci
-    post_build_dgiot
+function build_keepalived() {
+    cd ~
+    wget https://www.keepalived.org/software/keepalived-2.0.20.tar.gz
+    yum install -y gcc openssl-devel popt-devel ipvsadm
+    tar -zxvf keepalived-2.0.20.tar.gz
+    mv keepalived-2.0.20 /usr/
+    cd /usr/keepalived-2.0.20
+    ./configure --prefix=/usr/keepalived-2.0.20
+    make && make install
+    chmod 644 keepalived.conf
+    chmod +x /usr/keepalived-2.0.20/container_check.sh
+    systemctl enable keepalived.service
+    systemctl start keepalived.service
 }
 
 function install_python() {
@@ -1361,8 +1332,22 @@ function install_dotnet() {
    sudo yum install -y dotnet-sdk-5.0
 }
 
+function install_ffmpeg() {
+  sudo yum install yasm
+  wget http://www.ffmpeg.org/releases/ffmpeg-4.1.tar.gz
+  tar -zxvf ffmpeg-4.1.tar.gz
+  cd ffmpeg-4.1
+  ./configure --prefix=/usr/local/ffmpeg
+  make && make install
+  sudo ln -s  /usr/local/ffmpeg/bin/ffmpeg /usr/bin/ffmpeg
+  }
 
-function install_windows() {
+
+## ==============================begin deploy type ============================
+# 计划基于msys64来构建 类linux 的windows一键式部署和开发环境, 只支持单机版本
+function windows() {
+  echo -e "`date +%F_%T` $LINENO: ${GREEN} dgiot ${verType} windos deploy start${NC}"
+  set +uxe
   # initdb -D /data/dgiot/dgiot_pg_writer/data/
   # pg_ctl -D /data/dgiot/dgiot_pg_writer/data/ -l logfile start
   # pg_ctl.exe register -N pgsql -D /data/dgiot/dgiot_pg_writer/data/
@@ -1376,54 +1361,218 @@ function install_windows() {
   echo -e "`date +%F_%T` $LINENO: ${GREEN} install parse_server success${NC}"
 }
 
-## ==============================Main program starts from here============================
+function centos() {
+  # Install app and data node
+    if [ -x ${install_dir}/dgiot ]; then
+      update_dgiot
+      update_dashboard
+      #update_tdengine_server
+      #restore_parse_data       # 加载默认档案数据
+    else
+      pre_install
+      clean_services
+      deploy_postgres
+      restore_parse_data      # 档案数据
+      deploy_tdengine_server  # 时序数据
+      install_go_fastdfs      # 文件数据
+      #install_word_report    # 报告服务
+      deploy_parse_server     # Api网关
+      install_erlang_otp
+      install_dgiot
+      build_nginx
+      #install_node_exporter
+    fi
+}
 
-set -e
-#set -x
-echo -e "`date +%F_%T` $LINENO: ${GREEN} dgiot ${verType} deploy start${NC}"
-if [ "${os_type}" == 3 ]; then
-  echo -e "`date +%F_%T` $LINENO: ${GREEN} dgiot ${verType} windos deploy start${NC}"
-  set +uxe
-  install_windows
-else
-  if [ "${verType}" == "single" ]; then
-      # Install server and client
-      if [ -x ${install_dir}/dgiot ]; then
-        update_flag=1
-        update_dgiot
-        update_dashboard
-        update_tdengine_server
-      else
-        pre_install
-        clean_services
-        deploy_postgres
-        deploy_parse_server     # 配置数据
-        #install_postgres_exporter  #占用资源较多，先去除
-        deploy_tdengine_server  # 时序数据
-        install_go_fastdfs      # 文件数据
-        install_erlang_otp
-        install_dgiot
-        #install_prometheus #占用资源较多，先去除
-        #install_grafana    #占用资源较多，先去除
-        #install_nginx
-        build_nginx
-      fi
-  elif [ "${verType}" == "cluster" ]; then
-      # todo
-      if [ -x ${install_dir}/dgiot ]; then
-        update_flag=1
-        #update_dgiot_cluster
-      else
-        echo  "install_update_dgiot_cluster"
-        #install_update_dgiot_cluster
-      fi
-  elif [ "${verType}" == "devops" ]; then
+function single() {
+  pg_eip=${lanip}
+  pg_auth=${pg_pwd}
+  ## windows单机版本部署(待完成)
+  if [ "${os_type}" == 3 ]; then
+    windows
+  else ## linux单机版本目前只支持centos 7.6/7.9
+    centos
+  fi
+}
+
+function cluster() {
+  #如果数据节点ip和本机ip相同，则部署数据节点
+  if [ ${pg_eip} == "changeyourip" ]; then
+    pg_eip=${lanip}
+    pg_auth=${pg_pwd}
+    cluster_data
+  else
+    cluster_app
+  fi
+}
+
+## dgiot集群部署包含三类节点：
+# 1、数据存储节点(data),可以通过eip给数据消费节点和数据生产节点提供数据读写功能
+# 2、数据消费节点(consume),可以通过eip给外部用户提供高可用的数据消费,对设备数据只能读，不能写
+# 3、数据生产节点(product)，可以从内部子系统或者设备的数据源获取数据，并通过eip存储到数据节点
+# 部署顺序是首先安装数据存储节点，然后再部署数据生产节点和数据消费节点
+# 部署数据生产节点和数据消费节点时需要输入数据存储节点的eip地址
+### ----begin  dgiot cluster ----- ##
+##---- User layer -----------------##
+##       |eip|                     ##
+##----- dgiot consume node --------##
+##       |eip|                     ##
+##----- dgiot data node -----------##
+##       |eip|                     ##
+##----- dgiot product node --------##
+##     |c1| |c2|  |..|   |cn|      ##
+##---- Data source layer ----------##
+
+function cluster_data() {
+  #数据存储节点部署
+  if [ -x ${install_dir}/dgiot ]; then
+    build_nginx
+    echo -e "`date +%F_%T` $LINENO: ${GREEN} please update dgiot ${verType} node by youself${NC}"
+  else
+    pre_install
+    deploy_postgres             # 配置数据
+    restore_parse_data           # 配置数据
+    deploy_tdengine_server      # 时序数据
+    install_go_fastdfs          # 文件数据
+    install_prometheus          # 运维统计服务
+    install_grafana             # 运维可视化服务
+    install_postgres_exporter   # postgres数据运维监视
+    install_node_exporter       # 服务器系统数据运维监视
+  fi
+}
+
+function cluster_app() {
+  #数据生产节点部署
+  if [ -x ${install_dir}/dgiot ]; then
+    update_dgiot
+    update_dashboard
+    update_tdengine_server
+  else
+    pre_install
+    deploy_parse_server  # Api网关
+    install_erlang_otp
+    install_dgiot
+    build_nginx
+    install_node_exporter
+  fi
+}
+
+### ----end  dgiot cluster -------
+
+function devops() {
+    #一键式开发环境
+    build_dashboard
+    build_dashboard_lite
+    pre_build_dgiot
+    make
+    post_build_dgiot
+}
+
+function ci() {
+    #一键式持续集成
+    build_dashboard
+    build_dashboard_lite
+    pre_build_dgiot
+    make ci
+    post_build_dgiot
+}
+## ==============================end deploy type ============================
+function deploy_dgiot() {
+  set -e
+  echo -e "`date +%F_%T` $LINENO: ${GREEN} dgiot ${deployType} deploy start${NC}"
+  # centos单机版本部署(已完成)
+  if [ "${deployType}" == "single" ]; then
+      single
+  # cluster step 1 数据存储节点部署 (待完成)
+  elif [ "${deployType}" == "cluster" ]; then
+      cluster
+  #  本地开发环境部署 (已完成)
+  elif [ "${deployType}" == "devops" ]; then
       devops
-  elif [ "${verType}" == "ci" ]; then
+  #  持续集成环境部署 (已完成)
+  elif [ "${deployType}" == "ci" ]; then
       ci
   else
-      echo  "please input correct verType"
+      echo  "please input correct deployType"
   fi
+
+  echo -e "`date +%F_%T` $LINENO: ${GREEN} dgiot ${deployType} deploy success end${NC}"
+}
+
+## ==============================Main program starts from here============================
+if [ "$1" == "-h" ]; then
+  help
 fi
 
-echo -e "`date +%F_%T` $LINENO: ${GREEN} dgiot ${verType} deploy success end${NC}"
+###---------------------------- prepare config-------------------------------------------------
+## 当前支持cetos 7.6/7.9, 计划支持windows
+check_os_type
+## shell parameter init
+dgiot_shell
+
+# =============================  get input parameters =================================================
+# dgiot_install.sh -v [single | cluster | devops | ci] -s [dgiot_n] -p [dgiot_your_plugin] -m [dgiotmd5] -d [your_domain_name] -e [datanode_eip] -s [pg_auth]
+# set parameters by default value
+deployType=single                             # [single | cluster | devops | ci]
+domain_name="prod.iotn2n.com"                 # [prod.iotn2n.com | your_domain_name]
+software="dgiot_n99"                          # [dgiot_n99| dgiot_n]
+plugin="dgiot"                                # [dgiot | dgiot_your_plugin]
+dgiotmd5="2db7806c1bdb7eb5fddbb460af94f285"   # [dgiotmd5]
+pg_eip="changeyourip"                            # [datanode_eip]
+pg_auth='changeyourpassword'                  # [pg_auth]
+
+while getopts "v:s:p:m:d:e:a:" arg
+do
+  case $arg in
+    v)
+      echo -e  "`date +%F_%T` $LINENO: ${GREEN} deployType=$OPTARG${NC}"
+      deployType=$(echo $OPTARG)
+      ;;
+    s)
+      echo -e  "`date +%F_%T` $LINENO: ${GREEN} software=$OPTARG${NC}"
+      software=$(echo $OPTARG)
+      ;;
+    m)
+      echo -e  "`date +%F_%T` $LINENO: ${GREEN} dgiotmd5=$OPTARG${NC}"
+      dgiotmd5=$(echo $OPTARG)
+      ;;
+    p)
+      echo -e  "`date +%F_%T` $LINENO: ${GREEN} plugin=$OPTARG${NC}"
+      plugin=$(echo $OPTARG)
+      ;;
+    d)
+      domain_name=$(echo $OPTARG)
+      echo "Please ensure that the certificate file has been placed in ${script_dir}"
+      echo -e  "`date +%F_%T` $LINENO: ${RED} Please ensure that the certificate file has been placed in ${script_dir}${NC}"
+      echo -e  "`date +%F_%T` $LINENO: ${GREEN} Please ensure that the certificate file has been placed in `pwd`${NC}"
+      if [ ! -f  ${script_dir}/${domain_name}.zip  ]; then
+        echo -e  "`date +%F_%T` $LINENO: ${RED} ${script_dir}/${domain_name}.zip cert file not exist ${NC}"
+        exit 1
+      fi
+      ;;
+    e)
+      echo -e  "`date +%F_%T` $LINENO: ${GREEN} pg_eip=$OPTARG${NC}"
+      pg_eip=$(echo $OPTARG)
+      ;;
+    a)
+      echo -e  "`date +%F_%T` $LINENO: ${GREEN} pg_auth=$OPTARG${NC}"
+      pg_auth=$(echo $OPTARG)
+      ;;
+    ?) #unknow option
+      help
+      ;;
+  esac
+done
+
+## 不需要人机交互的参数初始化
+dgiot_auto_variables
+
+###---------------------------- install dgiot-------------------------------------------------
+deploy_dgiot
+
+###---------------------------- install dgiot-------------------------------------------------
+echo -e  "`date +%F_%T` $LINENO: ${RED} database login info${NC}"
+echo -e  "`date +%F_%T` $LINENO: ${RED} pg_info: postgres://postgres:${pg_auth}@${pg_eip}:7432/parse${NC}"
+echo -e  "`date +%F_%T` $LINENO: ${RED} pg_info: pg_eip=${pg_eip} pg_auth=${pg_auth}${NC}"
+echo -e  "`date +%F_%T` $LINENO: ${RED} parse_info: http://${wlanip}:1337/dashboard/ ${NC}"
+echo -e  "`date +%F_%T` $LINENO: ${RED} parse_info: username=${parse_user} password=${parse_pwd} ${NC}"

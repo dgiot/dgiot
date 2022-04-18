@@ -215,9 +215,9 @@ do_request(_OperationId, _Args, _Context, _Req) ->
 
 
 sql_tpl(Trigger, Condition, Action) ->
+    SELECT = generateSelect(Condition, Trigger, Action),
     FROM = generateFrom(Trigger),
     WHERE = generateWhere(Condition, Trigger, FROM),
-    SELECT = generateSelect(Condition, Trigger, Action),
 %%    {200, #{<<"code">> => 200, <<"Action">> => Action, <<"TopicTpl">> => FROM, <<"WHERE">> => WHERE}}.
 
 %%    WhereSql = lists:foldl(fun(X, Acc) ->
@@ -232,12 +232,13 @@ sql_tpl(Trigger, Condition, Action) ->
 %%            _ -> Acc
 %%        end
 %%                           end, <<"">>, Where),
-    DefaultSql = <<"SELECT", "\r\n   ",
-        SELECT/binary, "\r\n",
-        "FROM ", "\r\n",
-        "   \"", FROM/binary, "\"", "\r\n",
-        "WHERE", "\r\n   ",
-        WHERE/binary>>,
+    DefaultSql =
+        <<"SELECT", "\r\n",
+            SELECT/binary, "\r\n",
+            "FROM ", "\r\n",
+            "   \"", FROM/binary, "\"", "\r\n",
+            "WHERE", "\r\n     ",
+            WHERE/binary>>,
     {ok, #{<<"template">> => DefaultSql}}.
 
 %% 根据设备条件生成sql模板
@@ -486,54 +487,37 @@ generateFrom(Trigger) ->
             <<"$dg/user/", "test/#">>
     end.
 
-generateSelect(_Condition, Trigger, _FROM) ->
-%%    Trigger: [
-%%        {
-%%            label: '设备属性触发',
-%%            value: 'trigger/product/property',
-%%            },
-%%        {
-%%            label: '设备事件触发',
-%%            value: 'trigger/product/event',
-%%            },
-%%        {
-%%            label: 'mqtt事件触发',
-%%            value: 'trigger/mqtt/event',
-%%            },
-%%        {
-%%            label: '定时触发',
-%%            value: 'trigger/timer',
-%%            },
-%%        ],
-%%
-    Firstfrom = lists:nth(1, maps:get(<<"items">>, Trigger)),
-    Uri = maps:get(<<"uri">>, Firstfrom),
-    Params = maps:get(<<"params">>, Firstfrom, #{}),
-    case Uri of
-        <<"trigger/mqtt/event">> ->
-            case Params of
-                #{<<"mqtt">> := Mqtt} -> <<"payload.event.", Mqtt/binary, "  as ", Mqtt/binary>>;
-                _ ->
-                    <<"payload.event.", "test">>
-            end;
-        <<"trigger/product/property">> ->
-            case Params of
-                #{<<"propertyName">> := PropertyName} ->
-                    <<"payload.property.", PropertyName/binary, "  as ", PropertyName/binary>>;
-                _ ->
-                    <<"payload.property.", "test">>
-            end;
-        <<"trigger/product/event">> ->
-            case Params of
-                #{<<"propertyName">> := PropertyName} ->
-                    <<"payload.productevent.", PropertyName/binary, "  as ", PropertyName/binary>>;
-                _ ->
-                    <<"payload.productevent.", "test">>
-            end;
-        <<"trigger/timer">> -> <<"payload.cron">>;
-        _ ->
-            <<"$dg/user/", "test/#">>
-    end.
+generateSelect(Condition, _Trigger, _FROM) ->
+    lists:foldl(fun(Item, Acc) ->
+        case Item of
+            #{<<"uri">> := <<"condition/device/deviceState">>, <<"params">> := Params} ->
+                PropertyName = maps:get(<<"propertyName">>, Params, <<"test">>),
+                case Acc of
+                    <<"">> ->
+                        PropertyName;
+                    _ ->
+                        <<Acc/binary, ",\r\n   ", PropertyName/binary>>
+                end;
+            #{<<"uri">> := <<"condition/device/stateContinue">>, <<"params">> := Params} ->
+                PropertyName = maps:get(<<"propertyName">>, Params, <<"test">>),
+                case Acc of
+                    <<"">> ->
+                        PropertyName;
+                    _ ->
+                        <<Acc/binary, ",\r\n   ", PropertyName/binary>>
+                end;
+            #{<<"uri">> := <<"condition/device/time">>, <<"params">> := Params} ->
+                PropertyName = maps:get(<<"propertyName">>, Params, <<"test">>),
+                case Acc of
+                    <<"">> ->
+                        PropertyName;
+                    _ ->
+                        <<Acc/binary, ",\r\n   ", PropertyName/binary>>
+                end;
+            _ ->
+                Acc
+        end
+                end, <<"">>, maps:get(<<"items">>, Condition, [])).
 
 generateWhere(Condition, _Trigger, _FROM) ->
 %%    Condition: [

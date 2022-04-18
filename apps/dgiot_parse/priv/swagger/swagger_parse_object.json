@@ -77,6 +77,14 @@
       "description": "视图管理"
     },
     {
+      "name": "MetaData",
+      "description": "元数据管理"
+    },
+    {
+      "name": "MasterData",
+      "description": "主数据管理"
+    },
+    {
       "name": "Data",
       "description": "数据管理"
     },

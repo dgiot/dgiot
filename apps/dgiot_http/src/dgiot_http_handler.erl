@@ -167,13 +167,38 @@ do_request(post_sendemail, Args, #{<<"sessionToken">> := _SessionToken}, _Req) -
 %% 请求:POST /iotapi/get_maintenancefinish
 do_request(get_maintenancefinish, #{<<"number">> := Number}, #{<<"sessionToken">> := _SessionToken}, _Req) ->
     Topic = <<"/workOrderCompletion/up">>,
+    dgiot_mqtt:publish(Number, <<"bridge/", Topic/binary>>, jsx:encode(#{<<"id">> => Number})),
     dgiot_mqtt:publish(Number, Topic, jsx:encode(#{<<"id">> => Number}));
 
 %% iot_hub 概要: 查询平台api资源 描述:创建工单
 %% OperationId:post_maintenance
 %% 请求:POST /iotapi/post_maintenance
-do_request(post_maintenance, Args, #{<<"sessionToken">> := SessionToken}, _Req) ->
-    dgiot_umeng:create_maintenance(SessionToken, Args);
+do_request(post_maintenance, Args, _Context, _Req) ->
+    Isbridge = application:get_env(dgiot_http, isbridge, false),
+    Result = dgiot_umeng:create_maintenance(Args),
+    case Isbridge of
+        true ->
+            Url = "https://cad.iotn2n.com/iotapi/maintenance",
+            case catch httpc:request(post, {Url, [], "application/json", jsx:encode(Args)}, [], []) of
+                {'EXIT', _Reason} ->
+                    pass;
+                {ok, {{"HTTP/1.1", 200, "OK"}, _, Json}} ->
+                    jsx:decode(dgiot_utils:to_binary(Json), [{labels, binary}, return_maps]),
+                    pass;
+                _ ->
+                    pass
+            end;
+        _ ->
+            pass
+    end,
+    case Result of
+        {error, #{<<"code">> := 137}} ->
+            {ok, #{<<"code">> => 137, <<"error">> => <<"ID REPEAT">>}};
+        {ok, Result1} ->
+            {ok, Result1};
+        _ ->
+            {ok, #{<<"code">> => 500, <<"error">> => <<"SYSTEM ERROR">>}}
+    end;
 
 %% iot_hub 概要: 获取运维管理列表 描述:获取运维管理列表
 %% OperationId:get_operations
@@ -183,17 +208,26 @@ do_request(get_operations, _Args, #{<<"sessionToken">> := _SessionToken}, _Req) 
     {ok, #{<<"data">> => Data}};
 
 
-%% iot_hub 概要: 查询平台api资源 描述:创建工单
+%% iot_hub 概要: 查询平台api资源 描述:修改运维管理列表
 %% OperationId:post_operations
 %% 请求:POST /iotapi/post_operations
 do_request(post_operations, Args, #{<<"sessionToken">> := _SessionToken}, _Req) ->
 %%    dgiot_mqtt:publish(<<"">>, <<"">>, jsx:decode(Args)),
     {ok, #{<<"msg">> => <<"modify successfully">>, <<"data">> => Args}};
 
+%% iot_hub 概要: 查询平台api资源 描述:触发告警
+%% OperationId:post_triggeralarm
+%% 请求:POST /iotapi/post_triggeralarm
+do_request(post_triggeralarm, #{<<"deviceid">> := DeviceId} = Args, #{<<"sessionToken">> := _SessionToken}, _Req) ->
+%%    dgiot_mqtt:publish(<<"">>, <<"">>, jsx:decode(Args)),
+    dgiot_umeng:triggeralarm(DeviceId),
+    {ok, #{<<"msg">> => <<"trigger successfully">>, <<"data">> => Args}};
 
 %%  服务器不支持的API接口
 do_request(OperationId, Args, _Context, _Req) ->
-    ?LOG(error, "do request ~p, ~p~n", [OperationId, Args]),
+    io:format("~s ~p OperationId = ~p.~n", [?FILE, ?LINE, OperationId]),
+    io:format("~s ~p Args = ~p.~n", [?FILE, ?LINE, Args]),
+    io:format("~s ~p _Context = ~p.~n", [?FILE, ?LINE, _Context]),
     {error, <<"Not Allowed.">>}.
 
 

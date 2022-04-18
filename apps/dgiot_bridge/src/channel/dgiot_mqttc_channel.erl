@@ -119,7 +119,7 @@
         order => 102,
         type => string,
         required => false,
-        default => <<"http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/product/dgiot/channel/MQTT.png">>,
+        default => <<"/dgiot_file/shuwa_tech/zh/product/dgiot/channel/MQTT.png">>,
         title => #{
             en => <<"channel ICO">>,
             zh => <<"通道ICO"/utf8>>
@@ -142,7 +142,7 @@ init(?TYPE, ChannelId, ChannelArgs) ->
     State = #state{
         id = ChannelId
     },
-    {ok, State, dgiot_mqttc_worker:childSpec(ChannelId, State, ChannelArgs)}.
+    {ok, State, dgiot_mqttc_worker:childSpec(dgiot_utils:random(), State, ChannelArgs)}.
 
 %% 初始化池子
 handle_init(State) ->

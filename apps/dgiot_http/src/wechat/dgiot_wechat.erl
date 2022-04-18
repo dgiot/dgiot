@@ -153,8 +153,9 @@ sendSubscribe_test(UserId, #{<<"data">> := Data,
     <<"lang">> := Lang,
     <<"miniprogramstate">> := Miniprogramstate,
     <<"page">> := Page,
-    <<"templateid">> := Templateid} = Args) ->
-    io:format("~s ~p Args = ~p.~n", [?FILE, ?LINE, Args]),
+    <<"templateid">> := Templateid} = _Args) ->
+%%    io:format("~s ~p UserId = ~p.~n", [?FILE, ?LINE, UserId]),
+%%    io:format("~s ~p Args = ~p.~n", [?FILE, ?LINE, Args]),
     case dgiot_parse:get_object(<<"_User">>, UserId) of
         {ok, #{<<"tag">> := #{<<"wechat">> := #{<<"openid">> := OpenId}}}} when size(OpenId) > 0 ->
             AppId = dgiot_utils:to_binary(application:get_env(dgiot_http, wechat_appid, <<"">>)),
@@ -178,7 +179,7 @@ sendSubscribe_test(UserId, #{<<"data">> := Data,
                                         <<"data">> => Data},
                                     Data1 = dgiot_utils:to_list(jiffy:encode(Subscribe)),
 %%                                    io:format("~s ~p SubscribeUrl = ~p.~n", [?FILE, ?LINE, SubscribeUrl]),
-                                    io:format("~s ~p Subscribe = ~p.~n", [?FILE, ?LINE, Subscribe]),
+%%                                    io:format("~s ~p Subscribe = ~p.~n", [?FILE, ?LINE, Subscribe]),
                                     R = httpc:request(post, {SubscribeUrl, [], "application/x-www-form-urlencoded", Data1}, [{timeout, 5000}, {connect_timeout, 10000}], [{body_format, binary}]),
                                     io:format("~s ~p R = ~p.~n", [?FILE, ?LINE, R]);
                                 _Result ->

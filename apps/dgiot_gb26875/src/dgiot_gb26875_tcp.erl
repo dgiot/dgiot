@@ -22,7 +22,6 @@
 -define(MAX_BUFF_SIZE, 1024).
 
 -export([
-    get_deviceid/2,
     start/2
 ]).
 
@@ -32,9 +31,7 @@
 start(Port, State) ->
     dgiot_tcp_server:child_spec(?MODULE, dgiot_utils:to_int(Port), State).
 
-
 init(#tcp{state = #state{id = ChannelId}} = TCPState) ->
-    ?LOG(info, "ChannelId ~p", [ChannelId]),
     case dgiot_bridge:get_products(ChannelId) of
         {ok, _TYPE, _ProductIds} ->
             {ok, TCPState};
@@ -42,16 +39,13 @@ init(#tcp{state = #state{id = ChannelId}} = TCPState) ->
             {stop, not_find_channel}
     end.
 
-handle_info({tcp, Buff}, #tcp{state = #state{id = ChannelId, devaddr = _DevAddr, product = _ProductId} = State} = TCPState) ->
+handle_info({tcp, Buff}, #tcp{state = #state{id = ChannelId} = State} = TCPState) ->
     dgiot_bridge:send_log(ChannelId, "revice from  ~p", [dgiot_utils:binary_to_hex(Buff)]),
-    io:format("revice from Buff ~p ~n", [dgiot_utils:binary_to_hex(Buff)]),
     case dgiot_gb26875_decoder:parse_frame(Buff, State) of
         {ok, #{<<"ack">> := Ack} = _Result} ->
             dgiot_tcp_server:send(TCPState, Ack);
         {ok, Result} ->
-            io:format("revice from Buff ~p ~n", [dgiot_utils:binary_to_hex(Buff)]),
-            io:format("Result ~p ~n", [Result]),
-            dgiot_bridge:send_log(ChannelId, "parse_frame Buff  ~p", [Result]);
+            dgiot_bridge:send_log(ChannelId, "~s ~p ~ts", [?FILE, ?LINE, unicode:characters_to_list(jiffy:encode(Result))]);
 %%            R = dgiot_gb26875_decoder:to_frame(Result),
 %%            case R =:= Buff of
 %%                true ->
@@ -86,7 +80,3 @@ terminate(_Reason, _TCPState) ->
 code_change(_OldVsn, TCPState, _Extra) ->
     {ok, TCPState}.
 
-get_deviceid(ProdcutId, DevAddr) ->
-    #{<<"objectId">> := DeviceId} =
-        dgiot_parse:get_objectid(<<"Device">>, #{<<"product">> => ProdcutId, <<"devaddr">> => DevAddr}),
-    DeviceId.

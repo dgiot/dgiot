@@ -17,55 +17,232 @@
 -author("stoneliu").
 -include_lib("dgiot_gb26875.hrl").
 -include_lib("dgiot/include/logger.hrl").
--export([parse_frame/2]).
+-export([
+    userdevice/3,
+    load_thing/0,
+    get_thing/2,
+    sysdevice/3,
+    equdevice/3,
+    oplog/3
+]).
 
+load_thing() ->
+    {file, Here} = code:is_loaded(?MODULE),
+    Dir = filename:dirname(filename:dirname(Here)),
+    Path = dgiot_httpc:url_join([Dir, "/priv/ana_8_2_1_3.json"]),
+    case catch file:read_file(Path) of
+        {Err, Reason} when Err == 'EXIT'; Err == error ->
+            ?LOG(error, "read  Path,~p error,~p ~n", [Path, Reason]),
+            {error, Reason};
+        {ok, Bin} ->
+            case jsx:is_json(Bin) of
+                true ->
+                    Map = jiffy:decode(Bin, [return_maps]),
+                    case Map of
+                        #{<<"properties">> := Properties} when length(Properties) > 0 ->
+                            lists:map(fun(#{<<"identifier">> := Id} = X) ->
+                                dgiot_data:insert(?GB26875_ETS, Id, X)
+                                      end, Properties);
+                        _ ->
+                            pass
+                    end;
+                _ ->
+                    Bin
+            end
+    end.
 
-%% Buff = dgiot_utils:hex_to_binary(<<"3D302E30303030203D302E303030303530303138200D0A">>).
-%% Buff = dgiot_utils:hex_to_binary(<<"3D302E303230302D3D302E303130303530303138200D0A">>).
-%% Buff = dgiot_utils:hex_to_binary(<<"3D302E30323030203D302E303130303530303138200D0A">>).
-%% Buff = dgiot_utils:hex_to_binary(<<"3d31312e303230203d30302e3031303530303138200D0A">>).
-%% Buff = <<"=0.0000 =0.000050018 \r\n">>.
-%% <<"=", Suttle:6/binary, " ", "=", Tare:5/binary, Y2:1/binary, F1:1/binary, K1:1/binary, K2:1/binary, B1:1/binary, B2:1/binary, C1:1/binary, CR:1/binary, LF:1/binary>> = Buff.
-parse_frame(<<"=", Suttle:6/binary, Y1:1/binary, "=", Tare:5/binary, _:9/binary>>, #state{product = ProductId}) ->
-    case dgiot_product:lookup_prod(ProductId) of
-        {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
-            Ack = lists:foldl(fun(X, Acc) ->
-                case X of
-                    #{<<"identifier">> := Identifier,
-                        <<"dataForm">> := #{
-                            <<"protocol">> := <<"normal">>,
-                            <<"address">> := <<"0X01">>,
-                            <<"data">> := 6}} ->
-                        RelSuttle =
-                            case Y1 of
-                                <<" ">> ->
-                                    dgiot_utils:to_float(lists:reverse(dgiot_utils:to_list(Suttle)));
-                                <<"-">> ->
-                                    dgiot_utils:to_float(lists:reverse(dgiot_utils:to_list(<<Suttle/binary, "-">>)));
-                                _O ->
-                                    ?LOG(info, "_O ~p", [_O]),
-                                    <<"0">>
-                            end,
-                        Acc#{Identifier => RelSuttle};
-                    #{<<"identifier">> := Identifier,
-                        <<"dataForm">> := #{
-                            <<"protocol">> := <<"normal">>,
-                            <<"address">> := <<"0X02">>,
-                            <<"data">> := 5}} ->
-                        RelTare = dgiot_utils:to_float(lists:reverse(dgiot_utils:to_list(Tare))),
-                        Acc#{Identifier => RelTare};
-                    _Other ->
-                        ?LOG(info, "_Other ~p", [_Other]),
-                        Acc
-                end
-                              end, #{}, Props),
-            {params, Ack};
-        _ ->
-            {erroe, #{}}
+get_thing(Id, Acc) ->
+    case dgiot_data:get(?GB26875_ETS, Id) of
+        not_find ->
+            Acc;
+        X ->
+            Acc ++ [X]
+    end.
+
+sysdevice(#{<<"systype">> := SysType, <<"sysaddr">> := SysAddr} = Map,
+    #{<<"source">> := Ip} = Header, #state{devtype = DevType}) ->
+    BinSysAddr = dgiot_utils:to_binary(SysAddr),
+    %% 建筑消防设施系统
+    ProductId = <<"a73fe5d540">>,
+    create_sysdevice(BinSysAddr, ProductId, SysType, Ip, DevType, Header),
+    case maps:find(<<"data">>, Map) of
+        {ok, Data} ->
+%%            io:format("~s ~p ~p ", [?FILE, ?LINE, Data]),
+            dgiot_task:save_td(ProductId, BinSysAddr, Data, #{});
+        _ -> pass
+    end.
+
+equdevice(#{<<"systype">> := _SysType, <<"sysaddr">> := SysAddr, <<"equtype">> := EquType, <<"equaddr">> := EquAddr} = Map,
+    #{<<"source">> := Ip} = Header, #state{devtype = DevType}) ->
+%%    io:format("~s ~p ~p ~n", [?FILE, ?LINE, Map]),
+    Name = maps:get(<<"name">>, Map, EquType),
+    BinSysAddr = dgiot_utils:to_binary(SysAddr),
+    %%    建筑消防设施部件
+    ProductId = <<"8778425df1">>,
+    creat_equdevice(BinSysAddr, ProductId, EquAddr, Name, Ip, DevType, Header),
+    case maps:find(<<"data">>, Map) of
+        {ok, Data} ->
+            dgiot_task:save_td(ProductId, EquAddr, Data, #{});
+        _ -> pass
+    end.
+
+userdevice(#{<<"infotype">> := InforType, <<"userid">> := UserId} = Map,
+    #{<<"source">> := Ip} = Header, #state{devtype = DevType}) ->
+    %%    用户信息传输装置
+    ProductId = <<"b3973b214f">>,
+    BinUserId = dgiot_utils:to_binary(UserId),
+    creat_userdevice(BinUserId, ProductId, InforType, Ip, DevType, Header),
+    case maps:find(<<"data">>, Map) of
+        {ok, Data} ->
+%%            io:format("~s ~p ~p ", [?FILE, ?LINE, Data]),
+            dgiot_task:save_td(ProductId, BinUserId, Data, #{});
+        _ -> pass
     end;
 
-parse_frame(_Buff, _State) ->
-    {error, <<>>}.
+userdevice(_, _, _) ->
+    pass.
+
+oplog(#{<<"infotype">> := InforType, <<"userid">> := UserId} = Map,
+    #{<<"source">> := Ip} = Header, #state{devtype = DevType}) ->
+    %%    用户信息传输装置
+    ProductId = <<"b3973b214f">>,
+    BinUserId = dgiot_utils:to_binary(UserId),
+    creat_userdevice(BinUserId, ProductId, InforType, Ip, DevType, maps:merge(Map, Header)),
+    case dgiot_product:lookup_prod(ProductId) of
+        {ok, #{<<"ACL">> := Acl}} ->
+            create_devceLog(BinUserId, ProductId, Acl, maps:merge(Map, Header));
+        _ ->
+            pass
+    end;
+
+oplog(#{<<"systype">> := _SysType, <<"sysaddr">> := SysAddr, <<"equtype">> := EquType, <<"equaddr">> := EquAddr} = Map,
+    #{<<"source">> := Ip} = Header, #state{devtype = DevType}) ->
+    %%    建筑消防设施部件
+    ProductId = <<"8778425df1">>,
+    BinSysAddr = dgiot_utils:to_binary(SysAddr),
+    Name = maps:get(<<"name">>, Map, EquType),
+    creat_equdevice(BinSysAddr, ProductId, EquAddr, Name, Ip, DevType, maps:merge(Map, Header)),
+    case dgiot_product:lookup_prod(ProductId) of
+        {ok, #{<<"ACL">> := Acl}} ->
+            create_devceLog(BinSysAddr, ProductId, Acl, maps:merge(Map, Header));
+        _ ->
+            pass
+    end;
+
+oplog(#{<<"systype">> := SysType, <<"sysaddr">> := SysAddr} = Map,
+    #{<<"source">> := Ip} = Header, #state{devtype = DevType}) ->
+    BinSysAddr = dgiot_utils:to_binary(SysAddr),
+    %% 建筑消防设施系统
+    ProductId = <<"a73fe5d540">>,
+    create_sysdevice(BinSysAddr, ProductId, SysType, Ip, DevType, maps:merge(Map, Header)),
+    case dgiot_product:lookup_prod(ProductId) of
+        {ok, #{<<"ACL">> := Acl}} ->
+            create_devceLog(BinSysAddr, ProductId, Acl, maps:merge(Map, Header));
+        _ ->
+            pass
+    end;
+
+oplog(_, _, _) ->
+    ok.
+
+create_sysdevice(BinSysAddr, ProductId, SysType, Ip, DevType, Header) ->
+    case dgiot_product:lookup_prod(ProductId) of
+        {ok, #{<<"ACL">> := Acl}} ->
+            DeviceId = dgiot_parse:get_deviceid(ProductId, BinSysAddr),
+            case dgiot_device:lookup(DeviceId) of
+                {error, not_find} ->
+                    Device =
+                        #{
+                            <<"devaddr">> => BinSysAddr,
+                            <<"name">> => SysType,
+                            <<"ip">> => Ip,
+                            <<"isEnable">> => true,
+                            <<"product">> => ProductId,
+                            <<"basedata">> => Header,
+                            <<"ACL">> => Acl,
+                            <<"status">> => <<"ONLINE">>,
+                            <<"brand">> => DevType,
+                            <<"devModel">> => <<"城市消防"/utf8>>
+                        },
+                    dgiot_device:create_device(Device);
+                _ ->
+                    pass
+            end;
+        _ ->
+            pass
+    end.
+
+creat_userdevice(BinUserId, ProductId, InforType, Ip, DevType, Header) ->
+    case dgiot_product:lookup_prod(ProductId) of
+        {ok, #{<<"ACL">> := Acl}} ->
+            DeviceId = dgiot_parse:get_deviceid(ProductId, BinUserId),
+            case dgiot_device:lookup(DeviceId) of
+                {error, not_find} ->
+                    Device =
+                        #{
+                            <<"devaddr">> => dgiot_utils:to_binary(BinUserId),
+                            <<"name">> => dgiot_utils:to_binary(InforType),
+                            <<"ip">> => Ip,
+                            <<"isEnable">> => true,
+                            <<"product">> => ProductId,
+                            <<"ACL">> => Acl,
+                            <<"status">> => <<"ONLINE">>,
+                            <<"brand">> => DevType,
+                            <<"basedata">> => Header,
+                            <<"devModel">> => <<"城市消防"/utf8>>
+                        },
+%%            io:format("~s ~p Device  ~p ~n", [?FILE, ?LINE, Device]),
+                    dgiot_device:create_device(Device);
+                _ ->
+                    pass
+            end;
+        _ ->
+            pass
+    end.
+
+creat_equdevice(BinSysAddr, ProductId, EquAddr, Name, Ip, DevType, Header) ->
+    case dgiot_product:lookup_prod(ProductId) of
+        {ok, #{<<"ACL">> := Acl}} ->
+            DeviceId = dgiot_parse:get_deviceid(ProductId, BinSysAddr),
+            case dgiot_device:lookup(DeviceId) of
+                {error, not_find} ->
+                    %% 建筑消防设施系统
+                    SysProductId = <<"a73fe5d540">>,
+                    SysDeviceId = dgiot_parse:get_deviceid(SysProductId, BinSysAddr),
+                    Device = #{
+                        <<"devaddr">> => dgiot_utils:to_binary(EquAddr),
+                        <<"name">> => Name,
+                        <<"ip">> => Ip,
+                        <<"route">> => #{SysDeviceId => DeviceId},
+                        <<"isEnable">> => true,
+                        <<"product">> => ProductId,
+                        <<"basedata">> => Header,
+                        <<"ACL">> => Acl,
+                        <<"status">> => <<"ONLINE">>,
+                        <<"brand">> => DevType,
+                        <<"devModel">> => <<"城市消防"/utf8>>
+                    },
+%%            io:format("~s ~p Device  ~p ~n", [?FILE, ?LINE, Device]),
+                    dgiot_device:create_device(Device);
+                _ ->
+                    pass
+            end;
+        _ ->
+            pass
+    end.
 
 
-
+create_devceLog(Devaddr, ProductId, Acl, #{<<"serialid">> := Serialid} = Data) ->
+    Devcie = #{
+        <<"device">> => dgiot_parse:get_deviceid(ProductId, Devaddr),
+        <<"devaddr">> => dgiot_utils:to_binary(Serialid),
+        <<"product">> => #{
+            <<"__type">> => <<"Pointer">>,
+            <<"className">> => <<"Product">>,
+            <<"objectId">> => ProductId
+        },
+        <<"data">> => Data,
+        <<"ACL">> => Acl,
+        <<"status">> => <<"ONLINE">>
+    },
+    dgiot_parse:create_object(<<"Devicelog">>, Devcie).

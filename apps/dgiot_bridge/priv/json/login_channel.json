@@ -1,5 +1,5 @@
 {
-  "ico": "http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/product/dgiot/channel/TcpIcon.jpeg",
+  "ico": "/dgiot_file/shuwa_tech/zh/product/dgiot/channel/TcpIcon.jpeg",
   "host": "http://127.0.0.1:5080",
   "path": "/iotapi/login",
   "Size": 1,

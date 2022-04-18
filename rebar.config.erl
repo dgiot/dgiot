@@ -208,6 +208,7 @@ overlay_vars_rel(RelType) ->
         , {enable_plugin_dgiot_license, true}
         , {enable_plugin_dgiot_evidence, true}
         , {enable_plugin_dgiot_tdengine, true}
+        , {enable_plugin_dgiot_mysql, true}
         , {enable_plugin_dgiot_task, true}
         , {enable_plugin_dgiot_http, true}
         , {enable_plugin_dgiot_topo, true}
@@ -339,6 +340,7 @@ relx_plugin_apps_per_rel(cloud) ->
         , dgiot_bridge
         , dgiot_device
         , dgiot_tdengine
+        , dgiot_mysql
         , dgiot_evidence
         , dgiot_license
         , dgiot_task
