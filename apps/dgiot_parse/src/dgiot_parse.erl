@@ -82,6 +82,7 @@
 
 -export([
     get_objectid/2,
+    get_categoryid/2,
     get_deviceid/2,
     get_dictid/4,
     get_viewid/4,
@@ -99,7 +100,11 @@
     get_roleids/1,
     get_notificationid/1,
     load_LogLevel/0,
-    get_evidenceId/2
+    get_evidenceId/2,
+    get_devicelogid/2,
+    get_notificationid/2,
+    get_masterDataId/1,
+    get_metaData/1
 ]).
 
 -export([
@@ -156,6 +161,11 @@ send_msg(Table, Method, Args, ObjectId) ->
                        end, [], dgiot_data:get({sub, Table, Method})),
     dgiot_data:insert({sub, Table, Method}, Pids).
 
+get_categoryid(Level, Name) ->
+    <<CategoryId:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Category", Level/binary, Name/binary>>),
+    CategoryId.
+
+
 get_shapeid(DeviceId, Identifier) ->
     <<ShapeId:10/binary, _/binary>> = dgiot_utils:to_md5(<<DeviceId/binary, Identifier/binary, "dgiottopo">>),
     ShapeId.
@@ -174,6 +184,16 @@ get_deviceid(ProductId, DevAddr) ->
     #{<<"objectId">> := DeviceId} =
         dgiot_parse:get_objectid(<<"Device">>, #{<<"product">> => ProductId, <<"devaddr">> => DevAddr}),
     DeviceId.
+
+get_devicelogid(DeviceId, DevAddr) ->
+    #{<<"objectId">> := DevicelogId} =
+        dgiot_parse:get_objectid(<<"Devicelog">>, #{<<"device">> => DeviceId, <<"devaddr">> => DevAddr}),
+    DevicelogId.
+
+get_notificationid(DeviceId, Type) ->
+    #{<<"objectId">> := NotificationId} =
+        dgiot_parse:get_objectid(<<"Notification">>, #{<<"device">> => DeviceId, <<"type">> => Type}),
+    NotificationId.
 
 get_instruct(DeviceId, Pn, Di) ->
     <<DId:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Instruct", DeviceId/binary, Pn/binary, Di/binary>>),
@@ -218,6 +238,14 @@ get_sessionId(SessionToken) ->
 
 get_evidenceId(Ukey, TimeStamp) ->
     <<EId:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Evidence", Ukey/binary, TimeStamp/binary>>),
+    EId.
+
+get_masterDataId(Name) ->
+    <<EId:10/binary, _/binary>> = dgiot_utils:to_md5(<<"MasterData", Name/binary>>),
+    EId.
+
+get_metaData(Name) ->
+    <<EId:10/binary, _/binary>> = dgiot_utils:to_md5(<<"MetaData", Name/binary>>),
     EId.
 
 get_objectid(Class, Map) ->
@@ -274,12 +302,15 @@ get_objectid(Class, Map) ->
         <<"Category">> ->
             Level = dgiot_utils:to_binary(maps:get(<<"level">>, Map, 1)),
             Name = maps:get(<<"name">>, Map, <<"">>),
-            <<Pid:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Category", Level/binary, Name/binary>>),
             Map#{
-                <<"objectId">> => Pid
+                <<"objectId">> => get_categoryid(Level, Name)
             };
         <<"post_classes_device">> ->
             get_objectid(<<"Device">>, Map);
+        <<"post_classes_masterData">> ->
+            get_objectid(<<"MasterData">>, Map);
+        <<"post_classes_metaData">> ->
+            get_objectid(<<"MetaData">>, Map);
         <<"Device">> ->
             Product = case maps:get(<<"product">>, Map) of
                           #{<<"objectId">> := ProductId} -> ProductId;
@@ -290,16 +321,42 @@ get_objectid(Class, Map) ->
             Map#{
                 <<"objectId">> => Did
             };
+        <<"MetaData">> ->
+            Name = maps:get(<<"name">>, Map, <<"">>),
+            <<Did:10/binary, _/binary>> = dgiot_utils:to_md5(<<"MetaData", Name/binary>>),
+            Map#{
+                <<"objectId">> => Did
+            };
+        <<"MasterData">> ->
+            Name = maps:get(<<"name">>, Map, <<"">>),
+            <<Did:10/binary, _/binary>> = dgiot_utils:to_md5(<<"MasterData", Name/binary>>),
+            Map#{
+                <<"objectId">> => Did
+            };
         <<"post_classes_devicelog">> ->
             get_objectid(<<"Devicelog">>, Map);
         <<"Devicelog">> ->
-            Product = case maps:get(<<"product">>, Map) of
-                          #{<<"objectId">> := ProductId} -> ProductId;
-                          ProductId1 -> ProductId1
-                      end,
+            Device =
+                case maps:get(<<"device">>, Map) of
+                    #{<<"objectId">> := DeviceId} ->
+                        DeviceId;
+                    _ ->
+                        dgiot_utils:to_binary(dgiot_datetime:now_microsecs())
+                end,
             DevAddr = maps:get(<<"devaddr">>, Map, <<"">>),
-            Createtime = maps:get(<<"createtime">>, Map, <<"">>),
-            <<Did:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Device", Product/binary, DevAddr/binary, Createtime/binary>>),
+            <<Did:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Devicelog", Device/binary, DevAddr/binary>>),
+            Map#{
+                <<"objectId">> => Did
+            };
+        <<"post_classes_notification">> ->
+            get_objectid(<<"Notification">>, Map);
+        <<"Notification">> ->
+            Device = case maps:get(<<"device">>, Map) of
+                         #{<<"objectId">> := DeviceId} -> DeviceId;
+                         DeviceId1 -> DeviceId1
+                     end,
+            Type = maps:get(<<"type">>, Map, <<"">>),
+            <<Did:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Notification", Device/binary, Type/binary>>),
             Map#{
                 <<"objectId">> => Did
             };
@@ -327,7 +384,7 @@ get_objectid(Class, Map) ->
             Name = maps:get(<<"name">>, Map, <<"">>),
             Type = maps:get(<<"type">>, Map, <<"">>),
             CType = maps:get(<<"cType">>, Map, <<"">>),
-            <<CId:10/binary, _/binary>> = dgiot_license:to_md5(<<"Channel", Type/binary, CType/binary, Name/binary>>),
+            <<CId:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Channel", Type/binary, CType/binary, Name/binary>>),
             Map#{
                 <<"objectId">> => CId
             };

@@ -65,7 +65,7 @@
         }
     },
     <<"login">> => #{
-        order => 2,
+        order => 3,
         type => string,
         required => true,
         default => <<"ALLSTATUS;">>,
@@ -77,20 +77,23 @@
         }
     },
     <<"module">> => #{
-        order => 9,
+        order => 4,
         type => enum,
         required => false,
-        default => <<"dgiot_sonbs"/utf8>>,
-        enum => [<<"dgiot_sonbs">>],
+        default => <<"dgiot_udp"/utf8>>,
+        enum => [
+            #{<<"value">> => <<"dgiot_udp">>, <<"label">> => <<"dgiot_udp"/utf8>>},
+            #{<<"value">> => <<"dgiot_sonbs">>, <<"label">> => <<"dgiot_sonbs"/utf8>>}
+        ],
         title => #{
-            zh => <<"module"/utf8>>
+            zh => <<"回调模块"/utf8>>
         },
         description => #{
-            zh => <<"module"/utf8>>
+            zh => <<"回调模块"/utf8>>
         }
     },
     <<"hb">> => #{
-        order => 2,
+        order => 5,
         type => integer,
         required => true,
         default => 60,
@@ -98,14 +101,14 @@
             zh => <<"心跳"/utf8>>
         },
         description => #{
-            zh => <<"心跳"/utf8>>
+            zh => <<"心跳(S)"/utf8>>
         }
     },
     <<"ico">> => #{
         order => 102,
         type => string,
         required => false,
-        default => <<"http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/product/dgiot/channel/UdpIcon.png">>,
+        default => <<"/dgiot_file/shuwa_tech/zh/product/dgiot/channel/UdpIcon.png">>,
         title => #{
             en => <<"channel ICO">>,
             zh => <<"通道ICO"/utf8>>

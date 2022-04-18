@@ -21,6 +21,7 @@
 -define(CRLF, "\r\n").
 -export([
     get_cookie/0,
+    kill_chrome/0,
     test1/1,
     test/1,
     set_host/2,
@@ -77,7 +78,7 @@ init([#{
 }]) ->
     DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
     dgiot_data:insert({ChannelId, DeviceId, httpc}, self()),
-    erlang:send_after(Freq * 1000, self(), toke),
+    erlang:send_after(10 * 1000, self(), token),
     {ok, #state{tid = ChannelId, pid = ProductId, did = DeviceId, freq = Freq}};
 
 init(Args) ->
@@ -91,7 +92,7 @@ handle_cast(_Request, State) ->
 
 handle_info(token, #state{pid = ProductId, freq = Freq} = State) ->
     erlang:send_after(Freq * 10 * 1000, self(), reshtoken),
-    erlang:send_after(Freq * 1000, self(), capture),
+    erlang:send_after(10 * 1000, self(), capture),
     case dgiot_hook:run_hook({httpc, token, ProductId}, State) of
         {ok, NewState} ->
             {noreply, NewState};
@@ -102,18 +103,17 @@ handle_info(token, #state{pid = ProductId, freq = Freq} = State) ->
 handle_info(capture, #state{tid = Tid, pid = ProductId, freq = Freq} = State) ->
     {Method, Request} =
         case dgiot_hook:run_hook({httpc, do_before, ProductId}, State) of
-            {ok, {NewMethod, NewRequest}} ->
+            {ok, [{NewMethod, NewRequest}]} ->
                 {NewMethod, NewRequest};
             _ ->
                 Url = get_host(Tid) ++ get_path(Tid),
                 Headers = get_header(Tid),
                 ContentHeader = get_contenttype(Tid),
                 Body = dgiot_json:encode(get_body(Tid)),
-                get_method(Tid), {Url, Headers, ContentHeader, Body}
+                {get_method(Tid), {Url, Headers, ContentHeader, Body}}
         end,
     case dgiot_http_client:request(Method, Request) of
         {ok, Result} ->
-            ?LOG(info, "Result ~p ", [Result]),
             dgiot_hook:run_hook({httpc, do_after, ProductId}, {Result, State});
         {error, Reason} ->
             ?LOG(info, "Reason ~p ", [Reason])
@@ -147,16 +147,16 @@ get_method(ChannelId) ->
     dgiot_data:get({ChannelId, ?MODULE, method}).
 
 set_host(ChannelId, Args) ->
-    dgiot_data:insert({ChannelId, ?MODULE, url}, dgiot_utils:to_list(maps:get(<<"host">>, Args))).
+    dgiot_data:insert({ChannelId, ?MODULE, host}, dgiot_utils:to_list(maps:get(<<"host">>, Args))).
 
 get_host(ChannelId) ->
-    dgiot_data:get({ChannelId, ?MODULE, url}).
+    dgiot_data:get({ChannelId, ?MODULE, host}).
 
 set_path(ChannelId, Args) ->
-    dgiot_data:insert({ChannelId, ?MODULE, url}, dgiot_utils:to_list(maps:get(<<"path">>, Args))).
+    dgiot_data:insert({ChannelId, ?MODULE, path}, dgiot_utils:to_list(maps:get(<<"path">>, Args))).
 
 get_path(ChannelId) ->
-    dgiot_data:get({ChannelId, ?MODULE, url}).
+    dgiot_data:get({ChannelId, ?MODULE, path}).
 
 set_contenttype(ChannelId, Args) ->
     dgiot_data:insert({ChannelId, ?MODULE, contenttype}, dgiot_utils:to_list(maps:get(<<"contenttype">>, Args))).
@@ -200,6 +200,12 @@ get_cookie() ->
     Path = code:priv_dir(?MODULE),
     Python3path = Path ++ "/capture/getcookie.py ",
     os:cmd("python3 " ++ Python3path).
+
+kill_chrome() ->
+    Pids = dgiot_utils:to_binary(os:cmd("ps -ef | grep \"chrome\" | grep -v \"grep\" | awk '{print $2}'")),
+    lists:map(fun(X) ->
+        os:cmd("kill -9 " ++ binary_to_list(X))
+              end, binary:split(Pids, <<$\n>>, [global, trim])).
 
 test1(SessionId) ->
     Host = "127.0.0.1:8090",

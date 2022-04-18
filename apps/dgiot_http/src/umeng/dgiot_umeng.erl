@@ -32,9 +32,10 @@
     save_devicestatus/2,
     save_notification/3,
     sendSubscribe/3,
-    create_maintenance/2,
+    create_maintenance/1,
     get_operations/0,
-    send_message_to3D/3
+    send_message_to3D/3,
+    triggeralarm/1
 ]).
 
 test_broadcast() ->
@@ -502,6 +503,17 @@ save_devicestatus(DeviceId, Status) ->
 
 %%SELECT payload, payload.1.value as value, clientid, 'e636739559' as productid FROM "profile/e636739559/#" WHERE value = '02000000000000001A00000000250222'
 send_message_to3D(ProductId, DevAddr, Payload) ->
+    Warn = maps:get(<<"9">>, Payload, #{}),
+    {Lev, Type} =
+        case maps:get(<<"value">>, Warn, <<"一级"/utf8>>) of
+            <<"一级"/utf8>> ->
+                {<<"一级"/utf8>>, <<"故障工单"/utf8>>};
+            _ ->
+
+                {<<"二级"/utf8>>, <<"告警工单"/utf8>>}
+
+        end,
+    io:format("~s ~p Payload = ~p.~n", [?FILE, ?LINE, Payload]),
     Deviceid = dgiot_parse:get_deviceid(ProductId, DevAddr),
     DeviceName =
         case dgiot_parse:get_object(<<"Device">>, Deviceid) of
@@ -527,14 +539,14 @@ send_message_to3D(ProductId, DevAddr, Payload) ->
         <<"status">> => <<"拉闸"/utf8>>,
         <<"content">> => <<"电表拉闸断电"/utf8>>,
         <<"time">> => Timestamp,
-        <<"level">> => <<"一级"/utf8>>,
+        <<"level">> => Lev,
         <<"data">> => #{
             <<"id">> => Number,
             <<"deviceid">> => Deviceid,
             <<"devicename">> => DeviceName,
             <<"productid">> => ProductId,
             <<"productname">> => ProductName,
-            <<"type">> => <<"故障工单"/utf8>>,
+            <<"type">> => Type,
             <<"description">> => <<"电表拉闸断电"/utf8>>
         }
     },
@@ -548,15 +560,15 @@ send_message_to3D(ProductId, DevAddr, Payload) ->
             pass
     end.
 
-create_maintenance(SessionToken, Info) ->
+create_maintenance(Info) ->
     <<Number:10/binary, _/binary>> = dgiot_utils:random(),
     Timestamp = dgiot_datetime:format(dgiot_datetime:to_localtime(dgiot_datetime:now_secs()), <<"YY-MM-DD HH:NN:SS">>),
-    {Username, UserId, UserPhone} =
-        case dgiot_auth:get_session(SessionToken) of
-            #{<<"nick">> := Nick, <<"objectId">> := UserId1, <<"phone">> := UserPhone1} ->
-                {Nick, UserId1, UserPhone1};
+    {Username, UserId, UserPhone, SessionToken} =
+        case dgiot_parse:login(<<"dgiot_admin">>, <<"dgiot_admin">>) of
+            {ok, #{<<"nick">> := Nick, <<"objectId">> := UserId1, <<"phone">> := UserPhone1, <<"sessionToken">> := SessionToken1}} ->
+                {Nick, UserId1, UserPhone1, SessionToken1};
             _ ->
-                {<<"">>, <<"">>, <<"">>}
+                {<<"">>, <<"">>, <<"">>, <<"">>}
         end,
     DeviceId = maps:get(<<"deviceid">>, Info, <<"8d7bdaff69">>),
     Acl =
@@ -603,22 +615,27 @@ create_maintenance(SessionToken, Info) ->
             <<"className">> => <<"Device">>
         }
     },
-    send_gdmessage(DeviceId, #{
-        <<"character_string9">> => #{<<"value">> => maps:get(<<"id">>, Info, Number)},
-        <<"thing2">> => #{<<"value">> => maps:get(<<"devicename">>, Info, <<"电表_001"/utf8>>)},
-        <<"thing3">> => #{<<"value">> => maps:get(<<"type">>, Info, <<"故障工单"/utf8>>)},
-        <<"thing12">> => #{<<"value">> => maps:get(<<"description">>, Info, <<"电表拉闸断电"/utf8>>)},
-        <<"date5">> => #{<<"value">> => Timestamp}
-    }),
-    dgiot_parse:create_object(<<"Maintenance">>, Body,
-        [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]).
+    case dgiot_parse:create_object(<<"Maintenance">>, Body,
+        [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+        {ok, Result} ->
+            send_gdmessage(DeviceId, #{
+                <<"character_string9">> => #{<<"value">> => maps:get(<<"id">>, Info, Number)},
+                <<"thing2">> => #{<<"value">> => maps:get(<<"devicename">>, Info, <<"电表_001"/utf8>>)},
+                <<"thing3">> => #{<<"value">> => maps:get(<<"type">>, Info, <<"故障工单"/utf8>>)},
+                <<"thing12">> => #{<<"value">> => maps:get(<<"description">>, Info, <<"电表拉闸断电"/utf8>>)},
+                <<"date5">> => #{<<"value">> => Timestamp}
+            }),
+            {ok, Result};
+        Other ->
+            Other
+    end.
 
 
 send_gdmessage(DeviceId, Data) ->
     Result = #{<<"data">> => Data,
         <<"lang">> => <<"zh_CN">>,
         <<"miniprogramstate">> => <<"formal">>,
-        <<"page">> => <<"pages/alarm/alarm">>,
+        <<"page">> => <<"pages/work/work">>,
         <<"templateid">> => <<"wFe8o5L65ZwoQQyzEpR1hhCbvlXHN4ehtFSd_BT_6ZY">>},
     case dgiot_device:lookup(DeviceId) of
         {ok, #{<<"acl">> := Acl}} ->
@@ -681,11 +698,44 @@ get_operations() ->
         }
     }.
 
-
-
-
-
-
+triggeralarm(DeviceId) ->
+    case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+        {ok, #{<<"name">> := DeviceName, <<"product">> := #{<<"objectId">> := ProductId}, <<"detail">> := Detail}} ->
+            {ProductName, Lev, Type, Content} =
+                case dgiot_parse:get_object(<<"Product">>, ProductId) of
+                    {ok, #{<<"name">> := <<"检票闸机"/utf8>>}} ->
+                        Desc = maps:get(<<"desc">>, Detail, <<"通过人数超过阈值，请到现场处理"/utf8>>),
+                        {<<"检票闸机"/utf8>>, <<"二级"/utf8>>, <<"告警工单"/utf8>>, <<DeviceName/binary, Desc/binary>>};
+                    {ok, #{<<"name">> := Name1}} ->
+                        Desc = maps:get(<<"desc">>, Detail, <<"发生火灾，请赶往A区查看"/utf8>>),
+                        {Name1, <<"一级"/utf8>>, <<"报警工单"/utf8>>, <<DeviceName/binary, Desc/binary>>}
+                end,
+            <<Number:10/binary, _/binary>> = dgiot_utils:random(),
+            Timestamp = dgiot_datetime:format(dgiot_datetime:to_localtime(dgiot_datetime:now_secs()), <<"YY-MM-DD HH:NN:SS">>),
+            Data = #{
+                <<"id">> => Number,
+                <<"deviceid">> => DeviceId,
+                <<"devicename">> => DeviceName,
+                <<"status">> => <<"在线"/utf8>>,
+                <<"content">> => Content,
+                <<"time">> => Timestamp,
+                <<"level">> => Lev,
+                <<"data">> => #{
+                    <<"id">> => Number,
+                    <<"deviceid">> => DeviceId,
+                    <<"devicename">> => DeviceName,
+                    <<"productid">> => ProductId,
+                    <<"productname">> => ProductName,
+                    <<"type">> => Type,
+                    <<"description">> => Content
+                }
+            },
+            Topic = <<"/devWar/up">>,
+            dgiot_mqtt:publish(DeviceId, <<"bridge/", Topic/binary>>, jsx:encode(Data)),
+            dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(Data));
+        _ ->
+            pass
+    end.
 
 
 

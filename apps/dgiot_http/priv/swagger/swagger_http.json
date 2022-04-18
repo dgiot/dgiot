@@ -442,6 +442,7 @@
     },
     "/maintenance": {
       "post": {
+        "security": [],
         "basePath": "/",
         "description": "创建工单",
         "parameters": [
@@ -618,6 +619,41 @@
           }
         },
         "summary": "修改运维管理列表",
+        "tags": [
+          "Wechat"
+        ]
+      }
+    },
+    "/triggeralarm": {
+      "post": {
+        "basePath": "/",
+        "description": "触发告警",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "data",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "deviceid": {
+                  "type": "string",
+                  "required": true,
+                  "example": "8d7bdaff69",
+                  "description": "设备id"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "summary": "触发告警",
         "tags": [
           "Wechat"
         ]

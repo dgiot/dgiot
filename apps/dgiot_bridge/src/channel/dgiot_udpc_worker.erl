@@ -54,11 +54,6 @@ start_connect(#{
         login = Login,
         module = dgiot_utils:to_atom(Module)
     },
-    io:format("~s ~p MODULE = ~p.~n", [?FILE, ?LINE, ?MODULE]),
-    io:format("~s ~p Ip = ~p.~n", [?FILE, ?LINE, Ip]),
-    io:format("~s ~p Port = ~p.~n", [?FILE, ?LINE, Port]),
-    io:format("~s ~p State = ~p.~n", [?FILE, ?LINE, State]),
-
     dgiot_udp_client:start_link(?MODULE, Ip, Port, State).
 
 init(UDPState) ->
@@ -83,12 +78,12 @@ handle_info(login, #udp{state = #state{productid = _ProductId, hb = Hb, login = 
 
 handle_info(heartbeat, #udp{state = #state{hb = Hb, login = Login} = _State} = UDPState) ->
     erlang:send_after(Hb * 1000, self(), heartbeat),
-    io:format("~s ~p herart ~p ~n", [?FILE, ?LINE, Login]),
+%%    io:format("~s ~p herart ~p ~n", [?FILE, ?LINE, Login]),
     dgiot_udp_client:send(UDPState, Login),
     {noreply, UDPState};
 
-handle_info({udp, Buff}, #udp{state = #state{productid = ProductId, module = Module} = _State} = UDPState) ->
-    Module:parse_frame(Buff, #{}, #{<<"productid">> => ProductId}),
+handle_info({udp, _Buff}, #udp{state = #state{productid = _ProductId, module = _Module} = _State} = UDPState) ->
+%%    Module:parse_frame(Buff, #{}, #{<<"productid">> => ProductId}),
     {noreply, UDPState};
 
 handle_info({deliver, _Topic, Msg}, #udp{state = State} = UDPState) ->

@@ -58,11 +58,24 @@
             zh => <<"网关逻辑地址"/utf8>>
         }
     },
+    <<"mode">> => #{
+        order => 2,
+        type => enum,
+        required => false,
+        default => <<"incremental"/utf8>>,
+        enum => [<<"incremental">>, <<"fullamount">>],
+        title => #{
+            zh => <<"下发模式"/utf8>>
+        },
+        description => #{
+            zh => <<"下发模式:incremental|fullamount"/utf8>>
+        }
+    },
     <<"ico">> => #{
         order => 102,
         type => string,
         required => false,
-        default => <<"http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/product/dgiot/channel/TaskIcon.png">>,
+        default => <<"/dgiot_file/shuwa_tech/zh/product/dgiot/channel/TaskIcon.png">>,
         title => #{
             en => <<"channel ICO">>,
             zh => <<"通道ICO"/utf8>>
@@ -100,8 +113,8 @@ handle_init(#state{id = _ChannelId, env = #{<<"products">> := _Products, <<"args
 handle_event(_EventId, _Event, State) ->
     {ok, State}.
 
-handle_message({check_profie, Args}, State) ->
-    ?LOG(info, "Args ~p", [Args]),
+handle_message({check_profie, _Args}, State) ->
+%%    ?LOG(info, "Args ~p", [Args]),
     Fun = fun(X) ->
         ?LOG(info, "X ~p", [X])
           end,
@@ -109,28 +122,30 @@ handle_message({check_profie, Args}, State) ->
     erlang:send_after(1000 * 30, self(), {message, <<"_Pool">>, check_profile}),
     {ok, State};
 
-handle_message({sync_parse, Args, ObjectId}, State) ->
+%%{sync_parse,
+%%<<\"{\\\"profile\\\":{\\\"AgreementRelease\\\":\\\"0\\\",\\\"FOTA\\\":\\\"0\\\",\\\"ParaGet\\\":\\\"0\\\",\\\"PowerOffDelay\\\":50,\\\"PowerOnCtrl\\\":0,\\\"PubCtrl\\\":0,\\\"PubFreq\\\":31},\\\"sessiontoken\\\":\\\"r:1b1219229a72e05b79991c01d852d242\\\"}\">>,
+%%<<\"248e9007bf\">>
+%% }
+%%#state{env = #{<<"args">> := #{<<"mode">> := <<"incremental">>}}} =
+handle_message({sync_parse, Args,DeviceId}, #state{env = #{<<"args">> := #{<<"mode">> := <<"incremental">>}}} = State) ->
+%%    io:format("~s ~p Args = ~p.~n", [?FILE, ?LINE, State]),
+%%    io:format("~s ~p Args = ~p.~n", [?FILE, ?LINE, jsx:decode(Args, [{labels, binary}, return_maps])]),
     case jsx:decode(Args, [{labels, binary}, return_maps]) of
-        #{<<"profile">> := _Profile, <<"devaddr">> := _Devaddr, <<"product">> := #{<<"objectId">> := _ProductId}} ->
-            handle_message({sync_parse, Args}, State);
-        #{<<"profile">> := Profile} ->
-%%            io:format("~s ~p ObjectId = ~p.~n", [?FILE, ?LINE, ObjectId]),
-            case dgiot_device:lookup(dgiot_utils:to_binary(ObjectId)) of
-                {ok, #{<<"devaddr">> := Devaddr, <<"productid">> := ProductId}} ->
-                    NewArgs = jsx:encode(#{<<"profile">> => Profile, <<"devaddr">> => Devaddr, <<"product">> => #{<<"objectId">> => ProductId}}),
-                    handle_message({sync_parse, NewArgs}, State);
-                _ ->
-                    case dgiot_parse:get_object(<<"Device">>, ObjectId) of
-                        {ok, Device} ->
-                            NewArgs = jsx:encode(Device#{<<"profile">> => Profile}),
-                            handle_message({sync_parse, NewArgs}, State);
-                        _ ->
-                            pass
-                    end
+        #{<<"profile">> := Profile, <<"devaddr">> := Devaddr, <<"product">> := #{<<"objectId">> := ProductId}} ->
+            Modifyprofile = get_modifyprofile(DeviceId, Profile),
+%%            设置参数
+            case dgiot_device:get_online(DeviceId) of
+                true ->
+                    Topic = <<"profile/", ProductId/binary, "/", Devaddr/binary>>,
+                    dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(Modifyprofile)),
+                    dgiot_data:insert(?PROFILE, DeviceId, Profile);
+                false ->
+                    dgiot_data:insert(?MODIFYPROFILE, DeviceId, {Profile, ProductId, Devaddr})
             end;
         _ ->
             pass
-    end;
+    end,
+    {ok, State};
 
 handle_message({sync_parse, Args}, State) ->
 %%    io:format("~s ~p Args = ~p.~n", [?FILE, ?LINE, jsx:decode(Args, [{labels, binary}, return_maps])]),
@@ -138,7 +153,6 @@ handle_message({sync_parse, Args}, State) ->
         #{<<"profile">> := Profile, <<"devaddr">> := Devaddr, <<"product">> := #{<<"objectId">> := ProductId}} = Arg ->
             Sessiontoken = maps:get(<<"sessiontoken">>, Arg, <<"">>),
             DeviceId = dgiot_parse:get_deviceid(ProductId, Devaddr),
-%%            Modifyprofile = get_modifyprofile(DeviceId, Profile),
 %%            设置参数
             case dgiot_device:get_online(DeviceId) of
                 true ->
@@ -193,21 +207,21 @@ stop(ChannelType, ChannelId, #state{env = #{<<"product">> := ProductId, <<"args"
     ok.
 
 
-%%get_modifyprofile(_DeviceId, Profile) ->
-%%    case dgiot_data:get(?PROFILE, DeviceId) of
-%%        not_find ->
-%%            dgiot_data:insert(?PROFILE, DeviceId, Profile),
-%%            Profile;
-%%        OldProfile ->
-%%            maps:fold(fun(K, V, Acc) ->
-%%                case maps:find(K, OldProfile) of
-%%                    error ->
-%%                        Acc#{K => V};
-%%                    {ok, V} ->
-%%                        Acc;
-%%                    _ ->
-%%                        Acc#{K => V}
-%%                end
-%%                      end, #{}, Profile)
-%%
-%%    end.
+get_modifyprofile(DeviceId, Profile) ->
+    case dgiot_data:get(?PROFILE, DeviceId) of
+        not_find ->
+            dgiot_data:insert(?PROFILE, DeviceId, Profile),
+            Profile;
+        OldProfile ->
+            maps:fold(fun(K, V, Acc) ->
+                case maps:find(K, OldProfile) of
+                    error ->
+                        Acc#{K => V};
+                    {ok, V} ->
+                        Acc;
+                    _ ->
+                        Acc#{K => V}
+                end
+                      end, #{}, Profile)
+
+    end.

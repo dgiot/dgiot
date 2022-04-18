@@ -84,3 +84,12 @@
 {default, "rs256"},
 {datatype, string}
 ]}.
+
+
+%%--------------------------------------------------------------------
+%% isbridge
+%%--------------------------------------------------------------------
+{mapping, "isbridge", "dgiot_http.isbridge", [
+{default, true},
+{datatype, {enum, [true, false]}}
+]}.

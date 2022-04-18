@@ -118,9 +118,9 @@ do_request(get_amis, #{<<"deviceid">> := Deviceid}, _Context, _Req) ->
 do_request(get_amis_device, #{<<"deviceid">> := Deviceid}, _Context, _Req) ->
     case dgiot_parse:get_object(<<"Device">>, Deviceid) of
         {ok, Info} ->
-            {ok, Info};
+            {ok, #{<<"status">> => 0, <<"msg">> => <<"success">>, <<"data">> => Info}};
         _ ->
-            {error, #{<<"code">> => 404, <<"result">> => <<"deviec info null">>}}
+            {error, #{<<"status">> => 404, <<"msg">> => <<"error">>, <<"result">> => <<"deviec info null">>}}
     end;
 
 %% Role模版 概要: 修改amis设备

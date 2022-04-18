@@ -1,0 +1,436 @@
+{
+  "properties": [
+    {
+      "name": "预留操作",
+      "isshow": true,
+      "dataForm": {
+        "da": "",
+        "dt": "",
+        "afn": "",
+        "data": "null",
+        "rate": 1,
+        "order": 0,
+        "round": "all",
+        "offset": 0,
+        "address": "0X10",
+        "bytelen": "",
+        "control": "%d",
+        "iscount": "0",
+        "slaveid": "0X10",
+        "byteType": "",
+        "protocol": "DLINK",
+        "strategy": "主动上报",
+        "collection": "%s",
+        "countround": "all",
+        "operatetype": "readCoils",
+        "originaltype": "short16_AB",
+        "countstrategy": 20,
+        "countcollection": "%s"
+      },
+      "dataType": {
+        "das": [],
+        "type": "enum",
+        "specs": {
+          "0": "预留",
+          "1": "预留"
+        }
+      },
+      "required": true,
+      "updateAt": "1648872204156",
+      "accessMode": "r",
+      "dataSource": {
+        "dis": [
+          {
+            "key": "op_8_2_1_4_bit7",
+            "data": "1",
+            "type": "位",
+            "undefined": "位"
+          }
+        ],
+        "_dlinkindex": ""
+      },
+      "devicetype": "建筑消防设施操作信息",
+      "identifier": "status_8_2_1_4_bit7",
+      "moduleType": "properties",
+      "index": 0
+    },
+    {
+      "name": "测试操作",
+      "isshow": true,
+      "dataForm": {
+        "da": "",
+        "dt": "",
+        "afn": "",
+        "data": "null",
+        "rate": 1,
+        "order": 0,
+        "round": "all",
+        "offset": 0,
+        "address": "0X10",
+        "bytelen": "",
+        "control": "%d",
+        "iscount": "0",
+        "slaveid": "0X10",
+        "byteType": "",
+        "protocol": "DLINK",
+        "strategy": "主动上报",
+        "collection": "%s",
+        "countround": "all",
+        "operatetype": "readCoils",
+        "originaltype": "short16_AB",
+        "countstrategy": 20,
+        "countcollection": "%s"
+      },
+      "dataType": {
+        "das": [],
+        "type": "enum",
+        "specs": {
+          "0": "无操作",
+          "1": "测试"
+        }
+      },
+      "required": true,
+      "updateAt": "1648872204156",
+      "accessMode": "r",
+      "dataSource": {
+        "dis": [
+          {
+            "key": "op_8_2_1_4_bit6",
+            "data": "1",
+            "type": "位",
+            "undefined": "位"
+          }
+        ],
+        "_dlinkindex": ""
+      },
+      "devicetype": "建筑消防设施操作信息",
+      "identifier": "status_8_2_1_4_bit6",
+      "moduleType": "properties",
+      "index": 0
+    },
+    {
+      "name": "确认操作",
+      "isshow": true,
+      "dataForm": {
+        "da": "",
+        "dt": "",
+        "afn": "",
+        "data": "null",
+        "rate": 1,
+        "order": 0,
+        "round": "all",
+        "offset": 0,
+        "address": "0X10",
+        "bytelen": "",
+        "control": "%d",
+        "iscount": "0",
+        "slaveid": "0X10",
+        "byteType": "",
+        "protocol": "DLINK",
+        "strategy": "主动上报",
+        "collection": "%s",
+        "countround": "all",
+        "operatetype": "readCoils",
+        "originaltype": "short16_AB",
+        "countstrategy": 20,
+        "countcollection": "%s"
+      },
+      "dataType": {
+        "das": [],
+        "type": "enum",
+        "specs": {
+          "0": "无操作",
+          "1": "确认"
+        }
+      },
+      "required": true,
+      "updateAt": "1648872204156",
+      "accessMode": "r",
+      "dataSource": {
+        "dis": [
+          {
+            "key": "op_8_2_1_4_bit5",
+            "data": "1",
+            "type": "位",
+            "undefined": "位"
+          }
+        ],
+        "_dlinkindex": ""
+      },
+      "devicetype": "建筑消防设施操作信息",
+      "identifier": "status_8_2_1_4_bit5",
+      "moduleType": "properties",
+      "index": 0
+    },
+    {
+      "name": "自检操作",
+      "isshow": true,
+      "dataForm": {
+        "da": "",
+        "dt": "",
+        "afn": "",
+        "data": "null",
+        "rate": 1,
+        "order": 0,
+        "round": "all",
+        "offset": 0,
+        "address": "0X10",
+        "bytelen": "",
+        "control": "%d",
+        "iscount": "0",
+        "slaveid": "0X10",
+        "byteType": "",
+        "protocol": "DLINK",
+        "strategy": "主动上报",
+        "collection": "%s",
+        "countround": "all",
+        "operatetype": "readCoils",
+        "originaltype": "short16_AB",
+        "countstrategy": 20,
+        "countcollection": "%s"
+      },
+      "dataType": {
+        "das": [],
+        "type": "enum",
+        "specs": {
+          "0": "无操作",
+          "1": "自检"
+        }
+      },
+      "required": true,
+      "updateAt": "1648872204156",
+      "accessMode": "r",
+      "dataSource": {
+        "dis": [
+          {
+            "key": "op_8_2_1_4_bit4",
+            "data": "1",
+            "type": "位",
+            "undefined": "位"
+          }
+        ],
+        "_dlinkindex": ""
+      },
+      "devicetype": "建筑消防设施操作信息",
+      "identifier": "op_8_2_1_4_bit4",
+      "moduleType": "properties",
+      "index": 0
+    },
+    {
+      "name": "警情操作",
+      "isshow": true,
+      "dataForm": {
+        "da": "",
+        "dt": "",
+        "afn": "",
+        "data": "null",
+        "rate": 1,
+        "order": 0,
+        "round": "all",
+        "offset": 0,
+        "address": "0X10",
+        "bytelen": "",
+        "control": "%d",
+        "iscount": "0",
+        "slaveid": "0X10",
+        "byteType": "",
+        "protocol": "DLINK",
+        "strategy": "主动上报",
+        "collection": "%s",
+        "countround": "all",
+        "operatetype": "readCoils",
+        "originaltype": "short16_AB",
+        "countstrategy": 20,
+        "countcollection": "%s"
+      },
+      "dataType": {
+        "das": [],
+        "type": "enum",
+        "specs": {
+          "0": "无操作",
+          "1": "警情消除"
+        }
+      },
+      "required": true,
+      "updateAt": "1648872204156",
+      "accessMode": "r",
+      "dataSource": {
+        "dis": [
+          {
+            "key": "op_8_2_1_4_bit3",
+            "data": "1",
+            "type": "位",
+            "undefined": "位"
+          }
+        ],
+        "_dlinkindex": ""
+      },
+      "devicetype": "建筑消防设施操作信息",
+      "identifier": "op_8_2_1_4_bit3",
+      "moduleType": "properties",
+      "index": 0
+    },
+    {
+      "name": "报警操作",
+      "isshow": true,
+      "dataForm": {
+        "da": "",
+        "dt": "",
+        "afn": "",
+        "data": "null",
+        "rate": 1,
+        "order": 0,
+        "round": "all",
+        "offset": 0,
+        "address": "0X10",
+        "bytelen": "",
+        "control": "%d",
+        "iscount": "0",
+        "slaveid": "0X10",
+        "byteType": "",
+        "protocol": "DLINK",
+        "strategy": "主动上报",
+        "collection": "%s",
+        "countround": "all",
+        "operatetype": "readCoils",
+        "originaltype": "short16_AB",
+        "countstrategy": 20,
+        "countcollection": "%s"
+      },
+      "dataType": {
+        "das": [],
+        "type": "enum",
+        "specs": {
+          "0": "无操作",
+          "1": "手动报警"
+        }
+      },
+      "required": true,
+      "updateAt": "1648872204156",
+      "accessMode": "r",
+      "dataSource": {
+        "dis": [
+          {
+            "key": "op_8_2_1_4_bit2",
+            "data": "1",
+            "type": "位",
+            "undefined": "位"
+          }
+        ],
+        "_dlinkindex": ""
+      },
+      "devicetype": "建筑消防设施操作信息",
+      "identifier": "op_8_2_1_4_bit2",
+      "moduleType": "properties",
+      "index": 0
+    },
+    {
+      "name": "消音操作",
+      "isshow": true,
+      "dataForm": {
+        "da": "",
+        "dt": "",
+        "afn": "",
+        "data": "null",
+        "rate": 1,
+        "order": 0,
+        "round": "all",
+        "offset": 0,
+        "address": "0X10",
+        "bytelen": "",
+        "control": "%d",
+        "iscount": "0",
+        "slaveid": "0X10",
+        "byteType": "",
+        "protocol": "DLINK",
+        "strategy": "主动上报",
+        "collection": "%s",
+        "countround": "all",
+        "operatetype": "readCoils",
+        "originaltype": "short16_AB",
+        "countstrategy": 20,
+        "countcollection": "%s"
+      },
+      "dataType": {
+        "das": [],
+        "type": "enum",
+        "specs": {
+          "0": "无操作",
+          "1": "消音"
+        }
+      },
+      "required": true,
+      "updateAt": "1648872204156",
+      "accessMode": "r",
+      "dataSource": {
+        "dis": [
+          {
+            "key": "op_8_2_1_4_bit1",
+            "data": "1",
+            "type": "位",
+            "undefined": "位"
+          }
+        ],
+        "_dlinkindex": ""
+      },
+      "devicetype": "建筑消防设施操作信息",
+      "identifier": "status_8_2_1_4_bit1",
+      "moduleType": "properties",
+      "index": 0
+    },
+    {
+      "name": "复位操作",
+      "isshow": true,
+      "dataForm": {
+        "da": "",
+        "dt": "",
+        "afn": "",
+        "data": "null",
+        "rate": 1,
+        "order": 0,
+        "round": "all",
+        "offset": 0,
+        "address": "0X10",
+        "bytelen": "",
+        "control": "%d",
+        "iscount": "0",
+        "slaveid": "0X10",
+        "byteType": "",
+        "protocol": "DLINK",
+        "strategy": "主动上报",
+        "collection": "%s",
+        "countround": "all",
+        "operatetype": "readCoils",
+        "originaltype": "short16_AB",
+        "countstrategy": 20,
+        "countcollection": "%s"
+      },
+      "dataType": {
+        "das": [],
+        "type": "enum",
+        "specs": {
+          "0": "无操作",
+          "1": "复位"
+        }
+      },
+      "required": true,
+      "updateAt": "1648872204156",
+      "accessMode": "r",
+      "dataSource": {
+        "dis": [
+          {
+            "key": "op_8_2_1_4_bit0",
+            "data": "1",
+            "type": "位",
+            "undefined": "位"
+          }
+        ],
+        "_dlinkindex": ""
+      },
+      "devicetype": "建筑消防设施操作信息",
+      "identifier": "op_8_2_1_4_bit0",
+      "moduleType": "properties",
+      "index": 0
+    }
+  ]
+}

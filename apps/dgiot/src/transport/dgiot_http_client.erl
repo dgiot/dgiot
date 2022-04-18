@@ -78,10 +78,24 @@ method(Method, atom) ->
 method(Method, binary) ->
     list_to_binary(string:to_lower(dgiot_utils:to_list(Method))).
 
+do_decode(Headers, Body) ->
+    case lists:keyfind("content-encoding", 1, Headers) of
+        {_, "gzip"} ->
+            zlib:gunzip(Body);
+        _ ->
+            Body
+    end.
+
 request(Method, Request) ->
     case httpc:request(Method, Request, ?HTTPOption([{autoredirect, true}]), []) of
-        {ok, {{_, 200, _}, _, Body}} ->
-            {ok, Body};
+        {ok, {{_, 200, _}, Headers, Body}} ->
+            Deconde = do_decode(Headers, Body),
+            case jsx:is_json(dgiot_utils:to_binary(Deconde)) of
+                true ->
+                    {ok, jsx:decode(dgiot_utils:to_binary(Deconde), [{labels, binary}, return_maps])};
+                _ ->
+                    {ok, Deconde}
+            end;
         {ok, {{_, HTTPCode, _}, _, Body}} ->
             {error, {HTTPCode, Body}};
         {error, {failed_connect, _}} ->

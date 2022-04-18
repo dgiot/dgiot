@@ -1,0 +1,128 @@
+{
+  "tags": [
+    {
+      "name": "DBA",
+      "description": "数据库"
+    }
+  ],
+  "definitions": {
+
+  },
+  "paths": {
+    "/mysql/{table}": {
+      "get": {
+        "summary": "获取默认通道指定表信息",
+        "description": "获取默认通道指定表信息",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "table",
+            "required": true,
+            "description": "表名",
+            "type": "string"
+          },
+          {
+            "in": "query",
+            "name": "order",
+            "description": "排序方式, 负为降序, eg: score,-name",
+            "required": false,
+            "type": "string",
+            "default": "createdAt"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "description": "limit, 显示多少条记录，显示100条记录 eg:100",
+            "required": false,
+            "default": 1,
+            "type": "integer"
+          },
+          {
+            "in": "query",
+            "name": "skip",
+            "description": "skip",
+            "required": false,
+            "default": 0,
+            "type": "integer"
+          },
+          {
+            "in": "query",
+            "name": "keys",
+            "description": "需要显示的字段,加count(*)则结果里面会显示总记录数, eg: username,email",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "in": "query",
+            "name": "where",
+            "description": "过滤条件，eg: {\"objectId\":{\"$regex\":\"BGS3BFgcZN\"}}",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "consumes": [
+          "*"
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "DBA"
+        ]
+      }
+    },
+    "/show_tables": {
+      "get": {
+        "summary": "查询表名信息",
+        "description": "查询表名信息",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "filter",
+            "description": "过滤条件，eg: '%xssd20200722%'",
+            "required": false,
+            "type": "string",
+            "default":"%xssd20200722%"
+          }
+        ],
+        "consumes": [
+          "*"
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "DBA"
+        ]
+      }
+    }
+  }
+}

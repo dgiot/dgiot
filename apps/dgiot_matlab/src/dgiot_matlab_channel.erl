@@ -83,7 +83,11 @@
         type => enum,
         required => false,
         default => <<"quick"/utf8>>,
-        enum => [<<"nosearch">>, <<"quick">>, <<"normal">>],
+        enum => [
+            #{<<"value">> => <<"nosearch">>, <<"label">> => <<"nosearch"/utf8>>},
+            #{<<"value">> => <<"quick">>, <<"label">> => <<"quick"/utf8>>},
+            #{<<"value">> => <<"normal">>, <<"label">> => <<"normal"/utf8>>}
+        ],
         title => #{
             zh => <<"搜表模式"/utf8>>
         },
@@ -95,7 +99,7 @@
         order => 102,
         type => string,
         required => false,
-        default => <<"http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/product/dgiot/channel/matlab.jpg">>,
+        default => <<"/dgiot_file/shuwa_tech/zh/product/dgiot/channel/matlab.jpg">>,
         title => #{
             en => <<"channel ICO">>,
             zh => <<"通道ICO"/utf8>>

@@ -182,15 +182,12 @@
         order => 7,
         type => string,
         required => false,
-        default => #{<<"value">> => <<"text/plain">>, <<"label">> => <<"text/plain"/utf8>>},
-        enum => [
-            #{<<"value">> => <<"text/plain">>, <<"label">> => <<"text/plain"/utf8>>}
-        ],
+        default => <<"text/plain">>,
         title => #{
-            zh => <<"起始记录号"/utf8>>
+            zh => <<"contenttype"/utf8>>
         },
         description => #{
-            zh => <<"起始记录号"/utf8>>
+            zh => <<"contenttype"/utf8>>
         }
     },
     <<"freq">> => #{
@@ -245,7 +242,7 @@
         order => 102,
         type => string,
         required => false,
-        default => <<"http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/product/dgiot/channel/HTTP-collection.png">>,
+        default => <<"/dgiot_file/shuwa_tech/zh/product/dgiot/channel/HTTP-collection.png">>,
         title => #{
             en => <<"channel ICO">>,
             zh => <<"通道ICO"/utf8>>

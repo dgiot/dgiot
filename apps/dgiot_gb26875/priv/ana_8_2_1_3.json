@@ -1,0 +1,658 @@
+{
+  "properties": [
+    {
+      "name": "风速模拟量",
+      "index": 0,
+      "isshow": true,
+      "dataForm": {
+        "da": "",
+        "dt": "",
+        "afn": "",
+        "data": "null",
+        "rate": 1,
+        "order": 0,
+        "round": "all",
+        "offset": 0,
+        "address": "0X10",
+        "bytelen": "",
+        "control": "%d",
+        "iscount": "0",
+        "slaveid": "0X10",
+        "byteType": "",
+        "protocol": "DLINK",
+        "strategy": "主动上报",
+        "collection": "%s",
+        "countround": "all",
+        "operatetype": "readCoils",
+        "originaltype": "short16_AB",
+        "countstrategy": 20,
+        "countcollection": "%s"
+      },
+      "dataType": {
+        "das": [],
+        "type": "int",
+        "specs": {
+          "max": 20,
+          "min": 0,
+          "step": 0.1,
+          "unit": "m/s",
+          "precision": 3
+        }
+      },
+      "required": true,
+      "updateAt": "1649217283985",
+      "accessMode": "r",
+      "dataSource": {
+        "dis": [
+          {
+            "key": "ana_8_2_1_3_12",
+            "data": "1",
+            "type": "位",
+            "undefined": "位"
+          }
+        ],
+        "_dlinkindex": ""
+      },
+      "devicetype": "建筑消防设施部件模拟量",
+      "identifier": "ana_8_2_1_3_12",
+      "moduleType": "properties"
+    },
+    {
+      "name": "风量模拟量",
+      "index": 1,
+      "isshow": true,
+      "dataForm": {
+        "da": "",
+        "dt": "",
+        "afn": "",
+        "data": "null",
+        "rate": 1,
+        "order": 0,
+        "round": "all",
+        "offset": 0,
+        "address": "0X10",
+        "bytelen": "",
+        "control": "%d",
+        "iscount": "0",
+        "slaveid": "0X10",
+        "byteType": "",
+        "protocol": "DLINK",
+        "strategy": "主动上报",
+        "collection": "%s",
+        "countround": "all",
+        "operatetype": "readCoils",
+        "originaltype": "short16_AB",
+        "countstrategy": 20,
+        "countcollection": "%s"
+      },
+      "dataType": {
+        "das": [],
+        "type": "int",
+        "specs": {
+          "max": 3200,
+          "min": 0,
+          "step": 0.1,
+          "unit": "m³/min",
+          "precision": 3
+        }
+      },
+      "required": true,
+      "updateAt": "1648867672900",
+      "accessMode": "r",
+      "dataSource": {
+        "dis": [
+          {
+            "key": "ana_8_2_1_3_11",
+            "data": "2",
+            "type": "位",
+            "undefined": "位"
+          }
+        ],
+        "_dlinkindex": ""
+      },
+      "devicetype": "建筑消防设施部件模拟量",
+      "identifier": "ana_8_2_1_3_11",
+      "moduleType": "properties"
+    },
+    {
+      "name": "流量模拟量",
+      "index": 2,
+      "isshow": true,
+      "dataForm": {
+        "data": "null",
+        "rate": 1,
+        "order": 0,
+        "round": "all",
+        "offset": 0,
+        "address": "0X10",
+        "control": "%d",
+        "iscount": "0",
+        "slaveid": "0X10",
+        "protocol": "DLINK",
+        "strategy": "主动上报",
+        "collection": "%s",
+        "countround": "all",
+        "operatetype": "readCoils",
+        "originaltype": "short16_AB",
+        "countstrategy": 20,
+        "countcollection": "%s"
+      },
+      "dataType": {
+        "das": [],
+        "type": "int",
+        "specs": {
+          "max": 3200,
+          "min": 0,
+          "step": 0.1,
+          "unit": "L/s",
+          "precision": 3
+        }
+      },
+      "required": true,
+      "updateAt": "1648866474035",
+      "accessMode": "r",
+      "dataSource": {
+        "dis": [
+          {
+            "key": "ana_8_2_1_3_10",
+            "data": "2",
+            "type": "位",
+            "undefined": "位"
+          }
+        ],
+        "_dlinkindex": ""
+      },
+      "devicetype": "建筑消防设施部件模拟量",
+      "identifier": "ana_8_2_1_3_10",
+      "moduleType": "properties"
+    },
+    {
+      "name": "电流模拟量",
+      "index": 3,
+      "isshow": true,
+      "dataForm": {
+        "data": "null",
+        "rate": 1,
+        "order": 0,
+        "round": "all",
+        "offset": 0,
+        "address": "0X10",
+        "control": "%d",
+        "iscount": "0",
+        "slaveid": "0X10",
+        "protocol": "DLINK",
+        "strategy": "主动上报",
+        "collection": "%s",
+        "countround": "all",
+        "operatetype": "readCoils",
+        "originaltype": "short16_AB",
+        "countstrategy": 20,
+        "countcollection": "%s"
+      },
+      "dataType": {
+        "das": [],
+        "type": "int",
+        "specs": {
+          "max": 3200,
+          "min": 0,
+          "step": 0.1,
+          "unit": "A",
+          "precision": 3
+        }
+      },
+      "required": true,
+      "updateAt": "1648866474035",
+      "accessMode": "r",
+      "dataSource": {
+        "dis": [
+          {
+            "key": "ana_8_2_1_3_9",
+            "data": "2",
+            "type": "位",
+            "undefined": "位"
+          }
+        ],
+        "_dlinkindex": ""
+      },
+      "devicetype": "建筑消防设施部件模拟量",
+      "identifier": "ana_8_2_1_3_9",
+      "moduleType": "properties"
+    },
+    {
+      "name": "电压模拟量",
+      "index": 4,
+      "isshow": true,
+      "dataForm": {
+        "data": "null",
+        "rate": 1,
+        "order": 0,
+        "round": "all",
+        "offset": 0,
+        "address": "0X10",
+        "control": "%d",
+        "iscount": "0",
+        "slaveid": "0X10",
+        "protocol": "DLINK",
+        "strategy": "主动上报",
+        "collection": "%s",
+        "countround": "all",
+        "operatetype": "readCoils",
+        "originaltype": "short16_AB",
+        "countstrategy": 20,
+        "countcollection": "%s"
+      },
+      "dataType": {
+        "das": [],
+        "type": "int",
+        "specs": {
+          "max": 3200,
+          "min": 0,
+          "step": 0.1,
+          "unit": "V",
+          "precision": 3
+        }
+      },
+      "required": true,
+      "updateAt": "1648866474035",
+      "accessMode": "r",
+      "dataSource": {
+        "dis": [
+          {
+            "key": "ana_8_2_1_3_8",
+            "data": "2",
+            "type": "位",
+            "undefined": "位"
+          }
+        ],
+        "_dlinkindex": ""
+      },
+      "devicetype": "建筑消防设施部件模拟量",
+      "identifier": "ana_8_2_1_3_8",
+      "moduleType": "properties"
+    },
+    {
+      "name": "时间模拟量",
+      "index": 5,
+      "isshow": true,
+      "dataForm": {
+        "da": "",
+        "dt": "",
+        "afn": "",
+        "data": "null",
+        "rate": 1,
+        "order": 0,
+        "round": "all",
+        "offset": 0,
+        "address": "0X10",
+        "bytelen": "",
+        "control": "%d",
+        "iscount": "0",
+        "slaveid": "0X10",
+        "byteType": "",
+        "protocol": "DLINK",
+        "strategy": "主动上报",
+        "collection": "%s",
+        "countround": "all",
+        "operatetype": "readCoils",
+        "originaltype": "short16_AB",
+        "countstrategy": 20,
+        "countcollection": "%s"
+      },
+      "dataType": {
+        "das": [],
+        "type": "int",
+        "specs": {
+          "max": 32000,
+          "min": 0,
+          "step": 0.1,
+          "unit": "s",
+          "precision": 3
+        }
+      },
+      "required": true,
+      "updateAt": "1648867301024",
+      "accessMode": "r",
+      "dataSource": {
+        "dis": [
+          {
+            "key": "ana_8_2_1_3_7",
+            "data": "2",
+            "type": "位",
+            "undefined": "位"
+          }
+        ],
+        "_dlinkindex": ""
+      },
+      "devicetype": "建筑消防设施部件模拟量",
+      "identifier": "ana_8_2_1_3_7",
+      "moduleType": "properties"
+    },
+    {
+      "name": "气体浓度模拟量",
+      "index": 6,
+      "isshow": true,
+      "dataForm": {
+        "da": "",
+        "dt": "",
+        "afn": "",
+        "data": "null",
+        "rate": 1,
+        "order": 0,
+        "round": "all",
+        "offset": 0,
+        "address": "0X10",
+        "bytelen": "",
+        "control": "%d",
+        "iscount": "0",
+        "slaveid": "0X10",
+        "byteType": "",
+        "protocol": "DLINK",
+        "strategy": "主动上报",
+        "collection": "%s",
+        "countround": "all",
+        "operatetype": "readCoils",
+        "originaltype": "short16_AB",
+        "countstrategy": 20,
+        "countcollection": "%s"
+      },
+      "dataType": {
+        "das": [],
+        "type": "int",
+        "specs": {
+          "max": 100,
+          "min": 0,
+          "step": 0.1,
+          "unit": "%LEL",
+          "precision": 3
+        }
+      },
+      "required": true,
+      "updateAt": "1648867312184",
+      "accessMode": "r",
+      "dataSource": {
+        "dis": [
+          {
+            "key": "ana_8_2_1_3_6",
+            "data": "1",
+            "type": "位",
+            "undefined": "位"
+          }
+        ],
+        "_dlinkindex": ""
+      },
+      "devicetype": "建筑消防设施部件模拟量",
+      "identifier": "ana_8_2_1_3_6",
+      "moduleType": "properties"
+    },
+    {
+      "name": "压力模拟量",
+      "index": 7,
+      "isshow": true,
+      "dataForm": {
+        "da": "",
+        "dt": "",
+        "afn": "",
+        "data": "null",
+        "rate": 1,
+        "order": 0,
+        "round": "all",
+        "offset": 0,
+        "address": "0X10",
+        "bytelen": "",
+        "control": "%d",
+        "iscount": "0",
+        "slaveid": "0X10",
+        "byteType": "",
+        "protocol": "DLINK",
+        "strategy": "主动上报",
+        "collection": "%s",
+        "countround": "all",
+        "operatetype": "readCoils",
+        "originaltype": "short16_AB",
+        "countstrategy": 20,
+        "countcollection": "%s"
+      },
+      "dataType": {
+        "das": [],
+        "type": "int",
+        "specs": {
+          "max": 100,
+          "min": 0,
+          "step": 0.1,
+          "unit": "kPa",
+          "precision": 3
+        }
+      },
+      "required": true,
+      "updateAt": "1648868350045",
+      "accessMode": "r",
+      "dataSource": {
+        "dis": [
+          {
+            "key": "ana_8_2_1_3_5",
+            "data": "1",
+            "type": "位",
+            "undefined": "位"
+          }
+        ],
+        "_dlinkindex": ""
+      },
+      "devicetype": "建筑消防设施部件模拟量",
+      "identifier": "ana_8_2_1_3_5",
+      "moduleType": "properties"
+    },
+    {
+      "name": "压力模拟量",
+      "index": 8,
+      "isshow": true,
+      "dataForm": {
+        "da": "",
+        "dt": "",
+        "afn": "",
+        "data": "null",
+        "rate": 1,
+        "order": 0,
+        "round": "all",
+        "offset": 0,
+        "address": "0X10",
+        "bytelen": "",
+        "control": "%d",
+        "iscount": "0",
+        "slaveid": "0X10",
+        "byteType": "",
+        "protocol": "DLINK",
+        "strategy": "主动上报",
+        "collection": "%s",
+        "countround": "all",
+        "operatetype": "readCoils",
+        "originaltype": "short16_AB",
+        "countstrategy": 20,
+        "countcollection": "%s"
+      },
+      "dataType": {
+        "das": [],
+        "type": "int",
+        "specs": {
+          "max": 3200,
+          "min": 0,
+          "step": 0.1,
+          "unit": "MPa",
+          "precision": 3
+        }
+      },
+      "required": true,
+      "updateAt": "1648866683730",
+      "accessMode": "r",
+      "dataSource": {
+        "dis": [
+          {
+            "key": "ana_8_2_1_3_4",
+            "data": "2",
+            "type": "位",
+            "undefined": "位"
+          }
+        ],
+        "_dlinkindex": ""
+      },
+      "devicetype": "建筑消防设施部件模拟量",
+      "identifier": "ana_8_2_1_3_4",
+      "moduleType": "properties"
+    },
+    {
+      "name": "温度模拟量",
+      "index": 9,
+      "isshow": true,
+      "dataForm": {
+        "data": "null",
+        "rate": 1,
+        "order": 0,
+        "round": "all",
+        "offset": 0,
+        "address": "0X10",
+        "control": "%d",
+        "iscount": "0",
+        "slaveid": "0X10",
+        "protocol": "DLINK",
+        "strategy": "主动上报",
+        "collection": "%s",
+        "countround": "all",
+        "operatetype": "readCoils",
+        "originaltype": "short16_AB",
+        "countstrategy": 20,
+        "countcollection": "%s"
+      },
+      "dataType": {
+        "das": [],
+        "type": "int",
+        "specs": {
+          "max": 3200,
+          "min": -273,
+          "step": 0.1,
+          "unit": "℃",
+          "precision": 3
+        }
+      },
+      "required": true,
+      "updateAt": "1648866280345",
+      "accessMode": "r",
+      "dataSource": {
+        "dis": [
+          {
+            "key": "ana_8_2_1_3_3",
+            "data": "2",
+            "type": "位",
+            "undefined": "位"
+          }
+        ],
+        "_dlinkindex": ""
+      },
+      "devicetype": "建筑消防设施部件模拟量",
+      "identifier": "ana_8_2_1_3_3",
+      "moduleType": "properties"
+    },
+    {
+      "name": "高度模拟量",
+      "index": 10,
+      "isshow": true,
+      "dataForm": {
+        "data": "null",
+        "rate": 1,
+        "order": 0,
+        "round": "all",
+        "offset": 0,
+        "address": "0X10",
+        "control": "%d",
+        "iscount": "0",
+        "slaveid": "0X10",
+        "protocol": "DLINK",
+        "strategy": "主动上报",
+        "collection": "%s",
+        "countround": "all",
+        "operatetype": "readCoils",
+        "originaltype": "short16_AB",
+        "countstrategy": 20,
+        "countcollection": "%s"
+      },
+      "dataType": {
+        "das": [],
+        "type": "int",
+        "specs": {
+          "max": 320,
+          "min": 0,
+          "step": 0,
+          "unit": "m",
+          "precision": 3
+        }
+      },
+      "required": true,
+      "updateAt": "1648865988196",
+      "accessMode": "r",
+      "dataSource": {
+        "dis": [
+          {
+            "key": "ana_8_2_1_3_2",
+            "data": "2",
+            "type": "位",
+            "undefined": "位"
+          }
+        ],
+        "_dlinkindex": ""
+      },
+      "devicetype": "建筑消防设施部件模拟量",
+      "identifier": "ana_8_2_1_3_2",
+      "moduleType": "properties"
+    },
+    {
+      "name": "事件计数模拟量",
+      "index": 11,
+      "isshow": true,
+      "dataForm": {
+        "data": "null",
+        "rate": 1,
+        "order": 0,
+        "round": "all",
+        "offset": 0,
+        "address": "0X10",
+        "control": "%d",
+        "iscount": "0",
+        "slaveid": "0X10",
+        "protocol": "DLINK",
+        "strategy": "主动上报",
+        "collection": "%s",
+        "countround": "all",
+        "operatetype": "readCoils",
+        "originaltype": "short16_AB",
+        "countstrategy": 20,
+        "countcollection": "%s"
+      },
+      "dataType": {
+        "das": [],
+        "type": "int",
+        "specs": {
+          "max": 32000,
+          "min": 0,
+          "step": 1,
+          "unit": "",
+          "precision": 3
+        }
+      },
+      "required": true,
+      "updateAt": "1648865821693",
+      "accessMode": "r",
+      "dataSource": {
+        "dis": [
+          {
+            "key": "ana_8_2_1_3_1",
+            "data": "2",
+            "type": "位",
+            "undefined": "位"
+          }
+        ],
+        "_dlinkindex": ""
+      },
+      "devicetype": "建筑消防设施部件模拟量",
+      "identifier": "ana_8_2_1_3_1",
+      "moduleType": "properties"
+    }
+  ]
+}

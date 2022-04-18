@@ -46,7 +46,7 @@
         "tags": [
           "AMIS"
         ]
-      },
+      }
     },
     "/big_screen": {
       "get": {

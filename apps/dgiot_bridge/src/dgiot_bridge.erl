@@ -264,8 +264,22 @@ format_channel(App, CType, Channel_type, Attributes) ->
         cType => CType,
         app => App,
         params => maps:merge(#{
+            <<"Node">> => #{
+                order => 99,
+                type => string,
+                required => false,
+                default => <<"all"/utf8>>,
+                title => #{
+                    en => <<"Node">>,
+                    zh => <<"节点"/utf8>>
+                },
+                description => #{
+                    en => <<"Node start">>,
+                    zh => <<"指定节点启动"/utf8>>
+                }
+            },
             <<"Size">> => #{
-                order => 1,
+                order => 100,
                 type => integer,
                 required => false,
                 default => 1,

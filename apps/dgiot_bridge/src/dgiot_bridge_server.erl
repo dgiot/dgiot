@@ -72,7 +72,7 @@ handle_info({start_channel, Module, #{<<"objectId">> := ChannelId, <<"ACL">> := 
     ChannelType = list_to_binary(string:uppercase(binary_to_list(CType))),
     Behaviour = binary_to_atom(list_to_binary(io_lib:format("~s", [Module])), utf8),
     dgiot_data:insert(?DGIOT_BRIDGE, {ChannelId, acl}, Acl),
-    case do_channel(Type, ChannelType, ChannelId, Products, Cfg#{<<"behaviour">> => Behaviour}) of
+    case start_channel(Type, ChannelType, ChannelId, Products, Cfg#{<<"behaviour">> => Behaviour}) of
         ok ->
             do_handle(#{<<"channelId">> => ChannelId, <<"enable">> => true});
         {error, Reason} ->
@@ -93,6 +93,21 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+start_channel(_Type, CType, ChannelId, Products, Cfg) ->
+    case maps:get(<<"Node">>, Cfg, <<"all">>) of
+        <<"all">> ->
+            do_channel(_Type, CType, ChannelId, Products, Cfg);
+        Nodes ->
+            List = binary:split(Nodes, <<";">>, [global]),
+            LocalNode = dgiot_utils:to_binary(node()),
+            case lists:member(LocalNode, List) of
+                true ->
+                    do_channel(_Type, CType, ChannelId, Products, Cfg);
+                _ ->
+                    {error, {LocalNode, notstart}}
+            end
+    end.
+
 %% type : 1 采集通道 type : 2 资源通道
 do_channel(_Type, CType, ChannelId, Products, Cfg) ->
     case dgiot_bridge:get_behaviour(CType) of
@@ -121,7 +136,6 @@ do_channel(_Type, CType, ChannelId, Products, Cfg) ->
                     {error, {Mod, start_error}}
             end
     end.
-
 
 %% 停止通道
 do_handle(#{<<"channelId">> := ChannelId, <<"enable">> := false}) ->

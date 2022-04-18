@@ -33,7 +33,7 @@ childSpec(ClientID, State, ChannelArgs) ->
         {password, binary_to_list(maps:get(<<"password">>, ChannelArgs))},
         {clean_start, maps:get(<<"clean_start">>, ChannelArgs, false)}
     ],
-    [?CHILD(dgiot_mqtt_client, worker,[?MODULE, [State], Options])].
+    [?CHILD(dgiot_mqtt_client, worker, [?MODULE, [State], Options])].
 
 %% mqtt client hook
 init([State]) ->
@@ -47,38 +47,43 @@ handle_cast(_Request, State) ->
 
 handle_info({connect, Client}, #state{id = ChannelId} = State) ->
     emqtt:subscribe(Client, {<<"bridge/#">>, 1}),
-    case dgiot_bridge:get_products(ChannelId) of
-        {ok, _Type, ProductIds} ->
-            case ProductIds of
-                [] -> pass;
-                _ ->
-                    lists:map(fun(ProductId) ->
-%%                      dgiot_product:load(ProductId),
-                        emqtt:subscribe(Client, {<<"bridge/thing/", ProductId/binary, "/#">>, 1}),
-                        dgiot_mqtt:subscribe(<<"forward/thing/", ProductId/binary, "/+/post">>),
-                        dgiot_mqtt:publish(ChannelId, <<"thing/", ProductId/binary>>, jsx:encode(#{<<"network">> => <<"connect">>}))
-                              end, ProductIds)
-            end,
-            ?LOG(info, "connect ~p sub ~n", [Client]);
-        _ -> pass
-    end,
+%%    case dgiot_bridge:get_products(ChannelId) of
+%%        {ok, _Type, ProductIds} ->
+%%            case ProductIds of
+%%                [] -> pass;
+%%                _ ->
+%%                    lists:map(fun(ProductId) ->
+%%%%                      dgiot_product:load(ProductId),
+%%%%                        emqtt:subscribe(Client, {<<"bridge/thing/", ProductId/binary, "/#">>, 1}),
+%%%%                        dgiot_mqtt:subscribe(<<"forward/thing/", ProductId/binary, "/+/post">>),
+%%                        emqtt:publish(Client, <<"thing/", ProductId/binary>>, jsx:encode(#{<<"network">> => <<"connect">>}))
+%%%%                        dgiot_mqtt:publish(ChannelId, <<"thing/", ProductId/binary>>, jsx:encode(#{<<"network">> => <<"connect">>}))
+%%                              end, ProductIds)
+%%            end,
+%%            ?LOG(info, "connect ~p sub ~n", [Client]);
+%%        _ -> pass
+%%    end,
+    timer:sleep(1000),
+    emqtt:publish(Client, <<"thing/", ChannelId/binary>>, jsx:encode(#{<<"network">> => <<"connect">>})),
     {noreply, State#state{client = Client}};
 
-handle_info(disconnect, #state{id = ChannelId} = State) ->
-    case dgiot_bridge:get_products(ChannelId) of
-        {ok, _Type, ProductIds} ->
-            case ProductIds of
-                [] -> pass;
-                _ ->
-                    lists:map(fun(ProductId) ->
-                        dgiot_mqtt:publish(ChannelId, <<"thing/", ProductId/binary>>, jsx:encode(#{<<"network">> => <<"disconnect">>}))
-                              end, ProductIds)
-            end;
-        _ -> pass
-    end,
+handle_info(disconnect, #state{id = ChannelId, client = Client} = State) ->
+%%    case dgiot_bridge:get_products(ChannelId) of
+%%        {ok, _Type, ProductIds} ->
+%%            case ProductIds of
+%%                [] -> pass;
+%%                _ ->
+%%                    lists:map(fun(ProductId) ->
+%%                        dgiot_mqtt:publish(ChannelId, <<"thing/", ProductId/binary>>, jsx:encode(#{<<"network">> => <<"disconnect">>}))
+%%                              end, ProductIds)
+%%            end;
+%%        _ -> pass
+%%    end,
+    emqtt:publish(Client, <<"thing/", ChannelId/binary>>, jsx:encode(#{<<"network">> => <<"disconnect">>})),
     {noreply, State#state{client = disconnect}};
 
-handle_info({publish, #{payload := Payload, topic := <<"bridge/", Topic/binary>>} = _Msg}, #state{id = ChannelId} = State) ->
+handle_info({publish, #{payload := Payload, topic := <<"bridge/", Topic/binary>>} = Msg}, #state{id = ChannelId} = State) ->
+    io:format("~s ~p Msg = ~p.~n", [?FILE, ?LINE, Msg]),
     dgiot_mqtt:publish(ChannelId, Topic, Payload),
     {noreply, State};
 

@@ -25,6 +25,7 @@
     , get_env/1
     , binary_to_hex/1
     , hex_to_binary/1
+    , to_utf8/2
     , to_md5/1
     , to_hex/1
     , to_binary/1
@@ -111,6 +112,8 @@
     , get_url_path/1
     , get_ports/0
     , check_port/1
+    , gzip/1
+    , reverse/1
 ]).
 
 -define(TIMEZONE, + 8).
@@ -207,6 +210,18 @@ to_float(V) when is_binary(V) ->
         N ->
             N
     end.
+
+to_utf8(Binary, Type) ->
+    utf8(Binary, <<>>, <<>>, Type).
+utf8(<<>>, Block, Result, Type) ->
+    Code = iconverl:get_utf8(Block,Type),
+    <<Result/binary, Code/binary>>;
+utf8(<<I:8, Rest/binary>>, Block, Result, Type) when I < 128 andalso I > 0 ->
+    Code = iconverl:get_utf8(Block,Type),
+    Ascii = <<I:8>>,
+    utf8(Rest, <<>>, <<Result/binary, Code/binary, Ascii/binary>>, Type);
+utf8(<<I:8, Rest/binary>>, Block, Result, Type) ->
+    utf8(Rest, <<Block/binary, I:8>>, Result, Type).
 
 list_to_map(List) -> list_to_map(List, #{}).
 list_to_map([], Map) -> Map;
@@ -393,6 +408,11 @@ is_in_binary(Partten, Binary) ->
         _ -> true
     end.
 
+
+reverse(Bin) -> reverse(Bin, <<>>).
+reverse(<<>>, Acc) -> Acc;
+reverse(<<H:1/binary, Rest/binary>>, Acc) ->
+    reverse(Rest, <<H/binary, Acc/binary>>).
 
 get_parity(Data) when is_binary(Data) ->
     get_parity(binary_to_list(Data));
@@ -913,3 +933,41 @@ check_port(Port) ->
                 false
         end
               end, erlang:ports()).
+
+
+%% @private
+%% Reproducible gzip by not setting mtime and OS
+%%
+%% From https://tools.ietf.org/html/rfc1952
+%%
+%% +---+---+---+---+---+---+---+---+---+---+
+%% |ID1|ID2|CM |FLG|     MTIME     |XFL|OS | (more-->)
+%% +---+---+---+---+---+---+---+---+---+---+
+%%
+%% +=======================+
+%% |...compressed blocks...| (more-->)
+%% +=======================+
+%%
+%% +---+---+---+---+---+---+---+---+
+%% |     CRC32     |     ISIZE     |
+%% +---+---+---+---+---+---+---+---+
+gzip(Uncompressed) ->
+    Compressed = gzip_no_header(Uncompressed),
+    Header = <<31, 139, 8, 0, 0, 0, 0, 0, 0, 0>>,
+    Crc = erlang:crc32(Uncompressed),
+    Size = byte_size(Uncompressed),
+    Trailer = <<Crc:32/little, Size:32/little>>,
+    iolist_to_binary([Header, Compressed, Trailer]).
+
+%% @private
+gzip_no_header(Uncompressed) ->
+    Zstream = zlib:open(),
+
+    try
+        zlib:deflateInit(Zstream, default, deflated, -15, 8, default),
+        Compressed = zlib:deflate(Zstream, Uncompressed, finish),
+        zlib:deflateEnd(Zstream),
+        iolist_to_binary(Compressed)
+    after
+        zlib:close(Zstream)
+    end.

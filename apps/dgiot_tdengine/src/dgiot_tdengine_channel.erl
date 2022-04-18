@@ -119,7 +119,11 @@
         order => 7,
         type => enum,
         default => <<"linux"/utf8>>,
-        enum => [<<"linux">>, <<"windows">>, <<"all">>],
+        enum => [
+            #{<<"value">> => <<"linux">>, <<"label">> => <<"linux"/utf8>>},
+            #{<<"value">> => <<"windows">>, <<"label">> => <<"windows"/utf8>>},
+            #{<<"value">> => <<"all">>, <<"label">> => <<"all"/utf8>>}
+        ],
         title => #{
             zh => <<"指定操作系统"/utf8>>
         },
@@ -131,7 +135,7 @@
         order => 102,
         type => string,
         required => false,
-        default => <<"http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/product/dgiot/channel/TDIcon.png">>,
+        default => <<"/dgiot_file/shuwa_tech/zh/product/dgiot/channel/TDIcon.png">>,
         title => #{
             en => <<"channel ICO">>,
             zh => <<"通道ICO"/utf8>>

@@ -20,6 +20,9 @@
 -include("dgiot_gb26875.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -define(TYPE, <<"gb26875">>).
+-dgiot_data("ets").
+-export([init_ets/0]).
+
 %% API
 -export([start/2]).
 
@@ -51,7 +54,7 @@
             zh => <<"侦听端口"/utf8>>
         }
     },
-    <<"dtutype">> => #{
+    <<"devtype">> => #{
         order => 2,
         type => string,
         required => true,
@@ -60,14 +63,14 @@
             zh => <<"消防电子"/utf8>>
         },
         description => #{
-            zh => <<"消防电子"/utf8>>
+            zh => <<"厂家名称"/utf8>>
         }
     },
     <<"ico">> => #{
         order => 102,
         type => string,
         required => false,
-        default => <<"http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/product/dgiot/channel/modbus.png">>,
+        default => <<"/dgiot_file/shuwa_tech/zh/product/dgiot/channel/modbus.png">>,
         title => #{
             en => <<"channel ICO">>,
             zh => <<"通道ICO"/utf8>>
@@ -79,29 +82,34 @@
     }
 }).
 
+init_ets() ->
+    dgiot_data:init(?GB26875_ETS).
+
 start(ChannelId, ChannelArgs) ->
     dgiot_channelx:add(?TYPE, ChannelId, ?MODULE, ChannelArgs).
 
 %% 通道初始化
 init(?TYPE, ChannelId, #{
     <<"port">> := Port,
-    <<"product">> := Products,
-    <<"dtutype">> := Dtutype
+    <<"devtype">> := DevType
 } = _Args) ->
-    [{ProdcutId, App} | _] = get_app(Products),
     State = #state{
         id = ChannelId,
-        app = App,
-        product = ProdcutId,
-        dtutype = Dtutype
+        devtype = DevType
     },
-
-    {ok, State, dgiot_gb26875_tcp:start(Port, State)};
+    case dgiot_parse:get_object(<<"Channel">>, ChannelId) of
+        {ok, Channel} ->
+            App = get_app(Channel),
+            {ok, State, dgiot_gb26875_tcp:start(Port, State#state{app = App})};
+        _ ->
+            {ok, State, []}
+    end;
 
 init(?TYPE, _ChannelId, _Args) ->
     {ok, #{}, #{}}.
 
 handle_init(State) ->
+    dgiot_gb26875:load_thing(),
     {ok, State}.
 
 %% 通道消息处理,注意：进程池调用
@@ -129,15 +137,14 @@ handle_message(_Message, State) ->
 stop(_ChannelType, _ChannelId, _State) ->
     ok.
 
-get_app(Products) ->
-    lists:map(fun({ProdcutId, #{<<"ACL">> := Acl}}) ->
-        Predicate = fun(E) ->
-            case E of
-                <<"role:", _/binary>> -> true;
-                _ -> false
-            end
-                    end,
-        [<<"role:", App/binary>> | _] = lists:filter(Predicate, maps:keys(Acl)),
-        {ProdcutId, App}
-              end, Products).
+get_app(#{<<"ACL">> := Acl}) ->
+    Predicate = fun(E) ->
+        case E of
+            <<"role:", _/binary>> -> true;
+            _ -> false
+        end
+                end,
+    [<<"role:", App/binary>> | _] = lists:filter(Predicate, maps:keys(Acl)),
+    App.
+
 

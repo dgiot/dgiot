@@ -21,6 +21,7 @@
 %% API
 -export([
     post_role/2,
+    put_role/1,
     put_role/2,
     get_roletemp/3,
     post_roletemp/3,
@@ -123,6 +124,26 @@ put_role(#{<<"objectId">> := RoleId} = Role, SessionToken) ->
                     end
             end;
         Error -> Error
+    end.
+
+put_role(RoleId) ->
+    case dgiot_parse:get_object(<<"_Role">>, RoleId) of
+        {error, _} ->
+            {error, #{<<"msg">> => <<"role is not exist">>}};
+        {ok, #{<<"objectId">> := RoleId}} ->
+            NewRole = #{
+                <<"menus">> => get_role_relation(<<"Menu">>),
+                <<"rules">> => get_role_relation(<<"Permission">>)
+            },
+            dgiot_role:remove_menus_role(RoleId),
+            dgiot_role:remove_rules_role(RoleId),
+            case dgiot_parse:update_object(<<"_Role">>, RoleId, NewRole) of
+                {ok, R} ->
+                    {ok, R};
+                {error, Reason} ->
+                    dgiot_parse:update_object(<<"_Role">>, RoleId, NewRole),
+                    {error, Reason}
+            end
     end.
 
 get_roletemp(FileName, TempName, SessionToken) ->
@@ -668,6 +689,37 @@ get_menus_role(Menus) ->
                     <<"objects">> => [#{
                         <<"__type">> => <<"Pointer">>,
                         <<"className">> => <<"Menu">>,
+                        <<"objectId">> => 0
+                    }]
+                };
+                _ ->
+                    #{
+                        <<"__op">> => <<"AddRelation">>,
+                        <<"objects">> => Objects
+                    }
+            end;
+        Other ->
+            throw({error, Other})
+    end.
+
+get_role_relation(Table) ->
+    Where = #{<<"keys">> => [<<"objectId">>]},
+    case dgiot_parse:query_object(Table, Where) of
+        {ok, #{<<"results">> := Results}} ->
+            Objects = lists:foldl(
+                fun(#{<<"objectId">> := ObjectId}, Acc) ->
+                    Acc ++ [#{
+                        <<"__type">> => <<"Pointer">>,
+                        <<"className">> => Table,
+                        <<"objectId">> => ObjectId
+                    }]
+                end, [], Results),
+            case Objects of
+                [] -> #{
+                    <<"__op">> => <<"AddRelation">>,
+                    <<"objects">> => [#{
+                        <<"__type">> => <<"Pointer">>,
+                        <<"className">> => Table,
                         <<"objectId">> => 0
                     }]
                 };

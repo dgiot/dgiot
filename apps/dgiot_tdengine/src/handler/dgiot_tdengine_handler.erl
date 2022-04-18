@@ -403,8 +403,6 @@ get_app(ProductId, Results, DeviceId, Args) ->
                 end, [], Props).
 
 do_hook(Key, Args) ->
-    io:format("~s ~p Key = ~p.~n", [?FILE, ?LINE, Key]),
-    io:format("~s ~p Args = ~p.~n", [?FILE, ?LINE, Args]),
     case catch dgiot_hook:run_hook(Key, Args) of
         {'EXIT', Reason} ->
             {error, Reason};

@@ -44,11 +44,11 @@ load_device(Order) ->
     dgiot_parse_loader:start(<<"Device">>, Query, 0, 100, 1000000, Success).
 
 post(Device) ->
-    DeviceId = maps:get(<<"objectId">>, Device),
     Devaddr = maps:get(<<"devaddr">>, Device),
     Product = maps:get(<<"product">>, Device),
     ProductId = maps:get(<<"objectId">>, Product),
     DeviceSecret = maps:get(<<"deviceSecret">>, Device, <<"DeviceSecretdefault">>),
+    DeviceId = maps:get(<<"objectId">>, Device, dgiot_parse:get_deviceid(ProductId,Devaddr)),
     Status =
         case maps:get(<<"status">>, Device, <<"OFFLINE">>) of
             <<"OFFLINE">> -> false;
@@ -289,14 +289,8 @@ get_sub_device(DtuAddr, SessionToken) ->
         _ -> []
     end.
 
-create_device(#{
-    <<"status">> := Status,
-    <<"brand">> := Brand,
-    <<"devModel">> := DevModel,
-    <<"name">> := Name,
-    <<"devaddr">> := DevAddr,
-    <<"product">> := ProductId
-} = Device, SessionToken) ->
+create_device(#{<<"status">> := Status, <<"brand">> := Brand, <<"devModel">> := DevModel,
+    <<"name">> := Name, <<"devaddr">> := DevAddr, <<"product">> := ProductId} = Device, SessionToken) ->
     #{<<"objectId">> := DeviceId} =
         dgiot_parse:get_objectid(<<"Device">>, #{<<"product">> => ProductId, <<"devaddr">> => DevAddr}),
     case dgiot_parse:get_object(<<"Device">>, DeviceId) of
@@ -334,14 +328,8 @@ create_device(#{
                 [{"X-Parse-Session-Token", SessionToken}], [{from, rest}])
     end.
 
-create_device(#{
-    <<"status">> := Status,
-    <<"brand">> := Brand,
-    <<"devModel">> := DevModel,
-    <<"name">> := Name,
-    <<"devaddr">> := DevAddr,
-    <<"product">> := ProductId,
-    <<"ACL">> := Acl} = Device) ->
+create_device(#{<<"status">> := Status, <<"brand">> := Brand, <<"devModel">> := DevModel, <<"name">> := Name,
+    <<"devaddr">> := DevAddr, <<"product">> := ProductId, <<"ACL">> := Acl} = Device) ->
     #{<<"objectId">> := DeviceId} = dgiot_parse:get_objectid(<<"Device">>, #{<<"product">> => ProductId, <<"devaddr">> => DevAddr}),
     case dgiot_parse:get_object(<<"Device">>, DeviceId) of
         {ok, Result} ->
@@ -349,6 +337,7 @@ create_device(#{
                 <<"ip">> => maps:get(<<"ip">>, Device, <<"">>),
                 <<"status">> => Status},
             dgiot_parse:update_object(<<"Device">>, DeviceId, Body),
+            dgiot_device:put(#{<<"objectId">> => DeviceId}),
             {ok, Result};
         _R ->
             {{Y, M, D}, {_, _, _}} = dgiot_datetime:local_time(),
@@ -376,11 +365,8 @@ create_device(#{
                     }
                 }
             },
-
-%%            io:format("~s ~p NewDevice = ~p.~n", [?FILE, ?LINE, maps:without([<<"brand">>, <<"devModel">>], NewDevice)]),
-            R = dgiot_parse:create_object(<<"Device">>, maps:without([<<"brand">>, <<"devModel">>], NewDevice)),
-%%            io:format("~s ~p R = ~p.~n", [?FILE, ?LINE, R]),
-            R
+            dgiot_device:post(NewDevice),
+            dgiot_parse:create_object(<<"Device">>, maps:without([<<"brand">>, <<"devModel">>], NewDevice))
     end.
 
 get(ProductId, DevAddr) ->

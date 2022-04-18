@@ -265,7 +265,7 @@ set_params(Payload, ProductId, DevAddr) ->
                             <<H:8, L:8>> = dgiot_utils:hex_to_binary(is16(Address)),
                             <<Sh:8, Sl:8>> = dgiot_utils:hex_to_binary(is16(SlaveId)),
                             Str1 = re:replace(Setting, "%d", "(" ++ dgiot_utils:to_list(Value) ++ ")", [global, {return, list}]),
-                            Value1 = dgiot_utils:to_int(dgiot_task:string2value(Str1)),
+                            Value1 = dgiot_utils:to_int(dgiot_task:string2value(Str1, <<"type">>)),
 %%                                    NewBt = Bytes * 8,
                             Registersnumber = maps:get(<<"registersnumber">>, DataSource, <<"1">>),
                             RtuReq = #rtu_req{

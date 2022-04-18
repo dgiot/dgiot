@@ -22,7 +22,7 @@
 
 -on_load(load_nif/0).
 
--export([open/2, conv/2, conv/3]).
+-export([open/2, conv/2, conv/3,  get_utf8/2]).
 
 -export([test/0]).
 
@@ -56,7 +56,28 @@ load_nif() ->
             erlang:load_nif(filename:join(code:priv_dir(dgiot), iconv), 0)
     end.
 
+get_utf8(Block, Type) ->
+    case Block of
+        <<>> ->
+            <<>>;
+        _ ->
+            case os:type() of
+                {win32, _} ->
+                    Block;
+                _ ->
+                    case iconverl:conv("utf-8", dgiot_utils:to_list(Type),Block) of
+                        {ok, M} ->
+                            M;
+                        _ ->
+                            <<>>
+                    end
+            end
+    end.
+
 test() ->
-    {ok, M} = iconverl:conv("gbk", "utf-8", unicode:characters_to_binary(<<"在线"/utf8>>)),
-    {ok, DevAddr} = iconverl:conv("utf-8", "gbk", M),
-    io:format("DevAddr ~p ",[ unicode:characters_to_list(DevAddr)]).
+    {ok, M} = iconverl:conv("GB18030", "utf-8", unicode:characters_to_binary(<<"【火警】1号主机2位3号"/utf8>>)),
+    {ok, DevAddr} = iconverl:conv("utf-8", "GB18030", M),
+%%    L3 =  dgiot_utils:hex_to_binary(<<"31BAC5BDD3BFDAB0E531BBD8C2B73130BAC500C5D6F7BBFAF898C">>),
+%%    M = dgiot_utils:to_utf8(L3,"GB18030").
+%%    io:format("DevAddr ~ts ", [unicode:characters_to_list(M)]).
+    io:format("DevAddr ~ts ", [unicode:characters_to_list(DevAddr)]).
