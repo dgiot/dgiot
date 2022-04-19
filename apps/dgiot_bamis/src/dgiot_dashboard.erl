@@ -127,6 +127,14 @@ do_task(#{<<"dataType">> := <<"card">>, <<"vuekey">> := <<"ChartStatus">>, <<"ta
                 #{<<"状态"/utf8>> => <<"离线"/utf8>>, <<"数量"/utf8>> => OfflineCount}]}}})),
     send(DashboardId, Base64);
 
+do_task(#{<<"dataType">> := <<"card">>, <<"vuekey">> := <<"warn_count">>, <<"table">> := <<"Notification">>, <<"query">> := Query}, #task{dashboardId = DashboardId, sessiontoken = SessionToken}) ->
+    case dgiot_parse:query_object(<<"Device">>, Query, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+        {ok, #{<<"count">> := Count}} ->
+            Base64 = base64:encode(jsx:encode(#{<<"dataType">> => <<"card">>, <<"vuekey">> => <<"warn_count">>, <<"table">> => <<"Notification">>, <<"value">> => Count})),
+            send(DashboardId, Base64);
+        _ ->
+            pass
+    end;
 
 do_task(#{<<"dataType">> := <<"card">>, <<"vuekey">> := Vuekey, <<"table">> := Table, <<"query">> := Query}, #task{dashboardId = DashboardId, sessiontoken = SessionToken}) ->
     case dgiot_parse:query_object(Table, Query, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
