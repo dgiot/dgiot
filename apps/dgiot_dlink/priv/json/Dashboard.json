@@ -6,7 +6,10 @@
       "table": "baidu",
       "query": {
         "keys": [
-          "count(*)"
+          "count(*)",
+          "name",
+          "location",
+          "status"
         ]
       }
     },
@@ -94,7 +97,10 @@
       "query": {
         "limit": 1,
         "keys": [
-          "count(*)"
+          "count(*)",
+          "name",
+          "location",
+          "status"
         ],
         "where": {}
       }
