@@ -18,12 +18,13 @@
 -include_lib("dgiot/include/logger.hrl").
 -export([post_dashboard/2, do_task/2, dashboard/1]).
 
-
-post_dashboard(Args, #{<<"sessionToken">> := SessionToken} = _Context) ->
-%%    Args#{<<"sessionToken">> => SessionToken},
+post_dashboard(#{<<"dashboardId">> := DashboardId} = Args, #{<<"sessionToken">> := SessionToken} = _Context) ->
     NewArgs = Args#{<<"sessionToken">> => SessionToken},
-    supervisor:start_child(dashboard_task, [NewArgs]),
-    timer:sleep(1000).
+    dgiot_mqtt:publish(DashboardId, <<"dashboard_task/", DashboardId/binary>>, jsx:encode(NewArgs)),
+    #{};
+
+post_dashboard(_Args, _Context) ->
+    #{}.
 
 %%
 %%<<"location">> =>
@@ -34,7 +35,8 @@ post_dashboard(Args, #{<<"sessionToken">> := SessionToken} = _Context) ->
 %%182,229,153,168,49,50,51,52,...>>,
 %%<<"objectId">> => <<"5c413c7040">>,
 
-do_task(#{<<"dataType">> := <<"map">>, <<"vuekey">> := Vuekey, <<"table">> := Table, <<"query">> := Query}, #task{dashboardId = DashboardId, sessiontoken = SessionToken}) ->
+%%  当前只实现了百度地图，后续可以支持腾讯地图
+do_task(#{<<"dataType">> := <<"map">>, <<"vuekey">> := <<"baiduMap">>, <<"table">> := <<"Device">>, <<"query">> := Query}, #task{dashboardId = DashboardId, sessiontoken = SessionToken}) ->
     case dgiot_parse:query_object(<<"Device">>, Query, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
         {ok, #{<<"results">> := Results}} ->
             NewResult =
@@ -50,14 +52,82 @@ do_task(#{<<"dataType">> := <<"map">>, <<"vuekey">> := Vuekey, <<"table">> := Ta
                             Acc
                     end
                             end, [], Results),
-            Topic = <<"$dg/dashboard/", DashboardId/binary, "/report">>,
-            Base64 = base64:encode(jsx:encode(#{<<"dataType">> => <<"map">>, <<"vuekey">> => Vuekey, <<"table">> => Table, <<"value">> => NewResult})),
-            dgiot_mqtt:publish(self(), Topic, Base64);
+            Base64 = base64:encode(jsx:encode(#{<<"dataType">> => <<"map">>, <<"vuekey">> => <<"baiduMap">>, <<"table">> => <<"Device">>, <<"value">> => NewResult})),
+            send(DashboardId, Base64);
         _ ->
             pass
     end;
 
-%% dgiot_parse:query_object(<<"Device">>, #{<<"keys">> => [<<"count(*)">>],<<"order">> => <<"-updatedAt">>, <<"limit">> => 10, <<"skip">> => 0}, [{"X-Parse-Session-Token", <<"r:3bcb41395765d5affefd549a0bcc6f0f">>}], [{from, rest}])
+do_task(#{<<"dataType">> := <<"card">>, <<"vuekey">> := <<"app_count">>, <<"table">> := <<"App">>, <<"query">> := Query}, #task{dashboardId = DashboardId, sessiontoken = SessionToken}) ->
+    case dgiot_parse:query_object(<<"App">>, Query, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+        {ok, #{<<"count">> := Count}} ->
+            Base64 = base64:encode(jsx:encode(#{<<"dataType">> => <<"card">>, <<"vuekey">> => <<"app_count">>, <<"table">> => <<"App">>, <<"value">> => Count})),
+            send(DashboardId, Base64);
+        _ ->
+            pass
+    end;
+
+do_task(#{<<"dataType">> := <<"card">>, <<"vuekey">> := <<"product_count">>, <<"table">> := <<"Product">>, <<"query">> := Query}, #task{dashboardId = DashboardId, sessiontoken = SessionToken}) ->
+    case dgiot_parse:query_object(<<"Product">>, Query, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+        {ok, #{<<"count">> := Count}} ->
+            Base64 = base64:encode(jsx:encode(#{<<"dataType">> => <<"card">>, <<"vuekey">> => <<"product_count">>, <<"table">> => <<"Product">>, <<"value">> => Count})),
+            send(DashboardId, Base64);
+        _ ->
+            pass
+    end;
+
+do_task(#{<<"dataType">> := <<"card">>, <<"vuekey">> := <<"dev_online_count">>, <<"table">> := <<"Device">>, <<"query">> := Query}, #task{dashboardId = DashboardId, sessiontoken = SessionToken}) ->
+    case dgiot_parse:query_object(<<"Device">>, Query, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+        {ok, #{<<"count">> := Count}} ->
+            Base64 = base64:encode(jsx:encode(#{<<"dataType">> => <<"card">>, <<"vuekey">> => <<"dev_online_count">>, <<"table">> => <<"Device">>, <<"value">> => Count})),
+            send(DashboardId, Base64);
+        _ ->
+            pass
+    end;
+
+do_task(#{<<"dataType">> := <<"card">>, <<"vuekey">> := <<"dev_off_count">>, <<"table">> := <<"Device">>, <<"query">> := Query}, #task{dashboardId = DashboardId, sessiontoken = SessionToken}) ->
+    case dgiot_parse:query_object(<<"Device">>, Query, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+        {ok, #{<<"count">> := Count}} ->
+            Base64 = base64:encode(jsx:encode(#{<<"dataType">> => <<"card">>, <<"vuekey">> => <<"dev_off_count">>, <<"table">> => <<"Device">>, <<"value">> => Count})),
+            send(DashboardId, Base64);
+        _ ->
+            pass
+    end;
+
+do_task(#{<<"dataType">> := <<"card">>, <<"vuekey">> := <<"device_count">>, <<"table">> := <<"Device">>, <<"query">> := Query}, #task{dashboardId = DashboardId, sessiontoken = SessionToken}) ->
+    case dgiot_parse:query_object(<<"Device">>, Query, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+        {ok, #{<<"count">> := Count}} ->
+            Base64 = base64:encode(jsx:encode(#{<<"dataType">> => <<"card">>, <<"vuekey">> => <<"device_count">>, <<"table">> => <<"Device">>, <<"value">> => Count})),
+            send(DashboardId, Base64);
+        _ ->
+            pass
+    end;
+
+do_task(#{<<"dataType">> := <<"card">>, <<"vuekey">> := <<"ChartStatus">>, <<"table">> := <<"Device">>, <<"query">> := Query}, #task{dashboardId = DashboardId, sessiontoken = SessionToken}) ->
+    Where = maps:get(<<"where">>, Query, #{}),
+    OnlineCount =
+        case dgiot_parse:query_object(<<"Device">>, Query#{<<"keys">> => [<<"count(*)">>], <<"where">> => Where#{<<"status">> => <<"ONLINE">>}}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+            {ok, #{<<"count">> := OnlineCount1}} ->
+                OnlineCount1;
+            _ ->
+                0
+        end,
+    OfflineCount =
+        case dgiot_parse:query_object(<<"Device">>, Query#{<<"keys">> => [<<"count(*)">>], <<"where">> => Where#{<<"status">> => <<"OFFLINE">>}}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+            {ok, #{<<"count">> := OfflineCount2}} ->
+                OfflineCount2;
+            _ ->
+                0
+        end,
+    Base64 = base64:encode(jsx:encode(#{<<"dataType">> => <<"card">>, <<"vuekey">> => <<"ChartStatus">>, <<"table">> => <<"Device">>,
+        <<"value">> => #{<<"chartData">> => #{
+            <<"columns">> => [<<"状态"/utf8>>, <<"数量"/utf8>>],
+            <<"rows">> => [
+                #{<<"状态"/utf8>> => <<"在线"/utf8>>, <<"数量"/utf8>> => OnlineCount},
+                #{<<"状态"/utf8>> => <<"离线"/utf8>>, <<"数量"/utf8>> => OfflineCount}]}}})),
+    send(DashboardId, Base64);
+
+
 do_task(#{<<"dataType">> := <<"card">>, <<"vuekey">> := Vuekey, <<"table">> := Table, <<"query">> := Query}, #task{dashboardId = DashboardId, sessiontoken = SessionToken}) ->
     case dgiot_parse:query_object(Table, Query, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
         {ok, #{<<"count">> := Count, <<"results">> := Results} = NewResults} ->
@@ -75,41 +145,20 @@ do_task(#{<<"dataType">> := <<"card">>, <<"vuekey">> := Vuekey, <<"table">> := T
                                 end
                                         end, [], Results),
                         base64:encode(jsx:encode(#{<<"dataType">> => <<"card">>, <<"vuekey">> => Vuekey, <<"table">> => Table, <<"value">> => #{<<"count">> => Count, <<"results">> => Products}}));
-                    <<"ChartStatus">> ->
-                        OnlineCount =
-                            case dgiot_parse:query_object(<<"Device">>, #{<<"keys">> => [<<"count(*)">>], <<"where">> => #{<<"status">> => <<"ONLINE">>}}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
-                                {ok, #{<<"count">> := OnlineCount1}} ->
-                                    OnlineCount1;
-                                _ ->
-                                    0
-                            end,
-                        OfflineCount =
-                            case dgiot_parse:query_object(<<"Device">>, #{<<"keys">> => [<<"count(*)">>], <<"where">> => #{<<"status">> => <<"OFFLINE">>}}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
-                                {ok, #{<<"count">> := OfflineCount2}} ->
-                                    OfflineCount2;
-                                _ ->
-                                    0
-                            end,
-                        base64:encode(jsx:encode(#{<<"dataType">> => <<"card">>, <<"vuekey">> => Vuekey, <<"table">> => Table,
-                            <<"value">> => #{<<"chartData">> => #{
-                                <<"columns">> => [<<"状态"/utf8>>, <<"数量"/utf8>>],
-                                <<"rows">> => [
-                                    #{<<"状态"/utf8>> => <<"在线"/utf8>>, <<"数量"/utf8>> => OnlineCount},
-                                    #{<<"状态"/utf8>> => <<"离线"/utf8>>, <<"数量"/utf8>> => OfflineCount}]}}}));
                     _ ->
                         base64:encode(jsx:encode(#{<<"dataType">> => <<"card">>, <<"vuekey">> => Vuekey, <<"table">> => Table, <<"value">> => NewResults}))
                 end,
-            Topic = <<"$dg/dashboard/", DashboardId/binary, "/report">>,
-            dgiot_mqtt:publish(self(), Topic, Base64);
+            send(DashboardId, Base64);
         _ ->
             pass
     end;
 
 do_task(#{<<"dataType">> := <<"list">>}, #task{sessiontoken = SessionToken}) ->
+    Topic = <<"$dg/dashboard/getDashboard">>,
     case dashboard(SessionToken) of
         {ok, Info} ->
             Base64 = base64:encode(jsx:encode(#{<<"dataType">> => <<"list">>, <<"value">> => Info})),
-            Topic = <<"dg/dashboard/getDashboard">>,
+            dgiot_data:insert({dashboard, Topic}, Base64),
             dgiot_mqtt:publish(self(), Topic, Base64);
         _ ->
             pass
@@ -119,6 +168,10 @@ do_task(Task, State) ->
     ?LOG(info, "Task ~p", [Task]),
     ?LOG(info, "State ~p", [State]),
     ok.
+
+send(DashboardId, Base64) ->
+    Topic = <<"$dg/dashboard/", DashboardId/binary, "/report">>,
+    dgiot_mqtt:publish(self(), Topic, Base64).
 
 getDevice(<<"all">>, SessionToken) ->
     case dgiot_parse:query_object(<<"Device">>, #{<<"keys">> => [<<"count(*)">>], <<"limit">> => 10}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
@@ -194,7 +247,6 @@ dashboard(SessionToken) ->
         <<"errorList">> => ErrorList,
         <<"deviceLocationRecords">> => DeviceLocationList
     }}.
-
 
 get_product_and_device_count(SessionToken) ->
     case dgiot_parse:query_object(<<"Product">>, #{<<"keys">> => [<<"count(*)">>]}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of

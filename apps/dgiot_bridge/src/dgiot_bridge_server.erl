@@ -56,6 +56,8 @@ handle_info({deliver, _, Msg}, State) ->
             ?LOG(error, "Payload:~p, error:~p", [Payload, Reason]);
         Message ->
             case re:run(Topic, <<"[^//]+">>, [{capture, all, binary}, global]) of
+                {match, [[<<"dashboard_task">>], [_DashboardId] ]} ->
+                    supervisor:start_child(dashboard_task, [Message]);
                 {match, [[<<"channel">>], [ChannelId]]} ->
                     do_handle(Message#{<<"channelId">> => ChannelId});
                 {match, [[<<"channel">>], [ChannelId], [ProductId]]} ->
@@ -114,6 +116,7 @@ do_channel(_Type, CType, ChannelId, Products, Cfg) ->
         {error, not_find} ->
             {error, {CType, unknow}};
         {ok, Mod} ->
+            dgiot_mqtt:subscribe(<<"dashboard_task/#">>),
             case erlang:module_loaded(Mod) of
                 true ->
                     case erlang:function_exported(Mod, start, 2) of

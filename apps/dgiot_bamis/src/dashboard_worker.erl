@@ -57,8 +57,9 @@ stop(#{<<"sessionToken">> := SessionToken}) ->
 %%%===================================================================
 %%% gen_server callbacks
 %%%===================================================================
-init([#{<<"data">> := Que, <<"dashboardId">> := DashboardId, <<"sessionToken">> := SessionToken}]) ->
+init([#{<<"data">> := Que, <<"dashboardId">> := DashboardId, <<"sessionToken">> := SessionToken} = Args]) ->
     dgiot_data:insert({dashboard, SessionToken}, self()),
+    ?LOG(info, "Args ~p ",[Args]),
     case length(Que) of
         0 ->
             erlang:send_after(3000, self(), stop);
