@@ -38,7 +38,6 @@ new(Count) ->
             Server = list_to_atom(lists:concat([crypt, Id])),
             supervisor:start_child(dgiot_sup, {Server, {?MODULE, start_link, [Server]}, permanent, 5000, worker, [Server]})
         end,
-    dgiot:new_counter(crypt, Count),
     [Fun(Id) || Id <- lists:seq(1, Count)].
 
 
@@ -58,7 +57,7 @@ run(Fun, Args) ->
     end.
 
 run_cmd(CMD) ->
-    Id = dgiot:update_counter(crypt),
+    Id = dgiot_utils:update_counter(crypt),
     Server = list_to_atom(lists:concat([crypt, Id])),
 %%    ?LOG(info,"~p,~p~n", [Server, list_to_binary(CMD)]),
     case catch gen_server:call(Server, {cmd, CMD}, 50000) of
