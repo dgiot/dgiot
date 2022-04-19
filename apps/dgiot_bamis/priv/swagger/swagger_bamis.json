@@ -48,60 +48,6 @@
         ]
       }
     },
-    "/big_screen": {
-      "get": {
-        "description": "返回大屏需要的数据",
-        "parameters": [
-        ],
-        "responses": {
-          "200": {
-            "description": "Returns operation status"
-          },
-          "400": {
-            "description": "Bad Request"
-          },
-          "403": {
-            "description": "Forbidden"
-          },
-          "500": {
-            "description": "Server Internal error"
-          }
-        },
-        "summary": "返回大屏需要的数据",
-        "tags": [
-          "AMIS"
-        ]
-      },
-      "post": {
-        "description": "获取大屏数据（mqtt）",
-        "parameters": [
-          {
-            "in": "body",
-            "name": "data",
-            "required": true,
-            "schema": {
-              "type": "object",
-              "properties": {}
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Returns instance data"
-          },
-          "404": {
-            "description": "object not found",
-            "schema": {
-              "$ref": "#/definitions/Error"
-            }
-          }
-        },
-        "summary": "获取大屏数据（mqtt）",
-        "tags": [
-          "AMIS"
-        ]
-      }
-    },
     "/amis": {
       "get": {
         "description": "amis测试",

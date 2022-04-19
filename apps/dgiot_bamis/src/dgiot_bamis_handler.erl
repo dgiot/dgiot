@@ -94,12 +94,8 @@ handle(OperationID, Args, Context, Req) ->
 %% OperationId:post_dashboard
 %% 请求:POST /iotapi/post_dashboard
 do_request(post_dashboard, Arg, Context, _Req) ->
-    dgiot_dashboard:post_dashboard(Arg, Context),
-    {200, <<"success">>};
-
-do_request(post_big_screen, Args, Context, _Req) ->
-    dgiot_dashboard:post_dashboard(Args, Context),
-    {200, <<"success">>};
+    Data = dgiot_dashboard:post_dashboard(Arg, Context),
+    {200, Data};
 
 %% iot_hub 概要: 查询平台api资源 描述:总控台
 %% OperationId:get_amis
@@ -196,18 +192,6 @@ do_request(post_update_product, _Body, _Context, _Req) ->
                         end, [], Products);
         _Error ->
             {error, #{<<"code">> => 404, <<"result">> => <<"device info null">>}}
-    end;
-
-do_request(get_big_screen, _Body, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
-    case dgiot_dashboard:dashboard(SessionToken) of
-        {ok, Info} ->
-            {ok, #{
-                <<"status">> => 200,
-                <<"msg">> => <<"success">>,
-                <<"data">> => Info
-            }};
-        _ ->
-            {error, #{<<"code">> => 404, <<"result">> => <<"product info null">>}}
     end;
 
 %%  服务器不支持的API接口
