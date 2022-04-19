@@ -26,34 +26,13 @@ post_dashboard(#{<<"dashboardId">> := DashboardId} = Args, #{<<"sessionToken">> 
 post_dashboard(_Args, _Context) ->
     #{}.
 
-%%  当前只实现了百度地图，后续可以支持腾讯地图
-do_task(#{<<"dataType">> := <<"map">>, <<"vuekey">> := <<"baiduMap">>, <<"table">> := <<"Device">>, <<"query">> := Query}, #task{dashboardId = DashboardId, sessiontoken = SessionToken}) ->
-    case dgiot_parse:query_object(<<"Device">>, Query, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
-        {ok, #{<<"results">> := Results}} ->
-            NewResult =
-                lists:foldl(fun(X, Acc) ->
-                    case X of
-                        #{<<"objectId">> := ObjectId, <<"name">> := Name, <<"status">> := <<"ONLINE">>, <<"location">> := #{<<"latitude">> := Latitude, <<"longitude">> := Longitude}} ->
-                            [BaiduLongitude, BaiduLatitude] = dgiot_gps:get_baidu_gps(Longitude, Latitude, 0, -0.0013),
-                            Acc ++ [#{<<"objectId">> => ObjectId, <<"name">> => Name, <<"icon">> => <<"1">>, <<"location">> => #{<<"latitude">> => BaiduLatitude, <<"longitude">> => BaiduLongitude}}];
-                        #{<<"objectId">> := ObjectId, <<"name">> := Name, <<"status">> := <<"OFFLINE">>, <<"location">> := #{<<"latitude">> := Latitude, <<"longitude">> := Longitude}} ->
-                            [BaiduLongitude, BaiduLatitude] = dgiot_gps:get_baidu_gps(Longitude, Latitude, 0, -0.0013),
-                            Acc ++ [#{<<"objectId">> => ObjectId, <<"name">> => Name, <<"icon">> => <<"2">>, <<"location">> => #{<<"latitude">> => BaiduLatitude, <<"longitude">> => BaiduLongitude}}];
-                        _ ->
-                            Acc
-                    end
-                            end, [], Results),
-            Base64 = base64:encode(jsx:encode(#{<<"dataType">> => <<"map">>, <<"vuekey">> => <<"baiduMap">>, <<"table">> => <<"Device">>, <<"value">> => NewResult})),
-            send(DashboardId, Base64);
-        _ ->
-            pass
-    end;
 
 %%  应用总数卡片
+%%Query = #{<<"keys">> => [<<"count(*)">>, <<"name">>, <<"location">>, <<"status">>]}.
 do_task(#{<<"dataType">> := <<"card">>, <<"vuekey">> := <<"app_count">>, <<"table">> := <<"App">>, <<"query">> := Query}, #task{dashboardId = DashboardId, sessiontoken = SessionToken}) ->
     case dgiot_parse:query_object(<<"App">>, Query, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
-        {ok, #{<<"count">> := Count}} ->
-            Base64 = base64:encode(jsx:encode(#{<<"dataType">> => <<"card">>, <<"vuekey">> => <<"app_count">>, <<"table">> => <<"App">>, <<"value">> => Count})),
+        {ok, #{<<"count">> := _Count} = Value} ->
+            Base64 = base64:encode(jsx:encode(#{<<"dataType">> => <<"card">>, <<"vuekey">> => <<"app_count">>, <<"table">> => <<"App">>, <<"value">> => Value})),
             send(DashboardId, Base64);
         _ ->
             pass
@@ -62,8 +41,8 @@ do_task(#{<<"dataType">> := <<"card">>, <<"vuekey">> := <<"app_count">>, <<"tabl
 %%  产品总数卡片
 do_task(#{<<"dataType">> := <<"card">>, <<"vuekey">> := <<"product_count">>, <<"table">> := <<"Product">>, <<"query">> := Query}, #task{dashboardId = DashboardId, sessiontoken = SessionToken}) ->
     case dgiot_parse:query_object(<<"Product">>, Query, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
-        {ok, #{<<"count">> := Count}} ->
-            Base64 = base64:encode(jsx:encode(#{<<"dataType">> => <<"card">>, <<"vuekey">> => <<"product_count">>, <<"table">> => <<"Product">>, <<"value">> => Count})),
+        {ok, #{<<"count">> := _Count} = Value} ->
+            Base64 = base64:encode(jsx:encode(#{<<"dataType">> => <<"card">>, <<"vuekey">> => <<"product_count">>, <<"table">> => <<"Product">>,  <<"value">> => Value})),
             send(DashboardId, Base64);
         _ ->
             pass
@@ -72,8 +51,8 @@ do_task(#{<<"dataType">> := <<"card">>, <<"vuekey">> := <<"product_count">>, <<"
 %%  在线设备总数卡片
 do_task(#{<<"dataType">> := <<"card">>, <<"vuekey">> := <<"dev_online_count">>, <<"table">> := <<"Device">>, <<"query">> := Query}, #task{dashboardId = DashboardId, sessiontoken = SessionToken}) ->
     case dgiot_parse:query_object(<<"Device">>, Query, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
-        {ok, #{<<"count">> := Count}} ->
-            Base64 = base64:encode(jsx:encode(#{<<"dataType">> => <<"card">>, <<"vuekey">> => <<"dev_online_count">>, <<"table">> => <<"Device">>, <<"value">> => Count})),
+        {ok, #{<<"count">> := _Count} = Value} ->
+            Base64 = base64:encode(jsx:encode(#{<<"dataType">> => <<"card">>, <<"vuekey">> => <<"dev_online_count">>, <<"table">> => <<"Device">>,  <<"value">> => Value})),
             send(DashboardId, Base64);
         _ ->
             pass
@@ -82,8 +61,8 @@ do_task(#{<<"dataType">> := <<"card">>, <<"vuekey">> := <<"dev_online_count">>, 
 %%  离线设备总数卡片
 do_task(#{<<"dataType">> := <<"card">>, <<"vuekey">> := <<"dev_off_count">>, <<"table">> := <<"Device">>, <<"query">> := Query}, #task{dashboardId = DashboardId, sessiontoken = SessionToken}) ->
     case dgiot_parse:query_object(<<"Device">>, Query, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
-        {ok, #{<<"count">> := Count}} ->
-            Base64 = base64:encode(jsx:encode(#{<<"dataType">> => <<"card">>, <<"vuekey">> => <<"dev_off_count">>, <<"table">> => <<"Device">>, <<"value">> => Count})),
+        {ok, #{<<"count">> := _Count} = Value} ->
+            Base64 = base64:encode(jsx:encode(#{<<"dataType">> => <<"card">>, <<"vuekey">> => <<"dev_off_count">>, <<"table">> => <<"Device">>, <<"value">> => Value})),
             send(DashboardId, Base64);
         _ ->
             pass
@@ -92,8 +71,8 @@ do_task(#{<<"dataType">> := <<"card">>, <<"vuekey">> := <<"dev_off_count">>, <<"
 %%  设备总数卡片
 do_task(#{<<"dataType">> := <<"card">>, <<"vuekey">> := <<"device_count">>, <<"table">> := <<"Device">>, <<"query">> := Query}, #task{dashboardId = DashboardId, sessiontoken = SessionToken}) ->
     case dgiot_parse:query_object(<<"Device">>, Query, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
-        {ok, #{<<"count">> := Count}} ->
-            Base64 = base64:encode(jsx:encode(#{<<"dataType">> => <<"card">>, <<"vuekey">> => <<"device_count">>, <<"table">> => <<"Device">>, <<"value">> => Count})),
+        {ok, #{<<"count">> := _Count} = Value} ->
+            Base64 = base64:encode(jsx:encode(#{<<"dataType">> => <<"card">>, <<"vuekey">> => <<"device_count">>, <<"table">> => <<"Device">>, <<"value">> => Value})),
             send(DashboardId, Base64);
         _ ->
             pass
@@ -126,9 +105,34 @@ do_task(#{<<"dataType">> := <<"card">>, <<"vuekey">> := <<"ChartStatus">>, <<"ta
 
 %%  告警总数卡片
 do_task(#{<<"dataType">> := <<"card">>, <<"vuekey">> := <<"warn_count">>, <<"table">> := <<"Notification">>, <<"query">> := Query}, #task{dashboardId = DashboardId, sessiontoken = SessionToken}) ->
+    case dgiot_parse:query_object(<<"Notification">>, Query, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+        {ok, #{<<"count">> := _Count} = Value} ->
+            Base64 = base64:encode(jsx:encode(#{<<"dataType">> => <<"card">>, <<"vuekey">> => <<"warn_count">>, <<"table">> => <<"Notification">>, <<"value">> => Value})),
+            send(DashboardId, Base64);
+        _ ->
+            pass
+    end;
+
+%%  当前只实现了百度地图，后续可以支持腾讯地图
+%%Query5 = #{<<"keys">> => [<<"count(*)">>, <<"name">>, <<"location">>, <<"status">>],<<"limit">> =>1}.
+do_task(#{<<"dataType">> := <<"map">>, <<"vuekey">> := <<"baiduMap">>, <<"table">> := <<"Device">>, <<"query">> := Query}, #task{dashboardId = DashboardId, sessiontoken = SessionToken}) ->
+%%    io:format("~s ~p Client = ~p.~n", [?FILE, ?LINE, Query]),
     case dgiot_parse:query_object(<<"Device">>, Query, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
-        {ok, #{<<"count">> := Count}} ->
-            Base64 = base64:encode(jsx:encode(#{<<"dataType">> => <<"card">>, <<"vuekey">> => <<"warn_count">>, <<"table">> => <<"Notification">>, <<"value">> => Count})),
+        {ok, #{<<"results">> := Results}} ->
+            NewResult =
+                lists:foldl(fun(X, Acc) ->
+                    case X of
+                        #{<<"objectId">> := ObjectId, <<"name">> := Name, <<"status">> := <<"ONLINE">>, <<"location">> := #{<<"latitude">> := Latitude, <<"longitude">> := Longitude}} ->
+                            [BaiduLongitude, BaiduLatitude] = dgiot_gps:get_baidu_gps(Longitude, Latitude, 0, -0.0013),
+                            Acc ++ [#{<<"objectId">> => ObjectId, <<"name">> => Name, <<"icon">> => <<"1">>, <<"location">> => #{<<"latitude">> => BaiduLatitude, <<"longitude">> => BaiduLongitude}}];
+                        #{<<"objectId">> := ObjectId, <<"name">> := Name, <<"status">> := <<"OFFLINE">>, <<"location">> := #{<<"latitude">> := Latitude, <<"longitude">> := Longitude}} ->
+                            [BaiduLongitude, BaiduLatitude] = dgiot_gps:get_baidu_gps(Longitude, Latitude, 0, -0.0013),
+                            Acc ++ [#{<<"objectId">> => ObjectId, <<"name">> => Name, <<"icon">> => <<"2">>, <<"location">> => #{<<"latitude">> => BaiduLatitude, <<"longitude">> => BaiduLongitude}}];
+                        _ ->
+                            Acc
+                    end
+                            end, [], Results),
+            Base64 = base64:encode(jsx:encode(#{<<"dataType">> => <<"map">>, <<"vuekey">> => <<"baiduMap">>, <<"table">> => <<"Device">>, <<"value">> => NewResult})),
             send(DashboardId, Base64);
         _ ->
             pass
