@@ -79,32 +79,6 @@
                 description => #{
                     zh => <<"数据标识"/utf8>>
                 }
-            },
-            #{
-                key => <<"type">>,
-                order => 3,
-                type => string,
-                required => true,
-                default => #{<<"value">> => <<"bit">>, <<"label">> => <<"位"/utf8>>},
-                enum => [
-                    #{<<"value">> => <<"bit">>, <<"label">> => <<"位"/utf8>>},
-                    #{<<"value">> => <<"short16_AB">>, <<"label">> => <<"16位 有符号(AB)"/utf8>>},
-                    #{<<"value">> => <<"short16_BA">>, <<"label">> => <<"16位 有符号(BA)"/utf8>>},
-                    #{<<"value">> => <<"ushort16_AB">>, <<"label">> => <<"16位 无符号(AB)"/utf8>>},
-                    #{<<"value">> => <<"ushort16_BA">>, <<"label">> => <<"16位 无符号(BA)"/utf8>>},
-                    #{<<"value">> => <<"long32_ABCD">>, <<"label">> => <<"32位 有符号(ABCD)"/utf8>>},
-                    #{<<"value">> => <<"long32_CDAB">>, <<"label">> => <<"32位 有符号(CDAB)"/utf8>>},
-                    #{<<"value">> => <<"ulong32_ABCD">>, <<"label">> => <<"32位 无符号(ABCD)"/utf8>>},
-                    #{<<"value">> => <<"ulong32_CDAB">>, <<"label">> => <<"32位 无符号(CDAB)"/utf8>>},
-                    #{<<"value">> => <<"float32_ABCD">>, <<"label">> => <<"32位 浮点数(ABCD)"/utf8>>},
-                    #{<<"value">> => <<"float32_CDAB">>, <<"label">> => <<"32位 浮点数(CDAB)"/utf8>>}
-                ],
-                title => #{
-                    zh => <<"数据格式"/utf8>>
-                },
-                description => #{
-                    zh => <<"数据格式"/utf8>>
-                }
             }
         ]
     }
@@ -128,7 +102,6 @@ logout(ClinetId) ->
 
 send(ClinetId) ->
     dgiot_dlink_client:say_hello(#{name => <<"Xiao Ming">>}, #{channel => ClinetId}).
-
 
 test() ->
     FileName = <<"dlink">>,
