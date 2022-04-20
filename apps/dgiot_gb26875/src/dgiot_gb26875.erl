@@ -148,7 +148,7 @@ oplog(_, _, _) ->
 create_sysdevice(BinSysAddr, ProductId, SysType, Ip, DevType, Header) ->
     case dgiot_product:lookup_prod(ProductId) of
         {ok, #{<<"ACL">> := Acl}} ->
-            DeviceId = dgiot_parse:get_deviceid(ProductId, BinSysAddr),
+            DeviceId = dgiot_parse_id:get_deviceid(ProductId, BinSysAddr),
             case dgiot_device:lookup(DeviceId) of
                 {error, not_find} ->
                     Device =
@@ -175,7 +175,7 @@ create_sysdevice(BinSysAddr, ProductId, SysType, Ip, DevType, Header) ->
 creat_userdevice(BinUserId, ProductId, InforType, Ip, DevType, Header) ->
     case dgiot_product:lookup_prod(ProductId) of
         {ok, #{<<"ACL">> := Acl}} ->
-            DeviceId = dgiot_parse:get_deviceid(ProductId, BinUserId),
+            DeviceId = dgiot_parse_id:get_deviceid(ProductId, BinUserId),
             case dgiot_device:lookup(DeviceId) of
                 {error, not_find} ->
                     Device =
@@ -203,12 +203,12 @@ creat_userdevice(BinUserId, ProductId, InforType, Ip, DevType, Header) ->
 creat_equdevice(BinSysAddr, ProductId, EquAddr, Name, Ip, DevType, Header) ->
     case dgiot_product:lookup_prod(ProductId) of
         {ok, #{<<"ACL">> := Acl}} ->
-            DeviceId = dgiot_parse:get_deviceid(ProductId, BinSysAddr),
+            DeviceId = dgiot_parse_id:get_deviceid(ProductId, BinSysAddr),
             case dgiot_device:lookup(DeviceId) of
                 {error, not_find} ->
                     %% 建筑消防设施系统
                     SysProductId = <<"a73fe5d540">>,
-                    SysDeviceId = dgiot_parse:get_deviceid(SysProductId, BinSysAddr),
+                    SysDeviceId = dgiot_parse_id:get_deviceid(SysProductId, BinSysAddr),
                     Device = #{
                         <<"devaddr">> => dgiot_utils:to_binary(EquAddr),
                         <<"name">> => Name,
@@ -234,7 +234,7 @@ creat_equdevice(BinSysAddr, ProductId, EquAddr, Name, Ip, DevType, Header) ->
 
 create_devceLog(Devaddr, ProductId, Acl, #{<<"serialid">> := Serialid} = Data) ->
     Devcie = #{
-        <<"device">> => dgiot_parse:get_deviceid(ProductId, Devaddr),
+        <<"device">> => dgiot_parse_id:get_deviceid(ProductId, Devaddr),
         <<"devaddr">> => dgiot_utils:to_binary(Serialid),
         <<"product">> => #{
             <<"__type">> => <<"Pointer">>,

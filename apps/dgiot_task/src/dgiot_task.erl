@@ -60,7 +60,7 @@ load(#{
     Consumer = <<"task/", Channel/binary, "/", Dtu/binary>>,
     dgiot_data:set_consumer(Consumer, 10),
     #{<<"objectId">> := DeviceId} =
-        dgiot_parse:get_objectid(<<"Device">>, #{<<"product">> => ProductId, <<"devaddr">> => Dtu}),
+        dgiot_parse_id:get_objectid(<<"Device">>, #{<<"product">> => ProductId, <<"devaddr">> => Dtu}),
     case dgiot_parse:get_object(<<"Device">>, DeviceId) of
         {ok, #{<<"objectId">> := DtuId, <<"devaddr">> := DtuAddr}} ->
             start(Args#{<<"dtuid">> => DtuId, <<"dtuaddr">> => DtuAddr});
@@ -213,10 +213,10 @@ get_collection(ProductId, [], Payload, Ack) ->
                                 case maps:find(Identifier, Payload) of
                                     {ok, Value} ->
                                         Addr = dgiot_topo:get_gpsaddr(Value),
-                                        dgiot_data:insert({topogps, dgiot_parse:get_shapeid(ProductId, Identifier)}, Addr),
+                                        dgiot_data:insert({topogps, dgiot_parse_id:get_shapeid(ProductId, Identifier)}, Addr),
                                         Acc2#{Identifier => Value};
                                     _ ->
-                                        dgiot_data:insert({topogps, dgiot_parse:get_shapeid(ProductId, Identifier)}, <<"无GPS信息"/utf8>>),
+                                        dgiot_data:insert({topogps, dgiot_parse_id:get_shapeid(ProductId, Identifier)}, <<"无GPS信息"/utf8>>),
                                         Acc2
                                 end;
                             #{<<"dataForm">> := #{<<"address">> := Address, <<"strategy">> := Strategy, <<"collection">> := Collection},
@@ -271,10 +271,10 @@ get_collection(ProductId, Dis, Payload, Ack) ->
                                     case maps:find(Identifier, Payload) of
                                         {ok, Value} ->
                                             Addr = dgiot_topo:get_gpsaddr(Value),
-                                            dgiot_data:insert({topogps, dgiot_parse:get_shapeid(ProductId, Identifier)}, Addr),
+                                            dgiot_data:insert({topogps, dgiot_parse_id:get_shapeid(ProductId, Identifier)}, Addr),
                                             Acc2#{Identifier => Value};
                                         _ ->
-                                            dgiot_data:insert({topogps, dgiot_parse:get_shapeid(ProductId, Identifier)}, <<"无GPS信息"/utf8>>),
+                                            dgiot_data:insert({topogps, dgiot_parse_id:get_shapeid(ProductId, Identifier)}, <<"无GPS信息"/utf8>>),
                                             Acc2
                                     end;
                                 #{<<"dataForm">> := #{<<"address">> := Address, <<"strategy">> := Strategy, <<"collection">> := Collection},
@@ -368,7 +368,7 @@ string2value(Str, Type, Specs) ->
 
 
 save_pnque(DtuProductId, DtuAddr, ProductId, DevAddr) ->
-    DtuId = dgiot_parse:get_deviceid(DtuProductId, DtuAddr),
+    DtuId = dgiot_parse_id:get_deviceid(DtuProductId, DtuAddr),
     Topic = <<"thing/", ProductId/binary, "/", DevAddr/binary>>,
     dgiot_mqtt:subscribe(Topic),
     case dgiot_data:get(?DGIOT_PNQUE, DtuId) of
@@ -411,7 +411,7 @@ del_pnque(DtuId) ->
 
 
 save_td(ProductId, DevAddr, Data, AppData) ->
-    DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+    DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
     Payload = jsx:encode(#{<<"thingdata">> => Data, <<"appdata">> => AppData, <<"timestamp">> => dgiot_datetime:now_ms()}),
     Topic = <<"topo/", ProductId/binary, "/", DevAddr/binary, "/post">>,
     dgiot_mqtt:publish(DeviceId, Topic, Payload),

@@ -60,7 +60,7 @@ start_link(#{
     <<"productid">> := ProductId,
     <<"devaddr">> := DevAddr
 } = Args) ->
-    DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+    DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
     case dgiot_data:lookup({ChannelId, DeviceId, httpc}) of
         {ok, Pid} when is_pid(Pid) ->
             is_process_alive(Pid) andalso gen_server:call(Pid, stop, 5000);
@@ -76,7 +76,7 @@ init([#{
     <<"devaddr">> := DevAddr,
     <<"freq">> := Freq
 }]) ->
-    DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+    DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
     dgiot_data:insert({ChannelId, DeviceId, httpc}, self()),
     erlang:send_after(10 * 1000, self(), token),
     {ok, #state{tid = ChannelId, pid = ProductId, did = DeviceId, freq = Freq}};

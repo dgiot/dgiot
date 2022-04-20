@@ -38,7 +38,7 @@ get_opts(Path) ->
                 string:sub_string(dgiot_utils:to_list(Path), Size + 1)
         end,
     {ok, Type} = application:get_env(dgiot_api, dicttype),
-    DictId = dgiot_parse:get_dictid(Flag, dgiot_utils:to_binary(Type), <<"Dict">>, <<"Dict">>),
+    DictId = dgiot_parse_id:get_dictid(Flag, dgiot_utils:to_binary(Type), <<"Dict">>, <<"Dict">>),
     Data =
         case dgiot_data:get(DictId) of
             not_find ->

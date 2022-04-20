@@ -319,7 +319,7 @@ upload(#{
                     end;
                 false -> {640, 480}
             end,
-        case dgiot_evidence:upload(Path, App, dgiot_parse_handler:get_token(App)) of
+        case dgiot_evidence:upload(Path, App, dgiot_parse_auth:get_token(App)) of
             {ok, #{<<"md5">> := Md5} = Data} ->
                 NewData = maps:without([<<"md5">>, <<"retmsg">>, <<"retcode">>, <<"path">>,
                     <<"scene">>, <<"url">>, <<"domain">>], Data),
@@ -353,7 +353,7 @@ upload(#{
                                 },
                                 <<"datatype">> => <<"video">>,
                                 <<"sourcetype">> => DevAddr},
-                            <<"sessionToken">> => dgiot_parse_handler:get_token(App)});
+                            <<"sessionToken">> => dgiot_parse_auth:get_token(App)});
                     _ -> pass
                 end;
             Error -> Error

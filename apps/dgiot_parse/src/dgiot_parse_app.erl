@@ -26,7 +26,6 @@
 
 
 start(_StartType, _StartArgs) ->
-    ?LOG(error,"_StartType ~p, _StartArgs ~p",[_StartType, _StartArgs]),
     dgiot_metrics:start(dgiot_parse),
     {ok, Sup} = dgiot_parse_sup:start_link(),
     dgiot_parse_channel:start(),

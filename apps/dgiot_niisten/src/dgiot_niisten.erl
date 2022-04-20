@@ -23,6 +23,6 @@
 
 get_deviceid(ProdcutId, DevAddr) ->
     #{<<"objectId">> := DeviceId} =
-        dgiot_parse:get_objectid(<<"Device">>, #{<<"product">> => ProdcutId, <<"devaddr">> => DevAddr}),
+        dgiot_parse_id:get_objectid(<<"Device">>, #{<<"product">> => ProdcutId, <<"devaddr">> => DevAddr}),
     DeviceId.
 

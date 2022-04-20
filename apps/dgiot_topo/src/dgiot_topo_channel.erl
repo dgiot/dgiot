@@ -109,12 +109,12 @@ init(?TYPE, ChannelId, #{<<"product">> := Products, <<"BRIDGEURL">> := Bridgeurl
     },
     dgiot_data:insert(topourl, <<Bridgeurl/binary, "/iotapi/topo">>),
     dgiot_topo:get_Product(),
+    dgiot_parse_hook:subscribe(<<"Product">>, post, ChannelId),
     {ok, State}.
 
 %% 初始化池子
 handle_init(#state{env = #{productids := ProductIds}} = State) ->
     [dgiot_mqtt:subscribe(<<"topo/", ProductId/binary, "/#">>) || ProductId <- ProductIds],
-    dgiot_parse:subscribe(<<"Product">>, post),
     {ok, State}.
 
 %% 通道消息处理,注意：进程池调用
@@ -133,7 +133,7 @@ handle_message({sync_parse, _Method, Args}, State) ->
                             NewDict = maps:without([<<"createdAt">>, <<"objectId">>, <<"updatedAt">>], Dict),
                             Type = maps:get(<<"type">>, Dict, <<"">>),
                             Title = maps:get(<<"title">>, Dict, <<"">>),
-                            DictId = dgiot_parse:get_dictid(ObjectId, Type, <<"Product">>, Title),
+                            DictId = dgiot_parse_id:get_dictid(ObjectId, Type, <<"Product">>, Title),
                             Acc ++ [#{
                                 <<"method">> => <<"POST">>,
                                 <<"path">> => <<"/classes/Dict">>,
@@ -154,7 +154,7 @@ handle_message({sync_parse, _Method, Args}, State) ->
                             NewDict = maps:without([<<"createdAt">>, <<"objectId">>, <<"updatedAt">>], View),
                             Type = maps:get(<<"type">>, View, <<"">>),
                             Title = maps:get(<<"title">>, View, <<"">>),
-                            ViewId = dgiot_parse:get_viewid(ObjectId, Type, <<"Product">>, Title),
+                            ViewId = dgiot_parse_id:get_viewid(ObjectId, Type, <<"Product">>, Title),
                             Acc ++ [#{
                                 <<"method">> => <<"POST">>,
                                 <<"path">> => <<"/classes/View">>,
@@ -205,7 +205,7 @@ handle_message({deliver, _Topic, Msg}, #state{id = ChannelId} = State) ->
 %%接收task汇聚过来的整个dtu物模型采集的数据 发送组态
         [<<"topo">>, ProductId, DtuAddr, <<"post">>] ->
             Data = jsx:decode(Payload, [{labels, binary}, return_maps]),
-            DeviceId = dgiot_parse:get_deviceid(ProductId, DtuAddr),
+            DeviceId = dgiot_parse_id:get_deviceid(ProductId, DtuAddr),
             Thingdata = maps:get(<<"thingdata">>, Data, #{}),
             dgiot_topo:send_topo(ProductId, DeviceId, Thingdata),
 %%            发送实时数据

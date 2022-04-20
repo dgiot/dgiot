@@ -60,7 +60,7 @@ do_check(#{clientid := ClientID, username := Username} = _ClientInfo, subscribe,
 do_check(#{clientid := ClientID} = _ClientInfo, subscribe, <<"$dg/device/", DeviceInfo/binary>> = _Topic) ->
 %%    io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, _Topic]),
     [ProuctID, Devaddr | _] = binary:split(DeviceInfo, <<"/">>, [global]),
-    DeviceID = dgiot_parse:get_deviceid(ProuctID, Devaddr),
+    DeviceID = dgiot_parse_id:get_deviceid(ProuctID, Devaddr),
     case ClientID == DeviceID of
         true ->
             allow;
@@ -79,7 +79,7 @@ do_check(#{clientid := ClientID, username := UserId} = _ClientInfo, publish, <<"
         ok ->
             allow;
         _ ->
-            DeviceID = dgiot_parse:get_deviceid(Id, Devaddr),
+            DeviceID = dgiot_parse_id:get_deviceid(Id, Devaddr),
             case ClientID == DeviceID of
                 true ->
                     allow;

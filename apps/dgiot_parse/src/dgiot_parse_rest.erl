@@ -26,7 +26,7 @@
 
 
 %% API
--export([request/5, method/1, method/2, do_hook/2]).
+-export([request/5, method/1, method/2]).
 
 %%%===================================================================
 %%% API
@@ -390,7 +390,7 @@ httpc_request(Method, Path, Header, Body, HttpOptions, ReqOptions, Options) when
     httpc_request(Method, Request, HttpOptions, ReqOptions).
 
 httpc_request(Method, Request, HttpOptions, ReqOptions) ->
-    log(Method, Request),
+    dgiot_parse_log:log(Method, Request),
     case catch httpc:request(method(Method), Request, ?HTTPOption(HttpOptions), ?REQUESTOption(ReqOptions)) of
         {ok, {{_HTTPVersion, StatusCode, _ReasonPhrase}, Headers, Body}} ->
             {ok, StatusCode, Headers, Body};
@@ -416,27 +416,7 @@ do_request_after(Method0, Path, Data, ResBody, Options) ->
                 method(Method0, atom)
         end,
     {match, PathList} = re:run(Path, <<"([^/]+)">>, [global, {capture, all_but_first, binary}]),
-    do_request_hook('after', lists:concat(PathList), Method, Data, ResBody).
-
-do_request_hook(Type, [<<"classes">>, Class, ObjectId], Method, Data, Body) ->
-    do_hook({<<Class/binary, "/*">>, Method}, [Type, ObjectId, Data, Body]);
-do_request_hook(Type, [<<"classes">>, Class], Method, Data, Body) ->
-    do_hook({Class, Method}, [Type, Data, Body]);
-do_request_hook(_Type, _Paths, _Method, _Data, _Body) ->
-    ignore.
-do_hook(Key, Args) ->
-    case catch dgiot_hook:run_hook(Key, Args) of
-        {'EXIT', Reason} ->
-            {error, Reason};
-        {error, not_find} ->
-            ignore;
-        {ok, []} ->
-            ignore;
-        {ok, [{error, Reason} | _]} ->
-            {error, Reason};
-        {ok, [Rtn | _]} ->
-            Rtn
-    end.
+    dgiot_parse_hook:do_request_hook('after', lists:concat(PathList), Method, Data, ResBody).
 
 list_join([], Sep) when is_list(Sep) -> [];
 list_join([H | T], Sep) ->
@@ -461,14 +441,6 @@ handle_result(Result, Map) ->
         {error, Reason} ->
             {error, Reason}
     end.
-
-
-log(Method, {Url, Header}) ->
-    IsLog = application:get_env(dgiot_parse, log, false),
-    IsLog andalso ?LOG(info, "~s ~s ~p", [method(Method), Url, Header]);
-log(Method, {Url, Header, _, Body}) ->
-    IsLog = application:get_env(dgiot_parse, log, false),
-    IsLog andalso ?LOG(info, "~s ~s Header:~p  Body:~p", [method(Method), Url, Header, Body]).
 
 channel_add_product_relation(ChannelIds, ProductId) ->
     Map =

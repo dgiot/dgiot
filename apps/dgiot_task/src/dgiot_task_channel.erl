@@ -189,6 +189,7 @@ init(?TYPE, ChannelId, Args) ->
         <<"products">> => Products,
         <<"args">> => NewArgs}
     },
+    dgiot_parse_hook:subscribe(<<"device_id">>, delete, ChannelId),
     {ok, State, dgiot_task_worker:childSpec(ChannelId)}.
 
 handle_init(#state{id = ChannelId, env = #{<<"products">> := Products, <<"args">> := Args}} = State) ->
@@ -209,7 +210,6 @@ handle_init(#state{id = ChannelId, env = #{<<"products">> := Products, <<"args">
         dgiot_task:load(NewArgs)
               end, Products),
     dgiot_task:timing_start(Args#{<<"channel">> => ChannelId}),
-    dgiot_parse:subscribe(<<"device_id">>, delete),
     {ok, State}.
 
 %% 通道消息处理,注意：进程池调用

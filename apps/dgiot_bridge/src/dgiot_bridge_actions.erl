@@ -172,7 +172,8 @@ on_action_dgiot(Selected, #{event := Event} = Envs) ->
         'message.publish' ->
             post_rule(Msg),
             case dgiot_channelx:do_message(ChannelId, {rule, Msg, Selected}) of
-                not_find -> dgiot_mqtt:republish(Selected, Envs);
+                not_find ->
+                    dgiot_mqtt:republish(Selected, Envs);
                 _ -> pass
             end;
         EventId ->

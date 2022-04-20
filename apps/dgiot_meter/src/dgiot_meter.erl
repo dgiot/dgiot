@@ -121,7 +121,7 @@ create_meter4G(MeterAddr, MDa, ChannelId, DTUIP, DtuId, DtuAddr) ->
                 <<"devModel">> => <<"Meter">>
             },
             dgiot_device:create_device(Requests),
-            DeviceId = dgiot_parse:get_deviceid(ProductId, MeterAddr),
+            DeviceId = dgiot_parse_id:get_deviceid(ProductId, MeterAddr),
             dgiot_data:insert({metetda, DeviceId}, {dgiot_utils:to_binary(MDa), DtuAddr}),
             Topic = <<"profile/", ProductId/binary, "/", MeterAddr/binary>>,
             dgiot_mqtt:subscribe(Topic),

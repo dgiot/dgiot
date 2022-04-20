@@ -276,7 +276,7 @@ set_params(Payload, ProductId, DevAddr) ->
                                 dataByteSize = dgiot_utils:to_int(Bytes),
                                 quality = Value1
                             },
-                            DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+                            DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
                             Sessiontoken = maps:get(<<"sessiontoken">>, Data, <<"">>),
                             {Username, Acl} =
                                 case dgiot_auth:get_session(Sessiontoken) of

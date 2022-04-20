@@ -120,7 +120,7 @@ get_device(ProductId, DevAddr, Query) ->
         not_find ->
             {error, <<"not find channel">>};
         ChannelId ->
-            DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+            DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
             TableName = ?Table(DeviceId),
             case dgiot_tdengine:query_object(ChannelId, TableName, Query#{<<"db">> => ProductId}) of
                 {ok, Data} ->
@@ -131,7 +131,7 @@ get_device(ProductId, DevAddr, Query) ->
     end.
 
 get_device(Channel, ProductId, DevAddr, Query) ->
-    DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+    DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
     TableName = ?Table(DeviceId),
     case dgiot_tdengine:query_object(Channel, TableName, Query#{<<"db">> => ProductId}) of
         {ok, Data} ->

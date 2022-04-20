@@ -101,7 +101,7 @@ is_authorized(OperationID, {UserName, Password}, Req) ->
             is_authorized(OperationID, Token, Req);
         false ->
             % login
-            case dgiot_parse_handler:login_by_account(UserName, Password) of
+            case dgiot_parse_auth:login_by_account(UserName, Password) of
                 {ok, #{<<"sessionToken">> := SessionToken}} ->
                     dgiot_cache:set(Key, SessionToken, ttl()),
                     is_authorized(OperationID, SessionToken, Req);

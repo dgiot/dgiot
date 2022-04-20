@@ -299,7 +299,7 @@ process_message(Frames, ChannelId) ->
                     Topic = <<"thing/", ProductId/binary, "/", DevAddr/binary, "/status">>,
                     Di = <<16#1E, 16#00, 16#01, 16#01>>,
                     DValue = #{dgiot_utils:to_hex(Di) => dlt645_decoder:binary_to_dtime_dlt645_bcd(Value)},
-                    DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+                    DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
                     dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(DValue));
                 _ -> pass
             end;
@@ -310,7 +310,7 @@ process_message(Frames, ChannelId) ->
                     Topic = <<"thing/", ProductId/binary, "/", DevAddr/binary, "/status">>,
                     Di = <<16#1D, 16#00, 16#01, 16#01>>,
                     DValue = #{dgiot_utils:to_hex(Di) => dlt645_decoder:binary_to_dtime_dlt645_bcd(Value)},
-                    DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+                    DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
                     dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(DValue));
                 _ -> pass
             end;
@@ -321,7 +321,7 @@ process_message(Frames, ChannelId) ->
                     Topic = <<"thing/", ProductId/binary, "/", DevAddr/binary, "/status">>,
                     Di = <<16#FE, 16#FE, 16#FE, 16#FE>>,
                     DValue = #{dgiot_utils:to_hex(Di) => 0},
-                    DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+                    DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
                     dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(DValue));
                 _ -> pass
             end;
@@ -332,7 +332,7 @@ process_message(Frames, ChannelId) ->
                     Topic = <<"thing/", ProductId/binary, "/", DevAddr/binary, "/status">>,
                     Di = <<16#FE, 16#FE, 16#FE, 16#FD>>,
                     DValue = #{dgiot_utils:to_hex(Di) => dgiot_utils:to_hex(Value)},
-                    DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+                    DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
                     dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(DValue));
                 _ -> pass
             end;
@@ -341,7 +341,7 @@ process_message(Frames, ChannelId) ->
             case dgiot_data:get({meter, ChannelId}) of
                 {ProductId, _ACL, _Properties} -> DevAddr = dgiot_utils:binary_to_hex(Addr),
                     Topic = <<"thing/", ProductId/binary, "/", DevAddr/binary, "/post">>,
-                    DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+                    DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
                     dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(Value));
                 _ -> pass
             end;

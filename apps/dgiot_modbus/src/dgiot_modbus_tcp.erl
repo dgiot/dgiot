@@ -55,7 +55,7 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, state = #state{id = ChannelId, de
     List = dgiot_utils:to_list(DtuAddr),
     List1 = dgiot_utils:to_list(Buff),
     #{<<"objectId">> := DeviceId} =
-        dgiot_parse:get_objectid(<<"Device">>, #{<<"product">> => ProductId, <<"devaddr">> => DtuAddr}),
+        dgiot_parse_id:get_objectid(<<"Device">>, #{<<"product">> => ProductId, <<"devaddr">> => DtuAddr}),
     case re:run(DtuAddr, Head, [{capture, first, list}]) of
         {match, [Head]} when length(List) == Len ->
             {DevId, Devaddr} =
@@ -67,7 +67,7 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, state = #state{id = ChannelId, de
                 end,
             Topic = <<"profile/", ProductId/binary, "/", Devaddr/binary>>,
             dgiot_mqtt:subscribe(Topic),
-            DtuId = dgiot_parse:get_deviceid(ProductId, DtuAddr),
+            DtuId = dgiot_parse_id:get_deviceid(ProductId, DtuAddr),
             {noreply, TCPState#tcp{buff = <<>>, register = true, clientid = DtuId, state = State#state{devaddr = Devaddr, deviceId = DevId}}};
         _Error ->
             case re:run(Buff, Head, [{capture, first, list}]) of
@@ -75,7 +75,7 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, state = #state{id = ChannelId, de
                     create_device(DeviceId, ProductId, Buff, DTUIP, Dtutype),
                     Topic = <<"profile/", ProductId/binary, "/", Buff/binary>>,
                     dgiot_mqtt:subscribe(Topic),
-                    DtuId = dgiot_parse:get_deviceid(ProductId, DtuAddr),
+                    DtuId = dgiot_parse_id:get_deviceid(ProductId, DtuAddr),
                     {noreply, TCPState#tcp{buff = <<>>, register = true, clientid = DtuId, state = State#state{devaddr = Buff}}};
                 Error1 ->
                     ?LOG(info, "Error1 ~p Buff ~p ", [Error1, dgiot_utils:to_list(Buff)]),
@@ -97,7 +97,7 @@ handle_info({tcp, Buff}, #tcp{state = #state{id = ChannelId, devaddr = DtuAddr, 
 %%            ?LOG(info, "Things ~p", [Things]),
             NewTopic = <<"thing/", DtuProductId/binary, "/", DtuAddr/binary, "/post">>,
             dgiot_bridge:send_log(ChannelId, ProductId, DtuAddr, "Channel sends [~p] to [task:~p]", [jsx:encode(Things), NewTopic]),
-            DeviceId = dgiot_parse:get_deviceid(ProductId, DtuAddr),
+            DeviceId = dgiot_parse_id:get_deviceid(ProductId, DtuAddr),
             dgiot_mqtt:publish(DeviceId, NewTopic, jsx:encode(Things));
         Other ->
             ?LOG(info, "Other ~p", [Other]),
@@ -193,7 +193,7 @@ code_change(_OldVsn, TCPState, _Extra) ->
 
 get_deviceid(ProdcutId, DevAddr) ->
     #{<<"objectId">> := DeviceId} =
-        dgiot_parse:get_objectid(<<"Device">>, #{<<"product">> => ProdcutId, <<"devaddr">> => DevAddr}),
+        dgiot_parse_id:get_objectid(<<"Device">>, #{<<"product">> => ProdcutId, <<"devaddr">> => DevAddr}),
     DeviceId.
 
 create_device(DeviceId, ProductId, DTUMAC, DTUIP, Dtutype) ->

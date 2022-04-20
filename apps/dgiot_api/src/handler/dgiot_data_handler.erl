@@ -133,7 +133,7 @@ do_request(post_upload_token, #{<<"from">> := <<"fastdfs">>}, _Context, Req0) ->
                         _ ->
                             case User of
                                 #{<<"objectId">> := UserId} ->
-                                    case dgiot_parse:get_role(UserId, AuthToken) of
+                                    case dgiot_parse_auth:get_role(UserId, AuthToken) of
                                         {ok, _Result} -> {200, <<"ok">>};
                                         _ -> {200, <<"fail">>}
                                     end;
@@ -225,11 +225,11 @@ do_request(post_device, Body, #{<<"sessionToken">> := SessionToken} = _Context, 
 %% OperationId:post_adddevice
 %% 请求:POST /iotapi/post_adddevice
 do_request(post_adddevice, #{<<"devaddr">> := Devaddr, <<"productid">> := ProductId, <<"longitude">> := Longitude, <<"latitude">> := Latitude}, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
-    DeviceId = dgiot_parse:get_deviceid(ProductId, Devaddr),
+    DeviceId = dgiot_parse_id:get_deviceid(ProductId, Devaddr),
     case dgiot_auth:get_session(SessionToken) of
         #{<<"objectId">> := UserId} ->
             Acl =
-                case dgiot_parse:get_roleids(UserId) of
+                case dgiot_parse_id:get_roleids(UserId) of
                     [RoleId | _] ->
                         case dgiot_parse:get_object(<<"_Role">>, RoleId) of
                             {error, _} ->
@@ -288,7 +288,7 @@ do_request(get_product, #{<<"name">> := Name}, #{<<"sessionToken">> := SessionTo
 %% OperationId:post_product
 %% 请求:POST /iotapi/post_product
 do_request(post_hash_class, #{<<"class">> := Class} = Body, #{<<"sessionToken">> := _SessionToken} = _Context, _Req) ->
-    {ok, dgiot_parse:get_objectid(Class, Body)};
+    {ok, dgiot_parse_id:get_objectid(Class, Body)};
 
 %% 档案 概要: 导库 描述:json文件导库
 %% OperationId:post_product
@@ -458,7 +458,7 @@ do_request(delete_relation, #{<<"destClass">> := DestClass, <<"destId">> := Dest
 %% OperationId:post_tree
 %% 请求:POST /iotapi/post_tree
 do_request(post_tree, #{<<"class">> := Class, <<"parent">> := Parent, <<"filter">> := Filter}, #{<<"sessionToken">> := SessionToken} = _Context, _Req0) ->
-    dgiot_parse_handler:get_classtree(Class, Parent, jsx:decode(Filter, [{labels, binary}, return_maps]), SessionToken);
+    dgiot_parse_utils:get_classtree(Class, Parent, jsx:decode(Filter, [{labels, binary}, return_maps]), SessionToken);
 
 %%  服务器不支持的API接口
 do_request(_OperationId, _Args, _Context, _Req) ->

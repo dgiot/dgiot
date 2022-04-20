@@ -107,6 +107,7 @@ init(?TYPE, ChannelId, ChannelArgs) ->
             <<"deviceinfo_list">> => Deviceinfo_list
             }
     },
+    dgiot_parse_hook:subscribe(<<"Device">>, post, ChannelId),
     {ok, State}.
 
 %% 初始化池子
@@ -116,7 +117,6 @@ handle_init(State) ->
     Topic_SCAN = binary:bin_to_list(Topic) ++ "_scan",
     dgiot_mqtt:subscribe( erlang:list_to_binary(Topic_ACK)),
     dgiot_mqtt:subscribe( erlang:list_to_binary(Topic_SCAN)),
-    dgiot_parse:subscribe(<<"Device">>, post),
     erlang:send_after(1000 * 5, self(), scan_opc),
     erlang:send_after(1000*60*10,self(),offline_jud),
     {ok, State}.

@@ -193,12 +193,12 @@ init(?TYPE, ChannelId, Config) ->
         {dgiot_dcache, {dgiot_dcache, start_link, Opts}, permanent, 5000, worker, [dgiot_dcache]}
     ],
     dgiot_metrics:dec(dgiot_tdengine, <<"tdengine">>, 1000),
+    dgiot_parse_hook:subscribe(<<"product_id">>, delete, ChannelId),
     {ok, State, Specs}.
 
 handle_init(State) ->
     dgiot_metrics:inc(dgiot_tdengine, <<"tdengine">>, 1),
     erlang:send_after(5000, self(), init),
-    dgiot_parse:subscribe(<<"product_id">>, delete),
     {ok, State}.
 
 %% 通道消息处理,注意：进程池调用
@@ -307,7 +307,7 @@ do_save([ProductId, DevAddr, Data, _Context], #state{id = ChannelId} = State) ->
 
 %% 产品，设备地址与数据分离，推荐
 format_data(ProductId, DevAddr, Properties, Data) ->
-    DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+    DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
     Values = check_fields(Data, Properties),
 %%    Fields = lists:foldl(fun(X, Acc) ->
 %%        Acc ++ [list_to_binary(string:to_lower(binary_to_list(X)))]

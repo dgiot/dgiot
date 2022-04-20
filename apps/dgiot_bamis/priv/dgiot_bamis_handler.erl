@@ -18,9 +18,11 @@
 -behavior(dgiot_rest).
 -dgiot_rest(all).
 -include_lib("dgiot/include/logger.hrl").
+-dgiot_swagger(amis).
 
 %% API
 -export([swagger_amis/0]).
+
 -export([handle/4]).
 
 %% API描述
@@ -65,7 +67,7 @@ handle(OperationID, Args, Context, Req) ->
             ?LOG(debug,"do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
             {Status, Headers, Res, Req};
         {Status, NewHeaders, Res} ->
-            ?LOG(debug,"do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
+            ?LOG(info,"do request2: ~p, ~p ->~p~n", [OperationID, Args, Res]),
             {Status, maps:merge(Headers, NewHeaders), Res, Req}
     end.
 
@@ -79,8 +81,8 @@ handle(OperationID, Args, Context, Req) ->
 %% 请求:POST /iotapi/get_amis
 do_request(get_amis, #{<<"deviceid">> := Deviceid}, _Context, _Req) ->
     case dgiot_parse:get_object(<<"Device">>, Deviceid) of
-        {ok, #{<<"profile">> := Profile}} ->
-            {ok, Profile};
+        {ok, #{<<"profile">> := Profile1}} ->
+            {ok, Profile1};
         _ ->
             {ok, #{}}
     end;

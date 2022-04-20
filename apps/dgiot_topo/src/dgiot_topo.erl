@@ -51,7 +51,7 @@ docroot() ->
 %%                            {ok, #{<<"code">> => 200, <<"message">> => <<"SUCCESS">>, <<"data">> => Konva#{<<"Stage">> => Stage#{<<"children">> => NewChildren1}}}}
 %%                    end;
 %%                _ ->
-%%                    DeviceId = dgiot_parse:get_deviceid(ProductId, Devaddr),
+%%                    DeviceId = dgiot_parse_id:get_deviceid(ProductId, Devaddr),
 %%                    case dgiot_tdengine:get_device(ProductId, Devaddr, #{<<"keys">> => <<"last_row(*)">>, <<"limit">> => 1}) of
 %%                        {ok, #{<<"results">> := [Result | _]}} ->
 %%                            put({self(), td}, Result);
@@ -117,7 +117,7 @@ get_view(View, Devaddr, ProductId, Type) ->
                     Konva#{<<"Stage">> => Stage}
             end;
         _ ->
-            DeviceId = dgiot_parse:get_deviceid(ProductId, Devaddr),
+            DeviceId = dgiot_parse_id:get_deviceid(ProductId, Devaddr),
             case dgiot_tdengine:get_device(ProductId, Devaddr, #{<<"keys">> => <<"last_row(*)">>, <<"limit">> => 1}) of
                 {ok, #{<<"results">> := [Result | _]}} ->
                     put({self(), td}, Result);
@@ -283,7 +283,7 @@ get_attrs(Type, ProductId, ClassName, Attrs, DeviceId, KonvatId, Shapeid, Identi
                                 List ->
                                     put({self(), shapeids}, List ++ [Id])
                             end,
-                            dgiot_data:insert({shapetype, dgiot_parse:get_shapeid(ProductId, Id)}, ClassName),
+                            dgiot_data:insert({shapetype, dgiot_parse_id:get_shapeid(ProductId, Id)}, ClassName),
                             save(Type, Attrs),
                             X#{<<"attrs">> => Attrs};
                         _ ->
@@ -303,16 +303,16 @@ get_attrs(Type, ProductId, ClassName, Attrs, DeviceId, KonvatId, Shapeid, Identi
                                         Text2 = maps:get(<<"text">>, Attrs, <<"">>),
                                         case dgiot_data:get({toponotext, ProductId}) of
                                             not_find ->
-                                                dgiot_data:insert({toponotext, ProductId}, [#{<<"id">> => dgiot_parse:get_shapeid(DeviceId, Id), <<"text">> => <<Text2/binary, " ", Unit/binary>>, <<"type">> => Type}]);
+                                                dgiot_data:insert({toponotext, ProductId}, [#{<<"id">> => dgiot_parse_id:get_shapeid(DeviceId, Id), <<"text">> => <<Text2/binary, " ", Unit/binary>>, <<"type">> => Type}]);
                                             Topo ->
-                                                New_Topo = dgiot_utils:unique_2(Topo ++ [#{<<"id">> => dgiot_parse:get_shapeid(DeviceId, Id), <<"text">> => <<Text2/binary, " ", Unit/binary>>, <<"type">> => Type}]),
+                                                New_Topo = dgiot_utils:unique_2(Topo ++ [#{<<"id">> => dgiot_parse_id:get_shapeid(DeviceId, Id), <<"text">> => <<Text2/binary, " ", Unit/binary>>, <<"type">> => Type}]),
                                                 dgiot_data:insert({toponotext, ProductId}, New_Topo)
                                         end,
                                         Text2;
                                     {ok, Text1} ->
                                         get_value(ProductId, Identifier1, Text1)
                                 end,
-                            NewAttrs = Attrs#{<<"id">> => dgiot_parse:get_shapeid(DeviceId, Id), <<"text">> => Text, <<"draggable">> => false},
+                            NewAttrs = Attrs#{<<"id">> => dgiot_parse_id:get_shapeid(DeviceId, Id), <<"text">> => Text, <<"draggable">> => false},
                             save(Type, NewAttrs),
                             X#{<<"attrs">> => NewAttrs}
                     end
@@ -356,7 +356,7 @@ put_topo(Arg, _Context) ->
         <<"devaddr">> := Devaddr,
         <<"base64">> := Base64
     } = Arg,
-    DeviceId = dgiot_parse:get_deviceid(ProductId, Devaddr),
+    DeviceId = dgiot_parse_id:get_deviceid(ProductId, Devaddr),
     Pubtopic = <<"$dg/konva/", DeviceId/binary, "/properties/report">>,
     dgiot_mqtt:publish(self(), Pubtopic, Base64),
     {ok, <<"Success">>}.
@@ -419,7 +419,7 @@ get_optshape(ProductId, DeviceId, Payload) ->
     Shape =
         maps:fold(fun(K, V, Acc) ->
             Type =
-                case dgiot_data:get({shapetype, dgiot_parse:get_shapeid(ProductId, K)}) of
+                case dgiot_data:get({shapetype, dgiot_parse_id:get_shapeid(ProductId, K)}) of
                     not_find ->
                         <<"text">>;
                     Type1 ->
@@ -427,7 +427,7 @@ get_optshape(ProductId, DeviceId, Payload) ->
                 end,
             BinV = get_value(ProductId, K, V),
             Unit = get_unit(ProductId, K),
-            Acc ++ [#{<<"id">> => dgiot_parse:get_shapeid(DeviceId, <<ProductId/binary, "_", K/binary, "_text">>), <<"text">> => <<BinV/binary, " ", Unit/binary>>, <<"type">> => Type}]
+            Acc ++ [#{<<"id">> => dgiot_parse_id:get_shapeid(DeviceId, <<ProductId/binary, "_", K/binary, "_text">>), <<"text">> => <<BinV/binary, " ", Unit/binary>>, <<"type">> => Type}]
                   end, Topo, Payload),
     base64:encode(jsx:encode(#{<<"konva">> => Shape})).
 
@@ -444,7 +444,7 @@ get_value(ProductId, K, V) ->
                     dgiot_utils:to_binary(Value);
                 Type3 when Type3 == <<"geopoint">> ->
                     Addr =
-                        case dgiot_data:get({topogps, dgiot_parse:get_shapeid(ProductId, K)}) of
+                        case dgiot_data:get({topogps, dgiot_parse_id:get_shapeid(ProductId, K)}) of
                             not_find ->
                                 dgiot_utils:to_binary(V);
                             Gpsaddr ->

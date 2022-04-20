@@ -76,10 +76,10 @@ post_role(#{<<"tempname">> := TempName, <<"parent">> := Parent, <<"depname">> :=
     end.
 
 create_role(#{<<"name">> := Name} = Role) ->
-    RoleId = dgiot_parse:get_roleid(Name),
+    RoleId = dgiot_parse_id:get_roleid(Name),
     case dgiot_parse:get_object(<<"_Role">>, RoleId) of
         {error, _} ->
-            {ok, AppUser} = dgiot_parse_handler:create_user_for_app(Name),
+            {ok, AppUser} = dgiot_parse_auth:create_user_for_app(Name),
             ?LOG(info, "AppUser ~p ", [AppUser]),
             NewUsers = maps:get(<<"users">>, Role, []) ++ [AppUser],
             NewRole = Role#{
@@ -534,7 +534,7 @@ get_roletree(SessionToken) ->
                                 _ -> Acc ++ [Role]
                             end
                                     end, [], Roles),
-                    RoleTree = dgiot_parse_handler:create_tree(NewRoles, <<"parent">>),
+                    RoleTree = dgiot_parse_utils:create_tree(NewRoles, <<"parent">>),
                     Len = length(RoleTree),
                     Num = 1000,
                     case Len =< Num of

@@ -503,7 +503,7 @@ file_info(Path) ->
     end.
 
 get_url(AppName) ->
-    Roleid = dgiot_parse:get_roleid(AppName),
+    Roleid = dgiot_parse_id:get_roleid(AppName),
     case dgiot_parse:get_object(<<"_Role">>, Roleid) of
         {ok, #{<<"tag">> := #{<<"appconfig">> := #{<<"file">> := Url}}}} ->
             Url;
@@ -617,7 +617,7 @@ get_capture(#{<<"productid">> := ProductId, <<"topoid">> := TopoId, <<"thingid">
     end.
 
 update_view(Index, ImageUrl, Heigh, Width, TaskId) ->
-    Viewid = dgiot_parse:get_viewid(TaskId, <<"topo">>, <<"Device">>, Index),
+    Viewid = dgiot_parse_id:get_viewid(TaskId, <<"topo">>, <<"Device">>, Index),
     case dgiot_parse:get_object(<<"View">>, Viewid) of
         {ok, #{<<"data">> := #{<<"konva">> := Konva} = Data}} ->
             NewKonva = update_bgimage(Konva, ImageUrl, Heigh, Width),

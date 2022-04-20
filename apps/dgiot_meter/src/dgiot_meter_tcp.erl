@@ -80,7 +80,7 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, state = #state{id = ChannelId, dt
             Topic2 = <<"profile/", ProductId/binary, "/", DtuAddr/binary>>,
             dgiot_mqtt:subscribe(Topic2),
             {NewRef, NewStep} = {undefined, read_meter},
-            DtuId = dgiot_parse:get_deviceid(DtuProductId, DtuAddr),
+            DtuId = dgiot_parse_id:get_deviceid(DtuProductId, DtuAddr),
             case Search of
                 <<"nosearch">> ->
                     lists:map(fun(X) ->
@@ -123,7 +123,7 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, state = #state{id = ChannelId, dt
                         {Ref, Step, _Payload} = dgiot_meter:search_meter(tcp, undefined, TCPState, 1),
                         {Ref, Step}
                 end,
-            DtuId = dgiot_parse:get_deviceid(DtuProductId, DtuAddr),
+            DtuId = dgiot_parse_id:get_deviceid(DtuProductId, DtuAddr),
             dgiot_metrics:inc(dgiot_meter, <<"dtu_online">>, 1),
             {noreply, TCPState#tcp{buff = <<>>, register = true, clientid = DtuId, state = State#state{dtuaddr = DtuAddr, protocol = ?DLT645, ref = NewRef, step = NewStep}}}
     end;
@@ -167,7 +167,7 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, clientid = DtuId, state = #state{
 
 %% 下发报文返回
 %%handle_info({tcp, Buff}, #tcp{state = #state{id = ChannelId, protocol = Protocol, env = #{product := ProductId, devaddr := DevAddr}}} = TCPState) ->
-%%    DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+%%    DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
 %%    case Protocol of
 %%        ?DLT376 ->
 %%            dgiot_bridge:send_log(ChannelId, "~s ~p DLT376 from_dev: ~p ", [?FILE, ?LINE, dgiot_utils:binary_to_hex(Buff)]),
@@ -237,7 +237,7 @@ handle_info({deliver, _Topic, Msg}, #tcp{state = #state{id = ChannelId, protocol
                 [<<"thing">>, ProductId, DevAddr] ->
                     case Protocol of
                         ?DLT376 ->
-                            DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+                            DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
                             case dgiot_data:get({metetda, DeviceId}) of
                                 not_find ->
                                     [#{<<"thingdata">> := ThingData} | _] = jsx:decode(dgiot_mqtt:get_payload(Msg), [{labels, binary}, return_maps]),
@@ -327,7 +327,7 @@ handle_info({deliver, _Topic, Msg}, #tcp{state = #state{id = ChannelId, protocol
 %%    {DtuProductId, _, _} = dgiot_data:get({dtu, ChannelId}),
 %%    dgiot_bridge:send_log(ChannelId, DtuProductId, NewBuff, "(登录) ~p ", [NewBuff]),
 %%    {Protocol, DtuAddr, NewRef, NewStep} = frame(Buff, DTUIP, DtuProductId, TCPState),
-%%    DtuId = dgiot_parse:get_deviceid(DtuProductId, DtuAddr),
+%%    DtuId = dgiot_parse_id:get_deviceid(DtuProductId, DtuAddr),
 %%    {noreply, TCPState#tcp{buff = <<>>, register = true, clientid = DtuId,
 %%        state = State#state{dtuaddr = DtuAddr, protocol = Protocol, ref = NewRef, step = NewStep}}};
 
@@ -384,7 +384,7 @@ code_change(_OldVsn, TCPState, _Extra) ->
 %%            dgiot_mqtt:subscribe(Topic),  %为这个设备订阅一个mqtt
 %%            dgiot_bridge:send_log(ChannelId, ProductId, DtuAddr, "from dev ~p (登录)", [dgiot_utils:binary_to_hex(Buff)]),
 %%            {NewRef, NewStep} = {undefined, read_meter},
-%%            DtuId = dgiot_parse:get_deviceid(DtuProductId, DtuAddr),
+%%            DtuId = dgiot_parse_id:get_deviceid(DtuProductId, DtuAddr),
 %%            case Search of
 %%                <<"nosearch">> ->
 %%                    lists:map(fun(X) ->
@@ -428,7 +428,7 @@ code_change(_OldVsn, TCPState, _Extra) ->
 %%                        {Ref, Step}
 %%                end,
 %%            dgiot_bridge:send_log(ChannelId, DtuProductId, DtuAddr, "from dev ~p (登录)", [dgiot_utils:binary_to_hex(DtuAddr)]),
-%%            DtuId = dgiot_parse:get_deviceid(DtuProductId, DtuAddr),
+%%            DtuId = dgiot_parse_id:get_deviceid(DtuProductId, DtuAddr),
 %%            dgiot_metrics:inc(dgiot_meter, <<"dtu_online">>, 1),
 %%            {Protocol, DtuAddr, NewRef, NewStep}
 %%    end.

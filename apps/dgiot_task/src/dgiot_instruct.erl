@@ -52,7 +52,7 @@ create(ProductId, DeviceId, Pn, ACL, Rotation, #{<<"properties">> := Props}) ->
                 case Di of
                     <<"">> -> pass;
                     _ ->
-                        ObjectId = dgiot_parse:get_instruct(DeviceId, Pn, Di),
+                        ObjectId = dgiot_parse_id:get_instructid(DeviceId, Pn, Di),
                         case dgiot_parse:get_object(<<"Instruct">>, ObjectId) of
                             {ok, _} ->
                                 pass;
