@@ -122,7 +122,7 @@ handle_event(EventId, Event, _State) ->
     ?LOG(info, "channel ~p, ~p", [EventId, Event]),
     ok.
 
-handle_message({sync_parse, Args}, State) ->
+handle_message({sync_parse, _Method, Args}, State) ->
 %%    io:format("Args ~p~n", [jsx:decode(Args, [{labels, binary}, return_maps])]),
     case jsx:decode(Args, [{labels, binary}, return_maps]) of
         #{<<"producttemplet">> := #{<<"className">> := <<"ProductTemplet">>, <<"objectId">> := ProducttempletId, <<"__type">> := <<"Pointer">>}, <<"objectId">> := ObjectId} ->

@@ -217,7 +217,7 @@ handle_event(_EventId, Event, State) ->
     ?LOG(info, "channel ~p", [Event]),
     {ok, State}.
 
-handle_message({sync_parse, Args}, State) ->
+handle_message({sync_parse, _Method, Args}, State) ->
 %%    io:format("DeviceArgs ~p~n", [jsx:decode(Args, [{labels, binary}, return_maps])]),
     case jsx:decode(Args, [return_maps]) of
         #{<<"objectId">> := DtuId} ->
