@@ -127,7 +127,7 @@ handle_message({check_profie, _Args}, State) ->
 %%<<\"248e9007bf\">>
 %% }
 %%#state{env = #{<<"args">> := #{<<"mode">> := <<"incremental">>}}} =
-handle_message({sync_parse, Args,DeviceId}, #state{env = #{<<"args">> := #{<<"mode">> := <<"incremental">>}}} = State) ->
+handle_message({sync_parse, _Method, Args,DeviceId}, #state{env = #{<<"args">> := #{<<"mode">> := <<"incremental">>}}} = State) ->
 %%    io:format("~s ~p Args = ~p.~n", [?FILE, ?LINE, State]),
 %%    io:format("~s ~p Args = ~p.~n", [?FILE, ?LINE, jsx:decode(Args, [{labels, binary}, return_maps])]),
     case jsx:decode(Args, [{labels, binary}, return_maps]) of
@@ -147,7 +147,7 @@ handle_message({sync_parse, Args,DeviceId}, #state{env = #{<<"args">> := #{<<"mo
     end,
     {ok, State};
 
-handle_message({sync_parse, Args}, State) ->
+handle_message({sync_parse, _Method, Args}, State) ->
 %%    io:format("~s ~p Args = ~p.~n", [?FILE, ?LINE, jsx:decode(Args, [{labels, binary}, return_maps])]),
     case jsx:decode(Args, [{labels, binary}, return_maps]) of
         #{<<"profile">> := Profile, <<"devaddr">> := Devaddr, <<"product">> := #{<<"objectId">> := ProductId}} = Arg ->

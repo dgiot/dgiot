@@ -141,7 +141,7 @@ send_msg(Table, Method, Args) ->
     Pids = lists:foldl(fun(Pid, Acc) ->
         case is_process_alive(Pid) of
             true ->
-                Pid ! {sync_parse, Args},
+                Pid ! {sync_parse, Method, Args},
                 Acc ++ [Pid];
             false ->
                 Acc
@@ -153,7 +153,7 @@ send_msg(Table, Method, Args, ObjectId) ->
     Pids = lists:foldl(fun(Pid, Acc) ->
         case is_process_alive(Pid) of
             true ->
-                Pid ! {sync_parse, Args, ObjectId},
+                Pid ! {sync_parse, Method, Args, ObjectId},
                 Acc ++ [Pid];
             false ->
                 Acc

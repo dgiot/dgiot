@@ -135,7 +135,7 @@ handle_message(offline_jud, #state{env = Env} = State) ->
     [offline_modify(DeviceID) ||{DeviceID,_} <- Deviceinfo_list],
     {ok, State};
 
-handle_message({sync_parse, Args}, State) ->
+handle_message({sync_parse, _Method, Args}, State) ->
     ?LOG(info,"sync_parse ~p", [Args]),
     {ok, State};
 

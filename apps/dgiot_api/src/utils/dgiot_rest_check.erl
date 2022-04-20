@@ -242,8 +242,8 @@ validate(schema, Schema, Data) ->
         {error, [{schema_invalid, _, Reason}]} ->
             ?LOG(error,"validate_with_schema ~p,~p,~p~n", [Schema, Data, Reason]),
             validation_error(schema, schema, schema_invalid);
-        {error, [{data_invalid, _, Error, _, _Names}]} ->
-            ?LOG(error,"validate_with_schema ~p,~p,~p~n", [Schema, Data, Error]),
+        {error, [{data_invalid, _, _Error, _, _Names}]} ->
+%%            ?LOG(error,"validate_with_schema ~p,~p,~p~n", [Schema, Data, Error]),
 %%            validation_error(schema, Names, Error);
             ok;
         {ok, _} ->

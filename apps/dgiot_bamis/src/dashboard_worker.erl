@@ -42,8 +42,7 @@ start_link(#{<<"sessionToken">> := SessionToken} = State) ->
             gen_server:start_link(?MODULE, [State], [])
     end;
 
-start_link(State) ->
-    ?LOG(info, "State ~p", [State]),
+start_link(_State) ->
     ok.
 
 stop(#{<<"sessionToken">> := SessionToken}) ->
@@ -57,9 +56,8 @@ stop(#{<<"sessionToken">> := SessionToken}) ->
 %%%===================================================================
 %%% gen_server callbacks
 %%%===================================================================
-init([#{<<"data">> := Que, <<"dashboardId">> := DashboardId, <<"sessionToken">> := SessionToken} = Args]) ->
+init([#{<<"data">> := Que, <<"dashboardId">> := DashboardId, <<"sessionToken">> := SessionToken} ]) ->
     dgiot_data:insert({dashboard, SessionToken}, self()),
-    ?LOG(info, "Args ~p ",[Args]),
     case length(Que) of
         0 ->
             erlang:send_after(3000, self(), stop);
@@ -72,7 +70,6 @@ init([#{<<"data">> := Que, <<"dashboardId">> := DashboardId, <<"sessionToken">> 
     {ok, #task{oldque = Que, newque = Que, freq = 1, dashboardId = DashboardId, sessiontoken = SessionToken}};
 
 init([#{<<"data">> := Que, <<"sessionToken">> := SessionToken}]) ->
-    io:format("dashboard_worker_init ~p ~n",[Que]),
     dgiot_data:insert({dashboard, SessionToken}, self()),
     case length(Que) of
         0 ->

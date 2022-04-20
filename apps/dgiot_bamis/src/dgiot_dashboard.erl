@@ -26,7 +26,6 @@ post_dashboard(#{<<"dashboardId">> := DashboardId} = Args, #{<<"sessionToken">> 
 post_dashboard(_Args, _Context) ->
     #{}.
 
-
 %%  应用总数卡片
 %%Query = #{<<"keys">> => [<<"count(*)">>, <<"name">>, <<"location">>, <<"status">>]}.
 do_task(#{<<"dataType">> := <<"card">>, <<"vuekey">> := <<"app_count">>, <<"table">> := <<"App">>, <<"query">> := Query}, #task{dashboardId = DashboardId, sessiontoken = SessionToken}) ->
@@ -138,9 +137,7 @@ do_task(#{<<"dataType">> := <<"map">>, <<"vuekey">> := <<"baiduMap">>, <<"table"
             pass
     end;
 
-do_task(Task, State) ->
-    ?LOG(info, "Task ~p", [Task]),
-    ?LOG(info, "State ~p", [State]),
+do_task(_Task, _State) ->
     ok.
 
 send(DashboardId, Base64) ->
