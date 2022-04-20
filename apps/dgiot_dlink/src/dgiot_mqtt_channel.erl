@@ -256,7 +256,7 @@ create_rules(RuleID, ChannelId, Description, Rawsql, Target_topic) ->
         <<"for">> => <<"[\"t/#\"]">>,
         <<"rawsql">> => Rawsql
     },
-    ObjectId = dgiot_parse:get_dictid(RuleID, <<"ruleengine">>, <<"Rule">>, <<"Rule">>),
+    ObjectId = dgiot_parse_id:get_dictid(RuleID, <<"ruleengine">>, <<"Rule">>, <<"Rule">>),
     case dgiot_parse:get_object(<<"Dict">>, ObjectId) of
         {ok, _} ->
             dgiot_rule_handler:save_rule_to_dict(RuleID, Params);

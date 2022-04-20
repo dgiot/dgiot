@@ -190,7 +190,7 @@ post_notification(Notification) ->
 
 add_notification(<<"start_", Ruleid/binary>>, DevAddr, Payload) ->
     <<ProductId:10/binary, _/binary>> = Ruleid,
-    DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+    DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
     case dgiot_data:get(?NOTIFICATION, {DeviceId, Ruleid}) of
         {start, _Time} ->
             pass;
@@ -201,7 +201,7 @@ add_notification(<<"start_", Ruleid/binary>>, DevAddr, Payload) ->
 
 add_notification(<<"stop_", Ruleid/binary>>, DevAddr, Payload) ->
     <<ProductId:10/binary, _/binary>> = Ruleid,
-    DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+    DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
     case dgiot_data:get(?NOTIFICATION, {DeviceId, Ruleid}) of
         {start, _Time} ->
             save_notification(Ruleid, DevAddr, Payload#{<<"alertstatus">> => false});
@@ -217,7 +217,7 @@ add_notification(Ruleid, _DevAddr, _Payload) ->
 save_notification(Ruleid, DevAddr, Payload) ->
     case binary:split(Ruleid, <<$_>>, [global, trim]) of
         [ProductId, _] ->
-            DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+            DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
             case dgiot_device:lookup(DeviceId) of
                 {ok, #{<<"acl">> := Acl}} ->
                     Requests =
@@ -225,14 +225,14 @@ save_notification(Ruleid, DevAddr, Payload) ->
                             BinX = atom_to_binary(X),
                             case BinX of
                                 <<"role:", Name/binary>> ->
-%%                                    RoleId = dgiot_parse:get_roleid(<<"dgiot">>),
+%%                                    RoleId = dgiot_parse_id:get_roleid(<<"dgiot">>),
                                     case dgiot_parse:query_object(<<"_Role">>, #{<<"order">> => <<"updatedAt">>, <<"limit">> => 1,
                                         <<"where">> => #{<<"name">> => Name}}) of
                                         {ok, #{<<"results">> := [Role]}} ->
                                             #{<<"objectId">> := RoleId} = Role,
-                                            UserIds = dgiot_parse:get_userids(RoleId),
+                                            UserIds = dgiot_parse_id:get_userids(RoleId),
                                             lists:foldl(fun(UserId, Acc1) ->
-                                                ObjectId = dgiot_parse:get_notificationid(Ruleid),
+                                                ObjectId = dgiot_parse_id:get_notificationid(Ruleid),
                                                 Content = Payload#{<<"_deviceid">> => DeviceId, <<"_productid">> => ProductId},
                                                 sendSubscribe(Ruleid, Content, UserId),
                                                 Acc1 ++ [#{
@@ -268,7 +268,7 @@ save_notification(Ruleid, DevAddr, Payload) ->
                                             Acc
                                     end;
                                 <<"*">> ->
-                                    ObjectId = dgiot_parse:get_notificationid(Ruleid),
+                                    ObjectId = dgiot_parse_id:get_notificationid(Ruleid),
                                     Acc ++ [#{
                                         <<"method">> => <<"POST">>,
                                         <<"path">> => <<"/classes/Notification">>,
@@ -297,7 +297,7 @@ save_notification(Ruleid, DevAddr, Payload) ->
                                         }
                                     }];
                                 UserId ->
-                                    ObjectId = dgiot_parse:get_notificationid(Ruleid),
+                                    ObjectId = dgiot_parse_id:get_notificationid(Ruleid),
                                     Content = Payload#{<<"_deviceid">> => DeviceId, <<"_productid">> => ProductId},
                                     sendSubscribe(Ruleid, Content, UserId),
                                     Acc ++ [#{
@@ -415,9 +415,9 @@ save_devicestatus(DeviceId, Status) ->
                                 <<"where">> => #{<<"name">> => Name}}) of
                                 {ok, #{<<"results">> := [Role]}} ->
                                     #{<<"objectId">> := RoleId} = Role,
-                                    UserIds = dgiot_parse:get_userids(RoleId),
+                                    UserIds = dgiot_parse_id:get_userids(RoleId),
                                     lists:foldl(fun(UserId, Acc1) ->
-                                        ObjectId = dgiot_parse:get_notificationid(Ruleid),
+                                        ObjectId = dgiot_parse_id:get_notificationid(Ruleid),
                                         Content = #{<<"_deviceid">> => DeviceId, <<"_productid">> => ProductId, <<"status">> => Status},
                                         Result = #{<<"thing1">> => #{<<"value">> => Productname},
                                             <<"date4">> => #{<<"value">> => dgiot_datetime:format("YYYY-MM-DD HH:NN:SS")},
@@ -460,7 +460,7 @@ save_devicestatus(DeviceId, Status) ->
                         <<"*">> ->
                             Acc;
                         UserId ->
-                            ObjectId = dgiot_parse:get_notificationid(Ruleid),
+                            ObjectId = dgiot_parse_id:get_notificationid(Ruleid),
                             Result = #{<<"thing1">> => #{<<"value">> => Productname},
                                 <<"date4">> => #{<<"value">> => dgiot_datetime:format("YYYY-MM-DD HH:NN:SS")},
                                 <<"thing15">> => #{<<"value">> => <<"设备离线"/utf8>>},
@@ -514,7 +514,7 @@ send_message_to3D(ProductId, DevAddr, Payload) ->
 
         end,
     io:format("~s ~p Payload = ~p.~n", [?FILE, ?LINE, Payload]),
-    Deviceid = dgiot_parse:get_deviceid(ProductId, DevAddr),
+    Deviceid = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
     DeviceName =
         case dgiot_parse:get_object(<<"Device">>, Deviceid) of
             {ok, #{<<"name">> := Name}} ->
@@ -564,7 +564,7 @@ create_maintenance(Info) ->
     <<Number:10/binary, _/binary>> = dgiot_utils:random(),
     Timestamp = dgiot_datetime:format(dgiot_datetime:to_localtime(dgiot_datetime:now_secs()), <<"YY-MM-DD HH:NN:SS">>),
     {Username, UserId, UserPhone, SessionToken} =
-        case dgiot_parse:login(<<"dgiot_admin">>, <<"dgiot_admin">>) of
+        case dgiot_parse_auth:login(<<"dgiot_admin">>, <<"dgiot_admin">>) of
             {ok, #{<<"nick">> := Nick, <<"objectId">> := UserId1, <<"phone">> := UserPhone1, <<"sessionToken">> := SessionToken1}} ->
                 {Nick, UserId1, UserPhone1, SessionToken1};
             _ ->
@@ -647,7 +647,7 @@ send_gdmessage(DeviceId, Data) ->
                             <<"where">> => #{<<"name">> => Name}}) of
                             {ok, #{<<"results">> := [Role]}} ->
                                 #{<<"objectId">> := RoleId} = Role,
-                                UserIds = dgiot_parse:get_userids(RoleId),
+                                UserIds = dgiot_parse_id:get_userids(RoleId),
                                 lists:map(fun(UserId) ->
                                     dgiot_wechat:sendSubscribe_test(UserId, Result)
                                           end, UserIds);

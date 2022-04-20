@@ -286,7 +286,7 @@ update_config(Product, SessionToken) ->
 
 create_product(#{<<"name">> := ProductName, <<"devType">> := DevType, <<"category">> := #{
     <<"objectId">> := CategoryId, <<"__type">> := <<"Pointer">>, <<"className">> := <<"Category">>}} = Product, SessionToken) ->
-    ProductId = dgiot_parse:get_productid(CategoryId, DevType, ProductName),
+    ProductId = dgiot_parse_id:get_productid(CategoryId, DevType, ProductName),
     case dgiot_parse:get_object(<<"Product">>, ProductId, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
         {ok, #{<<"objectId">> := ObjectId}} ->
             dgiot_parse:update_object(<<"Product">>, ObjectId, Product,

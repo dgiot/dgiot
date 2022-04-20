@@ -234,17 +234,17 @@ jwtlogin(Idtoken) ->
                                 <<"sex">> => "男"
                             },
                             <<"jwt">> => TokenData}},
-                    SessionToken = dgiot_parse_handler:get_token(<<230, 181, 153, 233, 135, 140, 229, 138, 158, 228, 186, 167, 228, 184, 154, 229, 164, 167, 232, 132, 145>>),
+                    SessionToken = dgiot_parse_auth:get_token(<<230, 181, 153, 233, 135, 140, 229, 138, 158, 228, 186, 167, 228, 184, 154, 229, 164, 167, 232, 132, 145>>),
 %                   用户匹配查找
                     case dgiot_parse:query_object(<<"_User">>, #{<<"where">> => #{<<"username">> => Username}}) of
                         {ok, #{<<"results">> := Results}} when length(Results) == 0 ->
-                            dgiot_parse_handler:create_user(UserBody#{<<"department">> => <<"459e01521c">>}, SessionToken);
+                            dgiot_parse_auth:create_user(UserBody#{<<"department">> => <<"459e01521c">>}, SessionToken);
                         {ok, #{<<"results">> := [#{<<"objectId">> := UserId, <<"tag">> := Tag} | _]}} ->
                             dgiot_parse:update_object(<<"_User">>, UserId, #{<<"tag">> => Tag#{<<"jwt">> => TokenData}})
                     end,
 %                   验证账户登录获取用户信息
                     UserInfo =
-                        case dgiot_parse_handler:login_by_account(Username, UdAccountUuid) of
+                        case dgiot_parse_auth:login_by_account(Username, UdAccountUuid) of
                             {ok, #{<<"objectId">> := _UserId} = UserInfo1} ->
                                 UserInfo1#{<<"code">> => 200, <<"username">> => Username, <<"state">> => TokenData, <<"msg">> => <<"operation success">>};
                             {error, _Msg} ->
@@ -252,7 +252,7 @@ jwtlogin(Idtoken) ->
                                     case dgiot_parse:query_object(<<"_User">>, #{<<"where">> => #{<<"username">> => Username}}) of
                                         {ok, #{<<"results">> := Results1}} when length(Results1) == 0 ->
                                             UserInfo3 = UserBody#{<<"department">> => <<"459e01521c">>},
-                                            dgiot_parse_handler:create_user(UserInfo3, SessionToken),
+                                            dgiot_parse_auth:create_user(UserInfo3, SessionToken),
                                             UserInfo3;
                                         {ok, #{<<"results">> := [#{<<"objectId">> := UserId1, <<"tag">> := Tag1} = UserInfo1 | _]}} ->
                                             dgiot_parse:update_object(<<"_User">>, UserId1, #{<<"tag">> => Tag1#{<<"jwt">> => TokenData}}),
@@ -266,7 +266,7 @@ jwtlogin(Idtoken) ->
                     {ok, #{<<"code">> => 500, <<"msg">> => <<"id_token invalid">>}}
             end;
         {UserInfo2, Username2, UdAccountUuid2} ->
-            case dgiot_parse_handler:login_by_account(Username2, UdAccountUuid2) of
+            case dgiot_parse_auth:login_by_account(Username2, UdAccountUuid2) of
                 {ok, #{<<"objectId">> := _UserId} = UserInfo3} ->
                     {ok, maps:merge(UserInfo2, UserInfo3)};
                 {error, _Msg} ->

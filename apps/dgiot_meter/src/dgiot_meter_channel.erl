@@ -203,7 +203,7 @@ handle_init(State) ->
 %%SELECT username as productid, clientid, connected_at FROM "$events/client_connected" WHERE username = 'bffb6a3a27'
 handle_event('client.connected', {rule, #{peername := PeerName}, #{<<"clientid">> := DtuAddr, <<"productid">> := ProductId} = _Select}, State) ->
     [DTUIP, _] = binary:split(PeerName, <<$:>>, [global, trim]),
-    DeviceId = dgiot_parse:get_deviceid(ProductId, DtuAddr),
+    DeviceId = dgiot_parse_id:get_deviceid(ProductId, DtuAddr),
     case dgiot_device:lookup(DeviceId) of
         {ok, _V} ->
             dgiot_device:put(#{<<"objectId">> => DeviceId});

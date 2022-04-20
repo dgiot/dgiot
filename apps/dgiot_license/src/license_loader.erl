@@ -57,7 +57,7 @@ stop() ->
 on_client_authenticate(#{clientid := <<"swlic_", Key/binary>>, peerhost := Peerhost, username := UserName, password := Password}, AuthResult, _Env) ->
     ?LOG(info, "UserName ~p", [UserName]),
     NewAuthResult =
-        case dgiot_parse_handler:login_by_token(UserName, Password) of
+        case dgiot_parse_auth:login_by_token(UserName, Password) of
             {ok, #{<<"objectId">> := UserObjectId, <<"sessionToken">> := Session}} ->
                 case dgiot_parse:query_object(<<"License">>, #{<<"where">> => #{<<"key">> => Key}}) of
                     {ok, #{<<"results">> := [#{<<"objectId">> := ObjectId} | _]}} ->

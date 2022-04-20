@@ -41,10 +41,10 @@
 post_sns(UserName, Password, OpenId) ->
 %%    case dgiot_parse:query_object(<<"_User">>, #{<<"where">> => #{<<"tag.wechat.openid">> => OpenId}}) of
 %%        {ok, #{<<"results">> := [#{<<"objectId">> := _UserId, <<"username">> := Name} | _]}} ->
-%%            {ok, UserInfo} = dgiot_parse_handler:create_session(UserId, dgiot_auth:ttl(), Name),
+%%            {ok, UserInfo} = dgiot_parse_auth:create_session(UserId, dgiot_auth:ttl(), Name),
 %%            {error, <<OpenId/binary, " is bind ", Name/binary>>};
 %%        _ ->
-    case dgiot_parse:login(UserName, Password) of
+    case dgiot_parse_auth:login(UserName, Password) of
 %%                {ok, #{<<"objectId">> := _UserId, <<"tag">> := #{<<"wechat">> := #{<<"openid">> := OPENID}}}} when size(OPENID) > 0 ->
 %%                    {error, <<UserName/binary, "is bind">>};
         {ok, #{<<"objectId">> := UserId, <<"tag">> := Tag} = UserInfo} ->
@@ -86,7 +86,7 @@ get_sns(Jscode) ->
                             case dgiot_parse:query_object(<<"_User">>, #{<<"where">> => #{<<"tag.wechat.openid">> => OPENID}}) of
                                 {ok, #{<<"results">> := Results}} when length(Results) > 0 ->
                                     [#{<<"objectId">> := UserId, <<"username">> := Name} | _] = Results,
-                                    {ok, UserInfo} = dgiot_parse_handler:create_session(UserId, dgiot_auth:ttl(), Name),
+                                    {ok, UserInfo} = dgiot_parse_auth:create_session(UserId, dgiot_auth:ttl(), Name),
                                     {ok, UserInfo#{<<"openid">> => OPENID, <<"status">> => <<"bind">>}};
                                 _ ->
                                     {ok, #{<<"openid">> => OPENID, <<"status">> => <<"unbind">>}}

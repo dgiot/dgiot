@@ -48,7 +48,7 @@ post(Device) ->
     Product = maps:get(<<"product">>, Device),
     ProductId = maps:get(<<"objectId">>, Product),
     DeviceSecret = maps:get(<<"deviceSecret">>, Device, <<"DeviceSecretdefault">>),
-    DeviceId = maps:get(<<"objectId">>, Device, dgiot_parse:get_deviceid(ProductId,Devaddr)),
+    DeviceId = maps:get(<<"objectId">>, Device, dgiot_parse_id:get_deviceid(ProductId,Devaddr)),
     Status =
         case maps:get(<<"status">>, Device, <<"OFFLINE">>) of
             <<"OFFLINE">> -> false;
@@ -145,13 +145,13 @@ offline_child(DeviceId) ->
         List ->
             F =
                 fun(ProductId, DevAddr) ->
-                    offline(dgiot_parse:get_deviceid(ProductId, DevAddr))
+                    offline(dgiot_parse_id:get_deviceid(ProductId, DevAddr))
                 end,
             [F(ProductId, DevAddr) || {ProductId, DevAddr} <- List]
     end.
 
 save(ProductId, DevAddr) ->
-    DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+    DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
     online(DeviceId).
 
 sync_parse(OffLine) ->
@@ -227,7 +227,7 @@ lookup(DeviceId) ->
     end.
 
 lookup(ProductId, DevAddr) ->
-    DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+    DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
     lookup(DeviceId).
 
 save_subdevice({ProductId, DevAddr}, {DtuAddr, SlaveId}) ->
@@ -243,7 +243,7 @@ delete(DeviceId) ->
     dgiot_mnesia:delete(DeviceId).
 
 delete(ProductId, DevAddr) ->
-    DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+    DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
     dgiot_mnesia:delete(DeviceId).
 
 %% 存储产品
@@ -292,7 +292,7 @@ get_sub_device(DtuAddr, SessionToken) ->
 create_device(#{<<"status">> := Status, <<"brand">> := Brand, <<"devModel">> := DevModel,
     <<"name">> := Name, <<"devaddr">> := DevAddr, <<"product">> := ProductId} = Device, SessionToken) ->
     #{<<"objectId">> := DeviceId} =
-        dgiot_parse:get_objectid(<<"Device">>, #{<<"product">> => ProductId, <<"devaddr">> => DevAddr}),
+        dgiot_parse_id:get_objectid(<<"Device">>, #{<<"product">> => ProductId, <<"devaddr">> => DevAddr}),
     case dgiot_parse:get_object(<<"Device">>, DeviceId) of
         {ok, #{<<"objectId">> := ObjectId}} ->
             {ok, Result} = dgiot_parse:update_object(<<"Device">>, ObjectId,
@@ -330,7 +330,7 @@ create_device(#{<<"status">> := Status, <<"brand">> := Brand, <<"devModel">> := 
 
 create_device(#{<<"status">> := Status, <<"brand">> := Brand, <<"devModel">> := DevModel, <<"name">> := Name,
     <<"devaddr">> := DevAddr, <<"product">> := ProductId, <<"ACL">> := Acl} = Device) ->
-    #{<<"objectId">> := DeviceId} = dgiot_parse:get_objectid(<<"Device">>, #{<<"product">> => ProductId, <<"devaddr">> => DevAddr}),
+    #{<<"objectId">> := DeviceId} = dgiot_parse_id:get_objectid(<<"Device">>, #{<<"product">> => ProductId, <<"devaddr">> => DevAddr}),
     case dgiot_parse:get_object(<<"Device">>, DeviceId) of
         {ok, Result} ->
             Body = #{
@@ -371,7 +371,7 @@ create_device(#{<<"status">> := Status, <<"brand">> := Brand, <<"devModel">> := 
 
 get(ProductId, DevAddr) ->
     Keys = [<<"objectId">>, <<"status">>, <<"isEnable">>],
-    DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+    DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
     case dgiot_parse:get_object(<<"Device">>, DeviceId) of
         {ok, Device} ->
             case maps:get(<<"isEnable">>, Device, false) of
@@ -428,9 +428,9 @@ get_file(ProductId, DevAddr, FileUrl, Ext) ->
     BinFileName = dgiot_utils:to_binary(FileName),
     case ibrowse:send_req(dgiot_utils:to_list(FileUrl), [], get) of
         {ok, "200", _Header1, Stream} ->
-            DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+            DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
             AppName = get_appname(DeviceId),
-            SessionToken = dgiot_parse_handler:get_token(AppName),
+            SessionToken = dgiot_parse_auth:get_token(AppName),
             inets:start(),
             Url = get_url(AppName),
 
@@ -481,7 +481,7 @@ get_file(ProductId, DevAddr, FileUrl, Ext) ->
     end.
 
 get_url(AppName) ->
-    Roleid = dgiot_parse:get_roleid(AppName),
+    Roleid = dgiot_parse_id:get_roleid(AppName),
     case dgiot_parse:get_object(<<"_Role">>, Roleid) of
         {ok, #{<<"tag">> := #{<<"appconfig">> := #{<<"file">> := Url}}}} ->
             <<Url/binary>>;

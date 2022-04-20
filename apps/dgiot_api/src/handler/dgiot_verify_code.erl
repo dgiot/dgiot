@@ -25,9 +25,9 @@
 %% 注册/登录验证码校验成功
 handle(#{<<"Action">> := Action, <<"account">> := Account} = Args, Req)
     when Action == <<"register">>; Action == <<"login">> ->
-    case dgiot_parse_handler:login_by_mail_phone(Account) of
+    case dgiot_parse_auth:login_by_mail_phone(Account) of
         {ok, #{<<"sessionToken">> := Token} = UserInfo} ->
-            NewReq = dgiot_parse_handler:set_cookies("sessionToken", Token, Req),
+            NewReq = dgiot_parse_auth:set_cookies("sessionToken", Token, Req),
             case maps:get(<<"callback">>, Args, undefined) of
                 undefined ->
                     {200, #{}, UserInfo, NewReq};

@@ -80,7 +80,7 @@ handle(OperationID, Args, Context, Req) ->
 %% 请求:POST /iotapi/post_login
 do_request(post_login, #{<<"username">> := UserName, <<"password">> := Password}, _Context, _Req) ->
     ?LOG(debug, "UserName ~p ", [UserName]),
-    dgiot_parse_handler:login_by_account(UserName, Password);
+    dgiot_parse_auth:login_by_account(UserName, Password);
 
 %% Role模版 概要: 导库 描述:json文件导库
 %% OperationId:post_role
@@ -159,7 +159,7 @@ do_request(post_roleuser, Body, #{<<"sessionToken">> := SessionToken} = _Context
 %% 请求:GET /iotapi/roletree
 do_request(get_roletree, _Body, #{<<"sessionToken">> := SessionToken} = _Context, _Req0) ->
     ?LOG(debug, "SessionToken ~p ", [SessionToken]),
-    dgiot_parse_handler:get_classtree(<<"_Role">>, <<"parent">>, #{}, SessionToken);
+    dgiot_parse_utils:get_classtree(<<"_Role">>, <<"parent">>, #{}, SessionToken);
 %%    dgiot_role:get_roletree(SessionToken);
 
 %% Role模版 概要: 导库 描述:json文件导库

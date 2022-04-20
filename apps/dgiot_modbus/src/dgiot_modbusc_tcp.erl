@@ -92,7 +92,7 @@ handle_info({tcp, Buff}, #tcp{state = #state{id = ChannelId, devaddr = DtuAddr, 
 %%            ?LOG(info, "Things ~p", [Things]),
             NewTopic = <<"thing/", DtuProductId/binary, "/", DtuAddr/binary, "/post">>,
             dgiot_bridge:send_log(ChannelId, ProductId, DtuAddr, "Channel sends [~p] to [task:~p]", [jsx:encode(Things), NewTopic]),
-            DeviceId = dgiot_parse:get_deviceid(ProductId, DtuAddr),
+            DeviceId = dgiot_parse_id:get_deviceid(ProductId, DtuAddr),
             dgiot_mqtt:publish(DeviceId, NewTopic, jsx:encode(Things));
         Other ->
             ?LOG(info, "Other ~p", [Other]),

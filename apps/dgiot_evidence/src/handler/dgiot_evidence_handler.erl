@@ -178,7 +178,7 @@ do_request(post_generatereport, #{<<"id">> := TaskId}, #{<<"sessionToken">> := _
             <<"product">> := #{<<"__type">> := <<"Pointer">>, <<"className">> := <<"Product">>, <<"objectId">> := _ProductId},
             <<"parentId">> := #{<<"__type">> := <<"Pointer">>, <<"className">> := <<"Device">>, <<"objectId">> := _ParentId}
         }} ->
-            DictId = dgiot_parse:get_dictid(TaskId, <<"word">>, <<"Device">>, <<"worddict">>),
+            DictId = dgiot_parse_id:get_dictid(TaskId, <<"word">>, <<"Device">>, <<"worddict">>),
             case dgiot_parse:get_object(<<"Dict">>, DictId) of
                 {ok, #{<<"data">> := #{<<"params">> := Params}}} ->
                     Worddatas =
@@ -327,7 +327,7 @@ do_request(post_drawxnqx, #{<<"taskid">> := TaskId, <<"data">> := Data}, #{<<"se
                         [#{<<"name">> := Role} | _] = maps:values(Roles),
                         TimeStamp = dgiot_datetime:now_ms(),
                         Ukey = dgiot_utils:to_binary(dgiot_datetime:now_secs()),
-                        EvidenceId = dgiot_parse:get_evidenceId(Ukey, dgiot_utils:to_binary(TimeStamp)),
+                        EvidenceId = dgiot_parse_id:get_evidenceId(Ukey, dgiot_utils:to_binary(TimeStamp)),
                         Original = #{<<"taskid">> => TaskId, <<"avgs">> => Data, <<"type">> => <<"avgs">>, <<"path">> => Path},
                         Evidence = #{
                             <<"objectId">> => EvidenceId,
@@ -432,7 +432,7 @@ do_request(_OperationId, _Args, _Context, _Req) ->
 
 do_report(Config, DevType, Name, SessionToken, FullPath, Uri) ->
     CategoryId = maps:get(<<"category">>, Config, <<"d6ad425529">>),
-    ProductId = dgiot_parse:get_productid(CategoryId, DevType, Name),
+    ProductId = dgiot_parse_id:get_productid(CategoryId, DevType, Name),
     Producttempid = maps:get(<<"producttemplet">>, Config, <<"">>),
     case dgiot_httpc:fileUpload(Uri ++ "/WordController/fileUpload", dgiot_utils:to_list(FullPath), ProductId) of
         {ok, #{<<"code">> := 0, <<"msg">> := <<"SUCCESS">>, <<"path">> := WordPath, <<"images">> := Images}} ->
@@ -480,7 +480,7 @@ get_paper(_ProductId, FileInfo) ->
           end,
     List = dgiot_utils:read(Path, Fun, []),
 %%    Title = lists:nth(1, List),
-%    DeviceId = dgiot_parse:get_deviceid(ProductId, dgiot_utils:to_md5(Title)),
+%    DeviceId = dgiot_parse_id:get_deviceid(ProductId, dgiot_utils:to_md5(Title)),
     Single = dgiot_utils:split_list(<<"一、单选题"/utf8>>, <<"二、多选题"/utf8>>, false, List, []),
     Multiple = dgiot_utils:split_list(<<"二、多选题"/utf8>>, <<"三、判断题"/utf8>>, false, List, []),
     Judge = dgiot_utils:split_list(<<"三、判断题"/utf8>>, <<"四、案例题"/utf8>>, false, List, []),
@@ -922,7 +922,7 @@ post_report(#{<<"name">> := Name, <<"product">> := ProductId, <<"parentId">> := 
                                     NewView = maps:without([<<"createdAt">>, <<"objectId">>, <<"updatedAt">>], View),
                                     Type = maps:get(<<"type">>, View, <<"">>),
                                     Title = maps:get(<<"title">>, View, <<"">>),
-                                    Viewid = dgiot_parse:get_viewid(DeviceId, Type, <<"Device">>, Title),
+                                    Viewid = dgiot_parse_id:get_viewid(DeviceId, Type, <<"Device">>, Title),
                                     Acc ++ [#{
                                         <<"method">> => <<"POST">>,
                                         <<"path">> => <<"/classes/View">>,
@@ -943,7 +943,7 @@ post_report(#{<<"name">> := Name, <<"product">> := ProductId, <<"parentId">> := 
                                     NewDict = maps:without([<<"createdAt">>, <<"objectId">>, <<"updatedAt">>], Dict),
                                     Type = maps:get(<<"type">>, Dict, <<"">>),
                                     Title = maps:get(<<"title">>, Dict, <<"">>),
-                                    Dictid = dgiot_parse:get_dictid(DeviceId, Type, <<"Device">>, Title),
+                                    Dictid = dgiot_parse_id:get_dictid(DeviceId, Type, <<"Device">>, Title),
                                     Acc ++ [#{
                                         <<"method">> => <<"POST">>,
                                         <<"path">> => <<"/classes/Dict">>,

@@ -218,7 +218,7 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, state = #state{id = ChannelId, de
     List = dgiot_utils:to_list(DtuAddr),
     List1 = dgiot_utils:to_list(Buff),
     #{<<"objectId">> := DeviceId} =
-        dgiot_parse:get_objectid(<<"Device">>, #{<<"product">> => ProductId, <<"devaddr">> => DtuAddr}),
+        dgiot_parse_id:get_objectid(<<"Device">>, #{<<"product">> => ProductId, <<"devaddr">> => DtuAddr}),
     case re:run(DtuAddr, Head, [{capture, first, list}]) of
         {match, [Head]} when length(List) == Len ->
             {DevId, Devaddr} =

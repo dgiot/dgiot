@@ -214,7 +214,7 @@ do_request(post_cluster, #{<<"action">> := Action, <<"node">> := N}, _Context, _
 do_request(put_log_level, #{<<"type">> := Type, <<"name">> := Name, <<"level">> := Level}, _Context, _Req) ->
     case dgiot_logger:set_loglevel(Type, Name, Level) of
         ok ->
-            LoglevelId = dgiot_parse:get_loglevelid(Name, Type),
+            LoglevelId = dgiot_parse_id:get_loglevelid(Name, Type),
             dgiot_parse:update_object(<<"LogLevel">>, LoglevelId, #{<<"level">> => Level}),
             {200, #{<<"code">> => 200, <<"msg">> => <<"SUCCESS">>}};
         {error, Reason} ->

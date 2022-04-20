@@ -18,6 +18,8 @@
 -module(dgiot_bamis).
 -include("dgiot_bamis.hrl").
 -include_lib("dgiot/include/logger.hrl").
+-dgiot_swagger(<<"amis">>).
+
 -export([
     create_amis/3,
     put_amis_device/2,
@@ -37,7 +39,10 @@ put_amis_device( #{<<"objectId">> := Deviceid} = Body, SessionToken) ->
                 <<"data">> => maps:without([
                     <<"parent">>,
                     <<"createdAt">>,
-                    <<"updatedAt">>], maps:merge(OldRole, Body))},
+                    <<"updatedAt">>,
+                    <<"ACL">>,
+                    <<"objectId">>
+                    ], maps:merge(OldRole, Body))},
                 [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]);
         Error -> Error
     end.

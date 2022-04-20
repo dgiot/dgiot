@@ -57,7 +57,7 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, state = #state{id = ChannelId, dt
             dgiot_mqtt:subscribe(Topic),  %为这个设备订阅一个mqtt
             dgiot_bridge:send_log(ChannelId, ProductId, DtuAddr, "from dev ~p (登录)", [dgiot_utils:binary_to_hex(Buff)]),
             {NewRef, NewStep} = {undefined, read_meter},
-            DtuId = dgiot_parse:get_deviceid(DtuProductId, DtuAddr),
+            DtuId = dgiot_parse_id:get_deviceid(DtuProductId, DtuAddr),
             dgiot_metrics:inc(dgiot_iq60, <<"dtu_online">>, 1),
             {noreply, TCPState#tcp{buff = <<>>, register = true, clientid = DtuId, state = State#state{dtuaddr = DtuAddr, protocol = ?IQ60, ref = NewRef, step = NewStep}}};
        _ ->

@@ -67,7 +67,7 @@ handle_info({deliver, _, Msg}, TCPState) ->
     Topic = dgiot_mqtt:get_topic(Msg),
     case binary:split(Topic, <<$/>>, [global, trim]) of
         [<<"thing">>, ProductId, DevAddr, <<"tcp">>, <<"hex">>] ->
-            DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+            DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
             dgiot_device:save_log(DeviceId, Payload, ['tcp_send']),
             dgiot_tcp_server:send(TCPState, dgiot_utils:hex_to_binary(dgiot_utils:trim_string(Payload))),
             {noreply, TCPState};
@@ -108,7 +108,7 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, state = #state{id = ChannelId, de
             {noreply, TCPState#tcp{buff = <<>>}};
         DtuAddr ->
             NewProductId = get_productid(ChannelId, Products, Head, Dtutype),
-            DeviceId = dgiot_parse:get_deviceid(NewProductId, DtuAddr),
+            DeviceId = dgiot_parse_id:get_deviceid(NewProductId, DtuAddr),
             case create_device(DeviceId, NewProductId, DtuAddr, DTUIP, Dtutype) of
                 {<<>>, <<>>} ->
                     {noreply, TCPState#tcp{buff = <<>>}};
@@ -285,7 +285,7 @@ create_instruct(ACL, DtuProductId, DtuDevId) ->
     end.
 
 get_productid(ChannelId, Products, Head, Dtutype) ->
-    NewProductId = dgiot_parse:get_productid(<<"DGIOTHUB"/utf8>>, dgiot_utils:to_binary(Head), dgiot_utils:to_binary(Dtutype)),
+    NewProductId = dgiot_parse_id:get_productid(<<"DGIOTHUB"/utf8>>, dgiot_utils:to_binary(Head), dgiot_utils:to_binary(Dtutype)),
     case lists:member(NewProductId, Products) of
         false ->
             {ok, Acl} = dgiot_bridge:get_acl(ChannelId),

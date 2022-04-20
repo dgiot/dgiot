@@ -139,7 +139,7 @@ clean_database(List) ->
                         false ->
                             case List == [<<"*">>] orelse lists:member(Table, List) of
                                 true ->
-                                    dgiot_parse:del_trigger(Table),
+                                    dgiot_parse_hook:del_trigger(Table),
                                     case dgiot_parse:del_table(Table) of
                                         ok ->
                                             case dgiot_parse:del_schemas(Table) of
@@ -243,7 +243,7 @@ get_roletemp(Role) ->
 generate_role(Roles, Result) ->
     Fun =
         fun(#{<<"name">> := Name} = Role) ->
-            {ok, AppUser} = dgiot_parse_handler:create_user_for_app(Name),
+            {ok, AppUser} = dgiot_parse_auth:create_user_for_app(Name),
             ?LOG(info,"AppUser ~p ", [AppUser]),
             NewUsers = maps:get(<<"users">>, Role, []) ++ [AppUser],
             NewRole = Role#{

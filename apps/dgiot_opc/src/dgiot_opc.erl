@@ -399,7 +399,7 @@ jud(K1, K2, K3) ->
 send_properties(ProductId, DtuAddr, Properties) ->
     NewProperties = get_properties(ProductId, Properties),
     NewTopic = <<"thing/", ProductId/binary, "/", DtuAddr/binary, "/post">>,
-    DeviceId = dgiot_parse:get_deviceid(ProductId, DtuAddr),
+    DeviceId = dgiot_parse_id:get_deviceid(ProductId, DtuAddr),
 %%    io:format("~s ~p NewProperties = ~p.~n", [?FILE, ?LINE, NewProperties]),
     dgiot_mqtt:publish(DeviceId, NewTopic, jsx:encode(NewProperties)).
 

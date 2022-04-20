@@ -214,10 +214,10 @@ to_float(V) when is_binary(V) ->
 to_utf8(Binary, Type) ->
     utf8(Binary, <<>>, <<>>, Type).
 utf8(<<>>, Block, Result, Type) ->
-    Code = iconverl:get_utf8(Block,Type),
+    Code = iconverl:get_utf8(Block, Type),
     <<Result/binary, Code/binary>>;
 utf8(<<I:8, Rest/binary>>, Block, Result, Type) when I < 128 andalso I > 0 ->
-    Code = iconverl:get_utf8(Block,Type),
+    Code = iconverl:get_utf8(Block, Type),
     Ascii = <<I:8>>,
     utf8(Rest, <<>>, <<Result/binary, Code/binary, Ascii/binary>>, Type);
 utf8(<<I:8, Rest/binary>>, Block, Result, Type) ->

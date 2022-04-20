@@ -73,7 +73,7 @@ init([#{<<"app">> := App, <<"channel">> := ChannelId, <<"dtuid">> := DtuId, <<"m
             pass;
         {ProductId, DevAddr} ->
 %%            io:format("~s ~p DtuId = ~p.~n", [?FILE, ?LINE, DtuId]),
-            DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+            DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
             Que = dgiot_instruct:get_instruct(ProductId, DeviceId, 1, dgiot_utils:to_atom(Mode)),
 %%            ChildQue = dgiot_instruct:get_child_instruct(DeviceId, 1, dgiot_utils:to_atom(Mode)),
             Tsendtime = dgiot_datetime:localtime_to_unixtime(dgiot_datetime:to_localtime(Endtime)),
@@ -120,7 +120,7 @@ handle_info(init, #task{dtuid = DtuId, mode = Mode, round = Round, ts = Oldstamp
             ?LOG(info, "not_find ~p", [DtuId]),
             {noreply, State};
         {ProductId, DevAddr} ->
-            DeviceId = dgiot_parse:get_deviceid(ProductId, DevAddr),
+            DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
             NewRound = Round + 1,
             Que = dgiot_instruct:get_instruct(ProductId, DeviceId, NewRound, dgiot_utils:to_atom(Mode)),
             Nowstamp = dgiot_datetime:nowstamp(),
@@ -254,7 +254,7 @@ get_next_pn(#task{tid = Channel, mode = Mode, dtuid = DtuId, firstid = DeviceId,
 %%    Topic = <<"thing/", ProductId/binary, "/", DevAddr/binary, "/post">>,
 %%    dgiot_mqtt:unsubscribe(Topic),
     {NextProductId, NextDevAddr} = dgiot_task:get_pnque(DtuId),
-    NextDeviceId = dgiot_parse:get_deviceid(NextProductId, NextDevAddr),
+    NextDeviceId = dgiot_parse_id:get_deviceid(NextProductId, NextDevAddr),
     Que = dgiot_instruct:get_instruct(NextProductId, NextDeviceId, Round, Mode),
     dgiot_bridge:send_log(Channel, NextProductId, NextDevAddr, "to_dev=> ~s ~p NextProductId ~p NextDevAddr ~p NextDeviceId ~p", [?FILE, ?LINE, NextProductId, NextDevAddr, NextDeviceId]),
     NextTopic = <<"thing/", NextProductId/binary, "/", NextDevAddr/binary, "/post">>,

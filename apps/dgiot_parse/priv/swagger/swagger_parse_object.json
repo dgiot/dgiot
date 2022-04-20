@@ -61,10 +61,6 @@
       "description": "指令管理"
     },
     {
-      "name": "Tag",
-      "description": "标签管理"
-    },
-    {
       "name": "Evidence",
       "description": "证据管理"
     },
@@ -126,7 +122,7 @@
     }
   ],
   "paths": {
-    "/classes/{{className}}/{id}": {
+    "/{{classes}}/{{className}}/{id}": {
       "get": {
         "summary": "获取{{tag}}详情",
         "description": "根据ID获取{{tag}}详情",
@@ -289,7 +285,7 @@
         }
       }
     },
-    "/classes/{{className}}": {
+    "/{{classes}}/{{className}}": {
       "get": {
         "summary": "查询{{tag}}",
         "description": "参考parse文档 https://docs.parseplatform.org/rest/guide/#queries,<br/><br/>where支持：[$lt, $lte, $gt, $gte, $ne, $in, $nin, $exists, $select, $dontSelect, $all, $regex, $text]",
