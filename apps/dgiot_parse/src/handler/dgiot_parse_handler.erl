@@ -195,7 +195,6 @@ handle(OperationID, Args, #{from := js} = Context, Req) ->
     do_request_before(list_to_binary(atom_to_list(OperationID)), Args, NewBody, ReqHeader, Context, Req1);
 
 handle(OperationID, Args, Context, Req) ->
-    io:format("~s ~p  do_request_before OperationID = ~p ~n", [?FILE, ?LINE, OperationID]),
     OldHeaders = dgiot_req:headers(Req, [{return, map}]),
     ReqHeader = maps:without([<<"authorization">>, <<"sessionToken">>], OldHeaders),
     {ok, Body, Req1} = dgiot_req:read_body(Req),
@@ -420,7 +419,7 @@ do_request_before(<<"post_requestpasswordreset">>, Args, Body, Headers, Context,
     request_parse(<<"post_requestpasswordreset">>, Args, Body, Headers, Context, Req);
 
 do_request_before(OperationID, Args, Body, Headers, Context, Req) ->
-    io:format("~s ~p  do_request_before OperationID = ~p ~n", [?FILE, ?LINE, OperationID]),
+%%    io:format("~s ~p  do_request_before OperationID = ~p ~n", [?FILE, ?LINE, OperationID]),
     request_parse(OperationID, Args, Body, Headers, Context, Req).
 
 %% 所有请求后置处理
@@ -445,7 +444,7 @@ do_request_after(<<"delete_classes_", _OperationID/binary>>, 200, ResHeaders, Re
 
 
 do_request_after(_OperationID, StatusCode, ResHeaders, ResBody, _Context, Req) ->
-    io:format("~s ~p  do_request_after StatusCode = ~p ~n", [?FILE, ?LINE, StatusCode]),
+%%    io:format("~s ~p  do_request_after StatusCode = ~p ~n", [?FILE, ?LINE, StatusCode]),
     {StatusCode, ResHeaders, ResBody, Req}.
 
 
@@ -471,7 +470,7 @@ request_parse(OperationID, Args, Body, Headers, #{base_path := BasePath} = Conte
 
 request_parse(OperationID, Url, Method, _Args, Body, Headers, #{from := From} = Context, Req) ->
     {_Type, NewOperationID} = get_OperationID(OperationID),
-    io:format("~s ~p  request_parse Url = ~p ~n", [?FILE, ?LINE, Url]),
+%%    io:format("~s ~p  request_parse Url = ~p ~n", [?FILE, ?LINE, Url]),
     case dgiot_parse:request(Method, maps:to_list(Headers), Url, dgiot_parse_id:get_objectid(NewOperationID, Body), [{from, From}]) of
         {ok, StatusCode, ResHeaders, ResBody} ->
             NewHeaders =

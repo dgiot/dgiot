@@ -193,12 +193,13 @@ init(?TYPE, ChannelId, Config) ->
         {dgiot_dcache, {dgiot_dcache, start_link, Opts}, permanent, 5000, worker, [dgiot_dcache]}
     ],
     dgiot_metrics:dec(dgiot_tdengine, <<"tdengine">>, 1000),
-    dgiot_parse_hook:subscribe(<<"product_id">>, delete, ChannelId),
+
     {ok, State, Specs}.
 
-handle_init(State) ->
+handle_init(#state{id = ChannelId} = State) ->
     dgiot_metrics:inc(dgiot_tdengine, <<"tdengine">>, 1),
     erlang:send_after(5000, self(), init),
+    dgiot_parse_hook:subscribe(<<"Product/*">>, delete, ChannelId),
     {ok, State}.
 
 %% 通道消息处理,注意：进程池调用
@@ -210,9 +211,9 @@ handle_event(EventType, Event, _State) ->
     ?LOG(info, "channel ~p, ~p", [EventType, Event]),
     ok.
 
-handle_message({sync_parse, _Method, Args}, State) ->
+handle_message({sync_parse, delete, _Table, _Data, NewData, _ProductId}, State) ->
 %%    io:format("ProductArgs ~p~n", [jsx:decode(Args, [{labels, binary}, return_maps])]),
-    case jsx:decode(Args, [return_maps]) of
+    case jsx:decode(NewData, [return_maps]) of
         #{<<"objectId">> := ProductId} ->
             case dgiot_parse:query_object(<<"Dict">>, #{<<"where">> => #{<<"key">> => ProductId, <<"class">> => <<"Product">>}}) of
                 {ok, #{<<"results">> := Dicts}} ->

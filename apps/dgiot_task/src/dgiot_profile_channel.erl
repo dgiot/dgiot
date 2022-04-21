@@ -102,11 +102,12 @@ init(?TYPE, ChannelId, Args) ->
         <<"products">> => Products,
         <<"args">> => NewArgs}
     },
-    dgiot_parse_hook:subscribe(<<"Device/*">>, put, ChannelId),
+
     {ok, State, []}.
 
-handle_init(#state{id = _ChannelId, env = #{<<"products">> := _Products, <<"args">> := _Args}} = State) ->
+handle_init(#state{id = ChannelId, env = #{<<"products">> := _Products, <<"args">> := _Args}} = State) ->
     erlang:send_after(1000, self(), {message, <<"_Pool">>, check_profile}),
+    dgiot_parse_hook:subscribe(<<"Device/*">>, put, ChannelId),
     {ok, State}.
 
 %% 通道消息处理,注意：进程池调用
@@ -127,10 +128,10 @@ handle_message({check_profie, _Args}, State) ->
 %%<<\"248e9007bf\">>
 %% }
 %%#state{env = #{<<"args">> := #{<<"mode">> := <<"incremental">>}}} =
-handle_message({sync_parse, _Method, Args,DeviceId}, #state{env = #{<<"args">> := #{<<"mode">> := <<"incremental">>}}} = State) ->
+handle_message({sync_parse, put, _Table, _Data, NewData, DeviceId}, #state{env = #{<<"args">> := #{<<"mode">> := <<"incremental">>}}} = State) ->
 %%    io:format("~s ~p Args = ~p.~n", [?FILE, ?LINE, State]),
 %%    io:format("~s ~p Args = ~p.~n", [?FILE, ?LINE, jsx:decode(Args, [{labels, binary}, return_maps])]),
-    case jsx:decode(Args, [{labels, binary}, return_maps]) of
+    case jsx:decode(NewData, [{labels, binary}, return_maps]) of
         #{<<"profile">> := Profile, <<"devaddr">> := Devaddr, <<"product">> := #{<<"objectId">> := ProductId}} ->
             Modifyprofile = get_modifyprofile(DeviceId, Profile),
 %%            设置参数
@@ -147,9 +148,9 @@ handle_message({sync_parse, _Method, Args,DeviceId}, #state{env = #{<<"args">> :
     end,
     {ok, State};
 
-handle_message({sync_parse, _Method, Args}, State) ->
+handle_message({sync_parse, put, _Table, _Data, NewData, DeviceId}, State) ->
 %%    io:format("~s ~p Args = ~p.~n", [?FILE, ?LINE, jsx:decode(Args, [{labels, binary}, return_maps])]),
-    case jsx:decode(Args, [{labels, binary}, return_maps]) of
+    case jsx:decode(NewData, [{labels, binary}, return_maps]) of
         #{<<"profile">> := Profile, <<"devaddr">> := Devaddr, <<"product">> := #{<<"objectId">> := ProductId}} = Arg ->
             Sessiontoken = maps:get(<<"sessiontoken">>, Arg, <<"">>),
             DeviceId = dgiot_parse_id:get_deviceid(ProductId, Devaddr),

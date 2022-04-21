@@ -23,10 +23,10 @@
 
 %% API
 -export([
-    do_request_hook/5,
+    do_request_hook/6,
     subscribe/3,
-    publish/3,
     publish/4,
+    publish/5,
     add_trigger/3,
     del_trigger/2,
     del_trigger/1,
@@ -41,17 +41,17 @@
 subscribe(Table, Method, Channel) ->
     case dgiot_data:get({sub, Table, Method}) of
         not_find ->
-            dgiot_data:insert({sub, Table, Method, Channel}, [Channel]);
+            dgiot_data:insert({sub, Table, Method}, [Channel]);
         Acc ->
-            dgiot_data:insert({sub, Table, Method, Channel}, dgiot_utils:unique_2(Acc ++ [Channel]))
+            dgiot_data:insert({sub, Table, Method}, dgiot_utils:unique_2(Acc ++ [Channel]))
     end,
     Fun = fun(Args) ->
         case Args of
-            [_, Data, _Body] ->
-                publish(Table, Method, Data),
+            [_Type, Data, NewData,_Body] ->
+                publish(Table, Method, Data, NewData),
                 {ok, Data};
-            [_, ObjectId, Data, _Body] ->
-                publish(Table, Method, Data, ObjectId),
+            [_Type, Data, NewData, ObjectId, _Body] ->
+                publish(Table, Method, Data, NewData, ObjectId),
                 {ok, Data};
             _ ->
                 {ok, []}
@@ -59,21 +59,21 @@ subscribe(Table, Method, Channel) ->
           end,
     dgiot_hook:add(one_for_one, {Table, Method}, Fun).
 
-publish(Table, Method, Args) ->
+publish(Table, Method, Data, NewData) ->
     lists:map(fun(ChannelId) ->
-        dgiot_channelx:do_message(ChannelId, {sync_parse, Method, Args})
+        dgiot_channelx:do_message(ChannelId, {sync_parse, Method, Table, Data, NewData})
               end, dgiot_data:get({sub, Table, Method})).
 
-publish(Table, Method, Args, ObjectId) ->
+publish(Table, Method, Data, NewData, ObjectId) ->
     lists:map(fun(ChannelId) ->
-        dgiot_channelx:do_message(ChannelId, {sync_parse, Method, Args, ObjectId})
+        dgiot_channelx:do_message(ChannelId, {sync_parse, Method, Table, Data, NewData, ObjectId})
               end, dgiot_data:get({sub, Table, Method})).
 
-do_request_hook(Type, [<<"classes">>, Class, ObjectId], Method, Data, Body) ->
-    do_hook({<<Class/binary, "/*">>, Method}, [Type, ObjectId, Data, Body]);
-do_request_hook(Type, [<<"classes">>, Class], Method, Data, Body) ->
-    do_hook({Class, Method}, [Type, Data, Body]);
-do_request_hook(_Type, _Paths, _Method, _Data, _Body) ->
+do_request_hook(Type, [<<"classes">>, Class, ObjectId], Method, Data, NewData, Body) ->
+    do_hook({<<Class/binary, "/*">>, Method}, [Type, Data, NewData, ObjectId, Body]);
+do_request_hook(Type, [<<"classes">>, Class], Method, Data,  NewData, Body) ->
+    do_hook({Class, Method}, [Type, Data, NewData, Body]);
+do_request_hook(_Type, _Paths, _Method, _Data, _NewData, _Body) ->
     ignore.
 do_hook(Key, Args) ->
     case catch dgiot_hook:run_hook(Key, Args) of
@@ -101,7 +101,6 @@ add_trigger(Name, Class, TriggerName, Url) ->
         <<"url">> => Url
     },
     dgiot_parse:request_rest(Name, 'POST', [], Path, Body, [{from, master}]).
-
 
 %% 获取触发器
 get_trigger() ->
