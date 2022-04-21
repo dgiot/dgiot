@@ -356,7 +356,7 @@ handle_multipart({file, Name, Filename, ContentType}, Req, Acc, State) ->
 
 
 do_authorized(LogicHandler, OperationID, Args, Req) ->
-    io:format("~s ~p   LogicHandler = ~p OperationID = ~p ~n", [?FILE, ?LINE, LogicHandler, OperationID]),
+%%    io:format("~s ~p   LogicHandler = ~p OperationID = ~p ~n", [?FILE, ?LINE, LogicHandler, OperationID]),
     case call(LogicHandler, check_auth, [OperationID, Args, Req]) of
         no_call ->
             dgiot_auth:check_auth(OperationID, Args, Req);

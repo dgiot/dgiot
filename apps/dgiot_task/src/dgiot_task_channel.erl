@@ -189,7 +189,7 @@ init(?TYPE, ChannelId, Args) ->
         <<"products">> => Products,
         <<"args">> => NewArgs}
     },
-    dgiot_parse_hook:subscribe(<<"device_id">>, delete, ChannelId),
+
     {ok, State, dgiot_task_worker:childSpec(ChannelId)}.
 
 handle_init(#state{id = ChannelId, env = #{<<"products">> := Products, <<"args">> := Args}} = State) ->
@@ -209,6 +209,7 @@ handle_init(#state{id = ChannelId, env = #{<<"products">> := Products, <<"args">
         dgiot_data:insert({?TASK_ARGS, ProductId}, NewArgs),
         dgiot_task:load(NewArgs)
               end, Products),
+    dgiot_parse_hook:subscribe(<<"Device">>, delete, ChannelId),
     dgiot_task:timing_start(Args#{<<"channel">> => ChannelId}),
     {ok, State}.
 
@@ -217,9 +218,9 @@ handle_event(_EventId, Event, State) ->
     ?LOG(info, "channel ~p", [Event]),
     {ok, State}.
 
-handle_message({sync_parse, _Method, Args}, State) ->
+handle_message({sync_parse, delete, _Table, _Data, NewData}, State) ->
 %%    io:format("DeviceArgs ~p~n", [jsx:decode(Args, [{labels, binary}, return_maps])]),
-    case jsx:decode(Args, [return_maps]) of
+    case jsx:decode(NewData, [return_maps]) of
         #{<<"objectId">> := DtuId} ->
 %%            从队列删除该设备
             dgiot_task:del_pnque(DtuId),

@@ -358,7 +358,7 @@ do_request(Method, Path, Header, Data, Options) ->
         {error, Reason} ->
             {error, Reason};
         {ok, StatusCode, Headers, ResBody} ->
-            case do_request_after(Method, Path, NewData, ResBody, Options) of
+            case do_request_after(Method, Path, Data, NewData, ResBody, Options) of
                 {ok, NewResBody} ->
                     save_cache(Method, Path, Data),
                     {ok, StatusCode, Headers, NewResBody};
@@ -402,13 +402,13 @@ httpc_request(Method, Request, HttpOptions, ReqOptions) ->
             {error, Reason}
     end.
 
-do_request_after(Method0, Path, Data, ResBody, Options) ->
+do_request_after(Method0, Path, Data, NewData, ResBody, Options) ->
     Method =
         case proplists:get_value(from, Options) of
-            js when Data == <<>> ->
+            js when NewData == <<>> ->
                 method(Method0, atom);
             js ->
-                case maps:get(<<"_method">>, ?JSON_DECODE(Data), no) of
+                case maps:get(<<"_method">>, ?JSON_DECODE(NewData), no) of
                     no -> method(Method0, atom);
                     Method1 -> method(Method1, atom)
                 end;
@@ -416,7 +416,7 @@ do_request_after(Method0, Path, Data, ResBody, Options) ->
                 method(Method0, atom)
         end,
     {match, PathList} = re:run(Path, <<"([^/]+)">>, [global, {capture, all_but_first, binary}]),
-    dgiot_parse_hook:do_request_hook('after', lists:concat(PathList), Method, Data, ResBody).
+    dgiot_parse_hook:do_request_hook('after', lists:concat(PathList), Method, Data, NewData, ResBody).
 
 list_join([], Sep) when is_list(Sep) -> [];
 list_join([H | T], Sep) ->
