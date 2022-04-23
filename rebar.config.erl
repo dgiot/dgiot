@@ -223,7 +223,6 @@ overlay_vars_rel(RelType) ->
         , {enable_plugin_dgiot_dlink, true}
         , {enable_plugin_dgiot_bamis, true}
         , {enable_plugin_dgiot_iq60, true}
-        , {enable_plugin_dgiot_sinmahe, true}
         , {vm_args_file, VmArgs}
     ].
 
@@ -358,7 +357,6 @@ relx_plugin_apps_per_rel(cloud) ->
         , dgiot_dlink
         , dgiot_bamis
         , dgiot_iq60
-        , dgiot_sinmahe
     ];
 relx_plugin_apps_per_rel(edge) ->
     [].
