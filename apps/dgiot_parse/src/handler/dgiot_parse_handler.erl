@@ -418,8 +418,16 @@ do_request_before(<<"put_trigger_", _/binary>>, #{<<"triggerName">> := TriggerNa
 do_request_before(<<"post_requestpasswordreset">>, Args, Body, Headers, Context, Req) ->
     request_parse(<<"post_requestpasswordreset">>, Args, Body, Headers, Context, Req);
 
-do_request_before(OperationID, Args, Body, Headers, Context, Req) ->
+do_request_before(OperationID, Args, ReqBody, Headers, Context, Req) ->
+    [Method, Type | _] = re:split(OperationID, <<"_">>),
 %%    io:format("~s ~p  do_request_before OperationID = ~p ~n", [?FILE, ?LINE, OperationID]),
+    Body =
+        case dgiot_hook:run_hook({Method, Type}, {'before', ReqBody}) of
+            {ok, [Rtn | _]} ->
+                Rtn;
+            _ ->
+                ReqBody
+        end,
     request_parse(OperationID, Args, Body, Headers, Context, Req).
 
 %% 所有请求后置处理
@@ -443,12 +451,12 @@ do_request_after(<<"delete_classes_", _OperationID/binary>>, 200, ResHeaders, Re
     {200, ResHeaders, ResBody, Req};
 
 do_request_after(OperationID, StatusCode, ResHeaders, ResBody, _Context, Req) ->
-    [Method, Type | _] = re:split(OperationID,<<"_">>),
-    io:format("~s ~p  do_request_before Method = ~p Type ~p ~n", [?FILE, ?LINE, Method, Type]),
+    [Method, Type | _] = re:split(OperationID, <<"_">>),
+    Map = jsx:decode(ResBody, [{labels, binary}, return_maps]),
     Body =
-        case dgiot_hook:run_hook({ Method, Type}, ResBody) of
-            {ok, NewBody} ->
-                NewBody;
+        case dgiot_hook:run_hook({Method, Type}, {'after', Map}) of
+            {ok, [Rtn | _]} ->
+                jsx:encode(Rtn);
             _ ->
                 ResBody
         end,
@@ -507,3 +515,4 @@ get_OperationID(OperationID) ->
 
 get_url(Url) ->
     re:replace(Url, <<"/amis/">>, <<"/classes/">>, [global, {return, binary}, unicode]).
+

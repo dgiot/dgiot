@@ -21,6 +21,10 @@
 -dgiot_swagger(<<"amis">>).
 
 -export([
+    get/1,
+    post/1,
+    put/1,
+    delete/1,
     create_amis/3,
     put_amis_device/2,
     del_amis_device/1,
@@ -28,10 +32,33 @@
 ]).
 
 -define(APP, ?MODULE).
+%% amis api 接口适配
+get({'before', Data})  ->
+    Data;
+get({'after', #{<<"results">> := Data}}) ->
+    #{<<"data">> => Data};
+get({'after', Data}) ->
+    #{<<"data">> => Data}.
+
+post({'before', Data}) ->
+    Data;
+post({'after',Data}) ->
+    #{<<"data">> => Data}.
+
+put({'before',Data}) ->
+    Data;
+put({'after',Data}) ->
+    #{<<"data">> => Data}.
+
+delete({'before', Data}) ->
+    Data;
+delete({'after', Data}) ->
+    #{<<"data">> => Data}.
+
 del_amis_device(DeviceId) ->
     dgiot_device:delete(DeviceId).
 %%修改设备
-put_amis_device( #{<<"objectId">> := Deviceid} = Body, SessionToken) ->
+put_amis_device(#{<<"objectId">> := Deviceid} = Body, SessionToken) ->
     case dgiot_parse:get_object(<<"Device">>, Deviceid,
         [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
         {ok, #{<<"data">> := OldRole}} ->
@@ -42,7 +69,7 @@ put_amis_device( #{<<"objectId">> := Deviceid} = Body, SessionToken) ->
                     <<"updatedAt">>,
                     <<"ACL">>,
                     <<"objectId">>
-                    ], maps:merge(OldRole, Body))},
+                ], maps:merge(OldRole, Body))},
                 [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]);
         Error -> Error
     end.
