@@ -285,11 +285,11 @@ format_channel(App, CType, Channel_type, Attributes) ->
                 default => 1,
                 title => #{
                     en => <<"Size">>,
-                    zh => <<"池子大小"/utf8>>
+                    zh => <<"消费组"/utf8>>
                 },
                 description => #{
                     en => <<"Pool Size">>,
-                    zh => <<"进程池子数量"/utf8>>
+                    zh => <<"通道消费组进程数量"/utf8>>
                 }
             },
             <<"MaxOverFlow">> => #{
@@ -299,11 +299,11 @@ format_channel(App, CType, Channel_type, Attributes) ->
                 default => 10,
                 title => #{
                     en => <<"MaxOverFlow">>,
-                    zh => <<"最大溢出"/utf8>>
+                    zh => <<"缓存大小"/utf8>>
                 },
                 description => #{
                     en => <<"MaxOverFlow">>,
-                    zh => <<"最大溢出"/utf8>>
+                    zh => <<"缓存大小"/utf8>>
                 }
             },
             <<"ico">> => #{

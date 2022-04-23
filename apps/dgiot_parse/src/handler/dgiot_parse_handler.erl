@@ -442,16 +442,22 @@ do_request_after(<<"delete_classes_", _OperationID/binary>>, 200, ResHeaders, Re
     dgiot_parse_hook:do_hook({_OperationID, delete}, ['after', <<"{\"objectId\" : \"", ObjectId/binary, "\"}">>, <<"">>]),
     {200, ResHeaders, ResBody, Req};
 
-
-do_request_after(_OperationID, StatusCode, ResHeaders, ResBody, _Context, Req) ->
-%%    io:format("~s ~p  do_request_after StatusCode = ~p ~n", [?FILE, ?LINE, StatusCode]),
-    {StatusCode, ResHeaders, ResBody, Req}.
+do_request_after(OperationID, StatusCode, ResHeaders, ResBody, _Context, Req) ->
+    [Method, Type | _] = re:split(OperationID,<<"_">>),
+    io:format("~s ~p  do_request_before Method = ~p Type ~p ~n", [?FILE, ?LINE, Method, Type]),
+    Body =
+        case dgiot_hook:run_hook({ Method, Type}, ResBody) of
+            {ok, NewBody} ->
+                NewBody;
+            _ ->
+                ResBody
+        end,
+    {StatusCode, ResHeaders, Body, Req}.
 
 
 %% ==========================
 %%  parse 请求
 %% ==========================
-
 request_parse(OperationID, Args, Body, Headers, #{base_path := BasePath} = Context, Req) ->
     Path = re:replace(dgiot_req:path(Req), BasePath, <<>>, [{return, binary}]),
     QS =
@@ -470,8 +476,8 @@ request_parse(OperationID, Args, Body, Headers, #{base_path := BasePath} = Conte
 
 request_parse(OperationID, Url, Method, _Args, Body, Headers, #{from := From} = Context, Req) ->
     {_Type, NewOperationID} = get_OperationID(OperationID),
-%%    io:format("~s ~p  request_parse Url = ~p ~n", [?FILE, ?LINE, Url]),
-    case dgiot_parse:request(Method, maps:to_list(Headers), Url, dgiot_parse_id:get_objectid(NewOperationID, Body), [{from, From}]) of
+    NewUrl = get_url(Url),
+    case dgiot_parse:request(Method, maps:to_list(Headers), NewUrl, dgiot_parse_id:get_objectid(NewOperationID, Body), [{from, From}]) of
         {ok, StatusCode, ResHeaders, ResBody} ->
             NewHeaders =
                 lists:foldl(
@@ -481,7 +487,7 @@ request_parse(OperationID, Url, Method, _Args, Body, Headers, #{from := From} = 
                         ({Key, Val}, Map) ->
                             Map#{list_to_binary(Key) => list_to_binary(Val)}
                     end, #{}, ResHeaders),
-            do_request_after(NewOperationID, StatusCode, NewHeaders, ResBody, Context, Req);
+            do_request_after(OperationID, StatusCode, NewHeaders, ResBody, Context, Req);
         {error, Reason} ->
             ResBody = #{<<"code">> => 1, <<"error">> => dgiot_utils:to_binary(Reason)},
             {500, ResBody}
@@ -493,8 +499,11 @@ get_OperationID(OperationID) ->
         ApiType = <<"_", NewType/binary, "_">>,
         case re:run(OperationID, ApiType) of
             {match, _} ->
-                {NewType, re:replace(OperationID, ApiType, <<"_classes_">>, [{return, binary}])};
+                {NewType, re:replace(OperationID, ApiType, <<"_classes_">>, [global, {return, binary}, unicode])};
             _ ->
                 {Type, Acc}
         end
-            end, {<<"classes">>, OperationID}, dgiot_data:get(swaggerApi)).
+                end, {<<"classes">>, OperationID}, dgiot_data:get(swaggerApi)).
+
+get_url(Url) ->
+    re:replace(Url, <<"/amis/">>, <<"/classes/">>, [global, {return, binary}, unicode]).

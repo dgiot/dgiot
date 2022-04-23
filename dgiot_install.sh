@@ -515,7 +515,7 @@ function deploy_postgres() {
 }
 
 function restore_parse_data() {
-  ### 下载dgiot_parse_server初始数据
+  ### 下载dgiot_parse_server初始数据p
   wget ${fileserver}/parse_4.0.sql.tar.gz -O ${install_dir}/dgiot_pg_writer/parse_4.0.sql.tar.gz &> /dev/null
   cd ${install_dir}/dgiot_pg_writer/
   tar xvf parse_4.0.sql.tar.gz &> /dev/null
@@ -951,7 +951,7 @@ function install_node_exporter() {
     mv ${install_dir}/node_exporter-0.18.1.linux-amd64/ ${backup_dir}/
   fi
 
-  tar -zxvf node_exporter-0.18.1.linux-amd64.tar.gz &> /dev/null
+  tar -zxvf node_exporter-0.18.1.linux-amd64.tar.gz  &> /dev/null
   mv ${script_dir}/node_exporter-0.18.1.linux-amd64/ ${install_dir}/
   install_service2 node_exporter "simple" "${install_dir}/node_exporter-0.18.1.linux-amd64/node_exporter"
   cd ${script_dir}

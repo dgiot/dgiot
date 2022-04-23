@@ -198,8 +198,10 @@ get_objectid(Class, Map) ->
             get_objectid(<<"MetaData">>, Map);
         <<"Device">> ->
             Product = case maps:get(<<"product">>, Map) of
-                          #{<<"objectId">> := ProductId} -> ProductId;
-                          ProductId1 -> ProductId1
+                          #{<<"objectId">> := ProductId} ->
+                              ProductId;
+                          ProductId1 ->
+                              ProductId1
                       end,
             DevAddr = maps:get(<<"devaddr">>, Map, <<"">>),
             <<Did:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Device", Product/binary, DevAddr/binary>>),
