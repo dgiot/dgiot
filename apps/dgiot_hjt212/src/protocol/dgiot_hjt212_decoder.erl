@@ -21,22 +21,10 @@
 -protocol([?HJT212]).
 -define(CRLF, "\r\n").
 %% API
--export([parse_frame/2, to_frame/1, test/0]).
-
-test() ->
-    Buff = <<16#40, 16#40, 16#00, 16#00, 16#01, 16#01, 16#18, 16#0d, 16#11, 16#16, 16#0a, 16#14, 16#00, 16#00, 16#00, 16#00, 16#00, 16#00, 16#06, 16#05, 16#04, 16#03, 16#02, 16#01, 16#30, 16#00, 16#02, 16#02, 16#01, 16#01, 16#03, 16#00, 16#d9, 16#00, 16#06, 16#00, 16#02, 16#00, 16#a3, 16#c1, 16#c7, 16#f8, 16#a3, 16#b1, 16#b2, 16#e3, 16#df, 16#c8, 16#b2, 16#b8, 16#d7, 16#df, 16#c0, 16#c8, 16#00, 16#00, 16#00, 16#00, 16#00, 16#00, 16#00, 16#00, 16#00, 16#00, 16#00, 16#00, 16#00, 16#00, 16#00, 16#30, 16#12, 16#13, 16#01, 16#08, 16#14, 16#68, 16#23, 16#23>>,
-    {ok, Result} = parse_frame(Buff, #{}),
-    io:format("Result ~p~n", [Result]),
-    R = to_frame(Result),
-    case R =:= Buff of
-        true ->
-            io:format("success Buff ~p~n", [Buff]);
-        _ ->
-            io:format("error R ~p~n", [R])
-    end.
+-export([parse_frame/2, to_frame/1]).
 
 parse_frame(Buff, Opts) ->
-    parse_frame(Buff, #{}, Opts).
+    parse_frame(Buff, [], Opts).
 
 parse_frame(<<>>, Acc, _Opts) ->
     {ok, Acc};
@@ -59,14 +47,26 @@ parse_frame(<<>>, Acc, _Opts) ->
 %-------------------------------------------------------------------------------------------------------------------------
 %%    包尾     |    字符          |  2             |  固定为<CR><LF>（回车、换行）                                      |
 %-------------------------------------------------------------------------------------------------------------------------
-parse_frame(<<"##", Length:32, UserZone:Length/binary, Crc:1/binary, ?CRLF, Rest/binary>>, Acc, State) when Length > -1 andalso Length < 1025 ->
-    CheckCrc = dgiot_utils:get_parity(UserZone),
-    {Acc1, Rest1} =
-        case <<CheckCrc>> =:= Crc of
+parse_frame(<<"##", Length:4/binary, Tail/binary>>, Acc, State) ->
+    Len = binary_to_integer(Length, 10),
+    {Rest1, Acc1} =
+        case Len > -1 andalso Len < 1025 of
             true ->
-                {Acc ++ [parse_userzone(UserZone, State)], Rest};
-            false ->
-                {Acc, Rest}
+                case Tail of
+                    <<UserZone:Len/binary, Crc:4/binary, ?CRLF, Rest/binary>> ->
+                        CheckCrc = dgiot_hjt212_utils:crc16(UserZone),
+                        case Crc of
+                            CheckCrc ->
+                                {Rest, Acc ++ [parse_userzone(UserZone, State)]};
+                            _ ->
+                                {<<>>, Acc}
+                        end;
+                    _ ->
+                        {<<>>, Acc}
+                end;
+
+            _ ->
+                {<<>>, Acc}
         end,
     parse_frame(Rest1, Acc1, State);
 
@@ -101,10 +101,10 @@ parse_frame(<<_:8, Data/binary>> = _Rest, Acc, Opts) ->
 %|                    |          |       |   ——————————————————————————————————————————                                 |
 %|                    |          |       |   | V5 | V4 | V3 | V2 | V1 | V0 | D | A    |                                 |
 %|                    |          |       |   -------------------------------------------                                |
-%|  拆分包及应答标志   | 整数     | 8     | V5~V0：标准版本号；Bit：000000 表示标准 HJ/T 212-2005，000001                  |
-%|      Flag          | （0-255）|       | 表示本次标准修订版本号。                                                      |
-%|                    |          |       |  A：命令是否应答；Bit：1-应答，0-不应答。                                      |
-%|                    |          |       |  D：是否有数据包序号；Bit：1-数据包中包含包号和总包数两部分,                    |
+%|  拆分包及应答标志   | 整数     | 8     |   V5~V0：标准版本号；Bit：000000 表示标准 HJ/T 212-2005，000001                  |
+%|      Flag          | （0-255）|       |   表示本次标准修订版本号。                                                      |
+%|                    |          |       |   A：命令是否应答；Bit：1-应答，0-不应答。                                      |
+%|                    |          |       |   D：是否有数据包序号；Bit：1-数据包中包含包号和总包数两部分,                    |
 %|                    |          |       |     0-数据包中不包含包号和总包数两部分。                                       |
 %|                    |          |       |  示例：Flag=7 表示标准版本为本次修订版本号，数据段需要拆分并且命令需要应答       |
 %|----------------------------------------------------------------------------------------------------------------------|
@@ -114,19 +114,31 @@ parse_frame(<<_:8, Data/binary>> = _Rest, Acc, Opts) ->
 %|----------------------------------------------------------------------------------------------------------------------|
 %|  指令参数 CP      |    字符     | 0≤n≤950| CP=&&数据区&&，数据区定义见 6.3.3 章节                                      |
 %|----------------------------------------------------------------------------------------------------------------------|
-parse_userzone(<<"QN=", QN:17/binary, "ST=", ST:2/binary, "CN=", CN:4/binary, "PW=", PWD:6/binary, "MN=", MN:24/binary, "Flag=", Flag:2/binary, PNUM:9/binary, PNO:8/binary, "CP=", CP/binary>>, _State) ->
-    #{
-        <<"QN">> => QN,
-        <<"ST">> => ST,
-        <<"CN">> => CN,
-        <<"PW">> => PWD,
-        <<"MN">> => MN,
-        <<"Flag">> => Flag,
-        <<"PNUM">> => PNUM,
-        <<"PNO">> => PNO,
-        <<"CP">> => CP
-    }.
+%%parse_userzone(<<"QN=",QN:17/binary,";ST=", ST:2/binary, ";CN=", CN:4/binary, ";PW=", PWD:6/binary, ";MN=", MN:24/binary, ";Flag=", Flag:2/binary, PNUM:9/binary, PNO:8/binary, ";CP=", CP/binary>>, _State) ->
+parse_userzone(UserZone, _State) ->
+    lists:foldl(fun(X, Acc) ->
+        case X of
+            <<"CP=&&", CP/binary>> ->
+                Acc#{<<"CP">> => dgiot_hjt212_utils:get_cps(CP)};
+            _ ->
+                case re:split(X, <<"=">>) of
+                    [K, V] ->
+                        Acc#{K => V};
+                    _ -> Acc
+                end
+        end
+                end, #{}, re:split(UserZone, <<";">>)).
 
-to_frame(_Frame) ->
-    ok.
+to_frame(#{<<"QN">> := QN, <<"ST">> := ST, <<"CN">> := CN, <<"PW">> := PW, <<"MN">> := MN, <<"Flag">> := Flag, <<"CP">> := CP, <<"PNUM">> := PNUM, <<"PNO">> := PNO}) ->
+    Rdata = <<"QN=", QN/binary, ";ST=", ST/binary, ";CN=", CN/binary, ";PW=", PW/binary, ";MN=", MN/binary,
+        ";Flag=", Flag/binary, ";PNUM=",PNUM/binary,";PNO=", PNO/binary, ";CP=&&", CP/binary, "&&">>,
+    Len = dgiot_hjt212_utils:get_len(Rdata),
+    Crc = dgiot_hjt212_utils:crc16(Rdata),
+    <<"##", Len/binary, Rdata/binary, Crc/binary, "\r\n">>;
+
+to_frame(#{<<"QN">> := QN, <<"ST">> := ST, <<"CN">> := CN, <<"PW">> := PW, <<"MN">> := MN, <<"Flag">> := Flag, <<"CP">> := CP}) ->
+    Rdata = <<"QN=", QN/binary, ";ST=", ST/binary, ";CN=", CN/binary, ";PW=", PW/binary, ";MN=", MN/binary, ";Flag=", Flag/binary, ";CP=&&", CP/binary, "&&">>,
+    Len = dgiot_hjt212_utils:get_len(Rdata),
+    Crc = dgiot_hjt212_utils:crc16(Rdata),
+    <<"##", Len/binary, Rdata/binary, Crc/binary, "\r\n">>.
 

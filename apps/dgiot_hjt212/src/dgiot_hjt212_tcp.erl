@@ -40,15 +40,14 @@ init(#tcp{state = #state{id = ChannelId}} = TCPState) ->
     end.
 
 handle_info({tcp, Buff}, #tcp{state = #state{id = ChannelId} = State} = TCPState) ->
-    dgiot_bridge:send_log(ChannelId, "revice from  ~p", [dgiot_utils:binary_to_hex(Buff)]),
+    dgiot_bridge:send_log(ChannelId, "revice from  ~p", [Buff]),
     case dgiot_hjt212_decoder:parse_frame(Buff, State) of
-        {ok, #{<<"ack">> := Ack} = _Result} ->
-            dgiot_tcp_server:send(TCPState, Ack);
-        {ok, Result} ->
-            dgiot_bridge:send_log(ChannelId, "~s ~p ~ts", [?FILE, ?LINE, unicode:characters_to_list(jiffy:encode(Result))]);
-%%            R = dgiot_hjt212_decoder:to_frame(Result),
-%%            case R =:= Buff of
-%%                true ->
+        {ok, [Frame | _]} ->
+            io:format("~s ~p ~p  ~n",[?FILE, ?LINE, Frame]);
+%%            dgiot_bridge:send_log(ChannelId, "~s ~p ~ts", [?FILE, ?LINE, unicode:characters_to_list(jiffy:encode(Result))]),
+%%            R = dgiot_hjt212_decoder:to_frame(Frame),
+%%            case R  of
+%%                Buff ->
 %%                    io:format("success to_frame Buff ~p~n", [Buff]),
 %%                    dgiot_bridge:send_log(ChannelId, "success to_frame Buff ~p", [Buff]);
 %%                _ ->
