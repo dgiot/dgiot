@@ -10,40 +10,115 @@
     devtype = <<>>
 }).
 
+
+%%设置超时时间及重发次数
+-define(SetTimeOutReSendTimes, 1000).
+%%提取现场机时间
+-define(GetSceneDeviceTime, 1011).
+%%上传现场机时间
+-define(UploadSceneDeviceTime, 1011).
+%%设置现场机时间
+-define(SetSceneDeviceTime, 1012).
+%%现场机时间校准请求
+-define(SceneDeviceTimeCalibration, 1013).
+%%提取实时数据间隔
+-define(GetRtdDataInterval, 1061).
+%%上传实时数据间隔
+-define(UploadRtdDataInterval, 1061).
+%%设置实时数据间隔
+-define(SetRtdDataInterval, 1062).
+%%提取分钟数据间隔
+-define(GetMinuteDataInterval, 1063).
+%%上传分钟数据间隔
+-define(UploadMinuteDataInterval, 1063).
+%%设置分钟数据间隔
+-define(SetMinuteDataInterval, 1064).
+%%用于设置现场机的密码
+-define(SetSceneDevicePassword, 1072).
+%%取污染物实时数据
+-define(GetRtdData, 2011).
+%%上传污染物实时数据
+-define(UploadRtdData, 2011).
+%%停止察看污染物实时数据
+-define(StopRtdData, 2012).
+%%取设备运行状态数据
+-define(GetDeviceRunState, 2021).
+%%上传设备运行状态数据
+-define(UploadDeviceRunState, 2021).
+%%停止察看设备运行状态
+-define(StopDeviceRunState, 2022).
+%%取污染物日历史数据
+-define(GetDayData, 2031).
+%%上传污染物日历史数据
+-define(UploadDayData, 2031).
+%%取设备运行时间日历史数据
+-define(GetDeviceRunTimeDayData, 2041).
+%%上传设备运行时间日历史数据
+-define(UploadDeviceRunTimeDayData, 2041).
+%%取污染物分钟数据
+-define(GetMinuteData, 2051).
+%%上传污染物分钟数据
+-define(UploadMinuteData, 2051).
+%%取污染物小时数据
+-define(GetHourData, 2061).
+%%上传污染物小时数据
+-define(UploadHourData, 2061).
+%%上传数采仪开机时间
+-define(UploadComputerPowerOnTime, 2081).
+%%零点校准量程校准
+-define(RangeCalibration, 3011).
+%%即时采样
+-define(TakeSampleImmediately, 3012).
+%%启动清洗/反吹
+-define(StartClear, 3013).
+%%比对采样
+-define(CompareSample, 3014).
+%%超标留样
+-define(LeaveSuperstandardSample, 3015).
+%%上传超标留样信息
+-define(UploadSuperstandardSample, 3015).
+%%设置采样时间周期
+-define(SetSampleTimeInterval, 3016).
+%%提取采样时间周期
+-define(GetSampleTimeInterval, 3017).
+%%上传采样时间周期
+-define(UploadSampleTimeInterval, 3017).
+%%提取出样时间
+-define(GetSampleTime, 3018).
+%%上传出样时间
+-define(UploadSampleTime, 3018).
+%%提取设备唯一标识
+-define(GetSceneDeviceUUID, 3019).
+%%上传设备唯一标识
+-define(UploadSceneDeviceUUID, 3019).
+%%提取现场机信息
+-define(GetSceneDeviceInfo, 3020).
+%%上传现场机信息
+-define(UploadSceneDeviceInfo, 3020).
+%%设置现场机参数
+-define(SetSceneDeviceParam, 3021).
+%%取污染物周期数据
+-define(GetCycleData, 8051).
+%%上传污染物周期数据
+-define(UploadCycleData, 8051).
+%%请求应答
+-define(RequestResponse, 9011).
+%%执行结果
+-define(ExecuteResponse, 9012).
+%%通知应答
+-define(NoticeResponse, 9013).
+%%数据应答
+-define(DataResponse, 9014).
+%%心跳
+-define(HeartBeat, 9021).
+
+
+%%commandType
+-define(Request, 1).  %%请求命令
+-define(Upload, 2).  %% 上传命令
+-define(Notice, 3).  %% 通知命令
+-define(Other, 4). %% 其他
+-define(None, 5).  %%不支持
+
 -define(HJT212, <<"hjt212">>).
 -define(HJT212_ETS, hjt212_ets).
-%%6.6 表2
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% 命令
--define(COMMAND_RESERVED(Name), lists:member(Name, [0 |lists:seq(7, 127)]).            % 预留
--define(COMMAND_CONTROL, 1).            % 控制命令     时间同步
--define(COMMAND_SEND_DATA, 2).          % 发送数据     发送火灾报警和建筑消防设施运行状态等信息
--define(COMMAND_CONFIRM, 3).            % 确认        对控制命令和发送信息的确认回答
--define(COMMAND_REQUEST, 4).            % 请求        查询火灾报警和建筑消防设施运行状态等信息
--define(COMMAND_RESPONSE, 5).           % 应答        返回查询的信息
--define(COMMAND_DENY, 6).               % 否认        对控制命令和发送信息的否认回答
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%% 信息体类型标志定义表 8.1.1 表3
-%% 信息类型标志为l字节二进制数，取值范围0～255，信息体类型标志见表3。
--define(CLASS_UP_SYSTEM_STATE, 1).                %  8.2.1.1   4个字节,  上传建筑消防设施系统状态
--define(CLASS_UP_RUNNING_STATUS, 2).              %  8.3.1.2   40个字节, 上传建筑消防设施部件运行状态
--define(CLASS_UP_ANALOG_QUANTITY, 3).             %  8.3.1.3   10个字节, 上传建筑消防设施部件模拟量值
--define(CLASS_UP_OPERATING_INFORMATION, 4).       %  8.3.1.4   2个字节， 上传建筑消防设施操作信息记录
--define(CLASS_UP_SOFTWARE_VERSION, 5).            %  8.3.1.5   4个字节， 上传建筑消防设施软件版本
--define(CLASS_UP_SYSTEM_CONFIGURATION, 6).        %  8.3.1.6   1+ L个字节,  上传建筑消防设施系统配置情况
--define(CLASS_UP_EQUIPMENT_CONFIGURATION, 7).     %  8.3.1.7   38个字节, 上传建筑消防设施部件配置情况
--define(CLASS_UP_SYSTEM_TIME, 8).                 %  8.3.1.8   2个字节,  上传建筑消防设施系统时间
--define(CLASS_UP_RESERVED(Name), lists:member(Name, [22, 23, 27 | lists:seq(9, 20)] | lists:seq(29, 60)] ).
--define(CLASS_UP_USERDEV_RUNINFO, 21).            %  8.3.1.9   1个字节,  上传用户信息传输装置运行状态
--define(CLASS_UP_USERDEV_OPINFO, 24).             %  8.3.1.10  2个字节,  上传用户信息传输装置操作信息记录
--define(CLASS_UP_USERDEV_SOFTVER, 25).            %  8.3.1.11  2个字节， 上传用户信息传输装置软件版本
--define(CLASS_UP_USERDEV_CONFIG, 26).             %  8.3.1.12  1 +L字节  上传用户信息传输装置配置情况
--define(CLASS_UP_USERDEV_SYSTIME, 28).            %  8.3.1.13  0字节,    上传用户信息传输装置系统时间
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-%% 建筑消防设施系统状态 8．2．1．1
-%% 系统类型定义表
--define(SYS_TYPE_COMMOM , 0).        %  通用
--define(SYS_TYPE_FIRE_ALARM, 0).     %  火灾报警系统

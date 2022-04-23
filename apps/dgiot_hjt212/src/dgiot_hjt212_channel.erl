@@ -46,7 +46,7 @@
         order => 1,
         type => integer,
         required => true,
-        default => 7533,
+        default => 8401,
         title => #{
             zh => <<"端口"/utf8>>
         },
