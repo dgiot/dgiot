@@ -45,26 +45,14 @@ Before 2016, the Shuwa team had been crawling on the Internet and the mobile Int
      git clone https://gitee.com/dgiiot/dgiot.git
    ```
 
- +  China Linux/Unix/Mac/windows Build
-  ```bash
-    cd dgiot-dashboard
-    git pull
-    pnpm install
-    pnpm build
-    cd ./dist/
-    wget https://dgiot-release-1306147891.cos.ap-nanjing.myqcloud.com/v4.4.0/dgiot_dashboard.tar.gz &> /dev/null
-    tar xf dgiot_dashboard.tar.gz &> /dev/null
-    wget https://dgiot-release-1306147891.cos.ap-nanjing.myqcloud.com/v4.4.0/dgiot_file.tar.gz &> /dev/null
-    tar xf dgiot_file.tar.gz &> /dev/null
-    wget https://dgiot-release-1306147891.cos.ap-nanjing.myqcloud.com/v4.4.0/dgiot_swagger.tar.gz &> /dev/null
-    tar xf dgiot_swagger.tar.gz &> /dev/null
-    rm -rf dgiot_swagger.tar.gz dgiot_file.tar.gz dgiot_dashboard.tar.gz
-    cd ../../dgiot
-    git pull
-    rm ./apps/dgiot_api/priv/www -rf
-    cp ../dgiot-dashboard/dist/ ./apps/dgiot_api/priv/www -rf
-    make run
+ +  One touch start command Linux/Unix/Mac/windows
+ ```bash
+ sh init.sh
  ```
+ + To synchronize the latest front-end files, use the following command
+ ```bash
+ sh init.sh github
+```
 + Make Debug
  ```
   make DIAGNOSTIC=1

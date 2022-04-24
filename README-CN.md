@@ -78,36 +78,24 @@ wget -qO dgiot_install.sh https://gitee.com/dgiiot/dgiot/raw/master/dgiot_instal
 ## 构建
  构建 *dgiot* 需要 Erlang/OTP R23+, Windows下用 [开发环境包](https://dgiotdev-1308220533.cos.ap-nanjing.myqcloud.com/msys64.zip)开发。下载后解压到D盘根目录，严格按照下图操作：
 ![dgiotdevtools.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/dgiotdevtools.png)
- +  国外下载源码
-  ```bash
-     git clone -b master https://github.com/dgiot/dgiot-dashboard.git
-     git clone https://github.com/dgiot/dgiot.git
-   ```
- +  国内下载源码
-   ```bash
-     git clone -b master https://gitee.com/dgiiot/dgiot-dashboard.git
-     git clone https://gitee.com/dgiiot/dgiot.git
-   ```
- +  国内Linux/Unix/Mac/windows 构建
-  ```bash
-    cd dgiot-dashboard
-    git pull
-    pnpm install
-    pnpm build
-    cd ./dist/
-    wget https://dgiot-release-1306147891.cos.ap-nanjing.myqcloud.com/v4.4.0/dgiot_dashboard.tar.gz &> /dev/null
-    tar xf dgiot_dashboard.tar.gz &> /dev/null
-    wget https://dgiot-release-1306147891.cos.ap-nanjing.myqcloud.com/v4.4.0/dgiot_file.tar.gz &> /dev/null
-    tar xf dgiot_file.tar.gz &> /dev/null
-    wget https://dgiot-release-1306147891.cos.ap-nanjing.myqcloud.com/v4.4.0/dgiot_swagger.tar.gz &> /dev/null
-    tar xf dgiot_swagger.tar.gz &> /dev/null
-    rm -rf dgiot_swagger.tar.gz dgiot_file.tar.gz dgiot_dashboard.tar.gz
-    cd ../../dgiot
-    git pull
-    rm ./apps/dgiot_api/priv/www -rf
-    cp ../dgiot-dashboard/dist/ ./apps/dgiot_api/priv/www -rf
-    make run
++  国外下载源码
+```bash
+ git clone -b master https://github.com/dgiot/dgiot-dashboard.git
+ git clone https://github.com/dgiot/dgiot.git
+```
++  国内下载源码
+```bash
+ git clone -b master https://gitee.com/dgiiot/dgiot-dashboard.git
+ git clone https://gitee.com/dgiiot/dgiot.git
+```
+ +  一键式启动命令Linux/Unix/Mac/windows
+ ```bash
+ sh init.sh
  ```
+ + 如需同步最新前端文件,使用以下命令
+ ```bash
+ sh init.sh github
+```
 + Make Debug
  ```
   make DIAGNOSTIC=1
