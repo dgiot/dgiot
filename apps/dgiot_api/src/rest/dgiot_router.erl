@@ -207,7 +207,7 @@ init(Req0, install) ->
 init(Req0, mod) ->
     Mod = dgiot_req:binding(<<"Mod">>, Req0),
     Fun = dgiot_req:binding(<<"Fun">>, Req0),
-    ?LOG(error,"Mod ~p Fun ~p",[Mod,Fun]),
+%%    ?LOG(error,"Mod ~p Fun ~p",[Mod,Fun]),
     Req =
         case catch apply(list_to_atom(binary_to_list(Mod)), list_to_atom(binary_to_list(Fun)), [Req0]) of
             {Err, Reason} when Err == 'EXIT'; Err == error ->

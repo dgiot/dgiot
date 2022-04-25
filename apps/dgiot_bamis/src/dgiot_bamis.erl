@@ -24,11 +24,7 @@
     get/1,
     post/1,
     put/1,
-    delete/1,
-    create_amis/3,
-    put_amis_device/2,
-    del_amis_device/1,
-    created_amis_device/3
+    delete/1
 ]).
 
 -define(APP, ?MODULE).
@@ -86,54 +82,3 @@ delete({'after', Data}) ->
         <<"msg">> => <<"删除成功"/utf8>>,
         <<"data">> => Data
     }.
-
-del_amis_device(DeviceId) ->
-    dgiot_device:delete(DeviceId).
-%%修改设备
-put_amis_device(#{<<"objectId">> := Deviceid} = Body, SessionToken) ->
-    case dgiot_parse:get_object(<<"Device">>, Deviceid,
-        [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
-        {ok, #{<<"data">> := OldRole}} ->
-            dgiot_parse:update_object(<<"Device">>, Deviceid, #{
-                <<"data">> => maps:without([
-                    <<"parent">>,
-                    <<"createdAt">>,
-                    <<"updatedAt">>,
-                    <<"ACL">>,
-                    <<"objectId">>
-                ], maps:merge(OldRole, Body))},
-                [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]);
-        Error -> Error
-    end.
-
-%%新设备
-created_amis_device(DtuAddr, ChannelId, DTUIP) ->
-    {ProductId, Acl, _Properties} = dgiot_data:get({amis, ChannelId}),
-    Requests = #{
-        <<"devaddr">> => DtuAddr,
-        <<"name">> => <<"AMIS_", DtuAddr/binary>>,
-        <<"ip">> => DTUIP,
-        <<"isEnable">> => true,
-        <<"product">> => ProductId,
-        <<"ACL">> => Acl,
-        <<"status">> => <<"ONLINE">>,
-        <<"brand">> => <<"AMIS", DtuAddr/binary>>,
-        <<"devModel">> => <<"AMIS">>
-    },
-    dgiot_device:create_device(Requests).
-
-%%新设备
-create_amis(DtuAddr, ChannelId, DTUIP) ->
-    {ProductId, Acl, _Properties} = dgiot_data:get({amis, ChannelId}),
-    Requests = #{
-        <<"devaddr">> => DtuAddr,
-        <<"name">> => <<"AMIS_", DtuAddr/binary>>,
-        <<"ip">> => DTUIP,
-        <<"isEnable">> => true,
-        <<"product">> => ProductId,
-        <<"ACL">> => Acl,
-        <<"status">> => <<"ONLINE">>,
-        <<"brand">> => <<"AMIS", DtuAddr/binary>>,
-        <<"devModel">> => <<"AMIS">>
-    },
-    dgiot_device:create_device(Requests).

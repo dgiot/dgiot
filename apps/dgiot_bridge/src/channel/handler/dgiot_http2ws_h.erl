@@ -13,7 +13,7 @@
 %% See the License for the specific language governing permissions and
 %% limitations under the License.
 %%--------------------------------------------------------------------
--module(dgiot_ffmpeg_h).
+-module(dgiot_http2ws_h).
 -include_lib("dgiot/include/dgiot_socket.hrl").
 -include_lib("dgiot/include/logger.hrl").
 
@@ -28,12 +28,15 @@ init(Req0, Opts) ->
     {cowboy_loop, Req, Opts}.
 
 read_body_to_websocket(Req0) ->
+    Key = cowboy_req:path(Req0),
     case cowboy_req:read_body(Req0) of
-        {ok, _Data, Req} ->
+        {ok, Data, Req} ->
+            dgiot_ws_h:run_hook(Key, Data),
 %%            io:format("~s", [Data]),
             Req;
-        {more, _Data, Req} ->
+        {more, Data, Req} ->
 %%            io:format("~s", [Data]),
+            dgiot_ws_h:run_hook(Key, Data),
             read_body_to_websocket(Req)
     end.
 
