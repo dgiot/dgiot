@@ -14,262 +14,119 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
--module(dgiot_tcp_server).
+-module(dgiot_ws_server).
 -author("johnliu").
 -include("dgiot_socket.hrl").
 -include_lib("dgiot/include/logger.hrl").
 
-%% API
--export([start_link/5, child_spec/3, child_spec/4, send/2]).
+-export([start/0]).
 
-%% gen_server callbacks
--export([init/5, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
+start() ->
+    F = fun interact/2,
+    spawn(fun() -> start(F, 0) end).
 
--define(SERVER, ?MODULE).
+start(F, State0) ->
+    {ok, Listen} = gen_tcp:listen(8000, [{packet,raw}, {reuseaddr,true}, {active, true}]),
+    par_connect(Listen, F, State0).
 
--record(state, {mod, conn_state, active_n, incoming_bytes = 0, rate_limit, limit_timer, child = #tcp{}}).
-
-
-child_spec(Mod, Port, State) ->
-    child_spec(Mod, Port, State, []).
-
-
-child_spec(Mod, Port, State, Opts) ->
-    Name = Mod,
-    ok = esockd:start(),
-    case dgiot_transport:get_opts(tcp, Port) of
-        {ok, DefActiveN, DefRateLimit, TCPOpts} ->
-            ActiveN = proplists:get_value(active_n, Opts, DefActiveN),
-            RateLimit = proplists:get_value(rate_limit, Opts, DefRateLimit),
-            Opts1 = lists:foldl(fun(Key, Acc) -> proplists:delete(Key, Acc) end, Opts, [active_n, rate_limit]),
-            NewOpts = [{active_n, ActiveN}, {rate_limit, RateLimit}] ++ Opts1,
-            MFArgs = {?MODULE, start_link, [Mod, NewOpts, State]},
-            esockd:child_spec(Name, Port, TCPOpts, MFArgs);
-        _ ->
-            []
+par_connect(Listen, F, State0) ->
+    case gen_tcp:accept(Listen) of
+        {ok, Socket} ->
+            spawn(fun() -> par_connect(Listen, F, State0) end),
+            wait(Socket, F, State0);
+        {error, closed} ->
+            {ok, Listen2} = gen_tcp:listen(8000, [{packet,raw}, {reuseaddr,true}, {active, true}]),
+            par_connect(Listen2, F, State0)
     end.
 
-start_link(Transport, Sock, Mod, Opts, State) ->
-    {ok, proc_lib:spawn_link(?MODULE, init, [Mod, Transport, Opts, Sock, State])}.
-
-init(Mod, Transport, Opts, Sock0, State) ->
-    case Transport:wait(Sock0) of
-        {ok, Sock} ->
-            ChildState = #tcp{socket = Sock, register = false, transport = Transport, state = State},
-            case Mod:init(ChildState) of
-                {ok, NewChildState} ->
-                    GState = #state{
-                        mod = Mod,
-                        conn_state = running,
-                        active_n = proplists:get_value(active_n, Opts, 8),
-                        rate_limit = rate_limit(proplists:get_value(rate_limit, Opts)),
-                        child = NewChildState
-                    },
-                    dgiot_metrics:inc(dgiot_bridge, <<"tcp_server">>, 1),
-                    ok = activate_socket(GState),
-                    gen_server:enter_loop(?MODULE, [], GState);
-                {error, Reason} ->
-                    {stop, Reason}
-            end;
-        {error, Reason} ->
-            {stop, Reason}
+wait(Socket, F, State0) ->
+    receive
+        {tcp, Socket, Data} ->
+            Key = list_to_binary(lists:last(string:tokens(hd(lists:filter(fun(S) -> lists:prefix("Sec-WebSocket-Key:", S) end, string:tokens(Data, "\r\n"))), ": "))),
+            Challenge = base64:encode(crypto:hash(sha, << Key/binary, "258EAFA5-E914-47DA-95CA-C5AB0DC85B11" >>)),
+            Handshake =
+                ["HTTP/1.1 101 Switching Protocols\r\n",
+                    "connection: Upgrade\r\n",
+                    "upgrade: websocket\r\n",
+                    "sec-websocket-accept: ", Challenge, "\r\n",
+                    "\r\n",<<>>],
+            gen_tcp:send(Socket, Handshake),
+            send_data(Socket, "Hello, my world"),
+            S = self(),
+            Pid = spawn_link(fun() -> F(S, State0) end),
+            loop(Socket, Pid);
+        _Any ->
+            wait(Socket, F, State0)
     end.
 
-handle_call(Request, From, #state{mod = Mod, child = ChildState} = State) ->
-    case Mod:handle_call(Request, From, ChildState) of
-        {reply, Reply, NewChildState} ->
-            {reply, Reply, State#state{child = NewChildState}, hibernate};
-        {stop, Reason, NewChildState} ->
-            {stop, Reason, State#state{child = NewChildState}}
+loop(Socket, Pid) ->
+    receive
+        {tcp, Socket, Data} ->
+            Text = websocket_data(Data),
+            case Text =/= <<>> of
+                true ->
+                    Pid ! {browser, self(), ["You said: ",  Text]};
+                false ->
+                    ok
+            end,
+            loop(Socket, Pid);
+        {tcp_closed, Socket} ->
+            ok;
+        {send, Data} ->
+            send_data(Socket, Data),
+            loop(Socket, Pid);
+        _Any ->
+            loop(Socket, Pid)
     end.
 
-handle_cast(Msg, #state{mod = Mod, child = ChildState} = State) ->
-    case Mod:handle_cast(Msg, ChildState) of
-        {noreply, NewChildState} ->
-            {noreply, State#state{child = NewChildState}, hibernate};
-        {stop, Reason, NewChildState} ->
-            {stop, Reason, State#state{child = NewChildState}}
+interact(Browser, State) ->
+    receive
+        {browser, Browser, Str} ->
+            Browser ! {send, Str},
+            interact(Browser, State)
+    after 1000 ->
+        Browser ! {send, "clock ! tick " ++ integer_to_list(State)},
+        interact(Browser, State+1)
     end.
 
-handle_info(activate_socket, State) ->
-    NewState = State#state{limit_timer = undefined, conn_state = running},
-    ok = activate_socket(NewState),
-    {noreply, NewState, hibernate};
+%% 仅处理长度为125以内的文本消息
+websocket_data(Data) when is_list(Data) ->
+    websocket_data(list_to_binary(Data));
+websocket_data(<< 1:1, 0:3, 1:4, 1:1, Len:7, MaskKey:32, Rest/bits >>) when Len < 126 ->
+    <<End:Len/binary, _/bits>> = Rest,
+    Text = websocket_unmask(End, MaskKey, <<>>),
+    Text;
+websocket_data(_) ->
+    <<>>.
 
-handle_info({tcp_passive, _Sock}, State) ->
-    NState = ensure_rate_limit(State),
-    ok = activate_socket(NState),
-    {noreply, NState};
+%% 由于Browser发过来的数据都是mask的,所以需要unmask
+websocket_unmask(<<>>, _, Unmasked) ->
+    Unmasked;
+websocket_unmask(<< O:32, Rest/bits >>, MaskKey, Acc) ->
+    T = O bxor MaskKey,
+    websocket_unmask(Rest, MaskKey, << Acc/binary, T:32 >>);
+websocket_unmask(<< O:24 >>, MaskKey, Acc) ->
+    << MaskKey2:24, _:8 >> = << MaskKey:32 >>,
+    T = O bxor MaskKey2,
+    << Acc/binary, T:24 >>;
+websocket_unmask(<< O:16 >>, MaskKey, Acc) ->
+    << MaskKey2:16, _:16 >> = << MaskKey:32 >>,
+    T = O bxor MaskKey2,
+    << Acc/binary, T:16 >>;
+websocket_unmask(<< O:8 >>, MaskKey, Acc) ->
+    << MaskKey2:8, _:24 >> = << MaskKey:32 >>,
+    T = O bxor MaskKey2,
+    << Acc/binary, T:8 >>.
 
-%% add register function
-handle_info({tcp, Sock, Data}, #state{mod = Mod, child = #tcp{register = false, buff = Buff, socket = Sock} = ChildState} = State) ->
-    dgiot_metrics:inc(dgiot_bridge, <<"tcp_server_recv">>, 1),
-    Binary = iolist_to_binary(Data),
-    NewBin =
-        case binary:referenced_byte_size(Binary) of
-            Large when Large > 2 * byte_size(Binary) ->
-                binary:copy(Binary);
-            _ ->
-                Binary
-        end,
-    write_log(ChildState#tcp.log, <<"RECV">>, NewBin),
-    Cnt = byte_size(NewBin),
-    NewChildState = ChildState#tcp{buff = <<>>},
-    case Mod:handle_info({tcp, <<Buff/binary, NewBin/binary>>}, NewChildState) of
-        {noreply, #tcp{register = true, clientid = ClientId, buff = Buff, socket = Sock} = NewChild} ->
-            dgiot_cm:register_channel(ClientId, self(), #{conn_mod => Mod}),
-            Ip = dgiot_utils:get_ip(Sock),
-            Port = dgiot_utils:get_port(Sock),
-            dgiot_cm:insert_channel_info(ClientId, #{ip => Ip, port => Port, online => dgiot_datetime:now_microsecs()}, [{tcp_recv, 1}]),
-            {noreply, State#state{child = NewChild, incoming_bytes = Cnt}, hibernate};
-        {noreply, NewChild} ->
-            {noreply, State#state{child = NewChild, incoming_bytes = Cnt}, hibernate};
-        {stop, Reason, NewChild} ->
-            {stop, Reason, State#state{child = NewChild}}
-    end;
+%% 发送文本给Client
+send_data(Socket, Payload) ->
+    Len = iolist_size(Payload),
+    BinLen = payload_length_to_binary(Len),
+    gen_tcp:send(Socket, [<< 1:1, 0:3, 1:4, 0:1, BinLen/bits >>, Payload]).
 
-handle_info({tcp, Sock, Data}, #state{mod = Mod, child = #tcp{buff = Buff, socket = Sock} = ChildState} = State) ->
-    dgiot_metrics:inc(dgiot_bridge, <<"tcp_server_recv">>, 1),
-    Binary = iolist_to_binary(Data),
-    NewBin =
-        case binary:referenced_byte_size(Binary) of
-            Large when Large > 2 * byte_size(Binary) ->
-                binary:copy(Binary);
-            _ ->
-                Binary
-        end,
-    write_log(ChildState#tcp.log, <<"RECV">>, NewBin),
-    Cnt = byte_size(NewBin),
-    NewChildState = ChildState#tcp{buff = <<>>},
-    case NewChildState of
-        #tcp{clientid = CliendId, register = true} ->
-            dgiot_device:online(CliendId),
-            dgiot_tracer:check_trace(CliendId, CliendId, dgiot_utils:binary_to_hex(Binary), ?MODULE, ?LINE);
-        _ ->
-            pass
-    end,
-    case Mod:handle_info({tcp, <<Buff/binary, NewBin/binary>>}, NewChildState) of
-        {noreply, NewChild} ->
-            {noreply, State#state{child = NewChild, incoming_bytes = Cnt}, hibernate};
-        {stop, Reason, NewChild} ->
-            {stop, Reason, State#state{child = NewChild}}
-    end;
-
-handle_info({shutdown, Reason}, #state{child = #tcp{clientid = CliendId, register = true} = ChildState} = State) ->
-    ?LOG(error, "shutdown, ~p, ~p~n", [Reason, ChildState#tcp.state]),
-    dgiot_cm:unregister_channel(CliendId),
-    dgiot_device:offline(CliendId),
-    write_log(ChildState#tcp.log, <<"ERROR">>, list_to_binary(io_lib:format("~w", [Reason]))),
-    {stop, normal, State#state{child = ChildState#tcp{socket = undefined}}};
-
-handle_info({shutdown, Reason}, #state{child = ChildState} = State) ->
-    ?LOG(error, "shutdown, ~p, ~p~n", [Reason, ChildState#tcp.state]),
-    write_log(ChildState#tcp.log, <<"ERROR">>, list_to_binary(io_lib:format("~w", [Reason]))),
-    {stop, normal, State#state{child = ChildState#tcp{socket = undefined}}};
-
-handle_info({tcp_error, _Sock, Reason}, #state{child = ChildState} = State) ->
-    ?LOG(error, "tcp_error, ~p, ~p~n", [Reason, ChildState#tcp.state]),
-    write_log(ChildState#tcp.log, <<"ERROR">>, list_to_binary(io_lib:format("~w", [Reason]))),
-    {stop, {shutdown, Reason}, State};
-
-handle_info({tcp_closed, Sock}, #state{mod = Mod, child = #tcp{socket = Sock} = ChildState} = State) ->
-    write_log(ChildState#tcp.log, <<"ERROR">>, <<"tcp_closed">>),
-    ?LOG(error, "tcp_closed ~p", [ChildState#tcp.state]),
-    case Mod:handle_info(tcp_closed, ChildState) of
-        {noreply, NewChild} ->
-            {stop, normal, State#state{child = NewChild#tcp{socket = undefined}}};
-        {stop, _Reason, NewChild} ->
-            {stop, normal, State#state{child = NewChild#tcp{socket = undefined}}}
-    end;
-
-handle_info(Info, #state{mod = Mod, child = ChildState} = State) ->
-    case Mod:handle_info(Info, ChildState) of
-        {noreply, NewChildState} ->
-            {noreply, State#state{child = NewChildState}, hibernate};
-        {stop, Reason, NewChildState} ->
-            {stop, Reason, State#state{child = NewChildState}}
+payload_length_to_binary(N) ->
+    case N of
+        N when N =< 125 -> << N:7 >>;
+        N when N =< 16#ffff -> << 126:7, N:16 >>;
+        N when N =< 16#7fffffffffffffff -> << 127:7, N:64 >>
     end.
-
-terminate(Reason, #state{mod = Mod, child = #tcp{clientid = CliendId, register = true} = ChildState}) ->
-    dgiot_cm:unregister_channel(CliendId),
-    dgiot_metrics:dec(dgiot_bridge, <<"tcp_server">>, 1),
-    Mod:terminate(Reason, ChildState);
-
-terminate(Reason, #state{mod = Mod, child = ChildState}) ->
-    dgiot_metrics:dec(dgiot_bridge, <<"tcp_server">>, 1),
-    Mod:terminate(Reason, ChildState).
-
-code_change(OldVsn, #state{mod = Mod, child = ChildState} = State, Extra) ->
-    {ok, NewChildState} = Mod:code_change(OldVsn, ChildState, Extra),
-    {ok, State#state{child = NewChildState}}.
-
-%%%===================================================================
-%%% Internal functions
-%%%===================================================================
-
-send(#tcp{clientid = CliendId, register = true, transport = Transport, socket = Socket}, Payload) ->
-    dgiot_tracer:check_trace(CliendId, CliendId, dgiot_utils:binary_to_hex(Payload), ?MODULE, ?LINE),
-    dgiot_metrics:inc(dgiot_bridge, <<"tcp_server_send">>, 1),
-    case Socket == undefined of
-        true ->
-            {error, disconnected};
-        false ->
-            Transport:send(Socket, Payload)
-    end;
-
-send(#tcp{transport = Transport, socket = Socket}, Payload) ->
-    dgiot_metrics:inc(dgiot_bridge, <<"tcp_server_send">>, 1),
-    case Socket == undefined of
-        true ->
-            {error, disconnected};
-        false ->
-            Transport:send(Socket, Payload)
-    end.
-
-rate_limit({Rate, Burst}) ->
-    esockd_rate_limit:new(Rate, Burst).
-
-activate_socket(#state{conn_state = blocked}) ->
-    ok;
-activate_socket(#state{child = #tcp{transport = Transport, socket = Socket}, active_n = N}) ->
-    TrueOrN =
-        case Transport:is_ssl(Socket) of
-            true -> true; %% Cannot set '{active, N}' for SSL:(
-            false -> N
-        end,
-    case Transport:setopts(Socket, [{active, TrueOrN}]) of
-        ok -> ok;
-        {error, Reason} ->
-            self() ! {shutdown, Reason},
-            ok
-    end.
-
-ensure_rate_limit(State) ->
-    case esockd_rate_limit:check(State#state.incoming_bytes, State#state.rate_limit) of
-        {0, RateLimit} ->
-            State#state{incoming_bytes = 0, rate_limit = RateLimit};
-        {Pause, RateLimit} ->
-            %?LOG(info,"[~p] ensure_rate_limit :~p", [Pause, ensure_rate_limit]),
-            TRef = erlang:send_after(Pause, self(), activate_socket),
-            State#state{conn_state = blocked, incoming_bytes = 0, rate_limit = RateLimit, limit_timer = TRef}
-    end.
-
-
-write_log(file, Type, Buff) ->
-    [Pid] = io_lib:format("~p", [self()]),
-    Date = dgiot_datetime:format("YYYY-MM-DD"),
-    Path = <<"log/tcp_server/", Date/binary, ".txt">>,
-    filelib:ensure_dir(Path),
-    Time = dgiot_datetime:format("HH:NN:SS " ++ Pid),
-    Data = case Type of
-               <<"ERROR">> -> Buff;
-               _ -> <<<<Y>> || <<X:4>> <= Buff, Y <- integer_to_list(X, 16)>>
-           end,
-    file:write_file(Path, <<Time/binary, " ", Type/binary, " ", Data/binary, "\r\n">>, [append]),
-    ok;
-write_log({Mod, Fun}, Type, Buff) ->
-    catch apply(Mod, Fun, [Type, Buff]);
-write_log(Fun, Type, Buff) when is_function(Fun) ->
-    catch Fun(Type, Buff);
-write_log(_, _, _) ->
-    ok.

@@ -51,18 +51,6 @@
             zh => <<"侦听端口"/utf8>>
         }
     },
-    <<"path">> => #{
-        order => 2,
-        type => string,
-        required => true,
-        default => <<"/test">>,
-        title => #{
-            zh => <<"路径"/utf8>>
-        },
-        description => #{
-            zh => <<"路径"/utf8>>
-        }
-    },
     <<"ico">> => #{
         order => 102,
         type => string,

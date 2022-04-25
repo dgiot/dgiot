@@ -24,53 +24,6 @@ docroot() ->
     Root = dgiot_httpc:url_join([Dir, "/priv/"]),
     Root ++ "www".
 
-
-%%{ok,#{<<"results">> =>
-%%[#{<<"battery_voltage">> => 11.7,<<"charge_current">> => 0,
-%%<<"core_temperature">> => 37,
-%%<<"createdat">> => <<"2021-06-07 18:49:42.061">>,
-%%<<"day_electricity">> => 0.11,<<"dump_energy">> => 75.0,
-%%<<"i_out">> => 0.0,<<"outside_temperature">> => 25,
-%%<<"system_state">> => <<"0">>,<<"total_power">> => 2.1,
-%%<<"v_out">> => 0.0,<<"v_solarpanel">> => 0.3}]}}
-
-
-%%get_topo(Arg, _Context) ->
-%%    #{<<"productid">> := ProductId, <<"devaddr">> := Devaddr} = Arg,
-%%    Type = maps:get(<<"type">>, Arg, <<"web">>),
-%%    case dgiot_parse:get_object(<<"Product">>, ProductId) of
-%%        {ok, #{<<"config">> := #{<<"konva">> := #{<<"Stage">> := #{<<"children">> := Children} = Stage} = Konva}}} when length(Children) > 0 ->
-%%            case Devaddr of
-%%                undefined ->
-%%                    NewChildren1 = get_children(Type, ProductId, Children, ProductId, <<"KonvatId">>, <<"Shapeid">>, <<"Identifier">>, <<"Name">>),
-%%                    List = get_wechat(),
-%%                    case Type of
-%%                        <<"wechat">> ->
-%%                            {ok, #{<<"code">> => 200, <<"message">> => <<"SUCCESS">>, <<"data">> => List}};
-%%                        _ ->
-%%                            {ok, #{<<"code">> => 200, <<"message">> => <<"SUCCESS">>, <<"data">> => Konva#{<<"Stage">> => Stage#{<<"children">> => NewChildren1}}}}
-%%                    end;
-%%                _ ->
-%%                    DeviceId = dgiot_parse_id:get_deviceid(ProductId, Devaddr),
-%%                    case dgiot_tdengine:get_device(ProductId, Devaddr, #{<<"keys">> => <<"last_row(*)">>, <<"limit">> => 1}) of
-%%                        {ok, #{<<"results">> := [Result | _]}} ->
-%%                            put({self(), td}, Result);
-%%                        _ ->
-%%                            put({self(), td}, #{})
-%%                    end,
-%%                    NewChildren1 = get_children(Type, ProductId, Children, DeviceId, <<"KonvatId">>, <<"Shapeid">>, <<"Identifier">>, <<"Name">>),
-%%                    List = get_wechat(),
-%%                    case Type of
-%%                        <<"wechat">> ->
-%%                            {ok, #{<<"code">> => 200, <<"message">> => <<"SUCCESS">>, <<"data">> => List}};
-%%                        _ ->
-%%                            {ok, #{<<"code">> => 200, <<"message">> => <<"SUCCESS">>, <<"data">> => Konva#{<<"Stage">> => Stage#{<<"children">> => NewChildren1}}}}
-%%                    end
-%%            end;
-%%        _ ->
-%%            {ok, #{<<"code">> => 204, <<"message">> => <<"没有组态"/utf8>>}}
-%%    end.
-
 get_topo(Arg, _Context) ->
     #{<<"productid">> := ProductId, <<"devaddr">> := Devaddr, <<"viewid">> := ViewId} = Arg,
     Type = maps:get(<<"type">>, Arg, <<"web">>),

@@ -19,16 +19,15 @@
 -include_lib("dgiot/include/logger.hrl").
 -author("johnliu").
 
--record(state, {id, env}).
+-record(state, {id, env, type = stream}).
 
 %% API
--export([childSpec/3,
-    init/2]).
+-export([childSpec/3]).
 
 childSpec(Name, ChannelId, #{<<"port">> := Port} = ChannelArgs) ->
     State = #state{
         id = ChannelId,
-        env = maps:without([<<"port">>,<<"path">>,<<"product">>,<<"behaviour">>], ChannelArgs)
+        env = maps:without([<<"port">>, <<"path">>, <<"product">>, <<"behaviour">>], ChannelArgs)
     },
     Opts = [
         {ip, {0, 0, 0, 0}},
@@ -42,37 +41,19 @@ childSpec(Name, ChannelId, #{<<"port">> := Port} = ChannelArgs) ->
             SslOpts = [_ | _] ->
                 {ranch_ssl, Opts ++ SslOpts}
         end,
-    Route = get_route(maps:get(<<"path">>, ChannelArgs, <<>>)),
     Dispatch = cowboy_router:compile([
         {'_', [
-            {Route, ?MODULE, State}
+            {"/", cowboy_static, {priv_file, dgiot_bridge, "www/index.html"}},
+            {"/websocket/[...]", dgiot_ws_h, State},
+            {"/static/[...]", cowboy_static, {priv_dir, dgiot_bridge, "www/static"}},
+            {"/api/[...]", dgiot_rest_h, State},
+            {"/http2ws/[...]", dgiot_http2ws_h, State},
+            {"/[...]", dgiot_http2ws_h, State}
         ]}
     ]),
     CowboyOpts = #{
-        env =>#{
+        env => #{
             dispatch => Dispatch
         }
     },
-  ranch:child_spec(Name, 300, Transport, TransportOpts, cowboy_clear, CowboyOpts).
-
-%% ====== http callback ======
-init(Req, #state{ id = ChannelId, env = Env} = State) ->
-    {ok, _Type, ProductIds} = dgiot_bridge:get_products(ChannelId),
-    case dgiot_bridge:apply_channel(ChannelId, ProductIds, handle_info, [{http, Req}], Env) of
-        {ok, NewEnv} ->
-            Req1 = cowboy_req:reply(200, #{}, <<"hello word">>, Req),
-            {ok, Req1, State#state{env = NewEnv}};
-        {reply, _ProductId, {HTTPCode, Reply}, NewEnv} ->
-            Req1 = cowboy_req:reply(HTTPCode, #{}, Reply, Req),
-            {ok, Req1, State#state{env = NewEnv}};
-        {reply, _ProductId, {HTTPCode, Header, Reply}, NewEnv} ->
-            Req1 = cowboy_req:reply(HTTPCode, Header, Reply, Req),
-            {ok, Req1, State#state{env = NewEnv}}
-    end.
-
-get_route(<<"http://", Path>>) ->
-    get_route(Path);
-get_route(Path) when is_binary(Path) ->
-    binary_to_list(Path);
-get_route(_) ->
-    "/[...]".
+    ranch:child_spec(Name, 300, Transport, TransportOpts, cowboy_clear, CowboyOpts).
