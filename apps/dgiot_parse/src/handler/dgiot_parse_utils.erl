@@ -280,11 +280,11 @@ swaggerApi() ->
                 false ->
                     Acc;
                 _ ->
-                    case [SwaggerType || {dgiot_swagger,  [SwaggerType]} <- Mod:module_info(attributes)] of
+                    case [SwaggerType || {dgiot_swagger, [SwaggerType]} <- Mod:module_info(attributes)] of
                         [] ->
                             Acc;
                         [SwaggerType | _] ->
-                            [SwaggerType] ++ Acc
+                            [{SwaggerType, Mod}] ++ Acc
                     end
             end
         end,
@@ -297,11 +297,11 @@ get_paths(Schema, Acc) ->
         add_paths(Schema, NewAcc, Type)
                 end, Acc, SwaggerApi).
 
-add_paths(#{<<"className">> := ClassName} = Schema, Acc, Type) ->
+add_paths(#{<<"className">> := ClassName} = Schema, Acc, {Type, Mod}) ->
     Definitions = maps:get(<<"definitions">>, Acc, #{}),
     Paths = maps:get(<<"paths">>, Acc, #{}),
     Tags = maps:get(<<"tags">>, Acc, []),
-    CSchema = get_path(Tags, ClassName, Type),
+    CSchema = get_path(Tags, ClassName, Type, Mod),
     CDefinitions = maps:get(<<"definitions">>, CSchema, #{}),
     CPaths = maps:get(<<"paths">>, CSchema, #{}),
     CTags = maps:get(<<"tags">>, CSchema, []),
@@ -318,8 +318,8 @@ add_paths(#{<<"className">> := ClassName} = Schema, Acc, Type) ->
             end, Tags, CTags)
     }.
 
-get_path(Tags, ClassName, Type) ->
-    {ok, Bin} = dgiot_swagger:load_schema(?MODULE, "swagger_parse_object.json", []),
+get_path(Tags, ClassName, Type, Mod) ->
+    {ok, Bin} = dgiot_swagger:load_schema(Mod, "swagger_" ++ dgiot_utils:to_list(Type) ++ "_object.json", []),
     Data = re:replace(Bin, "\\{\\{className\\}\\}", ClassName, ?RE_OPTIONS),
     CTags = lists:filtermap(fun(#{<<"name">> := Name}) -> Name == ClassName end, Tags),
     Desc =
