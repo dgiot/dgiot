@@ -44,7 +44,6 @@
 
 %% @description 备注
 %% 已实现 get post 的适配工作
-
 get({'before', Data}) when is_map(Data) ->
     io:format("~s ~p Data: ~p ~n", [?FILE, ?LINE, Data]),
     NewData = maps:fold(fun(K, V, Acc) ->

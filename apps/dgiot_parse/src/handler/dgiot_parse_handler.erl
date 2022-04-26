@@ -421,19 +421,7 @@ do_request_before(<<"post_requestpasswordreset">>, Args, Body, Headers, Context,
     request_parse(<<"post_requestpasswordreset">>, Args, Body, Headers, Context, Req);
 
 do_request_before(OperationID, Args, ReqBody, Headers, Context, Req) ->
-    [Method, Type | _] = re:split(OperationID, <<"_">>),
-%%    io:format("~s ~p  do_request_before OperationID = ~p Args ~p ~n", [?FILE, ?LINE, OperationID, Args]),
-    NewArgs =
-        case dgiot_hook:run_hook({Method, Type}, {'before', Args}) of
-            {ok, [Rtn | _]} ->
-                io:format("~s ~p  do_request_before OperationID = ~p Args ~p ~n", [?FILE, ?LINE, OperationID, Rtn]),
-                Rtn;
-            _ ->
-                io:format("~s ~p  do_request_before OperationID = ~p Args ~p ~n", [?FILE, ?LINE, OperationID, Args]),
-                Args
-        end,
-    io:format("~s ~p  ReqBody OperationID = ~p Args ~p ~n", [?FILE, ?LINE, OperationID, Req]),
-    request_parse(OperationID, NewArgs, ReqBody, Headers, Context, Req).
+    request_parse(OperationID, Args, ReqBody, Headers, Context, Req).
 
 %% 所有请求后置处理
 do_request_after(<<"get_login">>, 200, ResHeaders, ResBody, Context, Req) ->
@@ -483,7 +471,14 @@ request_parse(OperationID, Args, Body, Headers, #{base_path := BasePath} = Conte
                 ({N, V}, Acc) ->
                     <<Acc/binary, "&", N/binary, "=", V/binary>>
             end, <<>>, dgiot_req:parse_qs(Req)),
-    Url = <<Path/binary, QS/binary>>,
+    [Method, Type | _] = re:split(OperationID, <<"_">>),
+    NewQs = case dgiot_hook:run_hook({Method, Type}, {'before', Args}) of
+            {ok, [Rtn | _]} ->
+                Rtn;
+            _ ->
+                QS
+        end,
+    Url = <<Path/binary, NewQs/binary>>,
     Method = dgiot_req:method(Req),
     request_parse(OperationID, Url, Method, Args, Body, Headers, Context, Req).
 
