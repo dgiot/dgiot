@@ -42,11 +42,9 @@ swagger_parse() ->
 
 init(Req0, Map) ->
     {ok, Body, Req} = dgiot_req:read_body(Req0),
-    io:format("~s ~p Body ~p ~n", [?FILE, ?LINE, Body]),
     case catch jsx:decode(Body, [{labels, binary}, return_maps]) of
         #{<<"_JavaScriptKey">> := _JSKey} = RecvMap ->
             Method = maps:get(<<"_method">>, RecvMap, dgiot_req:method(Req)),
-            io:format("~s ~p Method ~p ~n", [?FILE, ?LINE, Method]),
             Index = maps:get(Method, Map),
             {ok, {_, Config}} = dgiot_router:get_state(Index),
             OperationId = maps:get(operationid, Config, not_allowed),
@@ -460,7 +458,7 @@ do_request_after(OperationID, StatusCode, ResHeaders, ResBody, _Context, Req) ->
 %%  parse 请求
 %% ==========================
 request_parse(OperationID, Args, Body, Headers, #{base_path := BasePath} = Context, Req) ->
-    Path = re:replace(dgiot_req:path(Req), BasePath, <<>>, [{return, binary}]),
+    Path = get_path(re:replace(dgiot_req:path(Req), BasePath, <<>>, [{return, binary}])),
     QS =
         lists:foldl(
             fun
@@ -471,22 +469,21 @@ request_parse(OperationID, Args, Body, Headers, #{base_path := BasePath} = Conte
                 ({N, V}, Acc) ->
                     <<Acc/binary, "&", N/binary, "=", V/binary>>
             end, <<>>, dgiot_req:parse_qs(Req)),
-    [Method, Type | _] = re:split(OperationID, <<"_">>),
-    NewQs = case dgiot_hook:run_hook({Method, Type}, {'before', Args}) of
+    [Method1, Type | _] = re:split(OperationID, <<"_">>),
+    NewQs = case dgiot_hook:run_hook({Method1, Type}, {'before', Args}) of
                 {ok, [Rtn | _]} ->
                     get_qs(Rtn);
                 _ ->
                     QS
             end,
-    Url = get_url(<<Path/binary, NewQs/binary>>),
+    Url = <<Path/binary, NewQs/binary>>,
     io:format("~s ~p ~p~n", [?FILE, ?LINE, Url]),
     Method = dgiot_req:method(Req),
     request_parse(OperationID, Url, Method, Args, Body, Headers, Context, Req).
 
 request_parse(OperationID, Url, Method, _Args, Body, Headers, #{from := From} = Context, Req) ->
     {_Type, NewOperationID} = get_OperationID(OperationID),
-    NewUrl = get_url(Url),
-    case dgiot_parse:request(Method, maps:to_list(Headers), NewUrl, dgiot_parse_id:get_objectid(NewOperationID, Body), [{from, From}]) of
+    case dgiot_parse:request(Method, maps:to_list(Headers), Url, dgiot_parse_id:get_objectid(NewOperationID, Body), [{from, From}]) of
         {ok, StatusCode, ResHeaders, ResBody} ->
             NewHeaders =
                 lists:foldl(
@@ -515,7 +512,7 @@ get_OperationID(OperationID1) ->
         end
                 end, {<<"classes">>, OperationID}, dgiot_data:get(swaggerApi)).
 
-get_url(Url) ->
+get_path(Url) ->
     re:replace(Url, <<"/amis/">>, <<"/classes/">>, [global, {return, binary}, unicode]).
 
 get_qs(Map) ->
@@ -529,21 +526,9 @@ get_qs(Map) ->
                 <<Acc/binary, "&", N/binary, "=", NewV/binary>>
         end, <<>>, maps:to_list(Map)).
 
+format_value(V) when is_binary(V) ->
+    dgiot_httpc:urlencode(V);
 format_value(V) ->
     Json = jsx:encode(V),
-    V1 = re:replace(Json, <<"\[.*?\]">>, <<"">>, [global, {return, binary}, unicode]),
-    cow_qs:urlencode(V1).
-
-%%format_value(V) when is_list(V) ->
-%%    cow_qs:urlencode(dgiot_utils:to_binary(V));
-%%format_value(V) when is_map(V) ->
-%%    maps:fold(fun
-%%                  (N, V, <<>>) ->
-%%                      NewV = format_value(V),
-%%                      <<"?", N/binary, "=", NewV/binary>>;
-%%                  (N, V, Acc) ->
-%%                      NewV = format_value(V),
-%%                      <<Acc/binary, "&", N/binary, "=", NewV/binary>>
-%%              end, <<>>, V);
-%%format_value(V) ->
-%%    V.
+%%    V1 = re:replace(Json, <<"\[.*?\]">>, <<"">>, [global, {return, binary}, unicode]),
+    dgiot_httpc:urlencode(Json).
