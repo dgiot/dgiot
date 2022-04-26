@@ -45,7 +45,7 @@
 %% @description 备注
 %% 已实现 get post 的适配工作
 get({'before', Data}) when is_map(Data) ->
-    io:format("~s ~p Data: ~p ~n", [?FILE, ?LINE, Data]),
+%%    io:format("~s ~p Data: ~p ~n", [?FILE, ?LINE, Data]),
     NewData = maps:fold(fun(K, V, Acc) ->
         case V of
             undefined -> Acc;
@@ -53,10 +53,10 @@ get({'before', Data}) when is_map(Data) ->
         end
                         end, #{}, Data),
     Basic = format(NewData),
-    io:format("~s ~p Basic: ~p ~n", [?FILE, ?LINE, Basic]),
+%%    io:format("~s ~p Basic: ~p ~n", [?FILE, ?LINE, Basic]),
     Basic;
 get({'before', Data}) ->
-    io:format("~s ~p ~p~n", [?FILE, ?LINE, Data]),
+%%    io:format("~s ~p ~p~n", [?FILE, ?LINE, Data]),
     Data;
 get({'after', #{<<"results">> := Response, <<"count">> := Count} = _Data}) ->
     #{
@@ -68,7 +68,7 @@ get({'after', #{<<"results">> := Response, <<"count">> := Count} = _Data}) ->
         }
     };
 get({'after', #{<<"results">> := Response} = Data}) ->
-    io:format("~s ~p ~p~n", [?FILE, ?LINE, Data]),
+%%    io:format("~s ~p ~p~n", [?FILE, ?LINE, Data]),
     #{
         <<"status">> => 0,
         <<"msg">> => <<"数据请求成功"/utf8>>,
@@ -82,10 +82,10 @@ get({'after', Data}) ->
         <<"data">> => Data
     }.
 post({'before', Data}) ->
-    io:format("~s ~p ~p~n", [?FILE, ?LINE, Data]),
+%%    io:format("~s ~p ~p~n", [?FILE, ?LINE, Data]),
     Data;
 post({'after', Data}) ->
-    io:format("~s ~p ~p~n", [?FILE, ?LINE, Data]),
+%%    io:format("~s ~p ~p~n", [?FILE, ?LINE, Data]),
     #{
         <<"status">> => 0,
         <<"msg">> => <<"数据提交成功"/utf8>>,
@@ -93,11 +93,11 @@ post({'after', Data}) ->
     }.
 put({'before', Data}) ->
     erlang:put(<<"Request">>, Data),
-    io:format("~s ~p ~p~n", [?FILE, ?LINE, Data]),
+%%    io:format("~s ~p ~p~n", [?FILE, ?LINE, Data]),
     Data;
 put({'after', Data}) ->
     Request = erlang:get(<<"Request">>),
-    io:format("~s ~p ~p~n", [?FILE, ?LINE, Data]),
+%%    io:format("~s ~p ~p~n", [?FILE, ?LINE, Data]),
     #{
         <<"status">> => 0,
         <<"msg">> => <<"修改成功"/utf8>>,
@@ -105,11 +105,11 @@ put({'after', Data}) ->
     }.
 delete({'before', Data}) ->
     erlang:put(<<"Request">>, Data),
-    io:format("~s ~p ~p~n", [?FILE, ?LINE, Data]),
+%%    io:format("~s ~p ~p~n", [?FILE, ?LINE, Data]),
     Data;
 delete({'after', Data}) ->
     Request = erlang:get(<<"Request">>),
-    io:format("~s ~p ~p~n", [?FILE, ?LINE, Data]),
+%%    io:format("~s ~p ~p~n", [?FILE, ?LINE, Data]),
     #{
         <<"status">> => 0,
         <<"msg">> => <<"删除成功"/utf8>>,
@@ -160,8 +160,8 @@ format(#{<<"page">> := Page} = Data) ->
     format(NewData#{<<"limit">> => 10, <<"skip">> => Skip});
 
 format(Data) ->
-    Where = maps:without([<<"limit">>, <<"skip">>, <<"order">>, <<"limit">>, <<"keys">>, <<"excludeKeys">>, <<"include">>, <<"where">>], Data),
-    NewData = maps:without(maps:keys(Where) ++ [<<"perPage">>, <<"page">>], Data),
+    Where = maps:without([<<"limit">>, <<"skip">>, <<"order">>, <<"limit">>, <<"keys">>, <<"excludeKeys">>, <<"include">>, <<"where">>, <<"perPage">>, <<"page">>, <<"orderBy">>, <<"orderDir">>], Data),
+    NewData = maps:without(maps:keys(Where) ++ [<<"perPage">>, <<"page">>, <<"orderBy">>, <<"orderDir">>], Data),
     case Data of
         #{<<"where">> := ParesWhere} ->
             NewData#{<<"where">> => maps:merge(ParesWhere, Where)};
