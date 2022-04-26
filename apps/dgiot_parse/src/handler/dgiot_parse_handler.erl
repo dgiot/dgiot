@@ -503,7 +503,7 @@ request_parse(OperationID, Url, Method, _Args, Body, Headers, #{from := From} = 
 
 
 get_OperationID(OperationID) ->
-    lists:foldl(fun(NewType, {Type, Acc}) ->
+    lists:foldl(fun({NewType, _Mod}, {Type, Acc}) ->
         ApiType = <<"_", NewType/binary, "_">>,
         case re:run(OperationID, ApiType) of
             {match, _} ->

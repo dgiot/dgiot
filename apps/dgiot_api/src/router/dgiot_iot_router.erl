@@ -31,6 +31,7 @@
 -export([get_file/2]).
 
 init(Req, {iot, DocRoot}) ->
+    io:format("~s ~p ~p ~n",[?FILE, ?LINE, cowboy_req:path(Req)]),
     <<"/iot/", Path/binary>> = cowboy_req:path(Req),
     Index = dgiot_httpc:url_join([DocRoot, Path]),
     dgiot_router:init(Req, {file, Index, []});

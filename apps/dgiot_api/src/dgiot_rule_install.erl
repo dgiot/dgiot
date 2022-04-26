@@ -21,4 +21,4 @@
 -export([actions/0]).
 
 actions() ->
- [generate_rule].
+    [generate_rule].

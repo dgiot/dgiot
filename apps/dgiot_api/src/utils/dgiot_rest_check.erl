@@ -25,7 +25,6 @@
 %%%===================================================================
 
 check_request(Context, Req) ->
-
     Params = maps:get(check_request, Context, []),
     check_request_params(Params, Req, #{}).
 
