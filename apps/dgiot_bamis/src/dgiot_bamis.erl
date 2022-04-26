@@ -67,8 +67,8 @@ get({'after', #{<<"results">> := Response, <<"count">> := Count} = _Data}) ->
             <<"total">> => Count
         }
     };
-get({'after', #{<<"results">> := Response} = Data}) ->
-%%    io:format("~s ~p ~p~n", [?FILE, ?LINE, Data]),
+get({'after', #{<<"results">> := Response} = _Data}) ->
+%%    io:format("~s ~p ~p~n", [?FILE, ?LINE, _Data]),
     #{
         <<"status">> => 0,
         <<"msg">> => <<"数据请求成功"/utf8>>,
