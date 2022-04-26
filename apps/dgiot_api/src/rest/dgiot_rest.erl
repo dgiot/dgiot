@@ -149,10 +149,12 @@ is_authorized(Req0, State = #state{
             {true, Req0, State};
         false ->
             AuthList = maps:get(authorize, Context, []),
-            CheckResult = dgiot_auth:pre_check(OperationID, LogicHandler, AuthList, Req0),
+            AuthOperationID = get_OperationID(OperationID, LogicHandler),
+%%            io:format("~s ~p ~p ~p ~p ~n",[?FILE, ?LINE, OperationID, AuthOperationID, LogicHandler]),
+            CheckResult = dgiot_auth:pre_check(AuthOperationID, LogicHandler, AuthList, Req0),
             case CheckResult of
                 {ok, Args, Req} ->
-                    case do_authorized(LogicHandler, OperationID, Args, Req) of
+                    case do_authorized(LogicHandler, AuthOperationID, Args, Req) of
                         {true, NContext, Req1} ->
                             {true, Req1, State#state{context = maps:merge(Context, NContext)}};
                         {forbidden, Err, Req1} when AuthList =/= [] ->
@@ -169,7 +171,18 @@ is_authorized(Req0, State = #state{
             end
     end.
 
-
+get_OperationID(OperationID, LogicHandler) ->
+    case proplists:get_value(exports,LogicHandler:module_info()) of
+        undefined ->
+            OperationID;
+        Exports ->
+            case proplists:get_value(get_OperationID, Exports) of
+                undefined -> OperationID;
+                _ ->
+                    {_Type, NewOperationID} = LogicHandler:get_OperationID(OperationID),
+                    dgiot_utils:to_atom(NewOperationID)
+            end
+    end.
 
 -spec content_types_accepted(Req :: dgiot_req:req(), State :: state()) ->
     {
