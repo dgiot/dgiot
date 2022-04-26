@@ -4,8 +4,8 @@
   },
   "tags": [
     {
-      "description": "低代码",
-      "name": "AMIS"
+      "description": "视图管理",
+      "name": "View"
     }
   ],
   "paths": {
@@ -44,7 +44,7 @@
         },
         "summary": "大屏数据",
         "tags": [
-          "AMIS"
+          "View"
         ]
       }
     }
