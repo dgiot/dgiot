@@ -42,9 +42,11 @@ swagger_parse() ->
 
 init(Req0, Map) ->
     {ok, Body, Req} = dgiot_req:read_body(Req0),
+    io:format("~s ~p Body ~p ~n",[?FILE, ?LINE, Body]),
     case catch jsx:decode(Body, [{labels, binary}, return_maps]) of
         #{<<"_JavaScriptKey">> := _JSKey} = RecvMap ->
             Method = maps:get(<<"_method">>, RecvMap, dgiot_req:method(Req)),
+            io:format("~s ~p Method ~p ~n",[?FILE, ?LINE, Method]),
             Index = maps:get(Method, Map),
             {ok, {_, Config}} = dgiot_router:get_state(Index),
             OperationId = maps:get(operationid, Config, not_allowed),
@@ -502,7 +504,8 @@ request_parse(OperationID, Url, Method, _Args, Body, Headers, #{from := From} = 
     end.
 
 
-get_OperationID(OperationID) ->
+get_OperationID(OperationID1) ->
+    OperationID = dgiot_utils:to_binary(OperationID1),
     lists:foldl(fun({NewType, _Mod}, {Type, Acc}) ->
         ApiType = <<"_", NewType/binary, "_">>,
         case re:run(OperationID, ApiType) of
