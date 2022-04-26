@@ -24,7 +24,8 @@
     get/1,
     post/1,
     put/1,
-    delete/1
+    delete/1,
+    start_http/0
 ]).
 
 -define(APP, ?MODULE).
@@ -82,3 +83,12 @@ delete({'after', Data}) ->
         <<"msg">> => <<"删除成功"/utf8>>,
         <<"data">> => Data
     }.
+
+
+start_http() ->
+    Port = 9089,
+    {file, Here} = code:is_loaded(?MODULE),
+    Dir = filename:dirname(filename:dirname(Here)),
+    Root = dgiot_httpc:url_join([Dir, "/priv/"]),
+    DocRoot = Root ++ "www",
+    dgiot_http_server:start_http(?MODULE, Port, DocRoot).

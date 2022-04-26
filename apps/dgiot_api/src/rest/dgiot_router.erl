@@ -220,6 +220,7 @@ init(Req0, mod) ->
         end,
     {ok, Req, mod};
 
+%% 允许浏览器跨域请求
 init(Req, Opts) ->
     case dgiot_req:method(Req) of
         <<"OPTIONS">> ->
@@ -287,7 +288,6 @@ get_check_response(Map, SWSchema) ->
             }
         end,
     maps:fold(Fun, #{}, Responses).
-
 
 parse_ref_schema(#{<<"description">> := _} = Schema, SWSchema) ->
     parse_ref_schema(maps:without([<<"description">>], Schema), SWSchema);
