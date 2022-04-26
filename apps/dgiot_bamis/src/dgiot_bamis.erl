@@ -150,13 +150,18 @@ format(#{<<"perPage">> := PerPage, <<"page">> := Page} = Data) ->
     format(NewData#{<<"limit">> => PerPage, <<"skip">> => Skip});
 
 format(Data) ->
-    Where = maps:without([<<"limit">>, <<"skip">>, <<"order">>, <<"limit">>, <<"keys">>, <<"excludeKeys">>, <<"include">>, <<"where">>], Data),
+    Where = maps:without([<<"limit">>, <<"skip">>, <<"order">>, <<"limit">>, <<"keys">>, <<"excludeKeys">>, <<"include">>, <<"where">>, <<"orderBy">>, <<"orderDir">>, <<"perPage">>, <<"page">>], Data),
     NewData = maps:without(maps:keys(Where), Data),
     case Data of
         #{<<"where">> := ParesWhere} ->
             NewData#{<<"where">> => maps:merge(ParesWhere, Where)};
         _ ->
-            NewData#{<<"where">> => Where}
+            case length(maps:to_list(Where)) of
+                0 ->
+                    NewData;
+                _ ->
+                    NewData#{<<"where">> => Where}
+            end
     end.
 
 

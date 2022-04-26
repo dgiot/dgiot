@@ -473,12 +473,13 @@ request_parse(OperationID, Args, Body, Headers, #{base_path := BasePath} = Conte
             end, <<>>, dgiot_req:parse_qs(Req)),
     [Method, Type | _] = re:split(OperationID, <<"_">>),
     NewQs = case dgiot_hook:run_hook({Method, Type}, {'before', Args}) of
-            {ok, [Rtn | _]} ->
-                Rtn;
-            _ ->
-                QS
-        end,
-    Url = <<Path/binary, NewQs/binary>>,
+                {ok, [Rtn | _]} ->
+                    get_qs(Rtn);
+                _ ->
+                    QS
+            end,
+    Url = get_url(<<Path/binary, NewQs/binary>>),
+    io:format("~s ~p ~p~n", [?FILE, ?LINE, Url]),
     Method = dgiot_req:method(Req),
     request_parse(OperationID, Url, Method, Args, Body, Headers, Context, Req).
 
@@ -517,3 +518,32 @@ get_OperationID(OperationID1) ->
 get_url(Url) ->
     re:replace(Url, <<"/amis/">>, <<"/classes/">>, [global, {return, binary}, unicode]).
 
+get_qs(Map) ->
+    lists:foldl(
+        fun
+            ({N, V}, <<>>) ->
+                NewV = format_value(V),
+                <<"?", N/binary, "=", NewV/binary>>;
+            ({N, V}, Acc) ->
+                NewV = format_value(V),
+                <<Acc/binary, "&", N/binary, "=", NewV/binary>>
+        end, <<>>, maps:to_list(Map)).
+
+format_value(V) ->
+    Json = jsx:encode(V),
+    V1 = re:replace(Json, <<"\[.*?\]">>, <<"">>, [global, {return, binary}, unicode]),
+    cow_qs:urlencode(V1).
+
+%%format_value(V) when is_list(V) ->
+%%    cow_qs:urlencode(dgiot_utils:to_binary(V));
+%%format_value(V) when is_map(V) ->
+%%    maps:fold(fun
+%%                  (N, V, <<>>) ->
+%%                      NewV = format_value(V),
+%%                      <<"?", N/binary, "=", NewV/binary>>;
+%%                  (N, V, Acc) ->
+%%                      NewV = format_value(V),
+%%                      <<Acc/binary, "&", N/binary, "=", NewV/binary>>
+%%              end, <<>>, V);
+%%format_value(V) ->
+%%    V.

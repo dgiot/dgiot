@@ -157,8 +157,8 @@ to_binary(V) when is_list(V) -> list_to_binary(V);
 to_binary(V) when is_integer(V) -> integer_to_binary(V);
 to_binary(V) when is_binary(V) -> V;
 to_binary(V) when is_pid(V) -> to_binary(pid_to_list(V));
+to_binary(V) when is_map(V) -> jsx:encode(V);
 to_binary(V) -> to_binary(io_lib:format("~p", [V])).
-
 
 to_atom(V) when is_binary(V) -> to_atom(binary_to_list(V));
 to_atom(V) when is_list(V) -> list_to_atom(V);
