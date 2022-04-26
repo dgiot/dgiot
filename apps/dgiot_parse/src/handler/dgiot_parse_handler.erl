@@ -42,11 +42,11 @@ swagger_parse() ->
 
 init(Req0, Map) ->
     {ok, Body, Req} = dgiot_req:read_body(Req0),
-    io:format("~s ~p Body ~p ~n",[?FILE, ?LINE, Body]),
+    io:format("~s ~p Body ~p ~n", [?FILE, ?LINE, Body]),
     case catch jsx:decode(Body, [{labels, binary}, return_maps]) of
         #{<<"_JavaScriptKey">> := _JSKey} = RecvMap ->
             Method = maps:get(<<"_method">>, RecvMap, dgiot_req:method(Req)),
-            io:format("~s ~p Method ~p ~n",[?FILE, ?LINE, Method]),
+            io:format("~s ~p Method ~p ~n", [?FILE, ?LINE, Method]),
             Index = maps:get(Method, Map),
             {ok, {_, Config}} = dgiot_router:get_state(Index),
             OperationId = maps:get(operationid, Config, not_allowed),
@@ -267,7 +267,7 @@ do_request_before(<<"get_classes_navigation">>, Args, _Body, _Headers, Context, 
 
 % 创建应用
 do_request_before(<<"post_classes_app">>, _Args, #{<<"name">> := AppName} = Body, _Headers,
-        #{<<"sessionToken">> := SessionToken, <<"user">> := #{<<"objectId">> := UserId}}, _Req) ->
+    #{<<"sessionToken">> := SessionToken, <<"user">> := #{<<"objectId">> := UserId}}, _Req) ->
     Where = #{
         <<"limit">> => 1, <<"order">> => <<"-updatedAt">>,
         <<"where">> => #{<<"name">> => AppName}
@@ -314,7 +314,7 @@ do_request_before(<<"post_users">>, _Args, #{
     <<"username">> := UserName,
     <<"password">> := PassWord,
     <<"phone">> := Phone} = Body,
-        _Headers, _Context, _Req) ->
+    _Headers, _Context, _Req) ->
     ?LOG(info, "Body ~p", [Body]),
     Query = #{
         <<"order">> => <<"-updatedAt,-createdAt">>,
@@ -422,15 +422,18 @@ do_request_before(<<"post_requestpasswordreset">>, Args, Body, Headers, Context,
 
 do_request_before(OperationID, Args, ReqBody, Headers, Context, Req) ->
     [Method, Type | _] = re:split(OperationID, <<"_">>),
-%%    io:format("~s ~p  do_request_before OperationID = ~p ~n", [?FILE, ?LINE, OperationID]),
-    Body =
-        case dgiot_hook:run_hook({Method, Type}, {'before', ReqBody}) of
+%%    io:format("~s ~p  do_request_before OperationID = ~p Args ~p ~n", [?FILE, ?LINE, OperationID, Args]),
+    NewArgs =
+        case dgiot_hook:run_hook({Method, Type}, {'before', Args}) of
             {ok, [Rtn | _]} ->
+                io:format("~s ~p  do_request_before OperationID = ~p Args ~p ~n", [?FILE, ?LINE, OperationID, Rtn]),
                 Rtn;
             _ ->
-                ReqBody
+                io:format("~s ~p  do_request_before OperationID = ~p Args ~p ~n", [?FILE, ?LINE, OperationID, Args]),
+                Args
         end,
-    request_parse(OperationID, Args, Body, Headers, Context, Req).
+    io:format("~s ~p  ReqBody OperationID = ~p Args ~p ~n", [?FILE, ?LINE, OperationID, Req]),
+    request_parse(OperationID, NewArgs, ReqBody, Headers, Context, Req).
 
 %% 所有请求后置处理
 do_request_after(<<"get_login">>, 200, ResHeaders, ResBody, Context, Req) ->
