@@ -41,7 +41,7 @@
 -export([call/3]).
 
 -dgiot_data("ets").
--export([init_ets/0, get_log/4]).
+-export([init_ets/0, get_log/4, get_OperationID/2]).
 
 -record(state, {
     operationid :: atom(),
