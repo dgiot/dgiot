@@ -25,6 +25,7 @@
     post/1,
     put/1,
     delete/1,
+    format/1,
     start_http/0
 ]).
 
@@ -43,46 +44,121 @@
 
 %% @description 备注
 %% 已实现 get post 的适配工作
+
+get({'before', Data}) when is_map(Data) ->
+    io:format("~s ~p Data: ~p ~n", [?FILE, ?LINE, Data]),
+    NewData = maps:fold(fun(K, V, Acc) ->
+        case V of
+            undefined -> Acc;
+            _ -> Acc#{K => V}
+        end
+                        end, #{}, Data),
+    Basic = format(NewData),
+    io:format("~s ~p Basic: ~p ~n", [?FILE, ?LINE, Basic]),
+    Basic;
 get({'before', Data}) ->
-    io:format("amis get before: ~p~n", [Data]),
+    io:format("~s ~p ~p~n", [?FILE, ?LINE, Data]),
     Data;
+get({'after', #{<<"results">> := Response, <<"count">> := Count} = _Data}) ->
+    #{
+        <<"status">> => 0,
+        <<"msg">> => <<"数据请求成功"/utf8>>,
+        <<"data">> => #{
+            <<"items">> => Response,
+            <<"total">> => Count
+        }
+    };
+get({'after', #{<<"results">> := Response} = Data}) ->
+    io:format("~s ~p ~p~n", [?FILE, ?LINE, Data]),
+    #{
+        <<"status">> => 0,
+        <<"msg">> => <<"数据请求成功"/utf8>>,
+        <<"data">> => #{<<"items">> => Response}
+    };
+%% 查询单个
 get({'after', Data}) ->
-    io:format("amis get after: ~p~n", [Data]),
     #{
         <<"status">> => 0,
         <<"msg">> => <<"数据请求成功"/utf8>>,
         <<"data">> => Data
     }.
 post({'before', Data}) ->
-    io:format("amis post before ~p~n", [Data]),
+    io:format("~s ~p ~p~n", [?FILE, ?LINE, Data]),
     Data;
 post({'after', Data}) ->
-    io:format("amis post after ~p~n", [Data]),
+    io:format("~s ~p ~p~n", [?FILE, ?LINE, Data]),
     #{
         <<"status">> => 0,
         <<"msg">> => <<"数据提交成功"/utf8>>,
         <<"data">> => Data
     }.
 put({'before', Data}) ->
-    io:format("amis put before ~p~n", [Data]),
+    erlang:put(<<"Request">>, Data),
+    io:format("~s ~p ~p~n", [?FILE, ?LINE, Data]),
     Data;
 put({'after', Data}) ->
-    io:format("amis put after ~p~n", [Data]),
+    Request = erlang:get(<<"Request">>),
+    io:format("~s ~p ~p~n", [?FILE, ?LINE, Data]),
     #{
         <<"status">> => 0,
         <<"msg">> => <<"修改成功"/utf8>>,
-        <<"data">> => Data
+        <<"data">> => #{<<"Data">> => Data, <<"Request">> => Request}
     }.
 delete({'before', Data}) ->
-    io:format("amis delete before ~p~n", [Data]),
+    erlang:put(<<"Request">>, Data),
+    io:format("~s ~p ~p~n", [?FILE, ?LINE, Data]),
     Data;
 delete({'after', Data}) ->
-    io:format("amis delete after ~p~n", [Data]),
+    Request = erlang:get(<<"Request">>),
+    io:format("~s ~p ~p~n", [?FILE, ?LINE, Data]),
     #{
         <<"status">> => 0,
         <<"msg">> => <<"删除成功"/utf8>>,
-        <<"data">> => Data
+        <<"data">> => #{<<"Data">> => Data, <<"Request">> => Request}
     }.
+
+
+%% 查询多个
+%%/**
+%%* https://docs.parseplatform.org/rest/guide/#query-constraints
+%%* 查询条件
+%%Parameter	Use
+%%order	Specify a field to sort by
+%%limit	Limit the number of objects returned by the query
+%%skip	Use with limit to paginate through results
+%%keys	Restrict the fields returned by the query
+%%excludeKeys	Exclude specific fields from the returned query
+%%include	Use on Pointer columns to return the full object
+%%*/
+format(#{<<"orderBy">> := OrderBy} = Data) ->
+    NewData = maps:without([<<"orderBy">>], Data),
+    format(NewData#{<<"order">> => [OrderBy]});
+
+format(#{<<"order">> := [Order | _], <<"orderDir">> := OrderDir} = Data) ->
+    NewData = maps:without([<<"orderDir">>], Data),
+    NewOrder =
+        case OrderDir of
+            <<"desc">> ->
+                <<"-", Order/binary>>;
+            _ ->
+                Order
+        end,
+    format(NewData#{<<"order">> => [NewOrder]});
+
+format(#{<<"perPage">> := PerPage, <<"page">> := Page} = Data) ->
+    NewData = maps:without([<<"perPage">>, <<"page">>], Data),
+    Skip = (Page - 1) * PerPage,
+    format(NewData#{<<"limit">> => PerPage, <<"skip">> => Skip});
+
+format(Data) ->
+    Where = maps:without([<<"limit">>, <<"skip">>, <<"order">>, <<"limit">>, <<"keys">>, <<"excludeKeys">>, <<"include">>, <<"where">>], Data),
+    NewData = maps:without(maps:keys(Where), Data),
+    case Data of
+        #{<<"where">> := ParesWhere} ->
+            NewData#{<<"where">> => maps:merge(ParesWhere, Where)};
+        _ ->
+            NewData#{<<"where">> => Where}
+    end.
 
 
 start_http() ->
