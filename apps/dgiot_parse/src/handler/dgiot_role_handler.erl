@@ -28,9 +28,9 @@
 %% 支持二种方式导入
 %% 示例:
 %% 1. Metadata为map表示的JSON,
-%%    dgiot_http_server:bind(<<"/iotdev">>, ?MODULE, [], Metadata)
+%%    dgiot_http_server:bind(<<"/iotapi">>, ?MODULE, [], Metadata)
 %% 2. 从模块的priv/swagger/下导入
-%%    dgiot_http_server:bind(<<"/swagger_iot.json">>, ?MODULE, [], priv)
+%%    dgiot_http_server:bind(<<"/swagger_role.json">>, ?MODULE, [], priv)
 swagger_role() ->
     [
         dgiot_http_server:bind(<<"/swagger_role.json">>, ?MODULE, [], priv)
@@ -74,14 +74,6 @@ handle(OperationID, Args, Context, Req) ->
 %%%===================================================================
 %%% 内部函数 Version:API版本
 %%%===================================================================
-
-%% iot_hub 概要: 查询平台api资源 描述:查询平台api资源
-%% OperationId:post_login
-%% 请求:POST /iotapi/post_login
-do_request(post_login, #{<<"username">> := UserName, <<"password">> := Password}, _Context, _Req) ->
-    ?LOG(debug, "UserName ~p ", [UserName]),
-    dgiot_parse_auth:login_by_account(UserName, Password);
-
 %% Role模版 概要: 导库 描述:json文件导库
 %% OperationId:post_role
 %% 请求:POST /iotapi/role
@@ -113,60 +105,11 @@ do_request(get_role, #{<<"name">> := Name} = Body, #{<<"sessionToken">> := Sessi
     ?LOG(debug, "Body ~p ", [Body]),
     dgiot_role:get_role(Name, SessionToken);
 
-%% RoleUser 概要: 导库 描述:json文件导库
-%% OperationId:get_roleuser
-%% 请求:GET /iotapi/roleuser
-do_request(get_roleuser, #{<<"where">> := Where} = Filter, #{<<"sessionToken">> := SessionToken} = _Context, _Req0) ->
-    dgiot_role:get_roleuser(Filter#{<<"where">> => jsx:decode(Where, [return_maps])}, SessionToken);
-
-%% Role模版 概要: 导库 描述:json文件导库
-%% OperationId:put_roleuser
-%% 请求:POST /iotapi/roleuser
-do_request(put_roleuser, #{<<"userid">> := UserId} = Body, #{<<"sessionToken">> := SessionToken} = _Context, _Req0) ->
-%%    ?LOG(debug, "Body ~p ", [Body]),
-    case UserId of
-        <<"Klht7ERlYn">> ->
-            {ok, #{<<"code">> => 401, <<"result">> => <<"dgiot_admin Cannot be transferred">>}};
-        <<"lerYRy2jsh">> ->
-            {ok, #{<<"code">> => 401, <<"result">> => <<"dgiot_admin Cannot be transferred">>}};
-        _ ->
-            dgiot_role:put_roleuser(Body, SessionToken)
-    end;
-
-%% Role模版 概要: 导库 描述:json文件导库
-%% OperationId:delete_roleuser
-%% 请求:POST /iotapi/roleuser
-do_request(delete_roleuser, #{<<"userid">> := UserId} = Body, #{<<"sessionToken">> := SessionToken} = _Context, _Req0) ->
-%%    io:format("Body ~p~n", [Body]),
-    case UserId of
-        <<"Klht7ERlYn">> ->
-            {ok, #{<<"code">> => 401, <<"result">> => <<"dgiot_admin Cannot be Resignation">>}};
-        <<"lerYRy2jsh">> ->
-            {ok, #{<<"code">> => 401, <<"result">> => <<"dgiot_admin Cannot be Resignation">>}};
-        _ ->
-            dgiot_role:del_roleuser(Body, SessionToken)
-    end;
-
-%% Role模版 概要: 导库 描述:json文件导库
-%% OperationId:delete_roleuser
-%% 请求:POST /iotapi/roleuser
-do_request(post_roleuser, Body, #{<<"sessionToken">> := SessionToken} = _Context, _Req0) ->
-    ?LOG(debug, "Body ~p ", [Body]),
-    dgiot_role:post_roleuser(Body, SessionToken);
-
-%% Role 概要: 导库 描述:json文件导库
-%% OperationId:get_roletree
-%% 请求:GET /iotapi/roletree
-do_request(get_roletree, _Body, #{<<"sessionToken">> := SessionToken} = _Context, _Req0) ->
-    ?LOG(debug, "SessionToken ~p ", [SessionToken]),
-    dgiot_parse_utils:get_classtree(<<"_Role">>, <<"parent">>, #{}, SessionToken);
-%%    dgiot_role:get_roletree(SessionToken);
-
 %% Role模版 概要: 导库 描述:json文件导库
 %% OperationId:post_roletemp
 %% 请求:GET /iotapi/roletemp
 do_request(get_roletemp, #{<<"name">> := Name} = Body,
-    #{<<"sessionToken">> := SessionToken} = _Context, _Req0) ->
+        #{<<"sessionToken">> := SessionToken} = _Context, _Req0) ->
     ?LOG(debug, "Body ~p ", [Body]),
     FileName = dgiot_utils:to_list(Name) ++ ".zip",
     case dgiot_role:get_roletemp(FileName, Name, SessionToken) of
@@ -187,13 +130,20 @@ do_request(post_roletemp, #{<<"name">> := Name, <<"tempname">> := TempName} = Bo
     ?LOG(debug, "Body ~p ", [Body]),
     dgiot_role:post_roletemp(Name, TempName, SessionToken);
 
-
 %% Role模版 概要: 导库 描述:json文件导库
 %% OperationId:post_roletemp
 %% 请求:POST /iotapi/roletemp
 do_request(put_roletemp, Body, #{<<"sessionToken">> := SessionToken} = _Context, _Req0) ->
     ?LOG(debug, "Body ~p ", [Body]),
     dgiot_role:put_roletemp(Body, SessionToken);
+
+
+%% Role 概要: 导库 描述:json文件导库
+%% OperationId:get_roletree
+%% 请求:GET /iotapi/roletree
+do_request(get_roletree, _Body, #{<<"sessionToken">> := SessionToken} = _Context, _Req0) ->
+    ?LOG(debug, "SessionToken ~p ", [SessionToken]),
+    dgiot_parse_utils:get_classtree(<<"_Role">>, <<"parent">>, #{}, SessionToken);
 
 
 %%  服务器不支持的API接口

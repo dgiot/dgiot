@@ -81,14 +81,14 @@ do_request(get_jwtlogin, #{<<"id_token">> := Idtoken}, _Context, _Req) ->
     dgiot_aliyun_auth:jwtlogin(Idtoken);
 
 %% iot_hub 概要: 查询平台api资源 描述:wechat登陆
-%% OperationId:post_login
-%% 请求:POST /iotapi/post_login
+%% OperationId:get_wechat
+%% 请求:GET /iotapi/get_wechat
 do_request(get_wechat, #{<<"jscode">> := Jscode}, _Context, _Req) ->
     dgiot_wechat:get_sns(Jscode);
 
 %% iot_hub 概要: 查询平台api资源 描述:wechat绑定
-%% OperationId:post_login
-%% 请求:POST /iotapi/post_login
+%% OperationId:post_wechat
+%% 请求:POST /iotapi/post_wechat
 do_request(post_wechat, #{<<"username">> := UserName, <<"password">> := Password, <<"openid">> := OpenId}, _Context, _Req) ->
     dgiot_wechat:post_sns(UserName, Password, OpenId);
 
@@ -111,20 +111,20 @@ do_request(get_wechat_index, _Args, #{<<"sessionToken">> := SessionToken}, _Req)
 
 
 %% iot_hub 概要: 查询平台api资源 描述:设备地图
-%% OperationId:post_login
-%% 请求:POST /iotapi/post_login
+%% OperationId:get_wechat_map
+%% 请求:GET /iotapi/get_wechat_map
 do_request(get_wechat_map, _Args, #{<<"sessionToken">> := SessionToken}, _Req) ->
     dgiot_wechat:get_wechat_map(SessionToken);
 
 %% iot_hub 概要: 查询平台api资源 描述:设备详情
-%% OperationId:post_login
-%% 请求:POST /iotapi/post_login
+%% OperationId:get_device_info
+%% 请求:GET /iotapi/get_device_info
 do_request(get_device_info, #{<<"deviceid">> := Deviceid}, #{<<"sessionToken">> := SessionToken}, _Req) ->
     dgiot_wechat:get_device_info(Deviceid, SessionToken);
 
 %% iot_hub 概要: 查询平台api资源 描述:设备详情
-%% OperationId:post_login
-%% 请求:POST /iotapi/post_login
+%% OperationId:get_notification
+%% 请求:GET /iotapi/get_notification
 do_request(get_notification, #{<<"productid">> := ProductId, <<"order">> := Order, <<"limit">> := Limit, <<"skip">> := Skip, <<"isprocess">> := Isprocess}, #{<<"sessionToken">> := SessionToken}, _Req) ->
     ?LOG(info, "SessionToken = ~p ", [SessionToken]),
     Where =
@@ -175,10 +175,10 @@ do_request(get_maintenancefinish, #{<<"number">> := Number}, #{<<"sessionToken">
 %% 请求:POST /iotapi/post_maintenance
 do_request(post_maintenance, Args, _Context, _Req) ->
     Isbridge = application:get_env(dgiot_http, isbridge, false),
+    Url = application:get_env(dgiot_http, dgiot_bridge_url,  "https://prod.iotn2n.com") ++ "/iotapi/maintenance",
     Result = dgiot_umeng:create_maintenance(Args),
     case Isbridge of
         true ->
-            Url = "https://cad.iotn2n.com/iotapi/maintenance",
             case catch httpc:request(post, {Url, [], "application/json", jsx:encode(Args)}, [], []) of
                 {'EXIT', _Reason} ->
                     pass;
@@ -223,11 +223,31 @@ do_request(post_triggeralarm, #{<<"deviceid">> := DeviceId} = Args, #{<<"session
     dgiot_umeng:triggeralarm(DeviceId),
     {ok, #{<<"msg">> => <<"trigger successfully">>, <<"data">> => Args}};
 
+
+%% System 概要: 发送短信验证码 描述:发送短信,短信验证码发送成功后,则会在缓存中写入action + mobile, 用户下一步提交时，可以根据此键查询验证通过
+%% OperationId:post_sendsms_action
+%% 请求:POST /iotapi/sendsms/:Action
+do_request(post_sendsms, #{<<"account">> := Account, <<"nationcode">> := NationCode}, _Context, _Req) ->
+    case dgiot_notification:send_verification_code(NationCode, Account) of
+        {error, Reason} ->
+            {500, #{code => 1, error => Reason}};
+        {ok, Map} ->
+            {ok, Map}
+    end;
+
+%% System 概要: 验证手机号/邮箱是否通过 描述:验证手机号/邮箱是否通过
+%% OperationId:post_verify_code
+%% 请求:POST /iotapi/verify_code
+do_request(post_verify_code_action, #{<<"account">> := Account, <<"code">> := Code} = Args, _Context, Req) ->
+    case dgiot_notification:check_verification_code(Account, Code) of
+        true ->
+            dgiot_verify_code:handle(Args, Req);
+        false ->
+            {400, unicode:characters_to_binary(<<"验证码未通过！"/utf8>>)}
+    end;
+
 %%  服务器不支持的API接口
-do_request(OperationId, Args, _Context, _Req) ->
-    io:format("~s ~p OperationId = ~p.~n", [?FILE, ?LINE, OperationId]),
-    io:format("~s ~p Args = ~p.~n", [?FILE, ?LINE, Args]),
-    io:format("~s ~p _Context = ~p.~n", [?FILE, ?LINE, _Context]),
+do_request(_OperationId, _Args, _Context, _Req) ->
     {error, <<"Not Allowed.">>}.
 
 

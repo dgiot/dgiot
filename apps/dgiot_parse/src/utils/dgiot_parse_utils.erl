@@ -180,7 +180,6 @@ get_children(CId, Items) ->
         end, Items),
     lists:sort(fun children_sort/2, Tree).
 
-
 children_sort(Node1, Node2) ->
     Order1 = maps:get(<<"orderBy">>, Node1, 0),
     Order2 = maps:get(<<"orderBy">>, Node2, 0),
@@ -319,7 +318,7 @@ add_paths(#{<<"className">> := ClassName} = Schema, Acc, {Type, Mod}) ->
     }.
 
 get_path(Tags, ClassName, Type, Mod) ->
-    {ok, Bin} = dgiot_swagger:load_schema(Mod, "swagger_" ++ dgiot_utils:to_list(Type) ++ "_object.json", []),
+    {ok, Bin} = dgiot_swagger:load_schema(Mod, "swagger_" ++ dgiot_utils:to_list(Type) ++ ".json", []),
     Data = re:replace(Bin, "\\{\\{className\\}\\}", ClassName, ?RE_OPTIONS),
     CTags = lists:filtermap(fun(#{<<"name">> := Name}) -> Name == ClassName end, Tags),
     Desc =

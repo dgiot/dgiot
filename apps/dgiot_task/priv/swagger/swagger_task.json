@@ -3,10 +3,6 @@
     {
       "name": "Crond",
       "description": "任务管理"
-    },
-    {
-      "name": "Controlby",
-      "description": "控制下发"
     }
   ],
   "definitions": {

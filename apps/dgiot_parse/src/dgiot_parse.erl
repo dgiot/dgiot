@@ -20,7 +20,6 @@
 -include_lib("dgiot/include/logger.hrl").
 -define(DEFField, re:split(application:get_env(?MODULE, delete_field, ""), ",")).
 
-
 %% API
 -export([
     health/0,
@@ -60,12 +59,10 @@
     import/5,
     import/6,
     request/4,
-    request/5,
-    graphql/1
+    request/5
 ]).
 
 -export([
-    test_graphql/0,
     request_rest/6
 ]).
 
@@ -177,18 +174,6 @@ query_object(Class, Args, Header, Options) ->
 query_object(Name, Class, Args, Header, Options) ->
     Path = <<"/classes/", Class/binary>>,
     request_rest(Name, 'GET', Header, Path, Args, Options).
-
-graphql(Data) ->
-    Header =
-        case maps:get(<<"access_token">>, Data, <<"undefined">>) of
-            <<"undefined">> -> [];
-            Token -> [{"X-Parse-Session-Token", dgiot_utils:to_list(Token)}]
-        end,
-    ?LOG(info, "Header ~p", [Header]),
-    graphql(?DEFAULT, Header, maps:without([<<"access_token">>], Data)).
-graphql(Name, Header, Data) ->
-    request_rest(Name, 'POST', Header, <<"/graphql">>, Data, []).
-
 
 %% limit和skip参数进行分页
 %% 传递order逗号分隔列表按多个字段进行排序
@@ -549,13 +534,4 @@ handle_response(Result) ->
             {error, #{<<"code">> => 1, <<"error">> => Reason}}
     end.
 
-
-test_graphql() ->
-    Data = #{
-        <<"operationName">> => <<"Health">>,
-        <<"variables">> => #{},
-        <<"query">> => <<"query Health {\n  health\n}\n">>
-    },
-%%    {"operationName":"Health","variables":{},"query":"query Health {\n  health\n}\n"}
-    graphql(Data).
 

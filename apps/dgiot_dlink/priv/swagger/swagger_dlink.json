@@ -3,10 +3,6 @@
     {
       "name": "Dlink",
       "description": "Dlink协议"
-    },
-    {
-      "name": "Protocol",
-      "description": "Dlink解码器"
     }
   ],
   "definitions": {
@@ -36,7 +32,7 @@
           }
         },
         "tags": [
-          "Protocol"
+          "Dlink"
         ]
       }
     },

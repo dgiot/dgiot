@@ -1,4 +1,10 @@
 {
+  "tags": [
+    {
+      "name": "View",
+      "description": "视图管理"
+    }
+  ],
   "definitions": {},
   "paths": {
     "/topo": {
@@ -240,11 +246,5 @@
         ]
       }
     }
-  },
-  "tags": [
-    {
-      "name": "View",
-      "description": "视图管理"
-    }
-  ]
+  }
 }
