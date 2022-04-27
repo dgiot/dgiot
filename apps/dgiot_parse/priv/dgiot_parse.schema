@@ -36,6 +36,11 @@
      {datatype, string}
 ]}.
 
+{mapping, "parse.default_user", "dgiot_parse.default_user", [
+     {default, ""},
+     {datatype, string}
+]}.
+
 {mapping, "parse.parse_server", "dgiot_parse.parse_server", [
      {default, ""},
      {datatype, string}

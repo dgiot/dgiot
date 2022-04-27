@@ -1,8 +1,8 @@
 {
   "tags": [
     {
-      "name": "OPC",
-      "description": "OPC"
+      "name": "Dlink",
+      "description": "Dlink协议"
     }
   ],
   "definitions": {},
@@ -51,7 +51,7 @@
         },
         "summary": "获取表头",
         "tags": [
-          "OPC"
+          "Dlink"
         ]
       }
     }

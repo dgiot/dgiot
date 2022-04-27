@@ -171,6 +171,9 @@ handle_init(State) ->
     emqx_hooks:add('mqtt_publish.trace', {dgiot_tracer, check_trace, [?MODULE, ?LINE]}),
     {ok, State}.
 
+handle_message(export, #state{cfg = Cfg} = State) ->
+    {reply, {ok, Cfg}, State};
+
 handle_message(config, #state{cfg = Cfg} = State) ->
     {reply, {ok, Cfg}, State};
 

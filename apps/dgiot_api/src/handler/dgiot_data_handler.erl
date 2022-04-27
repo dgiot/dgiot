@@ -25,11 +25,6 @@
 -export([swagger_data/0]).
 -export([handle/4]).
 
--export([
-    export_table/1,
-    import_table/2
-]).
-
 %% API描述
 %% 支持二种方式导入
 %% 示例:
@@ -100,28 +95,6 @@ do_request(post_upload, #{<<"file">> := FileInfo}, #{<<"user">> := #{<<"objectId
             {error, Reason}
     end;
 
-%% System 概要: 发送短信验证码 描述:发送短信,短信验证码发送成功后,则会在缓存中写入action + mobile, 用户下一步提交时，可以根据此键查询验证通过
-%% OperationId:post_sendsms_action
-%% 请求:POST /iotapi/sendsms/:Action
-do_request(post_sendsms, #{<<"account">> := Account, <<"nationcode">> := NationCode}, _Context, _Req) ->
-    case dgiot_notification:send_verification_code(NationCode, Account) of
-        {error, Reason} ->
-            {500, #{code => 1, error => Reason}};
-        {ok, Map} ->
-            {ok, Map}
-    end;
-
-%% System 概要: 验证手机号/邮箱是否通过 描述:验证手机号/邮箱是否通过
-%% OperationId:post_verify_code
-%% 请求:POST /iotapi/verify_code
-do_request(post_verify_code_action, #{<<"account">> := Account, <<"code">> := Code} = Args, _Context, Req) ->
-    case dgiot_notification:check_verification_code(Account, Code) of
-        true ->
-            dgiot_verify_code:handle(Args, Req);
-        false ->
-            {400, unicode:characters_to_binary(<<"验证码未通过！"/utf8>>)}
-    end;
-
 do_request(post_upload_token, #{<<"from">> := <<"fastdfs">>}, _Context, Req0) ->
     {ok, Body, _Req1} = dgiot_req:read_body(Req0),
     case jsx:decode(Body, [{labels, binary}, return_maps]) of
@@ -158,13 +131,6 @@ do_request(post_upload_token, #{<<"from">> := <<"fastdfs">>}, _Context, Req0) ->
                             {200, <<"fail">>}
                     end
             end
-    end;
-
-do_request(post_graphql, Body, #{<<"sessionToken">> := SessionToken} = _Context, _Req0) ->
-    case dgiot_parse:graphql(Body#{<<"access_token">> => SessionToken}) of
-        {ok, Result} ->
-            {200, Result};
-        Other -> Other
     end;
 
 
@@ -454,12 +420,6 @@ do_request(delete_relation, #{<<"destClass">> := DestClass, <<"destId">> := Dest
         },
     dgiot_parse:update_object(DestClass, DestId, Map);
 
-%% Product 概要: 导库 描述:json文件导库
-%% OperationId:post_tree
-%% 请求:POST /iotapi/post_tree
-do_request(post_tree, #{<<"class">> := Class, <<"parent">> := Parent, <<"filter">> := Filter}, #{<<"sessionToken">> := SessionToken} = _Context, _Req0) ->
-    dgiot_parse_utils:get_classtree(Class, Parent, jsx:decode(Filter, [{labels, binary}, return_maps]), SessionToken);
-
 %%  服务器不支持的API接口
 do_request(_OperationId, _Args, _Context, _Req) ->
     ?LOG(info, "_Args ~p", [_Args]),
@@ -698,80 +658,4 @@ deleteThing(ProductId, SessionToken, Item) ->
         Error ->
             {error, Error}
     end.
-
-%%数据表导出
-%%postgres=# \c parse;
-%%You are now connected to database "parse" as user "postgres".
-%%parse=# \dt
-%%List of relations
-%%Schema |             Name             | Type  |  Owner
-%%--------+------------------------------+-------+----------
-%%public | App                          | table | postgres
-%%public | Article                      | table | postgres
-%%public | Category                     | table | postgres
-%%public | Channel                      | table | postgres
-%%public | Crond                        | table | postgres
-%%public | Device                       | table | postgres
-%%public | Devicelog                    | table | postgres
-%%public | Dict                         | table | postgres
-%%public | Evidence                     | table | postgres
-%%public | Instruct                     | table | postgres
-%%public | License                      | table | postgres
-%%public | Log                          | table | postgres
-%%public | LogLevel                     | table | postgres
-%%public | Maintenance                  | table | postgres
-%%public | MasterData                   | table | postgres
-%%public | Menu                         | table | postgres
-%%public | MetaData                     | table | postgres
-%%public | Notification                 | table | postgres
-%%public | Permission                   | table | postgres
-%%public | Product                      | table | postgres
-%%public | ProductTemplet               | table | postgres
-%%public | Project                      | table | postgres
-%%public | Timescale                    | table | postgres
-%%public | View                         | table | postgres
-%%public | _Audience                    | table | postgres
-%%public | _GlobalConfig                | table | postgres
-%%public | _GraphQLConfig               | table | postgres
-%%public | _Hooks                       | table | postgres
-%%public | _Installation                | table | postgres
-%%public | _JobSchedule                 | table | postgres
-%%public | _JobStatus                   | table | postgres
-%%public | _Join:app:Project            | table | postgres
-%%public | _Join:children:Product       | table | postgres
-%%public | _Join:deletedBy:Notification | table | postgres
-%%public | _Join:menus:_Role            | table | postgres
-%%public | _Join:product:Channel        | table | postgres
-%%public | _Join:product:Project        | table | postgres
-%%public | _Join:readBy:Notification    | table | postgres
-%%public | _Join:role:_User             | table | postgres
-%%public | _Join:roles:_Role            | table | postgres
-%%public | _Join:roles:_User            | table | postgres
-%%public | _Join:rules:_Role            | table | postgres
-%%public | _Join:users:_Role            | table | postgres
-%%public | _Join:users:_Session         | table | postgres
-%%public | _PushStatus                  | table | postgres
-%%public | _Role                        | table | postgres
-%%public | _SCHEMA                      | table | postgres
-%%public | _Session                     | table | postgres
-%%public | _User                        | table | postgres
-export_table(Table) ->
-    Header = "sudo -u postgres /usr/local/pgsql/12/bin/pg_dump -h localhost -U postgres -d parse -t public.\"",
-    TableName = dgiot_utils:to_list(Table),
-    Tail = """\"  --inserts > ",
-    {file, Here} = code:is_loaded(?MODULE),
-    Dir = filename:dirname(filename:dirname(Here)),
-    Path = dgiot_httpc:url_join([Dir, "/priv/www/", dgiot_utils:to_list(TableName), ".sql"]),
-    os:cmd(Header ++ TableName ++ Tail ++ Path).
-
-import_table(Table, Path) ->
-    Header = "sudo -u postgres /usr/local/pgsql/12/bin/psql -h localhost -U postgres  -d parse ",
-    TableName = dgiot_utils:to_list(Table),
-    %%  psql -h localhost -U postgres  -d parse -c "Drop table public.\"Menu\";";
-    os:cmd(Header ++ "-c \"Drop table public.\"" ++ TableName ++ "\";"),
-    %%  psql -h localhost -U postgres  -d parse  -f ./Menu.sql
-    os:cmd(Header ++ "-f \"" ++ dgiot_utils:to_list(Path) ++ "\";").
-
-%%{"menus":{"__op":"AddRelation","objects":[{"__type":"Pointer","className":"Menu","objectId":"4fe88ddb1a"}]},"_method":"PUT","_ApplicationId":"b068267541e3e578fff1ea84ed0f4cee","_ClientVersion":"js2.8.0","_MasterKey":"58ef0697b520b56757402b7fa06cd7fe","_InstallationId":"93d02d8d-cc00-1095-5e96-db328f522865"}
-
 

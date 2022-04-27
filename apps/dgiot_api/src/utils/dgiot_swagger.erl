@@ -43,8 +43,7 @@ stop() ->
             pass;
         Pid ->
             dgiot_data:delete({dgiot_swagger, pid}),
-            gen_server:stop(Pid),
-            ?LOG(info,"Pid ~p", [Pid])
+            gen_server:stop(Pid)
     end.
 
 %%%===================================================================
@@ -62,6 +61,7 @@ handle_call({write, Name, Version, Schema}, _From, #state{swagger = List} = Stat
     case lists:keyfind(Name, 1, List) of
         false ->
             SchemaPath = get_priv(?MODULE, ?SWAGGER(Name, Version)),
+            io:format("~s ~p ~p ~n",[?FILE,?LINE,SchemaPath]),
             Reply = file:write_file(SchemaPath, jsx:encode(Schema), [write]),
             {reply, Reply, State#state{swagger = [{Name, Version} | List]}};
         {Name, _Version} ->
@@ -69,7 +69,6 @@ handle_call({write, Name, Version, Schema}, _From, #state{swagger = List} = Stat
     end;
 
 handle_call({read, Name, Config}, _From, #state{swagger = List} = State) ->
-    ?LOG(info,"List ~p", [List]),
     case lists:keyfind(Name, 1, List) of
         false ->
             {reply, {error, not_find}, State};

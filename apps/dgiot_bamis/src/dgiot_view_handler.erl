@@ -13,14 +13,14 @@
 %% See the License for the specific language governing permissions and
 %% limitations under the License.
 %%--------------------------------------------------------------------
--module(dgiot_bamis_handler).
+-module(dgiot_view_handler).
 -author("johnliu").
 -behavior(dgiot_rest).
 -dgiot_rest(all).
 -include_lib("dgiot/include/logger.hrl").
 
 %% API
--export([swagger_amis/0]).
+-export([swagger_view/0]).
 -export([handle/4]).
 %% API描述
 %% 支持二种方式导入
@@ -28,10 +28,10 @@
 %% 1. Metadata为map表示的JSON,
 %%    dgiot_http_server:bind(<<"/amis">>, ?MODULE, [], Metadata)
 %% 2. 从模块的priv/swagger/下导入
-%%    dgiot_http_server:bind(<<"/swagger_amis.json">>, ?MODULE, [], priv)
-swagger_amis() ->
+%%    dgiot_http_server:bind(<<"/swagger_view.json">>, ?MODULE, [], priv)
+swagger_view() ->
     [
-        dgiot_http_server:bind(<<"/swagger_bamis.json">>, ?MODULE, [], priv)  %需要于priv/swagger/目录下放置swagger.json文件名保持一致
+        dgiot_http_server:bind(<<"/swagger_view.json">>, ?MODULE, [], priv)  %需要于priv/swagger/目录下放置swagger.json文件名保持一致
     ].
 
 

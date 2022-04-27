@@ -1,12 +1,12 @@
 {
   "tags": [
     {
-      "name": "Data",
-      "description": "数据管理"
+      "name": "Basic",
+      "description": "基础接口"
     },
     {
-      "name": "DGIOT",
-      "description": "基础接口"
+      "name": "View",
+      "description": "视图管理"
     }
   ],
   "definitions": {
@@ -112,7 +112,7 @@
           }
         },
         "tags": [
-          "DGIOT"
+          "Basic"
         ]
       }
     },
@@ -187,7 +187,7 @@
           }
         },
         "tags": [
-          "DGIOT"
+          "Basic"
         ]
       }
     },
@@ -292,7 +292,7 @@
           }
         },
         "tags": [
-          "DGIOT"
+          "View"
         ]
       }
     },
@@ -335,7 +335,7 @@
           }
         },
         "tags": [
-          "DGIOT"
+          "View"
         ]
       }
     }

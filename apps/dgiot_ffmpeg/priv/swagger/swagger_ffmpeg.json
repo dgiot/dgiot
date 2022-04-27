@@ -1,8 +1,8 @@
 {
   "tags": [
     {
-      "name": "FFMPEG",
-      "description": "视频管理"
+      "name": "View",
+      "description": "可视化管理"
     }
   ],
   "definitions": {
@@ -79,7 +79,7 @@
           }
         },
         "tags": [
-          "FFMPEG"
+          "View"
         ]
       },
       "get": {
@@ -133,7 +133,7 @@
           }
         },
         "tags": [
-          "FFMPEG"
+          "View"
         ]
       }
     }

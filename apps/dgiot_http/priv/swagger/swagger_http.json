@@ -1,12 +1,8 @@
 {
   "tags": [
     {
-      "name": "Wechat",
-      "description": "微信适配"
-    },
-    {
-      "name": "aliyun",
-      "description": "阿里云适配"
+      "name": "Notification",
+      "description": "通知管理"
     }
   ],
   "definitions": {
@@ -41,7 +37,7 @@
         },
         "summary": "wechat登陆",
         "tags": [
-          "Wechat"
+          "Notification"
         ]
       },
       "post": {
@@ -99,7 +95,7 @@
           }
         },
         "tags": [
-          "Wechat"
+          "Notification"
         ]
       }
     },
@@ -123,13 +119,13 @@
         },
         "summary": "wechat解绑",
         "tags": [
-          "Wechat"
+          "Notification"
         ]
       }
     },
     "/wechat_index": {
       "get": {
-        "description": "总控台",
+        "description": "小程序总控台",
         "parameters": [],
         "responses": {
           "200": {
@@ -145,15 +141,15 @@
             "description": "Server Internal error"
           }
         },
-        "summary": "总控台",
+        "summary": "小程序总控台",
         "tags": [
-          "Wechat"
+          "Notification"
         ]
       }
     },
     "/wechat_map": {
       "get": {
-        "description": "设备地图",
+        "description": "微信设备地图",
         "parameters": [],
         "responses": {
           "200": {
@@ -169,9 +165,9 @@
             "description": "Server Internal error"
           }
         },
-        "summary": "设备地图",
+        "summary": "微信设备地图",
         "tags": [
-          "Wechat"
+          "Notification"
         ]
       }
     },
@@ -203,7 +199,7 @@
         },
         "summary": "设备详情",
         "tags": [
-          "Wechat"
+          "Notification"
         ]
       }
     },
@@ -263,7 +259,7 @@
         },
         "summary": "告警列表",
         "tags": [
-          "Wechat"
+          "Notification"
         ]
       }
     },
@@ -321,7 +317,7 @@
         },
         "summary": "发送订阅消息",
         "tags": [
-          "Wechat"
+          "Notification"
         ]
       }
     },
@@ -403,7 +399,7 @@
         },
         "summary": "发送邮件",
         "tags": [
-          "Wechat"
+          "Notification"
         ]
       }
     },
@@ -436,7 +432,7 @@
         },
         "summary": "jwt回调",
         "tags": [
-          "aliyun"
+          "Notification"
         ]
       }
     },
@@ -508,7 +504,7 @@
         },
         "summary": "创建工单",
         "tags": [
-          "Wechat"
+          "Notification"
         ]
       }
     },
@@ -540,7 +536,7 @@
         },
         "summary": "工单结束发送",
         "tags": [
-          "Wechat"
+          "Notification"
         ]
       }
     },
@@ -558,7 +554,7 @@
           }
         },
         "tags": [
-          "Wechat"
+          "Notification"
         ]
       },
       "post": {
@@ -620,7 +616,7 @@
         },
         "summary": "修改运维管理列表",
         "tags": [
-          "Wechat"
+          "Notification"
         ]
       }
     },
@@ -655,7 +651,157 @@
         },
         "summary": "触发告警",
         "tags": [
-          "Wechat"
+          "Notification"
+        ]
+      }
+    },
+    "/sendsms": {
+      "post": {
+        "security": [],
+        "consumes": [
+          "*"
+        ],
+        "summary": "发送短信验证码",
+        "description": "发送短信,短信验证码发送成功后,则会在缓存中以mobile为键写入, 用户下一步提交时，可以根据此键查询验证通过",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "nationcode",
+            "type": "string",
+            "description": "国家/地区",
+            "enum": [
+              "+86/中国",
+              "+886/中国台湾",
+              "+852/中国香港",
+              "+91/India",
+              "+244/Angola",
+              "+54/Argentina",
+              "+1/American Samoa",
+              "+880/Bangladesh",
+              "+56/Chile",
+              "+855/Cambodia",
+              "+20/Egypt",
+              "+33/France",
+              "+49/Germany",
+              "+62/Indonesia",
+              "+353/Ireland",
+              "+972/Israel",
+              "+39/Italy",
+              "+81/Japan",
+              "+60/Malaysia",
+              "+63/Philippines",
+              "+92/Pakistan",
+              "+82/South Korea",
+              "+46/Sweden",
+              "+65/Singapore",
+              "+27/South Africa",
+              "+66/Thailand",
+              "+971/United Arab Emirates",
+              "+44/United Kingdom",
+              "+84/Vietnam",
+              "+967/Yemen",
+              "+260/Zambia"
+            ],
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "account",
+            "type": "string",
+            "description": "大陆手机号码",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "expire": {
+                  "type": "number"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Notification"
+        ]
+      }
+    },
+    "/verify_code": {
+      "post": {
+        "security": [],
+        "summary": "验证手机号/邮箱是否通过",
+        "description": "验证手机号/邮箱是否通过",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "Action",
+            "type": "string",
+            "description": "验证操作类型",
+            "enum": [
+              "login",
+              "register",
+              "passwordreset",
+              "modifyuser"
+            ],
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "account",
+            "type": "string",
+            "description": "邮箱或手机号",
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "code",
+            "type": "integer",
+            "description": "验证码",
+            "required": true
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+              }
+            },
+            "description": "扩展参数"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "302": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Notification"
         ]
       }
     }

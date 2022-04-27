@@ -1,8 +1,8 @@
 {
   "tags": [
     {
-      "name": "Project",
-      "description": "项目管理"
+      "name": "Basic",
+      "description": "基础接口"
     },
     {
       "name": "Data",
@@ -11,14 +11,6 @@
     {
       "name": "_User",
       "description": "用户管理"
-    },
-    {
-      "name": "Menu",
-      "description": "菜单管理"
-    },
-    {
-      "name": "DGIOT",
-      "description": "基础接口"
     }
   ],
   "definitions": {
@@ -108,49 +100,11 @@
     }
   },
   "paths": {
-    "/classes/Site": {
-      "get": {
-        "summary": "获取应用信息",
-        "description": "获取应用信息",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "Id",
-            "required": true,
-            "description": "应用标识",
-            "type": "string"
-          }
-        ],
-        "consumes": [
-          "*"
-        ],
-        "security": [],
-        "responses": {
-          "200": {
-            "description": "Returns operation status"
-          },
-          "400": {
-            "description": "Bad Request"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "403": {
-            "description": "Forbidden"
-          },
-          "500": {
-            "description": "Server Internal error"
-          }
-        },
-        "tags": [
-          "Project"
-        ]
-      }
-    },
     "/batch": {
       "post": {
         "summary": "数据批处理",
         "description": "为了减少网络往返的时间，可以使用批处理端点在一次调用中创建、更新或删除多达50个对象。",
+        "position" : 0,
         "parameters": [
           {
             "in": "body",
@@ -208,534 +162,7 @@
           }
         },
         "tags": [
-          "Data"
-        ]
-      }
-    },
-    "/user": {
-      "post": {
-        "summary": "员工入职",
-        "description": "新增用户",
-        "parameters": [
-          {
-            "in": "body",
-            "name": "user",
-            "description": "用户信息",
-            "required": true,
-            "schema": {
-              "type": "object",
-              "properties": {
-                "username": {
-                  "description": "用户名",
-                  "type": "string",
-                  "example": "dgiot_user"
-                },
-                "department": {
-                  "description": "部门id",
-                  "type": "string",
-                  "example": "a46c243b51"
-                },
-                "password": {
-                  "description": "用户密码",
-                  "type": "string",
-                  "example": "dgiot_pwd"
-                },
-                "phone": {
-                  "description": "手机号",
-                  "type": "string",
-                  "example": "15268887220"
-                },
-                "department": {
-                  "description": "手机号",
-                  "type": "string",
-                  "example": "IjOCg0BC0I"
-                }
-              }
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "Returns success",
-            "schema": {
-              "type": "object",
-              "properties": {
-                "objectId": {
-                  "description": "用户ID",
-                  "type": "string"
-                },
-                "createdAt": {
-                  "description": "创建时间",
-                  "type": "string",
-                  "format": "date-time"
-                },
-                "nick": {
-                  "description": "昵称",
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request"
-          },
-          "403": {
-            "description": "Forbidden"
-          },
-          "500": {
-            "description": "Server Internal error"
-          }
-        },
-        "tags": [
-          "_User"
-        ]
-      },
-      "put": {
-        "summary": "员工转岗",
-        "description": "员工转岗",
-        "parameters": [
-          {
-            "in": "body",
-            "name": "user",
-            "description": "用户信息",
-            "required": true,
-            "schema": {
-              "type": "object",
-              "properties": {
-                "username": {
-                  "description": "用户名",
-                  "type": "string",
-                  "example": "dgiot_user"
-                },
-                "department": {
-                  "description": "部门ID",
-                  "type": "string",
-                  "example": "IjOCg0BC0I"
-                }
-              }
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "Returns success"
-          },
-          "400": {
-            "description": "Bad Request"
-          },
-          "403": {
-            "description": "Forbidden"
-          },
-          "500": {
-            "description": "Server Internal error"
-          }
-        },
-        "tags": [
-          "_User"
-        ]
-      },
-      "delete": {
-        "summary": "员工离职",
-        "description": "员工离职",
-        "parameters": [
-          {
-            "in": "body",
-            "name": "user",
-            "description": "用户信息",
-            "required": true,
-            "schema": {
-              "type": "object",
-              "properties": {
-                "username": {
-                  "description": "用户名",
-                  "type": "string",
-                  "example": "dgiot_user"
-                },
-                "department": {
-                  "description": "部门ID",
-                  "type": "string",
-                  "example": "IjOCg0BC0I"
-                }
-              }
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "Returns success"
-          },
-          "400": {
-            "description": "Bad Request"
-          },
-          "403": {
-            "description": "Forbidden"
-          },
-          "500": {
-            "description": "Server Internal error"
-          }
-        },
-        "tags": [
-          "_User"
-        ]
-      }
-    },
-    "/users/me": {
-      "get": {
-        "summary": "检查会话是否有效",
-        "description": "检查会话是否有效,用于判断是否登录",
-        "parameters": [
-          {
-            "in": "header",
-            "name": "sessionToken",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "consumes": [
-          "*"
-        ],
-        "responses": {
-          "200": {
-            "description": "Returns operation status"
-          },
-          "400": {
-            "description": "Bad Request"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "403": {
-            "description": "Forbidden"
-          },
-          "500": {
-            "description": "Server Internal error"
-          }
-        },
-        "tags": [
-          "_User"
-        ]
-      }
-    },
-    "/users": {
-      "get": {
-        "summary": "获取用户信息",
-        "description": "获取用户信息",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "description": "获取用户信息",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Returns success",
-            "schema": {
-              "$ref": "#/definitions/_User"
-            }
-          },
-          "400": {
-            "description": "Bad Request"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "403": {
-            "description": "Forbidden"
-          },
-          "500": {
-            "description": "Server Internal error"
-          }
-        },
-        "tags": [
-          "_User"
-        ]
-      },
-      "post": {
-        "security": [],
-        "summary": "用户注册",
-        "description": "用户注册",
-        "parameters": [
-          {
-            "in": "body",
-            "name": "user",
-            "description": "用户信息",
-            "required": true,
-            "schema": {
-              "type": "object",
-              "properties": {
-                "username": {
-                  "description": "用户名",
-                  "type": "string"
-                },
-                "password": {
-                  "description": "用户密码",
-                  "type": "string"
-                },
-                "phone": {
-                  "description": "手机号",
-                  "type": "string"
-                }
-              }
-            }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "Returns success",
-            "schema": {
-              "type": "object",
-              "properties": {
-                "objectId": {
-                  "description": "用户ID",
-                  "type": "string"
-                },
-                "createdAt": {
-                  "description": "创建时间",
-                  "type": "string",
-                  "format": "date-time"
-                },
-                "nick": {
-                  "description": "昵称",
-                  "type": "string"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request"
-          },
-          "403": {
-            "description": "Forbidden"
-          },
-          "500": {
-            "description": "Server Internal error"
-          }
-        },
-        "tags": [
-          "_User"
-        ]
-      }
-    },
-    "/token": {
-      "get": {
-        "summary": "获得子角色Token",
-        "description": "获取子角色Token",
-        "parameters": [
-          {
-            "name": "name",
-            "in": "query",
-            "type": "string",
-            "default": "pump",
-            "description": "子角色名"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Returns success",
-            "schema": {
-              "type": "object",
-              "properties": {
-                "desc": {
-                  "description": "应用描述",
-                  "type": "string",
-                  "example": "pump"
-                },
-                "access_token": {
-                  "description": "访问token",
-                  "type": "string",
-                  "example": "QjEwMDczNjgxNTg1NzMxMjM0MjQ3"
-                },
-                "expires_in": {
-                  "description": "过期时间",
-                  "type": "number",
-                  "example": 5184000
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "object not found",
-            "schema": {
-              "$ref": "#/definitions/Error"
-            }
-          },
-          "400": {
-            "description": "Bad Request"
-          },
-          "500": {
-            "description": "Server Internal error"
-          }
-        },
-        "tags": [
-          "DGIOT"
-        ]
-      },
-      "post": {
-        "security": [],
-        "summary": "获得Token",
-        "description": "获取 token 时服务器会返回 token 有效期，具体值参考接口返回的 expires_in 字段值。由于网络延迟等原因，系统不保证 token 在此值表示的有效期内绝对有效，如果发现 token 使用异常请重新获取新的 token，比如 http response code 返回 401。",
-        "parameters": [
-          {
-            "in": "body",
-            "name": "body",
-            "description": "",
-            "required": true,
-            "schema": {
-              "$ref": "#/definitions/Token"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Returns success",
-            "schema": {
-              "type": "object",
-              "properties": {
-                "desc": {
-                  "description": "应用描述",
-                  "type": "string",
-                  "example": "pump"
-                },
-                "access_token": {
-                  "description": "访问token",
-                  "type": "string",
-                  "example": "QjEwMDczNjgxNTg1NzMxMjM0MjQ3"
-                },
-                "expires_in": {
-                  "description": "过期时间",
-                  "type": "number",
-                  "example": 5184000
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "object not found",
-            "schema": {
-              "$ref": "#/definitions/Error"
-            }
-          },
-          "400": {
-            "description": "Bad Request"
-          },
-          "500": {
-            "description": "Server Internal error"
-          }
-        },
-        "tags": [
-          "DGIOT"
-        ]
-      }
-    },
-    "/refresh_session/{sessionToken}": {
-      "get": {
-        "summary": "刷新Token",
-        "description": "刷新Token",
-        "parameters": [
-          {
-            "name": "sessionToken",
-            "in": "path",
-            "description": "sessionToken",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": ""
-          },
-          "404": {
-            "description": ""
-          }
-        },
-        "tags": [
-          "DGIOT"
-        ]
-      }
-    },
-    "/classes/Navigation": {
-      "get": {
-        "summary": "获取顶部导航",
-        "description": "查询顶部导航菜单",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "order",
-            "required": false,
-            "description": "排序方式",
-            "type": "string"
-          },
-          {
-            "in": "query",
-            "name": "limit",
-            "required": false,
-            "description": "显示数量",
-            "type": "number"
-          }
-        ],
-        "consumes": [
-          "*"
-        ],
-        "responses": {
-          "200": {
-            "description": "Returns operation status"
-          },
-          "400": {
-            "description": "Bad Request"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "403": {
-            "description": "Forbidden"
-          },
-          "500": {
-            "description": "Server Internal error"
-          }
-        },
-        "tags": [
-          "Menu"
-        ]
-      }
-    },
-    "/logout": {
-      "post": {
-        "security": [],
-        "summary": "退出登录",
-        "description": "退出登录",
-        "parameters": [
-          {
-            "in": "header",
-            "name": "sessionToken",
-            "required": true,
-            "type": "string"
-          }
-        ],
-        "consumes": [
-          "*"
-        ],
-        "responses": {
-          "200": {
-            "description": "Returns operation status"
-          },
-          "400": {
-            "description": "Bad Request"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "403": {
-            "description": "Forbidden"
-          },
-          "500": {
-            "description": "Server Internal error"
-          }
-        },
-        "tags": [
-          "DGIOT"
+          "Basic"
         ]
       }
     },
@@ -785,74 +212,38 @@
         ]
       }
     },
-    "/requestPasswordReset": {
+    "/tree": {
       "post": {
-        "security": [],
-        "summary": "重置密码",
-        "description": "重置密码",
+        "summary": "获取类树",
+        "description": "获取类树",
         "parameters": [
           {
             "in": "body",
-            "name": "account",
-            "description": "帐号绑定的邮箱/手机号码,填入绑定的邮箱或手机号",
+            "name": "data",
+            "description": "获取类树",
             "required": true,
             "schema": {
               "type": "object",
               "properties": {
-                "email": {
-                  "description": "邮箱",
-                  "type": "string"
+                "class": {
+                  "required": true,
+                  "description": "类表名",
+                  "type": "string",
+                  "example": "Device"
                 },
-                "phone": {
-                  "description": "手机号码",
-                  "type": "string"
+                "parent": {
+                  "required": true,
+                  "description": "父字段名",
+                  "type": "string",
+                  "example": "parentId"
+                },
+                "filter": {
+                  "description": "过滤条件 {\"keys\":[\"parentId\",\"name\"],\"where\":{\"$or\":[{\"parentId\":\"lgtDJDEZlW\"},{\"objectId\":\"lgtDJDEZlW\"}]}}",
+                  "type": "object",
+                  "example": "{\"keys\":[\"parentId\",\"name\"]}"
                 }
               }
             }
-          }
-        ],
-        "responses": {
-          "201": {
-            "description": "Returns success"
-          },
-          "400": {
-            "description": "Bad Request",
-            "schema": {
-              "$ref": "#/definitions/Error"
-            }
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "500": {
-            "description": "Server Internal error"
-          }
-        },
-        "tags": [
-          "_User"
-        ]
-      }
-    },
-    "/disableuser": {
-      "get": {
-        "summary": "禁用启用账号",
-        "description": "禁用启用账号",
-        "parameters": [
-          {
-            "in": "query",
-            "name": "userid",
-            "required": true,
-            "description": "账号id",
-            "default": "2CCcv7e9ul",
-            "type": "string"
-          },
-          {
-            "in": "query",
-            "name": "action",
-            "required": true,
-            "description": "状态",
-            "default": "enable",
-            "type": "string"
           }
         ],
         "responses": {
@@ -873,7 +264,46 @@
           }
         },
         "tags": [
-          "_User"
+          "Data"
+        ]
+      }
+    },
+    "/graphql": {
+      "post": {
+        "security": [],
+        "summary": "graphql",
+        "description": "graphql",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "graphql",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Data"
         ]
       }
     }
