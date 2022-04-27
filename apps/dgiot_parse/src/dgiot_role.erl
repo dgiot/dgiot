@@ -68,10 +68,11 @@ load_roles() ->
         lists:map(fun(X) ->
             #{<<"objectId">> := RoleId, <<"parent">> := #{<<"objectId">> := ParentId}} = X,
             dgiot_data:insert(?ROLE_PARENT_ETS, RoleId, ParentId),
-            dgiot_data:insert(?PARENT_ROLE_ETS, ParentId, RoleId)
+            dgiot_data:insert(?PARENT_ROLE_ETS, ParentId, RoleId),
+            dgiot_data:insert(?ROLE_ETS, RoleId, X)
                   end, Page)
               end,
-    Query = #{<<"keys">> => <<"parent">>},
+    Query = #{},
     dgiot_parse_loader:start(<<"_Role">>, Query, 0, 500, 10000, Success).
 
 post_role(#{<<"tempname">> := TempName, <<"parent">> := Parent, <<"depname">> := DepName,

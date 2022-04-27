@@ -24,9 +24,10 @@
 
 init_ets() ->
     dgiot_data:init(?DGIOT_PARSE_ETS),
+    dgiot_data:init(?ROLE_ETS),
     dgiot_data:init(?ROLE_USER_ETS),
-    dgiot_data:init(?ROLE_PARENT_ETS),
     dgiot_data:init(?USER_ROLE_ETS),
+    dgiot_data:init(?ROLE_PARENT_ETS),
     dgiot_data:init(?PARENT_ROLE_ETS, [public, named_table, bag, {write_concurrency, true}, {read_concurrency, true}]).
 
 %% 先缓存定时存库
