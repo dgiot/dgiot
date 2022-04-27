@@ -48,7 +48,7 @@ post(Device) ->
     Product = maps:get(<<"product">>, Device),
     ProductId = maps:get(<<"objectId">>, Product),
     DeviceSecret = maps:get(<<"deviceSecret">>, Device, <<"DeviceSecretdefault">>),
-    DeviceId = maps:get(<<"objectId">>, Device, dgiot_parse_id:get_deviceid(ProductId,Devaddr)),
+    DeviceId = maps:get(<<"objectId">>, Device, dgiot_parse_id:get_deviceid(ProductId, Devaddr)),
     Status =
         case maps:get(<<"status">>, Device, <<"OFFLINE">>) of
             <<"OFFLINE">> -> false;
@@ -162,14 +162,6 @@ sync_parse(OffLine) ->
             {[_, Last, Acl, Devaddr, ProductId, DeviceSecret], Node} when (Now - Last) < 0 ->
                 case dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"status">> => <<"ONLINE">>}) of
                     {ok, _R} ->
-%%                        Productname =
-%%                            case dgiot_parse:get_object(<<"Product">>, ProductId) of
-%%                                {ok, #{<<"name">> := Productname1}} ->
-%%                                    Productname1;
-%%                                _ ->
-%%                                    <<"">>
-%%                            end,
-%%                        ?MLOG(info, #{<<"deviceid">> => DeviceId, <<"devaddr">> => Devaddr, <<"productid">> => ProductId, <<"productname">> => Productname, <<"status">> => <<"上线"/utf8>>}, ['device_statuslog']),
                         dgiot_mnesia:insert(DeviceId, {[true, Now, Acl, Devaddr, ProductId, DeviceSecret], Node});
                     _ ->
                         pass
@@ -178,15 +170,6 @@ sync_parse(OffLine) ->
             {[true, Last, Acl, Devaddr, ProductId, DeviceSecret], Node} when (Now - Last) > OffLine ->
                 case dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"status">> => <<"OFFLINE">>}) of
                     {ok, _R} ->
-                        Productname =
-                            case dgiot_parse:get_object(<<"Product">>, ProductId) of
-                                {ok, #{<<"name">> := Productname1}} ->
-                                    Productname1;
-                                _ ->
-                                    <<"">>
-                            end,
-                        ?MLOG(info, #{<<"deviceid">> => DeviceId, <<"devaddr">> => Devaddr, <<"productid">> => ProductId, <<"productname">> => Productname, <<"status">> => <<"下线"/utf8>>}, ['device_statuslog']),
-%%                        dgiot_umeng:save_devicestatus(DeviceId, <<"OFFLINE">>),
                         dgiot_mnesia:insert(DeviceId, {[false, Last, Acl, Devaddr, ProductId, DeviceSecret], Node});
                     _ ->
                         pass
@@ -195,14 +178,6 @@ sync_parse(OffLine) ->
             {[false, Last, Acl, Devaddr, ProductId, DeviceSecret], Node} when (Now - Last) < OffLine ->
                 case dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"status">> => <<"ONLINE">>}) of
                     {ok, _R} ->
-                        Productname =
-                            case dgiot_parse:get_object(<<"Product">>, ProductId) of
-                                {ok, #{<<"name">> := Productname1}} ->
-                                    Productname1;
-                                _ ->
-                                    <<"">>
-                            end,
-                        ?MLOG(info, #{<<"deviceid">> => DeviceId, <<"devaddr">> => Devaddr, <<"productid">> => ProductId, <<"productname">> => Productname, <<"status">> => <<"上线"/utf8>>}, ['device_statuslog']),
                         dgiot_mnesia:insert(DeviceId, {[true, Last, Acl, Devaddr, ProductId, DeviceSecret], Node});
                     _ ->
                         pass

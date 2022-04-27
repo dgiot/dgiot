@@ -122,7 +122,8 @@ handle_message(load, #state{env = #{<<"order">> := Order, <<"offline">>:= OffLin
     dgiot_data:insert({device, offline}, OffLine),
     dgiot_device:load_device(Order),
     dgiot_product:load(),
-    dgiot_parse_auth:load_role(),
+    dgiot_role:load_roles(),
+    dgiot_parse_auth:load_roleuser(),
     {ok, State};
 
 handle_message(check, #state{env = #{<<"offline">>:= OffLine, <<"checktime">>:= CheckTime}} = State) ->

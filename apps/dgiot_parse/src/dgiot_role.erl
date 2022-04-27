@@ -16,6 +16,7 @@
 
 -module(dgiot_role).
 -author("dgiot").
+-include("dgiot_parse.hrl").
 -include_lib("dgiot/include/logger.hrl").
 
 %% API
@@ -27,10 +28,6 @@
     post_roletemp/3,
     put_roletemp/2,
     get_roletemp/2,
-    put_roleuser/2,
-    post_roleuser/2,
-    get_roleuser/2,
-    del_roleuser/2,
     get_role/2,
     get_roletree/1,
     get_parent_role/1,
@@ -41,8 +38,41 @@
     remove_users_roles/1,
     get_users_role/1,
     remove_rules_role/1,
-    get_rules_role/1
+    get_rules_role/1,
+    load_roles/0,
+    get_childrole/1
 ]).
+
+
+get_childrole(Role) ->
+    case dgiot_data:values(?PARENT_ROLE_ETS, Role) of
+        {error, not_find} ->
+            [Role];
+        Values ->
+            childrole(Values, dgiot_utils:unique_1(Values ++ [Role]))
+    end.
+
+childrole([], Acc) ->
+    Acc;
+childrole([Role | Roles], Acc) ->
+    case dgiot_data:values(?PARENT_ROLE_ETS, Role) of
+        {error, not_find} ->
+            childrole(Roles, Acc);
+        Values ->
+            childrole(dgiot_utils:unique_1(Roles ++ Values), Acc ++ Values)
+    end.
+
+load_roles() ->
+    dgiot_data:delete_all_objects(?PARENT_ROLE_ETS),
+    Success = fun(Page) ->
+        lists:map(fun(X) ->
+            #{<<"objectId">> := RoleId, <<"parent">> := #{<<"objectId">> := ParentId}} = X,
+            dgiot_data:insert(?ROLE_PARENT_ETS, RoleId, ParentId),
+            dgiot_data:insert(?PARENT_ROLE_ETS, ParentId, RoleId)
+                  end, Page)
+              end,
+    Query = #{<<"keys">> => <<"parent">>},
+    dgiot_parse_loader:start(<<"_Role">>, Query, 0, 500, 10000, Success).
 
 post_role(#{<<"tempname">> := TempName, <<"parent">> := Parent, <<"depname">> := DepName,
     <<"name">> := Name, <<"desc">> := Desc} = Body, SessionToken) ->
@@ -91,6 +121,7 @@ create_role(#{<<"name">> := Name} = Role) ->
             },
             case dgiot_parse:create_object(<<"_Role">>, NewRole) of
                 {ok, R} ->
+                    load_roles(),
                     {ok, R};
                 {error, Reason} ->
                     {error, Reason}
@@ -108,11 +139,9 @@ put_role(#{<<"objectId">> := RoleId} = Role, SessionToken) ->
                     {error, #{<<"msg">> => <<"role is not exist">>}};
                 {ok, #{<<"objectId">> := RoleId}} ->
                     NewRole = #{
-%%                        <<"users">> => dgiot_role:get_users_role(maps:get(<<"users">>, Role, [])),
                         <<"menus">> => dgiot_role:get_menus_role(maps:get(<<"menus">>, Role, [])),
                         <<"rules">> => dgiot_role:get_rules_role(maps:get(<<"rules">>, Role, []))
                     },
-%%                    dgiot_role:remove_users_roles(RoleId),
                     dgiot_role:remove_menus_role(RoleId),
                     dgiot_role:remove_rules_role(RoleId),
                     case dgiot_parse:update_object(<<"_Role">>, RoleId, NewRole) of
@@ -273,150 +302,6 @@ get_roletemp(Name, SessionToken) ->
             }};
         _ -> {error, <<"not find">>}
     end.
-
-get_roleuser(Filter, SessionToken) ->
-    case dgiot_parse:query_object(<<"_Role">>, Filter,
-        [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
-        {ok, #{<<"results">> := Roles}} ->
-            Users =
-                lists:foldl(fun(#{<<"objectId">> := RoleId} = Role, Acc) ->
-                    UsersQuery =
-                        #{<<"where">> => #{<<"$relatedTo">> => #{
-                            <<"object">> => #{
-                                <<"__type">> => <<"Pointer">>,
-                                <<"className">> => <<"_Role">>,
-                                <<"objectId">> => RoleId
-                            },
-                            <<"key">> => <<"users">>}
-                        }
-                        },
-                    case dgiot_parse:query_object(<<"_User">>, UsersQuery) of
-                        {ok, #{<<"results">> := Results}} ->
-
-                            Acc ++ lists:foldl(fun(X, Acc2) ->
-                                Acc2 ++ [X#{<<"role">> => maps:with([<<"org_type">>, <<"tag">>, <<"depname">>], Role)}]
-                                               end, [], Results);
-                        _ -> Acc
-                    end
-                            end, [], Roles),
-            NewUsers =
-                lists:foldl(fun(#{<<"username">> := UsrName} = User, Acc1) ->
-                    case UsrName of
-                        <<"user_for", _/binary>> -> Acc1;
-                        _ -> Acc1 ++ [User]
-                    end
-                            end, [], dgiot_utils:unique_1(Users)),
-%%            ?LOG(info,"NewUsers ~p ", [NewUsers]),
-            {ok, #{<<"results">> => NewUsers}};
-        Error ->
-            Error
-    end.
-
-put_roleuser(#{<<"userid">> := UserId} = Body, SessionToken) ->
-    R1 =
-        case maps:is_key(<<"delfilter">>, Body) of
-            true ->
-                DelFilter = maps:get(<<"delfilter">>, Body),
-                case dgiot_parse:query_object(<<"_Role">>, DelFilter, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
-                    {ok, #{<<"results">> := DelRoles}} ->
-                        lists:foldl(
-                            fun(#{<<"objectId">> := RoleId}, Acc) ->
-                                {_, R0} =
-                                    dgiot_parse:update_object(<<"_Role">>, RoleId, #{<<"users">> => #{
-                                        <<"__op">> => <<"RemoveRelation">>,
-                                        <<"objects">> => [
-                                            #{
-                                                <<"__type">> => <<"Pointer">>,
-                                                <<"className">> => <<"_User">>,
-                                                <<"objectId">> => UserId
-                                            }
-                                        ]}
-                                    }),
-                                Acc ++ [#{<<"del">> => R0}]
-                            end, [], DelRoles);
-                    _ -> []
-                end;
-            _ -> []
-        end,
-    ?LOG(info, "Body ~p ", [Body]),
-    R2 =
-        case maps:is_key(<<"addfilter">>, Body) of
-            true ->
-                AddFilter = maps:get(<<"addfilter">>, Body),
-                ?LOG(info, "AddFilter ~p ", [AddFilter]),
-                case dgiot_parse:query_object(<<"_Role">>, AddFilter, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
-                    {ok, #{<<"results">> := AddRoles}} ->
-                        ?LOG(info, "AddRoles ~p ", [AddRoles]),
-                        lists:foldl(fun(#{<<"objectId">> := RoleId}, Acc1) ->
-                            {_, R3} =
-                                dgiot_parse:update_object(<<"_Role">>, RoleId, #{<<"users">> => #{
-                                    <<"__op">> => <<"AddRelation">>,
-                                    <<"objects">> => [#{
-                                        <<"__type">> => <<"Pointer">>,
-                                        <<"className">> => <<"_User">>,
-                                        <<"objectId">> => UserId}]}}),
-                            Acc1 ++ [#{<<"add">> => R3}]
-                                    end, [], AddRoles);
-                    _ -> []
-                end;
-            Error ->
-                ?LOG(info, "Error ~p ", [Error]),
-                []
-        end,
-    {ok, #{<<"result">> => R1 ++ R2}}.
-
-
-
-post_roleuser(#{<<"userid">> := UserId} = Body, SessionToken) ->
-    R2 =
-        case maps:is_key(<<"addfilter">>, Body) of
-            true ->
-                AddFilter = maps:get(<<"addfilter">>, Body),
-                case dgiot_parse:query_object(<<"_Role">>, AddFilter, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
-                    {ok, #{<<"results">> := AddRoles}} ->
-                        lists:foldl(fun(#{<<"objectId">> := RoleId}, Acc1) ->
-                            {_, R3} =
-                                dgiot_parse:update_object(<<"_Role">>, RoleId, #{<<"users">> => #{
-                                    <<"__op">> => <<"AddRelation">>,
-                                    <<"objects">> => [#{
-                                        <<"__type">> => <<"Pointer">>,
-                                        <<"className">> => <<"_User">>,
-                                        <<"objectId">> => UserId}]}}),
-                            Acc1 ++ [#{<<"add">> => R3}]
-                                    end, [], AddRoles);
-                    _ -> []
-                end;
-            _ -> []
-        end,
-    {ok, #{<<"result">> => R2}}.
-
-del_roleuser(#{<<"userid">> := UserId} = Body, SessionToken) ->
-    R1 =
-        case maps:find(<<"filter">>, Body) of
-            error ->
-                [];
-            {ok, Filter} ->
-                case dgiot_parse:query_object(<<"_Role">>, jsx:decode(Filter, [{labels, binary}, return_maps]), [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
-                    {ok, #{<<"results">> := DelRoles}} ->
-                        lists:foldl(
-                            fun(#{<<"objectId">> := RoleId}, Acc) ->
-                                {_, R0} =
-                                    dgiot_parse:update_object(<<"_Role">>, RoleId, #{<<"users">> => #{
-                                        <<"__op">> => <<"RemoveRelation">>,
-                                        <<"objects">> => [
-                                            #{
-                                                <<"__type">> => <<"Pointer">>,
-                                                <<"className">> => <<"_User">>,
-                                                <<"objectId">> => UserId
-                                            }
-                                        ]}
-                                    }),
-                                Acc ++ [#{<<"del">> => R0}]
-                            end, [], DelRoles);
-                    _ -> []
-                end
-        end,
-    {ok, #{<<"result">> => R1}}.
 
 get_role(Name, SessionToken) ->
     case dgiot_parse:query_object(<<"_Role">>, #{<<"order">> => <<"updatedAt">>, <<"limit">> => 1,
