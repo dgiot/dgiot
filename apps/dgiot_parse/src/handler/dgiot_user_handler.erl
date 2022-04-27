@@ -131,30 +131,37 @@ do_request(put_token, #{<<"appid">> := AppId, <<"secret">> := Secret}, _Context,
 do_request(post_user, #{<<"username">> := _UserName, <<"password">> := _Password} = Body, #{<<"sessionToken">> := SessionToken}, _Req) ->
     case dgiot_parse_auth:create_user(Body, SessionToken) of
         {ok, Data} ->
-            dgiot_parse_auth:load_role(),
+            dgiot_parse_auth:load_roleuser(),
             {200, Data};
         {error, Error} -> {500, Error}
     end;
 
-do_request(delete_user, #{<<"username">> := _UserName} = Body, #{<<"sessionToken">> := SessionToken}, _Req) ->
-    case _UserName of
-        <<"dgiot_admin">> ->
+do_request(delete_user, #{<<"username">> := UserName} = Body, #{<<"sessionToken">> := SessionToken}, _Req) ->
+    DefaultUsers = ?DEFUser,
+    case lists:member(UserName, DefaultUsers) of
+        true ->
             {ok, #{<<"code">> => 401, <<"msg">> => <<"dgiot_admin PROHIBITED DELETE">>}};
         _ ->
             case dgiot_parse_auth:delete_user(Body, SessionToken) of
                 {ok, Data} ->
-                    dgiot_parse_auth:load_role(),
+                    dgiot_parse_auth:load_roleuser(),
                     {200, Data};
                 {error, Error} -> {error, Error}
             end
     end;
 
-do_request(put_user, #{<<"username">> := _UserName} = Body, #{<<"sessionToken">> := SessionToken}, _Req) ->
-    case dgiot_parse_auth:put_user(Body, SessionToken) of
-        {ok, Data} ->
-            dgiot_parse_auth:load_role(),
-            {200, Data};
-        {error, Error} -> {500, Error}
+do_request(put_user, #{<<"username">> := UserName} = Body, #{<<"sessionToken">> := SessionToken}, _Req) ->
+    DefaultUsers = ?DEFUser,
+    case lists:member(UserName, DefaultUsers) of
+        true ->
+            {ok, #{<<"code">> => 401, <<"msg">> => <<UserName/binary, " PROHIBITED Modify">>}};
+        _ ->
+            case dgiot_parse_auth:put_user(Body, SessionToken) of
+                {ok, Data} ->
+                    dgiot_parse_auth:load_roleuser(),
+                    {200, Data};
+                {error, Error} -> {500, Error}
+            end
     end;
 
 %% IoTDevice 概要: 禁用账号
@@ -164,11 +171,17 @@ do_request(put_user, #{<<"username">> := _UserName} = Body, #{<<"sessionToken">>
 %% dgiot_parse:load().
 do_request(get_disableuser, #{<<"userid">> := Disuserid, <<"action">> := Action} = _Body, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
     case dgiot_auth:get_session(SessionToken) of
-        #{<<"objectId">> := UserId} ->
-            case dgiot_parse_auth:disableusere(UserId, Disuserid, Action) of
-                {ok, Data} ->
-                    {200, Data};
-                {error, Error} -> {500, #{<<"code">> => 101, <<"error">> => Error}}
+        #{<<"objectId">> := UserId, <<"username">> := UserName} ->
+            DefaultUsers = ?DEFUser,
+            case lists:member(UserName, DefaultUsers) of
+                true ->
+                    {ok, #{<<"code">> => 401, <<"msg">> => <<UserName/binary, " PROHIBITED Disable">>}};
+                _ ->
+                    case dgiot_parse_auth:disableusere(UserId, Disuserid, Action) of
+                        {ok, Data} ->
+                            {200, Data};
+                        {error, Error} -> {500, #{<<"code">> => 101, <<"error">> => Error}}
+                    end
             end;
         _ ->
             {500, <<"Not Allowed.">>}
@@ -185,7 +198,7 @@ do_request(post_login, #{<<"username">> := UserName, <<"password">> := Password}
 %% OperationId:get_roleuser
 %% 请求:GET /iotapi/roleuser
 do_request(get_roleuser, #{<<"where">> := Where} = Filter, #{<<"sessionToken">> := SessionToken} = _Context, _Req0) ->
-    dgiot_role:get_roleuser(Filter#{<<"where">> => jsx:decode(Where, [return_maps])}, SessionToken);
+    dgiot_parse_auth:get_roleuser(Filter#{<<"where">> => jsx:decode(Where, [return_maps])}, SessionToken);
 
 %% Role模版 概要: 导库 描述:json文件导库
 %% OperationId:put_roleuser
@@ -197,28 +210,26 @@ do_request(put_roleuser, #{<<"userid">> := UserId} = Body, #{<<"sessionToken">> 
         true ->
             {ok, #{<<"code">> => 401, <<"result">> => <<UserId/binary, " Cannot be transferred">>}};
         _ ->
-            dgiot_role:put_roleuser(Body, SessionToken)
+            dgiot_parse_auth:put_roleuser(Body, SessionToken)
     end;
 
 %% Role模版 概要: 导库 描述:json文件导库
 %% OperationId:delete_roleuser
 %% 请求:POST /iotapi/roleuser
 do_request(delete_roleuser, #{<<"userid">> := UserId} = Body, #{<<"sessionToken">> := SessionToken} = _Context, _Req0) ->
-%%  io:format("Body ~p~n", [Body])
     DefaultUsers = ?DEFUser,
     case lists:member(UserId, DefaultUsers) of
         true ->
             {ok, #{<<"code">> => 401, <<"result">> => <<UserId/binary, " Cannot be Resignation">>}};
         _ ->
-            dgiot_role:del_roleuser(Body, SessionToken)
+            dgiot_parse_auth:del_roleuser(Body, SessionToken)
     end;
 
 %% Role模版 概要: 导库 描述:json文件导库
 %% OperationId:delete_roleuser
 %% 请求:POST /iotapi/roleuser
 do_request(post_roleuser, Body, #{<<"sessionToken">> := SessionToken} = _Context, _Req0) ->
-    ?LOG(debug, "Body ~p ", [Body]),
-    dgiot_role:post_roleuser(Body, SessionToken);
+    dgiot_parse_auth:post_roleuser(Body, SessionToken);
 
 %%  服务器不支持的API接口
 do_request(_OperationId, _Args, _Context, _Req) ->

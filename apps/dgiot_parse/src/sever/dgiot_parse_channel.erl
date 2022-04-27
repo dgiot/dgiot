@@ -20,10 +20,6 @@
 -include("dgiot_parse.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -behavior(dgiot_channelx).
--dgiot_data("ets").
--export([
-    init_ets/0,
-    send/2]).
 
 -export([get_config/0, get_config/1]).
 -export([start/0, start/2, init/3, handle_init/1, handle_event/3, handle_message/2, stop/3, handle_save/1]).
@@ -167,7 +163,7 @@ init(?TYPE, Channel, Cfg) ->
 
 %% 初始化池子
 handle_init(State) ->
-    emqx_hooks:add('logger.send', {?MODULE, send, []}),
+    emqx_hooks:add('logger.send', {dgiot_parse_log, send, []}),
     emqx_hooks:add('mqtt_publish.trace', {dgiot_tracer, check_trace, [?MODULE, ?LINE]}),
     {ok, State}.
 
@@ -194,82 +190,3 @@ get_config() ->
 
 get_config(Channel) ->
     dgiot_channelx:call(?TYPE, Channel, config).
-
-
-init_ets() ->
-    dgiot_data:init(?DGIOT_PARSE_ETS),
-    dgiot_data:init(?ROLE_USER_ETS),
-    dgiot_data:init(?ROLE_PARENT_ETS),
-    dgiot_data:init(?USER_ROLE_ETS).
-
-send(Meta, Payload) when is_list(Payload) ->
-    send(Meta, iolist_to_binary(Payload));
-
-send(#{error_logger := _Error_logger, mfa := {M, F, A}} = _Meta, Payload) ->
-    Mfa = <<(atom_to_binary(M, utf8))/binary, $/, (atom_to_binary(F, utf8))/binary, $/, (integer_to_binary(A))/binary>>,
-    Topic = <<"logger_trace/error/", Mfa/binary>>,
-    dgiot_mqtt:publish(Mfa, Topic, Payload),
-    Map = jiffy:decode(Payload, [return_maps]),
-    NewMap = maps:with([<<"domain">>, <<"time">>, <<"pid">>, <<"msg">>, <<"mfa">>, <<"line">>, <<"level">>, <<"clientid">>, <<"topic">>, <<"peername">>], Map),
-    dgiot_parse_cache:save_to_cache(#{<<"method">> => <<"POST">>,
-        <<"path">> => <<"/classes/Log">>,
-        <<"body">> => get_body(NewMap)});
-
-send(#{mfa := _MFA} = Meta, Payload) ->
-    Map = jiffy:decode(Payload, [return_maps]),
-    Mfa = dgiot_utils:to_binary(maps:get(<<"mfa">>, Map, <<"all">>)),
-    TraceTopic =
-        case maps:find(topic, Meta) of
-            {ok, TraceTopic1} ->
-                BinTraceTopic = dgiot_utils:to_binary(TraceTopic1),
-                <<"/", BinTraceTopic/binary>>;
-            _ -> <<"">>
-        end,
-    Topic =
-        case maps:find(clientid, Meta) of
-            {ok, ClientId1} ->
-                BinClientId = dgiot_utils:to_binary(ClientId1),
-                <<"logger_trace/trace/", BinClientId/binary, TraceTopic/binary>>;
-            _ ->
-                Line =
-                    case maps:find(<<"line">>, Map) of
-                        {ok, Line1} ->
-                            dgiot_utils:to_binary(Line1);
-                        _ ->
-                            <<"0">>
-                    end,
-                <<"logger_trace/log/", Mfa/binary, "/", Line/binary>>
-        end,
-    dgiot_mqtt:publish(Mfa, Topic, Payload),
-    NewMap = maps:with([<<"domain">>, <<"time">>, <<"pid">>, <<"msg">>, <<"mfa">>, <<"line">>, <<"level">>, <<"clientid">>, <<"topic">>, <<"peername">>], Map),
-    dgiot_parse_cache:save_to_cache(#{
-        <<"method">> => <<"POST">>,
-        <<"path">> => <<"/classes/Log">>,
-        <<"body">> => get_body(NewMap)});
-
-send(_Meta, Payload) ->
-    dgiot_mqtt:publish(<<"logger_trace_other">>, <<"logger_trace/other">>, Payload),
-    ok.
-
-get_body(#{<<"msg">> := Msg, <<"clientid">> := _} = Map) when is_map(Msg) ->
-    DefaultACL = #{<<"role:admin">> => #{
-        <<"read">> => true,
-        <<"write">> => true}
-    },
-    ACl = maps:get(<<"ACL">>, Msg, DefaultACL),
-    NewMsg = maps:without([<<"ACL">>], Msg),
-    Map#{<<"type">> => <<"json">>, <<"ACL">> => ACl, <<"msg">> => jiffy:encode(NewMsg)};
-get_body(#{<<"msg">> := Msg} = Map) when is_map(Msg) ->
-    Devaddr = maps:get(<<"devaddr">>, Msg, <<"">>),
-    ProductId = maps:get(<<"productid">>, Msg, <<"">>),
-    DeviceId = maps:get(<<"deviceid">>, Msg, <<"">>),
-    DefaultACL = dgiot_device:get_acl(DeviceId),
-    ACl = maps:get(<<"ACL">>, Msg, DefaultACL),
-    NewMsg = maps:without([<<"ACL">>], Msg),
-    Map#{<<"type">> => <<"json">>, <<"devaddr">> => Devaddr, <<"productid">> => ProductId, <<"deviceid">> => DeviceId, <<"ACL">> => ACl, <<"msg">> => jiffy:encode(NewMsg)};
-get_body(Map) ->
-    Map#{<<"type">> => <<"text">>,
-        <<"ACL">> => #{<<"role:admin">> => #{
-            <<"read">> => true,
-            <<"write">> => true}
-        }}.

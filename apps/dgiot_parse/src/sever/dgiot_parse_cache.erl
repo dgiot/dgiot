@@ -18,9 +18,16 @@
 -author("johnliu").
 -include("dgiot_parse.hrl").
 -include_lib("dgiot/include/logger.hrl").
-
+-dgiot_data("ets").
+-export([init_ets/0]).
 -export([do_save/1, save_to_cache/1, save_to_cache/2, save_test/1]).
 
+init_ets() ->
+    dgiot_data:init(?DGIOT_PARSE_ETS),
+    dgiot_data:init(?ROLE_USER_ETS),
+    dgiot_data:init(?ROLE_PARENT_ETS),
+    dgiot_data:init(?USER_ROLE_ETS),
+    dgiot_data:init(?PARENT_ROLE_ETS, [public, named_table, bag, {write_concurrency, true}, {read_concurrency, true}]).
 
 %% 先缓存定时存库
 save_to_cache(Requests) ->
@@ -36,7 +43,6 @@ save_to_cache(Channel, Requests) when is_list(Requests) ->
     end;
 save_to_cache(Channel, Request) when is_map(Request) ->
     save_to_cache(Channel, [Request]).
-
 
 check_cache(Channel) ->
     Info = dgiot_dcache:info(?CACHE(Channel)),
