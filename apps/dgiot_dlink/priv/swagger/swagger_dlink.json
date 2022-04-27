@@ -49,6 +49,7 @@
             "description": "Topic/Dashboard/Unit",
             "required": true,
             "enum": [
+              "Menu",
               "Topic",
               "Dashboard",
               "Unit",
