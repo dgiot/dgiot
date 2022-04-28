@@ -1,0 +1,16 @@
+[
+  {
+    "label": "基础接口",
+    "target": "#/DGIOT",
+    "children": [
+      {
+        "target": "#/DGIOT/post_login",
+        "label": "用户登录"
+      },
+      {
+        "target": "#/DGIOT/post_login",
+        "label": "退出登录"
+      }
+    ]
+  }
+]
