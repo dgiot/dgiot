@@ -196,10 +196,9 @@ init(?TYPE, ChannelId, Config) ->
 
     {ok, State, Specs}.
 
-handle_init(#state{id = ChannelId} = State) ->
+handle_init(#state{id = _ChannelId} = State) ->
     dgiot_metrics:inc(dgiot_tdengine, <<"tdengine">>, 1),
     erlang:send_after(5000, self(), init),
-    dgiot_parse_hook:subscribe(<<"Product/*">>, delete, ChannelId),
     {ok, State}.
 
 %% 通道消息处理,注意：进程池调用
@@ -211,50 +210,11 @@ handle_event(EventType, Event, _State) ->
     ?LOG(info, "channel ~p, ~p", [EventType, Event]),
     ok.
 
-handle_message({sync_parse, delete, _Table, _Data, NewData, _ProductId}, State) ->
-%%    io:format("ProductArgs ~p~n", [jsx:decode(Args, [{labels, binary}, return_maps])]),
-    case jsx:decode(NewData, [return_maps]) of
-        #{<<"objectId">> := ProductId} ->
-            case dgiot_parse:query_object(<<"Dict">>, #{<<"where">> => #{<<"key">> => ProductId, <<"class">> => <<"Product">>}}) of
-                {ok, #{<<"results">> := Dicts}} ->
-                    DictRequests =
-                        lists:foldl(fun(#{<<"objectId">> := DictId}, Acc) ->
-                            Acc ++ [#{
-                                <<"method">> => <<"DELETE">>,
-                                <<"path">> => <<"/classes/Dict/", DictId/binary>>,
-                                <<"body">> => #{}
-                            }]
-                                    end, [], Dicts),
-                    dgiot_parse:batch(DictRequests);
-                _ ->
-                    pass
-            end,
-            case dgiot_parse:query_object(<<"View">>, #{<<"where">> => #{<<"key">> => ProductId, <<"class">> => <<"Product">>}}) of
-                {ok, #{<<"results">> := Views}} ->
-                    ViewRequests =
-                        lists:foldl(fun(#{<<"objectId">> := ViewId}, Acc) ->
-                            Acc ++ [#{
-                                <<"method">> => <<"DELETE">>,
-                                <<"path">> => <<"/classes/View/", ViewId/binary>>,
-                                <<"body">> => #{}
-                            }]
-                                    end, [], Views),
-                    io:format("ViewRequests ~p~n", [ViewRequests]),
-                    dgiot_parse:batch(ViewRequests);
-                _ ->
-                    pass
-            end;
-        _ ->
-            pass
-    end,
-    {ok, State};
-
 %% 规则引擎导入
 handle_message({rule, Msg, Context}, State) ->
     ?LOG(info, "Msg ~p", [Msg]),
     ?LOG(info, "Context ~p", [Context]),
     handle_message({data, Msg, Context}, State);
-
 
 handle_message(init, #state{id = ChannelId, env = Config} = State) ->
     case dgiot_bridge:get_products(ChannelId) of

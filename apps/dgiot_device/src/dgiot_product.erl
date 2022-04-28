@@ -29,7 +29,7 @@
 -export([add_handler/4, do_handler/3, del_handler/1]).
 -export([update_config/2, parse_frame/3, to_frame/2, delete/1, save_prod/2, lookup_prod/1]).
 
--export([create_product/2]).
+-export([create_product/2, add_product_relation/2, delete_product_relation/1]).
 
 start() ->
     dgiot_data:init(?MODULE),
@@ -317,5 +317,44 @@ parse_frame(ProductId, Bin, Opts) ->
 
 to_frame(ProductId, Msg) ->
     apply(binary_to_atom(ProductId, utf8), to_frame, [Msg]).
+
+add_product_relation(ChannelIds, ProductId) ->
+    Map =
+        #{<<"product">> =>
+        #{
+            <<"__op">> => <<"AddRelation">>,
+            <<"objects">> => [
+                #{
+                    <<"__type">> => <<"Pointer">>,
+                    <<"className">> => <<"Product">>,
+                    <<"objectId">> => ProductId
+                }
+            ]
+        }
+        },
+    lists:map(fun(ChannelId) when size(ChannelId) > 0 ->
+        dgiot_parse:update_object(<<"Channel">>, ChannelId, Map)
+              end, ChannelIds).
+
+delete_product_relation(ProductId) ->
+    Map =
+        #{<<"product">> => #{
+            <<"__op">> => <<"RemoveRelation">>,
+            <<"objects">> => [
+                #{
+                    <<"__type">> => <<"Pointer">>,
+                    <<"className">> => <<"Product">>,
+                    <<"objectId">> => ProductId
+                }
+            ]}
+        },
+    case dgiot_parse:query_object(<<"Channel">>, #{<<"where">> => #{<<"product">> => #{<<"__type">> => <<"Pointer">>, <<"className">> => <<"Product">>, <<"objectId">> => ProductId}}, <<"limit">> => 20}) of
+        {ok, #{<<"results">> := Results}} when length(Results) > 0 ->
+            lists:foldl(fun(#{<<"objectId">> := ChannelId}, _Acc) ->
+                dgiot_parse:update_object(<<"Channel">>, ChannelId, Map)
+                        end, [], Results);
+        _ ->
+            []
+    end.
 
 

@@ -102,12 +102,11 @@ init(?TYPE, ChannelId, Args) ->
         <<"products">> => Products,
         <<"args">> => NewArgs}
     },
-
+    dgiot_parse_hook:subscribe(<<"Device/*">>, put, ChannelId),
     {ok, State, []}.
 
-handle_init(#state{id = ChannelId, env = #{<<"products">> := _Products, <<"args">> := _Args}} = State) ->
+handle_init(#state{id = _ChannelId, env = #{<<"products">> := _Products, <<"args">> := _Args}} = State) ->
     erlang:send_after(1000, self(), {message, <<"_Pool">>, check_profile}),
-    dgiot_parse_hook:subscribe(<<"Device/*">>, put, ChannelId),
     {ok, State}.
 
 %% 通道消息处理,注意：进程池调用

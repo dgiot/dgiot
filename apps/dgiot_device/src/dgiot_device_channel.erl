@@ -106,6 +106,9 @@ init(?TYPE, ChannelId, Args) ->
         id = ChannelId,
         env = Args
     },
+    dgiot_parse_hook:subscribe(<<"Product/*">>, put, ChannelId),
+    dgiot_parse_hook:subscribe(<<"Product">>, post, ChannelId),
+    dgiot_parse_hook:subscribe(<<"Product/*">>, delete, ChannelId),
     {ok, State, []}.
 
 handle_init(State) ->
@@ -118,7 +121,7 @@ handle_event(_EventId, Event, State) ->
     ?LOG(info, "Channel ~p", [Event]),
     {ok, State}.
 
-handle_message(load, #state{env = #{<<"order">> := Order, <<"offline">>:= OffLine}} = State) ->
+handle_message(load, #state{env = #{<<"order">> := Order, <<"offline">> := OffLine}} = State) ->
     dgiot_role:load_roles(),
     dgiot_data:insert({device, offline}, OffLine),
     dgiot_product:load(),
@@ -126,12 +129,28 @@ handle_message(load, #state{env = #{<<"order">> := Order, <<"offline">>:= OffLin
     dgiot_parse_cache:cache_classes(Order),
     {ok, State};
 
-handle_message(check, #state{env = #{<<"offline">>:= OffLine, <<"checktime">>:= CheckTime}} = State) ->
+handle_message(check, #state{env = #{<<"offline">> := OffLine, <<"checktime">> := CheckTime}} = State) ->
     erlang:send_after(CheckTime * 60 * 1000, self(), {message, <<"_Pool">>, check}),
     dgiot_device:sync_parse(OffLine),
     {ok, State};
 
-handle_message(_, State) ->
+handle_message({sync_parse, post, <<"Product">>, BeforeData, AfterData}, State) ->
+    dgiot_product_hook:post('befor', BeforeData),
+    dgiot_product_hook:post('after', AfterData),
+    {ok, State};
+
+handle_message({sync_parse, put, <<"Product">>, BeforeData, AfterData, ProductId}, State) ->
+    dgiot_product_hook:put('befor', BeforeData, ProductId),
+    dgiot_product_hook:put('after', AfterData, ProductId),
+    {ok, State};
+
+handle_message({sync_parse, delete, <<"Product">>, BeforeData, AfterData, ProductId}, State) ->
+    dgiot_product_hook:delete('befor', BeforeData, ProductId),
+    dgiot_product_hook:delete('after', AfterData, ProductId),
+    {ok, State};
+
+handle_message(Message, State) ->
+    ?LOG(info, "channel ~p", [Message]),
     {ok, State}.
 
 stop(ChannelType, ChannelId, _State) ->
