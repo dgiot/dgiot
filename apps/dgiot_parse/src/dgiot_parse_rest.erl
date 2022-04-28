@@ -73,7 +73,11 @@ request(Method, Header, Path0, Body, Options) ->
         end,
     case IsGetCount of
         true ->
-            handle_result(Fun(), get_count(Path, Header));
+            io:format("~s ~p ~p ~n ", [?FILE, ?LINE, Path]),
+            io:format("~s ~p ~p ~n ", [?FILE, ?LINE, Header]),
+            CountMap = get_count(Path, Header),
+            io:format("~s ~p ~p ~n ", [?FILE, ?LINE, CountMap]),
+            handle_result(Fun(), CountMap);
         false ->
             handle_result(Fun())
     end.
@@ -86,7 +90,13 @@ get_count(Path, Header) ->
     BinPath = to_binary(Path),
     case binary:split(BinPath, <<$/>>, [global, trim]) of
         [<<>>, <<"classes">>, ClassName | _] ->
-            Token = proplists:get_value("X-Parse-Session-Token", Header),
+            Token =
+                case proplists:get_value("X-Parse-Session-Token", Header) of
+                    undefined ->
+                        proplists:get_value(<<"X-Parse-Session-Token">>, Header);
+                    Token1 ->
+                        Token1
+                end,
             Acls =
                 case dgiot_auth:get_session(Token) of
                     #{<<"roles">> := Roles} ->
