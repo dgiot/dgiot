@@ -40,9 +40,21 @@
     remove_rules_role/1,
     get_rules_role/1,
     load_roles/0,
-    get_childrole/1
+    get_childrole/1,
+    get_childacl/1
 ]).
 
+get_childacl(AclName) ->
+    case dgiot_data:get(?NAME_ROLE_ETS, ?ACL(AclName)) of
+        {error, not_find} ->
+            [?ACL(AclName)];
+        RoleId ->
+            ChildAcl =
+                lists:foldl(fun(ChilRoleId, Acc) ->
+                    Acc ++ [dgiot_parse_cache:get_alcname(ChilRoleId)]
+                            end, [?ACL(AclName)], get_childrole(RoleId)),
+            dgiot_utils:unique_1(ChildAcl)
+    end.
 
 get_childrole(Role) ->
     case dgiot_data:values(?PARENT_ROLE_ETS, Role) of
@@ -68,8 +80,8 @@ load_roles() ->
         lists:map(fun(X) ->
             #{<<"objectId">> := RoleId, <<"name">> := RoleName, <<"parent">> := #{<<"objectId">> := ParentId}} = X,
             dgiot_data:insert(?ROLE_PARENT_ETS, RoleId, ParentId),
-            dgiot_data:insert(?PARENT_ROLE_ETS, ParentId, dgiot_utils:to_atom(RoleId)),
-            dgiot_data:insert(?NAME_ROLE_ETS, ?ACL(<<"role:", RoleName/binary>>), dgiot_utils:to_atom(RoleId)),
+            dgiot_data:insert(?PARENT_ROLE_ETS, ParentId, RoleId),
+            dgiot_data:insert(?NAME_ROLE_ETS, ?ACL(<<"role:", RoleName/binary>>), RoleId),
             dgiot_data:insert(?ROLE_ETS, RoleId, maps:without([<<"objectId">>, <<"createdAt">>, <<"users">>, <<"menus">>, <<"rules">>, <<"dict">>], X))
                   end, Page)
               end,
