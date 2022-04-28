@@ -220,6 +220,7 @@ overlay_vars_rel(RelType) ->
         , {enable_plugin_dgiot_ffmpeg, true}
         , {enable_plugin_dgiot_gb26875, true}
         , {enable_plugin_dgiot_hjt212, true}
+        , {enable_plugin_dgiot_bacnet, true}
         , {enable_plugin_dgiot_dlink, true}
         , {enable_plugin_dgiot_bamis, true}
         , {enable_plugin_dgiot_iq60, true}
@@ -354,6 +355,7 @@ relx_plugin_apps_per_rel(cloud) ->
         , dgiot_ffmpeg
         , dgiot_gb26875
         , dgiot_hjt212
+        , dgiot_bacnet
         , dgiot_dlink
         , dgiot_bamis
         , dgiot_iq60

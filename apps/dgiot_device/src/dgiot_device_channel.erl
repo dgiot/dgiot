@@ -119,11 +119,11 @@ handle_event(_EventId, Event, State) ->
     {ok, State}.
 
 handle_message(load, #state{env = #{<<"order">> := Order, <<"offline">>:= OffLine}} = State) ->
-    dgiot_data:insert({device, offline}, OffLine),
-    dgiot_parse_cache:cache_classes(Order),
-    dgiot_product:load(),
     dgiot_role:load_roles(),
+    dgiot_data:insert({device, offline}, OffLine),
+    dgiot_product:load(),
     dgiot_parse_auth:load_roleuser(),
+    dgiot_parse_cache:cache_classes(Order),
     {ok, State};
 
 handle_message(check, #state{env = #{<<"offline">>:= OffLine, <<"checktime">>:= CheckTime}} = State) ->

@@ -19,7 +19,7 @@
 -include("dgiot_parse.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -dgiot_data("ets").
--export([init_ets/0,cache_classes/1, get_count/2]).
+-export([test/0, init_ets/0, cache_classes/1, get_count/2, loop_count/1, get_roleids/1, get_roleid/1]).
 -export([do_save/1, save_to_cache/1, save_to_cache/2, save_test/1]).
 
 init_ets() ->
@@ -28,6 +28,7 @@ init_ets() ->
     dgiot_data:init(?ROLE_USER_ETS),
     dgiot_data:init(?USER_ROLE_ETS),
     dgiot_data:init(?ROLE_PARENT_ETS),
+    dgiot_data:init(?NAME_ROLE_ETS),
     dgiot_data:init(?PARENT_ROLE_ETS, [public, named_table, bag, {write_concurrency, true}, {read_concurrency, true}]).
 
 %% 先缓存定时存库
@@ -126,7 +127,9 @@ cache_classes(Order) ->
         {ok, #{<<"results">> := Results}} ->
             lists:map(fun
                           (#{<<"className">> := <<"Log">>}) ->
-                              pass;
+                              loop_count(<<"Log">>);
+                          (#{<<"className">> := <<"_Session">>}) ->
+                              loop_count(<<"_Session">>);
                           (#{<<"className">> := <<"Device">>}) ->
                               Success = fun(Page) ->
                                   lists:map(fun(Device) ->
@@ -135,7 +138,7 @@ cache_classes(Order) ->
                                         end,
                               Query = #{
                                   <<"order">> => Order,
-                                  <<"keys">> => [<<"ACL">>,<<"devaddr">>,<<"product">>,<<"deviceSecret">>],
+                                  <<"keys">> => [<<"ACL">>, <<"devaddr">>, <<"product">>, <<"deviceSecret">>],
                                   <<"where">> => #{}
                               },
                               dgiot_parse_loader:start(<<"Device">>, Query, 0, 500, 1000000, Success);
@@ -144,8 +147,8 @@ cache_classes(Order) ->
                               Success = fun(Page) ->
                                   lists:map(fun
                                                 (#{<<"objectId">> := ObjectId} = Class) ->
-                                                    Acl = maps:get(<<"Acl">>, Class, #{}),
-                                                    dgiot_data:insert(?CLASS(CLasseName), ObjectId, Acl);
+                                                    Acl = maps:get(<<"ACL">>, Class, #{}),
+                                                    dgiot_mnesia:insert(ObjectId, [binary_to_atom(CLasseName), get_roleids(maps:keys(Acl))]);
                                                 (_) ->
                                                     pass
                                             end, Page)
@@ -163,5 +166,117 @@ cache_classes(Order) ->
             pass
     end.
 
-get_count(_ClassesName, _Acl) ->
-    ok.
+get_roleids(Device) when is_map(Device) ->
+    Acl = maps:get(<<"ACL">>, Device, #{}),
+    get_roleids(maps:keys(Acl));
+
+get_roleids(Acls) when is_list(Acls) ->
+    Result =
+        lists:foldl(fun
+                        (<<"*">>, Acc1) ->
+                            Acc1 ++ ['*'];
+                        (RoleName, Acc) ->
+                            case dgiot_data:get(?NAME_ROLE_ETS, ?ACL(RoleName)) of
+                                not_find ->
+                                    Acc;
+                                RoleId ->
+                                    Acc ++ [RoleId]
+                            end
+                    end, [], Acls),
+    case length(Result) of
+        0 ->
+            ['*'];
+        _ ->
+            Result
+    end.
+
+get_roleid(RoleId) ->
+    dgiot_data:get(?ROLE_ETS, dgiot_utils:to_binary(RoleId)).
+
+get_count(Class, RoleId) when is_binary(RoleId) ->
+    RoleIds = dgiot_role:get_childrole(RoleId),
+    get_count(Class, RoleIds);
+
+get_count(<<"Log">>, _RoleIds) ->
+    #{
+        <<"count">> => dgiot_data:get({parse_count, 'Log'})
+    };
+
+get_count(<<"_Session">>, _RoleIds) ->
+    #{
+        <<"count">> => dgiot_data:get({parse_count, '_Session'})
+    };
+
+get_count(<<"Device">>, RoleIds) ->
+    init_count('Device'),
+    init_count('Device_true'),
+    init_count('Device_false'),
+    loop_count(RoleIds ++ ['*']),
+    #{
+        <<"count">> => dgiot_data:get({parse_count, 'Device'}),
+        <<"online">> => dgiot_data:get({parse_count, 'Device_true'}),
+        <<"offline">> => dgiot_data:get({parse_count, 'Device_false'})
+    };
+
+get_count(ClassesName, RoleIds) ->
+    Class = dgiot_utils:to_atom(ClassesName),
+    init_count(Class),
+    loop_count(RoleIds ++ ['*']),
+    #{
+        <<"count">> => dgiot_data:get({parse_count, Class})
+    }.
+
+loop_count(CLasseName) when is_binary(CLasseName) ->
+    Class = dgiot_utils:to_atom(CLasseName),
+    init_count(Class),
+    Success = fun(Page) ->
+        lists:map(fun(_) ->
+            add_count(Class)
+                  end, Page)
+              end,
+    Query = #{
+        <<"keys">> => [<<"objectId">>],
+        <<"where">> => #{}
+    },
+    dgiot_parse_loader:start(CLasseName, Query, 0, 500, 1000000, Success);
+
+loop_count(RoleIds) ->
+    Fun3 = fun
+               ({_, _, ['Device', RoleId, Status | _]}) ->
+                   case RoleIds -- RoleId of
+                       RoleIds ->
+                           pass;
+                       _ ->
+                           add_count('Device'),
+                           add_count(list_to_atom("Device_" ++ dgiot_utils:to_list(Status)))
+                   end;
+               ({_, _, [ClassesName, RoleId | _]}) ->
+                   case RoleIds -- RoleId of
+                       RoleIds ->
+                           pass;
+                       _ ->
+                           Class = dgiot_utils:to_atom(ClassesName),
+                           add_count(Class)
+                   end
+           end,
+    dgiot_mnesia:search(Fun3, #{<<"skip">> => 0, <<"limit">> => 1000000}).
+
+init_count(Class) ->
+    dgiot_data:insert({parse_count, Class}, 0).
+
+add_count(Class) ->
+    case dgiot_data:get({parse_count, Class}) of
+        not_find ->
+            dgiot_data:insert({parse_count, Class}, 1);
+        Count ->
+            dgiot_data:insert({parse_count, Class}, Count + 1)
+    end.
+
+test() ->
+    Fun3 = fun
+               ({_, _, ['Device' | _]} = X) ->
+                   io:format("~p~n", [X]);
+               ({_, _, [_ClassesName | _]}) ->
+                   pass
+           end,
+    dgiot_mnesia:search(Fun3, #{<<"skip">> => 0, <<"limit">> => 1000000}).
