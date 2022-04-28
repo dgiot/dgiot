@@ -19,7 +19,7 @@
 -include("dgiot_parse.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -dgiot_data("ets").
--export([init_ets/0]).
+-export([init_ets/0,cache_classes/1, get_count/2]).
 -export([do_save/1, save_to_cache/1, save_to_cache/2, save_test/1]).
 
 init_ets() ->
@@ -78,12 +78,12 @@ do_save(Idx, Channel, Requests, Acc) ->
 
 save_to_parse(_, []) -> ok;
 save_to_parse(Channel, Requests) ->
-    case dgiot_parse:batch(Channel,Requests) of
+    case dgiot_parse:batch(Channel, Requests) of
         {ok, Results} ->
             dgiot_metrics:inc(dgiot_parse, <<"parse_save_success">>, length(Requests)),
             do_result(Requests, Results);
         %%  错误报文应该丢弃，不是所有报文都应该重新缓存
-        #{<<"code">> := 100,<<"error">> := _Error} ->
+        #{<<"code">> := 100, <<"error">> := _Error} ->
             dgiot_metrics:inc(dgiot_parse, <<"parse_save_fail">>, length(Requests)),
             save_to_cache(Channel, Requests);
         Result ->
@@ -121,3 +121,47 @@ save_test(Count) ->
         }
     }) || I <- lists:seq(1, Count)], ok.
 
+cache_classes(Order) ->
+    case dgiot_parse:get_schemas() of
+        {ok, #{<<"results">> := Results}} ->
+            lists:map(fun
+                          (#{<<"className">> := <<"Log">>}) ->
+                              pass;
+                          (#{<<"className">> := <<"Device">>}) ->
+                              Success = fun(Page) ->
+                                  lists:map(fun(Device) ->
+                                      dgiot_device:save(Device)
+                                            end, Page)
+                                        end,
+                              Query = #{
+                                  <<"order">> => Order,
+                                  <<"keys">> => [<<"ACL">>,<<"devaddr">>,<<"product">>,<<"deviceSecret">>],
+                                  <<"where">> => #{}
+                              },
+                              dgiot_parse_loader:start(<<"Device">>, Query, 0, 500, 1000000, Success);
+                          (#{<<"className">> := CLasseName}) ->
+                              dgiot_data:init(?CLASS(CLasseName)),
+                              Success = fun(Page) ->
+                                  lists:map(fun
+                                                (#{<<"objectId">> := ObjectId} = Class) ->
+                                                    Acl = maps:get(<<"Acl">>, Class, #{}),
+                                                    dgiot_data:insert(?CLASS(CLasseName), ObjectId, Acl);
+                                                (_) ->
+                                                    pass
+                                            end, Page)
+                                        end,
+                              Query = #{
+                                  <<"keys">> => [<<"ACL">>],
+                                  <<"order">> => Order,
+                                  <<"where">> => #{}
+                              },
+                              dgiot_parse_loader:start(CLasseName, Query, 0, 500, 1000000, Success);
+                          (_) ->
+                              pass
+                      end, Results);
+        _ ->
+            pass
+    end.
+
+get_count(_ClassesName, _Acl) ->
+    ok.

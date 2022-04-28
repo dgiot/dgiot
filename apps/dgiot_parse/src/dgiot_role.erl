@@ -69,7 +69,7 @@ load_roles() ->
             #{<<"objectId">> := RoleId, <<"parent">> := #{<<"objectId">> := ParentId}} = X,
             dgiot_data:insert(?ROLE_PARENT_ETS, RoleId, ParentId),
             dgiot_data:insert(?PARENT_ROLE_ETS, ParentId, RoleId),
-            dgiot_data:insert(?ROLE_ETS, RoleId, X)
+            dgiot_data:insert(?ROLE_ETS, RoleId, maps:without([<<"objectId">>,<<"createdAt">>,<<"users">>,<<"menus">>,<<"rules">>,<<"dict">>], X))
                   end, Page)
               end,
     Query = #{},

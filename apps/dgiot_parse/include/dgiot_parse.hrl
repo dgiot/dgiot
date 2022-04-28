@@ -17,6 +17,7 @@
 -define(DEFAULT, <<"default">>).
 -define(TYPE, <<"PARSE">>).
 -define(CACHE(Channel), binary_to_atom(<<?TYPE/binary, Channel/binary>>, utf8)).
+-define(CLASS(ClassName), binary_to_atom(<<?TYPE/binary, "_class_", ClassName/binary>>, utf8)).
 -define(DGIOT_PARSE_ETS, dgiot_parse_ets).
 -define(ROLE_USER_ETS, role_user_ets).
 -define(USER_ROLE_ETS, user_role_ets).
