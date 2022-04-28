@@ -214,6 +214,7 @@ get_alcname(RoleId) ->
             ?ACL(RoleId)
     end.
 
+%% dgiot_parse_cache:get_count[<<"Device">>, <<"role:root">>,acl]
 get_count(Class, Acls, acl) ->
     ChildAcls =
         lists:foldl(
