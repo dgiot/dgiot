@@ -1,0 +1,85 @@
+{
+  "tags": [
+    {
+      "name": "BACnet",
+      "description": "BACnet"
+    }
+  ],
+  "definitions": {},
+  "paths": {
+    "/bacnetcallback": {
+      "post": {
+        "description": "bacnet采集回调",
+        "security": [],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "data",
+            "schema": {
+              "type": "object",
+              "properties": {}
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "summary": "bacnet采集回调",
+        "tags": [
+          "BACnet"
+        ]
+      },
+      "get": {
+        "description": "bacnet采集属性",
+        "security": [],
+        "parameters": [
+          {
+            "name": "host",
+            "description": "host",
+            "in": "query",
+            "required": true,
+            "type": "string",
+            "default": "192.168.1.11"
+          },
+          {
+            "name": "deviceid",
+            "description": "deviceid",
+            "in": "query",
+            "required": true,
+            "type": "string",
+            "default": "15"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "summary": "bacnet采集回调",
+        "tags": [
+          "BACnet"
+        ]
+      }
+    }
+  }
+}
