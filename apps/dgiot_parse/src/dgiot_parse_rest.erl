@@ -50,8 +50,10 @@ request(Method, Header, Path0, Body, Options) ->
         fun() ->
             NewBody1 =
                 case IsGetCount of
-                    true -> encode_body(Path, Method, NewBody, Options);
-                    false -> NewBody
+                    true ->
+                        encode_body(Path, Method, NewBody, Options);
+                    false ->
+                        NewBody
                 end,
             case Method of
                 _ when Method == 'GET'; Method == 'DELETE' ->
@@ -66,49 +68,12 @@ request(Method, Header, Path0, Body, Options) ->
                         end,
                     do_request(Method, NewPath, NewHeads, Query, Options);
                 _ when Method == 'POST'; Method == 'PUT' ->
-                    case to_binary(Path) of
-                        <<"/classes/Product">> when Method == 'POST' ->
-                            case Body of
-                                #{<<"objectId">> := ProductId, <<"channel">> := Channel} ->
-                                    TdchannelId = maps:get(<<"tdchannel">>, Channel, <<"">>),
-                                    TaskchannelId = maps:get(<<"taskchannel">>, Channel, <<"">>),
-                                    Otherchannel = maps:get(<<"otherchannel">>, Channel, []),
-                                    channel_add_product_relation(Otherchannel ++ [TdchannelId] ++ [TaskchannelId], ProductId);
-                                _ ->
-                                    pass
-                            end;
-                        <<"/classes/Product/", ProductId/binary>> when Method == 'PUT' ->
-                            case Body of
-                                #{<<"channel">> := Channel} ->
-                                    channel_delete_product_relation(ProductId),
-                                    TdchannelId = maps:get(<<"tdchannel">>, Channel, <<"">>),
-                                    TaskchannelId = maps:get(<<"taskchannel">>, Channel, <<"">>),
-                                    Otherchannel = maps:get(<<"otherchannel">>, Channel, []),
-                                    channel_add_product_relation(Otherchannel ++ [TdchannelId] ++ [TaskchannelId], ProductId);
-                                _ ->
-                                    pass
-                            end;
-                        _ ->
-                            pass
-                    end,
                     do_request(Method, to_binary(Path), NewHeads, NewBody1, Options)
             end
         end,
     case IsGetCount of
         true ->
-            NewMap = NewBody#{<<"count">> => 1, <<"limit">> => 0},
-            case request(Method, Header, Path, maps:with([<<"where">>, <<"count">>, <<"limit">>], NewMap), Options) of
-                {ok, 200, _, CountBody} ->
-                    case ?JSON_DECODE(CountBody) of
-                        #{<<"count">> := Count} ->
-                            handle_result(Fun(), #{<<"count">> => Count});
-                        _ ->
-                            ?LOG(error, "count not find, ~p~n", [CountBody]),
-                            handle_result(Fun(), #{})
-                    end;
-                Other ->
-                    Other
-            end;
+            handle_result(Fun(), get_count(Path, Header));
         false ->
             handle_result(Fun())
     end.
@@ -117,6 +82,23 @@ request(Method, Header, Path0, Body, Options) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+get_count(Path, Header) ->
+    BinPath = to_binary(Path),
+        case binary:split(BinPath, <<$/>>, [global, trim]) of
+            [<<>>, <<"classes">>, ClassName | _] ->
+                Token = proplists:get_value("X-Parse-Session-Token",Header),
+                Acls =
+                    case dgiot_auth:get_session(Token) of
+                    #{<<"roles">> := Roles} ->
+                        maps:keys(Roles);
+                    _ ->
+                        []
+                end,
+                dgiot_parse_cache:get_count(ClassName, Acls, roleid);
+            _ ->
+                #{<<"count">> => 20}
+        end.
+
 save_cache(_, <<"/batch">>, #{<<"requests">> := Requests}) ->
     lists:map(fun(X) ->
         Method = maps:get(<<"method">>, X, <<"">>),
@@ -440,43 +422,4 @@ handle_result(Result, Map) ->
             end;
         {error, Reason} ->
             {error, Reason}
-    end.
-
-channel_add_product_relation(ChannelIds, ProductId) ->
-    Map =
-        #{<<"product">> =>
-        #{
-            <<"__op">> => <<"AddRelation">>,
-            <<"objects">> => [
-                #{
-                    <<"__type">> => <<"Pointer">>,
-                    <<"className">> => <<"Product">>,
-                    <<"objectId">> => ProductId
-                }
-            ]
-        }
-        },
-    lists:map(fun(ChannelId) when size(ChannelId) > 0 ->
-        dgiot_parse:update_object(<<"Channel">>, ChannelId, Map)
-              end, ChannelIds).
-
-channel_delete_product_relation(ProductId) ->
-    Map =
-        #{<<"product">> => #{
-            <<"__op">> => <<"RemoveRelation">>,
-            <<"objects">> => [
-                #{
-                    <<"__type">> => <<"Pointer">>,
-                    <<"className">> => <<"Product">>,
-                    <<"objectId">> => ProductId
-                }
-            ]}
-        },
-    case dgiot_parse:query_object(<<"Channel">>, #{<<"where">> => #{<<"product">> => #{<<"__type">> => <<"Pointer">>, <<"className">> => <<"Product">>, <<"objectId">> => ProductId}}, <<"limit">> => 20}) of
-        {ok, #{<<"results">> := Results}} when length(Results) > 0 ->
-            lists:foldl(fun(#{<<"objectId">> := ChannelId}, _Acc) ->
-                dgiot_parse:update_object(<<"Channel">>, ChannelId, Map)
-                        end, [], Results);
-        _ ->
-            []
     end.

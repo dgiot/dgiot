@@ -124,7 +124,6 @@ create_role(#{<<"name">> := Name} = Role) ->
     case dgiot_parse:get_object(<<"_Role">>, RoleId) of
         {error, _} ->
             {ok, AppUser} = dgiot_parse_auth:create_user_for_app(Name),
-            ?LOG(info, "AppUser ~p ", [AppUser]),
             NewUsers = maps:get(<<"users">>, Role, []) ++ [AppUser],
             NewRole = Role#{
                 <<"users">> => dgiot_role:get_users_role(NewUsers),
