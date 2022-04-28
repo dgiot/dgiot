@@ -42,7 +42,7 @@ post(Device) ->
             <<"OFFLINE">> -> false;
             _ -> true
         end,
-    insert_mnesia(DeviceId, dgiot_parse_cache:get_roleids(Device), Status, dgiot_datetime:now_secs(), Devaddr, ProductId, DeviceSecret, node()).
+    insert_mnesia(DeviceId, dgiot_parse_cache:get_acls(Device), Status, dgiot_datetime:now_secs(), Devaddr, ProductId, DeviceSecret, node()).
 
 put(Device) ->
     DeviceId = maps:get(<<"objectId">>, Device),
@@ -53,7 +53,7 @@ put(Device) ->
                 error ->
                     insert_mnesia(DeviceId, Acl, Status, dgiot_datetime:now_secs(), Devaddr, ProductId, DeviceSecret, Node);
                 {ok, _} ->
-                    insert_mnesia(DeviceId, dgiot_parse_cache:get_roleids(Device), Status, dgiot_datetime:now_secs(), Devaddr, ProductId, DeviceSecret, Node)
+                    insert_mnesia(DeviceId, dgiot_parse_cache:get_acls(Device), Status, dgiot_datetime:now_secs(), Devaddr, ProductId, DeviceSecret, Node)
             end;
         _ ->
             pass
@@ -79,7 +79,7 @@ save(Device) ->
             <<"OFFLINE">> -> false;
             _ -> true
         end,
-    insert_mnesia(DeviceId, dgiot_parse_cache:get_roleids(Device), Status, UpdatedAt, Devaddr, ProductId, DeviceSecret, node()).
+    insert_mnesia(DeviceId, dgiot_parse_cache:get_acls(Device), Status, UpdatedAt, Devaddr, ProductId, DeviceSecret, node()).
 
 get_acl(DeviceId) when is_binary(DeviceId) ->
     case lookup(DeviceId) of
@@ -100,16 +100,6 @@ get_acl(Acl) when is_atom(Acl) ->
         <<"read">> => true,
         <<"write">> => true}
     }.
-
-get_acls(Roles) when is_list(Roles) ->
-    lists:foldl(fun(RoleId, Acc) ->
-        case dgiot_parse_cache:get_roleid(RoleId) of
-            not_find ->
-                Acc ++ ['*'];
-            #{<<"name">> := Name} ->
-                Acc ++ [dgiot_utils:to_atom(<<"role:", Name/binary>>)]
-        end
-                end, [], Roles).
 
 online(DeviceId) ->
     case lookup(DeviceId) of
@@ -184,8 +174,8 @@ lookup(DeviceId) ->
     case dgiot_mnesia:lookup(DeviceId) of
         {aborted, Reason} ->
             {error, Reason};
-        {ok, [{mnesia, _K, ['Device', Roles, Status, Time, Devaddr, ProductId, DeviceSecret, Node]}]} ->
-            {ok, #{<<"status">> => Status, <<"time">> => Time, <<"acl">> => get_acls(Roles),
+        {ok, [{mnesia, _K, ['Device', Acls, Status, Time, Devaddr, ProductId, DeviceSecret, Node]}]} ->
+            {ok, #{<<"status">> => Status, <<"time">> => Time, <<"acl">> => Acls,
                 <<"devaddr">> => Devaddr, <<"productid">> => ProductId, <<"devicesecret">> => DeviceSecret, <<"node">> => Node}};
         _ ->
             {error, not_find}

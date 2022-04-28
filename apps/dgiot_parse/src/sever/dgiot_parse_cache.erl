@@ -19,7 +19,8 @@
 -include("dgiot_parse.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -dgiot_data("ets").
--export([test/0, init_ets/0, cache_classes/1, get_count/2, loop_count/1, get_roleids/1, get_roleid/1]).
+-export([test/0, init_ets/0, cache_classes/1, get_count/2, loop_count/1, get_roleids/1, get_alcname/1, get_acls/1]).
+-export([get_count/3]).
 -export([do_save/1, save_to_cache/1, save_to_cache/2, save_test/1]).
 
 init_ets() ->
@@ -147,8 +148,7 @@ cache_classes(Order) ->
                               Success = fun(Page) ->
                                   lists:map(fun
                                                 (#{<<"objectId">> := ObjectId} = Class) ->
-                                                    Acl = maps:get(<<"ACL">>, Class, #{}),
-                                                    dgiot_mnesia:insert(ObjectId, [binary_to_atom(CLasseName), get_roleids(maps:keys(Acl))]);
+                                                    dgiot_mnesia:insert(ObjectId, [binary_to_atom(CLasseName), get_acls(Class)]);
                                                 (_) ->
                                                     pass
                                             end, Page)
@@ -166,23 +166,39 @@ cache_classes(Order) ->
             pass
     end.
 
+get_acls(Device) when is_map(Device) ->
+    Acl = maps:get(<<"ACL">>, Device, #{}),
+    get_acls(maps:keys(Acl));
+get_acls(Acls) when is_list(Acls) ->
+    AclsNames =
+        lists:foldl(fun(RoleName, Acc) ->
+            Acc ++ [?ACL(dgiot_utils:to_binary(RoleName))]
+                    end, [], Acls),
+    case length(AclsNames) of
+        0 ->
+            ['*'];
+        _ ->
+            AclsNames
+    end.
+
 get_roleids(Device) when is_map(Device) ->
     Acl = maps:get(<<"ACL">>, Device, #{}),
     get_roleids(maps:keys(Acl));
 
 get_roleids(Acls) when is_list(Acls) ->
     Result =
-        lists:foldl(fun
-                        (<<"*">>, Acc1) ->
-                            Acc1 ++ ['*'];
-                        (RoleName, Acc) ->
-                            case dgiot_data:get(?NAME_ROLE_ETS, ?ACL(RoleName)) of
-                                not_find ->
-                                    Acc;
-                                RoleId ->
-                                    Acc ++ [RoleId]
-                            end
-                    end, [], Acls),
+        lists:foldl(
+            fun
+                (<<"*">>, Acc1) ->
+                    Acc1 ++ ['*'];
+                (RoleName, Acc) ->
+                    case dgiot_data:get(?NAME_ROLE_ETS, ?ACL(RoleName)) of
+                        not_find ->
+                            Acc;
+                        RoleId ->
+                            Acc ++ [RoleId]
+                    end
+            end, [], Acls),
     case length(Result) of
         0 ->
             ['*'];
@@ -190,12 +206,29 @@ get_roleids(Acls) when is_list(Acls) ->
             Result
     end.
 
-get_roleid(RoleId) ->
-    dgiot_data:get(?ROLE_ETS, dgiot_utils:to_binary(RoleId)).
+get_alcname(RoleId) ->
+    case dgiot_data:get(?ROLE_ETS, dgiot_utils:to_binary(RoleId)) of
+        #{<<"name">> := Name} ->
+            ?ACL(<<"role:", Name/binary>>);
+        _ -> %%  * or userid
+            ?ACL(RoleId)
+    end.
 
-get_count(Class, RoleId) when is_binary(RoleId) ->
-    RoleIds = dgiot_role:get_childrole(RoleId),
-    get_count(Class, RoleIds);
+get_count(Class, Acls, acl) ->
+    ChildAcls =
+        lists:foldl(
+            fun
+                (AclName, Acc) ->
+                    Acc ++ dgiot_role:get_childacl(AclName)
+            end, [], Acls),
+    get_count(Class, dgiot_utils:unique_1(ChildAcls));
+
+get_count(Class, RoleId, roleid) ->
+    ChildRoleIds = dgiot_role:get_childrole(dgiot_utils:to_binary(RoleId)),
+    Acls = lists:foldl(fun(ChildRoleId, Acc) ->
+        Acc ++ [get_alcname(ChildRoleId)]
+                       end, [get_alcname(RoleId)], ChildRoleIds),
+    get_count(Class, Acls).
 
 get_count(<<"Log">>, _RoleIds) ->
     #{
@@ -207,24 +240,22 @@ get_count(<<"_Session">>, _RoleIds) ->
         <<"count">> => dgiot_data:get({parse_count, '_Session'})
     };
 
-get_count(<<"Device">>, RoleIds) ->
+get_count(<<"Device">>, Acls) ->
     init_count('Device'),
     init_count('Device_true'),
     init_count('Device_false'),
-    loop_count(RoleIds ++ ['*']),
+    loop_count(Acls ++ ['*']),
     #{
         <<"count">> => dgiot_data:get({parse_count, 'Device'}),
         <<"online">> => dgiot_data:get({parse_count, 'Device_true'}),
         <<"offline">> => dgiot_data:get({parse_count, 'Device_false'})
     };
 
-get_count(ClassesName, RoleIds) ->
+get_count(ClassesName, Acls) ->
     Class = dgiot_utils:to_atom(ClassesName),
     init_count(Class),
-    loop_count(RoleIds ++ ['*']),
-    #{
-        <<"count">> => dgiot_data:get({parse_count, Class})
-    }.
+    loop_count(Acls ++ ['*']),
+    #{<<"count">> => dgiot_data:get({parse_count, Class})}.
 
 loop_count(CLasseName) when is_binary(CLasseName) ->
     Class = dgiot_utils:to_atom(CLasseName),
@@ -240,25 +271,26 @@ loop_count(CLasseName) when is_binary(CLasseName) ->
     },
     dgiot_parse_loader:start(CLasseName, Query, 0, 500, 1000000, Success);
 
-loop_count(RoleIds) ->
-    Fun3 = fun
-               ({_, _, ['Device', RoleId, Status | _]}) ->
-                   case RoleIds -- RoleId of
-                       RoleIds ->
-                           pass;
-                       _ ->
-                           add_count('Device'),
-                           add_count(list_to_atom("Device_" ++ dgiot_utils:to_list(Status)))
-                   end;
-               ({_, _, [ClassesName, RoleId | _]}) ->
-                   case RoleIds -- RoleId of
-                       RoleIds ->
-                           pass;
-                       _ ->
-                           Class = dgiot_utils:to_atom(ClassesName),
-                           add_count(Class)
-                   end
-           end,
+loop_count(QueryAcls) ->
+    Fun3 =
+        fun
+            ({_, _, ['Device', Acls, Status | _]}) ->
+                case QueryAcls -- Acls of
+                    QueryAcls ->
+                        pass;
+                    _ ->
+                        add_count('Device'),
+                        add_count(list_to_atom("Device_" ++ dgiot_utils:to_list(Status)))
+                end;
+            ({_, _, [ClassesName, Acls | _]}) ->
+                case QueryAcls -- Acls of
+                    QueryAcls ->
+                        pass;
+                    _ ->
+                        Class = dgiot_utils:to_atom(ClassesName),
+                        add_count(Class)
+                end
+        end,
     dgiot_mnesia:search(Fun3, #{<<"skip">> => 0, <<"limit">> => 1000000}).
 
 init_count(Class) ->
