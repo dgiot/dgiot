@@ -109,7 +109,7 @@ init(?TYPE, ChannelId, Args) ->
     {ok, State, []}.
 
 handle_init(State) ->
-    erlang:send_after(500, self(), {message, <<"_Pool">>, load}),
+    erlang:send_after(5000, self(), {message, <<"_Pool">>, load}),
     erlang:send_after(3 * 60 * 1000, self(), {message, <<"_Pool">>, check}),
     {ok, State}.
 
@@ -120,7 +120,7 @@ handle_event(_EventId, Event, State) ->
 
 handle_message(load, #state{env = #{<<"order">> := Order, <<"offline">>:= OffLine}} = State) ->
     dgiot_data:insert({device, offline}, OffLine),
-    dgiot_device:load_device(Order),
+    dgiot_parse_cache:cache_classes(Order),
     dgiot_product:load(),
     dgiot_role:load_roles(),
     dgiot_parse_auth:load_roleuser(),
