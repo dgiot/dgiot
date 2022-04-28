@@ -84,20 +84,20 @@ request(Method, Header, Path0, Body, Options) ->
 %%%===================================================================
 get_count(Path, Header) ->
     BinPath = to_binary(Path),
-        case binary:split(BinPath, <<$/>>, [global, trim]) of
-            [<<>>, <<"classes">>, ClassName | _] ->
-                Token = proplists:get_value("X-Parse-Session-Token",Header),
-                Acls =
-                    case dgiot_auth:get_session(Token) of
+    case binary:split(BinPath, <<$/>>, [global, trim]) of
+        [<<>>, <<"classes">>, ClassName | _] ->
+            Token = proplists:get_value("X-Parse-Session-Token", Header),
+            Acls =
+                case dgiot_auth:get_session(Token) of
                     #{<<"roles">> := Roles} ->
                         maps:keys(Roles);
                     _ ->
                         []
                 end,
-                dgiot_parse_cache:get_count(ClassName, Acls, roleid);
-            _ ->
-                #{<<"count">> => 20}
-        end.
+            dgiot_parse_cache:get_count(ClassName, Acls, roleid);
+        _ ->
+            #{<<"count">> => 20}
+    end.
 
 save_cache(_, <<"/batch">>, #{<<"requests">> := Requests}) ->
     lists:map(fun(X) ->
@@ -384,13 +384,13 @@ httpc_request(Method, Request, HttpOptions, ReqOptions) ->
             {error, Reason}
     end.
 
-do_request_after(Method0, Path, Data, NewData, ResBody, Options) ->
+do_request_after(Method0, Path, BeforData, AfterData, ResBody, Options) ->
     Method =
         case proplists:get_value(from, Options) of
-            js when NewData == <<>> ->
+            js when AfterData == <<>> ->
                 method(Method0, atom);
             js ->
-                case maps:get(<<"_method">>, ?JSON_DECODE(NewData), no) of
+                case maps:get(<<"_method">>, ?JSON_DECODE(AfterData), no) of
                     no -> method(Method0, atom);
                     Method1 -> method(Method1, atom)
                 end;
@@ -398,7 +398,7 @@ do_request_after(Method0, Path, Data, NewData, ResBody, Options) ->
                 method(Method0, atom)
         end,
     {match, PathList} = re:run(Path, <<"([^/]+)">>, [global, {capture, all_but_first, binary}]),
-    dgiot_parse_hook:do_request_hook('after', lists:concat(PathList), Method, Data, NewData, ResBody).
+    dgiot_parse_hook:do_request_hook('after', lists:concat(PathList), Method, BeforData, AfterData, ResBody).
 
 list_join([], Sep) when is_list(Sep) -> [];
 list_join([H | T], Sep) ->

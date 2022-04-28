@@ -47,33 +47,33 @@ subscribe(Table, Method, Channel) ->
     end,
     Fun = fun(Args) ->
         case Args of
-            [_Type, Data, NewData,_Body] ->
-                publish(Table, Method, Data, NewData),
-                {ok, Data};
-            [_Type, Data, NewData, ObjectId, _Body] ->
-                publish(Table, Method, Data, NewData, ObjectId),
-                {ok, Data};
+            [_Type, BeforData, AfterData, _Body] ->
+                publish(Table, Method, BeforData, AfterData),
+                {ok, AfterData};
+            [_Type, BeforData, AfterData, ObjectId, _Body] ->
+                publish(Table, Method, BeforData, AfterData, ObjectId),
+                {ok, AfterData};
             _ ->
                 {ok, []}
         end
           end,
     dgiot_hook:add(one_for_one, {Table, Method}, Fun).
 
-publish(Table, Method, Data, NewData) ->
+publish(Table, Method, BeforData, AfterData) ->
     lists:map(fun(ChannelId) ->
-        dgiot_channelx:do_message(ChannelId, {sync_parse, Method, Table, Data, NewData})
+        dgiot_channelx:do_message(ChannelId, {sync_parse, Method, Table, dgiot_utils:to_map(BeforData), dgiot_utils:to_map(AfterData)})
               end, dgiot_data:get({sub, Table, Method})).
 
-publish(Table, Method, Data, NewData, ObjectId) ->
+publish(Table, Method, BeforData, AfterData, ObjectId) ->
     lists:map(fun(ChannelId) ->
-        dgiot_channelx:do_message(ChannelId, {sync_parse, Method, Table, Data, NewData, ObjectId})
+        dgiot_channelx:do_message(ChannelId, {sync_parse, Method, Table, dgiot_utils:to_map(BeforData), dgiot_utils:to_map(AfterData), ObjectId})
               end, dgiot_data:get({sub, Table, Method})).
 
-do_request_hook(Type, [<<"classes">>, Class, ObjectId], Method, Data, NewData, Body) ->
-    do_hook({<<Class/binary, "/*">>, Method}, [Type, Data, NewData, ObjectId, Body]);
-do_request_hook(Type, [<<"classes">>, Class], Method, Data,  NewData, Body) ->
-    do_hook({Class, Method}, [Type, Data, NewData, Body]);
-do_request_hook(_Type, _Paths, _Method, _Data, _NewData, _Body) ->
+do_request_hook(Type, [<<"classes">>, Class, ObjectId], Method, BeforData, AfterData, Body) ->
+    do_hook({<<Class/binary, "/*">>, Method}, [Type, BeforData, AfterData, ObjectId, Body]);
+do_request_hook(Type, [<<"classes">>, Class], Method, BeforData, AfterData, Body) ->
+    do_hook({Class, Method}, [Type, BeforData, AfterData, Body]);
+do_request_hook(_Type, _Paths, _Method, _BeforData, _AfterData, _Body) ->
     ignore.
 do_hook(Key, Args) ->
     case catch dgiot_hook:run_hook(Key, Args) of

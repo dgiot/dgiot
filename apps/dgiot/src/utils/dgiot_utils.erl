@@ -35,6 +35,7 @@
     , to_bool/1
     , to_float/1
     , to_float/2
+    , to_map/1
     , list_to_map/1
     , tokens/2
     , to_term/1
@@ -222,6 +223,17 @@ utf8(<<I:8, Rest/binary>>, Block, Result, Type) when I < 128 andalso I > 0 ->
     utf8(Rest, <<>>, <<Result/binary, Code/binary, Ascii/binary>>, Type);
 utf8(<<I:8, Rest/binary>>, Block, Result, Type) ->
     utf8(Rest, <<Block/binary, I:8>>, Result, Type).
+
+to_map(List) when is_list(List) ->
+    list_to_map(List);
+
+to_map(Data) when is_binary(Data) ->
+    case jsx:is_json(Data) of
+        true->
+            jsx:decode(Data, [{labels, binary}, return_maps]);
+        _->
+            Data
+    end.
 
 list_to_map(List) -> list_to_map(List, #{}).
 list_to_map([], Map) -> Map;
@@ -970,3 +982,5 @@ gzip_no_header(Uncompressed) ->
     after
         zlib:close(Zstream)
     end.
+
+

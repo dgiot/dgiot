@@ -75,19 +75,9 @@ handle(OperationID, Args, Context, Req) ->
 %%%===================================================================
 %%% 内部函数 Version:API版本
 %%%===================================================================
-do_request(post_bacnetcallback, #{<<"data">> := Data} = Args, _Context, _Req) ->
-    io:format("~s ~p Args = ~p.~n", [?FILE, ?LINE, Args]),
-    List =
-        lists:foldl(fun(X, Acc) ->
-            case X of
-                #{<<"device">> := _Device, <<"properties">> := _Properties} ->
-
-                    pass;
-                _ ->
-                    Acc
-            end
-                    end, [], Data),
-    {ok, #{<<"code">> => 200, <<"data">> => List}};
+do_request(post_bacnetcallback, #{<<"data">> := Data} = _Args, _Context, _Req) ->
+    dgiot_bacnet:bacnetcallback(Data),
+    {ok, #{<<"code">> => 200, <<"data">> => Data}};
 
 do_request(get_bacnetcallback, #{<<"deviceid">> := Deviceid, <<"host">> := Host} = _Args, _Context, _Req) ->
     Url = <<"http://127.0.0.1:8080/BACnetController/scanProperties?deviceid=", Deviceid/binary, "&host=", Host/binary>>,

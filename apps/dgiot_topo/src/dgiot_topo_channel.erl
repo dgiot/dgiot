@@ -109,7 +109,6 @@ init(?TYPE, ChannelId, #{<<"product">> := Products, <<"BRIDGEURL">> := Bridgeurl
     },
     dgiot_data:insert(topourl, <<Bridgeurl/binary, "/iotapi/topo">>),
     dgiot_topo:get_Product(),
-    dgiot_parse_hook:subscribe(<<"Product">>, post, ChannelId),
     {ok, State}.
 
 %% 初始化池子
@@ -121,82 +120,6 @@ handle_init(#state{env = #{productids := ProductIds}} = State) ->
 handle_event(EventId, Event, _State) ->
     ?LOG(info, "channel ~p, ~p", [EventId, Event]),
     ok.
-
-handle_message({sync_parse, _Method, Args}, State) ->
-%%    io:format("Args ~p~n", [jsx:decode(Args, [{labels, binary}, return_maps])]),
-    case jsx:decode(Args, [{labels, binary}, return_maps]) of
-        #{<<"producttemplet">> := #{<<"className">> := <<"ProductTemplet">>, <<"objectId">> := ProducttempletId, <<"__type">> := <<"Pointer">>}, <<"objectId">> := ObjectId} ->
-            case dgiot_parse:query_object(<<"Dict">>, #{<<"where">> => #{<<"key">> => ProducttempletId, <<"class">> => <<"ProductTemplet">>}}) of
-                {ok, #{<<"results">> := Dicts}} ->
-                    DictRequests =
-                        lists:foldl(fun(Dict, Acc) ->
-                            NewDict = maps:without([<<"createdAt">>, <<"objectId">>, <<"updatedAt">>], Dict),
-                            Type = maps:get(<<"type">>, Dict, <<"">>),
-                            Title = maps:get(<<"title">>, Dict, <<"">>),
-                            DictId = dgiot_parse_id:get_dictid(ObjectId, Type, <<"Product">>, Title),
-                            Acc ++ [#{
-                                <<"method">> => <<"POST">>,
-                                <<"path">> => <<"/classes/Dict">>,
-                                <<"body">> => NewDict#{
-                                    <<"objectId">> => DictId,
-                                    <<"key">> => ObjectId,
-                                    <<"class">> => <<"Product">>}
-                            }]
-                                    end, [], Dicts),
-                    dgiot_parse:batch(DictRequests);
-                _ ->
-                    pass
-            end,
-            case dgiot_parse:query_object(<<"View">>, #{<<"where">> => #{<<"key">> => ProducttempletId, <<"class">> => <<"ProductTemplet">>}}) of
-                {ok, #{<<"results">> := Views}} when length(Views) > 0 ->
-                    ViewRequests =
-                        lists:foldl(fun(View, Acc) ->
-                            NewDict = maps:without([<<"createdAt">>, <<"objectId">>, <<"updatedAt">>], View),
-                            Type = maps:get(<<"type">>, View, <<"">>),
-                            Title = maps:get(<<"title">>, View, <<"">>),
-                            ViewId = dgiot_parse_id:get_viewid(ObjectId, Type, <<"Product">>, Title),
-                            Acc ++ [#{
-                                <<"method">> => <<"POST">>,
-                                <<"path">> => <<"/classes/View">>,
-                                <<"body">> => NewDict#{
-                                    <<"objectId">> => ViewId,
-                                    <<"key">> => ObjectId,
-                                    <<"class">> => <<"Product">>}
-                            }]
-                                    end, [], Views),
-                    dgiot_parse:batch(ViewRequests);
-                _ ->
-                    NewConfig = #{
-                        <<"konva">> => #{
-                            <<"Stage">> => #{
-                                <<"attrs">> => #{
-                                    <<"width">> => <<"1200">>,
-                                    <<"height">> => <<"700">>},
-                                <<"className">> => <<"Stage">>,
-                                <<"children">> => [#{
-                                    <<"attrs">> => #{
-                                        <<"id">> => <<"Layer_Thing">>},
-                                    <<"className">> => <<"Layer">>,
-                                    <<"children">> => [#{
-                                        <<"attrs">> => #{
-                                            <<"id">> => <<"bg">>,
-                                            <<"type">> => <<"bg-image">>,
-                                            <<"width">> => <<"1200">>,
-                                            <<"height">> => <<"700">>,
-                                            <<"src">> => <<"//img7.ddove.com/upload/20181127/134600237598.jpg?timestamp=1635422987361">>},
-                                        <<"className">> => <<"Image">>}]}]}}},
-                    dgiot_parse:create_object(<<"View">>, #{
-                        <<"title">> => ObjectId,
-                        <<"key">> => ObjectId,
-                        <<"type">> => <<"topo">>,
-                        <<"class">> => <<"Product">>,
-                        <<"data">> => NewConfig
-                    })
-            end;
-        _ ->
-            pass
-    end,
-    {ok, State};
 
 handle_message({deliver, _Topic, Msg}, #state{id = ChannelId} = State) ->
     Payload = dgiot_mqtt:get_payload(Msg),

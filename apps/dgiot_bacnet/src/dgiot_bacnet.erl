@@ -18,21 +18,38 @@
 -include_lib("dgiot/include/logger.hrl").
 
 -export([
-    scan_opc/1
+    bacnetcallback/1
 ]).
 
 
-%% 下发扫描OPC命令
-%% topic: dgiot_bacnet_da
-%% payload：
-%%{
-%%"cmdtype":"scan",
-%%"opcserver":"Kepware.KEPServerEX.V6"
-%%}
-scan_opc(#{<<"OPCSEVER">> := OpcServer, <<"Topic">> := Topic}) ->
-    Payload = #{
-        <<"cmdtype">> => <<"scan">>,
-        <<"opcserver">> => OpcServer
-    },
-    dgiot_mqtt:publish(<<"opcserver">>, Topic, jsx:encode(Payload)).
+bacnetcallback(Data) ->
+%%    io:format("~s ~p Data = ~p.~n", [?FILE, ?LINE, Data]),
+    lists:foldl(fun(X, Acc) ->
+        case X of
+            #{<<"device">> := Device, <<"properties">> := Properties} ->
+                HostAddress = maps:get(<<"hostAddress">>, Device, <<"">>),
+                Address = maps:get(<<"address">>, Device, HostAddress),
+                InstanceNumber = maps:get(<<"instanceNumber">>, Device, <<"">>),
+                Name = maps:get(<<"name">>, Device, <<Address/binary, "_", InstanceNumber/binary>>),
+                dgiot_device:create_device(#{
+                    <<"status">> => <<"ONLINE">>,
+                    <<"name">> => Name,
+                    <<"devaddr">> => <<Address/binary, "_", InstanceNumber/binary>>,
+                    <<"ip">> => HostAddress,
+                    <<"brand">> => <<"Bacnet">>,
+                    <<"devModel">> => <<"DGIOT_GROUP">>,
+                    <<"product">> => <<"ProductId">>,
+                    <<"basedata">> => X,
+                    <<"address">> => Address,
+                    <<"ACL">> => #{<<"role:admin">> => #{<<"read">> => true, <<"write">> => true}}}),
+%%                _Thing =
+                    lists:foldl(fun(Prop, Acc1) ->
+                        Id = maps:get(<<"id">>, Prop, HostAddress),
+                        Value = maps:get(<<"value">>, Prop, HostAddress),
+                        Acc1#{Id => Value}
+                                end, #{}, Properties);
+            _ ->
+                Acc
+        end
+                end, [], Data).
 

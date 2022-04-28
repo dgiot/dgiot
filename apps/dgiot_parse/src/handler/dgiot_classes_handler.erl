@@ -323,7 +323,7 @@ request_parse(OperationID, Args, Body, Headers, #{base_path := BasePath} = Conte
             end,
     Path = get_path(re:replace(dgiot_req:path(Req), BasePath, <<>>, [{return, binary}]),Type),
     Url = <<Path/binary, NewQs/binary>>,
-    io:format("~s ~p ~p~n", [?FILE, ?LINE, Url]),
+%%    io:format("~s ~p ~p~n", [?FILE, ?LINE, Url]),
     Method = dgiot_req:method(Req),
     request_parse(OperationID, Url, Method, Args, Body, Headers, Context, Req).
 
