@@ -707,7 +707,7 @@ wait_request(Time, Fun) ->
 get_JsonFile(Mod, FileName) ->
     {file, Here} = code:is_loaded(Mod),
     Dir = filename:dirname(filename:dirname(Here)),
-    Path = dgiot_httpc:url_join([Dir, "/priv/json/", dgiot_utils:to_list(FileName)]),
+    Path = dgiot_httpc:url_join([Dir, "/priv/json/", dgiot_utils:to_list(FileName)]) ,
     case catch file:read_file(Path) of
         {Err, Reason} when Err == 'EXIT'; Err == error ->
             ?LOG(error, "read  Path,~p error,~p ~n", [Path, Reason]),

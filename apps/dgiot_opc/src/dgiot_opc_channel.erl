@@ -107,7 +107,6 @@ init(?TYPE, ChannelId, ChannelArgs) ->
             <<"deviceinfo_list">> => Deviceinfo_list
             }
     },
-    dgiot_parse_hook:subscribe(<<"Device">>, post, ChannelId),
     {ok, State}.
 
 %% 初始化池子

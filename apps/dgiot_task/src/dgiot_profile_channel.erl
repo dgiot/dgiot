@@ -128,11 +128,11 @@ handle_message({check_profile, _Args}, State) ->
 %% }
 %%#state{env = #{<<"args">> := #{<<"mode">> := <<"incremental">>}}} =
 handle_message({sync_parse, put, _Table, _BeforeData, AfterData, DeviceId}, #state{env = #{<<"args">> := #{<<"mode">> := <<"incremental">>}}} = State) ->
-    dgiot_profile_hook:put('after',AfterData, DeviceId, <<"incremental">>),
+    dgiot_task_hook:put('after',AfterData, DeviceId, <<"incremental">>),
     {ok, State};
 
 handle_message({sync_parse, put, _Table, _Data, AfterData, DeviceId}, State) ->
-    dgiot_profile_hook:put('after', AfterData, DeviceId,  <<"">>),
+    dgiot_task_hook:put('after', AfterData, DeviceId,  <<"">>),
     {ok, State};
 
 handle_message(_Message, State) ->
