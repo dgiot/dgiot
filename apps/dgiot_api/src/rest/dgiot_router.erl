@@ -167,27 +167,10 @@ init(Req0, {swagger, Name} = Opts) ->
     Req =
         case dgiot_swagger:read(Name, Config) of
             {ok, Schema} ->
-                io:format("~s ~p ~p ~n", [?FILE, ?LINE, maps:keys(Schema)]),
-%%              Tags = maps:get(<<"tags">>,Schema),
-                Paths = maps:get(<<"paths">>, Schema),
-                NewPath =
-                    maps:fold(fun
-                                  (<<"/level/", _/binary>>, _V, Acc) ->
-                                      Acc;
-                                  (<<"/classes/", _/binary>>, _V, Acc) ->
-                                      Acc;
-                                  (<<"/schema/", _/binary>>, _V, Acc) ->
-                                      Acc;
-                                  (K, V, Acc) ->
-                                      Acc#{K => V}
-                              end, #{}, Paths),
-                List = lists:keysort(1,maps:to_list(NewPath)),
-                NewSchema = Schema#{
-                    <<"paths">> => maps:from_list(List)
-                },
+
                 dgiot_req:reply(200, ?HEADER#{
                     <<"content-type">> => <<"application/json; charset=utf-8">>
-                }, jsx:encode(NewSchema), Req0);
+                }, jsx:encode(filter(Schema)), Req0);
             {error, Reason} ->
                 dgiot_req:reply(500, ?HEADER#{
                     <<"content-type">> => <<"application/json; charset=utf-8">>
@@ -396,3 +379,24 @@ get_state_by_operation(OperationId) ->
         {error, empty} ->
             {error, not_find}
     end.
+
+%% todo 过滤swaager文件
+filter(Schema) ->
+%%    io:format("~s ~p ~p ~n", [?FILE, ?LINE, maps:keys(Schema)]),
+%%              Tags = maps:get(<<"tags">>,Schema),
+    Paths = maps:get(<<"paths">>, Schema),
+    NewPath =
+        maps:fold(fun
+                      (<<"/level/", _/binary>>, _V, Acc) ->
+                          Acc;
+%%                                  (<<"/classes/", _/binary>>, _V, Acc) ->
+%%                                      Acc;
+                      (<<"/schema/", _/binary>>, _V, Acc) ->
+                          Acc;
+                      (K, V, Acc) ->
+                          Acc#{K => V}
+                  end, #{}, Paths),
+    List = lists:keysort(1, maps:to_list(NewPath)),
+    Schema#{
+        <<"paths">> => maps:from_list(List)
+    }.
