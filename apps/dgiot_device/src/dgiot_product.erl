@@ -24,7 +24,7 @@
 -define(CONFIG(Key, Default), dgiot:get_env(dgiot_device, Key, Default)).
 -record(state, {}).
 
--export([start/0, load/0, load/1, init/3, handle_event/3, handle_message/2, stop/3]).
+-export([start/0, load_cache/1, load/1, init/3, handle_event/3, handle_message/2, stop/3]).
 -export([add_device/2, local/1, save/1, get/1, synchronize_device/1]).
 -export([add_handler/4, do_handler/3, del_handler/1]).
 -export([update_config/2, parse_frame/3, to_frame/2, delete/1, save_prod/2, lookup_prod/1]).
@@ -34,6 +34,20 @@
 start() ->
     dgiot_data:init(?MODULE),
     dgiot_channelx:add(?TYPE, ?CHANNEL, ?MODULE, #{}).
+
+
+load_cache(_T) ->
+    io:format("~s ~p ~p ~n",[?FILE, ?LINE, _T]),
+    Success = fun(Page) ->
+        lists:map(fun(#{<<"objectId">> := ObjectId, <<"productSecret">> := ProductSecret} = Product) ->
+            dgiot_mnesia:insert(ObjectId, ['Product', dgiot_parse_cache:get_acls(Product), ProductSecret]),
+            dgiot_product:save(Product)
+                  end, Page)
+              end,
+    Query = #{
+        <<"where">> => #{}
+    },
+    dgiot_parse_loader:start(<<"Product">>, Query, 0, 100, 1000000, Success).
 
 %% 载入产品
 load(ProductId) ->
@@ -133,16 +147,6 @@ synchronize_device(ProductId) ->
             {error, Reason}
     end.
 
-load() ->
-    Success = fun(Page) ->
-        lists:map(fun(Product) ->
-            dgiot_product:save(Product)
-                  end, Page)
-              end,
-    Query = #{
-        <<"where">> => #{}
-    },
-    dgiot_parse_loader:start(<<"Product">>, Query, 0, 100, 1000000, Success).
 
 
 %% 存储产品

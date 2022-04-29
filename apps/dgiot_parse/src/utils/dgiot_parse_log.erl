@@ -40,7 +40,7 @@ send(#{error_logger := _Error_logger, mfa := {M, F, A}} = _Meta, Payload) ->
     NewMap = maps:with([<<"domain">>, <<"time">>, <<"pid">>, <<"msg">>, <<"mfa">>, <<"line">>, <<"level">>, <<"clientid">>, <<"topic">>, <<"peername">>], Map),
     dgiot_parse_cache:save_to_cache(#{<<"method">> => <<"POST">>,
         <<"path">> => <<"/classes/Log">>,
-        <<"body">> => get_body(NewMap)});
+        <<"body">> => get_body(NewMap#{<<"time">> =>  dgiot_datetime:now_ms()})});
 
 send(#{mfa := _MFA} = Meta, Payload) ->
     Map = jiffy:decode(Payload, [return_maps]),
@@ -72,7 +72,7 @@ send(#{mfa := _MFA} = Meta, Payload) ->
     dgiot_parse_cache:save_to_cache(#{
         <<"method">> => <<"POST">>,
         <<"path">> => <<"/classes/Log">>,
-        <<"body">> => get_body(NewMap)});
+        <<"body">> => get_body(NewMap#{<<"time">> =>  dgiot_datetime:now_ms()})});
 
 send(_Meta, Payload) ->
     dgiot_mqtt:publish(<<"logger_trace_other">>, <<"logger_trace/other">>, Payload),
