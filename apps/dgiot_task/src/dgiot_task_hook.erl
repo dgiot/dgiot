@@ -14,7 +14,7 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
--module(dgiot_profile_hook).
+-module(dgiot_task_hook).
 -author("jonhliu").
 -include("dgiot_task.hrl").
 -include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
@@ -95,8 +95,36 @@ put('after', AfterData, DeviceId, _) ->
 
 delete('before', _BeforeData, _ProductId) ->
     ok;
-delete('after', _AfterData, _ProductId) ->
-    ok.
+delete('after', #{<<"objectId">> := DtuId}, _ProductId) ->
+    dgiot_task:del_pnque(DtuId),
+    case dgiot_parse:query_object(<<"Dict">>, #{<<"where">> => #{<<"key">> => DtuId, <<"class">> => <<"Device">>}}) of
+        {ok, #{<<"results">> := Dicts}} ->
+            DictRequests =
+                lists:foldl(fun(#{<<"objectId">> := DictId}, Acc) ->
+                    Acc ++ [#{
+                        <<"method">> => <<"DELETE">>,
+                        <<"path">> => <<"/classes/Dict/", DictId/binary>>,
+                        <<"body">> => #{}
+                    }]
+                            end, [], Dicts),
+            dgiot_parse:batch(DictRequests);
+        _ ->
+            pass
+    end,
+    case dgiot_parse:query_object(<<"View">>, #{<<"where">> => #{<<"key">> => DtuId, <<"class">> => <<"Device">>}}) of
+        {ok, #{<<"results">> := Views}} ->
+            ViewRequests =
+                lists:foldl(fun(#{<<"objectId">> := ViewId}, Acc) ->
+                    Acc ++ [#{
+                        <<"method">> => <<"DELETE">>,
+                        <<"path">> => <<"/classes/View/", ViewId/binary>>,
+                        <<"body">> => #{}
+                    }]
+                            end, [], Views),
+            dgiot_parse:batch(ViewRequests);
+        _ ->
+            pass
+    end.
 
 get_modifyprofile(DeviceId, Profile) ->
     case dgiot_data:get(?PROFILE, DeviceId) of

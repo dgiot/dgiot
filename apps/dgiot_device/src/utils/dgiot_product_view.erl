@@ -56,5 +56,5 @@ post(ProductId) ->
         <<"key">> => ProductId,
         <<"type">> => <<"topo">>,
         <<"class">> => <<"Product">>,
-        <<"data">> =>  dgiot_utils:get_JsonFile(?MODULE,<<"konva">>)
+        <<"data">> =>  dgiot_utils:get_JsonFile(?MODULE,<<"konva.json">>)
     }).

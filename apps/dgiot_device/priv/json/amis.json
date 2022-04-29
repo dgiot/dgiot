@@ -1,83 +1,124 @@
 {
-      "properties": [
+  "type": "page",
+  "body": [
+    {
+      "tabs": [
         {
-          "identifier": "Uab",
-          "dataType": {
-            "specs": {
-              "unit": "V",
-              "min": "0",
-              "unitName": "伏特",
-              "max": "10000000000",
-              "step": "0.01"
-            },
-            "type": "double"
-          },
-          "name": "AB线电压",
-          "accessMode": "r",
-          "required": false
-        },
-        {
-          "identifier": "COSa",
-          "dataType": {
-            "specs": {
-              "min": "-1.00",
-          "unitName": "无",
-          "max": "1.00",
-          "step": "0.01"
-        },
-        "type": "double"
-      },
-      "name": "A相功率因数",
-      "accessMode": "r",
-      "required": false
-    },
-    {
-      "identifier": "electric_pfa",
-      "dataType": {
-        "specs": {
-          "unit": "kW",
-          "min": "0",
-          "unitName": "千瓦",
-          "max": "1000000",
-          "step": "0.01"
-        },
-        "type": "double"
-      },
-      "name": "A相功率因素",
-      "accessMode": "r",
-      "required": false
-    },
-    {
-      "identifier": "electric_pqa",
-      "dataType": {
-        "specs": {
-          "unit": "kvar",
-          "min": "0",
-          "unitName": "千乏",
-          "max": "10000000",
-          "step": "0.01"
-        },
-        "type": "double"
-      },
-      "name": "A相无功功率",
-      "accessMode": "r",
-      "required": false
-    },
-    {
-      "identifier": "electric_psa",
-      "dataType": {
-        "specs": {
-          "unit": "KVA",
-          "min": "0",
-          "unitName": "千伏安",
-          "max": "100000000",
-          "step": "0.01"
-        },
-        "type": "double"
-      },
-      "name": "A相视在功率",
-      "accessMode": "r",
-      "required": false
+          "body": [
+            {
+              "type": "form",
+              "title": "表单",
+              "body": [
+                {
+                  "mode": "inline",
+                  "name": "name",
+                  "size": "",
+                  "type": "input-text",
+                  "label": "设备名称",
+                  "disabled": true,
+                  "readOnly": true,
+                  "horizontal": {
+                    "left": 4,
+                    "right": 8,
+                    "leftFixed": ""
+                  }
+                },
+                {
+                  "mode": "inline",
+                  "name": "devaddr",
+                  "size": "",
+                  "type": "input-text",
+                  "label": "设备编号",
+                  "disabled": true,
+                  "readOnly": true,
+                  "horizontal": {
+                    "left": 4,
+                    "right": 8,
+                    "leftFixed": ""
+                  }
+                },
+                {
+                  "mode": "inline",
+                  "name": "address",
+                  "size": "",
+                  "type": "input-text",
+                  "label": "安装位置:",
+                  "disabled": true,
+                  "readOnly": true,
+                  "horizontal": {
+                    "left": 4,
+                    "right": 8,
+                    "leftFixed": ""
+                  }
+                },
+                {
+                  "mode": "inline",
+                  "name": "detail.assetNum",
+                  "size": "",
+                  "type": "input-text",
+                  "label": "入网编号",
+                  "disabled": true,
+                  "readOnly": true,
+                  "horizontal": {
+                    "left": 4,
+                    "right": 8,
+                    "leftFixed": ""
+                  }
+                },
+                {
+                  "mode": "inline",
+                  "name": "status",
+                  "size": "",
+                  "type": "switch",
+                  "label": "启用状态",
+                  "disabled": true,
+                  "readOnly": true,
+                  "horizontal": {
+                    "left": 4,
+                    "right": 8,
+                    "leftFixed": ""
+                  },
+                  "optionAtLeft": false,
+                  "trueValue": "ONLINE",
+                  "falseValue": "OFFLINE",
+                  "onText": "启用",
+                  "offText": "禁用"
+                },
+                {
+                  "type": "static-date",
+                  "label": "更新时间",
+                  "name": "updatedAt",
+                  "mode": "inline"
+                },
+                {
+                  "mode": "inline",
+                  "name": "createdAt",
+                  "type": "static-datetime",
+                  "label": "添加时间",
+                  "copyable": false,
+                  "quickEdit": false,
+                  "borderMode": "half",
+                  "placeholder": "",
+                  "valueFormat": "x"
+                }
+              ],
+              "initApi": {
+                "url": "iotapi/amis/Device/parse_objectid",
+                "method": "get",
+                "adaptor": "return {\r\n \"status\":0,\r\n \"msg\":\"\",\r\n \"data\":response.data\r\n }",
+                "headers": {
+                  "store": "localStorage",
+                  "dgiotReplace": "parse_objectid"
+                },
+                "dataType": "json"
+              }
+            }
+          ],
+          "icon": "fa fa-slideshare",
+          "title": "设备信息"
+        }
+      ],
+      "type": "tabs"
     }
   ]
 }

@@ -28,5 +28,5 @@ post(ProductId) ->
         <<"key">> => ProductId,
         <<"type">> => <<"amis">>,
         <<"class">> => <<"Product">>,
-        <<"data">> => dgiot_utils:get_JsonFile(?MODULE,<<"amis">>)
+        <<"data">> => dgiot_utils:get_JsonFile(?MODULE,<<"amis.json">>)
     }).

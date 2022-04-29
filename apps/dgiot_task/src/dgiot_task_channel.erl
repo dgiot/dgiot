@@ -218,43 +218,9 @@ handle_event(_EventId, Event, State) ->
     ?LOG(info, "channel ~p", [Event]),
     {ok, State}.
 
-handle_message({sync_parse, delete, _Table, _Data, NewData}, State) ->
+handle_message({sync_parse, delete, _Table, _BeforeData, AfterData, DeviceId}, State) ->
 %%    io:format("DeviceArgs ~p~n", [jsx:decode(Args, [{labels, binary}, return_maps])]),
-    case jsx:decode(NewData, [return_maps]) of
-        #{<<"objectId">> := DtuId} ->
-%%            从队列删除该设备
-            dgiot_task:del_pnque(DtuId),
-            case dgiot_parse:query_object(<<"Dict">>, #{<<"where">> => #{<<"key">> => DtuId, <<"class">> => <<"Device">>}}) of
-                {ok, #{<<"results">> := Dicts}} ->
-                    DictRequests =
-                        lists:foldl(fun(#{<<"objectId">> := DictId}, Acc) ->
-                            Acc ++ [#{
-                                <<"method">> => <<"DELETE">>,
-                                <<"path">> => <<"/classes/Dict/", DictId/binary>>,
-                                <<"body">> => #{}
-                            }]
-                                    end, [], Dicts),
-                    dgiot_parse:batch(DictRequests);
-                _ ->
-                    pass
-            end,
-            case dgiot_parse:query_object(<<"View">>, #{<<"where">> => #{<<"key">> => DtuId, <<"class">> => <<"Device">>}}) of
-                {ok, #{<<"results">> := Views}} ->
-                    ViewRequests =
-                        lists:foldl(fun(#{<<"objectId">> := ViewId}, Acc) ->
-                            Acc ++ [#{
-                                <<"method">> => <<"DELETE">>,
-                                <<"path">> => <<"/classes/View/", ViewId/binary>>,
-                                <<"body">> => #{}
-                            }]
-                                    end, [], Views),
-                    dgiot_parse:batch(ViewRequests);
-                _ ->
-                    pass
-            end;
-        _ ->
-            pass
-    end,
+    dgiot_task_hook:delete('after', AfterData, DeviceId),
     {ok, State};
 
 handle_message(_Message, State) ->

@@ -19,8 +19,7 @@
 -include("dgiot_parse.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -dgiot_data("ets").
--export([test/0, init_ets/0, cache_classes/1, lookup_count/2, get_count/2, loop_count/1, get_roleids/1, get_alcname/1, get_acls/1]).
--export([get_count/3]).
+-export([test/0, init_ets/0, cache_classes/1, add_count/1, lookup_count/1, lookup_count/2, get_count/2, get_count/3, loop_count/1, get_roleids/1, get_alcname/1, get_acls/1]).
 -export([do_save/1, save_to_cache/1, save_to_cache/2, save_test/1]).
 
 init_ets() ->
@@ -128,10 +127,8 @@ cache_classes(Order) ->
     case dgiot_parse:get_schemas() of
         {ok, #{<<"results">> := Results}} ->
             lists:map(fun
-                          (#{<<"className">> := <<"Log">>}) ->
-                              loop_count(<<"Log">>);
                           (#{<<"className">> := <<"_Session">>}) ->
-                              loop_count(<<"_Session">>);
+                              pass;
                           (#{<<"className">> := <<"Device">>}) ->
                               Success = fun(Page) ->
                                   lists:map(fun(Device) ->
@@ -145,7 +142,6 @@ cache_classes(Order) ->
                               },
                               dgiot_parse_loader:start(<<"Device">>, Query, 0, 500, 1000000, Success);
                           (#{<<"className">> := CLasseName}) ->
-                              dgiot_data:init(?CLASS(CLasseName)),
                               Success = fun(Page) ->
                                   lists:map(fun
                                                 (#{<<"objectId">> := ObjectId} = Class) ->
@@ -159,7 +155,7 @@ cache_classes(Order) ->
                                   <<"order">> => Order,
                                   <<"where">> => #{}
                               },
-                              dgiot_parse_loader:start(CLasseName, Query, 0, 500, 1000000, Success);
+                              dgiot_parse_loader:start(CLasseName, Query, 0, 1000, 1000000, Success);
                           (_) ->
                               pass
                       end, Results);
@@ -170,11 +166,19 @@ cache_classes(Order) ->
 get_acls(Device) when is_map(Device) ->
     Acl = maps:get(<<"ACL">>, Device, #{}),
     get_acls(maps:keys(Acl));
+get_acls(Acls) when length(Acls) == 0 ->
+    ['*'];
 get_acls(Acls) when is_list(Acls) ->
     AclsNames =
-        lists:foldl(fun(RoleName, Acc) ->
-            Acc ++ [?ACL(dgiot_utils:to_binary(RoleName))]
-                    end, [], Acls),
+        lists:foldl(
+            fun
+                (RoleName, Acc) when is_atom(RoleName) ->
+                    Acc ++ [RoleName];
+                (RoleName, Acc) when is_binary(RoleName)->
+                    Acc ++ [?ACL(RoleName)]
+            end,
+            [], Acls),
+
     case length(AclsNames) of
         0 ->
             ['*'];
@@ -210,12 +214,13 @@ get_roleids(Acls) when is_list(Acls) ->
 get_alcname(RoleId) ->
     case dgiot_data:get(?ROLE_ETS, dgiot_utils:to_binary(RoleId)) of
         #{<<"name">> := Name} ->
-            ?ACL(<<"role:", Name/binary>>);
+            ?ACL(<<"role:", Name/binary,""/utf8>>);
         _ -> %%  * or userid
             ?ACL(RoleId)
     end.
 
-%% dgiot_parse_cache:get_count[<<"Device">>, <<"role:root">>,acl]
+%% dgiot_parse_cache:get_count(<<"Device">>, [<<"role:root">>],acl).
+%% dgiot_parse_cache:get_count(<<"ProductTemplet">>, [<<"role:root">>],acl).
 get_count(Class, Acls, acl) ->
     ChildAcls =
         lists:foldl(
@@ -232,28 +237,18 @@ get_count(Class, RoleId, roleid) ->
                        end, [get_alcname(RoleId)], ChildRoleIds),
     get_count(Class, Acls).
 
-get_count(<<"Log">>, _RoleIds) ->
-    #{
-        <<"count">> => dgiot_data:get({parse_count, 'Log'})
-    };
-
-get_count(<<"_Session">>, _RoleIds) ->
-    #{
-        <<"count">> => dgiot_data:get({parse_count, '_Session'})
-    };
-
-get_count(<<"Product">>, Acls) ->
+get_count({<<"Product">>}, Acls) ->
     lists:map(
         fun
             (ProductId) ->
-                init_count(dgiot_utils:to_atom(dgiot_utils:to_list(ProductId) ++ "_Device_true")),
-                init_count(dgiot_utils:to_atom(dgiot_utils:to_list(ProductId) ++ "_Device_false"))
+                init_count(dgiot_utils:to_list(ProductId) ++ "_Device_true"),
+                init_count(dgiot_utils:to_list(ProductId) ++ "_Device_false")
         end,
         dgiot_data:keys(dgiot_product)),
-    init_count('Product'),
-    get_count(<<"Device">>, Acls),
+    init_count(<<"Product">>),
+    get_count({<<"Device">>}, Acls),
     #{
-        <<"count">> => dgiot_data:get({parse_count, 'Product'})
+        <<"count">> => lookup_count(<<"Product">>)
     };
 
 get_count(<<"Device">>, Acls) ->
@@ -262,16 +257,23 @@ get_count(<<"Device">>, Acls) ->
     init_count('Device_false'),
     loop_count(Acls ++ ['*']),
     #{
-        <<"count">> => dgiot_data:get({parse_count, 'Device'}),
-        <<"online">> => dgiot_data:get({parse_count, 'Device_true'}),
-        <<"offline">> => dgiot_data:get({parse_count, 'Device_false'})
+        <<"count">> => lookup_count(<<"Device">>),
+        <<"online">> => lookup_count(<<"Device_true">>),
+        <<"offline">> => lookup_count(<<"Device_false">>)
     };
+
+
+get_count({ClassesName, Type}, Acls) ->
+    Class = dgiot_utils:to_atom(ClassesName),
+    init_count(Class),
+    loop_count(Acls ++ ['*']),
+    #{<<"count">> => get({parse_count, Class, Type})};
 
 get_count(ClassesName, Acls) ->
     Class = dgiot_utils:to_atom(ClassesName),
     init_count(Class),
     loop_count(Acls ++ ['*']),
-    #{<<"count">> => dgiot_data:get({parse_count, Class})}.
+    #{<<"count">> => lookup_count(Class)}.
 
 loop_count(CLasseName) when is_binary(CLasseName) ->
     Class = dgiot_utils:to_atom(CLasseName),
@@ -288,24 +290,24 @@ loop_count(CLasseName) when is_binary(CLasseName) ->
     dgiot_parse_loader:start(CLasseName, Query, 0, 500, 1000000, Success);
 
 loop_count(QueryAcls) ->
+    AtomQueryAcls = get_acls(QueryAcls),
     Fun3 =
         fun
             ({_, _, ['Device', Acls, Status, _Time, _Devaddr, ProductId | _]}) ->
-                case QueryAcls -- Acls of
-                    QueryAcls ->
+                case AtomQueryAcls -- Acls of
+                    AtomQueryAcls ->
                         pass;
                     _ ->
-                        add_count('Device'),
-                        add_count(list_to_atom("Device_" ++ dgiot_utils:to_list(Status))),
-                        add_count(list_to_atom("Device_" ++ dgiot_utils:to_list(Status)), list_to_atom(dgiot_utils:to_list(ProductId)))
+                        add_count(<<"Device">>),
+                        add_count("Device_" ++ dgiot_utils:to_list(Status)),
+                        add_count("Device_" ++ dgiot_utils:to_list(Status), dgiot_utils:to_list(ProductId))
                 end;
             ({_, _, [ClassesName, Acls | _]}) ->
-                case QueryAcls -- Acls of
-                    QueryAcls ->
+                case AtomQueryAcls -- Acls of
+                    AtomQueryAcls ->
                         pass;
                     _ ->
-                        Class = dgiot_utils:to_atom(ClassesName),
-                        add_count(Class)
+                        add_count(ClassesName)
                 end
         end,
     dgiot_mnesia:search(Fun3, #{<<"skip">> => 0, <<"limit">> => 1000000}).
@@ -313,24 +315,27 @@ loop_count(QueryAcls) ->
 init_count(Class) ->
     init_count(Class, all).
 init_count(Class, Type) ->
-    dgiot_data:insert(?CLASS_COUNT_ETS, {parse_count, Class, Type}, 0).
+    put({self(), dgiot_utils:to_atom(Class), dgiot_utils:to_atom(Type)}, 0).
+
 add_count(Class) ->
     add_count(Class, all).
 add_count(Class, Type) ->
-    case dgiot_data:get(?CLASS_COUNT_ETS, {parse_count, Class, Type}) of
-        not_find ->
-            dgiot_data:insert(?CLASS_COUNT_ETS, {parse_count, Class, Type}, 1);
+    AtomClass = dgiot_utils:to_atom(Class),
+    AtomType = dgiot_utils:to_atom(Type),
+    case erlang:get({self(), AtomClass, AtomType}) of
+        undefined ->
+            erlang:put({self(), AtomClass, AtomType}, 1);
         Count ->
-            dgiot_data:insert(?CLASS_COUNT_ETS, {parse_count, Class, Type}, Count + 1)
+            NewCount = Count + 1,
+            erlang:put({self(), AtomClass, AtomType}, NewCount)
     end.
 
+lookup_count(Class) ->
+    lookup_count(Class, all).
 lookup_count(Class, Type) ->
-    case dgiot_data:get(?CLASS_COUNT_ETS, {parse_count, dgiot_utils:to_atom(Class), dgiot_utils:to_atom(Type)}) of
-        not_find ->
-            0;
-        Count ->
-            Count
-    end.
+    AtomClass = dgiot_utils:to_atom(Class),
+    AtomType = dgiot_utils:to_atom(Type),
+    erlang:get({self(), AtomClass, AtomType}).
 
 test() ->
     Fun3 = fun
