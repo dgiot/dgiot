@@ -13,9 +13,17 @@ start(_StartType, _StartArgs) ->
     {ok, Sup} = dgiot_device_sup:start_link(),
     dgiot_product:start(),
     dgiot_protocol:start(),
-    dgiot_product_hook:start(),
+    start_hook(),
     {ok, Sup}.
 
 stop(_State) ->
-    dgiot_product_hook:stop(),
+    stop_hook(),
     ok.
+
+start_hook() ->
+    dgiot_hook:add(one_for_one, {'parse_cache_classes', <<"Product">>}, fun dgiot_product:load_cache/1),
+    dgiot_hook:add(one_for_one, {'parse_cache_classes', <<"Device">>}, fun dgiot_device:load_cache/1).
+
+stop_hook() ->
+    dgiot_hook:add(one_for_one, {'parse_cache_classes', <<"Product">>}),
+    dgiot_hook:add(one_for_one, {'parse_cache_classes', <<"Device">>}).

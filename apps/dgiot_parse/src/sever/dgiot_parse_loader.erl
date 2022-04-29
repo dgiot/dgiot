@@ -138,14 +138,14 @@ load_page(#state{
                 {ok, Page} ->
                     Total = min(Count - (PageFirst - 1) * PageSize, MaxTotal),
                     LoadCount = (PageIndex - PageFirst) * PageSize + length(Page),
-                    Rate = io_lib:format("~.2f%", [LoadCount / Total * 100]),
+%%                    Rate = io_lib:format("~.2f%", [LoadCount / Total * 100]),
                     Callback(Page),
                     LastCount = Total - LoadCount,
                     case LastCount =< 0 of
                         true ->
                             self() ! complete;
                         false ->
-                            ?LOG(info,"~s Load ~s [~p/~p] Index:~p", [Rate, Class, LoadCount, Total, PageIndex]),
+%%                            ?LOG(info,"~s Load ~s [~p/~p] Index:~p", [Rate, Class, LoadCount, Total, PageIndex]),
                             case LastCount > PageSize of
                                 true ->
                                     load_page(State#state{page_index = PageIndex + 1});

@@ -19,8 +19,8 @@
 -include("dgiot_parse.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -dgiot_data("ets").
--export([test/0, init_ets/0, cache_classes/1, add_count/1, lookup_count/1, lookup_count/2, get_count/2, get_count/3, loop_count/1, get_roleids/1, get_alcname/1, get_acls/1]).
--export([do_save/1, save_to_cache/1, save_to_cache/2, save_test/1]).
+-export([test/0, init_ets/0, cache_classes/0, add_count/1, lookup_count/1, lookup_count/2, get_count/2, get_count/3, loop_count/1, get_roleids/1, get_alcname/1, get_acls/1]).
+-export([start_cache/1, load/1, do_save/1, save_to_cache/1, save_to_cache/2, save_test/1]).
 
 init_ets() ->
     dgiot_data:init(?DGIOT_PARSE_ETS),
@@ -31,6 +31,40 @@ init_ets() ->
     dgiot_data:init(?NAME_ROLE_ETS),
     dgiot_data:init(?CLASS_COUNT_ETS),
     dgiot_data:init(?PARENT_ROLE_ETS, [public, named_table, bag, {write_concurrency, true}, {read_concurrency, true}]).
+
+start_cache(_Pid) ->
+    dgiot_role:load_roles(),
+    dgiot_parse_auth:load_roleuser(),
+    cache_classes().
+
+cache_classes() ->
+    case dgiot_parse:get_schemas() of
+        {ok, #{<<"results">> := Results}} ->
+            lists:map(fun(#{<<"className">> := CLasseName}) ->
+                case catch dgiot_hook:run_hook({'parse_cache_classes', CLasseName}, [CLasseName]) of
+                    {ok, _} ->
+                        pass;
+                    _ ->
+                        load(CLasseName)
+                end
+                      end, Results);
+        _ ->
+            pass
+    end.
+
+load(CLasseName) ->
+    io:format("~s ~p ~p ~n",[?FILE, ?LINE, CLasseName]),
+    Success = fun(Page) ->
+        lists:map(fun(#{<<"objectId">> := ObjectId} = Class) ->
+            dgiot_mnesia:insert(ObjectId, [binary_to_atom(CLasseName), get_acls(Class)])
+                  end, Page)
+              end,
+    Query = #{
+        <<"keys">> => [<<"ACL">>],
+        <<"order">> => <<"updatedAt">>,
+        <<"where">> => #{}
+    },
+    dgiot_parse_loader:start(CLasseName, Query, 0, 500, 1000000, Success).
 
 %% 先缓存定时存库
 save_to_cache(Requests) ->
@@ -123,43 +157,6 @@ save_test(Count) ->
         }
     }) || I <- lists:seq(1, Count)], ok.
 
-cache_classes(Order) ->
-    case dgiot_parse:get_schemas() of
-        {ok, #{<<"results">> := Results}} ->
-            lists:map(fun
-                          (#{<<"className">> := <<"Device">>}) ->
-                              Success = fun(Page) ->
-                                  lists:map(fun(Device) ->
-                                      dgiot_device:save(Device)
-                                            end, Page)
-                                        end,
-                              Query = #{
-                                  <<"order">> => Order,
-                                  <<"keys">> => [<<"ACL">>, <<"devaddr">>, <<"product">>, <<"deviceSecret">>],
-                                  <<"where">> => #{}
-                              },
-                              dgiot_parse_loader:start(<<"Device">>, Query, 0, 500, 1000000, Success);
-                          (#{<<"className">> := CLasseName}) ->
-                              Success = fun(Page) ->
-                                  lists:map(fun
-                                                (#{<<"objectId">> := ObjectId} = Class) ->
-                                                    dgiot_mnesia:insert(ObjectId, [binary_to_atom(CLasseName), get_acls(Class)]);
-                                                (_) ->
-                                                    pass
-                                            end, Page)
-                                        end,
-                              Query = #{
-                                  <<"keys">> => [<<"ACL">>],
-                                  <<"order">> => Order,
-                                  <<"where">> => #{}
-                              },
-                              dgiot_parse_loader:start(CLasseName, Query, 0, 500, 1000000, Success);
-                          (_) ->
-                              pass
-                      end, Results);
-        _ ->
-            pass
-    end.
 
 get_acls(Device) when is_map(Device) ->
     Acl = maps:get(<<"ACL">>, Device, #{}),
@@ -235,31 +232,14 @@ get_count(Class, RoleId, roleid) ->
                        end, [get_alcname(RoleId)], ChildRoleIds),
     get_count(Class, Acls).
 
-get_count({<<"Product">>}, Acls) ->
-    lists:map(
-        fun
-            (ProductId) ->
-                init_count(dgiot_utils:to_list(ProductId) ++ "_Device_true"),
-                init_count(dgiot_utils:to_list(ProductId) ++ "_Device_false")
-        end,
-        dgiot_data:keys(dgiot_product)),
-    init_count(<<"Product">>),
-    get_count({<<"Device">>}, Acls),
-    #{
-        <<"count">> => lookup_count(<<"Product">>)
-    };
-
 get_count(<<"Device">>, Acls) ->
-    init_count('Device'),
-    init_count('Device_true'),
-    init_count('Device_false'),
+    init_count(<<"Device">>),
     loop_count(Acls ++ ['*']),
     #{
         <<"count">> => lookup_count(<<"Device">>),
         <<"online">> => lookup_count(<<"Device_true">>),
         <<"offline">> => lookup_count(<<"Device_false">>)
     };
-
 
 get_count({ClassesName, Type}, Acls) ->
     Class = dgiot_utils:to_atom(ClassesName),
@@ -289,6 +269,16 @@ loop_count(CLasseName) when is_binary(CLasseName) ->
 
 loop_count(QueryAcls) ->
     AtomQueryAcls = get_acls(QueryAcls),
+    init_count(<<"Device_true">>),
+    init_count(<<"Device_false">>),
+    lists:map(
+        fun
+            (ProductId) ->
+                init_count(<<"Device">>, ProductId),
+                init_count(<<"Device_true">>, ProductId),
+                init_count(<<"Device_false">>, ProductId)
+        end,
+        dgiot_data:keys(dgiot_product)),
     Fun3 =
         fun
             ({_, _, ['Device', Acls, Status, _Time, _Devaddr, ProductId | _]}) ->

@@ -314,7 +314,6 @@ request_parse(OperationID, Args, Body, Headers, #{base_path := BasePath} = Conte
                 ({N, V}, Acc) ->
                     <<Acc/binary, "&", N/binary, "=", V/binary>>
             end, <<>>, dgiot_req:parse_qs(Req)),
-    io:format("~s ~p ~p~n", [?FILE, ?LINE, OperationID]),
     {Method2, Type2, Id} =
         case re:split(OperationID, <<"_">>) of
             [Method1, Type, _Table, ObjectId | _] ->

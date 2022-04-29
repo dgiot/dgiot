@@ -21,8 +21,6 @@
 
 -export([post/2, put/3, delete/3]).
 
--export([get_count/2, start/0, stop/0]).
-
 post('before', BeforeData) ->
     case BeforeData of
         #{<<"objectId">> := ProductId, <<"channel">> := Channel} ->
@@ -49,7 +47,7 @@ post('after', AfterData) ->
                 {ok, #{<<"results">> := Views}} when length(Views) > 0 ->
                     dgiot_product_view:post_batch(Views, ProductId);
                 _ ->
-                    dgiot_product_konva:post(ProductId)
+                    dgiot_product_knova:post(ProductId)
             end;
         _ ->
             pass
@@ -94,13 +92,3 @@ delete('after', AfterData, ProductId) ->
         _ ->
             pass
     end.
-
-
-get_count(QueryAcls, Products) ->
-    dgiot_device:count(QueryAcls, Products).
-
-start() ->
-    dgiot_hook:add(one_for_one, {'parse_get_count', <<"Prodcut">>}, fun ?MODULE:get_count/2).
-
-stop() ->
-    dgiot_hook:add(one_for_one, {'parse_get_count', <<"Prodcut">>}).

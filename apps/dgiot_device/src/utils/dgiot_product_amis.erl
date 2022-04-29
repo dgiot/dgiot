@@ -21,7 +21,7 @@
 
 -export([post/1]).
 
-
+%%dgiot_product_amis:post(<<"d0cb711d3d">>).
 post(ProductId) ->
     dgiot_parse:create_object(<<"View">>, #{
         <<"title">> => ProductId,

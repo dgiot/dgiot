@@ -14,19 +14,20 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
--module(dgiot_product_konva).
+-module(dgiot_product_knova).
 -author("kenneth").
 -include("dgiot_device.hrl").
 -include_lib("dgiot/include/logger.hrl").
 
 -export([post/1]).
 
-
+%%dgiot_product_knova:post(<<"d0cb711d3d">>).
 post(ProductId) ->
     dgiot_parse:create_object(<<"View">>, #{
         <<"title">> => ProductId,
         <<"key">> => ProductId,
         <<"type">> => <<"topo">>,
         <<"class">> => <<"Product">>,
-        <<"data">> => dgiot_utils:get_JsonFile(?MODULE,<<"konva.json">>)
+        <<"data">> => dgiot_utils:get_JsonFile(?MODULE,<<"knova.json">>)
     }).
+

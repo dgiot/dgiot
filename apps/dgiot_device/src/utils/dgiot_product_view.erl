@@ -50,11 +50,12 @@ delete_batch(Views) ->
                     end, [], Views),
     dgiot_parse:batch(ViewRequests).
 
+%%dgiot_product_view:post(<<"d0cb711d3d">>).
 post(ProductId) ->
     dgiot_parse:create_object(<<"View">>, #{
         <<"title">> => ProductId,
         <<"key">> => ProductId,
         <<"type">> => <<"topo">>,
         <<"class">> => <<"Product">>,
-        <<"data">> =>  dgiot_utils:get_JsonFile(?MODULE,<<"konva.json">>)
+        <<"data">> =>  dgiot_utils:get_JsonFile(?MODULE,<<"knonva.json">>)
     }).

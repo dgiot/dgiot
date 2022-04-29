@@ -102,7 +102,7 @@ init(?TYPE, ChannelId, Args) ->
         <<"products">> => Products,
         <<"args">> => NewArgs}
     },
-    dgiot_parse_hook:subscribe(<<"Device/*">>, put, ChannelId),
+%%    dgiot_parse_hook:subscribe(<<"Device/*">>, put, ChannelId),
     {ok, State, []}.
 
 handle_init(#state{id = _ChannelId, env = #{<<"products">> := _Products, <<"args">> := _Args}} = State) ->

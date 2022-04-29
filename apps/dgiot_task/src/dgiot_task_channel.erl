@@ -209,7 +209,7 @@ handle_init(#state{id = ChannelId, env = #{<<"products">> := Products, <<"args">
         dgiot_data:insert({?TASK_ARGS, ProductId}, NewArgs),
         dgiot_task:load(NewArgs)
               end, Products),
-    dgiot_parse_hook:subscribe(<<"Device">>, delete, ChannelId),
+%%    dgiot_parse_hook:subscribe(<<"Device">>, delete, ChannelId),
     dgiot_task:timing_start(Args#{<<"channel">> => ChannelId}),
     {ok, State}.
 
