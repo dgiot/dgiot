@@ -403,6 +403,9 @@ do_request_after(Method0, Path, BeforData, AfterData, ResBody, Options) ->
             _ ->
                 method(Method0, atom)
         end,
+%%    <<"get_amis_device_id">>
+%%    dgiot_parse_rest.erl 407 get <<"/classes/Product/383e6240e2">>
+%%    io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Method, Path]),
     {match, PathList} = re:run(Path, <<"([^/]+)">>, [global, {capture, all_but_first, binary}]),
     dgiot_parse_hook:do_request_hook('after', lists:concat(PathList), Method, BeforData, AfterData, ResBody).
 

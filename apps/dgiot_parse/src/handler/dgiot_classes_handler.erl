@@ -314,14 +314,21 @@ request_parse(OperationID, Args, Body, Headers, #{base_path := BasePath} = Conte
                 ({N, V}, Acc) ->
                     <<Acc/binary, "&", N/binary, "=", V/binary>>
             end, <<>>, dgiot_req:parse_qs(Req)),
-    [Method1, Type | _] = re:split(OperationID, <<"_">>),
-    NewQs = case dgiot_hook:run_hook({Method1, Type}, {'before', Args}) of
+    io:format("~s ~p ~p~n", [?FILE, ?LINE, OperationID]),
+    {Method2, Type2, Id} =
+        case re:split(OperationID, <<"_">>) of
+            [Method1, Type, _Table, ObjectId | _] ->
+                {Method1, Type, ObjectId};
+            [Method1, Type | _] ->
+                {Method1, Type, '*'}
+        end,
+    NewQs = case dgiot_hook:run_hook({Method2, Type2}, {'before', Args, Id}) of
                 {ok, [Rtn | _]} ->
                     get_qs(Rtn);
                 _ ->
                     QS
             end,
-    Path = get_path(re:replace(dgiot_req:path(Req), BasePath, <<>>, [{return, binary}]),Type),
+    Path = get_path(re:replace(dgiot_req:path(Req), BasePath, <<>>, [{return, binary}]), Type2),
     Url = <<Path/binary, NewQs/binary>>,
 %%    io:format("~s ~p ~p~n", [?FILE, ?LINE, Url]),
     Method = dgiot_req:method(Req),

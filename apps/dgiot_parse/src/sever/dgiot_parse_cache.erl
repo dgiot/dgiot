@@ -127,8 +127,6 @@ cache_classes(Order) ->
     case dgiot_parse:get_schemas() of
         {ok, #{<<"results">> := Results}} ->
             lists:map(fun
-                          (#{<<"className">> := <<"_Session">>}) ->
-                              pass;
                           (#{<<"className">> := <<"Device">>}) ->
                               Success = fun(Page) ->
                                   lists:map(fun(Device) ->
@@ -155,7 +153,7 @@ cache_classes(Order) ->
                                   <<"order">> => Order,
                                   <<"where">> => #{}
                               },
-                              dgiot_parse_loader:start(CLasseName, Query, 0, 1000, 1000000, Success);
+                              dgiot_parse_loader:start(CLasseName, Query, 0, 500, 1000000, Success);
                           (_) ->
                               pass
                       end, Results);
@@ -172,9 +170,9 @@ get_acls(Acls) when is_list(Acls) ->
     AclsNames =
         lists:foldl(
             fun
-                (RoleName, Acc) when is_atom(RoleName) ->
+                (RoleName,  Acc) when is_atom(RoleName) ->
                     Acc ++ [RoleName];
-                (RoleName, Acc) when is_binary(RoleName)->
+                (RoleName,  Acc) when is_binary(RoleName)->
                     Acc ++ [?ACL(RoleName)]
             end,
             [], Acls),
@@ -214,7 +212,7 @@ get_roleids(Acls) when is_list(Acls) ->
 get_alcname(RoleId) ->
     case dgiot_data:get(?ROLE_ETS, dgiot_utils:to_binary(RoleId)) of
         #{<<"name">> := Name} ->
-            ?ACL(<<"role:", Name/binary,""/utf8>>);
+            ?ACL(<<"role:", Name/binary>>);
         _ -> %%  * or userid
             ?ACL(RoleId)
     end.
@@ -300,7 +298,7 @@ loop_count(QueryAcls) ->
                     _ ->
                         add_count(<<"Device">>),
                         add_count("Device_" ++ dgiot_utils:to_list(Status)),
-                        add_count("Device_" ++ dgiot_utils:to_list(Status), dgiot_utils:to_list(ProductId))
+                        add_count("Device_" ++ dgiot_utils:to_list(Status),  dgiot_utils:to_list(ProductId))
                 end;
             ({_, _, [ClassesName, Acls | _]}) ->
                 case AtomQueryAcls -- Acls of
