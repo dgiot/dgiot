@@ -113,12 +113,12 @@ handle_init(#state{id = _ChannelId, env = #{<<"products">> := _Products, <<"args
 handle_event(_EventId, _Event, State) ->
     {ok, State}.
 
-handle_message({check_profie, _Args}, State) ->
-%%    ?LOG(info, "Args ~p", [Args]),
-    Fun = fun(X) ->
-        ?LOG(info, "X ~p", [X])
-          end,
-    dgiot_data:loop(?MODIFYPROFILE, Fun),
+handle_message({check_profile, _Args}, State) ->
+%%%%    ?LOG(info, "Args ~p", [Args]),
+%%    Fun = fun(X) ->
+%%        ?LOG(info, "X ~p", [X])
+%%          end,
+%%    dgiot_data:loop(?MODIFYPROFILE, Fun),
     erlang:send_after(1000 * 30, self(), {message, <<"_Pool">>, check_profile}),
     {ok, State};
 
@@ -127,72 +127,12 @@ handle_message({check_profie, _Args}, State) ->
 %%<<\"248e9007bf\">>
 %% }
 %%#state{env = #{<<"args">> := #{<<"mode">> := <<"incremental">>}}} =
-handle_message({sync_parse, put, _Table, _Data, NewData, DeviceId}, #state{env = #{<<"args">> := #{<<"mode">> := <<"incremental">>}}} = State) ->
-%%    io:format("~s ~p Args = ~p.~n", [?FILE, ?LINE, State]),
-%%    io:format("~s ~p Args = ~p.~n", [?FILE, ?LINE, jsx:decode(Args, [{labels, binary}, return_maps])]),
-    case jsx:decode(NewData, [{labels, binary}, return_maps]) of
-        #{<<"profile">> := Profile, <<"devaddr">> := Devaddr, <<"product">> := #{<<"objectId">> := ProductId}} ->
-            Modifyprofile = get_modifyprofile(DeviceId, Profile),
-%%            设置参数
-            case dgiot_device:get_online(DeviceId) of
-                true ->
-                    Topic = <<"profile/", ProductId/binary, "/", Devaddr/binary>>,
-                    dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(Modifyprofile)),
-                    dgiot_data:insert(?PROFILE, DeviceId, Profile);
-                false ->
-                    dgiot_data:insert(?MODIFYPROFILE, DeviceId, {Profile, ProductId, Devaddr})
-            end;
-        _ ->
-            pass
-    end,
+handle_message({sync_parse, put, _Table, _BeforeData, AfterData, DeviceId}, #state{env = #{<<"args">> := #{<<"mode">> := <<"incremental">>}}} = State) ->
+    dgiot_profile_hook:put('after',AfterData, DeviceId, <<"incremental">>),
     {ok, State};
 
-handle_message({sync_parse, put, _Table, _Data, NewData, DeviceId}, State) ->
-%%    io:format("~s ~p Args = ~p.~n", [?FILE, ?LINE, jsx:decode(Args, [{labels, binary}, return_maps])]),
-    case jsx:decode(NewData, [{labels, binary}, return_maps]) of
-        #{<<"profile">> := Profile, <<"devaddr">> := Devaddr, <<"product">> := #{<<"objectId">> := ProductId}} = Arg ->
-            Sessiontoken = maps:get(<<"sessiontoken">>, Arg, <<"">>),
-            DeviceId = dgiot_parse_id:get_deviceid(ProductId, Devaddr),
-%%            设置参数
-            case dgiot_device:get_online(DeviceId) of
-                true ->
-                    case dgiot_parse:get_object(<<"Product">>, ProductId) of
-                        {ok, #{<<"name">> := ProductName, <<"thing">> := #{<<"properties">> := Properties}}} ->
-                            NewPayLoad =
-                                lists:foldl(fun(X, Acc) ->
-                                    case X of
-                                        #{<<"identifier">> := Identifier, <<"name">> := Name, <<"accessMode">> := <<"rw">>, <<"dataForm">> := DataForm, <<"dataSource">> := #{<<"_dlinkindex">> := Index} = DataSource} ->
-                                            case maps:find(Identifier, Profile) of
-                                                {ok, V} ->
-                                                    Acc#{
-                                                        Index => #{
-                                                            <<"sessiontoken">> => Sessiontoken,
-                                                            <<"value">> => V,
-                                                            <<"identifier">> => Identifier,
-                                                            <<"name">> => Name,
-                                                            <<"productname">> => ProductName,
-                                                            <<"dataSource">> => DataSource,
-                                                            <<"dataForm">> => DataForm
-                                                        }};
-                                                _ ->
-                                                    Acc
-                                            end;
-                                        _ -> Acc
-                                    end
-                                            end, #{}, Properties),
-                            Topic = <<"profile/", ProductId/binary, "/", Devaddr/binary>>,
-                            dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(NewPayLoad)),
-%%                            io:format("~s ~p NewPayLoad = ~p.~n", [?FILE, ?LINE, NewPayLoad]),
-                            dgiot_data:insert(?PROFILE, DeviceId, Profile);
-                        false ->
-                            dgiot_data:insert(?MODIFYPROFILE, DeviceId, {Profile, ProductId, Devaddr})
-                    end;
-                _ ->
-                    pass
-            end;
-        _Other ->
-            pass
-    end,
+handle_message({sync_parse, put, _Table, _Data, AfterData, DeviceId}, State) ->
+    dgiot_profile_hook:put('after', AfterData, DeviceId,  <<"">>),
     {ok, State};
 
 handle_message(_Message, State) ->
@@ -206,22 +146,3 @@ stop(ChannelType, ChannelId, #state{env = #{<<"product">> := ProductId, <<"args"
     ?LOG(warning, "channel stop ~p,~p", [ChannelType, ChannelId]),
     ok.
 
-
-get_modifyprofile(DeviceId, Profile) ->
-    case dgiot_data:get(?PROFILE, DeviceId) of
-        not_find ->
-            dgiot_data:insert(?PROFILE, DeviceId, Profile),
-            Profile;
-        OldProfile ->
-            maps:fold(fun(K, V, Acc) ->
-                case maps:find(K, OldProfile) of
-                    error ->
-                        Acc#{K => V};
-                    {ok, V} ->
-                        Acc;
-                    _ ->
-                        Acc#{K => V}
-                end
-                      end, #{}, Profile)
-
-    end.

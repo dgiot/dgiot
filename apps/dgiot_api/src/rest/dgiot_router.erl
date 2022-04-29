@@ -114,7 +114,7 @@ parse_path(Mod, Path, Method, MethodInfo, SWSchema, Init) ->
         check_request => get_check_request(MethodInfo, SWSchema),
         check_response => get_check_response(MethodInfo, SWSchema)
     },
-    dgiot_data:insert(?DGIOT_SWAGGER, OperationId,get_check_request(MethodInfo, SWSchema)),
+    dgiot_data:insert(?DGIOT_SWAGGER, OperationId, get_check_request(MethodInfo, SWSchema)),
     RealPath = dgiot_httpc:url_join([BasePath, NewPath]),
     {ok, Id} = set_state(OperationId, Config#{logic_handler => Mod}),
     State = #{
@@ -167,9 +167,27 @@ init(Req0, {swagger, Name} = Opts) ->
     Req =
         case dgiot_swagger:read(Name, Config) of
             {ok, Schema} ->
+                io:format("~s ~p ~p ~n", [?FILE, ?LINE, maps:keys(Schema)]),
+%%              Tags = maps:get(<<"tags">>,Schema),
+                Paths = maps:get(<<"paths">>, Schema),
+                NewPath =
+                    maps:fold(fun
+                                  (<<"/level/", _/binary>>, _V, Acc) ->
+                                      Acc;
+                                  (<<"/classes/", _/binary>>, _V, Acc) ->
+                                      Acc;
+                                  (<<"/schema/", _/binary>>, _V, Acc) ->
+                                      Acc;
+                                  (K, V, Acc) ->
+                                      Acc#{K => V}
+                              end, #{}, Paths),
+                List = lists:keysort(1,maps:to_list(NewPath)),
+                NewSchema = Schema#{
+                    <<"paths">> => maps:from_list(List)
+                },
                 dgiot_req:reply(200, ?HEADER#{
                     <<"content-type">> => <<"application/json; charset=utf-8">>
-                }, jsx:encode(Schema), Req0);
+                }, jsx:encode(NewSchema), Req0);
             {error, Reason} ->
                 dgiot_req:reply(500, ?HEADER#{
                     <<"content-type">> => <<"application/json; charset=utf-8">>

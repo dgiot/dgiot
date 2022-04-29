@@ -95,6 +95,7 @@
     , unique_2/1
     , string2value/1
     , get_file/3
+    , get_JsonFile/2
     , post_file/2
     , random/0
     , get_hostname/0
@@ -229,9 +230,9 @@ to_map(List) when is_list(List) ->
 
 to_map(Data) when is_binary(Data) ->
     case jsx:is_json(Data) of
-        true->
+        true ->
             jsx:decode(Data, [{labels, binary}, return_maps]);
-        _->
+        _ ->
             Data
     end.
 
@@ -698,6 +699,21 @@ wait_request(Time, Fun) ->
             Result ->
                 Result
         end
+    end.
+
+%%
+%% @description: 读取json文件并返回
+%%
+get_JsonFile(Mod, FileName) ->
+    {file, Here} = code:is_loaded(Mod),
+    Dir = filename:dirname(filename:dirname(Here)),
+    Path = dgiot_httpc:url_join([Dir, "/priv/json/", dgiot_utils:to_list(FileName)]),
+    case catch file:read_file(Path) of
+        {Err, Reason} when Err == 'EXIT'; Err == error ->
+            ?LOG(error, "read  Path,~p error,~p ~n", [Path, Reason]),
+            {error, Reason};
+        {ok, Bin} ->
+            Bin
     end.
 
 get_file(Root, Files, App) ->

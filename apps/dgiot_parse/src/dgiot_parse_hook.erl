@@ -35,8 +35,23 @@
     get_trigger/0,
     get_trigger/2,
     add_all_trigger/1,
-    do_hook/2
+    do_hook/2,
+    get_count/2
 ]).
+
+get_count(ClassName, Acls) ->
+    case catch dgiot_hook:run_hook({'parse_get_count', ClassName}, [Acls]) of
+        {'EXIT', Reason} ->
+            {error, Reason};
+        {error, not_find} ->
+            dgiot_parse_cache:get_count(ClassName, Acls, roleid);
+        {ok, []} ->
+            ignore;
+        {ok, [{error, Reason} | _]} ->
+            {error, Reason};
+        {ok, [Rtn | _]} ->
+            Rtn
+    end.
 
 subscribe(Table, Method, Channel) ->
     case dgiot_data:get({sub, Table, Method}) of
@@ -47,10 +62,10 @@ subscribe(Table, Method, Channel) ->
     end,
     Fun = fun(Args) ->
         case Args of
-            [_Type, BeforData, AfterData, _Body] ->
+            ['after', BeforData, AfterData, _Body] ->
                 publish(Table, Method, BeforData, AfterData),
                 {ok, AfterData};
-            [_Type, BeforData, AfterData, ObjectId, _Body] ->
+            ['after', BeforData, AfterData, ObjectId, _Body] ->
                 publish(Table, Method, BeforData, AfterData, ObjectId),
                 {ok, AfterData};
             _ ->

@@ -26,6 +26,7 @@
 -define(ROLE_PARENT_ETS, role_parent_ets).
 -define(PARENT_ROLE_ETS, parent_role_ets).
 -define(NAME_ROLE_ETS, name_role_ets).
+-define(CLASS_COUNT_ETS, parse_class_count_ets).
 
 
 %%public enum ErrorCode

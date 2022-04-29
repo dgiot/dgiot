@@ -44,6 +44,8 @@
         "security": [],
         "summary": "wechat绑定",
         "description": "wechat绑定",
+        "hidden": true,
+        "position": 0,
         "consumes": [
           "text/plain"
         ],

@@ -1,0 +1,67 @@
+{
+  "konva": {
+    "Stage": {
+      "attrs": {
+        "width": 1200,
+        "height": 700
+      },
+      "children": [
+        {
+          "attrs": {
+            "id": "Layer_Thing"
+          },
+          "children": [
+            {
+              "attrs": {
+                "id": "bg",
+                "src": "/dgiot_file/konva/konva_bg.png?timestamp=1635422987361",
+                "type": "bg-image",
+                "width": "1200",
+                "height": "700"
+              },
+              "className": "Image"
+            },
+            {
+              "attrs": {
+                "x": 323,
+                "y": 84.95900920567532,
+                "id": "f9dddd0eeb_amisBMK8t",
+                "name": "amis",
+                "opacity": 0.75,
+                "draggable": true
+              },
+              "children": [],
+              "className": "Label"
+            },
+            {
+              "attrs": {
+                "x": 547,
+                "y": 264,
+                "id": "f9dddd0eeb_texthsl01",
+                "name": "thing",
+                "opacity": 0.75,
+                "draggable": true
+              },
+              "children": [],
+              "className": "Label"
+            },
+            {
+              "attrs": {
+                "x": 482,
+                "y": 157,
+                "id": "f9dddd0eeb_textZGRWA",
+                "name": "thing",
+                "opacity": 0.75,
+                "draggable": true
+              },
+              "children": [],
+              "className": "Label"
+            }
+          ],
+          "className": "Layer"
+        }
+      ],
+      "className": "Stage"
+    }
+  }
+}

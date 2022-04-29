@@ -51,29 +51,10 @@ delete_batch(Views) ->
     dgiot_parse:batch(ViewRequests).
 
 post(ProductId) ->
-    NewConfig = #{
-        <<"konva">> => #{
-            <<"Stage">> => #{
-                <<"attrs">> => #{
-                    <<"width">> => <<"1200">>,
-                    <<"height">> => <<"700">>},
-                <<"className">> => <<"Stage">>,
-                <<"children">> => [#{
-                    <<"attrs">> => #{
-                        <<"id">> => <<"Layer_Thing">>},
-                    <<"className">> => <<"Layer">>,
-                    <<"children">> => [#{
-                        <<"attrs">> => #{
-                            <<"id">> => <<"bg">>,
-                            <<"type">> => <<"bg-image">>,
-                            <<"width">> => <<"1200">>,
-                            <<"height">> => <<"700">>,
-                            <<"src">> => <<"//img7.ddove.com/upload/20181127/134600237598.jpg?timestamp=1635422987361">>},
-                        <<"className">> => <<"Image">>}]}]}}},
     dgiot_parse:create_object(<<"View">>, #{
         <<"title">> => ProductId,
         <<"key">> => ProductId,
         <<"type">> => <<"topo">>,
         <<"class">> => <<"Product">>,
-        <<"data">> => NewConfig
+        <<"data">> =>  dgiot_utils:get_JsonFile(?MODULE,<<"konva">>)
     }).
