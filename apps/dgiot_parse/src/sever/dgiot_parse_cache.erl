@@ -170,9 +170,9 @@ get_acls(Acls) when is_list(Acls) ->
     AclsNames =
         lists:foldl(
             fun
-                (RoleName,  Acc) when is_atom(RoleName) ->
+                (RoleName, Acc) when is_atom(RoleName) ->
                     Acc ++ [RoleName];
-                (RoleName,  Acc) when is_binary(RoleName)->
+                (RoleName, Acc) when is_binary(RoleName) ->
                     Acc ++ [?ACL(RoleName)]
             end,
             [], Acls),
@@ -298,7 +298,8 @@ loop_count(QueryAcls) ->
                     _ ->
                         add_count(<<"Device">>),
                         add_count("Device_" ++ dgiot_utils:to_list(Status)),
-                        add_count("Device_" ++ dgiot_utils:to_list(Status),  dgiot_utils:to_list(ProductId))
+                        add_count(<<"Device">>, ProductId),
+                        add_count("Device_" ++ dgiot_utils:to_list(Status), ProductId)
                 end;
             ({_, _, [ClassesName, Acls | _]}) ->
                 case AtomQueryAcls -- Acls of
@@ -313,19 +314,19 @@ loop_count(QueryAcls) ->
 init_count(Class) ->
     init_count(Class, all).
 init_count(Class, Type) ->
-    put({self(), dgiot_utils:to_atom(Class), dgiot_utils:to_atom(Type)}, 0).
+    dgiot_data:insert(?CLASS_COUNT_ETS, {parse_count, dgiot_utils:to_atom(Class), dgiot_utils:to_atom(Type)}, 0).
 
 add_count(Class) ->
     add_count(Class, all).
 add_count(Class, Type) ->
     AtomClass = dgiot_utils:to_atom(Class),
     AtomType = dgiot_utils:to_atom(Type),
-    case erlang:get({self(), AtomClass, AtomType}) of
-        undefined ->
-            erlang:put({self(), AtomClass, AtomType}, 1);
+    case dgiot_data:get(?CLASS_COUNT_ETS, {parse_count, AtomClass, AtomType}) of
+        not_find ->
+            dgiot_data:insert(?CLASS_COUNT_ETS, {parse_count, AtomClass, AtomType}, 1);
         Count ->
             NewCount = Count + 1,
-            erlang:put({self(), AtomClass, AtomType}, NewCount)
+            dgiot_data:insert(?CLASS_COUNT_ETS, {parse_count, AtomClass, AtomType}, NewCount)
     end.
 
 lookup_count(Class) ->
@@ -333,7 +334,12 @@ lookup_count(Class) ->
 lookup_count(Class, Type) ->
     AtomClass = dgiot_utils:to_atom(Class),
     AtomType = dgiot_utils:to_atom(Type),
-    erlang:get({self(), AtomClass, AtomType}).
+    case dgiot_data:get(?CLASS_COUNT_ETS, {parse_count, AtomClass, AtomType}) of
+        not_find ->
+            0;
+        Count ->
+            Count
+    end.
 
 test() ->
     Fun3 = fun

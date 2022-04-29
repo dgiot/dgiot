@@ -346,13 +346,14 @@ do_request(Method, Path, Header, Data, Options) ->
         {error, Reason} ->
             {error, Reason};
         {ok, StatusCode, Headers, ResBody} ->
-            case do_request_after(Method, Path, Data, NewData, ResBody, Options) of
+            ResBody1 = handle_resbody(method(Method, atom), Path, ResBody),
+            case do_request_after(Method, Path, Data, NewData, ResBody1, Options) of
                 {ok, NewResBody} ->
                     save_cache(Method, Path, Data),
                     {ok, StatusCode, Headers, NewResBody};
                 ignore ->
                     save_cache(Method, Path, Data),
-                    {ok, StatusCode, Headers, ResBody};
+                    {ok, StatusCode, Headers, ResBody1};
                 {error, Reason} ->
                     {error, Reason}
             end
@@ -403,9 +404,6 @@ do_request_after(Method0, Path, BeforData, AfterData, ResBody, Options) ->
             _ ->
                 method(Method0, atom)
         end,
-%%    <<"get_amis_device_id">>
-%%    dgiot_parse_rest.erl 407 get <<"/classes/Product/383e6240e2">>
-%%    io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Method, Path]),
     {match, PathList} = re:run(Path, <<"([^/]+)">>, [global, {capture, all_but_first, binary}]),
     dgiot_parse_hook:do_request_hook('after', lists:concat(PathList), Method, BeforData, AfterData, ResBody).
 
@@ -432,3 +430,35 @@ handle_result(Result, Map) ->
         {error, Reason} ->
             {error, Reason}
     end.
+
+handle_resbody(get, <<"/classes/Product/", ProductId>>, ResBody) ->
+    ResBody#{
+        <<"devvice_counts">> => dgiot_parse_cache:lookup_count(<<"Device">>, ProductId),
+        <<"devvice_online">> => dgiot_parse_cache:lookup_count(<<"Device_true">>, ProductId),
+        <<"devvice_offline">> => dgiot_parse_cache:lookup_count(<<"Device_false">>, ProductId)
+    };
+
+handle_resbody(get, <<"/classes/Product">>, ResBody) ->
+    case jsx:is_json(ResBody) of
+        true ->
+            case ?JSON_DECODE(ResBody) of
+                #{<<"results">> := Results} = Map ->
+                    NewResults =
+                        lists:foldl(
+                            fun
+                                (#{<<"objectId">> := ProductId} = Product, Acc) ->
+%%                                    io:format("~s ~p ~p ~n", [?FILE, ?LINE, ProductId]),
+                                    Acc ++ [Product#{<<"device_counts">> => dgiot_parse_cache:lookup_count(<<"Device">>, ProductId),
+                                        <<"online_counts">> => dgiot_parse_cache:lookup_count(<<"Device_true">>, ProductId),
+                                        <<"offline_counts">> => dgiot_parse_cache:lookup_count(<<"Device_false">>, ProductId)}]
+                            end, [], Results),
+                    jsx:encode(Map#{<<"results">> => NewResults});
+                _ ->
+                    ResBody
+            end;
+        false ->
+            ResBody
+    end;
+
+handle_resbody(_Method, _Path, ResBody) ->
+    ResBody.
