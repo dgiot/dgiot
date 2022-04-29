@@ -433,9 +433,9 @@ handle_result(Result, Map) ->
 
 handle_resbody(get, <<"/classes/Product/", ProductId>>, ResBody) ->
     ResBody#{
-        <<"devvice_counts">> => dgiot_parse_cache:lookup_count(<<"Device">>, ProductId),
-        <<"devvice_online">> => dgiot_parse_cache:lookup_count(<<"Device_true">>, ProductId),
-        <<"devvice_offline">> => dgiot_parse_cache:lookup_count(<<"Device_false">>, ProductId)
+        <<"device_counts">> => dgiot_parse_cache:lookup_count(<<"Device">>, ProductId),
+        <<"online_counts">> => dgiot_parse_cache:lookup_count(<<"Device_true">>, ProductId),
+        <<"offline_counts">> => dgiot_parse_cache:lookup_count(<<"Device_false">>, ProductId)
     };
 
 handle_resbody(get, <<"/classes/Product">>, ResBody) ->
