@@ -44,20 +44,20 @@
 
 %% @description 备注
 %% 已实现 get post 的适配工作
-get({'before', Data}) when is_map(Data) ->
+get({'before', Args, '*'}) ->
 %%    io:format("~s ~p Data: ~p ~n", [?FILE, ?LINE, Data]),
     NewData = maps:fold(fun(K, V, Acc) ->
         case V of
             undefined -> Acc;
             _ -> Acc#{K => V}
         end
-                        end, #{}, Data),
+                        end, #{}, Args),
     Basic = format(NewData),
 %%    io:format("~s ~p Basic: ~p ~n", [?FILE, ?LINE, Basic]),
     Basic;
-get({'before', Data}) ->
-%%    io:format("~s ~p ~p~n", [?FILE, ?LINE, Data]),
-    Data;
+get({'before', Args, _Id}) ->
+%%    io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Args, Id]),
+    Args;
 get({'after', #{<<"results">> := Response, <<"count">> := Count} = _Data}) ->
     #{
         <<"status">> => 0,
@@ -81,9 +81,9 @@ get({'after', Data}) ->
         <<"msg">> => <<"数据请求成功"/utf8>>,
         <<"data">> => Data
     }.
-post({'before', Data}) ->
-%%    io:format("~s ~p ~p~n", [?FILE, ?LINE, Data]),
-    Data;
+post({'before', Args, _Id}) ->
+%%    io:format("~s ~p ~p ~p~n", [?FILE, ?LINE, Args, Id]),
+    Args;
 post({'after', Data}) ->
 %%    io:format("~s ~p ~p~n", [?FILE, ?LINE, Data]),
     #{
@@ -91,24 +91,24 @@ post({'after', Data}) ->
         <<"msg">> => <<"数据提交成功"/utf8>>,
         <<"data">> => Data
     }.
-put({'before', Data}) ->
-    erlang:put(<<"Request">>, Data),
-%%    io:format("~s ~p ~p~n", [?FILE, ?LINE, Data]),
-    Data;
+put({'before', Args, _Id}) ->
+    erlang:put(self(), Args),
+%%    io:format("~s ~p ~p ~p~n", [?FILE, ?LINE, Args, Id]),
+    Args;
 put({'after', Data}) ->
-    Request = erlang:get(<<"Request">>),
+    Request = erlang:get(self()),
 %%    io:format("~s ~p ~p~n", [?FILE, ?LINE, Data]),
     #{
         <<"status">> => 0,
         <<"msg">> => <<"修改成功"/utf8>>,
         <<"data">> => #{<<"Data">> => Data, <<"Request">> => Request}
     }.
-delete({'before', Data}) ->
-    erlang:put(<<"Request">>, Data),
-%%    io:format("~s ~p ~p~n", [?FILE, ?LINE, Data]),
-    Data;
+delete({'before', Args, _Id}) ->
+    erlang:put(self(), Args),
+%%    io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Args, Id]),
+    Args;
 delete({'after', Data}) ->
-    Request = erlang:get(<<"Request">>),
+    Request = erlang:get(self()),
 %%    io:format("~s ~p ~p~n", [?FILE, ?LINE, Data]),
     #{
         <<"status">> => 0,
