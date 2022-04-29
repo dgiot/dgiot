@@ -135,17 +135,17 @@ handle_message(check, #state{env = #{<<"offline">> := OffLine, <<"checktime">> :
     {ok, State};
 
 handle_message({sync_parse, post, <<"Product">>, BeforeData, AfterData}, State) ->
-    dgiot_product_hook:post('befor', BeforeData),
+    dgiot_product_hook:post('before', BeforeData),
     dgiot_product_hook:post('after', AfterData),
     {ok, State};
 
 handle_message({sync_parse, put, <<"Product">>, BeforeData, AfterData, ProductId}, State) ->
-    dgiot_product_hook:put('befor', BeforeData, ProductId),
+    dgiot_product_hook:put('before', BeforeData, ProductId),
     dgiot_product_hook:put('after', AfterData, ProductId),
     {ok, State};
 
 handle_message({sync_parse, delete, <<"Product">>, BeforeData, AfterData, ProductId}, State) ->
-    dgiot_product_hook:delete('befor', BeforeData, ProductId),
+    dgiot_product_hook:delete('before', BeforeData, ProductId),
     dgiot_product_hook:delete('after', AfterData, ProductId),
     {ok, State};
 

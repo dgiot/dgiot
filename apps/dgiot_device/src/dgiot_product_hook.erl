@@ -15,13 +15,15 @@
 %%--------------------------------------------------------------------
 
 -module(dgiot_product_hook).
--author("kenneth").
+-author("johnliu").
 -include("dgiot_device.hrl").
 -include_lib("dgiot/include/logger.hrl").
 
 -export([post/2, put/3, delete/3]).
 
-post('befor', BeforeData) ->
+-export([get_count/2, start/0, stop/0]).
+
+post('before', BeforeData) ->
     case BeforeData of
         #{<<"objectId">> := ProductId, <<"channel">> := Channel} ->
             io:format("~s ~p  Channel = ~p.~n", [?FILE, ?LINE, Channel]),
@@ -53,7 +55,7 @@ post('after', AfterData) ->
             pass
     end.
 
-put('befor', BeforeData, ProductId) ->
+put('before', BeforeData, ProductId) ->
     case BeforeData of
         #{<<"channel">> := Channel} ->
             dgiot_product:delete_product_relation(ProductId),
@@ -70,7 +72,7 @@ put('after', _AfterData, _ProductId) ->
     pass.
 
 
-delete('befor', _BeforeData, _ProductId) ->
+delete('before', _BeforeData, _ProductId) ->
 %%    todo
     pass;
 
@@ -92,3 +94,13 @@ delete('after', AfterData, ProductId) ->
         _ ->
             pass
     end.
+
+
+get_count(QueryAcls, Products) ->
+    dgiot_device:count(QueryAcls, Products).
+
+start() ->
+    dgiot_hook:add(one_for_one, {'parse_get_count', <<"Prodcut">>}, fun ?MODULE:get_count/2).
+
+stop() ->
+    dgiot_hook:add(one_for_one, {'parse_get_count', <<"Prodcut">>}).

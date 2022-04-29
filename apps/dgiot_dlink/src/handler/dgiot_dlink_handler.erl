@@ -81,7 +81,7 @@ do_request(get_protocol, _Body, #{<<"sessionToken">> := _SessionToken} = _Contex
 %% OperationId:dlinkjson
 %% 请求:GET /iotapi/dlinkjson
 do_request(get_dlinkjson, #{<<"type">> := Type}, _Context, _Req) ->
-    DlinkJson = dgiot_dlink:getJson(<<Type/binary, ".json">>),
+    DlinkJson = dgiot_utils:get_JsonFile(?MODULE, <<Type/binary, ".json">>),
     {200, DlinkJson};
 
 do_request(_OperationId, _Args, _Context, _Req) ->

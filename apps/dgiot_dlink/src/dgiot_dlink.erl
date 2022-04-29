@@ -171,29 +171,3 @@ list() ->
         end,
     lists:sort(dgiot_plugin:check_module(Fun, [])).
 
-read_include_file(Filename, IncludeSearchPath) ->
-    case file:path_open(IncludeSearchPath, Filename, [read, raw, binary]) of
-        {ok, IoDevice, FullName} ->
-            {ok, Data} = file:read(IoDevice, filelib:file_size(FullName)),
-            file:close(IoDevice),
-            binary_to_list(Data);
-        {error, Reason} ->
-            throw({failed_to_read_include_file, Reason, Filename, IncludeSearchPath})
-    end.
-
-
-%%
-%% @description: 读取json文件并返回
-%%
-getJson(FileName) ->
-    {file, Here} = code:is_loaded(?MODULE),
-    Dir = filename:dirname(filename:dirname(Here)),
-    Path = dgiot_httpc:url_join([Dir, "/priv/json/", dgiot_utils:to_list(FileName)]),
-    case catch file:read_file(Path) of
-        {Err, Reason} when Err == 'EXIT'; Err == error ->
-            ?LOG(error, "read  Path,~p error,~p ~n", [Path, Reason]),
-            {error, Reason};
-        {ok, Bin} ->
-            Bin
-    end.
-

@@ -73,11 +73,7 @@ request(Method, Header, Path0, Body, Options) ->
         end,
     case IsGetCount of
         true ->
-            io:format("~s ~p ~p ~n ", [?FILE, ?LINE, Path]),
-            io:format("~s ~p ~p ~n ", [?FILE, ?LINE, Header]),
-            CountMap = get_count(Path, Header),
-            io:format("~s ~p ~p ~n ", [?FILE, ?LINE, CountMap]),
-            handle_result(Fun(), CountMap);
+            handle_result(Fun(), get_count(Path, Header));
         false ->
             handle_result(Fun())
     end.
@@ -97,14 +93,14 @@ get_count(Path, Header) ->
                     Token1 ->
                         Token1
                 end,
-            Acls =
+            RoleIds =
                 case dgiot_auth:get_session(Token) of
                     #{<<"roles">> := Roles} ->
                         maps:keys(Roles);
                     _ ->
                         []
                 end,
-            dgiot_parse_cache:get_count(ClassName, Acls, roleid);
+            dgiot_parse_cache:get_count(ClassName, RoleIds, roleid);
         _ ->
             #{<<"count">> => 20}
     end.

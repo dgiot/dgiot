@@ -19,7 +19,7 @@
 -include("dgiot_parse.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -dgiot_data("ets").
--export([test/0, init_ets/0, cache_classes/1, get_count/2, loop_count/1, get_roleids/1, get_alcname/1, get_acls/1]).
+-export([test/0, init_ets/0, cache_classes/1, lookup_count/2, get_count/2, loop_count/1, get_roleids/1, get_alcname/1, get_acls/1]).
 -export([get_count/3]).
 -export([do_save/1, save_to_cache/1, save_to_cache/2, save_test/1]).
 
@@ -30,6 +30,7 @@ init_ets() ->
     dgiot_data:init(?USER_ROLE_ETS),
     dgiot_data:init(?ROLE_PARENT_ETS),
     dgiot_data:init(?NAME_ROLE_ETS),
+    dgiot_data:init(?CLASS_COUNT_ETS),
     dgiot_data:init(?PARENT_ROLE_ETS, [public, named_table, bag, {write_concurrency, true}, {read_concurrency, true}]).
 
 %% 先缓存定时存库
@@ -241,6 +242,20 @@ get_count(<<"_Session">>, _RoleIds) ->
         <<"count">> => dgiot_data:get({parse_count, '_Session'})
     };
 
+get_count(<<"Product">>, Acls) ->
+    lists:map(
+        fun
+            (ProductId) ->
+                init_count(dgiot_utils:to_atom(dgiot_utils:to_list(ProductId) ++ "_Device_true")),
+                init_count(dgiot_utils:to_atom(dgiot_utils:to_list(ProductId) ++ "_Device_false"))
+        end,
+        dgiot_data:keys(dgiot_product)),
+    init_count('Product'),
+    get_count(<<"Device">>, Acls),
+    #{
+        <<"count">> => dgiot_data:get({parse_count, 'Product'})
+    };
+
 get_count(<<"Device">>, Acls) ->
     init_count('Device'),
     init_count('Device_true'),
@@ -275,13 +290,14 @@ loop_count(CLasseName) when is_binary(CLasseName) ->
 loop_count(QueryAcls) ->
     Fun3 =
         fun
-            ({_, _, ['Device', Acls, Status | _]}) ->
+            ({_, _, ['Device', Acls, Status, _Time, _Devaddr, ProductId | _]}) ->
                 case QueryAcls -- Acls of
                     QueryAcls ->
                         pass;
                     _ ->
                         add_count('Device'),
-                        add_count(list_to_atom("Device_" ++ dgiot_utils:to_list(Status)))
+                        add_count(list_to_atom("Device_" ++ dgiot_utils:to_list(Status))),
+                        add_count(list_to_atom("Device_" ++ dgiot_utils:to_list(Status)), list_to_atom(dgiot_utils:to_list(ProductId)))
                 end;
             ({_, _, [ClassesName, Acls | _]}) ->
                 case QueryAcls -- Acls of
@@ -295,14 +311,25 @@ loop_count(QueryAcls) ->
     dgiot_mnesia:search(Fun3, #{<<"skip">> => 0, <<"limit">> => 1000000}).
 
 init_count(Class) ->
-    dgiot_data:insert({parse_count, Class}, 0).
-
+    init_count(Class, all).
+init_count(Class, Type) ->
+    dgiot_data:insert(?CLASS_COUNT_ETS, {parse_count, Class, Type}, 0).
 add_count(Class) ->
-    case dgiot_data:get({parse_count, Class}) of
+    add_count(Class, all).
+add_count(Class, Type) ->
+    case dgiot_data:get(?CLASS_COUNT_ETS, {parse_count, Class, Type}) of
         not_find ->
-            dgiot_data:insert({parse_count, Class}, 1);
+            dgiot_data:insert(?CLASS_COUNT_ETS, {parse_count, Class, Type}, 1);
         Count ->
-            dgiot_data:insert({parse_count, Class}, Count + 1)
+            dgiot_data:insert(?CLASS_COUNT_ETS, {parse_count, Class, Type}, Count + 1)
+    end.
+
+lookup_count(Class, Type) ->
+    case dgiot_data:get(?CLASS_COUNT_ETS, {parse_count, dgiot_utils:to_atom(Class), dgiot_utils:to_atom(Type)}) of
+        not_find ->
+            0;
+        Count ->
+            Count
     end.
 
 test() ->
