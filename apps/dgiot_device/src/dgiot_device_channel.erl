@@ -133,7 +133,7 @@ handle_message(check, #state{env = #{<<"offline">> := OffLine, <<"checktime">> :
     dgiot_device:sync_parse(OffLine),
     {ok, State};
 
-handle_message({sync_parse, Pid, 'after', get, Header, <<"Product">>, #{<<"results">> := Results} = ResBody}, State) ->
+handle_message({sync_parse, Pid, 'after', get, Header, <<"Product">>, #{<<"results">> := _Results} = ResBody}, State) ->
     io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Pid,Header]),
     dgiot_device_static:get_count(Header),
     NewResBody = dgiot_product:stats_Product(ResBody),
