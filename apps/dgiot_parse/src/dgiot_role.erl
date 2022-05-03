@@ -41,18 +41,21 @@
     get_rules_role/1,
     load_roles/0,
     get_childrole/1,
-    get_childacl/1
+    get_childacl/1,
+    get_roleids/1,
+    get_alcname/1,
+    get_acls/1
 ]).
 
 get_childacl(AclName) ->
-    case dgiot_data:get(?NAME_ROLE_ETS, ?ACL(AclName)) of
+    case dgiot_data:get(?NAME_ROLE_ETS, dgiot_utils:to_atom(AclName)) of
         {error, not_find} ->
-            [?ACL(AclName)];
+            [dgiot_utils:to_atom(AclName)];
         RoleId ->
             ChildAcl =
                 lists:foldl(fun(ChilRoleId, Acc) ->
-                    Acc ++ [dgiot_parse_cache:get_alcname(ChilRoleId)]
-                            end, [?ACL(AclName)], get_childrole(RoleId)),
+                    Acc ++ [get_alcname(ChilRoleId)]
+                            end, [dgiot_utils:to_atom(AclName)], get_childrole(RoleId)),
             dgiot_utils:unique_1(ChildAcl)
     end.
 
@@ -81,12 +84,67 @@ load_roles() ->
             #{<<"objectId">> := RoleId, <<"name">> := RoleName, <<"parent">> := #{<<"objectId">> := ParentId}} = X,
             dgiot_data:insert(?ROLE_PARENT_ETS, RoleId, ParentId),
             dgiot_data:insert(?PARENT_ROLE_ETS, ParentId, RoleId),
-            dgiot_data:insert(?NAME_ROLE_ETS, ?ACL(<<"role:", RoleName/binary>>), RoleId),
+            dgiot_data:insert(?NAME_ROLE_ETS, dgiot_utils:to_atom(<<"role:", RoleName/binary>>), RoleId),
+            dgiot_data:insert(?ROLE_NAME_ETS, RoleId, dgiot_utils:to_atom(<<"role:", RoleName/binary>>)),
             dgiot_data:insert(?ROLE_ETS, RoleId, maps:without([<<"objectId">>, <<"createdAt">>, <<"users">>, <<"menus">>, <<"rules">>, <<"dict">>], X))
                   end, Page)
               end,
     Query = #{},
     dgiot_parse_loader:start(<<"_Role">>, Query, 0, 500, 10000, Success).
+
+get_acls(Device) when is_map(Device) ->
+    Acl = maps:get(<<"ACL">>, Device, #{}),
+    get_acls(maps:keys(Acl));
+get_acls(Acls) when length(Acls) == 0 ->
+    ['*'];
+get_acls(Acls) when is_list(Acls) ->
+    AclsNames =
+        lists:foldl(
+            fun
+                (RoleName, Acc) ->
+                    Acc ++ [dgiot_utils:to_atom(RoleName)]
+            end,
+            [], Acls),
+
+    case length(AclsNames) of
+        0 ->
+            ['*'];
+        _ ->
+            AclsNames
+    end.
+
+get_roleids(Device) when is_map(Device) ->
+    Acl = maps:get(<<"ACL">>, Device, #{}),
+    get_roleids(maps:keys(Acl));
+
+get_roleids(Acls) when is_list(Acls) ->
+    Result =
+        lists:foldl(
+            fun
+                (<<"*">>, Acc1) ->
+                    Acc1 ++ ['*'];
+                (RoleName, Acc) ->
+                    case dgiot_data:get(?NAME_ROLE_ETS, dgiot_utils:to_atom(RoleName)) of
+                        not_find ->
+                            Acc;
+                        RoleId ->
+                            Acc ++ [RoleId]
+                    end
+            end, [], Acls),
+    case length(Result) of
+        0 ->
+            ['*'];
+        _ ->
+            Result
+    end.
+
+get_alcname(RoleId) ->
+    case dgiot_data:get(?ROLE_NAME_ETS, dgiot_utils:to_binary(RoleId)) of
+        not_find ->
+            dgiot_utils:to_atom(RoleId); %%  * or userid
+        RoleName ->
+            RoleName
+    end.
 
 post_role(#{<<"tempname">> := TempName, <<"parent">> := Parent, <<"depname">> := DepName,
     <<"name">> := Name, <<"desc">> := Desc} = Body, SessionToken) ->
@@ -107,7 +165,7 @@ post_role(#{<<"tempname">> := TempName, <<"parent">> := Parent, <<"depname">> :=
                 <<"leafnode">> => true,
                 <<"tag">> => NewTag,
                 <<"ACL">> => #{
-                    <<"role:", Name/binary, ""/utf8>> => #{
+                    <<"role:", Name/binary>> => #{
                         <<"read">> => true,
                         <<"write">> => true
                     }

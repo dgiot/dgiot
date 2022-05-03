@@ -73,7 +73,7 @@ request(Method, Header, Path0, Body, Options) ->
         end,
     case IsGetCount of
         true ->
-            handle_result(Fun(), get_count(Path, Header));
+            get_count(Method, to_binary(Path), NewHeads, NewBody, Options, Fun);
         false ->
             handle_result(Fun())
     end.
@@ -82,76 +82,30 @@ request(Method, Header, Path0, Body, Options) ->
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
-get_count(Path, Header) ->
-    BinPath = to_binary(Path),
-    case binary:split(BinPath, <<$/>>, [global, trim]) of
-        [<<>>, <<"classes">>, ClassName | _] ->
-            Token =
-                case proplists:get_value("X-Parse-Session-Token", Header) of
-                    undefined ->
-                        proplists:get_value(<<"X-Parse-Session-Token">>, Header);
-                    Token1 ->
-                        Token1
-                end,
-            RoleIds =
-                case dgiot_auth:get_session(Token) of
-                    #{<<"roles">> := Roles} ->
-                        maps:keys(Roles);
-                    _ ->
-                        []
-                end,
-            dgiot_parse_cache:get_count(ClassName, RoleIds, roleid);
-        _ ->
-            #{<<"count">> => 20}
+get_count(Method, Path, Header, Body, Options, Fun) ->
+    QueryData = Body#{<<"count">> => <<"objectId">>, <<"keys">> => [<<"objectId">>], <<"limit">> => 1},
+    NewBody = maps:with([<<"where">>, <<"count">>, <<"limit">>, <<"keys">>], QueryData),
+    NewBody1 = encode_body(Path, Method, NewBody, Options),
+    {NewPath, Query} =
+        case re:split(Path, <<"\\?">>, [{return, binary}]) of
+            [Path1] when NewBody1 =/= <<>> ->
+                {Path1, <<"?", NewBody1/binary>>};
+            [Path1, Query0] when NewBody1 =/= <<>> ->
+                {Path1, <<"?", Query0/binary, "&", NewBody1/binary>>};
+            _ ->
+                {to_binary(Path), <<>>}
+        end,
+    case httpc_request(Method, NewPath, Header, Query, [], [], Options) of
+        {ok, 200, _, CountBody} ->
+            case jsx:is_json(CountBody) of
+                #{<<"count">> := Count} ->
+                    handle_result(Fun(), #{<<"count">> => Count});
+                _ ->
+                    handle_result(Fun(), #{})
+            end;
+        _Other ->
+            handle_result(Fun(), #{})
     end.
-
-save_cache(_, <<"/batch">>, #{<<"requests">> := Requests}) ->
-    lists:map(fun(X) ->
-        Method = maps:get(<<"method">>, X, <<"">>),
-        Path = maps:get(<<"path">>, X, <<"">>),
-        Body = maps:get(<<"body">>, X, #{}),
-        save_cache(Method, Path, Body)
-              end, Requests),
-    pass;
-
-save_cache('POST', Path, Device) ->
-    case Path of
-        <<"/classes/Device">> ->
-            Map = jsx:decode(Device, [{labels, binary}, return_maps]),
-            dgiot_device:post(Map);
-        <<"/classes/Product">> ->
-            Map = jsx:decode(Device, [{labels, binary}, return_maps]),
-            dgiot_product:save(Map);
-        _ ->
-            pass
-    end;
-
-save_cache('PUT', Path, Device) ->
-    case Path of
-        <<"/classes/Device/", ObjectId/binary>> ->
-            Map = jsx:decode(Device, [{labels, binary}, return_maps]),
-            dgiot_device:put(Map#{<<"objectId">> => ObjectId});
-        <<"/classes/Product/", ObjectId/binary>> ->
-            Map = jsx:decode(Device, [{labels, binary}, return_maps]),
-            dgiot_product:save_prod(ObjectId, Map);
-        _ ->
-            pass
-    end;
-
-save_cache('DELETE', Path, Device) ->
-    case Path of
-        <<"/classes/Device/", ObjectId/binary>> ->
-            dgiot_device:delete(ObjectId);
-        <<"/classes/Product/", ObjectId/binary>> ->
-            dgiot_product:delete(ObjectId);
-        _ ->
-            ?LOG(error, "Path ~p, Device ~p", [Path, Device]),
-            pass
-    end;
-
-save_cache(_, _Path, _Device) ->
-    pass.
-
 
 to_list(V) when is_atom(V) -> atom_to_list(V);
 to_list(V) when is_binary(V) -> binary_to_list(V);
@@ -332,28 +286,25 @@ encode_body(_Path, Method, Args, _Options) when Method == 'GET'; Method == 'DELE
 encode_body(_Path, _Method, Map, _) ->
     jsx:encode(Map).
 
-do_request(Method, Path, Header, Data, Options) ->
+do_request(Method, Path, Header, QueryData, Options) ->
     Sessiontoken = proplists:get_value("sessiontoken", Header, ""),
-    NewData =
-        case jsx:is_json(Data) of
+    NewQueryData =
+        case jsx:is_json(QueryData) of
             true ->
-                Data1 = jsx:decode(Data, [{labels, binary}, return_maps]),
+                Data1 = jsx:decode(QueryData, [{labels, binary}, return_maps]),
                 jsx:encode(Data1#{<<"sessiontoken">> => dgiot_utils:to_binary(Sessiontoken)});
             false ->
-                Data
+                QueryData
         end,
-    case httpc_request(Method, Path, Header, Data, [], [], Options) of
+    case httpc_request(Method, Path, Header, QueryData, [], [], Options) of
         {error, Reason} ->
             {error, Reason};
         {ok, StatusCode, Headers, ResBody} ->
-            ResBody1 = handle_resbody(method(Method, atom), Path, ResBody),
-            case do_request_after(Method, Path, Data, NewData, ResBody1, Options) of
+            case do_request_after(Method, Path, Header, NewQueryData, ResBody, Options) of
                 {ok, NewResBody} ->
-                    save_cache(Method, Path, Data),
                     {ok, StatusCode, Headers, NewResBody};
                 ignore ->
-                    save_cache(Method, Path, Data),
-                    {ok, StatusCode, Headers, ResBody1};
+                    {ok, StatusCode, Headers, ResBody};
                 {error, Reason} ->
                     {error, Reason}
             end
@@ -369,6 +320,7 @@ httpc_request(Method, Path, Header, Query, HttpOptions, ReqOptions, Options) whe
 %%    ?LOG(error,"Options ~p",[Options]),
     #{<<"host">> := Host, <<"path">> := ParsePath} = proplists:get_value(cfg, Options),
     Url = dgiot_httpc:url_join([Host, ParsePath] ++ [<<Path/binary, Query/binary>>]),
+%%    io:format("~s ~p ~p ~n", [?FILE, ?LINE, Url]),
     Request = {Url, Header},
     httpc_request(Method, Request, HttpOptions, ReqOptions);
 
@@ -391,13 +343,13 @@ httpc_request(Method, Request, HttpOptions, ReqOptions) ->
             {error, Reason}
     end.
 
-do_request_after(Method0, Path, BeforData, AfterData, ResBody, Options) ->
+do_request_after(Method0, Path, Header, NewQueryData, ResBody, Options) ->
     Method =
         case proplists:get_value(from, Options) of
-            js when AfterData == <<>> ->
+            js when NewQueryData == <<>> ->
                 method(Method0, atom);
             js ->
-                case maps:get(<<"_method">>, ?JSON_DECODE(AfterData), no) of
+                case maps:get(<<"_method">>, ?JSON_DECODE(NewQueryData), no) of
                     no -> method(Method0, atom);
                     Method1 -> method(Method1, atom)
                 end;
@@ -405,7 +357,8 @@ do_request_after(Method0, Path, BeforData, AfterData, ResBody, Options) ->
                 method(Method0, atom)
         end,
     {match, PathList} = re:run(Path, <<"([^/]+)">>, [global, {capture, all_but_first, binary}]),
-    dgiot_parse_hook:do_request_hook('after', lists:concat(PathList), Method, BeforData, AfterData, ResBody).
+%%    io:format("~s ~p ~p ~p ~n",[?FILE, ?LINE, Path, NewQueryData]),
+    dgiot_parse_hook:do_request_hook('after', lists:concat(PathList), Method, Header, NewQueryData, ResBody).
 
 list_join([], Sep) when is_list(Sep) -> [];
 list_join([H | T], Sep) ->
@@ -431,34 +384,3 @@ handle_result(Result, Map) ->
             {error, Reason}
     end.
 
-handle_resbody(get, <<"/classes/Product/", ProductId>>, ResBody) ->
-    ResBody#{
-        <<"device_counts">> => dgiot_parse_cache:lookup_count(<<"Device">>, ProductId),
-        <<"online_counts">> => dgiot_parse_cache:lookup_count(<<"Device_true">>, ProductId),
-        <<"offline_counts">> => dgiot_parse_cache:lookup_count(<<"Device_false">>, ProductId)
-    };
-
-handle_resbody(get, <<"/classes/Product">>, ResBody) ->
-    case jsx:is_json(ResBody) of
-        true ->
-            case ?JSON_DECODE(ResBody) of
-                #{<<"results">> := Results} = Map ->
-                    NewResults =
-                        lists:foldl(
-                            fun
-                                (#{<<"objectId">> := ProductId} = Product, Acc) ->
-%%                                    io:format("~s ~p ~p ~n", [?FILE, ?LINE, ProductId]),
-                                    Acc ++ [Product#{<<"device_counts">> => dgiot_parse_cache:lookup_count(<<"Device">>, ProductId),
-                                        <<"online_counts">> => dgiot_parse_cache:lookup_count(<<"Device_true">>, ProductId),
-                                        <<"offline_counts">> => dgiot_parse_cache:lookup_count(<<"Device_false">>, ProductId)}]
-                            end, [], Results),
-                    jsx:encode(Map#{<<"results">> => NewResults});
-                _ ->
-                    ResBody
-            end;
-        false ->
-            ResBody
-    end;
-
-handle_resbody(_Method, _Path, ResBody) ->
-    ResBody.

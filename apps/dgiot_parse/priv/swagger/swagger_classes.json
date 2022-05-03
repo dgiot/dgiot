@@ -391,8 +391,16 @@
           },
           {
             "in": "query",
+            "name": "count",
+            "description": "需要统计数量的字段, eg: objectId",
+            "required": false,
+            "default": "objectId",
+            "type": "string"
+          },
+          {
+            "in": "query",
             "name": "keys",
-            "description": "需要显示的字段,加count(*)则结果里面会显示总记录数, eg: username,email",
+            "description": "需要显示的字段, eg: username,email",
             "required": false,
             "type": "string"
           },

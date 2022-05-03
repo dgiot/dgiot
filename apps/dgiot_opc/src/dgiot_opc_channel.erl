@@ -211,7 +211,6 @@ handle_message({deliver, _Topic, Msg}, #state{ step = pre_read, env = Env} = Sta
                     Final_Properties = dgiot_opc:create_final_Properties(Need_update_list),
                     Topo_para=lists:zip(Need_update_list,dgiot_opc:create_x_y(erlang:length(Need_update_list))),
                     New_config = dgiot_opc:create_config(dgiot_opc:change_config(Topo_para)),
-                    dgiot_product:load(ProductId),
                     case dgiot_device:lookup_prod(ProductId) of
                         {ok, #{<<"thing">> := #{<<"properties">> := Properties}}} ->
                             case erlang:length(Properties)  of

@@ -41,6 +41,9 @@
     , to_term/1
     , is_like/2
     , is_alive/1
+    , join/2
+    , join/3
+    , join/4
     , append/2
     , append/3
     , get_val/2
@@ -154,15 +157,15 @@ to_md5(V) ->
 to_hex(V) ->
     binary_to_hex(to_binary(V)).
 
-to_binary(V) when is_atom(V) -> to_binary(atom_to_list(V));
+to_binary(V) when is_atom(V) -> atom_to_binary(V, utf8);
 to_binary(V) when is_list(V) -> list_to_binary(V);
 to_binary(V) when is_integer(V) -> integer_to_binary(V);
-to_binary(V) when is_binary(V) -> V;
 to_binary(V) when is_pid(V) -> to_binary(pid_to_list(V));
 to_binary(V) when is_map(V) -> jsx:encode(V);
-to_binary(V) -> to_binary(io_lib:format("~p", [V])).
+to_binary(V) when is_float(V) -> to_binary(io_lib:format("~p", [V]));
+to_binary(V) when is_binary(V) -> V.
 
-to_atom(V) when is_binary(V) -> to_atom(binary_to_list(V));
+to_atom(V) when is_binary(V) -> binary_to_atom(V, utf8);
 to_atom(V) when is_list(V) -> list_to_atom(V);
 to_atom(V) when is_atom(V) -> V;
 to_atom(V) -> to_atom(io_lib:format("~p", [V])).
@@ -303,6 +306,15 @@ is_alive(Name) when is_atom(Name) ->
               Pid1 -> Pid1
           end,
     Pid =/= undefined andalso Pid.
+
+join(Sep, L) -> join(Sep, L, false).
+join(Sep, L, Trip) -> join(Sep, L, Trip, fun to_binary/1).
+join(_Sep, [], _, _) -> [];
+join(Sep, [<<>> | T], true, F) -> join(Sep, T, true, F);
+join(Sep, [H | T], Trip, F) -> [F(H) | join_prepend(Sep, T, Trip, F)].
+join_prepend(_Sep, [], _, _) -> [];
+join_prepend(Sep, [<<>> | T], true, F) -> join_prepend(Sep, T, true, F);
+join_prepend(Sep, [H | T], Trip, F) -> [Sep, F(H) | join_prepend(Sep, T, Trip, F)].
 
 append(New, Map) when is_map(New) andalso is_map(Map) ->
     maps:merge(Map, New);

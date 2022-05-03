@@ -229,7 +229,6 @@ create_ipc_device(#{
                 DevAddr = <<"IPC_", IPCMAC/binary>>,
                 {_, #{<<"objectId">> := ProductId}} =
                     scan_ipc(Env#{<<"IPCMAC">> => DevAddr}),
-                dgiot_product:load(ProductId),
                 {_, #{<<"objectId">> := DeviceId}} =
                     dgiot_device:create_device(#{
                         <<"status">> => <<"ONLINE">>,

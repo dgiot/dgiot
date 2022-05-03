@@ -26,7 +26,7 @@
 -dgiot_data("ets").
 -export([init_ets/0]).
 %% API
--export([start/2, transaction/2, run_sql/3, handle_save/1, save_to_cache/2]).
+-export([start/2, handle_save/1, save_to_cache/2]).
 -export([init/3, handle_event/3, handle_message/2, stop/3, handle_init/1]).
 -export([test/1]).
 
@@ -157,14 +157,7 @@ start(ChannelId, #{
     <<"username">> := UserName,
     <<"password">> := Password
 } = Cfg) ->
-    dgiot_tdrestful:start(),
-    {Driver, Url} =
-        case list_to_binary(string:uppercase(binary_to_list(Driver0))) of
-            <<"JDBC">> ->
-                {<<"JDBC">>, list_to_binary(lists:concat(["jdbc:TAOS://", binary_to_list(Ip), ":", Port, "/", binary_to_list(<<"dgiot">>)]))};
-            _ ->
-                {<<"HTTP">>, list_to_binary(lists:concat(["http://", binary_to_list(Ip), ":", Port, "/rest/sql"]))}
-        end,
+    {Driver, Url} = dgiot_tdengine_pool:start(list_to_binary(string:uppercase(binary_to_list(Driver0))), Ip, Port),
     Keep = min(maps:get(<<"keep">>, Cfg, 365 * 5), 365 * 5),
     dgiot_channelx:add(?TYPE, ChannelId, ?MODULE, #{
         <<"driver">> => Driver,
@@ -202,25 +195,22 @@ handle_init(#state{id = _ChannelId} = State) ->
     {ok, State}.
 
 %% 通道消息处理,注意：进程池调用
-handle_event(full, _From, #state{id = Channel}) ->
+handle_event(full, _From, #state{id = Channel} = State) ->
     dgiot_dcache:save_to_disk(?CACHE(Channel)),
-    ok;
+    {ok, State};
 
-handle_event(EventType, Event, _State) ->
-    ?LOG(info, "channel ~p, ~p", [EventType, Event]),
-    ok.
+handle_event(_EventType, _Event, State) ->
+    {ok, State}.
 
 %% 规则引擎导入
 handle_message({rule, Msg, Context}, State) ->
-    ?LOG(info, "Msg ~p", [Msg]),
-    ?LOG(info, "Context ~p", [Context]),
     handle_message({data, Msg, Context}, State);
 
 handle_message(init, #state{id = ChannelId, env = Config} = State) ->
     case dgiot_bridge:get_products(ChannelId) of
         {ok, _, ProductIds} ->
             NewProducts = lists:foldl(fun(X, Acc) ->
-                Acc ++ dgiot_tdengine:get_products(X, ChannelId)
+                Acc ++ dgiot_product_tdengine:get_products(X, ChannelId)
                                       end, [], ProductIds),
             do_check(ChannelId, dgiot_utils:unique_1(NewProducts), Config),
             {ok, State#state{product = NewProducts}};
@@ -260,77 +250,11 @@ do_save([ProductId, DevAddr, Data, _Context], #state{id = ChannelId} = State) ->
         {error, Reason} ->
             ?LOG(error, "Save to tdengine error, ~p, ~p", [Data, Reason]);
         {ok, #{<<"thing">> := Properties}} ->
-            Object = format_data(ProductId, DevAddr, Properties, Data),
+            Object = dgiot_tdengine:format_data(ProductId, DevAddr, Properties, Data),
             dgiot_device:save(ProductId, DevAddr),
             save_to_cache(ChannelId, Object)
     end,
     {ok, State}.
-
-%% 产品，设备地址与数据分离，推荐
-format_data(ProductId, DevAddr, Properties, Data) ->
-    DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
-    Values = check_fields(Data, Properties),
-%%    Fields = lists:foldl(fun(X, Acc) ->
-%%        Acc ++ [list_to_binary(string:to_lower(binary_to_list(X)))]
-%%                         end, [], maps:keys(Values)),
-    Fields = get_fields(ProductId),
-
-    dgiot_data:insert({td, ProductId, DeviceId}, Values#{<<"createdat">> => dgiot_datetime:nowstamp()}),
-    Now = maps:get(<<"createdat">>, Data, now),
-    NewValues = get_values(ProductId, Values, Now),
-    dgiot_data:insert(?DGIOT_TD_THING_ETS, DeviceId, Values),
-    #{
-        <<"db">> => ?Database(ProductId),
-        <<"tableName">> => ?Table(DeviceId),
-        <<"using">> => ?Table(ProductId),
-        <<"tags">> => [?Table(DevAddr)],
-        <<"fields">> => Fields,
-        <<"values">> => NewValues
-    }.
-
-%% INSERT INTO _173acf2f85._af6d16f9ba using _173acf2f85._173acf2f85 TAGS ('_KOHbyuiJilnsdD') VALUES (now,null,null,null,null);
-get_values(ProductId, Values, Now) ->
-    Values0 =
-        case dgiot_data:get({ProductId, describe_table}) of
-            Results when length(Results) > 0 ->
-                lists:foldl(fun(Column, Acc) ->
-                    case Column of
-                        #{<<"Note">> := <<"TAG">>} ->
-                            Acc;
-                        #{<<"Field">> := <<"createdat">>} ->
-                            Acc ++ dgiot_utils:to_list(Now);
-                        #{<<"Field">> := Field} ->
-                            Value = maps:get(Field, Values, null),
-                            case Value of
-                                {NewValue, text} ->
-                                    Acc ++ ",\'" ++ dgiot_utils:to_list(NewValue) ++ "\'";
-                                _ ->
-                                    Acc ++ "," ++ dgiot_utils:to_list(Value)
-                            end;
-                        _ ->
-                            Acc
-                    end
-                            end, " (", Results);
-            _ ->
-                " "
-        end,
-    list_to_binary(Values0 ++ ")").
-
-
-get_fields(ProductId) ->
-    case dgiot_data:get({ProductId, describe_table}) of
-        Results when length(Results) > 0 ->
-            lists:foldl(fun(Column, Acc) ->
-                case Column of
-                    #{<<"Field">> := Field} ->
-                        Acc ++ [Field];
-                    _ ->
-                        Acc
-                end
-                        end, [], Results);
-        _ ->
-            []
-    end.
 
 save_cache(Channel) ->
     Max = 50,
@@ -365,7 +289,6 @@ save_to_tdengine(Channel, Requests) ->
 %%            save_to_cache(Channel, Requests),
             pass
     end.
-
 
 check_cache(Channel) ->
     Info = dgiot_dcache:info(?CACHE(Channel)),
@@ -425,10 +348,6 @@ check_database(ChannelId, ProductIds, #{<<"database">> := DataBase, <<"keep">> :
             timer:sleep(5000),
             check_database(ChannelId, ProductIds, Config);
         _ ->
-%%            ?LOG(error, "Check database Error, ChannelId:~p, ProductIds:~p, Reason:~p", [ChannelId, ProductIds, Reason]),
-%%            dgiot_bridge:send_log(ChannelId, "Check database Error, ChannelId:~p, ProductIds:~p, Reason:~p", [ChannelId, ProductIds, Reason]),
-%%            timer:sleep(5000),
-%%            check_database(ChannelId, ProductIds, Config)
             ok
     end.
 
@@ -437,7 +356,7 @@ create_table(_, [], _) ->
 create_table(ChannelId, [ProductId | ProductIds], Config) ->
     case dgiot_bridge:get_product_info(ProductId) of
         {ok, Product} ->
-            case get_schema(ChannelId, Product) of
+            case dgiot_tdengine_schema:get_schema(ChannelId, Product) of
                 ignore ->
                     ?LOG(debug, "Create Table ignore, ChannelId:~p, ProductId:~p", [ChannelId, Product]);
                 Schema ->
@@ -457,220 +376,6 @@ create_table(ChannelId, [ProductId | ProductIds], Config) ->
             ?LOG(error, "Create Table Error, ~p ~p", [Reason, ProductId])
     end,
     create_table(ChannelId, ProductIds, Config).
-
-%% TDengine参数限制与保留关键字
-%% https://www.taosdata.com/docs/cn/v2.0/administrator#keywords
-get_schema(_ChannelId, Schema) ->
-    case maps:get(<<"thing">>, Schema, <<>>) of
-        <<>> ->
-            ignore;
-        Thing ->
-            {Columns, Tags} = get_field_tag(Thing),
-            case length(Columns) of
-                0 ->
-                    ignore;
-                _ ->
-                    #{
-                        <<"fields">> => Columns,
-                        <<"tags">> => Tags
-                    }
-            end
-    end.
-
-get_field_tag(Thing) ->
-    Properties = maps:get(<<"properties">>, Thing, []),
-    Tags = maps:get(<<"tags">>, Thing, []),
-    Columns =
-        lists:foldl(fun(Property, Acc) ->
-            case get_field(Property) of
-                pass ->
-                    Acc;
-                V ->
-                    Acc ++ [V]
-            end
-                    end, [], Properties),
-    NewTags =
-        lists:foldl(fun(Tag, Acc) ->
-            case get_field(Tag) of
-                pass ->
-                    Acc;
-                V ->
-                    Acc ++ [V]
-            end
-                    end, [{<<"devaddr">>, #{<<"type">> => <<"NCHAR(50)">>}}], Tags),
-    {lists:flatten(Columns), lists:flatten(NewTags)}.
-
-%%  https://www.taosdata.com/cn/documentation/taos-sql#data-type
-%%  #	类型       	Bytes    说明
-%%  1	TIMESTAMP   8        时间戳。缺省精度毫秒，可支持微秒。从格林威治时间 1970-01-01 00:00:00.000 (UTC/GMT) 开始，计时不能早于该时间。（从 2.0.18.0 版本开始，已经去除了这一时间范围限制）
-%%  2	INT       	4        整型，范围 [-2^31+1, 2^31-1], -2^31 用作 NULL
-%%  3	BIGINT      8        长整型，范围 [-2^63+1, 2^63-1], -2^63 用于 NULL
-%%  4	FLOAT       4        浮点型，有效位数 6-7，范围 [-3.4E38, 3.4E38]
-%%  5	DOUBLE      8        双精度浮点型，有效位数 15-16，范围 [-1.7E308, 1.7E308]
-%%  6	BINARY      自定义    记录单字节字符串，建议只用于处理 ASCII 可见字符，中文等多字节字符需使用 nchar。理论上，最长可以有 16374 字节，但由于每行数据最多 16K 字节，实际上限一般小于理论值。binary 仅支持字符串输入，字符串两端需使用单引号引用。使用时须指定大小，如 binary(20) 定义了最长为 20 个单字节字符的字符串，每个字符占 1 byte 的存储空间，总共固定占用 20 bytes 的空间，此时如果用户字符串超出 20 字节将会报错。对于字符串内的单引号，可以用转义字符反斜线加单引号来表示，即 \’。
-%%  7	SMALLINT    2        短整型， 范围 [-32767, 32767], -32768 用于 NULL
-%%  8	TINYINT     1        单字节整型，范围 [-127, 127], -128 用于 NULL
-%%  9	BOOL       	1        布尔型，{true, false}
-%%  10	NCHAR       自定义    记录包含多字节字符在内的字符串，如中文字符。每个 nchar 字符占用 4 bytes 的存储空间。字符串两端使用单引号引用，字符串内的单引号需用转义字符 \’。nchar 使用时须指定字符串大小，类型为 nchar(10) 的列表示此列的字符串最多存储 10 个 nchar 字符，会固定占用 40 bytes 的空间。如果用户字符串长度超出声明长度，将会报错。
-get_field(#{<<"isshow">> := false}) ->
-    pass;
-get_field(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"int">>}}) ->
-    {Field, #{<<"type">> => <<"INT">>}};
-get_field(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"image">>}}) ->
-    {Field, #{<<"type">> => <<"BIGINT">>}};
-get_field(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"long">>}}) ->
-    {Field, #{<<"type">> => <<"BIGINT">>}};
-get_field(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"float">>}}) ->
-    {Field, #{<<"type">> => <<"FLOAT">>}};
-get_field(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"date">>}}) ->
-    {Field, #{<<"type">> => <<"TIMESTAMP">>}};
-get_field(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"bool">>}}) ->
-    {Field, #{<<"type">> => <<"BOOL">>}};
-get_field(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"double">>}}) ->
-    {Field, #{<<"type">> => <<"DOUBLE">>}};
-get_field(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"string">>} = Spec}) ->
-    Size = integer_to_binary(min(maps:get(<<"size">>, Spec, 10), 200)),
-    {Field, #{<<"type">> => <<"NCHAR(", Size/binary, ")">>}};
-get_field(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"text">>} = Spec}) ->
-    Size = integer_to_binary(min(maps:get(<<"size">>, Spec, 50), 200)),
-    {Field, #{<<"type">> => <<"NCHAR(", Size/binary, ")">>}};
-get_field(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"geopoint">>} = Spec}) ->
-    Size = integer_to_binary(min(maps:get(<<"size">>, Spec, 50), 200)),
-    {Field, #{<<"type">> => <<"NCHAR(", Size/binary, ")">>}};
-get_field(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"enum">>, <<"specs">> := _Specs}}) ->
-%%    Size = integer_to_binary(maps:size(Specs)),
-    {Field, #{<<"type">> => <<"INT">>}};
-get_field(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"struct">>, <<"specs">> := SubFields}}) ->
-    [get_field(SubField#{<<"identifier">> => ?Struct(Field, Field1)}) || #{<<"identifier">> := Field1} = SubField <- SubFields].
-
-
-check_fields(Data, #{<<"properties">> := Props}) -> check_fields(Data, Props);
-check_fields(Data, Props) -> check_fields(Data, Props, #{}).
-check_fields(Data, Props, Acc) when Data == []; Props == [] -> Acc;
-check_fields(Data, [#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := Type} = DataType} = Prop | Other], Acc) ->
-    LowerField = list_to_binary(string:to_lower(binary_to_list(Field))),
-    case check_field(Data, Prop) of
-        undefined ->
-            check_fields(Data, Other, Acc);
-        Value ->
-            case list_to_binary(string:to_upper(binary_to_list(Type))) of
-                <<"STRUCT">> ->
-                    #{<<"specs">> := SubFields} = DataType,
-                    Acc2 = lists:foldl(
-                        fun(#{<<"identifier">> := Field1} = SubField, Acc1) ->
-                            case check_field(Value, SubField) of
-                                undefined ->
-                                    Acc1;
-                                Value1 ->
-                                    LowerField1 = list_to_binary(string:to_lower(binary_to_list(Field1))),
-                                    Acc1#{?Struct(LowerField, LowerField1) => Value1}
-                            end
-                        end, Acc, SubFields),
-                    check_fields(Data, Other, Acc2);
-                _ ->
-                    check_fields(Data, Other, Acc#{LowerField => Value})
-            end
-    end.
-
-check_field(Data, Props) when is_map(Data) ->
-    NewData =
-        maps:fold(fun(K, V, Acc) ->
-            NewK = list_to_binary(string:to_lower(binary_to_list(K))),
-            Acc#{NewK => V}
-                  end, #{}, Data),
-    check_field(maps:to_list(NewData), Props);
-
-check_field(Data, #{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := Type} = DataType}) ->
-    NewField = list_to_binary(string:to_lower(binary_to_list(Field))),
-    case proplists:get_value(NewField, Data) of
-        undefined ->
-            undefined;
-        Value ->
-            Type1 = list_to_binary(string:to_upper(binary_to_list(Type))),
-            NewValue =
-                case Type1 of
-                    _ when Type1 == <<"INT">>; Type1 == <<"DATE">>; Type1 == <<"SHORT">>; Type1 == <<"LONG">>;Type1 == <<"ENUM">>, is_list(Value) ->
-                        round(dgiot_utils:to_int(Value));
-                    _ when Type1 == <<"INT">>; Type1 == <<"DATE">>, is_float(Value) ->
-                        round(Value);
-                    _ when Type1 == <<"INT">>; Type1 == <<"DATE">> ->
-                        Value;
-                    _ when Type1 == <<"FLOAT">>; Type1 == <<"DOUBLE">> ->
-                        Specs = maps:get(<<"specs">>, DataType, #{}),
-                        Precision = maps:get(<<"precision">>, Specs, 3),
-                        dgiot_utils:to_float(Value / 1, Precision);
-                    <<"BOOL">> ->
-                        Value;
-                    <<"TEXT">> ->
-                        {unicode:characters_to_binary(unicode:characters_to_list((dgiot_utils:to_binary(Value)))), text};
-                    <<"GEOPOINT">> ->
-                        {unicode:characters_to_binary(unicode:characters_to_list((Value))), text};
-%%                    <<"ENUM">> ->
-%%%%                        Specs = maps:get(<<"specs">>, DataType, #{}),
-%%%%                        ?LOG(info, "Specs ~p", [Specs]),
-%%%%                        EnumValue = maps:get(Value, Specs, <<"1">>),
-%%%%                        dgiot_utils:to_int(EnumValue);
-%%                        Value;
-                    <<"STRUCT">> ->
-                        Value;
-                    <<"IMAGE">> ->
-                        round(dgiot_utils:to_int(Value));
-                    _ ->
-                        Value
-                end,
-            case check_validate(NewValue, DataType) of
-                true ->
-                    NewValue;
-                false ->
-                    throw({error, <<Field/binary, " is not validate">>})
-            end
-    end;
-
-check_field(Data, Props) ->
-    ?LOG(error, "Data ~p", [Data]),
-    ?LOG(error, "Props ~p", [Props]),
-    undefined.
-
-check_validate(Value, #{<<"max">> := Max, <<"min">> := Min}) when is_integer(Max), is_integer(Min) ->
-    Value =< Max andalso Value >= Min;
-check_validate(Value, #{<<"max">> := Max}) when is_integer(Max) ->
-    Value =< Max;
-check_validate(Value, #{<<"min">> := Min}) when is_integer(Min) ->
-    Value >= Min;
-check_validate(_, _) ->
-    true.
-
-
-transaction(Channel, Fun) ->
-    case dgiot_channelx:call(?TYPE, Channel, config) of
-        {ok, Context} ->
-            Fun(Context);
-        {error, Reason} ->
-            {error, Reason}
-    end.
-
-%% Action 用来区分数据库操作语句类型(DQL、DML、DDL、DCL)
-run_sql(#{<<"driver">> := <<"HTTP">>, <<"url">> := Url, <<"username">> := UserName, <<"password">> := Password} = Context, _Action, Sql) ->
-    ?LOG(debug, " ~p, ~p, ~p, (~ts)", [Url, UserName, Password, unicode:characters_to_list(Sql)]),
-    case dgiot_tdrestful:request(Url, UserName, Password, Sql) of
-        {ok, Result} ->
-            case maps:get(<<"channel">>, Context, <<"">>) of
-                <<"">> ->
-                    ?LOG(debug, "Execute ~p (~ts) ~p", [Url, unicode:characters_to_list(Sql), Result]);
-                ChannelId ->
-                    dgiot_bridge:send_log(ChannelId, "Execute ~p (~ts) ~p", [Url, unicode:characters_to_list(Sql), jsx:encode(Result)])
-            end,
-            {ok, Result};
-        {error, #{<<"code">> := 896} = Reason} ->
-            {ok, Reason#{<<"affected_rows">> => 0}};
-        {error, Reason} ->
-            ?LOG(error, "Execute Fail ~p (~ts) ~p", [Url, unicode:characters_to_list(Sql), Reason]),
-            {error, Reason}
-    end;
-run_sql(#{<<"driver">> := <<"JDBC">>, <<"url">> := _Url}, Action, _Sql) when Action == execute_update; Action == execute_query ->
-%%    ?LOG(info,"Execute ~p (~p) ~p", [Url, byte_size(Sql), Sql]),
-%%    apply(ejdbc, Action, [<<"com.taosdata.jdbc.TSDBDriver">>, Sql]).
-    ok.
 
 
 %% 先缓存定时存库

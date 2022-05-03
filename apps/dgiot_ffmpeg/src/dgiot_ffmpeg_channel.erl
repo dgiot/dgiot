@@ -211,7 +211,6 @@ handle_message(init, #state{env = #{
     <<"IPCMAC">> := Mac,
     <<"IPCTYPE">> := IPCTYPE
 }  = Env} = State) ->
-    dgiot_product:load(GwProductId),
     Filter = #{
         <<"where">> => #{<<"product">> => GwProductId},
         <<"limit">> => 1,

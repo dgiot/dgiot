@@ -106,9 +106,12 @@ init(?TYPE, ChannelId, Args) ->
         id = ChannelId,
         env = Args
     },
-%%    dgiot_parse_hook:subscribe(<<"Product/*">>, put, ChannelId),
-%%    dgiot_parse_hook:subscribe(<<"Product">>, post, ChannelId),
-%%    dgiot_parse_hook:subscribe(<<"Product/*">>, delete, ChannelId),
+    dgiot_parse_hook:subscribe(<<"Product/*">>, get, ChannelId),
+    dgiot_parse_hook:subscribe(<<"Product">>, get, ChannelId),
+    dgiot_parse_hook:subscribe(<<"Device/*">>, put, [<<"isEnable">>], ChannelId),
+    dgiot_parse_hook:subscribe(<<"Product">>, put, ChannelId),
+    dgiot_parse_hook:subscribe(<<"Product">>, post, ChannelId),
+    dgiot_parse_hook:subscribe(<<"Product/*">>, delete, ChannelId),
     {ok, State, []}.
 
 handle_init(State) ->
@@ -130,19 +133,38 @@ handle_message(check, #state{env = #{<<"offline">> := OffLine, <<"checktime">> :
     dgiot_device:sync_parse(OffLine),
     {ok, State};
 
-handle_message({sync_parse, post, <<"Product">>, BeforeData, AfterData}, State) ->
-    dgiot_product_hook:post('before', BeforeData),
-    dgiot_product_hook:post('after', AfterData),
+handle_message({sync_parse, Pid, 'after', get, Header, <<"Product">>, #{<<"results">> := Results} = ResBody}, State) ->
+    io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Pid,Header]),
+    dgiot_device_static:get_count(Header),
+    NewResBody = dgiot_product:stats_Product(ResBody),
+    dgiot_parse_hook:publish(Pid, NewResBody),
     {ok, State};
 
-handle_message({sync_parse, put, <<"Product">>, BeforeData, AfterData, ProductId}, State) ->
-    dgiot_product_hook:put('before', BeforeData, ProductId),
-    dgiot_product_hook:put('after', AfterData, ProductId),
+handle_message({sync_parse, Pid, 'after', get, _Header, <<"Product">>, #{<<"objectId">> := ObjectId} = ResBody}, State) ->
+    io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Pid, ObjectId]),
+    dgiot_parse_hook:publish(Pid, ResBody),
     {ok, State};
 
-handle_message({sync_parse, delete, <<"Product">>, BeforeData, AfterData, ProductId}, State) ->
-    dgiot_product_hook:delete('before', BeforeData, ProductId),
-    dgiot_product_hook:delete('after', AfterData, ProductId),
+handle_message({sync_parse, Pid, 'after', put, _Header, <<"Device">>,  QueryData}, State) ->
+    io:format("~s ~p ~p  ~p ~n", [?FILE, ?LINE, Pid,  QueryData]),
+    {ok, State};
+
+handle_message({sync_parse, Pid, 'after', post, _Header, <<"Product">>, QueryData}, State) ->
+    io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Pid, QueryData]),
+%%    dgiot_product_hook:post('before', BeforeData),
+%%    dgiot_product_hook:post('after', AfterData),
+    {ok, State};
+
+handle_message({sync_parse, Pid, 'after', put, _Header, <<"Product">>, QueryData}, State) ->
+    io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Pid, QueryData]),
+%%    dgiot_product_hook:put('before', QueryData, ObjectId),
+%%    dgiot_product_hook:put('after', ResBody, ObjectId),
+    {ok, State};
+
+handle_message({sync_parse, Pid, 'after', delete, _Header, <<"Product">>, ObjectId}, State) ->
+    io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Pid, ObjectId]),
+%%    dgiot_product_hook:delete('before', QueryData, ObjectId),
+%%    dgiot_product_hook:delete('after', ResBody, ObjectId),
     {ok, State};
 
 handle_message(Message, State) ->
