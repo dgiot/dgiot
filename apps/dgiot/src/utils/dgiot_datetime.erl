@@ -221,8 +221,14 @@ format2(<<F:1/bytes, Other/binary>>, L, Format) ->
             format2(Other, L, Format)
     end.
 
-to_unixtime(Time) when is_integer(Time) -> Time;
-to_unixtime(LocalTime) -> localtime_to_unixtime(LocalTime).
+to_unixtime(Time) when is_integer(Time) ->
+    Time;
+to_unixtime(Time) when is_binary(Time) ->
+    Size = byte_size(Time) - 4,
+    <<DateTime:Size/binary, _/binary>> = Time,
+    to_unixtime(to_localtime(DateTime));
+to_unixtime(LocalTime) ->
+    localtime_to_unixtime(LocalTime).
 
 
 -spec now_microsecs() -> integer().

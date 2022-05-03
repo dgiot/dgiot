@@ -452,7 +452,7 @@ do_report(Config, DevType, Name, SessionToken, FullPath, Uri) ->
                 <<"producttemplet">> => #{<<"objectId">> => Producttempid, <<"__type">> => <<"Pointer">>, <<"className">> => <<"ProductTemplet">>},
                 <<"config">> => Config#{<<"reporttemp">> => WordPath},
                 <<"thing">> => #{},
-                <<"productSecret">> => license_loader:random(),
+                <<"productSecret">> => dgiot_utils:random(),
                 <<"dynamicReg">> => true}, SessionToken) of
                 {_, #{<<"objectId">> := ProductId}} ->
                     lists:foldl(fun(Image, Acc) ->
@@ -894,7 +894,7 @@ post_report(#{<<"name">> := Name, <<"product">> := ProductId, <<"parentId">> := 
                 {ok, #{<<"results">> := Results}} when length(Results) == 0 ->
                     #{<<"roles">> := Roles} = dgiot_auth:get_session(SessionToken),
                     [#{<<"name">> := Role} | _] = maps:values(Roles),
-                    <<DtuAddr:12/binary, _/binary>> = license_loader:random(),
+                    <<DtuAddr:12/binary, _/binary>> = dgiot_utils:random(),
                     {ok, #{<<"objectId">> := DeviceId}} =
                         dgiot_device:create_device(#{
                             <<"devaddr">> => DtuAddr,

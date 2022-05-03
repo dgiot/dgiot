@@ -56,7 +56,6 @@ load(#{
     <<"product">> := ProductId,
     <<"channel">> := Channel,
     <<"vcaddr">> := Dtu} = Args) ->
-    dgiot_product:load(ProductId),
     Consumer = <<"task/", Channel/binary, "/", Dtu/binary>>,
     dgiot_data:set_consumer(Consumer, 10),
     #{<<"objectId">> := DeviceId} =

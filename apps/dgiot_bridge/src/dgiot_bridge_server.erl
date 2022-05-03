@@ -221,6 +221,4 @@ do_product(ChannelId, [{ProductId, Product} | Products], Acc) ->
         _ ->
             ok
     end,
-    %% 提前载入设备
-    dgiot_product:load(ProductId),
     do_product(ChannelId, Products, [ProductId | Acc]).

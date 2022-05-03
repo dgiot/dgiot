@@ -71,7 +71,7 @@ get_view(View, Devaddr, ProductId, Type) ->
             end;
         _ ->
             DeviceId = dgiot_parse_id:get_deviceid(ProductId, Devaddr),
-            case dgiot_tdengine:get_device(ProductId, Devaddr, #{<<"keys">> => <<"last_row(*)">>, <<"limit">> => 1}) of
+            case dgiot_device_tdengine:get_device(ProductId, Devaddr, #{<<"keys">> => <<"last_row(*)">>, <<"limit">> => 1}) of
                 {ok, #{<<"results">> := [Result | _]}} ->
                     put({self(), td}, Result);
                 _ ->
@@ -448,7 +448,7 @@ get_realtimedata(ProductId, DeviceId, Payload) ->
     Data =
         maps:fold(fun(K, V, Acc) ->
             Time = dgiot_datetime:now_secs(),
-            NewTime = dgiot_tdengine_handler:get_time(dgiot_utils:to_binary(Time), <<"111">>),
+            NewTime = dgiot_tdengine_field:get_time(dgiot_utils:to_binary(Time), <<"111">>),
             case maps:find(K, Maps) of
                 error ->
                     Acc;

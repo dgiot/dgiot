@@ -225,7 +225,6 @@ change_config(App, K, V) ->
     {_, Mappings, _} = Schema,
     Map = maps:from_list(proplists:get_value(App, Configs, [])),
     DefaultList = maps:to_list(maps:merge(Map, #{dgiot_utils:to_atom(K) => V})),
-    ?LOG(info,"Mappings ~p ", [Mappings]),
     NewMappings =
         lists:foldl(fun(X, Acc) ->
             case X#mapping.variable of
@@ -237,13 +236,12 @@ change_config(App, K, V) ->
                 _ -> Acc ++ [X]
             end
                     end, [], Mappings),
-    ?LOG(info,"NewMappings ~p ", [NewMappings]),
     cuttlefish_conf:generate_file(NewMappings,
         filename:join([dgiot:get_env(plugins_etc_dir), App]) ++ ".conf").
 
 check_parse() ->
     dgiot_data:init(check_parse_health),
-    timer:sleep(100),
+    timer:sleep(5000),
     dgiot_data:insert(check_parse_health, parse_health, false),
     spawn(
         fun() ->

@@ -135,7 +135,6 @@ read_opc_ack(Payload, ProductId, {DeviceId, Devaddr}) ->
                    end,
 
             %%  -------------------------------- 组态数据传递
-            dgiot_product:load(ProductId),
             Data = maps:fold(fun(K, V, Acc) ->
                 case binary:split(K, <<$.>>, [global, trim]) of
                     [_, DeviceName1, K1] ->

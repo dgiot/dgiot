@@ -25,8 +25,8 @@
 -export([
     do_request_hook/6,
     subscribe/3,
-    publish/4,
-    publish/5,
+    subscribe/4,
+    publish/2,
     add_trigger/3,
     del_trigger/2,
     del_trigger/1,
@@ -35,60 +35,103 @@
     get_trigger/0,
     get_trigger/2,
     add_all_trigger/1,
-    do_hook/2,
-    get_count/2
+    do_hook/2
 ]).
 
-get_count(ClassName, Acls) ->
-    case catch dgiot_hook:run_hook({'parse_get_count', ClassName}, [Acls]) of
-        {'EXIT', Reason} ->
-            {error, Reason};
-        {error, not_find} ->
-            dgiot_parse_cache:get_count(ClassName, Acls, roleid);
-        {ok, []} ->
-            ignore;
-        {ok, [{error, Reason} | _]} ->
-            {error, Reason};
-        {ok, [Rtn | _]} ->
-            Rtn
-    end.
-
 subscribe(Table, Method, Channel) ->
+    subscribe(Table, Method, Channel, [<<"*">>]).
+
+subscribe(Table, Method, Channel, Keys) ->
+    NewKeys =
+        case Method of
+            put -> Keys;
+            _ -> [<<"*">>]
+        end,
     case dgiot_data:get({sub, Table, Method}) of
         not_find ->
-            dgiot_data:insert({sub, Table, Method}, [Channel]);
+            dgiot_data:insert({sub, Table, Method}, [{Channel, NewKeys}]);
         Acc ->
-            dgiot_data:insert({sub, Table, Method}, dgiot_utils:unique_2(Acc ++ [Channel]))
+            dgiot_data:insert({sub, Table, Method}, dgiot_utils:unique_2(Acc ++ [{Channel, NewKeys}]))
     end,
-    Fun = fun(Args) ->
-        case Args of
-            ['after', BeforData, AfterData, _Body] ->
-                publish(Table, Method, BeforData, AfterData),
-                {ok, AfterData};
-            ['after', BeforData, AfterData, ObjectId, _Body] ->
-                publish(Table, Method, BeforData, AfterData, ObjectId),
-                {ok, AfterData};
-            _ ->
+    add_hook({Table, Method}).
+
+add_hook(Key) ->
+    Fun =
+        fun
+            ({'after', get, Header, Class, _QueryData, ResBody}) ->
+                send('after', get, Header, Class, dgiot_utils:to_map(ResBody)),
+                receive_ack(ResBody);
+            ({'after', get, Header,  Class, _ObjectId, _QueryData, ResBody}) ->
+                send('after', get, Header, Class, dgiot_utils:to_map(ResBody)),
+                receive_ack(ResBody);
+            ({'after', post, Header,  Class, QueryData, ResBody}) ->
+                send('after', post, Header,  Class, dgiot_utils:to_map(QueryData)),
+                {ok, ResBody};
+            ({'after', put, Header, Class, ObjectId, QueryData, ResBody}) ->
+                Map = dgiot_utils:to_map(QueryData),
+                send('after', put, Header, Class, Map#{<<"objectId">> => ObjectId}),
+                {ok, ResBody};
+            ({'after', delete, Header, Class, ObjectId, _QueryData, ResBody}) ->
+                send('after', delete, Header, Class, ObjectId),
+                {ok, ResBody};
+            (_) ->
                 {ok, []}
-        end
-          end,
-    dgiot_hook:add(one_for_one, {Table, Method}, Fun).
+        end,
+    dgiot_hook:add(one_for_one, Key, Fun).
 
-publish(Table, Method, BeforData, AfterData) ->
-    lists:map(fun(ChannelId) ->
-        dgiot_channelx:do_message(ChannelId, {sync_parse, Method, Table, dgiot_utils:to_map(BeforData), dgiot_utils:to_map(AfterData)})
-              end, dgiot_data:get({sub, Table, Method})).
+publish(Pid, Payload) ->
+    Pid ! {sync_parse, Payload}.
 
-publish(Table, Method, BeforData, AfterData, ObjectId) ->
-    lists:map(fun(ChannelId) ->
-        dgiot_channelx:do_message(ChannelId, {sync_parse, Method, Table, dgiot_utils:to_map(BeforData), dgiot_utils:to_map(AfterData), ObjectId})
-              end, dgiot_data:get({sub, Table, Method})).
+%% 同步等待消息处理
+receive_ack(ResBody) ->
+    receive
+        {sync_parse, NewResBody} when is_map(NewResBody) ->
+%%            io:format("~s ~p ~p  ~n", [?FILE, ?LINE, length(maps:to_list(NewResBody))]),
+            {ok, jsx:encode(NewResBody)};
+        {sync_parse, NewResBody} ->
+%%            io:format("~s ~p ~p  ~n", [?FILE, ?LINE, NewResBody]),
+            {ok, NewResBody};
+        {error} ->
+            {ok, ResBody}
+    after 5000 ->  %% 5秒消息没有响应则用原响应报文返回
+        {ok, ResBody}
+    end.
 
-do_request_hook(Type, [<<"classes">>, Class, ObjectId], Method, BeforData, AfterData, Body) ->
-    do_hook({<<Class/binary, "/*">>, Method}, [Type, BeforData, AfterData, ObjectId, Body]);
-do_request_hook(Type, [<<"classes">>, Class], Method, BeforData, AfterData, Body) ->
-    do_hook({Class, Method}, [Type, BeforData, AfterData, Body]);
-do_request_hook(_Type, _Paths, _Method, _BeforData, _AfterData, _Body) ->
+send(Type, Method, Header, Class, Data) ->
+    case dgiot_data:get({sub, Class, Method}) of
+        not_find ->
+            pass;
+        List ->
+            lists:map(
+                fun
+                    ({ChannelId, [<<"*">>]}) ->
+                        dgiot_channelx:do_message(ChannelId, {sync_parse, self(), Type, Method, Header, Class, Data});
+                    ({ChannelId, Keys}) when Method == put ->
+                        List = maps:keys(Data),
+                        case List -- Keys of
+                            List ->
+                                pass;
+                            _ ->
+                                dgiot_channelx:do_message(ChannelId, {sync_parse, self(), Type, Method, Header, Class, Data})
+                        end
+                end, List)
+    end.
+
+do_request_hook(Type, [<<"classes">>, Class, ObjectId], Method, Header, QueryData, ResBody) ->
+    do_hook({<<Class/binary, "/*">>, Method}, {Type, Method, Header, Class, ObjectId, QueryData, ResBody});
+do_request_hook(Type, [<<"classes">>, Class], Method, Header, QueryData, ResBody) ->
+    do_hook({Class, Method}, {Type, Method, Header, Class, QueryData, ResBody});
+%% 批处理只做异步通知，不做同步hook
+do_request_hook(Type, [<<"batch">>], _Method, Header, QueryData, #{<<"requests">> := Requests} = ResBody) ->
+    lists:map(fun(Request) ->
+        SubMethod = maps:get(<<"method">>, Request, <<"post">>),
+        Path = maps:get(<<"path">>, Request, <<"">>),
+        Body = maps:get(<<"body">>, Request, #{}),
+        {match, PathList} = re:run(Path, <<"([^/]+)">>, [global, {capture, all_but_first, binary}]),
+        do_request_hook(Type, lists:concat(PathList), dgiot_parse_rest:method(SubMethod), Header, QueryData, Body)
+              end, Requests),
+    {ok, ResBody};
+do_request_hook(_Type, _Paths, _Method, _Header, _QueryData, _ResBody) ->
     ignore.
 do_hook(Key, Args) ->
     case catch dgiot_hook:run_hook(Key, Args) of

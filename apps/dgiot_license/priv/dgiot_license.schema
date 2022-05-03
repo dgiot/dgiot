@@ -1,9 +1,0 @@
-{mapping, "dgiot_auth.license", "dgiot_license.license", [
-  {default, "0cd4719b0af8784a0b0bd1460b5fe687"},
-  {datatype, string}
-]}.
-
-{mapping, "dgiot_auth.host", "dgiot_license.host", [
-  {default, "license.iotn2n.com"},
-  {datatype, string}
-]}.
