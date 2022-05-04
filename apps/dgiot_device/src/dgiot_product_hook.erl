@@ -19,76 +19,67 @@
 -include("dgiot_device.hrl").
 -include_lib("dgiot/include/logger.hrl").
 
--export([post/2, put/3, delete/3]).
+-export([post/2, put/2, delete/2]).
 
-post('before', BeforeData) ->
-    case BeforeData of
-        #{<<"objectId">> := ProductId, <<"channel">> := Channel} ->
-            io:format("~s ~p  Channel = ~p.~n", [?FILE, ?LINE, Channel]),
-            TdchannelId = maps:get(<<"tdchannel">>, Channel, <<"">>),
-            TaskchannelId = maps:get(<<"taskchannel">>, Channel, <<"">>),
-            Otherchannel = maps:get(<<"otherchannel">>, Channel, []),
-            dgiot_product:add_product_relation(Otherchannel ++ [TdchannelId] ++ [TaskchannelId], ProductId);
+post('before', _QueryData) ->
+    pass;
+
+post('after', #{<<"objectId">> := ProductId, <<"channel">> := Channel} = QueryData) ->
+    TdchannelId = maps:get(<<"tdchannel">>, Channel, <<"">>),
+    TaskchannelId = maps:get(<<"taskchannel">>, Channel, <<"">>),
+    Otherchannel = maps:get(<<"otherchannel">>, Channel, []),
+    dgiot_product:add_product_relation(Otherchannel ++ [TdchannelId] ++ [TaskchannelId], ProductId),
+    post('after', maps:without([<<"channel">>], QueryData));
+
+post('after', #{<<"objectId">> := ProductId, <<"producttemplet">> := #{<<"objectId">> := ProducttempletId}} = _QueryData) ->
+    case dgiot_parse:query_object(<<"Dict">>, #{<<"where">> => #{<<"key">> => ProducttempletId, <<"class">> => <<"ProductTemplet">>}}) of
+        {ok, #{<<"results">> := Dicts}} when length(Dicts) > 0 ->
+            dgiot_product_dict:post_batch(Dicts, ProductId);
         _ ->
             pass
+    end,
+    case dgiot_parse:query_object(<<"View">>, #{<<"where">> => #{<<"key">> => ProducttempletId, <<"class">> => <<"ProductTemplet">>}}) of
+        {ok, #{<<"results">> := Views}} when length(Views) > 0 ->
+            dgiot_product_view:post_batch(Views, ProductId);
+        _ ->
+            dgiot_product_knova:post(ProductId),
+            dgiot_product_amis:post(ProductId)
     end;
 
-post('after', AfterData) ->
-    case AfterData of
-        #{<<"producttemplet">> := #{<<"className">> := <<"ProductTemplet">>, <<"objectId">> := ProducttempletId, <<"__type">> := <<"Pointer">>}, <<"objectId">> := ProductId} ->
-            io:format("~s ~p  ProductId = ~p.~n", [?FILE, ?LINE, ProductId]),
-            case dgiot_parse:query_object(<<"Dict">>, #{<<"where">> => #{<<"key">> => ProducttempletId, <<"class">> => <<"ProductTemplet">>}}) of
-                {ok, #{<<"results">> := Dicts}} when length(Dicts) > 0 ->
-                    dgiot_product_dict:post_batch(Dicts, ProductId);
-                _ ->
-                    pass
-            end,
-            case dgiot_parse:query_object(<<"View">>, #{<<"where">> => #{<<"key">> => ProducttempletId, <<"class">> => <<"ProductTemplet">>}}) of
-                {ok, #{<<"results">> := Views}} when length(Views) > 0 ->
-                    dgiot_product_view:post_batch(Views, ProductId);
-                _ ->
-                    dgiot_product_knova:post(ProductId)
-            end;
-        _ ->
-            pass
-    end.
-
-put('before', BeforeData, ProductId) ->
-    case BeforeData of
-        #{<<"channel">> := Channel} ->
-            dgiot_product:delete_product_relation(ProductId),
-            TdchannelId = maps:get(<<"tdchannel">>, Channel, <<"">>),
-            TaskchannelId = maps:get(<<"taskchannel">>, Channel, <<"">>),
-            Otherchannel = maps:get(<<"otherchannel">>, Channel, []),
-            dgiot_product:add_product_relation(Otherchannel ++ [TdchannelId] ++ [TaskchannelId], ProductId);
-        _ ->
-            pass
-    end;
-
-put('after', _AfterData, _ProductId) ->
-    %%    todo
+post(_, _) ->
     pass.
 
+put('before', _QueryData) ->
+    pass;
 
-delete('before', _BeforeData, _ProductId) ->
+put('after', #{<<"channel">> := Channel, <<"objectId">> := ProductId}) ->
+    dgiot_product:delete_product_relation(ProductId),
+    TdchannelId = maps:get(<<"tdchannel">>, Channel, <<"">>),
+    TaskchannelId = maps:get(<<"taskchannel">>, Channel, <<"">>),
+    Otherchannel = maps:get(<<"otherchannel">>, Channel, []),
+    dgiot_product:add_product_relation(Otherchannel ++ [TdchannelId] ++ [TaskchannelId], ProductId);
+
+put(_, _) ->
+    pass.
+
+delete('before', _ProductId) ->
 %%    todo
     pass;
 
-delete('after', AfterData, ProductId) ->
-    case AfterData of
-        #{<<"objectId">> := ProductId} ->
-            case dgiot_parse:query_object(<<"Dict">>, #{<<"where">> => #{<<"key">> => ProductId, <<"class">> => <<"Product">>}}) of
-                {ok, #{<<"results">> := Dicts}} ->
-                    dgiot_product_dict:delete_batch(Dicts);
-                _ ->
-                    pass
-            end,
-            case dgiot_parse:query_object(<<"View">>, #{<<"where">> => #{<<"key">> => ProductId, <<"class">> => <<"Product">>}}) of
-                {ok, #{<<"results">> := Views}} ->
-                    dgiot_product_view:delete_batch(Views);
-                _ ->
-                    pass
-            end;
+delete('after', ProductId) ->
+    case dgiot_parse:query_object(<<"Dict">>, #{<<"where">> => #{<<"key">> => ProductId, <<"class">> => <<"Product">>}}) of
+        {ok, #{<<"results">> := Dicts}} ->
+            dgiot_product_dict:delete_batch(Dicts);
         _ ->
             pass
-    end.
+    end,
+    case dgiot_parse:query_object(<<"View">>, #{<<"where">> => #{<<"key">> => ProductId, <<"class">> => <<"Product">>}}) of
+        {ok, #{<<"results">> := Views}} ->
+            dgiot_product_view:delete_batch(Views);
+        _ ->
+            pass
+    end;
+
+delete(_, _) ->
+    pass.
+
