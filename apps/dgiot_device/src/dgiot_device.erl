@@ -77,7 +77,7 @@ post(Device) ->
             <<"OFFLINE">> -> false;
             _ -> true
         end,
-    IsEnable = maps:get(<<"IsEnable">>, Device, false),
+    IsEnable = maps:get(<<"isEnable">>, Device, false),
     insert_mnesia(DeviceId, dgiot_role:get_acls(Device), Status, dgiot_datetime:now_secs(), IsEnable, ProductId, Devaddr, DeviceSecret, node()).
 
 put(Device) ->
