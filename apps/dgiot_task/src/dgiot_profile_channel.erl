@@ -102,7 +102,7 @@ init(?TYPE, ChannelId, Args) ->
         <<"products">> => Products,
         <<"args">> => NewArgs}
     },
-%%    dgiot_parse_hook:subscribe(<<"Device/*">>, put, ChannelId),
+    dgiot_parse_hook:subscribe(<<"Device/*">>, put, [<<"profile">>], ChannelId),
     {ok, State, []}.
 
 handle_init(#state{id = _ChannelId, env = #{<<"products">> := _Products, <<"args">> := _Args}} = State) ->
@@ -127,13 +127,10 @@ handle_message({check_profile, _Args}, State) ->
 %%<<\"248e9007bf\">>
 %% }
 %%#state{env = #{<<"args">> := #{<<"mode">> := <<"incremental">>}}} =
-handle_message({sync_parse, put, _Table, _BeforeData, AfterData, DeviceId}, #state{env = #{<<"args">> := #{<<"mode">> := <<"incremental">>}}} = State) ->
-    dgiot_task_hook:put('after',AfterData, DeviceId, <<"incremental">>),
+handle_message({sync_parse, _Pid, 'after', put, _Header, <<"Device">>,  QueryData},  State) ->
+    dgiot_task_hook:put('after',QueryData),
     {ok, State};
 
-handle_message({sync_parse, put, _Table, _Data, AfterData, DeviceId}, State) ->
-    dgiot_task_hook:put('after', AfterData, DeviceId,  <<"">>),
-    {ok, State};
 
 handle_message(_Message, State) ->
 %%    ?LOG(info, "_Message ~p", [_Message]),
