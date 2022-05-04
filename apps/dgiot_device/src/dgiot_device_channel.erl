@@ -134,19 +134,21 @@ handle_message(check, #state{env = #{<<"offline">> := OffLine, <<"checktime">> :
     {ok, State};
 
 handle_message({sync_parse, Pid, 'after', get, Header, <<"Product">>, #{<<"results">> := _Results} = ResBody}, State) ->
-    io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Pid,Header]),
-    dgiot_device_static:get_count(Header),
-    NewResBody = dgiot_product:stats_Product(ResBody),
+%%    io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Pid,Header]),
+    Key = dgiot_device_static:get_count(Header),
+    timer:sleep(100),
+    NewResBody = dgiot_device_static:stats(ResBody, Key),
     dgiot_parse_hook:publish(Pid, NewResBody),
     {ok, State};
 
-handle_message({sync_parse, Pid, 'after', get, _Header, <<"Product">>, #{<<"objectId">> := ObjectId} = ResBody}, State) ->
-    io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Pid, ObjectId]),
+handle_message({sync_parse, Pid, 'after', get, _Header, <<"Product">>, #{<<"objectId">> := _ObjectId} = ResBody}, State) ->
+%%    io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Pid, ObjectId]),
     dgiot_parse_hook:publish(Pid, ResBody),
     {ok, State};
 
 handle_message({sync_parse, Pid, 'after', put, _Header, <<"Device">>,  QueryData}, State) ->
     io:format("~s ~p ~p  ~p ~n", [?FILE, ?LINE, Pid,  QueryData]),
+    dgiot_device:put(QueryData),
     {ok, State};
 
 handle_message({sync_parse, Pid, 'after', post, _Header, <<"Product">>, QueryData}, State) ->
