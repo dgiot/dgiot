@@ -123,21 +123,21 @@ delete('after', #{<<"objectId">> := DtuId}, _ProductId) ->
             pass
     end.
 
-get_modifyprofile(DeviceId, Profile) ->
-    case dgiot_data:get(?PROFILE, DeviceId) of
-        not_find ->
-            dgiot_data:insert(?PROFILE, DeviceId, Profile),
-            Profile;
-        OldProfile ->
-            maps:fold(fun(K, V, Acc) ->
-                case maps:find(K, OldProfile) of
-                    error ->
-                        Acc#{K => V};
-                    {ok, V} ->
-                        Acc;
-                    _ ->
-                        Acc#{K => V}
-                end
-                      end, #{}, Profile)
-
-    end.
+%%get_modifyprofile(DeviceId, Profile) ->
+%%    case dgiot_data:get(?PROFILE, DeviceId) of
+%%        not_find ->
+%%            dgiot_data:insert(?PROFILE, DeviceId, Profile),
+%%            Profile;
+%%        OldProfile ->
+%%            maps:fold(fun(K, V, Acc) ->
+%%                case maps:find(K, OldProfile) of
+%%                    error ->
+%%                        Acc#{K => V};
+%%                    {ok, V} ->
+%%                        Acc;
+%%                    _ ->
+%%                        Acc#{K => V}
+%%                end
+%%                      end, #{}, Profile)
+%%
+%%    end.

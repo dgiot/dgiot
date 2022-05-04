@@ -338,6 +338,52 @@
           "View"
         ]
       }
+    },
+    "/profile/{deviceid}": {
+      "put": {
+        "summary": "增量更新设备配置数据",
+        "description": "增量更新设备配置数据",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "deviceid",
+            "required": true,
+            "default": "a90437ec84",
+            "description": "设备ID",
+            "type": "string"
+          },
+          {
+            "description": "增量更新的profile内容",
+            "in": "body",
+            "name": "profile",
+            "required": true,
+            "schema": {
+              "properties": {
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "View"
+        ]
+      }
     }
   }
 }

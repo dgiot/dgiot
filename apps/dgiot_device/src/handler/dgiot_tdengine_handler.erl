@@ -155,6 +155,16 @@ do_request(get_app_deviceid, #{<<"deviceid">> := DeviceId} = Args, #{<<"sessionT
             end
     end;
 
+%% Profile 概要: 增量更新Profile
+do_request(put_profile_deviceid, #{<<"deviceid">> := DeviceId, <<"profile">> := NewProfile} = _Args, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
+    case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+        {ok, #{<<"profile">> := Profile}} ->
+            dgiot_parse:update_object(<<"Device">>, DeviceId, maps:merge(Profile, NewProfile),
+                [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]);
+        _ ->
+            {error, <<"not find device">>}
+    end;
+
 %%  服务器不支持的API接口
 do_request(_OperationId, _Args, _Context, _Req) ->
     {error, <<"Not Allowed.">>}.

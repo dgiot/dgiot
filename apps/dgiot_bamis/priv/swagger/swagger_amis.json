@@ -170,18 +170,6 @@
             "required": true
           },
           {
-            "in": "path",
-            "name": "mode",
-            "type": "string",
-            "default": "REPLACE",
-            "enum": [
-              "MERGE",
-              "REPLACE"
-            ],
-            "description": "{{tag}}的更新模式,MERGE: 增量替换, REPLACE: 全量替换",
-            "required": false
-          },
-          {
             "in": "body",
             "name": "body",
             "description": "数据更新的内容.",
