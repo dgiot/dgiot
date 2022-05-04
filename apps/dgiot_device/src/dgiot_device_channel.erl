@@ -153,20 +153,17 @@ handle_message({sync_parse, Pid, 'after', put, _Header, <<"Device">>,  QueryData
 
 handle_message({sync_parse, Pid, 'after', post, _Header, <<"Product">>, QueryData}, State) ->
     io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Pid, QueryData]),
-%%    dgiot_product_hook:post('before', BeforeData),
-%%    dgiot_product_hook:post('after', AfterData),
+    dgiot_product_hook:post('after', QueryData),
     {ok, State};
 
 handle_message({sync_parse, Pid, 'after', put, _Header, <<"Product">>, QueryData}, State) ->
     io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Pid, QueryData]),
-%%    dgiot_product_hook:put('before', QueryData, ObjectId),
-%%    dgiot_product_hook:put('after', ResBody, ObjectId),
+    dgiot_product_hook:put('after', QueryData),
     {ok, State};
 
 handle_message({sync_parse, Pid, 'after', delete, _Header, <<"Product">>, ObjectId}, State) ->
     io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Pid, ObjectId]),
-%%    dgiot_product_hook:delete('before', QueryData, ObjectId),
-%%    dgiot_product_hook:delete('after', ResBody, ObjectId),
+    dgiot_product_hook:delete('after', ObjectId),
     {ok, State};
 
 handle_message(Message, State) ->
