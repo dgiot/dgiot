@@ -21,17 +21,8 @@
 
 -export([post/2, put/2, delete/2]).
 
-post('before', #{<<"objectId">> := ProductId, <<"channel">> := Channel} = QueryData) ->
-    case QueryData of
-        #{<<"objectId">> := ProductId, <<"channel">> := Channel} ->
-            io:format("~s ~p  Channel = ~p.~n", [?FILE, ?LINE, Channel]),
-            TdchannelId = maps:get(<<"tdchannel">>, Channel, <<"">>),
-            TaskchannelId = maps:get(<<"taskchannel">>, Channel, <<"">>),
-            Otherchannel = maps:get(<<"otherchannel">>, Channel, []),
-            dgiot_product:add_product_relation(Otherchannel ++ [TdchannelId] ++ [TaskchannelId], ProductId);
-        _ ->
-            pass
-    end;
+post('before', _QueryData) ->
+    pass;
 
 post('after', #{<<"objectId">> := ProductId, <<"channel">> := Channel} = QueryData) ->
     TdchannelId = maps:get(<<"tdchannel">>, Channel, <<"">>),
@@ -51,7 +42,8 @@ post('after', #{<<"objectId">> := ProductId, <<"producttemplet">> := #{<<"object
         {ok, #{<<"results">> := Views}} when length(Views) > 0 ->
             dgiot_product_view:post_batch(Views, ProductId);
         _ ->
-            dgiot_product_knova:post(ProductId)
+            dgiot_product_knova:post(ProductId),
+            dgiot_product_amis:post(ProductId)
     end;
 
 post(_, _) ->
@@ -67,7 +59,7 @@ put('after', #{<<"channel">> := Channel, <<"objectId">> := ProductId}) ->
     Otherchannel = maps:get(<<"otherchannel">>, Channel, []),
     dgiot_product:add_product_relation(Otherchannel ++ [TdchannelId] ++ [TaskchannelId], ProductId);
 
-put('after', _) ->
+put(_, _) ->
     pass.
 
 delete('before', _ProductId) ->
@@ -86,5 +78,8 @@ delete('after', ProductId) ->
             dgiot_product_view:delete_batch(Views);
         _ ->
             pass
-    end.
+    end;
+
+delete(_, _) ->
+    pass.
 
