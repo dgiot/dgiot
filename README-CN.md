@@ -90,12 +90,8 @@ wget -qO dgiot_install.sh https://gitee.com/dgiiot/dgiot/raw/master/dgiot_instal
 ```
  +  一键式启动命令Linux/Unix/Mac/windows
  ```bash
- sh init.sh
+ make run
  ```
- + 如需同步最新前端文件,使用以下命令
- ```bash
- sh init.sh github
-```
 + Make Debug
  ```
   make DIAGNOSTIC=1
