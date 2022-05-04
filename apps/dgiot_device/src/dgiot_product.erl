@@ -19,7 +19,7 @@
 -include("dgiot_device.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -dgiot_data("ets").
--export([init_ets/0, load_cache/1, local/1, save/1, get/1, stats_Product/1, delete/1, save_prod/2, lookup_prod/1]).
+-export([init_ets/0, load_cache/1, local/1, save/1, get/1, delete/1, save_prod/2, lookup_prod/1]).
 -export([parse_frame/3, to_frame/2]).
 -export([create_product/2, add_product_relation/2, delete_product_relation/1]).
 
@@ -73,32 +73,6 @@ save(#{<<"thing">> := _thing} = Product) ->
 delete(ProductId) ->
     dgiot_data:delete(?DGIOT_PRODUCT, ProductId).
 
-stats_Product(#{<<"results">> := Results} = Map) ->
-    NewResults =
-        lists:foldl(
-            fun
-                (#{<<"objectId">> := ProductId} = Product, Acc) ->
-                    Acc ++ [Product#{
-                        <<"device_counts">> => dgiot_device_static:val(<<"Device">>, ProductId),
-                        <<"online_counts">> => dgiot_device_static:val(<<"Device_Online">>, ProductId),
-                        <<"offline_counts">> => dgiot_device_static:val(<<"Device_Offline">>, ProductId),
-                        <<"poweron_counts">> => dgiot_device_static:val(<<"Device_true">>, ProductId),
-                        <<"poweroff_counts">> => dgiot_device_static:val(<<"Device_false">>, ProductId)
-                    }]
-            end, [], Results),
-    Map#{<<"results">> => NewResults};
-
-stats_Product(#{<<"objectId">> := ProductId} = Map) ->
-    Map#{
-        <<"device_counts">> => dgiot_device_static:val(<<"Device">>, ProductId),
-        <<"online_counts">> => dgiot_device_static:val(<<"Device_Online">>, ProductId),
-        <<"offline_counts">> => dgiot_device_static:val(<<"Device_Offline">>, ProductId),
-        <<"poweron_counts">> => dgiot_device_static:val(<<"Device_true">>, ProductId),
-        <<"poweroff_counts">> => dgiot_device_static:val(<<"Device_false">>, ProductId)
-    };
-
-stats_Product(_Body) ->
-    {error, <<"error body">>}.
 
 get(ProductId) ->
     Keys = [<<"ACL">>, <<"status">>, <<"nodeType">>, <<"dynamicReg">>, <<"topics">>, <<"productSecret">>],

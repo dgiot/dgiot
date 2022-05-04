@@ -23,7 +23,7 @@
 -define(TIMEOUT, 60000).
 
 -export([create_device/1, create_device/2, get_sub_device/1, get_sub_device/2, save_subdevice/2, get_subdevice/2]).
--export([parse_cache_Device/1, sync_parse/1, inc/1, get/2, post/1, put/1, save/1,  save/2, get_online/1, online/1, offline/1, offline_child/1, lookup/1, lookup/2, delete/1, delete/2, save_prod/2, lookup_prod/1]).
+-export([parse_cache_Device/1, sync_parse/1, get/2, post/1, put/1, save/1, save/2, get_online/1, online/1, offline/1, offline_child/1, lookup/1, lookup/2, delete/1, delete/2, save_prod/2, lookup_prod/1]).
 -export([encode/1, decode/3, get_file/4, get_acl/1, save_log/3, sub_topic/2, get_url/1, get_appname/1]).
 %% Device 数量统计，权限统计，在线离线统计，产品下面设备数量统计等是用户非常关系的数据指标
 parse_cache_Device(_ClassName) ->
@@ -40,31 +40,13 @@ parse_cache_Device(_ClassName) ->
     },
     dgiot_parse_loader:start(<<"Device">>, Query, 0, 500, 1000000, Success).
 
-inc(['Device', _Acls, Status, _Time, IsEnable, _Devaddr, ProductId | _] = _V) ->
-    dgiot_device_static:inc(<<"Device">>),
-    dgiot_device_static:inc(<<"Device">>, dgiot_utils:to_binary(ProductId)),
-    dgiot_device_static:inc("Device_" ++ dgiot_utils:to_list(IsEnable)),
-    dgiot_device_static:inc("Device_" ++ dgiot_utils:to_list(IsEnable), dgiot_utils:to_binary(ProductId)),
-    case Status of
-        true ->
-            dgiot_device_static:inc(<<"Device_Online">>, dgiot_utils:to_binary(ProductId)),
-            dgiot_device_static:inc(<<"Device_Online">>);
-        false ->
-            dgiot_device_static:inc(<<"Device_Offline">>, dgiot_utils:to_binary(ProductId)),
-            dgiot_device_static:inc(<<"Device_Offline">>)
-    end;
-
-inc(_V) ->
-%%    io:format("~s ~p ~p ~n",[?FILE, ?LINE,_V]),
-    pass.
-
 save(#{<<"objectId">> := _DeviceId, <<"devaddr">> := _Devaddr, <<"product">> := _Product} = Device) ->
     save_(Device);
 save(#{<<"objectId">> := DeviceId}) ->
-    {ok, Device}  = dgiot_parse:get_object(<<"Devcie">>,DeviceId),
+    {ok, Device} = dgiot_parse:get_object(<<"Devcie">>, DeviceId),
     save_(Device);
 save(V) ->
-    io:format("~s ~p ~p ~n",[?FILE,?LINE,V]),
+    io:format("~s ~p ~p ~n", [?FILE, ?LINE, V]),
     V.
 
 save_(#{<<"objectId">> := DeviceId, <<"devaddr">> := Devaddr, <<"product">> := Product} = Device) ->
@@ -103,12 +85,22 @@ put(Device) ->
     case lookup(DeviceId) of
         {ok, #{<<"status">> := Status, <<"acl">> := Acl, <<"IsEnable">> := IsEnable, <<"devaddr">> := Devaddr,
             <<"productid">> := ProductId, <<"devicesecret">> := DeviceSecret, <<"node">> := Node}} ->
-            case maps:find(<<"ACL">>, Device) of
-                error ->
-                    insert_mnesia(DeviceId, Acl, Status, dgiot_datetime:now_secs(), IsEnable, ProductId, Devaddr, DeviceSecret, Node);
-                {ok, _} ->
-                    insert_mnesia(DeviceId, dgiot_role:get_acls(Device), Status, dgiot_datetime:now_secs(), IsEnable, ProductId, Devaddr, DeviceSecret, Node)
-            end;
+            NewIsEnable = maps:get(<<"IsEnable">>, Device, IsEnable),
+            NewStatus =
+                case maps:find(<<"status">>, Device) of
+                    error ->
+                        Status;
+                    <<"OFFLINE">> -> false;
+                    _ -> true
+                end,
+            NewAcl =
+                case maps:find(<<"ACL">>, Device) of
+                    error ->
+                        Acl;
+                    _ ->
+                        dgiot_role:get_acls(Device)
+                end,
+            insert_mnesia(DeviceId, NewAcl, NewStatus, dgiot_datetime:now_secs(), NewIsEnable, ProductId, Devaddr, DeviceSecret, Node);
         _ ->
             pass
     end.

@@ -20,10 +20,8 @@ stop(_State) ->
     ok.
 
 start_hook() ->
-    dgiot_hook:add(one_for_one, 'stats_Product', fun dgiot_product:stats_Product/1),
     dgiot_hook:add(one_for_one, 'parse_cache_Device', fun dgiot_device:parse_cache_Device/1).
 
 stop_hook() ->
-    dgiot_hook:remove('stats_Product'),
     dgiot_hook:remove('parse_cache_Device').
 
