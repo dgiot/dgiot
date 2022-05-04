@@ -19,7 +19,7 @@
 -include("dgiot_task.hrl").
 -include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
 -include_lib("dgiot/include/logger.hrl").
--export([post/2, put/4, delete/3]).
+-export([post/2, put/2, delete/3]).
 
 
 post('before', _BeforeData) ->
@@ -27,64 +27,68 @@ post('before', _BeforeData) ->
 post('after', _AfterData) ->
     ok.
 
-put('before', _BeforeData, _ProductId, _Env) ->
-    ok;
-put('after', AfterData, DeviceId, <<"incremental">>) ->
-    case jsx:decode(AfterData, [{labels, binary}, return_maps]) of
-        #{<<"profile">> := Profile, <<"devaddr">> := Devaddr, <<"product">> := #{<<"objectId">> := ProductId}} ->
-            Modifyprofile = get_modifyprofile(DeviceId, Profile),
-%%            设置参数
-            case dgiot_device:get_online(DeviceId) of
-                true ->
-                    Topic = <<"profile/", ProductId/binary, "/", Devaddr/binary>>,
-                    dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(Modifyprofile)),
-                    dgiot_data:insert(?PROFILE, DeviceId, Profile);
-                false ->
-                    dgiot_data:insert(?MODIFYPROFILE, DeviceId, {Profile, ProductId, Devaddr})
-            end;
-        _ ->
-            pass
-    end,
+put('before', _BeforeData) ->
     ok;
 
-put('after', #{<<"profile">> := Profile, <<"devaddr">> := Devaddr, <<"product">> := #{<<"objectId">> := ProductId}}, DeviceId, _) ->
-%%            设置参数
-    case dgiot_device:get_online(DeviceId) of
-        true ->
-            case dgiot_parse:get_object(<<"Product">>, ProductId) of
-                {ok, #{<<"name">> := ProductName, <<"thing">> := #{<<"properties">> := Properties}}} ->
-                    NewPayLoad =
-                        lists:foldl(fun(X, Acc) ->
-                            case X of
-                                #{<<"identifier">> := Identifier, <<"name">> := Name, <<"accessMode">> := <<"rw">>, <<"dataForm">> := DataForm, <<"dataSource">> := #{<<"_dlinkindex">> := Index} = DataSource} ->
-                                    case maps:find(Identifier, Profile) of
-                                        {ok, V} ->
-                                            Acc#{
-                                                Index => #{
-%%                                                            <<"sessiontoken">> => Sessiontoken,
-                                                    <<"value">> => V,
-                                                    <<"identifier">> => Identifier,
-                                                    <<"name">> => Name,
-                                                    <<"productname">> => ProductName,
-                                                    <<"dataSource">> => DataSource,
-                                                    <<"dataForm">> => DataForm
-                                                }};
-                                        _ ->
-                                            Acc
-                                    end;
-                                _ -> Acc
-                            end
-                                    end, #{}, Properties),
-                    Topic = <<"profile/", ProductId/binary, "/", Devaddr/binary>>,
-                    dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(NewPayLoad)),
-%%                            io:format("~s ~p NewPayLoad = ~p.~n", [?FILE, ?LINE, NewPayLoad]),
-                    dgiot_data:insert(?PROFILE, DeviceId, Profile);
-                false ->
-                    dgiot_data:insert(?MODIFYPROFILE, DeviceId, {Profile, ProductId, Devaddr})
-            end;
-        _ ->
-            pass
-    end.
+put('after', _AfterData) ->
+   pass.
+
+%%put('after', AfterData, DeviceId, <<"incremental">>) ->
+%%    case jsx:decode(AfterData, [{labels, binary}, return_maps]) of
+%%        #{<<"profile">> := Profile, <<"devaddr">> := Devaddr, <<"product">> := #{<<"objectId">> := ProductId}} ->
+%%            Modifyprofile = get_modifyprofile(DeviceId, Profile),
+%%%%            设置参数
+%%            case dgiot_device:get_online(DeviceId) of
+%%                true ->
+%%                    Topic = <<"profile/", ProductId/binary, "/", Devaddr/binary>>,
+%%                    dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(Modifyprofile)),
+%%                    dgiot_data:insert(?PROFILE, DeviceId, Profile);
+%%                false ->
+%%                    dgiot_data:insert(?MODIFYPROFILE, DeviceId, {Profile, ProductId, Devaddr})
+%%            end;
+%%        _ ->
+%%            pass
+%%    end,
+%%    ok;
+
+%%put('after', #{<<"profile">> := Profile, <<"devaddr">> := Devaddr, <<"product">> := #{<<"objectId">> := ProductId}}, DeviceId, _) ->
+%%%%            设置参数
+%%    case dgiot_device:get_online(DeviceId) of
+%%        true ->
+%%            case dgiot_parse:get_object(<<"Product">>, ProductId) of
+%%                {ok, #{<<"name">> := ProductName, <<"thing">> := #{<<"properties">> := Properties}}} ->
+%%                    NewPayLoad =
+%%                        lists:foldl(fun(X, Acc) ->
+%%                            case X of
+%%                                #{<<"identifier">> := Identifier, <<"name">> := Name, <<"accessMode">> := <<"rw">>, <<"dataForm">> := DataForm, <<"dataSource">> := #{<<"_dlinkindex">> := Index} = DataSource} ->
+%%                                    case maps:find(Identifier, Profile) of
+%%                                        {ok, V} ->
+%%                                            Acc#{
+%%                                                Index => #{
+%%%%                                                            <<"sessiontoken">> => Sessiontoken,
+%%                                                    <<"value">> => V,
+%%                                                    <<"identifier">> => Identifier,
+%%                                                    <<"name">> => Name,
+%%                                                    <<"productname">> => ProductName,
+%%                                                    <<"dataSource">> => DataSource,
+%%                                                    <<"dataForm">> => DataForm
+%%                                                }};
+%%                                        _ ->
+%%                                            Acc
+%%                                    end;
+%%                                _ -> Acc
+%%                            end
+%%                                    end, #{}, Properties),
+%%                    Topic = <<"profile/", ProductId/binary, "/", Devaddr/binary>>,
+%%                    dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(NewPayLoad)),
+%%%%                            io:format("~s ~p NewPayLoad = ~p.~n", [?FILE, ?LINE, NewPayLoad]),
+%%                    dgiot_data:insert(?PROFILE, DeviceId, Profile);
+%%                false ->
+%%                    dgiot_data:insert(?MODIFYPROFILE, DeviceId, {Profile, ProductId, Devaddr})
+%%            end;
+%%        _ ->
+%%            pass
+%%    end.
 
 delete('before', _BeforeData, _ProductId) ->
     ok;

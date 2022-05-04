@@ -106,6 +106,11 @@ do_request(post_batch, Body, #{base_path := BasePath} = _Context, Req) ->
 do_request(get_health, _Body, _Context, Req) ->
     {200, #{<<"content-type">> => <<"text/plain">>}, <<"ok">>, Req};
 
+%% OperationId:get_table
+%% 请求:GET /iotapi/table
+do_request(get_table, _Args, _Context, _Req) ->
+    dgiot_parse:get_schemas();
+
 %%  服务器不支持的API接口
 do_request(_OperationId, _Args, _Context, _Req) ->
     ?LOG(debug, "_Args ~p", [_Args]),

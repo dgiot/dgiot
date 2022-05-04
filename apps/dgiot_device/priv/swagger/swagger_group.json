@@ -7,7 +7,7 @@
   ],
   "definitions": {},
   "paths": {
-    "/group":{
+    "/profile":{
       "post": {
       "description": "创建分组",
       "parameters": [
