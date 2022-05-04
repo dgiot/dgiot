@@ -49,13 +49,15 @@
             "description": "Topic/Dashboard/Unit",
             "required": true,
             "enum": [
+              "Amis",
+              "Konva",
+              "Thing",
               "Menu",
               "Topic",
               "Dashboard",
               "Unit",
               "rule-engine",
               "Category",
-              "thing",
               "thing-tsl",
               "thing-lite",
               "swaggerTree"

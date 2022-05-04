@@ -41,12 +41,8 @@
 
  +  ワンタッチスタートコマンド Linux/Unix/Mac/Windows
  ```bash
- sh init.sh
+ make run
  ```
- + 最新のフロントエンドファイルを同期するには、次のコマンドを使用します。
- ```bash
- sh init.sh github
-```
 + Make Debug
  ```
   make DIAGNOSTIC=1

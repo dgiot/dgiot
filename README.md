@@ -47,12 +47,8 @@ Before 2016, the Shuwa team had been crawling on the Internet and the mobile Int
 
  +  One touch start command Linux/Unix/Mac/windows
  ```bash
- sh init.sh
+ make run
  ```
- + To synchronize the latest front-end files, use the following command
- ```bash
- sh init.sh github
-```
 + Make Debug
  ```
   make DIAGNOSTIC=1
