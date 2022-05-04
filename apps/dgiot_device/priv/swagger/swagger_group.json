@@ -7,22 +7,10 @@
   ],
   "definitions": {},
   "paths": {
-    "/table/{mode}":{
+    "/group":{
       "post": {
       "description": "创建分组",
       "parameters": [
-        {
-          "in": "path",
-          "name": "mode",
-          "type": "string",
-          "default": "REPLACE",
-          "enum": [
-            "MERGE",
-            "REPLACE"
-          ],
-          "description": "{{tag}}的更新模式,MERGE: 增量替换, REPLACE: 全量替换",
-          "required": false
-        },
         {
           "description": "创建分组,自动创建虚拟组设备，无物模型",
           "in": "body",
@@ -30,6 +18,21 @@
           "required": true,
           "schema": {
             "properties": {
+              "name": {
+                "description": "组名",
+                "type": "string",
+                "example": "分组名"
+              },
+              "topo": {
+                "description": "组态文件名",
+                "type": "string",
+                "example": "group_topo"
+              },
+              "devType": {
+                "description": "设备类型",
+                "type": "string",
+                "example": "dgiot_iot_hub"
+              }
             }
           }
         }
