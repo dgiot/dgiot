@@ -127,7 +127,7 @@ handle_message({check_profile, _Args}, State) ->
 %%<<\"248e9007bf\">>
 %% }
 %%#state{env = #{<<"args">> := #{<<"mode">> := <<"incremental">>}}} =
-handle_message({sync_parse, _Pid, 'after', put, _Header, <<"Device">>,  QueryData},  State) ->
+handle_message({sync_parse, _Pid, 'after', put, _Token, <<"Device">>,  QueryData},  State) ->
     dgiot_task_hook:put('after',QueryData),
     {ok, State};
 

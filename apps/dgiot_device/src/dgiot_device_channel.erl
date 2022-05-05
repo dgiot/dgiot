@@ -133,35 +133,35 @@ handle_message(check, #state{env = #{<<"offline">> := OffLine, <<"checktime">> :
     dgiot_device:sync_parse(OffLine),
     {ok, State};
 
-handle_message({sync_parse, Pid, 'after', get, Header, <<"Product">>, #{<<"results">> := _Results} = ResBody}, State) ->
+handle_message({sync_parse, Pid, 'after', get, Token, <<"Product">>, #{<<"results">> := _Results} = ResBody}, State) ->
 %%    io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Pid,Header]),
-    Key = dgiot_device_static:get_count(Header),
+    Key = dgiot_device_static:get_count(Token),
     timer:sleep(100),
     NewResBody = dgiot_device_static:stats(ResBody, Key),
     dgiot_parse_hook:publish(Pid, NewResBody),
     {ok, State};
 
-handle_message({sync_parse, Pid, 'after', get, _Header, <<"Product">>, #{<<"objectId">> := _ObjectId} = ResBody}, State) ->
+handle_message({sync_parse, Pid, 'after', get, _Token, <<"Product">>, #{<<"objectId">> := _ObjectId} = ResBody}, State) ->
 %%    io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Pid, ObjectId]),
     dgiot_parse_hook:publish(Pid, ResBody),
     {ok, State};
 
-handle_message({sync_parse, Pid, 'after', put, _Header, <<"Device">>,  QueryData}, State) ->
+handle_message({sync_parse, Pid, 'after', put, _Token, <<"Device">>,  QueryData}, State) ->
     io:format("~s ~p ~p  ~p ~n", [?FILE, ?LINE, Pid,  QueryData]),
     dgiot_device:put(QueryData),
     {ok, State};
 
-handle_message({sync_parse, Pid, 'after', post, _Header, <<"Product">>, QueryData}, State) ->
+handle_message({sync_parse, Pid, 'after', post, _Token, <<"Product">>, QueryData}, State) ->
     io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Pid, QueryData]),
     dgiot_product_hook:post('after', QueryData),
     {ok, State};
 
-handle_message({sync_parse, Pid, 'after', put, _Header, <<"Product">>, QueryData}, State) ->
+handle_message({sync_parse, Pid, 'after', put, _Token, <<"Product">>, QueryData}, State) ->
     io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Pid, QueryData]),
     dgiot_product_hook:put('after', QueryData),
     {ok, State};
 
-handle_message({sync_parse, Pid, 'after', delete, _Header, <<"Product">>, ObjectId}, State) ->
+handle_message({sync_parse, Pid, 'after', delete, _Token, <<"Product">>, ObjectId}, State) ->
     io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Pid, ObjectId]),
     dgiot_product_hook:delete('after', ObjectId),
     {ok, State};
