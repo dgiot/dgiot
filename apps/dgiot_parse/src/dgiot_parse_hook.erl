@@ -36,7 +36,7 @@
     get_trigger/2,
     add_all_trigger/1,
     do_hook/2,
-    notify/5,
+    notify/6,
     api_hook/1
 ]).
 
@@ -61,20 +61,20 @@ add_hook(Key) ->
     Fun =
         fun
             ({'after', get, Token, Class, _QueryData, ResBody}) ->
-                notify('after', get, Token, Class, dgiot_utils:to_map(ResBody)),
+                notify('after', get, Token, Class, <<"ObjectId">>, dgiot_utils:to_map(ResBody)),
                 receive_ack(ResBody);
             ({'after', get, Token, Class, _ObjectId, _QueryData, ResBody}) ->
-                notify('after', get, Token, Class, dgiot_utils:to_map(ResBody)),
+                notify('after', get, Token, Class, <<"ObjectId">>, dgiot_utils:to_map(ResBody)),
                 receive_ack(ResBody);
             ({'after', post, Token, Class, QueryData, ResBody}) ->
-                notify('after', post, Token, Class, dgiot_utils:to_map(QueryData)),
+                notify('after', post, Token, Class, <<"ObjectId">>, dgiot_utils:to_map(QueryData)),
                 {ok, ResBody};
             ({'after', put, Token, Class, ObjectId, QueryData, ResBody}) ->
                 Map = dgiot_utils:to_map(QueryData),
-                notify('after', put, Token, Class, Map#{<<"objectId">> => ObjectId}),
+                notify('after', put, Token, Class, ObjectId, Map#{<<"objectId">> => ObjectId}),
                 {ok, ResBody};
             ({'after', delete, Token, Class, ObjectId, _QueryData, ResBody}) ->
-                notify('after', delete, Token, Class, ObjectId),
+                notify('after', delete, Token, Class, ObjectId, ObjectId),
                 {ok, ResBody};
             (_) ->
                 {ok, []}
@@ -99,25 +99,32 @@ receive_ack(ResBody) ->
         {ok, ResBody}
     end.
 
-notify(Type, Method, Token, Class, Data) ->
-    case dgiot_data:get({sub, Class, Method}) of
-        not_find ->
-            pass;
-        List ->
-            lists:map(
-                fun
-                    ({ChannelId, [<<"*">>]}) ->
-                        dgiot_channelx:do_message(ChannelId, {sync_parse, self(), Type, Method, Token, Class, Data});
-                    ({ChannelId, Keys}) when Method == put ->
-                        List = maps:keys(Data),
-                        case List -- Keys of
-                            List ->
-                                pass;
-                            _ ->
-                                dgiot_channelx:do_message(ChannelId, {sync_parse, self(), Type, Method, Token, Class, Data})
-                        end
-                end, List)
-    end.
+notify(Type, Method, Token, Class, ObjectId, Data) ->
+    Lists =
+        case dgiot_data:get({sub, <<Class/binary, "/*">>, Method}) of
+            not_find ->
+                case dgiot_data:get({sub, <<Class/binary, "/", ObjectId/binary>>, Method}) of
+                    not_find ->
+                        [];
+                    List2 ->
+                        List2
+                end;
+            List1 ->
+                List1
+        end,
+    lists:map(
+        fun
+            ({ChannelId, [<<"*">>]}) ->
+                dgiot_channelx:do_message(ChannelId, {sync_parse, self(), Type, Method, Token, Class, Data});
+            ({ChannelId, Keys}) when Method == put ->
+                List = maps:keys(Data),
+                case List -- Keys of
+                    List ->
+                        pass;
+                    _ ->
+                        dgiot_channelx:do_message(ChannelId, {sync_parse, self(), Type, Method, Token, Class, Data})
+                end
+        end, Lists).
 
 do_request_hook(Type, [<<"classes">>, Class, ObjectId], Method, Token, QueryData, ResBody) ->
     do_hook({<<Class/binary, "/*">>, Method}, {Type, Method, Token, Class, ObjectId, QueryData, ResBody});
@@ -286,7 +293,7 @@ get_id(OperationID) ->
 %% todo 可以做多级json的 merge修改
 do_put(<<"put">>, Token, <<"/iotapi/classes/", Tail/binary>>, #{<<"id">> := Id} = Args) ->
     [ClassName | _] = re:split(Tail, <<"/">>),
-    notify('before', put, Token, ClassName, Args),
+    notify('before', put, Token, ClassName, Id, Args),
     case dgiot_parse:get_object(ClassName, Id) of
         {ok, Class} ->
             maps:fold(fun(K, V, Acc) ->

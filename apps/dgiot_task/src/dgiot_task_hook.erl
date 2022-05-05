@@ -27,11 +27,51 @@ post('before', _BeforeData) ->
 post('after', _AfterData) ->
     ok.
 
-put('before', _BeforeData) ->
-    ok;
+put('before', Device) ->
+    io:format("~s ~p Device = ~p.~n", [?FILE, ?LINE, Device]),
+    DeviceId = maps:get(<<"objectId">>, Device),
+    case dgiot_device:lookup(DeviceId) of
+        {ok, #{<<"devaddr">> := Devaddr, <<"productid">> := ProductId}} ->
+            Profile = maps:get(<<"profile">>, Device, #{}),
+            io:format("~s ~p Devaddr = ~p.~n", [?FILE, ?LINE, Devaddr]),
+            io:format("~s ~p ProductId = ~p.~n", [?FILE, ?LINE, ProductId]),
+            case dgiot_parse:get_object(<<"Product">>, ProductId) of
+                {ok, #{<<"name">> := ProductName, <<"thing">> := #{<<"properties">> := Properties}}} ->
+                    NewPayLoad =
+                        lists:foldl(fun(X, Acc) ->
+                            case X of
+                                #{<<"identifier">> := Identifier, <<"name">> := Name, <<"accessMode">> := <<"rw">>, <<"dataForm">> := DataForm, <<"dataSource">> := #{<<"_dlinkindex">> := Index} = DataSource} ->
+                                    case maps:find(Identifier, Profile) of
+                                        {ok, V} ->
+                                            Acc#{
+                                                Index => #{
+%%                                                            <<"sessiontoken">> => Sessiontoken,
+                                                    <<"value">> => V,
+                                                    <<"identifier">> => Identifier,
+                                                    <<"name">> => Name,
+                                                    <<"productname">> => ProductName,
+                                                    <<"dataSource">> => DataSource,
+                                                    <<"dataForm">> => DataForm
+                                                }};
+                                        _ ->
+                                            Acc
+                                    end;
+                                _ -> Acc
+                            end
+                                    end, #{}, Properties),
+                    Topic = <<"profile/", ProductId/binary, "/", Devaddr/binary>>,
+                    dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(NewPayLoad)),
+%%                            io:format("~s ~p NewPayLoad = ~p.~n", [?FILE, ?LINE, NewPayLoad]),
+                    dgiot_data:insert(?PROFILE, DeviceId, Profile);
+                false ->
+                    pass
+            end;
+        _ ->
+            pass
+    end;
 
-put('after', _AfterData) ->
-   pass.
+put('after', _Device) ->
+    ok.
 
 %%put('after', AfterData, DeviceId, <<"incremental">>) ->
 %%    case jsx:decode(AfterData, [{labels, binary}, return_maps]) of
@@ -93,35 +133,7 @@ put('after', _AfterData) ->
 delete('before', _BeforeData, _ProductId) ->
     ok;
 delete('after', #{<<"objectId">> := DtuId}, _ProductId) ->
-    dgiot_task:del_pnque(DtuId),
-    case dgiot_parse:query_object(<<"Dict">>, #{<<"where">> => #{<<"key">> => DtuId, <<"class">> => <<"Device">>}}) of
-        {ok, #{<<"results">> := Dicts}} ->
-            DictRequests =
-                lists:foldl(fun(#{<<"objectId">> := DictId}, Acc) ->
-                    Acc ++ [#{
-                        <<"method">> => <<"DELETE">>,
-                        <<"path">> => <<"/classes/Dict/", DictId/binary>>,
-                        <<"body">> => #{}
-                    }]
-                            end, [], Dicts),
-            dgiot_parse:batch(DictRequests);
-        _ ->
-            pass
-    end,
-    case dgiot_parse:query_object(<<"View">>, #{<<"where">> => #{<<"key">> => DtuId, <<"class">> => <<"Device">>}}) of
-        {ok, #{<<"results">> := Views}} ->
-            ViewRequests =
-                lists:foldl(fun(#{<<"objectId">> := ViewId}, Acc) ->
-                    Acc ++ [#{
-                        <<"method">> => <<"DELETE">>,
-                        <<"path">> => <<"/classes/View/", ViewId/binary>>,
-                        <<"body">> => #{}
-                    }]
-                            end, [], Views),
-            dgiot_parse:batch(ViewRequests);
-        _ ->
-            pass
-    end.
+    dgiot_task:del_pnque(DtuId).
 
 %%get_modifyprofile(DeviceId, Profile) ->
 %%    case dgiot_data:get(?PROFILE, DeviceId) of
