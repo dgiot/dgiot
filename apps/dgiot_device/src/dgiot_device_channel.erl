@@ -106,10 +106,10 @@ init(?TYPE, ChannelId, Args) ->
         id = ChannelId,
         env = Args
     },
-    dgiot_parse_hook:subscribe(<<"Product/*">>, get, ChannelId),
     dgiot_parse_hook:subscribe(<<"Product">>, get, ChannelId),
-    dgiot_parse_hook:subscribe(<<"Device/*">>, put, [<<"isEnable">>], ChannelId),
-    dgiot_parse_hook:subscribe(<<"Product">>, put, ChannelId),
+    dgiot_parse_hook:subscribe(<<"Device/*">>, put, ChannelId, [<<"isEnable">>]),
+    dgiot_parse_hook:subscribe(<<"Device/*">>, delete, ChannelId),
+    dgiot_parse_hook:subscribe(<<"Product/*">>, put, ChannelId),
     dgiot_parse_hook:subscribe(<<"Product">>, post, ChannelId),
     dgiot_parse_hook:subscribe(<<"Product/*">>, delete, ChannelId),
     {ok, State, []}.
@@ -146,9 +146,14 @@ handle_message({sync_parse, Pid, 'after', get, _Token, <<"Product">>, #{<<"objec
     dgiot_parse_hook:publish(Pid, ResBody),
     {ok, State};
 
-handle_message({sync_parse, Pid, 'after', put, _Token, <<"Device">>,  QueryData}, State) ->
-    io:format("~s ~p ~p  ~p ~n", [?FILE, ?LINE, Pid,  QueryData]),
+handle_message({sync_parse, Pid, 'after', put, _Token, <<"Device">>, QueryData}, State) ->
+    io:format("~s ~p ~p  ~p ~n", [?FILE, ?LINE, Pid, QueryData]),
     dgiot_device:put(QueryData),
+    {ok, State};
+
+handle_message({sync_parse, Pid, 'after', delete, _Token, <<"Device">>, ObjectId}, State) ->
+    io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Pid, ObjectId]),
+    dgiot_product_hook:delete('after', ObjectId),
     {ok, State};
 
 handle_message({sync_parse, Pid, 'after', post, _Token, <<"Product">>, QueryData}, State) ->
