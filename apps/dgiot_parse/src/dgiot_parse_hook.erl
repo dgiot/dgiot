@@ -289,15 +289,14 @@ do_put(<<"put">>, Token, <<"/iotapi/classes/", Tail/binary>>, #{<<"id">> := Id} 
     notify('before', put, Token, ClassName, Args),
     case dgiot_parse:get_object(ClassName, Id) of
         {ok, Class} ->
-            maps:fold(fun
-                          (K, V, Acc) ->
-                              case maps:find(K, Class) of
-                                  error -> Acc;
-                                  {ok, Value} when is_map(Value) ->
-                                      Acc#{K => maps:merge(Value, V)};
-                                  _ ->
-                                      Acc#{K => V}
-                              end
+            maps:fold(fun(K, V, Acc) ->
+                case maps:find(K, Class) of
+                    error -> Acc;
+                    {ok, Value} when is_map(Value) ->
+                        Acc#{K => maps:merge(Value, V)};
+                    _ ->
+                        Acc#{K => V}
+                end
                       end,
                 #{}, maps:without([<<"id">>], Args));
         _ ->
