@@ -75,9 +75,9 @@ create_table(#{<<"tableName">> := TableName, <<"using">> := STbName, <<"tags">> 
     DB1 = dgiot_tdengine_select:format_db(TableName),
     <<"CREATE TABLE IF NOT EXISTS ", DB1/binary, TableName/binary, " USING ", STbName/binary, " TAGS (", TagFields/binary, ");">>;
 
-create_table(#{<<"tableName">> := TableName, <<"fields">> := Fields0} = Query, Context) ->
+create_table(#{<<"tableName">> := TableName, <<"fields">> := Fields0} = Query, _Context) ->
     Database = dgiot_tdengine_select:format_db(TableName),
-    alter_table(Query#{<<"db">> => Database}, Context),
+%%    alter_table(Query#{<<"db">> => Database}, Context),
     Fields =
         list_to_binary(dgiot_utils:join(",", ["createdat TIMESTAMP"] ++ lists:foldr(
             fun({FieldName, #{<<"type">> := Type}}, Acc) ->
@@ -95,10 +95,9 @@ create_table(#{<<"tableName">> := TableName, <<"fields">> := Fields0} = Query, C
             <<"CREATE TABLE IF NOT EXISTS ", Database/binary, TableName/binary, " (", Fields/binary, ") TAGS (", TagFields/binary, ");">>
     end.
 
-alter_table(#{<<"db">> := Database, <<"tableName">> := TableName}, #{<<"channel">> := Channel} = Context) ->
+alter_table(#{<<"tableName">> := TableName}, #{<<"channel">> := Channel} = Context) ->
+    Database = dgiot_tdengine_select:format_db(TableName),
     Sql1 = <<"DESCRIBE ", Database/binary, TableName/binary, ";">>,
-    <<"_", ProductId/binary>> = TableName,
-    Props = get_prop(ProductId),
     case dgiot_tdengine_pool:run_sql(Context, execute_query, Sql1) of
         {ok, #{<<"results">> := Results}} when length(Results) > 0 ->
             TdColumn =
@@ -111,41 +110,37 @@ alter_table(#{<<"db">> := Database, <<"tableName">> := TableName}, #{<<"channel"
                     end
                             end, #{}, Results),
             <<"_", ProductId/binary>> = TableName,
-            lists:foldl(fun(Prop, _Acc1) ->
-                case Prop of
-                    #{<<"dataType">> := #{<<"type">> := Type}, <<"identifier">> := Identifier, <<"isshow">> := true} ->
-                        LowerIdentifier = list_to_binary(string:to_lower(binary_to_list(Identifier))),
-                        case maps:find(LowerIdentifier, TdColumn) of
-                            error ->
-                                AddSql = dgiot_tdengine_field:add_field(Type, Database, TableName, LowerIdentifier),
-                                dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_query, AddSql);
-                            _ ->
-                                %% todo   类型改变
-                                pass
-                        end;
-                    _ ->
-                        pass
-                end
-                        end, #{}, Props),
+            AddSql = get_addSql(ProductId, TdColumn, Database, TableName),
+            dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_query, AddSql),
             case dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_query, Sql1) of
                 {ok, #{<<"results">> := Results2}} ->
                     <<"_", ProductId/binary>> = TableName,
                     dgiot_data:insert({ProductId, ?TABLEDESCRIBE}, Results2);
                 _ ->
                     pass
-            end
+            end;
+        _ ->
+            pass
     end.
 
-get_prop(ProductId) ->
+get_addSql(ProductId, TdColumn, Database, TableName) ->
     case dgiot_data:get(dgiot_product, ProductId) of
         {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
-            lists:foldl(fun(X, Acc) ->
-                case X of
-                    #{<<"identifier">> := Identifier, <<"name">> := Name} ->
-                        Acc#{Identifier => Name};
-                    _ -> Acc
+            lists:foldl(fun(Prop, _Acc1) ->
+                case Prop of
+                    #{<<"dataType">> := #{<<"type">> := Type}, <<"identifier">> := Identifier, <<"isshow">> := true} ->
+                        LowerIdentifier = list_to_binary(string:to_lower(binary_to_list(Identifier))),
+                        case maps:find(LowerIdentifier, TdColumn) of
+                            error ->
+                                dgiot_tdengine_field:add_field(Type, Database, TableName, LowerIdentifier);
+                            _ ->
+                                %% todo   类型改变
+                                <<>>
+                        end;
+                    _ ->
+                        <<>>
                 end
-                        end, #{}, Props);
+                        end, <<>>, Props);
         _ ->
-            #{}
+            <<>>
     end.
