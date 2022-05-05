@@ -27,14 +27,11 @@ post('before', _BeforeData) ->
 post('after', _AfterData) ->
     ok.
 
-put('before', Device) ->
+put('before', #{<<"id">> := DeviceId} = Device) ->
     io:format("~s ~p Device = ~p.~n", [?FILE, ?LINE, Device]),
-    DeviceId = maps:get(<<"objectId">>, Device),
     case dgiot_device:lookup(DeviceId) of
         {ok, #{<<"devaddr">> := Devaddr, <<"productid">> := ProductId}} ->
             Profile = maps:get(<<"profile">>, Device, #{}),
-            io:format("~s ~p Devaddr = ~p.~n", [?FILE, ?LINE, Devaddr]),
-            io:format("~s ~p ProductId = ~p.~n", [?FILE, ?LINE, ProductId]),
             case dgiot_parse:get_object(<<"Product">>, ProductId) of
                 {ok, #{<<"name">> := ProductName, <<"thing">> := #{<<"properties">> := Properties}}} ->
                     NewPayLoad =

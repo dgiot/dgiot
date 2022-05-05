@@ -81,14 +81,14 @@ do_task(#{<<"dataType">> := <<"card">>, <<"vuekey">> := <<"device_count">>, <<"t
 do_task(#{<<"dataType">> := <<"card">>, <<"vuekey">> := <<"ChartStatus">>, <<"table">> := <<"Device">>, <<"query">> := Query}, #task{dashboardId = DashboardId, sessiontoken = SessionToken}) ->
     Where = maps:get(<<"where">>, Query, #{}),
     OnlineCount =
-        case dgiot_parse:query_object(<<"Device">>, Query#{<<"keys">> => [<<"count(*)">>], <<"where">> => Where#{<<"status">> => <<"ONLINE">>}}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+        case dgiot_parse:query_object(<<"Device">>, Query#{<<"count">> => <<"objectId">>, <<"where">> => Where#{<<"status">> => <<"ONLINE">>}}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
             {ok, #{<<"count">> := OnlineCount1}} ->
                 OnlineCount1;
             _ ->
                 0
         end,
     OfflineCount =
-        case dgiot_parse:query_object(<<"Device">>, Query#{<<"keys">> => [<<"count(*)">>], <<"where">> => Where#{<<"status">> => <<"OFFLINE">>}}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+        case dgiot_parse:query_object(<<"Device">>, Query#{<<"count">> => <<"objectId">>, <<"where">> => Where#{<<"status">> => <<"OFFLINE">>}}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
             {ok, #{<<"count">> := OfflineCount2}} ->
                 OfflineCount2;
             _ ->

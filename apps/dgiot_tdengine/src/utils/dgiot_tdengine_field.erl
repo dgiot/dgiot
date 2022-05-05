@@ -19,7 +19,7 @@
 -include("dgiot_tdengine.hrl").
 -include_lib("dgiot/include/logger.hrl").
 
--export([ add_field/4, get_field/1, check_fields/2, check_fields/3, get_time/2]).
+-export([add_field/4, get_field/1, check_fields/2, check_fields/3, get_time/2]).
 
 add_field(<<"enum">>, Database, TableName, LowerIdentifier) ->
     <<"ALTER TABLE ", Database/binary, TableName/binary, " ADD COLUMN ", LowerIdentifier/binary, " INT;">>;
