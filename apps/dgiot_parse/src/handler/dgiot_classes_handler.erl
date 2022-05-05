@@ -310,6 +310,7 @@ request_parse(OperationID, Args, Body, Headers, #{base_path := BasePath, <<"sess
     {NewQs, NewType, NewArgs} =  dgiot_parse_hook:api_hook({'before', OperationID, Token, QS, dgiot_req:path(Req), Args}),
     Path = get_path(re:replace(dgiot_req:path(Req), BasePath, <<>>, [{return, binary}]), NewType),
     Url = <<Path/binary, NewQs/binary>>,
+%%    io:format("~s ~p ~p  ~n", [?FILE, ?LINE, Url]),
     request_parse(OperationID, Url, Method, NewArgs, Body, Headers, Context, Req).
 
 request_parse(OperationID, Url, Method, _Args, Body, Headers, #{from := From} = Context, Req) ->
