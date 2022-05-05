@@ -44,7 +44,7 @@
 
 %% @description 备注
 %% 已实现 get post 的适配工作
-get({'before', _Token, _Table, '*', Args}) ->
+get({'before',  '*', Args}) ->
 %%    io:format("~s ~p Data: ~p ~n", [?FILE, ?LINE, Data]),
     NewData = maps:fold(fun(K, V, Acc) ->
         case V of
@@ -55,7 +55,7 @@ get({'before', _Token, _Table, '*', Args}) ->
     Basic = format(NewData),
 %%    io:format("~s ~p Basic: ~p ~n", [?FILE, ?LINE, Basic]),
     Basic;
-get({'before', _Token, _Table, _Id, Args}) ->
+get({'before',  _Id, Args}) ->
 %%    io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Args, Id]),
     Args;
 get({'after', #{<<"results">> := Response, <<"count">> := Count} = _Data}) ->
@@ -67,7 +67,7 @@ get({'after', #{<<"results">> := Response, <<"count">> := Count} = _Data}) ->
             <<"total">> => Count
         }
     };
-get({'after', _Token, _Table, _Id, #{<<"results">> := Response} = _Data}) ->
+get({'after', #{<<"results">> := Response} = _Data}) ->
 %%    io:format("~s ~p ~p~n", [?FILE, ?LINE, _Data]),
     #{
         <<"status">> => 0,
@@ -75,13 +75,13 @@ get({'after', _Token, _Table, _Id, #{<<"results">> := Response} = _Data}) ->
         <<"data">> => #{<<"items">> => Response}
     };
 %% 查询单个
-get({'after', _Token, _Table, _Id, Data}) ->
+get({'after',  Data}) ->
     #{
         <<"status">> => 0,
         <<"msg">> => <<"数据请求成功"/utf8>>,
         <<"data">> => Data
     }.
-post({'before', _Token, _Table, _Id, Args}) ->
+post({'before',  _Id, Args}) ->
 %%    io:format("~s ~p ~p ~p~n", [?FILE, ?LINE, Args, Id]),
     Args;
 post({'after', Data}) ->
@@ -91,11 +91,11 @@ post({'after', Data}) ->
         <<"msg">> => <<"数据提交成功"/utf8>>,
         <<"data">> => Data
     }.
-put({'before', _Token, _Table, _Id, Args}) ->
+put({'before',  _Id, Args}) ->
     erlang:put(self(), Args),
 %%    io:format("~s ~p ~p ~p~n", [?FILE, ?LINE, Args, Id]),
     Args;
-put({'after', _Token, _Table, _Id, Data}) ->
+put({'after',  Data}) ->
     Request = erlang:get(self()),
 %%    io:format("~s ~p ~p~n", [?FILE, ?LINE, Data]),
     #{
@@ -103,11 +103,11 @@ put({'after', _Token, _Table, _Id, Data}) ->
         <<"msg">> => <<"修改成功"/utf8>>,
         <<"data">> => #{<<"Data">> => Data, <<"Request">> => Request}
     }.
-delete({'before', _Token, _Table, _Id, Args}) ->
+delete({'before',  _Id,  Args}) ->
     erlang:put(self(), Args),
 %%    io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Args, Id]),
     Args;
-delete({'after', _Token, _Table, _Id, Data}) ->
+delete({'after',  Data}) ->
     Request = erlang:get(self()),
 %%    io:format("~s ~p ~p~n", [?FILE, ?LINE, Data]),
     #{
