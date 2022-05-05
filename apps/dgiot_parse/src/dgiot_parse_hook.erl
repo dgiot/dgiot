@@ -101,11 +101,16 @@ receive_ack(ResBody) ->
 
 notify(Type, Method, Token, Class, ObjectId, Data) ->
     Lists =
-        case dgiot_data:get({sub, <<Class/binary, "/*">>, Method}) of
+        case dgiot_data:get({sub, Class, Method}) of
             not_find ->
-                case dgiot_data:get({sub, <<Class/binary, "/", ObjectId/binary>>, Method}) of
+                case dgiot_data:get({sub, <<Class/binary, "/*">>, Method}) of
                     not_find ->
-                        [];
+                        case dgiot_data:get({sub, <<Class/binary, "/", ObjectId/binary>>, Method}) of
+                            not_find ->
+                                [];
+                            List3 ->
+                                List3
+                        end;
                     List2 ->
                         List2
                 end;
