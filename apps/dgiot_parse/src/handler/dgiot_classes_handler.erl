@@ -288,17 +288,9 @@ do_request_after(<<"get_login">>, 200, ResHeaders, ResBody, Context, Req) ->
     end;
 
 do_request_after(OperationID, StatusCode, ResHeaders, ResBody, _Context, Req) ->
-    [Method, Type | _] = re:split(OperationID, <<"_">>),
     Map = jsx:decode(ResBody, [{labels, binary}, return_maps]),
-    Body =
-        case dgiot_hook:run_hook({Method, Type}, {'after', Map}) of
-            {ok, [Rtn | _]} ->
-                jsx:encode(Rtn);
-            _ ->
-                ResBody
-        end,
+    Body = dgiot_parse_hook:api_hook({'after', OperationID, ResHeaders, Map, ResBody}),
     {StatusCode, ResHeaders, Body, Req}.
-
 
 %% ==========================
 %%  parse 请求
@@ -314,20 +306,8 @@ request_parse(OperationID, Args, Body, Headers, #{base_path := BasePath} = Conte
                 ({N, V}, Acc) ->
                     <<Acc/binary, "&", N/binary, "=", V/binary>>
             end, <<>>, dgiot_req:parse_qs(Req)),
-    {Method2, Type2, Id} =
-        case re:split(OperationID, <<"_">>) of
-            [Method1, Type, _Table, ObjectId | _] ->
-                {Method1, Type, ObjectId};
-            [Method1, Type | _] ->
-                {Method1, Type, '*'}
-        end,
-    NewQs = case dgiot_hook:run_hook({Method2, Type2}, {'before', Args, Id}) of
-                {ok, [Rtn | _]} ->
-                    get_qs(Rtn);
-                _ ->
-                    QS
-            end,
-    Path = get_path(re:replace(dgiot_req:path(Req), BasePath, <<>>, [{return, binary}]), Type2),
+    {NewQs,NewType} = dgiot_parse_hook:api_hook({'before', OperationID, Headers, QS, Args}),
+    Path = get_path(re:replace(dgiot_req:path(Req), BasePath, <<>>, [{return, binary}]), NewType),
     Url = <<Path/binary, NewQs/binary>>,
 %%    io:format("~s ~p ~p~n", [?FILE, ?LINE, Url]),
     Method = dgiot_req:method(Req),
@@ -365,21 +345,3 @@ get_OperationID(OperationID1) ->
 
 get_path(Url, Type) ->
     re:replace(Url, <<"/",Type/binary,"/">>, <<"/classes/">>, [global, {return, binary}, unicode]).
-
-get_qs(Map) ->
-    lists:foldl(
-        fun
-            ({N, V}, <<>>) ->
-                NewV = format_value(V),
-                <<"?", N/binary, "=", NewV/binary>>;
-            ({N, V}, Acc) ->
-                NewV = format_value(V),
-                <<Acc/binary, "&", N/binary, "=", NewV/binary>>
-        end, <<>>, maps:to_list(Map)).
-
-format_value(V) when is_binary(V) ->
-    dgiot_httpc:urlencode(V);
-format_value(V) ->
-    Json = jsx:encode(V),
-%%    V1 = re:replace(Json, <<"\[.*?\]">>, <<"">>, [global, {return, binary}, unicode]),
-    dgiot_httpc:urlencode(Json).

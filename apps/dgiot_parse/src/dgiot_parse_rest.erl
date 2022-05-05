@@ -358,15 +358,8 @@ do_request_after(Method0, Path, Header, NewQueryData, ResBody, Options) ->
         end,
     {match, PathList} = re:run(Path, <<"([^/]+)">>, [global, {capture, all_but_first, binary}]),
 %%    io:format("~s ~p ~p ~p ~n",[?FILE, ?LINE, Path, NewQueryData]),
-    dgiot_parse_hook:do_request_hook('after', lists:concat(PathList), Method, get_token(Header), NewQueryData, ResBody).
+    dgiot_parse_hook:do_request_hook('after', lists:concat(PathList), Method, dgiot_parse:get_token(Header), NewQueryData, ResBody).
 
-get_token(Header) ->
-    case proplists:get_value("X-Parse-Session-Token", Header) of
-        undefined ->
-            proplists:get_value(<<"X-Parse-Session-Token">>, Header);
-        Token1 ->
-            Token1
-    end.
 
 list_join([], Sep) when is_list(Sep) -> [];
 list_join([H | T], Sep) ->
