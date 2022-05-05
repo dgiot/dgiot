@@ -22,14 +22,7 @@
 -include_lib("dgiot/include/logger.hrl").
 -export([stats/2, val/2, val/3, get_count/1, get_count/3]).
 
-get_count(Header) ->
-    Token =
-        case proplists:get_value("X-Parse-Session-Token", Header) of
-            undefined ->
-                proplists:get_value(<<"X-Parse-Session-Token">>, Header);
-            Token1 ->
-                Token1
-        end,
+get_count(Token) ->
     RoleIds =
         case dgiot_auth:get_session(dgiot_utils:to_binary(Token)) of
             #{<<"roles">> := Roles} ->

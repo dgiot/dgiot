@@ -35,7 +35,8 @@
     get_trigger/0,
     get_trigger/2,
     add_all_trigger/1,
-    do_hook/2
+    do_hook/2,
+    notify/5
 ]).
 
 subscribe(Table, Method, Channel) ->
@@ -58,21 +59,21 @@ subscribe(Table, Method, Channel, Keys) ->
 add_hook(Key) ->
     Fun =
         fun
-            ({'after', get, Header, Class, _QueryData, ResBody}) ->
-                send('after', get, Header, Class, dgiot_utils:to_map(ResBody)),
+            ({'after', get, Token, Class, _QueryData, ResBody}) ->
+                notify('after', get, Token, Class, dgiot_utils:to_map(ResBody)),
                 receive_ack(ResBody);
-            ({'after', get, Header,  Class, _ObjectId, _QueryData, ResBody}) ->
-                send('after', get, Header, Class, dgiot_utils:to_map(ResBody)),
+            ({'after', get, Token, Class, _ObjectId, _QueryData, ResBody}) ->
+                notify('after', get, Token, Class, dgiot_utils:to_map(ResBody)),
                 receive_ack(ResBody);
-            ({'after', post, Header,  Class, QueryData, ResBody}) ->
-                send('after', post, Header,  Class, dgiot_utils:to_map(QueryData)),
+            ({'after', post, Token, Class, QueryData, ResBody}) ->
+                notify('after', post, Token, Class, dgiot_utils:to_map(QueryData)),
                 {ok, ResBody};
-            ({'after', put, Header, Class, ObjectId, QueryData, ResBody}) ->
+            ({'after', put, Token, Class, ObjectId, QueryData, ResBody}) ->
                 Map = dgiot_utils:to_map(QueryData),
-                send('after', put, Header, Class, Map#{<<"objectId">> => ObjectId}),
+                notify('after', put, Token, Class, Map#{<<"objectId">> => ObjectId}),
                 {ok, ResBody};
-            ({'after', delete, Header, Class, ObjectId, _QueryData, ResBody}) ->
-                send('after', delete, Header, Class, ObjectId),
+            ({'after', delete, Token, Class, ObjectId, _QueryData, ResBody}) ->
+                notify('after', delete, Token, Class, ObjectId),
                 {ok, ResBody};
             (_) ->
                 {ok, []}
@@ -97,7 +98,7 @@ receive_ack(ResBody) ->
         {ok, ResBody}
     end.
 
-send(Type, Method, Header, Class, Data) ->
+notify(Type, Method, Token, Class, Data) ->
     case dgiot_data:get({sub, Class, Method}) of
         not_find ->
             pass;
@@ -105,33 +106,33 @@ send(Type, Method, Header, Class, Data) ->
             lists:map(
                 fun
                     ({ChannelId, [<<"*">>]}) ->
-                        dgiot_channelx:do_message(ChannelId, {sync_parse, self(), Type, Method, Header, Class, Data});
+                        dgiot_channelx:do_message(ChannelId, {sync_parse, self(), Type, Method, Token, Class, Data});
                     ({ChannelId, Keys}) when Method == put ->
                         List = maps:keys(Data),
                         case List -- Keys of
                             List ->
                                 pass;
                             _ ->
-                                dgiot_channelx:do_message(ChannelId, {sync_parse, self(), Type, Method, Header, Class, Data})
+                                dgiot_channelx:do_message(ChannelId, {sync_parse, self(), Type, Method, Token, Class, Data})
                         end
                 end, List)
     end.
 
-do_request_hook(Type, [<<"classes">>, Class, ObjectId], Method, Header, QueryData, ResBody) ->
-    do_hook({<<Class/binary, "/*">>, Method}, {Type, Method, Header, Class, ObjectId, QueryData, ResBody});
-do_request_hook(Type, [<<"classes">>, Class], Method, Header, QueryData, ResBody) ->
-    do_hook({Class, Method}, {Type, Method, Header, Class, QueryData, ResBody});
+do_request_hook(Type, [<<"classes">>, Class, ObjectId], Method, Token, QueryData, ResBody) ->
+    do_hook({<<Class/binary, "/*">>, Method}, {Type, Method, Token, Class, ObjectId, QueryData, ResBody});
+do_request_hook(Type, [<<"classes">>, Class], Method, Token, QueryData, ResBody) ->
+    do_hook({Class, Method}, {Type, Method, Token, Class, QueryData, ResBody});
 %% 批处理只做异步通知，不做同步hook
-do_request_hook(Type, [<<"batch">>], _Method, Header, QueryData, #{<<"requests">> := Requests} = ResBody) ->
+do_request_hook(Type, [<<"batch">>], _Method, Token, QueryData, #{<<"requests">> := Requests} = ResBody) ->
     lists:map(fun(Request) ->
         SubMethod = maps:get(<<"method">>, Request, <<"post">>),
         Path = maps:get(<<"path">>, Request, <<"">>),
         Body = maps:get(<<"body">>, Request, #{}),
         {match, PathList} = re:run(Path, <<"([^/]+)">>, [global, {capture, all_but_first, binary}]),
-        do_request_hook(Type, lists:concat(PathList), dgiot_parse_rest:method(SubMethod), Header, QueryData, Body)
+        do_request_hook(Type, lists:concat(PathList), dgiot_parse_rest:method(SubMethod), Token, QueryData, Body)
               end, Requests),
     {ok, ResBody};
-do_request_hook(_Type, _Paths, _Method, _Header, _QueryData, _ResBody) ->
+do_request_hook(_Type, _Paths, _Method, _Token, _QueryData, _ResBody) ->
     ignore.
 do_hook(Key, Args) ->
     case catch dgiot_hook:run_hook(Key, Args) of

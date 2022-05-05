@@ -218,9 +218,10 @@ handle_event(_EventId, Event, State) ->
     ?LOG(info, "channel ~p", [Event]),
     {ok, State}.
 
-handle_message({sync_parse, delete, _Table, _BeforeData, AfterData, DeviceId}, State) ->
+handle_message({sync_parse, _Pid, 'after', delete, _Token, <<"Device">>,  _DeviceId},  State) ->
+%%handle_message({sync_parse, delete, _Table, _BeforeData, AfterData, DeviceId}, State) ->
 %%    io:format("DeviceArgs ~p~n", [jsx:decode(Args, [{labels, binary}, return_maps])]),
-    dgiot_task_hook:delete('after', AfterData, DeviceId),
+%%    dgiot_task_hook:delete('after', AfterData, DeviceId),
     {ok, State};
 
 handle_message(_Message, State) ->
