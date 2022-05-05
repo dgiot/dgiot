@@ -55,8 +55,8 @@ get({'before',  '*', Args}) ->
     Basic = format(NewData),
 %%    io:format("~s ~p Basic: ~p ~n", [?FILE, ?LINE, Basic]),
     Basic;
-get({'before',  _Id, Args}) ->
-%%    io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Args, Id]),
+get({'before',  _Id,  Args}) ->
+%%    io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Args, _Id]),
     Args;
 get({'after', #{<<"results">> := Response, <<"count">> := Count} = _Data}) ->
     #{
@@ -76,6 +76,7 @@ get({'after', #{<<"results">> := Response} = _Data}) ->
     };
 %% 查询单个
 get({'after',  Data}) ->
+%%    io:format("~s ~p ~p ~n", [?FILE, ?LINE, Data]),
     #{
         <<"status">> => 0,
         <<"msg">> => <<"数据请求成功"/utf8>>,
@@ -160,10 +161,10 @@ format(#{<<"page">> := Page} = Data) ->
     format(NewData#{<<"limit">> => 10, <<"skip">> => Skip});
 
 format(Data) ->
-    Where = maps:without([<<"limit">>, <<"skip">>, <<"order">>, <<"limit">>, <<"keys">>, <<"excludeKeys">>, <<"include">>, <<"where">>, <<"perPage">>, <<"page">>, <<"orderBy">>, <<"orderDir">>], Data),
+    Where = maps:without([<<"limit">>, <<"skip">>, <<"order">>, <<"count">>, <<"limit">>, <<"keys">>, <<"excludeKeys">>, <<"include">>, <<"where">>, <<"perPage">>, <<"page">>, <<"orderBy">>, <<"orderDir">>], Data),
     NewData = maps:without(maps:keys(Where) ++ [<<"perPage">>, <<"page">>, <<"orderBy">>, <<"orderDir">>], Data),
     case Data of
-        #{<<"where">> := ParesWhere} ->
+        #{<<"where">> := ParesWhere} when is_map(ParesWhere) ->
             NewData#{<<"where">> => maps:merge(ParesWhere, Where)};
         _ ->
             case length(maps:to_list(Where)) of
@@ -173,7 +174,6 @@ format(Data) ->
                     NewData#{<<"where">> => Where}
             end
     end.
-
 
 start_http() ->
     Port = 9089,
