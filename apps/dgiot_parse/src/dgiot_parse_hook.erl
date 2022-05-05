@@ -254,7 +254,8 @@ add_all_trigger(Name, Host) ->
             {error, Reason}
     end.
 
-api_hook({'before', OperationID, Headers, QS, Args}) ->
+api_hook({'before', OperationID, Token, QS, Args}) ->
+    io:format("~s ~p ~p~n", [?FILE, ?LINE, OperationID]),
     {NewMethod, NewType, NewTable, Id} =
         case re:split(OperationID, <<"_">>) of
             [Method1, Type, Table, ObjectId | _] ->
@@ -262,15 +263,18 @@ api_hook({'before', OperationID, Headers, QS, Args}) ->
             [Method1, Type, Table | _] ->
                 {Method1, Type, Table, '*'}
         end,
-    NewQs = case dgiot_hook:run_hook({NewMethod, NewType}, {'before', dgiot_parse:get_token(Headers), NewTable, Id, Args}) of
+    io:format("~s ~p ~p~n", [?FILE, ?LINE, Token]),
+    NewQs = case dgiot_hook:run_hook({NewMethod, NewType}, {'before', Token, NewTable, Id, Args}) of
                 {ok, [Rtn | _]} ->
                     dgiot_parse:get_qs(Rtn);
                 _ ->
                     QS
             end,
+    io:format("~s ~p NewQs ~p~n", [?FILE, ?LINE, NewQs]),
     {NewQs, NewType};
 
-api_hook({'after', OperationID, Headers, Map, ResBody}) ->
+api_hook({'after', OperationID, Token, Map, ResBody}) ->
+    io:format("~s ~p ~p~n", [?FILE, ?LINE, OperationID]),
     {NewMethod, NewType, NewTable, Id} =
         case re:split(OperationID, <<"_">>) of
             [Method1, Type, Table, ObjectId | _] ->
@@ -278,7 +282,7 @@ api_hook({'after', OperationID, Headers, Map, ResBody}) ->
             [Method1, Type, Table | _] ->
                 {Method1, Type, Table, '*'}
         end,
-    case dgiot_hook:run_hook({NewMethod, NewType}, {'after', dgiot_parse:get_token(Headers), NewTable, Id, Map}) of
+    case dgiot_hook:run_hook({NewMethod, NewType}, {'after', Token, NewTable, Id, Map}) of
         {ok, [Rtn | _]} ->
             jsx:encode(Rtn);
         _ ->
