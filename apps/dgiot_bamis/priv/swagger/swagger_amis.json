@@ -336,7 +336,7 @@
             "name": "where",
             "description": "过滤条件，eg: {\"objectId\":{\"$in\":[\"BGS3BFgcZN\"]}}",
             "required": false,
-            "default": "count(*)",
+            "default": "{}",
             "type": "string"
           }
         ],
