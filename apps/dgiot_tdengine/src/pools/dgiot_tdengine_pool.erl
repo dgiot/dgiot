@@ -36,7 +36,7 @@ start(_Type, Ip, Port) ->
     {<<"HTTP">>, list_to_binary(lists:concat(["http://", binary_to_list(Ip), ":", Port, "/rest/sql"]))}.
 
 %% Action 用来区分数据库操作语句类型(DQL、DML、DDL、DCL)
-run_sql(#{<<"driver">> := <<"HTTP">>, <<"url">> := Url, <<"username">> := UserName, <<"password">> := Password} = Context, _Action, Sql) ->
+run_sql(#{<<"driver">> := <<"HTTP">>, <<"url">> := Url, <<"username">> := UserName, <<"password">> := Password} = Context, _Action, Sql)  when byte_size(Sql) > 0 ->
     ?LOG(debug, " ~p, ~p, ~p, (~ts)", [Url, UserName, Password, unicode:characters_to_list(Sql)]),
     case dgiot_tdengine_http:request(Url, UserName, Password, Sql) of
         {ok, Result} ->
@@ -62,4 +62,7 @@ run_sql(#{<<"driver">> := <<"mqtt">>, <<"url">> := _Url}, Action, _Sql) when Act
 run_sql(#{<<"driver">> := <<"JDBC">>, <<"url">> := _Url}, Action, _Sql) when Action == execute_update; Action == execute_query ->
 %%    ?LOG(info,"Execute ~p (~p) ~p", [Url, byte_size(Sql), Sql]),
 %%    apply(ejdbc, Action, [<<"com.taosdata.jdbc.TSDBDriver">>, Sql]).
+    ok;
+
+run_sql(_Context, _Action, _Sql) ->
     ok.
