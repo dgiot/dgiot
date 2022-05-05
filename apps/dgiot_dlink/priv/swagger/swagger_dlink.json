@@ -10,6 +10,7 @@
   "paths": {
     "/protocol": {
       "get": {
+        "security": [],
         "summary": "获取协议列表",
         "description": "获取协议列表",
         "parameters": [
