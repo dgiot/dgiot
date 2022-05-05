@@ -80,6 +80,10 @@ do_request(get_protocol, _Body, #{<<"sessionToken">> := _SessionToken} = _Contex
 %% Proctol 概要: 获取Dlink json信息
 %% OperationId:dlinkjson
 %% 请求:GET /iotapi/dlinkjson
+do_request(get_dlinkjson, #{<<"type">> := <<"swaggerTree">>}, _Context, _Req) ->
+    {ok, SwaggerTree} = dgiot_swagger:tree(),
+    {200, SwaggerTree};
+
 do_request(get_dlinkjson, #{<<"type">> := Type}, _Context, _Req) ->
     DlinkJson = dgiot_utils:get_JsonFile(?MODULE, <<Type/binary, ".json">>),
     {200, DlinkJson};
