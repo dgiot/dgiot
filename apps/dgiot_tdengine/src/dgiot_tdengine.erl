@@ -51,7 +51,7 @@ create_schemas(Schema) ->
 create_schemas(Channel, #{<<"using">> := _STbName} = Query) ->
     transaction(Channel,
         fun(Context) ->
-            Sql = dgiot_tdengine_schema:create_table(Query,Context#{<<"channel">> => Channel}),
+            Sql = dgiot_tdengine_schema:create_table(Query, Context#{<<"channel">> => Channel}),
             dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_update, Sql)
         end);
 
@@ -60,7 +60,9 @@ create_schemas(Channel, Query) ->
     transaction(Channel,
         fun(Context) ->
             Sql = dgiot_tdengine_schema:create_table(Query, Context#{<<"channel">> => Channel}),
-            dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_update, Sql)
+            R = dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_update, Sql),
+            dgiot_tdengine_schema:alter_table(Query, Context#{<<"channel">> => Channel}),
+            R
         end).
 
 %% 插入

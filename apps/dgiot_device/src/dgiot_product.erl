@@ -19,18 +19,17 @@
 -include("dgiot_device.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -dgiot_data("ets").
--export([init_ets/0, load_cache/1, local/1, save/1, get/1, delete/1, save_prod/2, lookup_prod/1]).
+-export([init_ets/0, load_cache/0, local/1, save/1, get/1, delete/1, save_prod/2, lookup_prod/1]).
 -export([parse_frame/3, to_frame/2]).
 -export([create_product/2, add_product_relation/2, delete_product_relation/1]).
 
 init_ets() ->
     dgiot_data:init(?DGIOT_PRODUCT).
 
-load_cache(ClassName) ->
-    io:format("~s ~p ~p ~n",[?FILE, ?LINE, ClassName]),
+load_cache() ->
     Success = fun(Page) ->
-        lists:map(fun(#{<<"objectId">> := ObjectId, <<"productSecret">> := ProductSecret} = Product) ->
-            dgiot_mnesia:insert(ObjectId, ['Product', dgiot_role:get_acls(Product), ProductSecret]),
+        lists:map(fun(Product) ->
+%%            dgiot_mnesia:insert(ObjectId, ['Product', dgiot_role:get_acls(Product), ProductSecret]),
             dgiot_product:save(Product)
                   end, Page)
               end,
