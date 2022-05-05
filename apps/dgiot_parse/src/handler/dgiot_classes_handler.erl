@@ -287,15 +287,15 @@ do_request_after(<<"get_login">>, 200, ResHeaders, ResBody, Context, Req) ->
             {500, ErrMsg}
     end;
 
-do_request_after(OperationID, StatusCode, ResHeaders, ResBody, _Context, Req) ->
+do_request_after(OperationID, StatusCode, ResHeaders, ResBody, #{<<"sessionToken">> := SessionToken} = _Context, Req) ->
     Map = jsx:decode(ResBody, [{labels, binary}, return_maps]),
-    Body = dgiot_parse_hook:api_hook({'after', OperationID, ResHeaders, Map, ResBody}),
+    Body = dgiot_parse_hook:api_hook({'after', OperationID, SessionToken, Map, ResBody}),
     {StatusCode, ResHeaders, Body, Req}.
 
 %% ==========================
 %%  parse 请求
 %% ==========================
-request_parse(OperationID, Args, Body, Headers, #{base_path := BasePath} = Context, Req) ->
+request_parse(OperationID, Args, Body, Headers, #{base_path := BasePath, <<"sessionToken">>:= Token} = Context, Req) ->
     QS =
         lists:foldl(
             fun
@@ -306,10 +306,10 @@ request_parse(OperationID, Args, Body, Headers, #{base_path := BasePath} = Conte
                 ({N, V}, Acc) ->
                     <<Acc/binary, "&", N/binary, "=", V/binary>>
             end, <<>>, dgiot_req:parse_qs(Req)),
-    {NewQs,NewType} = dgiot_parse_hook:api_hook({'before', OperationID, Headers, QS, Args}),
+    {NewQs, NewType} = dgiot_parse_hook:api_hook({'before', OperationID, Token, QS, Args}),
     Path = get_path(re:replace(dgiot_req:path(Req), BasePath, <<>>, [{return, binary}]), NewType),
     Url = <<Path/binary, NewQs/binary>>,
-%%    io:format("~s ~p ~p~n", [?FILE, ?LINE, Url]),
+    io:format("~s ~p ~p~n", [?FILE, ?LINE, Url]),
     Method = dgiot_req:method(Req),
     request_parse(OperationID, Url, Method, Args, Body, Headers, Context, Req).
 
