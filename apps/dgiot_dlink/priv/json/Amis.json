@@ -1,7 +1,7 @@
 {
   "type": "form",
   "api": {
-    "url": "iotapi/profile/parse_objectid",
+    "url": "iotapi/amis/Device/parse_objectid",
     "method": "put",
     "headers": {
       "store": "localStorage",
