@@ -36,7 +36,8 @@
     get_trigger/2,
     add_all_trigger/1,
     do_hook/2,
-    notify/5
+    notify/5,
+    api_hook/1
 ]).
 
 subscribe(Table, Method, Channel) ->
@@ -251,4 +252,35 @@ add_all_trigger(Name, Host) ->
             end;
         {error, Reason} ->
             {error, Reason}
+    end.
+
+api_hook({'before', OperationID, Headers, QS, Args}) ->
+    {NewMethod, NewType, NewTable, Id} =
+        case re:split(OperationID, <<"_">>) of
+            [Method1, Type, Table, ObjectId | _] ->
+                {Method1, Type, Table, ObjectId};
+            [Method1, Type, Table | _] ->
+                {Method1, Type, Table, '*'}
+        end,
+    NewQs = case dgiot_hook:run_hook({NewMethod, NewType}, {'before', dgiot_parse:get_token(Headers), NewTable, Id, Args}) of
+                {ok, [Rtn | _]} ->
+                    dgiot_parse:get_qs(Rtn);
+                _ ->
+                    QS
+            end,
+    {NewQs, NewType};
+
+api_hook({'after', OperationID, Headers, Map, ResBody}) ->
+    {NewMethod, NewType, NewTable, Id} =
+        case re:split(OperationID, <<"_">>) of
+            [Method1, Type, Table, ObjectId | _] ->
+                {Method1, Type, Table, ObjectId};
+            [Method1, Type, Table | _] ->
+                {Method1, Type, Table, '*'}
+        end,
+    case dgiot_hook:run_hook({NewMethod, NewType}, {'after', dgiot_parse:get_token(Headers), NewTable, Id, Map}) of
+        {ok, [Rtn | _]} ->
+            jsx:encode(Rtn);
+        _ ->
+            ResBody
     end.

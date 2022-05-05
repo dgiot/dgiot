@@ -59,7 +59,9 @@
     import/5,
     import/6,
     request/4,
-    request/5
+    request/5,
+    get_token/1,
+    get_qs/1
 ]).
 
 -export([
@@ -267,6 +269,31 @@ import(Name, Class, [Data | Other], Count, Requests, Fun, Acc) when length(Reque
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
+get_token(Header) ->
+    case proplists:get_value("X-Parse-Session-Token", Header) of
+        undefined ->
+            proplists:get_value(<<"X-Parse-Session-Token">>, Header);
+        Token1 ->
+            Token1
+    end.
+
+get_qs(Map) ->
+    lists:foldl(
+        fun
+            ({N, V}, <<>>) ->
+                NewV = format_value(V),
+                <<"?", N/binary, "=", NewV/binary>>;
+            ({N, V}, Acc) ->
+                NewV = format_value(V),
+                <<Acc/binary, "&", N/binary, "=", NewV/binary>>
+        end, <<>>, maps:to_list(Map)).
+
+format_value(V) when is_binary(V) ->
+    dgiot_httpc:urlencode(V);
+format_value(V) ->
+    Json = jsx:encode(V),
+%%    V1 = re:replace(Json, <<"\[.*?\]">>, <<"">>, [global, {return, binary}, unicode]),
+    dgiot_httpc:urlencode(Json).
 
 read_file(Path) ->
     case file:read_file(Path) of
