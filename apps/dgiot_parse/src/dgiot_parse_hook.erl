@@ -259,7 +259,7 @@ api_hook({'before', OperationID, Token, QS, Path, Args}) ->
     NewArgs = do_put(Method, Token, Path, Args),
     NewQs = case dgiot_hook:run_hook({Method, Type}, {'before', Id, Args}) of
                 {ok, [Rtn | _]} ->
-                    dgiot_parse:get_qs(Rtn);
+                    dgiot_parse:get_qs(maps:without([<<"id">>], Rtn));
                 _ ->
                     QS
             end,
@@ -268,7 +268,7 @@ api_hook({'before', OperationID, Token, QS, Path, Args}) ->
 api_hook({'after', OperationID, Map, ResBody}) ->
     [Method, Type | _] = re:split(OperationID, <<"_">>),
     case dgiot_hook:run_hook({Method, Type}, {'after', Map}) of
-        {ok, [Rtn | _]} ->
+        {ok, [Rtn | _]} when is_map(Rtn) ->
             jsx:encode(Rtn);
         _ ->
             ResBody
