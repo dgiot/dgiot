@@ -24,7 +24,7 @@
 
 %% API
 -export([start_link/0, stop/0]).
--export([generate/3, write/3, read/2, list/0, parse_schema/3, load_schema/3,compile_handler/3]).
+-export([generate/3, write/3, read/2, tree/0, list/0, parse_schema/3, load_schema/3, compile_handler/3]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
@@ -61,7 +61,7 @@ handle_call({write, Name, Version, Schema}, _From, #state{swagger = List} = Stat
     case lists:keyfind(Name, 1, List) of
         false ->
             SchemaPath = get_priv(?MODULE, ?SWAGGER(Name, Version)),
-            io:format("~s ~p ~p ~n",[?FILE,?LINE,SchemaPath]),
+            io:format("~s ~p ~p ~n", [?FILE, ?LINE, SchemaPath]),
             Reply = file:write_file(SchemaPath, jsx:encode(Schema), [write]),
             {reply, Reply, State#state{swagger = [{Name, Version} | List]}};
         {Name, _Version} ->
@@ -143,14 +143,14 @@ list() ->
 load_schema(Path, Opts, ext) ->
     case catch file:read_file(Path) of
         {Err, Reason} when Err == 'EXIT'; Err == error ->
-            ?LOG(error,"read swagger error,~p,~p~n", [Path, Reason]),
+            ?LOG(error, "read swagger error,~p,~p~n", [Path, Reason]),
             {error, Reason};
         {ok, Bin} ->
             case lists:member(return_maps, Opts) of
                 true ->
                     case catch jsx:decode(Bin, Opts) of
                         {'EXIT', Reason} ->
-                            ?LOG(error,"decode error,~p,~p~n", [Path, Reason]),
+                            ?LOG(error, "decode error,~p,~p~n", [Path, Reason]),
                             {error, Reason};
                         Schemas ->
                             {ok, Schemas}
@@ -164,14 +164,14 @@ load_schema(Mod, FileName, Opts) ->
     Path = get_priv(Mod, FileName),
     case catch file:read_file(Path) of
         {Err, Reason} when Err == 'EXIT'; Err == error ->
-            ?LOG(error,"read swagger error,~p, ~p ~p~n", [Path,filename:basename(Path), Reason]),
+            ?LOG(error, "read swagger error,~p, ~p ~p~n", [Path, filename:basename(Path), Reason]),
             {error, Reason};
         {ok, Bin} ->
             case lists:member(return_maps, Opts) of
                 true ->
                     case catch jsx:decode(Bin, Opts) of
                         {'EXIT', Reason} ->
-                            ?LOG(error,"decode error,~p,~p~n", [Path, Reason]),
+                            ?LOG(error, "decode error,~p,~p~n", [Path, Reason]),
                             {error, Reason};
                         Schemas ->
                             {ok, Schemas}
@@ -203,7 +203,7 @@ check_mod(Name, Path, AccIn, Hand) ->
                                 check_mod_swagger(Name, Mod, Acc, Hand)
                             catch
                                 _ErrType:Reason ->
-                                    ?LOG(error,"~p ~p", [Mod, Reason]),
+                                    ?LOG(error, "~p ~p", [Mod, Reason]),
                                     Acc
                             end
                     end
@@ -211,8 +211,6 @@ check_mod(Name, Path, AccIn, Hand) ->
             dgiot_plugin:check_module(Fun, maps:merge(BaseSchemas, AccIn));
         _ -> AccIn
     end.
-
-
 
 check_mod_swagger(ServerName, Mod, Schema, Hand) ->
     case code:is_loaded(Mod) == false of
@@ -302,7 +300,7 @@ do_method_fun(Path, Method, MethodInfo, SWSchemas, Hand) ->
                 }
             };
         _ ->
-            ?LOG(warning,"Path is repeat, ~p~n", [<<Method/binary, " ", Path/binary>>]),
+            ?LOG(warning, "Path is repeat, ~p~n", [<<Method/binary, " ", Path/binary>>]),
             SWSchemas
     end.
 
@@ -388,9 +386,58 @@ compile_handler(Mod, Schema, Hand) ->
                     {ok, IoList} = Render:render(Vals),
                     {ok, unicode:characters_to_binary(IoList)};
                 error ->
-                    ?LOG(error,"erlydtl compile ~p~n", [TplPath]),
+                    ?LOG(error, "erlydtl compile ~p~n", [TplPath]),
                     {error, compile_error}
             end;
         {error, Reason} ->
             {error, Reason}
+    end.
+
+%%{
+%%    "label": "基础接口",
+%%    "target": "#/DGIOT",
+%%    "children": [
+%%        {
+%%        "target": "#/DGIOT/post_login",
+%%        "label": "用户登录"
+%%        },
+%%        {
+%%        "target": "#/DGIOT/post_login",
+%%        "label": "退出登录"
+%%        }
+%%    ]
+%%}
+tree() ->
+    case read(?WEBSERVER, #{}) of
+        {ok, SWSchema} ->
+            Tags = maps:get(<<"tags">>, SWSchema, []),
+            Tree =
+                lists:foldl(fun
+                                (#{<<"description">> := Description, <<"name">> := Name}, Acc) ->
+                                    Acc#{Name => #{<<"label">> => Description,
+                                        <<"target">> => <<"#/", Name/binary>>,
+                                        <<"children">> => []
+                                    }};
+                                (_, Acc) ->
+                                    Acc
+                            end, #{}, Tags),
+            Paths = maps:with([<<"paths">>], SWSchema),
+            Tree1 =
+                lists:foldl(fun(Value, Acc) ->
+                    lists:foldl(fun(Value1, Acc1) ->
+                        lists:foldl(fun(#{<<"description">> := PathDescription, <<"operationId">> := OperationId, <<"tags">> := [PathTag | _]}, Acc2) ->
+                                            case maps:find(PathTag, Acc2) of
+                                                {ok, #{<<"children">> := Children, <<"target">> := TagTarget} = V} ->
+                                                    Path = #{<<"label">> => PathDescription, <<"target">> => <<TagTarget/binary, "/", OperationId/binary>>},
+                                                    Acc2#{PathTag => V#{<<"children">> => Children ++ [Path]}};
+                                                error ->
+                                                    Acc2
+                                            end
+                                    end, Acc1, maps:values(Value1))
+                                end, Acc, maps:values(Value))
+                            end, Tree, maps:values(Paths)),
+            NewMap = maps:from_list(lists:sort(maps:to_list(Tree1))),
+            {ok, maps:values(NewMap)};
+        _ ->
+            {error, #{}}
     end.
