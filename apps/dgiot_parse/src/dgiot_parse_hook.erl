@@ -254,37 +254,55 @@ add_all_trigger(Name, Host) ->
             {error, Reason}
     end.
 
-api_hook({'before', OperationID, Token, QS, Args}) ->
-    io:format("~s ~p ~p~n", [?FILE, ?LINE, OperationID]),
-    {NewMethod, NewType, NewTable, Id} =
-        case re:split(OperationID, <<"_">>) of
-            [Method1, Type, Table, ObjectId | _] ->
-                {Method1, Type, Table, ObjectId};
-            [Method1, Type, Table | _] ->
-                {Method1, Type, Table, '*'}
-        end,
-    io:format("~s ~p ~p~n", [?FILE, ?LINE, Token]),
-    NewQs = case dgiot_hook:run_hook({NewMethod, NewType}, {'before', Token, NewTable, Id, Args}) of
+api_hook({'before', OperationID, Token, QS, Path, Args}) ->
+    {Method, Type, Id} = get_id(OperationID),
+    NewArgs = do_put(Method, Token, Path, Args),
+    NewQs = case dgiot_hook:run_hook({Method, Type}, {'before', Id, Args}) of
                 {ok, [Rtn | _]} ->
                     dgiot_parse:get_qs(Rtn);
                 _ ->
                     QS
             end,
-    io:format("~s ~p NewQs ~p~n", [?FILE, ?LINE, NewQs]),
-    {NewQs, NewType};
+    {NewQs, Type, NewArgs};
 
-api_hook({'after', OperationID, Token, Map, ResBody}) ->
-    io:format("~s ~p ~p~n", [?FILE, ?LINE, OperationID]),
-    {NewMethod, NewType, NewTable, Id} =
-        case re:split(OperationID, <<"_">>) of
-            [Method1, Type, Table, ObjectId | _] ->
-                {Method1, Type, Table, ObjectId};
-            [Method1, Type, Table | _] ->
-                {Method1, Type, Table, '*'}
-        end,
-    case dgiot_hook:run_hook({NewMethod, NewType}, {'after', Token, NewTable, Id, Map}) of
+api_hook({'after', OperationID, Map, ResBody}) ->
+    [Method, Type | _] = re:split(OperationID, <<"_">>),
+    case dgiot_hook:run_hook({Method, Type}, {'after', Map}) of
         {ok, [Rtn | _]} ->
             jsx:encode(Rtn);
         _ ->
             ResBody
     end.
+
+get_id(OperationID) ->
+    %%    <<"get_classes_product">>,
+    case re:split(OperationID, <<"_">>, [{return, binary}]) of
+        [Method, Type, _Table, Id | _] ->
+            {Method, Type, Id};
+        [Method, Type | _] ->
+            {Method, Type, '*'}
+    end.
+
+%% todo 可以做多级json的 merge修改
+do_put(<<"put">>, Token, <<"/iotapi/classes/", Tail/binary>>, #{<<"id">> := Id} = Args) ->
+    [ClassName | _] = re:split(Tail, <<"/">>),
+    notify('before', put, Token, ClassName, Args),
+    case dgiot_parse:get_object(ClassName, Id) of
+        {ok, Class} ->
+            maps:fold(fun
+                          (K, V, Acc) ->
+                              case maps:find(K, Class) of
+                                  error -> Acc;
+                                  {ok, Value} when is_map(Value) ->
+                                      Acc#{K => maps:merge(Value, V)};
+                                  _ ->
+                                      Acc#{K => V}
+                              end
+                      end,
+                #{}, maps:without([<<"id">>], Args));
+        _ ->
+            Args
+    end;
+
+do_put(_, _Token, _ClassName, Args) ->
+    Args.
