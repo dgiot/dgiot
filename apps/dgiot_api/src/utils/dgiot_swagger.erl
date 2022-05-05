@@ -425,10 +425,10 @@ tree() ->
             Tree1 =
                 lists:foldl(fun(Value, Acc) ->
                     lists:foldl(fun(Value1, Acc1) ->
-                        lists:foldl(fun(#{<<"description">> := PathDescription, <<"operationId">> := OperationId, <<"tags">> := [PathTag | _]}, Acc2) ->
+                        lists:foldl(fun(#{<<"summary">> := Summary, <<"operationId">> := OperationId, <<"tags">> := [PathTag | _]}, Acc2) ->
                                             case maps:find(PathTag, Acc2) of
                                                 {ok, #{<<"children">> := Children, <<"target">> := TagTarget} = V} ->
-                                                    Path = #{<<"label">> => PathDescription, <<"target">> => <<TagTarget/binary, "/", OperationId/binary>>},
+                                                    Path = #{<<"label">> => Summary, <<"target">> => <<TagTarget/binary, "/", OperationId/binary>>},
                                                     Acc2#{PathTag => V#{<<"children">> => Children ++ [Path]}};
                                                 error ->
                                                     Acc2
