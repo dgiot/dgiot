@@ -209,7 +209,8 @@ handle_init(#state{id = ChannelId, env = #{<<"products">> := Products, <<"args">
         dgiot_data:insert({?TASK_ARGS, ProductId}, NewArgs),
         dgiot_task:load(NewArgs)
               end, Products),
-%%    dgiot_parse_hook:subscribe(<<"Device">>, delete, ChannelId),
+    dgiot_parse_hook:subscribe(<<"Device">>, delete, ChannelId),
+    dgiot_parse_hook:subscribe(<<"Device/*">>, delete, ChannelId),
     dgiot_task:timing_start(Args#{<<"channel">> => ChannelId}),
     {ok, State}.
 
@@ -218,9 +219,10 @@ handle_event(_EventId, Event, State) ->
     ?LOG(info, "channel ~p", [Event]),
     {ok, State}.
 
-handle_message({sync_parse, _Pid, 'after', delete, _Token, <<"Device">>,  _DeviceId},  State) ->
+handle_message({sync_parse, _Pid, 'after', delete, _Token, <<"Device">>,  DeviceId},  State) ->
 %%handle_message({sync_parse, delete, _Table, _BeforeData, AfterData, DeviceId}, State) ->
 %%    io:format("DeviceArgs ~p~n", [jsx:decode(Args, [{labels, binary}, return_maps])]),
+    io:format("~s ~p DeviceId =~p.~n", [?FILE, ?LINE, DeviceId]),
 %%    dgiot_task_hook:delete('after', AfterData, DeviceId),
     {ok, State};
 
