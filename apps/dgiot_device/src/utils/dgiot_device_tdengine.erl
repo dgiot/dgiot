@@ -152,7 +152,7 @@ get_app(ProductId, Results, DeviceId, Args) ->
     Props = get_Props(ProductId, Keys),
     lists:foldl(fun(X, Acc) ->
         case X of
-            #{<<"name">> := Name, <<"identifier">> := Identifier, <<"dataForm">> := #{<<"protocol">> := Protocol}, <<"dataSource">> := DataSource, <<"dataType">> := #{<<"type">> := Typea} = DataType} ->
+            #{<<"name">> := Name, <<"isshow">> := true, <<"identifier">> := Identifier, <<"dataForm">> := #{<<"protocol">> := Protocol}, <<"dataSource">> := DataSource, <<"dataType">> := #{<<"type">> := Typea} = DataType} ->
                 Time = maps:get(<<"createdat">>, Result, dgiot_datetime:now_secs()),
                 NewTime = dgiot_tdengine_field:get_time(dgiot_utils:to_binary(Time), <<"111">>),
                 Devicetype = maps:get(<<"devicetype">>, X, <<"others">>),

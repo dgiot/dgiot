@@ -144,7 +144,8 @@ do_request(get_echart_deviceid, #{<<"deviceid">> := DeviceId} = Args, #{<<"sessi
 %% TDengine 概要: 获取当前设备最新时序数据卡片
 do_request(get_app_deviceid, #{<<"deviceid">> := DeviceId} = Args, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
     case dgiot_product_tdengine:get_channel(SessionToken) of
-        {error, Error} -> {error, Error};
+        {error, Error} ->
+            {error, Error};
         {ok, Channel} ->
 %%            ?LOG(info,"DeviceId ~p", [DeviceId]),
             case dgiot_parse:get_object(<<"Device">>, DeviceId) of
