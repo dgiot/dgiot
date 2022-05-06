@@ -50,19 +50,26 @@
         order => 1,
         type => string,
         required => true,
-        default => <<"00"/utf8>>,
+        default => #{<<"value">> => <<"11">>, <<"label">> => <<"读数据"/utf8>>},
+        enum => [
+            #{<<"value">> => <<"11">>, <<"label">> => <<"读数据"/utf8>>},
+            #{<<"value">> => <<"12">>, <<"label">> => <<"请求读后续数据"/utf8>>}
+        ],
         title => #{
             zh => <<"功能码"/utf8>>
         },
         description => #{
-            zh => <<"功能码"/utf8>>
+            zh => <<"功能码, 16进制"/utf8>>
         }
     },
     <<"di">> => #{
         order => 2,
         type => string,
         required => true,
-        default => <<"0000"/utf8>>,
+        default => #{<<"value">> => <<"00010000"/utf8>>, <<"label">> => <<"(当前)正向有功总电能"/utf8>>},
+        enum => [
+            #{<<"value">> => <<"00010000"/utf8>>, <<"label">> => <<"正向有功"/utf8>>}
+        ],
         title => #{
             zh => <<"信息标识"/utf8>>
         },

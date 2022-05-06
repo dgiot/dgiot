@@ -156,7 +156,6 @@ init(?TYPE, ChannelId, #{
     lists:map(fun(X) ->
         case X of
             {ProductId, #{<<"ACL">> := Acl, <<"nodeType">> := 1, <<"thing">> := Thing}} ->
-%%                dgiot_data:insert({dtu, ChannelId}, {ProductId, Acl, maps:get(<<"properties">>, Thing, [])}),
                 Props = maps:get(<<"properties">>, Thing, []),
                 dgiot_data:insert({dtu, ChannelId}, {ProductId, Acl, Props}),
                 lists:map(fun(Prop) ->

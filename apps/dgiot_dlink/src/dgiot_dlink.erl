@@ -148,7 +148,7 @@ format_protocol(App, CType, Channel_type, Attributes) ->
                     zh => <<"报文序号"/utf8>>
                 },
                 description => #{
-                    zh => <<"报文序号"/utf8>>
+                    zh => <<"报文序号,初始值为0"/utf8>>
                 }
             }
         }, Params)

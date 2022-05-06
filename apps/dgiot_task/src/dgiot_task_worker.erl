@@ -245,7 +245,6 @@ send_msg(#task{tid = Channel, product = Product, devaddr = DevAddr, ref = Ref, q
     end,
     NewQue = lists:nthtail(NewCount, Que),
     dgiot_metrics:inc(dgiot_task, <<"task_send">>, 1),
-
     State#task{que = NewQue, dis = Dis, ref = erlang:send_after(Interval * 1000, self(), retry), interval = Interval}.
 
 
