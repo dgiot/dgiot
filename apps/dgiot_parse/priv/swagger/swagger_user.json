@@ -6,18 +6,18 @@
     }
   ],
   "definitions": {
-    "Token":{
-      "type":"object",
-      "properties":{
+    "Token": {
+      "type": "object",
+      "properties": {
         "appid": {
           "description": "app secret",
           "type": "string",
-          "example":"gEsTiaPAjv"
+          "example": "gEsTiaPAjv"
         },
         "secret": {
           "description": "app secret",
           "type": "string",
-          "example":"VzY0Mjc5NDQxNTg1ODI4NDk1MzYx"
+          "example": "VzY0Mjc5NDQxNTg1ODI4NDk1MzYx"
         }
       }
     }
@@ -42,12 +42,12 @@
                 "username": {
                   "required": true,
                   "type": "string",
-                  "example":"username"
+                  "example": "username"
                 },
                 "password": {
                   "required": true,
                   "type": "string",
-                  "example":"password"
+                  "example": "password"
                 }
               }
             }
@@ -439,17 +439,25 @@
                 "userid": {
                   "description": "用户id",
                   "type": "string",
-                  "example":"6H7kpYpIin"
+                  "example": "6H7kpYpIin"
                 },
-                  "delfilter": {
-                    "description": "删除角色用户条件",
-                    "type": "object",
-                    "example":{"where":{"name":"test"}}
-                  },
-                 "addfilter": {
+                "delfilter": {
+                  "description": "删除角色用户条件",
+                  "type": "object",
+                  "example": {
+                    "where": {
+                      "name": "test"
+                    }
+                  }
+                },
+                "addfilter": {
                   "description": "新增角色用户条件",
                   "type": "object",
-                  "example":{"where":{"name":"test2"}}
+                  "example": {
+                    "where": {
+                      "name": "test2"
+                    }
+                  }
                 }
               }
             }
@@ -491,12 +499,16 @@
                 "userid": {
                   "description": "用户id",
                   "type": "string",
-                  "example":"tnFJKWVOGY"
+                  "example": "tnFJKWVOGY"
                 },
                 "filter": {
                   "description": "过滤条件，eg: {\"where\":{\"name\":\"test\"}}",
                   "type": "object",
-                  "example":{"where":{"name":"test"}}
+                  "example": {
+                    "where": {
+                      "name": "test"
+                    }
+                  }
                 }
               }
             }
