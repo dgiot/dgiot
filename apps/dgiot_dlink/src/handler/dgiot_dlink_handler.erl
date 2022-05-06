@@ -73,7 +73,7 @@ handle(OperationID, Args, Context, Req) ->
 %% Proctol 概要: 获取Dlink协议列表
 %% OperationId:protocol
 %% 请求:GET /iotapi/protocol
-do_request(get_protocol, _Body, #{<<"sessionToken">> := _SessionToken} = _Context, _Req) ->
+do_request(get_protocol, _Body, _Context, _Req) ->
     Protocols = dgiot_dlink:get_all_protocol(),
     {200, Protocols};
 
