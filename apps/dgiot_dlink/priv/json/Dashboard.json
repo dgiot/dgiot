@@ -7,6 +7,7 @@
       "query": {
         "count": "objectId",
         "keys": [
+          "count(*)",
           "objectId",
           "name",
           "location",
