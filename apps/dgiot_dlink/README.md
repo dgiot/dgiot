@@ -36,6 +36,7 @@ Dlink协议是针对物联网开发领域设计的一种数据交换规范，数
 | 双向命令 |$dg/thing/{deviceId}/commands/request_id={request_id}|用户|平台|
 | 双向命令 |$dg/user/{deviceId}/commands/request_id={request_id}| 平台 | 用户 |
 | 属性上报 |$dg/thing/{productId}/{deviceAddr}/properties/report|设备|平台|
+| 属性批量上报 |$dg/thing/{productId}/{deviceAddr}/properties/batch/report|设备|平台|
 | 属性上报 |$dg/user/{deviceId}/properties/report|平台|用户|
 | 子属性上报 |$dg/thing/{productId}/{deviceAddr}/gateway/sub_devices/properties/report|设备|平台|
 | 子属性上报 |$dg/user/{deviceId}/gateway/sub_devices/properties/report|平台|用户|
@@ -50,6 +51,7 @@ Dlink协议是针对物联网开发领域设计的一种数据交换规范，数
 | 属性获取 |$dg/thing/{productId}/{deviceAddr}/shadow/get/request_id={request_id}|设备|平台|
 | 属性获取 |$dg/device/{productId}/{deviceAddr}/shadow/get/request_id={request_id}|平台|设备|
 | 事件上报 |$dg/thing/{productId}/{deviceAddr}/events|设备|平台|
+| 事件批量上报 |$dg/thing/{productId}/{deviceAddr}/batch/events|设备|平台|
 | 事件上报 |$dg/user/{deviceId}/events|平台|用户|
 | 通道消息 |$dg/channel/{channelId}/{productId}/{deviceId}|平台|用户|
 | 通道设置 |$dg/channel/{channelId}/commands/request_id={request_id}|用户|平台|
@@ -58,6 +60,95 @@ Dlink协议是针对物联网开发领域设计的一种数据交换规范，数
 | 云云对接 |$dg/bridge/{bridgetopic}|平台|平台|
 
 ## payload设计
+
+### 设备属性上报
+```json
+{
+    "requestId": "2",
+    "items": {
+        "Power": {
+            "value": "on",
+            "time": 1510799670074
+        },
+        "Position": {
+            "time": 1510292697470,
+            "value": {
+                "latitude": 39.9,
+                "longitude": 116.38
+            }
+        }
+    }
+}
+```
+
+### 设备事件上报
+```json
+{
+    "requestId": "2",
+    "time":1510799670074,
+    "value": {
+        "Power": "on",
+        "Position": {
+            "latitude": 39.9,
+            "longitude": 116.38
+        }
+    }
+}
+```
+
+### 属性批量上报
+```json
+{
+    "requestId": "2",
+    "value": {
+        "Power": [
+            {
+                "value": "on",
+                "time": 1524448722000
+            },
+            {
+                "value": "off",
+                "time": 1524448722001
+            }
+        ],
+        "WF": [
+            {
+                "value": 3,
+                "time": 1524448722000
+            },
+            {
+                "value": 4,
+                "time": 1524448722009
+            }
+        ]
+    }
+}
+```
+
+### 事件批量上报
+```json
+{
+    "requestId": "2",
+    "payload": {
+        "alarmEvent": [
+            {
+                "value": {
+                    "Power": "on",
+                    "WF": "2"
+                },
+                "time": 1524448722000
+            },
+            {
+                "value": {
+                    "Power": "on",
+                    "WF": "2"
+                },
+                "time": 1524448723000
+            }
+        ]
+    }
+}
+```
 
 ## 通道接入
 ### http server
