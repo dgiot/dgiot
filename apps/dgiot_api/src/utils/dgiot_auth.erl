@@ -20,12 +20,9 @@
 %% API
 -export([pre_check/4]).
 -export([check_auth/3]).
--export([put_session/2]).
--export([put_session/3]).
--export([get_session/1]).
+-export([put_session/2, put_session/3,get_session/1, delete_session/1]).
 
 -export([ttl/0]).
-
 
 %% session 期限
 ttl() ->
@@ -50,7 +47,7 @@ check_auth(OperationID, #{<<"apiKey">> := ApiKey}, Req) ->
 %%% pre check args
 %%%===================================================================
 
--spec pre_check(OperationID::atom(), LogicHandler :: atom(), AuthList :: list() | atom(), Req :: dgiot_req:req()) ->
+-spec pre_check(OperationID :: atom(), LogicHandler :: atom(), AuthList :: list() | atom(), Req :: dgiot_req:req()) ->
     {ok, Args :: #{binary() => any()}, Req :: dgiot_req:req()} |
     {error, Err :: binary(), Req :: dgiot_req:req()}.
 
@@ -106,7 +103,7 @@ is_authorized(OperationID, {UserName, Password}, Req) ->
                     dgiot_cache:set(Key, SessionToken, ttl()),
                     is_authorized(OperationID, SessionToken, Req);
                 {error, Msg} ->
-                    ?LOG(error,"~p,~p~n", [UserName, Msg]),
+                    ?LOG(error, "~p,~p~n", [UserName, Msg]),
                     {false, Msg, Req}
             end
     end;
@@ -136,12 +133,15 @@ put_session(SessionToken, UserInfo, TTL) ->
     timer:sleep(500),
     ok.
 
+delete_session(SessionToken) ->
+    dgiot_cache:delete({SessionToken, parse}).
+
 get_session(Token) ->
     case catch dgiot_cache:get({Token, parse}) of
         <<>> ->
             undefined;
         {'EXIT', Err} ->
-            ?LOG(error,"dgiot_cache get, ~p~n", [Err]),
+            ?LOG(error, "dgiot_cache get, ~p~n", [Err]),
             undefined;
         User when is_binary(User) ->
             jsx:decode(User, [{labels, binary}, return_maps])
