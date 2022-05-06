@@ -109,6 +109,7 @@ do_request(get_health, _Body, _Context, Req) ->
 %% OperationId:get_table
 %% 请求:GET /iotapi/table
 do_request(get_table, _Args, _Context, _Req) ->
+    io:format("~s ~p ~p ~n",[?FILE, ?LINE,_Args]),
     dgiot_parse:get_schemas();
 
 %%  服务器不支持的API接口
