@@ -5,8 +5,9 @@
       "vuekey": "baiduMap",
       "table": "baidu",
       "query": {
+        "count": "objectId",
         "keys": [
-          "count(*)",
+          "objectId",
           "name",
           "location",
           "status"
@@ -19,8 +20,9 @@
       "table": "App",
       "query": {
         "limit": 1,
+        "count": "objectId",
         "keys": [
-          "count(*)"
+          "objectId"
         ],
         "where": {}
       }
@@ -30,8 +32,9 @@
       "vuekey": "product_count",
       "table": "Product",
       "query": {
+        "count": "objectId",
         "keys": [
-          "count(*)"
+          "objectId"
         ],
         "where": {}
       }
@@ -43,8 +46,9 @@
       "query": {
         "order": "-updatedAt",
         "limit": 15,
+        "count": "objectId",
         "keys": [
-          "count(*)"
+          "objectId"
         ],
         "where": {
           "status": "ONLINE"
@@ -58,8 +62,9 @@
       "query": {
         "limit": 15,
         "order": "-updatedAt",
+        "count": "objectId",
         "keys": [
-          "count(*)"
+          "objectId"
         ],
         "where": {
           "status": "OFFLINE"
@@ -72,8 +77,9 @@
       "table": "Project",
       "query": {
         "limit": 1,
+        "count": "objectId",
         "keys": [
-          "count(*)"
+          "objectId"
         ],
         "where": {}
       }
@@ -84,8 +90,9 @@
       "table": "ChartStatus",
       "query": {
         "limit": 1,
+        "count": "objectId",
         "keys": [
-          "count(*)"
+          "objectId"
         ],
         "where": {}
       }
@@ -95,9 +102,9 @@
       "vuekey": "device_count",
       "table": "Device",
       "query": {
-        "limit": 1,
+        "count": "objectId",
         "keys": [
-          "count(*)",
+          "objectId",
           "name",
           "location",
           "status"
@@ -111,8 +118,9 @@
       "table": "Notification",
       "query": {
         "limit": 1,
+        "count": "objectId",
         "keys": [
-          "count(*)"
+          "objectId"
         ],
         "where": {}
       }
