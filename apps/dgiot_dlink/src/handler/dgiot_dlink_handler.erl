@@ -84,6 +84,10 @@ do_request(get_dlinkjson, #{<<"type">> := <<"swaggerTree">>}, _Context, _Req) ->
     {ok, SwaggerTree} = dgiot_swagger:tree(),
     {200, SwaggerTree};
 
+do_request(get_dlinkjson, #{<<"type">> := <<"Table">>}, _Context, _Req) ->
+    {ok, Tables} = dgiot_parse:get_schemas(),
+    {200, Tables};
+
 do_request(get_dlinkjson, #{<<"type">> := Type}, _Context, _Req) ->
     DlinkJson = dgiot_utils:get_JsonFile(?MODULE, <<Type/binary, ".json">>),
     {200, DlinkJson};

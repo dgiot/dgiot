@@ -6,18 +6,18 @@
     }
   ],
   "definitions": {
-    "Token":{
-      "type":"object",
-      "properties":{
+    "Token": {
+      "type": "object",
+      "properties": {
         "appid": {
           "description": "app secret",
           "type": "string",
-          "example":"gEsTiaPAjv"
+          "example": "gEsTiaPAjv"
         },
         "secret": {
           "description": "app secret",
           "type": "string",
-          "example":"VzY0Mjc5NDQxNTg1ODI4NDk1MzYx"
+          "example": "VzY0Mjc5NDQxNTg1ODI4NDk1MzYx"
         }
       }
     }
@@ -125,27 +125,37 @@
                 "objectId": {
                   "description": "角色ID",
                   "type": "string",
-                  "example":"tXcMOOJFA1"
+                  "example": "tXcMOOJFA1"
                 },
                 "menus": {
                   "description": "菜单列表",
                   "type": "array",
-                  "example":["项目管理","访问权限"]
+                  "example": [
+                    "项目管理",
+                    "访问权限"
+                  ]
                 },
                 "roles": {
                   "description": "父角色列表",
                   "type": "array",
-                  "example":["admin"]
+                  "example": [
+                    "admin"
+                  ]
                 },
                 "rules": {
                   "description": "API列表",
                   "type": "array",
-                  "example":["GET_USERS_ID", "GET_USERS_ME"]
+                  "example": [
+                    "GET_USERS_ID",
+                    "GET_USERS_ME"
+                  ]
                 },
                 "users": {
                   "description": "用户列表",
                   "type": "array",
-                  "example":["test"]
+                  "example": [
+                    "test"
+                  ]
                 }
               }
             }
@@ -225,27 +235,37 @@
                 "objectId": {
                   "description": "角色ID",
                   "type": "string",
-                  "example":"tXcMOOJFA1"
+                  "example": "tXcMOOJFA1"
                 },
                 "menus": {
                   "description": "菜单列表",
                   "type": "array",
-                  "example":["项目管理","访问权限"]
+                  "example": [
+                    "项目管理",
+                    "访问权限"
+                  ]
                 },
                 "roles": {
                   "description": "父角色列表",
                   "type": "array",
-                  "example":["admin"]
+                  "example": [
+                    "admin"
+                  ]
                 },
                 "rules": {
                   "description": "API列表",
                   "type": "array",
-                  "example":["GET_USERS_ID", "GET_USERS_ME"]
+                  "example": [
+                    "GET_USERS_ID",
+                    "GET_USERS_ME"
+                  ]
                 },
                 "users": {
                   "description": "用户列表",
                   "type": "array",
-                  "example":["test"]
+                  "example": [
+                    "test"
+                  ]
                 }
               }
             }
@@ -287,27 +307,27 @@
                 "name": {
                   "description": "名称",
                   "type": "string",
-                  "example":"dgiot"
+                  "example": "dgiot"
                 },
                 "desc": {
                   "description": "描述",
                   "type": "string",
-                  "example":"Project"
+                  "example": "Project"
                 },
                 "parent": {
                   "description": "父亲ID",
                   "type": "string",
-                  "example":"cBdwcIdp0n"
+                  "example": "cBdwcIdp0n"
                 },
                 "depname": {
                   "description": "部门名称",
                   "type": "string",
-                  "example":"运维部"
+                  "example": "运维部"
                 },
                 "tempname": {
                   "description": "角色模版名称",
                   "type": "string",
-                  "example":"pump模版"
+                  "example": "pump模版"
                 }
               }
             }
