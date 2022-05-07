@@ -98,7 +98,7 @@ do_request(post_topo, Arg, Context, _Req) ->
 %% OperationId:topo
 %% 请求:post get_konva_thing
 do_request(get_konva_thing, Arg, Context, _Req) ->
-    case dgiot_topo:get_konva_thing(Arg, Context) of
+    case dgiot_product_knova:get_konva_thing(Arg, Context) of
         {ok, Success} ->
             {ok, Success};
         {error, Reason} ->
@@ -109,7 +109,7 @@ do_request(get_konva_thing, Arg, Context, _Req) ->
 %% OperationId:topo
 %% 请求:post post_send_topo
 do_request(post_konva_thing, Arg, Context, _Req) ->
-    case dgiot_topo:edit_konva(Arg, Context) of
+    case dgiot_product_knova:edit_konva(Arg, Context) of
         {ok, Success} ->
             {ok, Success};
         {error, Reason} ->

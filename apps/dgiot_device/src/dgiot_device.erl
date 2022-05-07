@@ -91,7 +91,7 @@ put(Device) ->
                 case maps:find(<<"status">>, Device) of
                     error ->
                         Status;
-                    <<"OFFLINE">> -> false;
+                    {ok, <<"OFFLINE">>} -> false;
                     _ -> true
                 end,
             NewAcl =
