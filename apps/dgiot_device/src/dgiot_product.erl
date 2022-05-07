@@ -97,7 +97,7 @@ to_frame(ProductId, Msg) ->
 format_product(#{<<"objectId">> := ProductId} = Product) ->
     Thing = maps:get(<<"thing">>, Product, #{}),
     Props = maps:get(<<"properties">>, Thing, []),
-    Keys = [<<"ACL">>, <<"status">>, <<"nodeType">>, <<"dynamicReg">>, <<"topics">>, <<"productSecret">>],
+    Keys = [<<"ACL">>, <<"status">>, <<"name">>, <<"nodeType">>, <<"dynamicReg">>, <<"topics">>, <<"productSecret">>],
     Map = maps:with(Keys, Product),
     Map#{
         <<"productId">> => ProductId,
