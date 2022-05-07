@@ -32,16 +32,15 @@ on_message_publish(Message = #message{topic = <<"$dg/thing/", Topic/binary>>, pa
                 NewPayload =
                     case jsx:is_json(Payload) of
                     true ->
-                        jiffy:decode(Payload);
+                        jiffy:decode(Payload,[return_maps]);
                     false ->
                         Payload
                 end,
+                io:format("~s ~p NewPayload: ~p~n", [?FILE, ?LINE, NewPayload]),
                 dgiot_dlink_proctol:properties_report(ProductId, DevAddr, NewPayload);
             _ ->
              pass
         end,
-%%    io:format("~s ~p Topic: ~p Username ~p ~n", [?FILE, ?LINE, Topic, Headers]),
-    io:format("~s ~p Payload: ~p ~n", [?FILE, ?LINE, Payload]),
     {ok, Message};
 
 on_message_publish(Message, _State) ->
