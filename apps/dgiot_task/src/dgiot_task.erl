@@ -422,7 +422,7 @@ save_td(ProductId, DevAddr, Ack, _AppData) ->
                 _ ->
                     DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
 %%                    Payload = #{<<"thingdata">> => Data, <<"appdata">> => AppData, <<"timestamp">> => dgiot_datetime:now_ms()},
-                    ChannelId = dgiot_parse_id:get_channelid(?BRIDGE_CHL, <<"DGIOTTOPO">>, <<"TOPO组态通道"/utf8>>),
+                    ChannelId = dgiot_parse_id:get_channelid(dgiot_utils:to_binary(?BRIDGE_CHL), <<"DGIOTTOPO">>, <<"TOPO组态通道"/utf8>>),
                     dgiot_channelx:do_message(ChannelId, {topo_thing, ProductId, DeviceId, Data}),
                     dgiot_tdengine_adapter:save(ProductId, DevAddr, Data),
                     dgiot_metrics:inc(dgiot_task, <<"task_save">>, 1),
