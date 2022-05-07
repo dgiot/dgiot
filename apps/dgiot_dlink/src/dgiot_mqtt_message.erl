@@ -26,9 +26,22 @@
 
 -define(EMPTY_USERNAME, <<"">>).
 
-on_message_publish(Message = #message{from = _ClientId, topic = <<"$dg/",Rest/binary>>}, _State) ->
-    Topic = <<"$dg/",Rest/binary>>,
-    io:format("~s ~p ClientId: ~p~n", [?FILE, ?LINE, Topic]),
+on_message_publish(Message = #message{topic = <<"$dg/thing/", Topic/binary>>, payload = Payload, from = _ClientId, headers = _Headers}, _State) ->
+        case re:split(Topic, <<"/">>) of
+            [ProductId, DevAddr, <<"properties">>, <<"report">>] ->
+                NewPayload =
+                    case jsx:is_json(Payload) of
+                    true ->
+                        jiffy:decode(Payload);
+                    false ->
+                        Payload
+                end,
+                dgiot_dlink_properties:report(ProductId, DevAddr, NewPayload);
+            _ ->
+             pass
+        end,
+%%    io:format("~s ~p Topic: ~p Username ~p ~n", [?FILE, ?LINE, Topic, Headers]),
+    io:format("~s ~p Payload: ~p ~n", [?FILE, ?LINE, Payload]),
     {ok, Message};
 
 on_message_publish(Message, _State) ->
