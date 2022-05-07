@@ -88,16 +88,16 @@ get({'after', Data}) ->
             #{<<"field">> := undefined} ->
                 Data;
             #{<<"field">> := Field, <<"keys">> := undefined} ->
-                io:format("~s ~p Field ~p ~n", [?FILE, ?LINE, maps:get(Field, Data,#{})]),
+%%                io:format("~s ~p Field ~p ~n", [?FILE, ?LINE, maps:get(Field, Data,#{})]),
                 maps:get(Field, Data,#{});
             #{<<"field">> := Field, <<"keys">> := Keys} ->
                 NewKeys = re:split(Keys, <<",">>, [{return, binary}, trim]),
-                io:format("~s ~p Field ~p ~n", [?FILE, ?LINE, maps:get(Field, Data,#{})]),
+%%                io:format("~s ~p Field ~p ~n", [?FILE, ?LINE, maps:get(Field, Data,#{})]),
                 maps:with(NewKeys, maps:get(Field, Data,#{}));
             _ ->
                 Data
         end,
-    io:format("~s ~p NewData ~p ~n", [?FILE, ?LINE, NewData]),
+%%    io:format("~s ~p NewData ~p ~n", [?FILE, ?LINE, NewData]),
     #{
         <<"status">> => 0,
         <<"msg">> => <<"数据请求成功"/utf8>>,
