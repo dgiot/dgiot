@@ -47,15 +47,15 @@ check(#{clientid := Token, username := UserId, password := Token}, AuthResult, #
 %% 1、 尝试1型1密认证
 %% 2、 尝试ClientID 为deviceID的1机1密认证
 %% 3、 尝试ClientID 为deviceAddr的1机1密认证
-check(#{clientid := <<ProductID:10/binary, "_", DevAddr/binary>>, username := ProductID, password := Password, peerhost := PeerHost}, AuthResult, #{hash_type := _HashType}) ->
-%%    io:format("~s ~p ProductID: ~p ClientId ~p Password ~p ~n", [?FILE, ?LINE, ProductID, ClientId, Password]),
-    DeviceId = dgiot_parse_id:get_deviceid(ProductID, DevAddr),
-    do_check(AuthResult, Password, ProductID, DevAddr, DeviceId, PeerHost);
+check(#{clientid := <<ProductID:10/binary, "_", DeviceAddr/binary>>, username := ProductID, password := Password, peerhost := PeerHost}, AuthResult, #{hash_type := _HashType}) ->
+    io:format("~s ~p ProductID: ~p ClientId ~p Password ~p PeerHost ~p ~n", [?FILE, ?LINE, ProductID, DeviceAddr, Password,dgiot_utils:get_ip(PeerHost)]),
+    DeviceId = dgiot_parse_id:get_deviceid(ProductID, DeviceAddr),
+    do_check(AuthResult, Password, ProductID, DeviceAddr, DeviceId, dgiot_utils:get_ip(PeerHost));
 
 check(#{clientid := DeviceAddr, username := ProductID, password := Password, peerhost := PeerHost}, AuthResult, #{hash_type := _HashType}) ->
-%%    io:format("~s ~p ProductID: ~p ClientId ~p Password ~p ~n", [?FILE, ?LINE, ProductID, ClientId, Password]),
+    io:format("~s ~p ProductID: ~p ClientId ~p Password ~p PeerHost ~p ~n", [?FILE, ?LINE, ProductID, DeviceAddr, Password,dgiot_utils:get_ip(PeerHost)]),
     DeviceId = dgiot_parse_id:get_deviceid(ProductID, DeviceAddr),
-    do_check(AuthResult, Password, ProductID, DeviceAddr, DeviceId, PeerHost);
+    do_check(AuthResult, Password, ProductID, DeviceAddr, DeviceId, dgiot_utils:get_ip(PeerHost));
 
 check(#{username := _Username}, AuthResult, _) ->
 %%    io:format("~s ~p Username: ~p~n", [?FILE, ?LINE, _Username]),
@@ -63,13 +63,13 @@ check(#{username := _Username}, AuthResult, _) ->
 
 description() -> "Authentication with Mnesia".
 
-do_check(AuthResult, Password, ProductID, DeviceAddr, DeviceId, PeerHost) ->
+do_check(AuthResult, Password, ProductID, DeviceAddr, DeviceId, Ip) ->
     case dgiot_product:lookup_prod(ProductID) of
         {ok, #{<<"productSecret">> := Password, <<"ACL">> := Acl, <<"name">> := Name, <<"devType">> := DevType, <<"dynamicReg">> := true}} ->
             case dgiot_device:lookup(DeviceId) of
                 {ok, _} ->
                     Device = #{
-                        <<"ip">> => dgiot_utils:to_binary(PeerHost),
+                        <<"ip">> => Ip,
                         <<"status">> => <<"ONLINE">>,
                         <<"brand">> => Name,
                         <<"devModel">> => DevType,
