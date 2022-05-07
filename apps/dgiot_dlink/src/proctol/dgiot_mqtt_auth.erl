@@ -57,7 +57,7 @@ check(#{clientid := ClientId, username := ProductID, password := Password}, Auth
                 _ ->
                     DeviceID = dgiot_parse_id:get_deviceid(ProductID, ClientId),
                     case dgiot_device:lookup(DeviceID) of
-                        {ok, #{<<"devicesecret">> := Password, <<"devaddr">>  := ClientId}} ->
+                        {ok, #{<<"devicesecret">> := Password, <<"devaddr">> := ClientId}} ->
                             {stop, AuthResult#{anonymous => false, auth_result => success}};
                         _ ->
                             {stop, AuthResult#{anonymous => false, auth_result => password_error}}
