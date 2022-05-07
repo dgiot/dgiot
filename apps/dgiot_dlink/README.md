@@ -10,21 +10,19 @@ Dlink协议是针对物联网开发领域设计的一种数据交换规范，数
 
 
 ### 鉴权设计
-+ deviceId=md5("Device" + {productId} + {devAddr}).subString(10)
 + %u 表示用Username做ACL规则
 + %c 表示用clientId做ACL规则
 - 用户侧clientId用Token做ACL规则, Token是dgiot用户登录权限系统的token,与API权限一致
-- 设备侧clientId可用{productId}_{deviceAddr}或者deviceId,必须保证clientId的唯一性
+- 设备侧clientId为{productId}_{deviceAddr},或者 deviceAddr, 必须保证clientId的唯一性
 
 | 客户端   | Username  |  Password |  ClientId  | 登录鉴权|  订阅ACL  | 发布ACL|
 | --------  | -------- | ------- | -------- |-------- | ------- | -------- |
-| Device |{productId}|{productSecret}|{clientId}| 一型一密 | $dg/device/%u/# | $dg/thing/%u/# |
-| Device |{productId}|{deviceSecret}|{clientId}| 一机一密 | $dg/device/%u/%d/# | $dg/thing/%u/%c/# |
-| Device |{productId}|{productSecret}|{clientId}| 证书加密 | $dg/device/%u/# | $dg/thing/%u/# |
+| Device |{productId}|{productSecret}|clientId| 一型一密 | $dg/device/%u/# | $dg/thing/%u/# |
+| Device |{productId}|{deviceSecret}|clientId| 一机一密 | $dg/device/%u/%d/# | $dg/thing/%u/%c/# |
+| Device |{productId}|{productSecret}|clientId| 证书加密 | $dg/device/%u/# | $dg/thing/%u/# |
 | User |{userId}|{Token}|{Token}| Token认证 | $dg/user/%c/# | $dg/thing/%c/# |
 
 ## topic设计
-
 | 分类   | Topic  |  发布者 |  订阅者  |
 | --------  | -------- | ------- | -------- |
 | 属性上报 |$dg/thing/{productId}/{deviceAddr}/properties/report|设备|平台|

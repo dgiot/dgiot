@@ -41,32 +41,53 @@ check(#{clientid := Token, username := UserId, password := Token}, AuthResult, #
             {stop, AuthResult#{anonymous => false, auth_result => password_error}}
     end;
 
-%% ClientID 为deviceID 或者 deviceAddr Username 为 ProductID
+%% ClientID 为{ProductID}_(DeviceAddr}  或者 DeviceAddr
+%% Username 为 ProductID
+%% Password 可以为产品密码或者设备密码
 %% 1、 尝试1型1密认证
 %% 2、 尝试ClientID 为deviceID的1机1密认证
 %% 3、 尝试ClientID 为deviceAddr的1机1密认证
-check(#{clientid := ClientId, username := ProductID, password := Password}, AuthResult, #{hash_type := _HashType}) ->
+check(#{clientid := <<ProductID:10/binary, "_", DevAddr/binary>>, username := ProductID, password := Password, peerhost := PeerHost}, AuthResult, #{hash_type := _HashType}) ->
 %%    io:format("~s ~p ProductID: ~p ClientId ~p Password ~p ~n", [?FILE, ?LINE, ProductID, ClientId, Password]),
-    case dgiot_product:lookup_prod(ProductID) of
-        {ok, #{<<"productSecret">> := Password}} ->
-            {stop, AuthResult#{anonymous => false, auth_result => success}};
-        _ ->
-            case dgiot_device:lookup(ClientId) of
-                {ok, #{<<"devicesecret">> := Password}} ->
-                    {stop, AuthResult#{anonymous => false, auth_result => success}};
-                _ ->
-                    DeviceID = dgiot_parse_id:get_deviceid(ProductID, ClientId),
-                    case dgiot_device:lookup(DeviceID) of
-                        {ok, #{<<"devicesecret">> := Password, <<"devaddr">> := ClientId}} ->
-                            {stop, AuthResult#{anonymous => false, auth_result => success}};
-                        _ ->
-                            {stop, AuthResult#{anonymous => false, auth_result => password_error}}
-                    end
-            end
-    end;
+    DeviceId = dgiot_parse_id:get_deviceid(ProductID, DevAddr),
+    do_check(AuthResult, Password, ProductID, DevAddr, DeviceId, PeerHost);
+
+check(#{clientid := DeviceAddr, username := ProductID, password := Password, peerhost := PeerHost}, AuthResult, #{hash_type := _HashType}) ->
+%%    io:format("~s ~p ProductID: ~p ClientId ~p Password ~p ~n", [?FILE, ?LINE, ProductID, ClientId, Password]),
+    DeviceId = dgiot_parse_id:get_deviceid(ProductID, DeviceAddr),
+    do_check(AuthResult, Password, ProductID, DeviceAddr, DeviceId, PeerHost);
 
 check(#{username := _Username}, AuthResult, _) ->
 %%    io:format("~s ~p Username: ~p~n", [?FILE, ?LINE, _Username]),
     {stop, AuthResult#{anonymous => false, auth_result => password_error}}.
 
 description() -> "Authentication with Mnesia".
+
+do_check(AuthResult, Password, ProductID, DeviceAddr, DeviceId, PeerHost) ->
+    case dgiot_product:lookup_prod(ProductID) of
+        {ok, #{<<"productSecret">> := Password, <<"ACL">> := Acl, <<"name">> := Name, <<"devType">> := DevType, <<"dynamicReg">> := true}} ->
+            case dgiot_device:lookup(DeviceId) of
+                {ok, _} ->
+                    Device = #{
+                        <<"ip">> => dgiot_utils:to_binary(PeerHost),
+                        <<"status">> => <<"ONLINE">>,
+                        <<"brand">> => Name,
+                        <<"devModel">> => DevType,
+                        <<"name">> => DeviceAddr,
+                        <<"devaddr">> => DeviceAddr,
+                        <<"product">> => ProductID,
+                        <<"ACL">> => Acl
+                    },
+                    dgiot_device:create_device(Device);
+                _ ->
+                    pass
+            end,
+            {stop, AuthResult#{anonymous => false, auth_result => success}};
+        _ ->
+            case dgiot_device:lookup(DeviceId) of
+                {ok, #{<<"devicesecret">> := Password}} ->
+                    {stop, AuthResult#{anonymous => false, auth_result => success}};
+                _ ->
+                    {stop, AuthResult#{anonymous => false, auth_result => password_error}}
+            end
+    end.
