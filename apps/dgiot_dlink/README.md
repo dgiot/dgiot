@@ -40,7 +40,7 @@ Dlink协议是针对物联网开发领域设计的一种数据交换规范，数
 | 云云对接 |$dg/bridge/{bridgetopic}|平台|平台|
 
 ## payload设计
-### 属性上报 ($dg/user/{deviceId}/properties/report)
+### 属性上报 ($dg/thing/{productId}/{deviceAddr}/properties/report)
 + dlink json格式
 ```json
 {
