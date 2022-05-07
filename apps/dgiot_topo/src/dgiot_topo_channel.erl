@@ -30,7 +30,7 @@
 %% 注册通道类型
 -channel_type(#{
     cType => ?TYPE,
-    type => ?PROTOCOL_CHL,
+    type => ?BRIDGE_CHL,
     title => #{
         zh => <<"TOPO组态通道"/utf8>>
     },
