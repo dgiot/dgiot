@@ -108,7 +108,7 @@
   "paths": {
     "/{{classes}}/{{className}}/{id}": {
       "get": {
-        "summary": "获取{{tag}}详情",
+        "summary": "amis获取{{tag}}详情",
         "description": "根据ID获取{{tag}}详情",
         "tags": [
           "{{className}}"
@@ -120,6 +120,22 @@
             "type": "string",
             "description": "{{tag}}的ID",
             "required": true
+          },
+          {
+            "in": "query",
+            "name": "field",
+            "description": "需要查询的字段名, eg: content",
+            "required": false,
+            "default": "content",
+            "type": "string"
+          },
+          {
+            "in": "query",
+            "name": "keys",
+            "description": "需要显示的指定json字段内的keys, eg: i_out,i_in",
+            "required": false,
+            "default": "i_out,i_in",
+            "type": "string"
           }
         ],
         "responses": {
@@ -156,7 +172,7 @@
         }
       },
       "put": {
-        "summary": "更新{{tag}}",
+        "summary": "amis更新{{tag}}",
         "description": "通过ID更新{{tag}}",
         "tags": [
           "{{className}}"
@@ -224,7 +240,7 @@
         }
       },
       "delete": {
-        "summary": "删除{{tag}}",
+        "summary": "amis删除{{tag}}",
         "description": "通过ID删除{{tag}}记录",
         "tags": [
           "{{className}}"
@@ -271,7 +287,7 @@
     },
     "/{{classes}}/{{className}}": {
       "get": {
-        "summary": "查询{{tag}}",
+        "summary": "amis查询{{tag}}",
         "description": "where支持：[$lt, $lte, $gt, $gte, $ne, $in, $nin, $exists, $select, $dontSelect, $all, $regex, $text]",
         "tags": [
           "{{className}}"
@@ -376,7 +392,7 @@
         }
       },
       "post": {
-        "summary": "新增{{tag}}",
+        "summary": "amis新增{{tag}}",
         "description": "新增一条{{tag}}记录",
         "tags": [
           "{{className}}"
