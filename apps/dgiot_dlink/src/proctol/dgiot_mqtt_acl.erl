@@ -38,13 +38,6 @@ description() -> "Acl with Dlink".
 %%--------------------------------------------------------------------
 %% Internal functions
 %%-------------------------------------------------------------------
-%%"$dg/device/productid/devaddr/#"
-do_check(#{clientid := <<ProductID:10/binary, "_", DeviceAddr/binary>>, username := ProductID} = _ClientInfo, subscribe, <<"$dg/device/", ProductID:10/binary, "/", DeviceInfo/binary>> = _Topic) ->
-    check_device_addr(DeviceInfo, DeviceAddr);
-
-do_check(#{clientid := DeviceAddr, username := ProductID} = _ClientInfo, subscribe, <<"$dg/device/", ProductID:10/binary,"/", DeviceInfo/binary>> = _Topic) ->
-%%    io:format("~s ~p Topic: ~p _ClientInfo ~p~n", [?FILE, ?LINE, _Topic, _ClientInfo]),
-    check_device_addr(DeviceInfo, DeviceAddr);
 
 %% "$dg/thing/productid/devaddr/#"
 do_check(#{clientid := DeviceAddr, username := ProductID} = _ClientInfo, publish, <<"$dg/thing/", ProductID:10/binary, "/", DeviceInfo/binary>> = _Topic) ->
@@ -64,6 +57,14 @@ do_check(#{clientid := Token, username := UserId} = _ClientInfo, publish, <<"$dg
         _ ->
             deny
     end;
+
+%%"$dg/device/productid/devaddr/#"
+do_check(#{clientid := <<ProductID:10/binary, "_", DeviceAddr/binary>>, username := ProductID} = _ClientInfo, subscribe, <<"$dg/device/", ProductID:10/binary, "/", DeviceInfo/binary>> = _Topic) ->
+    check_device_addr(DeviceInfo, DeviceAddr);
+
+do_check(#{clientid := DeviceAddr, username := ProductID} = _ClientInfo, subscribe, <<"$dg/device/", ProductID:10/binary,"/", DeviceInfo/binary>> = _Topic) ->
+%%    io:format("~s ~p Topic: ~p _ClientInfo ~p~n", [?FILE, ?LINE, _Topic, _ClientInfo]),
+    check_device_addr(DeviceInfo, DeviceAddr);
 
 %% 用户订阅 "$dg/user/deviceid/#"
 do_check(#{clientid := Token, username := UserId} = _ClientInfo, subscribe, <<"$dg/user/", DeviceID:10/binary, "/", _Rest/binary>> = _Topic)
