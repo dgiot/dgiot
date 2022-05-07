@@ -44,6 +44,7 @@
     get_childacl/1,
     get_roleids/1,
     get_alcname/1,
+    get_aclNames/1,
     get_acls/1
 ]).
 
@@ -145,6 +146,11 @@ get_alcname(RoleId) ->
         RoleName ->
             RoleName
     end.
+
+get_aclNames(Roles) ->
+    lists:foldl(fun(RoleId, Acc) ->
+        Acc ++ [dgiot_utils:to_binary(dgiot_role:get_alcname(RoleId))]
+                end, [<<"*">>], maps:keys(Roles)).
 
 post_role(#{<<"tempname">> := TempName, <<"parent">> := Parent, <<"depname">> := DepName,
     <<"name">> := Name, <<"desc">> := Desc} = Body, SessionToken) ->

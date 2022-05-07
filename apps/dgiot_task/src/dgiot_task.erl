@@ -426,7 +426,7 @@ save_td(ProductId, DevAddr, Ack, _AppData) ->
                     dgiot_channelx:do_message(ChannelId, {topo_thing, ProductId, DeviceId, Data}),
                     dgiot_tdengine_adapter:save(ProductId, DevAddr, Data),
                     dgiot_metrics:inc(dgiot_task, <<"task_save">>, 1),
-                    NotificationTopic = <<"$dg/user/", ProductId/binary, "/", DeviceId/binary, "/properties/report">>,
+                    NotificationTopic = <<"$dg/alarm/", ProductId/binary, "/", DeviceId/binary, "/properties/report">>,
                     dgiot_mqtt:publish(DeviceId, NotificationTopic, jsx:encode(Data)),
                     Data
             end
