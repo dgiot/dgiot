@@ -212,7 +212,12 @@ do_request(_OperationId, _Args, _Context, _Req) ->
 
 %%getSelect(#{<<"mqttEvent">> := MqttEvent,<<"mqttEvent">> := MqttEvent}->Select) ->
 
+%%doc-api https://help.aliyun.com/document_detail/256392.html#section-yqn-9ue-cwa
+%%阿里云topic pub_payload 实例
+%%{\"id\":\"1\",\"version\":\"1.0\",\"params\":{\"LightSwitch\":0}}
 
+%%desc 消息通信数据格式
+%%doc-api https://help.aliyun.com/document_detail/73736.htm?spm=a2c4g.11186623.0.0.353d7a48CvEOwF#concept-ap3-lql-b2b
 
 sql_tpl(Trigger, Condition, Action) ->
     SELECT = generateSelect(Condition, Trigger, Action),
