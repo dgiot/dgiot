@@ -17,14 +17,9 @@
 -module(dgiot_mqtt_acl).
 
 %% ACL Callbacks
--export([
-    check_acl/5
-    , description/0
-    , check_device_acl/3
-]).
+-export([check_acl/5, description/0, check_device_acl/3]).
 
 check_acl(ClientInfo, PubSub, <<"$dg/", _/binary>> = Topic, _NoMatchAction, _Params) ->
-    io:format("~s ~p Topic: ~p _NoMatchAction ~p ~n", [?FILE, ?LINE, Topic, _NoMatchAction]),
     _Username = maps:get(username, ClientInfo, undefined),
     case do_check(ClientInfo, PubSub, Topic) of
         allow ->
@@ -71,7 +66,7 @@ do_check(#{clientid := Token, username := UserId} = _ClientInfo, publish, <<"$dg
     end;
 
 %% 用户订阅 "$dg/user/deviceid/#"
-do_check(#{clientid := Token, username := UserId} = _ClientInfo, subscribe, <<"$dg/user/", DeviceID:10/binary, "/", Rest/binary>> = _Topic)
+do_check(#{clientid := Token, username := UserId} = _ClientInfo, subscribe, <<"$dg/user/", DeviceID:10/binary, "/", _Rest/binary>> = _Topic)
     when UserId =/= undefined ->
 %%    io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, _Topic]),
     %% 此时的ClientID为 Token
