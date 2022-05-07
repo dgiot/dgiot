@@ -75,7 +75,7 @@ delete(ProductId) ->
 
 
 get(ProductId) ->
-    Keys = [<<"ACL">>, <<"status">>, <<"nodeType">>, <<"dynamicReg">>, <<"topics">>, <<"productSecret">>],
+    Keys = [<<"ACL">>, <<"name">>, <<"devType">>, <<"status">>, <<"nodeType">>, <<"dynamicReg">>, <<"topics">>, <<"productSecret">>],
     case dgiot_parse:get_object(<<"Product">>, ProductId) of
         {ok, Product} ->
             {ok, maps:with(Keys, Product)};
