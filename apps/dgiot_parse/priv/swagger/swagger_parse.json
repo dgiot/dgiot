@@ -7,10 +7,6 @@
     {
       "name": "Data",
       "description": "数据管理"
-    },
-    {
-      "name": "_User",
-      "description": "用户管理"
     }
   ],
   "definitions": {

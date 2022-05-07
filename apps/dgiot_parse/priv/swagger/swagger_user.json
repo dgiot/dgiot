@@ -2,7 +2,7 @@
   "tags": [
     {
       "name": "_User",
-      "description": "用户"
+      "description": "用户管理"
     }
   ],
   "definitions": {

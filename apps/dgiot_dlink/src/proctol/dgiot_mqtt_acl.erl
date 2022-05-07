@@ -20,6 +20,7 @@
 -export([
     check_acl/5
     , description/0
+    , check_device_acl/3
 ]).
 
 check_acl(ClientInfo, PubSub, <<"$dg/", _/binary>> = Topic, _NoMatchAction, _Params) ->
@@ -140,8 +141,8 @@ do_check(_ClientInfo, _PubSub, _Topic) ->
 
 check_device_acl(Token, DeviceID, UserId) ->
     case dgiot_auth:get_session(Token) of
-        #{<<"objectId">> := UserId, <<"ACL">> := Acl} ->
-            UserAcl = maps:keys(Acl) ++ [<<"*">>],
+        #{<<"objectId">> := UserId, <<"roles">> := Roles} ->
+            UserAcl = dgiot_role:get_aclNames(Roles),
             DeviceAcl = maps:keys(dgiot_device:get_acl(DeviceID)),
             case DeviceAcl -- UserAcl of
                 DeviceAcl ->
