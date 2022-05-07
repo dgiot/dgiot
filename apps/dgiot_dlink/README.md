@@ -27,29 +27,9 @@ Dlink协议是针对物联网开发领域设计的一种数据交换规范，数
 
 | 分类   | Topic  |  发布者 |  订阅者  |
 | --------  | -------- | ------- | -------- |
-| 双向消息 |$dg/device/{productId}/{deviceAddr}/messages| 平台 | 设备 |
-| 双向消息 |$dg/thing/{productId}/{deviceAddr}/messages| 设备 | 平台 |
-| 双向消息 |$dg/thing/{deviceId}/messages|用户|平台|
-| 双向消息 |$dg/user/{deviceId}/messages|平台|用户|
-| 双向命令 |$dg/device/{productId}/{deviceAddr}/commands/request_id={request_id}| 平台 | 设备 |
-| 双向命令 |$dg/thing/{productId}/{deviceAddr}/commands/request_id={request_id}| 设备 | 平台 |
-| 双向命令 |$dg/thing/{deviceId}/commands/request_id={request_id}|用户|平台|
-| 双向命令 |$dg/user/{deviceId}/commands/request_id={request_id}| 平台 | 用户 |
 | 属性上报 |$dg/thing/{productId}/{deviceAddr}/properties/report|设备|平台|
 | 属性批量上报 |$dg/thing/{productId}/{deviceAddr}/properties/batch/report|设备|平台|
 | 属性上报 |$dg/user/{deviceId}/properties/report|平台|用户|
-| 子属性上报 |$dg/thing/{productId}/{deviceAddr}/gateway/sub_devices/properties/report|设备|平台|
-| 子属性上报 |$dg/user/{deviceId}/gateway/sub_devices/properties/report|平台|用户|
-| 属性设置 |$dg/thing/{deviceId}/properties/set/request_id={request_id}|用户|平台|
-| 属性设置 |$dg/device/{productId}/{deviceAddr}/properties/set/request_id={request_id}|平台|设备|
-| 属性设置 |$dg/thing/{productId}/{deviceAddr}/properties/set/request_id={request_id}|设备|平台|
-| 属性设置 |$dg/user/{deviceId}/properties/set/request_id={request_id}|平台|用户|
-| 属性获取 |$dg/thing/{deviceId}/properties/get/request_id={request_id}|用户|平台|
-| 属性获取 |$dg/device/{productId}/{deviceAddr}/properties/get/response/request_id={request_id}|平台|设备|
-| 属性获取 |$dg/thing/{productId}/{deviceAddr}/properties/get/response/request_id={request_id}|设备|平台|
-| 属性获取|$dg/user/{deviceId}/properties/get/request_id={request_id}|平台|用户|
-| 属性获取 |$dg/thing/{productId}/{deviceAddr}/shadow/get/request_id={request_id}|设备|平台|
-| 属性获取 |$dg/device/{productId}/{deviceAddr}/shadow/get/request_id={request_id}|平台|设备|
 | 事件上报 |$dg/thing/{productId}/{deviceAddr}/events|设备|平台|
 | 事件批量上报 |$dg/thing/{productId}/{deviceAddr}/batch/events|设备|平台|
 | 事件上报 |$dg/user/{deviceId}/events|平台|用户|
@@ -60,6 +40,25 @@ Dlink协议是针对物联网开发领域设计的一种数据交换规范，数
 | 云云对接 |$dg/bridge/{bridgetopic}|平台|平台|
 
 ## payload设计
+### 属性上报 ($dg/user/{deviceId}/properties/report)
++ dlink json格式
+```json
+{
+    "Power":  "on",
+    "WF":  23.6
+}
+```
++ 透传/自定义
+```
+  00002233441232013fa00000
+```
+### 事件上报 $dg/thing/{productId}/{deviceAddr}/events
+```json
+{
+    "Power":  "on",
+    "WF":  23.6
+}
+```
 
 ### 设备属性上报
 ```json
