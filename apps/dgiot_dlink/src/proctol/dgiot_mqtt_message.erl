@@ -36,7 +36,7 @@ on_message_publish(Message = #message{topic = <<"$dg/thing/", Topic/binary>>, pa
                     false ->
                         Payload
                 end,
-                io:format("~s ~p NewPayload: ~p~n", [?FILE, ?LINE, NewPayload]),
+%%                io:format("~s ~p NewPayload: ~p~n", [?FILE, ?LINE, NewPayload]),
                 dgiot_dlink_proctol:properties_report(ProductId, DevAddr, NewPayload);
             _ ->
              pass
