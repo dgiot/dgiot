@@ -36,7 +36,7 @@ on_message_publish(Message = #message{topic = <<"$dg/thing/", Topic/binary>>, pa
                     false ->
                         Payload
                 end,
-                dgiot_dlink_properties:report(ProductId, DevAddr, NewPayload);
+                dgiot_dlink_proctol:properties_report(ProductId, DevAddr, NewPayload);
             _ ->
              pass
         end,

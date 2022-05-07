@@ -16,16 +16,26 @@
 %% https://doc.oschina.net/grpc
 %% https://www.grpc.io/docs/
 
--module(dgiot_dlink_properties).
+-module(dgiot_dlink_proctol).
 
 -include_lib("dgiot/include/logger.hrl").
 
--export([report/3]).
+-export([login/3]).
+-export([properties_report/3]).
 
 
-report(ProductId, DevAddr, Payload) when is_map(Payload) ->
-    dgiot_task:save_td(ProductId, DevAddr, Payload,#{});
+properties_report(ProductId, DevAddr, Payload) when is_map(Payload) ->
+    dgiot_task:save_td(ProductId, DevAddr, Payload, #{});
 
-report(ProductId, DevAddr, Payload) ->
+properties_report(ProductId, DevAddr, Payload) ->
+    lists:map(fun
+                  ({ChannelId, _Ctype}) ->
+                      dgiot_channelx:do_message(ChannelId, {dlink_device_report, ProductId, DevAddr, Payload});
+                  (_) ->
+                      pass
+              end, dgiot_bridge:get_proctol_channel(ProductId)),
     io:format("~s ~p ProductId ~p, DevAddr ~p, Payload: ~p ~n", [?FILE, ?LINE, ProductId, DevAddr, Payload]),
-   ok.
+    ok.
+
+login(_A, _B, _C) ->
+    ok.
