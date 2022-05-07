@@ -22,6 +22,7 @@
 -export([init_ets/0, load_cache/0, local/1, save/1, get/1, delete/1, save_prod/2, lookup_prod/1]).
 -export([parse_frame/3, to_frame/2]).
 -export([create_product/2, add_product_relation/2, delete_product_relation/1]).
+-export([get_prop/1, get_props/1, get_Props/2, get_unit/1]).
 
 init_ets() ->
     dgiot_data:init(?DGIOT_PRODUCT).
@@ -174,3 +175,78 @@ delete_product_relation(ProductId) ->
     end.
 
 
+get_prop(ProductId) ->
+    case dgiot_product:lookup_prod(ProductId) of
+        {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
+            lists:foldl(fun(X, Acc) ->
+                case X of
+                    #{<<"identifier">> := Identifier, <<"name">> := Name, <<"isshow">> := true} ->
+                        Acc#{Identifier => Name};
+                    _ -> Acc
+                end
+                        end, #{}, Props);
+        _ ->
+            #{}
+    end.
+
+
+get_unit(ProductId) ->
+    case dgiot_product:lookup_prod(ProductId) of
+        {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
+            lists:foldl(fun(X, Acc) ->
+                case X of
+                    #{<<"name">> := Name, <<"dataType">> := #{<<"specs">> := #{<<"unit">> := Unit}}} ->
+                        Acc#{Name => Unit};
+                    _ -> Acc
+                end
+                        end, #{}, Props);
+        _ ->
+            #{}
+    end.
+
+get_props(ProductId) ->
+    case dgiot_product:lookup_prod(ProductId) of
+        {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
+            lists:foldl(fun(X, Acc) ->
+                case X of
+                    #{<<"identifier">> := Identifier, <<"isshow">> := true} ->
+                        Acc#{Identifier => X};
+                    _ -> Acc
+                end
+                        end, #{}, Props);
+        _ ->
+            #{}
+    end.
+
+get_Props(ProductId, <<"*">>) ->
+    case dgiot_product:lookup_prod(ProductId) of
+        {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
+            Props;
+        _ ->
+            []
+    end;
+
+get_Props(ProductId, Keys) when Keys == undefined; Keys == <<>> ->
+    get_Props(ProductId, <<"*">>);
+
+get_Props(ProductId, Keys) ->
+    List =
+        case is_list(Keys) of
+            true -> Keys;
+            false -> re:split(Keys, <<",">>)
+        end,
+    lists:foldl(fun(Identifier, Acc) ->
+        case dgiot_product:lookup_prod(ProductId) of
+            {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
+                lists:foldl(fun(Prop, Acc1) ->
+                    case Prop of
+                        #{<<"identifier">> := Identifier} ->
+                            Acc1 ++ [Prop];
+                        _ ->
+                            Acc1
+                    end
+                            end, Acc, Props);
+            _ ->
+                Acc
+        end
+                end, [], List).

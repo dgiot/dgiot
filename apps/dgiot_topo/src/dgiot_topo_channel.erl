@@ -108,12 +108,11 @@ init(?TYPE, ChannelId, #{<<"product">> := Products, <<"BRIDGEURL">> := Bridgeurl
         env = NewEnv#{productids => get_prodcutids(Products)}
     },
     dgiot_data:insert(topourl, <<Bridgeurl/binary, "/iotapi/topo">>),
-    dgiot_topo:get_Product(),
+    dgiot_product_knova:get_Product_konva(),
     {ok, State}.
 
 %% 初始化池子
-handle_init(#state{env = #{productids := ProductIds}} = State) ->
-    [dgiot_mqtt:subscribe(<<"topo/", ProductId/binary, "/#">>) || ProductId <- ProductIds],
+handle_init(State) ->
     {ok, State}.
 
 %% 通道消息处理,注意：进程池调用
@@ -121,22 +120,10 @@ handle_event(EventId, Event, _State) ->
     ?LOG(info, "channel ~p, ~p", [EventId, Event]),
     ok.
 
-handle_message({deliver, _Topic, Msg}, #state{id = ChannelId} = State) ->
-    Payload = dgiot_mqtt:get_payload(Msg),
-    dgiot_bridge:send_log(ChannelId, "Topic ~p DTU revice from  ~s", [dgiot_mqtt:get_topic(Msg), Payload]),
-    case binary:split(dgiot_mqtt:get_topic(Msg), <<$/>>, [global, trim]) of
-%%接收task汇聚过来的整个dtu物模型采集的数据 发送组态
-        [<<"topo">>, ProductId, DtuAddr, <<"post">>] ->
-            Data = jsx:decode(Payload, [{labels, binary}, return_maps]),
-            DeviceId = dgiot_parse_id:get_deviceid(ProductId, DtuAddr),
-            Thingdata = maps:get(<<"thingdata">>, Data, #{}),
-            dgiot_topo:send_topo(ProductId, DeviceId, Thingdata),
+handle_message({topo_thing, ProductId, DeviceId, Data}, State) ->
+    dgiot_topo:send_konva(ProductId, DeviceId, Data),
 %%            发送实时数据
-            dgiot_topo:send_realtimedata(ProductId, DeviceId, Thingdata);
-        Other ->
-            ?LOG(info, "Other ~p", [Other]),
-            pass
-    end,
+    dgiot_topo:send_realtime_card(ProductId, DeviceId, Data),
     {ok, State};
 
 handle_message(Message, State) ->
