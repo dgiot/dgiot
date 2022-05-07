@@ -56,6 +56,19 @@ do_check(#{clientid := ClientID, username := Username} = _ClientInfo, subscribe,
             deny
     end;
 
+%% 告警上报 "$dg/alarm/{productId}/{deviceId}/properties/report"
+do_check(#{clientid := ClientID, username := Username} = _ClientInfo, subscribe, <<"$dg/alarm/", DeviceInfo/binary>> = _Topic)
+    when ClientID =/= undefined ->
+%%    io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, _Topic]),
+    [_, DeviceID | _] = binary:split(DeviceInfo, <<"/">>),
+    %% 此时的ClientID为 Token
+    case check_device_acl(ClientID, DeviceID, Username) of
+        ok ->
+            allow;
+        _ ->
+            deny
+    end;
+
 %%"$dg/device/productid/devaddr/#"
 do_check(#{clientid := ClientID} = _ClientInfo, subscribe, <<"$dg/device/", DeviceInfo/binary>> = _Topic) ->
 %%    io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, _Topic]),
@@ -128,11 +141,13 @@ do_check(_ClientInfo, _PubSub, _Topic) ->
 check_device_acl(Token, DeviceID, UserId) ->
     case dgiot_auth:get_session(Token) of
         #{<<"objectId">> := UserId, <<"ACL">> := Acl} ->
-            case dgiot_device:get_acl(DeviceID) of
-                Acl ->
-                    ok;
+            UserAcl = maps:keys(Acl) ++ [<<"*">>],
+            DeviceAcl = maps:keys(dgiot_device:get_acl(DeviceID)),
+            case DeviceAcl -- UserAcl of
+                DeviceAcl ->
+                    deny;
                 _ ->
-                    deny
+                    ok
             end;
         _ -> deny
     end.

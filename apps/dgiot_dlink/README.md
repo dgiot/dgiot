@@ -28,7 +28,7 @@ Dlink协议是针对物联网开发领域设计的一种数据交换规范，数
 | 分类   | Topic  |  发布者 |  订阅者  |
 | --------  | -------- | ------- | -------- |
 | 属性上报 |$dg/thing/{productId}/{deviceAddr}/properties/report|设备|平台|
-| 属性上报 |$dg/user/{productId}/{deviceId}/properties/report|平台|用户|
+| 告警上报 |$dg/alarm/{productId}/{deviceId}/properties/report|平台|用户|
 | 组态消息 |$dg/user/{DeviceId}/konva/report|平台|用户|
 | 卡片消息 |$dg/user/{DeviceId}/realtimecard/report|平台|用户|
 | 子属性上报 |$dg/thing/{productId}/{deviceAddr}/gateway/sub_devices/properties/report|设备|平台|
