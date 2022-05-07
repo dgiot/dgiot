@@ -34,7 +34,7 @@ properties_report(ProductId, DevAddr, Payload) ->
                   (_) ->
                       pass
               end, dgiot_bridge:get_proctol_channel(ProductId)),
-    io:format("~s ~p ProductId ~p, DevAddr ~p, Payload: ~p ~n", [?FILE, ?LINE, ProductId, DevAddr, Payload]),
+%%    io:format("~s ~p ProductId ~p, DevAddr ~p, Payload: ~p ~n", [?FILE, ?LINE, ProductId, DevAddr, Payload]),
     ok.
 
 login(_A, _B, _C) ->
