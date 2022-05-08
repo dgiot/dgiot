@@ -48,12 +48,12 @@ check(#{clientid := Token, username := UserId, password := Token}, AuthResult, #
 %% 2、 尝试ClientID 为deviceID的1机1密认证
 %% 3、 尝试ClientID 为deviceAddr的1机1密认证
 check(#{clientid := <<ProductID:10/binary, "_", DeviceAddr/binary>>, username := ProductID, password := Password, peerhost := PeerHost}, AuthResult, #{hash_type := _HashType}) ->
-%%    io:format("~s ~p ProductID: ~p ClientId ~p Password ~p PeerHost ~p ~n", [?FILE, ?LINE, ProductID, DeviceAddr, Password, dgiot_utils:get_ip(PeerHost)]),
+    io:format("~s ~p ProductID: ~p ClientId ~p Password ~p PeerHost ~p ~n", [?FILE, ?LINE, ProductID, DeviceAddr, Password, dgiot_utils:get_ip(PeerHost)]),
     DeviceId = dgiot_parse_id:get_deviceid(ProductID, DeviceAddr),
     do_check(AuthResult, Password, ProductID, DeviceAddr, DeviceId, dgiot_utils:get_ip(PeerHost));
 
 check(#{clientid := DeviceAddr, username := ProductID, password := Password, peerhost := PeerHost}, AuthResult, #{hash_type := _HashType}) ->
-%%    io:format("~s ~p ProductID: ~p ClientId ~p Password ~p PeerHost ~p ~n", [?FILE, ?LINE, ProductID, DeviceAddr, Password, dgiot_utils:get_ip(PeerHost)]),
+    io:format("~s ~p ProductID: ~p ClientId ~p Password ~p PeerHost ~p ~n", [?FILE, ?LINE, ProductID, DeviceAddr, Password, dgiot_utils:get_ip(PeerHost)]),
     DeviceId = dgiot_parse_id:get_deviceid(ProductID, DeviceAddr),
     do_check(AuthResult, Password, ProductID, DeviceAddr, DeviceId, dgiot_utils:get_ip(PeerHost));
 
@@ -65,22 +65,27 @@ description() -> "Authentication with Mnesia".
 
 do_check(AuthResult, Password, ProductID, DeviceAddr, DeviceId, Ip) ->
     case dgiot_product:lookup_prod(ProductID) of
-        {ok, #{<<"productSecret">> := Password, <<"ACL">> := Acl, <<"name">> := Name, <<"devType">> := DevType, <<"dynamicReg">> := true}} ->
+        {ok, #{<<"productSecret">> := Password} = Product} ->
             case dgiot_device:lookup(DeviceId) of
                 {ok, _} ->
                     pass;
                 _ ->
-                    Device = #{
-                        <<"ip">> => Ip,
-                        <<"status">> => <<"ONLINE">>,
-                        <<"brand">> => Name,
-                        <<"devModel">> => DevType,
-                        <<"name">> => DeviceAddr,
-                        <<"devaddr">> => DeviceAddr,
-                        <<"product">> => ProductID,
-                        <<"ACL">> => Acl
-                    },
-                    dgiot_device:create_device(Device)
+                    case Product of
+                        #{<<"ACL">> := Acl, <<"name">> := Name, <<"devType">> := DevType, <<"dynamicReg">> := true} ->
+                            Device = #{
+                                <<"ip">> => Ip,
+                                <<"status">> => <<"ONLINE">>,
+                                <<"brand">> => Name,
+                                <<"devModel">> => DevType,
+                                <<"name">> => DeviceAddr,
+                                <<"devaddr">> => DeviceAddr,
+                                <<"product">> => ProductID,
+                                <<"ACL">> => Acl
+                            },
+                            dgiot_device:create_device(Device);
+                        _ ->
+                            pass
+                    end
             end,
             {stop, AuthResult#{anonymous => false, auth_result => success}};
         _ ->

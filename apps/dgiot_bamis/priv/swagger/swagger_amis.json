@@ -123,18 +123,10 @@
           },
           {
             "in": "query",
-            "name": "field",
-            "description": "需要查询的字段名, eg: content",
-            "required": false,
-            "default": "content",
-            "type": "string"
-          },
-          {
-            "in": "query",
             "name": "keys",
-            "description": "需要显示的指定json字段内的keys, eg: i_out,i_in",
+            "description": "需要显示的指定json字段内的keys, eg: content.i_out, content.i_in",
             "required": false,
-            "default": "i_out,i_in",
+            "default": "content.i_out,content.i_in",
             "type": "string"
           }
         ],
