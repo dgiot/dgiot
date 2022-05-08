@@ -85,15 +85,13 @@ get({'after', Data}) ->
 %%    io:format("~s ~p Data ~p ~n", [?FILE, ?LINE, Data]),
     NewData =
         case Args of
-            #{<<"field">> := undefined} ->
-                Data;
-            #{<<"field">> := Field, <<"keys">> := undefined} ->
+            #{<<"keys">> := undefined} ->
 %%                io:format("~s ~p Field ~p ~n", [?FILE, ?LINE, maps:get(Field, Data,#{})]),
-                maps:get(Field, Data,#{});
-            #{<<"field">> := Field, <<"keys">> := Keys} ->
+                Data;
+            #{<<"keys">> := Keys} ->
                 NewKeys = re:split(Keys, <<",">>, [{return, binary}, trim]),
 %%                io:format("~s ~p Field ~p ~n", [?FILE, ?LINE, maps:get(Field, Data,#{})]),
-                maps:with(NewKeys, maps:get(Field, Data,#{}));
+                dgiot_map:with(NewKeys, Data);
             _ ->
                 Data
         end,
