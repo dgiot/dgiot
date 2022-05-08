@@ -10,9 +10,20 @@
 -author("jonhl").
 -export([test/0, with/2, get/2, merge/2]).
 
-merge(Data, NewData) ->
+merge(_Data, NewData) ->
     Keys = maps:keys(NewData),
-    ok.
+    Keys.
+
+%%    maps:fold(fun(K, V, Acc) ->
+%%        case maps:find(K, Class) of
+%%            error -> Acc;
+%%            {ok, Value} when is_map(Value) ->
+%%                Acc#{K => maps:merge(Value, V)};
+%%            _ ->
+%%                Acc#{K => V}
+%%        end
+%%              end,
+%%        #{}, maps:without([<<"id">>], Args));
 
 with(Keys, Data) ->
     with(Keys, Data, #{}).
