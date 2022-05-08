@@ -642,12 +642,13 @@ process_message(Frames, ChannelId) ->
 
 process_message(?DLT376, Frames, ChannelId) ->
     case Frames of
-        [#{<<"addr">> := DevAddr, <<"value">> := _Value, <<"childvalue">> := ChildValue} | _] ->
+        [#{<<"addr">> := DevAddr, <<"value">> := Value, <<"childvalue">> := ChildValue} | _] ->
             case dgiot_data:get({dtu, ChannelId}) of
                 {ProductId, _ACL, _Properties} ->
-%%                    Topic = <<"thing/", ProductId/binary, "/", DevAddr/binary, "/post">>,  % 发送给mqtt进行数据存储
+                    Topic = <<"thing/", ProductId/binary, "/", DevAddr/binary, "/post">>,  % 发送给mqtt进行数据存储
                     DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
-%%                    dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(Value)),
+                    dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(Value)),
+                    timer:sleep(1 * 1000),
                     send_childvalue(DeviceId, ChildValue);
                 _ -> pass
             end;
@@ -659,11 +660,11 @@ process_message(Frames, ChannelId, DTUIP, DtuId) ->
     [#{<<"afn">> := 16#0A, <<"di">> := <<16#00, 16#00, 16#02, 16#01>>, <<"addr">> := DevAddr, <<"value">> := Value} | _] = Frames,
     lists:map(fun(#{<<"addr">> := MeterAddr, <<"da">> := Da}) ->
         MAddr = dgiot_utils:binary_to_hex(MeterAddr),
-        dgiot_meter:create_meter4G(MAddr, dgiot_utils:to_binary(Da), ChannelId, DTUIP, DtuId, DevAddr)
+        dgiot_meter:create_meter4G(MAddr, dgiot_utils:to_binary(Da), ChannelId, DTUIP, DtuId, DevAddr),
+        timer:sleep(1 * 1000)
               end, Value).
 
 send_childvalue(DeviceId, ChildValue) ->
-    io:format("~s ~p DeviceId ~p.~n", [?FILE, ?LINE, DeviceId]),
     case dgiot_parse:query_object(<<"Device">>, #{<<"where">> => #{<<"parentId">> => DeviceId}}) of
         {ok, #{<<"results">> := ChildDevices}} ->
             lists:foldl(fun(#{<<"objectId">> := ChildId, <<"devaddr">> := Devaddr, <<"product">> := #{<<"objectId">> := ProductId}}, _Acc) ->
@@ -676,10 +677,10 @@ send_childvalue(DeviceId, ChildValue) ->
                             error ->
                                 pass;
                             {ok, Value} ->
-                                io:format("~s ~p Devaddr = ~p => Da = ~p => DA = ~p.~n Value = ~p.~n", [?FILE, ?LINE, Devaddr, Da, DA, Value]),
                                 Topic = <<"thing/", ProductId/binary, "/", Devaddr/binary, "/post">>,  % 发送给mqtt进行数据存储
                                 DeviceId1 = dgiot_parse_id:get_deviceid(ProductId, Devaddr),
-                                dgiot_mqtt:publish(DeviceId1, Topic, jsx:encode(Value))
+                                dgiot_mqtt:publish(DeviceId1, Topic, jsx:encode(Value)),
+                                timer:sleep(1 * 1000)
                         end
                 end
                         end, #{}, ChildDevices);
@@ -769,9 +770,9 @@ frame_write_param(#{<<"concentrator">> := ConAddr, <<"payload">> := Frame}) ->
                     {Acc, A, D, F}
             end
                     end, {[], 0, <<>>, <<>>}, lists:seq(1, Length)),
-    io:format("~s ~p BitList = ~p.~n", [?FILE, ?LINE, BitList]),
+%%    io:format("~s ~p BitList = ~p.~n", [?FILE, ?LINE, BitList]),
     UserZone = <<<<V:BitLen>> || {V, BitLen} <- BitList>>,
-    io:format("~s ~p UserZone  ~p. Afn ~p ~n", [?FILE, ?LINE, dgiot_utils:binary_to_hex(UserZone), Afn]),
+%%    io:format("~s ~p UserZone  ~p. Afn ~p ~n", [?FILE, ?LINE, dgiot_utils:binary_to_hex(UserZone), Afn]),
     UserData = add_to_userzone(UserZone, Afn, Fn),
     dlt376_decoder:to_frame(#{<<"command">> => 16#4B,
         <<"addr">> => concentrator_to_addr(ConAddr),
@@ -783,17 +784,6 @@ get_values(Acc, Data) ->
     lists:foldl(fun(V, Acc1) ->
         Acc1 ++ [{V, 8}]
                 end, Acc, binary_to_list(Data)).
-
-%%  搜表
-get_bitlist(Value, #{<<"afn">> := <<"0A">>, <<"da">> := <<"0000">>, <<"dt">> := <<"0201">>, <<"length">> := 2, <<"type">> := _Type}, Acc) ->
-    IntValue = dgiot_utils:to_int(Value),
-    Values =
-        lists:foldl(fun(Number, Acc1) ->
-            lists:foldl(fun(V, Acc2) ->
-                Acc2 ++ [{V, 8}]
-                        end, Acc1, binary_to_list(<<Number:16/little>>))
-                    end, get_values([], <<IntValue:16/little>>), lists:seq(1, IntValue)),
-    {Acc ++ Values, 10, <<"0000">>, <<"0201">>};
 
 %% 下发指令
 get_bitlist(Value, #{<<"afn">> := AFN, <<"da">> := DA, <<"dt">> := FN, <<"length">> := Len, <<"type">> := Type}, Acc) ->
@@ -815,36 +805,6 @@ get_bitlist(Value, #{<<"afn">> := AFN, <<"da">> := DA, <<"dt">> := FN, <<"length
             {Acc ++ [{NewValue, L}], AFN, DA, FN}
     end.
 
-%%frame_write_param(#{<<"concentrator">> := ConAddr, <<"basedata">> := Data}) ->
-%%    ZZXH = to_integer(maps:get(<<"zzxh">>, Data, <<"2040">>)),
-%%    CLDH = to_integer(maps:get(<<"cldh">>, Data, <<"2040">>)),
-%%    BTL = to_integer(maps:get(<<"btl">>, Data, <<"3">>)),
-%%    TXDKH = to_integer(maps:get(<<"txdkh">>, Data, <<"2">>)),
-%%    TXXY = to_integer(maps:get(<<"txxy">>, Data, <<"30">>)),
-%%    DBDZ = to_device(maps:get(<<"dbdz">>, Data, <<"000000000000">>)),
-%%    TXMM = to_device(maps:get(<<"txmm">>, Data, <<"000000000000">>)),
-%%    CJQ = to_device(maps:get(<<"cjq">>, Data, <<"000000000000">>)),
-%%    DNFLS = to_integer(maps:get(<<"dnfls">>, Data, <<"4">>)),
-%%    YHLX = to_integer(maps:get(<<"yhlx">>, Data, <<"5">>)),
-%%    DBLX = to_integer(maps:get(<<"dblx">>, Data, <<"1">>)),
-%%    UserZone = <<16#01, 16#00,
-%%        ZZXH:16/little,
-%%        CLDH:16/little,
-%%        BTL:3, TXDKH:5,
-%%        TXXY:8,
-%%        DBDZ:6/bytes,
-%%        TXMM:6/bytes,
-%%        DNFLS:8,
-%%        16#0B,
-%%        CJQ:6/bytes,
-%%        YHLX:4, DBLX:1>>,
-%%    dlt376_decoder:to_frame(#{<<"command">> => 16#4B,
-%%        <<"concentrator">> => ConAddr,
-%%        <<"afn">> => 16#04,
-%%        <<"da">> => <<16#00, 16#00>>,
-%%        <<"di">> => <<16#02, 16#01>>,
-%%        <<"data">> => UserZone}).
-
 add_to_userzone(UserZone, _Afn, _Fn) ->
     UserZone.
 
@@ -863,7 +823,7 @@ concentrator_to_addr(ConAddr) when byte_size(ConAddr) == 12 ->
 concentrator_to_addr(_ConAddr) ->
     <<16#00, 16#00, 16#00, 16#00, 16#00>>.
 
-decoder_value_Rate(Index, BinDi, BinDa, BinDt, DValue, Rates, #{<<"afn">> := 16#0C, <<"value">> := _Value, <<"childvalue">> := ChildValue} = State) ->
+decoder_value_Rate(Index, BinDi, BinDa, BinDt, DValue, Rates, #{<<"afn">> := 16#0C, <<"value">> := Value, <<"childvalue">> := ChildValue} = State) ->
     NewBinDa =
         case maps:find(BinDa, ChildValue) of
             error ->
@@ -874,24 +834,26 @@ decoder_value_Rate(Index, BinDi, BinDa, BinDt, DValue, Rates, #{<<"afn">> := 16#
     BinIndex = dgiot_utils:to_binary(Index),
     case Rates of
         <<Rate:5/bytes, RateRest/bytes>> ->
-            case DValue of
-                0 ->
-                    pass;
-                _ ->
-                    State1 = State#{
-%%                <<"value">> => Value#{
-%%                    <<BinDi/binary, "">> => binary_to_value_dlt376_bcd(DValue),
-%%                    <<BinDi/binary, "0", BinIndex/binary>> => binary_to_value_dlt376_bcd(NewRate)
-%%                },
-                        <<"childvalue">> => ChildValue#{
-                            <<BinDa/binary, "">> => NewBinDa#{
-                                <<"0000", BinDt/binary>> => binary_to_value_dlt376_bcd(DValue),
-                                <<"0000", BinDt/binary, "0", BinIndex/binary>> => binary_to_value_dlt376_bcd(Rate)
-                            }
-                        }
-                    },
-                    decoder_value_Rate(Index + 1, BinDi, BinDa, BinDt, DValue, RateRest, State1)
-            end;
+            NewRate =
+                case DValue of
+                    0 ->
+                        0;
+                    _ ->
+                        Rate
+                end,
+            State1 = State#{
+                <<"value">> => Value#{
+                    <<BinDi/binary, "">> => binary_to_value_dlt376_bcd(DValue),
+                    <<BinDi/binary, "0", BinIndex/binary>> => binary_to_value_dlt376_bcd(NewRate)
+                },
+                <<"childvalue">> => ChildValue#{
+                    <<BinDa/binary, "">> => NewBinDa#{
+                        <<"0000", BinDt/binary>> => binary_to_value_dlt376_bcd(DValue),
+                        <<"0000", BinDt/binary, "0", BinIndex/binary>> => binary_to_value_dlt376_bcd(NewRate)
+                    }
+                }
+            },
+            decoder_value_Rate(Index + 1, BinDi, BinDa, BinDt, DValue, RateRest, State1);
         _ ->
             State
     end;

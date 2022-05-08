@@ -93,6 +93,7 @@ init(?TYPE, ChannelId, Args) ->
         id = ChannelId,
         env = Args
     },
+    dgiot_parse_hook:subscribe(<<"Notification">>, get, ChannelId),
 %%    dgiot_parse_id:get_channelid(?BACKEND_CHL, ?TYPE, <<"dgiot_notification">>),
     {ok, State, []}.
 
@@ -115,6 +116,12 @@ handle_message({rule, #{clientid := _DevAddr, disconnected_at := _DisconnectedAt
 %% SELECT payload.electricity as electricity FROM  "$dg/alarm/94656917ab/157d0ff60f/#" where electricity  >  20
 handle_message({rule, #{metadata := #{rule_id := <<"rule:Notification_", Ruleid/binary>>}, clientid := DeviceId, payload := _Payload, topic := _Topic} = _Msg, Context}, State) ->
     dgiot_umeng:add_notification(Ruleid, DeviceId, Context),
+    {ok, State};
+
+handle_message({sync_parse, Pid, 'after', get, _Token, <<"Notification">>, #{<<"results">> := _Results} = ResBody}, State) ->
+    timer:sleep(100),
+    NewResBody = dgiot_notification:get_newbody(ResBody),
+    dgiot_parse_hook:publish(Pid, NewResBody),
     {ok, State};
 
 handle_message(_Message, State) ->

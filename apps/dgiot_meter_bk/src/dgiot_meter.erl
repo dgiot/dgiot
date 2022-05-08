@@ -100,13 +100,12 @@ create_meter(MeterAddr, ChannelId, DTUIP, DtuId, DtuAddr) ->
             pass
     end.
 
-
 create_meter4G(MeterAddr, MDa, ChannelId, DTUIP, DtuId, DtuAddr) ->
     case dgiot_data:get({meter, ChannelId}) of
         {ProductId, ACL, _Properties} ->
             Requests = #{
                 <<"devaddr">> => MeterAddr,
-                <<"name">> => <<DtuAddr/binary, "_Meter_", MDa/binary>>,
+                <<"name">> => <<"Meter_", MDa/binary>>,
                 <<"ip">> => DTUIP,
                 <<"isEnable">> => true,
                 <<"product">> => ProductId,
@@ -131,7 +130,6 @@ create_meter4G(MeterAddr, MDa, ChannelId, DTUIP, DtuId, DtuAddr) ->
         _ ->
             pass
     end.
-
 
 create_meter4G(DevAddr, ChannelId, DTUIP) ->
     case dgiot_data:get({dtu, ChannelId}) of
