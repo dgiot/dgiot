@@ -212,7 +212,7 @@ add_notification(Ruleid, _DevAddr, _Payload) ->
 
 save_notification(Ruleid, DeviceId, Payload) ->
     case binary:split(Ruleid, <<$_>>, [global, trim]) of
-        [ProductId, _AmisId] ->
+        [ProductId, ViewId] ->
             case dgiot_device:lookup(DeviceId) of
                 {ok, #{<<"acl">> := Acl}} ->
                     Requests =
@@ -228,7 +228,7 @@ save_notification(Ruleid, DeviceId, Payload) ->
                                             UserIds = dgiot_parse_id:get_userids(RoleId),
                                             lists:foldl(fun(UserId, Acc1) ->
                                                 ObjectId = dgiot_parse_id:get_notificationid(Ruleid),
-                                                Content = Payload#{<<"_deviceid">> => DeviceId, <<"_productid">> => ProductId},
+                                                Content = Payload#{<<"_deviceid">> => DeviceId, <<"_productid">> => ProductId, <<"_viewid">> => ViewId},
 %%                                                sendSubscribe(Ruleid, Content, UserId),
                                                 Acc1 ++ [#{
                                                     <<"method">> => <<"POST">>,
@@ -275,7 +275,7 @@ save_notification(Ruleid, DeviceId, Payload) ->
                                                     <<"write">> => true
                                                 }
                                             },
-                                            <<"content">> => Payload#{<<"_deviceid">> => DeviceId, <<"_productid">> => ProductId},
+                                            <<"content">> => Payload#{<<"_deviceid">> => DeviceId, <<"_productid">> => ProductId, <<"_viewid">> => ViewId},
                                             <<"public">> => false,
                                             <<"status">> => 0,
                                             <<"sender">> => #{
@@ -293,7 +293,7 @@ save_notification(Ruleid, DeviceId, Payload) ->
                                     }];
                                 UserId ->
                                     ObjectId = dgiot_parse_id:get_notificationid(Ruleid),
-                                    Content = Payload#{<<"_deviceid">> => DeviceId, <<"_productid">> => ProductId},
+                                    Content = Payload#{<<"_deviceid">> => DeviceId, <<"_productid">> => ProductId, <<"_viewid">> => ViewId},
 %%                                    sendSubscribe(Ruleid, Content, UserId),
                                     Acc ++ [#{
                                         <<"method">> => <<"POST">>,
