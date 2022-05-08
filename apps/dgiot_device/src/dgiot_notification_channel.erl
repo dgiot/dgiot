@@ -106,19 +106,15 @@ handle_event(_EventId, _Event, State) ->
 % SELECT clientid, payload, topic FROM "meter"
 % SELECT clientid, disconnected_at FROM "$events/client_disconnected" WHERE username = 'dgiot'
 % SELECT clientid, connected_at FROM "$events/client_connected" WHERE username = 'dgiot'
-handle_message({rule, #{clientid := _DevAddr, connected_at := _ConnectedAt} = Msg, _Context}, State) ->
-    io:format("~s ~p  Msg = ~p.~n", [?FILE, ?LINE, Msg]),
-    io:format("~s ~p  _Context = ~p.~n", [?FILE, ?LINE, _Context]),
+handle_message({rule, #{clientid := _DevAddr, connected_at := _ConnectedAt} = _Msg, _Context}, State) ->
     {ok, State};
 
-handle_message({rule, #{clientid := _DevAddr, disconnected_at := _DisconnectedAt} = Msg, _Context}, State) ->
-    io:format("~s ~p  Msg = ~p.~n", [?FILE, ?LINE, Msg]),
-    io:format("~s ~p  _Context = ~p.~n", [?FILE, ?LINE, _Context]),
+handle_message({rule, #{clientid := _DevAddr, disconnected_at := _DisconnectedAt} = _Msg, _Context}, State) ->
     {ok, State};
 
-handle_message({rule, #{clientid := _DevAddr, payload := _Payload, topic := _Topic} = Msg, _Context}, State) ->
-    io:format("~s ~p  Msg = ~p.~n", [?FILE, ?LINE, Msg]),
-    io:format("~s ~p  _Context = ~p.~n", [?FILE, ?LINE, _Context]),
+%% SELECT payload.electricity as electricity FROM  "$dg/alarm/94656917ab/157d0ff60f/#" where electricity  >  20
+handle_message({rule, #{metadata := #{rule_id := <<"rule:Notification_", Ruleid/binary>>}, clientid := DeviceId, payload := _Payload, topic := _Topic} = _Msg, Context}, State) ->
+    dgiot_umeng:add_notification(Ruleid, DeviceId, Context),
     {ok, State};
 
 handle_message(_Message, State) ->
