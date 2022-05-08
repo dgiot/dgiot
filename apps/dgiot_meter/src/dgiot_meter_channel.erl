@@ -116,7 +116,11 @@
         type => enum,
         required => false,
         default => <<"quick"/utf8>>,
-        enum => [<<"nosearch">>, <<"quick">>, <<"normal">>],
+        enum => [
+            #{<<"value">> => <<"nosearch">>, <<"label">> => <<"nosearch"/utf8>>},
+            #{<<"value">> => <<"quick">>, <<"label">> => <<"quick"/utf8>>},
+            #{<<"value">> => <<"normal">>, <<"label">> => <<"normal"/utf8>>}
+        ],
         title => #{
             zh => <<"搜表模式"/utf8>>
         },
@@ -128,7 +132,7 @@
         order => 102,
         type => string,
         required => false,
-        default => <<"http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/product/dgiot/channel/meter.jpg">>,
+        default => <<"/dgiot_file/shuwa_tech/zh/product/dgiot/channel/meter.jpg">>,
         title => #{
             en => <<"channel ICO">>,
             zh => <<"通道ICO"/utf8>>
@@ -152,7 +156,6 @@ init(?TYPE, ChannelId, #{
     lists:map(fun(X) ->
         case X of
             {ProductId, #{<<"ACL">> := Acl, <<"nodeType">> := 1, <<"thing">> := Thing}} ->
-%%                dgiot_data:insert({dtu, ChannelId}, {ProductId, Acl, maps:get(<<"properties">>, Thing, [])}),
                 Props = maps:get(<<"properties">>, Thing, []),
                 dgiot_data:insert({dtu, ChannelId}, {ProductId, Acl, Props}),
                 lists:map(fun(Prop) ->
