@@ -33,7 +33,7 @@
     put_User_Role/3,
     put_roleuser/2,
     post_roleuser/2,
-    get_roleuser/3,
+    get_roleuser/2,
     del_roleuser/2,
     get_UserIds/1
 ]).
@@ -270,8 +270,10 @@ refresh_session(Token) ->
     }).
 
 
-get_roleuser(Filter, IncludeChild, SessionToken) ->
-    case dgiot_parse:query_object(<<"_Role">>, Filter,
+get_roleuser(Filter, SessionToken) ->
+    IncludeChild = maps:get(<<"include">>, Filter, false),
+%%    io:format("~s ~p Filter ~p IncludeChild ~p ~n", [?FILE, ?LINE, Filter, IncludeChild]),
+    case dgiot_parse:query_object(<<"_Role">>, maps:without([<<"include">>],Filter),
         [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
         {ok, #{<<"results">> := Roles}} ->
             Users =
@@ -288,15 +290,16 @@ get_roleuser(Filter, IncludeChild, SessionToken) ->
                             Acc2 ++ dgiot_parse_auth:get_UserIds(ChildRoleId)
                                     end, [], ChildRoleIds),
                     UsersQuery =
-                        #{<<"where">> => #{<<"objectId">> => #{<<"$in">> => UserIds}},
-                            <<"keys">> => []
-                        },
+                        #{<<"where">> => #{<<"objectId">> => #{<<"$in">> => UserIds}}},
+%%                    io:format("~s ~p ~p ~n", [?FILE, ?LINE, UsersQuery]),
                     case dgiot_parse:query_object(<<"_User">>, UsersQuery) of
                         {ok, #{<<"results">> := Results}} ->
-                            Acc ++ lists:foldl(fun(X, Acc2) ->
-                                Acc2 ++ [X#{<<"role">> => maps:with([<<"org_type">>, <<"tag">>, <<"depname">>], Role)}]
-                                               end, [], Results);
-                        _ -> Acc
+                            lists:foldl(fun
+                                            (X, Acc2) ->
+                                                Acc2 ++ [X#{<<"role">> => maps:with([<<"org_type">>, <<"tag">>, <<"depname">>], Role)}]
+                                        end, Acc, Results);
+                        _ ->
+                            Acc
                     end
                             end, [], Roles),
             NewUsers =

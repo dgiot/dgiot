@@ -436,6 +436,7 @@ tree() ->
                                     end, Acc1, maps:values(Value1))
                                 end, Acc, maps:values(Value))
                             end, Tree, maps:values(Paths)),
+%%            [<<"Basic">>,],
             NewMap = maps:from_list(lists:sort(maps:to_list(Tree1))),
             {ok, maps:values(NewMap)};
         _ ->
