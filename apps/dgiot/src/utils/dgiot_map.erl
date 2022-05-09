@@ -8,22 +8,20 @@
 %%%-------------------------------------------------------------------
 -module(dgiot_map).
 -author("jonhl").
--export([test/0, with/2, get/2, merge/2]).
+-export([with/2, get/2, merge/2]).
+-export([test_get/0, test_merge/0]).
 
-merge(_Data, NewData) ->
-    Keys = maps:keys(NewData),
-    Keys.
-
-%%    maps:fold(fun(K, V, Acc) ->
-%%        case maps:find(K, Class) of
-%%            error -> Acc;
-%%            {ok, Value} when is_map(Value) ->
-%%                Acc#{K => maps:merge(Value, V)};
-%%            _ ->
-%%                Acc#{K => V}
-%%        end
-%%              end,
-%%        #{}, maps:without([<<"id">>], Args));
+merge(Data, NewData) ->
+    maps:fold(fun
+                  (NewKey, NewValue, Acc) ->
+                      case maps:find(NewKey, Acc) of
+                          {ok, Value} when is_map(Value) ->
+                              Acc#{NewKey => merge(Value, NewValue)};
+                          _ ->
+                              Acc#{NewKey => NewValue}
+                      end
+              end,
+        Data, NewData).
 
 with(Keys, Data) ->
     with(Keys, Data, #{}).
@@ -62,7 +60,12 @@ value([Key | Keys], Data) when is_map(Data) ->
 value(_, _Value) ->
     undefined.
 
-test() ->
+test_get() ->
     Keys = [<<"content.i_out">>, <<"content.i_in">>],
     Data = #{<<"content">> => #{<<"i_out">> => 1, <<"i_in">> => 9}},
     with(Keys, Data).
+
+test_merge() ->
+    A = #{1 => #{1 => 11}},
+    B = #{1 => #{1 => 2, 2 => 3}, 2 => #{4 => 5}},
+    merge(A, B).
