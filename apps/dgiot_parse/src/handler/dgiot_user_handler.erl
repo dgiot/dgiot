@@ -204,8 +204,9 @@ do_request(post_logout,  #{<<"sessionToken">> := SessionToken}, _Context, _Req) 
 %% RoleUser 概要: 导库 描述:json文件导库
 %% OperationId:get_roleuser
 %% 请求:GET /iotapi/roleuser
-do_request(get_roleuser, #{<<"where">> := Where} = Filter, #{<<"sessionToken">> := SessionToken} = _Context, _Req0) ->
-    dgiot_parse_auth:get_roleuser(Filter#{<<"where">> => jsx:decode(Where, [return_maps])}, SessionToken);
+do_request(get_roleuser, #{<<"where">> := Where} = Filter, #{<<"sessionToken">> := SessionToken} = Context, _Req0) ->
+    IncludeChild = maps:get(<<"include">>, Context, false),
+    dgiot_parse_auth:get_roleuser(Filter#{<<"where">> => jsx:decode(Where, [return_maps])}, IncludeChild, SessionToken);
 
 %% Role模版 概要: 导库 描述:json文件导库
 %% OperationId:put_roleuser

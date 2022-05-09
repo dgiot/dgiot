@@ -549,6 +549,17 @@
             "type": "number",
             "default": 1,
             "description": "limit, 显示多少条记录，显示100条记录 eg:100"
+          },
+          {
+            "name": "include",
+            "in": "query",
+            "type": "boolean",
+            "default": false,
+            "enum": [
+              false,
+              true
+            ],
+            "description": "include 是否包含子部门用户"
           }
         ],
         "responses": {
