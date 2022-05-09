@@ -57,7 +57,7 @@ get({'before', '*', Args}) ->
     Basic;
 
 get({'after', #{<<"results">> := Response} = _Data}) ->
-    io:format("~s ~p ~p~n", [?FILE, ?LINE, _Data]),
+%%    io:format("~s ~p ~p~n", [?FILE, ?LINE, _Data]),
     #{
         <<"status">> => 0,
         <<"msg">> => <<"数据请求成功"/utf8>>,
