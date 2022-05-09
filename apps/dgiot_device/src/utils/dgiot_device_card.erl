@@ -73,7 +73,7 @@ get_card(ProductId, Results, DeviceId, Args) ->
     Props = dgiot_product:get_Props(ProductId, Keys),
     lists:foldl(fun(X, Acc) ->
         case X of
-            #{<<"name">> := Name, <<"isshow">> := true, <<"identifier">> := Identifier, <<"dataForm">> := #{<<"protocol">> := Protocol}, <<"dataSource">> := DataSource, <<"dataType">> := #{<<"type">> := Typea} = DataType} ->
+            #{<<"name">> := Name, <<"identifier">> := Identifier, <<"dataForm">> := #{<<"protocol">> := Protocol}, <<"dataSource">> := DataSource, <<"dataType">> := #{<<"type">> := Typea} = DataType} ->
                 Time = maps:get(<<"createdat">>, Result, dgiot_datetime:now_secs()),
                 NewTime = dgiot_tdengine_field:get_time(dgiot_utils:to_binary(Time), <<"111">>),
                 Devicetype = maps:get(<<"devicetype">>, X, <<"others">>),
@@ -94,7 +94,10 @@ get_card(ProductId, Results, DeviceId, Args) ->
                             <<"time">> => NewTime, <<"unit">> => Unit,
                             <<"imgurl">> => Ico, <<"devicetype">> => Devicetype}];
                     {error, _Reason} ->
-                        Acc;
+                        Acc ++ [#{<<"identifier">> => Identifier, <<"name">> => Name,
+                            <<"type">> => Typea, <<"number">> => <<"--">>,
+                            <<"time">> => NewTime, <<"unit">> => Unit,
+                            <<"imgurl">> => Ico, <<"devicetype">> => Devicetype}];
                     V ->
                         NewV = dgiot_product_tdengine:check_field(Typea, V, #{<<"datatype">> => DataType, <<"specs">> => Specs, <<"deviceid">> => DeviceId}),
                         Acc ++ [#{<<"identifier">> => Identifier, <<"name">> => Name,

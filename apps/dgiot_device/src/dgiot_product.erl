@@ -18,11 +18,12 @@
 -author("jonliu").
 -include("dgiot_device.hrl").
 -include_lib("dgiot/include/logger.hrl").
+-include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
 -dgiot_data("ets").
--export([init_ets/0, load_cache/0, local/1, save/1, get/1, delete/1, save_prod/2, lookup_prod/1]).
+-export([init_ets/0, load_cache/0, local/1, save/1, put/1, get/1, delete/1, save_prod/2, lookup_prod/1]).
 -export([parse_frame/3, to_frame/2]).
 -export([create_product/2, add_product_relation/2, delete_product_relation/1]).
--export([get_prop/1, get_props/1, get_Props/2, get_unit/1]).
+-export([get_prop/1, get_props/1, get_Props/2, get_unit/1, do_td_message/1]).
 
 init_ets() ->
     dgiot_data:init(?DGIOT_PRODUCT).
@@ -63,11 +64,21 @@ lookup_prod(ProductId) ->
             {ok, Value}
     end.
 
-save(#{<<"thing">> := _thing} = Product) ->
+save(Product) ->
     Product1 = format_product(Product),
     #{<<"productId">> := ProductId} = Product1,
     dgiot_data:insert(?DGIOT_PRODUCT, ProductId, Product1),
     {ok, Product1}.
+
+put(Product) ->
+    ProductId = maps:get(<<"objectId">>, Product),
+    case lookup_prod(ProductId) of
+        {ok, OldProduct} ->
+            NewProduct = maps:merge(OldProduct, Product),
+            save(NewProduct);
+        _ ->
+            pass
+    end.
 
 
 delete(ProductId) ->
@@ -250,3 +261,8 @@ get_Props(ProductId, Keys) ->
                 Acc
         end
                 end, [], List).
+
+%% 发消息通知td 重载超级表、字段
+do_td_message(ProfuctId) ->
+    ChannelId = dgiot_parse_id:get_channelid(dgiot_utils:to_binary(?BRIDGE_CHL), <<"TD">>, <<"TD资源通道"/utf8>>),
+    dgiot_channelx:do_message(ChannelId, {sync_product, <<"Product">>, ProfuctId}).

@@ -30,7 +30,6 @@ post('after', #{<<"objectId">> := ProductId, <<"channel">> := Channel} = QueryDa
     Otherchannel = maps:get(<<"otherchannel">>, Channel, <<"">>),
     dgiot_product:add_product_relation(lists:flatten([Otherchannel]) ++ [TdchannelId] ++ [TaskchannelId], ProductId),
 %%    io:format("~s ~p ~p ~n ",[?FILE,?LINE, QueryData]),
-    dgiot_product:save(QueryData),
     post('after', maps:without([<<"channel">>], QueryData));
 
 post('after', #{<<"objectId">> := ProductId, <<"producttemplet">> := #{<<"objectId">> := ProducttempletId}} = _QueryData) ->
@@ -54,13 +53,12 @@ post(_, _) ->
 put('before', _QueryData) ->
     pass;
 
-put('after', #{<<"channel">> := Channel, <<"objectId">> := ProductId} = QueryData) ->
+put('after', #{<<"channel">> := Channel, <<"objectId">> := ProductId}) ->
     dgiot_product:delete_product_relation(ProductId),
     TdchannelId = maps:get(<<"tdchannel">>, Channel, <<"">>),
     TaskchannelId = maps:get(<<"taskchannel">>, Channel, <<"">>),
     Otherchannel = maps:get(<<"otherchannel">>, Channel, <<"">>),
-    dgiot_product:add_product_relation([Otherchannel] ++ [TdchannelId] ++ [TaskchannelId], ProductId),
-    dgiot_product:save(QueryData);
+    dgiot_product:add_product_relation([Otherchannel] ++ [TdchannelId] ++ [TaskchannelId], ProductId);
 
 put(_, _) ->
     pass.
@@ -70,7 +68,6 @@ delete('before', _ProductId) ->
     pass;
 
 delete('after', ProductId) ->
-    dgiot_product:delete(ProductId),
     case dgiot_parse:query_object(<<"Dict">>, #{<<"where">> => #{<<"key">> => ProductId, <<"class">> => <<"Product">>}}) of
         {ok, #{<<"results">> := Dicts}} ->
             dgiot_product_dict:delete_batch(Dicts);
