@@ -54,12 +54,13 @@ post(_, _) ->
 put('before', _QueryData) ->
     pass;
 
-put('after', #{<<"channel">> := Channel, <<"objectId">> := ProductId}) ->
+put('after', #{<<"channel">> := Channel, <<"objectId">> := ProductId} = QueryData) ->
     dgiot_product:delete_product_relation(ProductId),
     TdchannelId = maps:get(<<"tdchannel">>, Channel, <<"">>),
     TaskchannelId = maps:get(<<"taskchannel">>, Channel, <<"">>),
     Otherchannel = maps:get(<<"otherchannel">>, Channel, <<"">>),
-    dgiot_product:add_product_relation([Otherchannel] ++ [TdchannelId] ++ [TaskchannelId], ProductId);
+    dgiot_product:add_product_relation([Otherchannel] ++ [TdchannelId] ++ [TaskchannelId], ProductId),
+    dgiot_product:save(QueryData);
 
 put(_, _) ->
     pass.
