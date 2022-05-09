@@ -82,8 +82,9 @@ handle_info(heartbeat, #udp{state = #state{hb = Hb, login = Login} = _State} = U
     dgiot_udp_client:send(UDPState, Login),
     {noreply, UDPState};
 
-handle_info({udp, _Buff}, #udp{state = #state{productid = _ProductId, module = _Module} = _State} = UDPState) ->
+handle_info({udp, Buff}, #udp{state = #state{productid = ProductId, module = Module} = State} = UDPState) ->
 %%    Module:parse_frame(Buff, #{}, #{<<"productid">> => ProductId}),
+    dgiot_hook:run_hook({udpc, Module, ProductId}, {Buff, #{}, State}),
     {noreply, UDPState};
 
 handle_info({deliver, _Topic, Msg}, #udp{state = State} = UDPState) ->
