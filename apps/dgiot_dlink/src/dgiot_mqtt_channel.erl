@@ -83,13 +83,13 @@ init(?TYPE, ChannelId, #{
                 dgiot_data:insert({mqttd, ProductId}, {Acl, maps:get(<<"properties">>, Thing, [])}),
 %%              创建连接规则
                 ConRawsql = <<"SELECT clientid, connected_at FROM \"$events/client_connected\" WHERE username = '", ProductId/binary, "'">>,
-                create_rules(<<"rule:connected_", ProductId/binary>>, ChannelId, <<"创建连接规则"/utf8>>, ConRawsql, <<"/${productid}/#">>),
+                dgiot_rule_handler:create_rules(<<"rule:connected_", ProductId/binary>>, ChannelId, <<"创建连接规则"/utf8>>, ConRawsql, <<"/${productid}/#">>),
 %%              创建断开连接规则
                 DisRawsql = <<"SELECT clientid, disconnected_at FROM \"$events/client_disconnected\" WHERE username = '", ProductId/binary, "'">>,
-                create_rules(<<"rule:disconnected_", ProductId/binary>>, ChannelId, <<"断开连接规则"/utf8>>, DisRawsql, <<"/${productid}/#">>),
+                dgiot_rule_handler:create_rules(<<"rule:disconnected_", ProductId/binary>>, ChannelId, <<"断开连接规则"/utf8>>, DisRawsql, <<"/${productid}/#">>),
                 %%              创建上传数据规则
                 MetaRawsql = <<"SELECT payload.msg as msg,clientid,'", ProductId/binary, "' as productid FROM \"/", ProductId/binary, "/#\" WHERE username = '", ProductId/binary, "'">>,
-                create_rules(<<"rule:metadata_", ProductId/binary>>, ChannelId, <<"派生物模型上报规则"/utf8>>, MetaRawsql, <<"/${productid}/#">>);
+                dgiot_rule_handler:create_rules(<<"rule:metadata_", ProductId/binary>>, ChannelId, <<"派生物模型上报规则"/utf8>>, MetaRawsql, <<"/${productid}/#">>);
             _ ->
                 io:format("~s ~p X = ~p.~n", [?FILE, ?LINE, X]),
                 pass
@@ -152,46 +152,3 @@ updat_device(DeviceId, DTUIP, Status) ->
             pass
     end.
 
-create_rules(RuleID, ChannelId, Description, Rawsql, Target_topic) ->
-    emqx_rule_engine_api:create_resource(#{},
-        [
-            {<<"id">>, <<"resource:", ChannelId/binary>>},
-            {<<"type">>, <<"dgiot_resource">>},
-            {<<"config">>, [{<<"channel">>, ChannelId}]},
-            {<<"description">>, <<"resource:", ChannelId/binary>>}
-        ]),
-    Params = #{
-        <<"actions">> => [#{<<"name">> => <<"dgiot">>, <<"fallbacks">> => [],
-            <<"params">> => #{
-                <<"$resource">> => <<"resource:", ChannelId/binary>>,
-                <<"channel">> => <<"数蛙物联网通道"/utf8>>,
-                <<"payload_tmpl">> => <<"${payload}">>,
-                <<"target_qos">> => 0,
-                <<"target_topic">> => Target_topic
-            }}],
-        <<"enabled">> => true,
-        <<"ctx">> => #{
-            <<"clientid">> => <<"c_swqx">>,
-            <<"payload">> => <<"{\"msg\":\"hello\"}">>,
-            <<"qos">> => 1,
-            <<"topic">> => <<"t/a">>,
-            <<"username">> => <<"u_swqx">>
-        },
-        <<"description">> => Description,
-        <<"for">> => <<"[\"t/#\"]">>,
-        <<"rawsql">> => Rawsql
-    },
-    ObjectId = dgiot_parse_id:get_dictid(RuleID, <<"ruleengine">>, <<"Rule">>, <<"Rule">>),
-    case dgiot_parse:get_object(<<"Dict">>, ObjectId) of
-        {ok, _} ->
-            dgiot_rule_handler:save_rule_to_dict(RuleID, Params);
-        _ ->
-            R = emqx_rule_engine_api:create_rule(#{}, maps:to_list(Params)),
-            case R of
-                {ok, #{data := #{id := EmqxRuleId}}} ->
-                    dgiot_data:delete(?DGIOT_RUlES, EmqxRuleId),
-                    emqx_rule_engine_api:delete_rule(#{id => EmqxRuleId}, []),
-                    dgiot_rule_handler:save_rule_to_dict(RuleID, Params);
-                _ -> pass
-            end
-    end.
