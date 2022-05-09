@@ -21,7 +21,6 @@
 -include("dgiot_bridge.hrl").
 -include_lib("emqx_rule_engine/include/rule_engine.hrl").
 -include_lib("dgiot/include/logger.hrl").
--include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
 -define(ERR_UNKNOWN_COLUMN(COLUMN), list_to_binary(io_lib:format("Unknown Column: ~s", [(COLUMN)]))).
 -define(ERR_NO_ACTION(NAME), list_to_binary(io_lib:format("Action ~s Not Found", [(NAME)]))).
 -define(ERR_NO_RESOURCE(RESID), list_to_binary(io_lib:format("Resource ~s Not Found", [(RESID)]))).
