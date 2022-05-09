@@ -25,6 +25,7 @@
 
 
 properties_report(ProductId, DevAddr, Payload) when is_map(Payload) ->
+    io:format("~s ~p ProductId ~p, DevAddr ~p, Payload: ~p ~n", [?FILE, ?LINE, ProductId, DevAddr, Payload]),
     dgiot_task:save_td(ProductId, DevAddr, Payload, #{});
 
 properties_report(ProductId, DevAddr, Payload) ->
@@ -34,7 +35,7 @@ properties_report(ProductId, DevAddr, Payload) ->
                   (_) ->
                       pass
               end, dgiot_bridge:get_proctol_channel(ProductId)),
-%%    io:format("~s ~p ProductId ~p, DevAddr ~p, Payload: ~p ~n", [?FILE, ?LINE, ProductId, DevAddr, Payload]),
+    io:format("~s ~p ProductId ~p, DevAddr ~p, Payload: ~p ~n", [?FILE, ?LINE, ProductId, DevAddr, Payload]),
     ok.
 
 login(_A, _B, _C) ->

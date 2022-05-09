@@ -65,7 +65,8 @@ get_childrole(Role) ->
         {error, not_find} ->
             [Role];
         Values ->
-            childrole(Values, dgiot_utils:unique_1(Values ++ [Role]))
+            FlatValues = dgiot_utils:unique_1(lists:flatten(Values)),
+            dgiot_utils:unique_1(lists:flatten(childrole(FlatValues, FlatValues ++ [Role])))
     end.
 
 childrole([], Acc) ->
@@ -75,7 +76,8 @@ childrole([Role | Roles], Acc) ->
         {error, not_find} ->
             childrole(Roles, Acc);
         Values ->
-            childrole(dgiot_utils:unique_1(Roles ++ Values), Acc ++ Values)
+            FlatValues = dgiot_utils:unique_1(lists:flatten(Values)),
+            childrole(dgiot_utils:unique_1(Roles ++ FlatValues), Acc ++ FlatValues)
     end.
 
 load_roles() ->
