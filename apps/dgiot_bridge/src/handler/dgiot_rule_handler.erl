@@ -30,7 +30,7 @@
 
 %% API
 -export([swagger_rule/0]).
--export([handle/4, sysc_rules/0, save_rule_to_dict/2, device_sql/4]).
+-export([handle/4, sysc_rules/0, save_rule_to_dict/2, device_sql/4, create_rules/5]).
 
 %% API描述
 %% 支持二种方式导入
@@ -174,9 +174,9 @@ do_request(get_actions, _Args, _Context, _Req) ->
 %%do_request(post_rulesql, #{<<"select">> := Select, <<"from">> := From, <<"where">> := Where, <<"method">> := Method}, _Context, _Req) ->
 %%    device_sql(Select, From, Where, Method);
 
-do_request(post_rulesql, #{<<"trigger">> := Trigger, <<"condition">> := Condition, <<"action">> := Action}, _Context, _Req) ->
+do_request(post_rulesql, #{<<"trigger">> := Trigger, <<"condition">> := Condition, <<"action">> := Action, <<"ruleid">> := Ruleid, <<"description">> := Description}, _Context, _Req) ->
 %%    device_sql(Select, From, Where, Method);
-    sql_tpl(Trigger, Condition, Action);
+    sql_tpl(Trigger, Condition, Action, Ruleid, Description);
 
 
 
@@ -219,7 +219,7 @@ do_request(_OperationId, _Args, _Context, _Req) ->
 %%desc 消息通信数据格式
 %%doc-api https://help.aliyun.com/document_detail/73736.htm?spm=a2c4g.11186623.0.0.353d7a48CvEOwF#concept-ap3-lql-b2b
 
-sql_tpl(Trigger, Condition, Action) ->
+sql_tpl(Trigger, Condition, Action, Ruleid, Description) ->
     SELECT = generateSelect(Condition, Trigger, Action),
     FROM = generateFrom(Trigger),
     WHERE = generateWhere(Condition, Trigger, FROM),
@@ -237,6 +237,7 @@ sql_tpl(Trigger, Condition, Action) ->
 %%            _ -> Acc
 %%        end
 %%                           end, <<"">>, Where),
+    ChannelId = dgiot_parse_id:get_channelid(dgiot_utils:to_binary(?BACKEND_CHL), <<"NOTIFICATION">>, <<"dgiot_notification">>),
     DefaultSql =
         <<"SELECT", "\r\n",
             SELECT/binary, "\r\n",
@@ -244,6 +245,7 @@ sql_tpl(Trigger, Condition, Action) ->
             "   \"", FROM/binary, "\"", "\r\n",
             "WHERE", "\r\n     ",
             WHERE/binary>>,
+    create_rules(Ruleid, ChannelId, Description, DefaultSql, <<"/${productid}/#">>),
     {ok, #{<<"template">> => DefaultSql}}.
 
 %% 根据设备条件生成sql模板
@@ -600,3 +602,47 @@ generateWhere(Condition, _Trigger, _FROM) ->
                 Acc
         end
                 end, L2, maps:get(<<"items">>, Condition, [])).
+
+create_rules(RuleID, ChannelId, Description, Rawsql, Target_topic) ->
+    emqx_rule_engine_api:create_resource(#{},
+        [
+            {<<"id">>, <<"resource:", ChannelId/binary>>},
+            {<<"type">>, <<"dgiot_resource">>},
+            {<<"config">>, [{<<"channel">>, ChannelId}]},
+            {<<"description">>, <<"resource:", ChannelId/binary>>}
+        ]),
+    Params = #{
+        <<"actions">> => [#{<<"name">> => <<"dgiot">>, <<"fallbacks">> => [],
+            <<"params">> => #{
+                <<"$resource">> => <<"resource:", ChannelId/binary>>,
+                <<"channel">> => <<"数蛙物联网通道"/utf8>>,
+                <<"payload_tmpl">> => <<"${payload}">>,
+                <<"target_qos">> => 0,
+                <<"target_topic">> => Target_topic
+            }}],
+        <<"enabled">> => true,
+        <<"ctx">> => #{
+            <<"clientid">> => <<"c_swqx">>,
+            <<"payload">> => <<"{\"msg\":\"hello\"}">>,
+            <<"qos">> => 1,
+            <<"topic">> => <<"t/a">>,
+            <<"username">> => <<"u_swqx">>
+        },
+        <<"description">> => Description,
+        <<"for">> => <<"[\"t/#\"]">>,
+        <<"rawsql">> => Rawsql
+    },
+    ObjectId = dgiot_parse_id:get_dictid(RuleID, <<"ruleengine">>, <<"Rule">>, <<"Rule">>),
+    case dgiot_parse:get_object(<<"Dict">>, ObjectId) of
+        {ok, _} ->
+            dgiot_rule_handler:save_rule_to_dict(RuleID, Params);
+        _ ->
+            R = emqx_rule_engine_api:create_rule(#{}, maps:to_list(Params)),
+            case R of
+                {ok, #{data := #{id := EmqxRuleId}}} ->
+                    dgiot_data:delete(?DGIOT_RUlES, EmqxRuleId),
+                    emqx_rule_engine_api:delete_rule(#{id => EmqxRuleId}, []),
+                    dgiot_rule_handler:save_rule_to_dict(RuleID, Params);
+                _ -> pass
+            end
+    end.
