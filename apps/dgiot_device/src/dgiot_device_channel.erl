@@ -166,16 +166,27 @@ handle_message({sync_parse, Pid, 'after', get, _Token, <<"Product">>, #{<<"objec
 handle_message({sync_parse, _Pid, 'after', post, _Token, <<"Product">>, QueryData}, State) ->
 %%    io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Pid, QueryData]),
     dgiot_product_hook:post('after', QueryData),
+    dgiot_product:save(QueryData),
+    timer:sleep(1000),
+    ProductId = maps:get(<<"objectId">>, QueryData),
+    dgiot_product:do_td_message(ProductId),
     {ok, State};
 
 handle_message({sync_parse, _Pid, 'after', put, _Token, <<"Product">>, QueryData}, State) ->
 %%    io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Pid, QueryData]),
     dgiot_product_hook:put('after', QueryData),
+    dgiot_product:put(QueryData),
+    timer:sleep(1000),
+    ProductId = maps:get(<<"objectId">>, QueryData),
+    dgiot_product:do_td_message(ProductId),
     {ok, State};
 
 handle_message({sync_parse, _Pid, 'after', delete, _Token, <<"Product">>, ObjectId}, State) ->
 %%    io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Pid, ObjectId]),
     dgiot_product_hook:delete('after', ObjectId),
+    dgiot_product:delete(ObjectId),
+    timer:sleep(1000),
+    dgiot_product:do_td_message(ObjectId),
     {ok, State};
 
 handle_message(Message, State) ->

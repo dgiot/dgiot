@@ -29,6 +29,7 @@
 -export([start/2, handle_save/1, save_to_cache/2]).
 -export([init/3, handle_event/3, handle_message/2, stop/3, handle_init/1]).
 -export([test/1]).
+-export([check_init/3]).
 
 %% 注册通道类型
 -channel_type(#{
@@ -231,6 +232,11 @@ handle_message({data, Product, DevAddr, Data, Context}, State) ->
 
 handle_message(config, #state{env = Config} = State) ->
     {reply, {ok, Config}, State};
+
+handle_message({sync_product, <<"Product">>, ObjectId}, #state{id = ChannelId, env = Config} = State) ->
+    do_check(ChannelId, [ObjectId], Config),
+    {ok, State};
+
 handle_message(Message, #state{id = ChannelId, product = ProductId} = _State) ->
     ?LOG(info, "Channel ~p, Product ~p, handle_message ~p", [ChannelId, ProductId, Message]),
     ok.
