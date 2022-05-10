@@ -457,9 +457,11 @@ generateFrom(Trigger) ->
                 #{<<"productKey">> := ProductId, <<"deviceName">> := Devaddr} ->
                     case Devaddr of
                         <<"">> ->
-                            <<"$dg/user/", ProductId/binary, "/", Devaddr/binary>>;
+                            <<"$dg/alarm/", ProductId/binary, "/", Devaddr/binary>>;
+                        <<"#">> ->
+                            <<"$dg/alarm/", ProductId/binary, "/">>;
                         _ ->
-                            <<"$dg/user/", ProductId/binary, "/", Devaddr/binary, "/#">>
+                            <<"$dg/alarm/", ProductId/binary, "/", Devaddr/binary, "/#">>
                     end;
                 _ ->
                     <<"$dg/user/", "test/#">>
@@ -469,9 +471,11 @@ generateFrom(Trigger) ->
                 #{<<"productKey">> := ProductId, <<"deviceName">> := Devaddr} ->
                     case Devaddr of
                         <<"">> ->
-                            <<"$dg/user/", ProductId/binary, "/", Devaddr/binary>>;
+                            <<"$dg/alarm/", ProductId/binary, "/", Devaddr/binary>>;
+                        <<"#">> ->
+                            <<"$dg/alarm/", ProductId/binary, "/">>;
                         _ ->
-                            <<"$dg/user/", ProductId/binary, "/", Devaddr/binary, "/#">>
+                            <<"$dg/alarm/", ProductId/binary, "/", Devaddr/binary, "/#">>
                     end;
                 _ ->
                     <<"$dg/user/", "test/#">>
@@ -489,9 +493,9 @@ generateFrom(Trigger) ->
                     <<"$dg/user/", "test/#">>
             end;
         <<"trigger/timer">> ->
-            <<"$dg/user/", "test/#">>;
+            <<"$dg/alarm/", "test/#">>;
         _ ->
-            <<"$dg/user/", "test/#">>
+            <<"$dg/alarm/", "test/#">>
     end.
 
 generateSelect(Condition, _Trigger, _FROM) ->
