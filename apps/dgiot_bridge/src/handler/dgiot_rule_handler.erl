@@ -501,25 +501,25 @@ generateSelect(Condition, _Trigger, _FROM) ->
                 PropertyName = maps:get(<<"propertyName">>, Params, <<"test">>),
                 case Acc of
                     <<"">> ->
-                        PropertyName;
+                        <<"payload.", PropertyName/binary, "  as ", PropertyName/binary>>;
                     _ ->
-                        <<Acc/binary, ",\r\n   ", PropertyName/binary>>
+                        <<Acc/binary, ",\r\n   ", "payload.", PropertyName/binary, "  as ", PropertyName/binary>>
                 end;
             #{<<"uri">> := <<"condition/device/stateContinue">>, <<"params">> := Params} ->
                 PropertyName = maps:get(<<"propertyName">>, Params, <<"test">>),
                 case Acc of
                     <<"">> ->
-                        PropertyName;
+                        <<"payload.", PropertyName/binary, "  as ", PropertyName/binary>>;
                     _ ->
-                        <<Acc/binary, ",\r\n   ", PropertyName/binary>>
+                        <<Acc/binary, ",\r\n   ", "payload.", PropertyName/binary, "  as ", PropertyName/binary>>
                 end;
             #{<<"uri">> := <<"condition/device/time">>, <<"params">> := Params} ->
                 PropertyName = maps:get(<<"propertyName">>, Params, <<"test">>),
                 case Acc of
                     <<"">> ->
-                        PropertyName;
+                        <<"payload.", PropertyName/binary, "  as ", PropertyName/binary>>;
                     _ ->
-                        <<Acc/binary, ",\r\n   ", PropertyName/binary>>
+                        <<Acc/binary, ",\r\n   ", "payload.", PropertyName/binary, "  as ", PropertyName/binary>>
                 end;
             _ ->
                 Acc
