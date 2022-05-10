@@ -454,40 +454,40 @@ generateFrom(Trigger) ->
     case Uri of
         <<"trigger/product/property">> ->
             case Params of
-                #{<<"productKey">> := ProductId, <<"deviceName">> := Devaddr} ->
-                    case Devaddr of
+                #{<<"productKey">> := ProductId, <<"deviceName">> := DeviceId} ->
+                    case DeviceId of
                         <<"">> ->
-                            <<"$dg/alarm/", ProductId/binary, "/", Devaddr/binary>>;
+                            <<"$dg/alarm/", ProductId/binary, "/#">>;
                         <<"#">> ->
-                            <<"$dg/alarm/", ProductId/binary, "/">>;
+                            <<"$dg/alarm/", ProductId/binary, "/#">>;
                         _ ->
-                            <<"$dg/alarm/", ProductId/binary, "/", Devaddr/binary, "/#">>
+                            <<"$dg/alarm/", ProductId/binary, "/", DeviceId/binary, "/#">>
                     end;
                 _ ->
                     <<"$dg/alarm/", "test/#">>
             end;
         <<"trigger/product/event">> ->
             case Params of
-                #{<<"productKey">> := ProductId, <<"deviceName">> := Devaddr} ->
-                    case Devaddr of
+                #{<<"productKey">> := ProductId, <<"deviceName">> := DeviceId} ->
+                    case DeviceId of
                         <<"">> ->
-                            <<"$dg/alarm/", ProductId/binary, "/", Devaddr/binary>>;
+                            <<"$dg/alarm/", ProductId/binary, "/#">>;
                         <<"#">> ->
-                            <<"$dg/alarm/", ProductId/binary, "/">>;
+                            <<"$dg/alarm/", ProductId/binary, "/#">>;
                         _ ->
-                            <<"$dg/alarm/", ProductId/binary, "/", Devaddr/binary, "/#">>
+                            <<"$dg/alarm/", ProductId/binary, "/", DeviceId/binary, "/#">>
                     end;
                 _ ->
                     <<"$dg/alarm/", "test/#">>
             end;
         <<"trigger/mqtt/event">> ->
             case Params of
-                #{<<"productKey">> := ProductId, <<"mqtt">> := Mqtt, <<"deviceName">> := Devaddr} ->
+                #{<<"productKey">> := ProductId, <<"mqtt">> := Mqtt, <<"deviceName">> := DeviceId} ->
                     case ProductId of
                         <<"">> ->
-                            <<"$events/", Mqtt/binary, "/", ProductId/binary, "/", Devaddr/binary>>;
+                            <<"$events/", Mqtt/binary, "/", ProductId/binary, "/", DeviceId/binary>>;
                         _ ->
-                            <<"$events/", Mqtt/binary, "/", ProductId/binary, "/", Devaddr/binary, "/#">>
+                            <<"$events/", Mqtt/binary, "/", ProductId/binary, "/", DeviceId/binary, "/#">>
                     end;
                 _ ->
                     <<"$dg/alarm/", "test/#">>
