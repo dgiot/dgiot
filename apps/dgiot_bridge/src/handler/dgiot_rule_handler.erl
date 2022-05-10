@@ -266,9 +266,9 @@ device_sql(Select, From, Where, _Method) ->
                    #{<<"productid">> := ProductId, <<"devaddr">> := Devaddr} ->
                        case Devaddr of
                            <<"#">> ->
-                               <<"$dg/user/", ProductId/binary, "/", Devaddr/binary>>;
+                               <<"$dg/alarm/", ProductId/binary, "/", Devaddr/binary>>;
                            _ ->
-                               <<"$dg/user/", ProductId/binary, "/", Devaddr/binary, "/#">>
+                               <<"$dg/alarm/", ProductId/binary, "/", Devaddr/binary, "/#">>
                        end;
                    _ ->
                        <<"thing/", "test/#">>
@@ -464,7 +464,7 @@ generateFrom(Trigger) ->
                             <<"$dg/alarm/", ProductId/binary, "/", Devaddr/binary, "/#">>
                     end;
                 _ ->
-                    <<"$dg/user/", "test/#">>
+                    <<"$dg/alarm/", "test/#">>
             end;
         <<"trigger/product/event">> ->
             case Params of
@@ -478,7 +478,7 @@ generateFrom(Trigger) ->
                             <<"$dg/alarm/", ProductId/binary, "/", Devaddr/binary, "/#">>
                     end;
                 _ ->
-                    <<"$dg/user/", "test/#">>
+                    <<"$dg/alarm/", "test/#">>
             end;
         <<"trigger/mqtt/event">> ->
             case Params of
@@ -490,7 +490,7 @@ generateFrom(Trigger) ->
                             <<"$events/", Mqtt/binary, "/", ProductId/binary, "/", Devaddr/binary, "/#">>
                     end;
                 _ ->
-                    <<"$dg/user/", "test/#">>
+                    <<"$dg/alarm/", "test/#">>
             end;
         <<"trigger/timer">> ->
             <<"$dg/alarm/", "test/#">>;
