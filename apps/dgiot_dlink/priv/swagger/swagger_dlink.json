@@ -60,6 +60,7 @@
               "Dashboard",
               "Unit",
               "ThingUnit",
+              "ChartType",
               "rule-engine",
               "Category",
               "thing-tsl",
