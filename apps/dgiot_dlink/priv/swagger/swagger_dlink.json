@@ -58,6 +58,7 @@
               "Topic",
               "Dashboard",
               "Unit",
+              'ThingUnit',
               "rule-engine",
               "Category",
               "thing-tsl",
