@@ -1517,7 +1517,7 @@ deployType=single                             # [single | cluster | devops | ci]
 domain_name="prod.iotn2n.com"                 # [prod.iotn2n.com | your_domain_name]
 software="dgiot_n139"                          # [dgiot_n139| dgiot_n]
 plugin="dgiot"                                # [dgiot | dgiot_your_plugin]
-dgiotmd5="2db7806c1bdb7eb5fddbb460af94f285"   # [dgiotmd5]
+dgiotmd5="3da7c2e4929259d3c3c023f67f8bb979"   # [dgiotmd5]
 pg_eip="changeyourip"                            # [datanode_eip]
 pg_auth='changeyourpassword'                  # [pg_auth]
 
