@@ -76,7 +76,15 @@ get_card(ProductId, Results, DeviceId, Args) ->
             #{<<"name">> := Name, <<"identifier">> := Identifier, <<"dataForm">> := #{<<"protocol">> := Protocol}, <<"dataSource">> := DataSource, <<"dataType">> := #{<<"type">> := Typea} = DataType} ->
                 Time = maps:get(<<"createdat">>, Result, dgiot_datetime:now_secs()),
                 NewTime = dgiot_tdengine_field:get_time(dgiot_utils:to_binary(Time), <<"111">>),
-                Devicetype = maps:get(<<"devicetype">>, X, <<"others">>),
+                Devicetype =
+                    case maps:find(<<"devicetype">>, X) of
+                        {ok, <<"">>} ->
+                            <<"others">>;
+                        {ok, Data} when byte_size(Data) > 0 ->
+                            Data;
+                        _ ->
+                            <<"others">>
+                    end,
                 Ico = maps:get(<<"ico">>, X, <<"">>),
                 Specs = maps:get(<<"specs">>, DataType, #{}),
                 Unit = maps:get(<<"unit">>, Specs, <<"">>),
