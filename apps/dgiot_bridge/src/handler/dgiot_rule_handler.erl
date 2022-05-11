@@ -266,9 +266,9 @@ device_sql(Select, From, Where, _Method) ->
                    #{<<"productid">> := ProductId, <<"devaddr">> := Devaddr} ->
                        case Devaddr of
                            <<"#">> ->
-                               <<"$dg/user/", ProductId/binary, "/", Devaddr/binary>>;
+                               <<"$dg/alarm/", ProductId/binary, "/", Devaddr/binary>>;
                            _ ->
-                               <<"$dg/user/", ProductId/binary, "/", Devaddr/binary, "/#">>
+                               <<"$dg/alarm/", ProductId/binary, "/", Devaddr/binary, "/#">>
                        end;
                    _ ->
                        <<"thing/", "test/#">>
@@ -454,44 +454,48 @@ generateFrom(Trigger) ->
     case Uri of
         <<"trigger/product/property">> ->
             case Params of
-                #{<<"productKey">> := ProductId, <<"deviceName">> := Devaddr} ->
-                    case Devaddr of
+                #{<<"productKey">> := ProductId, <<"deviceName">> := DeviceId} ->
+                    case DeviceId of
                         <<"">> ->
-                            <<"$dg/user/", ProductId/binary, "/", Devaddr/binary>>;
+                            <<"$dg/alarm/", ProductId/binary, "/#">>;
+                        <<"#">> ->
+                            <<"$dg/alarm/", ProductId/binary, "/#">>;
                         _ ->
-                            <<"$dg/user/", ProductId/binary, "/", Devaddr/binary, "/#">>
+                            <<"$dg/alarm/", ProductId/binary, "/", DeviceId/binary, "/#">>
                     end;
                 _ ->
-                    <<"$dg/user/", "test/#">>
+                    <<"$dg/alarm/", "test/#">>
             end;
         <<"trigger/product/event">> ->
             case Params of
-                #{<<"productKey">> := ProductId, <<"deviceName">> := Devaddr} ->
-                    case Devaddr of
+                #{<<"productKey">> := ProductId, <<"deviceName">> := DeviceId} ->
+                    case DeviceId of
                         <<"">> ->
-                            <<"$dg/user/", ProductId/binary, "/", Devaddr/binary>>;
+                            <<"$dg/alarm/", ProductId/binary, "/#">>;
+                        <<"#">> ->
+                            <<"$dg/alarm/", ProductId/binary, "/#">>;
                         _ ->
-                            <<"$dg/user/", ProductId/binary, "/", Devaddr/binary, "/#">>
+                            <<"$dg/alarm/", ProductId/binary, "/", DeviceId/binary, "/#">>
                     end;
                 _ ->
-                    <<"$dg/user/", "test/#">>
+                    <<"$dg/alarm/", "test/#">>
             end;
         <<"trigger/mqtt/event">> ->
             case Params of
-                #{<<"productKey">> := ProductId, <<"mqtt">> := Mqtt, <<"deviceName">> := Devaddr} ->
+                #{<<"productKey">> := ProductId, <<"mqtt">> := Mqtt, <<"deviceName">> := DeviceId} ->
                     case ProductId of
                         <<"">> ->
-                            <<"$events/", Mqtt/binary, "/", ProductId/binary, "/", Devaddr/binary>>;
+                            <<"$events/", Mqtt/binary, "/", ProductId/binary, "/", DeviceId/binary>>;
                         _ ->
-                            <<"$events/", Mqtt/binary, "/", ProductId/binary, "/", Devaddr/binary, "/#">>
+                            <<"$events/", Mqtt/binary, "/", ProductId/binary, "/", DeviceId/binary, "/#">>
                     end;
                 _ ->
-                    <<"$dg/user/", "test/#">>
+                    <<"$dg/alarm/", "test/#">>
             end;
         <<"trigger/timer">> ->
-            <<"$dg/user/", "test/#">>;
+            <<"$dg/alarm/", "test/#">>;
         _ ->
-            <<"$dg/user/", "test/#">>
+            <<"$dg/alarm/", "test/#">>
     end.
 
 generateSelect(Condition, _Trigger, _FROM) ->
@@ -501,25 +505,25 @@ generateSelect(Condition, _Trigger, _FROM) ->
                 PropertyName = maps:get(<<"propertyName">>, Params, <<"test">>),
                 case Acc of
                     <<"">> ->
-                        PropertyName;
+                        <<"payload.", PropertyName/binary, "  as ", PropertyName/binary>>;
                     _ ->
-                        <<Acc/binary, ",\r\n   ", PropertyName/binary>>
+                        <<Acc/binary, ",\r\n   ", "payload.", PropertyName/binary, "  as ", PropertyName/binary>>
                 end;
             #{<<"uri">> := <<"condition/device/stateContinue">>, <<"params">> := Params} ->
                 PropertyName = maps:get(<<"propertyName">>, Params, <<"test">>),
                 case Acc of
                     <<"">> ->
-                        PropertyName;
+                        <<"payload.", PropertyName/binary, "  as ", PropertyName/binary>>;
                     _ ->
-                        <<Acc/binary, ",\r\n   ", PropertyName/binary>>
+                        <<Acc/binary, ",\r\n   ", "payload.", PropertyName/binary, "  as ", PropertyName/binary>>
                 end;
             #{<<"uri">> := <<"condition/device/time">>, <<"params">> := Params} ->
                 PropertyName = maps:get(<<"propertyName">>, Params, <<"test">>),
                 case Acc of
                     <<"">> ->
-                        PropertyName;
+                        <<"payload.", PropertyName/binary, "  as ", PropertyName/binary>>;
                     _ ->
-                        <<Acc/binary, ",\r\n   ", PropertyName/binary>>
+                        <<Acc/binary, ",\r\n   ", "payload.", PropertyName/binary, "  as ", PropertyName/binary>>
                 end;
             _ ->
                 Acc
