@@ -10,13 +10,25 @@ EMQX_DASHBOARD_PATH='lib-ce/emqx_dashboard/priv'
 DGIOT_DASHBOARD_PATH='apps/dgiot_api/priv'
 FILESEVER="https://dgiot-release-1306147891.cos.ap-nanjing.myqcloud.com/v4.4.0"
 
-get_dashboard(){
+get_emqx_dashboard(){
   if [ -d "$EMQX_DASHBOARD_PATH/www" ]; then
       echo "emqx_dashboard exist"
   else
+    wget ${FILESEVER}/emqx_dashboard.tar.gz
+    tar xvf emqx_dashboard.tar.gz
+    mv www "$EMQX_DASHBOARD_PATH/"
+    rm emqx_dashboard.tar.gz -rf
+    chmod 777 ./scripts/*
+  fi
+}
+
+get_dgiot_dashboard(){
+  if [ -d "$DGIOT_DASHBOARD_PATH/www" ]; then
+      echo "dgiot_dashboard exist"
+  else
     wget ${FILESEVER}/www.tar.gz
     tar xvf www.tar.gz
-    mv www "$EMQX_DASHBOARD_PATH/"
+    mv www "$DGIOT_DASHBOARD_PATH/"
     rm www.tar.gz -rf
     chmod 777 ./scripts/*
   fi
@@ -92,4 +104,6 @@ get_apps() {
 
  echo "ci"
  get_apps
- get_dashboard
+ get_dgiot_dashboard
+ get_emqx_dashboard
+
