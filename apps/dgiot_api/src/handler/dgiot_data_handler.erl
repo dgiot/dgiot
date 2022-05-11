@@ -405,7 +405,6 @@ do_request(post_relation, #{<<"destClass">> := DestClass, <<"destId">> := DestId
 %% OperationId:get_relation
 %% 请求:get /iotapi/relation
 do_request(get_relation, #{<<"destClass">> := DestClass, <<"destId">> := DestId, <<"destField">> := DestField, <<"srcClass">> := SrcClass} = _Args, _Context, _Req) ->
-    io:format("~s ~p ~p ~n", [?FILE, ?LINE, _Args]),
     Where = #{
         <<"where">> => #{
             <<"$relatedTo">> => #{
@@ -420,7 +419,6 @@ do_request(get_relation, #{<<"destClass">> := DestClass, <<"destId">> := DestId,
         <<"order">> => <<"-updatedAt">>,
         <<"count">> => 1
     },
-    io:format("~s ~p ~p ~n", [?FILE, ?LINE, Where]),
     dgiot_parse:query_object(SrcClass, Where);
 
 
