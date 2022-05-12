@@ -44,7 +44,7 @@
 
 %% @description 备注
 %% 已实现 get post 的适配工作
-get({'before',  '*', Args}) ->
+get({'before', '*', Args}) ->
 %%    io:format("~s ~p Data: ~p ~n", [?FILE, ?LINE, Data]),
     NewData = maps:fold(fun(K, V, Acc) ->
         case V of
@@ -55,9 +55,15 @@ get({'before',  '*', Args}) ->
     Basic = format(NewData),
 %%    io:format("~s ~p Basic: ~p ~n", [?FILE, ?LINE, Basic]),
     Basic;
-get({'before',  _Id,  Args}) ->
-%%    io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Args, _Id]),
-    Args;
+
+get({'after', #{<<"results">> := Response} = _Data}) ->
+%%    io:format("~s ~p ~p~n", [?FILE, ?LINE, _Data]),
+    #{
+        <<"status">> => 0,
+        <<"msg">> => <<"数据请求成功"/utf8>>,
+        <<"data">> => #{<<"items">> => Response}
+    };
+
 get({'after', #{<<"results">> := Response, <<"count">> := Count} = _Data}) ->
     #{
         <<"status">> => 0,
@@ -67,22 +73,36 @@ get({'after', #{<<"results">> := Response, <<"count">> := Count} = _Data}) ->
             <<"total">> => Count
         }
     };
-get({'after', #{<<"results">> := Response} = _Data}) ->
-%%    io:format("~s ~p ~p~n", [?FILE, ?LINE, _Data]),
-    #{
-        <<"status">> => 0,
-        <<"msg">> => <<"数据请求成功"/utf8>>,
-        <<"data">> => #{<<"items">> => Response}
-    };
+
+get({'before', _Id, Args}) ->
+    erlang:put(self(), Args),
+%%    io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Args, _Id]),
+    maps:with([<<"id">>], Args);
+
 %% 查询单个
-get({'after',  Data}) ->
-%%    io:format("~s ~p ~p ~n", [?FILE, ?LINE, Data]),
+get({'after', Data}) ->
+    Args = erlang:get(self()),
+%%    io:format("~s ~p Data ~p ~n", [?FILE, ?LINE, Data]),
+    NewData =
+        case Args of
+            #{<<"keys">> := undefined} ->
+%%                io:format("~s ~p Field ~p ~n", [?FILE, ?LINE, maps:get(Field, Data,#{})]),
+                Data;
+            #{<<"keys">> := Keys} ->
+                NewKeys = re:split(Keys, <<",">>, [{return, binary}, trim]),
+%%                io:format("~s ~p Field ~p ~n", [?FILE, ?LINE, maps:get(Field, Data,#{})]),
+                dgiot_map:with(NewKeys, Data);
+            _ ->
+                Data
+        end,
+%%    io:format("~s ~p NewData ~p ~n", [?FILE, ?LINE, NewData]),
     #{
         <<"status">> => 0,
         <<"msg">> => <<"数据请求成功"/utf8>>,
-        <<"data">> => Data
+        <<"data">> => NewData
     }.
-post({'before',  _Id, Args}) ->
+
+post({'before', _Id, Args}) ->
 %%    io:format("~s ~p ~p ~p~n", [?FILE, ?LINE, Args, Id]),
     Args;
 post({'after', Data}) ->
@@ -92,11 +112,11 @@ post({'after', Data}) ->
         <<"msg">> => <<"数据提交成功"/utf8>>,
         <<"data">> => Data
     }.
-put({'before',  _Id, Args}) ->
+put({'before', _Id, Args}) ->
     erlang:put(self(), Args),
 %%    io:format("~s ~p ~p ~p~n", [?FILE, ?LINE, Args, Id]),
     Args;
-put({'after',  Data}) ->
+put({'after', Data}) ->
     Request = erlang:get(self()),
 %%    io:format("~s ~p ~p~n", [?FILE, ?LINE, Data]),
     #{
@@ -104,11 +124,11 @@ put({'after',  Data}) ->
         <<"msg">> => <<"修改成功"/utf8>>,
         <<"data">> => #{<<"Data">> => Data, <<"Request">> => Request}
     }.
-delete({'before',  _Id,  Args}) ->
+delete({'before', _Id, Args}) ->
     erlang:put(self(), Args),
 %%    io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Args, Id]),
     Args;
-delete({'after',  Data}) ->
+delete({'after', Data}) ->
     Request = erlang:get(self()),
 %%    io:format("~s ~p ~p~n", [?FILE, ?LINE, Data]),
     #{

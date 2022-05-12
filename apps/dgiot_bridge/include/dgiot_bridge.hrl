@@ -16,6 +16,7 @@
 
 -author("kenneth").
 -define(DGIOT_BRIDGE, dgiot_bridge).
+-define(DGIOT_PRODUCT_CHANNEL, dgiot_product_channel).
 -define(DGIOT_RUlES, dgiot_rules).
 %% CHANNEL TYPE
 -define(PROTOCOL_CHL, 1).
@@ -23,6 +24,6 @@
 -define(BACKEND_CHL, 3).
 -define(FEATURE_CHL, 4).
 -define(AUTH_CHL, 5).
--define(defult_CHL, 5).
+-define(DEFAULT_CHL, 5).
 -define(DGIOT_SUP(Name), dgiot_utils:to_atom(lists:concat(["dgiot_sup", dgiot_utils:to_atom(Name)]))).
 

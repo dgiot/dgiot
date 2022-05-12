@@ -49,16 +49,17 @@ stop(_State) ->
 prep_stop(State) ->
     emqx:unhook('client.authenticate', fun dgiot_mqtt_auth:check/3),
     emqx:unhook('client.check_acl', fun dgiot_mqtt_acl:check_acl/5),
+    emqx:unhook('message.publish', fun dgiot_mqtt_message:on_message_publish/2),
     State.
 
 %% todo dlink auth
 load_auth_hook() ->
-%%    emqx:hook('client.authenticate', fun dgiot_mqtt_auth:check/3, [#{hash_type => plain}]).
+    emqx:hook('client.authenticate', fun dgiot_mqtt_auth:check/3, [#{hash_type => plain}]),
     ok.
 load_acl_hook() ->
-%%    emqx:hook('client.check_acl', fun dgiot_mqtt_acl:check_acl/5, [#{}]).
+    emqx:hook('client.check_acl', fun dgiot_mqtt_acl:check_acl/5, [#{}]),
     ok.
 load_publish_hook() ->
-%%    emqx:hook('message.publish', fun dgiot_mqtt_message:on_message_publish/2, [#{}]).
+    emqx:hook('message.publish', fun dgiot_mqtt_message:on_message_publish/2, [#{}]),
     ok.
 

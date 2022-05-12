@@ -83,13 +83,13 @@ init(?TYPE, ChannelId, #{
                 dgiot_data:insert({mqttd, ProductId}, {Acl, maps:get(<<"properties">>, Thing, [])}),
 %%              创建连接规则
                 ConRawsql = <<"SELECT clientid, connected_at FROM \"$events/client_connected\" WHERE username = '", ProductId/binary, "'">>,
-                create_rules(<<"rule:connected_", ProductId/binary>>, ChannelId, <<"创建连接规则"/utf8>>, ConRawsql, <<"/${productid}/#">>),
+                dgiot_rule_handler:create_rules(<<"rule:connected_", ProductId/binary>>, ChannelId, <<"创建连接规则"/utf8>>, ConRawsql, <<"/${productid}/#">>),
 %%              创建断开连接规则
                 DisRawsql = <<"SELECT clientid, disconnected_at FROM \"$events/client_disconnected\" WHERE username = '", ProductId/binary, "'">>,
-                create_rules(<<"rule:disconnected_", ProductId/binary>>, ChannelId, <<"断开连接规则"/utf8>>, DisRawsql, <<"/${productid}/#">>),
+                dgiot_rule_handler:create_rules(<<"rule:disconnected_", ProductId/binary>>, ChannelId, <<"断开连接规则"/utf8>>, DisRawsql, <<"/${productid}/#">>),
                 %%              创建上传数据规则
                 MetaRawsql = <<"SELECT payload.msg as msg,clientid,'", ProductId/binary, "' as productid FROM \"/", ProductId/binary, "/#\" WHERE username = '", ProductId/binary, "'">>,
-                create_rules(<<"rule:metadata_", ProductId/binary>>, ChannelId, <<"派生物模型上报规则"/utf8>>, MetaRawsql, <<"/${productid}/#">>);
+                dgiot_rule_handler:create_rules(<<"rule:metadata_", ProductId/binary>>, ChannelId, <<"派生物模型上报规则"/utf8>>, MetaRawsql, <<"/${productid}/#">>);
             _ ->
                 io:format("~s ~p X = ~p.~n", [?FILE, ?LINE, X]),
                 pass
@@ -130,66 +130,7 @@ handle_event('client.disconnected', {rule, #{clientid := DeviceId, disconnected_
 handle_event(_EventId, _Event, State) ->
     {ok, State}.
 
-handle_message({rule, #{clientid := _DeviceId, username := ProductId, payload := Payload, topic := Topic, peerhost := Peerhost} = _Msg, _Context}, State) ->
-%%    io:format("~s ~p Msg = ~p.~n", [?FILE, ?LINE, Msg]),
-    case jsx:is_json(Payload) of
-        true ->
-            case binary:split(Topic, <<$/>>, [global, trim]) of
-%%                     /ecfd3a227c/6C4B909AF64A/metadata/derived  派生物模型上报
-                [<<>>, ProductId, DtuAddr, <<"metadata">>, <<"derived">>] ->
-                    create_device(ProductId, DtuAddr, <<"MQTT_", DtuAddr/binary>>, Peerhost),
-                    case jsx:decode(Payload, [{labels, binary}, return_maps]) of
-                        #{<<"timestamp">> := _Timestamp,
-                            <<"metadata">> := Metadata,
-                            <<"all">> := _All} when is_map(Metadata) ->
-%%                            io:format("~s ~p Metadata = ~p.~n", [?FILE, ?LINE, Metadata]),
-                            dgiot_task:save_pnque(ProductId, DtuAddr, ProductId, DtuAddr),
-                            dgiot_opc:send_properties(ProductId, DtuAddr, Metadata);
-                        _Other1 ->
-                            io:format("~s ~p error: ~p~n", [?FILE, ?LINE, _Other1]),
-                            pass
-                    end;
-                [<<>>, ProductId, DtuAddr, <<"report">>, <<"opc">>, <<"properties">>] ->
-                    create_device(ProductId, DtuAddr, <<"OPC_", DtuAddr/binary>>, Peerhost),
-                    case jsx:decode(Payload, [{labels, binary}, return_maps]) of
-                        #{<<"properties">> := Properties} when is_map(Properties) ->
-%%                            io:format("~s ~p Metadata = ~p.~n", [?FILE, ?LINE, Properties]),
-                            dgiot_task:save_pnque(ProductId, DtuAddr, ProductId, DtuAddr),
-                            dgiot_opc:send_properties(ProductId, DtuAddr, Properties);
-                        _Other1 ->
-                            io:format("~s ~p error: ~p~n", [?FILE, ?LINE, _Other1]),
-                            pass
-                    end;
-%%%%                扫描子设备: /{productId}/{deviceAddr}/scan/{protocol}
-%%                [<<>>, ProductId, DtuAddr, <<"scan">>, <<"OPC_DA">>] ->
-%%                    case jsx:decode(Payload, [{labels, binary}, return_maps]) of
-%%                        #{} ->
-%%                            opc_da;
-%%                        _ ->
-%%                            pass
-%%                    end;
-%%                [<<>>, ProductId, DtuAddr, <<"scan">>, <<"OPC_UA">>] ->
-%%                    case jsx:decode(Payload, [{labels, binary}, return_maps]) of
-%%                        #{} ->
-%%                            opc_ua;
-%%                        _ ->
-%%                            pass
-%%                    end;
-%%                [<<>>, ProductId, DtuAddr, <<"scan">>, <<"PLC">>] ->
-%%                    case jsx:decode(Payload, [{labels, binary}, return_maps]) of
-%%                        #{} ->
-%%                            plc;
-%%                        _ ->
-%%                            pass
-%%                    end;
-                _Error ->
-                    io:format("~s ~p error: ~p~n", [?FILE, ?LINE, _Error]),
-                    pass
-            end;
-        _Error1 ->
-            io:format("~s ~p error: ~p~n", [?FILE, ?LINE, _Error1]),
-            pass
-    end,
+handle_message({rule, _Msg, _Context}, State) ->
     {ok, State};
 
 handle_message(_Message, State) ->
@@ -211,62 +152,3 @@ updat_device(DeviceId, DTUIP, Status) ->
             pass
     end.
 
-%%新设备
-create_device(ProductId, DtuAddr, Name, DTUIP) ->
-    {Acl, _Properties} = dgiot_data:get({mqttd, ProductId}),
-    Requests = #{
-        <<"devaddr">> => DtuAddr,
-        <<"name">> => Name,
-        <<"ip">> => DTUIP,
-        <<"isEnable">> => true,
-        <<"product">> => ProductId,
-        <<"ACL">> => Acl,
-        <<"status">> => <<"ONLINE">>,
-        <<"brand">> => Name,
-        <<"devModel">> => <<"MATLAB">>
-    },
-    dgiot_device:create_device(Requests).
-
-create_rules(RuleID, ChannelId, Description, Rawsql, Target_topic) ->
-    emqx_rule_engine_api:create_resource(#{},
-        [
-            {<<"id">>, <<"resource:", ChannelId/binary>>},
-            {<<"type">>, <<"dgiot_resource">>},
-            {<<"config">>, [{<<"channel">>, ChannelId}]},
-            {<<"description">>, <<"resource:", ChannelId/binary>>}
-        ]),
-    Params = #{
-        <<"actions">> => [#{<<"name">> => <<"dgiot">>, <<"fallbacks">> => [],
-            <<"params">> => #{
-                <<"$resource">> => <<"resource:", ChannelId/binary>>,
-                <<"channel">> => <<"数蛙物联网通道"/utf8>>,
-                <<"payload_tmpl">> => <<"${payload}">>,
-                <<"target_qos">> => 0,
-                <<"target_topic">> => Target_topic
-            }}],
-        <<"enabled">> => true,
-        <<"ctx">> => #{
-            <<"clientid">> => <<"c_swqx">>,
-            <<"payload">> => <<"{\"msg\":\"hello\"}">>,
-            <<"qos">> => 1,
-            <<"topic">> => <<"t/a">>,
-            <<"username">> => <<"u_swqx">>
-        },
-        <<"description">> => Description,
-        <<"for">> => <<"[\"t/#\"]">>,
-        <<"rawsql">> => Rawsql
-    },
-    ObjectId = dgiot_parse_id:get_dictid(RuleID, <<"ruleengine">>, <<"Rule">>, <<"Rule">>),
-    case dgiot_parse:get_object(<<"Dict">>, ObjectId) of
-        {ok, _} ->
-            dgiot_rule_handler:save_rule_to_dict(RuleID, Params);
-        _ ->
-            R = emqx_rule_engine_api:create_rule(#{}, maps:to_list(Params)),
-            case R of
-                {ok, #{data := #{id := EmqxRuleId}}} ->
-                    dgiot_data:delete(?DGIOT_RUlES, EmqxRuleId),
-                    emqx_rule_engine_api:delete_rule(#{id => EmqxRuleId}, []),
-                    dgiot_rule_handler:save_rule_to_dict(RuleID, Params);
-                _ -> pass
-            end
-    end.

@@ -195,7 +195,7 @@ sendSubscribe_test(UserId, #{<<"data">> := Data,
 
 %% 总控台
 get_wechat_index(SessionToken) ->
-    case dgiot_parse:query_object(<<"Device">>, #{<<"keys">> => [<<"count(*)">>], <<"limit">> => 1000}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+    case dgiot_parse:query_object(<<"Device">>, #{<<"count">> => <<"objectId">>, <<"limit">> => 1000}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
         {ok, #{<<"count">> := Count, <<"results">> := Results}} ->
             {ONLINE, OFFLINE} =
                 lists:foldl(fun(X, {Online, Offline}) ->
@@ -209,14 +209,14 @@ get_wechat_index(SessionToken) ->
                     end
                             end, {[], []}, Results),
             NotificationCount =
-                case dgiot_parse:query_object(<<"Notification">>, #{<<"keys">> => [<<"count(*)">>], <<"limit">> => 1}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+                case dgiot_parse:query_object(<<"Notification">>, #{<<"count">> => <<"objectId">>, <<"limit">> => 1}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
                     {ok, #{<<"count">> := NotCount, <<"results">> := _}} ->
                         NotCount;
                     _ ->
                         0
                 end,
             UnPanalarmCount =
-                case dgiot_parse:query_object(<<"Notification">>, #{<<"keys">> => [<<"count(*)">>], <<"limit">> => 1, <<"where">> => #{<<"status">> => 0}}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+                case dgiot_parse:query_object(<<"Notification">>, #{<<"count">> => <<"objectId">>, <<"limit">> => 1, <<"where">> => #{<<"status">> => 0}}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
                     {ok, #{<<"count">> := UnCount, <<"results">> := _}} ->
                         UnCount;
                     _ ->
@@ -286,7 +286,7 @@ sendTemplate() ->
     end.
 
 get_wechat_map(SessionToken) ->
-    case dgiot_parse:query_object(<<"Device">>, #{<<"keys">> => [<<"count(*)">>], <<"limit">> => 1000}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+    case dgiot_parse:query_object(<<"Device">>, #{<<"count">> => <<"objectId">>, <<"limit">> => 1000}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
         {ok, #{<<"results">> := Results}} ->
             NewResult =
                 lists:foldl(fun(X, Acc) ->
@@ -327,7 +327,7 @@ get_device_info(Deviceid, SessionToken) ->
     end.
 
 %% 告警列表
-%% dgiot_parse:query_object(<<"Notification">>, #{<<"keys">> => [<<"count(*)">>],<<"where">> => #{<<"type">> => #{<<"$regex">> => <<"c1e44b39f0">>}}}).
+%% dgiot_parse:query_object(<<"Notification">>, #{<<"count">> => <<"objectId">>,<<"where">> => #{<<"type">> => #{<<"$regex">> => <<"c1e44b39f0">>}}}).
 get_notification(ProductId1, SessionToken, Order, Limit, Skip, Where) ->
     Where1 =
         case ProductId1 of
@@ -336,64 +336,71 @@ get_notification(ProductId1, SessionToken, Order, Limit, Skip, Where) ->
             ProductId2 ->
                 Where#{<<"type">> => #{<<"$regex">> => ProductId2}}
         end,
-    case dgiot_parse:query_object(<<"Notification">>, #{<<"keys">> => [<<"count(*)">>], <<"order">> => Order, <<"limit">> => Limit, <<"skip">> => Skip, <<"where">> => Where1}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+    case dgiot_parse:query_object(<<"Notification">>, #{<<"count">> => <<"objectId">>, <<"order">> => Order, <<"limit">> => Limit, <<"skip">> => Skip, <<"where">> => Where1}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
         {ok, #{<<"count">> := Count, <<"results">> := Results}} ->
             NewResult =
                 lists:foldl(fun(X, Acc) ->
-                    case X of
-                        #{<<"objectId">> := ObjectId, <<"type">> := Type, <<"public">> := Public, <<"status">> := Status, <<"content">> := Content, <<"process">> := Process, <<"createdAt">> := Createdat} ->
-                            Alertstatus = maps:get(<<"alertstatus">>, Content, true),
-                            DeviceId = maps:get(<<"_deviceid">>, Content, <<"">>),
-                            Productid = maps:get(<<"_productid">>, Content, <<"">>),
-                            case dgiot_parse:get_object(<<"Device">>, DeviceId) of
-                                {ok, #{<<"name">> := DeviceName, <<"devaddr">> := Devaddr, <<"detail">> := Detail}} ->
-                                    Address = maps:get(<<"address">>, Detail, <<"无位置"/utf8>>),
-                                    Newdate = dgiot_datetime:format(dgiot_datetime:to_localtime(Createdat), <<"YY-MM-DD HH:NN:SS">>),
-                                    case binary:split(Type, <<$_>>, [global, trim]) of
-                                        [Productid, <<"status">>] ->
-                                            case dgiot_parse:get_object(<<"Product">>, Productid) of
-                                                {ok, #{<<"name">> := ProductName}} ->
-                                                    Acc ++ [#{<<"objectId">> => ObjectId, <<"dynamicform">> => [#{<<"设备编号"/utf8>> => Devaddr}, #{<<"设备地址"/utf8>> => Address}, #{<<"报警内容"/utf8>> => <<"设备"/utf8, DeviceName/binary, "离线"/utf8>>}, #{<<"离线时间"/utf8>> => Newdate}], <<"alertstatus">> => Alertstatus, <<"productname">> => ProductName, <<"devicename">> => DeviceName, <<"process">> => Process, <<"content">> => Content, <<"public">> => Public, <<"status">> => Status, <<"createdAt">> => Createdat}];
-                                                _ ->
-                                                    Acc
-                                            end;
-                                        [ProductId, AlertId] ->
-                                            case dgiot_parse:get_object(<<"Product">>, ProductId) of
-                                                {ok, #{<<"name">> := ProductName, <<"config">> := #{<<"parser">> := Parser}}} ->
-                                                    lists:foldl(fun(P, Par) ->
-                                                        case P of
-                                                            #{<<"uid">> := AlertId, <<"config">> := #{<<"formDesc">> := FormDesc}} ->
-                                                                FormD =
-                                                                    maps:fold(fun(Key, Value1, Form) ->
-                                                                        case maps:find(Key, Content) of
-                                                                            {ok, Value} ->
-                                                                                Label = maps:get(<<"label">>, Value1),
-                                                                                Form ++ [#{Label => Value}];
-                                                                            _ ->
-                                                                                Label = maps:get(<<"label">>, Value1),
-                                                                                Default = maps:get(<<"default">>, Value1, <<>>),
-                                                                                Form ++ [#{Label => Default}]
-                                                                        end
-                                                                              end, [], FormDesc),
-                                                                Acc ++ [Par#{<<"dynamicform">> => FormD ++ [#{<<"报警时间"/utf8>> => Newdate}]}];
-                                                            _Oth ->
-                                                                Acc ++ [Par]
-                                                        end
-                                                                end, #{<<"objectId">> => ObjectId, <<"alertstatus">> => Alertstatus, <<"productname">> => ProductName, <<"devicename">> => DeviceName, <<"process">> => Process, <<"public">> => Public, <<"status">> => Status, <<"createdAt">> => Newdate}, Parser);
-                                                _Other ->
-                                                    Acc
-                                            end;
-                                        _Other1 ->
-                                            Acc
-                                    end;
-                                _ ->
-                                    Acc
-                            end;
-                        _Other2 ->
-                            Acc
-                    end
+                    Acc ++ get_list(X)
                             end, [], Results),
             {ok, #{<<"count">> => Count, <<"results">> => NewResult}};
         _ ->
-            {error, <<"no device">>}
+            {ok, #{<<"msg">> => <<"no device">>, <<"results">> => []}}
+    end.
+
+get_list(#{<<"objectId">> := ObjectId} = Result) ->
+    Createdat = maps:get(<<"createdAt">>, Result),
+    Type = maps:get(<<"type">>, Result, <<"">>),
+    Public = maps:get(<<"public">>, Result, true),
+    Status = maps:get(<<"status">>, Result, 0),
+    Process = maps:get(<<"process">>, Result, <<"">>),
+    Content = maps:get(<<"content">>, Result, #{}),
+    Alertstatus = maps:get(<<"alertstatus">>, Content, true),
+    DeviceId = maps:get(<<"_deviceid">>, Content, <<"">>),
+    Productid = maps:get(<<"_productid">>, Content, <<"">>),
+    case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+        {ok, #{<<"name">> := DeviceName, <<"devaddr">> := Devaddr, <<"detail">> := Detail}} ->
+            Address = maps:get(<<"address">>, Detail, <<"无位置"/utf8>>),
+            Newdate = dgiot_datetime:format(dgiot_datetime:to_localtime(Createdat), <<"YY-MM-DD HH:NN:SS">>),
+            case binary:split(Type, <<$_>>, [global, trim]) of
+                [Productid, <<"status">>] ->
+                    case dgiot_parse:get_object(<<"Product">>, Productid) of
+                        {ok, #{<<"name">> := ProductName}} ->
+                            [#{<<"objectId">> => ObjectId, <<"dynamicform">> => [#{<<"设备编号"/utf8>> => Devaddr}, #{<<"设备地址"/utf8>> => Address}, #{<<"报警内容"/utf8>> => <<"设备"/utf8, DeviceName/binary, "离线"/utf8>>}, #{<<"离线时间"/utf8>> => Newdate}], <<"alertstatus">> => Alertstatus, <<"productname">> => ProductName, <<"devicename">> => DeviceName, <<"process">> => Process, <<"content">> => Content, <<"public">> => Public, <<"status">> => Status, <<"createdAt">> => Createdat}];
+                        _ ->
+                            []
+                    end;
+                [ProductId, AlertId] ->
+                    get_product_not(AlertId, ProductId, Content, Newdate, ObjectId, Alertstatus, DeviceName, Process, Public, Status);
+                _Other1 ->
+                    []
+            end;
+        _ ->
+            []
+    end.
+
+get_product_not(AlertId, ProductId, Content, Newdate, ObjectId, Alertstatus, DeviceName, Process, Public, Status) ->
+    case dgiot_parse:get_object(<<"Product">>, ProductId) of
+        {ok, #{<<"name">> := ProductName, <<"config">> := #{<<"parser">> := Parser}}} ->
+            lists:foldl(fun(P, Par) ->
+                case P of
+                    #{<<"uid">> := AlertId, <<"config">> := #{<<"formDesc">> := FormDesc}} ->
+                        FormD =
+                            maps:fold(fun(Key, Value1, Form) ->
+                                case maps:find(Key, Content) of
+                                    {ok, Value} ->
+                                        Label = maps:get(<<"label">>, Value1),
+                                        Form ++ [#{Label => Value}];
+                                    _ ->
+                                        Label = maps:get(<<"label">>, Value1),
+                                        Default = maps:get(<<"default">>, Value1, <<>>),
+                                        Form ++ [#{Label => Default}]
+                                end
+                                      end, [], FormDesc),
+                        [Par#{<<"dynamicform">> => FormD ++ [#{<<"报警时间"/utf8>> => Newdate}]}];
+                    _Oth ->
+                        [Par]
+                end
+                        end, #{<<"objectId">> => ObjectId, <<"alertstatus">> => Alertstatus, <<"productname">> => ProductName, <<"devicename">> => DeviceName, <<"process">> => Process, <<"public">> => Public, <<"status">> => Status, <<"createdAt">> => Newdate}, Parser);
+        _Other ->
+            []
     end.

@@ -180,19 +180,19 @@ on_action_dgiot(Selected, #{event := Event} = Envs) ->
             dgiot_channelx:do_event(ChannelId, EventId, {rule, Msg, Selected})
     end.
 
-%% SELECT payload, payload.dump_energy as dump_energy, clientid, 'productid' as productid FROM "notification/c1e44b39f0/868615051803274/#"
-%% WHERE (dump_energy < 90 or ad > 1) And ( da = 1 and d > 1) And ()
-post_rule(#{metadata := #{rule_id := <<"rule:Notification_", Ruleid/binary>>}, clientid := DevAddr, payload := Payload, topic := _Topic}) ->
-%%    ?LOG(info, "Msg ~p", [Msg]),
-    NewPayload = jsx:decode(Payload, [{labels, binary}, return_maps]),
-    dgiot_umeng:add_notification(Ruleid, DevAddr, NewPayload);
-
-%% SELECT payload, payload.dump_energy as dump_energy, clientid, 'productid' as productid FROM "notification/c1e44b39f0/868615051803274/#" WHERE dump_energy < 90
-post_rule(#{metadata := #{rule_id := <<"rule:profile_", Ruleid/binary>>}, clientid := DevAddr, payload := Payload, topic := _Topic}) ->
-%%    ?LOG(info, "Msg ~p", [Msg]),
-    NewPayload = jsx:decode(Payload, [{labels, binary}, return_maps]),
-    dgiot_umeng:add_notification(Ruleid, DevAddr, NewPayload);
+%%%% SELECT payload, payload.dump_energy as dump_energy, clientid, 'productid' as productid FROM "notification/c1e44b39f0/868615051803274/#"
+%%%% WHERE (dump_energy < 90 or ad > 1) And ( da = 1 and d > 1) And ()
+%%post_rule(#{metadata := #{rule_id := <<"rule:Notification_", Ruleid/binary>>}, clientid := DevAddr, payload := Payload, topic := _Topic}) ->
+%%%%    ?LOG(info, "Msg ~p", [Msg]),
+%%    NewPayload = jsx:decode(Payload, [{labels, binary}, return_maps]),
+%%    dgiot_umeng:add_notification(Ruleid, DevAddr, NewPayload);
+%%
+%%%% SELECT payload, payload.dump_energy as dump_energy, clientid, 'productid' as productid FROM "notification/c1e44b39f0/868615051803274/#" WHERE dump_energy < 90
+%%post_rule(#{metadata := #{rule_id := <<"rule:profile_", Ruleid/binary>>}, clientid := DevAddr, payload := Payload, topic := _Topic}) ->
+%%%%    ?LOG(info, "Msg ~p", [Msg]),
+%%    NewPayload = jsx:decode(Payload, [{labels, binary}, return_maps]),
+%%    dgiot_umeng:add_notification(Ruleid, DevAddr, NewPayload);
 
 post_rule(Msg) ->
-%%    io:format("~s ~p Msg = ~p.~n", [?FILE, ?LINE, Msg]),
-    ?LOG(debug, "~s ~p Msg = ~p.~n", [?FILE, ?LINE, Msg]).
+    io:format("~s ~p Msg = ~p.~n", [?FILE, ?LINE, Msg]).
+%%    ?LOG(debug, "~s ~p Msg = ~p.~n", [?FILE, ?LINE, Msg]).

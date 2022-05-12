@@ -27,6 +27,8 @@
 
 -export([send_verification_code/2, check_verification_code/2]).
 
+-export([get_newbody/1]).
+
 init_ets() ->
     dgiot_data:init(?NOTIFICATION).
 
@@ -106,9 +108,9 @@ send_sms(NationCode, Mobile, TplId, Params, Ext) ->
     end.
 
 test_email() ->
-    Map   = #{
+    Map = #{
         <<"from">> => <<"18257190166@163.com">>,
-        <<"to">> =>   [<<"463544084@qq.com">>],
+        <<"to">> => [<<"463544084@qq.com">>],
         <<"subject">> => <<"测试邮件"/utf8>>,
         <<"fromdes">> => <<"徐 <18257190166@163.com>"/utf8>>,
         <<"todes">> => <<"唐 <463544084@qq.com>"/utf8>>,
@@ -135,15 +137,53 @@ test_email() ->
 %%{trace_fun, fun( (Fmt :: string(), Args :: [any()]) -> any() )}].
 
 send_email(Email) ->
-    From = maps:get(<<"from">>,Email,<<"dgiot@163.com">>),
-    To = maps:get(<<"to">>,Email, <<"3333333@qq.com">>),
+    From = maps:get(<<"from">>, Email, <<"dgiot@163.com">>),
+    To = maps:get(<<"to">>, Email, <<"3333333@qq.com">>),
     ArrTo = binary:split(To, <<$,>>, [global, trim]),
-    Subject =  maps:get(<<"subject">>, Email, <<"测试邮件"/utf8>>),
-    FromDes  = maps:get(<<"fromdes">>, Email, <<"dgiot开源物联网 <dgiot@163.com>"/utf8>>),
-    ToDes  = maps:get(<<"todes">>, Email, <<"dgiot用户 <3333333@qq.com>"/utf8>>),
+    Subject = maps:get(<<"subject">>, Email, <<"测试邮件"/utf8>>),
+    FromDes = maps:get(<<"fromdes">>, Email, <<"dgiot开源物联网 <dgiot@163.com>"/utf8>>),
+    ToDes = maps:get(<<"todes">>, Email, <<"dgiot用户 <3333333@qq.com>"/utf8>>),
     Data = maps:get(<<"data">>, Email, <<"dgiot邮件 中文测试 欢迎访问 https://github.com/dgiot "/utf8>>),
     BodyBin = <<"Subject: ", Subject/binary, "\r\n", "From: ", FromDes/binary, "\r\n", "To:", ToDes/binary, "\r\n\r\n", Data/binary>>,
     Relay = maps:get(<<"relay">>, Email, <<"smtp.163.com">>),
-    UserName = maps:get(<<"username">>,Email, <<"dgiot@163.com">>),
+    UserName = maps:get(<<"username">>, Email, <<"dgiot@163.com">>),
     PassWord = maps:get(<<"password">>, Email, <<"yourstmppassword">>),
     gen_smtp_client:send({From, ArrTo, BodyBin}, [{relay, Relay}, {username, UserName}, {password, PassWord}]).
+
+
+get_newbody(#{<<"results">> := Results} = Map) ->
+    NewResults =
+        lists:foldl(fun(Notificat, Acc) ->
+            Acc ++ [get_newbody(Notificat)]
+                    end, [], Results),
+    Map#{<<"results">> => NewResults};
+
+get_newbody(#{<<"objectId">> := _Notificatid} = Map) ->
+    Content = maps:get(<<"content">>, Map, #{}),
+    ProductId = maps:get(<<"_productid">>, Content, <<>>),
+    DeviceId = maps:get(<<"_deviceid">>, Content, <<>>),
+    ViewId = maps:get(<<"_viewid">>, Content, <<>>),
+    ProductName =
+        case dgiot_product:lookup_prod(ProductId) of
+            {ok, #{<<"name">> := Name}} ->
+                Name;
+            _ ->
+                <<>>
+        end,
+    DevAddr =
+        case dgiot_device:lookup(DeviceId) of
+            {ok, #{<<"devaddr">> := Devaddr}} ->
+                Devaddr;
+            _ ->
+                <<>>
+        end,
+    Map#{
+        <<"productid">> => ProductId,
+        <<"productname">> => ProductName,
+        <<"deviceid">> => DeviceId,
+        <<"devaddr">> => DevAddr,
+        <<"viewid">> => ViewId
+    };
+
+get_newbody(Body) ->
+    Body.

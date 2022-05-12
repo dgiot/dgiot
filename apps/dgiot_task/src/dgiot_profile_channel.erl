@@ -63,7 +63,10 @@
         type => enum,
         required => false,
         default => <<"incremental"/utf8>>,
-        enum => [<<"incremental">>, <<"fullamount">>],
+        enum => [
+            #{<<"value">> => <<"incremental">>, <<"label">> => <<"incremental"/utf8>>},
+            #{<<"value">> => <<"fullamount">>, <<"label">> => <<"fullamount"/utf8>>}
+        ],
         title => #{
             zh => <<"下发模式"/utf8>>
         },

@@ -22,7 +22,7 @@
 -include_lib("dgiot/include/logger.hrl").
 
 %% API
--export([swagger_tdengine/0, get_props/1]).
+-export([swagger_tdengine/0]).
 -export([handle/4]).
 
 
@@ -122,34 +122,35 @@ do_request(get_device_deviceid, #{<<"deviceid">> := DeviceId} = Args, #{<<"sessi
             ?LOG(info, "DeviceId ~p", [DeviceId]),
             case dgiot_parse:get_object(<<"Device">>, DeviceId) of
                 {ok, #{<<"objectId">> := DeviceId, <<"product">> := #{<<"objectId">> := ProductId}}} ->
-                    get_tddata(Channel, ProductId, DeviceId, Args);
+                    dgiot_product_tdengine:get_product_data(Channel, ProductId, DeviceId, Args);
                 _ ->
                     {error, <<"not find device">>}
             end
     end;
 
-%% TDengine 概要: 获取设备数据图表 描述:获取设备数据图表
+%% TDengine 概要: 获取设备历史数据图表 描述:获取设备历史数据图表
 do_request(get_echart_deviceid, #{<<"deviceid">> := DeviceId} = Args, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
     case dgiot_product_tdengine:get_channel(SessionToken) of
         {error, Error} -> {error, Error};
         {ok, Channel} ->
             case dgiot_parse:get_object(<<"Device">>, DeviceId) of
                 {ok, #{<<"objectId">> := DeviceId, <<"product">> := #{<<"objectId">> := ProductId}}} ->
-                    get_chartdata(Channel, ProductId, DeviceId, Args);
+                    dgiot_device_echart:get_echart_data(Channel, ProductId, DeviceId, Args);
                 _ ->
                     {error, <<"not find device">>}
             end
     end;
 
 %% TDengine 概要: 获取当前设备最新时序数据卡片
-do_request(get_app_deviceid, #{<<"deviceid">> := DeviceId} = Args, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
+do_request(get_devicecard_deviceid, #{<<"deviceid">> := DeviceId} = Args, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
     case dgiot_product_tdengine:get_channel(SessionToken) of
-        {error, Error} -> {error, Error};
+        {error, Error} ->
+            {error, Error};
         {ok, Channel} ->
 %%            ?LOG(info,"DeviceId ~p", [DeviceId]),
             case dgiot_parse:get_object(<<"Device">>, DeviceId) of
                 {ok, #{<<"objectId">> := DeviceId, <<"product">> := #{<<"objectId">> := ProductId}}} ->
-                    get_appdata(Channel, ProductId, DeviceId, Args);
+                    dgiot_device_card:get_device_card(Channel, ProductId, DeviceId, Args);
                 _ ->
                     {error, <<"not find device">>}
             end
@@ -159,173 +160,5 @@ do_request(get_app_deviceid, #{<<"deviceid">> := DeviceId} = Args, #{<<"sessionT
 do_request(_OperationId, _Args, _Context, _Req) ->
     {error, <<"Not Allowed.">>}.
 
-get_tddata(Channel, ProductId, DeviceId, Args) ->
-    Query = maps:without([<<"productid">>, <<"deviceid">>], Args),
-    ?LOG(info, "Channel ~p Args ~p", [Channel, Args]),
-    case dgiot_data:get({tdengine_os, Channel}) of
-        <<"windows">> ->
-            Keys =
-                lists:foldl(fun(X, Acc) ->
-                    case X of
-                        <<"count(*)">> -> Acc ++ [<<"count(*)">>];
-                        <<"*">> -> Acc ++ [<<"values">>];
-                        _ -> Acc ++ [<<"values.", X/binary>>]
-                    end
-                            end, [], binary:split(maps:get(<<"keys">>, Args, <<"count(*)">>), <<$,>>, [global, trim])),
-            Query2 = Query#{<<"where">> => #{<<"product">> => ProductId,
-                <<"device">> => DeviceId}, <<"keys">> => Keys},
-            ?LOG(info, "Query2 ~p", [Query2]),
-            case dgiot_parse:query_object(<<"Timescale">>, Query2) of
-                {ok, #{<<"results">> := Results} = All} when length(Results) > 0 ->
-                    Data = lists:foldl(fun(X, Acc) ->
-                        Acc ++ [maps:get(<<"values">>, X)]
-                                       end, [], Results),
-                    {ok, All#{<<"results">> => Data}};
-                {ok, #{<<"results">> := Result}} ->
-                    {error, Result};
-                Error ->
-                    Error
-            end;
-        _ ->
-            Where = maps:get(<<"where">>, Args),
-            Query = maps:without([<<"productid">>, <<"deviceid">>], Args),
-            TableName = ?Table(DeviceId),
-            case dgiot_tdengine:query_object(Channel, TableName, Query#{
-                <<"db">> => ProductId,
-                <<"where">> => Where
-            }) of
-                {ok, Data} ->
-                    {ok, Data};
-                {error, Reason} ->
-                    {400, Reason}
-            end
-    end.
 
-get_chartdata(Channel, ProductId, DeviceId, Args) ->
-    Query = maps:without([<<"productid">>, <<"deviceid">>], Args),
-    case dgiot_data:get({tdengine_os, Channel}) of
-        <<"windows">> ->
-            pass;
-        _ ->
-            Query = maps:without([<<"productid">>, <<"deviceid">>], Args),
-            Interval = maps:get(<<"interval">>, Args),
-            TableName = ?Table(DeviceId),
-            case dgiot_device_tdengine:get_chartdata(Channel, TableName, Query#{
-                <<"db">> => ProductId
-            }) of
-                {Names, {ok, #{<<"results">> := Results}}} ->
-                    Chartdata = get_chart(ProductId, Results, Names, Interval),
-                    {ok, #{<<"chartData">> => Chartdata}};
-                _ ->
-                    {ok, #{<<"code">> => 400, <<"msg">> => <<"no data">>}}
-            end
-    end.
-
-get_appdata(Channel, ProductId, DeviceId, Args) ->
-    case dgiot_data:get({tdengine_os, Channel}) of
-        <<"windows">> ->
-            pass;
-        _ ->
-            TableName = ?Table(DeviceId),
-            case dgiot_device_tdengine:get_appdata(Channel, TableName, Args#{<<"db">> => ProductId}) of
-                {ok, #{<<"results">> := Results}} when length(Results) > 0 ->
-                    Chartdata = dgiot_device_tdengine:get_app(ProductId, Results, DeviceId, Args),
-                    {ok, #{<<"data">> => Chartdata}};
-                _ ->
-                    Chartdata = dgiot_device_tdengine:get_app(ProductId, [#{}], DeviceId, Args),
-                    {ok, #{<<"data">> => Chartdata}}
-            end
-    end.
-
-get_prop(ProductId) ->
-    case dgiot_product:lookup_prod(ProductId) of
-        {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
-            lists:foldl(fun(X, Acc) ->
-                case X of
-                    #{<<"identifier">> := Identifier, <<"name">> := Name, <<"isshow">> := true} ->
-                        Acc#{Identifier => Name};
-                    _ -> Acc
-                end
-                        end, #{}, Props);
-        _ ->
-            #{}
-    end.
-
-
-get_unit(ProductId) ->
-    case dgiot_product:lookup_prod(ProductId) of
-        {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
-            lists:foldl(fun(X, Acc) ->
-                case X of
-                    #{<<"name">> := Name, <<"dataType">> := #{<<"specs">> := #{<<"unit">> := Unit}}} ->
-                        Acc#{Name => Unit};
-                    _ -> Acc
-                end
-                        end, #{}, Props);
-        _ ->
-            #{}
-    end.
-
-get_props(ProductId) ->
-    case dgiot_product:lookup_prod(ProductId) of
-        {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
-            lists:foldl(fun(X, Acc) ->
-                case X of
-                    #{<<"identifier">> := Identifier, <<"isshow">> := true} ->
-                        Acc#{Identifier => X};
-                    _ -> Acc
-                end
-                        end, #{}, Props);
-        _ ->
-            #{}
-    end.
-
-get_chart(ProductId, Results, Names, Interval) ->
-    Maps = get_prop(ProductId),
-    Units = get_unit(ProductId),
-    NewMaps = maps:merge(#{<<"createdat">> => <<"日期"/utf8>>}, Maps),
-    Columns = [<<"日期"/utf8>>] ++ Names,
-    Rows =
-        lists:foldl(fun(Line, Lines) ->
-            NewLine =
-                maps:fold(fun(K, V, Acc) ->
-                    case maps:find(K, NewMaps) of
-                        error ->
-                            Acc;
-                        {ok, Name} ->
-                            case Name of
-                                <<"日期"/utf8>> ->
-                                    NewV = dgiot_tdengine_field:get_time(V, Interval),
-                                    Acc#{Name => NewV};
-                                _ ->
-                                    Acc#{Name => V}
-                            end
-                    end
-                          end, #{}, Line),
-            Lines ++ [NewLine]
-                    end, [], Results),
-    ?LOG(debug, "Rows ~p", [Rows]),
-    ChildRows = lists:foldl(fun(X, Acc1) ->
-        Date = maps:get(<<"日期"/utf8>>, X),
-        maps:fold(fun(K1, V1, Acc) ->
-            case maps:find(K1, Acc) of
-                error ->
-                    Acc#{K1 => [#{<<"日期"/utf8>> => Date, K1 => V1}]};
-                {ok, V2} ->
-                    Acc#{K1 => V2 ++ [#{<<"日期"/utf8>> => Date, K1 => V1}]}
-            end
-                  end, Acc1, maps:without([<<"日期"/utf8>>], X))
-                            end, #{}, Rows),
-    ?LOG(debug, "ChildRows ~p", [ChildRows]),
-    Child =
-        maps:fold(fun(K, V, Acc) ->
-            Unit =
-                case maps:find(K, Units) of
-                    error -> <<"">>;
-                    {ok, Unit1} -> Unit1
-                end,
-            Acc ++ [#{<<"columns">> => [<<"日期"/utf8>>, K], <<"rows">> => V, <<"unit">> => Unit}]
-                  end, [], ChildRows),
-    ?LOG(debug, "Child ~p", [Child]),
-    #{<<"columns">> => Columns, <<"rows">> => Rows, <<"child">> => Child}.
 

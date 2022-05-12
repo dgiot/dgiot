@@ -27,7 +27,7 @@ post_dashboard(_Args, _Context) ->
     #{}.
 
 %%  应用总数卡片
-%%Query = #{<<"keys">> => [<<"count(*)">>, <<"name">>, <<"location">>, <<"status">>]}.
+%% Query = #{<<"count">> => [<<"objectId">>], <<"keys">> => [<<"name">>, <<"location">>, <<"status">>]}.
 do_task(#{<<"dataType">> := <<"card">>, <<"vuekey">> := <<"app_count">>, <<"table">> := <<"App">>, <<"query">> := Query}, #task{dashboardId = DashboardId, sessiontoken = SessionToken}) ->
     case dgiot_parse:query_object(<<"App">>, Query, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
         {ok, #{<<"count">> := _Count} = Value} ->
@@ -81,14 +81,14 @@ do_task(#{<<"dataType">> := <<"card">>, <<"vuekey">> := <<"device_count">>, <<"t
 do_task(#{<<"dataType">> := <<"card">>, <<"vuekey">> := <<"ChartStatus">>, <<"table">> := <<"Device">>, <<"query">> := Query}, #task{dashboardId = DashboardId, sessiontoken = SessionToken}) ->
     Where = maps:get(<<"where">>, Query, #{}),
     OnlineCount =
-        case dgiot_parse:query_object(<<"Device">>, Query#{<<"keys">> => [<<"count(*)">>], <<"where">> => Where#{<<"status">> => <<"ONLINE">>}}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+        case dgiot_parse:query_object(<<"Device">>, Query#{<<"count">> => <<"objectId">>, <<"where">> => Where#{<<"status">> => <<"ONLINE">>}}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
             {ok, #{<<"count">> := OnlineCount1}} ->
                 OnlineCount1;
             _ ->
                 0
         end,
     OfflineCount =
-        case dgiot_parse:query_object(<<"Device">>, Query#{<<"keys">> => [<<"count(*)">>], <<"where">> => Where#{<<"status">> => <<"OFFLINE">>}}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+        case dgiot_parse:query_object(<<"Device">>, Query#{<<"count">> => <<"objectId">>, <<"where">> => Where#{<<"status">> => <<"OFFLINE">>}}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
             {ok, #{<<"count">> := OfflineCount2}} ->
                 OfflineCount2;
             _ ->
@@ -113,7 +113,7 @@ do_task(#{<<"dataType">> := <<"card">>, <<"vuekey">> := <<"warn_count">>, <<"tab
     end;
 
 %%  当前只实现了百度地图，后续可以支持腾讯地图
-%%Query5 = #{<<"keys">> => [<<"count(*)">>, <<"name">>, <<"location">>, <<"status">>],<<"limit">> =>1}.
+%%Query5 = #{<<"count">> => [<<"objectId">>], <<"keys">> => [<<"name">>, <<"location">>, <<"status">>],<<"limit">> =>1}.
 do_task(#{<<"dataType">> := <<"map">>, <<"vuekey">> := <<"baiduMap">>, <<"table">> := <<"Device">>, <<"query">> := Query}, #task{dashboardId = DashboardId, sessiontoken = SessionToken}) ->
 %%    io:format("~s ~p Client = ~p.~n", [?FILE, ?LINE, Query]),
     case dgiot_parse:query_object(<<"Device">>, Query, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of

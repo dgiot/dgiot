@@ -83,7 +83,8 @@
         default => <<"dgiot_udp"/utf8>>,
         enum => [
             #{<<"value">> => <<"dgiot_udp">>, <<"label">> => <<"dgiot_udp"/utf8>>},
-            #{<<"value">> => <<"dgiot_sonbs">>, <<"label">> => <<"dgiot_sonbs"/utf8>>}
+            #{<<"value">> => <<"dgiot_sonbs">>, <<"label">> => <<"dgiot_sonbs"/utf8>>},
+            #{<<"value">> => <<"dgiot_feixing">>, <<"label">> => <<"dgiot_feixing"/utf8>>}
         ],
         title => #{
             zh => <<"回调模块"/utf8>>

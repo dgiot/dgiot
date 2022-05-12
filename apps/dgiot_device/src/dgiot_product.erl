@@ -18,19 +18,20 @@
 -author("jonliu").
 -include("dgiot_device.hrl").
 -include_lib("dgiot/include/logger.hrl").
+-include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
 -dgiot_data("ets").
--export([init_ets/0, load_cache/1, local/1, save/1, get/1, delete/1, save_prod/2, lookup_prod/1]).
+-export([init_ets/0, load_cache/0, local/1, save/1, put/1, get/1, delete/1, save_prod/2, lookup_prod/1]).
 -export([parse_frame/3, to_frame/2]).
 -export([create_product/2, add_product_relation/2, delete_product_relation/1]).
+-export([get_prop/1, get_props/1, get_Props/2, get_unit/1, do_td_message/1]).
 
 init_ets() ->
     dgiot_data:init(?DGIOT_PRODUCT).
 
-load_cache(ClassName) ->
-    io:format("~s ~p ~p ~n",[?FILE, ?LINE, ClassName]),
+load_cache() ->
     Success = fun(Page) ->
-        lists:map(fun(#{<<"objectId">> := ObjectId, <<"productSecret">> := ProductSecret} = Product) ->
-            dgiot_mnesia:insert(ObjectId, ['Product', dgiot_role:get_acls(Product), ProductSecret]),
+        lists:map(fun(Product) ->
+%%            dgiot_mnesia:insert(ObjectId, ['Product', dgiot_role:get_acls(Product), ProductSecret]),
             dgiot_product:save(Product)
                   end, Page)
               end,
@@ -63,11 +64,21 @@ lookup_prod(ProductId) ->
             {ok, Value}
     end.
 
-save(#{<<"thing">> := _thing} = Product) ->
+save(Product) ->
     Product1 = format_product(Product),
     #{<<"productId">> := ProductId} = Product1,
     dgiot_data:insert(?DGIOT_PRODUCT, ProductId, Product1),
     {ok, Product1}.
+
+put(Product) ->
+    ProductId = maps:get(<<"objectId">>, Product),
+    case lookup_prod(ProductId) of
+        {ok, OldProduct} ->
+            NewProduct = maps:merge(OldProduct, Product),
+            save(NewProduct);
+        _ ->
+            pass
+    end.
 
 
 delete(ProductId) ->
@@ -75,7 +86,7 @@ delete(ProductId) ->
 
 
 get(ProductId) ->
-    Keys = [<<"ACL">>, <<"status">>, <<"nodeType">>, <<"dynamicReg">>, <<"topics">>, <<"productSecret">>],
+    Keys = [<<"ACL">>, <<"name">>, <<"devType">>, <<"status">>, <<"nodeType">>, <<"dynamicReg">>, <<"topics">>, <<"productSecret">>],
     case dgiot_parse:get_object(<<"Product">>, ProductId) of
         {ok, Product} ->
             {ok, maps:with(Keys, Product)};
@@ -97,7 +108,7 @@ to_frame(ProductId, Msg) ->
 format_product(#{<<"objectId">> := ProductId} = Product) ->
     Thing = maps:get(<<"thing">>, Product, #{}),
     Props = maps:get(<<"properties">>, Thing, []),
-    Keys = [<<"ACL">>, <<"status">>, <<"nodeType">>, <<"dynamicReg">>, <<"topics">>, <<"productSecret">>],
+    Keys = [<<"ACL">>, <<"status">>, <<"name">>, <<"devType">>, <<"nodeType">>, <<"dynamicReg">>, <<"topics">>, <<"productSecret">>],
     Map = maps:with(Keys, Product),
     Map#{
         <<"productId">> => ProductId,
@@ -175,3 +186,83 @@ delete_product_relation(ProductId) ->
     end.
 
 
+get_prop(ProductId) ->
+    case dgiot_product:lookup_prod(ProductId) of
+        {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
+            lists:foldl(fun(X, Acc) ->
+                case X of
+                    #{<<"identifier">> := Identifier, <<"name">> := Name, <<"isshow">> := true} ->
+                        Acc#{Identifier => Name};
+                    _ -> Acc
+                end
+                        end, #{}, Props);
+        _ ->
+            #{}
+    end.
+
+
+get_unit(ProductId) ->
+    case dgiot_product:lookup_prod(ProductId) of
+        {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
+            lists:foldl(fun(X, Acc) ->
+                case X of
+                    #{<<"name">> := Name, <<"dataType">> := #{<<"specs">> := #{<<"unit">> := Unit}}} ->
+                        Acc#{Name => Unit};
+                    _ -> Acc
+                end
+                        end, #{}, Props);
+        _ ->
+            #{}
+    end.
+
+get_props(ProductId) ->
+    case dgiot_product:lookup_prod(ProductId) of
+        {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
+            lists:foldl(fun(X, Acc) ->
+                case X of
+                    #{<<"identifier">> := Identifier, <<"isshow">> := true} ->
+                        Acc#{Identifier => X};
+                    _ -> Acc
+                end
+                        end, #{}, Props);
+        _ ->
+            #{}
+    end.
+
+get_Props(ProductId, <<"*">>) ->
+    case dgiot_product:lookup_prod(ProductId) of
+        {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
+            Props;
+        _ ->
+            []
+    end;
+
+get_Props(ProductId, Keys) when Keys == undefined; Keys == <<>> ->
+    get_Props(ProductId, <<"*">>);
+
+get_Props(ProductId, Keys) ->
+    List =
+        case is_list(Keys) of
+            true -> Keys;
+            false -> re:split(Keys, <<",">>)
+        end,
+    lists:foldl(fun(Identifier, Acc) ->
+        case dgiot_product:lookup_prod(ProductId) of
+            {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
+                lists:foldl(fun(Prop, Acc1) ->
+                    case Prop of
+                        #{<<"identifier">> := Identifier} ->
+                            Acc1 ++ [Prop];
+                        _ ->
+                            Acc1
+                    end
+                            end, Acc, Props);
+            _ ->
+                Acc
+        end
+                end, [], List).
+
+%% 发消息通知td 重载超级表、字段
+do_td_message(ProfuctId) ->
+    ChannelId = dgiot_parse_id:get_channelid(dgiot_utils:to_binary(?BRIDGE_CHL), <<"TD">>, <<"TD资源通道"/utf8>>),
+    dgiot_channelx:do_message(ChannelId, {sync_product, <<"Product">>, ProfuctId}).

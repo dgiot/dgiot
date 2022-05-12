@@ -17,6 +17,7 @@
 -module(dgiot_task).
 -include("dgiot_task.hrl").
 -include_lib("dgiot/include/logger.hrl").
+-include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
 
 -export([
     start/1,
@@ -409,12 +410,24 @@ del_pnque(DtuId) ->
     end.
 
 
-save_td(ProductId, DevAddr, Data, AppData) ->
-    DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
-    Payload = jsx:encode(#{<<"thingdata">> => Data, <<"appdata">> => AppData, <<"timestamp">> => dgiot_datetime:now_ms()}),
-    Topic = <<"topo/", ProductId/binary, "/", DevAddr/binary, "/post">>,
-    dgiot_mqtt:publish(DeviceId, Topic, Payload),
-    dgiot_tdengine_adapter:save(ProductId, DevAddr, Data),
-    dgiot_metrics:inc(dgiot_task, <<"task_save">>, 1),
-    NotificationTopic = <<"notification/", ProductId/binary, "/", DevAddr/binary, "/post">>,
-    dgiot_mqtt:publish(DevAddr, NotificationTopic, jsx:encode(Data)).
+save_td(ProductId, DevAddr, Ack, _AppData) ->
+    case length(maps:to_list(Ack)) of
+        0 ->
+            #{};
+        _ ->
+            Data = dgiot_task:get_calculated(ProductId, Ack),
+            case length(maps:to_list(Data)) of
+                0 ->
+                    Data;
+                _ ->
+                    DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
+%%                    Payload = #{<<"thingdata">> => Data, <<"appdata">> => AppData, <<"timestamp">> => dgiot_datetime:now_ms()},
+                    ChannelId = dgiot_parse_id:get_channelid(dgiot_utils:to_binary(?BRIDGE_CHL), <<"DGIOTTOPO">>, <<"TOPO组态通道"/utf8>>),
+                    dgiot_channelx:do_message(ChannelId, {topo_thing, ProductId, DeviceId, Data}),
+                    dgiot_tdengine_adapter:save(ProductId, DevAddr, Data),
+                    dgiot_metrics:inc(dgiot_task, <<"task_save">>, 1),
+                    NotificationTopic = <<"$dg/alarm/", ProductId/binary, "/", DeviceId/binary, "/properties/report">>,
+                    dgiot_mqtt:publish(DeviceId, NotificationTopic, jsx:encode(Data)),
+                    Data
+            end
+    end.

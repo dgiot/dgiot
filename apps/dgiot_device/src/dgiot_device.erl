@@ -28,6 +28,7 @@
 %% Device 数量统计，权限统计，在线离线统计，产品下面设备数量统计等是用户非常关系的数据指标
 parse_cache_Device(_ClassName) ->
 %%    io:format("~s ~p ~p ~n", [?FILE, ?LINE, ClassName]),
+    dgiot_product:load_cache(),
     Success = fun(Page) ->
         lists:map(fun(Device) ->
             dgiot_device:save(Device)
@@ -90,7 +91,7 @@ put(Device) ->
                 case maps:find(<<"status">>, Device) of
                     error ->
                         Status;
-                    <<"OFFLINE">> -> false;
+                    {ok, <<"OFFLINE">>} -> false;
                     _ -> true
                 end,
             NewAcl =

@@ -193,6 +193,13 @@ do_request(get_disableuser, #{<<"userid">> := Disuserid, <<"action">> := Action}
 do_request(post_login, #{<<"username">> := UserName, <<"password">> := Password}, _Context, _Req) ->
     dgiot_parse_auth:login_by_account(UserName, Password);
 
+%% iot_hub 概要: 用户管理 描述: 用户管理
+%% OperationId:post_logout
+%% 请求:POST /iotapi/post_logout
+do_request(post_logout,  #{<<"sessionToken">> := SessionToken}, _Context, _Req) ->
+    dgiot_auth:delete_session(SessionToken),
+    SessionId = dgiot_parse_id:get_sessionId(SessionToken),
+    dgiot_parse:del_object(<<"_Session">>, SessionId);
 
 %% RoleUser 概要: 导库 描述:json文件导库
 %% OperationId:get_roleuser
@@ -233,6 +240,6 @@ do_request(post_roleuser, Body, #{<<"sessionToken">> := SessionToken} = _Context
 
 %%  服务器不支持的API接口
 do_request(_OperationId, _Args, _Context, _Req) ->
-    ?LOG(debug, "_Args ~p", [_Args]),
+    ?LOG(info, "_Args ~p", [_Args]),
     {error, <<"Not Allowed.">>}.
 

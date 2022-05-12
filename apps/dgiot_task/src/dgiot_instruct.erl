@@ -192,15 +192,17 @@ get_instruct(ProductId, Round) ->
                         Acc;
                     #{<<"dataForm">> := #{<<"strategy">> := <<"主动上报"/utf8>>}} ->
                         Acc;
-                    #{<<"accessMode">> := AccessMode, <<"identifier">> := Identifier,
-                        <<"dataForm">> := DataForm, <<"dataSource">> := DataSource} ->
+                    #{<<"accessMode">> := AccessMode,
+                        <<"identifier">> := Identifier,
+                        <<"dataType">> := #{<<"specs">> := #{<<"min">> := Min}},
+                        <<"dataForm">> := DataForm,
+                        <<"dataSource">> := DataSource} ->
                         Protocol = maps:get(<<"protocol">>, DataForm, <<"">>),
                         ThingRound = maps:get(<<"round">>, DataForm, <<"all">>),
                         InstructOrder = maps:get(<<"order">>, DataForm, Order),
-                        Data = maps:get(<<"data">>, DataSource, <<"0">>),
                         Control = maps:get(<<"control">>, DataForm, "%d"),
-                        NewData = dgiot_task:get_control(Round, Data, Control),
-                        Strategy = dgiot_utils:to_int(maps:get(<<"strategy">>, DataForm, "2")),
+                        NewData = dgiot_task:get_control(Round, Min, Control),
+                        Strategy = dgiot_utils:to_int(maps:get(<<"strategy">>, DataForm,  20)),
                         BinRound = dgiot_utils:to_binary(Round),
                         case ThingRound of
                             <<"all">> ->
