@@ -295,22 +295,13 @@ get_id(OperationID) ->
             {Method, Type, '*'}
     end.
 
-%% todo 可以做多级json的 merge修改
+%% todo 多级json的 merge修改
 do_put(<<"put">>, Token, <<"/iotapi/classes/", Tail/binary>>, #{<<"id">> := Id} = Args) ->
     [ClassName | _] = re:split(Tail, <<"/">>),
     notify('before', put, Token, ClassName, Id, Args),
     case dgiot_parse:get_object(ClassName, Id) of
         {ok, Class} ->
-            maps:fold(fun(K, V, Acc) ->
-                case maps:find(K, Class) of
-                    error -> Acc;
-                    {ok, Value} when is_map(Value) ->
-                        Acc#{K => maps:merge(Value, V)};
-                    _ ->
-                        Acc#{K => V}
-                end
-                      end,
-                #{}, maps:without([<<"id">>], Args));
+            dgiot_map:merge(Class, maps:without([<<"id">>], Args));
         _ ->
             Args
     end;

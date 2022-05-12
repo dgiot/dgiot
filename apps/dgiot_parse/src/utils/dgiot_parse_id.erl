@@ -23,6 +23,7 @@
 -export([
     get_objectid/2,
     get_categoryid/2,
+    get_channelid/3,
     get_deviceid/2,
     get_dictid/4,
     get_viewid/4,
@@ -64,6 +65,11 @@ get_viewid(Key, Type, Class, Title) ->
     #{<<"objectId">> := DeviceId} =
         dgiot_parse_id:get_objectid(<<"View">>, #{<<"key">> => Key, <<"type">> => Type, <<"class">> => Class, <<"title">> => Title}),
     DeviceId.
+
+get_channelid(Type, CType, Name) ->
+    #{<<"objectId">> := ChannelID} =
+        dgiot_parse_id:get_objectid(<<"Channel">>, #{<<"name">> => Name, <<"type">> => Type, <<"cType">> => CType}),
+    ChannelID.
 
 get_deviceid(ProductId, DevAddr) ->
     #{<<"objectId">> := DeviceId} =
@@ -269,10 +275,19 @@ get_objectid(Class, Map) ->
             get_objectid(<<"Channel">>, Map);
         <<"Channel">> ->
             Name = maps:get(<<"name">>, Map, <<"">>),
+            Config = maps:get(<<"config">>, Map, #{}),
+            DefultName =
+                case maps:find(<<"defultname">>, Config) of
+                    {ok, Defultname} when byte_size(Defultname) > 0 ->
+                        Defultname;
+                    _ ->
+                        Name
+                end,
             Type = maps:get(<<"type">>, Map, <<"">>),
             CType = maps:get(<<"cType">>, Map, <<"">>),
-            <<CId:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Channel", Type/binary, CType/binary, Name/binary>>),
+            <<CId:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Channel", Type/binary, CType/binary, DefultName/binary>>),
             Map#{
+                <<"name">> => DefultName,
                 <<"objectId">> => CId
             };
         <<"post_classes_dict">> ->

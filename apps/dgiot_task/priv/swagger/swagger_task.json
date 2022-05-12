@@ -135,60 +135,6 @@
           "Crond"
         ]
       }
-    },
-    "/send_control/{id}": {
-      "put": {
-        "summary": "控制下发",
-        "description": "控制下发",
-        "parameters": [
-          {
-            "in": "path",
-            "name": "id",
-            "type": "string",
-            "description": "设备Id",
-            "required": true,
-            "example": "2c765f63f2"
-          },
-          {
-            "in": "body",
-            "name": "body",
-            "description": "下发数据",
-            "required": true,
-            "schema": {
-              "type": "object",
-              "properties": {
-                "profile": {
-                  "description": "profile",
-                  "type": "object",
-                  "example": {
-                    "name": "image"
-                  }
-                }
-              }
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Returns success"
-          },
-          "400": {
-            "description": "Bad Request"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "403": {
-            "description": "Forbidden"
-          },
-          "500": {
-            "description": "Server Internal error"
-          }
-        },
-        "tags": [
-          "Crond"
-        ]
-      }
     }
   }
 }

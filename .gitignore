@@ -59,6 +59,7 @@ ci.sh
 node_modules/
 apps/emqx_*
 apps/dgiot_parse/etc/dgiot_parse.conf
+apps/dgiot_parse/etc/dgiot_parse_temp.conf
 apps/dgiot_jieshun/
 apps/dgiot_mingcheng/
 apps/dgiot_xinchuangwei/
@@ -83,3 +84,4 @@ erlang_ls.config
 .#*
 # For direnv
 .envrc
+*.log

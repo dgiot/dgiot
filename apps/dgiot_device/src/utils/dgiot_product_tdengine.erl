@@ -20,8 +20,8 @@
 -include_lib("dgiot_tdengine/include/dgiot_tdengine.hrl").
 -include_lib("dgiot/include/logger.hrl").
 
--export([get_product/2, get_products/2, get_keys/3,  check_field/3, test_product/0]).
--export([get_channel/1, do_channel/3]).
+-export([get_product/2, get_products/2, get_keys/3, check_field/3, test_product/0]).
+-export([get_channel/1, do_channel/3, get_product_data/4]).
 
 test_product() ->
     ProductId = <<"0765bee775">>,
@@ -226,4 +226,47 @@ get_prop(ProductId) ->
                         end, #{}, Props);
         _ ->
             []
+    end.
+
+
+get_product_data(Channel, ProductId, DeviceId, Args) ->
+    Query = maps:without([<<"productid">>, <<"deviceid">>], Args),
+    ?LOG(info, "Channel ~p Args ~p", [Channel, Args]),
+    case dgiot_data:get({tdengine_os, Channel}) of
+        <<"windows">> ->
+            Keys =
+                lists:foldl(fun(X, Acc) ->
+                    case X of
+                        <<"count(*)">> -> Acc ++ [<<"count(*)">>];
+                        <<"*">> -> Acc ++ [<<"values">>];
+                        _ -> Acc ++ [<<"values.", X/binary>>]
+                    end
+                            end, [], binary:split(maps:get(<<"keys">>, Args, <<"count(*)">>), <<$,>>, [global, trim])),
+            Query2 = Query#{<<"where">> => #{<<"product">> => ProductId,
+                <<"device">> => DeviceId}, <<"keys">> => Keys},
+            ?LOG(info, "Query2 ~p", [Query2]),
+            case dgiot_parse:query_object(<<"Timescale">>, Query2) of
+                {ok, #{<<"results">> := Results} = All} when length(Results) > 0 ->
+                    Data = lists:foldl(fun(X, Acc) ->
+                        Acc ++ [maps:get(<<"values">>, X)]
+                                       end, [], Results),
+                    {ok, All#{<<"results">> => Data}};
+                {ok, #{<<"results">> := Result}} ->
+                    {error, Result};
+                Error ->
+                    Error
+            end;
+        _ ->
+            Where = maps:get(<<"where">>, Args),
+            Query = maps:without([<<"productid">>, <<"deviceid">>], Args),
+            TableName = ?Table(DeviceId),
+            case dgiot_tdengine:query_object(Channel, TableName, Query#{
+                <<"db">> => ProductId,
+                <<"where">> => Where
+            }) of
+                {ok, Data} ->
+                    {ok, Data};
+                {error, Reason} ->
+                    {400, Reason}
+            end
     end.

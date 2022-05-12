@@ -909,6 +909,61 @@
           "Data"
         ]
       },
+      "get": {
+        "summary": "查询关联",
+        "description": "查询关联",
+        "parameters": [
+          {
+            "name": "destClass",
+            "in": "query",
+            "type": "string",
+            "example": "_Role",
+            "default": "_Role",
+            "description": "目标类名"
+          },
+          {
+            "name": "destId",
+            "in": "query",
+            "type": "string",
+            "example": "ccf5456562",
+            "default": "ccf5456562",
+            "description": "目标类对象"
+          },
+          {
+            "name": "destField",
+            "in": "query",
+            "type": "string",
+            "example": "views",
+            "default": "views",
+            "description": "目标关联字段"
+          },
+          {
+            "name": "srcClass",
+            "in": "query",
+            "type": "string",
+            "example": "View",
+            "default": "View",
+            "description": "源类名"
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Returns success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Data"
+        ]
+      },
       "delete": {
         "summary": "删除关联",
         "description": "删除关联",

@@ -135,57 +135,6 @@ do_request(delete_task, #{<<"id">> := VcAddr} = _Args, #{<<"sessionToken">> := S
         Error -> Error
     end;
 
-do_request(put_send_control_id, #{<<"id">> := DeviceId, <<"profile">> := Profile} = Args, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
-    io:format("~s ~p Args = ~p.~n", [?FILE, ?LINE, Args]),
-    {NewProfile, ProductId, Devaddr} =
-        case dgiot_parse:get_object(<<"Device">>, DeviceId) of
-            {ok, #{<<"devaddr">> := Devaddr1, <<"product">> := #{<<"objectId">> := ProductId1}, <<"profile">> := OldProfile}} ->
-                {maps:merge(OldProfile, Profile), ProductId1, Devaddr1};
-            {ok, #{<<"devaddr">> := Devaddr2, <<"product">> := #{<<"objectId">> := ProductId2}}} ->
-                {Profile, ProductId2, Devaddr2};
-            _ ->
-                {#{}, <<"ProductId">>, <<"Devaddr">>}
-        end,
-    dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"profile">> => NewProfile}),
-    case dgiot_parse:get_object(<<"Product">>, ProductId) of
-        {ok, #{<<"name">> := ProductName, <<"thing">> := #{<<"properties">> := Properties}}} ->
-            NewPayLoad =
-                lists:foldl(fun(X, Acc) ->
-                    case X of
-                        #{<<"identifier">> := Identifier, <<"name">> := Name, <<"accessMode">> := <<"rw">>, <<"dataForm">> := DataForm, <<"dataSource">> := #{<<"_dlinkindex">> := Index} = DataSource} ->
-                            case maps:find(Identifier, Profile) of
-                                {ok, V} ->
-                                    Acc#{
-                                        Index => #{
-                                            <<"sessiontoken">> => SessionToken,
-                                            <<"value">> => V,
-                                            <<"identifier">> => Identifier,
-                                            <<"name">> => Name,
-                                            <<"productname">> => ProductName,
-                                            <<"dataSource">> => DataSource,
-                                            <<"dataForm">> => DataForm
-                                        }};
-                                _ ->
-                                    Acc
-                            end;
-                        _ -> Acc
-                    end
-                            end, #{<<"pid">> => self(), <<"deviceid">> => DeviceId}, Properties),
-            Topic = <<"profile/", ProductId/binary, "/", Devaddr/binary>>,
-            dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(NewPayLoad)),
-            receive
-                {hardware_msg, Msg} ->
-                    {ok, Msg};
-                {error} ->
-                    {ok, <<"SEND_FAIL">>}
-            after 10000 ->
-                {ok, <<"SEND_SUCCESS">>}
-            end;
-        _ ->
-            {error, #{<<"msg">> => <<ProductId/binary, " no exist">>}}
-    end;
-
-
 
 %%  服务器不支持的API接口
 do_request(_OperationId, _Args, _Context, _Req) ->

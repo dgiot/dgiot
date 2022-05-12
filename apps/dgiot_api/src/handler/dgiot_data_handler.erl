@@ -138,21 +138,21 @@ do_request(post_upload_token, #{<<"from">> := <<"fastdfs">>}, _Context, Req0) ->
 %% OperationId:get_thing
 %% 请求:GET /iotapi/get_thing
 do_request(get_thing, #{<<"productid">> := ProductId, <<"moduleType">> := ModuleType},
-        #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
+    #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
     getThing(ProductId, ModuleType, SessionToken);
 
 %% Thing 概要: 导库 描述:添加物模型
 %% OperationId:post_thing
 %% 请求:PUT /iotapi/post_thing
 do_request(post_thing, #{<<"productid">> := ProductId, <<"item">> := Item} = _Body,
-        #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
+    #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
     postThing(ProductId, Item, SessionToken);
 
 %% Thing 概要: 导库 描述:修改物模型
 %% OperationId:put_thing
 %% 请求:PUT /iotapi/put_thing
 do_request(put_thing, #{<<"productid">> := ProductId, <<"item">> := Item} = _Body,
-        #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
+    #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
     putTing(ProductId, Item, SessionToken);
 
 
@@ -160,7 +160,7 @@ do_request(put_thing, #{<<"productid">> := ProductId, <<"item">> := Item} = _Bod
 %% OperationId:put_thing
 %% 请求:PUT /iotapi/put_thing
 do_request(delete_thing, #{<<"productid">> := ProductId, <<"item">> := Item} = _Body,
-        #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
+    #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
     deleteThing(ProductId, SessionToken, Item);
 
 
@@ -168,7 +168,7 @@ do_request(delete_thing, #{<<"productid">> := ProductId, <<"item">> := Item} = _
 %% OperationId:post_product
 %% 请求:POST /iotapi/post_product
 do_request(post_product, #{<<"file">> := FileInfo, <<"appid">> := Appid} = _Body,
-        #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
+    #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
     case maps:get(<<"contentType">>, FileInfo, <<"unknow">>) of
         <<"application/x-zip-compressed">> -> post_product(FileInfo, Appid, SessionToken);
         <<"application/zip">> -> post_product(FileInfo, Appid, SessionToken);
@@ -371,7 +371,7 @@ do_request(post_import_file, #{<<"path">> := Path}, #{<<"sessionToken">> := Sess
 %% OperationId:post_menus
 %% 请求:POST /iotapi/post_menu
 do_request(post_menu, #{<<"file">> := FileInfo} = _Body,
-        #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
+    #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
     ?LOG(info, "FileInfo ~p", [FileInfo]),
     case maps:get(<<"contentType">>, FileInfo, <<"unknow">>) of
         <<"application/x-zip-compressed">> -> post_menu(FileInfo, SessionToken);
@@ -399,6 +399,28 @@ do_request(post_relation, #{<<"destClass">> := DestClass, <<"destId">> := DestId
         }
         },
     dgiot_parse:update_object(DestClass, DestId, Map);
+
+
+%% Relation 概要: 查询关系 描述:json文件导库
+%% OperationId:get_relation
+%% 请求:get /iotapi/relation
+do_request(get_relation, #{<<"destClass">> := DestClass, <<"destId">> := DestId, <<"destField">> := DestField, <<"srcClass">> := SrcClass} = _Args, _Context, _Req) ->
+    Where = #{
+        <<"where">> => #{
+            <<"$relatedTo">> => #{
+                <<"object">> => #{
+                    <<"__type">> => <<"Pointer">>,
+                    <<"className">> => DestClass,
+                    <<"objectId">> => DestId
+                },
+                <<"key">> => DestField
+            }
+        },
+        <<"order">> => <<"-updatedAt">>,
+        <<"count">> => 1
+    },
+    dgiot_parse:query_object(SrcClass, Where);
+
 
 %% Relation 概要: 删除关系 描述:json文件导库
 %% OperationId:post_relation
@@ -565,7 +587,6 @@ postThing(ProductId, Item, SessionToken) ->
         {ok, #{<<"thing">> := Thing}} ->
             ModuleType = maps:get(<<"moduleType">>, Item, <<"properties">>),
             Modules = maps:get(ModuleType, Thing, []),
-            io:format("~p~n", [Modules]),
             #{<<"identifier">> := Identifier} = Item,
             {Ids, NewModules} =
                 lists:foldl(fun(X, {Ids1, Acc}) ->
@@ -658,4 +679,5 @@ deleteThing(ProductId, SessionToken, Item) ->
         Error ->
             {error, Error}
     end.
+
 

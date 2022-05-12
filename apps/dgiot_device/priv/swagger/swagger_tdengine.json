@@ -296,7 +296,7 @@
         ]
       }
     },
-    "/app/{deviceid}": {
+    "/devicecard/{deviceid}": {
       "get": {
         "summary": "获取当前设备最新时序数据卡片",
         "description": "获取当前设备最新时序数据卡片",

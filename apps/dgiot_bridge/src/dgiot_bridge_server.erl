@@ -56,7 +56,7 @@ handle_info({deliver, _, Msg}, State) ->
             ?LOG(error, "Payload:~p, error:~p", [Payload, Reason]);
         Message ->
             case re:run(Topic, <<"[^//]+">>, [{capture, all, binary}, global]) of
-                {match, [[<<"dashboard_task">>], [_DashboardId] ]} ->
+                {match, [[<<"dashboard_task">>], [_DashboardId]]} ->
                     supervisor:start_child(dashboard_task, [Message]);
                 {match, [[<<"channel">>], [ChannelId]]} ->
                     do_handle(Message#{<<"channelId">> => ChannelId});
@@ -147,6 +147,7 @@ do_handle(#{<<"channelId">> := ChannelId, <<"enable">> := false}) ->
             dgiot_channelx:delete(CType, ChannelId),
             dgiot_data:delete(?DGIOT_BRIDGE, {ChannelId, productIds}),
             ?LOG(info, "Channel[~s,~p] offline!", [CType, ChannelId]),
+            sysnc_product_channel(ChannelId, <<"disable">>),
             dgiot_parse:update_object(<<"Channel">>, ChannelId, #{<<"status">> => <<"OFFLINE">>});
         _ ->
             ok
@@ -156,20 +157,25 @@ do_handle(#{<<"channelId">> := ChannelId, <<"enable">> := false}) ->
 do_handle(#{<<"channelId">> := ChannelId, <<"enable">> := true}) ->
     case dgiot_parse:update_object(<<"Channel">>, ChannelId, #{<<"status">> => <<"ONLINE">>}) of
         {ok, _} ->
-            ok;
+            sysnc_product_channel(ChannelId, <<"enable">>);
         {error, Reason} ->
             ?LOG(error, "Channel[~p] Start Fail, ~p", [ChannelId, Reason])
     end;
 
 %% 更新关联产品 { "action": "update" }
 do_handle(#{<<"channelId">> := ChannelId, <<"action">> := <<"update">>}) ->
-    {ok, Type, _} = dgiot_bridge:get_products(ChannelId),
-    dgiot_bridge_loader:load_channel([#{<<"objectId">> => ChannelId}],
-        fun(#{<<"product">> := Products}) ->
-            ProductIds = do_product(ChannelId, Products),
-            dgiot_data:insert(?DGIOT_BRIDGE, {ChannelId, productIds}, {Type, ProductIds}),
-            dgiot_bridge:send_log(ChannelId, "Channel ~s is Install Protocol ~s", [ChannelId, jsx:encode(ProductIds)])
-        end);
+    case dgiot_bridge:get_products(ChannelId) of
+        {ok, Type, _} ->
+            sysnc_product_channel(ChannelId, <<"update">>),
+            dgiot_bridge_loader:load_channel([#{<<"objectId">> => ChannelId}],
+                fun(#{<<"product">> := Products}) ->
+                    ProductIds = do_product(ChannelId, Products),
+                    dgiot_data:insert(?DGIOT_BRIDGE, {ChannelId, productIds}, {Type, ProductIds}),
+                    dgiot_bridge:send_log(ChannelId, "Channel ~s is Install Protocol ~s", [ChannelId, jsx:encode(ProductIds)])
+                end);
+        _ -> pass
+    end;
+
 
 %% 开启日志, cfg 里面可以加过滤
 do_handle(#{<<"channelId">> := ChannelId, <<"action">> := <<"start_logger">>} = Filter) ->
@@ -203,8 +209,6 @@ do_handle(#{<<"channelId">> := ChannelId, <<"action">> := <<"stop_logger">>} = F
     end,
     dgiot_data:delete(?DGIOT_BRIDGE, {ChannelId, log}).
 
-
-
 do_product(ChannelId, Products) ->
     do_product(ChannelId, Products, []).
 
@@ -222,3 +226,33 @@ do_product(ChannelId, [{ProductId, Product} | Products], Acc) ->
             ok
     end,
     do_product(ChannelId, Products, [ProductId | Acc]).
+
+%%保存产品的采集协议通道
+sysnc_product_channel(ChannelId, Action) ->
+    ProductIds =
+        case dgiot_bridge:get_products(ChannelId) of
+            {error, not_find} ->
+                [];
+            {ok, _Type, ProductIds1} ->
+                ProductIds1
+        end,
+    case dgiot_data:get(?DGIOT_BRIDGE, {ChannelId, type}) of
+        {?PROTOCOL_CHL, CType} ->
+            lists:map(fun(ProductId) ->
+                PropList =
+                    case dgiot_data:get(?DGIOT_PRODUCT_CHANNEL, ProductId) of
+                        not_find -> [];
+                        List -> List
+                    end,
+                case Action of
+                    <<"update">> ->
+                        dgiot_data:insert(?DGIOT_PRODUCT_CHANNEL, ProductId, dgiot_utils:unique_1(PropList ++ [{ChannelId, CType}]));
+                    <<"enable">> ->
+                        dgiot_data:insert(?DGIOT_PRODUCT_CHANNEL, ProductId, dgiot_utils:unique_1(PropList ++ [{ChannelId, CType}]));
+                    _ ->
+                        NewPropList = proplists:delete(ChannelId, PropList),
+                        dgiot_data:insert(?DGIOT_PRODUCT_CHANNEL, ProductId, NewPropList)
+                end
+                      end, ProductIds);
+        _ -> pass
+    end.

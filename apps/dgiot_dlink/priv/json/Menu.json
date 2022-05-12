@@ -1,2391 +1,80 @@
 [
   {
-    "objectId": "ffdf6cc1c6",
-    "createdAt": "2022-04-27T01:21:21.018Z",
-    "updatedAt": "2022-04-27T01:21:21.018Z",
-    "icon": "home-3-fill",
-    "name": "EquipmentList",
-    "orderBy": 21,
-    "parent": {
-      "objectId": "8f821711e1",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/dashboard",
-    "meta": {
-      "icon": "home-3-fill",
-      "badge": "",
-      "title": "设备列表",
-      "hidden": false,
-      "redirect": "",
-      "component": "@/views/DeviceCloud/manage/devicelist",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "f8386b794b",
-    "createdAt": "2022-04-22T02:38:23.522Z",
-    "updatedAt": "2022-04-22T02:38:23.522Z",
-    "icon": "barcode-fill",
-    "name": "ProcessPathDetail",
-    "orderBy": 91,
-    "parent": {
-      "objectId": "3971f04ee1",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/oc/Ftechnology/detail",
-    "meta": {
-      "icon": "barcode-fill",
-      "badge": "",
-      "title": " 工艺路径详情",
-      "hidden": true,
-      "redirect": "",
-      "component": "@/views/CloudOc/Ftechnology/componemts/index",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "bf40bdf962",
-    "createdAt": "2022-04-21T02:41:47.714Z",
-    "updatedAt": "2022-04-22T02:35:33.775Z",
-    "icon": "home-3-fill",
-    "name": "ModelDetail",
-    "orderBy": 98,
-    "parent": {
-      "objectId": "3971f04ee1",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/oc/Modeling/modeldetail",
-    "meta": {
-      "icon": "home-3-fill",
-      "badge": "",
-      "title": "建模详情",
-      "hidden": true,
-      "redirect": "",
-      "component": "@/views/CloudOc/Modeling/components/detail",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "zjRYRFGXzk",
+    "objectId": "2261f5a8e9",
     "createdAt": "2021-08-13T09:54:42.994Z",
-    "updatedAt": "2022-04-15T02:03:15.072Z",
-    "icon": "home-3-fill",
-    "name": "Workbench",
-    "orderBy": 11,
+    "updatedAt": "2021-11-17T04:15:27.588Z",
+    "icon": "mail-add-line",
+    "name": "AddRules",
+    "orderBy": 541,
     "parent": {
-      "objectId": "SVoMYPK8D5",
+      "objectId": "4c6c8c5b59",
       "__type": "Pointer",
       "className": "Menu"
     },
-    "url": "/index",
+    "url": "/rules_engine/addengine",
     "meta": {
-      "icon": "home-gear-line",
+      "icon": "mail-add-line",
       "badge": "",
-      "title": "总控台",
-      "hidden": false,
+      "title": "添加规则",
+      "hidden": true,
       "redirect": "",
-      "component": "@/views/DeviceCloud/manage/platform_overview",
+      "component": "@/views/CloudFunction/engine/addengine",
       "tabHidden": false,
       "alwaysShow": false,
-      "noClosable": true,
+      "noClosable": false,
       "isCustomSvg": false,
-      "noKeepAlive": true
+      "noKeepAlive": false
+    },
+    "ACL": {
+      "*": {
+        "read": true,
+        "write": true
+      },
+      "role:admin": {
+        "read": true,
+        "write": true
+      }
     }
   },
   {
-    "objectId": "SVoMYPK8D5",
+    "objectId": "ECsbqM3di4",
     "createdAt": "2021-08-13T09:54:42.993Z",
-    "updatedAt": "2022-04-15T01:44:00.418Z",
-    "icon": "home-3-fill",
-    "name": "Dashboard",
-    "orderBy": 1,
-    "parent": {
-      "objectId": "0         ",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/",
-    "meta": {
-      "icon": "home-2-line",
-      "badge": "",
-      "title": "总控台",
-      "hidden": false,
-      "redirect": "/index",
-      "component": "Layout",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": true,
-      "isCustomSvg": false,
-      "noKeepAlive": true
-    }
-  },
-  {
-    "objectId": "4fe88ddb1a",
-    "createdAt": "2022-03-30T08:36:40.143Z",
-    "updatedAt": "2022-03-30T08:41:07.120Z",
-    "icon": "sound-module-fill",
-    "name": "Module",
-    "orderBy": 951,
-    "parent": {
-      "objectId": "3971f04ee1",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/oc/MetaData/module",
-    "meta": {
-      "icon": "sound-module-fill",
-      "badge": "",
-      "title": "新建元数据",
-      "hidden": true,
-      "redirect": "",
-      "component": "@/views/CloudOc/MetaData/components/module",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "a0ff3ebe31",
-    "createdAt": "2022-03-30T01:41:58.915Z",
-    "updatedAt": "2022-03-30T01:41:58.915Z",
-    "icon": "stock-line",
-    "name": "Fstock",
-    "orderBy": 97,
-    "parent": {
-      "objectId": "3971f04ee1",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/oc/Fstock",
-    "meta": {
-      "icon": "stock-line",
-      "badge": "",
-      "title": "库存地点",
-      "hidden": false,
-      "redirect": "",
-      "component": "@/views/CloudOc/Fstock/index",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "bf518e839a",
-    "createdAt": "2022-03-30T01:41:08.146Z",
-    "updatedAt": "2022-03-30T01:41:08.146Z",
-    "icon": "mastercard-line",
-    "name": "MasterData",
-    "orderBy": 96,
-    "parent": {
-      "objectId": "3971f04ee1",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/oc/MasterData",
-    "meta": {
-      "icon": "mastercard-line",
-      "badge": "",
-      "title": "主数据管理",
-      "hidden": false,
-      "redirect": "",
-      "component": "@/views/CloudOc/MasterData/index",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "34afe5a6ff",
-    "createdAt": "2022-03-30T01:40:16.698Z",
-    "updatedAt": "2022-03-30T01:40:16.698Z",
-    "icon": "attachment-fill",
-    "name": "MetaData",
-    "orderBy": 95,
-    "parent": {
-      "objectId": "3971f04ee1",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/oc/MetaData",
-    "meta": {
-      "icon": "attachment-fill",
-      "badge": "",
-      "title": "元数据管理",
-      "hidden": false,
-      "redirect": "",
-      "component": "@/views/CloudOc/MetaData/index",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "a589d5ae6a",
-    "createdAt": "2022-03-30T01:35:47.432Z",
-    "updatedAt": "2022-03-30T01:39:14.402Z",
-    "icon": "home-3-fill",
-    "name": "Fquacate",
-    "orderBy": 92,
-    "parent": {
-      "objectId": "3971f04ee1",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/oc/Fquacate",
-    "meta": {
-      "icon": "building-4-fill",
-      "badge": "",
-      "title": "资质管理",
-      "hidden": false,
-      "redirect": "",
-      "component": "@/views/CloudOc/Fquacate/index",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "ba76ec6943",
-    "createdAt": "2022-03-30T01:36:43.691Z",
-    "updatedAt": "2022-03-30T01:39:01.045Z",
-    "icon": "boxing-fill",
-    "name": "Modeling",
-    "orderBy": 93,
-    "parent": {
-      "objectId": "3971f04ee1",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/oc/Modeling",
-    "meta": {
-      "icon": "boxing-fill",
-      "badge": "",
-      "title": "工厂建模",
-      "hidden": false,
-      "redirect": "",
-      "component": "@/views/CloudOc/Modeling/index",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "4c7a6b63f2",
-    "createdAt": "2022-03-30T01:38:45.584Z",
-    "updatedAt": "2022-03-30T01:38:45.584Z",
-    "icon": "home-3-fill",
-    "name": "Ftechnology",
-    "orderBy": 94,
-    "parent": {
-      "objectId": "3971f04ee1",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/oc/Ftechnology",
-    "meta": {
-      "icon": "home-3-fill",
-      "badge": "",
-      "title": "工艺路径",
-      "hidden": false,
-      "redirect": "",
-      "component": "@/views/CloudOc/Ftechnology/index",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "bfde1d523c",
-    "createdAt": "2022-03-30T01:28:41.225Z",
-    "updatedAt": "2022-03-30T01:37:00.723Z",
-    "icon": "home-3-fill",
-    "name": "Fassets",
-    "orderBy": 91,
-    "parent": {
-      "objectId": "3971f04ee1",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/oc/index",
-    "meta": {
-      "icon": "building-2-fill",
-      "badge": "",
-      "title": "资产管理",
-      "hidden": false,
-      "redirect": "",
-      "component": "@/views/CloudOc/Fassets/index",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "3971f04ee1",
-    "createdAt": "2022-03-29T12:53:38.235Z",
-    "updatedAt": "2022-03-29T12:54:07.662Z",
-    "icon": "hotel-fill",
-    "name": "CloudOc",
-    "orderBy": 9,
-    "parent": {
-      "objectId": "0         ",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/oc",
-    "meta": {
-      "icon": "hotel-fill",
-      "badge": "",
-      "title": "云工厂",
-      "hidden": false,
-      "redirect": "/oc/index",
-      "component": "Layout",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "4e4578cbe2",
-    "createdAt": "2021-11-17T07:35:12.966Z",
-    "updatedAt": "2022-02-17T06:58:43.511Z",
-    "icon": "code-box-fill",
-    "name": "LowCode",
-    "orderBy": 55,
-    "parent": {
-      "objectId": "4c6c8c5b59",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/design",
-    "meta": {
-      "icon": "code-box-fill",
-      "badge": "",
-      "title": "界面管理",
-      "hidden": false,
-      "redirect": "",
-      "component": "@/views/CloudFunction/lowcode/index",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "66f7799220",
-    "createdAt": "2022-01-20T11:14:30.933Z",
-    "updatedAt": "2022-01-20T11:14:30.933Z",
-    "icon": "file-ppt-2-fill",
-    "name": "DgiotDoc",
-    "orderBy": 52,
-    "parent": {
-      "objectId": "4c6c8c5b59",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/docs",
-    "meta": {
-      "icon": "file-ppt-2-fill",
-      "badge": "",
-      "title": "文档管理",
-      "hidden": false,
-      "redirect": "",
-      "component": "@/views/CloudFunction/doc",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "933cfaaa5c",
-    "createdAt": "2022-01-20T10:08:59.206Z",
-    "updatedAt": "2022-01-20T10:08:59.206Z",
-    "icon": "emotion-happy-line",
-    "name": "Swagger",
-    "orderBy": 58,
-    "parent": {
-      "objectId": "4c6c8c5b59",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "CloudFunction/swagger",
-    "meta": {
-      "icon": "emotion-happy-line",
-      "badge": "",
-      "title": "swagger",
-      "hidden": false,
-      "redirect": "",
-      "component": "@/views/CloudFunction/swagger",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "a4f99a0ef1",
-    "createdAt": "2021-08-13T09:54:42.994Z",
-    "updatedAt": "2022-01-20T10:04:31.234Z",
-    "icon": "group-2-fill",
-    "name": "UnableToResolveModClusterManagementHost",
-    "orderBy": 63,
-    "parent": {
-      "objectId": "9405b9d9b9",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/roles/nodes",
-    "meta": {
-      "icon": "group-2-fill",
-      "badge": "",
-      "title": "集群管理",
-      "hidden": false,
-      "redirect": "",
-      "component": "@/views/CloudSystem/installation/log",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "1b6fba6483",
-    "createdAt": "2022-01-20T07:56:06.912Z",
-    "updatedAt": "2022-01-20T08:03:31.032Z",
-    "icon": "user-2-line",
-    "name": "UserCenter",
-    "orderBy": 12,
-    "parent": {
-      "objectId": "SVoMYPK8D5",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/userinfo/:userid",
-    "meta": {
-      "icon": "user-2-line",
-      "badge": "",
-      "title": "用户中心",
-      "hidden": true,
-      "redirect": "",
-      "component": "@/views/MultiTenant/roles/userinfo",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "113bfa31f4",
-    "createdAt": "2022-01-20T07:19:46.970Z",
-    "updatedAt": "2022-01-20T07:19:46.970Z",
-    "icon": "swap-box-line",
-    "name": "ChannelManagement",
-    "orderBy": 28,
-    "parent": {
-      "objectId": "8f821711e1",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/dashboard/channel",
-    "meta": {
-      "icon": "swap-box-line",
-      "badge": "",
-      "title": "通道管理",
-      "hidden": false,
-      "redirect": "",
-      "component": "@/views/CloudFunction/engine/channel",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "65e0591399",
-    "createdAt": "2022-01-20T07:07:03.204Z",
-    "updatedAt": "2022-01-20T07:07:03.204Z",
-    "icon": "sort-asc",
-    "name": "CategoryManagement",
-    "orderBy": 591,
-    "parent": {
-      "objectId": "4c6c8c5b59",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/dashboard/category",
-    "meta": {
-      "icon": "sort-asc",
-      "badge": "",
-      "title": "品类管理",
-      "hidden": false,
-      "redirect": "",
-      "component": "@/views/DeviceCloud/category/category",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "b656d5e661",
-    "createdAt": "2022-01-20T06:17:25.888Z",
-    "updatedAt": "2022-01-20T07:04:30.555Z",
-    "icon": "store-2-fill",
-    "name": "Channelstore",
-    "orderBy": 52,
-    "parent": {
-      "objectId": "4c6c8c5b59",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/CloudFunction/store",
-    "meta": {
-      "icon": "store-2-fill",
-      "badge": "",
-      "title": "通道商店",
-      "hidden": false,
-      "redirect": "",
-      "component": "@/views/CloudFunction/engine/createchannel",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "3f24a349f1",
-    "createdAt": "2021-08-13T09:54:42.994Z",
-    "updatedAt": "2022-01-20T07:04:11.282Z",
-    "icon": "mini-program-fill",
-    "name": "ExtendedProgramming",
-    "orderBy": 59,
-    "parent": {
-      "objectId": "4c6c8c5b59",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/dashboard/expandprogram",
-    "meta": {
-      "icon": "router-line",
-      "badge": "",
-      "title": "扩展编程",
-      "hidden": true,
-      "redirect": "",
-      "component": "@/views/CloudSystem/manage/expandprogram",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "3760d5c787",
-    "createdAt": "2022-01-12T02:02:59.171Z",
-    "updatedAt": "2022-01-20T07:03:55.994Z",
-    "icon": "sim-card-2-line",
-    "name": "EquipmentTemplate",
-    "orderBy": 50,
-    "parent": {
-      "objectId": "4c6c8c5b59",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/dashboard/profile",
-    "meta": {
-      "icon": "sim-card-2-line",
-      "badge": "",
-      "title": "产品商店",
-      "hidden": false,
-      "redirect": "",
-      "component": "@views/DeviceCloud/manage/profile",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "3c9334d582",
-    "createdAt": "2022-01-19T02:05:47.471Z",
-    "updatedAt": "2022-01-19T02:05:47.471Z",
-    "icon": "list-settings-line",
-    "name": "AccessLog",
-    "orderBy": 84,
-    "parent": {
-      "objectId": "d0a9cbc4e7",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/Logs/access",
-    "meta": {
-      "icon": "list-settings-line",
-      "badge": "",
-      "title": "操作日志",
-      "hidden": false,
-      "redirect": "",
-      "component": "@/views/CloudSystem/logs/access",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "902321fe9a",
-    "createdAt": "2022-01-19T02:05:14.923Z",
-    "updatedAt": "2022-01-19T02:05:14.923Z",
-    "icon": "history-fill",
-    "name": "HistoryLog",
-    "orderBy": 83,
-    "parent": {
-      "objectId": "d0a9cbc4e7",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/Logs/history",
-    "meta": {
-      "icon": "history-fill",
-      "badge": "",
-      "title": "历史日志",
-      "hidden": false,
-      "redirect": "",
-      "component": "@/views/CloudSystem/logs/history",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "9d4918c580",
-    "createdAt": "2022-01-19T02:04:23.615Z",
-    "updatedAt": "2022-01-19T02:04:32.615Z",
-    "icon": "message-2-line",
-    "name": "EquipmentLog",
-    "orderBy": 82,
-    "parent": {
-      "objectId": "d0a9cbc4e7",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/Logs/device",
-    "meta": {
-      "icon": "message-2-line",
-      "badge": "",
-      "title": "设备日志",
-      "hidden": false,
-      "redirect": "",
-      "component": "@/views/CloudSystem/logs/device",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "9b33789fd9",
-    "createdAt": "2022-01-19T02:00:14.668Z",
-    "updatedAt": "2022-01-19T02:00:36.096Z",
-    "icon": "home-3-fill",
-    "name": "OperationLog",
-    "orderBy": 81,
-    "parent": {
-      "objectId": "d0a9cbc4e7",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/Logs",
-    "meta": {
-      "icon": "logout-circle-r-fill",
-      "badge": "",
-      "title": "实时日志",
-      "hidden": false,
-      "redirect": "",
-      "component": "@/views/CloudSystem/logs/index",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "d0a9cbc4e7",
-    "createdAt": "2022-01-19T01:58:13.161Z",
-    "updatedAt": "2022-01-19T01:59:37.679Z",
-    "icon": "home-3-fill",
-    "name": "CloudLogs",
-    "orderBy": 8,
-    "parent": {
-      "objectId": "0         ",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/Logs/index",
-    "meta": {
-      "icon": "logout-circle-r-line",
-      "badge": "",
-      "title": "云日志",
-      "hidden": false,
-      "redirect": "/Logs",
-      "component": "Layout",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "c219d5b111",
-    "createdAt": "2021-08-13T09:54:42.994Z",
-    "updatedAt": "2022-01-11T07:46:27.855Z",
-    "icon": "file-word-2-line",
-    "name": "EngineeringManagement",
-    "orderBy": 51,
-    "parent": {
-      "objectId": "4c6c8c5b59",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/roles/projectManagement",
-    "meta": {
-      "icon": "hammer-line",
-      "badge": "",
-      "title": "工程管理",
-      "hidden": true,
-      "redirect": "",
-      "component": "@/views/DeviceCloud/manage/application/applicationManagement",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "0ae2d28d46",
-    "createdAt": "2021-08-13T09:54:42.994Z",
-    "updatedAt": "2022-01-11T07:45:38.927Z",
-    "icon": "code-box-line",
-    "name": "DecodingManagement",
-    "orderBy": 53,
-    "parent": {
-      "objectId": "4c6c8c5b59",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/roles/thingsParse",
-    "meta": {
-      "icon": "key-2-fill",
-      "badge": "",
-      "title": "解码管理",
-      "hidden": true,
-      "redirect": "",
-      "component": "@/views/DeviceCloud/manage/thingsParse",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "3f0335d72a",
-    "createdAt": "2021-08-13T09:54:42.994Z",
-    "updatedAt": "2022-01-11T07:45:01.977Z",
-    "icon": "video-chat-line",
-    "name": "PerformanceMonitoring",
-    "orderBy": 61,
-    "parent": {
-      "objectId": "9405b9d9b9",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/performance_monitoring",
-    "meta": {
-      "icon": "video-chat-line",
-      "badge": "",
-      "title": "性能监控",
-      "hidden": true,
-      "redirect": "",
-      "component": "@/views/Dashboard/index",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "cc40a5c2bc",
-    "createdAt": "2021-08-13T09:54:42.994Z",
-    "updatedAt": "2022-01-11T07:43:56.739Z",
-    "icon": "open-arm-line",
-    "name": "SetManagementInterface",
-    "orderBy": 34,
+    "updatedAt": "2021-11-17T04:19:36.770Z",
+    "icon": "menu",
+    "name": "Menu",
+    "orderBy": 32,
     "parent": {
       "objectId": "2f2867fa49",
       "__type": "Pointer",
       "className": "Menu"
     },
-    "url": "/roles/rolescontrol",
+    "url": "/roles/menu",
     "meta": {
-      "icon": "links-fill",
-      "badge": "",
-      "title": "接口管理",
-      "hidden": true,
-      "redirect": "",
-      "component": "@/views/MultiTenant/roles/list/rolescontrol",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
+      "icon": "file-settings-line",
+      "title": "菜单管理",
+      "component": "@/views/MultiTenant/roles/menu"
     }
   },
   {
-    "objectId": "760cb0f88e",
+    "objectId": "54c68e3992",
     "createdAt": "2021-08-13T09:54:42.993Z",
-    "updatedAt": "2022-01-11T07:42:58.474Z",
-    "icon": "apple-fill",
-    "name": "ApplicationManagement",
-    "orderBy": 35,
+    "updatedAt": "2021-11-17T04:32:45.295Z",
+    "icon": "sound-module-line",
+    "name": "TemplateManagement",
+    "orderBy": 37,
     "parent": {
       "objectId": "2f2867fa49",
       "__type": "Pointer",
       "className": "Menu"
     },
-    "url": "/roles/applicationManagement",
+    "url": "/modules",
     "meta": {
-      "icon": "apple-fill",
+      "icon": "sound-module-line",
       "badge": "",
-      "title": "应用管理",
+      "title": "模板管理",
       "hidden": true,
       "redirect": "",
-      "component": "@/views/DeviceCloud/manage/application/application",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "7135d51e09",
-    "createdAt": "2021-08-13T09:54:42.994Z",
-    "updatedAt": "2021-12-30T08:25:19.614Z",
-    "icon": "codepen-line",
-    "name": "DeploymentManagement",
-    "orderBy": 64,
-    "parent": {
-      "objectId": "9405b9d9b9",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/roles/server_control",
-    "meta": {
-      "icon": "body-scan-line",
-      "badge": "",
-      "title": "部署管理",
-      "hidden": true,
-      "redirect": "",
-      "component": "@views/DeviceCloud/manage/server_control",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "a6cf3b4761",
-    "createdAt": "2021-11-22T04:15:53.944Z",
-    "updatedAt": "2021-12-30T08:23:27.974Z",
-    "icon": "codepen-line",
-    "name": "TopoEditor",
-    "orderBy": 57,
-    "parent": {
-      "objectId": "4c6c8c5b59",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/design/editor/topo",
-    "meta": {
-      "icon": "codepen-line",
-      "badge": "",
-      "title": "组态编辑器",
-      "hidden": true,
-      "redirect": "",
-      "component": "@/views/CloudFunction/topo/editor",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "4c6c8c5b59",
-    "createdAt": "2021-08-13T09:54:42.993Z",
-    "updatedAt": "2021-12-02T07:11:33.680Z",
-    "icon": "team-fill",
-    "name": "CloudFunction",
-    "orderBy": 5,
-    "parent": {
-      "objectId": "0         ",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/base",
-    "meta": {
-      "icon": "cloud-line",
-      "badge": "",
-      "title": " 云函数",
-      "hidden": false,
-      "redirect": "/roles/projectManagement",
-      "component": "Layout",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "850831af96",
-    "createdAt": "2021-11-18T09:49:41.328Z",
-    "updatedAt": "2021-11-22T04:11:51.367Z",
-    "icon": "home-3-fill",
-    "name": "AmisEditor",
-    "orderBy": 56,
-    "parent": {
-      "objectId": "4c6c8c5b59",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/design/editor/amis",
-    "meta": {
-      "icon": "home-3-fill",
-      "badge": "",
-      "title": "amis编辑器",
-      "hidden": false,
-      "redirect": "",
-      "component": "@/views/CloudFunction/amis/editor",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "fc5b20b163",
-    "createdAt": "2021-11-15T09:13:54.078Z",
-    "updatedAt": "2021-11-19T07:50:01.558Z",
-    "icon": "home-3-fill",
-    "name": "TestReport",
-    "orderBy": 71,
-    "parent": {
-      "objectId": "09c9f79a68",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/cloudTest/report",
-    "meta": {
-      "icon": "home-3-fill",
-      "badge": "",
-      "title": "报告模板",
-      "hidden": false,
-      "redirect": "",
-      "component": "@/views/CloudTest/report/index",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "09036ec2fd",
-    "createdAt": "2021-11-18T10:56:44.969Z",
-    "updatedAt": "2021-11-18T11:27:35.768Z",
-    "icon": "bar-chart-horizontal-fill",
-    "name": "CreateResourcechannel",
-    "orderBy": 221,
-    "parent": {
-      "objectId": "9405b9d9b9",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/Createchannel",
-    "meta": {
-      "icon": "bar-chart-horizontal-fill",
-      "badge": "",
-      "title": "创建通道",
-      "hidden": true,
-      "redirect": "",
-      "component": "@/views/CloudFunction/engine/createchannel",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "128be06afb",
-    "createdAt": "2021-10-20T06:51:22.333Z",
-    "updatedAt": "2021-11-17T12:16:38.122Z",
-    "icon": "product-hunt-fill",
-    "name": "Product_management",
-    "orderBy": 21,
-    "parent": {
-      "objectId": "8f821711e1",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/dashboard/productlist",
-    "meta": {
-      "icon": "product-hunt-fill",
-      "badge": "",
-      "title": "产品管理",
-      "hidden": false,
-      "redirect": "",
-      "component": "@views/DeviceCloud/manage/product",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "c15290c3eb",
-    "createdAt": "2021-08-13T10:21:09.855Z",
-    "updatedAt": "2021-11-17T06:40:13.355Z",
-    "icon": "code-box-fill",
-    "name": "Detailproduct",
-    "orderBy": 211,
-    "parent": {
-      "objectId": "8f821711e1",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/roles/detailproduct",
-    "meta": {
-      "icon": "code-box-fill",
-      "badge": "",
-      "title": "产品详情",
-      "hidden": true,
-      "redirect": "",
-      "component": "@views/DeviceCloud/manage/proddetail",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "cfda8d3366",
-    "createdAt": "2021-08-13T09:54:42.994Z",
-    "updatedAt": "2021-11-17T06:31:07.100Z",
-    "icon": "device-fill",
-    "name": "EquipmentManagement",
-    "orderBy": 23,
-    "parent": {
-      "objectId": "8f821711e1",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/dashboard/devicelist",
-    "meta": {
-      "icon": "bar-chart-horizontal-fill",
-      "badge": "",
-      "title": "设备管理",
-      "hidden": false,
-      "redirect": "",
-      "component": "@views/DeviceCloud/manage/home_index",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "9405b9d9b9",
-    "createdAt": "2021-08-13T09:54:42.994Z",
-    "updatedAt": "2021-11-17T06:30:11.822Z",
-    "icon": "closed-captioning-line",
-    "name": "CloudSystem",
-    "orderBy": 6,
-    "parent": {
-      "objectId": "0         ",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/dashboard/expandprogram",
-    "meta": {
-      "icon": "file-settings-fill",
-      "badge": "",
-      "title": "云系统",
-      "hidden": false,
-      "redirect": "/performance_monitoring",
-      "component": "Layout",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "76ad3ad6ef",
-    "createdAt": "2021-11-15T09:14:15.755Z",
-    "updatedAt": "2021-11-17T06:27:32.286Z",
-    "icon": "home-3-fill",
-    "name": "TestTask",
-    "orderBy": 72,
-    "parent": {
-      "objectId": "09c9f79a68",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/cloudTest/Task",
-    "meta": {
-      "icon": "home-3-fill",
-      "badge": "",
-      "title": "检测任务",
-      "hidden": false,
-      "redirect": "",
-      "component": "@/views/CloudTest/task/index",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "8ac5e547c0",
-    "createdAt": "2021-08-13T09:54:42.994Z",
-    "updatedAt": "2021-11-17T06:25:13.071Z",
-    "icon": "calendar-event-fill",
-    "name": "EndOfRepairOrder",
-    "orderBy": 47,
-    "parent": {
-      "objectId": "ee1042a17e",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/CloudOt/EvaluationTicket",
-    "meta": {
-      "icon": "file-lock-line",
-      "badge": "",
-      "title": "结束工单",
-      "hidden": false,
-      "redirect": "",
-      "component": "@/views/CloudOT/maintenance/evaluationTicket",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "e2bb0e7dc8",
-    "createdAt": "2021-08-13T09:54:42.994Z",
-    "updatedAt": "2021-11-17T06:25:02.492Z",
-    "icon": "creative-commons-by-line",
-    "name": "CreateWorkOrder",
-    "orderBy": 44,
-    "parent": {
-      "objectId": "ee1042a17e",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/CloudOt/createTicket",
-    "meta": {
-      "icon": "draft-fill",
-      "badge": "",
-      "title": "创建工单",
-      "hidden": false,
-      "redirect": "",
-      "component": "@/views/CloudOT/maintenance/createTicket",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "a0fdfba6cd",
-    "createdAt": "2021-08-13T09:54:42.994Z",
-    "updatedAt": "2021-11-17T06:24:51.953Z",
-    "icon": "alarm-warning-fill",
-    "name": "Alarm",
-    "orderBy": 43,
-    "parent": {
-      "objectId": "ee1042a17e",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/CloudOt/alarm",
-    "meta": {
-      "icon": "alarm-warning-fill",
-      "badge": "",
-      "title": "告警中心",
-      "hidden": false,
-      "redirect": "",
-      "component": "@/views/CloudOT/maintenance/alert",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "75763f7ad1",
-    "createdAt": "2021-08-13T09:54:42.994Z",
-    "updatedAt": "2021-11-17T06:24:42.261Z",
-    "icon": "task-fill",
-    "name": "MyWorkOrder",
-    "orderBy": 42,
-    "parent": {
-      "objectId": "ee1042a17e",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/CloudOt/myticket",
-    "meta": {
-      "icon": "file-user-line",
-      "badge": "",
-      "title": "我的工单",
-      "hidden": false,
-      "redirect": "",
-      "component": "@/views/CloudOT/maintenance/myticket",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "07e46af052",
-    "createdAt": "2021-08-13T09:54:42.994Z",
-    "updatedAt": "2021-11-17T06:24:24.681Z",
-    "icon": "compass-discover-fill",
-    "name": "DistributeWorkOrders",
-    "orderBy": 46,
-    "parent": {
-      "objectId": "ee1042a17e",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/CloudOt/dispatchTicket",
-    "meta": {
-      "icon": "file-transfer-line",
-      "badge": "",
-      "title": "派发工单",
-      "hidden": false,
-      "redirect": "",
-      "component": "@/views/CloudOT/maintenance/dispatchTicket",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "718ca9c223",
-    "createdAt": "2021-08-13T09:54:42.994Z",
-    "updatedAt": "2021-11-17T06:24:12.980Z",
-    "icon": "home-3-fill",
-    "name": "HandleRepairOrder",
-    "orderBy": 45,
-    "parent": {
-      "objectId": "ee1042a17e",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/CloudOt/ProcessTicket",
-    "meta": {
-      "icon": "file-add-line",
-      "badge": "",
-      "title": "处理工单",
-      "hidden": false,
-      "redirect": "",
-      "component": "@/views/CloudOT/maintenance/processTicket",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "e5f165661c",
-    "createdAt": "2021-08-13T09:54:42.994Z",
-    "updatedAt": "2021-11-17T06:24:03.001Z",
-    "icon": "file-chart-line",
-    "name": "AllWorkOrder",
-    "orderBy": 41,
-    "parent": {
-      "objectId": "ee1042a17e",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/CloudOt/index",
-    "meta": {
-      "icon": "article-line",
-      "badge": "",
-      "title": "所有工单",
-      "hidden": false,
-      "redirect": "",
-      "component": "@/views/CloudOT/maintenance/index",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "e32799936a",
-    "createdAt": "2021-08-13T09:54:42.993Z",
-    "updatedAt": "2021-11-17T06:00:21.599Z",
-    "icon": "building-4-fill",
-    "name": "DictionaryManagement",
-    "orderBy": 26,
-    "parent": {
-      "objectId": "8f821711e1",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/dashboard/dict",
-    "meta": {
-      "icon": "book-3-fill",
-      "badge": "",
-      "title": "字典管理",
-      "hidden": false,
-      "redirect": "",
-      "component": "@/views/CloudFunction/engine/dict",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "18c6a4a9bf",
-    "createdAt": "2021-08-13T09:54:42.993Z",
-    "updatedAt": "2021-11-17T04:53:12.338Z",
-    "icon": "video-add-line",
-    "name": "VideoPlayer",
-    "orderBy": 233,
-    "parent": {
-      "objectId": "8f821711e1",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/tools/player",
-    "meta": {
-      "icon": "video-add-line",
-      "badge": "",
-      "title": "视频播放器",
-      "hidden": true,
-      "redirect": "",
-      "component": "@/views/Tools/player",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "92717b489e",
-    "createdAt": "2021-08-13T09:54:42.993Z",
-    "updatedAt": "2021-11-17T04:50:07.585Z",
-    "icon": "bike-fill",
-    "name": "GetScreenConfigurationAccessor",
-    "orderBy": 27,
-    "parent": {
-      "objectId": "8f821711e1",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/Topo",
-    "meta": {
-      "icon": "bike-fill",
-      "badge": "",
-      "title": "组态大屏",
-      "hidden": true,
-      "redirect": "",
-      "component": "@/views/CloudFunction/topo/index",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "044a23939f",
-    "createdAt": "2021-11-05T10:10:31.818Z",
-    "updatedAt": "2021-11-17T04:49:26.185Z",
-    "icon": "home-3-fill",
-    "name": "Filemanagement",
-    "orderBy": 61,
-    "parent": {
-      "objectId": "9405b9d9b9",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/dashboard/filemanagement",
-    "meta": {
-      "icon": "home-3-fill",
-      "badge": "",
-      "title": "文件管理",
-      "hidden": false,
-      "redirect": "",
-      "component": "@/views/CloudSystem/manage/filemanagement",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "434556128e",
-    "createdAt": "2021-08-13T09:54:42.994Z",
-    "updatedAt": "2021-11-17T04:47:00.156Z",
-    "icon": "plug-fill",
-    "name": "Plug_inManagement",
-    "orderBy": 62,
-    "parent": {
-      "objectId": "9405b9d9b9",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/roles/appmanage",
-    "meta": {
-      "icon": "plug-fill",
-      "badge": "",
-      "title": "插件管理",
-      "hidden": false,
-      "redirect": "",
-      "component": "@/views/CloudSystem/manage/appmarage",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "c33ff3817d",
-    "createdAt": "2021-08-13T09:54:42.994Z",
-    "updatedAt": "2021-11-17T04:45:38.124Z",
-    "icon": "parking-box-fill",
-    "name": "DataManagement",
-    "orderBy": 65,
-    "parent": {
-      "objectId": "9405b9d9b9",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/dashboard/parse",
-    "meta": {
-      "icon": "folder-download-line",
-      "badge": "",
-      "title": "数据管理",
-      "hidden": false,
-      "redirect": "",
-      "component": "@views/DeviceCloud/manage/parse",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "a2b950dcbe",
-    "createdAt": "2021-08-13T09:54:42.994Z",
-    "updatedAt": "2021-11-17T04:45:02.293Z",
-    "icon": "bug-line",
-    "name": "OnlineDebugging",
-    "orderBy": 26,
-    "parent": {
-      "objectId": "8f821711e1",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/roles/onlinetest",
-    "meta": {
-      "icon": "bug-line",
-      "badge": "",
-      "title": "在线调试",
-      "hidden": true,
-      "redirect": "",
-      "component": "@views/DeviceCloud/manage/onlinetest",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "14af7cd9b8",
-    "createdAt": "2021-08-13T09:54:42.994Z",
-    "updatedAt": "2021-11-17T04:44:39.751Z",
-    "icon": "home-3-fill",
-    "name": "EquipmentDetails",
-    "orderBy": 231,
-    "parent": {
-      "objectId": "8f821711e1",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/roles/editdevices",
-    "meta": {
-      "icon": "home-3-fill",
-      "badge": "",
-      "title": "设备详情",
-      "hidden": true,
-      "redirect": "",
-      "component": "@views/DeviceCloud/manage/editdevices",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "d9b7460440",
-    "createdAt": "2021-08-13T09:54:42.993Z",
-    "updatedAt": "2021-11-17T04:44:22.491Z",
-    "icon": "device-line",
-    "name": "ChildDeviceManagement",
-    "orderBy": 232,
-    "parent": {
-      "objectId": "8f821711e1",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/roles/thing",
-    "meta": {
-      "icon": "device-line",
-      "badge": "",
-      "title": "子设备管理",
-      "hidden": true,
-      "redirect": "",
-      "component": "@views/DeviceCloud/manage/index",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "2b52f94a58",
-    "createdAt": "2021-10-18T09:41:53.517Z",
-    "updatedAt": "2021-11-17T04:44:10.403Z",
-    "icon": "home-3-fill",
-    "name": "Grouping_management",
-    "orderBy": 31,
-    "parent": {
-      "objectId": "8f821711e1",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/dashboard/grouping",
-    "meta": {
-      "icon": "bar-chart-grouped-line",
-      "badge": "",
-      "title": "分组管理",
-      "hidden": false,
-      "redirect": "",
-      "component": "@views/DeviceCloud/manage/home_group",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "dsnf1u9vCx",
-    "createdAt": "2021-08-13T09:54:42.994Z",
-    "updatedAt": "2021-11-17T04:37:11.950Z",
-    "icon": "usermanage",
-    "name": "Structure",
-    "orderBy": 31,
-    "parent": {
-      "objectId": "2f2867fa49",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/structures",
-    "meta": {
-      "icon": "user-3-line",
-      "title": "用户管理",
-      "component": "@/views/MultiTenant/roles/structure"
-    }
-  },
-  {
-    "objectId": "0512201918",
-    "createdAt": "2021-08-13T09:54:42.994Z",
-    "updatedAt": "2021-11-17T04:36:36.407Z",
-    "icon": "luggage-deposit-fill",
-    "name": "PostManagement",
-    "orderBy": 35,
-    "parent": {
-      "objectId": "2f2867fa49",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/department",
-    "meta": {
-      "icon": "organization-chart",
-      "badge": "",
-      "title": "岗位管理",
-      "hidden": false,
-      "redirect": "",
-      "component": "@/views/MultiTenant/roles/department/department",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "2a0b2eed09",
-    "createdAt": "2021-08-13T09:54:42.994Z",
-    "updatedAt": "2021-11-17T04:35:25.249Z",
-    "icon": "shield-user-fill",
-    "name": "RoleManagement",
-    "orderBy": 33,
-    "parent": {
-      "objectId": "2f2867fa49",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/roles/roles",
-    "meta": {
-      "icon": "user-add-line",
-      "badge": "",
-      "title": "角色管理",
-      "hidden": false,
-      "redirect": "",
-      "component": "@/views/MultiTenant/roles/list/roles",
-      "tabHidden": false,
-      "alwaysShow": false,
-      "noClosable": false,
-      "isCustomSvg": false,
-      "noKeepAlive": false
-    },
-    "ACL": {
-      "*": {
-        "read": true,
-        "write": true
-      },
-      "role:admin": {
-        "read": true,
-        "write": true
-      }
-    }
-  },
-  {
-    "objectId": "6a656efa55",
-    "createdAt": "2021-08-13T09:54:42.994Z",
-    "updatedAt": "2021-11-17T04:34:45.932Z",
-    "icon": "apps-line",
-    "name": "NewApplication",
-    "orderBy": 38,
-    "parent": {
-      "objectId": "2f2867fa49",
-      "__type": "Pointer",
-      "className": "Menu"
-    },
-    "url": "/applicationManagement/addApp",
-    "meta": {
-      "icon": "apps-line",
-      "badge": "",
-      "title": "新增应用",
-      "hidden": true,
-      "redirect": "",
-      "component": "@/views/DeviceCloud/manage/application/addApp",
+      "component": "@/views/CloudSystem/manage/modules",
       "tabHidden": false,
       "alwaysShow": false,
       "noClosable": false,
@@ -2441,25 +130,25 @@
     }
   },
   {
-    "objectId": "54c68e3992",
-    "createdAt": "2021-08-13T09:54:42.993Z",
-    "updatedAt": "2021-11-17T04:32:45.295Z",
-    "icon": "sound-module-line",
-    "name": "TemplateManagement",
-    "orderBy": 37,
+    "objectId": "2b52f94a58",
+    "createdAt": "2021-10-18T09:41:53.517Z",
+    "updatedAt": "2021-11-17T04:44:10.403Z",
+    "icon": "home-3-fill",
+    "name": "Grouping_management",
+    "orderBy": 31,
     "parent": {
-      "objectId": "2f2867fa49",
+      "objectId": "8f821711e1",
       "__type": "Pointer",
       "className": "Menu"
     },
-    "url": "/modules",
+    "url": "/dashboard/grouping",
     "meta": {
-      "icon": "sound-module-line",
+      "icon": "bar-chart-grouped-line",
       "badge": "",
-      "title": "模板管理",
-      "hidden": true,
+      "title": "分组管理",
+      "hidden": false,
       "redirect": "",
-      "component": "@/views/CloudSystem/manage/modules",
+      "component": "@views/DeviceCloud/manage/home_group",
       "tabHidden": false,
       "alwaysShow": false,
       "noClosable": false,
@@ -2478,44 +167,303 @@
     }
   },
   {
-    "objectId": "ECsbqM3di4",
+    "objectId": "d9b7460440",
     "createdAt": "2021-08-13T09:54:42.993Z",
-    "updatedAt": "2021-11-17T04:19:36.770Z",
-    "icon": "menu",
-    "name": "Menu",
-    "orderBy": 32,
+    "updatedAt": "2021-11-17T04:44:22.491Z",
+    "icon": "device-line",
+    "name": "ChildDeviceManagement",
+    "orderBy": 232,
+    "parent": {
+      "objectId": "8f821711e1",
+      "__type": "Pointer",
+      "className": "Menu"
+    },
+    "url": "/roles/thing",
+    "meta": {
+      "icon": "device-line",
+      "badge": "",
+      "title": "子设备管理",
+      "hidden": true,
+      "redirect": "",
+      "component": "@views/DeviceCloud/manage/index",
+      "tabHidden": false,
+      "alwaysShow": false,
+      "noClosable": false,
+      "isCustomSvg": false,
+      "noKeepAlive": false
+    },
+    "ACL": {
+      "*": {
+        "read": true,
+        "write": true
+      },
+      "role:admin": {
+        "read": true,
+        "write": true
+      }
+    }
+  },
+  {
+    "objectId": "044a23939f",
+    "createdAt": "2021-11-05T10:10:31.818Z",
+    "updatedAt": "2021-11-17T04:49:26.185Z",
+    "icon": "home-3-fill",
+    "name": "Filemanagement",
+    "orderBy": 61,
+    "parent": {
+      "objectId": "9405b9d9b9",
+      "__type": "Pointer",
+      "className": "Menu"
+    },
+    "url": "/dashboard/filemanagement",
+    "meta": {
+      "icon": "home-3-fill",
+      "badge": "",
+      "title": "文件管理",
+      "hidden": false,
+      "redirect": "",
+      "component": "@/views/CloudSystem/manage/filemanagement",
+      "tabHidden": false,
+      "alwaysShow": false,
+      "noClosable": false,
+      "isCustomSvg": false,
+      "noKeepAlive": false
+    },
+    "ACL": {
+      "*": {
+        "read": true,
+        "write": true
+      },
+      "role:admin": {
+        "read": true,
+        "write": true
+      }
+    }
+  },
+  {
+    "objectId": "c15290c3eb",
+    "createdAt": "2021-08-13T10:21:09.855Z",
+    "updatedAt": "2021-11-17T06:40:13.355Z",
+    "icon": "code-box-fill",
+    "name": "Detailproduct",
+    "orderBy": 211,
+    "parent": {
+      "objectId": "8f821711e1",
+      "__type": "Pointer",
+      "className": "Menu"
+    },
+    "url": "/roles/detailproduct",
+    "meta": {
+      "icon": "code-box-fill",
+      "badge": "",
+      "title": "产品详情",
+      "hidden": true,
+      "redirect": "",
+      "component": "@views/DeviceCloud/manage/proddetail",
+      "tabHidden": false,
+      "alwaysShow": false,
+      "noClosable": false,
+      "isCustomSvg": false,
+      "noKeepAlive": false
+    },
+    "ACL": {
+      "*": {
+        "read": true,
+        "write": true
+      },
+      "role:admin": {
+        "read": true,
+        "write": true
+      }
+    }
+  },
+  {
+    "objectId": "18c6a4a9bf",
+    "createdAt": "2021-08-13T09:54:42.993Z",
+    "updatedAt": "2021-11-17T04:53:12.338Z",
+    "icon": "video-add-line",
+    "name": "VideoPlayer",
+    "orderBy": 233,
+    "parent": {
+      "objectId": "8f821711e1",
+      "__type": "Pointer",
+      "className": "Menu"
+    },
+    "url": "/tools/player",
+    "meta": {
+      "icon": "video-add-line",
+      "badge": "",
+      "title": "视频播放器",
+      "hidden": true,
+      "redirect": "",
+      "component": "@/views/Tools/player",
+      "tabHidden": false,
+      "alwaysShow": false,
+      "noClosable": false,
+      "isCustomSvg": false,
+      "noKeepAlive": false
+    },
+    "ACL": {
+      "*": {
+        "read": true,
+        "write": true
+      },
+      "role:admin": {
+        "read": true,
+        "write": true
+      }
+    }
+  },
+  {
+    "objectId": "e32799936a",
+    "createdAt": "2021-08-13T09:54:42.993Z",
+    "updatedAt": "2021-11-17T06:00:21.599Z",
+    "icon": "building-4-fill",
+    "name": "DictionaryManagement",
+    "orderBy": 26,
+    "parent": {
+      "objectId": "8f821711e1",
+      "__type": "Pointer",
+      "className": "Menu"
+    },
+    "url": "/dashboard/dict",
+    "meta": {
+      "icon": "book-3-fill",
+      "badge": "",
+      "title": "字典管理",
+      "hidden": false,
+      "redirect": "",
+      "component": "@/views/CloudFunction/engine/dict",
+      "tabHidden": false,
+      "alwaysShow": false,
+      "noClosable": false,
+      "isCustomSvg": false,
+      "noKeepAlive": false
+    },
+    "ACL": {
+      "*": {
+        "read": true,
+        "write": true
+      },
+      "role:admin": {
+        "read": true,
+        "write": true
+      }
+    }
+  },
+  {
+    "objectId": "2f2867fa49",
+    "createdAt": "2021-08-13T09:54:42.993Z",
+    "updatedAt": "2021-10-19T02:36:18.493Z",
+    "icon": "admin-fill",
+    "name": "Multitenant",
+    "orderBy": 3,
+    "parent": {
+      "objectId": "0         ",
+      "__type": "Pointer",
+      "className": "Menu"
+    },
+    "url": "/roles",
+    "meta": {
+      "icon": "parent-line",
+      "badge": "",
+      "title": "多租户",
+      "hidden": false,
+      "redirect": "/structures",
+      "component": "Layout",
+      "tabHidden": false,
+      "alwaysShow": false,
+      "noClosable": false,
+      "isCustomSvg": false,
+      "noKeepAlive": false
+    },
+    "ACL": {
+      "*": {
+        "read": true,
+        "write": true
+      },
+      "role:admin": {
+        "read": true,
+        "write": true
+      }
+    }
+  },
+  {
+    "objectId": "dsnf1u9vCx",
+    "createdAt": "2021-08-13T09:54:42.994Z",
+    "updatedAt": "2021-11-17T04:37:11.950Z",
+    "icon": "usermanage",
+    "name": "Structure",
+    "orderBy": 31,
     "parent": {
       "objectId": "2f2867fa49",
       "__type": "Pointer",
       "className": "Menu"
     },
-    "url": "/roles/menu",
+    "url": "/structures",
     "meta": {
-      "icon": "file-settings-line",
-      "title": "菜单管理",
-      "component": "@/views/MultiTenant/roles/menu"
+      "icon": "user-3-line",
+      "title": "用户管理",
+      "component": "@/views/MultiTenant/roles/structure"
     }
   },
   {
-    "objectId": "70549bcc94",
+    "objectId": "0ae2d28d46",
     "createdAt": "2021-08-13T09:54:42.994Z",
-    "updatedAt": "2021-11-17T04:18:56.139Z",
-    "icon": "eye-2-line",
-    "name": "ViewRules",
-    "orderBy": 542,
+    "updatedAt": "2022-01-11T07:45:38.927Z",
+    "icon": "code-box-line",
+    "name": "DecodingManagement",
+    "orderBy": 53,
     "parent": {
       "objectId": "4c6c8c5b59",
       "__type": "Pointer",
       "className": "Menu"
     },
-    "url": "/rules_engine/checkengine",
+    "url": "/roles/thingsParse",
     "meta": {
-      "icon": "eye-2-line",
+      "icon": "key-2-fill",
       "badge": "",
-      "title": "查看规则",
+      "title": "解码管理",
       "hidden": true,
       "redirect": "",
-      "component": "@/views/CloudFunction/engine/checkengine",
+      "component": "@/views/DeviceCloud/manage/thingsParse",
+      "tabHidden": false,
+      "alwaysShow": false,
+      "noClosable": false,
+      "isCustomSvg": false,
+      "noKeepAlive": false
+    },
+    "ACL": {
+      "*": {
+        "read": true,
+        "write": true
+      },
+      "role:admin": {
+        "read": true,
+        "write": true
+      }
+    }
+  },
+  {
+    "objectId": "3f24a349f1",
+    "createdAt": "2021-08-13T09:54:42.994Z",
+    "updatedAt": "2022-01-20T07:04:11.282Z",
+    "icon": "mini-program-fill",
+    "name": "ExtendedProgramming",
+    "orderBy": 59,
+    "parent": {
+      "objectId": "4c6c8c5b59",
+      "__type": "Pointer",
+      "className": "Menu"
+    },
+    "url": "/dashboard/expandprogram",
+    "meta": {
+      "icon": "router-line",
+      "badge": "",
+      "title": "扩展编程",
+      "hidden": true,
+      "redirect": "",
+      "component": "@/views/CloudSystem/manage/expandprogram",
       "tabHidden": false,
       "alwaysShow": false,
       "noClosable": false,
@@ -2571,25 +519,25 @@
     }
   },
   {
-    "objectId": "2261f5a8e9",
+    "objectId": "6a656efa55",
     "createdAt": "2021-08-13T09:54:42.994Z",
-    "updatedAt": "2021-11-17T04:15:27.588Z",
-    "icon": "mail-add-line",
-    "name": "AddRules",
-    "orderBy": 541,
+    "updatedAt": "2021-11-17T04:34:45.932Z",
+    "icon": "apps-line",
+    "name": "NewApplication",
+    "orderBy": 38,
     "parent": {
-      "objectId": "4c6c8c5b59",
+      "objectId": "2f2867fa49",
       "__type": "Pointer",
       "className": "Menu"
     },
-    "url": "/rules_engine/addengine",
+    "url": "/applicationManagement/addApp",
     "meta": {
-      "icon": "mail-add-line",
+      "icon": "apps-line",
       "badge": "",
-      "title": "添加规则",
+      "title": "新增应用",
       "hidden": true,
       "redirect": "",
-      "component": "@/views/CloudFunction/engine/addengine",
+      "component": "@/views/DeviceCloud/manage/application/addApp",
       "tabHidden": false,
       "alwaysShow": false,
       "noClosable": false,
@@ -2608,25 +556,173 @@
     }
   },
   {
-    "objectId": "8f821711e1",
+    "objectId": "718ca9c223",
+    "createdAt": "2021-08-13T09:54:42.994Z",
+    "updatedAt": "2021-11-17T06:24:12.980Z",
+    "icon": "home-3-fill",
+    "name": "HandleRepairOrder",
+    "orderBy": 45,
+    "parent": {
+      "objectId": "ee1042a17e",
+      "__type": "Pointer",
+      "className": "Menu"
+    },
+    "url": "/CloudOt/ProcessTicket",
+    "meta": {
+      "icon": "file-add-line",
+      "badge": "",
+      "title": "处理工单",
+      "hidden": false,
+      "redirect": "",
+      "component": "@/views/CloudOT/maintenance/processTicket",
+      "tabHidden": false,
+      "alwaysShow": false,
+      "noClosable": false,
+      "isCustomSvg": false,
+      "noKeepAlive": false
+    },
+    "ACL": {
+      "*": {
+        "read": true,
+        "write": true
+      },
+      "role:admin": {
+        "read": true,
+        "write": true
+      }
+    }
+  },
+  {
+    "objectId": "07e46af052",
+    "createdAt": "2021-08-13T09:54:42.994Z",
+    "updatedAt": "2021-11-17T06:24:24.681Z",
+    "icon": "compass-discover-fill",
+    "name": "DistributeWorkOrders",
+    "orderBy": 46,
+    "parent": {
+      "objectId": "ee1042a17e",
+      "__type": "Pointer",
+      "className": "Menu"
+    },
+    "url": "/CloudOt/dispatchTicket",
+    "meta": {
+      "icon": "file-transfer-line",
+      "badge": "",
+      "title": "派发工单",
+      "hidden": false,
+      "redirect": "",
+      "component": "@/views/CloudOT/maintenance/dispatchTicket",
+      "tabHidden": false,
+      "alwaysShow": false,
+      "noClosable": false,
+      "isCustomSvg": false,
+      "noKeepAlive": false
+    },
+    "ACL": {
+      "*": {
+        "read": true,
+        "write": true
+      },
+      "role:admin": {
+        "read": true,
+        "write": true
+      }
+    }
+  },
+  {
+    "objectId": "14af7cd9b8",
+    "createdAt": "2021-08-13T09:54:42.994Z",
+    "updatedAt": "2021-11-17T04:44:39.751Z",
+    "icon": "home-3-fill",
+    "name": "EquipmentDetails",
+    "orderBy": 231,
+    "parent": {
+      "objectId": "8f821711e1",
+      "__type": "Pointer",
+      "className": "Menu"
+    },
+    "url": "/roles/editdevices",
+    "meta": {
+      "icon": "home-3-fill",
+      "badge": "",
+      "title": "设备详情",
+      "hidden": true,
+      "redirect": "",
+      "component": "@views/DeviceCloud/manage/editdevices",
+      "tabHidden": false,
+      "alwaysShow": false,
+      "noClosable": false,
+      "isCustomSvg": false,
+      "noKeepAlive": false
+    },
+    "ACL": {
+      "*": {
+        "read": true,
+        "write": true
+      },
+      "role:admin": {
+        "read": true,
+        "write": true
+      }
+    }
+  },
+  {
+    "objectId": "434556128e",
+    "createdAt": "2021-08-13T09:54:42.994Z",
+    "updatedAt": "2021-11-17T04:47:00.156Z",
+    "icon": "plug-fill",
+    "name": "Plug_inManagement",
+    "orderBy": 62,
+    "parent": {
+      "objectId": "9405b9d9b9",
+      "__type": "Pointer",
+      "className": "Menu"
+    },
+    "url": "/roles/appmanage",
+    "meta": {
+      "icon": "plug-fill",
+      "badge": "",
+      "title": "插件管理",
+      "hidden": false,
+      "redirect": "",
+      "component": "@/views/CloudSystem/manage/appmarage",
+      "tabHidden": false,
+      "alwaysShow": false,
+      "noClosable": false,
+      "isCustomSvg": false,
+      "noKeepAlive": false
+    },
+    "ACL": {
+      "*": {
+        "read": true,
+        "write": true
+      },
+      "role:admin": {
+        "read": true,
+        "write": true
+      }
+    }
+  },
+  {
+    "objectId": "92717b489e",
     "createdAt": "2021-08-13T09:54:42.993Z",
-    "updatedAt": "2021-11-15T10:17:01.964Z",
-    "icon": "product-hunt-fill",
-    "name": "EquipmentCloud",
-    "orderBy": 2,
+    "updatedAt": "2021-11-17T04:50:07.585Z",
+    "icon": "bike-fill",
+    "name": "GetScreenConfigurationAccessor",
+    "orderBy": 27,
     "parent": {
-      "objectId": "0         ",
+      "objectId": "8f821711e1",
       "__type": "Pointer",
       "className": "Menu"
     },
-    "url": "/dashboard",
+    "url": "/Topo",
     "meta": {
-      "icon": "account-box-fill",
+      "icon": "bike-fill",
       "badge": "",
-      "title": " 设备云",
-      "hidden": false,
-      "redirect": "/dashboard/productlist",
-      "component": "Layout",
+      "title": "组态大屏",
+      "hidden": true,
+      "redirect": "",
+      "component": "@/views/CloudFunction/topo/index",
       "tabHidden": false,
       "alwaysShow": false,
       "noClosable": false,
@@ -2645,25 +741,25 @@
     }
   },
   {
-    "objectId": "09c9f79a68",
-    "createdAt": "2021-11-15T09:13:32.679Z",
-    "updatedAt": "2021-11-15T09:13:32.679Z",
-    "icon": "test-tube-line",
-    "name": "CloudTest",
-    "orderBy": 7,
+    "objectId": "e5f165661c",
+    "createdAt": "2021-08-13T09:54:42.994Z",
+    "updatedAt": "2021-11-17T06:24:03.001Z",
+    "icon": "file-chart-line",
+    "name": "AllWorkOrder",
+    "orderBy": 41,
     "parent": {
-      "objectId": "0         ",
+      "objectId": "ee1042a17e",
       "__type": "Pointer",
       "className": "Menu"
     },
-    "url": "/cloudTest",
+    "url": "/CloudOt/index",
     "meta": {
-      "icon": "test-tube-line",
+      "icon": "article-line",
       "badge": "",
-      "title": "云检测",
+      "title": "所有工单",
       "hidden": false,
-      "redirect": "/cloudTest/report",
-      "component": "Layout",
+      "redirect": "",
+      "component": "@/views/CloudOT/maintenance/index",
       "tabHidden": false,
       "alwaysShow": false,
       "noClosable": false,
@@ -2719,25 +815,1596 @@
     }
   },
   {
-    "objectId": "2f2867fa49",
-    "createdAt": "2021-08-13T09:54:42.993Z",
-    "updatedAt": "2021-10-19T02:36:18.493Z",
-    "icon": "admin-fill",
-    "name": "Multitenant",
-    "orderBy": 3,
+    "objectId": "2a0b2eed09",
+    "createdAt": "2021-08-13T09:54:42.994Z",
+    "updatedAt": "2021-11-17T04:35:25.249Z",
+    "icon": "shield-user-fill",
+    "name": "RoleManagement",
+    "orderBy": 33,
+    "parent": {
+      "objectId": "2f2867fa49",
+      "__type": "Pointer",
+      "className": "Menu"
+    },
+    "url": "/roles/roles",
+    "meta": {
+      "icon": "user-add-line",
+      "badge": "",
+      "title": "角色管理",
+      "hidden": false,
+      "redirect": "",
+      "component": "@/views/MultiTenant/roles/list/roles",
+      "tabHidden": false,
+      "alwaysShow": false,
+      "noClosable": false,
+      "isCustomSvg": false,
+      "noKeepAlive": false
+    },
+    "ACL": {
+      "*": {
+        "read": true,
+        "write": true
+      },
+      "role:admin": {
+        "read": true,
+        "write": true
+      }
+    }
+  },
+  {
+    "objectId": "0512201918",
+    "createdAt": "2021-08-13T09:54:42.994Z",
+    "updatedAt": "2021-11-17T04:36:36.407Z",
+    "icon": "luggage-deposit-fill",
+    "name": "PostManagement",
+    "orderBy": 35,
+    "parent": {
+      "objectId": "2f2867fa49",
+      "__type": "Pointer",
+      "className": "Menu"
+    },
+    "url": "/department",
+    "meta": {
+      "icon": "organization-chart",
+      "badge": "",
+      "title": "岗位管理",
+      "hidden": false,
+      "redirect": "",
+      "component": "@/views/MultiTenant/roles/department/department",
+      "tabHidden": false,
+      "alwaysShow": false,
+      "noClosable": false,
+      "isCustomSvg": false,
+      "noKeepAlive": false
+    },
+    "ACL": {
+      "*": {
+        "read": true,
+        "write": true
+      },
+      "role:admin": {
+        "read": true,
+        "write": true
+      }
+    }
+  },
+  {
+    "objectId": "3f0335d72a",
+    "createdAt": "2021-08-13T09:54:42.994Z",
+    "updatedAt": "2022-01-11T07:45:01.977Z",
+    "icon": "video-chat-line",
+    "name": "PerformanceMonitoring",
+    "orderBy": 61,
+    "parent": {
+      "objectId": "9405b9d9b9",
+      "__type": "Pointer",
+      "className": "Menu"
+    },
+    "url": "/performance_monitoring",
+    "meta": {
+      "icon": "video-chat-line",
+      "badge": "",
+      "title": "性能监控",
+      "hidden": true,
+      "redirect": "",
+      "component": "@/views/Dashboard/index",
+      "tabHidden": false,
+      "alwaysShow": false,
+      "noClosable": false,
+      "isCustomSvg": false,
+      "noKeepAlive": false
+    },
+    "ACL": {
+      "*": {
+        "read": true,
+        "write": true
+      },
+      "role:admin": {
+        "read": true,
+        "write": true
+      }
+    }
+  },
+  {
+    "objectId": "c219d5b111",
+    "createdAt": "2021-08-13T09:54:42.994Z",
+    "updatedAt": "2022-01-11T07:46:27.855Z",
+    "icon": "file-word-2-line",
+    "name": "EngineeringManagement",
+    "orderBy": 51,
+    "parent": {
+      "objectId": "4c6c8c5b59",
+      "__type": "Pointer",
+      "className": "Menu"
+    },
+    "url": "/roles/projectManagement",
+    "meta": {
+      "icon": "hammer-line",
+      "badge": "",
+      "title": "工程管理",
+      "hidden": true,
+      "redirect": "",
+      "component": "@/views/DeviceCloud/manage/application/applicationManagement",
+      "tabHidden": false,
+      "alwaysShow": false,
+      "noClosable": false,
+      "isCustomSvg": false,
+      "noKeepAlive": false
+    },
+    "ACL": {
+      "*": {
+        "read": true,
+        "write": true
+      },
+      "role:admin": {
+        "read": true,
+        "write": true
+      }
+    }
+  },
+  {
+    "objectId": "a0fdfba6cd",
+    "createdAt": "2021-08-13T09:54:42.994Z",
+    "updatedAt": "2021-11-17T06:24:51.953Z",
+    "icon": "alarm-warning-fill",
+    "name": "Alarm",
+    "orderBy": 43,
+    "parent": {
+      "objectId": "ee1042a17e",
+      "__type": "Pointer",
+      "className": "Menu"
+    },
+    "url": "/CloudOt/alarm",
+    "meta": {
+      "icon": "alarm-warning-fill",
+      "badge": "",
+      "title": "告警中心",
+      "hidden": false,
+      "redirect": "",
+      "component": "@/views/CloudOT/maintenance/alert",
+      "tabHidden": false,
+      "alwaysShow": false,
+      "noClosable": false,
+      "isCustomSvg": false,
+      "noKeepAlive": false
+    },
+    "ACL": {
+      "*": {
+        "read": true,
+        "write": true
+      },
+      "role:admin": {
+        "read": true,
+        "write": true
+      }
+    }
+  },
+  {
+    "objectId": "8ac5e547c0",
+    "createdAt": "2021-08-13T09:54:42.994Z",
+    "updatedAt": "2021-11-17T06:25:13.071Z",
+    "icon": "calendar-event-fill",
+    "name": "EndOfRepairOrder",
+    "orderBy": 47,
+    "parent": {
+      "objectId": "ee1042a17e",
+      "__type": "Pointer",
+      "className": "Menu"
+    },
+    "url": "/CloudOt/EvaluationTicket",
+    "meta": {
+      "icon": "file-lock-line",
+      "badge": "",
+      "title": "结束工单",
+      "hidden": false,
+      "redirect": "",
+      "component": "@/views/CloudOT/maintenance/evaluationTicket",
+      "tabHidden": false,
+      "alwaysShow": false,
+      "noClosable": false,
+      "isCustomSvg": false,
+      "noKeepAlive": false
+    },
+    "ACL": {
+      "*": {
+        "read": true,
+        "write": true
+      },
+      "role:admin": {
+        "read": true,
+        "write": true
+      }
+    }
+  },
+  {
+    "objectId": "128be06afb",
+    "createdAt": "2021-10-20T06:51:22.333Z",
+    "updatedAt": "2021-11-17T12:16:38.122Z",
+    "icon": "product-hunt-fill",
+    "name": "Product_management",
+    "orderBy": 21,
+    "parent": {
+      "objectId": "8f821711e1",
+      "__type": "Pointer",
+      "className": "Menu"
+    },
+    "url": "/dashboard/productlist",
+    "meta": {
+      "icon": "product-hunt-fill",
+      "badge": "",
+      "title": "产品管理",
+      "hidden": false,
+      "redirect": "",
+      "component": "@views/DeviceCloud/manage/product",
+      "tabHidden": false,
+      "alwaysShow": false,
+      "noClosable": false,
+      "isCustomSvg": false,
+      "noKeepAlive": false
+    },
+    "ACL": {
+      "*": {
+        "read": true,
+        "write": true
+      },
+      "role:admin": {
+        "read": true,
+        "write": true
+      }
+    }
+  },
+  {
+    "objectId": "e2bb0e7dc8",
+    "createdAt": "2021-08-13T09:54:42.994Z",
+    "updatedAt": "2021-11-17T06:25:02.492Z",
+    "icon": "creative-commons-by-line",
+    "name": "CreateWorkOrder",
+    "orderBy": 44,
+    "parent": {
+      "objectId": "ee1042a17e",
+      "__type": "Pointer",
+      "className": "Menu"
+    },
+    "url": "/CloudOt/createTicket",
+    "meta": {
+      "icon": "draft-fill",
+      "badge": "",
+      "title": "创建工单",
+      "hidden": false,
+      "redirect": "",
+      "component": "@/views/CloudOT/maintenance/createTicket",
+      "tabHidden": false,
+      "alwaysShow": false,
+      "noClosable": false,
+      "isCustomSvg": false,
+      "noKeepAlive": false
+    },
+    "ACL": {
+      "*": {
+        "read": true,
+        "write": true
+      },
+      "role:admin": {
+        "read": true,
+        "write": true
+      }
+    }
+  },
+  {
+    "objectId": "a2b950dcbe",
+    "createdAt": "2021-08-13T09:54:42.994Z",
+    "updatedAt": "2021-11-17T04:45:02.293Z",
+    "icon": "bug-line",
+    "name": "OnlineDebugging",
+    "orderBy": 26,
+    "parent": {
+      "objectId": "8f821711e1",
+      "__type": "Pointer",
+      "className": "Menu"
+    },
+    "url": "/roles/onlinetest",
+    "meta": {
+      "icon": "bug-line",
+      "badge": "",
+      "title": "在线调试",
+      "hidden": true,
+      "redirect": "",
+      "component": "@views/DeviceCloud/manage/onlinetest",
+      "tabHidden": false,
+      "alwaysShow": false,
+      "noClosable": false,
+      "isCustomSvg": false,
+      "noKeepAlive": false
+    },
+    "ACL": {
+      "*": {
+        "read": true,
+        "write": true
+      },
+      "role:admin": {
+        "read": true,
+        "write": true
+      }
+    }
+  },
+  {
+    "objectId": "c33ff3817d",
+    "createdAt": "2021-08-13T09:54:42.994Z",
+    "updatedAt": "2021-11-17T04:45:38.124Z",
+    "icon": "parking-box-fill",
+    "name": "DataManagement",
+    "orderBy": 65,
+    "parent": {
+      "objectId": "9405b9d9b9",
+      "__type": "Pointer",
+      "className": "Menu"
+    },
+    "url": "/dashboard/parse",
+    "meta": {
+      "icon": "folder-download-line",
+      "badge": "",
+      "title": "数据管理",
+      "hidden": false,
+      "redirect": "",
+      "component": "@views/DeviceCloud/manage/parse",
+      "tabHidden": false,
+      "alwaysShow": false,
+      "noClosable": false,
+      "isCustomSvg": false,
+      "noKeepAlive": false
+    },
+    "ACL": {
+      "*": {
+        "read": true,
+        "write": true
+      },
+      "role:admin": {
+        "read": true,
+        "write": true
+      }
+    }
+  },
+  {
+    "objectId": "75763f7ad1",
+    "createdAt": "2021-08-13T09:54:42.994Z",
+    "updatedAt": "2021-11-17T06:24:42.261Z",
+    "icon": "task-fill",
+    "name": "MyWorkOrder",
+    "orderBy": 42,
+    "parent": {
+      "objectId": "ee1042a17e",
+      "__type": "Pointer",
+      "className": "Menu"
+    },
+    "url": "/CloudOt/myticket",
+    "meta": {
+      "icon": "file-user-line",
+      "badge": "",
+      "title": "我的工单",
+      "hidden": false,
+      "redirect": "",
+      "component": "@/views/CloudOT/maintenance/myticket",
+      "tabHidden": false,
+      "alwaysShow": false,
+      "noClosable": false,
+      "isCustomSvg": false,
+      "noKeepAlive": false
+    },
+    "ACL": {
+      "*": {
+        "read": true,
+        "write": true
+      },
+      "role:admin": {
+        "read": true,
+        "write": true
+      }
+    }
+  },
+  {
+    "objectId": "09c9f79a68",
+    "createdAt": "2021-11-15T09:13:32.679Z",
+    "updatedAt": "2021-11-15T09:13:32.679Z",
+    "icon": "test-tube-line",
+    "name": "CloudTest",
+    "orderBy": 7,
     "parent": {
       "objectId": "0         ",
       "__type": "Pointer",
       "className": "Menu"
     },
-    "url": "/roles",
+    "url": "/cloudTest",
     "meta": {
-      "icon": "parent-line",
+      "icon": "test-tube-line",
       "badge": "",
-      "title": "多租户",
+      "title": "云检测",
       "hidden": false,
-      "redirect": "/structures",
+      "redirect": "/cloudTest/report",
       "component": "Layout",
+      "tabHidden": false,
+      "alwaysShow": false,
+      "noClosable": false,
+      "isCustomSvg": false,
+      "noKeepAlive": false
+    },
+    "ACL": {
+      "*": {
+        "read": true,
+        "write": true
+      },
+      "role:admin": {
+        "read": true,
+        "write": true
+      }
+    }
+  },
+  {
+    "objectId": "8f821711e1",
+    "createdAt": "2021-08-13T09:54:42.993Z",
+    "updatedAt": "2021-11-15T10:17:01.964Z",
+    "icon": "product-hunt-fill",
+    "name": "EquipmentCloud",
+    "orderBy": 2,
+    "parent": {
+      "objectId": "0         ",
+      "__type": "Pointer",
+      "className": "Menu"
+    },
+    "url": "/dashboard",
+    "meta": {
+      "icon": "account-box-fill",
+      "badge": "",
+      "title": " 设备云",
+      "hidden": false,
+      "redirect": "/dashboard/productlist",
+      "component": "Layout",
+      "tabHidden": false,
+      "alwaysShow": false,
+      "noClosable": false,
+      "isCustomSvg": false,
+      "noKeepAlive": false
+    },
+    "ACL": {
+      "*": {
+        "read": true,
+        "write": true
+      },
+      "role:admin": {
+        "read": true,
+        "write": true
+      }
+    }
+  },
+  {
+    "objectId": "70549bcc94",
+    "createdAt": "2021-08-13T09:54:42.994Z",
+    "updatedAt": "2021-11-17T04:18:56.139Z",
+    "icon": "eye-2-line",
+    "name": "ViewRules",
+    "orderBy": 542,
+    "parent": {
+      "objectId": "4c6c8c5b59",
+      "__type": "Pointer",
+      "className": "Menu"
+    },
+    "url": "/rules_engine/checkengine",
+    "meta": {
+      "icon": "eye-2-line",
+      "badge": "",
+      "title": "查看规则",
+      "hidden": true,
+      "redirect": "",
+      "component": "@/views/CloudFunction/engine/checkengine",
+      "tabHidden": false,
+      "alwaysShow": false,
+      "noClosable": false,
+      "isCustomSvg": false,
+      "noKeepAlive": false
+    },
+    "ACL": {
+      "*": {
+        "read": true,
+        "write": true
+      },
+      "role:admin": {
+        "read": true,
+        "write": true
+      }
+    }
+  },
+  {
+    "objectId": "76ad3ad6ef",
+    "createdAt": "2021-11-15T09:14:15.755Z",
+    "updatedAt": "2021-11-17T06:27:32.286Z",
+    "icon": "home-3-fill",
+    "name": "TestTask",
+    "orderBy": 72,
+    "parent": {
+      "objectId": "09c9f79a68",
+      "__type": "Pointer",
+      "className": "Menu"
+    },
+    "url": "/cloudTest/Task",
+    "meta": {
+      "icon": "home-3-fill",
+      "badge": "",
+      "title": "检测任务",
+      "hidden": false,
+      "redirect": "",
+      "component": "@/views/CloudTest/task/index",
+      "tabHidden": false,
+      "alwaysShow": false,
+      "noClosable": false,
+      "isCustomSvg": false,
+      "noKeepAlive": false
+    },
+    "ACL": {
+      "*": {
+        "read": true,
+        "write": true
+      },
+      "role:admin": {
+        "read": true,
+        "write": true
+      }
+    }
+  },
+  {
+    "objectId": "7135d51e09",
+    "createdAt": "2021-08-13T09:54:42.994Z",
+    "updatedAt": "2021-12-30T08:25:19.614Z",
+    "icon": "codepen-line",
+    "name": "DeploymentManagement",
+    "orderBy": 64,
+    "parent": {
+      "objectId": "9405b9d9b9",
+      "__type": "Pointer",
+      "className": "Menu"
+    },
+    "url": "/roles/server_control",
+    "meta": {
+      "icon": "body-scan-line",
+      "badge": "",
+      "title": "部署管理",
+      "hidden": true,
+      "redirect": "",
+      "component": "@views/DeviceCloud/manage/server_control",
+      "tabHidden": false,
+      "alwaysShow": false,
+      "noClosable": false,
+      "isCustomSvg": false,
+      "noKeepAlive": false
+    },
+    "ACL": {
+      "*": {
+        "read": true,
+        "write": true
+      },
+      "role:admin": {
+        "read": true,
+        "write": true
+      }
+    }
+  },
+  {
+    "objectId": "cc40a5c2bc",
+    "createdAt": "2021-08-13T09:54:42.994Z",
+    "updatedAt": "2022-01-11T07:43:56.739Z",
+    "icon": "open-arm-line",
+    "name": "SetManagementInterface",
+    "orderBy": 34,
+    "parent": {
+      "objectId": "2f2867fa49",
+      "__type": "Pointer",
+      "className": "Menu"
+    },
+    "url": "/roles/rolescontrol",
+    "meta": {
+      "icon": "links-fill",
+      "badge": "",
+      "title": "接口管理",
+      "hidden": true,
+      "redirect": "",
+      "component": "@/views/MultiTenant/roles/list/rolescontrol",
+      "tabHidden": false,
+      "alwaysShow": false,
+      "noClosable": false,
+      "isCustomSvg": false,
+      "noKeepAlive": false
+    },
+    "ACL": {
+      "*": {
+        "read": true,
+        "write": true
+      },
+      "role:admin": {
+        "read": true,
+        "write": true
+      }
+    }
+  },
+  {
+    "objectId": "09036ec2fd",
+    "createdAt": "2021-11-18T10:56:44.969Z",
+    "updatedAt": "2021-11-18T11:27:35.768Z",
+    "icon": "bar-chart-horizontal-fill",
+    "name": "CreateResourcechannel",
+    "orderBy": 221,
+    "parent": {
+      "objectId": "9405b9d9b9",
+      "__type": "Pointer",
+      "className": "Menu"
+    },
+    "url": "/Createchannel",
+    "meta": {
+      "icon": "bar-chart-horizontal-fill",
+      "badge": "",
+      "title": "创建通道",
+      "hidden": true,
+      "redirect": "",
+      "component": "@/views/CloudFunction/engine/createchannel",
+      "tabHidden": false,
+      "alwaysShow": false,
+      "noClosable": false,
+      "isCustomSvg": false,
+      "noKeepAlive": false
+    },
+    "ACL": {
+      "*": {
+        "read": true,
+        "write": true
+      },
+      "role:admin": {
+        "read": true,
+        "write": true
+      }
+    }
+  },
+  {
+    "objectId": "9405b9d9b9",
+    "createdAt": "2021-08-13T09:54:42.994Z",
+    "updatedAt": "2021-11-17T06:30:11.822Z",
+    "icon": "closed-captioning-line",
+    "name": "CloudSystem",
+    "orderBy": 6,
+    "parent": {
+      "objectId": "0         ",
+      "__type": "Pointer",
+      "className": "Menu"
+    },
+    "url": "/dashboard/expandprogram",
+    "meta": {
+      "icon": "file-settings-fill",
+      "badge": "",
+      "title": "云系统",
+      "hidden": false,
+      "redirect": "/performance_monitoring",
+      "component": "Layout",
+      "tabHidden": false,
+      "alwaysShow": false,
+      "noClosable": false,
+      "isCustomSvg": false,
+      "noKeepAlive": false
+    },
+    "ACL": {
+      "*": {
+        "read": true,
+        "write": true
+      },
+      "role:admin": {
+        "read": true,
+        "write": true
+      }
+    }
+  },
+  {
+    "objectId": "cfda8d3366",
+    "createdAt": "2021-08-13T09:54:42.994Z",
+    "updatedAt": "2021-11-17T06:31:07.100Z",
+    "icon": "device-fill",
+    "name": "EquipmentManagement",
+    "orderBy": 23,
+    "parent": {
+      "objectId": "8f821711e1",
+      "__type": "Pointer",
+      "className": "Menu"
+    },
+    "url": "/dashboard/devicelist",
+    "meta": {
+      "icon": "bar-chart-horizontal-fill",
+      "badge": "",
+      "title": "设备管理",
+      "hidden": false,
+      "redirect": "",
+      "component": "@views/DeviceCloud/manage/home_index",
+      "tabHidden": false,
+      "alwaysShow": false,
+      "noClosable": false,
+      "isCustomSvg": false,
+      "noKeepAlive": false
+    },
+    "ACL": {
+      "*": {
+        "read": true,
+        "write": true
+      },
+      "role:admin": {
+        "read": true,
+        "write": true
+      }
+    }
+  },
+  {
+    "objectId": "fc5b20b163",
+    "createdAt": "2021-11-15T09:13:54.078Z",
+    "updatedAt": "2021-11-19T07:50:01.558Z",
+    "icon": "home-3-fill",
+    "name": "TestReport",
+    "orderBy": 71,
+    "parent": {
+      "objectId": "09c9f79a68",
+      "__type": "Pointer",
+      "className": "Menu"
+    },
+    "url": "/cloudTest/report",
+    "meta": {
+      "icon": "home-3-fill",
+      "badge": "",
+      "title": "报告模板",
+      "hidden": false,
+      "redirect": "",
+      "component": "@/views/CloudTest/report/index",
+      "tabHidden": false,
+      "alwaysShow": false,
+      "noClosable": false,
+      "isCustomSvg": false,
+      "noKeepAlive": false
+    },
+    "ACL": {
+      "*": {
+        "read": true,
+        "write": true
+      },
+      "role:admin": {
+        "read": true,
+        "write": true
+      }
+    }
+  },
+  {
+    "objectId": "850831af96",
+    "createdAt": "2021-11-18T09:49:41.328Z",
+    "updatedAt": "2021-11-22T04:11:51.367Z",
+    "icon": "home-3-fill",
+    "name": "AmisEditor",
+    "orderBy": 56,
+    "parent": {
+      "objectId": "4c6c8c5b59",
+      "__type": "Pointer",
+      "className": "Menu"
+    },
+    "url": "/design/editor/amis",
+    "meta": {
+      "icon": "home-3-fill",
+      "badge": "",
+      "title": "amis编辑器",
+      "hidden": false,
+      "redirect": "",
+      "component": "@/views/CloudFunction/amis/editor",
+      "tabHidden": false,
+      "alwaysShow": false,
+      "noClosable": false,
+      "isCustomSvg": false,
+      "noKeepAlive": false
+    },
+    "ACL": {
+      "*": {
+        "read": true,
+        "write": true
+      },
+      "role:admin": {
+        "read": true,
+        "write": true
+      }
+    }
+  },
+  {
+    "objectId": "SVoMYPK8D5",
+    "createdAt": "2021-08-13T09:54:42.993Z",
+    "updatedAt": "2021-11-24T10:23:32.571Z",
+    "icon": "home-3-fill",
+    "name": "Dashboard",
+    "orderBy": 1,
+    "parent": {
+      "objectId": "0         ",
+      "__type": "Pointer",
+      "className": "Menu"
+    },
+    "url": "/",
+    "meta": {
+      "icon": "home-2-line",
+      "badge": "",
+      "title": "总控台",
+      "hidden": false,
+      "redirect": "/index",
+      "component": "Layout",
+      "tabHidden": false,
+      "alwaysShow": false,
+      "noClosable": true,
+      "isCustomSvg": false,
+      "noKeepAlive": true
+    }
+  },
+  {
+    "objectId": "zjRYRFGXzk",
+    "createdAt": "2021-08-13T09:54:42.994Z",
+    "updatedAt": "2021-11-24T10:23:59.951Z",
+    "icon": "home-3-fill",
+    "name": "Workbench",
+    "orderBy": 11,
+    "parent": {
+      "objectId": "SVoMYPK8D5",
+      "__type": "Pointer",
+      "className": "Menu"
+    },
+    "url": "/index",
+    "meta": {
+      "icon": "home-gear-line",
+      "badge": "",
+      "title": "总控台",
+      "hidden": false,
+      "redirect": "",
+      "component": "@/views/DeviceCloud/manage/platform_overview",
+      "tabHidden": false,
+      "alwaysShow": false,
+      "noClosable": true,
+      "isCustomSvg": false,
+      "noKeepAlive": true
+    }
+  },
+  {
+    "objectId": "4c6c8c5b59",
+    "createdAt": "2021-08-13T09:54:42.993Z",
+    "updatedAt": "2021-12-02T07:11:33.680Z",
+    "icon": "team-fill",
+    "name": "CloudFunction",
+    "orderBy": 5,
+    "parent": {
+      "objectId": "0         ",
+      "__type": "Pointer",
+      "className": "Menu"
+    },
+    "url": "/base",
+    "meta": {
+      "icon": "cloud-line",
+      "badge": "",
+      "title": " 云函数",
+      "hidden": false,
+      "redirect": "/roles/projectManagement",
+      "component": "Layout",
+      "tabHidden": false,
+      "alwaysShow": false,
+      "noClosable": false,
+      "isCustomSvg": false,
+      "noKeepAlive": false
+    },
+    "ACL": {
+      "*": {
+        "read": true,
+        "write": true
+      },
+      "role:admin": {
+        "read": true,
+        "write": true
+      }
+    }
+  },
+  {
+    "objectId": "a6cf3b4761",
+    "createdAt": "2021-11-22T04:15:53.944Z",
+    "updatedAt": "2021-12-30T08:23:27.974Z",
+    "icon": "codepen-line",
+    "name": "TopoEditor",
+    "orderBy": 57,
+    "parent": {
+      "objectId": "4c6c8c5b59",
+      "__type": "Pointer",
+      "className": "Menu"
+    },
+    "url": "/design/editor/topo",
+    "meta": {
+      "icon": "codepen-line",
+      "badge": "",
+      "title": "组态编辑器",
+      "hidden": true,
+      "redirect": "",
+      "component": "@/views/CloudFunction/topo/editor",
+      "tabHidden": false,
+      "alwaysShow": false,
+      "noClosable": false,
+      "isCustomSvg": false,
+      "noKeepAlive": false
+    },
+    "ACL": {
+      "*": {
+        "read": true,
+        "write": true
+      },
+      "role:admin": {
+        "read": true,
+        "write": true
+      }
+    }
+  },
+  {
+    "objectId": "760cb0f88e",
+    "createdAt": "2021-08-13T09:54:42.993Z",
+    "updatedAt": "2022-01-11T07:42:58.474Z",
+    "icon": "apple-fill",
+    "name": "ApplicationManagement",
+    "orderBy": 35,
+    "parent": {
+      "objectId": "2f2867fa49",
+      "__type": "Pointer",
+      "className": "Menu"
+    },
+    "url": "/roles/applicationManagement",
+    "meta": {
+      "icon": "apple-fill",
+      "badge": "",
+      "title": "应用管理",
+      "hidden": true,
+      "redirect": "",
+      "component": "@/views/DeviceCloud/manage/application/application",
+      "tabHidden": false,
+      "alwaysShow": false,
+      "noClosable": false,
+      "isCustomSvg": false,
+      "noKeepAlive": false
+    },
+    "ACL": {
+      "*": {
+        "read": true,
+        "write": true
+      },
+      "role:admin": {
+        "read": true,
+        "write": true
+      }
+    }
+  },
+  {
+    "objectId": "d0a9cbc4e7",
+    "createdAt": "2022-01-19T01:58:13.161Z",
+    "updatedAt": "2022-01-19T01:59:37.679Z",
+    "icon": "home-3-fill",
+    "name": "CloudLogs",
+    "orderBy": 8,
+    "parent": {
+      "objectId": "0         ",
+      "__type": "Pointer",
+      "className": "Menu"
+    },
+    "url": "/Logs/index",
+    "meta": {
+      "icon": "logout-circle-r-line",
+      "badge": "",
+      "title": "云日志",
+      "hidden": false,
+      "redirect": "/Logs",
+      "component": "Layout",
+      "tabHidden": false,
+      "alwaysShow": false,
+      "noClosable": false,
+      "isCustomSvg": false,
+      "noKeepAlive": false
+    },
+    "ACL": {
+      "*": {
+        "read": true,
+        "write": true
+      },
+      "role:admin": {
+        "read": true,
+        "write": true
+      }
+    }
+  },
+  {
+    "objectId": "9b33789fd9",
+    "createdAt": "2022-01-19T02:00:14.668Z",
+    "updatedAt": "2022-01-19T02:00:36.096Z",
+    "icon": "home-3-fill",
+    "name": "OperationLog",
+    "orderBy": 81,
+    "parent": {
+      "objectId": "d0a9cbc4e7",
+      "__type": "Pointer",
+      "className": "Menu"
+    },
+    "url": "/Logs",
+    "meta": {
+      "icon": "logout-circle-r-fill",
+      "badge": "",
+      "title": "实时日志",
+      "hidden": false,
+      "redirect": "",
+      "component": "@/views/CloudSystem/logs/index",
+      "tabHidden": false,
+      "alwaysShow": false,
+      "noClosable": false,
+      "isCustomSvg": false,
+      "noKeepAlive": false
+    },
+    "ACL": {
+      "*": {
+        "read": true,
+        "write": true
+      },
+      "role:admin": {
+        "read": true,
+        "write": true
+      }
+    }
+  },
+  {
+    "objectId": "a4f99a0ef1",
+    "createdAt": "2021-08-13T09:54:42.994Z",
+    "updatedAt": "2022-01-20T10:04:31.234Z",
+    "icon": "group-2-fill",
+    "name": "UnableToResolveModClusterManagementHost",
+    "orderBy": 63,
+    "parent": {
+      "objectId": "9405b9d9b9",
+      "__type": "Pointer",
+      "className": "Menu"
+    },
+    "url": "/roles/nodes",
+    "meta": {
+      "icon": "group-2-fill",
+      "badge": "",
+      "title": "集群管理",
+      "hidden": false,
+      "redirect": "",
+      "component": "@/views/CloudSystem/installation/log",
+      "tabHidden": false,
+      "alwaysShow": false,
+      "noClosable": false,
+      "isCustomSvg": false,
+      "noKeepAlive": false
+    },
+    "ACL": {
+      "*": {
+        "read": true,
+        "write": true
+      },
+      "role:admin": {
+        "read": true,
+        "write": true
+      }
+    }
+  },
+  {
+    "objectId": "9d4918c580",
+    "createdAt": "2022-01-19T02:04:23.615Z",
+    "updatedAt": "2022-01-19T02:04:32.615Z",
+    "icon": "message-2-line",
+    "name": "EquipmentLog",
+    "orderBy": 82,
+    "parent": {
+      "objectId": "d0a9cbc4e7",
+      "__type": "Pointer",
+      "className": "Menu"
+    },
+    "url": "/Logs/device",
+    "meta": {
+      "icon": "message-2-line",
+      "badge": "",
+      "title": "设备日志",
+      "hidden": false,
+      "redirect": "",
+      "component": "@/views/CloudSystem/logs/device",
+      "tabHidden": false,
+      "alwaysShow": false,
+      "noClosable": false,
+      "isCustomSvg": false,
+      "noKeepAlive": false
+    },
+    "ACL": {
+      "*": {
+        "read": true,
+        "write": true
+      },
+      "role:admin": {
+        "read": true,
+        "write": true
+      }
+    }
+  },
+  {
+    "objectId": "902321fe9a",
+    "createdAt": "2022-01-19T02:05:14.923Z",
+    "updatedAt": "2022-01-19T02:05:14.923Z",
+    "icon": "history-fill",
+    "name": "HistoryLog",
+    "orderBy": 83,
+    "parent": {
+      "objectId": "d0a9cbc4e7",
+      "__type": "Pointer",
+      "className": "Menu"
+    },
+    "url": "/Logs/history",
+    "meta": {
+      "icon": "history-fill",
+      "badge": "",
+      "title": "历史日志",
+      "hidden": false,
+      "redirect": "",
+      "component": "@/views/CloudSystem/logs/history",
+      "tabHidden": false,
+      "alwaysShow": false,
+      "noClosable": false,
+      "isCustomSvg": false,
+      "noKeepAlive": false
+    },
+    "ACL": {
+      "*": {
+        "read": true,
+        "write": true
+      },
+      "role:admin": {
+        "read": true,
+        "write": true
+      }
+    }
+  },
+  {
+    "objectId": "3c9334d582",
+    "createdAt": "2022-01-19T02:05:47.471Z",
+    "updatedAt": "2022-01-19T02:05:47.471Z",
+    "icon": "list-settings-line",
+    "name": "AccessLog",
+    "orderBy": 84,
+    "parent": {
+      "objectId": "d0a9cbc4e7",
+      "__type": "Pointer",
+      "className": "Menu"
+    },
+    "url": "/Logs/access",
+    "meta": {
+      "icon": "list-settings-line",
+      "badge": "",
+      "title": "操作日志",
+      "hidden": false,
+      "redirect": "",
+      "component": "@/views/CloudSystem/logs/access",
+      "tabHidden": false,
+      "alwaysShow": false,
+      "noClosable": false,
+      "isCustomSvg": false,
+      "noKeepAlive": false
+    },
+    "ACL": {
+      "*": {
+        "read": true,
+        "write": true
+      },
+      "role:admin": {
+        "read": true,
+        "write": true
+      }
+    }
+  },
+  {
+    "objectId": "933cfaaa5c",
+    "createdAt": "2022-01-20T10:08:59.206Z",
+    "updatedAt": "2022-01-20T10:08:59.206Z",
+    "icon": "emotion-happy-line",
+    "name": "Swagger",
+    "orderBy": 58,
+    "parent": {
+      "objectId": "4c6c8c5b59",
+      "__type": "Pointer",
+      "className": "Menu"
+    },
+    "url": "CloudFunction/swagger",
+    "meta": {
+      "icon": "emotion-happy-line",
+      "badge": "",
+      "title": "swagger",
+      "hidden": false,
+      "redirect": "",
+      "component": "@/views/CloudFunction/swagger",
+      "tabHidden": false,
+      "alwaysShow": false,
+      "noClosable": false,
+      "isCustomSvg": false,
+      "noKeepAlive": false
+    },
+    "ACL": {
+      "*": {
+        "read": true,
+        "write": true
+      },
+      "role:admin": {
+        "read": true,
+        "write": true
+      }
+    }
+  },
+  {
+    "objectId": "66f7799220",
+    "createdAt": "2022-01-20T11:14:30.933Z",
+    "updatedAt": "2022-01-20T11:14:30.933Z",
+    "icon": "file-ppt-2-fill",
+    "name": "DgiotDoc",
+    "orderBy": 52,
+    "parent": {
+      "objectId": "4c6c8c5b59",
+      "__type": "Pointer",
+      "className": "Menu"
+    },
+    "url": "/docs",
+    "meta": {
+      "icon": "file-ppt-2-fill",
+      "badge": "",
+      "title": "文档管理",
+      "hidden": false,
+      "redirect": "",
+      "component": "@/views/CloudFunction/doc",
+      "tabHidden": false,
+      "alwaysShow": false,
+      "noClosable": false,
+      "isCustomSvg": false,
+      "noKeepAlive": false
+    },
+    "ACL": {
+      "*": {
+        "read": true,
+        "write": true
+      },
+      "role:admin": {
+        "read": true,
+        "write": true
+      }
+    }
+  },
+  {
+    "objectId": "3760d5c787",
+    "createdAt": "2022-01-12T02:02:59.171Z",
+    "updatedAt": "2022-01-20T07:03:55.994Z",
+    "icon": "sim-card-2-line",
+    "name": "EquipmentTemplate",
+    "orderBy": 50,
+    "parent": {
+      "objectId": "4c6c8c5b59",
+      "__type": "Pointer",
+      "className": "Menu"
+    },
+    "url": "/dashboard/profile",
+    "meta": {
+      "icon": "sim-card-2-line",
+      "badge": "",
+      "title": "产品商店",
+      "hidden": false,
+      "redirect": "",
+      "component": "@views/DeviceCloud/manage/profile",
+      "tabHidden": false,
+      "alwaysShow": false,
+      "noClosable": false,
+      "isCustomSvg": false,
+      "noKeepAlive": false
+    },
+    "ACL": {
+      "*": {
+        "read": true,
+        "write": true
+      },
+      "role:admin": {
+        "read": true,
+        "write": true
+      }
+    }
+  },
+  {
+    "objectId": "b656d5e661",
+    "createdAt": "2022-01-20T06:17:25.888Z",
+    "updatedAt": "2022-01-20T07:04:30.555Z",
+    "icon": "store-2-fill",
+    "name": "Channelstore",
+    "orderBy": 52,
+    "parent": {
+      "objectId": "4c6c8c5b59",
+      "__type": "Pointer",
+      "className": "Menu"
+    },
+    "url": "/CloudFunction/store",
+    "meta": {
+      "icon": "store-2-fill",
+      "badge": "",
+      "title": "通道商店",
+      "hidden": false,
+      "redirect": "",
+      "component": "@/views/CloudFunction/engine/createchannel",
+      "tabHidden": false,
+      "alwaysShow": false,
+      "noClosable": false,
+      "isCustomSvg": false,
+      "noKeepAlive": false
+    },
+    "ACL": {
+      "*": {
+        "read": true,
+        "write": true
+      },
+      "role:admin": {
+        "read": true,
+        "write": true
+      }
+    }
+  },
+  {
+    "objectId": "65e0591399",
+    "createdAt": "2022-01-20T07:07:03.204Z",
+    "updatedAt": "2022-01-20T07:07:03.204Z",
+    "icon": "sort-asc",
+    "name": "CategoryManagement",
+    "orderBy": 591,
+    "parent": {
+      "objectId": "4c6c8c5b59",
+      "__type": "Pointer",
+      "className": "Menu"
+    },
+    "url": "/dashboard/category",
+    "meta": {
+      "icon": "sort-asc",
+      "badge": "",
+      "title": "品类管理",
+      "hidden": false,
+      "redirect": "",
+      "component": "@/views/DeviceCloud/category/category",
+      "tabHidden": false,
+      "alwaysShow": false,
+      "noClosable": false,
+      "isCustomSvg": false,
+      "noKeepAlive": false
+    },
+    "ACL": {
+      "*": {
+        "read": true,
+        "write": true
+      },
+      "role:admin": {
+        "read": true,
+        "write": true
+      }
+    }
+  },
+  {
+    "objectId": "113bfa31f4",
+    "createdAt": "2022-01-20T07:19:46.970Z",
+    "updatedAt": "2022-01-20T07:19:46.970Z",
+    "icon": "swap-box-line",
+    "name": "ChannelManagement",
+    "orderBy": 28,
+    "parent": {
+      "objectId": "8f821711e1",
+      "__type": "Pointer",
+      "className": "Menu"
+    },
+    "url": "/dashboard/channel",
+    "meta": {
+      "icon": "swap-box-line",
+      "badge": "",
+      "title": "通道管理",
+      "hidden": false,
+      "redirect": "",
+      "component": "@/views/CloudFunction/engine/channel",
+      "tabHidden": false,
+      "alwaysShow": false,
+      "noClosable": false,
+      "isCustomSvg": false,
+      "noKeepAlive": false
+    },
+    "ACL": {
+      "*": {
+        "read": true,
+        "write": true
+      },
+      "role:admin": {
+        "read": true,
+        "write": true
+      }
+    }
+  },
+  {
+    "objectId": "1b6fba6483",
+    "createdAt": "2022-01-20T07:56:06.912Z",
+    "updatedAt": "2022-01-20T08:03:31.032Z",
+    "icon": "user-2-line",
+    "name": "UserCenter",
+    "orderBy": 12,
+    "parent": {
+      "objectId": "SVoMYPK8D5",
+      "__type": "Pointer",
+      "className": "Menu"
+    },
+    "url": "/userinfo/:userid",
+    "meta": {
+      "icon": "user-2-line",
+      "badge": "",
+      "title": "用户中心",
+      "hidden": true,
+      "redirect": "",
+      "component": "@/views/MultiTenant/roles/userinfo",
+      "tabHidden": false,
+      "alwaysShow": false,
+      "noClosable": false,
+      "isCustomSvg": false,
+      "noKeepAlive": false
+    },
+    "ACL": {
+      "*": {
+        "read": true,
+        "write": true
+      },
+      "role:admin": {
+        "read": true,
+        "write": true
+      }
+    }
+  },
+  {
+    "objectId": "4e4578cbe2",
+    "createdAt": "2021-11-17T07:35:12.966Z",
+    "updatedAt": "2022-02-17T06:58:43.511Z",
+    "icon": "code-box-fill",
+    "name": "LowCode",
+    "orderBy": 55,
+    "parent": {
+      "objectId": "4c6c8c5b59",
+      "__type": "Pointer",
+      "className": "Menu"
+    },
+    "url": "/design",
+    "meta": {
+      "icon": "code-box-fill",
+      "badge": "",
+      "title": "界面管理",
+      "hidden": false,
+      "redirect": "",
+      "component": "@/views/CloudFunction/lowcode/index",
+      "tabHidden": false,
+      "alwaysShow": false,
+      "noClosable": false,
+      "isCustomSvg": false,
+      "noKeepAlive": false
+    },
+    "ACL": {
+      "*": {
+        "read": true,
+        "write": true
+      },
+      "role:admin": {
+        "read": true,
+        "write": true
+      }
+    }
+  },
+  {
+    "objectId": "5d2a84b563",
+    "createdAt": "2022-04-29T13:57:20.162Z",
+    "updatedAt": "2022-04-29T13:57:20.162Z",
+    "icon": "home-3-fill",
+    "name": "DocumentDetails",
+    "orderBy": 51,
+    "parent": {
+      "objectId": "4c6c8c5b59",
+      "__type": "Pointer",
+      "className": "Menu"
+    },
+    "url": "/doc/details",
+    "meta": {
+      "icon": "home-3-fill",
+      "badge": "",
+      "title": "文档详情",
+      "hidden": true,
+      "redirect": "",
+      "component": "@/views/CloudFunction/doc/components/details.vue",
+      "tabHidden": false,
+      "alwaysShow": false,
+      "noClosable": false,
+      "isCustomSvg": false,
+      "noKeepAlive": false
+    },
+    "ACL": {
+      "*": {
+        "read": true,
+        "write": true
+      },
+      "role:admin": {
+        "read": true,
+        "write": true
+      }
+    }
+  },
+  {
+    "objectId": "838d051bf7",
+    "createdAt": "2022-05-06T01:40:04.289Z",
+    "updatedAt": "2022-05-06T01:40:33.024Z",
+    "icon": "pantone-line",
+    "name": "DevicePanel",
+    "orderBy": 29,
+    "parent": {
+      "objectId": "8f821711e1",
+      "__type": "Pointer",
+      "className": "Menu"
+    },
+    "url": "/roles/devicesDetailLite",
+    "meta": {
+      "icon": "pantone-line",
+      "badge": "",
+      "title": "设备面板",
+      "hidden": true,
+      "redirect": "",
+      "component": "@views/DeviceCloud/manage/devicesDetailLite",
+      "tabHidden": false,
+      "alwaysShow": false,
+      "noClosable": false,
+      "isCustomSvg": false,
+      "noKeepAlive": false
+    },
+    "ACL": {
+      "*": {
+        "read": true,
+        "write": true
+      },
+      "role:admin": {
+        "read": true,
+        "write": true
+      }
+    }
+  },
+  {
+    "objectId": "ffdf6cc1c6",
+    "createdAt": "2022-04-27T01:24:45.279Z",
+    "updatedAt": "2022-05-06T01:40:45.551Z",
+    "icon": "home-3-fill",
+    "name": "EquipmentList",
+    "orderBy": 28,
+    "parent": {
+      "objectId": "8f821711e1",
+      "__type": "Pointer",
+      "className": "Menu"
+    },
+    "url": "/dashboard/device",
+    "meta": {
+      "icon": "home-3-fill",
+      "badge": "",
+      "title": "设备列表",
+      "hidden": false,
+      "redirect": "",
+      "component": "@/views/DeviceCloud/manage/devicelist",
       "tabHidden": false,
       "alwaysShow": false,
       "noClosable": false,

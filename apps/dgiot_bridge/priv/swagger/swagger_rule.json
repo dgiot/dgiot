@@ -852,6 +852,16 @@
                   "description": "设备地址",
                   "example": "f851f03e35"
                 },
+                "description": {
+                  "type": "string",
+                  "description": "描述",
+                  "example": ""
+                },
+                "ruleid": {
+                  "type": "string",
+                  "description": "规则id",
+                  "example": "f851f03e35"
+                },
                 "method": {
                   "type": "string",
                   "description": "触发方法 （property/happening/offline）",

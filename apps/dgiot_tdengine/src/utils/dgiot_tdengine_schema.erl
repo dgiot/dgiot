@@ -19,7 +19,7 @@
 -include("dgiot_tdengine.hrl").
 -include_lib("dgiot/include/logger.hrl").
 
--export([get_schema/2, create_database/1, create_table/2, alter_table/2]).
+-export([get_schema/2, create_database/1, create_table/2, alter_table/2, get_addSql/4]).
 
 %% TDengine参数限制与保留关键字
 %% https://www.taosdata.com/docs/cn/v2.0/administrator#keywords
@@ -75,9 +75,9 @@ create_table(#{<<"tableName">> := TableName, <<"using">> := STbName, <<"tags">> 
     DB1 = dgiot_tdengine_select:format_db(TableName),
     <<"CREATE TABLE IF NOT EXISTS ", DB1/binary, TableName/binary, " USING ", STbName/binary, " TAGS (", TagFields/binary, ");">>;
 
-create_table(#{<<"tableName">> := TableName, <<"fields">> := Fields0} = Query, Context) ->
+create_table(#{<<"tableName">> := TableName, <<"fields">> := Fields0} = Query, _Context) ->
     Database = dgiot_tdengine_select:format_db(TableName),
-    alter_table(Query#{<<"db">> => Database}, Context),
+%%    alter_table(Query#{<<"db">> => Database}, Context),
     Fields =
         list_to_binary(dgiot_utils:join(",", ["createdat TIMESTAMP"] ++ lists:foldr(
             fun({FieldName, #{<<"type">> := Type}}, Acc) ->
@@ -95,12 +95,13 @@ create_table(#{<<"tableName">> := TableName, <<"fields">> := Fields0} = Query, C
             <<"CREATE TABLE IF NOT EXISTS ", Database/binary, TableName/binary, " (", Fields/binary, ") TAGS (", TagFields/binary, ");">>
     end.
 
-alter_table(#{<<"db">> := Database, <<"tableName">> := TableName}, #{<<"channel">> := Channel} = Context) ->
+alter_table(#{<<"tableName">> := TableName}, #{<<"channel">> := Channel} = Context) ->
+    Database = dgiot_tdengine_select:format_db(TableName),
     Sql1 = <<"DESCRIBE ", Database/binary, TableName/binary, ";">>,
-    <<"_", ProductId/binary>> = TableName,
-    Props = get_prop(ProductId),
     case dgiot_tdengine_pool:run_sql(Context, execute_query, Sql1) of
         {ok, #{<<"results">> := Results}} when length(Results) > 0 ->
+            <<"_", ProductId/binary>> = TableName,
+            dgiot_data:insert({ProductId, ?TABLEDESCRIBE}, Results),
             TdColumn =
                 lists:foldl(fun(Column, Acc) ->
                     case Column of
@@ -110,42 +111,32 @@ alter_table(#{<<"db">> := Database, <<"tableName">> := TableName}, #{<<"channel"
                             Acc
                     end
                             end, #{}, Results),
-            <<"_", ProductId/binary>> = TableName,
-            lists:foldl(fun(Prop, _Acc1) ->
+            AddSqls = dgiot_tdengine_schema:get_addSql(ProductId, TdColumn, Database, TableName),
+            lists:map(fun(AddSql) ->
+                dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_query, AddSql)
+                      end, AddSqls);
+        _ ->
+            pass
+    end.
+
+get_addSql(ProductId, TdColumn, Database, TableName) ->
+    case dgiot_product:lookup_prod(ProductId) of
+        {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
+            lists:foldl(fun(Prop, Acc) ->
                 case Prop of
                     #{<<"dataType">> := #{<<"type">> := Type}, <<"identifier">> := Identifier, <<"isshow">> := true} ->
                         LowerIdentifier = list_to_binary(string:to_lower(binary_to_list(Identifier))),
                         case maps:find(LowerIdentifier, TdColumn) of
                             error ->
-                                AddSql = dgiot_tdengine_field:add_field(Type, Database, TableName, LowerIdentifier),
-                                dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_query, AddSql);
+                                Acc ++ [dgiot_tdengine_field:add_field(Type, Database, TableName, LowerIdentifier)];
                             _ ->
                                 %% todo   类型改变
-                                pass
+                                Acc
                         end;
                     _ ->
-                        pass
+                        Acc
                 end
-                        end, #{}, Props),
-            case dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_query, Sql1) of
-                {ok, #{<<"results">> := Results2}} ->
-                    <<"_", ProductId/binary>> = TableName,
-                    dgiot_data:insert({ProductId, ?TABLEDESCRIBE}, Results2);
-                _ ->
-                    pass
-            end
-    end.
-
-get_prop(ProductId) ->
-    case dgiot_data:get(dgiot_product, ProductId) of
-        {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
-            lists:foldl(fun(X, Acc) ->
-                case X of
-                    #{<<"identifier">> := Identifier, <<"name">> := Name} ->
-                        Acc#{Identifier => Name};
-                    _ -> Acc
-                end
-                        end, #{}, Props);
+                        end, [], Props);
         _ ->
-            #{}
+            []
     end.

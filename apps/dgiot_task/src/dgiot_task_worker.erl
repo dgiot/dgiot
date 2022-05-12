@@ -245,7 +245,6 @@ send_msg(#task{tid = Channel, product = Product, devaddr = DevAddr, ref = Ref, q
     end,
     NewQue = lists:nthtail(NewCount, Que),
     dgiot_metrics:inc(dgiot_task, <<"task_send">>, 1),
-
     State#task{que = NewQue, dis = Dis, ref = erlang:send_after(Interval * 1000, self(), retry), interval = Interval}.
 
 
@@ -275,17 +274,6 @@ get_next_pn(#task{tid = Channel, mode = Mode, dtuid = DtuId, firstid = DeviceId,
     State#task{product = NextProductId, devaddr = NextDevAddr, que = Que, dis = [], ack = #{}, ref = NewRef}.
 
 save_td(#task{app = _App, tid = Channel, product = ProductId, devaddr = DevAddr, ack = Ack, appdata = AppData}) ->
-    case length(maps:to_list(Ack)) of
-        0 ->
-            pass;
-        _ ->
-            Data = dgiot_task:get_calculated(ProductId, Ack),
-            dgiot_bridge:send_log(Channel, ProductId, DevAddr, "save_td=> ~s ~p ProductId ~p DevAddr ~p : ~ts ", [?FILE, ?LINE, ProductId, DevAddr, unicode:characters_to_list(jsx:encode(Data))]),
-            case length(maps:to_list(Data)) of
-                0 ->
-                    pass;
-                _ ->
-                    dgiot_task:save_td(ProductId, DevAddr, Data, AppData)
-            end
-    end.
+    Data = dgiot_task:save_td(ProductId, DevAddr, Ack, AppData),
+    dgiot_bridge:send_log(Channel, ProductId, DevAddr, "save_td=> ~s ~p ProductId ~p DevAddr ~p : ~ts ", [?FILE, ?LINE, ProductId, DevAddr, unicode:characters_to_list(jsx:encode(Data))]).
 

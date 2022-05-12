@@ -21,7 +21,7 @@
 -include_lib("dgiot/include/logger.hrl").
 
 -export([get_device/3, get_device/4, get_device/5]).
--export([get_chartdata/3, get_appdata/3, get_app/4]).
+-export([get_history_data/3, get_realtime_data/3]).
 
 %% #{<<"keys">> => <<"last_row(*)">>, <<"limit">> => 1} 查询td最新的一条device
 get_device(ProductId, DevAddr, Query) ->
@@ -111,7 +111,7 @@ get_device(Channel, ProductId, DeviceId, _DevAddr, Query) ->
     end.
 
 %% SELECT max(day_electricity) '时间' ,max(charge_current) '日期' FROM _2d26a94cf8._c5e1093e30 WHERE createdat >= now - 1h INTERVAL(1h) limit 10;
-get_chartdata(Channel, TableName, Query) ->
+get_history_data(Channel, TableName, Query) ->
     dgiot_tdengine:transaction(Channel,
         fun(Context) ->
             Database = maps:get(<<"db">>, Query),
@@ -130,7 +130,7 @@ get_chartdata(Channel, TableName, Query) ->
         end).
 
 %% SELECT last(*) FROM _2d26a94cf8._c5e1093e30;
-get_appdata(Channel, TableName, Query) ->
+get_realtime_data(Channel, TableName, Query) ->
     dgiot_tdengine:transaction(Channel,
         fun(Context) ->
             Database = maps:get(<<"db">>, Query, <<"">>),
@@ -146,90 +146,3 @@ get_appdata(Channel, TableName, Query) ->
             end
         end).
 
-get_app(ProductId, Results, DeviceId, Args) ->
-    [Result | _] = Results,
-    Keys = maps:get(<<"keys">>, Args, <<"*">>),
-    Props = get_Props(ProductId, Keys),
-    lists:foldl(fun(X, Acc) ->
-        case X of
-            #{<<"name">> := Name, <<"identifier">> := Identifier, <<"dataForm">> := #{<<"protocol">> := Protocol}, <<"dataSource">> := DataSource, <<"dataType">> := #{<<"type">> := Typea} = DataType} ->
-                Time = maps:get(<<"createdat">>, Result, dgiot_datetime:now_secs()),
-                NewTime = dgiot_tdengine_field:get_time(dgiot_utils:to_binary(Time), <<"111">>),
-                Devicetype = maps:get(<<"devicetype">>, X, <<"others">>),
-                Ico = maps:get(<<"ico">>, X, <<"">>),
-                Specs = maps:get(<<"specs">>, DataType, #{}),
-                Unit = maps:get(<<"unit">>, Specs, <<"">>),
-                case do_hook({Protocol, Identifier}, DataSource#{<<"deviceid">> => DeviceId}) of
-                    ignore ->
-                        NewV =
-                            case maps:find(Identifier, Result) of
-                                error ->
-                                    <<"--">>;
-                                {ok, V} ->
-                                    dgiot_product_tdengine:check_field(Typea, V, #{<<"datatype">> => DataType, <<"specs">> => Specs, <<"deviceid">> => DeviceId})
-                            end,
-                        Acc ++ [#{<<"identifier">> => Identifier, <<"name">> => Name,
-                            <<"type">> => Typea, <<"number">> => NewV,
-                            <<"time">> => NewTime, <<"unit">> => Unit,
-                            <<"imgurl">> => Ico, <<"devicetype">> => Devicetype}];
-                    {error, _Reason} ->
-                        Acc;
-                    V ->
-                        NewV = dgiot_product_tdengine:check_field(Typea, V, #{<<"datatype">> => DataType, <<"specs">> => Specs, <<"deviceid">> => DeviceId}),
-                        Acc ++ [#{<<"identifier">> => Identifier, <<"name">> => Name,
-                            <<"type">> => Typea, <<"number">> => NewV,
-                            <<"time">> => NewTime, <<"unit">> => Unit,
-                            <<"imgurl">> => Ico, <<"devicetype">> => Devicetype}]
-                end;
-            _ ->
-                Acc
-        end
-                end, [], Props).
-
-get_Props(ProductId, <<"*">>) ->
-    case dgiot_product:lookup_prod(ProductId) of
-        {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
-            Props;
-        _ ->
-            []
-    end;
-
-get_Props(ProductId, Keys) when Keys == undefined; Keys == <<>> ->
-    get_Props(ProductId, <<"*">>);
-
-get_Props(ProductId, Keys) ->
-    List =
-        case is_list(Keys) of
-            true -> Keys;
-            false -> re:split(Keys, <<",">>)
-        end,
-    lists:foldl(fun(Identifier, Acc) ->
-        case dgiot_product:lookup_prod(ProductId) of
-            {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
-                lists:foldl(fun(Prop, Acc1) ->
-                    case Prop of
-                        #{<<"identifier">> := Identifier} ->
-                            Acc1 ++ [Prop];
-                        _ ->
-                            Acc1
-                    end
-                            end, Acc, Props);
-            _ ->
-                Acc
-        end
-                end, [], List).
-
-
-do_hook(Key, Args) ->
-    case catch dgiot_hook:run_hook(Key, Args) of
-        {'EXIT', Reason} ->
-            {error, Reason};
-        {error, not_find} ->
-            ignore;
-        {ok, []} ->
-            ignore;
-        {ok, [{error, Reason} | _]} ->
-            {error, Reason};
-        {ok, [Rtn | _]} ->
-            Rtn
-    end.

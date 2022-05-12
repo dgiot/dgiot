@@ -156,7 +156,6 @@ init(?TYPE, ChannelId, #{
     lists:map(fun(X) ->
         case X of
             {ProductId, #{<<"ACL">> := Acl, <<"nodeType">> := 1, <<"thing">> := Thing}} ->
-%%                dgiot_data:insert({dtu, ChannelId}, {ProductId, Acl, maps:get(<<"properties">>, Thing, [])}),
                 Props = maps:get(<<"properties">>, Thing, []),
                 dgiot_data:insert({dtu, ChannelId}, {ProductId, Acl, Props}),
                 lists:map(fun(Prop) ->
@@ -199,34 +198,23 @@ init(?TYPE, _ChannelId, _Args) ->
 handle_init(State) ->
     {ok, State}.
 
-%% 通道消息处理,注意：进程池调用
-%%SELECT username as productid, clientid, connected_at FROM "$events/client_connected" WHERE username = 'bffb6a3a27'
-handle_event('client.connected', {rule, #{peername := PeerName}, #{<<"clientid">> := DtuAddr, <<"productid">> := ProductId} = _Select}, State) ->
-    [DTUIP, _] = binary:split(PeerName, <<$:>>, [global, trim]),
-    DeviceId = dgiot_parse_id:get_deviceid(ProductId, DtuAddr),
-    case dgiot_device:lookup(DeviceId) of
-        {ok, _V} ->
-            dgiot_device:put(#{<<"objectId">> => DeviceId});
-        _ ->
-            dgiot_meter:create_dtu(mqtt, DtuAddr, ProductId, DTUIP)
-    end,
-    {ok, State};
+%%%% 通道消息处理,注意：进程池调用
+%%%%SELECT username as productid, clientid, connected_at FROM "$events/client_connected" WHERE username = 'bffb6a3a27'
+%%handle_event('client.connected', {rule, #{peername := PeerName}, #{<<"clientid">> := DtuAddr, <<"productid">> := ProductId} = _Select}, State) ->
+%%    [DTUIP, _] = binary:split(PeerName, <<$:>>, [global, trim]),
+%%    DeviceId = dgiot_parse_id:get_deviceid(ProductId, DtuAddr),
+%%    case dgiot_device:lookup(DeviceId) of
+%%        {ok, _V} ->
+%%            dgiot_device:put(#{<<"objectId">> => DeviceId});
+%%        _ ->
+%%            dgiot_meter:create_dtu(mqtt, DtuAddr, ProductId, DTUIP)
+%%    end,
+%%    {ok, State};
 
 %% 通道消息处理,注意：进程池调用
 handle_event(EventId, Event, State) ->
     ?LOG(error, "EventId ~p Event ~p", [EventId, Event]),
     {ok, State}.
-
-% SELECT clientid, payload, topic FROM "meter"
-% SELECT clientid, disconnected_at FROM "$events/client_disconnected" WHERE username = 'dgiot'
-% SELECT clientid, connected_at FROM "$events/client_connected" WHERE username = 'dgiot'
-handle_message({rule, #{clientid := DevAddr, disconnected_at := _DisconnectedAt}, _Context}, State) ->
-    ?LOG(error, "DevAddr ~p ", [DevAddr]),
-    {ok, State};
-
-handle_message({rule, #{clientid := DevAddr, payload := Payload, topic := _Topic}, _Msg}, #state{id = ChannelId} = State) ->
-    ?LOG(error, "DevAddr ~p Payload ~p ChannelId ~p", [DevAddr, Payload, ChannelId]),
-    {ok, State};
 
 handle_message(_Message, State) ->
     {ok, State}.

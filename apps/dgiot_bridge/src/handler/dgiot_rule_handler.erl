@@ -30,7 +30,7 @@
 
 %% API
 -export([swagger_rule/0]).
--export([handle/4, sysc_rules/0, save_rule_to_dict/2, device_sql/4]).
+-export([handle/4, sysc_rules/0, save_rule_to_dict/2, device_sql/4, create_rules/5]).
 
 %% API描述
 %% 支持二种方式导入
@@ -174,9 +174,9 @@ do_request(get_actions, _Args, _Context, _Req) ->
 %%do_request(post_rulesql, #{<<"select">> := Select, <<"from">> := From, <<"where">> := Where, <<"method">> := Method}, _Context, _Req) ->
 %%    device_sql(Select, From, Where, Method);
 
-do_request(post_rulesql, #{<<"trigger">> := Trigger, <<"condition">> := Condition, <<"action">> := Action}, _Context, _Req) ->
+do_request(post_rulesql, #{<<"trigger">> := Trigger, <<"condition">> := Condition, <<"action">> := Action, <<"ruleid">> := Ruleid, <<"description">> := Description}, _Context, _Req) ->
 %%    device_sql(Select, From, Where, Method);
-    sql_tpl(Trigger, Condition, Action);
+    sql_tpl(Trigger, Condition, Action, Ruleid, Description);
 
 
 
@@ -212,9 +212,14 @@ do_request(_OperationId, _Args, _Context, _Req) ->
 
 %%getSelect(#{<<"mqttEvent">> := MqttEvent,<<"mqttEvent">> := MqttEvent}->Select) ->
 
+%%doc-api https://help.aliyun.com/document_detail/256392.html#section-yqn-9ue-cwa
+%%阿里云topic pub_payload 实例
+%%{\"id\":\"1\",\"version\":\"1.0\",\"params\":{\"LightSwitch\":0}}
 
+%%desc 消息通信数据格式
+%%doc-api https://help.aliyun.com/document_detail/73736.htm?spm=a2c4g.11186623.0.0.353d7a48CvEOwF#concept-ap3-lql-b2b
 
-sql_tpl(Trigger, Condition, Action) ->
+sql_tpl(Trigger, Condition, Action, Ruleid, Description) ->
     SELECT = generateSelect(Condition, Trigger, Action),
     FROM = generateFrom(Trigger),
     WHERE = generateWhere(Condition, Trigger, FROM),
@@ -232,6 +237,7 @@ sql_tpl(Trigger, Condition, Action) ->
 %%            _ -> Acc
 %%        end
 %%                           end, <<"">>, Where),
+    ChannelId = dgiot_parse_id:get_channelid(dgiot_utils:to_binary(?BACKEND_CHL), <<"NOTIFICATION">>, <<"dgiot_notification">>),
     DefaultSql =
         <<"SELECT", "\r\n",
             SELECT/binary, "\r\n",
@@ -239,6 +245,7 @@ sql_tpl(Trigger, Condition, Action) ->
             "   \"", FROM/binary, "\"", "\r\n",
             "WHERE", "\r\n     ",
             WHERE/binary>>,
+    create_rules(Ruleid, ChannelId, Description, DefaultSql, <<"/${productid}/#">>),
     {ok, #{<<"template">> => DefaultSql}}.
 
 %% 根据设备条件生成sql模板
@@ -259,9 +266,9 @@ device_sql(Select, From, Where, _Method) ->
                    #{<<"productid">> := ProductId, <<"devaddr">> := Devaddr} ->
                        case Devaddr of
                            <<"#">> ->
-                               <<"$dg/user/", ProductId/binary, "/", Devaddr/binary>>;
+                               <<"$dg/alarm/", ProductId/binary, "/", Devaddr/binary>>;
                            _ ->
-                               <<"$dg/user/", ProductId/binary, "/", Devaddr/binary, "/#">>
+                               <<"$dg/alarm/", ProductId/binary, "/", Devaddr/binary, "/#">>
                        end;
                    _ ->
                        <<"thing/", "test/#">>
@@ -447,44 +454,48 @@ generateFrom(Trigger) ->
     case Uri of
         <<"trigger/product/property">> ->
             case Params of
-                #{<<"productKey">> := ProductId, <<"deviceName">> := Devaddr} ->
-                    case Devaddr of
+                #{<<"productKey">> := ProductId, <<"deviceName">> := DeviceId} ->
+                    case DeviceId of
                         <<"">> ->
-                            <<"$dg/user/", ProductId/binary, "/", Devaddr/binary>>;
+                            <<"$dg/alarm/", ProductId/binary, "/#">>;
+                        <<"#">> ->
+                            <<"$dg/alarm/", ProductId/binary, "/#">>;
                         _ ->
-                            <<"$dg/user/", ProductId/binary, "/", Devaddr/binary, "/#">>
+                            <<"$dg/alarm/", ProductId/binary, "/", DeviceId/binary, "/#">>
                     end;
                 _ ->
-                    <<"$dg/user/", "test/#">>
+                    <<"$dg/alarm/", "test/#">>
             end;
         <<"trigger/product/event">> ->
             case Params of
-                #{<<"productKey">> := ProductId, <<"deviceName">> := Devaddr} ->
-                    case Devaddr of
+                #{<<"productKey">> := ProductId, <<"deviceName">> := DeviceId} ->
+                    case DeviceId of
                         <<"">> ->
-                            <<"$dg/user/", ProductId/binary, "/", Devaddr/binary>>;
+                            <<"$dg/alarm/", ProductId/binary, "/#">>;
+                        <<"#">> ->
+                            <<"$dg/alarm/", ProductId/binary, "/#">>;
                         _ ->
-                            <<"$dg/user/", ProductId/binary, "/", Devaddr/binary, "/#">>
+                            <<"$dg/alarm/", ProductId/binary, "/", DeviceId/binary, "/#">>
                     end;
                 _ ->
-                    <<"$dg/user/", "test/#">>
+                    <<"$dg/alarm/", "test/#">>
             end;
         <<"trigger/mqtt/event">> ->
             case Params of
-                #{<<"productKey">> := ProductId, <<"mqtt">> := Mqtt, <<"deviceName">> := Devaddr} ->
+                #{<<"productKey">> := ProductId, <<"mqtt">> := Mqtt, <<"deviceName">> := DeviceId} ->
                     case ProductId of
                         <<"">> ->
-                            <<"$events/", Mqtt/binary, "/", ProductId/binary, "/", Devaddr/binary>>;
+                            <<"$events/", Mqtt/binary, "/", ProductId/binary, "/", DeviceId/binary>>;
                         _ ->
-                            <<"$events/", Mqtt/binary, "/", ProductId/binary, "/", Devaddr/binary, "/#">>
+                            <<"$events/", Mqtt/binary, "/", ProductId/binary, "/", DeviceId/binary, "/#">>
                     end;
                 _ ->
-                    <<"$dg/user/", "test/#">>
+                    <<"$dg/alarm/", "test/#">>
             end;
         <<"trigger/timer">> ->
-            <<"$dg/user/", "test/#">>;
+            <<"$dg/alarm/", "test/#">>;
         _ ->
-            <<"$dg/user/", "test/#">>
+            <<"$dg/alarm/", "test/#">>
     end.
 
 generateSelect(Condition, _Trigger, _FROM) ->
@@ -494,25 +505,25 @@ generateSelect(Condition, _Trigger, _FROM) ->
                 PropertyName = maps:get(<<"propertyName">>, Params, <<"test">>),
                 case Acc of
                     <<"">> ->
-                        PropertyName;
+                        <<"payload.", PropertyName/binary, "  as ", PropertyName/binary>>;
                     _ ->
-                        <<Acc/binary, ",\r\n   ", PropertyName/binary>>
+                        <<Acc/binary, ",\r\n   ", "payload.", PropertyName/binary, "  as ", PropertyName/binary>>
                 end;
             #{<<"uri">> := <<"condition/device/stateContinue">>, <<"params">> := Params} ->
                 PropertyName = maps:get(<<"propertyName">>, Params, <<"test">>),
                 case Acc of
                     <<"">> ->
-                        PropertyName;
+                        <<"payload.", PropertyName/binary, "  as ", PropertyName/binary>>;
                     _ ->
-                        <<Acc/binary, ",\r\n   ", PropertyName/binary>>
+                        <<Acc/binary, ",\r\n   ", "payload.", PropertyName/binary, "  as ", PropertyName/binary>>
                 end;
             #{<<"uri">> := <<"condition/device/time">>, <<"params">> := Params} ->
                 PropertyName = maps:get(<<"propertyName">>, Params, <<"test">>),
                 case Acc of
                     <<"">> ->
-                        PropertyName;
+                        <<"payload.", PropertyName/binary, "  as ", PropertyName/binary>>;
                     _ ->
-                        <<Acc/binary, ",\r\n   ", PropertyName/binary>>
+                        <<Acc/binary, ",\r\n   ", "payload.", PropertyName/binary, "  as ", PropertyName/binary>>
                 end;
             _ ->
                 Acc
@@ -595,3 +606,47 @@ generateWhere(Condition, _Trigger, _FROM) ->
                 Acc
         end
                 end, L2, maps:get(<<"items">>, Condition, [])).
+
+create_rules(RuleID, ChannelId, Description, Rawsql, Target_topic) ->
+    emqx_rule_engine_api:create_resource(#{},
+        [
+            {<<"id">>, <<"resource:", ChannelId/binary>>},
+            {<<"type">>, <<"dgiot_resource">>},
+            {<<"config">>, [{<<"channel">>, ChannelId}]},
+            {<<"description">>, <<"resource:", ChannelId/binary>>}
+        ]),
+    Params = #{
+        <<"actions">> => [#{<<"name">> => <<"dgiot">>, <<"fallbacks">> => [],
+            <<"params">> => #{
+                <<"$resource">> => <<"resource:", ChannelId/binary>>,
+                <<"channel">> => <<"数蛙物联网通道"/utf8>>,
+                <<"payload_tmpl">> => <<"${payload}">>,
+                <<"target_qos">> => 0,
+                <<"target_topic">> => Target_topic
+            }}],
+        <<"enabled">> => true,
+        <<"ctx">> => #{
+            <<"clientid">> => <<"c_swqx">>,
+            <<"payload">> => <<"{\"msg\":\"hello\"}">>,
+            <<"qos">> => 1,
+            <<"topic">> => <<"t/a">>,
+            <<"username">> => <<"u_swqx">>
+        },
+        <<"description">> => Description,
+        <<"for">> => <<"[\"t/#\"]">>,
+        <<"rawsql">> => Rawsql
+    },
+    ObjectId = dgiot_parse_id:get_dictid(RuleID, <<"ruleengine">>, <<"Rule">>, <<"Rule">>),
+    case dgiot_parse:get_object(<<"Dict">>, ObjectId) of
+        {ok, _} ->
+            dgiot_rule_handler:save_rule_to_dict(RuleID, Params);
+        _ ->
+            R = emqx_rule_engine_api:create_rule(#{}, maps:to_list(Params)),
+            case R of
+                {ok, #{data := #{id := EmqxRuleId}}} ->
+                    dgiot_data:delete(?DGIOT_RUlES, EmqxRuleId),
+                    emqx_rule_engine_api:delete_rule(#{id => EmqxRuleId}, []),
+                    dgiot_rule_handler:save_rule_to_dict(RuleID, Params);
+                _ -> pass
+            end
+    end.
