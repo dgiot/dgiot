@@ -71,24 +71,24 @@
                   "size": "",
                   "type": "switch",
                   "label": "启用状态",
+                  "onText": "启用",
+                  "offText": "禁用",
                   "disabled": true,
                   "readOnly": true,
+                  "trueValue": "ONLINE",
+                  "falseValue": "OFFLINE",
                   "horizontal": {
                     "left": 4,
                     "right": 8,
                     "leftFixed": ""
                   },
-                  "optionAtLeft": false,
-                  "trueValue": "ONLINE",
-                  "falseValue": "OFFLINE",
-                  "onText": "启用",
-                  "offText": "禁用"
+                  "optionAtLeft": false
                 },
                 {
-                  "type": "static-date",
-                  "label": "更新时间",
+                  "mode": "inline",
                   "name": "updatedAt",
-                  "mode": "inline"
+                  "type": "static-date",
+                  "label": "更新时间"
                 },
                 {
                   "mode": "inline",
@@ -100,25 +100,300 @@
                   "borderMode": "half",
                   "placeholder": "",
                   "valueFormat": "x"
+                },
+                {
+                  "type": "divider"
+                },
+                {
+                  "tpl": "数据下发",
+                  "type": "plain",
+                  "inline": false
+                },
+                {
+                  "mode": "inline",
+                  "name": "profile.text_value",
+                  "size": "",
+                  "type": "input-text",
+                  "addOn": null,
+                  "label": "下发阈值：",
+                  "value": "1",
+                  "remark": null,
+                  "options": [],
+                  "disabled": false,
+                  "readOnly": false,
+                  "horizontal": {
+                    "left": 4,
+                    "right": 8,
+                    "leftFixed": ""
+                  },
+                  "showCounter": true,
+                  "validateApi": {
+                    "url": "iotapi/amis/Device/parse_objectid",
+                    "method": "put",
+                    "headers": {
+                      "store": "localStorage",
+                      "dgiotReplace": "parse_objectid"
+                    },
+                    "requestAdaptor": "return {\r\n  ...api,\r\n  data:{\r\n    profile:{\r\n      text_value:api.data.profile.text_value\r\n    }\r\n  }\r\n}"
+                  },
+                  "submitOnChange": false,
+                  "validateOnChange": true
+                },
+                {
+                  "mode": "inline",
+                  "name": "profile.switch",
+                  "type": "switch",
+                  "label": "控制开关：",
+                  "onText": "开启",
+                  "option": "开关",
+                  "offText": "关闭",
+                  "trueValue": true,
+                  "falseValue": false,
+                  "validateApi": {
+                    "url": "iotapi/amis/Device/parse_objectid",
+                    "method": "put",
+                    "headers": {
+                      "store": "localStorage",
+                      "dgiotReplace": "parse_objectid"
+                    },
+                    "requestAdaptor": "return {\r\n  ...api,\r\n  data:{\r\n    profile:{\r\n      switch:api.data.profile.switch\r\n    }\r\n  }\r\n}"
+                  },
+                  "optionAtLeft": false,
+                  "submitOnChange": false,
+                  "validateOnChange": true
+                },
+                {
+                  "max": "180",
+                  "min": "30",
+                  "mode": "inline",
+                  "name": "profile.number",
+                  "step": 1,
+                  "type": "input-number",
+                  "label": "上报间隔(秒)：",
+                  "value": 30,
+                  "option": "开关",
+                  "precision": 0.01,
+                  "validateApi": {
+                    "url": "iotapi/amis/Device/parse_objectid",
+                    "method": "put",
+                    "headers": {
+                      "store": "localStorage",
+                      "dgiotReplace": "parse_objectid"
+                    },
+                    "requestAdaptor": "return {\r\n  ...api,\r\n  data:{\r\n    profile:{\r\n      number:api.data.profile.number\r\n    }\r\n  }\r\n}"
+                  },
+                  "optionAtLeft": false,
+                  "submitOnChange": false,
+                  "validateOnChange": true
                 }
               ],
+              "type": "form",
+              "style": {},
+              "title": "表单",
               "initApi": {
                 "url": "iotapi/amis/Device/parse_objectid",
                 "method": "get",
-                "adaptor": "return {\r\n \"status\":0,\r\n \"msg\":\"\",\r\n \"data\":response.data\r\n }",
+                "headers": {
+                  "store": "localStorage",
+                  "dgiotReplace": "parse_objectid"
+                }
+              },
+              "messages": {},
+              "autoFocus": true,
+              "submitText": "",
+              "submitOnChange": false
+            }
+          ],
+          "icon": "fa fa-snapchat-ghost",
+          "title": "参数下发（单个）",
+          "reload": true
+        },
+        {
+          "body": [
+            {
+              "api": {
+                "url": "iotapi/amis/Device/parse_objectid",
+                "method": "put",
                 "headers": {
                   "store": "localStorage",
                   "dgiotReplace": "parse_objectid"
                 },
-                "dataType": "json"
-              }
+                "requestAdaptor": "return {\r\n  ...api,\r\n  data:{\r\n    profile:{...api.data.profile}\r\n  }\r\n}"
+              },
+              "body": [
+                {
+                  "mode": "inline",
+                  "name": "name",
+                  "size": "",
+                  "type": "input-text",
+                  "label": "设备名称",
+                  "disabled": true,
+                  "readOnly": true,
+                  "horizontal": {
+                    "left": 4,
+                    "right": 8,
+                    "leftFixed": ""
+                  }
+                },
+                {
+                  "mode": "inline",
+                  "name": "devaddr",
+                  "size": "",
+                  "type": "input-text",
+                  "label": "设备编号",
+                  "disabled": true,
+                  "readOnly": true,
+                  "horizontal": {
+                    "left": 4,
+                    "right": 8,
+                    "leftFixed": ""
+                  }
+                },
+                {
+                  "mode": "inline",
+                  "name": "address",
+                  "size": "",
+                  "type": "input-text",
+                  "label": "安装位置:",
+                  "disabled": true,
+                  "readOnly": true,
+                  "horizontal": {
+                    "left": 4,
+                    "right": 8,
+                    "leftFixed": ""
+                  }
+                },
+                {
+                  "mode": "inline",
+                  "name": "detail.assetNum",
+                  "size": "",
+                  "type": "input-text",
+                  "label": "入网编号",
+                  "disabled": true,
+                  "readOnly": true,
+                  "horizontal": {
+                    "left": 4,
+                    "right": 8,
+                    "leftFixed": ""
+                  }
+                },
+                {
+                  "mode": "inline",
+                  "name": "status",
+                  "size": "",
+                  "type": "switch",
+                  "label": "启用状态",
+                  "onText": "启用",
+                  "offText": "禁用",
+                  "disabled": true,
+                  "readOnly": true,
+                  "trueValue": "ONLINE",
+                  "falseValue": "OFFLINE",
+                  "horizontal": {
+                    "left": 4,
+                    "right": 8,
+                    "leftFixed": ""
+                  },
+                  "optionAtLeft": false
+                },
+                {
+                  "mode": "inline",
+                  "name": "updatedAt",
+                  "type": "static-date",
+                  "label": "更新时间"
+                },
+                {
+                  "mode": "inline",
+                  "name": "createdAt",
+                  "type": "static-datetime",
+                  "label": "添加时间",
+                  "copyable": false,
+                  "quickEdit": false,
+                  "borderMode": "half",
+                  "placeholder": "",
+                  "valueFormat": "x"
+                },
+                {
+                  "type": "divider"
+                },
+                {
+                  "tpl": "数据下发",
+                  "type": "plain",
+                  "inline": false
+                },
+                {
+                  "mode": "inline",
+                  "name": "profile.text_value",
+                  "size": "",
+                  "type": "input-text",
+                  "addOn": null,
+                  "label": "下发阈值：",
+                  "value": "1",
+                  "remark": null,
+                  "options": [],
+                  "disabled": false,
+                  "readOnly": false,
+                  "horizontal": {
+                    "left": 4,
+                    "right": 8,
+                    "leftFixed": ""
+                  },
+                  "showCounter": true,
+                  "submitOnChange": false
+                },
+                {
+                  "mode": "inline",
+                  "name": "profile.switch",
+                  "type": "switch",
+                  "label": "控制开关：",
+                  "onText": "开启",
+                  "option": "开关",
+                  "offText": "关闭",
+                  "trueValue": true,
+                  "falseValue": false,
+                  "optionAtLeft": false,
+                  "submitOnChange": false,
+                  "validateOnChange": true
+                },
+                {
+                  "max": "180",
+                  "min": "30",
+                  "mode": "inline",
+                  "name": "profile.number",
+                  "step": 1,
+                  "type": "input-number",
+                  "label": "上报间隔(秒)：",
+                  "value": 30,
+                  "option": "开关",
+                  "precision": 0.01,
+                  "submitOnChange": true
+                }
+              ],
+              "type": "form",
+              "style": {},
+              "title": "表单",
+              "initApi": {
+                "url": "iotapi/amis/Device/parse_objectid",
+                "method": "get",
+                "headers": {
+                  "store": "localStorage",
+                  "dgiotReplace": "parse_objectid"
+                }
+              },
+              "messages": {},
+              "autoFocus": true,
+              "submitText": "批量控制",
+              "submitOnChange": false
             }
           ],
-          "icon": "fa fa-slideshare",
-          "title": "设备信息"
+          "icon": "fa fa-stack-exchange",
+          "title": "参数下发（多个）",
+          "reload": true
         }
       ],
-      "type": "tabs"
-    }
+      "type": "tabs",
+      "mountOnEnter": true
+    },
+    {}
   ]
 }
