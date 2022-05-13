@@ -97,6 +97,14 @@ do_request(post_dashboard, Arg, Context, _Req) ->
     Data = dgiot_dashboard:post_dashboard(Arg, Context),
     {200, Data};
 
+%% iot_hub 概要: 通过当前登录人员token（例如登录用户为生产报工部门员工） 查询获取当前用户所有同级部门及其子部门所有的用户的人员树
+%% OperationId:get_usertree
+%% 请求:POST /iotapi/get_usertree
+do_request(get_usertree, Arg, Context, _Req) ->
+    Data = dgiot_dashboard:post_dashboard(Arg, Context),
+    {200, Data};
+
+
 %%  服务器不支持的API接口
 do_request(_OperationId, _Args, _Context, _Req) ->
     ?LOG(info, "_OperationId:~p~n", [_OperationId]),

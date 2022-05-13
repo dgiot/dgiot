@@ -308,5 +308,18 @@ do_put(<<"put">>, Token, <<"/iotapi/classes/", Tail/binary>>, #{<<"id">> := Id} 
             Args
     end;
 
+%% 适配amis iotapi
+do_put(<<"put">>, Token, <<"/iotapi/amis/", Tail/binary>>, #{<<"id">> := Id} = Args) ->
+    [ClassName | _] = re:split(Tail, <<"/">>),
+    io:format("~s ~p put Id = ~p ~n", [?FILE, ?LINE, Id]),
+    notify('before', put, Token, ClassName, Id, Args),
+    case dgiot_parse:get_object(ClassName, Id) of
+        {ok, Class} ->
+            dgiot_map:merge(Class, maps:without([<<"id">>], Args));
+        _ ->
+            Args
+    end;
+
 do_put(_, _Token, _ClassName, Args) ->
+    io:format("~s ~p put Args = ~p ~n", [?FILE, ?LINE, Args]),
     Args.
