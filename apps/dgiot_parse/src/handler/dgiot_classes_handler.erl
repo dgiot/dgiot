@@ -294,8 +294,8 @@ do_request_after(OperationID, StatusCode, ResHeaders, ResBody, _Context, Req) ->
 
 %% ==========================
 %%  parse 请求
-%% ==========================
-request_parse(OperationID, Args, Body, Headers, #{base_path := BasePath, <<"sessionToken">>:= Token} = Context, Req) ->
+%% ==========================io:format
+request_parse(OperationID, Args, Body, Headers, #{base_path := BasePath, <<"sessionToken">> := Token} = Context, Req) ->
     QS =
         lists:foldl(
             fun
@@ -307,11 +307,17 @@ request_parse(OperationID, Args, Body, Headers, #{base_path := BasePath, <<"sess
                     <<Acc/binary, "&", N/binary, "=", V/binary>>
             end, <<>>, dgiot_req:parse_qs(Req)),
     Method = dgiot_req:method(Req),
-    {NewQs, NewType, NewArgs} =  dgiot_parse_hook:api_hook({'before', OperationID, Token, QS, dgiot_req:path(Req), Args}),
+    {NewQs, NewType, NewArgs} = dgiot_parse_hook:api_hook({'before', OperationID, Token, QS, dgiot_req:path(Req), Args}),
+    NewBody = case dgiot_utils:to_binary(Method) of
+                  <<"PUT">> ->
+                      NewArgs;
+                  _ ->
+                      Body
+              end,
     Path = get_path(re:replace(dgiot_req:path(Req), BasePath, <<>>, [{return, binary}]), NewType),
     Url = <<Path/binary, NewQs/binary>>,
-%%    io:format("~s ~p ~p  ~n", [?FILE, ?LINE, Url]),
-    request_parse(OperationID, Url, Method, NewArgs, Body, Headers, Context, Req).
+%%    io:format("~s ~p ~p  ~n", [?FILE, ?LINE, NewBody]),
+    request_parse(OperationID, Url, Method, NewArgs, NewBody, Headers, Context, Req).
 
 request_parse(OperationID, Url, Method, _Args, Body, Headers, #{from := From} = Context, Req) ->
     {_Type, NewOperationID} = get_OperationID(OperationID),
@@ -344,4 +350,4 @@ get_OperationID(OperationID1) ->
                 end, {<<"classes">>, OperationID}, dgiot_data:get(swaggerApi)).
 
 get_path(Url, Type) ->
-    re:replace(Url, <<"/",Type/binary,"/">>, <<"/classes/">>, [global, {return, binary}, unicode]).
+    re:replace(Url, <<"/", Type/binary, "/">>, <<"/classes/">>, [global, {return, binary}, unicode]).

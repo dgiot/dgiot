@@ -28,7 +28,7 @@ post('after', _AfterData) ->
     ok.
 
 put('before', #{<<"id">> := DeviceId} = Device) ->
-    io:format("~s ~p Device = ~p.~n", [?FILE, ?LINE, Device]),
+%%    io:format("~s ~p Device = ~p.~n", [?FILE, ?LINE, Device]),
     case dgiot_device:lookup(DeviceId) of
         {ok, #{<<"devaddr">> := Devaddr, <<"productid">> := ProductId}} ->
             Profile = maps:get(<<"profile">>, Device, #{}),
