@@ -213,6 +213,7 @@ overlay_vars_rel(RelType) ->
         , {enable_plugin_dgiot_topo, true}
         , {enable_plugin_dgiot_dlink, true}
         , {enable_plugin_dgiot_bamis, true}
+        , {enable_plugin_dgiot_sinmahe, true}
         , {enable_plugin_dgiot_evidence, true}
         , {enable_plugin_dgiot_opc, true}
         , {enable_plugin_dgiot_meter, true}
@@ -351,6 +352,7 @@ relx_plugin_apps_per_rel(cloud) ->
         , dgiot_gb26875
         , dgiot_hjt212
         , dgiot_bacnet
+        , dgiot_sinmahe
     ];
 relx_plugin_apps_per_rel(edge) ->
     [].

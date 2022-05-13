@@ -6,15 +6,8 @@
         {
           "body": [
             {
-              "api": {
-                "url": "iotapi/amis/Device/parse_objectid",
-                "method": "put",
-                "headers": {
-                  "store": "localStorage",
-                  "dgiotReplace": "parse_objectid"
-                },
-                "requestAdaptor": "return {\r\n  ...api,\r\n  data:{\r\n    profile:{...api.data.profile}\r\n  }\r\n}"
-              },
+              "type": "form",
+              "title": "表单",
               "body": [
                 {
                   "mode": "inline",

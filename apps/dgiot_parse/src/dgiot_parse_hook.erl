@@ -299,11 +299,12 @@ get_id(OperationID) ->
 %% todo 多级json的 merge修改
 do_put(<<"put">>, Token, <<"/iotapi/classes/", Tail/binary>>, #{<<"id">> := Id} = Args) ->
     [ClassName | _] = re:split(Tail, <<"/">>),
-    io:format("~s ~p put Id = ~p ~n", [?FILE, ?LINE, Id]),
+%%    io:format("~s ~p put Id = ~p ~n", [?FILE, ?LINE, Id]),
     notify('before', put, Token, ClassName, Id, Args),
     case dgiot_parse:get_object(ClassName, Id) of
         {ok, Class} ->
-            dgiot_map:merge(Class, maps:without([<<"id">>], Args));
+            Keys = maps:keys(Args),
+            dgiot_map:merge(maps:with([Keys], Class), maps:without([<<"id">>], Args));
         _ ->
             Args
     end;
@@ -311,15 +312,17 @@ do_put(<<"put">>, Token, <<"/iotapi/classes/", Tail/binary>>, #{<<"id">> := Id} 
 %% 适配amis iotapi
 do_put(<<"put">>, Token, <<"/iotapi/amis/", Tail/binary>>, #{<<"id">> := Id} = Args) ->
     [ClassName | _] = re:split(Tail, <<"/">>),
-    io:format("~s ~p put Id = ~p ~n", [?FILE, ?LINE, Id]),
     notify('before', put, Token, ClassName, Id, Args),
     case dgiot_parse:get_object(ClassName, Id) of
         {ok, Class} ->
-            dgiot_map:merge(Class, maps:without([<<"id">>], Args));
+            Keys = maps:keys(Args),
+            Res = dgiot_map:merge(maps:with(Keys, Class), maps:without([<<"id">>], Args)),
+%%            io:format("~s ~p put Res = ~p ~n", [?FILE, ?LINE, Res]),
+            Res;
         _ ->
             Args
     end;
 
 do_put(_, _Token, _ClassName, Args) ->
-    io:format("~s ~p put Args = ~p ~n", [?FILE, ?LINE, Args]),
+%%    io:format("~s ~p put Args = ~p ~n", [?FILE, ?LINE, Args]),
     Args.
