@@ -27,7 +27,7 @@
     build_req_message/1]
 ).
 
--export([modbus_encoder/4, is16/1, set_params/3, decode_data/4]).
+-export([is16/1, set_params/3, decode_data/4]).
 
 -define(TYPE, ?MODBUS_TCP).
 
@@ -452,7 +452,7 @@ list_word16_to_binary(Values) when is_list(Values) ->
         )
     ).
 
-modbus_decoder(ProductId, SlaveId, Address, Data, Acc1) ->
+modbus_tcp_decoder(ProductId, Slaveid, Address, Data, Acc1) ->
     case dgiot_product:lookup_prod(ProductId) of
         {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
             lists:foldl(fun(X, Acc) ->
@@ -469,15 +469,12 @@ modbus_decoder(ProductId, SlaveId, Address, Data, Acc1) ->
                         <<Sh:8, Sl:8>> = dgiot_utils:hex_to_binary(modbus_rtu:is16(OldAddress)),
                         NewSlaveid = H * 256 + L,
                         NewAddress = Sh * 256 + Sl,
-                        case {SlaveId, Address} of
+                        case {Slaveid, Address} of
                             {NewSlaveid, NewAddress} ->
                                 case format_value(Data, X, Props) of
-                                    {map, Value} ->
-                                        maps:merge(Acc, Value);
                                     {Value, _Rest} ->
                                         Acc#{Identifier => Value};
-                                    _A ->
-                                        Acc
+                                    _ -> Acc
                                 end;
                             _ ->
                                 Acc
@@ -487,30 +484,6 @@ modbus_decoder(ProductId, SlaveId, Address, Data, Acc1) ->
                 end
                         end, Acc1, Props);
         _ -> #{}
-    end.
-
-modbus_encoder(ProductId, SlaveId, Address, Value) ->
-    case dgiot_product:lookup_prod(ProductId) of
-        {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
-            lists:foldl(fun(X, Acc) ->
-                case X of
-                    #{<<"accessMode">> := <<"r">>,
-                        <<"dataSource">> := #{<<"address">> := Address, <<"data">> := Data, <<"slaveid">> := SlaveId, <<"operatetype">> := Operatetype},
-                        <<"dataForm">> := #{<<"protocol">> := <<"MODBUSTCP">>}
-                    } ->
-                        Acc ++ [{<<"r">>, Data, Operatetype}];
-                    #{<<"accessMode">> := Cmd,
-                        <<"dataSource">> := #{<<"address">> := Address, <<"data">> := _Quantity, <<"slaveid">> := SlaveId, <<"operatetype">> := Operatetype},
-                        <<"dataForm">> := #{<<"protocol">> := <<"MODBUSTCP">>}
-                    } ->
-                        Acc ++ [{Cmd, Value, Operatetype}];
-                    _Ot ->
-                        Acc
-                end
-                        end, [], Props);
-        Error ->
-            ?LOG(info, "~p", [Error]),
-            []
     end.
 
 %% 1)大端模式：Big-Endian就是高位字节排放在内存的低地址端，低位字节排放在内存的高地址端。
@@ -528,10 +501,10 @@ format_value(Buff, #{
 
 format_value(Buff, #{
     <<"accessMode">> := <<"rw">>,
-    <<"dataSource">> := DataSource} = X, _Props) ->
+    <<"dataSource">> := DataSource} = X, Props) ->
     format_value(Buff, X#{<<"accessMode">> => <<"r">>,
         <<"dataSource">> => DataSource#{<<"data">> => byte_size(Buff)}
-    }, _Props);
+    }, Props);
 
 format_value(Buff, #{<<"identifier">> := BitIdentifier,
     <<"dataSource">> := #{
