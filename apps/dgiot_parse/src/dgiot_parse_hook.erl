@@ -71,7 +71,8 @@ add_hook(Key) ->
                 {ok, ResBody};
             ({'after', put, Token, Class, ObjectId, QueryData, ResBody}) ->
                 Map = dgiot_utils:to_map(QueryData),
-                notify('after', put, Token, Class, ObjectId, Map#{<<"objectId">> => ObjectId}),
+                <<ObjectId1:10/binary, _/binary>> = ObjectId,
+                notify('after', put, Token, Class, ObjectId, Map#{<<"objectId">> => ObjectId1}),
                 {ok, ResBody};
             ({'after', delete, Token, Class, ObjectId, _QueryData, ResBody}) ->
                 notify('after', delete, Token, Class, ObjectId, ObjectId),
@@ -298,6 +299,7 @@ get_id(OperationID) ->
 %% todo 多级json的 merge修改
 do_put(<<"put">>, Token, <<"/iotapi/classes/", Tail/binary>>, #{<<"id">> := Id} = Args) ->
     [ClassName | _] = re:split(Tail, <<"/">>),
+    io:format("~s ~p put Id = ~p ~n", [?FILE, ?LINE, Id]),
     notify('before', put, Token, ClassName, Id, Args),
     case dgiot_parse:get_object(ClassName, Id) of
         {ok, Class} ->

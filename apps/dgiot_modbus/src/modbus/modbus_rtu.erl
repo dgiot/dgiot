@@ -31,18 +31,6 @@
 
 -define(TYPE, ?MODBUS_RTU).
 
-%% 注册协议类型
--protocol_type(#{
-    cType => ?TYPE,
-    type => <<"energy">>,
-    colum => 10,
-    title => #{
-        zh => <<"MODBUS RTU协议"/utf8>>
-    },
-    description => #{
-        zh => <<"MODBUS RTU协议"/utf8>>
-    }
-}).
 %% 注册协议参数
 -params(#{
     <<"originaltype">> => #{
@@ -141,6 +129,18 @@
     }
 }).
 
+%% 注册协议类型
+-protocol_type(#{
+    cType => ?TYPE,
+    type => <<"energy">>,
+    colum => 10,
+    title => #{
+        zh => <<"MODBUS RTU协议"/utf8>>
+    },
+    description => #{
+        zh => <<"MODBUS RTU协议"/utf8>>
+    }
+}).
 
 init(State) ->
     State#{<<"req">> => [], <<"ts">> => dgiot_datetime:now_ms(), <<"interval">> => 300}.
@@ -167,8 +167,17 @@ to_frame(#{
 %%<<"gateway">> => DtuAddr,
 %%<<"addr">> => SlaveId,
 %%<<"di">> => Address
-to_frame(_DataSource) ->
-    <<>>.
+to_frame(#{
+    <<"data">> := Value,
+    <<"gateway">> := DtuAddr,
+    <<"slaveid">> := SlaveId,
+    <<"address">> := Address
+}) ->
+    case dgiot_device:get_subdevice(DtuAddr, SlaveId) of
+        not_find -> [];
+        [ProductId, _DevAddr] ->
+            encode_data(Value, Address, SlaveId, ProductId)
+    end.
 
 %% Quality 读的时候代表寄存器个数，16位的寄存器，一个寄存器表示两个字节，写的时候代表实际下发值
 encode_data(Quality, Address, SlaveId, OperateType) ->
@@ -182,10 +191,10 @@ encode_data(Quality, Address, SlaveId, OperateType) ->
             <<"writeHreg">> -> {?FC_WRITE_HREG, dgiot_utils:to_int(Quality)}; %%需要校验，写多个线圈是什么状态
             <<"writeCoils">> -> {?FC_WRITE_COILS, dgiot_utils:to_int(Quality)};
             <<"writeHregs">> -> {?FC_WRITE_HREGS, dgiot_utils:to_int(Quality)}; %%需要校验，写多个保持寄存器是什么状态
-            _ -> {?FC_READ_HREGS, dgiot_utils:to_int(dgiot_utils:to_int(Quality) / 2)}
+            _ -> {?FC_READ_HREGS, dgiot_utils:to_int(dgiot_utils:to_int(Quality))}
         end,
-    <<H:8, L:8>> = dgiot_utils:hex_to_binary(modbus_rtu:is16(Address)),
-    <<Sh:8, Sl:8>> = dgiot_utils:hex_to_binary(modbus_rtu:is16(SlaveId)),
+    <<H:8, L:8>> = dgiot_utils:hex_to_binary(is16(Address)),
+    <<Sh:8, Sl:8>> = dgiot_utils:hex_to_binary(is16(SlaveId)),
     RtuReq = #rtu_req{
         slaveId = Sh * 256 + Sl,
         funcode = dgiot_utils:to_int(FunCode),
@@ -221,9 +230,6 @@ set_params(Payload, _ProductId, _DevAddr) ->
         lists:foldl(fun(Index, Acc) ->
             case maps:find(dgiot_utils:to_binary(Index), Payload) of
                 {ok, #{
-                    <<"identifier">> := _Identifier,
-                    <<"name">> := _Name,
-                    <<"productname">> := _Productname,
                     <<"dataForm">> := #{
                         <<"protocol">> := <<"MODBUSRTU">>,
                         <<"control">> := Setting},
@@ -265,21 +271,6 @@ set_params(Payload, _ProductId, _DevAddr) ->
                                 dataByteSize = dgiot_utils:to_int(Bytes),
                                 quality = Value1
                             },
-%%                            DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
-%%                            Sessiontoken = maps:get(<<"sessiontoken">>, Data, <<"">>),
-%%                            {Username, Acl} =
-%%                                case dgiot_auth:get_session(Sessiontoken) of
-%%                                    #{<<"username">> := Name1, <<"ACL">> := Acl1} ->
-%%                                        {Name1, Acl1};
-%%                                    _ ->
-%%                                        {<<"">>, #{}}
-%%                                end,
-%%                            ?MLOG(info, #{<<"clientid">> => DeviceId, <<"username">> => Username,
-%%                                <<"status">> => <<"ONLINE">>, <<"ACL">> => Acl,
-%%                                <<"devaddr">> => DevAddr, <<"productid">> => ProductId,
-%%                                <<"productname">> => Productname, <<"thingname">> => Name,
-%%                                <<"protocol">> => <<"modbus">>, <<"identifier">> => Identifier, <<"value">> => Value1},
-%%                                ['device_operationlog']),
                             Acc ++ [build_req_message(RtuReq)];
                         _ ->
                             Acc
