@@ -350,7 +350,6 @@ relx_plugin_apps_per_rel(cloud) ->
         , dgiot_gb26875
         , dgiot_hjt212
         , dgiot_bacnet
-        , dgiot_sinmahe
     ];
 relx_plugin_apps_per_rel(edge) ->
     [].
