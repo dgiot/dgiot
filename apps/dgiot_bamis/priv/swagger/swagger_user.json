@@ -1,0 +1,33 @@
+{
+  "definitions": {},
+  "paths": {
+  },
+  "tags": [
+    {
+      "description": "数字工厂",
+      "name": "Oc"
+    }
+  ],
+  "paths": {
+   "/usertree": {
+      "get": {
+        "description": "派发人员查询接口",
+        "responses": {
+          "200": {
+            "description": "Returns instance data"
+          },
+          "404": {
+            "description": "object not found",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        },
+        "summary": "数字工厂",
+        "tags": [
+          "Oc"
+        ]
+      }
+    }
+  }
+}
