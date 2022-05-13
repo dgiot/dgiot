@@ -74,7 +74,14 @@ handle(OperationID, Args, Context, Req) ->
 %% OperationId:protocol
 %% 请求:GET /iotapi/protocol
 do_request(get_protocol, _Body, _Context, _Req) ->
-    Protocols = dgiot_dlink:get_all_protocol(),
+    Protocols =
+        case dgiot_data:get(get_protocol) of
+            not_find ->
+                P = dgiot_dlink:get_all_protocol(),
+                dgiot_data:insert(get_protocol, P);
+            P ->
+                P
+        end,
     {200, Protocols};
 
 %% Proctol 概要: 获取Dlink json信息

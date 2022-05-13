@@ -228,6 +228,9 @@ utf8(<<I:8, Rest/binary>>, Block, Result, Type) when I < 128 andalso I > 0 ->
 utf8(<<I:8, Rest/binary>>, Block, Result, Type) ->
     utf8(Rest, <<Block/binary, I:8>>, Result, Type).
 
+to_map(Map) when is_map(Map) ->
+    Map;
+
 to_map(List) when is_list(List) ->
     list_to_map(List);
 

@@ -415,7 +415,8 @@ save_td(ProductId, DevAddr, Ack, _AppData) ->
         0 ->
             #{};
         _ ->
-            Data = dgiot_task:get_calculated(ProductId, Ack),
+            NewAck = dgiot_task:get_collection(ProductId, [], Ack, Ack),
+            Data = dgiot_task:get_calculated(ProductId, NewAck),
             case length(maps:to_list(Data)) of
                 0 ->
                     Data;
