@@ -1,6 +1,10 @@
 {
   "tags": [
     {
+      "name": "Basic",
+      "description": "基础接口"
+    },
+    {
       "name": "_User",
       "description": "用户管理"
     },
@@ -33,10 +37,6 @@
       "description": "应用管理"
     },
     {
-      "name": "Project",
-      "description": "项目管理"
-    },
-    {
       "name": "Device",
       "description": "设备管理"
     },
@@ -53,10 +53,6 @@
       "description": "通道管理"
     },
     {
-      "name": "Crond",
-      "description": "任务管理"
-    },
-    {
       "name": "Instruct",
       "description": "指令管理"
     },
@@ -70,7 +66,7 @@
     },
     {
       "name": "View",
-      "description": "可视化管理"
+      "description": "视图管理"
     },
     {
       "name": "Data",
@@ -103,6 +99,10 @@
     {
       "name": "Category",
       "description": "品类管理"
+    },
+    {
+      "name": "Article",
+      "description": "文章管理"
     }
   ],
   "paths": {

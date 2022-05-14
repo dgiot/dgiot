@@ -98,9 +98,13 @@ start(ChannelId, ChannelArgs) ->
 init(?TYPE, ChannelId, Args) ->
     #{<<"product">> := Products,
         <<"ip">> := Ip,
-        <<"port">> := Port,
-        <<"file">> := FileName} = Args,
-    dgiot_product_csv:read_csv(FileName),
+        <<"port">> := Port
+    } = Args,
+    case maps:find(<<"file">>, Args) of
+        {ok, FileName} ->
+            dgiot_product_csv:read_csv(FileName);
+        _ -> pass
+    end,
     lists:map(fun({ProductId, #{<<"ACL">> := _Acl}}) ->
         dgiot_modbusc_tcp:start_connect(#{
             <<"auto_reconnect">> => 10,

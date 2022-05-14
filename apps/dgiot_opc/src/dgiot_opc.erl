@@ -141,7 +141,7 @@ read_opc_ack(Payload, ProductId, {DeviceId, Devaddr}) ->
                         case Devaddr == DeviceName1 of
                             true ->
                                 Name =
-                                    case dgiot_device:lookup_prod(ProductId) of
+                                    case dgiot_product:lookup_prod(ProductId) of
                                         {ok, #{<<"thing">> := #{<<"properties">> := Properties}}}
                                             ->
                                             ALL_list = [{maps:get(<<"identifier">>, H), maps:get(<<"name">>, H)} || H <- Properties],
@@ -150,7 +150,7 @@ read_opc_ack(Payload, ProductId, {DeviceId, Devaddr}) ->
                                             <<" ">>
                                     end,
                                 Unit =
-                                    case dgiot_device:lookup_prod(ProductId) of
+                                    case dgiot_product:lookup_prod(ProductId) of
                                         {ok, #{<<"thing">> := #{<<"properties">> := Properties1}}}
                                             ->
                                             ALL_list1 = [{maps:get(<<"identifier">>, H), maps:get(<<"dataType">>, H)} || H <- Properties1],

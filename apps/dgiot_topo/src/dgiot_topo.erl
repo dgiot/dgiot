@@ -16,7 +16,7 @@
 -author("johnliu").
 -include_lib("dgiot/include/logger.hrl").
 
--export([docroot/0, get_topo/2, send_konva/3, send_realtime_card/3, get_name/3, put_topo/2, push/4, get_gpsaddr/1]).
+-export([docroot/0, get_topo/2, send_konva/3, send_realtime_card/3, get_name/3, put_topo/2, push/4]).
 
 docroot() ->
     {file, Here} = code:is_loaded(?MODULE),
@@ -99,17 +99,3 @@ push(ProductId, Devaddr, DeviceId, Payload) ->
     Data1 = dgiot_utils:to_list(jsx:encode(Data)),
     httpc:request(post, {Url1, [], "application/json", Data1}, [], []).
 
-
-get_gpsaddr(V) ->
-    BinV = dgiot_utils:to_binary(V),
-    case binary:split(BinV, <<$_>>, [global, trim]) of
-        [Longitude, Latitude] ->
-            case dgiot_gps:get_baidu_addr(Longitude, Latitude) of
-                #{<<"baiduaddr">> := #{<<"formatted_address">> := FormattedAddress}} ->
-                    FormattedAddress;
-                _ ->
-                    <<"[", BinV/binary, "]经纬度解析错误"/utf8>>
-            end;
-        _ ->
-            <<"无GPS信息"/utf8>>
-    end.

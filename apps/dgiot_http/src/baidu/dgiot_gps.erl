@@ -45,6 +45,7 @@
     get_baidu_addr/4,
     get_baidu_addr/2,
     out_of_china/2,
+    get_gpsaddr/1,
     get_baidu_gps/2,
     get_baidu_gps/4,
     get_deng_gps/2,
@@ -260,6 +261,19 @@ transformlng(Lng, Lat) ->
 out_of_china(Lng, Lat) ->
     not ((Lng > 73.66) and (Lng < 135.05) and (Lat > 3.86) and (Lat < 53.55)).
 
+get_gpsaddr(V) ->
+    BinV = dgiot_utils:to_binary(V),
+    case binary:split(BinV, <<$_>>, [global, trim]) of
+        [Longitude, Latitude] ->
+            case get_baidu_addr(Longitude, Latitude) of
+                #{<<"baiduaddr">> := #{<<"formatted_address">> := FormattedAddress}} ->
+                    FormattedAddress;
+                _ ->
+                    <<"[", BinV/binary, "]经纬度解析错误"/utf8>>
+            end;
+        _ ->
+            <<"无GPS信息"/utf8>>
+    end.
 
 %**
 %* 度分格式转度分秒格式

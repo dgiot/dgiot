@@ -89,7 +89,7 @@ handle_info({tcp, Buff}, #tcp{state = #state{id = ChannelId, devaddr = DtuAddr, 
         <<"slaveId">> => Sh * 256 + Sl,
         <<"address">> => H * 256 + L}) of
         {_, Things} ->
-            io:format("~s ~p Things = ~p.~n", [?FILE, ?LINE, Things]),
+%%            ?LOG(info, "Things ~p", [Things]),
             NewTopic = <<"thing/", DtuProductId/binary, "/", DtuAddr/binary, "/post">>,
             dgiot_bridge:send_log(ChannelId, ProductId, DtuAddr, "Channel sends [~p] to [task:~p]", [jsx:encode(Things), NewTopic]),
             DeviceId = dgiot_parse_id:get_deviceid(ProductId, DtuAddr),
@@ -125,7 +125,7 @@ handle_info({deliver, _, Msg}, #tcp{state = #state{id = ChannelId} = State} = TC
                                         <<"address">> := Address} = DataSource
                                 } ->
                                     Data = modbus_tcp:to_frame(DataSource#{<<"productid">> => ProductId}),
-                                    io:format("~s ~p Data = ~p.~n", [?FILE, ?LINE, dgiot_utils:binary_to_hex(Data)]),
+                                    % io:format("~s ~p Data = ~p.~n", [?FILE, ?LINE, dgiot_utils:binary_to_hex(Data)]),
                                     dgiot_bridge:send_log(ChannelId, ProductId, DevAddr, "Channel sends [~p] to [DtuAddr:~p]", [dgiot_utils:binary_to_hex(Data), DevAddr]),
                                     dgiot_tcp_server:send(TCPState, Data),
                                     {noreply, TCPState#tcp{state = State#state{env = #{product => ProductId, pn => SlaveId, di => Address}}}};

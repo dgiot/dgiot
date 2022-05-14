@@ -513,7 +513,6 @@ format_value(Buff, #{<<"identifier">> := BitIdentifier,
     <<"dataSource">> := #{
         <<"originaltype">> := <<"bit">>
     }}, Props) ->
-    io:format("~s ~p Buff = ~p.~n", [?FILE, ?LINE, Buff]),
     Values =
         lists:foldl(fun(X, Acc) ->
             case X of
@@ -526,12 +525,8 @@ format_value(Buff, #{<<"identifier">> := BitIdentifier,
                         <<"address">> := Offset,
                         <<"bytes">> := Len}
                 } ->
-                    io:format("~s ~p Identifier = ~p.~n", [?FILE, ?LINE, Identifier]),
                     IntOffset = dgiot_utils:to_int(Offset),
                     IntLen = dgiot_utils:to_int(Len),
-                    io:format("~s ~p Buff = ~p.~n", [?FILE, ?LINE, Buff]),
-                    io:format("~s ~p IntLen = ~p.~n", [?FILE, ?LINE, IntLen]),
-                    io:format("~s ~p IntOffset = ~p.~n", [?FILE, ?LINE, IntOffset]),
                     Value =
                         case IntOffset of
                             0 ->
@@ -556,7 +551,6 @@ format_value(Buff, #{<<"identifier">> := BitIdentifier,
                     Acc
             end
                     end, #{}, Props),
-    io:format("~s ~p Values = ~p.~n", [?FILE, ?LINE, Values]),
     {map, Values};
 
 format_value(Buff, #{<<"dataSource">> := #{
@@ -659,4 +653,3 @@ format_value(Buff, #{<<"dataSource">> := #{
 format_value(_, #{<<"identifier">> := Field}, _Props) ->
     ?LOG(info, "Field ~p", [Field]),
     throw({field_error, <<Field/binary, " is not validate">>}).
-

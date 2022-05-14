@@ -17,14 +17,11 @@
 -module(dgiot_profile_channel).
 -behavior(dgiot_channelx).
 -author("jonhliu").
--include("dgiot_task.hrl").
+-include("dgiot_device.hrl").
 -include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -define(TYPE, <<"PROFILE">>).
 -record(state, {id, mod, product, env = #{}}).
-
--dgiot_data("ets").
--export([init_ets/0]).
 %% API
 -export([start/2]).
 
@@ -34,7 +31,6 @@
 %% 注册通道类型
 
 -channel_type(#{
-
     cType => ?TYPE,
     type => ?BACKEND_CHL,
     title => #{
@@ -62,16 +58,32 @@
         order => 2,
         type => enum,
         required => false,
-        default => <<"incremental"/utf8>>,
+        default => #{<<"value">> => <<"manual">>, <<"label">> => <<"手动同步"/utf8>>},
         enum => [
-            #{<<"value">> => <<"incremental">>, <<"label">> => <<"incremental"/utf8>>},
-            #{<<"value">> => <<"fullamount">>, <<"label">> => <<"fullamount"/utf8>>}
+            #{<<"value">> => <<"manual">>, <<"label">> => <<"手动同步"/utf8>>},
+            #{<<"value">> => <<"auto">>, <<"label">> => <<"自动同步"/utf8>>}
         ],
         title => #{
             zh => <<"下发模式"/utf8>>
         },
         description => #{
-            zh => <<"下发模式:incremental|fullamount"/utf8>>
+            zh => <<"下发模式:手动同步|自动同步(设备上报配置后自动同步)"/utf8>>
+        }
+    },
+    <<"policy">> => #{
+        order => 2,
+        type => enum,
+        required => false,
+        default => #{<<"value">> => 30, <<"label">> => <<"延迟同步"/utf8>>},
+        enum => [
+            #{<<"value">> => 30, <<"label">> => <<"延迟同步"/utf8>>},
+            #{<<"value">> => [30, 50], <<"label">> => <<"策略同步"/utf8>>}
+        ],
+        title => #{
+            zh => <<"同步策略"/utf8>>
+        },
+        description => #{
+            zh => <<"同步策略:延迟同步|策略同步"/utf8>>
         }
     },
     <<"ico">> => #{
@@ -90,10 +102,6 @@
     }
 }).
 
-init_ets() ->
-    dgiot_data:init(?PROFILE),
-    dgiot_data:init(?MODIFYPROFILE).
-
 start(ChannelId, ChannelArgs) ->
     dgiot_channelx:add(?TYPE, ChannelId, ?MODULE, ChannelArgs).
 
@@ -105,35 +113,46 @@ init(?TYPE, ChannelId, Args) ->
         <<"products">> => Products,
         <<"args">> => NewArgs}
     },
+    dgiot_data:insert({profile, channel}, ChannelId),
     dgiot_parse_hook:subscribe(<<"Device/*">>, put, ChannelId, [<<"profile">>]),
     {ok, State, []}.
 
-handle_init(#state{id = _ChannelId, env = #{<<"products">> := _Products, <<"args">> := _Args}} = State) ->
-    erlang:send_after(1000, self(), {message, <<"_Pool">>, check_profile}),
+handle_init(State) ->
     {ok, State}.
 
 %% 通道消息处理,注意：进程池调用
 handle_event(_EventId, _Event, State) ->
     {ok, State}.
 
-handle_message({check_profile, _Args}, State) ->
-%%%%    ?LOG(info, "Args ~p", [Args]),
-%%    Fun = fun(X) ->
-%%        ?LOG(info, "X ~p", [X])
-%%          end,
-%%    dgiot_data:loop(?MODIFYPROFILE, Fun),
-    erlang:send_after(1000 * 30, self(), {message, <<"_Pool">>, check_profile}),
+%% todo 定时自动同步，不太好判断，通过采集通道里，通过设备登录时，检查状态来进行配置同步
+handle_message({{sync_profile, Pid, ProductId, DeviceAddr, Profile, Delay}}, State) ->
+    DeviceId = dgiot_parse_id:get_deviceid(ProductId, DeviceAddr),
+    maps:fold(fun(Id, Control, Count) ->
+        case maps:find(Id, Profile) of
+            {ok, DeviceConfig} ->
+                case dgiot_device:get_profile(DeviceId, Control) of
+                    not_find ->
+                        Count;
+                    DeviceConfig ->
+                        Count;
+                    UserCOnfig ->
+                        RealDelay = Delay * timer:seconds(Count),
+                        erlang:send_after(RealDelay, self(), {send_profile, DeviceId, #{Control => UserCOnfig}}),
+                        Count + 1
+                end
+        end
+              end, 1, dgiot_product:get_control(ProductId)),
+    io:format("~s ~p ~p ~p ~p ~p ~p ~n", [?FILE, ?LINE, Pid, ProductId, DeviceAddr, Profile, Delay]),
     {ok, State};
 
-%%{sync_parse,
-%%<<\"{\\\"profile\\\":{\\\"AgreementRelease\\\":\\\"0\\\",\\\"FOTA\\\":\\\"0\\\",\\\"ParaGet\\\":\\\"0\\\",\\\"PowerOffDelay\\\":50,\\\"PowerOnCtrl\\\":0,\\\"PubCtrl\\\":0,\\\"PubFreq\\\":31},\\\"sessiontoken\\\":\\\"r:1b1219229a72e05b79991c01d852d242\\\"}\">>,
-%%<<\"248e9007bf\">>
-%% }
-%%#state{env = #{<<"args">> := #{<<"mode">> := <<"incremental">>}}} =
+%%parse数据库里面的profile是用户想要控制设备的配置，设备的真实状态是设备上报的时候来进行比对的
 handle_message({sync_parse, _Pid, 'before', put, _Token, <<"Device">>, QueryData}, State) ->
-    dgiot_task_hook:put('before', QueryData),
+    dgiot_device_profile:put('before', QueryData),
     {ok, State};
 
+handle_message({send_profile, DeviceId, Profile}, State) ->
+    dgiot_device_profile:put('before', #{<<"id">> => DeviceId, <<"profile">> => Profile}),
+    {ok, State};
 
 handle_message(_Message, State) ->
 %%    ?LOG(info, "_Message ~p", [_Message]),
@@ -145,4 +164,3 @@ stop(ChannelType, ChannelId, #state{env = #{<<"product">> := ProductId, <<"args"
           end),
     ?LOG(warning, "channel stop ~p,~p", [ChannelType, ChannelId]),
     ok.
-

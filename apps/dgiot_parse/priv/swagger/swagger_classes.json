@@ -37,10 +37,6 @@
       "description": "应用管理"
     },
     {
-      "name": "Project",
-      "description": "项目管理"
-    },
-    {
       "name": "Device",
       "description": "设备管理"
     },
@@ -55,10 +51,6 @@
     {
       "name": "Channel",
       "description": "通道管理"
-    },
-    {
-      "name": "Crond",
-      "description": "任务管理"
     },
     {
       "name": "Instruct",
@@ -107,6 +99,10 @@
     {
       "name": "Category",
       "description": "品类管理"
+    },
+    {
+      "name": "Article",
+      "description": "文章管理"
     }
   ],
   "paths": {

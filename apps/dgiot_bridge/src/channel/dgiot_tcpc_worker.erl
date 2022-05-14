@@ -24,9 +24,11 @@
 
 -define(MAX_BUFF_SIZE, 10 * 1024).
 -record(state, {
+    id,
     productid,
     devaddr,
-    hb = 10
+    hb = 10,
+    device = #{}
 }).
 
 start_connect(#{
@@ -48,33 +50,46 @@ start_connect(#{
 init(TCPState) ->
     {ok, TCPState}.
 
-handle_info(connection_ready, TCPState) ->
+handle_info(connection_ready, #tcp{state = #state{productid = ProductId} = _State} = TCPState) ->
     rand:seed(exs1024),
     Time = erlang:round(rand:uniform() * 1 + 1) * 1000,
-    ?LOG(info,"Time ~p ",[Time]),
     dgiot_tcp_client:send(TCPState, <<"login">>),
-    erlang:send_after(Time, self(), login),
+    case do_cmd(ProductId, connection_ready, <<>>, TCPState) of
+        default ->
+            erlang:send_after(Time, self(), login);
+        _ ->
+            pass
+    end,
     {noreply, TCPState};
 
-handle_info(tcp_closed, TCPState) ->
-    {noreply, TCPState};
+handle_info(#{<<"cmd">> := Cmd, <<"data">> := Data, <<"productId">> := ProductId}, TCPState) ->
+    case do_cmd(ProductId, Cmd, Data, TCPState) of
+        default ->
+            {noreply, TCPState};
+        Result ->
+            Result
+    end;
 
-handle_info(login, #tcp{state = #state{productid = ProductId, devaddr = DevAddr, hb = Hb} = _State} = TCPState) ->
-    Topic = <<"mock/", ProductId/binary, "/", DevAddr/binary>>,
-    dgiot_mqtt:subscribe(Topic),
-    erlang:send_after(Hb * 1000, self(), heartbeat),
-    ?LOG(info,"~p ",[<<"login">>]),
-    dgiot_tcp_client:send(TCPState, <<"login">>),
-    {noreply, TCPState};
+handle_info(tcp_closed, #tcp{state = #state{productid = ProductId} = _State} = TCPState) ->
+    case do_cmd(ProductId, tcp_closed, <<>>, TCPState) of
+        default ->
+            {noreply, TCPState};
+        Result ->
+            Result
+    end;
 
-handle_info(heartbeat, #tcp{state = #state{devaddr = _DevAddr, hb = Hb} = _State} = TCPState) ->
-    erlang:send_after(Hb * 1000, self(), heartbeat),
-%%    ?LOG(info,"~p ",[<<"heartbeat">>]),
-    dgiot_tcp_client:send(TCPState, <<"heartbeat">>),
-    {noreply, TCPState};
-
-handle_info({tcp, _Buff}, #tcp{state = #state{productid = _ProductId} = _State} = TCPState) ->
-        {noreply, TCPState};
+handle_info({tcp, Buff}, #tcp{buff = Old, state = #state{productid = ProductId} = _State} = TCPState) ->
+    Data = <<Old/binary, Buff/binary>>,
+    case do_cmd(ProductId, tcp, Data, TCPState) of
+        default ->
+            {noreply, TCPState};
+        {noreply, Bin, State} ->
+            {noreply, TCPState#tcp{buff = Bin, state = State}};
+        {stop, Reason, State} ->
+            {stop, Reason, TCPState#tcp{state = State}};
+        Result ->
+            Result
+    end;
 
 handle_info({deliver, _Topic, Msg}, #tcp{state = State} = TCPState) ->
     Payload = dgiot_mqtt:get_payload(Msg),
@@ -88,8 +103,39 @@ handle_info({deliver, _Topic, Msg}, #tcp{state = State} = TCPState) ->
 %%        end,
     {noreply, TCPState};
 
+
+handle_info(login, #tcp{state = #state{productid = ProductId, devaddr = DevAddr, hb = Hb} = _State} = TCPState) ->
+    Topic = <<"mock/", ProductId/binary, "/", DevAddr/binary>>,
+    dgiot_mqtt:subscribe(Topic),
+    erlang:send_after(Hb * 1000, self(), heartbeat),
+    ?LOG(info, "~p ", [<<"login">>]),
+    dgiot_tcp_client:send(TCPState, <<"login">>),
+    {noreply, TCPState};
+
+handle_info(heartbeat, #tcp{state = #state{devaddr = _DevAddr, hb = Hb} = _State} = TCPState) ->
+    erlang:send_after(Hb * 1000, self(), heartbeat),
+%%    ?LOG(info,"~p ",[<<"heartbeat">>]),
+    dgiot_tcp_client:send(TCPState, <<"heartbeat">>),
+    {noreply, TCPState};
+
 handle_info(_Info, TCPState) ->
     {noreply, TCPState}.
 
 terminate(_Reason, _TCPState) ->
     ok.
+
+do_cmd(ProductId, Cmd, Data, #tcp{state = #state{id = ChannelId} = State} = TCPState) ->
+    case dgiot_hook:run_hook({tcp, ProductId}, [Cmd, Data, State]) of
+        {ok, NewState} ->
+            {noreply, TCPState#tcp{state = NewState}};
+        {reply, ProductId, Payload, NewState} ->
+            case dgiot_tcp_server:send(TCPState#tcp{state = NewState}, Payload) of
+                ok ->
+                    ok;
+                {error, Reason} ->
+                    dgiot_bridge:send_log(ChannelId, ProductId, "Send Fail, ~p, CMD:~p", [Cmd, Reason])
+            end,
+            {noreply, TCPState#tcp{state = NewState}};
+        _ ->
+            default
+    end.

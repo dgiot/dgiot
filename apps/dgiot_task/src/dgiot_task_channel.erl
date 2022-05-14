@@ -176,6 +176,7 @@
 init_ets() ->
     dgiot_data:init(?DGIOT_TASK),
     dgiot_data:init(?TASK_ARGS),
+    dgiot_data:init(?DGIOT_DATA_CACHE),
     dgiot_data:init(?DGIOT_PNQUE).
 
 start(ChannelId, ChannelArgs) ->

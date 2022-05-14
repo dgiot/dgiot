@@ -24,18 +24,9 @@
 -define(MAX_BUFF_SIZE, 1024).
 -record(state, {
     id,
-    buff_size = 1024000,
-    devaddr = <<>>,
-    heartcount = 0,
-    head = "xxxxxx0eee",
-    len = 0,
-    app = <<>>,
-    product = <<>>,
-    deviceId = <<>>,
-    env = #{},
-    dtutype = <<>>,
-    module = dgiot_tcp,
-    productid = <<>>
+    productIds = [],
+    devices = #{},
+    buff_size = 1024000
 }).
 
 
@@ -48,22 +39,21 @@ child_spec(Port, State) ->
 %% =======================
 %% {ok, State} | {stop, Reason}
 init(#tcp{state = #state{id = ChannelId} = State} = TCPState) ->
+    Time = rand:seed(exs1024),
+    _ = erlang:round(rand:uniform() * 60 + 1) * 1000,
+    erlang:send_after(Time, self(), login),
     case dgiot_bridge:get_products(ChannelId) of
         {ok, ?TYPE, ProductIds} ->
-            NewTcpState = TCPState#tcp{
-                log = log_fun(ChannelId)
-            },
-            do_product(init, [ChannelId], NewTcpState#tcp{
-                state = State#state{
-                    env = #{},
-                    product = ProductIds
-                }
-            });
+            lists:map(fun(ProductId) ->
+                do_cmd(ProductId, connection_ready, <<>>, TCPState)
+                      end, ProductIds),
+            NewState = State#state{productIds = ProductIds},
+            TCPState#tcp{log = log_fun(ChannelId), state = NewState};
         {error, not_find} ->
             {stop, not_find_channel}
     end.
 
-handle_info({deliver, _, Msg}, TCPState) ->
+handle_info({deliver, _, Msg},  TCPState) ->
     Payload = dgiot_mqtt:get_payload(Msg),
     Topic = dgiot_mqtt:get_topic(Msg),
     case binary:split(Topic, <<$/>>, [global, trim]) of
@@ -79,42 +69,26 @@ handle_info({deliver, _, Msg}, TCPState) ->
                         #{<<"cmd">> := <<"send">>} = Cmd ->
                             handle_info(Cmd, TCPState);
                         Info ->
-                            handle_info({mqtt, Topic, Info}, TCPState)
+                            handle_info(Info, TCPState)
                     end;
                 false ->
-                    handle_info({mqtt, Topic, Payload}, TCPState)
+                    {noreply, TCPState}
             end
     end;
 
-%% 对于TCP转一道，向下发的命令
-handle_info(#{<<"cmd">> := <<"send">>} = Cmd, #tcp{state = #state{id = ChannelId}} = TCPState) ->
-    case do_product(to_frame, [maps:without([<<"cmd">>], Cmd)], TCPState) of
-        {ok, NewTCPState} ->
-            {noreply, NewTCPState};
-        {reply, ProductId, Payload, NewTCPState} ->
-            case dgiot_tcp_server:send(TCPState, Payload) of
-                ok ->
-                    ok;
-                {error, Reason} ->
-                    dgiot_bridge:send_log(ChannelId, ProductId, "Send Fail, ~p, CMD:~p", [Cmd, Reason])
-            end,
-            {noreply, NewTCPState}
-    end;
+%%  执行tcp状态机内的命令
+handle_info(#{<<"cmd">> := Cmd, <<"data">> := Data, <<"productId">> := ProductId}, TCPState) ->
+    do_cmd(ProductId, Cmd, Data, TCPState);
 
-handle_info({tcp, Buff}, #tcp{state = #state{product = Products, module = Module} = State} = TCPState) ->
+handle_info({tcp, Buff}, #tcp{state = #state{productIds = ProductIds}} = TCPState) ->
     lists:map(fun(ProductId) ->
-        dgiot_hook:run_hook({tcp, Module, ProductId}, {Buff, #{}, State#state{productid = ProductId}})
-              end, Products),
+        do_cmd(ProductId, tcp, Buff, TCPState)
+              end, ProductIds),
     {noreply, TCPState};
 
 %% {stop, TCPState} | {stop, Reason} | {ok, TCPState} | ok | stop
-handle_info(Info, TCPState) ->
-    case do_product(handle_info, [Info], TCPState) of
-        {ok, NewTCPState} ->
-            {noreply, NewTCPState};
-        {stop, Reason, NewTCPState} ->
-            {stop, Reason, NewTCPState}
-    end.
+handle_info(_Info, TCPState) ->
+    {noreply, TCPState}.
 
 handle_call(_Msg, _From, TCPState) ->
     {reply, ok, TCPState}.
@@ -122,41 +96,41 @@ handle_call(_Msg, _From, TCPState) ->
 handle_cast(_Msg, TCPState) ->
     {noreply, TCPState}.
 
+terminate(_Reason,  #tcp{state = #state{productIds = ProductIds}} = TCPState) ->
+    lists:map(fun(ProductId) ->
+        do_cmd(ProductId, terminate, _Reason, TCPState)
+              end, ProductIds),
+    ok;
+
 terminate(_Reason, _TCPState) ->
     ok.
 
 code_change(_OldVsn, TCPState, _Extra) ->
     {ok, TCPState}.
 
-
 %% =======================
+do_cmd(ProductId, Cmd, Data, #tcp{state = #state{id = ChannelId} = State} = TCPState) ->
+    case dgiot_hook:run_hook({tcp, ProductId}, [Cmd, Data, State]) of
+        {ok, NewState} ->
+            {noreply, TCPState#tcp{state = NewState}};
+        {reply, ProductId, Payload, NewState} ->
+            case dgiot_tcp_server:send(TCPState, Payload) of
+                ok ->
+                    ok;
+                {error, Reason} ->
+                    dgiot_bridge:send_log(ChannelId, ProductId, "Send Fail, ~p, CMD:~p", [Cmd, Reason])
+            end,
+            {noreply, TCPState#tcp{state = NewState}}
+    end.
 
 log_fun(ChannelId) ->
     fun(Type, Buff) ->
         Data =
             case Type of
-                <<"ERROR">> -> Buff;
-                _ -> <<<<Y>> || <<X:4>> <= Buff, Y <- integer_to_list(X, 16)>>
+                <<"ERROR">> ->
+                    Buff;
+                _ -> dgiot_utils:binary_to_hex(Buff)
             end,
         dgiot_bridge:send_log(ChannelId, "~s", [<<Type/binary, " ", Data/binary>>])
     end.
-
-send_fun(TCPState) ->
-    fun(Payload) ->
-        dgiot_tcp_server:send(TCPState, Payload)
-    end.
-
-
-do_product(Fun, Args, #tcp{state = #state{product = ProductIds, id = ChannelId, env = Env}} = TCPState) ->
-    case dgiot_bridge:apply_channel(ChannelId, ProductIds, Fun, Args, Env#{<<"send">> => send_fun(TCPState)}) of
-        {ok, NewEnv} ->
-            {ok, update_state(NewEnv, TCPState)};
-        {stop, Reason, NewEnv} ->
-            {stop, Reason, update_state(NewEnv, TCPState)};
-        {reply, ProductId, Reply, NewEnv} ->
-            {reply, ProductId, Reply, update_state(NewEnv, TCPState)}
-    end.
-
-update_state(Env, #tcp{state = State} = TCPState) ->
-    TCPState#tcp{state = State#state{env = maps:without([<<"send">>], Env)}}.
 

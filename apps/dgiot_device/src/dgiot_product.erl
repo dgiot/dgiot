@@ -20,13 +20,15 @@
 -include_lib("dgiot/include/logger.hrl").
 -include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
 -dgiot_data("ets").
--export([init_ets/0, load_cache/0, local/1, save/1, put/1, get/1, delete/1, save_prod/2, lookup_prod/1]).
+-export([init_ets/0, load_cache/0, local/1, save/1, put/1, get/1, delete/1, save_prod/2, lookup_prod/1, get_keys/1, get_control/1]).
 -export([parse_frame/3, to_frame/2]).
--export([create_product/2, create_product/1, add_product_relation/2, delete_product_relation/1]).
+-export([create_product/1, create_product/2, add_product_relation/2, delete_product_relation/1]).
 -export([get_prop/1, get_props/1, get_Props/2, get_unit/1, do_td_message/1]).
 
 init_ets() ->
-    dgiot_data:init(?DGIOT_PRODUCT).
+    dgiot_data:init(?DGIOT_PRODUCT),
+    dgiot_data:init(?DEVICE_GPS),
+    dgiot_data:init(?DEVICE_PROFILE).
 
 load_cache() ->
     Success = fun(Page) ->
@@ -68,6 +70,8 @@ save(Product) ->
     Product1 = format_product(Product),
     #{<<"productId">> := ProductId} = Product1,
     dgiot_data:insert(?DGIOT_PRODUCT, ProductId, Product1),
+    save_keys(ProductId),
+    save_control(ProductId),
     {ok, Product1}.
 
 put(Product) ->
@@ -80,13 +84,11 @@ put(Product) ->
             pass
     end.
 
-
 delete(ProductId) ->
     dgiot_data:delete(?DGIOT_PRODUCT, ProductId).
 
-
 get(ProductId) ->
-    Keys = [<<"ACL">>, <<"name">>, <<"devType">>, <<"status">>, <<"nodeType">>, <<"dynamicReg">>, <<"topics">>, <<"productSecret">>],
+    Keys = [<<"ACL">>, <<"name">>, <<"devType">>, <<"status">>, <<"content">>, <<"profile">>, <<"nodeType">>, <<"dynamicReg">>, <<"topics">>, <<"productSecret">>],
     case dgiot_parse:get_object(<<"Product">>, ProductId) of
         {ok, Product} ->
             {ok, maps:with(Keys, Product)};
@@ -94,6 +96,56 @@ get(ProductId) ->
             {error, Reason}
     end.
 
+%% 保存配置下发控制字段
+save_control(ProductId) ->
+    Keys =
+        case dgiot_product:lookup_prod(ProductId) of
+            {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
+                lists:foldl(
+                    fun
+                        (#{<<"identifier">> := Identifier, <<"profile">> := Profile}, Acc) ->
+                            Acc#{Identifier => Profile};
+                        (_, Acc) ->
+                            Acc
+                    end, #{}, Props);
+
+            _Error ->
+                []
+        end,
+    dgiot_data:insert(?DGIOT_PRODUCT, {ProductId, profile_control}, Keys).
+
+get_control(ProductId) ->
+    case dgiot_data:get(?DGIOT_PRODUCT, {ProductId, profile_control}) of
+        not_find ->
+            #{};
+        Keys ->
+            Keys
+    end.
+
+save_keys(ProductId) ->
+    Keys =
+        case dgiot_product:lookup_prod(ProductId) of
+            {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
+                lists:foldl(
+                    fun
+                        (#{<<"identifier">> := Identifier, <<"isshow">> := true}, Acc) ->
+                            Acc ++ [Identifier];
+                        (_, Acc) ->
+                            Acc
+                    end, [], Props);
+
+            _Error ->
+                []
+        end,
+    dgiot_data:insert(?DGIOT_PRODUCT, {ProductId, keys}, Keys).
+
+get_keys(ProductId) ->
+    case dgiot_data:get(?DGIOT_PRODUCT, {ProductId, keys}) of
+        not_find ->
+            [];
+        Keys ->
+            Keys
+    end.
 
 %% 解码器
 parse_frame(ProductId, Bin, Opts) ->
@@ -108,7 +160,7 @@ to_frame(ProductId, Msg) ->
 format_product(#{<<"objectId">> := ProductId} = Product) ->
     Thing = maps:get(<<"thing">>, Product, #{}),
     Props = maps:get(<<"properties">>, Thing, []),
-    Keys = [<<"ACL">>, <<"status">>, <<"name">>, <<"devType">>, <<"nodeType">>, <<"dynamicReg">>, <<"topics">>, <<"productSecret">>],
+    Keys = [<<"ACL">>, <<"name">>, <<"devType">>, <<"status">>, <<"content">>, <<"profile">>, <<"nodeType">>, <<"dynamicReg">>, <<"topics">>, <<"productSecret">>],
     Map = maps:with(Keys, Product),
     Map#{
         <<"productId">> => ProductId,

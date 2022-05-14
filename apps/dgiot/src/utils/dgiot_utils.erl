@@ -724,10 +724,8 @@ get_JsonFile(Mod, FileName) ->
     Dir = filename:dirname(filename:dirname(Here)),
     Path = dgiot_httpc:url_join([Dir, "/priv/json/", dgiot_utils:to_list(FileName)]),
     case catch file:read_file(Path) of
-        {Err, _Reason} when Err == 'EXIT'; Err == error ->
-%%            io:format("~s ~p Reason = ~p.~n", [?FILE, ?LINE, Reason]),
-%%            io:format("~s ~p Err = ~p.~n", [?FILE, ?LINE, Err]),
-%%            io:format("~s ~p Path = ~p.~n", [?FILE, ?LINE, Path]),
+        {Err, Reason} when Err == 'EXIT'; Err == error ->
+            ?LOG(error, "read  Path,~p error,~p ~n", [Path, Reason]),
 %%            针对获取不到的文件做处理
             <<"{}">>;
         {ok, Bin} ->
