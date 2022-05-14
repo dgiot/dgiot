@@ -100,7 +100,7 @@ init(?TYPE, ChannelId, Args) ->
         <<"ip">> := Ip,
         <<"port">> := Port,
         <<"file">> := FileName} = Args,
-    modbus_tcp:read_csv(FileName),
+    dgiot_product_csv:read_csv(FileName),
     lists:map(fun({ProductId, #{<<"ACL">> := _Acl}}) ->
         dgiot_modbusc_tcp:start_connect(#{
             <<"auto_reconnect">> => 10,
