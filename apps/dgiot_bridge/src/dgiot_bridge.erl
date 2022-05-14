@@ -335,33 +335,46 @@ list() ->
     lists:sort(dgiot_plugin:check_module(Fun, [])).
 
 control_channel(ChannelId, Action) ->
-    IsEnable =
+    {IsEnable, Result} =
         case Action of
             <<"disable">> ->
                 Topic = <<"channel/", ChannelId/binary>>,
                 Payload = jsx:encode(#{<<"enable">> => false}),
                 dgiot_mqtt:publish(ChannelId, Topic, Payload),
-                false;
+                {false, <<"success">>};
             <<"enable">> ->
-                Topic = <<"global/dgiot">>,
                 Payload = jsx:encode(#{<<"channelId">> => ChannelId, <<"enable">> => true}),
-                dgiot_mqtt:publish(ChannelId, Topic, Payload),
-                true;
+                Topic = <<"global/dgiot">>,
+                case dgiot_parse:get_object(<<"Channel">>, ChannelId) of
+                    {ok, #{<<"config">> := #{<<"ip">> := _IP}}} ->
+                        dgiot_mqtt:publish(ChannelId, Topic, Payload),
+                        {true, <<"success">>};
+                    {ok, #{<<"config">> := #{<<"port">> := Port}}} ->
+                        case dgiot_utils:check_port(dgiot_utils:to_int(Port)) of
+                            true ->
+                                {true, <<"port conflict">>};
+                            _ ->
+                                {true, <<"success">>}
+                        end;
+                    _ ->
+                        dgiot_mqtt:publish(ChannelId, Topic, Payload),
+                        {true, <<"success">>}
+                end;
             <<"update">> ->
                 Topic = <<"channel/", ChannelId/binary>>,
                 Payload = jsx:encode(#{<<"channelId">> => ChannelId, <<"action">> => <<"update">>}),
                 dgiot_mqtt:publish(ChannelId, Topic, Payload),
-                true;
+                {true, <<"success">>};
             <<"start_logger">> ->
                 Topic = <<"channel/", ChannelId/binary>>,
                 Payload = jsx:encode(#{<<"channelId">> => ChannelId, <<"action">> => <<"start_logger">>}),
                 dgiot_mqtt:publish(ChannelId, Topic, Payload),
-                true;
+                {true, <<"success">>};
             <<"stop_logger">> ->
                 Topic = <<"channel/", ChannelId/binary>>,
                 Payload = jsx:encode(#{<<"channelId">> => ChannelId, <<"action">> => <<"stop_logger">>}),
                 dgiot_mqtt:publish(ChannelId, Topic, Payload),
-                true
+                {true, <<"success">>}
         end,
     Fun =
         fun() ->
@@ -375,16 +388,22 @@ control_channel(ChannelId, Action) ->
                     false
             end
         end,
-    case dgiot_parse:update_object(<<"Channel">>, ChannelId, #{<<"isEnable">> => IsEnable}) of
-        {ok, Update} ->
-            case wait_request(30000, Fun) of
-                false -> {500, #{}};
-                true -> {ok, Update}
+    case Result of
+        <<"success">> ->
+            case dgiot_parse:update_object(<<"Channel">>, ChannelId, #{<<"isEnable">> => IsEnable}) of
+                {ok, Update} ->
+                    case wait_request(30000, Fun) of
+                        false ->
+                            {500, #{}};
+                        true ->
+                            {ok, Update}
+                    end;
+                {error, Reason} ->
+                    {error, Reason}
             end;
-        {error, Reason} ->
-            {error, Reason}
+        Reason ->
+            {200, #{<<"message">> => Reason, <<"type">> => <<"error">>}}
     end.
-
 
 wait_request(Time, _) when Time =< 0 ->
     false;

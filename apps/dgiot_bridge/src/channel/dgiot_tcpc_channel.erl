@@ -128,10 +128,10 @@ init(?TYPE, ChannelId, Args) ->
     },
     {ok, State, []}.
 
-handle_init(#state{env = Args} = State) ->
+handle_init(#state{ id = ChannelId, env = Args} = State) ->
     #{<<"product">> := Products, <<"ip">> := Ip, <<"port">> := Port} = Args,
     lists:map(fun({ProductId, _Opt}) ->
-        start_client(ProductId, Ip, Port, Args)
+        start_client(ChannelId, ProductId, Ip, Port, Args)
               end, Products),
     {ok, State}.
 
@@ -147,13 +147,14 @@ stop(ChannelType, ChannelId, _State) ->
     ?LOG(warning, "channel stop ~p,~p", [ChannelType, ChannelId]),
     ok.
 
-start_client(ProductId, Ip, Port,
+start_client(ChannelId, ProductId, Ip, Port,
         #{<<"page_index">> := PageIndex, <<"page_size">> := PageSize, <<"total">> := Total}) ->
     Success = fun(Page) ->
         lists:map(fun(X) ->
             case X of
                 #{<<"devaddr">> := DevAddr} ->
                     dgiot_tcpc_worker:start_connect(#{
+                        <<"channelid">> => ChannelId,
                         <<"auto_reconnect">> => 10,
                         <<"reconnect_times">> => 3,
                         <<"ip">> => Ip,

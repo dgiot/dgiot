@@ -150,7 +150,7 @@ handle_message(scan_opc, #state{env = Env} = State) ->
 handle_message(read_opc, #state{id = ChannelId, step = read_cycle ,env = #{<<"OPCSEVER">> := OpcServer,<<"Topic">> := Topic, <<"productid">> := ProductId,<<"deviceinfo_list">> := Deviceinfo_list}} = State) ->
     {ok,#{<<"name">> :=ProductName}} = dgiot_parse:get_object(<<"Product">>,ProductId),
     DeviceName_list = [get_DevAddr(X)|| X <- Deviceinfo_list],
-    case dgiot_device:lookup_prod(ProductId) of
+    case dgiot_product:lookup_prod(ProductId) of
         {ok, #{<<"thing">> := #{<<"properties">> := Properties}}} ->
             Item2 = [maps:get(<<"identifier">>, H) || H <- Properties],
             Identifier_item = [binary:bin_to_list(H) || H <- Item2],
@@ -211,7 +211,7 @@ handle_message({deliver, _Topic, Msg}, #state{ step = pre_read, env = Env} = Sta
                     Final_Properties = dgiot_opc:create_final_Properties(Need_update_list),
                     Topo_para=lists:zip(Need_update_list,dgiot_opc:create_x_y(erlang:length(Need_update_list))),
                     New_config = dgiot_opc:create_config(dgiot_opc:change_config(Topo_para)),
-                    case dgiot_device:lookup_prod(ProductId) of
+                    case dgiot_product:lookup_prod(ProductId) of
                         {ok, #{<<"thing">> := #{<<"properties">> := Properties}}} ->
                             case erlang:length(Properties)  of
                                 0 ->

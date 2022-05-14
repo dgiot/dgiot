@@ -212,7 +212,7 @@ get_collection(ProductId, [], Payload, Ack) ->
                                 <<"identifier">> := Identifier} when Strategy =/= <<"计算值"/utf8>> ->
                                 case maps:find(Identifier, Payload) of
                                     {ok, Value} ->
-                                        Addr = dgiot_topo:get_gpsaddr(Value),
+                                        Addr = dgiot_gps:get_gpsaddr(Value),
                                         dgiot_data:insert({topogps, dgiot_parse_id:get_shapeid(ProductId, Identifier)}, Addr),
                                         Acc2#{Identifier => Value};
                                     _ ->
@@ -270,7 +270,7 @@ get_collection(ProductId, Dis, Payload, Ack) ->
                                     <<"identifier">> := Identifier} when Strategy =/= <<"计算值"/utf8>> ->
                                     case maps:find(Identifier, Payload) of
                                         {ok, Value} ->
-                                            Addr = dgiot_topo:get_gpsaddr(Value),
+                                            Addr = dgiot_gps:get_gpsaddr(Value),
                                             dgiot_data:insert({topogps, dgiot_parse_id:get_shapeid(ProductId, Identifier)}, Addr),
                                             Acc2#{Identifier => Value};
                                         _ ->
@@ -409,26 +409,51 @@ del_pnque(DtuId) ->
             pass
     end.
 
-
 save_td(ProductId, DevAddr, Ack, _AppData) ->
     case length(maps:to_list(Ack)) of
         0 ->
             #{};
         _ ->
             NewAck = dgiot_task:get_collection(ProductId, [], Ack, Ack),
-            Data = dgiot_task:get_calculated(ProductId, NewAck),
-            case length(maps:to_list(Data)) of
-                0 ->
-                    Data;
-                _ ->
-                    DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
-%%                    Payload = #{<<"thingdata">> => Data, <<"appdata">> => AppData, <<"timestamp">> => dgiot_datetime:now_ms()},
+            NewData = dgiot_task:get_calculated(ProductId, NewAck),
+            Keys = dgiot_product:get(ProductId),
+            DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
+            AllData = merge_cache_data(DeviceId, NewData),
+            case Keys -- maps:keys(AllData) of
+                List when length(List) == 0 andalso length(AllData) =/= 0 ->
                     ChannelId = dgiot_parse_id:get_channelid(dgiot_utils:to_binary(?BRIDGE_CHL), <<"DGIOTTOPO">>, <<"TOPO组态通道"/utf8>>),
-                    dgiot_channelx:do_message(ChannelId, {topo_thing, ProductId, DeviceId, Data}),
-                    dgiot_tdengine_adapter:save(ProductId, DevAddr, Data),
+                    dgiot_channelx:do_message(ChannelId, {topo_thing, ProductId, DeviceId, AllData}),
+                    dgiot_tdengine_adapter:save(ProductId, DevAddr, AllData),
                     dgiot_metrics:inc(dgiot_task, <<"task_save">>, 1),
                     NotificationTopic = <<"$dg/alarm/", ProductId/binary, "/", DeviceId/binary, "/properties/report">>,
-                    dgiot_mqtt:publish(DeviceId, NotificationTopic, jsx:encode(Data)),
-                    Data
+                    dgiot_mqtt:publish(DeviceId, NotificationTopic, jsx:encode(AllData)),
+                    AllData;
+                _ ->
+                    save_cache_data(DeviceId, AllData),
+                    AllData
+            end
+    end.
+
+save_cache_data(DeviceId, Data) ->
+    NewData = maps:fold(fun(K, V, Acc) ->
+        AtomKey = dgiot_utils:to_atom(K),
+        Acc#{AtomKey => V}
+                        end, #{}, Data),
+    dgiot_data:insert(?DGIOT_DATA_CACHE, DeviceId, {NewData, dgiot_datetime:now_secs()}).
+
+merge_cache_data(DeviceId, NewData) ->
+    case dgiot_data:get(?DGIOT_DATA_CACHE, DeviceId) of
+        not_find ->
+            NewData;
+        {OldData, Ts} ->
+            case dgiot_datetime:now_secs() - Ts < 3 of
+                true ->
+                    maps:fold(fun(K, V, Acc) ->
+                        Key = dgiot_utils:to_binary(K),
+                        Acc#{Key => V}
+                              end, NewData, OldData);
+                false ->
+                    save_cache_data(DeviceId, NewData),
+                    NewData
             end
     end.

@@ -19,6 +19,8 @@
 -include("dgiot_parse.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -export([
+    export_tables/0,
+    import_tables/0,
     export_table/1,
     import_table/2
 ]).
@@ -77,13 +79,35 @@
 %%public | _SCHEMA                      | table | postgres
 %%public | _Session                     | table | postgres
 %%public | _User                        | table | postgres
+export_tables() ->
+    case dgiot_parse:get_schemas() of
+        {ok, #{<<"results">> := Results}} ->
+            lists:map(fun
+                           (#{<<"className">> := <<"_Role">>}) ->
+                               pass;
+                           (#{<<"className">> := <<"_User">>}) ->
+                               pass;
+                           (#{<<"className">> := <<"Product">>}) ->
+                               pass;
+                           (#{<<"className">> := <<"Device">>}) ->
+                               pass;
+                           (#{<<"className">> := Table}) ->
+                               export_table(Table)
+                       end,
+                Results);
+        _ ->
+            pass
+    end.
+
 export_table(Table) ->
     Header = "sudo -u postgres /usr/local/pgsql/12/bin/pg_dump -h localhost -U postgres -d parse -t public.\"",
     TableName = dgiot_utils:to_list(Table),
     Tail = """\"  --inserts > ",
     {file, Here} = code:is_loaded(?MODULE),
     Dir = filename:dirname(filename:dirname(Here)),
-    Path = dgiot_httpc:url_join([Dir, "/priv/www/", dgiot_utils:to_list(TableName), ".sql"]),
+    Path = dgiot_httpc:url_join(["\"" ++ Dir, "/priv/sql/", TableName ++ ".sql\""]),
+    Sql = Header ++ TableName ++ Tail ++ Path,
+    io:format("~s ~p ~s ~n",[?FILE, ?LINE, Sql]),
     os:cmd(Header ++ TableName ++ Tail ++ Path).
 
 import_table(Table, Path) ->
@@ -96,4 +120,16 @@ import_table(Table, Path) ->
 
 %%{"menus":{"__op":"AddRelation","objects":[{"__type":"Pointer","className":"Menu","objectId":"4fe88ddb1a"}]},"_method":"PUT","_ApplicationId":"b068267541e3e578fff1ea84ed0f4cee","_ClientVersion":"js2.8.0","_MasterKey":"58ef0697b520b56757402b7fa06cd7fe","_InstallationId":"93d02d8d-cc00-1095-5e96-db328f522865"}
 
-
+import_tables() ->
+    {file, Here} = code:is_loaded(?MODULE),
+    Dir = filename:dirname(filename:dirname(Here)),
+    Path = dgiot_httpc:url_join([Dir, "/priv/sql/"]),
+    F =
+        fun(F, {I, Acc}) ->
+            io:format("~s ~p ~s ~n",[?FILE, ?LINE,I]),
+            Table = dgiot_utils:to_binary(re:replace(filename:basename(F), <<".sql">>, <<>>, [{return, binary}])),
+            import_table(Table, I),
+            Acc ++ [I]
+        end,
+    {_Count, Files} = filelib:fold_files(Path, dgiot_utils:to_list(<<".sql">>), true, F, {0, []}),
+    Files.

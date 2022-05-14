@@ -15,7 +15,6 @@
 %%--------------------------------------------------------------------
 
 -module(dgiot_device).
--define(CRLF, "\r\n").
 -author("kenneth").
 -include("dgiot_device.hrl").
 -include_lib("dgiot/include/dgiot_mnesia.hrl").
@@ -23,231 +22,79 @@
 -define(TIMEOUT, 60000).
 
 -export([create_device/1, create_device/2, get_sub_device/1, get_sub_device/2, save_subdevice/2, get_subdevice/2]).
--export([parse_cache_Device/1, sync_parse/1, get/2, post/1, put/1, save/1, save/2, get_online/1, online/1, offline/1, offline_child/1, lookup/1, lookup/2, delete/1, delete/2, save_prod/2, lookup_prod/1]).
--export([encode/1, decode/3, get_file/4, get_acl/1, save_log/3, sub_topic/2, get_url/1, get_appname/1]).
-%% Device 数量统计，权限统计，在线离线统计，产品下面设备数量统计等是用户非常关系的数据指标
-parse_cache_Device(_ClassName) ->
-%%    io:format("~s ~p ~p ~n", [?FILE, ?LINE, ClassName]),
-    dgiot_product:load_cache(),
-    Success = fun(Page) ->
-        lists:map(fun(Device) ->
-            dgiot_device:save(Device)
-                  end, Page)
-              end,
-    Query = #{
-        <<"order">> => <<"updatedAt">>,
-        <<"keys">> => [<<"ACL">>, <<"updatedAt">>, <<"devaddr">>, <<"status">>, <<"isEnable">>, <<"product">>, <<"deviceSecret">>],
-        <<"where">> => #{}
-    },
-    dgiot_parse_loader:start(<<"Device">>, Query, 0, 500, 1000000, Success).
+-export([parse_cache_Device/1, sync_parse/1, get/2, post/1, put/1, save/1, save/2, lookup/1, lookup/2, delete/1, delete/2]).
+-export([get_profile/1, get_profile/2, get_online/1, online/1, offline/1, offline_child/1, enable/1, disable/1]).
+-export([put_location/3, get_location/1, get_address/1]).
+-export([get_acl/1, save_log/3, get_url/1, get_appname/1]).
 
-save(#{<<"objectId">> := _DeviceId, <<"devaddr">> := _Devaddr, <<"product">> := _Product} = Device) ->
-    save_(Device);
-save(#{<<"objectId">> := DeviceId}) ->
-    {ok, Device} = dgiot_parse:get_object(<<"Devcie">>, DeviceId),
-    save_(Device);
-save(V) ->
-    io:format("~s ~p ~p ~n", [?FILE, ?LINE, V]),
-    V.
-
-save_(#{<<"objectId">> := DeviceId, <<"devaddr">> := Devaddr, <<"product">> := Product} = Device) ->
-    ProductId = maps:get(<<"objectId">>, Product),
-    DeviceSecret = maps:get(<<"deviceSecret">>, Device, <<"DeviceSecretdefult">>),
-    UpdatedAt =
-        case maps:get(<<"updatedAt">>, Device, dgiot_datetime:now_secs()) of
-            <<Data:10/binary, "T", Time:8/binary, _/binary>> ->
-                dgiot_datetime:to_unixtime(dgiot_datetime:to_localtime(<<Data/binary, " ", Time/binary>>)) + dgiot_datetime:timezone() * 60 * 60;
-            Now -> Now
-        end,
-    Status =
-        case maps:get(<<"status">>, Device, <<"OFFLINE">>) of
-            <<"OFFLINE">> -> false;
-            _ -> true
-        end,
-    IsEnable = maps:get(<<"isEnable">>, Device, false),
-    insert_mnesia(DeviceId, dgiot_role:get_acls(Device), Status, UpdatedAt, IsEnable, ProductId, Devaddr, DeviceSecret, node()).
-
-post(Device) ->
-    Devaddr = maps:get(<<"devaddr">>, Device),
-    Product = maps:get(<<"product">>, Device),
-    ProductId = maps:get(<<"objectId">>, Product),
-    DeviceSecret = maps:get(<<"deviceSecret">>, Device, <<"DeviceSecretdefault">>),
-    DeviceId = maps:get(<<"objectId">>, Device, dgiot_parse_id:get_deviceid(ProductId, Devaddr)),
-    Status =
-        case maps:get(<<"status">>, Device, <<"OFFLINE">>) of
-            <<"OFFLINE">> -> false;
-            _ -> true
-        end,
-    IsEnable = maps:get(<<"isEnable">>, Device, false),
-    insert_mnesia(DeviceId, dgiot_role:get_acls(Device), Status, dgiot_datetime:now_secs(), IsEnable, ProductId, Devaddr, DeviceSecret, node()).
-
-put(Device) ->
-    DeviceId = maps:get(<<"objectId">>, Device),
-    case lookup(DeviceId) of
-        {ok, #{<<"status">> := Status, <<"acl">> := Acl, <<"isEnable">> := IsEnable, <<"devaddr">> := Devaddr,
-            <<"productid">> := ProductId, <<"devicesecret">> := DeviceSecret, <<"node">> := Node}} ->
-            NewIsEnable = maps:get(<<"isEnable">>, Device, IsEnable),
-            NewStatus =
-                case maps:find(<<"status">>, Device) of
-                    error ->
-                        Status;
-                    {ok, <<"OFFLINE">>} -> false;
-                    _ -> true
-                end,
-            NewAcl =
-                case maps:find(<<"ACL">>, Device) of
-                    error ->
-                        Acl;
-                    _ ->
-                        dgiot_role:get_acls(Device)
-                end,
-            insert_mnesia(DeviceId, NewAcl, NewStatus, dgiot_datetime:now_secs(), NewIsEnable, ProductId, Devaddr, DeviceSecret, Node);
-        _ ->
-            pass
-    end.
-
-insert_mnesia(DeviceId, Acl, Status, Now, IsEnable, ProductId, Devaddr, DeviceSecret, Node) ->
-    dgiot_mnesia:insert(DeviceId, ['Device', Acl, Status, Now, IsEnable, dgiot_utils:to_atom(ProductId), Devaddr, DeviceSecret, Node]).
-
-get_acl(DeviceId) when is_binary(DeviceId) ->
-    case lookup(DeviceId) of
-        {ok, #{<<"acl">> := Acls}} ->
-            lists:foldl(fun(Acl, Acc) ->
-                maps:merge(get_acl(Acl), Acc)
-                        end, #{}, Acls);
-        _ ->
-            #{<<"*">> => #{
-                <<"read">> => true,
-                <<"write">> => true}
-            }
-    end;
-
-get_acl(Acl) when is_atom(Acl) ->
-    ACL = dgiot_utils:to_binary(Acl),
-    #{ACL => #{
-        <<"read">> => true,
-        <<"write">> => true}
-    }.
-
-online(DeviceId) ->
-    case lookup(DeviceId) of
-        {ok, #{<<"status">> := Status, <<"acl">> := Acl, <<"isEnable">> := IsEnable,
-            <<"devaddr">> := Devaddr, <<"productid">> := ProductId, <<"devicesecret">> := DeviceSecret, <<"node">> := Node}} ->
-            insert_mnesia(DeviceId, Acl, Status, dgiot_datetime:now_secs() + 72000, IsEnable, ProductId, Devaddr, DeviceSecret, Node);
-        _ -> pass
-    end.
-
-offline(DeviceId) ->
-    case lookup(DeviceId) of
-        {ok, #{<<"status">> := Status, <<"time">> := Now, <<"acl">> := Acl, <<"isEnable">> := IsEnable,
-            <<"devaddr">> := Devaddr, <<"productid">> := ProductId, <<"devicesecret">> := DeviceSecret, <<"node">> := Node}} ->
-            insert_mnesia(DeviceId, Acl, Status, Now - 72000, IsEnable, ProductId, Devaddr, DeviceSecret, Node),
-            offline_child(DeviceId);
-        _ -> pass
-    end.
-
-offline_child(DeviceId) ->
-    case dgiot_task:get_pnque(DeviceId) of
-        not_find ->
-            pass;
-        List ->
-            F =
-                fun(ProductId, DevAddr) ->
-                    offline(dgiot_parse_id:get_deviceid(ProductId, DevAddr))
-                end,
-            [F(ProductId, DevAddr) || {ProductId, DevAddr} <- List]
-    end.
-
-save(ProductId, DevAddr) ->
-    DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
-    online(DeviceId).
+parse_cache_Device(_ClasseName) ->
+    dgiot_device_cache:parse_cache_Device(_ClasseName).
 
 sync_parse(OffLine) ->
-    Fun = fun(X) ->
-        {_, DeviceId, V} = X,
-        Now = dgiot_datetime:now_secs(),
-        case V of
-            {[Acl, _, Last, IsEnable, ProductId, Devaddr, DeviceSecret, Node]} when (Now - Last) < 0 ->
-                case dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"status">> => <<"ONLINE">>, <<"isEnable">> => IsEnable}) of
-                    {ok, _R} ->
-                        insert_mnesia(DeviceId, Node, Acl, true, Last, IsEnable, Devaddr, DeviceSecret, ProductId);
-                    _ ->
-                        pass
-                end,
-                timer:sleep(50);
-            {[Acl, true, Last, IsEnable, ProductId, Devaddr, DeviceSecret, Node]} when (Now - Last) > OffLine ->
-                case dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"status">> => <<"OFFLINE">>, <<"isEnable">> => IsEnable}) of
-                    {ok, _R} ->
-                        insert_mnesia(DeviceId, Acl, false, Last, IsEnable, ProductId, Devaddr, DeviceSecret, Node);
-                    _ ->
-                        pass
-                end,
-                timer:sleep(50);
-            {[Acl, false, Last, IsEnable, ProductId, Devaddr, DeviceSecret, Node]} when (Now - Last) < OffLine ->
-                case dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"status">> => <<"ONLINE">>, <<"isEnable">> => IsEnable}) of
-                    {ok, _R} ->
-                        insert_mnesia(DeviceId, Acl, true, Last, IsEnable, ProductId, Devaddr, DeviceSecret, Node);
-                    _ ->
-                        pass
-                end,
-                timer:sleep(50);
-            _ ->
-                pass
-        end,
-        false
-          end,
-    dgiot_mnesia:search(Fun, #{<<"skip">> => 0, <<"limit">> => 1000000}).
+    dgiot_device_cache:sync_parse(OffLine).
 
-lookup(DeviceId) ->
-    case dgiot_mnesia:lookup(DeviceId) of
-        {aborted, Reason} ->
-            {error, Reason};
-        {ok, [{mnesia, _K, ['Device', Acls, Status, Time, IsEnable, ProductId, Devaddr, DeviceSecret, Node]}]} ->
-            {ok, #{<<"status">> => Status, <<"time">> => Time, <<"acl">> => Acls, <<"isEnable">> => IsEnable,
-                <<"devaddr">> => Devaddr, <<"productid">> => dgiot_utils:to_binary(ProductId), <<"devicesecret">> => DeviceSecret, <<"node">> => Node}};
-        _ ->
-            {error, not_find}
-    end.
+post(Device) ->
+    dgiot_device_cache:post(Device).
 
-lookup(ProductId, DevAddr) ->
-    DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
-    lookup(DeviceId).
+put(Device) ->
+    dgiot_device_cache:put(Device).
 
-save_subdevice({ProductId, DevAddr}, {DtuAddr, SlaveId}) ->
-    dgiot_data:insert({DtuAddr, SlaveId}, {ProductId, DevAddr}).
+save(ProductId, DevAddr)  ->
+    dgiot_device_cache:save(ProductId, DevAddr) .
 
+save(Device) ->
+    dgiot_device_cache:save(Device).
 
 get_subdevice(DtuAddr, SlaveId) ->
-%%    todo 返回productid,写对应save
-    dgiot_data:get({DtuAddr, SlaveId}).
+    dgiot_device_cache:get_subdevice(DtuAddr, SlaveId).
+
+lookup(DeviceId) ->
+    dgiot_device_cache:lookup(DeviceId).
+
+lookup(ProductId, DevAddr) ->
+    dgiot_device_cache:lookup(ProductId, DevAddr).
 
 delete(DeviceId) ->
-    dgiot_mnesia:delete(DeviceId).
+    dgiot_device_cache:delete(DeviceId).
 
 delete(ProductId, DevAddr) ->
-    DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
-    dgiot_mnesia:delete(DeviceId).
+    dgiot_device_cache:delete(ProductId, DevAddr).
 
-%% 存储产品
-%%-define(SMART_PROD, mnesia_smartprod).
-%%-record(dgiot_prod, {
-%%    key,      % [ProductId], [产品ID]
-%%    product   % 产品基本数据,map类型
-%%}).
-save_prod(ProductId, Product) ->
-    case dgiot_data:insert(?DGIOT_PRODUCT, ProductId, Product) of
-        true -> ok;
-        {error, Reason} ->
-            {error, Reason}
-    end.
+get_profile(DeviceId) ->
+    dgiot_device_cache:get_profile(DeviceId).
 
-lookup_prod(ProductId) ->
-    case dgiot_data:get(?DGIOT_PRODUCT, ProductId) of
-        not_find ->
-            not_find;
-        Value ->
-            {ok, Value}
-    end.
+get_profile(DeviceId, Key) ->
+    dgiot_device_cache:get_profile(DeviceId, Key).
+
+get_online(DeviceId) ->
+    dgiot_device_cache:get_online(DeviceId).
+
+online(DeviceId) ->
+    dgiot_device_cache:online(DeviceId).
+
+offline(DeviceId) ->
+    dgiot_device_cache:offline(DeviceId).
+
+offline_child(DeviceId) ->
+    dgiot_device_cache:offline_child(DeviceId).
+
+enable(DeviceId) ->
+    dgiot_device_cache:enable(DeviceId).
+
+disable(DeviceId) ->
+    dgiot_device_cache:disable(DeviceId).
+
+put_location(DeviceId, Longitude, Latitude) ->
+    dgiot_device_cache:location(DeviceId, Longitude, Latitude).
+
+get_location(DeviceId) ->
+    dgiot_device_cache:get_location(DeviceId).
+
+get_address(DeviceId) ->
+    dgiot_device_cache:get_address(DeviceId).
+
+save_subdevice({ProductId, DevAddr}, {DtuAddr, SlaveId}) ->
+    dgiot_device_cache:save_subdevice({ProductId, DevAddr}, {DtuAddr, SlaveId}).
 
 get_sub_device(DtuAddr) ->
     Query = #{<<"keys">> => [<<"route">>, <<"devaddr">>, <<"product">>],
@@ -366,102 +213,6 @@ get(ProductId, DevAddr) ->
             {error, Reason}
     end.
 
-encode(Frame) when is_map(Frame) ->
-    case maps:get(<<"data">>, Frame, no) of
-        no ->
-            dgiot_protocol:encode(Frame);
-        Data ->
-            HxData = dgiot_utils:binary_to_hex(Data),
-            case re:run(HxData, <<"0000180080E1">>) of
-                nomatch ->
-                    dgiot_protocol:encode(Frame);
-                _ ->
-                    {ignore, Frame}
-            end
-    end;
-encode(Data) when is_binary(Data) ->
-    {ok, Data}.
-
-decode([], _, _State) ->
-    {error, not_decode};
-decode([MsgType | Other], Bin, State) ->
-    case dgiot_protocol:decode(MsgType, Bin, State) of
-        {ok, Rest, Messages} ->
-            {ok, Rest, Messages};
-        {error, _} ->
-            %?LOG(error,"decode:~p, not this protocol:~p", [Bin, MsgType]),
-            decode(Other, Bin, State)
-    end.
-
-
-get_online(DeviceId) ->
-    OffLine = dgiot_data:get({device, offline}),
-    Now = dgiot_datetime:now_secs(),
-    case lookup(DeviceId) of
-        {ok, #{<<"time">> := Ts}} when Now - Ts < OffLine ->
-            true;
-        _ ->
-            false
-    end.
-
-get_file(ProductId, DevAddr, FileUrl, Ext) ->
-    Name = dgiot_datetime:now_microsecs(),
-    FileName = dgiot_utils:to_list(Name) ++ "." ++ dgiot_utils:to_list(Ext),
-    BinFileName = dgiot_utils:to_binary(FileName),
-    case ibrowse:send_req(dgiot_utils:to_list(FileUrl), [], get) of
-        {ok, "200", _Header1, Stream} ->
-            DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
-            AppName = get_appname(DeviceId),
-            SessionToken = dgiot_parse_auth:get_token(AppName),
-            inets:start(),
-            Url = get_url(AppName),
-
-            NewUrl = <<Url/binary, "/upload">>,
-            Boundary = <<"-----------------------acebdf135724681">>,
-            Header = <<"--", Boundary/binary, ?CRLF, "Content-Disposition: form-data;name=\"">>,
-
-            Data1 = <<"output\"", ?CRLF, ?CRLF, "json", ?CRLF>>,
-            ParamBody1 = <<Header/binary, Data1/binary>>,
-
-            Data2 = <<"scene\"", ?CRLF, ?CRLF, AppName/binary, ?CRLF>>,
-            ParamBody2 = <<Header/binary, Data2/binary>>,
-
-            Data3 = <<"path\"", ?CRLF, ?CRLF, "dgiot_file/", DeviceId/binary, ?CRLF>>,
-            ParamBody3 = <<Header/binary, Data3/binary>>,
-
-            Data4 = <<"auth_token\"", ?CRLF, ?CRLF, SessionToken/binary, ?CRLF>>,
-            ParamBody4 = <<Header/binary, Data4/binary>>,
-
-            Data5 = <<"filename\"", ?CRLF, ?CRLF, BinFileName/binary, ?CRLF>>,
-            ParamBody5 = <<Header/binary, Data5/binary>>,
-
-            Tail = <<"--", Boundary/binary, "--", ?CRLF, ?CRLF>>,
-
-            Binstream = dgiot_utils:to_binary(Stream),
-
-            FileBody = <<Header/binary, "file\"; filename=\"", BinFileName/binary, "\"", ?CRLF,
-                "Content-Type: application/octet-stream", ?CRLF, ?CRLF, Binstream/binary, ?CRLF, Tail/binary>>,
-
-            ParamBody = <<ParamBody1/binary, ParamBody2/binary, ParamBody3/binary, ParamBody4/binary, ParamBody5/binary>>,
-
-            Body = <<ParamBody/binary, FileBody/binary>>,
-            Size = byte_size(Body),
-            ContentType = <<"multipart/form-data; boundary=", Boundary/binary>>,
-            case httpc:request(post, {dgiot_utils:to_list(NewUrl), [{"Content-Length", integer_to_list(Size)}], binary_to_list(ContentType), Body}, [], []) of
-                {ok, {{"HTTP/1.1", 200, "OK"}, _, Json}} ->
-                    case jsx:decode(dgiot_utils:to_binary(Json), [{labels, binary}, return_maps]) of
-                        #{<<"md5">> := _Md5} ->
-                            {ok, Name};
-                        Error1 ->
-                            Error1
-                    end;
-                Error ->
-                    Error
-            end;
-        Error2 ->
-            Error2
-    end.
-
 get_url(AppName) ->
     Roleid = dgiot_parse_id:get_roleid(AppName),
     case dgiot_parse:get_object(<<"_Role">>, Roleid) of
@@ -470,6 +221,26 @@ get_url(AppName) ->
         _ -> <<"">>
     end.
 
+
+get_acl(DeviceId) when is_binary(DeviceId) ->
+    case lookup(DeviceId) of
+        {ok, #{<<"acl">> := Acls}} ->
+            lists:foldl(fun(Acl, Acc) ->
+                maps:merge(get_acl(Acl), Acc)
+                        end, #{}, Acls);
+        _ ->
+            #{<<"*">> => #{
+                <<"read">> => true,
+                <<"write">> => true}
+            }
+    end;
+
+get_acl(Acl) when is_atom(Acl) ->
+    ACL = dgiot_utils:to_binary(Acl),
+    #{ACL => #{
+        <<"read">> => true,
+        <<"write">> => true}
+    }.
 
 get_appname(DeviceId) ->
     case dgiot_device:lookup(DeviceId) of
@@ -497,10 +268,3 @@ save_log(DeviceId, Payload, Domain) ->
             pass
     end.
 
-sub_topic(DeviceId, Type) ->
-    case dgiot_device:lookup(DeviceId) of
-        {ok, #{<<"devaddr">> := Devaddr, <<"productid">> := ProductId}} ->
-            Topic = <<"thing/", ProductId/binary, "/", Devaddr/binary, "/", Type/binary>>,
-            dgiot_mqtt:subscribe(Topic);
-        _ -> pass
-    end.

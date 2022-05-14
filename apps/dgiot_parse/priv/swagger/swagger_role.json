@@ -2,7 +2,7 @@
   "tags": [
     {
       "name": "_Role",
-      "description": "角色"
+      "description": "角色管理"
     }
   ],
   "definitions": {
