@@ -67,7 +67,7 @@ put('before', #{<<"id">> := DeviceId} = Device) ->
             pass
     end;
 
-put('after', _Device) ->
+put(_Method, _Device) ->
     ok.
 
 %%put('after', AfterData, DeviceId, <<"incremental">>) ->

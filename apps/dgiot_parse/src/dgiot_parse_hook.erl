@@ -311,6 +311,7 @@ do_put(<<"put">>, Token, <<"/iotapi/classes/", Tail/binary>>, #{<<"id">> := Id} 
 
 %% 适配amis iotapi
 do_put(<<"put">>, Token, <<"/iotapi/amis/", Tail/binary>>, #{<<"id">> := Id} = Args) ->
+%%    io:format("~s ~p put Args = ~p.~n", [?FILE, ?LINE, Args]),
     [ClassName | _] = re:split(Tail, <<"/">>),
     notify('before', put, Token, ClassName, Id, Args),
     case dgiot_parse:get_object(ClassName, Id) of
@@ -324,5 +325,6 @@ do_put(<<"put">>, Token, <<"/iotapi/amis/", Tail/binary>>, #{<<"id">> := Id} = A
     end;
 
 do_put(_, _Token, _ClassName, Args) ->
-%%    io:format("~s ~p put Args = ~p ~n", [?FILE, ?LINE, Args]),
+%%    io:format("~s ~p put _ClassName = ~p.~n", [?FILE, ?LINE, _ClassName]),
+%%    io:format("~s ~p put Args = ~p.~n", [?FILE, ?LINE, Args]),
     Args.
