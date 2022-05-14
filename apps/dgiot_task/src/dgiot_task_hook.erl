@@ -56,7 +56,8 @@ put('before', #{<<"id">> := DeviceId} = Device) ->
                                 _ -> Acc
                             end
                                     end, #{}, Properties),
-                    Topic = <<"profile/", ProductId/binary, "/", Devaddr/binary>>,
+                    %%                    $dg/device/{productId}/{deviceAddr}/profile
+                    Topic = <<"$dg/device/", ProductId/binary, "/", Devaddr/binary, "/profile">>,
                     dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(NewPayLoad)),
 %%                            io:format("~s ~p NewPayLoad = ~p.~n", [?FILE, ?LINE, NewPayLoad]),
                     dgiot_data:insert(?PROFILE, DeviceId, Profile);

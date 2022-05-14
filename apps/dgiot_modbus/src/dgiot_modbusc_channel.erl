@@ -63,6 +63,18 @@
             zh => <<"服务器端口"/utf8>>
         }
     },
+    <<"file">> => #{
+        order => 2,
+        type => string,
+        required => true,
+        default => <<"弱电动环"/utf8>>,
+        title => #{
+            zh => <<"文件名"/utf8>>
+        },
+        description => #{
+            zh => <<"文件名"/utf8>>
+        }
+    },
     <<"ico">> => #{
         order => 102,
         type => string,
@@ -86,7 +98,9 @@ start(ChannelId, ChannelArgs) ->
 init(?TYPE, ChannelId, Args) ->
     #{<<"product">> := Products,
         <<"ip">> := Ip,
-        <<"port">> := Port} = Args,
+        <<"port">> := Port,
+        <<"file">> := FileName} = Args,
+    modbus_tcp:read_csv(FileName),
     lists:map(fun({ProductId, #{<<"ACL">> := _Acl}}) ->
         dgiot_modbusc_tcp:start_connect(#{
             <<"auto_reconnect">> => 10,

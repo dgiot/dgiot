@@ -65,7 +65,7 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, state = #state{id = ChannelId, de
                     {DevId1, Devaddr1} ->
                         {DevId1, Devaddr1}
                 end,
-            Topic = <<"profile/", ProductId/binary, "/", Devaddr/binary>>,
+            Topic = <<"$dg/device/", ProductId/binary, "/", Devaddr/binary, "/profile">>,
             dgiot_mqtt:subscribe(Topic),
             DtuId = dgiot_parse_id:get_deviceid(ProductId, DtuAddr),
             {noreply, TCPState#tcp{buff = <<>>, register = true, clientid = DtuId, state = State#state{devaddr = Devaddr, deviceId = DevId}}};
@@ -73,7 +73,7 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, state = #state{id = ChannelId, de
             case re:run(Buff, Head, [{capture, first, list}]) of
                 {match, [Head]} when length(List1) == Len ->
                     create_device(DeviceId, ProductId, Buff, DTUIP, Dtutype),
-                    Topic = <<"profile/", ProductId/binary, "/", Buff/binary>>,
+                    Topic = <<"$dg/device/", ProductId/binary, "/", Buff/binary, "/profile">>,
                     dgiot_mqtt:subscribe(Topic),
                     DtuId = dgiot_parse_id:get_deviceid(ProductId, DtuAddr),
                     {noreply, TCPState#tcp{buff = <<>>, register = true, clientid = DtuId, state = State#state{devaddr = Buff}}};

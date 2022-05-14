@@ -77,7 +77,8 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, state = #state{id = ChannelId, dt
             {ProductId, _, _} = dgiot_data:get({dtu, ChannelId}),
             Topic = <<"thing/", ProductId/binary, "/", DtuAddr/binary>>,
             dgiot_mqtt:subscribe(Topic),  %为这个集中器订阅一个mqtt
-            Topic2 = <<"profile/", ProductId/binary, "/", DtuAddr/binary>>,
+            %%                    $dg/device/{productId}/{deviceAddr}/profile
+            Topic2 = <<"$dg/device/", ProductId/binary, "/", DtuAddr/binary, "/profile">>,
             dgiot_mqtt:subscribe(Topic2),
             {NewRef, NewStep} = {undefined, read_meter},
             DtuId = dgiot_parse_id:get_deviceid(DtuProductId, DtuAddr),
@@ -101,7 +102,8 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, state = #state{id = ChannelId, dt
         ?DLT645 ->
             dgiot_meter:create_dtu(DtuAddr, ChannelId, DTUIP),
             {DtuProductId, _, _} = dgiot_data:get({dtu, ChannelId}),
-            Topic = <<"profile/", DtuProductId/binary, "/", DtuAddr/binary>>,
+            %%                    $dg/device/{productId}/{deviceAddr}/profile
+            Topic = <<"$dg/device/", DtuProductId/binary, "/", DtuAddr/binary, "/profile">>,
             dgiot_mqtt:subscribe(Topic),
             {NewRef, NewStep} =
                 case Search of
@@ -260,7 +262,7 @@ handle_info({deliver, _Topic, Msg}, #tcp{state = #state{id = ChannelId, protocol
                                     dgiot_tcp_server:send(TCPState, Payload1);
                                 % 获取上次拉闸、合闸的时间（一次发送两条查询指令）
                                 #{<<"devaddr">> := DevAddr, <<"ctrlflag">> := CtrlFlag, <<"apiname">> := <<"get_meter_ctrl_status">>} ->
-                                % 上次合闸时间
+                                    % 上次合闸时间
                                     ThingData1 = #{<<"devaddr">> => DevAddr, <<"ctrlflag">> => CtrlFlag, <<"protocol">> => Protocol, <<"apiname">> => get_meter_ctrl_status},
                                     Payload1 = dgiot_meter:to_frame(ThingData1),
                                     dgiot_tcp_server:send(TCPState, Payload1);

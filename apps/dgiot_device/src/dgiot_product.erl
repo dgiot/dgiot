@@ -22,7 +22,7 @@
 -dgiot_data("ets").
 -export([init_ets/0, load_cache/0, local/1, save/1, put/1, get/1, delete/1, save_prod/2, lookup_prod/1]).
 -export([parse_frame/3, to_frame/2]).
--export([create_product/2, add_product_relation/2, delete_product_relation/1]).
+-export([create_product/2, create_product/1, add_product_relation/2, delete_product_relation/1]).
 -export([get_prop/1, get_props/1, get_Props/2, get_unit/1, do_td_message/1]).
 
 init_ets() ->
@@ -142,6 +142,22 @@ create_product(#{<<"name">> := ProductName, <<"devType">> := DevType, <<"categor
                         CreateProductArgs, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]);
                 Err ->
                     {400, Err}
+            end
+    end.
+
+create_product(#{<<"name">> := ProductName, <<"devType">> := DevType, <<"category">> := #{
+    <<"objectId">> := CategoryId, <<"__type">> := <<"Pointer">>, <<"className">> := <<"Category">>}} = Product) ->
+    ProductId = dgiot_parse_id:get_productid(CategoryId, DevType, ProductName),
+    case dgiot_parse:get_object(<<"Product">>, ProductId) of
+        {ok, #{<<"objectId">> := ObjectId}} ->
+            dgiot_parse:update_object(<<"Product">>, ObjectId, Product),
+            {ok, ObjectId};
+        _ ->
+            case dgiot_parse:create_object(<<"Product">>, Product) of
+                {ok, #{<<"objectId">> := ObjectId}} ->
+                    {ok, ObjectId};
+                {error, Reason} ->
+                    {error, Reason}
             end
     end.
 
