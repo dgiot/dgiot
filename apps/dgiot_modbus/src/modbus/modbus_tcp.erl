@@ -311,7 +311,7 @@ parse_frame(<<MbAddr:8, BadCode:8, ErrorCode:8, Crc:2/binary>> = Buff, Acc,
 %% modbustcp
 %% Buff = <<"000100000006011000000001">>,
 parse_frame(<<_TransactionId:16, _ProtocolId:16, Size:16, _ResponseData:Size/bytes>> = Buff, Acc, #{<<"dtuproduct">> := ProductId, <<"address">> := Address} = State) ->
-    io:format("~s ~p _TransactionId = ~p.~n", [?FILE, ?LINE, _TransactionId]),
+    io:format("~s ~p Buff = ~p.~n", [?FILE, ?LINE, Buff]),
     case decode_data(Buff, ProductId, Address, Acc) of
         {Rest1, Acc1} ->
             parse_frame(Rest1, Acc1, State);
@@ -472,9 +472,12 @@ modbus_tcp_decoder(ProductId, Slaveid, Address, Data, Acc1) ->
                         case {Slaveid, Address} of
                             {NewSlaveid, NewAddress} ->
                                 case format_value(Data, X, Props) of
+                                    {map, Value} ->
+                                        maps:merge(Acc, Value);
                                     {Value, _Rest} ->
                                         Acc#{Identifier => Value};
-                                    _ -> Acc
+                                    _ ->
+                                        Acc
                                 end;
                             _ ->
                                 Acc
@@ -510,6 +513,7 @@ format_value(Buff, #{<<"identifier">> := BitIdentifier,
     <<"dataSource">> := #{
         <<"originaltype">> := <<"bit">>
     }}, Props) ->
+    io:format("~s ~p Buff = ~p.~n", [?FILE, ?LINE, Buff]),
     Values =
         lists:foldl(fun(X, Acc) ->
             case X of
@@ -522,8 +526,12 @@ format_value(Buff, #{<<"identifier">> := BitIdentifier,
                         <<"address">> := Offset,
                         <<"bytes">> := Len}
                 } ->
+                    io:format("~s ~p Identifier = ~p.~n", [?FILE, ?LINE, Identifier]),
                     IntOffset = dgiot_utils:to_int(Offset),
                     IntLen = dgiot_utils:to_int(Len),
+                    io:format("~s ~p Buff = ~p.~n", [?FILE, ?LINE, Buff]),
+                    io:format("~s ~p IntLen = ~p.~n", [?FILE, ?LINE, IntLen]),
+                    io:format("~s ~p IntOffset = ~p.~n", [?FILE, ?LINE, IntOffset]),
                     Value =
                         case IntOffset of
                             0 ->
@@ -548,6 +556,7 @@ format_value(Buff, #{<<"identifier">> := BitIdentifier,
                     Acc
             end
                     end, #{}, Props),
+    io:format("~s ~p Values = ~p.~n", [?FILE, ?LINE, Values]),
     {map, Values};
 
 format_value(Buff, #{<<"dataSource">> := #{
@@ -650,3 +659,4 @@ format_value(Buff, #{<<"dataSource">> := #{
 format_value(_, #{<<"identifier">> := Field}, _Props) ->
     ?LOG(info, "Field ~p", [Field]),
     throw({field_error, <<Field/binary, " is not validate">>}).
+

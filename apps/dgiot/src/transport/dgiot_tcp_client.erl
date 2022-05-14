@@ -118,7 +118,7 @@ handle_info({connection_ready, Socket}, #state{mod = Mod, child = ChildState} = 
     end;
 
 handle_info({tcp, Socket, Binary}, State) ->
-    ?LOG(info,"Binary ~p~n", [Binary]),
+%%    ?LOG(info,"Binary ~p~n", [Binary]),
     #state{mod = Mod, child = #tcp{socket = Socket} = ChildState} = State,
     NewBin =
         case binary:referenced_byte_size(Binary) of

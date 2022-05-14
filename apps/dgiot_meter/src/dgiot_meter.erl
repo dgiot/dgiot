@@ -92,7 +92,7 @@ create_meter(MeterAddr, ChannelId, DTUIP, DtuId, DtuAddr) ->
                 <<"devModel">> => <<"Meter">>
             },
             dgiot_device:create_device(Requests),
-            Topic = <<"profile/", ProductId/binary, "/", MeterAddr/binary>>,
+            Topic = <<"$dg/device/", ProductId/binary, "/", MeterAddr/binary, "/profile">>,
             dgiot_mqtt:subscribe(Topic),
             {DtuProductId, _, _} = dgiot_data:get({dtu, ChannelId}),
             dgiot_task:save_pnque(DtuProductId, DtuAddr, ProductId, MeterAddr);
@@ -123,7 +123,7 @@ create_meter4G(MeterAddr, MDa, ChannelId, DTUIP, DtuId, DtuAddr) ->
             dgiot_device:create_device(Requests),
             DeviceId = dgiot_parse_id:get_deviceid(ProductId, MeterAddr),
             dgiot_data:insert({metetda, DeviceId}, {dgiot_utils:to_binary(MDa), DtuAddr}),
-            Topic = <<"profile/", ProductId/binary, "/", MeterAddr/binary>>,
+            Topic = <<"$dg/device/", ProductId/binary, "/", MeterAddr/binary, "/profile">>,
             dgiot_mqtt:subscribe(Topic),
             {DtuProductId, _, _} = dgiot_data:get({dtu, ChannelId}),
             dgiot_task:save_pnque(DtuProductId, DtuAddr, ProductId, MeterAddr);
