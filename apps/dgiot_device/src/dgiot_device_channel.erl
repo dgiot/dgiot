@@ -107,6 +107,7 @@ init(?TYPE, ChannelId, Args) ->
         env = Args
     },
 
+    dgiot_parse_hook:subscribe(<<"Device">>, get, ChannelId),
     dgiot_parse_hook:subscribe(<<"Device">>, post, ChannelId),
     dgiot_parse_hook:subscribe(<<"Device/*">>, put, ChannelId, [<<"isEnable">>]),
     dgiot_parse_hook:subscribe(<<"Device/*">>, delete, ChannelId),
@@ -133,6 +134,29 @@ handle_message(load, #state{env = #{<<"order">> := _Order, <<"offline">> := OffL
 handle_message(check, #state{env = #{<<"offline">> := OffLine, <<"checktime">> := CheckTime}} = State) ->
     erlang:send_after(CheckTime * 60 * 1000, self(), {message, <<"_Pool">>, check}),
     dgiot_device:sync_parse(OffLine),
+    {ok, State};
+
+
+handle_message({sync_parse, Pid, 'after', get, _Token, <<"Device">>, #{<<"results">> := Results} = ResBody}, State) ->
+%%    io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Pid,Header]),
+    NewResults = lists:foldl(fun(#{<<"objectId">> := DeviceId} = Device, Acc) ->
+        case dgiot_device:lookup(DeviceId) of
+            {ok, #{<<"status">> := Status, <<"isEnable">> := IsEnable, <<"longitude">> := Longitude, <<"latitude">> := Latitude}} ->
+                NewStatus =
+                    case Status of
+                        true ->
+                            <<"ONLINE">>;
+                        _ ->
+                            <<"OFFLINE">>
+                    end,
+                Location = #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => Longitude, <<"latitude">> => Latitude},
+                Acc ++ [Device#{<<"location">> => Location, <<"status">> => NewStatus, <<"isEnable">> => IsEnable}];
+
+            _ ->
+                Acc ++ [Device]
+        end
+                             end, [], Results),
+    dgiot_parse_hook:publish(Pid, ResBody#{<<"results">> => NewResults}),
     {ok, State};
 
 handle_message({sync_parse, _Pid, 'after', post, _Token, <<"Device">>, QueryData}, State) ->
