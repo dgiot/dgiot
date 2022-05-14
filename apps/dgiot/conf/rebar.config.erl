@@ -220,6 +220,7 @@ overlay_vars_rel(RelType) ->
         , {enable_plugin_dgiot_gb26875, true}
         , {enable_plugin_dgiot_hjt212, true}
         , {enable_plugin_dgiot_bacnet, true}
+        , {enable_plugin_dgiot_bamis, true}
         , {vm_args_file, VmArgs}
     ].
 
@@ -350,6 +351,7 @@ relx_plugin_apps_per_rel(cloud) ->
         , dgiot_gb26875
         , dgiot_hjt212
         , dgiot_bacnet
+        , dgiot_sinmahe
     ];
 relx_plugin_apps_per_rel(edge) ->
     [].
