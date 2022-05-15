@@ -30,12 +30,11 @@ put('before', #{<<"id">> := DeviceId, <<"profile">> := Profile} = Device) ->
     io:format("~s ~p Device = ~p.~n", [?FILE, ?LINE, Device]),
     case dgiot_device:lookup(DeviceId) of
         {ok, #{<<"devaddr">> := Devaddr, <<"productid">> := ProductId}} ->
-            Profile = maps:get(<<"profile">>, Device, #{}),
             ProfileTopic =
                 case dgiot_product:lookup_prod(ProductId) of
                     {ok, #{<<"topics">> := #{<<"profile">> := ToipcTempl}}} ->
-                        Topic = re:replace(ToipcTempl, <<"${productId}">>, ProductId, [{return, binary}]),
-                        re:replace(Topic, <<"${deviceAddr}">>, Devaddr, [{return, binary}]);
+                        Topic = re:replace(ToipcTempl, <<"{productId}">>, ProductId, [{return, binary}]),
+                        re:replace(Topic, <<"{deviceAddr}">>, Devaddr, [{return, binary}]);
                     _ ->
                         <<"$dg/device/", ProductId/binary, "/", Devaddr/binary, "/profile">>
                 end,
