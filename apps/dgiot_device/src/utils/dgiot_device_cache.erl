@@ -226,19 +226,19 @@ get_online(DeviceId) ->
 
 online(DeviceId) ->
     case lookup(DeviceId) of
-        {ok, #{<<"status">> := Status, <<"acl">> := Acl, <<"isEnable">> := IsEnable,
+        {ok, #{<<"acl">> := Acl, <<"isEnable">> := IsEnable,
             <<"devaddr">> := Devaddr, <<"productid">> := ProductId, <<"devicesecret">> := DeviceSecret, <<"node">> := Node,
             <<"longitude">> := Longitude, <<"latitude">> := Latitude}} ->
-            insert_mnesia(DeviceId, Acl, Status, dgiot_datetime:now_secs() + 72000, IsEnable, ProductId, Devaddr, DeviceSecret, Node, Longitude, Latitude);
+            insert_mnesia(DeviceId, Acl, true, dgiot_datetime:now_secs(), IsEnable, ProductId, Devaddr, DeviceSecret, Node, Longitude, Latitude);
         _ -> pass
     end.
 
 offline(DeviceId) ->
     case lookup(DeviceId) of
-        {ok, #{<<"status">> := Status, <<"time">> := Now, <<"acl">> := Acl, <<"isEnable">> := IsEnable,
+        {ok, #{<<"time">> := Now, <<"acl">> := Acl, <<"isEnable">> := IsEnable,
             <<"devaddr">> := Devaddr, <<"productid">> := ProductId, <<"devicesecret">> := DeviceSecret, <<"node">> := Node,
             <<"longitude">> := Longitude, <<"latitude">> := Latitude}} ->
-            insert_mnesia(DeviceId, Acl, Status, Now - 72000, IsEnable, ProductId, Devaddr, DeviceSecret, Node, Longitude, Latitude),
+            insert_mnesia(DeviceId, Acl, false, Now, IsEnable, ProductId, Devaddr, DeviceSecret, Node, Longitude, Latitude),
             offline_child(DeviceId);
         _ -> pass
     end.
