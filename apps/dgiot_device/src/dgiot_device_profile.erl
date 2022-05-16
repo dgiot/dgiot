@@ -26,8 +26,9 @@ post('before', _BeforeData) ->
 post('after', _AfterData) ->
     ok.
 
-put('before', #{<<"id">> := DeviceId, <<"profile">> := Profile} = Device) ->
-    io:format("~s ~p Device = ~p.~n", [?FILE, ?LINE, Device]),
+%% 配置下发
+put('before', #{<<"id">> := DeviceId, <<"profile">> := Profile} = _Device) ->
+%%    io:format("~s ~p Device = ~p.~n", [?FILE, ?LINE, _Device]),
     case dgiot_device:lookup(DeviceId) of
         {ok, #{<<"devaddr">> := Devaddr, <<"productid">> := ProductId}} ->
             ProfileTopic =
@@ -44,7 +45,7 @@ put('before', #{<<"id">> := DeviceId, <<"profile">> := Profile} = Device) ->
     end;
 
 put('after', #{<<"id">> := DeviceId, <<"profile">> := Profile}) ->
-    io:format("~s ~p DeviceId ~p  Profile = ~p.~n", [?FILE, ?LINE, DeviceId, Profile]),
+%%    io:format("~s ~p DeviceId ~p  Profile = ~p.~n", [?FILE, ?LINE, DeviceId, Profile]),
     dgiot_data:insert(?DEVICE_PROFILE, DeviceId, Profile);
 
 put('after', _Device) ->
@@ -55,6 +56,7 @@ delete('before', _BeforeData, _ProductId) ->
 delete('after', #{<<"objectId">> := DtuId}, _ProductId) ->
     dgiot_task:del_pnque(DtuId).
 
+%% 配置同步
 publish(ProductId, DeviceAddr, Profile) ->
     publish(ProductId, DeviceAddr, Profile, 2).
 
