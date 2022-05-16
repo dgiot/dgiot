@@ -416,7 +416,7 @@ save_td(ProductId, DevAddr, Ack, _AppData) ->
         _ ->
             NewAck = dgiot_task:get_collection(ProductId, [], Ack, Ack),
             NewData = dgiot_task:get_calculated(ProductId, NewAck),
-            Keys = dgiot_product:get(ProductId),
+            Keys = dgiot_product:get_keys(ProductId),
             DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
             AllData = merge_cache_data(DeviceId, NewData),
             case Keys -- maps:keys(AllData) of

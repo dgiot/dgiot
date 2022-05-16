@@ -16,7 +16,6 @@
 
 -define(DGIOT_PRODUCT, dgiot_product).
 -define(DEVICE_PROFILE, dgiot_device_profile).
--define(DEVICE_GPS, dgiot_device_gps).
 
 -define(LOCAL, smartdev).
 -define(VCON, 0).

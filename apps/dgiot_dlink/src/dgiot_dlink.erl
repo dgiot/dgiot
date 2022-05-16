@@ -54,21 +54,21 @@
             zh => <<"数据标识"/utf8>>
         },
         <<"table">> => [
-             #{
-                 key =>  <<"data">>,
-                 order => 2,
-                 type => integer,
-                 required => true,
-                 default => <<"2"/utf8>>,
-                 title => #{
-                     zh => <<"数据长度(字节)"/utf8>>
-                 },
-                 description => #{
-                     zh => <<"数据长度(字节)"/utf8>>
-                 }
+            #{
+                key => <<"data">>,
+                order => 2,
+                type => integer,
+                required => true,
+                default => <<"2"/utf8>>,
+                title => #{
+                    zh => <<"数据长度(字节)"/utf8>>
+                },
+                description => #{
+                    zh => <<"数据长度(字节)"/utf8>>
+                }
             },
             #{
-                key =>  <<"key">>,
+                key => <<"key">>,
                 order => 2,
                 type => string,
                 required => true,
@@ -171,3 +171,5 @@ list() ->
         end,
     lists:sort(dgiot_plugin:check_module(Fun, [])).
 
+get_json(Type) ->
+    dgiot_utils:get_JsonFile(?MODULE, <<Type/binary, ".json">>).

@@ -96,7 +96,7 @@ do_request(get_dlinkjson, #{<<"type">> := <<"Table">>}, _Context, _Req) ->
     {200, Tables};
 
 do_request(get_dlinkjson, #{<<"type">> := Type}, _Context, _Req) ->
-    DlinkJson = dgiot_utils:get_JsonFile(?MODULE, <<Type/binary, ".json">>),
+    DlinkJson = dgiot_dlink:get_json(Type),
     {200, DlinkJson};
 
 do_request(_OperationId, _Args, _Context, _Req) ->

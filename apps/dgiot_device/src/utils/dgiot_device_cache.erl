@@ -21,13 +21,13 @@
 -include_lib("dgiot_tdengine/include/dgiot_tdengine.hrl").
 
 -export([parse_cache_Device/1, sync_parse/1, post/1, put/1, save/1, save/2, save_subdevice/2, get_subdevice/2, lookup/1, lookup/2, delete/1, delete/2]).
--export([get_profile/1, get_profile/2, get_online/1, online/1, offline/1, offline_child/1, enable/1, disable/1]).
+-export([get_profile/1, get_profile/2, get_online/1, online/1, offline/1, offline_child/1, enable/1, disable/1, save_profile/1]).
 -export([location/3, get_location/1, get_address/1]).
 
 
 %% Device 数量统计，权限统计，在线离线统计，产品下面设备数量统计等是用户非常关系的数据指标
 parse_cache_Device(_ClassName) ->
-%%    io:format("~s ~p ~p ~n", [?FILE, ?LINE, ClassName]),
+    io:format("~s ~p ~p ~n", [?FILE, ?LINE, _ClassName]),
     dgiot_product:load_cache(),
     Success = fun(Page) ->
         lists:map(fun(Device) ->
@@ -37,7 +37,7 @@ parse_cache_Device(_ClassName) ->
               end,
     Query = #{
         <<"order">> => <<"updatedAt">>,
-        <<"keys">> => [<<"ACL">>, <<"updatedAt">>, <<"devaddr">>, <<"status">>, <<"isEnable">>, <<"product">>, <<"location">>, <<"deviceSecret">>],
+        <<"keys">> => [<<"ACL">>, <<"updatedAt">>, <<"devaddr">>, <<"status">>, <<"isEnable">>, <<"profile">>, <<"product">>, <<"location">>, <<"deviceSecret">>],
         <<"where">> => #{}
     },
     dgiot_parse_loader:start(<<"Device">>, Query, 0, 500, 1000000, Success).
@@ -58,7 +58,8 @@ save(V) ->
 
 save_(#{<<"objectId">> := DeviceId, <<"devaddr">> := Devaddr, <<"product">> := Product} = Device) ->
     ProductId = maps:get(<<"objectId">>, Product),
-    DeviceSecret = maps:get(<<"deviceSecret">>, Device, <<"DeviceSecretdefult">>),
+    <<Sct:4/binary, _/binary>> = dgiot_utils:random(),
+    DeviceSecret = maps:get(<<"deviceSecret">>, Device, Sct),
     UpdatedAt =
         case maps:get(<<"updatedAt">>, Device, dgiot_datetime:now_secs()) of
             <<Data:10/binary, "T", Time:8/binary, _/binary>> ->
@@ -122,8 +123,9 @@ insert_mnesia(DeviceId, Acl, Status, Now, IsEnable, ProductId, Devaddr, DeviceSe
     dgiot_mnesia:insert(DeviceId, ['Device', Acl, Status, Now, IsEnable, dgiot_utils:to_atom(ProductId), Devaddr, DeviceSecret, Node, Longitude, Latitude]).
 
 %% 缓存设备的profile配置
-save_profile(#{<<"objectId">> := DeviceId, <<"profile">> := Profile}) ->
-    dgiot_data:insert(?DEVICE_PROFILE, DeviceId, Profile);
+save_profile(#{<<"objectId">> := DeviceId, <<"profile">> := Profile, <<"product">> := #{<<"objectId">> := ProductId}}) ->
+    Keys = maps:values(dgiot_product:get_control(ProductId)),
+    dgiot_data:insert(?DEVICE_PROFILE, DeviceId, maps:with(Keys, Profile));
 
 save_profile(_Device) ->
     pass.
@@ -203,12 +205,12 @@ get_address(DeviceId) ->
     case lookup(DeviceId) of
         {ok, #{<<"longitude">> := LonDeg, <<"latitude">> := LatDeg}} ->
             Address = dgiot_gps:get_baidu_addr(LonDeg, LatDeg),
-                case Address of
-                    #{<<"baiduaddr">> := #{<<"formatted_address">> := Formatted_address}} ->
-                        Formatted_address;
-                    _ ->
-                        <<"">>
-                end;
+            case Address of
+                #{<<"baiduaddr">> := #{<<"formatted_address">> := Formatted_address}} ->
+                    Formatted_address;
+                _ ->
+                    <<"">>
+            end;
         _ ->
             <<"">>
     end.

@@ -27,8 +27,9 @@ post('after', _AfterData) ->
     ok.
 
 %% 配置下发
-put('before', #{<<"id">> := DeviceId, <<"profile">> := Profile} = _Device) ->
+put('before', #{<<"id">> := DeviceId, <<"profile">> := Profile} = Device) ->
 %%    io:format("~s ~p Device = ~p.~n", [?FILE, ?LINE, _Device]),
+    dgiot_device:save_profile(Device),
     case dgiot_device:lookup(DeviceId) of
         {ok, #{<<"devaddr">> := Devaddr, <<"productid">> := ProductId}} ->
             ProfileTopic =
@@ -39,6 +40,7 @@ put('before', #{<<"id">> := DeviceId, <<"profile">> := Profile} = _Device) ->
                     _ ->
                         <<"$dg/device/", ProductId/binary, "/", Devaddr/binary, "/profile">>
                 end,
+%%            io:format("~s ~p ProfileTopic = ~p.~n", [?FILE, ?LINE, ProfileTopic]),
             dgiot_mqtt:publish(DeviceId, ProfileTopic, jsx:encode(Profile));
         _ ->
             pass
