@@ -1,34 +1,146 @@
 {
   "basic": [
     {
-      "category": "OTA 升级",
-      "desc": "设备属性上报",
+      "category": "配置下发",
+      "desc": "配置下发",
+      "id": "device_profile",
       "isdef": true,
-      "topic": "$dg/user/${deviceid}/post",
+      "subscribe": "设备",
+      "publisher": "平台",
+      "topic": "$dg/device/{productId}/{deviceAddr}/profile",
       "type": "sub"
     },
     {
-      "category": "OTA 升级",
-      "desc": "消息下发",
+      "category": "属性上报",
+      "desc": "设备属性上报",
+      "id": "device_property_report",
       "isdef": true,
-      "topic": "$dg/thing/${deviceid}/",
-      "type": "pub"
+      "subscribe": "平台",
+      "publisher": "设备",
+      "topic": "$dg/thing/{productId}/{deviceAddr}/properties/report",
+      "type": "sub"
+    },
+    {
+      "category": "告警上报",
+      "desc": "告警上报",
+      "id": "device_alarm_report",
+      "isdef": true,
+      "subscribe": "用户",
+      "publisher": "平台",
+      "topic": "$dg/alarm/{productId}/{deviceId}/properties/report",
+      "type": "sub"
+    },
+    {
+      "category": "组态消息",
+      "desc": "组态消息",
+      "id": "device_konva_report",
+      "isdef": true,
+      "subscribe": "用户",
+      "publisher": "平台",
+      "topic": "$dg/user/{DeviceId}/konva/report",
+      "type": "sub"
+    },
+    {
+      "category": "卡片消息",
+      "desc": "卡片消息",
+      "id": "device_realtimecard_report",
+      "isdef": true,
+      "subscribe": "用户",
+      "publisher": "平台",
+      "topic": "$dg/user/{DeviceId}/realtimecard/report",
+      "type": "sub"
+    },
+    {
+      "category": "子属性上报",
+      "desc": "子属性上报",
+      "id": "thing_sub_devices_report",
+      "isdef": true,
+      "subscribe": "平台",
+      "publisher": "设备",
+      "topic": "$dg/thing/{productId}/{deviceAddr}/gateway/sub_devices/properties/report",
+      "type": "sub"
+    },
+    {
+      "category": "子属性上报",
+      "desc": "子属性上报",
+      "id": "user_sub_devices_report",
+      "isdef": true,
+      "subscribe": "用户",
+      "publisher": "平台",
+      "topic": "$dg/user/{deviceId}/gateway/sub_devices/properties/report",
+      "type": "sub"
+    },
+    {
+      "category": "属性设置",
+      "desc": "属性设置",
+      "id": "thing_properties_set",
+      "isdef": true,
+      "subscribe": "平台",
+      "publisher": "用户",
+      "topic": "$dg/thing/{deviceId}/properties/set/request_id={request_id}",
+      "type": "sub"
+    },
+    {
+      "category": "属性设置",
+      "desc": "属性设置",
+      "id": "device_properties_set",
+      "isdef": true,
+      "publisher": "平台",
+      "subscribe": "设备",
+      "topic": "$dg/device/{productId}/{deviceAddr}/properties/set/request_id={request_id}",
+      "type": "sub"
+    },
+    {
+      "category": "属性设置",
+      "desc": "属性设置",
+      "id": "thing_properties_set",
+      "isdef": true,
+      "publisher": "设备",
+      "subscribe": "平台",
+      "topic": "$dg/thing/{productId}/{deviceAddr}/properties/set/request_id={request_id}",
+      "type": "sub"
+    },
+    {
+      "category": "属性设置",
+      "desc": "属性设置",
+      "id": "user_properties_set",
+      "isdef": true,
+      "publisher": "平台",
+      "subscribe": "用户",
+      "topic": "$dg/user/{deviceId}/properties/set/request_id={request_id}",
+      "type": "sub"
+    },
+    {
+      "category": "属性获取",
+      "desc": "属性获取",
+      "id": "thing_properties_get",
+      "isdef": true,
+      "publisher": "用户",
+      "subscribe": "平台",
+      "topic": "$dg/thing/{deviceId}/properties/get/request_id={request_id}",
+      "type": "sub"
+    },
+    {
+      "category": "属性获取",
+      "desc": "属性获取",
+      "id": "device_properties_get",
+      "isdef": true,
+      "publisher": "平台",
+      "subscribe": "设备",
+      "topic": "$dg/device/{productId}/{deviceAddr}/properties/get/response/request_id={request_id}",
+      "type": "sub"
+    },
+    {
+      "category": "属性获取",
+      "desc": "属性获取",
+      "id": "thing_properties_get",
+      "isdef": true,
+      "publisher": "设备",
+      "subscribe": "平台",
+      "topic": "$dg/thing/{productId}/{deviceAddr}/properties/get/response/request_id={request_id}",
+      "type": "sub"
     }
   ],
   "thing": [
-    {
-      "category": "属性上报",
-      "desc": "设备属性上报",
-      "isdef": true,
-      "topic": "$dg/user/${deviceid}/post",
-      "type": "sub'"
-    },
-    {
-      "category": "属性上报",
-      "desc": "消息下发",
-      "isdef": true,
-      "topic": "$dg/thing/${deviceid}/",
-      "type": "pub"
-    }
   ]
 }

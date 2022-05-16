@@ -33,7 +33,7 @@ put('before', #{<<"id">> := DeviceId, <<"profile">> := Profile} = _Device) ->
         {ok, #{<<"devaddr">> := Devaddr, <<"productid">> := ProductId}} ->
             ProfileTopic =
                 case dgiot_product:lookup_prod(ProductId) of
-                    {ok, #{<<"topics">> := #{<<"profile">> := ToipcTempl}}} ->
+                    {ok, #{<<"topics">> := #{<<"device_profile">> := ToipcTempl}}} ->
                         Topic = re:replace(ToipcTempl, <<"{productId}">>, ProductId, [{return, binary}]),
                         re:replace(Topic, <<"{deviceAddr}">>, Devaddr, [{return, binary}]);
                     _ ->
@@ -43,6 +43,7 @@ put('before', #{<<"id">> := DeviceId, <<"profile">> := Profile} = _Device) ->
         _ ->
             pass
     end;
+
 
 put('after', #{<<"id">> := DeviceId, <<"profile">> := Profile}) ->
 %%    io:format("~s ~p DeviceId ~p  Profile = ~p.~n", [?FILE, ?LINE, DeviceId, Profile]),
