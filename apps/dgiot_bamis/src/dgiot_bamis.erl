@@ -26,7 +26,8 @@
     put/1,
     delete/1,
     format/1,
-    start_http/0
+    start_http/0,
+    usertree/1
 ]).
 
 -define(APP, ?MODULE).
@@ -137,6 +138,54 @@ delete({'after', Data}) ->
         <<"data">> => #{<<"Data">> => Data, <<"Request">> => Request}
     }.
 
+usertree(#{<<"user">> := User}) ->
+    UserTree = case User of
+                   #{<<"roles">> := Roles} ->
+                       [RoleId] = maps:keys(Roles),
+                       ChildRoleIds = dgiot_role:get_childrole(RoleId),
+                       case dgiot_parse:query_object(<<"_Role">>, #{<<"where">> => #{<<"objectId">> => #{<<"$in">> => ChildRoleIds}}}) of
+                           {ok, #{<<"results">> := RoleList}} ->
+%%                               io:format("Result ~p ~n", [Result]),
+%%                               Roles = maps:get(<<"results">>, Result, []),
+                               List = lists:foldl(fun(X, Acc) ->
+                                   case X of
+                                       #{<<"objectId">> := ObjectId, <<"parent">> := Parent, <<"name">> := Name} ->
+                                           Acc ++ [#{<<"objectId">> => ObjectId, <<"parent">> => Parent, <<"label">> => Name}];
+                                       _ -> Acc
+                                   end
+                                                  end, [], RoleList
+                               ),
+                               [T]=dgiot_bamis:create_tree(List, <<"parent">>),
+                               RootUser = getuser(maps:get(<<"objectId">>, T)),
+                               T#{<<"children">> => lists:append(maps:get(<<"children">>, T, []), RootUser)}
+                           ;
+                           Other ->
+                               io:format("Other ~p ~n", [Other])
+                       end;
+                   _ ->
+                       pass
+
+               end,
+    UserTree.
+
+getuser(RoleId) ->
+    UserIds = dgiot_parse_auth:get_UserIds(RoleId),
+    UsersQuery =
+        #{<<"where">> => #{<<"objectId">> => #{<<"$in">> => UserIds}}},
+    UserList = case dgiot_parse:query_object(<<"_User">>, UsersQuery) of
+                   {ok, #{<<"results">> := Results}} ->
+                       Results;
+                   _ ->
+                       []
+               end,
+    NewList = lists:foldl(fun(X, Acc) ->
+        case X of
+            #{<<"nick">> := Nick, <<"objectId">> := ObjectId} ->
+                Acc ++ [#{<<"label">> => Nick, <<"value">> => #{<<"label">> => Nick, <<"objectId">> => ObjectId}}]
+        end
+                          end, [], UserList
+    ),
+    NewList.
 
 %% 查询多个
 %%/**

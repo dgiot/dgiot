@@ -47,6 +47,27 @@
           "View"
         ]
       }
+    },
+    "/usertree": {
+      "get": {
+        "description": "用户树",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Returns instance data"
+          },
+          "404": {
+            "description": "object not found",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        },
+        "summary": "用户树",
+        "tags": [
+          "User"
+        ]
+      }
     }
   }
 }
