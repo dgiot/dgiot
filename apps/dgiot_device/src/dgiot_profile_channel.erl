@@ -125,15 +125,19 @@ handle_event(_EventId, _Event, State) ->
     {ok, State}.
 
 %% todo 定时自动同步，不太好判断，通过采集通道里，通过设备登录时，检查状态来进行配置同步
-handle_message({{sync_profile, Pid, ProductId, DeviceAddr, Profile, Delay}}, State) ->
+handle_message({sync_profile, _Pid, ProductId, DeviceAddr, Profile, Delay}, State) ->
+%%    io:format("~s ~p ~p ~p ~p ~p ~p ~n", [?FILE, ?LINE, Pid, ProductId, DeviceAddr, Profile, Delay]),
     DeviceId = dgiot_parse_id:get_deviceid(ProductId, DeviceAddr),
     maps:fold(fun(Id, Control, Count) ->
         case maps:find(Id, Profile) of
             {ok, DeviceConfig} ->
+                StringDeviceConfig = dgiot_utils:to_list(DeviceConfig),
                 case dgiot_device:get_profile(DeviceId, Control) of
                     not_find ->
                         Count;
                     DeviceConfig ->
+                        Count;
+                    StringDeviceConfig -> %% 用字符串的值比较一下，不下发
                         Count;
                     UserCOnfig ->
                         RealDelay = Delay * timer:seconds(Count),
@@ -142,7 +146,7 @@ handle_message({{sync_profile, Pid, ProductId, DeviceAddr, Profile, Delay}}, Sta
                 end
         end
               end, 1, dgiot_product:get_control(ProductId)),
-    io:format("~s ~p ~p ~p ~p ~p ~p ~n", [?FILE, ?LINE, Pid, ProductId, DeviceAddr, Profile, Delay]),
+%%    io:format("~s ~p ~p ~p ~p ~p ~p ~n", [?FILE, ?LINE, Pid, ProductId, DeviceAddr, Profile, Delay]),
     {ok, State};
 
 %%parse数据库里面的profile是用户想要控制设备的配置，设备的真实状态是设备上报的时候来进行比对的

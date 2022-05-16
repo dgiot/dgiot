@@ -141,7 +141,7 @@ handle_message({sync_parse, Pid, 'after', get, _Token, <<"Device">>, #{<<"result
 %%    io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Pid,Header]),
     NewResults = lists:foldl(fun(#{<<"objectId">> := DeviceId} = Device, Acc) ->
         case dgiot_device:lookup(DeviceId) of
-            {ok, #{<<"status">> := Status, <<"isEnable">> := IsEnable, <<"longitude">> := Longitude, <<"latitude">> := Latitude}} ->
+            {ok, #{<<"status">> := Status, <<"isEnable">> := IsEnable, <<"longitude">> := Longitude, <<"latitude">> := Latitude, <<"time">> := Time}} ->
                 NewStatus =
                     case Status of
                         true ->
@@ -150,8 +150,7 @@ handle_message({sync_parse, Pid, 'after', get, _Token, <<"Device">>, #{<<"result
                             <<"OFFLINE">>
                     end,
                 Location = #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => Longitude, <<"latitude">> => Latitude},
-                Acc ++ [Device#{<<"location">> => Location, <<"status">> => NewStatus, <<"isEnable">> => IsEnable}];
-
+                Acc ++ [Device#{<<"location">> => Location, <<"status">> => NewStatus, <<"isEnable">> => IsEnable, <<"lastOnlineTime">> => Time}];
             _ ->
                 Acc ++ [Device]
         end

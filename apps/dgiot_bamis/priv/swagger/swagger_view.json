@@ -6,6 +6,15 @@
     {
       "description": "视图管理",
       "name": "View"
+    },
+    {
+      "description": "用户管理",
+      "name": "_User"
+    },
+
+    {
+      "description": "产品管理",
+      "name": "Product"
     }
   ],
   "paths": {
@@ -65,7 +74,28 @@
         },
         "summary": "用户树",
         "tags": [
-          "User"
+          "_User"
+        ]
+      }
+    },
+    "/update_properties": {
+      "get": {
+        "description": "适配物模型",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Returns instance data"
+          },
+          "404": {
+            "description": "object not found",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        },
+        "summary": "适配物模型",
+        "tags": [
+          "Product"
         ]
       }
     }
