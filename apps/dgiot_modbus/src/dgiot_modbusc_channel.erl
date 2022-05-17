@@ -26,6 +26,7 @@
 
 %% Channel callback
 -export([init/3, handle_init/1, handle_event/3, handle_message/2, stop/3]).
+-define(consumer(ChannelId), <<"modbus_consumer_", ChannelId/binary>>).
 
 -channel_type(#{
     cType => ?TYPE,
@@ -67,7 +68,7 @@
         order => 2,
         type => string,
         required => true,
-        default => <<"弱电动环"/utf8>>,
+        default => <<"modbustcp">>,
         title => #{
             zh => <<"文件名"/utf8>>
         },
@@ -100,11 +101,15 @@ init(?TYPE, ChannelId, Args) ->
         <<"ip">> := Ip,
         <<"port">> := Port
     } = Args,
-    case maps:find(<<"file">>, Args) of
-        {ok, FileName} ->
-            dgiot_product_csv:read_csv(FileName);
-        _ -> pass
-    end,
+    {FileName, MinAddr, MaxAddr} =
+        case maps:find(<<"file">>, Args) of
+            {ok, FileName1} ->
+                {MinAddr1, MaxAddr1} = dgiot_product_csv:read_csv(FileName1),
+                modbus_tcp:set_addr(ChannelId, MinAddr1, MaxAddr1),
+                {FileName1, MinAddr1, MaxAddr1};
+            _ ->
+                {<<>>, 0, 100}
+        end,
     lists:map(fun({ProductId, #{<<"ACL">> := _Acl}}) ->
         dgiot_modbusc_tcp:start_connect(#{
             <<"auto_reconnect">> => 10,
@@ -113,7 +118,10 @@ init(?TYPE, ChannelId, Args) ->
             <<"port">> => Port,
             <<"productid">> => ProductId,
             <<"channelid">> => ChannelId,
-            <<"hb">> => 10
+            <<"hb">> => 10,
+            <<"filename">> => FileName,
+            <<"minaddr">> => MinAddr,
+            <<"maxaddr">> => MaxAddr
         })
               end, Products),
     {ok, #state{id = ChannelId}, []}.

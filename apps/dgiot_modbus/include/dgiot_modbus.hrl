@@ -13,7 +13,8 @@
     temperature = 0,
     env = <<>>,
     dtutype = <<>>,
-    hb = 60
+    hb = 60,
+    maxaddr = 0
 }).
 
 -define(READ_DISCRETE_INPUTS, 2).

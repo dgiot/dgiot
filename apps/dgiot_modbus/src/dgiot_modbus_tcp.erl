@@ -129,7 +129,6 @@ handle_info({deliver, _, Msg}, #tcp{state = #state{id = ChannelId} = State} = TC
                                         <<"slaveid">> := SlaveId,
                                         <<"address">> := Address} = DataSource
                                 } ->
-%%                                    io:format("~s ~p DataSource = ~p.~n", [?FILE, ?LINE, DataSource]),
                                     Data = modbus_rtu:to_frame(DataSource),
                                     dgiot_bridge:send_log(ChannelId, ProductId, DevAddr, "Channel sends [~p] to [DtuAddr:~p]", [dgiot_utils:binary_to_hex(Data), DevAddr]),
                                     dgiot_tcp_server:send(TCPState, Data),
@@ -224,8 +223,8 @@ create_device(DeviceId, ProductId, DTUMAC, DTUIP, Dtutype) ->
                 end,
             ?MLOG(info, #{<<"clientid">> => DeviceId, <<"devaddr">> => DTUMAC, <<"productid">> => ProductId, <<"productname">> => Productname, <<"devicename">> => <<Dtutype/binary, DTUMAC/binary>>, <<"status">> => <<"上线"/utf8>>}, ['device_statuslog']),
             {DeviceId, DTUMAC};
-        Error2 ->
-            ?LOG(info, "Error2 ~p ", [Error2]),
+        _Error2 ->
+%%            ?LOG(info, "Error2 ~p ", [Error2]),
             {<<>>, <<>>}
     end.
 

@@ -145,16 +145,16 @@
         order => 9,
         type => enum,
         required => false,
-        default => <<"thing"/utf8>>,
+        default => <<"物模型指令模式"/utf8>>,
         enum => [
-            #{<<"value">> => <<"thing">>, <<"label">> => <<"thing"/utf8>>},
-            #{<<"value">> => <<"instruct">>, <<"label">> => <<"instruct"/utf8>>}
+            #{<<"value">> => <<"thing">>, <<"label">> => <<"物模型指令模式"/utf8>>},
+            #{<<"value">> => <<"instruct">>, <<"label">> => <<"设备指令模式"/utf8>>}
         ],
         title => #{
             zh => <<"指令模式"/utf8>>
         },
         description => #{
-            zh => <<"指令模式:thing|instruct"/utf8>>
+            zh => <<"物模型指令模式:用产品物模型来生成采集指令;设备指令模式:设备配置的独立的指令"/utf8>>
         }
     },
     <<"ico">> => #{
@@ -220,7 +220,7 @@ handle_event(_EventId, Event, State) ->
     ?LOG(info, "channel ~p", [Event]),
     {ok, State}.
 
-handle_message({sync_parse, _Pid, 'after', delete, _Token, <<"Device">>,  DeviceId},  State) ->
+handle_message({sync_parse, _Pid, 'after', delete, _Token, <<"Device">>, DeviceId}, State) ->
 %%handle_message({sync_parse, delete, _Table, _BeforeData, AfterData, DeviceId}, State) ->
 %%    io:format("DeviceArgs ~p~n", [jsx:decode(Args, [{labels, binary}, return_maps])]),
     io:format("~s ~p DeviceId =~p.~n", [?FILE, ?LINE, DeviceId]),
