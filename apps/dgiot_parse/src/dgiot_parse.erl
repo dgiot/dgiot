@@ -61,12 +61,21 @@
     request/4,
     request/5,
     get_token/1,
-    get_qs/1
+    get_qs/1,
+    update/0
 ]).
 
 -export([
     request_rest/6
 ]).
+
+update() ->
+%%    物模型更新
+%%    dgiot_product:update_properties()
+%%    表及其字段更新
+%%    菜单更新
+%%    API更新
+    ok.
 
 health() ->
     health(?DEFAULT).

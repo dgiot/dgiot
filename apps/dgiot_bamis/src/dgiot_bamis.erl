@@ -26,9 +26,7 @@
     put/1,
     delete/1,
     format/1,
-    start_http/0,
-    usertree/1,
-    create_tree/2
+    start_http/0
 ]).
 
 -define(APP, ?MODULE).
@@ -139,83 +137,7 @@ delete({'after', Data}) ->
         <<"data">> => #{<<"Data">> => Data, <<"Request">> => Request}
     }.
 
-usertree(#{<<"user">> := User}) ->
-    UserTree = case User of
-                   #{<<"roles">> := Roles} ->
-                       [RoleId] = maps:keys(Roles),
-                       ChildRoleIds = dgiot_role:get_childrole(RoleId),
-                       case dgiot_parse:query_object(<<"_Role">>, #{<<"where">> => #{<<"objectId">> => #{<<"$in">> => ChildRoleIds}}}) of
-                           {ok, #{<<"results">> := RoleList}} ->
-%%                               io:format("Result ~p ~n", [Result]),
-%%                               Roles = maps:get(<<"results">>, Result, []),
-                               List = lists:foldl(fun(X, Acc) ->
-                                   case X of
-                                       #{<<"objectId">> := ObjectId, <<"parent">> := Parent, <<"name">> := Name} ->
-                                           Acc ++ [#{<<"objectId">> => ObjectId, <<"parent">> => Parent, <<"label">> => Name}];
-                                       _ -> Acc
-                                   end
-                                                  end, [], RoleList
-                               ),
-                               [T] = dgiot_bamis:create_tree(List, <<"parent">>),
-                               RootUser = getuser(maps:get(<<"objectId">>, T)),
-                               T#{<<"children">> => lists:append(maps:get(<<"children">>, T, []), RootUser)}
-                           ;
-                           Other ->
-                               io:format("Other ~p ~n", [Other])
-                       end;
-                   _ ->
-                       pass
 
-               end,
-    UserTree.
-
-getuser(RoleId) ->
-    UserIds = dgiot_parse_auth:get_UserIds(RoleId),
-    UsersQuery =
-        #{<<"where">> => #{<<"objectId">> => #{<<"$in">> => UserIds}}},
-    UserList = case dgiot_parse:query_object(<<"_User">>, UsersQuery) of
-                   {ok, #{<<"results">> := Results}} ->
-                       Results;
-                   _ ->
-                       []
-               end,
-    NewList = lists:foldl(fun(X, Acc) ->
-        case X of
-            #{<<"nick">> := Nick, <<"objectId">> := ObjectId} ->
-                Acc ++ [#{<<"label">> => Nick, <<"value">> => #{<<"label">> => Nick, <<"objectId">> => ObjectId}}]
-        end
-                          end, [], UserList
-    ),
-    NewList.
-
-create_tree(Items, Parent) ->
-    NewItems = lists:foldl(
-        fun(#{<<"objectId">> := Id} = Item, Acc) ->
-            ParentId =
-                case maps:get(Parent, Item, no) of
-                    #{<<"objectId">> := PId} ->
-                        binary:replace(PId, <<" ">>, <<>>, [global]);
-                    _ ->
-                        <<"0">>
-                end,
-            Node = Item#{Parent => ParentId},
-            [{Id, ParentId, Node} | Acc]
-        end, [], Items),
-    Tree = lists:foldl(
-        fun({Id, PId, Node}, Acc) ->
-            case lists:keyfind(PId, 1, NewItems) of
-                false ->
-                    case dgiot_bamis:get_children(Id, NewItems) of
-                        [] ->
-                            [Node | Acc];
-                        Children ->
-                            [Node#{<<"children">> => Children} | Acc]
-                    end;
-                _ ->
-                    Acc
-            end
-        end, [], NewItems),
-    lists:sort(fun children_sort/2, Tree).
 
 %% 查询多个
 %%/**
