@@ -1,16 +1,1911 @@
 [
   {
-    "label": "基础接口",
-    "target": "#/DGIOT",
     "children": [
       {
-        "target": "#/DGIOT/post_login",
-        "label": "用户登录"
+        "label": "health",
+        "target": "#/Basic/get_health"
       },
       {
-        "target": "#/DGIOT/post_login",
-        "label": "退出登录"
+        "label": "Parse表升级",
+        "target": "#/Basic/get_update"
+      },
+      {
+        "label": "数据批处理",
+        "target": "#/Basic/post_batch"
+      },
+      {
+        "label": "获取当前设备时序数据",
+        "target": "#/Basic/get_device_deviceid"
+      },
+      {
+        "label": "获取当前产品下的所有设备数据",
+        "target": "#/Basic/get_product_pid"
       }
-    ]
+    ],
+    "label": "基础接口",
+    "target": "#/Basic"
+  },
+  {
+    "children": [
+      {
+        "label": "amis删除角色管理",
+        "target": "#/_Role/delete_amis_role_id"
+      },
+      {
+        "label": "amis获取角色管理详情",
+        "target": "#/_Role/get_amis_role_id"
+      },
+      {
+        "label": "amis更新角色管理",
+        "target": "#/_Role/put_amis_role_id"
+      },
+      {
+        "label": "删除角色管理",
+        "target": "#/_Role/delete_classes_role_id"
+      },
+      {
+        "label": "获取角色管理详情",
+        "target": "#/_Role/get_classes_role_id"
+      },
+      {
+        "label": "更新角色管理",
+        "target": "#/_Role/put_classes_role_id"
+      },
+      {
+        "label": "新增用户权限",
+        "target": "#/_Role/post_roleuser"
+      },
+      {
+        "label": "修改用户权限",
+        "target": "#/_Role/put_roleuser"
+      },
+      {
+        "label": "获取角色树",
+        "target": "#/_Role/get_roletree"
+      },
+      {
+        "label": "amis查询角色管理",
+        "target": "#/_Role/get_amis_role"
+      },
+      {
+        "label": "amis新增角色管理",
+        "target": "#/_Role/post_amis_role"
+      },
+      {
+        "label": "设置角色管理表级别",
+        "target": "#/_Role/put_level_role"
+      },
+      {
+        "label": "删除角色",
+        "target": "#/_Role/delete_role"
+      },
+      {
+        "label": "获取角色",
+        "target": "#/_Role/get_role"
+      },
+      {
+        "label": "创建角色",
+        "target": "#/_Role/post_role"
+      },
+      {
+        "label": "修改角色",
+        "target": "#/_Role/put_role"
+      },
+      {
+        "label": "删除岗位",
+        "target": "#/_Role/delete_roletemp"
+      },
+      {
+        "label": "导出岗位",
+        "target": "#/_Role/get_roletemp"
+      },
+      {
+        "label": "保存岗位",
+        "target": "#/_Role/post_roletemp"
+      },
+      {
+        "label": "修改岗位",
+        "target": "#/_Role/put_roletemp"
+      },
+      {
+        "label": "获取角色管理表的权限级别和结构",
+        "target": "#/_Role/get_schema_role"
+      },
+      {
+        "label": "查询角色管理",
+        "target": "#/_Role/get_classes_role"
+      },
+      {
+        "label": "新增角色管理",
+        "target": "#/_Role/post_classes_role"
+      }
+    ],
+    "label": "角色管理",
+    "target": "#/_Role"
+  },
+  {
+    "children": [
+      {
+        "label": "amis删除Permission",
+        "target": "#/Permission/delete_amis_permission_id"
+      },
+      {
+        "label": "amis获取Permission详情",
+        "target": "#/Permission/get_amis_permission_id"
+      },
+      {
+        "label": "amis更新Permission",
+        "target": "#/Permission/put_amis_permission_id"
+      },
+      {
+        "label": "amis查询Permission",
+        "target": "#/Permission/get_amis_permission"
+      },
+      {
+        "label": "amis新增Permission",
+        "target": "#/Permission/post_amis_permission"
+      },
+      {
+        "label": "删除权限管理",
+        "target": "#/Permission/delete_classes_permission_id"
+      },
+      {
+        "label": "获取权限管理详情",
+        "target": "#/Permission/get_classes_permission_id"
+      },
+      {
+        "label": "更新权限管理",
+        "target": "#/Permission/put_classes_permission_id"
+      },
+      {
+        "label": "查询权限管理",
+        "target": "#/Permission/get_classes_permission"
+      },
+      {
+        "label": "新增权限管理",
+        "target": "#/Permission/post_classes_permission"
+      },
+      {
+        "label": "获取权限管理表的权限级别和结构",
+        "target": "#/Permission/get_schema_permission"
+      },
+      {
+        "label": "设置权限管理表级别",
+        "target": "#/Permission/put_level_permission"
+      }
+    ],
+    "label": "权限管理",
+    "target": "#/Permission"
+  },
+  {
+    "children": [
+      {
+        "label": "查询用户管理",
+        "target": "#/_User/get_classes_user"
+      },
+      {
+        "label": "新增用户管理",
+        "target": "#/_User/post_classes_user"
+      },
+      {
+        "label": "删除用户权限",
+        "target": "#/_User/delete_roleuser"
+      },
+      {
+        "label": "查询用户权限",
+        "target": "#/_User/get_roleuser"
+      },
+      {
+        "label": "用户树",
+        "target": "#/_User/get_usertree"
+      },
+      {
+        "label": "员工离职",
+        "target": "#/_User/delete_user"
+      },
+      {
+        "label": "员工入职",
+        "target": "#/_User/post_user"
+      },
+      {
+        "label": "员工转岗",
+        "target": "#/_User/put_user"
+      },
+      {
+        "label": "用户登录",
+        "target": "#/_User/post_login"
+      },
+      {
+        "label": "禁用启用账号",
+        "target": "#/_User/get_disableuser"
+      },
+      {
+        "label": "获取用户信息",
+        "target": "#/_User/get_users_id"
+      },
+      {
+        "label": "获得子角色Token",
+        "target": "#/_User/get_token"
+      },
+      {
+        "label": "获得Token",
+        "target": "#/_User/post_token"
+      },
+      {
+        "label": "删除用户管理",
+        "target": "#/_User/delete_classes_user_id"
+      },
+      {
+        "label": "获取用户管理详情",
+        "target": "#/_User/get_classes_user_id"
+      },
+      {
+        "label": "更新用户管理",
+        "target": "#/_User/put_classes_user_id"
+      },
+      {
+        "label": "amis查询用户管理",
+        "target": "#/_User/get_amis_user"
+      },
+      {
+        "label": "amis新增用户管理",
+        "target": "#/_User/post_amis_user"
+      },
+      {
+        "label": "设置用户管理表级别",
+        "target": "#/_User/put_level_user"
+      },
+      {
+        "label": "获取用户管理表的权限级别和结构",
+        "target": "#/_User/get_schema_user"
+      },
+      {
+        "label": "重置密码",
+        "target": "#/_User/post_requestpasswordreset"
+      },
+      {
+        "label": "刷新Token",
+        "target": "#/_User/get_refresh_session_sessiontoken"
+      },
+      {
+        "label": "amis删除用户管理",
+        "target": "#/_User/delete_amis_user_id"
+      },
+      {
+        "label": "amis获取用户管理详情",
+        "target": "#/_User/get_amis_user_id"
+      },
+      {
+        "label": "amis更新用户管理",
+        "target": "#/_User/put_amis_user_id"
+      },
+      {
+        "label": "检查会话是否有效",
+        "target": "#/_User/get_users_me"
+      },
+      {
+        "label": "用户注册",
+        "target": "#/_User/post_users"
+      },
+      {
+        "label": "退出登录",
+        "target": "#/_User/post_logout"
+      }
+    ],
+    "label": "用户管理",
+    "target": "#/_User"
+  },
+  {
+    "children": [
+      {
+        "label": "查询设备管理",
+        "target": "#/Device/get_classes_device"
+      },
+      {
+        "label": "新增设备管理",
+        "target": "#/Device/post_classes_device"
+      },
+      {
+        "label": "序列号添加设备",
+        "target": "#/Device/post_adddevice"
+      },
+      {
+        "label": "amis删除设备管理",
+        "target": "#/Device/delete_amis_device_id"
+      },
+      {
+        "label": "amis获取设备管理详情",
+        "target": "#/Device/get_amis_device_id"
+      },
+      {
+        "label": "amis更新设备管理",
+        "target": "#/Device/put_amis_device_id"
+      },
+      {
+        "label": "获取设备管理表的权限级别和结构",
+        "target": "#/Device/get_schema_device"
+      },
+      {
+        "label": "amis查询设备管理",
+        "target": "#/Device/get_amis_device"
+      },
+      {
+        "label": "amis新增设备管理",
+        "target": "#/Device/post_amis_device"
+      },
+      {
+        "label": "删除设备管理",
+        "target": "#/Device/delete_classes_device_id"
+      },
+      {
+        "label": "获取设备管理详情",
+        "target": "#/Device/get_classes_device_id"
+      },
+      {
+        "label": "更新设备管理",
+        "target": "#/Device/put_classes_device_id"
+      },
+      {
+        "label": "查询设备时序数据",
+        "target": "#/Device/post_device"
+      },
+      {
+        "label": "设置设备管理表级别",
+        "target": "#/Device/put_level_device"
+      }
+    ],
+    "label": "设备管理",
+    "target": "#/Device"
+  },
+  {
+    "children": [
+      {
+        "label": "查询产品管理",
+        "target": "#/Product/get_classes_product"
+      },
+      {
+        "label": "新增产品管理",
+        "target": "#/Product/post_classes_product"
+      },
+      {
+        "label": "设置产品管理表级别",
+        "target": "#/Product/put_level_product"
+      },
+      {
+        "label": "删除产品管理",
+        "target": "#/Product/delete_classes_product_id"
+      },
+      {
+        "label": "获取产品管理详情",
+        "target": "#/Product/get_classes_product_id"
+      },
+      {
+        "label": "更新产品管理",
+        "target": "#/Product/put_classes_product_id"
+      },
+      {
+        "label": "产品档案导出",
+        "target": "#/Product/get_product"
+      },
+      {
+        "label": "产品档案导入",
+        "target": "#/Product/post_product"
+      },
+      {
+        "label": "获取产品管理表的权限级别和结构",
+        "target": "#/Product/get_schema_product"
+      },
+      {
+        "label": "amis查询产品管理",
+        "target": "#/Product/get_amis_product"
+      },
+      {
+        "label": "amis新增产品管理",
+        "target": "#/Product/post_amis_product"
+      },
+      {
+        "label": "删除物模型",
+        "target": "#/Product/delete_thing"
+      },
+      {
+        "label": "查询物模型",
+        "target": "#/Product/get_thing"
+      },
+      {
+        "label": "添加物模型",
+        "target": "#/Product/post_thing"
+      },
+      {
+        "label": "修改物模型",
+        "target": "#/Product/put_thing"
+      },
+      {
+        "label": "amis删除产品管理",
+        "target": "#/Product/delete_amis_product_id"
+      },
+      {
+        "label": "amis获取产品管理详情",
+        "target": "#/Product/get_amis_product_id"
+      },
+      {
+        "label": "amis更新产品管理",
+        "target": "#/Product/put_amis_product_id"
+      }
+    ],
+    "label": "产品管理",
+    "target": "#/Product"
+  },
+  {
+    "children": [
+      {
+        "label": "获取协议列表",
+        "target": "#/Dlink/get_protocol"
+      },
+      {
+        "label": "获取json信息",
+        "target": "#/Dlink/get_dlinkjson"
+      },
+      {
+        "label": "获取表头",
+        "target": "#/Dlink/post_head"
+      }
+    ],
+    "label": "Dlink协议",
+    "target": "#/Dlink"
+  },
+  {
+    "children": [
+      {
+        "label": "删除会话管理",
+        "target": "#/_Session/delete_classes_session_id"
+      },
+      {
+        "label": "获取会话管理详情",
+        "target": "#/_Session/get_classes_session_id"
+      },
+      {
+        "label": "更新会话管理",
+        "target": "#/_Session/put_classes_session_id"
+      },
+      {
+        "label": "amis查询会话管理",
+        "target": "#/_Session/get_amis_session"
+      },
+      {
+        "label": "amis新增会话管理",
+        "target": "#/_Session/post_amis_session"
+      },
+      {
+        "label": "amis删除会话管理",
+        "target": "#/_Session/delete_amis_session_id"
+      },
+      {
+        "label": "amis获取会话管理详情",
+        "target": "#/_Session/get_amis_session_id"
+      },
+      {
+        "label": "amis更新会话管理",
+        "target": "#/_Session/put_amis_session_id"
+      },
+      {
+        "label": "查询会话管理",
+        "target": "#/_Session/get_classes_session"
+      },
+      {
+        "label": "新增会话管理",
+        "target": "#/_Session/post_classes_session"
+      },
+      {
+        "label": "设置会话管理表级别",
+        "target": "#/_Session/put_level_session"
+      },
+      {
+        "label": "获取会话管理表的权限级别和结构",
+        "target": "#/_Session/get_schema_session"
+      }
+    ],
+    "label": "会话管理",
+    "target": "#/_Session"
+  },
+  {
+    "children": [
+      {
+        "label": "删除品类管理",
+        "target": "#/Category/delete_classes_category_id"
+      },
+      {
+        "label": "获取品类管理详情",
+        "target": "#/Category/get_classes_category_id"
+      },
+      {
+        "label": "更新品类管理",
+        "target": "#/Category/put_classes_category_id"
+      },
+      {
+        "label": "amis查询品类管理",
+        "target": "#/Category/get_amis_category"
+      },
+      {
+        "label": "amis新增品类管理",
+        "target": "#/Category/post_amis_category"
+      },
+      {
+        "label": "设置品类管理表级别",
+        "target": "#/Category/put_level_category"
+      },
+      {
+        "label": "获取品类管理表的权限级别和结构",
+        "target": "#/Category/get_schema_category"
+      },
+      {
+        "label": "amis删除品类管理",
+        "target": "#/Category/delete_amis_category_id"
+      },
+      {
+        "label": "amis获取品类管理详情",
+        "target": "#/Category/get_amis_category_id"
+      },
+      {
+        "label": "amis更新品类管理",
+        "target": "#/Category/put_amis_category_id"
+      },
+      {
+        "label": "查询品类管理",
+        "target": "#/Category/get_classes_category"
+      },
+      {
+        "label": "新增品类管理",
+        "target": "#/Category/post_classes_category"
+      }
+    ],
+    "label": "品类管理",
+    "target": "#/Category"
+  },
+  {
+    "children": [
+      {
+        "label": "删除解码器",
+        "target": "#/Decoder/delete_classes_decoder_id"
+      },
+      {
+        "label": "获取解码器",
+        "target": "#/Decoder/get_classes_decoder_id"
+      },
+      {
+        "label": "更新解码器",
+        "target": "#/Decoder/put_classes_decoder_id"
+      },
+      {
+        "label": "获取指令集",
+        "target": "#/Decoder/get_decoder_func_id"
+      },
+      {
+        "label": "查询解码器",
+        "target": "#/Decoder/get_classes_decoder"
+      },
+      {
+        "label": "新增解码器",
+        "target": "#/Decoder/post_classes_decoder"
+      }
+    ],
+    "label": "解码管理",
+    "target": "#/Decoder"
+  },
+  {
+    "children": [
+      {
+        "label": "停止任务",
+        "target": "#/Crond/delete_task_vcaddr"
+      },
+      {
+        "label": "获取任务",
+        "target": "#/Crond/get_task"
+      },
+      {
+        "label": "修改任务",
+        "target": "#/Crond/put_task"
+      }
+    ],
+    "label": "任务管理",
+    "target": "#/Crond"
+  },
+  {
+    "children": [
+      {
+        "label": "查询产品模板",
+        "target": "#/ProductTemplet/get_classes_producttemplet"
+      },
+      {
+        "label": "新增产品模板",
+        "target": "#/ProductTemplet/post_classes_producttemplet"
+      },
+      {
+        "label": "设置产品模板表级别",
+        "target": "#/ProductTemplet/put_level_producttemplet"
+      },
+      {
+        "label": "amis删除产品模板",
+        "target": "#/ProductTemplet/delete_amis_producttemplet_id"
+      },
+      {
+        "label": "amis获取产品模板详情",
+        "target": "#/ProductTemplet/get_amis_producttemplet_id"
+      },
+      {
+        "label": "amis更新产品模板",
+        "target": "#/ProductTemplet/put_amis_producttemplet_id"
+      },
+      {
+        "label": "amis查询产品模板",
+        "target": "#/ProductTemplet/get_amis_producttemplet"
+      },
+      {
+        "label": "amis新增产品模板",
+        "target": "#/ProductTemplet/post_amis_producttemplet"
+      },
+      {
+        "label": "删除产品模板",
+        "target": "#/ProductTemplet/delete_classes_producttemplet_id"
+      },
+      {
+        "label": "获取产品模板详情",
+        "target": "#/ProductTemplet/get_classes_producttemplet_id"
+      },
+      {
+        "label": "更新产品模板",
+        "target": "#/ProductTemplet/put_classes_producttemplet_id"
+      },
+      {
+        "label": "获取产品模板表的权限级别和结构",
+        "target": "#/ProductTemplet/get_schema_producttemplet"
+      }
+    ],
+    "label": "产品模板",
+    "target": "#/ProductTemplet"
+  },
+  {
+    "children": [
+      {
+        "label": "获取日志配置",
+        "target": "#/System/get_log_level"
+      },
+      {
+        "label": "更新日志级别",
+        "target": "#/System/put_log_level"
+      },
+      {
+        "label": "编译代码",
+        "target": "#/System/post_compile"
+      },
+      {
+        "label": "根据swagger产生API代码",
+        "target": "#/System/post_generate_api_type"
+      },
+      {
+        "label": "集群操作",
+        "target": "#/System/post_cluster"
+      },
+      {
+        "label": "统计获取",
+        "target": "#/System/get_chart_version"
+      },
+      {
+        "label": "获取节点",
+        "target": "#/System/get_nodes"
+      },
+      {
+        "label": "对插件启动/停止/热更新/获取",
+        "target": "#/System/post_plugin_app"
+      },
+      {
+        "label": "trace列表",
+        "target": "#/System/get_trace"
+      },
+      {
+        "label": "trace操作",
+        "target": "#/System/post_trace"
+      },
+      {
+        "label": "获取插件",
+        "target": "#/System/get_plugin"
+      }
+    ],
+    "label": "系统管理",
+    "target": "#/System"
+  },
+  {
+    "children": [
+      {
+        "label": "删除视图管理",
+        "target": "#/View/delete_classes_view_id"
+      },
+      {
+        "label": "获取视图管理详情",
+        "target": "#/View/get_classes_view_id"
+      },
+      {
+        "label": "更新视图管理",
+        "target": "#/View/put_classes_view_id"
+      },
+      {
+        "label": "获取当前设备最新时序数据卡片",
+        "target": "#/View/get_devicecard_deviceid"
+      },
+      {
+        "label": "amis删除视图管理",
+        "target": "#/View/delete_amis_view_id"
+      },
+      {
+        "label": "amis获取视图管理详情",
+        "target": "#/View/get_amis_view_id"
+      },
+      {
+        "label": "amis更新视图管理",
+        "target": "#/View/put_amis_view_id"
+      },
+      {
+        "label": "设置视图管理表级别",
+        "target": "#/View/put_level_view"
+      },
+      {
+        "label": "大屏数据",
+        "target": "#/View/post_dashboard"
+      },
+      {
+        "label": "获取当前设备时序数据图表",
+        "target": "#/View/get_echart_deviceid"
+      },
+      {
+        "label": "查询设备参数字典",
+        "target": "#/View/get_devicedict"
+      },
+      {
+        "label": "amis查询视图管理",
+        "target": "#/View/get_amis_view"
+      },
+      {
+        "label": "amis新增视图管理",
+        "target": "#/View/post_amis_view"
+      },
+      {
+        "label": "获取视频取证任务",
+        "target": "#/View/get_ffmpeg"
+      },
+      {
+        "label": "修改视频取证任务",
+        "target": "#/View/put_ffmpeg"
+      },
+      {
+        "label": "查询设备所拥有权限",
+        "target": "#/View/get_deviceacl"
+      },
+      {
+        "label": "获取视图管理表的权限级别和结构",
+        "target": "#/View/get_schema_view"
+      },
+      {
+        "label": "物模型详情",
+        "target": "#/View/get_konva_thing"
+      },
+      {
+        "label": "组态修改",
+        "target": "#/View/post_konva_thing"
+      },
+      {
+        "label": "查询视图管理",
+        "target": "#/View/get_classes_view"
+      },
+      {
+        "label": "新增视图管理",
+        "target": "#/View/post_classes_view"
+      },
+      {
+        "label": "获取产品组态",
+        "target": "#/View/get_topo"
+      },
+      {
+        "label": "发送组态",
+        "target": "#/View/post_topo"
+      }
+    ],
+    "label": "可视化管理",
+    "target": "#/View"
+  },
+  {
+    "children": [
+      {
+        "label": "bacnet采集回调",
+        "target": "#/BACnet/get_bacnetcallback"
+      },
+      {
+        "label": "bacnet采集回调",
+        "target": "#/BACnet/post_bacnetcallback"
+      }
+    ],
+    "label": "BACnet",
+    "target": "#/BACnet"
+  },
+  {
+    "children": [
+      {
+        "label": "查询文章管理",
+        "target": "#/Article/get_classes_article"
+      },
+      {
+        "label": "新增文章管理",
+        "target": "#/Article/post_classes_article"
+      },
+      {
+        "label": "获取文章管理表的权限级别和结构",
+        "target": "#/Article/get_schema_article"
+      },
+      {
+        "label": "amis删除文章管理",
+        "target": "#/Article/delete_amis_article_id"
+      },
+      {
+        "label": "amis获取文章管理详情",
+        "target": "#/Article/get_amis_article_id"
+      },
+      {
+        "label": "amis更新文章管理",
+        "target": "#/Article/put_amis_article_id"
+      },
+      {
+        "label": "amis查询文章管理",
+        "target": "#/Article/get_amis_article"
+      },
+      {
+        "label": "amis新增文章管理",
+        "target": "#/Article/post_amis_article"
+      },
+      {
+        "label": "删除文章管理",
+        "target": "#/Article/delete_classes_article_id"
+      },
+      {
+        "label": "获取文章管理详情",
+        "target": "#/Article/get_classes_article_id"
+      },
+      {
+        "label": "更新文章管理",
+        "target": "#/Article/put_classes_article_id"
+      },
+      {
+        "label": "设置文章管理表级别",
+        "target": "#/Article/put_level_article"
+      }
+    ],
+    "label": "文章管理",
+    "target": "#/Article"
+  },
+  {
+    "children": [],
+    "label": "授权管理",
+    "target": "#/License"
+  },
+  {
+    "children": [
+      {
+        "label": "amis查询字典管理",
+        "target": "#/Dict/get_amis_dict"
+      },
+      {
+        "label": "amis新增字典管理",
+        "target": "#/Dict/post_amis_dict"
+      },
+      {
+        "label": "设置字典管理表级别",
+        "target": "#/Dict/put_level_dict"
+      },
+      {
+        "label": "amis删除字典管理",
+        "target": "#/Dict/delete_amis_dict_id"
+      },
+      {
+        "label": "amis获取字典管理详情",
+        "target": "#/Dict/get_amis_dict_id"
+      },
+      {
+        "label": "amis更新字典管理",
+        "target": "#/Dict/put_amis_dict_id"
+      },
+      {
+        "label": "删除字典管理",
+        "target": "#/Dict/delete_classes_dict_id"
+      },
+      {
+        "label": "获取字典管理详情",
+        "target": "#/Dict/get_classes_dict_id"
+      },
+      {
+        "label": "更新字典管理",
+        "target": "#/Dict/put_classes_dict_id"
+      },
+      {
+        "label": "获取字典管理表的权限级别和结构",
+        "target": "#/Dict/get_schema_dict"
+      },
+      {
+        "label": "查询字典管理",
+        "target": "#/Dict/get_classes_dict"
+      },
+      {
+        "label": "新增字典管理",
+        "target": "#/Dict/post_classes_dict"
+      }
+    ],
+    "label": "字典管理",
+    "target": "#/Dict"
+  },
+  {
+    "children": [
+      {
+        "label": "wechat登陆",
+        "target": "#/Notification/get_wechat"
+      },
+      {
+        "label": "wechat绑定",
+        "target": "#/Notification/post_wechat"
+      },
+      {
+        "label": "amis删除通知管理",
+        "target": "#/Notification/delete_amis_notification_id"
+      },
+      {
+        "label": "amis获取通知管理详情",
+        "target": "#/Notification/get_amis_notification_id"
+      },
+      {
+        "label": "amis更新通知管理",
+        "target": "#/Notification/put_amis_notification_id"
+      },
+      {
+        "label": "设置通知管理表级别",
+        "target": "#/Notification/put_level_notification"
+      },
+      {
+        "label": "wechat解绑",
+        "target": "#/Notification/get_wechat_unbind"
+      },
+      {
+        "label": "告警列表",
+        "target": "#/Notification/get_notification"
+      },
+      {
+        "label": "创建工单",
+        "target": "#/Notification/post_maintenance"
+      },
+      {
+        "label": "amis查询通知管理",
+        "target": "#/Notification/get_amis_notification"
+      },
+      {
+        "label": "amis新增通知管理",
+        "target": "#/Notification/post_amis_notification"
+      },
+      {
+        "label": "触发告警",
+        "target": "#/Notification/post_triggeralarm"
+      },
+      {
+        "label": "发送订阅消息",
+        "target": "#/Notification/post_sendsubscribe"
+      },
+      {
+        "label": "验证手机号/邮箱是否通过",
+        "target": "#/Notification/post_verify_code_action"
+      },
+      {
+        "label": "发送邮件",
+        "target": "#/Notification/post_sendemail"
+      },
+      {
+        "label": "删除通知管理",
+        "target": "#/Notification/delete_classes_notification_id"
+      },
+      {
+        "label": "获取通知管理详情",
+        "target": "#/Notification/get_classes_notification_id"
+      },
+      {
+        "label": "更新通知管理",
+        "target": "#/Notification/put_classes_notification_id"
+      },
+      {
+        "label": "发送短信验证码",
+        "target": "#/Notification/post_sendsms"
+      },
+      {
+        "label": "工单结束发送",
+        "target": "#/Notification/get_maintenancefinish"
+      },
+      {
+        "label": "jwt回调",
+        "target": "#/Notification/get_jwtlogin"
+      },
+      {
+        "label": "小程序总控台",
+        "target": "#/Notification/get_wechat_index"
+      },
+      {
+        "label": "查询通知管理",
+        "target": "#/Notification/get_classes_notification"
+      },
+      {
+        "label": "新增通知管理",
+        "target": "#/Notification/post_classes_notification"
+      },
+      {
+        "label": "微信设备地图",
+        "target": "#/Notification/get_wechat_map"
+      },
+      {
+        "label": "获取运维管理列表",
+        "target": "#/Notification/get_operations"
+      },
+      {
+        "label": "修改运维管理列表",
+        "target": "#/Notification/post_operations"
+      },
+      {
+        "label": "设备详情",
+        "target": "#/Notification/get_device_info"
+      },
+      {
+        "label": "获取通知管理表的权限级别和结构",
+        "target": "#/Notification/get_schema_notification"
+      }
+    ],
+    "label": "通知管理",
+    "target": "#/Notification"
+  },
+  {
+    "children": [
+      {
+        "label": "获取日志级别表的权限级别和结构",
+        "target": "#/LogLevel/get_schema_loglevel"
+      },
+      {
+        "label": "设置日志级别表级别",
+        "target": "#/LogLevel/put_level_loglevel"
+      },
+      {
+        "label": "amis查询日志级别",
+        "target": "#/LogLevel/get_amis_loglevel"
+      },
+      {
+        "label": "amis新增日志级别",
+        "target": "#/LogLevel/post_amis_loglevel"
+      },
+      {
+        "label": "删除日志级别",
+        "target": "#/LogLevel/delete_classes_loglevel_id"
+      },
+      {
+        "label": "获取日志级别详情",
+        "target": "#/LogLevel/get_classes_loglevel_id"
+      },
+      {
+        "label": "更新日志级别",
+        "target": "#/LogLevel/put_classes_loglevel_id"
+      },
+      {
+        "label": "查询日志级别",
+        "target": "#/LogLevel/get_classes_loglevel"
+      },
+      {
+        "label": "新增日志级别",
+        "target": "#/LogLevel/post_classes_loglevel"
+      },
+      {
+        "label": "amis删除日志级别",
+        "target": "#/LogLevel/delete_amis_loglevel_id"
+      },
+      {
+        "label": "amis获取日志级别详情",
+        "target": "#/LogLevel/get_amis_loglevel_id"
+      },
+      {
+        "label": "amis更新日志级别",
+        "target": "#/LogLevel/put_amis_loglevel_id"
+      }
+    ],
+    "label": "日志级别",
+    "target": "#/LogLevel"
+  },
+  {
+    "children": [
+      {
+        "label": "获取通道管理表的权限级别和结构",
+        "target": "#/Channel/get_schema_channel"
+      },
+      {
+        "label": "查询通道管理",
+        "target": "#/Channel/get_classes_channel"
+      },
+      {
+        "label": "新增通道管理",
+        "target": "#/Channel/post_classes_channel"
+      },
+      {
+        "label": "删除通道管理",
+        "target": "#/Channel/delete_classes_channel_id"
+      },
+      {
+        "label": "获取通道管理详情",
+        "target": "#/Channel/get_classes_channel_id"
+      },
+      {
+        "label": "更新通道管理",
+        "target": "#/Channel/put_classes_channel_id"
+      },
+      {
+        "label": "设置通道管理表级别",
+        "target": "#/Channel/put_level_channel"
+      },
+      {
+        "label": "通道控制",
+        "target": "#/Channel/post_control_channel"
+      },
+      {
+        "label": "amis查询通道管理",
+        "target": "#/Channel/get_amis_channel"
+      },
+      {
+        "label": "amis新增通道管理",
+        "target": "#/Channel/post_amis_channel"
+      },
+      {
+        "label": "amis删除通道管理",
+        "target": "#/Channel/delete_amis_channel_id"
+      },
+      {
+        "label": "amis获取通道管理详情",
+        "target": "#/Channel/get_amis_channel_id"
+      },
+      {
+        "label": "amis更新通道管理",
+        "target": "#/Channel/put_amis_channel_id"
+      }
+    ],
+    "label": "通道管理",
+    "target": "#/Channel"
+  },
+  {
+    "children": [
+      {
+        "label": "查询设备日志",
+        "target": "#/Devicelog/get_classes_devicelog"
+      },
+      {
+        "label": "新增设备日志",
+        "target": "#/Devicelog/post_classes_devicelog"
+      },
+      {
+        "label": "获取设备日志表的权限级别和结构",
+        "target": "#/Devicelog/get_schema_devicelog"
+      },
+      {
+        "label": "设置设备日志表级别",
+        "target": "#/Devicelog/put_level_devicelog"
+      },
+      {
+        "label": "删除设备日志",
+        "target": "#/Devicelog/delete_classes_devicelog_id"
+      },
+      {
+        "label": "获取设备日志详情",
+        "target": "#/Devicelog/get_classes_devicelog_id"
+      },
+      {
+        "label": "更新设备日志",
+        "target": "#/Devicelog/put_classes_devicelog_id"
+      },
+      {
+        "label": "amis删除设备日志",
+        "target": "#/Devicelog/delete_amis_devicelog_id"
+      },
+      {
+        "label": "amis获取设备日志详情",
+        "target": "#/Devicelog/get_amis_devicelog_id"
+      },
+      {
+        "label": "amis更新设备日志",
+        "target": "#/Devicelog/put_amis_devicelog_id"
+      },
+      {
+        "label": "amis查询设备日志",
+        "target": "#/Devicelog/get_amis_devicelog"
+      },
+      {
+        "label": "amis新增设备日志",
+        "target": "#/Devicelog/post_amis_devicelog"
+      }
+    ],
+    "label": "设备日志",
+    "target": "#/Devicelog"
+  },
+  {
+    "children": [
+      {
+        "label": "获取工单管理表的权限级别和结构",
+        "target": "#/Maintenance/get_schema_maintenance"
+      },
+      {
+        "label": "设置工单管理表级别",
+        "target": "#/Maintenance/put_level_maintenance"
+      },
+      {
+        "label": "删除工单管理",
+        "target": "#/Maintenance/delete_classes_maintenance_id"
+      },
+      {
+        "label": "获取工单管理详情",
+        "target": "#/Maintenance/get_classes_maintenance_id"
+      },
+      {
+        "label": "更新工单管理",
+        "target": "#/Maintenance/put_classes_maintenance_id"
+      },
+      {
+        "label": "amis删除工单管理",
+        "target": "#/Maintenance/delete_amis_maintenance_id"
+      },
+      {
+        "label": "amis获取工单管理详情",
+        "target": "#/Maintenance/get_amis_maintenance_id"
+      },
+      {
+        "label": "amis更新工单管理",
+        "target": "#/Maintenance/put_amis_maintenance_id"
+      },
+      {
+        "label": "amis查询工单管理",
+        "target": "#/Maintenance/get_amis_maintenance"
+      },
+      {
+        "label": "amis新增工单管理",
+        "target": "#/Maintenance/post_amis_maintenance"
+      },
+      {
+        "label": "查询工单管理",
+        "target": "#/Maintenance/get_classes_maintenance"
+      },
+      {
+        "label": "新增工单管理",
+        "target": "#/Maintenance/post_classes_maintenance"
+      }
+    ],
+    "label": "工单管理",
+    "target": "#/Maintenance"
+  },
+  {
+    "children": [
+      {
+        "label": "设置部署管理表级别",
+        "target": "#/_Installation/put_level_installation"
+      },
+      {
+        "label": "获取部署管理表的权限级别和结构",
+        "target": "#/_Installation/get_schema_installation"
+      },
+      {
+        "label": "amis删除部署管理",
+        "target": "#/_Installation/delete_amis_installation_id"
+      },
+      {
+        "label": "amis获取部署管理详情",
+        "target": "#/_Installation/get_amis_installation_id"
+      },
+      {
+        "label": "amis更新部署管理",
+        "target": "#/_Installation/put_amis_installation_id"
+      },
+      {
+        "label": "查询部署管理",
+        "target": "#/_Installation/get_classes_installation"
+      },
+      {
+        "label": "新增部署管理",
+        "target": "#/_Installation/post_classes_installation"
+      },
+      {
+        "label": "删除部署管理",
+        "target": "#/_Installation/delete_classes_installation_id"
+      },
+      {
+        "label": "获取部署管理详情",
+        "target": "#/_Installation/get_classes_installation_id"
+      },
+      {
+        "label": "更新部署管理",
+        "target": "#/_Installation/put_classes_installation_id"
+      },
+      {
+        "label": "amis查询部署管理",
+        "target": "#/_Installation/get_amis_installation"
+      },
+      {
+        "label": "amis新增部署管理",
+        "target": "#/_Installation/post_amis_installation"
+      }
+    ],
+    "label": "部署管理",
+    "target": "#/_Installation"
+  },
+  {
+    "children": [
+      {
+        "label": "获取类对象hash值",
+        "target": "#/Data/post_hash_class"
+      },
+      {
+        "label": "删除文件",
+        "target": "#/Data/delete_file_info"
+      },
+      {
+        "label": "获取文件信息",
+        "target": "#/Data/get_file_info"
+      },
+      {
+        "label": "文件导出",
+        "target": "#/Data/post_export_file"
+      },
+      {
+        "label": "试卷",
+        "target": "#/Data/post_testpaper"
+      },
+      {
+        "label": "graphql",
+        "target": "#/Data/post_graphql"
+      },
+      {
+        "label": "获取文件列表",
+        "target": "#/Data/get_list_dir"
+      },
+      {
+        "label": "档案导出",
+        "target": "#/Data/post_export_data"
+      },
+      {
+        "label": "云函数",
+        "target": "#/Data/post_functions_func"
+      },
+      {
+        "label": "文件导入",
+        "target": "#/Data/post_import_file"
+      },
+      {
+        "label": "获取类树",
+        "target": "#/Data/post_tree"
+      },
+      {
+        "label": "导库",
+        "target": "#/Data/post_import_data"
+      },
+      {
+        "label": "服务器文件上传",
+        "target": "#/Data/post_upload"
+      },
+      {
+        "label": "配置管理API",
+        "target": "#/Data/post_file_reload"
+      },
+      {
+        "label": "导库",
+        "target": "#/Data/post_import_reporttemp"
+      },
+      {
+        "label": "删除关联",
+        "target": "#/Data/delete_relation"
+      },
+      {
+        "label": "查询关联",
+        "target": "#/Data/get_relation"
+      },
+      {
+        "label": "创建关联",
+        "target": "#/Data/post_relation"
+      },
+      {
+        "label": "获取上传文件Token",
+        "target": "#/Data/post_upload_token"
+      },
+      {
+        "label": "文件统计信息",
+        "target": "#/Data/get_file_stat"
+      }
+    ],
+    "label": "数据管理",
+    "target": "#/Data"
+  },
+  {
+    "children": [
+      {
+        "label": "导出取证报告压缩包",
+        "target": "#/Evidence/get_report"
+      },
+      {
+        "label": "新增取证报告",
+        "target": "#/Evidence/post_report"
+      },
+      {
+        "label": "导入取证报告压缩包",
+        "target": "#/Evidence/put_report"
+      },
+      {
+        "label": "设置证据管理表级别",
+        "target": "#/Evidence/put_level_evidence"
+      },
+      {
+        "label": "删除证据管理",
+        "target": "#/Evidence/delete_classes_evidence_id"
+      },
+      {
+        "label": "获取证据管理详情",
+        "target": "#/Evidence/get_classes_evidence_id"
+      },
+      {
+        "label": "更新证据管理",
+        "target": "#/Evidence/put_classes_evidence_id"
+      },
+      {
+        "label": "生成性能曲线图",
+        "target": "#/Evidence/post_drawxnqx"
+      },
+      {
+        "label": "amis删除证据管理",
+        "target": "#/Evidence/delete_amis_evidence_id"
+      },
+      {
+        "label": "amis获取证据管理详情",
+        "target": "#/Evidence/get_amis_evidence_id"
+      },
+      {
+        "label": "amis更新证据管理",
+        "target": "#/Evidence/put_amis_evidence_id"
+      },
+      {
+        "label": "证据统计",
+        "target": "#/Evidence/get_evidence"
+      },
+      {
+        "label": "存证",
+        "target": "#/Evidence/post_evidence"
+      },
+      {
+        "label": "证据固化",
+        "target": "#/Evidence/put_evidence"
+      },
+      {
+        "label": "查询台体其子设备",
+        "target": "#/Evidence/get_bed"
+      },
+      {
+        "label": "取证前处理",
+        "target": "#/Evidence/post_bed"
+      },
+      {
+        "label": "生成报告",
+        "target": "#/Evidence/post_generatereport"
+      },
+      {
+        "label": "获取证据管理表的权限级别和结构",
+        "target": "#/Evidence/get_schema_evidence"
+      },
+      {
+        "label": "amis查询证据管理",
+        "target": "#/Evidence/get_amis_evidence"
+      },
+      {
+        "label": "amis新增证据管理",
+        "target": "#/Evidence/post_amis_evidence"
+      },
+      {
+        "label": "删除取证报告",
+        "target": "#/Evidence/delete_report_reportid"
+      },
+      {
+        "label": "扫描U盾",
+        "target": "#/Evidence/get_cert"
+      },
+      {
+        "label": "关联组态控件与物模型",
+        "target": "#/Evidence/get_capture"
+      },
+      {
+        "label": "获取采集点",
+        "target": "#/Evidence/get_point"
+      },
+      {
+        "label": "标识采样点",
+        "target": "#/Evidence/post_point"
+      },
+      {
+        "label": "查询证据管理",
+        "target": "#/Evidence/get_classes_evidence"
+      },
+      {
+        "label": "新增证据管理",
+        "target": "#/Evidence/post_classes_evidence"
+      },
+      {
+        "label": "新增报告模版",
+        "target": "#/Evidence/post_reporttemp"
+      },
+      {
+        "label": "新增报告子模版",
+        "target": "#/Evidence/put_reporttemp"
+      }
+    ],
+    "label": "证据管理",
+    "target": "#/Evidence"
+  },
+  {
+    "children": [
+      {
+        "label": "获取应用管理表的权限级别和结构",
+        "target": "#/App/get_schema_app"
+      },
+      {
+        "label": "查询应用管理",
+        "target": "#/App/get_classes_app"
+      },
+      {
+        "label": "新增应用管理",
+        "target": "#/App/post_classes_app"
+      },
+      {
+        "label": "设置应用管理表级别",
+        "target": "#/App/put_level_app"
+      },
+      {
+        "label": "amis删除应用管理",
+        "target": "#/App/delete_amis_app_id"
+      },
+      {
+        "label": "amis获取应用管理详情",
+        "target": "#/App/get_amis_app_id"
+      },
+      {
+        "label": "amis更新应用管理",
+        "target": "#/App/put_amis_app_id"
+      },
+      {
+        "label": "amis查询应用管理",
+        "target": "#/App/get_amis_app"
+      },
+      {
+        "label": "amis新增应用管理",
+        "target": "#/App/post_amis_app"
+      },
+      {
+        "label": "删除应用管理",
+        "target": "#/App/delete_classes_app_id"
+      },
+      {
+        "label": "获取应用管理详情",
+        "target": "#/App/get_classes_app_id"
+      },
+      {
+        "label": "更新应用管理",
+        "target": "#/App/put_classes_app_id"
+      }
+    ],
+    "label": "应用管理",
+    "target": "#/App"
+  },
+  {
+    "children": [
+      {
+        "label": "获取资源类型列表",
+        "target": "#/Rule/get_resource_types"
+      },
+      {
+        "label": "获取资源列表",
+        "target": "#/Rule/get_resources"
+      },
+      {
+        "label": "创建资源",
+        "target": "#/Rule/post_resources"
+      },
+      {
+        "label": "获取acl编辑器提示语",
+        "target": "#/Rule/get_provider"
+      },
+      {
+        "label": "生成规则sql",
+        "target": "#/Rule/post_rulesql"
+      },
+      {
+        "label": "删除规则引擎",
+        "target": "#/Rule/delete_rule_id"
+      },
+      {
+        "label": "获取规则引擎",
+        "target": "#/Rule/get_rule_id"
+      },
+      {
+        "label": "修改规则引擎",
+        "target": "#/Rule/put_rule_id"
+      },
+      {
+        "label": "获取动作",
+        "target": "#/Rule/get_actions_id"
+      },
+      {
+        "label": "获取动作列表",
+        "target": "#/Rule/get_actions"
+      },
+      {
+        "label": "获取规则引擎列表",
+        "target": "#/Rule/get_rules"
+      },
+      {
+        "label": "创建规则引擎",
+        "target": "#/Rule/post_rules"
+      },
+      {
+        "label": "删除资源",
+        "target": "#/Rule/delete_resources_id"
+      },
+      {
+        "label": "获取资源",
+        "target": "#/Rule/get_resources_id"
+      }
+    ],
+    "label": "规则管理",
+    "target": "#/Rule"
+  },
+  {
+    "children": [
+      {
+        "label": "amis查询时序管理",
+        "target": "#/Timescale/get_amis_timescale"
+      },
+      {
+        "label": "amis新增时序管理",
+        "target": "#/Timescale/post_amis_timescale"
+      },
+      {
+        "label": "amis删除时序管理",
+        "target": "#/Timescale/delete_amis_timescale_id"
+      },
+      {
+        "label": "amis获取时序管理详情",
+        "target": "#/Timescale/get_amis_timescale_id"
+      },
+      {
+        "label": "amis更新时序管理",
+        "target": "#/Timescale/put_amis_timescale_id"
+      },
+      {
+        "label": "查询时序管理",
+        "target": "#/Timescale/get_classes_timescale"
+      },
+      {
+        "label": "新增时序管理",
+        "target": "#/Timescale/post_classes_timescale"
+      },
+      {
+        "label": "获取时序管理表的权限级别和结构",
+        "target": "#/Timescale/get_schema_timescale"
+      },
+      {
+        "label": "设置时序管理表级别",
+        "target": "#/Timescale/put_level_timescale"
+      },
+      {
+        "label": "删除时序管理",
+        "target": "#/Timescale/delete_classes_timescale_id"
+      },
+      {
+        "label": "获取时序管理详情",
+        "target": "#/Timescale/get_classes_timescale_id"
+      },
+      {
+        "label": "更新时序管理",
+        "target": "#/Timescale/put_classes_timescale_id"
+      }
+    ],
+    "label": "时序管理",
+    "target": "#/Timescale"
+  },
+  {
+    "children": [
+      {
+        "label": "删除操作日志",
+        "target": "#/Log/delete_classes_log_id"
+      },
+      {
+        "label": "获取操作日志详情",
+        "target": "#/Log/get_classes_log_id"
+      },
+      {
+        "label": "更新操作日志",
+        "target": "#/Log/put_classes_log_id"
+      },
+      {
+        "label": "获取操作日志表的权限级别和结构",
+        "target": "#/Log/get_schema_log"
+      },
+      {
+        "label": "amis删除操作日志",
+        "target": "#/Log/delete_amis_log_id"
+      },
+      {
+        "label": "amis获取操作日志详情",
+        "target": "#/Log/get_amis_log_id"
+      },
+      {
+        "label": "amis更新操作日志",
+        "target": "#/Log/put_amis_log_id"
+      },
+      {
+        "label": "设置操作日志表级别",
+        "target": "#/Log/put_level_log"
+      },
+      {
+        "label": "amis查询操作日志",
+        "target": "#/Log/get_amis_log"
+      },
+      {
+        "label": "amis新增操作日志",
+        "target": "#/Log/post_amis_log"
+      },
+      {
+        "label": "查询操作日志",
+        "target": "#/Log/get_classes_log"
+      },
+      {
+        "label": "新增操作日志",
+        "target": "#/Log/post_classes_log"
+      }
+    ],
+    "label": "操作日志",
+    "target": "#/Log"
+  },
+  {
+    "children": [
+      {
+        "label": "amis查询指令管理",
+        "target": "#/Instruct/get_amis_instruct"
+      },
+      {
+        "label": "amis新增指令管理",
+        "target": "#/Instruct/post_amis_instruct"
+      },
+      {
+        "label": "删除指令管理",
+        "target": "#/Instruct/delete_classes_instruct_id"
+      },
+      {
+        "label": "获取指令管理详情",
+        "target": "#/Instruct/get_classes_instruct_id"
+      },
+      {
+        "label": "更新指令管理",
+        "target": "#/Instruct/put_classes_instruct_id"
+      },
+      {
+        "label": "获取指令管理表的权限级别和结构",
+        "target": "#/Instruct/get_schema_instruct"
+      },
+      {
+        "label": "查询指令管理",
+        "target": "#/Instruct/get_classes_instruct"
+      },
+      {
+        "label": "新增指令管理",
+        "target": "#/Instruct/post_classes_instruct"
+      },
+      {
+        "label": "amis删除指令管理",
+        "target": "#/Instruct/delete_amis_instruct_id"
+      },
+      {
+        "label": "amis获取指令管理详情",
+        "target": "#/Instruct/get_amis_instruct_id"
+      },
+      {
+        "label": "amis更新指令管理",
+        "target": "#/Instruct/put_amis_instruct_id"
+      },
+      {
+        "label": "设置指令管理表级别",
+        "target": "#/Instruct/put_level_instruct"
+      }
+    ],
+    "label": "指令管理",
+    "target": "#/Instruct"
+  },
+  {
+    "children": [
+      {
+        "label": "amis删除菜单管理",
+        "target": "#/Menu/delete_amis_menu_id"
+      },
+      {
+        "label": "amis获取菜单管理详情",
+        "target": "#/Menu/get_amis_menu_id"
+      },
+      {
+        "label": "amis更新菜单管理",
+        "target": "#/Menu/put_amis_menu_id"
+      },
+      {
+        "label": "删除菜单管理",
+        "target": "#/Menu/delete_classes_menu_id"
+      },
+      {
+        "label": "获取菜单管理详情",
+        "target": "#/Menu/get_classes_menu_id"
+      },
+      {
+        "label": "更新菜单管理",
+        "target": "#/Menu/put_classes_menu_id"
+      },
+      {
+        "label": "设置菜单管理表级别",
+        "target": "#/Menu/put_level_menu"
+      },
+      {
+        "label": "菜单导出",
+        "target": "#/Menu/get_menu"
+      },
+      {
+        "label": "菜单导入",
+        "target": "#/Menu/post_menu"
+      },
+      {
+        "label": "查询菜单管理",
+        "target": "#/Menu/get_classes_menu"
+      },
+      {
+        "label": "新增菜单管理",
+        "target": "#/Menu/post_classes_menu"
+      },
+      {
+        "label": "amis查询菜单管理",
+        "target": "#/Menu/get_amis_menu"
+      },
+      {
+        "label": "amis新增菜单管理",
+        "target": "#/Menu/post_amis_menu"
+      },
+      {
+        "label": "获取顶部导航",
+        "target": "#/Menu/get_classes_navigation"
+      },
+      {
+        "label": "获取菜单管理表的权限级别和结构",
+        "target": "#/Menu/get_schema_menu"
+      }
+    ],
+    "label": "菜单管理",
+    "target": "#/Menu"
+  },
+  {
+    "children": [
+      {
+        "label": "获取组信息",
+        "target": "#/Group/get_group_id"
+      },
+      {
+        "label": "删除分组",
+        "target": "#/Group/delete_group"
+      },
+      {
+        "label": "创建分组",
+        "target": "#/Group/post_group"
+      },
+      {
+        "label": "关联组态与物模型",
+        "target": "#/Group/put_group"
+      }
+    ],
+    "label": "分组管理",
+    "target": "#/Group"
   }
 ]

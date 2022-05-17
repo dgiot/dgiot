@@ -128,7 +128,7 @@ get_control(ProductId) ->
     end.
 
 update_properties(ProductId, Product) ->
-    io:format("~s ~p ProductId = ~p.~n", [?FILE, ?LINE, ProductId]),
+%%    io:format("~s ~p ProductId = ~p.~n", [?FILE, ?LINE, ProductId]),
     PropertiesTpl = dgiot_dlink:get_json(<<"properties_tpl">>),
     case dgiot_product:lookup_prod(ProductId) of
         {ok, #{<<"thing">> := #{<<"properties">> := Props} = Thing}} ->
@@ -141,8 +141,7 @@ update_properties(ProductId, Product) ->
             NewThing = Thing#{
                 <<"properties">> => NewProperties
             },
-            Message = dgiot_parse:update_object(<<"Product">>, ProductId, #{<<"thing">> => NewThing}),
-            io:format("~s ~p Message = ~p.~n", [?FILE, ?LINE, Message]),
+            dgiot_parse:update_object(<<"Product">>, ProductId, #{<<"thing">> => NewThing}),
             dgiot_data:insert(?DGIOT_PRODUCT, ProductId, Product#{<<"thing">> => NewThing});
         _Error ->
             []

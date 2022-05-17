@@ -88,7 +88,19 @@ do_request(get_protocol, _Body, _Context, _Req) ->
 %% OperationId:dlinkjson
 %% 请求:GET /iotapi/dlinkjson
 do_request(get_dlinkjson, #{<<"type">> := <<"swaggerTree">>}, _Context, _Req) ->
-    {ok, SwaggerTree} = dgiot_swagger:tree(),
+    {ok, Swagger} = dgiot_swagger:tree(),
+    {file, Here} = code:is_loaded(?MODULE),
+    Dir = filename:dirname(filename:dirname(Here)),
+    FileName = <<"swagger.json">>,
+    SwaggerFile = dgiot_httpc:url_join([Dir, "/priv/json/", dgiot_utils:to_list(FileName)]),
+    case dgiot_data:get(swaggerTree) of
+        not_find ->
+            file:write_file(SwaggerFile, jsx:encode(Swagger)),
+            dgiot_data:insert(swaggerTree, <<"swaggerTree">>);
+        _ ->
+            pass
+    end,
+    SwaggerTree = dgiot_dlink:get_json(<<"swaggerTree">>),
     {200, SwaggerTree};
 
 do_request(get_dlinkjson, #{<<"type">> := <<"Table">>}, _Context, _Req) ->
