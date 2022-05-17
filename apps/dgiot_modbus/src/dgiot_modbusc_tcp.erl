@@ -32,12 +32,21 @@ start_connect(_Opts =
         <<"ip">> := Ip,
         <<"productid">> := ProductId,
         <<"channelid">> := ChannelId,
-        <<"hb">> := HB
+        <<"hb">> := HB,
+        <<"filename">> := FileName,
+        <<"minaddr">> := MinAddr,
+        <<"maxaddr">> := Maxaddr
     }) ->
     State = #state{
         product = ProductId,
         id = ChannelId,
-        hb = HB
+        hb = HB,
+        env = #{
+            data => <<>>,
+            filename => FileName,
+            minaddr => MinAddr,
+            maxaddr => Maxaddr
+        }
     },
 %%    dgiot_tcp_client:start_link(dgiot_modbusc_tcp, "192.168.1.5", 8989, 10, 3, #{productid => <<"c38905f64d">>,devaddr => <<"0622e8ca1355">>,hb => 60}).
     dgiot_tcp_client:start_link(?MODULE, Ip, Port, Recon, ReTimes, State).
@@ -46,127 +55,43 @@ init(TCPState) ->
     {ok, TCPState}.
 
 handle_info(connection_ready, TCPState) ->
-    io:format("47 ~s ~p TCPState = ~p.~n", [?FILE, ?LINE, TCPState]),
+    io:format("~s ~p TCPState = ~p.~n", [?FILE, ?LINE, TCPState]),
     rand:seed(exs1024),
     Time = erlang:round(rand:uniform() * 1 + 1) * 1000,
-    erlang:send_after(Time, self(), login),
-%%    dgiot_tcp_client:send(TCPState, <<"D3F100000009011000040001020021">>),
+    erlang:send_after(Time, self(), read),
     {noreply, TCPState};
 
 handle_info(tcp_closed, TCPState) ->
     {noreply, TCPState};
 
-handle_info(login, #tcp{state = #state{hb = Hb}} = TCPState) ->
-    io:format("~s ~p Hb = ~p.~n", [?FILE, ?LINE, Hb]),
-    erlang:send_after(Hb * 1000, self(), save_pnque),
-    {noreply, TCPState};
+handle_info(read, #tcp{state = #state{id = ChannelId, product = ProductId, env = #{minaddr := MinAddr, maxaddr := Maxaddr} = Env} = State} = TCPState) ->
+    Address = modbus_tcp:get_addr(ChannelId, MinAddr, Maxaddr, 120),
+    DataSource =
+        #{
+            <<"registersnumber">> => <<"120">>,
+            <<"slaveid">> => <<"0X01">>,
+            <<"operatetype">> => <<"readHregs">>,
+            <<"address">> => Address
+        },
+    Data = modbus_tcp:to_frame(DataSource),
+    dgiot_tcp_server:send(TCPState, Data),
+%%    erlang:send_after(10 * 1000, self(), read),
+    {noreply, TCPState#tcp{state = State#state{env = Env#{product => ProductId, maxaddr => Maxaddr, di => Address, step => 120}}}};
 
-handle_info(save_pnque, #tcp{state = #state{product = ProductId} = State} = TCPState) ->
-    case dgiot_parse:query_object(<<"Device">>, #{<<"where">> => #{<<"product">> => ProductId}, <<"limit">> => 1}) of
-        {ok, #{<<"results">> := []}} ->
-            {noreply, TCPState};
-        {ok, #{<<"results">> := [#{<<"devaddr">> := Devaddr}]}} ->
-            dgiot_task:save_pnque(ProductId, Devaddr, ProductId, Devaddr),
-            {noreply, TCPState#tcp{buff = <<>>, state = State#state{product = ProductId, devaddr = Devaddr}}};
-        _ ->
-            {noreply, TCPState}
-    end;
-
-handle_info(heartbeat, #tcp{state = #state{hb = Hb} = _State} = TCPState) ->
-    erlang:send_after(Hb * 1000, self(), heartbeat),
-    io:format("~s ~p TCPState = ~p.~n", [?FILE, ?LINE, TCPState]),
-    dgiot_tcp_client:send(TCPState, <<"heartbeat">>),
-    {noreply, TCPState};
-
-handle_info({tcp, Buff}, #tcp{state = #state{id = ChannelId, devaddr = DtuAddr, env = #{product := ProductId, pn := Pn, di := Di}, product = DtuProductId} = State} = TCPState) ->
-    dgiot_bridge:send_log(ChannelId, ProductId, DtuAddr, "[DtuAddr:~p] returns [~p] to Channel", [DtuAddr, dgiot_utils:binary_to_hex(Buff)]),
-    <<H:8, L:8>> = dgiot_utils:hex_to_binary(modbus_tcp:is16(Di)),
-    <<Sh:8, Sl:8>> = dgiot_utils:hex_to_binary(modbus_tcp:is16(Pn)),
-    case modbus_tcp:parse_frame(Buff, #{}, #{
-        <<"dtuproduct">> => ProductId,
-        <<"channel">> => ChannelId,
-        <<"dtuaddr">> => DtuAddr,
-        <<"slaveId">> => Sh * 256 + Sl,
-        <<"address">> => H * 256 + L}) of
-        {_, Things} ->
-%%            ?LOG(info, "Things ~p", [Things]),
-            NewTopic = <<"thing/", DtuProductId/binary, "/", DtuAddr/binary, "/post">>,
-            dgiot_bridge:send_log(ChannelId, ProductId, DtuAddr, "Channel sends [~p] to [task:~p]", [jsx:encode(Things), NewTopic]),
-            DeviceId = dgiot_parse_id:get_deviceid(ProductId, DtuAddr),
-            dgiot_mqtt:publish(DeviceId, NewTopic, jsx:encode(Things));
-        Other ->
-            ?LOG(info, "Other ~p", [Other]),
-            pass
-    end,
-    {noreply, TCPState#tcp{buff = <<>>, state = State#state{env = <<>>}}};
-
-handle_info({deliver, _, Msg}, #tcp{state = #state{id = ChannelId} = State} = TCPState) ->
-    Payload = dgiot_mqtt:get_payload(Msg),
-    Topic = dgiot_mqtt:get_topic(Msg),
-    case jsx:is_json(Payload) of
+handle_info({tcp, Buff}, #tcp{state = #state{id = _ChannelId, env = #{maxaddr := Maxaddr, di := Address, filename := FileName, data := OldData, step := Step} = Env} = State} = TCPState) ->
+%%    dgiot_bridge:send_log(ChannelId, ProductId, DtuAddr, "[DtuAddr:~p] returns [~p] to Channel", [DtuAddr, dgiot_utils:binary_to_hex(Buff)]),
+%%    io:format("~s ~p OldData = ~p.~n", [?FILE, ?LINE, OldData]),
+    Data = modbus_tcp:parse_frame(Buff),
+    erlang:send_after(3 * 1000, self(), read),
+    case Address + Step >= Maxaddr of
         true ->
-            case binary:split(Topic, <<$/>>, [global, trim]) of
-                [<<"$dg">>, <<"device">>, ProductId, DevAddr, <<"profile">>] ->
-%%                    设置参数
-                    Payloads = modbus_tcp:set_params(jsx:decode(Payload), ProductId, DevAddr),
-                    lists:map(fun(X) ->
-                        dgiot_tcp_server:send(TCPState, X)
-                              end, Payloads),
-                    {noreply, TCPState};
-                [<<"thing">>, ProductId, DevAddr] ->
-                    case jsx:decode(Payload, [{labels, binary}, return_maps]) of
-                        [#{<<"thingdata">> := ThingData} | _] ->
-                            case ThingData of
-                                #{<<"command">> := <<"r">>,
-                                    <<"product">> := ProductId,
-                                    <<"protocol">> := <<"MODBUSTCP">>,
-                                    <<"dataSource">> := #{
-                                        <<"slaveid">> := SlaveId,
-                                        <<"address">> := Address} = DataSource
-                                } ->
-                                    Data = modbus_tcp:to_frame(DataSource#{<<"productid">> => ProductId}),
-                                    % io:format("~s ~p Data = ~p.~n", [?FILE, ?LINE, dgiot_utils:binary_to_hex(Data)]),
-                                    dgiot_bridge:send_log(ChannelId, ProductId, DevAddr, "Channel sends [~p] to [DtuAddr:~p]", [dgiot_utils:binary_to_hex(Data), DevAddr]),
-                                    dgiot_tcp_server:send(TCPState, Data),
-                                    {noreply, TCPState#tcp{state = State#state{env = #{product => ProductId, pn => SlaveId, di => Address}}}};
-                                #{<<"command">> := <<"rw">>,
-                                    <<"product">> := ProductId,
-                                    <<"protocol">> := <<"MODBUSTCP">>,
-                                    <<"dataSource">> := #{
-                                        <<"slaveid">> := SlaveId,
-                                        <<"address">> := Address} = DataSource
-                                } ->
-                                    Datas = modbus_tcp:to_frame(DataSource#{<<"productid">> => ProductId}),
-                                    lists:map(fun(X) ->
-                                        dgiot_bridge:send_log(ChannelId, ProductId, DevAddr, "Channel sends [~p] to [DtuAddr:~p]", [dgiot_utils:binary_to_hex(X), DevAddr]),
-                                        dgiot_tcp_server:send(TCPState, X),
-                                        timer:sleep(1000)
-                                              end, Datas),
-                                    {noreply, TCPState#tcp{state = State#state{env = #{product => ProductId, pn => SlaveId, di => Address}}}};
-                                _Ot ->
-                                    io:format("~s ~p _Ot = ~p.~n", [?FILE, ?LINE, _Ot]),
-                                    {noreply, TCPState}
-                            end;
-                        _a ->
-                            io:format("~s ~p _Ot = ~p.~n", [?FILE, ?LINE, _a]),
-                            {noreply, TCPState}
-                    end;
-                _Other ->
-                    io:format("~s ~p _Other = ~p.~n", [?FILE, ?LINE, _Other]),
-                    {noreply, TCPState}
-            end;
-        false ->
-            case binary:split(Topic, <<$/>>, [global, trim]) of
-                [<<"$dg">>, <<"device">>, ProductId, DevAddr, <<"profile">>] ->
-                    %% 设置参数
-                    Payloads = modbus_tcp:set_params(jsx:decode(Payload), ProductId, DevAddr),
-                    lists:map(fun(X) ->
-                        dgiot_tcp_server:send(TCPState, X)
-                              end, Payloads),
-                    {noreply, TCPState};
-                _ ->
-                    {noreply, TCPState}
-            end
+            EndData = <<OldData/binary, Data/binary>>,
+%%            io:format("~s ~p EndData = ~p.~n", [?FILE, ?LINE, EndData]),
+            modbus_tcp:parse_frame(FileName, EndData),
+            {noreply, TCPState#tcp{buff = <<>>, state = State#state{env = Env#{data => <<>>}}}};
+        _ ->
+            {noreply, TCPState#tcp{buff = <<>>, state = State#state{env = Env#{data => <<OldData/binary, Data/binary>>}}}}
+
     end;
 
 handle_info(_Info, TCPState) ->

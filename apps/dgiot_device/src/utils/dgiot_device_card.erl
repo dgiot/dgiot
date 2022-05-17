@@ -20,7 +20,7 @@
 -include_lib("dgiot/include/logger.hrl").
 -include_lib("dgiot_tdengine/include/dgiot_tdengine.hrl").
 
--export([get_realtime_card/3, get_device_card/4]).
+-export([get_card/4, get_device_card/4]).
 
 get_device_card(Channel, ProductId, DeviceId, Args) ->
     case dgiot_data:get({tdengine_os, Channel}) of
@@ -37,35 +37,6 @@ get_device_card(Channel, ProductId, DeviceId, Args) ->
                     {ok, #{<<"data">> => Chartdata}}
             end
     end.
-
-get_realtime_card(ProductId, DeviceId, Payload) ->
-    Maps = dgiot_product:get_prop(ProductId),
-    Props = dgiot_product:get_props(ProductId),
-    Data =
-        maps:fold(fun(K, V, Acc) ->
-            Time = dgiot_datetime:now_secs(),
-            NewTime = dgiot_tdengine_field:get_time(dgiot_utils:to_binary(Time), <<"111">>),
-            case maps:find(K, Maps) of
-                error ->
-                    Acc;
-                {ok, Name} ->
-                    {Type, NewV, Unit, Ico, Devicetype} =
-                        case maps:find(K, Props) of
-                            error ->
-                                {V, <<"">>, <<"">>, <<"others">>};
-                            {ok, #{<<"dataType">> := #{<<"type">> := Typea} = DataType} = Prop} ->
-                                Devicetype1 = maps:get(<<"devicetype">>, Prop, <<"others">>),
-                                Specs = maps:get(<<"specs">>, DataType, #{}),
-                                Value = dgiot_product_tdengine:check_field(Typea, V, #{<<"datatype">> => DataType, <<"specs">> => Specs, <<"deviceid">> => DeviceId}),
-                                Ico1 = maps:get(<<"ico">>, Prop, <<"">>),
-                                {Typea, Value, <<"">>, Ico1, Devicetype1};
-                            _ ->
-                                {<<"others">>, V, <<"">>, <<"">>, <<"others">>}
-                        end,
-                    Acc ++ [#{<<"name">> => Name, <<"type">> => Type, <<"number">> => NewV, <<"time">> => NewTime, <<"unit">> => Unit, <<"imgurl">> => Ico, <<"devicetype">> => Devicetype}]
-            end
-                  end, [], Payload),
-    base64:encode(jsx:encode(#{<<"data">> => Data})).
 
 get_card(ProductId, Results, DeviceId, Args) ->
     [Result | _] = Results,

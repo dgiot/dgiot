@@ -16,15 +16,20 @@
 
 -module(modbus_tcp).
 -author("jonhl").
+-define(consumer(ChannelId), <<"modbus_consumer_", ChannelId/binary>>).
 
 -include("dgiot_modbus.hrl").
 -include_lib("dgiot/include/logger.hrl").
 
 -export([
     init/1,
+    parse_frame/1,
+    parse_frame/2,
     parse_frame/3,
     to_frame/1,
-    build_req_message/1]
+    build_req_message/1,
+    get_addr/4,
+    set_addr/3]
 ).
 
 -export([is16/1, set_params/3, decode_data/4]).
@@ -67,7 +72,7 @@
             zh => <<"从机地址"/utf8>>
         },
         description => #{
-            zh => <<"从机地址(16进制加0X,例如:0X10,否在是10进制)"/utf8>>
+            zh => <<"从机地址(16进制加0X,例如:0X10,否在是10进制),范围1-247,一个字节"/utf8>>
         }
     },
     <<"operatetype">> => #{
@@ -100,7 +105,7 @@
             zh => <<"寄存器地址"/utf8>>
         },
         description => #{
-            zh => <<"寄存器地址:原数据地址(16进制加0X,例如:0X10,否在是10进制)"/utf8>>
+            zh => <<"寄存器地址:原数据地址(16进制加0X,例如:0X10,否在是10进制);8位寄存器,一个字节;16位寄存器,两个字节;32位寄存器,四个字节"/utf8>>
         }
     },
     <<"registersnumber">> => #{
@@ -113,18 +118,6 @@
         },
         description => #{
             zh => <<"寄存器个数(多个寄存器个数)"/utf8>>
-        }
-    },
-    <<"bytes">> => #{
-        order => 6,
-        type => integer,
-        required => true,
-        default => <<"2"/utf8>>,
-        title => #{
-            zh => <<"字节个数"/utf8>>
-        },
-        description => #{
-            zh => <<"读写字节个数(字节)"/utf8>>
         }
     }
 }).
@@ -193,8 +186,8 @@ encode_data(Quality, Address, SlaveId, OperateType) ->
             <<"writeHregs">> -> {?FC_WRITE_HREGS, dgiot_utils:to_int(Quality)}; %%需要校验，写多个保持寄存器是什么状态
             _ -> {?FC_READ_HREGS, dgiot_utils:to_int(dgiot_utils:to_int(Quality))}
         end,
-    <<H:8, L:8>> = dgiot_utils:hex_to_binary(is16(Address)),
-    <<Sh:8, Sl:8>> = dgiot_utils:hex_to_binary(is16(SlaveId)),
+    <<H:8, L:8>> = dgiot_utils:hex_to_binary(modbus_tcp:is16(Address)),
+    <<Sh:8, Sl:8>> = dgiot_utils:hex_to_binary(modbus_tcp:is16(SlaveId)),
     RtuReq = #rtu_req{
         slaveId = Sh * 256 + Sl,
         funcode = dgiot_utils:to_int(FunCode),
@@ -212,17 +205,12 @@ is16(<<"0X", Data/binary>>) when size(Data) > 4 ->
 is16(<<"0X", Data/binary>>) ->
     <<"00", Data/binary>>;
 
-is16(<<"00", Data/binary>>) when size(Data) == 2 ->
-    Data;
-
-is16(<<"256">>) ->
-    <<"0100">>;
-
-is16(Data) when size(Data) > 1 ->
-    <<"00", Data/binary>>;
+is16(<<"00", Data/binary>>) ->
+    is16(Data);
 
 is16(Data) ->
-    <<"000", Data/binary>>.
+    IntData = dgiot_utils:to_int(Data),
+    dgiot_utils:binary_to_hex(<<IntData:16>>).
 
 set_params(Payload, _ProductId, _DevAddr) ->
     Length = length(maps:keys(Payload)),
@@ -280,6 +268,12 @@ set_params(Payload, _ProductId, _DevAddr) ->
             end
                     end, [], lists:seq(1, Length)),
     Payloads.
+
+parse_frame(<<_TransactionId:16, _ProtocolId:16, _Size1:16, _Slaveid:8, _FunCode:8, DataLen:8, Data:DataLen/bytes>>) ->
+    Data.
+
+parse_frame(_FileName, Data) ->
+    Data.
 
 %rtu modbus
 parse_frame(<<>>, Acc, _State) -> {<<>>, Acc};
@@ -523,10 +517,12 @@ format_value(Buff, #{<<"identifier">> := BitIdentifier,
                     <<"dataSource">> := #{
                         <<"slaveid">> := BitIdentifier,
                         <<"address">> := Offset,
-                        <<"bytes">> := Len}
+                        <<"registersnumber">> := Num,
+                        <<"originaltype">> := Originaltype}
                 } ->
                     IntOffset = dgiot_utils:to_int(Offset),
-                    IntLen = dgiot_utils:to_int(Len),
+                    IntNum = dgiot_utils:to_int(Num),
+                    IntLen = get_len(IntNum, Originaltype),
                     Value =
                         case IntOffset of
                             0 ->
@@ -554,97 +550,97 @@ format_value(Buff, #{<<"identifier">> := BitIdentifier,
     {map, Values};
 
 format_value(Buff, #{<<"dataSource">> := #{
-    <<"bytes">> := Len,
+    <<"registersnumber">> := Num,
     <<"originaltype">> := <<"short16_AB">>
 }}, _Props) ->
-    IntLen = dgiot_utils:to_int(Len),
-    Size = max(2, IntLen) * 8,
+    IntNum = dgiot_utils:to_int(Num),
+    Size = IntNum * 2 * 8,
     <<Value:Size/signed-big-integer, Rest/binary>> = Buff,
     {Value, Rest};
 
 format_value(Buff, #{<<"dataSource">> := #{
-    <<"bytes">> := Len,
+    <<"registersnumber">> := Num,
     <<"originaltype">> := <<"short16_BA">>
 }}, _Props) ->
-    IntLen = dgiot_utils:to_int(Len),
-    Size = max(2, IntLen) * 8,
+    IntNum = dgiot_utils:to_int(Num),
+    Size = IntNum * 2 * 8,
     <<Value:Size/signed-little-integer, Rest/binary>> = Buff,
     {Value, Rest};
 
 format_value(Buff, #{<<"dataSource">> := #{
-    <<"bytes">> := Len,
+    <<"registersnumber">> := Num,
     <<"originaltype">> := <<"ushort16_AB">>
 }}, _Props) ->
-    IntLen = dgiot_utils:to_int(Len),
-    Size = max(2, IntLen) * 8,
+    IntNum = dgiot_utils:to_int(Num),
+    Size = IntNum * 2 * 8,
     <<Value:Size/unsigned-big-integer, Rest/binary>> = Buff,
     {Value, Rest};
 
 format_value(Buff, #{<<"dataSource">> := #{
-    <<"bytes">> := Len,
+    <<"registersnumber">> := Num,
     <<"originaltype">> := <<"ushort16_BA">>
 }}, _Props) ->
-    IntLen = dgiot_utils:to_int(Len),
-    Size = max(2, IntLen) * 8,
+    IntNum = dgiot_utils:to_int(Num),
+    Size = IntNum * 2 * 8,
     <<Value:Size/unsigned-little-integer, Rest/binary>> = Buff,
     {Value, Rest};
 
 format_value(Buff, #{<<"dataSource">> := #{
-    <<"bytes">> := Len,
+    <<"registersnumber">> := Num,
     <<"originaltype">> := <<"long32_ABCD">>
 }}, _Props) ->
-    IntLen = dgiot_utils:to_int(Len),
-    Size = max(4, IntLen) * 8,
+    IntNum = dgiot_utils:to_int(Num),
+    Size = IntNum * 4 * 8,
     <<H:2/binary, L:2/binary, Rest/binary>> = Buff,
     <<Value:Size/integer>> = <<H/binary, L/binary>>,
     {Value, Rest};
 
 format_value(Buff, #{<<"dataSource">> := #{
-    <<"bytes">> := Len,
+    <<"registersnumber">> := Num,
     <<"originaltype">> := <<"long32_CDAB">>
 }}, _Props) ->
-    IntLen = dgiot_utils:to_int(Len),
-    Size = max(4, IntLen) * 8,
+    IntNum = dgiot_utils:to_int(Num),
+    Size = IntNum * 4 * 8,
     <<H:2/binary, L:2/binary, Rest/binary>> = Buff,
     <<Value:Size/integer>> = <<L/binary, H/binary>>,
     {Value, Rest};
 
 format_value(Buff, #{<<"dataSource">> := #{
-    <<"bytes">> := Len,
+    <<"registersnumber">> := Num,
     <<"originaltype">> := <<"ulong32_ABCD">>
 }}, _Props) ->
-    IntLen = dgiot_utils:to_int(Len),
-    Size = max(4, IntLen) * 8,
+    IntNum = dgiot_utils:to_int(Num),
+    Size = IntNum * 4 * 8,
     <<H:2/binary, L:2/binary, Rest/binary>> = Buff,
     <<Value:Size/integer>> = <<H/binary, L/binary>>,
     {Value, Rest};
 
 format_value(Buff, #{<<"dataSource">> := #{
-    <<"bytes">> := Len,
+    <<"registersnumber">> := Num,
     <<"originaltype">> := <<"ulong32_CDAB">>
 }}, _Props) ->
-    IntLen = dgiot_utils:to_int(Len),
-    Size = max(4, IntLen) * 8,
+    IntNum = dgiot_utils:to_int(Num),
+    Size = IntNum * 4 * 8,
     <<H:2/binary, L:2/binary, Rest/binary>> = Buff,
     <<Value:Size/integer>> = <<L/binary, H/binary>>,
     {Value, Rest};
 
 format_value(Buff, #{<<"dataSource">> := #{
-    <<"bytes">> := Len,
+    <<"registersnumber">> := Num,
     <<"originaltype">> := <<"float32_ABCD">>
 }}, _Props) ->
-    IntLen = dgiot_utils:to_int(Len),
-    Size = max(4, IntLen) * 8,
+    IntNum = dgiot_utils:to_int(Num),
+    Size = IntNum * 4 * 8,
     <<H:2/binary, L:2/binary, Rest/binary>> = Buff,
     <<Value:Size/float>> = <<H/binary, L/binary>>,
     {Value, Rest};
 
 format_value(Buff, #{<<"dataSource">> := #{
-    <<"bytes">> := Len,
+    <<"registersnumber">> := Num,
     <<"originaltype">> := <<"float32_CDAB">>
 }}, _Props) ->
-    IntLen = dgiot_utils:to_int(Len),
-    Size = max(4, IntLen) * 8,
+    IntNum = dgiot_utils:to_int(Num),
+    Size = IntNum * 4 * 8,
     <<H:2/binary, L:2/binary, Rest/binary>> = Buff,
     <<Value:Size/float>> = <<L/binary, H/binary>>,
     {Value, Rest};
@@ -653,3 +649,49 @@ format_value(Buff, #{<<"dataSource">> := #{
 format_value(_, #{<<"identifier">> := Field}, _Props) ->
     ?LOG(info, "Field ~p", [Field]),
     throw({field_error, <<Field/binary, " is not validate">>}).
+
+%% 获取寄存器字节长度
+get_len(IntNum, <<"short16_AB">>) ->
+    IntNum * 2 * 8;
+
+get_len(IntNum, <<"short16_BA">>) ->
+    IntNum * 2 * 8;
+
+get_len(IntNum, <<"ushort16_AB">>) ->
+    IntNum * 2 * 8;
+
+get_len(IntNum, <<"ushort16_BA">>) ->
+    IntNum * 2 * 8;
+
+get_len(IntNum, <<"long32_ABCD">>) ->
+    IntNum * 4 * 8;
+
+get_len(IntNum, <<"long32_CDAB">>) ->
+    IntNum * 4 * 8;
+
+get_len(IntNum, <<"ulong32_ABCD">>) ->
+    IntNum * 4 * 8;
+
+get_len(IntNum, <<"ulong32_CDAB">>) ->
+    IntNum * 4 * 8;
+
+get_len(IntNum, <<"float32_ABCD">>) ->
+    IntNum * 4 * 8;
+
+get_len(IntNum, <<"float32_CDAB">>) ->
+    IntNum * 4 * 8;
+
+get_len(IntNum, _Originaltype) ->
+    IntNum * 2 * 8.
+
+get_addr(ChannelId, Min, Max, Step) ->
+    case dgiot_data:get_consumer(?consumer(ChannelId), Step) of
+        Value when (Value + Step) > Max ->
+            dgiot_data:set_consumer(?consumer(ChannelId), Min, Max),
+            Value - Step;
+        Value ->
+            Value - Step
+    end.
+
+set_addr(ChannelId, Min, Max) ->
+    dgiot_data:set_consumer(?consumer(ChannelId), Min, Max).

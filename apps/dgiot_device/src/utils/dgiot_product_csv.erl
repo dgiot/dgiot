@@ -20,6 +20,7 @@
 -include_lib("dgiot/include/logger.hrl").
 
 -export([test_read_csv/2, read_csv/1, get_products/1, create_product/3, create_device/3, post_thing/2, get_CategoryId/1, get_channelAcl/1]).
+-export([get_max_addrs/1]).
 
 %%  dgiot_product_csv:test_read_csv(<<"8f9eaf3720">>, <<"ruodian">>).
 test_read_csv(ChannelId, FileName) ->
@@ -29,12 +30,13 @@ test_read_csv(ChannelId, FileName) ->
     dgiot_product_csv:create_device(FileName, Devicemap, ProductIds),
     dgiot_product_csv:post_thing(FileName, ProductIds).
 
-%% dgiot_product_csv:read_csv(<<"ruodian">>)
+%% dgiot_product_csv:read_csv(<<"modbustcp">>)
 read_csv(FileName) ->
     {file, Here} = code:is_loaded(?MODULE),
     Dir = dgiot_httpc:url_join([filename:dirname(filename:dirname(Here)), "/priv/csv/"]),
     Name = dgiot_utils:to_list(FileName),
     AtomName = dgiot_utils:to_atom(FileName),
+    dgiot_data:init(AtomName),
     NewName =
         case filename:extension(Name) of
             [] ->
@@ -43,7 +45,6 @@ read_csv(FileName) ->
                 Name
         end,
     Path = Dir ++ NewName,
-    dgiot_data:init(AtomName),
     put(count, -1),
     Fun = fun(X) ->
         Count = get(count),
@@ -55,7 +56,8 @@ read_csv(FileName) ->
         end,
         put(count, Count + 1)
           end,
-    dgiot_utils:read_from_csv(Path, Fun).
+    dgiot_utils:read_from_csv(Path, Fun),
+    get_max_addrs(FileName).
 
 %%  ets:match(ruodian,{'_', ['$1', '_', <<"D6101">> | '_']}).
 get_products(FileName) ->
@@ -126,7 +128,7 @@ post_thing(FileName, Productids) ->
     AtomName = dgiot_utils:to_atom(FileName),
     maps:fold(fun(ProductId, {DeviceName, ProductName}, _Acc) ->
         Things = ets:match(AtomName, {'_', [ProductName, '_', '_', DeviceName, '_', '$1', '$2', '$3', '$4', '$5', '$6', '$7', '$8', '$9', '$10', '$11' | '_']}),
-        Properties = get_properties(Things),
+        Properties = get_properties(Things, AtomName, ProductId),
         dgiot_parse:update_object(<<"Product">>, ProductId, #{<<"thing">> => #{<<"properties">> => Properties}})
               end, [], Productids).
 
@@ -167,9 +169,10 @@ get_channelAcl(ChannelId) ->
             }
     end.
 
-get_properties(Things) ->
+get_properties(Things, AtomName, ProductId) ->
     lists:foldl(fun([Devicetype, Identifier, Name, Address, Bytes, AccessMode, Min_Max, Unit, Type, Operatetype, Originaltype | _], Propertie) ->
         {Min, Max} = get_min_max(Min_Max),
+        dgiot_data:insert(AtomName, {addr, Address}, ProductId),
         Propertie ++ [#{
             <<"name">> => Name,
             <<"index">> => 0,
@@ -217,6 +220,12 @@ get_properties(Things) ->
         }]
                 end, [], Things).
 
+get_max_addrs(FileName) ->
+    AtomName = dgiot_utils:to_atom(FileName),
+    Address = dgiot_utils:unique_1(lists:flatten(ets:match(AtomName, {'_', ['_', '_', '_', '_', '_', '_', '_', '_', '$1' | '_']}))),
+    Address1 = [dgiot_utils:to_int(X) || X <- Address],
+%%    dgiot_data:insert(AtomName, adds, Address1),
+    {lists:min(Address1), lists:max(Address1)}.
 
 to_lower(Value) ->
     list_to_binary(string:to_lower(binary_to_list(Value))).

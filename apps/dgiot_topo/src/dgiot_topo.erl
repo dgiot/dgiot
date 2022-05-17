@@ -80,9 +80,9 @@ get_name(ProductId, K, V) ->
 
 %% 发送实时卡片数据
 send_realtime_card(ProductId, DeviceId, Payload) ->
-    Base64 = dgiot_device_card:get_realtime_card(ProductId, DeviceId, Payload),
+    Data = dgiot_device_card:get_card(ProductId, [Payload], DeviceId, #{}),
     Pubtopic = <<"$dg/user/", DeviceId/binary, "/realtimecard/report">>,
-    dgiot_mqtt:publish(self(), Pubtopic, Base64).
+    dgiot_mqtt:publish(self(), Pubtopic, base64:encode(jsx:encode(#{<<"data">> => Data}))).
 
 %% 发送实时组态数据
 send_konva(ProductId, DeviceId, Payload) ->
