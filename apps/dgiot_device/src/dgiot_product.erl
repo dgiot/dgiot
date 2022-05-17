@@ -23,7 +23,7 @@
 -export([init_ets/0, load_cache/0, local/1, save/1, put/1, get/1, delete/1, save_prod/2, lookup_prod/1, get_keys/1, get_control/1, save_control/1]).
 -export([parse_frame/3, to_frame/2]).
 -export([create_product/1, create_product/2, add_product_relation/2, delete_product_relation/1]).
--export([get_prop/1, get_props/1, get_Props/2, get_unit/1, do_td_message/1, update_properties/2]).
+-export([get_prop/1, get_props/1, get_Props/2, get_unit/1, do_td_message/1, update_properties/2, update_properties/0]).
 
 init_ets() ->
     dgiot_data:init(?DGIOT_PRODUCT),
@@ -128,6 +128,7 @@ get_control(ProductId) ->
     end.
 
 update_properties(ProductId, Product) ->
+    io:format("~s ~p ProductId = ~p.~n", [?FILE, ?LINE, ProductId]),
     PropertiesTpl = dgiot_dlink:get_json(<<"properties_tpl">>),
     case dgiot_product:lookup_prod(ProductId) of
         {ok, #{<<"thing">> := #{<<"properties">> := Props} = Thing}} ->
@@ -140,10 +141,26 @@ update_properties(ProductId, Product) ->
             NewThing = Thing#{
                 <<"properties">> => NewProperties
             },
-            dgiot_parse:update_object(<<"Product">>, ProductId, #{<<"thing">> => NewThing}),
+            Message = dgiot_parse:update_object(<<"Product">>, ProductId, #{<<"thing">> => NewThing}),
+            io:format("~s ~p Message = ~p.~n", [?FILE, ?LINE, Message]),
             dgiot_data:insert(?DGIOT_PRODUCT, ProductId, Product#{<<"thing">> => NewThing});
         _Error ->
             []
+    end.
+
+update_properties() ->
+    case dgiot_parse:query_object(<<"Product">>, #{<<"skip">> => 0}) of
+        {ok, #{<<"results">> := Results}} ->
+            lists:foldl(fun(X, _Acc) ->
+                case X of
+                    #{<<"objectId">> := ProductId} ->
+                        update_properties(ProductId, X);
+                    _ ->
+                        pass
+                end
+                        end, #{}, Results);
+        _ ->
+            pass
     end.
 
 save_keys(ProductId) ->
