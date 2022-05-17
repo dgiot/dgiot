@@ -106,9 +106,9 @@ handle_info({deliver, _, Msg}, #tcp{state = #state{id = ChannelId} = State} = TC
     case jsx:is_json(Payload) of
         true ->
             case binary:split(Topic, <<$/>>, [global, trim]) of
-                [<<"profile">>, ProductId, DtuAddr] ->
+                [<<"$dg">>, <<"device">>, ProductId, DevAddr, <<"profile">>] ->
 %%                    设置参数
-                    Payloads = modbus_tcp:set_params(jsx:decode(Payload), ProductId, DtuAddr),
+                    Payloads = modbus_tcp:set_params(jsx:decode(Payload), ProductId, DevAddr),
                     lists:map(fun(X) ->
                         dgiot_tcp_server:send(TCPState, X)
                               end, Payloads),
@@ -157,7 +157,7 @@ handle_info({deliver, _, Msg}, #tcp{state = #state{id = ChannelId} = State} = TC
             end;
         false ->
             case binary:split(Topic, <<$/>>, [global, trim]) of
-                [<<"profile">>, ProductId, DevAddr] ->
+                [<<"$dg">>, <<"device">>, ProductId, DevAddr, <<"profile">>] ->
                     %% 设置参数
                     Payloads = modbus_tcp:set_params(jsx:decode(Payload), ProductId, DevAddr),
                     lists:map(fun(X) ->
