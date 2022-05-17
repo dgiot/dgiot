@@ -238,6 +238,14 @@ do_request(delete_roleuser, #{<<"userid">> := UserId} = Body, #{<<"sessionToken"
 do_request(post_roleuser, Body, #{<<"sessionToken">> := SessionToken} = _Context, _Req0) ->
     dgiot_parse_auth:post_roleuser(Body, SessionToken);
 
+do_request(get_usertree, _Arg, Context, _Req) ->
+    Data = dgiot_parse_auth:get_usertree(Context),
+    {ok, #{
+        <<"status">> => 0,
+        <<"msg">> => <<"ok">>,
+        <<"data">> => #{<<"options">> => [Data]}
+    }};
+
 %%  服务器不支持的API接口
 do_request(_OperationId, _Args, _Context, _Req) ->
     ?LOG(info, "_Args ~p", [_Args]),

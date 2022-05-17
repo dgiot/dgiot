@@ -97,14 +97,6 @@ do_request(post_dashboard, Arg, Context, _Req) ->
     Data = dgiot_dashboard:post_dashboard(Arg, Context),
     {200, Data};
 
-do_request(get_usertree, _Arg, Context, _Req) ->
-    Data = dgiot_bamis:usertree(Context),
-    {ok, #{
-        <<"status">> => 0,
-        <<"msg">> => <<"ok">>,
-        <<"data">> => #{<<"options">> => [Data]}
-    }};
-
 %%  服务器不支持的API接口
 do_request(_OperationId, _Args, _Context, _Req) ->
     ?LOG(info, "_OperationId:~p~n", [_OperationId]),
