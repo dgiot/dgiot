@@ -27,7 +27,8 @@
     delete/1,
     format/1,
     start_http/0,
-    usertree/1
+    usertree/1,
+    create_tree/2
 ]).
 
 -define(APP, ?MODULE).
@@ -155,7 +156,7 @@ usertree(#{<<"user">> := User}) ->
                                    end
                                                   end, [], RoleList
                                ),
-                               [T]=dgiot_bamis:create_tree(List, <<"parent">>),
+                               [T] = dgiot_bamis:create_tree(List, <<"parent">>),
                                RootUser = getuser(maps:get(<<"objectId">>, T)),
                                T#{<<"children">> => lists:append(maps:get(<<"children">>, T, []), RootUser)}
                            ;
@@ -186,6 +187,35 @@ getuser(RoleId) ->
                           end, [], UserList
     ),
     NewList.
+
+create_tree(Items, Parent) ->
+    NewItems = lists:foldl(
+        fun(#{<<"objectId">> := Id} = Item, Acc) ->
+            ParentId =
+                case maps:get(Parent, Item, no) of
+                    #{<<"objectId">> := PId} ->
+                        binary:replace(PId, <<" ">>, <<>>, [global]);
+                    _ ->
+                        <<"0">>
+                end,
+            Node = Item#{Parent => ParentId},
+            [{Id, ParentId, Node} | Acc]
+        end, [], Items),
+    Tree = lists:foldl(
+        fun({Id, PId, Node}, Acc) ->
+            case lists:keyfind(PId, 1, NewItems) of
+                false ->
+                    case dgiot_bamis:get_children(Id, NewItems) of
+                        [] ->
+                            [Node | Acc];
+                        Children ->
+                            [Node#{<<"children">> => Children} | Acc]
+                    end;
+                _ ->
+                    Acc
+            end
+        end, [], NewItems),
+    lists:sort(fun children_sort/2, Tree).
 
 %% 查询多个
 %%/**
