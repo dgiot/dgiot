@@ -333,6 +333,27 @@
           "Basic"
         ]
       }
+    },
+    "/update": {
+      "get": {
+        "description": "Parse表升级",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Returns instance data"
+          },
+          "404": {
+            "description": "object not found",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        },
+        "summary": "Parse表升级",
+        "tags": [
+          "Basic"
+        ]
+      }
     }
   }
 }

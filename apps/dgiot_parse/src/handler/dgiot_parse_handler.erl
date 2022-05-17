@@ -106,6 +106,10 @@ do_request(post_batch, Body, #{base_path := BasePath} = _Context, Req) ->
 do_request(get_health, _Body, _Context, Req) ->
     {200, #{<<"content-type">> => <<"text/plain">>}, <<"ok">>, Req};
 
+do_request(get_update, _Body, _Context, Req) ->
+    dgiot_parse:update(),
+    {200, #{<<"content-type">> => <<"text/plain">>}, <<"ok">>, Req};
+
 %%  服务器不支持的API接口
 do_request(_OperationId, _Args, _Context, _Req) ->
     ?LOG(debug, "_Args ~p", [_Args]),

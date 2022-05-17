@@ -35,7 +35,8 @@
     post_roleuser/2,
     get_roleuser/2,
     del_roleuser/2,
-    get_UserIds/1
+    get_UserIds/1,
+    get_usertree/1
 ]).
 -export([create_user/2, delete_user/2, put_user/2, disableusere/3, check_roles/1]).
 -export([login_by_account/2, login_by_token/2, login_by_mail_phone/1, do_login/1]).
@@ -965,3 +966,53 @@ get_value(_, []) -> false;
 get_value(Key, [{Key, Value}]) -> Value;
 get_value(Key, [Key | _]) -> Key;
 get_value(Key, [_ | L]) -> get_value(Key, L).
+
+get_usertree(#{<<"user">> := User}) ->
+    UserTree = case User of
+                   #{<<"roles">> := Roles} ->
+                       [RoleId] = maps:keys(Roles),
+                       ChildRoleIds = dgiot_role:get_childrole(RoleId),
+                       case dgiot_parse:query_object(<<"_Role">>, #{<<"where">> => #{<<"objectId">> => #{<<"$in">> => ChildRoleIds}}}) of
+                           {ok, #{<<"results">> := RoleList}} ->
+%%                               io:format("Result ~p ~n", [Result]),
+%%                               Roles = maps:get(<<"results">>, Result, []),
+                               List = lists:foldl(fun(X, Acc) ->
+                                   case X of
+                                       #{<<"objectId">> := ObjectId, <<"parent">> := Parent, <<"name">> := Name} ->
+                                           Acc ++ [#{<<"objectId">> => ObjectId, <<"parent">> => Parent, <<"label">> => Name}];
+                                       _ -> Acc
+                                   end
+                                                  end, [], RoleList
+                               ),
+                               [T] = dgiot_parse_utils:create_tree(List, <<"parent">>),
+                               RootUser = getuser(maps:get(<<"objectId">>, T)),
+                               T#{<<"children">> => lists:append(maps:get(<<"children">>, T, []), RootUser)}
+                           ;
+                           Other ->
+                               io:format("Other ~p ~n", [Other])
+                       end;
+                   _ ->
+                       pass
+
+               end,
+    UserTree.
+
+getuser(RoleId) ->
+    UserIds = dgiot_parse_auth:get_UserIds(RoleId),
+    UsersQuery =
+        #{<<"where">> => #{<<"objectId">> => #{<<"$in">> => UserIds}}},
+    UserList = case dgiot_parse:query_object(<<"_User">>, UsersQuery) of
+                   {ok, #{<<"results">> := Results}} ->
+                       Results;
+                   _ ->
+                       []
+               end,
+    NewList = lists:foldl(fun(X, Acc) ->
+        case X of
+            #{<<"nick">> := Nick, <<"objectId">> := ObjectId} ->
+                Acc ++ [#{<<"label">> => Nick, <<"value">> => #{<<"label">> => Nick, <<"objectId">> => ObjectId}}]
+        end
+                          end, [], UserList
+    ),
+    NewList.
+
