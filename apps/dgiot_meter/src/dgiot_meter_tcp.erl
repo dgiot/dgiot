@@ -236,7 +236,7 @@ handle_info({deliver, _Topic, Msg}, #tcp{state = #state{id = ChannelId, protocol
                             dgiot_tcp_server:send(TCPState, Payload1)
                     end,
                     {noreply, TCPState};
-                [<<"profile">>, ProductId, DevAddr] ->
+                [<<"$dg">>, <<"device">>, ProductId, DevAddr, <<"profile">>] ->
                     dgiot_umeng:send_message_to3D(ProductId, DevAddr, jsx:decode(Payload)),
                     case Protocol of
                         ?DLT376 ->
