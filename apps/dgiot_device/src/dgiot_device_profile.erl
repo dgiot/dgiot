@@ -27,7 +27,7 @@ post('after', _AfterData) ->
     ok.
 
 %% 配置下发
-put('before', #{<<"id">> := DeviceId, <<"profile">> := Profile} = Device) ->
+put('before', #{<<"id">> := DeviceId, <<"profile">> := UserProfile} = Device) ->
 %%    io:format("~s ~p Device = ~p.~n", [?FILE, ?LINE, _Device]),
     dgiot_device:save_profile(Device),
     case dgiot_device:lookup(DeviceId) of
@@ -41,15 +41,15 @@ put('before', #{<<"id">> := DeviceId, <<"profile">> := Profile} = Device) ->
                         <<"$dg/device/", ProductId/binary, "/", Devaddr/binary, "/profile">>
                 end,
 %%            io:format("~s ~p ProfileTopic = ~p.~n", [?FILE, ?LINE, ProfileTopic]),
-            dgiot_mqtt:publish(DeviceId, ProfileTopic, jsx:encode(Profile));
+            dgiot_mqtt:publish(DeviceId, ProfileTopic, jsx:encode(UserProfile));
         _ ->
             pass
     end;
 
 
-put('after', #{<<"id">> := DeviceId, <<"profile">> := Profile}) ->
-%%    io:format("~s ~p DeviceId ~p  Profile = ~p.~n", [?FILE, ?LINE, DeviceId, Profile]),
-    dgiot_data:insert(?DEVICE_PROFILE, DeviceId, Profile);
+put('after', #{<<"id">> := DeviceId, <<"profile">> := UserProfile}) ->
+%%    io:format("~s ~p DeviceId ~p  Profile = ~p.~n", [?FILE, ?LINE, DeviceId, UserProfile]),
+    dgiot_data:insert(?DEVICE_PROFILE, DeviceId, UserProfile);
 
 put('after', _Device) ->
     ok.
@@ -60,13 +60,13 @@ delete('after', #{<<"objectId">> := DtuId}, _ProductId) ->
     dgiot_task:del_pnque(DtuId).
 
 %% 配置同步
-publish(ProductId, DeviceAddr, Profile) ->
-    publish(ProductId, DeviceAddr, Profile, 2).
+publish(ProductId, DeviceAddr, DeviceProfile) ->
+    publish(ProductId, DeviceAddr, DeviceProfile, 2).
 
-publish(ProductId, DeviceAddr, Profile, Delay) ->
+publish(ProductId, DeviceAddr, DeviceProfile, Delay) ->
     case dgiot_data:get({profile, channel}) of
         not_find ->
             pass;
         ChannelId ->
-            dgiot_channelx:do_message(ChannelId, {sync_profile, self(), ProductId, DeviceAddr, Profile, Delay})
+            dgiot_channelx:do_message(ChannelId, {sync_profile, self(), ProductId, DeviceAddr, DeviceProfile, Delay})
     end.

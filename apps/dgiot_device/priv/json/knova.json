@@ -23,30 +23,6 @@
             },
             {
               "attrs": {
-                "x": 323,
-                "y": 84.95900920567532,
-                "id": "f9dddd0eeb_amisBMK8t",
-                "name": "amis",
-                "opacity": 0.75,
-                "draggable": true
-              },
-              "children": [],
-              "className": "Label"
-            },
-            {
-              "attrs": {
-                "x": 547,
-                "y": 264,
-                "id": "f9dddd0eeb_texthsl01",
-                "name": "thing",
-                "opacity": 0.75,
-                "draggable": true
-              },
-              "children": [],
-              "className": "Label"
-            },
-            {
-              "attrs": {
                 "x": 482,
                 "y": 157,
                 "id": "f9dddd0eeb_textZGRWA",

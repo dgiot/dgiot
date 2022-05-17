@@ -125,24 +125,28 @@ handle_event(_EventId, _Event, State) ->
     {ok, State}.
 
 %% todo 定时自动同步，不太好判断，通过采集通道里，通过设备登录时，检查状态来进行配置同步
-handle_message({sync_profile, _Pid, ProductId, DeviceAddr, Profile, Delay}, State) ->
+handle_message({sync_profile, _Pid, ProductId, DeviceAddr, DeviceProfile, Delay}, State) ->
 %%    io:format("~s ~p ~p ~p ~p ~p ~p ~n", [?FILE, ?LINE, Pid, ProductId, DeviceAddr, Profile, Delay]),
     DeviceId = dgiot_parse_id:get_deviceid(ProductId, DeviceAddr),
-    maps:fold(fun(Id, Control, Count) ->
-        case maps:find(Id, Profile) of
-            {ok, DeviceConfig} ->
-                StringDeviceConfig = dgiot_utils:to_list(DeviceConfig),
-                case dgiot_device:get_profile(DeviceId, Control) of
+    maps:fold(fun(DeviceProfileKey, UserProfileKey, Count) ->
+        case maps:find(DeviceProfileKey, DeviceProfile) of
+            {ok, DeviceProfileValue} ->
+                case dgiot_device:get_profile(DeviceId, UserProfileKey) of
                     not_find ->
                         Count;
-                    DeviceConfig ->
+                    DeviceProfileValue ->
                         Count;
-                    StringDeviceConfig -> %% 用字符串的值比较一下，不下发
-                        Count;
-                    UserCOnfig ->
-                        RealDelay = Delay * timer:seconds(Count),
-                        erlang:send_after(RealDelay, self(), {send_profile, DeviceId, #{Control => UserCOnfig}}),
-                        Count + 1
+                    UserProfileValue ->
+                        NewUserProfileValue = dgiot_utils:trim_string(dgiot_utils:to_list(UserProfileValue)),
+                        NewDeviceProfileValue = dgiot_utils:trim_string(dgiot_utils:to_list(DeviceProfileValue)),
+                        case NewDeviceProfileValue of
+                            NewUserProfileValue ->
+                                RealDelay = Delay * timer:seconds(Count),
+                                erlang:send_after(RealDelay, self(), {send_profile, DeviceId, #{UserProfileKey => UserProfileValue}}),
+                                Count + 1;
+                            _ ->
+                                Count
+                        end
                 end
         end
               end, 1, dgiot_product:get_control(ProductId)),
