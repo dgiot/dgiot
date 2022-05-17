@@ -361,3 +361,8 @@ get_Product_konva() ->
         _ ->
             pass
     end.
+
+%%update_konva(PdocuctId) ->
+%%    Amis = dgiot_utils:get_JsonFile(?MODULE, <<"knova.json">>),
+%%    Keys = dgiot_product:get_keys(PdocuctId)
+%%.
