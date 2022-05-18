@@ -419,8 +419,9 @@ save_td(ProductId, DevAddr, Ack, _AppData) ->
             Keys = dgiot_product:get_keys(ProductId),
             DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
             AllData = merge_cache_data(DeviceId, NewData),
-            case Keys -- maps:keys(AllData) of
-                List when length(List) == 0 andalso length(AllData) =/= 0 ->
+            AllDataKey = maps:keys(AllData),
+            case Keys -- AllDataKey of
+                List when length(List) == 0 andalso length(AllDataKey) =/= 0 ->
                     ChannelId = dgiot_parse_id:get_channelid(dgiot_utils:to_binary(?BRIDGE_CHL), <<"DGIOTTOPO">>, <<"TOPO组态通道"/utf8>>),
                     dgiot_channelx:do_message(ChannelId, {topo_thing, ProductId, DeviceId, AllData}),
                     dgiot_tdengine_adapter:save(ProductId, DevAddr, AllData),
