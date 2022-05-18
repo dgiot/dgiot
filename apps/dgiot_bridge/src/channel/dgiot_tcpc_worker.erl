@@ -32,6 +32,7 @@
 }).
 
 start_connect(#{
+    <<"channelid">> := ChannelId,
     <<"auto_reconnect">> := Recon,
     <<"reconnect_times">> := ReTimes,
     <<"port">> := Port,
@@ -41,6 +42,7 @@ start_connect(#{
     <<"devaddr">> := DevAddr
 }) ->
     State = #state{
+        id = ChannelId,
         productid = ProductId,
         devaddr = DevAddr,
         hb = HB

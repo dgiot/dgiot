@@ -23,7 +23,7 @@
 -export([init_ets/0]).
 
 %% API
--export([start/0, start_channel/2, register_channel/2, get_behaviour/1, start_channel/3, do_global_message/1]).
+-export([start/0, start_channel/2, start_channel/3, register_channel/2, get_behaviour/1, do_global_message/1]).
 -export([get_product_info/1, get_products/1, get_acl/1, apply_channel/5, apply_product/3, parse_frame/3, to_frame/3]).
 -export([get_data/2, send_log/3, send_log/4, send_log/5]).
 -export([get_all_channel/0, control_channel/2, list/0, get_proctol_channel/1]).
@@ -32,6 +32,7 @@ init_ets() ->
     dgiot_data:init(?DGIOT_BRIDGE),
     dgiot_data:init(?DGIOT_RUlES),
     dgiot_data:init(?DGIOT_PRODUCT_CHANNEL),
+    dgiot_data:init(?DGIOT_CHANNEL_CLIENT),
     register_all_channel(),
     dgiot_hook:add(<<"global/dgiot">>, fun ?MODULE:do_global_message/1),
     proc_lib:spawn_link(
@@ -193,7 +194,6 @@ get_data(ProductId, DevAddr) ->
 %%====================================================================
 %% Internal functions
 %%====================================================================
-
 is_send_log(ChannelId, ProductId, DevAddr, Fun) ->
     Now = dgiot_datetime:nowstamp(),
     case dgiot_data:lookup(?DGIOT_BRIDGE, {ChannelId, log}) of
