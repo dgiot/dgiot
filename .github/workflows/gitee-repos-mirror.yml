@@ -37,4 +37,4 @@ jobs:
         timeout: '1h'
         debug: true
         force_update: true
-          static_list: "dgiot" # 只同步这个项目 https://github.com/Yikun/hub-mirror-action#%E9%BB%91%E7%99%BD%E5%90%8D%E5%8D%95
+        static_list: "dgiot" # 只同步这个项目 https://github.com/Yikun/hub-mirror-action#%E9%BB%91%E7%99%BD%E5%90%8D%E5%8D%95
