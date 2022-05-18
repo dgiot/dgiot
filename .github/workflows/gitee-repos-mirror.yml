@@ -9,12 +9,11 @@ on:
 
 jobs:
   build:
-
+    name: Gitee repos mirror periodic job
     runs-on: ubuntu-latest
-
     steps:
 
-    - name: Mirror the Github organization repos to Gitee.
+    - name: dgiot
       uses: Yikun/hub-mirror-action@v1.0
       with:
         src: github/dgiot
@@ -26,3 +25,16 @@ jobs:
         debug: true
         force_update: true
         black_list: "issue-generator,dgiot-dashboard"
+
+    - name: fastdgiot
+      uses: Yikun/hub-mirror-action@v1.0
+      with:
+        src: github/dgiot
+        dst: gitee/fastdgiot
+        dst_key: ${{ secrets.PRIVATE_KEY }}
+        dst_token:  ${{ secrets.TOKEN }}
+        account_type: org
+        timeout: '1h'
+        debug: true
+        force_update: true
+          static_list: "dgiot" # 只同步这个项目 https://github.com/Yikun/hub-mirror-action#%E9%BB%91%E7%99%BD%E5%90%8D%E5%8D%95
