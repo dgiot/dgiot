@@ -1,0 +1,155 @@
+{
+  "type": "page",
+  "body": [
+    {
+      "tabs": [
+        {
+          "body": [
+            {
+              "api": {
+                "url": "iotapi/classes/Device",
+                "method": "post",
+                "requestAdaptor": "return {\r\n    ...api,\r\n    data:{\r\n    \"name\":api.data.name,\r\n    \"devaddr\":api.data.name,\r\n    \"address\":api.data.profile.info.location.address || \"\",\r\n    \"location\":{\r\n        \"__type\":\"GeoPoint\",\r\n        \"latitude\":api.data.profile.info.location.lat,\r\n        \"longitude\":api.data.profile.info.location.lng,\r\n        },\r\n    \"detail\":api.data.profile.info.location,\r\n    \"ACL\":{\"role:开发者\":{\"read\":true,\"write\":true}},\r\n    \"product\":{\"__type\":\"Pointer\",\"className\":\"Product\",\"objectId\":\"5804cbd375\"},\r\n    \"profile\":api.data.profile.info,\r\n    \"route\":{},\r\n    \"isEnable\":true\r\n    }\r\n}"
+              },
+              "body": [
+                {
+                  "mode": "horizontal",
+                  "name": "name",
+                  "type": "input-text",
+                  "label": "任务名称",
+                  "required": true,
+                  "placeholder": "请输入任务名称"
+                },
+                {
+                  "mode": "horizontal",
+                  "name": "profile.info.remarks",
+                  "type": "input-text",
+                  "label": "备注信息",
+                  "description": "",
+                  "placeholder": "备注信息"
+                },
+                {
+                  "mode": "horizontal",
+                  "name": "profile.info.startTime",
+                  "type": "input-date",
+                  "label": "开始时间",
+                  "value": "now",
+                  "required": true,
+                  "placeholder": "请选择开始时间"
+                },
+                {
+                  "mode": "horizontal",
+                  "name": "profile.info.endTime",
+                  "type": "input-date",
+                  "label": "结束时间",
+                  "value": "+7day",
+                  "placeholder": "请选择结束时间"
+                },
+                {
+                  "mode": "horizontal",
+                  "name": "profile.info.server",
+                  "type": "select",
+                  "label": "压测服务器",
+                  "value": "zetag",
+                  "options": [
+                    {
+                      "label": "zetag",
+                      "value": "zetag"
+                    },
+                    {
+                      "label": "zeta",
+                      "value": "zeta"
+                    }
+                  ],
+                  "checkAll": false,
+                  "required": true,
+                  "placeholder": "请选择压测服务器"
+                },
+                {
+                  "mode": "horizontal",
+                  "name": "profile.info.version",
+                  "type": "select",
+                  "label": "版本号",
+                  "value": "1.9",
+                  "options": [
+                    {
+                      "label": "1.9",
+                      "value": "1.9"
+                    },
+                    {
+                      "label": "2.0",
+                      "value": "2.0"
+                    }
+                  ],
+                  "checkAll": false,
+                  "required": true,
+                  "placeholder": "请选择版本号"
+                },
+                {
+                  "mode": "horizontal",
+                  "name": "profile.info.target",
+                  "type": "select",
+                  "label": "压测指标",
+                  "value": "2",
+                  "options": [
+                    {
+                      "label": "1",
+                      "value": "1"
+                    },
+                    {
+                      "label": "2",
+                      "value": "2"
+                    }
+                  ],
+                  "checkAll": false,
+                  "required": true,
+                  "placeholder": ""
+                },
+                {
+                  "mode": "horizontal",
+                  "name": "profile.info.intent",
+                  "type": "select",
+                  "label": "压测目标",
+                  "value": "4",
+                  "options": [
+                    {
+                      "label": "3",
+                      "value": "3"
+                    },
+                    {
+                      "label": "4",
+                      "value": "4"
+                    }
+                  ],
+                  "checkAll": false,
+                  "required": true,
+                  "placeholder": "请选择压测目标"
+                },
+                {
+                  "ak": "fnc5Z92jC7CwfBGz8Dk66E9sXEIYZ6TG",
+                  "mode": "horizontal",
+                  "name": "profile.info.location",
+                  "type": "location-picker",
+                  "label": "位置",
+                  "required": true,
+                  "coordinatesType": "gcj02"
+                }
+              ],
+              "mode": "inline",
+              "type": "form",
+              "title": "表单",
+              "messages": {
+                "saveFailed": "压测任务新增失败",
+                "fetchFailed": "初始化失败",
+                "saveSuccess": "压测任务新增成功"
+              }
+            }
+          ],
+          "title": "新增压测任务"
+        }
+      ],
+      "type": "tabs",
+      "subFormMode": ""
+    }
+  ]
+}
