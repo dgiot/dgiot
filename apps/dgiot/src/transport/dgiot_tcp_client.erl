@@ -58,7 +58,7 @@ start_link(Name, Mod, Host, Port, ReconnectTimes, ReconnectSleep, Args) ->
 
 
 init([#state{mod = Mod} = State, Args]) ->
-    ?LOG(info,"Args ~p ",[Args]),
+    ?LOG(info,"Mod ~p Args ~p ",[Mod, Args]),
     Transport = gen_tcp,
     Child = #tcp{transport = Transport, socket = undefined},
     case Mod:init(Child#tcp{state = Args}) of

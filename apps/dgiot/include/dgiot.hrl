@@ -35,5 +35,5 @@
     cowlib, epgsql, erlydtl, websocket_client,esockd,gen_coap,
     gen_rpc,getopt, goldrush, gpb,gproc,gun,jiffy,luerl,lwm2m_coap,
     minirest,mysql,prometheus,recon,rulesql,ssl_verify_fun,
-    ekka,ibrowse
+    ekka,ibrowse,grpc,hut,emqx,ehttpc,ejdbc
 ]).

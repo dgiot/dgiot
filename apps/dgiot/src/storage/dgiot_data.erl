@@ -63,7 +63,6 @@ search_data() ->
 init() ->
     init(?CONSUMER),
     init(?DB),
-    init(?DGIOT_CRON),
     init(?CRON_DB).
 
 init(Name) ->
@@ -155,7 +154,7 @@ values(Name, Key) ->
     end.
 
 keys(Name) ->
-    lists:flatten(ets:match(Name,{'$1','_'})).
+    lists:flatten(ets:match(Name, {'$1', '_'})).
 
 get(Key) ->
     get(?DB, Key).

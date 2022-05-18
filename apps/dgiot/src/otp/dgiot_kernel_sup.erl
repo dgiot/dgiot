@@ -26,33 +26,17 @@ start_link() ->
     supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
 init([]) ->
-    {ok, {{one_for_one, 10, 100},
-        [child_spec(dgiot_global_gc, worker),
-            child_spec(dgiot_node, worker),
-            child_spec(dgiot_pool_sup, supervisor),
-            child_spec(dgiot_hooks, worker),
-            child_spec(dgiot_stats, worker),
-            child_spec(dgiot_cache_sup, supervisor, []),
-            child_spec(dgiot_cron_sup, supervisor, []),
-            child_spec(dgiot_ctl, worker)]}}.
-
-child_spec(M, Type) ->
-    child_spec(M, Type, []).
-
-child_spec(M, worker, Args) ->
-    #{id => M,
-        start => {M, start_link, Args},
-        restart => permanent,
-        shutdown => 5000,
-        type => worker,
-        modules => [M]
-    };
-
-child_spec(M, supervisor, Args) ->
-    #{id => M,
-        start => {M, start_link, Args},
-        restart => permanent,
-        shutdown => infinity,
-        type => supervisor,
-        modules => [M]
+    {ok, {
+        {one_for_one, 10, 100},
+        [
+            dgiot:child_spec(dgiot_global_gc, worker),
+            dgiot:child_spec(dgiot_node, worker),
+            dgiot:child_spec(dgiot_pool_sup, supervisor),
+            dgiot:child_spec(dgiot_hooks, worker),
+            dgiot:child_spec(dgiot_stats, worker),
+            dgiot:child_spec(dgiot_cache_sup, supervisor, []),
+            dgiot:child_spec(dgiot_cron_sup, supervisor, []),
+            dgiot:child_spec(dgiot_ctl, worker)
+        ]
+    }
     }.

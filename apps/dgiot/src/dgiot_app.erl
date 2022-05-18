@@ -30,6 +30,7 @@ start(_StartType, _StartArgs) ->
     start_mnesia(),
     dgiot:init_plugins(),
     {ok, Sup} = dgiot_sup:start_link(),
+    dgiot_cron_timer:start(),
     start_plugin(Sup),
     dgiot_pushgateway:start_link(),
     {ok, Sup}.
