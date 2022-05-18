@@ -41,8 +41,10 @@
     get_schemas/1,
     get_schemas/2,
     create_schemas/1,
+    create_schemas/2,
     update_schemas/1,
     del_schemas/1,
+    del_schemas/2,
     set_class_level/2,
     query_object/2,
     query_object/3,
@@ -71,8 +73,13 @@
 
 update() ->
 %%    物模型更新
-%%    dgiot_product:update_properties()
+    dgiot_product:update_properties(),
 %%    表及其字段更新
+%%    topics更新
+    dgiot_product:update_topics(),
+%%    产品字段新增
+%%  适配https://gitee.com/dgiiot/dgiot/issues/I583AD
+    dgiot_product:update_product_filed(#{<<"profile">> => #{}, <<"content">> => #{}}),
 %%    菜单更新
 %%    API更新
     ok.
@@ -151,7 +158,10 @@ update_schemas(Name, #{<<"className">> := Class} = Fields) ->
 %% 删除表结构
 del_schemas(Class) ->
     del_schemas(?DEFAULT, Class).
+%% 下面好像有点问题。待解决、
 del_schemas(Name, Class) ->
+    io:format("~s ~p ~p ~n", [?FILE, ?LINE, Name]),
+    io:format("~s ~p ~p ~n", [?FILE, ?LINE, Class]),
     Path = <<"/schemas/", Class/binary>>,
     request_rest(Name, 'DELETE', [], Path, #{}, [{from, master}]).
 
@@ -408,6 +418,12 @@ format_value(_Class, _Key, Value) ->
 
 %% Rest请求
 request_rest(Name, Method, Header, Path, Body, Options) ->
+%%    io:format("~s ~p ~p ~n", [?FILE, ?LINE, Name]),
+%%    io:format("~s ~p ~p ~n", [?FILE, ?LINE, Method]),
+%%    io:format("~s ~p ~p ~n", [?FILE, ?LINE, Header]),
+%%    io:format("~s ~p ~p ~n", [?FILE, ?LINE, Path]),
+%%    io:format("~s ~p ~p ~n", [?FILE, ?LINE, Body]),
+%%    io:format("~s ~p ~p ~n", [?FILE, ?LINE, Options]),
     handle_response(request(Name, Method, Header, Path, Body, Options)).
 request(Method, Header, Path, Options) ->
     request(Method, Header, Path, <<>>, Options).

@@ -24,6 +24,8 @@
 -export([parse_frame/3, to_frame/2]).
 -export([create_product/1, create_product/2, add_product_relation/2, delete_product_relation/1]).
 -export([get_prop/1, get_props/1, get_Props/2, get_unit/1, do_td_message/1, update_properties/2, update_properties/0]).
+-export([update_topics/0, update_product_filed/1]).
+
 
 init_ets() ->
     dgiot_data:init(?DGIOT_PRODUCT),
@@ -161,6 +163,42 @@ update_properties() ->
         _ ->
             pass
     end.
+
+%% 更新topics
+update_topics() ->
+    {ok, #{<<"fields">> := Fields}} = dgiot_parse:get_schemas(<<"Product">>),
+    #{<<"type">> := Type} = maps:get(<<"topics">>, Fields),
+    case Type of
+        <<"Object">> ->
+%% 判断目前topics 是那种类型，如果是object类型，就不更新
+%% 删除原有topics字段
+            case dgiot_parse:del_schemas(<<"topics">>, <<"Product">>) of
+                {ok, _} ->
+                    %%  新增topics字段
+                    dgiot_parse:create_schemas(<<"Product">>, #{<<"topics">> => []});
+                Err ->
+                    io:format("~s ~p ~p ~n", [?FILE, ?LINE, Err])
+            end;
+        _ -> pass
+    end.
+
+%% 产品字段新增
+update_product_filed(_Filed) ->
+    case dgiot_parse:query_object(<<"Product">>, #{<<"skip">> => 0}) of
+        {ok, #{<<"results">> := Results}} ->
+            lists:foldl(fun(X, _Acc) ->
+                case X of
+                    #{<<"objectId">> := ProductId} ->
+                        update_properties(ProductId, X);
+                    _ ->
+                        pass
+                end
+                        end, #{}, Results);
+        _ ->
+            pass
+    end.
+
+
 
 save_keys(ProductId) ->
     Keys =
