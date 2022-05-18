@@ -14,9 +14,6 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 -author("johnliu").
-
--define(DGIOT_CRON, dgiot_cron).
-
--define(DEFAULT_CRON, default_cron).
 -define(CRON_DB, dgiot_base_cron).
--define(CRON_NAME(Name), dgiot_utils:to_atom(lists:concat([dgiot_utils:to_atom(Name), "cron"]))).
+-define(DGIOT_TIMER, dgiot_timer).
+-define(CRON_NAME(Name), dgiot_utils:to_atom(lists:concat([dgiot_utils:to_atom(Name), "_cron"]))).

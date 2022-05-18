@@ -17,7 +17,7 @@
 -module(dgiot).
 -author("johnliu").
 -include("dgiot.hrl").
--export([get_env/1,get_env/2, get_env/3, init_plugins/0, child_spec/2]).
+-export([get_env/1,get_env/2, get_env/3, init_plugins/0, child_spec/2, child_spec/3]).
 
 %%--------------------------------------------------------------------
 %% API
@@ -46,24 +46,27 @@ init_plugins() ->
              _ ->   Acc
         end
         end,?SYS_APP,ekka_boot:all_module_attributes(dgiot_plugin)),
-    dgiot_data:insert({dgiot,sys_app},SysApp).
+    dgiot_data:insert({dgiot, sys_app}, SysApp).
 
+child_spec(M, Type) ->
+    child_spec(M, Type, []).
 
+child_spec(M, worker, Args) ->
+    #{
+        id => M,
+        start => {M, start_link, Args},
+        restart => permanent,
+        shutdown => 5000,
+        type => worker,
+        modules => [M]
+    };
 
-child_spec(Mod, supervisor) ->
-    #{id => Mod,
-        start => {Mod, start_link, []},
+child_spec(M, supervisor, Args) ->
+    #{
+        id => M,
+        start => {M, start_link, Args},
         restart => permanent,
         shutdown => infinity,
         type => supervisor,
-        modules => [Mod]
-    };
-
-child_spec(Mod, worker) ->
-    #{id => Mod,
-        start => {Mod, start_link, []},
-        restart => permanent,
-        shutdown => 15000,
-        type => worker,
-        modules => [Mod]
+        modules => [M]
     }.

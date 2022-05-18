@@ -24,9 +24,8 @@
 %% @end
 
 -module(dgiot_cron_sup).
-
+-include("dgiot_cron.hrl").
 -behaviour(supervisor).
-
 %% API
 -export([start_link/0]).
 
@@ -45,5 +44,7 @@ start_link() ->
 %% ===================================================================
 
 init([]) ->
-    Children = [{dgiot_cron_woker,{dgiot_cron_woker, start_link, []}, transient, infinity, worker, [dgiot_cron_woker]}],
-    {ok, { {simple_one_for_one, 5, 10}, Children} }.
+    Children = [
+        dgiot:child_spec(dgiot_cron_worker, worker)
+    ],
+    {ok, {{simple_one_for_one, 5, 10}, Children}}.
