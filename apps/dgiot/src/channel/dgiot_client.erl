@@ -33,6 +33,8 @@ register(ChannelId, Sup, State) ->
     end,
     set_consumer(ChannelId, 100),
     dgiot_data:init(?DGIOT_CLIENT(ChannelId)),
+    dgiot_data:delete({start_client, ChannelId}),
+    dgiot_data:delete({stop_client, ChannelId}),
     ChildSpec = dgiot:child_spec(Sup, supervisor, [?DGIOT_CLIENT(ChannelId)]),
     [ChildSpec].
 
@@ -130,4 +132,7 @@ add_clock(Channel, Start_time, End_time) ->
     dgiot_cron:push(<<Channel/binary,"_stop">>, dgiot_datetime:to_localtime(End_time),   {?MODULE, notify, [Channel, stop_client]}).
 
 notify(_Task, Channel, Type) ->
-    dgiot_channelx:do_message(Channel, Type).
+    dgiot_channelx:do_message(Channel, Type),
+    timer:sleep(50),
+    dgiot_data:insert({Type,Channel}, Type).
+
