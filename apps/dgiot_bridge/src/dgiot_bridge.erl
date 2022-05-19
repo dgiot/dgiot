@@ -354,6 +354,7 @@ control_channel(ChannelId, Action) ->
                             true ->
                                 {true, <<"port conflict">>};
                             _ ->
+                                dgiot_mqtt:publish(ChannelId, Topic, Payload),
                                 {true, <<"success">>}
                         end;
                     _ ->

@@ -26,17 +26,13 @@
 -record(state, {
     id,
     buff_size = 1024000,
-    devaddr = <<>>,
     heartcount = 0,
     head = "xxxxxx0eee",
     len = 0,
-    app = <<>>,
-    product = <<>>,
-    deviceId = <<>>,
     env = #{},
     dtutype = <<>>,
-    module = dgiot_tcp,
-    productid = <<>>
+    productIds = <<>>,
+    productId = <<>>
 }).
 
 %% API
@@ -94,22 +90,6 @@
             zh => <<"控制器厂商与设备类型一起组合生成产品ID"/utf8>>
         }
     },
-    <<"module">> => #{
-        order => 4,
-        type => enum,
-        required => true,
-        default => <<"dgiot_iptalk"/utf8>>,
-        enum => [
-            #{<<"value">> => <<"dgiot_tcp">>, <<"label">> => <<"dgiot_tcp"/utf8>>},
-            #{<<"value">> => <<"dgiot_iptalk">>, <<"label">> => <<"dgiot_iptalk"/utf8>>}
-        ],
-        title => #{
-            zh => <<"回调模块"/utf8>>
-        },
-        description => #{
-            zh => <<"回调模块,解码模块"/utf8>>
-        }
-    },
     <<"ico">> => #{
         order => 102,
         type => string,
@@ -134,8 +114,7 @@ start(ChannelId, ChannelArgs) ->
 init(?TYPE, ChannelId, #{
     <<"port">> := Port,
     <<"login">> := Login,
-    <<"dtutype">> := Dtutype,
-    <<"module">> := Module
+    <<"dtutype">> := Dtutype
 } = Args) ->
     {Header, Len} = get_header(Login),
     State = #state{
@@ -143,7 +122,6 @@ init(?TYPE, ChannelId, #{
         head = Header,
         len = Len,
         dtutype = Dtutype,
-        module = dgiot_utils:to_atom(Module),
         buff_size = maps:get(<<"buff_size">>, Args, 1024000)
     },
     {ok, State, dgiot_tcp_worker:child_spec(Port, State)}.
