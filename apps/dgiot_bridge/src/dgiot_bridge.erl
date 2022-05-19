@@ -32,7 +32,6 @@ init_ets() ->
     dgiot_data:init(?DGIOT_BRIDGE),
     dgiot_data:init(?DGIOT_RUlES),
     dgiot_data:init(?DGIOT_PRODUCT_CHANNEL),
-    dgiot_data:init(?DGIOT_CHANNEL_CLIENT),
     register_all_channel(),
     dgiot_hook:add(<<"global/dgiot">>, fun ?MODULE:do_global_message/1),
     proc_lib:spawn_link(
@@ -67,7 +66,6 @@ parse_frame(ProductId, Bin, State) ->
 
 to_frame(ProductId, Msg, State) ->
     apply_product(ProductId, to_frame, [Msg, State]).
-
 
 %% 对产品编码器依次调用
 apply_channel(_ChannelId, [], _Fun, _Args, Env) ->

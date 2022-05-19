@@ -14,19 +14,21 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
--module(dgiot_bridge_client).
+-module(dgiot_client).
 -author("kenneth").
--include("dgiot_bridge.hrl").
+-include("dgiot.hrl").
 -include_lib("dgiot/include/logger.hrl").
 
 %% API
--export([get_client/2, start_client/1, start_client/2, stop_client/2, restart_client/2, save_client/3, stop_clients/1, check_init/1, set_consumer/2, get_consumer/1]).
+-export([get_client/2, start_client/1, start_client/2, stop_client/2, restart_client/2, save_client/3, stop_clients/1, register/4, set_consumer/2, get_consumer/1]).
+
+-export([add_clock/3]).
 
 stop_clients(ChannelId) ->
     stop_pid(ChannelId).
 
 stop_pid(ChannelId) ->
-    case ets:info(ChannelId) of
+    case ets:info(?DGIOT_CLIENT(ChannelId)) of
         undefined ->
             pass;
         _ ->
@@ -37,12 +39,12 @@ stop_pid(ChannelId) ->
                     (_) ->
                         pass
                 end,
-            dgiot_data:loop(ChannelId, Fun),
-            dgiot_data:clear(ChannelId)
+            dgiot_data:loop(?DGIOT_CLIENT(ChannelId), Fun),
+            dgiot_data:clear(?DGIOT_CLIENT(ChannelId))
     end.
 
 get_client(ChannelId, ClientId) ->
-    case dgiot_data:get(ChannelId, ClientId) of
+    case dgiot_data:get(?DGIOT_CLIENT(ChannelId), ClientId) of
         Pid when is_pid(Pid) ->
             case is_process_alive(Pid) of
                 true ->
@@ -59,13 +61,13 @@ start_client(#{<<"channel">> := ChannelId} = State, Module) ->
     start_client(State).
 
 start_client(#{<<"channel">> := ChannelId, <<"client">> := Client} = State) ->
-    case dgiot_data:lookup(ChannelId, Client) of
+    case dgiot_data:lookup(?DGIOT_CLIENT(ChannelId), Client) of
         {ok, Pid} when is_pid(Pid) ->
             case is_process_alive(Pid) of
                 true ->
                     ok;
                 false ->
-                    case dgiot_data:get(?DGIOT_CHANNEL_CLIENT, ChannelId) of
+                    case dgiot_data:get(?DGIOT_CLIENT(ChannelId), ChannelId) of
                         {Module, State} ->
                             gen_server:start_link(Module, [State], []);
                         _ ->
@@ -73,7 +75,7 @@ start_client(#{<<"channel">> := ChannelId, <<"client">> := Client} = State) ->
                     end
             end;
         _Reason ->
-            case dgiot_data:get(?DGIOT_CHANNEL_CLIENT, ChannelId) of
+            case dgiot_data:get(?DGIOT_CLIENT(ChannelId), ChannelId) of
                 {Module, State} ->
                     gen_server:start_link(Module, [State], []);
                 _ ->
@@ -85,7 +87,7 @@ start_client(_State) ->
     ok.
 
 restart_client(ChannelId, ClientId) ->
-    case dgiot_data:get(ChannelId, ClientId) of
+    case dgiot_data:get(?DGIOT_CLIENT(ChannelId), ClientId) of
         Pid when is_pid(Pid) ->
             case is_process_alive(Pid) of
                 true ->
@@ -98,72 +100,60 @@ restart_client(ChannelId, ClientId) ->
     end.
 
 stop_client(ChannelId, ClientId) ->
-    case dgiot_data:lookup(ChannelId, ClientId) of
+    case dgiot_data:lookup(?DGIOT_CLIENT(ChannelId), ClientId) of
         {ok, Pid} when is_pid(Pid) ->
             is_process_alive(Pid) andalso gen_server:call(Pid, stop, 5000);
         _ ->
             ok
     end,
-    dgiot_data:delete(ChannelId, ClientId).
+    dgiot_data:delete(?DGIOT_CLIENT(ChannelId), ClientId).
 
 save_client(ChannelId, Module, State) ->
-    case dgiot_data:get(?DGIOT_CHANNEL_CLIENT, ChannelId) of
+    case dgiot_data:get(?DGIOT_CLIENT(ChannelId), module_state) of
         not_find ->
-            dgiot_data:insert(?DGIOT_CHANNEL_CLIENT, ChannelId, {Module, State});
+            dgiot_data:insert(?DGIOT_CLIENT(ChannelId), {Module, State});
         _ ->
             pass
     end.
 
 restart_client_(ChannelId, ClientId) ->
-    case dgiot_data:get(?DGIOT_CHANNEL_CLIENT, ChannelId) of
+    case dgiot_data:get(?DGIOT_CLIENT(ChannelId), module_state) of
         {Module, State} ->
             gen_server:start_link(Module, [State#{<<"client">> => ClientId}], []),
-            dgiot_data:insert(ChannelId, ClientId, self());
+            dgiot_data:insert(?DGIOT_CLIENT(ChannelId), ClientId, self());
         _ ->
             pass
     end.
 
-check_init(ChannelId) ->
-    case dgiot_data:get(?DGIOT_BRIDGE, {ChannelId, init}) of
+register(ChannelId, Sup, Start_time, End_time) ->
+    case dgiot_data:get(?DGIOT_CLIENT(ChannelId), supervisor) of
         not_find ->
-            dgiot_data:insert(?DGIOT_BRIDGE, {ChannelId, init}, self()),
+            dgiot_data:insert(?DGIOT_CLIENT(ChannelId), supervisor, Sup),
             false;
         _ ->
             true
-    end.
+    end,
+    set_consumer(ChannelId, 100),
+    add_clock(ChannelId, Start_time, End_time),
+    dgiot:child_spec(Sup, supervisor, [ChannelId]).
 
 set_consumer(ChannelId, PoolSize) ->
-    dgiot_data:set_consumer(?DGIOT_CHANNEL_CONSUMER(ChannelId), PoolSize).
+    dgiot_data:set_consumer(?DGIOT_CLIENT(ChannelId), PoolSize).
 
 get_consumer(ChannelId) ->
-    dgiot_data:get_consumer(?DGIOT_CHANNEL_CONSUMER(ChannelId), 1).
+    dgiot_data:get_consumer(?DGIOT_CLIENT(ChannelId), 1).
 
-%%%% 定时启动
-%%start_timer(Channel, #{
-%%    <<"freq">> := _Freq,
-%%    <<"start_time">> := Start_time,
-%%    <<"end_time">> := End_time,
-%%    <<"channel">> := Channel
-%%} = Args) ->
-%%    Fun =
-%%        fun(_X) ->
-%%            lists:map(fun(Y) ->
-%%                case Y of
-%%                    {DtuId, _} ->
-%%                        supervisor:start_child(?TASK_SUP(Channel), [Args#{<<"client">> => DtuId}]);
-%%                    _ ->
-%%                        pass
-%%                end
-%%                      end, ets:tab2list(?DGIOT_PNQUE))
-%%        end,
-%%    Task = #{
-%%        <<"freq">> => 5,
-%%        <<"unit">> => 0,
-%%        <<"start_time">> => dgiot_datetime:to_localtime(Start_time),
-%%        <<"end_time">> => dgiot_datetime:to_localtime(End_time),
-%%        <<"id">> => <<"task/", Channel/binary>>,
-%%        <<"callback">> => Fun
-%%    },
-%%    dgiot_cron:save(default_task, Task).
+%% 定时检查启动, 10s 检查一次
+add_clock(Start_time, End_time, Channel) ->
+    Task = #{
+        <<"freq">> => 10,
+        <<"unit">> => second,
+        <<"start_time">> => dgiot_datetime:to_localtime(Start_time),
+        <<"end_time">> => dgiot_datetime:to_localtime(End_time),
+        <<"id">> => Channel,
+        <<"callback">> => {dgiot_channelx, do_message, [Channel, channel_clock]}
+    },
+    dgiot_cron:save(Task).
+
 
 

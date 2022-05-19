@@ -24,15 +24,11 @@
 -define(MAX_BUFF_SIZE, 1024).
 -record(state, {
     id,
-    buff_size = 1024000,
-    heartcount = 0,
-    head = "xxxxxx0eee",
-    len = 0,
-    env = #{},
-    dtutype = <<>>,
-    productIds = <<>>,
-    productId = <<>>
+    productIds = [],
+    devices = #{},
+    buff_size = 1024000
 }).
+
 
 %% TCP callback
 -export([child_spec/2, init/1, handle_info/2, handle_cast/2, handle_call/3, terminate/2, code_change/3]).
@@ -43,21 +39,21 @@ child_spec(Port, State) ->
 %% =======================
 %% {ok, State} | {stop, Reason}
 init(#tcp{state = #state{id = ChannelId} = State} = TCPState) ->
-%%    io:format("~s ~p TCPState = ~p.~n", [?FILE, ?LINE, TCPState]),
-%%    Time = erlang:round(rand:uniform() * 60 + 1) * 1000,
-%%    erlang:send_after(Time, self(), login),
+    Time = rand:seed(exs1024),
+    _ = erlang:round(rand:uniform() * 60 + 1) * 1000,
+    erlang:send_after(Time, self(), login),
     case dgiot_bridge:get_products(ChannelId) of
         {ok, ?TYPE, ProductIds} ->
             lists:map(fun(ProductId) ->
                 do_cmd(ProductId, connection_ready, <<>>, TCPState)
                       end, ProductIds),
             NewState = State#state{productIds = ProductIds},
-            {ok, TCPState#tcp{log = log_fun(ChannelId), state = NewState}};
+            TCPState#tcp{log = log_fun(ChannelId), state = NewState};
         {error, not_find} ->
             {error, not_find_channel}
     end.
 
-handle_info({deliver, _, Msg}, TCPState) ->
+handle_info({deliver, _, Msg},  TCPState) ->
     Payload = dgiot_mqtt:get_payload(Msg),
     Topic = dgiot_mqtt:get_topic(Msg),
     case binary:split(Topic, <<$/>>, [global, trim]) of
@@ -100,7 +96,7 @@ handle_call(_Msg, _From, TCPState) ->
 handle_cast(_Msg, TCPState) ->
     {noreply, TCPState}.
 
-terminate(_Reason, #tcp{state = #state{productIds = ProductIds}} = TCPState) ->
+terminate(_Reason,  #tcp{state = #state{productIds = ProductIds}} = TCPState) ->
     lists:map(fun(ProductId) ->
         do_cmd(ProductId, terminate, _Reason, TCPState)
               end, ProductIds),
@@ -114,7 +110,7 @@ code_change(_OldVsn, TCPState, _Extra) ->
 
 %% =======================
 do_cmd(ProductId, Cmd, Data, #tcp{state = #state{id = ChannelId} = State} = TCPState) ->
-    case dgiot_hook:run_hook({tcp, ProductId}, [Cmd, Data, State#state{productId = ProductId}]) of
+    case dgiot_hook:run_hook({tcp, ProductId}, [Cmd, Data, State]) of
         {ok, NewState} ->
             {noreply, TCPState#tcp{state = NewState}};
         {reply, ProductId, Payload, NewState} ->

@@ -18,7 +18,6 @@
 -define(DGIOT_BRIDGE, dgiot_bridge).
 -define(DGIOT_PRODUCT_CHANNEL, dgiot_product_channel).
 -define(DGIOT_RUlES, dgiot_rules).
--define(DGIOT_CHANNEL_CLIENT, dgiot_channel_client).
 %% CHANNEL TYPE
 -define(PROTOCOL_CHL, 1).
 -define(BRIDGE_CHL, 2).
@@ -27,4 +26,4 @@
 -define(AUTH_CHL, 5).
 -define(DEFAULT_CHL, 5).
 -define(DGIOT_SUP(Name), dgiot_utils:to_atom(lists:concat(["dgiot_sup", dgiot_utils:to_atom(Name)]))).
--define(DGIOT_CHANNEL_CONSUMER(ChannelId), <<"consumer/", ChannelId/binary>>).
+
