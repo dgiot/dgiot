@@ -31,9 +31,13 @@ push(StartTime, Callback) ->
     ID = dgiot_utils:guid(),
     push(ID, StartTime, Callback).
 
+%% 定时启停任务
 push(ID, {{Y, M, D}, {H, N, S}}, Callback) ->
     save(?DGIOT_TIMER, #{
         <<"id">> => ID,
+        <<"freq">> => 5,
+        <<"unit">> => second,
+        <<"count">> => 3,
         <<"start_time">> => {{Y, M, D}, {H, N, S}},
         <<"callback">> => Callback
     });

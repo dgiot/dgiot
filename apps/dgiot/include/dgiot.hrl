@@ -18,7 +18,7 @@
 -define(GLOBAL_TOPIC, <<"global/dgiot">>).
 -define(DCACHE, dgiotdiskcache).
 -define(DEFREGISTRY, dgiot_global).
--define(DGIOT_CLIENT(ChannelId), binary_to_atom(<<"dgiot_client_", ChannelId/binary>>)).
+-define(DGIOT_CLIENT(Id), binary_to_atom(<<"dgiot_client_", Id/binary>>)).
 -define(CHILD(I, Type, Args), {I, {I, start_link, Args}, permanent, 5000, Type, [I]}).
 
 -define(CHILD2(I, Mod, Type, Args), {I, {Mod, start_link, Args}, permanent, 5000, Type, [Mod]}).

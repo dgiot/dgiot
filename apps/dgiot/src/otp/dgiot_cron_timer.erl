@@ -68,8 +68,7 @@ save(_Name, #{<<"id">> := Id, <<"count">> := 0}) ->
 save(Name, Task) ->
     save(Name, Task, dgiot_datetime:nowstamp()).
 
-save(Name, #{<<"id">> := Id, <<"start_time">> := {{_Y, M, D}, {H, N, S}}} = Task, _) when
-    M == '_'; D == '_'; H == '_'; N == '_'; S == '_' ->
+save(Name, #{<<"id">> := Id, <<"start_time">> := {{_Y, M, D}, {H, N, S}}} = Task, _Now) when M == '_'; D == '_'; H == '_'; N == '_'; S == '_' ->
     Enable = maps:get(<<"enable">>, Task, true),
     Count = maps:get(<<"count">>, Task, forever),
     dgiot_data:insert(?CRON_DB, Id, Task#{<<"name">> => Name, <<"count">> => Count, <<"enable">> => Enable});
@@ -218,7 +217,8 @@ test() ->
             fun
                 (I) ->
                     save(<<"secondTimer">>, #{
-                        <<"callback">> => fun(_T) -> io:format("secondTimer freq ~p ~p ~n", [I, dgiot_datetime:now_secs()]) end,
+                        <<"callback">> => fun(_T) ->
+                            io:format("secondTimer freq ~p ~p ~n", [I, dgiot_datetime:now_secs()]) end,
                         <<"freq">> => I,
                         <<"unit">> => second,
                         <<"id">> => I
