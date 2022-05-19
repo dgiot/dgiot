@@ -166,9 +166,5 @@ handle_message(_Message, State) ->
 %%    ?LOG(info, "_Message ~p", [_Message]),
     {ok, State}.
 
-stop(ChannelType, ChannelId, #state{env = #{<<"product">> := ProductId, <<"args">> := Args}} = _State) ->
-    spawn(fun() ->
-        dgiot_task:stop(Args#{<<"product">> => ProductId, <<"channel">> => ChannelId})
-          end),
-    ?LOG(warning, "channel stop ~p,~p", [ChannelType, ChannelId]),
+stop(_ChannelType, _ChannelId, _State) ->
     ok.
