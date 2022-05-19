@@ -254,7 +254,7 @@ stop(ChannelType, ChannelId, _State) ->
 do_save([ProductId, DevAddr, Data, _Context], #state{id = ChannelId} = State) ->
     case dgiot_bridge:get_product_info(ProductId) of
         {error, Reason} ->
-            ?LOG(error, "Save to tdengine error, ~p, ~p", [Data, Reason]);
+            ?LOG(error, "Save to tdengine error, ~p, ~p, ProductId = ~p.", [Data, Reason, ProductId]);
         {ok, #{<<"thing">> := Properties}} ->
             Object = dgiot_tdengine:format_data(ProductId, DevAddr, Properties, Data),
             dgiot_device:save(ProductId, DevAddr),
