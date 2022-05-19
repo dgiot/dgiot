@@ -32,7 +32,4 @@ start_link() ->
     supervisor:start_link({local, ?MODULE}, ?MODULE, []).
 
 init([]) ->
-    Children = [
-        ?CHILD(task_loader, worker, [])
-    ],
-    {ok, {{one_for_one, 5, 10}, Children}}.
+    {ok, {{one_for_one, 5, 10}, []}}.

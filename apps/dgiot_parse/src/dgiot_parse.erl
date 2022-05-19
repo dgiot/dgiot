@@ -182,7 +182,6 @@ set_class_level(Name, Class, Permissions) ->
     Body = #{<<"classLevelPermissions">> => Permissions},
     request_rest(Name, 'PUT', [], Path, Body, [{from, master}]).
 
-
 %% limit和skip参数进行分页
 %% 传递order逗号分隔列表按多个字段进行排序
 %% http://docs.parseplatform.org/rest/guide/#query-constraints
