@@ -17,7 +17,6 @@
 -author("johnliu").
 
 -define(DGIOT_TASK, dgiot_task).
--define(TASK_ARGS, task_args).
 -define(DGIOT_PNQUE, dgiot_pnque).
 -define(DGIOT_DATA_CACHE, dgiot_data_cache).
 -define(TASK_NAME(Name), dgiot_utils:to_atom(lists:concat([dgiot_utils:to_atom(Name), "task"]))).

@@ -24,11 +24,9 @@
 start_link(Name) ->
     supervisor:start_link({local, Name}, ?MODULE, []).
 
-
 init([]) ->
-    Child = [
-        {dgiot_task_worker, {dgiot_task_worker, start_link, []}, transient, 5000, worker, [dgiot_task_worker]}],
-    {ok, {{simple_one_for_one, 5, 10}, Child}}.
+    ChildSpec = [dgiot:child_spec(dgiot_task_worker, worker)],
+    {ok, {{simple_one_for_one, 5, 10}, ChildSpec}}.
 
 
 

@@ -19,151 +19,21 @@
 -include_lib("dgiot/include/logger.hrl").
 -include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
 
--export([
-    start/1,
-    stop/1,
-    load/1,
-    get_control/3,
-    get_collection/4,
-    get_calculated/2,
-    string2value/2,
-    string2value/3,
-    save_pnque/4,
-    get_pnque/1,
-    del_pnque/1,
-    timing_start/1,
-    save_td/4
-]).
+-export([start/1, start/2, save_pnque/4, get_pnque/1, del_pnque/1, save_td/4]).
+-export([get_control/3, get_collection/4, get_calculated/2, string2value/2, string2value/3]).
 
-%% 查询指标队列
-load(#{
-    <<"page_index">> := PageIndex,
-    <<"page_size">> := PageSize,
-    <<"total">> := Total,
-    <<"product">> := ProductId,
-    <<"vcaddr">> := <<"all">>
-} = Args) ->
-    Success = fun(Page) ->
-        lists:map(fun(X) ->
-            #{<<"objectId">> := DtuId, <<"devaddr">> := DtuAddr} = X,
-            start(Args#{<<"dtuid">> => DtuId, <<"dtuaddr">> => DtuAddr})
-                  end, Page)
-              end,
-    Query = #{<<"where">> => #{<<"product">> => ProductId}},
-    dgiot_parse_loader:start(<<"Device">>, Query, PageIndex, PageSize, Total, Success);
+start(ChannelId) ->
+    lists:map(fun(Y) ->
+        case Y of
+            {ClientId, _} ->
+                dgiot_client:start(ChannelId, ClientId);
+            _ ->
+                pass
+        end
+              end, ets:tab2list(?DGIOT_PNQUE)).
 
-%% 查询指标队列
-load(#{
-    <<"product">> := ProductId,
-    <<"channel">> := Channel,
-    <<"vcaddr">> := Dtu} = Args) ->
-    Consumer = <<"task/", Channel/binary, "/", Dtu/binary>>,
-    dgiot_data:set_consumer(Consumer, 10),
-    #{<<"objectId">> := DeviceId} =
-        dgiot_parse_id:get_objectid(<<"Device">>, #{<<"product">> => ProductId, <<"devaddr">> => Dtu}),
-    case dgiot_parse:get_object(<<"Device">>, DeviceId) of
-        {ok, #{<<"objectId">> := DtuId, <<"devaddr">> := DtuAddr}} ->
-            start(Args#{<<"dtuid">> => DtuId, <<"dtuaddr">> => DtuAddr});
-        _ -> pass
-    end.
-
-start(#{
-    <<"channel">> := Channel,
-    <<"dtuid">> := DtuId
-} = Args) ->
-%% 设备没上线则不加入到采集任务队列中
-    dgiot_data:set_consumer(<<"taskround/", Channel/binary, "/", DtuId/binary>>, 1000000),
-    case dgiot_task:get_pnque(DtuId) of
-        not_find ->
-%%            ?LOG(info, "not_find ~p", [DtuId]);
-            pass;
-        _ ->
-%%            ?LOG(info, "find ~p", [Args]),
-            supervisor:start_child(?TASK_SUP(Channel), [Args])
-    end;
-
-start(_) ->
-    ok.
-
-%% 定时启动
-timing_start(#{
-    <<"freq">> := _Freq,
-    <<"start_time">> := Start_time,
-    <<"end_time">> := End_time,
-    <<"channel">> := Channel
-} = Args) ->
-    Callback =
-        fun(_X) ->
-            lists:map(fun(Y) ->
-                case Y of
-                    {DtuId, _} ->
-                        supervisor:start_child(?TASK_SUP(Channel), [Args#{<<"dtuid">> => DtuId}]);
-                    _ ->
-                        pass
-                end
-                      end, ets:tab2list(?DGIOT_PNQUE))
-        end,
-    Task = #{
-        <<"freq">> => 5,
-        <<"unit">> => 0,
-        <<"start_time">> => dgiot_datetime:to_localtime(Start_time),
-        <<"end_time">> => dgiot_datetime:to_localtime(End_time),
-        <<"id">> => <<"task/", Channel/binary>>,
-        <<"callback">> => Callback
-    },
-    dgiot_cron:save(default_task, Task).
-
-stop(#{
-    <<"page_index">> := PageIndex,
-    <<"page_size">> := PageSize,
-    <<"total">> := Total,
-    <<"product">> := ProductId,
-    <<"channel">> := Channel,
-    <<"vcaddr">> := <<"all">>}
-) ->
-    Consumer = <<"task/", Channel/binary>>,
-    dgiot_data:set_consumer(Consumer, 10),
-    Success = fun(Page) ->
-        lists:map(fun(X) ->
-            #{<<"objectId">> := DtuId} = X,
-            dgiot_cron:save(default_task, #{
-                <<"id">> => <<"task/", Channel/binary, "/", DtuId/binary>>,
-                <<"count">> => 0}),
-            del_pnque(DtuId),
-            dgiot_task_worker:stop(#{<<"channel">> => Channel, <<"dtuid">> => DtuId})
-                  end, Page)
-              end,
-    Query = #{
-        <<"where">> => #{<<"product">> => ProductId
-        }
-    },
-    dgiot_parse_loader:start(<<"Device">>, Query, PageIndex, PageSize, Total, Success);
-
-stop(#{
-    <<"page_index">> := PageIndex,
-    <<"page_size">> := PageSize,
-    <<"total">> := Total,
-    <<"product">> := ProductId,
-    <<"channel">> := Channel,
-    <<"vcaddr">> := VcAddr}
-) ->
-    Consumer = <<"task/", Channel/binary>>,
-    dgiot_data:set_consumer(Consumer, 10),
-    Success = fun(Page) ->
-        lists:map(fun(X) ->
-            #{<<"objectId">> := DtuId} = X,
-            dgiot_cron:save(default_task, #{
-                <<"id">> => <<"task/", Channel/binary, "/", DtuId/binary>>,
-                <<"count">> => 0}),
-            del_pnque(DtuId),
-            dgiot_task_worker:stop(#{<<"channel">> => Channel, <<"dtuid">> => DtuId})
-                  end, Page)
-              end,
-    Query = #{
-        <<"where">> => #{<<"product">> => ProductId, <<"devaddr">> => VcAddr
-        }
-    },
-    dgiot_parse_loader:start(<<"Device">>, Query, PageIndex, PageSize, Total, Success).
+start(ChannelId, ClientId) ->
+    dgiot_client:start(ChannelId, ClientId).
 
 %%获取计算值，必须返回物模型里面的数据表示，不能用寄存器地址
 get_calculated(ProductId, Ack) ->
@@ -254,6 +124,7 @@ get_collection(ProductId, [], Payload, Ack) ->
         _Error ->
             Ack
     end;
+
 %%转换设备上报值，必须返回物模型里面的数据表示，不能用寄存器地址
 get_collection(ProductId, Dis, Payload, Ack) ->
     case dgiot_product:lookup_prod(ProductId) of
@@ -366,7 +237,6 @@ string2value(Str, Type, Specs) ->
             end
     end.
 
-
 save_pnque(DtuProductId, DtuAddr, ProductId, DevAddr) ->
     DtuId = dgiot_parse_id:get_deviceid(DtuProductId, DtuAddr),
     Topic = <<"thing/", ProductId/binary, "/", DevAddr/binary>>,
@@ -386,7 +256,6 @@ save_pnque(DtuProductId, DtuAddr, ProductId, DevAddr) ->
             supervisor:start_child(?TASK_SUP(Channel), [Args#{<<"dtuid">> => DtuId}])
     end.
 
-
 get_pnque(DtuId) ->
     case dgiot_data:get(?DGIOT_PNQUE, DtuId) of
         not_find ->
@@ -398,6 +267,7 @@ get_pnque(DtuId) ->
         _ ->
             not_find
     end.
+
 %% INSERT INTO _b8b630322d._4ad9ab0830 using _b8b630322d._b8b630322d TAGS ('_862607057395777') VALUES  (now,638,67,2.1,0.11,0,27,38,0.3,0.0,0.0,11.4,0);
 del_pnque(DtuId) ->
     case dgiot_data:get(?DGIOT_PNQUE, DtuId) of
