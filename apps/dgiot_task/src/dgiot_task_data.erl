@@ -18,7 +18,7 @@
 -include("dgiot_task.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
--export([get_userdata/6]).
+-export([get_userdata/6, get_datasource/2]).
 
 get_userdata(ProductId, Identifier, _DataForm, #{<<"type">> := <<"geopoint">>}, Payload, Acc) ->
     case maps:find(Identifier, Payload) of
@@ -31,7 +31,7 @@ get_userdata(ProductId, Identifier, _DataForm, #{<<"type">> := <<"geopoint">>}, 
             Acc
     end;
 
-get_userdata(_ProductId, Identifier, #{<<"address">> := Address, <<"collection">> := Collection}, #{<<"type">> := Type, <<"specs">> := Specs}, Payload, Acc) ->
+get_userdata(_ProductId, Identifier, #{<<"collection">> := Collection} = DataForm, #{<<"type">> := Type, <<"specs">> := Specs}, Payload, Acc) ->
     case maps:find(Identifier, Payload) of
         {ok, Value} ->
             Str = re:replace(Collection, dgiot_utils:to_list(<<"%%", Identifier/binary>>), "(" ++ dgiot_utils:to_list(Value) ++ ")", [global, {return, list}]),
@@ -43,6 +43,7 @@ get_userdata(_ProductId, Identifier, #{<<"address">> := Address, <<"collection">
                     Acc#{Identifier => Value1}
             end;
         _ ->
+            Address = maps:get(<<"address">>, DataForm, <<"">>),
             case maps:find(Address, Payload) of
                 {ok, Value} ->
                     Str = re:replace(Collection, dgiot_utils:to_list(<<"%%", Identifier/binary>>), "(" ++ dgiot_utils:to_list(Value) ++ ")", [global, {return, list}]),
@@ -55,4 +56,13 @@ get_userdata(_ProductId, Identifier, #{<<"address">> := Address, <<"collection">
                     end;
                 _ -> Acc
             end
+    end.
+
+
+get_datasource(Protocol, DataSource) ->
+    case catch dgiot_hook:run_hook({datasource, Protocol}, DataSource) of
+        {ok, [Rtn | _]} ->
+            Rtn;
+        _ ->
+            DataSource
     end.

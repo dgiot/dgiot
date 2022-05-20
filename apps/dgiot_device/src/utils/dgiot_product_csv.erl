@@ -19,19 +19,20 @@
 -include("dgiot_device.hrl").
 -include_lib("dgiot/include/logger.hrl").
 
--export([test_read_csv/2, read_csv/1, get_products/1, create_product/3, create_device/3, post_thing/2, get_CategoryId/1, get_channelAcl/1]).
+-export([read_csv/2, read_from_csv/1, get_products/1, create_product/3, create_device/3, post_thing/2, get_CategoryId/1, get_channelAcl/1]).
 -export([get_max_addrs/1]).
 
-%%  dgiot_product_csv:test_read_csv(<<"8f9eaf3720">>, <<"ruodian">>).
-test_read_csv(ChannelId, FileName) ->
-    read_csv(FileName),
+%%  dgiot_product_csv:read_csv(<<"b28ee0e3c4">>, <<"modbustcp">>).
+read_csv(ChannelId, FileName) ->
+    read_from_csv(FileName),
     Productmap = dgiot_product_csv:get_products(FileName),
     {Devicemap, ProductIds} = dgiot_product_csv:create_product(ChannelId, FileName, Productmap),
     dgiot_product_csv:create_device(FileName, Devicemap, ProductIds),
-    dgiot_product_csv:post_thing(FileName, ProductIds).
+    dgiot_product_csv:post_thing(FileName, ProductIds),
+    get_max_addrs(FileName).
 
-%% dgiot_product_csv:read_csv(<<"modbustcp">>)
-read_csv(FileName) ->
+%% dgiot_product_csv:read_from_csv(<<"modbustcp">>)
+read_from_csv(FileName) ->
     {file, Here} = code:is_loaded(?MODULE),
     Dir = dgiot_httpc:url_join([filename:dirname(filename:dirname(Here)), "/priv/csv/"]),
     Name = dgiot_utils:to_list(FileName),
@@ -56,8 +57,7 @@ read_csv(FileName) ->
         end,
         put(count, Count + 1)
           end,
-    dgiot_utils:read_from_csv(Path, Fun),
-    get_max_addrs(FileName).
+    dgiot_utils:read_from_csv(Path, Fun).
 
 %%  ets:match(ruodian,{'_', ['$1', '_', <<"D6101">> | '_']}).
 get_products(FileName) ->
@@ -82,7 +82,7 @@ create_product(ChannelId, FileName, Productmap) ->
                     <<"category">> => #{<<"objectId">> => CategoryId, <<"__type">> => <<"Pointer">>, <<"className">> => <<"Category">>},
                     <<"desc">> => DevType,
                     <<"config">> => #{},
-                    <<"channel">> => #{<<"type">> => 1, <<"tdchannel">> => <<"24b9b4bc50">>, <<"taskchannel">> => <<"fa3fad91f8">>, <<"otherchannel">> => [ChannelId]},
+                    <<"channel">> => #{<<"type">> => 1, <<"tdchannel">> => <<"24b9b4bc50">>, <<"otherchannel">> => [ChannelId]},
                     <<"thing">> => #{},
                     <<"ACL">> => Acl,
                     <<"nodeType">> => 0,
@@ -128,7 +128,7 @@ post_thing(FileName, Productids) ->
     AtomName = dgiot_utils:to_atom(FileName),
     maps:fold(fun(ProductId, {DeviceName, ProductName}, _Acc) ->
         Things = ets:match(AtomName, {'_', [ProductName, '_', '_', DeviceName, '_', '$1', '$2', '$3', '$4', '$5', '$6', '$7', '$8', '$9', '$10', '$11' | '_']}),
-        Properties = get_properties(Things, AtomName, ProductId),
+        Properties = get_properties(Things, AtomName, ProductId, ProductName),
         dgiot_parse:update_object(<<"Product">>, ProductId, #{<<"thing">> => #{<<"properties">> => Properties}})
               end, [], Productids).
 
@@ -169,10 +169,9 @@ get_channelAcl(ChannelId) ->
             }
     end.
 
-get_properties(Things, AtomName, ProductId) ->
-    lists:foldl(fun([Devicetype, Identifier, Name, Address, Bytes, AccessMode, Min_Max, Unit, Type, Operatetype, Originaltype | _], Propertie) ->
+get_properties(Things, AtomName, ProductId, ProductName) ->
+    lists:foldl(fun([Devicetype, Identifier, Name, _Address, _Bytes, AccessMode, Min_Max, Unit, Type, _Operatetype, _Originaltype | _], Propertie) ->
         {Min, Max} = get_min_max(Min_Max),
-        dgiot_data:insert(AtomName, {addr, Address}, ProductId),
         Propertie ++ [#{
             <<"name">> => Name,
             <<"index">> => 0,
@@ -184,7 +183,7 @@ get_properties(Things, AtomName, ProductId) ->
                 <<"offset">> => 0,
                 <<"control">> => <<"%d">>,
                 <<"iscount">> => <<"0">>,
-                <<"protocol">> => <<"MODBUSTCP">>,
+                <<"protocol">> => <<"DLINK">>,
                 <<"strategy">> => <<"主动上报"/utf8>>,
                 <<"collection">> => <<"%s">>,
                 <<"countround">> => <<"all">>,
@@ -204,21 +203,23 @@ get_properties(Things, AtomName, ProductId) ->
             },
             <<"required">> => true,
             <<"accessMode">> => get_accessmode(AccessMode),
-            <<"dataSource">> => #{
-                <<"dis">> => [],
-                <<"_dlinkindex">> => 1,
-                <<"bytes">> => Bytes,
-                <<"address">> => Address,
-                <<"slaveid">> => <<"0X00">>,
-                <<"operatetype">> => get_operatetype(Operatetype),
-                <<"originaltype">> => Originaltype,
-                <<"registersnumber">> => <<"1">>
-            },
+            <<"dataSource">> => get_dataSource(AtomName, ProductId, ProductName, Name),
             <<"devicetype">> => Devicetype,
             <<"identifier">> => to_lower(Identifier),
-            <<"moduleType">> => <<"properties">>
+            <<"moduleType">> => <<"properties">>,
+            <<"isaccumulate">> => false
         }]
                 end, [], Things).
+
+get_dataSource(AtomName, ProductId, ProductName, ThingName) ->
+    Things = ets:match(AtomName, {'_', [ProductName, '_', '_', '_', '_', '_', '_', ThingName, '$1', '$2' | '_']}),
+    Dis =
+        lists:foldl(fun([Address, Bytes | _], Acc) ->
+            dgiot_data:insert(AtomName, {addr, Address}, ProductId),
+            Acc ++ [#{<<"key">> => Address, <<"data">> => Bytes}]
+                    end, [], Things),
+    #{<<"dis">> => Dis,
+        <<"_dlinkindex">> => "1"}.
 
 get_max_addrs(FileName) ->
     AtomName = dgiot_utils:to_atom(FileName),
@@ -244,18 +245,18 @@ get_min_max(Min_Max) ->
             {0, 999}
     end.
 
-get_operatetype(Operatetype) ->
-    case Operatetype of
-        <<"01">> -> <<"readCoils">>;
-        <<"02">> -> <<"readInputs">>;
-        <<"03">> -> <<"readHregs">>;
-        <<"04">> -> <<"readIregs">>;
-        <<"05">> -> <<"writeCoil">>;
-        <<"06">> -> <<"writeHreg">>;
-        <<"0f">> -> <<"writeCoils">>;
-        <<"10">> -> <<"writeHregs">>;
-        _ -> <<"readHregs">>
-    end.
+%%get_operatetype(Operatetype) ->
+%%    case Operatetype of
+%%        <<"01">> -> <<"readCoils">>;
+%%        <<"02">> -> <<"readInputs">>;
+%%        <<"03">> -> <<"readHregs">>;
+%%        <<"04">> -> <<"readIregs">>;
+%%        <<"05">> -> <<"writeCoil">>;
+%%        <<"06">> -> <<"writeHreg">>;
+%%        <<"0f">> -> <<"writeCoils">>;
+%%        <<"10">> -> <<"writeHregs">>;
+%%        _ -> <<"readHregs">>
+%%    end.
 
 get_unit(<<"null">>) ->
     <<"ok">>;

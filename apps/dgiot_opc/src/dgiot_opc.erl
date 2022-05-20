@@ -394,7 +394,6 @@ jud(K1, K2, K3) ->
     end.
 
 
-
 send_properties(ProductId, DtuAddr, Properties) ->
     NewProperties = get_properties(ProductId, Properties),
     NewTopic = <<"thing/", ProductId/binary, "/", DtuAddr/binary, "/post">>,

@@ -28,9 +28,8 @@ start_connect(_Opts =
     #{
         <<"auto_reconnect">> := Recon,
         <<"reconnect_times">> := ReTimes,
-        <<"port">> := Port,
         <<"ip">> := Ip,
-        <<"productid">> := ProductId,
+        <<"port">> := Port,
         <<"channelid">> := ChannelId,
         <<"hb">> := HB,
         <<"filename">> := FileName,
@@ -38,7 +37,6 @@ start_connect(_Opts =
         <<"maxaddr">> := Maxaddr
     }) ->
     State = #state{
-        product = ProductId,
         id = ChannelId,
         hb = HB,
         env = #{
@@ -48,7 +46,6 @@ start_connect(_Opts =
             maxaddr => Maxaddr
         }
     },
-%%    dgiot_tcp_client:start_link(dgiot_modbusc_tcp, "192.168.1.5", 8989, 10, 3, #{productid => <<"c38905f64d">>,devaddr => <<"0622e8ca1355">>,hb => 60}).
     dgiot_tcp_client:start_link(?MODULE, Ip, Port, Recon, ReTimes, State).
 
 init(TCPState) ->
@@ -64,7 +61,7 @@ handle_info(connection_ready, TCPState) ->
 handle_info(tcp_closed, TCPState) ->
     {noreply, TCPState};
 
-handle_info(read, #tcp{state = #state{id = ChannelId, product = ProductId, env = #{minaddr := MinAddr, maxaddr := Maxaddr} = Env} = State} = TCPState) ->
+handle_info(read, #tcp{state = #state{id = ChannelId, env = #{minaddr := MinAddr, maxaddr := Maxaddr} = Env} = State} = TCPState) ->
     Address = modbus_tcp:get_addr(ChannelId, MinAddr, Maxaddr, 120),
     DataSource =
         #{
@@ -76,11 +73,10 @@ handle_info(read, #tcp{state = #state{id = ChannelId, product = ProductId, env =
     Data = modbus_tcp:to_frame(DataSource),
     dgiot_tcp_server:send(TCPState, Data),
 %%    erlang:send_after(10 * 1000, self(), read),
-    {noreply, TCPState#tcp{state = State#state{env = Env#{product => ProductId, maxaddr => Maxaddr, di => Address, step => 120}}}};
+    {noreply, TCPState#tcp{state = State#state{env = Env#{maxaddr => Maxaddr, di => Address, step => 120}}}};
 
-handle_info({tcp, Buff}, #tcp{state = #state{id = _ChannelId, env = #{maxaddr := Maxaddr, di := Address, filename := FileName, data := OldData, step := Step} = Env} = State} = TCPState) ->
-%%    dgiot_bridge:send_log(ChannelId, ProductId, DtuAddr, "[DtuAddr:~p] returns [~p] to Channel", [DtuAddr, dgiot_utils:binary_to_hex(Buff)]),
-%%    io:format("~s ~p OldData = ~p.~n", [?FILE, ?LINE, OldData]),
+handle_info({tcp, Buff}, #tcp{state = #state{id = ChannelId, env = #{maxaddr := Maxaddr, di := Address, filename := FileName, data := OldData, step := Step} = Env} = State} = TCPState) ->
+    dgiot_bridge:send_log(ChannelId, "returns [~p] to Channel", [dgiot_utils:binary_to_hex(Buff)]),
     Data = modbus_tcp:parse_frame(Buff),
     erlang:send_after(3 * 1000, self(), read),
     case Address + Step >= Maxaddr of

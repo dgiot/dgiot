@@ -95,7 +95,7 @@ handle_info({tcp, Buff}, #tcp{state = #state{id = ChannelId, devaddr = DtuAddr, 
         <<"address">> => H * 256 + L}) of
         {_, Things} ->
 %%            ?LOG(info, "Things ~p", [Things]),
-            NewTopic = <<"thing/", DtuProductId/binary, "/", DtuAddr/binary, "/post">>,
+            NewTopic = <<"$dg/thing/", DtuProductId/binary, "/", DtuAddr/binary, "/properties/report">>,
             dgiot_bridge:send_log(ChannelId, ProductId, DtuAddr, "Channel sends [~p] to [task:~p]", [jsx:encode(Things), NewTopic]),
             DeviceId = dgiot_parse_id:get_deviceid(ProductId, DtuAddr),
             dgiot_mqtt:publish(DeviceId, NewTopic, jsx:encode(Things));
@@ -118,36 +118,13 @@ handle_info({deliver, _, Msg}, #tcp{state = #state{id = ChannelId} = State} = TC
                         dgiot_tcp_server:send(TCPState, X)
                               end, Payloads),
                     {noreply, TCPState};
-                [<<"thing">>, _ProductId, DevAddr] ->
+                [<<"$dg">>, <<"device">>, ProductId, DevAddr, <<"properties">>] ->
                     case jsx:decode(Payload, [{labels, binary}, return_maps]) of
-                        [#{<<"thingdata">> := ThingData} | _] ->
-                            case ThingData of
-                                #{<<"command">> := <<"r">>,
-                                    <<"product">> := ProductId,
-                                    <<"protocol">> := <<"MODBUSRTU">>,
-                                    <<"dataSource">> := #{
-                                        <<"slaveid">> := SlaveId,
-                                        <<"address">> := Address} = DataSource
-                                } ->
-                                    Data = modbus_rtu:to_frame(DataSource),
-                                    dgiot_bridge:send_log(ChannelId, ProductId, DevAddr, "Channel sends [~p] to [DtuAddr:~p]", [dgiot_utils:binary_to_hex(Data), DevAddr]),
-                                    dgiot_tcp_server:send(TCPState, Data),
-                                    {noreply, TCPState#tcp{state = State#state{env = #{product => ProductId, pn => SlaveId, di => Address}}}};
-                                #{<<"command">> := <<"rw">>,
-                                    <<"product">> := ProductId,
-                                    <<"protocol">> := <<"MODBUSRTU">>,
-                                    <<"dataSource">> := #{
-                                        <<"slaveid">> := SlaveId,
-                                        <<"address">> := Address} = DataSource
-                                } ->
-                                    Data = modbus_rtu:to_frame(DataSource),
-                                    dgiot_bridge:send_log(ChannelId, ProductId, DevAddr, "Channel sends [~p] to [DtuAddr:~p]", [dgiot_utils:binary_to_hex(Data), DevAddr]),
-                                    dgiot_tcp_server:send(TCPState, Data),
-                                    {noreply, TCPState#tcp{state = State#state{env = #{product => ProductId, pn => SlaveId, di => Address}}}};
-                                _Ot ->
-                                    ?LOG(error, "_Ot ~p", [_Ot]),
-                                    {noreply, TCPState}
-                            end;
+                        #{<<"slaveid">> := SlaveId, <<"address">> := Address} = DataSource ->
+                            Data = modbus_rtu:to_frame(DataSource),
+                            dgiot_bridge:send_log(ChannelId, ProductId, DevAddr, "Channel sends [~p] to [DtuAddr:~p]", [dgiot_utils:binary_to_hex(Data), DevAddr]),
+                            dgiot_tcp_server:send(TCPState, Data),
+                            {noreply, TCPState#tcp{state = State#state{env = #{product => ProductId, pn => SlaveId, di => Address}}}};
                         _ ->
                             {noreply, TCPState}
                     end;
