@@ -54,15 +54,11 @@
     },
     {
       "name": "Instruct",
-      "description": "指令管理"
+      "description": "指令任务"
     },
     {
       "name": "Evidence",
       "description": "证据管理"
-    },
-    {
-      "name": "License",
-      "description": "授权管理"
     },
     {
       "name": "View",

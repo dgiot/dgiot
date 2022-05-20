@@ -594,24 +594,6 @@
   {
     "children": [
       {
-        "label": "停止任务",
-        "target": "#/Crond/delete_task_vcaddr"
-      },
-      {
-        "label": "获取任务",
-        "target": "#/Crond/get_task"
-      },
-      {
-        "label": "修改任务",
-        "target": "#/Crond/put_task"
-      }
-    ],
-    "label": "任务管理",
-    "target": "#/Crond"
-  },
-  {
-    "children": [
-      {
         "label": "查询产品模板",
         "target": "#/ProductTemplet/get_classes_producttemplet"
       },
@@ -878,11 +860,6 @@
     ],
     "label": "文章管理",
     "target": "#/Article"
-  },
-  {
-    "children": [],
-    "label": "授权管理",
-    "target": "#/License"
   },
   {
     "children": [
