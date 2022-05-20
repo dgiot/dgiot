@@ -170,7 +170,7 @@ handle_message({sync_parse, _Pid, 'after', put, _Token, <<"Device">>, QueryData}
 
 handle_message({sync_parse, _Pid, 'after', delete, _Token, <<"Device">>, ObjectId}, State) ->
 %%    io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Pid, ObjectId]),
-    dgiot_device:delete('after', ObjectId),
+    dgiot_device_hook:delete('after', ObjectId),
     {ok, State};
 
 handle_message({sync_parse, Pid, 'after', get, Token, <<"Product">>, #{<<"results">> := _Results} = ResBody}, State) ->

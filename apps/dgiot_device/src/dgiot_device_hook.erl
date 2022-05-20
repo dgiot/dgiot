@@ -34,6 +34,7 @@ put(_, _) ->
     pass.
 
 delete('after', DeviceId) ->
+    dgiot_device:delete(DeviceId),
     case dgiot_parse:query_object(<<"Dict">>, #{<<"where">> => #{<<"key">> => DeviceId, <<"class">> => <<"Device">>}}) of
         {ok, #{<<"results">> := Dicts}} ->
             DictRequests =
@@ -62,6 +63,7 @@ delete('after', DeviceId) ->
         _ ->
             pass
     end;
+
 
 delete(_, _) ->
     pass.
