@@ -70,7 +70,7 @@
             zh => <<"采集频率/秒"/utf8>>
         },
         description => #{
-            zh => <<"采集频率/秒"/utf8>>
+            zh => <<"网关及网关下所有子设备的采集频率/秒"/utf8>>
         }
     },
     <<"start_time">> => #{
@@ -79,10 +79,10 @@
         required => false,
         default => <<"2020-03-26 10:35:10"/utf8>>,
         title => #{
-            zh => <<"开始时间"/utf8>>
+            zh => <<"任务开始时间"/utf8>>
         },
         description => #{
-            zh => <<"开始时间"/utf8>>
+            zh => <<"任务开始时间"/utf8>>
         }
     },
     <<"end_time">> => #{
@@ -91,10 +91,10 @@
         required => false,
         default => <<"2025-05-28 10:35:10"/utf8>>,
         title => #{
-            zh => <<"结束时间"/utf8>>
+            zh => <<"任务结束时间"/utf8>>
         },
         description => #{
-            zh => <<"结束时间"/utf8>>
+            zh => <<"任务结束时间"/utf8>>
         }
     },
     <<"ico">> => #{
