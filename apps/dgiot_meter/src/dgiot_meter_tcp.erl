@@ -75,7 +75,7 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, state = #state{id = ChannelId, dt
     case Protocol of
         ?DLT376 ->
             {ProductId, _, _} = dgiot_data:get({dtu, ChannelId}),
-            Topic = <<"thing/", ProductId/binary, "/", DtuAddr/binary>>,
+            Topic = <<"$dg/device/", ProductId/binary, "/", DtuAddr/binary, "/properties/report">>,
             dgiot_mqtt:subscribe(Topic),  %为这个集中器订阅一个mqtt
             %%                    $dg/device/{productId}/{deviceAddr}/profile
             Topic2 = <<"$dg/device/", ProductId/binary, "/", DtuAddr/binary, "/profile">>,
@@ -212,20 +212,20 @@ handle_info({deliver, _Topic, Msg}, #tcp{state = #state{id = ChannelId, protocol
     case jsx:is_json(Payload) of
         true ->
             case binary:split(dgiot_mqtt:get_topic(Msg), <<$/>>, [global, trim]) of
-                [<<"thing">>, ProductId, DevAddr] ->
+                [<<"$dg">>, <<"device">>, ProductId, DevAddr, <<"properties">>, <<"report">>] ->
                     case Protocol of
                         ?DLT376 ->
                             DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
-                            case dgiot_data:get({metetda, DeviceId}) of
+                            case dgiot_data:get({metertda, DeviceId}) of
                                 not_find ->
-                                    [#{<<"thingdata">> := ThingData} | _] = jsx:decode(dgiot_mqtt:get_payload(Msg), [{labels, binary}, return_maps]),
-                                    Payload1 = dgiot_meter:to_frame(ThingData),
+                                    DataSource = jsx:decode(dgiot_mqtt:get_payload(Msg), [{labels, binary}, return_maps]),
+                                    Payload1 = dgiot_meter:to_frame(#{<<"devaddr">> => DevAddr, <<"dataSource">> => DataSource}),
                                     dgiot_bridge:send_log(ChannelId, ProductId, DevAddr, " ~s ~p DLT376 send to DevAddr ~p => ~p", [?FILE, ?LINE, DevAddr, dgiot_utils:binary_to_hex(Payload1)]),
                                     dgiot_tcp_server:send(TCPState, Payload1);
                                 {Da, Dtuaddr} ->
                                     DA = dgiot_utils:binary_to_hex(dlt376_decoder:pn_to_da(dgiot_utils:to_int(Da))),
-                                    [#{<<"thingdata">> := #{<<"dataSource">> := DataSource} = ThingData} | _] = jsx:decode(dgiot_mqtt:get_payload(Msg), [{labels, binary}, return_maps]),
-                                    Payload1 = dgiot_meter:to_frame(ThingData#{<<"devaddr">> => Dtuaddr, <<"dataSource">> => DataSource#{<<"da">> => DA}}),
+                                    DataSource = jsx:decode(dgiot_mqtt:get_payload(Msg), [{labels, binary}, return_maps]),
+                                    Payload1 = dgiot_meter:to_frame(#{<<"protocol">> => Protocol, <<"devaddr">> => Dtuaddr, <<"dataSource">> => DataSource#{<<"da">> => DA}}),
                                     dgiot_bridge:send_log(ChannelId, ProductId, DevAddr, " ~s ~p DLT376 send to DevAddr ~p => ~p", [?FILE, ?LINE, DevAddr, dgiot_utils:binary_to_hex(Payload1)]),
                                     dgiot_tcp_server:send(TCPState, Payload1)
                             end;
@@ -249,45 +249,6 @@ handle_info({deliver, _Topic, Msg}, #tcp{state = #state{id = ChannelId, protocol
                             dgiot_tcp_server:send(TCPState, Payload1)
                     end,
                     {noreply, TCPState#tcp{state = State#state{env = #{product => ProductId, devaddr => DevAddr}}}};
-                [<<"thingctrl">>, _ProductId, _DevAddr] ->
-                    #tcp{state = #state{protocol = Protocol}} = TCPState,
-                    case Protocol of
-                        ?DLT376 ->
-                            [#{<<"thingdata">> := ThingData} | _] = jsx:decode(dgiot_mqtt:get_payload(Msg), [{labels, binary}, return_maps]),
-                            case ThingData of
-                                % 远程控制电表拉闸、合闸
-                                #{<<"devaddr">> := DevAddr, <<"ctrlflag">> := CtrlFlag, <<"devpass">> := DevPass, <<"apiname">> := <<"get_meter_ctrl">>} ->
-                                    ThingData1 = #{<<"devaddr">> => DevAddr, <<"ctrlflag">> => CtrlFlag, <<"devpass">> => DevPass, <<"protocol">> => Protocol, <<"apiname">> => get_meter_ctrl},
-                                    Payload1 = dgiot_meter:to_frame(ThingData1),
-                                    dgiot_tcp_server:send(TCPState, Payload1);
-                                % 获取上次拉闸、合闸的时间（一次发送两条查询指令）
-                                #{<<"devaddr">> := DevAddr, <<"ctrlflag">> := CtrlFlag, <<"apiname">> := <<"get_meter_ctrl_status">>} ->
-                                    % 上次合闸时间
-                                    ThingData1 = #{<<"devaddr">> => DevAddr, <<"ctrlflag">> => CtrlFlag, <<"protocol">> => Protocol, <<"apiname">> => get_meter_ctrl_status},
-                                    Payload1 = dgiot_meter:to_frame(ThingData1),
-                                    dgiot_tcp_server:send(TCPState, Payload1);
-                                _ ->
-                                    pass
-                            end;
-                        ?DLT645 ->
-                            [#{<<"thingdata">> := ThingData} | _] = jsx:decode(dgiot_mqtt:get_payload(Msg), [{labels, binary}, return_maps]),
-                            case ThingData of
-                                % 远程控制电表拉闸、合闸
-                                #{<<"devaddr">> := DevAddr, <<"ctrlflag">> := CtrlFlag, <<"devpass">> := DevPass, <<"apiname">> := <<"get_meter_ctrl">>} ->
-                                    % ?LOG(info, "GGM 212 dgiot_meter_tcp, handle_info9 ~p,~p,~p,~p",[DevAddr,CtrlFlag,DevPass,Protocol]),
-                                    ThingData1 = #{<<"devaddr">> => DevAddr, <<"ctrlflag">> => CtrlFlag, <<"devpass">> => DevPass, <<"protocol">> => Protocol, <<"apiname">> => get_meter_ctrl},
-                                    Payload1 = dgiot_meter:to_frame(ThingData1),
-                                    dgiot_tcp_server:send(TCPState, Payload1);
-                                % 获取上次拉闸、合闸的时间（一次发送两条查询指令）
-                                #{<<"devaddr">> := DevAddr, <<"ctrlflag">> := CtrlFlag, <<"apiname">> := <<"get_meter_ctrl_status">>} ->
-                                    ThingData1 = #{<<"devaddr">> => DevAddr, <<"ctrlflag">> => CtrlFlag, <<"protocol">> => Protocol, <<"apiname">> => get_meter_ctrl_status},
-                                    Payload1 = dgiot_meter:to_frame(ThingData1),
-                                    dgiot_tcp_server:send(TCPState, Payload1);
-                                _ ->
-                                    pass
-                            end
-                    end,
-                    {noreply, TCPState};
                 _ ->
                     {noreply, TCPState}
             end;
