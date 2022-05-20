@@ -23,7 +23,7 @@
 %% gen_server callbacks
 -export([start_link/1, init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
--record(task, {mode = thing, tid, app, firstid, dtuid, product, devaddr, dis = [], que, round, ref, ack = #{}, appdata = #{}, ts = 0, freq = 0, interval = 5}).
+-record(task, {mode = thing, tid, firstid, dtuid, product, devaddr, dis = [], que, round, ref, ack = #{}, appdata = #{}, ts = 0, freq = 0, interval = 5}).
 -define(CHILD(I, Type, Args), {I, {I, start_link, Args}, permanent, 5000, Type, [I]}).
 
 %%%===================================================================
@@ -35,7 +35,7 @@ start_link(State) ->
 %%%===================================================================
 %%% gen_server callbacks
 %%%===================================================================
-init([#{<<"app">> := App, <<"channel">> := ChannelId, <<"client">> := DtuId, <<"mode">> := Mode, <<"freq">> := Freq} = State]) ->
+init([#{<<"channel">> := ChannelId, <<"client">> := DtuId, <<"mode">> := Mode, <<"freq">> := Freq} = State]) ->
     case dgiot_task:get_pnque(DtuId) of
         not_find ->
             io:format("~s ~p State ~p ~n", [?FILE, ?LINE, State]),
@@ -48,11 +48,10 @@ init([#{<<"app">> := App, <<"channel">> := ChannelId, <<"client">> := DtuId, <<"
             erlang:send_after(1000, self(), init),
             Topic = <<"$dg/thing/", ProductId/binary, "/", DevAddr/binary, "/#">>,
             dgiot_mqtt:subscribe(Topic),
-            AppData = maps:get(<<"appdata">>, State, #{}),
             dgiot_metrics:inc(dgiot_task, <<"task">>, 1),
             dgiot_client:save(ChannelId, DtuId),
-            {ok, #task{mode = dgiot_utils:to_atom(Mode), app = App, dtuid = DtuId, product = ProductId, devaddr = DevAddr,
-                tid = ChannelId, firstid = DeviceId, que = Que, round = 1, appdata = AppData, ts = Nowstamp, freq = Freq}}
+            {ok, #task{mode = dgiot_utils:to_atom(Mode), dtuid = DtuId, product = ProductId, devaddr = DevAddr,
+                tid = ChannelId, firstid = DeviceId, que = Que, round = 1, ts = Nowstamp, freq = Freq}}
     end;
 
 init(A) ->
@@ -124,7 +123,8 @@ handle_info({deliver, _, Msg}, #task{tid = Channel, dis = Dis, product = _Produc
     dgiot_metrics:inc(dgiot_task, <<"task_recv">>, 1),
     case binary:split(dgiot_mqtt:get_topic(Msg), <<$/>>, [global, trim]) of
         [<<"$dg">>, <<"thing">>, ProductId, DevAddr, <<"properties">>, <<"report">>] ->
-            dgiot_bridge:send_log(Channel, ProductId, DevAddr, "~s ~p  ~ts: ~ts ", [?FILE, ?LINE, unicode:characters_to_list(dgiot_mqtt:get_topic(Msg)), unicode:characters_to_list(dgiot_mqtt:get_payload(Msg))]),
+            dgiot_bridge:send_log(Channel, ProductId, DevAddr, "~s ~p  ~ts: ~ts ",
+                [?FILE, ?LINE, unicode:characters_to_list(dgiot_mqtt:get_topic(Msg)), unicode:characters_to_list(dgiot_mqtt:get_payload(Msg))]),
             NewPayload =
                 maps:fold(fun(K, V, Acc) ->
                     case dgiot_data:get({protocol, K, ProductId}) of
@@ -160,24 +160,17 @@ send_msg(#task{ref = Ref, que = Que} = State) when length(Que) == 0 ->
     end,
     get_next_pn(State);
 
-send_msg(#task{tid = Channel, product = Product, devaddr = DevAddr, ref = Ref, que = Que, appdata = AppData} = State) ->
+send_msg(#task{tid = Channel, product = Product, devaddr = DevAddr, ref = Ref, que = Que} = State) ->
     {InstructOrder, Interval, _, _, _, Protocol, _, _} = lists:nth(1, Que),
     {NewCount, Payload, Dis} =
         lists:foldl(fun(X, {Count, Acc, Acc1}) ->
             case X of
                 {InstructOrder, _, _, _, error, _, _, _} ->
                     {Count + 1, Acc, Acc1};
-                {InstructOrder, _, Identifier1, AccessMode, NewData, Protocol, DataSource, _} ->
-                    Payload1 = #{
-                        <<"appdata">> => AppData,
-                        <<"thingdata">> => #{
-                            <<"product">> => Product,
-                            <<"devaddr">> => DevAddr,
-                            <<"command">> => AccessMode,
-                            <<"protocol">> => Protocol,
-                            <<"dataSource">> => DataSource#{<<"data">> => NewData}
-                        }
-                    },
+                {InstructOrder, _, Identifier1, _AccessMode, NewData, Protocol, DataSource, _} ->
+                    Payload1 = DataSource#{<<"data">> => NewData},
+                    Topic = <<"$dg/device/", Product/binary, "/", DevAddr/binary, "/properties/report">>,
+                    dgiot_mqtt:publish(Channel, Topic, jsx:encode(Payload1)),
                     {Count + 1, Acc ++ [Payload1], Acc1 ++ [Identifier1]};
                 _ ->
                     {Count, Acc, Acc1}
@@ -186,7 +179,6 @@ send_msg(#task{tid = Channel, product = Product, devaddr = DevAddr, ref = Ref, q
     Newpayload = jsx:encode(Payload),
     Topic = <<"$dg/device/", Product/binary, "/", DevAddr/binary, "/properties/report">>,
     dgiot_bridge:send_log(Channel, Product, DevAddr, "to_dev=> ~s ~p ~ts: ~ts", [?FILE, ?LINE, unicode:characters_to_list(Topic), unicode:characters_to_list(Newpayload)]),
-    dgiot_mqtt:publish(Channel, Topic, Newpayload),
     %%  在超时期限内，回报文，就取消超时定时器
     case Ref of
         undefined ->
@@ -220,7 +212,7 @@ get_next_pn(#task{tid = _Channel, mode = Mode, dtuid = DtuId, firstid = DeviceId
         end,
     State#task{product = NextProductId, devaddr = NextDevAddr, que = Que, dis = [], ack = #{}, ref = NewRef}.
 
-save_td(#task{app = _App, tid = Channel, product = ProductId, devaddr = DevAddr, ack = Ack, appdata = AppData}) ->
+save_td(#task{tid = Channel, product = ProductId, devaddr = DevAddr, ack = Ack, appdata = AppData}) ->
     Data = dgiot_task:save_td(ProductId, DevAddr, Ack, AppData),
     dgiot_bridge:send_log(Channel, ProductId, DevAddr, "save_td=> ~s ~p ProductId ~p DevAddr ~p : ~ts ", [?FILE, ?LINE, ProductId, DevAddr, unicode:characters_to_list(jsx:encode(Data))]).
 
