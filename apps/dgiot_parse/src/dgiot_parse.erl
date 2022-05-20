@@ -139,6 +139,23 @@ batch(Requests, Header, Opts) ->
 batch(Name, Requests, Header, Opts) ->
     request_rest(Name, 'POST', Header, <<"/batch">>, #{<<"requests">> => Requests}, Opts).
 
+del_filed_schemas(Class, Fileds) ->
+    del_filed_schemas(?DEFAULT, Class, Fileds).
+%%
+del_filed_schemas(Name, Class, Fileds) ->
+    Path = <<"/schemas/", Class/binary>>,
+    NewFields = lists:foldl(
+        fun(X, Acc) ->
+            Acc#{X => #{<<"__op">> => <<"Delete">>}}
+        end, #{}, Fileds),
+
+    Method = <<"PUT">>,
+    Body = #{
+        <<"className">> => <<Class/binary>>,
+        <<"fields">> => NewFields,
+        <<"_method">> => Method
+    },
+    request_rest(Name, 'PUT', [], Path, Body, [{from, master}]).
 
 %% 创建表结构
 create_schemas(Fields) ->
@@ -158,10 +175,7 @@ update_schemas(Name, #{<<"className">> := Class} = Fields) ->
 %% 删除表结构
 del_schemas(Class) ->
     del_schemas(?DEFAULT, Class).
-%% 下面好像有点问题。待解决、
 del_schemas(Name, Class) ->
-    io:format("~s ~p ~p ~n", [?FILE, ?LINE, Name]),
-    io:format("~s ~p ~p ~n", [?FILE, ?LINE, Class]),
     Path = <<"/schemas/", Class/binary>>,
     request_rest(Name, 'DELETE', [], Path, #{}, [{from, master}]).
 
@@ -417,13 +431,8 @@ format_value(_Class, _Key, Value) ->
 
 %% Rest请求
 request_rest(Name, Method, Header, Path, Body, Options) ->
-%%    io:format("~s ~p ~p ~n", [?FILE, ?LINE, Name]),
-%%    io:format("~s ~p ~p ~n", [?FILE, ?LINE, Method]),
-%%    io:format("~s ~p ~p ~n", [?FILE, ?LINE, Header]),
-%%    io:format("~s ~p ~p ~n", [?FILE, ?LINE, Path]),
-%%    io:format("~s ~p ~p ~n", [?FILE, ?LINE, Body]),
-%%    io:format("~s ~p ~p ~n", [?FILE, ?LINE, Options]),
-    handle_response(request(Name, Method, Header, Path, Body, Options)).
+    Response = request(Name, Method, Header, Path, Body, Options),
+    handle_response(Response).
 request(Method, Header, Path, Options) ->
     request(Method, Header, Path, <<>>, Options).
 request(Method, Header, Path0, Body, Options) ->

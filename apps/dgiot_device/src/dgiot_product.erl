@@ -172,7 +172,7 @@ update_topics() ->
         <<"Object">> ->
 %% 判断目前topics 是那种类型，如果是object类型，就不更新
 %% 删除原有topics字段
-            case dgiot_parse:del_schemas(<<"topics">>, <<"Product">>) of
+            case dgiot_parse:del_filed_schemas(<<"topics">>, <<"Product">>) of
                 {ok, _} ->
                     %%  新增topics字段
                     dgiot_parse:create_schemas(<<"Product">>, #{<<"topics">> => []});
