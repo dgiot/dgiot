@@ -70,6 +70,7 @@ apps/dgiot_sinmahe/
 apps/dgiot_yinhu/
 apps/dgiot_dahua/
 apps/dgiot_kingdee/
+apps/dgiot_jetlinks/
 apps/dgiot_http/etc/dgiot_http.conf
 apps/emqx_*
 node_modules/

@@ -221,6 +221,7 @@ overlay_vars_rel(RelType) ->
         , {enable_plugin_dgiot_hjt212, true}
         , {enable_plugin_dgiot_bacnet, true}
         , {enable_plugin_dgiot_bamis, true}
+        , {enable_plugin_dgiot_jetlinks, true}
         , {vm_args_file, VmArgs}
     ].
 
@@ -343,6 +344,7 @@ relx_plugin_apps_per_rel(cloud) ->
         , dgiot_dlink
         , dgiot_topo
         , dgiot_bamis
+        , dgiot_jetlinks
         , dgiot_evidence
         , dgiot_opc
         , dgiot_meter
