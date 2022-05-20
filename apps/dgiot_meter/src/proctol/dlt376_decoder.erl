@@ -668,7 +668,7 @@ send_childvalue(DeviceId, ChildValue) ->
     case dgiot_parse:query_object(<<"Device">>, #{<<"where">> => #{<<"parentId">> => DeviceId}}) of
         {ok, #{<<"results">> := ChildDevices}} ->
             lists:foldl(fun(#{<<"objectId">> := ChildId, <<"devaddr">> := Devaddr, <<"product">> := #{<<"objectId">> := ProductId}}, _Acc) ->
-                case dgiot_data:get({metetda, ChildId}) of
+                case dgiot_data:get({metertda, ChildId}) of
                     not_find ->
                         pass;
                     {Da, _Dtuaddr} ->
@@ -677,7 +677,7 @@ send_childvalue(DeviceId, ChildValue) ->
                             error ->
                                 pass;
                             {ok, Value} ->
-                                Topic = <<"thing/", ProductId/binary, "/", Devaddr/binary, "/post">>,  % 发送给mqtt进行数据存储
+                                Topic = <<"$dg/thing/", ProductId/binary, "/", Devaddr/binary, "/post">>,  % 发送给mqtt进行数据存储
                                 DeviceId1 = dgiot_parse_id:get_deviceid(ProductId, Devaddr),
                                 dgiot_mqtt:publish(DeviceId1, Topic, jsx:encode(Value)),
                                 timer:sleep(1 * 1000)
