@@ -50,7 +50,7 @@ save(ProductId, DevAddr) ->
 save(#{<<"objectId">> := _DeviceId, <<"devaddr">> := _Devaddr, <<"product">> := _Product} = Device) ->
     save_(Device);
 save(#{<<"objectId">> := DeviceId}) ->
-    {ok, Device} = dgiot_parse:get_object(<<"Devcie">>, DeviceId),
+    {ok, Device} = dgiot_parse:get_object(<<"Device">>, DeviceId),
     save_(Device);
 save(V) ->
     io:format("~s ~p ~p ~n", [?FILE, ?LINE, V]),
@@ -148,7 +148,7 @@ put_content(#{<<"product">> := Product, <<"objectId">> := DeviceId}) ->
     ProductId = maps:get(<<"objectId">>, Product),
     case dgiot_product:lookup_prod(ProductId) of
         {ok, #{<<"content">> := Content}} ->
-            dgiot_parse:update_object(<<"Devcie">>, DeviceId, #{<<"content">> => Content});
+            dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"content">> => Content});
         _ ->
             pass
     end;
@@ -162,7 +162,7 @@ put_profile(#{<<"product">> := Product, <<"objectId">> := DeviceId}) ->
     ProductId = maps:get(<<"objectId">>, Product),
     case dgiot_product:lookup_prod(ProductId) of
         {ok, #{<<"profile">> := Profile}} ->
-            dgiot_parse:update_object(<<"Devcie">>, DeviceId, #{<<"profile">> => Profile});
+            dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"profile">> => Profile});
         _ ->
             pass
     end;

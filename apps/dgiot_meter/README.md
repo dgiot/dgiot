@@ -54,7 +54,7 @@
               |                              |                                       |
              ACL                            ACL            <--parse--> shuaw_parse --+
               +                              +                                       |              +-- 时序数据--+
-          Group(Devcie)                 Group(Devcie)                                |              |            |
+          Group(Device)                 Group(Device)                                |              |            |
               |                              |                                       | === 流计算==> 物理层镜像    +--> 批量计算
      +--------+-------+                      +                                       |              |            |
      |                |                      |                                       |              +-- 关系数据--+

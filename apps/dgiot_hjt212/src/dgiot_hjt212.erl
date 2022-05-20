@@ -233,7 +233,7 @@ creat_equdevice(BinSysAddr, ProductId, EquAddr, Name, Ip, DevType, Header) ->
 
 
 create_devceLog(Devaddr, ProductId, Acl, #{<<"serialid">> := Serialid} = Data) ->
-    Devcie = #{
+    Device = #{
         <<"device">> => dgiot_parse_id:get_deviceid(ProductId, Devaddr),
         <<"devaddr">> => dgiot_utils:to_binary(Serialid),
         <<"product">> => #{
@@ -245,4 +245,4 @@ create_devceLog(Devaddr, ProductId, Acl, #{<<"serialid">> := Serialid} = Data) -
         <<"ACL">> => Acl,
         <<"status">> => <<"ONLINE">>
     },
-    dgiot_parse:create_object(<<"Devicelog">>, Devcie).
+    dgiot_parse:create_object(<<"Devicelog">>, Device).
