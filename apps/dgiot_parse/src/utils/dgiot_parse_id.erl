@@ -338,14 +338,6 @@ get_objectid(Class, Map) ->
             Map#{
                 <<"objectId">> => DId
             };
-        <<"post_classes_crond">> ->
-            get_objectid(<<"Crond">>, Map);
-        <<"Crond">> ->
-            Name = maps:get(<<"tid">>, Map, <<"">>),
-            <<DId:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Crond", Name/binary>>),
-            Map#{
-                <<"objectId">> => DId
-            };
         <<"_Role">> ->
             Name = maps:get(<<"name">>, Map, <<"">>),
             <<DId:10/binary, _/binary>> = dgiot_utils:to_md5(<<"_Role", Name/binary>>),
