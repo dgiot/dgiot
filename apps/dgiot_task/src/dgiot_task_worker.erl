@@ -111,7 +111,7 @@ handle_info({deliver, _, Msg}, #task{tid = Channel, dis = Dis, product = _Produc
             NewAck = dgiot_task:get_collection(ProductId, Dis, NewPayload, maps:merge(Ack, NewPayload)),
             dgiot_metrics:inc(dgiot_task, <<"task_recv">>, 1),
             {noreply, get_next_pn(State#task{ack = NewAck, product = ProductId, devaddr = DevAddr})};
-        [<<"$dg">>, <<"thing">>, ProductId, DevAddr, <<"events">>] -> % todo
+        [<<"$dg">>, <<"thing">>, _ProductId, _DevAddr, <<"events">>] -> % todo
             {noreply, get_next_pn(State#task{ack = Ack})};
         _ ->
             {noreply, get_next_pn(State#task{ack = Ack})}
@@ -136,7 +136,7 @@ handle_info({deliver, _, Msg}, #task{tid = Channel, dis = Dis, product = _Produc
                           end, #{}, Payload),
             NewAck = dgiot_task:get_collection(ProductId, Dis, NewPayload, maps:merge(Ack, NewPayload)),
             {noreply, send_msg(State#task{ack = NewAck, product = ProductId, devaddr = DevAddr})};
-        [<<"$dg">>, <<"thing">>, ProductId, DevAddr, <<"events">>] -> % todo
+        [<<"$dg">>, <<"thing">>, _ProductId, _DevAddr, <<"events">>] -> % todo
             {noreply, get_next_pn(State#task{ack = Ack})};
         _ ->
             {noreply, send_msg(State#task{ack = Ack})}
