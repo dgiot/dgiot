@@ -77,45 +77,10 @@ get_collection(ProductId, [], Payload, Ack) ->
                         Acc2;
                     _ ->
                         case X of
-                            #{<<"dataForm">> := #{<<"strategy">> := Strategy},
-                                <<"dataType">> := #{<<"type">> := <<"geopoint">>},
+                            #{<<"dataForm">> := #{<<"strategy">> := Strategy} = DataForm,
+                                <<"dataType">> := DataType,
                                 <<"identifier">> := Identifier} when Strategy =/= <<"计算值"/utf8>> ->
-                                case maps:find(Identifier, Payload) of
-                                    {ok, Value} ->
-                                        Addr = dgiot_gps:get_gpsaddr(Value),
-                                        dgiot_data:insert({topogps, dgiot_parse_id:get_shapeid(ProductId, Identifier)}, Addr),
-                                        Acc2#{Identifier => Value};
-                                    _ ->
-                                        dgiot_data:insert({topogps, dgiot_parse_id:get_shapeid(ProductId, Identifier)}, <<"无GPS信息"/utf8>>),
-                                        Acc2
-                                end;
-                            #{<<"dataForm">> := #{<<"address">> := Address, <<"strategy">> := Strategy, <<"collection">> := Collection},
-                                <<"dataType">> := #{<<"type">> := Type, <<"specs">> := Specs},
-                                <<"identifier">> := Identifier} when Strategy =/= <<"计算值"/utf8>> ->
-                                case maps:find(Identifier, Payload) of
-                                    {ok, Value} ->
-                                        Str = re:replace(Collection, dgiot_utils:to_list(<<"%%", Identifier/binary>>), "(" ++ dgiot_utils:to_list(Value) ++ ")", [global, {return, list}]),
-                                        Str1 = re:replace(Str, "%s", "(" ++ dgiot_utils:to_list(Value) ++ ")", [global, {return, list}]),
-                                        case string2value(Str1, Type, Specs) of
-                                            error ->
-                                                maps:without([Identifier], Acc2);
-                                            Value1 ->
-                                                Acc2#{Identifier => Value1}
-                                        end;
-                                    _ ->
-                                        case maps:find(Address, Payload) of
-                                            {ok, Value} ->
-                                                Str = re:replace(Collection, dgiot_utils:to_list(<<"%%", Identifier/binary>>), "(" ++ dgiot_utils:to_list(Value) ++ ")", [global, {return, list}]),
-                                                Str1 = re:replace(Str, "%s", "(" ++ dgiot_utils:to_list(Value) ++ ")", [global, {return, list}]),
-                                                case string2value(Str1, Type, Specs) of
-                                                    error ->
-                                                        maps:without([Identifier], Acc2);
-                                                    Value1 ->
-                                                        Acc2#{Identifier => Value1}
-                                                end;
-                                            _ -> Acc2
-                                        end
-                                end;
+                                dgiot_task_data:get_userdata(ProductId, Identifier, DataForm, DataType, Payload, Acc2);
                             _ ->
                                 Acc2
                         end
@@ -136,45 +101,10 @@ get_collection(ProductId, Dis, Payload, Ack) ->
                             Acc2;
                         _ ->
                             case X of
-                                #{<<"dataForm">> := #{<<"strategy">> := Strategy},
-                                    <<"dataType">> := #{<<"type">> := <<"geopoint">>},
+                                #{<<"dataForm">> := #{<<"strategy">> := Strategy} = DataForm,
+                                    <<"dataType">> := DataType,
                                     <<"identifier">> := Identifier} when Strategy =/= <<"计算值"/utf8>> ->
-                                    case maps:find(Identifier, Payload) of
-                                        {ok, Value} ->
-                                            Addr = dgiot_gps:get_gpsaddr(Value),
-                                            dgiot_data:insert({topogps, dgiot_parse_id:get_shapeid(ProductId, Identifier)}, Addr),
-                                            Acc2#{Identifier => Value};
-                                        _ ->
-                                            dgiot_data:insert({topogps, dgiot_parse_id:get_shapeid(ProductId, Identifier)}, <<"无GPS信息"/utf8>>),
-                                            Acc2
-                                    end;
-                                #{<<"dataForm">> := #{<<"address">> := Address, <<"strategy">> := Strategy, <<"collection">> := Collection},
-                                    <<"dataType">> := #{<<"type">> := Type, <<"specs">> := Specs},
-                                    <<"identifier">> := Identifier} when Strategy =/= <<"计算值"/utf8>> ->
-                                    case maps:find(Identifier, Payload) of
-                                        {ok, Value} ->
-                                            Str = re:replace(Collection, dgiot_utils:to_list(<<"%%", Identifier/binary>>), "(" ++ dgiot_utils:to_list(Value) ++ ")", [global, {return, list}]),
-                                            Str1 = re:replace(Str, "%s", "(" ++ dgiot_utils:to_list(Value) ++ ")", [global, {return, list}]),
-                                            case string2value(Str1, Type, Specs) of
-                                                error ->
-                                                    maps:without([Identifier], Acc2);
-                                                Value1 ->
-                                                    Acc2#{Identifier => Value1}
-                                            end;
-                                        _ ->
-                                            case maps:find(Address, Payload) of
-                                                {ok, Value} ->
-                                                    Str = re:replace(Collection, dgiot_utils:to_list(<<"%%", Identifier/binary>>), "(" ++ dgiot_utils:to_list(Value) ++ ")", [global, {return, list}]),
-                                                    Str1 = re:replace(Str, "%s", "(" ++ dgiot_utils:to_list(Value) ++ ")", [global, {return, list}]),
-                                                    case string2value(Str1, Type, Specs) of
-                                                        error ->
-                                                            maps:without([Identifier], Acc2);
-                                                        Value1 ->
-                                                            Acc2#{Identifier => Value1}
-                                                    end;
-                                                _ -> Acc2
-                                            end
-                                    end;
+                                    dgiot_task_data:get_userdata(ProductId, Identifier, DataForm, DataType, Payload, Acc2);
                                 _ ->
                                     Acc2
                             end
