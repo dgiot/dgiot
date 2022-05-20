@@ -66,7 +66,7 @@ do_request(Url, Authorization, Sql) ->
     Index = dgiot_utils:update_counter({tdengine, index}),
     Profile = list_to_atom(lists:concat([http, Index])),
     timer:sleep(1),
-    case catch httpc:request(post, Request, ?HTTPOption, ?REQUESTOption, Profile) of
+    case catch httpc:request(post, Request, [{timeout, 60000}, {connect_timeout, 60000}], [{body_format, binary}], Profile) of
         {ok, {{_HTTPVersion, StatusCode, _ReasonPhrase}, _Headers, Body}} ->
             format_body(StatusCode, Body, Formatter);
         {error, {failed_connect, _}} ->

@@ -621,7 +621,7 @@ process_message(Frames, ChannelId) ->
         [#{<<"di">> := <<16#01, 16#01, 16#01, 16#10>>, <<"addr">> := Addr, <<"value">> := Value} | _] ->
             case dgiot_data:get({meter, ChannelId}) of
                 {ProductId, _ACL, _Properties} -> DevAddr = dgiot_utils:binary_to_hex(Addr),
-                    Topic = <<"thing/", ProductId/binary, "/", Addr/binary, "/post">>,  % 发送给mqtt进行数据存储
+                    Topic = <<"$dg/thing/", ProductId/binary, "/", DevAddr/binary, "/properties/report">>, % 发送给task进行数据存储
                     DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
                     dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(Value));
                 _ -> pass
@@ -631,7 +631,7 @@ process_message(Frames, ChannelId) ->
             case dgiot_data:get({meter, ChannelId}) of
                 {ProductId, _ACL, _Properties} ->
                     %DevAddr = dgiot_utils:binary_to_hex(Addr),
-                    Topic = <<"thing/", ProductId/binary, "/", MAddr/binary, "/post">>,  % 发送给mqtt进行数据存储
+                    Topic = <<"$dg/thing/", ProductId/binary, "/", MAddr/binary, "/properties/report">>, % 发送给task进行数据存储
                     DeviceId = dgiot_parse_id:get_deviceid(ProductId, MAddr),
                     dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(Value));
                 _ -> pass
@@ -645,7 +645,7 @@ process_message(?DLT376, Frames, ChannelId) ->
         [#{<<"addr">> := DevAddr, <<"value">> := Value, <<"childvalue">> := ChildValue} | _] ->
             case dgiot_data:get({dtu, ChannelId}) of
                 {ProductId, _ACL, _Properties} ->
-                    Topic = <<"thing/", ProductId/binary, "/", DevAddr/binary, "/post">>,  % 发送给mqtt进行数据存储
+                    Topic = <<"$dg/thing/", ProductId/binary, "/", DevAddr/binary, "/properties/report">>, % 发送给task进行数据存储
                     DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
                     dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(Value)),
                     timer:sleep(1 * 1000),
@@ -677,7 +677,7 @@ send_childvalue(DeviceId, ChildValue) ->
                             error ->
                                 pass;
                             {ok, Value} ->
-                                Topic = <<"$dg/thing/", ProductId/binary, "/", Devaddr/binary, "/post">>,  % 发送给mqtt进行数据存储
+                                Topic = <<"$dg/thing/", ProductId/binary, "/", Devaddr/binary, "/properties/report">>, % 发送给task进行数据存储
                                 DeviceId1 = dgiot_parse_id:get_deviceid(ProductId, Devaddr),
                                 dgiot_mqtt:publish(DeviceId1, Topic, jsx:encode(Value)),
                                 timer:sleep(1 * 1000)

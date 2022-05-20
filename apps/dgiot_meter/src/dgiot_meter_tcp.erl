@@ -75,7 +75,7 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, state = #state{id = ChannelId, dt
     case Protocol of
         ?DLT376 ->
             {ProductId, _, _} = dgiot_data:get({dtu, ChannelId}),
-            Topic = <<"$dg/device/", ProductId/binary, "/", DtuAddr/binary, "/properties/report">>,
+            Topic = <<"$dg/device/", ProductId/binary, "/", DtuAddr/binary, "/properties">>,
             dgiot_mqtt:subscribe(Topic),  %为这个集中器订阅一个mqtt
             %%                    $dg/device/{productId}/{deviceAddr}/profile
             Topic2 = <<"$dg/device/", ProductId/binary, "/", DtuAddr/binary, "/profile">>,
@@ -212,7 +212,7 @@ handle_info({deliver, _Topic, Msg}, #tcp{state = #state{id = ChannelId, protocol
     case jsx:is_json(Payload) of
         true ->
             case binary:split(dgiot_mqtt:get_topic(Msg), <<$/>>, [global, trim]) of
-                [<<"$dg">>, <<"device">>, ProductId, DevAddr, <<"properties">>, <<"report">>] ->
+                [<<"$dg">>, <<"device">>, ProductId, DevAddr, <<"properties">>] ->
                     case Protocol of
                         ?DLT376 ->
                             DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
@@ -230,7 +230,12 @@ handle_info({deliver, _Topic, Msg}, #tcp{state = #state{id = ChannelId, protocol
                                     dgiot_tcp_server:send(TCPState, Payload1)
                             end;
                         ?DLT645 ->
-                            [#{<<"thingdata">> := ThingData} | _] = jsx:decode(dgiot_mqtt:get_payload(Msg), [{labels, binary}, return_maps]),
+                            DataSource = jsx:decode(dgiot_mqtt:get_payload(Msg), [{labels, binary}, return_maps]),
+                            ThingData = #{
+                                <<"devaddr">> => DevAddr,
+                                <<"protocol">> => ?DLT645,
+                                <<"dataSource">> => DataSource
+                            },
                             Payload1 = dgiot_meter:to_frame(ThingData),
                             dgiot_bridge:send_log(ChannelId, "~s ~p DLT645 send=> ~p", [?FILE, ?LINE, dgiot_utils:binary_to_hex(Payload1)]),
                             dgiot_tcp_server:send(TCPState, Payload1)

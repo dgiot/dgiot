@@ -96,34 +96,30 @@ start(ChannelId, ChannelArgs) ->
     dgiot_channelx:add(?TYPE, ChannelId, ?MODULE, ChannelArgs).
 
 %% 通道初始化
-init(?TYPE, ChannelId, Args) ->
-    #{<<"product">> := Products,
-        <<"ip">> := Ip,
-        <<"port">> := Port
-    } = Args,
+init(?TYPE, ChannelId, #{
+    <<"ip">> := Ip,
+    <<"port">> := Port
+} = Args) ->
     {FileName, MinAddr, MaxAddr} =
         case maps:find(<<"file">>, Args) of
             {ok, FileName1} ->
-                {MinAddr1, MaxAddr1} = dgiot_product_csv:read_csv(FileName1),
+                {MinAddr1, MaxAddr1} = dgiot_product_csv:read_csv(ChannelId, FileName1),
                 modbus_tcp:set_addr(ChannelId, MinAddr1, MaxAddr1),
                 {FileName1, MinAddr1, MaxAddr1};
             _ ->
                 {<<>>, 0, 100}
         end,
-    lists:map(fun({ProductId, #{<<"ACL">> := _Acl}}) ->
-        dgiot_modbusc_tcp:start_connect(#{
-            <<"auto_reconnect">> => 10,
-            <<"reconnect_times">> => 3,
-            <<"ip">> => Ip,
-            <<"port">> => Port,
-            <<"productid">> => ProductId,
-            <<"channelid">> => ChannelId,
-            <<"hb">> => 10,
-            <<"filename">> => FileName,
-            <<"minaddr">> => MinAddr,
-            <<"maxaddr">> => MaxAddr
-        })
-              end, Products),
+    dgiot_modbusc_tcp:start_connect(#{
+        <<"auto_reconnect">> => 10,
+        <<"reconnect_times">> => 3,
+        <<"ip">> => Ip,
+        <<"port">> => Port,
+        <<"channelid">> => ChannelId,
+        <<"hb">> => 10,
+        <<"filename">> => FileName,
+        <<"minaddr">> => MinAddr,
+        <<"maxaddr">> => MaxAddr
+    }),
     {ok, #state{id = ChannelId}, []}.
 
 handle_init(State) ->

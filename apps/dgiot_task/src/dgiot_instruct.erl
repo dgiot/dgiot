@@ -198,22 +198,23 @@ get_instruct(ProductId, Round) ->
                         <<"dataForm">> := DataForm,
                         <<"dataSource">> := DataSource} ->
                         Protocol = maps:get(<<"protocol">>, DataForm, <<"">>),
+                        NewDataSource = dgiot_task_data:get_datasource(Protocol, DataSource),
                         ThingRound = maps:get(<<"round">>, DataForm, <<"all">>),
                         InstructOrder = maps:get(<<"order">>, DataForm, Order),
                         Control = maps:get(<<"control">>, DataForm, "%d"),
                         NewData = dgiot_task:get_control(Round, Min, Control),
-                        Strategy = dgiot_utils:to_int(maps:get(<<"strategy">>, DataForm,  20)),
+                        Strategy = dgiot_utils:to_int(maps:get(<<"strategy">>, DataForm, 20)),
                         BinRound = dgiot_utils:to_binary(Round),
                         case ThingRound of
                             <<"all">> ->
-                                {Order + 1, List ++ [{InstructOrder, Strategy, Identifier, AccessMode, NewData, Protocol, DataSource, ThingRound}]};
+                                {Order + 1, List ++ [{InstructOrder, Strategy, Identifier, AccessMode, NewData, Protocol, NewDataSource, ThingRound}]};
                             BinRound ->
-                                {Order + 1, List ++ [{InstructOrder, Strategy, Identifier, AccessMode, NewData, Protocol, DataSource, ThingRound}]};
+                                {Order + 1, List ++ [{InstructOrder, Strategy, Identifier, AccessMode, NewData, Protocol, NewDataSource, ThingRound}]};
                             Rounds ->
                                 RoundList = binary:split(Rounds, <<",">>, [global]),
                                 case lists:member(BinRound, RoundList) of
                                     true ->
-                                        {Order + 1, List ++ [{InstructOrder, Strategy, Identifier, AccessMode, NewData, Protocol, DataSource, ThingRound}]};
+                                        {Order + 1, List ++ [{InstructOrder, Strategy, Identifier, AccessMode, NewData, Protocol, NewDataSource, ThingRound}]};
                                     false ->
                                         Acc
                                 end
@@ -270,5 +271,3 @@ get_que_(Que, Round) ->
                 Acc
         end
                 end, [], Que).
-
-

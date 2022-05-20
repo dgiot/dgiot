@@ -169,7 +169,7 @@ string2value(Str, Type, Specs) ->
 
 save_pnque(DtuProductId, DtuAddr, ProductId, DevAddr) ->
     DtuId = dgiot_parse_id:get_deviceid(DtuProductId, DtuAddr),
-    Topic = <<"thing/", ProductId/binary, "/", DevAddr/binary>>,
+    Topic = <<"$dg/device/", ProductId/binary, "/", DevAddr/binary, "/properties">>,
     dgiot_mqtt:subscribe(Topic),
     case dgiot_data:get(?DGIOT_PNQUE, DtuId) of
         not_find ->
@@ -209,7 +209,7 @@ del_pnque(DtuId) ->
             pass
     end.
 
-save_td(ProductId, DevAddr, Ack, _AppData) ->
+save_td(ProductId, DevAddr, Ack, AppData) ->
     case length(maps:to_list(Ack)) of
         0 ->
             #{};
@@ -218,7 +218,8 @@ save_td(ProductId, DevAddr, Ack, _AppData) ->
             NewData = dgiot_task:get_calculated(ProductId, NewAck),
             Keys = dgiot_product:get_keys(ProductId),
             DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
-            AllData = merge_cache_data(DeviceId, NewData),
+            Interval = maps:get(<<"interval">>, AppData, 3),
+            AllData = merge_cache_data(DeviceId, NewData, Interval),
             AllDataKey = maps:keys(AllData),
             case Keys -- AllDataKey of
                 List when length(List) == 0 andalso length(AllDataKey) =/= 0 ->
@@ -242,12 +243,12 @@ save_cache_data(DeviceId, Data) ->
                         end, #{}, Data),
     dgiot_data:insert(?DGIOT_DATA_CACHE, DeviceId, {NewData, dgiot_datetime:now_secs()}).
 
-merge_cache_data(DeviceId, NewData) ->
+merge_cache_data(DeviceId, NewData, Interval) ->
     case dgiot_data:get(?DGIOT_DATA_CACHE, DeviceId) of
         not_find ->
             NewData;
         {OldData, Ts} ->
-            case dgiot_datetime:now_secs() - Ts < 3 of
+            case dgiot_datetime:now_secs() - Ts < Interval of
                 true ->
                     maps:fold(fun(K, V, Acc) ->
                         Key = dgiot_utils:to_binary(K),

@@ -305,8 +305,11 @@ add_product_relation(ChannelIds, ProductId) ->
             ]
         }
         },
-    lists:map(fun(ChannelId) when size(ChannelId) > 0 ->
-        dgiot_parse:update_object(<<"Channel">>, ChannelId, Map)
+    lists:map(fun
+                  (ChannelId) when size(ChannelId) > 0 ->
+                      dgiot_parse:update_object(<<"Channel">>, ChannelId, Map);
+                  (_) ->
+                      pass
               end, ChannelIds).
 
 delete_product_relation(ProductId) ->

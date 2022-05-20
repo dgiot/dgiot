@@ -269,11 +269,77 @@ set_params(Payload, _ProductId, _DevAddr) ->
                     end, [], lists:seq(1, Length)),
     Payloads.
 
-parse_frame(<<_TransactionId:16, _ProtocolId:16, _Size1:16, _Slaveid:8, _FunCode:8, DataLen:8, Data:DataLen/bytes>>) ->
+parse_frame(<<_TransactionId:16, _ProtocolId:16, _Size1:16, _Slaveid:8, _FunCode:8, DataLen:8, Data:DataLen/bytes, _/bytes>>) ->
     Data.
 
-parse_frame(_FileName, Data) ->
-    Data.
+parse_frame(FileName, Data) ->
+    AtomName = dgiot_utils:to_atom(FileName),
+    Things = ets:match(AtomName, {'_', ['_', '_', '_', '_', '$1', '_', '_', '_', '$2', '_', '_', '_', '_', '_', '_', '$3' | '_']}),
+    lists:foldl(fun([Devaddr, Address, Originaltype | _], _Acc) ->
+        ProductId = dgiot_data:get(AtomName, {addr, Address}),
+        IntOffset = dgiot_utils:to_int(Address),
+        IntLen = get_len(1, Originaltype),
+        Thing = #{<<"dataSource">> => #{
+            <<"registersnumber">> => 1,
+            <<"originaltype">> => Originaltype
+        }},
+        Value =
+            case IntOffset of
+                1 ->
+                    <<V:IntLen/binary, _/binary>> = Data,
+                    case format_value(V, Thing, #{}) of
+                        {Value1, _Rest} ->
+                            Value1;
+                        _ ->
+                            V
+                    end;
+                _ ->
+                    NewIntOffset = IntOffset + 1,
+                    <<_:NewIntOffset/binary, V:IntLen/binary, _/binary>> = Data,
+                    case format_value(V, Thing, #{}) of
+                        {Value1, _Rest} ->
+                            Value1;
+                        _ ->
+                            V
+                    end
+            end,
+        NewData = change_data(ProductId, #{Address => Value}),
+        dgiot_task:save_td(ProductId, Devaddr, NewData, #{<<"interval">> => 30})
+                end, #{}, Things),
+    <<>>.
+
+change_data(ProductId, Data) ->
+    case dgiot_product:lookup_prod(ProductId) of
+        {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
+            lists:foldl(fun(X, Acc) ->
+                case X of
+                    #{<<"identifier">> := Identifier,
+                        <<"dataSource">> := DataSource} ->
+                        Dis = maps:get(<<"dis">>, DataSource, []),
+                        NewDis =
+                            lists:foldl(fun(X1, Acc1) ->
+                                case X1 of
+                                    #{<<"key">> := Key} ->
+                                        Acc1 ++ [Key];
+                                    _ ->
+                                        Acc1
+                                end
+                                        end, [], Dis),
+                        maps:fold(fun(PK, PV, Acc2) ->
+                            case lists:member(PK, NewDis) of
+                                true ->
+                                    Acc2#{Identifier => PV};
+                                _ ->
+                                    Acc2#{PK => PV}
+                            end
+                                  end, Acc, Data);
+                    _ ->
+                        Acc
+                end
+                        end, #{}, Props);
+        _Error ->
+            Data
+    end.
 
 %rtu modbus
 parse_frame(<<>>, Acc, _State) -> {<<>>, Acc};
@@ -686,11 +752,13 @@ get_len(IntNum, _Originaltype) ->
 
 get_addr(ChannelId, Min, Max, Step) ->
     case dgiot_data:get_consumer(?consumer(ChannelId), Step) of
-        Value when (Value + Step) > Max ->
+        Min ->
+            Min;
+        Value when (Value + Step) >= Max ->
             dgiot_data:set_consumer(?consumer(ChannelId), Min, Max),
             Value - Step;
         Value ->
-            Value - Step
+            Value
     end.
 
 set_addr(ChannelId, Min, Max) ->

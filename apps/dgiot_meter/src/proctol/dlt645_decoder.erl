@@ -347,7 +347,7 @@ process_message(Frames, ChannelId) ->
         [#{<<"command">> := 16#91, <<"di">> := _Di, <<"addr">> := Addr, <<"value">> := Value} | _] ->
             case dgiot_data:get({meter, ChannelId}) of
                 {ProductId, _ACL, _Properties} -> DevAddr = dgiot_utils:binary_to_hex(Addr),
-                    Topic = <<"thing/", ProductId/binary, "/", DevAddr/binary, "/post">>,
+                    Topic = <<"$dg/thing/", ProductId/binary, "/", DevAddr/binary, "/properties/report">>, % 发送给task进行数据存储
                     DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
                     dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(Value));
                 _ -> pass

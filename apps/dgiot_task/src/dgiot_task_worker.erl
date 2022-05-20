@@ -46,7 +46,7 @@ init([#{<<"channel">> := ChannelId, <<"client">> := DtuId, <<"mode">> := Mode, <
 %%          ChildQue = dgiot_instruct:get_child_instruct(DeviceId, 1, dgiot_utils:to_atom(Mode)),
             Nowstamp = dgiot_datetime:nowstamp(),
             erlang:send_after(1000, self(), init),
-            Topic = <<"$dg/thing/", ProductId/binary, "/", DevAddr/binary, "/#">>,
+            Topic = <<"$dg/thing/", ProductId/binary, "/", DevAddr/binary, "/properties/report">>,
             dgiot_mqtt:subscribe(Topic),
             dgiot_metrics:inc(dgiot_task, <<"task">>, 1),
             dgiot_client:save(ChannelId, DtuId),
@@ -85,6 +85,7 @@ handle_info(init, #task{dtuid = DtuId, mode = Mode, round = Round} = State) ->
             DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
             NewRound = Round + 1,
             Que = dgiot_instruct:get_instruct(ProductId, DeviceId, NewRound, dgiot_utils:to_atom(Mode)),
+            erlang:send_after(1000, self(), retry),
             {noreply, State#task{product = ProductId, devaddr = DevAddr, round = NewRound, firstid = DeviceId, que = Que}}
     end;
 
@@ -162,23 +163,21 @@ send_msg(#task{ref = Ref, que = Que} = State) when length(Que) == 0 ->
 
 send_msg(#task{tid = Channel, product = Product, devaddr = DevAddr, ref = Ref, que = Que} = State) ->
     {InstructOrder, Interval, _, _, _, Protocol, _, _} = lists:nth(1, Que),
-    {NewCount, Payload, Dis} =
+    {NewCount, _Payload, Dis} =
         lists:foldl(fun(X, {Count, Acc, Acc1}) ->
             case X of
                 {InstructOrder, _, _, _, error, _, _, _} ->
                     {Count + 1, Acc, Acc1};
                 {InstructOrder, _, Identifier1, _AccessMode, NewData, Protocol, DataSource, _} ->
                     Payload1 = DataSource#{<<"data">> => NewData},
-                    Topic = <<"$dg/device/", Product/binary, "/", DevAddr/binary, "/properties/report">>,
+                    Topic = <<"$dg/device/", Product/binary, "/", DevAddr/binary, "/properties">>,
                     dgiot_mqtt:publish(Channel, Topic, jsx:encode(Payload1)),
+                    dgiot_bridge:send_log(Channel, Product, DevAddr, "to_dev=> ~s ~p ~ts: ~ts", [?FILE, ?LINE, unicode:characters_to_list(Topic), unicode:characters_to_list(jsx:encode(Payload1))]),
                     {Count + 1, Acc ++ [Payload1], Acc1 ++ [Identifier1]};
                 _ ->
                     {Count, Acc, Acc1}
             end
                     end, {0, [], []}, Que),
-    Newpayload = jsx:encode(Payload),
-    Topic = <<"$dg/device/", Product/binary, "/", DevAddr/binary, "/properties/report">>,
-    dgiot_bridge:send_log(Channel, Product, DevAddr, "to_dev=> ~s ~p ~ts: ~ts", [?FILE, ?LINE, unicode:characters_to_list(Topic), unicode:characters_to_list(Newpayload)]),
     %%  在超时期限内，回报文，就取消超时定时器
     case Ref of
         undefined ->

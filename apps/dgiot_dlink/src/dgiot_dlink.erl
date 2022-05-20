@@ -55,19 +55,6 @@
         },
         <<"table">> => [
             #{
-                key => <<"data">>,
-                order => 2,
-                type => integer,
-                required => true,
-                default => <<"2"/utf8>>,
-                title => #{
-                    zh => <<"数据长度(字节)"/utf8>>
-                },
-                description => #{
-                    zh => <<"数据长度(字节)"/utf8>>
-                }
-            },
-            #{
                 key => <<"key">>,
                 order => 2,
                 type => string,
@@ -78,6 +65,19 @@
                 },
                 description => #{
                     zh => <<"数据标识"/utf8>>
+                }
+            },
+            #{
+                key => <<"data">>,
+                order => 2,
+                type => integer,
+                required => true,
+                default => <<"2"/utf8>>,
+                title => #{
+                    zh => <<"数据长度(字节)"/utf8>>
+                },
+                description => #{
+                    zh => <<"数据长度(字节)"/utf8>>
                 }
             }
         ]
