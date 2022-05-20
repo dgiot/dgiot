@@ -46,6 +46,8 @@
     del_schemas/1,
     del_schemas/2,
     set_class_level/2,
+    del_filed_schemas/2,
+    del_filed_schemas/3,
     query_object/2,
     query_object/3,
     query_object/4,
