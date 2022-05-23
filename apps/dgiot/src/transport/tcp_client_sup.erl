@@ -14,9 +14,8 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
--module(task_sup).
+-module(tcp_client_sup).
 
--include("dgiot_task.hrl").
 -behaviour(supervisor).
 
 -export([start_link/1, init/1]).
@@ -25,14 +24,8 @@ start_link(Name) ->
     supervisor:start_link({local, Name}, ?MODULE, []).
 
 init([]) ->
-    ChildSpec = [dgiot:child_spec(dgiot_task_worker, worker)],
+    ChildSpec = [dgiot:child_spec(dgiot_tcp_client, worker)],
     {ok, {{simple_one_for_one, 5, 10}, ChildSpec}}.
-
-
-
-
-
-
 
 
 

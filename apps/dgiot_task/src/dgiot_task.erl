@@ -19,8 +19,8 @@
 -include_lib("dgiot/include/logger.hrl").
 -include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
 
--export([start/1, start/2, save_pnque/4, get_pnque/1, del_pnque/1, save_td/4]).
--export([get_control/3, get_collection/4, get_calculated/2, string2value/2, string2value/3]).
+-export([start/1, start/2, send/3, get_pnque_len/1, save_pnque/4, get_pnque/1, del_pnque/1, save_td/4]).
+-export([get_control/3, get_collection/4, get_calculated/2, get_instruct/2, string2value/2, string2value/3]).
 
 start(ChannelId) ->
     lists:map(fun(Y) ->
@@ -34,6 +34,15 @@ start(ChannelId) ->
 
 start(ChannelId, ClientId) ->
     dgiot_client:start(ChannelId, ClientId).
+
+send(ProductId, DevAddr, Payload) ->
+    case dgiot_data:get({?TYPE, ProductId}) of
+        not_find ->
+            pass;
+        ChannelId ->
+            Topic = <<"$dg/thing/", ProductId/binary, "/", DevAddr/binary, "/properties/report">>,
+            dgiot_client:send(ChannelId, DevAddr, Topic, Payload)
+    end.
 
 %%获取计算值，必须返回物模型里面的数据表示，不能用寄存器地址
 get_calculated(ProductId, Ack) ->
@@ -126,6 +135,52 @@ get_control(Round, Data, Control) ->
             dgiot_task:string2value(Str1, <<"type">>)
     end.
 
+get_instruct(ProductId, Round) ->
+    case dgiot_product:lookup_prod(ProductId) of
+        {ok, #{<<"thing">> := #{<<"properties">> := Props}}} when length(Props) > 0 ->
+            {_, NewList} = lists:foldl(fun(X, Acc) ->
+                {Seq, List} = Acc,
+                case X of
+                    #{<<"dataForm">> := #{<<"strategy">> := <<"计算值"/utf8>>}} ->    %% 计算值加入采集指令队列
+                        Acc;
+                    #{<<"dataForm">> := #{<<"strategy">> := <<"主动上报"/utf8>>}} ->  %% 主动上报值加入采集指令队列
+                        Acc;
+                    #{<<"accessMode">> := AccessMode,
+                        <<"identifier">> := Identifier,
+                        <<"dataType">> := #{<<"specs">> := #{<<"min">> := Min}},
+                        <<"dataForm">> := DataForm,
+                        <<"dataSource">> := DataSource} ->
+                        Protocol = maps:get(<<"protocol">>, DataForm, <<"Dlink">>),
+                        NewDataSource = dgiot_task_data:get_datasource(Protocol, DataSource),    %% 根据协议类型生成采集数据格式
+                        Order = maps:get(<<"order">>, DataForm, Seq),                            %% 指令顺序
+                        Control = maps:get(<<"control">>, DataForm, "%d"),                       %% 控制参数
+                        Data = dgiot_task:get_control(Round, Min, Control),                      %% 控制参数的初始值，可以根据轮次进行计算
+                        Interval = dgiot_utils:to_int(maps:get(<<"strategy">>, DataForm, 20)),   %% 下一个指令的采集间隔
+                        ThingRound = maps:get(<<"round">>, DataForm, <<"all">>),                 %% 物模型中的指令轮次规则
+                        BinRound = dgiot_utils:to_binary(Round),                                 %% 判断本轮是否需要加入采集指令队列
+                        case ThingRound of
+                            <<"all">> ->  %% 所有轮次
+                                {Seq + 1, List ++ [{Order, Interval, Identifier, AccessMode, Data, NewDataSource}]};
+                            BinRound ->
+                                {Seq + 1, List ++ [{Order, Interval, Identifier, AccessMode, Data, NewDataSource}]};
+                            Rounds ->
+                                RoundList = binary:split(Rounds, <<",">>, [global]),
+                                case lists:member(BinRound, RoundList) of
+                                    true ->
+                                        {Seq + 1, List ++ [{Order, Interval, Identifier, AccessMode, Data, NewDataSource}]};
+                                    false ->
+                                        Acc
+                                end
+                        end;
+                    _ ->
+                        Acc
+                end
+                                       end, {1, []}, Props),
+            lists:keysort(1, NewList);
+        _ ->
+            []
+    end.
+
 string2value(Str, <<"TEXT">>) when is_list(Str) ->
     %% eralng语法中. 表示事务结束
     case string:find(Str, "%%") of
@@ -184,6 +239,14 @@ save_pnque(DtuProductId, DtuAddr, ProductId, DevAddr) ->
         #{<<"channel">> := Channel} = Args ->
 %%            io:format("Args ~p.~n", [Args]),
             supervisor:start_child(?TASK_SUP(Channel), [Args#{<<"dtuid">> => DtuId}])
+    end.
+
+get_pnque_len(DtuId) ->
+    case dgiot_data:get(?DGIOT_PNQUE, DtuId) of
+        not_find ->
+            0;
+        PnQue ->
+            length(PnQue)
     end.
 
 get_pnque(DtuId) ->

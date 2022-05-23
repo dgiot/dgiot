@@ -44,18 +44,6 @@
 }).
 %% 注册通道参数
 -params(#{
-    <<"port">> => #{
-        order => 1,
-        type => integer,
-        required => true,
-        default => 61888,
-        title => #{
-            zh => <<"端口"/utf8>>
-        },
-        description => #{
-            zh => <<"侦听端口"/utf8>>
-        }
-    },
     <<"ico">> => #{
         order => 102,
         type => string,
@@ -76,27 +64,10 @@
 start(ChannelId, ChannelArgs) ->
     dgiot_channelx:add(?TYPE, ChannelId, ?MODULE, ChannelArgs).
 
-%% 通道初始化
-init(?TYPE, ChannelId, #{
-    <<"product">> := Products,
-    <<"search">> := Search}) ->
-    lists:map(fun(X) ->
-        case X of
-            {ProductId, #{<<"ACL">> := Acl, <<"nodeType">> := 1,<<"thing">> := Thing}} ->
-                dgiot_data:insert({amis, ChannelId}, {ProductId, Acl, maps:get(<<"properties">>,Thing,[])});
-            _ ->
-                ?LOG(info,"X ~p", [X]),
-                pass
-        end
-              end, Products),
-    dgiot_data:set_consumer(ChannelId, 20),
-    State = #state{
-        id = ChannelId,
-        search = Search
-    },
-    {ok, State, []};
-
-init(?TYPE, _ChannelId, _Args) ->
+init(?TYPE, ChannelId, _Args) ->
+    dgiot_parse_hook:subscribe(<<"View">>, post, ChannelId),
+    dgiot_parse_hook:subscribe(<<"View/*">>, put, ChannelId, [<<"isEnable">>]),
+    dgiot_parse_hook:subscribe(<<"View/*">>, delete, ChannelId),
     {ok, #{}, #{}}.
 
 handle_init(State) ->
@@ -106,19 +77,19 @@ handle_init(State) ->
 handle_event(_EventId, _Event, State) ->
     {ok, State}.
 
-% SELECT clientid, payload, topic FROM "meter"
-% SELECT clientid, disconnected_at FROM "$events/client_disconnected" WHERE username = 'dgiot'
-% SELECT clientid, connected_at FROM "$events/client_connected" WHERE username = 'dgiot'
-handle_message({rule, #{clientid := DtuAddr, connected_at := _ConnectedAt}, #{peername := PeerName} = _Context}, #state{id = _ChannelId} = State) ->
-    ?LOG(error,"DtuAddr ~p PeerName ~p",[DtuAddr,PeerName] ),
+handle_message({sync_parse, Pid, 'after', post, _Token, <<"View">>, QueryData}, State) ->
+    io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Pid, QueryData]),
+    dgiot_bamis_view:post('after', QueryData),
     {ok, State};
 
-handle_message({rule, #{clientid := DevAddr, disconnected_at := _DisconnectedAt}, _Context}, State) ->
-    ?LOG(error,"DevAddr ~p ",[DevAddr] ),
+handle_message({sync_parse, _Pid, 'after', put, _Token, <<"View">>, QueryData}, State) ->
+%%    io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Pid, QueryData]),
+    dgiot_bamis_view:put('after', QueryData),
     {ok, State};
 
-handle_message({rule, #{clientid := DevAddr, payload := Payload, topic := _Topic}, _Msg}, #state{id = ChannelId} = State) ->
-    ?LOG(error,"DevAddr ~p Payload ~p ChannelId ~p",[DevAddr,Payload,ChannelId] ),
+handle_message({sync_parse, _Pid, 'after', delete, _Token, <<"View">>, ObjectId}, State) ->
+%%    io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Pid, ObjectId]),
+    dgiot_bamis_view:delete('after', ObjectId),
     {ok, State};
 
 handle_message(_Message, State) ->

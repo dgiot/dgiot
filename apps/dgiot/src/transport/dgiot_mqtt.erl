@@ -28,6 +28,7 @@
     , unsubscribe/1
     , publish/3
     , publish/4
+    , message/3
     , shared_sub/3
     , shared_unsub/3
     , get_payload/1
@@ -64,6 +65,9 @@ publish(Client, Topic, Payload, check_route) ->
 
 publish(Client, Topic, Payload, _) ->
     publish(Client, Topic, Payload).
+
+message(Client, Topic, Payload) ->
+    emqx_message:make(dgiot_utils:to_binary(Client), 0, Topic, Payload).
 
 shared_sub(Group, Topic, SubPid) ->
     emqx_shared_sub:subscribe(Group, Topic, SubPid).

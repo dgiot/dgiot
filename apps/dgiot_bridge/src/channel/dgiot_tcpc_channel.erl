@@ -64,42 +64,6 @@
             zh => <<"端口"/utf8>>
         }
     },
-    <<"page_index">> => #{
-        order => 3,
-        type => integer,
-        required => false,
-        default => 1,
-        title => #{
-            zh => <<"起始记录号"/utf8>>
-        },
-        description => #{
-            zh => <<"起始记录号"/utf8>>
-        }
-    },
-    <<"page_size">> => #{
-        order => 4,
-        type => integer,
-        required => false,
-        default => 1,
-        title => #{
-            zh => <<"每页记录数"/utf8>>
-        },
-        description => #{
-            zh => <<"每页记录数"/utf8>>
-        }
-    },
-    <<"total">> => #{
-        order => 5,
-        type => integer,
-        required => false,
-        default => 1,
-        title => #{
-            zh => <<"总计页数"/utf8>>
-        },
-        description => #{
-            zh => <<"总计页数"/utf8>>
-        }
-    },
     <<"ico">> => #{
         order => 102,
         type => string,
@@ -119,20 +83,15 @@
 start(ChannelId, ChannelArgs) ->
     dgiot_channelx:add(?TYPE, ChannelId, ?MODULE, ChannelArgs).
 
-
 %% 通道初始化
-init(?TYPE, ChannelId, Args) ->
-    State = #state{
-        id = ChannelId,
-        env = Args
-    },
-    {ok, State, []}.
+init(?TYPE, ChannelId,
+        #{<<"ip">> := Ip, <<"port">> := Port} = Args) ->
+    State = #state{id = ChannelId, env = Args},
+    dgiot_client:add_clock(ChannelId, dgiot_datetime:now_secs() + 5, dgiot_datetime:now_secs() + 30),
+    NewArgs = #{ <<"channel">> => ChannelId, <<"ip">> => Ip, <<"port">> => Port, <<"mod">> => dgiot_tcpc_worker, <<"count">> => 3, <<"freq">> => 10},
+    {ok, State, dgiot_client:register(ChannelId, tcp_client_sup, NewArgs)}.
 
-handle_init(#state{ id = ChannelId, env = Args} = State) ->
-    #{<<"product">> := Products, <<"ip">> := Ip, <<"port">> := Port} = Args,
-    lists:map(fun({ProductId, _Opt}) ->
-        start_client(ChannelId, ProductId, Ip, Port, Args)
-              end, Products),
+handle_init(State) ->
     {ok, State}.
 
 %% 通道消息处理,注意：进程池调用
@@ -140,35 +99,20 @@ handle_event(_EventId, Event, State) ->
     ?LOG(info, "channel ~p", [Event]),
     {ok, State}.
 
+handle_message(start_client, #state{id = ChannelId} = State) ->
+    io:format("~s ~p ChannelId = ~p.~n", [?FILE, ?LINE, ChannelId]),
+    case dgiot_data:get({start_client, ChannelId}) of
+        not_find ->
+            [dgiot_client:start(ChannelId, dgiot_utils:to_binary(I)) || I <- lists:seq(1, 10)];
+        _ ->
+            pass
+    end,
+
+    {ok, State};
+
 handle_message(_Message, State) ->
     {ok, State}.
 
 stop(ChannelType, ChannelId, _State) ->
     ?LOG(warning, "channel stop ~p,~p", [ChannelType, ChannelId]),
     ok.
-
-start_client(ChannelId, ProductId, Ip, Port,
-        #{<<"page_index">> := PageIndex, <<"page_size">> := PageSize, <<"total">> := Total}) ->
-    Success = fun(Page) ->
-        lists:map(fun(X) ->
-            case X of
-                #{<<"devaddr">> := DevAddr} ->
-                    dgiot_tcpc_worker:start_connect(#{
-                        <<"channelid">> => ChannelId,
-                        <<"auto_reconnect">> => 10,
-                        <<"reconnect_times">> => 3,
-                        <<"ip">> => Ip,
-                        <<"port">> => Port,
-                        <<"productid">> => ProductId,
-                        <<"hb">> => 60,
-                        <<"devaddr">> => DevAddr
-                    });
-                _ ->
-                    ok
-            end
-                  end, Page)
-              end,
-    Query = #{
-        <<"where">> => #{<<"product">> => ProductId}
-    },
-    dgiot_parse_loader:start(<<"Device">>, Query, PageIndex, PageSize, Total, Success).

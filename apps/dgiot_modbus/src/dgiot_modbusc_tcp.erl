@@ -18,35 +18,10 @@
 -include_lib("dgiot/include/dgiot_socket.hrl").
 %% API
 -export([init/1, handle_info/2, terminate/2]).
--export([start_connect/1]).
 -include("dgiot_modbus.hrl").
 -include_lib("dgiot/include/dgiot.hrl").
 -define(MAX_BUFF_SIZE, 10 * 1024).
 -include_lib("dgiot/include/logger.hrl").
-
-start_connect(_Opts =
-    #{
-        <<"auto_reconnect">> := Recon,
-        <<"reconnect_times">> := ReTimes,
-        <<"ip">> := Ip,
-        <<"port">> := Port,
-        <<"channelid">> := ChannelId,
-        <<"hb">> := HB,
-        <<"filename">> := FileName,
-        <<"minaddr">> := MinAddr,
-        <<"maxaddr">> := Maxaddr
-    }) ->
-    State = #state{
-        id = ChannelId,
-        hb = HB,
-        env = #{
-            data => <<>>,
-            filename => FileName,
-            minaddr => MinAddr,
-            maxaddr => Maxaddr
-        }
-    },
-    dgiot_tcp_client:start_link(?MODULE, Ip, Port, Recon, ReTimes, State).
 
 init(TCPState) ->
     {ok, TCPState}.
