@@ -29,7 +29,7 @@ post('after', #{<<"objectId">> := ProductId, <<"channel">> := Channel} = QueryDa
     TaskchannelId = maps:get(<<"taskchannel">>, Channel, <<"">>),
     Otherchannel = maps:get(<<"otherchannel">>, Channel, <<"">>),
     dgiot_product:add_product_relation(lists:flatten([Otherchannel]) ++ [TdchannelId] ++ [TaskchannelId], ProductId),
-%%    io:format("~s ~p ~p ~n ",[?FILE,?LINE, QueryData]),
+    %% io:format("~s ~p ~p ~n ",[?FILE,?LINE, QueryData]),
     post('after', maps:without([<<"channel">>], QueryData));
 
 post('after', #{<<"objectId">> := ProductId, <<"producttemplet">> := #{<<"objectId">> := ProducttempletId}} = _QueryData) ->
