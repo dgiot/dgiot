@@ -194,7 +194,7 @@ create_scr_device(#{
     SCREENADDR = <<"SCR_", GWAddr/binary>>,
     {_, #{<<"objectId">> := ProductId}} =
         scan_ipc(Env#{<<"IPCMAC">> => SCREENADDR}),
-    {_, #{<<"objectId">> := DeviceId1}} = dgiot_device:create_device(#{
+    dgiot_device:create_device(#{
         <<"status">> => <<"ONLINE">>,
         <<"devaddr">> => SCREENADDR,
         <<"name">> => SCREENADDR,
@@ -208,8 +208,7 @@ create_scr_device(#{
             <<"className">> => <<"Device">>,
             <<"objectId">> => GwDeviceId
         }
-    }),
-    create_instruct(Acl, ProductId, DeviceId1, SCREENADDR).
+    }).
 
 create_ipc_device(#{
     <<"IPCMAC">> := Mac,
@@ -229,7 +228,7 @@ create_ipc_device(#{
                 DevAddr = <<"IPC_", IPCMAC/binary>>,
                 {_, #{<<"objectId">> := ProductId}} =
                     scan_ipc(Env#{<<"IPCMAC">> => DevAddr}),
-                {_, #{<<"objectId">> := DeviceId}} =
+                {_, #{<<"objectId">> := _DeviceId}} =
                     dgiot_device:create_device(#{
                         <<"status">> => <<"ONLINE">>,
                         <<"devaddr">> => DevAddr,
@@ -246,7 +245,6 @@ create_ipc_device(#{
                             <<"objectId">> => GwDeviceId
                         }
                     }),
-                create_instruct(Acl, ProductId, DeviceId, DevAddr),
                 Acc#{DevAddr => IPCIP}
         end
                 end, #{}, MacList).
@@ -261,28 +259,6 @@ get_ipc(DtuAddr) ->
         end
                 end, #{}, dgiot_device:get_sub_device(DtuAddr)).
 
-create_instruct(ACL, ProductId, DeviceId, DevAddr) ->
-    case dgiot_product:lookup_prod(ProductId) of
-        {ok, #{<<"thing">> := Thing}} ->
-            #{<<"properties">> := Props} = Thing,
-            NewProps =
-                lists:foldl(fun(X, Acc) ->
-                    case X of
-                        #{<<"name">> := <<"点播地址"/utf8>>,
-                            <<"dataForm">> := DataForm} ->
-                            #{<<"dataForm">> := DataForm} = X,
-                            Acc ++ [X#{<<"dataForm">> => DataForm#{<<"address">> => <<DevAddr/binary, "/VIDEO">>}}];
-                        _ -> Acc
-                    end
-                            end, [], Props),
-            Pn = <<DevAddr/binary, "/FFMPEG">>,
-            Topic = <<"thing/", ProductId/binary, "/", DevAddr/binary, "/", Pn/binary>>,
-            dgiot_mqtt:subscribe(Topic),
-            dgiot_instruct:create(ProductId, DeviceId, Pn, ACL, <<"all">>, Thing#{
-                <<"properties">> => NewProps
-            });
-        _ -> pass
-    end.
 
 get_path(DevAddr) ->
     {file, Here} = code:is_loaded(?MODULE),
