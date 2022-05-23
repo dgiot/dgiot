@@ -20,28 +20,21 @@
 -include_lib("dgiot/include/logger.hrl").
 -behaviour(gen_server).
 %% API
--export([start_link/6, start_link/4, start_link/5, start_link/3, start_link/7, send/2]).
+-export([start_link/1, send/2]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 -record(state, {host, port, child = #tcp{}, mod, reconnect_times, reconnect_sleep = 30}).
 -define(TIMEOUT, 10000).
 -define(TCP_OPTIONS, [binary, {active, once}, {packet, raw}, {reuseaddr, false}, {send_timeout, ?TIMEOUT}]).
 
+start_link(Args) ->
+    dgiot_client:start_link(?MODULE, Args).
 
-start_link(Mod, Host, Port) ->
-    start_link(Mod, Host, Port, undefined).
-
-start_link(Mod, Host, Port, Args) ->
-    start_link(Mod, Host, Port, max, 30, Args).
-
-start_link(Name, Mod, Host, Port, Args) ->
-    start_link(Name, Mod, Host, Port, max, 30, Args).
-
-start_link(Mod, Host, Port, ReconnectTimes, ReconnectSleep, Args) ->
-    start_link(undefined, Mod, Host, Port, ReconnectTimes, ReconnectSleep, Args).
-
-start_link(Name, Mod, Host, Port, ReconnectTimes, ReconnectSleep, Args) ->
+init([#{<<"host">> := Host, <<"port">> := Port, <<"mod">> := Mod, <<"child">> := ChildState} = Args]) ->
+    io:format("~s ~p ~p ~n", [?FILE, ?LINE, ChildState]),
     Ip = dgiot_utils:to_list(Host),
     Port1 = dgiot_utils:to_int(Port),
+    ReconnectTimes = maps:get(<<"reconnect_times">>, Args, max),
+    ReconnectSleep = maps:get(<<"reconnect_sleep">>, Args, 30),
     State = #state{
         mod = Mod,
         host = Ip,
@@ -49,19 +42,9 @@ start_link(Name, Mod, Host, Port, ReconnectTimes, ReconnectSleep, Args) ->
         reconnect_times = ReconnectTimes, %% 重连次数
         reconnect_sleep = ReconnectSleep  %% 重连间隔
     },
-    case Name of
-        undefined ->
-            gen_server:start_link(?MODULE, [State, Args], []);
-        _ ->
-            gen_server:start_link({local, list_to_atom(dgiot_utils:to_list(Name))}, ?MODULE, [State, Args], [])
-    end.
-
-
-init([#state{mod = Mod} = State, Args]) ->
-    ?LOG(info,"Mod ~p Args ~p ",[Mod, Args]),
     Transport = gen_tcp,
     Child = #tcp{transport = Transport, socket = undefined},
-    case Mod:init(Child#tcp{state = Args}) of
+    case Mod:init(Child#tcp{state = ChildState}) of
         {ok, ChildState} ->
             NewState = State#state{
                 child = ChildState
@@ -98,17 +81,17 @@ handle_cast(Msg, #state{mod = Mod, child = ChildState} = State) ->
 
 %% 连接次数为0了
 handle_info(do_connect, State) ->
-    ?LOG(info,"CONNECT CLOSE ~s:~p", [State#state.host, State#state.port]),
+    ?LOG(info, "CONNECT CLOSE ~s:~p", [State#state.host, State#state.port]),
     {stop, normal, State};
 
 %% 连接次数为0了
 handle_info(connect_stop, State) ->
-    ?LOG(info,"CONNECT CLOSE ~s:~p", [State#state.host, State#state.port]),
+    ?LOG(info, "CONNECT CLOSE ~s:~p", [State#state.host, State#state.port]),
     {stop, normal, State};
 
 handle_info({connection_ready, Socket}, #state{mod = Mod, child = ChildState} = State) ->
     NewChildState = ChildState#tcp{socket = Socket},
-    ?LOG(info,"connection_ready ~p~n", [Socket]),
+    ?LOG(info, "connection_ready ~p~n", [Socket]),
     case Mod:handle_info(connection_ready, NewChildState) of
         {noreply, NewChildState1} ->
             inet:setopts(Socket, [{active, once}]),

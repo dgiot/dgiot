@@ -100,7 +100,7 @@ init(?TYPE, ChannelId, #{
     <<"ip">> := Ip,
     <<"port">> := Port
 } = Args) ->
-    {FileName, MinAddr, MaxAddr} =
+    {_FileName, _MinAddr, _MaxAddr} =
         case maps:find(<<"file">>, Args) of
             {ok, FileName1} ->
                 {MinAddr1, MaxAddr1} = dgiot_product_csv:read_csv(ChannelId, FileName1),
@@ -109,18 +109,18 @@ init(?TYPE, ChannelId, #{
             _ ->
                 {<<>>, 0, 100}
         end,
-    dgiot_modbusc_tcp:start_connect(#{
-        <<"auto_reconnect">> => 10,
-        <<"reconnect_times">> => 3,
-        <<"ip">> => Ip,
-        <<"port">> => Port,
-        <<"channelid">> => ChannelId,
-        <<"hb">> => 10,
-        <<"filename">> => FileName,
-        <<"minaddr">> => MinAddr,
-        <<"maxaddr">> => MaxAddr
-    }),
-    {ok, #state{id = ChannelId}, []}.
+%%    dgiot_modbusc_tcp:start_connect(#{
+%%        <<"auto_reconnect">> => 10,
+%%        <<"reconnect_times">> => 3,
+%%        <<"ip">> => Ip,
+%%        <<"port">> => Port,
+%%        <<"channelid">> => ChannelId,
+%%        <<"hb">> => 10,
+%%        <<"filename">> => FileName,
+%%        <<"minaddr">> => MinAddr,
+%%        <<"maxaddr">> => MaxAddr
+%%    }),
+    {ok, #state{id = ChannelId}, dgiot_client:register(ChannelId, tcp_client_sup, #{<<"ip">> => Ip, <<"port">> => Port})}.
 
 handle_init(State) ->
     {ok, State}.
