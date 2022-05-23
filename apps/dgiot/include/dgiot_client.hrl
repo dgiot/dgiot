@@ -17,9 +17,9 @@
 
 -record(dclock, {
     nexttime :: non_neg_integer(), %% 下一次闹铃执行时间
-    endtime :: non_neg_integer(),  %% 闹铃结束时间
     freq :: non_neg_integer(),     %% 周期闹铃提醒频率单位为秒
-    round :: non_neg_integer(),    %% 闹铃总计执行轮次
+    count:: non_neg_integer(),     %% 闹铃总计执行多少次
+    round :: non_neg_integer(),    %% 闹铃总计已执行轮次
     rand :: boolean()              %% 闹铃任务启动是否随机错峰处理, 防止所有客户端在同一个时刻启动任务
 }).
 
@@ -28,7 +28,8 @@
     client :: binary(),            %% 客户端地址
     status :: integer(),           %% client的状态值
     clock :: #dclock{},            %% client的闹铃
-    userdata                       %% 用户自定义参数
+    userdata :: any(),             %% 用户自定义参数
+    child ::any()                  %% 子模块参数
 }).
 
 

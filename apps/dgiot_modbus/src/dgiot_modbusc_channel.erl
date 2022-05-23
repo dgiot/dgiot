@@ -139,57 +139,6 @@ stop(ChannelType, ChannelId, _State) ->
     io:format("~s ~p channel stop ~p~n ~p~n", [?FILE, ?LINE, ChannelType, ChannelId]),
     ok.
 
-%%start_client(ProductId, Ip, Port, #{<<"parse">> := Parse}) ->
-%%    #{
-%%        <<"parse_table">> := ParseTable,
-%%        <<"devaddr">> := DevAddrKey,
-%%        <<"page_index">> := PageIndex,
-%%        <<"page_size">> := PageSize,
-%%        <<"total">> := Total
-%%    } = Parse,
-%%    Success = fun(Page) ->
-%%        lists:map(fun(#{<<"devaddr">> := DevAddr}) ->
-%%            dgiot_modbusc_tcp:start_connect(#{
-%%                <<"auto_reconnect">> => 10,
-%%                <<"reconnect_times">> => 3,
-%%                <<"ip">> => Ip,
-%%                <<"port">> => Port,
-%%                <<"productid">> => ProductId,
-%%                <<"hb">> => 60,
-%%                <<"devaddr">> => DevAddr
-%%            })
-%%                  end, Page)
-%%              end,
-%%    Query = #{<<"keys">> => [DevAddrKey], <<"order">> => DevAddrKey},
-%%    dgiot_parse_loader:start(ParseTable, Query, PageIndex, PageSize, Total, Success).
-%%
-%%
-%%start_timer(Time, Fun) ->
-%%    spawn(fun() ->
-%%        timer(Time, Fun)
-%%          end).
-%%
-%%timer(Time, Fun) ->
-%%    receive
-%%        cancel ->
-%%            void
-%%    after Time ->
-%%        Fun()
-%%    end.
-
-
-%%get_app(Products) ->
-%%    lists:map(fun({ProdcutId, #{<<"ACL">> := Acl}}) ->
-%%        Predicate = fun(E) ->
-%%            case E of
-%%                <<"role:", _/binary>> -> true;
-%%                _ -> false
-%%            end
-%%                    end,
-%%        [<<"role:", App/binary>> | _] = lists:filter(Predicate, maps:keys(Acl)),
-%%        {ProdcutId, App}
-%%              end, Products).
-
 
 
 

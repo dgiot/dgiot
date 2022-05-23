@@ -22,7 +22,7 @@
 %% API
 -export([register/3, start_link/2, add_clock/3, notify/3, add/2, set_consumer/2, get_consumer/1]).
 -export([start/2, start/3, stop/1, stop/2, stop/3, restart/2, get/2, send/4]).
--export([get_nexttime/2, send_after/4]).
+-export([get_nexttime/2, send_after/4, get_count/3]).
 
 -type(result() :: any()).   %% todo 目前只做参数检查，不做结果检查
 
@@ -110,11 +110,10 @@ stop(ChannelId, ClientId) ->
 
 %% @doc stop client
 -spec stop(atom() | binary(), binary(), non_neg_integer()) -> result().
-stop(ChannelId, ClientId, EndTime) when is_binary(ChannelId) ->
-    stop(binary_to_atom(ChannelId), ClientId, EndTime);
-stop(ChannelId, ClientId, EndTime) ->
-    NowTime = dgiot_datetime:nowstamp(),
-    case NowTime > EndTime of
+stop(ChannelId, ClientId, Count) when is_binary(ChannelId) ->
+    stop(binary_to_atom(ChannelId), ClientId, Count);
+stop(ChannelId, ClientId, Count) ->
+    case Count =< 0 of
         true ->
             stop(ChannelId, ClientId)
     end.
@@ -146,7 +145,7 @@ get(ChannelId, ClientId) ->
         Pid when is_pid(Pid) ->
             case is_process_alive(Pid) of
                 true ->
-                    online;
+                    {ok, Pid};
                 false ->
                     offline
             end;
@@ -196,6 +195,15 @@ send_after(RetryTime, Freq, true, Msg) ->
 send_after(RetryTime, _Freq, _, Msg) ->
     erlang:send_after(RetryTime * 1000, self(), Msg).
 
+%% @doc 获取闹铃执行次数
+-spec get_count(integer(), integer(), integer()) -> result().
+get_count(StartTime, EndTime, _Freq) when EndTime >= StartTime ->
+    0;
+get_count(_StartTime, _EndTime, Freq) when Freq =< 0 ->
+    0;
+get_count(StartTime, EndTime, Freq) ->
+  (EndTime - StartTime) div Freq.
+
 get_nexttime(NextTime, Freq) ->
     NowTime = dgiot_datetime:nowstamp(),
     get_nexttime(NowTime, Freq, NextTime).
@@ -224,13 +232,15 @@ get_consumer(ChannelId) ->
 
 %% 定时检查启动, 10s
 %% @doc 添加闹铃
--spec add_clock(binary() | atom(), binary(), binary()) -> result().
+-spec add_clock(binary() | atom(), binary() | integer(), binary() | integer()) -> result().
 add_clock(Channel, Start_time, End_time) when is_binary(Channel) ->
     add_clock(dgiot_utils:to_atom(Channel), Start_time, End_time);
+add_clock(Channel, Start_time, End_time) when is_binary(Start_time) ->
+    add_clock(Channel, dgiot_datetime:to_localtime(Start_time), dgiot_datetime:to_localtime(End_time));
 add_clock(Channel, Start_time, End_time) ->
     BinChannel =  dgiot_utils:to_binary(Channel),
-    dgiot_cron:push(BinChannel, dgiot_datetime:to_localtime(Start_time), {?MODULE, notify, [Channel, start_client]}),
-    dgiot_cron:push(<<BinChannel/binary, "_stop">>, dgiot_datetime:to_localtime(End_time), {?MODULE, notify, [Channel, stop_client]}).
+    dgiot_cron:push(BinChannel, Start_time, {?MODULE, notify, [Channel, start_client]}),
+    dgiot_cron:push(<<BinChannel/binary, "_stop">>, End_time, {?MODULE, notify, [Channel, stop_client]}).
 
 %% 定时检查启动, 10s
 %% @doc 闹铃通知回调函数

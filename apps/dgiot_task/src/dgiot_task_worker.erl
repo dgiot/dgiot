@@ -47,8 +47,10 @@ init([#{<<"channel">> := ChannelId, <<"client">> := ClientId, <<"starttime">> :=
     erlang:send_after(20, self(), init),
     dgiot_metrics:inc(dgiot_task, <<"task">>, 1),
     NextTime = dgiot_client:get_nexttime(StartTime, Freq),
-    io:format("~s ~p DtuId = ~p.~n", [?FILE, ?LINE, NextTime]),
-    Dclient = #dclient{channel = ChannelId, client = ClientId, status = ?DCLIENT_INTIALIZED, clock = #dclock{nexttime = NextTime, endtime = EndTime, freq = Freq, round = 0}},
+    Count = dgiot_client:get_count(StartTime, EndTime, Freq),
+    io:format("~s ~p ChannelId ~p ClientId ~p  NextTime = ~p  Freq ~p Count = ~p.~n", [?FILE, ?LINE, ChannelId, ClientId, NextTime, Freq, Count]),
+    Dclient = #dclient{channel = ChannelId, client = ClientId, status = ?DCLIENT_INTIALIZED,
+        clock = #dclock{nexttime = NextTime, freq = Freq, count = Count,  round = 0}},
     {ok, Dclient};
 
 init(A) ->
@@ -74,24 +76,24 @@ handle_info(stop, State) ->
 
 %% 动态修改任务启动时间和周期
 handle_info({change_clock, NextTime, EndTime, Freq}, #dclient{clock = Clock} = Dclient) ->
-    {noreply, Dclient#dclient{clock = Clock#dclock{nexttime = NextTime, endtime = EndTime, freq = Freq}}};
+    {noreply, Dclient#dclient{clock = Clock#dclock{nexttime = NextTime, count  = dgiot_client:get_count(NextTime, EndTime, Freq), freq = Freq}}};
 
 %% 定时触发网关及网关任务, 在单个任务轮次中，要将任务在全局上做一下错峰操作
 handle_info(next_time, #dclient{ channel = Channel, client = Client, userdata =  UserData,
-    clock = #dclock{round = Round, nexttime = NextTime, endtime = EndTime, freq = Freq, rand = Rand} = Clock} = Dclient) ->
+    clock = #dclock{round = Round, nexttime = NextTime, count  = Count, freq = Freq, rand = Rand} = Clock} = Dclient) ->
     io:format("~s ~p DtuId = ~p.~n", [?FILE, ?LINE, Client]),
-    dgiot_client:stop(Channel, Client, EndTime), %% 检查是否需要停止任务
+    dgiot_client:stop(Channel, Client, Count), %% 检查是否需要停止任务
     NewNextTime = dgiot_client:get_nexttime(NextTime, Freq),
     case dgiot_task:get_pnque(Client) of
         not_find ->
-            {noreply, Dclient#dclient{clock = Clock#dclock{ nexttime = NewNextTime}}};
+            {noreply, Dclient#dclient{clock = Clock#dclock{ nexttime = NewNextTime, count = Count - 1}}};
         {ProductId, DevAddr} ->
             NewRound = Round + 1,
             PnQueLen = dgiot_task:get_pnque_len(Client),
             DiQue = dgiot_task:get_instruct(ProductId, NewRound),
             dgiot_client:send_after(10, Freq, Rand, read), % 每轮任务开始时，做一下随机开始
             {noreply, Dclient#dclient{userdata = UserData#device_task{product = ProductId, devaddr = DevAddr,  pnque_len = PnQueLen, dique = DiQue},
-                clock = Clock#dclock{nexttime = NewNextTime, round = NewRound}}}
+                clock = Clock#dclock{nexttime = NewNextTime, count = Count - 1, round = NewRound}}}
     end;
 
 %% 开始采集下一个子设备的指令集
