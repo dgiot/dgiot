@@ -14,7 +14,7 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
--module(task_sup).
+-module(tcp_client_sup).
 
 -include("dgiot_task.hrl").
 -behaviour(supervisor).
