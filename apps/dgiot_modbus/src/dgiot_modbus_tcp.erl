@@ -173,8 +173,7 @@ create_device(DeviceId, ProductId, DTUMAC, DTUIP, Dtutype) ->
             case dgiot_parse:get_object(<<"Device">>, DeviceId) of
                 {ok, #{<<"devaddr">> := _GWAddr}} ->
                     dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"ip">> => DTUIP, <<"status">> => <<"ONLINE">>}),
-                    dgiot_task:save_pnque(ProductId, DTUMAC, ProductId, DTUMAC),
-                    create_instruct(Acl, ProductId, DeviceId);
+                    dgiot_task:save_pnque(ProductId, DTUMAC, ProductId, DTUMAC);
                 _ ->
                     dgiot_device:create_device(#{
                         <<"devaddr">> => DTUMAC,
@@ -188,8 +187,7 @@ create_device(DeviceId, ProductId, DTUMAC, DTUIP, Dtutype) ->
                         <<"brand">> => Dtutype,
                         <<"devModel">> => DevType
                     }),
-                    dgiot_task:save_pnque(ProductId, DTUMAC, ProductId, DTUMAC),
-                    create_instruct(Acl, ProductId, DeviceId)
+                    dgiot_task:save_pnque(ProductId, DTUMAC, ProductId, DTUMAC)
             end,
             Productname =
                 case dgiot_parse:get_object(<<"Product">>, ProductId) of
@@ -203,22 +201,4 @@ create_device(DeviceId, ProductId, DTUMAC, DTUIP, Dtutype) ->
         _Error2 ->
 %%            ?LOG(info, "Error2 ~p ", [Error2]),
             {<<>>, <<>>}
-    end.
-
-create_instruct(ACL, DtuProductId, DtuDevId) ->
-    case dgiot_product:lookup_prod(DtuProductId) of
-        {ok, #{<<"thing">> := #{<<"properties">> := Properties}}} ->
-            lists:map(fun(Y) ->
-                case Y of
-                    #{<<"dataSource">> := #{<<"slaveid">> := 256}} ->   %%不做指令
-                        pass;
-                    #{<<"dataSource">> := #{<<"slaveid">> := SlaveId}} ->
-                        Pn = dgiot_utils:to_binary(SlaveId),
-%%                        ?LOG(info,"DtuProductId ~p DtuDevId ~p Pn ~p ACL ~p", [DtuProductId, DtuDevId, Pn, ACL]),
-%%                        ?LOG(info,"Y ~p", [Y]),
-                        dgiot_instruct:create(DtuProductId, DtuDevId, Pn, ACL, <<"all">>, #{<<"properties">> => [Y]});
-                    _ -> pass
-                end
-                      end, Properties);
-        _ -> pass
     end.
