@@ -126,13 +126,13 @@ code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
 send_msg(#dclient{channel = Channel, userdata = #device_task{product = Product, devaddr = DevAddr, dique = DisQue} = UserData} = State) ->
-    {InstructOrder, Interval, _, _, _, Protocol, _, _} = lists:nth(1, DisQue),
+    {InstructOrder, Interval, _Identifier, _AccessMode, _Data, _NewDataSource} = lists:nth(1, DisQue),
     {NewCount, _Payload, _Dis} =
         lists:foldl(fun(X, {Count, Acc, Acc1}) ->
             case X of
-                {InstructOrder, _, _, _, error, _, _, _} ->
+                {InstructOrder, _, _, _, error, _, _} ->
                     {Count + 1, Acc, Acc1};
-                {InstructOrder, _, Identifier1, _AccessMode, NewData, Protocol, DataSource, _} ->
+                {InstructOrder, _, Identifier1, _AccessMode, NewData, DataSource, _} ->
                     Payload1 = DataSource#{<<"data">> => NewData},
                     Topic = <<"$dg/device/", Product/binary, "/", DevAddr/binary, "/properties">>,
                     dgiot_mqtt:publish(Channel, Topic, jsx:encode(Payload1)),
