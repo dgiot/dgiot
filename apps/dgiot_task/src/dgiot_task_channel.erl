@@ -20,7 +20,6 @@
 -include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
 -include("dgiot_task.hrl").
 -include_lib("dgiot/include/logger.hrl").
--define(TYPE, <<"INSTRUCT">>).
 -record(state, {id, mod, product, env = #{}}).
 
 -dgiot_data("ets").
@@ -33,7 +32,6 @@
 
 %% 注册通道类型
 -channel_type(#{
-
     cType => ?TYPE,
     type => ?BRIDGE_CHL,
     title => #{
@@ -45,24 +43,8 @@
 }).
 %% 注册通道参数
 -params(#{
-    <<"mode">> => #{
-        order => 1,
-        type => enum,
-        required => false,
-        default => <<"物模型指令模式"/utf8>>,
-        enum => [
-            #{<<"value">> => <<"thing">>, <<"label">> => <<"物模型指令模式"/utf8>>},
-            #{<<"value">> => <<"instruct">>, <<"label">> => <<"设备指令模式"/utf8>>}
-        ],
-        title => #{
-            zh => <<"指令模式"/utf8>>
-        },
-        description => #{
-            zh => <<"物模型指令模式:用产品物模型来生成采集指令;设备指令模式:设备配置的独立的指令"/utf8>>
-        }
-    },
     <<"freq">> => #{
-        order => 2,
+        order => 1,
         type => integer,
         required => false,
         default => 180,
@@ -74,7 +56,7 @@
         }
     },
     <<"start_time">> => #{
-        order => 3,
+        order => 2,
         type => string,
         required => false,
         default => <<"2020-03-26 10:35:10"/utf8>>,
@@ -86,7 +68,7 @@
         }
     },
     <<"end_time">> => #{
-        order => 4,
+        order => 3,
         type => string,
         required => false,
         default => <<"2025-05-28 10:35:10"/utf8>>,
@@ -123,11 +105,15 @@ start(ChannelId, ChannelArgs) ->
 
 %% 通道初始化
 init(?TYPE, ChannelId, Args) ->
-    NewArgs = maps:with([<<"freq">>, <<"mode">>], Args),
-    #{<<"start_time">> := Start_time, <<"end_time">> := End_time} = Args,
+    #{<<"freq">> := Freq, <<"start_time">> := Start_time, <<"end_time">> := End_time} = Args,
     dgiot_client:add_clock(ChannelId, Start_time, End_time),
     State = #state{id = ChannelId},
-    {ok, State, dgiot_client:register(ChannelId, task_sup, NewArgs#{<<"channel">> => ChannelId, <<"app">> => #{}})}.
+    {ok, State, dgiot_client:register(ChannelId, task_sup, #{
+        <<"channel">> => ChannelId,
+        <<"starttime">> => dgiot_datetime:localtime_to_unixtime(dgiot_datetime:to_localtime(Start_time)),
+        <<"endtime">> => dgiot_datetime:localtime_to_unixtime(dgiot_datetime:to_localtime(End_time)),
+        <<"freq">> => Freq
+    })}.
 
 handle_init(State) ->
     {ok, State}.
@@ -151,7 +137,7 @@ handle_message(start_client, #state{id = ChannelId} = State) ->
 
 handle_message(stop_client, #state{id = ChannelId} = State) ->
     io:format("~s ~p ChannelId =~p.~n", [?FILE, ?LINE, ChannelId]),
-    case dgiot_data:get({stop_client, ChannelId}) of
+    case dgiot_data:get({stop_client, binary_to_atom(ChannelId)}) of
         not_find ->
             dgiot_client:stop(ChannelId);
         _ ->
@@ -160,8 +146,8 @@ handle_message(stop_client, #state{id = ChannelId} = State) ->
     {ok, State};
 
 handle_message(check_client, #state{id = ChannelId} = State) ->
-    io:format("~s ~p ChannelId =~p.~n", [?FILE, ?LINE, ChannelId]),
-    case dgiot_data:get({stop_client, ChannelId}) of
+%%    io:format("~s ~p ChannelId =~p.~n", [?FILE, ?LINE, ChannelId]),
+    case dgiot_data:get({stop_client, binary_to_atom(ChannelId)}) of
         not_find ->
             dgiot_task:start(ChannelId),
             erlang:send_after(1000 * 60 * 1, self(), check_client);

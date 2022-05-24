@@ -41,7 +41,7 @@ get_device_card(Channel, ProductId, DeviceId, Args) ->
 get_card(ProductId, Results, DeviceId, Args) ->
     [Result | _] = Results,
     Keys = maps:get(<<"keys">>, Args, <<"*">>),
-    Props = dgiot_product:get_Props(ProductId, Keys),
+    Props = dgiot_product:get_props(ProductId, Keys),
     lists:foldl(fun(X, Acc) ->
         case X of
             #{<<"name">> := Name, <<"identifier">> := Identifier, <<"dataForm">> := #{<<"protocol">> := Protocol}, <<"dataSource">> := DataSource, <<"dataType">> := #{<<"type">> := Typea} = DataType} ->

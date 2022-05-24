@@ -14,10 +14,35 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
--define(AMIS, <<"AMIS">>).
--record(state, {
-    id,
-    env = #{}
-}).
--record(task, {oldque = [], newque = [], freq = 0, heart = 0, dashboardId = <<>>, sessiontoken = <<>>}).
+%% @doc dgiot_bamis Protocol
+-module(dgiot_bamis_view).
+-include("dgiot_bamis.hrl").
+-include_lib("dgiot/include/logger.hrl").
+-dgiot_swagger(<<"amis">>).
+
+-export([
+    post/2,
+    put/2,
+    delete/2
+]).
+
+post('before', Args) ->
+%%    io:format("~s ~p ~p ~p~n", [?FILE, ?LINE, Args, Id]),
+    Args;
+post('after', Data) ->
+%%    io:format("~s ~p ~p~n", [?FILE, ?LINE, Data]),
+    Data.
+
+put('before', Args) ->
+%%    io:format("~s ~p ~p ~p~n", [?FILE, ?LINE, Args, Id]),
+    Args;
+put('after', Data) ->
+%%    io:format("~s ~p ~p~n", [?FILE, ?LINE, Data]),
+    Data.
+
+delete('before', Args) ->
+%%    io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Args, Id]),
+    Args;
+delete('after', Data) ->
+    Data.
 

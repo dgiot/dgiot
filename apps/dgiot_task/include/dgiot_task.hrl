@@ -15,7 +15,7 @@
 %%--------------------------------------------------------------------
 
 -author("johnliu").
-
+-define(TYPE, <<"INSTRUCT">>).
 -define(DGIOT_TASK, dgiot_task).
 -define(DGIOT_PNQUE, dgiot_pnque).
 -define(DGIOT_DATA_CACHE, dgiot_data_cache).

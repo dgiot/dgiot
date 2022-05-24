@@ -20,12 +20,13 @@
 -include_lib("dgiot/include/logger.hrl").
 -include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
 -dgiot_data("ets").
--export([init_ets/0, load_cache/0, local/1, save/1, put/1, get/1, delete/1, save_prod/2, lookup_prod/1, get_keys/1, get_control/1, save_control/1]).
+-export([init_ets/0, load_cache/0, local/1, save/1, put/1, get/1, delete/1, save_prod/2, lookup_prod/1]).
 -export([parse_frame/3, to_frame/2]).
 -export([create_product/1, create_product/2, add_product_relation/2, delete_product_relation/1]).
--export([get_prop/1, get_props/1, get_Props/2, get_unit/1, do_td_message/1, update_properties/2, update_properties/0]).
+-export([get_prop/1, get_props/1, get_props/2, get_unit/1, do_td_message/1, update_properties/2, update_properties/0]).
 -export([update_topics/0, update_product_filed/1]).
-
+-export([save_keys/1, get_keys/1, get_control/1, save_control/1, save_channel/1, get_channel/1]).
+-type(result() :: any()).   %% todo 目前只做参数检查，不做结果检查
 
 init_ets() ->
     dgiot_data:init(?DGIOT_PRODUCT),
@@ -70,15 +71,10 @@ lookup_prod(ProductId) ->
 save(Product) ->
     Product1 = format_product(Product),
     #{<<"productId">> := ProductId} = Product1,
-%%    case dgiot_data:get({ProductId, update_properties}) of
-%%        not_find ->
-%%            update_properties(ProductId, Product1),
-%%            dgiot_data:insert({ProductId, update_properties}, ProductId);
-%%        _ -> pass
-%%    end,
     dgiot_data:insert(?DGIOT_PRODUCT, ProductId, Product1),
     save_keys(ProductId),
     save_control(ProductId),
+    save_channel(ProductId),
     {ok, Product1}.
 
 put(Product) ->
@@ -102,6 +98,23 @@ get(ProductId) ->
         {error, Reason} ->
             {error, Reason}
     end.
+
+-spec save_channel(binary()) -> result().
+save_channel(ProductId) ->
+    case lookup_prod(ProductId) of
+        {ok, #{<<"channel">> := #{<<"otherchannel">> := [Channel|_]}}} ->
+            dgiot_data:insert({channel_product, binary_to_atom(Channel)}, ProductId);
+        {ok, #{<<"channel">> := #{<<"otherchannel">> := Channel}}} ->
+            dgiot_data:insert({channel_product, binary_to_atom(Channel)}, ProductId);
+        _ ->
+            pass
+    end.
+
+-spec get_channel(binary() | atom()) -> result().
+get_channel(ChannelId) when is_binary(ChannelId) ->
+    get_channel(binary_to_atom(ChannelId));
+get_channel(ChannelId) ->
+    dgiot_data:get({channel_product, ChannelId}).
 
 %% 保存配置下发控制字段
 save_control(ProductId) ->
@@ -198,8 +211,6 @@ update_product_filed(_Filed) ->
             pass
     end.
 
-
-
 save_keys(ProductId) ->
     Keys =
         case dgiot_product:lookup_prod(ProductId) of
@@ -238,7 +249,7 @@ to_frame(ProductId, Msg) ->
 format_product(#{<<"objectId">> := ProductId} = Product) ->
     Thing = maps:get(<<"thing">>, Product, #{}),
     Props = maps:get(<<"properties">>, Thing, []),
-    Keys = [<<"ACL">>, <<"name">>, <<"devType">>, <<"status">>, <<"content">>, <<"profile">>, <<"nodeType">>, <<"dynamicReg">>, <<"topics">>, <<"productSecret">>],
+    Keys = [<<"ACL">>, <<"name">>, <<"devType">>, <<"status">>, <<"channel">>, <<"content">>, <<"profile">>, <<"nodeType">>, <<"dynamicReg">>, <<"topics">>, <<"productSecret">>],
     Map = maps:with(Keys, Product),
     Map#{
         <<"productId">> => ProductId,
@@ -378,7 +389,7 @@ get_props(ProductId) ->
             #{}
     end.
 
-get_Props(ProductId, <<"*">>) ->
+get_props(ProductId, <<"*">>) ->
     case dgiot_product:lookup_prod(ProductId) of
         {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
             Props;
@@ -386,10 +397,10 @@ get_Props(ProductId, <<"*">>) ->
             []
     end;
 
-get_Props(ProductId, Keys) when Keys == undefined; Keys == <<>> ->
-    get_Props(ProductId, <<"*">>);
+get_props(ProductId, Keys) when Keys == undefined; Keys == <<>> ->
+    get_props(ProductId, <<"*">>);
 
-get_Props(ProductId, Keys) ->
+get_props(ProductId, Keys) ->
     List =
         case is_list(Keys) of
             true -> Keys;

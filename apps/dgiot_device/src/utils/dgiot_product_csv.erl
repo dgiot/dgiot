@@ -259,7 +259,7 @@ get_min_max(Min_Max) ->
 %%    end.
 
 get_unit(<<"null">>) ->
-    <<"ok">>;
+    <<"">>;
 
 get_unit(Unit) ->
     Unit.

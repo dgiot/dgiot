@@ -18,7 +18,7 @@
 -include("dgiot_task.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
--export([get_userdata/6, get_datasource/2]).
+-export([get_userdata/6, get_datasource/2, get_ack/4]).
 
 get_userdata(ProductId, Identifier, _DataForm, #{<<"type">> := <<"geopoint">>}, Payload, Acc) ->
     case maps:find(Identifier, Payload) of
@@ -58,6 +58,18 @@ get_userdata(_ProductId, Identifier, #{<<"collection">> := Collection} = DataFor
             end
     end.
 
+
+get_ack(ProductId, Payload, Dis, Ack) ->
+    NewPayload =
+        maps:fold(fun(K, V, Acc) ->
+            case dgiot_data:get({protocol, K, ProductId}) of
+                not_find ->
+                    Acc#{K => V};
+                Identifier ->
+                    Acc#{Identifier => V}
+            end
+                  end, #{}, Payload),
+    dgiot_task:get_collection(ProductId, Dis, NewPayload, maps:merge(Ack, NewPayload)).
 
 get_datasource(Protocol, DataSource) ->
     case catch dgiot_hook:run_hook({datasource, Protocol}, DataSource) of
