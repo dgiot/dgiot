@@ -99,7 +99,7 @@ stop(ChannelId, ClientId) ->
         Pid when is_pid(Pid) ->
             case is_process_alive(Pid) of
                 true ->
-                    io:format("~s ~p DtuId = ~p. Pid ~p ~n", [?FILE, ?LINE, ChannelId,Pid]),
+                    io:format("~s ~p DtuId = ~p. Pid ~p ~n", [?FILE, ?LINE, ChannelId, Pid]),
                     supervisor:terminate_child(ChannelId, Pid);
                 _ ->
                     pass
@@ -202,7 +202,7 @@ get_count(StartTime, EndTime, _Freq) when EndTime >= StartTime ->
 get_count(_StartTime, _EndTime, Freq) when Freq =< 0 ->
     0;
 get_count(StartTime, EndTime, Freq) ->
-  (EndTime - StartTime) div Freq.
+    (EndTime - StartTime) div Freq.
 
 get_nexttime(NextTime, Freq) ->
     NowTime = dgiot_datetime:nowstamp(),
@@ -238,7 +238,7 @@ add_clock(Channel, Start_time, End_time) when is_binary(Channel) ->
 add_clock(Channel, Start_time, End_time) when is_binary(Start_time) ->
     add_clock(Channel, dgiot_datetime:to_localtime(Start_time), dgiot_datetime:to_localtime(End_time));
 add_clock(Channel, Start_time, End_time) ->
-    BinChannel =  dgiot_utils:to_binary(Channel),
+    BinChannel = dgiot_utils:to_binary(Channel),
     dgiot_cron:push(BinChannel, Start_time, {?MODULE, notify, [Channel, start_client]}),
     dgiot_cron:push(<<BinChannel/binary, "_stop">>, End_time, {?MODULE, notify, [Channel, stop_client]}).
 
