@@ -41,9 +41,9 @@ init([#{<<"channel">> := ChannelId, <<"client">> := ClientId, <<"ip">> := Host, 
     Dclient = #dclient{channel = ChannelId, client = ClientId, status = ?DCLIENT_INTIALIZED, clock = Clock, userdata = UserData, child = ChildState},
     dgiot_client:add(ChannelId, ClientId),
     case Mod:init(Dclient) of
-        {ok, NewDclient} ->
-            do_connect(NewDclient),
-            {ok, NewDclient, hibernate};
+        {ok, NewChildState} ->
+            do_connect(Dclient#dclient{child = NewChildState}),
+            {ok, Dclient#dclient{child = NewChildState}, hibernate};
         {stop, Reason} ->
             {stop, Reason}
     end.
