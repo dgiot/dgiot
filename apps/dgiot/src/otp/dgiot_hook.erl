@@ -62,7 +62,7 @@ run_hook(Key, Args) ->
 	end.
 
 do_hook({M, F}, Args) when is_list(Args) ->
-    apply(M,F,Args);
+    apply(M, F, Args);
 
 do_hook({M, F}, Arg) ->
     do_hook({M, F}, [Arg]);
