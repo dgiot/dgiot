@@ -185,4 +185,3 @@ do_connect(#dclient{userdata = #connect_state{host = Host, port = Port}}) ->
 
 do_connect(_) ->
     self() ! do_connect.
-

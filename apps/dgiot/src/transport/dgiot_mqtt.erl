@@ -187,4 +187,3 @@ republish(_Selected, Envs = #{
     ?LOG(debug, " msg topic: ~p, target topic: ~p",
         [Topic, ?bound_v('TargetTopic', Envs)]),
     emqx_rule_metrics:inc_actions_error(?bound_v('_Id', Envs)).
-

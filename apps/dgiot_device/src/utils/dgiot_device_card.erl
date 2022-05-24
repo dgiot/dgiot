@@ -102,7 +102,3 @@ do_hook(Key, Args) ->
         {ok, [Rtn | _]} ->
             Rtn
     end.
-
-
-
-

@@ -45,4 +45,3 @@ delete('before', Args) ->
     Args;
 delete('after', Data) ->
     Data.
-

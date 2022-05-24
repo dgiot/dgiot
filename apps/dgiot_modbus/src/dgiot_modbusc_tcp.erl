@@ -90,4 +90,3 @@ handle_info(_Info, #dclient{child = ChildState} = Dclient) ->
 
 terminate(_Reason, _TCPState) ->
     ok.
-
