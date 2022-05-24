@@ -22,53 +22,71 @@
 -include_lib("dgiot/include/dgiot.hrl").
 -define(MAX_BUFF_SIZE, 10 * 1024).
 -include_lib("dgiot/include/logger.hrl").
+-include_lib("dgiot/include/dgiot_client.hrl").
 
-init(TCPState) ->
-    {ok, TCPState}.
 
-handle_info(connection_ready, TCPState) ->
-    io:format("~s ~p TCPState = ~p.~n", [?FILE, ?LINE, TCPState]),
+%% tcp client  callback
+init(#dclient{child = ChildState}) when is_map(ChildState) ->
+    {ok, ChildState};
+
+init(_) ->
+    {ok, #{}}.
+
+handle_info(connection_ready, #dclient{child = ChildState}) ->
+    io:format("~s ~p ChildState = ~p.~n", [?FILE, ?LINE, ChildState]),
     rand:seed(exs1024),
     Time = erlang:round(rand:uniform() * 1 + 1) * 1000,
     erlang:send_after(Time, self(), read),
-    {noreply, TCPState};
+    {noreply, ChildState};
 
-handle_info(tcp_closed, TCPState) ->
-    {noreply, TCPState};
+handle_info(tcp_closed, #dclient{child = ChildState}) ->
+    {noreply, ChildState};
 
-handle_info(read, #tcp{state = #state{id = ChannelId, env = #{minaddr := MinAddr, maxaddr := Maxaddr} = Env} = State} = TCPState) ->
-    Address = modbus_tcp:get_addr(ChannelId, MinAddr, Maxaddr, 120),
+handle_info(read, #dclient{channel = ChannelId, client = ClientId, child = #{minaddr := MinAddr, maxaddr := Maxaddr} = ChildState}) ->
+%%    _Address1 = modbus_tcp:get_addr(ChannelId, MinAddr, Maxaddr, 124),
+    Address = maps:get(di, ChildState, MinAddr),
+    Step = maps:get(step, ChildState, 100),
+    Registersnumber =
+        case Address + Step >= Maxaddr of
+            true ->
+                Maxaddr - Address + 1;
+            _ ->
+                100
+        end,
     DataSource =
         #{
-            <<"registersnumber">> => <<"120">>,
+            <<"registersnumber">> => Registersnumber,
             <<"slaveid">> => <<"0X01">>,
             <<"operatetype">> => <<"readHregs">>,
             <<"address">> => Address
         },
     Data = modbus_tcp:to_frame(DataSource),
-    dgiot_tcp_server:send(TCPState, Data),
-%%    erlang:send_after(10 * 1000, self(), read),
-    {noreply, TCPState#tcp{state = State#state{env = Env#{maxaddr => Maxaddr, di => Address, step => 120}}}};
+    dgiot_tcp_client:send(ChannelId, ClientId, Data),
+%%    io:format("~s ~p Send = ~p.~n", [?FILE, ?LINE, dgiot_utils:binary_to_hex(Data)]),
+    {noreply, ChildState#{minaddr => MinAddr, maxaddr => Maxaddr, di => Address, data => <<>>, step => Step}};
 
-handle_info({tcp, Buff}, #tcp{state = #state{id = ChannelId, env = #{maxaddr := Maxaddr, di := Address, filename := FileName, data := OldData, step := Step} = Env} = State} = TCPState) ->
+handle_info({tcp, Buff}, #dclient{channel = ChannelId, child = #{minaddr := MinAddr, maxaddr := Maxaddr, di := Address, filename := FileName, data := OldData, step := Step} = ChildState}) ->
     dgiot_bridge:send_log(ChannelId, "returns [~p] to Channel", [dgiot_utils:binary_to_hex(Buff)]),
+%%    io:format("~s ~p Address = ~p.~n", [?FILE, ?LINE, Address]),
+%%    io:format("~s ~p Buff = ~p.~n", [?FILE, ?LINE, Buff]),
     Data = modbus_tcp:parse_frame(Buff),
-    erlang:send_after(3 * 1000, self(), read),
     case Address + Step >= Maxaddr of
         true ->
             EndData = <<OldData/binary, Data/binary>>,
 %%            io:format("~s ~p EndData = ~p.~n", [?FILE, ?LINE, EndData]),
             modbus_tcp:parse_frame(FileName, EndData),
-            {noreply, TCPState#tcp{buff = <<>>, state = State#state{env = Env#{data => <<>>}}}};
+            erlang:send_after(10 * 1000, self(), read),
+            {noreply, ChildState#{di => MinAddr, data => <<>>}};
         _ ->
-            {noreply, TCPState#tcp{buff = <<>>, state = State#state{env = Env#{data => <<OldData/binary, Data/binary>>}}}}
-
+            erlang:send_after(3 * 1000, self(), read),
+            {noreply, ChildState#{di => Address + Step, data => <<OldData/binary, Data/binary>>}}
     end;
 
-handle_info(_Info, TCPState) ->
+handle_info(_Info, #dclient{child = ChildState} = Dclient) ->
     io:format("~s ~p _Info = ~p.~n", [?FILE, ?LINE, _Info]),
-    io:format("~s ~p TCPState = ~p.~n", [?FILE, ?LINE, TCPState]),
-    {noreply, TCPState}.
+    io:format("~s ~p Dclient = ~p.~n", [?FILE, ?LINE, Dclient]),
+    io:format("~s ~p ChildState = ~p.~n", [?FILE, ?LINE, ChildState]),
+    {noreply, ChildState}.
 
 terminate(_Reason, _TCPState) ->
     ok.
