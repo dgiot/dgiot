@@ -34,7 +34,7 @@ init(#dclient{channel = ChannelId}) ->
             {ok, #child_state{product = ProductId}}
     end.
 
-handle_info(connection_ready, #dclient{child = #child_state{product = ProductId} = ChildState} = Dclient) ->
+handle_info(connection_ready, #dclient{child = #child_state{product = ProductId}} = Dclient) ->
     rand:seed(exs1024),
     Time = erlang:round(rand:uniform() * 1 + 1) * 1000,
     io:format("~s ~p ~p ~n",[?FILE, ?LINE, ProductId]),
@@ -54,10 +54,10 @@ handle_info(#{<<"cmd">> := Cmd, <<"data">> := Data, <<"productId">> := ProductId
             Result
     end;
 
-handle_info(tcp_closed, #dclient{child = #child_state{product = ProductId}} = Dclient) ->
+handle_info(tcp_closed, #dclient{child = #child_state{product = ProductId} = ChildState} = Dclient) ->
     case do_cmd(ProductId, tcp_closed, <<>>, Dclient) of
         default ->
-            {noreply, Dclient};
+            {noreply, ChildState};
         Result ->
             Result
     end;
@@ -66,27 +66,27 @@ handle_info({tcp, Buff}, #dclient{child = #child_state{buff = Old, product = Pro
     Data = <<Old/binary, Buff/binary>>,
     case do_cmd(ProductId, tcp, Data, Dclient) of
         default ->
-            {noreply, Dclient};
-        {noreply, Bin, NewDclient} ->
-            {noreply, NewDclient#dclient{child = ChildState#child_state{buff = Bin}}};
-        {stop, Reason, NewDclient} ->
-            {stop, Reason, NewDclient};
+            {noreply, ChildState};
+        {noreply, Bin, NewChildState} ->
+            {noreply, NewChildState#child_state{buff = Bin}};
+        {stop, Reason, NewChildState} ->
+            {stop, Reason, NewChildState};
         Result ->
             Result
     end;
 
-handle_info({deliver, _Topic, _Msg}, NewDclient) ->
-    {noreply, NewDclient};
+handle_info({deliver, _Topic, _Msg}, #dclient{child = ChildState}) ->
+    {noreply, ChildState};
 
-handle_info(login, #dclient{child = #child_state{hb = Hb}} = Dclient) ->
+handle_info(login, #dclient{child = #child_state{hb = Hb} = ChildState} ) ->
     erlang:send_after(Hb * 1000, self(), heartbeat),
     dgiot_tcp_client:send(<<"login">>),
-    {noreply, Dclient};
+    {noreply, ChildState};
 
-handle_info(heartbeat, #dclient{child = #child_state{hb = Hb}} = Dclient) ->
+handle_info(heartbeat, #dclient{child = #child_state{hb = Hb} = ChildState}) ->
     erlang:send_after(Hb * 1000, self(), heartbeat),
     dgiot_tcp_client:send(<<"heartbeat">>),
-    {noreply, Dclient};
+    {noreply, ChildState};
 
 handle_info(_Info, Dclient) ->
     {noreply, Dclient}.
@@ -97,16 +97,16 @@ terminate(_Reason, _Dclient) ->
 do_cmd(ProductId, Cmd, Data, Dclient) ->
     io:format("~s ~p ~p ~n",[?FILE, ?LINE, ProductId]),
     case dgiot_hook:run_hook({tcp, ProductId}, [Cmd, Data, Dclient]) of
-        {ok, NewDclient} ->
-            {noreply, NewDclient};
-        {reply, ProductId, Payload, NewDclient} ->
+        {ok, ChildState} ->
+            {noreply, ChildState};
+        {reply, ProductId, Payload, ChildState} ->
             case dgiot_tcp_client:send(Payload) of
                 ok ->
                     ok;
                 {error, _Reason} ->
                     pass
             end,
-            {noreply, NewDclient};
+            {noreply, ChildState};
         _ ->
             default
     end.
