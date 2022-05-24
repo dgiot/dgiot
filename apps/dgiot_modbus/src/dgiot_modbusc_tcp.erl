@@ -45,13 +45,13 @@ handle_info(tcp_closed, #dclient{child = ChildState}) ->
 handle_info(read, #dclient{channel = ChannelId, client = ClientId, child = #{minaddr := MinAddr, maxaddr := Maxaddr} = ChildState}) ->
 %%    _Address1 = modbus_tcp:get_addr(ChannelId, MinAddr, Maxaddr, 124),
     Address = maps:get(di, ChildState, MinAddr),
-    Step = maps:get(step, ChildState, 125),
+    Step = maps:get(step, ChildState, 100),
     Registersnumber =
         case Address + Step >= Maxaddr of
             true ->
                 Maxaddr - Address + 1;
             _ ->
-                125
+                100
         end,
     DataSource =
         #{
