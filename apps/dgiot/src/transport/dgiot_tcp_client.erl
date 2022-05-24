@@ -48,8 +48,7 @@ init([#{<<"channel">> := ChannelId, <<"client">> := ClientId, <<"ip">> := Host, 
             {stop, Reason}
     end.
 
-handle_call({connection_ready, Socket}, _From, #dclient{channel = ChannelId, client = ClientId,
-    userdata = #connect_state{mod = Mod} = UserData, child = ChildState} = Dclient) ->
+handle_call({connection_ready, Socket}, _From, #dclient{channel = ChannelId, client = ClientId, userdata = #connect_state{mod = Mod} = UserData} = Dclient) ->
     NewUserData = UserData#connect_state{socket = Socket},
     case Mod:handle_info(connection_ready, Dclient) of
         {noreply, NewChildState} ->
@@ -59,8 +58,7 @@ handle_call({connection_ready, Socket}, _From, #dclient{channel = ChannelId, cli
             {reply, _Reason, Dclient#dclient{child = NewChildState, userdata = NewUserData}}
     end;
 
-handle_call(Request, From, #dclient{channel = ChannelId, client = ClientId,
-    userdata = #connect_state{mod = Mod}, child = ChildState} = Dclient) ->
+handle_call(Request, From, #dclient{channel = ChannelId, client = ClientId, userdata = #connect_state{mod = Mod}} = Dclient) ->
     case Mod:handle_call(Request, From, Dclient) of
         {reply, Reply, NewChildState} ->
             {reply, Reply, Dclient#dclient{child = NewChildState}, hibernate};
@@ -70,7 +68,7 @@ handle_call(Request, From, #dclient{channel = ChannelId, client = ClientId,
     end.
 
 handle_cast(Msg, #dclient{channel = ChannelId, client = ClientId,
-    userdata = #connect_state{mod = Mod}, child = ChildState} = Dclient) ->
+    userdata = #connect_state{mod = Mod}} = Dclient) ->
     case Mod:handle_cast(Msg, Dclient) of
         {noreply, NewChildState} ->
             {noreply, Dclient#dclient{child = NewChildState}, hibernate};
@@ -90,13 +88,13 @@ handle_info(do_connect, #dclient{clock = #dclock{count = Count, round = Round, f
     io:format("~s ~p ~p ~n", [?FILE, ?LINE, Count]),
     {noreply, NewState, hibernate};
 
-handle_info({connection_ready, Socket}, #dclient{userdata = #connect_state{mod = Mod}, child = ChildState} = Dclient) ->
+handle_info({connection_ready, Socket}, #dclient{userdata = #connect_state{mod = Mod}} = Dclient) ->
     case Mod:handle_info(connection_ready, Dclient) of
-        {noreply, NewChildState1} ->
+        {noreply, ChildState} ->
             inet:setopts(Socket, [{active, once}]),
-            {noreply, Dclient#dclient{child = NewChildState1}, hibernate};
-        {stop, Reason, NewChildState1} ->
-            {stop, Reason, Dclient#dclient{child = NewChildState1}}
+            {noreply, Dclient#dclient{child = ChildState}, hibernate};
+        {stop, Reason, ChildState} ->
+            {stop, Reason, Dclient#dclient{child = ChildState}}
     end;
 
 %% 往tcp server 发送报文
@@ -107,8 +105,7 @@ handle_info({send, PayLoad}, #dclient{userdata = #connect_state{socket = Socket}
     {noreply, State, hibernate};
 
 %% 接收tcp server发送过来的报文
-handle_info({tcp, Socket, Binary}, #dclient{channel = ChannelId, client = ClientId,
-    userdata = #connect_state{mod = Mod, socket = Socket}} = Dclient) ->
+handle_info({tcp, Socket, Binary}, #dclient{channel = ChannelId, client = ClientId, userdata = #connect_state{mod = Mod, socket = Socket}} = Dclient) ->
     NewBin =
         case binary:referenced_byte_size(Binary) of
             Large when Large > 2 * byte_size(Binary) ->
@@ -117,44 +114,44 @@ handle_info({tcp, Socket, Binary}, #dclient{channel = ChannelId, client = Client
                 Binary
         end,
     case Mod:handle_info({tcp, NewBin}, Dclient) of
-        {noreply, NewDclient} ->
+        {noreply, ChildState} ->
             inet:setopts(Socket, [{active, once}]),
-            {noreply, NewDclient, hibernate};
-        {stop, Reason, NewDclient} ->
+            {noreply, Dclient#dclient{child = ChildState}, hibernate};
+        {stop, Reason, ChildState} ->
             dgiot_client:stop(ChannelId, ClientId),
-            {noreply, Reason, NewDclient, hibernate}
+            {noreply, Reason, Dclient#dclient{child = ChildState}, hibernate}
     end;
 
 handle_info({tcp_error, _Socket, _Reason}, State) ->
     {noreply, State, hibernate};
 
-handle_info({tcp_closed, _Sock}, #dclient{channel = ChannelId, client = ClientId,
-    userdata = #connect_state{mod = Mod, socket = Socket}, child = ChildState} = Dclient) ->
+handle_info({tcp_closed, _Sock}, #dclient{channel = ChannelId, client = ClientId, userdata = #connect_state{mod = Mod, socket = Socket}} = Dclient) ->
     gen_tcp:close(Socket),
     case Mod:handle_info(tcp_closed, Dclient) of
-        {noreply, NewDclient} ->
+        {noreply, ChildState} ->
             self() ! do_connect,
-            {noreply, NewDclient, hibernate};
-        {stop, _Reason, NewDclient} ->
+            {noreply,  Dclient#dclient{child = ChildState}, hibernate};
+        {stop, _Reason, ChildState} ->
             dgiot_client:stop(ChannelId, ClientId),
-            {noreply, NewDclient, hibernate}
+            {noreply, Dclient#dclient{child = ChildState}, hibernate}
     end;
 
 handle_info(Info, #dclient{channel = ChannelId, client = ClientId, userdata = #connect_state{mod = Mod, socket = Socket}} = Dclient) ->
     case Mod:handle_info(Info, Dclient) of
-        {noreply, NewDclient} ->
-            {noreply, NewDclient, hibernate};
-        {stop, _Reason, NewDclient} ->
+        {noreply, ChildState} ->
+            {noreply, Dclient#dclient{child = ChildState}, hibernate};
+        {stop, _Reason, ChildState} ->
             gen_tcp:close(Socket),
             dgiot_client:stop(ChannelId, ClientId),
-            {noreply, NewDclient, hibernate}
+            {noreply, Dclient#dclient{child = ChildState}, hibernate}
     end.
 
 terminate(Reason, #dclient{userdata = #connect_state{mod = Mod}} = Dclient) ->
     Mod:terminate(Reason, Dclient).
 
 code_change(OldVsn, #dclient{userdata = #connect_state{mod = Mod}, child = ChildState} = Dclient, Extra) ->
-   Mod:code_change(OldVsn, Dclient, Extra).
+    {ok, ChildState} = Mod:code_change(OldVsn, Dclient, Extra),
+    {ok, Dclient#dclient{child = ChildState}}.
 
 
 
