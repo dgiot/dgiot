@@ -17,88 +17,96 @@
 -include("dgiot_bridge.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -include_lib("dgiot/include/dgiot_socket.hrl").
--record(child_state, {buff = <<>>, product, devaddr, hb = 30 }).
-
+-include_lib("dgiot/include/dgiot_client.hrl").
+-record(child_state, {buff = <<>>, product, devaddr, hb = 30, device}).
 
 %% tcp client callback
 -define(MAX_BUFF_SIZE, 10 * 1024).
 -export([init/1, handle_info/2, terminate/2]).
 
 %% tcp client  callback
-init(_Dclient) ->
-    {ok, #child_state{}}.
+init(#dclient{channel = ChannelId}) ->
+    case dgiot_product:get_channel(ChannelId) of
+        not_find ->
+            {stop, <<"not find product">>};
+        ProductId ->
+            io:format("~s ~p ~p ~p ~n",[?FILE, ?LINE, ChannelId, ProductId]),
+            {ok, #child_state{product = ProductId}}
+    end.
 
-handle_info(connection_ready, #child_state{product = ProductId} = ChildState) ->
+handle_info(connection_ready, #dclient{child = #child_state{product = ProductId} = ChildState} = Dclient) ->
     rand:seed(exs1024),
     Time = erlang:round(rand:uniform() * 1 + 1) * 1000,
-    case do_cmd(ProductId, connection_ready, <<>>, ChildState) of
+    io:format("~s ~p ~p ~n",[?FILE, ?LINE, ProductId]),
+    case do_cmd(ProductId, connection_ready, <<>>, Dclient) of
         default ->
             erlang:send_after(Time, self(), login);
         _ ->
             pass
     end,
-    {noreply, ChildState};
+    {noreply, Dclient};
 
-handle_info(#{<<"cmd">> := Cmd, <<"data">> := Data, <<"productId">> := ProductId}, ChildState) ->
-    case do_cmd(ProductId, Cmd, Data, ChildState) of
+handle_info(#{<<"cmd">> := Cmd, <<"data">> := Data, <<"productId">> := ProductId}, Dclient) ->
+    case do_cmd(ProductId, Cmd, Data, Dclient) of
         default ->
-            {noreply, ChildState};
+            {noreply, Dclient};
         Result ->
             Result
     end;
 
-handle_info(tcp_closed, #child_state{product = ProductId}  = ChildState) ->
-    case do_cmd(ProductId, tcp_closed, <<>>, ChildState) of
+handle_info(tcp_closed, #dclient{child = #child_state{product = ProductId}} = Dclient) ->
+    case do_cmd(ProductId, tcp_closed, <<>>, Dclient) of
         default ->
-            {noreply, ChildState};
+            {noreply, Dclient};
         Result ->
             Result
     end;
 
-handle_info({tcp, Buff}, #child_state{buff = Old, product = ProductId} = ChildState) ->
+handle_info({tcp, Buff}, #dclient{child = #child_state{buff = Old, product = ProductId} = ChildState} = Dclient) ->
     Data = <<Old/binary, Buff/binary>>,
-    case do_cmd(ProductId, tcp, Data, ChildState) of
+    case do_cmd(ProductId, tcp, Data, Dclient) of
         default ->
-            {noreply, ChildState};
-        {noreply, Bin, NewChildState} ->
-            {noreply, NewChildState#child_state{buff = Bin}};
-        {stop, Reason, NewChildState} ->
-            {stop, Reason, NewChildState};
+            {noreply, Dclient};
+        {noreply, Bin, NewDclient} ->
+            {noreply, NewDclient#dclient{child = ChildState#child_state{buff = Bin}}};
+        {stop, Reason, NewDclient} ->
+            {stop, Reason, NewDclient};
         Result ->
             Result
     end;
 
-handle_info({deliver, _Topic, _Msg}, ChildState) ->
-    {noreply, ChildState};
+handle_info({deliver, _Topic, _Msg}, NewDclient) ->
+    {noreply, NewDclient};
 
-handle_info(login, #child_state{hb = Hb} = ChildState) ->
+handle_info(login, #dclient{child = #child_state{hb = Hb}} = Dclient) ->
     erlang:send_after(Hb * 1000, self(), heartbeat),
     dgiot_tcp_client:send(<<"login">>),
-    {noreply, ChildState};
+    {noreply, Dclient};
 
-handle_info(heartbeat, #child_state{hb = Hb} = TCPState) ->
+handle_info(heartbeat, #dclient{child = #child_state{hb = Hb}} = Dclient) ->
     erlang:send_after(Hb * 1000, self(), heartbeat),
     dgiot_tcp_client:send(<<"heartbeat">>),
-    {noreply, TCPState};
+    {noreply, Dclient};
 
-handle_info(_Info, TCPState) ->
-    {noreply, TCPState}.
+handle_info(_Info, Dclient) ->
+    {noreply, Dclient}.
 
-terminate(_Reason, _TCPState) ->
+terminate(_Reason, _Dclient) ->
     ok.
 
-do_cmd(ProductId, Cmd, Data, ChildState) ->
-    case dgiot_hook:run_hook({tcp, ProductId}, [Cmd, Data, ChildState]) of
-        {ok, NewChildState} ->
-            {noreply, NewChildState};
-        {reply, ProductId, Payload, NewChildState} ->
+do_cmd(ProductId, Cmd, Data, Dclient) ->
+    io:format("~s ~p ~p ~n",[?FILE, ?LINE, ProductId]),
+    case dgiot_hook:run_hook({tcp, ProductId}, [Cmd, Data, Dclient]) of
+        {ok, NewDclient} ->
+            {noreply, NewDclient};
+        {reply, ProductId, Payload, NewDclient} ->
             case dgiot_tcp_client:send(Payload) of
                 ok ->
                     ok;
                 {error, _Reason} ->
                     pass
             end,
-            {noreply, NewChildState};
+            {noreply, NewDclient};
         _ ->
             default
     end.
