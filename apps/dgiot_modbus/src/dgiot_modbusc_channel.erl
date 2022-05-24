@@ -98,29 +98,31 @@ start(ChannelId, ChannelArgs) ->
 %% 通道初始化
 init(?TYPE, ChannelId, #{
     <<"ip">> := Ip,
-    <<"port">> := Port
+    <<"port">> := Port,
+    <<"Size">> := Size
 } = Args) ->
-    {_FileName, _MinAddr, _MaxAddr} =
+    {FileName, MinAddr, MaxAddr} =
         case maps:find(<<"file">>, Args) of
             {ok, FileName1} ->
                 {MinAddr1, MaxAddr1} = dgiot_product_csv:read_csv(ChannelId, FileName1),
-                modbus_tcp:set_addr(ChannelId, MinAddr1, MaxAddr1),
+                %% modbus_tcp:set_addr(ChannelId, MinAddr1, MaxAddr1),
                 {FileName1, MinAddr1, MaxAddr1};
             _ ->
                 {<<>>, 0, 100}
         end,
-%%    dgiot_modbusc_tcp:start_connect(#{
-%%        <<"auto_reconnect">> => 10,
-%%        <<"reconnect_times">> => 3,
-%%        <<"ip">> => Ip,
-%%        <<"port">> => Port,
-%%        <<"channelid">> => ChannelId,
-%%        <<"hb">> => 10,
-%%        <<"filename">> => FileName,
-%%        <<"minaddr">> => MinAddr,
-%%        <<"maxaddr">> => MaxAddr
-%%    }),
-    {ok, #state{id = ChannelId}, dgiot_client:register(ChannelId, tcp_client_sup, #{<<"ip">> => Ip, <<"port">> => Port})}.
+    NewArgs = #{
+        <<"ip">> => Ip,
+        <<"port">> => Port,
+        <<"mod">> => dgiot_modbusc_tcp,
+        <<"count">> => 3,
+        <<"freq">> => 10,
+        <<"child">> => #{
+            filename => FileName,
+            minaddr => MinAddr,
+            maxaddr => MaxAddr}},
+%%    dgiot_client:add_clock(ChannelId, Start_time, End_time),
+    dgiot_client:add_clock(ChannelId, dgiot_datetime:now_secs() - 5000, dgiot_datetime:now_secs() + 300000),
+    {ok, #state{id = ChannelId, env = #{size => Size}}, dgiot_client:register(ChannelId, tcp_client_sup, NewArgs)}.
 
 handle_init(State) ->
     {ok, State}.
@@ -129,6 +131,15 @@ handle_init(State) ->
 handle_event(_EventId, Event, State) ->
     io:format("~s ~p Event = ~p.~n", [?FILE, ?LINE, Event]),
     {ok, State}.
+
+handle_message(start_client, #state{id = ChannelId, env = #{size := Size}} = State) ->
+    case dgiot_data:get({start_client, ChannelId}) of
+        not_find ->
+            [dgiot_client:start(ChannelId, dgiot_utils:to_binary(I)) || I <- lists:seq(1, Size)];
+        _ ->
+            pass
+    end,
+    {ok, State};
 
 handle_message(_Message, State) ->
     io:format("~s ~p _Message = ~p.~n", [?FILE, ?LINE, _Message]),

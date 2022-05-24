@@ -20,7 +20,7 @@
 -include_lib("dgiot/include/logger.hrl").
 
 %% API
--export([register/3, start_link/2, add_clock/3, notify/3, add/2, set_consumer/2, get_consumer/1]).
+-export([register/3, unregister/1, start_link/2, add_clock/3, notify/3, add/2, set_consumer/2, get_consumer/1]).
 -export([start/2, start/3, stop/1, stop/2, stop/3, restart/2, get/2, send/4]).
 -export([get_nexttime/2, send_after/4, get_count/3]).
 
@@ -43,6 +43,15 @@ register(ChannelId, Sup, State) ->
     dgiot_data:delete({stop_client, ChannelId}),
     ChildSpec = dgiot:child_spec(Sup, supervisor, [ChannelId]),
     [ChildSpec].
+
+unregister(ChannelId) when is_binary(ChannelId) ->
+    dgiot_client:unregister(binary_to_atom(ChannelId));
+
+unregister(ChannelId) ->
+    dgiot_data:delete({client, ChannelId}),
+    dgiot_data:delete(ChannelId),
+    dgiot_data:delete({start_client, ChannelId}),
+    dgiot_data:delete({stop_client, ChannelId}).
 
 %% @doc 在通道管理池子中增加client的Pid号
 -spec add(atom() | binary(), binary()) -> result().
@@ -87,7 +96,8 @@ stop(ChannelId) ->
                         pass
                 end,
             dgiot_data:loop(ChannelId, Fun),
-            dgiot_data:clear(ChannelId)
+            dgiot_data:clear(ChannelId),
+            dgiot_client:unregister(ChannelId)
     end.
 
 %% @doc stop client
@@ -237,6 +247,8 @@ add_clock(Channel, Start_time, End_time) when is_binary(Channel) ->
     add_clock(dgiot_utils:to_atom(Channel), Start_time, End_time);
 add_clock(Channel, Start_time, End_time) when is_binary(Start_time) ->
     add_clock(Channel, dgiot_datetime:to_localtime(Start_time), dgiot_datetime:to_localtime(End_time));
+add_clock(Channel, Start_time, End_time) when is_integer(Start_time) ->
+    add_clock(Channel, dgiot_datetime:unixtime_to_localtime(Start_time), dgiot_datetime:unixtime_to_localtime(End_time));
 add_clock(Channel, Start_time, End_time) ->
     BinChannel = dgiot_utils:to_binary(Channel),
     dgiot_cron:push(BinChannel, Start_time, {?MODULE, notify, [Channel, start_client]}),

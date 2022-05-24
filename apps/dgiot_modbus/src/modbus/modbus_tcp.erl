@@ -279,10 +279,12 @@ parse_frame(FileName, Data) ->
         ProductId = dgiot_data:get(AtomName, {addr, Address}),
         IntOffset = dgiot_utils:to_int(Address),
         IntLen = get_len(1, Originaltype),
-        Thing = #{<<"dataSource">> => #{
-            <<"registersnumber">> => 1,
-            <<"originaltype">> => Originaltype
-        }},
+        Thing = #{
+            <<"identifier">> => Address,
+            <<"dataSource">> => #{
+                <<"registersnumber">> => 1,
+                <<"originaltype">> => Originaltype
+            }},
         Value =
             case IntOffset of
                 1 ->
@@ -330,7 +332,7 @@ change_data(ProductId, Data) ->
                                 true ->
                                     Acc2#{Identifier => PV};
                                 _ ->
-                                    Acc2#{PK => PV}
+                                    Acc2
                             end
                                   end, Acc, Data);
                     _ ->
@@ -712,9 +714,10 @@ format_value(Buff, #{<<"dataSource">> := #{
     {Value, Rest};
 
 %% @todo 其它类型处理
-format_value(_, #{<<"identifier">> := Field}, _Props) ->
-    ?LOG(info, "Field ~p", [Field]),
-    throw({field_error, <<Field/binary, " is not validate">>}).
+format_value(Buff, #{<<"identifier">> := Field, <<"originaltype">> := Originaltype}, _Props) ->
+    ?LOG(error, "Field ~p originaltype ~p", [Field, Originaltype]),
+%%    throw({field_error, <<Field/binary, "_", Originaltype/binary, " is not validate">>}),
+    {<<"">>, Buff}.
 
 %% 获取寄存器字节长度
 get_len(IntNum, <<"short16_AB">>) ->
@@ -752,13 +755,13 @@ get_len(IntNum, _Originaltype) ->
 
 get_addr(ChannelId, Min, Max, Step) ->
     case dgiot_data:get_consumer(?consumer(ChannelId), Step) of
-        Min ->
+        Step ->
             Min;
         Value when (Value + Step) >= Max ->
             dgiot_data:set_consumer(?consumer(ChannelId), Min, Max),
             Value - Step;
         Value ->
-            Value
+            Value - Step
     end.
 
 set_addr(ChannelId, Min, Max) ->
