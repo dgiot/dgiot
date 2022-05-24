@@ -25,6 +25,14 @@
 -export([init/1, handle_info/2, terminate/2]).
 
 %% tcp client  callback
+init(#dclient{channel = ChannelId, child = #child_state{} = ChildState}) ->
+    case dgiot_product:get_channel(ChannelId) of
+        not_find ->
+            {stop, <<"not find product">>};
+        ProductId ->
+            io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, ChannelId, ProductId]),
+            {ok, ChildState#child_state{product = ProductId}}
+    end;
 init(#dclient{channel = ChannelId}) ->
     case dgiot_product:get_channel(ChannelId) of
         not_find ->
@@ -46,7 +54,7 @@ handle_info(connection_ready, #dclient{child = #child_state{product = ProductId}
             {noreply, ChildState#child_state{device = Device}}
     end;
 
-handle_info(#{<<"cmd">> := Cmd, <<"data">> := Data, <<"productId">> := ProductId}, #dclient{child = ChildState} = Dclient) ->
+handle_info(#{<<"cmd">> := Cmd, <<"data">> := Data, <<"productId">> := ProductId}, #dclient{child = #child_state{} = ChildState} = Dclient) ->
     case do_cmd(ProductId, Cmd, Data, Dclient) of
         default ->
             {noreply, ChildState};
