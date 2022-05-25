@@ -48,6 +48,12 @@
 %% Queue topic
 -define(QUEUE,  <<"$queue/">>).
 
+-define(DEFAULT_SUBOPTS, #{rh  => 0, %% Retain Handling
+    rap => 0, %% Retain as Publish
+    nl  => 0, %% No Local
+    qos => 0  %% QoS
+}).
+
 %%--------------------------------------------------------------------
 %% Message and Delivery
 %%--------------------------------------------------------------------
