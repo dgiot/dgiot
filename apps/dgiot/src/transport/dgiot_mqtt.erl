@@ -25,6 +25,7 @@
 -export([
     has_routes/1
     , subscribe/1
+    , subscribe/2
     , unsubscribe/1
     , publish/3
     , publish/4
@@ -35,10 +36,21 @@
     , get_topic/1
     , get_channel/1
     , republish/2
-    , get_message/2]).
+    , get_message/2
+    , mqueue/0
+    , session/0
+    , clientinfo/0
+    , subopts/0
+    , delivery/2
+    , ts/1
+]).
 
 has_routes(Topic) ->
     emqx_router:has_routes(Topic).
+
+subscribe(ClientId, TopicFilter) ->
+    timer:sleep(1),
+    emqx_broker:subscribe(TopicFilter, ClientId, subopts()).
 
 subscribe(Topic) ->
     Options = #{qos => 0},
@@ -49,7 +61,7 @@ unsubscribe(Topic) ->
     emqx_broker:unsubscribe(iolist_to_binary(Topic)).
 
 -spec(publish(Client :: binary(), Topic :: binary(), Payload :: binary())
-        -> ok | {error, Reason :: any()}).
+            -> ok | {error, Reason :: any()}).
 publish(Client, Topic, Payload) ->
     timer:sleep(10),
     Msg = emqx_message:make(dgiot_utils:to_binary(Client), 0, Topic, Payload),
@@ -188,3 +200,33 @@ republish(_Selected, Envs = #{
         [Topic, ?bound_v('TargetTopic', Envs)]),
     emqx_rule_metrics:inc_actions_error(?bound_v('_Id', Envs)).
 
+mqueue() -> mqueue(#{}).
+mqueue(Opts) ->
+    emqx_mqueue:init(maps:merge(#{max_len => 0, store_qos0 => false}, Opts)).
+
+session() -> session(#{}).
+session(InitFields) when is_map(InitFields) ->
+    maps:fold(fun(Field, Value, Session) ->
+        emqx_session:set_field(Field, Value, Session)
+              end,
+        emqx_session:init(#{zone => channel}, #{receive_maximum => 0}),
+        InitFields).
+
+
+clientinfo() -> clientinfo(#{}).
+clientinfo(Init) ->
+    maps:merge(#{clientid => <<"clientid">>,
+        username => <<"username">>
+    }, Init).
+
+subopts() -> subopts(#{}).
+subopts(Init) ->
+    maps:merge(?DEFAULT_SUBOPTS, Init).
+
+delivery(QoS, Topic) ->
+    {deliver, Topic, emqx_message:make(test, QoS, Topic, <<"payload">>)}.
+
+ts(second) ->
+    erlang:system_time(second);
+ts(millisecond) ->
+    erlang:system_time(millisecond).
