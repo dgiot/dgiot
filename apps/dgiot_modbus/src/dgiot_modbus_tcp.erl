@@ -94,11 +94,11 @@ handle_info({tcp, Buff}, #tcp{state = #state{id = ChannelId, devaddr = DtuAddr, 
         <<"slaveId">> => Sh * 256 + Sl,
         <<"address">> => H * 256 + L}) of
         {_, Things} ->
-%%            ?LOG(info, "Things ~p", [Things]),
             NewTopic = <<"$dg/thing/", DtuProductId/binary, "/", DtuAddr/binary, "/properties/report">>,
             dgiot_bridge:send_log(ChannelId, ProductId, DtuAddr, "Channel sends [~p] to [task:~p]", [jsx:encode(Things), NewTopic]),
             DeviceId = dgiot_parse_id:get_deviceid(ProductId, DtuAddr),
-            dgiot_mqtt:publish(DeviceId, NewTopic, jsx:encode(Things));
+            Taskchannel = dgiot_product:get_taskchannel(ProductId),
+            dgiot_client:send(Taskchannel, DeviceId, NewTopic, Things);
         Other ->
             ?LOG(info, "Other ~p", [Other]),
             pass
@@ -122,6 +122,7 @@ handle_info({deliver, _, Msg}, #tcp{state = #state{id = ChannelId} = State} = TC
                     case jsx:decode(Payload, [{labels, binary}, return_maps]) of
                         #{<<"slaveid">> := SlaveId, <<"address">> := Address} = DataSource ->
                             Data = modbus_rtu:to_frame(DataSource),
+%%                            io:format("~s ~p Data = ~p.~n", [?FILE, ?LINE, dgiot_utils:to_hex(Data)]),
                             dgiot_bridge:send_log(ChannelId, ProductId, DevAddr, "Channel sends [~p] to [DtuAddr:~p]", [dgiot_utils:binary_to_hex(Data), DevAddr]),
                             dgiot_tcp_server:send(TCPState, Data),
                             {noreply, TCPState#tcp{state = State#state{env = #{product => ProductId, pn => SlaveId, di => Address}}}};
@@ -155,6 +156,13 @@ handle_call(_Msg, _From, TCPState) ->
 
 handle_cast(_Msg, TCPState) ->
     {noreply, TCPState}.
+
+terminate(_Reason, #tcp{state = #state{devaddr = DtuAddr, env = #{product := ProductId}}} = _TCPState) ->
+    DeviceId = dgiot_parse_id:get_deviceid(ProductId, DtuAddr),
+    Taskchannel = dgiot_product:get_taskchannel(ProductId),
+    dgiot_task:del_pnque(DeviceId),
+    dgiot_client:stop(Taskchannel, DeviceId),
+    ok;
 
 terminate(_Reason, _TCPState) ->
     ok.

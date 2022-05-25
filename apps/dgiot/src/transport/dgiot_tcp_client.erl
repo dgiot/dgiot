@@ -85,7 +85,7 @@ handle_info(do_connect, #dclient{clock = #dclock{count = Count, round = Round, f
     timer:sleep(Freq * 1000),
     NewState = State#dclient{clock = Clock#dclock{count = Count - 1, round = Round + 1}},
     do_connect(NewState),
-    io:format("~s ~p ~p ~n", [?FILE, ?LINE, Count]),
+%%    io:format("~s ~p ~p ~n", [?FILE, ?LINE, Count]),
     {noreply, NewState, hibernate};
 
 handle_info({connection_ready, Socket}, #dclient{userdata = #connect_state{mod = Mod}} = Dclient) ->

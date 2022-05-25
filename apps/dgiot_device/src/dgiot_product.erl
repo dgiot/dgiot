@@ -25,7 +25,7 @@
 -export([create_product/1, create_product/2, add_product_relation/2, delete_product_relation/1]).
 -export([get_prop/1, get_props/1, get_props/2, get_unit/1, do_td_message/1, update_properties/2, update_properties/0]).
 -export([update_topics/0, update_product_filed/1]).
--export([save_keys/1, get_keys/1, get_control/1, save_control/1, save_channel/1, get_channel/1]).
+-export([save_keys/1, get_keys/1, get_control/1, save_control/1, save_channel/1, save_tdchannel/1, save_taskchannel/1, get_channel/1, get_tdchannel/1, get_taskchannel/1]).
 -type(result() :: any()).   %% todo 目前只做参数检查，不做结果检查
 
 init_ets() ->
@@ -75,6 +75,8 @@ save(Product) ->
     save_keys(ProductId),
     save_control(ProductId),
     save_channel(ProductId),
+    save_tdchannel(ProductId),
+    save_taskchannel(ProductId),
     {ok, Product1}.
 
 put(Product) ->
@@ -99,10 +101,28 @@ get(ProductId) ->
             {error, Reason}
     end.
 
+-spec save_tdchannel(binary()) -> result().
+save_tdchannel(ProductId) ->
+    case lookup_prod(ProductId) of
+        {ok, #{<<"channel">> := #{<<"tdchannel">> := Channel}}} ->
+            dgiot_data:insert({tdchannel_product, binary_to_atom(ProductId)}, Channel);
+        _ ->
+            pass
+    end.
+
+-spec save_taskchannel(binary()) -> result().
+save_taskchannel(ProductId) ->
+    case lookup_prod(ProductId) of
+        {ok, #{<<"channel">> := #{<<"taskchannel">> := Channel}}} ->
+            dgiot_data:insert({taskchannel_product, binary_to_atom(ProductId)}, Channel);
+        _ ->
+            pass
+    end.
+
 -spec save_channel(binary()) -> result().
 save_channel(ProductId) ->
     case lookup_prod(ProductId) of
-        {ok, #{<<"channel">> := #{<<"otherchannel">> := [Channel|_]}}} ->
+        {ok, #{<<"channel">> := #{<<"otherchannel">> := [Channel | _]}}} ->
             dgiot_data:insert({channel_product, binary_to_atom(Channel)}, ProductId);
         {ok, #{<<"channel">> := #{<<"otherchannel">> := Channel}}} ->
             dgiot_data:insert({channel_product, binary_to_atom(Channel)}, ProductId);
@@ -115,6 +135,19 @@ get_channel(ChannelId) when is_binary(ChannelId) ->
     get_channel(binary_to_atom(ChannelId));
 get_channel(ChannelId) ->
     dgiot_data:get({channel_product, ChannelId}).
+
+-spec get_tdchannel(binary() | atom()) -> result().
+get_tdchannel(ProductId) when is_binary(ProductId) ->
+    get_tdchannel(binary_to_atom(ProductId));
+get_tdchannel(ProductId) ->
+    dgiot_data:get({tdchannel_product, ProductId}).
+
+-spec get_taskchannel(binary() | atom()) -> result().
+get_taskchannel(ProductId) when is_binary(ProductId) ->
+    get_taskchannel(binary_to_atom(ProductId));
+get_taskchannel(ProductId) ->
+    dgiot_data:get({taskchannel_product, ProductId}).
+
 
 %% 保存配置下发控制字段
 save_control(ProductId) ->
