@@ -22,6 +22,11 @@
 -include_lib("emqx_rule_engine/include/rule_engine.hrl").
 -include_lib("emqx_rule_engine/include/rule_actions.hrl").
 
+%% ETS tables for PubSub
+-define(SUBOPTION, emqx_suboption).
+-define(SUBSCRIBER, emqx_subscriber).
+-define(SUBSCRIPTION, emqx_subscription).
+
 -export([
     has_routes/1
     , subscribe/1
@@ -37,25 +42,27 @@
     , get_channel/1
     , republish/2
     , get_message/2
-    , mqueue/0
-    , session/0
-    , clientinfo/0
     , subopts/0
-    , delivery/2
-    , ts/1
 ]).
 
 has_routes(Topic) ->
     emqx_router:has_routes(Topic).
 
+%% 动态注册topic
 subscribe(ClientId, TopicFilter) ->
     timer:sleep(1),
-    emqx_broker:subscribe(TopicFilter, ClientId, subopts()).
+    case emqx_broker_helper:lookup_subpid(ClientId) of
+        Pid when is_pid(Pid) ->
+            subscribe(TopicFilter, ClientId, Pid, subopts());
+        _ ->
+            emqx_broker:subscribe(TopicFilter, ClientId, subopts())
+    end.
 
 subscribe(Topic) ->
     Options = #{qos => 0},
     timer:sleep(1),
     emqx:subscribe(Topic, dgiot_utils:to_binary(self()), Options).
+
 
 unsubscribe(Topic) ->
     emqx_broker:unsubscribe(iolist_to_binary(Topic)).
@@ -150,7 +157,6 @@ republish(Selected, #{
         'TopicTks' := TopicTks,
         'PayloadTks' := PayloadTks
     } = Bind}) ->
-    ?LOG(debug, "Selected ~p ", [Selected]),
     TargetQoS = maps:get('TargetQoS', Bind, 0),
     Msg = #message{
         id = emqx_guid:gen(),
@@ -162,7 +168,6 @@ republish(Selected, #{
         payload = emqx_rule_utils:proc_tmpl(PayloadTks, Selected),
         timestamp = Timestamp
     },
-    ?LOG(debug, "Msg ~p ", [Msg]),
     _ = emqx_broker:safe_publish(Msg),
     emqx_rule_metrics:inc_actions_success(ActId),
     emqx_metrics:inc_msg(Msg);
@@ -186,7 +191,6 @@ republish(Selected, #{
         payload = emqx_rule_utils:proc_tmpl(PayloadTks, Selected),
         timestamp = erlang:system_time(millisecond)
     },
-    ?LOG(debug, "Msg ~p ", [Msg]),
     _ = emqx_broker:safe_publish(Msg),
     emqx_rule_metrics:inc_actions_success(ActId),
     emqx_metrics:inc_msg(Msg);
@@ -200,33 +204,69 @@ republish(_Selected, Envs = #{
         [Topic, ?bound_v('TargetTopic', Envs)]),
     emqx_rule_metrics:inc_actions_error(?bound_v('_Id', Envs)).
 
-mqueue() -> mqueue(#{}).
-mqueue(Opts) ->
-    emqx_mqueue:init(maps:merge(#{max_len => 0, store_qos0 => false}, Opts)).
-
-session() -> session(#{}).
-session(InitFields) when is_map(InitFields) ->
-    maps:fold(fun(Field, Value, Session) ->
-        emqx_session:set_field(Field, Value, Session)
-              end,
-        emqx_session:init(#{zone => channel}, #{receive_maximum => 0}),
-        InitFields).
-
-
-clientinfo() -> clientinfo(#{}).
-clientinfo(Init) ->
-    maps:merge(#{clientid => <<"clientid">>,
-        username => <<"username">>
-    }, Init).
-
+%% @private
 subopts() -> subopts(#{}).
 subopts(Init) ->
     maps:merge(?DEFAULT_SUBOPTS, Init).
 
-delivery(QoS, Topic) ->
-    {deliver, Topic, emqx_message:make(test, QoS, Topic, <<"payload">>)}.
+%% @private
+-spec(subscribe(emqx_topic:topic(), emqx_types:subid(), pid(), emqx_types:subopts()) -> ok).
+subscribe(Topic, SubId, SubPid, SubOpts0) when is_binary(Topic), is_pid(SubPid), is_map(SubOpts0) ->
+    SubOpts = maps:merge(?DEFAULT_SUBOPTS, SubOpts0),
+    case ets:member(?SUBOPTION, {SubPid, Topic}) of
+        false -> %% New
+            ok = emqx_broker_helper:register_sub(SubPid, SubId),
+            do_subscribe(Topic, SubPid, with_subid(SubId, SubOpts));
+        true -> %% Existed
+            set_subopts(SubPid, Topic, with_subid(SubId, SubOpts)),
+            ok %% ensure to return 'ok'
+    end.
 
-ts(second) ->
-    erlang:system_time(second);
-ts(millisecond) ->
-    erlang:system_time(millisecond).
+%% @private
+set_subopts(SubPid, Topic, NewOpts) ->
+    Sub = {SubPid, Topic},
+    case ets:lookup(?SUBOPTION, Sub) of
+        [{_, OldOpts}] ->
+            ets:insert(?SUBOPTION, {Sub, maps:merge(OldOpts, NewOpts)});
+        [] -> false
+    end.
+
+%% @private
+do_subscribe(Topic, SubPid, SubOpts) ->
+    true = ets:insert(?SUBSCRIPTION, {SubPid, Topic}),
+    Group = maps:get(share, SubOpts, undefined),
+    do_subscribe(Group, Topic, SubPid, SubOpts).
+
+do_subscribe(undefined, Topic, SubPid, SubOpts) ->
+    case emqx_broker_helper:get_sub_shard(SubPid, Topic) of
+        0 -> true = ets:insert(?SUBSCRIBER, {Topic, SubPid}),
+            true = ets:insert(?SUBOPTION, {{SubPid, Topic}, SubOpts}),
+            call(pick(Topic), {subscribe, Topic});
+        I -> true = ets:insert(?SUBSCRIBER, {{shard, Topic, I}, SubPid}),
+            true = ets:insert(?SUBOPTION, {{SubPid, Topic}, maps:put(shard, I, SubOpts)}),
+            call(pick({Topic, I}), {subscribe, Topic, I})
+    end;
+
+
+%% Shared subscription
+do_subscribe(Group, Topic, SubPid, SubOpts) ->
+    true = ets:insert(?SUBOPTION, {{SubPid, Topic}, SubOpts}),
+    emqx_shared_sub:subscribe(Group, Topic, SubPid).
+
+-compile({inline, [with_subid/2]}).
+with_subid(undefined, SubOpts) ->
+    SubOpts;
+with_subid(SubId, SubOpts) ->
+    maps:put(subid, SubId, SubOpts).
+
+%%--------------------------------------------------------------------
+%% call, pick
+%%--------------------------------------------------------------------
+
+-compile({inline, [call/2, pick/1]}).
+call(Broker, Req) ->
+    gen_server:call(Broker, Req, infinity).
+
+%% Pick a broker
+pick(Topic) ->
+    gproc_pool:pick_worker(broker_pool, Topic).
