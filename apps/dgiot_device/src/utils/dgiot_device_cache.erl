@@ -84,6 +84,13 @@ post(Device) ->
     ProductId = maps:get(<<"objectId">>, Product),
     DeviceSecret = maps:get(<<"deviceSecret">>, Device, <<"DeviceSecretdefault">>),
     DeviceId = maps:get(<<"objectId">>, Device, dgiot_parse_id:get_deviceid(ProductId, Devaddr)),
+    case dgiot_product:lookup_prod(ProductId) of
+        {ok, ProductInfo} ->
+            Data = maps:with([<<"profile">>, <<"content">>], ProductInfo),
+            dgiot_parse:update_object(<<"Device">>, DeviceId, Data);
+        _ ->
+            pass
+    end,
     #{<<"longitude">> := Longitude, <<"latitude">> := Latitude} =
         maps:get(<<"location">>, Device, #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => 120.161324, <<"latitude">> => 30.262441}),
     Status =
