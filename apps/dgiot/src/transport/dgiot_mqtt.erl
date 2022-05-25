@@ -32,6 +32,7 @@
     , subscribe/1
     , subscribe/2
     , unsubscribe/1
+    , unsubscribe/2
     , publish/3
     , publish/4
     , message/3
@@ -48,7 +49,12 @@
 has_routes(Topic) ->
     emqx_router:has_routes(Topic).
 
-%% 动态注册topic
+subscribe(Topic) ->
+    Options = #{qos => 0},
+    timer:sleep(1),
+    emqx:subscribe(Topic, dgiot_utils:to_binary(self()), Options).
+
+%% 根据clientid动态订阅topic
 subscribe(ClientId, TopicFilter) ->
     timer:sleep(1),
     case emqx_broker_helper:lookup_subpid(ClientId) of
@@ -58,14 +64,18 @@ subscribe(ClientId, TopicFilter) ->
             emqx_broker:subscribe(TopicFilter, ClientId, subopts())
     end.
 
-subscribe(Topic) ->
-    Options = #{qos => 0},
-    timer:sleep(1),
-    emqx:subscribe(Topic, dgiot_utils:to_binary(self()), Options).
-
-
 unsubscribe(Topic) ->
     emqx_broker:unsubscribe(iolist_to_binary(Topic)).
+
+%% 根据clientid动态取消订阅topic
+unsubscribe(ClientId, TopicFilter) ->
+    timer:sleep(1),
+    case emqx_broker_helper:lookup_subpid(ClientId) of
+        Pid when is_pid(Pid) ->
+            do_unsubscribe(TopicFilter, Pid);
+        _ ->
+            emqx_broker:unsubscribe(TopicFilter)
+    end.
 
 -spec(publish(Client :: binary(), Topic :: binary(), Payload :: binary())
             -> ok | {error, Reason :: any()}).
@@ -231,6 +241,36 @@ set_subopts(SubPid, Topic, NewOpts) ->
         [] -> false
     end.
 
+%%--------------------------------------------------------------------
+%% Unsubscribe API
+%%--------------------------------------------------------------------
+
+-spec(do_unsubscribe(emqx_topic:topic(), pid()) -> ok).
+do_unsubscribe(Topic, SubPid) when is_binary(Topic) ->
+    case ets:lookup(?SUBOPTION, {SubPid, Topic}) of
+        [{_, SubOpts}] ->
+            _ = emqx_broker_helper:reclaim_seq(Topic),
+            do_unsubscribe(Topic, SubPid, SubOpts);
+        [] -> ok
+    end.
+
+do_unsubscribe(Topic, SubPid, SubOpts) ->
+    true = ets:delete(?SUBOPTION, {SubPid, Topic}),
+    true = ets:delete_object(?SUBSCRIPTION, {SubPid, Topic}),
+    Group = maps:get(share, SubOpts, undefined),
+    do_unsubscribe(Group, Topic, SubPid, SubOpts).
+
+do_unsubscribe(undefined, Topic, SubPid, SubOpts) ->
+    case maps:get(shard, SubOpts, 0) of
+        0 -> true = ets:delete_object(?SUBSCRIBER, {Topic, SubPid}),
+            cast(pick(Topic), {unsubscribed, Topic});
+        I -> true = ets:delete_object(?SUBSCRIBER, {{shard, Topic, I}, SubPid}),
+            cast(pick({Topic, I}), {unsubscribed, Topic, I})
+    end;
+
+do_unsubscribe(Group, Topic, SubPid, _SubOpts) ->
+    emqx_shared_sub:unsubscribe(Group, Topic, SubPid).
+
 %% @private
 do_subscribe(Topic, SubPid, SubOpts) ->
     true = ets:insert(?SUBSCRIPTION, {SubPid, Topic}),
@@ -260,12 +300,15 @@ with_subid(SubId, SubOpts) ->
     maps:put(subid, SubId, SubOpts).
 
 %%--------------------------------------------------------------------
-%% call, pick
+%% call, cast, pick
 %%--------------------------------------------------------------------
 
 -compile({inline, [call/2, pick/1]}).
 call(Broker, Req) ->
     gen_server:call(Broker, Req, infinity).
+
+cast(Broker, Msg) ->
+    gen_server:cast(Broker, Msg).
 
 %% Pick a broker
 pick(Topic) ->
