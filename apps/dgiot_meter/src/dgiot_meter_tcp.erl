@@ -180,12 +180,8 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, clientid = DtuId, state = #state{
 %%                    io:format("~s ~p DLT376 send = ~p.~n", [?FILE, ?LINE, dgiot_utils:binary_to_hex(Buff)]),
                     dgiot_tcp_server:send(TCPState, Frame);  %%回复确认
                 [#{<<"afn">> := 16#0A, <<"di">> := <<16#00, 16#00, 16#02, 16#01>>} | _] ->
-                    io:format("~s ~p Response Buff = ~p.~n", [?FILE, ?LINE, dgiot_utils:binary_to_hex(Buff)]),
-                    io:format("~s ~p parse_frame = ~p.~n", [?FILE, ?LINE, Frames]),
                     dlt376_decoder:process_message(Frames, ChannelId, DTUIP, DtuId);  %%注册或更新电表信
                 _ ->
-                    io:format("~s ~p Response Buff = ~p.~n", [?FILE, ?LINE, dgiot_utils:binary_to_hex(Buff)]),
-                    io:format("~s ~p parse_frame = ~p.~n", [?FILE, ?LINE, Frames]),
                     dlt376_decoder:process_message(?DLT376, Frames, ChannelId)
             end,
             {noreply, TCPState#tcp{buff = Rest}};

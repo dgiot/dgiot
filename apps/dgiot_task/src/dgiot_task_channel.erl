@@ -79,6 +79,18 @@
             zh => <<"任务结束时间"/utf8>>
         }
     },
+    <<"rand">> => #{
+        order => 4,
+        type => boolean,
+        required => true,
+        default => true,
+        title => #{
+            zh => <<"是否错峰执行任务"/utf8>>
+        },
+        description => #{
+            zh => <<"每轮任务开始时,是否随机开始,错峰处理"/utf8>>
+        }
+    },
     <<"ico">> => #{
         order => 102,
         type => string,
@@ -105,14 +117,15 @@ start(ChannelId, ChannelArgs) ->
 
 %% 通道初始化
 init(?TYPE, ChannelId, Args) ->
-    #{<<"freq">> := Freq, <<"start_time">> := Start_time, <<"end_time">> := End_time} = Args,
+    #{<<"freq">> := Freq, <<"start_time">> := Start_time, <<"end_time">> := End_time, <<"rand">> := Rand} = Args,
     dgiot_client:add_clock(ChannelId, Start_time, End_time),
     State = #state{id = ChannelId},
     {ok, State, dgiot_client:register(ChannelId, task_sup, #{
         <<"channel">> => ChannelId,
         <<"starttime">> => dgiot_datetime:localtime_to_unixtime(dgiot_datetime:to_localtime(Start_time)),
         <<"endtime">> => dgiot_datetime:localtime_to_unixtime(dgiot_datetime:to_localtime(End_time)),
-        <<"freq">> => Freq
+        <<"freq">> => Freq,
+        <<"rand">> => Rand
     })}.
 
 handle_init(State) ->
@@ -124,7 +137,7 @@ handle_event(_EventId, Event, State) ->
     {ok, State}.
 
 handle_message(start_client, #state{id = ChannelId} = State) ->
-    io:format("~s ~p ChannelId =~p.~n", [?FILE, ?LINE, ChannelId]),
+%%    io:format("~s ~p ChannelId = ~p.~n", [?FILE, ?LINE, ChannelId]),
     case dgiot_data:get({start_client, ChannelId}) of
         not_find ->
             dgiot_task:start(ChannelId),
@@ -136,7 +149,7 @@ handle_message(start_client, #state{id = ChannelId} = State) ->
     {ok, State};
 
 handle_message(stop_client, #state{id = ChannelId} = State) ->
-    io:format("~s ~p ChannelId =~p.~n", [?FILE, ?LINE, ChannelId]),
+%%    io:format("~s ~p ChannelId = ~p.~n", [?FILE, ?LINE, ChannelId]),
     case dgiot_data:get({stop_client, binary_to_atom(ChannelId)}) of
         not_find ->
             dgiot_client:stop(ChannelId);
@@ -146,7 +159,7 @@ handle_message(stop_client, #state{id = ChannelId} = State) ->
     {ok, State};
 
 handle_message(check_client, #state{id = ChannelId} = State) ->
-%%    io:format("~s ~p ChannelId =~p.~n", [?FILE, ?LINE, ChannelId]),
+%%    io:format("~s ~p time ~p ChannelId = ~p.~n", [?FILE, ?LINE, dgiot_datetime:format(dgiot_datetime:now_secs(), <<"YY-MM-DD HH:NN:SS">>), ChannelId]),
     case dgiot_data:get({stop_client, binary_to_atom(ChannelId)}) of
         not_find ->
             dgiot_task:start(ChannelId),

@@ -109,7 +109,7 @@ stop(ChannelId, ClientId) ->
         Pid when is_pid(Pid) ->
             case is_process_alive(Pid) of
                 true ->
-                    io:format("~s ~p DtuId = ~p. Pid ~p ~n", [?FILE, ?LINE, ChannelId, Pid]),
+%%                    io:format("~s ~p DtuId = ~p. Pid ~p ~n", [?FILE, ?LINE, ChannelId, Pid]),
                     supervisor:terminate_child(ChannelId, Pid);
                 _ ->
                     pass
@@ -125,7 +125,9 @@ stop(ChannelId, ClientId, Count) when is_binary(ChannelId) ->
 stop(ChannelId, ClientId, Count) ->
     case Count =< 0 of
         true ->
-            stop(ChannelId, ClientId)
+            stop(ChannelId, ClientId);
+        _ ->
+            pass
     end.
 
 %% @doc restart client
@@ -201,13 +203,14 @@ start_link(Module, #{<<"channel">> := ChannelId, <<"client">> := Client} = State
 send_after(RetryTime, Freq, true, Msg) ->
     Seed = Freq * 200, %  默认用采样周期的20%的时间来做随机
     Rand = rand:uniform(Seed),
-    erlang:send_after(RetryTime * 1000 + Rand, self(), Msg);
+    erlang:send_after(RetryTime + Rand, self(), Msg);
+
 send_after(RetryTime, _Freq, _, Msg) ->
-    erlang:send_after(RetryTime * 1000, self(), Msg).
+    erlang:send_after(RetryTime, self(), Msg).
 
 %% @doc 获取闹铃执行次数
 -spec get_count(integer(), integer(), integer()) -> result().
-get_count(StartTime, EndTime, _Freq) when EndTime >= StartTime ->
+get_count(StartTime, EndTime, _Freq) when EndTime =< StartTime ->
     0;
 get_count(_StartTime, _EndTime, Freq) when Freq =< 0 ->
     0;
@@ -218,13 +221,17 @@ get_nexttime(NextTime, Freq) ->
     NowTime = dgiot_datetime:nowstamp(),
     get_nexttime(NowTime, Freq, NextTime).
 
+get_nexttime(NowTime, Freq, NextTime) when (NextTime =< NowTime) ->
+    erlang:send_after(1, self(), next_time),
+    NowTime + Freq;
+
 get_nexttime(NowTime, Freq, NextTime) when (NextTime > NowTime) ->
     RetryTime = NextTime - NowTime,
     erlang:send_after(RetryTime * 1000, self(), next_time),
     NextTime + Freq;
 
 get_nexttime(NowTime, Freq, NextTime) ->
-    get_nexttime(NowTime, Freq, NextTime + Freq).
+    get_nexttime(NowTime, Freq, NextTime).
 
 %% @doc 设置消费组大小
 -spec set_consumer(binary() | atom(), integer()) -> result().
