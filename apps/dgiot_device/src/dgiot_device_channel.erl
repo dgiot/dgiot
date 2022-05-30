@@ -210,6 +210,11 @@ handle_message({sync_parse, _Pid, 'after', delete, _Token, <<"Product">>, Object
     dgiot_product:delete(ObjectId),
     {ok, State};
 
+handle_message({update_schemas_json}, State) ->
+%%    更新表字段
+    dgiot_parse:update_schemas_json(),
+    {ok, State};
+
 handle_message(Message, State) ->
     ?LOG(info, "channel ~p", [Message]),
     {ok, State}.

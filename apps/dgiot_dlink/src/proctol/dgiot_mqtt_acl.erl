@@ -90,7 +90,7 @@ do_check(#{clientid := Token, username := UserId} = _ClientInfo, publish, <<"$dg
     end;
 
 %% "$dg/channel/{channelId}/{productId}/{deviceId}"
-do_check(#{clientid := Token} = _ClientInfo, subscribe, <<"$dg/channel/", DeviceInfo/binary>> = _Topic) ->
+do_check(#{clientid := Token} = _ClientInfo, subscribe, <<"$dg/user/channel/", DeviceInfo/binary>> = _Topic) ->
 %%    io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, _Topic]),
     [ChannelId | _] = binary:split(DeviceInfo, <<"/">>, [global]),
     case dgiot_parse:get_object(<<"Channel">>, ChannelId, [{"X-Parse-Session-Token", Token}], [{from, rest}]) of
@@ -101,7 +101,7 @@ do_check(#{clientid := Token} = _ClientInfo, subscribe, <<"$dg/channel/", Device
     end;
 
 %% $dg/dashboard/{dashboardId}/{productId}/{deviceId}
-do_check(#{clientid := Token} = _ClientInfo, subscribe, <<"$dg/dashboard/", DashboardId:10/binary, "/", _Rest/binary>> = _Topic) ->
+do_check(#{clientid := Token} = _ClientInfo, subscribe, <<"$dg/user/dashboard/", DashboardId:10/binary, "/", _Rest/binary>> = _Topic) ->
 %%    io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, _Topic]),
     case dgiot_parse:get_object(<<"View">>, DashboardId, [{"X-Parse-Session-Token", Token}], [{from, rest}]) of
         {ok, _} ->

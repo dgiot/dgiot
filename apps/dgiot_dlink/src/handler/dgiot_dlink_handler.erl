@@ -111,5 +111,22 @@ do_request(get_dlinkjson, #{<<"type">> := Type}, _Context, _Req) ->
     DlinkJson = dgiot_dlink:get_json(Type),
     {200, DlinkJson};
 
+do_request(post_topic, #{<<"topic">> := Topic} = _Args, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
+    io:format("~s ~p Topic ~p SessionToken ~p   ~n", [?FILE, ?LINE, Topic, SessionToken]),
+%%    订阅topic
+    [_Head, _User, Key | _] = re:split(Topic, "/"),
+    TopicKey = <<"dg_user_", Key/binary>>,
+%%    io:format("~s ~p Topic ~p SessionToken ~p  TopicKey ~p ~n", [?FILE, ?LINE, Topic, SessionToken,TopicKey]),
+    case dgiot_data:get({page_router_key, SessionToken, TopicKey}) of
+        not_find ->
+            pass;
+        OldTopic ->
+            dgiot_mqtt:unsubscribe(SessionToken, OldTopic)
+    end,
+    dgiot_mqtt:subscribe(SessionToken, Topic),
+    dgiot_data:insert({page_router_key, SessionToken, TopicKey}, Topic),
+    timer:sleep(10),
+    {200, #{<<"message">> => <<"订阅成功"/utf8>>, <<"Topic">> => Topic, <<"TopicKey">> => TopicKey}};
+
 do_request(_OperationId, _Args, _Context, _Req) ->
     {error, <<"Not Allowed.">>}.

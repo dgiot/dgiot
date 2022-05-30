@@ -304,14 +304,9 @@
     },
     "/health": {
       "get": {
-        "security": [],
         "summary": "health",
         "description": "检测是启动",
-        "consumes": [
-          "*"
-        ],
-        "parameters": [
-        ],
+        "parameters": [],
         "responses": {
           "200": {
             "description": "Returns operation status"
@@ -334,22 +329,25 @@
         ]
       }
     },
-    "/update": {
+    "/upgrade": {
       "get": {
-        "description": "Parse表升级",
+        "summary": "数据库升级",
+        "description": "数据库升级",
         "parameters": [],
         "responses": {
           "200": {
-            "description": "Returns instance data"
+            "description": "Returns operation status"
           },
-          "404": {
-            "description": "object not found",
-            "schema": {
-              "$ref": "#/definitions/Error"
-            }
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
           }
         },
-        "summary": "Parse表升级",
         "tags": [
           "Basic"
         ]

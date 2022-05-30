@@ -26,15 +26,13 @@
 -record(state, {
     id,
     buff_size = 1024000,
-    devaddr = <<>>,
     heartcount = 0,
     head = "xxxxxx0eee",
     len = 0,
-    app = <<>>,
-    product = <<>>,
-    deviceId = <<>>,
     env = #{},
-    dtutype = <<>>
+    dtutype = <<>>,
+    productIds = <<>>,
+    productId = <<>>
 }).
 
 %% API

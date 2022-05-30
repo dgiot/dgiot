@@ -17,13 +17,14 @@
 -module(dgiot_client).
 -author("johnliu").
 -include("dgiot.hrl").
+-include("dgiot_client.hrl").
 -include_lib("dgiot/include/logger.hrl").
 
 %% API
 -export([register/3, unregister/1, start_link/2, add_clock/3, notify/3, add/2, set_consumer/2, get_consumer/1]).
 -export([start/2, start/3, stop/1, stop/2, stop/3, restart/2, get/2, send/4]).
--export([get_nexttime/2, send_after/4, get_count/3]).
-
+-export([get_time/1, get_nexttime/2, get_count/3, get_rand/1]).
+-export([get_que/2, save_que/3, start_que/1, get_pnque_len/2, save_pnque/5, get_pnque/2, del_pnque/2, start_pnque/3]).
 -type(result() :: any()).   %% todo 目前只做参数检查，不做结果检查
 
 %% @doc 注册client的通道管理池子
@@ -39,6 +40,8 @@ register(ChannelId, Sup, State) ->
     end,
     set_consumer(ChannelId, 100),
     dgiot_data:init(ChannelId),
+    dgiot_data:init(?DCLINET_QUE(ChannelId)),
+    dgiot_data:init(?DCLINET_PNQUE(ChannelId)),
     dgiot_data:delete({start_client, ChannelId}),
     dgiot_data:delete({stop_client, ChannelId}),
     ChildSpec = dgiot:child_spec(Sup, supervisor, [ChannelId]),
@@ -52,6 +55,76 @@ unregister(ChannelId) ->
     dgiot_data:delete(ChannelId),
     dgiot_data:delete({start_client, ChannelId}),
     dgiot_data:delete({stop_client, ChannelId}).
+
+save_pnque(ChannelId, DtuProductId, DtuAddr, ProductId, DevAddr) ->
+    DtuId = dgiot_parse_id:get_deviceid(DtuProductId, DtuAddr),
+    case dgiot_data:get(?DCLINET_PNQUE(ChannelId), DtuId) of
+        not_find ->
+            dgiot_data:insert(?DCLINET_PNQUE(ChannelId), DtuId, [{ProductId, DevAddr}]);
+        Pn_que ->
+            New_Pn_que = dgiot_utils:unique_2(Pn_que ++ [{ProductId, DevAddr}]),
+            dgiot_data:insert(?DCLINET_PNQUE(ChannelId), DtuId, New_Pn_que)
+    end.
+
+get_pnque_len(ChannelId, DtuId) ->
+    case dgiot_data:get(?DCLINET_PNQUE(ChannelId), DtuId) of
+        not_find ->
+            0;
+        PnQue ->
+            length(PnQue)
+    end.
+
+get_pnque(ChannelId, DtuId) ->
+    case dgiot_data:get(?DCLINET_PNQUE(ChannelId), DtuId) of
+        not_find ->
+            not_find;
+        PnQue when length(PnQue) > 0 ->
+            Head = lists:nth(1, PnQue),
+            dgiot_data:insert(?DCLINET_PNQUE(ChannelId), DtuId, lists:nthtail(1, PnQue) ++ [Head]),
+            Head;
+        _ ->
+            not_find
+    end.
+
+del_pnque(ChannelId, DtuId) ->
+    case dgiot_data:get(?DCLINET_PNQUE(ChannelId), DtuId) of
+        not_find ->
+            pass;
+        PnQue when length(PnQue) > 0 ->
+            dgiot_data:delete(?DCLINET_PNQUE(ChannelId), DtuId);
+        _ ->
+            pass
+    end.
+start_pnque(ChannelId, Type, ClinetId) ->
+    case dgiot_data:get(?DCLINET_PNQUE(ChannelId), ClinetId) of
+        not_find ->
+            not_find;
+        PnQue ->
+            lists:map(fun({ProductId, DevAddr}) ->
+                DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
+                BinChannelId = dgiot_utils:to_binary(ChannelId),
+                io:format("~s ~p ChannelId ~p, Type ~p , ClinetId ~p ",[?FILE, ?LINE, ChannelId, Type, ClinetId]),
+                dgiot_client:start(<<Type/binary, "_", BinChannelId/binary>>, DeviceId, #{<<"productid">> => ProductId, <<"devaddr">> => DevAddr, <<"dtuid">> => ClinetId})
+                      end, PnQue)
+    end.
+
+save_que(ChannelId, ProductId, DevAddr) ->
+    DtuId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
+    dgiot_data:insert(?DCLINET_QUE(ChannelId), DtuId, {ProductId, DevAddr}).
+
+get_que(ChannelId, DeviceId) when is_atom(ChannelId) ->
+    get_que(atom_to_binary(ChannelId), DeviceId);
+get_que(ChannelId, DeviceId) ->
+    dgiot_data:get(?DCLINET_QUE(ChannelId), DeviceId).
+
+start_que(ChannelId) ->
+    Fun = fun
+              ({Key, _Value}) ->
+                  dgiot_client:start(ChannelId, Key);
+              (_) ->
+                  pass
+          end,
+    dgiot_data:loop(?DCLINET_QUE(ChannelId), Fun).
 
 %% @doc 在通道管理池子中增加client的Pid号
 -spec add(atom() | binary(), binary()) -> result().
@@ -199,14 +272,10 @@ start_link(Module, #{<<"channel">> := ChannelId, <<"client">> := Client} = State
     end.
 
 %% @doc 做一下全局的错峰处理
--spec send_after(integer(), integer(), boolean(), any()) -> result().
-send_after(RetryTime, Freq, true, Msg) ->
-    Seed = Freq * 200, %  默认用采样周期的20%的时间来做随机
-    Rand = rand:uniform(Seed),
-    erlang:send_after(RetryTime + Rand, self(), Msg);
-
-send_after(RetryTime, _Freq, _, Msg) ->
-    erlang:send_after(RetryTime, self(), Msg).
+-spec get_rand(non_neg_integer()) -> non_neg_integer().
+get_rand(Freq) ->
+    Seed = Freq * 1000, %  默认用采样周期的20%的时间来做随机
+    rand:uniform(Seed) div 1000.
 
 %% @doc 获取闹铃执行次数
 -spec get_count(integer(), integer(), integer()) -> result().
@@ -216,6 +285,11 @@ get_count(_StartTime, _EndTime, Freq) when Freq =< 0 ->
     0;
 get_count(StartTime, EndTime, Freq) ->
     (EndTime - StartTime) div Freq.
+
+get_time(Time) when is_integer(Time) ->
+    Time;
+get_time(Time) ->
+    dgiot_datetime:localtime_to_unixtime(dgiot_datetime:to_localtime(Time)).
 
 get_nexttime(NextTime, Freq) ->
     NowTime = dgiot_datetime:nowstamp(),

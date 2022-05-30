@@ -25,49 +25,54 @@
 -export([init/1, handle_info/2, terminate/2]).
 
 %% tcp client  callback
-init(#dclient{channel = ChannelId, child = #child_state{} = ChildState}) ->
-    case dgiot_product:get_channel(ChannelId) of
-        not_find ->
-            {stop, <<"not find product">>};
-        ProductId ->
-            io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, ChannelId, ProductId]),
-            {ok, ChildState#child_state{product = ProductId}}
+init(#dclient{child = ChildState} = Dclient) when is_map(ChildState) ->
+    case maps:find(<<"productid">>, ChildState) of
+        {ok, ProductId} ->
+            case do_cmd(ProductId, init, ChildState, Dclient) of
+                default ->
+                    {noreply, #child_state{product = ProductId}};
+                Result ->
+                    Result
+            end;
+        _ ->
+            {stop, <<"not find product">>}
     end;
+
 init(#dclient{channel = ChannelId}) ->
     case dgiot_product:get_channel(ChannelId) of
         not_find ->
             {stop, <<"not find product">>};
         ProductId ->
             io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, ChannelId, ProductId]),
-            {ok, #child_state{product = ProductId}}
+            {noreply, #child_state{product = ProductId}}
     end.
 
 handle_info(connection_ready, #dclient{child = #child_state{product = ProductId} = ChildState} = Dclient) ->
     rand:seed(exs1024),
     Time = erlang:round(rand:uniform() * 1 + 1) * 1000,
-    io:format("~s ~p ~p ~n", [?FILE, ?LINE, ProductId]),
+%%    io:format("~s ~p ~p ~n", [?FILE, ?LINE, ProductId]),
     case do_cmd(ProductId, connection_ready, <<>>, Dclient) of
         default ->
             erlang:send_after(Time, self(), login),
             {noreply, ChildState};
-        Device ->
-            {noreply, ChildState#child_state{device = Device}}
+        Result ->
+            Result
     end;
 
 handle_info(#{<<"cmd">> := Cmd, <<"data">> := Data, <<"productId">> := ProductId}, #dclient{child = #child_state{} = ChildState} = Dclient) ->
     case do_cmd(ProductId, Cmd, Data, Dclient) of
         default ->
             {noreply, ChildState};
-        {Result, Device} ->
-            {Result, ChildState#child_state{device = Device}}
+        Result  ->
+            Result
     end;
 
 handle_info(tcp_closed, #dclient{child = #child_state{product = ProductId} = ChildState} = Dclient) ->
     case do_cmd(ProductId, tcp_closed, <<>>, Dclient) of
         default ->
             {noreply, ChildState};
-        {Result, Device} ->
-            {Result, ChildState#child_state{device = Device}}
+        Result  ->
+            Result
     end;
 
 handle_info({tcp, Buff}, #dclient{child = #child_state{buff = Old, product = ProductId} = ChildState} = Dclient) ->
@@ -75,10 +80,6 @@ handle_info({tcp, Buff}, #dclient{child = #child_state{buff = Old, product = Pro
     case do_cmd(ProductId, tcp, Data, Dclient) of
         default ->
             {noreply, ChildState};
-        {noreply, Bin, Device} ->
-            {noreply, ChildState#child_state{buff = Bin, device = Device}};
-        {stop, Reason, Device} ->
-            {stop, Reason, ChildState#child_state{device = Device}};
         Result ->
             Result
     end;
@@ -102,19 +103,19 @@ handle_info(_Info, Dclient) ->
 terminate(_Reason, _Dclient) ->
     ok.
 
-do_cmd(ProductId, Cmd, Data, Dclient) ->
-    io:format("~s ~p ~p ~n", [?FILE, ?LINE, ProductId]),
+do_cmd(ProductId, Cmd, Data, #dclient{child = ChildState} = Dclient) ->
+    io:format("~s ~p ~p Cmd ~p  ~n", [?FILE, ?LINE, ProductId, Cmd]),
     case dgiot_hook:run_hook({tcp, ProductId}, [Cmd, Data, Dclient]) of
         {ok, Device} ->
-            {noreply, Device};
-        {reply, ProductId, Payload, Device} ->
-            case dgiot_tcp_client:send(Payload) of
-                ok ->
-                    ok;
-                {error, _Reason} ->
-                    pass
-            end,
-            {noreply, Device};
+            {noreply, ChildState#child_state{device = Device}};
+        {noreply, Device} ->
+            {noreply, ChildState#child_state{device = Device}};
+        {noreply, Bin, Device} ->
+            {noreply, ChildState#child_state{buff = Bin, device = Device}};
+        {error, Reason, Device} ->
+            {stop, Reason, ChildState#child_state{device = Device}};
+        {stop, Reason, Device} ->
+            {stop, Reason, ChildState#child_state{device = Device}};
         _ ->
             default
     end.

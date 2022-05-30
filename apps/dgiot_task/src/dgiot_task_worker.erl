@@ -42,14 +42,21 @@ start_link(Args) ->
 %%%===================================================================
 %%% gen_server callbacks
 %%%===================================================================
-init([#{<<"channel">> := ChannelId, <<"client">> := ClientId, <<"starttime">> := StartTime, <<"endtime">> := EndTime, <<"freq">> := Freq, <<"rand">> := Rand}]) ->
+init([#{<<"channel">> := ChannelId, <<"client">> := ClientId, <<"starttime">> := StartTime, <<"endtime">> := EndTime, <<"freq">> := Freq} = Args]) ->
     dgiot_client:add(ChannelId, ClientId),
     dgiot_metrics:inc(dgiot_task, <<"task">>, 1),
     NextTime = dgiot_client:get_nexttime(StartTime, Freq),
     Count = dgiot_client:get_count(StartTime, EndTime, Freq),
+    Rand =
+        case maps:get(<<"rand">>,Args, true) of
+            true ->
+                dgiot_client:get_rand(Freq);
+            _ ->
+                0
+        end,
     io:format("~s ~p ChannelId ~p ClientId ~p  NextTime = ~p  Freq ~p Count = ~p.~n", [?FILE, ?LINE, ChannelId, ClientId, NextTime, Freq, Count]),
     Dclient = #dclient{channel = ChannelId, client = ClientId, status = ?DCLIENT_INTIALIZED, userdata = #device_task{},
-        clock = #dclock{nexttime = NextTime, freq = Freq, count = Count, round = 0, rand = Rand}},
+        clock = #dclock{nexttime = NextTime + Rand, freq = Freq, count = Count, round = 0}},
     {ok, Dclient};
 
 init(A) ->
@@ -79,7 +86,7 @@ handle_info({change_clock, NextTime, EndTime, Freq}, #dclient{clock = Clock} = D
 
 %% 定时触发网关及网关任务, 在单个任务轮次中，要将任务在全局上做一下错峰操作
 handle_info(next_time, #dclient{channel = Channel, client = Client, userdata = UserData,
-    clock = #dclock{round = Round, nexttime = NextTime, count = Count, freq = Freq, rand = Rand} = Clock} = Dclient) ->
+    clock = #dclock{round = Round, nexttime = NextTime, count = Count, freq = Freq} = Clock} = Dclient) ->
     dgiot_client:stop(Channel, Client, Count), %% 检查是否需要停止任务
     NewNextTime = dgiot_client:get_nexttime(NextTime, Freq),
     case dgiot_task:get_pnque(Client) of
@@ -90,7 +97,7 @@ handle_info(next_time, #dclient{channel = Channel, client = Client, userdata = U
             PnQueLen = dgiot_task:get_pnque_len(Client),
             DiQue = dgiot_task:get_instruct(ProductId, NewRound),
 %%            io:format("~s ~p DiQue = ~p.~n", [?FILE, ?LINE, DiQue]),
-            dgiot_client:send_after(10, Freq, Rand, read), % 每轮任务开始时，做一下随机开始
+            erlang:send_after(100, self(), read), % 每轮任务开始时，做一下随机开始
             {noreply, Dclient#dclient{userdata = UserData#device_task{product = ProductId, devaddr = DevAddr, pnque_len = PnQueLen, dique = DiQue},
                 clock = Clock#dclock{nexttime = NewNextTime, count = Count - 1, round = NewRound}}}
     end;
@@ -100,11 +107,11 @@ handle_info(read, State) ->
     {noreply, send_msg(State)};
 
 %% ACK消息触发进行新的指令发送
-handle_info({dclient_ack, Topic, Payload}, #dclient{userdata = Usedata} = State) ->
+handle_info({dclient_ack, Topic, Payload}, #dclient{channel = ChannelId, userdata = Usedata} = State) ->
     dgiot_metrics:inc(dgiot_task, <<"task_recv">>, 1),
     case binary:split(Topic, <<$/>>, [global, trim]) of
         [<<"$dg">>, <<"thing">>, ProductId, DevAddr, <<"properties">>, <<"report">>] ->
-%%            io:format("~s ~p Payload = ~p.~n", [?FILE, ?LINE, Payload]),
+            dgiot_bridge:send_log(dgiot_utils:to_binary(ChannelId), ProductId, DevAddr, "~s ~p recv => ~p ~ts ", [?FILE, ?LINE, Topic, unicode:characters_to_list(jsx:encode(Payload))]),
             dgiot_task:save_td(ProductId, DevAddr, Payload, #{}),
             {noreply, send_msg(State#dclient{userdata = Usedata#device_task{product = ProductId, devaddr = DevAddr}})};
         _ ->
@@ -141,7 +148,7 @@ send_msg(#dclient{channel = Channel, userdata = #device_task{product = Product, 
 %%                    io:format("~s ~p Payload1 = ~p.~n", [?FILE, ?LINE, Payload1]),
                     Topic = <<"$dg/device/", Product/binary, "/", DevAddr/binary, "/properties">>,
                     dgiot_mqtt:publish(Channel, Topic, jsx:encode(Payload1)),
-                    dgiot_bridge:send_log(Channel, Product, DevAddr, "to_dev=> ~s ~p ~ts: ~ts", [?FILE, ?LINE, unicode:characters_to_list(Topic), unicode:characters_to_list(jsx:encode(Payload1))]),
+                    dgiot_bridge:send_log(Channel, Product, DevAddr, "~s ~p to dev => ~ts: ~ts", [?FILE, ?LINE, unicode:characters_to_list(Topic), unicode:characters_to_list(jsx:encode(Payload1))]),
                     {Count + 1, Acc ++ [Payload1], Acc1 ++ [Identifier1]};
                 _ ->
                     {Count, Acc, Acc1}
@@ -153,14 +160,18 @@ send_msg(#dclient{channel = Channel, userdata = #device_task{product = Product, 
     State#dclient{userdata = UserData#device_task{dique = NewDisQue, interval = Interval}}.
 
 get_next_pn(#dclient{client = CLient, clock = #dclock{round = Round}, userdata = UserData} = State) ->
-    {NextProductId, NextDevAddr} = dgiot_task:get_pnque(CLient),
-    NextDeviceId = dgiot_parse_id:get_deviceid(NextProductId, NextDevAddr),
-    case NextDeviceId of
-        CLient ->
+    case dgiot_task:get_pnque(CLient) of
+        not_find ->
             State;
-        _ ->
-            DisQue = dgiot_task:get_instruct(NextProductId, Round),
-            NewState = State#dclient{client = NextDeviceId, userdata = UserData#device_task{product = NextProductId, devaddr = NextDevAddr, dique = DisQue}},
-            send_msg(NewState)
+        {NextProductId, NextDevAddr} ->
+            NextDeviceId = dgiot_parse_id:get_deviceid(NextProductId, NextDevAddr),
+            case NextDeviceId of
+                CLient ->
+                    State;
+                _ ->
+                    DisQue = dgiot_task:get_instruct(NextProductId, Round),
+                    NewState = State#dclient{client = NextDeviceId, userdata = UserData#device_task{product = NextProductId, devaddr = NextDevAddr, dique = DisQue}},
+                    send_msg(NewState)
+            end
     end.
 

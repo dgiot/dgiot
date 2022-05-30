@@ -54,7 +54,7 @@ handle(OperationID, Args, Context, Req) ->
             ?LOG(debug, "do request: ~p, ~p, ~p~n", [OperationID, Args, Reason]),
             Err = case is_binary(Reason) of
                       true -> Reason;
-                      false -> dgiot_utils:format("~p", [Reason])
+                      false -> list_to_binary(io_lib:format("~p", [Reason]))
                   end,
             {500, Headers, #{<<"error">> => Err}};
         ok ->
@@ -64,10 +64,14 @@ handle(OperationID, Args, Context, Req) ->
             ?LOG(debug, "do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
             {200, Headers, Res, Req};
         {Status, Res} ->
+            ?LOG(debug, "do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
             {Status, Headers, Res, Req};
         {Status, NewHeaders, Res} ->
             ?LOG(debug, "do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
-            {Status, maps:merge(Headers, NewHeaders), Res, Req}
+            {Status, maps:merge(Headers, NewHeaders), Res, Req};
+        {Status, NewHeaders, Res, NewReq} ->
+            ?LOG(debug, "do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
+            {Status, maps:merge(Headers, NewHeaders), Res, NewReq}
     end.
 
 
@@ -103,14 +107,15 @@ do_request(post_batch, Body, #{base_path := BasePath} = _Context, Req) ->
         {error, Reason} -> {400, Reason}
     end;
 
-do_request(get_health, _Body, _Context, Req) ->
-    {200, #{<<"content-type">> => <<"text/plain">>}, <<"ok">>, Req};
+do_request(get_health, _Body, _Context, _Req) ->
+    {ok, #{<<"msg">> => <<"success">>}};
 
-do_request(get_update, _Body, _Context, Req) ->
+%% 数据库升级
+do_request(get_upgrade, _Body, _Context, _Req) ->
     dgiot_parse:update(),
-    {200, #{<<"content-type">> => <<"text/plain">>}, <<"ok">>, Req};
+    {ok, #{<<"msg">> => <<"success">>}};
 
 %%  服务器不支持的API接口
 do_request(_OperationId, _Args, _Context, _Req) ->
-    ?LOG(debug, "_Args ~p", [_Args]),
+    io:format("~s ~p _OperationId = ~p.~n", [?FILE, ?LINE, _OperationId]),
     {error, <<"Not Allowed.">>}.
