@@ -13,11 +13,11 @@
 %% See the License for the specific language governing permissions and
 %% limitations under the License.
 %%--------------------------------------------------------------------
--module(dgiot_tcpc_channel).
+-module(dgiot_common_channel).
 -behavior(dgiot_channelx).
 -include("dgiot_bridge.hrl").
 -include_lib("dgiot/include/logger.hrl").
--define(TYPE, <<"TCPC">>).
+-define(TYPE, <<"COMMON">>).
 -record(state, {id, env}).
 %% API
 -export([
@@ -40,35 +40,11 @@
 }).
 %% 注册通道参数
 -params(#{
-    <<"ip">> => #{
-        order => 1,
-        type => string,
-        required => true,
-        default => <<"127.0.0.1"/utf8>>,
-        title => #{
-            zh => <<"服务器地址"/utf8>>
-        },
-        description => #{
-            zh => <<"服务器地址"/utf8>>
-        }
-    },
-    <<"port">> => #{
-        order => 2,
-        type => integer,
-        required => true,
-        default => 8080,
-        title => #{
-            zh => <<"端口"/utf8>>
-        },
-        description => #{
-            zh => <<"端口"/utf8>>
-        }
-    },
     <<"ico">> => #{
         order => 102,
         type => string,
         required => false,
-        default => <<"/dgiot_file/shuwa_tech/zh/product/dgiot/channel/Tcpc.jpg">>,
+        default => <<"/dgiot_file/shuwa_tech/zh/product/dgiot/channel/TcpIcon.jpeg">>,
         title => #{
             en => <<"channel ICO">>,
             zh => <<"通道ICO"/utf8>>
@@ -88,11 +64,9 @@ init(?TYPE, ChannelId, Args) ->
     State = #state{id = ChannelId, env = Args},
     StartTime = maps:get(<<"startTime">>, Args, dgiot_datetime:now_secs() + 5),
     EndTime = maps:get(<<"endTime">>, Args, dgiot_datetime:now_secs() + 1000000),
-    Mod = maps:get(<<"mod">>, Args, dgiot_tcpc_worker),
-    io:format("~s ~p StartTime = ~p. EndTime =  ~p~n", [?FILE, ?LINE, StartTime, EndTime]),
     dgiot_client:add_clock(ChannelId, StartTime, EndTime),
-    NewArgs = Args#{<<"channel">> => ChannelId, <<"mod">> => Mod, <<"count">> => 3, <<"freq">> => 10},
-    {ok, State, dgiot_client:register(ChannelId, tcp_client_sup, NewArgs)}.
+    ChildSpecs = maps:get(<<"childspecs">>, Args, []),
+    {ok, State, ChildSpecs}.
 
 handle_init(State) ->
     {ok, State}.
@@ -106,7 +80,7 @@ handle_message(start_client, #state{id = ChannelId} = State) ->
     io:format("~s ~p ChannelId = ~p.~n", [?FILE, ?LINE, ChannelId]),
     case dgiot_data:get({start_client, ChannelId}) of
         not_find ->
-            dgiot_client:start(ChannelId, dgiot_utils:to_binary(<<"AF000001">>));
+            dgiot_client:start_que(ChannelId);
         _ ->
             pass
     end,

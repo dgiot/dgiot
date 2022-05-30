@@ -94,8 +94,8 @@ create_meter(MeterAddr, ChannelId, DTUIP, DtuId, DtuAddr) ->
             dgiot_device:create_device(Requests),
             Topic = <<"$dg/device/", ProductId/binary, "/", MeterAddr/binary, "/profile">>,
             dgiot_mqtt:subscribe(Topic),
-            {DtuProductId, _, _} = dgiot_data:get({dtu, ChannelId}),
-            dgiot_task:save_pnque(DtuProductId, DtuAddr, ProductId, MeterAddr);
+%%            {DtuProductId, _, _} = dgiot_data:get({dtu, ChannelId}),
+            dgiot_task:save_pnque(ProductId, MeterAddr, ProductId, MeterAddr);
         _ ->
             pass
     end.
@@ -125,8 +125,8 @@ create_meter4G(MeterAddr, MDa, ChannelId, DTUIP, DtuId, DtuAddr) ->
             dgiot_data:insert({metertda, DeviceId}, {dgiot_utils:to_binary(MDa), DtuAddr}),
             Topic = <<"$dg/device/", ProductId/binary, "/", MeterAddr/binary, "/properties/report">>,
             dgiot_mqtt:subscribe(Topic),
-            {DtuProductId, _, _} = dgiot_data:get({dtu, ChannelId}),
-            dgiot_task:save_pnque(DtuProductId, DtuAddr, ProductId, MeterAddr);
+%%            {DtuProductId, _, _} = dgiot_data:get({dtu, ChannelId}),
+            dgiot_task:save_pnque(ProductId, MeterAddr, ProductId, MeterAddr);
         _ ->
             pass
     end.
@@ -356,7 +356,7 @@ search_meter(tcp, _Ref, TCPState, 0) ->
         <<"command">> => ?DLT645_MS_READ_DATA,
         <<"di">> => dlt645_proctol:reverse(<<0, 0, 0, 0>>)  %%组合有功
     }),
-    ?LOG(info, "Payload ~p", [dgiot_utils:binary_to_hex(Payload)]),
+%%    ?LOG(info, "Payload ~p", [dgiot_utils:binary_to_hex(Payload)]),
     dgiot_tcp_server:send(TCPState, Payload),
     read_meter;
 

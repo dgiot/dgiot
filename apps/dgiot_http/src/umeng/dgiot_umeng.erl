@@ -559,7 +559,7 @@ create_maintenance(Info) ->
     <<Number:10/binary, _/binary>> = dgiot_utils:random(),
     Timestamp = dgiot_datetime:format(dgiot_datetime:to_localtime(dgiot_datetime:now_secs()), <<"YY-MM-DD HH:NN:SS">>),
     {Username, UserId, UserPhone, SessionToken} =
-        case dgiot_parse_auth:login(<<"dgiot_admin">>, <<"dgiot_admin">>) of
+        case dgiot_parse_auth:login(<<"dgiot_dev">>, <<"dgiot_dev">>) of
             {ok, #{<<"nick">> := Nick, <<"objectId">> := UserId1, <<"phone">> := UserPhone1, <<"sessionToken">> := SessionToken1}} ->
                 {Nick, UserId1, UserPhone1, SessionToken1};
             _ ->
@@ -575,7 +575,7 @@ create_maintenance(Info) ->
                                 end, #{}, Acl1),
                 NewAcl1;
             _ ->
-                #{<<"role:admin">> => #{<<"read">> => true, <<"write">> => true}}
+                #{<<"role:开发者"/utf8>> => #{<<"read">> => true, <<"write">> => true}}
         end,
     Body = #{
         <<"number">> => maps:get(<<"id">>, Info, Number),

@@ -37,7 +37,7 @@
         zh => <<"GB26875"/utf8>>
     },
     description => #{
-        zh => <<"gb26875"/utf8>>
+        zh => <<"GB26875"/utf8>>
     }
 }).
 %% 注册通道参数
@@ -70,7 +70,7 @@
         order => 102,
         type => string,
         required => false,
-        default => <<"/dgiot_file/shuwa_tech/zh/product/dgiot/channel/modbus.png">>,
+        default => <<"/dgiot_file/shuwa_tech/zh/product/dgiot/channel/GB26875.png">>,
         title => #{
             en => <<"channel ICO">>,
             zh => <<"通道ICO"/utf8>>

@@ -69,8 +69,8 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, state = #state{id = ChannelId, dt
                 dgiot_tcp_server:send(TCPState, Frame2),
                 {Protocol1, MeterAddr};
             _ ->
-%%                dgiot_bridge:send_log(ChannelId, "~s ~p DLT645 login ~p", [?FILE, ?LINE, NewBuff]),
-                {?DLT645, Buff}
+                dgiot_bridge:send_log(ChannelId, "~s ~p DLT645 dtu login ~p", [?FILE, ?LINE, NewBuff]),
+                {?DLT645, NewBuff}
         end,
     case Protocol of
         ?DLT376 ->
@@ -138,16 +138,14 @@ handle_info(search_meter, #tcp{state = #state{ref = Ref, protocol = ?DLT645} = S
 %%ACK报文触发搜表
 handle_info({tcp, Buff}, #tcp{socket = Socket, clientid = DtuId, state = #state{id = ChannelId, dtuaddr = DtuAddr, protocol = ?DLT645, ref = Ref, step = search_meter, search = Search} = State} = TCPState) ->
 %%    io:format("~s ~p tcp Buff = ~p.~n", [?FILE, ?LINE, dgiot_utils:binary_to_hex(Buff)]),
-    dgiot_bridge:send_log(ChannelId, "~s ~p from_dev=> ~p", [?FILE, ?LINE, dgiot_utils:binary_to_hex(Buff)]),
     dgiot_metrics:inc(dgiot_meter, <<"search_meter">>, 1),
     {DtuProductId, _, _} = dgiot_data:get({dtu, ChannelId}),
-    ?LOG(info, "Buff ~p", [Buff]),
-    dgiot_bridge:send_log(ChannelId, DtuProductId, DtuAddr, "from dev ~p (搜表成功)", [dgiot_utils:binary_to_hex(Buff)]),
     {Rest, Frames} = dgiot_meter:parse_frame(<<"DLT645">>, Buff, []),
     lists:map(fun(X) ->
         case X of
             #{<<"addr">> := Addr} ->
                 DTUIP = dgiot_utils:get_ip(Socket),
+                dgiot_bridge:send_log(ChannelId, DtuProductId, DtuAddr, "~s ~p from dtu:~p (搜表成功) Buff:~p => MeterAddr:~p", [?FILE, ?LINE, DtuAddr, dgiot_utils:binary_to_hex(Buff), dgiot_utils:binary_to_hex(Addr)]),
                 dgiot_meter:create_meter(dgiot_utils:binary_to_hex(Addr), ChannelId, DTUIP, DtuId, DtuAddr);
             Other ->
                 ?LOG(info, "Other ~p", [Other]),
@@ -186,7 +184,8 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, clientid = DtuId, state = #state{
             end,
             {noreply, TCPState#tcp{buff = Rest}};
         ?DLT645 ->
-            dgiot_bridge:send_log(ChannelId, "DLT645 from_dev: ~p ", [dgiot_utils:binary_to_hex(Buff)]),
+            dgiot_bridge:send_log(ChannelId, "~s ~p DLT645 dev recv ~p ", [?FILE, ?LINE, dgiot_utils:binary_to_hex(Buff)]),
+%%            io:format("~s ~p Buff = ~p.~n", [?FILE, ?LINE, dgiot_utils:binary_to_hex(Buff)]),
             {Rest, Frames} = dgiot_meter:parse_frame(?DLT645, Buff, []),
             dlt645_decoder:process_message(Frames, ChannelId),
             {noreply, TCPState#tcp{buff = Rest}};
@@ -233,7 +232,7 @@ handle_info({deliver, _Topic, Msg}, #tcp{state = #state{id = ChannelId, protocol
                                 <<"dataSource">> => DataSource
                             },
                             Payload1 = dgiot_meter:to_frame(ThingData),
-                            dgiot_bridge:send_log(ChannelId, "~s ~p DLT645 send=> ~p", [?FILE, ?LINE, dgiot_utils:binary_to_hex(Payload1)]),
+                            dgiot_bridge:send_log(ChannelId, "~s ~p DLT645 to dev => ~p", [?FILE, ?LINE, dgiot_utils:binary_to_hex(Payload1)]),
                             dgiot_tcp_server:send(TCPState, Payload1)
                     end,
                     {noreply, TCPState};

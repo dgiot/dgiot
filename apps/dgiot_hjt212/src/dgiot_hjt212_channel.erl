@@ -37,7 +37,7 @@
         zh => <<"HJT212"/utf8>>
     },
     description => #{
-        zh => <<"hjt212"/utf8>>
+        zh => <<"HJT212"/utf8>>
     }
 }).
 %% 注册通道参数
@@ -70,7 +70,7 @@
         order => 102,
         type => string,
         required => false,
-        default => <<"/dgiot_file/shuwa_tech/zh/product/dgiot/channel/modbus.png">>,
+        default => <<"/dgiot_file/shuwa_tech/zh/product/dgiot/channel/HJT212.png">>,
         title => #{
             en => <<"channel ICO">>,
             zh => <<"通道ICO"/utf8>>

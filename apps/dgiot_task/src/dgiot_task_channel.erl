@@ -117,7 +117,8 @@ start(ChannelId, ChannelArgs) ->
 
 %% 通道初始化
 init(?TYPE, ChannelId, Args) ->
-    #{<<"freq">> := Freq, <<"start_time">> := Start_time, <<"end_time">> := End_time, <<"rand">> := Rand} = Args,
+    #{<<"freq">> := Freq, <<"start_time">> := Start_time, <<"end_time">> := End_time} = Args,
+    Rand = maps:get(<<"rand">>, Args, true),
     dgiot_client:add_clock(ChannelId, Start_time, End_time),
     State = #state{id = ChannelId},
     {ok, State, dgiot_client:register(ChannelId, task_sup, #{

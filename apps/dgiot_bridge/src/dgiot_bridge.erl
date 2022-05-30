@@ -163,7 +163,7 @@ get_acl(ChannelId) ->
 send_log(ChannelId, ProductId, DevAddr, Fmt, Args) ->
     is_send_log(ChannelId, ProductId, DevAddr,
         fun() ->
-            Topic = <<"$dg/channel/", ChannelId/binary, "/", ProductId/binary, "/", DevAddr/binary>>,
+            Topic = <<"$dg/user/channel/", ChannelId/binary, "/", ProductId/binary, "/", DevAddr/binary>>,
             Payload = io_lib:format("[~s]~p " ++ Fmt, [node(), self() | Args]),
             dgiot_mqtt:publish(ChannelId, Topic, unicode:characters_to_binary(Payload))
         end).
@@ -171,7 +171,7 @@ send_log(ChannelId, ProductId, DevAddr, Fmt, Args) ->
 send_log(ChannelId, ProductId, Fmt, Args) ->
     is_send_log(ChannelId, ProductId, undefined,
         fun() ->
-            Topic = <<"$dg/channel/", ChannelId/binary, "/", ProductId/binary>>,
+            Topic = <<"$dg/user/channel/", ChannelId/binary, "/", ProductId/binary>>,
             Payload = io_lib:format("[~s]~p " ++ Fmt, [node(), self() | Args]),
             dgiot_mqtt:publish(ChannelId, Topic, unicode:characters_to_binary(Payload))
         end).
@@ -179,7 +179,7 @@ send_log(ChannelId, ProductId, Fmt, Args) ->
 send_log(ChannelId, Fmt, Args) ->
     is_send_log(ChannelId, undefined, undefined,
         fun() ->
-            Topic = <<"$dg/channel/", ChannelId/binary, "/channelid">>,
+            Topic = <<"$dg/user/channel/", ChannelId/binary, "/channelid">>,
             Payload = io_lib:format("[~s]~p " ++ Fmt, [node(), self() | Args]),
             dgiot_mqtt:publish(ChannelId, Topic, unicode:characters_to_binary(Payload))
         end).

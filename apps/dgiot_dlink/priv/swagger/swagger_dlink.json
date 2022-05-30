@@ -90,6 +90,49 @@
           "Dlink"
         ]
       }
+    },
+    "/topic":{
+      "post":{
+        "summary": "订阅topic",
+        "description":"订阅topic",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "data",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "topic": {
+                  "required": true,
+                  "type": "string",
+                  "example": "$dg/user/router/"
+                }
+              }
+            }
+          }
+        ],
+        "responses":{
+          "200":{
+            "description":"Returns operation status"
+          },
+          "400":{
+            "description":"Bad Request"
+          },
+          "401":{
+            "description":"Unauthorized"
+          },
+          "403":{
+            "description":"Forbidden"
+          },
+          "500":{
+            "description":"Server Internal error"
+          }
+        },
+        "tags":[
+          "Dlink"
+        ]
+      }
     }
   }
 }

@@ -19,6 +19,7 @@
 -include("dgiot_parse.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -define(DEFField, re:split(application:get_env(?MODULE, delete_field, ""), ",")).
+-include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
 
 %% API
 -export([
@@ -43,6 +44,7 @@
     create_schemas/1,
     create_schemas/2,
     update_schemas/1,
+    update_schemas/2,
     del_schemas/1,
     del_schemas/2,
     set_class_level/2,
@@ -70,20 +72,48 @@
 ]).
 
 -export([
-    request_rest/6
+    request_rest/6,
+    create_schemas_json/0,
+    get_schemas_json/0,
+    update_schemas_json/0
 ]).
 
-update() ->
-%%    物模型更新
+create_schemas_json() ->
+    {file, Here} = code:is_loaded(?MODULE),
+    SchemasFile = dgiot_httpc:url_join([filename:dirname(filename:dirname(Here)), "/priv/json/schemas.json"]),
+    case dgiot_parse:get_schemas() of
+        {ok, #{<<"results">> := Schemas}} ->
+            file:write_file(SchemasFile, jsx:encode(Schemas));
+        _ ->
+            pass
+    end.
+
+get_schemas_json() ->
+    dgiot_utils:get_JsonFile(?MODULE, <<"schemas.json">>).
+
+%%   dgiot_parse:update_schemas(Fields).
+update_schemas_json() ->
+    io:format("~s ~p ~p~n", [?FILE, ?LINE, <<"update_schemas_json start">>]),
+    %%    API更新
+    os:cmd("curl 127.0.0.1:5080/install/rule"),
+    %%    物模型更新
     dgiot_product:update_properties(),
-%%    表及其字段更新
-%%    topics更新
-    dgiot_product:update_topics(),
-%%    产品字段新增
-%%  适配https://gitee.com/dgiiot/dgiot/issues/I583AD
-    dgiot_product:update_product_filed(#{<<"profile">> => #{}, <<"content">> => #{}}),
-%%    菜单更新
-%%    API更新
+    %%    表字段更新
+    Schemas = dgiot_parse:get_schemas_json(),
+    dgiot_parse:del_filed_schemas(<<"Product">>, [<<"topics">>]),
+    timer:sleep(1000),
+    lists:foldl(fun(#{<<"className">> := ClassName, <<"fields">> := Fields}, _Acc) ->
+        maps:fold(fun(Key, Value, _Acc1) ->
+%%           io:format("Fields = #{~p => ~p, ~n           ~p => #{~p => ~p}}.~n", [<<"className">>, ClassName, <<"fields">>, Key, Value]),
+            dgiot_parse:update_schemas(#{<<"className">> => ClassName, <<"fields">> => #{Key => Value}}),
+            timer:sleep(100)
+                  end, #{}, Fields)
+                end, #{}, Schemas).
+
+update() ->
+    %%    发通知异步调用更新
+    ChannelId = dgiot_parse_id:get_channelid(dgiot_utils:to_binary(?BACKEND_CHL), <<"DEVICE">>, <<"Device缓存通道"/utf8>>),
+    dgiot_channelx:do_message(ChannelId, {update_schemas_json}),
     ok.
 
 health() ->
