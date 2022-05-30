@@ -158,9 +158,8 @@ handle_message({sync_parse, Pid, 'after', get, _Token, <<"Device">>, #{<<"result
     dgiot_parse_hook:publish(Pid, ResBody#{<<"results">> => NewResults}),
     {ok, State};
 
-handle_message({sync_parse, _Pid, 'after', post, _Token, <<"Device">>, QueryData}, State) ->
-%%    io:format("~s ~p ~p  ~p ~n", [?FILE, ?LINE, Pid, QueryData]),
-    dgiot_device:post(QueryData),
+handle_message({sync_parse, _Pid, 'after', post, Token, <<"Device">>, QueryData}, State) ->
+    dgiot_device:post(QueryData,Token),
     {ok, State};
 
 handle_message({sync_parse, _Pid, 'after', put, _Token, <<"Device">>, QueryData}, State) ->
