@@ -273,4 +273,3 @@ save_log(DeviceId, Payload, Domain) ->
         _ ->
             pass
     end.
-
