@@ -147,7 +147,9 @@ handle_message({sync_profile, _Pid, ProductId, DeviceAddr, DeviceProfile, Delay}
                             _ ->
                                 Count
                         end
-                end
+                end;
+            _ ->
+                Count
         end
               end, 1, dgiot_product:get_control(ProductId)),
 %%    io:format("~s ~p ~p ~p ~p ~p ~p ~n", [?FILE, ?LINE, Pid, ProductId, DeviceAddr, Profile, Delay]),
