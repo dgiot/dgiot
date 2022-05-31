@@ -112,7 +112,7 @@ handle_info(start, #dclient{channel = ChannelId, client = ClientId, userdata = #
             {noreply, NewDclient, hibernate}
     end;
 
-%% Íùhttp server ·¢ËÍ±¨ÎÄ
+%% å¾€http server å‘é€æŠ¥æ–‡
 handle_info({send, Fun, Args}, #dclient{userdata = #connect_state{mod = Mod}} = Dclient) ->
 %%    io:format("~s ~p send to from ~p:~p : ~p ~n", [?FILE, ?LINE,  _Ip, _Port, dgiot_utils:to_hex(PayLoad)]),
     case send(Fun, Args) of
