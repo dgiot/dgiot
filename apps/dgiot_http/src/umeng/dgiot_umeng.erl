@@ -32,7 +32,7 @@
     save_devicestatus/2,
     save_notification/3,
     sendSubscribe/3,
-    create_maintenance/1,
+    create_maintenance/2,
     get_operations/0,
     send_message_to3D/3,
     triggeralarm/1
@@ -555,15 +555,15 @@ send_message_to3D(ProductId, DevAddr, Payload) ->
             pass
     end.
 
-create_maintenance(Info) ->
+create_maintenance(Info, SessionToken) ->
     <<Number:10/binary, _/binary>> = dgiot_utils:random(),
     Timestamp = dgiot_datetime:format(dgiot_datetime:to_localtime(dgiot_datetime:now_secs()), <<"YY-MM-DD HH:NN:SS">>),
-    {Username, UserId, UserPhone, SessionToken} =
-        case dgiot_parse_auth:login(<<"dgiot_dev">>, <<"dgiot_dev">>) of
-            {ok, #{<<"nick">> := Nick, <<"objectId">> := UserId1, <<"phone">> := UserPhone1, <<"sessionToken">> := SessionToken1}} ->
-                {Nick, UserId1, UserPhone1, SessionToken1};
+    {Username, UserId, UserPhone} =
+        case dgiot_auth:get_session(SessionToken) of
+            #{<<"nick">> := Nick, <<"objectId">> := UserId1, <<"phone">> := UserPhone1} ->
+                {Nick, UserId1, UserPhone1};
             _ ->
-                {<<"">>, <<"">>, <<"">>, <<"">>}
+                {<<"">>, <<"">>, <<"">>}
         end,
     DeviceId = maps:get(<<"deviceid">>, Info, <<"8d7bdaff69">>),
     Acl =
@@ -591,12 +591,12 @@ create_maintenance(Info) ->
                 #{
                     <<"timestamp">> => Timestamp,
                     <<"h4">> => <<"生成工单"/utf8>>,
-                    <<"p">> => <<"管理员 新建工单"/utf8>>
+                    <<"p">> => <<Username/binary, " 新建工单"/utf8>>
                 },
                 #{
                     <<"timestamp">> => Timestamp,
                     <<"h4">> => <<"生成工单"/utf8>>,
-                    <<"p">> => <<"管理员 分配给 "/utf8, Username/binary>>
+                    <<"p">> => <<Username/binary, " 分配给 "/utf8, Username/binary>>
                 }
             ],
             <<"createdname">> => <<"管理员"/utf8>>,
