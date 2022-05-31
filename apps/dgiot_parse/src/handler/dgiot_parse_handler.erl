@@ -117,5 +117,5 @@ do_request(get_upgrade, _Body, _Context, _Req) ->
 
 %%  服务器不支持的API接口
 do_request(_OperationId, _Args, _Context, _Req) ->
-    io:format("~s ~p _OperationId = ~p.~n", [?FILE, ?LINE, _OperationId]),
+    ?LOG(debug, "_Args ~p", [_Args]),
     {error, <<"Not Allowed.">>}.
