@@ -274,7 +274,7 @@ refresh_session(Token) ->
 get_roleuser(Filter, SessionToken) ->
     IncludeChild = maps:get(<<"include">>, Filter, false),
 %%    io:format("~s ~p Filter ~p IncludeChild ~p ~n", [?FILE, ?LINE, Filter, IncludeChild]),
-    case dgiot_parse:query_object(<<"_Role">>, maps:without([<<"include">>],Filter),
+    case dgiot_parse:query_object(<<"_Role">>, maps:without([<<"include">>], Filter),
         [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
         {ok, #{<<"results">> := Roles}} ->
             Users =
@@ -428,7 +428,7 @@ get_role(UserId, SessionToken) ->
     get_role(?DEFAULT, UserId, SessionToken).
 get_role(Name, UserId, SessionToken) ->
     Query = #{
-        <<"keys">> => [<<"name">>, <<"alias">>, <<"org_type">>, <<"tag">>],
+        <<"keys">> => [<<"name">>, <<"alias">>, <<"org_type">>, <<"tag">>, <<"level">>],
         <<"where">> => #{
             <<"users">> => #{
                 <<"className">> => <<"_User">>,
@@ -441,8 +441,8 @@ get_role(Name, UserId, SessionToken) ->
         {ok, #{<<"results">> := RoleResults}} ->
             Roles =
                 lists:foldr(
-                    fun(#{<<"objectId">> := RoleId, <<"name">> := Name1, <<"alias">> := Alias, <<"org_type">> := Org_type} = X, Acc) ->
-                        Role = #{<<"objectId">> => RoleId, <<"name">> => Name1, <<"alias">> => Alias, <<"org_type">> => Org_type, <<"tag">> => maps:get(<<"tag">>, X, #{})},
+                    fun(#{<<"objectId">> := RoleId, <<"name">> := Name1, <<"alias">> := Alias, <<"org_type">> := Org_type, <<"level">> := Level} = X, Acc) ->
+                        Role = #{<<"objectId">> => RoleId, <<"name">> => Name1, <<"alias">> => Alias, <<"org_type">> => Org_type, <<"tag">> => maps:get(<<"tag">>, X, #{}), <<"level">> => Level},
                         Acc#{RoleId => Role}
                     end, #{}, RoleResults),
             RoleIds =
