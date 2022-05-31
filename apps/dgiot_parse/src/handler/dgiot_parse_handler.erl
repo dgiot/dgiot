@@ -111,11 +111,13 @@ do_request(get_health, _Body, _Context, _Req) ->
     {ok, #{<<"msg">> => <<"success">>}};
 
 %% 数据库升级
-do_request(get_upgrade, _Body, _Context, _Req) ->
-    dgiot_parse:update(),
-    {ok, #{<<"msg">> => <<"success">>}};
+do_request(get_upgrade, _Body, _Context, Req) ->
+    Cookies = cowboy_req:parse_cookies(Req),
+    SessionToken = proplists:get_value(<<"departmentToken">>, Cookies),
+%%    io:format("~s ~p SessionToken = ~p.~n", [?FILE, ?LINE, SessionToken]),
+    dgiot_parse:update(SessionToken);
+
 
 %%  服务器不支持的API接口
 do_request(_OperationId, _Args, _Context, _Req) ->
-    ?LOG(debug, "_Args ~p", [_Args]),
     {error, <<"Not Allowed.">>}.
