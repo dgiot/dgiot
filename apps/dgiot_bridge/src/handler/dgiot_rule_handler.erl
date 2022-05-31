@@ -266,12 +266,12 @@ device_sql(Select, From, Where, _Method) ->
                    #{<<"productid">> := ProductId, <<"devaddr">> := Devaddr} ->
                        case Devaddr of
                            <<"#">> ->
-                               <<"$dg/alarm/", ProductId/binary, "/", Devaddr/binary>>;
+                               <<"$dg/user/alarm/", ProductId/binary, "/", Devaddr/binary>>;
                            _ ->
-                               <<"$dg/alarm/", ProductId/binary, "/", Devaddr/binary, "/#">>
+                               <<"$dg/user/alarm/", ProductId/binary, "/", Devaddr/binary, "/#">>
                        end;
                    _ ->
-                       <<"thing/", "test/#">>
+                       <<"dg/user/alarm/test/#">>
                end,
     WhereSql = lists:foldl(fun(X, Acc) ->
         case X of
@@ -457,28 +457,28 @@ generateFrom(Trigger) ->
                 #{<<"productKey">> := ProductId, <<"deviceName">> := DeviceId} ->
                     case DeviceId of
                         <<"">> ->
-                            <<"$dg/alarm/", ProductId/binary, "/#">>;
+                            <<"$dg/user/alarm/", ProductId/binary, "/#">>;
                         <<"#">> ->
-                            <<"$dg/alarm/", ProductId/binary, "/#">>;
+                            <<"$dg/user/alarm/", ProductId/binary, "/#">>;
                         _ ->
-                            <<"$dg/alarm/", ProductId/binary, "/", DeviceId/binary, "/#">>
+                            <<"$dg/user/alarm/", ProductId/binary, "/", DeviceId/binary, "/#">>
                     end;
                 _ ->
-                    <<"$dg/alarm/", "test/#">>
+                    <<"$dg/user/alarm/test/#">>
             end;
         <<"trigger/product/event">> ->
             case Params of
                 #{<<"productKey">> := ProductId, <<"deviceName">> := DeviceId} ->
                     case DeviceId of
                         <<"">> ->
-                            <<"$dg/alarm/", ProductId/binary, "/#">>;
+                            <<"$dg/user/alarm/", ProductId/binary, "/#">>;
                         <<"#">> ->
-                            <<"$dg/alarm/", ProductId/binary, "/#">>;
+                            <<"$dg/user/alarm/", ProductId/binary, "/#">>;
                         _ ->
-                            <<"$dg/alarm/", ProductId/binary, "/", DeviceId/binary, "/#">>
+                            <<"$dg/user/alarm/", ProductId/binary, "/", DeviceId/binary, "/#">>
                     end;
                 _ ->
-                    <<"$dg/alarm/", "test/#">>
+                    <<"$dg/user/alarm/test/#">>
             end;
         <<"trigger/mqtt/event">> ->
             case Params of
@@ -490,12 +490,12 @@ generateFrom(Trigger) ->
                             <<"$events/", Mqtt/binary, "/", ProductId/binary, "/", DeviceId/binary, "/#">>
                     end;
                 _ ->
-                    <<"$dg/alarm/", "test/#">>
+                    <<"$dg/user/alarm/test/#">>
             end;
         <<"trigger/timer">> ->
-            <<"$dg/alarm/", "test/#">>;
+            <<"$dg/user/alarm/test/#">>;
         _ ->
-            <<"$dg/alarm/", "test/#">>
+            <<"$dg/user/alarm/test/#">>
     end.
 
 generateSelect(Condition, _Trigger, _FROM) ->

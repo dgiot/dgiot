@@ -95,7 +95,7 @@ get_schemas_json() ->
 update_schemas_json() ->
     io:format("~s ~p ~p~n", [?FILE, ?LINE, <<"update_schemas_json start">>]),
     %%    API更新
-    os:cmd("curl 127.0.0.1:5080/install/rule"),
+    dgiot_install:generate_rule([{<<"webname">>, #{name => dgiot_apihub}}]),
     %%    物模型更新
     dgiot_product:update_properties(),
     %%    表字段更新

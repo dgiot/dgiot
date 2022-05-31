@@ -21,3 +21,4 @@
 -define(DGIOT_DATA_CACHE, dgiot_data_cache).
 -define(TASK_NAME(Name), dgiot_utils:to_atom(lists:concat([dgiot_utils:to_atom(Name), "task"]))).
 -define(TASK_SUP(Name), dgiot_utils:to_atom(lists:concat(["dgiot_task_sup", dgiot_utils:to_atom(Name)]))).
+-define(DGIOT_DATASOURCE, dgiot_datasource).
