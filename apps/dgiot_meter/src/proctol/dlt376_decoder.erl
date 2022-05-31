@@ -31,7 +31,7 @@
     check_Command/1,
     more_Check_Command/2,
     frame_write_param/1,
-    send_childvalue/2,
+    get_childvalues/2,
     pn_to_da/1]).
 
 -define(TYPE, ?DLT376).
@@ -584,61 +584,48 @@ process_message(Frames, ChannelId) ->
         % 返回读取上次合闸时间
         [#{<<"di">> := <<16#1E, 16#00, 16#01, 16#01>>, <<"addr">> := Addr, <<"value">> := Value} | _] ->
             case dgiot_data:get({meter, ChannelId}) of
-                {ProductId, _ACL, _Properties} -> DevAddr = dgiot_utils:binary_to_hex(Addr),
-                    Topic = <<"thing/", ProductId/binary, "/", Addr/binary, "/status">>,
-                    DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
-                    dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(Value));
-                _ -> pass
+                {ProductId, _ACL, _Properties} ->
+                    #{<<"productid">> => ProductId, <<"di">> => <<16#1E, 16#00, 16#01, 16#01>>, <<"addr">> => Addr, <<"value">> => jsx:encode(Value)};
+                _ -> #{}
             end;
         % 返回读取上次拉闸时间
         [#{<<"di">> := <<16#1D, 16#00, 16#01, 16#01>>, <<"addr">> := Addr, <<"value">> := Value} | _] ->
             case dgiot_data:get({meter, ChannelId}) of
-                {ProductId, _ACL, _Properties} -> DevAddr = dgiot_utils:binary_to_hex(Addr),
-                    Topic = <<"thing/", ProductId/binary, "/", Addr/binary, "/status">>,
-                    DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
-                    dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(Value));
-                _ -> pass
+                {ProductId, _ACL, _Properties} ->
+                    #{<<"productid">> => ProductId, <<"di">> => <<16#1D, 16#00, 16#01, 16#01>>, <<"addr">> => Addr, <<"value">> => jsx:encode(Value)};
+                _ -> #{}
             end;
         % 拉闸，合闸成功
         [#{<<"di">> := <<16#FE, 16#FE, 16#FE, 16#FE>>, <<"addr">> := Addr, <<"value">> := Value} | _] ->
             case dgiot_data:get({meter, ChannelId}) of
-                {ProductId, _ACL, _Properties} -> DevAddr = dgiot_utils:binary_to_hex(Addr),
-                    Topic = <<"thing/", ProductId/binary, "/", Addr/binary, "/status">>,
-                    DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
-                    dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(Value));
-                _ -> pass
+                {ProductId, _ACL, _Properties} ->
+                    #{<<"productid">> => ProductId, <<"di">> => <<16#FE, 16#FE, 16#FE, 16#FE>>, <<"addr">> => Addr, <<"value">> => jsx:encode(Value)};
+                _ -> #{}
             end;
         % 拉闸，合闸失败
         [#{<<"di">> := <<16#FE, 16#FE, 16#FE, 16#FD>>, <<"addr">> := Addr, <<"value">> := Value} | _] ->
             case dgiot_data:get({meter, ChannelId}) of
-                {ProductId, _ACL, _Properties} -> DevAddr = dgiot_utils:binary_to_hex(Addr),
-                    Topic = <<"thing/", ProductId/binary, "/", Addr/binary, "/status">>,
-                    DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
-                    dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(Value));
-                _ -> pass
+                {ProductId, _ACL, _Properties} ->
+                    #{<<"productid">> => ProductId, <<"di">> => <<16#FE, 16#FE, 16#FE, 16#FD>>, <<"addr">> => Addr, <<"value">> => jsx:encode(Value)};
+                _ -> #{}
             end;
         % 返回抄表数据
         [#{<<"di">> := <<16#01, 16#01, 16#01, 16#10>>, <<"addr">> := Addr, <<"value">> := Value} | _] ->
             case dgiot_data:get({meter, ChannelId}) of
-                {ProductId, _ACL, _Properties} -> DevAddr = dgiot_utils:binary_to_hex(Addr),
-                    Topic = <<"$dg/thing/", ProductId/binary, "/", DevAddr/binary, "/properties/report">>, % 发送给task进行数据存储
-                    DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
-                    Taskchannel = dgiot_product:get_taskchannel(ProductId),
-                    dgiot_client:send(Taskchannel, DeviceId, Topic, Value);
-                _ -> pass
+                {ProductId, _ACL, _Properties} ->
+                    NewValue = dgiot_meter:get_ValueData(Value, ProductId),
+                    #{<<"productid">> => ProductId, <<"addr">> => Addr, <<"value">> => NewValue};
+                _ -> #{}
             end;
         %[#{<<"addr">> => <<"330100480000">>,<<"meter">> => <<>>, <<"di">> => <<0,1,0,0>>, <<"value">> => #{<<"00010000">> => 0}}]
         [#{<<"di">> := <<16#00, 16#01, 16#00, 16#00>>, <<"meter">> := MAddr, <<"value">> := Value} | _] ->
             case dgiot_data:get({meter, ChannelId}) of
                 {ProductId, _ACL, _Properties} ->
-                    %DevAddr = dgiot_utils:binary_to_hex(Addr),
-                    Topic = <<"$dg/thing/", ProductId/binary, "/", MAddr/binary, "/properties/report">>, % 发送给task进行数据存储
-                    DeviceId = dgiot_parse_id:get_deviceid(ProductId, MAddr),
-                    Taskchannel = dgiot_product:get_taskchannel(ProductId),
-                    dgiot_client:send(Taskchannel, DeviceId, Topic, Value);
-                _ -> pass
+                    NewValue = dgiot_meter:get_ValueData(Value, ProductId),
+                    #{<<"productid">> => ProductId, <<"addr">> => MAddr, <<"value">> => NewValue};
+                _ -> #{}
             end;
-        _ -> pass
+        _ -> #{}
     end.
 
 
@@ -647,12 +634,10 @@ process_message(?DLT376, Frames, ChannelId) ->
         [#{<<"addr">> := DevAddr, <<"value">> := Value, <<"childvalue">> := ChildValue} | _] ->
             case dgiot_data:get({dtu, ChannelId}) of
                 {ProductId, _ACL, _Properties} ->
-                    Topic = <<"$dg/thing/", ProductId/binary, "/", DevAddr/binary, "/properties/report">>, % 发送给task进行数据存储
                     DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
-                    Taskchannel = dgiot_product:get_taskchannel(ProductId),
-                    dgiot_client:send(Taskchannel, DeviceId, Topic, Value),
-                    timer:sleep(1 * 1000),
-                    send_childvalue(DeviceId, ChildValue);
+                    NewValue = dgiot_meter:get_ValueData(Value, ProductId),
+                    ChildValues = get_childvalues(DeviceId, ChildValue),
+                    #{<<"productid">> => ProductId, <<"addr">> => DevAddr, <<"value">> => NewValue, <<"childvalues">> => ChildValues};
                 _ -> pass
             end;
         _ ->
@@ -667,29 +652,26 @@ process_message(Frames, ChannelId, DTUIP, DtuId) ->
         timer:sleep(1 * 1000)
               end, Value).
 
-send_childvalue(DeviceId, ChildValue) ->
+get_childvalues(DeviceId, ChildValue) ->
     case dgiot_parse:query_object(<<"Device">>, #{<<"where">> => #{<<"parentId">> => DeviceId}}) of
         {ok, #{<<"results">> := ChildDevices}} ->
-            lists:foldl(fun(#{<<"objectId">> := ChildId, <<"devaddr">> := Devaddr, <<"product">> := #{<<"objectId">> := ProductId}}, _Acc) ->
+            lists:foldl(fun(#{<<"objectId">> := ChildId, <<"devaddr">> := Devaddr, <<"product">> := #{<<"objectId">> := ProductId}}, Acc) ->
                 case dgiot_data:get({metertda, ChildId}) of
                     not_find ->
-                        pass;
+                        Acc;
                     {Da, _Dtuaddr} ->
                         DA = dgiot_utils:binary_to_hex(dlt376_decoder:pn_to_da(dgiot_utils:to_int(Da))),
                         case maps:find(DA, ChildValue) of
                             error ->
-                                pass;
+                                Acc;
                             {ok, Value} ->
-                                Topic = <<"$dg/thing/", ProductId/binary, "/", Devaddr/binary, "/properties/report">>, % 发送给task进行数据存储
-                                DeviceId1 = dgiot_parse_id:get_deviceid(ProductId, Devaddr),
-                                Taskchannel = dgiot_product:get_taskchannel(ProductId),
-                                dgiot_client:send(Taskchannel, DeviceId1, Topic, Value),
-                                timer:sleep(1 * 1000)
+                                NewValue = dgiot_meter:get_ValueData(Value, ProductId),
+                                Acc ++ [#{<<"productid">> => ProductId, <<"addr">> => Devaddr, <<"value">> => NewValue}]
                         end
                 end
-                        end, #{}, ChildDevices);
+                        end, [], ChildDevices);
         _ ->
-            pass
+            []
 
     end.
 

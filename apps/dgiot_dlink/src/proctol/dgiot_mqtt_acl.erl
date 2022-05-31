@@ -78,8 +78,8 @@ do_check(#{clientid := Token, username := UserId} = _ClientInfo, subscribe, <<"$
             deny
     end;
 
-%% 告警上报 "$dg/alarm/{productId}/{deviceId}/properties/report"
-do_check(#{clientid := Token, username := UserId} = _ClientInfo, publish, <<"$dg/alarm/", _ProductID:10/binary,"/",DeviceId:10/binary, "/",  _Rest/binary>>  = _Topic)
+%% 告警上报 "$dg/user/alarm/{productId}/{deviceId}/properties/report"
+do_check(#{clientid := Token, username := UserId} = _ClientInfo, publish, <<"$dg/user/alarm/", _ProductID:10/binary,"/",DeviceId:10/binary, "/",  _Rest/binary>>  = _Topic)
     when Token =/= undefined ->
 %%    io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, _Topic]),
     case check_device_acl(Token, DeviceId, UserId) of
@@ -89,7 +89,7 @@ do_check(#{clientid := Token, username := UserId} = _ClientInfo, publish, <<"$dg
             deny
     end;
 
-%% "$dg/channel/{channelId}/{productId}/{deviceId}"
+%% "$dg/user/channel/{channelId}/{productId}/{deviceId}"
 do_check(#{clientid := Token} = _ClientInfo, subscribe, <<"$dg/user/channel/", DeviceInfo/binary>> = _Topic) ->
 %%    io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, _Topic]),
     [ChannelId | _] = binary:split(DeviceInfo, <<"/">>, [global]),
@@ -100,7 +100,7 @@ do_check(#{clientid := Token} = _ClientInfo, subscribe, <<"$dg/user/channel/", D
             deny
     end;
 
-%% $dg/dashboard/{dashboardId}/{productId}/{deviceId}
+%% $dg/user/dashboard/{dashboardId}/{productId}/{deviceId}
 do_check(#{clientid := Token} = _ClientInfo, subscribe, <<"$dg/user/dashboard/", DashboardId:10/binary, "/", _Rest/binary>> = _Topic) ->
 %%    io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, _Topic]),
     case dgiot_parse:get_object(<<"View">>, DashboardId, [{"X-Parse-Session-Token", Token}], [{from, rest}]) of
@@ -110,8 +110,8 @@ do_check(#{clientid := Token} = _ClientInfo, subscribe, <<"$dg/user/dashboard/",
             deny
     end;
 
-%% "$dg/trace/{DeviceId}/{Topic}"
-do_check(#{clientid := Token, username := UserId} = _ClientInfo, subscribe, <<"$dg/trace/", DeviceId:10/binary, "/",  _Rest/binary>> = _Topic) ->
+%% "$dg/user/trace/{DeviceId}/{Topic}"
+do_check(#{clientid := Token, username := UserId} = _ClientInfo, subscribe, <<"$dg/user/trace/", DeviceId:10/binary, "/",  _Rest/binary>> = _Topic) ->
 %%    io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, _Topic]),
     check_device_acl(Token, DeviceId, UserId);
 

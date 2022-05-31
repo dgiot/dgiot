@@ -18,9 +18,9 @@
 -include("dgiot_task.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
--export([get_userdata/7, get_datasource/2, get_ack/4]).
+-export([get_userdata/6, get_datasource/4, get_ack/4]).
 
-get_userdata(ProductId, Identifier, _DataForm, #{<<"type">> := <<"geopoint">>}, _DataSource, Payload, Acc) ->
+get_userdata(ProductId, Identifier, _DataForm, #{<<"type">> := <<"geopoint">>}, Payload, Acc) ->
     case maps:find(Identifier, Payload) of
         {ok, Value} ->
             Addr = dgiot_gps:get_gpsaddr(Value),
@@ -31,37 +31,19 @@ get_userdata(ProductId, Identifier, _DataForm, #{<<"type">> := <<"geopoint">>}, 
             Acc
     end;
 
-get_userdata(_ProductId, Identifier, #{<<"collection">> := Collection}, DataType, DataSource, Payload, Acc) ->
+get_userdata(_ProductId, Identifier, #{<<"collection">> := Collection}, #{<<"type">> := Type, <<"specs">> := Specs}, Payload, Acc) ->
     case maps:find(Identifier, Payload) of
         {ok, Value} ->
-            calculate_value(Value, Collection, Identifier, DataType, Acc);
+            Str = re:replace(Collection, dgiot_utils:to_list(<<"%%", Identifier/binary>>), "(" ++ dgiot_utils:to_list(Value) ++ ")", [global, {return, list}]),
+            Str1 = re:replace(Str, "%s", "(" ++ dgiot_utils:to_list(Value) ++ ")", [global, {return, list}]),
+            case dgiot_task:string2value(Str1, Type, Specs) of
+                error ->
+                    Acc;
+                Value1 ->
+                    Acc#{Identifier => Value1}
+            end;
         _ ->
-            Address = maps:get(<<"address">>, DataSource, <<"">>),
-            case maps:find(Address, Payload) of
-                {ok, Value} ->
-                    NewAcc = maps:without([Address], Acc),
-                    calculate_value(Value, Collection, Identifier, DataType, NewAcc);
-                _ ->
-%%                    电表
-                    Di = maps:get(<<"di">>, DataSource, <<"">>),
-                    case maps:find(Di, Payload) of
-                        {ok, Value} ->
-                            NewAcc = maps:without([Di], Acc),
-                            calculate_value(Value, Collection, Identifier, DataType, NewAcc);
-                        _ ->
-                            Acc
-                    end
-            end
-    end.
-
-calculate_value(Value, Collection, Identifier, #{<<"type">> := Type, <<"specs">> := Specs}, Acc) ->
-    Str = re:replace(Collection, dgiot_utils:to_list(<<"%%", Identifier/binary>>), "(" ++ dgiot_utils:to_list(Value) ++ ")", [global, {return, list}]),
-    Str1 = re:replace(Str, "%s", "(" ++ dgiot_utils:to_list(Value) ++ ")", [global, {return, list}]),
-    case dgiot_task:string2value(Str1, Type, Specs) of
-        error ->
-            maps:without([Identifier], Acc);
-        Value1 ->
-            Acc#{Identifier => Value1}
+            Acc
     end.
 
 get_ack(ProductId, Payload, Dis, Ack) ->
@@ -76,8 +58,8 @@ get_ack(ProductId, Payload, Dis, Ack) ->
                   end, #{}, Payload),
     dgiot_task:get_collection(ProductId, Dis, NewPayload, maps:merge(Ack, NewPayload)).
 
-get_datasource(Protocol, DataSource) ->
-    case catch dgiot_hook:run_hook({datasource, Protocol}, DataSource) of
+get_datasource(Protocol, AccessMode, Data, DataSource) ->
+    case catch dgiot_hook:run_hook({?DGIOT_DATASOURCE, Protocol}, DataSource#{<<"accessMode">> => AccessMode, <<"data">> => Data}) of
         {ok, [Rtn | _]} ->
             Rtn;
         _ ->

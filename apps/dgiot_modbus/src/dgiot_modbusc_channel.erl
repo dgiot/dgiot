@@ -147,7 +147,6 @@ handle_message(_Message, State) ->
 
 stop(ChannelType, ChannelId, _State) ->
     ?LOG(info, "channel stop ~p,~p", [ChannelType, ChannelId]),
-    io:format("~s ~p channel stop ~p~n ~p~n", [?FILE, ?LINE, ChannelType, ChannelId]),
     ok.
 
 
