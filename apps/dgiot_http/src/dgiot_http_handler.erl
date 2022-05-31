@@ -173,10 +173,10 @@ do_request(get_maintenancefinish, #{<<"number">> := Number}, #{<<"sessionToken">
 %% iot_hub 概要: 查询平台api资源 描述:创建工单
 %% OperationId:post_maintenance
 %% 请求:POST /iotapi/post_maintenance
-do_request(post_maintenance, Args, _Context, _Req) ->
+do_request(post_maintenance, Args, #{<<"sessionToken">> := SessionToken}, _Req) ->
     Isbridge = application:get_env(dgiot_http, isbridge, false),
-    Url = application:get_env(dgiot_http, dgiot_bridge_url,  "https://prod.iotn2n.com") ++ "/iotapi/maintenance",
-    Result = dgiot_umeng:create_maintenance(Args),
+    Url = application:get_env(dgiot_http, dgiot_bridge_url, "https://prod.iotn2n.com") ++ "/iotapi/maintenance",
+    Result = dgiot_umeng:create_maintenance(Args, SessionToken),
     case Isbridge of
         true ->
             case catch httpc:request(post, {Url, [], "application/json", jsx:encode(Args)}, [], []) of

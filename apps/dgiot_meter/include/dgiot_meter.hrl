@@ -33,6 +33,7 @@
 -record(state, {
     id,
     env = #{},
+    product = <<>>,
     dtuaddr = <<>>,
     step = login,
     ref = undefined,

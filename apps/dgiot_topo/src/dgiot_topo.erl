@@ -63,7 +63,7 @@ put_topo(Arg, _Context) ->
         <<"base64">> := Base64
     } = Arg,
     DeviceId = dgiot_parse_id:get_deviceid(ProductId, Devaddr),
-    Pubtopic = <<"$dg/konva/", DeviceId/binary, "/properties/report">>,
+    Pubtopic = <<"$dg/user/konva/", DeviceId/binary, "/report">>,
     dgiot_mqtt:publish(self(), Pubtopic, Base64),
     {ok, <<"Success">>}.
 
@@ -87,7 +87,7 @@ send_realtime_card(ProductId, DeviceId, Payload) ->
 %% 发送实时组态数据
 send_konva(ProductId, DeviceId, Payload) ->
     Base64 = dgiot_product_knova:get_konva(ProductId, DeviceId, Payload),
-    Pubtopic = <<"$dg/user/", DeviceId/binary, "/konva/report">>,
+    Pubtopic = <<"$dg/user/konva/", DeviceId/binary, "/report">>,
     dgiot_mqtt:publish(self(), Pubtopic, Base64).
 
 

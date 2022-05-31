@@ -27,7 +27,7 @@
       "isdef": true,
       "subscribe": "用户",
       "publisher": "平台",
-      "topic": "$dg/alarm/{productId}/{deviceId}/properties/report",
+      "topic": "$dg/user/alarm/{productId}/{deviceId}/properties/report",
       "type": "sub"
     },
     {
@@ -37,7 +37,7 @@
       "isdef": true,
       "subscribe": "用户",
       "publisher": "平台",
-      "topic": "$dg/user/{DeviceId}/konva/report",
+      "topic": "$dg/user/konva/{DeviceId}/report",
       "type": "sub"
     },
     {
@@ -47,7 +47,7 @@
       "isdef": true,
       "subscribe": "用户",
       "publisher": "平台",
-      "topic": "$dg/user/{DeviceId}/realtimecard/report",
+      "topic": "$dg/user/realtimecard/{DeviceId}/report",
       "type": "sub"
     },
     {
@@ -67,7 +67,7 @@
       "isdef": true,
       "subscribe": "用户",
       "publisher": "平台",
-      "topic": "$dg/user/{deviceId}/gateway/sub_devices/properties/report",
+      "topic": "$dg/user/gateway/{deviceId}/sub_devices/properties/report",
       "type": "sub"
     },
     {
