@@ -76,7 +76,7 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, state = #state{id = ChannelId, de
             end
     end;
 
-handle_info({tcp, Buff}, #tcp{state = #state{id = ChannelId, devaddr = DtuAddr, env = #{product := ProductId, pn := Pn, di := Di}, product = DtuProductId}} = TCPState) ->
+handle_info({tcp, Buff}, #tcp{state = #state{id = ChannelId, devaddr = DtuAddr, env = #{product := ProductId, pn := Pn, di := Di}, product = DtuProductId} = State} = TCPState) ->
     dgiot_bridge:send_log(ChannelId, ProductId, DtuAddr, "~s ~p DTU ~p recv ~p", [?FILE, ?LINE, DtuAddr, dgiot_utils:binary_to_hex(Buff)]),
     <<H:8, L:8>> = dgiot_utils:hex_to_binary(modbus_rtu:is16(Di)),
     <<Sh:8, Sl:8>> = dgiot_utils:hex_to_binary(modbus_rtu:is16(Pn)),
@@ -96,7 +96,7 @@ handle_info({tcp, Buff}, #tcp{state = #state{id = ChannelId, devaddr = DtuAddr, 
             ?LOG(info, "Other ~p", [Other]),
             pass
     end,
-    {noreply, TCPState#tcp{buff = <<>>}};
+    {noreply, TCPState#tcp{buff = <<>>, state = State#state{env = <<>>}}};
 
 handle_info({deliver, _, Msg}, #tcp{state = #state{id = ChannelId} = State} = TCPState) ->
     Payload = dgiot_mqtt:get_payload(Msg),
