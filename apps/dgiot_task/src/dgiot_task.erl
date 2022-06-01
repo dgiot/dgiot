@@ -88,9 +88,8 @@ get_collection(ProductId, [], Payload, Ack) ->
                         case X of
                             #{<<"dataForm">> := #{<<"strategy">> := Strategy} = DataForm,
                                 <<"dataType">> := DataType,
-                                <<"dataSource">> := DataSource,
                                 <<"identifier">> := Identifier} when Strategy =/= <<"计算值"/utf8>> ->
-                                dgiot_task_data:get_userdata(ProductId, Identifier, DataForm, DataType, DataSource, Payload, Acc2);
+                                dgiot_task_data:get_userdata(ProductId, Identifier, DataForm, DataType, Payload, Acc2);
                             _ ->
                                 Acc2
                         end
@@ -113,9 +112,8 @@ get_collection(ProductId, Dis, Payload, Ack) ->
                             case X of
                                 #{<<"dataForm">> := #{<<"strategy">> := Strategy} = DataForm,
                                     <<"dataType">> := DataType,
-                                    <<"dataSource">> := DataSource,
                                     <<"identifier">> := Identifier} when Strategy =/= <<"计算值"/utf8>> ->
-                                    dgiot_task_data:get_userdata(ProductId, Identifier, DataForm, DataType, DataSource, Payload, Acc2);
+                                    dgiot_task_data:get_userdata(ProductId, Identifier, DataForm, DataType, Payload, Acc2);
                                 _ ->
                                     Acc2
                             end
@@ -149,27 +147,28 @@ get_instruct(ProductId, Round) ->
                         Acc;
                     #{<<"accessMode">> := AccessMode,
                         <<"identifier">> := Identifier,
-                        <<"dataType">> := #{<<"specs">> := #{<<"min">> := Min}},
+                        <<"dataType">> := #{<<"specs">> := Specs},
                         <<"dataForm">> := DataForm,
                         <<"dataSource">> := DataSource} ->
+                        Min = maps:get(<<"min">>, Specs, 0),
                         Protocol = maps:get(<<"protocol">>, DataForm, <<"Dlink">>),
-                        NewDataSource = dgiot_task_data:get_datasource(Protocol, DataSource),    %% 根据协议类型生成采集数据格式
-                        Order = maps:get(<<"order">>, DataForm, Seq),                            %% 指令顺序
                         Control = maps:get(<<"control">>, DataForm, "%d"),                       %% 控制参数
                         Data = dgiot_task:get_control(Round, Min, Control),                      %% 控制参数的初始值，可以根据轮次进行计算
+                        NewDataSource = dgiot_task_data:get_datasource(Protocol, AccessMode, Data, DataSource),    %% 根据协议类型生成采集数据格式
+                        Order = maps:get(<<"order">>, DataForm, Seq),                            %% 指令顺序
                         Interval = dgiot_utils:to_int(maps:get(<<"strategy">>, DataForm, 20)),   %% 下一个指令的采集间隔
                         ThingRound = maps:get(<<"round">>, DataForm, <<"all">>),                 %% 物模型中的指令轮次规则
                         BinRound = dgiot_utils:to_binary(Round),                                 %% 判断本轮是否需要加入采集指令队列
                         case ThingRound of
                             <<"all">> ->  %% 所有轮次
-                                {Seq + 1, List ++ [{Order, Interval, Identifier, AccessMode, Data, NewDataSource}]};
+                                {Seq + 1, List ++ [{Order, Interval, Identifier, NewDataSource}]};
                             BinRound ->
-                                {Seq + 1, List ++ [{Order, Interval, Identifier, AccessMode, Data, NewDataSource}]};
+                                {Seq + 1, List ++ [{Order, Interval, Identifier, NewDataSource}]};
                             Rounds ->
                                 RoundList = binary:split(Rounds, <<",">>, [global]),
                                 case lists:member(BinRound, RoundList) of
                                     true ->
-                                        {Seq + 1, List ++ [{Order, Interval, Identifier, AccessMode, Data, NewDataSource}]};
+                                        {Seq + 1, List ++ [{Order, Interval, Identifier, NewDataSource}]};
                                     false ->
                                         Acc
                                 end
@@ -303,7 +302,7 @@ save_td(ProductId, DevAddr, Ack, AppData) ->
                     Channel = dgiot_product:get_taskchannel(ProductId),
                     dgiot_bridge:send_log(Channel, ProductId, DevAddr, "~s ~p save td => ProductId ~p DevAddr ~p ~ts ", [?FILE, ?LINE, ProductId, DevAddr, unicode:characters_to_list(jsx:encode(AllData))]),
                     dgiot_metrics:inc(dgiot_task, <<"task_save">>, 1),
-                    NotificationTopic = <<"$dg/alarm/", ProductId/binary, "/", DeviceId/binary, "/properties/report">>,
+                    NotificationTopic = <<"$dg/user/alarm/", ProductId/binary, "/", DeviceId/binary, "/properties/report">>,
                     dgiot_mqtt:publish(DeviceId, NotificationTopic, jsx:encode(AllData)),
                     AllData;
                 _ ->

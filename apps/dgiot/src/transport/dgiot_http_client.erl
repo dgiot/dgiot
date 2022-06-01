@@ -15,13 +15,25 @@
 %%--------------------------------------------------------------------
 -module(dgiot_http_client).
 -author("johnliu").
-
 -include_lib("dgiot/include/logger.hrl").
+-include_lib("dgiot/include/dgiot_client.hrl").
+
 -define(CHNANEL(Name), dgiot_utils:to_atom(Name)).
 -define(JSON_DECODE(Data), jsx:decode(Data, [{labels, binary}, return_maps])).
 -define(HTTPOption(Option), [{timeout, 60000}, {connect_timeout, 60000}] ++ Option).
 -define(REQUESTOption(Option), [{body_format, binary} | Option]).
 -define(HEAD_CFG, [{"content-length", del}, {"referer", del}, {"user-agent", "dgiot"}]).
+-record(connect_state, {mod, freq = 30, count = 10}).
+
+%% gen_server callbacks
+-export([
+    start_link/1,
+    init/1,
+    handle_call/3,
+    handle_cast/2,
+    handle_info/2,
+    terminate/2,
+    code_change/3]).
 
 %% API
 -export([
@@ -31,44 +43,152 @@
 ]).
 
 -export([
-    get/2,
+    send/2,
+    send/4,
     get/3,
     post/3,
     post/4,
-    tc/4,
-    set_url/2,
-    get_sign/3,
-    get_sign/4,
-    getToken/1,
+    set_uri/2,
     format_json/1
 ]).
 
-get(Name, Path) ->
-    #{
-        <<"apiKey">> := Key,
-        <<"apiSecret">> := Secret
-    } = persistent_term:get({Name, http_appkey}, #{
-        <<"apiKey">> => <<"Key">>,
-        <<"apiSecret">> => <<"Secret">>
-    }),
-    T = dgiot_utils:to_list(dgiot_datetime:now_ms()),
-    Header = [
-        {"apiKey", dgiot_utils:to_list(Key)},
-        {"sign", get_sign(Name, Secret, Key, T)},
-        {"t", T},
-        {"Content-Type", "application/json;charset=UTF-8"},
-        {"lang", "zh"}
-    ],
-    get(Name, Path, Header).
 
-get(Name, Path, Header) ->
-    Url = get_url(Name, Path),
+start_link(Args) ->
+    dgiot_client:start_link(?MODULE, Args).
+
+init([#{<<"channel">> := ChannelId, <<"client">> := ClientId, <<"mod">> := Mod} = Args]) ->
+    set_uri(ChannelId, maps:with([<<"proctol">>, <<"ip">>, <<"port">>], Args)),
+    UserData = #connect_state{mod = Mod, freq = 30, count = 300},
+    ChildState = maps:get(<<"child">>, Args, #{}),
+    StartTime = dgiot_client:get_time(maps:get(<<"starttime">>, Args, dgiot_datetime:now_secs())),
+    EndTime = dgiot_client:get_time(maps:get(<<"endtime">>, Args, dgiot_datetime:now_secs() + 1000000000)),
+    Freq = maps:get(<<"freq">>, Args, 30),
+    NextTime = dgiot_client:get_nexttime(StartTime, Freq),
+    Count = dgiot_client:get_count(StartTime, EndTime, Freq),
+    Rand =
+        case maps:get(<<"rand">>, Args, true) of
+            true -> 0;
+            _ -> dgiot_client:get_rand(Freq)
+        end,
+    Clock = #dclock{freq = Freq, nexttime = NextTime + Rand, count = Count, round = 0},
+    Dclient = #dclient{channel = ChannelId, client = ClientId, status = ?DCLIENT_INTIALIZED, clock = Clock, userdata = UserData, child = ChildState},
+    dgiot_client:add(ChannelId, ClientId),
+    case Mod:init(Dclient) of
+        {ok, NewDclient} ->
+            rand:seed(exs1024),
+            Time = erlang:round(rand:uniform() * 60 * 3 + 1) * 1000,
+            erlang:send_after(Time, self(), login),
+            {ok, NewDclient, hibernate};
+        {stop, Reason} ->
+            {stop, Reason}
+    end.
+
+handle_call(Request, From, #dclient{channel = ChannelId, client = ClientId, userdata = #connect_state{mod = Mod}} = Dclient) ->
+    case Mod:handle_call(Request, From, Dclient) of
+        {reply, Reply, NewDclient} ->
+            {reply, Reply, NewDclient, hibernate};
+        {stop, Reason, NewDclient} ->
+            dgiot_client:stop(ChannelId, ClientId),
+            {reply, Reason, NewDclient}
+    end.
+
+handle_cast(Msg, #dclient{channel = ChannelId, client = ClientId,
+    userdata = #connect_state{mod = Mod}} = Dclient) ->
+    case Mod:handle_cast(Msg, Dclient) of
+        {noreply, NewDclient} ->
+            {noreply, NewDclient, hibernate};
+        {stop, Reason, NewDclient} ->
+            dgiot_client:stop(ChannelId, ClientId),
+            {reply, Reason, NewDclient}
+    end.
+
+handle_info(start, #dclient{channel = ChannelId, client = ClientId, userdata = #connect_state{mod = Mod}} = Dclient) ->
+    case Mod:handle_info(start, Dclient) of
+        {noreply, NewDclient} ->
+            {noreply, NewDclient, hibernate};
+        {stop, _Reason, NewDclient} ->
+            timer:sleep(10),
+            dgiot_client:stop(ChannelId, ClientId),
+            {noreply, NewDclient, hibernate}
+    end;
+
+%% 往http server 发送报文
+handle_info({send, Fun, Args}, #dclient{userdata = #connect_state{mod = Mod}} = Dclient) ->
+%%    io:format("~s ~p send to from ~p:~p : ~p ~n", [?FILE, ?LINE,  _Ip, _Port, dgiot_utils:to_hex(PayLoad)]),
+    case send(Fun, Args) of
+        {ok, Result1} ->
+            Mod:handle_info({Fun, ok, Result1}, Dclient);
+        {error, Reason} ->
+            Mod:handle_info({Fun, error, Reason}, Dclient)
+    end,
+    {noreply, Dclient, hibernate};
+
+handle_info({send, Registry,  Mod, Fun, Args}, #dclient{userdata = #connect_state{mod = Mod}} = Dclient) ->
+%%    io:format("~s ~p send to from ~p:~p : ~p ~n", [?FILE, ?LINE,  _Ip, _Port, dgiot_utils:to_hex(PayLoad)]),
+    case send(Registry, Mod, Fun, Args) of
+        {ok, Result1} ->
+            Mod:handle_info({Fun, ok, Result1}, Dclient);
+        {error, Reason} ->
+            Mod:handle_info({Fun, error, Reason}, Dclient)
+    end,
+    {noreply, Dclient, hibernate};
+
+handle_info(Info, #dclient{channel = ChannelId, client = ClientId, userdata = #connect_state{mod = Mod}} = Dclient) ->
+    case Mod:handle_info(Info, Dclient) of
+        {noreply, NewDclient} ->
+            {noreply, NewDclient, hibernate};
+        {stop, _Reason, NewDclient} ->
+            timer:sleep(10),
+            dgiot_client:stop(ChannelId, ClientId),
+            {noreply, NewDclient, hibernate}
+    end.
+
+terminate(Reason, #dclient{userdata = #connect_state{mod = Mod}} = Dclient) ->
+    Mod:terminate(Reason, Dclient).
+
+code_change(OldVsn, #dclient{userdata = #connect_state{mod = Mod}} = Dclient, Extra) ->
+    Mod:code_change(OldVsn, Dclient, Extra).
+
+%%%===================================================================
+%%% Internal functions
+%%%===================================================================
+set_uri(ChannelId, Args) ->
+    persistent_term:put({ChannelId, http_uri}, Args).
+
+get_url(ChannelId, Path) ->
+    #{<<"proctol">> := Proctol, <<"ip">> := Host, <<"port">> := Port} = persistent_term:get({ChannelId, http_uri}, #{
+        <<"proctol">> => <<"http">>, <<"host">> => "127.0.0.1", <<"port">> => 5080}),
+    lists:concat([dgiot_utils:to_list(Proctol), "//", dgiot_utils:to_list(Host), ":", Port, "/", dgiot_utils:to_list(Path)]).
+
+send(Fun, Args)  when Fun == post orelse Fun == get ->
+    send(?MODULE, ?MODULE, Fun, Args).
+
+send(Registry, Metrics, Fun, Args) ->
+    {Time, Result} = timer:tc(?MODULE, Fun, Args),
+    MSecs = Time / 1000,
+    Metrics = dgiot_utils:to_binary(Fun),
+    dgiot_metrics:inc(Registry, <<"http_count">>, 1),
+    dgiot_metrics:inc(Registry, <<"http_", Metrics/binary, "_time">>, MSecs, average),
+    case Result of
+        {ok, Result1} ->
+            ?LOG(debug, "~p Args ~p Result1 ~p", [Metrics, Args, format_json(Result1)]),
+            dgiot_metrics:inc(Registry, <<"http_", Metrics/binary, "_succ">>, 1),
+            dgiot_metrics:inc(Registry, <<"http_succ">>, 1),
+            {ok, Result1};
+        {error, Reason} ->
+            ?LOG(debug, "~p Args:~p, Reason:~p", [Metrics, Args, Reason]),
+            dgiot_metrics:inc(Registry, <<"http_", Metrics/binary, "_fail">>, 1),
+            {error, Reason}
+    end.
+
+get(ChannelId, Path, Header) ->
+    Url = get_url(ChannelId, Path),
     request(get, {Url, Header}).
 
-post(Name, Path, Data) ->
-    post(Name, Path, [], Data).
-post(Name, Path, Header, Data) ->
-    Url = get_url(Name, Path),
+post(ChannelId, Path, Data) ->
+    post(ChannelId, Path, [], Data).
+post(ChannelId, Path, Header, Data) ->
+    Url = get_url(ChannelId, Path),
     request(post, {Url, Header, "application/xml;charset=UTF-8", Data}).
 
 method(Method) ->
@@ -104,70 +224,10 @@ request(Method, Request) ->
             {error, Reason}
     end.
 
-
-set_url(Name, Args) ->
-    persistent_term:put({Name, http_url}, Args).
-
-get_url(Name, Path) ->
-    #{
-        <<"proctol">> := Proctol,
-        <<"host">> := Host,
-        <<"port">> := Port
-    } = persistent_term:get({Name, http_url}, #{
-        <<"proctol">> => <<"http">>,
-        <<"host">> => "127.0.0.1",
-        <<"port">> => 5080
-    }),
-    lists:concat([dgiot_utils:to_list(Proctol), "//", dgiot_utils:to_list(Host), ":", Port, "/", dgiot_utils:to_list(Path)]).
-
-tc(Name, Mod, Fun, Args) ->
-    {Time, Result} = timer:tc(Mod, Fun, Args),
-    MSecs = Time / 1000,
-    dgiot_metrics:inc(dgiot_http_client, <<"http_count">>, 1),
-    dgiot_metrics:inc(dgiot_http_client, <<"http_", Name/binary, "_time">>, MSecs, average),
-    case Result of
-        {ok, Result1} ->
-            ?LOG(debug, "~p Args ~p Result1 ~p", [Name, Args, format_json(Result1)]),
-            dgiot_metrics:inc(dgiot_http_client, <<"http_", Name/binary, "_succ">>, 1),
-            dgiot_metrics:inc(dgiot_http_client, <<"http_succ">>, 1),
-            {ok, Result1};
-        {error, Reason} ->
-            ?LOG(debug, "~p Args:~p, Reason:~p", [Name, Args, Reason]),
-            dgiot_metrics:inc(dgiot_http_client, <<"http_", Name/binary, "_fail">>, 1),
-            {error, Reason}
-    end.
-
 format_json(Body) ->
     case catch dgiot_json:decode(Body, [{labels, binary}, return_maps]) of
         {'EXIT', Reason} ->
             {error, Reason};
-        #{<<"success">> := Status, <<"code">> := Code, <<"msg">> := Msg} when Status == false ->
-            {error, #{<<"code">> => Code, <<"msg">> => Msg}};
-        #{<<"result">> := Result} ->
-            {ok, Result}
-    end.
-
-
-get_sign(Name, Secret, Key, T) ->
-    AccessToken = dgiot_data:get({Name, self(), token}),
-    Data = dgiot_utils:to_binary(dgiot_utils:to_list(Key) ++ dgiot_utils:to_list(AccessToken) ++ T),
-    string:uppercase(binary_to_list(hmac:encode(sha256, Secret, Data))).
-
-get_sign(Secret, Key, T) ->
-    Data = dgiot_utils:to_binary(dgiot_utils:to_list(Key) ++ T),
-    string:uppercase(binary_to_list(hmac:encode(sha256, Secret, Data))).
-
-getToken(Name) ->
-    case tc(?FUNCTION_NAME, ?MODULE, tokenRefresh, [Name]) of
-        {ok, Body} ->
-            case format_json(Body) of
-                {ok, #{<<"accessToken">> := _AccessToken, <<"refreshToken">> := _RefreshToken, <<"expire">> := _Expire} = Result} ->
-                    ?LOG(debug, "Result ~p", [Result]),
-                    {ok, Result};
-                {error, Reason} ->
-                    ?LOG(debug, "Reason ~p", [Reason]),
-                    {error, Reason}
-            end;
-        {error, Reason} ->
-            {error, Reason}
+        Map ->
+            {ok, Map}
     end.

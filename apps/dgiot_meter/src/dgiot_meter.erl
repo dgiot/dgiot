@@ -19,14 +19,16 @@
 -include("dgiot_meter.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -export([parse_frame/3, to_frame/1]).
--export([search_meter/1, search_meter/4]).
+-export([search_meter/1, search_meter/4, get_ValueData/2]).
 -export([
     create_dtu/3,
     create_dtu/4,
     create_meter/5,
     create_meter4G/3,
     create_meter4G/6,
-    get_sub_device/1
+    get_sub_device/1,
+    send_task/4,
+    send_mqtt/4
 ]).
 
 -define(APP, ?MODULE).
@@ -407,3 +409,28 @@ search_meter(1) ->
 
 search_meter(_) ->
     <<"finish">>.
+
+
+%% di dadt 转换物模型标识符
+get_ValueData(Value, ProductId) ->
+    maps:fold(fun(K, V, Acc) ->
+        case dgiot_data:get({protocol, K, ProductId}) of
+            not_find ->
+                Acc#{K => V};
+            Identifier ->
+                Acc#{Identifier => V}
+        end
+              end, #{}, Value).
+
+send_task(ProductId, DevAddr, DtuId, Value) ->
+    Topic = <<"$dg/thing/", ProductId/binary, "/", DevAddr/binary, "/properties/report">>, % 发送给task进行数据存储
+    Taskchannel = dgiot_product:get_taskchannel(ProductId),
+    dgiot_client:send(Taskchannel, DtuId, Topic, Value),
+    Topic.
+
+send_mqtt(ProductId, DevAddr, Di, Value) ->
+    DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
+    Topic = <<"thing/", ProductId/binary, "/", DevAddr/binary, "/status">>,
+    DValue = #{dgiot_utils:to_hex(Di) => Value},
+    dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(DValue)),
+    Topic.

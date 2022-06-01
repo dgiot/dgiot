@@ -304,6 +304,7 @@
     },
     "/health": {
       "get": {
+        "security": [],
         "summary": "health",
         "description": "检测是启动",
         "parameters": [],

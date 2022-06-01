@@ -98,7 +98,7 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, state = #state{id = ChannelId, dt
                     pass
             end,
             dgiot_metrics:inc(dgiot_meter, <<"dtu_online">>, 1),
-            {noreply, TCPState#tcp{buff = <<>>, register = true, clientid = DtuId, state = State#state{dtuaddr = DtuAddr, protocol = ?DLT376, ref = NewRef, step = NewStep}}};
+            {noreply, TCPState#tcp{buff = <<>>, register = true, clientid = DtuId, state = State#state{product = ProductId, dtuaddr = DtuAddr, protocol = ?DLT376, ref = NewRef, step = NewStep}}};
         ?DLT645 ->
             dgiot_meter:create_dtu(DtuAddr, ChannelId, DTUIP),
             {DtuProductId, _, _} = dgiot_data:get({dtu, ChannelId}),
@@ -127,7 +127,7 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, state = #state{id = ChannelId, dt
                 end,
             DtuId = dgiot_parse_id:get_deviceid(DtuProductId, DtuAddr),
             dgiot_metrics:inc(dgiot_meter, <<"dtu_online">>, 1),
-            {noreply, TCPState#tcp{buff = <<>>, register = true, clientid = DtuId, state = State#state{dtuaddr = DtuAddr, protocol = ?DLT645, ref = NewRef, step = NewStep}}}
+            {noreply, TCPState#tcp{buff = <<>>, register = true, clientid = DtuId, state = State#state{product = DtuProductId, dtuaddr = DtuAddr, protocol = ?DLT645, ref = NewRef, step = NewStep}}}
     end;
 
 %%定时器触发搜表
@@ -180,14 +180,50 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, clientid = DtuId, state = #state{
                 [#{<<"afn">> := 16#0A, <<"di">> := <<16#00, 16#00, 16#02, 16#01>>} | _] ->
                     dlt376_decoder:process_message(Frames, ChannelId, DTUIP, DtuId);  %%注册或更新电表信
                 _ ->
-                    dlt376_decoder:process_message(?DLT376, Frames, ChannelId)
+                    case dlt376_decoder:process_message(?DLT376, Frames, ChannelId) of
+                        % 拉闸，返回
+                        #{<<"productid">> := ProductId, <<"addr">> := Addr, <<"di">> := Di, <<"value">> := Value} ->
+                            DevAddr = dgiot_utils:binary_to_hex(Addr),
+                            dgiot_meter:send_mqtt(ProductId, DevAddr, Di, Value);
+                        % 抄表数据返回
+                        #{<<"productid">> := ProductId, <<"addr">> := DevAddr, <<"value">> := Value, <<"childvalues">> := ChildValues} ->
+                            Topic = dgiot_meter:send_task(ProductId, DevAddr, DtuId, Value),
+                            dgiot_bridge:send_log(ChannelId, ProductId, DevAddr, "~s ~p Dtu to task ~p ~ts ", [?FILE, ?LINE, Topic, unicode:characters_to_list(jsx:encode(Value))]),
+                            timer:sleep(1 * 1000),
+                            lists:foldl(fun(#{<<"productid">> := ChildProductId, <<"addr">> := ChildDevAddr, <<"value">> := ChildValue}, _Acc) ->
+                                ChildTopic = dgiot_meter:send_task(ChildProductId, ChildDevAddr, DtuId, ChildValue),
+                                dgiot_bridge:send_log(ChannelId, ProductId, DevAddr, "~s ~p DtuChild to task ~p ~ts ", [?FILE, ?LINE, ChildTopic, unicode:characters_to_list(jsx:encode(ChildValue))]),
+                                timer:sleep(1 * 1000)
+                                        end, #{}, ChildValues);
+                        % 抄表数据返回
+                        #{<<"productid">> := ProductId, <<"addr">> := Addr, <<"value">> := Value} ->
+                            DevAddr = dgiot_utils:binary_to_hex(Addr),
+                            Topic = dgiot_meter:send_task(ProductId, DevAddr, DtuId, Value),
+                            dgiot_bridge:send_log(ChannelId, ProductId, DevAddr, "~s ~p Dtu to task ~p ~ts ", [?FILE, ?LINE, Topic, unicode:characters_to_list(jsx:encode(Value))]);
+                        Error ->
+                            dgiot_bridge:send_log(ChannelId, "~s ~p process_message error ~ts ", [?FILE, ?LINE, unicode:characters_to_list(jsx:encode(Error))]),
+                            pass
+                    end
             end,
             {noreply, TCPState#tcp{buff = Rest}};
         ?DLT645 ->
             dgiot_bridge:send_log(ChannelId, "~s ~p DLT645 dev recv ~p ", [?FILE, ?LINE, dgiot_utils:binary_to_hex(Buff)]),
 %%            io:format("~s ~p Buff = ~p.~n", [?FILE, ?LINE, dgiot_utils:binary_to_hex(Buff)]),
             {Rest, Frames} = dgiot_meter:parse_frame(?DLT645, Buff, []),
-            dlt645_decoder:process_message(Frames, ChannelId),
+            case dlt645_decoder:process_message(Frames, ChannelId) of
+                % 拉闸，返回
+                #{<<"productid">> := ProductId, <<"addr">> := Addr, <<"di">> := Di, <<"value">> := Value} ->
+                    DevAddr = dgiot_utils:binary_to_hex(Addr),
+                    dgiot_meter:send_mqtt(ProductId, DevAddr, Di, Value);
+                % 抄表数据返回
+                #{<<"productid">> := ProductId, <<"addr">> := Addr, <<"value">> := Value} ->
+                    DevAddr = dgiot_utils:binary_to_hex(Addr),
+                    Topic = dgiot_meter:send_task(ProductId, DevAddr, DtuId, Value),
+                    dgiot_bridge:send_log(ChannelId, ProductId, DevAddr, "~s ~p to task ~p ~ts ", [?FILE, ?LINE, Topic, unicode:characters_to_list(jsx:encode(Value))]);
+                Error ->
+                    dgiot_bridge:send_log(ChannelId, "~s ~p process_message error ~ts ", [?FILE, ?LINE, unicode:characters_to_list(jsx:encode(Error))]),
+                    pass
+            end,
             {noreply, TCPState#tcp{buff = Rest}};
         _ ->
             {noreply, TCPState#tcp{buff = <<0, 0, 0, 0, 0, 0, 0, 0>>}}
@@ -269,8 +305,15 @@ handle_call(_Msg, _From, TCPState) ->
 handle_cast(_Msg, TCPState) ->
     {noreply, TCPState}.
 
-terminate(_Reason, _TCPState) ->
+terminate(_Reason, #tcp{state = #state{dtuaddr = DtuAddr, product = ProductId}} = _TCPState) ->
     dgiot_metrics:dec(dgiot_meter, <<"dtu_online">>, 1),
+    DeviceId = dgiot_parse_id:get_deviceid(ProductId, DtuAddr),
+    Taskchannel = dgiot_product:get_taskchannel(ProductId),
+    dgiot_task:del_pnque(DeviceId),
+    dgiot_client:stop(Taskchannel, DeviceId),
+    ok;
+
+terminate(_Reason, _TCPState) ->
     ok.
 
 code_change(_OldVsn, TCPState, _Extra) ->
