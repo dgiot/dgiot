@@ -48,7 +48,7 @@ init([#{<<"channel">> := ChannelId, <<"client">> := ClientId, <<"starttime">> :=
     NextTime = dgiot_client:get_nexttime(StartTime, Freq),
     Count = dgiot_client:get_count(StartTime, EndTime, Freq),
     Rand =
-        case maps:get(<<"rand">>,Args, true) of
+        case maps:get(<<"rand">>, Args, true) of
             true ->
                 dgiot_client:get_rand(Freq);
             _ ->
@@ -136,20 +136,17 @@ send_msg(#dclient{userdata = #device_task{dique = DisQue}} = State) when length(
     get_next_pn(State);
 
 %% 发送指令集
-send_msg(#dclient{channel = Channel, userdata = #device_task{product = Product, devaddr = DevAddr, dique = DisQue} = UserData} = State) ->
-    {InstructOrder, Interval, _Identifier, _AccessMode, _Data, _NewDataSource} = lists:nth(1, DisQue),
+send_msg(#dclient{channel = ChannelId, userdata = #device_task{product = Product, devaddr = DevAddr, dique = DisQue} = UserData} = State) ->
+    {InstructOrder, Interval, _Identifier, _NewDataSource} = lists:nth(1, DisQue),
     {NewCount, _Payload, _Dis} =
         lists:foldl(fun(X, {Count, Acc, Acc1}) ->
             case X of
-                {InstructOrder, _, _, _, error, _} ->
-                    {Count + 1, Acc, Acc1};
-                {InstructOrder, _, Identifier1, _AccessMode, NewData, DataSource} ->
-                    Payload1 = DataSource#{<<"data">> => NewData},
-%%                    io:format("~s ~p Payload1 = ~p.~n", [?FILE, ?LINE, Payload1]),
+                {InstructOrder, _, Identifier1, DataSource} ->
                     Topic = <<"$dg/device/", Product/binary, "/", DevAddr/binary, "/properties">>,
-                    dgiot_mqtt:publish(Channel, Topic, jsx:encode(Payload1)),
-                    dgiot_bridge:send_log(Channel, Product, DevAddr, "~s ~p to dev => ~ts: ~ts", [?FILE, ?LINE, unicode:characters_to_list(Topic), unicode:characters_to_list(jsx:encode(Payload1))]),
-                    {Count + 1, Acc ++ [Payload1], Acc1 ++ [Identifier1]};
+%%                    io:format("~s ~p DataSource = ~p.~n", [?FILE, ?LINE, DataSource]),
+                    dgiot_mqtt:publish(dgiot_utils:to_binary(ChannelId), Topic, jsx:encode(DataSource)),
+                    dgiot_bridge:send_log(dgiot_utils:to_binary(ChannelId), Product, DevAddr, "~s ~p to dev => ~ts: ~ts", [?FILE, ?LINE, unicode:characters_to_list(Topic), unicode:characters_to_list(jsx:encode(DataSource))]),
+                    {Count + 1, Acc ++ [DataSource], Acc1 ++ [Identifier1]};
                 _ ->
                     {Count, Acc, Acc1}
             end
@@ -159,19 +156,15 @@ send_msg(#dclient{channel = Channel, userdata = #device_task{product = Product, 
     erlang:send_after(Interval * 1000, self(), read),
     State#dclient{userdata = UserData#device_task{dique = NewDisQue, interval = Interval}}.
 
-get_next_pn(#dclient{client = CLient, clock = #dclock{round = Round}, userdata = UserData} = State) ->
+get_next_pn(#dclient{client = CLient, clock = #dclock{round = Round}, userdata = #device_task{product = ProductId, devaddr = DevAddr} = UserData} = State) ->
     case dgiot_task:get_pnque(CLient) of
         not_find ->
             State;
+        {ProductId, DevAddr} ->
+            State;
         {NextProductId, NextDevAddr} ->
-            NextDeviceId = dgiot_parse_id:get_deviceid(NextProductId, NextDevAddr),
-            case NextDeviceId of
-                CLient ->
-                    State;
-                _ ->
-                    DisQue = dgiot_task:get_instruct(NextProductId, Round),
-                    NewState = State#dclient{client = NextDeviceId, userdata = UserData#device_task{product = NextProductId, devaddr = NextDevAddr, dique = DisQue}},
-                    send_msg(NewState)
-            end
+            DisQue = dgiot_task:get_instruct(NextProductId, Round),
+            NewState = State#dclient{userdata = UserData#device_task{product = NextProductId, devaddr = NextDevAddr, dique = DisQue}},
+            send_msg(NewState)
     end.
 

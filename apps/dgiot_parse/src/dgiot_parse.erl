@@ -68,7 +68,7 @@
     request/5,
     get_token/1,
     get_qs/1,
-    update/0
+    update/1
 ]).
 
 -export([
@@ -93,9 +93,9 @@ get_schemas_json() ->
 
 %%   dgiot_parse:update_schemas(Fields).
 update_schemas_json() ->
-    io:format("~s ~p ~p~n", [?FILE, ?LINE, <<"update_schemas_json start">>]),
+%%    io:format("~s ~p ~p~n", [?FILE, ?LINE, <<"update_schemas_json start">>]),
     %%    API更新
-    os:cmd("curl 127.0.0.1:5080/install/rule"),
+    dgiot_install:generate_rule([{<<"webname">>, #{name => dgiot_apihub}}]),
     %%    物模型更新
     dgiot_product:update_properties(),
     %%    表字段更新
@@ -110,11 +110,29 @@ update_schemas_json() ->
                   end, #{}, Fields)
                 end, #{}, Schemas).
 
-update() ->
-    %%    发通知异步调用更新
-    ChannelId = dgiot_parse_id:get_channelid(dgiot_utils:to_binary(?BACKEND_CHL), <<"DEVICE">>, <<"Device缓存通道"/utf8>>),
-    dgiot_channelx:do_message(ChannelId, {update_schemas_json}),
-    ok.
+update(SessionToken) ->
+    case dgiot_auth:get_session(SessionToken) of
+        #{<<"roles">> := Roles} ->
+            Flag =
+                maps:fold(
+                    fun
+                        (_RoleId, #{<<"level">> := Level}, _Acc1) when Level < 3 ->
+                            %%    发通知异步调用更新
+                            ChannelId = dgiot_parse_id:get_channelid(dgiot_utils:to_binary(?BACKEND_CHL), <<"DEVICE">>, <<"Device缓存通道"/utf8>>),
+                            dgiot_channelx:do_message(ChannelId, {update_schemas_json}),
+                            true;
+                        (_, _, _) ->
+                            false
+                    end, false, Roles),
+            case Flag of
+                true ->
+                    {ok, #{<<"msg">> => <<"success">>}};
+                _ ->
+                    {ok, #{<<"code">> => 201, <<"msg">> => <<"请使用开发者账号"/utf8>>}}
+            end;
+        _ ->
+            {ok, #{<<"code">> => 201, <<"msg">> => <<"请使用开发者账号"/utf8>>}}
+    end.
 
 health() ->
     health(?DEFAULT).

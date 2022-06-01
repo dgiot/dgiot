@@ -150,7 +150,7 @@ handle_call(_Msg, _From, TCPState) ->
 handle_cast(_Msg, TCPState) ->
     {noreply, TCPState}.
 
-terminate(_Reason, #tcp{state = #state{devaddr = DtuAddr, env = #{product := ProductId}}} = _TCPState) ->
+terminate(_Reason, #tcp{state = #state{devaddr = DtuAddr, product = ProductId}} = _TCPState) ->
     DeviceId = dgiot_parse_id:get_deviceid(ProductId, DtuAddr),
     Taskchannel = dgiot_product:get_taskchannel(ProductId),
     dgiot_task:del_pnque(DeviceId),

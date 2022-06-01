@@ -14,11 +14,19 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
--author("johnliu").
--define(TYPE, <<"INSTRUCT">>).
--define(DGIOT_TASK, dgiot_task).
--define(DGIOT_PNQUE, dgiot_pnque).
--define(DGIOT_DATA_CACHE, dgiot_data_cache).
--define(TASK_NAME(Name), dgiot_utils:to_atom(lists:concat([dgiot_utils:to_atom(Name), "task"]))).
--define(TASK_SUP(Name), dgiot_utils:to_atom(lists:concat(["dgiot_task_sup", dgiot_utils:to_atom(Name)]))).
--define(DGIOT_DATASOURCE, dgiot_datasource).
+-module(http_client_sup).
+
+-behaviour(supervisor).
+
+-export([start_link/1, init/1]).
+
+start_link(Name) ->
+    supervisor:start_link({local, Name}, ?MODULE, []).
+
+init([]) ->
+    ChildSpec = [dgiot:child_spec(dgiot_http_client, worker)],
+    {ok, {{simple_one_for_one, 5, 10}, ChildSpec}}.
+
+
+
+

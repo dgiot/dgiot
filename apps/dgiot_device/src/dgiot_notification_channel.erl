@@ -113,7 +113,7 @@ handle_message({rule, #{clientid := _DevAddr, connected_at := _ConnectedAt} = _M
 handle_message({rule, #{clientid := _DevAddr, disconnected_at := _DisconnectedAt} = _Msg, _Context}, State) ->
     {ok, State};
 
-%% SELECT payload.electricity as electricity FROM  "$dg/alarm/94656917ab/157d0ff60f/#" where electricity  >  20
+%% SELECT payload.electricity as electricity FROM  "$dg/user/alarm/94656917ab/157d0ff60f/#" where electricity  >  20
 handle_message({rule, #{metadata := #{rule_id := <<"rule:Notification_", Ruleid/binary>>}, clientid := DeviceId, payload := _Payload, topic := _Topic} = _Msg, Context}, State) ->
     dgiot_umeng:add_notification(Ruleid, DeviceId, Context),
     {ok, State};

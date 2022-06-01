@@ -141,5 +141,5 @@ do_task(_Task, _State) ->
     ok.
 
 send(DashboardId, Base64) ->
-    Topic = <<"$dg/dashboard/", DashboardId/binary, "/report">>,
+    Topic = <<"$dg/user/dashboard/", DashboardId/binary, "/report">>,
     dgiot_mqtt:publish(self(), Topic, Base64).
