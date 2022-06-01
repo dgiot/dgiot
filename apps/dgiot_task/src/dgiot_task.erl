@@ -19,7 +19,7 @@
 -include_lib("dgiot/include/logger.hrl").
 -include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
 
--export([start/1, start/2, send/3, get_pnque_len/1, save_pnque/4, get_pnque/1, del_pnque/1, save_td/4]).
+-export([start/1, start/2, send/3, get_pnque_len/1, save_pnque/4, get_pnque/1, del_pnque/1, save_td/4, merge_cache_data/3, save_cache_data/2]).
 -export([get_control/3, get_collection/4, get_calculated/2, get_instruct/2, string2value/2, string2value/3]).
 
 start(ChannelId) ->
@@ -293,11 +293,13 @@ save_td(ProductId, DevAddr, Ack, AppData) ->
             Interval = maps:get(<<"interval">>, AppData, 3),
             AllData = merge_cache_data(DeviceId, NewData, Interval),
             AllDataKey = maps:keys(AllData),
+            Flag = Keys -- AllDataKey,
             case Keys -- AllDataKey of
                 List when length(List) == 0 andalso length(AllDataKey) =/= 0 ->
                     ChannelId = dgiot_parse_id:get_channelid(dgiot_utils:to_binary(?BRIDGE_CHL), <<"DGIOTTOPO">>, <<"TOPO组态通道"/utf8>>),
                     dgiot_channelx:do_message(ChannelId, {topo_thing, ProductId, DeviceId, AllData}),
                     dgiot_tdengine_adapter:save(ProductId, DevAddr, AllData),
+ 
                     Channel = dgiot_product:get_taskchannel(ProductId),
                     dgiot_bridge:send_log(Channel, ProductId, DevAddr, "~s ~p save td => ProductId ~p DevAddr ~p ~ts ", [?FILE, ?LINE, ProductId, DevAddr, unicode:characters_to_list(jsx:encode(AllData))]),
                     dgiot_metrics:inc(dgiot_task, <<"task_save">>, 1),
