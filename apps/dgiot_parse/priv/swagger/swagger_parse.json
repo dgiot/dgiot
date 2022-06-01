@@ -332,6 +332,7 @@
     },
     "/upgrade": {
       "get": {
+        "security": [],
         "summary": "数据库升级",
         "description": "数据库升级",
         "parameters": [],
