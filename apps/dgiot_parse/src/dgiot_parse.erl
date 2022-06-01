@@ -126,12 +126,12 @@ update(SessionToken) ->
                     end, false, Roles),
             case Flag of
                 true ->
-                    {ok, #{<<"msg">> =>  <<"数据库升级成功"/utf8>>}};
+                    {ok, #{<<"code">> => 200, <<"msg">> => <<"数据库升级成功"/utf8>>}};
                 _ ->
-                    {ok, #{<<"code">> => 201, <<"msg">> => <<"请使用开发者账号"/utf8>>}}
+                    {ok, #{<<"code">> => 200, <<"msg">> => <<"请使用开发者账号"/utf8>>}}
             end;
         _ ->
-            {ok, #{<<"code">> => 201, <<"msg">> => <<"请使用开发者账号"/utf8>>}}
+            {ok, #{<<"code">> => 200, <<"msg">> => <<"请使用开发者账号"/utf8>>}}
     end.
 
 health() ->
