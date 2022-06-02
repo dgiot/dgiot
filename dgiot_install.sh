@@ -1486,9 +1486,9 @@ dgiot_shell
 # set parameters by default value
 deployType=single                             # [single | cluster | devops | ci]
 domain_name="prod.iotn2n.com"                 # [prod.iotn2n.com | your_domain_name]
-software="dgiot_n176"                          # [dgiot_n176| dgiot_n]
+software="dgiot_n177"                          # [dgiot_n177| dgiot_n]
 plugin="dgiot"                                # [dgiot | dgiot_your_plugin]
-dgiotmd5="6ad83cd8b1e00c0551f0f911e55273e9"   # [dgiotmd5]
+dgiotmd5="b85dbf90fd67e16d5f6da2147157a6f7"   # [dgiotmd5]
 pg_eip="changeyourip"                            # [datanode_eip]
 pg_auth='changeyourpassword'                  # [pg_auth]
 
