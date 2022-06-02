@@ -86,7 +86,7 @@ compile_module(Code, Opts) ->
                     undefined ->
                         case catch from_string(Code, CompileOpts) of
                             {'EXIT', {{badmatch, {error, {Line, erl_parse, Reason}}}, _}} ->
-                                ?LOG(info,"~p~n", [Reason]),
+                                ?LOG(info, "~p~n", [Reason]),
                                 {error, [{ModuleName, [{Line, erl_parse, Reason}]}], []};
                             {failed_to_read_include_file, Reason, Filename, IncludeSearchPath} ->
                                 {error, [{ModuleName, [{Filename, ModuleName, {failed_to_read_include_file, IncludeSearchPath, Reason}}]}], []};
@@ -166,7 +166,7 @@ reload_plugin(App, Version) ->
                 {module, M} ->
                     true;
                 {error, Reason} ->
-                    ?LOG(error,"~p->~p", [M, Reason]),
+                    ?LOG(error, "~p->~p", [M, Reason]),
                     false
             end
         end,
@@ -205,7 +205,8 @@ check_module(Check, Acc0) ->
                     Acc
             end
         end,
-    lists:foldl(Fun, Acc0, application:loaded_applications()).
+    Apps = dgiot:check_dgiot_app(),
+    lists:foldl(Fun, Acc0, Apps).
 
 all_changed() ->
     [M || {M, Fn} <- code:all_loaded(), is_list(Fn), is_changed(M)].
