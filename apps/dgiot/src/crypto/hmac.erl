@@ -22,7 +22,6 @@
 
 %% Type : sha sha256
 encode(Type, Key, Data) ->
-%%    B = crypto:hmac(Type, Key, Data),
     B = crypto:mac(hmac, Type, Key, Data),
     Len = byte_size(B) * 8,
     <<Mac:Len/integer>> = B,
