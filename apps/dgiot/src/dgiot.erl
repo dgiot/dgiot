@@ -17,7 +17,7 @@
 -module(dgiot).
 -author("johnliu").
 -include("dgiot.hrl").
--export([get_env/1,get_env/2, get_env/3, init_plugins/0, child_spec/2, child_spec/3]).
+-export([get_env/1, get_env/2, get_env/3, init_plugins/0, check_dgiot_app/0, child_spec/2, child_spec/3]).
 
 %%--------------------------------------------------------------------
 %% API
@@ -35,18 +35,28 @@ get_env(App, Key, Default) ->
     application:get_env(App, Key, Default).
 
 init_plugins() ->
-   SysApp =  lists:foldl(fun(X,Acc) ->
+    SysApp = lists:foldl(fun(X, Acc) ->
         case X of
-            {Plugin,_,_} ->
+            {Plugin, _, _} ->
                 BinPlugin = dgiot_utils:to_binary(Plugin),
                 case BinPlugin of
-                    <<"dgiot_",_>> -> Acc ++ [Plugin];
+                    <<"dgiot_", _>> -> Acc ++ [Plugin];
                     _ -> Acc
                 end;
-             _ ->   Acc
+            _ -> Acc
         end
-        end,?SYS_APP,ekka_boot:all_module_attributes(dgiot_plugin)),
+                         end, ?SYS_APP, ekka_boot:all_module_attributes(dgiot_plugin)),
     dgiot_data:insert({dgiot, sys_app}, SysApp).
+
+check_dgiot_app() ->
+    lists:foldl(fun({Module, _, _} = App, Acc) ->
+        case dgiot_utils:to_binary(Module) of
+            <<"dgiot_", _/binary>> ->
+                Acc ++ [App];
+            _ ->
+                Acc
+        end
+                end, [], application:loaded_applications()).
 
 child_spec(M, Type) ->
     child_spec(M, Type, []).

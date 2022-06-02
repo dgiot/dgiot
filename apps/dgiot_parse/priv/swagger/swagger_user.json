@@ -336,9 +336,7 @@
         "responses": {
           "200": {
             "description": "Returns success",
-            "schema": {
-              "$ref": "#/definitions/_User"
-            }
+            "schema": {}
           },
           "400": {
             "description": "Bad Request"

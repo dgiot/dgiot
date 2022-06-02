@@ -143,9 +143,7 @@
           },
           "400": {
             "description": "Bad Request",
-            "schema": {
-              "$ref": "#/definitions/Error"
-            }
+            "schema": {}
           },
           "401": {
             "description": "Unauthorized"

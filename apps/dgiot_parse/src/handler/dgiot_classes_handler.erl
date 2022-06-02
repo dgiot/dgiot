@@ -24,13 +24,13 @@
 -define(RE_OPTIONS, [global, {return, binary}]).
 
 %% API
--export([get_OperationID/1, swagger_parse/0, init/2, handle/4]).
+-export([get_OperationID/1, swagger_classes/0, init/2, handle/4]).
 
 %%%===================================================================
 %%% swagger Callback
 %%%===================================================================
 
-swagger_parse() ->
+swagger_classes() ->
     S = application:get_env(dgiot_api, swagger_tables, "*"),
     Tables =
         case S == "*" orelse re:run(S, "([^\\,]+)", [global, {capture, all_but_first, binary}]) of
