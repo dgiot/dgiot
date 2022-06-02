@@ -115,6 +115,7 @@ init(?TYPE, ChannelId, Args) ->
     dgiot_parse_hook:subscribe(<<"Product">>, post, ChannelId),
     dgiot_parse_hook:subscribe(<<"Product/*">>, put, ChannelId),
     dgiot_parse_hook:subscribe(<<"Product/*">>, delete, ChannelId),
+    dgiot_parse_hook:subscribe(<<"Channel/*">>, delete, ChannelId),
     {ok, State, []}.
 
 handle_init(State) ->
@@ -159,7 +160,7 @@ handle_message({sync_parse, Pid, 'after', get, _Token, <<"Device">>, #{<<"result
     {ok, State};
 
 handle_message({sync_parse, _Pid, 'after', post, Token, <<"Device">>, QueryData}, State) ->
-    dgiot_device:post(QueryData,Token),
+    dgiot_device:post(QueryData, Token),
     {ok, State};
 
 handle_message({sync_parse, _Pid, 'after', put, _Token, <<"Device">>, QueryData}, State) ->
@@ -207,6 +208,15 @@ handle_message({sync_parse, _Pid, 'after', delete, _Token, <<"Product">>, Object
 %%    io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Pid, ObjectId]),
     dgiot_product_hook:delete('after', ObjectId),
     dgiot_product:delete(ObjectId),
+    {ok, State};
+
+handle_message({sync_parse, _Pid, 'before', delete, _Token, <<"Channel">>, ObjectId}, State) ->
+    io:format("~s ~p ~p ~n", [?FILE, ?LINE, ObjectId]),
+    case dgiot_parse:get_object(<<"Channel">>, ObjectId) of
+        {ok, #{<<"isEnable">> := true}} ->
+            dgiot_bridge:control_channel(ObjectId, <<"disable">>);
+        _ -> pass
+    end,
     {ok, State};
 
 handle_message({update_schemas_json}, State) ->
