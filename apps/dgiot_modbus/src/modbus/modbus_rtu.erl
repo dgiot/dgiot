@@ -607,6 +607,7 @@ format_value(Buff, #{<<"identifier">> := BitIdentifier,
                     IntOffset = dgiot_utils:to_int(Offset),
                     IntNum = dgiot_utils:to_int(Num),
                     IntLen = get_len(IntNum, Originaltype),
+                    IntOffsetLen = get_len(IntOffset, Originaltype),
                     Value =
                         case IntOffset of
                             0 ->
@@ -618,7 +619,7 @@ format_value(Buff, #{<<"identifier">> := BitIdentifier,
                                         V
                                 end;
                             _ ->
-                                <<_:IntOffset/binary, V:IntLen/binary, _/binary>> = Buff,
+                                <<_:IntOffsetLen/binary, V:IntLen/binary, _/binary>> = Buff,
                                 case format_value(V, X, Props) of
                                     {Value1, _Rest} ->
                                         Value1;
@@ -736,34 +737,34 @@ format_value(_, #{<<"identifier">> := Field}, _Props) ->
 
 %% 获取寄存器字节长度
 get_len(IntNum, <<"short16_AB">>) ->
-    IntNum * 2 * 8;
+    IntNum * 2;
 
 get_len(IntNum, <<"short16_BA">>) ->
-    IntNum * 2 * 8;
+    IntNum * 2;
 
 get_len(IntNum, <<"ushort16_AB">>) ->
-    IntNum * 2 * 8;
+    IntNum * 2;
 
 get_len(IntNum, <<"ushort16_BA">>) ->
-    IntNum * 2 * 8;
+    IntNum * 2;
 
 get_len(IntNum, <<"long32_ABCD">>) ->
-    IntNum * 4 * 8;
+    IntNum * 4;
 
 get_len(IntNum, <<"long32_CDAB">>) ->
-    IntNum * 4 * 8;
+    IntNum * 4;
 
 get_len(IntNum, <<"ulong32_ABCD">>) ->
-    IntNum * 4 * 8;
+    IntNum * 4;
 
 get_len(IntNum, <<"ulong32_CDAB">>) ->
-    IntNum * 4 * 8;
+    IntNum * 4;
 
 get_len(IntNum, <<"float32_ABCD">>) ->
-    IntNum * 4 * 8;
+    IntNum * 4;
 
 get_len(IntNum, <<"float32_CDAB">>) ->
-    IntNum * 4 * 8;
+    IntNum * 4;
 
 get_len(IntNum, _Originaltype) ->
-    IntNum * 2 * 8.
+    IntNum * 2.
