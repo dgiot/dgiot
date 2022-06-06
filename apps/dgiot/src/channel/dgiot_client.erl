@@ -22,7 +22,7 @@
 
 %% API
 -export([register/3, unregister/1, start_link/2, add_clock/3, notify/3, add/2, set_consumer/2, get_consumer/1]).
--export([start/2, start/3, stop/1, stop/2, stop/3, restart/2, get/2, send/4]).
+-export([start/2, start/3, stop/1, stop/2, stop/3, restart/2, get/2, send/4, count/1]).
 -export([get_time/1, get_nexttime/2, get_count/3, get_rand/1]).
 -export([get_que/2, save_que/3, start_que/1, get_pnque_len/2, save_pnque/5, get_pnque/2, del_pnque/2, start_pnque/2]).
 -type(result() :: any()).   %% todo 目前只做参数检查，不做结果检查
@@ -278,6 +278,18 @@ start_link(Module, #{<<"channel">> := ChannelId, <<"client">> := Client} = State
             gen_server:start_link(Module, [State], [])
     end.
 
+%% @doc 该通道下客户端数量
+-spec count(atom() | binary()) -> result().
+count(ChannelId) when is_binary(ChannelId) ->
+    count(binary_to_atom(ChannelId));
+count(ChannelId) ->
+    case ets:info(ChannelId) of
+        undefined ->
+            0;
+        Info ->
+            proplists:get_value(size,Info)
+    end.
+
 %% @doc 做一下全局的错峰处理
 -spec get_rand(non_neg_integer()) -> non_neg_integer().
 get_rand(Freq) ->
@@ -303,16 +315,14 @@ get_nexttime(NextTime, Freq) ->
     get_nexttime(NowTime, Freq, NextTime).
 
 get_nexttime(NowTime, Freq, NextTime) when (NextTime =< NowTime) ->
-    erlang:send_after(1, self(), next_time),
-    NowTime + Freq;
+    RetryTime = (NowTime - NextTime) rem Freq,
+    erlang:send_after(RetryTime * 1000, self(), next_time),
+    NowTime + RetryTime + Freq;
 
-get_nexttime(NowTime, Freq, NextTime) when (NextTime > NowTime) ->
+get_nexttime(NowTime, Freq, NextTime)  ->
     RetryTime = NextTime - NowTime,
     erlang:send_after(RetryTime * 1000, self(), next_time),
-    NextTime + Freq;
-
-get_nexttime(NowTime, Freq, NextTime) ->
-    get_nexttime(NowTime, Freq, NextTime).
+    NextTime + Freq.
 
 %% @doc 设置消费组大小
 -spec set_consumer(binary() | atom(), integer()) -> result().

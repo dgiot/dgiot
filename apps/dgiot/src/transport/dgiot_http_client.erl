@@ -23,7 +23,7 @@
 -define(HTTPOption(Option), [{timeout, 60000}, {connect_timeout, 60000}] ++ Option).
 -define(REQUESTOption(Option), [{body_format, binary} | Option]).
 -define(HEAD_CFG, [{"content-length", del}, {"referer", del}, {"user-agent", "dgiot"}]).
--record(connect_state, {mod, freq = 30, count = 10}).
+-record(connect_state, {mod}).
 
 %% gen_server callbacks
 -export([
@@ -45,11 +45,11 @@
 -export([
     send/2,
     send/4,
+    get/2,
     get/3,
     post/3,
     post/4,
-    set_uri/2,
-    format_json/1
+    set_uri/2
 ]).
 
 
@@ -57,11 +57,12 @@ start_link(Args) ->
     dgiot_client:start_link(?MODULE, Args).
 
 init([#{<<"channel">> := ChannelId, <<"client">> := ClientId, <<"mod">> := Mod} = Args]) ->
-    set_uri(ChannelId, maps:with([<<"proctol">>, <<"ip">>, <<"port">>], Args)),
-    UserData = #connect_state{mod = Mod, freq = 30, count = 300},
+%%    io:format("~s ~p  Args ~p ~n", [?FILE, ?LINE, Args]),
+    set_uri(dgiot_utils:to_binary(ChannelId), maps:with([<<"proctol">>, <<"host">>, <<"ip">>, <<"port">>], Args)),
+    UserData = #connect_state{mod = Mod},
     ChildState = maps:get(<<"child">>, Args, #{}),
-    StartTime = dgiot_client:get_time(maps:get(<<"starttime">>, Args, dgiot_datetime:now_secs())),
-    EndTime = dgiot_client:get_time(maps:get(<<"endtime">>, Args, dgiot_datetime:now_secs() + 1000000000)),
+    StartTime = dgiot_client:get_time(maps:get(<<"starttime">>, Args,  dgiot_datetime:now_secs())),
+    EndTime = dgiot_client:get_time(maps:get(<<"endtime">>, Args,  dgiot_datetime:now_secs() + 1000000000)),
     Freq = maps:get(<<"freq">>, Args, 30),
     NextTime = dgiot_client:get_nexttime(StartTime, Freq),
     Count = dgiot_client:get_count(StartTime, EndTime, Freq),
@@ -114,7 +115,7 @@ handle_info(start, #dclient{channel = ChannelId, client = ClientId, userdata = #
 
 %% 往http server 发送报文
 handle_info({send, Fun, Args}, #dclient{userdata = #connect_state{mod = Mod}} = Dclient) ->
-%%    io:format("~s ~p send to from ~p:~p : ~p ~n", [?FILE, ?LINE,  _Ip, _Port, dgiot_utils:to_hex(PayLoad)]),
+%%  io:format("~s ~p send to from ~p:~p : ~p ~n", [?FILE, ?LINE,  _Ip, _Port, dgiot_utils:to_hex(PayLoad)]),
     case send(Fun, Args) of
         {ok, Result1} ->
             Mod:handle_info({Fun, ok, Result1}, Dclient);
@@ -123,13 +124,12 @@ handle_info({send, Fun, Args}, #dclient{userdata = #connect_state{mod = Mod}} = 
     end,
     {noreply, Dclient, hibernate};
 
-handle_info({send, Registry,  Mod, Fun, Args}, #dclient{userdata = #connect_state{mod = Mod}} = Dclient) ->
-%%    io:format("~s ~p send to from ~p:~p : ~p ~n", [?FILE, ?LINE,  _Ip, _Port, dgiot_utils:to_hex(PayLoad)]),
-    case send(Registry, Mod, Fun, Args) of
+handle_info({send, Registry, Metrics, Fun, Args}, #dclient{userdata = #connect_state{mod = Mod}} = Dclient) ->
+    case send(Registry, Metrics, Fun, Args) of
         {ok, Result1} ->
-            Mod:handle_info({Fun, ok, Result1}, Dclient);
+            Mod:handle_info({Metrics, ok, Result1}, Dclient);
         {error, Reason} ->
-            Mod:handle_info({Fun, error, Reason}, Dclient)
+            Mod:handle_info({Metrics, error, Reason}, Dclient)
     end,
     {noreply, Dclient, hibernate};
 
@@ -152,35 +152,44 @@ code_change(OldVsn, #dclient{userdata = #connect_state{mod = Mod}} = Dclient, Ex
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
-set_uri(ChannelId, Args) ->
-    persistent_term:put({ChannelId, http_uri}, Args).
+set_uri(ChannelId, Args) when is_binary(ChannelId) andalso byte_size(ChannelId) > 20 ->
+    <<_:11/binary, Tid/binary>> = dgiot_utils:to_binary(ChannelId),
+    set_uri(dgiot_utils:to_atom(Tid), Args);
+
+set_uri(ChannelId, #{<<"ip">> := Host} = Args) ->
+    NewArgs = maps:without([<<"ip">>], Args),
+    set_uri(ChannelId, NewArgs#{<<"host">> => Host});
+set_uri(ChannelId, #{<<"host">> := Host, <<"port">> := Port} = Args) ->
+    Proctol = maps:get(<<"proctol">>, Args, <<"http">>),
+    persistent_term:put({ChannelId, http_uri}, #{<<"proctol">> => Proctol, <<"host">> => Host, <<"port">> => Port}).
 
 get_url(ChannelId, Path) ->
-    #{<<"proctol">> := Proctol, <<"ip">> := Host, <<"port">> := Port} = persistent_term:get({ChannelId, http_uri}, #{
-        <<"proctol">> => <<"http">>, <<"host">> => "127.0.0.1", <<"port">> => 5080}),
-    lists:concat([dgiot_utils:to_list(Proctol), "//", dgiot_utils:to_list(Host), ":", Port, "/", dgiot_utils:to_list(Path)]).
+    #{<<"proctol">> := Proctol, <<"host">> := Host, <<"port">> := Port} = persistent_term:get({ChannelId, http_uri}),
+    lists:concat([dgiot_utils:to_list(Proctol), "://", dgiot_utils:to_list(Host), ":", Port, "/", dgiot_utils:to_list(Path)]).
 
-send(Fun, Args)  when Fun == post orelse Fun == get ->
+send(Fun, Args) when Fun == post orelse Fun == get ->
     send(?MODULE, ?MODULE, Fun, Args).
 
 send(Registry, Metrics, Fun, Args) ->
     {Time, Result} = timer:tc(?MODULE, Fun, Args),
+%%    io:format("~s ~p  Time ~p Result ~p ~n", [?FILE, ?LINE, Time, Result]),
     MSecs = Time / 1000,
-    Metrics = dgiot_utils:to_binary(Fun),
     dgiot_metrics:inc(Registry, <<"http_count">>, 1),
     dgiot_metrics:inc(Registry, <<"http_", Metrics/binary, "_time">>, MSecs, average),
     case Result of
         {ok, Result1} ->
-            ?LOG(debug, "~p Args ~p Result1 ~p", [Metrics, Args, format_json(Result1)]),
+%%            io:format("~s ~p  ~p Args ~p Result1 ~p ~n", [?FILE, ?LINE, Metrics, Args, Result1]),
             dgiot_metrics:inc(Registry, <<"http_", Metrics/binary, "_succ">>, 1),
             dgiot_metrics:inc(Registry, <<"http_succ">>, 1),
             {ok, Result1};
         {error, Reason} ->
-            ?LOG(debug, "~p Args:~p, Reason:~p", [Metrics, Args, Reason]),
+%%            io:format("~s ~p  ~p Args ~p Reason ~p ~n", [?FILE, ?LINE, Metrics, Args, Reason]),
             dgiot_metrics:inc(Registry, <<"http_", Metrics/binary, "_fail">>, 1),
             {error, Reason}
     end.
 
+get(ChannelId, Path) ->
+    get(ChannelId, Path, []).
 get(ChannelId, Path, Header) ->
     Url = get_url(ChannelId, Path),
     request(get, {Url, Header}).
@@ -207,12 +216,12 @@ do_decode(Headers, Body) ->
     end.
 
 request(Method, Request) ->
-    case httpc:request(Method, Request, ?HTTPOption([{autoredirect, true}]), []) of
+    case httpc:request(Method, Request, ?HTTPOption([{autoredirect, true}]), ?REQUESTOption([])) of
         {ok, {{_, 200, _}, Headers, Body}} ->
             Deconde = do_decode(Headers, Body),
             case jsx:is_json(dgiot_utils:to_binary(Deconde)) of
                 true ->
-                    {ok, jsx:decode(dgiot_utils:to_binary(Deconde), [{labels, binary}, return_maps])};
+                    {ok, ?JSON_DECODE(dgiot_utils:to_binary(Deconde))};
                 _ ->
                     {ok, Deconde}
             end;
@@ -224,10 +233,3 @@ request(Method, Request) ->
             {error, Reason}
     end.
 
-format_json(Body) ->
-    case catch dgiot_json:decode(Body, [{labels, binary}, return_maps]) of
-        {'EXIT', Reason} ->
-            {error, Reason};
-        Map ->
-            {ok, Map}
-    end.
