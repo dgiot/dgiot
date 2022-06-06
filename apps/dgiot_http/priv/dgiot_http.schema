@@ -37,6 +37,17 @@
 {datatype, string}
 ]}.
 
+{mapping, "tencent_sms.tmplid", "dgiot_http.tencent_sms_tmplid", [
+{default, "340847"},
+{datatype, string}
+]}.
+
+{mapping, "tencent_sms.sign", "dgiot_http.tencent_sms_sign", [
+{default, "dgiot"},
+{datatype, string}
+]}.
+
+
 
 %%--------------------------------------------------------------------
 %% 百度地图配置

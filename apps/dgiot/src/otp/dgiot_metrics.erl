@@ -106,8 +106,10 @@ histogram_reset(Registry, Name, LabelValues) ->
 inc(Registry, Name, Value) ->
     {ok, Count} =
         case dgiot_data:lookup({Name, Registry}) of
-            {error, not_find} -> {ok, 0};
-            {ok, Count1} -> {ok, Count1}
+            {error, not_find} ->
+                {ok, 0};
+            {ok, Count1} ->
+                {ok, Count1}
         end,
     dgiot_data:insert({Name, Registry}, Count + Value).
 
@@ -212,7 +214,7 @@ start(Registry) ->
     start_metrics(Registry).
 
 start_metrics(Registry) ->
-   dgiot_stats:new(Registry).
+    dgiot_stats:new(Registry).
 
 init_metrics(#{name := Name, registry := Registry, labels := Labels}) ->
     case Labels of

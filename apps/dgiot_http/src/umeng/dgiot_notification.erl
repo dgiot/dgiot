@@ -41,7 +41,8 @@ send_verification_code(NationCode, Key) ->
             rand:seed(exs1024),
             Rand = 10000 + erlang:round(rand:uniform() * 10000),
             TTL = 3,
-            case dgiot_notification:send_sms(NationCode, Key, "340847", [Rand, TTL]) of
+            Tpml = dgiot:get_env(dgiot_http, tencent_sms_tmplid,""),
+            case dgiot_notification:send_sms(NationCode, Key, Tpml, [Rand, TTL]) of
                 {ok, _Ext} ->
                     dgiot_cache:set(Key, Rand, TTL * 60),
                     {ok, #{<<"expire">> => TTL * 60}};
@@ -67,19 +68,19 @@ send_sms(NationCode, Mobile, TplId, Params) ->
     send_sms(NationCode, Mobile, TplId, Params, <<>>).
 send_sms(NationCode, Mobile, TplId, Params, Ext) ->
     Random = integer_to_list(1000 + rand:uniform(1000)),
-    AppId = dgiot:get_env(tencent_sms_appid),
-    AppKey = dgiot:get_env(tencent_sms_appkey),
+    AppId = dgiot:get_env(dgiot_http, tencent_sms_appid,""),
+    AppKey = dgiot:get_env(dgiot_http, tencent_sms_appkey,""),
     BaseUrl = "https://yun.tim.qq.com/v5/tlssmssvr/sendsms?sdkappid=~s&random=~s",
     Url = io_lib:format(BaseUrl, [AppId, Random]),
     Now = dgiot_datetime:nowstamp(),
     case re:run(NationCode, <<"\\+(\\d{1,3})">>, [{capture, all, binary}]) of
         {match, [_, NationCode1]} ->
             Data = #{
-                <<"tpl_id">> => case is_binary(TplId) of true -> TplId; false -> list_to_binary(TplId) end,
+                <<"tpl_id">> => dgiot_utils:to_binary(TplId),
                 <<"ext">> => Ext,
                 <<"extend">> => <<>>,
                 <<"params">> => Params,
-                <<"sign">> => <<>>,
+                <<"sign">> => dgiot_utils:to_binary(dgiot:get_env(dgiot_http, tencent_sms_sign,"")),
                 <<"tel">> => #{
                     <<"mobile">> => case is_binary(Mobile) of true -> Mobile; false -> list_to_binary(Mobile) end,
                     <<"nationcode">> => NationCode1
