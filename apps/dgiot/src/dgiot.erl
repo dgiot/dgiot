@@ -53,6 +53,8 @@ check_dgiot_app() ->
         case dgiot_utils:to_binary(Module) of
             <<"dgiot_", _/binary>> ->
                 Acc ++ [App];
+            <<"dgiot">> ->
+                Acc ++ [App];
             _ ->
                 Acc
         end
