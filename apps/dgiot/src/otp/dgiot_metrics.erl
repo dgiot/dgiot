@@ -257,4 +257,4 @@ check_metrics() ->
                 _ -> pass
             end
         end,
-    lists:map(Fun, application:loaded_applications()).
+    lists:map(Fun, dgiot:check_dgiot_app()).
