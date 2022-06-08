@@ -14,7 +14,7 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
--module(tcp_client_sup).
+-module(device_client_sup).
 
 -behaviour(supervisor).
 
@@ -24,7 +24,7 @@ start_link(Name) ->
     supervisor:start_link({local, Name}, ?MODULE, []).
 
 init([]) ->
-    ChildSpec = [dgiot:child_spec(dgiot_tcp_client, worker)],
+    ChildSpec = [dgiot:child_spec(dgiot_device_client, worker)],
     {ok, {{simple_one_for_one, 5, 10}, ChildSpec}}.
 
 

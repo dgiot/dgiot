@@ -64,21 +64,12 @@ init([#{<<"channel">> := ChannelId, <<"client">> := ClientId, <<"mod">> := Mod} 
     StartTime = dgiot_client:get_time(maps:get(<<"starttime">>, Args,  dgiot_datetime:now_secs())),
     EndTime = dgiot_client:get_time(maps:get(<<"endtime">>, Args,  dgiot_datetime:now_secs() + 1000000000)),
     Freq = maps:get(<<"freq">>, Args, 30),
-    NextTime = dgiot_client:get_nexttime(StartTime, Freq),
     Count = dgiot_client:get_count(StartTime, EndTime, Freq),
-    Rand =
-        case maps:get(<<"rand">>, Args, true) of
-            true -> 0;
-            _ -> dgiot_client:get_rand(Freq)
-        end,
-    Clock = #dclock{freq = Freq, nexttime = NextTime + Rand, count = Count, round = 0},
+    Clock = #dclock{freq = Freq, nexttime = StartTime, count = Count, round = 0},
     Dclient = #dclient{channel = ChannelId, client = ClientId, status = ?DCLIENT_INTIALIZED, clock = Clock, userdata = UserData, child = ChildState},
     dgiot_client:add(ChannelId, ClientId),
     case Mod:init(Dclient) of
         {ok, NewDclient} ->
-            rand:seed(exs1024),
-            Time = erlang:round(rand:uniform() * 60 * 3 + 1) * 1000,
-            erlang:send_after(Time, self(), login),
             {ok, NewDclient, hibernate};
         {stop, Reason} ->
             {stop, Reason}
@@ -102,16 +93,6 @@ handle_cast(Msg, #dclient{channel = ChannelId, client = ClientId,
             dgiot_client:stop(ChannelId, ClientId),
             {reply, Reason, NewDclient}
     end.
-
-handle_info(start, #dclient{channel = ChannelId, client = ClientId, userdata = #connect_state{mod = Mod}} = Dclient) ->
-    case Mod:handle_info(start, Dclient) of
-        {noreply, NewDclient} ->
-            {noreply, NewDclient, hibernate};
-        {stop, _Reason, NewDclient} ->
-            timer:sleep(10),
-            dgiot_client:stop(ChannelId, ClientId),
-            {noreply, NewDclient, hibernate}
-    end;
 
 %% 往http server 发送报文
 handle_info({send, Fun, Args}, #dclient{userdata = #connect_state{mod = Mod}} = Dclient) ->
