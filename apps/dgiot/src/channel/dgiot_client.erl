@@ -109,7 +109,7 @@ start_pnque(ChannelId, ClinetId) ->
                         DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
                         %% io:format("~s ~p ChannelId ~p, Type ~p , ClinetId ~p ~n",[?FILE, ?LINE, ChannelId, Type, ClinetId]),
                         dgiot_client:start(<<ProductId/binary, "_", ChannelId/binary>>, DeviceId,
-                            #{<<"productid">> => ProductId, <<"devaddr">> => DevAddr, <<"dtuid">> => ClinetId});
+                            #{<<"child">> => #{<<"productid">> => ProductId, <<"devaddr">> => DevAddr, <<"dtuid">> => ClinetId}});
                     (_) ->
                         pass
                 end, PnQue)
