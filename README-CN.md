@@ -19,7 +19,7 @@ DG-IoT是国内首款轻量级开源工业物联网平台，我们致力于提�
 ## 快速体验与微信群
 | 微信技术支持群 | [QQ技术支持群](https://jq.qq.com/?_wv=1027&k=LipWZvDe)   | 小程序体验 |电脑端https://prod.iotn2n.com|
 |:---:|:---:|:---:|:---:|
-|![image](https://user-images.githubusercontent.com/51999461/169738911-bb4b3511-27b1-4dd2-a87a-0139e9e31b59.png)|<img src="http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/QQ%E6%8A%80%E6%9C%AF%E7%BE%A4%E4%BA%8C%E7%BB%B4%E7%A0%81.png" width = "60%" /> |<img src="http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_release/dgiot_wechat.jpg" width = "60%" />|运维账号：dgiot_admin  </br>  密码: dgiot_admin  </br> </br>开发账号: dgiot_dev  </br>  密码: dgiot_dev |
+|![image](https://user-images.githubusercontent.com/51999461/172523982-c3179a1d-aa1a-46b0-b614-1e347cbab33f.png)|<img src="http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/QQ%E6%8A%80%E6%9C%AF%E7%BE%A4%E4%BA%8C%E7%BB%B4%E7%A0%81.png" width = "60%" /> |<img src="http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_release/dgiot_wechat.jpg" width = "60%" />|运维账号：dgiot_admin  </br>  密码: dgiot_admin  </br> </br>开发账号: dgiot_dev  </br>  密码: dgiot_dev |
 
 
 ## 核心特色
