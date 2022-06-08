@@ -139,7 +139,7 @@ handle_message(check, #state{env = #{<<"offline">> := OffLine, <<"checktime">> :
 
 
 handle_message({sync_parse, Pid, 'after', get, _Token, <<"Device">>, #{<<"results">> := Results} = ResBody}, State) ->
-%%    io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Pid,Header]),
+%%    io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Pid,Results]),
     NewResults = lists:foldl(fun(#{<<"objectId">> := DeviceId} = Device, Acc) ->
         case dgiot_device:lookup(DeviceId) of
             {ok, #{<<"status">> := Status, <<"isEnable">> := IsEnable, <<"longitude">> := Longitude, <<"latitude">> := Latitude, <<"time">> := Time}} ->

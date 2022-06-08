@@ -101,29 +101,30 @@ post(Device) ->
     IsEnable = maps:get(<<"isEnable">>, Device, false),
     insert_mnesia(DeviceId, dgiot_role:get_acls(Device), Status, dgiot_datetime:now_secs(), IsEnable, ProductId, Devaddr, DeviceSecret, node(), Longitude, Latitude).
 
+post(#{<<"ACL">> := _Acl} = Device, _SessionToken) ->
+    dgiot_device_cache:post(Device);
+
 post(Device, SessionToken) ->
     Devaddr = maps:get(<<"devaddr">>, Device),
     Product = maps:get(<<"product">>, Device),
     ProductId = maps:get(<<"objectId">>, Product),
     DeviceId = maps:get(<<"objectId">>, Device, dgiot_parse_id:get_deviceid(ProductId, Devaddr)),
-    ACL = maps:get(<<"ACL">>, Product, #{}),
-    DefaultAcl = #{<<"*">> => #{<<"read">> => true}, <<"role:admin">> => #{<<"read">> => true, <<"write">> => true}},
-    SetAcl = case dgiot_auth:get_session(dgiot_utils:to_binary(SessionToken)) of
-                 #{<<"roles">> := Roles} = _User ->
-                     [#{<<"name">> := Role} | _] = maps:values(Roles),
-                     GetAcl = ACL#{
-                         <<"role:", Role/binary>> => #{
-                             <<"read">> => true,
-                             <<"write">> => true
-                         }
-                     },
-                     GetAcl;
-                 Err ->
-                     io:format("~s ~p R = ~p.~n", [?FILE, ?LINE, Err]),
-                     DefaultAcl
-             end,
+    SetAcl =
+        case dgiot_auth:get_session(dgiot_utils:to_binary(SessionToken)) of
+            #{<<"roles">> := Roles} = _User ->
+                [#{<<"name">> := Role} | _] = maps:values(Roles),
+                #{
+                    <<"role:", Role/binary>> => #{
+                        <<"read">> => true,
+                        <<"write">> => true
+                    }
+                };
+            Err ->
+                ?LOG(error, "~s ~p DeviceId ~p  Err = ~p.~n", [?FILE, ?LINE, DeviceId, Err]),
+                #{<<"role:admin">> => #{<<"read">> => true, <<"write">> => true}}
+        end,
     dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"ACL">> => SetAcl}),
-    dgiot_device_cache:post(Device).
+    dgiot_device_cache:post(Device#{<<"ACL">> => SetAcl}).
 
 put(Device) ->
     DeviceId = maps:get(<<"objectId">>, Device),
