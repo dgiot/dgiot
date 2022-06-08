@@ -52,6 +52,7 @@
     , hour_from/0
     , hour_from/1
     , timestamp/0
+    , last_month/1
 ]).
 
 -define(MS_ONE_DAY, 86400000).
@@ -230,7 +231,6 @@ to_unixtime(Time) when is_binary(Time) ->
 to_unixtime(LocalTime) ->
     localtime_to_unixtime(LocalTime).
 
-
 -spec now_microsecs() -> integer().
 now_microsecs() ->
     now_microsecs(os:timestamp()).
@@ -316,3 +316,22 @@ timestamp_to_datetime(Timestamp) ->
     calendar:universal_time_to_local_time(
         calendar:gregorian_seconds_to_datetime(Timestamp div 1000 +
             calendar:datetime_to_gregorian_seconds({{1970, 1, 1}, {0, 0, 0}}))).
+
+last_month(Count) ->
+    EndTime = dgiot_datetime:nowstamp(),
+    {{Year, Month, _Day}, {_Hour, _Minute, _Second}} = calendar:local_time(),
+    StartTime = dgiot_datetime:localtime_to_unixtime({{Year, Month, 1}, {0, 0, 0}}),
+    last_month(StartTime, EndTime, Count - 1).
+last_month(StartTime, EndTime, 0) ->
+    {StartTime, EndTime};
+last_month(StartTime, EndTime, Count) ->
+    {{Year, Month, _Day}, {_Hour, _Minute, _Second}} = dgiot_datetime:unixtime_to_localtime(StartTime),
+    {NewYear, NewMonth} =
+        case Month of
+            1 ->
+                {Year - 1, 12};
+            _ ->
+                {Year, Month - 1}
+        end,
+    NewStartTime = dgiot_datetime:localtime_to_unixtime({{NewYear, NewMonth, 1}, {0, 0, 0}}),
+    last_month(NewStartTime, EndTime, Count - 1).
