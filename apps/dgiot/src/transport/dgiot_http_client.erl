@@ -57,7 +57,7 @@ start_link(Args) ->
     dgiot_client:start_link(?MODULE, Args).
 
 init([#{<<"channel">> := ChannelId, <<"client">> := ClientId, <<"mod">> := Mod} = Args]) ->
-%%    io:format("~s ~p  Args ~p ~n", [?FILE, ?LINE, Args]),
+%%  io:format("~s ~p  Args ~p ~n", [?FILE, ?LINE, Args]),
     set_uri(dgiot_utils:to_binary(ChannelId), maps:with([<<"proctol">>, <<"host">>, <<"ip">>, <<"port">>], Args)),
     UserData = #connect_state{mod = Mod},
     ChildState = maps:get(<<"child">>, Args, #{}),

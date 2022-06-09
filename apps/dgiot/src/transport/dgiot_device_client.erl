@@ -38,17 +38,11 @@ init([#{<<"channel">> := ChannelId, <<"client">> := ClientId, <<"mod">> := Mod} 
 %%    io:format("~s ~p  Args ~p ~n", [?FILE, ?LINE, Args]),
     UserData = #connect_state{mod = Mod},
     ChildState = maps:get(<<"child">>, Args, #{}),
-    StartTime = dgiot_client:get_time(maps:get(<<"starttime">>, Args,  dgiot_datetime:now_secs())),
-    EndTime = dgiot_client:get_time(maps:get(<<"endtime">>, Args,  dgiot_datetime:now_secs() + 1000000000)),
+    StartTime = dgiot_client:get_time(maps:get(<<"starttime">>, Args, dgiot_datetime:now_secs())),
+    EndTime = dgiot_client:get_time(maps:get(<<"endtime">>, Args, dgiot_datetime:now_secs() + 1000000000)),
     Freq = maps:get(<<"freq">>, Args, 30),
-    NextTime = dgiot_client:get_nexttime(StartTime, Freq),
     Count = dgiot_client:get_count(StartTime, EndTime, Freq),
-    Rand =
-        case maps:get(<<"rand">>, Args, true) of
-            true -> 0;
-            _ -> dgiot_client:get_rand(Freq)
-        end,
-    Clock = #dclock{freq = Freq, nexttime = NextTime + Rand, count = Count, round = 0},
+    Clock = #dclock{freq = Freq, nexttime = StartTime, count = Count, round = 0},
     Dclient = #dclient{channel = ChannelId, client = ClientId, status = ?DCLIENT_INTIALIZED, clock = Clock, userdata = UserData, child = ChildState},
     dgiot_client:add(ChannelId, ClientId),
     case Mod:init(Dclient) of
