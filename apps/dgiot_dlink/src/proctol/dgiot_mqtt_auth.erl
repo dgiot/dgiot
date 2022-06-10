@@ -31,6 +31,16 @@ check(#{username := Username}, AuthResult, _)
 %%    io:format("~s ~p Username: ~p~n", [?FILE, ?LINE, Username]),
     {ok, AuthResult#{anonymous => true, auth_result => success}};
 
+check(#{username := <<"dgiot">>, password := Password}, AuthResult, _) ->
+    io:format("~s ~p Password: ~p~n", [?FILE, ?LINE, Password]),
+    SuperPwd = dgiot_utils:to_binary(dgiot:get_env(dgiot_dlink, super_pwd, <<"">>)),
+    case SuperPwd of
+        Password ->
+            {stop, AuthResult#{anonymous => false, auth_result => success}};
+        _ ->
+            {stop, AuthResult#{anonymous => false, auth_result => password_error}}
+    end;
+
 %% 当 clientid 和 password 为token 且相等的时候为用户登录
 check(#{clientid := Token, username := UserId, password := Token}, AuthResult, #{hash_type := _HashType}) ->
 %%    io:format("~s ~p UserId: ~p~n", [?FILE, ?LINE, UserId]),
