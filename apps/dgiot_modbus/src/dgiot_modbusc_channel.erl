@@ -65,7 +65,7 @@
         }
     },
     <<"file">> => #{
-        order => 2,
+        order => 3,
         type => string,
         required => true,
         default => <<"modbustcp">>,
@@ -74,6 +74,18 @@
         },
         description => #{
             zh => <<"文件名"/utf8>>
+        }
+    },
+    <<"freq">> => #{
+        order => 4,
+        type => integer,
+        required => true,
+        default => 60,
+        title => #{
+            zh => <<"采集频率/秒"/utf8>>
+        },
+        description => #{
+            zh => <<"采集频率/秒"/utf8>>
         }
     },
     <<"ico">> => #{
@@ -99,6 +111,7 @@ start(ChannelId, ChannelArgs) ->
 init(?TYPE, ChannelId, #{
     <<"ip">> := Ip,
     <<"port">> := Port,
+    <<"freq">> := Freq,
     <<"Size">> := Size
 } = Args) ->
     {FileName, MinAddr, MaxAddr} =
@@ -114,10 +127,10 @@ init(?TYPE, ChannelId, #{
         <<"ip">> => Ip,
         <<"port">> => Port,
         <<"mod">> => dgiot_modbusc_tcp,
-        <<"count">> => 3,
-        <<"freq">> => 10,
         <<"child">> => #{
             filename => FileName,
+            data => <<>>,
+            freq => Freq,
             minaddr => MinAddr,
             maxaddr => MaxAddr}},
 %%    dgiot_client:add_clock(ChannelId, Start_time, End_time),
