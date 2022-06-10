@@ -62,31 +62,30 @@ handle_info(read, #dclient{channel = ChannelId, client = ClientId, child = #{min
         },
     Data = modbus_tcp:to_frame(DataSource),
     dgiot_tcp_client:send(ChannelId, ClientId, Data),
-%%    io:format("~s ~p Send = ~p.~n", [?FILE, ?LINE, dgiot_utils:binary_to_hex(Data)]),
-    {noreply, Dclient#dclient{child = ChildState#{minaddr => MinAddr, maxaddr => Maxaddr, di => Address, data => <<>>, step => Step}}};
+    dgiot_bridge:send_log(ChannelId, "Channel sends ~p to DTU", [dgiot_utils:binary_to_hex(Data)]),
+%%    io:format("~s ~p Address = ~p.~n", [?FILE, ?LINE, Address]),
+    {noreply, Dclient#dclient{child = ChildState#{minaddr => MinAddr, maxaddr => Maxaddr, di => Address, step => Step}}};
 
 handle_info({tcp, Buff}, #dclient{channel = ChannelId,
-    child = #{minaddr := MinAddr, maxaddr := Maxaddr, di := Address, filename := FileName, data := OldData, step := Step} = ChildState} = Dclient) ->
+    child = #{freq := Freq, minaddr := MinAddr, maxaddr := Maxaddr, di := Address, filename := FileName, data := OldData, step := Step} = ChildState} = Dclient) ->
     dgiot_bridge:send_log(ChannelId, "returns [~p] to Channel", [dgiot_utils:binary_to_hex(Buff)]),
-%%    io:format("~s ~p Address = ~p.~n", [?FILE, ?LINE, Address]),
-%%    io:format("~s ~p Buff = ~p.~n", [?FILE, ?LINE, Buff]),
     Data = modbus_tcp:parse_frame(Buff),
     case Address + Step >= Maxaddr of
         true ->
             EndData = <<OldData/binary, Data/binary>>,
 %%            io:format("~s ~p EndData = ~p.~n", [?FILE, ?LINE, EndData]),
             modbus_tcp:parse_frame(FileName, EndData),
-            erlang:send_after(10 * 1000, self(), read),
+            erlang:send_after(Freq * 1000, self(), read),
             {noreply, Dclient#dclient{child = ChildState#{di => MinAddr, data => <<>>}}};
         _ ->
-            erlang:send_after(3 * 1000, self(), read),
+            erlang:send_after(1 * 1500, self(), read),
             {noreply, Dclient#dclient{child = ChildState#{di => Address + Step, data => <<OldData/binary, Data/binary>>}}}
     end;
 
-handle_info(_Info, #dclient{child = ChildState} = Dclient) ->
-    io:format("~s ~p _Info = ~p.~n", [?FILE, ?LINE, _Info]),
-    io:format("~s ~p Dclient = ~p.~n", [?FILE, ?LINE, Dclient]),
-    io:format("~s ~p ChildState = ~p.~n", [?FILE, ?LINE, ChildState]),
+handle_info(_Info, #dclient{child = _ChildState} = Dclient) ->
+%%    io:format("~s ~p _Info = ~p.~n", [?FILE, ?LINE, _Info]),
+%%    io:format("~s ~p Dclient = ~p.~n", [?FILE, ?LINE, Dclient]),
+%%    io:format("~s ~p ChildState = ~p.~n", [?FILE, ?LINE, ChildState]),
     {noreply, Dclient}.
 
 terminate(_Reason, _Dclient) ->

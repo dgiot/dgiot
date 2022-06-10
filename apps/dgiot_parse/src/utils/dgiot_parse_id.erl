@@ -244,12 +244,9 @@ get_objectid(Class, Map) ->
         <<"post_classes_notification">> ->
             get_objectid(<<"Notification">>, Map);
         <<"Notification">> ->
-            Device = case maps:get(<<"device">>, Map) of
-                         #{<<"objectId">> := DeviceId} -> DeviceId;
-                         DeviceId1 -> DeviceId1
-                     end,
+            UUID = dgiot_utils:guid(),
             Type = maps:get(<<"type">>, Map, <<"">>),
-            <<Did:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Notification", Device/binary, Type/binary>>),
+            <<Did:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Notification", Type/binary, UUID/binary>>),
             Map#{
                 <<"objectId">> => Did
             };
