@@ -169,7 +169,7 @@ get_deviceid(ProdcutId, DevAddr) ->
     DeviceId.
 
 create_device(DeviceId, ProductId, DTUMAC, DTUIP, Dtutype) ->
-    case dgiot_parse:get_object(<<"Product">>, ProductId) of
+    case dgiot_product:lookup_prod(ProductId) of
         {ok, #{<<"ACL">> := Acl, <<"devType">> := DevType}} ->
             case dgiot_parse:get_object(<<"Device">>, DeviceId) of
                 {ok, #{<<"devaddr">> := _GWAddr}} ->
