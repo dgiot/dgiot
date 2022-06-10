@@ -100,12 +100,12 @@
 %%--------------------------------------------------------------------
 %% bridge
 %%--------------------------------------------------------------------
-{mapping, "isbridge", "dgiot_http.isbridge", [
+{mapping, "dgiot_api.isbridge", "dgiot_http.isbridge", [
 {default, true},
 {datatype, {enum, [true, false]}}
 ]}.
 
-{mapping, "bridge_url", "dgiot_http.bridge_url", [
+{mapping, "dgiot_api.bridge_url", "dgiot_http.bridge_url", [
 {default, "https://prod.iotn2n.com"},
 {datatype, string}
 ]}.
