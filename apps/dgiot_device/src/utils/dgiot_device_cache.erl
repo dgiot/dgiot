@@ -294,7 +294,7 @@ sync_parse(OffLine) ->
         {_, DeviceId, V} = X,
         Now = dgiot_datetime:now_secs(),
         case V of
-            {[Acl, _, Last, IsEnable, ProductId, Devaddr, DeviceSecret, Node, Longitude, Latitude]} when (Now - Last) < 0 ->
+            ['Device', Acl, _, Last, IsEnable, ProductId, Devaddr, DeviceSecret, Node, Longitude, Latitude] when (Now - Last) < 0 ->
                 case dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"status">> => <<"ONLINE">>, <<"isEnable">> => IsEnable, <<"lastOnlineTime">> => Last}) of
                     {ok, _R} ->
                         insert_mnesia(DeviceId, Acl, true, Last, IsEnable, ProductId, Devaddr, DeviceSecret, Node, Longitude, Latitude);
@@ -302,7 +302,7 @@ sync_parse(OffLine) ->
                         pass
                 end,
                 timer:sleep(50);
-            {[Acl, true, Last, IsEnable, ProductId, Devaddr, DeviceSecret, Node, Longitude, Latitude]} when (Now - Last) > OffLine ->
+            ['Device', Acl, true, Last, IsEnable, ProductId, Devaddr, DeviceSecret, Node, Longitude, Latitude] when (Now - Last) > OffLine ->
                 case dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"status">> => <<"OFFLINE">>, <<"isEnable">> => IsEnable, <<"lastOnlineTime">> => Last}) of
                     {ok, _R} ->
                         insert_mnesia(DeviceId, Acl, false, Last, IsEnable, ProductId, Devaddr, DeviceSecret, Node, Longitude, Latitude);
@@ -310,7 +310,7 @@ sync_parse(OffLine) ->
                         pass
                 end,
                 timer:sleep(50);
-            {[Acl, false, Last, IsEnable, ProductId, Devaddr, DeviceSecret, Node, Longitude, Latitude]} when (Now - Last) < OffLine ->
+            ['Device', Acl, false, Last, IsEnable, ProductId, Devaddr, DeviceSecret, Node, Longitude, Latitude] when (Now - Last) < OffLine ->
                 case dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"status">> => <<"ONLINE">>, <<"isEnable">> => IsEnable, <<"lastOnlineTime">> => Last}) of
                     {ok, _R} ->
                         insert_mnesia(DeviceId, Acl, true, Last, IsEnable, ProductId, Devaddr, DeviceSecret, Node, Longitude, Latitude);

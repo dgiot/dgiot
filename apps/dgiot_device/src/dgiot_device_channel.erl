@@ -101,12 +101,12 @@ start(ChannelId, ChannelArgs) ->
     dgiot_channelx:add(?TYPE, ChannelId, ?MODULE, ChannelArgs).
 
 %% 通道初始化
-init(?TYPE, ChannelId, Args) ->
+init(?TYPE, ChannelId, #{<<"offline">> := OffLine} = Args) ->
     State = #state{
         id = ChannelId,
         env = Args
     },
-
+    dgiot_data:insert({device, offline}, OffLine),
     dgiot_parse_hook:subscribe(<<"Device">>, get, ChannelId),
     dgiot_parse_hook:subscribe(<<"Device">>, post, ChannelId),
     dgiot_parse_hook:subscribe(<<"Device/*">>, put, ChannelId, [<<"isEnable">>]),
@@ -118,9 +118,8 @@ init(?TYPE, ChannelId, Args) ->
     dgiot_parse_hook:subscribe(<<"Channel/*">>, delete, ChannelId),
     {ok, State, []}.
 
-handle_init(State) ->
-    erlang:send_after(5000, self(), {message, <<"_Pool">>, load}),
-    erlang:send_after(3 * 60 * 1000, self(), {message, <<"_Pool">>, check}),
+handle_init(#state{env = #{<<"checktime">> := CheckTime}} =State) ->
+    erlang:send_after(CheckTime * 60 * 1000, self(), check),
     {ok, State}.
 
 %% 通道消息处理,注意：进程池调用
@@ -128,12 +127,8 @@ handle_event(_EventId, Event, State) ->
     ?LOG(info, "Channel ~p", [Event]),
     {ok, State}.
 
-handle_message(load, #state{env = #{<<"order">> := _Order, <<"offline">> := OffLine}} = State) ->
-    dgiot_data:insert({device, offline}, OffLine),
-    {ok, State};
-
-handle_message(check, #state{env = #{<<"offline">> := OffLine, <<"checktime">> := CheckTime}} = State) ->
-    erlang:send_after(CheckTime * 60 * 1000, self(), {message, <<"_Pool">>, check}),
+handle_message(check, #state{id = ChannelId, env = #{<<"offline">> := OffLine, <<"checktime">> := CheckTime}} = State) ->
+    dgiot_channelx:send_after(CheckTime * 60 * 1000, ChannelId, check),
     dgiot_device:sync_parse(OffLine),
     {ok, State};
 
