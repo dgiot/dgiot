@@ -129,13 +129,21 @@ do_request(get_device_deviceid, #{<<"deviceid">> := DeviceId} = Args, #{<<"sessi
     end;
 
 %% TDengine 概要: 获取设备历史数据图表 描述:获取设备历史数据图表
-do_request(get_echart_deviceid, #{<<"deviceid">> := DeviceId} = Args, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
+do_request(get_echart_deviceid, #{<<"deviceid">> := DeviceId,<<"style">> := Style} = Args, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
     case dgiot_product_tdengine:get_channel(SessionToken) of
         {error, Error} -> {error, Error};
         {ok, Channel} ->
             case dgiot_parse:get_object(<<"Device">>, DeviceId) of
                 {ok, #{<<"objectId">> := DeviceId, <<"product">> := #{<<"objectId">> := ProductId}}} ->
-                    dgiot_device_echart:get_echart_data(Channel, ProductId, DeviceId, Args);
+                    case Style of
+                        <<"amis_table">> ->
+                            dgiot_device_echart:get_data_by_month(Channel, ProductId, DeviceId, Args);
+                        <<"echart_category">> ->
+                            dgiot_device_echart:get_data_by_echart_category(Channel, ProductId, DeviceId, Args);
+                        _ ->
+                            dgiot_device_echart:get_echart_data(Channel, ProductId, DeviceId, Args)
+
+                    end;
                 _ ->
                     {error, <<"not find device">>}
             end
