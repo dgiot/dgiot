@@ -318,12 +318,14 @@ timestamp_to_datetime(Timestamp) ->
             calendar:datetime_to_gregorian_seconds({{1970, 1, 1}, {0, 0, 0}}))).
 
 last_month(Count) ->
-    EndTime = dgiot_datetime:nowstamp(),
-    {{Year, Month, _Day}, {_Hour, _Minute, _Second}} = calendar:local_time(),
+    {{Year, Month, Day}, {_Hour, _Minute, _Second}} = calendar:local_time(),
+    EndTime = dgiot_datetime:localtime_to_unixtime({{Year, Month, Day}, {23, 59, 59}}),
     StartTime = dgiot_datetime:localtime_to_unixtime({{Year, Month, 1}, {0, 0, 0}}),
     last_month(StartTime, EndTime, Count - 1).
+
 last_month(StartTime, EndTime, 0) ->
     {StartTime, EndTime};
+
 last_month(StartTime, EndTime, Count) ->
     {{Year, Month, _Day}, {_Hour, _Minute, _Second}} = dgiot_datetime:unixtime_to_localtime(StartTime),
     {NewYear, NewMonth} =

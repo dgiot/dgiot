@@ -197,6 +197,27 @@
         "description": "获取当前设备数据图表，支持折线图，柱状图，饼图等",
         "parameters": [
           {
+            "in": "query",
+            "name": "style",
+            "description": "图标类型",
+            "default": "line",
+            "required": true,
+            "type": "string",
+            "enum": [
+              "amis_table",
+              "line",
+              "echart_category"
+            ]
+          },
+          {
+            "in": "query",
+            "name": "month_count",
+            "description": "月份数量",
+            "default": "1",
+            "required": false,
+            "type": "number"
+          },
+          {
             "in": "path",
             "name": "deviceid",
             "required": true,
@@ -270,7 +291,7 @@
               "last"
             ],
             "default": "last",
-            "required": true,
+            "required": false,
             "type": "string"
           }
         ],
