@@ -108,7 +108,7 @@ handle_info({connection_ready, Socket}, #dclient{userdata = #connect_state{mod =
 handle_info({send, _PayLoad}, #dclient{userdata = #connect_state{socket = undefined}} = Dclient) ->
     {noreply, Dclient, hibernate};
 handle_info({send, PayLoad}, #dclient{userdata = #connect_state{host = _Ip, port = _Port, socket = Socket}} = Dclient) ->
-%%    io:format("~s ~p send to from ~p:~p : ~p ~n", [?FILE, ?LINE,  _Ip, _Port, dgiot_utils:to_hex(PayLoad)]),
+%%    io:format("~s ~p ~p send to from ~p:~p : ~p ~n", [?FILE, ?LINE, self(), _Ip, _Port, dgiot_utils:to_hex(PayLoad)]),
     gen_tcp:send(Socket, PayLoad),
     {noreply, Dclient, hibernate};
 

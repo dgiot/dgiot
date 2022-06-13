@@ -35,7 +35,7 @@ push(StartTime, Callback) ->
 push(ID, {{Y, M, D}, {H, N, S}}, Callback) ->
     save(?DGIOT_TIMER, #{
         <<"id">> => ID,
-        <<"freq">> => 5,
+        <<"freq">> => 30,
         <<"unit">> => second,
         <<"count">> => 3,
         <<"start_time">> => {{Y, M, D}, {H, N, S}},
@@ -59,7 +59,7 @@ test() ->
             fun(I) ->
                 save(#{
                     <<"callback">> => fun(_T) ->
-                        io:format("dgiot_cron ~p ~p ~n", [I,dgiot_datetime:local_time()]), ok end,
+                        io:format("dgiot_cron ~p ~p ~n", [I, dgiot_datetime:local_time()]), ok end,
                     <<"freq">> => I,
                     <<"unit">> => second,
                     <<"id">> => I + 1000
