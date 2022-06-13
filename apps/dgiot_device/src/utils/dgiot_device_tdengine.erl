@@ -22,6 +22,7 @@
 
 -export([get_device/3, get_device/4, get_device/5]).
 -export([get_history_data/3, get_realtime_data/3]).
+-export([get_history_data2/7]).
 
 %% #{<<"keys">> => <<"last_row(*)">>, <<"limit">> => 1} 查询td最新的一条device
 get_device(ProductId, DevAddr, Query) ->
@@ -146,3 +147,15 @@ get_realtime_data(Channel, TableName, Query) ->
             end
         end).
 
+get_history_data2(Order, Channel, TableName, Interval, ProductId, StartTime, _EndTime) ->
+%%    io:format("~s ~p Order= ~p, Channel= ~p, TableName= ~p, TableName= ~p,~n Interval= ~p, ProductId= ~p, ~n StartTime= ~p, EndTime =~p. ~n",[?FILE,?LINE,Order, Channel, TableName, TableName, Interval, ProductId, StartTime, _EndTime]),
+    dgiot_tdengine:transaction(Channel,
+        fun(Context) ->
+            Database = ProductId,
+            DB = dgiot_tdengine_select:format_db(?Database(Database)),
+            BinStartTime = dgiot_utils:to_binary(StartTime),
+            Tail = <<" where createdat >= ", BinStartTime/binary,  " INTERVAL(", Interval/binary, ") ", ";">>,
+            Sql = <<"SELECT ", Order/binary, " FROM ", DB/binary, TableName/binary, Tail/binary>>,
+            ?LOG(error, "Sql ~s", [Sql]),
+            dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_query, Sql)
+        end).
