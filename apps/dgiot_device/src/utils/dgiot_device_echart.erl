@@ -36,9 +36,7 @@ get_echart_data(Channel, ProductId, DeviceId, Args) ->
                 <<"db">> => ProductId
             }) of
                 {Names, {ok, #{<<"results">> := Results}}} ->
-                    io:format("~s ~p Results = ~p ~n",[?FILE,?LINE,Results]),
                     Chartdata = get_echart(ProductId, Results, Names, Interval),
-                    io:format("~s ~p Chartdata = ~p~n",[?FILE,?LINE,Chartdata]),
                     {ok, #{<<"chartData">> => Chartdata}};
                 _ ->
                     {ok, #{<<"code">> => 400, <<"msg">> => <<"no data">>}}
@@ -46,7 +44,6 @@ get_echart_data(Channel, ProductId, DeviceId, Args) ->
     end.
 
 get_echart(ProductId, Results, Names, Interval) ->
-    io:format("~s ~p ProductId = ~p, Results = ~p, Names = ~p, Interval = ~p ~n",[?FILE,?LINE,ProductId, Results, Names, Interval]),
     Maps = dgiot_product:get_prop(ProductId),
     Units = dgiot_product:get_unit(ProductId),
     NewMaps = maps:merge(#{<<"createdat">> => <<"日期"/utf8>>}, Maps),
