@@ -19,9 +19,24 @@
 -include_lib("dgiot/include/logger.hrl").
 -include("dgiot.hrl").
 %% API
--export([compile_module/1, compile_module/2, check_module/1, check_module/2, get_changed_modules/0, get_modules/1,
-    get_modules/2, reload_module/1, reload_modules/0, reload_modules/1, reload_plugin/1, reload_plugin/2, all_changed/0,
-    applications/1, applications/0]).
+-export([
+    get_apps_home/1,
+    compile/1,
+    compile_module/1,
+    compile_module/2,
+    check_module/1,
+    check_module/2,
+    get_changed_modules/0,
+    get_modules/1,
+    get_modules/2,
+    reload_module/1,
+    reload_modules/0,
+    reload_modules/1,
+    reload_plugin/1,
+    reload_plugin/2,
+    all_changed/0,
+    applications/1,
+    applications/0]).
 
 %% dynamic_compile
 -export([load_from_string/1, load_from_string/2, from_string/1, from_string/2]).
@@ -73,6 +88,60 @@ applications([{App, Desc, Ver} | Apps], Acc, StartApps, Filter) ->
                 end,
             applications(Apps, Acc1, StartApps, Filter)
     end.
+
+compile(App) ->
+    AtomApp = dgiot_utils:to_atom(App),
+    BeamOutDir = code:lib_dir(AtomApp) ++ "/ebin/",
+    AppsHomePath1 = dgiot_utils:to_list(dgiot_plugin:get_apps_home(App)) ++ "/apps/",
+    SrcPath = lists:concat([AppsHomePath1, dgiot_utils:to_list(App) ++ "/src"]),
+    AppIncludeDir = lists:concat([AppsHomePath1, dgiot_utils:to_list(App) ++ "/include/"]),
+    CompileOpts = [
+        {i, AppIncludeDir}
+        , {i, AppsHomePath1}
+        , binary,
+        return_errors,
+        return_warnings
+    ],
+    Fun =
+        fun(SrcFile, _Acc) ->
+            needs_compile(SrcFile, BeamOutDir, CompileOpts)
+        end,
+    filelib:fold_files(SrcPath, ".erl", true, Fun, 0),
+    reload_plugin(App),
+    ok.
+
+needs_compile(AppsFile, BeamOutDir, CompileOpts) ->
+    LibFile = re:replace(dgiot_utils:to_binary(AppsFile), <<"/apps/">>, <<"/_build/emqx/lib/">>, [{return, binary}]),
+    case filelib:last_modified(dgiot_utils:to_list(AppsFile)) > filelib:last_modified(dgiot_utils:to_list(LibFile)) of
+        true ->
+            file:copy(dgiot_utils:to_list(AppsFile), dgiot_utils:to_list(LibFile)),
+            compile_file(dgiot_utils:to_list(AppsFile), dgiot_utils:to_list(BeamOutDir), CompileOpts);
+        false ->
+
+            pass
+    end.
+
+compile_file(SrcFile, BeamOutDir, CompileOpts) ->
+    case compile:file(SrcFile, CompileOpts) of
+        {error, Errors, Warnings1} ->
+            io:format("~s build failed! Errors ~p,  Warnings ~p ~n", [SrcFile, Errors, Warnings1]);
+        {ok, Module, Bin, Warnings} ->
+            filelib:ensure_dir(lists:concat([BeamOutDir, Module, ".beam"])),
+            file:write_file(lists:concat([BeamOutDir, Module, ".beam"]), Bin),
+            io:format("~s  build success!    Warnings ~p ~n", [SrcFile, Warnings])
+    end.
+
+get_apps_home(App) ->
+    [_A, _B, _C, _D, _E, _F | Rest] = lists:reverse(re:split(code:lib_dir(dgiot_utils:to_atom(App)), "/")),
+    lists:foldr(fun(X, Acc) ->
+        case byte_size(Acc) of
+            0 ->
+                X;
+            _ ->
+                <<Acc/binary, "/", X/binary>>
+        end
+                end, <<"">>, Rest).
+
 
 compile_module(Code) ->
     compile_module(Code, []).
