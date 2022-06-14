@@ -323,10 +323,12 @@ merge_cache_data(DeviceId, NewData, Interval) ->
         {OldData, Ts} ->
             case dgiot_datetime:now_secs() - Ts < Interval of
                 true ->
-                    maps:fold(fun(K, V, Acc) ->
-                        Key = dgiot_utils:to_binary(K),
-                        Acc#{Key => V}
-                              end, NewData, OldData);
+                    NewOldData =
+                        maps:fold(fun(K, V, Acc) ->
+                            Key = dgiot_utils:to_binary(K),
+                            Acc#{Key => V}
+                                  end, #{}, OldData),
+                    dgiot_map:merge(NewOldData, NewData);
                 false ->
                     save_cache_data(DeviceId, NewData),
                     NewData

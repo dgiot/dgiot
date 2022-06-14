@@ -1,3 +1,4 @@
 产品名称(必填),产品类型(必填),产品类别(必填),设备名称(必填),设备地址(必填),设备功能类型(必填),标识符(必填),功能名称(必填),寄存器地址(必填),字节长度(必填),读写类型(必填),值范围（RW信号必填）,信号单位(必填),数据类型(必填),功能码(必填),数据格式(必填),比例系数（非必填）,告警级别（非必填）
 productname,devType,category,devname,devaddr,devicetype,identifier,name,address,bytes,accessMode,min-max,unit,type,operatetype,originaltype,ratio,alarm_level
-电池组,电池,dgiot,电池组一,DC101,电池电压,DC101001,电池电压,1,4,只读,0-65535,V,FLOAT,3,float32_CDAB,1,1
+电池组,电池,dgiot,电池组一,DC101,电池电压,DC101001,电池电压,0,2,只读,0-65535,V,FLOAT,3,short16_AB,1,1
+电池组,电池,dgiot,电池组一,DC101,电池电压,DC101002,电池电流,1,2,只读,0-65535,A,FLOAT,3,short16_AB,1,1
