@@ -31,10 +31,10 @@
     cType => ?TYPE,
     type => ?PROTOCOL_CHL,
     title => #{
-        zh => <<"MQTT采集通道"/utf8>>
+        zh => <<"MQTT压测通道"/utf8>>
     },
     description => #{
-        zh => <<"MQTT采集通道"/utf8>>
+        zh => <<"MQTT压测通道"/utf8>>
     }
 }).
 %% 注册通道参数

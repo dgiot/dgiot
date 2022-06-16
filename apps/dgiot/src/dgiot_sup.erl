@@ -74,9 +74,11 @@ init([]) ->
     KernelSup = child_spec(dgiot_kernel_sup, supervisor, []),
     MnesiaSup = child_spec(dgiot_mnesia_sup, supervisor, []),
     CMSup = child_spec(dgiot_cm_sup, supervisor, []),
+    RuleSup = child_spec(dgiot_rule_engine_sup,supervisor, []),
     Childs = [KernelSup]
         ++ [MnesiaSup]
         ++ [CMSup]
+        ++ [RuleSup]
         ++ [child_spec(dgiot_dcache, worker, [?DCACHE]),
             dgiot_channelx:spec(channelx_mgr)],
 
