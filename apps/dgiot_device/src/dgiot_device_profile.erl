@@ -39,8 +39,17 @@ put('before', #{<<"id">> := DeviceId, <<"profile">> := UserProfile} = Device) ->
                     _ ->
                         <<"$dg/device/", ProductId/binary, "/", Devaddr/binary, "/profile">>
                 end,
-%%            io:format("~s ~p ProfileTopic = ~p.~n", [?FILE, ?LINE, ProfileTopic]),
-            dgiot_mqtt:publish(DeviceId, ProfileTopic, jsx:encode(UserProfile));
+            Profile = maps:get(<<"PowerOnCtrl">>,UserProfile),
+            Topic1 = <<"/$dg/thing/device/",ProductId/binary,"/",Devaddr/binary,"/","properties/publish">>,
+                    case dgiot_utils:trim_string(dgiot_utils:to_list(Profile)) of
+                        "1" ->
+                            dgiot_mqtt:publish(DeviceId, Topic1, jsx:encode(#{DeviceId => #{<<"isEnable">> => true}}));
+                        "0" ->
+                            dgiot_mqtt:publish(DeviceId, Topic1, jsx:encode(#{DeviceId => #{<<"isEnable">> => false}}));
+                        _ ->
+                            pass
+                    end,
+                dgiot_mqtt:publish(DeviceId, ProfileTopic, jsx:encode(UserProfile));
         _ ->
             pass
     end;
