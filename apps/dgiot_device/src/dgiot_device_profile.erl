@@ -19,7 +19,7 @@
 -include("dgiot_device.hrl").
 -include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
 -include_lib("dgiot/include/logger.hrl").
--export([post/2, put/2, delete/3, publish/3, publish/4]).
+-export([post/2, put/2, delete/3, publish/3, publish/4, update_profile/2]).
 
 post('before', _BeforeData) ->
     ok;
@@ -40,12 +40,11 @@ put('before', #{<<"id">> := DeviceId, <<"profile">> := UserProfile} = Device) ->
                         <<"$dg/device/", ProductId/binary, "/", Devaddr/binary, "/profile">>
                 end,
             PowerOnCtrl = maps:get(<<"PowerOnCtrl">>, UserProfile, <<>>),
-            Topic1 = <<"/$dg/thing/device/", ProductId/binary, "/", Devaddr/binary, "/", "properties/publish">>,
             case dgiot_utils:trim_string(dgiot_utils:to_list(PowerOnCtrl)) of
                 "1" ->
-                    dgiot_mqtt:publish(DeviceId, Topic1, jsx:encode(#{DeviceId => #{<<"isEnable">> => true}}));
+                    dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"isEnable">> => true});
                 "0" ->
-                    dgiot_mqtt:publish(DeviceId, Topic1, jsx:encode(#{DeviceId => #{<<"isEnable">> => false}}));
+                    dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"isEnable">> => false});
                 _ ->
                     pass
             end,
@@ -77,4 +76,14 @@ publish(ProductId, DeviceAddr, DeviceProfile, Delay) ->
             pass;
         ChannelId ->
             dgiot_channelx:do_message(ChannelId, {sync_profile, self(), ProductId, DeviceAddr, DeviceProfile, Delay})
+    end.
+
+update_profile(DeviceId, NewProfile) ->
+    case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+        {ok, Device} ->
+            OldProfile = maps:get(<<"profile">>, Device, #{}),
+            dgiot_parse:update_object(<<"Device">>, DeviceId, #{
+                <<"profile">> => dgiot_map:merge(OldProfile, NewProfile)});
+        _ ->
+            pass
     end.
