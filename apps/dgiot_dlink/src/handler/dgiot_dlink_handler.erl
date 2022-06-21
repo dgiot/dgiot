@@ -129,7 +129,6 @@ do_request(post_topic, #{<<"topic">> := Topic} = _Args, #{<<"sessionToken">> := 
 
             lists:foldl(
                 fun(X, _Acc) ->
-                    io:format("~s ~p Topic = ~p ~n",[?FILE,?LINE,X]),
                     dgiot_mqtt:subscribe(SessionToken, X),
                     []
                 end, [], Topic
