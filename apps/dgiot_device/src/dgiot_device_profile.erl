@@ -28,10 +28,9 @@ post('after', _AfterData) ->
 
 %% 配置下发
 put('before', #{<<"id">> := DeviceId, <<"profile">> := UserProfile} = Device) ->
-%%    io:format("~s ~p Device = ~p.~n", [?FILE, ?LINE, _Device]),
-    dgiot_device:save_profile(Device),
     case dgiot_device:lookup(DeviceId) of
         {ok, #{<<"devaddr">> := Devaddr, <<"productid">> := ProductId}} ->
+            dgiot_device:save_profile(Device#{<<"objectId">> => DeviceId, <<"product">> => #{<<"objectId">> => ProductId}}),
             ProfileTopic =
                 case dgiot_product:lookup_prod(ProductId) of
                     {ok, #{<<"topics">> := #{<<"device_profile">> := ToipcTempl}}} ->

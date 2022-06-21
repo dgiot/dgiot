@@ -159,7 +159,7 @@ handle_message({sync_parse, _Pid, 'after', post, Token, <<"Device">>, QueryData}
     {ok, State};
 
 handle_message({sync_parse, _Pid, 'after', put, _Token, <<"Device">>, QueryData}, State) ->
-%%    io:format("~s ~p ~p  ~p ~n", [?FILE, ?LINE, Pid, QueryData]),
+%%    io:format("~s ~p ~p  ~n", [?FILE, ?LINE, QueryData]),
     dgiot_device:put(QueryData),
     {ok, State};
 
