@@ -31,7 +31,7 @@ parse_cache_Device(_ClassName) ->
     dgiot_product:load_cache(),
     Success = fun(Page) ->
         lists:map(fun(Device) ->
-            save_profile(Device),
+%%            save_profile(Device),
             dgiot_device:save(Device)
                   end, Page)
               end,
@@ -139,8 +139,8 @@ put(Device) ->
                     {ok, <<"OFFLINE">>} -> false;
                     _ -> true
                 end,
-            Topic = <<"/$dg/thing/device/",ProductId/binary,"/",Devaddr/binary,"/","properties/publish">>,
-            dgiot_mqtt:publish(DeviceId,Topic,jsx:encode(#{DeviceId =>#{<<"status">> => NewStatus,<<"isEnable">> => NewIsEnable}})),
+            Topic = <<"$dg/user/devicestate/", DeviceId/binary, "/", "report">>,
+            dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(#{DeviceId => #{<<"isEnable">> => NewIsEnable}})),
             NewAcl =
                 case maps:find(<<"ACL">>, Device) of
                     error ->

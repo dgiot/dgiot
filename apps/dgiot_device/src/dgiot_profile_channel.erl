@@ -134,6 +134,7 @@ handle_message({sync_profile, _Pid, ProductId, DeviceAddr, DeviceProfile, Delay}
                 NewDeviceProfileValue = <<" ", BinDeviceProfileValue/binary>>,
                 case dgiot_device:get_profile(DeviceId, UserProfileKey) of
                     not_find ->
+                        dgiot_device_profile:update_profile(DeviceId, #{UserProfileKey => NewDeviceProfileValue}),
                         Count;
                     NewDeviceProfileValue ->
                         Count;
@@ -149,7 +150,7 @@ handle_message({sync_profile, _Pid, ProductId, DeviceAddr, DeviceProfile, Delay}
 %%    io:format("~s ~p ~p ~p ~p ~p ~p ~n", [?FILE, ?LINE, Pid, ProductId, DeviceAddr, Profile, Delay]),
     {ok, State};
 
-%%parse数据库里面的profile是用户想要控制设备的配置，设备的真实状态是设备上报的时候来进行比对的
+%% parse数据库里面的profile是用户想要控制设备的配置，设备的真实状态是设备上报的时候来进行比对的
 handle_message({sync_parse, _Pid, 'before', put, _Token, <<"Device">>, QueryData}, State) ->
     dgiot_device_profile:put('before', QueryData),
     {ok, State};
