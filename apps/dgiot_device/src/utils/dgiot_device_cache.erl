@@ -139,6 +139,8 @@ put(Device) ->
                     {ok, <<"OFFLINE">>} -> false;
                     _ -> true
                 end,
+            Topic = <<"/$dg/thing/device/",ProductId/binary,"/",Devaddr/binary,"/","properties/publish">>,
+            dgiot_mqtt:publish(DeviceId,Topic,jsx:encode(#{DeviceId =>#{<<"status">> => NewStatus,<<"isEnable">> => NewIsEnable}})),
             NewAcl =
                 case maps:find(<<"ACL">>, Device) of
                     error ->
