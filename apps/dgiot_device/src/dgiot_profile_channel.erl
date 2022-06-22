@@ -126,27 +126,22 @@ handle_event(_EventId, _Event, State) ->
 
 %% todo 定时自动同步，不太好判断，通过采集通道里，通过设备登录时，检查状态来进行配置同步
 handle_message({sync_profile, _Pid, ProductId, DeviceAddr, DeviceProfile, Delay}, State) ->
-%%    io:format("~s ~p ~p ~p ~p ~p ~p ~n", [?FILE, ?LINE, Pid, ProductId, DeviceAddr, Profile, Delay]),
     DeviceId = dgiot_parse_id:get_deviceid(ProductId, DeviceAddr),
     maps:fold(fun(DeviceProfileKey, UserProfileKey, Count) ->
         case maps:find(DeviceProfileKey, DeviceProfile) of
             {ok, DeviceProfileValue} ->
+                BinDeviceProfileValue = dgiot_utils:to_binary(DeviceProfileValue),
+                NewDeviceProfileValue = <<" ", BinDeviceProfileValue/binary>>,
                 case dgiot_device:get_profile(DeviceId, UserProfileKey) of
                     not_find ->
+                        dgiot_device_profile:update_profile(DeviceId, #{UserProfileKey => NewDeviceProfileValue}),
                         Count;
-                    DeviceProfileValue ->
+                    NewDeviceProfileValue ->
                         Count;
                     UserProfileValue ->
-                        NewUserProfileValue = dgiot_utils:trim_string(dgiot_utils:to_list(UserProfileValue)),
-                        NewDeviceProfileValue = dgiot_utils:trim_string(dgiot_utils:to_list(DeviceProfileValue)),
-                        case NewDeviceProfileValue of
-                            NewUserProfileValue ->
-                                RealDelay = Delay * timer:seconds(Count),
-                                erlang:send_after(RealDelay, self(), {send_profile, DeviceId, #{UserProfileKey => UserProfileValue}}),
-                                Count + 1;
-                            _ ->
-                                Count
-                        end
+                        RealDelay = Delay * timer:seconds(Count),
+                        erlang:send_after(RealDelay, self(), {send_profile, DeviceId, #{UserProfileKey => UserProfileValue}}),
+                        Count + 1
                 end;
             _ ->
                 Count
@@ -155,7 +150,7 @@ handle_message({sync_profile, _Pid, ProductId, DeviceAddr, DeviceProfile, Delay}
 %%    io:format("~s ~p ~p ~p ~p ~p ~p ~n", [?FILE, ?LINE, Pid, ProductId, DeviceAddr, Profile, Delay]),
     {ok, State};
 
-%%parse数据库里面的profile是用户想要控制设备的配置，设备的真实状态是设备上报的时候来进行比对的
+%% parse数据库里面的profile是用户想要控制设备的配置，设备的真实状态是设备上报的时候来进行比对的
 handle_message({sync_parse, _Pid, 'before', put, _Token, <<"Device">>, QueryData}, State) ->
     dgiot_device_profile:put('before', QueryData),
     {ok, State};

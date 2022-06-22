@@ -324,7 +324,7 @@ last_month(Count) ->
     last_month(StartTime, EndTime, Count - 1).
 
 last_month(StartTime, EndTime, 0) ->
-    {StartTime, EndTime};
+    {StartTime*1000, EndTime*1000};
 
 last_month(StartTime, EndTime, Count) ->
     {{Year, Month, _Day}, {_Hour, _Minute, _Second}} = dgiot_datetime:unixtime_to_localtime(StartTime),
