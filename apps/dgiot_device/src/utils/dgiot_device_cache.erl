@@ -152,8 +152,16 @@ put(Device) ->
     end.
 
 insert_mnesia(DeviceId, Acl, Status, Now, IsEnable, ProductId, Devaddr, DeviceSecret, Node, Longitude, Latitude) ->
-    Topic = <<"$dg/user/devicestate/",DeviceId/binary,"/report">>,
-    dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(#{DeviceId => #{<<"state">> =>Status, <<"isEnable">> => IsEnable}})),
+    Topic = <<"$dg/user/devicestate/", DeviceId/binary, "/report">>,
+    NewStatus =
+        case Status of
+            true ->
+                <<"ONLINE">>;
+            _ ->
+                <<"OFFLINE">>
+        end,
+    Address = dgiot_gps:get_baidu_addr(Longitude, Latitude),
+    dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(#{DeviceId => #{<<"status">> => NewStatus, <<"isEnable">> => IsEnable, <<"lastOnlineTime">> => Now, <<"address">> => Address}})),
     dgiot_mnesia:insert(DeviceId, ['Device', Acl, Status, Now, IsEnable, dgiot_utils:to_atom(ProductId), Devaddr, DeviceSecret, Node, Longitude, Latitude]).
 
 %% 缓存设备的profile配置
