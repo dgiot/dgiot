@@ -134,7 +134,7 @@ handle_message(check, #state{id = ChannelId, env = #{<<"offline">> := OffLine, <
     {ok, State};
 
 
-handle_message({sync_parse, Pid, 'after', get, _Token, <<"Device">>, #{<<"results">> := Results} = ResBody}, State) ->
+handle_message({sync_parse, Pid, 'after', get, Token, <<"Device">>, #{<<"results">> := Results} = ResBody}, State) ->
     {NewResults, DeviceList} =
         lists:foldl(
             fun(#{<<"objectId">> := DeviceId} = Device, {NewResult, Dev}) ->
@@ -153,8 +153,12 @@ handle_message({sync_parse, Pid, 'after', get, _Token, <<"Device">>, #{<<"result
                         {NewResult ++ [Device], Dev}
                 end
             end, {[], []}, Results),
-    SessionToken = dgiot_parse_auth:get_usersession(dgiot_utils:to_binary(_Token)),
-    dgiot_mqtt:subscribe_route_key(DeviceList, SessionToken, devicestate),
+    case dgiot_parse_auth:get_usersession(dgiot_utils:to_binary(Token)) of
+        not_find ->
+            pass;
+        SessionToken ->
+            dgiot_mqtt:subscribe_route_key(DeviceList, SessionToken, devicestate)
+    end,
     dgiot_parse_hook:publish(Pid, ResBody#{<<"results">> => NewResults}),
     {ok, State};
 
