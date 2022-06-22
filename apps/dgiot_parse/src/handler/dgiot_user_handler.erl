@@ -83,7 +83,14 @@ do_request(get_token, #{<<"name">> := Name} = _Body, #{<<"sessionToken">> := Ses
         <<"order">> => <<"updatedAt">>, <<"limit">> => 1,
         <<"where">> => #{<<"name">> => Name}}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
         {ok, #{<<"results">> := Results}} when length(Results) > 0 ->
-            dgiot_parse_auth:check_roles(Name);
+            Result = dgiot_parse_auth:check_roles(Name),
+            case Result of
+                {200, #{<<"access_token">> := Depart_token}} ->
+                    dgiot_parse_auth:put_usersession(#{<<Depart_token/binary>> => SessionToken}),
+                    Result;
+                _ ->
+                    Result
+            end;
         {ok, #{<<"results">> := Roles}} when length(Roles) == 0 ->
             {404, #{<<"code">> => 101, <<"error">> => <<"User not found.">>}};
         {error, Error} ->

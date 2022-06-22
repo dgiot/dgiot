@@ -135,23 +135,26 @@ handle_message(check, #state{id = ChannelId, env = #{<<"offline">> := OffLine, <
 
 
 handle_message({sync_parse, Pid, 'after', get, _Token, <<"Device">>, #{<<"results">> := Results} = ResBody}, State) ->
-%%    io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Pid,Results]),
-    NewResults = lists:foldl(fun(#{<<"objectId">> := DeviceId} = Device, Acc) ->
-        case dgiot_device:lookup(DeviceId) of
-            {ok, #{<<"status">> := Status, <<"isEnable">> := IsEnable, <<"longitude">> := Longitude, <<"latitude">> := Latitude, <<"time">> := Time}} ->
-                NewStatus =
-                    case Status of
-                        true ->
-                            <<"ONLINE">>;
-                        _ ->
-                            <<"OFFLINE">>
-                    end,
-                Location = #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => Longitude, <<"latitude">> => Latitude},
-                Acc ++ [Device#{<<"location">> => Location, <<"status">> => NewStatus, <<"isEnable">> => IsEnable, <<"lastOnlineTime">> => Time}];
-            _ ->
-                Acc ++ [Device]
-        end
-                             end, [], Results),
+    {NewResults, DeviceList} = lists:foldl(
+        fun(#{<<"objectId">> := DeviceId} = Device, Acc) ->
+            {NewResult,Dev} = Acc,
+            case dgiot_device:lookup(DeviceId) of
+                {ok, #{<<"status">> := Status, <<"isEnable">> := IsEnable, <<"longitude">> := Longitude, <<"latitude">> := Latitude, <<"time">> := Time}} ->
+                    NewStatus =
+                        case Status of
+                            true ->
+                                <<"ONLINE">>;
+                            _ ->
+                                <<"OFFLINE">>
+                        end,
+                    Location = #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => Longitude, <<"latitude">> => Latitude},
+                    {NewResult ++ [Device#{<<"location">> => Location, <<"status">> => NewStatus, <<"isEnable">> => IsEnable, <<"lastOnlineTime">> => Time}],Dev ++ [DeviceId]};
+                _ ->
+                    NewResult ++ [Device]
+            end
+        end, {[], []}, Results),
+    SessionToken = dgiot_parse_auth:get_usersession(dgiot_utils:to_binary(_Token)),
+    dgiot_mqtt:subscribe_route_key(DeviceList,SessionToken,devicestate),
     dgiot_parse_hook:publish(Pid, ResBody#{<<"results">> => NewResults}),
     {ok, State};
 
