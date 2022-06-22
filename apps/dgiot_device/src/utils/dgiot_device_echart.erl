@@ -207,9 +207,8 @@ get_keys(#{<<"thing">> := #{<<"properties">> := Properties}}, Keys) ->
         end
                 end, #{}, Properties).
 
-get_table(Results,Name_and_nuit) ->
-    Count = string:len(Results),
-    TableData = lists:foldl(fun(X, Acc) ->
+get_table(Results, Name_and_nuit) ->
+    {TableData, Count} = lists:foldl(fun(X, Acc) ->
         Res = maps:fold(fun(K, V, Init) ->
             case K of
                 <<"createdat">> ->
@@ -220,14 +219,14 @@ get_table(Results,Name_and_nuit) ->
                             Last_Key = binary:part(K, 5, byte_size(K) - 6),
                             case maps:find(<<Last_Key/binary>>, Name_and_nuit) of
                                 {ok, Map} ->
-                                    Name = maps:get(<<"name">>,Map,K),
-                                    Unit = maps:get(<<"unit">>,Map,<<"">>),
+                                    Name = maps:get(<<"name">>, Map, K),
+                                    Unit = maps:get(<<"unit">>, Map, <<"">>),
                                     K_with_unit = case V of
-                                               null -> <<"-">>;
-                                               _ ->
-                                                   NewK = dgiot_utils:to_binary(V),
-                                                   <<NewK/binary,Unit/binary>>
-                                           end,
+                                                      null -> <<"-">>;
+                                                      _ ->
+                                                          NewK = dgiot_utils:to_binary(V),
+                                                          <<NewK/binary, Unit/binary>>
+                                                  end,
                                     Init#{<<Name/binary>> => <<K_with_unit/binary>>};
                                 error ->
                                     Init#{<<K/binary>> => V}
@@ -238,13 +237,13 @@ get_table(Results,Name_and_nuit) ->
                                     Sum_Key = binary:part(K, 4, byte_size(K) - 5),
                                     case maps:find(<<Sum_Key/binary>>, Name_and_nuit) of
                                         {ok, Map} ->
-                                            Name = maps:get(<<"name">>,Map,K),
-                                            Unit = maps:get(<<"unit">>,Map,<<"">>),
+                                            Name = maps:get(<<"name">>, Map, K),
+                                            Unit = maps:get(<<"unit">>, Map, <<"">>),
                                             K_with_unit = case V of
                                                               null -> <<"-">>;
                                                               _ ->
                                                                   NewK = dgiot_utils:to_binary(V),
-                                                                  <<NewK/binary,Unit/binary>>
+                                                                  <<NewK/binary, Unit/binary>>
                                                           end,
                                             Init#{<<Name/binary>> => <<K_with_unit/binary>>};
                                         errgor ->
@@ -256,9 +255,10 @@ get_table(Results,Name_and_nuit) ->
                     end
             end
                         end, #{}, X),
-        Acc ++ [Res]
-                            end, [], Results),
-    #{<<"status">> => 0, <<"msg">> => <<"ok">>, <<"data">> => #{<<"counts">> => Count ,<<"rows">> => TableData}}.
+        {D, N} = Acc,
+        {D ++ [Res#{<<"序号"/utf8>> => N + 1}], N + 1}
+                                     end, {[], 0}, Results),
+    #{<<"status">> => 0, <<"msg">> => <<"ok">>, <<"data">> => #{<<"counts">> => Count, <<"rows">> => TableData}}.
 
 
 get_data_by_echart_category(Channel, ProductId, DeviceId, Args) ->

@@ -21,6 +21,7 @@
 %% API
 -export([
     get_apps_home/1,
+    compile/0,
     compile/1,
     compile_module/1,
     compile_module/2,
@@ -89,10 +90,32 @@ applications([{App, Desc, Ver} | Apps], Acc, StartApps, Filter) ->
             applications(Apps, Acc1, StartApps, Filter)
     end.
 
+compile() ->
+    case dgiot_data:get({compile, app}) of
+        not_find ->
+            not_find_app;
+        Apps when length(Apps) > 0 ->
+            lists:foldl(fun(App, _Acc) ->
+                io:format("~s ~p compile ~p~n", [?FILE, ?LINE, App]),
+                compile(App)
+                        end, #{}, Apps);
+        _ ->
+            not_find_app
+    end.
+
+save_app(App) ->
+    case dgiot_data:get({compile, app}) of
+        not_find ->
+            dgiot_data:insert({compile, app}, [App]);
+        OldApp ->
+            NewApp = dgiot_utils:unique_2(OldApp ++ [App]),
+            dgiot_data:insert({compile, app}, NewApp)
+    end.
+
 compile(App) ->
     AtomApp = dgiot_utils:to_atom(App),
     BeamOutDir = code:lib_dir(AtomApp) ++ "/ebin/",
-    AppsHomePath1 = dgiot_utils:to_list(dgiot_plugin:get_apps_home(App)) ++ "/apps/",
+    AppsHomePath1 = dgiot_utils:trim_string(dgiot_utils:to_list(dgiot_plugin:get_apps_home(App))) ++ "/apps/",
     SrcPath = lists:concat([AppsHomePath1, dgiot_utils:to_list(App) ++ "/src"]),
     AppIncludeDir = lists:concat([AppsHomePath1, dgiot_utils:to_list(App) ++ "/include/"]),
     CompileOpts = [
@@ -108,6 +131,7 @@ compile(App) ->
         end,
     filelib:fold_files(SrcPath, ".erl", true, Fun, 0),
     reload_plugin(App),
+    save_app(App),
     ok.
 
 needs_compile(AppsFile, BeamOutDir, CompileOpts) ->
@@ -136,7 +160,12 @@ get_apps_home(App) ->
     lists:foldr(fun(X, Acc) ->
         case byte_size(Acc) of
             0 ->
-                X;
+                case byte_size(X) of
+                    0 ->
+                        <<" ">>;
+                    _ ->
+                        X
+                end;
             _ ->
                 <<Acc/binary, "/", X/binary>>
         end
