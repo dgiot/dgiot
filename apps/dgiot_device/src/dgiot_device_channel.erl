@@ -119,7 +119,7 @@ init(?TYPE, ChannelId, #{<<"offline">> := OffLine} = Args) ->
     dgiot_parse_hook:subscribe(<<"Channel/*">>, delete, ChannelId),
     {ok, State, []}.
 
-handle_init(#state{env = #{<<"checktime">> := CheckTime}} =State) ->
+handle_init(#state{env = #{<<"checktime">> := CheckTime}} = State) ->
     erlang:send_after(CheckTime * 60 * 1000, self(), check),
     {ok, State}.
 
@@ -135,26 +135,26 @@ handle_message(check, #state{id = ChannelId, env = #{<<"offline">> := OffLine, <
 
 
 handle_message({sync_parse, Pid, 'after', get, _Token, <<"Device">>, #{<<"results">> := Results} = ResBody}, State) ->
-    {NewResults, DeviceList} = lists:foldl(
-        fun(#{<<"objectId">> := DeviceId} = Device, Acc) ->
-            {NewResult,Dev} = Acc,
-            case dgiot_device:lookup(DeviceId) of
-                {ok, #{<<"status">> := Status, <<"isEnable">> := IsEnable, <<"longitude">> := Longitude, <<"latitude">> := Latitude, <<"time">> := Time}} ->
-                    NewStatus =
-                        case Status of
-                            true ->
-                                <<"ONLINE">>;
-                            _ ->
-                                <<"OFFLINE">>
-                        end,
-                    Location = #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => Longitude, <<"latitude">> => Latitude},
-                    {NewResult ++ [Device#{<<"location">> => Location, <<"status">> => NewStatus, <<"isEnable">> => IsEnable, <<"lastOnlineTime">> => Time}],Dev ++ [DeviceId]};
-                _ ->
-                    NewResult ++ [Device]
-            end
-        end, {[], []}, Results),
+    {NewResults, DeviceList} =
+        lists:foldl(
+            fun(#{<<"objectId">> := DeviceId} = Device, {NewResult, Dev}) ->
+                case dgiot_device:lookup(DeviceId) of
+                    {ok, #{<<"status">> := Status, <<"isEnable">> := IsEnable, <<"longitude">> := Longitude, <<"latitude">> := Latitude, <<"time">> := Time}} ->
+                        NewStatus =
+                            case Status of
+                                true ->
+                                    <<"ONLINE">>;
+                                _ ->
+                                    <<"OFFLINE">>
+                            end,
+                        Location = #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => Longitude, <<"latitude">> => Latitude},
+                        {NewResult ++ [Device#{<<"location">> => Location, <<"status">> => NewStatus, <<"isEnable">> => IsEnable, <<"lastOnlineTime">> => Time}], Dev ++ [DeviceId]};
+                    _ ->
+                        {NewResult ++ [Device], Dev}
+                end
+            end, {[], []}, Results),
     SessionToken = dgiot_parse_auth:get_usersession(dgiot_utils:to_binary(_Token)),
-    dgiot_mqtt:subscribe_route_key(DeviceList,SessionToken,devicestate),
+    dgiot_mqtt:subscribe_route_key(DeviceList, SessionToken, devicestate),
     dgiot_parse_hook:publish(Pid, ResBody#{<<"results">> => NewResults}),
     {ok, State};
 
@@ -224,7 +224,7 @@ handle_message({update_schemas_json}, State) ->
     {ok, State};
 
 handle_message(Message, State) ->
-    ?LOG(info, "channel ~p", [Message]),
+    ?LOG(debug, "channel ~p", [Message]),
     {ok, State}.
 
 stop(ChannelType, ChannelId, _State) ->
