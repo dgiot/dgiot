@@ -75,22 +75,6 @@
             zh => <<"填写正则表达式匹配login报文, 9C-A5标识设备类型，**-**-**-**为设备地址,中杆会自动去除"/utf8>>
         }
     },
-    <<"modbustype">> => #{
-        order => 4,
-        type => string,
-        required => true,
-        default => #{<<"value">> => <<"modbusrtu">>, <<"label">> => <<"Modbus RTU">>},
-        enum => [
-            #{<<"value">> => <<"modbusrtu">>, <<"label">> => <<"Modbus RTU">>},
-            #{<<"value">> => <<"modbustcp">>, <<"label">> => <<"Modbus TCP">>}
-        ],
-        title => #{
-            zh => <<"Modbus种类"/utf8>>
-        },
-        description => #{
-            zh => <<"Modbus种类"/utf8>>
-        }
-    },
     <<"dtutype">> => #{
         order => 5,
         type => string,
@@ -129,7 +113,7 @@ init(?TYPE, ChannelId, #{
     <<"regular">> := Regular,
     <<"product">> := Products,
     <<"dtutype">> := Dtutype
-} = Args) ->
+} = _Args) ->
     {ProdcutId, App} =
         case get_app(Products) of
             [{ProdcutId1, App1} | _] ->
@@ -149,13 +133,7 @@ init(?TYPE, ChannelId, #{
         product = ProdcutId,
         dtutype = Dtutype
     },
-%%    dgiot_data:insert({ChannelId, heartbeat}, {Heartbeat, Port}),
-    case maps:get(<<"modbustype">>, Args, <<"modbusrtu">>) of
-        <<"modbustcp">> ->
-            {ok, State, dgiot_modbustcp_tcp:start(Port, State)};
-        _ ->
-            {ok, State, dgiot_modbusrtu_tcp:start(Port, State)}
-    end;
+    {ok, State, dgiot_modbusrtu_tcp:start(Port, State)};
 
 
 init(?TYPE, _ChannelId, _Args) ->
