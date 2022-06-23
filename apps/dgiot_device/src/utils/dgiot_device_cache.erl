@@ -84,15 +84,24 @@ post(Device) ->
     ProductId = maps:get(<<"objectId">>, Product),
     DeviceSecret = maps:get(<<"deviceSecret">>, Device, <<"oioojn">>),
     DeviceId = maps:get(<<"objectId">>, Device, dgiot_parse_id:get_deviceid(ProductId, Devaddr)),
-    case dgiot_product:lookup_prod(ProductId) of
-        {ok, ProductInfo} ->
-            Data = maps:with([<<"profile">>, <<"content">>], ProductInfo),
-            dgiot_parse:update_object(<<"Device">>, DeviceId, Data);
-        _ ->
-            pass
-    end,
+    {Data, Location, Address} =
+        case dgiot_product:lookup_prod(ProductId) of
+            {ok, ProductInfo} ->
+                Data1 = maps:with([<<"profile">>, <<"content">>], ProductInfo),
+                case maps:find(<<"config">>, #{}) of
+                    {ok, #{<<"location">> := Location1, <<"address">> := Address1}} ->
+                        {Data1, Location1, Address1};
+                    _ ->
+                        {Data1, #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => 120.065463, <<"latitude">> => 30.368707}, <<>>}
+                end;
+            _ ->
+                {#{}, #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => 120.065463, <<"latitude">> => 30.368707}, <<>>}
+        end,
+
+    dgiot_parse:update_object(<<"Device">>, DeviceId, Data#{<<"location">> => maps:get(<<"location">>, Device, Location), <<"address">> => maps:get(<<"address">>, Device, Address)}),
+
     #{<<"longitude">> := Longitude, <<"latitude">> := Latitude} =
-        maps:get(<<"location">>, Device, #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => 120.161324, <<"latitude">> => 30.262441}),
+        maps:get(<<"location">>, Device, Location),
     Status =
         case maps:get(<<"status">>, Device, <<"OFFLINE">>) of
             <<"OFFLINE">> -> false;
