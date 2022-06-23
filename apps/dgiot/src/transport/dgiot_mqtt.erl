@@ -48,6 +48,7 @@
     , get_message/2
     , subopts/0
     , subscribe_route_key/3
+    , unsubscribe_route_key/1
 ]).
 
 init_ets() ->
@@ -71,6 +72,20 @@ subscribe_route_key(DeviceList, SessionToken, Route) ->
         dgiot_mqtt:subscribe(SessionToken, Topic)
                 end, [], DeviceList),
     dgiot_data:insert(?DGIOT_ROUTE_KEY, {SessionToken, TopicKey}, DeviceList).
+
+
+unsubscribe_route_key(SessionToken) ->
+    TopicKey = devicestate,
+    case dgiot_data:get(?DGIOT_ROUTE_KEY, {SessionToken, TopicKey}) of
+        not_find ->
+            pass;
+        OldTopic ->
+            lists:foldl(fun(X, _Acc) ->
+                Topic = <<"$dg/user/devicestate/", X/binary, "/report">>,
+                dgiot_mqtt:unsubscribe(SessionToken, Topic)
+                        end, [], OldTopic)
+    end,
+    dgiot_data:delete(?DGIOT_ROUTE_KEY, {SessionToken, TopicKey}).
 
 has_routes(Topic) ->
     emqx_router:has_routes(Topic).
