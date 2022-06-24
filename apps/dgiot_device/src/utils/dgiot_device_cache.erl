@@ -84,15 +84,24 @@ post(Device) ->
     ProductId = maps:get(<<"objectId">>, Product),
     DeviceSecret = maps:get(<<"deviceSecret">>, Device, <<"oioojn">>),
     DeviceId = maps:get(<<"objectId">>, Device, dgiot_parse_id:get_deviceid(ProductId, Devaddr)),
-    case dgiot_product:lookup_prod(ProductId) of
-        {ok, ProductInfo} ->
-            Data = maps:with([<<"profile">>, <<"content">>], ProductInfo),
-            dgiot_parse:update_object(<<"Device">>, DeviceId, Data);
-        _ ->
-            pass
-    end,
+    {Data, Location, Address} =
+        case dgiot_product:lookup_prod(ProductId) of
+            {ok, ProductInfo} ->
+                Data1 = maps:with([<<"profile">>, <<"content">>], ProductInfo),
+                case maps:find(<<"config">>, #{}) of
+                    {ok, #{<<"location">> := Location1, <<"address">> := Address1}} ->
+                        {Data1, Location1, Address1};
+                    _ ->
+                        {Data1, #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => 120.065463, <<"latitude">> => 30.368707}, <<>>}
+                end;
+            _ ->
+                {#{}, #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => 120.065463, <<"latitude">> => 30.368707}, <<>>}
+        end,
+
+    dgiot_parse:update_object(<<"Device">>, DeviceId, Data#{<<"location">> => maps:get(<<"location">>, Device, Location), <<"address">> => maps:get(<<"address">>, Device, Address)}),
+
     #{<<"longitude">> := Longitude, <<"latitude">> := Latitude} =
-        maps:get(<<"location">>, Device, #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => 120.161324, <<"latitude">> => 30.262441}),
+        maps:get(<<"location">>, Device, Location),
     Status =
         case maps:get(<<"status">>, Device, <<"OFFLINE">>) of
             <<"OFFLINE">> -> false;
@@ -139,8 +148,6 @@ put(Device) ->
                     {ok, <<"OFFLINE">>} -> false;
                     _ -> true
                 end,
-            Topic = <<"$dg/user/devicestate/", DeviceId/binary, "/", "report">>,
-            dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(#{DeviceId => #{<<"isEnable">> => NewIsEnable}})),
             NewAcl =
                 case maps:find(<<"ACL">>, Device) of
                     error ->
@@ -154,6 +161,23 @@ put(Device) ->
     end.
 
 insert_mnesia(DeviceId, Acl, Status, Now, IsEnable, ProductId, Devaddr, DeviceSecret, Node, Longitude, Latitude) ->
+    Topic = <<"$dg/user/devicestate/", DeviceId/binary, "/report">>,
+    NewStatus =
+        case Status of
+            true ->
+                <<"ONLINE">>;
+            _ ->
+                <<"OFFLINE">>
+        end,
+    Address =
+        case dgiot_gps:get_baidu_addr(Longitude, Latitude) of
+            #{<<"baiduaddr">> := #{<<"formatted_address">> := FormattedAddress}} ->
+                FormattedAddress;
+            _ ->
+                <<>>
+        end,
+    dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(#{DeviceId => #{<<"status">> => NewStatus, <<"isEnable">> => IsEnable, <<"lastOnlineTime">> => Now, <<"address">> => Address, <<"longitude">> => Longitude, <<"latitude">> => Latitude}})),
+%%    io:format("~s ~p Data = ~ts~n", [?FILE, ?LINE, jsx:encode(#{DeviceId => #{<<"status">> => NewStatus, <<"isEnable">> => IsEnable, <<"lastOnlineTime">> => Now, <<"address">> => Address}})]),
     dgiot_mnesia:insert(DeviceId, ['Device', Acl, Status, Now, IsEnable, dgiot_utils:to_atom(ProductId), Devaddr, DeviceSecret, Node, Longitude, Latitude]).
 
 %% 缓存设备的profile配置
@@ -297,7 +321,7 @@ sync_parse(OffLine) ->
         Now = dgiot_datetime:now_secs(),
         case V of
             ['Device', Acl, _, Last, IsEnable, ProductId, Devaddr, DeviceSecret, Node, Longitude, Latitude] when (Now - Last) < 0 ->
-                case dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"status">> => <<"ONLINE">>, <<"isEnable">> => IsEnable, <<"lastOnlineTime">> => Last}) of
+                case dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"status">> => <<"ONLINE">>, <<"isEnable">> => IsEnable, <<"lastOnlineTime">> => Last, <<"location">> => #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => Longitude, <<"latitude">> => Latitude}}) of
                     {ok, _R} ->
                         insert_mnesia(DeviceId, Acl, true, Last, IsEnable, ProductId, Devaddr, DeviceSecret, Node, Longitude, Latitude);
                     _ ->
@@ -305,7 +329,7 @@ sync_parse(OffLine) ->
                 end,
                 timer:sleep(50);
             ['Device', Acl, true, Last, IsEnable, ProductId, Devaddr, DeviceSecret, Node, Longitude, Latitude] when (Now - Last) > OffLine ->
-                case dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"status">> => <<"OFFLINE">>, <<"isEnable">> => IsEnable, <<"lastOnlineTime">> => Last}) of
+                case dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"status">> => <<"OFFLINE">>, <<"isEnable">> => IsEnable, <<"lastOnlineTime">> => Last, <<"location">> => #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => Longitude, <<"latitude">> => Latitude}}) of
                     {ok, _R} ->
                         insert_mnesia(DeviceId, Acl, false, Last, IsEnable, ProductId, Devaddr, DeviceSecret, Node, Longitude, Latitude);
                     _ ->
@@ -313,7 +337,7 @@ sync_parse(OffLine) ->
                 end,
                 timer:sleep(50);
             ['Device', Acl, false, Last, IsEnable, ProductId, Devaddr, DeviceSecret, Node, Longitude, Latitude] when (Now - Last) < OffLine ->
-                case dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"status">> => <<"ONLINE">>, <<"isEnable">> => IsEnable, <<"lastOnlineTime">> => Last}) of
+                case dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"status">> => <<"ONLINE">>, <<"isEnable">> => IsEnable, <<"lastOnlineTime">> => Last, <<"location">> => #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => Longitude, <<"latitude">> => Latitude}}) of
                     {ok, _R} ->
                         insert_mnesia(DeviceId, Acl, true, Last, IsEnable, ProductId, Devaddr, DeviceSecret, Node, Longitude, Latitude);
                     _ ->

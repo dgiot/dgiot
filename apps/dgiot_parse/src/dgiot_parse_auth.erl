@@ -19,6 +19,10 @@
 -include("dgiot_parse.hrl").
 -include_lib("dgiot/include/logger.hrl").
 
+-dgiot_data("ets").
+-export([init_ets/0]).
+-define(DGIOT_USERSESSION, dgiot_usersession).
+
 %% API
 -export([
     login/2,
@@ -44,6 +48,36 @@
 -export([create_user/2, delete_user/2, put_user/2, disableusere/3, check_roles/1]).
 -export([login_by_account/2, login_by_token/2, login_by_mail_phone/1, do_login/1]).
 -export([create_user_for_app/1, get_token/1, set_cookies/3, add_acl/5]).
+-export([get_usersession/1, put_usersession/1,del_usersession/1]).
+
+
+init_ets() ->
+    dgiot_data:init(?DGIOT_USERSESSION).
+
+get_usersession(Depart_token) ->
+    dgiot_data:get(?DGIOT_USERSESSION, {Depart_token}).
+
+put_usersession(SessionMap) ->
+    [Depart_token] = maps:keys(SessionMap),
+    User_session = maps:get(Depart_token, SessionMap),
+    dgiot_data:insert(?DGIOT_USERSESSION, {Depart_token}, User_session).
+
+del_usersession(User_session)->
+    Fun = fun
+              ({Key, Value}) ->
+                  case Value of
+                      User_session ->
+                          dgiot_data:delete(?DGIOT_USERSESSION, Key);
+                      _->
+                          pass
+                  end ;
+              (_) ->
+                  pass
+          end,
+    dgiot_data:loop(?DGIOT_USERSESSION, Fun).
+
+
+
 %% 登录
 login(UserName, Password) ->
     login(?DEFAULT, UserName, Password).
