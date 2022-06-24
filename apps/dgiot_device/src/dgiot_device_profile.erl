@@ -39,15 +39,6 @@ put('before', #{<<"id">> := DeviceId, <<"profile">> := UserProfile} = Device) ->
                     _ ->
                         <<"$dg/device/", ProductId/binary, "/", Devaddr/binary, "/profile">>
                 end,
-            PowerOnCtrl = maps:get(<<"PowerOnCtrl">>, UserProfile, <<>>),
-            case dgiot_utils:trim_string(dgiot_utils:to_list(PowerOnCtrl)) of
-                "1" ->
-                    dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"isEnable">> => true});
-                "0" ->
-                    dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"isEnable">> => false});
-                _ ->
-                    pass
-            end,
             dgiot_mqtt:publish(DeviceId, ProfileTopic, jsx:encode(UserProfile));
         _ ->
             pass
