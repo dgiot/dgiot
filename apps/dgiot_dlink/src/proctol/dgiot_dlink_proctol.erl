@@ -21,7 +21,10 @@
 -include_lib("dgiot/include/logger.hrl").
 
 -export([login/3]).
--export([properties_report/3]).
+-export([
+    properties_report/3
+    ,firmware_report/3
+]).
 
 
 properties_report(ProductId, DevAddr, Payload) when is_map(Payload) ->
@@ -31,7 +34,21 @@ properties_report(ProductId, DevAddr, Payload) when is_map(Payload) ->
 properties_report(ProductId, DevAddr, Payload) ->
     lists:map(fun
                   ({ChannelId, _Ctype}) ->
-                      dgiot_channelx:do_message(ChannelId, {dlink_device_report, ProductId, DevAddr, Payload});
+                      dgiot_channelx:do_message(ChannelId, {dlink_properties_report, ProductId, DevAddr, Payload});
+                  (_) ->
+                      pass
+              end, dgiot_bridge:get_proctol_channel(ProductId)),
+    io:format("~s ~p ProductId ~p, DevAddr ~p, Payload: ~p ~n", [?FILE, ?LINE, ProductId, DevAddr, Payload]),
+    ok.
+
+firmware_report(ProductId, DevAddr, Payload) when is_map(Payload) ->
+    io:format("~s ~p ProductId ~p, DevAddr ~p, Payload: ~p ~n", [?FILE, ?LINE, ProductId, DevAddr, Payload]),
+    dgiot_task:save_td(ProductId, DevAddr, Payload, #{});
+
+firmware_report(ProductId, DevAddr, Payload) ->
+    lists:map(fun
+                  ({ChannelId, _Ctype}) ->
+                      dgiot_channelx:do_message(ChannelId, {dlink_firmware_report, ProductId, DevAddr, Payload});
                   (_) ->
                       pass
               end, dgiot_bridge:get_proctol_channel(ProductId)),

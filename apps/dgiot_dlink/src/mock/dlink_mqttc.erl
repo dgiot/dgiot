@@ -13,61 +13,43 @@
 %% See the License for the specific language governing permissions and
 %% limitations under the License.
 %%--------------------------------------------------------------------
--module(zeta_mqttc).
+-module(dlink_mqttc).
 -author("johnliu").
 -include_lib("dgiot/include/logger.hrl").
 -include_lib("dgiot/include/dgiot_client.hrl").
 
 -record(zeta, {tid}).
 
--export([childspec/2, star_client/2]).
+-export([childspec/2, start_client/2]).
 
 %% API
 -export([init/1, handle_cast/2, handle_call/3, handle_info/2, terminate/2, code_change/3]).
 
-childspec(ChannelId, #{<<"host">> := Host, <<"port">> := Port}) ->
-    #{<<"apiKey">> := Key, <<"apiSecret">> := Secret} = zeta_config:get_config(ChannelId, <<"zeta_auth">>),
+childspec(ChannelId, #{<<"host">> := Host, <<"port">> := Port,
+    <<"username">> := UserName, <<"password">> :=  Password}) ->
     Options = #{
         host => dgiot_utils:to_list(Host),
         port => Port,
-        username => dgiot_utils:to_list(Key),
-        password => dgiot_utils:to_list(Secret),
+        username => dgiot_utils:to_list(UserName),
+        password => dgiot_utils:to_list(Password),
         proto_ver => v3,
         keepalive => 60,
         clean_start => true
     },
     Args = #{
-        <<"channel">> => get_channel(ChannelId),
+        <<"channel">> => ChannelId,
         <<"mod">> => ?MODULE,
         <<"options">> => Options
     },
-    dgiot_client:register(get_channel(ChannelId), mqtt_client_sup, Args).
+    dgiot_client:register(ChannelId, mqtt_client_sup, Args).
 
-get_channel(ChannelId) when is_atom(ChannelId) ->
-    get_channel(dgiot_utils:to_binary(ChannelId));
-get_channel(ChannelId) ->
-    ProductId = get_productid(),
-    dgiot_utils:to_atom(<<ProductId/binary, "_", ChannelId/binary>>).
 
-get_productid() ->
-    <<"a51704b2cf">>. % zeta订阅压测
-
-%%推送协议：MQTT
-%%➢ 连接地址：服务器 IP
-%%➢ 连接端口：1883
-%%➢ 连接方式：TCP
-%%➢ 认证参数
-%%用户名：api_key（企业编码）
-%%密码：api_secret（企业秘钥）
-%%clientID：api_key:api_secret: + 三位随机数字。 如：api_key:api_secret125
-%%注：服务器 IP 由平台运营商提供，企业编码、企业秘钥可在 ZETA 网管平台 -> 权限管理 -> 企业信息中获得
-star_client(_ChannelId, 0) ->
+start_client(_ChannelId, 0) ->
     pass;
-star_client(ChannelId, Count) ->
-    #{<<"apiKey">> := Key, <<"apiSecret">> := Secret} = zeta_config:get_config(ChannelId, <<"zeta_auth">>),
-    ClientId = list_to_binary(lists:concat([binary_to_list(Key), ":", binary_to_list(Secret), ":", io_lib:format("~3.10.0B", [Count])])),
-    dgiot_client:start(get_channel(ChannelId), ClientId),
-    star_client(ChannelId, Count - 1).
+start_client(ChannelId, Count) ->
+    ClientId = <<"">>,
+    dgiot_client:start(ChannelId, ClientId),
+    start_client(ChannelId, Count - 1).
 
 
 %%  callback
@@ -128,4 +110,4 @@ code_change(_OldVsn, Dclient, _Extra) ->
     {ok, Dclient}.
 
 update(ChannelId) ->
-    dgiot_data:insert({<<"mqtt_online">>, zeta_metrics}, dgiot_client:count(ChannelId)).
+    dgiot_data:insert({<<"mqtt_online">>, dlink_metrics}, dgiot_client:count(ChannelId)).

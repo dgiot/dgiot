@@ -25,7 +25,7 @@
         , clear_rule_payload/0
         ]).
 
--import(emqx_rule_maps,
+-import(dgiot_rule_maps,
         [ nested_get/2
         , range_gen/2
         , range_get/3

@@ -17,6 +17,10 @@
 -module(dgiot_metrics).
 -include_lib("dgiot/include/dgiot.hrl").
 -include_lib("dgiot/include/logger.hrl").
+-dgiot_data("ets").
+-export([init_ets/0]).
+-define(DGIOT_METRICS_ETS, dgiot_metrics_ets).
+
 -export([counter/2, counter/3, counter/4, gauge/2, gauge/3, gauge/4, summary/2, summary/3, summary/4, histogram/3, histogram/2, histogram/4]).
 -export([counter_reset/1, counter_reset/2, counter_reset/3]).
 -export([gauge_reset/1, gauge_reset/2, gauge_reset/3]).
@@ -25,7 +29,7 @@
 
 -export([init_metrics/1, collect_metrics/4]).
 -export([start_metrics/1, inc/3, inc/4, inc/5, dec/3, dec/4, dec/5]).
--export([start/1, check_metrics/0]).
+-export([start/1, check_metrics/0, reset_metrics/1]).
 
 -route_path("/metrics/:Registry").
 -export([init/2]).
@@ -36,6 +40,9 @@ init(Req0, ?MODULE) ->
         <<"content-type">> => <<"text/plain">>
     }, dgiot_utils:to_binary(Data), Req0),
     {ok, Req, ?MODULE}.
+
+init_ets() ->
+    dgiot_data:init(?DGIOT_METRICS_ETS).
 
 counter(Name, Value) when Value > 0 ->
     counter(Name, [], Value);
@@ -105,63 +112,71 @@ histogram_reset(Registry, Name, LabelValues) ->
 %%新增统计函数
 inc(Registry, Name, Value) ->
     {ok, Count} =
-        case dgiot_data:lookup({Name, Registry}) of
+        case dgiot_data:lookup(?DGIOT_METRICS_ETS, {Name, Registry}) of
             {error, not_find} ->
                 {ok, 0};
             {ok, Count1} ->
                 {ok, Count1}
         end,
-    dgiot_data:insert({Name, Registry}, Count + Value).
+    dgiot_data:insert(?DGIOT_METRICS_ETS, {Name, Registry}, Count + Value).
 
 inc(Registry, Name, Value, Total, rate) ->
     {ok, Count} =
-        case dgiot_data:lookup({Name, Registry}) of
-            {error, not_find} -> {ok, 0};
-            {ok, Count1} -> {ok, Count1}
+        case dgiot_data:lookup(?DGIOT_METRICS_ETS, {Name, Registry}) of
+            {error, not_find} ->
+                {ok, 0};
+            {ok, Count1} ->
+                {ok, Count1}
         end,
-    case (Count + Value) >= Total of
+    OldValue = round(Count * Total / 100),
+    NewValue = OldValue + Value,
+    case NewValue >= Total of
         true ->
-            dgiot_data:insert({Name, Registry}, 100);
+            dgiot_data:insert(?DGIOT_METRICS_ETS, {Name, Registry}, 100);
         _ ->
             case Total > 0 of
-                true -> dgiot_data:insert({Name, Registry}, round(100 * (Count + Value) / Total));
-                _ -> dgiot_data:insert({Name, Registry}, 0)
+                true ->
+                    dgiot_data:insert(?DGIOT_METRICS_ETS, {Name, Registry}, round(100 * NewValue) / Total);
+                _ ->
+                    dgiot_data:insert(?DGIOT_METRICS_ETS, {Name, Registry}, 0)
             end
     end;
 
 inc(Registry, Name, Value, Total, max) ->
     {ok, Count} =
-        case dgiot_data:lookup({Name, Registry}) of
-            {error, not_find} -> {ok, 0};
-            {ok, Count1} -> {ok, Count1}
+        case dgiot_data:lookup(?DGIOT_METRICS_ETS, {Name, Registry}) of
+            {error, not_find} ->
+                {ok, 0};
+            {ok, Count1} ->
+                {ok, Count1}
         end,
     case (Count + Value) >= Total of
         true ->
-            dgiot_data:insert({Name, Registry}, Total);
+            dgiot_data:insert(?DGIOT_METRICS_ETS, {Name, Registry}, Total);
         _ ->
-            dgiot_data:insert({Name, Registry}, (Count + Value))
+            dgiot_data:insert(?DGIOT_METRICS_ETS, {Name, Registry}, (Count + Value))
     end.
 
 inc(Registry, Name, Value, average) ->
     {ok, Count} =
-        case dgiot_data:lookup({Name, Registry}) of
+        case dgiot_data:lookup(?DGIOT_METRICS_ETS, {Name, Registry}) of
             {error, not_find} -> {ok, 0};
             {ok, Count1} -> {ok, Count1}
         end,
-    dgiot_data:insert({Name, Registry}, (Count + Value) / 2);
+    dgiot_data:insert(?DGIOT_METRICS_ETS, {Name, Registry}, (Count + Value) / 2);
 
 inc(Registry, Name, Label, Value) ->
     {ok, Map} =
-        case dgiot_data:lookup({Name, Registry}) of
+        case dgiot_data:lookup(?DGIOT_METRICS_ETS, {Name, Registry}) of
             {error, not_find} -> {ok, #{}};
             {ok, Map1} -> {ok, Map1}
         end,
     Count = maps:get(Label, Map, 0),
-    dgiot_data:insert({Name, Registry}, Map#{Label => Count + Value}).
+    dgiot_data:insert(?DGIOT_METRICS_ETS, {Name, Registry}, Map#{Label => Count + Value}).
 
 dec(Registry, Name, Value) ->
     {ok, Count} =
-        case dgiot_data:lookup({Name, Registry}) of
+        case dgiot_data:lookup(?DGIOT_METRICS_ETS, {Name, Registry}) of
             {error, not_find} -> {ok, 0};
             {ok, Count1} -> {ok, Count1}
         end,
@@ -172,33 +187,32 @@ dec(Registry, Name, Value) ->
             false ->
                 Count - Value
         end,
-    dgiot_data:insert({Name, Registry}, NewCount).
+    dgiot_data:insert(?DGIOT_METRICS_ETS, {Name, Registry}, NewCount).
 
 dec(Registry, Name, Value, Total, rate) ->
     {ok, Count} =
-        case dgiot_data:lookup({Name, Registry}) of
-            {error, not_find} -> {ok, 0};
-            {ok, Count1} -> {ok, Count1}
+        case dgiot_data:lookup(?DGIOT_METRICS_ETS, {Name, Registry}) of
+            {error, not_find} ->
+                {ok, 0};
+            {ok, Count1} ->
+                {ok, Count1}
         end,
-    NewCount =
-        case Count > Value of
-            true ->
-                Count - Value;
-            false ->
-                0
-        end,
-    case Total > 0 of
-        true ->
-            dgiot_data:insert({Name, Registry}, round(100 * NewCount / Total));
+    OldValue = round(Count * Total / 100),
+    NewValue = OldValue - Value,
+    case NewValue =< 0 of
+        false when Total > 0 ->
+            dgiot_data:insert(?DGIOT_METRICS_ETS, {Name, Registry}, round(100 * NewValue / Total));
         _ ->
-            dgiot_data:insert({Name, Registry}, 0)
+            dgiot_data:insert(?DGIOT_METRICS_ETS, {Name, Registry}, 0)
     end.
 
 dec(Registry, Name, Label, Value) ->
     {ok, Map} =
-        case dgiot_data:lookup({Name, Registry}) of
-            {error, not_find} -> {ok, #{}};
-            {ok, Map1} -> {ok, Map1}
+        case dgiot_data:lookup(?DGIOT_METRICS_ETS, {Name, Registry}) of
+            {error, not_find} ->
+                {ok, #{}};
+            {ok, Map1} ->
+                {ok, Map1}
         end,
     Count = maps:get(Label, Map, 0),
     NewCount =
@@ -208,7 +222,7 @@ dec(Registry, Name, Label, Value) ->
             false ->
                 0
         end,
-    dgiot_data:insert({Name, Registry}, Map#{Label => NewCount}).
+    dgiot_data:insert(?DGIOT_METRICS_ETS, {Name, Registry}, Map#{Label => NewCount}).
 
 start(Registry) ->
     start_metrics(Registry).
@@ -216,18 +230,40 @@ start(Registry) ->
 start_metrics(Registry) ->
     dgiot_stats:new(Registry).
 
+reset_metrics(Registry) ->
+    Fun =
+        fun({{Name, Registry1}, _V1}) when Registry1 == Registry ->
+            case dgiot_data:get(?DGIOT_METRICS_ETS, {Name, Registry}) of
+                Values when is_map(Values) ->
+                    LabelValues =
+                        maps:fold(fun(K, _V, Acc) ->
+                            Acc#{K => 0}
+                                  end, #{}, Values),
+                    dgiot_data:insert(?DGIOT_METRICS_ETS, {Name, Registry}, LabelValues);
+                _ ->
+                    dgiot_data:insert(?DGIOT_METRICS_ETS, {Name, Registry}, 0)
+            end;
+            (_) ->
+                pass
+        end,
+    dgiot_data:loop(?DGIOT_METRICS_ETS, Fun).
+
 init_metrics(#{name := Name, registry := Registry, labels := Labels}) ->
     case Labels of
         [] ->
-            dgiot_data:insert({Name, Registry}, 0);
+            dgiot_data:insert(?DGIOT_METRICS_ETS, {Name, Registry}, 0);
         [#{<<"values">> := Values}] ->
-            dgiot_data:insert({Name, Registry}, lists:foldl(fun(Label, Acc) -> Acc#{Label => 0} end, #{}, Values))
+            LabelsValue =
+                lists:foldl(
+                    fun(Label, Acc) ->
+                        Acc#{Label => 0}
+                    end, #{}, Values),
+            dgiot_data:insert(?DGIOT_METRICS_ETS, {Name, Registry}, LabelsValue)
     end.
-
 
 % Module =  ?MODULE,
 collect_metrics(_Instance, Registry, Name, _Labels) ->
-    {ok, Map} = dgiot_data:lookup({Name, Registry}),
+    {ok, Map} = dgiot_data:lookup(?DGIOT_METRICS_ETS, {Name, Registry}),
     case is_map(Map) of
         true ->
             maps:fold(
