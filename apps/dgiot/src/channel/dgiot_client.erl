@@ -390,9 +390,9 @@ add_clock(Channel, Start_time, End_time) ->
 %% @doc 闹铃通知回调函数
 -spec notify(any(), binary() | atom(), atom()) -> result().
 notify(_Task, Channel, Type) when is_binary(Channel) ->
-    notify(_Task, binary_to_atom(Channel), Type);
+    notify(_Task, dgiot_utils:to_atom(Channel), Type);
 notify(_Task, Channel, Type) ->
-    dgiot_channelx:do_message(atom_to_binary(Channel), Type),
+    dgiot_channelx:do_message(dgiot_utils:to_binary(Channel), Type),
     timer:sleep(50),
     dgiot_data:insert({Type, Channel}, Type).
 
