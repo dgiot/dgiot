@@ -360,17 +360,21 @@ new_registry(Registry, #{<<"type">> := Type, <<"name">> := Name, <<"help">> := H
             collect_metrics(Type, Labels, Spec)
     end.
 
+% 只增不减 计数器
 collect_metrics(<<"counter">>, Labels, Spec) ->
     prometheus_counter:new(maps:to_list(Spec)),
     do_callback(Spec#{labels => Labels});
+% 可增可减 仪表盘
 collect_metrics(<<"gauge">>, Labels, Spec) ->
     prometheus_gauge:new(maps:to_list(Spec)),
     do_callback(Spec#{labels => Labels});
-collect_metrics(<<"summary">>, Labels, Spec) ->
-    prometheus_summary:new(maps:to_list(Spec)),
-    do_callback(Spec#{labels => Labels});
+% 直方图
 collect_metrics(<<"histogram">>, Labels, Spec) ->
     prometheus_histogram:new(maps:to_list(Spec)),
+    do_callback(Spec#{labels => Labels});
+% 摘要型
+collect_metrics(<<"summary">>, Labels, Spec) ->
+    prometheus_summary:new(maps:to_list(Spec)),
     do_callback(Spec#{labels => Labels}).
 
 do_callback(Spec) ->
@@ -380,7 +384,7 @@ do_callback(Spec) ->
 load_config(File) ->
     case file:read_file(File) of
         {ok, Bin} ->
-            {ok, jsx:decode(Bin, [{labels, binary}, return_maps])};
+            {ok, jiffy:decode(Bin, [return_maps])};
         _ ->
             {error, <<"readfile failed">>}
     end.

@@ -18,7 +18,7 @@
 -behavior(dgiot_channelx).
 -define(TYPE, <<"MQTT">>).
 -author("johnliu").
--record(state, {id, auth = <<"ProductSecret"/utf8>>, devaddr, deviceId}).
+-record(state, {id, auth = <<"ProductSecret"/utf8>>, count, devaddr, deviceId}).
 -include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
 -include_lib("dgiot/include/logger.hrl").
 
@@ -44,12 +44,31 @@
         type => string,
         required => true,
         default => <<"ProductSecret"/utf8>>,
-        enum => [<<"ProductSecret"/utf8>>, <<"DeviceSecret"/utf8>>, <<"DeviceCert"/utf8>>],
+        type => string,
+        required => false,
+        default => #{<<"value">> => <<"ProductSecret">>, <<"label">> => <<"一型一密"/utf8>>},
+        enum => [
+            #{<<"value">> => <<"ProductSecret">>, <<"label">> => <<"一型一密"/utf8>>},
+            #{<<"value">> => <<"DeviceSecret">>, <<"label">> => <<"一机一密"/utf8>>},
+            #{<<"value">> => <<"DeviceCert">>, <<"label">> => <<"设备证书"/utf8>>}
+        ],
         title => #{
             zh => <<"设备授权"/utf8>>
         },
         description => #{
-            zh => <<"设备授权：一型一密:ProductSecret 一机一密: DeviceSecret 设备证书：DeviceCert "/utf8>>
+            zh => <<"设备授权"/utf8>>
+        }
+    },
+    <<"count">> => #{
+        order => 2,
+        type => integer,
+        required => true,
+        default => 10,
+        title => #{
+            zh => <<"压测数量"/utf8>>
+        },
+        description => #{
+            zh => <<"压测数量：数量为-1时, 从设备档案数据库获取Device, 否则自动生成device"/utf8>>
         }
     },
     <<"ico">> => #{
@@ -68,70 +87,32 @@
     }
 }).
 
-
 start(ChannelId, ChannelArgs) ->
     dgiot_channelx:add(?TYPE, ChannelId, ?MODULE, ChannelArgs).
 
 %% 通道初始化
 init(?TYPE, ChannelId, #{
-    <<"product">> := Products,
-    <<"auth">> := Auth}) ->
-%%    io:format("Products = ~p.~n", [Products]),
-    lists:map(fun(X) ->
-        case X of
-            {ProductId, #{<<"ACL">> := Acl, <<"thing">> := Thing}} ->
-                dgiot_data:insert({mqttd, ProductId}, {Acl, maps:get(<<"properties">>, Thing, [])}),
-%%              创建连接规则
-                ConRawsql = <<"SELECT clientid, connected_at FROM \"$events/client_connected\" WHERE username = '", ProductId/binary, "'">>,
-                dgiot_rule_handler:create_rules(<<"rule:connected_", ProductId/binary>>, ChannelId, <<"创建连接规则"/utf8>>, ConRawsql, <<"/${productid}/#">>),
-%%              创建断开连接规则
-                DisRawsql = <<"SELECT clientid, disconnected_at FROM \"$events/client_disconnected\" WHERE username = '", ProductId/binary, "'">>,
-                dgiot_rule_handler:create_rules(<<"rule:disconnected_", ProductId/binary>>, ChannelId, <<"断开连接规则"/utf8>>, DisRawsql, <<"/${productid}/#">>),
-                %%              创建上传数据规则
-                MetaRawsql = <<"SELECT payload.msg as msg,clientid,'", ProductId/binary, "' as productid FROM \"/", ProductId/binary, "/#\" WHERE username = '", ProductId/binary, "'">>,
-                dgiot_rule_handler:create_rules(<<"rule:metadata_", ProductId/binary>>, ChannelId, <<"派生物模型上报规则"/utf8>>, MetaRawsql, <<"/${productid}/#">>);
-            _ ->
-                io:format("~s ~p X = ~p.~n", [?FILE, ?LINE, X]),
-                pass
-        end
-              end, Products),
-    dgiot_data:set_consumer(ChannelId, 20),
+    <<"product">> := [{ProductId, _Product} |_],
+    <<"auth">> := Auth,
+    <<"count">> := Count}) ->
     State = #state{
         id = ChannelId,
-        auth = Auth
+        auth = Auth,
+        count = Count
     },
-    dgiot_rule_handler:sysc_rules(),
-    emqx_rule_engine_api:list_rules(#{}, []),
+    io:format("~s ~p ProductId ~p ~n",[?FILE, ?LINE, ProductId]),
     {ok, State};
 
 init(?TYPE, _ChannelId, _Args) ->
+    io:format("~s ~p _ChannelId ~p ~n",[?FILE, ?LINE, _ChannelId]),
     {ok, #{}}.
 
 handle_init(State) ->
     {ok, State}.
 
-% SELECT clientid, payload, topic FROM "meter"
-% SELECT clientid, disconnected_at FROM "$events/client_disconnected" WHERE username = 'dgiot'
-% SELECT clientid, connected_at FROM "$events/client_connected" WHERE username = 'dgiot'
-handle_event('client.connected', {rule, #{clientid := DeviceId, connected_at := _ConnectedAt, peername := PeerName}, _Context}, #state{id = _ChannelId} = State) ->
-    [DTUIP, _] = binary:split(PeerName, <<$:>>, [global, trim]),
-    updat_device(DeviceId, DTUIP, <<"ONLINE">>),
-    dgiot_device:online(DeviceId),
-    {ok, State};
-
-
-handle_event('client.disconnected', {rule, #{clientid := DeviceId, disconnected_at := _DisconnectedAt, peername := PeerName}, _Context}, State) ->
-    [DTUIP, _] = binary:split(PeerName, <<$:>>, [global, trim]),
-    updat_device(DeviceId, DTUIP, <<"OFFLINE">>),
-    dgiot_device:offline(DeviceId),
-    {ok, State};
-
 %% 通道消息处理,注意：进程池调用
 handle_event(_EventId, _Event, State) ->
     {ok, State}.
-
-handle_message({rule, _Msg, _Context}, State) ->
-    {ok, State};
 
 handle_message(_Message, State) ->
     io:format("~s ~p _Message = ~p.~n", [?FILE, ?LINE, _Message]),
@@ -139,16 +120,4 @@ handle_message(_Message, State) ->
 
 stop(_ChannelType, _ChannelId, _State) ->
     ok.
-
-%% 更新设备
-updat_device(DeviceId, DTUIP, Status) ->
-    case dgiot_parse:get_object(<<"Device">>, DeviceId) of
-        {ok, _Result} ->
-            Body = #{
-                <<"ip">> => DTUIP,
-                <<"status">> => Status},
-            dgiot_parse:update_object(<<"Device">>, DeviceId, Body);
-        _R ->
-            pass
-    end.
 

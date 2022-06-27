@@ -27,20 +27,14 @@
 -define(EMPTY_USERNAME, <<"">>).
 
 on_message_publish(Message = #message{topic = <<"$dg/thing/", Topic/binary>>, payload = Payload, from = _ClientId, headers = _Headers}, _State) ->
-        case re:split(Topic, <<"/">>) of
-            [ProductId, DevAddr, <<"properties">>, <<"report">>] ->
-                NewPayload =
-                    case jsx:is_json(Payload) of
-                    true ->
-                        jiffy:decode(Payload,[return_maps]);
-                    false ->
-                        Payload
-                end,
-%%                io:format("~s ~p NewPayload: ~p~n", [?FILE, ?LINE, NewPayload]),
-                dgiot_dlink_proctol:properties_report(ProductId, DevAddr, NewPayload);
-            _ ->
-             pass
-        end,
+    case re:split(Topic, <<"/">>) of
+        [ProductId, DevAddr, <<"properties">>, <<"report">>] ->
+            dgiot_dlink_proctol:properties_report(ProductId, DevAddr, get_payload(Payload));
+        [ProductId, DevAddr, <<"firmware">>, <<"report">>] ->
+            dgiot_dlink_proctol:firmware_report(ProductId, DevAddr, get_payload(Payload));
+        _ ->
+            pass
+    end,
     {ok, Message};
 
 on_message_publish(Message, _State) ->
@@ -63,3 +57,12 @@ on_message_publish(Message, _State) ->
 %%    ?LOG(debug, "Message acked by client(~s): ~s~n",
 %%        [ClientId, emqx_message:format(Message)]),
 %%    ok.
+
+get_payload(Payload) ->
+    io:format("~s ~p Payload: ~p~n", [?FILE, ?LINE, Payload]),
+    case jsx:is_json(Payload) of
+        true ->
+            jiffy:decode(Payload, [return_maps]);
+        false ->
+            Payload
+    end.
