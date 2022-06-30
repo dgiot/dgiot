@@ -123,17 +123,17 @@
 }).
 
 %% 注册协议类型
--protocol_type(#{
-    cType => ?TYPE,
-    type => <<"energy">>,
-    colum => 10,
-    title => #{
-        zh => <<"MODBUS TCP协议"/utf8>>
-    },
-    description => #{
-        zh => <<"MODBUS TCP协议"/utf8>>
-    }
-}).
+%%-protocol_type(#{
+%%    cType => ?TYPE,
+%%    type => <<"energy">>,
+%%    colum => 10,
+%%    title => #{
+%%        zh => <<"MODBUS TCP协议"/utf8>>
+%%    },
+%%    description => #{
+%%        zh => <<"MODBUS TCP协议"/utf8>>
+%%    }
+%%}).
 
 init(State) ->
     State#{<<"req">> => [], <<"ts">> => dgiot_datetime:now_ms(), <<"interval">> => 300}.

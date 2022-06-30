@@ -250,7 +250,7 @@ save_keys(ProductId) ->
             {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
                 lists:foldl(
                     fun
-                        (#{<<"identifier">> := Identifier, <<"isshow">> := true}, Acc) ->
+                        (#{<<"identifier">> := Identifier, <<"isstorage">> := true}, Acc) ->
                             Acc ++ [Identifier];
                         (_, Acc) ->
                             Acc
@@ -399,7 +399,7 @@ get_unit(ProductId) ->
         {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
             lists:foldl(fun(X, Acc) ->
                 case X of
-                    #{<<"name">> := Name, <<"dataType">> := #{<<"specs">> := #{<<"unit">> := Unit}}} ->
+                    #{<<"name">> := Name, <<"isshow">> := true, <<"dataType">> := #{<<"specs">> := #{<<"unit">> := Unit}}} ->
                         Acc#{Name => Unit};
                     _ -> Acc
                 end
@@ -425,7 +425,14 @@ get_props(ProductId) ->
 get_props(ProductId, <<"*">>) ->
     case dgiot_product:lookup_prod(ProductId) of
         {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
-            Props;
+            lists:foldl(fun(Prop, Acc) ->
+                case Prop of
+                    #{<<"isshow">> := true} ->
+                        Acc ++ [Prop];
+                    _ ->
+                        Acc
+                end
+                        end, [], Props);
         _ ->
             []
     end;
@@ -444,7 +451,7 @@ get_props(ProductId, Keys) ->
             {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
                 lists:foldl(fun(Prop, Acc1) ->
                     case Prop of
-                        #{<<"identifier">> := Identifier} ->
+                        #{<<"identifier">> := Identifier, <<"isshow">> := true} ->
                             Acc1 ++ [Prop];
                         _ ->
                             Acc1

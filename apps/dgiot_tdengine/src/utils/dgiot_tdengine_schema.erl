@@ -124,7 +124,7 @@ get_addSql(ProductId, TdColumn, Database, TableName) ->
         {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
             lists:foldl(fun(Prop, Acc) ->
                 case Prop of
-                    #{<<"dataType">> := #{<<"type">> := Type}, <<"identifier">> := Identifier, <<"isshow">> := true} ->
+                    #{<<"dataType">> := #{<<"type">> := Type}, <<"identifier">> := Identifier, <<"isstorage">> := true} ->
                         LowerIdentifier = list_to_binary(string:to_lower(binary_to_list(Identifier))),
                         case maps:find(LowerIdentifier, TdColumn) of
                             error ->
