@@ -128,6 +128,18 @@
             zh => <<"搜表模式:nosearch|quick|normal"/utf8>>
         }
     },
+    <<"len">> => #{
+        order => 3,
+        type => integer,
+        required => true,
+        default => 15,
+        title => #{
+            zh => <<"登录报文长度"/utf8>>
+        },
+        description => #{
+            zh => <<"登录报文长度,默认15位IEMI码"/utf8>>
+        }
+    },
     <<"ico">> => #{
         order => 102,
         type => string,
@@ -152,7 +164,7 @@ start(ChannelId, ChannelArgs) ->
 init(?TYPE, ChannelId, #{
     <<"port">> := Port,
     <<"product">> := Products,
-    <<"search">> := Search}) ->
+    <<"search">> := Search} = Args) ->
     lists:map(fun(X) ->
         case X of
             {ProductId, #{<<"ACL">> := Acl, <<"nodeType">> := 1, <<"thing">> := Thing}} ->
@@ -186,9 +198,17 @@ init(?TYPE, ChannelId, #{
         end
               end, Products),
     dgiot_data:set_consumer(ChannelId, 20),
+    Len =
+        case maps:find(<<"len">>, Args) of
+            error ->
+                15;
+            {ok, Len1} ->
+                Len1
+        end,
     State = #state{
         id = ChannelId,
-        search = Search
+        search = Search,
+        len = Len
     },
     {ok, State, dgiot_meter_tcp:start(Port, State)};
 

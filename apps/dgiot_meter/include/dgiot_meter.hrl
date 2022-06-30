@@ -38,7 +38,8 @@
     step = login,
     ref = undefined,
     search = <<"quick">>,
-    protocol = dlt645
+    protocol = dlt645,
+    len = 15
 }).
 
 %% Internal Header File
