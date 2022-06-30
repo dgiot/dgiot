@@ -33,8 +33,65 @@
 
 %% 注册协议参数
 -params(#{
-    <<"originaltype">> => #{
+    <<"slaveid">> => #{
         order => 1,
+        type => string,
+        required => true,
+        default => <<"0000"/utf8>>,
+        title => #{
+            zh => <<"从机地址"/utf8>>
+        },
+        description => #{
+            zh => <<"从机地址(16进制加0X,例如:0X10,否在是10进制),范围1-247,一个字节"/utf8>>
+        }
+    },
+    <<"operatetype">> => #{
+        order => 2,
+        type => string,
+        required => true,
+        default => #{<<"value">> => <<"readCoils">>, <<"label">> => <<"0X01:读线圈寄存器"/utf8>>},
+        enum => [#{<<"value">> => <<"readCoils">>, <<"label">> => <<"0X01:读线圈寄存器"/utf8>>},
+            #{<<"value">> => <<"readInputs">>, <<"label">> => <<"0X02:读离散输入寄存器"/utf8>>},
+            #{<<"value">> => <<"readHregs">>, <<"label">> => <<"0X03:读保持寄存器"/utf8>>},
+            #{<<"value">> => <<"readIregs">>, <<"label">> => <<"0X04:读输入寄存器"/utf8>>},
+            #{<<"value">> => <<"writeCoil">>, <<"label">> => <<"0X05:写单个线圈寄存器"/utf8>>},
+            #{<<"value">> => <<"writeHreg">>, <<"label">> => <<"0X06:写单个保持寄存器"/utf8>>},
+            #{<<"value">> => <<"writeCoils">>, <<"label">> => <<"0X0f:写多个线圈寄存器"/utf8>>},
+            #{<<"value">> => <<"writeHregs">>, <<"label">> => <<"0X10:写多个保持寄存器"/utf8>>}
+        ],
+        title => #{
+            zh => <<"寄存器功能码"/utf8>>
+        },
+        description => #{
+            zh => <<"寄存器功能码"/utf8>>
+        }
+    },
+    <<"address">> => #{
+        order => 3,
+        type => string,
+        required => true,
+        default => <<"0X00"/utf8>>,
+        title => #{
+            zh => <<"寄存器起始地址"/utf8>>
+        },
+        description => #{
+            zh => <<"寄存器起始地址:原数据地址(16进制加0X,例如:0X10,否在是10进制);8位寄存器,一个字节;16位寄存器,两个字节;32位寄存器,四个字节"/utf8>>
+        }
+    },
+    <<"registersnumber">> => #{
+        order => 4,
+        type => string,
+        required => true,
+        default => <<"1">>,
+        title => #{
+            zh => <<"寄存器个数"/utf8>>
+        },
+        description => #{
+            zh => <<"寄存器个数(多个寄存器个数)"/utf8>>
+        }
+    },
+    <<"originaltype">> => #{
+        order => 5,
         type => string,
         required => true,
         default => #{<<"value">> => <<"bit">>, <<"label">> => <<"位"/utf8>>},
@@ -56,63 +113,6 @@
         },
         description => #{
             zh => <<"数据格式"/utf8>>
-        }
-    },
-    <<"slaveid">> => #{
-        order => 2,
-        type => string,
-        required => true,
-        default => <<"0000"/utf8>>,
-        title => #{
-            zh => <<"从机地址"/utf8>>
-        },
-        description => #{
-            zh => <<"从机地址(16进制加0X,例如:0X10,否在是10进制),范围1-247,一个字节"/utf8>>
-        }
-    },
-    <<"operatetype">> => #{
-        order => 3,
-        type => string,
-        required => true,
-        default => #{<<"value">> => <<"readCoils">>, <<"label">> => <<"0X01:读线圈寄存器"/utf8>>},
-        enum => [#{<<"value">> => <<"readCoils">>, <<"label">> => <<"0X01:读线圈寄存器"/utf8>>},
-            #{<<"value">> => <<"readInputs">>, <<"label">> => <<"0X02:读离散输入寄存器"/utf8>>},
-            #{<<"value">> => <<"readHregs">>, <<"label">> => <<"0X03:读保持寄存器"/utf8>>},
-            #{<<"value">> => <<"readIregs">>, <<"label">> => <<"0X04:读输入寄存器"/utf8>>},
-            #{<<"value">> => <<"writeCoil">>, <<"label">> => <<"0X05:写单个线圈寄存器"/utf8>>},
-            #{<<"value">> => <<"writeHreg">>, <<"label">> => <<"0X06:写单个保持寄存器"/utf8>>},
-            #{<<"value">> => <<"writeCoils">>, <<"label">> => <<"0X0f:写多个线圈寄存器"/utf8>>},
-            #{<<"value">> => <<"writeHregs">>, <<"label">> => <<"0X10:写多个保持寄存器"/utf8>>}
-        ],
-        title => #{
-            zh => <<"寄存器状态"/utf8>>
-        },
-        description => #{
-            zh => <<"寄存器状态"/utf8>>
-        }
-    },
-    <<"address">> => #{
-        order => 4,
-        type => string,
-        required => true,
-        default => <<"0X00"/utf8>>,
-        title => #{
-            zh => <<"寄存器地址"/utf8>>
-        },
-        description => #{
-            zh => <<"寄存器地址:原数据地址(16进制加0X,例如:0X10,否在是10进制);8位寄存器,一个字节;16位寄存器,两个字节;32位寄存器,四个字节"/utf8>>
-        }
-    },
-    <<"registersnumber">> => #{
-        order => 5,
-        type => string,
-        required => true,
-        default => <<"1">>,
-        title => #{
-            zh => <<"寄存器个数"/utf8>>
-        },
-        description => #{
-            zh => <<"寄存器个数(多个寄存器个数)"/utf8>>
         }
     }
 }).

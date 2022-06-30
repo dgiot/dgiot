@@ -92,7 +92,7 @@ parse_frame(<<>>, Acc, _Opts) ->
 %%应答
 %%4040   6900       1000  0a110e030615 ac103cd56d1d   000000000000  0100           03       17           30    2323
 parse_frame(<<"@@", SerialId:16, Version:16, Time:6/binary, Source:6/binary, Destination:6/binary, Length:16/little, ?COMMAND_SEND_DATA:8, UserZone:1/binary, Crc:1/binary, "##", Rest/binary>> = Buff,
-        Acc, Opts) when Length == 1 ->
+    Acc, Opts) when Length == 1 ->
     <<"@@", Head:25/binary, _/binary>> = Buff,
     CheckCrc = dgiot_utils:get_parity(<<Head/binary, UserZone/binary>>),
     {Acc1, Rest1} =
@@ -117,6 +117,9 @@ parse_frame(<<"@@", SerialId:16, Version:16, Time:6/binary, Source:6/binary, Des
                 {Acc, Rest}
         end,
     parse_frame(Rest1, Acc1, Opts);
+
+parse_frame(<<"@@", _:22/binary, 0:16, Command:8, _Tail/binary>> = _Buff, Acc, _Opts) ->
+    {ok, Acc#{<<"heart">> => 0, <<"command">> => Command}};
 
 parse_frame(<<"@@", SerialId:16, Version:16, Time:6/binary, Source:6/binary, Destination:6/binary, Length:16/little, Command:8, Tail/binary>> = Buff, Acc, Opts)
     when size(Tail) >= Length + 3 andalso Length > 2 ->
