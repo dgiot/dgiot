@@ -42,6 +42,7 @@ Dlink协议是针对物联网开发领域设计的一种数据交换规范，数
 | 属性获取 |$dg/user/{deviceId}/properties/get/request_id={request_id}|平台|用户|
 | 属性获取 |$dg/thing/{productId}/{deviceAddr}/shadow/get/request_id={request_id}|设备|平台|
 | 属性获取 |$dg/device/{productId}/{deviceAddr}/shadow/get/request_id={request_id}|平台|设备|
+| 属性采集 |$dg/device/{productId}/{deviceAddr}/properties|平台|设备|
 | 配置下发 |$dg/device/{productId}/{deviceAddr}/profile|平台|设备|
 | 事件上报 |$dg/thing/{productId}/{deviceAddr}/events|设备|平台|
 | 事件上报 |$dg/user/{deviceId}/events|平台|用户|
