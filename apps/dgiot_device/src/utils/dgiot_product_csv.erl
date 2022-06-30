@@ -187,6 +187,7 @@ get_properties(Things, AtomName, ProductId, ProductName) ->
         Propertie ++ [#{
             <<"name">> => Name,
             <<"index">> => 0,
+	    <<"isstorage">> => true,
             <<"isshow">> => true,
             <<"dataForm">> => #{
                 <<"rate">> => 1,

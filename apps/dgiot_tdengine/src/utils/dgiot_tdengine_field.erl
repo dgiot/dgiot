@@ -50,7 +50,7 @@ add_field(Type, Database, TableName, LowerIdentifier) ->
 %%  8	TINYINT     1        单字节整型，范围 [-127, 127], -128 用于 NULL
 %%  9	BOOL       	1        布尔型，{true, false}
 %%  10	NCHAR       自定义    记录包含多字节字符在内的字符串，如中文字符。每个 nchar 字符占用 4 bytes 的存储空间。字符串两端使用单引号引用，字符串内的单引号需用转义字符 \’。nchar 使用时须指定字符串大小，类型为 nchar(10) 的列表示此列的字符串最多存储 10 个 nchar 字符，会固定占用 40 bytes 的空间。如果用户字符串长度超出声明长度，将会报错。
-get_field(#{<<"isshow">> := false}) ->
+get_field(#{<<"isstorage">> := false}) ->
     pass;
 get_field(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"int">>}}) ->
     {Field, #{<<"type">> => <<"INT">>}};
