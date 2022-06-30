@@ -1467,7 +1467,7 @@
       },
       "timestamp": {
         "required": false,
-        "type": "Number"
+        "type": "String"
       },
       "type": {
         "required": false,
