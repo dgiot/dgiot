@@ -88,7 +88,7 @@ post(Device) ->
         case dgiot_product:lookup_prod(ProductId) of
             {ok, ProductInfo} ->
                 Data1 = maps:with([<<"profile">>, <<"content">>], ProductInfo),
-                case maps:find(<<"config">>, #{}) of
+                case maps:find(<<"config">>, Device) of
                     {ok, #{<<"location">> := Location1, <<"address">> := Address1}} ->
                         {Data1, Location1, Address1};
                     _ ->
@@ -138,16 +138,10 @@ post(Device, SessionToken) ->
 put(Device) ->
     DeviceId = maps:get(<<"objectId">>, Device),
     case lookup(DeviceId) of
-        {ok, #{<<"status">> := Status, <<"acl">> := Acl, <<"isEnable">> := IsEnable, <<"devaddr">> := Devaddr,
+        {ok, #{<<"status">> := Status, <<"acl">> := Acl, <<"isEnable">> := IsEnable, <<"devaddr">> := Devaddr, <<"time">> := Oldtime,
             <<"productid">> := ProductId, <<"devicesecret">> := DeviceSecret, <<"node">> := Node, <<"longitude">> := Longitude, <<"latitude">> := Latitude}} ->
             NewIsEnable = maps:get(<<"isEnable">>, Device, IsEnable),
-            NewStatus =
-                case maps:find(<<"status">>, Device) of
-                    error ->
-                        Status;
-                    {ok, <<"OFFLINE">>} -> false;
-                    _ -> true
-                end,
+            {NewStatus, Now} = check_time(Status, Device, Oldtime),
             NewAcl =
                 case maps:find(<<"ACL">>, Device) of
                     error ->
@@ -155,10 +149,22 @@ put(Device) ->
                     _ ->
                         dgiot_role:get_acls(Device)
                 end,
-            insert_mnesia(DeviceId, NewAcl, NewStatus, dgiot_datetime:now_secs(), NewIsEnable, ProductId, Devaddr, DeviceSecret, Node, Longitude, Latitude);
+            insert_mnesia(DeviceId, NewAcl, NewStatus, Now, NewIsEnable, ProductId, Devaddr, DeviceSecret, Node, Longitude, Latitude);
         _ ->
             pass
     end.
+
+check_time(_, #{<<"status">> := <<"OFFLINE">>}, Oldtime) ->
+    {false, Oldtime};
+
+check_time(_, #{<<"status">> := <<"ONLINE">>}, _Oldtime) ->
+    {true, dgiot_datetime:now_secs()};
+
+check_time(false, _, Oldtime) ->
+    {false, Oldtime};
+
+check_time(_, _, _) ->
+    {true, dgiot_datetime:now_secs()}.
 
 insert_mnesia(DeviceId, Acl, Status, Now, IsEnable, ProductId, Devaddr, DeviceSecret, Node, Longitude, Latitude) ->
     Topic = <<"$dg/user/devicestate/", DeviceId/binary, "/report">>,

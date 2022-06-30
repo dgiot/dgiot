@@ -701,6 +701,9 @@ triggeralarm(DeviceId) ->
                     {ok, #{<<"name">> := <<"检票闸机"/utf8>>}} ->
                         Desc = maps:get(<<"desc">>, Detail, <<"通过人数超过阈值，请到现场处理"/utf8>>),
                         {<<"检票闸机"/utf8>>, <<"二级"/utf8>>, <<"告警工单"/utf8>>, <<DeviceName/binary, Desc/binary>>};
+                    {ok, #{<<"name">> := <<"车闸机"/utf8>>}} ->
+                        Desc = maps:get(<<"desc">>, Detail, <<"当前车闸机无法自动抬起，请检查该设备"/utf8>>),
+                        {<<"车闸机"/utf8>>, <<"二级"/utf8>>, <<"告警工单"/utf8>>, <<DeviceName/binary, Desc/binary>>};
                     {ok, #{<<"name">> := Name1}} ->
                         Desc = maps:get(<<"desc">>, Detail, <<"发生火灾，请赶往A区查看"/utf8>>),
                         {Name1, <<"一级"/utf8>>, <<"报警工单"/utf8>>, <<DeviceName/binary, Desc/binary>>}
