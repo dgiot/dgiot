@@ -135,7 +135,7 @@ do_request(post_topic, #{<<"topic">> := Topic} = _Args, #{<<"sessionToken">> := 
             ),
             dgiot_data:insert({page_router_key, SessionToken, TopicKey}, Topic),
             timer:sleep(10),
-            {200, #{<<"message">> => <<"订阅成功"/utf8>>, <<"Topic">> => Topic, <<"TopicKey">> => TopicKey}}    ;
+            {200, #{<<"message">> => <<"订阅成功"/utf8>>, <<"Topic">> => Topic, <<"TopicKey">> => TopicKey}};
         false ->
             [_Head, _User, Key | _] = re:split(Topic, "/"),
             TopicKey = <<"dg_user_", Key/binary>>,
@@ -150,6 +150,10 @@ do_request(post_topic, #{<<"topic">> := Topic} = _Args, #{<<"sessionToken">> := 
             timer:sleep(10),
             {200, #{<<"message">> => <<"订阅成功"/utf8>>, <<"Topic">> => Topic, <<"TopicKey">> => TopicKey}}
     end;
+
+do_request(get_thingecho, _Args, _Context, _Req) ->
+%%    发送mqtt消息
+    {200, <<"success">>};
 
 do_request(_OperationId, _Args, _Context, _Req) ->
     {error, <<"Not Allowed.">>}.
