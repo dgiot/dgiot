@@ -16,7 +16,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-namespace Helloworld;
+namespace dlink;
 
 /**
  * The greeting service definition.
@@ -34,16 +34,16 @@ class GreeterClient extends \Grpc\BaseStub {
 
     /**
      * Sends a greeting
-     * @param \Helloworld\HelloRequest $argument input argument
+     * @param \dlink\HelloRequest $argument input argument
      * @param array $metadata metadata
      * @param array $options call options
      * @return \Grpc\UnaryCall
      */
-    public function SayHello(\Helloworld\HelloRequest $argument,
+    public function SayHello(\dlink\HelloRequest $argument,
       $metadata = [], $options = []) {
-        return $this->_simpleRequest('/helloworld.Greeter/SayHello',
+        return $this->_simpleRequest('/dlink.Greeter/SayHello',
         $argument,
-        ['\Helloworld\HelloReply', 'decode'],
+        ['\dlink\HelloReply', 'decode'],
         $metadata, $options);
     }
 

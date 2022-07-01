@@ -294,9 +294,12 @@ get_deng_gps(Lng, Lat) ->
     [LngDeg, LatDeg].
 
 get_baidu_gps(LonDeg, LatDeg) ->
+    Latoffset = dgiot_utils:to_float(application:get_env(dgiot_http, baidumap_latoffset, <<"-0.0002">>)),
+    Lngoffset = dgiot_utils:to_float(application:get_env(dgiot_http, baidumap_lngoffset, <<"-0.0000">>)),
     [Mglng, Mglat] = wgs84togcj02(LonDeg, LatDeg),
     [Bd_lng, Bd_lat] = gcj02tobd09(Mglng, Mglat),
-    [dgiot_utils:to_float(Bd_lng, 6), dgiot_utils:to_float(Bd_lat - 0.0002, 6)].
+%%    定位偏移值，使用当前gps解析值，加上偏移值，偏移值可为负数
+    [dgiot_utils:to_float(Bd_lng + Lngoffset, 6), dgiot_utils:to_float(Bd_lat + Latoffset, 6)].
 
 get_baidu_gps(LonDeg, LatDeg, Lonoffset, Latoffset) ->
     [Mglng, Mglat] = wgs84togcj02(LonDeg, LatDeg),

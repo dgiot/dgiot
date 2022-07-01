@@ -16,7 +16,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-namespace Helloworld;
+namespace dlink;
 
 /**
  * The greeting service definition.
@@ -31,9 +31,9 @@ class GreeterStub {
      *     initial metadata (if any) and status (if not ok) should be set to $context
      */
     public function SayHello(
-        \Helloworld\HelloRequest $request,
+        \dlink\HelloRequest $request,
         \Grpc\ServerContext $context
-    ): ?\Helloworld\HelloReply {
+    ): ?\dlink\HelloReply {
         $context->setStatus(\Grpc\Status::unimplemented());
         return null;
     }
@@ -46,10 +46,10 @@ class GreeterStub {
     public final function getMethodDescriptors(): array
     {
         return [
-            '/helloworld.Greeter/SayHello' => new \Grpc\MethodDescriptor(
+            '/dlink.Greeter/SayHello' => new \Grpc\MethodDescriptor(
                 $this,
                 'SayHello',
-                '\Helloworld\HelloRequest',
+                '\dlink\HelloRequest',
                 \Grpc\MethodDescriptor::UNARY_CALL
             ),
         ];
