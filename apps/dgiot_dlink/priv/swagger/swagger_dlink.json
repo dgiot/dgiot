@@ -91,10 +91,10 @@
         ]
       }
     },
-    "/topic":{
-      "post":{
+    "/topic": {
+      "post": {
         "summary": "订阅topic",
-        "description":"订阅topic",
+        "description": "订阅topic",
         "parameters": [
           {
             "in": "body",
@@ -112,24 +112,66 @@
             }
           }
         ],
-        "responses":{
-          "200":{
-            "description":"Returns operation status"
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
           },
-          "400":{
-            "description":"Bad Request"
+          "400": {
+            "description": "Bad Request"
           },
-          "401":{
-            "description":"Unauthorized"
+          "401": {
+            "description": "Unauthorized"
           },
-          "403":{
-            "description":"Forbidden"
+          "403": {
+            "description": "Forbidden"
           },
-          "500":{
-            "description":"Server Internal error"
+          "500": {
+            "description": "Server Internal error"
           }
         },
-        "tags":[
+        "tags": [
+          "Dlink"
+        ]
+      }
+    },
+    "/thingecho": {
+      "get": {
+        "summary": "物模型",
+        "description": "物模型回显",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "productid",
+            "type": "string",
+            "description": "产品id",
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "identifier",
+            "type": "string",
+            "description": "物模型标识符",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
           "Dlink"
         ]
       }
