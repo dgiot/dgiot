@@ -106,7 +106,8 @@ handle_info({deliver, _, Msg}, #tcp{state = #state{id = ChannelId} = State} = TC
             case binary:split(Topic, <<$/>>, [global, trim]) of
                 [<<"$dg">>, <<"device">>, ProductId, DevAddr, <<"profile">>] ->
 %%                    设置参数
-                    Payloads = modbus_rtu:set_params(jsx:decode(Payload), ProductId, DevAddr),
+                    ProfilePayload = dgiot_device_profile:encode_profile(ProductId, jsx:decode(Payload)),
+                    Payloads = modbus_rtu:set_params(ProfilePayload, ProductId, DevAddr),
                     lists:map(fun(X) ->
                         dgiot_tcp_server:send(TCPState, X)
                               end, Payloads),
@@ -130,7 +131,8 @@ handle_info({deliver, _, Msg}, #tcp{state = #state{id = ChannelId} = State} = TC
             case binary:split(Topic, <<$/>>, [global, trim]) of
                 [<<"$dg">>, <<"device">>, ProductId, DevAddr, <<"profile">>] ->
                     %% 设置参数
-                    Payloads = modbus_rtu:set_params(jsx:decode(Payload), ProductId, DevAddr),
+                    ProfilePayload = dgiot_device_profile:encode_profile(ProductId, jsx:decode(Payload)),
+                    Payloads = modbus_rtu:set_params(ProfilePayload, ProductId, DevAddr),
                     lists:map(fun(X) ->
                         dgiot_tcp_server:send(TCPState, X)
                               end, Payloads),

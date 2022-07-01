@@ -54,7 +54,8 @@ get_calculated(ProductId, Ack) ->
                         Acc;
                     _ ->
                         case X of
-                            #{<<"identifier">> := Identifier, <<"dataForm">> := #{
+                            #{<<"isstorage">> := true,
+                                <<"identifier">> := Identifier, <<"dataForm">> := #{
                                 <<"strategy">> := <<"计算值"/utf8>>, <<"collection">> := Collection},
                                 <<"dataType">> := #{<<"type">> := Type, <<"specs">> := Specs}} ->
                                 Str1 = maps:fold(fun(K, V, Acc2) ->
@@ -86,7 +87,8 @@ get_collection(ProductId, [], Payload, Ack) ->
                         Acc2;
                     _ ->
                         case X of
-                            #{<<"dataForm">> := #{<<"strategy">> := Strategy} = DataForm,
+                            #{<<"isstorage">> := true,
+                                <<"dataForm">> := #{<<"strategy">> := Strategy} = DataForm,
                                 <<"dataType">> := DataType,
                                 <<"identifier">> := Identifier} when Strategy =/= <<"计算值"/utf8>> ->
                                 dgiot_task_data:get_userdata(ProductId, Identifier, DataForm, DataType, Payload, Acc2);
@@ -110,7 +112,8 @@ get_collection(ProductId, Dis, Payload, Ack) ->
                             Acc2;
                         _ ->
                             case X of
-                                #{<<"dataForm">> := #{<<"strategy">> := Strategy} = DataForm,
+                                #{<<"isstorage">> := true,
+                                    <<"dataForm">> := #{<<"strategy">> := Strategy} = DataForm,
                                     <<"dataType">> := DataType,
                                     <<"identifier">> := Identifier} when Strategy =/= <<"计算值"/utf8>> ->
                                     dgiot_task_data:get_userdata(ProductId, Identifier, DataForm, DataType, Payload, Acc2);
