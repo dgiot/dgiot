@@ -172,7 +172,7 @@ create_device(#{<<"status">> := Status, <<"brand">> := Brand, <<"devModel">> := 
                 <<"ip">> => maps:get(<<"ip">>, Device, <<"">>),
                 <<"status">> => Status},
             dgiot_parse:update_object(<<"Device">>, DeviceId, Body),
-            dgiot_device:put(#{<<"objectId">> => DeviceId}),
+            dgiot_device:put(#{<<"objectId">> => DeviceId, <<"status">> => Status}),
             {ok, Result};
         _R ->
             {{Y, M, D}, {_, _, _}} = dgiot_datetime:local_time(),
