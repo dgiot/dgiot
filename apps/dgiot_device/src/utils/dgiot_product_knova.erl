@@ -268,7 +268,7 @@ get_attrs(Type, ProductId, ClassName, Attrs, DeviceId, KonvatId, Shapeid, Identi
                                     {ok, Text1} ->
                                         get_konva_value(ProductId, Identifier1, Text1)
                                 end,
-                            NewAttrs = Attrs#{<<"id">> => dgiot_parse_id:get_shapeid(DeviceId, Id), <<"text">> => Text, <<"draggable">> => false},
+                            NewAttrs = Attrs#{<<"id">> => dgiot_parse_id:get_shapeid(DeviceId, Id), <<"text">> => <<Text/binary, " ", Unit/binary>>, <<"draggable">> => false},
                             save(Type, NewAttrs),
                             X#{<<"attrs">> => NewAttrs}
                     end
