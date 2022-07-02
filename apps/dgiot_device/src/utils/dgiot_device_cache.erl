@@ -84,24 +84,10 @@ post(Device) ->
     ProductId = maps:get(<<"objectId">>, Product),
     DeviceSecret = maps:get(<<"deviceSecret">>, Device, <<"oioojn">>),
     DeviceId = maps:get(<<"objectId">>, Device, dgiot_parse_id:get_deviceid(ProductId, Devaddr)),
-    {Data, Location, Address} =
-        case dgiot_product:lookup_prod(ProductId) of
-            {ok, ProductInfo} ->
-                Data1 = maps:with([<<"profile">>, <<"content">>], ProductInfo),
-                case maps:find(<<"config">>, Device) of
-                    {ok, #{<<"location">> := Location1, <<"address">> := Address1}} ->
-                        {Data1, Location1, Address1};
-                    _ ->
-                        {Data1, #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => 120.065463, <<"latitude">> => 30.368707}, <<>>}
-                end;
-            _ ->
-                {#{}, #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => 120.065463, <<"latitude">> => 30.368707}, <<>>}
-        end,
-
-    dgiot_parse:update_object(<<"Device">>, DeviceId, Data#{<<"location">> => maps:get(<<"location">>, Device, Location), <<"address">> => maps:get(<<"address">>, Device, Address)}),
-
+    NewData = get_newdata(Device, ProductId),
+    dgiot_parse:update_object(<<"Device">>, DeviceId, NewData),
     #{<<"longitude">> := Longitude, <<"latitude">> := Latitude} =
-        maps:get(<<"location">>, Device, Location),
+        maps:get(<<"location">>, NewData, #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => 120.065463, <<"latitude">> => 30.368707}),
     Status =
         case maps:get(<<"status">>, Device, <<"OFFLINE">>) of
             <<"OFFLINE">> -> false;
@@ -109,6 +95,27 @@ post(Device) ->
         end,
     IsEnable = maps:get(<<"isEnable">>, Device, false),
     insert_mnesia(DeviceId, dgiot_role:get_acls(Device), Status, dgiot_datetime:now_secs(), IsEnable, ProductId, Devaddr, DeviceSecret, node(), Longitude, Latitude).
+
+%% 新建设备时，如果没有，从产品拿默认值
+get_newdata(Device, ProductId) ->
+    {Profile, Content, Location, Address} =
+        case dgiot_product:lookup_prod(ProductId) of
+            {ok, ProductInfo} ->
+                Profile1 = maps:get(<<"profile">>, ProductInfo, #{}),
+                Content1 = maps:get(<<"content">>, ProductInfo, #{}),
+                Config = maps:get(<<"config">>, ProductInfo, #{}),
+                Location1 = maps:get(<<"location">>, Config, #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => 120.065463, <<"latitude">> => 30.368707}),
+                Address1 = maps:get(<<"address">>, Config, <<>>),
+                {Profile1, Content1, Location1, Address1};
+            _ ->
+                {#{}, #{}, #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => 120.065463, <<"latitude">> => 30.368707}, <<>>}
+        end,
+    #{
+        <<"profile">> => maps:get(<<"profile">>, Device, Profile),
+        <<"content">> => maps:get(<<"content">>, Device, Content),
+        <<"location">> => maps:get(<<"location">>, Device, Location),
+        <<"address">> => maps:get(<<"address">>, Device, Address)
+    }.
 
 post(#{<<"ACL">> := _Acl} = Device, _SessionToken) ->
     dgiot_device_cache:post(Device);

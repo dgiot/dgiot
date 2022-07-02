@@ -23,7 +23,7 @@
 -export([start/2]).
 
 %% Channel callback
--export([init/3, handle_init/1, handle_event/3, handle_message/2, stop/3]).
+-export([init/3, handle_init/1, handle_event/3, handle_message/2, stop/3, test/1]).
 
 %% 注册通道类型
 -channel_type(#{
@@ -129,3 +129,31 @@ handle_message(_Message, State) ->
 
 stop(_ChannelType, _ChannelId, _State) ->
     ok.
+
+
+test(ProductId) ->
+    spawn(fun() ->
+        timer:sleep(3 * 100),
+        lists:foreach(
+            fun(I) ->
+                DeviceId = dgiot_parse_id:get_deviceid(ProductId, dgiot_utils:to_binary(I)),
+                Body = #{
+                    <<"ACL">> => #{
+                        <<"*">> => #{
+                            <<"read">> => true,
+                            <<"write">> => true
+                        }
+                    },
+                    <<"content">> => #{<<"alertstatus">> => true, <<"_deviceid">> => DeviceId, <<"_productid">> => ProductId},
+                    <<"public">> => true,
+                    <<"status">> => 0,
+                    <<"sender">> => #{
+                        <<"__type">> => <<"Pointer">>,
+                        <<"className">> => <<"_User">>,
+                        <<"objectId">> => <<"Klht7ERlYn">>
+                    },
+                    <<"type">> => <<ProductId/binary, "_alarm">>
+                },
+                dgiot_parse:create_object(<<"Notification">>, Body)
+            end, lists:seq(1, 6000))
+          end).
