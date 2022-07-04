@@ -17,11 +17,16 @@
 -module(dgiot_device_cache).
 -author("kenneth").
 -include("dgiot_device.hrl").
+-dgiot_data("ets").
+-export([init_ets/0]).
 -include_lib("dgiot/include/logger.hrl").
 -include_lib("dgiot_tdengine/include/dgiot_tdengine.hrl").
 -export([parse_cache_Device/1, sync_parse/1, post/1, post/2, put/1, save/1, save/2, save_subdevice/2, get_subdevice/2, lookup/1, lookup/2, delete/1, delete/2]).
 -export([get_profile/1, get_profile/2, get_online/1, online/1, offline/1, offline_child/1, enable/1, disable/1, save_profile/1]).
 -export([location/3, get_location/1, get_address/2]).
+
+init_ets() ->
+    dgiot_data:init(?DGIOT_LOCATION).
 
 %% Device 数量统计，权限统计，在线离线统计，产品下面设备数量统计等是用户非常关系的数据指标
 parse_cache_Device(_ClassName) ->
@@ -39,7 +44,6 @@ parse_cache_Device(_ClassName) ->
         <<"where">> => #{}
     },
     dgiot_parse_loader:start(<<"Device">>, Query, 0, 500, 1000000, Success).
-
 
 save(ProductId, DevAddr) ->
     DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
@@ -187,9 +191,10 @@ insert_mnesia(DeviceId, Acl, Status, Now, IsEnable, ProductId, Devaddr, DeviceSe
             _ ->
                 {<<>>, <<>>, <<>>}
         end,
+    dgiot_data:insert(?DGIOT_LOCATION, DeviceId, {Bd_lng, Bd_lat}),
     dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(#{DeviceId => #{<<"status">> => NewStatus, <<"isEnable">> => IsEnable, <<"lastOnlineTime">> => Now, <<"address">> => Address, <<"longitude">> => Bd_lng, <<"latitude">> => Bd_lat}, <<"location">> => #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => Bd_lng, <<"latitude">> => Bd_lat}})),
 %%    io:format("~s ~p Data = ~ts~n", [?FILE, ?LINE, jsx:encode(#{DeviceId => #{<<"status">> => NewStatus, <<"isEnable">> => IsEnable, <<"lastOnlineTime">> => Now, <<"address">> => Address}})]),
-    dgiot_mnesia:insert(DeviceId, ['Device', Acl, Status, Now, IsEnable, dgiot_utils:to_atom(ProductId), Devaddr, DeviceSecret, Node, Bd_lng, Bd_lat]).
+    dgiot_mnesia:insert(DeviceId, ['Device', Acl, Status, Now, IsEnable, dgiot_utils:to_atom(ProductId), Devaddr, DeviceSecret, Node, Longitude, Latitude]).
 
 %% 缓存设备的profile配置
 save_profile(#{<<"objectId">> := DeviceId, <<"profile">> := Profile, <<"product">> := #{<<"objectId">> := ProductId}}) ->

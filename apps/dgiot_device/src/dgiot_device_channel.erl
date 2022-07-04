@@ -20,6 +20,7 @@
 -include_lib("dgiot/include/dgiot_socket.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
+-include("dgiot_device.hrl").
 -define(TYPE, <<"DEVICE">>).
 -define(MAX_BUFF_SIZE, 1024).
 -record(state, {id, mod, product, env = #{}}).
@@ -149,11 +150,11 @@ handle_message({sync_parse, Pid, 'after', get, Token, <<"Device">>, #{<<"results
                                     <<"OFFLINE">>
                             end,
                         Location =
-                            case dgiot_device:lookup(DeviceId) of
-                                {ok, #{<<"longitude">> := Bd_lng, <<"latitude">> := Bd_lat}} ->
-                                    #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => Bd_lng, <<"latitude">> => Bd_lat};
-                                _ ->
-                                    #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => Longitude, <<"latitude">> => Latitude}
+                            case dgiot_data:get(?DGIOT_LOCATION, DeviceId) of
+                                not_fing ->
+                                    #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => Longitude, <<"latitude">> => Latitude};
+                                {Bd_lng, Bd_lat} ->
+                                    #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => Bd_lng, <<"latitude">> => Bd_lat}
                             end,
                         {NewResult ++ [Device#{<<"location">> => Location, <<"status">> => NewStatus, <<"isEnable">> => IsEnable, <<"lastOnlineTime">> => Time}], Dev ++ [DeviceId]};
                     _ ->
@@ -174,11 +175,11 @@ handle_message({sync_parse, Pid, 'after', get, _Token, <<"Device">>, #{<<"object
         case ResBody of
             #{<<"location">> := Location1} ->
                 Location =
-                    case dgiot_device:lookup(ObjectId) of
-                        {ok, #{<<"longitude">> := Bd_lng, <<"latitude">> := Bd_lat}} ->
-                            #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => Bd_lng, <<"latitude">> => Bd_lat};
-                        _ ->
-                            Location1
+                    case dgiot_data:get(?DGIOT_LOCATION, ObjectId) of
+                        not_fing ->
+                            Location1;
+                        {Bd_lng, Bd_lat} ->
+                            #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => Bd_lng, <<"latitude">> => Bd_lat}
                     end,
                 ResBody#{<<"location">> => Location};
             _ ->
