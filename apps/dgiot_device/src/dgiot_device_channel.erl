@@ -108,6 +108,7 @@ init(?TYPE, ChannelId, #{<<"offline">> := OffLine} = Args) ->
     },
     dgiot_data:insert({device, offline}, OffLine),
     dgiot_parse_hook:subscribe(<<"Device">>, get, ChannelId),
+    dgiot_parse_hook:subscribe(<<"Device/*">>, get, ChannelId),
     dgiot_parse_hook:subscribe(<<"Device">>, post, ChannelId),
     dgiot_parse_hook:subscribe(<<"Device/*">>, put, ChannelId, [<<"isEnable">>]),
     dgiot_parse_hook:subscribe(<<"Device/*">>, delete, ChannelId),
@@ -147,7 +148,13 @@ handle_message({sync_parse, Pid, 'after', get, Token, <<"Device">>, #{<<"results
                                 _ ->
                                     <<"OFFLINE">>
                             end,
-                        Location = #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => Longitude, <<"latitude">> => Latitude},
+                        Location =
+                            case dgiot_device:lookup(DeviceId) of
+                                {ok, #{<<"longitude">> := Bd_lng, <<"latitude">> := Bd_lat}} ->
+                                    #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => Bd_lng, <<"latitude">> => Bd_lat};
+                                _ ->
+                                    #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => Longitude, <<"latitude">> => Latitude}
+                            end,
                         {NewResult ++ [Device#{<<"location">> => Location, <<"status">> => NewStatus, <<"isEnable">> => IsEnable, <<"lastOnlineTime">> => Time}], Dev ++ [DeviceId]};
                     _ ->
                         {NewResult ++ [Device], Dev}
@@ -161,6 +168,25 @@ handle_message({sync_parse, Pid, 'after', get, Token, <<"Device">>, #{<<"results
     end,
     dgiot_parse_hook:publish(Pid, ResBody#{<<"results">> => NewResults}),
     {ok, State};
+
+handle_message({sync_parse, Pid, 'after', get, _Token, <<"Device">>, #{<<"objectId">> := ObjectId} = ResBody}, State) ->
+    ResBody1 =
+        case ResBody of
+            #{<<"location">> := Location1} ->
+                Location =
+                    case dgiot_device:lookup(ObjectId) of
+                        {ok, #{<<"longitude">> := Bd_lng, <<"latitude">> := Bd_lat}} ->
+                            #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => Bd_lng, <<"latitude">> => Bd_lat};
+                        _ ->
+                            Location1
+                    end,
+                ResBody#{<<"location">> => Location};
+            _ ->
+                ResBody
+        end,
+    dgiot_parse_hook:publish(Pid, ResBody1),
+    {ok, State};
+
 
 handle_message({sync_parse, _Pid, 'after', post, Token, <<"Device">>, QueryData}, State) ->
     dgiot_device:post(QueryData, Token),
