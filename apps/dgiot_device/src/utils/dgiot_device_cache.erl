@@ -19,11 +19,9 @@
 -include("dgiot_device.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -include_lib("dgiot_tdengine/include/dgiot_tdengine.hrl").
-
 -export([parse_cache_Device/1, sync_parse/1, post/1, post/2, put/1, save/1, save/2, save_subdevice/2, get_subdevice/2, lookup/1, lookup/2, delete/1, delete/2]).
 -export([get_profile/1, get_profile/2, get_online/1, online/1, offline/1, offline_child/1, enable/1, disable/1, save_profile/1]).
--export([location/3, get_location/1, get_address/1]).
-
+-export([location/3, get_location/1, get_address/2]).
 
 %% Device 数量统计，权限统计，在线离线统计，产品下面设备数量统计等是用户非常关系的数据指标
 parse_cache_Device(_ClassName) ->
@@ -182,16 +180,16 @@ insert_mnesia(DeviceId, Acl, Status, Now, IsEnable, ProductId, Devaddr, DeviceSe
             _ ->
                 <<"OFFLINE">>
         end,
-    Address =
+    {Address, Bd_lng, Bd_lat} =
         case dgiot_gps:get_baidu_addr(Longitude, Latitude) of
-            #{<<"baiduaddr">> := #{<<"formatted_address">> := FormattedAddress}} ->
-                FormattedAddress;
+            #{<<"baiduaddr">> := #{<<"formatted_address">> := FormattedAddress, <<"location">> := #{<<"lng">> := Bd_lng1, <<"lat">> := Bd_lat1}}} ->
+                {FormattedAddress, Bd_lng1, Bd_lat1};
             _ ->
-                <<>>
+                {<<>>, <<>>, <<>>}
         end,
-    dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(#{DeviceId => #{<<"status">> => NewStatus, <<"isEnable">> => IsEnable, <<"lastOnlineTime">> => Now, <<"address">> => Address, <<"longitude">> => Longitude, <<"latitude">> => Latitude}})),
+    dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(#{DeviceId => #{<<"status">> => NewStatus, <<"isEnable">> => IsEnable, <<"lastOnlineTime">> => Now, <<"address">> => Address, <<"longitude">> => Bd_lng, <<"latitude">> => Bd_lat}, <<"location">> => #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => Bd_lng, <<"latitude">> => Bd_lat}})),
 %%    io:format("~s ~p Data = ~ts~n", [?FILE, ?LINE, jsx:encode(#{DeviceId => #{<<"status">> => NewStatus, <<"isEnable">> => IsEnable, <<"lastOnlineTime">> => Now, <<"address">> => Address}})]),
-    dgiot_mnesia:insert(DeviceId, ['Device', Acl, Status, Now, IsEnable, dgiot_utils:to_atom(ProductId), Devaddr, DeviceSecret, Node, Longitude, Latitude]).
+    dgiot_mnesia:insert(DeviceId, ['Device', Acl, Status, Now, IsEnable, dgiot_utils:to_atom(ProductId), Devaddr, DeviceSecret, Node, Bd_lng, Bd_lat]).
 
 %% 缓存设备的profile配置
 save_profile(#{<<"objectId">> := DeviceId, <<"profile">> := Profile, <<"product">> := #{<<"objectId">> := ProductId}}) ->
@@ -272,16 +270,11 @@ get_location(DeviceId) ->
             #{}
     end.
 
-get_address(DeviceId) ->
-    case lookup(DeviceId) of
-        {ok, #{<<"longitude">> := LonDeg, <<"latitude">> := LatDeg}} ->
-            Address = dgiot_gps:get_baidu_addr(LonDeg, LatDeg),
-            case Address of
-                #{<<"baiduaddr">> := #{<<"formatted_address">> := Formatted_address}} ->
-                    Formatted_address;
-                _ ->
-                    <<"">>
-            end;
+get_address(Lon, Lat) ->
+    Address = dgiot_gps:get_baidu_addr(Lon, Lat),
+    case Address of
+        #{<<"baiduaddr">> := #{<<"formatted_address">> := Formatted_address}} ->
+            Formatted_address;
         _ ->
             <<"">>
     end.
