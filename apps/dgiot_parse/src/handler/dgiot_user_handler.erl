@@ -208,7 +208,8 @@ do_request(post_logout,  #{<<"sessionToken">> := SessionToken}, _Context, _Req) 
     SessionId = dgiot_parse_id:get_sessionId(SessionToken),
     dgiot_parse:del_object(<<"_Session">>, SessionId),
     dgiot_mqtt:unsubscribe_route_key(SessionToken),
-    dgiot_parse_auth:del_usersession(SessionToken);
+    dgiot_parse_auth:del_usersession(SessionToken),
+    dgiot_parse_auth:del_cookie(SessionToken);
 
 %% RoleUser 概要: 导库 描述:json文件导库
 %% OperationId:get_roleuser

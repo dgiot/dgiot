@@ -22,6 +22,7 @@
 -dgiot_data("ets").
 -export([init_ets/0]).
 -define(DGIOT_USERSESSION, dgiot_usersession).
+-define(DGIOT_COOKIE,dgiot_cookie).
 
 %% API
 -export([
@@ -49,10 +50,12 @@
 -export([login_by_account/2, login_by_token/2, login_by_mail_phone/1, do_login/1]).
 -export([create_user_for_app/1, get_token/1, set_cookies/3, add_acl/5]).
 -export([get_usersession/1, put_usersession/1,del_usersession/1]).
+-export([get_cookie/1,put_cookie/2,del_cookie/1]).
 
 
 init_ets() ->
-    dgiot_data:init(?DGIOT_USERSESSION).
+    dgiot_data:init(?DGIOT_USERSESSION),
+    dgiot_data:init(?DGIOT_COOKIE).
 
 get_usersession(Depart_token) ->
     dgiot_data:get(?DGIOT_USERSESSION, {Depart_token}).
@@ -77,6 +80,14 @@ del_usersession(User_session)->
     dgiot_data:loop(?DGIOT_USERSESSION, Fun).
 
 
+
+put_cookie(UserSession,Cookie)->
+    dgiot_data:insert(?DGIOT_COOKIE, {UserSession}, Cookie).
+
+get_cookie(UserSession)->
+    dgiot_data:get(?DGIOT_COOKIE, {UserSession}).
+del_cookie(UserSession)->
+    dgiot_data:delete(?DGIOT_COOKIE, UserSession).
 
 %% 登录
 login(UserName, Password) ->
