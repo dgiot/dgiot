@@ -175,6 +175,55 @@
           "Dlink"
         ]
       }
+    },
+    "/cookie": {
+      "post": {
+        "summary": "cookie存储",
+        "description": "cookie存储",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "data",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "UserSession": {
+                  "required": true,
+                  "type": "string",
+                  "example": "usersession"
+                },
+                "cookie": {
+                  "required": true,
+                  "type": "string",
+                  "example": "{}"
+                }
+              }
+            }
+          }
+        ],
+
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Dlink"
+        ]
+      }
     }
   }
 }
