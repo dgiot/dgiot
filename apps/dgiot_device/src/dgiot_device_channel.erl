@@ -28,7 +28,7 @@
 -export([start/2]).
 
 %% Channel callback
--export([init/3, handle_init/1, handle_event/3, handle_message/2, stop/3]).
+-export([init/3, handle_init/1, handle_event/3, handle_message/2, stop/3, get_new_location/2]).
 
 
 %% 注册通道类型
@@ -138,16 +138,16 @@ handle_message(check, #state{id = ChannelId, env = #{<<"offline">> := OffLine, <
 
 handle_message({sync_parse, Pid, 'after', get, Token, <<"Device">>, #{<<"results">> := Results} = ResBody}, State) ->
     SessionToken = dgiot_parse_auth:get_usersession(dgiot_utils:to_binary(Token)),
-    Cookie= case  dgiot_parse_auth:get_cookie(SessionToken) of
-                not_find ->
-                    #{};
-            Cooki ->
-                Cooki
-            end,
-    MapType = maps:get(<<"mapType">>,Cookie,<<"baidu">>),
+    Cookie = case dgiot_parse_auth:get_cookie(SessionToken) of
+                 not_find ->
+                     #{};
+                 Cooki ->
+                     Cooki
+             end,
+    MapType = maps:get(<<"mapType">>, Cookie, <<"baidu">>),
     {NewResults, DeviceList} =
         lists:foldl(
-            fun(#{<<"objectId">> := DeviceId } = Device, {NewResult, Dev}) ->
+            fun(#{<<"objectId">> := DeviceId} = Device, {NewResult, Dev}) ->
                 case dgiot_device:lookup(DeviceId) of
                     {ok, #{<<"status">> := Status, <<"isEnable">> := IsEnable, <<"time">> := Time}} ->
                         NewStatus =
@@ -157,14 +157,14 @@ handle_message({sync_parse, Pid, 'after', get, Token, <<"Device">>, #{<<"results
                                 _ ->
                                     <<"OFFLINE">>
                             end,
-                        Location = case maps:find(<<"location">>,Device)of
-                                       error ->
-                                           #{};
-                                       {ok,A} ->
-                                           A
-                                   end,
-
-                        NewLocation = get_new_location(Location,MapType),
+                        Location =
+                            case maps:find(<<"location">>, Device) of
+                                error ->
+                                    #{};
+                                {ok, A} ->
+                                    A
+                            end,
+                        NewLocation = get_new_location(Location, MapType),
                         {NewResult ++ [Device#{<<"location">> => NewLocation, <<"status">> => NewStatus, <<"isEnable">> => IsEnable, <<"lastOnlineTime">> => Time}], Dev ++ [DeviceId]};
                     _ ->
                         {NewResult ++ [Device], Dev}
@@ -181,17 +181,17 @@ handle_message({sync_parse, Pid, 'after', get, Token, <<"Device">>, #{<<"results
 
 handle_message({sync_parse, Pid, 'after', get, Token, <<"Device">>, #{<<"objectId">> := _ObjectId} = ResBody}, State) ->
     SessionToken = dgiot_parse_auth:get_usersession(dgiot_utils:to_binary(Token)),
-    Cookie= case  dgiot_parse_auth:get_cookie(SessionToken) of
-                not_find ->
-                    #{};
-                A->
-                    A
-            end,
-    MapType = maps:get(<<"mapType">>,Cookie,<<"baidu">>),
+    Cookie = case dgiot_parse_auth:get_cookie(SessionToken) of
+                 not_find ->
+                     #{};
+                 A ->
+                     A
+             end,
+    MapType = maps:get(<<"mapType">>, Cookie, <<"baidu">>),
     ResBody1 =
         case ResBody of
             #{<<"location">> := Location} ->
-                NewLocation = get_new_location(Location,MapType),
+                NewLocation = get_new_location(Location, MapType),
                 ResBody#{<<"location">> => NewLocation};
             _ ->
                 ResBody
@@ -273,19 +273,13 @@ stop(ChannelType, ChannelId, _State) ->
     ?LOG(warning, "Channel[~p,~p] stop", [ChannelType, ChannelId]),
     ok.
 
-get_new_location(Location,MapType)->
-    case MapType of
-        <<"baidu">> ->
-            Longitude = maps:get(<<"longitude">>, Location, 0),
-            Latitude = maps:get(<<"latitude">>, Location, 0),
-            case [Location, Latitude] of
-                [0, 0] ->
-                    #{};
-                _ ->
-                    [Bd_lng, Bd_lat] = dgiot_gps:gcj02tobd09(Longitude, Latitude),
-                    #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => Bd_lng, <<"latitude">> => Bd_lat}
-            end;
+get_new_location(#{<<"longitude">> := Longitude, <<"latitude">> := Latitude}, <<"baidu">>) ->
+    [Mglng, Mglat] = dgiot_gps:get_baidu_gps(Longitude, Latitude),
+    #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => Mglng, <<"latitude">> => Mglat};
 
-        _ ->
-            Location
-    end.
+get_new_location(#{<<"longitude">> := Longitude, <<"latitude">> := Latitude}, <<"GCJ">>) ->
+    [Mglng, Mglat] = dgiot_gps:wgs84togcj02(Longitude, Latitude),
+    #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => Mglng, <<"latitude">> => Mglat};
+
+get_new_location(Location, _MapType) ->
+    Location.
