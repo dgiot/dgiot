@@ -25,6 +25,11 @@
 {datatype, integer}
 ]}.
 
+{mapping, "statsd.load_cache_classes_interval", "dgiot.load_cache_classes_interval", [
+{default, 10},
+{datatype, integer}
+]}.
+
 {mapping, "statsd.collector.$name", "dgiot.collectors", [
 {datatype, atom}
 ]}.

@@ -24,7 +24,7 @@
 -export([create_device/1, create_device/2, get_sub_device/1, get_sub_device/2, save_subdevice/2, get_subdevice/2]).
 -export([parse_cache_Device/1, sync_parse/1, get/2, post/1, post/2, put/1, save/1, save/2, lookup/1, lookup/2, delete/1, delete/2]).
 -export([save_profile/1, get_profile/1, get_profile/2, get_online/1, online/1, offline/1, offline_child/1, enable/1, disable/1]).
--export([put_location/3, get_location/1, get_address/2]).
+-export([put_location/3, get_location/1, get_address/3]).
 -export([get_acl/1, save_log/3, get_url/1, get_appname/1]).
 
 parse_cache_Device(_ClasseName) ->
@@ -96,8 +96,8 @@ put_location(DeviceId, Longitude, Latitude) ->
 get_location(DeviceId) ->
     dgiot_device_cache:get_location(DeviceId).
 
-get_address(Lon, Lat) ->
-    dgiot_device_cache:get_address(Lon, Lat).
+get_address(DeviceId, DgLon, DgLat) ->
+    dgiot_device_cache:get_address(DeviceId, DgLon, DgLat).
 
 save_subdevice({ProductId, DevAddr}, {DtuAddr, SlaveId}) ->
     dgiot_device_cache:save_subdevice({ProductId, DevAddr}, {DtuAddr, SlaveId}).

@@ -81,7 +81,8 @@ init(Opts) ->
     Threshold = proplists:get_value(ets_threshold, Opts, 0.85),
     CheckPid = proplists:get_value(checkpid, Opts),
     ValueEts = ets:new(?MODULE, [public, named_table, {write_concurrency, true}, {read_concurrency, true}]),
-    erlang:send_after(1000 * 10, self(), load_cache_classes),
+    Interval = dgiot:get_env(load_cache_classes_interval, 10),
+    erlang:send_after(1000 * Interval, self(), load_cache_classes),
     {ok, #cachestate{maxsize = MaxSize,
         threshold = Threshold,
         cacheets = ValueEts,
@@ -122,14 +123,15 @@ handle_cast(stop, #cachestate{
 handle_cast(_Msg, State) ->
     {noreply, State}.
 
-handle_info({'load_cache_classes_fin'},  State) ->
-    io:format("~s ~p ~p ~n",[?FILE, ?LINE, load_cache_classes_fin]),
+handle_info({'load_cache_classes_fin'}, State) ->
+    io:format("~s ~p ~p ~n", [?FILE, ?LINE, load_cache_classes_fin]),
     {noreply, State};
 
-handle_info(load_cache_classes, State)  ->
-    case dgiot_hook:run_hook({'dgiot','load_cache_classes'}, [self()]) of
+handle_info(load_cache_classes, State) ->
+    case dgiot_hook:run_hook({'dgiot', 'load_cache_classes'}, [self()]) of
         {error, not_find} ->
-            erlang:send_after(15000, self(), load_cache_classes);
+            Interval = dgiot:get_env(load_cache_classes_interval, 10),
+            erlang:send_after(1000 * Interval, self(), load_cache_classes);
         _ ->
             pass
     end,
