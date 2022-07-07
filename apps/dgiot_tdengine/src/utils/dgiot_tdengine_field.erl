@@ -121,6 +121,7 @@ check_field(Data, Props) when is_map(Data) ->
 
 check_field(Data, #{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := Type} = DataType}) ->
     NewField = list_to_binary(string:to_lower(binary_to_list(Field))),
+    Specs = maps:get(<<"specs">>, DataType, #{}),
     case proplists:get_value(NewField, Data) of
         undefined ->
             undefined;
@@ -135,7 +136,6 @@ check_field(Data, #{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> :=
                     _ when Type1 == <<"INT">>; Type1 == <<"DATE">> ->
                         Value;
                     _ when Type1 == <<"FLOAT">>; Type1 == <<"DOUBLE">> ->
-                        Specs = maps:get(<<"specs">>, DataType, #{}),
                         Precision = maps:get(<<"precision">>, Specs, 3),
                         dgiot_utils:to_float(Value / 1, Precision);
                     <<"BOOL">> ->
@@ -157,7 +157,7 @@ check_field(Data, #{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> :=
                     _ ->
                         Value
                 end,
-            case check_validate(NewValue, DataType) of
+            case check_validate(NewValue, Specs) of
                 true ->
                     NewValue;
                 false ->
