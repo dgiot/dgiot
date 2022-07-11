@@ -115,7 +115,7 @@ get_newdata(Device, ProductId) ->
     #{
         <<"profile">> => maps:get(<<"profile">>, Device, Profile),
         <<"content">> => maps:get(<<"content">>, Device, Content),
-        <<"location">> => maps:get(<<"location">>, Device, Location),
+        <<"location">> => maps:get(<<"location">>, Device, Location#{<<"__type">> => <<"GeoPoint">>}),
         <<"address">> => maps:get(<<"address">>, Device, Address)
     }.
 
