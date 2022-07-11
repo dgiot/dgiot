@@ -98,7 +98,7 @@ login(Name, UserName, Password) ->
     dgiot_parse:request_rest(Name, 'GET', [], Path, Args, [{from, rest}]).
 
 load_roleuser() ->
-    dgiot_data:delete_all_objects(?PARENT_ROLE_ETS),
+%%    dgiot_data:delete_all_objects(?PARENT_ROLE_ETS),
     Success = fun(Page) ->
         lists:map(fun
                       (#{<<"objectId">> := RoleId}) ->

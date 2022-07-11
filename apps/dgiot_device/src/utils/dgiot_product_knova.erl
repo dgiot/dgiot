@@ -265,6 +265,8 @@ get_attrs(Type, ProductId, ClassName, Attrs, DeviceId, KonvatId, Shapeid, Identi
                                                 dgiot_data:insert({toponotext, ProductId}, New_Topo)
                                         end,
                                         Text2;
+                                    {ok, null} ->
+                                        <<"--">>;
                                     {ok, Text1} ->
                                         get_konva_value(ProductId, Identifier1, Text1)
                                 end,
