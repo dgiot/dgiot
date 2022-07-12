@@ -1,0 +1,30 @@
+{
+  "version.label": {
+    "message": "Next",
+    "description": "The label for version current"
+  },
+  "sidebar.docs.category.user_manual": {
+    "message": "用户手册",
+    "description": "The label for category user_manual in sidebar docs"
+  },
+  "sidebar.docs.category.product_doc": {
+    "message": "产品文档",
+    "description": "The label for category product_doc in sidebar docs"
+  },
+  "sidebar.docs.category.developer_guid": {
+    "message": "开发指南",
+    "description": "The label for category developer_guid in sidebar docs"
+  },
+  "sidebar.docs.category.系统架构": {
+    "message": "系统架构",
+    "description": "The label for category 系统架构 in sidebar docs"
+  },
+  "sidebar.docs.category.技术内幕": {
+    "message": "技术内幕",
+    "description": "The label for category 技术内幕 in sidebar docs"
+  },
+  "sidebar.docs.category.practical_tutorial": {
+    "message": "实战教程",
+    "description": "The label for category practical_tutorial in sidebar docs"
+  }
+}
