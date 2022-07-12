@@ -41,7 +41,7 @@ get_status(Type, Flag) ->
         lists:foldl(fun(X, {Num, Acc}) ->
             FlagId = dgiot_utils:to_binary("status_" ++ dgiot_utils:to_list(Type) ++ "_bit" ++ dgiot_utils:to_list(Num)),
             {Num + 1, Acc#{FlagId => X}}
-                    end, {0, #{}}, [X || <<X:1>> <= dgiot_utils:reverse(Flag)]),
+                    end, {0, #{}}, lists:reverse([X || <<X:1>> <= Flag])),
     Data.
 
 get_op(Type, Flag) ->
@@ -49,7 +49,7 @@ get_op(Type, Flag) ->
         lists:foldl(fun(X, {Num, Acc}) ->
             FlagId = dgiot_utils:to_binary("op_" ++ dgiot_utils:to_list(Type) ++ "_bit" ++ dgiot_utils:to_list(Num)),
             {Num + 1, Acc#{FlagId => get_op_desc(FlagId, X)}}
-                    end, {0, #{}}, [X || <<X:1>> <= dgiot_utils:reverse(Flag)]),
+                    end, {0, #{}}, lists:reverse([X || <<X:1>> <= Flag])),
     Data.
 
 %% 8．2．1．1 建筑消防设施系统状态
@@ -205,33 +205,33 @@ get_status_desc(_, _) ->
 %% 0|预留|无操作|无操作 |无操作 | 无操作   |无操作   |无操作 |无操作 |
 %%-----------------------------------------------------------------
 get_op_desc(<<"op_8_2_1_4_bit6">>, 1) ->
-    <<"测试"/utf8>>;
+    #{<<"测试操作"/utf8>> => <<"测试"/utf8>>};
 get_op_desc(<<"op_8_2_1_4_bit6">>, 0) ->
-    <<"无操作"/utf8>>;
+    #{<<"测试操作"/utf8>> => <<"无操作"/utf8>>};
 get_op_desc(<<"op_8_2_1_4_bit5">>, 1) ->
-    <<"确认"/utf8>>;
+    #{<<"确认操作"/utf8>> => <<"确认"/utf8>>};
 get_op_desc(<<"op_8_2_1_4_bit5">>, 0) ->
-    <<"无操作"/utf8>>;
+    #{<<"确认操作"/utf8>> => <<"无操作"/utf8>>};
 get_op_desc(<<"op_8_2_1_4_bit4">>, 1) ->
-    <<"自检"/utf8>>;
+    #{<<"自检操作"/utf8>> => <<"自检"/utf8>>};
 get_op_desc(<<"op_8_2_1_4_bit4">>, 0) ->
-    <<"无操作"/utf8>>;
+    #{<<"自检操作"/utf8>> => <<"无操作"/utf8>>};
 get_op_desc(<<"op_8_2_1_4_bit3">>, 1) ->
-    <<"警情消除"/utf8>>;
+    #{<<"警情操作"/utf8>> => <<"警情消除"/utf8>>};
 get_op_desc(<<"op_8_2_1_4_bit3">>, 0) ->
-    <<"无操作"/utf8>>;
+    #{<<"警情操作"/utf8>> => <<"无操作"/utf8>>};
 get_op_desc(<<"op_8_2_1_4_bit2">>, 1) ->
-    <<"手动报警"/utf8>>;
+    #{<<"报警操作"/utf8>> => <<"手动报警"/utf8>>};
 get_op_desc(<<"op_8_2_1_4_bit2">>, 0) ->
-    <<"无操作"/utf8>>;
+    #{<<"报警操作"/utf8>> => <<"无操作"/utf8>>};
 get_op_desc(<<"op_8_2_1_4_bit1">>, 1) ->
-    <<"消音"/utf8>>;
+    #{<<"消音操作"/utf8>> => <<"消音"/utf8>>};
 get_op_desc(<<"op_8_2_1_4_bit1">>, 0) ->
-    <<"无操作"/utf8>>;
+    #{<<"消音操作"/utf8>> => <<"无操作"/utf8>>};
 get_op_desc(<<"op_8_2_1_4_bit0">>, 1) ->
-    <<"复位"/utf8>>;
+    #{<<"复位操作"/utf8>> => <<"复位"/utf8>>};
 get_op_desc(<<"op_8_2_1_4_bit0">>, 0) ->
-    <<"无操作"/utf8>>;
+    #{<<"复位操作"/utf8>> => <<"无操作"/utf8>>};
 
 
 %% 8．2．1．9用户信息传输装置操作信息
@@ -242,35 +242,35 @@ get_op_desc(<<"op_8_2_1_4_bit0">>, 0) ->
 %% 0|预留 |无操作|无操作  |无操作|无操作  |无操作  |无操作|无操作|
 %%-------------------------------------------------------------
 get_op_desc(<<"op_8_2_1_9_bit6">>, 1) ->
-    <<"测试"/utf8>>;
+    #{<<"测试操作"/utf8>> => <<"测试"/utf8>>};
 get_op_desc(<<"op_8_2_1_9_bit6">>, 0) ->
-    <<"无操作"/utf8>>;
+    #{<<"测试操作"/utf8>> => <<"无操作"/utf8>>};
 get_op_desc(<<"op_8_2_1_9_bit5">>, 1) ->
-    <<"查岗应答"/utf8>>;
+    #{<<"查岗操作"/utf8>> => <<"查岗应答"/utf8>>};
 get_op_desc(<<"op_8_2_1_9_bit5">>, 0) ->
-    <<"无操作"/utf8>>;
+    #{<<"查岗操作"/utf8>> => <<"无操作"/utf8>>};
 get_op_desc(<<"op_8_2_1_9_bit4">>, 1) ->
-    <<"自检"/utf8>>;
+    #{<<"自检操作"/utf8>> => <<"自检"/utf8>>};
 get_op_desc(<<"op_8_2_1_9_bit4">>, 0) ->
-    <<"无操作"/utf8>>;
+    #{<<"自检操作"/utf8>> => <<"无操作"/utf8>>};
 get_op_desc(<<"op_8_2_1_9_bit3">>, 1) ->
-    <<"警情消除"/utf8>>;
+    #{<<"警情操作"/utf8>> => <<"警情消除"/utf8>>};
 get_op_desc(<<"op_8_2_1_9_bit3">>, 0) ->
-    <<"无操作"/utf8>>;
+    #{<<"警情操作"/utf8>> => <<"无操作"/utf8>>};
 get_op_desc(<<"op_8_2_1_9_bit2">>, 1) ->
-    <<"手动报警"/utf8>>;
+    #{<<"报警操作"/utf8>> => <<"手动报警"/utf8>>};
 get_op_desc(<<"op_8_2_1_9_bit2">>, 0) ->
-    <<"无操作"/utf8>>;
+    #{<<"报警操作"/utf8>> => <<"无操作"/utf8>>};
 get_op_desc(<<"op_8_2_1_9_bit1">>, 1) ->
-    <<"消音"/utf8>>;
+    #{<<"消音操作"/utf8>> => <<"消音"/utf8>>};
 get_op_desc(<<"op_8_2_1_9_bit1">>, 0) ->
-    <<"无操作"/utf8>>;
+    #{<<"消音操作"/utf8>> => <<"无操作"/utf8>>};
 get_op_desc(<<"op_8_2_1_9_bit0">>, 1) ->
-    <<"复位"/utf8>>;
+    #{<<"复位操作"/utf8>> => <<"复位"/utf8>>};
 get_op_desc(<<"op_8_2_1_9_bit0">>, 0) ->
-    <<"无操作"/utf8>>;
+    #{<<"复位操作"/utf8>> => <<"无操作"/utf8>>};
 get_op_desc(_, _) ->
-    <<"预留"/utf8>>.
+    #{<<"预留操作"/utf8>> => <<"预留"/utf8>>}.
 
 %% 不包含时间的信息体长度
 get_infobody_len(Type) ->
@@ -502,10 +502,10 @@ get_equ_addr(Board, <<Loop:16, Number:16>>, EquType) ->
 %%    0xFF+接口板回路号n
     NewLoop =
         case Loop > 65280 of
-        true ->
-            Loop- 65280;
-        _ -> Loop
-    end,
+            true ->
+                Loop - 65280;
+            _ -> Loop
+        end,
     BinLoop = dgiot_utils:to_binary(NewLoop),
     BinNumber = dgiot_utils:to_binary(Number),
     BinEquType = dgiot_gb26875_utils:get_equ_type(EquType),

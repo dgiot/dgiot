@@ -39,22 +39,13 @@ init(#tcp{state = #state{id = ChannelId}} = TCPState) ->
             {stop, not_find_channel}
     end.
 
+%%40400000010214200E0C07160000000000006400000000000A000218010101220D0E0C07165F2323
 handle_info({tcp, Buff}, #tcp{state = #state{id = ChannelId} = State} = TCPState) ->
     dgiot_bridge:send_log(ChannelId, "revice from  ~p", [dgiot_utils:binary_to_hex(Buff)]),
     case dgiot_gb26875_decoder:parse_frame(Buff, State) of
-        {ok, #{<<"ack">> := Ack} = _Result} ->
-            dgiot_tcp_server:send(TCPState, Ack);
-        {ok, Result} ->
-            dgiot_bridge:send_log(ChannelId, "~s ~p ~ts", [?FILE, ?LINE, unicode:characters_to_list(jiffy:encode(Result))]);
-%%            R = dgiot_gb26875_decoder:to_frame(Result),
-%%            case R =:= Buff of
-%%                true ->
-%%                    io:format("success to_frame Buff ~p~n", [Buff]),
-%%                    dgiot_bridge:send_log(ChannelId, "success to_frame Buff ~p", [Buff]);
-%%                _ ->
-%%                    io:format("error to_frame R ~p~n", [R]),
-%%                    dgiot_bridge:send_log(ChannelId, "error to_frame Buff ~p", [R])
-%%            end;
+        {ok, #{<<"ack">> := Ack}} ->
+            dgiot_tcp_server:send(TCPState, Ack),
+            dgiot_bridge:send_log(ChannelId, "~s ~p send ~p", [?FILE, ?LINE, dgiot_utils:binary_to_hex(Ack)]);
         _ ->
             pass
     end,
