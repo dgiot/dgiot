@@ -86,28 +86,28 @@ equdevice(#{<<"systype">> := _SysType, <<"sysaddr">> := SysAddr, <<"equtype">> :
         _ -> pass
     end.
 
-userdevice(#{<<"infotype">> := InforType, <<"userid">> := UserId} = Map,
+userdevice(#{<<"userid">> := UserId} = Map,
     #{<<"source">> := Ip} = Header, #state{devtype = DevType}) ->
     %%    用户信息传输装置
     ProductId = <<"b3973b214f">>,
     BinUserId = dgiot_utils:to_binary(UserId),
-    creat_userdevice(BinUserId, ProductId, InforType, Ip, DevType, Header),
+    creat_userdevice(BinUserId, ProductId, Ip, DevType, Header),
     case maps:find(<<"data">>, Map) of
         {ok, Data} ->
 %%            io:format("~s ~p ~p ", [?FILE, ?LINE, Data]),
-            dgiot_task:save_td(ProductId, BinUserId, Data, #{});
+            dgiot_task:save_td(ProductId, BinUserId, Data, #{<<"interval">> => 3});
         _ -> pass
     end;
 
 userdevice(_, _, _) ->
     pass.
 
-oplog(#{<<"infotype">> := InforType, <<"userid">> := UserId} = Map,
+oplog(#{<<"userid">> := UserId} = Map,
     #{<<"source">> := Ip} = Header, #state{devtype = DevType}) ->
     %%    用户信息传输装置
     ProductId = <<"b3973b214f">>,
     BinUserId = dgiot_utils:to_binary(UserId),
-    creat_userdevice(BinUserId, ProductId, InforType, Ip, DevType, maps:merge(Map, Header)),
+    creat_userdevice(BinUserId, ProductId, Ip, DevType, maps:merge(Map, Header)),
     case dgiot_product:lookup_prod(ProductId) of
         {ok, #{<<"ACL">> := Acl}} ->
             create_devceLog(BinUserId, ProductId, Acl, maps:merge(Map, Header));
@@ -172,16 +172,17 @@ create_sysdevice(BinSysAddr, ProductId, SysType, Ip, DevType, Header) ->
             pass
     end.
 
-creat_userdevice(BinUserId, ProductId, InforType, Ip, DevType, Header) ->
+creat_userdevice(BinUserId, ProductId, Ip, DevType, Header) ->
     case dgiot_product:lookup_prod(ProductId) of
         {ok, #{<<"ACL">> := Acl}} ->
-            DeviceId = dgiot_parse_id:get_deviceid(ProductId, BinUserId),
+            BinUserId1 = dgiot_utils:to_binary(BinUserId),
+            DeviceId = dgiot_parse_id:get_deviceid(ProductId, BinUserId1),
             case dgiot_device:lookup(DeviceId) of
                 {error, not_find} ->
                     Device =
                         #{
-                            <<"devaddr">> => dgiot_utils:to_binary(BinUserId),
-                            <<"name">> => dgiot_utils:to_binary(InforType),
+                            <<"devaddr">> => BinUserId1,
+                            <<"name">> => <<"用户信息传输装置"/utf8, "_", BinUserId1/binary>>,
                             <<"ip">> => Ip,
                             <<"isEnable">> => true,
                             <<"product">> => ProductId,
@@ -191,7 +192,7 @@ creat_userdevice(BinUserId, ProductId, InforType, Ip, DevType, Header) ->
                             <<"basedata">> => Header,
                             <<"devModel">> => <<"城市消防"/utf8>>
                         },
-%%            io:format("~s ~p Device  ~p ~n", [?FILE, ?LINE, Device]),
+%%                    io:format("~s ~p Device  ~p ~n", [?FILE, ?LINE, Device]),
                     dgiot_device:create_device(Device);
                 _ ->
                     pass
@@ -233,14 +234,23 @@ creat_equdevice(BinSysAddr, ProductId, EquAddr, Name, Ip, DevType, Header) ->
 
 
 create_devceLog(Devaddr, ProductId, Acl, #{<<"serialid">> := Serialid} = Data) ->
+    Createtime = dgiot_utils:to_binary(maps:get(<<"timestamp">>, Data, dgiot_datetime:now_secs())),
+    DeviceId = dgiot_parse_id:get_deviceid(ProductId, Devaddr),
+    DevicelogId = dgiot_parse_id:get_devicelogid(DeviceId, Createtime),
     Device = #{
-        <<"device">> => dgiot_parse_id:get_deviceid(ProductId, Devaddr),
+        <<"objectId">> => DevicelogId,
+        <<"device">> => #{
+            <<"__type">> => <<"Pointer">>,
+            <<"className">> => <<"Device">>,
+            <<"objectId">> => DeviceId
+        },
         <<"devaddr">> => dgiot_utils:to_binary(Serialid),
         <<"product">> => #{
             <<"__type">> => <<"Pointer">>,
             <<"className">> => <<"Product">>,
             <<"objectId">> => ProductId
         },
+        <<"createtime">> => Createtime,
         <<"data">> => Data,
         <<"ACL">> => Acl,
         <<"status">> => <<"ONLINE">>

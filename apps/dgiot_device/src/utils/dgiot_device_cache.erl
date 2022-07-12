@@ -189,7 +189,7 @@ insert_mnesia(DeviceId, Acl, Status, Now, IsEnable, ProductId, Devaddr, DeviceSe
     Address =
         case dgiot_data:get(?DGIOT_LOCATION_ADDRESS, DeviceId) of
             not_find ->
-                <<>>;
+                get_address(DeviceId, Longitude, Latitude);
             Addr ->
                 Addr
         end,

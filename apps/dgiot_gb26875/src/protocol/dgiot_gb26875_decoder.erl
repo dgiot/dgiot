@@ -118,8 +118,24 @@ parse_frame(<<"@@", SerialId:16, Version:16, Time:6/binary, Source:6/binary, Des
         end,
     parse_frame(Rest1, Acc1, Opts);
 
-parse_frame(<<"@@", _:22/binary, 0:16, Command:8, _Tail/binary>> = _Buff, Acc, _Opts) ->
-    {ok, Acc#{<<"heart">> => 0, <<"command">> => Command}};
+%% 大华注册帧
+%% 启动符 业务流水号 协议版本号  时间标签         源地址         目的地址        应用数据单元长度  命令字节  应用数据单元             校验和   结束符
+%% 4040  0900     0102      2A380A080716   000000000000  640000000000    0000           02                              03      2323
+%% 4040  0000     0102      37380B0C0716   000000000000  640000000000    0A00           02        180101013A2E0B0C0716  CD 2323
+parse_frame(<<"@@", SerialId:16, Version:16, Time:6/binary, Source:6/binary, Destination:6/binary, 0:16, Command:8, Crc:1/binary, "##", _Rest/binary>> = Buff, Acc, _Opts) ->
+    <<"@@", Head:25/binary, _/binary>> = Buff,
+    CheckCrc = dgiot_utils:get_parity(Head),
+    NewTime = dgiot_gb26875_utils:to_time(dgiot_datetime:now_secs()),
+    AckBuff =
+        case <<CheckCrc>> =:= Crc of
+            true ->
+                NewHead = <<SerialId:16, Version:16, NewTime:6/binary, Destination:6/binary, Source:6/binary, 0:16, ?COMMAND_CONFIRM:8>>,
+                NewCrc = dgiot_utils:get_parity(NewHead),
+                <<"@@", NewHead/binary, NewCrc:8, "##">>;
+            _ ->
+                <<>>
+        end,
+    {ok, Acc#{<<"timestamp">> => dgiot_gb26875_utils:get_timestamp(Time), <<"command">> => Command, <<"ack">> => AckBuff}};
 
 parse_frame(<<"@@", SerialId:16, Version:16, Time:6/binary, Source:6/binary, Destination:6/binary, Length:16/little, Command:8, Tail/binary>> = Buff, Acc, Opts)
     when size(Tail) >= Length + 3 andalso Length > 2 ->
@@ -130,9 +146,14 @@ parse_frame(<<"@@", SerialId:16, Version:16, Time:6/binary, Source:6/binary, Des
                 CheckCrc = dgiot_utils:get_parity(<<Head/binary, UserZone/binary>>),
                 case <<CheckCrc>> =:= Crc of
                     true ->
+                        NewTime = dgiot_gb26875_utils:to_time(dgiot_datetime:now_secs()),
+                        NewHead = <<SerialId:16, Version:16, NewTime:6/binary, Destination:6/binary, Source:6/binary, 0:16, ?COMMAND_CONFIRM:8>>,
+                        NewCrc = dgiot_utils:get_parity(NewHead),
+                        AckBuff = <<"@@", NewHead/binary, NewCrc:8, "##">>,
                         Header = #{
                             <<"serialid">> => SerialId,
                             <<"version">> => Version,
+                            <<"userdevaddr">> => dgiot_utils:to_hex(Source),
                             <<"timestamp">> => dgiot_gb26875_utils:get_timestamp(Time),
                             <<"source">> => dgiot_gb26875_utils:get_address(Source),
                             <<"destination">> => dgiot_gb26875_utils:get_address(Destination)
@@ -142,7 +163,8 @@ parse_frame(<<"@@", SerialId:16, Version:16, Time:6/binary, Source:6/binary, Des
                             <<"header">> => Header,
                             <<"command">> => Command,
                             <<"appdata">> => parse_userzone(UserZone, Header, Opts),
-                            <<"rawdata">> => dgiot_utils:binary_to_hex(<<UserZone:Length/binary, Crc:1/binary, "##">>)
+                            <<"rawdata">> => dgiot_utils:binary_to_hex(<<UserZone:Length/binary, Crc:1/binary, "##">>),
+                            <<"ack">> => AckBuff
                         },
                         {Map, Rest};
                     _ ->
@@ -237,6 +259,8 @@ parse_infobody(?CLASS_UP_SYSTEM_STATE, {<<SysType:8, SysAddr:8, Flag:2/binary, _
 %%|部件状态 | 8．2．1．2  建筑消防设施部件状态
 %%建筑消防设施部件说明为31字节的字符串，采用GB 18030--2005规定的编码。
 %%状态发生时间
+%% 40 40 07 00 01 02 2D 34 0E 0C 07 16 00 00 00 00 00 00 64 00 00 00 00 00 30 00 02 02 01 01 01 00 37 00 0A 00 04 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 2D 34 0E 0C 07 16 1A 23 23
+%% 40 40 08 00 01 02 38 34 0E 0C 07 16 00 00 00 00 00 00 64 00 00 00 00 00 30 00 02 02 01 01 01 00 37 00 0A 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 38 34 0E 0C 07 16 2D 23 23
 parse_infobody(?CLASS_UP_RUNNING_STATUS, {<<SysType:8, SysAddr:8, EquType:8, EquAddr:4/binary, Flag:2/binary, Description:31/binary, _Time:6/binary>>, Header, Opts}) ->
     Data = dgiot_gb26875_utils:get_status(<<"8_2_1_2">>, Flag),
     Map = #{
@@ -261,7 +285,7 @@ parse_infobody(?CLASS_UP_RUNNING_STATUS, {<<SysType:8, SysAddr:8, EquType:8, Equ
 %%|01      | 01    |2a     |0100 0100| 0200   |01       | 0203       | 25110301060c   |
 %%---------------------------------------------------------------------------------------
 %% 模拟值定义 8．2．1．3 表3
-parse_infobody(?CLASS_UP_ANALOG_QUANTITY, {<<SysType:8, SysAddr:8, EquType:8, EquAddr:4/binary, Key:8, Value:16, _Time:6/binary>>,  Header, Opts}) ->
+parse_infobody(?CLASS_UP_ANALOG_QUANTITY, {<<SysType:8, SysAddr:8, EquType:8, EquAddr:4/binary, Key:8, Value:16, _Time:6/binary>>, Header, Opts}) ->
     NewKey = dgiot_utils:to_binary("ana_8_2_1_3_" ++ dgiot_utils:to_list(Key)),
     Map = #{
         <<"infotype">> => ?CLASS_UP_ANALOG_QUANTITY,
@@ -358,7 +382,7 @@ parse_infobody(?CLASS_UP_EQUIPMENT_CONFIGURATION, {<<SysType:8, SysAddr:8, EquTy
 %%|(1字节) |(1字节)    |  (6字节)             |
 %%|01      | 01       |  00993399449          |
 %%---------------------------------------------
-parse_infobody(?CLASS_UP_SYSTEM_TIME, {<<SysType:8, SysAddr:8,  _Time:6/binary>>, Header, Opts}) ->
+parse_infobody(?CLASS_UP_SYSTEM_TIME, {<<SysType:8, SysAddr:8, _Time:6/binary>>, Header, Opts}) ->
     Map = #{
         <<"infotype">> => ?CLASS_UP_SYSTEM_TIME,
         <<"systype">> => dgiot_gb26875_utils:get_sys_type(SysType),
@@ -377,16 +401,18 @@ parse_infobody(?CLASS_UP_SYSTEM_TIME, {<<SysType:8, SysAddr:8,  _Time:6/binary>>
 %%|(1字节) |  (6字节)     |
 %%|01      | 00993399449  |
 %%-------------------------
-parse_infobody(?CLASS_UP_USERDEV_RUNINFO, {<<SysType:8, SysAddr:8, Flag:1/binary, _Time:6/binary>>, Header, Opts}) ->
+%% 40 40 02 00 01 02 16 2A 10 0C 07 16 00 00 00 00 00 00 64 00 00 00 00 00 09 00 02 15 01 14 0E 2A 10 0C 07 16 88 23 23
+%% 40 40 01 00 01 02 15 2A 10 0C 07 16 00 00 00 00 00 00 64 00 00 00 00 00 09 00 02 15 01 00 0A 2A 10 0C 07 16 6E 23 23
+parse_infobody(?CLASS_UP_USERDEV_RUNINFO, {<<Flag:1/binary, _Time:6/binary>>, #{<<"userdevaddr">> := Devaddr} = Header, Opts}) ->
     Data = dgiot_gb26875_utils:get_status(<<"8_2_1_8">>, Flag),
     Map = #{
-        <<"infotype">> => ?CLASS_UP_USERDEV_RUNINFO,
-        <<"systype">> => dgiot_gb26875_utils:get_sys_type(SysType),
-        <<"sysaddr">> => SysAddr,
+        <<"userid">> => Devaddr,
         <<"data">> => Data
     },
-    dgiot_gb26875:sysdevice(Map, Header, Opts),
+%%    io:format("~s ~p Data = ~p.~n ", [?FILE, ?LINE, Data]),
+    dgiot_gb26875:userdevice(Map, Header, Opts),
     Map;
+
 
 %% 8.3.1.10  2个字节,  上传用户信息传输装置操作信息记录
 %% 类型标志符 24
@@ -396,11 +422,11 @@ parse_infobody(?CLASS_UP_USERDEV_RUNINFO, {<<SysType:8, SysAddr:8, Flag:1/binary
 %%|(1字节)  |  (1字节)     |(6字节)     |
 %%|01       | 00          |001122334455|
 %%--------------------------------------
-parse_infobody(?CLASS_UP_USERDEV_OPINFO, {<<Flag:1/binary, UserId:8, _Time:6/binary>>, Header, Opts}) ->
-    Data = dgiot_gb26875_utils:get_status(<<"8_2_1_9">>, Flag),
+%% 40 40 00 00 01 02 15 2A 10 0C 07 16 00 00 00 00 00 00 64 00 00 00 00 00 0A 00 02 18 01 01 01 0A 2A 10 0C 07 16 73 23 23
+parse_infobody(?CLASS_UP_USERDEV_OPINFO, {<<Flag:1/binary, _UserId:8, _Time:6/binary>>, #{<<"userdevaddr">> := Devaddr} = Header, Opts}) ->
+    Data = dgiot_gb26875_utils:get_op(<<"8_2_1_9">>, Flag),
     Map = #{
-        <<"infotype">> => ?CLASS_UP_USERDEV_OPINFO,
-        <<"userid">> => UserId,
+        <<"userid">> => Devaddr,
         <<"data">> => Data
     },
     dgiot_gb26875:oplog(Map, Header, Opts),
@@ -409,7 +435,7 @@ parse_infobody(?CLASS_UP_USERDEV_OPINFO, {<<Flag:1/binary, UserId:8, _Time:6/bin
 %% 8.3.1.11  4个字节， 上传用户信息传输装置软件版本
 %% 类型标志符 25
 %%8．2．1．10的定义
-parse_infobody(?CLASS_UP_USERDEV_SOFTVER, {<< MasterVersion:8, SlaveVersion:8>>, Header, Opts}) ->
+parse_infobody(?CLASS_UP_USERDEV_SOFTVER, {<<MasterVersion:8, SlaveVersion:8>>, Header, Opts}) ->
     Map = #{
         <<"infotype">> => ?CLASS_UP_USERDEV_SOFTVER,
         <<"basedata">> => #{<<"masterversion">> => MasterVersion, <<"slaveversion">> => SlaveVersion}
