@@ -74,22 +74,24 @@ save_(#{<<"objectId">> := DeviceId, <<"devaddr">> := Devaddr, <<"product">> := P
             _ -> true
         end,
     IsEnable = maps:get(<<"isEnable">>, Device, false),
-    #{<<"longitude">> := Longitude, <<"latitude">> := Latitude} =
-        maps:get(<<"location">>, Device, #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => 120.161324, <<"latitude">> => 30.262441}),
+    {Longitude, Latitude} =
+        case maps:find(<<"location">>, Device) of
+            {ok, #{<<"longitude">> := Longitude1, <<"latitude">> := Latitude1}} ->
+                {Longitude1, Latitude1};
+            _ ->
+                {120.065714, 30.369491}
+        end,
     insert_mnesia(DeviceId, dgiot_role:get_acls(Device), Status, UpdatedAt, IsEnable, ProductId, Devaddr, DeviceSecret, node(), Longitude, Latitude).
 
 post(Device) ->
     put_content(Device),
     put_profile(Device),
+    #{<<"longitude">> := Longitude, <<"latitude">> := Latitude} = put_location(Device),
     Devaddr = maps:get(<<"devaddr">>, Device),
     Product = maps:get(<<"product">>, Device),
     ProductId = maps:get(<<"objectId">>, Product),
     DeviceSecret = maps:get(<<"deviceSecret">>, Device, <<"oioojn">>),
     DeviceId = maps:get(<<"objectId">>, Device, dgiot_parse_id:get_deviceid(ProductId, Devaddr)),
-    NewData = get_newdata(Device, ProductId),
-    dgiot_parse:update_object(<<"Device">>, DeviceId, NewData),
-    #{<<"longitude">> := Longitude, <<"latitude">> := Latitude} =
-        maps:get(<<"location">>, NewData, #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => 120.065463, <<"latitude">> => 30.368707}),
     Status =
         case maps:get(<<"status">>, Device, <<"OFFLINE">>) of
             <<"OFFLINE">> -> false;
@@ -97,27 +99,6 @@ post(Device) ->
         end,
     IsEnable = maps:get(<<"isEnable">>, Device, false),
     insert_mnesia(DeviceId, dgiot_role:get_acls(Device), Status, dgiot_datetime:now_secs(), IsEnable, ProductId, Devaddr, DeviceSecret, node(), Longitude, Latitude).
-
-%% 新建设备时，如果没有，从产品拿默认值
-get_newdata(Device, ProductId) ->
-    {Profile, Content, Location, Address} =
-        case dgiot_product:lookup_prod(ProductId) of
-            {ok, ProductInfo} ->
-                Profile1 = maps:get(<<"profile">>, ProductInfo, #{}),
-                Content1 = maps:get(<<"content">>, ProductInfo, #{}),
-                Config = maps:get(<<"config">>, ProductInfo, #{}),
-                Location1 = maps:get(<<"location">>, Config, #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => 120.065463, <<"latitude">> => 30.368707}),
-                Address1 = maps:get(<<"address">>, Config, <<>>),
-                {Profile1, Content1, Location1, Address1};
-            _ ->
-                {#{}, #{}, #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => 120.065463, <<"latitude">> => 30.368707}, <<>>}
-        end,
-    #{
-        <<"profile">> => maps:get(<<"profile">>, Device, Profile),
-        <<"content">> => maps:get(<<"content">>, Device, Content),
-        <<"location">> => maps:get(<<"location">>, Device, Location#{<<"__type">> => <<"GeoPoint">>}),
-        <<"address">> => maps:get(<<"address">>, Device, Address)
-    }.
 
 post(#{<<"ACL">> := _Acl} = Device, _SessionToken) ->
     dgiot_device_cache:post(Device);
@@ -230,7 +211,7 @@ put_content(#{<<"product">> := Product, <<"objectId">> := DeviceId}) ->
 put_content(_) ->
     pass.
 
-%% 根据产品的content 创建设备默认的content
+%% 根据产品的profile 创建设备默认的profile
 put_profile(#{<<"profile">> := _Content}) ->
     pass;
 put_profile(#{<<"product">> := Product, <<"objectId">> := DeviceId}) ->
@@ -243,6 +224,21 @@ put_profile(#{<<"product">> := Product, <<"objectId">> := DeviceId}) ->
     end;
 put_profile(_) ->
     pass.
+
+%% 根据产品的location 创建设备默认的location
+put_location(#{<<"location">> := Location}) ->
+    Location;
+put_location(#{<<"product">> := Product, <<"objectId">> := DeviceId}) ->
+    ProductId = maps:get(<<"objectId">>, Product),
+    case dgiot_product:lookup_prod(ProductId) of
+        {ok, #{<<"config">> := #{<<"location">> := Location, <<"address">> := Address}}} ->
+            dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"location">> => Location, <<"address">> => Address}),
+            Location;
+        _ ->
+            #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => 120.065714, <<"latitude">> => 30.369491}
+    end;
+put_location(_) ->
+    #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => 120.065714, <<"latitude">> => 30.369491}.
 
 enable(DeviceId) ->
     case lookup(DeviceId) of

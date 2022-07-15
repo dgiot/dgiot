@@ -274,7 +274,7 @@ stop(ChannelType, ChannelId, _State) ->
     ok.
 
 get_new_location(#{<<"longitude">> := Longitude, <<"latitude">> := Latitude}, <<"baidu">>) ->
-    [Mglng, Mglat] = dgiot_gps:get_baidu_gps(Longitude, Latitude),
+    [Mglng, Mglat] = dgiot_gps:get_baidu_gps(dgiot_utils:to_float(Longitude), dgiot_utils:to_float(Latitude)),
     #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => Mglng, <<"latitude">> => Mglat};
 
 get_new_location(#{<<"longitude">> := Longitude, <<"latitude">> := Latitude}, <<"GCJ">>) ->
