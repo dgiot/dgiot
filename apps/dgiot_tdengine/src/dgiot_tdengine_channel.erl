@@ -220,11 +220,12 @@ handle_message(init, #state{id = ChannelId, env = Config} = State) ->
     end;
 
 %% 数据与产品，设备地址分离
-handle_message({data, Product, DevAddr, Data, Context}, State) ->
+handle_message({data, Product, DevAddr, Data, Context}, #state{id = ChannelId} = State) ->
     dgiot_metrics:inc(dgiot_tdengine, <<"tdengine_recv">>, 1),
     case catch do_save([Product, DevAddr, Data, Context], State) of
         {Err, Reason} when Err == error; Err == 'EXIT' ->
             ?LOG(error, "Save to Tdengine error, ~p, ~p", [Data, Reason]),
+            dgiot_bridge:send_log(ChannelId, "Save to Tdengine error, ~ts~n, ~p", [unicode:characters_to_list(jsx:encode(Data)), Reason]),
             ok;
         {ok, NewState} ->
             {ok, NewState}
