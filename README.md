@@ -3,7 +3,7 @@
 [![GitHub Release](https://img.shields.io/github/release/dgiot/dgiot?color=brightgreen)](https://github.com/dgiot/dgiot/releases)
 [![Build Status](https://travis-ci.org/dgiot/dgiot.svg)](https://travis-ci.org/dgiot/dgiot)
 [![Docker Pulls](https://img.shields.io/docker/pulls/dgiot/dgiot)](https://hub.docker.com/r/dgiot/dgiot)
-[![Community](https://img.shields.io/badge/Community-DGIOT-yellow)](https://tech.iotn2n.com)
+[![Community](https://img.shields.io/badge/Community-DGIOT-yellow)](https://www.dgiotcloud.cn/)
 [![QQ群346566935](https://img.shields.io/badge/QQ群-346566935-brightgreen)](https://jq.qq.com/?_wv=1027&k=LipWZvDe)
 [![star](https://gitee.com/dgiiot/dgiot/badge/star.svg?theme=gvp)](https://gitee.com/dgiiot/dgiot/stargazers)
 
@@ -11,7 +11,7 @@
 [English](./README.md) | [简体中文](./README-CN.md) | [日本語](./README-JP.md) | [русский](./README-RU.md)
 
 
-[github](https://github.com/dgiot?from=git)|[gitee](https://www.iotn2n.com?from=git)|[Official website](https://www.iotn2n.com?from=git)|[Blog](https://tech.iotn2n.com?from=git)|[Experience](https://prod.iotn2n.com?from=git)|
+[github](https://github.com/dgiot?from=git)|[gitee](https://gitee.com/dgiiot)|[Official website](https://www.dgiotcloud.cn/)|[Blog](https://www.dgiotcloud.cn/?cat=19)|[Experience](https://prod.dgiotcloud.cn)|
 
 *DGIOT*  is the first lightweight open source industrial IoT continuous integration platform in China
 
@@ -56,7 +56,7 @@ Before 2016, the Shuwa team had been crawling on the Internet and the mobile Int
  *DGIOT* start, you can use a browser to visit  http://localhost to view Dashboard.。
 
 - For a complete list of new features, see [DGIOT Release Notes](https://github.com/dgiot/dgiot/releases)。
-- For more information, please visit [DGIOT Website](https://tech.iotn2n.com/)。
+- For more information, please visit [DGIOT Website](https://www.dgiotcloud.cn/)。
 
 ## Installation and deployment
 
@@ -71,12 +71,12 @@ wget -q https://gitee.com/dgiiot/dgiot/raw/master/dgiot_install.sh  && sh dgiot_
 
 ### FAQ
 
-Visit [DGIOT FAQ](https://tech.iotn2n.com/en/backend/) to get help on frequently asked questions
+Visit [DGIOT FAQ](https://www.dgiotcloud.cn/?cat=19) to get help on frequently asked questions
 
 ### FAQ
 
 [GitHub Discussions](https://github.com/dgiot/dgiot_server/discussions)
-[DGIOT Chinese Q&A Community](https://tech.iotn2n.com/)
+[DGIOT Chinese Q&A Community](https://www.dgiotcloud.cn/?page_id=12)
 
 ### Involved in the design
 
@@ -93,11 +93,11 @@ You are welcome to submit any bugs, issues and feature requests to [dgiot/dgiot]
 | -------------- | ----------------------------------------------------------------------------------------- |
 | github         | [https://github.com/dgiot](https://github.com/dgiot?from=git)                             |
 | gitee          | [https://gitee.com/dgiot](https://gitee.com/dgiiot?from=git)                              |
-| Official website           | [https://www.iotn2n.com](https://www.iotn2n.com?from=git)                                 |
-| Blog           | [https://tech.iotn2n.com](https://tech.iotn2n.com?from=git)                               |
-| IoT access platform | [https://dgiot.iotn2n.com](https://dgiot.iotn2n.com?from=git)                             |
+| Official website           | [https://www.dgiotcloud.cn](https://www.dgiotcloud.cn)                                 |
+| Blog           | [https://www.dgiotcloud.cn/?cat=19](https://www.dgiotcloud.cn/?cat=19)                               |
+| IoT access platform | [https://prod.dgiotcloud.cn](https://prod.dgiotcloud.cn)                             |
 | The public         | ![qrcode.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/wechat/qrcode.png) |
-|QQ group             | 346566935   |
+| QQ group             | 346566935   |
 
 
 

@@ -700,7 +700,7 @@ function install_go_fastdfs() {
   mv ${script_dir}/go_fastdfs ${install_dir}
   ${csudo} bash -c "sed -i 's!{{ip}}!${lanip}!g'  ${install_dir}/go_fastdfs/cfg.json"
   ${csudo} bash -c "sed -i 's/{{port}}/1250/g'  ${install_dir}/go_fastdfs/cfg.json"
-  ${csudo} bash -c "sed -i 's/{{domain_name}}/${domain_name}/g'  ${install_dir}/go_fastdfs/cfg.json"
+  ${csudo} bash -c "sed -i 's/{{domain_name}}/${lanip}/g'  ${install_dir}/go_fastdfs/cfg.json"
 
   if [ -f ${install_dir}/go_fastdfs/conf/ ]; then
     rm ${install_dir}/go_fastdfs/conf/ -rf
@@ -1486,9 +1486,9 @@ dgiot_shell
 # set parameters by default value
 deployType=single                             # [single | cluster | devops | ci]
 domain_name="prod.iotn2n.com"                 # [prod.iotn2n.com | your_domain_name]
-software="dgiot_n206"                          # [dgiot_n206| dgiot_n]
+software="dgiot_n210"                          # [dgiot_n206| dgiot_n]
 plugin="dgiot"                                # [dgiot | dgiot_your_plugin]
-dgiotmd5="63ede62183ec67827ae7b5aef4cc1901"   # [dgiotmd5]
+dgiotmd5="1e07120c13edb490a4a9e06358ec3d35"   # [dgiotmd5]
 pg_eip="changeyourip"                            # [datanode_eip]
 pg_auth='changeyourpassword'                  # [pg_auth]
 

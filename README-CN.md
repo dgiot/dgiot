@@ -2,12 +2,12 @@
 
 [![GitHub Release](https://img.shields.io/github/release/dgiot/dgiot?color=brightgreen)](https://github.com/dgiot/dgiot/releases)
 [![Docker Pulls](https://img.shields.io/docker/pulls/dgiot/dgiot)](https://hub.docker.com/r/dgiot/dgiot)
-[![Community](https://img.shields.io/badge/Community-DGIOT-yellow)](https://tech.iotn2n.com)
+[![Community](https://img.shields.io/badge/Community-DGIOT-yellow)](https://www.dgiotcloud.cn/)
 [![QQ群346566935](https://img.shields.io/badge/QQ群-346566935-brightgreen)](https://jq.qq.com/?_wv=1027&k=LipWZvDe)
 
 
 [English](./README.md) | [中文](./README-CN.md) | [日本語](./README-JP.md) | [русский](./README-RU.md)|
-[github](https://github.com/dgiot?from=git)|[gitee](https://www.iotn2n.com?from=git)|[官网](https://www.iotn2n.com?from=git)|[博客](https://tech.iotn2n.com?from=git)|[体验](https://prod.iotn2n.com?from=git)|[微信群](#jump)
+[github](https://github.com/dgiot)|[gitee](https://gitee.com/dgiiot)|[官网](https://www.dgiotcloud.cn/)|[博客](https://www.dgiotcloud.cn/?cat=19)|[体验](https://prod.dgiotcloud.cn)|[微信群](#jump)
 ## DG-IoT简介
 DG-IoT是国内首款轻量级开源工业物联网平台，我们致力于提供五类物联网解决方案：
 + **国企/研究院**：平台代码开源，无版权产权困扰，国产无“卡脖”之忧
@@ -17,7 +17,7 @@ DG-IoT是国内首款轻量级开源工业物联网平台，我们致力于提�
 + **垂直领域物联网平台**：快速部署私有化平台，千万级承载，运营级底座，全开放扩展
 
 ## 快速体验与微信群
-| 微信技术支持群 | [QQ技术支持群](https://jq.qq.com/?_wv=1027&k=LipWZvDe)   | 小程序体验 |电脑端https://prod.iotn2n.com|
+| 微信技术支持群 | [QQ技术支持群](https://jq.qq.com/?_wv=1027&k=LipWZvDe)   | 小程序体验 |电脑端https://prod.dgiotcloud.cn|
 |:---:|:---:|:---:|:---:|
 |![7.25.jpg](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/7.25.jpg)|<img src="http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/QQ%E6%8A%80%E6%9C%AF%E7%BE%A4%E4%BA%8C%E7%BB%B4%E7%A0%81.png" width = "60%" /> |<img src="http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_release/dgiot_wechat.jpg" width = "60%" />|运维账号：dgiot_admin  </br>  密码: dgiot_admin  </br> </br>开发账号: dgiot_dev  </br>  密码: dgiot_dev |
 
@@ -98,7 +98,7 @@ wget -qO dgiot_install.sh https://gitee.com/dgiiot/dgiot/raw/master/dgiot_instal
 *DGIOT* 启动，可以使用浏览器访问 http://localhost:5080 来查看 Dashboard。
 
 - 新功能的完整列表，请参阅 [DGIOT Release Notes](https://github.com/dgiot/dgiot/releases)。
-- 获取更多信息，请访问 [DGIOT 官网](https://tech.iotn2n.com/)。
+- 获取更多信息，请访问 [DGIOT 官网](https://www.dgiotcloud.cn/)。
 
 ## 参与设计
 
