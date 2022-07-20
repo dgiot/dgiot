@@ -67,10 +67,16 @@ parse_payload(ProductId, Payload) ->
             lists:foldl(fun(X, Acc) ->
                 case X of
                     #{<<"identifier">> := Identifier,
-                        <<"dataType">> := DataType} ->
-                        Das = maps:get(<<"das">>, DataType, []),
+                        <<"dataSource">> := DtaSource} ->
+                        Dis =
+                            lists:foldl(fun
+                                            (#{<<"key">> := Key}, Acc) ->
+                                                Acc ++ [Key];
+                                            (_, Acc) ->
+                                                Acc
+                                        end, [], maps:get(<<"dis">>, DtaSource, [])),
                         maps:fold(fun(PK, PV, Acc1) ->
-                            case lists:member(PK, Das) of
+                            case lists:member(PK, Dis) of
                                 true ->
                                     Acc1#{Identifier => PV};
                                 _ ->

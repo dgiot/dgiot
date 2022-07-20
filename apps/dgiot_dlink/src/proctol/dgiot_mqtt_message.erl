@@ -19,7 +19,7 @@
 
 -include_lib("dgiot/include/logger.hrl").
 -include_lib("dgiot/include/dgiot_mqtt.hrl").
--define(DGIOT_DLINK_REQUEST_ID, <<"dgiot_dlink_request_id">>).
+-define(DGIOT_DLINK_REQUEST_ID, dgiot_dlink_request_id).
 %% ACL Callbacks
 -export([
     on_message_publish/2,
@@ -29,7 +29,7 @@
 -define(EMPTY_USERNAME, <<"">>).
 
 init_ets() ->
-    dgiot_data:init(?DGIOT_DLINK_REQUEST_ID).
+    dgiot_data:init(dgiot_dlink_request_id).
 
 on_message_publish(Message = #message{topic = <<"$dg/thing/", Topic/binary>>, payload = Payload, from = _ClientId, headers = _Headers}, _State) ->
     case re:split(Topic, <<"/">>) of
