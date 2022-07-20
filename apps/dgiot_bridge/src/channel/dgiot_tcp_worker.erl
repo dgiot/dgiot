@@ -83,7 +83,8 @@ handle_info({deliver, _, Msg}, TCPState) ->
 handle_info(#{<<"cmd">> := Cmd, <<"data">> := Data, <<"productId">> := ProductId}, TCPState) ->
     do_cmd(ProductId, Cmd, Data, TCPState);
 
-handle_info({tcp, Buff}, #tcp{state = #state{productIds = ProductIds}} = TCPState) ->
+handle_info({tcp, Buff}, #tcp{state = #state{id = ChannelId, productIds = ProductIds}} = TCPState) ->
+    dgiot_bridge:send_log(ChannelId, "Buff ~p", [Buff]),
     lists:map(fun(ProductId) ->
         do_cmd(ProductId, tcp, Buff, TCPState)
               end, ProductIds),

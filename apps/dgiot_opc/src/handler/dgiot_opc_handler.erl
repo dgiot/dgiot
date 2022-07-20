@@ -51,23 +51,23 @@ handle(OperationID, Args, Context, Req) ->
     Headers = #{},
     case catch do_request(OperationID, Args, Context, Req) of
         {ErrType, Reason} when ErrType == 'EXIT'; ErrType == error ->
-            ?LOG(info, "do request: ~p, ~p, ~p~n", [OperationID, Args, Reason]),
+            ?LOG(debug, "do request: ~p, ~p, ~p~n", [OperationID, Args, Reason]),
             Err = case is_binary(Reason) of
                       true -> Reason;
                       false -> dgiot_utils:format("~p", [Reason])
                   end,
             {500, Headers, #{<<"error">> => Err}};
         ok ->
-            ?LOG(info, "do request: ~p, ~p ->ok ~n", [OperationID, Args]),
+            ?LOG(debug, "do request: ~p, ~p ->ok ~n", [OperationID, Args]),
             {200, Headers, #{}, Req};
         {ok, Res} ->
-            ?LOG(info, "do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
+            ?LOG(debug, "do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
             {200, Headers, Res, Req};
         {Status, Res} ->
-            ?LOG(info, "do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
+            ?LOG(debug, "do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
             {Status, Headers, Res, Req};
         {Status, NewHeaders, Res} ->
-            ?LOG(info, "do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
+            ?LOG(debug, "do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
             {Status, maps:merge(Headers, NewHeaders), Res, Req}
     end.
 

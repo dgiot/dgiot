@@ -56,7 +56,7 @@
         order => 2,
         type => integer,
         required => true,
-        default => 8080,
+        default => 502,
         title => #{
             zh => <<"服务器端口"/utf8>>
         },

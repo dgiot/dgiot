@@ -44,7 +44,8 @@ get_card(ProductId, Results, DeviceId, Args) ->
     Props = dgiot_product:get_props(ProductId, Keys),
     lists:foldl(fun(X, Acc) ->
         case X of
-            #{<<"name">> := Name, <<"identifier">> := Identifier, <<"dataForm">> := #{<<"protocol">> := Protocol}, <<"dataSource">> := DataSource, <<"dataType">> := #{<<"type">> := Typea} = DataType} ->
+            #{<<"name">> := Name, <<"identifier">> := Identifier, <<"dataForm">> := #{<<"protocol">> := Protocol}, <<"dataType">> := #{<<"type">> := Typea} = DataType} ->
+                DataSource = maps:get(<<"dataSource">>, X, #{}),
                 Time = maps:get(<<"createdat">>, Result, dgiot_datetime:now_secs()),
                 NewTime = dgiot_tdengine_field:get_time(dgiot_utils:to_binary(Time), <<"111">>),
                 Devicetype =
