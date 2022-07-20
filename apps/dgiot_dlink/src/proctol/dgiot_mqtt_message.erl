@@ -15,20 +15,36 @@
 %%--------------------------------------------------------------------
 
 -module(dgiot_mqtt_message).
+-dgiot_data("ets").
 
 -include_lib("dgiot/include/logger.hrl").
 -include_lib("dgiot/include/dgiot_mqtt.hrl").
-
+-define(DGIOT_DLINK_REQUEST_ID, <<"dgiot_dlink_request_id">>).
 %% ACL Callbacks
 -export([
-    on_message_publish/2
+    on_message_publish/2,
+    init_ets/0
 ]).
 
 -define(EMPTY_USERNAME, <<"">>).
 
+init_ets() ->
+    dgiot_data:init(?DGIOT_DLINK_REQUEST_ID).
+
 on_message_publish(Message = #message{topic = <<"$dg/thing/", Topic/binary>>, payload = Payload, from = _ClientId, headers = _Headers}, _State) ->
     case re:split(Topic, <<"/">>) of
         [ProductId, DevAddr, <<"properties">>, <<"report">>] ->
+%%       属性获取	$dg/thing/{productId}/{deviceAddr}/properties/report	设备	平台
+            DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
+            Ts = dgiot_datetime:now_secs(),
+            case dgiot_data:get(?DGIOT_DLINK_REQUEST_ID, DeviceId) of
+                {OldTs, Request_id} when (Ts - OldTs) < 5 ->
+%%                    $dg/user/realtimecard/{DeviceId}/report
+                    RequestTopic = <<"$dg/user/", Request_id/binary, "/", DeviceId/binary, "/report">>,
+                    dgiot_mqtt:publish(DeviceId, RequestTopic, Payload);
+                _ ->
+                    pass
+            end,
             dgiot_dlink_proctol:properties_report(ProductId, DevAddr, get_payload(Payload));
         [ProductId, DevAddr, <<"firmware">>, <<"report">>] ->
             dgiot_dlink_proctol:firmware_report(ProductId, DevAddr, get_payload(Payload));
@@ -36,16 +52,13 @@ on_message_publish(Message = #message{topic = <<"$dg/thing/", Topic/binary>>, pa
 %%       属性获取	$dg/thing/{deviceId}/properties/get/request_id={request_id}	用户	平台
             case dgiot_device:lookup(DeviceId) of
                 {ok, #{<<"devaddr">> := Devaddr, <<"productid">> := ProductId}} ->
-%%                  属性获取	$dg/device/{productId}/{deviceAddr}/properties/get/response/request_id={request_id}	平台	设备
-                    RequestTopic = <<"$dg/device/", ProductId/binary, "/", Devaddr/binary, "/properties/get/response/request_id=", Request_id/binary>>,
-%%                    io:format("~s ~p Payload = ~p~n", [?FILE, ?LINE, Payload]),
+%%                  属性获取	$dg/device/{productId}/{deviceAddr}/properties 	平台	设备
+                    RequestTopic = <<"$dg/device/", ProductId/binary, "/", Devaddr/binary, "/properties">>,
+                    dgiot_data:insert(?DGIOT_DLINK_REQUEST_ID, DeviceId, {dgiot_datetime:now_secs(), Request_id}),
                     dgiot_mqtt:publish(DeviceId, RequestTopic, Payload);
                 _ ->
                     pass
             end;
-        [ProductId, DevAddr, <<"properties">>, <<"get">>, <<"response">>, _] ->
-%%       属性获取	$dg/thing/{productId}/{deviceAddr}/properties/get/response/request_id={request_id}	设备	平台
-            dgiot_dlink_proctol:firmware_report(ProductId, DevAddr, get_payload(Payload));
         _ ->
             pass
     end,

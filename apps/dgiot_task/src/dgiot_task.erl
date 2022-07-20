@@ -20,7 +20,7 @@
 -include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
 
 -export([start/1, start/2, send/3, get_pnque_len/1, save_pnque/4, get_pnque/1, del_pnque/1, save_td/4, merge_cache_data/3, save_cache_data/2]).
--export([get_control/3, get_collection/4, get_calculated/2, get_instruct/2, string2value/2, string2value/3]).
+-export([get_control/3, get_collection/3, get_calculated/2, get_instruct/2, get_storage/2, string2value/2, string2value/3]).
 -export([save_td_no_match/4]).
 start(ChannelId) ->
     lists:map(fun(Y) ->
@@ -61,7 +61,7 @@ get_calculated(ProductId, Calculated) ->
                                 Str1 = maps:fold(fun(K, V, Acc2) ->
                                     Str = re:replace(Acc2, dgiot_utils:to_list(<<"%%", K/binary>>), "(" ++ dgiot_utils:to_list(V) ++ ")", [global, {return, list}]),
                                     re:replace(Str, "%s", "(" ++ dgiot_utils:to_list(V) ++ ")", [global, {return, list}])
-                                                 end, dgiot_utils:to_list(Collection), Ack),
+                                                 end, dgiot_utils:to_list(Collection), Calculated),
                                 case string2value(Str1, Type, Specs) of
                                     error ->
                                         maps:without([Identifier], Acc);
