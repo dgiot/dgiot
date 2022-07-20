@@ -69,12 +69,13 @@ parse_payload(ProductId, Payload) ->
                     #{<<"identifier">> := Identifier,
                         <<"dataSource">> := DtaSource} ->
                         Dis =
-                            lists:foldl(fun
-                                            (#{<<"key">> := Key}, Acc) ->
-                                                Acc ++ [Key];
-                                            (_, Acc) ->
-                                                Acc
-                                        end, [], maps:get(<<"dis">>, DtaSource, [])),
+                            lists:foldl(
+                                fun
+                                    (#{<<"key">> := Key}, Acc1) ->
+                                        Acc1 ++ [Key];
+                                    (_, Acc1) ->
+                                        Acc1
+                                end, [], maps:get(<<"dis">>, DtaSource, [])),
                         maps:fold(fun(PK, PV, Acc1) ->
                             case lists:member(PK, Dis) of
                                 true ->
