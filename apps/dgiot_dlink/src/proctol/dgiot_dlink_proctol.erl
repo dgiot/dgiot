@@ -29,8 +29,9 @@
 
 
 properties_report(ProductId, DevAddr, Payload) when is_map(Payload) ->
-    io:format("~s ~p ProductId ~p, DevAddr ~p, Payload: ~p ~n", [?FILE, ?LINE, ProductId, DevAddr, Payload]),
-    dgiot_task:save_td(ProductId, DevAddr, Payload, #{});
+%%    io:format("~s ~p ProductId ~p, DevAddr ~p, Payload: ~p ~n", [?FILE, ?LINE, ProductId, DevAddr, Payload]),
+    NewPload = parse_payload(ProductId, Payload),
+    dgiot_task:save_td(ProductId, DevAddr, NewPload, #{});
 
 properties_report(ProductId, DevAddr, Payload) ->
     lists:map(fun
@@ -39,13 +40,13 @@ properties_report(ProductId, DevAddr, Payload) ->
                   (_) ->
                       pass
               end, dgiot_bridge:get_proctol_channel(ProductId)),
-    io:format("~s ~p ProductId ~p, DevAddr ~p, Payload: ~p ~n", [?FILE, ?LINE, ProductId, DevAddr, Payload]),
+%%    io:format("~s ~p ProductId ~p, DevAddr ~p, Payload: ~p ~n", [?FILE, ?LINE, ProductId, DevAddr, Payload]),
     ok.
 
 firmware_report(ProductId, DevAddr, Payload) when is_map(Payload) ->
 %%    io:format("~s ~p ProductId ~p, DevAddr ~p, Payload: ~p ~n", [?FILE, ?LINE, ProductId, DevAddr, Payload]),
     NewPload = parse_payload(ProductId, Payload),
-    dgiot_task:save_td(ProductId, DevAddr, NewPload, #{<<"interval">> => 30});
+    dgiot_task:save_td(ProductId, DevAddr, NewPload, #{});
 
 firmware_report(ProductId, DevAddr, Payload) ->
     lists:map(fun
