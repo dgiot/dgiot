@@ -29,7 +29,7 @@
 -define(EMPTY_USERNAME, <<"">>).
 
 init_ets() ->
-    dgiot_data:init(dgiot_dlink_request_id).
+    dgiot_data:init(?DGIOT_DLINK_REQUEST_ID).
 
 on_message_publish(Message = #message{topic = <<"$dg/thing/", Topic/binary>>, payload = Payload, from = _ClientId, headers = _Headers}, _State) ->
     case re:split(Topic, <<"/">>) of
