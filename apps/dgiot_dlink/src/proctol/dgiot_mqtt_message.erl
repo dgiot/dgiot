@@ -32,6 +32,20 @@ on_message_publish(Message = #message{topic = <<"$dg/thing/", Topic/binary>>, pa
             dgiot_dlink_proctol:properties_report(ProductId, DevAddr, get_payload(Payload));
         [ProductId, DevAddr, <<"firmware">>, <<"report">>] ->
             dgiot_dlink_proctol:firmware_report(ProductId, DevAddr, get_payload(Payload));
+        [DeviceId, <<"properties">>, <<"get">>, <<"request_id=", Request_id/binary>>] ->
+%%       属性获取	$dg/thing/{deviceId}/properties/get/request_id={request_id}	用户	平台
+            case dgiot_device:lookup(DeviceId) of
+                {ok, #{<<"devaddr">> := Devaddr, <<"productid">> := ProductId}} ->
+%%                  属性获取	$dg/device/{productId}/{deviceAddr}/properties/get/response/request_id={request_id}	平台	设备
+                    RequestTopic = <<"$dg/device/", ProductId/binary, "/", Devaddr/binary, "/properties/get/response/request_id=", Request_id/binary>>,
+%%                    io:format("~s ~p Payload = ~p~n", [?FILE, ?LINE, Payload]),
+                    dgiot_mqtt:publish(DeviceId, RequestTopic, Payload);
+                _ ->
+                    pass
+            end;
+        [ProductId, DevAddr, <<"properties">>, <<"get">>, <<"response">>, _] ->
+%%       属性获取	$dg/thing/{productId}/{deviceAddr}/properties/get/response/request_id={request_id}	设备	平台
+            dgiot_dlink_proctol:firmware_report(ProductId, DevAddr, get_payload(Payload));
         _ ->
             pass
     end,
@@ -59,7 +73,7 @@ on_message_publish(Message, _State) ->
 %%    ok.
 
 get_payload(Payload) ->
-    io:format("~s ~p Payload: ~p~n", [?FILE, ?LINE, Payload]),
+%%    io:format("~s ~p Payload: ~p~n", [?FILE, ?LINE, Payload]),
     case jsx:is_json(Payload) of
         true ->
             jiffy:decode(Payload, [return_maps]);

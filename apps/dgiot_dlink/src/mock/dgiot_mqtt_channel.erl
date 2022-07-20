@@ -92,7 +92,7 @@ start(ChannelId, ChannelArgs) ->
 
 %% 通道初始化
 init(?TYPE, ChannelId, #{
-    <<"product">> := [{ProductId, _Product} |_],
+    <<"product">> := [{_ProductId, _Product} |_],
     <<"auth">> := Auth,
     <<"count">> := Count}) ->
     State = #state{
@@ -100,11 +100,11 @@ init(?TYPE, ChannelId, #{
         auth = Auth,
         count = Count
     },
-    io:format("~s ~p ProductId ~p ~n",[?FILE, ?LINE, ProductId]),
+%%    io:format("~s ~p ProductId ~p ~n",[?FILE, ?LINE, ProductId]),
     {ok, State};
 
 init(?TYPE, _ChannelId, _Args) ->
-    io:format("~s ~p _ChannelId ~p ~n",[?FILE, ?LINE, _ChannelId]),
+%%    io:format("~s ~p _ChannelId ~p ~n",[?FILE, ?LINE, _ChannelId]),
     {ok, #{}}.
 
 handle_init(State) ->
@@ -115,7 +115,7 @@ handle_event(_EventId, _Event, State) ->
     {ok, State}.
 
 handle_message(_Message, State) ->
-    io:format("~s ~p _Message = ~p.~n", [?FILE, ?LINE, _Message]),
+%%    io:format("~s ~p _Message = ~p.~n", [?FILE, ?LINE, _Message]),
     {ok, State}.
 
 stop(_ChannelType, _ChannelId, _State) ->

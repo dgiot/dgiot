@@ -23,7 +23,8 @@
 -export([login/3]).
 -export([
     properties_report/3
-    ,firmware_report/3
+    , firmware_report/3
+    , parse_payload/2
 ]).
 
 
@@ -42,8 +43,9 @@ properties_report(ProductId, DevAddr, Payload) ->
     ok.
 
 firmware_report(ProductId, DevAddr, Payload) when is_map(Payload) ->
-    io:format("~s ~p ProductId ~p, DevAddr ~p, Payload: ~p ~n", [?FILE, ?LINE, ProductId, DevAddr, Payload]),
-    dgiot_task:save_td(ProductId, DevAddr, Payload, #{});
+%%    io:format("~s ~p ProductId ~p, DevAddr ~p, Payload: ~p ~n", [?FILE, ?LINE, ProductId, DevAddr, Payload]),
+    NewPload = parse_payload(ProductId, Payload),
+    dgiot_task:save_td(ProductId, DevAddr, NewPload, #{<<"interval">> => 30});
 
 firmware_report(ProductId, DevAddr, Payload) ->
     lists:map(fun
@@ -52,8 +54,32 @@ firmware_report(ProductId, DevAddr, Payload) ->
                   (_) ->
                       pass
               end, dgiot_bridge:get_proctol_channel(ProductId)),
-    io:format("~s ~p ProductId ~p, DevAddr ~p, Payload: ~p ~n", [?FILE, ?LINE, ProductId, DevAddr, Payload]),
+%%    io:format("~s ~p ProductId ~p, DevAddr ~p, Payload: ~p ~n", [?FILE, ?LINE, ProductId, DevAddr, Payload]),
     ok.
 
 login(_A, _B, _C) ->
     ok.
+
+parse_payload(ProductId, Payload) ->
+    case dgiot_product:lookup_prod(ProductId) of
+        {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
+            lists:foldl(fun(X, Acc) ->
+                case X of
+                    #{<<"identifier">> := Identifier,
+                        <<"dataType">> := DataType} ->
+                        Das = maps:get(<<"das">>, DataType, []),
+                        maps:fold(fun(PK, PV, Acc1) ->
+                            case lists:member(PK, Das) of
+                                true ->
+                                    Acc1#{Identifier => PV};
+                                _ ->
+                                    Acc1#{PK => PV}
+                            end
+                                  end, Acc, Payload);
+                    _ ->
+                        Acc
+                end
+                        end, #{}, Props);
+        _Error ->
+            Payload
+    end.

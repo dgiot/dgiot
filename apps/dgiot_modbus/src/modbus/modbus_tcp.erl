@@ -272,13 +272,14 @@ set_params(Payload, _ProductId, _DevAddr) ->
 parse_frame(<<_TransactionId:16, _ProtocolId:16, _Size1:16, _Slaveid:8, _FunCode:8, DataLen:8, Data:DataLen/bytes, _/bytes>>) ->
     Data.
 
+%% 00 03 64 5c
 parse_frame(FileName, Data) ->
     AtomName = dgiot_utils:to_atom(FileName),
-    Things = ets:match(AtomName, {'_', ['_', '_', '_', '_', '$1', '_', '_', '_', '$2', '_', '_', '_', '_', '_', '_', '$3' | '_']}),
+    Things = ets:match(AtomName, {'$1', ['_', '_', '_', '_', '$2', '_', '_', '_', '$3', '_', '_', '_', '_', '_', '_', '$4' | '_']}),
     AllData =
-        lists:foldl(fun([Devaddr, Address, Originaltype | _], Acc) ->
+        lists:foldl(fun([Number, Devaddr, Address, Originaltype | _], Acc) ->
             ProductId = dgiot_data:get(AtomName, {addr, Address}),
-            IntOffset = dgiot_utils:to_int(Address),
+            IntOffset = dgiot_utils:to_int(Number) - 1,
             Thing = #{
                 <<"identifier">> => Address,
                 <<"dataSource">> => #{

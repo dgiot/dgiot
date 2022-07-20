@@ -52,33 +52,39 @@ add_field(Type, Database, TableName, LowerIdentifier) ->
 %%  10	NCHAR       自定义    记录包含多字节字符在内的字符串，如中文字符。每个 nchar 字符占用 4 bytes 的存储空间。字符串两端使用单引号引用，字符串内的单引号需用转义字符 \’。nchar 使用时须指定字符串大小，类型为 nchar(10) 的列表示此列的字符串最多存储 10 个 nchar 字符，会固定占用 40 bytes 的空间。如果用户字符串长度超出声明长度，将会报错。
 get_field(#{<<"isstorage">> := false}) ->
     pass;
-get_field(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"int">>}}) ->
+get_field(#{<<"isstorage">> := true} = Property) ->
+    get_field_(Property);
+get_field(#{<<"isshow">> := true} = Property) ->
+    get_field_(Property);
+get_field(_) ->
+    pass.
+get_field_(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"int">>}}) ->
     {Field, #{<<"type">> => <<"INT">>}};
-get_field(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"image">>}}) ->
+get_field_(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"image">>}}) ->
     {Field, #{<<"type">> => <<"BIGINT">>}};
-get_field(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"long">>}}) ->
+get_field_(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"long">>}}) ->
     {Field, #{<<"type">> => <<"BIGINT">>}};
-get_field(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"float">>}}) ->
+get_field_(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"float">>}}) ->
     {Field, #{<<"type">> => <<"FLOAT">>}};
-get_field(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"date">>}}) ->
+get_field_(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"date">>}}) ->
     {Field, #{<<"type">> => <<"TIMESTAMP">>}};
-get_field(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"bool">>}}) ->
+get_field_(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"bool">>}}) ->
     {Field, #{<<"type">> => <<"BOOL">>}};
-get_field(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"double">>}}) ->
+get_field_(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"double">>}}) ->
     {Field, #{<<"type">> => <<"DOUBLE">>}};
-get_field(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"string">>} = Spec}) ->
+get_field_(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"string">>} = Spec}) ->
     Size = integer_to_binary(min(maps:get(<<"size">>, Spec, 10), 200)),
     {Field, #{<<"type">> => <<"NCHAR(", Size/binary, ")">>}};
-get_field(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"text">>} = Spec}) ->
+get_field_(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"text">>} = Spec}) ->
     Size = integer_to_binary(min(maps:get(<<"size">>, Spec, 50), 200)),
     {Field, #{<<"type">> => <<"NCHAR(", Size/binary, ")">>}};
-get_field(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"geopoint">>} = Spec}) ->
+get_field_(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"geopoint">>} = Spec}) ->
     Size = integer_to_binary(min(maps:get(<<"size">>, Spec, 50), 200)),
     {Field, #{<<"type">> => <<"NCHAR(", Size/binary, ")">>}};
-get_field(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"enum">>, <<"specs">> := _Specs}}) ->
+get_field_(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"enum">>, <<"specs">> := _Specs}}) ->
 %%    Size = integer_to_binary(maps:size(Specs)),
     {Field, #{<<"type">> => <<"INT">>}};
-get_field(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"struct">>, <<"specs">> := SubFields}}) ->
+get_field_(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"struct">>, <<"specs">> := SubFields}}) ->
     [get_field(SubField#{<<"identifier">> => ?Struct(Field, Field1)}) || #{<<"identifier">> := Field1} = SubField <- SubFields].
 
 
