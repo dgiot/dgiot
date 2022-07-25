@@ -82,7 +82,8 @@ do_request(post_head, #{<<"items">> := Items, <<"productid">> := ProductId}, _Co
                 lists:foldl(fun(Prop, {Acc1, Acc2}) ->
                     case Prop of
                         #{<<"name">> := Name, <<"identifier">> := Identifier,
-                            <<"dataType">> := #{<<"type">> := _Type, <<"das">> := Das} = DataType} ->
+                            <<"dataSource">> := DtaSource,
+                            <<"dataType">> := DataType} ->
                             Specs = maps:get(<<"specs">>, DataType, #{}),
                             Unit =
                                 case maps:find(<<"unit">>, Specs) of
@@ -91,8 +92,16 @@ do_request(post_head, #{<<"items">> := Items, <<"productid">> := ProductId}, _Co
                                     {ok, Un} ->
                                         <<"(", Un/binary, ")">>
                                 end,
+                            Dis =
+                                lists:foldl(
+                                    fun
+                                        (#{<<"key">> := Key}, Ds) ->
+                                            Ds ++ [Key];
+                                        (_, Ds) ->
+                                            Ds
+                                    end, [], maps:get(<<"dis">>, DtaSource, [])),
                             lists:foldl(fun(Item, {Acc, Acc3}) ->
-                                case lists:member(Item, Das) of
+                                case lists:member(Item, Dis) of
                                     true ->
                                         {Acc#{Identifier => <<Name/binary, Unit/binary>>}, Acc3 ++ [#{<<"prop">> => Identifier, <<"label">> => <<Name/binary, Unit/binary>>}]};
                                     _ ->

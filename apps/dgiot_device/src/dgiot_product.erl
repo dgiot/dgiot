@@ -25,7 +25,7 @@
 -export([create_product/1, create_product/2, add_product_relation/2, delete_product_relation/1]).
 -export([get_prop/1, get_props/1, get_props/2, get_unit/1, do_td_message/1, update_properties/2, update_properties/0]).
 -export([update_topics/0, update_product_filed/1]).
--export([save_keys/1, get_keys/1, get_control/1, save_control/1, save_channel/1, save_tdchannel/1, save_taskchannel/1, get_channel/1, get_tdchannel/1, get_taskchannel/1]).
+-export([save_keys/1, get_keys/1, get_control/1, save_control/1, save_channel/1, save_tdchannel/1, save_taskchannel/1, get_channel/1, get_tdchannel/1, get_taskchannel/1, get_interval/1]).
 -type(result() :: any()).   %% todo 目前只做参数检查，不做结果检查
 
 init_ets() ->
@@ -267,6 +267,14 @@ get_keys(ProductId) ->
             [];
         Keys ->
             Keys
+    end.
+
+get_interval(ProductId) ->
+    case lookup_prod(ProductId) of
+        {ok, #{<<"config">> := #{<<"interval">> := Interval}}} ->
+            dgiot_utils:to_int(Interval);
+        _ ->
+            3
     end.
 
 %% 解码器
