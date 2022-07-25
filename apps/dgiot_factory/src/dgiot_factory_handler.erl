@@ -142,13 +142,14 @@ do_request(post_data, #{<<"objectid">> := DeviceId} = Args, _Context, _Body) ->
             {error, Msg}
     end;
 
-do_request(get_data, #{<<"objectId">> := undefined, <<"type">> := Type, <<"where">> := Where, <<"limit">> := Limit, <<"skip">> := Skip} = _Args, #{<<"sessionToken">> := SessionToken} = _Context, _Body) ->
+do_request(get_data, #{<<"objectId">> := undefined, <<"type">> := Type, <<"where">> := Where, <<"limit">> := Limit, <<"skip">> := Skip,<<"new">> := New} = _Args, #{<<"sessionToken">> := SessionToken} = _Context, _Body) ->
+
     case dgiot_product_tdengine:get_channel(SessionToken) of
         {error, Error} -> {error, Error};
         {ok, Channel} ->
             case dgiot_factory_data:get_device_list() of
                 {ok, DeviceList} ->
-                    case dgiot_factory_data:get_work_sheet(Type, Channel, DeviceList, Where, Limit, Skip) of
+                    case dgiot_factory_data:get_work_sheet(Type, Channel, DeviceList, Where, Limit, Skip,New) of
                         {ok, {Total, Res}} ->
                             {ok, #{<<"status">> => 0, msg => <<"数据请求成功"/utf8>>, <<"data">> => #{<<"total">> => Total, <<"items">> => Res}}};
                         _ ->
@@ -163,12 +164,12 @@ do_request(get_data, #{<<"objectId">> := undefined, <<"type">> := Type, <<"where
     end;
 
 
-do_request(get_data, #{<<"objectId">> := DeviceId, <<"type">> := Type, <<"where">> := Where, <<"limit">> := Limit, <<"skip">> := Skip} = _Args, #{<<"sessionToken">> := SessionToken} = _Context, _Body) ->
+do_request(get_data, #{<<"objectId">> := DeviceId, <<"type">> := Type, <<"where">> := Where, <<"limit">> := Limit, <<"skip">> := Skip,<<"new">> := New} = _Args, #{<<"sessionToken">> := SessionToken} = _Context, _Body) ->
     case dgiot_product_tdengine:get_channel(SessionToken) of
         {error, Error} -> {error, Error};
         {ok, Channel} ->
-            io:format("~s ~p Channel= ~p ~n",[?FILE,?LINE,Channel]),
-            case dgiot_factory_data:get_work_sheet(Type, Channel, DeviceId, Where, Limit, Skip) of
+
+            case dgiot_factory_data:get_work_sheet(Type, Channel, DeviceId, Where, Limit, Skip,New) of
                 {ok, {Total, Res}} ->
                     {ok, #{<<"status">> => 0, msg => <<"数据请求成功"/utf8>>, <<"data">> => #{<<"total">> => Total, <<"items">> => Res}}};
                 _ ->
@@ -179,11 +180,11 @@ do_request(get_data, #{<<"objectId">> := DeviceId, <<"type">> := Type, <<"where"
 
 
 
-do_request(post_stored, #{<<"objectId">> := DeviceId,<<"operator">> := Operator} = _Args, #{<<"sessionToken">> := SessionToken} = _Context, _Body) ->
+do_request(post_stored, #{<<"objectId">> := DeviceId,<<"operator">> := Operator,<<"quality">>:=Quality} = _Args, #{<<"sessionToken">> := SessionToken} = _Context, _Body) ->
     case dgiot_product_tdengine:get_channel(SessionToken) of
         {error, Error} -> {error, Error};
         {ok, Channel} ->
-            case dgiot_factory_other:store_all(Channel, DeviceId,Operator) of
+            case dgiot_factory_utils:store_all(Channel, DeviceId,Operator,Quality) of
                 {ok, _} ->
                     {ok, #{<<"status">> => 0, msg => <<"操作成功"/utf8>>, <<"data">> => #{}}};
                 _ ->

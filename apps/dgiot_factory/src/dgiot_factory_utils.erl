@@ -14,18 +14,21 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
--module(dgiot_factory_other).
+-module(dgiot_factory_utils).
 -author("jonhl").
 -include_lib("dgiot/include/logger.hrl").
--export([store_all/3]).
+-export([store_all/4]).
+store_all(_, DeviceId,_,<<"false">>)->
+    dgiot_parse:update_object(<<"Device">>, DeviceId,#{<<"realstate">> =>2});
 
-store_all(Channel, DeviceId,Operator)->
- case    dgiot_factory_data:get_work_sheet(<<"product">>,Channel,DeviceId,undefed,undefed,0) of
+
+store_all(Channel, DeviceId,Operator,<<"true">>)->
+ case    dgiot_factory_data:get_work_sheet(<<"product">>,Channel,DeviceId,undefed,undefed,0,<<"true">>) of
      {ok,Res} ->
          lists:foldl(
              fun(X,_)->
                  case maps:get(<<"product_condition">>,X) of
-                     2 ->
+                     2   ->
                          dgiot_factory_data:handle_data(DeviceId, <<"product">>, X#{<<"product_condition">> := 3,<<"product_storedperson">> =>Operator});
                      _ ->
                          pass

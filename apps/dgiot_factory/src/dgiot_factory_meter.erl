@@ -5,17 +5,13 @@
 -export([
     get_body/1,
     test/2,
-    get_header/0,
-    run/0
-%%    updata/1,
-%%    barcode/0
-%%    request/5
+    get_header/0
+
+
 ]).
 %%
 
 
-
-%%  获取设备
 
 
 
@@ -111,7 +107,7 @@ hmac(Data, Key) ->
 
 
 
-updata(_Payload, DeviceId) ->
+updata(Payload, DeviceId) ->
     FDocumentStatus=#{
         <<"创建"/utf8>> => <<"A">>,
         <<"审核中"/utf8>> => <<"B">>,
@@ -147,12 +143,25 @@ updata(_Payload, DeviceId) ->
                                 <<"FMoId">> -> Acc1#{<<"FMoId">> => maps:get(<<"FId">>, BaseInfo)};
                                 <<"FMoEntryId">> -> Acc1#{<<"FMoEntryId">> => maps:get(<<"FMoEntryId">>, BaseInfo)};
                                 <<"FWorkshipId">> -> Acc1#{<<"FWorkshipId">> => #{<<"FNumber">> =>  maps:get(maps:get(<<"Production_workshop">>, BaseInfo),FWorkshipId)}};
-                                <<"FQuaQty">> -> Acc1#{<<"FQuaQty">> => sdfsa};
+                                <<"FQuaQty">> -> Acc1#{<<"FQuaQty">> => maps:get(<<"product_pnumber">>, Payload)};
                                 <<"FReworkQty">> -> Acc1#{<<"FReworkQty">> => aaa};
                                 <<"FScrapQty">> -> Acc1#{<<"FScrapQty">> => aaa};
                                 <<"FReMadeQty">> -> Acc1#{<<"FReMadeQty">> => aaa};
-                                <<"FFinishQty">> -> Acc1#{<<"FFinishQty">> => aaa};
-                                <<"FFailQty">> -> Acc1#{<<"FFailQty">> => aaa};
+                                <<"FFinishQty">> ->
+                                    case maps:get(<<"product_rejects">>, Payload) of
+                                        {ok,FFailQty} ->
+                                            case maps:get(<<"FQuaQty">>, Payload) of
+                                                {ok,FQuaQty} ->
+                                                    Acc1#{<<"FFinishQty">> =>FFailQty+FQuaQty };
+                                                _ ->
+                                                    Acc1
+                                            end;
+                                        _ ->
+                                            Acc1
+                                    end;
+
+
+                                <<"FFailQty">> -> Acc1#{<<"FFailQty">> => maps:get(<<"product_rejects">>, Payload)};
                                 <<"FReportType">> -> Acc1#{<<"FReportType">> => #{<<"FNumber">> => <<"CTG002">>}};
                                 <<"FBomId">> -> Acc1#{<<"FBomId">> => #{<<"FNumber">> => maps:get(<<"FBomId">>, BaseInfo)}};
                                 <<"FCostRate">> -> Acc1#{K1 => V1};
@@ -178,28 +187,6 @@ updata(_Payload, DeviceId) ->
         _ ->
             error
     end.
-
-
-%%barcode()->
-%%        DevAddr = <<"MO000007DGC030100015DG1">>,
-%%        Time=dgiot_utils:to_binary(dgiot_datetime:timestamp()),
-%%        random:uniform_s()
-%%        ProductId = <<"ec71804a3d">>,
-%%        <<ObjID:10/binary, _/binary>> = dgiot_utils:to_md5(<<DevAddr/binary,Time/binary>>),
-%%        case dgiot_parse_id:get_deviceid(ProductId, DevAddr) of
-%%            {error, Row} -> io:format("~s  ~p  Res= ~p ~n", [?FILE, ?LINE, Row]);
-%%            {ok ,Row} ->Row
-%%        end,
-%%        pass.
-
-
-run() ->
-    dgiot_task:save_td(),
-    Device = "日本MR(16334772)X70增强工业擦拭布80GSM白色1/4折叠式大点压花(300X330MM))",
-    re:run(Device, "\\((.*?)\\)\\)", [unicode, global, ungreedy, {capture, first, list}]).
-%%    pass.
-
-
 
 
 

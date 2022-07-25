@@ -20,9 +20,10 @@
 -define(PRE, <<"_">>).
 -define(Database(Name), <<?PRE/binary, Name/binary>>).
 -define(Table(Name), <<?PRE/binary, Name/binary>>).
+-define(SHEETID(SHEET), <<SHEET/binary, "_id">>).
 -define(PRODUCTID, <<"ec71804a3d">>).
 
--export([handle_data/3,save_data/4, get_work_sheet/6]).
+-export([handle_data/3, save_data/4, get_work_sheet/7]).
 -export([update_progress/0, get_ThingMap/2, thinglist2binary/1, get_history/8, get_device_list/0]).
 -export([filter_where/3, handle_alert/2, handle_storehouse/2]).
 
@@ -40,56 +41,89 @@ handle_data(DeviceId, Type, Payload) ->
     end.
 
 
-save_data(ProductId, DeviceId, <<"product">>, #{<<"product_pnumber">> := Pnumber, <<"product_subtime">> := SubTime} = Payload) ->
+save_data(ProductId, DeviceId, <<"product">> = Type, #{<<"product_pnumber">> := Pnumber, <<"product_subtime">> := SubTime} = Payload) ->
     case dgiot_parse:get_object(<<"Device">>, DeviceId) of
-        {ok, #{<<"devaddr">> := DevAddr, <<"updatedAt">> := LastSubTime, <<"progress">> := Progress, <<"content">> := #{<<"baseInfo">> := #{<<"Number">> := Total}}}} ->
-            LastSubStmp = dgiot_datetime:localtime_to_unixtime(dgiot_datetime:to_localtime(LastSubTime)),
-            WorkTime = SubTime div 1000 - LastSubStmp,
-             case maps:find(<<"product_id">>,Payload) of
-                     {ok,Product_id} ->
-                         dgiot_task:save_td_no_match(ProductId, DevAddr, Payload#{<<"product_mhour">> => abs(WorkTime), <<"product_id">> => dgiot_utils:to_list(Product_id)}, #{}),
-                         handle_storehouse(Payload, DeviceId);
-                     _ ->
-                         Id = get_id(DevAddr),
-                         UpId = string:to_upper(dgiot_utils:to_list(Id)),
-                         dgiot_task:save_td_no_match(ProductId, DevAddr, Payload#{<<"product_mhour">> => abs(WorkTime), <<"product_id">> => UpId}, #{}),
-                         save_progress(DeviceId, Progress, Total, Pnumber),
-                         handle_storehouse(Payload, DeviceId)
-                 end,
-
-            {ok, a};
+        {ok, #{<<"devaddr">> := DevAddr, <<"startTime">> := LastSubTime, <<"progress">> := Progress, <<"content">> := #{<<"baseInfo">> := #{<<"Number">> := Total}}}} ->
+            case maps:find(<<"product_condition">>, Payload) of
+                {ok, 1} ->
+                    case Payload of
+                        #{<<"product_pnumber">> := Pnumber, <<"product_subtime">> := SubTime} ->
+                            WorkTime = (SubTime  - LastSubTime) div 1000,
+                            Id = get_id(DevAddr, Type),
+                            UpId = string:to_upper(dgiot_utils:to_list(Id)),
+                            dgiot_task:save_td_no_match(ProductId, DevAddr, Payload#{<<"product_mhour">> => abs(WorkTime), <<"product_id">> => UpId}, #{}),
+                            save_progress(DeviceId, Progress, Total, Pnumber, SubTime),
+                            {ok, ok};
+                        _ ->
+                            error
+                    end;
+                {ok, 2} ->
+                    case maps:find(<<"product_id">>, Payload) of
+                        {ok, Product_id} ->
+                            dgiot_task:save_td_no_match(ProductId, DevAddr, Payload#{<<"product_id">> => dgiot_utils:to_list(Product_id)}, #{}),
+                            handle_storehouse(Payload, DeviceId),
+                            {ok, ok};
+                        _ ->
+                            error
+                    end;
+                {ok, 3} ->
+                    case maps:find(<<"product_id">>, Payload) of
+                        {ok, Product_id} ->
+                            dgiot_task:save_td_no_match(ProductId, DevAddr, Payload#{<<"product_id">> => dgiot_utils:to_list(Product_id)}, #{}),
+                            handle_storehouse(Payload, DeviceId),
+                            handle_dingdan(DeviceId),
+%%                            dgiot_factory_meter:test(Payload, DeviceId),
+                            {ok, ok};
+                        _ ->
+                            error
+                    end;
+                _ ->
+                    error
+            end;
         _ ->
-
             {error, not_find_toal_num}
     end;
 
 
-save_data(ProductId, DeviceId, <<"semiproduct">>, Payload) ->
-
-    case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+save_data(ProductId, DeviceId, <<"semiproduct">> = Type, Payload) ->
+%%    case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+%%        {ok, #{<<"devaddr">> := DevAddr}} ->
+    case dgiot_device_cache:lookup(DeviceId) of
         {ok, #{<<"devaddr">> := DevAddr}} ->
-            Id = get_id(DeviceId),
-
-            dgiot_task:save_td_no_match(ProductId, DevAddr, Payload#{ <<"semiproduct_id">> => Id}, #{});
+            Id = get_id(DevAddr, Type),
+            dgiot_task:save_td_no_match(ProductId, DevAddr, Payload#{?SHEETID(Type) => Id}, #{});
         _ ->
             {error, <<"not_fin_device">>}
     end;
 
-save_data(ProductId, DeviceId, <<"quality">>, Payload) ->
+save_data(ProductId, DeviceId, <<"quality">> = Type, Payload) ->
     case dgiot_parse:get_object(<<"Device">>, DeviceId) of
         {ok, #{<<"devaddr">> := DevAddr}} ->
             handle_quality(Payload, DeviceId),
-            Id = get_id(DeviceId),
-            dgiot_task:save_td_no_match(ProductId, DevAddr, Payload#{ <<"semiproduct_id">> => Id}, #{});
+            Id = get_id(DevAddr, Type),
+            dgiot_task:save_td_no_match(ProductId, DevAddr, Payload#{?SHEETID(Type) => Id}, #{});
         _ ->
-            {error, <<"not_fin_device">>}
+            {error, <<"not_find_device">>}
     end;
 
 save_data(_, _, _, _) ->
     {error, wrong_product}.
 
+
+handle_dingdan(DeviceId) ->
+    case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+        {ok, #{<<"progress">> := Progress,<<"detail">> :=Detail, <<"content">> := #{<<"baseInfo">> := #{<<"Number">> := Total}}}} ->
+            case Progress >= Total of
+                true ->
+                    EndTime = dgiot_datetime:format("YYYY-MM-DD HH:NN:SS"),
+                    dgiot_parse:update_object(<<"Device">>, DeviceId,#{<<"realstate">> =>8,<<"detail">> =>Detail#{<<"tasksend">> =>EndTime}});
+                _ ->
+                    pass
+            end
+    end.
+
+
 handle_storehouse(#{<<"product_condition">> := 2, <<"product_pnumber">> := Pnumber}, DeviceId) ->
-    io:format("~s ~p here~n",[?FILE,?LINE]),
     case dgiot_parse:get_object(<<"Device">>, DeviceId) of
         {ok, #{<<"storehouse">> := #{<<"unstored">> := Unstored, <<"stored">> := Stored}}} ->
             dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"storehouse">> => #{<<"unstored">> => Unstored + Pnumber, <<"stored">> => Stored}});
@@ -112,23 +146,26 @@ handle_storehouse(#{<<"product_condition">> := 3, <<"product_pnumber">> := Pnumb
 handle_storehouse(_, _) ->
     pass.
 
-get_id(DevAddr) ->
+get_id(DevAddr, Type) ->
     Time = dgiot_utils:to_binary(dgiot_datetime:timestamp()),
-    <<ObjID:10/binary, _/binary>> = dgiot_utils:to_md5(<<DevAddr/binary, Time/binary>>),
+    <<ObjID:10/binary, _/binary>> = dgiot_utils:to_md5(<<Type/binary, DevAddr/binary, Time/binary>>),
     Res = string:to_upper(dgiot_utils:to_list(ObjID)),
     dgiot_utils:to_binary(Res).
 
-handle_quality(#{<<"quality_people">> := Operator, <<"quality_status">> := Status, <<"quality_quality">> := Quality, <<"quality_alarmid">> := NotificationId}, DeviceId) ->
+handle_quality(#{<<"quality_people">> := Operator, <<"quality_status">> := Status, <<"quality_quality">> := Quality, <<"quality_alarmid">> := NotificationId, <<"
+quality_pnumber">> := Pnumber}, DeviceId) ->
     case {Status, Quality} of
         {3, 1} ->
             handle_alert(NotificationId, Operator),
             dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"realstatus">> => 4});
         {3, 0} ->
+            handle_progress(DeviceId, -Pnumber),
             dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"realstatus">> => 2});
         {5, 1} ->
             handle_alert(NotificationId, Operator),
             dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"realstatus">> => 6});
         {5, 0} ->
+            handle_progress(DeviceId, -Pnumber),
             dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"realstatus">> => 2});
         {6, 1} ->
             handle_alert(NotificationId, Operator);
@@ -137,6 +174,22 @@ handle_quality(#{<<"quality_people">> := Operator, <<"quality_status">> := Statu
     end;
 handle_quality(_, _) ->
     pass.
+
+
+handle_progress(DeviceId, Pnumber) ->
+    case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+        {ok, #{<<"progress">> := Progress}} ->
+            NewProgress = case Progress + Pnumber < 0 of
+                              true ->
+                                  0;
+                              false ->
+                                  Progress + Pnumber
+                          end,
+            dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"progress">> => NewProgress});
+        _ ->
+            pass
+    end.
+
 handle_alert(NotificationId, Operator) ->
     case dgiot_parse:get_object(<<"Notification">>, NotificationId) of
         {ok, #{<<"content">> := #{<<"alarm">> := Alarm}}} ->
@@ -146,16 +199,15 @@ handle_alert(NotificationId, Operator) ->
     end.
 
 
-save_progress(DeviceId, Progress, Total, Pnumber) ->
+save_progress(DeviceId, Progress, Total, Pnumber, SubTime) ->
     NewProgress = case Progress + Pnumber > Total of
                       true ->
                           Total;
                       false ->
                           Progress + Pnumber
                   end,
-%%    io:format("~s ~p NewProgress = ~p ~n",[?FILE,?LINE,NewProgress]),
-    case dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"progress">> => NewProgress}) of
-        {ok, _ } ->
+    case dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"progress">> => NewProgress, <<"startTime">> => SubTime}) of
+        {ok, _} ->
 
             {ok, ok};
         _ ->
@@ -163,16 +215,16 @@ save_progress(DeviceId, Progress, Total, Pnumber) ->
     end.
 
 
-get_work_sheet(Type, Channel, DeviceId, Where, Limit, Skip) ->
+get_work_sheet(Type, Channel, DeviceId, Where, Limit, Skip, New) ->
     case filter_where(Where, ?PRODUCTID, Type) of
         {Parse, Td, ThingMap} ->
             case search_parse(DeviceId, Parse, Type) of
                 {ok, ParseData} ->
                     case get_history(Channel, ?PRODUCTID, DeviceId, ThingMap, Td, Limit, Skip, Type) of
                         {ok, #{<<"results">> := HistoryData}} ->
-                            NewestHistoryData = case Type of
-                                                    <<"product">> ->
-                                                        get_newest_data(HistoryData);
+                            NewestHistoryData = case New of
+                                                    <<"true">> ->
+                                                        get_newest_data(HistoryData, Type);
                                                     _ ->
                                                         HistoryData
                                                 end,
@@ -189,16 +241,16 @@ get_work_sheet(Type, Channel, DeviceId, Where, Limit, Skip) ->
             {error, not_find_thing}
     end.
 
-get_newest_data(HistoryData) ->
+get_newest_data(HistoryData, Type) ->
     [_, Res] = lists:foldl(
         fun(X, [AddrList, Acc]) ->
-            case maps:find(<<"product_id">>, X) of
-                {ok, Product_id} ->
-                    case lists:member(Product_id, AddrList) of
+            case maps:find(?SHEETID(Type), X) of
+                {ok, Id} ->
+                    case lists:member(Id, AddrList) of
                         true ->
                             [AddrList, Acc];
                         _ ->
-                            [AddrList ++ [Product_id], Acc ++ [X]]
+                            [AddrList ++ [Id], Acc ++ [X]]
                     end;
                 _ ->
 
@@ -248,8 +300,9 @@ search_parse(DeviceList, Parse, Type) when is_list(DeviceList) ->
 search_parse(DeviceId, undefined, Type) ->
     case dgiot_parse:get_object(<<"Device">>, DeviceId) of
         {ok, #{<<"content">> := #{Type := Data}}} ->
+
             FlatternMap = dgiot_map:flatten(#{Type => Data}),
-            {ok, FlatternMap#{<<"objectId">> =>DeviceId}};
+            {ok, FlatternMap#{<<"objectId">> => DeviceId}};
         _ ->
             error
     end;
@@ -263,7 +316,7 @@ search_parse(DeviceId, Parse, Type) ->
             case dgiot_parse:get_object(<<"Device">>, DeviceId) of
                 {ok, #{<<"content">> := Content}} ->
                     FlatMap = dgiot_map:flatten(Content),
-                    MatchNum =  maps:fold(
+                    MatchNum = maps:fold(
                         fun(K, V, Acc) ->
 
                             case maps:find(K, FlatMap) of
@@ -279,7 +332,7 @@ search_parse(DeviceId, Parse, Type) ->
                         Num ->
                             Data = maps:get(<<Type/binary>>, Content),
                             FlatternMap = dgiot_map:flatten(#{Type => Data}),
-                            {ok, FlatternMap#{<<"objectId">> =>DeviceId}};
+                            {ok, FlatternMap#{<<"objectId">> => DeviceId}};
                         _ ->
                             error
                     end
@@ -337,7 +390,7 @@ filter_where(Where, ProductId, Type) ->
 
 
 get_ThingMap(Type, ProductId) ->
-    case dgiot_product:lookup_prod(ProductId) of
+    case dgiot_parse:get_object(<<"Product">>, ProductId) of
         {ok, #{<<"thing">> := #{<<"properties">> := Properties}}} ->
             ThingList = lists:foldl(
                 fun(X, Acc) ->
@@ -378,7 +431,7 @@ get_history(Channel, ProductId, DeviceId, ThingMap, Where, _Limit, _Skip, Type) 
                                 ?Table(DeviceId)
                         end,
             ThingList = maps:keys(ThingMap),
-            DetectThing = <<Type/binary,"_id">>,
+            DetectThing = <<Type/binary, "_id">>,
 %%            DetectThing = lists:nth(1, get_detect_thing(Type, ProductId)),
             ThingStr = thinglist2binary(ThingList),
             ColumnStr = case get_ThingMap(<<"person">>, ProductId) of
