@@ -287,12 +287,10 @@ encode_body(_Path, _Method, Map, _) ->
     jsx:encode(Map).
 
 do_request(Method, Path, Header, QueryData, Options) ->
-    Sessiontoken = proplists:get_value("sessiontoken", Header, ""),
     NewQueryData =
         case jsx:is_json(QueryData) of
             true ->
-                Data1 = jsx:decode(QueryData, [{labels, binary}, return_maps]),
-                jsx:encode(Data1#{<<"sessiontoken">> => dgiot_utils:to_binary(Sessiontoken)});
+                jsx:decode(QueryData, [{labels, binary}, return_maps]);
             false ->
                 QueryData
         end,
