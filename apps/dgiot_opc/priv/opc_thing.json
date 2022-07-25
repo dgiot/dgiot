@@ -1,220 +1,747 @@
 {
+  "events": [],
   "properties": [
     {
-      "name": "电压",
-      "dataForm": {
-        "data": "528590",
-        "rate": 1,
-        "offset": 0,
-        "address": "Edit-24",
-        "control": "%q",
-        "protocol": "normal",
-        "quantity": "528590",
-        "strategy": "20",
-        "byteorder": "big",
-        "collection": "%s"
-      },
-      "dataType": {
-        "type": "int",
-        "specs": {
-          "max": 1000,
-          "min": 0,
-          "step": 0,
-          "unit": "kV"
-        }
-      },
-      "required": true,
       "accessMode": "r",
-      "identifier": "U_OPC"
-    },
-    {
-      "name": "输入功率",
       "dataForm": {
-        "data": "528590",
-        "rate": 1,
+        "address": "0X10",
+        "afn": "",
+        "byteType": "",
+        "bytelen": "",
+        "collection": "%s",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "da": "",
+        "data": "null",
+        "dt": "",
+        "iscount": "0",
         "offset": 0,
-        "address": "Edit-24",
-        "control": "%q",
-        "protocol": "normal",
-        "quantity": "528590",
-        "strategy": "20",
-        "byteorder": "big",
-        "collection": "%s"
-      },
-      "dataType": {
-        "type": "int",
-        "specs": {
-          "max": 100000,
-          "min": 0,
-          "step": 0,
-          "unit": "W"
-        }
-      },
-      "required": true,
-      "accessMode": "r",
-      "identifier": "P_OPC"
-    },
-    {
-      "name": "电流",
-      "dataForm": {
-        "data": "528590",
+        "operatetype": "",
+        "order": 0,
+        "originaltype": "",
+        "protocol": "DLINK",
         "rate": 1,
-        "offset": 0,
-        "address": "Edit-24",
-        "control": "%q",
-        "protocol": "normal",
-        "quantity": "528590",
-        "strategy": "20",
-        "byteorder": "big",
-        "collection": "%s"
+        "round": "all",
+        "slaveid": "",
+        "strategy": "主动上报"
       },
-      "dataType": {
-        "type": "float",
+      "dataSource": {
+        "_dlinkindex": 1,
+        "dis": [
+          {
+            "data": "1",
+            "key": "BYXZ.KST_XK1.FeedBack.Real_flow1"
+          },
+          {
+            "data": 1,
+            "key": "BYXZ.KST_XK1.FeedBack.Real_flow2"
+          },
+          {
+            "data": 1,
+            "key": "BYXZ.KST_XK1.FeedBack.Real_flow3"
+          },
+          {
+            "data": 1,
+            "key": "BYXZ.KST_XK1.FeedBack.Real_flow4"
+          },
+          {
+            "data": 1,
+            "key": "BYXZ.KST_XK1.FeedBack.Real_flow5"
+          },
+          {
+            "data": 1,
+            "key": "BYXZ.KST_XK1.FeedBack.Real_flow6"
+          }
+        ]
+      },
+       "dataType": {
+        "das": [],
         "specs": {
-          "max": 100,
-          "min": 0,
-          "step": 0,
-          "unit": "A"
-        }
-      },
-      "required": true,
-      "accessMode": "r",
-      "identifier": "I_OPC"
-    },
-    {
-      "name": "电机转速",
-      "dataForm": {
-        "data": "528590",
-        "rate": 1,
-        "offset": 0,
-        "address": "Edit-24",
-        "control": "%q",
-        "protocol": "normal",
-        "quantity": "528590",
-        "strategy": "20",
-        "byteorder": "big",
-        "collection": "%s"
-      },
-      "dataType": {
-        "type": "float",
-        "specs": {
-          "max": 100000,
-          "min": 0,
-          "step": 0,
-          "unit": "r/min"
-        }
-      },
-      "required": true,
-      "accessMode": "r",
-      "identifier": "DJZS_OPC"
-    },
-    {
-      "name": "水温度",
-      "dataForm": {
-        "data": "528590",
-        "rate": 1,
-        "offset": 0,
-        "address": "Edit-24",
-        "control": "%q",
-        "protocol": "normal",
-        "quantity": "528590",
-        "strategy": "20",
-        "byteorder": "big",
-        "collection": "%s"
-      },
-      "dataType": {
-        "type": "float",
-        "specs": {
-          "max": 100,
-          "min": 0,
-          "step": 0,
-          "unit": "°"
-        }
-      },
-      "required": true,
-      "accessMode": "r",
-      "identifier": "SWD_OPC"
-    },
-    {
-      "name": "电磁流量",
-      "dataForm": {
-        "data": "528590",
-        "rate": 1,
-        "offset": 0,
-        "address": "Edit-24",
-        "control": "%q",
-        "protocol": "normal",
-        "quantity": "528590",
-        "strategy": "20",
-        "byteorder": "big",
-        "collection": "%s"
-      },
-      "dataType": {
-        "type": "float",
-        "specs": {
-          "max": 1000,
-          "min": 0,
+          "max": 999,
+          "min": 1,
+          "precision": 3,
           "step": 0,
           "unit": "m³/h"
-        }
+        },
+        "type": "float"
       },
+      "devicetype": "采集值",
+      "ico": "/dgiot_file/devicething/ico/fa82a59201.flow.png?timestamp=1640852770146",
+      "identifier": "flow",
+      "index": 1,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "流量",
       "required": true,
-      "accessMode": "r",
-      "identifier": "DCLL_OPC"
+      "updateAt": "1658319663420"
     },
     {
-      "name": "进口压力",
+      "accessMode": "r",
       "dataForm": {
-        "data": "528590",
-        "rate": 1,
+        "address": "0X10",
+        "collection": "%s",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
         "offset": 0,
-        "address": "Edit-24",
-        "control": "%q",
-        "protocol": "opcda",
-        "quantity": "528590",
-        "strategy": "20",
-        "byteorder": "big",
-        "collection": "%s/100"
+        "order": 0,
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "strategy": "主动上报"
       },
-      "dataType": {
-        "type": "float",
+      "dataSource": {
+        "_dlinkindex": 1,
+        "dis": [
+          {
+            "data": "1",
+            "key": "BYXZ.KST_XK1.FeedBack.PreGauge_1"
+          },
+          {
+            "data": 1,
+            "key": "BYXZ.KST_XK1.FeedBack.PreGauge_2"
+          },
+          {
+            "data": 1,
+            "key": "BYXZ.KST_XK1.FeedBack.PreGauge_3"
+          },
+          {
+            "data": 1,
+            "key": "BYXZ.KST_XK1.FeedBack.PreGauge_4"
+          },
+          {
+            "data": 1,
+            "key": "BYXZ.KST_XK1.FeedBack.PreGauge_5"
+          },
+          {
+            "data": 1,
+            "key": "BYXZ.KST_XK1.FeedBack.PreGauge_6"
+          }
+        ]
+      },
+       "dataType": {
+        "das": [],
         "specs": {
           "max": 500,
           "min": -500,
-          "step": 0.1,
-          "unit": "Mpa"
-        }
+          "precision": 3,
+          "step": 0,
+          "unit": "MPa"
+        },
+        "type": "float"
       },
-      "required": true,
-      "accessMode": "r",
-      "identifier": "JKYL_OPC"
-    },
-    {
+      "devicetype": "采集值",
+      "identifier": "pressure_out",
+      "index": 2,
+      "isshow": true,
+      "isstorage": true,
       "name": "出口压力",
+      "required": true
+    },
+    {
+      "accessMode": "r",
       "dataForm": {
-        "data": "528590",
-        "rate": 1,
+        "address": "0X10",
+        "collection": "0.00",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
         "offset": 0,
-        "address": "Edit-24",
-        "control": "%q",
-        "protocol": "opcda",
-        "quantity": "528590",
-        "strategy": "20",
-        "byteorder": "big",
-        "collection": "%s/100"
+        "order": 0,
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "strategy": "主动上报"
       },
-      "dataType": {
-        "type": "float",
+      "dataSource": {
+        "_dlinkindex": 1,
+        "dis": [
+          {
+            "data": "1",
+            "key": "GCU331_YJ.P_L_10"
+          }
+        ]
+      },
+       "dataType": {
+        "das": [],
         "specs": {
           "max": 500,
           "min": -500,
-          "step": 0.1,
-          "unit": "Mpa"
-        }
+          "precision": 3,
+          "step": 0,
+          "unit": "MPa"
+        },
+        "type": "float"
       },
-      "required": true,
+      "devicetype": "采集值",
+      "identifier": "pressure_in",
+      "index": 3,
+      "isshow": false,
+      "isstorage": false,
+      "name": "进口压力",
+      "required": true
+    },
+    {
       "accessMode": "r",
-      "identifier": "CKYL_OPC"
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%s",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "order": 0,
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "_dlinkindex": 1,
+        "dis": [
+          {
+            "data": "1",
+            "key": "BYXZ.KST_XK1.Powers.YB_ZS"
+          }
+        ]
+      },
+       "dataType": {
+        "das": [],
+        "specs": {
+          "max": 10000,
+          "min": 0,
+          "precision": 3,
+          "step": 0,
+          "unit": "r/min"
+        },
+        "type": "float"
+      },
+      "devicetype": "采集值",
+      "identifier": "rotate",
+      "index": 4,
+      "isshow": true,
+      "isstorage": true,
+      "name": "转速",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%s",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "order": 0,
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "_dlinkindex": 1,
+        "dis": [
+          {
+            "data": "1",
+            "key": "BYXZ.KST_XK1.Powers.HH_B_fre"
+          }
+        ]
+      },
+       "dataType": {
+        "das": [],
+        "specs": {
+          "max": 100,
+          "min": 0,
+          "precision": 3,
+          "step": 0,
+          "unit": "Hz"
+        },
+        "type": "float"
+      },
+      "devicetype": "采集值",
+      "identifier": "pinlv",
+      "index": 5,
+      "isshow": true,
+      "isstorage": true,
+      "name": "频率",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%s",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "order": 0,
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "_dlinkindex": 1,
+        "dis": [
+          {
+            "data": "1",
+            "key": "BYXZ.KST_XK1.Powers.HH_Avg_voltage"
+          },
+          {
+            "data": "1",
+            "key": "BYXZ.KST_XK1.Powers.HH_B_voltage"
+          }
+        ]
+      },
+       "dataType": {
+        "das": [],
+        "specs": {
+          "max": 999,
+          "min": 0,
+          "precision": 3,
+          "step": 0,
+          "unit": "V"
+        },
+        "type": "float"
+      },
+      "devicetype": "采集值",
+      "identifier": "vol",
+      "index": 6,
+      "isshow": true,
+      "isstorage": true,
+      "name": "电压",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%s*5",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "order": 0,
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "_dlinkindex": 1,
+        "dis": [
+          {
+            "data": "1",
+            "key": "BYXZ.KST_XK1.Powers.HH_Avg_elec"
+          },
+          {
+            "data": "1",
+            "key": "BYXZ.KST_XK1.Powers.HH_B_elec"
+          }
+        ]
+      },
+       "dataType": {
+        "das": [],
+        "specs": {
+          "max": 999,
+          "min": 0,
+          "precision": 3,
+          "step": 0,
+          "unit": "A"
+        },
+        "type": "float"
+      },
+      "devicetype": "采集值",
+      "identifier": "current",
+      "index": 7,
+      "isshow": true,
+      "isstorage": true,
+      "name": "电流",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%s",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "order": 0,
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "_dlinkindex": 1,
+        "dis": [
+          {
+            "data": "1",
+            "key": "BYXZ.KST_XK1.Powers.HH_Avg_pf"
+          },
+          {
+            "data": "1",
+            "key": "BYXZ.KST_XK1.Powers.HH_B_pf"
+          }
+        ]
+      },
+       "dataType": {
+        "das": [],
+        "specs": {
+          "max": 100,
+          "min": 0,
+          "precision": 3,
+          "step": 0
+        },
+        "type": "float"
+      },
+      "devicetype": "采集值",
+      "identifier": "factor",
+      "index": 8,
+      "isshow": true,
+      "isstorage": true,
+      "name": "功率因素",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%s*5",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "order": 0,
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "_dlinkindex": 1,
+        "dis": [
+          {
+            "data": "1",
+            "key": "BYXZ.KST_XK1.Powers.HH_Avg_kw"
+          },
+          {
+            "data": "1",
+            "key": "BYXZ.KST_XK1.Powers.HH_B_kw"
+          }
+        ]
+      },
+       "dataType": {
+        "das": [],
+        "specs": {
+          "max": 999,
+          "min": 1,
+          "precision": 3,
+          "step": 0,
+          "unit": "kW"
+        },
+        "type": "float"
+      },
+      "devicetype": "采集值",
+      "identifier": "power",
+      "index": 9,
+      "isshow": true,
+      "isstorage": true,
+      "name": "功率",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "256",
+        "collection": "Ymj = 12.5*12.5*3.14,\nDhead = (%%flow/(3600*Ymj))*(%%flow/(3600*Ymj))/(2*9.81),\n(%%pressure_out - 0)*1000000/9800+2.2+Dhead",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "order": 0,
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "strategy": "计算值"
+      },
+      "dataSource": {
+        "_dlinkindex": 1,
+        "dis": [
+          {
+            "data": "1",
+            "key": "BYXZ.KST_XK1.Powers.yang_cheng"
+          },
+          {
+            "data": "1",
+            "key": "BYXZ.KST_XK1.Powers.HH_B_kw"
+          }
+        ]
+      },
+       "dataType": {
+           "das": [],
+        "specs": {
+          "max": 100,
+          "min": 0,
+          "precision": 3,
+          "step": 0,
+          "unit": "m"
+        },
+        "type": "float"
+      },
+      "devicetype": "计算值",
+      "identifier": "head",
+      "index": 10,
+      "isshow": true,
+      "isstorage": true,
+      "name": "扬程",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "256",
+        "collection": "Ymj = 12.5*12.5*3.14,\nDhead = (%%flow/(3600*Ymj))*(%%flow/(3600*Ymj))/(2*9.81),\nHead = (%%pressure_out - 0)*1000000/9800+2.2+Dhead,\n(9.81*%%flow*Head)/%%power/3600*100",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "order": 0,
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "strategy": "计算值"
+      },
+      "dataSource": {
+        "_dlinkindex": 1,
+        "dis": [
+          {
+            "data": "1",
+            "key": "BYXZ.KST_XK1.Powers.xiao_lv"
+          }
+        ]
+      },
+       "dataType": {
+        "das": [],
+        "specs": {
+          "max": 100,
+          "min": 0,
+          "precision": 3,
+          "step": 0,
+          "unit": "%"
+        },
+        "type": "float"
+      },
+      "devicetype": "计算值",
+      "identifier": "effect",
+      "index": 11,
+      "isshow": true,
+      "isstorage": true,
+      "name": "机组效率",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%%power*((%%rotate/2850)*(%%rotate/2850)*(%%rotate/2850))",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "order": 0,
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "strategy": "计算值"
+      },
+      "dataSource": {
+        "_dlinkindex": 1,
+        "dis": []
+      },
+       "dataType": {
+        "das": [],
+        "specs": {
+          "max": 999,
+          "min": 0,
+          "precision": 3,
+          "step": 0,
+          "unit": "kW"
+        },
+        "type": "float"
+      },
+      "devicetype": "计算值",
+      "identifier": "conversion_power",
+      "index": 12,
+      "isshow": true,
+      "isstorage": true,
+      "name": "换算功率",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "Ymj = 12.5*12.5*3.14,\nDhead = (%%flow/(3600*Ymj))*(%%flow/(3600*Ymj))/(2*9.81),\nHead = (%%pressure_out - 0)*1000000/9800+2.2+Dhead,\nHead*((%%rotate/2850)*(%%rotate/2850))",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "order": 0,
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "strategy": "计算值"
+      },
+      "dataSource": {
+        "_dlinkindex": 1,
+        "dis": []
+      },
+       "dataType": {
+        "das": [],
+        "specs": {
+          "max": 999,
+          "min": 0,
+          "precision": 3,
+          "step": 0,
+          "unit": "m"
+        },
+        "type": "float"
+      },
+      "devicetype": "计算值",
+      "identifier": "conversion_head",
+      "index": 13,
+      "isshow": true,
+      "isstorage": true,
+      "name": "换算扬程",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%%flow *( %%rotate/2850)",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "order": 0,
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "strategy": "计算值"
+      },
+      "dataSource": {
+        "_dlinkindex": 1,
+        "dis": []
+      },
+       "dataType": {
+        "das": [],
+        "specs": {
+          "max": 999,
+          "min": 0,
+          "precision": 3,
+          "step": 0,
+          "unit": "m³/h"
+        },
+        "type": "float"
+      },
+      "devicetype": "计算值",
+      "identifier": "conversion_flow",
+      "index": 14,
+      "isshow": true,
+      "isstorage": true,
+      "name": "换算流量",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%s",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "order": 0,
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "_dlinkindex": 1,
+        "dis": []
+      },
+       "dataType": {
+        "das": [],
+        "specs": {
+          "max": 1,
+          "min": 0,
+          "precision": 3,
+          "step": 0,
+          "unit": ""
+        },
+        "type": "int"
+      },
+      "devicetype": "dgiotcollectflag",
+      "identifier": "dgiotcollectflag",
+      "index": 15,
+      "isshow": true,
+      "isstorage": true,
+      "name": "opc采集标识",
+      "required": true
     }
-  ]
+  ],
+  "services": [],
+  "tags": []
 }
