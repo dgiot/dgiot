@@ -8,8 +8,36 @@
 %%%-------------------------------------------------------------------
 -module(dgiot_map).
 -author("jonhl").
--export([with/2, get/2, merge/2]).
+-export([with/2, get/2, merge/2, flatten/1, flatten/2]).
 -export([test_get/0, test_merge/0]).
+
+flatten(Map) ->
+    flatten(Map, <<"_">>).
+
+flatten(Map, Link) ->
+    case is_map(Map) of
+        true ->
+            maps:fold(
+                fun(K,V,Acc) ->
+                    maps:merge(Acc,flatten(<<K/binary>>,V,Link))
+                end,#{},Map);
+        false ->
+            {error,<<"wrong_type">>}
+
+    end.
+
+flatten(Head,Map,Link) ->
+    case is_map(Map) of
+        true ->
+                maps:fold(
+                    fun(K,V,Acc) ->
+                        maps:merge(Acc,flatten(<<Head/binary,Link/binary,K/binary>>,V,Link))
+                    end,#{},Map);
+        false ->
+            #{<<Head/binary>> => Map}
+
+    end.
+
 
 merge(Data, NewData) ->
     maps:fold(fun

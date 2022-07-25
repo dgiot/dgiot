@@ -1,0 +1,314 @@
+{
+  "definitions": {},
+  "paths": {
+    "/factory_calendar": {
+      "get": {
+        "consumes": [
+          "application/json"
+        ],
+        "summary": "获取工厂日历",
+        "description": "获取工厂日历",
+        "parameters": [
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "factory"
+        ]
+      },
+      "post": {
+        "summary": "更新工厂日历",
+        "description": "更新工厂日历",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "calendar",
+            "description": "日历",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "default": {
+                  "description": "默认",
+                  "type": "string"
+                },
+                "other": {
+                  "description": "自定义",
+                  "type": "string"
+                }
+                }
+              }
+            }
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "factory"
+        ]
+      }
+    },
+    "/worker_shift": {
+      "get": {
+        "consumes": [
+          "application/json"
+        ],
+        "summary": "获取排班",
+        "description": "获取排班",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "type": "string",
+            "description": "查询日期"
+          },
+          {
+            "name": "workshop",
+            "in": "query",
+            "type": "string",
+            "description": "查询的车间id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "factory"
+        ]
+      },
+      "post": {
+        "summary": "更新排班",
+        "description": "更新排班",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "shift",
+            "description": "日历",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "shift": {
+                  "description": "变动的排班",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "factory"
+        ]
+      }
+    },
+    "/data": {
+      "post": {
+        "summary": "存储数据到td库",
+        "description": "存储数据到td库",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "data",
+            "description": "工单内容",
+            "required": true
+          }
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "factory"
+        ]
+      },
+      "get": {
+        "summary": "查询工单信息",
+        "description": "查询工单信息",
+        "parameters": [
+          {
+            "description": "工单id",
+            "in": "query",
+            "name": "objectId",
+            "type": "string"
+          },
+          {
+            "description": "工单类型",
+            "in": "query",
+            "name": "type",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "description": "limit, 显示多少条记录，显示100条记录 eg:100",
+            "required": false,
+            "default": 10,
+            "type": "integer"
+          },
+          {
+            "in": "query",
+            "name": "skip",
+            "description": "skip",
+            "required": false,
+            "default": 0,
+            "type": "integer"
+          },
+          {
+            "description": "过滤条件",
+            "in": "query",
+            "name": "where",
+            "type": "string"
+          }
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "factory"
+        ]
+      }
+    },
+    "/stored": {
+      "post": {
+        "summary": "入库所有订单",
+        "description": "入库所有订单",
+        "consumes": [
+          "*"
+        ],
+        "parameters": [
+          {
+            "name": "objectId",
+            "in": "query",
+            "type": "string",
+            "default": "fastdfs",
+            "description": "订单id"
+          },
+          {
+            "name": "operator",
+            "in": "query",
+            "type": "string",
+            "default": "operator",
+            "description": "入库者"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "factory"
+        ]
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "factory",
+      "description": "factory"
+    }
+  ]
+
+}
+
+
+
+
+
+
+
+

@@ -198,30 +198,26 @@ overlay_vars_rel(RelType) ->
         , {enable_plugin_emqx_modules, false} %% modules is not a plugin in ce
         , {enable_plugin_emqx_recon, true}
         , {enable_plugin_emqx_retainer, true}
-        , {enable_plugin_emqx_web_hook, true}
         , {enable_plugin_emqx_telemetry, true}
-        %% dgiot base plugin
         , {enable_plugin_dgiot, true}
         , {enable_plugin_dgiot_bridge, true}
         , {enable_plugin_dgiot_parse, true}
         , {enable_plugin_dgiot_api, true}
+        , {enable_plugin_dgiot_device, true}
+        , {enable_plugin_dgiot_evidence, true}
         , {enable_plugin_dgiot_tdengine, true}
         , {enable_plugin_dgiot_task, true}
-        , {enable_plugin_dgiot_device, true}
-        %% dgiot base plugin
         , {enable_plugin_dgiot_http, true}
         , {enable_plugin_dgiot_topo, true}
-        , {enable_plugin_dgiot_dlink, true}
-        , {enable_plugin_dgiot_evidence, true}
         , {enable_plugin_dgiot_opc, true}
         , {enable_plugin_dgiot_meter, true}
         , {enable_plugin_dgiot_modbus, true}
+        , {enable_plugin_dgiot_group, true}
         , {enable_plugin_dgiot_ffmpeg, true}
         , {enable_plugin_dgiot_gb26875, true}
-        , {enable_plugin_dgiot_hjt212, true}
-        , {enable_plugin_dgiot_bacnet, true}
-        , {enable_plugin_dgiot_bamis, true}
+        , {enable_plugin_dgiot_dlink, true}
         , {enable_plugin_dgiot_factory, true}
+        , {enable_plugin_dgiot_bamis, true}
         , {vm_args_file, VmArgs}
     ].
 
@@ -318,7 +314,6 @@ relx_plugin_apps(ReleaseType) ->
         , emqx_rule_engine
         , emqx_sasl
         , emqx_exhook
-        , emqx_web_hook
         , emqx_auth_mnesia
     ]
     ++ [emqx_telemetry || not is_enterprise()]
@@ -334,24 +329,22 @@ relx_plugin_apps_per_rel(cloud) ->
         , emqx_psk_file
         , emqx_auth_mnesia
         , dgiot
-        , dgiot_api
         , dgiot_parse
+        , dgiot_api
         , dgiot_bridge
         , dgiot_device
         , dgiot_tdengine
-        , dgiot_http
-        , dgiot_task
-        , dgiot_dlink
-        , dgiot_topo
-        , dgiot_bamis
         , dgiot_evidence
+        , dgiot_task
+        , dgiot_http
+        , dgiot_topo
         , dgiot_opc
         , dgiot_meter
         , dgiot_modbus
         , dgiot_ffmpeg
         , dgiot_gb26875
-        , dgiot_hjt212
-        , dgiot_bacnet
+        , dgiot_dlink
+        , dgiot_bamis
         , dgiot_factory
     ];
 relx_plugin_apps_per_rel(edge) ->
