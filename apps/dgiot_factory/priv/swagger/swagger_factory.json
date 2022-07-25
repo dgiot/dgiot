@@ -223,6 +223,16 @@
             "in": "query",
             "name": "where",
             "type": "string"
+          },
+          {
+            "description": "取最新值",
+            "in": "query",
+            "name": "new",
+            "type": "string",
+            "enum": [
+              true,
+              false
+            ]
           }
         ],
         "consumes": [
@@ -271,6 +281,16 @@
             "type": "string",
             "default": "operator",
             "description": "入库者"
+          },
+          {
+            "description": "是否合格",
+            "in": "query",
+            "name": "quality",
+            "type": "string",
+            "enum": [
+              true,
+              false
+            ]
           }
         ],
         "responses": {

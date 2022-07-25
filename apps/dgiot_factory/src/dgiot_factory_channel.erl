@@ -91,11 +91,22 @@ handle_message({sync_parse, _Pid, 'after', post, Token, <<"Device">>, QueryData}
 
 
 
-handle_message({sync_parse, _Pid, 'before', put, Token, <<"Device">>, #{<<"content">> := Content,<<"id">> := DeviceId } = _QueryData},  State) ->
+%%handle_message({sync_parse, _Pid, 'before', put, Token, <<"Device">>, #{<<"content">> := Content,<<"id">> := DeviceId } = _QueryData},  #state{env =#{<<"product">> :=Product}} =State) ->
+    handle_message({sync_parse, _Pid, 'before', put, Token, <<"Device">>, #{<<"content">> := Content,<<"id">> := DeviceId } = _QueryData},  State) ->
+%%    lists:foldl(
+%%        fun(X,_)->
+%%            L = tuple_to_list(X),
+%%            io:format("~s ~p length = ~p ~n",[?FILE,?LINE,length(L)]),
+%%            F = lists:nth(1,L),
+%%            io:format("~s ~p F = ~p ~n",[?FILE,?LINE,F])
+%%            lists:foldl(
+%%                fun(K,_)->
+%%                    io:format("~s ~p Product= ~p ~n",[?FILE,?LINE,is_map(K)])
+%%            end,[],L)
+%%    end,[],Product),
     FlatMap = dgiot_map:flatten(Content),
     case Content of
         #{<<"person">>:= #{<<"type">> :=Type}} ->
-%%            io:format("~s ~p Content= ~p ~n",[?FILE,?LINE,Content]),
             dgiot_factory_data:handle_data(DeviceId,Type,FlatMap#{<<"persion_sessiontoken">> => Token});
         _ ->
             pass
@@ -132,6 +143,7 @@ stop(ChannelType, ChannelId, _State) ->
 %%            pass
 %%    end.
 %%
+
 %%get_sheetlist(ProductId) ->
 %%    case dgiot_product:lookup_prod(ProductId) of
 %%        {ok, #{<<"thing">> := #{<<"properties">> := PropertiesList}}} ->
