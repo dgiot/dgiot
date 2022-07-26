@@ -72,7 +72,7 @@ save_data(ProductId, DeviceId, <<"product">> = Type, #{<<"product_pnumber">> := 
                             dgiot_task:save_td_no_match(ProductId, DevAddr, Payload#{<<"product_id">> => dgiot_utils:to_list(Product_id)}, #{}),
                             handle_storehouse(Payload, DeviceId),
                             handle_dingdan(DeviceId),
-%%                            dgiot_factory_meter:test(Payload, DeviceId),
+                            dgiot_factory_meter:test(Payload, DeviceId),
                             {ok, ok};
                         _ ->
                             error
@@ -112,11 +112,11 @@ save_data(_, _, _, _) ->
 
 handle_dingdan(DeviceId) ->
     case dgiot_parse:get_object(<<"Device">>, DeviceId) of
-        {ok, #{<<"progress">> := Progress,<<"detail">> :=Detail, <<"content">> := #{<<"baseInfo">> := #{<<"Number">> := Total}}}} ->
+        {ok, #{<<"progress">> := Progress, <<"detail">> := Detail, <<"content">> := #{<<"baseInfo">> := #{<<"Number">> := Total}}}} ->
             case Progress >= Total of
                 true ->
                     EndTime = dgiot_datetime:format("YYYY-MM-DD HH:NN:SS"),
-                    dgiot_parse:update_object(<<"Device">>, DeviceId,#{<<"realstate">> =>8,<<"detail">> =>Detail#{<<"tasksend">> =>EndTime}});
+                    dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"realstate">> => 8, <<"detail">> => Detail#{<<"taskend">> => EndTime}});
                 _ ->
                     pass
             end
@@ -152,8 +152,8 @@ get_id(DevAddr, Type) ->
     Res = string:to_upper(dgiot_utils:to_list(ObjID)),
     dgiot_utils:to_binary(Res).
 
-handle_quality(#{<<"quality_people">> := Operator, <<"quality_status">> := Status, <<"quality_quality">> := Quality, <<"quality_alarmid">> := NotificationId, <<"
-quality_pnumber">> := Pnumber}, DeviceId) ->
+handle_quality(#{<<"quality_people">> := Operator, <<"quality_status">> := Status, <<"quality_quality">> := Quality, <<"quality_alarmid">> := NotificationId,
+    <<"quality_pnumber">> := Pnumber}, DeviceId) ->
     case {Status, Quality} of
         {3, 1} ->
             handle_alert(NotificationId, Operator),
@@ -432,7 +432,6 @@ get_history(Channel, ProductId, DeviceId, ThingMap, Where, _Limit, _Skip, Type) 
                         end,
             ThingList = maps:keys(ThingMap),
             DetectThing = <<Type/binary, "_id">>,
-%%            DetectThing = lists:nth(1, get_detect_thing(Type, ProductId)),
             ThingStr = thinglist2binary(ThingList),
             ColumnStr = case get_ThingMap(<<"person">>, ProductId) of
                             {ok, PersonMap} ->
@@ -447,38 +446,17 @@ get_history(Channel, ProductId, DeviceId, ThingMap, Where, _Limit, _Skip, Type) 
                     Database = ProductId,
                     DB = dgiot_tdengine_select:format_db(?Database(Database)),
                     WHERE = get_where(Where, ThingMap, DetectThing, ProductId),
-%%                    LIMIT = get_limit( Limit, Skip),
-%%                    Sql = <<"SELECT ", ThingStr/binary, " FROM ", DB/binary, TableName/binary, WHERE/binary,LIMIT/binary,";">>,
                     Order = <<" ORDER BY createdat DESC ">>,
                     Sql = <<"SELECT ", ColumnStr/binary, " FROM ", DB/binary, TableName/binary, WHERE/binary, Order/binary, ";">>,
-
                     ?LOG(error, "Sql ~s", [Sql]),
                     dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_query, Sql)
                 end)
     end.
 
-
-%%get_detect_thing(Type, ProductId) ->
-%%    case dgiot_product:lookup_prod(ProductId) of
-%%        {ok, #{<<"thing">> := #{<<"properties">> := PropertiesList}}} ->
-%%            lists:foldl(
-%%                fun(X, Acc) ->
-%%                    case X of
-%%                        #{<<"isstorage">> := true, <<"devicetype">> := Type, <<"identifier">> := Identifier} ->
-%%                            Acc ++ [Identifier];
-%%                        _ ->
-%%                            Acc
-%%                    end
-%%                end, [], PropertiesList);
-%%        _ ->
-%%            error
-%%    end.
-
 get_where(undefined, _, DetectThing, _) ->
     <<" where ", DetectThing/binary, " is not null ">>;
 
 get_where(Where, ThingMap, DetectThing, ProductId) ->
-
     case is_map(Where) of
         true ->
             W = maps:fold(
@@ -519,8 +497,6 @@ filter_data(undefined, _, HistoryData) ->
     Total = length(HistoryData),
     {Total, HistoryData};
 
-
-
 filter_data(Limit, Skip, HistoryData) ->
     Total = length(HistoryData),
     Res = case Limit + Skip > Total of
@@ -530,15 +506,6 @@ filter_data(Limit, Skip, HistoryData) ->
                   lists:sublist(HistoryData, Skip + 1, Limit + Skip + 1)
           end,
     {Total, Res}.
-
-
-%%get_limit( Limit, Skip) ->
-%%    L = dgiot_utils:to_binary(Limit),
-%%    S = dgiot_utils:to_binary(Skip*Limit),
-%%    <<" limit ",S/binary,",",L/binary>>.
-
-
-
 
 update_progress() ->
     {ok, #{<<"results">> := List}} = dgiot_parse:query_object(<<"Device">>, #{}),
@@ -550,7 +517,6 @@ update_progress() ->
             end
         end, [], List
     ).
-
 
 get_device_list() ->
     case dgiot_parse:query_object(<<"Device">>, #{<<"where">> => #{<<"product">> => <<"ec71804a3d">>}}) of

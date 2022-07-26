@@ -5,7 +5,8 @@
 -export([
     get_body/1,
     test/2,
-    get_header/0
+    get_header/0,
+    updata/2
 
 
 ]).
@@ -43,36 +44,37 @@ test(Payload, ObjectId) ->
             Url = "http://king.jeenor.com:8008/k3cloud/Kingdee.BOS.WebApi.ServicesStub.DynamicFormService.Save.common.kdsvc",
             Timestamp = dgiot_utils:to_list(dgiot_datetime:nowstamp()),
 %%    Path_url = "%2Fk3cloud%2FKingdee.BOS.WebApi.ServicesStub.DynamicFormService.ExecuteBillQuery.common.kdsvc",
-            Path_url = "%2Fk3cloud%2FKingdee.BOS.WebApi.ServicesStub.DynamicFormService.Save.common.kdsvc", %save路径
-            App_data = "62a939f4df3245,Administrator,2052,0",
-            Client_sec = "bddc299e0a7d95cef5515adf3a8c1314",
-            AppId = "229973_Xedp77lt6Jm+waUtS61C3cVv5Mx94BlL",
-            AppSecret = "f582a31a838c4c6bae98a1747eba15aa",
-            A = dgiot_utils:to_binary(AppId ++ App_data),
-            B = dgiot_utils:to_binary(AppSecret),
-            Api_sign = "POST" ++ dgiot_utils:to_list(Path_url) ++ "x-api-nonce:" ++ dgiot_utils:to_list(Timestamp) ++ "x-api-timestamp:" ++ dgiot_utils:to_list(Timestamp),
-            AA = dgiot_utils:to_binary(Api_sign),
-            BB = dgiot_utils:to_binary(Client_sec),
-            Headers = [
-                {"X-Api-ClientID", "229973"},
-                {"X-Api-Auth-Version", "2.0"},
-                {"X-Api-Timestamp", Timestamp},
-                {"X-Api-Nonce", Timestamp},
-                {"X-Api-SignHeaders", "x-api-timestamp,x-api-nonce"},
-                {"X-Api-Signature", hmac(AA, BB)},
-                {"X-KD-AppKey", "229973_Xedp77lt6Jm+waUtS61C3cVv5Mx94BlL"},
-                {"X-KD-AppData", dgiot_utils:to_list(base64:encode(dgiot_utils:to_binary(App_data)))},
-                {"X-KD-Signature", hmac(A, B)}, %%MDdmMzJiZDIxZWMxYjdkMDgwYjE3MzZlYmQ3MTJhOGNkYjQ4NzZhZjA4NTFiYzM0MWU1NzJjNTNlNzQ3NDczZA==
-                {"Accept-Charset", "utf-8"},
-                {"User-Agent", "Kingdee/Python WebApi SDK 7.3 (compatible; MSIE 6.0; Windows NT 5.1;SV1)"}
-            ],
-            ContentType = "application/json",
-            Request = {Url, Headers, ContentType, Body},
-            dgiot_http_client:request(post, Request);
+    Path_url = "%2Fk3cloud%2FKingdee.BOS.WebApi.ServicesStub.DynamicFormService.Save.common.kdsvc", %save路径
+    App_data = "62a939f4df3245,Administrator,2052,0",
+    Client_sec = "bddc299e0a7d95cef5515adf3a8c1314",
+    AppId = "229973_Xedp77lt6Jm+waUtS61C3cVv5Mx94BlL",
+    AppSecret = "f582a31a838c4c6bae98a1747eba15aa",
+    A = dgiot_utils:to_binary(AppId ++ App_data),
+    B = dgiot_utils:to_binary(AppSecret),
+    Api_sign = "POST" ++ dgiot_utils:to_list(Path_url) ++ "x-api-nonce:" ++ dgiot_utils:to_list(Timestamp) ++ "x-api-timestamp:" ++ dgiot_utils:to_list(Timestamp),
+    AA = dgiot_utils:to_binary(Api_sign),
+    BB = dgiot_utils:to_binary(Client_sec),
+    Headers = [
+        {"X-Api-ClientID", "229973"},
+        {"X-Api-Auth-Version", "2.0"},
+        {"X-Api-Timestamp", Timestamp},
+        {"X-Api-Nonce", Timestamp},
+        {"X-Api-SignHeaders", "x-api-timestamp,x-api-nonce"},
+        {"X-Api-Signature", hmac(AA, BB)},
+        {"X-KD-AppKey", "229973_Xedp77lt6Jm+waUtS61C3cVv5Mx94BlL"},
+        {"X-KD-AppData", dgiot_utils:to_list(base64:encode(dgiot_utils:to_binary(App_data)))},
+        {"X-KD-Signature", hmac(A, B)}, %%MDdmMzJiZDIxZWMxYjdkMDgwYjE3MzZlYmQ3MTJhOGNkYjQ4NzZhZjA4NTFiYzM0MWU1NzJjNTNlNzQ3NDczZA==
+        {"Accept-Charset", "utf-8"},
+        {"User-Agent", "Kingdee/Python WebApi SDK 7.3 (compatible; MSIE 6.0; Windows NT 5.1;SV1)"}
+    ],
+    ContentType = "application/json",
+    Request = {Url, Headers, ContentType, Body},
+            {ok,Row}=dgiot_http_client:request(post, Request),
+            Row;
         _ ->
             error
 
-    end.
+ end.
 
 
 get_header() ->
@@ -126,7 +128,7 @@ updata(Payload, DeviceId) ->
             Model = maps:get(<<"Model">>, Data),
             Modelvalue = maps:fold(fun(K, V, Acc) ->
                 case K of
-                    <<"FBillNo">> -> Acc#{<<"FBillNo">> => maps:get(<<"DeviceAddr">>, BaseInfo)};
+                    <<"FBillNo">> -> Acc#{<<"FBillNo">> => <<"">>};
                     <<"FBillType">> -> Acc#{<<"FBillType">> => #{<<"FName">> => maps:get(<<"Type_of_document">>, BaseInfo)}};
                     <<"FDocumentStatus">> -> Acc#{<<"FDocumentStatus">> =>  maps:get(maps:get(<<"Documents_state">>, BaseInfo), FDocumentStatus)};
                     <<"FDate">> -> Acc#{<<"FDate">> => maps:get(<<"Document_date">>, BaseInfo)};
@@ -143,14 +145,15 @@ updata(Payload, DeviceId) ->
                                 <<"FMoId">> -> Acc1#{<<"FMoId">> => maps:get(<<"FId">>, BaseInfo)};
                                 <<"FMoEntryId">> -> Acc1#{<<"FMoEntryId">> => maps:get(<<"FMoEntryId">>, BaseInfo)};
                                 <<"FWorkshipId">> -> Acc1#{<<"FWorkshipId">> => #{<<"FNumber">> =>  maps:get(maps:get(<<"Production_workshop">>, BaseInfo),FWorkshipId)}};
+                                <<"FReworkQty">> -> Acc1#{<<"FReworkQty">> => 0};
+                                <<"FScrapQty">> -> Acc1#{<<"FScrapQty">> => 0};
+                                <<"FReMadeQty">> -> Acc1#{<<"FReMadeQty">> => 0};
                                 <<"FQuaQty">> -> Acc1#{<<"FQuaQty">> => maps:get(<<"product_pnumber">>, Payload)};
-                                <<"FReworkQty">> -> Acc1#{<<"FReworkQty">> => aaa};
-                                <<"FScrapQty">> -> Acc1#{<<"FScrapQty">> => aaa};
-                                <<"FReMadeQty">> -> Acc1#{<<"FReMadeQty">> => aaa};
+                                <<"FFailQty">> -> Acc1#{<<"FFailQty">> => maps:get(<<"product_rejects">>, Payload)};
                                 <<"FFinishQty">> ->
-                                    case maps:get(<<"product_rejects">>, Payload) of
+                                    case maps:find(<<"product_rejects">>, Payload) of
                                         {ok,FFailQty} ->
-                                            case maps:get(<<"FQuaQty">>, Payload) of
+                                            case maps:find(<<"product_pnumber">>, Payload) of
                                                 {ok,FQuaQty} ->
                                                     Acc1#{<<"FFinishQty">> =>FFailQty+FQuaQty };
                                                 _ ->
@@ -159,9 +162,6 @@ updata(Payload, DeviceId) ->
                                         _ ->
                                             Acc1
                                     end;
-
-
-                                <<"FFailQty">> -> Acc1#{<<"FFailQty">> => maps:get(<<"product_rejects">>, Payload)};
                                 <<"FReportType">> -> Acc1#{<<"FReportType">> => #{<<"FNumber">> => <<"CTG002">>}};
                                 <<"FBomId">> -> Acc1#{<<"FBomId">> => #{<<"FNumber">> => maps:get(<<"FBomId">>, BaseInfo)}};
                                 <<"FCostRate">> -> Acc1#{K1 => V1};
@@ -182,8 +182,8 @@ updata(Payload, DeviceId) ->
 
             NewData = maps:update(<<"Model">>, Modelvalue, Data),
             NewJson = maps:update(<<"data">>, NewData, Json),
-            io:format("~s  ~p  NewJson= ~p ~n", [?FILE, ?LINE, NewJson]),
-            {ok, jsx:encode(NewJson)};
+%%            io:format("~s  ~p  NewJson= ~ts ~n", [?FILE, ?LINE, unicode:characters_to_list(jiffy:encode(NewJson))]),
+            {ok, jiffy:encode(NewJson)};
         _ ->
             error
     end.
