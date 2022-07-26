@@ -164,11 +164,11 @@ do_request(get_data, #{<<"objectId">> := undefined, <<"type">> := Type, <<"where
     end;
 
 
-do_request(get_data, #{<<"objectId">> := DeviceId, <<"type">> := Type, <<"where">> := Where, <<"limit">> := Limit, <<"skip">> := Skip,<<"new">> := New} = _Args, #{<<"sessionToken">> := SessionToken} = _Context, _Body) ->
+do_request(get_data, #{<<"objectId">> := DeviceId, <<"type">> := Type, <<"where">> := Where, <<"limit">> := Limit, <<"skip">> := Skip,<<"new">> := New} = _Args,
+    #{<<"sessionToken">> := SessionToken} = _Context, _Body) ->
     case dgiot_product_tdengine:get_channel(SessionToken) of
         {error, Error} -> {error, Error};
         {ok, Channel} ->
-
             case dgiot_factory_data:get_work_sheet(Type, Channel, DeviceId, Where, Limit, Skip,New) of
                 {ok, {Total, Res}} ->
                     {ok, #{<<"status">> => 0, msg => <<"数据请求成功"/utf8>>, <<"data">> => #{<<"total">> => Total, <<"items">> => Res}}};
