@@ -533,4 +533,3 @@ get_device_list() ->
         _ ->
             error
     end.
-

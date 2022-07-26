@@ -187,7 +187,3 @@ updata(Payload, DeviceId) ->
         _ ->
             error
     end.
-
-
-
-

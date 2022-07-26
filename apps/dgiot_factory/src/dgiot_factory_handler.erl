@@ -198,4 +198,3 @@ do_request(_OperationId, _Args, _Context, _Req) ->
     io:format("~s ~p here ~n",[?FILE,?LINE]),
     ?LOG(info, "_OperationId:~p~n", [_Args]),
     {error, <<"Not Allowed.">>}.
-
