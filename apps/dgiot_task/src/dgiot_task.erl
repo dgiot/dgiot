@@ -312,28 +312,28 @@ save_td(ProductId, DevAddr, Ack, _AppData) ->
         0 ->
             #{};
         _ ->
-            %%            计算上报值
-            Collection = dgiot_task:get_collection(ProductId, [], Ack),
-            %%            计算计算值
-            Calculated = dgiot_task:get_calculated(ProductId, Collection),
             DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
-            case dgiot_product:get_interval(ProductId) of
+            Interval = dgiot_product:get_interval(ProductId),
+            %%            是否有缓存
+            CacheData = merge_cache_data(DeviceId, Ack, Interval),
+            %%            计算上报值
+            Collection = dgiot_task:get_collection(ProductId, [], CacheData),
+            %%            计算计算值
+            AllData = dgiot_task:get_calculated(ProductId, Collection),
+            %%            过滤存储值
+            Storage = dgiot_task:get_storage(ProductId, AllData),
+            case Interval of
                 0 ->
-                    %%            过滤存储值
-                    Storage = dgiot_task:get_storage(ProductId, Calculated),
-                    dealwith_data(ProductId, DevAddr, DeviceId, Calculated, Storage);
+                    save_cache_data(DeviceId, CacheData),
+                    dealwith_data(ProductId, DevAddr, DeviceId, AllData, Storage);
                 Interval ->
-                    %%            是否有缓存
-                    AllData = merge_cache_data(DeviceId, Calculated, Interval),
-                    %%            过滤存储值
-                    Storage = dgiot_task:get_storage(ProductId, AllData),
                     Keys = dgiot_product:get_keys(ProductId),
                     AllStorageKey = maps:keys(Storage),
                     case Keys -- AllStorageKey of
                         List when length(List) == 0 andalso length(AllStorageKey) =/= 0 ->
                             dealwith_data(ProductId, DevAddr, DeviceId, AllData, Storage);
                         _ ->
-                            save_cache_data(DeviceId, AllData),
+                            save_cache_data(DeviceId, CacheData),
                             AllData
                     end
             end
@@ -361,8 +361,21 @@ save_cache_data(DeviceId, Data) ->
                         end, #{}, Data),
     dgiot_data:insert(?DGIOT_DATA_CACHE, DeviceId, {NewData, dgiot_datetime:now_secs()}).
 
+merge_cache_data(DeviceId, NewData, 0) ->
+    case dgiot_data:get(?DGIOT_DATA_CACHE, DeviceId) of
+        not_find ->
+            NewData;
+        {OldData, _Ts} ->
+            NewOldData =
+                maps:fold(fun(K, V, Acc) ->
+                    Key = dgiot_utils:to_binary(K),
+                    Acc#{Key => V}
+                          end, #{}, OldData),
+            dgiot_map:merge(NewOldData, NewData)
+    end;
+
 merge_cache_data(DeviceId, NewData, Interval) ->
-    case dgiot_data:get(dgiot_data_cache, DeviceId) of
+    case dgiot_data:get(?DGIOT_DATA_CACHE, DeviceId) of
         not_find ->
             NewData;
         {OldData, Ts} ->
@@ -375,11 +388,9 @@ merge_cache_data(DeviceId, NewData, Interval) ->
                                   end, #{}, OldData),
                     dgiot_map:merge(NewOldData, NewData);
                 false ->
-                    save_cache_data(DeviceId, NewData),
                     NewData
             end
     end.
-
 
 save_td_no_match(ProductId, DevAddr, Ack, AppData) ->
     case length(maps:to_list(Ack)) of
