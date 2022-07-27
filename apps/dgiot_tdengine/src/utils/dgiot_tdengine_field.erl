@@ -21,21 +21,25 @@
 
 -export([add_field/4, get_field/1, check_fields/2, check_fields/3, get_time/2]).
 
-add_field(<<"enum">>, Database, TableName, LowerIdentifier) ->
+add_field(#{<<"type">> := <<"enum">>}, Database, TableName, LowerIdentifier) ->
     <<"ALTER TABLE ", Database/binary, TableName/binary, " ADD COLUMN ", LowerIdentifier/binary, " INT;">>;
-add_field(<<"file">>, Database, TableName, LowerIdentifier) ->
-    <<"ALTER TABLE ", Database/binary, TableName/binary, " ADD COLUMN ", LowerIdentifier/binary, " NCHAR(10);">>;
-add_field(<<"text">>, Database, TableName, LowerIdentifier) ->
-    <<"ALTER TABLE ", Database/binary, TableName/binary, " ADD COLUMN ", LowerIdentifier/binary, " NCHAR(10);">>;
-add_field(<<"url">>, Database, TableName, LowerIdentifier) ->
-    <<"ALTER TABLE ", Database/binary, TableName/binary, " ADD COLUMN ", LowerIdentifier/binary, " NCHAR(10);">>;
-add_field(<<"geopoint">>, Database, TableName, LowerIdentifier) ->
-    <<"ALTER TABLE ", Database/binary, TableName/binary, " ADD COLUMN ", LowerIdentifier/binary, " NCHAR(30);">>;
-add_field(<<"image">>, Database, TableName, LowerIdentifier) ->
+add_field(#{<<"type">> := <<"file">>} = Spec, Database, TableName, LowerIdentifier) ->
+    Size = integer_to_binary(min(maps:get(<<"size">>, Spec, 50), 200)),
+    <<"ALTER TABLE ", Database/binary, TableName/binary, " ADD COLUMN ", LowerIdentifier/binary, " NCHAR(", Size/binary, ");">>;
+add_field(#{<<"type">> := <<"text">>} = Spec, Database, TableName, LowerIdentifier) ->
+    Size = integer_to_binary(min(maps:get(<<"size">>, Spec, 50), 200)),
+    <<"ALTER TABLE ", Database/binary, TableName/binary, " ADD COLUMN ", LowerIdentifier/binary, " NCHAR(", Size/binary, ");">>;
+add_field(#{<<"type">> := <<"url">>} = Spec, Database, TableName, LowerIdentifier) ->
+    Size = integer_to_binary(min(maps:get(<<"size">>, Spec, 50), 200)),
+    <<"ALTER TABLE ", Database/binary, TableName/binary, " ADD COLUMN ", LowerIdentifier/binary, " NCHAR((", Size/binary, ");">>;
+add_field(#{<<"type">> := <<"geopoint">>} = Spec, Database, TableName, LowerIdentifier) ->
+    Size = integer_to_binary(min(maps:get(<<"size">>, Spec, 50), 200)),
+    <<"ALTER TABLE ", Database/binary, TableName/binary, " ADD COLUMN ", LowerIdentifier/binary, " NCHAR(", Size/binary, ");">>;
+add_field(#{<<"type">> := <<"image">>}, Database, TableName, LowerIdentifier) ->
     <<"ALTER TABLE ", Database/binary, TableName/binary, " ADD COLUMN ", LowerIdentifier/binary, " BIGINT;">>;
-add_field(<<"date">>, Database, TableName, LowerIdentifier) ->
+add_field(#{<<"type">> := <<"date">>}, Database, TableName, LowerIdentifier) ->
     <<"ALTER TABLE ", Database/binary, TableName/binary, " ADD COLUMN ", LowerIdentifier/binary, " TIMESTAMP;">>;
-add_field(Type, Database, TableName, LowerIdentifier) ->
+add_field(#{<<"type">> := Type}, Database, TableName, LowerIdentifier) ->
     <<"ALTER TABLE ", Database/binary, TableName/binary, " ADD COLUMN ", LowerIdentifier/binary, " ", Type/binary, ";">>.
 
 %%  https://www.taosdata.com/cn/documentation/taos-sql#data-type
