@@ -16,20 +16,20 @@ class DlinkStub(object):
             channel: A grpc.Channel.
         """
         self.SayHello = channel.unary_unary(
-                '/dgiot.Dlink/SayHello',
-                request_serializer=dlink__pb2.HelloRequest.SerializeToString,
-                response_deserializer=dlink__pb2.HelloReply.FromString,
-                )
+            '/dgiot.Dlink/SayHello',
+            request_serializer=dlink__pb2.HelloRequest.SerializeToString,
+            response_deserializer=dlink__pb2.HelloReply.FromString,
+        )
         self.Check = channel.unary_unary(
-                '/dgiot.Dlink/Check',
-                request_serializer=dlink__pb2.HealthCheckRequest.SerializeToString,
-                response_deserializer=dlink__pb2.HealthCheckResponse.FromString,
-                )
+            '/dgiot.Dlink/Check',
+            request_serializer=dlink__pb2.HealthCheckRequest.SerializeToString,
+            response_deserializer=dlink__pb2.HealthCheckResponse.FromString,
+        )
         self.Watch = channel.unary_stream(
-                '/dgiot.Dlink/Watch',
-                request_serializer=dlink__pb2.HealthCheckRequest.SerializeToString,
-                response_deserializer=dlink__pb2.HealthCheckResponse.FromString,
-                )
+            '/dgiot.Dlink/Watch',
+            request_serializer=dlink__pb2.HealthCheckRequest.SerializeToString,
+            response_deserializer=dlink__pb2.HealthCheckResponse.FromString,
+        )
 
 
 class DlinkServicer(object):
@@ -75,79 +75,80 @@ class DlinkServicer(object):
 
 def add_DlinkServicer_to_server(servicer, server):
     rpc_method_handlers = {
-            'SayHello': grpc.unary_unary_rpc_method_handler(
-                    servicer.SayHello,
-                    request_deserializer=dlink__pb2.HelloRequest.FromString,
-                    response_serializer=dlink__pb2.HelloReply.SerializeToString,
-            ),
-            'Check': grpc.unary_unary_rpc_method_handler(
-                    servicer.Check,
-                    request_deserializer=dlink__pb2.HealthCheckRequest.FromString,
-                    response_serializer=dlink__pb2.HealthCheckResponse.SerializeToString,
-            ),
-            'Watch': grpc.unary_stream_rpc_method_handler(
-                    servicer.Watch,
-                    request_deserializer=dlink__pb2.HealthCheckRequest.FromString,
-                    response_serializer=dlink__pb2.HealthCheckResponse.SerializeToString,
-            ),
+        'SayHello': grpc.unary_unary_rpc_method_handler(
+            servicer.SayHello,
+            request_deserializer=dlink__pb2.HelloRequest.FromString,
+            response_serializer=dlink__pb2.HelloReply.SerializeToString,
+        ),
+        'Check': grpc.unary_unary_rpc_method_handler(
+            servicer.Check,
+            request_deserializer=dlink__pb2.HealthCheckRequest.FromString,
+            response_serializer=dlink__pb2.HealthCheckResponse.SerializeToString,
+        ),
+        'Watch': grpc.unary_stream_rpc_method_handler(
+            servicer.Watch,
+            request_deserializer=dlink__pb2.HealthCheckRequest.FromString,
+            response_serializer=dlink__pb2.HealthCheckResponse.SerializeToString,
+        ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
-            'dgiot.Dlink', rpc_method_handlers)
+        'dgiot.Dlink', rpc_method_handlers)
     server.add_generic_rpc_handlers((generic_handler,))
 
-
  # This class is part of an EXPERIMENTAL API.
+
+
 class Dlink(object):
     """The dlink service definition.
     """
 
     @staticmethod
     def SayHello(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
+                 target,
+                 options=(),
+                 channel_credentials=None,
+                 call_credentials=None,
+                 insecure=False,
+                 compression=None,
+                 wait_for_ready=None,
+                 timeout=None,
+                 metadata=None):
         return grpc.experimental.unary_unary(request, target, '/dgiot.Dlink/SayHello',
-            dlink__pb2.HelloRequest.SerializeToString,
-            dlink__pb2.HelloReply.FromString,
-            options, channel_credentials,
-            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+                                             dlink__pb2.HelloRequest.SerializeToString,
+                                             dlink__pb2.HelloReply.FromString,
+                                             options, channel_credentials,
+                                             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
     def Check(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
+              target,
+              options=(),
+              channel_credentials=None,
+              call_credentials=None,
+              insecure=False,
+              compression=None,
+              wait_for_ready=None,
+              timeout=None,
+              metadata=None):
         return grpc.experimental.unary_unary(request, target, '/dgiot.Dlink/Check',
-            dlink__pb2.HealthCheckRequest.SerializeToString,
-            dlink__pb2.HealthCheckResponse.FromString,
-            options, channel_credentials,
-            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+                                             dlink__pb2.HealthCheckRequest.SerializeToString,
+                                             dlink__pb2.HealthCheckResponse.FromString,
+                                             options, channel_credentials,
+                                             insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
 
     @staticmethod
     def Watch(request,
-            target,
-            options=(),
-            channel_credentials=None,
-            call_credentials=None,
-            insecure=False,
-            compression=None,
-            wait_for_ready=None,
-            timeout=None,
-            metadata=None):
+              target,
+              options=(),
+              channel_credentials=None,
+              call_credentials=None,
+              insecure=False,
+              compression=None,
+              wait_for_ready=None,
+              timeout=None,
+              metadata=None):
         return grpc.experimental.unary_stream(request, target, '/dgiot.Dlink/Watch',
-            dlink__pb2.HealthCheckRequest.SerializeToString,
-            dlink__pb2.HealthCheckResponse.FromString,
-            options, channel_credentials,
-            insecure, call_credentials, compression, wait_for_ready, timeout, metadata)
+                                              dlink__pb2.HealthCheckRequest.SerializeToString,
+                                              dlink__pb2.HealthCheckResponse.FromString,
+                                              options, channel_credentials,
+                                              insecure, call_credentials, compression, wait_for_ready, timeout, metadata)

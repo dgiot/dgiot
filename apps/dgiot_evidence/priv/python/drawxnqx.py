@@ -29,10 +29,8 @@ def polynomial_fitting(data_x, data_y):
         sum_four_power_x += math.pow(data_x[i], 4)
         sum_xy += data_x[i] * data_y[i]
         sum_sqare_xy += math.pow(data_x[i], 2) * data_y[i]
-        i += 1;
-    return [[size, sum_x, sum_sqare_x, sum_y]
-        , [sum_x, sum_sqare_x, sum_third_power_x, sum_xy]
-        , [sum_sqare_x, sum_third_power_x, sum_four_power_x, sum_sqare_xy]]
+        i += 1
+    return [[size, sum_x, sum_sqare_x, sum_y], [sum_x, sum_sqare_x, sum_third_power_x, sum_xy], [sum_sqare_x, sum_third_power_x, sum_four_power_x, sum_sqare_xy]]
 
 
 """完成拟合曲线参数的计算
@@ -42,8 +40,8 @@ def polynomial_fitting(data_x, data_y):
 
 def calculate_parameter(data):
     # i用来控制列元素，line是一行元素,j用来控制循环次数,datas用来存储局部变量。保存修改后的值
-    i = 0;
-    j = 0;
+    i = 0
+    j = 0
     line_size = len(data)
 
     # 将行列式变换为上三角行列式
@@ -92,7 +90,8 @@ def calculate_parameter(data):
             # result_flag为访问已求出解的标志
             result_flag = 0
             while flag_j > 0:
-                temp2 -= operate_line[flag_rol + flag_j] * parameters[result_flag]
+                temp2 -= operate_line[flag_rol +
+                                      flag_j] * parameters[result_flag]
                 result_flag += 1
                 flag_j -= 1
             parameter = temp2 / operate_line[flag_rol]
@@ -111,7 +110,9 @@ def calculate(data_x, parameters):
         datay.append(parameters[2] + parameters[1] * x + parameters[0] * x * x)
     return datay
 
+
 """完成函数的绘制"""
+
 
 def draw(flow1, head1, headparameters, power1, powerparameters, effect, effectparameters, params):
     fm = math.ceil(max(flow1))
@@ -154,11 +155,13 @@ def draw(flow1, head1, headparameters, power1, powerparameters, effect, effectpa
     p1, = host.plot(x, y, label="HQ拟合曲线", color="black")
     host.scatter(flow1, head1, c='k', label="HQ离散数据")
     x1 = np.linspace(0, fm, 500)
-    y1 = powerparameters[0] * x ** 2 + powerparameters[1] * x + powerparameters[2]
+    y1 = powerparameters[0] * x ** 2 + \
+        powerparameters[1] * x + powerparameters[2]
     p2, = par1.plot(x, y1, label="PQ拟合曲线", color="red")
     par1.scatter(flow1, power1, c='r', label="PQ离散数据")
     x2 = np.linspace(0, fm, 500)
-    y2 = effectparameters[0] * x ** 2 + effectparameters[1] * x + effectparameters[2]
+    y2 = effectparameters[0] * x ** 2 + \
+        effectparameters[1] * x + effectparameters[2]
     p3, = par2.plot(x, y2, label="EQ拟合曲线", color="blue")
     par2.scatter(flow1, effect, c='b', label="EQ离散数据")
     par1.set_ylim(0, pm * 2)
@@ -179,13 +182,16 @@ def draw(flow1, head1, headparameters, power1, powerparameters, effect, effectpa
         fppoints = [t for t in zip(flow1, power1) if x_begin <= t[0] <= x_end]
         if len(fepoints) > 0:
             par2.text(fepoints[0][0], fepoints[0][1] + 0.5,
-                      ("流量" + str(fepoints[0][0]) + " m3/h", "效率" + str(fepoints[0][1]) + " %"),
+                      ("流量" + str(fepoints[0][0]) + " m3/h",
+                       "效率" + str(fepoints[0][1]) + " %"),
                       ha='center', color='b')
             host.text(fhpoints[0][0], fhpoints[0][1] + 1,
-                      ("流量" + str(fhpoints[0][0]) + " m3/h", "扬程" + str(fhpoints[0][1]) + " m"),
+                      ("流量" + str(fhpoints[0][0]) + " m3/h",
+                       "扬程" + str(fhpoints[0][1]) + " m"),
                       ha='center', color='k')
             par1.text(fppoints[0][0], fppoints[0][1] + 0.1,
-                      ("流量" + str(fppoints[0][0]) + " m3/h", "功率" + str(fppoints[0][1]) + " kW"),
+                      ("流量" + str(fppoints[0][0]) + " m3/h",
+                       "功率" + str(fppoints[0][1]) + " kW"),
                       ha='center', color='r')
 
     # 解决使用matplotliblib画图的时候出现中文或者是负号无法显示的情况
@@ -193,7 +199,8 @@ def draw(flow1, head1, headparameters, power1, powerparameters, effect, effectpa
     mpl.rcParams['axes.unicode_minus'] = False
 
     plt.title("性能曲线拟合数据")
-    plt.legend(loc=9, bbox_to_anchor=(-0.142, 1.1), borderaxespad=0., fontsize=8)
+    plt.legend(loc=9, bbox_to_anchor=(-0.142, 1.1),
+               borderaxespad=0., fontsize=8)
     # 获取当前时间
     # localtime = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
     filename = params['path'] + params['name']
@@ -201,6 +208,7 @@ def draw(flow1, head1, headparameters, power1, powerparameters, effect, effectpa
     plt.savefig(filename)
     # plt.show()
     return (filename)
+
 
 def find_close(arr, e):
     low = 0
@@ -222,6 +230,7 @@ def find_close(arr, e):
 
     return arr[idx]
 
+
 def main(argv):
     params = json.loads(base64.b64decode(argv).decode("utf-8"))
     # 流量
@@ -242,7 +251,8 @@ def main(argv):
     effectdata = polynomial_fitting(flow, effect)
     effectparameters = calculate_parameter(effectdata)
 
-    filename = draw(flow, head, headparameters, power, powerparameters, effect, effectparameters, params)
+    filename = draw(flow, head, headparameters, power,
+                    powerparameters, effect, effectparameters, params)
     after_base64 = base64.b64encode(filename.encode('utf-8')).decode('ascii')
     print(after_base64)
 
