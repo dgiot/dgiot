@@ -89,6 +89,7 @@ You are welcome to submit any bugs, issues and feature requests to [dgiot/dgiot]
 | Blog           | [https://www.dgiotcloud.cn/?cat=19](https://www.dgiotcloud.cn/?cat=19)                               |
 | IoT access platform | [https://prod.dgiotcloud.cn](https://prod.dgiotcloud.cn)                             |
 | The public         | ![qrcode.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/wechat/qrcode.png) |
+|We chat group|![wx.png](https://dgiot-web-1306242080.cos.ap-nanjing.myqcloud.com/wechat.png)|
 | QQ group             | 346566935   |
 
 ### お問い合わせ

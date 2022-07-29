@@ -131,17 +131,23 @@ handle_message({sync_profile, _Pid, ProductId, DeviceAddr, DeviceProfile, Delay}
         case maps:find(DeviceProfileKey, DeviceProfile) of
             {ok, DeviceProfileValue} ->
                 BinDeviceProfileValue = dgiot_utils:to_binary(DeviceProfileValue),
-                NewDeviceProfileValue = <<" ", BinDeviceProfileValue/binary>>,
                 case dgiot_device:get_profile(DeviceId, UserProfileKey) of
                     not_find ->
-                        dgiot_device_profile:update_profile(DeviceId, #{UserProfileKey => NewDeviceProfileValue}),
+%%                        NewDeviceProfileValue = <<" ", BinDeviceProfileValue/binary>>,
+                        dgiot_device_profile:update_profile(DeviceId, #{UserProfileKey => BinDeviceProfileValue}),
                         Count;
-                    NewDeviceProfileValue ->
+                    BinDeviceProfileValue ->
                         Count;
                     UserProfileValue ->
-                        RealDelay = Delay * timer:seconds(Count),
-                        erlang:send_after(RealDelay, self(), {send_profile, DeviceId, #{UserProfileKey => UserProfileValue}}),
-                        Count + 1
+                        BinUserProfileValue = dgiot_utils:to_binary(UserProfileValue),
+                        case dgiot_utils:trim_string(BinUserProfileValue) of
+                            BinDeviceProfileValue ->
+                                Count;
+                            _ ->
+                                RealDelay = Delay * timer:seconds(Count),
+                                erlang:send_after(RealDelay, self(), {send_profile, DeviceId, #{UserProfileKey => UserProfileValue}}),
+                                Count + 1
+                        end
                 end;
             _ ->
                 Count
