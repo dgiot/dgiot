@@ -1,90 +1,109 @@
-# Dlink协议
-Dlink协议是针对物联网开发领域设计的一种数据交换规范，数据格式是JSON，用于设备端和物联网平台的双向通信，更便捷地实现和规范了设备端和物联网平台之间的业务数据交互。
+# Dlink 协议
+
+Dlink 协议是针对物联网开发领域设计的一种数据交换规范，数据格式是 JSON，用于设备端和物联网平台的双向通信，更便捷地实现和规范了设备端和物联网平台之间的业务数据交互。
 
 ## 协议框架
-![dlink proctol.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/backend/dgiot/dlink%20proctol.png)
-+ 设备层和用户层隔离，物理层和逻辑层隔离
-+ 用户层mqtt权限与openApi权限保持一致性
-+ 设备侧topic交互采用 {productId}/{deviceAddr}的组合来唯一标识设备, deviceAddr为设备物理地址
-+ 用户侧topic交互采用{deviceId}来唯一标识设备，用{userId}来唯一标识用户,deviceId为设备虚拟地址
 
+![dlink proctol.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/backend/dgiot/dlink%20proctol.png)
+
+- 设备层和用户层隔离，物理层和逻辑层隔离
+- 用户层 mqtt 权限与 openApi 权限保持一致性
+- 设备侧 topic 交互采用 {productId}/{deviceAddr}的组合来唯一标识设备, deviceAddr 为设备物理地址
+- 用户侧 topic 交互采用{deviceId}来唯一标识设备，用{userId}来唯一标识用户,deviceId 为设备虚拟地址
 
 ### 鉴权设计
-+ %u 表示用Username做ACL规则
-+ %c 表示用clientId做ACL规则
-- 用户侧clientId用Token做ACL规则, Token是dgiot用户登录权限系统的token,与API权限一致
-- 设备侧clientId为{productId}_{deviceAddr},或者 deviceAddr, 必须保证clientId的唯一性
 
-| 客户端   | Username  |  Password |  ClientId  | 登录鉴权|  订阅ACL  | 发布ACL|
-| --------  | -------- | ------- | -------- |-------- | ------- | -------- |
-| Device |{productId}|{productSecret}|clientId| 一型一密 | $dg/device/%u/# | $dg/thing/%u/# |
-| Device |{productId}|{deviceSecret}|clientId| 一机一密 | $dg/device/%u/%d/# | $dg/thing/%u/%c/# |
-| Device |{productId}|{productSecret}|clientId| 证书加密 | $dg/device/%u/# | $dg/thing/%u/# |
-| User |{userId}|{Token}|{Token}| Token认证 | $dg/user/%c/# | $dg/thing/%c/# |
+- %u 表示用 Username 做 ACL 规则
+- %c 表示用 clientId 做 ACL 规则
 
-## topic设计
-| 分类   | Topic  |  发布者 |  订阅者  |
-| --------  | -------- | ------- | -------- |
-| 属性上报 |$dg/thing/{productId}/{deviceAddr}/properties/report|设备|平台|
-| 告警上报 |$dg/user/alarm/{productId}/{deviceId}/properties/report|平台|用户|
-| 组态消息 |$dg/user/konva/{DeviceId}/report|平台|用户|
-| 卡片消息 | $dg/user/realtimecard/{DeviceId}/report|平台|用户|
-| 设备状态消息 | $dg/user/devicestate/{DeviceId}/report |平台|用户|
-| 子属性上报 |$dg/thing/{productId}/{deviceAddr}/gateway/sub_devices/properties/report|设备|平台|
-| 子属性上报 |$dg/user/gateway/{deviceId}/sub_devices/properties/report|平台|用户|
-| 属性设置 | $dg/thing/{deviceId}/properties/set/request_id={request_id}|用户|平台|
-| 属性设置 | $dg/device/{productId}/{deviceAddr}/properties/set/request_id={request_id}|平台|设备|
-| 属性设置 |$dg/thing/{productId}/{deviceAddr}/properties/set/request_id={request_id}|设备|平台|
-| 属性设置 |$dg/user/{deviceId}/properties/set/request_id={request_id}|平台|用户|
-| 属性获取 |$dg/thing/{deviceId}/properties/get/request_id={request_id}|用户|平台|
-| 属性获取 |$dg/device/{productId}/{deviceAddr}/properties/get/response/request_id={request_id}|平台|设备|
-| 属性获取 |$dg/thing/{productId}/{deviceAddr}/properties/get/response/request_id={request_id}|设备|平台|
-| 属性获取 |$dg/user/{deviceId}/properties/get/request_id={request_id}|平台|用户|
-| 属性获取 |$dg/thing/{productId}/{deviceAddr}/shadow/get/request_id={request_id}|设备|平台|
-| 属性获取 |$dg/device/{productId}/{deviceAddr}/shadow/get/request_id={request_id}|平台|设备|
-| 属性采集 |$dg/device/{productId}/{deviceAddr}/properties|平台|设备|
-| 配置下发 |$dg/device/{productId}/{deviceAddr}/profile|平台|设备|
-| 事件上报 |$dg/thing/{productId}/{deviceAddr}/events|设备|平台|
-| 事件上报 |$dg/user/{deviceId}/events|平台|用户|
-| 通道消息 |$dg/user/channel/{channelId}/{productId}/{deviceId}|平台|用户|
-| 通道设置 |$dg/user/channel/{channelId}/commands/request_id={request_id}|用户|平台|
-| 通道设置 |$dg/user/channel/{channelId}/commands/response/request_id={request_id}|平台|用户|
-| 大屏消息 |$dg/user/dashboard/{dashboardId}/{productId}/{deviceId}|平台|用户|
-| 云云对接 |$dg/bridge/{bridgetopic}|平台|平台|
+* 用户侧 clientId 用 Token 做 ACL 规则, Token 是 dgiot 用户登录权限系统的 token,与 API 权限一致
+* 设备侧 clientId 为{productId}\_{deviceAddr},或者 deviceAddr, 必须保证 clientId 的唯一性
 
+| 客户端 | Username    | Password        | ClientId | 登录鉴权   | 订阅 ACL           | 发布 ACL          |
+| ------ | ----------- | --------------- | -------- | ---------- | ------------------ | ----------------- |
+| Device | {productId} | {productSecret} | clientId | 一型一密   | $dg/device/%u/#    | $dg/thing/%u/#    |
+| Device | {productId} | {deviceSecret}  | clientId | 一机一密   | $dg/device/%u/%d/# | $dg/thing/%u/%c/# |
+| Device | {productId} | {productSecret} | clientId | 证书加密   | $dg/device/%u/#    | $dg/thing/%u/#    |
+| User   | {userId}    | {Token}         | {Token}  | Token 认证 | $dg/user/%c/#      | $dg/thing/%c/#    |
 
-## payload设计
+## topic 设计
+
+| 分类         | Topic                                                                               | 发布者 | 订阅者 |
+| ------------ | ----------------------------------------------------------------------------------- | ------ | ------ |
+| 属性上报     | $dg/thing/{productId}/{deviceAddr}/properties/report                                | 设备   | 平台   |
+| 告警上报     | $dg/user/alarm/{productId}/{deviceId}/properties/report                             | 平台   | 用户   |
+| 组态消息     | $dg/user/konva/{DeviceId}/report                                                    | 平台   | 用户   |
+| 卡片消息     | $dg/user/realtimecard/{DeviceId}/report                                             | 平台   | 用户   |
+| 设备状态消息 | $dg/user/devicestate/{DeviceId}/report                                              | 平台   | 用户   |
+| 子属性上报   | $dg/thing/{productId}/{deviceAddr}/gateway/sub_devices/properties/report            | 设备   | 平台   |
+| 子属性上报   | $dg/user/gateway/{deviceId}/sub_devices/properties/report                           | 平台   | 用户   |
+| 属性设置     | $dg/thing/{deviceId}/properties/set/request_id={request_id}                         | 用户   | 平台   |
+| 属性设置     | $dg/device/{productId}/{deviceAddr}/properties/set/request_id={request_id}          | 平台   | 设备   |
+| 属性设置     | $dg/thing/{productId}/{deviceAddr}/properties/set/request_id={request_id}           | 设备   | 平台   |
+| 属性设置     | $dg/user/{deviceId}/properties/set/request_id={request_id}                          | 平台   | 用户   |
+| 属性获取     | $dg/thing/{deviceId}/properties/get/request_id={request_id}                         | 用户   | 平台   |
+| 属性获取     | $dg/device/{productId}/{deviceAddr}/properties/get/response/request_id={request_id} | 平台   | 设备   |
+| 属性获取     | $dg/thing/{productId}/{deviceAddr}/properties/get/response/request_id={request_id}  | 设备   | 平台   |
+| 属性获取     | $dg/user/{deviceId}/properties/get/request_id={request_id}                          | 平台   | 用户   |
+| 属性获取     | $dg/thing/{productId}/{deviceAddr}/shadow/get/request_id={request_id}               | 设备   | 平台   |
+| 属性获取     | $dg/device/{productId}/{deviceAddr}/shadow/get/request_id={request_id}              | 平台   | 设备   |
+| 属性采集     | $dg/device/{productId}/{deviceAddr}/properties                                      | 平台   | 设备   |
+| 配置下发     | $dg/device/{productId}/{deviceAddr}/profile                                         | 平台   | 设备   |
+| 事件上报     | $dg/thing/{productId}/{deviceAddr}/events                                           | 设备   | 平台   |
+| 事件上报     | $dg/user/{deviceId}/events                                                          | 平台   | 用户   |
+| 通道消息     | $dg/user/channel/{channelId}/{productId}/{deviceId}                                 | 平台   | 用户   |
+| 通道设置     | $dg/user/channel/{channelId}/commands/request_id={request_id}                       | 用户   | 平台   |
+| 通道设置     | $dg/user/channel/{channelId}/commands/response/request_id={request_id}              | 平台   | 用户   |
+| 大屏消息     | $dg/user/dashboard/{dashboardId}/{productId}/{deviceId}                             | 平台   | 用户   |
+| 云云对接     | $dg/bridge/{bridgetopic}                                                            | 平台   | 平台   |
+
+## payload 设计
+
 ### 属性上报 ($dg/thing/{productId}/{deviceAddr}/properties/report)
-+ dlink json格式
+
+- dlink json 格式
+
 ```json
 {
-    "Power":  "on",
-    "WF":  23.6
+  "Power": "on",
+  "WF": 23.6
 }
 ```
-+ 透传/自定义
+
+- 透传/自定义
+
 ```
   00002233441232013fa00000
 ```
+
 ### 事件上报 $dg/thing/{productId}/{deviceAddr}/events
+
 ```json
 {
-    "Power":  "on",
-    "WF":  23.6
+  "Power": "on",
+  "WF": 23.6
 }
 ```
 
 ## 通道接入
+
 ### http server
+
 ### http client
+
 ### mqtt client
+
 ### mqtt bridge
+
 ### tpc server
+
 ### tcp client
+
 ### udp server
+
 ### udp client
 
-+ 支持grpc多语言编解码
+- 支持 grpc 多语言编解码
 
 ```
 Dlink RunTime                             Third-party Decode/Encode
@@ -96,6 +115,7 @@ Dlink RunTime                             Third-party Decode/Encode
 |                        |                 |        |          |
 +========================+                 +========+==========+
 ```
+
 ### gRPC
 
 For instructions on how to use the language-specific gRPC runtime for a project,
