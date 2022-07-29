@@ -100,7 +100,7 @@
       "post": {
         "summary": "数据批处理",
         "description": "为了减少网络往返的时间，可以使用批处理端点在一次调用中创建、更新或删除多达50个对象。",
-        "position" : 0,
+        "position": 0,
         "parameters": [
           {
             "in": "body",
@@ -179,8 +179,7 @@
             "required": true,
             "schema": {
               "type": "object",
-              "properties": {
-              }
+              "properties": {}
             }
           }
         ],
@@ -273,8 +272,7 @@
             "required": true,
             "schema": {
               "type": "object",
-              "properties": {
-              }
+              "properties": {}
             }
           }
         ],

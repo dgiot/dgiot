@@ -5,16 +5,14 @@
       "description": "Dlink协议"
     }
   ],
-  "definitions": {
-  },
+  "definitions": {},
   "paths": {
     "/protocol": {
       "get": {
         "security": [],
         "summary": "获取协议列表",
         "description": "获取协议列表",
-        "parameters": [
-        ],
+        "parameters": [],
         "responses": {
           "200": {
             "description": "Returns operation status"
@@ -202,7 +200,6 @@
             }
           }
         ],
-
         "responses": {
           "200": {
             "description": "Returns operation status"

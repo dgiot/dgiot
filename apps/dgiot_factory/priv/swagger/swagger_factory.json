@@ -8,8 +8,7 @@
         ],
         "summary": "获取工厂日历",
         "description": "获取工厂日历",
-        "parameters": [
-        ],
+        "parameters": [],
         "responses": {
           "200": {
             "description": ""
@@ -42,9 +41,9 @@
                   "description": "自定义",
                   "type": "string"
                 }
-                }
               }
             }
+          }
         ],
         "consumes": [
           "application/json"
@@ -322,13 +321,4 @@
       "description": "factory"
     }
   ]
-
 }
-
-
-
-
-
-
-
-

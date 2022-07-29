@@ -135,9 +135,9 @@
                   "example": "dgiot_user"
                 },
                 "department": {
-                  "description": "部门id",
+                  "description": "手机号",
                   "type": "string",
-                  "example": "a46c243b51"
+                  "example": "IjOCg0BC0I"
                 },
                 "password": {
                   "description": "用户密码",
@@ -148,11 +148,6 @@
                   "description": "手机号",
                   "type": "string",
                   "example": "15268887220"
-                },
-                "department": {
-                  "description": "手机号",
-                  "type": "string",
-                  "example": "IjOCg0BC0I"
                 }
               }
             }

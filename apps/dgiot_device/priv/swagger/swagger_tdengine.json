@@ -9,8 +9,7 @@
       "description": "视图管理"
     }
   ],
-  "definitions": {
-  },
+  "definitions": {},
   "paths": {
     "/product/{pid}": {
       "get": {

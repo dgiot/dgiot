@@ -5,8 +5,7 @@
       "description": "通知管理"
     }
   ],
-  "definitions": {
-  },
+  "definitions": {},
   "paths": {
     "/wechat": {
       "get": {
@@ -778,8 +777,7 @@
             "name": "body",
             "schema": {
               "type": "object",
-              "properties": {
-              }
+              "properties": {}
             },
             "description": "扩展参数"
           }

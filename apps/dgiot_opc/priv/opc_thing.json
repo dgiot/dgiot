@@ -56,7 +56,7 @@
           }
         ]
       },
-       "dataType": {
+      "dataType": {
         "das": [],
         "specs": {
           "max": 999,
@@ -125,7 +125,7 @@
           }
         ]
       },
-       "dataType": {
+      "dataType": {
         "das": [],
         "specs": {
           "max": 500,
@@ -171,7 +171,7 @@
           }
         ]
       },
-       "dataType": {
+      "dataType": {
         "das": [],
         "specs": {
           "max": 500,
@@ -217,7 +217,7 @@
           }
         ]
       },
-       "dataType": {
+      "dataType": {
         "das": [],
         "specs": {
           "max": 10000,
@@ -263,7 +263,7 @@
           }
         ]
       },
-       "dataType": {
+      "dataType": {
         "das": [],
         "specs": {
           "max": 100,
@@ -313,7 +313,7 @@
           }
         ]
       },
-       "dataType": {
+      "dataType": {
         "das": [],
         "specs": {
           "max": 999,
@@ -363,7 +363,7 @@
           }
         ]
       },
-       "dataType": {
+      "dataType": {
         "das": [],
         "specs": {
           "max": 999,
@@ -413,7 +413,7 @@
           }
         ]
       },
-       "dataType": {
+      "dataType": {
         "das": [],
         "specs": {
           "max": 100,
@@ -462,7 +462,7 @@
           }
         ]
       },
-       "dataType": {
+      "dataType": {
         "das": [],
         "specs": {
           "max": 999,
@@ -512,8 +512,8 @@
           }
         ]
       },
-       "dataType": {
-           "das": [],
+      "dataType": {
+        "das": [],
         "specs": {
           "max": 100,
           "min": 0,
@@ -558,7 +558,7 @@
           }
         ]
       },
-       "dataType": {
+      "dataType": {
         "das": [],
         "specs": {
           "max": 100,
@@ -599,7 +599,7 @@
         "_dlinkindex": 1,
         "dis": []
       },
-       "dataType": {
+      "dataType": {
         "das": [],
         "specs": {
           "max": 999,
@@ -640,7 +640,7 @@
         "_dlinkindex": 1,
         "dis": []
       },
-       "dataType": {
+      "dataType": {
         "das": [],
         "specs": {
           "max": 999,
@@ -681,7 +681,7 @@
         "_dlinkindex": 1,
         "dis": []
       },
-       "dataType": {
+      "dataType": {
         "das": [],
         "specs": {
           "max": 999,
@@ -722,7 +722,7 @@
         "_dlinkindex": 1,
         "dis": []
       },
-       "dataType": {
+      "dataType": {
         "das": [],
         "specs": {
           "max": 1,
