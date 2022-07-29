@@ -6,7 +6,8 @@ import time
 
 import matplotlib.pyplot as plt
 import numpy as np
-from mpl_toolkits.axisartist.parasite_axes import HostAxes, ParasiteAxes
+from mpl_toolkits.axisartist.parasite_axes import HostAxes
+from mpl_toolkits.axisartist.parasite_axes import ParasiteAxes
 from pylab import mpl
 
 """完成拟合曲线参数计算前相应变量的计算"""
