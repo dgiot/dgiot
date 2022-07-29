@@ -71,26 +71,30 @@ class DlinkServicer(object):
 
 def add_DlinkServicer_to_server(servicer, server):
     rpc_method_handlers = {
-        "SayHello": grpc.unary_unary_rpc_method_handler(
+        "SayHello":
+        grpc.unary_unary_rpc_method_handler(
             servicer.SayHello,
             request_deserializer=dlink__pb2.HelloRequest.FromString,
             response_serializer=dlink__pb2.HelloReply.SerializeToString,
         ),
-        "Check": grpc.unary_unary_rpc_method_handler(
+        "Check":
+        grpc.unary_unary_rpc_method_handler(
             servicer.Check,
             request_deserializer=dlink__pb2.HealthCheckRequest.FromString,
-            response_serializer=dlink__pb2.HealthCheckResponse.SerializeToString,
+            response_serializer=dlink__pb2.HealthCheckResponse.
+            SerializeToString,
         ),
-        "Watch": grpc.unary_stream_rpc_method_handler(
+        "Watch":
+        grpc.unary_stream_rpc_method_handler(
             servicer.Watch,
             request_deserializer=dlink__pb2.HealthCheckRequest.FromString,
-            response_serializer=dlink__pb2.HealthCheckResponse.SerializeToString,
+            response_serializer=dlink__pb2.HealthCheckResponse.
+            SerializeToString,
         ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
-        "dgiot.Dlink", rpc_method_handlers
-    )
-    server.add_generic_rpc_handlers((generic_handler,))
+        "dgiot.Dlink", rpc_method_handlers)
+    server.add_generic_rpc_handlers((generic_handler, ))
 
 
 # This class is part of an EXPERIMENTAL API.

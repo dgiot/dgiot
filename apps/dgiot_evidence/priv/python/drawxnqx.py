@@ -9,7 +9,6 @@ import numpy as np
 from mpl_toolkits.axisartist.parasite_axes import HostAxes
 from mpl_toolkits.axisartist.parasite_axes import ParasiteAxes
 from pylab import mpl
-
 """完成拟合曲线参数计算前相应变量的计算"""
 
 
@@ -96,7 +95,8 @@ def calculate_parameter(data):
             # result_flag为访问已求出解的标志
             result_flag = 0
             while flag_j > 0:
-                temp2 -= operate_line[flag_rol + flag_j] * parameters[result_flag]
+                temp2 -= operate_line[flag_rol +
+                                      flag_j] * parameters[result_flag]
                 result_flag += 1
                 flag_j -= 1
             parameter = temp2 / operate_line[flag_rol]
@@ -166,15 +166,16 @@ def draw(
     host.set_ylabel("扬程(H)(m)", color="black")
     x = np.linspace(0, fm, 500)
     y = headparameters[0] * x**2 + headparameters[1] * x + headparameters[2]
-    (p1,) = host.plot(x, y, label="HQ拟合曲线", color="black")
+    (p1, ) = host.plot(x, y, label="HQ拟合曲线", color="black")
     host.scatter(flow1, head1, c="k", label="HQ离散数据")
     x1 = np.linspace(0, fm, 500)
     y1 = powerparameters[0] * x**2 + powerparameters[1] * x + powerparameters[2]
-    (p2,) = par1.plot(x, y1, label="PQ拟合曲线", color="red")
+    (p2, ) = par1.plot(x, y1, label="PQ拟合曲线", color="red")
     par1.scatter(flow1, power1, c="r", label="PQ离散数据")
     x2 = np.linspace(0, fm, 500)
-    y2 = effectparameters[0] * x**2 + effectparameters[1] * x + effectparameters[2]
-    (p3,) = par2.plot(x, y2, label="EQ拟合曲线", color="blue")
+    y2 = effectparameters[0] * x**2 + effectparameters[
+        1] * x + effectparameters[2]
+    (p3, ) = par2.plot(x, y2, label="EQ拟合曲线", color="blue")
     par2.scatter(flow1, effect, c="b", label="EQ离散数据")
     par1.set_ylim(0, pm * 2)
     par2.set_ylim(0, nm + 5)
@@ -229,7 +230,10 @@ def draw(
     mpl.rcParams["axes.unicode_minus"] = False
 
     plt.title("性能曲线拟合数据")
-    plt.legend(loc=9, bbox_to_anchor=(-0.142, 1.1), borderaxespad=0.0, fontsize=8)
+    plt.legend(loc=9,
+               bbox_to_anchor=(-0.142, 1.1),
+               borderaxespad=0.0,
+               fontsize=8)
     # 获取当前时间
     # localtime = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
     filename = params["path"] + params["name"]

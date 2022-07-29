@@ -11,16 +11,16 @@ from google.protobuf import symbol_database as _symbol_database
 
 _sym_db = _symbol_database.Default()
 
-
 DESCRIPTOR = _descriptor.FileDescriptor(
     name="dlink.proto",
     package="dgiot",
     syntax="proto3",
-    serialized_options=b"\n\026io.grpc.examples.dlinkB\nDlinkProtoP\001\242\002\005dlink",
+    serialized_options=
+    b"\n\026io.grpc.examples.dlinkB\nDlinkProtoP\001\242\002\005dlink",
     create_key=_descriptor._internal_create_key,
-    serialized_pb=b'\n\x0b\x64link.proto\x12\x05\x64giot"\x1c\n\x0cHelloRequest\x12\x0c\n\x04name\x18\x01 \x01(\t"\x1d\n\nHelloReply\x12\x0f\n\x07message\x18\x01 \x01(\t"%\n\x12HealthCheckRequest\x12\x0f\n\x07service\x18\x01 \x01(\t"\xa0\x01\n\x13HealthCheckResponse\x12\x38\n\x06status\x18\x01 \x01(\x0e\x32(.dgiot.HealthCheckResponse.ServingStatus"O\n\rServingStatus\x12\x0b\n\x07UNKNOWN\x10\x00\x12\x0b\n\x07SERVING\x10\x01\x12\x0f\n\x0bNOT_SERVING\x10\x02\x12\x13\n\x0fSERVICE_UNKNOWN\x10\x03\x32\xbf\x01\n\x05\x44link\x12\x34\n\x08SayHello\x12\x13.dgiot.HelloRequest\x1a\x11.dgiot.HelloReply"\x00\x12>\n\x05\x43heck\x12\x19.dgiot.HealthCheckRequest\x1a\x1a.dgiot.HealthCheckResponse\x12@\n\x05Watch\x12\x19.dgiot.HealthCheckRequest\x1a\x1a.dgiot.HealthCheckResponse0\x01\x42.\n\x16io.grpc.examples.dlinkB\nDlinkProtoP\x01\xa2\x02\x05\x64linkb\x06proto3',
+    serialized_pb=
+    b'\n\x0b\x64link.proto\x12\x05\x64giot"\x1c\n\x0cHelloRequest\x12\x0c\n\x04name\x18\x01 \x01(\t"\x1d\n\nHelloReply\x12\x0f\n\x07message\x18\x01 \x01(\t"%\n\x12HealthCheckRequest\x12\x0f\n\x07service\x18\x01 \x01(\t"\xa0\x01\n\x13HealthCheckResponse\x12\x38\n\x06status\x18\x01 \x01(\x0e\x32(.dgiot.HealthCheckResponse.ServingStatus"O\n\rServingStatus\x12\x0b\n\x07UNKNOWN\x10\x00\x12\x0b\n\x07SERVING\x10\x01\x12\x0f\n\x0bNOT_SERVING\x10\x02\x12\x13\n\x0fSERVICE_UNKNOWN\x10\x03\x32\xbf\x01\n\x05\x44link\x12\x34\n\x08SayHello\x12\x13.dgiot.HelloRequest\x1a\x11.dgiot.HelloReply"\x00\x12>\n\x05\x43heck\x12\x19.dgiot.HealthCheckRequest\x1a\x1a.dgiot.HealthCheckResponse\x12@\n\x05Watch\x12\x19.dgiot.HealthCheckRequest\x1a\x1a.dgiot.HealthCheckResponse0\x01\x42.\n\x16io.grpc.examples.dlinkB\nDlinkProtoP\x01\xa2\x02\x05\x64linkb\x06proto3',
 )
-
 
 _HEALTHCHECKRESPONSE_SERVINGSTATUS = _descriptor.EnumDescriptor(
     name="ServingStatus",
@@ -69,7 +69,6 @@ _HEALTHCHECKRESPONSE_SERVINGSTATUS = _descriptor.EnumDescriptor(
 )
 _sym_db.RegisterEnumDescriptor(_HEALTHCHECKRESPONSE_SERVINGSTATUS)
 
-
 _HELLOREQUEST = _descriptor.Descriptor(
     name="HelloRequest",
     full_name="dgiot.HelloRequest",
@@ -109,7 +108,6 @@ _HELLOREQUEST = _descriptor.Descriptor(
     serialized_start=22,
     serialized_end=50,
 )
-
 
 _HELLOREPLY = _descriptor.Descriptor(
     name="HelloReply",
@@ -151,7 +149,6 @@ _HELLOREPLY = _descriptor.Descriptor(
     serialized_end=81,
 )
 
-
 _HEALTHCHECKREQUEST = _descriptor.Descriptor(
     name="HealthCheckRequest",
     full_name="dgiot.HealthCheckRequest",
@@ -191,7 +188,6 @@ _HEALTHCHECKREQUEST = _descriptor.Descriptor(
     serialized_start=83,
     serialized_end=120,
 )
-
 
 _HEALTHCHECKRESPONSE = _descriptor.Descriptor(
     name="HealthCheckResponse",
@@ -236,8 +232,7 @@ _HEALTHCHECKRESPONSE = _descriptor.Descriptor(
 )
 
 _HEALTHCHECKRESPONSE.fields_by_name[
-    "status"
-].enum_type = _HEALTHCHECKRESPONSE_SERVINGSTATUS
+    "status"].enum_type = _HEALTHCHECKRESPONSE_SERVINGSTATUS
 _HEALTHCHECKRESPONSE_SERVINGSTATUS.containing_type = _HEALTHCHECKRESPONSE
 DESCRIPTOR.message_types_by_name["HelloRequest"] = _HELLOREQUEST
 DESCRIPTOR.message_types_by_name["HelloReply"] = _HELLOREPLY
@@ -247,7 +242,7 @@ _sym_db.RegisterFileDescriptor(DESCRIPTOR)
 
 HelloRequest = _reflection.GeneratedProtocolMessageType(
     "HelloRequest",
-    (_message.Message,),
+    (_message.Message, ),
     {
         "DESCRIPTOR": _HELLOREQUEST,
         "__module__": "dlink_pb2"
@@ -258,7 +253,7 @@ _sym_db.RegisterMessage(HelloRequest)
 
 HelloReply = _reflection.GeneratedProtocolMessageType(
     "HelloReply",
-    (_message.Message,),
+    (_message.Message, ),
     {
         "DESCRIPTOR": _HELLOREPLY,
         "__module__": "dlink_pb2"
@@ -269,7 +264,7 @@ _sym_db.RegisterMessage(HelloReply)
 
 HealthCheckRequest = _reflection.GeneratedProtocolMessageType(
     "HealthCheckRequest",
-    (_message.Message,),
+    (_message.Message, ),
     {
         "DESCRIPTOR": _HEALTHCHECKREQUEST,
         "__module__": "dlink_pb2"
@@ -280,7 +275,7 @@ _sym_db.RegisterMessage(HealthCheckRequest)
 
 HealthCheckResponse = _reflection.GeneratedProtocolMessageType(
     "HealthCheckResponse",
-    (_message.Message,),
+    (_message.Message, ),
     {
         "DESCRIPTOR": _HEALTHCHECKRESPONSE,
         "__module__": "dlink_pb2"
@@ -288,7 +283,6 @@ HealthCheckResponse = _reflection.GeneratedProtocolMessageType(
     },
 )
 _sym_db.RegisterMessage(HealthCheckResponse)
-
 
 DESCRIPTOR._options = None
 
