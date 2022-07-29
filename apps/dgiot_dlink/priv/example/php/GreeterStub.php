@@ -1,4 +1,5 @@
 <?php
+
 // GENERATED CODE -- DO NOT EDIT!
 
 // Original file comments:
@@ -16,13 +17,14 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
+
 namespace dlink;
 
 /**
  * The greeting service definition.
  */
-class GreeterStub {
-
+class GreeterStub
+{
     /**
      * Sends a greeting
      * @param \Helloworld\HelloRequest $request client request
@@ -43,7 +45,7 @@ class GreeterStub {
      *
      * @return array of \Grpc\MethodDescriptor for the service methods
      */
-    public final function getMethodDescriptors(): array
+    final public function getMethodDescriptors(): array
     {
         return [
             '/dlink.Greeter/SayHello' => new \Grpc\MethodDescriptor(
@@ -54,5 +56,4 @@ class GreeterStub {
             ),
         ];
     }
-
 }

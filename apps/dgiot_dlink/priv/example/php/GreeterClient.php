@@ -1,4 +1,5 @@
 <?php
+
 // GENERATED CODE -- DO NOT EDIT!
 
 // Original file comments:
@@ -16,19 +17,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
+
 namespace dlink;
 
 /**
  * The greeting service definition.
  */
-class GreeterClient extends \Grpc\BaseStub {
-
+class GreeterClient extends \Grpc\BaseStub
+{
     /**
      * @param string $hostname hostname
      * @param array $opts channel options
      * @param \Grpc\Channel $channel (optional) re-use channel object
      */
-    public function __construct($hostname, $opts, $channel = null) {
+    public function __construct($hostname, $opts, $channel = null)
+    {
         parent::__construct($hostname, $opts, $channel);
     }
 
@@ -39,12 +42,18 @@ class GreeterClient extends \Grpc\BaseStub {
      * @param array $options call options
      * @return \Grpc\UnaryCall
      */
-    public function SayHello(\dlink\HelloRequest $argument,
-      $metadata = [], $options = []) {
-        return $this->_simpleRequest('/dlink.Greeter/SayHello',
-        $argument,
-        ['\dlink\HelloReply', 'decode'],
-        $metadata, $options);
+    public function SayHello(
+        \dlink\HelloRequest $argument,
+        $metadata = [],
+        $options = []
+    )
+    {
+        return $this->_simpleRequest(
+            '/dlink.Greeter/SayHello',
+            $argument,
+            ['\dlink\HelloReply', 'decode'],
+            $metadata,
+            $options
+        );
     }
-
 }
