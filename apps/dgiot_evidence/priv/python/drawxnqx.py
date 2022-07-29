@@ -30,7 +30,11 @@ def polynomial_fitting(data_x, data_y):
         sum_xy += data_x[i] * data_y[i]
         sum_sqare_xy += math.pow(data_x[i], 2) * data_y[i]
         i += 1
-    return [[size, sum_x, sum_sqare_x, sum_y], [sum_x, sum_sqare_x, sum_third_power_x, sum_xy], [sum_sqare_x, sum_third_power_x, sum_four_power_x, sum_sqare_xy]]
+    return [
+        [size, sum_x, sum_sqare_x, sum_y],
+        [sum_x, sum_sqare_x, sum_third_power_x, sum_xy],
+        [sum_sqare_x, sum_third_power_x, sum_four_power_x, sum_sqare_xy],
+    ]
 
 
 """完成拟合曲线参数的计算
@@ -85,13 +89,12 @@ def calculate_parameter(data):
             parameter = operate_line[rol_size - 1] / operate_line[flag_rol]
             parameters.append(parameter)
         else:
-            flag_j = (rol_size - flag_rol - 2)
+            flag_j = rol_size - flag_rol - 2
             temp2 = operate_line[rol_size - 1]
             # result_flag为访问已求出解的标志
             result_flag = 0
             while flag_j > 0:
-                temp2 -= operate_line[flag_rol +
-                                      flag_j] * parameters[result_flag]
+                temp2 -= operate_line[flag_rol + flag_j] * parameters[result_flag]
                 result_flag += 1
                 flag_j -= 1
             parameter = temp2 / operate_line[flag_rol]
@@ -114,7 +117,16 @@ def calculate(data_x, parameters):
 """完成函数的绘制"""
 
 
-def draw(flow1, head1, headparameters, power1, powerparameters, effect, effectparameters, params):
+def draw(
+    flow1,
+    head1,
+    headparameters,
+    power1,
+    powerparameters,
+    effect,
+    effectparameters,
+    params,
+):
     fm = math.ceil(max(flow1))
     hm = math.ceil(max(head1))
     hmin = math.floor(min(head1))
@@ -129,51 +141,49 @@ def draw(flow1, head1, headparameters, power1, powerparameters, effect, effectpa
     par2 = ParasiteAxes(host, sharex=host)
     host.parasites.append(par1)
     host.parasites.append(par2)
-    host.set_ylabel('效率(E)(%)', color="blue")
-    host.set_xlabel('流量(Q)(m3/h)')
-    host.axis['right'].set_visible(False)
-    par1.axis['right'].set_visible(True)
-    par1.set_ylabel('功率(P)(kW)', color="red")
+    host.set_ylabel("效率(E)(%)", color="blue")
+    host.set_xlabel("流量(Q)(m3/h)")
+    host.axis["right"].set_visible(False)
+    par1.axis["right"].set_visible(True)
+    par1.set_ylabel("功率(P)(kW)", color="red")
 
-    par1.axis['right'].major_ticklabels.set_visible(True)
-    par1.axis['right'].label.set_visible(True)
+    par1.axis["right"].major_ticklabels.set_visible(True)
+    par1.axis["right"].label.set_visible(True)
 
-    par2.set_ylabel('效率(E)(%)', color="blue")
+    par2.set_ylabel("效率(E)(%)", color="blue")
     offset = (60, 0)
     new_axisline = par2._grid_helper.new_fixed_axis
-    par2.axis['right2'] = new_axisline(loc='right', axes=par2, offset=offset)
+    par2.axis["right2"] = new_axisline(loc="right", axes=par2, offset=offset)
     fig.add_axes(host)
     host.set_xlim(0, fm + 1)
     # plt.xticks(range(0, fm + 1, 1))
     host.set_ylim(0, hm + 5)
 
-    host.set_xlabel('流量(Q)(m3/h)')
-    host.set_ylabel('功率(P)(kW)', color="red")
-    host.set_ylabel('扬程(H)(m)', color="black")
+    host.set_xlabel("流量(Q)(m3/h)")
+    host.set_ylabel("功率(P)(kW)", color="red")
+    host.set_ylabel("扬程(H)(m)", color="black")
     x = np.linspace(0, fm, 500)
-    y = headparameters[0] * x ** 2 + headparameters[1] * x + headparameters[2]
-    p1, = host.plot(x, y, label="HQ拟合曲线", color="black")
-    host.scatter(flow1, head1, c='k', label="HQ离散数据")
+    y = headparameters[0] * x**2 + headparameters[1] * x + headparameters[2]
+    (p1,) = host.plot(x, y, label="HQ拟合曲线", color="black")
+    host.scatter(flow1, head1, c="k", label="HQ离散数据")
     x1 = np.linspace(0, fm, 500)
-    y1 = powerparameters[0] * x ** 2 + \
-        powerparameters[1] * x + powerparameters[2]
-    p2, = par1.plot(x, y1, label="PQ拟合曲线", color="red")
-    par1.scatter(flow1, power1, c='r', label="PQ离散数据")
+    y1 = powerparameters[0] * x**2 + powerparameters[1] * x + powerparameters[2]
+    (p2,) = par1.plot(x, y1, label="PQ拟合曲线", color="red")
+    par1.scatter(flow1, power1, c="r", label="PQ离散数据")
     x2 = np.linspace(0, fm, 500)
-    y2 = effectparameters[0] * x ** 2 + \
-        effectparameters[1] * x + effectparameters[2]
-    p3, = par2.plot(x, y2, label="EQ拟合曲线", color="blue")
-    par2.scatter(flow1, effect, c='b', label="EQ离散数据")
+    y2 = effectparameters[0] * x**2 + effectparameters[1] * x + effectparameters[2]
+    (p3,) = par2.plot(x, y2, label="EQ拟合曲线", color="blue")
+    par2.scatter(flow1, effect, c="b", label="EQ离散数据")
     par1.set_ylim(0, pm * 2)
     par2.set_ylim(0, nm + 5)
     # host.legend()
-    par2.axis['right2'].major_ticklabels.set_color(p3.get_color())  # 刻度值颜色
-    par2.axis['right2'].set_axisline_style('-|>', size=1.5)  # 轴的形状色
+    par2.axis["right2"].major_ticklabels.set_color(p3.get_color())  # 刻度值颜色
+    par2.axis["right2"].set_axisline_style("-|>", size=1.5)  # 轴的形状色
 
-    par1.axis['right'].major_ticklabels.set_color(p2.get_color())  # 刻度值颜色
-    if 'dgiot_testing_equipment_flowSet' in params:
-        flowSet = float(params['dgiot_testing_equipment_flowSet'])
-        par2.axvline(flowSet, color='orange')
+    par1.axis["right"].major_ticklabels.set_color(p2.get_color())  # 刻度值颜色
+    if "dgiot_testing_equipment_flowSet" in params:
+        flowSet = float(params["dgiot_testing_equipment_flowSet"])
+        par2.axvline(flowSet, color="orange")
         flowSetclose = find_close(flow1, flowSet)
         x_begin = flowSetclose
         x_end = flowSetclose
@@ -181,33 +191,50 @@ def draw(flow1, head1, headparameters, power1, powerparameters, effect, effectpa
         fhpoints = [t for t in zip(flow1, head1) if x_begin <= t[0] <= x_end]
         fppoints = [t for t in zip(flow1, power1) if x_begin <= t[0] <= x_end]
         if len(fepoints) > 0:
-            par2.text(fepoints[0][0], fepoints[0][1] + 0.5,
-                      ("流量" + str(fepoints[0][0]) + " m3/h",
-                       "效率" + str(fepoints[0][1]) + " %"),
-                      ha='center', color='b')
-            host.text(fhpoints[0][0], fhpoints[0][1] + 1,
-                      ("流量" + str(fhpoints[0][0]) + " m3/h",
-                       "扬程" + str(fhpoints[0][1]) + " m"),
-                      ha='center', color='k')
-            par1.text(fppoints[0][0], fppoints[0][1] + 0.1,
-                      ("流量" + str(fppoints[0][0]) + " m3/h",
-                       "功率" + str(fppoints[0][1]) + " kW"),
-                      ha='center', color='r')
+            par2.text(
+                fepoints[0][0],
+                fepoints[0][1] + 0.5,
+                (
+                    "流量" + str(fepoints[0][0]) + " m3/h",
+                    "效率" + str(fepoints[0][1]) + " %",
+                ),
+                ha="center",
+                color="b",
+            )
+            host.text(
+                fhpoints[0][0],
+                fhpoints[0][1] + 1,
+                (
+                    "流量" + str(fhpoints[0][0]) + " m3/h",
+                    "扬程" + str(fhpoints[0][1]) + " m",
+                ),
+                ha="center",
+                color="k",
+            )
+            par1.text(
+                fppoints[0][0],
+                fppoints[0][1] + 0.1,
+                (
+                    "流量" + str(fppoints[0][0]) + " m3/h",
+                    "功率" + str(fppoints[0][1]) + " kW",
+                ),
+                ha="center",
+                color="r",
+            )
 
     # 解决使用matplotliblib画图的时候出现中文或者是负号无法显示的情况
-    mpl.rcParams['font.sans-serif'] = ['SimHei']
-    mpl.rcParams['axes.unicode_minus'] = False
+    mpl.rcParams["font.sans-serif"] = ["SimHei"]
+    mpl.rcParams["axes.unicode_minus"] = False
 
     plt.title("性能曲线拟合数据")
-    plt.legend(loc=9, bbox_to_anchor=(-0.142, 1.1),
-               borderaxespad=0., fontsize=8)
+    plt.legend(loc=9, bbox_to_anchor=(-0.142, 1.1), borderaxespad=0.0, fontsize=8)
     # 获取当前时间
     # localtime = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
-    filename = params['path'] + params['name']
+    filename = params["path"] + params["name"]
     # print(filename)
     plt.savefig(filename)
     # plt.show()
-    return (filename)
+    return filename
 
 
 def find_close(arr, e):
@@ -234,13 +261,13 @@ def find_close(arr, e):
 def main(argv):
     params = json.loads(base64.b64decode(argv).decode("utf-8"))
     # 流量
-    flow = params['data']['flow']
+    flow = params["data"]["flow"]
     # 扬程
-    head = params['data']['head']
+    head = params["data"]["head"]
     # 功率
-    power = params['data']['power']
+    power = params["data"]["power"]
     # 效率
-    effect = params['data']['effect']
+    effect = params["data"]["effect"]
 
     headdata = polynomial_fitting(flow, head)
     headparameters = calculate_parameter(headdata)
@@ -251,9 +278,17 @@ def main(argv):
     effectdata = polynomial_fitting(flow, effect)
     effectparameters = calculate_parameter(effectdata)
 
-    filename = draw(flow, head, headparameters, power,
-                    powerparameters, effect, effectparameters, params)
-    after_base64 = base64.b64encode(filename.encode('utf-8')).decode('ascii')
+    filename = draw(
+        flow,
+        head,
+        headparameters,
+        power,
+        powerparameters,
+        effect,
+        effectparameters,
+        params,
+    )
+    after_base64 = base64.b64encode(filename.encode("utf-8")).decode("ascii")
     print(after_base64)
 
 

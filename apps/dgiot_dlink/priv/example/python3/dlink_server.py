@@ -21,20 +21,19 @@ import dlink_pb2_grpc
 
 
 class Dlink(dlink_pb2_grpc.DlinkServicer):
-
     def SayHello(self, request, context):
         print(request.name)
-        return dlink_pb2.HelloReply(message='Hello, %s!' % request.name)
+        return dlink_pb2.HelloReply(message="Hello, %s!" % request.name)
 
 
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     dlink_pb2_grpc.add_DlinkServicer_to_server(Dlink(), server)
-    server.add_insecure_port('[::]:30051')
+    server.add_insecure_port("[::]:30051")
     server.start()
     server.wait_for_termination()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     logging.basicConfig()
     serve()
