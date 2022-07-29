@@ -28,9 +28,7 @@
         "security": [],
         "summary": "用户登录",
         "description": "用户登录",
-        "consumes": [
-          "text/plain"
-        ],
+        "consumes": ["text/plain"],
         "parameters": [
           {
             "in": "body",
@@ -73,9 +71,7 @@
             }
           }
         },
-        "tags": [
-          "_User"
-        ]
+        "tags": ["_User"]
       }
     },
     "/logout": {
@@ -91,9 +87,7 @@
             "type": "string"
           }
         ],
-        "consumes": [
-          "*"
-        ],
+        "consumes": ["*"],
         "responses": {
           "200": {
             "description": "Returns operation status"
@@ -111,9 +105,7 @@
             "description": "Server Internal error"
           }
         },
-        "tags": [
-          "_User"
-        ]
+        "tags": ["_User"]
       }
     },
     "/user": {
@@ -185,9 +177,7 @@
             "description": "Server Internal error"
           }
         },
-        "tags": [
-          "_User"
-        ]
+        "tags": ["_User"]
       },
       "put": {
         "summary": "员工转岗",
@@ -229,9 +219,7 @@
             "description": "Server Internal error"
           }
         },
-        "tags": [
-          "_User"
-        ]
+        "tags": ["_User"]
       },
       "delete": {
         "summary": "员工离职",
@@ -273,9 +261,7 @@
             "description": "Server Internal error"
           }
         },
-        "tags": [
-          "_User"
-        ]
+        "tags": ["_User"]
       }
     },
     "/users/me": {
@@ -290,9 +276,7 @@
             "type": "string"
           }
         ],
-        "consumes": [
-          "*"
-        ],
+        "consumes": ["*"],
         "responses": {
           "200": {
             "description": "Returns operation status"
@@ -310,9 +294,7 @@
             "description": "Server Internal error"
           }
         },
-        "tags": [
-          "_User"
-        ]
+        "tags": ["_User"]
       }
     },
     "/users": {
@@ -346,9 +328,7 @@
             "description": "Server Internal error"
           }
         },
-        "tags": [
-          "_User"
-        ]
+        "tags": ["_User"]
       },
       "post": {
         "security": [],
@@ -411,9 +391,7 @@
             "description": "Server Internal error"
           }
         },
-        "tags": [
-          "_User"
-        ]
+        "tags": ["_User"]
       }
     },
     "/roleuser": {
@@ -473,9 +451,7 @@
             "description": "Server Internal error"
           }
         },
-        "tags": [
-          "_Role"
-        ]
+        "tags": ["_Role"]
       },
       "post": {
         "summary": "新增用户权限",
@@ -521,9 +497,7 @@
             "description": "Server Internal error"
           }
         },
-        "tags": [
-          "_Role"
-        ]
+        "tags": ["_Role"]
       },
       "get": {
         "summary": "查询用户权限",
@@ -548,10 +522,7 @@
             "in": "query",
             "type": "boolean",
             "default": false,
-            "enum": [
-              false,
-              true
-            ],
+            "enum": [false, true],
             "description": "include 是否包含子部门用户"
           }
         ],
@@ -572,9 +543,7 @@
             "description": "Server Internal error"
           }
         },
-        "tags": [
-          "_User"
-        ]
+        "tags": ["_User"]
       },
       "delete": {
         "summary": "删除用户权限",
@@ -612,9 +581,7 @@
             "description": "Server Internal error"
           }
         },
-        "tags": [
-          "_User"
-        ]
+        "tags": ["_User"]
       }
     },
     "/usertree": {
@@ -633,9 +600,7 @@
           }
         },
         "summary": "用户树",
-        "tags": [
-          "_User"
-        ]
+        "tags": ["_User"]
       }
     },
     "/token": {
@@ -688,9 +653,7 @@
             "description": "Server Internal error"
           }
         },
-        "tags": [
-          "_User"
-        ]
+        "tags": ["_User"]
       },
       "post": {
         "security": [],
@@ -744,9 +707,7 @@
             "description": "Server Internal error"
           }
         },
-        "tags": [
-          "_User"
-        ]
+        "tags": ["_User"]
       }
     },
     "/refresh_session/{sessionToken}": {
@@ -770,9 +731,7 @@
             "description": ""
           }
         },
-        "tags": [
-          "_User"
-        ]
+        "tags": ["_User"]
       }
     },
     "/requestPasswordReset": {
@@ -818,9 +777,7 @@
             "description": "Server Internal error"
           }
         },
-        "tags": [
-          "_User"
-        ]
+        "tags": ["_User"]
       }
     },
     "/disableuser": {
@@ -862,9 +819,7 @@
             "description": "Server Internal error"
           }
         },
-        "tags": [
-          "_User"
-        ]
+        "tags": ["_User"]
       }
     }
   }

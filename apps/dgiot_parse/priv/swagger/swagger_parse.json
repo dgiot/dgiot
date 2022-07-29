@@ -117,12 +117,7 @@
                     "properties": {
                       "method": {
                         "type": "string",
-                        "enum": [
-                          "POST",
-                          "DELETE",
-                          "PUT",
-                          "GET"
-                        ]
+                        "enum": ["POST", "DELETE", "PUT", "GET"]
                       },
                       "path": {
                         "type": "string"
@@ -155,9 +150,7 @@
             "description": "Server Internal error"
           }
         },
-        "tags": [
-          "Basic"
-        ]
+        "tags": ["Basic"]
       }
     },
     "/functions": {
@@ -200,9 +193,7 @@
             "description": "Server Internal error"
           }
         },
-        "tags": [
-          "Data"
-        ]
+        "tags": ["Data"]
       }
     },
     "/tree": {
@@ -256,9 +247,7 @@
             "description": "Server Internal error"
           }
         },
-        "tags": [
-          "Data"
-        ]
+        "tags": ["Data"]
       }
     },
     "/graphql": {
@@ -293,9 +282,7 @@
             "description": "Server Internal error"
           }
         },
-        "tags": [
-          "Data"
-        ]
+        "tags": ["Data"]
       }
     },
     "/health": {
@@ -321,9 +308,7 @@
             "description": "Server Internal error"
           }
         },
-        "tags": [
-          "Basic"
-        ]
+        "tags": ["Basic"]
       }
     },
     "/upgrade": {
@@ -346,9 +331,7 @@
             "description": "Server Internal error"
           }
         },
-        "tags": [
-          "Basic"
-        ]
+        "tags": ["Basic"]
       }
     }
   }

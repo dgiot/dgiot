@@ -6,12 +6,7 @@
       "table": "Device",
       "query": {
         "count": "objectId",
-        "keys": [
-          "objectId",
-          "name",
-          "location",
-          "status"
-        ]
+        "keys": ["objectId", "name", "location", "status"]
       }
     },
     {
@@ -21,9 +16,7 @@
       "query": {
         "limit": 1,
         "count": "objectId",
-        "keys": [
-          "objectId"
-        ],
+        "keys": ["objectId"],
         "where": {}
       }
     },
@@ -33,9 +26,7 @@
       "table": "Product",
       "query": {
         "count": "objectId",
-        "keys": [
-          "objectId"
-        ],
+        "keys": ["objectId"],
         "where": {}
       }
     },
@@ -47,9 +38,7 @@
         "order": "-updatedAt",
         "limit": 15,
         "count": "objectId",
-        "keys": [
-          "objectId"
-        ],
+        "keys": ["objectId"],
         "where": {
           "status": "ONLINE"
         }
@@ -63,9 +52,7 @@
         "limit": 15,
         "order": "-updatedAt",
         "count": "objectId",
-        "keys": [
-          "objectId"
-        ],
+        "keys": ["objectId"],
         "where": {
           "status": "OFFLINE"
         }
@@ -78,9 +65,7 @@
       "query": {
         "limit": 1,
         "count": "objectId",
-        "keys": [
-          "objectId"
-        ],
+        "keys": ["objectId"],
         "where": {}
       }
     },
@@ -91,9 +76,7 @@
       "query": {
         "limit": 1,
         "count": "objectId",
-        "keys": [
-          "objectId"
-        ],
+        "keys": ["objectId"],
         "where": {}
       }
     },
@@ -103,12 +86,7 @@
       "table": "Device",
       "query": {
         "count": "objectId",
-        "keys": [
-          "objectId",
-          "name",
-          "location",
-          "status"
-        ],
+        "keys": ["objectId", "name", "location", "status"],
         "where": {}
       }
     },
@@ -119,9 +97,7 @@
       "query": {
         "limit": 1,
         "count": "objectId",
-        "keys": [
-          "objectId"
-        ],
+        "keys": ["objectId"],
         "where": {}
       }
     }

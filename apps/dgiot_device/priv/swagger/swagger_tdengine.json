@@ -110,9 +110,7 @@
             "description": "Server Internal error"
           }
         },
-        "tags": [
-          "Basic"
-        ]
+        "tags": ["Basic"]
       }
     },
     "/device/{deviceid}": {
@@ -185,9 +183,7 @@
             "description": "Server Internal error"
           }
         },
-        "tags": [
-          "Basic"
-        ]
+        "tags": ["Basic"]
       }
     },
     "/echart/{deviceid}": {
@@ -202,11 +198,7 @@
             "default": "line",
             "required": true,
             "type": "string",
-            "enum": [
-              "amis_table",
-              "line",
-              "echart_category"
-            ]
+            "enum": ["amis_table", "line", "echart_category"]
           },
           {
             "in": "query",
@@ -244,17 +236,7 @@
             "in": "query",
             "name": "interval",
             "description": "统计间隔",
-            "enum": [
-              "1u",
-              "1a",
-              "1s",
-              "1m",
-              "1h",
-              "1d",
-              "1w",
-              "1n",
-              "1y"
-            ],
+            "enum": ["1u", "1a", "1s", "1m", "1h", "1d", "1w", "1n", "1y"],
             "default": "1m",
             "required": false,
             "type": "string"
@@ -311,9 +293,7 @@
             "description": "Server Internal error"
           }
         },
-        "tags": [
-          "View"
-        ]
+        "tags": ["View"]
       }
     },
     "/devicecard/{deviceid}": {
@@ -354,9 +334,7 @@
             "description": "Server Internal error"
           }
         },
-        "tags": [
-          "View"
-        ]
+        "tags": ["View"]
       }
     }
   }
