@@ -29,7 +29,7 @@ if [ ! -d "node_modules" ]; then
   npm install
 fi
 echo "进度: 替换key"
-sed -i "s/'WpeAb6pL4tsX2ZVd56GHbO9Ut6c4HZhG'/$mapKey/g"  /data/dgiot/dgiot/lib/dgiot_api-4.3.0/priv/dgiot-dashboard/src/config/secret.config.js
+sed -i "s/'WpeAb6pL4tsX2ZVd56GHbO9Ut6c4HZhG'/$mapKey/g" /data/dgiot/dgiot/lib/dgiot_api-4.3.0/priv/dgiot-dashboard/src/config/secret.config.js
 echo "进度: 打包编译"
 npm build
 echo "进度: 拷贝文件夹dist"
