@@ -1,0 +1,3818 @@
+{
+  "events": [],
+  "properties": [
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "20"
+      },
+      "dataSource": {
+        "": []
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 100000000,
+          "min": -1,
+          "precision": 3,
+          "step": 0,
+          "unit": ""
+        },
+        "type": "int"
+      },
+      "devicetype": "product",
+      "identifier": "product_instock",
+      "index": 0,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "入库数",
+      "required": true,
+      "updateAt": "1658974429957"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "20"
+      },
+      "dataSource": {
+        "": []
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 10000,
+          "min": 0,
+          "precision": 3,
+          "step": 0.01,
+          "unit": ""
+        },
+        "type": "int"
+      },
+      "devicetype": "material",
+      "identifier": "material_received",
+      "index": 1,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "已领",
+      "required": true,
+      "updateAt": "1658914125927"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "afn": "",
+        "byteType": "",
+        "bytelen": "",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "da": "",
+        "data": "null",
+        "dt": "",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "20"
+      },
+      "dataSource": {
+        "": []
+      },
+      "dataType": {
+        "das": [],
+        "size": 50,
+        "specs": {},
+        "type": "text"
+      },
+      "devicetype": "product",
+      "identifier": "product_workhour",
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "工作时长",
+      "required": true,
+      "updateAt": "1659066817430",
+      "index": 2
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "afn": "",
+        "byteType": "",
+        "bytelen": "",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "da": "",
+        "data": "null",
+        "dt": "",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "20"
+      },
+      "dataSource": {
+        "": []
+      },
+      "dataType": {
+        "das": [],
+        "size": 50,
+        "specs": {},
+        "type": "text"
+      },
+      "devicetype": "product",
+      "identifier": "product_worktime",
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "工作时间",
+      "required": true,
+      "updateAt": "1659066827714",
+      "index": 3
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "20"
+      },
+      "dataSource": {
+        "": []
+      },
+      "dataType": {
+        "das": [],
+        "size": 50,
+        "specs": {},
+        "type": "text"
+      },
+      "devicetype": "material",
+      "identifier": "material_id",
+      "index": 4,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "表单id",
+      "required": true,
+      "updateAt": "1658892654005"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "20"
+      },
+      "dataSource": {
+        "": []
+      },
+      "dataType": {
+        "das": [],
+        "size": 100,
+        "specs": {},
+        "type": "text"
+      },
+      "devicetype": "material",
+      "identifier": "material_productid",
+      "index": 5,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "订单id",
+      "required": true,
+      "updateAt": "1658891330521"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "20"
+      },
+      "dataSource": {
+        "": []
+      },
+      "dataType": {
+        "das": [],
+        "size": 100,
+        "specs": {},
+        "type": "text"
+      },
+      "devicetype": "material",
+      "identifier": "material_date",
+      "index": 6,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "日期",
+      "required": true,
+      "updateAt": "1658891330521"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "afn": "",
+        "byteType": "",
+        "bytelen": "",
+        "collection": "%s",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "da": "",
+        "data": "null",
+        "dt": "",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "20"
+      },
+      "dataSource": {
+        "": []
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 1000,
+          "min": 0,
+          "precision": 3,
+          "step": 0,
+          "unit": ""
+        },
+        "type": "float"
+      },
+      "devicetype": "material",
+      "identifier": "material_loss",
+      "index": 7,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "退料数量",
+      "required": true,
+      "updateAt": "1658980164470"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%s",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "20"
+      },
+      "dataSource": {
+        "": []
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 1000,
+          "min": 0,
+          "precision": 3,
+          "step": 0,
+          "unit": ""
+        },
+        "type": "float"
+      },
+      "devicetype": "material",
+      "identifier": "material_num",
+      "index": 8,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "应发数量",
+      "required": true,
+      "updateAt": "1658891330521"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "20"
+      },
+      "dataSource": {
+        "": []
+      },
+      "dataType": {
+        "das": [],
+        "size": 100,
+        "specs": {},
+        "type": "text"
+      },
+      "devicetype": "material",
+      "identifier": "material_unit",
+      "index": 9,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "材料单位",
+      "required": true,
+      "updateAt": "1658891330521"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "afn": "",
+        "byteType": "",
+        "bytelen": "",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "da": "",
+        "data": "null",
+        "dt": "",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "20"
+      },
+      "dataSource": {
+        "": []
+      },
+      "dataType": {
+        "das": [],
+        "size": 1000,
+        "specs": {},
+        "type": "text"
+      },
+      "devicetype": "material",
+      "identifier": "material_spec",
+      "index": 10,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "材料规格",
+      "required": true,
+      "updateAt": "1658893089740"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "afn": "",
+        "byteType": "",
+        "bytelen": "",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "da": "",
+        "data": "null",
+        "dt": "",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "20"
+      },
+      "dataSource": {
+        "": []
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+        },
+        "type": "enum"
+      },
+      "devicetype": "material",
+      "identifier": "material_name",
+      "index": 11,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "材料名称",
+      "required": true,
+      "updateAt": "1658996552994"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "20"
+      },
+      "dataSource": {
+        "": []
+      },
+      "dataType": {
+        "das": [],
+        "size": 98,
+        "specs": {},
+        "type": "text"
+      },
+      "devicetype": "product",
+      "identifier": "product_inspector",
+      "index": 12,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "质检人",
+      "required": true,
+      "updateAt": "1658729658211"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "": []
+      },
+      "dataType": {
+        "das": [],
+        "size": 50,
+        "specs": {},
+        "type": "text"
+      },
+      "devicetype": "product",
+      "identifier": "product_people",
+      "index": 13,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "人员",
+      "required": true,
+      "updateAt": "1658398150725"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "": []
+      },
+      "dataType": {
+        "das": [],
+        "size": 50,
+        "specs": {},
+        "type": "text"
+      },
+      "devicetype": "semiproduct",
+      "identifier": "semiproduct_people",
+      "index": 14,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "人员",
+      "required": true,
+      "updateAt": "1658398111397"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "afn": "",
+        "byteType": "",
+        "bytelen": "",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "da": "",
+        "data": "null",
+        "dt": "",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "": []
+      },
+      "dataType": {
+        "das": [],
+        "size": 50,
+        "specs": {},
+        "type": "text"
+      },
+      "devicetype": "quality",
+      "identifier": "quality_people",
+      "index": 15,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "人员",
+      "required": true,
+      "updateAt": "1658398125868"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "afn": "",
+        "byteType": "",
+        "bytelen": "",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "da": "",
+        "data": "null",
+        "dt": "",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "": []
+      },
+      "dataType": {
+        "das": [],
+        "size": 40,
+        "specs": {},
+        "type": "text"
+      },
+      "devicetype": "quality",
+      "identifier": "quality_alarmid",
+      "index": 16,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "告警id",
+      "required": true,
+      "updateAt": "1658386144362"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "afn": "",
+        "byteType": "",
+        "bytelen": "",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "da": "",
+        "data": "null",
+        "dt": "",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "": []
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 100000000000000000000,
+          "min": 0,
+          "precision": 3,
+          "step": 0,
+          "unit": ""
+        },
+        "type": "long"
+      },
+      "devicetype": "semiproduct",
+      "identifier": "semiproduct_pic",
+      "index": 17,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "pic",
+      "required": true,
+      "updateAt": "1658373551635"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "afn": "",
+        "byteType": "",
+        "bytelen": "",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "da": "",
+        "data": "null",
+        "dt": "",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "": []
+      },
+      "dataType": {
+        "das": [],
+        "size": 400,
+        "specs": {},
+        "type": "text"
+      },
+      "devicetype": "product",
+      "identifier": "product_id",
+      "index": 18,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "成品id",
+      "required": true,
+      "updateAt": "1658298935148"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "afn": "",
+        "byteType": "",
+        "bytelen": "",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "da": "",
+        "data": "null",
+        "dt": "",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "": []
+      },
+      "dataType": {
+        "das": [],
+        "size": 20,
+        "specs": {},
+        "type": "text"
+      },
+      "devicetype": "person",
+      "identifier": "person_type",
+      "index": 19,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "工单类型",
+      "required": true,
+      "updateAt": "1658285591900"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "": []
+      },
+      "dataType": {
+        "das": [],
+        "size": 20,
+        "specs": {},
+        "type": "text"
+      },
+      "devicetype": "person",
+      "identifier": "person_person10",
+      "index": 20,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "操作员10",
+      "required": true,
+      "updateAt": "1658233395344"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "": []
+      },
+      "dataType": {
+        "das": [],
+        "size": 20,
+        "specs": {},
+        "type": "text"
+      },
+      "devicetype": "person",
+      "identifier": "person_person9",
+      "index": 21,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "操作员9",
+      "required": true,
+      "updateAt": "1658233395344"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "": []
+      },
+      "dataType": {
+        "das": [],
+        "size": 20,
+        "specs": {},
+        "type": "text"
+      },
+      "devicetype": "person",
+      "identifier": "person_person8",
+      "index": 22,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "操作员8",
+      "required": true,
+      "updateAt": "1658233395344"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "": []
+      },
+      "dataType": {
+        "das": [],
+        "size": 20,
+        "specs": {},
+        "type": "text"
+      },
+      "devicetype": "person",
+      "identifier": "person_person7",
+      "index": 23,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "操作员7",
+      "required": true,
+      "updateAt": "1658233395344"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "": []
+      },
+      "dataType": {
+        "das": [],
+        "size": 20,
+        "specs": {},
+        "type": "text"
+      },
+      "devicetype": "person",
+      "identifier": "person_person6",
+      "index": 24,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "操作员6",
+      "required": true,
+      "updateAt": "1658233395344"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "": []
+      },
+      "dataType": {
+        "das": [],
+        "size": 20,
+        "specs": {},
+        "type": "text"
+      },
+      "devicetype": "person",
+      "identifier": "person_person5",
+      "index": 25,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "操作员5",
+      "required": true,
+      "updateAt": "1658233395344"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "": []
+      },
+      "dataType": {
+        "das": [],
+        "size": 20,
+        "specs": {},
+        "type": "text"
+      },
+      "devicetype": "person",
+      "identifier": "person_person4",
+      "index": 26,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "操作员4",
+      "required": true,
+      "updateAt": "1658233395344"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "": []
+      },
+      "dataType": {
+        "das": [],
+        "size": 20,
+        "specs": {},
+        "type": "text"
+      },
+      "devicetype": "person",
+      "identifier": "person_person3",
+      "index": 27,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "操作员3",
+      "required": true,
+      "updateAt": "1658233395344"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "afn": "",
+        "byteType": "",
+        "bytelen": "",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "da": "",
+        "data": "null",
+        "dt": "",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "20"
+      },
+      "dataSource": {
+        "": []
+      },
+      "dataType": {
+        "das": [],
+        "size": 30,
+        "specs": {},
+        "type": "text"
+      },
+      "devicetype": "quality",
+      "identifier": "quality_id",
+      "index": 28,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "信息id",
+      "required": true,
+      "updateAt": "1658492350096"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "afn": "",
+        "byteType": "",
+        "bytelen": "",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "da": "",
+        "data": "null",
+        "dt": "",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "": []
+      },
+      "dataType": {
+        "das": [],
+        "size": 30,
+        "specs": {},
+        "type": "text"
+      },
+      "devicetype": "semiproduct",
+      "identifier": "semiproduct_id",
+      "index": 29,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "信息id",
+      "required": true,
+      "updateAt": "1658492355951"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "": []
+      },
+      "dataType": {
+        "das": [],
+        "size": 20,
+        "specs": {},
+        "type": "text"
+      },
+      "devicetype": "person",
+      "identifier": "person_person2",
+      "index": 30,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "操作员2",
+      "required": true,
+      "updateAt": "1658233395344"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "afn": "",
+        "byteType": "",
+        "bytelen": "",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "da": "",
+        "data": "null",
+        "dt": "",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "": []
+      },
+      "dataType": {
+        "das": [],
+        "size": 20,
+        "specs": {},
+        "type": "text"
+      },
+      "devicetype": "person",
+      "identifier": "person_person1",
+      "index": 31,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "操作员1",
+      "required": true,
+      "updateAt": "1658386815623"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "": []
+      },
+      "dataType": {
+        "das": [],
+        "size": 100,
+        "specs": {},
+        "type": "text"
+      },
+      "devicetype": "person",
+      "identifier": "person_sessiontoken",
+      "index": 32,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "登录用户",
+      "required": true,
+      "updateAt": "1658233262777"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "afn": "",
+        "byteType": "",
+        "bytelen": "",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "da": "",
+        "data": "null",
+        "dt": "",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "": []
+      },
+      "dataType": {
+        "das": [],
+        "size": 50,
+        "specs": {},
+        "type": "text"
+      },
+      "devicetype": "product",
+      "identifier": "product_storedperson",
+      "index": 33,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "入库者",
+      "required": true,
+      "updateAt": "1658837895455"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "afn": "",
+        "byteType": "",
+        "bytelen": "",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "da": "",
+        "data": "null",
+        "dt": "",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "20"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "dis": [
+          {
+            "data": "2",
+            "key": "0000",
+            "undefined": "2"
+          }
+        ]
+      },
+      "dataType": {
+        "das": [],
+        "size": 50,
+        "specs": {},
+        "type": "text"
+      },
+      "devicetype": "semiproduct",
+      "identifier": "semiproduct_bprom",
+      "index": 34,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "半成品型号",
+      "required": true,
+      "updateAt": "1658457330880"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "afn": "",
+        "byteType": "",
+        "bytelen": "",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "da": "",
+        "data": "null",
+        "dt": "",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "dis": [
+          {
+            "data": "2",
+            "key": "0000",
+            "undefined": "2"
+          }
+        ]
+      },
+      "dataType": {
+        "das": [],
+        "size": 50,
+        "specs": {},
+        "type": "text"
+      },
+      "devicetype": "product",
+      "identifier": "product_subtime",
+      "index": 35,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "日期时间",
+      "required": true,
+      "updateAt": "1657802036246"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "dis": [
+          {
+            "data": "2",
+            "key": "0000",
+            "undefined": "2"
+          }
+        ]
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 200,
+          "min": 0,
+          "precision": 3,
+          "step": 0,
+          "unit": ""
+        },
+        "type": "int"
+      },
+      "devicetype": "product",
+      "identifier": "product_condition",
+      "index": 36,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "状态",
+      "required": true,
+      "updateAt": "1657611006197"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "dis": [
+          {
+            "data": "2",
+            "key": "0000",
+            "undefined": "2"
+          }
+        ]
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 10,
+          "min": 0,
+          "precision": 3,
+          "step": 0,
+          "unit": ""
+        },
+        "type": "int"
+      },
+      "devicetype": "quality",
+      "identifier": "quality_status",
+      "index": 37,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "检验标识",
+      "required": true,
+      "updateAt": "1657535714192"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "dis": [
+          {
+            "data": "2",
+            "key": "0000",
+            "undefined": "2"
+          }
+        ]
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 100000000000000000000,
+          "min": 0,
+          "precision": 3,
+          "step": 0,
+          "unit": ""
+        },
+        "type": "long"
+      },
+      "devicetype": "quality",
+      "identifier": "quality_picture1",
+      "index": 38,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "图片地址1",
+      "required": true,
+      "updateAt": "1657535668880"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "dis": [
+          {
+            "data": "2",
+            "key": "0000",
+            "undefined": "2"
+          }
+        ]
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 100000000000000000000,
+          "min": 0,
+          "precision": 3,
+          "step": 0,
+          "unit": ""
+        },
+        "type": "long"
+      },
+      "devicetype": "quality",
+      "identifier": "quality_picture2",
+      "index": 39,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "图片地址2",
+      "required": true,
+      "updateAt": "1657535668880"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "dis": [
+          {
+            "data": "2",
+            "key": "0000",
+            "undefined": "2"
+          }
+        ]
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 100000000000000000000,
+          "min": 0,
+          "precision": 3,
+          "step": 0,
+          "unit": ""
+        },
+        "type": "long"
+      },
+      "devicetype": "quality",
+      "identifier": "quality_picture3",
+      "index": 40,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "图片地址3",
+      "required": true,
+      "updateAt": "1657535668880"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "dis": [
+          {
+            "data": "2",
+            "key": "0000",
+            "undefined": "2"
+          }
+        ]
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 100000000000000000000,
+          "min": 0,
+          "precision": 3,
+          "step": 0,
+          "unit": ""
+        },
+        "type": "long"
+      },
+      "devicetype": "quality",
+      "identifier": "quality_picture4",
+      "index": 41,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "图片地址4",
+      "required": true,
+      "updateAt": "1657535668880"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "dis": [
+          {
+            "data": "2",
+            "key": "0000",
+            "undefined": "2"
+          }
+        ]
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 100000000000000000000,
+          "min": 0,
+          "precision": 3,
+          "step": 0,
+          "unit": ""
+        },
+        "type": "long"
+      },
+      "devicetype": "quality",
+      "identifier": "quality_picture5",
+      "index": 42,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "图片地址5",
+      "required": true,
+      "updateAt": "1657535668880"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "dis": [
+          {
+            "data": "2",
+            "key": "0000",
+            "undefined": "2"
+          }
+        ]
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 100000000000000000000,
+          "min": 0,
+          "precision": 3,
+          "step": 0,
+          "unit": ""
+        },
+        "type": "long"
+      },
+      "devicetype": "quality",
+      "identifier": "quality_picture6",
+      "index": 43,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "图片地址6",
+      "required": true,
+      "updateAt": "1657535668880"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "dis": [
+          {
+            "data": "2",
+            "key": "0000",
+            "undefined": "2"
+          }
+        ]
+      },
+      "dataType": {
+        "das": [],
+        "size": 100,
+        "specs": {},
+        "type": "text"
+      },
+      "devicetype": "quality",
+      "identifier": "quality_remarks",
+      "index": 44,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "备注摘要",
+      "required": true,
+      "updateAt": "1657535602587"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "dis": [
+          {
+            "data": "2",
+            "key": "0000",
+            "undefined": "2"
+          }
+        ]
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "不合格",
+          "1": "合格"
+        },
+        "type": "bool"
+      },
+      "devicetype": "quality",
+      "identifier": "quality_quality",
+      "index": 45,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "是否合格",
+      "required": true,
+      "updateAt": "1657535572650"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "dis": [
+          {
+            "data": "2",
+            "key": "0000",
+            "undefined": "2"
+          }
+        ]
+      },
+      "dataType": {
+        "das": [],
+        "size": 50,
+        "specs": {},
+        "type": "text"
+      },
+      "devicetype": "quality",
+      "identifier": "quality_ymodel",
+      "index": 46,
+      "isaccumulate": false,
+      "isshow": false,
+      "isstorage": false,
+      "moduleType": "properties",
+      "name": "原料型号",
+      "required": true,
+      "updateAt": "1657535439781"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "dis": [
+          {
+            "data": "2",
+            "key": "0000",
+            "undefined": "2"
+          }
+        ]
+      },
+      "dataType": {
+        "das": [],
+        "size": 50,
+        "specs": {},
+        "type": "text"
+      },
+      "devicetype": "quality",
+      "identifier": "quality_prostand",
+      "index": 47,
+      "isaccumulate": false,
+      "isshow": false,
+      "isstorage": false,
+      "moduleType": "properties",
+      "name": "产品规格",
+      "required": true,
+      "updateAt": "1657535387732"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "dis": [
+          {
+            "data": "2",
+            "key": "0000",
+            "undefined": "2"
+          }
+        ]
+      },
+      "dataType": {
+        "das": [],
+        "size": 50,
+        "specs": {},
+        "type": "text"
+      },
+      "devicetype": "quality",
+      "identifier": "quality_prom",
+      "index": 48,
+      "isaccumulate": false,
+      "isshow": false,
+      "isstorage": false,
+      "moduleType": "properties",
+      "name": "产品型号",
+      "required": true,
+      "updateAt": "1657535346416"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "afn": "",
+        "byteType": "",
+        "bytelen": "",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "da": "",
+        "data": "null",
+        "dt": "",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "dis": [
+          {
+            "data": "2",
+            "key": "0000",
+            "undefined": "2"
+          }
+        ]
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 1000,
+          "min": 0,
+          "precision": 3,
+          "step": 0,
+          "unit": ""
+        },
+        "type": "float"
+      },
+      "devicetype": "quality",
+      "identifier": "quality_pnumber",
+      "index": 49,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "生产数量",
+      "required": true,
+      "updateAt": "1658287012162"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "dis": [
+          {
+            "data": "2",
+            "key": "0000",
+            "undefined": "2"
+          }
+        ]
+      },
+      "dataType": {
+        "das": [],
+        "size": 50,
+        "specs": {},
+        "type": "text"
+      },
+      "devicetype": "quality",
+      "identifier": "quality_packspec",
+      "index": 50,
+      "isaccumulate": false,
+      "isshow": false,
+      "isstorage": false,
+      "moduleType": "properties",
+      "name": "包装规格",
+      "required": true,
+      "updateAt": "1657535108575"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "dis": [
+          {
+            "data": "2",
+            "key": "0000",
+            "undefined": "2"
+          }
+        ]
+      },
+      "dataType": {
+        "das": [],
+        "size": 60,
+        "specs": {},
+        "type": "text"
+      },
+      "devicetype": "quality",
+      "identifier": "quality_machine",
+      "index": 51,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": false,
+      "moduleType": "properties",
+      "name": "机台",
+      "required": true,
+      "updateAt": "1657535019632"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "afn": "",
+        "byteType": "",
+        "bytelen": "",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "da": "",
+        "data": "null",
+        "dt": "",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "dis": [
+          {
+            "data": "2",
+            "key": "0000",
+            "undefined": "2"
+          }
+        ]
+      },
+      "dataType": {
+        "das": [],
+        "size": 50,
+        "specs": {},
+        "type": "text"
+      },
+      "devicetype": "quality",
+      "identifier": "quality_dingdan",
+      "index": 52,
+      "isaccumulate": false,
+      "isshow": false,
+      "isstorage": false,
+      "moduleType": "properties",
+      "name": "订单号",
+      "required": true,
+      "updateAt": "1658287093555"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "afn": "",
+        "byteType": "",
+        "bytelen": "",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "da": "",
+        "data": "null",
+        "dt": "",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "dis": [
+          {
+            "data": "2",
+            "key": "0000",
+            "undefined": "2"
+          }
+        ]
+      },
+      "dataType": {
+        "das": [],
+        "size": 50,
+        "specs": {},
+        "type": "text"
+      },
+      "devicetype": "quality",
+      "identifier": "quality_pdatetime",
+      "index": 53,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "日期",
+      "required": true,
+      "updateAt": "1658287072130"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "afn": "",
+        "byteType": "",
+        "bytelen": "",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "da": "",
+        "data": "null",
+        "dt": "",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "dis": [
+          {
+            "data": "2",
+            "key": "0000",
+            "undefined": "2"
+          }
+        ]
+      },
+      "dataType": {
+        "das": [],
+        "size": 50,
+        "specs": {},
+        "type": "text"
+      },
+      "devicetype": "semiproduct",
+      "identifier": "semiproduct_machine",
+      "index": 54,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "机台",
+      "required": true,
+      "updateAt": "1658287268796"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "afn": "",
+        "byteType": "",
+        "bytelen": "",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "da": "",
+        "data": "null",
+        "dt": "",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "dis": [
+          {
+            "data": "2",
+            "key": "0000",
+            "undefined": "2"
+          }
+        ]
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 1000,
+          "min": 0,
+          "precision": 3,
+          "step": 0,
+          "unit": ""
+        },
+        "type": "float"
+      },
+      "devicetype": "semiproduct",
+      "identifier": "semiproduct_fmater",
+      "index": 55,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "废料",
+      "required": true,
+      "updateAt": "1658287320139"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "afn": "",
+        "byteType": "",
+        "bytelen": "",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "da": "",
+        "data": "null",
+        "dt": "",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "dis": [
+          {
+            "data": "2",
+            "key": "0000",
+            "undefined": "2"
+          }
+        ]
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 5000,
+          "min": 0,
+          "precision": 3,
+          "step": 0,
+          "unit": ""
+        },
+        "type": "float"
+      },
+      "devicetype": "semiproduct",
+      "identifier": "semiproduct_ymater",
+      "index": 56,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "剩料",
+      "required": true,
+      "updateAt": "1658285664915"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "afn": "",
+        "byteType": "",
+        "bytelen": "",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "da": "",
+        "data": "null",
+        "dt": "",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "dis": [
+          {
+            "data": "2",
+            "key": "0000",
+            "undefined": "2"
+          }
+        ]
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 5000,
+          "min": 0,
+          "precision": 3,
+          "step": 0,
+          "unit": ""
+        },
+        "type": "float"
+      },
+      "devicetype": "semiproduct",
+      "identifier": "semiproduct_smater",
+      "index": 57,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "上机原料",
+      "required": true,
+      "updateAt": "1658285674979"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "afn": "",
+        "byteType": "",
+        "bytelen": "",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "da": "",
+        "data": "null",
+        "dt": "",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "dis": [
+          {
+            "data": "2",
+            "key": "0000",
+            "undefined": "2"
+          }
+        ]
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 5000,
+          "min": 0,
+          "precision": 3,
+          "step": 0,
+          "unit": ""
+        },
+        "type": "float"
+      },
+      "devicetype": "semiproduct",
+      "identifier": "semiproduct_rejects",
+      "index": 58,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "不良品",
+      "required": true,
+      "updateAt": "1658285709755"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "afn": "",
+        "byteType": "",
+        "bytelen": "",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "da": "",
+        "data": "null",
+        "dt": "",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "dis": [
+          {
+            "data": "2",
+            "key": "0000",
+            "undefined": "2"
+          }
+        ]
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 5000,
+          "min": 0,
+          "precision": 3,
+          "step": 0,
+          "unit": ""
+        },
+        "type": "float"
+      },
+      "devicetype": "semiproduct",
+      "identifier": "semiproduct_pnumber",
+      "index": 59,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "生产数量",
+      "required": true,
+      "updateAt": "1658285727428"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "dis": [
+          {
+            "data": "2",
+            "key": "0000",
+            "undefined": "2"
+          }
+        ]
+      },
+      "dataType": {
+        "das": [],
+        "size": 50,
+        "specs": {},
+        "type": "text"
+      },
+      "devicetype": "semiproduct",
+      "identifier": "semiproduct_packspec",
+      "index": 60,
+      "isaccumulate": false,
+      "isshow": false,
+      "isstorage": false,
+      "moduleType": "properties",
+      "name": "包装规格",
+      "required": true,
+      "updateAt": "1657522254969"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "afn": "",
+        "byteType": "",
+        "bytelen": "",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "da": "",
+        "data": "null",
+        "dt": "",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "dis": [
+          {
+            "data": "2",
+            "key": "0000",
+            "undefined": "2"
+          }
+        ]
+      },
+      "dataType": {
+        "das": [],
+        "size": 50,
+        "specs": {},
+        "type": "text"
+      },
+      "devicetype": "semiproduct",
+      "identifier": "semiproduct_ymodel",
+      "index": 61,
+      "isaccumulate": false,
+      "isshow": false,
+      "isstorage": false,
+      "moduleType": "properties",
+      "name": "原料型号",
+      "required": true,
+      "updateAt": "1658285742444"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "afn": "",
+        "byteType": "",
+        "bytelen": "",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "da": "",
+        "data": "null",
+        "dt": "",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "dis": [
+          {
+            "data": "2",
+            "key": "0000",
+            "undefined": "2"
+          }
+        ]
+      },
+      "dataType": {
+        "das": [],
+        "size": 50,
+        "specs": {},
+        "type": "text"
+      },
+      "devicetype": "semiproduct",
+      "identifier": "semiproduct_prom",
+      "index": 62,
+      "isaccumulate": false,
+      "isshow": false,
+      "isstorage": false,
+      "moduleType": "properties",
+      "name": "产品型号",
+      "required": true,
+      "updateAt": "1657522100323"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "dis": [
+          {
+            "data": "2",
+            "key": "0000",
+            "undefined": "2"
+          }
+        ]
+      },
+      "dataType": {
+        "das": [],
+        "size": 50,
+        "specs": {},
+        "type": "text"
+      },
+      "devicetype": "semiproduct",
+      "identifier": "semiproduct_dingdan",
+      "index": 63,
+      "isaccumulate": false,
+      "isshow": false,
+      "isstorage": false,
+      "moduleType": "properties",
+      "name": "订单号",
+      "required": true,
+      "updateAt": "1657521474089"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "afn": "",
+        "byteType": "",
+        "bytelen": "",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "da": "",
+        "data": "null",
+        "dt": "",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "dis": [
+          {
+            "data": "2",
+            "key": "0000",
+            "undefined": "2"
+          }
+        ]
+      },
+      "dataType": {
+        "das": [],
+        "size": 50,
+        "specs": {},
+        "type": "text"
+      },
+      "devicetype": "semiproduct",
+      "identifier": "semiproduct_cdate",
+      "index": 64,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "日期",
+      "required": true,
+      "updateAt": "1658285758483"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "afn": "",
+        "byteType": "",
+        "bytelen": "",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "da": "",
+        "data": "null",
+        "dt": "",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "": []
+      },
+      "dataType": {
+        "das": [],
+        "size": 1000,
+        "specs": {},
+        "type": "text"
+      },
+      "devicetype": "product",
+      "identifier": "product_ymodel",
+      "index": 65,
+      "isaccumulate": false,
+      "isshow": false,
+      "isstorage": false,
+      "moduleType": "properties",
+      "name": "原料型号",
+      "required": true,
+      "updateAt": "1657707887952"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "afn": "",
+        "byteType": "",
+        "bytelen": "",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "da": "",
+        "data": "null",
+        "dt": "",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "dis": [
+          {
+            "data": "2",
+            "key": "0000",
+            "undefined": "2"
+          }
+        ]
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 5000,
+          "min": 0,
+          "precision": 3,
+          "step": 0,
+          "unit": ""
+        },
+        "type": "float"
+      },
+      "devicetype": "product",
+      "identifier": "product_ymater",
+      "index": 66,
+      "isaccumulate": false,
+      "isshow": false,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "剩料",
+      "required": true,
+      "updateAt": "1658393093940"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "afn": "",
+        "byteType": "",
+        "bytelen": "",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "da": "",
+        "data": "null",
+        "dt": "",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "dis": [
+          {
+            "data": "2",
+            "key": "0000",
+            "undefined": "2"
+          }
+        ]
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 5000,
+          "min": 0,
+          "precision": 3,
+          "step": 0,
+          "unit": ""
+        },
+        "type": "float"
+      },
+      "devicetype": "product",
+      "identifier": "product_smater",
+      "index": 67,
+      "isaccumulate": false,
+      "isshow": false,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "上机原料",
+      "required": true,
+      "updateAt": "1658286102283"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "afn": "",
+        "byteType": "",
+        "bytelen": "",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "da": "",
+        "data": "null",
+        "dt": "",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "dis": [
+          {
+            "data": "2",
+            "key": "0000",
+            "undefined": "2"
+          }
+        ]
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 5000,
+          "min": 0,
+          "precision": 3,
+          "step": 0,
+          "unit": ""
+        },
+        "type": "float"
+      },
+      "devicetype": "product",
+      "identifier": "product_rejects",
+      "index": 68,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "不良品",
+      "required": true,
+      "updateAt": "1658393104315"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "dis": [
+          {
+            "data": "2",
+            "key": "0000",
+            "undefined": "2"
+          }
+        ]
+      },
+      "dataType": {
+        "das": [],
+        "size": 50,
+        "specs": {},
+        "type": "text"
+      },
+      "devicetype": "product",
+      "identifier": "product_prostand",
+      "index": 69,
+      "isaccumulate": false,
+      "isshow": false,
+      "isstorage": false,
+      "moduleType": "properties",
+      "name": "产品规格",
+      "required": true,
+      "updateAt": "1657356167237"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "dis": [
+          {
+            "data": "2",
+            "key": "0000",
+            "undefined": "2"
+          }
+        ]
+      },
+      "dataType": {
+        "das": [],
+        "size": 100,
+        "specs": {},
+        "type": "text"
+      },
+      "devicetype": "product",
+      "identifier": "product_prom",
+      "index": 70,
+      "isaccumulate": false,
+      "isshow": false,
+      "isstorage": false,
+      "moduleType": "properties",
+      "name": "产品型号",
+      "required": true,
+      "updateAt": "1657356123309"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "afn": "",
+        "byteType": "",
+        "bytelen": "",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "da": "",
+        "data": "null",
+        "dt": "",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "dis": [
+          {
+            "data": "2",
+            "key": "0000",
+            "undefined": "2"
+          }
+        ]
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 100000,
+          "min": 0.1,
+          "precision": 3,
+          "step": 0.01,
+          "unit": ""
+        },
+        "type": "float"
+      },
+      "devicetype": "product",
+      "identifier": "product_pnumber",
+      "index": 71,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "生产数",
+      "required": true,
+      "updateAt": "1658393114700"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "dis": [
+          {
+            "data": "2",
+            "key": "0000",
+            "undefined": "2"
+          }
+        ]
+      },
+      "dataType": {
+        "das": [],
+        "size": 50,
+        "specs": {},
+        "type": "text"
+      },
+      "devicetype": "product",
+      "identifier": "product_packspec",
+      "index": 72,
+      "isaccumulate": false,
+      "isshow": false,
+      "isstorage": false,
+      "moduleType": "properties",
+      "name": "包装规格",
+      "required": true,
+      "updateAt": "1657355986887"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "dis": [
+          {
+            "data": "2",
+            "key": "0000",
+            "undefined": "2"
+          }
+        ]
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 100000000000000000000,
+          "min": 0,
+          "precision": 3,
+          "step": 0,
+          "unit": ""
+        },
+        "type": "long"
+      },
+      "devicetype": "product",
+      "identifier": "product_mhour",
+      "index": 73,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "时长",
+      "required": true,
+      "updateAt": "1657355891034"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "afn": "",
+        "byteType": "",
+        "bytelen": "",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "da": "",
+        "data": "null",
+        "dt": "",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "dis": [
+          {
+            "data": "2",
+            "key": "0000",
+            "undefined": "2"
+          }
+        ]
+      },
+      "dataType": {
+        "das": [],
+        "size": 50,
+        "specs": {},
+        "type": "text"
+      },
+      "devicetype": "product",
+      "identifier": "product_machine",
+      "index": 74,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "机台",
+      "required": true,
+      "updateAt": "1658393152709"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "afn": "",
+        "byteType": "",
+        "bytelen": "",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "da": "",
+        "data": "null",
+        "dt": "",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "dis": [
+          {
+            "data": "2",
+            "key": "0000",
+            "undefined": "2"
+          }
+        ]
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 100000,
+          "min": 0,
+          "precision": 3,
+          "step": 0.01,
+          "unit": ""
+        },
+        "type": "float"
+      },
+      "devicetype": "product",
+      "identifier": "product_fmater",
+      "index": 75,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "废料",
+      "required": true,
+      "updateAt": "1658393139619"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "afn": "",
+        "byteType": "",
+        "bytelen": "",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "da": "",
+        "data": "null",
+        "dt": "",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "dis": [
+          {
+            "data": "2",
+            "key": "0000",
+            "undefined": "2"
+          }
+        ]
+      },
+      "dataType": {
+        "das": [],
+        "size": 50,
+        "specs": {},
+        "type": "text"
+      },
+      "devicetype": "product",
+      "identifier": "product_cdate",
+      "index": 76,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "日期",
+      "required": true,
+      "updateAt": "1658393126716"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "afn": "",
+        "byteType": "",
+        "bytelen": "",
+        "collection": "%%",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "da": "",
+        "data": "null",
+        "dt": "",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "dis": [
+          {
+            "data": "2",
+            "key": "0000",
+            "undefined": "2"
+          }
+        ]
+      },
+      "dataType": {
+        "das": [],
+        "size": 50,
+        "specs": {},
+        "type": "text"
+      },
+      "devicetype": "product",
+      "identifier": "product_dingdan",
+      "index": 77,
+      "isaccumulate": false,
+      "isshow": false,
+      "isstorage": false,
+      "moduleType": "properties",
+      "name": "订单号",
+      "required": true,
+      "updateAt": "1657356350441"
+    }
+  ],
+  "services": [],
+  "tags": []
+}
