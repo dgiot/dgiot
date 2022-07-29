@@ -31,6 +31,7 @@
 properties_report(ProductId, DevAddr, Payload) when is_map(Payload) ->
 %%    io:format("~s ~p ProductId ~p, DevAddr ~p, Payload: ~p ~n", [?FILE, ?LINE, ProductId, DevAddr, Payload]),
     NewPload = parse_payload(ProductId, Payload),
+    dgiot_device_profile:publish(ProductId, DevAddr, NewPload),
     dgiot_task:save_td(ProductId, DevAddr, NewPload, #{});
 
 properties_report(ProductId, DevAddr, Payload) ->
