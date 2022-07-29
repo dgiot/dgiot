@@ -784,7 +784,7 @@
       "dataType": {
         "das": [],
         "specs": {
-          "max": 1e+20,
+          "max": 1e20,
           "min": 0,
           "precision": 3,
           "step": 0,
@@ -1735,7 +1735,7 @@
       "dataType": {
         "das": [],
         "specs": {
-          "max": 1e+20,
+          "max": 1e20,
           "min": 0,
           "precision": 3,
           "step": 0,
@@ -1788,7 +1788,7 @@
       "dataType": {
         "das": [],
         "specs": {
-          "max": 1e+20,
+          "max": 1e20,
           "min": 0,
           "precision": 3,
           "step": 0,
@@ -1841,7 +1841,7 @@
       "dataType": {
         "das": [],
         "specs": {
-          "max": 1e+20,
+          "max": 1e20,
           "min": 0,
           "precision": 3,
           "step": 0,
@@ -1894,7 +1894,7 @@
       "dataType": {
         "das": [],
         "specs": {
-          "max": 1e+20,
+          "max": 1e20,
           "min": 0,
           "precision": 3,
           "step": 0,
@@ -1947,7 +1947,7 @@
       "dataType": {
         "das": [],
         "specs": {
-          "max": 1e+20,
+          "max": 1e20,
           "min": 0,
           "precision": 3,
           "step": 0,
@@ -2000,7 +2000,7 @@
       "dataType": {
         "das": [],
         "specs": {
-          "max": 1e+20,
+          "max": 1e20,
           "min": 0,
           "precision": 3,
           "step": 0,
@@ -3575,7 +3575,7 @@
       "dataType": {
         "das": [],
         "specs": {
-          "max": 1e+20,
+          "max": 1e20,
           "min": 0,
           "precision": 3,
           "step": 0,
