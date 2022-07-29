@@ -48,7 +48,6 @@ swagger_factory() ->
     {Status :: dgiot_req:http_status(), Headers :: map(), Body :: map(), Req :: dgiot_req:req()}.
 
 handle(OperationID, Args, Context, Req) ->
-    io:format("~s ~p OperationID ~p ~n", [?FILE, ?LINE, OperationID]),
     Headers = #{},
     case catch do_request(OperationID, Args, Context, Req) of
         {ErrType, Reason} when ErrType == 'EXIT'; ErrType == error ->
@@ -169,6 +168,7 @@ do_request(get_data, #{<<"objectId">> := DeviceId, <<"type">> := Type, <<"where"
     case dgiot_product_tdengine:get_channel(SessionToken) of
         {error, Error} -> {error, Error};
         {ok, Channel} ->
+%%            io:format("~s ~p Channel= ~p ~n",[?FILE,?LINE,Channel]),
             case dgiot_factory_data:get_work_sheet(Type, Channel, DeviceId, Where, Limit, Skip,New) of
                 {ok, {Total, Res}} ->
                     {ok, #{<<"status">> => 0, msg => <<"数据请求成功"/utf8>>, <<"data">> => #{<<"total">> => Total, <<"items">> => Res}}};

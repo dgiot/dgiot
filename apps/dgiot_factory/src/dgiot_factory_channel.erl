@@ -66,7 +66,7 @@ start(ChannelId, ChannelArgs) ->
     dgiot_channelx:add(?TYPE, ChannelId, ?MODULE, ChannelArgs).
 
 %% 通道初始化
-init(?TYPE, ChannelId,  Args) ->
+init(?TYPE, ChannelId, Args) ->
     State = #state{
         id = ChannelId,
         env = Args
@@ -76,7 +76,7 @@ init(?TYPE, ChannelId,  Args) ->
     dgiot_parse_hook:subscribe(<<"Device/*">>, delete, ChannelId),
     {ok, State, []}.
 
-handle_init( State) ->
+handle_init(State) ->
     {ok, State}.
 
 %% 通道消息处理,注意：进程池调用
@@ -91,27 +91,32 @@ handle_message({sync_parse, _Pid, 'after', post, Token, <<"Device">>, QueryData}
 
 
 
-%%handle_message({sync_parse, _Pid, 'before', put, Token, <<"Device">>, #{<<"content">> := Content,<<"id">> := DeviceId } = _QueryData},  #state{env =#{<<"product">> :=Product}} =State) ->
-    handle_message({sync_parse, _Pid, 'before', put, Token, <<"Device">>, #{<<"content">> := Content,<<"id">> := DeviceId } = _QueryData},  State) ->
-%%    lists:foldl(
-%%        fun(X,_)->
-%%            L = tuple_to_list(X),
-%%            io:format("~s ~p length = ~p ~n",[?FILE,?LINE,length(L)]),
-%%            F = lists:nth(1,L),
-%%            io:format("~s ~p F = ~p ~n",[?FILE,?LINE,F])
-%%            lists:foldl(
-%%                fun(K,_)->
-%%                    io:format("~s ~p Product= ~p ~n",[?FILE,?LINE,is_map(K)])
-%%            end,[],L)
-%%    end,[],Product),
-    FlatMap = dgiot_map:flatten(Content),
-    case Content of
-        #{<<"person">>:= #{<<"type">> :=Type}} ->
-            dgiot_factory_data:handle_data(DeviceId,Type,FlatMap#{<<"persion_sessiontoken">> => Token});
+handle_message({sync_parse, _Pid, 'before', put, Token, <<"Device">>, #{<<"content">> := Content, <<"id">> := DeviceId} = _QueryData}, State) ->
+    case dgiot_device_cache:lookup(DeviceId) of
+        {ok, #{<<"productid">> := ProductId}} ->
+            case Content of
+                #{<<"person">> := #{<<"type">> := Type}} ->
+                    FlatMap = dgiot_map:flatten(Content),
+
+
+%%                    case dgiot_hook:run_hook({factory, save_data}, [ProductId, DeviceId, Type, FlatMap#{<<"persion_sessiontoken">> => Token}]) of
+                    case dgiot_factory_data:handel_data([ProductId, DeviceId, Type, FlatMap#{<<"persion_sessiontoken">> => Token}]) of
+                        {ok, [{ok, _}]} ->
+                            {ok, State};
+                        ok ->
+                            {ok, State};
+                        _ ->
+                            dgiot_parse_hook:publish(_Pid, #{}),
+                            {'EXIT', error}
+                    end;
+                _ ->
+                    {'EXIT', error}
+            end;
         _ ->
-            pass
-    end,
-    {ok, State};
+            {'EXIT', error}
+    end;
+
+
 
 
 handle_message(Message, State) ->
@@ -121,48 +126,3 @@ handle_message(Message, State) ->
 stop(ChannelType, ChannelId, _State) ->
     ?LOG(warning, "Channel[~p,~p] stop", [ChannelType, ChannelId]),
     ok.
-
-
-
-%%handle_content(Content,DeviceId)->
-%%    case dgiot_device_cache:lookup(DeviceId) of
-%%        {ok,#{<<"productid">> = ProductId}} ->
-%%            SheetList = get_sheetlist(ProductId),
-%%        maps:fold(
-%%            fun(K,V,Acc) ->
-%%                case lists:member(SheetList, K) of
-%%                    true ->
-%%
-%%                        Acc;
-%%                    false ->
-%%                        Acc
-%%                end
-%%
-%%        end ,[],Content);
-%%        _ ->
-%%            pass
-%%    end.
-%%
-
-%%get_sheetlist(ProductId) ->
-%%    case dgiot_product:lookup_prod(ProductId) of
-%%        {ok, #{<<"thing">> := #{<<"properties">> := PropertiesList}}} ->
-%%            Res =lists:foldl(
-%%                fun(X, Acc) ->
-%%                    case maps:find(<<"devicetype">>, X) of
-%%                        {ok, Sheet} ->
-%%                            case lists:member(Sheet, Acc) of
-%%                                true ->
-%%                                    Acc;
-%%                                false ->
-%%                                    Acc ++ [Sheet]
-%%                            end;
-%%                        _ ->
-%%                            Acc
-%%                    end
-%%                end, [], PropertiesList),
-%%            lists:delete(<<"person">>,Res);
-%%        _ ->
-%%            []
-%%
-%%    end.

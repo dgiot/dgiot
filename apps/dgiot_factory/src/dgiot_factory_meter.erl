@@ -41,8 +41,10 @@ get_body(FileName) ->
 test(Payload, ObjectId) ->
     case updata(Payload, ObjectId) of
         {ok, Body} ->
-            Url = "http://king.jeenor.com:8008/k3cloud/Kingdee.BOS.WebApi.ServicesStub.DynamicFormService.Save.common.kdsvc",
-            Timestamp = dgiot_utils:to_list(dgiot_datetime:nowstamp()),
+%%            io:format("~s ~p Body= ~p ~n",[?FILE,?LINE,Body]),
+    Url = "http://king.jeenor.com:8008/k3cloud/Kingdee.BOS.WebApi.ServicesStub.DynamicFormService.Save.common.kdsvc",
+    Timestamp = dgiot_utils:to_list(dgiot_datetime:nowstamp()),
+%%    Body= get_body("Newsave"),
 %%    Path_url = "%2Fk3cloud%2FKingdee.BOS.WebApi.ServicesStub.DynamicFormService.ExecuteBillQuery.common.kdsvc",
     Path_url = "%2Fk3cloud%2FKingdee.BOS.WebApi.ServicesStub.DynamicFormService.Save.common.kdsvc", %save路径
     App_data = "62a939f4df3245,Administrator,2052,0",
@@ -179,7 +181,6 @@ updata(Payload, DeviceId) ->
                         Acc#{<<"FEntity">> => [FEntity]}
                 end
                                    end, #{}, Model),
-
             NewData = maps:update(<<"Model">>, Modelvalue, Data),
             NewJson = maps:update(<<"data">>, NewData, Json),
 %%            io:format("~s  ~p  NewJson= ~ts ~n", [?FILE, ?LINE, unicode:characters_to_list(jiffy:encode(NewJson))]),
@@ -187,7 +188,3 @@ updata(Payload, DeviceId) ->
         _ ->
             error
     end.
-
-
-
-
