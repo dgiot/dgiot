@@ -676,8 +676,3 @@ add_data(Channel, ProductId, DevAddr, Data) ->
         _ ->
             error
     end.
-
-
-
-
-

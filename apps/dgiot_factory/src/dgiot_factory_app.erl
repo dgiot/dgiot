@@ -42,4 +42,3 @@ start_hook() ->
 
 stop_hook() ->
     dgiot_hook:remove({factory, save_data}).
-
