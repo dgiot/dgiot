@@ -177,5 +177,3 @@ handle_message(_Message, State) ->
 stop(_ChannelType, ChannelId, _State) ->
     dgiot_client:stop(ChannelId),
     ok.
-
-

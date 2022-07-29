@@ -105,4 +105,3 @@ select_from(#select{from = From}) ->
 -spec(select_where(select()) -> tuple()).
 select_where(#select{where = Where}) ->
     Where.
-

@@ -167,4 +167,3 @@ get_next_pn(#dclient{client = CLient, clock = #dclock{round = Round}, userdata =
             NewState = State#dclient{userdata = UserData#device_task{product = NextProductId, devaddr = NextDevAddr, dique = DisQue}},
             send_msg(NewState)
     end.
-

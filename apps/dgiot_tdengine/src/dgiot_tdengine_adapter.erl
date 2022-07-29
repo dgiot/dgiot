@@ -84,5 +84,3 @@ format_thing(Things) -> format_thing(Things, #{}).
 format_thing([], Acc) -> Acc;
 format_thing([#{<<"value">> := Value, <<"identifier">> := Id} | Other], Acc) ->
     format_thing(Other, Acc#{Id => Value}).
-
-

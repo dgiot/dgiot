@@ -856,5 +856,3 @@ get_rules_role(Rules) ->
             ?LOG(info, "Other ~p", [Other]),
             {error, Other}
     end.
-
-

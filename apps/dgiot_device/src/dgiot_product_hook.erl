@@ -83,4 +83,3 @@ delete('after', ProductId) ->
 
 delete(_, _) ->
     pass.
-

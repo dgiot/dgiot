@@ -123,4 +123,3 @@
 {default, "https://prod.iotn2n.com"},
 {datatype, string}
 ]}.
-

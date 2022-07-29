@@ -52,8 +52,3 @@ decode(aes_cbc128, AES_KEY, AES_IV, Bin) ->
         _ ->
             {error, 1102}
     end.
-
-
-
-
-

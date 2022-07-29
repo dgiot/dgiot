@@ -1082,6 +1082,3 @@ getuser(#{<<"objectId">> := RoleId, <<"name">> := Depname} = Role) ->
         {ok, SubChildren} ->
             #{<<"objectId">> => RoleId, <<"name">> => Depname, <<"label">> => Depname, <<"children">> => SubChildren, <<"userlist">> => NewUserList}
     end.
-
-
-

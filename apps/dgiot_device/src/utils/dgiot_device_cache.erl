@@ -391,6 +391,3 @@ delete(DeviceId) ->
 delete(ProductId, DevAddr) ->
     DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
     dgiot_mnesia:delete(DeviceId).
-
-
-

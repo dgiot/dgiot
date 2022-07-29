@@ -135,4 +135,3 @@ get_product(ChannelId) ->
 get_deviceinfo(X) ->
     #{<<"objectId">> := DeviceId, <<"devaddr">> := Devaddr} = X,
     {DeviceId, Devaddr}.
-

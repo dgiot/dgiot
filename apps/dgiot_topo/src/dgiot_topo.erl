@@ -98,4 +98,3 @@ push(ProductId, Devaddr, DeviceId, Payload) ->
     Data = #{<<"productid">> => ProductId, <<"devaddr">> => Devaddr, <<"base64">> => Base64},
     Data1 = dgiot_utils:to_list(jsx:encode(Data)),
     httpc:request(post, {Url1, [], "application/json", Data1}, [], []).
-

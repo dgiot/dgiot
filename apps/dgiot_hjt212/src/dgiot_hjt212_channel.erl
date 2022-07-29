@@ -146,5 +146,3 @@ get_app(#{<<"ACL">> := Acl}) ->
                 end,
     [<<"role:", App/binary>> | _] = lists:filter(Predicate, maps:keys(Acl)),
     App.
-
-

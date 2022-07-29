@@ -161,7 +161,3 @@ handle_message(_Message, State) ->
 stop(ChannelType, ChannelId, _State) ->
     ?LOG(info, "channel stop ~p,~p", [ChannelType, ChannelId]),
     ok.
-
-
-
-

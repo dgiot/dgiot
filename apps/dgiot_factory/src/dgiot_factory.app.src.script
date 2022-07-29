@@ -22,4 +22,3 @@ case os:getenv("EMQX_DEPS_DEFAULT_VSN") of
            {application, App, AppConf0}
         end || Conf = {application, App, AppConf} <- CONFIG]
 end.
-

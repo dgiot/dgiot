@@ -139,4 +139,3 @@ log_fun(ChannelId) ->
             end,
         dgiot_bridge:send_log(ChannelId, "~s", [<<Type/binary, " ", Data/binary>>])
     end.
-

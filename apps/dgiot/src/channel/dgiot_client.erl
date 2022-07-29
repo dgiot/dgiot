@@ -395,4 +395,3 @@ notify(_Task, Channel, Type) ->
     dgiot_channelx:do_message(dgiot_utils:to_binary(Channel), Type),
     timer:sleep(50),
     dgiot_data:insert({Type, Channel}, Type).
-

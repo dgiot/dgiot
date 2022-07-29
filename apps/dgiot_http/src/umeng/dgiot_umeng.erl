@@ -734,18 +734,3 @@ triggeralarm(DeviceId) ->
         _ ->
             pass
     end.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

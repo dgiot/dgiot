@@ -79,6 +79,3 @@ get_hooks() ->
 		{ok, Hooks} -> Hooks;
 		{error, not_find} -> #{}
 	end.
-
-
-

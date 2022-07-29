@@ -17,4 +17,3 @@
   {default, baidu},
   {datatype, string}
 ]}.
-

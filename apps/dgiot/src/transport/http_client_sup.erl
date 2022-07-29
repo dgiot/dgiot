@@ -26,7 +26,3 @@ start_link(Name) ->
 init([]) ->
     ChildSpec = [dgiot:child_spec(dgiot_http_client, worker)],
     {ok, {{simple_one_for_one, 5, 10}, ChildSpec}}.
-
-
-
-

@@ -259,4 +259,3 @@
 -record(a1_645data, { di :: di_645data(),
     da
 }).
-

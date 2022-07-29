@@ -382,4 +382,3 @@ handle_result(Result, Map) ->
         {error, Reason} ->
             {error, Reason}
     end.
-

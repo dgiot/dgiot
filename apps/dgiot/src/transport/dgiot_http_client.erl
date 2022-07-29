@@ -213,4 +213,3 @@ request(Method, Request) ->
         {error, Reason} ->
             {error, Reason}
     end.
-

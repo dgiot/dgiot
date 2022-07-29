@@ -603,4 +603,3 @@ normalize_record({attribute, La, record, {Record, Fields}} = Form) ->
     end;
 normalize_record(Form) ->
     {Form, []}.
-

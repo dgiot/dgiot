@@ -120,4 +120,3 @@ handle_message(_Message, State) ->
 
 stop(_ChannelType, _ChannelId, _State) ->
     ok.
-

@@ -167,6 +167,3 @@ do_request(get_devicecard_deviceid, #{<<"deviceid">> := DeviceId} = Args, #{<<"s
 %%  服务器不支持的API接口
 do_request(_OperationId, _Args, _Context, _Req) ->
     {error, <<"Not Allowed.">>}.
-
-
-

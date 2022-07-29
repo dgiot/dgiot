@@ -260,4 +260,3 @@ do_request(get_usertree, _Arg, #{<<"sessionToken">> := SessionToken} = _Context,
 do_request(_OperationId, _Args, _Context, _Req) ->
     ?LOG(info, "_Args ~p", [_Args]),
     {error, <<"Not Allowed.">>}.
-

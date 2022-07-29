@@ -40,4 +40,3 @@ logout() ->
 send() ->
     Result = dgiot_dlink_client:say_hello(#{name => <<"Xiao Ming">>}, #{channel => channel}),
     io:format("Result ~p ~n", [Result]).
-
