@@ -13,11 +13,12 @@
 # limitations under the License.
 """The Python implementation of the GRPC helloworld.Greeter server."""
 
-from concurrent import futures
 import logging
-import grpc
+from concurrent import futures
+
 import dlink_pb2
 import dlink_pb2_grpc
+import grpc
 
 
 class Dlink(dlink_pb2_grpc.DlinkServicer):

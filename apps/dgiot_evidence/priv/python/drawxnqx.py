@@ -1,12 +1,13 @@
-import matplotlib.pyplot as plt
-from pylab import mpl
-import math
-import numpy as np
-from mpl_toolkits.axisartist.parasite_axes import HostAxes, ParasiteAxes
-import time
-import sys
 import base64
 import json
+import math
+import sys
+import time
+
+import matplotlib.pyplot as plt
+import numpy as np
+from mpl_toolkits.axisartist.parasite_axes import HostAxes, ParasiteAxes
+from pylab import mpl
 
 """完成拟合曲线参数计算前相应变量的计算"""
 
