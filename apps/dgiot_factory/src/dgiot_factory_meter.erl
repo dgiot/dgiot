@@ -16,7 +16,6 @@
 
 
 
-
 get_body(FileName) ->
     {file, Here} = code:is_loaded(?MODULE),
     Dir = dgiot_httpc:url_join([filename:dirname(filename:dirname(Here)), "/priv/json/"]),
