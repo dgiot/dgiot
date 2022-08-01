@@ -18,7 +18,7 @@
 -author("jonhl").
 -include_lib("dgiot/include/logger.hrl").
 -export([store_all/4]).
--export([get_num/2, get_name/2,turn_name/2]).
+-export([get_num/2, get_name/2,turn_name/2,turn_num/3]).
 
 
 store_all(_, DeviceId, _, <<"false">>) ->
@@ -101,22 +101,59 @@ case dgiot_parse:get_object(<<"Dict">>, Id) of
 end.
 
 turn_name(Data, ThingMap) when is_list(Data) ->
-maps:fold(
-    fun(K, V, Acc) ->
-        case V of
-            <<"enum">> ->
-                case maps:find(K, Acc) of
-                    {ok, Num} ->
-                        case get_name(K, Num) of
-                            error ->
-                                Acc;
-                            Map ->
-                                maps:merge(Acc, Map)
-                        end;
-                    _ ->
-                        Acc
-                end;
-            _ ->
-                Acc
-        end
-    end, Data, ThingMap).
+    lists:foldl(
+        fun(X,ACC)->
+            ACC++turn_name(X, ThingMap)
+    end,[],Data);
+
+turn_name(Data, ThingMap) when is_map(Data)->
+    Res = maps:fold(
+        fun(K, V, Acc) ->
+            case V of
+                <<"enum">> ->
+                    case maps:find(K, Acc) of
+                        {ok, Num} ->
+                            case get_name(K, Num) of
+                                error ->
+                                    Acc;
+                                Map ->
+                                    maps:merge(Acc, Map)
+                            end;
+                        _ ->
+                            Acc
+                    end;
+                _ ->
+                    Acc
+            end
+        end, Data, ThingMap),
+    [Res];
+
+turn_name(Data, _) ->
+    Data.
+
+turn_num(FlatMap,ProductId,Type)->
+    case dgiot_factory_getdata:get_ThingMap(Type, ProductId) of
+        {ok, ThingMap} ->
+            maps:fold(
+                fun(K, V, Acc) ->
+                    case V of
+                        <<"enum">> ->
+                            case maps:find(K, Acc) of
+                                {ok, Data} ->
+                                    case dgiot_factory_utils:get_num(K, Data) of
+                                        error ->
+                                            Acc;
+                                        Map ->
+                                            maps:merge(Acc, Map)
+                                    end;
+                                _ ->
+                                    Acc
+                            end;
+                        _ ->
+                            Acc
+                    end
+
+                end, FlatMap, ThingMap);
+        _ ->
+            FlatMap
+    end.
