@@ -123,7 +123,6 @@ do_request(get_worker_shift, #{<<"depart">> := Depart, <<"date">> := Data, <<"wo
                     {error, Msg}
             end;
         _ ->
-
             case dgiot_factory_shift:get_shift(Data, Workshop) of
                 {ok, Res} ->
                     {Total, Result} = dgiot_factory_getdata:filter_data(Limit, Skip, Res),

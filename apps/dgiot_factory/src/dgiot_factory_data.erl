@@ -112,9 +112,9 @@ handle_product_condition(_Channel, ProductId, DeviceId, DevAddr, _Type, #{<<"pro
 
 handle_product_condition(_Channel, ProductId, DeviceId, DevAddr, _Type, #{<<"product_condition">> := 3, <<"product_id">> := Product_id, <<"product_pnumber">> := Pnumber} = Payload) ->
     dgiot_task:save_td_no_match(ProductId, DevAddr, Payload#{<<"product_id">> => dgiot_utils:to_list(Product_id)}, #{}),
-    handle_storehouse(3, Pnumber, DeviceId),
+    handle_storehouse(3, Pnumber, DeviceId);
 %%            handle_dingdan(DeviceId),
-    dgiot_jienuo_meter:test(Payload, DeviceId);
+%%    dgiot_jienuo_meter:test(Payload, DeviceId);
 
 handle_product_condition(_, _, _, _, _, _) ->
 
