@@ -8,8 +8,7 @@
         ],
         "summary": "获取工厂日历",
         "description": "获取工厂日历",
-        "parameters": [
-        ],
+        "parameters": [],
         "responses": {
           "200": {
             "description": ""
@@ -312,11 +311,3 @@
     }
   ]
 }
-
-
-
-
-
-
-
-
