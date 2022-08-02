@@ -68,7 +68,7 @@ get_workshop(Tree, Acc,Department) ->
         _ ->
             lists:foldl(
                 fun(X, ACC) ->
-                    case maps:get(<<"alias">>, X, <<"">>) of
+                    case maps:get(<<"depname">>, X, <<"">>) of
                         Department ->
                             Child = maps:get(<<"children">>, X, []),
                             lists:foldl(
