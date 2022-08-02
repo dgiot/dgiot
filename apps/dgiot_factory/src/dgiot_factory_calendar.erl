@@ -38,7 +38,6 @@
 %%dgiot_datetime:format("HH:NN:SS")
 
 post_calendar(Newcalendar)->
-    io:format("~s ~p Newcalendar =~p ~n",[?FILE,?LINE,Newcalendar]),
         case dgiot_factory_calendar:get_calendar() of
             {ok,ObjectId,OldCalendar} ->
                 Merged_Calendar = maps:fold(
@@ -56,21 +55,17 @@ post_calendar(Newcalendar)->
                 dgiot_parse:update_object(<<"Dict">>,ObjectId,#{<<"data">> => Merged_Calendar});
             _ ->
                 pass
-        end
-.
+        end.
 
 get_new_other(OldCalendar, NewOther) ->
     case maps:find(<<"other">>, OldCalendar) of
         {ok, Old} ->
              maps:fold(
                 fun(K, V, Acc) ->
-                    io:format("~s ~p Acc = ~p ~n",[?FILE,?LINE,Acc]),
                     case maps:size(V) of
                         0 ->
-                            io:format("~s ~p herep ~n",[?FILE,?LINE]),
                             maps:remove(K, Acc);
                         _ ->
-                            io:format("~s ~p herep ~n",[?FILE,?LINE]),
                             Acc#{K => V}
                     end
                 end, Old, NewOther);
@@ -84,7 +79,6 @@ get_calendar()->
         {ok,#{<<"results">> := Results}} ->
             case length(Results) of
                 1 ->
-
                     #{<<"objectId">> := ObjectId,<<"data">> :=Calendar} = lists:nth(1,Results),
                     {ok,ObjectId,Calendar};
                 0 ->
