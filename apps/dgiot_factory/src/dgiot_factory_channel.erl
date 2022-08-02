@@ -97,10 +97,7 @@ handle_message({sync_parse, _Pid, 'before', put, Token, <<"Device">>, #{<<"conte
             case Content of
                 #{<<"person">> := #{<<"type">> := Type}} ->
                     FlatMap = dgiot_map:flatten(Content),
-
-
-%%                    case dgiot_hook:run_hook({factory, save_data}, [ProductId, DeviceId, Type, FlatMap#{<<"persion_sessiontoken">> => Token}]) of
-                    case dgiot_factory_data:handel_data([ProductId, DeviceId, Type, FlatMap#{<<"persion_sessiontoken">> => Token}]) of
+                    case dgiot_factory_data:handle_data([ProductId, DeviceId, Type, FlatMap#{<<"person_sessiontoken">> => Token,<<"person_deviceid">>=>DeviceId} ]) of
                         {ok, [{ok, _}]} ->
                             {ok, State};
                         ok ->

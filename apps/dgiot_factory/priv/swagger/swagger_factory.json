@@ -90,6 +90,18 @@
             "in": "query",
             "type": "string",
             "description": "查询的车间id"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "type": "integer",
+            "description": "limit"
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "type": "integer",
+            "description": "skip"
           }
         ],
         "responses": {
@@ -150,45 +162,16 @@
       }
     },
     "/data": {
-      "post": {
-        "summary": "存储数据到td库",
-        "description": "存储数据到td库",
-        "parameters": [
-          {
-            "in": "body",
-            "name": "data",
-            "description": "工单内容",
-            "required": true
-          }
-        ],
-        "consumes": [
-          "application/json"
-        ],
-        "responses": {
-          "200": {
-            "description": "Returns operation status"
-          },
-          "400": {
-            "description": "Bad Request"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "403": {
-            "description": "Forbidden"
-          },
-          "500": {
-            "description": "Server Internal error"
-          }
-        },
-        "tags": [
-          "factory"
-        ]
-      },
       "get": {
         "summary": "查询工单信息",
         "description": "查询工单信息",
         "parameters": [
+          {
+            "description": "产品类型",
+            "in": "query",
+            "name": "productId",
+            "type": "string"
+          },
           {
             "description": "工单id",
             "in": "query",
