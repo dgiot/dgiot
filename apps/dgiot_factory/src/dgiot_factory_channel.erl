@@ -22,6 +22,7 @@
 -include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
 -include("dgiot_factory.hrl").
 -define(TYPE, <<"FACTORY">>).
+-define(SHEETID(SHEET), <<SHEET/binary, "_id">>).
 -define(MAX_BUFF_SIZE, 1024).
 -record(state, {id, mod, product, env = #{}}).
 %% API
@@ -29,7 +30,7 @@
 
 %% Channel callback
 -export([init/3, handle_init/1, handle_event/3, handle_message/2, stop/3]).
-
+-export([save_data/4,get_id/2]).
 
 %% 注册通道类型
 -channel_type(#{
@@ -97,15 +98,9 @@ handle_message({sync_parse, _Pid, 'before', put, Token, <<"Device">>, #{<<"conte
             case Content of
                 #{<<"person">> := #{<<"type">> := Type}} ->
                     FlatMap = dgiot_map:flatten(Content),
-                    case dgiot_factory_data:handle_data([ProductId, DeviceId, Type, FlatMap#{<<"person_sessiontoken">> => Token,<<"person_deviceid">>=>DeviceId} ]) of
-                        {ok, [{ok, _}]} ->
-                            {ok, State};
-                        ok ->
-                            {ok, State};
-                        _ ->
-                            dgiot_parse_hook:publish(_Pid, #{}),
-                            {'EXIT', error}
-                    end;
+                     save_data(ProductId, DeviceId, Type, FlatMap#{<<"persion_sessiontoken">> => Token}),
+%%                    dgiot_factory_data:handle_data([ProductId, DeviceId, Type, FlatMap#{<<"persion_sessiontoken">> => Token}]),
+                {ok, State};
                 _ ->
                     {'EXIT', error}
             end;
@@ -123,3 +118,43 @@ handle_message(Message, State) ->
 stop(ChannelType, ChannelId, _State) ->
     ?LOG(warning, "Channel[~p,~p] stop", [ChannelType, ChannelId]),
     ok.
+
+save_data(ProductId, DeviceId, Type, Payload) ->
+    NumData = dgiot_factory_utils:turn_num(Payload, ProductId, Type),
+    case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+        {ok, #{<<"devaddr">> := DevAddr}} ->
+            case dgiot_hook:run_hook({factory, ProductId}, [ProductId, DeviceId, Type, NumData]) of
+                {ok, Res} ->
+                    case length(Res) of
+                        1 ->
+                            F = lists:nth(1, Res),
+                            case F of
+                                {ok, NewPayload} ->
+                                    Id = maps:get(?SHEETID(Type), NewPayload, get_id(DevAddr, Type)),
+
+                                    dgiot_task:save_td_no_match(ProductId, DevAddr, NewPayload#{?SHEETID(Type) => Id}, #{});
+                                _ ->
+                                    {error, <<"run_hook_failed">>}
+                            end;
+                        _ ->
+                            {error, <<"run_hook_failed">>}
+                    end;
+                {error, not_find} ->
+                    io:format("~s ~p here~n",[?FILE,?LINE]),
+                    Id = maps:get(?SHEETID(Type), Payload, get_id(DevAddr, Type)),
+                    dgiot_task:save_td_no_match(ProductId, DevAddr, Payload#{?SHEETID(Type) => Id}, #{});
+
+                _ ->
+                    {error, <<"run_hook_failed">>}
+            end;
+        _ ->
+            {error, <<"not_fin_device">>}
+    end.
+
+
+get_id(DevAddr, Type) ->
+    Time = dgiot_utils:to_binary(dgiot_datetime:timestamp()),
+    Bin = dgiot_utils:to_binary(Type),
+    <<ObjID:10/binary, _/binary>> = dgiot_utils:to_md5(<<Bin/binary, DevAddr/binary, Time/binary>>),
+    Res = string:to_upper(dgiot_utils:to_list(ObjID)),
+    dgiot_utils:to_binary(Res).
