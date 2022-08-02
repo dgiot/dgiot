@@ -29,7 +29,6 @@ get_work_sheet(ProductId, Type, Channel, DeviceId, Where, Limit, Skip, New) ->
                             {Total, Res} = filter_data(Limit, Skip, HistoryData),
                             MergeData = merge_data(ParseData, Res, DeviceId, ThingMap),
                             NamedData = dgiot_factory_utils:turn_name(MergeData, ThingMap),
-                            io:format("~s ~p NamedData= ~p ~n",[?FILE,?LINE,NamedData]),
                             {ok, {Total, NamedData}};
                         _ ->
                             error
