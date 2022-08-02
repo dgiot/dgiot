@@ -138,4 +138,3 @@ check_laying_off(_Type,Default)->
 
 check_work_shift(_Default)->
     {ok}.
-
