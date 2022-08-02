@@ -42,9 +42,9 @@
                   "description": "自定义",
                   "type": "string"
                 }
-                }
               }
             }
+          }
         ],
         "consumes": [
           "application/json"
@@ -84,6 +84,12 @@
             "in": "query",
             "type": "string",
             "description": "查询日期"
+          },
+          {
+            "name": "depart",
+            "in": "query",
+            "type": "string",
+            "description": "查询部门"
           },
           {
             "name": "workshop",
@@ -305,7 +311,6 @@
       "description": "factory"
     }
   ]
-
 }
 
 
