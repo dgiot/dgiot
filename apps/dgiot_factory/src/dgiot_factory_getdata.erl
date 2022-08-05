@@ -26,6 +26,7 @@ get_work_sheet(ProductId, Type, Channel, DeviceId, Where, Limit, Skip, New) ->
                 {ok, ParseData} ->
                     case get_history(Channel, ProductId, DeviceId, ThingMap, Td, Limit, Skip, Type, New) of
                         {ok, #{<<"results">> := HistoryData}} ->
+                            io:format("~s ~p DeviceId= ~p ~n",[?FILE,?LINE,DeviceId]),
                             {Total, Res} = filter_data(Limit, Skip, HistoryData),
                             MergeData = merge_data(ParseData, Res, DeviceId, ThingMap),
                             NamedData = dgiot_factory_utils:turn_name(MergeData, ThingMap),
@@ -34,7 +35,7 @@ get_work_sheet(ProductId, Type, Channel, DeviceId, Where, Limit, Skip, New) ->
                             error
                     end;
                 _ ->
-                    {ok, <<"nodata">>}
+                    {ok, {0,[]}}
             end;
         _ ->
             {error, not_find_thing}
@@ -75,7 +76,6 @@ search_parse(DeviceList, Parse, Type) when is_list(DeviceList) ->
 search_parse(DeviceId, undefined, Type) ->
     case dgiot_parse:get_object(<<"Device">>, DeviceId) of
         {ok, #{<<"content">> := #{Type := Data}}} ->
-
             FlatternMap = dgiot_map:flatten(#{Type => Data}),
             {ok, FlatternMap#{<<"objectId">> => DeviceId}};
         _ ->
@@ -87,13 +87,11 @@ search_parse(DeviceId, Parse, Type) ->
         0 ->
             search_parse(DeviceId, undefined, Type);
         Num ->
-
             case dgiot_parse:get_object(<<"Device">>, DeviceId) of
                 {ok, #{<<"content">> := Content}} ->
                     FlatMap = dgiot_map:flatten(Content),
                     MatchNum = maps:fold(
                         fun(K, V, Acc) ->
-
                             case maps:find(K, FlatMap) of
                                 {ok, V} ->
                                     Acc + 1;
@@ -127,45 +125,29 @@ filter_where(Where, ProductId, Type) ->
                    _ ->
                        jsx:decode(Where)
                end,
-    case dgiot_product:lookup_prod(ProductId) of
-        {ok, #{<<"thing">> := #{<<"properties">> := PropertiesList}}} ->
-            {Parse, Td} = lists:foldl(
-                fun(X, {Parse, Td}) ->
-                    Identifier = maps:get(<<"identifier">>, X, <<"">>),
-                    case lists:member(Identifier, maps:keys(MapWhere)) of
+
+    case get_ThingMap(Type, ProductId) of
+        {ok, ThingMap} ->
+            {Parse, Td} = maps:fold(
+                fun(K,V,{Parse, Td})->
+                    case maps:is_key(K,ThingMap) of
                         true ->
-                            case X of
-                                #{<<"isstorage">> := false, <<"devicetype">> := Type} ->
+                            {Parse, Td#{K => V}};
+                        _ ->
+                            {Parse#{K => V}, Td}
 
-                                    {Parse#{Identifier => maps:get(Identifier, MapWhere)}, Td};
-                                #{<<"isstorage">> := true, <<"devicetype">> := Type} ->
-                                    {Parse, Td#{Identifier => maps:get(Identifier, MapWhere)}};
-                                _ ->
-                                    {Parse, Td}
-
-                            end;
-                        false ->
-                            {Parse, Td}
                     end
-                end, {#{}, #{}}, PropertiesList),
-            TdWithPerson = case lists:member(<<"person">>, maps:keys(MapWhere)) of
+            end,{#{},#{}},MapWhere),
+            TdWithPerson = case maps:is_key(<<"person">>,ThingMap) of
                                true ->
                                    Td#{<<"person">> => maps:get(<<"person">>, MapWhere)};
                                false ->
                                    Td
                            end,
-            case get_ThingMap(Type, ProductId) of
-                {ok, ThingMap} ->
-                    {Parse, TdWithPerson, ThingMap};
-                _ ->
-                    error
-            end;
-
-
+            {Parse, TdWithPerson, ThingMap};
         _ ->
             error
     end.
-
 
 
 get_ThingMap(Type, ProductId) ->
@@ -203,6 +185,7 @@ get_history(Channel, ProductId, DeviceId, ThingMap, Where, _Limit, _Skip, Type, 
             {error, wrong_td_platform};
         _ ->
             DB = dgiot_tdengine_select:format_db(?Database(ProductId)),
+
             TableName = case is_list(DeviceId) of
                             true ->
                                 ?Table(ProductId);
@@ -317,7 +300,7 @@ get_from(<<"true">>, DB, TableName, Type, List) ->
 
     Select = dgiot_utils:to_binary(lists:nthtail(2, Last)),
     SheetId = ?SHEETID(Type),
-    <<"(select ", Select/binary, " from ", DB/binary, TableName/binary, " group by ", SheetId/binary, " ) ">>;
+    <<"( select ", Select/binary, " from ", DB/binary, TableName/binary, " group by ", SheetId/binary, " ) ">>;
 
 get_from(_, DB, TableName, _, _) ->
     <<DB/binary, TableName/binary>>.
