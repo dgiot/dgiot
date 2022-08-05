@@ -19,34 +19,59 @@
 -include_lib("dgiot/include/logger.hrl").
 -export([store_all/5]).
 -export([get_num/2, get_name/2, turn_name/2, turn_num/3]).
+
 store_all(_, _, DeviceId, _, <<"false">>) ->
     dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"realstatus">> => 2});
-
 store_all(ProductId, Channel, DeviceId, Operator, <<"true">>) ->
     case dgiot_factory_getdata:get_work_sheet(ProductId, <<"product">>, Channel, DeviceId, undefined, undefined, 0, <<"true">>) of
         {ok, {_, Res}} ->
+
             lists:foldl(
                 fun(X, _) ->
-                    case maps:get(<<"product_condition">>, X) of
-                        2 ->
-                            dgiot_factory_channel:save_data(ProductId, DeviceId, <<"product">>, X#{<<"product_condition">> := 3, <<"product_storedperson">> => Operator});
-                        _ ->
-                            pass
-                    end
+                    dgiot_factory_channel:save_data(ProductId, DeviceId, <<"product">>, X#{<<"product_condition">> := 3, <<"product_storedperson">> => Operator})
                 end, [], Res),
-            case dgiot_parse:get_object(<<"Device">>, DeviceId) of
-                {ok, #{<<"detail">> := Detail}} ->
-                    EndTime = dgiot_datetime:format("YYYY-MM-DD HH:NN:SS"),
-                    dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"realstatus">> => 8, <<"detail">> => Detail#{<<"taskend">> => EndTime}});
-                _ ->
-                    error
-            end;
+        handle_dingdan(DeviceId, ProductId, Channel);
+        {ok, _} ->
+            io:format("~s ~p DeviceId= ~p ~n", [?FILE, ?LINE, DeviceId]),
+            handle_dingdan(DeviceId, ProductId, Channel);
         _ ->
             error
     end;
 
-store_all(_,_, _, _, _) ->
+store_all(_, _, _, _, _) ->
     error.
+
+handle_dingdan(DeviceId, ProductId, Channel) ->
+    case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+        {ok, #{<<"detail">> := Detail}} ->
+            EndTime = dgiot_datetime:format("YYYY-MM-DD HH:NN:SS"),
+            dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"realstatus">> => 8, <<"detail">> => Detail#{<<"taskend">> => EndTime}}),
+            Res = calculate_jindiedata(ProductId, DeviceId, Channel),
+            dgiot_jienuo_meter:test(Res, DeviceId);
+        _ ->
+            error
+    end.
+calculate_jindiedata(ProductId, DeviceId, Channel) ->
+    case dgiot_factory_getdata:get_work_sheet(ProductId, <<"product">>, Channel, DeviceId, undefined, undefined, 0, <<"true">>) of
+        {ok, {_, Res}} ->
+
+            Product_mhour = lists:foldl(
+                fun(X, Acc) ->
+                    case maps:get(<<"product_mhour">>, X) of
+                        {ok, WorkTime} ->
+                            Acc + WorkTime;
+                        _ ->
+                            Acc
+
+                    end
+                end, 0, Res),
+            #{<<"product_mhour">> => Product_mhour};
+        _ ->
+            error
+    end.
+
+
+ 
 
 
 get_num(K, V) ->
@@ -77,7 +102,6 @@ get_num(K, V) ->
                 _ ->
                     error
             end
-
     end.
 
 get_name(K, Num) ->
