@@ -131,7 +131,6 @@ save_data(ProductId, DeviceId, Type, Payload) ->
                             case F of
                                 {ok, NewPayload} ->
                                     Id = maps:get(?SHEETID(Type), NewPayload, get_id(DevAddr, Type)),
-
                                     dgiot_task:save_td_no_match(ProductId, DevAddr, NewPayload#{?SHEETID(Type) => Id}, #{});
                                 _ ->
                                     {error, <<"run_hook_failed">>}
@@ -140,7 +139,6 @@ save_data(ProductId, DeviceId, Type, Payload) ->
                             {error, <<"run_hook_failed">>}
                     end;
                 {error, not_find} ->
-                    io:format("~s ~p here~n",[?FILE,?LINE]),
                     Id = maps:get(?SHEETID(Type), Payload, get_id(DevAddr, Type)),
                     dgiot_task:save_td_no_match(ProductId, DevAddr, Payload#{?SHEETID(Type) => Id}, #{});
 

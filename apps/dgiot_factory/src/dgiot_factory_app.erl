@@ -22,24 +22,13 @@
 
 %% Application callbacks
 -export([start/2, stop/1]).
--export([start_hook/0,stop_hook/0]).
 
 %%--------------------------------------------------------------------
 %% Application callbacks
 %%--------------------------------------------------------------------
 
 start(_StartType, _StartArgs) ->
-    start_hook(),
     dgiot_factory_sup:start_link().
 
 stop(_State) ->
-    stop_hook(),
     ok.
-
-
-start_hook() ->
-    dgiot_hook:add(one_for_one, {factory, save_data}, fun dgiot_factory_data:handle_data/1).
-
-stop_hook() ->
-    dgiot_hook:remove({factory, save_data}).
-
