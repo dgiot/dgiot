@@ -224,4 +224,3 @@ handle_data(ChannelId, ProductId, Map) ->
         _ ->
             pass
     end.
-
