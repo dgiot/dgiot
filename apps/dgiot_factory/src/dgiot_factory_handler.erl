@@ -151,7 +151,7 @@ do_request(get_data, #{<<"productId">> := undefined, <<"objectId">> := undefined
                             {error, <<"get_data_failed">>}
                     end;
                 _ ->
-                    io:format("~s ~p here~n", [?FILE, ?LINE]),
+
                     {error, <<"notfinddevice">>}
 
             end
@@ -171,7 +171,6 @@ do_request(get_data, #{<<"productId">> := ProductId, <<"objectId">> := undefined
                             {error, <<"get_data_failed">>}
                     end;
                 _ ->
-                    io:format("~s ~p here~n", [?FILE, ?LINE]),
                     {error, <<"notfinddevice">>}
 
             end
