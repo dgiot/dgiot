@@ -71,7 +71,7 @@ calculate_jindiedata(ProductId, DeviceId, Channel) ->
     end.
 
 
- 
+
 
 
 get_num(K, V) ->
