@@ -22,12 +22,11 @@
 
 -define(TYPE, <<"TCP2DLINK">>).
 -define(MAX_BUFF_SIZE, 1024).
-
-
+-define(PUMPTATUS, pumpstatus).
+-define(AREA(R),3.14*R*R).
 -record(state, {
     id,
-    productId
-    ,
+    productId,
     is_sub
 }).
 
@@ -49,12 +48,7 @@ init(#tcp{state = #state{id = ChannelId} = State} = TCPState) ->
             {ok, TCPState#tcp{state = NewState}};
         {error, not_find} ->
             {error, not_find_channel}
-    end;
-init(#tcp{state = State} = _TCPState) ->
-    io:format("~s ~p State = ~p ~n", [?FILE, ?LINE, State]),
-    {state, ID} = State,
-    io:format("~s ~p ID = ~p ~n", [?FILE, ?LINE, ID]),
-    ok.
+    end.
 
 
 %% task2device 下行
@@ -83,33 +77,41 @@ handle_info({deliver, _, Msg}, TCPState) ->
     end;
 
 % device2task 上行
-handle_info({tcp, Buff}, #tcp{state = #state{id = ChannelId, productId = ProductIds,is_sub = Is_sub} = State} = TCPState) ->
-    dgiot_bridge:send_log(ChannelId,  "Payload ~s", [dgiot_utils:to_list(Buff)]),
-    case jsx:is_json(Buff) of
-        true ->
-            Map = jsx:decode(Buff, [{labels, binary}, return_maps]),
-            ProductId = lists:nth(1, ProductIds),
-            dgiot_bridge:send_log(ChannelId, ProductId, " Recv ~s", [jsx:encode(Map)]),
-            case maps:find(<<"devaddr">>, Map) of
-                {ok, DevAddr} ->
-                    NewState = case Is_sub of
-                        0 ->
-                            dgiot_mqtt:subscribe(<<"$dg/device/", ProductId/binary, "/", DevAddr/binary, "/#">>),
-                             State#state{is_sub = 1} ;
-                        _ ->
+handle_info({tcp, Buff}, #tcp{state = #state{id = ChannelId, productId = ProductIds, is_sub = Is_sub} = State} = TCPState) ->
+%%    dgiot_bridge:send_log(ChannelId, "received: ~ts", [dgiot_utils:to_list(Buff)]),
+    Map = case jsx:is_json(Buff) of
+              true ->
+                  NewBuff = dgiot_utils:to_utf8(Buff,"GB18030"),
+                  jsx:decode(NewBuff, [{labels, binary}, return_maps]);
+              _ ->
+                  Buff
+          end,
 
-                            State
-                    end,
-                    Payload = maps:without([<<"devaddr">>], Map),
-                    dgiot_dlink_proctol:properties_report(ProductId, DevAddr, Payload),
-                    dgiot_bridge:send_log(ChannelId, ProductId, "Device:~p Save_td ~s", [DevAddr,jsx:encode(Payload)]),
-                {noreply, TCPState#tcp{state = NewState}};
-                _ ->
-                    pass
-            end;
+    ProductId = lists:nth(1, ProductIds),
+    dgiot_bridge:send_log(ChannelId, ProductId, " Recv ~ts", [jsx:encode(Map)]),
+    case maps:size(Map) of
+        40 ->
+            handle_baseinfo(ChannelId, ProductId, Map),
+            {noreply, TCPState};
+        1 ->
+            handle_status(ChannelId, ProductId, Map),
+            {noreply, TCPState};
+        11 ->
+            handle_data(ChannelId, ProductId, Map),
+            DevAddr = maps:get(<<"devaddr">>, Map),
+            NewState = case Is_sub of
+                           0 ->
+                               dgiot_mqtt:subscribe(<<"$dg/device/", ProductId/binary, "/", DevAddr/binary, "/#">>),
+                               State#state{is_sub = 1};
+                           _ ->
+
+                               State
+                       end,
+            {noreply, TCPState#tcp{state = NewState}};
         _ ->
-            {noreply, TCPState}
+            error
     end;
+
 
 %% {stop, TCPState} | {stop, Reason} | {ok, TCPState} | ok | stop
 handle_info(_Info, TCPState) ->
@@ -129,4 +131,97 @@ terminate(_Reason, _TCPState) ->
 
 code_change(_OldVsn, TCPState, _Extra) ->
     {ok, TCPState}.
+
+handle_baseinfo(ChannelId, ProductId, #{<<"Dat 39">> := Devaddr} = Map) ->
+    DeviceId = dgiot_parse_id:get_deviceid(ProductId, Devaddr),
+    Trans = #{<<"Dat 1">> => <<"QG">>,
+        <<"Dat 2">> => <<"HG">>,
+        <<"Dat 3">> => <<"PG">>,
+        <<"Dat 4">> => <<"XG">>,
+        <<"Dat 5">>=><<"npsh">>,
+        <<"Dat 6">> => <<"im_area">>,
+        <<"Dat 7">> => <<"out_area">>,
+        <<"Dat 10">> => <<"NG">>,
+        <<"Dat 11">> => <<"dgiot_testing_equipment_pressure">>,
+        <<"Dat 12">> => <<"dgiot_testing_equipment_electricity">>,
+        <<"Dat 13">> =><<"electnum">>,
+        <<"Dat 14">> =><<"normal_fre">>,
+        <<"Dat 15">>=><<"phase">>,
+        <<"Dat 20">> => <<"tem_ture">>,
+        <<"Dat 21">> => <<"atmos">>,
+        <<"Dat 22">>=> <<"media">>,
+        <<"Dat 23">>=> <<"cst">>,
+        <<"Dat 24">>=> <<"temp_before">>,
+        <<"Dat 25">>=> <<"temp_after">>,
+        <<"Dat 26">> => <<"in_distend">>,
+        <<"Dat 27">> => <<"out_distend">>,
+        <<"Dat 30">>=> <<"exper_count">>,
+        <<"Dat 31">>=> <<"pro_model">>
+    },
+
+    NewMap = maps:fold(
+        fun(K, V, Acc) ->
+            case maps:find(K, Trans) of
+                {ok, <<"im_area">>} ->
+                    Num = dgiot_utils:to_float(V),
+                    Acc#{<<"im_area">> => ?AREA(Num)};
+                {ok, <<"out_area">>} ->
+                    Num = dgiot_utils:to_float(V),
+                    Acc#{<<"out_area">> => ?AREA(Num)};
+                {ok, NewK} ->
+                    Acc#{NewK => V};
+                _ ->
+                    Acc#{K => V}
+            end
+        end, #{}, Map),
+    case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+        {ok, _} ->
+            dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"basedata">> => NewMap}),
+            dgiot_bridge:send_log(ChannelId, ProductId, "Device:~s BaseInfo ~s", [Devaddr, jsx:encode(NewMap)]);
+        _ ->
+            case dgiot_product:lookup_prod(ProductId) of
+                {ok, #{<<"ACL">> := Acl, <<"name">> := Name, <<"devType">> := DevType, <<"dynamicReg">> := true}} ->
+                    Device = #{
+                        <<"status">> => <<"ONLINE">>,
+                        <<"brand">> => Name,
+                        <<"name">> => Devaddr,
+                        <<"devaddr">> => Devaddr,
+                        <<"devModel">> => DevType,
+                        <<"product">> => ProductId,
+                        <<"ACL">> => Acl,
+                        <<"basedata">> => NewMap
+                    },
+                    dgiot_device:create_device(Device),
+                    dgiot_bridge:send_log(ChannelId, ProductId, "Device:~p BaseInfo ~s", [Devaddr, jsx:encode(NewMap)]);
+                _ ->
+                    error
+            end
+    end;
+handle_baseinfo(_, _, _) ->
+    error.
+
+handle_status(ChannelId, ProductId, #{<<"Start">> := Devaddr}) ->
+    dgiot_bridge:send_log(ChannelId, ProductId, "Start Device:~s  ", [Devaddr]);
+handle_status(ChannelId, ProductId, #{<<"Stop">> := Devaddr}) ->
+    dgiot_bridge:send_log(ChannelId, ProductId, "Stop Device:~s ", [Devaddr]).
+
+handle_data(ChannelId, ProductId, Map) ->
+    case maps:find(<<"devaddr">>, Map) of
+        {ok, DevAddr} ->
+            Payload = maps:fold(
+                fun(K, V, Acc) ->
+                    case K of
+                        <<"devaddr">> ->
+                            Acc;
+                        _ ->
+                            NewK = re:replace(K, " ", "_", [global, {return, binary}]),
+                            Acc#{NewK => V}
+                    end
+                end, #{}, Map),
+
+            dgiot_dlink_proctol:properties_report(ProductId, DevAddr, Payload),
+            dgiot_bridge:send_log(ChannelId, ProductId, "Device:~s Save_td ~s", [DevAddr, jsx:encode(Payload)]);
+        _ ->
+            pass
+    end.
 
