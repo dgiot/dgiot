@@ -17,30 +17,28 @@
 -module(dgiot_factory_shift).
 -author("jonhl").
 -include_lib("dgiot/include/logger.hrl").
--export([get_one_shift/1, save_one_shift/1, updata_id/0, get_shift/2, post_shift/1, get_all_shift/3, get_workshop/1]).
+-export([get_one_shift/1, save_one_shift/1, updata_id/0, get_shift/2, post_shift/1, get_all_shift/4, get_workshop/2]).
 -export([post_one_shift/1,get_shift_time/0]).
 -define(DAY, 86400).
 -define(SHIFT, [<<"白班"/utf8>>, <<"晚班"/utf8>>]).
 -define(WORKERCALENDAR, <<"WorkerCanlendar">>).
--define(INTERVAL, 1296000).
+-define(INTERVAL, 604800).
 -define(ONEDAY, 86400).
-
-get_all_shift(Data, Workshop, SessionToken) ->
-
+get_all_shift(Department,Data, Workshop, SessionToken) ->
     case Data of
         undefined ->
             StartDate = dgiot_datetime:localtime_to_unixtime(calendar:local_time()),
             EndDate = StartDate + ?INTERVAL,
             WorkshopList = case Workshop of
                                undefined ->
-                                   get_workshop(SessionToken);
+                                   get_workshop(SessionToken,Department);
                                _ ->
                                    [Workshop]
                            end,
-            Res = get_all_shift(StartDate, EndDate, WorkshopList, []),
+            Res = get_department_shift(StartDate, EndDate, WorkshopList, []),
             {ok,Res};
         _ ->
-            WorkshopList = get_workshop(SessionToken),
+            WorkshopList = get_workshop(SessionToken,Department),
             Res = lists:foldl(
                 fun(X, Acc) ->
                     case get_shift(Data, X) of
@@ -54,24 +52,24 @@ get_all_shift(Data, Workshop, SessionToken) ->
 
     end.
 
-get_workshop(SessionToken) ->
+get_workshop(SessionToken,Department) ->
     case dgiot_parse_utils:get_classtree(<<"_Role">>, <<"parent">>, #{}, SessionToken) of
         {200, Res} ->
             Tree = maps:get(<<"results">>, Res, <<"">>),
-            get_workshop(Tree, []);
+            get_workshop(Tree, [],Department);
         _ ->
             {error, not_find_workshop}
     end.
 
-get_workshop(Tree, Acc) ->
+get_workshop(Tree, Acc,Department) ->
     case length((Tree)) of
         0 ->
             Acc;
         _ ->
             lists:foldl(
                 fun(X, ACC) ->
-                    case maps:get(<<"alias">>, X, <<"">>) of
-                        <<231, 148, 159, 228, 186, 167, 231, 187, 143, 231, 144, 134>> ->
+                    case maps:get(<<"depname">>, X, <<"">>) of
+                        Department ->
                             Child = maps:get(<<"children">>, X, []),
                             lists:foldl(
                                 fun(Workshop, Workshops) ->
@@ -85,12 +83,12 @@ get_workshop(Tree, Acc) ->
 
                         _ ->
                             Child = maps:get(<<"children">>, X, []),
-                            get_workshop(Child, ACC)
+                            get_workshop(Child, ACC,Department)
                     end
                 end, Acc, Tree)
     end.
 
-get_all_shift(StartDate, EndDate, WorkshopList, Acc) ->
+get_department_shift(StartDate, EndDate, WorkshopList, Acc) ->
     case (EndDate - StartDate) < 0 of
         true ->
             Acc;
@@ -105,7 +103,7 @@ get_all_shift(StartDate, EndDate, WorkshopList, Acc) ->
                              ACC
                      end
                 end, [], WorkshopList),
-            get_all_shift(StartDate + ?ONEDAY, EndDate, WorkshopList, Acc++Shifts)
+            get_department_shift(StartDate + ?ONEDAY, EndDate, WorkshopList, Acc++Shifts)
     end.
 
 

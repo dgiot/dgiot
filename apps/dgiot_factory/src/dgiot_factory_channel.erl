@@ -22,6 +22,7 @@
 -include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
 -include("dgiot_factory.hrl").
 -define(TYPE, <<"FACTORY">>).
+-define(SHEETID(SHEET), <<SHEET/binary, "_id">>).
 -define(MAX_BUFF_SIZE, 1024).
 -record(state, {id, mod, product, env = #{}}).
 %% API
@@ -29,7 +30,7 @@
 
 %% Channel callback
 -export([init/3, handle_init/1, handle_event/3, handle_message/2, stop/3]).
-
+-export([save_data/4,get_id/2]).
 
 %% 注册通道类型
 -channel_type(#{
@@ -66,7 +67,7 @@ start(ChannelId, ChannelArgs) ->
     dgiot_channelx:add(?TYPE, ChannelId, ?MODULE, ChannelArgs).
 
 %% 通道初始化
-init(?TYPE, ChannelId,  Args) ->
+init(?TYPE, ChannelId, Args) ->
     State = #state{
         id = ChannelId,
         env = Args
@@ -76,7 +77,7 @@ init(?TYPE, ChannelId,  Args) ->
     dgiot_parse_hook:subscribe(<<"Device/*">>, delete, ChannelId),
     {ok, State, []}.
 
-handle_init( State) ->
+handle_init(State) ->
     {ok, State}.
 
 %% 通道消息处理,注意：进程池调用
@@ -91,27 +92,23 @@ handle_message({sync_parse, _Pid, 'after', post, Token, <<"Device">>, QueryData}
 
 
 
-%%handle_message({sync_parse, _Pid, 'before', put, Token, <<"Device">>, #{<<"content">> := Content,<<"id">> := DeviceId } = _QueryData},  #state{env =#{<<"product">> :=Product}} =State) ->
-    handle_message({sync_parse, _Pid, 'before', put, Token, <<"Device">>, #{<<"content">> := Content,<<"id">> := DeviceId } = _QueryData},  State) ->
-%%    lists:foldl(
-%%        fun(X,_)->
-%%            L = tuple_to_list(X),
-%%            io:format("~s ~p length = ~p ~n",[?FILE,?LINE,length(L)]),
-%%            F = lists:nth(1,L),
-%%            io:format("~s ~p F = ~p ~n",[?FILE,?LINE,F])
-%%            lists:foldl(
-%%                fun(K,_)->
-%%                    io:format("~s ~p Product= ~p ~n",[?FILE,?LINE,is_map(K)])
-%%            end,[],L)
-%%    end,[],Product),
-    FlatMap = dgiot_map:flatten(Content),
-    case Content of
-        #{<<"person">>:= #{<<"type">> :=Type}} ->
-            dgiot_factory_data:handle_data(DeviceId,Type,FlatMap#{<<"persion_sessiontoken">> => Token});
+handle_message({sync_parse, _Pid, 'before', put, Token, <<"Device">>, #{<<"content">> := Content, <<"id">> := DeviceId} = _QueryData}, State) ->
+    case dgiot_device_cache:lookup(DeviceId) of
+        {ok, #{<<"productid">> := ProductId}} ->
+            case Content of
+                #{<<"person">> := #{<<"type">> := Type}} ->
+                    FlatMap = dgiot_map:flatten(Content),
+                     save_data(ProductId, DeviceId, Type, FlatMap#{<<"persion_sessiontoken">> => Token}),
+%%                    dgiot_factory_data:handle_data([ProductId, DeviceId, Type, FlatMap#{<<"persion_sessiontoken">> => Token}]),
+                {ok, State};
+                _ ->
+                    {'EXIT', error}
+            end;
         _ ->
-            pass
-    end,
-    {ok, State};
+            {'EXIT', error}
+    end;
+
+
 
 
 handle_message(Message, State) ->
@@ -122,47 +119,40 @@ stop(ChannelType, ChannelId, _State) ->
     ?LOG(warning, "Channel[~p,~p] stop", [ChannelType, ChannelId]),
     ok.
 
+save_data(ProductId, DeviceId, Type, Payload) ->
+    NumData = dgiot_factory_utils:turn_num(Payload, ProductId, Type),
+    case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+        {ok, #{<<"devaddr">> := DevAddr}} ->
+            case dgiot_hook:run_hook({factory, ProductId}, [ProductId, DeviceId, Type, NumData]) of
+                {ok, Res} ->
+                    case length(Res) of
+                        1 ->
+                            F = lists:nth(1, Res),
+                            case F of
+                                {ok, NewPayload} ->
+                                    Id = maps:get(?SHEETID(Type), NewPayload, get_id(DevAddr, Type)),
+                                    dgiot_task:save_td_no_match(ProductId, DevAddr, NewPayload#{?SHEETID(Type) => Id}, #{});
+                                _ ->
+                                    {error, <<"run_hook_failed">>}
+                            end;
+                        _ ->
+                            {error, <<"run_hook_failed">>}
+                    end;
+                {error, not_find} ->
+                    Id = maps:get(?SHEETID(Type), Payload, get_id(DevAddr, Type)),
+                    dgiot_task:save_td_no_match(ProductId, DevAddr, Payload#{?SHEETID(Type) => Id}, #{});
+
+                _ ->
+                    {error, <<"run_hook_failed">>}
+            end;
+        _ ->
+            {error, <<"not_fin_device">>}
+    end.
 
 
-%%handle_content(Content,DeviceId)->
-%%    case dgiot_device_cache:lookup(DeviceId) of
-%%        {ok,#{<<"productid">> = ProductId}} ->
-%%            SheetList = get_sheetlist(ProductId),
-%%        maps:fold(
-%%            fun(K,V,Acc) ->
-%%                case lists:member(SheetList, K) of
-%%                    true ->
-%%
-%%                        Acc;
-%%                    false ->
-%%                        Acc
-%%                end
-%%
-%%        end ,[],Content);
-%%        _ ->
-%%            pass
-%%    end.
-%%
-
-%%get_sheetlist(ProductId) ->
-%%    case dgiot_product:lookup_prod(ProductId) of
-%%        {ok, #{<<"thing">> := #{<<"properties">> := PropertiesList}}} ->
-%%            Res =lists:foldl(
-%%                fun(X, Acc) ->
-%%                    case maps:find(<<"devicetype">>, X) of
-%%                        {ok, Sheet} ->
-%%                            case lists:member(Sheet, Acc) of
-%%                                true ->
-%%                                    Acc;
-%%                                false ->
-%%                                    Acc ++ [Sheet]
-%%                            end;
-%%                        _ ->
-%%                            Acc
-%%                    end
-%%                end, [], PropertiesList),
-%%            lists:delete(<<"person">>,Res);
-%%        _ ->
-%%            []
-%%
-%%    end.
+get_id(DevAddr, Type) ->
+    Time = dgiot_utils:to_binary(dgiot_datetime:timestamp()),
+    Bin = dgiot_utils:to_binary(Type),
+    <<ObjID:10/binary, _/binary>> = dgiot_utils:to_md5(<<Bin/binary, DevAddr/binary, Time/binary>>),
+    Res = string:to_upper(dgiot_utils:to_list(ObjID)),
+    dgiot_utils:to_binary(Res).

@@ -18,7 +18,6 @@
 -behavior(dgiot_rest).
 -dgiot_rest(all).
 -include_lib("dgiot/include/logger.hrl").
--define(PRODUCTID, <<"ec71804a3d">>).
 
 
 %% API
@@ -48,7 +47,6 @@ swagger_factory() ->
     {Status :: dgiot_req:http_status(), Headers :: map(), Body :: map(), Req :: dgiot_req:req()}.
 
 handle(OperationID, Args, Context, Req) ->
-    io:format("~s ~p OperationID ~p ~n", [?FILE, ?LINE, OperationID]),
     Headers = #{},
     case catch do_request(OperationID, Args, Context, Req) of
         {ErrType, Reason} when ErrType == 'EXIT'; ErrType == error ->
@@ -86,7 +84,7 @@ do_request(get_factory_calendar, _Args, _Context, _Body) ->
             {error, Res}
     end;
 
-do_request(post_worker_shift, #{<<"default">> := Default, <<"other">> := Other} = _Args, _Context, _Body) ->
+do_request(post_factory_calendar, #{<<"default">> := Default, <<"other">> := Other} = _Args, _Context, _Body) ->
     case dgiot_factory_calendar:post_calendar(#{<<"default">> => Default, <<"other">> => Other}) of
         {ok, _, FactoryCalendar} ->
             {ok, FactoryCalendar};
@@ -100,56 +98,52 @@ do_request(post_worker_shift, #{<<"default">> := Default, <<"other">> := Other} 
 
 
 
-do_request(get_worker_shift, #{<<"date">> := Data, <<"workshop">> := Workshop} = _Args, #{<<"sessionToken">> := SessionToken} = _Context, _Body) ->
+do_request(get_worker_shift, #{<<"depart">> := Depart, <<"date">> := Data, <<"workshop">> := Workshop, <<"limit">> := Limit, <<"skip">> := Skip} = _Args, #{<<"sessionToken">> := SessionToken} = _Context, _Body) ->
+    Department = case Depart of
+                     undefined ->
+                         <<10, 10, 230, 180, 129, 232, 175, 186, 231, 148, 159, 228, 186, 167, 231, 174, 161, 231, 144, 134>>;
+                     _ ->
+                         Depart
+                 end,
     case {Data, Workshop} of
         {undefined, _} ->
-            io:format("~s ~p here~n", [?FILE, ?LINE]),
-            case dgiot_factory_shift:get_all_shift(Data, Workshop, SessionToken) of
+            case dgiot_factory_shift:get_all_shift(Department, Data, Workshop, SessionToken) of
                 {ok, Res} ->
-                    {ok, #{<<"status">> => 0, msg => <<"数据请求成功"/utf8>>, <<"data">> => #{<<"item">> => Res}}};
+                    {Total, Result} = dgiot_factory_getdata:filter_data(Limit, Skip, Res),
+                    {ok, #{<<"status">> => 0, msg => <<"数据请求成功"/utf8>>, <<"data">> => #{<<"total">> => Total, <<"item">> => Result}}};
                 {error, Msg} ->
                     {error, Msg}
             end;
         {_, undefined} ->
-            io:format("~s ~p here~n", [?FILE, ?LINE]),
-            case dgiot_factory_shift:get_all_shift(Data, Workshop, SessionToken) of
+            case dgiot_factory_shift:get_all_shift(Department, Data, Workshop, SessionToken) of
                 {ok, Res} ->
-                    {ok, #{<<"status">> => 0, msg => <<"数据请求成功"/utf8>>, <<"data">> => #{<<"item">> => Res}}};
+                    {Total, Result} = dgiot_factory_getdata:filter_data(Limit, Skip, Res),
+                    {ok, #{<<"status">> => 0, msg => <<"数据请求成功"/utf8>>, <<"data">> => #{<<"total">> => Total, <<"item">> => Result}}};
                 {error, Msg} ->
                     {error, Msg}
             end;
         _ ->
-
             case dgiot_factory_shift:get_shift(Data, Workshop) of
                 {ok, Res} ->
-                    {ok, #{<<"status">> => 0, msg => <<"数据请求成功"/utf8>>, <<"data">> => #{<<"item">> => Res}}};
+                    {Total, Result} = dgiot_factory_getdata:filter_data(Limit, Skip, Res),
+                    {ok, #{<<"status">> => 0, msg => <<"数据请求成功"/utf8>>, <<"data">> => #{<<"total">> => Total, <<"item">> => Result}}};
                 {error, Msg} ->
                     {error, Msg}
             end
     end;
 
 do_request(post_worker_shift, #{<<"shift">> := Shifts} = _Args, _Context, _Body) ->
-    io:format("~s ~p_Args= ~p ~n", [?FILE, ?LINE, _Args]),
     dgiot_factory_shift:post_shift(Shifts),
-    {ok, <<"修改成功">>};
+    {ok, <<"修改成功"/utf8>>};
 
-do_request(post_data, #{<<"objectid">> := DeviceId} = Args, _Context, _Body) ->
-    io:format("~s ~p DeviceId= ~p ~n", [?FILE, ?LINE, dgiot_utils:to_binary(string:to_lower(binary_to_list(DeviceId)))]),
-    case dgiot_factory_data:handle_data(dgiot_utils:to_binary(string:to_lower(binary_to_list(DeviceId))), a, Args) of
-        {ok, _} ->
-            {ok, <<"修改成功"/utf8>>};
-        {error, Msg} ->
-            {error, Msg}
-    end;
-
-do_request(get_data, #{<<"objectId">> := undefined, <<"type">> := Type, <<"where">> := Where, <<"limit">> := Limit, <<"skip">> := Skip,<<"new">> := New} = _Args, #{<<"sessionToken">> := SessionToken} = _Context, _Body) ->
-
+do_request(get_data, #{<<"productId">> := undefined, <<"objectId">> := undefined, <<"type">> := Type, <<"where">> := Where, <<"limit">> := Limit, <<"skip">> := Skip, <<"new">> := New} = _Args, #{<<"sessionToken">> := SessionToken} = _Context, _Body) ->
     case dgiot_product_tdengine:get_channel(SessionToken) of
         {error, Error} -> {error, Error};
         {ok, Channel} ->
-            case dgiot_factory_data:get_device_list() of
+            ProductId = <<"ec71804a3d">>,
+            case dgiot_factory_getdata:get_device_list(ProductId) of
                 {ok, DeviceList} ->
-                    case dgiot_factory_data:get_work_sheet(Type, Channel, DeviceList, Where, Limit, Skip,New) of
+                    case dgiot_factory_getdata:get_work_sheet(ProductId, Type, Channel, DeviceList, Where, Limit, Skip, New) of
                         {ok, {Total, Res}} ->
                             {ok, #{<<"status">> => 0, msg => <<"数据请求成功"/utf8>>, <<"data">> => #{<<"total">> => Total, <<"items">> => Res}}};
                         _ ->
@@ -157,45 +151,71 @@ do_request(get_data, #{<<"objectId">> := undefined, <<"type">> := Type, <<"where
                             {error, <<"get_data_failed">>}
                     end;
                 _ ->
-                    io:format("~s ~p here~n",[?FILE,?LINE]),
+
+                    {error, <<"notfinddevice">>}
+
+            end
+    end;
+
+do_request(get_data, #{<<"productId">> := ProductId, <<"objectId">> := undefined, <<"type">> := Type, <<"where">> := Where, <<"limit">> := Limit, <<"skip">> := Skip, <<"new">> := New} = _Args, #{<<"sessionToken">> := SessionToken} = _Context, _Body) ->
+    case dgiot_product_tdengine:get_channel(SessionToken) of
+        {error, Error} -> {error, Error};
+        {ok, Channel} ->
+            case dgiot_factory_getdata:get_device_list(ProductId) of
+                {ok, DeviceList} ->
+                    case dgiot_factory_getdata:get_work_sheet(ProductId, Type, Channel, DeviceList, Where, Limit, Skip, New) of
+                        {ok, {Total, Res}} ->
+                            {ok, #{<<"status">> => 0, msg => <<"数据请求成功"/utf8>>, <<"data">> => #{<<"total">> => Total, <<"items">> => Res}}};
+                        _ ->
+
+                            {error, <<"get_data_failed">>}
+                    end;
+                _ ->
                     {error, <<"notfinddevice">>}
 
             end
     end;
 
 
-do_request(get_data, #{<<"objectId">> := DeviceId, <<"type">> := Type, <<"where">> := Where, <<"limit">> := Limit, <<"skip">> := Skip,<<"new">> := New} = _Args,
+do_request(get_data, #{<<"objectId">> := DeviceId, <<"type">> := Type, <<"where">> := Where, <<"limit">> := Limit, <<"skip">> := Skip, <<"new">> := New} = _Args,
     #{<<"sessionToken">> := SessionToken} = _Context, _Body) ->
     case dgiot_product_tdengine:get_channel(SessionToken) of
         {error, Error} -> {error, Error};
         {ok, Channel} ->
-            case dgiot_factory_data:get_work_sheet(Type, Channel, DeviceId, Where, Limit, Skip,New) of
-                {ok, {Total, Res}} ->
-                    {ok, #{<<"status">> => 0, msg => <<"数据请求成功"/utf8>>, <<"data">> => #{<<"total">> => Total, <<"items">> => Res}}};
-                _ ->
+            case dgiot_device_cache:lookup(DeviceId) of
+                {ok, #{<<"productid">> := ProductId}} ->
+                    case dgiot_factory_getdata:get_work_sheet(ProductId, Type, Channel, DeviceId, Where, Limit, Skip, New) of
+                        {ok, {Total, Res}} ->
+                            {ok, #{<<"status">> => 0, msg => <<"数据请求成功"/utf8>>, <<"data">> => #{<<"total">> => Total, <<"items">> => Res}}};
+                        _ ->
 
-                    {error, <<"get_data_failed">>}
+                            {error, <<"get_data_failed">>}
+                    end;
+                _ ->
+                    error
             end
     end;
 
-
-
-do_request(post_stored, #{<<"objectId">> := DeviceId,<<"operator">> := Operator,<<"quality">>:=Quality} = _Args, #{<<"sessionToken">> := SessionToken} = _Context, _Body) ->
+do_request(post_stored, #{<<"objectId">> := DeviceId, <<"operator">> := Operator, <<"quality">> := Quality} = _Args, #{<<"sessionToken">> := SessionToken} = _Context, _Body) ->
     case dgiot_product_tdengine:get_channel(SessionToken) of
         {error, Error} -> {error, Error};
         {ok, Channel} ->
-            case dgiot_factory_utils:store_all(Channel, DeviceId,Operator,Quality) of
-                {ok, _} ->
-                    {ok, #{<<"status">> => 0, msg => <<"操作成功"/utf8>>, <<"data">> => #{}}};
+            case dgiot_device_cache:lookup(DeviceId) of
+                {ok, #{<<"productid">> := ProductId}} ->
+                    case dgiot_factory_utils:store_all(ProductId,Channel, DeviceId, Operator, Quality) of
+                        {ok, _} ->
+                            {ok, #{<<"status">> => 0, msg => <<"操作成功"/utf8>>, <<"data">> => #{}}};
+                        _ ->
+                            {error, <<"get_data_failed">>}
+                    end;
                 _ ->
-                    {error, <<"get_data_failed">>}
+                    {error, <<"not_find_product">>}
             end
     end;
 
 
 %%  服务器不支持的API接口
 do_request(_OperationId, _Args, _Context, _Req) ->
-    io:format("~s ~p here ~n",[?FILE,?LINE]),
+    io:format("~s ~p _Args = ~p  ~n", [?FILE, ?LINE, _Args]),
     ?LOG(info, "_OperationId:~p~n", [_Args]),
     {error, <<"Not Allowed.">>}.
-
