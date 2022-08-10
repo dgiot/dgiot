@@ -24,8 +24,8 @@
 -export([get_max_addrs/1]).
 
 %%  dgiot_product_csv:read_csv(<<"8cff09f988">>, <<"modbustcp">>).
-read_csv(ChannelId, FileName) ->
-    read_from_csv(FileName),
+read_csv(ChannelId, FilePath) ->
+    FileName = read_from_csv(FilePath),
     Productmap = dgiot_product_csv:get_products(FileName),
     TdChannelId = dgiot_parse_id:get_channelid(dgiot_utils:to_binary(?BRIDGE_CHL), <<"TD">>, <<"TD资源通道"/utf8>>),
     {Devicemap, ProductIds} = dgiot_product_csv:create_product(ChannelId, FileName, Productmap, TdChannelId),
@@ -37,20 +37,11 @@ read_csv(ChannelId, FileName) ->
     get_max_addrs(FileName).
 
 %% dgiot_product_csv:read_from_csv(<<"modbustcp">>)
-read_from_csv(FileName) ->
-    {file, Here} = code:is_loaded(?MODULE),
-    Dir = dgiot_httpc:url_join([filename:dirname(filename:dirname(Here)), "/priv/csv/"]),
-    Name = dgiot_utils:to_list(FileName),
+read_from_csv(FilePath) ->
+    FileName = dgiot_utils:to_md5(FilePath),
     AtomName = dgiot_utils:to_atom(FileName),
     dgiot_data:init(AtomName),
-    NewName =
-        case filename:extension(Name) of
-            [] ->
-                Name ++ ".csv";
-            _ ->
-                Name
-        end,
-    Path = Dir ++ NewName,
+    Path = "/data/dgiot/go_fastdfs/files" ++ dgiot_utils:to_list(FilePath),
     put(count, -1),
     Fun = fun(X) ->
         Count = get(count),
@@ -62,7 +53,8 @@ read_from_csv(FileName) ->
         end,
         put(count, Count + 1)
           end,
-    dgiot_utils:read_from_csv(Path, Fun).
+    dgiot_utils:read_from_csv(Path, Fun),
+    FileName.
 
 %%  ets:match(ruodian,{'_', ['$1', '_', <<"D6101">> | '_']}).
 get_products(FileName) ->
@@ -187,7 +179,7 @@ get_properties(Things, AtomName, ProductId, ProductName) ->
         Propertie ++ [#{
             <<"name">> => Name,
             <<"index">> => 0,
-	    <<"isstorage">> => true,
+            <<"isstorage">> => true,
             <<"isshow">> => true,
             <<"dataForm">> => #{
                 <<"rate">> => 1,
@@ -239,7 +231,7 @@ get_max_addrs(FileName) ->
     Address = dgiot_utils:unique_1(lists:flatten(ets:match(AtomName, {'_', ['_', '_', '_', '_', '_', '_', '_', '_', '$1' | '_']}))),
     Address1 = [dgiot_utils:to_int(X) || X <- Address],
 %%    dgiot_data:insert(AtomName, adds, Address1),
-    {lists:min(Address1), lists:max(Address1)}.
+    {FileName, lists:min(Address1), lists:max(Address1)}.
 
 to_lower(Value) ->
     list_to_binary(string:to_lower(binary_to_list(Value))).

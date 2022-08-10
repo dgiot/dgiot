@@ -48,6 +48,16 @@ do_check(#{username := <<"dgiot">>, clientid := ClientId}, _PubSub, _Topic) ->
             deny
     end;
 
+%% "$dg/thing/uniapp/{SessionToken}/report"
+do_check(#{clientid := Token, username := _UserId} = _ClientInfo, publish, <<"$dg/thing/uniapp/", SessionToken:34/binary, "/", _Rest/binary>> = _Topic) ->
+    %% io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, _Topic]),
+    case Token of
+        SessionToken ->
+            allow;
+        _ ->
+            deny
+    end;
+
 %% "$dg/thing/productid/devaddr/#"
 do_check(#{clientid := DeviceAddr, username := ProductID} = _ClientInfo, publish, <<"$dg/thing/", ProductID:10/binary, "/", DeviceInfo/binary>> = _Topic) ->
 %%    io:format("~s ~p Topic: ~p _ClientInfo ~p~n", [?FILE, ?LINE, _Topic, _ClientInfo]),
@@ -74,6 +84,17 @@ do_check(#{clientid := <<ProductID:10/binary, "_", DeviceAddr/binary>>, username
 do_check(#{clientid := DeviceAddr, username := ProductID} = _ClientInfo, subscribe, <<"$dg/device/", ProductID:10/binary, "/", DeviceInfo/binary>> = _Topic) ->
 %%    io:format("~s ~p Topic: ~p _ClientInfo ~p~n", [?FILE, ?LINE, _Topic, _ClientInfo]),
     check_device_addr(DeviceInfo, DeviceAddr);
+
+
+%% "$dg/user/uniapp/{SessionToken}/report"
+do_check(#{clientid := Token, username := _UserId} = _ClientInfo, subscribe, <<"$dg/user/uniapp/", SessionToken:34/binary, "/", _Rest/binary>> = _Topic) ->
+%%    io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, _Topic]),
+    case Token of
+        SessionToken ->
+            allow;
+        _ ->
+            deny
+    end;
 
 %% 用户订阅 "$dg/user/deviceid/#"
 do_check(#{clientid := Token, username := UserId} = _ClientInfo, subscribe, <<"$dg/user/", DeviceID:10/binary, "/", _Rest/binary>> = _Topic)
@@ -124,8 +145,8 @@ do_check(#{clientid := Token, username := UserId} = _ClientInfo, subscribe, <<"$
 %%    io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, _Topic]),
     check_device_acl(Token, DeviceId, UserId);
 
-
 do_check(_ClientInfo, _PubSub, _Topic) ->
+%%    io:format("~s ~p _PubSub: ~p~n", [?FILE, ?LINE, _PubSub]),
 %%    io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, _Topic]),
     deny.
 

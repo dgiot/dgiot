@@ -239,7 +239,7 @@ handle_message({sync_product, <<"Product">>, ObjectId}, #state{id = ChannelId, e
     {ok, State};
 
 handle_message(Message, #state{id = ChannelId, product = ProductId} = _State) ->
-    ?LOG(info, "Channel ~p, Product ~p, handle_message ~p", [ChannelId, ProductId, Message]),
+    ?LOG(debug, "Channel ~p, Product ~p, handle_message ~p", [ChannelId, ProductId, Message]),
     ok.
 
 handle_save(Channel) ->

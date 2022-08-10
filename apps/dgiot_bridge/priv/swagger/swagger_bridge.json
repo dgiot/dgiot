@@ -3,6 +3,10 @@
     {
       "name": "Decoder",
       "description": "解码管理"
+    },
+    {
+      "name": "UniApp",
+      "description": "UniApp"
     }
   ],
   "definitions": {
@@ -357,6 +361,72 @@
         },
         "tags": [
           "Decoder"
+        ]
+      }
+    },
+    "/uniapp/{instruct}/{deviceid}": {
+      "put": {
+        "summary": "下发指令",
+        "description": "下发指令",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "instruct",
+            "description": "指令",
+            "required": true,
+            "type": "string",
+            "enum": [
+              "photo",
+              "scancode"
+            ]
+          },
+          {
+            "in": "path",
+            "name": "deviceid",
+            "description": "设备id",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "data",
+            "description": "下发值",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "other": {
+                  "type": "string",
+                  "description": "自定义",
+                  "example": "拍照"
+                }
+              }
+            }
+          }
+        ],
+        "consumes": [
+          "application/json",
+          "*"
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "UniApp"
         ]
       }
     }
