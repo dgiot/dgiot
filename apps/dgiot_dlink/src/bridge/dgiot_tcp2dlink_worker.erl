@@ -53,7 +53,6 @@ init(#tcp{state = #state{id = ChannelId} = State} = TCPState) ->
 
 %% task2device 下行
 handle_info({deliver, _, Msg}, TCPState) ->
-    io:format("~s ~p here ~n", [?FILE, ?LINE]),
     Payload = dgiot_mqtt:get_payload(Msg),
     Topic = dgiot_mqtt:get_topic(Msg),
     case binary:split(Topic, <<$/>>, [global, trim]) of
@@ -208,19 +207,26 @@ handle_status(ChannelId, ProductId, #{<<"Stop">> := Devaddr}) ->
 handle_data(ChannelId, ProductId, Map) ->
     case maps:find(<<"devaddr">>, Map) of
         {ok, DevAddr} ->
-            Payload = maps:fold(
-                fun(K, V, Acc) ->
-                    case K of
-                        <<"devaddr">> ->
-                            Acc;
-                        _ ->
-                            NewK = re:replace(K, " ", "_", [global, {return, binary}]),
-                            Acc#{NewK => V}
-                    end
-                end, #{}, Map),
-
-            dgiot_dlink_proctol:properties_report(ProductId, DevAddr, Payload),
-            dgiot_bridge:send_log(ChannelId, ProductId, "Device:~s Save_td ~s", [DevAddr, jsx:encode(Payload)]);
+            DeviceId = dgiot_parse_id:get_deviceid(ProductId,DevAddr),
+            case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+                {ok, #{<<"basedata">> := #{<<"exper_count">> := Exper_count}}} ->
+                    Payload = maps:fold(
+                        fun(K, V, Acc) ->
+                            case K of
+                                <<"devaddr">> ->
+                                    Acc;
+                                _ ->
+                                    NewK = re:replace(K, " ", "_", [global, {return, binary}]),
+                                    Acc#{NewK => V}
+                            end
+                        end, #{}, Map),
+                    NewPayload = maps:merge(Payload,#{<<"exper_count">> => Exper_count}),
+                    dgiot_dlink_proctol:properties_report(ProductId, DevAddr, NewPayload),
+                    dgiot_bridge:send_log(ChannelId, ProductId, "Device:~s Save_td ~s", [DevAddr, jsx:encode(NewPayload)]);
+                _ ->
+                    io:format("~s ~p here~n",[?FILE,?LINE]),
+                    error
+            end;
         _ ->
             pass
     end.

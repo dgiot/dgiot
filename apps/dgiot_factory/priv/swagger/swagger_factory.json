@@ -9,6 +9,12 @@
         "summary": "获取工厂日历",
         "description": "获取工厂日历",
         "parameters": [
+          {
+            "name": "depart",
+            "in": "query",
+            "type": "string",
+            "description": "查询部门"
+          }
         ],
         "responses": {
           "200": {
@@ -34,6 +40,10 @@
             "schema": {
               "type": "object",
               "properties": {
+                "depart": {
+                  "description": "部门",
+                  "type": "string"
+                },
                 "default": {
                   "description": "默认",
                   "type": "string"
@@ -179,7 +189,7 @@
             "type": "string"
           },
           {
-            "description": "工单id",
+            "description": "订单id",
             "in": "query",
             "name": "objectId",
             "type": "string"
