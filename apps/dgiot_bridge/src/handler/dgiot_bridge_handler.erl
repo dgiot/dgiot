@@ -175,6 +175,10 @@ do_request(get_classes_decoder, Args, #{<<"sessionToken">> := Session}, _Req) ->
             {error, Reason}
     end;
 
+%% uniapp 下发指令
+do_request(put_uniapp_instruct_deviceid, Args, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
+    dgiot_bridge:control_uniapp(Args, SessionToken);
+
 %%  服务器不支持的API接口
 do_request(_OperationId, _Args, _Context, _Req) ->
     {error, <<"Not Allowed.">>}.

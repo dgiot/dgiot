@@ -64,16 +64,16 @@
             zh => <<"服务器端口"/utf8>>
         }
     },
-    <<"file">> => #{
+    <<"filepath">> => #{
         order => 3,
-        type => string,
+        type => upload,
         required => true,
-        default => <<"modbustcp">>,
+        default => <<"">>,
         title => #{
-            zh => <<"文件名"/utf8>>
+            zh => <<"csv文件"/utf8>>
         },
         description => #{
-            zh => <<"文件名"/utf8>>
+            zh => <<"上传csv点位文件"/utf8>>
         }
     },
     <<"freq">> => #{
@@ -115,9 +115,9 @@ init(?TYPE, ChannelId, #{
     <<"Size">> := Size
 } = Args) ->
     {FileName, MinAddr, MaxAddr} =
-        case maps:find(<<"file">>, Args) of
-            {ok, FileName1} ->
-                {MinAddr1, MaxAddr1} = dgiot_product_csv:read_csv(ChannelId, FileName1),
+        case maps:find(<<"filepath">>, Args) of
+            {ok, FilePath} ->
+                {FileName1, MinAddr1, MaxAddr1} = dgiot_product_csv:read_csv(ChannelId, FilePath),
                 %% modbus_tcp:set_addr(ChannelId, MinAddr1, MaxAddr1),
                 {FileName1, MinAddr1, MaxAddr1};
             _ ->

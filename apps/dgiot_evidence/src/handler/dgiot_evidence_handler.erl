@@ -22,7 +22,7 @@
 
 %% API
 -export([swagger_system/0]).
--export([handle/4, arrtojsonlist/1, python_drawxnqx/2]).
+-export([handle/4, arrtojsonlist/1, python_drawxnqx/2, post_report/2]).
 
 %% API描述
 %% 支持二种方式导入
@@ -885,85 +885,86 @@ get_report(Id, SessionToken) ->
         Error -> Error
     end.
 
-post_report(#{<<"name">> := Name, <<"product">> := ProductId, <<"parentId">> := ParentId, <<"profile">> := Profile}, SessionToken) ->
-    case dgiot_parse:get_object(<<"Product">>, ProductId, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
-        {ok, #{<<"objectId">> := ProductId, <<"config">> := Config}} ->
-            WordPath = maps:get(<<"reporttemp">>, Config, <<"">>),
-            case dgiot_parse:query_object(<<"Device">>, #{<<"where">> => #{<<"name">> => Name, <<"product">> => ProductId}},
-                [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
-                {ok, #{<<"results">> := Results}} when length(Results) == 0 ->
-                    #{<<"roles">> := Roles} = dgiot_auth:get_session(SessionToken),
-                    [#{<<"name">> := Role} | _] = maps:values(Roles),
-                    <<DtuAddr:12/binary, _/binary>> = dgiot_utils:random(),
-                    {ok, #{<<"objectId">> := DeviceId}} =
-                        dgiot_device:create_device(#{
-                            <<"devaddr">> => DtuAddr,
-                            <<"name">> => Name,
-                            <<"product">> => ProductId,
-                            <<"ACL">> => #{<<"role:", Role/binary>> => #{
-                                <<"read">> => true,
-                                <<"write">> => true}
-                            },
-                            <<"status">> => <<"ONLINE">>,
-                            <<"brand">> => <<"数蛙桌面采集网关"/utf8>>,
-                            <<"devModel">> => <<"SW_WIN_CAPTURE">>,
-                            <<"basedata">> => #{},
-                            <<"profile">> => Profile#{<<"reporttemp">> => WordPath},
-                            <<"parentId">> => #{
-                                <<"__type">> => <<"Pointer">>,
-                                <<"className">> => <<"Device">>,
-                                <<"objectId">> => ParentId
-                            }
-                        }),
-                    case dgiot_parse:query_object(<<"View">>, #{<<"order">> => <<"createdAt">>, <<"where">> => #{<<"key">> => ProductId, <<"class">> => <<"Product">>}}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
-                        {ok, #{<<"results">> := Views}} ->
-                            ViewRequests =
-                                lists:foldl(fun(View, Acc) ->
-                                    NewView = maps:without([<<"createdAt">>, <<"objectId">>, <<"updatedAt">>], View),
-                                    Type = maps:get(<<"type">>, View, <<"">>),
-                                    Title = maps:get(<<"title">>, View, <<"">>),
-                                    Viewid = dgiot_parse_id:get_viewid(DeviceId, Type, <<"Device">>, Title),
-                                    Acc ++ [#{
-                                        <<"method">> => <<"POST">>,
-                                        <<"path">> => <<"/classes/View">>,
-                                        <<"body">> => NewView#{
-                                            <<"objectId">> => Viewid,
-                                            <<"key">> => DeviceId,
-                                            <<"class">> => <<"Device">>}
-                                    }]
-                                            end, [], Views),
-                            dgiot_parse:batch(ViewRequests);
-                        _R1 ->
-                            ?LOG(info, "R1 ~p", [_R1])
-                    end,
-                    case dgiot_parse:query_object(<<"Dict">>, #{<<"order">> => <<"createdAt">>, <<"where">> => #{<<"key">> => ProductId, <<"class">> => <<"Product">>}}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
-                        {ok, #{<<"results">> := Dicts}} ->
-                            DictRequests =
-                                lists:foldl(fun(Dict, Acc) ->
-                                    NewDict = maps:without([<<"createdAt">>, <<"objectId">>, <<"updatedAt">>], Dict),
-                                    Type = maps:get(<<"type">>, Dict, <<"">>),
-                                    Title = maps:get(<<"title">>, Dict, <<"">>),
-                                    Dictid = dgiot_parse_id:get_dictid(DeviceId, Type, <<"Device">>, Title),
-                                    Acc ++ [#{
-                                        <<"method">> => <<"POST">>,
-                                        <<"path">> => <<"/classes/Dict">>,
-                                        <<"body">> => NewDict#{
-                                            <<"objectId">> => Dictid,
-                                            <<"key">> => DeviceId,
-                                            <<"class">> => <<"Device">>}
-                                    }]
-                                            end, [], Dicts),
-                            dgiot_parse:batch(DictRequests);
-                        _R3 ->
-                            ?LOG(info, "R1 ~p", [_R3])
-                    end,
-                    {ok, #{<<"result">> => <<"success">>}};
-                _R2 ->
-                    ?LOG(info, "R2 ~p", [_R2]),
-                    {error, <<"report exist">>}
-            end;
-        _R3 ->
-            ?LOG(info, "R3 ~p", [_R3]),
+post_report(#{<<"name">> := Name, <<"product">> := ProductId, <<"parentId">> := ParentId, <<"profile">> := Profile} = Args, SessionToken) ->
+    WordPath =
+        case dgiot_product:lookup_prod(ProductId) of
+            {ok, #{<<"productId">> := ProductId, <<"config">> := Config}} ->
+                maps:get(<<"reporttemp">>, Config, <<"">>);
+            _ ->
+                <<"">>
+        end,
+    <<DtuAddr:12/binary, _/binary>> = dgiot_utils:random(),
+    DevAddr = maps:get(<<"devaddr">>, Args, DtuAddr),
+    case dgiot_parse:query_object(<<"Device">>, #{<<"where">> => #{<<"name">> => Name, <<"devaddr">> => DevAddr, <<"product">> => ProductId}},
+        [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+        {ok, #{<<"results">> := Results}} when length(Results) == 0 ->
+            #{<<"roles">> := Roles} = dgiot_auth:get_session(SessionToken),
+            [#{<<"name">> := Role} | _] = maps:values(Roles),
+            Basedata = maps:get(<<"basedata">>, Args, #{}),
+            {ok, #{<<"objectId">> := DeviceId}} =
+                dgiot_device:create_device(#{
+                    <<"devaddr">> => DevAddr,
+                    <<"name">> => Name,
+                    <<"product">> => ProductId,
+                    <<"ACL">> => #{<<"role:", Role/binary>> => #{
+                        <<"read">> => true,
+                        <<"write">> => true}
+                    },
+                    <<"status">> => <<"ONLINE">>,
+                    <<"brand">> => <<"数蛙桌面采集网关"/utf8>>,
+                    <<"devModel">> => <<"SW_WIN_CAPTURE">>,
+                    <<"basedata">> => Basedata,
+                    <<"profile">> => Profile#{<<"reporttemp">> => WordPath},
+                    <<"parentId">> => #{
+                        <<"__type">> => <<"Pointer">>,
+                        <<"className">> => <<"Device">>,
+                        <<"objectId">> => ParentId
+                    }
+                }),
+            case dgiot_parse:query_object(<<"View">>, #{<<"order">> => <<"createdAt">>, <<"where">> => #{<<"key">> => ProductId, <<"class">> => <<"Product">>}}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+                {ok, #{<<"results">> := Views}} ->
+                    ViewRequests =
+                        lists:foldl(fun(View, Acc) ->
+                            NewView = maps:without([<<"createdAt">>, <<"objectId">>, <<"updatedAt">>], View),
+                            Type = maps:get(<<"type">>, View, <<"">>),
+                            Title = maps:get(<<"title">>, View, <<"">>),
+                            Viewid = dgiot_parse_id:get_viewid(DeviceId, Type, <<"Device">>, Title),
+                            Acc ++ [#{
+                                <<"method">> => <<"POST">>,
+                                <<"path">> => <<"/classes/View">>,
+                                <<"body">> => NewView#{
+                                    <<"objectId">> => Viewid,
+                                    <<"key">> => DeviceId,
+                                    <<"class">> => <<"Device">>}
+                            }]
+                                    end, [], Views),
+                    dgiot_parse:batch(ViewRequests);
+                _R1 ->
+                    ?LOG(info, "R1 ~p", [_R1])
+            end,
+            case dgiot_parse:query_object(<<"Dict">>, #{<<"order">> => <<"createdAt">>, <<"where">> => #{<<"key">> => ProductId, <<"class">> => <<"Product">>}}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+                {ok, #{<<"results">> := Dicts}} ->
+                    DictRequests =
+                        lists:foldl(fun(Dict, Acc) ->
+                            NewDict = maps:without([<<"createdAt">>, <<"objectId">>, <<"updatedAt">>], Dict),
+                            Type = maps:get(<<"type">>, Dict, <<"">>),
+                            Title = maps:get(<<"title">>, Dict, <<"">>),
+                            Dictid = dgiot_parse_id:get_dictid(DeviceId, Type, <<"Device">>, Title),
+                            Acc ++ [#{
+                                <<"method">> => <<"POST">>,
+                                <<"path">> => <<"/classes/Dict">>,
+                                <<"body">> => NewDict#{
+                                    <<"objectId">> => Dictid,
+                                    <<"key">> => DeviceId,
+                                    <<"class">> => <<"Device">>}
+                            }]
+                                    end, [], Dicts),
+                    dgiot_parse:batch(DictRequests);
+                _R3 ->
+                    ?LOG(info, "R1 ~p", [_R3])
+            end,
+            {ok, #{<<"result">> => <<"success">>}};
+        _R2 ->
             {error, <<"report exist">>}
     end.
 
