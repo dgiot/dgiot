@@ -19,18 +19,18 @@
 -include_lib("dgiot/include/logger.hrl").
 -export([store_all/5]).
 -export([get_num/2, get_name/2, turn_name/2, turn_num/3]).
-
+-export([get_sheet_type/2]).
 store_all(_, _, DeviceId, _, <<"false">>) ->
     dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"realstatus">> => 2});
 store_all(ProductId, Channel, DeviceId, Operator, <<"true">>) ->
-    case dgiot_factory_getdata:get_work_sheet(ProductId, <<"product">>, Channel, DeviceId, undefined, undefined, 0, <<"true">>) of
+    case dgiot_factory_getdata:get_work_sheet(ProductId, <<"product">>, Channel, DeviceId, #{<<"product_conditiong">> => 2}, undefined, 0, <<"true">>) of
         {ok, {_, Res}} ->
 
             lists:foldl(
                 fun(X, _) ->
                     dgiot_factory_channel:save_data(ProductId, DeviceId, <<"product">>, X#{<<"product_condition">> := 3, <<"product_storedperson">> => Operator})
                 end, [], Res),
-        handle_dingdan(DeviceId, ProductId, Channel);
+            handle_dingdan(DeviceId, ProductId, Channel);
         {ok, _} ->
             io:format("~s ~p DeviceId= ~p ~n", [?FILE, ?LINE, DeviceId]),
             handle_dingdan(DeviceId, ProductId, Channel);
@@ -176,4 +176,29 @@ turn_num(FlatMap, ProductId, Type) ->
                 end, FlatMap, ThingMap);
         _ ->
             FlatMap
+    end.
+
+
+get_sheet_type(ProductId, Exclude) ->
+    case dgiot_product:lookup_prod(ProductId) of
+        {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
+            Res = lists:foldl(
+                fun(X, Acc) ->
+                    case X of
+                        #{<<"devicetype">> := Type} ->
+                            case lists:member(Type, Acc) of
+                                false ->
+                                    Acc ++ [Type];
+                                _ ->
+                                    Acc
+                            end;
+                        _ -> Acc
+                    end
+                end, [], Props),
+            lists:foldl(
+                fun(X, Acc) ->
+                    Acc -- [X]
+                end, Res, Exclude);
+        _ ->
+            #{}
     end.

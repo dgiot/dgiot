@@ -74,8 +74,8 @@ handle(OperationID, Args, Context, Req) ->
 %%% 内部函数 Version:API版本
 %%%===================================================================
 
-do_request(get_factory_calendar, _Args, _Context, _Body) ->
-    case dgiot_factory_calendar:get_calendar() of
+do_request(get_factory_calendar,#{ <<"depart">> :=Depart} =_Args, _Context, _Body) ->
+    case dgiot_factory_calendar:get_calendar(Depart) of
         {ok, _, FactoryCalendar} ->
             {ok, FactoryCalendar};
         {Error, Res} ->
@@ -84,8 +84,9 @@ do_request(get_factory_calendar, _Args, _Context, _Body) ->
             {error, Res}
     end;
 
-do_request(post_factory_calendar, #{<<"default">> := Default, <<"other">> := Other} = _Args, _Context, _Body) ->
-    case dgiot_factory_calendar:post_calendar(#{<<"default">> => Default, <<"other">> => Other}) of
+do_request(post_factory_calendar, #{<<"default">> := Default, <<"other">> := Other,<<"depart">> :=Depart} = _Args, _Context, _Body) ->
+    io:format("~s ~p Depart= ~p ~n",[?FILE,?LINE,Depart]),
+    case dgiot_factory_calendar:post_calendar(Depart,#{<<"default">> => Default, <<"other">> => Other}) of
         {ok, _, FactoryCalendar} ->
             {ok, FactoryCalendar};
         {Error, Res} ->
@@ -98,38 +99,20 @@ do_request(post_factory_calendar, #{<<"default">> := Default, <<"other">> := Oth
 
 
 
-do_request(get_worker_shift, #{<<"depart">> := Depart, <<"date">> := Data, <<"workshop">> := Workshop, <<"limit">> := Limit, <<"skip">> := Skip} = _Args, #{<<"sessionToken">> := SessionToken} = _Context, _Body) ->
+do_request(get_worker_shift, #{<<"depart">> := Depart, <<"date">> := Data, <<"workshop">> := Workshop, <<"limit">> := Limit, <<"skip">> := Skip} = _Args,
+    #{<<"sessionToken">> := SessionToken} = _Context, _Body) ->
     Department = case Depart of
                      undefined ->
                          <<10, 10, 230, 180, 129, 232, 175, 186, 231, 148, 159, 228, 186, 167, 231, 174, 161, 231, 144, 134>>;
                      _ ->
                          Depart
                  end,
-    case {Data, Workshop} of
-        {undefined, _} ->
-            case dgiot_factory_shift:get_all_shift(Department, Data, Workshop, SessionToken) of
-                {ok, Res} ->
-                    {Total, Result} = dgiot_factory_getdata:filter_data(Limit, Skip, Res),
-                    {ok, #{<<"status">> => 0, msg => <<"数据请求成功"/utf8>>, <<"data">> => #{<<"total">> => Total, <<"item">> => Result}}};
-                {error, Msg} ->
-                    {error, Msg}
-            end;
-        {_, undefined} ->
-            case dgiot_factory_shift:get_all_shift(Department, Data, Workshop, SessionToken) of
-                {ok, Res} ->
-                    {Total, Result} = dgiot_factory_getdata:filter_data(Limit, Skip, Res),
-                    {ok, #{<<"status">> => 0, msg => <<"数据请求成功"/utf8>>, <<"data">> => #{<<"total">> => Total, <<"item">> => Result}}};
-                {error, Msg} ->
-                    {error, Msg}
-            end;
+    case dgiot_factory_shift:get_all_shift(Department, Data, Workshop, SessionToken) of
+        {ok, Res} ->
+            {Total, Result} = dgiot_factory_getdata:filter_data(Limit, Skip, Res),
+            {ok, #{<<"status">> => 0, msg => <<"数据请求成功"/utf8>>, <<"data">> => #{<<"total">> => Total, <<"item">> => Result}}};
         _ ->
-            case dgiot_factory_shift:get_shift(Data, Workshop) of
-                {ok, Res} ->
-                    {Total, Result} = dgiot_factory_getdata:filter_data(Limit, Skip, Res),
-                    {ok, #{<<"status">> => 0, msg => <<"数据请求成功"/utf8>>, <<"data">> => #{<<"total">> => Total, <<"item">> => Result}}};
-                {error, Msg} ->
-                    {error, Msg}
-            end
+            {error, <<"get_data_failed">>}
     end;
 
 do_request(post_worker_shift, #{<<"shift">> := Shifts} = _Args, _Context, _Body) ->
@@ -202,7 +185,7 @@ do_request(post_stored, #{<<"objectId">> := DeviceId, <<"operator">> := Operator
         {ok, Channel} ->
             case dgiot_device_cache:lookup(DeviceId) of
                 {ok, #{<<"productid">> := ProductId}} ->
-                    case dgiot_factory_utils:store_all(ProductId,Channel, DeviceId, Operator, Quality) of
+                    case dgiot_factory_utils:store_all(ProductId, Channel, DeviceId, Operator, Quality) of
                         {ok, _} ->
                             {ok, #{<<"status">> => 0, msg => <<"操作成功"/utf8>>, <<"data">> => #{}}};
                         _ ->
