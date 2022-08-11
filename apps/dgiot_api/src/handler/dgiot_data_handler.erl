@@ -142,6 +142,12 @@ do_request(get_thing, #{<<"productid">> := ProductId, <<"moduleType">> := Module
     getThing(ProductId, ModuleType, SessionToken);
 
 %% Thing 概要: 导库 描述:添加物模型
+%% OperationId:post_excelthing
+%% 请求:PUT /iotapi/post_excelthing
+do_request(post_excelthing, #{<<"productid">> := ProductId, <<"excel">> := Excel} = _Body,
+    #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
+    postexcelThing(ProductId, Excel, SessionToken);
+%% Thing 概要: 导库 描述:添加物模型
 %% OperationId:post_thing
 %% 请求:PUT /iotapi/post_thing
 do_request(post_thing, #{<<"productid">> := ProductId, <<"item">> := Item} = _Body,
@@ -578,6 +584,39 @@ getThing(ProductId, ModuleType, SessionToken) ->
         Error ->
             {error, Error}
     end.
+
+%% Thing 概要: 导库 描述:添加物模型
+%% OperationId:post_excelthing
+%% 请求:POST /iotapi/post_excelthing
+postexcelThing(ProductId, Excel, SessionToken)->
+    case dgiot_parse:get_object(<<"Product">>, ProductId, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+        {ok, #{<<"thing">> := Thing}} ->
+            NewThing =lists:foldl(fun(Item, Acc0)->
+            ModuleType = maps:get(<<"moduleType">>, Item, <<"properties">>),
+            Modules = maps:get(ModuleType, Acc0, []),
+            #{<<"identifier">> := Identifier} = Item,
+            {Ids, NewModules} =
+                lists:foldl(fun(X, {Ids1, Acc}) ->
+                    case X of
+                        #{<<"identifier">> := Identifier} ->
+                            {Ids1 ++ [Identifier], Acc};
+                        _ ->
+                            {Ids1, Acc ++ [X]}
+                    end
+                            end, {[], [Item]}, Modules),
+            case length(Ids) of
+                0 ->
+                    Acc0#{ModuleType => NewModules}
+            end
+                        end, Thing, Excel),
+            dgiot_parse:update_object(<<"Product">>, ProductId,
+            #{<<"thing">> => NewThing},
+            [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]),
+            {ok, #{<<"code">> => 200}};
+        Error ->
+            {error, Error}
+    end.
+
 
 %% Thing 概要: 导库 描述:添加物模型
 %% OperationId:post_thing

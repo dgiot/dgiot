@@ -28,17 +28,17 @@
 %%--------------------------------------------------------------------
 
 {mapping, "tencent_sms.appid", "dgiot_http.tencent_sms_appid", [
-{default, "1400214975"},
+{default, "1400635630"},
 {datatype, string}
 ]}.
 
 {mapping, "tencent_sms.appkey", "dgiot_http.tencent_sms_appkey", [
-{default, "25c8c3a4d17367a8232931ff54d114a2"},
+{default, "40d9609b9e6212cbff051b4f1d4cabfc"},
 {datatype, string}
 ]}.
 
-{mapping, "tencent_sms.tmplid", "dgiot_http.tencent_sms_tmplid", [
-{default, "340847"},
+{mapping, "tencent_sms.notification.templateId", "dgiot_http.tencent_sms_notification_templateId", [
+{default, "1473069"},
 {datatype, string}
 ]}.
 
@@ -46,7 +46,6 @@
 {default, "dgiot"},
 {datatype, string}
 ]}.
-
 
 
 %%--------------------------------------------------------------------
