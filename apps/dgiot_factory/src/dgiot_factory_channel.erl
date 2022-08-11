@@ -91,15 +91,13 @@ handle_message({sync_parse, _Pid, 'after', post, Token, <<"Device">>, QueryData}
     {ok, State};
 
 
-
 handle_message({sync_parse, _Pid, 'before', put, Token, <<"Device">>, #{<<"content">> := Content, <<"id">> := DeviceId} = _QueryData}, State) ->
     case dgiot_device_cache:lookup(DeviceId) of
         {ok, #{<<"productid">> := ProductId}} ->
             case Content of
                 #{<<"person">> := #{<<"type">> := Type}} ->
                     FlatMap = dgiot_map:flatten(Content),
-                     save_data(ProductId, DeviceId, Type, FlatMap#{<<"persion_sessiontoken">> => Token}),
-%%                    dgiot_factory_data:handle_data([ProductId, DeviceId, Type, FlatMap#{<<"persion_sessiontoken">> => Token}]),
+                     save_data(ProductId, DeviceId, Type, FlatMap#{<<"persion_sessiontoken">> => Token,<<"person_deviceid">> => DeviceId}),
                 {ok, State};
                 _ ->
                     {'EXIT', error}
@@ -131,7 +129,7 @@ save_data(ProductId, DeviceId, Type, Payload) ->
                             case F of
                                 {ok, NewPayload} ->
                                     Id = maps:get(?SHEETID(Type), NewPayload, get_id(DevAddr, Type)),
-                                    dgiot_task:save_td_no_match(ProductId, DevAddr, NewPayload#{?SHEETID(Type) => Id}, #{});
+                                    dgiot_task:save_td(ProductId, DevAddr, NewPayload#{?SHEETID(Type) => Id,<<"person_sheetsid">> =>Id}, #{});
                                 _ ->
                                     {error, <<"run_hook_failed">>}
                             end;
@@ -140,7 +138,7 @@ save_data(ProductId, DeviceId, Type, Payload) ->
                     end;
                 {error, not_find} ->
                     Id = maps:get(?SHEETID(Type), Payload, get_id(DevAddr, Type)),
-                    dgiot_task:save_td_no_match(ProductId, DevAddr, Payload#{?SHEETID(Type) => Id}, #{});
+                    dgiot_task:save_td(ProductId, DevAddr, Payload#{?SHEETID(Type) => Id,<<"person_sheetsid">> =>Id}, #{});
 
                 _ ->
                     {error, <<"run_hook_failed">>}

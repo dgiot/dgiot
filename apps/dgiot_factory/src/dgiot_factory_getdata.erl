@@ -8,7 +8,7 @@
 %%%-------------------------------------------------------------------
 -module(dgiot_factory_getdata).
 -author("wolong").
-
+-include("dgiot_factory.hrl").
 -define(PRE, <<"_">>).
 -define(Database(Name), <<?PRE/binary, Name/binary>>).
 -define(Table(Name), <<?PRE/binary, Name/binary>>).
@@ -17,8 +17,80 @@
 
 %% API
 -export([get_work_sheet/8]).
--export([get_ThingMap/2, thinglist2binary/1, get_history/9, get_device_list/1,get_example/2, filter_data/3]).
+-export([get_ThingMap/2, thinglist2binary/1, get_history/9, get_device_list/1, get_example/2, filter_data/3]).
+-export([get_all_sheet/7]).
 
+get_all_sheet(ProductId, Channel, DeviceId, Where, Limit, Skip, New) ->
+    UnflattenWhere = unflatten_where(Where),
+    case dgiot_hook:run_hook({factory, get_sheet_list}, [ProductId]) of
+        {ok, [SheetList]} ->
+            SheetsData = lists:foldl(
+                fun(X, Acc) ->
+                    SheetWhere = get_sheet_where(X, UnflattenWhere),
+                    case dgiot_factory_getdata:get_work_sheet(ProductId, X, Channel, DeviceId, SheetWhere, undefined, undefined, New) of
+                        {ok, {_, Res}} ->
+                            Acc#{X => Res};
+                        _ ->
+                            Acc
+                    end
+                end, #{}, SheetList),
+            IdData = get_sheet_id(SheetsData),
+            MergedData = merge_sheets(IdData),
+            Data = maps:values(MergedData),
+            {Total, Res} = filter_data(Limit, Skip, Data),
+            {ok, {Total, Res}};
+        _ ->
+            error
+
+    end.
+unflatten_where(undefined) ->
+    undefined;
+unflatten_where(Where) ->
+    case is_map(Where) of
+        true ->
+            dgiot_map:unflatten(Where);
+        _ ->
+            dgiot_map:unflatten(jsx:decode(Where))
+    end.
+
+merge_sheets(IdData) ->
+    lists:foldl(
+        fun(X, Acc) ->
+            dgiot_map:merge(Acc, X)
+        end, #{}, IdData).
+
+get_sheet_id(SheetsData) ->
+    maps:fold(
+        fun(K, V, Acc) ->
+            Res = lists:foldl(
+                fun(X, Acc1) ->
+                    SheetId = ?SHEETID(K),
+
+                    Res1 = maps:fold(
+                        fun(K1, V1, Acc2) ->
+                            case K1 of
+                                SheetId ->
+                                    Acc2#{V1 => X};
+                                _ ->
+                                    Acc2
+                            end
+                        end, #{}, X),
+                    maps:merge(Acc1, Res1)
+                end, #{}, V),
+            Acc ++ [Res]
+        end, [], SheetsData).
+
+
+get_sheet_where(_, undefined) ->
+    undefined;
+get_sheet_where(X, UnflattenWhere) ->
+    PersonWhere = maps:get(?PERSON, UnflattenWhere, #{}),
+    SheetWhere = maps:get(X, UnflattenWhere, #{}),
+    dgiot_map:flatten(maps:merge(#{?PERSON => PersonWhere},#{X=> SheetWhere})).
+
+
+get_work_sheet(ProductId, <<"person">>, Channel, DeviceId, Where, Limit, Skip, New) ->
+    get_all_sheet(ProductId, Channel, DeviceId, Where, Limit, Skip, New);
 get_work_sheet(ProductId, Type, Channel, DeviceId, Where, Limit, Skip, New) ->
     case filter_where(Where, ProductId, Type) of
         {Parse, Td, ThingMap} ->
@@ -26,7 +98,6 @@ get_work_sheet(ProductId, Type, Channel, DeviceId, Where, Limit, Skip, New) ->
                 {ok, ParseData} ->
                     case get_history(Channel, ProductId, DeviceId, ThingMap, Td, Limit, Skip, Type, New) of
                         {ok, #{<<"results">> := HistoryData}} ->
-                            io:format("~s ~p DeviceId= ~p ~n",[?FILE,?LINE,DeviceId]),
                             {Total, Res} = filter_data(Limit, Skip, HistoryData),
                             MergeData = merge_data(ParseData, Res, DeviceId, ThingMap),
                             NamedData = dgiot_factory_utils:turn_name(MergeData, ThingMap),
@@ -35,7 +106,7 @@ get_work_sheet(ProductId, Type, Channel, DeviceId, Where, Limit, Skip, New) ->
                             error
                     end;
                 _ ->
-                    {ok, {0,[]}}
+                    {ok, {0, []}}
             end;
         _ ->
             {error, not_find_thing}
@@ -121,24 +192,25 @@ filter_where(undefined, ProductId, Type) ->
 filter_where(Where, ProductId, Type) ->
     MapWhere = case is_map(Where) of
                    true ->
-                       Where;
+                       dgiot_factory_utils:turn_num(Where, ProductId, Type);
                    _ ->
-                       jsx:decode(Where)
+                       dgiot_factory_utils:turn_num(jsx:decode(Where), ProductId, Type)
                end,
 
     case get_ThingMap(Type, ProductId) of
         {ok, ThingMap} ->
             {Parse, Td} = maps:fold(
-                fun(K,V,{Parse, Td})->
-                    case maps:is_key(K,ThingMap) of
+                fun(K, V, {Parse, Td}) ->
+                    case maps:is_key(K, ThingMap) of
                         true ->
                             {Parse, Td#{K => V}};
                         _ ->
                             {Parse#{K => V}, Td}
 
                     end
-            end,{#{},#{}},MapWhere),
-            TdWithPerson = case maps:is_key(<<"person">>,ThingMap) of
+                end, {#{}, #{}}, MapWhere),
+
+            TdWithPerson = case maps:is_key(<<"person">>, ThingMap) of
                                true ->
                                    Td#{<<"person">> => maps:get(<<"person">>, MapWhere)};
                                false ->
@@ -156,12 +228,15 @@ get_ThingMap(Type, ProductId) ->
             ThingList = lists:foldl(
                 fun(X, Acc) ->
                     case X of
+                        #{<<"devicetype">> := ?PERSON, <<"isstorage">> := true, <<"identifier">> := Identifier, <<"dataType">> := #{<<"type">> := DateType}} ->
+                            Acc#{Identifier => DateType};
                         #{<<"devicetype">> := Type, <<"isstorage">> := true, <<"identifier">> := Identifier, <<"dataType">> := #{<<"type">> := DateType}} ->
                             Acc#{Identifier => DateType};
                         _ ->
                             Acc
                     end
                 end, #{}, Properties),
+
             case maps:size(ThingList) of
                 0 ->
                     {error, not_find_thing};
@@ -219,26 +294,26 @@ get_history(Channel, ProductId, DeviceId, ThingMap, Where, _Limit, _Skip, Type, 
 get_where(undefined, _, DetectThing, _) ->
     <<" where ", DetectThing/binary, " is not null ">>;
 
-get_where(Where, ThingMap, DetectThing, ProductId) ->
+get_where(Where, ThingMap, DetectThing, _ProductId) ->
     case is_map(Where) of
         true ->
             W = maps:fold(
                 fun(K, V, Acc) ->
-                    case K of
-                        <<"person">> ->
-                            case get_ThingMap(<<"person">>, ProductId) of
-                                {ok, PersonMap} ->
-                                    PersonList = maps:keys(PersonMap),
-                                    Res = lists:foldl(
-                                        fun(X, ACC) ->
-                                            <<ACC/binary, "or ", X/binary, " like \"%", V/binary, "%\" ">>
-                                        end, <<"">>, PersonList),
-                                    FixedRes = binary:part(Res, 2, byte_size(Res) - 2),
-                                    <<Acc/binary, "( ", FixedRes/binary, " ) and ">>;
-                                _ ->
-                                    Acc
-                            end;
-                        _ ->
+%%                    case K of
+%%                        <<"person">> ->
+%%                            case get_ThingMap(<<"person">>, ProductId) of
+%%                                {ok, PersonMap} ->
+%%                                    PersonList = maps:keys(PersonMap),
+%%                                    Res = lists:foldl(
+%%                                        fun(X, ACC) ->
+%%                                            <<ACC/binary, "or ", X/binary, " like \"%", V/binary, "%\" ">>
+%%                                        end, <<"">>, PersonList),
+%%                                    FixedRes = binary:part(Res, 2, byte_size(Res) - 2),
+%%                                    <<Acc/binary, "( ", FixedRes/binary, " ) and ">>;
+%%                                _ ->
+%%                                    Acc
+%%                            end;
+%%                        _ ->
                             case maps:find(K, ThingMap) of
                                 {ok, <<"text">>} ->
                                     <<Acc/binary, K/binary, " like \"%", V/binary, "%\" and ">>;
@@ -248,7 +323,7 @@ get_where(Where, ThingMap, DetectThing, ProductId) ->
                                 _ ->
                                     Acc
                             end
-                    end
+%%                    end
                 end, <<" ">>, maps:remove(<<"product">>, Where)),
             <<" where ", W/binary, DetectThing/binary, " is not null ">>;
         _ ->
@@ -315,12 +390,14 @@ get_example(Type, ProductId) ->
                       fun(K, V, Acc) ->
                           case V of
                               <<"text">> ->
-                                  Acc#{K =><<"text">>};
+                                  Acc#{K => <<"text">>};
                               <<"enum">> ->
-                                  Acc#{K =><<"text">>};
+                                  Acc#{K => <<"text">>};
                               _ ->
-                                  Acc#{K =>2.55}
+                                  Acc#{K => 2.55}
                           end
                       end, #{}, Res)
-          end ,
-    io:format("~ts ~n",[unicode:characters_to_list(jsx:encode(Map))]).
+          end,
+    io:format("~ts ~n", [unicode:characters_to_list(jsx:encode(Map))]).
+
+
