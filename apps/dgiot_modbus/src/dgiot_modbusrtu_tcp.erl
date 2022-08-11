@@ -173,25 +173,19 @@ get_deviceid(ProdcutId, DevAddr) ->
 create_device(DeviceId, ProductId, DTUMAC, DTUIP, Dtutype) ->
     case dgiot_product:lookup_prod(ProductId) of
         {ok, #{<<"ACL">> := Acl, <<"devType">> := DevType}} ->
-            case dgiot_parse:get_object(<<"Device">>, DeviceId) of
-                {ok, #{<<"devaddr">> := _GWAddr}} ->
-                    dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"ip">> => DTUIP, <<"status">> => <<"ONLINE">>}),
-                    dgiot_task:save_pnque(ProductId, DTUMAC, ProductId, DTUMAC);
-                _ ->
-                    dgiot_device:create_device(#{
-                        <<"devaddr">> => DTUMAC,
-                        <<"name">> => <<Dtutype/binary, DTUMAC/binary>>,
-                        <<"ip">> => DTUIP,
-                        <<"isEnable">> => true,
-                        <<"product">> => ProductId,
-                        <<"ACL">> => Acl,
-                        <<"status">> => <<"ONLINE">>,
-                        <<"location">> => #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => 120.161324, <<"latitude">> => 30.262441},
-                        <<"brand">> => Dtutype,
-                        <<"devModel">> => DevType
-                    }),
-                    dgiot_task:save_pnque(ProductId, DTUMAC, ProductId, DTUMAC)
-            end,
+            dgiot_device:create_device(#{
+                <<"devaddr">> => DTUMAC,
+                <<"name">> => <<Dtutype/binary, DTUMAC/binary>>,
+                <<"ip">> => DTUIP,
+                <<"isEnable">> => true,
+                <<"product">> => ProductId,
+                <<"ACL">> => Acl,
+                <<"status">> => <<"ONLINE">>,
+                <<"location">> => #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => 120.161324, <<"latitude">> => 30.262441},
+                <<"brand">> => Dtutype,
+                <<"devModel">> => DevType
+            }),
+            dgiot_task:save_pnque(ProductId, DTUMAC, ProductId, DTUMAC),
             Productname =
                 case dgiot_parse:get_object(<<"Product">>, ProductId) of
                     {ok, #{<<"name">> := Productname1}} ->
