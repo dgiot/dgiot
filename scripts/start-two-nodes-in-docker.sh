@@ -51,7 +51,7 @@ docker run -d -t --restart=always --name "$NODE2" \
   -v "$PROJ_DIR"/_build/emqx/rel/emqx:/built \
   "$IMAGE" sh -c 'cp -r /built /emqx && /emqx/bin/emqx console'
 
-wait (){
+wait() {
   container="$1"
   while ! docker exec "$container" /emqx/bin/emqx_ctl status >/dev/null 2>&1; do
     echo -n '.'

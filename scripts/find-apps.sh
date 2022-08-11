@@ -6,8 +6,8 @@ set -euo pipefail
 cd -P -- "$(dirname -- "$0")/.."
 
 find_app() {
-    local appdir="$1"
-    find "$appdir" -mindepth 1 -maxdepth 1 -type d
+  local appdir="$1"
+  find "$appdir" -mindepth 1 -maxdepth 1 -type d
 }
 
 # append emqx application first
@@ -15,9 +15,9 @@ echo 'emqx'
 
 find_app 'apps'
 if [ -f 'EMQX_ENTERPRISE' ]; then
-    find_app 'lib-ee'
+  find_app 'lib-ee'
 else
-    find_app 'lib-ce'
+  find_app 'lib-ce'
 fi
 
 ## find directories in lib-extra
