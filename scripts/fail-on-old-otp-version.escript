@@ -9,4 +9,3 @@ main(_) ->
         false ->
             ok
     end.
-
