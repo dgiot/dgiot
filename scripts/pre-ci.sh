@@ -14,7 +14,7 @@ get_emqx_dashboard(){
   if [ -d "$EMQX_DASHBOARD_PATH/www" ]; then
       echo "emqx_dashboard exist"
   else
-    wget ${FILESEVER}/emqx_dashboard.tar.gz
+    wget "$FILESEVER"/emqx_dashboard.tar.gz
     tar xvf emqx_dashboard.tar.gz
     mv www "$EMQX_DASHBOARD_PATH/"
     rm emqx_dashboard.tar.gz -rf
@@ -26,7 +26,7 @@ get_dgiot_dashboard(){
   if [ -d "$DGIOT_DASHBOARD_PATH/www" ]; then
       echo "dgiot_dashboard exist"
   else
-    wget ${FILESEVER}/www.tar.gz
+    wget "$FILESEVER"/www.tar.gz
     tar xvf www.tar.gz
     mv www "$DGIOT_DASHBOARD_PATH/"
     rm www.tar.gz -rf
@@ -35,7 +35,7 @@ get_dgiot_dashboard(){
 }
 
 get_apps() {
-    cd ${EMQX_APP}
+    cd "$EMQX_APP"
     if [ ! -d "emqx_rule_engine/" ]; then
       git clone  -b "v4.3.10" "https://gitee.com/fastdgiot/emqx-rule-engine.git"  emqx_rule_engine
     fi

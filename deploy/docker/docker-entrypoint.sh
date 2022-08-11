@@ -94,9 +94,9 @@ fi
 # SYNOPSIS
 #     fill_tuples FILE [ELEMENTS ...]
 fill_tuples() {
-    local file=$1
-    local elements=${*:2}
-    for var in $elements; do
+    local file="$1"
+    local elements="${*:2}"
+    for var in "$elements"; do
         if grep -qE "\{\s*$var\s*,\s*(true|false)\s*\}\s*\." "$file"; then
             sed -r "s/\{\s*($var)\s*,\s*(true|false)\s*\}\s*\./{\1, true}./1" "$file" > tmpfile && cat tmpfile > "$file" 
         elif grep -q "$var\s*\." "$file"; then

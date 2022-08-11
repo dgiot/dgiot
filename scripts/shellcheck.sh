@@ -12,4 +12,4 @@ for i in "${target_files[@]}"; do
   fi
 done
 
-exit $return_code
+exit "$return_code"

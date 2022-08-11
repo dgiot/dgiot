@@ -19,7 +19,7 @@ set -euo pipefail
 cd -P -- "$(dirname -- "$0")/.."
 
 IMAGE="${1}"
-PROJ_DIR="$(pwd)"
+PROJ_DIR="$PWD"
 
 NET='emqx.io'
 NODE1="node1.$NET"
@@ -59,8 +59,8 @@ wait (){
   done
 }
 
-wait $NODE1
-wait $NODE2
+wait "$NODE1"
+wait "$NODE2"
 echo
 
-docker exec $NODE1 /emqx/bin/emqx_ctl cluster join "emqx@$NODE2"
+docker exec "$NODE1" /emqx/bin/emqx_ctl cluster join "emqx@$NODE2"

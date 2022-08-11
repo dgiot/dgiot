@@ -15,5 +15,5 @@ elif [ "$(uname -s)" = 'Linux' ]; then
         DIST="$(sed -n '/^ID=/p' /etc/os-release | sed -r 's/ID=(.*)/\1/g' | sed 's/"//g')"
         VERSION_ID="$(sed -n '/^VERSION_ID=/p' /etc/os-release | sed -r 's/VERSION_ID=(.*)/\1/g' | sed 's/"//g')"
     fi
-    echo "${DIST}${VERSION_ID}" | sed -r 's/([a-zA-Z]*)-.*/\1/g'
+    echo "$DIST$VERSION_ID" | sed -r 's/([a-zA-Z]*)-.*/\1/g'
 fi

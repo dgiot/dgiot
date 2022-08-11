@@ -13,7 +13,7 @@ else
 fi
 
 ## emqx_release.hrl is the single source of truth for release version
-RELEASE="$(grep -E "define.+EMQX_RELEASE.+${EDITION}" include/emqx_release.hrl | cut -d '"' -f2)"
+RELEASE="$(grep -E "define.+EMQX_RELEASE.+$EDITION" include/emqx_release.hrl | cut -d '"' -f2)"
 
 git_exact_vsn() {
     local tag
@@ -32,4 +32,4 @@ else
     SUFFIX="-$(git rev-parse HEAD | cut -b1-8)"
 fi
 
-echo "${RELEASE}${SUFFIX}"
+echo "$RELEASE$SUFFIX"

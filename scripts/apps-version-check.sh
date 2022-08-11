@@ -35,7 +35,7 @@ while read -r app; do
     fi
 done < <(./scripts/find-apps.sh)
 
-if [ $bad_app_count -gt 0 ]; then
+if [ "$bad_app_count" -gt 0 ]; then
     exit 1
 else
     echo "apps version check successfully"

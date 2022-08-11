@@ -10,7 +10,7 @@ elvis_version='1.0.0-emqx-2'
 base="${1:-}"
 repo="${2:-emqx/emqx}"
 REPO="${GITHUB_REPOSITORY:-${repo}}"
-if [ "${base}" = "" ]; then
+if [ "$base" = "" ]; then
     echo "Usage $0 <git-compare-base-ref>"
     exit 1
 fi
@@ -37,7 +37,7 @@ git_diff() {
 }
 
 bad_file_count=0
-for file in $(git_diff); do
+for file in "$(git_diff)"; do
     if [ ! -f "$file" ]; then
         # file is deleted, skip
         continue
@@ -50,7 +50,7 @@ for file in $(git_diff); do
         bad_file_count=$(( bad_file_count + 1))
     fi
 done
-if [ $bad_file_count -gt 0 ]; then
+if [ "$bad_file_count" -gt 0 ]; then
     echo "elvis: $bad_file_count errors"
     exit 1
 fi
@@ -75,10 +75,10 @@ nl_at_eof() {
     fi
 }
 
-for file in $(git_diff); do
+for file in "$(git_diff)"; do
     if ! nl_at_eof "$file"; then
         bad_file_count=$(( bad_file_count  + 1 ))
     fi
 done
 
-exit $bad_file_count
+exit "$bad_file_count"

@@ -13,4 +13,4 @@ if [ "$1" != "emqx" ]; then
     BASEDIR="$1"
 fi
 
-find "${BASEDIR}/test/props" -name "prop_*.erl" 2>/dev/null | xargs -I{} basename {} .erl | xargs | tr ' ' ','
+find "$BASEDIR/test/props" -name "prop_*.erl" 2>/dev/null | xargs -I{} basename {} .erl | xargs | tr ' ' ','
