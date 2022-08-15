@@ -133,7 +133,7 @@ handle_material(ProductId, DeviceId, #{<<"material_type">> := <<"retriving">>, <
         {ok, Token} ->
             case dgiot_product_tdengine:get_channel(Token) of
                 {ok, Channel} ->
-                    case dgiot_factory_getdata:get_work_sheet(ProductId, <<"material">>, Channel, DeviceId, #{<<"material_spec">> => MaterialName, <<"material_date">> => Date}, 1, 0, <<"true">>) of
+                    case dgiot_factory_getdata:get_work_sheet(ProductId, <<"material">>,undefined ,undefined ,Channel, DeviceId, #{<<"material_spec">> => MaterialName, <<"material_date">> => Date}, 1, 0, <<"true">>) of
                         {ok, {_, Res}} ->
                             case length(Res) of
                                 1 ->
