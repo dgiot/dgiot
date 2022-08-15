@@ -75,18 +75,36 @@ do_request(get_file_signature, Args, _Context, _Req) ->
     end;
 
 %dgiot通用告警
-do_request(post_handlewarnsendsms, #{<<"appId">> := AppId,<<"appKey">> := AppKey,<<"tplId">> := TplId,<<"phones">> := Phones,<<"params">>:=Params}, _Context, _Req) ->
-    ListMobile = lists:foldl(
-        fun ( #{<<"mobile">> := Mobile,<<"nationcode">> := Nationcode},Acc) ->
-            Acc ++ [#{<<"mobile">>=>unicode:characters_to_binary(Mobile),<<"nationcode">>=>unicode:characters_to_binary(Nationcode)}]
-                             end, [], Phones),
-    dgiot_notification:send_sms(ListMobile, Params, AppId, AppKey, TplId),
-    Json= #{},
-    {ok,#{
-        <<"status">> => 200,
-        <<"msg">> => <<"success">>,
-        <<"data">> => Json
-    }};
+do_request(post_handlewarnsendsms, #{<<"appId">> := AppId,<<"appKey">> := AppKey,<<"tplId">> := TplId,<<"sign">> := Sign,<<"params">>:=Params}, _Context, _Req) ->
+    %通用
+    application:set_env(dgiot_http, tencent_sms_appid,AppId),
+    application:set_env(dgiot_http, tencent_sms_appkey,AppKey),
+    application:set_env(dgiot_http, tencent_sms_notification_templateId,TplId),
+    %测试告警通知的部门，默认为数蛙部门
+    application:set_env(dgiot_http, tencent_sms_sign,Sign),
+    application:set_env(dgiot_http, tencent_sms_params,Params),
+
+    case dgiot_parse:get_object(<<"_Role">>, Sign) of
+        {ok,#{<<"objectId">> := RolesId}} ->
+            %循环得到部门下所有的手机号
+            Users =dgiot_parse_auth:get_UserIds(unicode:characters_to_binary(RolesId)),
+            UsersQuery = #{<<"where">> => #{<<"objectId">> => #{<<"$in">> => Users}}},
+            {ok, #{<<"results">> := Row}}=dgiot_parse:query_object(<<"_User">>, UsersQuery),
+            PhoneList=lists:foldl(fun(X,Acc)->
+                Phone=unicode:characters_to_binary(dgiot_utils:to_list(maps:get(<<"phone">>,X))),
+                dgiot_notification:send_sms(Phone,application:get_env(dgiot_http, tencent_sms_params,Params)),
+                Acc ++ [unicode:characters_to_binary(dgiot_utils:to_list(maps:get(<<"phone">>,X)))]
+                                  end,[],Row),
+%      模板格式：时间：{1} {2}（发起人：{3}）（单据编号{4}）（车间：{5}）产生异常,警告等级为:{6}。
+            Json= #{<<"phones">>=>PhoneList},
+            {ok,#{
+                <<"status">> => 200,
+                <<"msg">> => <<"success">>,
+                <<"data">> => Json
+            }};
+        _ ->
+            {error, #{<<"status">> => 404, <<"msg">> => <<"部门ID错误"/utf8>>, <<"result">> => <<"_Role info null">>}}
+    end;
 
 %数字工厂告警
 do_request(post_warnsendsms,#{<<"objectId">> := DeviceId,<<"branchId">> := BranchId,<<"datetimes">> := DateTimes,<<"docnumber">> :=Docnumber,<<"username">> := UserName,<<"workshop">> := Workshop,<<"level">> := Level,<<"desc">> := Desc,<<"file">> := FileInfo}, _Context,_Req) ->

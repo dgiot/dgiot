@@ -43,10 +43,14 @@
 ]}.
 
 {mapping, "tencent_sms.sign", "dgiot_http.tencent_sms_sign", [
-{default, "dgiot"},
+{default, "ae746ee803"},
 {datatype, string}
 ]}.
 
+{mapping, "tencent_sms.params", "dgiot_http.tencent_sms_params", [
+{default, ["测试2","测试3","测试4","测试5","测试6","测试7"]},
+{datatype, object}
+]}.
 
 %%--------------------------------------------------------------------
 %% 百度地图配置

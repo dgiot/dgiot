@@ -11,8 +11,8 @@
     "/handlewarnsendsms": {
       "post": {
         "security": [],
-        "summary": "短信发送",
-        "description": "短信发送",
+        "summary": "短信配置发送",
+        "description": "短信配置发送",
         "consumes": [
           "application/json"
         ],
@@ -39,10 +39,10 @@
                   "type": "string",
                   "example": "1473069"
                 },
-                "phones": {
+                "sign": {
                   "required": true,
-                  "type": "object",
-                  "example": [{"mobile":"13291721215","nationcode":"86"},{"mobile":"13211111111","nationcode":"86"}]
+                  "type": "string",
+                  "example": "ae746ee803"
                 },
                 "params": {
                   "required": true,
@@ -81,8 +81,8 @@
     "/warnsendsms": {
       "post": {
         "security": [],
-        "summary": "短信发送",
-        "description": "短信发送",
+        "summary": "短信告警发送",
+        "description": "短信告警发送",
         "consumes": [
           "application/json"
         ],
