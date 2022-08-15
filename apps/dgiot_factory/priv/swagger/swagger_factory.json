@@ -9,6 +9,12 @@
         "summary": "获取工厂日历",
         "description": "获取工厂日历",
         "parameters": [
+          {
+            "name": "depart",
+            "in": "query",
+            "type": "string",
+            "description": "查询部门"
+          }
         ],
         "responses": {
           "200": {
@@ -34,6 +40,10 @@
             "schema": {
               "type": "object",
               "properties": {
+                "depart": {
+                  "description": "部门",
+                  "type": "string"
+                },
                 "default": {
                   "description": "默认",
                   "type": "string"
@@ -42,9 +52,9 @@
                   "description": "自定义",
                   "type": "string"
                 }
-                }
               }
             }
+          }
         ],
         "consumes": [
           "application/json"
@@ -86,10 +96,28 @@
             "description": "查询日期"
           },
           {
+            "name": "depart",
+            "in": "query",
+            "type": "string",
+            "description": "查询部门"
+          },
+          {
             "name": "workshop",
             "in": "query",
             "type": "string",
             "description": "查询的车间id"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "type": "integer",
+            "description": "limit"
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "type": "integer",
+            "description": "skip"
           }
         ],
         "responses": {
@@ -150,47 +178,18 @@
       }
     },
     "/data": {
-      "post": {
-        "summary": "存储数据到td库",
-        "description": "存储数据到td库",
-        "parameters": [
-          {
-            "in": "body",
-            "name": "data",
-            "description": "工单内容",
-            "required": true
-          }
-        ],
-        "consumes": [
-          "application/json"
-        ],
-        "responses": {
-          "200": {
-            "description": "Returns operation status"
-          },
-          "400": {
-            "description": "Bad Request"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "403": {
-            "description": "Forbidden"
-          },
-          "500": {
-            "description": "Server Internal error"
-          }
-        },
-        "tags": [
-          "factory"
-        ]
-      },
       "get": {
         "summary": "查询工单信息",
         "description": "查询工单信息",
         "parameters": [
           {
-            "description": "工单id",
+            "description": "产品类型",
+            "in": "query",
+            "name": "productId",
+            "type": "string"
+          },
+          {
+            "description": "订单id",
             "in": "query",
             "name": "objectId",
             "type": "string"
@@ -322,7 +321,6 @@
       "description": "factory"
     }
   ]
-
 }
 
 

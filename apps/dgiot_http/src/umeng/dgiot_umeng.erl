@@ -193,7 +193,9 @@ add_notification(<<"start_", Ruleid/binary>>, DeviceId, Payload) ->
         {start, _Time} ->
             pass;
         _ ->
+            io:format("~s ~p Msg= ~p ~p.~n", [?FILE, ?LINE,DeviceId, Payload]),
             save_notification(Ruleid, DeviceId, Payload#{<<"alertstatus">> => true})
+
     end,
     dgiot_data:insert(?NOTIFICATION, {DeviceId, Ruleid}, {start, dgiot_datetime:now_secs()});
 
@@ -734,11 +736,6 @@ triggeralarm(DeviceId) ->
         _ ->
             pass
     end.
-
-
-
-
-
 
 
 

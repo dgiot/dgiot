@@ -79,7 +79,10 @@ do_check(AuthResult, Password, ProductID, DeviceAddr, DeviceId, Ip) ->
         {ok, #{<<"productSecret">> := Password} = Product} ->
             case dgiot_device:lookup(DeviceId) of
                 {ok, _} ->
-                    pass;
+                    Body = #{
+                        <<"status">> => <<"ONLINE">>},
+                    dgiot_device:online(DeviceId),
+                    dgiot_parse:update_object(<<"Device">>, DeviceId, Body);
                 _ ->
                     case Product of
                         #{<<"ACL">> := Acl, <<"name">> := Name, <<"devType">> := DevType, <<"dynamicReg">> := true} ->

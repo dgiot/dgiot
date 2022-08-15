@@ -59,7 +59,11 @@ on_message_publish(Message = #message{topic = <<"$dg/thing/", Topic/binary>>, pa
                 _ ->
                     pass
             end;
+        [<<"uniapp">>, Token, <<"report">>] ->
+%%            <<"$dg/thing/uniapp/r:e5186aba099ce35105ba811e80bdaefa/report">>
+            dgiot_hook:run_hook({uniapp, report}, {Token, get_payload(Payload)});
         _ ->
+            io:format("~s ~p Payload = ~p.~n", [?FILE, ?LINE, get_payload(Payload)]),
             pass
     end,
     {ok, Message};

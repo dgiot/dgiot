@@ -32,13 +32,23 @@ start(_StartType, _StartArgs) ->
     {ok, Sup} = dgiot_bridge_sup:start_link(),
     dgiot_metrics:start(dgiot_parse),
     dgiot_metrics:start(dgiot_bridge),
+    start_hook(),
     {ok, Sup}.
 
 %%--------------------------------------------------------------------
 stop(_State) ->
+    stop_hook(),
     ok.
 
 %%====================================================================
 %% Internal functions
 %%====================================================================
 
+start_hook() ->
+    %%    app
+    dgiot_hook:add(one_for_one, {uniapp, report}, fun dgiot_bridge:uniapp_report/1).
+
+
+stop_hook() ->
+    %%    app
+    dgiot_hook:remove({uniapp, report}).

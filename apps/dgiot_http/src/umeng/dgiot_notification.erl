@@ -21,7 +21,7 @@
 -dgiot_data("ets").
 -export([init_ets/0]).
 %% API
--export([send_sms/3, send_sms/4, send_sms/5]).
+-export([send_sms/2, send_sms/3, send_sms/5, send_sms/6, send_sms/7]).
 
 -export([send_email/1, test_email/0]).
 
@@ -41,8 +41,7 @@ send_verification_code(NationCode, Key) ->
             rand:seed(exs1024),
             Rand = 10000 + erlang:round(rand:uniform() * 10000),
             TTL = 3,
-            Tpml = dgiot:get_env(dgiot_http, tencent_sms_tmplid,""),
-            case dgiot_notification:send_sms(NationCode, Key, Tpml, [Rand, TTL]) of
+            case dgiot_notification:send_sms(NationCode, Key, [Rand, TTL]) of
                 {ok, _Ext} ->
                     dgiot_cache:set(Key, Rand, TTL * 60),
                     {ok, #{<<"expire">> => TTL * 60}};
@@ -62,46 +61,99 @@ check_verification_code(Key, Code) ->
 
 
 
-send_sms(Mobile, TplId, Params) ->
-    send_sms("+86", Mobile, TplId, Params).
-send_sms(NationCode, Mobile, TplId, Params) ->
-    send_sms(NationCode, Mobile, TplId, Params, <<>>).
-send_sms(NationCode, Mobile, TplId, Params, Ext) ->
-    Random = integer_to_list(1000 + rand:uniform(1000)),
-    AppId = dgiot:get_env(dgiot_http, tencent_sms_appid,""),
-    AppKey = dgiot:get_env(dgiot_http, tencent_sms_appkey,""),
-    BaseUrl = "https://yun.tim.qq.com/v5/tlssmssvr/sendsms?sdkappid=~s&random=~s",
-    Url = io_lib:format(BaseUrl, [AppId, Random]),
-    Now = dgiot_datetime:nowstamp(),
-    case re:run(NationCode, <<"\\+(\\d{1,3})">>, [{capture, all, binary}]) of
+send_sms(Mobile, Params) ->
+    send_sms("+86", Mobile, Params).
+send_sms(NationCode,Mobile, Params) ->
+    TplId = dgiot_utils:to_list(application:get_env(dgiot_http, tencent_sms_notification_templateId , <<"">>)),
+    AppId = dgiot_utils:to_list(application:get_env(dgiot_http, tencent_sms_appid, <<"">>)),
+    AppKey = dgiot_utils:to_list(application:get_env(dgiot_http, tencent_sms_appkey, <<"">>)),
+    send_sms(NationCode, Mobile, Params, AppId, AppKey, TplId).
+send_sms(Mobile, Params, AppId, AppKey, TplId)->
+    send_sms("+86", Mobile, Params, AppId, AppKey, TplId, <<>>).
+send_sms(NationCode, Mobile, Params, AppId, AppKey, TplId)->
+    send_sms(NationCode, Mobile, Params, AppId, AppKey, TplId, <<>>).
+send_sms(NationCode, Mobile, Params, AppId,AppKey,TplId,Ext) ->
+    AppId_b=
+        case is_binary(AppId) of
+            true ->
+                binary_to_list(AppId);
+            _->
+                AppId
+        end,
+    Random = dgiot_utils:to_list(1000 + rand:uniform(1000)),
+    Url =
+        case is_list(Mobile) of
+            true ->
+                "https://yun.tim.qq.com/v5/tlssmssvr/sendmultisms2?sdkappid=" ++ AppId_b ++ "&random=" ++ Random;
+            false ->
+                "https://yun.tim.qq.com/v5/tlssmssvr/sendsms?sdkappid=" ++ AppId_b ++ "&random=" ++ Random
+        end,
+    case re:run(NationCode, <<"\\+(\\d{1,3})">>, [{capture, all, binary}]) of % "+86" 自动转换二进制
         {match, [_, NationCode1]} ->
+
+            {MobileStr, Tel_b} =
+                case is_list(Mobile)   of
+                    true ->    %%短信多发
+                        ListMobile = lists:foldl(fun ( #{<<"mobile">> := Num},Acc) -> Acc ++ [binary_to_list(Num)]
+                                                 end, [], Mobile),
+                        {string:join(ListMobile, ","), Mobile};
+                    _ ->    %%短信单发
+                        case is_binary(Mobile) of
+                            true ->
+                            {Mobile, #{<<"mobile">> => Mobile, <<"nationcode">> => NationCode1}};
+                        _ ->
+                            {Mobile, #{<<"mobile">> => unicode:characters_to_binary(Mobile), <<"nationcode">> => NationCode1}}
+                        end
+                end,
+            Now = dgiot_datetime:nowstamp(),
+            AppKey_b=
+                case is_binary(AppKey) of
+                    true ->
+                        binary_to_list(AppKey);
+                    _->
+                        AppKey
+                end,
+            SigStr = io_lib:format("appkey=~s&random=~s&time=~s&mobile=~s", [AppKey_b, Random, integer_to_list(Now), MobileStr]),
+            Sig_b = dgiot_utils:to_binary(string:to_lower(binary_to_list(<<<<Y>> || <<X:4>> <= crypto:hash(sha256, SigStr), Y <- integer_to_list(X, 16)>>))),
+            FunParams =
+                fun(X, Acc) ->
+                    case is_binary(X) of
+                        true ->
+                            Acc ++ [X];
+                        _->
+                            Acc ++ [unicode:characters_to_binary(X)]
+                    end
+                end,
+            Params_b = lists:foldl(FunParams, [], Params),
+            case is_binary(TplId) of
+                true ->
+                    TplId_b=TplId;
+                _->
+                    TplId_b=unicode:characters_to_binary(TplId)
+            end,
             Data = #{
-                <<"tpl_id">> => dgiot_utils:to_binary(TplId),
+                <<"tpl_id">> => TplId_b,
                 <<"ext">> => Ext,
                 <<"extend">> => <<>>,
-                <<"params">> => Params,
-                <<"sign">> => dgiot_utils:to_binary(dgiot:get_env(dgiot_http, tencent_sms_sign,"")),
-                <<"tel">> => #{
-                    <<"mobile">> => case is_binary(Mobile) of true -> Mobile; false -> list_to_binary(Mobile) end,
-                    <<"nationcode">> => NationCode1
-                },
-                <<"time">> => Now
+                <<"params">> => Params_b,
+                <<"sign">> => <<"质云科技"/utf8>>,
+                <<"tel">> => Tel_b,
+                <<"time">> => Now,
+                <<"sig">> =>  Sig_b
             },
-            SigStr = io_lib:format("appkey=~s&random=~s&time=~s&mobile=~s", [AppKey, Random, integer_to_list(Now), Mobile]),
-            Sig = string:to_lower(binary_to_list(<<<<Y>> || <<X:4>> <= crypto:hash(sha256, SigStr), Y <- integer_to_list(X, 16)>>)),
-            Body = Data#{<<"sig">> => list_to_binary(Sig)},
-            Request = {Url, [], "application/json", jsx:encode(Body)},
+            Request = {Url, [], "application/json", jsx:encode(Data)},
+
             case catch httpc:request(post, Request, [], [{body_format, binary}]) of
                 {ok, {{_HTTPVersion, 200, "OK"}, _Header, ResBody}} ->
                     case jsx:decode(ResBody, [{labels, binary}, return_maps]) of
                         #{<<"result">> := 0, <<"ext">> := Ext} ->
                             {ok, Ext};
                         #{<<"errmsg">> := ErrMsg, <<"result">> := Code} ->
-                            ?LOG(error, "Send SMS ERROR: ~p->~ts, Request:~p~n", [list_to_binary(Url), unicode:characters_to_binary(ErrMsg), Body]),
+                            ?LOG(error, "Send SMS ERROR: ~p->~ts, Request:~p~n", [list_to_binary(Url), unicode:characters_to_binary(ErrMsg), Data]),
                             {error, #{code => Code, error => ErrMsg}}
                     end;
                 {Err, Reason} when Err == error; Err == 'EXIT' ->
-                    ?LOG(error, "Send SMS ERROR: ~p, ~p, ~p~n", [Url, Body, Reason]),
+                    ?LOG(error, "Send SMS ERROR: ~p, ~p, ~p~n", [Url, Data, Reason]),
                     {error, #{code => 1, error => list_to_binary(io_lib:format("~p", [Reason]))}}
             end;
         _ ->

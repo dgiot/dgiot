@@ -8,6 +8,166 @@
   "definitions": {
   },
   "paths": {
+    "/handlewarnsendsms": {
+      "post": {
+        "security": [],
+        "summary": "短信配置发送",
+        "description": "短信配置发送",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "user",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "appId": {
+                  "required": true,
+                  "type": "string",
+                  "example": "1400635630"
+                },
+                "appKey": {
+                  "required": true,
+                  "type": "string",
+                  "example": "40d9609b9e6212cbff051b4f1d4cabfc"
+                },
+                "tplId": {
+                  "required": true,
+                  "type": "string",
+                  "example": "1473069"
+                },
+                "sign": {
+                  "required": true,
+                  "type": "string",
+                  "example": "ae746ee803"
+                },
+                "params": {
+                  "required": true,
+                  "type": "object",
+                  "example": ["测试1","测试2","测试3","测试4","测试5","测试6"]
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "404": {
+            "description": "Forbidden",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "500": {
+            "description": "Server Internal error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        },
+        "tags": [
+          "Notification"
+        ]
+      }
+    },
+    "/warnsendsms": {
+      "post": {
+        "security": [],
+        "summary": "短信告警发送",
+        "description": "短信告警发送",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "user",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "objectId": {
+                  "required": true,
+                  "type": "string",
+                  "example": "dasssd54"
+                },
+                "branchId": {
+                  "required": true,
+                  "type": "string",
+                  "example": "9256b5cf2e"
+                },
+                "docnumber": {
+                  "required": true,
+                  "type": "string",
+                  "example": "MO000015"
+                },
+                "datetimes": {
+                  "required": true,
+                  "type": "string",
+                  "example": "2022-12-15,14:20"
+                },
+                "username": {
+                  "required": true,
+                  "type": "string",
+                  "example": "张三"
+                },
+                "workshop": {
+                  "required": true,
+                  "type": "string",
+                  "example": "车间1-1"
+                },
+                "level": {
+                  "required": true,
+                  "type": "string",
+                  "example": "1"
+                },
+                "desc": {
+                  "required": true,
+                  "type": "string",
+                  "example": "desc"
+                },
+                "file": {
+                  "required": true,
+                  "type": "string",
+                  "example": "img"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "404": {
+            "description": "Forbidden",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "500": {
+            "description": "Server Internal error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        },
+        "tags": [
+          "Notification"
+        ]
+      }
+    },
     "/wechat": {
       "get": {
         "security": [],
@@ -40,6 +200,7 @@
           "Notification"
         ]
       },
+
       "post": {
         "security": [],
         "summary": "wechat绑定",
