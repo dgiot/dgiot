@@ -65,8 +65,9 @@ get_new_other(OldCalendar, NewOther) ->
         error ->
             NewOther
     end.
-get_calendar() ->
-    pas.
+
+
+
 
 get_calendar(Depart) ->
     Id = dgiot_parse_id:get_dictid(Depart, ?FACTORY_CALENDAR, Depart, Depart),

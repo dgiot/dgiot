@@ -202,6 +202,18 @@
             "type": "string"
           },
           {
+            "description": "开始时间",
+            "in": "query",
+            "name": "starttime",
+            "type": "number"
+          },
+          {
+            "description": "结束时间",
+            "in": "query",
+            "name": "endtime",
+            "type": "number"
+          },
+          {
             "in": "query",
             "name": "limit",
             "description": "limit, 显示多少条记录，显示100条记录 eg:100",
@@ -259,38 +271,61 @@
         ]
       }
     },
-    "/stored": {
-      "post": {
-        "summary": "入库所有订单",
-        "description": "入库所有订单",
+    "/material": {
+      "get": {
         "consumes": [
-          "*"
+          "application/json"
         ],
+        "summary": "获取领料记录",
+        "description": "获取领料记录",
         "parameters": [
           {
             "name": "objectId",
             "in": "query",
             "type": "string",
-            "default": "fastdfs",
+            "default": "9e9e52ffbb",
+            "description": "订单id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "factory"
+        ]
+      },
+      "post": {
+        "summary": "更新领料记录",
+        "description": "更新领料记录",
+        "parameters": [
+          {
+            "name": "objectId",
+            "in": "query",
+            "type": "string",
             "description": "订单id"
           },
           {
-            "name": "operator",
-            "in": "query",
-            "type": "string",
-            "default": "operator",
-            "description": "入库者"
-          },
-          {
-            "description": "是否合格",
-            "in": "query",
-            "name": "quality",
-            "type": "string",
-            "enum": [
-              true,
-              false
-            ]
+            "in": "body",
+            "name": "data",
+            "description": "数据",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "shift": {
+                  "description": "变动的排班",
+                  "type": "string"
+                }
+              }
+            }
           }
+        ],
+        "consumes": [
+          "application/json"
         ],
         "responses": {
           "200": {
