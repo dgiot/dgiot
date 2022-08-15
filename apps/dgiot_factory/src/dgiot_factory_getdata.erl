@@ -16,18 +16,18 @@
 -define(TYPE, <<"TD">>).
 
 %% API
--export([get_work_sheet/8]).
+-export([get_work_sheet/10]).
 -export([get_ThingMap/2, thinglist2binary/1, get_history/9, get_device_list/1, get_example/2, filter_data/3]).
--export([get_all_sheet/7]).
+-export([get_all_sheet/9]).
 
-get_all_sheet(ProductId, Channel, DeviceId, Where, Limit, Skip, New) ->
+get_all_sheet(ProductId, Start ,End,Channel, DeviceId, Where, Limit, Skip, New) ->
     UnflattenWhere = unflatten_where(Where),
     case dgiot_hook:run_hook({factory, get_sheet_list}, [ProductId]) of
         {ok, [SheetList]} ->
             SheetsData = lists:foldl(
                 fun(X, Acc) ->
                     SheetWhere = get_sheet_where(X, UnflattenWhere),
-                    case dgiot_factory_getdata:get_work_sheet(ProductId, X, Channel, DeviceId, SheetWhere, undefined, undefined, New) of
+                    case dgiot_factory_getdata:get_work_sheet(ProductId, X, Start ,End,Channel, DeviceId, SheetWhere, undefined, undefined, New) of
                         {ok, {_, Res}} ->
                             Acc#{X => Res};
                         _ ->
@@ -89,14 +89,14 @@ get_sheet_where(X, UnflattenWhere) ->
     dgiot_map:flatten(maps:merge(#{?PERSON => PersonWhere},#{X=> SheetWhere})).
 
 
-get_work_sheet(ProductId, <<"person">>, Channel, DeviceId, Where, Limit, Skip, New) ->
-    get_all_sheet(ProductId, Channel, DeviceId, Where, Limit, Skip, New);
-get_work_sheet(ProductId, Type, Channel, DeviceId, Where, Limit, Skip, New) ->
+get_work_sheet(ProductId, <<"person">>,Start ,End, Channel, DeviceId, Where, Limit, Skip, New) ->
+    get_all_sheet(ProductId, Start ,End,Channel, DeviceId, Where, Limit, Skip, New);
+get_work_sheet(ProductId, Type,Start ,End,Channel , DeviceId, Where, Limit, Skip, New) ->
     case filter_where(Where, ProductId, Type) of
         {Parse, Td, ThingMap} ->
             case search_parse(DeviceId, Parse, Type) of
                 {ok, ParseData} ->
-                    case get_history(Channel, ProductId, DeviceId, ThingMap, Td, Limit, Skip, Type, New) of
+                    case get_history(Channel, ProductId, DeviceId, ThingMap, Td, Start ,End, Type, New) of
                         {ok, #{<<"results">> := HistoryData}} ->
                             {Total, Res} = filter_data(Limit, Skip, HistoryData),
                             MergeData = merge_data(ParseData, Res, DeviceId, ThingMap),
@@ -196,7 +196,6 @@ filter_where(Where, ProductId, Type) ->
                    _ ->
                        dgiot_factory_utils:turn_num(jsx:decode(Where), ProductId, Type)
                end,
-
     case get_ThingMap(Type, ProductId) of
         {ok, ThingMap} ->
             {Parse, Td} = maps:fold(
@@ -210,7 +209,7 @@ filter_where(Where, ProductId, Type) ->
                     end
                 end, {#{}, #{}}, MapWhere),
 
-            TdWithPerson = case maps:is_key(<<"person">>, ThingMap) of
+            TdWithPerson = case maps:is_key(<<"person">>, MapWhere) of
                                true ->
                                    Td#{<<"person">> => maps:get(<<"person">>, MapWhere)};
                                false ->
@@ -254,7 +253,7 @@ thinglist2binary(ThingList) ->
         end, [], ThingList),
     dgiot_utils:to_binary(lists:nthtail(2, Str)).
 
-get_history(Channel, ProductId, DeviceId, ThingMap, Where, _Limit, _Skip, Type, New) ->
+get_history(Channel, ProductId, DeviceId, ThingMap, Where, Start ,End, Type, New) ->
     case dgiot_data:get({tdengine_os, Channel}) of
         <<"windows">> ->
             {error, wrong_td_platform};
@@ -267,8 +266,6 @@ get_history(Channel, ProductId, DeviceId, ThingMap, Where, _Limit, _Skip, Type, 
                             _ ->
                                 ?Table(DeviceId)
                         end,
-            DetectThing = <<Type/binary, "_id">>,
-
             List = case get_ThingMap(<<"person">>, ProductId) of
                        {ok, PersonMap} ->
                            PersonList = maps:keys(PersonMap),
@@ -282,7 +279,7 @@ get_history(Channel, ProductId, DeviceId, ThingMap, Where, _Limit, _Skip, Type, 
                 fun(Context) ->
                     Select = thinglist2binary(List),
                     From = get_from(New, DB, TableName, Type, List),
-                    WHERE = get_where(Where, ThingMap, DetectThing, ProductId),
+                    WHERE = get_where(Where, ThingMap, Type, ProductId,Start ,End),
                     Order = <<" ORDER BY createdat DESC ">>,
                     Sql = <<"SELECT ", Select/binary, " FROM ", From/binary, WHERE/binary, Order/binary, ";">>,
 %%                    ?LOG(error, "Sql ~s", [Sql]),
@@ -291,29 +288,22 @@ get_history(Channel, ProductId, DeviceId, ThingMap, Where, _Limit, _Skip, Type, 
     end.
 
 
-get_where(undefined, _, DetectThing, _) ->
-    <<" where ", DetectThing/binary, " is not null ">>;
+get_where(undefined, _, Type, _,Start ,End) ->
+    Time = get_time(Start,End),
+    DetectThing  =?SHEETID(Type),
+    <<" where ", DetectThing/binary, " is not null ",Time/binary>>;
 
-get_where(Where, ThingMap, DetectThing, _ProductId) ->
+get_where(Where, ThingMap, Type, _ProductId,Start ,End) ->
+    DetectThing  =?SHEETID(Type),
     case is_map(Where) of
         true ->
             W = maps:fold(
                 fun(K, V, Acc) ->
-%%                    case K of
-%%                        <<"person">> ->
-%%                            case get_ThingMap(<<"person">>, ProductId) of
-%%                                {ok, PersonMap} ->
-%%                                    PersonList = maps:keys(PersonMap),
-%%                                    Res = lists:foldl(
-%%                                        fun(X, ACC) ->
-%%                                            <<ACC/binary, "or ", X/binary, " like \"%", V/binary, "%\" ">>
-%%                                        end, <<"">>, PersonList),
-%%                                    FixedRes = binary:part(Res, 2, byte_size(Res) - 2),
-%%                                    <<Acc/binary, "( ", FixedRes/binary, " ) and ">>;
-%%                                _ ->
-%%                                    Acc
-%%                            end;
-%%                        _ ->
+                    case K of
+                        <<"person">> ->
+                            P = <<Type/binary,"_people">>,
+                            <<Acc/binary, P/binary, " like \"%", V/binary, "%\" and ">>;
+                        _ ->
                             case maps:find(K, ThingMap) of
                                 {ok, <<"text">>} ->
                                     <<Acc/binary, K/binary, " like \"%", V/binary, "%\" and ">>;
@@ -323,12 +313,26 @@ get_where(Where, ThingMap, DetectThing, _ProductId) ->
                                 _ ->
                                     Acc
                             end
-%%                    end
+                    end
                 end, <<" ">>, maps:remove(<<"product">>, Where)),
-            <<" where ", W/binary, DetectThing/binary, " is not null ">>;
+            Time = get_time(Start,End),
+            <<" where ", W/binary, DetectThing/binary, " is not null ",Time/binary>>;
         _ ->
-            <<" where ", DetectThing/binary, " is not null ">>
+            Time = get_time(Start,End),
+            <<" where ", DetectThing/binary, " is not null ",Time/binary>>
     end.
+get_time(undefined,undefined)->
+    <<" ">>;
+get_time(undefined,End)->
+    BinEnd = dgiot_utils:to_binary(End*1000),
+    <<" and createdat < ",BinEnd/binary ," ">>;
+get_time(Start,undefined)->
+    BinStart = dgiot_utils:to_binary(Start*1000),
+    <<" and createdat > ",BinStart/binary ," ">>;
+get_time(Start,End)->
+    BinStart = dgiot_utils:to_binary(Start*1000),
+    BinEnd = dgiot_utils:to_binary(End*1000),
+    <<" and createdat > ",BinStart/binary ," and createdat < ",BinEnd/binary ," ">>.
 
 filter_data(undefined, _, HistoryData) ->
     Total = length(HistoryData),
@@ -372,7 +376,6 @@ get_from(<<"true">>, DB, TableName, Type, List) ->
             L = dgiot_utils:to_list(X),
             Acc ++ " ,last(" ++ L ++ " ) as " ++ L
         end, [], List),
-
     Select = dgiot_utils:to_binary(lists:nthtail(2, Last)),
     SheetId = ?SHEETID(Type),
     <<"( select ", Select/binary, " from ", DB/binary, TableName/binary, " group by ", SheetId/binary, " ) ">>;
@@ -399,5 +402,3 @@ get_example(Type, ProductId) ->
                       end, #{}, Res)
           end,
     io:format("~ts ~n", [unicode:characters_to_list(jsx:encode(Map))]).
-
-
