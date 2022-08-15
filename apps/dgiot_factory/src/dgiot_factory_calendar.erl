@@ -25,7 +25,6 @@
 
 -export([get_calendar/1, post_calendar/2, check_default/1, check_type/1, check_work_shift/1, check_laying_off/2]).
 -export([get_new_other/2]).
--export([get_calendar/0]).
 
 %%dgiot_datetime:format(dgiot_datetime:nowstamp(), <<"YY-MM-DD">>)
 %%dgiot_datetime:format("HH:NN:SS")
