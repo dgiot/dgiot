@@ -402,5 +402,3 @@ get_example(Type, ProductId) ->
                       end, #{}, Res)
           end,
     io:format("~ts ~n", [unicode:characters_to_list(jsx:encode(Map))]).
-
-
