@@ -15,6 +15,7 @@
 %%--------------------------------------------------------------------
 
 -define(DEFAULT, <<"default">>).
+-define(TIMESCALE, <<"timescale">>).
 -define(TYPE, <<"PARSE">>).
 -define(CACHE(Channel), binary_to_atom(<<?TYPE/binary, Channel/binary>>, utf8)).
 -define(CLASS(ClassName), binary_to_atom(<<?TYPE/binary, "_class_", ClassName/binary>>, utf8)).
