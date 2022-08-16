@@ -220,15 +220,33 @@ handle_message(init, #state{id = ChannelId, env = Config} = State) ->
     end;
 
 %% 数据与产品，设备地址分离
-handle_message({data, Product, DevAddr, Data, Context}, #state{id = ChannelId} = State) ->
+handle_message({data, Product, DevAddr, Data, Context}, #state{id = ChannelId, env = Config} = State) ->
     dgiot_metrics:inc(dgiot_tdengine, <<"tdengine_recv">>, 1),
-    case catch do_save([Product, DevAddr, Data, Context], State) of
-        {Err, Reason} when Err == error; Err == 'EXIT' ->
-            ?LOG(error, "Save to Tdengine error, ~p, ~p", [Data, Reason]),
-            dgiot_bridge:send_log(ChannelId, "Save to Tdengine error, ~ts~n, ~p", [unicode:characters_to_list(jsx:encode(Data)), Reason]),
-            ok;
-        {ok, NewState} ->
-            {ok, NewState}
+    OsType =
+        case maps:get(<<"os">>, Config, <<"all">>) of
+            <<"all">> ->
+                case os:type() of
+                    {win32, _} ->
+                        <<"windows">>;
+                    _ ->
+                        <<"linux">>
+                end;
+            <<"windows">> -> <<"windows">>;
+            _ -> <<"linux">>
+        end,
+    dgiot_data:insert({tdengine_os, ChannelId}, OsType),
+    case OsType of
+        <<"windows">> ->
+            dgiot_parse_timescale:do_save(Product, DevAddr, Data);
+        _ ->
+            case catch do_save([Product, DevAddr, Data, Context], State) of
+                {Err, Reason} when Err == error; Err == 'EXIT' ->
+                    ?LOG(error, "Save to Tdengine error, ~p, ~p", [Data, Reason]),
+                    dgiot_bridge:send_log(ChannelId, "Save to Tdengine error, ~ts~n, ~p", [unicode:characters_to_list(jsx:encode(Data)), Reason]),
+                    ok;
+                {ok, NewState} ->
+                    {ok, NewState}
+            end
     end;
 
 handle_message(config, #state{env = Config} = State) ->
@@ -329,7 +347,7 @@ do_check(ChannelId, ProductIds, Config) ->
             dgiot_data:insert({tdengine_os, ChannelId}, OsType),
             case OsType of
                 <<"windows">> ->
-                    pass;
+                    dgiot_parse_channel:start_timescale();
                 _ ->
                     check_init(ChannelId, ProductIds, Config)
             end

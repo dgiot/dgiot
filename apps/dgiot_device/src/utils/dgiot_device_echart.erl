@@ -21,27 +21,28 @@
 -include_lib("dgiot_tdengine/include/dgiot_tdengine.hrl").
 
 -export([get_echart_data/4]).
--export([get_data_by_month/4,get_data_by_echart_category/4, get_keys/2,get_table/2]).
+-export([get_data_by_month/4, get_data_by_echart_category/4, get_keys/2, get_table/2]).
 
 get_echart_data(Channel, ProductId, DeviceId, Args) ->
     Query = maps:without([<<"productid">>, <<"deviceid">>], Args),
-    case dgiot_data:get({tdengine_os, Channel}) of
-        <<"windows">> ->
-            pass;
-        _ ->
-            Query = maps:without([<<"productid">>, <<"deviceid">>], Args),
-            Interval = maps:get(<<"interval">>, Args),
-            TableName = ?Table(DeviceId),
-            case dgiot_device_tdengine:get_history_data(Channel, TableName, Query#{
-                <<"db">> => ProductId
-            }) of
-                {Names, {ok, #{<<"results">> := Results}}} ->
-                    Chartdata = get_echart(ProductId, Results, Names, Interval),
-                    {ok, #{<<"chartData">> => Chartdata}};
-                _ ->
-                    {ok, #{<<"code">> => 400, <<"msg">> => <<"no data">>}}
-            end
-    end.
+    Interval = maps:get(<<"interval">>, Args),
+    {Names, Results} =
+        case dgiot_data:get({tdengine_os, Channel}) of
+            <<"windows">> ->
+                dgiot_parse_timescale:get_history_data(DeviceId, Query#{<<"db">> => ProductId});
+            _ ->
+                TableName = ?Table(DeviceId),
+                case dgiot_device_tdengine:get_history_data(Channel, TableName, Query#{
+                    <<"db">> => ProductId
+                }) of
+                    {TdNames, {ok, #{<<"results">> := TdResults}}} ->
+                        {TdNames, TdResults};
+                    _ ->
+                        {[], []}
+                end
+        end,
+    Chartdata = get_echart(ProductId, Results, Names, Interval),
+    {ok, #{<<"chartData">> => Chartdata}}.
 
 get_echart(ProductId, Results, Names, Interval) ->
     Maps = dgiot_product:get_prop(ProductId),
@@ -92,7 +93,6 @@ get_echart(ProductId, Results, Names, Interval) ->
     ?LOG(debug, "Child ~p", [Child]),
     #{<<"columns">> => Columns, <<"rows">> => Rows, <<"child">> => Child}.
 
-
 %%判断目标keys是否累计并根据结果设置Function
 %% 遍历产品keys和目标keys得到目标keys是否累计
 %%根据是否累计将keys分到sum和last
@@ -107,22 +107,22 @@ get_data_by_month(Channel, ProductId, DeviceId, Args) ->
         _ ->
 %%            io:format("~s ~p here ~n",[?FILE,?LINE]),
 %%           由月份获得起止时间
-            {ok,Count} = maps:find(<<"month_count">>,Args),
+            {ok, Count} = maps:find(<<"month_count">>, Args),
             {StartTime, EndTime} = dgiot_datetime:last_month(Count),
 %%            取得key并分割转为list
-            {ok, K}  = maps:find(<<"keys">>,Args),
-            Keys = re:split(K,","),
+            {ok, K} = maps:find(<<"keys">>, Args),
+            Keys = re:split(K, ","),
 %%            由key提取其accu属性并生成sql命令
             Res = case dgiot_product:lookup_prod(ProductId) of
-                        {ok, Product} ->
+                      {ok, Product} ->
 %%                            io:format("~s ~p Product =~p , Keys = ~p ~n",[?FILE,?LINE,Product,Keys]),
-                            get_keys(Product, Keys);
-                        _ ->
-                            error
-                    end,
+                          get_keys(Product, Keys);
+                      _ ->
+                          error
+                  end,
 %%            io:format("~s ~p Res = ~p~n",[?FILE,?LINE,Res]),
-            {ok,Sql} = maps:find(<<"sql">>,Res),
-            {ok,Name_and_nuit} = maps:find(<<"name_and_unit">>,Res),
+            {ok, Sql} = maps:find(<<"sql">>, Res),
+            {ok, Name_and_nuit} = maps:find(<<"name_and_unit">>, Res),
 %%            配置参数
             TableName = ?Table(DeviceId),
             Interval = <<"1d">>,
@@ -131,9 +131,9 @@ get_data_by_month(Channel, ProductId, DeviceId, Args) ->
 %%                判断结果并转换格式
                 {ok, #{<<"results">> := Results}} ->
 %%                    io:format("~s ~p Results = ~p,Name_and_nuit = ~p ~n",[?FILE,?LINE,Results,Name_and_nuit]),
-                    Tabledata = get_table(Results,Name_and_nuit),
+                    Tabledata = get_table(Results, Name_and_nuit),
 %%                    io:format("~s ~p Tabledata = ~p ~n",[?FILE,?LINE,Tabledata]),
-                    {ok,Tabledata};
+                    {ok, Tabledata};
                 _ ->
                     {ok, #{<<"code">> => 400, <<"msg">> => <<"no data">>}}
             end
@@ -146,23 +146,23 @@ get_keys(#{<<"thing">> := #{<<"properties">> := Properties}}, [<<"*">>]) ->
         fun(X, Acc) ->
 %%        io:format("~s ~p Acc = ~p ~n",[?FILE,?LINE,Acc]),
             case X of
-                #{<<"identifier">> := Identifier, <<"isaccumulate">> := true, <<"name">> := Name, <<"identifier">> := Key,<<"dataType">> := #{<<"specs">> := #{<<"unit">> := Unit}} } ->
+                #{<<"identifier">> := Identifier, <<"isaccumulate">> := true, <<"name">> := Name, <<"identifier">> := Key, <<"dataType">> := #{<<"specs">> := #{<<"unit">> := Unit}}} ->
                     case Acc of
                         #{<<"sql">> := Sql, <<"name_and_unit">> := Map} ->
 %%                        io:format("~s ~p Key = ~p ~n",[?FILE,?LINE,Key]),
-                            #{<<"sql">> => <<Sql/binary, ", sum(", Identifier/binary, ")">>, <<"name_and_unit">> =>Map#{<<Key/binary>> => #{<<"name">> => <<Name/binary>>,<<"unit">> => <<Unit/binary>>}}};
+                            #{<<"sql">> => <<Sql/binary, ", sum(", Identifier/binary, ")">>, <<"name_and_unit">> => Map#{<<Key/binary>> => #{<<"name">> => <<Name/binary>>, <<"unit">> => <<Unit/binary>>}}};
                         _ ->
 %%                        io:format("~s ~p Key = ~p ~n",[?FILE,?LINE,Key]),
-                            #{<<"sql">> => <<" sum(", Identifier/binary, ")">>, <<"name_and_unit">> => #{<<Key/binary>> => #{<<"name">> => <<Name/binary>>,<<"unit">> => <<Unit/binary>>}}}
+                            #{<<"sql">> => <<" sum(", Identifier/binary, ")">>, <<"name_and_unit">> => #{<<Key/binary>> => #{<<"name">> => <<Name/binary>>, <<"unit">> => <<Unit/binary>>}}}
                     end;
-                #{<<"identifier">> := Identifier, <<"isaccumulate">> := false, <<"name">> := Name, <<"identifier">> := Key,<<"dataType">> := #{<<"specs">> := #{<<"unit">> := Unit}}} ->
+                #{<<"identifier">> := Identifier, <<"isaccumulate">> := false, <<"name">> := Name, <<"identifier">> := Key, <<"dataType">> := #{<<"specs">> := #{<<"unit">> := Unit}}} ->
                     case Acc of
                         #{<<"sql">> := Sql, <<"name_and_unit">> := Map} ->
 %%                        io:format("~s ~p Key = ~p ~n",[?FILE,?LINE,Key]),
-                            #{<<"sql">> => <<Sql/binary, ", last(", Identifier/binary, ")">>, <<"name_and_unit">> =>Map#{<<Key/binary>> => #{<<"name">> => <<Name/binary>>,<<"unit">> => <<Unit/binary>>}}};
+                            #{<<"sql">> => <<Sql/binary, ", last(", Identifier/binary, ")">>, <<"name_and_unit">> => Map#{<<Key/binary>> => #{<<"name">> => <<Name/binary>>, <<"unit">> => <<Unit/binary>>}}};
                         _ ->
 %%                        io:format("~s ~p Key = ~p ~n",[?FILE,?LINE,Key]),
-                            #{<<"sql">> => <<" last(", Identifier/binary, ")">>, <<"name_and_unit">> => #{<<Key/binary>> => #{<<"name">> => <<Name/binary>>,<<"unit">> => <<Unit/binary>>}}}
+                            #{<<"sql">> => <<" last(", Identifier/binary, ")">>, <<"name_and_unit">> => #{<<Key/binary>> => #{<<"name">> => <<Name/binary>>, <<"unit">> => <<Unit/binary>>}}}
                     end;
                 _ ->
 %%                    io:format("~s ~p Property = ~p ~n",[?FILE,?LINE,X]),
@@ -173,31 +173,31 @@ get_keys(#{<<"thing">> := #{<<"properties">> := Properties}}, [<<"*">>]) ->
 get_keys(#{<<"thing">> := #{<<"properties">> := Properties}}, Keys) ->
     lists:foldl(fun(X, Acc) ->
         case X of
-            #{<<"identifier">> := Identifier, <<"isaccumulate">> := true, <<"name">> := Name, <<"identifier">> := Key,<<"dataType">> := #{<<"specs">> := #{<<"unit">> := Unit}}} ->
+            #{<<"identifier">> := Identifier, <<"isaccumulate">> := true, <<"name">> := Name, <<"identifier">> := Key, <<"dataType">> := #{<<"specs">> := #{<<"unit">> := Unit}}} ->
                 case lists:member(Identifier, Keys) of
                     true ->
                         case Acc of
                             #{<<"sql">> := Sql, <<"name_and_unit">> := Map} ->
 %%                        io:format("~s ~p Key = ~p ~n",[?FILE,?LINE,Key]),
-                                #{<<"sql">> => <<Sql/binary, ", sum(", Identifier/binary, ")">>, <<"name_and_unit">> =>Map#{<<Key/binary>> => #{<<"name">> => <<Name/binary>>,<<"unit">> => <<Unit/binary>>}}};
+                                #{<<"sql">> => <<Sql/binary, ", sum(", Identifier/binary, ")">>, <<"name_and_unit">> => Map#{<<Key/binary>> => #{<<"name">> => <<Name/binary>>, <<"unit">> => <<Unit/binary>>}}};
                             _ ->
 %%                        io:format("~s ~p Key = ~p ~n",[?FILE,?LINE,Key]),
-                                #{<<"sql">> => <<" sum(", Identifier/binary, ")">>, <<"name_and_unit">> => #{<<Key/binary>> => #{<<"name">> => <<Name/binary>>,<<"unit">> => <<Unit/binary>>}}}
+                                #{<<"sql">> => <<" sum(", Identifier/binary, ")">>, <<"name_and_unit">> => #{<<Key/binary>> => #{<<"name">> => <<Name/binary>>, <<"unit">> => <<Unit/binary>>}}}
                         end;
                     false ->
                         Acc
                 end;
 
-            #{<<"identifier">> := Identifier, <<"isaccumulate">> := false, <<"name">> := Name, <<"identifier">> := Key,<<"dataType">> := #{<<"specs">> := #{<<"unit">> := Unit}} } ->
+            #{<<"identifier">> := Identifier, <<"isaccumulate">> := false, <<"name">> := Name, <<"identifier">> := Key, <<"dataType">> := #{<<"specs">> := #{<<"unit">> := Unit}}} ->
                 case lists:member(Identifier, Keys) of
                     true ->
                         case Acc of
                             #{<<"sql">> := Sql, <<"name_and_unit">> := Map} ->
 %%                        io:format("~s ~p Key = ~p ~n",[?FILE,?LINE,Key]),
-                                #{<<"sql">> => <<Sql/binary, ", last(", Identifier/binary, ")">>, <<"name_and_unit">> =>Map#{<<Key/binary>> => #{<<"name">> => <<Name/binary>>,<<"unit">> => <<Unit/binary>>}}};
+                                #{<<"sql">> => <<Sql/binary, ", last(", Identifier/binary, ")">>, <<"name_and_unit">> => Map#{<<Key/binary>> => #{<<"name">> => <<Name/binary>>, <<"unit">> => <<Unit/binary>>}}};
                             _ ->
 %%                        io:format("~s ~p Key = ~p ~n",[?FILE,?LINE,Key]),
-                                #{<<"sql">> => <<" last(", Identifier/binary, ")">>, <<"name_and_unit">> => #{<<Key/binary>> => #{<<"name">> => <<Name/binary>>,<<"unit">> => <<Unit/binary>>}}}
+                                #{<<"sql">> => <<" last(", Identifier/binary, ")">>, <<"name_and_unit">> => #{<<Key/binary>> => #{<<"name">> => <<Name/binary>>, <<"unit">> => <<Unit/binary>>}}}
                         end;
                     false -> Acc
                 end;
@@ -269,11 +269,11 @@ get_data_by_echart_category(Channel, ProductId, DeviceId, Args) ->
         _ ->
 %%            io:format("~s ~p here ~n",[?FILE,?LINE]),
 %%           由月份获得起止时间
-            {ok,Count} = maps:find(<<"month_count">>,Args),
+            {ok, Count} = maps:find(<<"month_count">>, Args),
             {StartTime, EndTime} = dgiot_datetime:last_month(Count),
 %%            取得key并分割转为list
-            {ok, K}  = maps:find(<<"keys">>,Args),
-            Keys = re:split(K,","),
+            {ok, K} = maps:find(<<"keys">>, Args),
+            Keys = re:split(K, ","),
 %%            由key提取其accu属性并生成sql命令
             Res = case dgiot_product:lookup_prod(ProductId) of
                       {ok, Product} ->
@@ -283,8 +283,8 @@ get_data_by_echart_category(Channel, ProductId, DeviceId, Args) ->
                           error
                   end,
 %%            io:format("~s ~p Res = ~p~n",[?FILE,?LINE,Res]),
-            {ok,Sql} = maps:find(<<"sql">>,Res),
-            {ok,Names} = maps:find(<<"names">>,Res),
+            {ok, Sql} = maps:find(<<"sql">>, Res),
+            {ok, Names} = maps:find(<<"names">>, Res),
 %%            配置参数
             TableName = ?Table(DeviceId),
             Interval = <<"1d">>,
@@ -293,9 +293,9 @@ get_data_by_echart_category(Channel, ProductId, DeviceId, Args) ->
 %%                判断结果并转换格式
                 {ok, #{<<"results">> := Results}} ->
 %%                    io:format("~s ~p Results = ~p ~n",[?FILE,?LINE,Results]),
-                    Tabledata = get_table(Results,Names),
+                    Tabledata = get_table(Results, Names),
 %%                    io:format("~s ~p Tabledata = ~p ~n",[?FILE,?LINE,Tabledata]),
-                    {ok,Tabledata};
+                    {ok, Tabledata};
                 _ ->
                     {ok, #{<<"code">> => 400, <<"msg">> => <<"no data">>}}
             end

@@ -968,15 +968,19 @@ post_report(#{<<"name">> := Name, <<"product">> := ProductId, <<"parentId">> := 
             {error, <<"report exist">>}
     end.
 
-
-
 arrtojsonlist(Data) when length(Data) > 0 ->
     [Da | _] = Data,
     Keys = maps:keys(Da),
     lists:foldl(fun(Key, Acc) ->
         Values =
             lists:foldl(fun(X, Acc1) ->
-                Acc1 ++ [maps:get(Key, X, 0)]
+                V = maps:get(Key, X, 0),
+                case is_number(V) of
+                    true ->
+                        Acc1 ++ [dgiot_utils:to_float(V)];
+                    _ ->
+                        Acc1
+                end
                         end, [], Data),
         Acc#{Key => Values}
                 end, #{}, Keys);
@@ -985,13 +989,12 @@ arrtojsonlist(_Data) ->
     #{}.
 
 python_drawxnqx(TaskId, NewData) ->
-%%    io:format("NewData ~p~n",[NewData]),
     Dgiot_testing_equipment_flowSet =
         case dgiot_parse:get_object(<<"Device">>, TaskId) of
             {ok, #{<<"basedata">> := BaseData}} ->
                 dgiot_utils:to_float(maps:get(<<"dgiot_testing_equipment_flowSet">>, BaseData, <<>>));
             _ ->
-                0
+                1
         end,
     {file, Here} = code:is_loaded(?MODULE),
     Path = dgiot_httpc:url_join([filename:dirname(filename:dirname(Here)), "/priv"]),

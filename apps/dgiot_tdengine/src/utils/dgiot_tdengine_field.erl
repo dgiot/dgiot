@@ -193,11 +193,16 @@ check_validate(_, _) ->
 
 get_time(V, Interval) ->
     NewV =
-        case binary:split(V, <<$.>>, [global, trim]) of
-            [NewV1, _] ->
-                NewV1;
+        case binary:split(V, <<$T>>, [global, trim]) of
+            [_, _] ->
+                V;
             _ ->
-                V
+                case binary:split(V, <<$.>>, [global, trim]) of
+                    [NewV1, _] ->
+                        NewV1;
+                    _ ->
+                        V
+                end
         end,
     Size = erlang:size(Interval) - 1,
     <<_:Size/binary, Type/binary>> = Interval,

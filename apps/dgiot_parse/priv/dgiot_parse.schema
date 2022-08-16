@@ -46,6 +46,11 @@
      {datatype, string}
 ]}.
 
+{mapping, "parse.timescale_server", "dgiot_parse.timescale_server", [
+     {default, ""},
+     {datatype, string}
+]}.
+
 {mapping, "parse.parse_path", "dgiot_parse.parse_path", [
      {default, "/parse/"},
      {datatype, string}
