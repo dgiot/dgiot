@@ -25,7 +25,6 @@
 
 -export([get_calendar/1, post_calendar/2, check_default/1, check_type/1, check_work_shift/1, check_laying_off/2]).
 -export([get_new_other/2]).
--export([get_calendar/0]).
 
 %%dgiot_datetime:format(dgiot_datetime:nowstamp(), <<"YY-MM-DD">>)
 %%dgiot_datetime:format("HH:NN:SS")
@@ -65,8 +64,9 @@ get_new_other(OldCalendar, NewOther) ->
         error ->
             NewOther
     end.
-get_calendar() ->
-    pas.
+
+
+
 
 get_calendar(Depart) ->
     Id = dgiot_parse_id:get_dictid(Depart, ?FACTORY_CALENDAR, Depart, Depart),
@@ -147,4 +147,3 @@ check_laying_off(_Type, Default) ->
 
 check_work_shift(_Default) ->
     {ok}.
-

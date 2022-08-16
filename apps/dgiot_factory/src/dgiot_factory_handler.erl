@@ -74,7 +74,7 @@ handle(OperationID, Args, Context, Req) ->
 %%% 内部函数 Version:API版本
 %%%===================================================================
 
-do_request(get_factory_calendar,#{ <<"depart">> :=Depart} =_Args, _Context, _Body) ->
+do_request(get_factory_calendar, #{<<"depart">> := Depart} = _Args, _Context, _Body) ->
     case dgiot_factory_calendar:get_calendar(Depart) of
         {ok, _, FactoryCalendar} ->
             {ok, FactoryCalendar};
@@ -84,9 +84,9 @@ do_request(get_factory_calendar,#{ <<"depart">> :=Depart} =_Args, _Context, _Bod
             {error, Res}
     end;
 
-do_request(post_factory_calendar, #{<<"default">> := Default, <<"other">> := Other,<<"depart">> :=Depart} = _Args, _Context, _Body) ->
-    io:format("~s ~p Depart= ~p ~n",[?FILE,?LINE,Depart]),
-    case dgiot_factory_calendar:post_calendar(Depart,#{<<"default">> => Default, <<"other">> => Other}) of
+do_request(post_factory_calendar, #{<<"default">> := Default, <<"other">> := Other, <<"depart">> := Depart} = _Args, _Context, _Body) ->
+    io:format("~s ~p Depart= ~p ~n", [?FILE, ?LINE, Depart]),
+    case dgiot_factory_calendar:post_calendar(Depart, #{<<"default">> => Default, <<"other">> => Other}) of
         {ok, _, FactoryCalendar} ->
             {ok, FactoryCalendar};
         {Error, Res} ->
@@ -119,14 +119,14 @@ do_request(post_worker_shift, #{<<"shift">> := Shifts} = _Args, _Context, _Body)
     dgiot_factory_shift:post_shift(Shifts),
     {ok, <<"修改成功"/utf8>>};
 
-do_request(get_data, #{<<"productId">> := undefined, <<"objectId">> := undefined, <<"type">> := Type, <<"where">> := Where, <<"limit">> := Limit, <<"skip">> := Skip, <<"new">> := New} = _Args, #{<<"sessionToken">> := SessionToken} = _Context, _Body) ->
+do_request(get_data, #{<<"productId">> := undefined, <<"objectId">> := undefined, <<"type">> := Type, <<"starttime">> := Start, <<"endtime">> := End, <<"where">> := Where, <<"limit">> := Limit, <<"skip">> := Skip, <<"new">> := New} = _Args, #{<<"sessionToken">> := SessionToken} = _Context, _Body) ->
     case dgiot_product_tdengine:get_channel(SessionToken) of
         {error, Error} -> {error, Error};
         {ok, Channel} ->
             ProductId = <<"ec71804a3d">>,
             case dgiot_factory_getdata:get_device_list(ProductId) of
                 {ok, DeviceList} ->
-                    case dgiot_factory_getdata:get_work_sheet(ProductId, Type, Channel, DeviceList, Where, Limit, Skip, New) of
+                    case dgiot_factory_getdata:get_work_sheet(ProductId, Type, Start, End, Channel, DeviceList, Where, Limit, Skip, New) of
                         {ok, {Total, Res}} ->
                             {ok, #{<<"status">> => 0, msg => <<"数据请求成功"/utf8>>, <<"data">> => #{<<"total">> => Total, <<"items">> => Res}}};
                         _ ->
@@ -140,13 +140,13 @@ do_request(get_data, #{<<"productId">> := undefined, <<"objectId">> := undefined
             end
     end;
 
-do_request(get_data, #{<<"productId">> := ProductId, <<"objectId">> := undefined, <<"type">> := Type, <<"where">> := Where, <<"limit">> := Limit, <<"skip">> := Skip, <<"new">> := New} = _Args, #{<<"sessionToken">> := SessionToken} = _Context, _Body) ->
+do_request(get_data, #{<<"productId">> := ProductId, <<"objectId">> := undefined, <<"type">> := Type, <<"starttime">> := Start, <<"endtime">> := End, <<"where">> := Where, <<"limit">> := Limit, <<"skip">> := Skip, <<"new">> := New} = _Args, #{<<"sessionToken">> := SessionToken} = _Context, _Body) ->
     case dgiot_product_tdengine:get_channel(SessionToken) of
         {error, Error} -> {error, Error};
         {ok, Channel} ->
             case dgiot_factory_getdata:get_device_list(ProductId) of
                 {ok, DeviceList} ->
-                    case dgiot_factory_getdata:get_work_sheet(ProductId, Type, Channel, DeviceList, Where, Limit, Skip, New) of
+                    case dgiot_factory_getdata:get_work_sheet(ProductId, Type, Start, End, Channel, DeviceList, Where, Limit, Skip, New) of
                         {ok, {Total, Res}} ->
                             {ok, #{<<"status">> => 0, msg => <<"数据请求成功"/utf8>>, <<"data">> => #{<<"total">> => Total, <<"items">> => Res}}};
                         _ ->
@@ -160,14 +160,14 @@ do_request(get_data, #{<<"productId">> := ProductId, <<"objectId">> := undefined
     end;
 
 
-do_request(get_data, #{<<"objectId">> := DeviceId, <<"type">> := Type, <<"where">> := Where, <<"limit">> := Limit, <<"skip">> := Skip, <<"new">> := New} = _Args,
+do_request(get_data, #{<<"objectId">> := DeviceId, <<"type">> := Type, <<"starttime">> := Start, <<"endtime">> := End, <<"where">> := Where, <<"limit">> := Limit, <<"skip">> := Skip, <<"new">> := New} = _Args,
     #{<<"sessionToken">> := SessionToken} = _Context, _Body) ->
     case dgiot_product_tdengine:get_channel(SessionToken) of
         {error, Error} -> {error, Error};
         {ok, Channel} ->
             case dgiot_device_cache:lookup(DeviceId) of
                 {ok, #{<<"productid">> := ProductId}} ->
-                    case dgiot_factory_getdata:get_work_sheet(ProductId, Type, Channel, DeviceId, Where, Limit, Skip, New) of
+                    case dgiot_factory_getdata:get_work_sheet(ProductId, Type, Start, End, Channel, DeviceId, Where, Limit, Skip, New) of
                         {ok, {Total, Res}} ->
                             {ok, #{<<"status">> => 0, msg => <<"数据请求成功"/utf8>>, <<"data">> => #{<<"total">> => Total, <<"items">> => Res}}};
                         _ ->
@@ -178,22 +178,22 @@ do_request(get_data, #{<<"objectId">> := DeviceId, <<"type">> := Type, <<"where"
                     error
             end
     end;
+do_request(get_material, #{<<"objectId">> := DeviceId} = _Args, _Context, _Req) ->
+%%    io:format("~s ~p DeviceId= ~p ~n", [?FILE, ?LINE, DeviceId]),
+    case dgiot_factory_material:get_material_record(DeviceId) of
+        {ok, Res} ->
 
-do_request(post_stored, #{<<"objectId">> := DeviceId, <<"operator">> := Operator, <<"quality">> := Quality} = _Args, #{<<"sessionToken">> := SessionToken} = _Context, _Body) ->
-    case dgiot_product_tdengine:get_channel(SessionToken) of
-        {error, Error} -> {error, Error};
-        {ok, Channel} ->
-            case dgiot_device_cache:lookup(DeviceId) of
-                {ok, #{<<"productid">> := ProductId}} ->
-                    case dgiot_factory_utils:store_all(ProductId, Channel, DeviceId, Operator, Quality) of
-                        {ok, _} ->
-                            {ok, #{<<"status">> => 0, msg => <<"操作成功"/utf8>>, <<"data">> => #{}}};
-                        _ ->
-                            {error, <<"get_data_failed">>}
-                    end;
-                _ ->
-                    {error, <<"not_find_product">>}
-            end
+            {ok, #{<<"status">> => 0, msg => <<"操作成功"/utf8>>, <<"data">> => maps:values(Res)}};
+        _ ->
+            error
+    end;
+do_request(post_material, #{<<"objectId">> := DeviceId, <<"shift">> :=  Data} = _Args, _Context, _Req) ->
+
+    case dgiot_factory_material:post_material(DeviceId, Data) of
+        {ok, _} ->
+            {ok, #{<<"status">> => 0, msg => <<"操作成功"/utf8>>, <<"data">> => []}};
+        _ ->
+            error
     end;
 
 

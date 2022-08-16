@@ -1485,10 +1485,10 @@ dgiot_shell
 # dgiot_install.sh -v [single | cluster | devops | ci] -s [dgiot_n] -p [dgiot_your_plugin] -m [dgiotmd5] -d [your_domain_name] -e [datanode_eip] -s [pg_auth]
 # set parameters by default value
 deployType=single                             # [single | cluster | devops | ci]
-domain_name="prod.iotn2n.com"                 # [prod.iotn2n.com | your_domain_name]
-software="dgiot_n216"                          # [dgiot_n216| dgiot_n]
+domain_name="prod.dgiotcloud.cn"              # [prod.dgiotcloud.cn | your_domain_name]
+software="dgiot_n217"                          # [dgiot_n217| dgiot_n]
 plugin="dgiot"                                # [dgiot | dgiot_your_plugin]
-dgiotmd5="2ba8b606d598adf2a7c0b2fad114b300"   # [dgiotmd5]
+dgiotmd5="100a4ad18470b83fe90edb29f8acf7ca"   # [dgiotmd5]
 pg_eip="changeyourip"                            # [datanode_eip]
 pg_auth='changeyourpassword'                  # [pg_auth]
 
