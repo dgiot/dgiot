@@ -22,7 +22,7 @@
 -behavior(dgiot_channelx).
 
 -export([get_config/0, get_config/1]).
--export([start/0, start/2, init/3, handle_init/1, handle_event/3, handle_message/2, stop/3, handle_save/1]).
+-export([start/0, start_timescale/0, start/2, init/3, handle_init/1, handle_event/3, handle_message/2, stop/3, handle_save/1]).
 -record(state, {channel, cfg}).
 
 %% 注册通道类型
@@ -139,6 +139,18 @@ start() ->
         <<"restkey">> => application:get_env(dgiot_parse, parse_rest_key, not_find)
     },
     start(?DEFAULT, Cfg).
+
+
+start_timescale() ->
+    Cfg = #{
+        <<"host">> => application:get_env(dgiot_parse, timescale_server, not_find),
+        <<"path">> => application:get_env(dgiot_parse, parse_path, not_find),
+        <<"appid">> => application:get_env(dgiot_parse, parse_appid, not_find),
+        <<"master">> => application:get_env(dgiot_parse, parse_master_key, not_find),
+        <<"jskey">> => application:get_env(dgiot_parse, parse_js_key, not_find),
+        <<"restkey">> => application:get_env(dgiot_parse, parse_rest_key, not_find)
+    },
+    start(?TIMESCALE, Cfg).
 
 start(Channel, Cfg) ->
     dgiot_channelx:add(parse_channelx, ?TYPE, Channel, ?MODULE, Cfg#{

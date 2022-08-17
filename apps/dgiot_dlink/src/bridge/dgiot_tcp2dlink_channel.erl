@@ -25,9 +25,9 @@
 -define(MAX_BUFF_SIZE, 1024).
 -record(state, {
     id,
-    productId
-    ,
-    is_sub
+    productId,
+    devaddr,
+    exper_count
 }).
 %% API
 -export([start/2]).
@@ -86,8 +86,6 @@ init(?TYPE, ChannelId, #{
 }) ->
     State = #state{
         id = ChannelId
-        ,
-        is_sub = 0
     },
     {ok, State, dgiot_tcp2dlink_worker:child_spec(Port, State)}.
 
