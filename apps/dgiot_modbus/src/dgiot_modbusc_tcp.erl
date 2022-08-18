@@ -33,7 +33,7 @@ init(_) ->
     {ok, #{}}.
 
 handle_info(connection_ready, #dclient{child = ChildState} = Dclient) ->
-    io:format("~s ~p ChildState = ~p.~n", [?FILE, ?LINE, ChildState]),
+%%    io:format("~s ~p ChildState = ~p.~n", [?FILE, ?LINE, ChildState]),
     rand:seed(exs1024),
     Time = erlang:round(rand:uniform() * 1 + 1) * 1000,
     erlang:send_after(Time, self(), read),
