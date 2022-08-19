@@ -6,3 +6,5 @@
 
 
 -define(PERSON ,<<"person">>).
+-define(MATERIALTABLE,<<"material">>).
+-define(MATERIALETS,material).
