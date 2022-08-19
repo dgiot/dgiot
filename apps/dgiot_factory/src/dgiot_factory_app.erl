@@ -20,6 +20,7 @@
 -behaviour(application).
 -include("dgiot_factory.hrl").
 
+-export([ init_materialets/0]).
 %% Application callbacks
 -export([start/2, stop/1]).
 
@@ -28,7 +29,30 @@
 %%--------------------------------------------------------------------
 
 start(_StartType, _StartArgs) ->
+    init_ets(),
     dgiot_factory_sup:start_link().
 
 stop(_State) ->
     ok.
+init_ets() ->
+    dgiot_data:init(?MATERIALETS),
+    init_materialets().
+
+init_materialets() ->
+%%    case dgiot_parse:query_object(?MATERIALTABLE, #{<<"where">> => #{<<"validate">> => true}}) of
+        case dgiot_parse:query_object(<<"material">>, #{<<"where">> => #{<<"validate">> => true}}) of
+        {ok, #{<<"results">> := Res}} ->
+            lists:foldl(
+                fun(X, _) ->
+                    case X of
+                        #{<<"FMaterialName">> := Id, <<"FDeliveryDate">> := Date} ->
+                            io:format("~s ~p Id= ~ts ~n",[?FILE,?LINE,Id]),
+                            Data = maps:remove(<<"createdAt">>,maps:remove(<<"updatedAt">> ,X)),
+                            dgiot_data:insert(?MATERIALETS, {Id, Date}, Data);
+                        _ ->
+                            pass
+                    end
+                end, [], Res);
+        _ ->
+            pas
+    end.

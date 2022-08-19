@@ -22,7 +22,9 @@
             "description": ""
           }
         },
-        "tags": ["factory"]
+        "tags": [
+          "factory"
+        ]
       },
       "post": {
         "summary": "更新工厂日历",
@@ -52,7 +54,9 @@
             }
           }
         ],
-        "consumes": ["application/json"],
+        "consumes": [
+          "application/json"
+        ],
         "responses": {
           "200": {
             "description": "Returns operation status"
@@ -70,12 +74,16 @@
             "description": "Server Internal error"
           }
         },
-        "tags": ["factory"]
+        "tags": [
+          "factory"
+        ]
       }
     },
     "/worker_shift": {
       "get": {
-        "consumes": ["application/json"],
+        "consumes": [
+          "application/json"
+        ],
         "summary": "获取排班",
         "description": "获取排班",
         "parameters": [
@@ -118,7 +126,9 @@
             "description": ""
           }
         },
-        "tags": ["factory"]
+        "tags": [
+          "factory"
+        ]
       },
       "post": {
         "summary": "更新排班",
@@ -140,7 +150,9 @@
             }
           }
         ],
-        "consumes": ["application/json"],
+        "consumes": [
+          "application/json"
+        ],
         "responses": {
           "200": {
             "description": "Returns operation status"
@@ -158,7 +170,9 @@
             "description": "Server Internal error"
           }
         },
-        "tags": ["factory"]
+        "tags": [
+          "factory"
+        ]
       }
     },
     "/data": {
@@ -224,10 +238,15 @@
             "in": "query",
             "name": "new",
             "type": "string",
-            "enum": [true, false]
+            "enum": [
+              true,
+              false
+            ]
           }
         ],
-        "consumes": ["application/json"],
+        "consumes": [
+          "application/json"
+        ],
         "responses": {
           "200": {
             "description": "Returns operation status"
@@ -245,12 +264,16 @@
             "description": "Server Internal error"
           }
         },
-        "tags": ["factory"]
+        "tags": [
+          "factory"
+        ]
       }
     },
     "/material": {
       "get": {
-        "consumes": ["application/json"],
+        "consumes": [
+          "application/json"
+        ],
         "summary": "获取领料记录",
         "description": "获取领料记录",
         "parameters": [
@@ -270,7 +293,9 @@
             "description": ""
           }
         },
-        "tags": ["factory"]
+        "tags": [
+          "factory"
+        ]
       },
       "post": {
         "summary": "更新领料记录",
@@ -297,7 +322,9 @@
             }
           }
         ],
-        "consumes": ["application/json"],
+        "consumes": [
+          "application/json"
+        ],
         "responses": {
           "200": {
             "description": "Returns operation status"
@@ -315,7 +342,98 @@
             "description": "Server Internal error"
           }
         },
-        "tags": ["factory"]
+        "tags": [
+          "factory"
+        ]
+      }
+    },
+    "/warehouse_material": {
+      "get": {
+        "consumes": [
+          "application/json"
+        ],
+        "summary": "获取仓库物料记录",
+        "description": "获取仓库物料记录",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "description": "limit, 显示多少条记录，显示100条记录 eg:100",
+            "required": false,
+            "default": 10,
+            "type": "integer"
+          },
+          {
+            "in": "query",
+            "name": "skip",
+            "description": "skip",
+            "required": false,
+            "default": 0,
+            "type": "integer"
+          },
+          {
+            "in": "query",
+            "name": "where",
+            "description": "过滤条件，eg: {\"objectId\":{\"$in\":[\"BGS3BFgcZN\"]}}",
+            "required": false,
+            "default": "{}",
+            "type": "string"
+          }
+
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "factory"
+        ]
+      },
+      "post": {
+        "summary": "更新仓库物料",
+        "description": "更新仓库物料",
+        "parameters": [
+          {
+            "name": "objectId",
+            "in": "query",
+            "type": "string",
+            "description": "修改的id"
+          },
+          {
+            "in": "body",
+            "name": "record",
+            "description": "更新内容",
+            "required": true,
+            "schema": {}
+          }
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "factory"
+        ]
       }
     }
   },
