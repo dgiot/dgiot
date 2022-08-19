@@ -212,5 +212,3 @@ test1(Deviceid) ->
             Acc ++ Results
         end, [], PUR_PurchaseOrderList
     ).
-
-
