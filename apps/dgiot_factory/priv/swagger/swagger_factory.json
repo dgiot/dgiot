@@ -3,7 +3,9 @@
   "paths": {
     "/factory_calendar": {
       "get": {
-        "consumes": ["application/json"],
+        "consumes": [
+          "application/json"
+        ],
         "summary": "获取工厂日历",
         "description": "获取工厂日历",
         "parameters": [
@@ -379,7 +381,6 @@
             "default": "{}",
             "type": "string"
           }
-
         ],
         "responses": {
           "200": {
