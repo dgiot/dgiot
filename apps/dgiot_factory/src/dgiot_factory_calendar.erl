@@ -65,9 +65,6 @@ get_new_other(OldCalendar, NewOther) ->
             NewOther
     end.
 
-
-
-
 get_calendar(Depart) ->
     Id = dgiot_parse_id:get_dictid(Depart, ?FACTORY_CALENDAR, Depart, Depart),
     case dgiot_parse:get_object(<<"Dict">>, Id) of
