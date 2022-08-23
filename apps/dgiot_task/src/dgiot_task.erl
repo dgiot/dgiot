@@ -227,8 +227,12 @@ string2value(Str, _) ->
                     error;
                 {ok, Exprs} ->
                     Bindings = erl_eval:new_bindings(),
-                    {value, Value, _} = erl_eval:exprs(Exprs, Bindings),
-                    Value
+                    case catch erl_eval:exprs(Exprs, Bindings) of
+                        {value, Value, _} ->
+                            Value;
+                        _ ->
+                            0
+                    end
             end;
         _ -> error
     end.

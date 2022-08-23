@@ -99,15 +99,15 @@
                   "type": "string",
                   "example": "dasssd54"
                 },
+                "orderId": {
+                  "required": true,
+                  "type": "string",
+                  "example": "dasssd54"
+                },
                 "branchId": {
                   "required": true,
                   "type": "string",
                   "example": "9256b5cf2e"
-                },
-                "orderId": {
-                  "required": true,
-                  "type": "string",
-                  "example": "MO000027"
                 },
                 "docnumber": {
                   "required": true,
