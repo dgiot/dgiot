@@ -1000,7 +1000,7 @@ python_drawxnqx(TaskId, NewData) ->
     Path = dgiot_httpc:url_join([filename:dirname(filename:dirname(Here)), "/priv"]),
     Python3path = Path ++ "/python/drawxnqx.py ",
     Filepath = application:get_env(dgiot_evidence, gofastdfs_path, <<"/data/dgiot/go_fastdfs/files/dgiot_file/pump_python/">>),
-    PythonBody = #{<<"name">> => <<TaskId/binary, ".png">>, <<"data">> => NewData, <<"path">> => Filepath, <<"dgiot_testing_equipment_flowSet">> => Dgiot_testing_equipment_flowSet},
+    PythonBody = #{<<"name">> => <<TaskId/binary, ".png">>, <<"data">> => NewData, <<"path">> => base64:encode(Filepath), <<"dgiot_testing_equipment_flowSet">> => Dgiot_testing_equipment_flowSet},
     Imagepath =
         case catch base64:decode(os:cmd("python3 " ++ Python3path ++ dgiot_utils:to_list(base64:encode(jsx:encode(PythonBody))))) of
             {'EXIT', _Error} ->

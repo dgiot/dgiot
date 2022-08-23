@@ -1,7 +1,7 @@
 {application, dgiot_evidence,
     [{description, "DGIOT Evidence"},
         {vsn, "4.3.0"},
-        {registered, []},
+        {registered, [dgiot_evidence_sup]},
         {mod, {dgiot_evidence_app, []}},
         {applications, [kernel, stdlib, dgiot]},
         {env, []},

@@ -36,25 +36,33 @@ read_csv(ChannelId, FilePath) ->
     dgiot_bridge:control_channel(TdChannelId, <<"update">>),
     get_max_addrs(FileName).
 
-%% dgiot_product_csv:read_from_csv(<<"modbustcp">>)
+%% dgiot_product_csv:read_from_csv(<<"/dgiot_file/product/csv/modbustcp.csv">>)
 read_from_csv(FilePath) ->
+    Url = "http://127.0.0.1" ++ dgiot_utils:to_list(FilePath),
     FileName = dgiot_utils:to_md5(FilePath),
-    AtomName = dgiot_utils:to_atom(FileName),
-    dgiot_data:init(AtomName),
-    Path = "/data/dgiot/go_fastdfs/files" ++ dgiot_utils:to_list(FilePath),
-    put(count, -1),
-    Fun = fun(X) ->
-        Count = get(count),
-        case Count > 0 of
-            true ->
-                dgiot_data:insert(AtomName, Count, X ++ [0]);
-            _ ->
-                pass
-        end,
-        put(count, Count + 1)
-          end,
-    dgiot_utils:read_from_csv(Path, Fun),
-    FileName.
+    {file, Here} = code:is_loaded(dgiot_product_csv),
+    DownloadPath = dgiot_httpc:url_join([filename:dirname(filename:dirname(Here)), "/priv/csv/"]) ++ dgiot_utils:to_list(FileName) ++ ".csv",
+    os:cmd("rm -rf " ++ DownloadPath),
+    case dgiot_httpc:download(Url, DownloadPath) of
+        {ok, saved_to_file} ->
+            AtomName = dgiot_utils:to_atom(FileName),
+            dgiot_data:init(AtomName),
+            put(count, -1),
+            Fun = fun(X) ->
+                Count = get(count),
+                case Count > 0 of
+                    true ->
+                        dgiot_data:insert(AtomName, Count, X ++ [0]);
+                    _ ->
+                        pass
+                end,
+                put(count, Count + 1)
+                  end,
+            dgiot_utils:read_from_csv(DownloadPath, Fun),
+            FileName;
+        _ ->
+            FileName
+    end.
 
 %%  ets:match(ruodian,{'_', ['$1', '_', <<"D6101">> | '_']}).
 get_products(FileName) ->
@@ -108,11 +116,11 @@ create_device(FileName, Devicemap, ProductIds) ->
         {_, ProductName} = maps:get(ProductId, ProductIds, {'_', '_'}),
         Devaddrs = dgiot_utils:unique_1(lists:flatten(ets:match(AtomName, {'_', [ProductName, '_', '_', DeviceName, '$1' | '_']}))),
         NewAcl =
-            case dgiot_product:lookup_prod(ProductId) of
+            case dgiot_parse:get_object(<<"Product">>, ProductId) of
                 {ok, #{<<"ACL">> := Acl}} ->
                     Acl;
                 _ ->
-                    #{<<"role:admin">> => #{<<"read">> => true, <<"write">> => true}}
+                    #{<<114,111,108,101,58,229,188,128,229,143,145,232,128,133>> => #{<<"read">> => true, <<"write">> => true}}
             end,
         lists:foldl(fun(Devaddr, _Acc1) ->
             dgiot_device:create_device(#{

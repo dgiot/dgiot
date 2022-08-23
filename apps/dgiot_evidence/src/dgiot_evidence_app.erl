@@ -22,14 +22,23 @@
 
 %% Application callbacks
 -export([start/2, stop/1]).
+-export([start_hook/0, stop_hook/0]).
 -include("dgiot_evidence.hrl").
 %%--------------------------------------------------------------------
 %% Application callbacks
 %%--------------------------------------------------------------------
 
 start(_StartType, _StartArgs) ->
+    start_hook(),
     dgiot_evidence_sup:start_link().
 
 stop(_State) ->
+    stop_hook(),
     ok.
 
+
+start_hook() ->
+    dgiot_hook:add(one_for_one, {opc, evidence, pump}, fun dgiot_evidence:properties_report/1).
+
+stop_hook() ->
+    dgiot_hook:remove({opc, evidence, pump}).

@@ -28,7 +28,10 @@
     id,
     productId,
     devaddr,
-    exper_count
+    exper_count,
+    out_area_mj,
+    out_distend,
+    ratedspeed
 }).
 
 
@@ -120,51 +123,20 @@ parse_frame(#{<<"Stop">> := Devaddr}, #state{id = ChannelId, productId = Product
         _R ->
             pass
     end,
-    State#state{devaddr = <<>>, exper_count = <<>>};
+    State#state{devaddr = <<>>, exper_count = <<>>, out_area_mj = <<>>, out_distend = <<>>, ratedspeed = <<>>};
 
-parse_frame(#{<<"Dat 39">> := Devaddr} = Map, #state{id = ChannelId, productId = ProductId} = State) ->
+parse_frame(#{<<"Dat 7">> := Dat7, <<"Dat 10">> := Dat10, <<"Dat 27">> := Dat27, <<"Dat 39">> := Devaddr} = Map, #state{id = ChannelId, productId = ProductId} = State) ->
     DeviceId = dgiot_parse_id:get_deviceid(ProductId, Devaddr),
-    Trans = #{
-        <<"Dat 0">> => <<"pump_type">>,
-        <<"Dat 1">> => <<"QG">>,
-        <<"Dat 2">> => <<"HG">>,
-        <<"Dat 3">> => <<"PG">>,
-        <<"Dat 4">> => <<"XG">>,
-        <<"Dat 5">> => <<"npsh">>,
-        <<"Dat 6">> => <<"im_area">>,
-        <<"Dat 7">> => <<"out_area">>, %% 出口管径(m)
-        <<"Dat 10">> => <<"NG">>,
-        <<"Dat 11">> => <<"dgiot_testing_equipment_pressure">>,
-        <<"Dat 12">> => <<"dgiot_testing_equipment_electricity">>,
-        <<"Dat 13">> => <<"electnum">>,
-        <<"Dat 14">> => <<"normal_fre">>,
-        <<"Dat 15">> => <<"phase">>,
-        <<"Dat 20">> => <<"tem_ture">>,
-        <<"Dat 21">> => <<"atmos">>,
-        <<"Dat 22">> => <<"media">>,
-        <<"Dat 23">> => <<"cst">>,
-        <<"Dat 24">> => <<"temp_before">>,
-        <<"Dat 25">> => <<"temp_after">>,
-        <<"Dat 26">> => <<"in_distend">>,
-        <<"Dat 27">> => <<"out_distend">>,
-        <<"Dat 30">> => <<"exper_count">>,
-        <<"Dat 31">> => <<"pro_model">>
-    },
     NewMap = maps:fold(
         fun(K, V, Acc) ->
-            case maps:find(K, Trans) of
-                {ok, <<"im_area">>} ->
-                    Num = dgiot_utils:to_float(V),
-                    Acc#{<<"im_area">> => ?AREA(Num)};
-                {ok, <<"out_area">>} ->
-                    Num = dgiot_utils:to_float(V),
-                    Acc#{<<"out_area">> => ?AREA(Num)};
-                {ok, NewK} ->
-                    Acc#{NewK => V};
-                _ ->
-                    Acc#{K => V}
-            end
+            Acc#{get_key(K) => V}
         end, #{}, Map),
+    %%                     出口管径(m) 面积
+    Banjin = dgiot_utils:to_float(Dat7) * 1000 / 2,
+    Out_area_mj = ?AREA(Banjin),
+    %%                    出口表距(m)
+    Out_distend = dgiot_utils:to_float(Dat27),
+
     dgiot_bridge:send_log(ChannelId, ProductId, "Device:~p BaseInfo ~ts", [Devaddr, unicode:characters_to_list(jsx:encode(NewMap))]),
     case dgiot_product:lookup_prod(ProductId) of
         {ok, #{<<"ACL">> := Acl, <<"name">> := ProductName, <<"devType">> := DevType, <<"dynamicReg">> := true}} ->
@@ -182,11 +154,11 @@ parse_frame(#{<<"Dat 39">> := Devaddr} = Map, #state{id = ChannelId, productId =
                 <<"ACL">> => Acl,
                 <<"basedata">> => NewMap}),
 %%                     创建任务
-            Profile = #{<<"identifier">> => <<"inspectionReportTemp">>, <<"wordtemplatename">> => ProductName, <<"step">> => 0, <<"testbed">> => Testbed},
+            Profile = #{<<"identifier">> => <<"inspectionReportTemp">>, <<"wordtemplatename">> => ProductName, <<"step">> => 0, <<"testbed">> => Testbed, <<"istcp">> => true},
             Body = #{<<"name">> => <<Testbed/binary, "_检测任务_"/utf8, Exper_count/binary>>, <<"devaddr">> => <<Devaddr/binary, Exper_count/binary>>, <<"product">> => ProductId, <<"profile">> => Profile, <<"parentId">> => DeviceId, <<"basedata">> => NewMap},
             SessionToken = dgiot_auth:get_sessiontoken(maps:without([<<"*">>], Acl)),
             dgiot_evidence_handler:post_report(Body, SessionToken),
-            State#state{devaddr = Devaddr, exper_count = Exper_count};
+            State#state{devaddr = Devaddr, exper_count = Exper_count, out_area_mj = Out_area_mj, out_distend = Out_distend, ratedspeed = Dat10};
         _ ->
             State
     end;
@@ -194,7 +166,7 @@ parse_frame(#{<<"Dat 39">> := Devaddr} = Map, #state{id = ChannelId, productId =
 parse_frame(_, State) ->
     State.
 
-handle_data(Map, #state{id = ChannelId, productId = ProductId, devaddr = Devaddr, exper_count = Exper_count} = State) when size(Exper_count) > 0 ->
+handle_data(Map, #state{id = ChannelId, productId = ProductId, devaddr = Devaddr, exper_count = Exper_count, out_area_mj = Out_area_mj, out_distend = Out_distend, ratedspeed = Rated_speed} = State) when size(Exper_count) > 0 ->
     case maps:find(<<"devaddr">>, Map) of
         {ok, DevAddr} ->
             Payload = maps:fold(
@@ -206,7 +178,8 @@ handle_data(Map, #state{id = ChannelId, productId = ProductId, devaddr = Devaddr
                             NewK = re:replace(K, " ", "_", [global, {return, binary}]),
                             Acc#{list_to_binary(string:to_lower(binary_to_list(NewK))) => V}
                     end
-                end, #{}, Map),
+                end, #{<<"ymj">> => Out_area_mj, <<"out_distend">> => Out_distend, <<"rated_speed">> => Rated_speed}, Map),
+            io:format("~s ~p Payload = ~p.~n", [?FILE, ?LINE, Payload]),
             AllData = dgiot_dlink_proctol:properties_report(ProductId, DevAddr, Payload),
             save_historicaldata(AllData, ProductId, <<Devaddr/binary, Exper_count/binary>>),
             dgiot_bridge:send_log(ChannelId, ProductId, "Device:~s save_historicaldata ~s", [DevAddr, jsx:encode(AllData)]);
@@ -259,3 +232,103 @@ get_historicaldatacolumns(ProductId) ->
                 Acc
         end
                 end, [], Props).
+
+
+get_key(<<"Dat 0">>) ->
+    <<"pump_type">>;
+
+get_key(<<"Dat 1">>) ->
+    <<"QG">>;
+
+get_key(<<"Dat 2">>) ->
+    <<"HG">>;
+
+get_key(<<"Dat 3">>) ->
+    <<"PG">>;
+
+get_key(<<"Dat 4">>) ->
+    <<"XG">>;
+
+get_key(<<"Dat 5">>) ->
+    <<"npsh">>;
+
+get_key(<<"Dat 6">>) ->
+    <<"im_area">>;
+
+get_key(<<"Dat 7">>) ->
+    <<"out_area">>;
+
+get_key(<<"Dat 8">>) ->
+    <<"dat_8">>;
+
+get_key(<<"Dat 9">>) ->
+    <<"dat_9">>;
+
+get_key(<<"Dat 10">>) ->
+    <<"NG">>;
+
+get_key(<<"Dat 11">>) ->
+    <<"dgiot_testing_equipment_pressure">>;
+
+get_key(<<"Dat 12">>) ->
+    <<"dgiot_testing_equipment_electricity">>;
+
+get_key(<<"Dat 13">>) ->
+    <<"electnum">>;
+
+get_key(<<"Dat 14">>) ->
+    <<"normal_fre">>;
+
+get_key(<<"Dat 15">>) ->
+    <<"phase">>;
+
+get_key(<<"Dat 16">>) ->
+    <<"dat_16">>;
+
+get_key(<<"Dat 17">>) ->
+    <<"dat_17">>;
+
+get_key(<<"Dat_18">>) ->
+    <<"dat_18">>;
+
+get_key(<<"Dat_19">>) ->
+    <<"dat_19">>;
+
+get_key(<<"Dat 20">>) ->
+    <<"tem_ture">>;
+
+get_key(<<"Dat 21">>) ->
+    <<"atmos">>;
+
+get_key(<<"Dat 22">>) ->
+    <<"media">>;
+
+get_key(<<"Dat 23">>) ->
+    <<"cst">>;
+
+get_key(<<"Dat 24">>) ->
+    <<"temp_before">>;
+
+get_key(<<"Dat 25">>) ->
+    <<"temp_after">>;
+
+get_key(<<"Dat 26">>) ->
+    <<"in_distend">>;
+
+get_key(<<"Dat 27">>) ->
+    <<"out_distend">>;
+
+get_key(<<"Dat 28">>) ->
+    <<"dat_28">>;
+
+get_key(<<"Dat 29">>) ->
+    <<"dat_29">>;
+
+get_key(<<"Dat 30">>) ->
+    <<"exper_count">>;
+
+get_key(<<"Dat 31">>) ->
+    <<"pro_model">>;
+
+get_key(Key) ->
+    Key.

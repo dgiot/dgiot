@@ -27,7 +27,10 @@
     id,
     productId,
     devaddr,
-    exper_count
+    exper_count,
+    out_area_mj,
+    out_distend,
+    ratedspeed
 }).
 %% API
 -export([start/2]).
