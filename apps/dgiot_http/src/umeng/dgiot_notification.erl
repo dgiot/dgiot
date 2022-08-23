@@ -63,21 +63,21 @@ check_verification_code(Key, Code) ->
 
 send_sms(Mobile, Params) ->
     send_sms("+86", Mobile, Params).
-send_sms(NationCode,Mobile, Params) ->
-    TplId = dgiot_utils:to_list(application:get_env(dgiot_http, tencent_sms_notification_templateId , <<"">>)),
+send_sms(NationCode, Mobile, Params) ->
+    TplId = dgiot_utils:to_list(application:get_env(dgiot_http, tencent_sms_notification_templateId, <<"">>)),
     AppId = dgiot_utils:to_list(application:get_env(dgiot_http, tencent_sms_appid, <<"">>)),
     AppKey = dgiot_utils:to_list(application:get_env(dgiot_http, tencent_sms_appkey, <<"">>)),
     send_sms(NationCode, Mobile, Params, AppId, AppKey, TplId).
-send_sms(Mobile, Params, AppId, AppKey, TplId)->
+send_sms(Mobile, Params, AppId, AppKey, TplId) ->
     send_sms("+86", Mobile, Params, AppId, AppKey, TplId, <<>>).
-send_sms(NationCode, Mobile, Params, AppId, AppKey, TplId)->
+send_sms(NationCode, Mobile, Params, AppId, AppKey, TplId) ->
     send_sms(NationCode, Mobile, Params, AppId, AppKey, TplId, <<>>).
-send_sms(NationCode, Mobile, Params, AppId,AppKey,TplId,Ext) ->
-    AppId_b=
+send_sms(NationCode, Mobile, Params, AppId, AppKey, TplId, Ext) ->
+    AppId_b =
         case is_binary(AppId) of
             true ->
                 binary_to_list(AppId);
-            _->
+            _ ->
                 AppId
         end,
     Random = dgiot_utils:to_list(1000 + rand:uniform(1000)),
@@ -92,25 +92,25 @@ send_sms(NationCode, Mobile, Params, AppId,AppKey,TplId,Ext) ->
         {match, [_, NationCode1]} ->
 
             {MobileStr, Tel_b} =
-                case is_list(Mobile)   of
+                case is_list(Mobile) of
                     true ->    %%短信多发
-                        ListMobile = lists:foldl(fun ( #{<<"mobile">> := Num},Acc) -> Acc ++ [binary_to_list(Num)]
+                        ListMobile = lists:foldl(fun(#{<<"mobile">> := Num}, Acc) -> Acc ++ [binary_to_list(Num)]
                                                  end, [], Mobile),
                         {string:join(ListMobile, ","), Mobile};
                     _ ->    %%短信单发
                         case is_binary(Mobile) of
                             true ->
-                            {Mobile, #{<<"mobile">> => Mobile, <<"nationcode">> => NationCode1}};
-                        _ ->
-                            {Mobile, #{<<"mobile">> => unicode:characters_to_binary(Mobile), <<"nationcode">> => NationCode1}}
+                                {Mobile, #{<<"mobile">> => Mobile, <<"nationcode">> => NationCode1}};
+                            _ ->
+                                {Mobile, #{<<"mobile">> => unicode:characters_to_binary(Mobile), <<"nationcode">> => NationCode1}}
                         end
                 end,
             Now = dgiot_datetime:nowstamp(),
-            AppKey_b=
+            AppKey_b =
                 case is_binary(AppKey) of
                     true ->
                         binary_to_list(AppKey);
-                    _->
+                    _ ->
                         AppKey
                 end,
             SigStr = io_lib:format("appkey=~s&random=~s&time=~s&mobile=~s", [AppKey_b, Random, integer_to_list(Now), MobileStr]),
@@ -120,26 +120,26 @@ send_sms(NationCode, Mobile, Params, AppId,AppKey,TplId,Ext) ->
                     case is_binary(X) of
                         true ->
                             Acc ++ [X];
-                        _->
+                        _ ->
                             Acc ++ [unicode:characters_to_binary(X)]
                     end
                 end,
             Params_b = lists:foldl(FunParams, [], Params),
             case is_binary(TplId) of
                 true ->
-                    TplId_b=TplId;
-                _->
-                    TplId_b=unicode:characters_to_binary(TplId)
+                    TplId_b = TplId;
+                _ ->
+                    TplId_b = unicode:characters_to_binary(TplId)
             end,
             Data = #{
                 <<"tpl_id">> => TplId_b,
                 <<"ext">> => Ext,
                 <<"extend">> => <<>>,
                 <<"params">> => Params_b,
-                <<"sign">> => <<"质云科技"/utf8>>,
+                <<"sign">> => <<"dgiot"/utf8>>,
                 <<"tel">> => Tel_b,
                 <<"time">> => Now,
-                <<"sig">> =>  Sig_b
+                <<"sig">> => Sig_b
             },
             Request = {Url, [], "application/json", jsx:encode(Data)},
 
@@ -163,7 +163,7 @@ send_sms(NationCode, Mobile, Params, AppId,AppKey,TplId,Ext) ->
 test_email() ->
     Map = #{
         <<"from">> => <<"18257190166@163.com">>,
-        <<"to">> => [<<"463544084@qq.com">>],
+        <<"to">> => <<"463544084@qq.com">>,
         <<"subject">> => <<"测试邮件"/utf8>>,
         <<"fromdes">> => <<"徐 <18257190166@163.com>"/utf8>>,
         <<"todes">> => <<"唐 <463544084@qq.com>"/utf8>>,

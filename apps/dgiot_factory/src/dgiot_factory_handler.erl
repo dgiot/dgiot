@@ -114,7 +114,6 @@ do_request(get_worker_shift, #{<<"depart">> := Depart, <<"date">> := Data, <<"wo
         _ ->
             {error, <<"get_data_failed">>}
     end;
-
 do_request(post_worker_shift, #{<<"shift">> := Shifts} = _Args, _Context, _Body) ->
     dgiot_factory_shift:post_shift(Shifts),
     {ok, <<"修改成功"/utf8>>};
@@ -179,17 +178,31 @@ do_request(get_data, #{<<"objectId">> := DeviceId, <<"type">> := Type, <<"startt
             end
     end;
 do_request(get_material, #{<<"objectId">> := DeviceId} = _Args, _Context, _Req) ->
-%%    io:format("~s ~p DeviceId= ~p ~n", [?FILE, ?LINE, DeviceId]),
     case dgiot_factory_material:get_material_record(DeviceId) of
         {ok, Res} ->
-
             {ok, #{<<"status">> => 0, msg => <<"操作成功"/utf8>>, <<"data">> => maps:values(Res)}};
         _ ->
             error
     end;
 do_request(post_material, #{<<"objectId">> := DeviceId, <<"shift">> :=  Data} = _Args, _Context, _Req) ->
-
     case dgiot_factory_material:post_material(DeviceId, Data) of
+        {ok, _} ->
+            {ok, #{<<"status">> => 0, msg => <<"操作成功"/utf8>>, <<"data">> => []}};
+        _ ->
+            error
+    end;
+
+
+do_request(get_warehouse_material, #{<<"limit">> := Limit,<<"skip">> := Skip,<<"where">> := Where} = _Args, _Context, _Req) ->
+    case dgiot_factory_material:get_warehouse_material(Limit, Skip, Where) of
+        {ok, {Total,Res}} ->
+            {ok, #{<<"status">> => 0, msg => <<"操作成功"/utf8>>, <<"data">> => #{<<"total">> => Total,<<"items">> =>Res}}};
+        _ ->
+            error
+    end;
+%%do_request(post_warehouse_material,  #{<<"objectId">> :=Id ,<<"record">> := Record} =_Args, _Context, _Req) ->
+    do_request(post_warehouse_material,  _Args, _Context, _Req) ->
+        case dgiot_factory_material:put_warehouse_material( _Args) of
         {ok, _} ->
             {ok, #{<<"status">> => 0, msg => <<"操作成功"/utf8>>, <<"data">> => []}};
         _ ->
