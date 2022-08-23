@@ -196,7 +196,8 @@ def draw(flow1, head1, headparameters, power1, powerparameters, effect, effectpa
     plt.legend(loc=9, bbox_to_anchor=(-0.142, 1.1), borderaxespad=0., fontsize=8)
     # 获取当前时间
     # localtime = time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime())
-    filename = params['path'] + params['name']
+    filepath = base64.b64decode(params['path']).decode("utf-8")
+    filename = filepath + params['name']
     # print(filename)
     plt.savefig(filename)
     # plt.show()

@@ -195,7 +195,7 @@ sendSubscribe_test(UserId, #{<<"data">> := Data,
 
 %% 总控台
 get_wechat_index(SessionToken) ->
-    case dgiot_parse:query_object(<<"Device">>, #{<<"count">> => <<"objectId">>, <<"limit">> => 1000}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+    case dgiot_parse:query_object(<<"Device">>, #{<<"count">> => <<"objectId">>, <<"limit">> => 1000000}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
         {ok, #{<<"count">> := Count, <<"results">> := Results}} ->
             {ONLINE, OFFLINE} =
                 lists:foldl(fun(X, {Online, Offline}) ->
