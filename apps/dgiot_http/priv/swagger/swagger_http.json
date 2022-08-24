@@ -99,6 +99,16 @@
                   "type": "string",
                   "example": "dasssd54"
                 },
+                "orderId": {
+                  "required": true,
+                  "type": "string",
+                  "example": "a2"
+                },
+                "department": {
+                  "required": true,
+                  "type": "string",
+                  "example": "部门"
+                },
                 "branchId": {
                   "required": true,
                   "type": "string",
