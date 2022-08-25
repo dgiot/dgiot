@@ -29,35 +29,31 @@ get_all_shift(Department, undefined, undefined, SessionToken) ->
     StartDate = dgiot_datetime:localtime_to_unixtime(calendar:local_time()),
     EndDate = StartDate + ?INTERVAL,
     WorkshopList = get_workshop(SessionToken, Department),
-    Res = get_department_shift(Department,StartDate, EndDate, WorkshopList, []),
+    Res = get_department_shift(Department, StartDate, EndDate, WorkshopList, []),
     {ok, Res};
 get_all_shift(Department, Data, undefined, SessionToken) ->
     WorkshopList = get_workshop(SessionToken, Department),
     Res = lists:foldl(
         fun(X, Acc) ->
-            case get_shift(Department,Data, X) of
+            case get_shift(Department, Data, X) of
                 {ok, Res} ->
                     Acc ++ Res;
                 _ ->
                     Acc
             end
         end, [], WorkshopList),
-    {ok, #{Data => Res}};
+    {ok,  Res};
 
 
 get_all_shift(Department, undefined, Workshop, _) ->
     StartDate = dgiot_datetime:localtime_to_unixtime(calendar:local_time()),
     EndDate = StartDate + ?INTERVAL,
-    Res = get_department_shift(Department,StartDate, EndDate, [Workshop], []),
+    Res = get_department_shift(Department, StartDate, EndDate, [Workshop], []),
     {ok, Res};
 
 get_all_shift(Department, Data, Workshop, _) ->
-    {ok,Res}= dgiot_factory_shift:get_shift(Department,Data, Workshop),
+    {ok, Res} = dgiot_factory_shift:get_shift(Department, Data, Workshop),
     {ok, Res}.
-
-
-
-
 
 
 %%get_all_shift(Department, Data, Workshop, SessionToken) ->
@@ -124,7 +120,7 @@ get_workshop(Tree, Acc, Department) ->
                 end, Acc, Tree)
     end.
 
-get_department_shift(Department,StartDate, EndDate, WorkshopList, Acc) ->
+get_department_shift(Department, StartDate, EndDate, WorkshopList, Acc) ->
     case (EndDate - StartDate) < 0 of
         true ->
             Acc;
@@ -132,19 +128,19 @@ get_department_shift(Department,StartDate, EndDate, WorkshopList, Acc) ->
             DateStr = dgiot_datetime:format(StartDate, <<"YY-MM-DD">>),
             Shifts = lists:foldl(
                 fun(X, ACC) ->
-                    case get_shift(Department,DateStr, X) of
+                    case get_shift(Department, DateStr, X) of
                         {ok, Res} ->
                             ACC ++ Res;
                         _ ->
                             ACC
                     end
                 end, [], WorkshopList),
-            get_department_shift(Department,StartDate + ?ONEDAY, EndDate, WorkshopList, Acc ++ Shifts)
+            get_department_shift(Department, StartDate + ?ONEDAY, EndDate, WorkshopList, Acc ++ Shifts)
     end.
 
 
 
-get_shift(Department,Date, Workshop) ->
+get_shift(Department, Date, Workshop) ->
     case get_shift_time(Department) of
         {ok, Shifts, _} ->
             Res = lists:foldl(
@@ -162,8 +158,10 @@ get_shift(Department,Date, Workshop) ->
     end.
 
 
+post_shift(#{<<"device">> := Dev, <<"date">> := Date, <<"shift">> := Shift, <<"worker">> := Worker}) ->
+    post_one_shift(#{<<"device">> => Dev, <<"date">> => Date, <<"shift">> => Shift, <<"worker">> => Worker});
 
-post_shift(Shifts) ->
+post_shift(Shifts) when is_list(Shifts) ->
     lists:foldl(
         fun(X, _Acc) ->
             case X of
@@ -172,14 +170,15 @@ post_shift(Shifts) ->
                 _ ->
                     pass
             end
-        end, [], Shifts).
+        end, [], Shifts);
+post_shift(_) ->
+    error.
 
 
 post_one_shift(Args) ->
-
     case dgiot_parse_id:get_objectid(<<"shift">>, Args) of
         #{<<"objectId">> := ObjectId} ->
-
+            io:format("~s ~p ObjectId =~p ~n",[?FILE,?LINE,ObjectId]),
             case dgiot_parse:get_object(?WORKERCALENDAR, ObjectId) of
                 {ok, _} ->
                     dgiot_parse:update_object(?WORKERCALENDAR, ObjectId, Args);
