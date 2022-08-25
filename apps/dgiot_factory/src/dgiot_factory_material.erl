@@ -20,12 +20,6 @@
 %% API
 -export([get_material_record/1, post_material/2]).
 -export([get_warehouse_material/3, put_warehouse_material/1]).
-
-
--export([test1/1]).
-
-
-
 get_material_record(DeviceId) ->
     case dgiot_parse:get_object(<<"Device">>, DeviceId) of
         {ok, #{<<"material">> := Material}} ->
@@ -50,18 +44,6 @@ get_usable_material(Material) ->
             end
         end, #{}, Material).
 
-post_material(DeviceId, #{<<"material_name">> := Name} = Data) when is_map(Data) ->
-    case get_material_record(DeviceId) of
-        {ok, Material} ->
-            case maps:find(Name, Material) of
-                {ok, _Res} ->
-                    dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"material">> => maps:merge(Material, #{Name => Data})});
-                _ ->
-                    error
-            end;
-        _ ->
-            error
-    end;
 
 post_material(DeviceId, Data) when is_list(Data) ->
     case get_material_record(DeviceId) of
@@ -184,13 +166,15 @@ handle_ets(Record) ->
 
 get_id_and_data(#{<<"FMaterialId">> := Id, <<"FDeliveryDate">> := Date}) ->
     {ok,{Id,Date}};
+
 get_id_and_data(#{<<"objectId">> := ObjectId}) ->
     case dgiot_parse:get_object(<<"material">>,ObjectId) of
-        {ok,#{<<"FMaterialName">> := Id,<<"FDeliveryDate">> := Date}}->
+        {ok,#{<<"FMaterialId">> := Id,<<"FDeliveryDate">> := Date}}->
             {ok,{Id,Date}};
         _ ->
             error
     end;
+
 
 get_id_and_data(_) ->
     error.
@@ -200,17 +184,3 @@ get_id_and_data(_) ->
 %%    BinNum = dgiot_utils:to_binary("1"),
 %%    <<DeviceId:10/binary, _/binary>> = dgiot_utils:to_md5(<<FBillNo/binary, FCloseStatus/binary, BinNum/binary>>),
 %%    DeviceId.
-
-
-
-test1(Deviceid) ->
-    {ok, #{<<"content">> := #{<<"baseInfo">> := BaseInfo}}} = dgiot_parse:get_object(<<"Device">>, Deviceid),
-    PUR_PurchaseOrderList = maps:get(<<"PUR_PurchaseOrderList">>, BaseInfo, <<"">>),
-    lists:foldl(
-        fun(X, Acc) ->
-            {ok, #{<<"results">> := Results}} = dgiot_parse:query_object(<<"material">>, #{<<"where">> => #{<<"FMaterialId">> => X}}),
-            Acc ++ Results
-        end, [], PUR_PurchaseOrderList
-    ).
-
-

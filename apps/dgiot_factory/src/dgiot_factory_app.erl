@@ -45,8 +45,7 @@ init_materialets() ->
             lists:foldl(
                 fun(X, _) ->
                     case X of
-                        #{<<"FMaterialName">> := Id, <<"FDeliveryDate">> := Date} ->
-                            io:format("~s ~p Id= ~ts ~n",[?FILE,?LINE,Id]),
+                        #{<<"FMaterialId">> := Id, <<"FDeliveryDate">> := Date} ->
                             Data = maps:remove(<<"createdAt">>,maps:remove(<<"updatedAt">> ,X)),
                             dgiot_data:insert(?MATERIALETS, {Id, Date}, Data);
                         _ ->
