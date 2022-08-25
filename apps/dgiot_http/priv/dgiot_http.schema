@@ -42,11 +42,10 @@
 {datatype, string}
 ]}.
 
-{mapping, "tencent_sms.sign", "dgiot_http.tencent_sms_sign", [
+{mapping, "tencent_sms.branchId", "dgiot_http.tencent_sms_branchId", [
 {default, "ae746ee803"},
 {datatype, string}
 ]}.
-
 %%--------------------------------------------------------------------
 %% 百度地图配置
 %%--------------------------------------------------------------------
