@@ -108,7 +108,7 @@ do_request(post_handlewarnsendsms, #{<<"appId">> := AppId, <<"appKey">> := AppKe
     end;
 
 %数字工厂告警
-do_request(post_warnsendsms, #{<<"objectId">> := DeviceId, <<"department">> := Department,"dailyWorksId":= DailyWorksId,<<"branchId">> := BranchId,<<"datetimes">> := DateTimes, <<"docnumber">> := Docnumber, <<"username">> := UserName, <<"workshop">> := Workshop, <<"level">> := Level, <<"desc">> := Desc, <<"file">> := FileInfo}, _Context, _Req) ->
+do_request(post_warnsendsms, #{<<"objectId">> := DeviceId, <<"department">> := Department,<<"dailyWorksId">>:= DailyWorksId,<<"branchId">> := BranchId,<<"datetimes">> := DateTimes, <<"docnumber">> := Docnumber, <<"username">> := UserName, <<"workshop">> := Workshop, <<"level">> := Level, <<"desc">> := Desc, <<"file">> := FileInfo}, _Context, _Req) ->
     case Level of
         <<"1">> ->
             Warn = <<"待首检"/utf8>>,
