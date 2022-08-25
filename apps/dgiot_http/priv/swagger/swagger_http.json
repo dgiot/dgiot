@@ -78,9 +78,9 @@
         ]
       }
     },
+
     "/warnsendsms": {
       "post": {
-        "security": [],
         "summary": "短信告警发送",
         "description": "短信告警发送",
         "consumes": [
@@ -99,10 +99,10 @@
                   "type": "string",
                   "example": "dasssd54"
                 },
-                "orderId": {
+                "dailyWorksId": {
                   "required": true,
                   "type": "string",
-                  "example": "a2"
+                  "example": "abcd"
                 },
                 "department": {
                   "required": true,

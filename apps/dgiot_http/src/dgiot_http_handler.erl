@@ -74,6 +74,7 @@ do_request(get_file_signature, Args, _Context, _Req) ->
         _ -> {404, #{<<"code">> => 1001, <<"error">> => <<"not support this type">>}}
     end;
 
+
 %dgiot通用告警
 do_request(post_handlewarnsendsms, #{<<"appId">> := AppId, <<"appKey">> := AppKey, <<"tplId">> := TplId, <<"sign">> := Sign, <<"params">> := Params}, _Context, _Req) ->
     %通用
@@ -107,8 +108,7 @@ do_request(post_handlewarnsendsms, #{<<"appId">> := AppId, <<"appKey">> := AppKe
     end;
 
 %数字工厂告警
-do_request(post_warnsendsms, #{<<"objectId">> := DeviceId, <<"department">> := Department,<<"branchId">> := BranchId,"orderId":= OrderId, <<"datetimes">> := DateTimes, <<"docnumber">> := Docnumber, <<"username">> := UserName, <<"workshop">> := Workshop, <<"level">> := Level, <<"desc">> := Desc, <<"file">> := FileInfo}, _Context, _Req) ->
-
+do_request(post_warnsendsms, #{<<"objectId">> := DeviceId, <<"department">> := Department,"dailyWorksId":= DailyWorksId,<<"branchId">> := BranchId,<<"datetimes">> := DateTimes, <<"docnumber">> := Docnumber, <<"username">> := UserName, <<"workshop">> := Workshop, <<"level">> := Level, <<"desc">> := Desc, <<"file">> := FileInfo}, _Context, _Req) ->
     case Level of
         <<"1">> ->
             Warn = <<"待首检"/utf8>>,
@@ -131,7 +131,7 @@ do_request(post_warnsendsms, #{<<"objectId">> := DeviceId, <<"department">> := D
                 <<"content">> => #{
                     <<"alarm">> => #{
                         <<"deviceId"/utf8>> => DeviceId,
-                        <<"orderId"/utf8>> => OrderId,
+                        <<"dailyWorksId"/utf8>> => DailyWorksId,
                         <<"department"/utf8>> => Department,
                         <<"docnumber"/utf8>> => Docnumber,
                         <<"datetimes"/utf8>> => DateTimes,
