@@ -119,6 +119,7 @@
     , check_port/1
     , gzip/1
     , reverse/1
+    , is_phone/1
 ]).
 
 -define(TIMEZONE, + 8).
@@ -1020,4 +1021,10 @@ gzip_no_header(Uncompressed) ->
         zlib:close(Zstream)
     end.
 
-
+is_phone(Phone) ->
+    case re:run(Phone, "(^1(3[0-9]|4[01456879]|5[0-35-9]|6[2567]|7[0-8]|8[0-9]|9[0-35-9])\\d{8}$)") of
+        {match, _} ->
+            true;
+        _ ->
+            false
+    end.

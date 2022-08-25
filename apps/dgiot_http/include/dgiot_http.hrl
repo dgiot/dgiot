@@ -15,3 +15,4 @@
 %%--------------------------------------------------------------------
 -author("johnliu").
 -define(NOTIFICATION, dgiot_notification).
+-define(CONFIGURATION, dgiot_configuration).

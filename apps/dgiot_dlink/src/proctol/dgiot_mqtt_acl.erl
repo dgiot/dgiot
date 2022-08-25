@@ -49,7 +49,7 @@ do_check(#{username := <<"dgiot">>, clientid := ClientId}, _PubSub, _Topic) ->
     end;
 
 %% "$dg/thing/uniapp/{SessionToken}/report"
-do_check(#{clientid := Token, username := _UserId} = _ClientInfo, publish, <<"$dg/thing/uniapp/", SessionToken:34/binary, "/", _Rest/binary>> = _Topic) ->
+do_check(#{clientid := Token, username := _UserId} = _ClientInfo, publish, <<"$dg/thing/uniapp/", SessionToken:41/binary, "/", _Rest/binary>> = _Topic) ->
     %% io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, _Topic]),
     case Token of
         SessionToken ->
