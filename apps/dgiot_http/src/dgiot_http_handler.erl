@@ -76,16 +76,17 @@ do_request(get_file_signature, Args, _Context, _Req) ->
 
 
 %dgiot通用告警
-do_request(post_handlewarnsendsms, #{<<"appId">> := AppId, <<"appKey">> := AppKey, <<"tplId">> := TplId, <<"sign">> := Sign, <<"params">> := Params}, _Context, _Req) ->
+do_request(post_handlewarnsendsms, #{<<"appId">> := AppId, <<"appKey">> := AppKey,<<"sign">> := Sign,<<"tplId">> := TplId, <<"params">> := Params,<<"branchId">> := BranchId}, _Context, _Req) ->
     %通用
     application:set_env(dgiot_http, tencent_sms_appid, AppId),
     application:set_env(dgiot_http, tencent_sms_appkey, AppKey),
     application:set_env(dgiot_http, tencent_sms_notification_templateId, TplId),
-    %测试告警通知的部门，默认为数蛙部门
     application:set_env(dgiot_http, tencent_sms_sign, Sign),
+    %测试告警通知的部门，默认为数蛙部门
     application:set_env(dgiot_http, tencent_sms_params, Params),
+    application:set_env(dgiot_http, tencent_sms_BranchId, BranchId),
 
-    case dgiot_parse:get_object(<<"_Role">>, Sign) of
+    case dgiot_parse:get_object(<<"_Role">>, BranchId) of
         {ok, #{<<"objectId">> := RolesId}} ->
             %循环得到部门下所有的手机号
             Users = dgiot_parse_auth:get_UserIds(unicode:characters_to_binary(RolesId)),
@@ -93,8 +94,8 @@ do_request(post_handlewarnsendsms, #{<<"appId">> := AppId, <<"appKey">> := AppKe
             {ok, #{<<"results">> := Row}} = dgiot_parse:query_object(<<"_User">>, UsersQuery),
             PhoneList = lists:foldl(fun(X, Acc) ->
                 Phone = unicode:characters_to_binary(dgiot_utils:to_list(maps:get(<<"phone">>, X))),
-                dgiot_notification:send_sms(Phone, application:get_env(dgiot_http, tencent_sms_params, Params)),
-                Acc ++ [unicode:characters_to_binary(dgiot_utils:to_list(maps:get(<<"phone">>, X)))]
+                Data=dgiot_notification:send_sms(Phone, application:get_env(dgiot_http, tencent_sms_params, Params)),
+                Acc ++ [Data]
                                     end, [], Row),
 %      模板格式：时间：{1} {2}（发起人：{3}）（单据编号{4}）（车间：{5}）产生异常,警告等级为:{6}。
             Json = #{<<"phones">> => PhoneList},
@@ -108,7 +109,7 @@ do_request(post_handlewarnsendsms, #{<<"appId">> := AppId, <<"appKey">> := AppKe
     end;
 
 %数字工厂告警
-do_request(post_warnsendsms, #{<<"objectId">> := DeviceId, <<"department">> := Department,<<"dailyWorksId">>:= DailyWorksId,<<"branchId">> := BranchId,<<"datetimes">> := DateTimes, <<"docnumber">> := Docnumber, <<"username">> := UserName, <<"workshop">> := Workshop, <<"level">> := Level, <<"desc">> := Desc, <<"file">> := FileInfo}, _Context, _Req) ->
+do_request(post_warnsendsms, #{<<"objectId">> := DeviceId,<<"department">>:=Department,<<"dailyWorksId">>:=DailyWorksId,<<"branchId">> := BranchId,<<"datetimes">> := DateTimes, <<"docnumber">> := Docnumber, <<"username">> := UserName, <<"workshop">> := Workshop, <<"level">> := Level, <<"desc">> := Desc, <<"file">> := FileInfo}, _Context, _Req) ->
     case Level of
         <<"1">> ->
             Warn = <<"待首检"/utf8>>,
@@ -131,8 +132,8 @@ do_request(post_warnsendsms, #{<<"objectId">> := DeviceId, <<"department">> := D
                 <<"content">> => #{
                     <<"alarm">> => #{
                         <<"deviceId"/utf8>> => DeviceId,
-                        <<"dailyWorksId"/utf8>> => DailyWorksId,
                         <<"department"/utf8>> => Department,
+                        <<"dailyWorksId"/utf8>> => DailyWorksId,
                         <<"docnumber"/utf8>> => Docnumber,
                         <<"datetimes"/utf8>> => DateTimes,
                         <<"username"/utf8>> => UserName,
@@ -156,8 +157,8 @@ do_request(post_warnsendsms, #{<<"objectId">> := DeviceId, <<"department">> := D
             {ok, #{<<"results">> := Row}} = dgiot_parse:query_object(<<"_User">>, UsersQuery),
             PhoneList = lists:foldl(fun(X, Acc) ->
                 Phone = unicode:characters_to_binary(dgiot_utils:to_list(maps:get(<<"phone">>, X))),
-                dgiot_notification:send_sms(Phone, [DateTimes, <<"-">>, UserName, Docnumber, Workshop, Warns]),
-                Acc ++ [unicode:characters_to_binary(dgiot_utils:to_list(maps:get(<<"phone">>, X)))]
+                Data=dgiot_notification:send_sms(Phone, [DateTimes, <<"-">>, UserName, Docnumber, Workshop, Warns]),
+                Acc ++ [Data]
                                     end, [], Row),
 %      模板格式：时间：{1} {2}（发起人：{3}）（单据编号{4}）（车间：{5}）产生异常,警告等级为:{6}。
             Json = #{<<"phones">> => PhoneList},

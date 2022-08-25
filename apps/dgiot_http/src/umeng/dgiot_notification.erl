@@ -21,7 +21,7 @@
 -dgiot_data("ets").
 -export([init_ets/0]).
 %% API
--export([send_sms/2, send_sms/3, send_sms/5, send_sms/6, send_sms/7]).
+-export([send_sms/2, send_sms/3, send_sms/7, send_sms/8]).
 
 -export([send_email/1, test_email/0]).
 
@@ -64,15 +64,14 @@ check_verification_code(Key, Code) ->
 send_sms(Mobile, Params) ->
     send_sms("+86", Mobile, Params).
 send_sms(NationCode, Mobile, Params) ->
-    TplId = dgiot_utils:to_list(application:get_env(dgiot_http, tencent_sms_notification_templateId, <<"">>)),
-    AppId = dgiot_utils:to_list(application:get_env(dgiot_http, tencent_sms_appid, <<"">>)),
-    AppKey = dgiot_utils:to_list(application:get_env(dgiot_http, tencent_sms_appkey, <<"">>)),
-    send_sms(NationCode, Mobile, Params, AppId, AppKey, TplId).
-send_sms(Mobile, Params, AppId, AppKey, TplId) ->
-    send_sms("+86", Mobile, Params, AppId, AppKey, TplId, <<>>).
-send_sms(NationCode, Mobile, Params, AppId, AppKey, TplId) ->
-    send_sms(NationCode, Mobile, Params, AppId, AppKey, TplId, <<>>).
-send_sms(NationCode, Mobile, Params, AppId, AppKey, TplId, Ext) ->
+    AppId = unicode:characters_to_binary(application:get_env(dgiot_http, tencent_sms_appid, <<"1400635630">>)),
+    AppKey = unicode:characters_to_binary(application:get_env(dgiot_http, tencent_sms_appkey, <<"40d9609b9e6212cbff051b4f1d4cabfc">>)),
+    Sign = unicode:characters_to_binary(application:get_env(dgiot_http, tencent_sms_sign, <<"质云科技"/utf8>>)),
+    TplId = unicode:characters_to_binary(application:get_env(dgiot_http, tencent_sms_notification_templateId, <<"1473069">>)),
+    send_sms(NationCode,Mobile,AppId,AppKey,Sign,TplId,Params).
+send_sms(NationCode,Mobile,AppId,AppKey,Sign,TplId,Params) ->
+    send_sms(NationCode,Mobile,AppId,AppKey,Sign,TplId,Params, <<>>).
+send_sms(NationCode,Mobile,AppId,AppKey,Sign,TplId,Params, Ext) ->
     AppId_b =
         case is_binary(AppId) of
             true ->
@@ -81,6 +80,9 @@ send_sms(NationCode, Mobile, Params, AppId, AppKey, TplId, Ext) ->
                 AppId
         end,
     Random = dgiot_utils:to_list(1000 + rand:uniform(1000)),
+    io:fwrite("1111111111111111"),
+    io:fwrite(Sign),
+    io:fwrite("1111111111111111"),
     Url =
         case is_list(Mobile) of
             true ->
@@ -114,7 +116,7 @@ send_sms(NationCode, Mobile, Params, AppId, AppKey, TplId, Ext) ->
                         AppKey
                 end,
             SigStr = io_lib:format("appkey=~s&random=~s&time=~s&mobile=~s", [AppKey_b, Random, integer_to_list(Now), MobileStr]),
-            Sig_b = dgiot_utils:to_binary(string:to_lower(binary_to_list(<<<<Y>> || <<X:4>> <= crypto:hash(sha256, SigStr), Y <- integer_to_list(X, 16)>>))),
+            Sig_b = unicode:characters_to_binary(string:to_lower(binary_to_list(<<<<Y>> || <<X:4>> <= crypto:hash(sha256, SigStr), Y <- integer_to_list(X, 16)>>))),
             FunParams =
                 fun(X, Acc) ->
                     case is_binary(X) of
@@ -136,7 +138,7 @@ send_sms(NationCode, Mobile, Params, AppId, AppKey, TplId, Ext) ->
                 <<"ext">> => Ext,
                 <<"extend">> => <<>>,
                 <<"params">> => Params_b,
-                <<"sign">> => <<"dgiot"/utf8>>,
+                <<"sign">> => Sign,
                 <<"tel">> => Tel_b,
                 <<"time">> => Now,
                 <<"sig">> => Sig_b
