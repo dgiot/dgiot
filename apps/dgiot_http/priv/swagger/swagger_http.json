@@ -5,8 +5,7 @@
       "description": "通知管理"
     }
   ],
-  "definitions": {
-  },
+  "definitions": {},
   "paths": {
     "/handlewarnsendsms": {
       "post": {
@@ -47,7 +46,14 @@
                 "params": {
                   "required": true,
                   "type": "object",
-                  "example": ["测试1","测试2","测试3","测试4","测试5","测试6"]
+                  "example": [
+                    "测试1",
+                    "测试2",
+                    "测试3",
+                    "测试4",
+                    "测试5",
+                    "测试6"
+                  ]
                 }
               }
             }
@@ -78,7 +84,6 @@
         ]
       }
     },
-
     "/warnsendsms": {
       "post": {
         "summary": "短信告警发送",
@@ -210,7 +215,6 @@
           "Notification"
         ]
       },
-
       "post": {
         "security": [],
         "summary": "wechat绑定",
@@ -949,8 +953,7 @@
             "name": "body",
             "schema": {
               "type": "object",
-              "properties": {
-              }
+              "properties": {}
             },
             "description": "扩展参数"
           }
