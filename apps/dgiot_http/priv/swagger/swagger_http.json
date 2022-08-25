@@ -42,6 +42,11 @@
                 "sign": {
                   "required": true,
                   "type": "string",
+                  "example": "质云科技"
+                },
+                "branchId": {
+                  "required": true,
+                  "type": "string",
                   "example": "ae746ee803"
                 },
                 "params": {
@@ -99,15 +104,15 @@
                   "type": "string",
                   "example": "dasssd54"
                 },
-                "dailyWorksId": {
-                  "required": true,
-                  "type": "string",
-                  "example": "abcd"
-                },
                 "department": {
                   "required": true,
                   "type": "string",
                   "example": "部门"
+                },
+                "dailyWorksId": {
+                  "required": true,
+                  "type": "string",
+                  "example": "每天工单编号"
                 },
                 "branchId": {
                   "required": true,
