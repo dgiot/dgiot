@@ -12,9 +12,7 @@
         "security": [],
         "summary": "短信配置发送",
         "description": "短信配置发送",
-        "consumes": [
-          "application/json"
-        ],
+        "consumes": ["application/json"],
         "parameters": [
           {
             "in": "body",
@@ -84,18 +82,14 @@
             }
           }
         },
-        "tags": [
-          "Notification"
-        ]
+        "tags": ["Notification"]
       }
     },
     "/warnsendsms": {
       "post": {
         "summary": "短信告警发送",
         "description": "短信告警发送",
-        "consumes": [
-          "application/json"
-        ],
+        "consumes": ["application/json"],
         "parameters": [
           {
             "in": "body",
@@ -183,9 +177,7 @@
             }
           }
         },
-        "tags": [
-          "Notification"
-        ]
+        "tags": ["Notification"]
       }
     },
     "/wechat": {
@@ -216,9 +208,7 @@
           }
         },
         "summary": "wechat登陆",
-        "tags": [
-          "Notification"
-        ]
+        "tags": ["Notification"]
       },
       "post": {
         "security": [],
@@ -226,9 +216,7 @@
         "description": "wechat绑定",
         "hidden": true,
         "position": 0,
-        "consumes": [
-          "text/plain"
-        ],
+        "consumes": ["text/plain"],
         "parameters": [
           {
             "in": "body",
@@ -276,9 +264,7 @@
             }
           }
         },
-        "tags": [
-          "Notification"
-        ]
+        "tags": ["Notification"]
       }
     },
     "/wechat_unbind": {
@@ -300,9 +286,7 @@
           }
         },
         "summary": "wechat解绑",
-        "tags": [
-          "Notification"
-        ]
+        "tags": ["Notification"]
       }
     },
     "/wechat_index": {
@@ -324,9 +308,7 @@
           }
         },
         "summary": "小程序总控台",
-        "tags": [
-          "Notification"
-        ]
+        "tags": ["Notification"]
       }
     },
     "/wechat_map": {
@@ -348,9 +330,7 @@
           }
         },
         "summary": "微信设备地图",
-        "tags": [
-          "Notification"
-        ]
+        "tags": ["Notification"]
       }
     },
     "/device_info": {
@@ -380,9 +360,7 @@
           }
         },
         "summary": "设备详情",
-        "tags": [
-          "Notification"
-        ]
+        "tags": ["Notification"]
       }
     },
     "/notification": {
@@ -440,9 +418,7 @@
           }
         },
         "summary": "告警列表",
-        "tags": [
-          "Notification"
-        ]
+        "tags": ["Notification"]
       }
     },
     "/sendsubscribe": {
@@ -498,9 +474,7 @@
           }
         },
         "summary": "发送订阅消息",
-        "tags": [
-          "Notification"
-        ]
+        "tags": ["Notification"]
       }
     },
     "/sendemail": {
@@ -580,9 +554,7 @@
           }
         },
         "summary": "发送邮件",
-        "tags": [
-          "Notification"
-        ]
+        "tags": ["Notification"]
       }
     },
     "/jwtlogin": {
@@ -613,9 +585,7 @@
           }
         },
         "summary": "jwt回调",
-        "tags": [
-          "Notification"
-        ]
+        "tags": ["Notification"]
       }
     },
     "/maintenance": {
@@ -684,9 +654,7 @@
           }
         },
         "summary": "创建工单",
-        "tags": [
-          "Notification"
-        ]
+        "tags": ["Notification"]
       }
     },
     "/maintenancefinish": {
@@ -716,9 +684,7 @@
           }
         },
         "summary": "工单结束发送",
-        "tags": [
-          "Notification"
-        ]
+        "tags": ["Notification"]
       }
     },
     "/operations": {
@@ -734,9 +700,7 @@
             "description": ""
           }
         },
-        "tags": [
-          "Notification"
-        ]
+        "tags": ["Notification"]
       },
       "post": {
         "basePath": "/",
@@ -796,9 +760,7 @@
           }
         },
         "summary": "修改运维管理列表",
-        "tags": [
-          "Notification"
-        ]
+        "tags": ["Notification"]
       }
     },
     "/triggeralarm": {
@@ -831,17 +793,13 @@
           }
         },
         "summary": "触发告警",
-        "tags": [
-          "Notification"
-        ]
+        "tags": ["Notification"]
       }
     },
     "/sendsms": {
       "post": {
         "security": [],
-        "consumes": [
-          "*"
-        ],
+        "consumes": ["*"],
         "summary": "发送短信验证码",
         "description": "发送短信,短信验证码发送成功后,则会在缓存中以mobile为键写入, 用户下一步提交时，可以根据此键查询验证通过",
         "parameters": [
@@ -915,9 +873,7 @@
             "description": "Server Internal error"
           }
         },
-        "tags": [
-          "Notification"
-        ]
+        "tags": ["Notification"]
       }
     },
     "/verify_code": {
@@ -931,12 +887,7 @@
             "name": "Action",
             "type": "string",
             "description": "验证操作类型",
-            "enum": [
-              "login",
-              "register",
-              "passwordreset",
-              "modifyuser"
-            ],
+            "enum": ["login", "register", "passwordreset", "modifyuser"],
             "required": true
           },
           {
@@ -980,9 +931,7 @@
             "description": "Server Internal error"
           }
         },
-        "tags": [
-          "Notification"
-        ]
+        "tags": ["Notification"]
       }
     }
   }
