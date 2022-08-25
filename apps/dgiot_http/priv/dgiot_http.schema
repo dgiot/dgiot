@@ -22,30 +22,6 @@
 {datatype, string}
 ]}.
 
-
-%%--------------------------------------------------------------------
-%% 腾讯短信配置
-%%--------------------------------------------------------------------
-
-{mapping, "tencent_sms.appid", "dgiot_http.tencent_sms_appid", [
-{default, "1400635630"},
-{datatype, string}
-]}.
-
-{mapping, "tencent_sms.appkey", "dgiot_http.tencent_sms_appkey", [
-{default, "40d9609b9e6212cbff051b4f1d4cabfc"},
-{datatype, string}
-]}.
-
-{mapping, "tencent_sms.notification.templateId", "dgiot_http.tencent_sms_notification_templateId", [
-{default, "1473069"},
-{datatype, string}
-]}.
-
-{mapping, "tencent_sms.branchId", "dgiot_http.tencent_sms_branchId", [
-{default, "ae746ee803"},
-{datatype, string}
-]}.
 %%--------------------------------------------------------------------
 %% 百度地图配置
 %%--------------------------------------------------------------------
