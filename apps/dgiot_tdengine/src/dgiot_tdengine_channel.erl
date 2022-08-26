@@ -237,7 +237,14 @@ handle_message({data, Product, DevAddr, Data, Context}, #state{id = ChannelId, e
     dgiot_data:insert({tdengine_os, ChannelId}, OsType),
     case OsType of
         <<"windows">> ->
-            dgiot_parse_timescale:do_save(Product, DevAddr, Data);
+            case catch dgiot_parse_timescale:do_save(Product, DevAddr, Data) of
+                {ok, _} ->
+                    {ok, State};
+                {_, Reason} ->
+                    ?LOG(error, "Save to Tdengine error, ~p, ~p", [Data, Reason]),
+                    dgiot_bridge:send_log(ChannelId, "Save to Tdengine error, ~ts~n, ~p", [unicode:characters_to_list(jsx:encode(Data)), Reason]),
+                    ok
+            end;
         _ ->
             case catch do_save([Product, DevAddr, Data, Context], State) of
                 {Err, Reason} when Err == error; Err == 'EXIT' ->

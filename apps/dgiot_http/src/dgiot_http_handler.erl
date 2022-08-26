@@ -128,7 +128,7 @@ do_request(post_sendsms_deviceid, #{<<"deviceid">> := DeviceId, <<"tplid">> := T
     dgiot_notification:send_sms(Mobile, TplId, Params);
 
 %数字工厂告警
-do_request(post_warnsendsms, #{<<"objectId">> := DeviceId,<<"department">>:=Department,<<"dailyWorksId">>:=DailyWorksId,<<"branchId">> := BranchId,<<"datetimes">> := DateTimes, <<"docnumber">> := Docnumber, <<"username">> := UserName, <<"workshop">> := Workshop, <<"level">> := Level, <<"desc">> := Desc, <<"file">> := FileInfo}, _Context, _Req) ->
+do_request(post_warnsendsms, #{<<"objectId">> := DeviceId, <<"department">> := Department, <<"dailyWorksId">> := DailyWorksId, <<"branchId">> := BranchId, <<"datetimes">> := DateTimes, <<"docnumber">> := Docnumber, <<"username">> := UserName, <<"workshop">> := Workshop, <<"level">> := Level, <<"desc">> := Desc, <<"file">> := FileInfo}, _Context, _Req) ->
     case Level of
         <<"1">> ->
             Warn = <<"待首检"/utf8>>,
@@ -176,7 +176,7 @@ do_request(post_warnsendsms, #{<<"objectId">> := DeviceId,<<"department">>:=Depa
             {ok, #{<<"results">> := Row}} = dgiot_parse:query_object(<<"_User">>, UsersQuery),
             PhoneList = lists:foldl(fun(X, Acc) ->
                 Phone = unicode:characters_to_binary(dgiot_utils:to_list(maps:get(<<"phone">>, X))),
-                Data=dgiot_notification:send_sms(Phone, [DateTimes, <<"-">>, UserName, Docnumber, Workshop, Warns]),
+                Data = dgiot_notification:send_sms(Phone, <<"">>, [DateTimes, <<"-">>, UserName, Docnumber, Workshop, Warns]),
                 Acc ++ [Data]
                                     end, [], Row),
 %      模板格式：时间：{1} {2}（发起人：{3}）（单据编号{4}）（车间：{5}）产生异常,警告等级为:{6}。
