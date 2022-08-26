@@ -23,7 +23,7 @@
 -define(TYPE, <<"TCP2DLINK">>).
 -define(MAX_BUFF_SIZE, 1024).
 -define(PUMPTATUS, pumpstatus).
--define(AREA(R), 3.14 * R * R).
+-define(AREA(R), 3.14159265 * R * R).
 -record(state, {
     id,
     productId,
@@ -198,7 +198,7 @@ save_historicaldata(AllData, ProductId, TaskDevaddr) ->
         {ok, #{<<"profile">> := Profile}} ->
             Historicaldata = maps:get(<<"historicaldata">>, Profile, []),
             DrawxnqxPath = maps:get(<<"drawxnqxPath">>, Profile, <<>>),
-            NewHistoricaldata = lists:merge(Historicaldata, [AllData]),
+            NewHistoricaldata = Historicaldata ++ [AllData],
             Jsonlist = dgiot_evidence_handler:arrtojsonlist(NewHistoricaldata),
             Path =
                 case dgiot_evidence_handler:python_drawxnqx(TaskDeviceId, Jsonlist) of
