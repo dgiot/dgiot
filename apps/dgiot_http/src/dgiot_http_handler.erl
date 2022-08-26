@@ -145,7 +145,7 @@ do_request(post_warnsendsms, #{<<"objectId">> := DeviceId, <<"department">> := D
 
             Map = #{
                 <<"type">> => DeviceId,
-                <<"name">> => <<"Manual alarm">>,
+                <<"name">> => Department,
                 <<"status">> => 0,
                 <<"content">> => #{
                     <<"alarm">> => #{
@@ -164,11 +164,7 @@ do_request(post_warnsendsms, #{<<"objectId">> := DeviceId, <<"department">> := D
                 },
                 <<"ACL">> => Acl
             },
-            #{<<"objectId">> := ObjectId} = dgiot_parse_id:get_objectid(<<"Notification">>, Map),
-            NewMap = Map#{
-                <<"objectId">> => ObjectId
-            },
-            dgiot_parse:create_object(<<"Notification">>, NewMap),
+            dgiot_parse:create_object(<<"Notification">>, Map),
             %循环得到部门下所有的手机号
             Users = dgiot_parse_auth:get_UserIds(unicode:characters_to_binary(RolesId)),
             UsersQuery = #{<<"where">> => #{<<"objectId">> => #{<<"$in">> => Users}}},
