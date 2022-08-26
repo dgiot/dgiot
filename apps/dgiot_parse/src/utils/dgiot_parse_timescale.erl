@@ -86,7 +86,7 @@ do_save(ProductId, DevAddr, Data) ->
     create_object(DeviceId, #{<<"timescale">> => Data}).
 
 get_schemas(Class) ->
-    dgiot_parse:get_schemas(?TIMESCALE, Class).
+    dgiot_parse:get_schemas(?TIMESCALE, <<"timescale_", Class/binary>>).
 
 %% 建表
 create_schemas(DeviceId) ->
