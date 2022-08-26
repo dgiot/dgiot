@@ -59,6 +59,88 @@
   {
     "classLevelPermissions": {
       "addField": {
+        "*": true
+      },
+      "count": {
+        "*": true
+      },
+      "create": {
+        "*": true
+      },
+      "delete": {
+        "*": true
+      },
+      "find": {
+        "*": true
+      },
+      "get": {
+        "*": true
+      },
+      "protectedFields": {
+        "*": []
+      },
+      "update": {
+        "*": true
+      }
+    },
+    "className": "_Installation",
+    "fields": {
+      "ACL": {
+        "type": "ACL"
+      },
+      "GCMSenderId": {
+        "type": "String"
+      },
+      "appIdentifier": {
+        "type": "String"
+      },
+      "appName": {
+        "type": "String"
+      },
+      "appVersion": {
+        "type": "String"
+      },
+      "badge": {
+        "type": "Number"
+      },
+      "channels": {
+        "type": "Array"
+      },
+      "createdAt": {
+        "type": "Date"
+      },
+      "deviceToken": {
+        "type": "String"
+      },
+      "deviceType": {
+        "type": "String"
+      },
+      "installationId": {
+        "type": "String"
+      },
+      "localeIdentifier": {
+        "type": "String"
+      },
+      "objectId": {
+        "type": "String"
+      },
+      "parseVersion": {
+        "type": "String"
+      },
+      "pushType": {
+        "type": "String"
+      },
+      "timeZone": {
+        "type": "String"
+      },
+      "updatedAt": {
+        "type": "Date"
+      }
+    }
+  },
+  {
+    "classLevelPermissions": {
+      "addField": {
         "role:root": true
       },
       "count": {
@@ -240,88 +322,6 @@
       "values": {
         "required": true,
         "type": "Object"
-      }
-    }
-  },
-  {
-    "classLevelPermissions": {
-      "addField": {
-        "*": true
-      },
-      "count": {
-        "*": true
-      },
-      "create": {
-        "*": true
-      },
-      "delete": {
-        "*": true
-      },
-      "find": {
-        "*": true
-      },
-      "get": {
-        "*": true
-      },
-      "protectedFields": {
-        "*": []
-      },
-      "update": {
-        "*": true
-      }
-    },
-    "className": "_Installation",
-    "fields": {
-      "ACL": {
-        "type": "ACL"
-      },
-      "GCMSenderId": {
-        "type": "String"
-      },
-      "appIdentifier": {
-        "type": "String"
-      },
-      "appName": {
-        "type": "String"
-      },
-      "appVersion": {
-        "type": "String"
-      },
-      "badge": {
-        "type": "Number"
-      },
-      "channels": {
-        "type": "Array"
-      },
-      "createdAt": {
-        "type": "Date"
-      },
-      "deviceToken": {
-        "type": "String"
-      },
-      "deviceType": {
-        "type": "String"
-      },
-      "installationId": {
-        "type": "String"
-      },
-      "localeIdentifier": {
-        "type": "String"
-      },
-      "objectId": {
-        "type": "String"
-      },
-      "parseVersion": {
-        "type": "String"
-      },
-      "pushType": {
-        "type": "String"
-      },
-      "timeZone": {
-        "type": "String"
-      },
-      "updatedAt": {
-        "type": "Date"
       }
     }
   },
@@ -532,6 +532,86 @@
       },
       "updatedAt": {
         "type": "Date"
+      }
+    }
+  },
+  {
+    "classLevelPermissions": {
+      "addField": {
+        "*": true
+      },
+      "count": {
+        "*": true
+      },
+      "create": {
+        "*": true
+      },
+      "delete": {
+        "*": true
+      },
+      "find": {
+        "*": true
+      },
+      "get": {
+        "*": true
+      },
+      "protectedFields": {
+        "*": []
+      },
+      "update": {
+        "*": true
+      }
+    },
+    "className": "_User",
+    "fields": {
+      "ACL": {
+        "type": "ACL"
+      },
+      "authData": {
+        "type": "Object"
+      },
+      "createdAt": {
+        "type": "Date"
+      },
+      "department": {
+        "type": "String"
+      },
+      "email": {
+        "type": "String"
+      },
+      "emailVerified": {
+        "type": "Boolean"
+      },
+      "nick": {
+        "type": "String"
+      },
+      "objectId": {
+        "type": "String"
+      },
+      "password": {
+        "type": "String"
+      },
+      "phone": {
+        "type": "String"
+      },
+      "role": {
+        "required": false,
+        "targetClass": "_Role",
+        "type": "Relation"
+      },
+      "roles": {
+        "required": false,
+        "targetClass": "_Role",
+        "type": "Relation"
+      },
+      "tag": {
+        "type": "Object"
+      },
+      "updatedAt": {
+        "type": "Date"
+      },
+      "username": {
+        "type": "String"
       }
     }
   },
@@ -790,6 +870,82 @@
         "*": true
       }
     },
+    "className": "Notification",
+    "fields": {
+      "ACL": {
+        "type": "ACL"
+      },
+      "content": {
+        "required": false,
+        "type": "Object"
+      },
+      "createdAt": {
+        "type": "Date"
+      },
+      "deletedBy": {
+        "targetClass": "_User",
+        "type": "Relation"
+      },
+      "objectId": {
+        "type": "String"
+      },
+      "process": {
+        "required": false,
+        "type": "String"
+      },
+      "public": {
+        "type": "Boolean"
+      },
+      "readBy": {
+        "targetClass": "_User",
+        "type": "Relation"
+      },
+      "sender": {
+        "targetClass": "_User",
+        "type": "Pointer"
+      },
+      "status": {
+        "type": "Number"
+      },
+      "type": {
+        "type": "String"
+      },
+      "updatedAt": {
+        "type": "Date"
+      },
+      "user": {
+        "targetClass": "_User",
+        "type": "Pointer"
+      }
+    }
+  },
+  {
+    "classLevelPermissions": {
+      "addField": {
+        "*": true
+      },
+      "count": {
+        "*": true
+      },
+      "create": {
+        "*": true
+      },
+      "delete": {
+        "*": true
+      },
+      "find": {
+        "*": true
+      },
+      "get": {
+        "*": true
+      },
+      "protectedFields": {
+        "*": []
+      },
+      "update": {
+        "*": true
+      }
+    },
     "className": "Category",
     "fields": {
       "ACL": {
@@ -941,56 +1097,43 @@
         "*": true
       }
     },
-    "className": "_User",
+    "className": "View",
     "fields": {
       "ACL": {
         "type": "ACL"
       },
-      "authData": {
-        "type": "Object"
+      "class": {
+        "required": false,
+        "type": "String"
       },
       "createdAt": {
         "type": "Date"
       },
-      "department": {
+      "data": {
+        "required": false,
+        "type": "Object"
+      },
+      "key": {
+        "required": false,
         "type": "String"
       },
-      "email": {
-        "type": "String"
-      },
-      "emailVerified": {
-        "type": "Boolean"
-      },
-      "nick": {
+      "language": {
+        "required": false,
         "type": "String"
       },
       "objectId": {
         "type": "String"
       },
-      "password": {
+      "title": {
+        "required": false,
         "type": "String"
       },
-      "phone": {
+      "type": {
+        "required": false,
         "type": "String"
-      },
-      "role": {
-        "required": false,
-        "targetClass": "_Role",
-        "type": "Relation"
-      },
-      "roles": {
-        "required": false,
-        "targetClass": "_Role",
-        "type": "Relation"
-      },
-      "tag": {
-        "type": "Object"
       },
       "updatedAt": {
         "type": "Date"
-      },
-      "username": {
-        "type": "String"
       }
     }
   },
@@ -1156,59 +1299,83 @@
         "*": true
       }
     },
-    "className": "Notification",
+    "className": "_Role",
     "fields": {
       "ACL": {
         "type": "ACL"
       },
-      "content": {
-        "required": false,
-        "type": "Object"
+      "alias": {
+        "type": "String"
       },
       "createdAt": {
         "type": "Date"
       },
-      "deletedBy": {
-        "targetClass": "_User",
+      "depname": {
+        "type": "String"
+      },
+      "desc": {
+        "type": "String"
+      },
+      "leafnode": {
+        "type": "Boolean"
+      },
+      "level": {
+        "type": "Number"
+      },
+      "menus": {
+        "targetClass": "Menu",
         "type": "Relation"
+      },
+      "name": {
+        "type": "String"
       },
       "objectId": {
         "type": "String"
       },
-      "process": {
-        "required": false,
-        "type": "String"
-      },
-      "public": {
-        "type": "Boolean"
-      },
-      "readBy": {
-        "targetClass": "_User",
-        "type": "Relation"
-      },
-      "sender": {
-        "targetClass": "_User",
-        "type": "Pointer"
-      },
-      "status": {
+      "order": {
         "type": "Number"
       },
-      "type": {
+      "org_type": {
         "type": "String"
+      },
+      "parent": {
+        "targetClass": "_Role",
+        "type": "Pointer"
+      },
+      "roles": {
+        "targetClass": "_Role",
+        "type": "Relation"
+      },
+      "rules": {
+        "targetClass": "Permission",
+        "type": "Relation"
+      },
+      "tag": {
+        "type": "Object"
       },
       "updatedAt": {
         "type": "Date"
       },
-      "user": {
+      "users": {
         "targetClass": "_User",
-        "type": "Pointer"
+        "type": "Relation"
+      },
+      "views": {
+        "required": false,
+        "targetClass": "View",
+        "type": "Relation"
+      },
+      "views1": {
+        "required": false,
+        "targetClass": "View",
+        "type": "Relation"
       }
     }
   },
   {
     "classLevelPermissions": {
       "addField": {
-        "role:root": true
+        "*": true
       },
       "count": {
         "*": true
@@ -1232,40 +1399,62 @@
         "*": true
       }
     },
-    "className": "View",
+    "className": "ProductTemplet",
     "fields": {
       "ACL": {
         "type": "ACL"
       },
-      "class": {
+      "category": {
         "required": false,
-        "type": "String"
+        "targetClass": "Category",
+        "type": "Pointer"
+      },
+      "config": {
+        "required": false,
+        "type": "Object"
+      },
+      "content": {
+        "required": false,
+        "type": "Object"
       },
       "createdAt": {
         "type": "Date"
       },
-      "data": {
+      "decoder": {
         "required": false,
         "type": "Object"
       },
-      "key": {
+      "desc": {
         "required": false,
         "type": "String"
       },
-      "language": {
+      "icon": {
         "required": false,
         "type": "String"
+      },
+      "id": {
+        "type": "String"
+      },
+      "name": {
+        "required": false,
+        "type": "String"
+      },
+      "netType": {
+        "type": "String"
+      },
+      "nodeType": {
+        "type": "Number"
       },
       "objectId": {
         "type": "String"
       },
-      "title": {
+      "profile": {
         "required": false,
-        "type": "String"
+        "type": "Object"
       },
-      "type": {
+      "thing": {
         "required": false,
-        "type": "String"
+        "type": "Object"
       },
       "updatedAt": {
         "type": "Date"
@@ -1377,6 +1566,10 @@
       "route": {
         "type": "Object"
       },
+      "state": {
+        "required": false,
+        "type": "Number"
+      },
       "status": {
         "type": "String"
       },
@@ -1456,6 +1649,9 @@
         "required": false,
         "type": "Number"
       },
+      "orderBy": {
+        "type": "Number"
+      },
       "parent": {
         "required": false,
         "targetClass": "Article",
@@ -1472,190 +1668,6 @@
       "type": {
         "required": false,
         "type": "String"
-      },
-      "updatedAt": {
-        "type": "Date"
-      }
-    }
-  },
-  {
-    "classLevelPermissions": {
-      "addField": {
-        "*": true
-      },
-      "count": {
-        "*": true
-      },
-      "create": {
-        "*": true
-      },
-      "delete": {
-        "*": true
-      },
-      "find": {
-        "*": true
-      },
-      "get": {
-        "*": true
-      },
-      "protectedFields": {
-        "*": []
-      },
-      "update": {
-        "*": true
-      }
-    },
-    "className": "_Role",
-    "fields": {
-      "ACL": {
-        "type": "ACL"
-      },
-      "alias": {
-        "type": "String"
-      },
-      "createdAt": {
-        "type": "Date"
-      },
-      "depname": {
-        "type": "String"
-      },
-      "desc": {
-        "type": "String"
-      },
-      "leafnode": {
-        "type": "Boolean"
-      },
-      "level": {
-        "type": "Number"
-      },
-      "menus": {
-        "targetClass": "Menu",
-        "type": "Relation"
-      },
-      "name": {
-        "type": "String"
-      },
-      "objectId": {
-        "type": "String"
-      },
-      "order": {
-        "type": "Number"
-      },
-      "org_type": {
-        "type": "String"
-      },
-      "parent": {
-        "targetClass": "_Role",
-        "type": "Pointer"
-      },
-      "roles": {
-        "targetClass": "_Role",
-        "type": "Relation"
-      },
-      "rules": {
-        "targetClass": "Permission",
-        "type": "Relation"
-      },
-      "tag": {
-        "type": "Object"
-      },
-      "updatedAt": {
-        "type": "Date"
-      },
-      "users": {
-        "targetClass": "_User",
-        "type": "Relation"
-      },
-      "views": {
-        "required": false,
-        "targetClass": "View",
-        "type": "Relation"
-      }
-    }
-  },
-  {
-    "classLevelPermissions": {
-      "addField": {
-        "*": true
-      },
-      "count": {
-        "*": true
-      },
-      "create": {
-        "*": true
-      },
-      "delete": {
-        "*": true
-      },
-      "find": {
-        "*": true
-      },
-      "get": {
-        "*": true
-      },
-      "protectedFields": {
-        "*": []
-      },
-      "update": {
-        "*": true
-      }
-    },
-    "className": "ProductTemplet",
-    "fields": {
-      "ACL": {
-        "type": "ACL"
-      },
-      "category": {
-        "required": false,
-        "targetClass": "Category",
-        "type": "Pointer"
-      },
-      "config": {
-        "required": false,
-        "type": "Object"
-      },
-      "content": {
-        "required": false,
-        "type": "Object"
-      },
-      "createdAt": {
-        "type": "Date"
-      },
-      "decoder": {
-        "required": false,
-        "type": "Object"
-      },
-      "desc": {
-        "required": false,
-        "type": "String"
-      },
-      "icon": {
-        "required": false,
-        "type": "String"
-      },
-      "id": {
-        "type": "String"
-      },
-      "name": {
-        "required": false,
-        "type": "String"
-      },
-      "netType": {
-        "type": "String"
-      },
-      "nodeType": {
-        "type": "Number"
-      },
-      "objectId": {
-        "type": "String"
-      },
-      "profile": {
-        "required": false,
-        "type": "Object"
-      },
-      "thing": {
-        "required": false,
-        "type": "Object"
       },
       "updatedAt": {
         "type": "Date"

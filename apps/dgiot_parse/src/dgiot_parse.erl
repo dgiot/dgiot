@@ -100,8 +100,6 @@ update_schemas_json() ->
     dgiot_product:update_properties(),
     %%    表字段更新
     Schemas = dgiot_parse:get_schemas_json(),
-    dgiot_parse:del_filed_schemas(<<"Product">>, [<<"topics">>]),
-    dgiot_parse:del_filed_schemas(<<"Article">>, [<<"timestamp">>]),
     timer:sleep(1000),
     lists:foldl(fun(#{<<"className">> := ClassName, <<"fields">> := Fields}, _Acc) ->
         maps:fold(fun(Key, Value, _Acc1) ->
