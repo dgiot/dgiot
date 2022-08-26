@@ -42,7 +42,7 @@ check(#{username := <<"dgiot">>, password := Password}, AuthResult, _) ->
     end;
 
 %% 当 clientid 和 password 为token 且相等的时候为用户登录
-check(#{clientid := Token, username := UserId, password := Token}, AuthResult, #{hash_type := _HashType}) ->
+check(#{clientid := <<Token:34/binary, _Type/binary>>, username := UserId, password := Token}, AuthResult, #{hash_type := _HashType}) ->
 %%    io:format("~s ~p UserId: ~p~n", [?FILE, ?LINE, UserId]),
     case dgiot_auth:get_session(Token) of
         #{<<"objectId">> := UserId} ->
