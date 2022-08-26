@@ -366,5 +366,3 @@ do_request(post_verify_code_action, #{<<"account">> := Account, <<"code">> := Co
 %%  服务器不支持的API接口
 do_request(_OperationId, _Args, _Context, _Req) ->
     {error, <<"Not Allowed.">>}.
-
-

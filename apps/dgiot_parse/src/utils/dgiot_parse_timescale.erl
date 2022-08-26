@@ -116,5 +116,3 @@ query_object(DeviceId, Args) ->
 
 update_object(DeviceId, ObjectId, Data) ->
     dgiot_parse:update_object(?TIMESCALE, <<"timescale_", DeviceId/binary>>, ObjectId, Data).
-
-
