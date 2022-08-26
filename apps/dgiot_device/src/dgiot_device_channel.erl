@@ -234,6 +234,7 @@ handle_message({sync_parse, _Pid, 'after', post, _Token, <<"Product">>, QueryDat
     timer:sleep(100),
     ProductId = maps:get(<<"objectId">>, QueryData),
     dgiot_product:do_td_message(ProductId),
+    dgiot_product_knova:save_Product_konva(ProductId),
     {ok, State};
 
 handle_message({sync_parse, _Pid, 'after', put, _Token, <<"Product">>, QueryData}, State) ->
@@ -243,6 +244,7 @@ handle_message({sync_parse, _Pid, 'after', put, _Token, <<"Product">>, QueryData
     timer:sleep(100),
     ProductId = maps:get(<<"objectId">>, QueryData),
     dgiot_product:do_td_message(ProductId),
+    dgiot_product_knova:save_Product_konva(ProductId),
     {ok, State};
 
 handle_message({sync_parse, _Pid, 'after', delete, _Token, <<"Product">>, ObjectId}, State) ->
