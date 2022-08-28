@@ -128,7 +128,7 @@ do_request(post_sendsms_deviceid, #{<<"deviceid">> := DeviceId, <<"tplid">> := T
     dgiot_notification:send_sms(Mobile, TplId, Params);
 
 %数字工厂告警
-do_request(post_warnsendsms, #{<<"objectId">> := DeviceId, <<"department">> := Department, <<"dailyWorksId">> := DailyWorksId, <<"branchId">> := BranchId, <<"datetimes">> := DateTimes, <<"docnumber">> := Docnumber, <<"username">> := UserName, <<"workshop">> := Workshop, <<"level">> := Level, <<"desc">> := Desc, <<"file">> := FileInfo}, _Context, _Req) ->
+do_request(post_warnsendsms, #{<<"objectId">> := DeviceId, <<"branchId">> := BranchId, <<"datetimes">> := DateTimes, <<"docnumber">> := Docnumber, <<"username">> := UserName, <<"workshop">> := Workshop, <<"level">> := Level}=_Args, _Context, _Req) ->
     case Level of
         <<"1">> ->
             Warn = <<"待首检"/utf8>>,
@@ -145,21 +145,10 @@ do_request(post_warnsendsms, #{<<"objectId">> := DeviceId, <<"department">> := D
 
             Map = #{
                 <<"type">> => DeviceId,
-                <<"name">> => Department,
+                <<"name">> => Workshop,
                 <<"status">> => 0,
                 <<"content">> => #{
-                    <<"alarm">> => #{
-                        <<"deviceId"/utf8>> => DeviceId,
-                        <<"department"/utf8>> => Department,
-                        <<"dailyWorksId"/utf8>> => DailyWorksId,
-                        <<"docnumber"/utf8>> => Docnumber,
-                        <<"datetimes"/utf8>> => DateTimes,
-                        <<"username"/utf8>> => UserName,
-                        <<"workshop"/utf8>> => Workshop,
-                        <<"level"/utf8>> => Level,
-                        <<"desc"/utf8>> => Desc,
-                        <<"imgurl"/utf8>> => FileInfo
-                    },
+                    <<"alarm">> => _Args,
                     <<"alertstatus">> => 1
                 },
                 <<"ACL">> => Acl
