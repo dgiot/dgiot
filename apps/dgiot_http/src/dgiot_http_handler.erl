@@ -148,7 +148,7 @@ do_request(post_warnsendsms, #{<<"objectId">> := DeviceId, <<"branchId">> := Bra
                 <<"name">> => Workshop,
                 <<"status">> => 0,
                 <<"content">> => #{
-                    <<"alarm">> => _Args,
+                    <<"alarm">> => _Args#{<<"deviceId">> => DeviceId},
                     <<"alertstatus">> => 1
                 },
                 <<"ACL">> => Acl
