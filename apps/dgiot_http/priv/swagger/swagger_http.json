@@ -9,8 +9,7 @@
       "description": "通知配置"
     }
   ],
-  "definitions": {
-  },
+  "definitions": {},
   "paths": {
     "/configuration": {
       "get": {
@@ -176,7 +175,6 @@
         ]
       }
     },
-
     "/warnsendsms": {
       "post": {
         "summary": "短信告警发送",
@@ -1017,8 +1015,7 @@
             "name": "body",
             "schema": {
               "type": "object",
-              "properties": {
-              }
+              "properties": {}
             },
             "description": "扩展参数"
           }
