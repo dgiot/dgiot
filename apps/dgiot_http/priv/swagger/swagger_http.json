@@ -198,12 +198,10 @@
                   "example": "dasssd54"
                 },
                 "department": {
-                  "required": true,
                   "type": "string",
                   "example": "部门"
                 },
                 "dailyWorksId": {
-                  "required": true,
                   "type": "string",
                   "example": "每天工单编号"
                 },
@@ -228,7 +226,6 @@
                   "example": "张三"
                 },
                 "workshop": {
-                  "required": true,
                   "type": "string",
                   "example": "车间1-1"
                 },
@@ -238,12 +235,10 @@
                   "example": "1"
                 },
                 "desc": {
-                  "required": true,
                   "type": "string",
                   "example": "desc"
                 },
                 "file": {
-                  "required": true,
                   "type": "string",
                   "example": "img"
                 }

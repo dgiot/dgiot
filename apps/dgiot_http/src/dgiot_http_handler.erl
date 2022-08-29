@@ -128,7 +128,7 @@ do_request(post_sendsms_deviceid, #{<<"deviceid">> := DeviceId, <<"tplid">> := T
     dgiot_notification:send_sms(Mobile, TplId, Params);
 
 %数字工厂告警
-do_request(post_warnsendsms, #{<<"objectId">> := DeviceId, <<"department">> := Department, <<"dailyWorksId">> := DailyWorksId, <<"branchId">> := BranchId, <<"datetimes">> := DateTimes, <<"docnumber">> := Docnumber, <<"username">> := UserName, <<"workshop">> := Workshop, <<"level">> := Level, <<"desc">> := Desc, <<"file">> := FileInfo}, _Context, _Req) ->
+do_request(post_warnsendsms, #{<<"objectId">> := DeviceId, <<"branchId">> := BranchId, <<"datetimes">> := DateTimes, <<"docnumber">> := Docnumber, <<"username">> := UserName, <<"workshop">> := Workshop, <<"level">> := Level} = _Args, _Context, _Req) ->
     case Level of
         <<"1">> ->
             Warn = <<"待首检"/utf8>>,
@@ -137,8 +137,7 @@ do_request(post_warnsendsms, #{<<"objectId">> := DeviceId, <<"department">> := D
             Warn = <<"待尾检"/utf8>>,
             dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"realstatus">> => 5});
         _ ->
-            Warn = <<"告警"/utf8>>,
-            {error, #{code => 1, error => ("level错误")}}
+            Warn = <<"告警"/utf8>>
     end,
     Warns = Warn,
     case dgiot_parse:get_object(<<"_Role">>, BranchId) of
@@ -146,38 +145,25 @@ do_request(post_warnsendsms, #{<<"objectId">> := DeviceId, <<"department">> := D
 
             Map = #{
                 <<"type">> => DeviceId,
-                <<"name">> => <<"Manual alarm">>,
+                <<"name">> => Workshop,
                 <<"status">> => 0,
                 <<"content">> => #{
-                    <<"alarm">> => #{
-                        <<"deviceId"/utf8>> => DeviceId,
-                        <<"department"/utf8>> => Department,
-                        <<"dailyWorksId"/utf8>> => DailyWorksId,
-                        <<"docnumber"/utf8>> => Docnumber,
-                        <<"datetimes"/utf8>> => DateTimes,
-                        <<"username"/utf8>> => UserName,
-                        <<"workshop"/utf8>> => Workshop,
-                        <<"level"/utf8>> => Level,
-                        <<"desc"/utf8>> => Desc,
-                        <<"imgurl"/utf8>> => FileInfo
-                    },
+                    <<"alarm">> => _Args#{<<"deviceId">> => DeviceId},
                     <<"alertstatus">> => 1
                 },
                 <<"ACL">> => Acl
             },
-            #{<<"objectId">> := ObjectId} = dgiot_parse_id:get_objectid(<<"Notification">>, Map),
-            NewMap = Map#{
-                <<"objectId">> => ObjectId
-            },
-            dgiot_parse:create_object(<<"Notification">>, NewMap),
+            dgiot_parse:create_object(<<"Notification">>, Map),
             %循环得到部门下所有的手机号
             Users = dgiot_parse_auth:get_UserIds(unicode:characters_to_binary(RolesId)),
             UsersQuery = #{<<"where">> => #{<<"objectId">> => #{<<"$in">> => Users}}},
             {ok, #{<<"results">> := Row}} = dgiot_parse:query_object(<<"_User">>, UsersQuery),
             PhoneList = lists:foldl(fun(X, Acc) ->
                 Phone = unicode:characters_to_binary(dgiot_utils:to_list(maps:get(<<"phone">>, X))),
-                Data = dgiot_notification:send_sms(Phone, <<"">>, [DateTimes, <<"-">>, UserName, Docnumber, Workshop, Warns]),
-                Acc ++ [Data]
+                dgiot_notification:send_sms("+86", Phone, "1473069",
+                    [DateTimes, <<"-">>, UserName, Docnumber, Workshop, Warns],
+                    "1400635630", "40d9609b9e6212cbff051b4f1d4cabfc", <<"质云科技"/utf8>>),
+                Acc ++ [Phone]
                                     end, [], Row),
 %      模板格式：时间：{1} {2}（发起人：{3}）（单据编号{4}）（车间：{5}）产生异常,警告等级为:{6}。
             Json = #{<<"phones">> => PhoneList},
