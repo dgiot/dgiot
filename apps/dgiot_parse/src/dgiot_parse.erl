@@ -642,5 +642,3 @@ handle_response(Result) ->
         {error, Reason} ->
             {error, #{<<"code">> => 1, <<"error">> => Reason}}
     end.
-
-
