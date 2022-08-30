@@ -177,6 +177,58 @@ oss_signature(VerB, Expire, Bucket, ObjectName) ->
     String = lists:concat([dgiot_utils:to_list(VerB), LineBreak, LineBreak, LineBreak, dgiot_utils:to_list(Expire), LineBreak, "/", dgiot_utils:to_list(Bucket), "/", dgiot_utils:to_list(ObjectName)]),
     http_uri:encode(dgiot_utils:to_list(base64:encode(crypto:hmac(sha, dgiot_utils:to_list(?AccessKeySecret), String)))).
 
+jwtlogin(<<"yanshizhanghao">>) ->
+    Md5Idtoken = dgiot_utils:to_md5(<<"yanshizhanghao">>),
+    case dgiot_data:get({userinfo, Md5Idtoken}) of
+        not_find ->
+            State = #{
+                <<"exp">> => 1640688171,
+                <<"iat">> => 1640687571,
+                <<"jti">> => <<"yanshizhanghao">>,
+                <<"nbf">> => 1640687511,
+                <<"sub">> => <<"yanshizhanghao">>,
+                <<"name">> => <<"演示账号"/utf8>>,
+                <<"ouId">> => null,
+                <<"email">> => null,
+                <<"mobile">> => <<"15873875357">>,
+                <<"openId">> => null,
+                <<"ouName">> => <<"演示账号"/utf8>>,
+                <<"username">> => <<"yanshizhanghao">>,
+                <<"externalId">> => <<"3309863849979079019">>,
+                <<"instanceId">> => <<"test">>,
+                <<"idpUsername">> => <<"yanshizhanghao">>,
+                <<"aliyunDomain">> => <<"">>,
+                <<"enterpriseId">> => <<"test">>,
+                <<"extendFields">> => #{
+                    <<"orgNo">> => <<"yanshizhanghao">>,
+                    <<"zwwId">> => <<"yanshizhanghao">>,
+                    <<"orgType">> => <<"企业、农专社、个体工商户"/utf8>>,
+                    <<"uniscid">> => <<"yanshizhanghao">>,
+                    <<"userType">> => <<"法人"/utf8>>,
+                    <<"companyName">> => <<"演示账号"/utf8>>,
+                    <<"companyAddress">> => <<"浙江省杭州市余杭区良渚街道网周路99号3幢24层2418室"/utf8>>,
+                    <<"ZheLiBanLegalPersonSSOToken">> => <<"yanshizhanghao">>
+                },
+                <<"udAccountUuid">> => <<"82f280ae9935f80d5bb8bf8e2e94395ddRQgCWJLD26">>,
+                <<"applicationName">> => <<"水泵远程检测"/utf8>>
+            },
+            UserInfo =
+                case dgiot_parse_auth:login_by_account(<<"yanshizhanghao">>, <<"yanshizhanghao">>) of
+                    {ok, #{<<"objectId">> := _UserId} = UserInfo1} ->
+                        UserInfo1#{<<"code">> => 200, <<"msg">> => <<"operation success">>};
+                    {error, _Msg} ->
+                        #{<<"code">> => 200, <<"msg">> => <<"operation success">>}
+                end,
+            dgiot_data:insert({userinfo, Md5Idtoken}, {UserInfo#{<<"state">> => State}, <<"yanshizhanghao">>, <<"yanshizhanghao">>}),
+            {ok, UserInfo#{<<"state">> => State}};
+        {UserInfo2, Username2, UdAccountUuid2} ->
+            case dgiot_parse_auth:login_by_account(Username2, UdAccountUuid2) of
+                {ok, #{<<"objectId">> := _UserId} = UserInfo3} ->
+                    {ok, maps:merge(UserInfo2, UserInfo3)};
+                {error, _Msg} ->
+                    {ok, UserInfo2}
+            end
+    end;
 
 jwtlogin(Idtoken) ->
     Path = code:priv_dir(dgiot_http),
