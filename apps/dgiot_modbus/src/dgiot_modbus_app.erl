@@ -20,12 +20,20 @@
 
 -behaviour(application).
 -include("dgiot_modbus.hrl").
-
+-include_lib("dgiot_task/include/dgiot_task.hrl").
 %% Application callbacks
--export([start/2, stop/1]).
+-export([start/2, stop/1, start_hook/0, stop_hook/0]).
 
 start(_StartType, _StartArgs) ->
+    start_hook(),
     dgiot_modbus_sup:start_link().
 
 stop(_State) ->
+    stop_hook(),
     ok.
+
+start_hook() ->
+    dgiot_hook:add(one_for_one, {?DGIOT_DATASOURCE, <<"MODBUSRTU">>}, fun modbus_rtu:get_datasource/1).
+
+stop_hook() ->
+    dgiot_hook:remove({?DGIOT_DATASOURCE, <<"MODBUSRTU">>}).

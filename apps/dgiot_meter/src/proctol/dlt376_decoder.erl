@@ -749,7 +749,7 @@ frame_write_param(#{<<"concentrator">> := ConAddr, <<"payload">> := Frame}) ->
 %%    io:format("~s ~p SortFrame   ~p.~n", [?FILE, ?LINE, Length]),
     {BitList, Afn, Da, Fn} =
         lists:foldl(fun(Index, {Acc, A, D, F}) ->
-            case maps:find(dgiot_utils:to_binary(Index), Frame) of
+            case maps:find(Index, Frame) of
                 {ok, #{<<"value">> := Value, <<"dataSource">> := DataSource}} ->
                     get_bitlist(Value, DataSource, Acc);
                 _ ->

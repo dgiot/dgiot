@@ -216,7 +216,7 @@ set_params(Payload, _ProductId, _DevAddr) ->
     Length = length(maps:keys(Payload)),
     Payloads =
         lists:foldl(fun(Index, Acc) ->
-            case maps:find(dgiot_utils:to_binary(Index), Payload) of
+            case maps:find(Index, Payload) of
                 {ok, #{
                     <<"dataForm">> := #{
                         <<"protocol">> := <<"MODBUSTCP">>,

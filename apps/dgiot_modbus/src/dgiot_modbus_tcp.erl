@@ -143,7 +143,7 @@ handle_info({deliver, _, Msg}, #tcp{state = #state{id = ChannelId} = State} = TC
     end;
 %% {stop, TCPState} | {stop, Reason} | {ok, TCPState} | ok | stop
 handle_info(_Info, TCPState) ->
-    ?LOG(info, "TCPState ~p", [TCPState]),
+%%    ?LOG(info, "TCPState ~p", [TCPState]),
     {noreply, TCPState}.
 
 handle_call(_Msg, _From, TCPState) ->

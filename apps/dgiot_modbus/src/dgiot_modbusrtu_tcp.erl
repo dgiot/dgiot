@@ -30,8 +30,6 @@
 -export([init/1, handle_info/2, handle_cast/2, handle_call/3, terminate/2, code_change/3]).
 
 start(Port, State) ->
-
-
     dgiot_tcp_server:child_spec(?MODULE, dgiot_utils:to_int(Port), State).
 
 %% =======================
@@ -108,7 +106,8 @@ handle_info({deliver, _, Msg}, #tcp{state = #state{id = ChannelId} = State} = TC
             case binary:split(Topic, <<$/>>, [global, trim]) of
                 [<<"$dg">>, <<"device">>, ProductId, DevAddr, <<"profile">>] ->
 %%                    设置参数
-                    Payloads = modbus_rtu:set_params(jsx:decode(Payload), ProductId, DevAddr),
+                    ProfilePayload = dgiot_device_profile:encode_profile(ProductId, jsx:decode(Payload)),
+                    Payloads = modbus_rtu:set_params(ProfilePayload, ProductId, DevAddr),
                     lists:map(fun(X) ->
                         dgiot_tcp_server:send(TCPState, X)
                               end, Payloads),
@@ -132,7 +131,8 @@ handle_info({deliver, _, Msg}, #tcp{state = #state{id = ChannelId} = State} = TC
             case binary:split(Topic, <<$/>>, [global, trim]) of
                 [<<"$dg">>, <<"device">>, ProductId, DevAddr, <<"profile">>] ->
                     %% 设置参数
-                    Payloads = modbus_rtu:set_params(jsx:decode(Payload), ProductId, DevAddr),
+                    ProfilePayload = dgiot_device_profile:encode_profile(ProductId, jsx:decode(Payload)),
+                    Payloads = modbus_rtu:set_params(ProfilePayload, ProductId, DevAddr),
                     lists:map(fun(X) ->
                         dgiot_tcp_server:send(TCPState, X)
                               end, Payloads),
@@ -143,7 +143,7 @@ handle_info({deliver, _, Msg}, #tcp{state = #state{id = ChannelId} = State} = TC
     end;
 %% {stop, TCPState} | {stop, Reason} | {ok, TCPState} | ok | stop
 handle_info(_Info, TCPState) ->
-    ?LOG(info, "TCPState ~p", [TCPState]),
+%%    ?LOG(info, "TCPState ~p", [TCPState]),
     {noreply, TCPState}.
 
 handle_call(_Msg, _From, TCPState) ->
