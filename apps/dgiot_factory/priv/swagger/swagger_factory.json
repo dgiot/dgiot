@@ -3,7 +3,9 @@
   "paths": {
     "/factory_calendar": {
       "get": {
-        "consumes": ["application/json"],
+        "consumes": [
+          "application/json"
+        ],
         "summary": "获取工厂日历",
         "description": "获取工厂日历",
         "parameters": [
@@ -283,6 +285,13 @@
             "type": "string",
             "default": "9e9e52ffbb",
             "description": "订单id"
+          },
+          {
+            "name": "dept",
+            "in": "query",
+            "type": "string",
+            "default": "9e9e52ffbb",
+            "description": "部门名称"
           }
         ],
         "responses": {
@@ -379,7 +388,6 @@
             "default": "{}",
             "type": "string"
           }
-
         ],
         "responses": {
           "200": {
@@ -431,6 +439,62 @@
             "description": "Server Internal error"
           }
         },
+        "tags": [
+          "factory"
+        ]
+      }
+    },
+    "/workertree": {
+      "get": {
+        "description": "用户树",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Returns instance data"
+          },
+          "404": {
+            "description": "object not found",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        },
+        "summary": "工人树",
+        "tags": [
+          "factory"
+        ]
+      }
+    },
+    "/init": {
+      "get": {
+        "description": "获取页面初始化数据",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "type": "string",
+            "description": "页面标识"
+          },
+          {
+            "name": "para",
+            "in": "query",
+            "type": "string",
+            "description": "页面参数",
+            "default": "{}"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns instance data"
+          },
+          "404": {
+            "description": "object not found",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        },
+        "summary": "获取页面初始化数据",
         "tags": [
           "factory"
         ]
