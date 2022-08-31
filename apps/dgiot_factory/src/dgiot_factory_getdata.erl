@@ -19,15 +19,97 @@
 -export([get_work_sheet/10]).
 -export([get_ThingMap/2, thinglist2binary/1, get_history/9, get_device_list/1, get_example/2, filter_data/3]).
 -export([get_all_sheet/9]).
--export([merge_data/4]).
+
+get_all_sheet(ProductId, Start, End, Channel, DeviceId, Where, Limit, Skip, New) ->
+    UnflattenWhere = unflatten_where(Where),
+    case dgiot_hook:run_hook({factory, get_sheet_list}, [ProductId]) of
+        {ok, [{ok, SheetList}]} ->
+            SheetsData = lists:foldl(
+                fun(X, Acc) ->
+                    SheetWhere = get_sheet_where(X, UnflattenWhere),
+                    case dgiot_factory_getdata:get_work_sheet(ProductId, X, Start, End, Channel, DeviceId, SheetWhere, undefined, undefined, New) of
+                        {ok, {_, Res}} ->
+                            Acc ++ [Res];
+                        _ ->
+                            Acc
+                    end
+                end, [], SheetList),
+            io:format("~s ~p SheetsData= ~p ~n", [?FILE, ?LINE, length(SheetsData)]),
+            IdData = get_sheet_id(SheetsData, SheetList),
+
+            MergedData = merge_sheets(IdData, SheetList),
+%%            Data = maps:values(MergedData),
+            {Total, Res} = filter_data(Limit, Skip, MergedData),
+            {ok, {Total, Res}};
+        _ ->
+            error
+
+    end.
+unflatten_where(undefined) ->
+    undefined;
+unflatten_where(Where) ->
+    case is_map(Where) of
+        true ->
+            dgiot_map:unflatten(Where);
+        _ ->
+            dgiot_map:unflatten(jsx:decode(Where))
+    end.
+
+merge_sheets(IdData, _SheetList) ->
+    FirstSheetData = lists:nth(1, IdData),
+
+    maps:fold(
+        fun(K, V, Acc) ->
+            Res = lists:foldl(
+                fun(X, Acc1) ->
+                    case maps:find(K, X) of
+                        {ok, Res1} ->
+                            maps:merge(Acc1, Res1);
+                        _ ->
+                            Acc1
+                    end
+                end, V, lists:nthtail(1, IdData)),
+            Acc ++ [maps:merge(Res, V)]
+        end, [], FirstSheetData)
+%%    lists:foldl(
+%%        fun(X, Acc) ->
+%%            dgiot_map:merge(Acc, X)
+%%        end, #{}, IdData)
+.
 
 
+get_sheet_id(SheetsData, SheetList) ->
+    {Res, _} = lists:foldl(
+        fun(V, {Acc, Num}) ->
+            K = lists:nth(Num, SheetList),
+            Res = lists:foldl(
+                fun(X, Acc1) ->
+                    SheetId = ?SHEETID(K),
+                    Res1 = maps:fold(
+                        fun(K1, V1, Acc2) ->
+                            case K1 of
+                                SheetId ->
+                                    Acc2#{V1 => X};
+                                _ ->
+                                    Acc2
+                            end
+                        end, #{}, X),
+                    maps:merge(Acc1, Res1)
+                end, #{}, V),
+            {Acc ++ [Res], Num + 1}
+        end, {[], 1}, SheetsData),
+    Res.
 
+get_sheet_where(_, undefined) ->
+    undefined;
+get_sheet_where(X, UnflattenWhere) ->
+    PersonWhere = maps:get(?PERSON, UnflattenWhere, #{}),
+    SheetWhere = maps:get(X, UnflattenWhere, #{}),
+    dgiot_map:flatten(maps:merge(#{?PERSON => PersonWhere}, #{X => SheetWhere})).
 
 
 get_work_sheet(ProductId, <<"person">>, Start, End, Channel, DeviceId, Where, Limit, Skip, New) ->
     get_all_sheet(ProductId, Start, End, Channel, DeviceId, Where, Limit, Skip, New);
-
 get_work_sheet(ProductId, Type, Start, End, Channel, DeviceId, Where, Limit, Skip, New) ->
     case filter_where(Where, ProductId, Type) of
         {Parse, Td, ThingMap} ->
@@ -339,99 +421,3 @@ get_example(Type, ProductId) ->
                       end, #{}, Res)
           end,
     io:format("~ts ~n", [unicode:characters_to_list(jsx:encode(Map))]).
-
-
-
-
-
-
-
-get_all_sheet(ProductId, Start, End, Channel, DeviceId, Where, Limit, Skip, _) ->
-    UnflattenWhere = unflatten_where(Where),
-    case dgiot_hook:run_hook({factory, get_sheet_list}, [ProductId]) of
-        {ok, [SheetList]} ->
-            case length(SheetList) > 1 of
-                true ->
-                    FirstSheet = lists:nth(1, SheetList),
-                    SheetWhere = get_sheet_where(FirstSheet, UnflattenWhere),
-                    case dgiot_factory_getdata:get_work_sheet(ProductId, FirstSheet, Start, End, Channel, DeviceId, SheetWhere, undefined, undefined, <<"true">>) of
-                        {ok, {_, FirstData}} ->
-                            Data = get_other_sheet(FirstSheet, FirstData, lists:nthtail(1, SheetList), ProductId, Channel, DeviceId, UnflattenWhere),
-                            {Total, Res} = filter_data(Limit, Skip, Data),
-                            {ok, {Total, Res}};
-                        _ ->
-                            error
-                    end;
-                _ ->
-                    error
-            end;
-        _ ->
-            error
-
-    end.
-
-get_other_sheet(FirstSheet, FirstData, SheetList, ProductId, Channel, DeviceId, UnflattenWhere) ->
-    lists:foldl(
-        fun(Data, Acc) ->
-            case maps:find(?SHEETID(FirstSheet), Data) of
-                {ok, Id} ->
-                    case get_left_data(FirstSheet, Data, SheetList, UnflattenWhere, ProductId, Channel, DeviceId, Id) of
-                        {ok, AllData} ->
-                            Acc ++ [AllData];
-                        _ ->
-                            Acc
-                    end;
-                _ ->
-                    Acc
-            end
-
-        end, [], FirstData).
-
-
-get_left_data(FirstSheet, Data, SheetList, UnflattenWhere, ProductId, Channel, DeviceId, Id) ->
-    Res = lists:foldl(
-        fun(NextSheet, Acc) ->
-            case maps:size(Acc) > 0 of
-                true ->
-                    NextSheetWhere = case get_sheet_where(FirstSheet, UnflattenWhere) of
-                                         undefined ->
-                                             #{?SHEETID(NextSheet) => Id};
-                                         Where ->
-                                             maps:merge(Where, #{?SHEETID(NextSheet) => Id})
-                                     end,
-                    case dgiot_factory_getdata:get_work_sheet(ProductId, NextSheet, undefined, undefined, Channel, DeviceId, NextSheetWhere, 1, 0, <<"true">>) of
-                        {ok, {0, _}} ->
-                            Acc;
-                        {ok, {1, [NextSheetData]}} ->
-                            maps:merge(Acc, NextSheetData);
-                        _ ->
-                            Acc
-                    end;
-                _ ->
-                    #{}
-
-            end
-        end, Data, SheetList),
-    case maps:size(Res) > 0 of
-        true ->
-            {ok, Res};
-        _ ->
-            error
-    end.
-
-unflatten_where(undefined) ->
-    undefined;
-unflatten_where(Where) ->
-    case is_map(Where) of
-        true ->
-            dgiot_map:unflatten(Where);
-        _ ->
-            dgiot_map:unflatten(jsx:decode(Where))
-    end.
-
-get_sheet_where(_, undefined) ->
-    undefined;
-get_sheet_where(X, UnflattenWhere) ->
-    PersonWhere = maps:get(?PERSON, UnflattenWhere, #{}),
-    SheetWhere = maps:get(X, UnflattenWhere, #{}),
-    dgiot_map:flatten(maps:merge(#{?PERSON => PersonWhere}, #{X => SheetWhere})).

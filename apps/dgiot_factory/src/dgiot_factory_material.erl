@@ -18,12 +18,14 @@
 -author("wolong").
 -include("dgiot_factory.hrl").
 %% API
--export([get_material_record/1, post_material/2]).
+-export([get_material_record/2, post_material/2]).
 -export([get_warehouse_material/3, put_warehouse_material/1]).
-get_material_record(DeviceId) ->
+get_material_record(DeviceId, Depart) ->
+    io:format("~s ~p Depart= ~p ~n",[?FILE,?LINE,Depart]),
     case dgiot_parse:get_object(<<"Device">>, DeviceId) of
         {ok, #{<<"material">> := Material}} ->
-            {ok, get_usable_material(Material)};
+            DepartMaterial = get_depart_material(Material, Depart),
+            {ok, get_usable_material(DepartMaterial)};
         _ ->
             case dgiot_hook:run_hook({factory, get_material}, [DeviceId]) of
                 {ok, [{ok, Material}]} ->
@@ -32,6 +34,23 @@ get_material_record(DeviceId) ->
                     error
             end
     end.
+get_depart_material(Material, undefined) ->
+    Material;
+get_depart_material(Material, Depart) ->
+    maps:fold(
+        fun(K, V, Acc) ->
+            case maps:find(<<"Production_workshop">>, V) of
+                {ok, MaterialDepart} ->
+                    case re:run(MaterialDepart, Depart, [{capture, none}]) of
+                        match ->
+                            Acc#{K => V};
+                        _ ->
+                            Acc
+                    end;
+                _ ->
+                    Acc
+            end
+        end, #{}, Material).
 
 get_usable_material(Material) ->
     maps:fold(
@@ -40,13 +59,13 @@ get_usable_material(Material) ->
                 {ok, Res} ->
                     Acc#{K => maps:merge(V, #{<<"usable_material">> => lists:flatten(Res)})};
                 _ ->
-                    Acc
+                    Acc#{K =>V}
             end
         end, #{}, Material).
 
 
 post_material(DeviceId, Data) when is_list(Data) ->
-    case get_material_record(DeviceId) of
+    case get_material_record(DeviceId,undefined) of
         {ok, Material} ->
             Res = lists:foldl(
                 fun(X, Acc) ->
@@ -65,24 +84,31 @@ post_material(_, _) ->
     error.
 
 
-hanlde_pickandretrive(#{<<"material_name">> := Name, <<"material_date">> := Date,
+
+
+
+
+hanlde_pickandretrive(#{<<"Subitem_BOM_number">> := Name, <<"material_date">> := Date,
     <<"material_people">> := People, <<"material_type">> := Type,
-    <<"material_number">> := Num, <<"material_batchid">> := BatchId, <<"material_weight">> := Weight}, Material) ->
+    <<"material_number">> := Num, <<"material_batchid">> := BatchId, <<"material_weight">> := Weight, <<"material_batch">> := #{<<"extra">> := #{<<"objectId">> := Id}}}, Material) ->
     case maps:find(Name, Material) of
         {ok, Res} ->
             case Res of
-                #{<<"material_pick">> := Pick, <<"material_picked">> := Picked} ->
-                    After = case Type of
-                                <<"picking">> ->
-                                    dgiot_utils:to_float(Picked) + dgiot_utils:to_float(Weight);
-                                <<"retriving">> ->
-                                    dgiot_utils:to_float(Picked) - dgiot_utils:to_float(Weight);
-                                _ ->
-                                    dgiot_utils:to_float(Picked)
-                            end,
-                    handle_warehouse(BatchId, Type, Weight),
-                    {ok, Name, maps:merge(Res, #{<<"material_picked">> => After, <<"material_pick">> => Pick ++ [#{<<"material_date">> => Date, <<"material_people">> => People, <<"material_number">> => Num,
-                        <<"material_batchid">> => BatchId, <<"material_weight">> => Weight}]})};
+                #{<<"material_pick">> := Pick, <<"material_retrive">> := Retrive, <<"material_picked">> := Picked} ->
+                    case Type of
+                        <<"picking">> ->
+                            After = dgiot_utils:to_float(Picked) + dgiot_utils:to_float(Weight),
+                            handle_warehouse(Id, Type, Num),
+                            {ok, Name, maps:merge(Res, #{<<"material_picked">> => After, <<"material_pick">> => Pick ++ [#{<<"material_date">> => Date, <<"material_people">> => People, <<"material_number">> => Num,
+                                <<"material_batchid">> => BatchId, <<"material_weight">> => Weight}]})};
+                        <<"retriving">> ->
+                            After = dgiot_utils:to_float(Picked) - dgiot_utils:to_float(Weight),
+                            handle_warehouse(Id, Type, Num),
+                            {ok, Name, maps:merge(Res, #{<<"material_picked">> => After, <<"material_retrive">> => Retrive ++ [#{<<"material_date">> => Date, <<"material_people">> => People, <<"material_number">> => Num,
+                                <<"material_batchid">> => BatchId, <<"material_weight">> => Weight}]})};
+                        _ ->
+                            error
+                    end;
                 _ ->
                     error
             end;
@@ -91,27 +117,33 @@ hanlde_pickandretrive(#{<<"material_name">> := Name, <<"material_date">> := Date
     end;
 
 hanlde_pickandretrive(_, _) ->
+    io:format("~s ~p hanlde_pickandretrive  ~n", [?FILE, ?LINE]),
     error.
 
 
-handle_warehouse(BatchId, Type, Weight) ->
-    NewRemaining = case Type of
-                       <<"picking">> ->
-                           -Weight;
-                       <<"retriving">> ->
-                           Weight;
-                       _ ->
-                           0
-                   end,
+handle_warehouse(BatchId, Type, Number) ->
+    NewWeight = dgiot_utils:to_float(Number),
+    Num = case Type of
+              <<"picking">> ->
+                  NewWeight;
+              <<"retriving">> ->
+                  -NewWeight;
+              _ ->
+                  0
+          end,
     case dgiot_parse:get_object(?MATERIALTABLE, BatchId) of
-        {ok, #{<<"Remaining">> := -1, <<"RQty">> := FQty}} ->
-            dgiot_parse:update_object(?MATERIALTABLE, BatchId, #{<<"Remaining">> => FQty + NewRemaining});
-        {ok, #{<<"Remaining">> := Remaining}} ->
-            dgiot_parse:update_object(?MATERIALTABLE, BatchId, #{<<"Remaining">> => Remaining + NewRemaining});
+        {ok, #{<<"Remaining">> := Remaining, <<"FQty">> := FQty} = Res} ->
+            NewRemaining = case Remaining + Num > FQty of
+                               true ->
+                                   FQty;
+                               _ ->
+                                   Remaining + Num
+                           end,
+            put_warehouse_material(maps:merge(Res, #{<<"Remaining">> => NewRemaining}));
         _ ->
+            io:format("~s ~p not_find   ~n", [?FILE, ?LINE]),
             error
     end.
-
 get_warehouse_material(Limit, Skip, undefined) ->
     case dgiot_parse:query_object(?MATERIALTABLE, #{<<"order">> => <<"createdAt">>}) of
         {ok, #{<<"results">> := Res}} ->
@@ -136,26 +168,20 @@ remove_time(Res) ->
 
 
 put_warehouse_material(#{<<"objectId">> := Id} = Record) ->
-    NewRecord = handle_remaining(Record),
-    handle_ets(NewRecord),
-    dgiot_parse:update_object(?MATERIALTABLE, Id, NewRecord).
-
-handle_remaining(#{<<"FQty">> := FQty, <<"Remaining">> := -1} = Record) ->
-    Record#{<<"Remaining">> => FQty};
-handle_remaining(Record) ->
-    Record.
+    handle_ets(Record),
+    dgiot_parse:update_object(?MATERIALTABLE, Id, maps:remove(<<"createdAt">>, maps:remove(<<"updatedAt">>, Record))).
 
 handle_ets(#{<<"validate">> := false} = Record) ->
-    io:format("~s ~p here~n",[?FILE,?LINE]),
     case get_id_and_data(Record) of
-        {ok,{Id,Date}} ->
+        {ok, {Id, Date}} ->
             dgiot_data:delete(?MATERIALETS, {Id, Date});
         _ ->
             error
     end;
 handle_ets(#{<<"validate">> := true} = Record) ->
     case get_id_and_data(Record) of
-        {ok,{Id,Date}} ->
+        {ok, {Id, Date}} ->
+
             dgiot_data:insert(?MATERIALETS, {Id, Date}, Record#{<<"FDeliveryDate">> => Date});
         _ ->
             error
@@ -165,12 +191,12 @@ handle_ets(Record) ->
     io:format("~s ~p Record= ~p ~n", [?FILE, ?LINE, Record]).
 
 get_id_and_data(#{<<"FMaterialId">> := Id, <<"FDeliveryDate">> := Date}) ->
-    {ok,{Id,Date}};
+    {ok, {Id, Date}};
 
 get_id_and_data(#{<<"objectId">> := ObjectId}) ->
-    case dgiot_parse:get_object(<<"material">>,ObjectId) of
-        {ok,#{<<"FMaterialId">> := Id,<<"FDeliveryDate">> := Date}}->
-            {ok,{Id,Date}};
+    case dgiot_parse:get_object(<<"material">>, ObjectId) of
+        {ok, #{<<"FMaterialId">> := Id, <<"FDeliveryDate">> := Date}} ->
+            {ok, {Id, Date}};
         _ ->
             error
     end;
@@ -178,8 +204,6 @@ get_id_and_data(#{<<"objectId">> := ObjectId}) ->
 
 get_id_and_data(_) ->
     error.
-
-
 %%get_material_record_id(#{<<"FBillNo">> := FBillNo, <<"FCloseStatus">> := FCloseStatus}) ->
 %%    BinNum = dgiot_utils:to_binary("1"),
 %%    <<DeviceId:10/binary, _/binary>> = dgiot_utils:to_md5(<<FBillNo/binary, FCloseStatus/binary, BinNum/binary>>),

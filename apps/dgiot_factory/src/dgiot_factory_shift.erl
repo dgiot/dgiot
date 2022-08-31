@@ -17,8 +17,10 @@
 -module(dgiot_factory_shift).
 -author("jonhl").
 -include_lib("dgiot/include/logger.hrl").
+-include("dgiot_factory.hrl").
 -export([get_one_shift/1, save_one_shift/1, updata_id/0, get_shift/3, post_shift/1, get_all_shift/4, get_workshop/2]).
 -export([post_one_shift/1, get_shift_time/1]).
+-export([ bits_to_workerlist/1, workerlist_to_bits/1]).
 -define(DAY, 86400).
 -define(SHIFT, [<<"白班"/utf8>>, <<"晚班"/utf8>>]).
 -define(WORKERCALENDAR, <<"WorkerCanlendar">>).
@@ -42,7 +44,7 @@ get_all_shift(Department, Data, undefined, SessionToken) ->
                     Acc
             end
         end, [], WorkshopList),
-    {ok,  Res};
+    {ok, Res};
 
 
 get_all_shift(Department, undefined, Workshop, _) ->
@@ -157,10 +159,6 @@ get_shift(Department, Date, Workshop) ->
             {error, Msg}
     end.
 
-
-post_shift(#{<<"device">> := Dev, <<"date">> := Date, <<"shift">> := Shift, <<"worker">> := Worker}) ->
-    post_one_shift(#{<<"device">> => Dev, <<"date">> => Date, <<"shift">> => Shift, <<"worker">> => Worker});
-
 post_shift(Shifts) when is_list(Shifts) ->
     lists:foldl(
         fun(X, _Acc) ->
@@ -171,14 +169,21 @@ post_shift(Shifts) when is_list(Shifts) ->
                     pass
             end
         end, [], Shifts);
+
+    post_shift(Shifts) when is_map(Shifts) ->
+    post_one_shift(Shifts);
+
+
 post_shift(_) ->
+    io:format("~s ~p here ~n", [?FILE, ?LINE]),
     error.
 
 
-post_one_shift(Args) ->
+post_one_shift(#{<<"worker">> := _Workers} = Args) ->
+%%    Bits = workerlist_to_bits(_Workers),
+%%    Args = maps:merge(Shift, #{<<"worker">> => Bits}),
     case dgiot_parse_id:get_objectid(<<"shift">>, Args) of
         #{<<"objectId">> := ObjectId} ->
-            io:format("~s ~p ObjectId =~p ~n",[?FILE,?LINE,ObjectId]),
             case dgiot_parse:get_object(?WORKERCALENDAR, ObjectId) of
                 {ok, _} ->
                     dgiot_parse:update_object(?WORKERCALENDAR, ObjectId, Args);
@@ -211,10 +216,9 @@ save_one_shift(Shift) ->
         #{<<"objectId">> := ObjectId} ->
             case dgiot_parse:get_object(?WORKERCALENDAR, ObjectId) of
                 {ok, _Res} ->
-                    io:format("~s ~p here~n", [?FILE, ?LINE]),
+
                     dgiot_parse:update_object(?WORKERCALENDAR, ObjectId, Shift);
-                A ->
-                    io:format("~s ~p A = ~p ~n", [?FILE, ?LINE, A]),
+                _ ->
                     NewShift = Shift#{<<"objectId">> => ObjectId},
                     dgiot_parse:create_object(?WORKERCALENDAR, NewShift)
             end;
@@ -234,7 +238,6 @@ updata_id() ->
         fun(X, _Acc) ->
             Old = maps:get(<<"objectId">>, X),
             #{<<"objectId">> := ObjectId} = dgiot_parse_id:get_objectid(<<"shift">>, X),
-            io:format("Old = ~p ,Id =~p ~n", [Old, ObjectId]),
             dgiot_parse:update_object(?WORKERCALENDAR, Old, #{<<"objectId">> => ObjectId})
         end, [], Res).
 
@@ -242,15 +245,13 @@ updata_id() ->
 get_shift_time(Department) ->
     case dgiot_factory_calendar:get_calendar(Department) of
         {ok, _, Calendar} ->
-            Default = maps:get(<<"default">>, Calendar),
-            Shifts = maps:get(<<"work_shift">>, Default),
+            Default = maps:get(<<"default">>, Calendar, #{}),
+            Shifts = maps:get(<<"work_shift">>, Default, #{}),
             ShiftList = maps:keys(Shifts),
             {ok, ShiftList, Shifts};
         _ ->
             {error, not_find_shift}
     end.
-
-
 %%post_shift(Shifts) ->
 %%    io:format("~s ~p here~n", [?FILE, ?LINE]),
 %%    maps:fold(
@@ -265,3 +266,55 @@ get_shift_time(Department) ->
 %%                        end, #{}, DevCon)
 %%                end, #{}, DateCon)
 %%        end, #{}, Shifts).
+
+
+
+
+workerlist_to_bits(Workers) when is_binary(Workers) ->
+    List = re:split(Workers, " "),
+    NumList = lists:foldl(
+        fun(X, Acc) ->
+            [Num] = re:split(X, "_"),
+            Acc ++ [dgiot_utils:to_int(Num)]
+        end, [], List),
+    SortedList = lists:sort(NumList),
+    {Bits,_} = lists:foldl(
+        fun(X, {Acc, LastNum}) ->
+            ZeroNum = X - LastNum - 1,
+            ZeroList = dgiot_factory_utils:get_zero_list(ZeroNum),
+            {Acc ++ ZeroList ++ [1], X}
+        end, {[], 0}, SortedList),
+    Res = case length(Bits) < ?MAXWORKERNUM of
+        true ->
+            Bits ++ dgiot_factory_utils:get_zero_list(?MAXWORKERNUM - length(Bits));
+        _ ->
+            Bits
+    end,
+    dgiot_utils:bits_to_binary(Res);
+workerlist_to_bits(Workers) ->
+    Workers.
+
+
+
+bits_to_workerlist(Bits) ->
+    Binary = dgiot_utils:to_binary(Bits),
+    List = dgiot_utils:binary_to_bits(Binary),
+    {Res, _ } = lists:foldl(
+        fun(X, {Acc, Num}) ->
+            case X of
+                1 ->
+                    B = dgiot_utils:to_binary(Num),
+                    ZeroNum = ?MAXUNIT - size(B),
+                    Zero = dgiot_factory_utils:get_zero_binary(ZeroNum),
+                    Bin = <<Zero/binary, B/binary>>,
+                    case dgiot_data:lookup(?WORKERTREE, Bin) of
+                        {ok, Value} ->
+                            {<<Acc/binary," ", Value/binary>>, Num + 1};
+                        _ ->
+                            {<<Acc/binary, " ", Bin/binary>>, Num + 1}
+                    end;
+                _ ->
+                    {Acc, Num + 1}
+            end
+        end, {<<>>, 1}, List),
+    Res.
