@@ -8,3 +8,7 @@
 -define(PERSON ,<<"person">>).
 -define(MATERIALTABLE,<<"material">>).
 -define(MATERIALETS,material).
+-define(WORKERTREE, workertree).
+-define(MAXWORKERNUM,1024).
+-define(MAXUNIT,4).
+

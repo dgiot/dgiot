@@ -93,11 +93,6 @@ do_request(post_factory_calendar, #{<<"default">> := Default, <<"other">> := Oth
         Res ->
             {error, Res}
     end;
-
-
-
-
-
 do_request(get_worker_shift, #{<<"depart">> := Depart, <<"date">> := Data, <<"workshop">> := Workshop, <<"limit">> := Limit, <<"skip">> := Skip} = _Args,
     #{<<"sessionToken">> := SessionToken} = _Context, _Body) ->
     Department = case Depart of
@@ -158,28 +153,28 @@ do_request(get_data, #{<<"productId">> := ProductId, <<"objectId">> := undefined
     end;
 
 
-do_request(get_data, #{<<"productId">> := ProductId,<<"objectId">> := DeviceId, <<"type">> := Type, <<"starttime">> := Start, <<"endtime">> := End, <<"where">> := Where, <<"limit">> := Limit, <<"skip">> := Skip, <<"new">> := New} = _Args,
+do_request(get_data, #{<<"productId">> := ProductId, <<"objectId">> := DeviceId, <<"type">> := Type, <<"starttime">> := Start, <<"endtime">> := End, <<"where">> := Where, <<"limit">> := Limit, <<"skip">> := Skip, <<"new">> := New} = _Args,
     #{<<"sessionToken">> := SessionToken} = _Context, _Body) ->
     case dgiot_product_tdengine:get_channel(SessionToken) of
         {error, Error} -> {error, Error};
         {ok, Channel} ->
-                    case dgiot_factory_getdata:get_work_sheet(ProductId, Type, Start, End, Channel, DeviceId, Where, Limit, Skip, New) of
-                        {ok, {Total, Res}} ->
-                            {ok, #{<<"status">> => 0, msg => <<"数据请求成功"/utf8>>, <<"data">> => #{<<"total">> => Total, <<"items">> => Res}}};
-                        _ ->
+            case dgiot_factory_getdata:get_work_sheet(ProductId, Type, Start, End, Channel, DeviceId, Where, Limit, Skip, New) of
+                {ok, {Total, Res}} ->
+                    {ok, #{<<"status">> => 0, msg => <<"数据请求成功"/utf8>>, <<"data">> => #{<<"total">> => Total, <<"items">> => Res}}};
+                _ ->
 
-                            {error, <<"get_data_failed">>}
-                    end
+                    {error, <<"get_data_failed">>}
+            end
 
     end;
-do_request(get_material, #{<<"objectId">> := DeviceId} = _Args, _Context, _Req) ->
-    case dgiot_factory_material:get_material_record(DeviceId) of
+do_request(get_material, #{<<"objectId">> := DeviceId,<<"dept">> :=Depart} = _Args, _Context, _Req) ->
+    case dgiot_factory_material:get_material_record(DeviceId,Depart) of
         {ok, Res} ->
             {ok, #{<<"status">> => 0, msg => <<"操作成功"/utf8>>, <<"data">> => maps:values(Res)}};
         _ ->
             error
     end;
-do_request(post_material, #{<<"objectId">> := DeviceId, <<"shift">> :=  Data} = _Args, _Context, _Req) ->
+do_request(post_material, #{<<"objectId">> := DeviceId, <<"shift">> := Data} = _Args, _Context, _Req) ->
     case dgiot_factory_material:post_material(DeviceId, Data) of
         {ok, _} ->
             {ok, #{<<"status">> => 0, msg => <<"操作成功"/utf8>>, <<"data">> => []}};
@@ -188,21 +183,29 @@ do_request(post_material, #{<<"objectId">> := DeviceId, <<"shift">> :=  Data} = 
     end;
 
 
-do_request(get_warehouse_material, #{<<"limit">> := Limit,<<"skip">> := Skip,<<"where">> := Where} = _Args, _Context, _Req) ->
+do_request(get_warehouse_material, #{<<"limit">> := Limit, <<"skip">> := Skip, <<"where">> := Where} = _Args, _Context, _Req) ->
     case dgiot_factory_material:get_warehouse_material(Limit, Skip, Where) of
-        {ok, {Total,Res}} ->
-            {ok, #{<<"status">> => 0, msg => <<"操作成功"/utf8>>, <<"data">> => #{<<"total">> => Total,<<"items">> =>Res}}};
+        {ok, {Total, Res}} ->
+            {ok, #{<<"status">> => 0, msg => <<"操作成功"/utf8>>, <<"data">> => #{<<"total">> => Total, <<"items">> => Res}}};
         _ ->
             error
     end;
-%%do_request(post_warehouse_material,  #{<<"objectId">> :=Id ,<<"record">> := Record} =_Args, _Context, _Req) ->
-    do_request(post_warehouse_material,  _Args, _Context, _Req) ->
-        case dgiot_factory_material:put_warehouse_material( _Args) of
+
+do_request(post_warehouse_material, _Args, _Context, _Req) ->
+    case dgiot_factory_material:put_warehouse_material(_Args) of
         {ok, _} ->
             {ok, #{<<"status">> => 0, msg => <<"操作成功"/utf8>>, <<"data">> => []}};
         _ ->
             error
     end;
+
+do_request(get_workertree, _Arg, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
+    Data = dgiot_factory_utils:get_usertree(SessionToken),
+    {ok, #{
+        <<"status">> => 0,
+        <<"msg">> => <<"ok">>,
+        <<"data">> => #{<<"options">> => Data}
+    }};
 
 
 %%  服务器不支持的API接口

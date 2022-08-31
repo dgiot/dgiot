@@ -36,6 +36,7 @@ stop(_State) ->
     ok.
 init_ets() ->
     dgiot_data:init(?MATERIALETS),
+    dgiot_data:init(?WORKERTREE),
     init_materialets().
 
 init_materialets() ->
