@@ -3,9 +3,7 @@
   "paths": {
     "/factory_calendar": {
       "get": {
-        "consumes": [
-          "application/json"
-        ],
+        "consumes": ["application/json"],
         "summary": "获取工厂日历",
         "description": "获取工厂日历",
         "parameters": [
@@ -24,9 +22,7 @@
             "description": ""
           }
         },
-        "tags": [
-          "factory"
-        ]
+        "tags": ["factory"]
       },
       "post": {
         "summary": "更新工厂日历",
@@ -56,9 +52,7 @@
             }
           }
         ],
-        "consumes": [
-          "application/json"
-        ],
+        "consumes": ["application/json"],
         "responses": {
           "200": {
             "description": "Returns operation status"
@@ -76,16 +70,12 @@
             "description": "Server Internal error"
           }
         },
-        "tags": [
-          "factory"
-        ]
+        "tags": ["factory"]
       }
     },
     "/worker_shift": {
       "get": {
-        "consumes": [
-          "application/json"
-        ],
+        "consumes": ["application/json"],
         "summary": "获取排班",
         "description": "获取排班",
         "parameters": [
@@ -134,9 +124,7 @@
             "description": ""
           }
         },
-        "tags": [
-          "factory"
-        ]
+        "tags": ["factory"]
       },
       "post": {
         "summary": "更新排班",
@@ -158,9 +146,7 @@
             }
           }
         ],
-        "consumes": [
-          "application/json"
-        ],
+        "consumes": ["application/json"],
         "responses": {
           "200": {
             "description": "Returns operation status"
@@ -178,9 +164,7 @@
             "description": "Server Internal error"
           }
         },
-        "tags": [
-          "factory"
-        ]
+        "tags": ["factory"]
       }
     },
     "/data": {
@@ -246,15 +230,10 @@
             "in": "query",
             "name": "new",
             "type": "string",
-            "enum": [
-              true,
-              false
-            ]
+            "enum": [true, false]
           }
         ],
-        "consumes": [
-          "application/json"
-        ],
+        "consumes": ["application/json"],
         "responses": {
           "200": {
             "description": "Returns operation status"
@@ -272,16 +251,12 @@
             "description": "Server Internal error"
           }
         },
-        "tags": [
-          "factory"
-        ]
+        "tags": ["factory"]
       }
     },
     "/material": {
       "get": {
-        "consumes": [
-          "application/json"
-        ],
+        "consumes": ["application/json"],
         "summary": "获取领料记录",
         "description": "获取领料记录",
         "parameters": [
@@ -308,9 +283,7 @@
             "description": ""
           }
         },
-        "tags": [
-          "factory"
-        ]
+        "tags": ["factory"]
       },
       "post": {
         "summary": "更新领料记录",
@@ -337,9 +310,7 @@
             }
           }
         ],
-        "consumes": [
-          "application/json"
-        ],
+        "consumes": ["application/json"],
         "responses": {
           "200": {
             "description": "Returns operation status"
@@ -357,16 +328,12 @@
             "description": "Server Internal error"
           }
         },
-        "tags": [
-          "factory"
-        ]
+        "tags": ["factory"]
       }
     },
     "/warehouse_material": {
       "get": {
-        "consumes": [
-          "application/json"
-        ],
+        "consumes": ["application/json"],
         "summary": "获取仓库物料记录",
         "description": "获取仓库物料记录",
         "parameters": [
@@ -403,9 +370,7 @@
             "description": ""
           }
         },
-        "tags": [
-          "factory"
-        ]
+        "tags": ["factory"]
       },
       "post": {
         "summary": "更新仓库物料",
@@ -425,9 +390,7 @@
             "schema": {}
           }
         ],
-        "consumes": [
-          "application/json"
-        ],
+        "consumes": ["application/json"],
         "responses": {
           "200": {
             "description": "Returns operation status"
@@ -445,9 +408,7 @@
             "description": "Server Internal error"
           }
         },
-        "tags": [
-          "factory"
-        ]
+        "tags": ["factory"]
       }
     },
     "/workertree": {
@@ -466,9 +427,7 @@
           }
         },
         "summary": "工人树",
-        "tags": [
-          "factory"
-        ]
+        "tags": ["factory"]
       }
     },
     "/init": {
@@ -501,9 +460,7 @@
           }
         },
         "summary": "获取页面初始化数据",
-        "tags": [
-          "factory"
-        ]
+        "tags": ["factory"]
       }
     }
   },
