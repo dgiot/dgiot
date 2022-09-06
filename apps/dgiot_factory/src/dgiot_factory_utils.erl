@@ -21,24 +21,27 @@
 -export([get_num/2, get_name/2, turn_name/2, turn_num/3]).
 -export([get_sheet_type/2]).
 -export([get_usertree/1, getalluser/1]).
--export([get_zero_list/1,get_zero_binary/1]).
--export([del/1]).
-del(ProductId) ->
-    case dgiot_parse:query_object(<<"Device">>, #{<<"where">> => #{<<"product">> => ProductId}}) of
-        {ok, #{<<"results">> := Results}} ->
-            lists:foldl(
-                fun(X, _) ->
-                    case maps:find(<<"objectId">>, X) of
-                        {ok, Id} ->
-                            dgiot_jienuo_utils:get_material([Id]);
-                        _ ->
-                            error
-                    end
-                end, [], Results);
-        _ ->
-            error
+-export([get_zero_list/1, get_zero_binary/1]).
+-export([fix_model/1]).
 
-    end.
+fix_model(ID) ->
+    {ok,#{<<"thing">> :=Model}} = dgiot_parse:get_object(<<"Product">>,ID),
+    {ok, Pro} = maps:find(<<"properties">>, Model),
+    Res = lists:foldl(
+        fun(X, Acc) ->
+            case X of
+                #{<<"dataType">> := #{<<"type">> := <<"text">>, <<"specs">> := #{<<"max">> := 999999}}} ->
+                    NweData = #{<<"das">> => [], <<"size">> => 50, <<"specs">> => #{}, <<"type">> => <<"text">>},
+                    NewX = maps:merge(X, #{<<"dataType">> => NweData}),
+                    Acc ++ [NewX];
+                _ ->
+                    Acc ++[X]
+            end
+        end, [], Pro),
+    NewThing = maps:merge(Model, #{<<"properties">> => Res}),
+dgiot_parse:update_object(<<"Product">>,ID,#{<<"thing">> =>NewThing}).
+
+
 
 get_num(K, V) ->
     Id = dgiot_parse_id:get_dictid(K, K, K, K),
@@ -185,7 +188,7 @@ get_same_level_role(SessionToken) ->
     case dgiot_auth:get_session(SessionToken) of
         #{<<"roles">> := Roles} ->
             maps:fold(
-                fun(_RoleId, #{<< "parent">> := Parent}, Acc) ->
+                fun(_RoleId, #{<<"parent">> := Parent}, Acc) ->
                     ChildroleIds = dgiot_role:get_childrole(Parent) -- [Parent],
                     case dgiot_parse:query_object(<<"_Role">>, #{<<"where">> => #{<<"objectId">> => #{<<"$in">> => ChildroleIds}}}) of
                         {ok, #{<<"results">> := RoleList}} ->
@@ -244,7 +247,7 @@ getalluser(#{<<"objectId">> := RoleId, <<"name">> := Depname} = Role) ->
                 #{<<"nick">> := <<"user_for_", _/binary>>} ->
                     Acc;
                 #{<<"nick">> := Nick, <<"username">> := UserName} ->
-                    dgiot_data:insert(?WORKERTREE,UserName,Nick),
+                    dgiot_data:insert(?WORKERTREE, UserName, Nick),
                     Acc ++ [#{<<"label">> => Nick, <<"value">> => <<UserName/binary, "_", Nick/binary>>}];
                 _ ->
                     Acc
@@ -277,7 +280,7 @@ get_zero_binary(Num) ->
 get_zero_binary(Acc, Num) ->
     case Num > 0 of
         true ->
-            get_zero_binary(<<Acc/binary,"0">>, Num - 1);
+            get_zero_binary(<<Acc/binary, "0">>, Num - 1);
         _ ->
             Acc
     end.

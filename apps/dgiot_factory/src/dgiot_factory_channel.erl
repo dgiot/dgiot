@@ -30,7 +30,7 @@
 
 %% Channel callback
 -export([init/3, handle_init/1, handle_event/3, handle_message/2, stop/3]).
--export([save_data/4,get_id/2]).
+-export([save_data/4, get_id/2]).
 
 %% 注册通道类型
 -channel_type(#{
@@ -92,13 +92,16 @@ handle_message({sync_parse, _Pid, 'after', post, Token, <<"Device">>, QueryData}
 
 
 handle_message({sync_parse, _Pid, 'before', put, Token, <<"Device">>, #{<<"content">> := Content, <<"id">> := DeviceId} = _QueryData}, State) ->
-    case dgiot_device_cache:lookup(DeviceId) of
-        {ok, #{<<"productid">> := ProductId}} ->
+%%    case dgiot_device_cache:lookup(DeviceId) of
+%%        {ok, #{<<"productid">> := ProductId}} ->
+    case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+        {ok, #{<<"product">> := #{<<"objectId">> := ProductId}}} ->
             case Content of
                 #{<<"person">> := #{<<"type">> := Type}} ->
                     FlatMap = dgiot_map:flatten(Content),
-                     save_data(ProductId, DeviceId, Type, FlatMap#{<<"persion_sessiontoken">> => Token,<<"person_deviceid">> => DeviceId}),
-                {ok, State};
+                    io:format("~s ~p DeviceId = ~p.~n", [?FILE, ?LINE, DeviceId]),
+                    save_data(ProductId, DeviceId, Type, FlatMap#{<<"person_sessiontoken">> => Token, <<"person_deviceid">> => DeviceId}),
+                    {ok, State};
                 _ ->
                     {'EXIT', error}
             end;
@@ -129,7 +132,9 @@ save_data(ProductId, DeviceId, Type, Payload) ->
                             case F of
                                 {ok, NewPayload} ->
                                     Id = maps:get(?SHEETID(Type), NewPayload, get_id(DevAddr, Type)),
-                                    dgiot_task:save_td(ProductId, DevAddr, NewPayload#{?SHEETID(Type) => Id,<<"person_sheetsid">> =>Id}, #{});
+                                    Use = turn_user(NewPayload),
+                                    io:format("~s ~p Id = ~p.~n", [?FILE, ?LINE, Id]),
+                                    dgiot_task:save_td(ProductId, DevAddr, NewPayload#{<<"person_sessiontoken">> => Use,?SHEETID(Type) => Id, <<"person_sheetsid">> => Id}, #{});
                                 _ ->
                                     {error, <<"run_hook_failed">>}
                             end;
@@ -138,8 +143,8 @@ save_data(ProductId, DeviceId, Type, Payload) ->
                     end;
                 {error, not_find} ->
                     Id = maps:get(?SHEETID(Type), Payload, get_id(DevAddr, Type)),
-                    dgiot_task:save_td(ProductId, DevAddr, Payload#{?SHEETID(Type) => Id,<<"person_sheetsid">> =>Id}, #{});
-
+                    Use = turn_user(Payload),
+                    dgiot_task:save_td(ProductId, DevAddr, Payload#{<<"person_sessiontoken">> => Use,?SHEETID(Type) => Id, <<"person_sheetsid">> => Id}, #{});
                 _ ->
                     {error, <<"run_hook_failed">>}
             end;
@@ -154,3 +159,10 @@ get_id(DevAddr, Type) ->
     <<ObjID:10/binary, _/binary>> = dgiot_utils:to_md5(<<Bin/binary, DevAddr/binary, Time/binary>>),
     Res = string:to_upper(dgiot_utils:to_list(ObjID)),
     dgiot_utils:to_binary(Res).
+turn_user(#{<<"person_sessiontoken">> := SessionToken}) ->
+    case dgiot_auth:get_session(SessionToken) of
+        {ok, #{<<"user">> := User}} ->
+            User;
+        _ ->
+            SessionToken
+    end.

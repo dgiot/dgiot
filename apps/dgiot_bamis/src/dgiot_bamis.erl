@@ -26,7 +26,8 @@
     put/1,
     delete/1,
     format/1,
-    start_http/0
+    start_http/0,
+    format_multilayer/1
 ]).
 
 -define(APP, ?MODULE).
@@ -56,14 +57,6 @@ get({'before', '*', Args}) ->
 %%    io:format("~s ~p Basic: ~p ~n", [?FILE, ?LINE, Basic]),
     Basic;
 
-get({'after', #{<<"results">> := Response} = _Data}) ->
-%%    io:format("~s ~p ~p~n", [?FILE, ?LINE, _Data]),
-    #{
-        <<"status">> => 0,
-        <<"msg">> => <<"数据请求成功"/utf8>>,
-        <<"data">> => #{<<"items">> => Response}
-    };
-
 get({'after', #{<<"results">> := Response, <<"count">> := Count} = _Data}) ->
     #{
         <<"status">> => 0,
@@ -73,6 +66,16 @@ get({'after', #{<<"results">> := Response, <<"count">> := Count} = _Data}) ->
             <<"total">> => Count
         }
     };
+
+get({'after', #{<<"results">> := Response} = _Data}) ->
+%%    io:format("~s ~p _Data = ~p~n", [?FILE, ?LINE, _Data]),
+    #{
+        <<"status">> => 0,
+        <<"msg">> => <<"数据请求成功"/utf8>>,
+        <<"data">> => #{<<"items">> => Response}
+    };
+
+
 
 get({'before', _Id, Args}) ->
     erlang:put(self(), Args),
@@ -138,7 +141,6 @@ delete({'after', Data}) ->
     }.
 
 
-
 %% 查询多个
 %%/**
 %%* https://docs.parseplatform.org/rest/guide/#query-constraints
@@ -181,20 +183,29 @@ format(#{<<"page">> := Page} = Data) ->
     Skip = (Page - 1) * 10,
     format(NewData#{<<"limit">> => 10, <<"skip">> => Skip});
 
-format(Data) ->
-    Where = maps:without([<<"limit">>, <<"skip">>, <<"order">>, <<"count">>, <<"limit">>, <<"keys">>, <<"excludeKeys">>, <<"include">>, <<"where">>, <<"perPage">>, <<"page">>, <<"orderBy">>, <<"orderDir">>], Data),
-    NewData = maps:without(maps:keys(Where) ++ [<<"perPage">>, <<"page">>, <<"orderBy">>, <<"orderDir">>], Data),
-    case Data of
-        #{<<"where">> := ParesWhere} when is_map(ParesWhere) ->
-            NewData#{<<"where">> => maps:merge(ParesWhere, Where)};
-        _ ->
-            case length(maps:to_list(Where)) of
-                0 ->
-                    NewData;
-                _ ->
-                    NewData#{<<"where">> => Where}
-            end
-    end.
+format(OldData) ->
+    Data =case maps:find(<<"where">>,OldData) of
+              {ok,Object} ->
+                  maps:merge(OldData,#{<<"where">> =>format_multilayer(Object)});
+              _ ->
+                  OldData
+          end,
+
+    Where = maps:without([<<"limit">>, <<"skip">>, <<"order">>, <<"count">>,
+    <<"limit">>, <<"keys">>, <<"excludeKeys">>, <<"include">>, <<"where">>,
+    <<"perPage">>, <<"page">>, <<"orderBy">>, <<"orderDir">>], Data),
+NewData = maps:without(maps:keys(Where) ++ [<<"perPage">>, <<"page">>, <<"orderBy">>, <<"orderDir">>], Data),
+case Data of
+#{<<"where">> := ParesWhere} when is_map(ParesWhere) ->
+NewData#{<<"where">> => maps:merge(ParesWhere, Where)};
+_ ->
+case length(maps:to_list(Where)) of
+0 ->
+NewData;
+_ ->
+NewData#{<<"where">> => Where}
+end
+end .
 
 start_http() ->
     Port = 9089,
@@ -203,3 +214,15 @@ start_http() ->
     Root = dgiot_httpc:url_join([Dir, "/priv/"]),
     DocRoot = Root ++ "www",
     dgiot_http_server:start_http(?MODULE, Port, DocRoot).
+
+format_multilayer(Object) ->
+    MapWhere = dgiot_utils:to_map(Object),
+    maps:fold(
+        fun(K, V, Acc) ->
+            case size(V) of
+                0 ->
+                    Acc;
+                _ ->
+                    Acc#{K => V}
+            end
+        end, #{}, MapWhere).
