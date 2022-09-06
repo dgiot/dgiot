@@ -93,7 +93,7 @@ do_request(post_factory_calendar, #{<<"default">> := Default, <<"other">> := Oth
         Res ->
             {error, Res}
     end;
-do_request(get_worker_shift, #{<<"depart">> := Depart, <<"date">> := Data, <<"workshop">> := Workshop, <<"limit">> := Limit, <<"skip">> := Skip} = _Args,
+do_request(get_worker_shift, #{<<"depart">> := Depart, <<"date">> := Data, <<"workshop">> := Workshop, <<"limit">> := Limit, <<"skip">> := Skip, <<"shift">> := undefined} = _Args,
     #{<<"sessionToken">> := SessionToken} = _Context, _Body) ->
     Department = case Depart of
                      undefined ->
@@ -108,30 +108,28 @@ do_request(get_worker_shift, #{<<"depart">> := Depart, <<"date">> := Data, <<"wo
         _ ->
             {error, <<"get_data_failed">>}
     end;
+
+do_request(get_worker_shift, #{<<"date">> := Data, <<"workshop">> := Workshop, <<"shift">> := Shift} = _Args,
+    _Context, _Body) ->
+    case dgiot_factory_shift:get_one_shift(#{<<"date">> => Data, <<"device">> => Workshop, <<"shift">> => Shift}) of
+        {ok, Res} ->
+            Worker = maps:get(<<"worker">>, Res, <<"">>),
+            WorkerList = re:split(Worker, " "),
+            Options = lists:foldl(
+                fun(X, Acc) ->
+                    Acc ++ [#{<<"label">> => X, <<"value">> => X}]
+                end, [], WorkerList),
+            {ok, #{<<"status">> => 0, msg => <<"数据请求成功"/utf8>>, <<"data">> => #{<<"options">> => Options}}};
+        _ ->
+            {ok, #{<<"status">> => 0, msg => <<"数据请求成功"/utf8>>, <<"data">> => #{<<"options">> => #{}}}}
+    end;
+
 do_request(post_worker_shift, #{<<"shift">> := Shifts} = _Args, _Context, _Body) ->
     dgiot_factory_shift:post_shift(Shifts),
     {ok, #{<<"status">> => 0, msg => <<"修改成功"/utf8>>, <<"data">> => #{}}};
 
-do_request(get_data, #{<<"productId">> := undefined, <<"objectId">> := undefined, <<"type">> := Type, <<"starttime">> := Start, <<"endtime">> := End, <<"where">> := Where, <<"limit">> := Limit, <<"skip">> := Skip, <<"new">> := New} = _Args, #{<<"sessionToken">> := SessionToken} = _Context, _Body) ->
-    case dgiot_product_tdengine:get_channel(SessionToken) of
-        {error, Error} -> {error, Error};
-        {ok, Channel} ->
-            ProductId = <<"ec71804a3d">>,
-            case dgiot_factory_getdata:get_device_list(ProductId) of
-                {ok, DeviceList} ->
-                    case dgiot_factory_getdata:get_work_sheet(ProductId, Type, Start, End, Channel, DeviceList, Where, Limit, Skip, New) of
-                        {ok, {Total, Res}} ->
-                            {ok, #{<<"status">> => 0, msg => <<"数据请求成功"/utf8>>, <<"data">> => #{<<"total">> => Total, <<"items">> => Res}}};
-                        _ ->
-
-                            {error, <<"get_data_failed">>}
-                    end;
-                _ ->
-
-                    {error, <<"notfinddevice">>}
-
-            end
-    end;
+do_request(get_data, #{<<"productId">> := undefined} = _Args, _Context, _Body) ->
+    do_request(get_data, _Args#{<<"productId">> => <<"ec71804a3d">>}, _Context, _Body);
 
 do_request(get_data, #{<<"productId">> := ProductId, <<"objectId">> := undefined, <<"type">> := Type, <<"starttime">> := Start, <<"endtime">> := End, <<"where">> := Where, <<"limit">> := Limit, <<"skip">> := Skip, <<"new">> := New} = _Args, #{<<"sessionToken">> := SessionToken} = _Context, _Body) ->
     case dgiot_product_tdengine:get_channel(SessionToken) of
@@ -167,15 +165,15 @@ do_request(get_data, #{<<"productId">> := ProductId, <<"objectId">> := DeviceId,
             end
 
     end;
-do_request(get_material, #{<<"objectId">> := DeviceId,<<"dept">> :=Depart} = _Args, _Context, _Req) ->
-    case dgiot_factory_material:get_material_record(DeviceId,Depart) of
+do_request(get_material, #{<<"objectId">> := DeviceId, <<"dept">> := Depart} = _Args, _Context, _Req) ->
+    case dgiot_factory_material:get_material_record(DeviceId, Depart) of
         {ok, Res} ->
             {ok, #{<<"status">> => 0, msg => <<"操作成功"/utf8>>, <<"data">> => maps:values(Res)}};
         _ ->
             error
     end;
 do_request(post_material, #{<<"objectId">> := DeviceId, <<"shift">> := Data} = _Args, _Context, _Req) ->
-    case dgiot_factory_material:post_material(DeviceId, Data) of
+    case dgiot_factory_material:post_material(DeviceId,     Data) of
         {ok, _} ->
             {ok, #{<<"status">> => 0, msg => <<"操作成功"/utf8>>, <<"data">> => []}};
         _ ->
@@ -206,7 +204,6 @@ do_request(get_workertree, _Arg, #{<<"sessionToken">> := SessionToken} = _Contex
         <<"msg">> => <<"ok">>,
         <<"data">> => #{<<"options">> => Data}
     }};
-
 
 %%  服务器不支持的API接口
 do_request(_OperationId, _Args, _Context, _Req) ->
