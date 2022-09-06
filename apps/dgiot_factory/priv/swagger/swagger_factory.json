@@ -118,6 +118,12 @@
             "in": "query",
             "type": "integer",
             "description": "skip"
+          },
+          {
+            "name": "shift",
+            "in": "query",
+            "type": "string",
+            "description": "班次"
           }
         ],
         "responses": {

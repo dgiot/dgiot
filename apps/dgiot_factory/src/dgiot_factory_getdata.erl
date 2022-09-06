@@ -34,9 +34,7 @@ get_all_sheet(ProductId, Start, End, Channel, DeviceId, Where, Limit, Skip, New)
                             Acc
                     end
                 end, [], SheetList),
-            io:format("~s ~p SheetsData= ~p ~n", [?FILE, ?LINE, length(SheetsData)]),
             IdData = get_sheet_id(SheetsData, SheetList),
-
             MergedData = merge_sheets(IdData, SheetList),
 %%            Data = maps:values(MergedData),
             {Total, Res} = filter_data(Limit, Skip, MergedData),
@@ -70,12 +68,7 @@ merge_sheets(IdData, _SheetList) ->
                     end
                 end, V, lists:nthtail(1, IdData)),
             Acc ++ [maps:merge(Res, V)]
-        end, [], FirstSheetData)
-%%    lists:foldl(
-%%        fun(X, Acc) ->
-%%            dgiot_map:merge(Acc, X)
-%%        end, #{}, IdData)
-.
+        end, [], FirstSheetData).
 
 
 get_sheet_id(SheetsData, SheetList) ->
@@ -111,6 +104,7 @@ get_sheet_where(X, UnflattenWhere) ->
 get_work_sheet(ProductId, <<"person">>, Start, End, Channel, DeviceId, Where, Limit, Skip, New) ->
     get_all_sheet(ProductId, Start, End, Channel, DeviceId, Where, Limit, Skip, New);
 get_work_sheet(ProductId, Type, Start, End, Channel, DeviceId, Where, Limit, Skip, New) ->
+
     case filter_where(Where, ProductId, Type) of
         {Parse, Td, ThingMap} ->
             case search_parse(DeviceId, Parse, Type) of
@@ -362,12 +356,14 @@ filter_data(Limit, undefined, HistoryData) ->
 
 filter_data(Limit, Skip, HistoryData) ->
     Total = length(HistoryData),
-    Res = case Limit + Skip > Total of
-              true ->
-                  lists:sublist(HistoryData, Skip + 1, Total);
-              false ->
-                  lists:sublist(HistoryData, Skip + 1, Limit + Skip)
-          end,
+    Min = max(Skip + 1,0),
+    Max = min(Total,Limit+Skip),
+    Res= case Max > Min of
+        true ->
+            lists:sublist(HistoryData, Min, Max);
+        _ ->
+            HistoryData
+    end,
     {Total, Res}.
 
 get_device_list(ProductId) ->
