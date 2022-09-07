@@ -70,6 +70,48 @@ handle(OperationID, Args, Context, Req) ->
 %%%===================================================================
 %%% 内部函数 Version:API版本
 %%%===================================================================
+do_request(post_head, #{<<"items">> := Items, <<"productid">> := ProductId}, _Context, _Req) ->
+    {Head, Table} =
+        case dgiot_product:lookup_prod(ProductId) of
+            {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
+                lists:foldl(fun(Prop, {Acc1, Acc2}) ->
+                    case Prop of
+                        #{<<"name">> := Name, <<"identifier">> := Identifier,
+                            <<"dataSource">> := DtaSource,
+                            <<"dataType">> := DataType} ->
+                            Specs = maps:get(<<"specs">>, DataType, #{}),
+                            Unit =
+                                case maps:find(<<"unit">>, Specs) of
+                                    error ->
+                                        <<>>;
+                                    {ok, Un} ->
+                                        <<"(", Un/binary, ")">>
+                                end,
+                            Dis =
+                                lists:foldl(
+                                    fun
+                                        (#{<<"key">> := Key}, Ds) ->
+                                            Ds ++ [Key];
+                                        (_, Ds) ->
+                                            Ds
+                                    end, [], maps:get(<<"dis">>, DtaSource, [])),
+                            lists:foldl(fun(Item, {Acc, Acc3}) ->
+                                case lists:member(Item, Dis) of
+                                    true ->
+                                        {Acc#{Identifier => <<Name/binary, Unit/binary>>}, Acc3 ++ [#{<<"prop">> => Identifier, <<"label">> => <<Name/binary, Unit/binary>>}]};
+                                    _ ->
+                                        {Acc, Acc3}
+                                end
+                                        end, {Acc1, Acc2}, Items);
+                        _ ->
+                            {Acc1, Acc2}
+                    end
+                            end, {#{}, [#{<<"prop">> => <<"timestamp">>, <<"label">> => <<"时间"/utf8>>}]}, Props);
+            _Error ->
+                #{}
+        end,
+    {ok, #{<<"code">> => 200, <<"head">> => Head, <<"table">> => Table}};
+
 %% Proctol 概要: 获取Dlink协议列表
 %% OperationId:protocol
 %% 请求:GET /iotapi/protocol

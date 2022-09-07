@@ -1,14 +1,5 @@
 {
-  "tags": [
-    {
-      "name": "Basic",
-      "description": "基础接口"
-    },
-    {
-      "name": "Data",
-      "description": "数据管理"
-    }
-  ],
+  "tags": [],
   "definitions": {
     "Token": {
       "type": "object",

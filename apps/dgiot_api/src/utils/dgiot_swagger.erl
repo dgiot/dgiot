@@ -288,7 +288,7 @@ do_method_fun(Path, Method, MethodInfo, SWSchemas, Hand) ->
             PreMethodInfo = MethodInfo#{
                 <<"operationId">> => OperationId,
                 <<"externalDocs">> => #{
-                    <<"url">> => <<"http://www.iotn2n.com/doc/#", BinOpId/binary>>
+                    <<"url">> => <<"https://doc.dgiotcloud.cn/doc/#", BinOpId/binary>>
                 }
             },
             NewMethodInfo = Hand(Path, Method, PreMethodInfo, SWSchemas),
