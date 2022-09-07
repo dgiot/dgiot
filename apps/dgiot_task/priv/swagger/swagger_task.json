@@ -1,10 +1,5 @@
 {
-  "tags": [
-    {
-      "name": "Instruct",
-      "description": "指令任务"
-    }
-  ],
+  "tags": [],
   "definitions": {
   },
   "paths": {

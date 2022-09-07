@@ -100,14 +100,47 @@
             "schema": {
               "properties": {
                 "topo": {
-                  "description": "组态控件关联字段",
-                  "type": "object",
-                  "example": {"productid":"JVANH8bf5n","topoid":"330980"}
+                  "schema": {
+                    "description": "组态控件关联字段",
+                    "properties": {
+                      "productid": {
+                        "description": "productid",
+                        "type": "string",
+                        "example": "JVANH8bf5n"
+                      },
+                      "topoid": {
+                        "description": "topoid",
+                        "type": "string",
+                        "example": "330980"
+                      }
+                    },
+                    "required": true,
+                    "type": "object"
+                  }
                 },
                 "thing": {
-                  "description": "物模型关联字段",
-                  "type": "object",
-                  "example": {"thingid":"ipjnGiLSt7","subprodid":"9c5930e565","subdevid":"5b1bc4cf52"}
+                  "schema": {
+                    "description": "物模型关联字段",
+                    "properties": {
+                      "thingid": {
+                        "description": "thingid",
+                        "type": "string",
+                        "example": "ipjnGiLSt7"
+                      },
+                      "subprodid": {
+                        "description": "subprodid",
+                        "type": "string",
+                        "example": "9c5930e565"
+                      },
+                      "subdevid": {
+                        "description": "subdevid",
+                        "type": "string",
+                        "example": "5b1bc4cf52"
+                      }
+                    },
+                    "required": true,
+                    "type": "object"
+                  }
                 }
               }
             }

@@ -2,12 +2,7 @@
   "definitions": {},
   "paths": {
   },
-  "tags": [
-    {
-      "description": "视图管理",
-      "name": "View"
-    }
-  ],
+  "tags": [],
   "paths": {
     "/dashboard": {
       "post": {

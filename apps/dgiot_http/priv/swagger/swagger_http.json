@@ -1,10 +1,6 @@
 {
   "tags": [
     {
-      "name": "Notification",
-      "description": "通知管理"
-    },
-    {
       "name": "configuration",
       "description": "通知配置"
     }
@@ -59,21 +55,37 @@
               "type": "object",
               "properties": {
                 "sms": {
-                  "required": true,
-                  "type": "object",
-                  "example": {
-                    "appid": "1400635630",
-                    "appkey": "40d9609b9e6212cbff051b4f1d4cabfc",
-                    "sign": "dgiota"
+                  "schema": {
+                    "description": "模板内容",
+                    "properties": {
+                      "appid": {
+                        "description": "appid",
+                        "example": "1400635630",
+                        "required": true,
+                        "type": "string"
+                      },
+                      "appkey": {
+                        "description": "appkey",
+                        "example": "40d9609b9e6212cbff051b4f1d4cabfc",
+                        "required": true,
+                        "type": "string"
+                      },
+                      "sign": {
+                        "description": "sign",
+                        "example": "dgiota",
+                        "required": true,
+                        "type": "string"
+                      }
+                    },
+                    "required": true,
+                    "type": "object"
                   }
                 },
                 "mail": {
-                  "required": true,
-                  "type": "object",
-                  "example": {
-                    "username": "18257190166@163.com",
-                    "password": "ALRFYEVAFSITDXSX",
-                    "smtp": "smtp.163.com"
+                  "schema": {
+                    "properties": {},
+                    "required": true,
+                    "type": "object"
                   }
                 }
               }
@@ -176,7 +188,6 @@
         ]
       }
     },
-
     "/warnsendsms": {
       "post": {
         "summary": "短信告警发送",
@@ -199,6 +210,7 @@
                 },
                 "department": {
                   "type": "string",
+                  "required": true,
                   "example": "部门"
                 },
                 "dailyWorksId": {
@@ -563,10 +575,12 @@
                   "description": "语言类型"
                 },
                 "data": {
-                  "type": "object",
-                  "required": true,
-                  "example": {},
-                  "description": "模板内容"
+                  "schema": {
+                    "description": "模板内容",
+                    "properties": {},
+                    "required": true,
+                    "type": "object"
+                  }
                 }
               }
             }
@@ -808,39 +822,12 @@
               "type": "object",
               "properties": {
                 "data": {
-                  "type": "object",
-                  "example": {
-                    "巡检": {
-                      "巡检时长": "1小时",
-                      "巡检状态": "当日已巡检",
-                      "当月巡检次数": "15次"
-                    },
-                    "报修": {
-                      "报修地点": "201空调机组间",
-                      "报修时间": "2022/2/3",
-                      "报修状态": "未完成",
-                      "报修设备": "1号空调"
-                    },
-                    "空间管理": {
-                      "VIP上座率": "0%",
-                      "商业区出租率": "75%",
-                      "竞技场状态": "未开启",
-                      "观众席上座率": "0%"
-                    },
-                    "维保": {
-                      "年维保频率": "2次",
-                      "维保周期": "6个月",
-                      "维保时间": "2022/2/1",
-                      "维保设备": "1号电梯"
-                    },
-                    "资产": {
-                      "园区面积": "26W平方米",
-                      "固定资产": "未知",
-                      "建筑面积": "8W平方米",
-                      "流动资产": "未知"
-                    }
-                  },
-                  "description": "运维数据"
+                  "schema": {
+                    "description": "运维数据",
+                    "properties": {},
+                    "required": true,
+                    "type": "object"
+                  }
                 }
               }
             }
