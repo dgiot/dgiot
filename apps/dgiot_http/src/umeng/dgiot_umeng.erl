@@ -30,12 +30,14 @@
     test_customizedcast/0,
     add_notification/3,
     save_devicestatus/2,
-    save_notification/3,
+    save_notification/4,
+    update_notification/2,
     sendSubscribe/3,
     create_maintenance/2,
     get_operations/0,
     send_message_to3D/3,
-    triggeralarm/1
+    triggeralarm/1,
+    send_msg/1
 ]).
 
 test_broadcast() ->
@@ -189,147 +191,78 @@ post_notification(Notification) ->
     }).
 
 add_notification(<<"start_", Ruleid/binary>>, DeviceId, Payload) ->
-    case dgiot_data:get(?NOTIFICATION, {DeviceId, Ruleid}) of
-        {start, _Time} ->
-            pass;
-        _ ->
-            save_notification(Ruleid, DeviceId, Payload#{<<"alertstatus">> => true})
-    end,
-    dgiot_data:insert(?NOTIFICATION, {DeviceId, Ruleid}, {start, dgiot_datetime:now_secs()});
+    NotificationId = dgiot_parse_id:get_notificationid(Ruleid),
+    Result =
+        case dgiot_data:get(dgiot_notification, {DeviceId, Ruleid}) of
+            {start, _Time, _} ->
+                <<>>;
+            _ ->
+                save_notification(Ruleid, DeviceId, Payload, NotificationId)
+        end,
+    dgiot_data:insert(?NOTIFICATION, {DeviceId, Ruleid}, {start, dgiot_datetime:now_secs(), NotificationId}),
+    Result;
 
 add_notification(<<"stop_", Ruleid/binary>>, DeviceId, Payload) ->
-    case dgiot_data:get(?NOTIFICATION, {DeviceId, Ruleid}) of
-        {start, _Time} ->
-            save_notification(Ruleid, DeviceId, Payload#{<<"alertstatus">> => false});
-        _ ->
-            pass
-    end,
-    dgiot_data:insert(?NOTIFICATION, {DeviceId, Ruleid}, {stop, dgiot_datetime:now_secs()});
+    Result =
+        case dgiot_data:get(?NOTIFICATION, {DeviceId, Ruleid}) of
+            {start, _Time, NotificationId} ->
+                update_notification(NotificationId, Payload);
+            _ ->
+                <<>>
+        end,
+    dgiot_data:insert(?NOTIFICATION, {DeviceId, Ruleid}, {stop, dgiot_datetime:now_secs(), <<>>}),
+    Result;
 
 add_notification(Ruleid, _DevAddr, _Payload) ->
     ?LOG(error, "Ruleid ~p", [Ruleid]),
     ok.
 
-save_notification(Ruleid, DeviceId, Payload) ->
+save_notification(Ruleid, DeviceId, Payload, NotificationId) ->
+    Alarm_createdAt = dgiot_datetime:format("YYYY-MM-DD HH:NN:SS"),
     case binary:split(Ruleid, <<$_>>, [global, trim]) of
         [ProductId, ViewId] ->
             case dgiot_device:lookup(DeviceId) of
-                {ok, #{<<"acl">> := Acl}} ->
-                    Requests =
+                {ok, #{<<"acl">> := Acls}} ->
+                    Acl =
                         lists:foldl(fun(X, Acc) ->
-                            BinX = atom_to_binary(X),
-                            case BinX of
-                                <<"role:", Name/binary>> ->
-%%                                    RoleId = dgiot_parse_id:get_roleid(<<"dgiot">>),
-                                    case dgiot_parse:query_object(<<"_Role">>, #{<<"order">> => <<"updatedAt">>, <<"limit">> => 1,
-                                        <<"where">> => #{<<"name">> => Name}}) of
-                                        {ok, #{<<"results">> := [Role]}} ->
-                                            #{<<"objectId">> := RoleId} = Role,
-                                            UserIds = dgiot_parse_id:get_userids(RoleId),
-                                            lists:foldl(fun(UserId, Acc1) ->
-                                                ObjectId = dgiot_parse_id:get_notificationid(Ruleid),
-                                                Content = Payload#{<<"_deviceid">> => DeviceId, <<"_productid">> => ProductId, <<"_viewid">> => ViewId},
-%%                                                sendSubscribe(Ruleid, Content, UserId),
-                                                Acc1 ++ [#{
-                                                    <<"method">> => <<"POST">>,
-                                                    <<"path">> => <<"/classes/Notification">>,
-                                                    <<"body">> => #{
-                                                        <<"objectId">> => ObjectId,
-                                                        <<"ACL">> => #{
-                                                            UserId => #{
-                                                                <<"read">> => true,
-                                                                <<"write">> => true
-                                                            }
-                                                        },
-                                                        <<"content">> => Content,
-                                                        <<"public">> => false,
-                                                        <<"status">> => 0,
-                                                        <<"sender">> => #{
-                                                            <<"__type">> => <<"Pointer">>,
-                                                            <<"className">> => <<"_User">>,
-                                                            <<"objectId">> => <<"Klht7ERlYn">>
-                                                        },
-                                                        <<"process">> => <<"">>,
-                                                        <<"type">> => Ruleid,
-                                                        <<"user">> => #{
-                                                            <<"__type">> => <<"Pointer">>,
-                                                            <<"className">> => <<"_User">>,
-                                                            <<"objectId">> => UserId
-                                                        }
-                                                    }
-                                                }]
-                                                        end, Acc, UserIds);
-                                        _ ->
-                                            Acc
-                                    end;
-                                <<"*">> ->
-                                    ObjectId = dgiot_parse_id:get_notificationid(Ruleid),
-                                    Acc ++ [#{
-                                        <<"method">> => <<"POST">>,
-                                        <<"path">> => <<"/classes/Notification">>,
-                                        <<"body">> => #{
-                                            <<"objectId">> => ObjectId,
-                                            <<"ACL">> => #{
-                                                <<"*">> => #{
-                                                    <<"read">> => true,
-                                                    <<"write">> => true
-                                                }
-                                            },
-                                            <<"content">> => Payload#{<<"_deviceid">> => DeviceId, <<"_productid">> => ProductId, <<"_viewid">> => ViewId},
-                                            <<"public">> => false,
-                                            <<"status">> => 0,
-                                            <<"sender">> => #{
-                                                <<"__type">> => <<"Pointer">>,
-                                                <<"className">> => <<"_User">>,
-                                                <<"objectId">> => <<"Klht7ERlYn">>
-                                            },
-                                            <<"type">> => Ruleid,
-                                            <<"user">> => #{
-                                                <<"__type">> => <<"Pointer">>,
-                                                <<"className">> => <<"_User">>,
-                                                <<"objectId">> => <<"">>
-                                            }
-                                        }
-                                    }];
-                                UserId ->
-                                    ObjectId = dgiot_parse_id:get_notificationid(Ruleid),
-                                    Content = Payload#{<<"_deviceid">> => DeviceId, <<"_productid">> => ProductId, <<"_viewid">> => ViewId},
-%%                                    sendSubscribe(Ruleid, Content, UserId),
-                                    Acc ++ [#{
-                                        <<"method">> => <<"POST">>,
-                                        <<"path">> => <<"/classes/Notification">>,
-                                        <<"body">> => #{
-                                            <<"objectId">> => ObjectId,
-                                            <<"ACL">> => #{
-                                                UserId => #{
-                                                    <<"read">> => true,
-                                                    <<"write">> => true
-                                                }
-                                            },
-                                            <<"content">> => Content,
-                                            <<"public">> => false,
-                                            <<"status">> => 0,
-                                            <<"sender">> => #{
-                                                <<"__type">> => <<"Pointer">>,
-                                                <<"className">> => <<"_User">>,
-                                                <<"objectId">> => <<"Klht7ERlYn">>
-                                            },
-                                            <<"type">> => Ruleid,
-                                            <<"user">> => #{
-                                                <<"__type">> => <<"Pointer">>,
-                                                <<"className">> => <<"_User">>,
-                                                <<"objectId">> => UserId
-                                            }
-                                        }
-                                    }]
-                            end
-                                    end, [], Acl),
-                    dgiot_parse:batch(Requests);
+                            Acc#{
+                                dgiot_utils:to_binary(X) => #{
+                                    <<"read">> => true,
+                                    <<"write">> => true
+                                }}
+                                    end, #{}, Acls),
+                    Content = Payload#{<<"alarm_createdAt">> => Alarm_createdAt, <<"_deviceid">> => DeviceId, <<"_productid">> => ProductId, <<"_viewid">> => ViewId},
+                    dgiot_parse:create_object(<<"Notification">>, #{
+                        <<"objectId">> => NotificationId,
+                        <<"ACL">> => Acl,
+                        <<"content">> => Content,
+                        <<"public">> => false,
+                        <<"status">> => 0,
+                        <<"process">> => <<"">>,
+                        <<"type">> => Ruleid
+                    }),
+                    Content#{<<"send_alarm_status">> => <<"start">>};
                 _ ->
-                    pass
+                    <<>>
             end;
         _ ->
-            pass
+            <<>>
+    end.
+
+%% 0 未确认 1 误报 2 手动恢复 3 自动恢复
+update_notification(NotificationId, Payload) ->
+    case dgiot_parse:get_object(<<"Notification">>, NotificationId) of
+        {ok, #{<<"content">> := Content}} ->
+            NewContent = maps:merge(Content, Payload),
+            dgiot_parse:update_object(<<"Notification">>, NotificationId, #{
+                <<"public">> => true,
+                <<"status">> => 3,
+                <<"content">> => NewContent,
+                <<"process">> => <<"自动恢复"/utf8>>
+            }),
+            NewContent#{<<"send_alarm_status">> => <<"stop">>};
+        _ ->
+            <<>>
     end.
 
 sendSubscribe(Type, Content, UserId) ->
@@ -736,14 +669,115 @@ triggeralarm(DeviceId) ->
     end.
 
 
+%% 触发
+send_msg(#{<<"send_alarm_status">> := <<"start">>, <<"alarm_createdAt">> := Alarm_createdAt, <<"_deviceid">> := DeviceId, <<"_productid">> := ProductId, <<"dgiot_alarmkey">> := Key, <<"dgiot_alarmvalue">> := Value}) ->
+    case dgiot_parse:get_object(<<"Product">>, ProductId) of
+        {ok, #{<<"name">> := ProductName, <<"content">> := #{<<"sms">> := #{<<"params">> := Params, <<"tplid">> := TplId} = Sms}}} when is_list(Params) ->
+            NewParams =
+                lists:foldl(fun(Param, Acc) ->
+                    Acc ++ [replace_param(Param, ProductName, ProductId, DeviceId, Key, Value, Alarm_createdAt, <<"触发"/utf8>>)]
+                            end, [], Params),
+            Mobile =
+                case maps:find(<<"users">>, Sms) of
+                    {ok, Users} ->
+                        UsersQuery = #{<<"where">> => #{<<"objectId">> => #{<<"$in">> => Users}}},
+                        case dgiot_parse:query_object(<<"_User">>, UsersQuery) of
+                            {ok, #{<<"results">> := Row}} ->
+                                lists:foldl(fun(User, Acc) ->
+                                    Phone = maps:get(<<"phone">>, User, ""),
+                                    case dgiot_utils:is_phone(Phone) of
+                                        true ->
+                                            Acc ++ [#{<<"mobile">> => Phone, <<"nationcode">> => <<"86">>}];
+                                        _ ->
+                                            Acc
+                                    end
+                                            end, [], Row);
+                            _ ->
+                                dgiot_notification:get_Mobile(DeviceId)
+                        end;
+                    _ ->
+                        dgiot_notification:get_Mobile(DeviceId)
+                end,
+            dgiot_notification:send_sms(Mobile, TplId, NewParams);
+        _ ->
+            pass
+    end;
+
+%% 恢复
+send_msg(#{<<"send_alarm_status">> := <<"stop">>, <<"alarm_createdAt">> := Alarm_createdAt, <<"_deviceid">> := DeviceId, <<"_productid">> := ProductId, <<"dgiot_alarmkey">> := Key, <<"dgiot_alarmvalue">> := Value}) ->
+    case dgiot_parse:get_object(<<"Product">>, ProductId) of
+        {ok, #{<<"name">> := ProductName, <<"content">> := #{<<"sms">> := #{<<"params">> := Params, <<"tplid">> := TplId} = Sms}}} when is_list(Params) ->
+            NewParams =
+                lists:foldl(fun(Param, Acc) ->
+                    Acc ++ [replace_param(Param, ProductName, ProductId, DeviceId, Key, Value, Alarm_createdAt, <<"恢复"/utf8>>)]
+                            end, [], Params),
+            Mobile =
+                case maps:find(<<"users">>, Sms) of
+                    {ok, Users} ->
+                        UsersQuery = #{<<"where">> => #{<<"objectId">> => #{<<"$in">> => Users}}},
+                        case dgiot_parse:query_object(<<"_User">>, UsersQuery) of
+                            {ok, #{<<"results">> := Row}} ->
+                                lists:foldl(fun(User, Acc) ->
+                                    Phone = maps:get(<<"phone">>, User, ""),
+                                    case dgiot_utils:is_phone(Phone) of
+                                        true ->
+                                            Acc ++ [#{<<"mobile">> => Phone, <<"nationcode">> => <<"86">>}];
+                                        _ ->
+                                            Acc
+                                    end
+                                            end, [], Row);
+                            _ ->
+                                dgiot_notification:get_Mobile(DeviceId)
+                        end;
+                    _ ->
+                        dgiot_notification:get_Mobile(DeviceId)
+                end,
+            dgiot_notification:send_sms(Mobile, TplId, NewParams);
+        _ ->
+            pass
+    end;
+
+send_msg(_) ->
+    pass.
 
 
-
-
-
-
-
-
+%%  产品名称：%PRODUCTNAME%
+%%  设备名称：%DEVICENAME%
+%%  设备地址：%DEVICEADDR%
+%%  日期：%DATE%
+%%  时间：%DATETIME%
+%%  用户名称：%USERNAME%
+%%  报警时间：%TRIGGERTIME%
+%%  变量名称：%DATAPOINTNAME%
+%%  当前值：%NOWVALUE%
+%%  触发描述：%TRIGGERDESCRIPTION%
+replace_param(Param, ProductName, ProductId, DeviceId, Key, Value, Alarm_createdAt, TriggerdeScription) ->
+    Date = dgiot_datetime:format("YYYY-MM-DD"),
+    DateTime = dgiot_datetime:format("YYYY-MM-DD HH:NN:SS"),
+    {DeviceName, DeviceAddr} =
+        case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+            {ok, #{<<"name">> := Name, <<"devaddr">> := Devaddr}} ->
+                {Name, Devaddr};
+            _ ->
+                {<<"--">>, <<"--">>}
+        end,
+    DataPointname =
+        case dgiot_data:get({product, <<ProductId/binary, Key/binary>>}) of
+            not_find ->
+                <<"--">>;
+            {ThingName, _, _} ->
+                ThingName
+        end,
+    Str1 = re:replace(Param, "%PRODUCTNAME%", ProductName, [global, {return, list}]),
+    Str2 = re:replace(Str1, "%DEVICENAME%", DeviceName, [global, {return, list}]),
+    Str3 = re:replace(Str2, "%DEVICEADDR%", DeviceAddr, [global, {return, list}]),
+    Str4 = re:replace(Str3, "%DATE%", Date, [global, {return, list}]),
+    Str4 = re:replace(Str3, "%DATETIME%", DateTime, [global, {return, list}]),
+    Str5 = re:replace(Str4, "%USERNAME%", <<"admin">>, [global, {return, list}]),
+    Str6 = re:replace(Str5, "%TRIGGERTIME%", Alarm_createdAt, [global, {return, list}]),
+    Str7 = re:replace(Str6, "%DATAPOINTNAME%", DataPointname, [global, {return, list}]),
+    Str8 = re:replace(Str7, "%TRIGGERDESCRIPTION%", TriggerdeScription, [global, {return, list}]),
+    re:replace(Str8, "%NOWVALUE%", dgiot_utils:to_list(Value), [global, {return, binary}]).
 
 
 
