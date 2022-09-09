@@ -772,12 +772,12 @@ replace_param(Param, ProductName, ProductId, DeviceId, Key, Value, Alarm_created
     Str2 = re:replace(Str1, "%DEVICENAME%", DeviceName, [global, {return, list}]),
     Str3 = re:replace(Str2, "%DEVICEADDR%", DeviceAddr, [global, {return, list}]),
     Str4 = re:replace(Str3, "%DATE%", Date, [global, {return, list}]),
-    Str4 = re:replace(Str3, "%DATETIME%", DateTime, [global, {return, list}]),
-    Str5 = re:replace(Str4, "%USERNAME%", <<"admin">>, [global, {return, list}]),
-    Str6 = re:replace(Str5, "%TRIGGERTIME%", Alarm_createdAt, [global, {return, list}]),
-    Str7 = re:replace(Str6, "%DATAPOINTNAME%", DataPointname, [global, {return, list}]),
-    Str8 = re:replace(Str7, "%TRIGGERDESCRIPTION%", TriggerdeScription, [global, {return, list}]),
-    re:replace(Str8, "%NOWVALUE%", dgiot_utils:to_list(Value), [global, {return, binary}]).
+    Str5 = re:replace(Str4, "%DATETIME%", DateTime, [global, {return, list}]),
+    Str6 = re:replace(Str5, "%USERNAME%", <<"admin">>, [global, {return, list}]),
+    Str7 = re:replace(Str6, "%TRIGGERTIME%", Alarm_createdAt, [global, {return, list}]),
+    Str8 = re:replace(Str7, "%DATAPOINTNAME%", DataPointname, [global, {return, list}]),
+    Str9 = re:replace(Str8, "%TRIGGERDESCRIPTION%", TriggerdeScription, [global, {return, list}]),
+    re:replace(Str9, "%NOWVALUE%", dgiot_utils:to_list(Value), [global, {return, binary}]).
 
 
 
