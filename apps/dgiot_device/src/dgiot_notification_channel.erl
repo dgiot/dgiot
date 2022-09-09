@@ -116,25 +116,12 @@ handle_message({rule, #{clientid := _DevAddr, disconnected_at := _DisconnectedAt
 
 %% SELECT payload.electricity as electricity FROM  "$dg/user/alarm/94656917ab/157d0ff60f/#" where electricity  >  20
 handle_message({rule, #{metadata := #{rule_id := <<"rule:Notification_", Ruleid/binary>>}, clientid := DeviceId, payload := _Payload, topic := _Topic} = _Msg, Context}, State) ->
-    dgiot_umeng:add_notification(Ruleid, DeviceId, Context),
-    case dgiot_parse:get_object(<<"_Role">>, application:get_env(dgiot_http, tencent_sms_sign, "ae746ee803")) of
-        {ok, #{<<"objectId">> := RolesId}} ->
-            %循环得到部门下所有的手机号
-            Users = dgiot_parse_auth:get_UserIds(unicode:characters_to_binary(RolesId)),
-            UsersQuery = #{<<"where">> => #{<<"objectId">> => #{<<"$in">> => Users}}},
-            {ok, #{<<"results">> := Row}} = dgiot_parse:query_object(<<"_User">>, UsersQuery),
-            Params = lists:foldl(fun(X, Acc) ->
-                Acc ++ [X ++ ":" ++ DeviceId]
-                                 end, [], application:get_env(dgiot_http, tencent_sms_params, ["aaa", "bbb", "ccc", "ddd", "eee", "fff"])),
-            lists:foldl(fun(X, Acc) ->
-                Phone = unicode:characters_to_binary(dgiot_utils:to_list(maps:get(<<"phone">>, X))),
-                dgiot_notification:send_sms(Phone, <<"TplId">>, Params),
-                Acc ++ [unicode:characters_to_binary(dgiot_utils:to_list(maps:get(<<"phone">>, X)))]
-                        end, [], Row);
-%      模板格式：时间：{1} {2}（发起人：{3}）（单据编号{4}）（车间：{5}）产生异常,警告等级为:{6}。
-        _ ->
-            pass
-    end,
+    NewContext =
+        maps:fold(fun(Key, Value, Acc) ->
+            Acc#{<<"dgiot_alarmkey">> => Key, <<"dgiot_alarmvalue">> => Value}
+                  end, #{}, Context),
+    Content = dgiot_umeng:add_notification(Ruleid, DeviceId, NewContext),
+    dgiot_umeng:send_msg(Content),
     {ok, State};
 
 handle_message({sync_parse, Pid, 'after', get, _Token, <<"Notification">>, #{<<"results">> := _Results} = ResBody}, State) ->
