@@ -123,17 +123,17 @@
 }).
 
 %% 注册协议类型
--protocol_type(#{
-    cType => ?TYPE,
-    type => <<"energy">>,
-    colum => 10,
-    title => #{
-        zh => <<"MODBUS TCP协议"/utf8>>
-    },
-    description => #{
-        zh => <<"MODBUS TCP协议"/utf8>>
-    }
-}).
+%%-protocol_type(#{
+%%    cType => ?TYPE,
+%%    type => <<"energy">>,
+%%    colum => 10,
+%%    title => #{
+%%        zh => <<"MODBUS TCP协议"/utf8>>
+%%    },
+%%    description => #{
+%%        zh => <<"MODBUS TCP协议"/utf8>>
+%%    }
+%%}).
 
 init(State) ->
     State#{<<"req">> => [], <<"ts">> => dgiot_datetime:now_ms(), <<"interval">> => 300}.
@@ -216,7 +216,7 @@ set_params(Payload, _ProductId, _DevAddr) ->
     Length = length(maps:keys(Payload)),
     Payloads =
         lists:foldl(fun(Index, Acc) ->
-            case maps:find(dgiot_utils:to_binary(Index), Payload) of
+            case maps:find(Index, Payload) of
                 {ok, #{
                     <<"dataForm">> := #{
                         <<"protocol">> := <<"MODBUSTCP">>,
@@ -272,43 +272,46 @@ set_params(Payload, _ProductId, _DevAddr) ->
 parse_frame(<<_TransactionId:16, _ProtocolId:16, _Size1:16, _Slaveid:8, _FunCode:8, DataLen:8, Data:DataLen/bytes, _/bytes>>) ->
     Data.
 
+%% 00 03 64 5c
 parse_frame(FileName, Data) ->
     AtomName = dgiot_utils:to_atom(FileName),
-    Things = ets:match(AtomName, {'_', ['_', '_', '_', '_', '$1', '_', '_', '_', '$2', '_', '_', '_', '_', '_', '_', '$3' | '_']}),
-    lists:foldl(fun([Devaddr, Address, Originaltype | _], _Acc) ->
-        ProductId = dgiot_data:get(AtomName, {addr, Address}),
-        IntOffset = dgiot_utils:to_int(Address),
-        IntLen = get_len(1, Originaltype),
-        Thing = #{
-            <<"identifier">> => Address,
-            <<"dataSource">> => #{
-                <<"registersnumber">> => 1,
-                <<"originaltype">> => Originaltype
-            }},
-        Value =
-            case IntOffset of
-                1 ->
-                    <<V:IntLen/binary, _/binary>> = Data,
-                    case format_value(V, Thing, #{}) of
-                        {Value1, _Rest} ->
-                            Value1;
-                        _ ->
-                            V
-                    end;
-                _ ->
-                    NewIntOffset = IntOffset + 1,
-                    <<_:NewIntOffset/binary, V:IntLen/binary, _/binary>> = Data,
-                    case format_value(V, Thing, #{}) of
-                        {Value1, _Rest} ->
-                            Value1;
-                        _ ->
-                            V
-                    end
-            end,
-        NewData = change_data(ProductId, #{Address => Value}),
-        dgiot_task:save_td(ProductId, Devaddr, NewData, #{<<"interval">> => 30})
-                end, #{}, Things),
-    <<>>.
+    Things = ets:match(AtomName, {'$1', ['_', '_', '_', '_', '$2', '_', '_', '_', '$3', '_', '_', '_', '_', '_', '_', '$4' | '_']}),
+    AllData =
+        lists:foldl(fun([Number, Devaddr, Address, Originaltype | _], Acc) ->
+            ProductId = dgiot_data:get(AtomName, {addr, Address}),
+            IntOffset = dgiot_utils:to_int(Number) - 1,
+            Thing = #{
+                <<"identifier">> => Address,
+                <<"dataSource">> => #{
+                    <<"registersnumber">> => 1,
+                    <<"originaltype">> => Originaltype
+                }},
+            IntLen = get_len(1, Originaltype),
+            Value =
+                case IntOffset of
+                    0 ->
+                        <<V:IntLen/binary, _/binary>> = Data,
+                        case format_value(V, Thing, #{}) of
+                            {Value1, _Rest} ->
+                                Value1;
+                            _ ->
+                                V
+                        end;
+                    _ ->
+                        NewIntOffset = get_len(IntOffset, Originaltype),
+                        <<_:NewIntOffset/binary, V:IntLen/binary, _/binary>> = Data,
+                        case format_value(V, Thing, #{}) of
+                            {Value1, _Rest} ->
+                                Value1;
+                            _ ->
+                                V
+                        end
+                end,
+            NewData = change_data(ProductId, #{Address => Value}),
+            dgiot_task:save_td(ProductId, Devaddr, NewData, #{<<"interval">> => 30}),
+            Acc ++ [NewData]
+                    end, [], Things),
+    AllData.
 
 change_data(ProductId, Data) ->
     case dgiot_product:lookup_prod(ProductId) of
@@ -721,37 +724,37 @@ format_value(Buff, #{<<"identifier">> := Field, <<"originaltype">> := Originalty
 
 %% 获取寄存器字节长度
 get_len(IntNum, <<"short16_AB">>) ->
-    IntNum * 2 * 8;
+    IntNum * 2;
 
 get_len(IntNum, <<"short16_BA">>) ->
-    IntNum * 2 * 8;
+    IntNum * 2;
 
 get_len(IntNum, <<"ushort16_AB">>) ->
-    IntNum * 2 * 8;
+    IntNum * 2;
 
 get_len(IntNum, <<"ushort16_BA">>) ->
-    IntNum * 2 * 8;
+    IntNum * 2;
 
 get_len(IntNum, <<"long32_ABCD">>) ->
-    IntNum * 4 * 8;
+    IntNum * 4;
 
 get_len(IntNum, <<"long32_CDAB">>) ->
-    IntNum * 4 * 8;
+    IntNum * 4;
 
 get_len(IntNum, <<"ulong32_ABCD">>) ->
-    IntNum * 4 * 8;
+    IntNum * 4;
 
 get_len(IntNum, <<"ulong32_CDAB">>) ->
-    IntNum * 4 * 8;
+    IntNum * 4;
 
 get_len(IntNum, <<"float32_ABCD">>) ->
-    IntNum * 4 * 8;
+    IntNum * 4;
 
 get_len(IntNum, <<"float32_CDAB">>) ->
-    IntNum * 4 * 8;
+    IntNum * 4;
 
 get_len(IntNum, _Originaltype) ->
-    IntNum * 2 * 8.
+    IntNum * 2.
 
 get_addr(ChannelId, Min, Max, Step) ->
     case dgiot_data:get_consumer(?consumer(ChannelId), Step) of

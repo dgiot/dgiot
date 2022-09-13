@@ -100,9 +100,9 @@
     create => on_action_create_dgiot,
     params => ?ACTION_DATA_SPEC,
     title => #{en => <<"DGIOT CHANNEL">>,
-        zh => <<"数蛙物联网通道"/utf8>>},
+        zh => <<"DGIOT通道"/utf8>>},
     description => #{en => <<"Republish a MQTT message to dgiot channel">>,
-        zh => <<"重新发布消息到物联网通道"/utf8>>}
+        zh => <<"重新发布消息到DGIOT通道"/utf8>>}
 }).
 
 
@@ -194,5 +194,5 @@ on_action_dgiot(Selected, #{event := Event} = Envs) ->
 %%    dgiot_umeng:add_notification(Ruleid, DevAddr, NewPayload);
 
 post_rule(Msg) ->
-    io:format("~s ~p Msg = ~p.~n", [?FILE, ?LINE, Msg]).
-%%    ?LOG(debug, "~s ~p Msg = ~p.~n", [?FILE, ?LINE, Msg]).
+%%    io:format("~s ~p Msg = ~p.~n", [?FILE, ?LINE, Msg]).
+    ?LOG(debug, "~s ~p Msg = ~p.~n", [?FILE, ?LINE, Msg]).

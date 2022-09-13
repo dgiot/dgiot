@@ -23,6 +23,7 @@
 -export([
     start_time/0,
     get_iso_8601/1,
+    get_iso_8601_loacl/0,
     timezone/0,
     nowstamp/0,
     local_time/0,
@@ -52,12 +53,31 @@
     , hour_from/0
     , hour_from/1
     , timestamp/0
+    , last_month/1
 ]).
 
 -define(MS_ONE_DAY, 86400000).
 
 -import(dgiot_utils, [to_int/1, to_list/1, to_binary/1, tokens/2]).
 -define(TIMEZONE, + 8).
+
+
+get_iso_8601_loacl() ->
+    {{Y1, M1, D1}, {H1, Mm1, S1}} = calendar:local_time(),
+    F =
+        fun(Num) ->
+            NumL = to_list(Num),
+            case length(NumL) of
+                1 ->
+                    "0" ++ NumL;
+                _ ->
+                    NumL
+            end
+        end,
+    [Y, M, D, H, Mn, S] = [F(Num) || Num <- [Y1, M1, D1, H1, Mm1, S1]],
+    lists:concat([Y, "-", M, "-", D, "T", H, ":", Mn, ":", S]).
+
+
 
 get_iso_8601(Expire_syncpoint) ->
     utc(Expire_syncpoint).
@@ -230,7 +250,6 @@ to_unixtime(Time) when is_binary(Time) ->
 to_unixtime(LocalTime) ->
     localtime_to_unixtime(LocalTime).
 
-
 -spec now_microsecs() -> integer().
 now_microsecs() ->
     now_microsecs(os:timestamp()).
@@ -316,3 +335,24 @@ timestamp_to_datetime(Timestamp) ->
     calendar:universal_time_to_local_time(
         calendar:gregorian_seconds_to_datetime(Timestamp div 1000 +
             calendar:datetime_to_gregorian_seconds({{1970, 1, 1}, {0, 0, 0}}))).
+
+last_month(Count) ->
+    {{Year, Month, Day}, {_Hour, _Minute, _Second}} = calendar:local_time(),
+    EndTime = dgiot_datetime:localtime_to_unixtime({{Year, Month, Day}, {23, 59, 59}}),
+    StartTime = dgiot_datetime:localtime_to_unixtime({{Year, Month, 1}, {0, 0, 0}}),
+    last_month(StartTime, EndTime, Count - 1).
+
+last_month(StartTime, EndTime, 0) ->
+    {StartTime * 1000, EndTime * 1000};
+
+last_month(StartTime, EndTime, Count) ->
+    {{Year, Month, _Day}, {_Hour, _Minute, _Second}} = dgiot_datetime:unixtime_to_localtime(StartTime),
+    {NewYear, NewMonth} =
+        case Month of
+            1 ->
+                {Year - 1, 12};
+            _ ->
+                {Year, Month - 1}
+        end,
+    NewStartTime = dgiot_datetime:localtime_to_unixtime({{NewYear, NewMonth, 1}, {0, 0, 0}}),
+    last_month(NewStartTime, EndTime, Count - 1).

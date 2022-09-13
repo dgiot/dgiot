@@ -74,6 +74,108 @@ do_request(get_file_signature, Args, _Context, _Req) ->
         _ -> {404, #{<<"code">> => 1001, <<"error">> => <<"not support this type">>}}
     end;
 
+% 获取配置
+do_request(get_configuration, _, _Context, _Req) ->
+    DictId = dgiot_parse_id:get_dictid(<<"dgiotconfiguration">>, <<"configuration">>, <<"configuration">>, <<"dgiotconfiguration">>),
+    case dgiot_parse:get_object(<<"Dict">>, DictId) of
+        {ok, #{<<"data">> := Data}} ->
+            {ok, #{<<"code">> => 200, <<"msg">> => <<"success">>, <<"data">> => Data}};
+        _ ->
+            Data = #{
+                <<"sms">> => #{
+                    <<"appid">> => <<"">>,
+                    <<"appkey">> => <<"">>,
+                    <<"sign">> => <<"">>
+                },
+                <<"mail">> => #{
+                    <<"username">> => <<"">>,
+                    <<"password">> => <<"">>,
+                    <<"smtp">> => <<"">>
+                }
+            },
+            {ok, #{<<"code">> => 200, <<"msg">> => <<"success">>, <<"data">> => Data}}
+    end;
+
+% 编辑配置
+do_request(post_configuration, #{<<"data">> := Data}, _Context, _Req) ->
+    DictId = dgiot_parse_id:get_dictid(<<"dgiotconfiguration">>, <<"configuration">>, <<"configuration">>, <<"dgiotconfiguration">>),
+    Result =
+        case dgiot_parse:get_object(<<"Dict">>, DictId) of
+            {ok, _} ->
+                dgiot_parse:update_object(<<"Dict">>, DictId, #{<<"data">> => Data});
+            _ ->
+                Dict = #{
+                    <<"key">> => <<"dgiotconfiguration">>,
+                    <<"type">> => <<"configuration">>,
+                    <<"class">> => <<"configuration">>,
+                    <<"title">> => <<"dgiotconfiguration">>,
+                    <<"data">> => Data
+                },
+                case dgiot_parse:create_object(<<"Dict">>, Dict) of
+                    {ok, Msg} ->
+                        {ok, Msg};
+                    {error, Reason1} ->
+                        {error, Reason1}
+                end
+        end,
+    dgiot_notification:save_configuration(),
+    Result;
+
+% 设备短信发送
+do_request(post_sendsms_deviceid, #{<<"deviceid">> := DeviceId, <<"tplid">> := TplId, <<"params">> := Params} = _Args, _Context, _Req) ->
+%%    io:format("~s ~p Args = ~p.~n", [?FILE, ?LINE, _Args]),
+    Mobile = dgiot_notification:get_Mobile(DeviceId),
+    dgiot_notification:send_sms(Mobile, TplId, Params);
+
+%数字工厂告警
+do_request(post_warnsendsms, #{<<"objectId">> := DeviceId, <<"branchId">> := BranchId, <<"datetimes">> := DateTimes, <<"docnumber">> := Docnumber, <<"username">> := UserName, <<"workshop">> := Workshop, <<"level">> := Level} = _Args, _Context, _Req) ->
+    case Level of
+        <<"1">> ->
+            Warn = <<"待首检"/utf8>>,
+            dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"realstatus">> => 3});
+        <<"2">> ->
+            Warn = <<"待尾检"/utf8>>,
+            dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"realstatus">> => 5});
+        _ ->
+            Warn = <<"告警"/utf8>>
+    end,
+    Warns = Warn,
+    case dgiot_parse:get_object(<<"_Role">>, BranchId) of
+        {ok, #{<<"objectId">> := RolesId, <<"ACL">> := Acl}} ->
+
+            Map = #{
+                <<"type">> => DeviceId,
+                <<"name">> => Workshop,
+                <<"status">> => 0,
+                <<"content">> => #{
+                    <<"alarm">> => _Args#{<<"deviceId">> => DeviceId},
+                    <<"alertstatus">> => 1
+                },
+                <<"ACL">> => Acl
+            },
+            dgiot_parse:create_object(<<"Notification">>, Map),
+            %循环得到部门下所有的手机号
+            Users = dgiot_parse_auth:get_UserIds(unicode:characters_to_binary(RolesId)),
+            UsersQuery = #{<<"where">> => #{<<"objectId">> => #{<<"$in">> => Users}}},
+            {ok, #{<<"results">> := Row}} = dgiot_parse:query_object(<<"_User">>, UsersQuery),
+            PhoneList = lists:foldl(fun(X, Acc) ->
+                Phone = unicode:characters_to_binary(dgiot_utils:to_list(maps:get(<<"phone">>, X))),
+                dgiot_notification:send_sms("+86", Phone, "1473069",
+                    [DateTimes, <<"-">>, UserName, Docnumber, Workshop, Warns],
+                    "1400635630", "40d9609b9e6212cbff051b4f1d4cabfc", <<"质云科技"/utf8>>),
+                Acc ++ [Phone]
+                                    end, [], Row),
+%      模板格式：时间：{1} {2}（发起人：{3}）（单据编号{4}）（车间：{5}）产生异常,警告等级为:{6}。
+            Json = #{<<"phones">> => PhoneList},
+            {ok, #{
+                <<"status">> => 200,
+                <<"msg">> => <<"success">>,
+                <<"data">> => Json
+            }};
+        _ ->
+            {error, #{<<"status">> => 404, <<"msg">> => <<"部门ID错误"/utf8>>, <<"result">> => <<"_Role info null">>}}
+    end;
+
 %% iot_hub 概要: 查询平台api资源 描述:jwt回调
 %% OperationId:get_jwtlogin
 %% 请求:POST /iotapi/get_jwtlogin

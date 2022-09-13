@@ -21,22 +21,81 @@
 -include_lib("dgiot/include/logger.hrl").
 
 -export([login/3]).
--export([properties_report/3]).
+-export([
+    properties_report/3
+    , firmware_report/3
+    , parse_payload/2
+]).
 
 
 properties_report(ProductId, DevAddr, Payload) when is_map(Payload) ->
-    io:format("~s ~p ProductId ~p, DevAddr ~p, Payload: ~p ~n", [?FILE, ?LINE, ProductId, DevAddr, Payload]),
-    dgiot_task:save_td(ProductId, DevAddr, Payload, #{});
+%%    io:format("~s ~p ProductId ~p, DevAddr ~p, Payload: ~p ~n", [?FILE, ?LINE, ProductId, DevAddr, Payload]),
+    OldPayload = parse_payload(ProductId, Payload),
+    NewPload =
+        case dgiot_hook:run_hook({opc, evidence, pump}, OldPayload) of
+            {ok, [Payload1]} ->
+                Payload1;
+            _ ->
+                OldPayload
+        end,
+    dgiot_device_profile:publish(ProductId, DevAddr, NewPload),
+    dgiot_task:save_td(ProductId, DevAddr, NewPload, #{});
 
 properties_report(ProductId, DevAddr, Payload) ->
     lists:map(fun
                   ({ChannelId, _Ctype}) ->
-                      dgiot_channelx:do_message(ChannelId, {dlink_device_report, ProductId, DevAddr, Payload});
+                      dgiot_channelx:do_message(ChannelId, {dlink_properties_report, ProductId, DevAddr, Payload});
                   (_) ->
                       pass
               end, dgiot_bridge:get_proctol_channel(ProductId)),
-    io:format("~s ~p ProductId ~p, DevAddr ~p, Payload: ~p ~n", [?FILE, ?LINE, ProductId, DevAddr, Payload]),
+%%    io:format("~s ~p ProductId ~p, DevAddr ~p, Payload: ~p ~n", [?FILE, ?LINE, ProductId, DevAddr, Payload]),
+    ok.
+
+firmware_report(ProductId, DevAddr, Payload) when is_map(Payload) ->
+%%    io:format("~s ~p ProductId ~p, DevAddr ~p, Payload: ~p ~n", [?FILE, ?LINE, ProductId, DevAddr, Payload]),
+    NewPload = parse_payload(ProductId, Payload),
+    dgiot_task:save_td(ProductId, DevAddr, NewPload, #{});
+
+firmware_report(ProductId, DevAddr, Payload) ->
+    lists:map(fun
+                  ({ChannelId, _Ctype}) ->
+                      dgiot_channelx:do_message(ChannelId, {dlink_firmware_report, ProductId, DevAddr, Payload});
+                  (_) ->
+                      pass
+              end, dgiot_bridge:get_proctol_channel(ProductId)),
+%%    io:format("~s ~p ProductId ~p, DevAddr ~p, Payload: ~p ~n", [?FILE, ?LINE, ProductId, DevAddr, Payload]),
     ok.
 
 login(_A, _B, _C) ->
     ok.
+
+parse_payload(ProductId, Payload) ->
+    case dgiot_product:lookup_prod(ProductId) of
+        {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
+            lists:foldl(fun(X, Acc) ->
+                case X of
+                    #{<<"identifier">> := Identifier,
+                        <<"dataSource">> := DtaSource} ->
+                        Dis =
+                            lists:foldl(
+                                fun
+                                    (#{<<"key">> := Key}, Acc1) ->
+                                        Acc1 ++ [Key];
+                                    (_, Acc1) ->
+                                        Acc1
+                                end, [], maps:get(<<"dis">>, DtaSource, [])),
+                        maps:fold(fun(PK, PV, Acc1) ->
+                            case lists:member(PK, Dis) of
+                                true ->
+                                    Acc1#{Identifier => PV};
+                                _ ->
+                                    Acc1#{PK => PV}
+                            end
+                                  end, Acc, Payload);
+                    _ ->
+                        Acc
+                end
+                        end, #{}, Props);
+        _Error ->
+            Payload
+    end.

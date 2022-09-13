@@ -29,6 +29,7 @@ Dlink协议是针对物联网开发领域设计的一种数据交换规范，数
 | 告警上报 |$dg/user/alarm/{productId}/{deviceId}/properties/report|平台|用户|
 | 组态消息 |$dg/user/konva/{DeviceId}/report|平台|用户|
 | 卡片消息 | $dg/user/realtimecard/{DeviceId}/report|平台|用户|
+| 设备状态消息 | $dg/user/devicestate/{DeviceId}/report |平台|用户|
 | 子属性上报 |$dg/thing/{productId}/{deviceAddr}/gateway/sub_devices/properties/report|设备|平台|
 | 子属性上报 |$dg/user/gateway/{deviceId}/sub_devices/properties/report|平台|用户|
 | 属性设置 | $dg/thing/{deviceId}/properties/set/request_id={request_id}|用户|平台|
@@ -38,9 +39,10 @@ Dlink协议是针对物联网开发领域设计的一种数据交换规范，数
 | 属性获取 |$dg/thing/{deviceId}/properties/get/request_id={request_id}|用户|平台|
 | 属性获取 |$dg/device/{productId}/{deviceAddr}/properties/get/response/request_id={request_id}|平台|设备|
 | 属性获取 |$dg/thing/{productId}/{deviceAddr}/properties/get/response/request_id={request_id}|设备|平台|
-| 属性获取|$dg/user/{deviceId}/properties/get/request_id={request_id}|平台|用户|
+| 属性获取 |$dg/user/{deviceId}/properties/get/request_id={request_id}|平台|用户|
 | 属性获取 |$dg/thing/{productId}/{deviceAddr}/shadow/get/request_id={request_id}|设备|平台|
 | 属性获取 |$dg/device/{productId}/{deviceAddr}/shadow/get/request_id={request_id}|平台|设备|
+| 属性采集 |$dg/device/{productId}/{deviceAddr}/properties|平台|设备|
 | 配置下发 |$dg/device/{productId}/{deviceAddr}/profile|平台|设备|
 | 事件上报 |$dg/thing/{productId}/{deviceAddr}/events|设备|平台|
 | 事件上报 |$dg/user/{deviceId}/events|平台|用户|
@@ -49,7 +51,8 @@ Dlink协议是针对物联网开发领域设计的一种数据交换规范，数
 | 通道设置 |$dg/user/channel/{channelId}/commands/response/request_id={request_id}|平台|用户|
 | 大屏消息 |$dg/user/dashboard/{dashboardId}/{productId}/{deviceId}|平台|用户|
 | 云云对接 |$dg/bridge/{bridgetopic}|平台|平台|
-
+| app对接 |$dg/user/uniapp/{SessionToken}/report|平台|app|
+| app对接 |$dg/thing/uniapp/{SessionToken}/report|app|平台|
 
 ## payload设计
 ### 属性上报 ($dg/thing/{productId}/{deviceAddr}/properties/report)

@@ -18,46 +18,51 @@
 -author("kenneth").
 -include("dgiot_device.hrl").
 -include_lib("dgiot/include/logger.hrl").
+-include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
 
--export([read_csv/2, read_from_csv/1, get_products/1, create_product/3, create_device/3, post_thing/2, get_CategoryId/1, get_channelAcl/1]).
+-export([read_csv/2, read_from_csv/1, get_products/1, create_product/4, create_device/3, post_thing/2, get_CategoryId/1, get_channelAcl/1]).
 -export([get_max_addrs/1]).
 
-%%  dgiot_product_csv:read_csv(<<"b28ee0e3c4">>, <<"modbustcp">>).
-read_csv(ChannelId, FileName) ->
-    read_from_csv(FileName),
+%%  dgiot_product_csv:read_csv(<<"8cff09f988">>, <<"modbustcp">>).
+read_csv(ChannelId, FilePath) ->
+    FileName = read_from_csv(FilePath),
     Productmap = dgiot_product_csv:get_products(FileName),
-    {Devicemap, ProductIds} = dgiot_product_csv:create_product(ChannelId, FileName, Productmap),
+    TdChannelId = dgiot_parse_id:get_channelid(dgiot_utils:to_binary(?BRIDGE_CHL), <<"TD">>, <<"TD资源通道"/utf8>>),
+    {Devicemap, ProductIds} = dgiot_product_csv:create_product(ChannelId, FileName, Productmap, TdChannelId),
     dgiot_product_csv:create_device(FileName, Devicemap, ProductIds),
+    timer:sleep(1000),
     dgiot_product_csv:post_thing(FileName, ProductIds),
+    timer:sleep(1000),
+    dgiot_bridge:control_channel(TdChannelId, <<"update">>),
     get_max_addrs(FileName).
 
-%% dgiot_product_csv:read_from_csv(<<"modbustcp">>)
-read_from_csv(FileName) ->
-    {file, Here} = code:is_loaded(?MODULE),
-    Dir = dgiot_httpc:url_join([filename:dirname(filename:dirname(Here)), "/priv/csv/"]),
-    Name = dgiot_utils:to_list(FileName),
-    AtomName = dgiot_utils:to_atom(FileName),
-    dgiot_data:init(AtomName),
-    NewName =
-        case filename:extension(Name) of
-            [] ->
-                Name ++ ".csv";
-            _ ->
-                Name
-        end,
-    Path = Dir ++ NewName,
-    put(count, -1),
-    Fun = fun(X) ->
-        Count = get(count),
-        case Count > 0 of
-            true ->
-                dgiot_data:insert(AtomName, Count, X ++ [0]);
-            _ ->
-                pass
-        end,
-        put(count, Count + 1)
-          end,
-    dgiot_utils:read_from_csv(Path, Fun).
+%% dgiot_product_csv:read_from_csv(<<"/dgiot_file/product/csv/modbustcp.csv">>)
+read_from_csv(FilePath) ->
+    Url = "http://127.0.0.1" ++ dgiot_utils:to_list(FilePath),
+    FileName = dgiot_utils:to_md5(FilePath),
+    {file, Here} = code:is_loaded(dgiot_product_csv),
+    DownloadPath = dgiot_httpc:url_join([filename:dirname(filename:dirname(Here)), "/priv/csv/"]) ++ dgiot_utils:to_list(FileName) ++ ".csv",
+    os:cmd("rm -rf " ++ DownloadPath),
+    case dgiot_httpc:download(Url, DownloadPath) of
+        {ok, saved_to_file} ->
+            AtomName = dgiot_utils:to_atom(FileName),
+            dgiot_data:init(AtomName),
+            put(count, -1),
+            Fun = fun(X) ->
+                Count = get(count),
+                case Count > 0 of
+                    true ->
+                        dgiot_data:insert(AtomName, Count, X ++ [0]);
+                    _ ->
+                        pass
+                end,
+                put(count, Count + 1)
+                  end,
+            dgiot_utils:read_from_csv(DownloadPath, Fun),
+            FileName;
+        _ ->
+            FileName
+    end.
 
 %%  ets:match(ruodian,{'_', ['$1', '_', <<"D6101">> | '_']}).
 get_products(FileName) ->
@@ -68,7 +73,7 @@ get_products(FileName) ->
         Acc#{ProductName => Devices}
                 end, #{}, Products).
 
-create_product(ChannelId, FileName, Productmap) ->
+create_product(ChannelId, FileName, Productmap, TdChannelId) ->
     AtomName = dgiot_utils:to_atom(FileName),
     maps:fold(fun(ProductName, [DeviceName | _] = DeviceNames, {Acc, Acc2}) ->
         Types = ets:match(AtomName, {'_', [ProductName, '$1', '$2', DeviceName | '_']}),
@@ -82,7 +87,7 @@ create_product(ChannelId, FileName, Productmap) ->
                     <<"category">> => #{<<"objectId">> => CategoryId, <<"__type">> => <<"Pointer">>, <<"className">> => <<"Category">>},
                     <<"desc">> => DevType,
                     <<"config">> => #{},
-                    <<"channel">> => #{<<"type">> => 1, <<"tdchannel">> => <<"24b9b4bc50">>, <<"otherchannel">> => [ChannelId]},
+                    <<"channel">> => #{<<"type">> => 1, <<"tdchannel">> => TdChannelId, <<"otherchannel">> => [ChannelId]},
                     <<"thing">> => #{},
                     <<"ACL">> => Acl,
                     <<"nodeType">> => 0,
@@ -110,6 +115,13 @@ create_device(FileName, Devicemap, ProductIds) ->
     maps:fold(fun(DeviceName, ProductId, _Acc) ->
         {_, ProductName} = maps:get(ProductId, ProductIds, {'_', '_'}),
         Devaddrs = dgiot_utils:unique_1(lists:flatten(ets:match(AtomName, {'_', [ProductName, '_', '_', DeviceName, '$1' | '_']}))),
+        NewAcl =
+            case dgiot_parse:get_object(<<"Product">>, ProductId) of
+                {ok, #{<<"ACL">> := Acl}} ->
+                    Acl;
+                _ ->
+                    #{<<114,111,108,101,58,229,188,128,229,143,145,232,128,133>> => #{<<"read">> => true, <<"write">> => true}}
+            end,
         lists:foldl(fun(Devaddr, _Acc1) ->
             dgiot_device:create_device(#{
                 <<"status">> => <<"ONLINE">>,
@@ -120,7 +132,7 @@ create_device(FileName, Devicemap, ProductIds) ->
                 <<"product">> => ProductId,
                 <<"basedata">> => #{},
                 <<"address">> => DeviceName,
-                <<"ACL">> => #{<<"role:admin">> => #{<<"read">> => true, <<"write">> => true}}})
+                <<"ACL">> => NewAcl})
                     end, #{}, Devaddrs)
               end, #{}, Devicemap).
 
@@ -175,6 +187,7 @@ get_properties(Things, AtomName, ProductId, ProductName) ->
         Propertie ++ [#{
             <<"name">> => Name,
             <<"index">> => 0,
+            <<"isstorage">> => true,
             <<"isshow">> => true,
             <<"dataForm">> => #{
                 <<"rate">> => 1,
@@ -226,7 +239,7 @@ get_max_addrs(FileName) ->
     Address = dgiot_utils:unique_1(lists:flatten(ets:match(AtomName, {'_', ['_', '_', '_', '_', '_', '_', '_', '_', '$1' | '_']}))),
     Address1 = [dgiot_utils:to_int(X) || X <- Address],
 %%    dgiot_data:insert(AtomName, adds, Address1),
-    {lists:min(Address1), lists:max(Address1)}.
+    {FileName, lists:min(Address1), lists:max(Address1)}.
 
 to_lower(Value) ->
     list_to_binary(string:to_lower(binary_to_list(Value))).

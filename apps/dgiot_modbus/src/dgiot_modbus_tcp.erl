@@ -106,7 +106,8 @@ handle_info({deliver, _, Msg}, #tcp{state = #state{id = ChannelId} = State} = TC
             case binary:split(Topic, <<$/>>, [global, trim]) of
                 [<<"$dg">>, <<"device">>, ProductId, DevAddr, <<"profile">>] ->
 %%                    设置参数
-                    Payloads = modbus_rtu:set_params(jsx:decode(Payload), ProductId, DevAddr),
+                    ProfilePayload = dgiot_device_profile:encode_profile(ProductId, jsx:decode(Payload)),
+                    Payloads = modbus_rtu:set_params(ProfilePayload, ProductId, DevAddr),
                     lists:map(fun(X) ->
                         dgiot_tcp_server:send(TCPState, X)
                               end, Payloads),
@@ -130,7 +131,8 @@ handle_info({deliver, _, Msg}, #tcp{state = #state{id = ChannelId} = State} = TC
             case binary:split(Topic, <<$/>>, [global, trim]) of
                 [<<"$dg">>, <<"device">>, ProductId, DevAddr, <<"profile">>] ->
                     %% 设置参数
-                    Payloads = modbus_rtu:set_params(jsx:decode(Payload), ProductId, DevAddr),
+                    ProfilePayload = dgiot_device_profile:encode_profile(ProductId, jsx:decode(Payload)),
+                    Payloads = modbus_rtu:set_params(ProfilePayload, ProductId, DevAddr),
                     lists:map(fun(X) ->
                         dgiot_tcp_server:send(TCPState, X)
                               end, Payloads),
@@ -141,7 +143,7 @@ handle_info({deliver, _, Msg}, #tcp{state = #state{id = ChannelId} = State} = TC
     end;
 %% {stop, TCPState} | {stop, Reason} | {ok, TCPState} | ok | stop
 handle_info(_Info, TCPState) ->
-    ?LOG(info, "TCPState ~p", [TCPState]),
+%%    ?LOG(info, "TCPState ~p", [TCPState]),
     {noreply, TCPState}.
 
 handle_call(_Msg, _From, TCPState) ->
@@ -169,7 +171,7 @@ get_deviceid(ProdcutId, DevAddr) ->
     DeviceId.
 
 create_device(DeviceId, ProductId, DTUMAC, DTUIP, Dtutype) ->
-    case dgiot_parse:get_object(<<"Product">>, ProductId) of
+    case dgiot_product:lookup_prod(ProductId) of
         {ok, #{<<"ACL">> := Acl, <<"devType">> := DevType}} ->
             case dgiot_parse:get_object(<<"Device">>, DeviceId) of
                 {ok, #{<<"devaddr">> := _GWAddr}} ->

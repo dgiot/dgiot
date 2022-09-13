@@ -14,17 +14,18 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 -module(dgiot_mqtt_client).
--author("zwx").
+-author("jonhliu").
 -behaviour(gen_server).
 -include_lib("dgiot/include/logger.hrl").
+-include_lib("dgiot/include/dgiot_client.hrl").
 
 %% API
--export([start_link/3, subscribe/3, publish/4]).
+-export([start_link/1, subscribe/3, publish/4]).
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
--record(state, {options, conn = disconnect, props, mod, childState}).
+-record(connect_state, {options, socket = disconnect, props, mod}).
 
 %%%===================================================================
 %%% API
@@ -36,114 +37,118 @@ subscribe(Client, Topic, Qos) ->
 publish(Client, Topic, Payload, Qos) ->
     gen_server:call(Client, {publish, Topic, Payload, Qos}).
 
-start_link(Mod, Init, Options) ->
-    gen_server:start_link(?MODULE, [Mod, Init, format(Options)], []).
+start_link(Args) ->
+    dgiot_client:start_link(?MODULE, Args).
 
 %%%===================================================================
 %%% gen_server callbacks
 %%%===================================================================
 
-init([Mod, Init, Options]) ->
-    case Mod:init(Init) of
-        {ok, ChildState} ->
+init([#{<<"channel">> := ChannelId, <<"client">> := ClientId, <<"mod">> := Mod, <<"options">> := Options} = Args]) ->
+    UserData = #connect_state{mod = Mod, options = Options#{clientid => ClientId}},
+    ChildState = maps:get(<<"child">>, Args, #{}),
+    Dclient = #dclient{channel = ChannelId, client = ClientId, status = ?DCLIENT_INTIALIZED, userdata = UserData, child = ChildState},
+    dgiot_client:add(ChannelId, ClientId),
+    case Mod:init(Dclient) of
+        {ok, NewDclient} ->
             process_flag(trap_exit, true),
-            self() ! connect,
-            {ok, #state{
-                mod = Mod,
-                options = Options,
-                childState = ChildState
-            }};
-        {error, Reason} ->
+            rand:seed(exs1024),
+            Time = erlang:round(rand:uniform() * 60 * 3 + 1) * 1000,
+            erlang:send_after(Time, self(), connect),
+            {ok, NewDclient, hibernate};
+        {stop, Reason} ->
             {stop, Reason}
     end.
 
-handle_call({publish, Topic, Payload, Qos}, _From, #state{conn = ConnPid} = State) ->
+handle_call({publish, Topic, Payload, Qos}, _From, #dclient{userdata = #connect_state{socket = ConnPid}} = Dclient) ->
     case ConnPid of
         disconnect ->
-            {reply, {error, disconnect}, State};
+            {reply, {error, disconnect}, Dclient};
         Pid ->
             Reply = emqtt:publish(Pid, Topic, Payload, Qos),
-            {reply, Reply, State}
+            {reply, Reply, Dclient}
     end;
 
-handle_call({subscribe, Topic, Qos}, _From, #state{conn = ConnPid} = State) ->
+handle_call({subscribe, Topic, Qos}, _From, #dclient{userdata = #connect_state{socket = ConnPid}} = Dclient) ->
     case ConnPid of
         disconnect ->
-            {reply, {error, disconnect}, State};
+            {reply, {error, disconnect}, Dclient};
         Pid ->
             Reply = emqtt:subscribe(Pid, {Topic, Qos}),
-            {reply, Reply, State}
+            {reply, Reply, Dclient}
     end;
 
-handle_call(_Request, _From, State) ->
-    {reply, ok, State}.
+handle_call(_Request, _From, Dclient) ->
+    {reply, ok, Dclient}.
 
-handle_cast(_Request, State) ->
-    {noreply, State}.
+handle_cast(_Request, Dclient) ->
+    {noreply, Dclient}.
 
-handle_info(connect, #state{options = Options, mod = Mod, childState = ChildState} = State) ->
+handle_info(connect, #dclient{userdata = #connect_state{options = Options, mod = Mod} = ConnectStat} = Dclient) ->
     case connect(Options) of
         {ok, ConnPid, Props} ->
-            case Mod:handle_info({connect, ConnPid}, ChildState) of
-                {noreply, NewChildState} ->
-                    {noreply, State#state{options = Options, childState = NewChildState, conn = ConnPid, props = Props}};
-                {stop, Reason, NewChildState} ->
-                    {stop, Reason, State#state{options = Options, childState = NewChildState, conn = ConnPid, props = Props}}
+            case Mod:handle_info({connect, ConnPid}, Dclient#dclient{userdata = ConnectStat#connect_state{props = Props}}) of
+                {noreply, NewDclient} ->
+                    {noreply, NewDclient};
+                {stop, Reason, NewDclient} ->
+                    {stop, Reason, NewDclient}
             end;
         {error, unauthorized} ->
-            ?LOG(warning,"connect ~p", [unauthorized]),
-            {stop, normal, State};
+            ?LOG(warning, "connect ~p", [unauthorized]),
+            {stop, normal, Dclient};
         {error, econnrefused} ->
-            {noreply, State#state{conn = disconnect, props = undefined}};
+            {noreply, Dclient#dclient{userdata = ConnectStat#connect_state{socket = disconnect, props = undefined}}};
         {error, Reason} ->
-            ?LOG(warning,"connect error,~p", [Reason]),
-            {noreply, State#state{conn = disconnect, props = undefined}}
+            ?LOG(warning, "connect error,~p", [Reason]),
+            {noreply, Dclient#dclient{userdata = ConnectStat#connect_state{socket = disconnect, props = undefined}}}
     end;
 
-handle_info({publish, Message}, #state{mod = Mod, childState = ChildState} = State) ->
-    case Mod:handle_info({publish, Message}, ChildState) of
-        {noreply, NewChildState} ->
-            {noreply, State#state{childState = NewChildState}};
-        {stop, Reason, NewChildState} ->
-            {stop, Reason, State#state{childState = NewChildState}}
+handle_info({publish, Message}, #dclient{userdata = #connect_state{mod = Mod}} = Dclient) ->
+    case Mod:handle_info({publish, Message}, Dclient) of
+        {noreply, NewDclient} ->
+            {noreply, NewDclient};
+        {stop, Reason, NewDclient} ->
+            {stop, Reason, NewDclient}
     end;
 
-handle_info({disconnected,shutdown,tcp_closed}, State) ->
-    {noreply, State#state{ conn = disconnect}};
-handle_info({'EXIT', _Conn, Reason}, #state{mod = Mod, childState = ChildState} = State) ->
-    case Mod:handle_info(disconnect, ChildState) of
-        {noreply, NewChildState} ->
-            Sec = application:get_env(dgiot_framework, reconnect, 10),
+handle_info({disconnected, shutdown, tcp_closed}, Dclient) ->
+    {noreply, Dclient#dclient{userdata = #connect_state{socket = disconnect}}};
+
+handle_info({'EXIT', _Conn, Reason}, #dclient{userdata = #connect_state{mod = Mod} = ConnectState} = Dclient) ->
+    case Mod:handle_info(disconnect, Dclient) of
+        {noreply, NewDclient} ->
+            Sec = application:get_env(dgiot, reconnect, 10),
             case erlang:system_time(second) - get(last) > Sec of
                 true ->
                     self() ! connect;
                 false ->
                     erlang:send_after(Sec * 1000, self(), connect)
             end,
-            {noreply, State#state{childState = NewChildState, conn = disconnect}};
-        {stop, Reason, NewChildState} ->
-            {stop, Reason, State#state{childState = NewChildState, conn = disconnect}}
+            {noreply, NewDclient#dclient{userdata = ConnectState#connect_state{socket = disconnect}}};
+        {stop, Reason, NewDclient} ->
+            {stop, Reason, NewDclient#dclient{userdata = ConnectState#connect_state{socket = disconnect}}}
     end;
 
-handle_info(Info, #state{mod = Mod, childState = ChildState} = State) ->
-    case Mod:handle_info(Info, ChildState) of
-        {noreply, NewChildState} ->
-            {noreply, State#state{childState = NewChildState}};
-        {stop, Reason, NewChildState} ->
-            {stop, Reason, State#state{childState = NewChildState, conn = disconnect}}
+handle_info(Info, #dclient{userdata = #connect_state{mod = Mod} = ConnectState} = Dclient) ->
+    case Mod:handle_info(Info, Dclient) of
+        {noreply, NewDclient} ->
+            {noreply, NewDclient};
+        {stop, Reason, NewDclient} ->
+            {stop, Reason, NewDclient#dclient{userdata = ConnectState#connect_state{socket = disconnect}}}
     end.
 
-terminate(Reason, #state{mod = Mod, childState = ChildState}) ->
-    Mod:terminate(Reason, ChildState).
+terminate(Reason, #dclient{userdata = #connect_state{mod = Mod}} = Dclient) ->
+    Mod:terminate(Reason, Dclient).
 
-code_change(OldVsn, #state{mod = Mod, childState = ChildState} = State, Extra) ->
-    {ok, NewChildState} = Mod:code_change(OldVsn, ChildState, Extra),
-    {ok, State#state{childState = NewChildState}}.
+code_change(OldVsn, #dclient{userdata = #connect_state{mod = Mod}} = Dclient, Extra) ->
+    Mod:code_change(OldVsn, Dclient, Extra).
+
 
 %%%===================================================================
 %%% Internal functions
 %%%===================================================================
-
+connect(Options) when is_map(Options) ->
+    connect(maps:to_list(Options));
 connect(Options) ->
     put(last, erlang:system_time(second)),
     case emqtt:start_link([{owner, self()} | Options]) of
@@ -151,38 +156,11 @@ connect(Options) ->
             case catch emqtt:connect(ConnPid) of
                 {ok, Props} ->
                     {ok, ConnPid, Props};
-                {error, {unauthorized_client,_}} ->
+                {error, {unauthorized_client, _}} ->
                     {error, unauthorized};
                 {error, Reason} ->
                     {error, Reason}
             end;
         {error, Reason} ->
             {error, Reason}
-    end.
-
-format(Opts) ->
-    lists:foldl(
-        fun(Fun, Acc) ->
-            Fun(Acc)
-        end, Opts, [fun format_ssl/1, fun format_clean_start/1]).
-
-format_ssl(Opts) ->
-    case proplists:get_value(ssl, Opts) of
-        true ->
-            case proplists:get_value(ssl_opts, Opts) of
-                undefined ->
-                    [{ssl, false} | proplists:delete(ssl, Opts)];
-                _ ->
-                    Opts
-            end;
-        _ ->
-            [{ssl, false} | proplists:delete(ssl, Opts)]
-    end.
-
-format_clean_start(Opts) ->
-    case proplists:get_value(clean_start, Opts) of
-        true ->
-            Opts;
-        _ ->
-            [{clean_start, false} | proplists:delete(clean_start, Opts)]
     end.

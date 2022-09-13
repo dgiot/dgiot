@@ -28,7 +28,7 @@
     spec/0, spec/1,
     delete/2, delete/3,
     status/1,
-    do_event/3, do_event/4,  do_event/5,
+    do_event/3, do_event/4, do_event/5, send_after/3,
     do_message/2, do_message/3, do_message/4,
     call/3, call/4, call2/3, call2/4,
     start_link/1]).
@@ -102,6 +102,21 @@ do_event(ChannelType, ChannelId, EventId, Event, Timeout) ->
         end,
 %%    ?LOG(error, "EventId ~p", [EventId]),
     poolboy:transaction(Pool, Fun, Timeout).
+
+
+send_after(Time, ChannelId, Message) ->
+    case dgiot_data:get({channeltype, ChannelId}) of
+        not_find ->
+            not_find;
+        ChannelType ->
+            Pool = ?CHANNEL(ChannelType, ChannelId),
+            Fun =
+                fun(Worker) ->
+                    erlang:send_after(Time, Worker, {message, Pool, Message}),
+                    ok
+                end,
+            poolboy:transaction(Pool, Fun, 5000)
+    end.
 
 do_message(ChannelId, Message) ->
     case dgiot_data:get({channeltype, ChannelId}) of
@@ -242,7 +257,7 @@ handle_info(Info, State) ->
         {Err, Reason} when Err == 'EXIT'; Err == error ->
             ?LOG(error, "do_message, ~p,~p", [Info, Reason]),
             {noreply, State};
-        _->
+        _ ->
             {noreply, State}
     end.
 

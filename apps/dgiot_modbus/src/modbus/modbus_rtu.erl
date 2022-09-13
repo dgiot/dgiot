@@ -27,14 +27,71 @@
     build_req_message/1]
 ).
 
--export([modbus_encoder/4, modbus_decoder/5, is16/1, set_params/3, decode_data/5]).
+-export([modbus_encoder/4, modbus_decoder/5, is16/1, set_params/3, decode_data/5, get_datasource/1]).
 
 -define(TYPE, ?MODBUS_RTU).
 
 %% 注册协议参数
 -params(#{
-    <<"originaltype">> => #{
+    <<"slaveid">> => #{
         order => 1,
+        type => string,
+        required => true,
+        default => <<"0000"/utf8>>,
+        title => #{
+            zh => <<"从机地址"/utf8>>
+        },
+        description => #{
+            zh => <<"从机地址(16进制加0X,例如:0X10,否在是10进制),范围1-247,一个字节"/utf8>>
+        }
+    },
+    <<"operatetype">> => #{
+        order => 2,
+        type => string,
+        required => true,
+        default => #{<<"value">> => <<"readCoils">>, <<"label">> => <<"0X01:读线圈寄存器"/utf8>>},
+        enum => [#{<<"value">> => <<"readCoils">>, <<"label">> => <<"0X01:读线圈寄存器"/utf8>>},
+            #{<<"value">> => <<"readInputs">>, <<"label">> => <<"0X02:读离散输入寄存器"/utf8>>},
+            #{<<"value">> => <<"readHregs">>, <<"label">> => <<"0X03:读保持寄存器"/utf8>>},
+            #{<<"value">> => <<"readIregs">>, <<"label">> => <<"0X04:读输入寄存器"/utf8>>},
+            #{<<"value">> => <<"writeCoil">>, <<"label">> => <<"0X05:写单个线圈寄存器"/utf8>>},
+            #{<<"value">> => <<"writeHreg">>, <<"label">> => <<"0X06:写单个保持寄存器"/utf8>>},
+            #{<<"value">> => <<"writeCoils">>, <<"label">> => <<"0X0f:写多个线圈寄存器"/utf8>>},
+            #{<<"value">> => <<"writeHregs">>, <<"label">> => <<"0X10:写多个保持寄存器"/utf8>>}
+        ],
+        title => #{
+            zh => <<"寄存器功能码"/utf8>>
+        },
+        description => #{
+            zh => <<"寄存器功能码"/utf8>>
+        }
+    },
+    <<"address">> => #{
+        order => 3,
+        type => string,
+        required => true,
+        default => <<"0X00"/utf8>>,
+        title => #{
+            zh => <<"寄存器起始地址"/utf8>>
+        },
+        description => #{
+            zh => <<"寄存器起始地址:原数据地址(16进制加0X,例如:0X10,否在是10进制);8位寄存器,一个字节;16位寄存器,两个字节;32位寄存器,四个字节"/utf8>>
+        }
+    },
+    <<"registersnumber">> => #{
+        order => 4,
+        type => string,
+        required => true,
+        default => <<"1">>,
+        title => #{
+            zh => <<"寄存器个数"/utf8>>
+        },
+        description => #{
+            zh => <<"寄存器个数(多个寄存器个数)"/utf8>>
+        }
+    },
+    <<"originaltype">> => #{
+        order => 5,
         type => string,
         required => true,
         default => #{<<"value">> => <<"bit">>, <<"label">> => <<"位"/utf8>>},
@@ -56,63 +113,6 @@
         },
         description => #{
             zh => <<"数据格式"/utf8>>
-        }
-    },
-    <<"slaveid">> => #{
-        order => 2,
-        type => string,
-        required => true,
-        default => <<"0000"/utf8>>,
-        title => #{
-            zh => <<"从机地址"/utf8>>
-        },
-        description => #{
-            zh => <<"从机地址(16进制加0X,例如:0X10,否在是10进制),范围1-247,一个字节"/utf8>>
-        }
-    },
-    <<"operatetype">> => #{
-        order => 3,
-        type => string,
-        required => true,
-        default => #{<<"value">> => <<"readCoils">>, <<"label">> => <<"0X01:读线圈寄存器"/utf8>>},
-        enum => [#{<<"value">> => <<"readCoils">>, <<"label">> => <<"0X01:读线圈寄存器"/utf8>>},
-            #{<<"value">> => <<"readInputs">>, <<"label">> => <<"0X02:读离散输入寄存器"/utf8>>},
-            #{<<"value">> => <<"readHregs">>, <<"label">> => <<"0X03:读保持寄存器"/utf8>>},
-            #{<<"value">> => <<"readIregs">>, <<"label">> => <<"0X04:读输入寄存器"/utf8>>},
-            #{<<"value">> => <<"writeCoil">>, <<"label">> => <<"0X05:写单个线圈寄存器"/utf8>>},
-            #{<<"value">> => <<"writeHreg">>, <<"label">> => <<"0X06:写单个保持寄存器"/utf8>>},
-            #{<<"value">> => <<"writeCoils">>, <<"label">> => <<"0X0f:写多个线圈寄存器"/utf8>>},
-            #{<<"value">> => <<"writeHregs">>, <<"label">> => <<"0X10:写多个保持寄存器"/utf8>>}
-        ],
-        title => #{
-            zh => <<"寄存器状态"/utf8>>
-        },
-        description => #{
-            zh => <<"寄存器状态"/utf8>>
-        }
-    },
-    <<"address">> => #{
-        order => 4,
-        type => string,
-        required => true,
-        default => <<"0X00"/utf8>>,
-        title => #{
-            zh => <<"寄存器地址"/utf8>>
-        },
-        description => #{
-            zh => <<"寄存器地址:原数据地址(16进制加0X,例如:0X10,否在是10进制);8位寄存器,一个字节;16位寄存器,两个字节;32位寄存器,四个字节"/utf8>>
-        }
-    },
-    <<"registersnumber">> => #{
-        order => 5,
-        type => string,
-        required => true,
-        default => <<"1">>,
-        title => #{
-            zh => <<"寄存器个数"/utf8>>
-        },
-        description => #{
-            zh => <<"寄存器个数(多个寄存器个数)"/utf8>>
         }
     }
 }).
@@ -144,50 +144,56 @@ init(State) ->
 %%    {ok, State}.
 
 to_frame(#{
+    <<"data">> := Data,
     <<"registersnumber">> := Quality,
     <<"slaveid">> := SlaveId,
     <<"operatetype">> := Operatetype,
+    <<"originaltype">> := Originaltype,
     <<"address">> := Address
 }) ->
-    encode_data(Quality, Address, SlaveId, Operatetype);
+    encode_data(Data, Quality, Address, SlaveId, Operatetype, Originaltype);
 
 %%<<"cmd">> => Cmd,
 %%<<"gateway">> => DtuAddr,
 %%<<"addr">> => SlaveId,
 %%<<"di">> => Address
 to_frame(#{
-    <<"data">> := Value,
+    <<"data">> := Data,
+    <<"registersnumber">> := Quality,
     <<"gateway">> := DtuAddr,
     <<"slaveid">> := SlaveId,
+    <<"originaltype">> := Originaltype,
     <<"address">> := Address
 }) ->
     case dgiot_device:get_subdevice(DtuAddr, SlaveId) of
         not_find -> [];
         [ProductId, _DevAddr] ->
-            encode_data(Value, Address, SlaveId, ProductId)
+            encode_data(Data, Quality, Address, SlaveId, ProductId, Originaltype)
     end.
 
 %% Quality 读的时候代表寄存器个数，16位的寄存器，一个寄存器表示两个字节，写的时候代表实际下发值
-encode_data(Quality, Address, SlaveId, OperateType) ->
-    {FunCode, NewQuality} =
+encode_data(Data, Quality, Address, SlaveId, OperateType, Originaltype) ->
+    FunCode =
         case OperateType of
-            <<"readCoils">> -> {?FC_READ_COILS, dgiot_utils:to_int(Quality)};
-            <<"readInputs">> -> {?FC_READ_INPUTS, dgiot_utils:to_int(Quality)};
-            <<"readHregs">> -> {?FC_READ_HREGS, dgiot_utils:to_int(Quality)};
-            <<"readIregs">> -> {?FC_READ_IREGS, dgiot_utils:to_int(Quality)};
-            <<"writeCoil">> -> {?FC_WRITE_COIL, dgiot_utils:to_int(Quality)};
-            <<"writeHreg">> -> {?FC_WRITE_HREG, dgiot_utils:to_int(Quality)}; %%需要校验，写多个线圈是什么状态
-            <<"writeCoils">> -> {?FC_WRITE_COILS, dgiot_utils:to_int(Quality)};
-            <<"writeHregs">> -> {?FC_WRITE_HREGS, dgiot_utils:to_int(Quality)}; %%需要校验，写多个保持寄存器是什么状态
-            _ -> {?FC_READ_HREGS, dgiot_utils:to_int(dgiot_utils:to_int(Quality))}
+            <<"readCoils">> -> ?FC_READ_COILS;
+            <<"readInputs">> -> ?FC_READ_INPUTS;
+            <<"readHregs">> -> ?FC_READ_HREGS;
+            <<"readIregs">> -> ?FC_READ_IREGS;
+            <<"writeCoil">> -> ?FC_WRITE_COIL;
+            <<"writeHreg">> -> ?FC_WRITE_HREG; %%需要校验，写多个线圈是什么状态
+            <<"writeCoils">> -> ?FC_WRITE_COILS;
+            <<"writeHregs">> -> ?FC_WRITE_HREGS; %%需要校验，写多个保持寄存器是什么状态
+            _ -> ?FC_READ_HREGS
         end,
     <<H:8, L:8>> = dgiot_utils:hex_to_binary(is16(Address)),
     <<Sh:8, Sl:8>> = dgiot_utils:hex_to_binary(is16(SlaveId)),
+    NewQuality = dgiot_utils:to_int(get_len(Quality, Originaltype) / 2),
     RtuReq = #rtu_req{
         slaveId = Sh * 256 + Sl,
         funcode = dgiot_utils:to_int(FunCode),
         address = H * 256 + L,
-        quality = NewQuality
+        quality = NewQuality,
+        data = dgiot_utils:to_int(Data)
     },
     build_req_message(RtuReq).
 
@@ -211,7 +217,7 @@ set_params(Payload, _ProductId, _DevAddr) ->
     Length = length(maps:keys(Payload)),
     Payloads =
         lists:foldl(fun(Index, Acc) ->
-            case maps:find(dgiot_utils:to_binary(Index), Payload) of
+            case maps:find(Index, Payload) of
                 {ok, #{
                     <<"dataForm">> := #{
                         <<"protocol">> := <<"MODBUSRTU">>,
@@ -219,7 +225,7 @@ set_params(Payload, _ProductId, _DevAddr) ->
                     <<"dataSource">> := #{
                         <<"slaveid">> := SlaveId,
                         <<"address">> := Address,
-                        <<"bytes">> := Bytes,
+                        <<"originaltype">> := Originaltype,
                         <<"operatetype">> := OperateType} = DataSource
                 } = Data} ->
                     case maps:find(<<"value">>, Data) of
@@ -246,6 +252,7 @@ set_params(Payload, _ProductId, _DevAddr) ->
                             Value1 = dgiot_utils:to_int(dgiot_task:string2value(Str1, <<"type">>)),
 %%                                    NewBt = Bytes * 8,
                             Registersnumber = maps:get(<<"registersnumber">>, DataSource, <<"1">>),
+                            Bytes = get_len(Registersnumber, Originaltype),
                             RtuReq = #rtu_req{
                                 slaveId = Sh * 256 + Sl,
                                 funcode = dgiot_utils:to_int(FunCode),
@@ -315,7 +322,7 @@ parse_frame(<<SlaveId:8, _/binary>> = Buff, Acc, #{<<"dtuaddr">> := DtuAddr, <<"
     end;
 %rtu modbus
 parse_frame(_Other, Acc, _State) ->
-    ?LOG(error, "_Other ~p", [_Other]),
+%%    ?LOG(error, "_Other ~p", [_Other]),
     {error, Acc}.
 
 decode_data(Buff, ProductId, DtuAddr, Address, Acc) ->
@@ -424,7 +431,7 @@ build_req_message(Req) when is_record(Req, rtu_req) ->
                 ByteCount = length(binary_to_list(ValuesBin)),
                 <<(Req#rtu_req.slaveId):8, (Req#rtu_req.funcode):8, (Req#rtu_req.address):16, Quantity:16, ByteCount:8, ValuesBin/binary>>;
             ?FC_WRITE_HREG ->
-                ValueBin = list_word16_to_binary([Req#rtu_req.quality]),
+                ValueBin = list_word16_to_binary([Req#rtu_req.data]),
                 <<(Req#rtu_req.slaveId):8, (Req#rtu_req.funcode):8, (Req#rtu_req.address):16, ValueBin/binary>>;
             ?FC_WRITE_HREGS ->
 %%                ValuesBin = list_word16_to_binary(Req#rtu_req.quality),
@@ -607,6 +614,7 @@ format_value(Buff, #{<<"identifier">> := BitIdentifier,
                     IntOffset = dgiot_utils:to_int(Offset),
                     IntNum = dgiot_utils:to_int(Num),
                     IntLen = get_len(IntNum, Originaltype),
+                    IntOffsetLen = get_len(IntOffset, Originaltype),
                     Value =
                         case IntOffset of
                             0 ->
@@ -618,7 +626,7 @@ format_value(Buff, #{<<"identifier">> := BitIdentifier,
                                         V
                                 end;
                             _ ->
-                                <<_:IntOffset/binary, V:IntLen/binary, _/binary>> = Buff,
+                                <<_:IntOffsetLen/binary, V:IntLen/binary, _/binary>> = Buff,
                                 case format_value(V, X, Props) of
                                     {Value1, _Rest} ->
                                         Value1;
@@ -736,34 +744,41 @@ format_value(_, #{<<"identifier">> := Field}, _Props) ->
 
 %% 获取寄存器字节长度
 get_len(IntNum, <<"short16_AB">>) ->
-    IntNum * 2 * 8;
+    dgiot_utils:to_int(IntNum) * 2;
 
 get_len(IntNum, <<"short16_BA">>) ->
-    IntNum * 2 * 8;
+    dgiot_utils:to_int(IntNum) * 2;
 
 get_len(IntNum, <<"ushort16_AB">>) ->
-    IntNum * 2 * 8;
+    dgiot_utils:to_int(IntNum) * 2;
 
 get_len(IntNum, <<"ushort16_BA">>) ->
-    IntNum * 2 * 8;
+    dgiot_utils:to_int(IntNum) * 2;
 
 get_len(IntNum, <<"long32_ABCD">>) ->
-    IntNum * 4 * 8;
+    dgiot_utils:to_int(IntNum) * 4;
 
 get_len(IntNum, <<"long32_CDAB">>) ->
-    IntNum * 4 * 8;
+    dgiot_utils:to_int(IntNum) * 4;
 
 get_len(IntNum, <<"ulong32_ABCD">>) ->
-    IntNum * 4 * 8;
+    dgiot_utils:to_int(IntNum) * 4;
 
 get_len(IntNum, <<"ulong32_CDAB">>) ->
-    IntNum * 4 * 8;
+    dgiot_utils:to_int(IntNum) * 4;
 
 get_len(IntNum, <<"float32_ABCD">>) ->
-    IntNum * 4 * 8;
+    dgiot_utils:to_int(IntNum) * 4;
 
 get_len(IntNum, <<"float32_CDAB">>) ->
-    IntNum * 4 * 8;
+    dgiot_utils:to_int(IntNum) * 4;
 
 get_len(IntNum, _Originaltype) ->
-    IntNum * 2 * 8.
+    dgiot_utils:to_int(IntNum) * 2.
+
+
+get_datasource(#{<<"operatetype">> := <<"writeHreg">>, <<"data">> := Data} = DataSource) ->
+    DataSource#{<<"data">> => Data};
+
+get_datasource(DataSource) ->
+    DataSource.

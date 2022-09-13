@@ -255,7 +255,6 @@ put_role(RoleId) ->
     end.
 
 get_roletemp(FileName, TempName, SessionToken) ->
-    ?LOG(info, "FileName ~p", [FileName]),
     case dgiot_parse:query_object(<<"Dict">>, #{
         <<"order">> => <<"updatedAt">>, <<"limit">> => 1,
         <<"where">> => #{<<"key">> => TempName}},

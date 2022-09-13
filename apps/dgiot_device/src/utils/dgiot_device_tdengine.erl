@@ -22,6 +22,7 @@
 
 -export([get_device/3, get_device/4, get_device/5]).
 -export([get_history_data/3, get_realtime_data/3]).
+-export([get_history_data2/7]).
 
 %% #{<<"keys">> => <<"last_row(*)">>, <<"limit">> => 1} 查询td最新的一条device
 get_device(ProductId, DevAddr, Query) ->
@@ -111,6 +112,8 @@ get_device(Channel, ProductId, DeviceId, _DevAddr, Query) ->
     end.
 
 %% SELECT max(day_electricity) '时间' ,max(charge_current) '日期' FROM _2d26a94cf8._c5e1093e30 WHERE createdat >= now - 1h INTERVAL(1h) limit 10;
+%% SELECT spread(cumulativescale) FROM _797197ad06 WHERE  createdat >= now - 1Y INTERVAL(1h);
+%% SELECT last(cumulativescale) FROM _797197ad06 WHERE createdat >= now - 1Y INTERVAL(1h);
 get_history_data(Channel, TableName, Query) ->
     dgiot_tdengine:transaction(Channel,
         fun(Context) ->
@@ -146,3 +149,15 @@ get_realtime_data(Channel, TableName, Query) ->
             end
         end).
 
+get_history_data2(Order, Channel, TableName, Interval, ProductId, StartTime, _EndTime) ->
+%%    io:format("~s ~p Order= ~p, Channel= ~p, TableName= ~p, TableName= ~p,~n Interval= ~p, ProductId= ~p, ~n StartTime= ~p, EndTime =~p. ~n",[?FILE,?LINE,Order, Channel, TableName, TableName, Interval, ProductId, StartTime, _EndTime]),
+    dgiot_tdengine:transaction(Channel,
+        fun(Context) ->
+            Database = ProductId,
+            DB = dgiot_tdengine_select:format_db(?Database(Database)),
+            BinStartTime = dgiot_utils:to_binary(StartTime),
+            Tail = <<" where createdat >= ", BinStartTime/binary,  " INTERVAL(", Interval/binary, ") ", ";">>,
+            Sql = <<"SELECT ", Order/binary, " FROM ", DB/binary, TableName/binary, Tail/binary>>,
+            ?LOG(error, "Sql ~s", [Sql]),
+            dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_query, Sql)
+        end).

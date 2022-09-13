@@ -62,7 +62,7 @@
 %%|16   |写   |整型、字符型、状态字、浮点型      |
 %%——————————————————————————————————————————————
 
--record(rtu_req, {slaveId, funcode, address, registersnumber, dataByteSize, quality}).
+-record(rtu_req, {slaveId, funcode, address, registersnumber, dataByteSize, quality, data}).
 -record(rtu_pdu, {slaveId, funcode, dataByteSize, data}).
 -record(tcp_request, {sock, tid = 1, address = 1, function, start, data}).
 

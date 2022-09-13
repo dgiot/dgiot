@@ -94,15 +94,8 @@ do_request(post_graphql, Body, #{<<"sessionToken">> := SessionToken} = _Context,
 do_request(post_tree, #{<<"class">> := Class, <<"parent">> := Parent, <<"filter">> := Filter}, #{<<"sessionToken">> := SessionToken} = _Context, _Req0) ->
     dgiot_parse_utils:get_classtree(Class, Parent, jsx:decode(Filter, [{labels, binary}, return_maps]), SessionToken);
 
-do_request(post_batch, Body, #{base_path := BasePath} = _Context, Req) ->
-    Headers = dgiot_req:headers(Req),
-    Requests =
-        lists:foldr(
-            fun(#{<<"path">> := Path} = Request, Acc) ->
-                Path1 = re:replace(Path, BasePath, <<>>, [{return, binary}]),
-                [Request#{<<"path">> => Path1} | Acc]
-            end, [], maps:get(<<"requests">>, Body)),
-    case dgiot_parse:batch(Requests, Headers, [{from, rest}]) of
+do_request(post_batch, #{<<"requests">> := Requests}, _Context, _Req) ->
+    case dgiot_parse:batch(Requests) of
         {ok, Result} -> {200, Result};
         {error, Reason} -> {400, Reason}
     end;

@@ -1,0 +1,231 @@
+{
+  "type": "page",
+  "body": [
+    {
+      "id": "u:2c72c2d76916",
+      "api": {
+        "url": "iotapi/sendsms/parse_objectid",
+        "data": {
+          "tplid": "${tplid}",
+          "params": [
+            "${updatedAt}",
+            "${product_name}",
+            "${name}",
+            "${devaddr}",
+            "${alarm_level}",
+            "${alarm_message}"
+          ]
+        },
+        "method": "post",
+        "headers": {
+          "store": "localStorage",
+          "dgiotReplace": "parse_objectid"
+        },
+        "dataType": "json",
+        "requestAdaptor": "console.log('ffds ', ...api.data)\r\nreturn {\r\n    ...api,\r\n    data: {\r\n        tplid: ...api.data.tplid\r\n    }\r\n}"
+      },
+      "body": [
+        {
+          "hint": "1519757",
+          "name": "tplid",
+          "type": "input-text",
+          "label": "模板编号",
+          "value": "1519757",
+          "visible": false,
+          "disabled": "",
+          "readOnly": true,
+          "visibleOn": "",
+          "clearValueOnHidden": false
+        },
+        {
+          "mode": "horizontal",
+          "name": "alarm_createdAt",
+          "size": "md",
+          "type": "input-datetime",
+          "label": "告警时间",
+          "value": "now",
+          "format": "YYYY-MM-DD HH:mm:ss",
+          "maxDate": "",
+          "minDate": "",
+          "clearable": false,
+          "horizontal": {
+            "left": 2,
+            "right": 10,
+            "leftFixed": "sm"
+          },
+          "placeholder": "请选择日期时间",
+          "validateApi": ""
+        },
+        {
+          "id": "u:55d89cd2eb42",
+          "api": "",
+          "body": [
+            {
+              "hint": "",
+              "mode": "horizontal",
+              "name": "product_name",
+              "size": "md",
+              "type": "input-text",
+              "label": "产品名称",
+              "inline": false,
+              "readOnly": true,
+              "horizontal": {
+                "left": 2,
+                "right": 10,
+                "leftFixed": "sm"
+              },
+              "submitOnChange": false
+            }
+          ],
+          "mode": "inline",
+          "type": "form",
+          "title": "",
+          "target": "alarm_form",
+          "initApi": {
+            "url": "iotapi/classes/Product/${_productid}",
+            "data": null,
+            "method": "get",
+            "adaptor": "return {\r\n  \"status\":0,\r\n  \"msg\":\"\",\r\n  \"data\":response.data\r\n  }",
+            "responseData": {
+              "product_name": "${name}"
+            },
+            "requestAdaptor": ""
+          },
+          "className": "m-t-lg m-b-lg",
+          "horizontal": {
+            "left": 2,
+            "right": 10,
+            "leftFixed": "normal"
+          },
+          "submitText": "",
+          "wrapWithPanel": false
+        },
+        {
+          "id": "u:55d89cd2eb42",
+          "api": "",
+          "body": [
+            {
+              "hint": "",
+              "mode": "horizontal",
+              "name": "name",
+              "size": "md",
+              "type": "input-text",
+              "label": "设备名称",
+              "inline": false,
+              "readOnly": true,
+              "horizontal": {
+                "left": 2,
+                "right": 10,
+                "leftFixed": "sm"
+              }
+            },
+            {
+              "id": "u:a656b5747025",
+              "hint": "",
+              "mode": "horizontal",
+              "name": "devaddr",
+              "size": "md",
+              "type": "input-text",
+              "label": "设备地址",
+              "inline": false,
+              "readOnly": true,
+              "horizontal": {
+                "left": 1,
+                "right": 11,
+                "leftFixed": "sm"
+              }
+            }
+          ],
+          "mode": "normal",
+          "type": "form",
+          "title": "",
+          "target": "alarm_form",
+          "initApi": {
+            "url": "iotapi/classes/Device/${_deviceid}",
+            "data": null,
+            "method": "get",
+            "adaptor": "return {\r\n  \"status\":0,\r\n  \"msg\":\"\",\r\n  \"data\":response.data\r\n  }",
+            "responseData": {
+              "name": "${name}",
+              "devaddr": "${devaddr}"
+            },
+            "requestAdaptor": ""
+          },
+          "className": "m-b-lg",
+          "horizontal": {
+            "left": 2,
+            "right": 10,
+            "leftFixed": "normal"
+          },
+          "submitText": "",
+          "wrapWithPanel": false
+        },
+        {
+          "id": "u:b5d871f9d40f",
+          "mode": "horizontal",
+          "name": "alarm_level",
+          "size": "md",
+          "type": "input-text",
+          "label": "告警等级",
+          "value": "二级告警(自行填写)",
+          "horizontal": {
+            "left": 2,
+            "right": 10,
+            "leftFixed": "sm"
+          }
+        },
+        {
+          "id": "u:2739169db893",
+          "mode": "horizontal",
+          "name": "alarm_message",
+          "size": "md",
+          "type": "input-text",
+          "label": "告警信息",
+          "value": "温度过高(自行填写)",
+          "horizontal": {
+            "left": 2,
+            "right": 10,
+            "leftFixed": "sm"
+          }
+        },
+        {
+          "id": "u:cdfa428176ab",
+          "hint": "字段名改为物模型标识符",
+          "mode": "horizontal",
+          "name": "dgiot_alarmvalue",
+          "size": "md",
+          "type": "input-text",
+          "label": "告警值",
+          "readOnly": true,
+          "horizontal": {
+            "left": 2,
+            "right": 10,
+            "leftFixed": "sm"
+          }
+        }
+      ],
+      "name": "alarm_form",
+      "type": "form",
+      "rules": [
+      ],
+      "title": "",
+      "initApi": "",
+      "submitText": ""
+    }
+  ],
+  "style": {
+  },
+  "initApi": {
+    "url": "/iotapi/classes/Notification/parse_notificationid",
+    "method": "get",
+    "adaptor": "return {\r\n  \"status\":0,\r\n  \"msg\":\"\",\r\n  \"data\":response.data.content\r\n  }",
+    "headers": {
+      "store": "localStorage",
+      "dgiotReplace": "parse_notificationid"
+    },
+    "dataType": "json"
+  },
+  "messages": {
+  },
+  "initFetch": true
+}

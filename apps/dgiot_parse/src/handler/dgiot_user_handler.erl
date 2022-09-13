@@ -83,7 +83,14 @@ do_request(get_token, #{<<"name">> := Name} = _Body, #{<<"sessionToken">> := Ses
         <<"order">> => <<"updatedAt">>, <<"limit">> => 1,
         <<"where">> => #{<<"name">> => Name}}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
         {ok, #{<<"results">> := Results}} when length(Results) > 0 ->
-            dgiot_parse_auth:check_roles(Name);
+            Result = dgiot_parse_auth:check_roles(Name),
+            case Result of
+                {200, #{<<"access_token">> := Depart_token}} ->
+                    dgiot_parse_auth:put_usersession(#{<<Depart_token/binary>> => SessionToken}),
+                    Result;
+                _ ->
+                    Result
+            end;
         {ok, #{<<"results">> := Roles}} when length(Roles) == 0 ->
             {404, #{<<"code">> => 101, <<"error">> => <<"User not found.">>}};
         {error, Error} ->
@@ -199,7 +206,10 @@ do_request(post_login, #{<<"username">> := UserName, <<"password">> := Password}
 do_request(post_logout,  #{<<"sessionToken">> := SessionToken}, _Context, _Req) ->
     dgiot_auth:delete_session(SessionToken),
     SessionId = dgiot_parse_id:get_sessionId(SessionToken),
-    dgiot_parse:del_object(<<"_Session">>, SessionId);
+    dgiot_parse:del_object(<<"_Session">>, SessionId),
+    dgiot_mqtt:unsubscribe_route_key(SessionToken),
+    dgiot_parse_auth:del_usersession(SessionToken),
+    dgiot_parse_auth:del_cookie(SessionToken);
 
 %% RoleUser 概要: 导库 描述:json文件导库
 %% OperationId:get_roleuser
@@ -238,12 +248,12 @@ do_request(delete_roleuser, #{<<"userid">> := UserId} = Body, #{<<"sessionToken"
 do_request(post_roleuser, Body, #{<<"sessionToken">> := SessionToken} = _Context, _Req0) ->
     dgiot_parse_auth:post_roleuser(Body, SessionToken);
 
-do_request(get_usertree, _Arg, Context, _Req) ->
-    Data = dgiot_parse_auth:get_usertree(Context),
+do_request(get_usertree, _Arg, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
+    Data = dgiot_parse_auth:get_usertree(SessionToken),
     {ok, #{
         <<"status">> => 0,
         <<"msg">> => <<"ok">>,
-        <<"data">> => #{<<"options">> => [Data]}
+        <<"data">> => #{<<"options">> => Data}
     }};
 
 %%  服务器不支持的API接口

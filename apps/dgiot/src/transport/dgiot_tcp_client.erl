@@ -23,7 +23,7 @@
 %% API
 -export([start_link/1, send/1, send/2, send/3]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
--record(connect_state, {host, port, mod, socket = undefined, freq = 30, count = 10}).
+-record(connect_state, {host, port, mod, socket = undefined, freq = 30, count = 1000}).
 -define(TIMEOUT, 10000).
 -define(TCP_OPTIONS, [binary, {active, once}, {packet, raw}, {reuseaddr, false}, {send_timeout, ?TIMEOUT}]).
 
@@ -108,7 +108,7 @@ handle_info({connection_ready, Socket}, #dclient{userdata = #connect_state{mod =
 handle_info({send, _PayLoad}, #dclient{userdata = #connect_state{socket = undefined}} = Dclient) ->
     {noreply, Dclient, hibernate};
 handle_info({send, PayLoad}, #dclient{userdata = #connect_state{host = _Ip, port = _Port, socket = Socket}} = Dclient) ->
-%%    io:format("~s ~p send to from ~p:~p : ~p ~n", [?FILE, ?LINE,  _Ip, _Port, dgiot_utils:to_hex(PayLoad)]),
+%%    io:format("~s ~p ~p send to from ~p:~p : ~p ~n", [?FILE, ?LINE, self(), _Ip, _Port, dgiot_utils:to_hex(PayLoad)]),
     gen_tcp:send(Socket, PayLoad),
     {noreply, Dclient, hibernate};
 
@@ -137,12 +137,12 @@ handle_info({tcp_error, _Socket, _Reason}, Dclient) ->
 handle_info({tcp_closed, Socket}, #dclient{channel = ChannelId, client = ClientId, userdata = #connect_state{mod = Mod}} = Dclient) ->
     gen_tcp:close(Socket),
     case Mod:handle_info(tcp_closed, Dclient) of
-        {noreply, ChildState} ->
+        {noreply, NewDclient} ->
             self() ! do_connect,
-            {noreply, Dclient#dclient{child = ChildState}, hibernate};
-        {stop, _Reason, ChildState} ->
+            {noreply, NewDclient, hibernate};
+        {stop, _Reason, NewDclient} ->
             dgiot_client:stop(ChannelId, ClientId),
-            {noreply, Dclient#dclient{child = ChildState}, hibernate}
+            {noreply, NewDclient, hibernate}
     end;
 
 handle_info(Info, #dclient{channel = ChannelId, client = ClientId, userdata = #connect_state{mod = Mod, socket = Socket}} = Dclient) ->

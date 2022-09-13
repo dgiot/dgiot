@@ -56,7 +56,7 @@
         order => 2,
         type => integer,
         required => true,
-        default => 8080,
+        default => 502,
         title => #{
             zh => <<"服务器端口"/utf8>>
         },
@@ -64,16 +64,28 @@
             zh => <<"服务器端口"/utf8>>
         }
     },
-    <<"file">> => #{
-        order => 2,
-        type => string,
+    <<"filepath">> => #{
+        order => 3,
+        type => upload,
         required => true,
-        default => <<"modbustcp">>,
+        default => <<"">>,
         title => #{
-            zh => <<"文件名"/utf8>>
+            zh => <<"csv文件"/utf8>>
         },
         description => #{
-            zh => <<"文件名"/utf8>>
+            zh => <<"上传csv点位文件"/utf8>>
+        }
+    },
+    <<"freq">> => #{
+        order => 4,
+        type => integer,
+        required => true,
+        default => 60,
+        title => #{
+            zh => <<"采集频率/秒"/utf8>>
+        },
+        description => #{
+            zh => <<"采集频率/秒"/utf8>>
         }
     },
     <<"ico">> => #{
@@ -99,12 +111,13 @@ start(ChannelId, ChannelArgs) ->
 init(?TYPE, ChannelId, #{
     <<"ip">> := Ip,
     <<"port">> := Port,
+    <<"freq">> := Freq,
     <<"Size">> := Size
 } = Args) ->
     {FileName, MinAddr, MaxAddr} =
-        case maps:find(<<"file">>, Args) of
-            {ok, FileName1} ->
-                {MinAddr1, MaxAddr1} = dgiot_product_csv:read_csv(ChannelId, FileName1),
+        case maps:find(<<"filepath">>, Args) of
+            {ok, FilePath} ->
+                {FileName1, MinAddr1, MaxAddr1} = dgiot_product_csv:read_csv(ChannelId, FilePath),
                 %% modbus_tcp:set_addr(ChannelId, MinAddr1, MaxAddr1),
                 {FileName1, MinAddr1, MaxAddr1};
             _ ->
@@ -114,10 +127,10 @@ init(?TYPE, ChannelId, #{
         <<"ip">> => Ip,
         <<"port">> => Port,
         <<"mod">> => dgiot_modbusc_tcp,
-        <<"count">> => 3,
-        <<"freq">> => 10,
         <<"child">> => #{
             filename => FileName,
+            data => <<>>,
+            freq => Freq,
             minaddr => MinAddr,
             maxaddr => MaxAddr}},
 %%    dgiot_client:add_clock(ChannelId, Start_time, End_time),

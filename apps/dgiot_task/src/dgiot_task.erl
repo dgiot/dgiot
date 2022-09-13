@@ -20,8 +20,8 @@
 -include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
 
 -export([start/1, start/2, send/3, get_pnque_len/1, save_pnque/4, get_pnque/1, del_pnque/1, save_td/4, merge_cache_data/3, save_cache_data/2]).
--export([get_control/3, get_collection/4, get_calculated/2, get_instruct/2, string2value/2, string2value/3]).
-
+-export([get_control/3, get_collection/3, get_calculated/2, get_instruct/2, get_storage/2, string2value/2, string2value/3]).
+-export([save_td_no_match/4]).
 start(ChannelId) ->
     lists:map(fun(Y) ->
         case Y of
@@ -45,7 +45,7 @@ send(ProductId, DevAddr, Payload) ->
     end.
 
 %%获取计算值，必须返回物模型里面的数据表示，不能用寄存器地址
-get_calculated(ProductId, Ack) ->
+get_calculated(ProductId, Calculated) ->
     case dgiot_product:lookup_prod(ProductId) of
         {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
             lists:foldl(fun(X, Acc) ->
@@ -54,13 +54,14 @@ get_calculated(ProductId, Ack) ->
                         Acc;
                     _ ->
                         case X of
-                            #{<<"identifier">> := Identifier, <<"dataForm">> := #{
+                            #{<<"isstorage">> := true,
+                                <<"identifier">> := Identifier, <<"dataForm">> := #{
                                 <<"strategy">> := <<"计算值"/utf8>>, <<"collection">> := Collection},
                                 <<"dataType">> := #{<<"type">> := Type, <<"specs">> := Specs}} ->
                                 Str1 = maps:fold(fun(K, V, Acc2) ->
                                     Str = re:replace(Acc2, dgiot_utils:to_list(<<"%%", K/binary>>), "(" ++ dgiot_utils:to_list(V) ++ ")", [global, {return, list}]),
                                     re:replace(Str, "%s", "(" ++ dgiot_utils:to_list(V) ++ ")", [global, {return, list}])
-                                                 end, dgiot_utils:to_list(Collection), Ack),
+                                                 end, dgiot_utils:to_list(Collection), Calculated),
                                 case string2value(Str1, Type, Specs) of
                                     error ->
                                         maps:without([Identifier], Acc);
@@ -71,13 +72,13 @@ get_calculated(ProductId, Ack) ->
                                 Acc
                         end
                 end
-                        end, Ack, Props);
+                        end, Calculated, Props);
         _Error ->
-            Ack
+            Calculated
     end.
 
 %% 主动上报 dis为[]
-get_collection(ProductId, [], Payload, Ack) ->
+get_collection(ProductId, [], Payload) ->
     case dgiot_product:lookup_prod(ProductId) of
         {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
             lists:foldl(fun(X, Acc2) ->
@@ -94,13 +95,13 @@ get_collection(ProductId, [], Payload, Ack) ->
                                 Acc2
                         end
                 end
-                        end, Ack, Props);
+                        end, Payload, Props);
         _Error ->
-            Ack
+            Payload
     end;
 
 %%转换设备上报值，必须返回物模型里面的数据表示，不能用寄存器地址
-get_collection(ProductId, Dis, Payload, Ack) ->
+get_collection(ProductId, Dis, Payload) ->
     case dgiot_product:lookup_prod(ProductId) of
         {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
             lists:foldl(fun(Identifier, Acc1) ->
@@ -119,9 +120,9 @@ get_collection(ProductId, Dis, Payload, Ack) ->
                             end
                     end
                             end, Acc1, Props)
-                        end, Ack, Dis);
+                        end, Payload, Dis);
         _Error ->
-            Ack
+            Payload
     end.
 
 %% 获取控制值
@@ -133,6 +134,32 @@ get_control(Round, Data, Control) ->
             Str = re:replace(dgiot_utils:to_list(Control), "%d", "(" ++ dgiot_utils:to_list(Data) ++ ")", [global, {return, list}]),
             Str1 = re:replace(Str, "%r", "(" ++ dgiot_utils:to_list(Round) ++ ")", [global, {return, list}]),
             dgiot_task:string2value(Str1, <<"type">>)
+    end.
+
+%%获取存储值
+get_storage(ProductId, Calculated) ->
+    case dgiot_product:lookup_prod(ProductId) of
+        {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
+            lists:foldl(fun(X, Acc) ->
+                case Acc of
+                    error ->
+                        Acc;
+                    _ ->
+                        case X of
+                            #{<<"isstorage">> := true, <<"identifier">> := Identifier} ->
+                                case maps:find(Identifier, Calculated) of
+                                    {ok, Value} ->
+                                        Acc#{Identifier => Value};
+                                    _ ->
+                                        Acc
+                                end;
+                            _ ->
+                                Acc
+                        end
+                end
+                        end, #{}, Props);
+        _Error ->
+            Calculated
     end.
 
 get_instruct(ProductId, Round) ->
@@ -200,8 +227,12 @@ string2value(Str, _) ->
                     error;
                 {ok, Exprs} ->
                     Bindings = erl_eval:new_bindings(),
-                    {value, Value, _} = erl_eval:exprs(Exprs, Bindings),
-                    Value
+                    case catch erl_eval:exprs(Exprs, Bindings) of
+                        {value, Value, _} ->
+                            Value;
+                        _ ->
+                            0
+                    end
             end;
         _ -> error
     end.
@@ -280,34 +311,52 @@ del_pnque(DtuId) ->
             pass
     end.
 
-save_td(ProductId, DevAddr, Ack, AppData) ->
+save_td(ProductId, DevAddr, Ack, _AppData) ->
     case length(maps:to_list(Ack)) of
         0 ->
             #{};
         _ ->
-            NewAck = dgiot_task:get_collection(ProductId, [], Ack, Ack),
-            NewData = dgiot_task:get_calculated(ProductId, NewAck),
-            Keys = dgiot_product:get_keys(ProductId),
             DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
-            Interval = maps:get(<<"interval">>, AppData, 3),
-            AllData = merge_cache_data(DeviceId, NewData, Interval),
-            AllDataKey = maps:keys(AllData),
-            case Keys -- AllDataKey of
-                List when length(List) == 0 andalso length(AllDataKey) =/= 0 ->
-                    ChannelId = dgiot_parse_id:get_channelid(dgiot_utils:to_binary(?BRIDGE_CHL), <<"DGIOTTOPO">>, <<"TOPO组态通道"/utf8>>),
-                    dgiot_channelx:do_message(ChannelId, {topo_thing, ProductId, DeviceId, AllData}),
-                    dgiot_tdengine_adapter:save(ProductId, DevAddr, AllData),
-                    Channel = dgiot_product:get_taskchannel(ProductId),
-                    dgiot_bridge:send_log(Channel, ProductId, DevAddr, "~s ~p save td => ProductId ~p DevAddr ~p ~ts ", [?FILE, ?LINE, ProductId, DevAddr, unicode:characters_to_list(jsx:encode(AllData))]),
-                    dgiot_metrics:inc(dgiot_task, <<"task_save">>, 1),
-                    NotificationTopic = <<"$dg/user/alarm/", ProductId/binary, "/", DeviceId/binary, "/properties/report">>,
-                    dgiot_mqtt:publish(DeviceId, NotificationTopic, jsx:encode(AllData)),
-                    AllData;
-                _ ->
-                    save_cache_data(DeviceId, AllData),
-                    AllData
+            Interval = dgiot_product:get_interval(ProductId),
+            %%            是否有缓存
+            CacheData = merge_cache_data(DeviceId, Ack, Interval),
+            %%            计算上报值
+            Collection = dgiot_task:get_collection(ProductId, [], CacheData),
+            %%            计算计算值
+            AllData = dgiot_task:get_calculated(ProductId, Collection),
+            %%            过滤存储值
+            Storage = dgiot_task:get_storage(ProductId, AllData),
+            case Interval of
+                0 ->
+                    save_cache_data(DeviceId, CacheData),
+                    dealwith_data(ProductId, DevAddr, DeviceId, AllData, Storage);
+                Interval ->
+                    Keys = dgiot_product:get_keys(ProductId),
+                    AllStorageKey = maps:keys(Storage),
+                    case Keys -- AllStorageKey of
+                        List when length(List) == 0 andalso length(AllStorageKey) =/= 0 ->
+                            dealwith_data(ProductId, DevAddr, DeviceId, AllData, Storage);
+                        _ ->
+                            save_cache_data(DeviceId, CacheData),
+                            AllData
+                    end
             end
     end.
+
+%% 处理数据
+dealwith_data(ProductId, DevAddr, DeviceId, AllData, Storage) ->
+    %%                    告警
+    NotificationTopic = <<"$dg/user/alarm/", ProductId/binary, "/", DeviceId/binary, "/properties/report">>,
+    dgiot_mqtt:publish(DeviceId, NotificationTopic, jsx:encode(AllData)),
+    %%                    实时数据
+    ChannelId = dgiot_parse_id:get_channelid(dgiot_utils:to_binary(?BRIDGE_CHL), <<"DGIOTTOPO">>, <<"TOPO组态通道"/utf8>>),
+    dgiot_channelx:do_message(ChannelId, {topo_thing, ProductId, DeviceId, AllData}),
+    %%                    save td
+    dgiot_tdengine_adapter:save(ProductId, DevAddr, Storage),
+    Channel = dgiot_product:get_taskchannel(ProductId),
+    dgiot_bridge:send_log(Channel, ProductId, DevAddr, "~s ~p save td => ProductId ~p DevAddr ~p ~ts ", [?FILE, ?LINE, ProductId, DevAddr, unicode:characters_to_list(jsx:encode(AllData))]),
+    dgiot_metrics:inc(dgiot_task, <<"task_save">>, 1),
+    AllData.
 
 save_cache_data(DeviceId, Data) ->
     NewData = maps:fold(fun(K, V, Acc) ->
@@ -316,6 +365,19 @@ save_cache_data(DeviceId, Data) ->
                         end, #{}, Data),
     dgiot_data:insert(?DGIOT_DATA_CACHE, DeviceId, {NewData, dgiot_datetime:now_secs()}).
 
+merge_cache_data(DeviceId, NewData, 0) ->
+    case dgiot_data:get(?DGIOT_DATA_CACHE, DeviceId) of
+        not_find ->
+            NewData;
+        {OldData, _Ts} ->
+            NewOldData =
+                maps:fold(fun(K, V, Acc) ->
+                    Key = dgiot_utils:to_binary(K),
+                    Acc#{Key => V}
+                          end, #{}, OldData),
+            dgiot_map:merge(NewOldData, NewData)
+    end;
+
 merge_cache_data(DeviceId, NewData, Interval) ->
     case dgiot_data:get(?DGIOT_DATA_CACHE, DeviceId) of
         not_find ->
@@ -323,12 +385,38 @@ merge_cache_data(DeviceId, NewData, Interval) ->
         {OldData, Ts} ->
             case dgiot_datetime:now_secs() - Ts < Interval of
                 true ->
-                    maps:fold(fun(K, V, Acc) ->
-                        Key = dgiot_utils:to_binary(K),
-                        Acc#{Key => V}
-                              end, NewData, OldData);
+                    NewOldData =
+                        maps:fold(fun(K, V, Acc) ->
+                            Key = dgiot_utils:to_binary(K),
+                            Acc#{Key => V}
+                                  end, #{}, OldData),
+                    dgiot_map:merge(NewOldData, NewData);
                 false ->
-                    save_cache_data(DeviceId, NewData),
                     NewData
             end
+    end.
+
+save_td_no_match(ProductId, DevAddr, Ack, AppData) ->
+    case length(maps:to_list(Ack)) of
+        0 ->
+            #{};
+        _ ->
+%%            计算上报值
+            Collection = dgiot_task:get_collection(ProductId, [], Ack),
+%%            计算计算值
+            Calculated = dgiot_task:get_calculated(ProductId, Collection),
+%%            过滤存储值
+            Storage = dgiot_task:get_storage(ProductId, Calculated),
+            DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
+            Interval = maps:get(<<"interval">>, AppData, 3),
+            AllData = merge_cache_data(DeviceId, Storage, Interval),
+            ChannelId = dgiot_parse_id:get_channelid(dgiot_utils:to_binary(?BRIDGE_CHL), <<"DGIOTTOPO">>, <<"TOPO组态通道"/utf8>>),
+            dgiot_channelx:do_message(ChannelId, {topo_thing, ProductId, DeviceId, AllData}),
+            dgiot_tdengine_adapter:save(ProductId, DevAddr, AllData),
+            Channel = dgiot_product:get_taskchannel(ProductId),
+            dgiot_bridge:send_log(Channel, ProductId, DevAddr, "~s ~p save td => ProductId ~p DevAddr ~p ~ts ", [?FILE, ?LINE, ProductId, DevAddr, unicode:characters_to_list(jsx:encode(AllData))]),
+            dgiot_metrics:inc(dgiot_task, <<"task_save">>, 1),
+            NotificationTopic = <<"$dg/user/alarm/", ProductId/binary, "/", DeviceId/binary, "/properties/report">>,
+            dgiot_mqtt:publish(DeviceId, NotificationTopic, jsx:encode(AllData)),
+            AllData
     end.

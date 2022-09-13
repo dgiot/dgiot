@@ -53,7 +53,8 @@
         default => #{<<"value">> => <<"11">>, <<"label">> => <<"读数据"/utf8>>},
         enum => [
             #{<<"value">> => <<"11">>, <<"label">> => <<"读数据"/utf8>>},
-            #{<<"value">> => <<"12">>, <<"label">> => <<"请求读后续数据"/utf8>>}
+            #{<<"value">> => <<"12">>, <<"label">> => <<"请求读后续数据"/utf8>>},
+            #{<<"value">> => <<"1C">>, <<"label">> => <<"下发控制"/utf8>>}
         ],
         title => #{
             zh => <<"功能码"/utf8>>
@@ -68,7 +69,8 @@
         required => true,
         default => #{<<"value">> => <<"00010000"/utf8>>, <<"label">> => <<"(当前)正向有功总电能"/utf8>>},
         enum => [
-            #{<<"value">> => <<"00010000"/utf8>>, <<"label">> => <<"正向有功"/utf8>>}
+            #{<<"value">> => <<"00010000"/utf8>>, <<"label">> => <<"正向有功"/utf8>>},
+            #{<<"value">> => <<"00000000"/utf8>>, <<"label">> => <<"拉合闸"/utf8>>}
         ],
         title => #{
             zh => <<"信息标识"/utf8>>
@@ -361,27 +363,27 @@ to_frame(#{
 frame_write_param(#{<<"meter">> := MeterAddr, <<"payload">> := Frame}) ->
     Addr = dlt645_proctol:reverse(dgiot_utils:hex_to_binary(MeterAddr)),
     Length = length(maps:keys(Frame)),
-    io:format("~s ~p SortFrame   ~p.~n", [?FILE, ?LINE, Length]),
+    io:format("~s ~p SortFrame ~p.~n", [?FILE, ?LINE, Length]),
     {BitList, Afn} =
         lists:foldl(fun(Index, {Acc, A}) ->
-            case maps:find(dgiot_utils:to_binary(Index), Frame) of
+            case maps:find(Index, Frame) of
                 {ok, #{<<"value">> := Value, <<"dataSource">> := #{<<"afn">> := AFN, <<"length">> := Len, <<"type">> := Type}}} ->
-                    io:format("~s ~p Value ~p.", [?FILE, ?LINE, Value]),
+%%                    io:format("~s ~p Value ~p.", [?FILE, ?LINE, Value]),
                     case Type of
                         <<"bytes">> ->
                             NewValue = dgiot_utils:hex_to_binary(Value),
-                            io:format("~s ~p NewValue   ~p.~n", [?FILE, ?LINE, NewValue]),
+%%                            io:format("~s ~p NewValue   ~p.~n", [?FILE, ?LINE, NewValue]),
                             {get_values(Acc, NewValue), dgiot_utils:hex_to_binary(AFN)};
                         <<"little">> ->
                             NewValue = dgiot_utils:to_int(Value),
                             L = dgiot_utils:to_int(Len),
                             Len1 = L * 8,
-                            io:format("~s ~p NewValue   ~p.~n", [?FILE, ?LINE, NewValue]),
+%%                            io:format("~s ~p NewValue   ~p.~n", [?FILE, ?LINE, NewValue]),
                             {get_values(Acc, <<NewValue:Len1/little>>), dgiot_utils:hex_to_binary(AFN)};
                         <<"bit">> ->
                             NewValue = dgiot_utils:to_int(Value),
                             L = dgiot_utils:to_int(Len),
-                            io:format("~s ~p NewValue   ~p.~n", [?FILE, ?LINE, NewValue]),
+%%                            io:format("~s ~p NewValue   ~p.~n", [?FILE, ?LINE, NewValue]),
                             {Acc ++ [{NewValue, L}], dgiot_utils:hex_to_binary(AFN)};
                         _ ->
                             {Acc, A}
@@ -390,12 +392,12 @@ frame_write_param(#{<<"meter">> := MeterAddr, <<"payload">> := Frame}) ->
                     {Acc, A}
             end
                     end, {[], 0}, lists:seq(1, Length)),
-    io:format("~s ~p BitList   ~p.~n", [?FILE, ?LINE, BitList]),
+%%    io:format("~s ~p BitList   ~p.~n", [?FILE, ?LINE, BitList]),
     UserZone = <<<<V:BitLen>> || {V, BitLen} <- BitList>>,
     UserZone33 = list_to_binary(dgiot_utils:add_33h(UserZone)),
     Len = byte_size(UserZone),
-    io:format("~s ~p UserZone  ~p", [?FILE, ?LINE, UserZone]),
-    io:format("~s ~p Addr  ~p. Afn ~p ~n", [?FILE, ?LINE, Addr, Afn]),
+%%    io:format("~s ~p UserZone  ~p", [?FILE, ?LINE, UserZone]),
+%%    io:format("~s ~p Addr  ~p. Afn ~p ~n", [?FILE, ?LINE, Addr, Afn]),
     Crc = dgiot_utils:get_parity(<<16#68, Addr/binary, 16#68, Afn/binary, Len:8, UserZone33/binary>>),
     <<
         16#68,

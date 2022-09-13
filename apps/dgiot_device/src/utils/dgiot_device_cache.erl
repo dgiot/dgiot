@@ -17,13 +17,16 @@
 -module(dgiot_device_cache).
 -author("kenneth").
 -include("dgiot_device.hrl").
+-dgiot_data("ets").
+-export([init_ets/0]).
 -include_lib("dgiot/include/logger.hrl").
 -include_lib("dgiot_tdengine/include/dgiot_tdengine.hrl").
-
 -export([parse_cache_Device/1, sync_parse/1, post/1, post/2, put/1, save/1, save/2, save_subdevice/2, get_subdevice/2, lookup/1, lookup/2, delete/1, delete/2]).
 -export([get_profile/1, get_profile/2, get_online/1, online/1, offline/1, offline_child/1, enable/1, disable/1, save_profile/1]).
--export([location/3, get_location/1, get_address/1]).
+-export([location/3, get_location/1, get_address/3]).
 
+init_ets() ->
+    dgiot_data:init(?DGIOT_LOCATION_ADDRESS).
 
 %% Device 数量统计，权限统计，在线离线统计，产品下面设备数量统计等是用户非常关系的数据指标
 parse_cache_Device(_ClassName) ->
@@ -31,7 +34,7 @@ parse_cache_Device(_ClassName) ->
     dgiot_product:load_cache(),
     Success = fun(Page) ->
         lists:map(fun(Device) ->
-            save_profile(Device),
+%%            save_profile(Device),
             dgiot_device:save(Device)
                   end, Page)
               end,
@@ -41,7 +44,6 @@ parse_cache_Device(_ClassName) ->
         <<"where">> => #{}
     },
     dgiot_parse_loader:start(<<"Device">>, Query, 0, 500, 1000000, Success).
-
 
 save(ProductId, DevAddr) ->
     DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
@@ -72,27 +74,24 @@ save_(#{<<"objectId">> := DeviceId, <<"devaddr">> := Devaddr, <<"product">> := P
             _ -> true
         end,
     IsEnable = maps:get(<<"isEnable">>, Device, false),
-    #{<<"longitude">> := Longitude, <<"latitude">> := Latitude} =
-        maps:get(<<"location">>, Device, #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => 120.161324, <<"latitude">> => 30.262441}),
+    {Longitude, Latitude} =
+        case maps:find(<<"location">>, Device) of
+            {ok, #{<<"longitude">> := Longitude1, <<"latitude">> := Latitude1}} ->
+                {Longitude1, Latitude1};
+            _ ->
+                {120.065714, 30.369491}
+        end,
     insert_mnesia(DeviceId, dgiot_role:get_acls(Device), Status, UpdatedAt, IsEnable, ProductId, Devaddr, DeviceSecret, node(), Longitude, Latitude).
 
 post(Device) ->
     put_content(Device),
     put_profile(Device),
+    #{<<"longitude">> := Longitude, <<"latitude">> := Latitude} = put_location(Device),
     Devaddr = maps:get(<<"devaddr">>, Device),
     Product = maps:get(<<"product">>, Device),
     ProductId = maps:get(<<"objectId">>, Product),
     DeviceSecret = maps:get(<<"deviceSecret">>, Device, <<"oioojn">>),
     DeviceId = maps:get(<<"objectId">>, Device, dgiot_parse_id:get_deviceid(ProductId, Devaddr)),
-    case dgiot_product:lookup_prod(ProductId) of
-        {ok, ProductInfo} ->
-            Data = maps:with([<<"profile">>, <<"content">>], ProductInfo),
-            dgiot_parse:update_object(<<"Device">>, DeviceId, Data);
-        _ ->
-            pass
-    end,
-    #{<<"longitude">> := Longitude, <<"latitude">> := Latitude} =
-        maps:get(<<"location">>, Device, #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => 120.161324, <<"latitude">> => 30.262441}),
     Status =
         case maps:get(<<"status">>, Device, <<"OFFLINE">>) of
             <<"OFFLINE">> -> false;
@@ -101,43 +100,38 @@ post(Device) ->
     IsEnable = maps:get(<<"isEnable">>, Device, false),
     insert_mnesia(DeviceId, dgiot_role:get_acls(Device), Status, dgiot_datetime:now_secs(), IsEnable, ProductId, Devaddr, DeviceSecret, node(), Longitude, Latitude).
 
+post(#{<<"ACL">> := _Acl} = Device, _SessionToken) ->
+    dgiot_device_cache:post(Device);
+
 post(Device, SessionToken) ->
     Devaddr = maps:get(<<"devaddr">>, Device),
     Product = maps:get(<<"product">>, Device),
     ProductId = maps:get(<<"objectId">>, Product),
     DeviceId = maps:get(<<"objectId">>, Device, dgiot_parse_id:get_deviceid(ProductId, Devaddr)),
-    ACL = maps:get(<<"ACL">>, Product, #{}),
-    DefaultAcl = #{<<"*">> => #{<<"read">> => true}, <<"role:admin">> => #{<<"read">> => true, <<"write">> => true}},
-    SetAcl = case dgiot_auth:get_session(dgiot_utils:to_binary(SessionToken)) of
-                 #{<<"roles">> := Roles} = _User ->
-                     [#{<<"name">> := Role} | _] = maps:values(Roles),
-                     GetAcl = ACL#{
-                         <<"role:", Role/binary>> => #{
-                             <<"read">> => true,
-                             <<"write">> => true
-                         }
-                     },
-                     GetAcl;
-                 Err ->
-                     io:format("~s ~p R = ~p.~n", [?FILE, ?LINE, Err]),
-                     DefaultAcl
-             end,
+    SetAcl =
+        case dgiot_auth:get_session(dgiot_utils:to_binary(SessionToken)) of
+            #{<<"roles">> := Roles} = _User ->
+                [#{<<"name">> := Role} | _] = maps:values(Roles),
+                #{
+                    <<"role:", Role/binary>> => #{
+                        <<"read">> => true,
+                        <<"write">> => true
+                    }
+                };
+            Err ->
+                ?LOG(error, "~s ~p DeviceId ~p  Err = ~p.~n", [?FILE, ?LINE, DeviceId, Err]),
+                #{<<"role:admin">> => #{<<"read">> => true, <<"write">> => true}}
+        end,
     dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"ACL">> => SetAcl}),
-    dgiot_device_cache:post(Device).
+    dgiot_device_cache:post(Device#{<<"ACL">> => SetAcl}).
 
 put(Device) ->
     DeviceId = maps:get(<<"objectId">>, Device),
     case lookup(DeviceId) of
-        {ok, #{<<"status">> := Status, <<"acl">> := Acl, <<"isEnable">> := IsEnable, <<"devaddr">> := Devaddr,
+        {ok, #{<<"status">> := Status, <<"acl">> := Acl, <<"isEnable">> := IsEnable, <<"devaddr">> := Devaddr, <<"time">> := Oldtime,
             <<"productid">> := ProductId, <<"devicesecret">> := DeviceSecret, <<"node">> := Node, <<"longitude">> := Longitude, <<"latitude">> := Latitude}} ->
             NewIsEnable = maps:get(<<"isEnable">>, Device, IsEnable),
-            NewStatus =
-                case maps:find(<<"status">>, Device) of
-                    error ->
-                        Status;
-                    {ok, <<"OFFLINE">>} -> false;
-                    _ -> true
-                end,
+            {NewStatus, Now} = check_time(Status, Device, Oldtime),
             NewAcl =
                 case maps:find(<<"ACL">>, Device) of
                     error ->
@@ -145,12 +139,43 @@ put(Device) ->
                     _ ->
                         dgiot_role:get_acls(Device)
                 end,
-            insert_mnesia(DeviceId, NewAcl, NewStatus, dgiot_datetime:now_secs(), NewIsEnable, ProductId, Devaddr, DeviceSecret, Node, Longitude, Latitude);
+            insert_mnesia(DeviceId, NewAcl, NewStatus, Now, NewIsEnable, ProductId, Devaddr, DeviceSecret, Node, Longitude, Latitude);
         _ ->
             pass
     end.
 
+check_time(_, #{<<"status">> := <<"OFFLINE">>}, Oldtime) ->
+    {false, Oldtime};
+
+check_time(_, #{<<"status">> := <<"ONLINE">>}, _Oldtime) ->
+    {true, dgiot_datetime:now_secs()};
+
+check_time(false, _, Oldtime) ->
+    {false, Oldtime};
+
+check_time(_, _, _) ->
+    {true, dgiot_datetime:now_secs()}.
+
 insert_mnesia(DeviceId, Acl, Status, Now, IsEnable, ProductId, Devaddr, DeviceSecret, Node, Longitude, Latitude) ->
+    Topic = <<"$dg/user/devicestate/", DeviceId/binary, "/report">>,
+    NewStatus =
+        case Status of
+            true ->
+                <<"ONLINE">>;
+            _ ->
+                <<"OFFLINE">>
+        end,
+    Maptype = dgiot_utils:to_binary(application:get_env(dgiot_device, map_type, "baidu")),
+    NewLocation = dgiot_device_channel:get_new_location(#{<<"longitude">> => Longitude, <<"latitude">> => Latitude}, Maptype),
+    Address =
+        case dgiot_data:get(?DGIOT_LOCATION_ADDRESS, DeviceId) of
+            not_find ->
+                get_address(DeviceId, Longitude, Latitude);
+            Addr ->
+                Addr
+        end,
+    dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(#{DeviceId => #{<<"status">> => NewStatus, <<"isEnable">> => IsEnable, <<"lastOnlineTime">> => Now, <<"address">> => Address, <<"location">> => NewLocation}})),
+%%    io:format("~s ~p Data = ~ts~n", [?FILE, ?LINE, jsx:encode(#{DeviceId => #{<<"status">> => NewStatus, <<"isEnable">> => IsEnable, <<"lastOnlineTime">> => Now, <<"address">> => Address}})]),
     dgiot_mnesia:insert(DeviceId, ['Device', Acl, Status, Now, IsEnable, dgiot_utils:to_atom(ProductId), Devaddr, DeviceSecret, Node, Longitude, Latitude]).
 
 %% 缓存设备的profile配置
@@ -186,7 +211,7 @@ put_content(#{<<"product">> := Product, <<"objectId">> := DeviceId}) ->
 put_content(_) ->
     pass.
 
-%% 根据产品的content 创建设备默认的content
+%% 根据产品的profile 创建设备默认的profile
 put_profile(#{<<"profile">> := _Content}) ->
     pass;
 put_profile(#{<<"product">> := Product, <<"objectId">> := DeviceId}) ->
@@ -199,6 +224,21 @@ put_profile(#{<<"product">> := Product, <<"objectId">> := DeviceId}) ->
     end;
 put_profile(_) ->
     pass.
+
+%% 根据产品的location 创建设备默认的location
+put_location(#{<<"location">> := Location}) ->
+    Location;
+put_location(#{<<"product">> := Product, <<"objectId">> := DeviceId}) ->
+    ProductId = maps:get(<<"objectId">>, Product),
+    case dgiot_product:lookup_prod(ProductId) of
+        {ok, #{<<"config">> := #{<<"location">> := Location, <<"address">> := Address}}} ->
+            dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"location">> => Location, <<"address">> => Address}),
+            Location;
+        _ ->
+            #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => 120.065714, <<"latitude">> => 30.369491}
+    end;
+put_location(_) ->
+    #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => 120.065714, <<"latitude">> => 30.369491}.
 
 enable(DeviceId) ->
     case lookup(DeviceId) of
@@ -232,19 +272,16 @@ get_location(DeviceId) ->
             #{}
     end.
 
-get_address(DeviceId) ->
-    case lookup(DeviceId) of
-        {ok, #{<<"longitude">> := LonDeg, <<"latitude">> := LatDeg}} ->
-            Address = dgiot_gps:get_baidu_addr(LonDeg, LatDeg),
-            case Address of
-                #{<<"baiduaddr">> := #{<<"formatted_address">> := Formatted_address}} ->
-                    Formatted_address;
-                _ ->
-                    <<"">>
-            end;
-        _ ->
-            <<"">>
-    end.
+get_address(DeviceId, DgLon, DgLat) ->
+    Address =
+        case dgiot_gps:get_baidu_addr(DgLon, DgLat) of
+            #{<<"baiduaddr">> := #{<<"formatted_address">> := Formatted_address}} ->
+                Formatted_address;
+            _ ->
+                <<"">>
+        end,
+    dgiot_data:insert(?DGIOT_LOCATION_ADDRESS, DeviceId, Address),
+    Address.
 
 
 get_online(DeviceId) ->
@@ -293,24 +330,24 @@ sync_parse(OffLine) ->
         {_, DeviceId, V} = X,
         Now = dgiot_datetime:now_secs(),
         case V of
-            {[Acl, _, Last, IsEnable, ProductId, Devaddr, DeviceSecret, Node, Longitude, Latitude]} when (Now - Last) < 0 ->
-                case dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"status">> => <<"ONLINE">>, <<"isEnable">> => IsEnable, <<"lastOnlineTime">> => Last}) of
+            ['Device', Acl, _, Last, IsEnable, ProductId, Devaddr, DeviceSecret, Node, Longitude, Latitude] when (Now - Last) < 0 ->
+                case dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"status">> => <<"ONLINE">>, <<"isEnable">> => IsEnable, <<"lastOnlineTime">> => Last, <<"location">> => #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => Longitude, <<"latitude">> => Latitude}}) of
                     {ok, _R} ->
                         insert_mnesia(DeviceId, Acl, true, Last, IsEnable, ProductId, Devaddr, DeviceSecret, Node, Longitude, Latitude);
                     _ ->
                         pass
                 end,
                 timer:sleep(50);
-            {[Acl, true, Last, IsEnable, ProductId, Devaddr, DeviceSecret, Node, Longitude, Latitude]} when (Now - Last) > OffLine ->
-                case dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"status">> => <<"OFFLINE">>, <<"isEnable">> => IsEnable, <<"lastOnlineTime">> => Last}) of
+            ['Device', Acl, true, Last, IsEnable, ProductId, Devaddr, DeviceSecret, Node, Longitude, Latitude] when (Now - Last) > OffLine ->
+                case dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"status">> => <<"OFFLINE">>, <<"isEnable">> => IsEnable, <<"lastOnlineTime">> => Last, <<"location">> => #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => Longitude, <<"latitude">> => Latitude}}) of
                     {ok, _R} ->
                         insert_mnesia(DeviceId, Acl, false, Last, IsEnable, ProductId, Devaddr, DeviceSecret, Node, Longitude, Latitude);
                     _ ->
                         pass
                 end,
                 timer:sleep(50);
-            {[Acl, false, Last, IsEnable, ProductId, Devaddr, DeviceSecret, Node, Longitude, Latitude]} when (Now - Last) < OffLine ->
-                case dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"status">> => <<"ONLINE">>, <<"isEnable">> => IsEnable, <<"lastOnlineTime">> => Last}) of
+            ['Device', Acl, false, Last, IsEnable, ProductId, Devaddr, DeviceSecret, Node, Longitude, Latitude] when (Now - Last) < OffLine ->
+                case dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"status">> => <<"ONLINE">>, <<"isEnable">> => IsEnable, <<"lastOnlineTime">> => Last, <<"location">> => #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => Longitude, <<"latitude">> => Latitude}}) of
                     {ok, _R} ->
                         insert_mnesia(DeviceId, Acl, true, Last, IsEnable, ProductId, Devaddr, DeviceSecret, Node, Longitude, Latitude);
                     _ ->

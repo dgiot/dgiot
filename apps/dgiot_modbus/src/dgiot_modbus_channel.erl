@@ -76,7 +76,7 @@
         }
     },
     <<"dtutype">> => #{
-        order => 4,
+        order => 5,
         type => string,
         required => true,
         default => <<"usr">>,
@@ -133,9 +133,8 @@ init(?TYPE, ChannelId, #{
         product = ProdcutId,
         dtutype = Dtutype
     },
+    {ok, State, dgiot_modbusrtu_tcp:start(Port, State)};
 
-%%    dgiot_data:insert({ChannelId, heartbeat}, {Heartbeat, Port}),
-    {ok, State, dgiot_modbus_tcp:start(Port, State)};
 
 init(?TYPE, _ChannelId, _Args) ->
     {ok, #{}, #{}}.

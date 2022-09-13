@@ -31,8 +31,18 @@ check(#{username := Username}, AuthResult, _)
 %%    io:format("~s ~p Username: ~p~n", [?FILE, ?LINE, Username]),
     {ok, AuthResult#{anonymous => true, auth_result => success}};
 
+check(#{username := <<"dgiot">>, password := Password}, AuthResult, _) ->
+    io:format("~s ~p Password: ~p~n", [?FILE, ?LINE, Password]),
+    SuperPwd = dgiot_utils:to_binary(dgiot:get_env(dgiot_dlink, super_pwd, <<"">>)),
+    case SuperPwd of
+        Password ->
+            {stop, AuthResult#{anonymous => false, auth_result => success}};
+        _ ->
+            {stop, AuthResult#{anonymous => false, auth_result => password_error}}
+    end;
+
 %% 当 clientid 和 password 为token 且相等的时候为用户登录
-check(#{clientid := Token, username := UserId, password := Token}, AuthResult, #{hash_type := _HashType}) ->
+check(#{clientid := <<Token:34/binary, _Type/binary>>, username := UserId, password := Token}, AuthResult, #{hash_type := _HashType}) ->
 %%    io:format("~s ~p UserId: ~p~n", [?FILE, ?LINE, UserId]),
     case dgiot_auth:get_session(Token) of
         #{<<"objectId">> := UserId} ->
@@ -69,7 +79,10 @@ do_check(AuthResult, Password, ProductID, DeviceAddr, DeviceId, Ip) ->
         {ok, #{<<"productSecret">> := Password} = Product} ->
             case dgiot_device:lookup(DeviceId) of
                 {ok, _} ->
-                    pass;
+                    Body = #{
+                        <<"status">> => <<"ONLINE">>},
+                    dgiot_device:online(DeviceId),
+                    dgiot_parse:update_object(<<"Device">>, DeviceId, Body);
                 _ ->
                     case Product of
                         #{<<"ACL">> := Acl, <<"name">> := Name, <<"devType">> := DevType, <<"dynamicReg">> := true} ->
