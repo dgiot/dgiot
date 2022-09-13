@@ -1,0 +1,8 @@
+[
+  {
+    "name": "factory_metric",
+    "help": "数据统计",
+    "type": "gauge",
+    "labels": []
+  }
+ ]

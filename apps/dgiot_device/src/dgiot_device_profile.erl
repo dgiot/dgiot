@@ -19,7 +19,7 @@
 -include("dgiot_device.hrl").
 -include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
 -include_lib("dgiot/include/logger.hrl").
--export([post/2, put/2, delete/3, publish/3, publish/4]).
+-export([post/2, put/2, delete/3, publish/3, publish/4, update_profile/2, encode_profile/2]).
 
 post('before', _BeforeData) ->
     ok;
@@ -28,10 +28,9 @@ post('after', _AfterData) ->
 
 %% 配置下发
 put('before', #{<<"id">> := DeviceId, <<"profile">> := UserProfile} = Device) ->
-%%    io:format("~s ~p Device = ~p.~n", [?FILE, ?LINE, _Device]),
-    dgiot_device:save_profile(Device),
     case dgiot_device:lookup(DeviceId) of
         {ok, #{<<"devaddr">> := Devaddr, <<"productid">> := ProductId}} ->
+            dgiot_device:save_profile(Device#{<<"objectId">> => DeviceId, <<"product">> => #{<<"objectId">> => ProductId}}),
             ProfileTopic =
                 case dgiot_product:lookup_prod(ProductId) of
                     {ok, #{<<"topics">> := #{<<"device_profile">> := ToipcTempl}}} ->
@@ -40,7 +39,6 @@ put('before', #{<<"id">> := DeviceId, <<"profile">> := UserProfile} = Device) ->
                     _ ->
                         <<"$dg/device/", ProductId/binary, "/", Devaddr/binary, "/profile">>
                 end,
-%%            io:format("~s ~p ProfileTopic = ~p.~n", [?FILE, ?LINE, ProfileTopic]),
             dgiot_mqtt:publish(DeviceId, ProfileTopic, jsx:encode(UserProfile));
         _ ->
             pass
@@ -69,4 +67,41 @@ publish(ProductId, DeviceAddr, DeviceProfile, Delay) ->
             pass;
         ChannelId ->
             dgiot_channelx:do_message(ChannelId, {sync_profile, self(), ProductId, DeviceAddr, DeviceProfile, Delay})
+    end.
+
+update_profile(DeviceId, NewProfile) ->
+    case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+        {ok, Device} ->
+            OldProfile = maps:get(<<"profile">>, Device, #{}),
+            dgiot_parse:update_object(<<"Device">>, DeviceId, #{
+                <<"profile">> => dgiot_map:merge(OldProfile, NewProfile)});
+        _ ->
+            pass
+    end.
+
+encode_profile(ProductId, Profile) ->
+    case dgiot_parse:get_object(<<"Product">>, ProductId) of
+        {ok, #{<<"name">> := ProductName, <<"thing">> := #{<<"properties">> := Properties}}} ->
+            lists:foldl(fun(X, Acc) ->
+                case X of
+                    #{<<"identifier">> := Identifier, <<"name">> := Name, <<"accessMode">> := <<"rw">>, <<"dataForm">> := DataForm, <<"dataSource">> := #{<<"_dlinkindex">> := Index} = DataSource} ->
+                        case maps:find(Identifier, Profile) of
+                            {ok, V} ->
+                                Acc#{
+                                    Index => #{
+                                        <<"value">> => V,
+                                        <<"identifier">> => Identifier,
+                                        <<"name">> => Name,
+                                        <<"productname">> => ProductName,
+                                        <<"dataSource">> => DataSource,
+                                        <<"dataForm">> => DataForm
+                                    }};
+                            _ ->
+                                Acc
+                        end;
+                    _ -> Acc
+                end
+                        end, #{}, Properties);
+        false ->
+            pass
     end.

@@ -1,10 +1,10 @@
 {
   "swagger": "2.0",
   "info": {
-    "title": "dgiot api",
-    "description": "dgiot物联网平台API接口, 高并发全连接物联网平台,支持私有云部署的全开放的IoT产品全生命周期管理平台",
+    "title": "DGIOT开源物联网平台接口手册",
+    "description": "DGIOT开源物联网平台接口手册, 高并发全连接物联网平台, 支持私有云部署的全开放的IoT产品全生命周期管理平台",
     "version": "2.0.0",
-    "termsOfService": "http://www.iotn2n.com",
+    "termsOfService": "https://www.dgiotcloud.cn/",
     "contact": {
       "name": "技术支持",
       "qq群": "34489690@qq.com"

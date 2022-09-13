@@ -21,21 +21,27 @@
 
 -export([add_field/4, get_field/1, check_fields/2, check_fields/3, get_time/2]).
 
-add_field(<<"enum">>, Database, TableName, LowerIdentifier) ->
+add_field(#{<<"type">> := <<"enum">>}, Database, TableName, LowerIdentifier) ->
     <<"ALTER TABLE ", Database/binary, TableName/binary, " ADD COLUMN ", LowerIdentifier/binary, " INT;">>;
-add_field(<<"file">>, Database, TableName, LowerIdentifier) ->
-    <<"ALTER TABLE ", Database/binary, TableName/binary, " ADD COLUMN ", LowerIdentifier/binary, " NCHAR(10);">>;
-add_field(<<"text">>, Database, TableName, LowerIdentifier) ->
-    <<"ALTER TABLE ", Database/binary, TableName/binary, " ADD COLUMN ", LowerIdentifier/binary, " NCHAR(10);">>;
-add_field(<<"url">>, Database, TableName, LowerIdentifier) ->
-    <<"ALTER TABLE ", Database/binary, TableName/binary, " ADD COLUMN ", LowerIdentifier/binary, " NCHAR(10);">>;
-add_field(<<"geopoint">>, Database, TableName, LowerIdentifier) ->
-    <<"ALTER TABLE ", Database/binary, TableName/binary, " ADD COLUMN ", LowerIdentifier/binary, " NCHAR(30);">>;
-add_field(<<"image">>, Database, TableName, LowerIdentifier) ->
+add_field(#{<<"type">> := <<"file">>} = Spec, Database, TableName, LowerIdentifier) ->
+    Size = integer_to_binary(min(maps:get(<<"size">>, Spec, 50), 200)),
+    <<"ALTER TABLE ", Database/binary, TableName/binary, " ADD COLUMN ", LowerIdentifier/binary, " NCHAR(", Size/binary, ");">>;
+add_field(#{<<"type">> := <<"text">>} = Spec, Database, TableName, LowerIdentifier) ->
+    Size = integer_to_binary(min(maps:get(<<"size">>, Spec, 50), 200)),
+    <<"ALTER TABLE ", Database/binary, TableName/binary, " ADD COLUMN ", LowerIdentifier/binary, " NCHAR(", Size/binary, ");">>;
+add_field(#{<<"type">> := <<"url">>} = Spec, Database, TableName, LowerIdentifier) ->
+    Size = integer_to_binary(min(maps:get(<<"size">>, Spec, 50), 200)),
+    <<"ALTER TABLE ", Database/binary, TableName/binary, " ADD COLUMN ", LowerIdentifier/binary, " NCHAR((", Size/binary, ");">>;
+add_field(#{<<"type">> := <<"geopoint">>} = Spec, Database, TableName, LowerIdentifier) ->
+    Size = integer_to_binary(min(maps:get(<<"size">>, Spec, 50), 200)),
+    <<"ALTER TABLE ", Database/binary, TableName/binary, " ADD COLUMN ", LowerIdentifier/binary, " NCHAR(", Size/binary, ");">>;
+add_field(#{<<"type">> := <<"image">>}, Database, TableName, LowerIdentifier) ->
     <<"ALTER TABLE ", Database/binary, TableName/binary, " ADD COLUMN ", LowerIdentifier/binary, " BIGINT;">>;
-add_field(<<"date">>, Database, TableName, LowerIdentifier) ->
+add_field(#{<<"type">> := <<"date">>}, Database, TableName, LowerIdentifier) ->
     <<"ALTER TABLE ", Database/binary, TableName/binary, " ADD COLUMN ", LowerIdentifier/binary, " TIMESTAMP;">>;
-add_field(Type, Database, TableName, LowerIdentifier) ->
+add_field(#{<<"type">> := <<"long">>}, Database, TableName, LowerIdentifier) ->
+    <<"ALTER TABLE ", Database/binary, TableName/binary, " ADD COLUMN ", LowerIdentifier/binary, " BIGINT;">>;
+add_field(#{<<"type">> := Type}, Database, TableName, LowerIdentifier) ->
     <<"ALTER TABLE ", Database/binary, TableName/binary, " ADD COLUMN ", LowerIdentifier/binary, " ", Type/binary, ";">>.
 
 %%  https://www.taosdata.com/cn/documentation/taos-sql#data-type
@@ -50,35 +56,41 @@ add_field(Type, Database, TableName, LowerIdentifier) ->
 %%  8	TINYINT     1        单字节整型，范围 [-127, 127], -128 用于 NULL
 %%  9	BOOL       	1        布尔型，{true, false}
 %%  10	NCHAR       自定义    记录包含多字节字符在内的字符串，如中文字符。每个 nchar 字符占用 4 bytes 的存储空间。字符串两端使用单引号引用，字符串内的单引号需用转义字符 \’。nchar 使用时须指定字符串大小，类型为 nchar(10) 的列表示此列的字符串最多存储 10 个 nchar 字符，会固定占用 40 bytes 的空间。如果用户字符串长度超出声明长度，将会报错。
-get_field(#{<<"isshow">> := false}) ->
+get_field(#{<<"isstorage">> := false}) ->
     pass;
-get_field(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"int">>}}) ->
+get_field(#{<<"isstorage">> := true} = Property) ->
+    get_field_(Property);
+get_field(#{<<"isshow">> := true} = Property) ->
+    get_field_(Property);
+get_field(_) ->
+    pass.
+get_field_(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"int">>}}) ->
     {Field, #{<<"type">> => <<"INT">>}};
-get_field(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"image">>}}) ->
+get_field_(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"image">>}}) ->
     {Field, #{<<"type">> => <<"BIGINT">>}};
-get_field(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"long">>}}) ->
+get_field_(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"long">>}}) ->
     {Field, #{<<"type">> => <<"BIGINT">>}};
-get_field(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"float">>}}) ->
+get_field_(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"float">>}}) ->
     {Field, #{<<"type">> => <<"FLOAT">>}};
-get_field(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"date">>}}) ->
+get_field_(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"date">>}}) ->
     {Field, #{<<"type">> => <<"TIMESTAMP">>}};
-get_field(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"bool">>}}) ->
+get_field_(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"bool">>}}) ->
     {Field, #{<<"type">> => <<"BOOL">>}};
-get_field(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"double">>}}) ->
+get_field_(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"double">>}}) ->
     {Field, #{<<"type">> => <<"DOUBLE">>}};
-get_field(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"string">>} = Spec}) ->
+get_field_(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"string">>} = Spec}) ->
     Size = integer_to_binary(min(maps:get(<<"size">>, Spec, 10), 200)),
     {Field, #{<<"type">> => <<"NCHAR(", Size/binary, ")">>}};
-get_field(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"text">>} = Spec}) ->
+get_field_(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"text">>} = Spec}) ->
     Size = integer_to_binary(min(maps:get(<<"size">>, Spec, 50), 200)),
     {Field, #{<<"type">> => <<"NCHAR(", Size/binary, ")">>}};
-get_field(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"geopoint">>} = Spec}) ->
+get_field_(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"geopoint">>} = Spec}) ->
     Size = integer_to_binary(min(maps:get(<<"size">>, Spec, 50), 200)),
     {Field, #{<<"type">> => <<"NCHAR(", Size/binary, ")">>}};
-get_field(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"enum">>, <<"specs">> := _Specs}}) ->
+get_field_(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"enum">>, <<"specs">> := _Specs}}) ->
 %%    Size = integer_to_binary(maps:size(Specs)),
     {Field, #{<<"type">> => <<"INT">>}};
-get_field(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"struct">>, <<"specs">> := SubFields}}) ->
+get_field_(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"struct">>, <<"specs">> := SubFields}}) ->
     [get_field(SubField#{<<"identifier">> => ?Struct(Field, Field1)}) || #{<<"identifier">> := Field1} = SubField <- SubFields].
 
 
@@ -121,6 +133,7 @@ check_field(Data, Props) when is_map(Data) ->
 
 check_field(Data, #{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := Type} = DataType}) ->
     NewField = list_to_binary(string:to_lower(binary_to_list(Field))),
+    Specs = maps:get(<<"specs">>, DataType, #{}),
     case proplists:get_value(NewField, Data) of
         undefined ->
             undefined;
@@ -135,7 +148,6 @@ check_field(Data, #{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> :=
                     _ when Type1 == <<"INT">>; Type1 == <<"DATE">> ->
                         Value;
                     _ when Type1 == <<"FLOAT">>; Type1 == <<"DOUBLE">> ->
-                        Specs = maps:get(<<"specs">>, DataType, #{}),
                         Precision = maps:get(<<"precision">>, Specs, 3),
                         dgiot_utils:to_float(Value / 1, Precision);
                     <<"BOOL">> ->
@@ -157,7 +169,7 @@ check_field(Data, #{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> :=
                     _ ->
                         Value
                 end,
-            case check_validate(NewValue, DataType) of
+            case check_validate(NewValue, Specs) of
                 true ->
                     NewValue;
                 false ->
@@ -181,11 +193,16 @@ check_validate(_, _) ->
 
 get_time(V, Interval) ->
     NewV =
-        case binary:split(V, <<$.>>, [global, trim]) of
-            [NewV1, _] ->
-                NewV1;
+        case binary:split(V, <<$T>>, [global, trim]) of
+            [_, _] ->
+                V;
             _ ->
-                V
+                case binary:split(V, <<$.>>, [global, trim]) of
+                    [NewV1, _] ->
+                        NewV1;
+                    _ ->
+                        V
+                end
         end,
     Size = erlang:size(Interval) - 1,
     <<_:Size/binary, Type/binary>> = Interval,

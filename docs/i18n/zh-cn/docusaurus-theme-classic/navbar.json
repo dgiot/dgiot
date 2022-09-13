@@ -1,0 +1,70 @@
+{
+  "title": {
+    "message": "dgiot",
+    "description": "The title in the navbar"
+  },
+  "item.label.Docs": {
+    "message": "文档",
+    "description": "Navbar item with label Docs"
+  },
+  "item.label.Home": {
+    "message": "首页",
+    "description": "Navbar item with label Home"
+  },
+  "link.item.label.Introduction": {
+    "message": "官网介绍",
+    "description": "The label of footer link with label=Introduction linking to /dgiot/intro"
+  },
+  "item.label.DgiotCloud": {
+    "message": "迪格云",
+    "description": "Navbar item with label DgiotCloud"
+  },
+  "item.label.Media": {
+    "message": "媒体",
+    "description": "Navbar item with label Media"
+  },
+  "item.label.Solution": {
+    "message": "解决方案",
+    "description": "Navbar item with label Solution"
+  },
+  "item.label.SmartBuilding": {
+    "message": "智慧工地",
+    "description": "Navbar item with label SmartBuilding"
+  },
+  "item.label.SmartVenue": {
+    "message": "智慧场馆",
+    "description": "Navbar item with label SmartVenue"
+  },
+  "item.label.DigitalFactory": {
+    "message": "数字工厂",
+    "description": "Navbar item with label DigitalFactory"
+  },
+  "item.label.CloudDetection": {
+    "message": "云检测",
+    "description": "Navbar item with label CloudDetection"
+  },
+  "item.label.CloudTest": {
+    "message": "云压测",
+    "description": "Navbar item with label CloudTest"
+  },
+  "item.label.Community": {
+    "message": "社区",
+    "description": "Navbar item with label Community"
+  },
+  "item.label.Products": {
+    "message": "产品",
+    "description": "Navbar item with label Products"
+  },
+  "item.label.Blog": {
+    "message": "博客",
+    "description": "Navbar item with label Blog"
+  },
+  "item.label.Support": {
+    "message": "联系我们",
+    "description": "Navbar item with label Support"
+  },
+  "item.label.GitHub": {
+    "message": "GitHub",
+    "description": "Navbar item with label GitHub"
+  }
+}

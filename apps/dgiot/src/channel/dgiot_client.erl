@@ -22,9 +22,11 @@
 
 %% API
 -export([register/3, unregister/1, start_link/2, add_clock/3, notify/3, add/2, set_consumer/2, get_consumer/1]).
--export([start/2, start/3, stop/1, stop/2, stop/3, restart/2, get/2, send/4]).
+-export([start/2, start/3, stop/1, stop/2, stop/3, restart/2, get/2, send/4, count/1]).
 -export([get_time/1, get_nexttime/2, get_count/3, get_rand/1]).
--export([get_que/2, save_que/3, start_que/1, get_pnque_len/2, save_pnque/5, get_pnque/2, del_pnque/2, start_pnque/2]).
+-export([get_que/2, save_que/3, start_que/1, stop_que/1]).
+-export([get_pnque_len/2, save_pnque/5, get_pnque/2, del_pnque/2, start_pnque/2, stop_pnque/2]).
+
 -type(result() :: any()).   %% todo 目前只做参数检查，不做结果检查
 
 %% @doc 注册client的通道管理池子
@@ -109,10 +111,30 @@ start_pnque(ChannelId, ClinetId) ->
                         DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
                         %% io:format("~s ~p ChannelId ~p, Type ~p , ClinetId ~p ~n",[?FILE, ?LINE, ChannelId, Type, ClinetId]),
                         dgiot_client:start(<<ProductId/binary, "_", ChannelId/binary>>, DeviceId,
-                            #{<<"productid">> => ProductId, <<"devaddr">> => DevAddr, <<"dtuid">> => ClinetId});
+                            #{<<"child">> => #{<<"productid">> => ProductId, <<"devaddr">> => DevAddr, <<"dtuid">> => ClinetId}});
                     (_) ->
                         pass
                 end, PnQue)
+    end.
+
+stop_pnque(ChannelId, ClinetId) when is_atom(ChannelId) ->
+    stop_pnque(dgiot_utils:to_binary(ChannelId), ClinetId);
+stop_pnque(ChannelId, ClinetId) ->
+    case dgiot_data:get(?DCLINET_PNQUE(ChannelId), ClinetId) of
+        not_find ->
+            not_find;
+        PnQue ->
+            lists:map(
+                fun
+                    ({ProductId, DevAddr}) ->
+                        DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
+                        %% io:format("~s ~p ChannelId ~p, Type ~p , ClinetId ~p ~n",[?FILE, ?LINE, ChannelId, Type, ClinetId]),
+                        dgiot_client:stop(<<ProductId/binary, "_", ChannelId/binary>>, DeviceId,
+                            #{<<"child">> => #{<<"productid">> => ProductId, <<"devaddr">> => DevAddr, <<"dtuid">> => ClinetId}});
+                    (_) ->
+                        pass
+                end, PnQue),
+            del_pnque(ChannelId, ClinetId)
     end.
 
 save_que(ChannelId, ProductId, DevAddr) ->
@@ -132,6 +154,18 @@ start_que(ChannelId) ->
                   pass
           end,
     dgiot_data:loop(?DCLINET_QUE(ChannelId), Fun).
+
+stop_que(ChannelId) ->
+    Fun = fun
+              ({ClientId, _Value}) ->
+                  dgiot_client:stop_pnque(ChannelId, ClientId),
+                  dgiot_client:stop(ChannelId, ClientId);
+              (_) ->
+                  pass
+          end,
+    dgiot_data:loop(?DCLINET_QUE(ChannelId), Fun),
+    timer:sleep(3000),
+    dgiot_data:destroy(?DCLINET_QUE(ChannelId)).
 
 %% @doc 在通道管理池子中增加client的Pid号
 -spec add(atom() | binary(), binary()) -> result().
@@ -278,6 +312,18 @@ start_link(Module, #{<<"channel">> := ChannelId, <<"client">> := Client} = State
             gen_server:start_link(Module, [State], [])
     end.
 
+%% @doc 该通道下客户端数量
+-spec count(atom() | binary()) -> result().
+count(ChannelId) when is_binary(ChannelId) ->
+    count(binary_to_atom(ChannelId));
+count(ChannelId) ->
+    case ets:info(ChannelId) of
+        undefined ->
+            0;
+        Info ->
+            proplists:get_value(size, Info)
+    end.
+
 %% @doc 做一下全局的错峰处理
 -spec get_rand(non_neg_integer()) -> non_neg_integer().
 get_rand(Freq) ->
@@ -303,16 +349,14 @@ get_nexttime(NextTime, Freq) ->
     get_nexttime(NowTime, Freq, NextTime).
 
 get_nexttime(NowTime, Freq, NextTime) when (NextTime =< NowTime) ->
-    erlang:send_after(1, self(), next_time),
-    NowTime + Freq;
-
-get_nexttime(NowTime, Freq, NextTime) when (NextTime > NowTime) ->
-    RetryTime = NextTime - NowTime,
+    RetryTime = (NowTime - NextTime) rem Freq,
     erlang:send_after(RetryTime * 1000, self(), next_time),
-    NextTime + Freq;
+    NowTime + RetryTime + Freq;
 
 get_nexttime(NowTime, Freq, NextTime) ->
-    get_nexttime(NowTime, Freq, NextTime).
+    RetryTime = NextTime - NowTime,
+    erlang:send_after(RetryTime * 1000, self(), next_time),
+    NextTime + Freq.
 
 %% @doc 设置消费组大小
 -spec set_consumer(binary() | atom(), integer()) -> result().
@@ -346,9 +390,9 @@ add_clock(Channel, Start_time, End_time) ->
 %% @doc 闹铃通知回调函数
 -spec notify(any(), binary() | atom(), atom()) -> result().
 notify(_Task, Channel, Type) when is_binary(Channel) ->
-    notify(_Task, binary_to_atom(Channel), Type);
+    notify(_Task, dgiot_utils:to_atom(Channel), Type);
 notify(_Task, Channel, Type) ->
-    dgiot_channelx:do_message(atom_to_binary(Channel), Type),
+    dgiot_channelx:do_message(dgiot_utils:to_binary(Channel), Type),
     timer:sleep(50),
     dgiot_data:insert({Type, Channel}, Type).
 

@@ -20,3 +20,4 @@
 -define(LOCAL, smartdev).
 -define(VCON, 0).
 -define(DEV, 1).
+-define(DGIOT_LOCATION_ADDRESS, dgiot_location_address).

@@ -3,11 +3,10 @@
     {
       "dataType": "map",
       "vuekey": "baiduMap",
-      "table": "baidu",
+      "table": "Device",
       "query": {
         "count": "objectId",
         "keys": [
-          "count(*)",
           "objectId",
           "name",
           "location",

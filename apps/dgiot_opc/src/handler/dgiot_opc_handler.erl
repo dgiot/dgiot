@@ -51,23 +51,23 @@ handle(OperationID, Args, Context, Req) ->
     Headers = #{},
     case catch do_request(OperationID, Args, Context, Req) of
         {ErrType, Reason} when ErrType == 'EXIT'; ErrType == error ->
-            ?LOG(info, "do request: ~p, ~p, ~p~n", [OperationID, Args, Reason]),
+            ?LOG(debug, "do request: ~p, ~p, ~p~n", [OperationID, Args, Reason]),
             Err = case is_binary(Reason) of
                       true -> Reason;
                       false -> dgiot_utils:format("~p", [Reason])
                   end,
             {500, Headers, #{<<"error">> => Err}};
         ok ->
-            ?LOG(info, "do request: ~p, ~p ->ok ~n", [OperationID, Args]),
+            ?LOG(debug, "do request: ~p, ~p ->ok ~n", [OperationID, Args]),
             {200, Headers, #{}, Req};
         {ok, Res} ->
-            ?LOG(info, "do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
+            ?LOG(debug, "do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
             {200, Headers, Res, Req};
         {Status, Res} ->
-            ?LOG(info, "do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
+            ?LOG(debug, "do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
             {Status, Headers, Res, Req};
         {Status, NewHeaders, Res} ->
-            ?LOG(info, "do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
+            ?LOG(debug, "do request: ~p, ~p ->~p~n", [OperationID, Args, Res]),
             {Status, maps:merge(Headers, NewHeaders), Res, Req}
     end.
 
@@ -75,38 +75,7 @@ handle(OperationID, Args, Context, Req) ->
 %%%===================================================================
 %%% 内部函数 Version:API版本
 %%%===================================================================
-do_request(post_head, #{<<"items">> := Items, <<"productid">> := ProductId}, _Context, _Req) ->
-    {Head, Table} =
-        case dgiot_product:lookup_prod(ProductId) of
-            {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
-                lists:foldl(fun(Prop, {Acc1, Acc2}) ->
-                    case Prop of
-                        #{<<"name">> := Name, <<"identifier">> := Identifier,
-                            <<"dataType">> := #{<<"type">> := _Type, <<"das">> := Das} = DataType} ->
-                            Specs = maps:get(<<"specs">>, DataType, #{}),
-                            Unit =
-                                case maps:find(<<"unit">>, Specs) of
-                                    error ->
-                                        <<>>;
-                                    {ok, Un} ->
-                                        <<"(", Un/binary, ")">>
-                                end,
-                            lists:foldl(fun(Item, {Acc, Acc3}) ->
-                                case lists:member(Item, Das) of
-                                    true ->
-                                        {Acc#{Identifier => <<Name/binary, Unit/binary>>}, Acc3 ++ [#{<<"prop">> => Identifier, <<"label">> => <<Name/binary, Unit/binary>>}]};
-                                    _ ->
-                                        {Acc, Acc3}
-                                end
-                                        end, {Acc1, Acc2}, Items);
-                        _ ->
-                            {Acc1, Acc2}
-                    end
-                            end, {#{}, [#{<<"prop">> => <<"timestamp">>, <<"label">> => <<"时间"/utf8>>}]}, Props);
-            _Error ->
-                #{}
-        end,
-    {ok, #{<<"code">> => 200, <<"head">> => Head, <<"table">> => Table}};
+
 
 %%  服务器不支持的API接口
 do_request(_OperationId, _Args, _Context, _Req) ->

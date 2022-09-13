@@ -26,7 +26,7 @@
 -export([start/0, start_channel/2, start_channel/3, register_channel/2, get_behaviour/1, do_global_message/1]).
 -export([get_product_info/1, get_products/1, get_acl/1, apply_channel/5, apply_product/3, parse_frame/3, to_frame/3]).
 -export([get_data/2, send_log/3, send_log/4, send_log/5]).
--export([get_all_channel/0, control_channel/2, list/0, get_proctol_channel/1]).
+-export([get_all_channel/0, control_channel/2, list/0, get_proctol_channel/1, control_uniapp/2, uniapp_report/1]).
 
 init_ets() ->
     dgiot_data:init(?DGIOT_BRIDGE),
@@ -417,3 +417,36 @@ wait_request(Time, Fun) ->
                 Result
         end
     end.
+
+control_uniapp(#{<<"instruct">> := _Instruct} = Args, SessionToken) ->
+    Topic = <<"$dg/user/uniapp/", SessionToken/binary, "/report">>,
+    dgiot_mqtt:publish(SessionToken, Topic, jsx:encode(Args)),
+    {ok, #{<<"code">> => 200, <<"msg">> => <<"success">>}};
+
+control_uniapp(_Args, _SessionToken) ->
+    pass.
+
+%% 拍照
+uniapp_report({_Token, #{<<"instruct">> := <<"photo">>, <<"deviceid">> := DeviceId, <<"url">> := Url} = _Payload}) ->
+    case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+        {ok, #{<<"objectId">> := DeviceId} = Device} ->
+            Content = maps:get(<<"content">>, Device, #{}),
+            dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"content">> => Content#{<<"app_photo">> => Url}});
+        _ ->
+            pass
+    end;
+
+%% 扫码
+uniapp_report({_Token, #{<<"instruct">> := <<"scancode">>, <<"deviceid">> := DeviceId, <<"url">> := Url} = _Payload}) ->
+    case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+        {ok, #{<<"objectId">> := DeviceId} = Device} ->
+            Content = maps:get(<<"content">>, Device, #{}),
+            dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"content">> => Content#{<<"app_scancode">> => Url}});
+        _ ->
+            pass
+    end;
+
+uniapp_report({_Token, _Payload}) ->
+%%    io:format("~s ~p Payload = ~p.~n", [?FILE, ?LINE, Payload]),
+    pass.
+

@@ -1,0 +1,46 @@
+{
+  "link.title.Docs": {
+    "message": "文档",
+    "description": "The title of the footer links column with title=Docs in the footer"
+  },
+  "link.title.Community": {
+    "message": "社区",
+    "description": "The title of the footer links column with title=Community in the footer"
+  },
+  "link.title.More": {
+    "message": "More",
+    "description": "The title of the footer links column with title=More in the footer"
+  },
+  "link.item.label.Introduction": {
+    "message": "Introduction",
+    "description": "The label of footer link with label=Introduction linking to /docs/intro"
+  },
+  "link.item.label.Issue Tracker": {
+    "message": "Issue Tracker",
+    "description": "The label of footer link with label=Issue Tracker linking to https://github.com/dgiot/dgiot/issues"
+  },
+  "link.item.label.Pull Requests": {
+    "message": "Pull Requests",
+    "description": "The label of footer link with label=Pull Requests linking to https://github.com/dgiot/dgiot/pulls"
+  },
+  "link.item.label.Discussions": {
+    "message": "Discussions",
+    "description": "The label of footer link with label=Discussions linking to https://github.com/dgiot/dgiot/discussions"
+  },
+  "link.item.label.Blog": {
+    "message": "博客",
+    "description": "The label of footer link with label=Blog linking to /"
+  },
+  "link.item.label.GitHub": {
+    "message": "GitHub",
+    "description": "The label of footer link with label=GitHub linking to https://github.com/dgiot/dgiot"
+  },
+  "copyright": {
+    "message": "Copyright © 2022 dgiot, Inc. Built with Docusaurus.",
+    "description": "The footer copyright"
+  },
+  "link.item.label.快速上手": {
+    "message": "快速上手",
+    "description": "The label of footer link with label=快速上手 linking to /"
+  }
+}

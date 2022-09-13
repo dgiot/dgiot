@@ -100,7 +100,6 @@ update_schemas_json() ->
     dgiot_product:update_properties(),
     %%    表字段更新
     Schemas = dgiot_parse:get_schemas_json(),
-    dgiot_parse:del_filed_schemas(<<"Product">>, [<<"topics">>]),
     timer:sleep(1000),
     lists:foldl(fun(#{<<"className">> := ClassName, <<"fields">> := Fields}, _Acc) ->
         maps:fold(fun(Key, Value, _Acc1) ->
@@ -126,12 +125,12 @@ update(SessionToken) ->
                     end, false, Roles),
             case Flag of
                 true ->
-                    {ok, #{<<"msg">> => <<"success">>}};
+                    {ok, #{<<"code">> => 200, <<"msg">> => <<"数据库升级成功"/utf8>>}};
                 _ ->
-                    {ok, #{<<"code">> => 201, <<"msg">> => <<"请使用开发者账号"/utf8>>}}
+                    {ok, #{<<"code">> => 200, <<"msg">> => <<"请使用开发者账号"/utf8>>}}
             end;
         _ ->
-            {ok, #{<<"code">> => 201, <<"msg">> => <<"请使用开发者账号"/utf8>>}}
+            {ok, #{<<"code">> => 200, <<"msg">> => <<"请使用开发者账号"/utf8>>}}
     end.
 
 health() ->

@@ -19,7 +19,7 @@
 -include("dgiot_device.hrl").
 -include_lib("dgiot/include/logger.hrl").
 
--export([post/1, get_konva/3, get_konva_thing/2, edit_konva/2, get_konva_view/4, get_Product_konva/0]).
+-export([post/1, get_konva/3, get_konva_thing/2, edit_konva/2, get_konva_view/4, get_Product_konva/0, save_Product_konva/1]).
 
 %%dgiot_product_knova:post(<<"d0cb711d3d">>).
 post(ProductId) ->
@@ -265,10 +265,12 @@ get_attrs(Type, ProductId, ClassName, Attrs, DeviceId, KonvatId, Shapeid, Identi
                                                 dgiot_data:insert({toponotext, ProductId}, New_Topo)
                                         end,
                                         Text2;
+                                    {ok, null} ->
+                                        <<"--">>;
                                     {ok, Text1} ->
                                         get_konva_value(ProductId, Identifier1, Text1)
                                 end,
-                            NewAttrs = Attrs#{<<"id">> => dgiot_parse_id:get_shapeid(DeviceId, Id), <<"text">> => Text, <<"draggable">> => false},
+                            NewAttrs = Attrs#{<<"id">> => dgiot_parse_id:get_shapeid(DeviceId, Id), <<"text">> => <<Text/binary, " ", Unit/binary>>, <<"draggable">> => false},
                             save(Type, NewAttrs),
                             X#{<<"attrs">> => NewAttrs}
                     end
@@ -330,34 +332,38 @@ get_konva_value(ProductId, K, V) ->
     end.
 
 get_Product_konva() ->
-    case dgiot_parse:query_object(<<"Product">>, #{<<"skip">> => 0}) of
-        {ok, #{<<"results">> := Results}} ->
-            lists:foldl(fun(X, _Acc) ->
-                case X of
-                    #{<<"objectId">> := ProductId, <<"thing">> := #{<<"properties">> := Properties}} ->
-                        lists:map(fun(P) ->
-                            DataType = maps:get(<<"dataType">>, P, #{}),
-                            Type = maps:get(<<"type">>, DataType, <<"">>),
-                            Specs = maps:get(<<"specs">>, DataType, #{}),
-                            Unit = maps:get(<<"unit">>, Specs, <<"">>),
-                            Identifier = maps:get(<<"identifier">>, P, <<"">>),
-                            Name = maps:get(<<"name">>, P, <<"">>),
-                            dgiot_data:insert({product, <<ProductId/binary, Identifier/binary>>}, {Name, Type, Unit}),
-                            dgiot_data:insert({thing, <<ProductId/binary, Identifier/binary>>}, P)
-                                  end, Properties),
-                        case dgiot_parse:query_object(<<"View">>, #{<<"limit">> => 1, <<"where">> => #{<<"key">> => ProductId, <<"type">> => <<"topo">>, <<"class">> => <<"Product">>}}) of
-                            {ok, #{<<"results">> := Views}} when length(Views) > 0 ->
-                                lists:foldl(fun(View, _Acc1) ->
-                                    #{<<"data">> := #{<<"konva">> := #{<<"Stage">> := #{<<"children">> := Children}}}} = View,
-                                    get_children(<<"web">>, ProductId, Children, ProductId, <<"KonvatId">>, <<"Shapeid">>, <<"Identifier">>, <<"Name">>)
-                                            end, #{}, Views);
-                            _ ->
-                                pass
-                        end;
-                    _ ->
-                        pass
-                end
-                        end, [], Results);
+    Success = fun(Page) ->
+        lists:map(fun(#{<<"objectId">> := ProductId}) ->
+            save_Product_konva(ProductId)
+                  end, Page)
+              end,
+    Query = #{
+        <<"where">> => #{}
+    },
+    dgiot_parse_loader:start(<<"Product">>, Query, 0, 100, 1000000, Success).
+
+save_Product_konva(ProductId) ->
+    case dgiot_product:lookup_prod(ProductId) of
+        {ok, #{<<"thing">> := #{<<"properties">> := Properties}}} ->
+            lists:map(fun(P) ->
+                DataType = maps:get(<<"dataType">>, P, #{}),
+                Type = maps:get(<<"type">>, DataType, <<"">>),
+                Specs = maps:get(<<"specs">>, DataType, #{}),
+                Unit = maps:get(<<"unit">>, Specs, <<"">>),
+                Identifier = maps:get(<<"identifier">>, P, <<"">>),
+                Name = maps:get(<<"name">>, P, <<"">>),
+                dgiot_data:insert({product, <<ProductId/binary, Identifier/binary>>}, {Name, Type, Unit}),
+                dgiot_data:insert({thing, <<ProductId/binary, Identifier/binary>>}, P)
+                      end, Properties),
+            case dgiot_parse:query_object(<<"View">>, #{<<"limit">> => 1, <<"where">> => #{<<"key">> => ProductId, <<"type">> => <<"topo">>, <<"class">> => <<"Product">>}}) of
+                {ok, #{<<"results">> := Views}} when length(Views) > 0 ->
+                    lists:foldl(fun(View, _Acc1) ->
+                        #{<<"data">> := #{<<"konva">> := #{<<"Stage">> := #{<<"children">> := Children}}}} = View,
+                        get_children(<<"web">>, ProductId, Children, ProductId, <<"KonvatId">>, <<"Shapeid">>, <<"Identifier">>, <<"Name">>)
+                                end, #{}, Views);
+                _ ->
+                    pass
+            end;
         _ ->
             pass
     end.

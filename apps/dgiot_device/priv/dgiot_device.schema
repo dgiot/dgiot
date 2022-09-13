@@ -12,3 +12,9 @@
   {default, 500},
   {datatype, integer}
 ]}.
+
+{mapping, "device.map_type", "dgiot_device.map_type", [
+  {default, baidu},
+  {datatype, string}
+]}.
+

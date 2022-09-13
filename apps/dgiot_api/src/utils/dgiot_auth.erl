@@ -20,7 +20,7 @@
 %% API
 -export([pre_check/4]).
 -export([check_auth/3]).
--export([put_session/2, put_session/3,get_session/1, delete_session/1]).
+-export([put_session/2, put_session/3, get_session/1, delete_session/1, get_sessiontoken/1]).
 
 -export([ttl/0]).
 
@@ -145,4 +145,14 @@ get_session(Token) ->
             undefined;
         User when is_binary(User) ->
             jsx:decode(User, [{labels, binary}, return_maps])
+    end.
+
+
+get_sessiontoken(Acl) ->
+    [<<"role:", RoleName/binary>> | _] = maps:keys(Acl),
+    case dgiot_parse_auth:check_roles(RoleName) of
+        {200, #{<<"access_token">> := SessionToken}} ->
+            SessionToken;
+        _ ->
+            <<"">>
     end.

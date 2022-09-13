@@ -26,6 +26,9 @@
 -define(SUBOPTION, emqx_suboption).
 -define(SUBSCRIBER, emqx_subscriber).
 -define(SUBSCRIPTION, emqx_subscription).
+-dgiot_data("ets").
+-export([init_ets/0]).
+-define(DGIOT_ROUTE_KEY, dgiot_route_key).
 
 -export([
     has_routes/1
@@ -44,7 +47,45 @@
     , republish/2
     , get_message/2
     , subopts/0
+    , subscribe_route_key/3
+    , unsubscribe_route_key/1
 ]).
+
+init_ets() ->
+    dgiot_data:init(?DGIOT_ROUTE_KEY).
+
+
+%%
+subscribe_route_key(DeviceList, SessionToken, Route) ->
+    TopicKey = Route,
+    case dgiot_data:get(?DGIOT_ROUTE_KEY, {SessionToken, TopicKey}) of
+        not_find ->
+            pass;
+        OldTopic ->
+            lists:foldl(fun(X, _Acc) ->
+                Topic = <<"$dg/user/devicestate/", X/binary, "/report">>,
+                dgiot_mqtt:unsubscribe(SessionToken, Topic)
+                        end, [], OldTopic)
+    end,
+    lists:foldl(fun(X, _Acc) ->
+        Topic = <<"$dg/user/devicestate/", X/binary, "/report">>,
+        dgiot_mqtt:subscribe(SessionToken, Topic)
+                end, [], DeviceList),
+    dgiot_data:insert(?DGIOT_ROUTE_KEY, {SessionToken, TopicKey}, DeviceList).
+
+
+unsubscribe_route_key(SessionToken) ->
+    TopicKey = devicestate,
+    case dgiot_data:get(?DGIOT_ROUTE_KEY, {SessionToken, TopicKey}) of
+        not_find ->
+            pass;
+        OldTopic ->
+            lists:foldl(fun(X, _Acc) ->
+                Topic = <<"$dg/user/devicestate/", X/binary, "/report">>,
+                dgiot_mqtt:unsubscribe(SessionToken, Topic)
+                        end, [], OldTopic)
+    end,
+    dgiot_data:delete(?DGIOT_ROUTE_KEY, {SessionToken, TopicKey}).
 
 has_routes(Topic) ->
     emqx_router:has_routes(Topic).
@@ -78,7 +119,7 @@ unsubscribe(ClientId, TopicFilter) ->
     end.
 
 -spec(publish(Client :: binary(), Topic :: binary(), Payload :: binary())
-            -> ok | {error, Reason :: any()}).
+        -> ok | {error, Reason :: any()}).
 publish(Client, Topic, Payload) ->
     timer:sleep(10),
     Msg = emqx_message:make(dgiot_utils:to_binary(Client), 0, Topic, Payload),

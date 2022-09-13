@@ -1,14 +1,5 @@
 {
-  "tags": [
-    {
-      "name": "Evidence",
-      "description": "证据管理"
-    },
-    {
-      "name": "Data",
-      "description": "数据管理"
-    }
-  ],
+  "tags": [],
   "definitions": {
   },
   "paths": {
@@ -209,11 +200,11 @@
                   "example": 1
                 },
                 "config": {
-                  "description": "模版描述信息",
-                  "type": "object",
-                  "example": {
-                    "name": "image0",
-                    "identifier": "a28b138a-0f31-fe7d-cadc-0be47faf8a8d"
+                  "schema": {
+                    "description": "模版描述信息",
+                    "properties": {},
+                    "required": true,
+                    "type": "object"
                   }
                 }
               }
@@ -354,11 +345,27 @@
                 },
                 "profile": {
                   "description": "报告描述信息",
-                  "type": "object",
-                  "example": {
-                    "starttime": "1637251200000",
-                    "endtime": "1637942400000",
-                    "bedname": "南方泵业台体"
+                  "schema": {
+                    "description": "报告描述信息",
+                    "properties": {
+                      "starttime": {
+                        "description": "开始时间",
+                        "type": "string",
+                        "example": "1637251200000"
+                      },
+                      "endtime": {
+                        "description": "结束时间",
+                        "type": "string",
+                        "example": "1637942400000"
+                      },
+                      "bedname": {
+                        "description": "检测台体",
+                        "type": "string",
+                        "example": "南方泵业台体"
+                      }
+                    },
+                    "required": true,
+                    "type": "object"
                   }
                 }
               }
@@ -518,12 +525,27 @@
                   "example": "1637563568"
                 },
                 "original": {
-                  "description": "原件",
-                  "type": "object",
-                  "example": {
-                    "type": "image",
-                    "controlid": "controlid",
-                    "taskid": "taskid"
+                  "schema": {
+                    "description": "原件",
+                    "properties": {
+                      "type": {
+                        "description": "type",
+                        "type": "string",
+                        "example": "image"
+                      },
+                      "controlid": {
+                        "description": "controlid",
+                        "type": "string",
+                        "example": "controlid"
+                      },
+                      "taskid": {
+                        "description": "taskid",
+                        "type": "string",
+                        "example": "taskid"
+                      }
+                    },
+                    "required": true,
+                    "type": "object"
                   }
                 },
                 "md5": {
@@ -1016,6 +1038,7 @@
         "description": "生成性能曲线图",
         "parameters": [
           {
+            "description": "生成性能曲线图",
             "in": "body",
             "name": "data",
             "required": true,
@@ -1029,10 +1052,30 @@
                 },
                 "data": {
                   "required": true,
-                  "type": "object",
-                  "example": [{"current":125,"flow":12,"power":10,"vol":220,"timestamp":"2021-12-20 17:23:53"},
-                    {"current":120,"flow":9,"power":10,"vol":220,"timestamp":"2021-12-20 17:23:53"},
-                    {"current":132,"flow":5,"power":10,"vol":220,"timestamp":"2021-12-20 17:23:53"}]
+                  "type": "array",
+                  "example": [
+                    {
+                      "current": 125,
+                      "flow": 12,
+                      "power": 10,
+                      "vol": 220,
+                      "timestamp": "2021-12-20 17:23:53"
+                    },
+                    {
+                      "current": 120,
+                      "flow": 9,
+                      "power": 10,
+                      "vol": 220,
+                      "timestamp": "2021-12-20 17:23:53"
+                    },
+                    {
+                      "current": 132,
+                      "flow": 5,
+                      "power": 10,
+                      "vol": 220,
+                      "timestamp": "2021-12-20 17:23:53"
+                    }
+                  ]
                 }
               }
             }

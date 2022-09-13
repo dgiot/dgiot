@@ -1,13 +1,288 @@
 {
   "tags": [
     {
-      "name": "Notification",
-      "description": "通知管理"
+      "name": "configuration",
+      "description": "通知配置"
     }
   ],
   "definitions": {
   },
   "paths": {
+    "/configuration": {
+      "get": {
+        "summary": "获取配置",
+        "description": "获取配置",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Returns success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "404": {
+            "description": "Forbidden",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "500": {
+            "description": "Server Internal error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        },
+        "tags": [
+          "configuration"
+        ]
+      },
+      "post": {
+        "summary": "编辑配置",
+        "description": "编辑配置",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "user",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "sms": {
+                  "schema": {
+                    "description": "模板内容",
+                    "properties": {
+                      "appid": {
+                        "description": "appid",
+                        "example": "1400635630",
+                        "required": true,
+                        "type": "string"
+                      },
+                      "appkey": {
+                        "description": "appkey",
+                        "example": "40d9609b9e6212cbff051b4f1d4cabfc",
+                        "required": true,
+                        "type": "string"
+                      },
+                      "sign": {
+                        "description": "sign",
+                        "example": "dgiota",
+                        "required": true,
+                        "type": "string"
+                      }
+                    },
+                    "required": true,
+                    "type": "object"
+                  }
+                },
+                "mail": {
+                  "schema": {
+                    "properties": {},
+                    "required": true,
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "404": {
+            "description": "Forbidden",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "500": {
+            "description": "Server Internal error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        },
+        "tags": [
+          "configuration"
+        ]
+      }
+    },
+    "/sendsms/{deviceid}": {
+      "post": {
+        "summary": "设备发送短信",
+        "description": "设备发送短信",
+        "consumes": [
+          "application/json",
+          "*"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "deviceid",
+            "description": "设备id",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "data",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "tplid": {
+                  "required": true,
+                  "type": "string",
+                  "description": "模板id",
+                  "example": "1473069"
+                },
+                "params": {
+                  "required": true,
+                  "type": "array",
+                  "description": "发送内容",
+                  "example": [
+                    "测试1",
+                    "测试2",
+                    "测试3",
+                    "测试4",
+                    "测试5",
+                    "测试6"
+                  ]
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "404": {
+            "description": "Forbidden",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "500": {
+            "description": "Server Internal error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        },
+        "tags": [
+          "Notification"
+        ]
+      }
+    },
+    "/warnsendsms": {
+      "post": {
+        "summary": "短信告警发送",
+        "description": "短信告警发送",
+        "consumes": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "user",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "objectId": {
+                  "required": true,
+                  "type": "string",
+                  "example": "dasssd54"
+                },
+                "department": {
+                  "type": "string",
+                  "required": true,
+                  "example": "部门"
+                },
+                "dailyWorksId": {
+                  "type": "string",
+                  "example": "每天工单编号"
+                },
+                "branchId": {
+                  "required": true,
+                  "type": "string",
+                  "example": "9256b5cf2e"
+                },
+                "docnumber": {
+                  "required": true,
+                  "type": "string",
+                  "example": "MO000015"
+                },
+                "datetimes": {
+                  "required": true,
+                  "type": "string",
+                  "example": "2022-12-15,14:20"
+                },
+                "username": {
+                  "required": true,
+                  "type": "string",
+                  "example": "张三"
+                },
+                "workshop": {
+                  "type": "string",
+                  "example": "车间1-1"
+                },
+                "level": {
+                  "required": true,
+                  "type": "string",
+                  "example": "1"
+                },
+                "desc": {
+                  "type": "string",
+                  "example": "desc"
+                },
+                "file": {
+                  "type": "string",
+                  "example": "img"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "404": {
+            "description": "Forbidden",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "500": {
+            "description": "Server Internal error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        },
+        "tags": [
+          "Notification"
+        ]
+      }
+    },
     "/wechat": {
       "get": {
         "security": [],
@@ -300,10 +575,12 @@
                   "description": "语言类型"
                 },
                 "data": {
-                  "type": "object",
-                  "required": true,
-                  "example": {},
-                  "description": "模板内容"
+                  "schema": {
+                    "description": "模板内容",
+                    "properties": {},
+                    "required": true,
+                    "type": "object"
+                  }
                 }
               }
             }
@@ -334,12 +611,6 @@
             "schema": {
               "type": "object",
               "properties": {
-                "from": {
-                  "type": "string",
-                  "required": true,
-                  "example": "18257190166@163.com",
-                  "description": "发件人邮箱"
-                },
                 "to": {
                   "type": "array",
                   "example": "463544084@qq.com,46354408412@qq.com",
@@ -368,24 +639,6 @@
                   "required": true,
                   "example": "发件内容",
                   "description": "发件内容"
-                },
-                "relay": {
-                  "type": "string",
-                  "required": true,
-                  "example": "smtp.163.com",
-                  "description": "中转服务"
-                },
-                "username": {
-                  "type": "string",
-                  "required": true,
-                  "example": "18257190166@163.com",
-                  "description": "发件人邮箱账户"
-                },
-                "password": {
-                  "type": "string",
-                  "required": true,
-                  "example": "ALRFYEVAFSITDXSX",
-                  "description": "密钥"
                 }
               }
             }
@@ -440,7 +693,6 @@
     },
     "/maintenance": {
       "post": {
-        "security": [],
         "basePath": "/",
         "description": "创建工单",
         "parameters": [
@@ -570,39 +822,12 @@
               "type": "object",
               "properties": {
                 "data": {
-                  "type": "object",
-                  "example": {
-                    "巡检": {
-                      "巡检时长": "1小时",
-                      "巡检状态": "当日已巡检",
-                      "当月巡检次数": "15次"
-                    },
-                    "报修": {
-                      "报修地点": "201空调机组间",
-                      "报修时间": "2022/2/3",
-                      "报修状态": "未完成",
-                      "报修设备": "1号空调"
-                    },
-                    "空间管理": {
-                      "VIP上座率": "0%",
-                      "商业区出租率": "75%",
-                      "竞技场状态": "未开启",
-                      "观众席上座率": "0%"
-                    },
-                    "维保": {
-                      "年维保频率": "2次",
-                      "维保周期": "6个月",
-                      "维保时间": "2022/2/1",
-                      "维保设备": "1号电梯"
-                    },
-                    "资产": {
-                      "园区面积": "26W平方米",
-                      "固定资产": "未知",
-                      "建筑面积": "8W平方米",
-                      "流动资产": "未知"
-                    }
-                  },
-                  "description": "运维数据"
+                  "schema": {
+                    "description": "运维数据",
+                    "properties": {},
+                    "required": true,
+                    "type": "object"
+                  }
                 }
               }
             }

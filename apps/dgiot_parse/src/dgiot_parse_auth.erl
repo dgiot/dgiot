@@ -19,6 +19,11 @@
 -include("dgiot_parse.hrl").
 -include_lib("dgiot/include/logger.hrl").
 
+-dgiot_data("ets").
+-export([init_ets/0]).
+-define(DGIOT_USERSESSION, dgiot_usersession).
+-define(DGIOT_COOKIE,dgiot_cookie).
+
 %% API
 -export([
     login/2,
@@ -36,11 +41,54 @@
     get_roleuser/2,
     del_roleuser/2,
     get_UserIds/1,
-    get_usertree/1
+    get_usertree/1,
+    get_same_level_role/1,
+    get_children/1,
+    getuser/1
 ]).
 -export([create_user/2, delete_user/2, put_user/2, disableusere/3, check_roles/1]).
 -export([login_by_account/2, login_by_token/2, login_by_mail_phone/1, do_login/1]).
 -export([create_user_for_app/1, get_token/1, set_cookies/3, add_acl/5]).
+-export([get_usersession/1, put_usersession/1,del_usersession/1]).
+-export([get_cookie/1,put_cookie/2,del_cookie/1]).
+
+
+init_ets() ->
+    dgiot_data:init(?DGIOT_USERSESSION),
+    dgiot_data:init(?DGIOT_COOKIE).
+
+get_usersession(Depart_token) ->
+    dgiot_data:get(?DGIOT_USERSESSION, {Depart_token}).
+
+put_usersession(SessionMap) ->
+    [Depart_token] = maps:keys(SessionMap),
+    User_session = maps:get(Depart_token, SessionMap),
+    dgiot_data:insert(?DGIOT_USERSESSION, {Depart_token}, User_session).
+
+del_usersession(User_session)->
+    Fun = fun
+              ({Key, Value}) ->
+                  case Value of
+                      User_session ->
+                          dgiot_data:delete(?DGIOT_USERSESSION, Key);
+                      _->
+                          pass
+                  end ;
+              (_) ->
+                  pass
+          end,
+    dgiot_data:loop(?DGIOT_USERSESSION, Fun).
+
+
+
+put_cookie(UserSession,Cookie)->
+    dgiot_data:insert(?DGIOT_COOKIE, {UserSession}, Cookie).
+
+get_cookie(UserSession)->
+    dgiot_data:get(?DGIOT_COOKIE, {UserSession}).
+del_cookie(UserSession)->
+    dgiot_data:delete(?DGIOT_COOKIE, UserSession).
+
 %% 登录
 login(UserName, Password) ->
     login(?DEFAULT, UserName, Password).
@@ -50,7 +98,7 @@ login(Name, UserName, Password) ->
     dgiot_parse:request_rest(Name, 'GET', [], Path, Args, [{from, rest}]).
 
 load_roleuser() ->
-    dgiot_data:delete_all_objects(?PARENT_ROLE_ETS),
+%%    dgiot_data:delete_all_objects(?PARENT_ROLE_ETS),
     Success = fun(Page) ->
         lists:map(fun
                       (#{<<"objectId">> := RoleId}) ->
@@ -428,7 +476,7 @@ get_role(UserId, SessionToken) ->
     get_role(?DEFAULT, UserId, SessionToken).
 get_role(Name, UserId, SessionToken) ->
     Query = #{
-        <<"keys">> => [<<"name">>, <<"alias">>, <<"org_type">>, <<"tag">>, <<"level">>],
+        <<"keys">> => [<<"name">>, <<"alias">>, <<"org_type">>, <<"tag">>, <<"level">>, <<"parent">>],
         <<"where">> => #{
             <<"users">> => #{
                 <<"className">> => <<"_User">>,
@@ -441,8 +489,8 @@ get_role(Name, UserId, SessionToken) ->
         {ok, #{<<"results">> := RoleResults}} ->
             Roles =
                 lists:foldr(
-                    fun(#{<<"objectId">> := RoleId, <<"name">> := Name1, <<"alias">> := Alias, <<"org_type">> := Org_type, <<"level">> := Level} = X, Acc) ->
-                        Role = #{<<"objectId">> => RoleId, <<"name">> => Name1, <<"alias">> => Alias, <<"org_type">> => Org_type, <<"tag">> => maps:get(<<"tag">>, X, #{}), <<"level">> => Level},
+                    fun(#{<<"objectId">> := RoleId, <<"name">> := Name1, <<"alias">> := Alias, <<"org_type">> := Org_type, <<"level">> := Level, <<"parent">> := Parent} = X, Acc) ->
+                        Role = #{<<"objectId">> => RoleId, <<"name">> => Name1, <<"alias">> => Alias, <<"org_type">> => Org_type, <<"tag">> => maps:get(<<"tag">>, X, #{}), <<"level">> => Level, <<"parent">> => maps:get(<<"objectId">>, Parent, <<>>)},
                         Acc#{RoleId => Role}
                     end, #{}, RoleResults),
             RoleIds =
@@ -967,52 +1015,73 @@ get_value(Key, [{Key, Value}]) -> Value;
 get_value(Key, [Key | _]) -> Key;
 get_value(Key, [_ | L]) -> get_value(Key, L).
 
-get_usertree(#{<<"user">> := User}) ->
-    UserTree = case User of
-                   #{<<"roles">> := Roles} ->
-                       [RoleId] = maps:keys(Roles),
-                       ChildRoleIds = dgiot_role:get_childrole(RoleId),
-                       case dgiot_parse:query_object(<<"_Role">>, #{<<"where">> => #{<<"objectId">> => #{<<"$in">> => ChildRoleIds}}}) of
-                           {ok, #{<<"results">> := RoleList}} ->
-%%                               io:format("Result ~p ~n", [Result]),
-%%                               Roles = maps:get(<<"results">>, Result, []),
-                               List = lists:foldl(fun(X, Acc) ->
-                                   case X of
-                                       #{<<"objectId">> := ObjectId, <<"parent">> := Parent, <<"name">> := Name} ->
-                                           Acc ++ [#{<<"objectId">> => ObjectId, <<"parent">> => Parent, <<"label">> => Name}];
-                                       _ -> Acc
-                                   end
-                                                  end, [], RoleList
-                               ),
-                               [T] = dgiot_parse_utils:create_tree(List, <<"parent">>),
-                               RootUser = getuser(maps:get(<<"objectId">>, T)),
-                               T#{<<"children">> => lists:append(maps:get(<<"children">>, T, []), RootUser)}
-                           ;
-                           Other ->
-                               io:format("Other ~p ~n", [Other])
-                       end;
-                   _ ->
-                       pass
+get_usertree(SessionToken) ->
+    case dgiot_parse_auth:get_same_level_role(SessionToken) of
+        RoleTree when length(RoleTree) > 0 ->
+            dgiot_parse_auth:get_children(RoleTree);
+        _ ->
+            []
+    end.
 
-               end,
-    UserTree.
+get_same_level_role(SessionToken) ->
+    case dgiot_auth:get_session(SessionToken) of
+        #{<<"roles">> := Roles} ->
+            maps:fold(fun(_RoleId, #{<<"parent">> := Parent}, Acc) ->
+                ChildroleIds = dgiot_role:get_childrole(Parent) -- [Parent],
+                case dgiot_parse:query_object(<<"_Role">>, #{<<"where">> => #{<<"objectId">> => #{<<"$in">> => ChildroleIds}}}) of
+                    {ok, #{<<"results">> := RoleList}} ->
+                        Acc ++ dgiot_parse_utils:create_tree(RoleList, <<"parent">>);
+                    _ ->
+                        Acc
+                end
+                      end, [], Roles);
+        _ ->
+            []
+    end.
 
-getuser(RoleId) ->
+get_children(Results) ->
+    lists:foldl(fun(Role, Acc) ->
+        X1 = dgiot_parse_auth:getuser(Role),
+        X2 =
+            case maps:find(<<"children">>, X1) of
+                error ->
+                    #{<<"userlist">> := Userlist} = X1,
+                    X1#{<<"children">> => Userlist};
+                {ok, SubChildren} ->
+                    #{<<"userlist">> := Userlist} = X1,
+                    X1#{<<"children">> => get_children(SubChildren) ++ Userlist}
+            end,
+        Acc ++ [maps:without([<<"objectId">>, <<"userlist">>, <<"name">>], X2)]
+                end, [], Results).
+
+getuser(#{<<"objectId">> := RoleId, <<"name">> := Depname} = Role) ->
     UserIds = dgiot_parse_auth:get_UserIds(RoleId),
     UsersQuery =
         #{<<"where">> => #{<<"objectId">> => #{<<"$in">> => UserIds}}},
-    UserList = case dgiot_parse:query_object(<<"_User">>, UsersQuery) of
-                   {ok, #{<<"results">> := Results}} ->
-                       Results;
-                   _ ->
-                       []
-               end,
-    NewList = lists:foldl(fun(X, Acc) ->
-        case X of
-            #{<<"nick">> := Nick, <<"objectId">> := ObjectId} ->
-                Acc ++ [#{<<"label">> => Nick, <<"value">> => #{<<"label">> => Nick, <<"objectId">> => ObjectId}}]
-        end
-                          end, [], UserList
-    ),
-    NewList.
+    UserList =
+        case dgiot_parse:query_object(<<"_User">>, UsersQuery) of
+            {ok, #{<<"results">> := Results}} ->
+                Results;
+            _ ->
+                []
+        end,
+    NewUserList =
+        lists:foldl(fun(X, Acc) ->
+            case X of
+                #{<<"nick">> := <<"user_for_", _/binary>>} ->
+                    Acc;
+                #{<<"nick">> := Nick, <<"objectId">> := ObjectId} ->
+                    Acc ++ [#{<<"label">> => Nick, <<"value">> => #{<<"label">> => Nick, <<"objectId">> => ObjectId}}];
+                _ ->
+                    Acc
+            end
+                    end, [], UserList),
+    case maps:find(<<"children">>, Role) of
+        error ->
+            #{<<"objectId">> => RoleId, <<"name">> => Depname, <<"label">> => Depname, <<"userlist">> => NewUserList};
+        {ok, SubChildren} ->
+            #{<<"objectId">> => RoleId, <<"name">> => Depname, <<"label">> => Depname, <<"children">> => SubChildren, <<"userlist">> => NewUserList}
+    end.
+
+
 

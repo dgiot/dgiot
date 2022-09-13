@@ -22,28 +22,26 @@
 {datatype, string}
 ]}.
 
-
-%%--------------------------------------------------------------------
-%% 腾讯短信配置
-%%--------------------------------------------------------------------
-
-{mapping, "tencent_sms.appid", "dgiot_http.tencent_sms_appid", [
-{default, "1400214975"},
-{datatype, string}
-]}.
-
-{mapping, "tencent_sms.appkey", "dgiot_http.tencent_sms_appkey", [
-{default, "25c8c3a4d17367a8232931ff54d114a2"},
-{datatype, string}
-]}.
-
-
 %%--------------------------------------------------------------------
 %% 百度地图配置
 %%--------------------------------------------------------------------
 
 {mapping, "baidumap.appkey", "dgiot_http.baidumap_appkey", [
 {default, "fnc5Z92jC7CwfBGz8Dk36E9sXEIYZ6TG"},
+{datatype, string}
+]}.
+
+%%--------------------------------------------------------------------
+%% 百度地图纠偏值
+%%--------------------------------------------------------------------
+
+{mapping, "baidumap.lngoffset", "dgiot_http.baidumap_lngoffset", [
+{default, "0.00002"},
+{datatype, string}
+]}.
+
+{mapping, "baidumap.latoffset", "dgiot_http.baidumap_latoffset", [
+{default, "0.00001"},
 {datatype, string}
 ]}.
 
@@ -89,12 +87,12 @@
 %%--------------------------------------------------------------------
 %% bridge
 %%--------------------------------------------------------------------
-{mapping, "isbridge", "dgiot_http.isbridge", [
+{mapping, "dgiot_api.isbridge", "dgiot_http.isbridge", [
 {default, true},
 {datatype, {enum, [true, false]}}
 ]}.
 
-{mapping, "bridge_url", "dgiot_http.bridge_url", [
+{mapping, "dgiot_api.bridge_url", "dgiot_http.bridge_url", [
 {default, "https://prod.iotn2n.com"},
 {datatype, string}
 ]}.

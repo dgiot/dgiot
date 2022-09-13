@@ -1,0 +1,12 @@
+{application, dgiot_factory,
+    [
+        {description, "DG-IoT esports"},
+        {vsn, "4.3.1"},
+        {modules, []},
+        {registered, [dgiot_factory_sup]},
+        {applications, [kernel, stdlib]},
+        {mod, {dgiot_factory_app, []}},
+        {env,[
+        ]}
+    ]
+}.

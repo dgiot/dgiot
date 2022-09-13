@@ -19,7 +19,7 @@
 -author("johnliu").
 
 %% API
--export([generate/0, en_rsa/2, de_rsa/2, rsa_to_string/1]).
+-export([generate/0, en_rsa/2, de_rsa/2, rsa_to_string/1, test/0]).
 
 generate() ->
     %%获取私钥
@@ -54,5 +54,7 @@ de_rsa(PrivateKey, BinData) ->
             Result
     end.
 
-
-
+test() ->
+    {PrivateKey, PublicKey} = generate(),
+    Encode = en_rsa(PublicKey, <<"BinData">>),
+    de_rsa(PrivateKey, Encode).

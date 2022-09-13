@@ -1,14 +1,5 @@
 {
-  "tags": [
-    {
-      "name": "Basic",
-      "description": "基础接口"
-    },
-    {
-      "name": "Data",
-      "description": "数据管理"
-    }
-  ],
+  "tags": [],
   "definitions": {
     "Token": {
       "type": "object",
@@ -143,9 +134,7 @@
           },
           "400": {
             "description": "Bad Request",
-            "schema": {
-              "$ref": "#/definitions/Error"
-            }
+            "schema": {}
           },
           "401": {
             "description": "Unauthorized"
@@ -332,6 +321,7 @@
     },
     "/upgrade": {
       "get": {
+        "security": [],
         "summary": "数据库升级",
         "description": "数据库升级",
         "parameters": [],

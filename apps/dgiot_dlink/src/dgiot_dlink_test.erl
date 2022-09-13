@@ -20,7 +20,8 @@
 -compile(nowarn_export_all).
 
 start() ->
-    Services = #{protos => [dgiot_dlink_pb],
+    Services = #{
+        protos => [dgiot_dlink_pb],
         services => #{'dgiot.Dlink' => dgiot_dlink_server}
     },
     {ok, _} = grpc:start_server(server, 30051, Services, []).
@@ -28,13 +29,15 @@ start() ->
 stop() ->
     _ = grpc:stop_server(server).
 
+%%https://grpc.io/docs/languages/php/basics/
 login() ->
-    SvrAddr =  "http://127.0.0.1:30051",
+    SvrAddr = "http://127.0.0.1:30051",
     {ok, _} = grpc_client_sup:create_channel_pool(channel, SvrAddr, #{}).
 
 logout() ->
     _ = grpc_client_sup:stop_channel_pool(channel).
 
 send() ->
-    dgiot_dlink_client:say_hello(#{name => <<"Xiao Ming">>}, #{channel => channel}).
+    Result = dgiot_dlink_client:say_hello(#{name => <<"Xiao Ming">>}, #{channel => channel}),
+    io:format("Result ~p ~n", [Result]).
 

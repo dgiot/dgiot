@@ -122,7 +122,7 @@ get_keys(ProductId, Function, <<"*">>) ->
         {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
             lists:foldl(fun(X, {Names, Acc}) ->
                 case X of
-                    #{<<"identifier">> := Identifier, <<"name">> := Name, <<"isshow">> := true} ->
+                    #{<<"identifier">> := Identifier, <<"name">> := Name, <<"isstorage">> := true} ->
                         case Acc of
                             <<"">> ->
                                 {Names ++ [Name], <<Function/binary, "(", Identifier/binary, ") \'", Identifier/binary, "\'">>};
@@ -134,7 +134,7 @@ get_keys(ProductId, Function, <<"*">>) ->
                 end
                         end, {[], <<"">>}, Props);
         _Other ->
-            ?LOG(info, "_Other ~p", [_Other]),
+            ?LOG(info, "~p _Other ~p", [ProductId, _Other]),
             {[], <<"">>}
     end;
 

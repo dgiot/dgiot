@@ -1,426 +1,874 @@
 {
   "properties": [
     {
-      "name": "测试状态",
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "afn": "",
+        "byteType": "",
+        "bytelen": "",
+        "collection": "%s",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "da": "",
+        "data": "null",
+        "dt": "",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "dis": [
+          {
+            "data": "1",
+            "key": "op_8_2_1_9_bit0",
+            "type": "位",
+            "undefined": "位"
+          }
+        ]
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无操作",
+          "1": "复位"
+        },
+        "type": "enum"
+      },
+      "devicetype": "用户信息传输装置操作信息",
+      "identifier": "op_8_2_1_9_bit0",
       "index": 0,
       "isshow": true,
-      "dataForm": {
-        "data": "null",
-        "rate": 1,
-        "order": 0,
-        "round": "all",
-        "offset": 0,
-        "address": "0X10",
-        "control": "%d",
-        "iscount": "0",
-        "slaveid": "0X10",
-        "protocol": "DLINK",
-        "strategy": "主动上报",
-        "collection": "%s",
-        "countround": "all",
-        "operatetype": "readCoils",
-        "originaltype": "short16_AB",
-        "countstrategy": 20,
-        "countcollection": "%s"
-      },
-      "dataType": {
-        "das": [],
-        "type": "enum",
-        "specs": {
-          "0": "测试状态",
-          "1": "正常监视状态"
-        }
-      },
+      "moduleType": "properties",
+      "name": "复位操作",
       "required": true,
-      "updateAt": "1648805349267",
+      "updateAt": "1648873308480",
+      "isstorage": true
+    },
+    {
       "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "afn": "",
+        "byteType": "",
+        "bytelen": "",
+        "collection": "%s",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "da": "",
+        "data": "null",
+        "dt": "",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
       "dataSource": {
+        "_dlinkindex": "",
         "dis": [
           {
-            "key": "status_8_2_1_8_bit0",
-            "data": "2",
+            "data": "1",
+            "key": "op_8_2_1_9_bit1",
             "type": "位",
             "undefined": "位"
           }
-        ],
-        "_dlinkindex": ""
+        ]
       },
-      "devicetype": "用户信息传输装置",
-      "identifier": "status_8_2_1_8_bit0",
-      "moduleType": "properties"
-    },
-    {
-      "name": "火警状态",
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无操作",
+          "1": "消音"
+        },
+        "type": "enum"
+      },
+      "devicetype": "用户信息传输装置操作信息",
+      "identifier": "op_8_2_1_9_bit1",
       "index": 1,
       "isshow": true,
-      "dataForm": {
-        "da": "",
-        "dt": "",
-        "afn": "",
-        "data": "null",
-        "rate": 1,
-        "order": 0,
-        "round": "all",
-        "offset": 0,
-        "address": "0X10",
-        "bytelen": "",
-        "control": "%d",
-        "iscount": "0",
-        "slaveid": "0X10",
-        "byteType": "",
-        "protocol": "DLINK",
-        "strategy": "主动上报",
-        "collection": "%s",
-        "countround": "all",
-        "operatetype": "readCoils",
-        "originaltype": "short16_AB",
-        "countstrategy": 20,
-        "countcollection": "%s"
-      },
-      "dataType": {
-        "das": [],
-        "type": "enum",
-        "specs": {
-          "0": "无火警",
-          "1": "火警"
-        }
-      },
+      "moduleType": "properties",
+      "name": "消音操作",
       "required": true,
-      "updateAt": "1648803766496",
+      "updateAt": "1648863589709",
+      "isstorage": true
+    },
+    {
       "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "afn": "",
+        "byteType": "",
+        "bytelen": "",
+        "collection": "%s",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "da": "",
+        "data": "null",
+        "dt": "",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
       "dataSource": {
+        "_dlinkindex": "",
         "dis": [
           {
-            "key": "status_8_2_1_8_bit1",
             "data": "1",
+            "key": "op_8_2_1_9_bit2",
             "type": "位",
             "undefined": "位"
           }
-        ],
-        "_dlinkindex": ""
+        ]
       },
-      "devicetype": "用户信息传输装置",
-      "identifier": "status_8_2_1_8_bit1",
-      "moduleType": "properties"
-    },
-    {
-      "name": "故障状态",
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无操作",
+          "1": "手动报警"
+        },
+        "type": "enum"
+      },
+      "devicetype": "用户信息传输装置操作信息",
+      "identifier": "op_8_2_1_9_bit2",
       "index": 2,
       "isshow": true,
-      "dataForm": {
-        "da": "",
-        "dt": "",
-        "afn": "",
-        "data": "null",
-        "rate": 1,
-        "order": 0,
-        "round": "all",
-        "offset": 0,
-        "address": "0X10",
-        "bytelen": "",
-        "control": "%d",
-        "iscount": "0",
-        "slaveid": "0X10",
-        "byteType": "",
-        "protocol": "DLINK",
-        "strategy": "主动上报",
-        "collection": "%s",
-        "countround": "all",
-        "operatetype": "readCoils",
-        "originaltype": "short16_AB",
-        "countstrategy": 20,
-        "countcollection": "%s"
-      },
-      "dataType": {
-        "das": [],
-        "type": "enum",
-        "specs": {
-          "0": "无故障",
-          "1": "故障"
-        }
-      },
+      "moduleType": "properties",
+      "name": "报警操作",
       "required": true,
-      "updateAt": "1648803742869",
+      "updateAt": "1648863533326",
+      "isstorage": true
+    },
+    {
       "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "afn": "",
+        "byteType": "",
+        "bytelen": "",
+        "collection": "%s",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "da": "",
+        "data": "null",
+        "dt": "",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
       "dataSource": {
+        "_dlinkindex": "",
         "dis": [
           {
-            "key": "status_8_2_1_8_bit2",
             "data": "1",
+            "key": "op_8_2_1_9_bit3",
             "type": "位",
             "undefined": "位"
           }
-        ],
-        "_dlinkindex": ""
+        ]
       },
-      "devicetype": "用户信息传输装置",
-      "identifier": "status_8_2_1_8_bit2",
-      "moduleType": "properties"
-    },
-    {
-      "name": "主电状态",
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无操作",
+          "1": "警情消除"
+        },
+        "type": "enum"
+      },
+      "devicetype": "用户信息传输装置操作信息",
+      "identifier": "op_8_2_1_9_bit3",
       "index": 3,
       "isshow": true,
-      "dataForm": {
-        "da": "",
-        "dt": "",
-        "afn": "",
-        "data": "null",
-        "rate": 1,
-        "order": 0,
-        "round": "all",
-        "offset": 0,
-        "address": "0X10",
-        "bytelen": "",
-        "control": "%d",
-        "iscount": "0",
-        "slaveid": "0X10",
-        "byteType": "",
-        "protocol": "DLINK",
-        "strategy": "主动上报",
-        "collection": "%s",
-        "countround": "all",
-        "operatetype": "readCoils",
-        "originaltype": "short16_AB",
-        "countstrategy": 20,
-        "countcollection": "%s"
-      },
-      "dataType": {
-        "das": [],
-        "type": "enum",
-        "specs": {
-          "0": "主电正常",
-          "1": "主电故障"
-        }
-      },
+      "moduleType": "properties",
+      "name": "警情操作",
       "required": true,
-      "updateAt": "1648803726514",
+      "updateAt": "1648863613149",
+      "isstorage": true
+    },
+    {
       "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "afn": "",
+        "byteType": "",
+        "bytelen": "",
+        "collection": "%s",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "da": "",
+        "data": "null",
+        "dt": "",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
       "dataSource": {
+        "_dlinkindex": "",
         "dis": [
           {
-            "key": "status_8_2_1_8_bit3",
             "data": "1",
+            "key": "op_8_2_1_9_bit4",
             "type": "位",
             "undefined": "位"
           }
-        ],
-        "_dlinkindex": ""
+        ]
       },
-      "devicetype": "用户信息传输装置",
-      "identifier": "status_8_2_1_8_bit3",
-      "moduleType": "properties"
-    },
-    {
-      "name": "备电状态",
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无操作",
+          "1": "自检"
+        },
+        "type": "enum"
+      },
+      "devicetype": "用户信息传输装置操作信息",
+      "identifier": "op_8_2_1_9_bit4",
       "index": 4,
       "isshow": true,
-      "dataForm": {
-        "da": "",
-        "dt": "",
-        "afn": "",
-        "data": "null",
-        "rate": 1,
-        "order": 0,
-        "round": "all",
-        "offset": 0,
-        "address": "0X10",
-        "bytelen": "",
-        "control": "%d",
-        "iscount": "0",
-        "slaveid": "0X10",
-        "byteType": "",
-        "protocol": "DLINK",
-        "strategy": "主动上报",
-        "collection": "%s",
-        "countround": "all",
-        "operatetype": "readCoils",
-        "originaltype": "short16_AB",
-        "countstrategy": 20,
-        "countcollection": "%s"
-      },
-      "dataType": {
-        "das": [],
-        "type": "enum",
-        "specs": {
-          "0": "备电正常",
-          "1": "备电故障"
-        }
-      },
+      "moduleType": "properties",
+      "name": "自检操作",
       "required": true,
-      "updateAt": "1648803691414",
+      "updateAt": "1648863544963",
+      "isstorage": true
+    },
+    {
       "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "afn": "",
+        "byteType": "",
+        "bytelen": "",
+        "collection": "%s",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "da": "",
+        "data": "null",
+        "dt": "",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
       "dataSource": {
+        "_dlinkindex": "",
         "dis": [
           {
-            "key": "status_8_2_1_8_bit4",
             "data": "1",
+            "key": "op_8_2_1_9_bit5",
             "type": "位",
             "undefined": "位"
           }
-        ],
-        "_dlinkindex": ""
+        ]
       },
-      "devicetype": "用户信息传输装置",
-      "identifier": "status_8_2_1_8_bit4",
-      "moduleType": "properties"
-    },
-    {
-      "name": "通信状态",
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无操作",
+          "1": "查岗应答"
+        },
+        "type": "enum"
+      },
+      "devicetype": "用户信息传输装置操作信息",
+      "identifier": "op_8_2_1_9_bit5",
       "index": 5,
       "isshow": true,
-      "dataForm": {
-        "da": "",
-        "dt": "",
-        "afn": "",
-        "data": "null",
-        "rate": 1,
-        "order": 0,
-        "round": "all",
-        "offset": 0,
-        "address": "0X10",
-        "bytelen": "",
-        "control": "%d",
-        "iscount": "0",
-        "slaveid": "0X10",
-        "byteType": "",
-        "protocol": "DLINK",
-        "strategy": "主动上报",
-        "collection": "%s",
-        "countround": "all",
-        "operatetype": "readCoils",
-        "originaltype": "short16_AB",
-        "countstrategy": 20,
-        "countcollection": "%s"
-      },
-      "dataType": {
-        "das": [],
-        "type": "enum",
-        "specs": {
-          "0": "通信信道正常",
-          "1": "与监控中心通信信道故障"
-        }
-      },
+      "moduleType": "properties",
+      "name": "查岗操作",
       "required": true,
-      "updateAt": "1648805398284",
+      "updateAt": "1648863619537",
+      "isstorage": true
+    },
+    {
       "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "afn": "",
+        "byteType": "",
+        "bytelen": "",
+        "collection": "%s",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "da": "",
+        "data": "null",
+        "dt": "",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
       "dataSource": {
+        "_dlinkindex": "",
         "dis": [
           {
-            "key": "status_8_2_1_8_bit5",
-            "data": "2",
+            "data": "1",
+            "key": "op_8_2_1_9_bit6",
             "type": "位",
             "undefined": "位"
           }
-        ],
-        "_dlinkindex": ""
+        ]
       },
-      "devicetype": "用户信息传输装置",
-      "identifier": "status_8_2_1_8_bit5",
-      "moduleType": "properties"
-    },
-    {
-      "name": "连接线路状态",
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无操作",
+          "1": "测试"
+        },
+        "type": "enum"
+      },
+      "devicetype": "用户信息传输装置操作信息",
+      "identifier": "op_8_2_1_9_bit6",
       "index": 6,
       "isshow": true,
-      "dataForm": {
-        "da": "",
-        "dt": "",
-        "afn": "",
-        "data": "null",
-        "rate": 1,
-        "order": 0,
-        "round": "all",
-        "offset": 0,
-        "address": "0X10",
-        "bytelen": "",
-        "control": "%d",
-        "iscount": "0",
-        "slaveid": "0X10",
-        "byteType": "",
-        "protocol": "DLINK",
-        "strategy": "主动上报",
-        "collection": "%s",
-        "countround": "all",
-        "operatetype": "readCoils",
-        "originaltype": "short16_AB",
-        "countstrategy": 20,
-        "countcollection": "%s"
-      },
-      "dataType": {
-        "das": [],
-        "type": "enum",
-        "specs": {
-          "0": "监测连接线路故障",
-          "1": "监测连接线路正常"
-        }
-      },
+      "moduleType": "properties",
+      "name": "测试操作",
       "required": true,
-      "updateAt": "1648803531383",
+      "updateAt": "1648863623807",
+      "isstorage": true
+    },
+    {
       "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "afn": "",
+        "byteType": "",
+        "bytelen": "",
+        "collection": "%s",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "da": "",
+        "data": "null",
+        "dt": "",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
       "dataSource": {
+        "_dlinkindex": "",
         "dis": [
           {
-            "key": "status_8_2_1_8_bit6",
             "data": "1",
+            "key": "op_8_2_1_9_bit7",
             "type": "位",
             "undefined": "位"
           }
-        ],
-        "_dlinkindex": ""
-      },
-      "devicetype": "用户信息传输装置",
-      "identifier": "status_8_2_1_8_bit6",
-      "moduleType": "properties"
-    },
-    {
-      "name": "预留状态",
-      "index": 7,
-      "isshow": true,
-      "dataForm": {
-        "data": "null",
-        "rate": 1,
-        "order": 0,
-        "round": "all",
-        "offset": 0,
-        "address": "0X10",
-        "control": "%d",
-        "iscount": "0",
-        "slaveid": "0X10",
-        "protocol": "DLINK",
-        "strategy": "主动上报",
-        "collection": "%s",
-        "countround": "all",
-        "operatetype": "readCoils",
-        "originaltype": "short16_AB",
-        "countstrategy": 20,
-        "countcollection": "%s"
+        ]
       },
       "dataType": {
         "das": [],
-        "type": "enum",
         "specs": {
           "0": "预留",
           "1": "预留"
-        }
+        },
+        "type": "enum"
       },
+      "devicetype": "用户信息传输装置操作信息",
+      "identifier": "op_8_2_1_9_bit7",
+      "index": 7,
+      "isshow": true,
+      "moduleType": "properties",
+      "name": "预留操作",
       "required": true,
-      "updateAt": "1648802015766",
+      "updateAt": "1648863627722",
+      "isstorage": true
+    },
+    {
       "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%s",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
       "dataSource": {
+        "_dlinkindex": "",
         "dis": [
           {
-            "key": "status_8_2_1_8_bit7",
+            "data": "2",
+            "key": "status_8_2_1_8_bit0",
+            "type": "位",
+            "undefined": "位"
+          }
+        ]
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "测试状态",
+          "1": "正常监视状态"
+        },
+        "type": "enum"
+      },
+      "devicetype": "用户信息传输装置运行状态",
+      "identifier": "status_8_2_1_8_bit0",
+      "index": 8,
+      "isshow": true,
+      "moduleType": "properties",
+      "name": "测试状态",
+      "required": true,
+      "updateAt": "1648805349267",
+      "isstorage": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "afn": "",
+        "byteType": "",
+        "bytelen": "",
+        "collection": "%s",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "da": "",
+        "data": "null",
+        "dt": "",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "dis": [
+          {
             "data": "1",
+            "key": "status_8_2_1_8_bit1",
+            "type": "位",
+            "undefined": "位"
+          }
+        ]
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无火警",
+          "1": "火警"
+        },
+        "type": "enum"
+      },
+      "devicetype": "用户信息传输装置运行状态",
+      "identifier": "status_8_2_1_8_bit1",
+      "index": 9,
+      "isshow": true,
+      "moduleType": "properties",
+      "name": "火警状态",
+      "required": true,
+      "updateAt": "1648803766496",
+      "isstorage": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "afn": "",
+        "byteType": "",
+        "bytelen": "",
+        "collection": "%s",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "da": "",
+        "data": "null",
+        "dt": "",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "dis": [
+          {
+            "data": "1",
+            "key": "status_8_2_1_8_bit2",
+            "type": "位",
+            "undefined": "位"
+          }
+        ]
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无故障",
+          "1": "故障"
+        },
+        "type": "enum"
+      },
+      "devicetype": "用户信息传输装置运行状态",
+      "identifier": "status_8_2_1_8_bit2",
+      "index": 10,
+      "isshow": true,
+      "moduleType": "properties",
+      "name": "故障状态",
+      "required": true,
+      "updateAt": "1648803742869",
+      "isstorage": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "afn": "",
+        "byteType": "",
+        "bytelen": "",
+        "collection": "%s",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "da": "",
+        "data": "null",
+        "dt": "",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "dis": [
+          {
+            "data": "1",
+            "key": "status_8_2_1_8_bit3",
+            "type": "位",
+            "undefined": "位"
+          }
+        ]
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "主电正常",
+          "1": "主电故障"
+        },
+        "type": "enum"
+      },
+      "devicetype": "用户信息传输装置运行状态",
+      "identifier": "status_8_2_1_8_bit3",
+      "index": 11,
+      "isshow": true,
+      "moduleType": "properties",
+      "name": "主电状态",
+      "required": true,
+      "updateAt": "1648803726514",
+      "isstorage": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "afn": "",
+        "byteType": "",
+        "bytelen": "",
+        "collection": "%s",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "da": "",
+        "data": "null",
+        "dt": "",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "dis": [
+          {
+            "data": "1",
+            "key": "status_8_2_1_8_bit4",
+            "type": "位",
+            "undefined": "位"
+          }
+        ]
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "备电正常",
+          "1": "备电故障"
+        },
+        "type": "enum"
+      },
+      "devicetype": "用户信息传输装置运行状态",
+      "identifier": "status_8_2_1_8_bit4",
+      "index": 12,
+      "isshow": true,
+      "moduleType": "properties",
+      "name": "备电状态",
+      "required": true,
+      "updateAt": "1648803691414",
+      "isstorage": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "afn": "",
+        "byteType": "",
+        "bytelen": "",
+        "collection": "%s",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "da": "",
+        "data": "null",
+        "dt": "",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "dis": [
+          {
+            "data": "2",
+            "key": "status_8_2_1_8_bit5",
+            "type": "位",
+            "undefined": "位"
+          }
+        ]
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "通信信道正常",
+          "1": "与监控中心通信信道故障"
+        },
+        "type": "enum"
+      },
+      "devicetype": "用户信息传输装置运行状态",
+      "identifier": "status_8_2_1_8_bit5",
+      "index": 13,
+      "isshow": true,
+      "moduleType": "properties",
+      "name": "通信状态",
+      "required": true,
+      "updateAt": "1648805398284",
+      "isstorage": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "afn": "",
+        "byteType": "",
+        "bytelen": "",
+        "collection": "%s",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "da": "",
+        "data": "null",
+        "dt": "",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "dis": [
+          {
+            "data": "1",
+            "key": "status_8_2_1_8_bit6",
+            "type": "位",
+            "undefined": "位"
+          }
+        ]
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "监测连接线路故障",
+          "1": "监测连接线路正常"
+        },
+        "type": "enum"
+      },
+      "devicetype": "用户信息传输装置运行状态",
+      "identifier": "status_8_2_1_8_bit6",
+      "index": 14,
+      "isshow": true,
+      "moduleType": "properties",
+      "name": "连接线路状态",
+      "required": true,
+      "updateAt": "1648803531383",
+      "isstorage": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%s",
+        "control": "%d",
+        "countcollection": "%s",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "DLINK",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "dis": [
+          {
+            "data": "1",
+            "key": "status_8_2_1_8_bit7",
             "type": "bit",
             "undefined": "位"
           }
-        ],
-        "_dlinkindex": ""
+        ]
       },
-      "devicetype": "用户信息传输装置",
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "预留",
+          "1": "预留"
+        },
+        "type": "enum"
+      },
+      "devicetype": "用户信息传输装置运行状态",
       "identifier": "status_8_2_1_8_bit7",
-      "moduleType": "properties"
+      "index": 15,
+      "isshow": true,
+      "moduleType": "properties",
+      "name": "预留状态",
+      "required": true,
+      "updateAt": "1648802015766",
+      "isstorage": true
     }
   ]
 }

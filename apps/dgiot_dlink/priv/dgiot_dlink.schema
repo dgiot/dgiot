@@ -1,18 +1,23 @@
 %%-*- mode: erlang -*-
 %% dgiot_mqtt config mapping
 
-{mapping, "auth.password_hash", "dgiot_mqtt.password_hash", [
+{mapping, "auth.password_hash", "dgiot_dlink.password_hash", [
   {default, sha256},
   {datatype, {enum, [plain, md5, sha, sha256, sha512]}}
 ]}.
 
-{mapping, "iot_dgiot_mqtt.listener", "dgiot_mqtt.listener", [
+{mapping, "iot_dgiot_dlink.listener", "dgiot_dlink.listener", [
 {default, 31888},
 {datatype, [integer, ip]}
 ]}.
 
 
-{mapping, "iot_dgiot_mqtt.heartbeat", "dgiot_mqtt.heartbeat", [
+{mapping, "iot_dgiot_dlink.heartbeat", "dgiot_dlink.heartbeat", [
 {default, 180},
 {datatype, integer}
+]}.
+
+{mapping, "iot_dgiot_dlink.super_pwd", "dgiot_dlink.super_pwd", [
+{default, "w9943535dsgfgdsgdsertet"},
+{datatype, string}
 ]}.

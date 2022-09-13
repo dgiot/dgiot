@@ -700,7 +700,7 @@ function install_go_fastdfs() {
   mv ${script_dir}/go_fastdfs ${install_dir}
   ${csudo} bash -c "sed -i 's!{{ip}}!${lanip}!g'  ${install_dir}/go_fastdfs/cfg.json"
   ${csudo} bash -c "sed -i 's/{{port}}/1250/g'  ${install_dir}/go_fastdfs/cfg.json"
-  ${csudo} bash -c "sed -i 's/{{domain_name}}/${domain_name}/g'  ${install_dir}/go_fastdfs/cfg.json"
+  ${csudo} bash -c "sed -i 's/{{domain_name}}/${lanip}/g'  ${install_dir}/go_fastdfs/cfg.json"
 
   if [ -f ${install_dir}/go_fastdfs/conf/ ]; then
     rm ${install_dir}/go_fastdfs/conf/ -rf
@@ -900,35 +900,6 @@ function install_dgiot() {
   echo -e "`date +%F_%T` $LINENO: ${GREEN} install_dgiot dgiot${NC}"
   # 修改dgiot.conf
   ${csudo} bash -c "sed -ri 's!/etc/ssl/certs/domain_name!/etc/ssl/certs/${domain_name}!g' ${install_dir}/go_fastdfs/files/package/dgiot/etc/emqx.conf"
-
-  cat > ${install_dir}/go_fastdfs/files/package/dgiot/data/loaded_plugins << "EOF"
-  {emqx_management, true}.
-  {emqx_dashboard, true}.
-  {emqx_modules, false}.
-  {emqx_recon, true}.
-  {emqx_retainer, true}.
-  {emqx_telemetry, true}.
-  {emqx_rule_engine, true}.
-  {emqx_bridge_mqtt, false}.
-  {dgiot, true}.
-  {dgiot_parse, true}.
-  {dgiot_api, true}.
-  {dgiot_bridge, true}.
-  {dgiot_device, true}.
-  {dgiot_tdengine, true}.
-  {dgiot_task, true}.
-  {dgiot_http, true}.
-  {dgiot_ffmpeg, true}.
-  {dgiot_license, true}.
-  {dgiot_topo, true}.
-  {dgiot_opc, true}.
-  {dgiot_meter, true}.
-  {dgiot_matlab, true}.
-  {dgiot_niisten, true}.
-  {dgiot_modbus, true}.
-  {dgiot_group, true}.
-  {dgiot_ffmpeg, true}.
-EOF
 
   if [ -d ${install_dir}/dgiot/ ]; then
     clean_service dgiot
@@ -1514,10 +1485,10 @@ dgiot_shell
 # dgiot_install.sh -v [single | cluster | devops | ci] -s [dgiot_n] -p [dgiot_your_plugin] -m [dgiotmd5] -d [your_domain_name] -e [datanode_eip] -s [pg_auth]
 # set parameters by default value
 deployType=single                             # [single | cluster | devops | ci]
-domain_name="prod.iotn2n.com"                 # [prod.iotn2n.com | your_domain_name]
-software="dgiot_n165"                          # [dgiot_n165| dgiot_n]
+domain_name="prod.dgiotcloud.cn"              # [prod.dgiotcloud.cn | your_domain_name]
+software="dgiot_n229"                          # [dgiot_n229| dgiot_n]
 plugin="dgiot"                                # [dgiot | dgiot_your_plugin]
-dgiotmd5="da072c15a460fb8ef7095d142b3fcc10"   # [dgiotmd5]
+dgiotmd5="8431e1d68463ce81e96a758e684fe9b1"   # [dgiotmd5]
 pg_eip="changeyourip"                            # [datanode_eip]
 pg_auth='changeyourpassword'                  # [pg_auth]
 

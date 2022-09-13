@@ -211,6 +211,7 @@ overlay_vars_rel(RelType) ->
         %% dgiot base plugin
         , {enable_plugin_dgiot_http, true}
         , {enable_plugin_dgiot_topo, true}
+        , {enable_plugin_dgiot_bamis, true}
         , {enable_plugin_dgiot_dlink, true}
         , {enable_plugin_dgiot_evidence, true}
         , {enable_plugin_dgiot_opc, true}
@@ -220,7 +221,7 @@ overlay_vars_rel(RelType) ->
         , {enable_plugin_dgiot_gb26875, true}
         , {enable_plugin_dgiot_hjt212, true}
         , {enable_plugin_dgiot_bacnet, true}
-        , {enable_plugin_dgiot_bamis, true}
+        , {enable_plugin_dgiot_factory, true}
         , {vm_args_file, VmArgs}
     ].
 
@@ -351,6 +352,7 @@ relx_plugin_apps_per_rel(cloud) ->
         , dgiot_gb26875
         , dgiot_hjt212
         , dgiot_bacnet
+        , dgiot_factory
     ];
 relx_plugin_apps_per_rel(edge) ->
     [].

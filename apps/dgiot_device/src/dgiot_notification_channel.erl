@@ -23,7 +23,7 @@
 -export([start/2]).
 
 %% Channel callback
--export([init/3, handle_init/1, handle_event/3, handle_message/2, stop/3]).
+-export([init/3, handle_init/1, handle_event/3, handle_message/2, stop/3, test/1]).
 
 %% 注册通道类型
 -channel_type(#{
@@ -93,6 +93,7 @@ init(?TYPE, ChannelId, Args) ->
         id = ChannelId,
         env = Args
     },
+    dgiot_notification:save_configuration(),
     dgiot_parse_hook:subscribe(<<"Notification">>, get, ChannelId),
 %%    dgiot_parse_id:get_channelid(?BACKEND_CHL, ?TYPE, <<"dgiot_notification">>),
     {ok, State, []}.
@@ -115,7 +116,12 @@ handle_message({rule, #{clientid := _DevAddr, disconnected_at := _DisconnectedAt
 
 %% SELECT payload.electricity as electricity FROM  "$dg/user/alarm/94656917ab/157d0ff60f/#" where electricity  >  20
 handle_message({rule, #{metadata := #{rule_id := <<"rule:Notification_", Ruleid/binary>>}, clientid := DeviceId, payload := _Payload, topic := _Topic} = _Msg, Context}, State) ->
-    dgiot_umeng:add_notification(Ruleid, DeviceId, Context),
+    NewContext =
+        maps:fold(fun(Key, Value, Acc) ->
+            Acc#{<<"dgiot_alarmkey">> => Key, <<"dgiot_alarmvalue">> => Value}
+                  end, #{}, Context),
+    Content = dgiot_umeng:add_notification(Ruleid, DeviceId, NewContext),
+    dgiot_umeng:send_msg(Content),
     {ok, State};
 
 handle_message({sync_parse, Pid, 'after', get, _Token, <<"Notification">>, #{<<"results">> := _Results} = ResBody}, State) ->
@@ -129,3 +135,31 @@ handle_message(_Message, State) ->
 
 stop(_ChannelType, _ChannelId, _State) ->
     ok.
+
+
+test(ProductId) ->
+    spawn(fun() ->
+        timer:sleep(3 * 100),
+        lists:foreach(
+            fun(I) ->
+                DeviceId = dgiot_parse_id:get_deviceid(ProductId, dgiot_utils:to_binary(I)),
+                Body = #{
+                    <<"ACL">> => #{
+                        <<"*">> => #{
+                            <<"read">> => true,
+                            <<"write">> => true
+                        }
+                    },
+                    <<"content">> => #{<<"alertstatus">> => true, <<"_deviceid">> => DeviceId, <<"_productid">> => ProductId},
+                    <<"public">> => true,
+                    <<"status">> => 0,
+                    <<"sender">> => #{
+                        <<"__type">> => <<"Pointer">>,
+                        <<"className">> => <<"_User">>,
+                        <<"objectId">> => <<"Klht7ERlYn">>
+                    },
+                    <<"type">> => <<ProductId/binary, "_alarm">>
+                },
+                dgiot_parse:create_object(<<"Notification">>, Body)
+            end, lists:seq(1, 6000))
+          end).

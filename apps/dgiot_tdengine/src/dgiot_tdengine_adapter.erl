@@ -56,7 +56,7 @@ do_channel(Product, Fun) ->
         {ok, Channel} ->
             Fun(Channel);
         {error, not_find} ->
-            ?LOG(warning, "~s not find tdengine channel!", [Product]),
+            ?LOG(warning, "~p not find tdengine channel!", [Product]),
             {error, not_find_tdengine}
     end.
 

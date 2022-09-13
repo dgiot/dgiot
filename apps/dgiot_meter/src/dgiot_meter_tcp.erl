@@ -35,18 +35,13 @@ init(TCPState) ->
     {ok, TCPState}.
 
 %%设备登录报文，登陆成功后，开始搜表
-handle_info({tcp, Buff}, #tcp{socket = Socket, state = #state{id = ChannelId, dtuaddr = <<>>, search = Search} = State} = TCPState) ->
+handle_info({tcp, Buff}, #tcp{socket = Socket, state = #state{id = ChannelId, dtuaddr = <<>>, search = Search, len = Len} = State} = TCPState) ->
     DTUIP = dgiot_utils:get_ip(Socket),
-    NewBuff =
-        case is_binary(Buff) of
-            true -> dgiot_utils:binary_to_hex(Buff);
-            false -> Buff
-        end,
     {DtuProductId, _, _} = dgiot_data:get({dtu, ChannelId}),
     {Protocol, DtuAddr} =
         case Buff of
             <<16#68, _:4/bytes, 16#68, _A1:8/bytes, _Rest/binary>> ->
-                dgiot_bridge:send_log(ChannelId, "~s ~p DLT376 login   ~p ", [?FILE, ?LINE, NewBuff]),
+                dgiot_bridge:send_log(ChannelId, "~s ~p DLT376 login   ~p ", [?FILE, ?LINE, dgiot_utils:binary_to_hex(Buff)]),
                 {_, [Acc | _]} = dlt376_decoder:parse_frame(Buff, []),  %% NewBuff
                 #{<<"msgtype">> := Protocol1, <<"con">> := Con, <<"addr">> := MeterAddr} = Acc,
                 Concentrator = maps:get(<<"concentrator">>, Acc, <<16#31, 16#07, 16#5F, 16#81, 16#00>>),
@@ -69,6 +64,21 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, state = #state{id = ChannelId, dt
                 dgiot_tcp_server:send(TCPState, Frame2),
                 {Protocol1, MeterAddr};
             _ ->
+                BinBuff = dgiot_utils:binary_to_hex(Buff),
+                List = dgiot_utils:to_list(BinBuff),
+                List1 = dgiot_utils:to_list(Buff),
+                NewBuff =
+                    case length(List) of
+                        Len ->
+                            BinBuff;
+                        _ ->
+                            case length(List1) of
+                                Len ->
+                                    Buff;
+                                _ ->
+                                    <<>>
+                            end
+                    end,
                 dgiot_bridge:send_log(ChannelId, "~s ~p DLT645 dtu login ~p", [?FILE, ?LINE, NewBuff]),
                 {?DLT645, NewBuff}
         end,
@@ -100,34 +110,39 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, state = #state{id = ChannelId, dt
             dgiot_metrics:inc(dgiot_meter, <<"dtu_online">>, 1),
             {noreply, TCPState#tcp{buff = <<>>, register = true, clientid = DtuId, state = State#state{product = ProductId, dtuaddr = DtuAddr, protocol = ?DLT376, ref = NewRef, step = NewStep}}};
         ?DLT645 ->
-            dgiot_meter:create_dtu(DtuAddr, ChannelId, DTUIP),
-            {DtuProductId, _, _} = dgiot_data:get({dtu, ChannelId}),
-            %%                    $dg/device/{productId}/{deviceAddr}/profile
-            Topic = <<"$dg/device/", DtuProductId/binary, "/", DtuAddr/binary, "/profile">>,
-            dgiot_mqtt:subscribe(Topic),
-            {NewRef, NewStep} =
-                case Search of
-                    <<"nosearch">> ->
-                        lists:map(fun(X) ->
-                            case X of
-                                #{<<"product">> := #{<<"objectId">> := MeterProductid}, <<"devaddr">> := Meteraddr} ->
-                                    dgiot_bridge:send_log(ChannelId, MeterProductid, Meteraddr, "save taskque Meteraddr ~p", [Meteraddr]),
-                                    dgiot_task:save_pnque(DtuProductId, DtuAddr, MeterProductid, Meteraddr);
-                                _ ->
-                                    pass
-                            end
-                                  end, dgiot_meter:get_sub_device(DtuAddr)),
-                        {undefined, read_meter};
-                    <<"quick">> ->
-                        dgiot_meter:search_meter(tcp, undefined, TCPState, 0),
-                        {undefined, search_meter};
-                    _ ->
-                        {Ref, Step, _Payload} = dgiot_meter:search_meter(tcp, undefined, TCPState, 1),
-                        {Ref, Step}
-                end,
-            DtuId = dgiot_parse_id:get_deviceid(DtuProductId, DtuAddr),
-            dgiot_metrics:inc(dgiot_meter, <<"dtu_online">>, 1),
-            {noreply, TCPState#tcp{buff = <<>>, register = true, clientid = DtuId, state = State#state{product = DtuProductId, dtuaddr = DtuAddr, protocol = ?DLT645, ref = NewRef, step = NewStep}}}
+            case DtuAddr of
+                <<>> ->
+                    {noreply, TCPState#tcp{buff = <<>>}};
+                _->
+                    dgiot_meter:create_dtu(DtuAddr, ChannelId, DTUIP),
+                    {DtuProductId, _, _} = dgiot_data:get({dtu, ChannelId}),
+                    %%                    $dg/device/{productId}/{deviceAddr}/profile
+                    Topic = <<"$dg/device/", DtuProductId/binary, "/", DtuAddr/binary, "/profile">>,
+                    dgiot_mqtt:subscribe(Topic),
+                    {NewRef, NewStep} =
+                        case Search of
+                            <<"nosearch">> ->
+                                lists:map(fun(X) ->
+                                    case X of
+                                        #{<<"product">> := #{<<"objectId">> := MeterProductid}, <<"devaddr">> := Meteraddr} ->
+                                            dgiot_bridge:send_log(ChannelId, MeterProductid, Meteraddr, "save taskque Meteraddr ~p", [Meteraddr]),
+                                            dgiot_task:save_pnque(DtuProductId, DtuAddr, MeterProductid, Meteraddr);
+                                        _ ->
+                                            pass
+                                    end
+                                          end, dgiot_meter:get_sub_device(DtuAddr)),
+                                {undefined, read_meter};
+                            <<"quick">> ->
+                                dgiot_meter:search_meter(tcp, undefined, TCPState, 0),
+                                {undefined, search_meter};
+                            _ ->
+                                {Ref, Step, _Payload} = dgiot_meter:search_meter(tcp, undefined, TCPState, 1),
+                                {Ref, Step}
+                        end,
+                    DtuId = dgiot_parse_id:get_deviceid(DtuProductId, DtuAddr),
+                    dgiot_metrics:inc(dgiot_meter, <<"dtu_online">>, 1),
+                    {noreply, TCPState#tcp{buff = <<>>, register = true, clientid = DtuId, state = State#state{product = DtuProductId, dtuaddr = DtuAddr, protocol = ?DLT645, ref = NewRef, step = NewStep}}}
+            end
     end;
 
 %%定时器触发搜表
@@ -273,14 +288,14 @@ handle_info({deliver, _Topic, Msg}, #tcp{state = #state{id = ChannelId, protocol
                     end,
                     {noreply, TCPState};
                 [<<"$dg">>, <<"device">>, ProductId, DevAddr, <<"profile">>] ->
-                    dgiot_umeng:send_message_to3D(ProductId, DevAddr, jsx:decode(Payload)),
+                    ProfilePayload = dgiot_device_profile:encode_profile(ProductId, jsx:decode(Payload)),
                     case Protocol of
                         ?DLT376 ->
-                            Payload2 = dlt376_decoder:frame_write_param(#{<<"concentrator">> => DevAddr, <<"payload">> => jsx:decode(Payload)}),
+                            Payload2 = dlt376_decoder:frame_write_param(#{<<"concentrator">> => DevAddr, <<"payload">> => ProfilePayload}),
                             dgiot_bridge:send_log(ChannelId, " ~s ~p DLT376(下发) send to DevAddr ~p => ~p", [?FILE, ?LINE, DevAddr, dgiot_utils:binary_to_hex(Payload2)]),
                             dgiot_tcp_server:send(TCPState, Payload2);
                         ?DLT645 ->
-                            Payload1 = dlt645_decoder:frame_write_param(#{<<"meter">> => DevAddr, <<"payload">> => jsx:decode(Payload)}),
+                            Payload1 = dlt645_decoder:frame_write_param(#{<<"meter">> => DevAddr, <<"payload">> => ProfilePayload}),
                             ?LOG(info, "DLT645 Payload1 :~p ~n~n", [dgiot_utils:binary_to_hex(Payload1)]),
                             dgiot_tcp_server:send(TCPState, Payload1)
                     end,

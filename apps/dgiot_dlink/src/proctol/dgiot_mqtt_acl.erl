@@ -38,6 +38,25 @@ description() -> "Acl with Dlink".
 %%--------------------------------------------------------------------
 %% Internal functions
 %%-------------------------------------------------------------------
+do_check(#{username := <<"dgiot">>, clientid := ClientId}, _PubSub, _Topic) ->
+    io:format("~s ~p ClientId: ~p _Topic ~p ~n", [?FILE, ?LINE, ClientId, _Topic]),
+    SuperPwd = dgiot_utils:to_binary(dgiot:get_env(dgiot_dlink, super_pwd, <<"">>)),
+    case SuperPwd of
+        ClientId ->
+            allow;
+        _ ->
+            deny
+    end;
+
+%% <<"$dg/thing/uniapp/r:46d3eaec6dfeafc9d719899eae858cb7_uniapp/report">>
+do_check(#{clientid := <<Token:34/binary, _Type/binary>>, username := _UserId} = _ClientInfo, publish, <<"$dg/thing/uniapp/", SessionToken:34/binary, "/", _Rest/binary>> = _Topic) ->
+    %% io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, _Topic]),
+    case Token of
+        SessionToken ->
+            allow;
+        _ ->
+            deny
+    end;
 
 %% "$dg/thing/productid/devaddr/#"
 do_check(#{clientid := DeviceAddr, username := ProductID} = _ClientInfo, publish, <<"$dg/thing/", ProductID:10/binary, "/", DeviceInfo/binary>> = _Topic) ->
@@ -48,7 +67,7 @@ do_check(#{clientid := <<ProductID:10/binary, "_", DeviceAddr/binary>>, username
     check_device_addr(DeviceInfo, DeviceAddr);
 
 %% "$dg/thing/deviceid/#"
-do_check(#{clientid := Token, username := UserId} = _ClientInfo, publish, <<"$dg/thing/", DeviceId:10/binary, "/",  _Rest/binary>> = _Topic)
+do_check(#{clientid := Token, username := UserId} = _ClientInfo, publish, <<"$dg/thing/", DeviceId:10/binary, "/", _Rest/binary>> = _Topic)
     when Token =/= undefined ->
 %%    io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, _Topic]),
     case check_device_acl(Token, DeviceId, UserId) of
@@ -62,9 +81,20 @@ do_check(#{clientid := Token, username := UserId} = _ClientInfo, publish, <<"$dg
 do_check(#{clientid := <<ProductID:10/binary, "_", DeviceAddr/binary>>, username := ProductID} = _ClientInfo, subscribe, <<"$dg/device/", ProductID:10/binary, "/", DeviceInfo/binary>> = _Topic) ->
     check_device_addr(DeviceInfo, DeviceAddr);
 
-do_check(#{clientid := DeviceAddr, username := ProductID} = _ClientInfo, subscribe, <<"$dg/device/", ProductID:10/binary,"/", DeviceInfo/binary>> = _Topic) ->
+do_check(#{clientid := DeviceAddr, username := ProductID} = _ClientInfo, subscribe, <<"$dg/device/", ProductID:10/binary, "/", DeviceInfo/binary>> = _Topic) ->
 %%    io:format("~s ~p Topic: ~p _ClientInfo ~p~n", [?FILE, ?LINE, _Topic, _ClientInfo]),
     check_device_addr(DeviceInfo, DeviceAddr);
+
+
+%% "$dg/user/uniapp/{SessionToken}/report"
+do_check(#{clientid := <<Token:34/binary, _Type/binary>>, username := _UserId} = _ClientInfo, subscribe, <<"$dg/user/uniapp/", SessionToken:34/binary, "/", _Rest/binary>> = _Topic) ->
+%%    io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, _Topic]),
+    case Token of
+        SessionToken ->
+            allow;
+        _ ->
+            deny
+    end;
 
 %% 用户订阅 "$dg/user/deviceid/#"
 do_check(#{clientid := Token, username := UserId} = _ClientInfo, subscribe, <<"$dg/user/", DeviceID:10/binary, "/", _Rest/binary>> = _Topic)
@@ -79,7 +109,7 @@ do_check(#{clientid := Token, username := UserId} = _ClientInfo, subscribe, <<"$
     end;
 
 %% 告警上报 "$dg/user/alarm/{productId}/{deviceId}/properties/report"
-do_check(#{clientid := Token, username := UserId} = _ClientInfo, publish, <<"$dg/user/alarm/", _ProductID:10/binary,"/",DeviceId:10/binary, "/",  _Rest/binary>>  = _Topic)
+do_check(#{clientid := Token, username := UserId} = _ClientInfo, publish, <<"$dg/user/alarm/", _ProductID:10/binary, "/", DeviceId:10/binary, "/", _Rest/binary>> = _Topic)
     when Token =/= undefined ->
 %%    io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, _Topic]),
     case check_device_acl(Token, DeviceId, UserId) of
@@ -111,12 +141,12 @@ do_check(#{clientid := Token} = _ClientInfo, subscribe, <<"$dg/user/dashboard/",
     end;
 
 %% "$dg/user/trace/{DeviceId}/{Topic}"
-do_check(#{clientid := Token, username := UserId} = _ClientInfo, subscribe, <<"$dg/user/trace/", DeviceId:10/binary, "/",  _Rest/binary>> = _Topic) ->
+do_check(#{clientid := Token, username := UserId} = _ClientInfo, subscribe, <<"$dg/user/trace/", DeviceId:10/binary, "/", _Rest/binary>> = _Topic) ->
 %%    io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, _Topic]),
     check_device_acl(Token, DeviceId, UserId);
 
-
 do_check(_ClientInfo, _PubSub, _Topic) ->
+%%    io:format("~s ~p _PubSub: ~p~n", [?FILE, ?LINE, _PubSub]),
 %%    io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, _Topic]),
     deny.
 

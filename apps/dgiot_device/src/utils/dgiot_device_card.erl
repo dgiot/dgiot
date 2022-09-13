@@ -23,20 +23,21 @@
 -export([get_card/4, get_device_card/4]).
 
 get_device_card(Channel, ProductId, DeviceId, Args) ->
-    case dgiot_data:get({tdengine_os, Channel}) of
-        <<"windows">> ->
-            pass;
-        _ ->
-            TableName = ?Table(DeviceId),
-            case dgiot_device_tdengine:get_realtime_data(Channel, TableName, Args#{<<"db">> => ProductId}) of
-                {ok, #{<<"results">> := Results}} when length(Results) > 0 ->
-                    Chartdata = get_card(ProductId, Results, DeviceId, Args),
-                    {ok, #{<<"data">> => Chartdata}};
-                _ ->
-                    Chartdata = get_card(ProductId, [#{}], DeviceId, Args),
-                    {ok, #{<<"data">> => Chartdata}}
-            end
-    end.
+    Results =
+        case dgiot_data:get({tdengine_os, Channel}) of
+            <<"windows">> ->
+                dgiot_parse_timescale:get_realtime_data(DeviceId);
+            _ ->
+                TableName = ?Table(DeviceId),
+                case dgiot_device_tdengine:get_realtime_data(Channel, TableName, Args#{<<"db">> => ProductId}) of
+                    {ok, #{<<"results">> := TdResults}} when length(TdResults) > 0 ->
+                        TdResults;
+                    _ ->
+                        [#{}]
+                end
+        end,
+    Chartdata = get_card(ProductId, Results, DeviceId, Args),
+    {ok, #{<<"data">> => Chartdata}}.
 
 get_card(ProductId, Results, DeviceId, Args) ->
     [Result | _] = Results,
@@ -44,7 +45,8 @@ get_card(ProductId, Results, DeviceId, Args) ->
     Props = dgiot_product:get_props(ProductId, Keys),
     lists:foldl(fun(X, Acc) ->
         case X of
-            #{<<"name">> := Name, <<"identifier">> := Identifier, <<"dataForm">> := #{<<"protocol">> := Protocol}, <<"dataSource">> := DataSource, <<"dataType">> := #{<<"type">> := Typea} = DataType} ->
+            #{<<"name">> := Name, <<"identifier">> := Identifier, <<"dataForm">> := #{<<"protocol">> := Protocol}, <<"dataType">> := #{<<"type">> := Typea} = DataType} ->
+                DataSource = maps:get(<<"dataSource">>, X, #{}),
                 Time = maps:get(<<"createdat">>, Result, dgiot_datetime:now_secs()),
                 NewTime = dgiot_tdengine_field:get_time(dgiot_utils:to_binary(Time), <<"111">>),
                 Devicetype =

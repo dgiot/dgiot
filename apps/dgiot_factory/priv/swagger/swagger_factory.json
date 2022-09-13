@@ -1,0 +1,516 @@
+{
+  "definitions": {},
+  "paths": {
+    "/factory_calendar": {
+      "get": {
+        "consumes": [
+          "application/json"
+        ],
+        "summary": "获取工厂日历",
+        "description": "获取工厂日历",
+        "parameters": [
+          {
+            "name": "depart",
+            "in": "query",
+            "type": "string",
+            "description": "查询部门"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "factory"
+        ]
+      },
+      "post": {
+        "summary": "更新工厂日历",
+        "description": "更新工厂日历",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "calendar",
+            "description": "日历",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "depart": {
+                  "description": "部门",
+                  "type": "string"
+                },
+                "default": {
+                  "description": "默认",
+                  "type": "string"
+                },
+                "other": {
+                  "description": "自定义",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "factory"
+        ]
+      }
+    },
+    "/worker_shift": {
+      "get": {
+        "consumes": [
+          "application/json"
+        ],
+        "summary": "获取排班",
+        "description": "获取排班",
+        "parameters": [
+          {
+            "name": "date",
+            "in": "query",
+            "type": "string",
+            "description": "查询日期"
+          },
+          {
+            "name": "depart",
+            "in": "query",
+            "type": "string",
+            "description": "查询部门"
+          },
+          {
+            "name": "workshop",
+            "in": "query",
+            "type": "string",
+            "description": "查询的车间id"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "type": "integer",
+            "description": "limit"
+          },
+          {
+            "name": "skip",
+            "in": "query",
+            "type": "integer",
+            "description": "skip"
+          },
+          {
+            "name": "shift",
+            "in": "query",
+            "type": "string",
+            "description": "班次"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "factory"
+        ]
+      },
+      "post": {
+        "summary": "更新排班",
+        "description": "更新排班",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "shift",
+            "description": "日历",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "shift": {
+                  "description": "变动的排班",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "factory"
+        ]
+      }
+    },
+    "/data": {
+      "get": {
+        "summary": "查询工单信息",
+        "description": "查询工单信息",
+        "parameters": [
+          {
+            "description": "产品类型",
+            "in": "query",
+            "name": "productId",
+            "type": "string"
+          },
+          {
+            "description": "订单id",
+            "in": "query",
+            "name": "objectId",
+            "type": "string"
+          },
+          {
+            "description": "工单类型",
+            "in": "query",
+            "name": "type",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "开始时间",
+            "in": "query",
+            "name": "starttime",
+            "type": "number"
+          },
+          {
+            "description": "结束时间",
+            "in": "query",
+            "name": "endtime",
+            "type": "number"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "description": "limit, 显示多少条记录，显示100条记录 eg:100",
+            "required": false,
+            "default": 10,
+            "type": "integer"
+          },
+          {
+            "in": "query",
+            "name": "skip",
+            "description": "skip",
+            "required": false,
+            "default": 0,
+            "type": "integer"
+          },
+          {
+            "description": "过滤条件",
+            "in": "query",
+            "name": "where",
+            "type": "string"
+          },
+          {
+            "description": "取最新值",
+            "in": "query",
+            "name": "new",
+            "type": "string",
+            "enum": [
+              true,
+              false
+            ]
+          }
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "factory"
+        ]
+      }
+    },
+    "/material": {
+      "get": {
+        "consumes": [
+          "application/json"
+        ],
+        "summary": "获取领料记录",
+        "description": "获取领料记录",
+        "parameters": [
+          {
+            "name": "objectId",
+            "in": "query",
+            "type": "string",
+            "default": "9e9e52ffbb",
+            "description": "订单id"
+          },
+          {
+            "name": "dept",
+            "in": "query",
+            "type": "string",
+            "default": "9e9e52ffbb",
+            "description": "部门名称"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "factory"
+        ]
+      },
+      "post": {
+        "summary": "更新领料记录",
+        "description": "更新领料记录",
+        "parameters": [
+          {
+            "name": "objectId",
+            "in": "query",
+            "type": "string",
+            "description": "订单id"
+          },
+          {
+            "in": "body",
+            "name": "data",
+            "description": "数据",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "shift": {
+                  "description": "变动的排班",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "factory"
+        ]
+      }
+    },
+    "/warehouse_material": {
+      "get": {
+        "consumes": [
+          "application/json"
+        ],
+        "summary": "获取仓库物料记录",
+        "description": "获取仓库物料记录",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "description": "limit, 显示多少条记录，显示100条记录 eg:100",
+            "required": false,
+            "default": 10,
+            "type": "integer"
+          },
+          {
+            "in": "query",
+            "name": "skip",
+            "description": "skip",
+            "required": false,
+            "default": 0,
+            "type": "integer"
+          },
+          {
+            "in": "query",
+            "name": "where",
+            "description": "过滤条件，eg: {\"objectId\":{\"$in\":[\"BGS3BFgcZN\"]}}",
+            "required": false,
+            "default": "{}",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "factory"
+        ]
+      },
+      "post": {
+        "summary": "更新仓库物料",
+        "description": "更新仓库物料",
+        "parameters": [
+          {
+            "name": "objectId",
+            "in": "query",
+            "type": "string",
+            "description": "修改的id"
+          },
+          {
+            "in": "body",
+            "name": "record",
+            "description": "更新内容",
+            "required": true,
+            "schema": {}
+          }
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "factory"
+        ]
+      }
+    },
+    "/workertree": {
+      "get": {
+        "description": "用户树",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Returns instance data"
+          },
+          "404": {
+            "description": "object not found",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        },
+        "summary": "工人树",
+        "tags": [
+          "factory"
+        ]
+      }
+    },
+    "/init": {
+      "get": {
+        "description": "获取页面初始化数据",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "type": "string",
+            "description": "页面标识"
+          },
+          {
+            "name": "para",
+            "in": "query",
+            "type": "string",
+            "description": "页面参数",
+            "default": "{}"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns instance data"
+          },
+          "404": {
+            "description": "object not found",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        },
+        "summary": "获取页面初始化数据",
+        "tags": [
+          "factory"
+        ]
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "factory",
+      "description": "factory"
+    }
+  ]
+}

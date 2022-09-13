@@ -18,7 +18,7 @@
 -include("dgiot_bridge.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -define(TYPE, <<"COMMON">>).
--record(state, {id, env}).
+-record(state, {id, env, superchannel}).
 %% API
 -export([
     start/2
@@ -61,10 +61,19 @@ start(ChannelId, ChannelArgs) ->
 
 %% 通道初始化
 init(?TYPE, ChannelId, Args) ->
-    State = #state{id = ChannelId, env = Args},
-    StartTime = maps:get(<<"startTime">>, Args, dgiot_datetime:now_secs() + 5),
-    EndTime = maps:get(<<"endTime">>, Args, dgiot_datetime:now_secs() + 1000000),
-    dgiot_client:add_clock(ChannelId, StartTime, EndTime),
+    SuperChannel = maps:get(<<"superchannel">>, Args, ChannelId),
+    State = #state{id = ChannelId, env = Args, superchannel = SuperChannel},
+    StartTime = maps:get(<<"starttime">>, Args, dgiot_datetime:now_secs() + 5),
+    NewStartTime =
+        case dgiot_datetime:now_secs() > StartTime of
+            true ->
+                dgiot_datetime:now_secs() + 5;
+            _ ->
+                StartTime
+        end,
+    EndTime = dgiot_utils:to_int(maps:get(<<"endtime">>, Args, dgiot_datetime:now_secs() + 1000)),
+    io:format("~s ~p SuperChannel = ~p NewStartTime ~p EndTime= ~p ~n", [?FILE, ?LINE, SuperChannel,NewStartTime,  EndTime]),
+    dgiot_client:add_clock(ChannelId, NewStartTime, EndTime),
     ChildSpecs = maps:get(<<"childspecs">>, Args, []),
     {ok, State, ChildSpecs}.
 
@@ -84,6 +93,11 @@ handle_message(start_client, #state{id = ChannelId} = State) ->
         _ ->
             pass
     end,
+    {ok, State};
+
+handle_message(stop_client, #state{id = ChannelId, superchannel = SuperChannel} = State) ->
+    io:format("~s ~p stop_client ChannelId = ~p. SuperChannel ~p ~n", [?FILE, ?LINE, ChannelId, SuperChannel]),
+    dgiot_channelx:do_message(dgiot_utils:to_binary(SuperChannel), {stop_client, ChannelId}),
     {ok, State};
 
 handle_message(_Message, State) ->
