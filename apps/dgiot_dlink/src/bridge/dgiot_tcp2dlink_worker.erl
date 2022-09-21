@@ -28,7 +28,7 @@
     id,
     productId,
     devaddr,
-    exper_count,
+    taskdeviceid,
     out_area_mj,
     out_distend,
     ratedspeed
@@ -36,7 +36,7 @@
 
 
 %% TCP callback
--export([child_spec/2, init/1, handle_info/2, handle_cast/2, handle_call/3, terminate/2, code_change/3]).
+-export([child_spec/2, init/1, handle_info/2, handle_cast/2, handle_call/3, terminate/2, code_change/3, check_zjimeetask/1]).
 
 
 child_spec(Port, State) ->
@@ -92,9 +92,9 @@ terminate(_Reason, _TCPState) ->
 code_change(_OldVsn, TCPState, _Extra) ->
     {ok, TCPState}.
 
-parse_frame(#{<<"Start">> := Devaddr}, #state{id = ChannelId, productId = ProductId, devaddr = Devaddr, exper_count = Exper_count} = State) ->
+parse_frame(#{<<"Start">> := Devaddr}, #state{id = ChannelId, productId = ProductId, devaddr = Devaddr, taskdeviceid = TaskDeviceId} = State) ->
     dgiot_bridge:send_log(ChannelId, ProductId, "Start Device:~s  ", [Devaddr]),
-    TaskDeviceId = dgiot_parse_id:get_deviceid(ProductId, <<Devaddr/binary, Exper_count/binary>>),
+    io:format("~s ~p TaskDeviceId = ~p.~n", [?FILE, ?LINE, TaskDeviceId]),
     case dgiot_parse:get_object(<<"Device">>, TaskDeviceId) of
         {ok, #{<<"profile">> := Profile}} ->
             Historicaldatacolumns = get_historicaldatacolumns(ProductId),
@@ -104,9 +104,9 @@ parse_frame(#{<<"Start">> := Devaddr}, #state{id = ChannelId, productId = Produc
     end,
     State;
 
-parse_frame(#{<<"Stop">> := Devaddr}, #state{id = ChannelId, productId = ProductId, devaddr = Devaddr, exper_count = Exper_count} = State) ->
+parse_frame(#{<<"Stop">> := Devaddr}, #state{id = ChannelId, productId = ProductId, devaddr = Devaddr, taskdeviceid = TaskDeviceId} = State) ->
     dgiot_bridge:send_log(ChannelId, ProductId, "Stop Device:~s ", [Devaddr]),
-    TaskDeviceId = dgiot_parse_id:get_deviceid(ProductId, <<Devaddr/binary, Exper_count/binary>>),
+    io:format("~s ~p TaskDeviceId = ~p.~n", [?FILE, ?LINE, TaskDeviceId]),
     case dgiot_parse:get_object(<<"Device">>, TaskDeviceId) of
         {ok, #{<<"profile">> := Profile}} ->
             Historicaldata = maps:get(<<"historicaldata">>, Profile, []),
@@ -123,7 +123,7 @@ parse_frame(#{<<"Stop">> := Devaddr}, #state{id = ChannelId, productId = Product
         _R ->
             pass
     end,
-    State#state{devaddr = <<>>, exper_count = <<>>, out_area_mj = <<>>, out_distend = <<>>, ratedspeed = <<>>};
+    State#state{devaddr = <<>>, taskdeviceid = <<>>, out_area_mj = <<>>, out_distend = <<>>, ratedspeed = <<>>};
 
 parse_frame(#{<<"Dat 7">> := Dat7, <<"Dat 10">> := Dat10, <<"Dat 27">> := Dat27, <<"Dat 39">> := Devaddr} = Map, #state{id = ChannelId, productId = ProductId} = State) ->
     DeviceId = dgiot_parse_id:get_deviceid(ProductId, Devaddr),
@@ -154,19 +154,48 @@ parse_frame(#{<<"Dat 7">> := Dat7, <<"Dat 10">> := Dat10, <<"Dat 27">> := Dat27,
                 <<"ACL">> => Acl,
                 <<"basedata">> => NewMap}),
 %%                     创建任务
-            Profile = #{<<"identifier">> => <<"inspectionReportTemp">>, <<"wordtemplatename">> => ProductName, <<"step">> => 0, <<"testbed">> => Testbed, <<"istcp">> => true},
-            Body = #{<<"name">> => <<Testbed/binary, "_检测任务_"/utf8, Exper_count/binary>>, <<"devaddr">> => <<Devaddr/binary, Exper_count/binary>>, <<"product">> => ProductId, <<"profile">> => Profile, <<"parentId">> => DeviceId, <<"basedata">> => NewMap},
-            SessionToken = dgiot_auth:get_sessiontoken(maps:without([<<"*">>], Acl)),
-            dgiot_evidence_handler:post_report(Body, SessionToken),
-            State#state{devaddr = Devaddr, exper_count = Exper_count, out_area_mj = Out_area_mj, out_distend = Out_distend, ratedspeed = Dat10};
+%%            检查是否有机电院下发的先科任务
+            TaskDevidceId =
+                case dgiot_tcp2dlink_worker:check_zjimeetask(DeviceId) of
+                    not_find ->
+                        Profile = #{<<"identifier">> => <<"inspectionReportTemp">>, <<"wordtemplatename">> => ProductName, <<"step">> => 0, <<"testbed">> => Testbed, <<"istcp">> => true},
+                        Body = #{<<"name">> => <<Testbed/binary, "_检测任务_"/utf8, Exper_count/binary>>, <<"devaddr">> => <<Devaddr/binary, Exper_count/binary>>, <<"product">> => ProductId, <<"profile">> => Profile, <<"parentId">> => DeviceId, <<"basedata">> => NewMap},
+                        SessionToken = dgiot_auth:get_sessiontoken(maps:without([<<"*">>], Acl)),
+                        dgiot_evidence_handler:post_report(Body, SessionToken),
+                        dgiot_parse_id:get_deviceid(ProductId, <<Devaddr/binary, Exper_count/binary>>);
+                    #{<<"objectId">> := TaskDeviceId1} ->
+                        dgiot_parse:update_object(<<"Device">>, TaskDeviceId1, #{<<"basedata">> => NewMap}),
+                        TaskDeviceId1
+                end,
+            State#state{devaddr = Devaddr, taskdeviceid = TaskDevidceId, out_area_mj = Out_area_mj, out_distend = Out_distend, ratedspeed = Dat10};
         _ ->
             State
     end;
 
-parse_frame(_, State) ->
-    State.
+parse_frame(Map, State) ->
+    io:format("~s ~p Map = ~p.~n", [?FILE, ?LINE, Map]),
+    handle_data(Map, State).
 
-handle_data(Map, #state{id = ChannelId, productId = ProductId, devaddr = Devaddr, exper_count = Exper_count, out_area_mj = Out_area_mj, out_distend = Out_distend, ratedspeed = Rated_speed} = State) when size(Exper_count) > 0 ->
+%% 检查此台体是否有机电院下发的先科任务
+check_zjimeetask(ParentId) ->
+    Query = #{
+        <<"where">> => #{
+            <<"parentId">> => ParentId,
+            <<"profile.identifier">> => <<"inspectionReportTemp">>,
+            <<"profile.iszjimee">> => true,
+            <<"profile.checkTestReceive">> => false,
+            <<"profile.receivezjimee">> => 0
+        },
+        <<"order">> => <<"-createdAt">>, <<"limit">> => 1
+    },
+    case dgiot_parse:query_object(<<"Device">>, Query) of
+        {ok, #{<<"results">> := [Device | _]}} ->
+            Device;
+        _ ->
+            not_find
+    end.
+
+handle_data(Map, #state{id = ChannelId, productId = ProductId, devaddr = DevAddr, taskdeviceid = TaskDeviceId, out_area_mj = Out_area_mj, out_distend = Out_distend, ratedspeed = Rated_speed} = State) when size(TaskDeviceId) > 0 ->
     case maps:find(<<"devaddr">>, Map) of
         {ok, DevAddr} ->
             Payload = maps:fold(
@@ -181,7 +210,7 @@ handle_data(Map, #state{id = ChannelId, productId = ProductId, devaddr = Devaddr
                 end, #{<<"ymj">> => Out_area_mj, <<"out_distend">> => Out_distend, <<"rated_speed">> => Rated_speed}, Map),
             io:format("~s ~p Payload = ~p.~n", [?FILE, ?LINE, Payload]),
             AllData = dgiot_dlink_proctol:properties_report(ProductId, DevAddr, Payload),
-            save_historicaldata(AllData, ProductId, <<Devaddr/binary, Exper_count/binary>>),
+            save_historicaldata(AllData, TaskDeviceId),
             dgiot_bridge:send_log(ChannelId, ProductId, "Device:~s save_historicaldata ~s", [DevAddr, jsx:encode(AllData)]);
         _ ->
             pass
@@ -191,9 +220,8 @@ handle_data(Map, #state{id = ChannelId, productId = ProductId, devaddr = Devaddr
 handle_data(_, State) ->
     State.
 
-save_historicaldata(AllData, ProductId, TaskDevaddr) ->
+save_historicaldata(AllData, TaskDeviceId) ->
     io:format("~s ~p AllData = ~p.~n", [?FILE, ?LINE, AllData]),
-    TaskDeviceId = dgiot_parse_id:get_deviceid(ProductId, TaskDevaddr),
     case dgiot_parse:get_object(<<"Device">>, TaskDeviceId) of
         {ok, #{<<"profile">> := Profile}} ->
             Historicaldata = maps:get(<<"historicaldata">>, Profile, []),

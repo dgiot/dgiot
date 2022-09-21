@@ -72,7 +72,6 @@ handle(OperationID, Args, Context, Req) ->
 %%% 内部函数 Version:API版本
 %%%===================================================================
 do_request(post_evidence, Args, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
-    ?LOG(info, "Args ~p ", [Args]),
     case dgiot_evidence:post(Args#{<<"sessionToken">> => SessionToken}) of
         {ok, Result} ->
             {ok, Result};
@@ -80,8 +79,7 @@ do_request(post_evidence, Args, #{<<"sessionToken">> := SessionToken} = _Context
             {500, Reason}
     end;
 
-do_request(put_evidence, #{<<"status">> := Status} = Args, #{<<"sessionToken">> := SessionToken} = _Context, Req) ->
-    ?LOG(info, "Status ~p ", [Status]),
+do_request(put_evidence, #{<<"status">> := _Status} = Args, #{<<"sessionToken">> := SessionToken} = _Context, Req) ->
     Host = dgiot_req:host(Req),
     dgiot_evidence:put(Args#{<<"ip">> => Host}, SessionToken);
 

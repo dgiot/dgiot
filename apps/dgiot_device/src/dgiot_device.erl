@@ -188,11 +188,12 @@ create_device(#{<<"status">> := Status, <<"brand">> := Brand, <<"devModel">> := 
                     <<"objectId">> => ProductId
                 },
                 <<"ACL">> => maps:without([<<"*">>], Acl),
-                <<"deviceSecret">> => DeviceSecret,
+                <<"deviceSecret">> => maps:get(<<"deviceSecret">>, Device, DeviceSecret),
                 <<"detail">> => #{
                     <<"desc">> => Name,
                     <<"brand">> => Brand,
                     <<"devModel">> => DevModel,
+                    <<"assetNum">> => maps:get(<<"assetNum">>, Device, <<"">>),
                     <<"address">> => maps:get(<<"address">>, Device, <<"">>),
                     <<"batchId">> => #{
                         <<"batch_name">> => dgiot_utils:to_binary(Batch_name),

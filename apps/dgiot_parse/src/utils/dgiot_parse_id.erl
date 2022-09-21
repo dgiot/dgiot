@@ -161,7 +161,7 @@ get_objectid(Class, Map) ->
         <<"post_classes_maintenance">> ->
             get_objectid(<<"Maintenance">>, Map);
         <<"Maintenance">> ->
-            #{<<"objectId">> := Deviceid} = maps:get(<<"device">>, Map, <<"">>),
+            #{<<"objectId">> := Deviceid} = maps:get(<<"device">>, Map, #{<<"objectId">> => <<"">>}),
             Number = maps:get(<<"number">>, Map, <<"">>),
             <<Pid:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Maintenance", Deviceid/binary, Number/binary>>),
             Map#{
@@ -351,7 +351,7 @@ get_objectid(Class, Map) ->
             Date = maps:get(<<"date">>, Map, <<"">>),
             Device = maps:get(<<"device">>, Map, <<"">>),
             Shift = maps:get(<<"shift">>, Map, <<"">>),
-            <<DId:10/binary, _/binary>> = dgiot_utils:to_md5(<<"_Shift", Date/binary,Device/binary,Shift/binary>>),
+            <<DId:10/binary, _/binary>> = dgiot_utils:to_md5(<<"_Shift", Date/binary, Device/binary, Shift/binary>>),
             Map#{
                 <<"objectId">> => DId
             };

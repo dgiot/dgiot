@@ -442,6 +442,51 @@ do_request(delete_relation, #{<<"destClass">> := DestClass, <<"destId">> := Dest
         },
     dgiot_parse:update_object(DestClass, DestId, Map);
 
+%% group 概要: 描述:获取产品树
+%% OperationId:get_producttree
+%% 请求:get /iotapi/get_producttree
+do_request(get_producttree, _, _Context, _Req) ->
+    Data =
+        case dgiot_parse:query_object(<<"Product">>, #{<<"keys">> => [<<"name">>, <<"category">>]}) of
+            {ok, #{<<"results">> := Result}} ->
+                lists:foldl(fun(#{<<"category">> := #{<<"objectId">> := CategoryId}}, Acc) ->
+                    CategoryIds =
+                        lists:foldl(fun
+                                        (#{<<"name">> := Name, <<"objectId">> := ObjectId, <<"category">> := #{<<"objectId">> := CategoryId1}}, Acc1) when CategoryId1 == CategoryId ->
+                                            Acc1 ++ [#{<<"label">> => Name, <<"value">> => ObjectId}];
+                                        (_, Acc1) ->
+                                            Acc1
+                                    end, [], Result),
+                    Acc#{CategoryId => CategoryIds}
+                            end, #{}, Result);
+            _ ->
+                #{}
+        end,
+    case dgiot_parse:query_object(<<"Category">>, #{<<"where">> => #{<<"level">> => #{<<"$gt">> => 1}}, <<"keys">> => [<<"parent">>, <<"name">>, <<"level">>, <<"createdAt">>]}) of
+        {ok, #{<<"results">> := Classes}} when length(Classes) > 0 ->
+            NewClasses =
+                lists:foldl(fun(Class, Acc) ->
+                    NewClasse = Class#{
+                        <<"label">> => maps:get(<<"name">>, Class, <<"label">>),
+                        <<"value">> => <<>>,
+                        <<"parent">> => maps:get(<<"parent">>, Class, <<"0">>)},
+                    Acc ++ [maps:without([<<"createdAt">>, <<"updatedAt">>, <<"ACL">>], NewClasse)]
+                            end, [], Classes),
+            ClassTree = dgiot_parse_utils:create_tree(NewClasses, <<"parent">>),
+            lists:foldl(fun(X, Acc1) ->
+                case X of
+                    #{<<"objectId">> := <<"de2ae39f47">>, <<"children">> := Children} ->
+                        Acc1 ++ Children;
+                    _ ->
+                        Acc1
+                end
+                        end, [], dgiot_parse_utils:create_tree(NewClasses, <<"parent">>)),
+            CategoryTree = set_children(ClassTree, Data),
+            {200, #{<<"producttree">> => CategoryTree}};
+        _ ->
+            {200, #{<<"producttree">> => []}}
+    end;
+
 %%  服务器不支持的API接口
 do_request(_OperationId, _Args, _Context, _Req) ->
     ?LOG(info, "_Args ~p", [_Args]),
@@ -680,4 +725,24 @@ deleteThing(ProductId, SessionToken, Item) ->
             {error, Error}
     end.
 
-
+set_children(ClassTree, Data) ->
+    lists:foldl(fun(#{<<"objectId">> := ObjectId} = Class, Acc) ->
+        NewClass =
+            case maps:find(<<"children">>, Class) of
+                {ok, Children1} when length(Children1) > 0 ->
+                    Class#{<<"children">> => set_children(Children1, Data)};
+                _ ->
+                    case maps:get(ObjectId, Data, []) of
+                        Child when length(Child) > 0 ->
+                            Class#{<<"children">> => maps:get(ObjectId, Data, [])};
+                        _ ->
+                            []
+                    end
+            end,
+        case NewClass of
+            [] ->
+                Acc;
+            _ ->
+                Acc ++ [NewClass]
+        end
+                end, [], ClassTree).

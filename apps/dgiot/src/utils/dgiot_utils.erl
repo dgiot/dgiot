@@ -120,6 +120,8 @@
     , gzip/1
     , reverse/1
     , is_phone/1
+    , get_mock/2
+    , write_mock/3
 ]).
 
 -define(TIMEZONE, + 8).
@@ -1028,3 +1030,49 @@ is_phone(Phone) ->
         _ ->
             false
     end.
+
+
+%%
+%% @description: 读取json文件并返回
+%%
+get_mock(Module, FileName) ->
+    {file, Here} = code:is_loaded(Module),
+    Dir = dgiot_httpc:url_join([filename:dirname(filename:dirname(Here)), "/priv/mock/"]),
+    Name = dgiot_utils:to_list(FileName),
+    NewName =
+        case filename:extension(Name) of
+            [] ->
+                Name ++ ".json";
+            _ ->
+                Name
+        end,
+    Path = Dir ++ NewName,
+    case catch file:read_file(Path) of
+        {Err, Reason} when Err == 'EXIT'; Err == error ->
+            ?LOG(error, "read  Path,~p error,~p ~n", [Path, Reason]),
+            #{};
+        {ok, Bin} ->
+            case jsx:is_json(dgiot_utils:to_binary(Bin)) of
+                true ->
+                    jsx:decode(Bin);
+                false ->
+                    Bin
+            end
+    end.
+
+%%
+%% @description: 写入json
+%%
+write_mock(Module, FileName, Json) ->
+    {file, Here} = code:is_loaded(Module),
+    Dir = dgiot_httpc:url_join([filename:dirname(filename:dirname(Here)), "/priv/mock/"]),
+    Name = dgiot_utils:to_list(FileName),
+    NewName =
+        case filename:extension(Name) of
+            [] ->
+                Name ++ ".json";
+            _ ->
+                Name
+        end,
+    Path = Dir ++ NewName,
+    file:write_file(Path, jsx:encode(Json)).
