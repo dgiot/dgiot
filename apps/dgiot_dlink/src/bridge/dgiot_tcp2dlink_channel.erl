@@ -27,7 +27,7 @@
     id,
     productId,
     devaddr,
-    exper_count,
+    taskdeviceid,
     out_area_mj,
     out_distend,
     ratedspeed

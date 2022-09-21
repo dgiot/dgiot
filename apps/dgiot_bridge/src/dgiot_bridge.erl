@@ -347,7 +347,7 @@ control_channel(ChannelId, Action) ->
                     {ok, #{<<"config">> := #{<<"ip">> := _IP}}} ->
                         dgiot_mqtt:publish(ChannelId, Topic, Payload),
                         {true, <<"success">>};
-                    {ok, #{<<"config">> := #{<<"port">> := Port}}} ->
+                    {ok, #{<<"config">> := #{<<"port">> := Port}, <<"type">> := <<"1">>}} ->
                         case dgiot_utils:check_port(dgiot_utils:to_int(Port)) of
                             true ->
                                 {true, <<"port conflict">>};

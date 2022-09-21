@@ -44,7 +44,6 @@ put('before', #{<<"id">> := DeviceId, <<"profile">> := UserProfile} = Device) ->
             pass
     end;
 
-
 put('after', #{<<"id">> := DeviceId, <<"profile">> := UserProfile}) ->
 %%    io:format("~s ~p DeviceId ~p  Profile = ~p.~n", [?FILE, ?LINE, DeviceId, UserProfile]),
     dgiot_data:insert(?DEVICE_PROFILE, DeviceId, UserProfile);

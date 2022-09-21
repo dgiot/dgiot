@@ -33,6 +33,9 @@ init_ets() ->
 
 on_message_publish(Message = #message{topic = <<"$dg/thing/", Topic/binary>>, payload = Payload, from = _ClientId, headers = _Headers}, _State) ->
     case re:split(Topic, <<"/">>) of
+        [ProductId, DevAddr, <<"init">>, <<"request">>] ->
+%%      初始化请求      $dg/thing/{productId}/{deviceAddr}/init/request
+            dgiot_dlink_proctol:firmware_report(ProductId, DevAddr, get_payload(Payload));
         [ProductId, DevAddr, <<"properties">>, <<"report">>] ->
 %%       属性获取	$dg/thing/{productId}/{deviceAddr}/properties/report	设备	平台
             DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),

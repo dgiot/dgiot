@@ -27,20 +27,21 @@
     , parse_payload/2
 ]).
 
-
+%% json格式报文
 properties_report(ProductId, DevAddr, Payload) when is_map(Payload) ->
 %%    io:format("~s ~p ProductId ~p, DevAddr ~p, Payload: ~p ~n", [?FILE, ?LINE, ProductId, DevAddr, Payload]),
-    OldPayload = parse_payload(ProductId, Payload),
-    NewPload =
-        case dgiot_hook:run_hook({opc, evidence, pump}, OldPayload) of
+    OldPayload =
+        case dgiot_hook:run_hook({dlink_properties_report, ProductId}, {DevAddr, Payload}) of
             {ok, [Payload1]} ->
                 Payload1;
             _ ->
-                OldPayload
+                Payload
         end,
+    NewPload = parse_payload(ProductId, OldPayload),
     dgiot_device_profile:publish(ProductId, DevAddr, NewPload),
     dgiot_task:save_td(ProductId, DevAddr, NewPload, #{});
 
+%% 二进制报文
 properties_report(ProductId, DevAddr, Payload) ->
     lists:map(fun
                   ({ChannelId, _Ctype}) ->
@@ -51,11 +52,19 @@ properties_report(ProductId, DevAddr, Payload) ->
 %%    io:format("~s ~p ProductId ~p, DevAddr ~p, Payload: ~p ~n", [?FILE, ?LINE, ProductId, DevAddr, Payload]),
     ok.
 
+%% json格式报文
 firmware_report(ProductId, DevAddr, Payload) when is_map(Payload) ->
-%%    io:format("~s ~p ProductId ~p, DevAddr ~p, Payload: ~p ~n", [?FILE, ?LINE, ProductId, DevAddr, Payload]),
-    NewPload = parse_payload(ProductId, Payload),
+    OldPayload =
+        case dgiot_hook:run_hook({dlink_properties_report, ProductId}, {ProductId, DevAddr, Payload}) of
+            {ok, [Payload1]} ->
+                Payload1;
+            _ ->
+                Payload
+        end,
+    NewPload = parse_payload(ProductId, OldPayload),
     dgiot_task:save_td(ProductId, DevAddr, NewPload, #{});
 
+%% 二进制报文
 firmware_report(ProductId, DevAddr, Payload) ->
     lists:map(fun
                   ({ChannelId, _Ctype}) ->
