@@ -25,6 +25,7 @@
 -export([create_product/1, create_product/2, add_product_relation/2, delete_product_relation/1]).
 -export([get_prop/1, get_props/1, get_props/2, get_unit/1, do_td_message/1, update_properties/2, update_properties/0]).
 -export([update_topics/0, update_product_filed/1]).
+-export([get_initdata/2, init_inspection/1, get_inspection/1]).
 -export([save_keys/1, get_keys/1, get_control/1, save_control/1, save_channel/1, save_tdchannel/1, save_taskchannel/1, get_channel/1, get_tdchannel/1, get_taskchannel/1, get_interval/1]).
 -type(result() :: any()).   %% todo 目前只做参数检查，不做结果检查
 
@@ -474,3 +475,61 @@ get_props(ProductId, Keys) ->
 do_td_message(ProfuctId) ->
     ChannelId = dgiot_parse_id:get_channelid(dgiot_utils:to_binary(?BRIDGE_CHL), <<"TD">>, <<"TD资源通道"/utf8>>),
     dgiot_channelx:do_message(ChannelId, {sync_product, <<"Product">>, ProfuctId}).
+
+get_initdata(Type, ProductId) ->
+    case dgiot_product:lookup_prod(ProductId) of
+        {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
+            lists:foldl(fun(#{<<"devicetype">> := Devicetype, <<"name">> := Name,
+                <<"identifier">> := Identifier} = X, Acc) ->
+                DataType = maps:get(<<"datatype">>, X, #{}),
+                Typea = maps:get(<<"type">>, X, <<>>),
+                Specs = maps:get(<<"specs">>, DataType, #{}),
+                Unit = maps:get(<<"unit">>, Specs, <<"">>),
+                Size = size(Type),
+                case binary:match(Devicetype, Type) of
+                    {0, Size} ->
+                        Acc ++ [#{
+                            <<"devicetype">> => Devicetype,
+                            <<"identifier">> => Identifier, <<"name">> => Name,
+                            <<"type">> => Typea, <<"number">> => <<>>,
+                            <<"unit">> => Unit}];
+                    _O ->
+                        Acc
+                end
+                        end, [], Props);
+        _ ->
+            []
+    end.
+
+%% 初始化工单巡检动态数据
+init_inspection(#{<<"objectId">> := MaintenanceId, <<"info">> := Info, <<"product">> := #{<<"objectId">> := ProductId}, <<"device">> := #{<<"objectId">> := DeviceId}} = _QueryData) ->
+    InitData = get_initdata(<<"巡检"/utf8>>, ProductId),
+    dgiot_parse:update_object(<<"Maintenance">>, MaintenanceId, #{<<"info">> => Info#{<<"dynamicdata">> => InitData}}),
+    %%    下发巡检信息
+    %%    $dg/device/{productId}/{deviceAddr}/init/response/inspection
+    case dgiot_device:lookup(DeviceId) of
+        {ok, #{<<"devaddr">> := DevAddr}} ->
+            InspectionTopic = <<"$dg/device/", ProductId/binary, "/", DevAddr/binary, "/init/response/inspection">>,
+            Data = get_inspection(DeviceId),
+            dgiot_mqtt:publish(DeviceId, InspectionTopic, jsx:encode(Data));
+        _ ->
+            pass
+    end.
+
+get_inspection(DeviceId) ->
+    Where = #{
+        <<"where">> => #{
+            <<"device">> => DeviceId
+        },
+        <<"keys">> => [<<"number">>, <<"status">>, <<"info">>],
+        <<"order">> => <<"-createdAt">>
+    },
+    case dgiot_parse:query_object(<<"Maintenance">>, Where) of
+        {ok, #{<<"results">> := Results}} ->
+            lists:foldl(fun(_X, Acc) ->
+                Acc++[]
+                        end, [], Results);
+        _ ->
+            []
+
+    end.

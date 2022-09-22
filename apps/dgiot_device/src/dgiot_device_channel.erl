@@ -119,6 +119,7 @@ init(?TYPE, ChannelId, #{<<"offline">> := OffLine} = Args) ->
     dgiot_parse_hook:subscribe(<<"Product/*">>, put, ChannelId),
     dgiot_parse_hook:subscribe(<<"Product/*">>, delete, ChannelId),
     dgiot_parse_hook:subscribe(<<"Channel/*">>, delete, ChannelId),
+    dgiot_parse_hook:subscribe(<<"Maintenance">>, post, ChannelId),
     {ok, State, []}.
 
 handle_init(#state{env = #{<<"checktime">> := CheckTime}} = State) ->
@@ -134,7 +135,6 @@ handle_message(check, #state{id = ChannelId, env = #{<<"offline">> := OffLine, <
     dgiot_channelx:send_after(CheckTime * 60 * 1000, ChannelId, check),
     dgiot_device:sync_parse(OffLine),
     {ok, State};
-
 
 handle_message({sync_parse, Pid, 'after', get, Token, <<"Device">>, #{<<"results">> := Results} = ResBody}, State) ->
     SessionToken = dgiot_parse_auth:get_usersession(dgiot_utils:to_binary(Token)),
@@ -260,6 +260,10 @@ handle_message({sync_parse, _Pid, 'before', delete, _Token, <<"Channel">>, Objec
             dgiot_bridge:control_channel(ObjectId, <<"disable">>);
         _ -> pass
     end,
+    {ok, State};
+
+handle_message({sync_parse, _Pid, 'after', post, _Token, <<"Maintenance">>, QueryData}, State) ->
+    dgiot_product:init_inspection(QueryData),
     {ok, State};
 
 handle_message({update_schemas_json}, State) ->
