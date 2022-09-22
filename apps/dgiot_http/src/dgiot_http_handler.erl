@@ -361,5 +361,3 @@ do_request(post_verify_code_action, #{<<"account">> := Account, <<"code">> := Co
 do_request(_OperationId, _Args, _Context, _Req) ->
     io:format("~s ~p Q = ~p  ~n", [?FILE, ?LINE, _Args]),
     {error, <<"Not Allowed.">>}.
-
-
