@@ -22,7 +22,6 @@
 -export([post_one_shift/1, get_shift_time/1]).
 -export([ bits_to_workerlist/1, workerlist_to_bits/1]).
 -define(DAY, 86400).
--define(SHIFT, [<<"白班"/utf8>>, <<"晚班"/utf8>>]).
 -define(WORKERCALENDAR, <<"WorkerCanlendar">>).
 -define(INTERVAL, 604800).
 -define(ONEDAY, 86400).
