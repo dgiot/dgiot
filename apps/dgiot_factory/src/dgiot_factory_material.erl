@@ -21,7 +21,6 @@
 -export([get_material_record/2, post_material/2]).
 -export([get_warehouse_material/3, put_warehouse_material/1]).
 get_material_record(DeviceId, Depart) ->
-    io:format("~s ~p Depart= ~p ~n", [?FILE, ?LINE, Depart]),
     case dgiot_parse:get_object(<<"Device">>, DeviceId) of
         {ok, #{<<"material">> := Material}} ->
             DepartMaterial = get_depart_material(Material, Depart),
@@ -65,7 +64,8 @@ get_usable_material(Material) ->
 
 
 post_material(DeviceId, Data) when is_list(Data) ->
-    case get_material_record(DeviceId, undefined) of
+    io:format("~s ~p here ~n", [?FILE, ?LINE]),
+case get_material_record(DeviceId, undefined) of
         {ok, Material} ->
             Res = lists:foldl(
                 fun(X, Acc) ->
@@ -81,25 +81,22 @@ post_material(DeviceId, Data) when is_list(Data) ->
             error
     end;
 post_material(DeviceId, Data) when is_map(Data) ->
+    io:format("~s ~p here ~n", [?FILE, ?LINE]),
     case get_material_record(DeviceId, undefined) of
         {ok, Material} ->
-            Res = hanlde_pickandretrive(Data, Material),
-            dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"material">> => Res});
+            case hanlde_pickandretrive(Data, Material) of
+                {ok, NewMaterial} ->
+                    dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"material">> => NewMaterial})
+            end;
         _ ->
             error
     end;
 post_material(_, _) ->
     error.
-
-
-
-
-
-
 hanlde_pickandretrive(#{<<"Subitem_BOM_number">> := Name, <<"material_date">> := Date,
     <<"material_people">> := People, <<"material_type">> := Type,
     <<"material_number">> := Num, <<"material_batchid">> := BatchId, <<"material_weight">> := Weight,
-    <<"material_batch">> := #{<<"extra">> := #{<<"objectId">> := Id}}} = Data, Material) when is_list(Data) ->
+    <<"material_batch">> := #{<<"extra">> := #{<<"objectId">> := Id}}}, Material) ->
     case maps:find(Name, Material) of
         {ok, Res} ->
             case Res of
@@ -128,7 +125,7 @@ hanlde_pickandretrive(#{<<"Subitem_BOM_number">> := Name, <<"material_date">> :=
 hanlde_pickandretrive(#{<<"Subitem_BOM_number">> := Name, <<"material_date">> := Date,
     <<"material_people">> := People, <<"material_type">> := Type,
     <<"material_number">> := Num, <<"material_batchid">> := BatchId, <<"material_weight">> := Weight,
-   <<"objectId">> := Id} = Data, Material) when is_map(Data) ->
+    <<"objectId">> := Id}, Material) ->
     case maps:find(Name, Material) of
         {ok, Res} ->
             case Res of
@@ -137,13 +134,15 @@ hanlde_pickandretrive(#{<<"Subitem_BOM_number">> := Name, <<"material_date">> :=
                         <<"picking">> ->
                             After = dgiot_utils:to_float(Picked) + dgiot_utils:to_float(Weight),
                             handle_warehouse(Id, Type, Num),
-                            {ok, Name, maps:merge(Res, #{<<"material_picked">> => After, <<"material_pick">> => Pick ++ [#{<<"material_date">> => Date, <<"material_people">> => People, <<"material_number">> => Num,
-                                <<"material_batchid">> => BatchId, <<"material_weight">> => Weight}]})};
+                            NewRes = maps:merge(Res, #{<<"material_picked">> => After, <<"material_pick">> => Pick ++ [#{<<"material_date">> => Date, <<"material_people">> => People, <<"material_number">> => Num,
+                                <<"material_batchid">> => BatchId, <<"material_weight">> => Weight}]}),
+                            {ok, maps:merge(Material, #{Name => NewRes})};
                         <<"retriving">> ->
                             After = dgiot_utils:to_float(Picked) - dgiot_utils:to_float(Weight),
                             handle_warehouse(Id, Type, Num),
-                            {ok, Name, maps:merge(Res, #{<<"material_picked">> => After, <<"material_retrive">> => Retrive ++ [#{<<"material_date">> => Date, <<"material_people">> => People, <<"material_number">> => Num,
-                                <<"material_batchid">> => BatchId, <<"material_weight">> => Weight}]})};
+                            NewRes = maps:merge(Res, #{<<"material_picked">> => After, <<"material_retrive">> => Retrive ++ [#{<<"material_date">> => Date, <<"material_people">> => People, <<"material_number">> => Num,
+                                <<"material_batchid">> => BatchId, <<"material_weight">> => Weight}]}),
+                            {ok, maps:merge(Material, #{Name => NewRes})};
                         _ ->
                             error
                     end;
@@ -154,7 +153,7 @@ hanlde_pickandretrive(#{<<"Subitem_BOM_number">> := Name, <<"material_date">> :=
             error
     end;
 hanlde_pickandretrive(_, _) ->
-    io:format("~s ~p hanlde_pickandretrive  ~n", [?FILE, ?LINE]),
+%%    io:format("~s ~p R = ~p  ~n", [?FILE, ?LINE,R]),
     error.
 
 

@@ -128,7 +128,16 @@ do_request(post_sendsms_deviceid, #{<<"deviceid">> := DeviceId, <<"tplid">> := T
     dgiot_notification:send_sms(Mobile, TplId, Params);
 
 %数字工厂告警
-do_request(post_warnsendsms, #{<<"objectId">> := DeviceId, <<"branchId">> := BranchId, <<"datetimes">> := DateTimes, <<"docnumber">> := Docnumber, <<"username">> := UserName, <<"workshop">> := Workshop, <<"level">> := Level} = _Args, _Context, _Req) ->
+do_request(post_warnsendsms, #{<<"objectId">> := DeviceId, <<"branchId">> := BranchId, <<"datetimes">> := DateTimes, <<"docnumber">> := Docnumber,
+    <<"username">> := _S, <<"workshop">> := Workshop, <<"level">> := Level} = _Args, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
+%%    io:format("~s ~p _Args = ~p  ~n", [?FILE, ?LINE,_Args]),
+    UserName = case dgiot_auth:get_session(SessionToken) of
+                   {ok, #{<<"username">> := U}} ->
+                       U;
+                   _ ->
+                       error
+               end,
+
     case Level of
         <<"1">> ->
             Warn = <<"待首检"/utf8>>,
@@ -350,6 +359,7 @@ do_request(post_verify_code_action, #{<<"account">> := Account, <<"code">> := Co
 
 %%  服务器不支持的API接口
 do_request(_OperationId, _Args, _Context, _Req) ->
+    io:format("~s ~p Q = ~p  ~n", [?FILE, ?LINE, _Args]),
     {error, <<"Not Allowed.">>}.
 
 

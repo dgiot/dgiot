@@ -131,7 +131,20 @@ do_request(post_worker_shift, #{<<"shift">> := Shifts} = _Args, _Context, _Body)
 do_request(get_data, #{<<"productId">> := undefined} = _Args, _Context, _Body) ->
     do_request(get_data, _Args#{<<"productId">> => <<"ec71804a3d">>}, _Context, _Body);
 
-do_request(get_data, #{<<"productId">> := ProductId, <<"objectId">> := undefined, <<"type">> := Type, <<"starttime">> := Start, <<"endtime">> := End, <<"where">> := Where, <<"limit">> := Limit, <<"skip">> := Skip, <<"new">> := New} = _Args, #{<<"sessionToken">> := SessionToken} = _Context, _Body) ->
+do_request(get_data, #{<<"productId">> := ProductId, <<"objectId">> := undefined, <<"type">> := Type,
+    <<"starttime">> := Start, <<"endtime">> := End, <<"where">> := OldWhere,
+    <<"limit">> := Limit, <<"skip">> := Skip, <<"new">> := New} = _Args, #{<<"sessionToken">> := SessionToken} = _Context, _Body) ->
+    Where = case is_map(OldWhere) of
+                true ->
+                    OldWhere;
+                _ ->
+                    case jsx:is_json(OldWhere) of
+                        true ->
+                            dgiot_bamis:format_multilayer(OldWhere);
+                        _ ->
+                            OldWhere
+                    end
+            end,
     case dgiot_product_tdengine:get_channel(SessionToken) of
         {error, Error} -> {error, Error};
         {ok, Channel} ->
@@ -151,8 +164,20 @@ do_request(get_data, #{<<"productId">> := ProductId, <<"objectId">> := undefined
     end;
 
 
-do_request(get_data, #{<<"productId">> := ProductId, <<"objectId">> := DeviceId, <<"type">> := Type, <<"starttime">> := Start, <<"endtime">> := End, <<"where">> := Where, <<"limit">> := Limit, <<"skip">> := Skip, <<"new">> := New} = _Args,
+do_request(get_data, #{<<"productId">> := ProductId, <<"objectId">> := DeviceId, <<"type">> := Type, <<"starttime">> := Start,
+    <<"endtime">> := End, <<"where">> := OldWhere, <<"limit">> := Limit, <<"skip">> := Skip, <<"new">> := New} = _Args,
     #{<<"sessionToken">> := SessionToken} = _Context, _Body) ->
+    Where = case is_map(OldWhere) of
+                true ->
+                    OldWhere;
+                _ ->
+                    case jsx:is_json(OldWhere) of
+                        true ->
+                            dgiot_bamis:format_multilayer(OldWhere);
+                        _ ->
+                            OldWhere
+                    end
+            end,
     case dgiot_product_tdengine:get_channel(SessionToken) of
         {error, Error} -> {error, Error};
         {ok, Channel} ->
@@ -173,7 +198,7 @@ do_request(get_material, #{<<"objectId">> := DeviceId, <<"dept">> := Depart} = _
             error
     end;
 do_request(post_material, #{<<"objectId">> := DeviceId, <<"shift">> := Data} = _Args, _Context, _Req) ->
-    case dgiot_factory_material:post_material(DeviceId,     Data) of
+    case dgiot_factory_material:post_material(DeviceId, Data) of
         {ok, _} ->
             {ok, #{<<"status">> => 0, msg => <<"操作成功"/utf8>>, <<"data">> => []}};
         _ ->
