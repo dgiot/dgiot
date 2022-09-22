@@ -99,7 +99,6 @@ handle_message({sync_parse, _Pid, 'before', put, Token, <<"Device">>, #{<<"conte
             case Content of
                 #{<<"person">> := #{<<"type">> := Type}} ->
                     FlatMap = dgiot_map:flatten(Content),
-                    io:format("~s ~p DeviceId = ~p.~n", [?FILE, ?LINE, DeviceId]),
                     save_data(ProductId, DeviceId, Type, FlatMap#{<<"person_sessiontoken">> => Token, <<"person_deviceid">> => DeviceId}),
                     {ok, State};
                 _ ->
@@ -133,7 +132,6 @@ save_data(ProductId, DeviceId, Type, Payload) ->
                                 {ok, NewPayload} ->
                                     Id = maps:get(?SHEETID(Type), NewPayload, get_id(DevAddr, Type)),
                                     Use = turn_user(NewPayload),
-                                    io:format("~s ~p Id = ~p.~n", [?FILE, ?LINE, Id]),
                                     dgiot_task:save_td(ProductId, DevAddr, NewPayload#{<<"person_sessiontoken">> => Use,?SHEETID(Type) => Id, <<"person_sheetsid">> => Id}, #{});
                                 _ ->
                                     {error, <<"run_hook_failed">>}

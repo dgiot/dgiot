@@ -284,3 +284,4 @@ get_zero_binary(Acc, Num) ->
         _ ->
             Acc
     end.
+

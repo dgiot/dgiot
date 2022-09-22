@@ -17,7 +17,7 @@
 
 %% API
 -export([get_work_sheet/10]).
--export([get_ThingMap/2, thinglist2binary/1, get_history/9, get_device_list/1, get_example/2, filter_data/3]).
+-export([get_ThingMap/2, thinglist2binary/1, get_history/9, get_device_list/1, get_example/2, filter_data/3,filter_data/1]).
 -export([get_all_sheet/9]).
 
 get_all_sheet(ProductId, Start, End, Channel, DeviceId, Where, Limit, Skip, New) ->
@@ -114,7 +114,7 @@ get_work_sheet(ProductId, Type, Start, End, Channel, DeviceId, Where, Limit, Ski
                             {Total, Res} = filter_data(Limit, Skip, HistoryData),
                             MergeData = merge_data(ParseData, Res, DeviceId, ThingMap),
                             NamedData = dgiot_factory_utils:turn_name(MergeData, ThingMap),
-                            {ok, {Total, NamedData}};
+                            {ok, {Total, filter_data(NamedData)}};
                         _ ->
                             error
                     end;
@@ -365,6 +365,13 @@ filter_data(Limit, Skip, HistoryData) ->
             HistoryData
     end,
     {Total, Res}.
+
+filter_data(Data) when is_list(Data) ->
+    lists:foldl(
+        fun(X, Acc) ->
+            Filtered = maps:filter(fun(_, V) ->  (V /= <<"null">>) and (V/= null) end, X),
+            Acc ++ [Filtered]
+        end, [], Data).
 
 get_device_list(ProductId) ->
     case dgiot_parse:query_object(<<"Device">>, #{<<"where">> => #{<<"product">> => ProductId}}) of
