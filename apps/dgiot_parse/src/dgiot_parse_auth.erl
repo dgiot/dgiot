@@ -22,7 +22,7 @@
 -dgiot_data("ets").
 -export([init_ets/0]).
 -define(DGIOT_USERSESSION, dgiot_usersession).
--define(DGIOT_COOKIE,dgiot_cookie).
+-define(DGIOT_COOKIE, dgiot_cookie).
 
 %% API
 -export([
@@ -49,8 +49,8 @@
 -export([create_user/2, delete_user/2, put_user/2, disableusere/3, check_roles/1]).
 -export([login_by_account/2, login_by_token/2, login_by_mail_phone/1, do_login/1]).
 -export([create_user_for_app/1, get_token/1, set_cookies/3, add_acl/5]).
--export([get_usersession/1, put_usersession/1,del_usersession/1]).
--export([get_cookie/1,put_cookie/2,del_cookie/1]).
+-export([get_usersession/1, put_usersession/1, del_usersession/1]).
+-export([get_cookie/1, put_cookie/2, del_cookie/1]).
 
 
 init_ets() ->
@@ -65,15 +65,15 @@ put_usersession(SessionMap) ->
     User_session = maps:get(Depart_token, SessionMap),
     dgiot_data:insert(?DGIOT_USERSESSION, {Depart_token}, User_session).
 
-del_usersession(User_session)->
+del_usersession(User_session) ->
     Fun = fun
               ({Key, Value}) ->
                   case Value of
                       User_session ->
                           dgiot_data:delete(?DGIOT_USERSESSION, Key);
-                      _->
+                      _ ->
                           pass
-                  end ;
+                  end;
               (_) ->
                   pass
           end,
@@ -81,12 +81,12 @@ del_usersession(User_session)->
 
 
 
-put_cookie(UserSession,Cookie)->
+put_cookie(UserSession, Cookie) ->
     dgiot_data:insert(?DGIOT_COOKIE, {UserSession}, Cookie).
 
-get_cookie(UserSession)->
+get_cookie(UserSession) ->
     dgiot_data:get(?DGIOT_COOKIE, {UserSession}).
-del_cookie(UserSession)->
+del_cookie(UserSession) ->
     dgiot_data:delete(?DGIOT_COOKIE, UserSession).
 
 %% 登录
@@ -326,7 +326,7 @@ get_roleuser(Filter, SessionToken) ->
         [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
         {ok, #{<<"results">> := Roles}} ->
             Users =
-                lists:foldl(fun(#{<<"objectId">> := RoleId} = Role, Acc) ->
+                lists:foldl(fun(#{<<"objectId">> := RoleId}, Acc) ->
                     ChildRoleIds =
                         case IncludeChild of
                             true ->
@@ -344,8 +344,24 @@ get_roleuser(Filter, SessionToken) ->
                     case dgiot_parse:query_object(<<"_User">>, UsersQuery) of
                         {ok, #{<<"results">> := Results}} ->
                             lists:foldl(fun
-                                            (X, Acc2) ->
-                                                Acc2 ++ [X#{<<"role">> => maps:with([<<"org_type">>, <<"tag">>, <<"depname">>], Role)}]
+                                            (#{<<"objectId">> := UserId} = X, Acc2) ->
+                                                Query = #{<<"where">> => #{<<"$relatedTo">> => #{
+                                                    <<"object">> => #{
+                                                        <<"__type">> => <<"Pointer">>,
+                                                        <<"className">> => <<"_User">>,
+                                                        <<"objectId">> => UserId},
+                                                    <<"key">> => <<"roles">>
+                                                }}},
+                                                UserRole =
+                                                    case dgiot_parse:query_object(<<"_Role">>, Query) of
+                                                        {ok, #{<<"results">> := UserRoles}} ->
+                                                            lists:foldl(fun(UserRole, Acc3) ->
+                                                                Acc3 ++ [maps:with([<<"org_type">>, <<"tag">>, <<"depname">>], UserRole)]
+                                                                        end, [], UserRoles);
+                                                        _ ->
+                                                            []
+                                                    end,
+                                                Acc2 ++ [X#{<<"roles">> => UserRole}]
                                         end, Acc, Results);
                         _ ->
                             Acc
@@ -384,6 +400,7 @@ put_roleuser(#{<<"userid">> := UserId} = Body, SessionToken) ->
                                             }
                                         ]}
                                     }),
+                                role_ets(RoleId),
                                 Acc ++ [#{<<"del">> => R0}]
                             end, [], DelRoles);
                     _ -> []
@@ -406,6 +423,7 @@ put_roleuser(#{<<"userid">> := UserId} = Body, SessionToken) ->
                                         <<"__type">> => <<"Pointer">>,
                                         <<"className">> => <<"_User">>,
                                         <<"objectId">> => UserId}]}}),
+                            role_ets(RoleId),
                             Acc1 ++ [#{<<"add">> => R3}]
                                     end, [], AddRoles);
                     _ -> []
