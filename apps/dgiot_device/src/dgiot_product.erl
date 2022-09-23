@@ -526,8 +526,21 @@ get_inspection(DeviceId) ->
     },
     case dgiot_parse:query_object(<<"Maintenance">>, Where) of
         {ok, #{<<"results">> := Results}} ->
-            lists:foldl(fun(_X, Acc) ->
-                Acc++[]
+            lists:foldl(fun(X, Acc) ->
+                Info = maps:get(<<"info">>, X, #{}),
+                Dynamicdata = maps:get(<<"dynamicdata">>, Info, []),
+                <<Number:10/binary, _/binary>> = dgiot_utils:to_binary(dgiot_datetime:now_secs()),
+                Basic = #{
+                    <<"number">> => maps:get(<<"number">>, X, Number),
+                    <<"status">> => maps:get(<<"status">>, X, <<>>),
+                    <<"productname">> => maps:get(<<"productname">>, Info, <<>>),
+                    <<"devicename">> => maps:get(<<"devicename">>, Info, <<>>),
+                    <<"executorname">> => maps:get(<<"executorname">>, Info, <<>>),
+                    <<"principalname">> => maps:get(<<"principalname">>, Info, <<>>),
+                    <<"startdata">> => maps:get(<<"startdata">>, Info, <<>>),
+                    <<"completiondata">> => maps:get(<<"completiondata">>, Info, <<>>)
+                },
+                Acc ++ [#{<<"basic">> => Basic, <<"time">> => dgiot_datetime:now_secs(), <<"data">> => Dynamicdata}]
                         end, [], Results);
         _ ->
             []
