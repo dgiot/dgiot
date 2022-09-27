@@ -4,7 +4,7 @@
 export PATH=$PATH:/usr/local/bin
 
 function help() {
-  echo "Usage: `basename $0` -v [single | cluster | devops | ci] -s [dgiot_n] -p [your_dgiot_plugin] -d [your_domain_name] -m [dgiotmd5] -e [pg_eip] -a [pg_auth]"
+  echo "Usage: `basename $0` -v [single | cluster | devops | ci] -s [dgiot_n] -p [your_dgiot_plugin] -d [your_domain_name] -m [dgiotmd5] -e [pg_eip] -a [pg_auth] -n [islanip]"
   exit 0
 }
 
@@ -160,6 +160,10 @@ function get_processor() {
 function get_wanip() {
   ping -c2 baidu.com &> /dev/null
   wlanip=`curl whatismyip.akamai.com`
+  echo -e  "`date +%F_%T` $LINENO: ${GREEN} islanip=${islanip} ${NC}"
+  if [ "${islanip}" == "true"  ]; then
+     wlanip=${lanip}
+  fi
   echo -e  "`date +%F_%T` $LINENO: ${GREEN} wlanip: ${wlanip}${NC}"
 }
 
@@ -515,8 +519,11 @@ function deploy_postgres() {
 }
 
 function restore_parse_data() {
-  ### 下载dgiot_parse_server初始数据p
-  wget ${fileserver}/parse_4.0.sql.tar.gz -O ${install_dir}/dgiot_pg_writer/parse_4.0.sql.tar.gz &> /dev/null
+  ### 下载dgiot_parse_server初始数据
+  if [ ! -f ${script_dir}/parse_4.0.sql.tar.gz ]; then
+      wget ${fileserver}/parse_4.0.sql.tar.gz -O ${script_dir}/parse_4.0.sql.tar.gz &> /dev/null
+  fi
+  cp ${script_dir}/parse_4.0.sql.tar.gz ${install_dir}/dgiot_pg_writer/
   cd ${install_dir}/dgiot_pg_writer/
   tar xvf parse_4.0.sql.tar.gz &> /dev/null
 
@@ -542,7 +549,7 @@ function install_parse_server() {
   fi
 
   ###下载dgiot_parse_server软件
-  if [ ! -f ${install_dir}/dgiot_parse_server.tar.gz ]; then
+  if [ ! -f ${script_dir}/dgiot_parse_server.tar.gz ]; then
      wget ${fileserver}/dgiot_parse_server.tar.gz -O ${script_dir}/dgiot_parse_server.tar.gz &> /dev/null
   fi
 
@@ -646,7 +653,7 @@ function deploy_tdengine_server() {
   systemctl start taosadapter
   ${csudo} systemctl enable taosadapter &> /dev/null
   echo -e "`date +%F_%T` $LINENO: ${GREEN} tdengine_server start success${NC}"
-  install_dgiot_tdengine_mqtt
+  #  install_dgiot_tdengine_mqtt
 }
 
 ## 3.3 部署dgiot_tdengine_mqtt桥接服务
@@ -654,7 +661,7 @@ function install_dgiot_tdengine_mqtt() {
   ## 3.2.setup mosquitto
   ### 1.2.5 下载mosquitto
   if [ ! -f ${script_dir}/mosquitto-1.6.7.tar.gz ]; then
-    wget ${fileserver}/mosquitto-1.6.7.tar.gz -O ${script_dir}/mosquitto-1.6.7.tar.gz &> /dev/null
+     wget ${fileserver}/mosquitto-1.6.7.tar.gz -O ${script_dir}/mosquitto-1.6.7.tar.gz &> /dev/null
   fi
   if [ -d ${script_dir}/mosquitto-1.6.7/ ]; then
      rm ${script_dir}/mosquitto-1.6.7/ -rf
@@ -663,7 +670,7 @@ function install_dgiot_tdengine_mqtt() {
   tar xvf mosquitto-1.6.7.tar.gz &> /dev/null
   cd  ${script_dir}/mosquitto-1.6.7
   if [ -f /usr/lib/libmosquitto.so.1 ]; then
-    rm /usr/lib/libmosquitto.so.1 -rf
+     rm /usr/lib/libmosquitto.so.1 -rf
   fi
 
   make -j${processor} &> /dev/null
@@ -673,9 +680,12 @@ function install_dgiot_tdengine_mqtt() {
   cd  ${script_dir}/
   rm ${script_dir}/mosquitto-1.6.7/ -rf
   #wget ${fileserver}/dgiot_tdengine_mqtt -O /usr/sbin/dgiot_tdengine_mqtt &> /dev/null
-  rm ${script_dir}/dgiot_tdengine_mqtt/ -rf
+  #rm ${script_dir}/dgiot_tdengine_mqtt/ -rf
   rm /usr/sbin/dgiot_tdengine_mqtt -rf
-  git clone https://gitee.com/dgiiot/dgiot_tdengine_mqtt.git &> /dev/null
+  if [ -d ${script_dir}/dgiot_tdengine_mqtt/ ]; then
+     echo -e "`date +%F_%T` $LINENO: ${GREEN} git clone dgiot_tdengine_mqtt ${NC}"
+     git clone https://gitee.com/dgiiot/dgiot_tdengine_mqtt.git &> /dev/null
+  fi
   cd ${script_dir}/dgiot_tdengine_mqtt/c/
   make &> /dev/null
   cp ${script_dir}/dgiot_tdengine_mqtt/c/dgiot_tdengine_mqtt /usr/sbin/dgiot_tdengine_mqtt
@@ -884,7 +894,11 @@ function install_dgiot() {
   fi
 
   if [ ! -f ${install_dir}/go_fastdfs/files/package/${software}.tar.gz ]; then
-    wget ${fileserver}/${software}.tar.gz -O ${install_dir}/go_fastdfs/files/package/${software}.tar.gz &> /dev/null
+    if [ ! -f ${script_dir}/${software}.tar.gz ]; then
+       wget ${fileserver}/${software}.tar.gz -O ${install_dir}/go_fastdfs/files/package/${software}.tar.gz &> /dev/null
+    else
+       cp ${script_dir}/${software}.tar.gz ${install_dir}/go_fastdfs/files/package/
+    fi
   fi
   cd ${install_dir}/go_fastdfs/files/package/
   tar xf ${software}.tar.gz
@@ -1491,8 +1505,9 @@ plugin="dgiot"                                # [dgiot | dgiot_your_plugin]
 dgiotmd5="5def10e33d5f5b7fabd362249a58f36b"   # [dgiotmd5]
 pg_eip="changeyourip"                            # [datanode_eip]
 pg_auth='changeyourpassword'                  # [pg_auth]
+islanip="false"                                    # [islanip]
 
-while getopts "v:s:p:m:d:e:a:" arg
+while getopts "v:s:p:m:d:e:a:n:" arg
 do
   case $arg in
     v)
@@ -1528,6 +1543,9 @@ do
     a)
       echo -e  "`date +%F_%T` $LINENO: ${GREEN} pg_auth=$OPTARG${NC}"
       pg_auth=$(echo $OPTARG)
+      ;;
+    n)
+      islanip=$(echo $OPTARG)
       ;;
     ?) #unknow option
       help
