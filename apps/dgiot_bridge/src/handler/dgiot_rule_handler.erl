@@ -30,7 +30,7 @@
 
 %% API
 -export([swagger_rule/0]).
--export([handle/4, sysc_rules/0, save_rule_to_dict/2, device_sql/4, create_rules/5]).
+-export([handle/4, sysc_rules/0, save_rule_to_dict/3, device_sql/4, create_rules/6]).
 
 %% API描述
 %% 支持二种方式导入
@@ -104,7 +104,7 @@ do_request(get_rule_id, #{<<"id">> := RuleID}, _Context, _Req) ->
 %% OperationId:put_rules_id
 %% 请求:PUT /iotapi/rule/:{id}
 do_request(put_rule_id, #{<<"id">> := RuleID} = Params, _Context, _Req) ->
-    save_rule_to_dict(RuleID, Params),
+    save_rule_to_dict(RuleID, Params, #{}),
     emqx_rule_engine_api:update_rule(#{id => RuleID}, maps:to_list(maps:without([<<"id">>], Params)));
 
 %% Rule 概要: 删除规则引擎 描述:删除规则引擎
@@ -139,7 +139,7 @@ do_request(post_rules, Params, _Context, _Req) ->
     R = emqx_rule_engine_api:create_rule(#{}, maps:to_list(Params#{<<"actions">> => NewActions})),
     case R of
         {ok, #{data := #{id := RuleID}}} ->
-            save_rule_to_dict(RuleID, Params#{<<"actions">> => NewActions});
+            save_rule_to_dict(RuleID, Params#{<<"actions">> => NewActions}, #{});
         _ -> pass
     end,
     R;
@@ -174,10 +174,10 @@ do_request(get_actions, _Args, _Context, _Req) ->
 %%do_request(post_rulesql, #{<<"select">> := Select, <<"from">> := From, <<"where">> := Where, <<"method">> := Method}, _Context, _Req) ->
 %%    device_sql(Select, From, Where, Method);
 
-do_request(post_rulesql, #{<<"trigger">> := Trigger, <<"ruleid">> := Ruleid, <<"productid">> := ProductId, <<"description">> := Description}, _Context, _Req) ->
+do_request(post_rulesql, #{<<"trigger">> := Trigger, <<"ruleid">> := Ruleid, <<"productid">> := ProductId, <<"description">> := Description} = Args, _Context, _Req) ->
 %%    device_sql(Select, From, Where, Method);
 %%    sql_tpl(Trigger, Condition, Action, Ruleid, Description);
-    sql_tpl(Trigger, Ruleid, ProductId, Description);
+    sql_tpl(Trigger, Ruleid, ProductId, Description, Args);
 
 
 do_request(get_actions_id, #{<<"id">> := RuleID}, _Context, _Req) ->
@@ -220,7 +220,7 @@ do_request(_OperationId, _Args, _Context, _Req) ->
 %%doc-api https://help.aliyun.com/document_detail/73736.htm?spm=a2c4g.11186623.0.0.353d7a48CvEOwF#concept-ap3-lql-b2b
 
 %% SELECT payload.electricity as electricity FROM  "$dg/alarm/94656917ab/157d0ff60f/#" where electricity  >  20
-sql_tpl(Trigger, Ruleid, ProductId, Description) ->
+sql_tpl(Trigger, Ruleid, ProductId, Description, Args) ->
     SELECT = generateSelect(Trigger),
     FROM = generateFrom(ProductId, Trigger),
     WHERE = generateWhere(Trigger),
@@ -233,7 +233,7 @@ sql_tpl(Trigger, Ruleid, ProductId, Description) ->
             "   \"", FROM/binary, "\"", "\r\n",
             "WHERE", "\r\n     ",
             WHERE/binary>>,
-    create_rules(Ruleid, ChannelId, Description, DefaultSql, FROM),
+    create_rules(Ruleid, ChannelId, Description, DefaultSql, FROM, Args),
     {ok, #{<<"template">> => DefaultSql}}.
 
 %% 根据设备条件生成sql模板
@@ -282,10 +282,7 @@ device_sql(Select, From, Where, _Method) ->
     {ok, #{<<"template">> => DefaultSql}}.
 
 %% 根据cron表达式生成sql模板
-
-
-
-save_rule_to_dict(RuleID, Params) ->
+save_rule_to_dict(RuleID, Params, Args) ->
     Rule =
         case emqx_rule_engine_api:show_rule(#{id => RuleID}, []) of
             {ok, #{message := <<"Not Found">>}} ->
@@ -301,7 +298,7 @@ save_rule_to_dict(RuleID, Params) ->
         <<"title">> => <<"Rule">>,
         <<"key">> => RuleID,
         <<"type">> => <<"ruleengine">>,
-        <<"data">> => #{<<"rule">> => jsx:encode(Rule)}
+        <<"data">> => #{<<"args">> => Args, <<"rule">> => jsx:encode(Rule)}
     },
     dgiot_data:insert(?DGIOT_RUlES, Dict),
     ObjectId = dgiot_parse_id:get_dictid(RuleID, <<"ruleengine">>, <<"Rule">>, <<"Rule">>),
@@ -498,7 +495,7 @@ generateWhere(Trigger) ->
         end
                 end, <<"">>, maps:get(<<"items">>, Trigger, [])).
 
-create_rules(RuleID, ChannelId, Description, Rawsql, Target_topic) ->
+create_rules(RuleID, ChannelId, Description, Rawsql, Target_topic, Args) ->
     emqx_rule_engine_api:create_resource(#{},
         [
             {<<"id">>, <<"resource:", ChannelId/binary>>},
@@ -530,14 +527,14 @@ create_rules(RuleID, ChannelId, Description, Rawsql, Target_topic) ->
     ObjectId = dgiot_parse_id:get_dictid(RuleID, <<"ruleengine">>, <<"Rule">>, <<"Rule">>),
     case dgiot_parse:get_object(<<"Dict">>, ObjectId) of
         {ok, _} ->
-            dgiot_rule_handler:save_rule_to_dict(RuleID, Params);
+            dgiot_rule_handler:save_rule_to_dict(RuleID, Params, Args);
         _ ->
             R = emqx_rule_engine_api:create_rule(#{}, maps:to_list(Params)),
             case R of
                 {ok, #{data := #{id := EmqxRuleId}}} ->
                     dgiot_data:delete(?DGIOT_RUlES, EmqxRuleId),
                     emqx_rule_engine_api:delete_rule(#{id => EmqxRuleId}, []),
-                    dgiot_rule_handler:save_rule_to_dict(RuleID, Params);
+                    dgiot_rule_handler:save_rule_to_dict(RuleID, Params, Args);
                 _ -> pass
             end
     end.
