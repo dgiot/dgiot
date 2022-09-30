@@ -26,7 +26,10 @@
 -export([get_prop/1, get_props/1, get_props/2, get_unit/1, do_td_message/1, update_properties/2, update_properties/0]).
 -export([update_topics/0, update_product_filed/1]).
 -export([get_initdata/2, init_inspection/1, get_inspection/1]).
--export([save_keys/1, get_keys/1, get_control/1, save_control/1, save_channel/1, save_tdchannel/1, save_taskchannel/1, get_channel/1, get_tdchannel/1, get_taskchannel/1, get_interval/1]).
+-export([save_devicetype/1, get_devicetype/1,get_device_thing/2]).
+-export([save_keys/1, get_keys/1, get_control/1, save_control/1, save_channel/1, save_tdchannel/1,
+    save_taskchannel/1, get_channel/1, get_tdchannel/1,
+    get_taskchannel/1, get_interval/1]).
 -type(result() :: any()).   %% todo 目前只做参数检查，不做结果检查
 
 init_ets() ->
@@ -75,9 +78,11 @@ save(Product) ->
     dgiot_data:insert(?DGIOT_PRODUCT, ProductId, Product1),
     save_keys(ProductId),
     save_control(ProductId),
+    save_devicetype(ProductId),
     save_channel(ProductId),
     save_tdchannel(ProductId),
     save_taskchannel(ProductId),
+    save_device_thingtype(ProductId),
     {ok, Product1}.
 
 put(Product) ->
@@ -174,6 +179,57 @@ get_control(ProductId) ->
             #{};
         Keys ->
             Keys
+    end.
+
+
+%% 设备类型
+save_devicetype(ProductId) ->
+    DeviceTypes =
+        case dgiot_product:lookup_prod(ProductId) of
+            {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
+                lists:foldl(fun(#{<<"devicetype">> := DeviceType}, Acc) ->
+                    Acc ++ [DeviceType]
+                            end, [], Props);
+
+            _Error ->
+                []
+        end,
+    dgiot_data:insert(?DGIOT_PRODUCT, {ProductId, devicetype}, dgiot_utils:unique_2(DeviceTypes)).
+
+get_devicetype(ProductId) ->
+    case dgiot_data:get(?DGIOT_PRODUCT, {ProductId, devicetype}) of
+        not_find ->
+            [];
+        DeviceTypes ->
+            DeviceTypes
+    end.
+
+
+%% 设备类型
+save_device_thingtype(ProductId) ->
+    case dgiot_product:lookup_prod(ProductId) of
+        {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
+            lists:map(fun(#{<<"devicetype">> := DeviceType, <<"identifier">> := Identifier, <<"dataType">> := #{<<"type">> := Type}}) ->
+
+                case dgiot_data:get(?DGIOT_PRODUCT, {ProductId, device_thing, DeviceType}) of
+                    not_find ->
+                        dgiot_data:insert(?DGIOT_PRODUCT, {ProductId, device_thing, DeviceType}, #{Identifier => Type});
+                    Map ->
+                        dgiot_data:insert(?DGIOT_PRODUCT, {ProductId, device_thing, DeviceType}, Map#{Identifier => Type})
+                end
+
+                      end, Props);
+
+        _Error ->
+            []
+    end.
+
+get_device_thing(ProductId, DeviceType) ->
+    case dgiot_data:get(?DGIOT_PRODUCT, {ProductId, device_thing, DeviceType}) of
+        not_find ->
+            not_find;
+        Thingtypes ->
+            Thingtypes
     end.
 
 update_properties(ProductId, Product) ->

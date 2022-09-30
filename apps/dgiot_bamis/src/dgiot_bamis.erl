@@ -218,11 +218,23 @@ start_http() ->
 format_multilayer(Object) ->
     MapWhere = dgiot_utils:to_map(Object),
     maps:fold(
-        fun(K, V, Acc) ->
-            case size(V) of
-                0 ->
+        fun
+            (K, V, Acc) when is_map(V) ->
+            case maps:values(V) of
+                [<<"">>] ->
                     Acc;
                 _ ->
                     Acc#{K => V}
-            end
-        end, #{}, MapWhere).
+            end;
+            (K, V, Acc) when is_binary(V) ->
+                case size(V) of
+                    0 ->
+                        Acc;
+                    _ ->
+                        Acc#{K => V}
+                end;
+            (_, _, Acc) ->
+                Acc
+        end,
+        #{}, MapWhere).
+

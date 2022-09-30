@@ -20,7 +20,7 @@
 -behaviour(application).
 -include("dgiot_factory.hrl").
 
--export([ init_materialets/0]).
+
 %% Application callbacks
 -export([start/2, stop/1]).
 
@@ -30,29 +30,16 @@
 
 start(_StartType, _StartArgs) ->
     init_ets(),
+    dgiot_hook:add(one_for_one, {sync_parse, before, put,  <<"9652332a2d">>}, fun dgiot_factory_repliceword:handle_form/1),
     dgiot_factory_sup:start_link().
 
 stop(_State) ->
+    dgiot_hook:remove(one_for_one, {sync_parse, before, put,  <<"9652332a2d">>}),
     ok.
 init_ets() ->
     dgiot_data:init(?MATERIALETS),
     dgiot_data:init(?WORKERTREE),
-    init_materialets().
+    dgiot_data:init(?FACTORY_ORDER),
+    dgiot_data:init(?FACTORY_QUALITY),
+    dgiot_data:init(?FACTORY_NOTIFICATION).
 
-init_materialets() ->
-%%    case dgiot_parse:query_object(?MATERIALTABLE, #{<<"where">> => #{<<"validate">> => true}}) of
-        case dgiot_parse:query_object(<<"material">>, #{<<"where">> => #{<<"validate">> => true}}) of
-        {ok, #{<<"results">> := Res}} ->
-            lists:foldl(
-                fun(X, _) ->
-                    case X of
-                        #{<<"FMaterialId">> := Id, <<"FDeliveryDate">> := Date} ->
-                            Data = maps:remove(<<"createdAt">>,maps:remove(<<"updatedAt">> ,X)),
-                            dgiot_data:insert(?MATERIALETS, {Id, Date}, Data);
-                        _ ->
-                            pass
-                    end
-                end, [], Res);
-        _ ->
-            pas
-    end.

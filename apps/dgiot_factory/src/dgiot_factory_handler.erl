@@ -128,60 +128,17 @@ do_request(post_worker_shift, #{<<"shift">> := Shifts} = _Args, _Context, _Body)
     dgiot_factory_shift:post_shift(Shifts),
     {ok, #{<<"status">> => 0, msg => <<"修改成功"/utf8>>, <<"data">> => #{}}};
 
-do_request(get_data, #{<<"productId">> := undefined} = _Args, _Context, _Body) ->
-    do_request(get_data, _Args#{<<"productId">> => <<"ec71804a3d">>}, _Context, _Body);
-
-do_request(get_data, #{<<"productId">> := ProductId, <<"objectId">> := undefined, <<"type">> := Type,
-    <<"starttime">> := Start, <<"endtime">> := End, <<"where">> := OldWhere,
-    <<"limit">> := Limit, <<"skip">> := Skip, <<"new">> := New} = _Args, #{<<"sessionToken">> := SessionToken} = _Context, _Body) ->
-    Where = case is_map(OldWhere) of
-                true ->
-                    OldWhere;
-                _ ->
-                    case jsx:is_json(OldWhere) of
-                        true ->
-                            dgiot_bamis:format_multilayer(OldWhere);
-                        _ ->
-                            OldWhere
-                    end
-            end,
-    case dgiot_product_tdengine:get_channel(SessionToken) of
-        {error, Error} -> {error, Error};
-        {ok, Channel} ->
-            case dgiot_factory_getdata:get_device_list(ProductId) of
-                {ok, DeviceList} ->
-                    case dgiot_factory_getdata:get_work_sheet(ProductId, Type, Start, End, Channel, DeviceList, Where, Limit, Skip, New) of
-                        {ok, {Total, Res}} ->
-                            {ok, #{<<"status">> => 0, msg => <<"数据请求成功"/utf8>>, <<"data">> => #{<<"total">> => Total, <<"items">> => Res}}};
-                        _ ->
-
-                            {error, <<"get_data_failed">>}
-                    end;
-                _ ->
-                    {error, <<"notfinddevice">>}
-
-            end
-    end;
 
 
-do_request(get_data, #{<<"productId">> := ProductId, <<"objectId">> := DeviceId, <<"type">> := Type, <<"starttime">> := Start,
-    <<"endtime">> := End, <<"where">> := OldWhere, <<"limit">> := Limit, <<"skip">> := Skip, <<"new">> := New} = _Args,
+
+
+do_request(get_data, #{<<"productId">> := ProductId, <<"objectId">> := DeviceId, <<"type">> := Type, <<"function">> := Function, <<"group">> := Group,
+    <<"order">> := Order, <<"where">> := Where, <<"limit">> := Limit, <<"skip">> := Skip} = _Args,
     #{<<"sessionToken">> := SessionToken} = _Context, _Body) ->
-    Where = case is_map(OldWhere) of
-                true ->
-                    OldWhere;
-                _ ->
-                    case jsx:is_json(OldWhere) of
-                        true ->
-                            dgiot_bamis:format_multilayer(OldWhere);
-                        _ ->
-                            OldWhere
-                    end
-            end,
     case dgiot_product_tdengine:get_channel(SessionToken) of
         {error, Error} -> {error, Error};
         {ok, Channel} ->
-            case dgiot_factory_getdata:get_work_sheet(ProductId, Type, Start, End, Channel, DeviceId, Where, Limit, Skip, New) of
+            case dgiot_factory_data:get_history_data(ProductId, DeviceId, Type, Function, Group, Where, Order, Limit, Skip, Channel) of
                 {ok, {Total, Res}} ->
                     {ok, #{<<"status">> => 0, msg => <<"数据请求成功"/utf8>>, <<"data">> => #{<<"total">> => Total, <<"items">> => Res}}};
                 _ ->
@@ -206,8 +163,20 @@ do_request(post_material, #{<<"objectId">> := DeviceId, <<"shift">> := Data} = _
     end;
 
 
-do_request(get_warehouse_material, #{<<"limit">> := Limit, <<"skip">> := Skip, <<"where">> := Where} = _Args, _Context, _Req) ->
-    case dgiot_factory_material:get_warehouse_material(Limit, Skip, Where) of
+do_request(get_warehouse_material, #{<<"limit">> := Limit, <<"skip">> := Skip, <<"where">> := OldWhere, <<"productId">> := ProductId} = _Args, _Context, _Req) ->
+%%    io:format("~s ~p _Args = ~p  ~n", [?FILE, ?LINE, _Args]),
+    Where = case is_map(OldWhere) of
+                true ->
+                    OldWhere;
+                _ ->
+                    case jsx:is_json(OldWhere) of
+                        true ->
+                            dgiot_bamis:format_multilayer(OldWhere);
+                        _ ->
+                            OldWhere
+                    end
+            end,
+    case dgiot_factory_material:get_warehouse_material(Limit, Skip, Where, ProductId) of
         {ok, {Total, Res}} ->
             {ok, #{<<"status">> => 0, msg => <<"操作成功"/utf8>>, <<"data">> => #{<<"total">> => Total, <<"items">> => Res}}};
         _ ->
@@ -223,15 +192,30 @@ do_request(post_warehouse_material, _Args, _Context, _Req) ->
     end;
 
 do_request(get_workertree, _Arg, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
-    Data = dgiot_factory_utils:get_usertree(SessionToken),
+%%    io:format("~s ~p SessionToken = ~p  ~n", [?FILE, ?LINE, SessionToken]),
+    Data = dgiot_factory_utils:get_usertree(_Arg, SessionToken),
     {ok, #{
         <<"status">> => 0,
         <<"msg">> => <<"ok">>,
         <<"data">> => #{<<"options">> => Data}
     }};
 
+do_request(get_useablematerial, #{<<"id">> := Id} = _Arg, _Context, _Req) ->
+    case dgiot_data:match(material, {{Id, '_'}, '$1'}) of
+        {ok, Res} ->
+            {ok, #{
+                <<"status">> => 0,
+                <<"msg">> => <<"ok">>,
+                <<"data">> => #{<<"total">> => length(Res), <<"items">> => Res}
+            }};
+        _ ->
+            {error, <<"not find useable material">>}
+    end
+;
+
 %%  服务器不支持的API接口
 do_request(_OperationId, _Args, _Context, _Req) ->
     io:format("~s ~p _Args = ~p  ~n", [?FILE, ?LINE, _Args]),
     ?LOG(info, "_OperationId:~p~n", [_Args]),
     {error, <<"Not Allowed.">>}.
+
