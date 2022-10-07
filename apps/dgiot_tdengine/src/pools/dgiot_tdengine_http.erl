@@ -142,7 +142,7 @@ show_database(Url, UserName, Password) ->
 test_showdb() ->
     lists:foreach(
         fun(Sql) ->
-            R = request(<<"http://132.232.121.164:6020/rest/sql">>, <<"root">>, <<"taosdata">>, Sql),
+            R = request(<<"http://127.0.0.1:6041/rest/sql">>, <<"root">>, <<"taosdata">>, Sql),
             io:format("~p~n", [R])
         end, [
             <<"select * from dgiot.device;">>,
