@@ -271,7 +271,7 @@
 %%    BinEnd = dgiot_utils:to_binary(End * 1000),
 %%    <<"  createdat > ", BinStart/binary, " and createdat < ", BinEnd/binary, " ">>.
 
-filter_data(undefined, _, HistoryData) ->
+filter_data(undefined, _ , HistoryData) ->
     Total = length(HistoryData),
     {Total, HistoryData};
 

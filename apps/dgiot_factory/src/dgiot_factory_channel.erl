@@ -30,7 +30,7 @@
 
 %% Channel callback
 -export([init/3, handle_init/1, handle_event/3, handle_message/2, stop/3]).
--export([get_id/2, after_handle/4, handle_data/7]).
+-export([get_id/2, after_handle/4, handle_data/7,get_card_data/2]).
 
 %% 注册通道类型
 -channel_type(#{
@@ -127,27 +127,33 @@ stop(ChannelType, ChannelId, _State) ->
 %%process_content(#{<<"person_type">> := PersonType} = Payload, ProductId, DeviceId, DevAddr, Id) ->
 %%    save_data(ProductId, Id, DevAddr, DeviceId, PersonType, Payload).
 
-handle_data(TaskProductId, TaskDeviceId, BatchProductId, BatchDeviceId, BatchAddr, PersonType, NewData) ->
-    NewPayLoad = run_factory_hook(TaskProductId, TaskDeviceId, BatchDeviceId, PersonType, NewData),
-    OldData = get_card_data(BatchProductId, BatchDeviceId),
+handle_data(_TaskProductId, TaskDeviceId, BatchProductId, BatchDeviceId, BatchAddr, PersonType, NewData) ->
+    io:format("~s ~p status =~p ~n", [?FILE, ?LINE,maps:get(<<"person_status">>,NewData,error)]),
+    NewPayLoad = run_factory_hook(_TaskProductId, TaskDeviceId, BatchProductId, BatchDeviceId, PersonType, NewData),
+    {OldNumData, OldNameData} = get_card_data(BatchProductId, BatchDeviceId),
     dgiot_data:insert(?FACTORY_ORDER, {BatchProductId, BatchDeviceId, PersonType}, NewPayLoad),
-    Content = maps:merge(OldData, NewPayLoad),
+    Content = maps:merge(OldNameData, NewPayLoad),
+    io:format("~s ~p status =~p ~n", [?FILE, ?LINE,maps:get(<<"person_status">>,Content,error)]),
     dgiot_parse:update_object(<<"Device">>, BatchDeviceId, #{<<"content">> => dgiot_map:unflatten(Content)}),
-    dgiot_task:save_td(BatchProductId, BatchAddr, Content, #{}).
+    NumData = dgiot_factory_utils:turn_num(NewPayLoad, BatchProductId, PersonType),
+    io:format("~s ~p status =~p ~n", [?FILE, ?LINE,maps:get(<<"person_status">>,NumData,error)]),
+%%    io:format("~s ~p OldNumData =~p ~n", [?FILE, ?LINE,OldNumData]),
+    dgiot_task:save_td(BatchProductId, BatchAddr, maps:merge(OldNumData, NumData), #{}).
 get_card_data(BatchProductId, BatchDeviceId) ->
     DevcieTypeList = dgiot_product:get_devicetype(BatchProductId),
     lists:foldl(
-        fun(DeviceType, Acc) ->
+        fun(DeviceType, {Num, Name}) ->
             case dgiot_data:get(?FACTORY_ORDER, {BatchProductId, BatchDeviceId, DeviceType}) of
                 not_find ->
-                    Acc;
+                    {Num, Name};
                 Res ->
-                    maps:merge(Acc, Res)
+                    {maps:merge(Num, dgiot_factory_utils:turn_num(Res, BatchProductId, DeviceType)), maps:merge(Name, Res)}
             end
-        end, #{}, DevcieTypeList).
+        end, {#{}, #{}}, DevcieTypeList).
 
 process_data(Content, PersonType, Token, TaskDeviceId) ->
     FlatMap = dgiot_map:flatten(Content),
+%%    io:format("~s ~p status =~p ~n", [?FILE, ?LINE,maps:get(<<"quality_status">>,FlatMap,0)]),
     case dgiot_parse:get_object(<<"Device">>, TaskDeviceId) of
         {ok, #{<<"name">> := OrderName, <<"product">> := #{<<"objectId">> := TaskProductId}}} ->
             {ok, {BatchProductId, BatchDeviceId, BatchAddr}} = process_roll_dev(TaskProductId, TaskDeviceId, OrderName, Token, FlatMap),
@@ -157,9 +163,8 @@ process_data(Content, PersonType, Token, TaskDeviceId) ->
             error
     end.
 
-init_data(TaskProductId, TaskDeviceId, BatchDeviceId, FlatMap, PersonType, Token) ->
-    NumData = dgiot_factory_utils:turn_num(FlatMap, TaskProductId, PersonType),
-    maps:merge(NumData, #{<<"person_sessiontoken">> => Token, <<"person_deviceid">> => TaskDeviceId, ?SHEETID(PersonType) => BatchDeviceId, <<"person_sheetsid">> => BatchDeviceId}).
+init_data(_TaskProductId, TaskDeviceId, BatchDeviceId, FlatMap, _PersonType, Token) ->
+    maps:merge(FlatMap, #{<<"person_sessiontoken">> => Token, <<"person_deviceid">> => TaskDeviceId, <<"person_sheetsid">> => BatchDeviceId}).
 after_handle(ProductId, DevAddr, Payload, _Type) ->
     Use = turn_user(Payload),
     dgiot_task:save_td(ProductId, DevAddr, Payload#{<<"person_sessiontoken">> => Use}, #{}).
@@ -178,8 +183,8 @@ turn_user(#{<<"person_sessiontoken">> := SessionToken}) ->
             SessionToken
     end.
 
-run_factory_hook(TaskProductId, TaskDeviceId, RollDeviceId, PersonType, NewData) ->
-    case dgiot_hook:run_hook({factory, TaskProductId, PersonType}, [TaskProductId, TaskDeviceId, RollDeviceId, PersonType, NewData]) of
+run_factory_hook(TaskProductId, TaskDeviceId, BatchProductId, BatchDeviceId, PersonType, NewData) ->
+    case dgiot_hook:run_hook({factory, TaskProductId, PersonType}, [BatchProductId, TaskDeviceId, BatchDeviceId, PersonType, NewData]) of
         {ok, [{ok, Res}]} ->
             Res;
         _ ->
@@ -202,7 +207,7 @@ process_roll_dev(TaskProductId, TaskDeviceId, OrderName, SessionToken, FlatMap) 
             io:format("~s ~p RollDeviceId = ~p ~n", [?FILE, ?LINE, BatchDeviceId]),
             NewAcl = get_new_acl(SessionToken, Acl),
 %%            dgiot_device_cache:put(#{<<"objectId">> => TaskDeviceId, <<"ACL">> => NewAcl}),
-            dgiot_parse:update_object(<<"Device">>, TaskDeviceId, #{<<"ACL">> => NewAcl}),
+            dgiot_parse:update_object(<<"Device">>, BatchDeviceId, #{<<"ACL">> => NewAcl}),
             dgiot_device:save_subdevice(BatchDeviceId, TaskDeviceId, 1),
             {ok, {BatchProductId, BatchDeviceId, BatchAddr}};
         _ ->
@@ -228,30 +233,41 @@ process_roll_dev(TaskProductId, TaskDeviceId, OrderName, SessionToken, FlatMap) 
 
 
 get_roll_dev_id(ProductId, FlatMap) ->
-    BatchAddr = case maps:find(<<"person_devaddr">>, FlatMap) of
-                    {ok, Devaddr} ->
-                        Devaddr;
-                    _ ->
-                        dgiot_datetime:format("YYYY-MM-DD HH:NN:SS")
-                end,
     BatchProductId = get_sub_product(ProductId),
-    BatchDeviceId = dgiot_parse_id:get_deviceid(BatchProductId, BatchAddr),
-    {BatchProductId, BatchDeviceId, BatchAddr}.
+    case maps:find(<<"person_sheetsid">>, FlatMap) of
+        {ok, BatchDeviceId} ->
+            case dgiot_device:lookup(BatchDeviceId) of
+                {ok, #{<<"devaddr">> := BatchAddr}} ->
+
+                    {BatchProductId, BatchDeviceId, BatchAddr};
+                _ ->
+                    error
+            end;
+        _ ->
+
+            BatchAddr = dgiot_utils:to_binary(dgiot_datetime:nowstamp()),
+            BatchDeviceId = list_to_binary(string:to_upper(binary_to_list(dgiot_parse_id:get_deviceid(BatchProductId, BatchAddr)))),
+            {BatchProductId, BatchDeviceId, BatchAddr}
+    end.
 
 get_new_acl(SessionToken, Acl) ->
-    PersonAcl = case dgiot_auth:get_session(SessionToken) of
-                    #{<<"roles">> := Roles} = _User ->
-                        [#{<<"name">> := Role} | _] = maps:values(Roles),
-                        #{<<"role:", Role/binary>> => #{
-                            <<"read">> => true,
-                            <<"write">> => true}
-                        };
-                    Err -> {400, Err}
-                end,
-    OldAcl = lists:foldl(
-        fun(X, Acc) ->
-            Acc#{X => #{<<"read">> => true, <<"write">> => true}}
-        end, #{}, Acl),
-    maps:merge(OldAcl, PersonAcl).
+    case dgiot_auth:get_session(SessionToken) of
+        #{<<"roles">> := Roles} = _User ->
+            [#{<<"name">> := Role} | _] = maps:values(Roles),
+            PersonAcl = <<"role:", Role/binary>>,
+            AclList = case lists:member(PersonAcl, Acl) of
+                          true ->
+                              Acl;
+                          _ ->
+                              Acl ++ [PersonAcl]
+                      end,
+
+            lists:foldl(
+                fun(X, Acc) ->
+                    Acc#{dgiot_utils:to_binary(X) => #{<<"read">> => true, <<"write">> => true}}
+                end, #{}, AclList);
+        Err -> {400, Err}
+    end.
+
 
 

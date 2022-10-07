@@ -18,10 +18,10 @@
 -author("jonhl").
 -include_lib("dgiot/include/logger.hrl").
 -include("dgiot_factory.hrl").
--export([get_num/2, get_name/2, turn_name/2, turn_num/3]).
--export([get_usertree/2, getalluser/1]).
+-export([get_num/2, get_name/2, turn_name/3, turn_num/3]).
+-export([get_usertree/2, getalluser/1, get_ThingMap/2]).
 -export([get_zero_list/1, get_zero_binary/1]).
--export([fix_model/1, get_worker/1,get_children/1]).
+-export([fix_model/1, get_worker/1, get_children/1]).
 
 fix_model(ID) ->
     {ok, #{<<"thing">> := Model}} = dgiot_parse:get_object(<<"Product">>, ID),
@@ -39,6 +39,7 @@ fix_model(ID) ->
         end, [], Pro),
     NewThing = maps:merge(Model, #{<<"properties">> => Res}),
     dgiot_parse:update_object(<<"Product">>, ID, #{<<"thing">> => NewThing}).
+
 
 
 get_num(K, V) ->
@@ -61,6 +62,7 @@ get_num(K, V) ->
                 <<"title">> => K,
                 <<"type">> => K,
                 <<"key">> => K,
+                <<"objectId">> => Id,
                 <<"data">> => #{<<"end">> => 1, V => 0}
             },
             case dgiot_parse:create_object(<<"Dict">>, Map) of
@@ -86,40 +88,14 @@ get_name(K, Num) ->
             error
     end.
 
-
-turn_name(Data, ThingMap) when is_list(Data) ->
+turn_name(List, ProductId, Type) when is_list(List) ->
     lists:foldl(
-        fun(X, ACC) ->
-            ACC ++ turn_name(X, ThingMap)
-        end, [], Data);
+        fun(X, Acc) ->
+            Acc ++ [turn_num(X, ProductId, Type)]
+        end, [], List);
 
-turn_name(Data, ThingMap) when is_map(Data) ->
-    Res = maps:fold(
-        fun(K, V, Acc) ->
-            case V of
-                <<"enum">> ->
-                    case maps:find(K, Acc) of
-                        {ok, Num} ->
-                            case get_name(K, Num) of
-                                error ->
-                                    Acc;
-                                Map ->
-                                    maps:merge(Acc, Map)
-                            end;
-                        _ ->
-                            Acc
-                    end;
-                _ ->
-                    Acc
-            end
-        end, Data, ThingMap),
-    [Res];
-
-turn_name(Data, _) ->
-    Data.
-
-turn_num(FlatMap, ProductId, Type) ->
-    case dgiot_product:get_device_thing(ProductId, Type) of
+turn_name(FlatMap, ProductId, Type) when is_map(FlatMap) ->
+    case get_ThingMap(Type, ProductId) of
         {ok, ThingMap} ->
             maps:fold(
                 fun(K, V, Acc) ->
@@ -127,7 +103,37 @@ turn_num(FlatMap, ProductId, Type) ->
                         <<"enum">> ->
                             case maps:find(K, Acc) of
                                 {ok, Data} ->
-                                    case dgiot_factory_utils:get_num(K, Data) of
+                                    case dgiot_factory_utils:get_name(K, Data) of
+                                        error ->
+                                            Acc;
+                                        Map ->
+                                            maps:merge(Acc, Map)
+                                    end;
+                                _ ->
+                                    Acc
+                            end;
+                        _ ->
+                            Acc
+                    end
+
+                end, FlatMap, ThingMap);
+        _ ->
+            FlatMap
+    end;
+
+turn_name(Data, _, _) ->
+    Data.
+
+turn_num(FlatMap, ProductId, Type) ->
+    case get_ThingMap(Type, ProductId) of
+        {ok, ThingMap} ->
+            maps:fold(
+                fun(K, V, Acc) ->
+                    case V of
+                        <<"enum">> ->
+                            case maps:find(K, Acc) of
+                                {ok, Data} ->
+                                    case dgiot_factory_utils: get_num(K, Data) of
                                         error ->
                                             Acc;
                                         Map ->
@@ -146,7 +152,7 @@ turn_num(FlatMap, ProductId, Type) ->
     end.
 
 
-get_usertree(#{<<"id">> := undefined},SessionToken) ->
+get_usertree(#{<<"id">> := undefined}, SessionToken) ->
     case get_same_level_role(SessionToken) of
         RoleTree when length(RoleTree) > 0 ->
             get_children(RoleTree);
@@ -155,6 +161,7 @@ get_usertree(#{<<"id">> := undefined},SessionToken) ->
     end;
 get_usertree(#{<<"id">> := Id}, _) ->
     get_worker(Id).
+
 
 
 get_same_level_role(SessionToken) ->
@@ -178,13 +185,13 @@ get_worker(Id) ->
 %%                io:format("~s ~p Id = ~p  ~n", [?FILE, ?LINE, Id]),
 %%    case dgiot_parse:get_object(<<"_Role">>, Id) of
 %%        {ok, #{<<"parent">> := Parent}} ->
-            ChildroleIds = dgiot_role:get_childrole(Id) -- [Id],
-            case dgiot_parse:query_object(<<"_Role">>, #{<<"where">> => #{<<"objectId">> => #{<<"$in">> =>ChildroleIds}}}) of
-                {ok, #{<<"results">> := RoleList}} ->
-                    get_children(dgiot_parse_utils:create_tree(RoleList, <<"parent">>));
-                _ ->
-                    io:format("~s ~p Id = ~p  ~n", [?FILE, ?LINE, Id]),
-                    error
+    ChildroleIds = dgiot_role:get_childrole(Id) -- [Id],
+    case dgiot_parse:query_object(<<"_Role">>, #{<<"where">> => #{<<"objectId">> => #{<<"$in">> => ChildroleIds}}}) of
+        {ok, #{<<"results">> := RoleList}} ->
+            get_children(dgiot_parse_utils:create_tree(RoleList, <<"parent">>));
+        _ ->
+            io:format("~s ~p Id = ~p  ~n", [?FILE, ?LINE, Id]),
+            error
 %%            end
     end.
 
@@ -260,3 +267,21 @@ get_zero_binary(Acc, Num) ->
             Acc
     end.
 
+
+
+get_ThingMap(_DeviceType, ProductId) ->
+    case dgiot_product:get_devicetype(ProductId) of
+        not_find ->
+            error;
+        List ->
+            Res = lists:foldl(
+                fun(DeviceType, Acc) ->
+                    case dgiot_product:get_device_thing(ProductId, DeviceType) of
+                        not_find ->
+                            Acc;
+                        Res ->
+                            maps:merge(Acc, Res)
+                    end
+                end, #{}, List),
+            {ok, Res}
+    end.
