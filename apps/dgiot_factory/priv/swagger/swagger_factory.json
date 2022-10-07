@@ -208,16 +208,16 @@
             "type": "string"
           },
           {
-            "description": "开始时间",
+            "description": "分组",
             "in": "query",
-            "name": "starttime",
-            "type": "number"
+            "name": "group",
+            "type": "string"
           },
           {
-            "description": "结束时间",
+            "description": "聚合函数",
             "in": "query",
-            "name": "endtime",
-            "type": "number"
+            "name": "function",
+            "type": "string"
           },
           {
             "in": "query",
@@ -242,14 +242,10 @@
             "type": "string"
           },
           {
-            "description": "取最新值",
+            "description": "排序",
             "in": "query",
-            "name": "new",
-            "type": "string",
-            "enum": [
-              true,
-              false
-            ]
+            "name": "order",
+            "type": "string"
           }
         ],
         "consumes": [
@@ -388,6 +384,14 @@
           },
           {
             "in": "query",
+            "name": "productId",
+            "description": "物料产品id",
+            "required": false,
+            "default": 10,
+            "type": "string"
+          },
+          {
+            "in": "query",
             "name": "where",
             "description": "过滤条件，eg: {\"objectId\":{\"$in\":[\"BGS3BFgcZN\"]}}",
             "required": false,
@@ -453,7 +457,14 @@
     "/workertree": {
       "get": {
         "description": "用户树",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "query",
+            "type": "string",
+            "description": "部门id"
+          }
+        ],
         "responses": {
           "200": {
             "description": "Returns instance data"
@@ -471,22 +482,15 @@
         ]
       }
     },
-    "/init": {
+    "/useablematerial": {
       "get": {
         "description": "获取页面初始化数据",
         "parameters": [
           {
-            "name": "page",
+            "name": "id",
             "in": "query",
             "type": "string",
-            "description": "页面标识"
-          },
-          {
-            "name": "para",
-            "in": "query",
-            "type": "string",
-            "description": "页面参数",
-            "default": "{}"
+            "description": "物料id"
           }
         ],
         "responses": {

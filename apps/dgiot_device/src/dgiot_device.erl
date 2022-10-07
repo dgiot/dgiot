@@ -21,7 +21,7 @@
 -include_lib("dgiot/include/logger.hrl").
 -define(TIMEOUT, 60000).
 
--export([create_device/1, create_device/2, get_sub_device/1, get_sub_device/2, save_subdevice/2, get_subdevice/2]).
+-export([create_device/1, create_device/2, get_sub_device/1, get_sub_device/2, save_subdevice/2, get_subdevice/2, get_subdevices/2, save_subdevice/3]).
 -export([parse_cache_Device/1, sync_parse/1, get/2, post/1, post/2, put/1, save/1, save/2, lookup/1, lookup/2, delete/1, delete/2]).
 -export([save_profile/1, get_profile/1, get_profile/2, get_online/1, online/1, offline/1, offline_child/1, enable/1, disable/1]).
 -export([put_location/3, get_location/1, get_address/3]).
@@ -102,11 +102,37 @@ get_address(DeviceId, DgLon, DgLat) ->
 save_subdevice({ProductId, DevAddr}, {DtuAddr, SlaveId}) ->
     dgiot_device_cache:save_subdevice({ProductId, DevAddr}, {DtuAddr, SlaveId}).
 
-get_sub_device(DtuAddr) ->
+save_subdevice(DeviceId, DtuDeviceId, SlaveId) ->
+    Parent = #{
+        <<"__type">> => <<"Pointer">>,
+        <<"className">> => <<"Device">>,
+        <<"objectId">> => DtuDeviceId
+    },
+    case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+        {ok, #{<<"route">> := OldRoute}} ->
+
+            dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"route">> => OldRoute#{DtuDeviceId => SlaveId}, <<"parentId">> => Parent});
+
+        _ ->
+            dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"route">> => #{DtuDeviceId => SlaveId}, <<"parentId">> => Parent})
+    end.
+
+get_sub_device(DtuDeviceId) ->
     Query = #{<<"keys">> => [<<"route">>, <<"devaddr">>, <<"product">>],
-        <<"where">> => #{<<"route.", DtuAddr/binary>> => #{<<"$regex">> => <<".+">>}},
+        <<"where">> => #{<<"route.", DtuDeviceId/binary>> => #{<<"$regex">> => <<".+">>}},
         <<"order">> => <<"devaddr">>, <<"limit">> => 1000,
         <<"include">> => <<"product">>},
+    case dgiot_parse:query_object(<<"Device">>, Query) of
+        {ok, #{<<"results">> := []}} -> [];
+        {ok, #{<<"results">> := List}} -> List;
+        _ -> []
+    end.
+
+get_subdevices(DtuDeviceId, Keys) ->
+    NewKeys = [<<"route">> | Keys],
+    Query = #{<<"keys">> => NewKeys,
+        <<"where">> => #{<<"route.", DtuDeviceId/binary>> => #{<<"$regex">> => <<".+">>}},
+        <<"order">> => <<"devaddr">>, <<"limit">> => 100},
     case dgiot_parse:query_object(<<"Device">>, Query) of
         {ok, #{<<"results">> := []}} -> [];
         {ok, #{<<"results">> := List}} -> List;
@@ -165,7 +191,8 @@ create_device(#{<<"status">> := Status, <<"brand">> := Brand, <<"devModel">> := 
 
 create_device(#{<<"status">> := Status, <<"brand">> := Brand, <<"devModel">> := DevModel, <<"name">> := Name,
     <<"devaddr">> := DevAddr, <<"product">> := ProductId, <<"ACL">> := Acl} = Device) ->
-    #{<<"objectId">> := DeviceId} = dgiot_parse_id:get_objectid(<<"Device">>, #{<<"product">> => ProductId, <<"devaddr">> => DevAddr}),
+    DeviceId = maps:get(<<"objectId">>, Device, dgiot_parse_id:get_deviceid(ProductId, DevAddr)),
+%%    #{<<"objectId">> := DeviceId} = dgiot_parse_id:get_objectid(<<"Device">>, #{<<"product">> => ProductId, <<"devaddr">> => DevAddr}),
     case dgiot_parse:get_object(<<"Device">>, DeviceId) of
         {ok, Result} ->
             Body = #{

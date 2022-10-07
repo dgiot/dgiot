@@ -178,9 +178,10 @@ post_shift(_) ->
     error.
 
 
-post_one_shift(#{<<"worker">> := _Workers} = Args) ->
+post_one_shift(#{<<"worker">> := Workers} = Data) ->
 %%    Bits = workerlist_to_bits(_Workers),
 %%    Args = maps:merge(Shift, #{<<"worker">> => Bits}),
+    Args = maps:merge(Data,#{<<"worker">> => dgiot_utils:to_binary(Workers)}),
     case dgiot_parse_id:get_objectid(<<"shift">>, Args) of
         #{<<"objectId">> := ObjectId} ->
             case dgiot_parse:get_object(?WORKERCALENDAR, ObjectId) of

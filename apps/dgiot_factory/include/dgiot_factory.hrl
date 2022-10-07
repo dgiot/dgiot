@@ -9,6 +9,9 @@
 -define(MATERIALTABLE,<<"material">>).
 -define(MATERIALETS,material).
 -define(WORKERTREE, workertree).
+-define(FACTORY_ORDER,factory_order).
+-define(FACTORY_QUALITY,factory_quality).
+-define(FACTORY_NOTIFICATION,factory_notification).
 -define(MAXWORKERNUM,1024).
 -define(MAXUNIT,4).
 
