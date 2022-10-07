@@ -24,6 +24,7 @@ get_material_record(DeviceId, Depart) ->
     case dgiot_parse:get_object(<<"Device">>, DeviceId) of
         {ok, #{<<"basedata">> := #{<<"material">> := Material}}} ->
             DepartMaterial = get_depart_material(Material, Depart),
+
             {ok, get_usable_material(DepartMaterial)};
         _ ->
             io:format("~s ~p DeviceId = ~p  ~n", [?FILE, ?LINE, DeviceId]),
@@ -52,6 +53,8 @@ get_depart_material(Material, Depart) ->
             end
         end, #{}, Material).
 
+
+
 get_usable_material(Material) ->
     maps:fold(
         fun(K, V, Acc) ->
@@ -68,101 +71,98 @@ get_usable_material(Material) ->
 
 post_material(DeviceId, Data) when is_map(Data) ->
     case get_material_record(DeviceId, undefined) of
-        {ok, _Material} ->
+        {ok, Material} ->
             io:format("~s ~p Data = ~p ~n", [?FILE, ?LINE, Data]),
-%%            case hanlde_pickandretrive(DeviceId, Data, Material) of
-%%                {ok, NewMaterial} ->
-%%%%                    io:format("~s ~p NewMaterial = ~ts ~n", [?FILE, ?LINE, unicode:characters_to_list(jiffy:encode(NewMaterial))]),
-%%                    dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"basedata">> => #{<<"material">> => NewMaterial}});
-%%                _ ->
-%%                    error
-%%            end;
-            ok;
+            case hanlde_pickandretrive(DeviceId, Data, Material) of
+                {ok, NewMaterial} ->
+%%                    io:format("~s ~p NewMaterial = ~ts ~n", [?FILE, ?LINE, unicode:characters_to_list(jiffy:encode(NewMaterial))]),
+                    dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"basedata">> => #{<<"material">> => NewMaterial}});
+                _ ->
+                    error
+            end;
         _ ->
             error
     end;
 post_material(_, _) ->
     error.
-%%%%get_Material(Deviceid, FReplaceGroup, FPrdOrgId,FStockId, FAppQty, FActualQty)
-%%%%FReplaceGroup 行号 FPrdOrgId 组织id FStockId 仓库id  FAppQty 申请数量 FActualQty 实际数量
-%%hanlde_pickandretrive(DeviceId, #{<<"FPrdOrgId">> := FPrdOrgId, <<"FStockId">> := FStockId, <<"FReplaceGroup">> := FReplaceGroup,
-%%    <<"Subitem_BOM_number">> := Name, <<"material_date">> := Date,
-%%    <<"material_people">> := People, <<"material_type">> := Type,
-%%    <<"material_number">> := Num, <<"material_batchid">> := BatchId, <<"material_weight">> := Weight,
-%%    <<"objectId">> := Id}, Material) ->
-%%    case maps:find(Name, Material) of
-%%        {ok, Res} ->
-%%            case Res of
-%%                #{<<"material_pick">> := Pick, <<"material_retrive">> := Retrive, <<"material_picked">> := Picked} ->
-%%                    case Type of
-%%                        <<"picking">> ->
-%%                            case dgiot_kingdee_wuliao:get_Material(DeviceId, FReplaceGroup, FPrdOrgId, FStockId, Weight, Weight) of
-%%                                #{<<"Result">> := #{<<"ResponseStatus">> := #{<<"IsSuccess">> := true}}} ->
-%%                                    io:format("~s ~p Type = ~p ~n", [?FILE, ?LINE, Type]),
-%%                                    After = dgiot_utils:to_float(Picked) + dgiot_utils:to_float(Weight),
-%%                                    handle_warehouse(Id, Type, Num),
-%%                                    NewRes = maps:merge(Res, #{<<"material_picked">> => After, <<"material_pick">> => Pick ++ [#{<<"material_date">> => Date, <<"material_people">> => People, <<"material_number">> => Num,
-%%                                        <<"material_batchid">> => BatchId, <<"material_weight">> => Weight}]}),
-%%                                    {ok, maps:merge(Material, #{Name => NewRes})};
-%%                                Type ->
-%%                                    io:format("~s ~p Type = ~p ~n", [?FILE, ?LINE, Type]),
-%%                                    error
-%%
-%%                            end;
-%%                            ok;
-%%                        <<"retriving">> ->
-%%                            case dgiot_kingdee_wuliao:get_Material(DeviceId, FReplaceGroup, FPrdOrgId, FStockId, Weight, Weight) of
-%%                                #{<<"Result">> := #{<<"ResponseStatus">> := #{<<"IsSuccess">> := true}}} ->
-%%                                    After = dgiot_utils:to_float(Picked) - dgiot_utils:to_float(Weight),
-%%                                    handle_warehouse(Id, Type, Num),
-%%                                    NewRes = maps:merge(Res, #{<<"material_picked">> => After, <<"material_retrive">> => Retrive ++ [#{<<"material_date">> => Date, <<"material_people">> => People, <<"material_number">> => Num,
-%%                                        <<"material_batchid">> => BatchId, <<"material_weight">> => Weight}]}),
-%%                                    {ok, maps:merge(Material, #{Name => NewRes})};
-%%                                _ ->
-%%                                    error
-%%
-%%                            end;
-%%                            ok;
-%%                        _ ->
-%%                            error
-%%                    end;
-%%                _ ->
-%%                    error
-%%            end;
-%%        _ ->
-%%            error
-%%    end;
-%%hanlde_pickandretrive(_, _, _) ->
-%%%%    io:format("~s ~p R = ~p  ~n", [?FILE, ?LINE,R]),
-%%    error.
+%%get_Material(Deviceid, FReplaceGroup, FPrdOrgId,FStockId, FAppQty, FActualQty)
+%%FReplaceGroup 行号 FPrdOrgId 组织id FStockId 仓库id  FAppQty 申请数量 FActualQty 实际数量
+hanlde_pickandretrive(DeviceId,  #{ <<"FPrdOrgId">> :=FPrdOrgId,<<"FStockId">> := FStockId, <<"FReplaceGroup">> := FReplaceGroup,
+    <<"Subitem_BOM_number">> := Name, <<"material_date">> := Date,
+    <<"material_people">> := People, <<"material_type">> := Type,
+    <<"material_number">> := Num, <<"material_batchid">> := BatchId, <<"material_weight">> := Weight,
+    <<"objectId">> := Id}, Material) ->
+    case maps:find(Name, Material) of
+        {ok, Res} ->
+            case Res of
+                #{<<"material_pick">> := Pick, <<"material_retrive">> := Retrive, <<"material_picked">> := Picked} ->
+                    case Type of
+                        <<"picking">> ->
+                            case dgiot_kingdee_wuliao:get_Material(DeviceId, FReplaceGroup, FPrdOrgId, FStockId, Weight, Weight) of
+                                #{<<"Result">> := #{<<"ResponseStatus">> := #{<<"IsSuccess">> := true}}} ->
+                                    io:format("~s ~p Type = ~p ~n", [?FILE, ?LINE, Type]),
+                                    After = dgiot_utils:to_float(Picked) + dgiot_utils:to_float(Weight),
+                                    handle_warehouse(Id, Type, Num),
+                                    NewRes = maps:merge(Res, #{<<"material_picked">> => After, <<"material_pick">> => Pick ++ [#{<<"material_date">> => Date, <<"material_people">> => People, <<"material_number">> => Num,
+                                        <<"material_batchid">> => BatchId, <<"material_weight">> => Weight}]}),
+                                    {ok, maps:merge(Material, #{Name => NewRes})};
+                                Type ->
+                                    io:format("~s ~p Type = ~p ~n", [?FILE, ?LINE, Type]),
+                                    error
+
+                            end;
+                        <<"retriving">> ->
+                            case dgiot_kingdee_wuliao:get_Material(DeviceId, FReplaceGroup, FPrdOrgId, FStockId, Weight, Weight) of
+                                #{<<"Result">> := #{<<"ResponseStatus">> := #{<<"IsSuccess">> := true}}} ->
+                                    After = dgiot_utils:to_float(Picked) - dgiot_utils:to_float(Weight),
+                                    handle_warehouse(Id, Type, Num),
+                                    NewRes = maps:merge(Res, #{<<"material_picked">> => After, <<"material_retrive">> => Retrive ++ [#{<<"material_date">> => Date, <<"material_people">> => People, <<"material_number">> => Num,
+                                        <<"material_batchid">> => BatchId, <<"material_weight">> => Weight}]}),
+                                    {ok, maps:merge(Material, #{Name => NewRes})};
+                                _ ->
+                                    error
+
+                            end;
+                        _ ->
+                            error
+                    end;
+                _ ->
+                    error
+            end;
+        _ ->
+            error
+    end;
+hanlde_pickandretrive(_,_, _) ->
+%%    io:format("~s ~p R = ~p  ~n", [?FILE, ?LINE,R]),
+    error.
 
 
-%%handle_warehouse(BatchId, Type, Number) ->
-%%    NewWeight = dgiot_utils:to_float(Number),
-%%    Num = case Type of
-%%              <<"picking">> ->
-%%                  NewWeight;
-%%              <<"retriving">> ->
-%%                  -NewWeight;
-%%              _ ->
-%%                  0
-%%          end,
-%%    io:format("~s ~p BatchId = ~p  ~n", [?FILE, ?LINE, BatchId]),
-%%    case dgiot_parse:get_object(<<"Device">>, BatchId) of
-%%        {ok, #{<<"content">> := #{<<"FQty">> := FQty} = Res}} ->
-%%            Remaining = maps:get(<<"Remaining">>, Res, 0),
-%%            NewRemaining = case Remaining + Num > FQty of
-%%                               true ->
-%%                                   FQty;
-%%                               _ ->
-%%                                   Remaining + Num
-%%                           end,
-%%            io:format("~s ~p NewRemaining = ~p  ~n", [?FILE, ?LINE, NewRemaining]),
-%%            put_warehouse_material(maps:merge(Res, #{<<"Remaining">> => NewRemaining, <<"objectId">> => BatchId}));
-%%        _ ->
-%%            io:format("~s ~p not_find   ~n", [?FILE, ?LINE]),
-%%            error
-%%    end.
+handle_warehouse(BatchId, Type, Number) ->
+    NewWeight = dgiot_utils:to_float(Number),
+    Num = case Type of
+              <<"picking">> ->
+                  NewWeight;
+              <<"retriving">> ->
+                  -NewWeight;
+              _ ->
+                  0
+          end,
+    io:format("~s ~p BatchId = ~p  ~n", [?FILE, ?LINE, BatchId]),
+    case dgiot_parse:get_object(<<"Device">>, BatchId) of
+        {ok, #{<<"content">> := #{<<"FQty">> := FQty} = Res}} ->
+            Remaining = maps:get(<<"Remaining">>, Res, 0),
+            NewRemaining = case Remaining + Num > FQty of
+                               true ->
+                                   FQty;
+                               _ ->
+                                   Remaining + Num
+                           end,
+            io:format("~s ~p NewRemaining = ~p  ~n", [?FILE, ?LINE, NewRemaining]),
+            put_warehouse_material(maps:merge(Res, #{<<"Remaining">> => NewRemaining, <<"objectId">> => BatchId}));
+        _ ->
+            io:format("~s ~p not_find   ~n", [?FILE, ?LINE]),
+            error
+    end.
 
 get_warehouse_material(Limit, Skip, Where, ProductId) when is_map(Where) ->
     NewWhere = maps:fold(
@@ -199,7 +199,10 @@ get_warehouse_material(_, _, _, _) ->
     error.
 
 
+
 put_warehouse_material(#{<<"objectId">> := Id} = Record) ->
+
+
     case dgiot_parse:get_object(<<"Device">>, Id) of
         {ok, #{<<"content">> := Content}} ->
             case maps:find(<<"isEnable">>, Record) of

@@ -184,28 +184,30 @@ format(#{<<"page">> := Page} = Data) ->
     format(NewData#{<<"limit">> => 10, <<"skip">> => Skip});
 
 format(OldData) ->
-    Data =case maps:find(<<"where">>,OldData) of
-              {ok,Object} ->
-                  maps:merge(OldData,#{<<"where">> =>format_multilayer(Object)});
-              _ ->
-                  OldData
-          end,
+    Data = case maps:find(<<"where">>, OldData) of
+               {ok, Object} ->
+                   NewWhere = format_multilayer(Object),
+%%                   io:format("~s ~p NewWhere= ~p ~n", [?FILE, ?LINE, NewWhere]),
+                   maps:merge(OldData, #{<<"where">> =>NewWhere });
+               _ ->
+                   OldData
+           end,
 
     Where = maps:without([<<"limit">>, <<"skip">>, <<"order">>, <<"count">>,
-    <<"limit">>, <<"keys">>, <<"excludeKeys">>, <<"include">>, <<"where">>,
-    <<"perPage">>, <<"page">>, <<"orderBy">>, <<"orderDir">>], Data),
-NewData = maps:without(maps:keys(Where) ++ [<<"perPage">>, <<"page">>, <<"orderBy">>, <<"orderDir">>], Data),
-case Data of
-#{<<"where">> := ParesWhere} when is_map(ParesWhere) ->
-NewData#{<<"where">> => maps:merge(ParesWhere, Where)};
-_ ->
-case length(maps:to_list(Where)) of
-0 ->
-NewData;
-_ ->
-NewData#{<<"where">> => Where}
-end
-end .
+        <<"limit">>, <<"keys">>, <<"excludeKeys">>, <<"include">>, <<"where">>,
+        <<"perPage">>, <<"page">>, <<"orderBy">>, <<"orderDir">>], Data),
+    NewData = maps:without(maps:keys(Where) ++ [<<"perPage">>, <<"page">>, <<"orderBy">>, <<"orderDir">>], Data),
+    case Data of
+        #{<<"where">> := ParesWhere} when is_map(ParesWhere) ->
+            NewData#{<<"where">> => maps:merge(ParesWhere, Where)};
+        _ ->
+            case length(maps:to_list(Where)) of
+                0 ->
+                    NewData;
+                _ ->
+                    NewData#{<<"where">> => Where}
+            end
+    end.
 
 start_http() ->
     Port = 9089,
@@ -218,11 +220,33 @@ start_http() ->
 format_multilayer(Object) ->
     MapWhere = dgiot_utils:to_map(Object),
     maps:fold(
-        fun(K, V, Acc) ->
-            case size(V) of
-                0 ->
-                    Acc;
-                _ ->
-                    Acc#{K => V}
-            end
-        end, #{}, MapWhere).
+        fun
+            (K, V, Acc) when is_map(V) ->
+                case maps:values(V) of
+                    [<<"">>] ->
+                        Acc;
+                    _ ->
+                        NewV = format_value(V),
+                        Acc#{K => NewV}
+                end;
+            (K, V, Acc) when is_binary(V) ->
+                case size(V) of
+                    0 ->
+                        Acc;
+                    _ ->
+                        Acc#{K => V}
+                end;
+            (_, _, Acc) ->
+                Acc
+        end,
+        #{}, MapWhere).
+
+
+format_value(#{<<"gt">> := V}) ->
+    #{<<"$gt">> => V};
+
+format_value(#{<<"lt">> := V}) ->
+    #{<<"$lt">> => V};
+format_value(V) ->
+    V.
+%%dgiot_parse:query_object(<<"Device">>,#{<<"where">> => #{<<"content.quality.status">> => #{<<"$gt">> => 3}}, <<"product">> => <<"b0ec1970c7">>
