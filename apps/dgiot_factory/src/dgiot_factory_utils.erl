@@ -19,13 +19,12 @@
 -include_lib("dgiot/include/logger.hrl").
 -include("dgiot_factory.hrl").
 -export([get_num/2, get_name/2, turn_name/2, turn_num/3]).
--export([get_sheet_type/2]).
--export([get_usertree/1, getalluser/1]).
+-export([get_usertree/2, getalluser/1]).
 -export([get_zero_list/1, get_zero_binary/1]).
--export([fix_model/1]).
+-export([fix_model/1, get_worker/1,get_children/1]).
 
 fix_model(ID) ->
-    {ok,#{<<"thing">> :=Model}} = dgiot_parse:get_object(<<"Product">>,ID),
+    {ok, #{<<"thing">> := Model}} = dgiot_parse:get_object(<<"Product">>, ID),
     {ok, Pro} = maps:find(<<"properties">>, Model),
     Res = lists:foldl(
         fun(X, Acc) ->
@@ -35,12 +34,11 @@ fix_model(ID) ->
                     NewX = maps:merge(X, #{<<"dataType">> => NweData}),
                     Acc ++ [NewX];
                 _ ->
-                    Acc ++[X]
+                    Acc ++ [X]
             end
         end, [], Pro),
     NewThing = maps:merge(Model, #{<<"properties">> => Res}),
-dgiot_parse:update_object(<<"Product">>,ID,#{<<"thing">> =>NewThing}).
-
+    dgiot_parse:update_object(<<"Product">>, ID, #{<<"thing">> => NewThing}).
 
 
 get_num(K, V) ->
@@ -121,7 +119,7 @@ turn_name(Data, _) ->
     Data.
 
 turn_num(FlatMap, ProductId, Type) ->
-    case dgiot_factory_getdata:get_ThingMap(Type, ProductId) of
+    case dgiot_product:get_device_thing(ProductId, Type) of
         {ok, ThingMap} ->
             maps:fold(
                 fun(K, V, Acc) ->
@@ -148,41 +146,16 @@ turn_num(FlatMap, ProductId, Type) ->
     end.
 
 
-get_sheet_type(ProductId, Exclude) ->
-    case dgiot_product:lookup_prod(ProductId) of
-        {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
-            Res = lists:foldl(
-                fun(X, Acc) ->
-                    case X of
-                        #{<<"devicetype">> := Type} ->
-                            case lists:member(Type, Acc) of
-                                false ->
-                                    Acc ++ [Type];
-                                _ ->
-                                    Acc
-                            end;
-                        _ -> Acc
-                    end
-                end, [], Props),
-            lists:foldl(
-                fun(X, Acc) ->
-                    Acc -- [X]
-                end, Res, Exclude);
-        _ ->
-            #{}
-    end.
-
-
-
-
-
-get_usertree(SessionToken) ->
+get_usertree(#{<<"id">> := undefined},SessionToken) ->
     case get_same_level_role(SessionToken) of
         RoleTree when length(RoleTree) > 0 ->
             get_children(RoleTree);
         _ ->
             []
-    end.
+    end;
+get_usertree(#{<<"id">> := Id}, _) ->
+    get_worker(Id).
+
 
 get_same_level_role(SessionToken) ->
     case dgiot_auth:get_session(SessionToken) of
@@ -201,23 +174,24 @@ get_same_level_role(SessionToken) ->
             []
     end.
 
-%%get_usertree(SessionToken) ->
-%%    case dgiot_parse:query_object(<<"_Role">>, #{<<"where">> => #{}}) of
-%%        {ok, #{<<"results">> := RoleList}} ->
-%%            RoleTree = dgiot_parse_utils:create_tree(RoleList, <<"parent">>),
-%%            case RoleTree of
-%%                RoleTree when length(RoleTree) > 0 ->
-%%                    get_children(RoleTree);
-%%                _ ->
-%%                    []
-%%            end;
-%%        _ ->
-%%            []
-%%    end.
+get_worker(Id) ->
+%%                io:format("~s ~p Id = ~p  ~n", [?FILE, ?LINE, Id]),
+%%    case dgiot_parse:get_object(<<"_Role">>, Id) of
+%%        {ok, #{<<"parent">> := Parent}} ->
+            ChildroleIds = dgiot_role:get_childrole(Id) -- [Id],
+            case dgiot_parse:query_object(<<"_Role">>, #{<<"where">> => #{<<"objectId">> => #{<<"$in">> =>ChildroleIds}}}) of
+                {ok, #{<<"results">> := RoleList}} ->
+                    get_children(dgiot_parse_utils:create_tree(RoleList, <<"parent">>));
+                _ ->
+                    io:format("~s ~p Id = ~p  ~n", [?FILE, ?LINE, Id]),
+                    error
+%%            end
+    end.
 
 get_children(Results) ->
     lists:foldl(
         fun(Role, Acc) ->
+%%            io:format("~s ~p Role = ~p  ~n", [?FILE, ?LINE, Role]),
             X1 = getalluser(Role),
             X2 = case maps:find(<<"children">>, X1) of
                      error ->
@@ -248,7 +222,8 @@ getalluser(#{<<"objectId">> := RoleId, <<"name">> := Depname} = Role) ->
                     Acc;
                 #{<<"nick">> := Nick, <<"username">> := UserName} ->
                     dgiot_data:insert(?WORKERTREE, UserName, Nick),
-                    Acc ++ [#{<<"label">> => Nick, <<"value">> => <<UserName/binary, "_", Nick/binary>>}];
+%%                    Acc ++ [#{<<"label">> => Nick, <<"value">> => <<UserName/binary, "_", Nick/binary>>}];
+                    Acc ++ [#{<<"label">> => Nick, <<"value">> => Nick}];
                 _ ->
                     Acc
             end
