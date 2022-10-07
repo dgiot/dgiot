@@ -397,19 +397,15 @@ create_table(ChannelId, [ProductId | ProductIds], Config) ->
                         {error, Reason} ->
                             ?LOG(error, "Create Table[~s] Fail, Schema:~p, Reason:~p", [TableName, Schema, Reason]);
                         {ok, #{<<"affected_rows">> := _}} ->
-                        %% @todo 一个产品只能挂一个TDengine?
-                        dgiot_data:insert({ProductId, ?TYPE}, ChannelId),
-                        ?LOG(debug, "Create Table[~s] Succ, Schema:~p", [TableName, Schema]);
+                            %% @todo 一个产品只能挂一个TDengine?
+                            dgiot_data:insert({ProductId, ?TYPE}, ChannelId),
+                            ?LOG(debug, "Create Table[~s] Succ, Schema:~p", [TableName, Schema]);
                         {ok, #{<<"code">> := 0, <<"column_meta">> := _}} ->
                             %% @todo 一个产品只能挂一个TDengine?
                             dgiot_data:insert({ProductId, ?TYPE}, ChannelId),
                             ?LOG(debug, "Create Table[~s] Succ, Schema:~p", [TableName, Schema]);
-                        {ok, #{<<"code">> := 904, <<"desc">> := Desc}} ->
-                            io:format("~p ~p ~p ~n", [?FILE, ?LINE, Desc]),
-                            ok;
-                        {ok, #{<<"code">> := 9728, <<"desc">> := Desc}} ->
-                            io:format("~p ~p ~p ~n", [?FILE, ?LINE, Desc]),
-                            ok
+                        {ok, #{<<"code">> := Code, <<"desc">> := Desc}} ->
+                            io:format("~p ~p Code: ~p Desc ~p ~n", [?FILE, ?LINE, Code, Desc])
                     end
             end;
         {error, Reason} ->
