@@ -68,6 +68,7 @@ do_request(Url, Authorization, Sql) ->
     timer:sleep(1),
     case catch httpc:request(post, Request, ?HTTPOption, ?REQUESTOption, Profile) of
         {ok, {{_HTTPVersion, StatusCode, _ReasonPhrase}, _Headers, Body}} ->
+%%            io:format("~p ~p ~p ~n",[?FILE, ?LINE, StatusCode]),
             format_body(StatusCode, Body, Formatter);
         {error, {failed_connect, _}} ->
             dgiot_metrics:inc(dgiot_tdengine,<<"tdengine_save_failed">>,1),

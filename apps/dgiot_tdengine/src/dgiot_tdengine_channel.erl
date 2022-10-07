@@ -393,15 +393,23 @@ create_table(ChannelId, [ProductId | ProductIds], Config) ->
                     ?LOG(debug, "Create Table ignore, ChannelId:~p, ProductId:~p", [ChannelId, Product]);
                 Schema ->
                     TableName = ?Table(ProductId),
-                    case dgiot_tdengine:create_schemas(ChannelId, Schema#{
-                        <<"tableName">> => TableName
-                    }) of
+                    case dgiot_tdengine:create_schemas(ChannelId, Schema#{<<"tableName">> => TableName}) of
                         {error, Reason} ->
                             ?LOG(error, "Create Table[~s] Fail, Schema:~p, Reason:~p", [TableName, Schema, Reason]);
                         {ok, #{<<"affected_rows">> := _}} ->
+                        %% @todo 一个产品只能挂一个TDengine?
+                        dgiot_data:insert({ProductId, ?TYPE}, ChannelId),
+                        ?LOG(debug, "Create Table[~s] Succ, Schema:~p", [TableName, Schema]);
+                        {ok, #{<<"code">> := 0, <<"column_meta">> := _}} ->
                             %% @todo 一个产品只能挂一个TDengine?
                             dgiot_data:insert({ProductId, ?TYPE}, ChannelId),
-                            ?LOG(debug, "Create Table[~s] Succ, Schema:~p", [TableName, Schema])
+                            ?LOG(debug, "Create Table[~s] Succ, Schema:~p", [TableName, Schema]);
+                        {ok, #{<<"code">> := 904, <<"desc">> := Desc}} ->
+                            io:format("~p ~p ~p ~n", [?FILE, ?LINE, Desc]),
+                            ok;
+                        {ok, #{<<"code">> := 9728, <<"desc">> := Desc}} ->
+                            io:format("~p ~p ~p ~n", [?FILE, ?LINE, Desc]),
+                            ok
                     end
             end;
         {error, Reason} ->
