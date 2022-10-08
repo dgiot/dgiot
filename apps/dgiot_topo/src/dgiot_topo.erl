@@ -25,36 +25,15 @@ docroot() ->
     Root ++ "www".
 
 get_topo(Arg, _Context) ->
-    #{<<"productid">> := ProductId, <<"devaddr">> := Devaddr, <<"viewid">> := ViewId} = Arg,
+    #{<<"productid">> := ProductId, <<"devaddr">> := Devaddr} = Arg,
     Type = maps:get(<<"type">>, Arg, <<"web">>),
-    case ViewId of
-        undefined ->
-            case dgiot_parse:query_object(<<"View">>, #{<<"limit">> => 1, <<"where">> => #{<<"key">> => ProductId, <<"type">> => <<"topo">>, <<"class">> => <<"Product">>}}) of
-                {ok, #{<<"results">> := Views}} when length(Views) > 0 ->
-                    NewStage =
-                        lists:foldl(fun(View, Acc) ->
-                            case View of
-                                #{<<"objectId">> := ViewId1, <<"data">> := #{<<"konva">> := #{<<"Stage">> := #{<<"children">> := Children}}}} when length(Children) > 0 ->
-                                    NewView = dgiot_product_knova:get_konva_view(View, Devaddr, ProductId, Type),
-                                    NewView#{<<"viewid">> => ViewId1};
-                                #{<<"objectId">> := ViewId2} ->
-                                    Acc#{<<"viewid">> => ViewId2};
-                                _ ->
-                                    Acc
-                            end
-                                    end, #{}, Views),
-                    {ok, #{<<"code">> => 200, <<"message">> => <<"SUCCESS">>, <<"data">> => NewStage}};
-                _ ->
-                    {ok, #{<<"code">> => 204, <<"message">> => <<"没有组态"/utf8>>}}
-            end;
+    ViewId = dgiot_parse_id:get_viewid(ProductId, <<"topo">>, <<"Product">>, ProductId),
+    case dgiot_parse:get_object(<<"View">>, ViewId) of
+        {ok, #{<<"data">> := #{<<"konva">> := #{<<"Stage">> := #{<<"children">> := Children}}}} = View} when length(Children) > 0 ->
+            NewView = dgiot_product_knova:get_konva_view(View, Devaddr, ProductId, Type),
+            {ok, #{<<"code">> => 200, <<"message">> => <<"SUCCESS">>, <<"data">> => NewView#{<<"viewid">> => ViewId}}};
         _ ->
-            case dgiot_parse:get_object(<<"View">>, ViewId) of
-                {ok, #{<<"data">> := #{<<"konva">> := #{<<"Stage">> := #{<<"children">> := Children}}}} = View} when length(Children) > 0 ->
-                    NewView = dgiot_product_knova:get_konva_view(View, Devaddr, ProductId, Type),
-                    {ok, #{<<"code">> => 200, <<"message">> => <<"SUCCESS">>, <<"data">> => NewView#{<<"viewid">> => ViewId}}};
-                _ ->
-                    {ok, #{<<"code">> => 204, <<"message">> => <<"没有组态"/utf8>>}}
-            end
+            {ok, #{<<"code">> => 204, <<"message">> => <<"没有组态"/utf8>>}}
     end.
 
 put_topo(Arg, _Context) ->
