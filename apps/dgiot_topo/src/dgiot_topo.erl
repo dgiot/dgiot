@@ -25,13 +25,19 @@ docroot() ->
     Root ++ "www".
 
 get_topo(Arg, _Context) ->
-    #{<<"productid">> := ProductId, <<"devaddr">> := Devaddr} = Arg,
+    #{<<"productid">> := ProductId, <<"devaddr">> := Devaddr, <<"viewid">> := ViewId} = Arg,
     Type = maps:get(<<"type">>, Arg, <<"web">>),
-    ViewId = dgiot_parse_id:get_viewid(ProductId, <<"topo">>, <<"Product">>, ProductId),
-    case dgiot_parse:get_object(<<"View">>, ViewId) of
+    NewViewId =
+        case ViewId of
+            undefined ->
+                dgiot_parse_id:get_viewid(ProductId, <<"topo">>, <<"Product">>, ProductId);
+            _ ->
+                ViewId
+        end,
+    case dgiot_parse:get_object(<<"View">>, NewViewId) of
         {ok, #{<<"data">> := #{<<"konva">> := #{<<"Stage">> := #{<<"children">> := Children}}}} = View} when length(Children) > 0 ->
             NewView = dgiot_product_knova:get_konva_view(View, Devaddr, ProductId, Type),
-            {ok, #{<<"code">> => 200, <<"message">> => <<"SUCCESS">>, <<"data">> => NewView#{<<"viewid">> => ViewId}}};
+            {ok, #{<<"code">> => 200, <<"message">> => <<"SUCCESS">>, <<"data">> => NewView#{<<"viewid">> => NewViewId}}};
         _ ->
             {ok, #{<<"code">> => 204, <<"message">> => <<"没有组态"/utf8>>}}
     end.
