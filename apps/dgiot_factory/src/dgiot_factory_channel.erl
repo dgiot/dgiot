@@ -30,7 +30,7 @@
 
 %% Channel callback
 -export([init/3, handle_init/1, handle_event/3, handle_message/2, stop/3]).
--export([get_id/2, after_handle/4, handle_data/7,get_card_data/2]).
+-export([get_id/2, after_handle/4, handle_data/7, get_card_data/2]).
 
 %% 注册通道类型
 -channel_type(#{
@@ -74,6 +74,7 @@ init(?TYPE, ChannelId, Args) ->
     },
     dgiot_parse_hook:subscribe(<<"Device/*">>, put, ChannelId, [<<"content">>]),
     dgiot_parse_hook:subscribe(<<"Device/*">>, delete, ChannelId),
+    dgiot_factory_printer:start_hooks(Args),
     {ok, State, []}.
 
 handle_init(State) ->
@@ -107,7 +108,8 @@ handle_message(Message, State) ->
     ?LOG(debug, "channel ~p", [Message]),
     {ok, State}.
 
-stop(ChannelType, ChannelId, _State) ->
+stop(ChannelType, ChannelId, #state{env = Args} = _State) ->
+    dgiot_factory_printer:stop_hooks(Args),
     ?LOG(warning, "Channel[~p,~p] stop", [ChannelType, ChannelId]),
     ok.
 
@@ -128,15 +130,15 @@ stop(ChannelType, ChannelId, _State) ->
 %%    save_data(ProductId, Id, DevAddr, DeviceId, PersonType, Payload).
 
 handle_data(_TaskProductId, TaskDeviceId, BatchProductId, BatchDeviceId, BatchAddr, PersonType, NewData) ->
-    io:format("~s ~p status =~p ~n", [?FILE, ?LINE,maps:get(<<"person_status">>,NewData,error)]),
+    io:format("~s ~p status =~p ~n", [?FILE, ?LINE, maps:get(<<"person_status">>, NewData, error)]),
     NewPayLoad = run_factory_hook(_TaskProductId, TaskDeviceId, BatchProductId, BatchDeviceId, PersonType, NewData),
     {OldNumData, OldNameData} = get_card_data(BatchProductId, BatchDeviceId),
     dgiot_data:insert(?FACTORY_ORDER, {BatchProductId, BatchDeviceId, PersonType}, NewPayLoad),
     Content = maps:merge(OldNameData, NewPayLoad),
-    io:format("~s ~p status =~p ~n", [?FILE, ?LINE,maps:get(<<"person_status">>,Content,error)]),
+    io:format("~s ~p status =~p ~n", [?FILE, ?LINE, maps:get(<<"person_status">>, Content, error)]),
     dgiot_parse:update_object(<<"Device">>, BatchDeviceId, #{<<"content">> => dgiot_map:unflatten(Content)}),
     NumData = dgiot_factory_utils:turn_num(NewPayLoad, BatchProductId, PersonType),
-    io:format("~s ~p status =~p ~n", [?FILE, ?LINE,maps:get(<<"person_status">>,NumData,error)]),
+    io:format("~s ~p status =~p ~n", [?FILE, ?LINE, maps:get(<<"person_status">>, NumData, error)]),
 %%    io:format("~s ~p OldNumData =~p ~n", [?FILE, ?LINE,OldNumData]),
     dgiot_task:save_td(BatchProductId, BatchAddr, maps:merge(OldNumData, NumData), #{}).
 get_card_data(BatchProductId, BatchDeviceId) ->

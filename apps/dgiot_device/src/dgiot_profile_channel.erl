@@ -158,15 +158,18 @@ handle_message({sync_profile, _Pid, ProductId, DeviceAddr, DeviceProfile, Delay}
 
 %% parse数据库里面的profile是用户想要控制设备的配置，设备的真实状态是设备上报的时候来进行比对的
 handle_message({sync_parse, _Pid, 'before', put, _Token, <<"Device">>, #{<<"id">> := DeviceId} = QueryData}, State) ->
-    {ok, #{<<"product">> := #{<<"objectId">> := Productid}}} = dgiot_device:lookup(DeviceId),
+    io:format("~s ~p DeviceId: ~p  ~n", [?FILE, ?LINE, DeviceId]),
     NewQueryData =
-        case catch dgiot_hook:run_hook({sync_parse, before, put, Productid}, {QueryData, State}) of
-            {ok,Res} ->
-                Res;
-            _ ->
-                QueryData
+        case dgiot_device:lookup(DeviceId) of
+            {ok, #{<<"productid">> := ProductId}} ->
+                case catch dgiot_hook:run_hook({sync_parse, before, put, ProductId}, {QueryData, ProductId, State}) of
+                    {ok, [Res]} ->
+                        io:format("~s ~p Res: ~p  ~n", [?FILE, ?LINE, Res]),
+                        Res;
+                    _ ->
+                        QueryData
+                end
         end,
-
 %%    io:format("~s ~p Template = ~ts ~n", [?FILE, ?LINE, unicode:characters_to_list(jiffy:encode(Template))]),
     dgiot_device_profile:put('before', NewQueryData),
     {ok, State};

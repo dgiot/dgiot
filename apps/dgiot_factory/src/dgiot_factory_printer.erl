@@ -6,17 +6,51 @@
 %%% @end
 %%% Created : 08. 8月 2022 10:09
 %%%-------------------------------------------------------------------
--module(dgiot_factory_repliceword).
+-module(dgiot_factory_printer).
 -author("dgiot").
 
 %% API
 -export([
     requsts/1,
-    template/1,
-    handle_form/1
+    template/2,
+    handle_form/1,
+    start_hooks/1,
+    stop_hooks/1
 ]).
-handle_form({QueryData, _State}) ->
-    template( QueryData  ).
+handle_form({QueryData, ProductId, _State}) ->
+    template(QueryData, ProductId).
+
+template(Profile, ProductId) ->
+    ViewId = dgiot_parse_id:get_viewid(ProductId, <<"topo">>, <<"Product">>, ProductId),
+    case dgiot_parse:get_object(<<"View">>, ViewId) of
+        {ok, #{<<"data">> := #{<<"konva">> := #{<<"Stage">> := Stage}}}} ->
+            io:format("~s ~p Profile= ~p Stage ~p ~n", [?FILE, ?LINE, Profile, Stage]),
+            Profile;
+        _ ->
+            Profile
+    end.
+%%    Profile#{<<"profile">> => #{<<"data">> => List, <<"cmd">> => <<"printer">>}},
+
+
+start_hooks(#{<<"product">> := Products}) ->
+    lists:map(fun(X) ->
+        case X of
+            {ProductId, _} ->
+                dgiot_hook:add(one_for_one, {sync_parse, before, put, ProductId}, fun dgiot_factory_printer:handle_form/1);
+            _ ->
+                pass
+        end
+              end, Products).
+
+stop_hooks(#{<<"product">> := Products}) ->
+    lists:map(fun(X) ->
+        case X of
+            {ProductId, _} ->
+                dgiot_hook:remove({sync_parse, before, put, ProductId});
+            _ ->
+                pass
+        end
+              end, Products).
 
 
 requsts(#{<<"id">> := TaskId,
@@ -86,63 +120,3 @@ requsts(#{<<"id">> := TaskId,
         _Oth1 ->
             Profile
     end.
-
-template(Profile) ->
-    Age = maps:get(<<"profile">>, Profile),
-    case maps:get(<<"cmd">>, Age, <<"">>) of
-        <<"printer"/utf8>> ->
-            Product = maps:get(<<"factoryid">>, Age, <<"">>),
-            {ok, #{<<"product">> := #{<<"objectId">> := Productid}}} = dgiot_parse:get_object(<<"Device">>, maps:get(<<"id">>, Age)),
-            NewStage = case dgiot_parse:query_object(<<"View">>, #{<<"limit">> => 1, <<"where">> => #{<<"key">> => Productid, <<"type">> => <<"amis">>, <<"class">> => <<"Product">>, <<"title">> => Product}}) of
-                           {ok, #{<<"results">> := Views}} when length(Views) > 0 ->
-
-                               lists:foldl(fun(View, Acc) ->
-                                   case View of
-                                       #{<<"data">> := ViewId2} ->
-                                           Acc#{<<"data">> => ViewId2};
-                                       _ ->
-                                           Acc
-                                   end
-                                           end, #{}, Views);
-                           _ -> #{}
-                       end,
-            Body = maps:get(<<"body">>, maps:get(<<"data">>, NewStage)),
-            List = lists:foldl(
-                fun(X, Acc) ->
-                    Label = maps:get(<<"label">>, X),
-                    Label1 = dgiot_utils:to_list(Label),
-                    Replace = maps:fold(
-                        fun(Key, V, Acc1) ->
-                            K = lists:concat([" ", dgiot_utils:to_list(Key)]),
-                            A = case re:replace(Label, K, dgiot_utils:to_binary(V), [global, {return, list}]) of
-                                    Label1 -> [];
-                                    Row -> Row
-                                end,
-
-%%                    io:format("~s ~p A= ~p ~n", [?FILE, ?LINE, A]),
-                            A ++ Acc1
-                        end, [], Age),
-%%            io:format("~s ~p Replace = ~ts ~n", [?FILE, ?LINE, unicode:characters_to_list(dgiot_utils:to_binary(Replace))]),
-                    case Replace of
-                        [] ->
-                            case re:run(Label, <<" ">>, [{capture, none}]) of
-                                match -> Replaceddd = lists:nth(1, binary:split(Label, <<" ">>)),
-                                    Acc#{dgiot_utils:to_binary(maps:get(<<"num">>, X)) => maps:update(<<"label">>, dgiot_utils:to_binary(Replaceddd), X)};
-                                nomatch -> Acc#{dgiot_utils:to_binary(maps:get(<<"num">>, X)) => X}
-                            end;
-
-                        _ ->
-                            Acc#{dgiot_utils:to_binary(maps:get(<<"num">>, X)) => maps:update(<<"label">>, dgiot_utils:to_binary(Replace), X)}
-                    end
-
-                end, #{}, Body
-            ),
-
-            maps:update(<<"profile">>, #{<<"data">> => List,
-                <<"cmd">> => <<"printer">>
-            }, Profile);
-        <<"">> -> Profile
-    end.
-
-
-

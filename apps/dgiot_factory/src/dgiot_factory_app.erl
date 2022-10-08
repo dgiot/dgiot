@@ -30,12 +30,11 @@
 
 start(_StartType, _StartArgs) ->
     init_ets(),
-    dgiot_hook:add(one_for_one, {sync_parse, before, put,  <<"9652332a2d">>}, fun dgiot_factory_repliceword:handle_form/1),
     dgiot_factory_sup:start_link().
 
 stop(_State) ->
-    dgiot_hook:remove({sync_parse, before, put,  <<"9652332a2d">>}),
     ok.
+
 init_ets() ->
     dgiot_data:init(?MATERIALETS),
     dgiot_data:init(?WORKERTREE),
