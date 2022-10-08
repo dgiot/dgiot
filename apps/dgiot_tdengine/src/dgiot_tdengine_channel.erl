@@ -404,8 +404,11 @@ create_table(ChannelId, [ProductId | ProductIds], Config) ->
                             %% @todo 一个产品只能挂一个TDengine?
                             dgiot_data:insert({ProductId, ?TYPE}, ChannelId),
                             ?LOG(debug, "Create Table[~s] Succ, Schema:~p", [TableName, Schema]);
+                        {ok, #{<<"code">> := 904, <<"desc">> := _Desc}} ->
+%%                            io:format("~p ~p Code: ~p Desc ~p ~n", [?FILE, ?LINE, Code, Desc])
+                            ok;
                         {ok, #{<<"code">> := Code, <<"desc">> := Desc}} ->
-                            io:format("~p ~p Code: ~p Desc ~p ~n", [?FILE, ?LINE, Code, Desc])
+                            ?LOG(debug, "Create Table[~s] failed, Code:~p Desc:~p", [TableName, Code, Desc])
                     end
             end;
         {error, Reason} ->
