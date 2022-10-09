@@ -20,7 +20,7 @@
 -include_lib("dgiot/include/logger.hrl").
 
 %% API
--export([swagger_system/0]).
+-export([swagger_ffmpeg/0]).
 -export([handle/4]).
 
 %% API描述
@@ -30,7 +30,7 @@
 %%    dgiot_http_server:bind(<<"/system">>, ?MODULE, [], Metadata)
 %% 2. 从模块的priv/swagger/下导入
 %%    dgiot_http_server:bind(<<"/swagger_ffmpeg.json">>, ?MODULE, [], priv)
-swagger_system() ->
+swagger_ffmpeg() ->
     [
         dgiot_http_server:bind(<<"/swagger_ffmpeg.json">>, ?MODULE, [], priv)
     ].
@@ -76,7 +76,7 @@ handle(OperationID, Args, Context, Req) ->
 %% 请求:GET /iotapi/ffmpeg
 do_request(get_ffmpeg, #{<<"type">> := Type, <<"devaddr">> := DevAddr, <<"product">> := Product} = _Body,
         #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
-    ?LOG(info,"_Body ~p", [_Body]),
+    ?LOG(info, "_Body ~p", [_Body]),
     get_ffmpeg(Type, DevAddr, Product, SessionToken);
 
 %%  视频取证的API接口
@@ -84,7 +84,7 @@ do_request(get_ffmpeg, #{<<"type">> := Type, <<"devaddr">> := DevAddr, <<"produc
 %% OperationId:put_ffmpeg
 %% 请求:PUT /iotapi/ffmpeg
 do_request(put_ffmpeg, _Body, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
-    ?LOG(info,"_Body ~p", [_Body]),
+    ?LOG(info, "_Body ~p", [_Body]),
     put_ffmpeg(_Body, SessionToken);
 
 do_request(_OperationId, _Args, _Context, _Req) ->
@@ -92,10 +92,10 @@ do_request(_OperationId, _Args, _Context, _Req) ->
 
 
 get_ffmpeg(Type, DevAddr, Product, SessionToken) ->
-    case dgiot_parse:query_object(<<"Device">>, #{<<"limit">> => 1, <<"where">> => #{<<"devaddr">> => DevAddr, <<"product">> => Product}},
-        [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
-        {ok, #{<<"results">> := [Device | _]}} ->
-            ?LOG(info,"Device ~p ", [Device]),
+    DeviceId = dgiot_parse_id:get_deviceid(Product, DevAddr),
+    case dgiot_parse:get_object(<<"Device">>, DeviceId, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+        {ok, Device} ->
+            ?LOG(info, "Device ~p ", [Device]),
             Dis =
                 case Device of
                     #{<<"route">> := _Route} ->
@@ -123,18 +123,16 @@ get_ffmpeg(Type, DevAddr, Product, SessionToken) ->
                         _ -> Acc ++ [<<DevAddr1/binary, "/", Type/binary>>]
                     end
                             end, Dis, dgiot_device:get_sub_device(DevAddr)),
-            dgiot_parse:query_object(<<"Instruct">>, #{
-                <<"keys">> => [<<"name">>, <<"di">>, <<"enable">>, <<"interval">>, <<"rotation">>],
+            dgiot_parse:query_object(<<"Instruct">>, #{<<"keys">> => [<<"name">>, <<"di">>, <<"enable">>, <<"interval">>, <<"rotation">>],
                 <<"where">> => #{<<"di">> => #{<<"$in">> => dgiot_utils:unique_1(NewDis)}}},
                 [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]);
         _Error -> _Error
     end.
 
-
 put_ffmpeg(#{<<"type">> := Type, <<"devaddr">> := DevAddr, <<"product">> := Product} = Body, SessionToken) ->
-    case dgiot_parse:query_object(<<"Device">>, #{<<"limit">> => 1, <<"where">> => #{<<"devaddr">> => DevAddr, <<"product">> => Product}},
-        [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
-        {ok, #{<<"results">> := [Device | _]}} ->
+    DeviceId = dgiot_parse_id:get_deviceid(Product, DevAddr),
+    case dgiot_parse:query_object(<<"Device">>,DeviceId, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+        {ok, Device} ->
             Dis =
                 case Device of
                     #{<<"route">> := _Route} ->
@@ -173,7 +171,7 @@ put_ffmpeg(#{<<"type">> := Type, <<"devaddr">> := DevAddr, <<"product">> := Prod
                         {_, R} = dgiot_parse:update_object(<<"Instruct">>, ObjectId,
                             maps:with([<<"enable">>, <<"interval">>], Body)),
                         Acc ++ [R]
-                                                     end, [], Resutls)
+                                end, [], Resutls)
                     }};
                 Error -> Error
             end;

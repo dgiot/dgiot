@@ -22,7 +22,6 @@
 -define(FACTORY_CALENDAR, <<"factory_calendar">>).
 -define(SCOPE, #{<<"week">> => [1, 7], <<"month">> = [1, 31]}).
 
-
 -export([get_calendar/1, post_calendar/2, check_default/1, check_type/1, check_work_shift/1, check_laying_off/2]).
 -export([get_new_other/2]).
 

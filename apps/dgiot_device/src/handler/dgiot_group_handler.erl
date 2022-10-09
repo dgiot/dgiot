@@ -245,7 +245,7 @@ post_group(Body, SessionToken) ->
               Err -> {400, Err}
           end,
     Body1 = NewBody#{
-        <<"desc">> => <<"DG-IoT设备分组"/utf8>>,
+        <<"desc">> => <<"DGIOT设备分组"/utf8>>,
         <<"netType">> => <<"WIFI">>,
         <<"category">> => #{<<"objectId">> => <<"e5a9059441">>, <<"__type">> => <<"Pointer">>, <<"className">> => <<"Category">>},
         <<"config">> => #{},
@@ -265,7 +265,7 @@ post_group(Body, SessionToken) ->
                 <<"devaddr">> => NewAddr,
                 <<"name">> => ProductName,
                 <<"ip">> => NatIP,
-                <<"brand">> => <<"DG-IoT分组设备"/utf8>>,
+                <<"brand">> => <<"DGIOT分组设备"/utf8>>,
                 <<"devModel">> => <<"DGIOT_GROUP">>,
                 <<"product">> => ProductId,
                 <<"ACL">> => Acl},

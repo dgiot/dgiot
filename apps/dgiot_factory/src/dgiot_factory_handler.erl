@@ -123,9 +123,6 @@ do_request(post_worker_shift, #{<<"shift">> := Shifts} = _Args, _Context, _Body)
     {ok, #{<<"status">> => 0, msg => <<"修改成功"/utf8>>, <<"data">> => #{}}};
 
 
-
-
-
 do_request(get_data, #{<<"objectId">> := DeviceId, <<"type">> := Type, <<"function">> := Function, <<"group">> := Group,
     <<"order">> := Order, <<"where">> := Where, <<"limit">> := Limit, <<"skip">> := Skip} = _Args,
     #{<<"sessionToken">> := SessionToken} = _Context, _Body) ->

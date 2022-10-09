@@ -54,7 +54,6 @@ get_depart_material(Material, Depart) ->
         end, #{}, Material).
 
 
-
 get_usable_material(Material) ->
     maps:fold(
         fun(K, V, Acc) ->
@@ -65,8 +64,6 @@ get_usable_material(Material) ->
                     Acc#{K => V}
             end
         end, #{}, Material).
-
-
 
 
 post_material(DeviceId, Data) when is_map(Data) ->

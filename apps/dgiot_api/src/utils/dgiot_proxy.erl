@@ -50,7 +50,7 @@ get_opts(Path) ->
                 end;
             Data1 -> Data1
         end,
-    Host = maps:get(<<"host">>, Data, <<"www.iotn2n.com">>),
+    Host = maps:get(<<"host">>, Data, <<"www.dgiotcloud.cn">>),
     Wlanip = get_wlanip(),
     NewHost = re:replace(Host, <<"127.0.0.1">>, Wlanip, [global, {return, binary}]),
     Protocol = dgiot_utils:to_list(maps:get(<<"protocol">>, Data, <<"http">>)),

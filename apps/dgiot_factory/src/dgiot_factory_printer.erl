@@ -21,10 +21,10 @@ handle_form({QueryData, ProductId, _State}) ->
     template(QueryData, ProductId).
 
 template(Profile, ProductId) ->
-    ViewId = dgiot_parse_id:get_viewid(ProductId, <<"topo">>, <<"Product">>, ProductId),
-    case dgiot_parse:get_object(<<"View">>, ViewId) of
-        {ok, #{<<"data">> := #{<<"konva">> := #{<<"Stage">> := Stage}}}} ->
-            io:format("~s ~p Profile= ~p Stage ~p ~n", [?FILE, ?LINE, Profile, Stage]),
+    case dgiot_product_knova:get_stage(ProductId) of
+        {ok, Stage} ->
+            Nodes = dgiot_product_knova:get_nodes(Stage, [<<"Text">>]),
+            io:format("~s ~p  Nodes ~p ~n", [?FILE, ?LINE, Nodes]),
             Profile;
         _ ->
             Profile
