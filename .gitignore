@@ -73,7 +73,6 @@ apps/dgiot_kingdee/
 apps/dgiot_zjimee/
 apps/dgiot_emicp/
 apps/dgiot_http/etc/dgiot_http.conf
-apps/emqx_*
 node_modules/
 package-lock.json
 erlang_ls.config
