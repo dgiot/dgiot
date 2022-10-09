@@ -57,24 +57,21 @@ get_konva_thing(Arg, _Context) ->
         <<"shapeid">> := Shapeid,
         <<"viewid">> := ViewId
     } = Arg,
-    Children =
+    NewViewId =
         case ViewId of
             undefined ->
-                case dgiot_parse:query_object(<<"View">>, #{<<"limit">> => 1, <<"where">> => #{<<"key">> => ProductId, <<"type">> => <<"topo">>, <<"class">> => <<"Product">>}}) of
-                    {ok, #{<<"results">> := Views}} when length(Views) > 0 ->
-                        [#{<<"data">> := #{<<"konva">> := #{<<"Stage">> := #{<<"children">> := Children1}}}} | _] = Views,
-                        Children1;
-                    _ ->
-                        []
-                end;
+                dgiot_parse_id:get_viewid(ProductId, <<"topo">>, <<"Product">>, ProductId);
             _ ->
-                case dgiot_parse:get_object(<<"View">>, ViewId) of
-                    {ok, #{<<"data">> := #{<<"konva">> := #{<<"Stage">> := #{<<"children">> := Children2}}}}} when length(Children2) > 0 ->
-                        Children2;
-                    _ ->
-                        []
-                end
+                ViewId
         end,
+    Children =
+        case dgiot_parse:get_object(<<"View">>, NewViewId) of
+            {ok, #{<<"data">> := #{<<"konva">> := #{<<"Stage">> := #{<<"children">> := Children2}}}}} when length(Children2) > 0 ->
+                Children2;
+            _ ->
+                []
+        end,
+
     case length(Children) > 0 of
         true ->
             case dgiot_parse:get_object(<<"Product">>, ProductId) of
@@ -156,42 +153,28 @@ edit_konva(Arg, _Context) ->
         <<"identifier">> := Identifier,
         <<"name">> := Name
     } = Arg,
-    case maps:find(<<"viewid">>, Arg) of
-        error ->
-            case dgiot_parse:query_object(<<"View">>, #{<<"limit">> => 1, <<"where">> => #{<<"key">> => ProductId, <<"type">> => <<"topo">>, <<"class">> => <<"Product">>}}) of
-                {ok, #{<<"results">> := Views}} when length(Views) > 0 ->
-                    [#{<<"objectId">> := ViewId1, <<"data">> := #{<<"konva">> := #{<<"Stage">> := #{<<"children">> := Children1} = Stage} = Konva} = Data} | _] = Views,
-                    put({self(), shapeids}, []),
-                    NewChildren = get_children(<<"web">>, ProductId, Children1, ProductId, ProductId, Shapeid, Identifier, Name),
-                    NewData = Data#{<<"konva">> => Konva#{<<"Stage">> => Stage#{<<"children">> => NewChildren}}},
-                    case dgiot_parse:update_object(<<"View">>, ViewId1, #{<<"data">> => NewData}) of
-                        {ok, Message} ->
-                            {ok, #{<<"code">> => 200, <<"message">> => Message}};
-                        {error, Message} ->
-                            {ok, Message};
-                        _ ->
-                            {ok, #{<<"code">> => 500, <<"message">> => <<"error">>}}
-                    end;
+    NewViewId =
+        case maps:find(<<"viewid">>, Arg) of
+            error ->
+                dgiot_parse_id:get_viewid(ProductId, <<"topo">>, <<"Product">>, ProductId);
+            {ok, ViewId} ->
+                ViewId
+        end,
+    case dgiot_parse:get_object(<<"View">>, NewViewId) of
+        {ok, #{<<"data">> := #{<<"konva">> := #{<<"Stage">> := #{<<"children">> := Children2} = Stage} = Konva} = Data}} when length(Children2) > 0 ->
+            put({self(), shapeids}, []),
+            NewChildren = get_children(<<"web">>, ProductId, Children2, ProductId, ProductId, Shapeid, Identifier, Name),
+            NewData = Data#{<<"konva">> => Konva#{<<"Stage">> => Stage#{<<"children">> => NewChildren}}},
+            case dgiot_parse:update_object(<<"View">>, NewViewId, #{<<"data">> => NewData}) of
+                {ok, Message} ->
+                    {ok, #{<<"code">> => 200, <<"message">> => Message}};
+                {error, Message} ->
+                    {ok, Message};
                 _ ->
-                    {ok, #{<<"code">> => 101, <<"message">> => <<ProductId/binary, " not found">>}}
+                    {ok, #{<<"code">> => 500, <<"message">> => <<"error">>}}
             end;
-        {ok, ViewId} ->
-            case dgiot_parse:get_object(<<"View">>, ViewId) of
-                {ok, #{<<"data">> := #{<<"konva">> := #{<<"Stage">> := #{<<"children">> := Children2} = Stage} = Konva} = Data}} when length(Children2) > 0 ->
-                    put({self(), shapeids}, []),
-                    NewChildren = get_children(<<"web">>, ProductId, Children2, ProductId, ProductId, Shapeid, Identifier, Name),
-                    NewData = Data#{<<"konva">> => Konva#{<<"Stage">> => Stage#{<<"children">> => NewChildren}}},
-                    case dgiot_parse:update_object(<<"View">>, ViewId, #{<<"data">> => NewData}) of
-                        {ok, Message} ->
-                            {ok, #{<<"code">> => 200, <<"message">> => Message}};
-                        {error, Message} ->
-                            {ok, Message};
-                        _ ->
-                            {ok, #{<<"code">> => 500, <<"message">> => <<"error">>}}
-                    end;
-                _ ->
-                    {ok, #{<<"code">> => 101, <<"message">> => <<ProductId/binary, " not found">>}}
-            end
+        _ ->
+            {ok, #{<<"code">> => 101, <<"message">> => <<ProductId/binary, " not found">>}}
     end.
 
 get_children(Type, ProductId, Children, DeviceId, KonvatId, Shapeid, Identifier, Name) ->
@@ -217,65 +200,68 @@ get_attrs(Type, ProductId, ClassName, Attrs, DeviceId, KonvatId, Shapeid, Identi
         <<"Label">> ->
             X;
         <<"Text">> ->
-            case maps:find(<<"id">>, Attrs) of
-                error ->
-                    X;
-                {ok, Id} ->
-                    case ProductId of
-                        KonvatId ->
-                            case Id of
-                                Shapeid ->
-                                    NewAttrs = Attrs#{<<"id">> => <<ProductId/binary, "_", Identifier/binary, "_text">>, <<"text">> => Name},
-                                    save(Type, NewAttrs),
-                                    X#{<<"attrs">> => NewAttrs};
-                                _ ->
-                                    save(Type, Attrs),
-                                    X
-                            end;
-                        DeviceId ->
-                            case get({self(), shapeids}) of
-                                undefined ->
-                                    put({self(), shapeids}, [Id]);
-                                List ->
-                                    put({self(), shapeids}, List ++ [Id])
-                            end,
-                            dgiot_data:insert({shapetype, dgiot_parse_id:get_shapeid(ProductId, Id)}, ClassName),
-                            save(Type, Attrs),
-                            X#{<<"attrs">> => Attrs};
-                        _ ->
-                            Len = size(Id) - 16,
-                            Identifier1 =
-                                case Id of
-                                    <<_:10/binary, "_", Identifier2:Len/binary, "_text">> ->
-                                        Identifier2;
-                                    _ ->
-                                        <<"">>
-                                end,
-                            Result = get({self(), td}),
-                            Unit = get_konva_unit(ProductId, Identifier1),
-                            Text =
-                                case maps:find(Identifier1, Result) of
-                                    error ->
-                                        Text2 = maps:get(<<"text">>, Attrs, <<"">>),
-                                        case dgiot_data:get({toponotext, ProductId}) of
-                                            not_find ->
-                                                dgiot_data:insert({toponotext, ProductId}, [#{<<"id">> => dgiot_parse_id:get_shapeid(DeviceId, Id), <<"text">> => <<Text2/binary, " ", Unit/binary>>, <<"type">> => Type}]);
-                                            Topo ->
-                                                New_Topo = dgiot_utils:unique_2(Topo ++ [#{<<"id">> => dgiot_parse_id:get_shapeid(DeviceId, Id), <<"text">> => <<Text2/binary, " ", Unit/binary>>, <<"type">> => Type}]),
-                                                dgiot_data:insert({toponotext, ProductId}, New_Topo)
-                                        end,
-                                        Text2;
-                                    {ok, null} ->
-                                        <<"--">>;
-                                    {ok, Text1} ->
-                                        get_konva_value(ProductId, Identifier1, Text1)
-                                end,
-                            NewAttrs = Attrs#{<<"id">> => dgiot_parse_id:get_shapeid(DeviceId, Id), <<"text">> => <<Text/binary, " ", Unit/binary>>, <<"draggable">> => false},
-                            save(Type, NewAttrs),
-                            X#{<<"attrs">> => NewAttrs}
-                    end
-            end;
+            get_text(Type, ProductId, ClassName, Attrs, DeviceId, KonvatId, Shapeid, Identifier, Name, X);
         _ ->
+            X
+    end.
+
+get_text(Type, ProductId, ClassName, Attrs, DeviceId, KonvatId, Shapeid, Identifier, Name, X) ->
+    case maps:find(<<"id">>, Attrs) of
+        {ok, Id} ->
+            case ProductId of
+                KonvatId ->
+                    case Id of
+                        Shapeid ->
+                            NewAttrs = Attrs#{<<"id">> => <<ProductId/binary, "_", Identifier/binary, "_text">>, <<"text">> => Name},
+                            save(Type, NewAttrs),
+                            X#{<<"attrs">> => NewAttrs};
+                        _ ->
+                            save(Type, Attrs),
+                            X
+                    end;
+                DeviceId ->
+                    case get({self(), shapeids}) of
+                        undefined ->
+                            put({self(), shapeids}, [Id]);
+                        List ->
+                            put({self(), shapeids}, List ++ [Id])
+                    end,
+                    dgiot_data:insert({shapetype, dgiot_parse_id:get_shapeid(ProductId, Id)}, ClassName),
+                    save(Type, Attrs),
+                    X#{<<"attrs">> => Attrs};
+                _ ->
+                    Len = size(Id) - 16,
+                    Identifier1 =
+                        case Id of
+                            <<_:10/binary, "_", Identifier2:Len/binary, "_text">> ->
+                                Identifier2;
+                            _ ->
+                                <<"">>
+                        end,
+                    Result = get({self(), td}),
+                    Unit = get_konva_unit(ProductId, Identifier1),
+                    Text =
+                        case maps:find(Identifier1, Result) of
+                            error ->
+                                Text2 = maps:get(<<"text">>, Attrs, <<"">>),
+                                case dgiot_data:get({toponotext, ProductId}) of
+                                    not_find ->
+                                        dgiot_data:insert({toponotext, ProductId}, [#{<<"id">> => dgiot_parse_id:get_shapeid(DeviceId, Id), <<"text">> => <<Text2/binary, " ", Unit/binary>>, <<"type">> => Type}]);
+                                    Topo ->
+                                        New_Topo = dgiot_utils:unique_2(Topo ++ [#{<<"id">> => dgiot_parse_id:get_shapeid(DeviceId, Id), <<"text">> => <<Text2/binary, " ", Unit/binary>>, <<"type">> => Type}]),
+                                        dgiot_data:insert({toponotext, ProductId}, New_Topo)
+                                end,
+                                Text2;
+                            {ok, null} ->
+                                <<"--">>;
+                            {ok, Text1} ->
+                                get_konva_value(ProductId, Identifier1, Text1)
+                        end,
+                    NewAttrs = Attrs#{<<"id">> => dgiot_parse_id:get_shapeid(DeviceId, Id), <<"text">> => <<Text/binary, " ", Unit/binary>>, <<"draggable">> => false},
+                    save(Type, NewAttrs),
+                    X#{<<"attrs">> => NewAttrs}
+            end;
+        error ->
             X
     end.
 
