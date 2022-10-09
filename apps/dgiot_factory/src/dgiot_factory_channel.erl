@@ -38,10 +38,10 @@
     type => ?BACKEND_CHL,
     priority => 2,
     title => #{
-        zh => <<"Device缓存通道"/utf8>>
+        zh => <<"数字工厂通道"/utf8>>
     },
     description => #{
-        zh => <<"Device缓存通道"/utf8>>
+        zh => <<"数字工厂通道"/utf8>>
     }
 }).
 %% 注册通道参数
@@ -50,7 +50,7 @@
         order => 102,
         type => string,
         required => false,
-        default => <<"/dgiot_file/shuwa_tech/zh/product/dgiot/channel/device_profile.png">>,
+        default => <<"/dgiot_file/shuwa_tech/zh/product/dgiot/channel/factory.png">>,
         title => #{
             en => <<"channel ICO">>,
             zh => <<"通道ICO"/utf8>>
@@ -74,7 +74,6 @@ init(?TYPE, ChannelId, Args) ->
     },
     dgiot_parse_hook:subscribe(<<"Device/*">>, put, ChannelId, [<<"content">>]),
     dgiot_parse_hook:subscribe(<<"Device/*">>, delete, ChannelId),
-    dgiot_factory_printer:start_hooks(Args),
     {ok, State, []}.
 
 handle_init(State) ->
@@ -108,8 +107,7 @@ handle_message(Message, State) ->
     ?LOG(debug, "channel ~p", [Message]),
     {ok, State}.
 
-stop(ChannelType, ChannelId, #state{env = Args} = _State) ->
-    dgiot_factory_printer:stop_hooks(Args),
+stop(ChannelType, ChannelId, _State) ->
     ?LOG(warning, "Channel[~p,~p] stop", [ChannelType, ChannelId]),
     ok.
 

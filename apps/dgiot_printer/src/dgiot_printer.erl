@@ -18,11 +18,18 @@
 -include_lib("dgiot/include/logger.hrl").
 
 -export([
-    get_topo/1,
-    get_word/1
+    handle_profile/1,
+    get_topo/2,
+    get_word/1,
+    start_hooks/1,
+    stop_hooks/1
 ]).
 
-get_topo(ProductId) ->
+
+handle_profile({QueryData, ProductId, _State}) ->
+    get_topo(QueryData, ProductId).
+
+get_topo(_QueryData, ProductId) ->
     case dgiot_product_knova:get_stage(ProductId) of
         {ok, Stage} ->
             Nodes = dgiot_product_knova:get_nodes(Stage, [<<"Text">>]),
@@ -30,6 +37,26 @@ get_topo(ProductId) ->
         _ ->
             ok
     end.
+
+start_hooks(#{<<"product">> := Products}) ->
+    lists:map(fun(X) ->
+        case X of
+            {ProductId, _} ->
+                dgiot_hook:add(one_for_one, {sync_parse, before, put, ProductId}, fun dgiot_printer:handle_profile/1);
+            _ ->
+                pass
+        end
+              end, Products).
+
+stop_hooks(#{<<"product">> := Products}) ->
+    lists:map(fun(X) ->
+        case X of
+            {ProductId, _} ->
+                dgiot_hook:remove({sync_parse, before, put, ProductId});
+            _ ->
+                pass
+        end
+              end, Products).
 
 get_word(#{<<"id">> := TaskId, <<"cmd">> := Printer, <<"data">> := Data, <<"Home">> := Home} = Profile) ->
     Url = "http://127.0.0.1:8012/WordController/replaceWord",
