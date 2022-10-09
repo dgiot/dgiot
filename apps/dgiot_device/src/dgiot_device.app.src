@@ -6,8 +6,8 @@
         {applications, [kernel, stdlib, dgiot]},
         {mod, {dgiot_device_app, []}},
         {licenses, ["Apache-2.0"]},
-        {maintainers, ["DG-IoT Team"]},
-        {links, [{"Homepage", "https://www.iotn2n.com/"},
+        {maintainers, ["DGIOT Team"]},
+        {links, [{"Homepage", "https://www.dgiotcloud.cn/"},
             {"Github", "https://github.com/dgiot/dgiot"}
         ]}
     ]

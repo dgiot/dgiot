@@ -1,0 +1,14 @@
+{application, dgiot_printer,
+    [{description, "DGIOT PRINTER"},
+        {vsn, "4.3.0"},
+        {modules, []},
+        {registered, [dgiot_printer_sup]},
+        {applications, [kernel, stdlib, dgiot]},
+        {mod, {dgiot_printer_app, []}},
+        {licenses, ["Apache-2.0"]},
+        {maintainers, ["DGIOT Team"]},
+        {links, [{"Homepage", "https://www.dgiotcloud.cn/"},
+            {"Github", "https://github.com/dgiot/dgiot"}
+        ]}
+    ]
+}.

@@ -1,6 +1,6 @@
 {application, dgiot_factory,
     [
-        {description, "DG-IoT esports"},
+        {description, "DGIOT esports"},
         {vsn, "4.3.1"},
         {modules, []},
         {registered, [dgiot_factory_sup]},

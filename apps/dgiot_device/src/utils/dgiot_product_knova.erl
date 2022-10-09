@@ -19,7 +19,17 @@
 -include("dgiot_device.hrl").
 -include_lib("dgiot/include/logger.hrl").
 
--export([post/1, get_konva/3, get_konva_thing/2, edit_konva/2, get_konva_view/4, get_Product_konva/0, save_Product_konva/1]).
+-export([
+    post/1,
+    get_konva/3,
+    get_konva_thing/2,
+    edit_konva/2,
+    get_konva_view/4,
+    get_Product_konva/0,
+    save_Product_konva/1,
+    get_stage/1,
+    get_stage/2,
+    get_nodes/2]).
 
 %%dgiot_product_knova:post(<<"d0cb711d3d">>).
 post(ProductId) ->
@@ -148,7 +158,8 @@ get_wechat() ->
     end.
 
 edit_konva(Arg, _Context) ->
-    #{<<"productid">> := ProductId,
+    #{
+        <<"productid">> := ProductId,
         <<"shapeid">> := Shapeid,
         <<"identifier">> := Identifier,
         <<"name">> := Name
@@ -353,6 +364,44 @@ save_Product_konva(ProductId) ->
         _ ->
             pass
     end.
+
+get_stage(ProductId) ->
+    ViewId = dgiot_parse_id:get_viewid(ProductId, <<"topo">>, <<"Product">>, ProductId),
+    case dgiot_parse:get_object(<<"View">>, ViewId) of
+        {ok, #{<<"data">> := #{<<"konva">> := #{<<"Stage">> := Stage}}}} ->
+            {ok, Stage};
+        _ ->
+            #{}
+    end.
+
+get_stage(ProductId, Tiltle) ->
+    ViewId = dgiot_parse_id:get_viewid(ProductId, <<"topo">>, <<"Product">>, Tiltle),
+    case dgiot_parse:get_object(<<"View">>, ViewId) of
+        {ok, #{<<"data">> := #{<<"konva">> := #{<<"Stage">> := Stage}}}} ->
+            Stage;
+        _ ->
+            #{}
+    end.
+
+get_nodes(Stage, ClassNames) ->
+    get_children(Stage, ClassNames, #{}).
+
+get_children(#{<<"children">> := Childrens, <<"className">> := ClassName, <<"attrs">> := Attrs}, ClassNames, Acc) ->
+    lists:foldl(fun(Children, Acc1) ->
+        get_children(Children, ClassNames, get_attrs(Attrs, ClassName, ClassNames, Acc1))
+                end, Acc, Childrens);
+get_children(#{<<"className">> := ClassName, <<"attrs">> := Attrs}, ClassNames, Acc) ->
+    get_attrs(Attrs, ClassName, ClassNames, Acc).
+
+get_attrs(#{<<"id">> := Id} = Attrs, ClassName, ClassNames, Acc) ->
+    case lists:member(ClassName, ClassNames) of
+        false ->
+            Acc;
+        _ ->
+            Acc#{Id => maps:without([<<"id">>], Attrs)}
+    end;
+get_attrs(_Attrs, _ClassName, _ClassNames, Acc) ->
+    Acc.
 
 %%update_konva(PdocuctId) ->
 %%    Amis = dgiot_utils:get_JsonFile(?MODULE, <<"knova.json">>),
