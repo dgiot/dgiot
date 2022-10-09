@@ -28,7 +28,6 @@
 -export([init/3, handle_init/1, handle_event/3, handle_message/2, stop/3]).
 
 -channel_type(#{
-
     cType => ?TYPE,
     type => ?PROTOCOL_CHL,
     title => #{
@@ -60,20 +59,15 @@ start(ChannelId, ChannelArgs) ->
     dgiot_channelx:add(?TYPE, ChannelId, ?MODULE, ChannelArgs).
 
 %% 通道初始化
-init(?TYPE, ChannelId, #{
-    <<"product">> := _Products,
-    <<"IPCTYPE">> :=  _IPCTYPE
-} = ChannelArgs) ->
-    _Env = get_newenv(ChannelArgs),
+init(?TYPE, ChannelId, Args) ->
     State = #state{
         id = ChannelId,
-        env = []
+        env = Args
     },
+    dgiot_printer:start_hooks(Args),
     {ok, State, []}.
 
-
 handle_init(State) ->
-    erlang:send_after(5000, self(), init),
     {ok, State}.
 
 %% 通道消息处理,注意：进程池调用
@@ -84,14 +78,7 @@ handle_event(_EventId, Event, State) ->
 handle_message(_Message, State) ->
     {ok, State}.
 
-stop(ChannelType, ChannelId, _State) ->
-    ?LOG(error, "channel stop ~p,~p", [ChannelType, ChannelId]),
+stop(ChannelType, ChannelId, #state{env = Args} = _State) ->
+    dgiot_printer:stop_hooks(Args),
+    ?LOG(warning, "Channel[~p,~p] stop", [ChannelType, ChannelId]),
     ok.
-
-get_newenv(Args) ->
-    maps:without([
-        <<"behaviour">>,
-        <<"MaxOverFlow">>,
-        <<"Size">>,
-        <<"applicationtText">>,
-        <<"product">>], Args).
