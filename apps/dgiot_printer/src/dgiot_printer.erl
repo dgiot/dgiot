@@ -29,13 +29,14 @@
 handle_profile({QueryData, ProductId, _State}) ->
     get_topo(QueryData, ProductId).
 
-get_topo(_QueryData, ProductId) ->
+get_topo(#{<<"profile">> := Profile} = QueryData, ProductId) ->
     case dgiot_product_knova:get_stage(ProductId) of
         {ok, Stage} ->
-            Nodes = dgiot_product_knova:get_nodes(Stage, [<<"Text">>]),
-            io:format("~s ~p  Nodes ~p ~n", [?FILE, ?LINE, Nodes]);
+            dgiot_product_knova:get_nodes(Stage, [<<"Text">>]),
+            io:format("~s ~p  Profile ~p ~n", [?FILE, ?LINE, Profile]),
+            QueryData;
         _ ->
-            ok
+            QueryData
     end.
 
 start_hooks(#{<<"product">> := Products}) ->
