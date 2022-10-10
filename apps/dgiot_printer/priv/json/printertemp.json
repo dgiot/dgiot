@@ -14,16 +14,6 @@
           "children": [
             {
               "attrs": {
-                "id": "bg",
-                "src": "/dgiot_file/knova/knova_bg.png?timestamp=1635422987361",
-                "type": "bg-image",
-                "width": 393,
-                "height": 275
-              },
-              "className": "Image"
-            },
-            {
-              "attrs": {
                 "x": 323,
                 "y": 84.95900920567532,
                 "id": "f9dddd0eeb_amisBMK8t",
@@ -37,7 +27,7 @@
             },
             {
               "attrs": {
-                "id": "596569e7b3_rectzAaeC",
+                "id": "print_paper",
                 "name": "printer",
                 "type": "paper",
                 "width": 393,
@@ -341,7 +331,7 @@
               "attrs": {
                 "x": 70,
                 "y": 100,
-                "id": "596569e7b3_textoZ7yE",
+                "id": "spunlace_spec",
                 "fill": "rgba(0, 0, 0, 1)",
                 "name": "printer",
                 "text": "X6055W-T2170",
@@ -359,7 +349,7 @@
               "attrs": {
                 "x": 280,
                 "y": 100,
-                "id": "596569e7b3_textzwMKc",
+                "id": "spunlace_rollnum",
                 "fill": "rgba(0, 0, 0, 1)",
                 "name": "printer",
                 "text": "A20221009A01",
@@ -377,7 +367,7 @@
               "attrs": {
                 "x": 70,
                 "y": 130,
-                "id": "596569e7b3_textpFxek",
+                "id": "quality_people",
                 "fill": "rgba(0, 0, 0, 1)",
                 "name": "printer",
                 "text": "张三",
@@ -395,7 +385,7 @@
               "attrs": {
                 "x": 250,
                 "y": 130,
-                "id": "596569e7b3_textkgIIx",
+                "id": "spunlace_date",
                 "fill": "rgba(0, 0, 0, 1)",
                 "name": "printer",
                 "text": "2022-10-09",
@@ -413,7 +403,7 @@
               "attrs": {
                 "x": 140,
                 "y": 160,
-                "id": "596569e7b3_textaOCrc",
+                "id": "wide",
                 "fill": "rgba(0, 0, 0, 1)",
                 "name": "printer",
                 "text": "20",
@@ -431,7 +421,7 @@
               "attrs": {
                 "x": 50,
                 "y": 160,
-                "id": "596569e7b3_text1aBiJ",
+                "id": "long",
                 "fill": "rgba(0, 0, 0, 1)",
                 "name": "printer",
                 "text": "18",
@@ -449,7 +439,7 @@
               "attrs": {
                 "x": 250,
                 "y": 160,
-                "id": "596569e7b3_textxmoIG",
+                "id": "spunlace_semisuttle",
                 "fill": "rgba(0, 0, 0, 1)",
                 "name": "printer",
                 "text": "22",
@@ -467,7 +457,7 @@
               "attrs": {
                 "x": 70,
                 "y": 185,
-                "id": "596569e7b3_textJEDqs",
+                "id": "spunlace_fundsuttle",
                 "fill": "rgba(0, 0, 0, 1)",
                 "name": "printer",
                 "text": "12",
@@ -485,7 +475,7 @@
               "attrs": {
                 "x": 270,
                 "y": 185,
-                "id": "596569e7b3_textuXwJE",
+                "id": "joint",
                 "fill": "rgba(0, 0, 0, 1)",
                 "name": "printer",
                 "text": "12",
@@ -503,7 +493,7 @@
               "attrs": {
                 "x": 60,
                 "y": 210,
-                "id": "596569e7b3_texttlxtK",
+                "id": "quality_destination",
                 "fill": "rgba(0, 0, 0, 1)",
                 "name": "printer",
                 "text": "成品仓库",
@@ -521,7 +511,7 @@
               "attrs": {
                 "x": 250,
                 "y": 210,
-                "id": "596569e7b3_textMesgD",
+                "id": "quality_detail",
                 "fill": "rgba(0, 0, 0, 1)",
                 "name": "printer",
                 "text": "合格",
@@ -539,7 +529,7 @@
               "attrs": {
                 "x": 40,
                 "y": 235,
-                "id": "596569e7b3_text8aVpi",
+                "id": "spunlace_id",
                 "fill": "rgba(0, 0, 0, 1)",
                 "name": "printer",
                 "text": "条码",
