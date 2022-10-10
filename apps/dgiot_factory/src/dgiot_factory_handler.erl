@@ -123,26 +123,33 @@ do_request(post_worker_shift, #{<<"shift">> := Shifts} = _Args, _Context, _Body)
     {ok, #{<<"status">> => 0, msg => <<"修改成功"/utf8>>, <<"data">> => #{}}};
 
 
-do_request(get_data, #{<<"objectId">> := DeviceId, <<"type">> := Type, <<"function">> := Function, <<"group">> := Group,
+do_request(get_data, #{<<"productId">> := undefined, <<"objectId">> := DeviceId} = _Args, _Context, _Body) ->
+    case dgiot_device_cache:lookup(DeviceId) of
+        {ok, #{<<"productid">> := ProductId}} ->
+            do_request(get_data, maps:merge(_Args, #{<<"productId">> => ProductId}), _Context, _Body);
+        _ ->
+
+            {error, <<"get_data_failed">>}
+    end;
+do_request(get_data, #{<<"productId">> := ProductId, <<"objectId">> := DeviceId, <<"type">> := Type,
+    <<"function">> := Function, <<"functionmap">> := FunctionMap, <<"group">> := Group,<<"having">> := Having,
     <<"order">> := Order, <<"where">> := Where, <<"limit">> := Limit, <<"skip">> := Skip} = _Args,
     #{<<"sessionToken">> := SessionToken} = _Context, _Body) ->
+    io:format("~s ~p _Args = ~p  ~n", [?FILE, ?LINE, _Args]),
     case dgiot_product_tdengine:get_channel(SessionToken) of
-        {error, Error} -> {error, Error};
+        {error, Error} ->
+            io:format("~s ~p ProductId = ~p  ~n", [?FILE, ?LINE, ProductId]),
+            {error, Error};
         {ok, Channel} ->
-            case dgiot_device_cache:lookup(DeviceId) of
-                {ok, #{<<"productid">> := ProductId}} ->
-                    case dgiot_factory_data:get_history_data(ProductId, DeviceId, Type, Function, Group, Where, Order, Limit, Skip, Channel) of
-                        {ok, {Total, Res}} ->
-                            {ok, #{<<"status">> => 0, msg => <<"数据请求成功"/utf8>>, <<"data">> => #{<<"total">> => Total, <<"items">> => Res}}};
-                        _ ->
-
-                            {error, <<"get_data_failed">>}
-                    end;
+            case dgiot_factory_data:get_history_data(ProductId, DeviceId, Type, Function, FunctionMap, Group,Having, Where, Order, Channel, Limit, Skip) of
+                {ok, {Total, Res}} ->
+                    {ok, #{<<"status">> => 0, msg => <<"数据请求成功"/utf8>>, <<"data">> => #{<<"total">> => Total, <<"items">> => Res}}};
                 _ ->
+                    io:format("~s ~p ProductId = ~p  ~n", [?FILE, ?LINE, ProductId]),
                     {error, <<"get_data_failed">>}
-
             end;
         _ ->
+            io:format("~s ~p ProductId = ~p  ~n", [?FILE, ?LINE, ProductId]),
             {error, <<"get_data_failed">>}
     end;
 do_request(get_material, #{<<"objectId">> := DeviceId, <<"dept">> := Depart} = _Args, _Context, _Req) ->

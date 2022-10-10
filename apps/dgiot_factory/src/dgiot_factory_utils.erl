@@ -133,7 +133,7 @@ turn_num(FlatMap, ProductId, Type) ->
                         <<"enum">> ->
                             case maps:find(K, Acc) of
                                 {ok, Data} ->
-                                    case dgiot_factory_utils: get_num(K, Data) of
+                                    case dgiot_factory_utils:get_num(K, Data) of
                                         error ->
                                             Acc;
                                         Map ->
@@ -227,10 +227,10 @@ getalluser(#{<<"objectId">> := RoleId, <<"name">> := Depname} = Role) ->
             case X of
                 #{<<"nick">> := <<"user_for_", _/binary>>} ->
                     Acc;
-                #{<<"nick">> := Nick, <<"username">> := UserName} ->
-                    dgiot_data:insert(?WORKERTREE, UserName, Nick),
+                #{<<"objectId">> := Id, <<"nick">> := Nick, <<"username">> := UserName} ->
+                    update_worker_ets(Id, UserName, Nick,Depname),
 %%                    Acc ++ [#{<<"label">> => Nick, <<"value">> => <<UserName/binary, "_", Nick/binary>>}];
-                    Acc ++ [#{<<"label">> => Nick, <<"value">> => Nick}];
+                    Acc ++ [#{<<"label">> => <<UserName/binary, "_", Nick/binary>>, <<"value">> => UserName}];
                 _ ->
                     Acc
             end
@@ -241,10 +241,6 @@ getalluser(#{<<"objectId">> := RoleId, <<"name">> := Depname} = Role) ->
         {ok, SubChildren} ->
             #{<<"objectId">> => RoleId, <<"name">> => Depname, <<"label">> => Depname, <<"children">> => SubChildren, <<"userlist">> => NewUserList}
     end.
-
-
-
-
 get_zero_list(Num) ->
     get_zero_list([], Num).
 
@@ -284,4 +280,13 @@ get_ThingMap(_DeviceType, ProductId) ->
                     end
                 end, #{}, List),
             {ok, Res}
+    end.
+
+%%dgiot_data:insert(?WORKERTREE, Id, {UserName, Nick,1}),
+update_worker_ets(Id, UserName, Nick,Depname) ->
+    case dgiot_data:lookup(?WORKERTREE, Id) of
+        {ok, {_, _, State}} ->
+            dgiot_data:insert(?WORKERTREE, UserName, {Id, Depname,Nick, State});
+        {error, not_find} ->
+            dgiot_data:insert(?WORKERTREE, UserName, {Id,Depname, Nick, 1})
     end.
