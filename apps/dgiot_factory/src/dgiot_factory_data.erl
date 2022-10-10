@@ -14,7 +14,8 @@
 -define(Table(Name), <<?PRE/binary, Name/binary>>).
 -define(SHEETID(SHEET), <<SHEET/binary, "_id">>).
 -define(TYPE, <<"TD">>).
--export([get_history_data/10,filter_data/1,filter_data/3]).
+-export([get_history_data/12, filter_data/1, filter_data/3]).
+-export([select/4, get_thing_list/2, limit_skip/2]).
 %% API
 %%-export([
 %%    get_card_data/2,
@@ -271,7 +272,7 @@
 %%    BinEnd = dgiot_utils:to_binary(End * 1000),
 %%    <<"  createdat > ", BinStart/binary, " and createdat < ", BinEnd/binary, " ">>.
 
-filter_data(undefined, _ , HistoryData) ->
+filter_data(undefined, _, HistoryData) ->
     Total = length(HistoryData),
     {Total, HistoryData};
 
@@ -579,7 +580,8 @@ filter_data(Data) when is_map(Data) ->
 %%    end.
 %%get_td_sheet(ProductId, Type, Start, End, Channel, DeviceId, Where, Limit, Skip, New)
 
-get_history_data(ProductId, DeviceId, Type, Function, Group, Where, Order, Channel, Limit, Skip) ->
+get_history_data(ProductId, DeviceId, Type, Function, FunctionMap, Group,Having, Where, Order, Channel, Limit, Skip) ->
+    io:format("~s ~p ProductId = ~p  ~n", [?FILE, ?LINE, ProductId]),
     DB = dgiot_tdengine_select:format_db(?Database(ProductId)),
     TableName = case DeviceId of
                     undefined ->
@@ -587,93 +589,53 @@ get_history_data(ProductId, DeviceId, Type, Function, Group, Where, Order, Chann
                     _ ->
                         ?Table(DeviceId)
                 end,
-
-
-    Select = select(ProductId, Type, Function),
-    From = <<DB/binary, ".", TableName/binary>>,
+    Select = select(ProductId, Type, Function, FunctionMap),
+    From = <<DB/binary, TableName/binary>>,
     GROPU = group(Group),
+    Have =have(Having),
     WHERE = where(Where),
     ORDER = order(Order),
-    LimitAndSkip = limit_skip(Limit, Skip),
-    {ok, #{<<"results">> := HistoryData}} = dgiot_tdengine:transaction(Channel,
+%%    LimitAndSkip = limit_skip(Limit, Skip),
+    case dgiot_tdengine:transaction(Channel,
         fun(Context) ->
-            Sql = <<"SELECT , ", Select/binary, " FROM ", From/binary, GROPU/binary, WHERE/binary, ORDER/binary, LimitAndSkip/binary, ";">>,
+            Sql = <<"SELECT  ", Select/binary, " FROM ", From/binary, GROPU/binary,Have/binary, WHERE/binary, ORDER/binary, ";">>,
+            io:format("~s ~p Sql = ~p  ~n", [?FILE, ?LINE, Sql]),
             dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_query, Sql)
-        end),
+        end)
+    of
+        {ok, #{<<"results">> := HistoryData}} ->
+            NamedData = dgiot_factory_utils:turn_name(HistoryData, ProductId, Type),
+            {Total, Res} = filter_data(Limit, Skip, NamedData),
+            {ok, {Total, filter_data(Res)}};
+        _ ->
+            error
 
-    {ok, #{<<"results">> := [#{<<"count">> := Total}]}} = dgiot_tdengine:transaction(Channel,
-        fun(Context) ->
-            Sql = <<"SELECT count(*) as count , FROM ", From/binary, GROPU/binary, WHERE/binary, ORDER/binary, ";">>,
-            dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_query, Sql)
-        end),
-    {ok, {Total, filter_data(HistoryData)}}.
-
-
-select(ProductId, Type, undefined) ->
-    case dgiot_product:get_device_thing(ProductId, Type) of
-        not_find ->
-            <<"select * ">>;
-        ThingMap ->
-            Quality = case dgiot_product:get_device_thing(ProductId, <<"quality">>) of
-                          not_find ->
-                              #{};
-                          Res ->
-                              Res
-                      end,
-            Person = case dgiot_product:get_device_thing(ProductId, <<"person">>) of
-                         not_find ->
-                             #{};
-                         Res1 ->
-                             Res1
-                     end,
-            AllThngMap = maps:merge(ThingMap, maps:merge(Quality, Person)),
-            List = maps:keys(AllThngMap) ++ [<<"createdat">>],
-
-            <<" , ", Res2/binary>> = lists:foldl(
-                fun(X, Acc) ->
-                    <<Acc/binary, " , ", X/binary>>
-
-                end, <<"">>, List),
-            Res2
-
-    end;
-select(ProductId, Type, Function) ->
-    case dgiot_product:get_device_thing(ProductId, Type) of
-        not_find ->
-            <<"select * ">>;
-        ThingMap ->
-            Quality = case dgiot_product:get_device_thing(ProductId, <<"quality">>) of
-                          not_find ->
-                              #{};
-                          Res ->
-                              Res
-                      end,
-            Person = case dgiot_product:get_device_thing(ProductId, <<"person">>) of
-                         not_find ->
-                             #{};
-                         Res1 ->
-                             Res1
-                     end,
-            AllThngMap = maps:merge(ThingMap, maps:merge(Quality, Person)),
-            List = maps:keys(AllThngMap) ++ [<<"createdat">>],
-
-            <<" , ", Res2/binary>> = lists:foldl(
-                fun(X, Acc) ->
-                    <<Acc/binary, " , ", Function/binary, "(", X/binary, ") as ", X/binary>>
-                end, <<"">>, List),
-            Res2
     end.
+
+%%    {ok, #{<<"results">> := [#{<<"count">> := Total}]}} = dgiot_tdengine:transaction(Channel,
+%%        fun(Context) ->
+%%            Sql = <<"SELECT count(*) as count , FROM ", From/binary, GROPU/binary, WHERE/binary, ORDER/binary, ";">>,
+%%            dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_query, Sql)
+%%        end),
+%%    {ok, {Total, filter_data(HistoryData)}}.
+
+
+
 
 
 group(undefined) ->
     <<" ">>;
 group(Group) ->
     <<" group by ", Group/binary, " ">>.
+have(undefined) ->
+    <<" ">>;
+have(Having) ->
+    <<" having ", Having/binary>>.
 where(undefined) ->
     <<" ">>;
 where(Where) ->
     <<" where ", Where/binary>>.
-order(udnefined) ->
+order(undefined) ->
     <<" ">>;
 order(Order) ->
     <<" ", Order/binary>>.
@@ -683,3 +645,80 @@ limit_skip(Limit, Skip) ->
     BinLimit = dgiot_utils:to_binary(Limit),
     BinSkip = dgiot_utils:to_binary(Skip),
     <<" limit ", BinLimit/binary, " offset ", BinSkip/binary>>.
+
+select(ProductId, Type, Function, undefined) ->
+    select(ProductId, Type, Function, #{});
+
+select(ProductId, Type, undefined, _) ->
+    ThingList = get_thing_list(ProductId, Type),
+    <<" , ", Res/binary>> = lists:foldl(
+        fun(X, Acc) ->
+            <<Acc/binary, " , ", X/binary>>
+        end, <<"">>, ThingList),
+    Res;
+
+select(ProductId, Type, Function, FunctiongMap1)  ->
+    ThingList = get_thing_list(ProductId, Type),
+    FunctiongMap = dgiot_utils:to_map(FunctiongMap1),
+    <<" , ", Res/binary>> =
+        lists:foldl(
+            fun(Thing, Acc) ->
+                Fun = maps:fold(
+                    fun(Func, FuncThingList, Acc1) ->
+                        case lists:member(Thing, FuncThingList) of
+                            true ->
+                                Func;
+                            _ ->
+                                Acc1
+                        end
+                    end, <<"null">>, FunctiongMap),
+                case Fun of
+                    <<"null">> ->
+                        <<Acc/binary, " , ", Function/binary, "( ", Thing/binary, " ) as ", Thing/binary>>;
+                    _ ->
+                        <<Acc/binary, " , ", Fun/binary, " ( ", Thing/binary, " ) as ", Thing/binary>>
+                end
+
+            end, <<"">>, ThingList),
+    Res.
+
+
+get_thing_list(ProductId, undefined) ->
+    case dgiot_product:get_devicetype(ProductId) of
+        not_find ->
+            [];
+        DevTypeList ->
+            Res = lists:foldl(
+                fun(Type, Acc) ->
+                    case dgiot_product:get_device_thing(ProductId, Type) of
+                        not_find ->
+                            Acc;
+                        List ->
+                            Acc ++ maps:keys(List)
+                    end
+                end, [], DevTypeList),
+            Res ++ [<<"createdat">>]
+    end;
+get_thing_list(ProductId, Type) ->
+    Quality = case dgiot_product:get_device_thing(ProductId, <<"quality">>) of
+                  not_find ->
+                      [];
+                  Res ->
+                      maps:keys(Res)
+              end,
+    Person = case dgiot_product:get_device_thing(ProductId, <<"person">>) of
+                 not_find ->
+                     [];
+                 Res1 ->
+                     maps:keys(Res1)
+             end,
+    TypeData = case dgiot_product:get_device_thing(ProductId, Type) of
+                   not_find ->
+                       [];
+                   Res2 ->
+                       maps:keys(Res2)
+               end,
+    TypeData ++ Quality ++ Person ++ [<<"createdat">>].
+
+
+%%select last(manufac_rollnum), sum(manufac_worktime) as  manufac_worktime from _d5e32f7542._d5e32f7542 group by devaddr having manufac_worktime = 139;

@@ -95,8 +95,8 @@ hanlde_pickandretrive(DeviceId,  #{ <<"FPrdOrgId">> :=FPrdOrgId,<<"FStockId">> :
                 #{<<"material_pick">> := Pick, <<"material_retrive">> := Retrive, <<"material_picked">> := Picked} ->
                     case Type of
                         <<"picking">> ->
-                            case dgiot_kingdee_wuliao:get_Material(DeviceId, FReplaceGroup, FPrdOrgId, FStockId, Weight, Weight) of
-                                #{<<"Result">> := #{<<"ResponseStatus">> := #{<<"IsSuccess">> := true}}} ->
+                            case dgiot_hook:run_hook({kingdee, post_material, <<"picking">>},[DeviceId, FReplaceGroup, FPrdOrgId, FStockId, Weight, Weight]) of
+                                {ok, [{ok, _}]} ->
                                     io:format("~s ~p Type = ~p ~n", [?FILE, ?LINE, Type]),
                                     After = dgiot_utils:to_float(Picked) + dgiot_utils:to_float(Weight),
                                     handle_warehouse(Id, Type, Num),
@@ -109,8 +109,8 @@ hanlde_pickandretrive(DeviceId,  #{ <<"FPrdOrgId">> :=FPrdOrgId,<<"FStockId">> :
 
                             end;
                         <<"retriving">> ->
-                            case dgiot_kingdee_wuliao:get_Material(DeviceId, FReplaceGroup, FPrdOrgId, FStockId, Weight, Weight) of
-                                #{<<"Result">> := #{<<"ResponseStatus">> := #{<<"IsSuccess">> := true}}} ->
+                            case dgiot_hook:run_hook({kingdee, post_material, <<"retriving">>},[DeviceId, FReplaceGroup, FPrdOrgId, FStockId, Weight, Weight]) of
+                                {ok, [{ok, _}]} ->
                                     After = dgiot_utils:to_float(Picked) - dgiot_utils:to_float(Weight),
                                     handle_warehouse(Id, Type, Num),
                                     NewRes = maps:merge(Res, #{<<"material_picked">> => After, <<"material_retrive">> => Retrive ++ [#{<<"material_date">> => Date, <<"material_people">> => People, <<"material_number">> => Num,

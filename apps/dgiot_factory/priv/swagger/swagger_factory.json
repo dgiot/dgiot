@@ -204,7 +204,7 @@
             "description": "工单类型",
             "in": "query",
             "name": "type",
-            "required": true,
+            "required": false,
             "type": "string"
           },
           {
@@ -214,11 +214,12 @@
             "type": "string"
           },
           {
-            "description": "聚合函数",
+            "description": "having条件",
             "in": "query",
-            "name": "function",
+            "name": "having",
             "type": "string"
           },
+
           {
             "in": "query",
             "name": "limit",
@@ -245,6 +246,18 @@
             "description": "排序",
             "in": "query",
             "name": "order",
+            "type": "string"
+          },
+          {
+            "description": "聚合函数",
+            "in": "query",
+            "name": "function",
+            "type": "string"
+          },
+          {
+            "description": "其余函数",
+            "in": "query",
+            "name": "functionmap",
             "type": "string"
           }
         ],
