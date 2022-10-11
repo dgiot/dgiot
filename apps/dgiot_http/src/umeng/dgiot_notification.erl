@@ -29,7 +29,7 @@
 
 -export([send_verification_code/2, check_verification_code/2]).
 
--export([get_newbody/1, get_Mobile/1]).
+-export([get_newbody/1, get_Mobile/2]).
 
 init_ets() ->
     dgiot_data:init(?CONFIGURATION),
@@ -220,38 +220,54 @@ get_newbody(#{<<"objectId">> := _Notificatid} = Map) ->
 get_newbody(Body) ->
     Body.
 
-get_Mobile(DeviceId) ->
-    case dgiot_device:lookup(DeviceId) of
-        {ok, #{<<"acl">> := Acl}} ->
-            lists:foldl(fun(X, Acc) ->
-                BinX = atom_to_binary(X),
-                case BinX of
-                    <<"role:", Name/binary>> ->
-                        case dgiot_parse:query_object(<<"_Role">>, #{<<"order">> => <<"updatedAt">>, <<"limit">> => 1,
-                            <<"where">> => #{<<"name">> => Name}}) of
-                            {ok, #{<<"results">> := [Role]}} ->
-                                #{<<"objectId">> := RoleId} = Role,
-                                UserIds = dgiot_parse_id:get_userids(RoleId),
-                                UsersQuery = #{<<"where">> => #{<<"objectId">> => #{<<"$in">> => UserIds}}},
-                                {ok, #{<<"results">> := Users}} = dgiot_parse:query_object(<<"_User">>, UsersQuery),
-                                lists:foldl(fun(User, Acc1) ->
-                                    Phone = maps:get(<<"phone">>, User, ""),
-                                    case dgiot_utils:is_phone(Phone) of
-                                        true ->
-                                            Acc1 ++ [#{<<"mobile">> => Phone, <<"nationcode">> => <<"86">>}];
-                                        _ ->
-                                            Acc1
-                                    end
-                                            end, Acc, Users);
+get_Mobile(DeviceId, RoleId) ->
+    case RoleId of
+        <<>> ->
+            case dgiot_device:lookup(DeviceId) of
+                {ok, #{<<"acl">> := Acl}} ->
+                    lists:foldl(fun(X, Acc) ->
+                        BinX = atom_to_binary(X),
+                        case BinX of
+                            <<"role:", Name/binary>> ->
+                                case dgiot_parse:query_object(<<"_Role">>, #{<<"order">> => <<"updatedAt">>, <<"limit">> => 1,
+                                    <<"where">> => #{<<"name">> => Name}}) of
+                                    {ok, #{<<"results">> := [Role]}} ->
+                                        #{<<"objectId">> := RoleId1} = Role,
+                                        UserIds = dgiot_parse_id:get_userids(RoleId1),
+                                        UsersQuery = #{<<"where">> => #{<<"objectId">> => #{<<"$in">> => UserIds}}},
+                                        {ok, #{<<"results">> := Users}} = dgiot_parse:query_object(<<"_User">>, UsersQuery),
+                                        lists:foldl(fun(User, Acc1) ->
+                                            Phone = maps:get(<<"phone">>, User, ""),
+                                            case dgiot_utils:is_phone(Phone) of
+                                                true ->
+                                                    Acc1 ++ [#{<<"mobile">> => Phone, <<"nationcode">> => <<"86">>}];
+                                                _ ->
+                                                    Acc1
+                                            end
+                                                    end, Acc, Users);
+                                    _ ->
+                                        Acc
+                                end;
                             _ ->
                                 Acc
-                        end;
-                    _ ->
-                        Acc
-                end
-                        end, [], Acl);
+                        end
+                                end, [], Acl);
+                _ ->
+                    []
+            end;
         _ ->
-            []
+            UserIds = dgiot_parse_id:get_userids(RoleId),
+            UsersQuery = #{<<"where">> => #{<<"objectId">> => #{<<"$in">> => UserIds}}},
+            {ok, #{<<"results">> := Users}} = dgiot_parse:query_object(<<"_User">>, UsersQuery),
+            lists:foldl(fun(User, Acc1) ->
+                Phone = maps:get(<<"phone">>, User, ""),
+                case dgiot_utils:is_phone(Phone) of
+                    true ->
+                        Acc1 ++ [#{<<"mobile">> => Phone, <<"nationcode">> => <<"86">>}];
+                    _ ->
+                        Acc1
+                end
+                        end, [], Users)
     end.
 
 save_configuration() ->
