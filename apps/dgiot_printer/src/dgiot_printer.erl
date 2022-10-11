@@ -32,9 +32,17 @@ handle_profile({QueryData, ProductId, _State}) ->
 get_topo(#{<<"profile">> := Profile} = QueryData, ProductId) ->
     case dgiot_product_knova:get_stage(ProductId) of
         {ok, Stage} ->
-            dgiot_product_knova:get_nodes(Stage, [<<"Text">>]),
-            io:format("~s ~p  Profile ~p ~n", [?FILE, ?LINE, Profile]),
-            QueryData;
+            StageMap = dgiot_product_knova:get_nodes(Stage, [<<"Text">>, <<"Rect">>]),
+            NewProfile =
+                maps:fold(fun(K, V, Acc) ->
+                    case maps:find(K, Profile) of
+                        error ->
+                            Acc ++ [V];
+                        {ok, Text} ->
+                            Acc ++ [V#{<<"text">> => Text}]
+                    end
+                          end, [], StageMap),
+            QueryData#{<<"profile">> => #{<<"cmd">> => <<"printer">>, <<"data">> => NewProfile}};
         _ ->
             QueryData
     end.

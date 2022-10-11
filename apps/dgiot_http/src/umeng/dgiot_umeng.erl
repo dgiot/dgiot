@@ -431,7 +431,7 @@ save_devicestatus(DeviceId, Status) ->
 
 %%SELECT payload, payload.1.value as value, clientid, 'e636739559' as productid FROM "profile/e636739559/#" WHERE value = '02000000000000001A00000000250222'
 send_message_to3D(ProductId, DevAddr, Payload) ->
-    Warn = maps:get(<<"9">>, Payload, #{}),
+    Warn = maps:get(9, Payload, #{}),
     {Lev, Type} =
         case maps:get(<<"value">>, Warn, <<"一级"/utf8>>) of
             <<"一级"/utf8>> ->
@@ -480,9 +480,9 @@ send_message_to3D(ProductId, DevAddr, Payload) ->
     },
     case Payload of
 %%        拉闸 <<"02000000000000001A00000000250222">>
-        #{<<"1">> := #{<<"value">> := <<"02000000000000001A", _/binary>>}} ->
+        #{1 := #{<<"value">> := <<"02000000000000001A", _/binary>>}} ->
             dgiot_mqtt:publish(Deviceid, Topic, jsx:encode(Data));
-        #{<<"4">> := #{<<"value">> := <<"1A">>}} ->
+        #{4 := #{<<"value">> := <<"1A">>}} ->
             dgiot_mqtt:publish(Deviceid, Topic, jsx:encode(Data));
         _ ->
             pass
