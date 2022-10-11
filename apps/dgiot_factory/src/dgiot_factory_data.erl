@@ -598,7 +598,7 @@ get_history_data(ProductId, DeviceId, Type, Function, FunctionMap, Group,Having,
 %%    LimitAndSkip = limit_skip(Limit, Skip),
     case dgiot_tdengine:transaction(Channel,
         fun(Context) ->
-            Sql = <<"SELECT  ", Select/binary, " FROM ", From/binary, GROPU/binary,Have/binary, WHERE/binary, ORDER/binary, ";">>,
+            Sql = <<"SELECT  ", Select/binary, " FROM ", From/binary, WHERE/binary,GROPU/binary,Have/binary,  ORDER/binary, ";">>,
             io:format("~s ~p Sql = ~p  ~n", [?FILE, ?LINE, Sql]),
             dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_query, Sql)
         end)

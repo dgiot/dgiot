@@ -111,7 +111,8 @@ do_request(get_worker_shift, #{<<"date">> := Data, <<"workshop">> := Workshop, <
             WorkerList = re:split(Worker, " "),
             Options = lists:foldl(
                 fun(X, Acc) ->
-                    Acc ++ [#{<<"label">> => X, <<"value">> => X}]
+                    V = dgiot_factory_shift:format_worker(X),
+                    Acc ++ [#{<<"label">> => X, <<"value">> => V}]
                 end, [], WorkerList),
             {ok, #{<<"status">> => 0, msg => <<"数据请求成功"/utf8>>, <<"data">> => #{<<"options">> => Options}}};
         _ ->
