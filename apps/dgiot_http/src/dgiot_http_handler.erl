@@ -122,9 +122,9 @@ do_request(post_configuration, #{<<"data">> := Data}, _Context, _Req) ->
     Result;
 
 % 设备短信发送
-do_request(post_sendsms_deviceid, #{<<"deviceid">> := DeviceId, <<"tplid">> := TplId, <<"params">> := Params} = _Args, _Context, _Req) ->
+do_request(post_sendsms_deviceid, #{<<"deviceid">> := DeviceId, <<"roleid">> := RoleId, <<"tplid">> := TplId, <<"params">> := Params} = _Args, _Context, _Req) ->
 %%    io:format("~s ~p Args = ~p.~n", [?FILE, ?LINE, _Args]),
-    Mobile = dgiot_notification:get_Mobile(DeviceId),
+    Mobile = dgiot_notification:get_Mobile(DeviceId, RoleId),
     dgiot_notification:send_sms(Mobile, TplId, Params);
 
 %数字工厂告警
