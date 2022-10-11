@@ -672,7 +672,7 @@ triggeralarm(DeviceId) ->
 %% 触发
 send_msg(#{<<"send_alarm_status">> := <<"start">>, <<"alarm_createdAt">> := Alarm_createdAt, <<"_deviceid">> := DeviceId, <<"_productid">> := ProductId, <<"dgiot_alarmkey">> := Key, <<"dgiot_alarmvalue">> := Value}) ->
     case dgiot_parse:get_object(<<"Product">>, ProductId) of
-        {ok, #{<<"name">> := ProductName, <<"content">> := #{<<"sms">> := #{<<"params">> := Params, <<"tplid">> := TplId} = Sms}}} when is_list(Params) ->
+        {ok, #{<<"name">> := ProductName, <<"content">> := #{<<"sms">> := #{<<"params">> := Params, <<"tplid">> := TplId, <<"roleid">> := RoleId} = Sms}}} when is_list(Params) ->
             NewParams =
                 lists:foldl(fun(Param, Acc) ->
                     Acc ++ [replace_param(Param, ProductName, ProductId, DeviceId, Key, Value, Alarm_createdAt, <<"触发"/utf8>>)]
@@ -693,10 +693,10 @@ send_msg(#{<<"send_alarm_status">> := <<"start">>, <<"alarm_createdAt">> := Alar
                                     end
                                             end, [], Row);
                             _ ->
-                                dgiot_notification:get_Mobile(DeviceId)
+                                dgiot_notification:get_Mobile(DeviceId, RoleId)
                         end;
                     _ ->
-                        dgiot_notification:get_Mobile(DeviceId)
+                        dgiot_notification:get_Mobile(DeviceId, RoleId)
                 end,
             dgiot_notification:send_sms(Mobile, TplId, NewParams);
         _ ->
@@ -706,7 +706,7 @@ send_msg(#{<<"send_alarm_status">> := <<"start">>, <<"alarm_createdAt">> := Alar
 %% 恢复
 send_msg(#{<<"send_alarm_status">> := <<"stop">>, <<"alarm_createdAt">> := Alarm_createdAt, <<"_deviceid">> := DeviceId, <<"_productid">> := ProductId, <<"dgiot_alarmkey">> := Key, <<"dgiot_alarmvalue">> := Value}) ->
     case dgiot_parse:get_object(<<"Product">>, ProductId) of
-        {ok, #{<<"name">> := ProductName, <<"content">> := #{<<"sms">> := #{<<"params">> := Params, <<"tplid">> := TplId} = Sms}}} when is_list(Params) ->
+        {ok, #{<<"name">> := ProductName, <<"content">> := #{<<"sms">> := #{<<"params">> := Params, <<"tplid">> := TplId, <<"roleid">> := RoleId} = Sms}}} when is_list(Params) ->
             NewParams =
                 lists:foldl(fun(Param, Acc) ->
                     Acc ++ [replace_param(Param, ProductName, ProductId, DeviceId, Key, Value, Alarm_createdAt, <<"恢复"/utf8>>)]
@@ -727,10 +727,10 @@ send_msg(#{<<"send_alarm_status">> := <<"stop">>, <<"alarm_createdAt">> := Alarm
                                     end
                                             end, [], Row);
                             _ ->
-                                dgiot_notification:get_Mobile(DeviceId)
+                                dgiot_notification:get_Mobile(DeviceId, RoleId)
                         end;
                     _ ->
-                        dgiot_notification:get_Mobile(DeviceId)
+                        dgiot_notification:get_Mobile(DeviceId, RoleId)
                 end,
             dgiot_notification:send_sms(Mobile, TplId, NewParams);
         _ ->
@@ -742,6 +742,7 @@ send_msg(_) ->
 
 
 %%  产品名称：%PRODUCTNAME%
+%%  部门名称：%ROLENAME%
 %%  设备名称：%DEVICENAME%
 %%  设备地址：%DEVICEADDR%
 %%  日期：%DATE%
@@ -754,13 +755,28 @@ send_msg(_) ->
 replace_param(Param, ProductName, ProductId, DeviceId, Key, Value, Alarm_createdAt, TriggerdeScription) ->
     Date = dgiot_datetime:format("YYYY-MM-DD"),
     DateTime = dgiot_datetime:format("YYYY-MM-DD HH:NN:SS"),
-    {DeviceName, DeviceAddr} =
+    {DeviceName, DeviceAddr, OldACL} =
         case dgiot_parse:get_object(<<"Device">>, DeviceId) of
-            {ok, #{<<"name">> := Name, <<"devaddr">> := Devaddr}} ->
-                {Name, Devaddr};
+            {ok, #{<<"name">> := Name, <<"devaddr">> := Devaddr, <<"ACL">> := Acl}} ->
+                {Name, Devaddr, Acl};
             _ ->
-                {<<"--">>, <<"--">>}
+                {<<"--">>, <<"--">>, <<"--">>}
         end,
+    Device = #{
+        <<"ACL">> => OldACL,
+        <<"objectId">> => DeviceId
+    },
+    NewACL = dgiot_role:get_acls(Device),
+    DeviceRoleName =
+        lists:foldl(fun(X, _Acc) ->
+            BinX = atom_to_binary(X),
+            case BinX of
+                <<"role:", NewName/binary>> ->
+                    NewName;
+                _ ->
+                    <<"admin">>
+            end
+                    end, <<>>, NewACL),
     DataPointname =
         case dgiot_data:get({product, <<ProductId/binary, Key/binary>>}) of
             not_find ->
@@ -769,15 +785,16 @@ replace_param(Param, ProductName, ProductId, DeviceId, Key, Value, Alarm_created
                 ThingName
         end,
     Str1 = re:replace(Param, "%PRODUCTNAME%", ProductName, [global, {return, list}]),
-    Str2 = re:replace(Str1, "%DEVICENAME%", DeviceName, [global, {return, list}]),
-    Str3 = re:replace(Str2, "%DEVICEADDR%", DeviceAddr, [global, {return, list}]),
-    Str4 = re:replace(Str3, "%DATE%", Date, [global, {return, list}]),
-    Str5 = re:replace(Str4, "%DATETIME%", DateTime, [global, {return, list}]),
-    Str6 = re:replace(Str5, "%USERNAME%", <<"admin">>, [global, {return, list}]),
-    Str7 = re:replace(Str6, "%TRIGGERTIME%", Alarm_createdAt, [global, {return, list}]),
-    Str8 = re:replace(Str7, "%DATAPOINTNAME%", DataPointname, [global, {return, list}]),
-    Str9 = re:replace(Str8, "%TRIGGERDESCRIPTION%", TriggerdeScription, [global, {return, list}]),
-    re:replace(Str9, "%NOWVALUE%", dgiot_utils:to_list(Value), [global, {return, binary}]).
+    Str2 = re:replace(Str1, "%ROLENAME%", DeviceRoleName, [global, {return, list}]),
+    Str3 = re:replace(Str2, "%DEVICENAME%", DeviceName, [global, {return, list}]),
+    Str4 = re:replace(Str3, "%DEVICEADDR%", DeviceAddr, [global, {return, list}]),
+    Str5 = re:replace(Str4, "%DATE%", Date, [global, {return, list}]),
+    Str6 = re:replace(Str5, "%DATETIME%", DateTime, [global, {return, list}]),
+    Str7 = re:replace(Str6, "%USERNAME%", <<"admin">>, [global, {return, list}]),
+    Str8 = re:replace(Str7, "%TRIGGERTIME%", Alarm_createdAt, [global, {return, list}]),
+    Str9 = re:replace(Str8, "%DATAPOINTNAME%", DataPointname, [global, {return, list}]),
+    Str10 = re:replace(Str9, "%TRIGGERDESCRIPTION%", TriggerdeScription, [global, {return, list}]),
+    re:replace(Str10, "%NOWVALUE%", dgiot_utils:to_list(Value), [global, {return, binary}]).
 
 
 
