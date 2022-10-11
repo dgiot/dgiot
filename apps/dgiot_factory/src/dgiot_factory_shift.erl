@@ -18,7 +18,7 @@
 -author("jonhl").
 -include_lib("dgiot/include/logger.hrl").
 -include("dgiot_factory.hrl").
--export([get_one_shift/1, save_one_shift/1, updata_id/0, get_shift/3, post_shift/1, get_all_shift/4, get_workshop/2]).
+-export([get_one_shift/1, save_one_shift/1, updata_id/0, get_shift/3, post_shift/1, get_all_shift/4, get_workshop/2,format_worker/1]).
 -export([post_one_shift/1, get_shift_time/1]).
 -export([ bits_to_workerlist/1, workerlist_to_bits/1]).
 -define(DAY, 86400).
@@ -148,7 +148,7 @@ get_shift(Department, Date, Workshop) ->
                 fun(X, Acc) ->
                     case get_one_shift(#{<<"date">> => Date, <<"device">> => Workshop, <<"shift">> => X}) of
                         {ok, #{<<"worker">> := Worker}} ->
-                            Acc ++ [#{<<"date">> => Date, <<"device">> => Workshop, <<"shift">> => X, <<"worker">> => Worker}];
+                            Acc ++ [#{<<"date">> => Date, <<"device">> => Workshop, <<"shift">> => X, <<"worker">> => format_worker(Worker)}];
                         _ ->
                             Acc
                     end
@@ -318,3 +318,18 @@ bits_to_workerlist(Bits) ->
             end
         end, {<<>>, 1}, List),
     Res.
+
+
+format_worker(Worker) ->
+    WorkerList = re:split(Worker,<<" ">>),
+    lists:foldl(
+        fun(X, Acc)->
+            case dgiot_data:get(?WORKERTREE,X) of
+                not_find ->
+                    <<Acc/binary," ",X/binary>>;
+                {_,_,Name,_} ->
+                    io:format("~s ~p Name = ~p.~n", [?FILE, ?LINE, Name]),
+
+                    <<Acc/binary," ",Name/binary>>
+            end
+    end,<<"">>,WorkerList).
