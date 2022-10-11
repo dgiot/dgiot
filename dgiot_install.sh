@@ -1079,7 +1079,7 @@ function build_nginx() {
     cd ${script_dir}/
     tar xvf nginx-1.20.1.tar.gz &> /dev/null
     cd ${script_dir}/nginx-1.20.1
-    ./configure --prefix=/data/dgiot/nginx --with-http_realip_module --with-http_ssl_module --with-http_gzip_static_module &> /dev/null
+    ./configure --prefix=/data/dgiot/nginx --with-http_realip_module --with-http_ssl_module --with-http_gzip_static_module --with-stream &> /dev/null
     make &> /dev/null
     make install &> /dev/null
 

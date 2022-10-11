@@ -1,0 +1,194 @@
+
+
+{
+  "type": "form",
+  "api": {
+    "url": "/iotapi/amis/Device/parse_objectid",
+    "method": "put",
+    "headers": {
+      "store": "localStorage",
+      "dgiotReplace": "parse_objectid"
+    },
+    "requestAdaptor": "api.data.shift = api.data.spunlace_rollnum.slice(9, api.data.spunlace_rollnum.length)\r\nlet profile = api.data\r\ndelete api.data\r\napi.data = {\r\n  profile:profile\r\n}\r\nreturn {\r\n  ...api\r\n}"
+  },
+  "body": [
+    {
+      "mode": "inline",
+      "name": "spunlace_id",
+      "size": "md",
+      "type": "input-text",
+      "label": "内容",
+      "readOnly": true
+    },
+    {
+      "mode": "inline",
+      "name": "spunlace_orderid",
+      "size": "md",
+      "type": "input-text",
+      "label": "订单号"
+    },
+    {
+      "mode": "inline",
+      "name": "spunlace_date",
+      "size": "md",
+      "type": "input-text",
+      "label": "日期"
+    },
+    {
+      "mode": "inline",
+      "name": "spunlace_spec",
+      "size": "md",
+      "type": "input-text",
+      "label": "规格"
+    },
+    {
+      "mode": "inline",
+      "name": "spunlace_fundgram",
+      "size": "md",
+      "type": "input-text",
+      "label": "克重"
+    },
+    {
+      "mode": "inline",
+      "name": "spunlace_rollnum",
+      "size": "md",
+      "type": "input-text",
+      "label": "母卷号"
+    },
+    {
+      "mode": "inline",
+      "name": "quality_people",
+      "size": "md",
+      "type": "input-text",
+      "label": "质检人"
+    },
+    {
+      "mode": "inline",
+      "name": "spunlace_fundsuttle",
+      "size": "md",
+      "type": "input-text",
+      "label": "净重"
+    },
+    {
+      "mode": "inline",
+      "name": "quality_destination",
+      "size": "md",
+      "type": "input-text",
+      "label": "去向"
+    },
+    {
+      "mode": "inline",
+      "name": "quality_quality",
+      "size": "md",
+      "type": "select",
+      "label": "合格/不合格",
+      "options": [
+        {
+          "label": "不合格",
+          "value": "0"
+        },
+        {
+          "label": "合格",
+          "value": "1"
+        }
+      ]
+    },
+    {
+      "mode": "inline",
+      "name": "quality_detail",
+      "size": "md",
+      "type": "select",
+      "label": "原因",
+      "options": [
+        {
+          "label": "复卷",
+          "value": 1
+        },
+        {
+          "label": "二等品",
+          "value": 2
+        },
+        {
+          "label": "烘干",
+          "value": 3
+        },
+        {
+          "label": "上亲水/上胶",
+          "value": 4
+        },
+        {
+          "label": "固色",
+          "value": 5
+        },
+        {
+          "label": "待判定",
+          "value": 6
+        },
+        {
+          "label": "印染-复卷",
+          "value": 7
+        },
+        {
+          "label": "分切重工",
+          "value": 8
+        }
+      ]
+    },
+    {
+      "mode": "inline",
+      "name": "quality_otherdetail",
+      "size": "md",
+      "type": "input-text",
+      "label": "额外原因"
+    },
+    {
+      "mode": "inline",
+      "name": "long",
+      "size": "md",
+      "type": "input-text",
+      "label": "长"
+    },
+    {
+      "mode": "inline",
+      "name": "wide",
+      "size": "md",
+      "type": "input-text",
+      "label": "宽"
+    },
+    {
+      "mode": "inline",
+      "name": "spunlace_semisuttle",
+      "size": "md",
+      "type": "input-text",
+      "label": "毛重"
+    },
+    {
+      "mode": "inline",
+      "name": "joint",
+      "size": "md",
+      "type": "input-text",
+      "label": "接头数"
+    },
+    {
+      "id": "u:7a010414ddf4",
+      "mode": "inline",
+      "name": "cmd",
+      "size": "md",
+      "type": "input-text",
+      "label": "cmd",
+      "value": "printer",
+      "readOnly": true
+    },
+    {
+      "id": "u:210a5303b7eb",
+      "mode": "inline",
+      "name": "printertemplate",
+      "size": "md",
+      "type": "input-text",
+      "label": "文本",
+      "value": ""
+    }
+  ],
+  "checkAll": false,
+  "className": "flex-form-label-5x"
+}
