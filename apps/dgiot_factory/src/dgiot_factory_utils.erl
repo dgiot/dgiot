@@ -21,7 +21,7 @@
 -export([get_num/2, get_name/2, turn_name/3, turn_num/3]).
 -export([get_usertree/2, getalluser/1, get_ThingMap/2]).
 -export([get_zero_list/1, get_zero_binary/1]).
--export([fix_model/1, get_worker/1, get_children/1]).
+-export([fix_model/1, get_worker/1, get_children/1, check_workteam/1]).
 
 fix_model(ID) ->
     {ok, #{<<"thing">> := Model}} = dgiot_parse:get_object(<<"Product">>, ID),
@@ -160,7 +160,10 @@ get_usertree(#{<<"id">> := undefined}, SessionToken) ->
             []
     end;
 get_usertree(#{<<"id">> := Id}, _) ->
-    get_worker(Id).
+    Tree = get_worker(Id),
+    {NewTree, List} = format_tree(Tree),
+    record_workteam(List),
+    NewTree.
 
 
 
@@ -190,7 +193,6 @@ get_worker(Id) ->
         {ok, #{<<"results">> := RoleList}} ->
             get_children(dgiot_parse_utils:create_tree(RoleList, <<"parent">>));
         _ ->
-            io:format("~s ~p Id = ~p  ~n", [?FILE, ?LINE, Id]),
             error
 %%            end
     end.
@@ -228,7 +230,7 @@ getalluser(#{<<"objectId">> := RoleId, <<"name">> := Depname} = Role) ->
                 #{<<"nick">> := <<"user_for_", _/binary>>} ->
                     Acc;
                 #{<<"objectId">> := Id, <<"nick">> := Nick, <<"username">> := UserName} ->
-                    update_worker_ets(Id, UserName, Nick,Depname),
+                    update_worker_ets(Id, UserName, Nick, Depname),
 %%                    Acc ++ [#{<<"label">> => Nick, <<"value">> => <<UserName/binary, "_", Nick/binary>>}];
                     Acc ++ [#{<<"label">> => <<UserName/binary, "_", Nick/binary>>, <<"value">> => UserName}];
                 _ ->
@@ -283,10 +285,83 @@ get_ThingMap(_DeviceType, ProductId) ->
     end.
 
 %%dgiot_data:insert(?WORKERTREE, Id, {UserName, Nick,1}),
-update_worker_ets(Id, UserName, Nick,Depname) ->
+update_worker_ets(Id, UserName, Nick, Depname) ->
     case dgiot_data:lookup(?WORKERTREE, Id) of
         {ok, {_, _, State}} ->
-            dgiot_data:insert(?WORKERTREE, UserName, {Id, Depname,Nick, State});
+            dgiot_data:insert(?WORKERTREE, UserName, {Id, Depname, Nick, State});
         {error, not_find} ->
-            dgiot_data:insert(?WORKERTREE, UserName, {Id,Depname, Nick, 1})
+            dgiot_data:insert(?WORKERTREE, UserName, {Id, Depname, Nick, 1})
     end.
+record_workteam(List) ->
+    Res = lists:foldl(
+        fun(X, Acc) ->
+            case is_map(X) of
+                true ->
+                    maps:merge(Acc, X);
+                _ ->
+                    Acc
+            end
+        end, #{}, List),
+    dgiot_data:insert(?WORKERTREE, workteam, Res).
+
+check_workteam(Worker) ->
+    WorkerList = re:split(Worker, <<" ">>),
+    TeamMap = case dgiot_data:get(?WORKERTREE, workteam) of
+                  not_find ->
+                      [];
+                  L ->
+                      L
+              end,
+    TeamList = maps:keys(TeamMap),
+    lists:foldl(
+        fun(Shift, Acc) ->
+            case lists:member(Shift, TeamList) of
+                true ->
+                    Workers = maps:get(Shift, TeamMap, <<"">>),
+                    BinWorkers = turn_workes2binary(Workers),
+                    <<Acc/binary, BinWorkers/binary>>;
+                _ ->
+                    <<Acc/binary, " ", Shift/binary>>
+            end
+        end, <<"">>, WorkerList).
+
+turn_workes2binary(Workers) ->
+    FlatternList = lists:flatten(Workers),
+    lists:foldl(
+        fun(X, Acc) ->
+            Bin = dgiot_utils:to_binary(X),
+            <<Acc/binary, " ", Bin/binary>>
+        end, <<"">>, FlatternList).
+
+format_tree(Tree) ->
+    lists:foldl(
+        fun(Team, {NewTree, List}) ->
+            case Team of
+                #{<<"name">> := Value, <<"children">> := Child} ->
+                    {AllChild, ChildList} = get_all_worker(Child),
+                    {NewTree ++ [maps:merge(Team, #{<<"children">> => AllChild})], List ++ [#{Value => ChildList}]};
+                #{<<"name">> := Lable, <<"value">> := Value} ->
+                    {NewTree ++ [#{<<"label">> => Lable, <<"value">> => Value}], List ++ [Value]};
+                _ ->
+
+                    {NewTree, List}
+            end
+        end, {[], []}, Tree).
+
+get_all_worker(Child) when is_list(Child) ->
+    lists:foldl(
+        fun(X, {NewTree, List}) ->
+            case X of
+                #{<<"children">> := SubChild} ->
+                    {SubTree, SubList} = get_all_worker(SubChild),
+                    {NewTree ++ SubTree, List ++ [SubList]};
+                #{<<"label">> := Lable, <<"value">> := Value} ->
+                    {NewTree ++ [#{<<"label">> => Lable, <<"value">> => Value}], List ++ [Value]};
+                _ ->
+                    {NewTree, List}
+            end
+        end, {[], []}, Child);
+
+get_all_worker(Child) ->
+    io:format("~s ~p here ~n", [?FILE, ?LINE]),
+    {Child, []}.
