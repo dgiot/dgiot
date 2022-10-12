@@ -19,7 +19,7 @@
 -include_lib("dgiot/include/logger.hrl").
 -include("dgiot_factory.hrl").
 -export([get_one_shift/1, save_one_shift/1, updata_id/0, get_shift/3, post_shift/1, get_all_shift/4, get_workshop/2, format_worker/1]).
--export([post_one_shift/1, get_shift_time/1]).
+-export([post_one_shift/1, get_shift_time/1, get_day_stamp/1, clear_cache/0]).
 -export([bits_to_workerlist/1, workerlist_to_bits/1]).
 -define(DAY, 86400).
 -define(WORKERCALENDAR, <<"WorkerCanlendar">>).
@@ -179,6 +179,7 @@ post_shift(_) ->
 
 
 post_one_shift(#{<<"worker">> := Workers} = Data) ->
+    update_cache(Data),
 %%    Bits = workerlist_to_bits(_Workers),
 %%    Args = maps:merge(Shift, #{<<"worker">> => Bits}),
     TeamWorker = dgiot_factory_utils:check_workteam(Workers),
@@ -198,18 +199,25 @@ post_one_shift(#{<<"worker">> := Workers} = Data) ->
 
 
 
-get_one_shift(Args) ->
-    case dgiot_parse_id:get_objectid(<<"shift">>, Args) of
-        #{<<"objectId">> := ObjectId} ->
-            case dgiot_parse:get_object(?WORKERCALENDAR, ObjectId) of
-                {ok, Res} ->
-                    {ok, Res};
-                {error, Res} ->
-                    {error, Res}
+get_one_shift(#{<<"date">> := Date, <<"device">> := Workshop, <<"shift">> := Shift} = Args) ->
+    NewDate = get_day_stamp(Date),
+    case dgiot_data:get(?WORKERSHIFT, {NewDate, Shift, Workshop}) of
+        not_find ->
+            case dgiot_parse_id:get_objectid(<<"shift">>, Args) of
+                #{<<"objectId">> := ObjectId} ->
+                    case dgiot_parse:get_object(?WORKERCALENDAR, ObjectId) of
+                        {ok, Res} ->
+                            {ok, Res};
+                        {error, Res} ->
+                            {error, Res}
+                    end;
+                _ ->
+                    pass
             end;
-        _ ->
-            pass
-    end.
+        Workers ->
+            {ok, #{<<"device">> => Workshop, <<"date">> => Date, <<"shift">> => Shift, <<"worker">> => Workers}}
+    end
+.
 
 
 save_one_shift(Shift) ->
@@ -330,7 +338,36 @@ format_worker(Worker) ->
                     <<Acc/binary, " ", X/binary>>;
                 {_, _, Name, _} ->
 %%                    io:format("~s ~p Name = ~p.~n", [?FILE, ?LINE, Name]),
-
                     <<Acc/binary, " ", Name/binary>>
             end
         end, <<"">>, WorkerList).
+
+
+update_cache(#{<<"device">> := Dev, <<"date">> := Date, <<"shift">> := Shift, <<"worker">> := Worker}) ->
+    NewDate = get_day_stamp(Date),
+    dgiot_data:insert(?WORKERSHIFT, {NewDate, Shift, Dev}, Worker),
+    clear_cache().
+
+clear_cache() ->
+    Now = dgiot_datetime:nowstamp(),
+    Fun = fun({Key, _}) ->
+        case Key of
+            {Date, Shift, Dev} ->
+                case (Date > Now - ?ONEDAY) and (Date < Now + ?ONEDAY) of
+                    false ->
+                        dgiot_data:delete(?WORKERSHIFT, {Date, Shift, Dev});
+                    _ ->
+                        pass
+                end;
+            _ ->
+                pass
+        end;
+        (_) ->
+            pass
+          end,
+    dgiot_data:loop(?WORKERSHIFT, Fun).
+get_day_stamp(Date) when is_integer(Date) ->
+    Date;
+get_day_stamp(<<Y:4/bytes, "-", M:2/bytes, "-", D:2/bytes>>) ->
+    Data = {{dgiot_utils:to_int(Y), dgiot_utils:to_int(M), dgiot_utils:to_int(D)}, {0, 0, 0}},
+    dgiot_datetime:localtime_to_unixtime(Data).

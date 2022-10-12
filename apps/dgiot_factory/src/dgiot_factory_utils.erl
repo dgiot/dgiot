@@ -292,28 +292,40 @@ update_worker_ets(Id, UserName, Nick, Depname) ->
         {error, not_find} ->
             dgiot_data:insert(?WORKERTREE, UserName, {Id, Depname, Nick, 1})
     end.
+
 record_workteam(List) ->
-    Res = lists:foldl(
+    WorkTeamMember = lists:foldl(
         fun(X, Acc) ->
-            case is_map(X) of
-                true ->
-                    maps:merge(Acc, X);
-                _ ->
-                    Acc
-            end
+            Team = lists:nth(1, maps:keys(X)),
+            OldList = maps:get(Team,Acc,[]),
+            WorkerList = lists:flatten(maps:get(Team, X, [])),
+            lists:foldl(
+                fun(Worker, Acc1) ->
+                    case dgiot_data:get(?WORKERTREE, Worker) of
+                        not_find ->
+                            Acc1 ++[Worker];
+                        {Id, _, Name, State} ->
+                            dgiot_data:insert(?WORKERTREE, Worker, {Id, Team, Name, State}),
+                            Acc1 ++[Worker];
+                        _ ->
+                            Acc1 ++[Worker]
+
+                    end
+                end, [], WorkerList),
+            maps:merge(Acc,#{Team => OldList ++ WorkerList})
         end, #{}, List),
-    dgiot_data:insert(?WORKERTREE, workteam, Res).
+    dgiot_data:insert(?WORKERTREE, workteam,WorkTeamMember).
 
 check_workteam(Worker) ->
-    WorkerList = re:split(Worker, <<" ">>),
+    WorkerList = lists:delete(<<>>, re:split(Worker, <<" ">>)),
     TeamMap = case dgiot_data:get(?WORKERTREE, workteam) of
                   not_find ->
-                      [];
+                      #{};
                   L ->
                       L
               end,
     TeamList = maps:keys(TeamMap),
-    lists:foldl(
+    Res = lists:foldl(
         fun(Shift, Acc) ->
             case lists:member(Shift, TeamList) of
                 true ->
@@ -323,7 +335,14 @@ check_workteam(Worker) ->
                 _ ->
                     <<Acc/binary, " ", Shift/binary>>
             end
-        end, <<"">>, WorkerList).
+        end, <<"">>, WorkerList),
+    case Res of
+        <<" ", R/binary>> ->
+            R;
+        _ ->
+            <<"">>
+
+    end.
 
 turn_workes2binary(Workers) ->
     FlatternList = lists:flatten(Workers),
