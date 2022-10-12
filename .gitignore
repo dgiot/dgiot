@@ -9,6 +9,7 @@ www/
 *.plt
 *.iml
 *.iws
+/__pycache__
 erl_crash.dump
 ebin
 !ebin/.placeholder
