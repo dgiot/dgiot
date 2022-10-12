@@ -27,7 +27,6 @@ get_material_record(DeviceId, Depart) ->
 
             {ok, get_usable_material(DepartMaterial)};
         _ ->
-            io:format("~s ~p DeviceId = ~p  ~n", [?FILE, ?LINE, DeviceId]),
             case dgiot_hook:run_hook({factory, get_material}, [DeviceId]) of
                 {ok, [{ok, Material}]} ->
                     {ok, get_usable_material(Material)};
@@ -69,7 +68,7 @@ get_usable_material(Material) ->
 post_material(DeviceId, Data) when is_map(Data) ->
     case get_material_record(DeviceId, undefined) of
         {ok, Material} ->
-            io:format("~s ~p Data = ~p ~n", [?FILE, ?LINE, Data]),
+%%            io:format("~s ~p Data = ~p ~n", [?FILE, ?LINE, Data]),
             case hanlde_pickandretrive(DeviceId, Data, Material) of
                 {ok, NewMaterial} ->
 %%                    io:format("~s ~p NewMaterial = ~ts ~n", [?FILE, ?LINE, unicode:characters_to_list(jiffy:encode(NewMaterial))]),
@@ -84,18 +83,19 @@ post_material(_, _) ->
     error.
 %%get_Material(Deviceid, FReplaceGroup, FPrdOrgId,FStockId, FAppQty, FActualQty)
 %%FReplaceGroup 行号 FPrdOrgId 组织id FStockId 仓库id  FAppQty 申请数量 FActualQty 实际数量
-hanlde_pickandretrive(DeviceId,  #{ <<"FPrdOrgId">> :=FPrdOrgId,<<"FStockId">> := FStockId, <<"FReplaceGroup">> := FReplaceGroup,
-    <<"Subitem_BOM_number">> := Name, <<"material_date">> := Date,
+hanlde_pickandretrive(DeviceId, #{<<"FPrdOrgId">> := FPrdOrgId, <<"FStockId">> := FStockId, <<"FReplaceGroup">> := FReplaceGroup,
+    <<"Subitem_BOM_number">> := Name,
     <<"material_people">> := People, <<"material_type">> := Type,
     <<"material_number">> := Num, <<"material_batchid">> := BatchId, <<"material_weight">> := Weight,
     <<"objectId">> := Id}, Material) ->
+    Date = dgiot_datetime:format("YYYY-MM-DD"),
     case maps:find(Name, Material) of
         {ok, Res} ->
             case Res of
                 #{<<"material_pick">> := Pick, <<"material_retrive">> := Retrive, <<"material_picked">> := Picked} ->
                     case Type of
                         <<"picking">> ->
-                            case dgiot_hook:run_hook({kingdee, post_material, <<"picking">>},[DeviceId, FReplaceGroup, FPrdOrgId, FStockId, Weight, Weight]) of
+                            case dgiot_hook:run_hook({kingdee, post_material, <<"picking">>}, [DeviceId, FReplaceGroup, FPrdOrgId, FStockId, Weight, Weight]) of
                                 {ok, [{ok, _}]} ->
                                     io:format("~s ~p Type = ~p ~n", [?FILE, ?LINE, Type]),
                                     After = dgiot_utils:to_float(Picked) + dgiot_utils:to_float(Weight),
@@ -103,13 +103,13 @@ hanlde_pickandretrive(DeviceId,  #{ <<"FPrdOrgId">> :=FPrdOrgId,<<"FStockId">> :
                                     NewRes = maps:merge(Res, #{<<"material_picked">> => After, <<"material_pick">> => Pick ++ [#{<<"material_date">> => Date, <<"material_people">> => People, <<"material_number">> => Num,
                                         <<"material_batchid">> => BatchId, <<"material_weight">> => Weight}]}),
                                     {ok, maps:merge(Material, #{Name => NewRes})};
-                                Type ->
+                                _ ->
                                     io:format("~s ~p Type = ~p ~n", [?FILE, ?LINE, Type]),
                                     error
 
                             end;
                         <<"retriving">> ->
-                            case dgiot_hook:run_hook({kingdee, post_material, <<"retriving">>},[DeviceId, FReplaceGroup, FPrdOrgId, FStockId, Weight, Weight]) of
+                            case dgiot_hook:run_hook({kingdee, post_material, <<"retriving">>}, [DeviceId, FReplaceGroup, FPrdOrgId, FStockId, Weight, Weight]) of
                                 {ok, [{ok, _}]} ->
                                     After = dgiot_utils:to_float(Picked) - dgiot_utils:to_float(Weight),
                                     handle_warehouse(Id, Type, Num),
@@ -129,7 +129,7 @@ hanlde_pickandretrive(DeviceId,  #{ <<"FPrdOrgId">> :=FPrdOrgId,<<"FStockId">> :
         _ ->
             error
     end;
-hanlde_pickandretrive(_,_, _) ->
+hanlde_pickandretrive(_, _, _) ->
 %%    io:format("~s ~p R = ~p  ~n", [?FILE, ?LINE,R]),
     error.
 
