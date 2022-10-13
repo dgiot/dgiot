@@ -238,13 +238,12 @@ format_multilayer(Object) ->
                 end
         end,
         #{}, MapWhere).
-
-
 format_value(#{<<"gt">> := V}) ->
     #{<<"$gt">> => V};
-
 format_value(#{<<"lt">> := V}) ->
     #{<<"$lt">> => V};
+format_value(#{<<"regex">> := V}) ->
+    #{<<"$regex">> => V};
 format_value(V) ->
     V.
 %%dgiot_parse:query_object(<<"Device">>,#{<<"where">> => #{<<"content.quality.status">> => #{<<"$gt">> => 3}}, <<"product">> => <<"b0ec1970c7">>

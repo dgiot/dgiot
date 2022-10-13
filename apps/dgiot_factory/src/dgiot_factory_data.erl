@@ -581,13 +581,14 @@ filter_data(Data) when is_map(Data) ->
 %%get_td_sheet(ProductId, Type, Start, End, Channel, DeviceId, Where, Limit, Skip, New)
 
 get_history_data(ProductId, DeviceId, Type, Function, FunctionMap, Group,Having, Where, Order, Channel, Limit, Skip) ->
-    io:format("~s ~p ProductId = ~p  ~n", [?FILE, ?LINE, ProductId]),
     DB = dgiot_tdengine_select:format_db(?Database(ProductId)),
     TableName = case DeviceId of
                     undefined ->
-                        ?Table(ProductId);
+                        Lower = list_to_binary(string:to_lower(dgiot_utils:to_list(ProductId))),
+                        ?Table(Lower);
                     _ ->
-                        ?Table(DeviceId)
+                        Low = list_to_binary(string:to_lower(dgiot_utils:to_list(DeviceId))),
+                        ?Table(Low)
                 end,
     Select = select(ProductId, Type, Function, FunctionMap),
     From = <<DB/binary, TableName/binary>>,
@@ -600,6 +601,7 @@ get_history_data(ProductId, DeviceId, Type, Function, FunctionMap, Group,Having,
         fun(Context) ->
             Sql = <<"SELECT  ", Select/binary, " FROM ", From/binary, WHERE/binary,GROPU/binary,Have/binary,  ORDER/binary, ";">>,
             io:format("~s ~p Sql = ~p  ~n", [?FILE, ?LINE, Sql]),
+
             dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_query, Sql)
         end)
     of

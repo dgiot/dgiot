@@ -141,7 +141,7 @@ handle_data(_TaskProductId, TaskDeviceId, BatchProductId, BatchDeviceId, BatchAd
     dgiot_task:save_td(BatchProductId, BatchAddr, maps:merge(OldNumData, NumData), #{}),
     Content.
 get_card_data(BatchProductId, BatchDeviceId) ->
-    DevcieTypeList = dgiot_product:get_devicetype(BatchProductId),
+    DevcieTypeList = dgiot_product:get_devicetype(BatchProductId) -- [<<"quality">>],
     lists:foldl(
         fun(DeviceType, {Num, Name}) ->
             case dgiot_data:get(?FACTORY_ORDER, {BatchProductId, BatchDeviceId, DeviceType}) of
@@ -202,10 +202,14 @@ get_sub_product(ProductId) ->
     end.
 
 process_roll_dev(TaskProductId, TaskDeviceId, OrderName, SessionToken, FlatMap) ->
-    {BatchProductId, BatchDeviceId, BatchAddr} = get_roll_dev_id(TaskProductId, FlatMap),
+    {BatchProductId, BatchDeviceId, BatchAddr} = case get_roll_dev_id(TaskProductId, FlatMap) of
+                                                     {A, B, C} ->
+                                                         {A, B, C};
+                                                     _ -> {<<"1">>, <<"1">>, <<"1">>}
+                                                 end,
     case dgiot_device_cache:lookup(BatchDeviceId) of
         {ok, #{<<"acl">> := Acl}} ->
-            io:format("~s ~p RollDeviceId = ~p ~n", [?FILE, ?LINE, BatchDeviceId]),
+            io:format("~s ~p BatchDeviceId = ~p ~n", [?FILE, ?LINE, BatchDeviceId]),
             NewAcl = get_new_acl(SessionToken, Acl),
 %%            dgiot_device_cache:put(#{<<"objectId">> => TaskDeviceId, <<"ACL">> => NewAcl}),
             dgiot_parse:update_object(<<"Device">>, BatchDeviceId, #{<<"ACL">> => NewAcl}),
@@ -245,7 +249,6 @@ get_roll_dev_id(ProductId, FlatMap) ->
                     error
             end;
         _ ->
-
             BatchAddr = dgiot_utils:to_binary(dgiot_datetime:nowstamp()),
             BatchDeviceId = list_to_binary(string:to_upper(binary_to_list(dgiot_parse_id:get_deviceid(BatchProductId, BatchAddr)))),
             {BatchProductId, BatchDeviceId, BatchAddr}
