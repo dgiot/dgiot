@@ -31,6 +31,7 @@
 %% Channel callback
 -export([init/3, handle_init/1, handle_event/3, handle_message/2, stop/3]).
 -export([get_id/2, after_handle/4, handle_data/7, get_card_data/2]).
+-export([get_sub_product/1]).
 
 %% 注册通道类型
 -channel_type(#{

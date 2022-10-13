@@ -229,15 +229,13 @@ format_multilayer(Object) ->
                         NewV = format_value(V),
                         Acc#{K => NewV}
                 end;
-            (K, V, Acc) when is_binary(V) ->
-                case size(V) of
+            (K, V, Acc)  ->
+                case size(dgiot_utils:to_binary(V)) of
                     0 ->
                         Acc;
                     _ ->
                         Acc#{K => V}
-                end;
-            (_, _, Acc) ->
-                Acc
+                end
         end,
         #{}, MapWhere).
 
