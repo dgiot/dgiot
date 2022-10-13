@@ -133,7 +133,7 @@ do_request(get_data, #{<<"productId">> := undefined, <<"objectId">> := DeviceId}
             {error, <<"get_data_failed">>}
     end;
 do_request(get_data, #{<<"productId">> := ProductId, <<"objectId">> := DeviceId, <<"type">> := Type,
-    <<"function">> := Function, <<"functionmap">> := FunctionMap, <<"group">> := Group,<<"having">> := Having,
+    <<"function">> := Function, <<"functionmap">> := FunctionMap, <<"group">> := Group, <<"having">> := Having,
     <<"order">> := Order, <<"where">> := Where, <<"limit">> := Limit, <<"skip">> := Skip} = _Args,
     #{<<"sessionToken">> := SessionToken} = _Context, _Body) ->
     io:format("~s ~p _Args = ~p  ~n", [?FILE, ?LINE, _Args]),
@@ -142,7 +142,7 @@ do_request(get_data, #{<<"productId">> := ProductId, <<"objectId">> := DeviceId,
             io:format("~s ~p ProductId = ~p  ~n", [?FILE, ?LINE, ProductId]),
             {error, Error};
         {ok, Channel} ->
-            case dgiot_factory_data:get_history_data(ProductId, DeviceId, Type, Function, FunctionMap, Group,Having, Where, Order, Channel, Limit, Skip) of
+            case dgiot_factory_data:get_history_data(ProductId, DeviceId, Type, Function, FunctionMap, Group, Having, Where, Order, Channel, Limit, Skip) of
                 {ok, {Total, Res}} ->
                     {ok, #{<<"status">> => 0, msg => <<"数据请求成功"/utf8>>, <<"data">> => #{<<"total">> => Total, <<"items">> => Res}}};
                 _ ->

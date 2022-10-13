@@ -9,6 +9,7 @@ www/
 *.plt
 *.iml
 *.iws
+/__pycache__
 erl_crash.dump
 ebin
 !ebin/.placeholder
@@ -70,6 +71,7 @@ apps/dgiot_sinmahe/
 apps/dgiot_yinhu/
 apps/dgiot_dahua/
 apps/dgiot_kingdee/
+apps/dgiot_jienuo/
 apps/dgiot_zjimee/
 apps/dgiot_emicp/
 apps/dgiot_http/etc/dgiot_http.conf

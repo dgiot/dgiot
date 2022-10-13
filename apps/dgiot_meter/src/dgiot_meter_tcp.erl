@@ -295,6 +295,7 @@ handle_info({deliver, _Topic, Msg}, #tcp{state = #state{id = ChannelId, protocol
                             dgiot_bridge:send_log(ChannelId, " ~s ~p DLT376(下发) send to DevAddr ~p => ~p", [?FILE, ?LINE, DevAddr, dgiot_utils:binary_to_hex(Payload2)]),
                             dgiot_tcp_server:send(TCPState, Payload2);
                         ?DLT645 ->
+%%                            dgiot_umeng:send_message_to3D(ProductId, DevAddr, ProfilePayload),
                             Payload1 = dlt645_decoder:frame_write_param(#{<<"meter">> => DevAddr, <<"payload">> => ProfilePayload}),
                             ?LOG(info, "DLT645 Payload1 :~p ~n~n", [dgiot_utils:binary_to_hex(Payload1)]),
                             dgiot_tcp_server:send(TCPState, Payload1)

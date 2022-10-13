@@ -18,9 +18,9 @@
 -author("jonhl").
 -include_lib("dgiot/include/logger.hrl").
 -include("dgiot_factory.hrl").
--export([get_one_shift/1, save_one_shift/1, updata_id/0, get_shift/3, post_shift/1, get_all_shift/4, get_workshop/2,format_worker/1]).
--export([post_one_shift/1, get_shift_time/1]).
--export([ bits_to_workerlist/1, workerlist_to_bits/1]).
+-export([get_one_shift/1, save_one_shift/1, updata_id/0, get_shift/3, post_shift/1, get_all_shift/4, get_workshop/2, format_worker/1]).
+-export([post_one_shift/1, get_shift_time/1, get_day_stamp/1, clear_cache/0]).
+-export([bits_to_workerlist/1, workerlist_to_bits/1]).
 -define(DAY, 86400).
 -define(WORKERCALENDAR, <<"WorkerCanlendar">>).
 -define(INTERVAL, 604800).
@@ -169,7 +169,7 @@ post_shift(Shifts) when is_list(Shifts) ->
             end
         end, [], Shifts);
 
-    post_shift(Shifts) when is_map(Shifts) ->
+post_shift(Shifts) when is_map(Shifts) ->
     post_one_shift(Shifts);
 
 
@@ -179,9 +179,11 @@ post_shift(_) ->
 
 
 post_one_shift(#{<<"worker">> := Workers} = Data) ->
+    update_cache(Data),
 %%    Bits = workerlist_to_bits(_Workers),
 %%    Args = maps:merge(Shift, #{<<"worker">> => Bits}),
-    Args = maps:merge(Data,#{<<"worker">> => dgiot_utils:to_binary(Workers)}),
+    TeamWorker = dgiot_factory_utils:check_workteam(Workers),
+    Args = maps:merge(Data, #{<<"worker">> => dgiot_utils:to_binary(TeamWorker)}),
     case dgiot_parse_id:get_objectid(<<"shift">>, Args) of
         #{<<"objectId">> := ObjectId} ->
             case dgiot_parse:get_object(?WORKERCALENDAR, ObjectId) of
@@ -197,18 +199,25 @@ post_one_shift(#{<<"worker">> := Workers} = Data) ->
 
 
 
-get_one_shift(Args) ->
-    case dgiot_parse_id:get_objectid(<<"shift">>, Args) of
-        #{<<"objectId">> := ObjectId} ->
-            case dgiot_parse:get_object(?WORKERCALENDAR, ObjectId) of
-                {ok, Res} ->
-                    {ok, Res};
-                {error, Res} ->
-                    {error, Res}
+get_one_shift(#{<<"date">> := Date, <<"device">> := Workshop, <<"shift">> := Shift} = Args) ->
+    NewDate = get_day_stamp(Date),
+    case dgiot_data:get(?WORKERSHIFT, {NewDate, Shift, Workshop}) of
+        not_find ->
+            case dgiot_parse_id:get_objectid(<<"shift">>, Args) of
+                #{<<"objectId">> := ObjectId} ->
+                    case dgiot_parse:get_object(?WORKERCALENDAR, ObjectId) of
+                        {ok, Res} ->
+                            {ok, Res};
+                        {error, Res} ->
+                            {error, Res}
+                    end;
+                _ ->
+                    pass
             end;
-        _ ->
-            pass
-    end.
+        Workers ->
+            {ok, #{<<"device">> => Workshop, <<"date">> => Date, <<"shift">> => Shift, <<"worker">> => Workers}}
+    end
+.
 
 
 save_one_shift(Shift) ->
@@ -278,18 +287,18 @@ workerlist_to_bits(Workers) when is_binary(Workers) ->
             Acc ++ [dgiot_utils:to_int(Num)]
         end, [], List),
     SortedList = lists:sort(NumList),
-    {Bits,_} = lists:foldl(
+    {Bits, _} = lists:foldl(
         fun(X, {Acc, LastNum}) ->
             ZeroNum = X - LastNum - 1,
             ZeroList = dgiot_factory_utils:get_zero_list(ZeroNum),
             {Acc ++ ZeroList ++ [1], X}
         end, {[], 0}, SortedList),
     Res = case length(Bits) < ?MAXWORKERNUM of
-        true ->
-            Bits ++ dgiot_factory_utils:get_zero_list(?MAXWORKERNUM - length(Bits));
-        _ ->
-            Bits
-    end,
+              true ->
+                  Bits ++ dgiot_factory_utils:get_zero_list(?MAXWORKERNUM - length(Bits));
+              _ ->
+                  Bits
+          end,
     dgiot_utils:bits_to_binary(Res);
 workerlist_to_bits(Workers) ->
     Workers.
@@ -299,7 +308,7 @@ workerlist_to_bits(Workers) ->
 bits_to_workerlist(Bits) ->
     Binary = dgiot_utils:to_binary(Bits),
     List = dgiot_utils:binary_to_bits(Binary),
-    {Res, _ } = lists:foldl(
+    {Res, _} = lists:foldl(
         fun(X, {Acc, Num}) ->
             case X of
                 1 ->
@@ -309,7 +318,7 @@ bits_to_workerlist(Bits) ->
                     Bin = <<Zero/binary, B/binary>>,
                     case dgiot_data:lookup(?WORKERTREE, Bin) of
                         {ok, Value} ->
-                            {<<Acc/binary," ", Value/binary>>, Num + 1};
+                            {<<Acc/binary, " ", Value/binary>>, Num + 1};
                         _ ->
                             {<<Acc/binary, " ", Bin/binary>>, Num + 1}
                     end;
@@ -321,15 +330,44 @@ bits_to_workerlist(Bits) ->
 
 
 format_worker(Worker) ->
-    WorkerList = re:split(Worker,<<" ">>),
+    WorkerList = re:split(Worker, <<" ">>),
     lists:foldl(
-        fun(X, Acc)->
-            case dgiot_data:get(?WORKERTREE,X) of
+        fun(X, Acc) ->
+            case dgiot_data:get(?WORKERTREE, X) of
                 not_find ->
-                    <<Acc/binary," ",X/binary>>;
-                {_,_,Name,_} ->
-                    io:format("~s ~p Name = ~p.~n", [?FILE, ?LINE, Name]),
-
-                    <<Acc/binary," ",Name/binary>>
+                    <<Acc/binary, " ", X/binary>>;
+                {_, _, Name, _} ->
+%%                    io:format("~s ~p Name = ~p.~n", [?FILE, ?LINE, Name]),
+                    <<Acc/binary, " ", Name/binary>>
             end
-    end,<<"">>,WorkerList).
+        end, <<"">>, WorkerList).
+
+
+update_cache(#{<<"device">> := Dev, <<"date">> := Date, <<"shift">> := Shift, <<"worker">> := Worker}) ->
+    NewDate = get_day_stamp(Date),
+    dgiot_data:insert(?WORKERSHIFT, {NewDate, Shift, Dev}, Worker),
+    clear_cache().
+
+clear_cache() ->
+    Now = dgiot_datetime:nowstamp(),
+    Fun = fun({Key, _}) ->
+        case Key of
+            {Date, Shift, Dev} ->
+                case (Date > Now - ?ONEDAY) and (Date < Now + ?ONEDAY) of
+                    false ->
+                        dgiot_data:delete(?WORKERSHIFT, {Date, Shift, Dev});
+                    _ ->
+                        pass
+                end;
+            _ ->
+                pass
+        end;
+        (_) ->
+            pass
+          end,
+    dgiot_data:loop(?WORKERSHIFT, Fun).
+get_day_stamp(Date) when is_integer(Date) ->
+    Date;
+get_day_stamp(<<Y:4/bytes, "-", M:2/bytes, "-", D:2/bytes>>) ->
+    Data = {{dgiot_utils:to_int(Y), dgiot_utils:to_int(M), dgiot_utils:to_int(D)}, {0, 0, 0}},
+    dgiot_datetime:localtime_to_unixtime(Data).
