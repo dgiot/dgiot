@@ -241,8 +241,8 @@ handle_message({data, Product, DevAddr, Data, Context}, #state{id = ChannelId, e
                 {ok, _} ->
                     {ok, State};
                 {_, Reason} ->
-                    ?LOG(error, "Save to Tdengine error, ~p, ~p", [Data, Reason]),
-                    dgiot_bridge:send_log(ChannelId, "Save to Tdengine error, ~ts~n, ~p", [unicode:characters_to_list(jsx:encode(Data)), Reason]),
+                    ?LOG(error, "Save to parse_timescale error, ~p, ~p", [Data, Reason]),
+                    dgiot_bridge:send_log(ChannelId, "Save to parse_timescale error, ~ts~n, ~p", [unicode:characters_to_list(jsx:encode(Data)), Reason]),
                     ok
             end;
         _ ->
@@ -405,7 +405,7 @@ create_table(ChannelId, [ProductId | ProductIds], Config) ->
                             dgiot_data:insert({ProductId, ?TYPE}, ChannelId),
                             ?LOG(debug, "Create Table[~s] Succ, Schema:~p", [TableName, Schema]);
                         {ok, #{<<"code">> := 904, <<"desc">> := _Desc}} ->
-%%                            io:format("~p ~p Code: ~p Desc ~p ~n", [?FILE, ?LINE, Code, Desc])
+%%                            io:format("~p ~p Desc ~p ~n Schema = ~p.~n", [?FILE, ?LINE, _Desc, Schema#{<<"tableName">> => TableName}]),
                             ok;
                         {ok, #{<<"code">> := Code, <<"desc">> := Desc}} ->
                             ?LOG(debug, "Create Table[~s] failed, Code:~p Desc:~p", [TableName, Code, Desc])
