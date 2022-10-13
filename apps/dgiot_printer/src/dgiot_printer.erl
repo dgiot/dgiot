@@ -42,7 +42,8 @@ get_topo(#{<<"profile">> := Profile} = QueryData, ProductId) ->
                             Acc ++ [V#{<<"text">> => Text}]
                     end
                           end, [], StageMap),
-            QueryData#{<<"profile">> => #{<<"cmd">> => <<"printer">>, <<"data">> => NewProfile}};
+            Cmd = maps:get(<<"cmd">>, Profile, <<"printer_barcode">>),
+            QueryData#{<<"profile">> => #{<<"cmd">> => Cmd, <<"data">> => NewProfile}};
         _ ->
             QueryData
     end.

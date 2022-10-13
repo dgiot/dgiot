@@ -19,6 +19,7 @@
                 "id": "f9dddd0eeb_amisBMK8t",
                 "name": "amis",
                 "opacity": 0.75,
+                "fontSize": 12,
                 "draggable": true
               },
               "children": [],
@@ -26,7 +27,7 @@
             },
             {
               "attrs": {
-                "x": 3,
+                "x": 2,
                 "y": 1,
                 "id": "print_paper",
                 "fill": "",
@@ -39,6 +40,7 @@
                 "opacity": 0.75,
                 "fontSize": 15,
                 "draggable": true,
+                "fontFamily": "宋体",
                 "lineHeight": 0,
                 "strokeWidth": 4
               },
@@ -115,12 +117,12 @@
                 "fill": "rgba(0, 0, 0, 1)",
                 "name": "printer",
                 "text": "班次:",
-                "fontSize": 12,
                 "type": "label",
                 "width": 300,
                 "height": 20,
                 "stroke": "",
                 "opacity": 0.75,
+                "fontSize": 12,
                 "draggable": true,
                 "fontFamily": "Calibri",
                 "lineHeight": 0,
@@ -319,7 +321,7 @@
             },
             {
               "attrs": {
-                "x": 10,
+                "x": 9,
                 "y": 210,
                 "id": "596569e7b3_textaiToJ",
                 "fill": "rgba(0, 0, 0, 1)",
@@ -327,7 +329,7 @@
                 "text": "去向:",
                 "type": "label",
                 "width": 300,
-                "height": 20,
+                "height": 10,
                 "stroke": "",
                 "opacity": 0.75,
                 "fontSize": 12,
@@ -613,14 +615,16 @@
             },
             {
               "attrs": {
-                "x": 20,
-                "y": 235,
-                "id": "spunlace_id",
+                "x": 61,
+                "y": 270.00534412955466,
+                "id": "spunlace_id_barcode",
                 "fill": "rgba(0, 0, 0, 1)",
                 "name": "printer",
-                "text": "条码",
-                "type": "scancode",
+                "text": "1234567800jh",
+                "type": "scancodetext",
+                "align": 4,
                 "width": 150,
+                "format": 29,
                 "height": 50,
                 "stroke": "",
                 "opacity": 0.75,
@@ -652,6 +656,28 @@
                 "strokeWidth": 0.1
               },
               "className": "Text"
+            },
+            {
+              "attrs": {
+                "x": 25,
+                "y": 229,
+                "id": "spunlace_id",
+                "fill": "rgba(170, 234, 213, 1)",
+                "name": "printer",
+                "text": "1334456456h",
+                "type": "scancode",
+                "align": 4,
+                "width": 150,
+                "format": 27,
+                "height": 50,
+                "stroke": "black",
+                "opacity": 0.75,
+                "fontSize": 12,
+                "draggable": true,
+                "fontFamily": "宋体",
+                "strokeWidth": 4
+              },
+              "className": "Rect"
             }
           ],
           "className": "Layer"
