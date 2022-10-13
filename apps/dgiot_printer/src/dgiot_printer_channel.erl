@@ -72,8 +72,26 @@ handle_init(State) ->
 
 %% 通道消息处理,注意：进程池调用
 handle_event(_EventId, Event, State) ->
-    ?LOG(info,"channel ~p", [Event]),
+    ?LOG(info, "channel ~p", [Event]),
     {ok, State}.
+
+handle_message({dlink_login, do_after, ProductId, Devaddr, DeviceId, _Ip}, State) ->
+    timer:sleep(1 * 1000),
+    RequestTopic = <<"$dg/device/", ProductId/binary, "/", Devaddr/binary, "/properties">>,
+    Payload = #{<<"cmd">> => <<"scan_printer">>, <<"data">> => #{}},
+    dgiot_mqtt:publish(DeviceId, RequestTopic, jsx:encode(Payload)),
+    {ok, State};
+
+handle_message({dlink_firmware_report, ProductId, DevAddr, Payload}, State) ->
+    DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
+    case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+        {ok, Device} ->
+            Profile = maps:get(<<"profile">>, Device, #{}),
+            dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"profile">> => Profile#{<<"printers">> => Payload}});
+        _ ->
+            pass
+    end,
+    {ok, State};
 
 handle_message(_Message, State) ->
     {ok, State}.

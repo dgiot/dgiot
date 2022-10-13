@@ -75,38 +75,52 @@ check(#{username := _Username}, AuthResult, _) ->
 description() -> "Authentication with Mnesia".
 
 do_check(AuthResult, Password, ProductID, DeviceAddr, DeviceId, Ip) ->
-    case dgiot_product:lookup_prod(ProductID) of
-        {ok, #{<<"productSecret">> := Password} = Product} ->
-            case dgiot_device:lookup(DeviceId) of
-                {ok, _} ->
-                    Body = #{
-                        <<"status">> => <<"ONLINE">>},
-                    dgiot_device:online(DeviceId),
-                    dgiot_parse:update_object(<<"Device">>, DeviceId, Body);
-                _ ->
-                    case Product of
-                        #{<<"ACL">> := Acl, <<"name">> := Name, <<"devType">> := DevType, <<"dynamicReg">> := true} ->
-                            Device = #{
-                                <<"ip">> => Ip,
-                                <<"status">> => <<"ONLINE">>,
-                                <<"brand">> => Name,
-                                <<"devModel">> => DevType,
-                                <<"name">> => DeviceAddr,
-                                <<"devaddr">> => DeviceAddr,
-                                <<"product">> => ProductID,
-                                <<"ACL">> => Acl
-                            },
-                            dgiot_device:create_device(Device);
-                        _ ->
-                            pass
-                    end
-            end,
-            {stop, AuthResult#{anonymous => false, auth_result => success}};
+    Result =
+        case dgiot_product:lookup_prod(ProductID) of
+            {ok, #{<<"productSecret">> := Password} = Product} ->
+                case dgiot_device:lookup(DeviceId) of
+                    {ok, _} ->
+                        Body = #{
+                            <<"status">> => <<"ONLINE">>},
+                        dgiot_device:online(DeviceId),
+                        dgiot_parse:update_object(<<"Device">>, DeviceId, Body);
+                    _ ->
+                        case Product of
+                            #{<<"ACL">> := Acl, <<"name">> := Name, <<"devType">> := DevType, <<"dynamicReg">> := true} ->
+                                Device = #{
+                                    <<"ip">> => Ip,
+                                    <<"status">> => <<"ONLINE">>,
+                                    <<"brand">> => Name,
+                                    <<"devModel">> => DevType,
+                                    <<"name">> => DeviceAddr,
+                                    <<"devaddr">> => DeviceAddr,
+                                    <<"product">> => ProductID,
+                                    <<"ACL">> => Acl
+                                },
+                                dgiot_device:create_device(Device);
+                            _ ->
+                                pass
+                        end
+                end,
+                {stop, AuthResult#{anonymous => false, auth_result => success}};
+            _ ->
+                case dgiot_device:lookup(DeviceId) of
+                    {ok, #{<<"devicesecret">> := Password}} ->
+                        {stop, AuthResult#{anonymous => false, auth_result => success}};
+                    _ ->
+                        {stop, AuthResult#{anonymous => false, auth_result => password_error}}
+                end
+        end,
+
+    case Result of
+        {stop, #{auth_result := success}} ->
+            lists:map(fun
+                          ({ChannelId, _Ctype}) ->
+                              dgiot_channelx:do_message(ChannelId, {dlink_login, do_after, ProductID, DeviceAddr, DeviceId, Ip});
+                          (_) ->
+                              pass
+                      end, dgiot_bridge:get_proctol_channel(ProductID));
         _ ->
-            case dgiot_device:lookup(DeviceId) of
-                {ok, #{<<"devicesecret">> := Password}} ->
-                    {stop, AuthResult#{anonymous => false, auth_result => success}};
-                _ ->
-                    {stop, AuthResult#{anonymous => false, auth_result => password_error}}
-            end
-    end.
+            pass
+    end,
+    Result.

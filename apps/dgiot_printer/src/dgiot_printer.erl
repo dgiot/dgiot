@@ -25,7 +25,6 @@
     stop_hooks/1
 ]).
 
-
 handle_profile({QueryData, ProductId, _State}) ->
     get_topo(QueryData, ProductId).
 
@@ -37,6 +36,7 @@ get_topo(#{<<"profile">> := Profile} = QueryData, ProductId) ->
                 maps:fold(fun(K, V, Acc) ->
                     case maps:find(K, Profile) of
                         error ->
+
                             Acc ++ [V];
                         {ok, Text} ->
                             Acc ++ [V#{<<"text">> => Text}]
