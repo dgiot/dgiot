@@ -755,12 +755,12 @@ send_msg(_) ->
 replace_param(Param, ProductName, ProductId, DeviceId, Key, Value, Alarm_createdAt, TriggerdeScription) ->
     Date = dgiot_datetime:format("YYYY-MM-DD"),
     DateTime = dgiot_datetime:format("YYYY-MM-DD HH:NN:SS"),
-    {DeviceName, DeviceAddr, OldACL} =
+    {DeviceName, DeviceAddr, OldACL, UserToken} =
         case dgiot_parse:get_object(<<"Device">>, DeviceId) of
-            {ok, #{<<"name">> := Name, <<"devaddr">> := Devaddr, <<"ACL">> := Acl}} ->
-                {Name, Devaddr, Acl};
+            {ok, #{<<"name">> := Name, <<"devaddr">> := Devaddr, <<"ACL">> := Acl, <<"content">> := #{<<"person">> := #{<<"sessiontoken">> := SessionToken}}}} ->
+                {Name, Devaddr, Acl, SessionToken};
             _ ->
-                {<<"--">>, <<"--">>, <<"--">>}
+                {<<"--">>, <<"--">>, <<"--">>, <<"--">>}
         end,
     Device = #{
         <<"ACL">> => OldACL,
@@ -777,6 +777,13 @@ replace_param(Param, ProductName, ProductId, DeviceId, Key, Value, Alarm_created
                     <<"admin">>
             end
                     end, <<>>, NewACL),
+    Username =
+        case dgiot_auth:get_session(UserToken) of
+            #{<<"nick">> := Nick} ->
+                Nick;
+            _ ->
+                <<"admin">>
+        end,
     DataPointname =
         case dgiot_data:get({product, <<ProductId/binary, Key/binary>>}) of
             not_find ->
@@ -790,7 +797,7 @@ replace_param(Param, ProductName, ProductId, DeviceId, Key, Value, Alarm_created
     Str4 = re:replace(Str3, "%DEVICEADDR%", DeviceAddr, [global, {return, list}]),
     Str5 = re:replace(Str4, "%DATE%", Date, [global, {return, list}]),
     Str6 = re:replace(Str5, "%DATETIME%", DateTime, [global, {return, list}]),
-    Str7 = re:replace(Str6, "%USERNAME%", <<"admin">>, [global, {return, list}]),
+    Str7 = re:replace(Str6, "%USERNAME%", Username, [global, {return, list}]),
     Str8 = re:replace(Str7, "%TRIGGERTIME%", Alarm_createdAt, [global, {return, list}]),
     Str9 = re:replace(Str8, "%DATAPOINTNAME%", DataPointname, [global, {return, list}]),
     Str10 = re:replace(Str9, "%TRIGGERDESCRIPTION%", TriggerdeScription, [global, {return, list}]),
