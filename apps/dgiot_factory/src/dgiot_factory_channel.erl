@@ -31,7 +31,7 @@
 %% Channel callback
 -export([init/3, handle_init/1, handle_event/3, handle_message/2, stop/3]).
 -export([get_id/2, after_handle/4, handle_data/7, get_card_data/2]).
--export([get_sub_product/1]).
+-export([get_sub_product/1,get_new_acl/2]).
 
 %% 注册通道类型
 -channel_type(#{
@@ -93,9 +93,7 @@ handle_message({sync_parse, _Pid, 'before', put, Token, <<"Device">>, #{<<"conte
                 #{<<"person">> := #{<<"type">> := PersonType}} ->
                     case process_data(Content, PersonType, Token, TaskDeviceId) of
                         {BatchProductId, BatchDeviceId, BatchAddr, NewData} ->
-                            NewContent = handle_data(TaskProductId, TaskDeviceId, BatchProductId, BatchDeviceId, BatchAddr, PersonType, NewData),
-                            MergedContent = maps:merge(Content, NewContent),
-                            dgiot_parse_hook:publish(_Pid, MergedContent),
+                            handle_data(TaskProductId, TaskDeviceId, BatchProductId, BatchDeviceId, BatchAddr, PersonType, NewData),
                             {ok, State};
                         _ ->
                             {ok, State}
@@ -133,24 +131,22 @@ stop(ChannelType, ChannelId, _State) ->
 
 handle_data(_TaskProductId, TaskDeviceId, BatchProductId, BatchDeviceId, BatchAddr, PersonType, NewData) ->
     NewPayLoad = run_factory_hook(_TaskProductId, TaskDeviceId, BatchProductId, BatchDeviceId, PersonType, NewData),
-    {OldNumData, OldNameData} = get_card_data(BatchProductId, BatchDeviceId),
     dgiot_data:insert(?FACTORY_ORDER, {BatchProductId, BatchDeviceId, PersonType}, NewPayLoad),
-    Content = dgiot_map:unflatten(maps:merge(OldNameData, NewPayLoad)),
-    dgiot_parse:update_object(<<"Device">>, BatchDeviceId, #{<<"content">> => Content}),
-    NumData = dgiot_factory_utils:turn_num(NewPayLoad, BatchProductId, PersonType),
-    dgiot_task:save_td(BatchProductId, BatchAddr, maps:merge(OldNumData, NumData), #{}),
-    Content.
+    OldData = get_card_data(BatchProductId, BatchDeviceId),
+    ALlData = maps:merge(OldData, NewPayLoad),
+    save2parse(BatchDeviceId, ALlData),
+    save2td(BatchProductId, BatchAddr, ALlData).
 get_card_data(BatchProductId, BatchDeviceId) ->
     DevcieTypeList = dgiot_product:get_devicetype(BatchProductId) -- [<<"quality">>],
     lists:foldl(
-        fun(DeviceType, {Num, Name}) ->
+        fun(DeviceType, Acc) ->
             case dgiot_data:get(?FACTORY_ORDER, {BatchProductId, BatchDeviceId, DeviceType}) of
                 not_find ->
-                    {Num, Name};
+                    Acc;
                 Res ->
-                    {maps:merge(Num, dgiot_factory_utils:turn_num(Res, BatchProductId, DeviceType)), maps:merge(Name, Res)}
+                    maps:merge(Acc, Res)
             end
-        end, {#{}, #{}}, DevcieTypeList).
+        end, #{}, DevcieTypeList).
 
 process_data(Content, PersonType, Token, TaskDeviceId) ->
     FlatMap = dgiot_map:flatten(Content),
@@ -158,6 +154,7 @@ process_data(Content, PersonType, Token, TaskDeviceId) ->
     case dgiot_parse:get_object(<<"Device">>, TaskDeviceId) of
         {ok, #{<<"name">> := OrderName, <<"product">> := #{<<"objectId">> := TaskProductId}}} ->
             {ok, {BatchProductId, BatchDeviceId, BatchAddr}} = process_roll_dev(TaskProductId, TaskDeviceId, OrderName, Token, FlatMap),
+            io:format("~s ~p BatchDeviceId =~p ~n", [?FILE, ?LINE, BatchDeviceId]),
             NewData = init_data(TaskProductId, TaskDeviceId, BatchDeviceId, FlatMap, PersonType, Token),
             {BatchProductId, BatchDeviceId, BatchAddr, NewData};
         _ ->
@@ -256,19 +253,29 @@ get_roll_dev_id(ProductId, FlatMap) ->
 
 get_new_acl(SessionToken, Acl) ->
     case dgiot_auth:get_session(SessionToken) of
-        #{<<"roles">> := Roles} = _User ->
-            [#{<<"name">> := Role} | _] = maps:values(Roles),
-            PersonAcl = <<"role:", Role/binary>>,
-            AclList = case lists:member(PersonAcl, Acl) of
-                          true ->
-                              Acl;
-                          _ ->
-                              Acl ++ [PersonAcl]
-                      end,
-
+        #{<<"roles">> := Roles} ->
+            UserRoleList = maps:fold(
+                fun(_, V, Acc) ->
+                    case maps:find(<<"name">>, V) of
+                        {ok, Role} ->
+                            Acc ++ [<<"role:", Role/binary>>];
+                        _ ->
+                            Acc
+                    end
+                end, [], Roles),
+            NewRoleList = Acl ++ (UserRoleList --Acl  ),
             lists:foldl(
                 fun(X, Acc) ->
-                    Acc#{dgiot_utils:to_binary(X) => #{<<"read">> => true, <<"write">> => true}}
-                end, #{}, AclList);
+                    maps:merge(Acc,#{dgiot_utils:to_binary(X) => #{<<"read">> => true, <<"write">> => true}})
+                end, #{}, NewRoleList);
         Err -> {400, Err}
     end.
+
+save2parse(BatchDeviceId, ALlData) ->
+    NameData = dgiot_factory_utils:turn_name(ALlData, BatchDeviceId),
+    Content = dgiot_map:unflatten(NameData),
+    dgiot_parse:update_object(<<"Device">>, BatchDeviceId, #{<<"content">> => Content}).
+
+save2td(BatchProductId, BatchAddr, ALlData) ->
+    NumData = dgiot_factory_utils:turn_num(ALlData, BatchProductId),
+    dgiot_task:save_td(BatchProductId, BatchAddr, NumData, #{}).

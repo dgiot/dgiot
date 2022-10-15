@@ -18,8 +18,8 @@
 -author("jonhl").
 -include_lib("dgiot/include/logger.hrl").
 -include("dgiot_factory.hrl").
--export([get_num/2, get_name/2, turn_name/3, turn_num/3]).
--export([get_usertree/2, getalluser/1, get_ThingMap/2]).
+-export([get_num/2, get_name/2, turn_name/2, turn_num/2]).
+-export([get_usertree/2, getalluser/1, get_ThingMap/1,clear_cache/2]).
 -export([get_zero_list/1, get_zero_binary/1]).
 -export([fix_model/1, get_worker/1, get_children/1, check_workteam/1]).
 
@@ -88,14 +88,14 @@ get_name(K, Num) ->
             error
     end.
 
-turn_name(List, ProductId, Type) when is_list(List) ->
+turn_name(List, ProductId) when is_list(List) ->
     lists:foldl(
         fun(X, Acc) ->
-            Acc ++ [turn_num(X, ProductId, Type)]
+            Acc ++ [turn_name(X, ProductId)]
         end, [], List);
 
-turn_name(FlatMap, ProductId, Type) when is_map(FlatMap) ->
-    case get_ThingMap(Type, ProductId) of
+turn_name(FlatMap, ProductId) when is_map(FlatMap) ->
+    case get_ThingMap( ProductId) of
         {ok, ThingMap} ->
             maps:fold(
                 fun(K, V, Acc) ->
@@ -121,11 +121,11 @@ turn_name(FlatMap, ProductId, Type) when is_map(FlatMap) ->
             FlatMap
     end;
 
-turn_name(Data, _, _) ->
+turn_name(Data, _) ->
     Data.
 
-turn_num(FlatMap, ProductId, Type) ->
-    case get_ThingMap(Type, ProductId) of
+turn_num(FlatMap, ProductId) ->
+    case get_ThingMap( ProductId) of
         {ok, ThingMap} ->
             maps:fold(
                 fun(K, V, Acc) ->
@@ -267,7 +267,7 @@ get_zero_binary(Acc, Num) ->
 
 
 
-get_ThingMap(_DeviceType, ProductId) ->
+get_ThingMap( ProductId) ->
     case dgiot_product:get_devicetype(ProductId) of
         not_find ->
             error;
@@ -358,11 +358,10 @@ format_tree(Tree) ->
             case Team of
                 #{<<"name">> := Value, <<"children">> := Child} ->
                     {AllChild, ChildList} = get_all_worker(Child),
-                    {NewTree ++ [maps:merge(Team, #{<<"children">> => AllChild})], List ++ [#{Value => ChildList}]};
+                    {NewTree ++ [#{<<"label">> => Value,<<"value">> => Value,<<"children">> => AllChild}], List ++ [#{Value => ChildList}]};
                 #{<<"name">> := Lable, <<"value">> := Value} ->
                     {NewTree ++ [#{<<"label">> => Lable, <<"value">> => Value}], List ++ [Value]};
                 _ ->
-
                     {NewTree, List}
             end
         end, {[], []}, Tree).
@@ -384,3 +383,14 @@ get_all_worker(Child) when is_list(Child) ->
 get_all_worker(Child) ->
     io:format("~s ~p here ~n", [?FILE, ?LINE]),
     {Child, []}.
+clear_cache(BatchProduct, BatchDeviceId) ->
+    DeviceTypeList = case dgiot_product:get_devicetype(BatchDeviceId) of
+                         not_find ->
+                             [];
+                         L ->
+                             L
+                     end,
+    lists:foldl(
+        fun(Type, _) ->
+            dgiot_data:delete(?FACTORY_ORDER, {BatchProduct, BatchDeviceId, Type})
+        end, [], DeviceTypeList).
