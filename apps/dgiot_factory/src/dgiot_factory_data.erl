@@ -606,7 +606,7 @@ get_history_data(ProductId, DeviceId, Type, Function, FunctionMap, Group,Having,
         end)
     of
         {ok, #{<<"results">> := HistoryData}} ->
-            NamedData = dgiot_factory_utils:turn_name(HistoryData, ProductId, Type),
+            NamedData = dgiot_factory_utils:turn_name(HistoryData, ProductId),
             {Total, Res} = filter_data(Limit, Skip, NamedData),
             {ok, {Total, filter_data(Res)}};
         _ ->
