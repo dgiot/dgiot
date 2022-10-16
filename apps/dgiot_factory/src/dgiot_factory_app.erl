@@ -38,8 +38,8 @@ stop(_State) ->
 init_ets() ->
     dgiot_data:init(?WORKERSHIFT),
     dgiot_data:init(?MATERIALETS),
-    dgiot_data:init(?WORKERTREE),
+    dgiot_data:init(?WORKER),
     dgiot_data:init(?FACTORY_ORDER),
     dgiot_data:init(?FACTORY_QUALITY),
-    dgiot_data:init(?FACTORY_NOTIFICATION).
+    dgiot_data:init(?FACTORY).
 

@@ -284,13 +284,13 @@ get_ThingMap( ProductId) ->
             {ok, Res}
     end.
 
-%%dgiot_data:insert(?WORKERTREE, Id, {UserName, Nick,1}),
+%%dgiot_data:insert(?WORKER, Id, {UserName, Nick,1}),
 update_worker_ets(Id, UserName, Nick, Depname) ->
-    case dgiot_data:lookup(?WORKERTREE, Id) of
+    case dgiot_data:lookup(?WORKER, Id) of
         {ok, {_, _, State}} ->
-            dgiot_data:insert(?WORKERTREE, UserName, {Id, Depname, Nick, State});
+            dgiot_data:insert(?WORKER, UserName, {Id, Depname, Nick, State});
         {error, not_find} ->
-            dgiot_data:insert(?WORKERTREE, UserName, {Id, Depname, Nick, 1})
+            dgiot_data:insert(?WORKER, UserName, {Id, Depname, Nick, 1})
     end.
 
 record_workteam(List) ->
@@ -301,11 +301,11 @@ record_workteam(List) ->
             WorkerList = lists:flatten(maps:get(Team, X, [])),
             lists:foldl(
                 fun(Worker, Acc1) ->
-                    case dgiot_data:get(?WORKERTREE, Worker) of
+                    case dgiot_data:get(?WORKER, Worker) of
                         not_find ->
                             Acc1 ++[Worker];
                         {Id, _, Name, State} ->
-                            dgiot_data:insert(?WORKERTREE, Worker, {Id, Team, Name, State}),
+                            dgiot_data:insert(?WORKER, Worker, {Id, Team, Name, State}),
                             Acc1 ++[Worker];
                         _ ->
                             Acc1 ++[Worker]
@@ -314,11 +314,11 @@ record_workteam(List) ->
                 end, [], WorkerList),
             maps:merge(Acc,#{Team => OldList ++ WorkerList})
         end, #{}, List),
-    dgiot_data:insert(?WORKERTREE, workteam,WorkTeamMember).
+    dgiot_data:insert(?WORKER, workteam,WorkTeamMember).
 
 check_workteam(Worker) ->
     WorkerList = lists:delete(<<>>, re:split(Worker, <<" ">>)),
-    TeamMap = case dgiot_data:get(?WORKERTREE, workteam) of
+    TeamMap = case dgiot_data:get(?WORKER, workteam) of
                   not_find ->
                       #{};
                   L ->

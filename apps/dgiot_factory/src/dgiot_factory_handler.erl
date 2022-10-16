@@ -123,6 +123,15 @@ do_request(post_worker_shift, #{<<"shift">> := Shifts} = _Args, _Context, _Body)
     dgiot_factory_shift:post_shift(Shifts),
     {ok, #{<<"status">> => 0, msg => <<"修改成功"/utf8>>, <<"data">> => #{}}};
 
+do_request(put_worker_shift, _Args, _Context, _Body) ->
+    io:format("~s ~p _Args = ~p  ~n", [?FILE, ?LINE, _Args]),
+    case dgiot_factory_worker:put_worker_shift(_Args) of
+        {ok, _} ->
+            {ok, #{<<"status">> => 0, msg => <<"修改成功"/utf8>>, <<"data">> => #{}}};
+        _ ->
+            {error, <<"failed">>}
+    end;
+
 
 do_request(get_data, #{<<"productId">> := undefined, <<"objectId">> := DeviceId} = _Args, _Context, _Body) ->
     case dgiot_device_cache:lookup(DeviceId) of
@@ -216,9 +225,19 @@ do_request(get_useablematerial, #{<<"id">> := Id} = _Arg, _Context, _Req) ->
             }};
         _ ->
             {error, <<"not find useable material">>}
-    end
-;
+    end;
+do_request(get_workshop_worker, #{<<"WorkShop">> := WorkShop} = _Args, _Context, _Body) ->
+%%    {Res,_} = dgiot_jienuo_utils:get_shift(WorkShop),
+    Res = dgiot_factory_worker:get_work_shop_workers(WorkShop),
+%%            io:format("~s  ~p  Res= ~ts ~n", [?FILE, ?LINE, unicode:characters_to_list(jiffy:encode(Res))]),
+    {ok, #{<<"status">> => 0, msg => <<"操作成功"/utf8>>, <<"data">> => #{<<"options">> => Res}}};
 
+do_request(get_new_worker_num, #{<<"product">> := ProductId} = _Arg, _Context, _Req) ->
+    Num = dgiot_factory_worker:get_new_workernum(ProductId),
+    {ok, #{<<"status">> => 0, msg => <<"操作成功"/utf8>>, <<"data">> => Num}};
+do_request(get_shift_time, #{<<"product">> := ProductId, <<"shift">> := Shift} = _Arg, _Context, _Req) ->
+    Res = dgiot_factory_worker:get_shift_time(ProductId, Shift),
+    {ok, #{<<"status">> => 0, msg => <<"操作成功"/utf8>>, <<"data">> => Res}};
 %%  服务器不支持的API接口
 do_request(_OperationId, _Args, _Context, _Req) ->
     io:format("~s ~p _Args = ~p  ~n", [?FILE, ?LINE, _Args]),

@@ -181,6 +181,83 @@
         "tags": [
           "factory"
         ]
+      },
+      "put": {
+        "summary": "更新排班",
+        "security": [],
+        "description": "更新排班",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "description": "批量排班数据",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "product": {
+                  "description": "产品id",
+                  "type": "string"
+                },
+                "ids": {
+                  "description": "工号",
+                  "type": "string"
+                },
+                "workteam": {
+                  "description": "班组",
+                  "type": "string"
+                },
+                "leader": {
+                  "description": "班长",
+                  "type": "string"
+                },
+                "workshop": {
+                  "description": "车间",
+                  "type": "string"
+                },
+                "shift": {
+                  "description": "班次",
+                  "type": "string"
+                },
+                "date": {
+                  "description": "日期",
+                  "type": "integer"
+                },
+                "startTime": {
+                  "description": "开始时间",
+                  "type": "string"
+                },
+                "endTime": {
+                  "description": "结束时间",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "factory"
+        ]
       }
     },
     "/data": {
@@ -219,7 +296,6 @@
             "name": "having",
             "type": "string"
           },
-
           {
             "in": "query",
             "name": "limit",
@@ -520,6 +596,109 @@
         "summary": "获取页面初始化数据",
         "tags": [
           "factory"
+        ]
+      }
+    },
+    "/new_worker_num": {
+      "get": {
+        "description": "用户树",
+        "security": [],
+        "parameters": [
+          {
+            "name": "product",
+            "in": "query",
+            "type": "string",
+            "description": "人员产品id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns instance data"
+          },
+          "404": {
+            "description": "object not found",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        },
+        "summary": "工人树",
+        "tags": [
+          "factory"
+        ]
+      }
+    },
+    "/shift_time": {
+      "get": {
+        "description": "用户树",
+        "security": [],
+        "parameters": [
+          {
+            "name": "product",
+            "in": "query",
+            "type": "string",
+            "description": "人员产品id"
+          },
+          {
+            "name": "shift",
+            "in": "query",
+            "type": "string",
+            "description": "班次"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns instance data"
+          },
+          "404": {
+            "description": "object not found",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        },
+        "summary": "工人树",
+        "tags": [
+          "factory"
+        ]
+      }
+    },
+    "/workshop_worker": {
+      "get": {
+        "security": [],
+        "summary": "获取排班",
+        "description": "获取排班",
+        "consumes": [
+          "*"
+        ],
+        "parameters": [
+          {
+            "name": "WorkShop",
+            "in": "query",
+            "type": "string",
+            "default": "fastdfs",
+            "description": "车间"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "jienuo"
         ]
       }
     }

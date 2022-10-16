@@ -54,6 +54,8 @@
     , hour_from/1
     , timestamp/0
     , last_month/1
+    , get_today_stamp/0
+    , get_today_stamp/1
 ]).
 
 -define(MS_ONE_DAY, 86400000).
@@ -356,3 +358,12 @@ last_month(StartTime, EndTime, Count) ->
         end,
     NewStartTime = dgiot_datetime:localtime_to_unixtime({{NewYear, NewMonth, 1}, {0, 0, 0}}),
     last_month(NewStartTime, EndTime, Count - 1).
+
+get_today_stamp() ->
+    {{Year, Month, Day}, _} = local_time(),
+    dgiot_datetime:localtime_to_unixtime({{Year, Month, Day}, {0, 0, 0}}).
+get_today_stamp(Date) when is_integer(Date) ->
+    {{Year, Month, Day}, _} = to_localtime(Date),
+    dgiot_datetime:localtime_to_unixtime({{Year, Month, Day}, {0, 0, 0}});
+get_today_stamp(Date) ->
+    Date.

@@ -24,7 +24,6 @@
 -define(DAY, 86400).
 -define(WORKERCALENDAR, <<"WorkerCanlendar">>).
 -define(INTERVAL, 604800).
--define(ONEDAY, 86400).
 
 get_all_shift(Department, undefined, undefined, SessionToken) ->
     StartDate = dgiot_datetime:localtime_to_unixtime(calendar:local_time()),
@@ -316,7 +315,7 @@ bits_to_workerlist(Bits) ->
                     ZeroNum = ?MAXUNIT - size(B),
                     Zero = dgiot_factory_utils:get_zero_binary(ZeroNum),
                     Bin = <<Zero/binary, B/binary>>,
-                    case dgiot_data:lookup(?WORKERTREE, Bin) of
+                    case dgiot_data:lookup(?WORKER, Bin) of
                         {ok, Value} ->
                             {<<Acc/binary, " ", Value/binary>>, Num + 1};
                         _ ->
@@ -333,7 +332,7 @@ format_worker(Worker) when is_binary(Worker) ->
     WorkerList = re:split(Worker, <<" ">>),
     lists:foldl(
         fun(X, Acc) ->
-            case dgiot_data:get(?WORKERTREE, X) of
+            case dgiot_data:get(?WORKER, X) of
                 not_find ->
                     <<Acc/binary, " ", X/binary>>;
                 {_, _, Name, _} ->
@@ -373,3 +372,6 @@ get_day_stamp(Date) when is_integer(Date) ->
 get_day_stamp(<<Y:4/bytes, "-", M:2/bytes, "-", D:2/bytes>>) ->
     Data = {{dgiot_utils:to_int(Y), dgiot_utils:to_int(M), dgiot_utils:to_int(D)}, {0, 0, 0}},
     dgiot_datetime:localtime_to_unixtime(Data).
+
+
+
