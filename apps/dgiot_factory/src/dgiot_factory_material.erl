@@ -198,8 +198,6 @@ get_warehouse_material(_, _, _, _) ->
 
 
 put_warehouse_material(#{<<"objectId">> := Id} = Record) ->
-
-
     case dgiot_parse:get_object(<<"Device">>, Id) of
         {ok, #{<<"content">> := Content}} ->
             case maps:find(<<"isEnable">>, Record) of
