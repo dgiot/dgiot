@@ -31,7 +31,7 @@
 %% Channel callback
 -export([init/3, handle_init/1, handle_event/3, handle_message/2, stop/3]).
 -export([get_id/2, after_handle/4, handle_data/7, get_card_data/2]).
--export([get_sub_product/1,get_new_acl/2]).
+-export([get_sub_product/1, get_new_acl/2]).
 
 %% 注册通道类型
 -channel_type(#{
@@ -133,9 +133,9 @@ handle_data(_TaskProductId, TaskDeviceId, BatchProductId, BatchDeviceId, BatchAd
     NewPayLoad = run_factory_hook(_TaskProductId, TaskDeviceId, BatchProductId, BatchDeviceId, PersonType, NewData),
     dgiot_data:insert(?FACTORY_ORDER, {BatchProductId, BatchDeviceId, PersonType}, NewPayLoad),
     OldData = get_card_data(BatchProductId, BatchDeviceId),
-    ALlData = maps:merge(OldData, NewPayLoad),
-    save2parse(BatchDeviceId, ALlData),
-    save2td(BatchProductId, BatchAddr, ALlData).
+    ALlData = dgiot_map:merge(OldData, NewPayLoad),
+    save2parse(BatchProductId, BatchDeviceId, ALlData),
+    save2td(BatchProductId, BatchAddr, NewPayLoad).
 get_card_data(BatchProductId, BatchDeviceId) ->
     DevcieTypeList = dgiot_product:get_devicetype(BatchProductId) -- [<<"quality">>],
     lists:foldl(
@@ -144,12 +144,12 @@ get_card_data(BatchProductId, BatchDeviceId) ->
                 not_find ->
                     Acc;
                 Res ->
-                    maps:merge(Acc, Res)
+                    dgiot_map:merge(Acc, Res)
             end
         end, #{}, DevcieTypeList).
 
-process_data(Content, PersonType, Token, TaskDeviceId) ->
-    FlatMap = dgiot_map:flatten(Content),
+process_data(FlatMap, PersonType, Token, TaskDeviceId) ->
+%%    FlatMap = dgiot_map:flatten(Content),
 %%    io:format("~s ~p status =~p ~n", [?FILE, ?LINE,maps:get(<<"quality_status">>,FlatMap,0)]),
     case dgiot_parse:get_object(<<"Device">>, TaskDeviceId) of
         {ok, #{<<"name">> := OrderName, <<"product">> := #{<<"objectId">> := TaskProductId}}} ->
@@ -162,7 +162,9 @@ process_data(Content, PersonType, Token, TaskDeviceId) ->
     end.
 
 init_data(_TaskProductId, TaskDeviceId, BatchDeviceId, FlatMap, _PersonType, Token) ->
-    maps:merge(FlatMap, #{<<"person_sessiontoken">> => Token, <<"person_deviceid">> => TaskDeviceId, <<"person_sheetsid">> => BatchDeviceId}).
+%%    maps:merge(FlatMap, #{<<"person_sessiontoken">> => Token, <<"person_deviceid">> => TaskDeviceId, <<"person_sheetsid">> => BatchDeviceId}).
+    dgiot_map:merge(FlatMap, #{<<"person">> => #{<<"sessiontoken">> => Token, <<"deviceid">> => TaskDeviceId, <<"sheetsid">> => BatchDeviceId}}).
+
 after_handle(ProductId, DevAddr, Payload, _Type) ->
     Use = turn_user(Payload),
     dgiot_task:save_td(ProductId, DevAddr, Payload#{<<"person_sessiontoken">> => Use}, #{}).
@@ -240,7 +242,6 @@ get_roll_dev_id(ProductId, FlatMap) ->
         {ok, BatchDeviceId} ->
             case dgiot_device:lookup(BatchDeviceId) of
                 {ok, #{<<"devaddr">> := BatchAddr}} ->
-
                     {BatchProductId, BatchDeviceId, BatchAddr};
                 _ ->
                     error
@@ -263,19 +264,25 @@ get_new_acl(SessionToken, Acl) ->
                             Acc
                     end
                 end, [], Roles),
-            NewRoleList = Acl ++ (UserRoleList --Acl  ),
+            NewRoleList = Acl ++ (UserRoleList --Acl),
             lists:foldl(
                 fun(X, Acc) ->
-                    maps:merge(Acc,#{dgiot_utils:to_binary(X) => #{<<"read">> => true, <<"write">> => true}})
+                    maps:merge(Acc, #{dgiot_utils:to_binary(X) => #{<<"read">> => true, <<"write">> => true}})
                 end, #{}, NewRoleList);
         Err -> {400, Err}
     end.
 
-save2parse(BatchDeviceId, ALlData) ->
-    NameData = dgiot_factory_utils:turn_name(ALlData, BatchDeviceId),
-    Content = dgiot_map:unflatten(NameData),
+
+save2parse(BatchProductId, BatchDeviceId, ALlData) ->
+    Content = case dgiot_hook:run_hook({factory, BatchProductId, beforeParse}, [ALlData]) of
+                  {ok, [{ok, Res}]} ->
+                      Res;
+                  _ ->
+                      ALlData
+              end,
     dgiot_parse:update_object(<<"Device">>, BatchDeviceId, #{<<"content">> => Content}).
 
-save2td(BatchProductId, BatchAddr, ALlData) ->
-    NumData = dgiot_factory_utils:turn_num(ALlData, BatchProductId),
+save2td(BatchProductId, BatchAddr, Data) ->
+    FlatternData = dgiot_map:flatten(Data),
+    NumData = dgiot_factory_utils:turn_num(FlatternData, BatchProductId),
     dgiot_task:save_td(BatchProductId, BatchAddr, NumData, #{}).

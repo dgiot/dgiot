@@ -329,7 +329,7 @@ bits_to_workerlist(Bits) ->
     Res.
 
 
-format_worker(Worker) ->
+format_worker(Worker) when is_binary(Worker) ->
     WorkerList = re:split(Worker, <<" ">>),
     lists:foldl(
         fun(X, Acc) ->
@@ -340,7 +340,9 @@ format_worker(Worker) ->
 %%                    io:format("~s ~p Name = ~p.~n", [?FILE, ?LINE, Name]),
                     <<Acc/binary, " ", Name/binary>>
             end
-        end, <<"">>, WorkerList).
+        end, <<"">>, WorkerList);
+format_worker(Worker) ->
+    Worker.
 
 
 update_cache(#{<<"device">> := Dev, <<"date">> := Date, <<"shift">> := Shift, <<"worker">> := Worker}) ->

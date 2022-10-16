@@ -580,7 +580,7 @@ filter_data(Data) when is_map(Data) ->
 %%    end.
 %%get_td_sheet(ProductId, Type, Start, End, Channel, DeviceId, Where, Limit, Skip, New)
 
-get_history_data(ProductId, DeviceId, Type, Function, FunctionMap, Group,Having, Where, Order, Channel, Limit, Skip) ->
+get_history_data(ProductId, DeviceId, Type, Function, FunctionMap, Group, Having, Where, Order, Channel, Limit, Skip) ->
     DB = dgiot_tdengine_select:format_db(?Database(ProductId)),
     TableName = case DeviceId of
                     undefined ->
@@ -593,13 +593,13 @@ get_history_data(ProductId, DeviceId, Type, Function, FunctionMap, Group,Having,
     Select = select(ProductId, Type, Function, FunctionMap),
     From = <<DB/binary, TableName/binary>>,
     GROPU = group(Group),
-    Have =have(Having),
+    Have = have(Having),
     WHERE = where(Where),
     ORDER = order(Order),
 %%    LimitAndSkip = limit_skip(Limit, Skip),
     case dgiot_tdengine:transaction(Channel,
         fun(Context) ->
-            Sql = <<"SELECT  ", Select/binary, " FROM ", From/binary, WHERE/binary,GROPU/binary,Have/binary,  ORDER/binary, ";">>,
+            Sql = <<"SELECT  ", Select/binary, " FROM ", From/binary, WHERE/binary, GROPU/binary, Have/binary, ORDER/binary, ";">>,
             io:format("~s ~p Sql = ~p  ~n", [?FILE, ?LINE, Sql]),
 
             dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_query, Sql)
@@ -607,8 +607,14 @@ get_history_data(ProductId, DeviceId, Type, Function, FunctionMap, Group,Having,
     of
         {ok, #{<<"results">> := HistoryData}} ->
             NamedData = dgiot_factory_utils:turn_name(HistoryData, ProductId),
-            {Total, Res} = filter_data(Limit, Skip, NamedData),
-            {ok, {Total, filter_data(Res)}};
+            {Total, FileredRes} = filter_data(Limit, Skip, NamedData),
+            Data = case dgiot_hook:run_hook({factory, ProductId, afterTd}, [FileredRes]) of
+                       {ok, [{ok, AfteRes}]} ->
+                           AfteRes;
+                       _ ->
+                           FileredRes
+                   end,
+            {ok, {Total, Data}};
         _ ->
             error
 
@@ -659,7 +665,7 @@ select(ProductId, Type, undefined, _) ->
         end, <<"">>, ThingList),
     Res;
 
-select(ProductId, Type, Function, FunctiongMap1)  ->
+select(ProductId, Type, Function, FunctiongMap1) ->
     ThingList = get_thing_list(ProductId, Type),
     FunctiongMap = dgiot_utils:to_map(FunctiongMap1),
     <<" , ", Res/binary>> =
