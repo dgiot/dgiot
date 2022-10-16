@@ -135,7 +135,7 @@ handle_data(_TaskProductId, TaskDeviceId, BatchProductId, BatchDeviceId, BatchAd
     OldData = get_card_data(BatchProductId, BatchDeviceId),
     ALlData = dgiot_map:merge(OldData, NewPayLoad),
     save2parse(BatchProductId, BatchDeviceId, ALlData),
-    save2td(BatchProductId, BatchAddr, NewPayLoad).
+    save2td(BatchProductId, BatchAddr, ALlData).
 get_card_data(BatchProductId, BatchDeviceId) ->
     DevcieTypeList = dgiot_product:get_devicetype(BatchProductId) -- [<<"quality">>],
     lists:foldl(
