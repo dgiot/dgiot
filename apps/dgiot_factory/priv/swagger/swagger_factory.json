@@ -630,7 +630,7 @@
     },
     "/shift_time": {
       "get": {
-        "description": "用户树",
+        "description": "获取班次默认信息",
         "security": [],
         "parameters": [
           {
@@ -678,6 +678,70 @@
             "type": "string",
             "default": "fastdfs",
             "description": "车间"
+          },
+          {
+            "name": "product",
+            "in": "query",
+            "type": "string",
+            "description": "人员产品id"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "jienuo"
+        ]
+      }
+    },
+    "/duplicate_shift": {
+      "put": {
+        "security": [],
+        "summary": "复制排班",
+        "description": "复制排班",
+        "consumes": [
+          "*"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "user",
+            "description": "用户信息",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "product": {
+                  "description": "人员产品id",
+                  "type": "string",
+                  "example": "38e6d7b035"
+                },
+                "sink_date": {
+                  "description": "目标日期",
+                  "type": "string",
+                  "example": "1666022400"
+                },
+                "where": {
+                  "description": "复制条件",
+                  "type": "string",
+                  "example": "worker_date = 1664812800"
+                }
+              }
+            }
           }
         ],
         "responses": {

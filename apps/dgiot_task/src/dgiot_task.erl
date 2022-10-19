@@ -410,13 +410,6 @@ save_td_no_match(ProductId, DevAddr, Ack, AppData) ->
             DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
             Interval = maps:get(<<"interval">>, AppData, 3),
             AllData = merge_cache_data(DeviceId, Storage, Interval),
-            ChannelId = dgiot_parse_id:get_channelid(dgiot_utils:to_binary(?BRIDGE_CHL), <<"DGIOTTOPO">>, <<"TOPO组态通道"/utf8>>),
-            dgiot_channelx:do_message(ChannelId, {topo_thing, ProductId, DeviceId, AllData}),
-            dgiot_tdengine_adapter:save(ProductId, DevAddr, AllData),
-            Channel = dgiot_product:get_taskchannel(ProductId),
-            dgiot_bridge:send_log(Channel, ProductId, DevAddr, "~s ~p save td => ProductId ~p DevAddr ~p ~ts ", [?FILE, ?LINE, ProductId, DevAddr, unicode:characters_to_list(jsx:encode(AllData))]),
-            dgiot_metrics:inc(dgiot_task, <<"task_save">>, 1),
-            NotificationTopic = <<"$dg/user/alarm/", ProductId/binary, "/", DeviceId/binary, "/properties/report">>,
-            dgiot_mqtt:publish(DeviceId, NotificationTopic, jsx:encode(AllData)),
+            dealwith_data(ProductId, DevAddr, DeviceId, AllData, Storage),
             AllData
     end.

@@ -648,7 +648,7 @@ order(undefined) ->
 order(Order) ->
     <<" ", Order/binary>>.
 limit_skip(undefined, undefined) ->
-    <<" limit 10  ">>;
+    <<"  ">>;
 limit_skip(Limit, Skip) ->
     BinLimit = dgiot_utils:to_binary(Limit),
     BinSkip = dgiot_utils:to_binary(Skip),
