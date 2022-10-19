@@ -24,55 +24,45 @@
 -include_lib("dgiot/include/logger.hrl").
 -include("dgiot_factory.hrl").
 
--export([put_worker_shift/1, get_work_shop_workers/1,get_new_workernum/1]).
+-export([put_worker_shift/1, get_work_shop_workers/2, get_new_workernum/1]).
+-export([duplicate_shift/4]).
 put_worker_shift(#{<<"product">> := ProductId, <<"ids">> := Ids, <<"workteam">> := WorkTeam,
-    <<"shift">> := Shift, <<"workshop">> := WorkShop, <<"leader">> := Leader} = Data) ->
+    <<"shift">> := Shift, <<"workshop">> := WorkShop} = Data) ->
+    Validate = maps:get(<<"worker_validate">>, Data, <<"true">>),
+    _Leader = maps:get(<<"leader">>, Data, <<"">>),
     WorkerList = re:split(Ids, <<",">>),
-    Today = dgiot_datetime:get_today_stamp(),
-    io:format("~s ~p WorkerList ~p  ~n", [?FILE, ?LINE, WorkerList]),
-    case format_time(Data) of
+    _Today = dgiot_datetime:get_today_stamp(),
+    case maps:find(<<"items">>, Data) of
+        {ok, Items} ->
+            put_relax(Items, ProductId);
+        _ ->
+            pass
+    end,
+    case format_time(Data, ProductId) of
         {ok, {Day, ShiftStartTime, ShiftEndTime}} ->
-            case dgiot_data:get(?FACTORY, {ProductId, shift}) of
-                not_find ->
-                    dgiot_data:insert(?FACTORY, {ProductId, shift}, #{Shift => #{<<"startTime">> => ShiftStartTime, <<"endTime">> => ShiftEndTime}});
-                Res ->
-
-                    dgiot_data:insert(?FACTORY, {ProductId, shift_info}, maps:merge(Res, #{Shift => #{<<"startTime">> => ShiftStartTime, <<"endTime">> => ShiftEndTime}}))
-            end,
-            io:format("~s ~p Day ~p  ~n", [?FILE, ?LINE, Day]),
             lists:foldl(
                 fun(Worker, _) ->
-                    WorkerId = dgiot_parse_id:get_deviceid(ProductId, Worker),
-                    IfMonitor = case Worker == Leader of
-                                    true ->
-                                        true;
-                                    _ ->
-                                        false
-                                end,
+                    WorkerId = dgiot_parse_id:get_deviceid(ProductId, dgiot_utils:to_binary(Worker)),
                     WorkerName = case dgiot_parse:get_object(<<"Device">>, WorkerId) of
                                      {ok, #{<<"name">> := Name}} ->
                                          Name;
                                      _ ->
                                          <<"null">>
                                  end,
-                    AllData = #{<<"worker_name">> => WorkerName,
+                    AllData = #{
+                        <<"base_source">> => 1,
+                        <<"worker_validate">> => Validate,
+                        <<"worker_num">> => Worker,
+                        <<"worker_name">> => WorkerName,
                         <<"worker_workshop">> => WorkShop,
                         <<"worker_date">> => Day,
+                        <<"worker_shiftstarttime">> => ShiftStartTime,
+                        <<"worker_shiftendtime">> => ShiftEndTime,
                         <<"worker_shift">> => Shift,
                         <<"worker_team">> => WorkTeam,
-                        <<"worker_monitor">> => IfMonitor,
-                        <<"worker_shiftstarttime">> => ShiftStartTime,
-                        <<"worker_shiftendtime">> => ShiftEndTime},
-                    NumTd = dgiot_factory_utils:turn_num(AllData, ProductId),
-                    dgiot_task:save_td(ProductId, Worker, NumTd, #{}),
-
-                    case Day == Today of
-                        true ->
-                            dgiot_parse:update_object(<<"Device">>, WorkerId, #{<<"content">> => Data}),
-                            dgiot_data:insert(?WORKER, Worker, AllData);
-                        _ ->
-                            pass
-                    end
+                        <<"worker_monitor">> => _Leader,
+                        <<"product">> => ProductId},
+                    put_one_shift(AllData, ProductId, Worker)
                 end, [], WorkerList),
             {ok, ok};
         _ ->
@@ -81,7 +71,20 @@ put_worker_shift(#{<<"product">> := ProductId, <<"ids">> := Ids, <<"workteam">> 
 put_worker_shift(_) ->
     io:format("~s ~p here   ~n", [?FILE, ?LINE]),
     error.
-format_time(#{<<"date">> := Date, <<"startTime">> := S, <<"endTime">> := E}) ->
+
+put_one_shift(AllData, ProductId, Worker) ->
+    NumTd = dgiot_factory_utils:turn_num(AllData, ProductId),
+    dgiot_task:save_td(ProductId, Worker, NumTd, #{}),
+    case dgiot_data:get(?WORKER, Worker) of
+        not_find ->
+            dgiot_data:insert(?WORKER, Worker, [AllData]);
+        List ->
+            CheckedList = check_shift(AllData, List),
+            NewList = sort_shift(CheckedList),
+            dgiot_data:insert(?WORKER, Worker, NewList)
+    end.
+format_time(#{<<"date">> := Date, <<"startTime">> := S, <<"endTime">> := E, <<"shift">> := Shift}, ProductId) ->
+    update_shift_info(ProductId, Shift, S, E),
     Day = dgiot_datetime:get_today_stamp(dgiot_utils:to_int(Date)),
     case get_new_time(S) of
         error ->
@@ -101,7 +104,7 @@ format_time(#{<<"date">> := Date, <<"startTime">> := S, <<"endTime">> := E}) ->
                     {ok, {Day, ShiftStartTime, ShiftEndTime}}
             end
     end;
-format_time(_) ->
+format_time(_, _) ->
     error.
 get_new_time(<<H:2/binary, ":", M:2/binary>>) ->
     Hour = dgiot_utils:to_int(H),
@@ -111,19 +114,28 @@ get_new_time(_) ->
     error.
 
 
-get_work_shop_workers(WorkeShop) ->
+get_work_shop_workers(WorkeShop, _ProductId) ->
     Now = dgiot_datetime:nowstamp(),
     WorkerList = dgiot_data:keys(?WORKER),
     lists:foldl(
         fun(WorkerNum, Acc) ->
             case dgiot_data:lookup(?WORKER, WorkerNum) of
-                not_find ->
-                    Acc;
-                {ok, #{<<"worker_workshop">> := Shop, <<"worker_shiftstarttime">> := Start, <<"worker_shiftendtime">> := End, <<"worker_name">> := WorkerName}}
-                    ->
-                    case ((Now > Start) and (Now < End)) and (WorkeShop == Shop) of
+                {ok, ShiftList} ->
+                    NewList = get_new_shift(Now, ShiftList),
+                    case length(NewList) > 0 of
                         true ->
-                            Acc ++ [#{<<"label">> => WorkerName, <<"value">> => WorkerNum}];
+                            First = lists:nth(1, NewList),
+                            case First of
+                                #{<<"worker_workshop">> := Shop, <<"worker_shiftstarttime">> := Start, <<"worker_shiftendtime">> := End, <<"worker_name">> := WorkerName} ->
+                                    case ((Now > Start) and (Now < End)) and (WorkeShop == Shop) of
+                                        true ->
+                                            Acc ++ [#{<<"label">> => WorkerName, <<"value">> => WorkerNum}];
+                                        _ ->
+                                            Acc
+                                    end;
+                                _ ->
+                                    Acc
+                            end;
                         _ ->
                             Acc
                     end;
@@ -156,10 +168,149 @@ get_new_workernum(WorkerProduct) ->
     end.
 
 
-get_shift_time(ProductId,Shift) ->
-    case dgiot_data:get(?FACTORY,{ProductId,shift}) of
+get_shift_time(ProductId, Shift) ->
+    case dgiot_data:get(?FACTORY, {ProductId, shift}) of
         nut_find ->
             #{};
         Res ->
-            maps:get(Shift,Res,#{})
+            maps:get(Shift, Res, #{})
     end.
+get_latest_shift(Res) ->
+    lists:foldl(
+        fun(#{<<"worker_shiftstarttime">> := StartTime} = X, #{<<"worker_shiftstarttime">> := OldStart} = Acc) ->
+            case StartTime < OldStart of
+                true ->
+                    X;
+                _ ->
+                    Acc
+            end;
+            (_, Acc) ->
+                Acc
+        end, #{<<"worker_shiftstarttime">> => 0}, Res).
+
+
+
+sort_shift(List) ->
+    Fun = fun(#{<<"worker_shiftstarttime">> := Start1}, #{<<"worker_shiftstarttime">> := Start2}) ->
+        Start1 =< Start2
+          end,
+    lists:sort(Fun, List).
+
+
+update_shift_info(ProductId, Shift, ShiftStartTime, ShiftEndTime) ->
+    case dgiot_data:get(?FACTORY, {ProductId, shift}) of
+        not_find ->
+            dgiot_data:insert(?FACTORY, {ProductId, shift}, #{Shift => #{<<"startTime">> => ShiftStartTime, <<"endTime">> => ShiftEndTime}});
+        Res ->
+            dgiot_data:insert(?FACTORY, {ProductId, shift}, maps:merge(Res, #{Shift => #{<<"startTime">> => ShiftStartTime, <<"endTime">> => ShiftEndTime}}))
+    end.
+get_new_shift(Now, ShiftList) ->
+    case length(ShiftList)  of
+         0->
+             [];
+%%        1 ->
+%%            First = lists:nth(1, ShiftList),
+%%            EndTime = maps:get(<<"worker_shiftendtime">>, First, 99999999999999),
+%%            case EndTime < Now of
+%%                true ->
+%%                    NewData = duplicate_shift(First),
+%%                    Worker = maps:get(<<"worker_name">>, First, <<"null">>),
+%%                    ProductId = maps:get(<<"product">>, First, <<"null">>),
+%%                    NumTd = dgiot_factory_utils:turn_num(NewData, ProductId),
+%%                    dgiot_task:save_td(ProductId, Worker, NumTd, #{}),
+%%                    dgiot_data:insert(?WORKER, Worker, [NewData]);
+%%                _ ->
+%%                    ShiftList
+%%            end;
+        _ ->
+            First = lists:nth(1, ShiftList),
+            EndTime = maps:get(<<"worker_shiftendtime">>, First, 99999999999999),
+            case EndTime < Now of
+                true ->
+                    get_new_shift(Now,lists:delete(First,ShiftList));
+                _ ->
+                    ShiftList
+            end
+    end.
+check_shift(#{<<"worker_validate">> := <<"false">>} = Data, List) ->
+    Day = maps:get(<<"worker_date">>, Data, 0),
+    lists:foldl(
+        fun(#{<<"worker_date">> := OldDay} = X, Acc) ->
+            case Day == OldDay of
+                true ->
+                    Acc;
+                _ ->
+                    Acc ++ [X]
+            end;
+            (_, Acc) ->
+                Acc
+        end, [], List);
+check_shift(#{ <<"worker_shift">> := <<"休班"/utf8>>}=Data, List) ->
+    Day = maps:get(<<"worker_date">>, Data, 0),
+    lists:foldl(
+        fun(#{<<"worker_date">> := OldDay} = X, Acc) ->
+            case Day == OldDay of
+                true ->
+                    Acc;
+                _ ->
+                    Acc ++ [X]
+            end;
+            (_, Acc) ->
+                Acc
+        end, [], List);
+
+check_shift( Data, List) ->
+    Day = maps:get(<<"worker_date">>, Data, 0),
+    lists:foldl(
+        fun(#{<<"worker_date">> := OldDay} = X, Acc) ->
+            case Day == OldDay of
+                true ->
+                    Acc;
+                _ ->
+                    Acc ++ [X]
+            end;
+            (_, Acc) ->
+                Acc
+        end, [], List),
+    List ++ [Data].
+
+
+duplicate_shift(Shift) ->
+    NewEndTime = Shift + ?ONEDAY,
+    NewSatrtTime = maps:get(<<"worker_shiftstarttime">>, Shift, 0) + ?ONEDAY,
+    NewDay = maps:get(<<"worker_date">>, Shift, 0) ++ ?ONEDAY,
+    maps:merge(Shift, #{<<"worker_shiftendtime">> => NewEndTime, <<"worker_shiftstarttime">> => NewSatrtTime, <<"worker_date">> => NewDay}).
+
+
+%%get_history_data(ProductId, DeviceId, Type, Function, FunctionMap, Group, Having, Where, Order, Channel, Limit, Skip) ->
+%%duplicate_shift(#{<<"sink_date">> := SinkDate,<<"source_date">> := SourceDate,<<"where">> := Where},ProductId) ->
+duplicate_shift(SinkDate, Where, ProductId, Channel) ->
+    case dgiot_factory_data:get_history_data(ProductId, undefined, <<"worker">>, <<"last">>, #{}, <<"worker_num">>, undefined, Where, undefined, Channel, undefined, undefined) of
+        {ok, {_, Res}} ->
+            Results = lists:foldl(
+                fun(#{<<"worker_date">> := Day, <<"worker_shiftstarttime">> := ShiftStartTime, <<"worker_shiftendtime">> := ShiftEndTime,
+                    <<"worker_num">> := WorkerNum, <<"worker_name">> := Name} = OldShift, Acc) ->
+                    Gap = dgiot_utils:to_int(SinkDate) - dgiot_utils:to_int(Day),
+                    NewDay = SinkDate,
+                    NewStartTime = ShiftStartTime + Gap,
+                    NewEndTime = ShiftEndTime + Gap,
+                    NewData = maps:merge(OldShift, #{<<"worker_date">> => NewDay, <<"worker_shiftstarttime">> => NewStartTime, <<"worker_shiftendtime">> => NewEndTime}),
+                    put_one_shift(NewData, ProductId, WorkerNum),
+                    Acc#{WorkerNum => Name};
+                    (_, Acc) ->
+                        Acc
+                end, #{}, Res),
+            {ok, Results};
+        _ ->
+            {ok, #{}}
+    end.
+
+
+put_relax(Items, ProductId) ->
+    lists:foldl(
+        fun
+            (#{<<"worker_num">> := Worker} = Item, _) ->
+                put_one_shift(Item#{<<"worker_shift">> => 0}, ProductId, Worker);
+            (_, _) ->
+                pass
+        end, [], Items).

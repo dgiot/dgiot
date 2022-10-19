@@ -24,6 +24,7 @@
 -define(TYPE, <<"FACTORY">>).
 -define(SHEETID(SHEET), <<SHEET/binary, "_id">>).
 -define(MAX_BUFF_SIZE, 1024).
+-define(WORKERCATEGORY, <<"bf6cbee357">>).
 -record(state, {id, mod, product, env = #{}}).
 %% API
 -export([start/2]).
@@ -31,12 +32,12 @@
 %% Channel callback
 -export([init/3, handle_init/1, handle_event/3, handle_message/2, stop/3]).
 -export([get_id/2, after_handle/4, handle_data/7, get_card_data/2]).
--export([get_sub_product/1, get_new_acl/2]).
+-export([get_sub_product/1, get_new_acl/2, init_worker_device/3]).
 
 %% 注册通道类型
 -channel_type(#{
     cType => ?TYPE,
-    type => ?BACKEND_CHL,
+    type => ?PROTOCOL_CHL,
     priority => 2,
     title => #{
         zh => <<"数字工厂通道"/utf8>>
@@ -68,13 +69,32 @@ start(ChannelId, ChannelArgs) ->
     dgiot_channelx:add(?TYPE, ChannelId, ?MODULE, ChannelArgs).
 
 %% 通道初始化
-init(?TYPE, ChannelId, Args) ->
+init(?TYPE, ChannelId, #{<<"product">> := Products} = Args) ->
     State = #state{
         id = ChannelId,
         env = Args
     },
+    lists:map(
+        fun
+            ({ProductId, _}) ->
+                case dgiot_product:get(ProductId) of
+                    {ok, #{<<"devType">> := DevType, <<"name">> := Name}} ->
+                        TempProductId = get_wokrer_id(Name, DevType),
+                        case TempProductId of
+                            ProductId ->
+                                dgiot_data:insert({ChannelId, worker}, ProductId);
+                            _ ->
+                                pass
+                        end;
+                    _ ->
+                        pass
+                end
+        end, Products),
     dgiot_parse_hook:subscribe(<<"Device/*">>, put, ChannelId, [<<"content">>]),
     dgiot_parse_hook:subscribe(<<"Device/*">>, delete, ChannelId),
+    dgiot_parse_hook:subscribe(<<"_User/*">>, post, ChannelId),
+    dgiot_parse_hook:subscribe(<<"_User/*">>, put, ChannelId),
+    dgiot_parse_hook:subscribe(<<"_User/*">>, delete, ChannelId),
     {ok, State, []}.
 
 handle_init(State) ->
@@ -86,7 +106,23 @@ handle_event(_EventId, Event, State) ->
     {ok, State}.
 
 
+handle_message({sync_parse, _Pid, 'after', put, _Token, <<"_User">>, #{<<"objectId">> := UserId} = _QueryData},
+    #state{id = ChannelId} = State) ->
+    io:format("~s ~p ChannelId =~p ~n", [?FILE, ?LINE, ChannelId]),
+    case dgiot_data:get({ChannelId, worker}) of
+        not_find ->
+            pass;
+        ProductId ->
+            case dgiot_parse:get_object(<<"_User">>, UserId) of
+                {ok, #{<<"username">> := WorkerNum, <<"nick">> :=WorkerName }} ->
+                    init_worker_device(ProductId, WorkerNum, WorkerName);
+                _ ->
+                    pass
+            end
+    end,
+    {ok, State};
 handle_message({sync_parse, _Pid, 'before', put, Token, <<"Device">>, #{<<"content">> := Content, <<"id">> := TaskDeviceId} = _QueryData}, State) ->
+    io:format("~s ~p TaskDeviceId =~p ~n", [?FILE, ?LINE, TaskDeviceId]),
     case dgiot_device_cache:lookup(TaskDeviceId) of
         {ok, #{<<"productid">> := TaskProductId}} ->
             case Content of
@@ -238,7 +274,7 @@ process_roll_dev(TaskProductId, TaskDeviceId, OrderName, SessionToken, FlatMap) 
 
 get_roll_dev_id(ProductId, FlatMap) ->
     BatchProductId = get_sub_product(ProductId),
-    case maps:find(<<"person_sheetsid">>, FlatMap) of
+    case maps:find(<<"sheetsid">>, maps:get(<<"person">>,FlatMap,#{})) of
         {ok, BatchDeviceId} ->
             case dgiot_device:lookup(BatchDeviceId) of
                 {ok, #{<<"devaddr">> := BatchAddr}} ->
@@ -280,9 +316,43 @@ save2parse(BatchProductId, BatchDeviceId, ALlData) ->
                   _ ->
                       ALlData
               end,
-    dgiot_parse:update_object(<<"Device">>, BatchDeviceId, #{<<"content">> => Content}).
+        dgiot_parse:update_object(<<"Device">>, BatchDeviceId, #{<<"content">> => Content}).
 
 save2td(BatchProductId, BatchAddr, Data) ->
     FlatternData = dgiot_map:flatten(Data),
     NumData = dgiot_factory_utils:turn_num(FlatternData, BatchProductId),
     dgiot_task:save_td(BatchProductId, BatchAddr, NumData, #{}).
+
+
+get_wokrer_id(Name, DevType) ->
+    dgiot_parse_id:get_productid(?WORKERCATEGORY, DevType, Name).
+
+init_worker_device(ProductId, WorkerNum, WorkerName) ->
+    case dgiot_product:get(ProductId) of
+        {ok, Product} ->
+            case Product of
+                #{<<"ACL">> := Acl, <<"name">> := Name, <<"devType">> := DevType, <<"dynamicReg">> := true} ->
+                    Device = #{
+                        <<"status">> => <<"ONLINE">>,
+                        <<"brand">> => Name,
+                        <<"devModel">> => DevType,
+                        <<"name">> => WorkerName,
+                        <<"devaddr">> => WorkerNum,
+                        <<"product">> => ProductId,
+                        <<"ACL">> => Acl
+                    },
+
+                    dgiot_device:create_device(Device),
+                    AllData = #{<<"worker_validate">> => true,
+                        <<"worker_num">> => WorkerNum,
+                        <<"worker_date">> => 0,
+                        <<"worker_name">> => WorkerName,
+                        <<"product">> => ProductId},
+                    NumData = dgiot_factory_utils:turn_num(AllData,ProductId),
+                    dgiot_task:save_td_no_match(ProductId, WorkerNum, NumData, #{});
+                _ ->
+                    pass
+            end;
+        _ ->
+            error
+    end.
