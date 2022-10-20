@@ -73,15 +73,16 @@ put_worker_shift(_) ->
     error.
 
 put_one_shift(AllData, ProductId, Worker) ->
+    BinWorker = dgiot_utils:to_binary(Worker),
     NumTd = dgiot_factory_utils:turn_num(AllData, ProductId),
-    dgiot_task:save_td(ProductId, Worker, NumTd, #{}),
-    case dgiot_data:get(?WORKER, Worker) of
+    dgiot_task:save_td(ProductId, BinWorker, NumTd, #{}),
+    case dgiot_data:get(?WORKER, BinWorker) of
         not_find ->
-            dgiot_data:insert(?WORKER, Worker, [AllData]);
+            dgiot_data:insert(?WORKER, BinWorker, [AllData]);
         List ->
             CheckedList = check_shift(AllData, List),
             NewList = sort_shift(CheckedList),
-            dgiot_data:insert(?WORKER, Worker, NewList)
+            dgiot_data:insert(?WORKER, BinWorker, NewList)
     end.
 format_time(#{<<"date">> := Date, <<"startTime">> := S, <<"endTime">> := E, <<"shift">> := Shift}, ProductId) ->
     update_shift_info(ProductId, Shift, S, E),

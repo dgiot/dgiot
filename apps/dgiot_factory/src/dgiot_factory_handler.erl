@@ -237,8 +237,9 @@ do_request(get_new_worker_num, #{<<"product">> := ProductId} = _Arg, _Context, _
 do_request(get_shift_time, #{<<"product">> := ProductId, <<"shift">> := Shift} = _Arg, _Context, _Req) ->
     Res = dgiot_factory_worker:get_shift_time(ProductId, Shift),
     {ok, #{<<"status">> => 0, msg => <<"操作成功"/utf8>>, <<"data">> => Res}};
-do_request(put_duplicate_shift, #{<<"product">> := ProductId, <<"sink_date">> := SinkDate, <<"where">> := Where} = _Arg,
+do_request(post_duplicate_shift, #{<<"product">> := ProductId, <<"sink_date">> := SinkDate, <<"where">> := Where} = _Arg,
     #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
+    io:format("~s ~p _Args = ~p  ~n", [?FILE, ?LINE, _Arg]),
     case dgiot_product_tdengine:get_channel(SessionToken) of
         {error, Error} ->
             {error, Error};
