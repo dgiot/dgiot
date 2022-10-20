@@ -641,12 +641,15 @@ have(Having) ->
     <<" having ", Having/binary>>.
 where(undefined) ->
     <<" ">>;
+
 where(Where) ->
     <<" where ", Where/binary>>.
 order(undefined) ->
     <<" ">>;
 order(Order) ->
     <<" ", Order/binary>>.
+
+
 limit_skip(undefined, undefined) ->
     <<"  ">>;
 limit_skip(Limit, Skip) ->
