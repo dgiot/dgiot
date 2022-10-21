@@ -31,7 +31,7 @@
 
 %% Channel callback
 -export([init/3, handle_init/1, handle_event/3, handle_message/2, stop/3]).
--export([get_id/2, after_handle/4, handle_data/7, get_card_data/2]).
+-export([get_id/2, after_handle/4, handle_data/8, get_card_data/2]).
 -export([get_sub_product/1, get_new_acl/2, init_worker_device/3]).
 
 %% 注册通道类型
@@ -120,7 +120,9 @@ handle_message({sync_parse, _Pid, 'after', put, _Token, <<"_User">>, #{<<"object
             end
     end,
     {ok, State};
-handle_message({sync_parse, _Pid, 'before', put, Token, <<"Device">>, #{<<"content">> := Content, <<"id">> := TaskDeviceId} = _QueryData}, State) ->
+handle_message({sync_parse, _Pid, 'before', put, Token, <<"Device">>,
+    #{<<"content">> := Content, <<"id">> := TaskDeviceId} = _QueryData},
+    #state{id = ChannelId} = State) ->
     io:format("~s ~p TaskDeviceId =~p ~n", [?FILE, ?LINE, TaskDeviceId]),
     case dgiot_device_cache:lookup(TaskDeviceId) of
         {ok, #{<<"productid">> := TaskProductId}} ->
@@ -128,7 +130,7 @@ handle_message({sync_parse, _Pid, 'before', put, Token, <<"Device">>, #{<<"conte
                 #{<<"person">> := #{<<"type">> := PersonType}} ->
                     case process_data(Content, PersonType, Token, TaskDeviceId) of
                         {BatchProductId, BatchDeviceId, BatchAddr, NewData} ->
-                            handle_data(TaskProductId, TaskDeviceId, BatchProductId, BatchDeviceId, BatchAddr, PersonType, NewData),
+                            handle_data(TaskProductId, TaskDeviceId, BatchProductId, BatchDeviceId, BatchAddr, PersonType, NewData,ChannelId),
                             {ok, State};
                         _ ->
                             {ok, State}
@@ -164,8 +166,8 @@ stop(ChannelType, ChannelId, _State) ->
 %%    save_data(ProductId, Id, DevAddr, DeviceId, PersonType, Payload).
 
 
-handle_data(_TaskProductId, TaskDeviceId, BatchProductId, BatchDeviceId, BatchAddr, PersonType, NewData) ->
-    NewPayLoad = run_factory_hook(_TaskProductId, TaskDeviceId, BatchProductId, BatchDeviceId, PersonType, NewData),
+handle_data(_TaskProductId, TaskDeviceId, BatchProductId, BatchDeviceId, BatchAddr, PersonType, NewData,ChannelId) ->
+    NewPayLoad = run_factory_hook(_TaskProductId, TaskDeviceId, BatchProductId, BatchDeviceId, PersonType, NewData,ChannelId),
     dgiot_data:insert(?FACTORY_ORDER, {BatchProductId, BatchDeviceId, PersonType}, NewPayLoad),
     OldData = get_card_data(BatchProductId, BatchDeviceId),
     ALlData = dgiot_map:merge(OldData, NewPayLoad),
@@ -218,8 +220,8 @@ turn_user(#{<<"person_sessiontoken">> := SessionToken}) ->
             SessionToken
     end.
 
-run_factory_hook(TaskProductId, TaskDeviceId, BatchProductId, BatchDeviceId, PersonType, NewData) ->
-    case dgiot_hook:run_hook({factory, TaskProductId, PersonType}, [BatchProductId, TaskDeviceId, BatchDeviceId, PersonType, NewData]) of
+run_factory_hook(TaskProductId, TaskDeviceId, BatchProductId, BatchDeviceId, PersonType, NewData,ChannelId) ->
+    case dgiot_hook:run_hook({factory, TaskProductId, PersonType}, [BatchProductId, TaskDeviceId, BatchDeviceId, PersonType, NewData,ChannelId]) of
         {ok, [{ok, Res}]} ->
             Res;
         _ ->
@@ -318,7 +320,7 @@ save2parse(BatchProductId, BatchDeviceId, ALlData) ->
 
 save2td(BatchProductId, BatchAddr, Data) ->
     FlatternData = dgiot_map:flatten(Data),
-    NumData = dgiot_factory_utils:turn_num(FlatternData, BatchProductId),
+    NumData = dgiot_product_enum:turn_num(FlatternData, BatchProductId),
     dgiot_task:save_td(BatchProductId, BatchAddr, NumData, #{}).
 
 
@@ -346,7 +348,7 @@ init_worker_device(ProductId, WorkerNum, WorkerName) ->
                         <<"worker_date">> => 0,
                         <<"worker_name">> => WorkerName,
                         <<"product">> => ProductId},
-                    NumData = dgiot_factory_utils:turn_num(AllData, ProductId),
+                    NumData = dgiot_product_enum:turn_num(AllData, ProductId),
                     dgiot_task:save_td_no_match(ProductId, WorkerNum, NumData, #{});
                 _ ->
                     pass

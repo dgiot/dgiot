@@ -18,8 +18,7 @@
 -author("jonhl").
 -include_lib("dgiot/include/logger.hrl").
 -include("dgiot_factory.hrl").
--export([get_num/2, get_name/2, turn_name/2, turn_num/2]).
--export([get_usertree/2, getalluser/1, get_ThingMap/1,clear_cache/2]).
+-export([get_usertree/2, getalluser/1, clear_cache/2]).
 -export([get_zero_list/1, get_zero_binary/1]).
 -export([fix_model/1, get_worker/1, get_children/1, check_workteam/1]).
 
@@ -40,116 +39,6 @@ fix_model(ID) ->
     NewThing = maps:merge(Model, #{<<"properties">> => Res}),
     dgiot_parse:update_object(<<"Product">>, ID, #{<<"thing">> => NewThing}).
 
-
-
-get_num(K, V) ->
-    Id = dgiot_parse_id:get_dictid(K, K, K, K),
-    case dgiot_parse:get_object(<<"Dict">>, Id) of
-        {ok, #{<<"data">> := #{<<"end">> := End} = Dict}} ->
-            case maps:find(V, Dict) of
-                {ok, Num} ->
-                    #{K => Num};
-                _ ->
-                    case dgiot_parse:update_object(<<"Dict">>, Id, #{<<"data">> => Dict#{<<"end">> => End + 1, V => End}}) of
-                        {ok, _} ->
-                            #{K => End};
-                        _ ->
-                            error
-                    end
-            end;
-        _ ->
-            Map = #{<<"class">> => K,
-                <<"title">> => K,
-                <<"type">> => K,
-                <<"key">> => K,
-                <<"objectId">> => Id,
-                <<"data">> => #{<<"end">> => 1, V => 0}
-            },
-            case dgiot_parse:create_object(<<"Dict">>, Map) of
-                {ok, _} ->
-                    #{K => 0};
-                _ ->
-                    error
-            end
-    end.
-
-get_name(K, Num) ->
-    Id = dgiot_parse_id:get_dictid(K, K, K, K),
-    case dgiot_parse:get_object(<<"Dict">>, Id) of
-        {ok, #{<<"data">> := Dict}} ->
-            TupleList = maps:to_list(Dict),
-            case lists:keytake(Num, 2, TupleList) of
-                {value, {Name, _}, _} ->
-                    #{K => Name};
-                _ ->
-                    error
-            end;
-        _ ->
-            error
-    end.
-
-turn_name(List, ProductId) when is_list(List) ->
-    lists:foldl(
-        fun(X, Acc) ->
-            Acc ++ [turn_name(X, ProductId)]
-        end, [], List);
-
-turn_name(FlatMap, ProductId) when is_map(FlatMap) ->
-    case get_ThingMap( ProductId) of
-        {ok, ThingMap} ->
-            maps:fold(
-                fun(K, V, Acc) ->
-                    case V of
-                        <<"enum">> ->
-                            case maps:find(K, Acc) of
-                                {ok, Data} ->
-                                    case dgiot_factory_utils:get_name(K, Data) of
-                                        error ->
-                                            Acc;
-                                        Map ->
-                                            maps:merge(Acc, Map)
-                                    end;
-                                _ ->
-                                    Acc
-                            end;
-                        _ ->
-                            Acc
-                    end
-
-                end, FlatMap, ThingMap);
-        _ ->
-            FlatMap
-    end;
-
-turn_name(Data, _) ->
-    Data.
-
-turn_num(FlatMap, ProductId) ->
-    case get_ThingMap( ProductId) of
-        {ok, ThingMap} ->
-            maps:fold(
-                fun(K, V, Acc) ->
-                    case V of
-                        <<"enum">> ->
-                            case maps:find(K, Acc) of
-                                {ok, Data} ->
-                                    case dgiot_factory_utils:get_num(K, Data) of
-                                        error ->
-                                            Acc;
-                                        Map ->
-                                            maps:merge(Acc, Map)
-                                    end;
-                                _ ->
-                                    Acc
-                            end;
-                        _ ->
-                            Acc
-                    end
-
-                end, FlatMap, ThingMap);
-        _ ->
-            FlatMap
-    end.
 
 
 get_usertree(#{<<"id">> := undefined}, SessionToken) ->
@@ -267,22 +156,7 @@ get_zero_binary(Acc, Num) ->
 
 
 
-get_ThingMap( ProductId) ->
-    case dgiot_product:get_devicetype(ProductId) of
-        not_find ->
-            error;
-        List ->
-            Res = lists:foldl(
-                fun(DeviceType, Acc) ->
-                    case dgiot_product:get_device_thing(ProductId, DeviceType) of
-                        not_find ->
-                            Acc;
-                        Res ->
-                            maps:merge(Acc, Res)
-                    end
-                end, #{}, List),
-            {ok, Res}
-    end.
+
 
 %%dgiot_data:insert(?WORKER, Id, {UserName, Nick,1}),
 update_worker_ets(Id, UserName, Nick, Depname) ->
@@ -297,24 +171,24 @@ record_workteam(List) ->
     WorkTeamMember = lists:foldl(
         fun(X, Acc) ->
             Team = lists:nth(1, maps:keys(X)),
-            OldList = maps:get(Team,Acc,[]),
+            OldList = maps:get(Team, Acc, []),
             WorkerList = lists:flatten(maps:get(Team, X, [])),
             lists:foldl(
                 fun(Worker, Acc1) ->
                     case dgiot_data:get(?WORKER, Worker) of
                         not_find ->
-                            Acc1 ++[Worker];
+                            Acc1 ++ [Worker];
                         {Id, _, Name, State} ->
                             dgiot_data:insert(?WORKER, Worker, {Id, Team, Name, State}),
-                            Acc1 ++[Worker];
+                            Acc1 ++ [Worker];
                         _ ->
-                            Acc1 ++[Worker]
+                            Acc1 ++ [Worker]
 
                     end
                 end, [], WorkerList),
-            maps:merge(Acc,#{Team => OldList ++ WorkerList})
+            maps:merge(Acc, #{Team => OldList ++ WorkerList})
         end, #{}, List),
-    dgiot_data:insert(?WORKER, workteam,WorkTeamMember).
+    dgiot_data:insert(?WORKER, workteam, WorkTeamMember).
 
 check_workteam(Worker) ->
     WorkerList = lists:delete(<<>>, re:split(Worker, <<" ">>)),
@@ -358,7 +232,7 @@ format_tree(Tree) ->
             case Team of
                 #{<<"name">> := Value, <<"children">> := Child} ->
                     {AllChild, ChildList} = get_all_worker(Child),
-                    {NewTree ++ [#{<<"label">> => Value,<<"value">> => Value,<<"children">> => AllChild}], List ++ [#{Value => ChildList}]};
+                    {NewTree ++ [#{<<"label">> => Value, <<"value">> => Value, <<"children">> => AllChild}], List ++ [#{Value => ChildList}]};
                 #{<<"name">> := Lable, <<"value">> := Value} ->
                     {NewTree ++ [#{<<"label">> => Lable, <<"value">> => Value}], List ++ [Value]};
                 _ ->
