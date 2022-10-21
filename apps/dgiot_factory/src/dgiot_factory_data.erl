@@ -54,7 +54,7 @@
 %%        ThingMap ->
 %%            case get_history(Channel, ProductId, DeviceId, ThingMap, Type) of
 %%                {ok, #{<<"results">> := HistoryData}} ->
-%%                    NamedData = dgiot_factory_utils:turn_name(HistoryData, ThingMap),
+%%                    NamedData = dgiot_product_enum:turn_name(HistoryData, ThingMap),
 %%%%                    {Total, Res} = filter_data(Limit, Skip, NamedData),
 %%                    {ok, {Total, filter_data(Res)}};
 %%
@@ -72,7 +72,7 @@
 %%        ThingMap ->
 %%            case get_history(Channel, ProductId, DeviceId, ThingMap, Where, Start, End, Type, New) of
 %%                {ok, #{<<"results">> := HistoryData}} ->
-%%                    NamedData = dgiot_factory_utils:turn_name(HistoryData, ThingMap),
+%%                    NamedData = dgiot_product_enum:turn_name(HistoryData, ThingMap),
 %%                    {Total, Res} = filter_data(Limit, Skip, NamedData),
 %%                    {ok, {Total, filter_data(Res)}};
 %%
@@ -88,7 +88,7 @@
 %%        ThingMap ->
 %%            case get_history(Channel, ProductId, DeviceId, ThingMap, Where, Start, End, Type, New) of
 %%                {ok, #{<<"results">> := HistoryData}} ->
-%%                    NamedData = dgiot_factory_utils:turn_name(HistoryData, ThingMap),
+%%                    NamedData = dgiot_product_enum:turn_name(HistoryData, ThingMap),
 %%                    {Total, Res} = filter_data(Limit, Skip, NamedData),
 %%                    {ok, {Total, filter_data(Res)}};
 %%
@@ -551,9 +551,9 @@ filter_data(Data) when is_map(Data) ->
 %%filter_where(Where, ProductId, Type) ->
 %%    MapWhere = case is_map(Where) of
 %%                   true ->
-%%                       dgiot_factory_utils:turn_num(Where, ProductId, Type);
+%%                       dgiot_product_enum:turn_num(Where, ProductId, Type);
 %%                   _ ->
-%%                       dgiot_factory_utils:turn_num(jsx:decode(Where), ProductId, Type)
+%%                       dgiot_product_enum:turn_num(jsx:decode(Where), ProductId, Type)
 %%               end,
 %%    case get_ThingMap(Type, ProductId) of
 %%        {ok, ThingMap} ->
@@ -606,7 +606,7 @@ get_history_data(ProductId, DeviceId, Type, Function, FunctionMap, Group, Having
         end)
     of
         {ok, #{<<"results">> := HistoryData}} ->
-            NamedData = dgiot_factory_utils:turn_name(HistoryData, ProductId),
+            NamedData = dgiot_product_enum:turn_name(HistoryData, ProductId),
             {Total, FileredRes} = filter_data(Limit, Skip, NamedData),
             Data = case dgiot_hook:run_hook({factory, ProductId, afterTd}, [FileredRes]) of
                        {ok, [{ok, AfteRes}]} ->

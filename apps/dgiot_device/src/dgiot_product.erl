@@ -26,7 +26,7 @@
 -export([get_prop/1, get_props/1, get_props/2, get_unit/1, do_td_message/1, update_properties/2, update_properties/0]).
 -export([update_topics/0, update_product_filed/1]).
 -export([get_initdata/2, init_inspection/1, get_inspection/1]).
--export([save_devicetype/1, get_devicetype/1,get_device_thing/2]).
+-export([save_devicetype/1, get_devicetype/1, get_device_thing/2]).
 -export([save_keys/1, get_keys/1, get_control/1, save_control/1, save_channel/1, save_tdchannel/1,
     save_taskchannel/1, get_channel/1, get_tdchannel/1,
     get_taskchannel/1, get_interval/1]).
@@ -83,6 +83,7 @@ save(Product) ->
     save_tdchannel(ProductId),
     save_taskchannel(ProductId),
     save_device_thingtype(ProductId),
+    dgiot_product_enum:save_product_enum(ProductId),
     {ok, Product1}.
 
 put(Product) ->
@@ -209,16 +210,15 @@ get_devicetype(ProductId) ->
 save_device_thingtype(ProductId) ->
     case dgiot_product:lookup_prod(ProductId) of
         {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
-            lists:map(fun(#{<<"devicetype">> := DeviceType, <<"identifier">> := Identifier, <<"dataType">> := #{<<"type">> := Type}}) ->
-
-                case dgiot_data:get(?DGIOT_PRODUCT, {ProductId, device_thing, DeviceType}) of
-                    not_find ->
-                        dgiot_data:insert(?DGIOT_PRODUCT, {ProductId, device_thing, DeviceType}, #{Identifier => Type});
-                    Map ->
-                        dgiot_data:insert(?DGIOT_PRODUCT, {ProductId, device_thing, DeviceType}, Map#{Identifier => Type})
-                end
-
-                      end, Props);
+            lists:map(
+                fun(#{<<"devicetype">> := DeviceType, <<"identifier">> := Identifier, <<"dataType">> := #{<<"type">> := Type}}) ->
+                    case dgiot_data:get(?DGIOT_PRODUCT, {ProductId, device_thing, DeviceType}) of
+                        not_find ->
+                            dgiot_data:insert(?DGIOT_PRODUCT, {ProductId, device_thing, Identifier}, #{Identifier => Type});
+                        Map ->
+                            dgiot_data:insert(?DGIOT_PRODUCT, {ProductId, device_thing, DeviceType}, Map#{Identifier => Type})
+                    end
+                end, Props);
 
         _Error ->
             []

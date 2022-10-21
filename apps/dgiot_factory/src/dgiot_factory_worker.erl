@@ -26,10 +26,11 @@
 
 -export([put_worker_shift/1, get_work_shop_workers/2, get_new_workernum/1]).
 -export([duplicate_shift/4]).
+-export([record_worker_info/3]).
 
-put_worker_shift(#{<<"product">> := ProductId, <<"ids">> := Ids, <<"shift">> := Shift } = Data) ->
-     WorkShop = maps:get(<<"workshop">> ,Data,<<"">>),
-     WorkTeam = maps:get(<<"workteam">>,Data,<<"">>),
+put_worker_shift(#{<<"product">> := ProductId, <<"ids">> := Ids, <<"shift">> := Shift} = Data) ->
+    WorkShop = maps:get(<<"workshop">>, Data, <<"">>),
+    WorkTeam = maps:get(<<"workteam">>, Data, <<"">>),
     Validate = maps:get(<<"worker_validate">>, Data, true),
     _Leader = maps:get(<<"leader">>, Data, <<"">>),
     WorkerList = re:split(Ids, <<",">>),
@@ -76,7 +77,7 @@ put_worker_shift(_) ->
 
 put_one_shift(AllData, ProductId, Worker) ->
     BinWorker = dgiot_utils:to_binary(Worker),
-    NumTd = dgiot_factory_utils:turn_num(AllData, ProductId),
+    NumTd = dgiot_product_enum:turn_num(AllData, ProductId),
     dgiot_task:save_td_no_match(ProductId, BinWorker, NumTd, #{}),
     case dgiot_data:get(?WORKER, BinWorker) of
         not_find ->
@@ -219,7 +220,7 @@ get_new_shift(Now, ShiftList) ->
 %%                    NewData = duplicate_shift(First),
 %%                    Worker = maps:get(<<"worker_name">>, First, <<"null">>),
 %%                    ProductId = maps:get(<<"product">>, First, <<"null">>),
-%%                    NumTd = dgiot_factory_utils:turn_num(NewData, ProductId),
+%%                    NumTd = dgiot_product_enum:turn_num(NewData, ProductId),
 %%                    dgiot_task:save_td(ProductId, Worker, NumTd, #{}),
 %%                    dgiot_data:insert(?WORKER, Worker, [NewData]);
 %%                _ ->
@@ -266,11 +267,14 @@ check_shift(Data, List) ->
     Day = maps:get(<<"worker_date">>, Data, 0),
     Res = lists:foldl(
         fun(#{<<"worker_date">> := OldDay} = X, Acc) ->
+            io:format("~s ~p OldDay: ~p~n", [?FILE, ?LINE, OldDay]),
+            io:format("~s ~p Day: ~p~n", [?FILE, ?LINE, Day]),
             case Day == OldDay of
                 true ->
                     io:format("~s ~p here~n", [?FILE, ?LINE]),
                     Acc;
                 _ ->
+                    io:format("~s ~p here~n", [?FILE, ?LINE]),
                     Acc ++ [X]
             end;
             (_, Acc) ->
@@ -318,3 +322,51 @@ put_relax(Items, ProductId) ->
             (_, _) ->
                 pass
         end, [], Items).
+
+
+
+
+
+record_worker_info(BatchDeviceId, #{<<"quality">> := #{<<"type">> := Type}} = Payload, ChannelId) ->
+    Quality = maps:get(<<"workshop">>, maps:get(<<"quality">>, Payload, #{}), <<"true">>),
+    TypeData = dgiot_data:get(?FACTORY_ORDER, Type),
+    OrderId = maps:get(<<"ordername">>, maps:get(<<"person">>, TypeData, #{}), <<"null">>),
+    People = maps:get(<<"people">>, TypeData, <<"null">>),
+    _WorkShop = maps:get(<<"workshop">>, TypeData, <<"null">>),
+    Num = maps:get(<<"num">>, TypeData, 0),
+    Spec = maps:get(<<"spec">>, TypeData, <<"">>),
+    WorkeTime = maps:get(<<"worketime">>, TypeData, 0),
+    RollNum = maps:get(<<"rollnum">>, maps:get(<<"person">>, Payload, #{}), <<"null">>),
+    _Time = dgiot_datetime:nowstamp(),
+    WorkerList = re:split(People, <<",">>),
+    lists:foldl(
+        fun(Worker, _) ->
+            case dgiot_data:get({ChannelId, worker}) of
+                not_find ->
+                    pass;
+                ProductId ->
+                    WorkerData = case dgiot_data:get(?WORKER, Worker) of
+                                     not_find ->
+                                         #{};
+                                     N ->
+                                         lists:nth(1, N)
+
+                                 end,
+                    ManufacData = #{
+%%                        <<"manufac_type">> => dgiot_utils:to_binary(Type),
+                        <<"manufac_quality">> => Quality,
+                        <<"manufac_orderid">> => OrderId,
+                        <<"manufac_spec">> => Spec,
+                        <<"manufac_num">> => Num,
+                        <<"manufac_worktime">> => WorkeTime,
+                        <<"manufac_batchid">> => BatchDeviceId,
+                        <<"manufac_rollnum">> => RollNum,
+                        <<"base_source">> => <<"质检数据"/utf8>>
+                    },
+                    NumData = dgiot_product_enum:turn_num(maps:merge(WorkerData, ManufacData), ProductId),
+                    dgiot_task:save_td(ProductId, Worker, NumData, #{})
+            end
+
+        end, [], WorkerList);
+record_worker_info(_, _, _) ->
+    pass.
