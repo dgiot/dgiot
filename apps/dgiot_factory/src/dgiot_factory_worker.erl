@@ -26,9 +26,11 @@
 
 -export([put_worker_shift/1, get_work_shop_workers/2, get_new_workernum/1]).
 -export([duplicate_shift/4]).
-put_worker_shift(#{<<"product">> := ProductId, <<"ids">> := Ids, <<"workteam">> := WorkTeam,
-    <<"shift">> := Shift, <<"workshop">> := WorkShop} = Data) ->
-    Validate = maps:get(<<"worker_validate">>, Data, <<"true">>),
+
+put_worker_shift(#{<<"product">> := ProductId, <<"ids">> := Ids, <<"shift">> := Shift } = Data) ->
+     WorkShop = maps:get(<<"workshop">> ,Data,<<"">>),
+     WorkTeam = maps:get(<<"workteam">>,Data,<<"">>),
+    Validate = maps:get(<<"worker_validate">>, Data, true),
     _Leader = maps:get(<<"leader">>, Data, <<"">>),
     WorkerList = re:split(Ids, <<",">>),
     _Today = dgiot_datetime:get_today_stamp(),
@@ -75,7 +77,7 @@ put_worker_shift(_) ->
 put_one_shift(AllData, ProductId, Worker) ->
     BinWorker = dgiot_utils:to_binary(Worker),
     NumTd = dgiot_factory_utils:turn_num(AllData, ProductId),
-    dgiot_task:save_td(ProductId, BinWorker, NumTd, #{}),
+    dgiot_task:save_td_no_match(ProductId, BinWorker, NumTd, #{}),
     case dgiot_data:get(?WORKER, BinWorker) of
         not_find ->
             dgiot_data:insert(?WORKER, BinWorker, [AllData]);
@@ -206,9 +208,9 @@ update_shift_info(ProductId, Shift, ShiftStartTime, ShiftEndTime) ->
             dgiot_data:insert(?FACTORY, {ProductId, shift}, maps:merge(Res, #{Shift => #{<<"startTime">> => ShiftStartTime, <<"endTime">> => ShiftEndTime}}))
     end.
 get_new_shift(Now, ShiftList) ->
-    case length(ShiftList)  of
-         0->
-             [];
+    case length(ShiftList) of
+        0 ->
+            [];
 %%        1 ->
 %%            First = lists:nth(1, ShiftList),
 %%            EndTime = maps:get(<<"worker_shiftendtime">>, First, 99999999999999),
@@ -228,7 +230,7 @@ get_new_shift(Now, ShiftList) ->
             EndTime = maps:get(<<"worker_shiftendtime">>, First, 99999999999999),
             case EndTime < Now of
                 true ->
-                    get_new_shift(Now,lists:delete(First,ShiftList));
+                    get_new_shift(Now, lists:delete(First, ShiftList));
                 _ ->
                     ShiftList
             end
@@ -246,7 +248,7 @@ check_shift(#{<<"worker_validate">> := <<"false">>} = Data, List) ->
             (_, Acc) ->
                 Acc
         end, [], List);
-check_shift(#{ <<"worker_shift">> := <<"休班"/utf8>>}=Data, List) ->
+check_shift(#{<<"worker_shift">> := <<"休班"/utf8>>} = Data, List) ->
     Day = maps:get(<<"worker_date">>, Data, 0),
     lists:foldl(
         fun(#{<<"worker_date">> := OldDay} = X, Acc) ->
@@ -260,12 +262,13 @@ check_shift(#{ <<"worker_shift">> := <<"休班"/utf8>>}=Data, List) ->
                 Acc
         end, [], List);
 
-check_shift( Data, List) ->
+check_shift(Data, List) ->
     Day = maps:get(<<"worker_date">>, Data, 0),
-    lists:foldl(
+    Res = lists:foldl(
         fun(#{<<"worker_date">> := OldDay} = X, Acc) ->
             case Day == OldDay of
                 true ->
+                    io:format("~s ~p here~n", [?FILE, ?LINE]),
                     Acc;
                 _ ->
                     Acc ++ [X]
@@ -273,7 +276,7 @@ check_shift( Data, List) ->
             (_, Acc) ->
                 Acc
         end, [], List),
-    List ++ [Data].
+    Res ++ [Data].
 
 
 duplicate_shift(Shift) ->

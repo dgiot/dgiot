@@ -139,6 +139,7 @@ check_field(Data, #{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> :=
             undefined;
         Value ->
             Type1 = list_to_binary(string:to_upper(binary_to_list(Type))),
+
             NewValue =
                 case Type1 of
                     _ when Type1 == <<"INT">>; Type1 == <<"DATE">>; Type1 == <<"SHORT">>; Type1 == <<"LONG">>;Type1 == <<"ENUM">>, is_list(Value) ->
@@ -149,7 +150,12 @@ check_field(Data, #{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> :=
                         Value;
                     _ when Type1 == <<"FLOAT">>; Type1 == <<"DOUBLE">> ->
                         Precision = maps:get(<<"precision">>, Specs, 3),
-                        dgiot_utils:to_float(Value / 1, Precision);
+                        case size(Value) of
+                            0 ->
+                                0;
+                            _ ->
+                                dgiot_utils:to_float(Value / 1, Precision)
+                        end;
                     <<"BOOL">> ->
                         Value;
                     <<"TEXT">> ->
