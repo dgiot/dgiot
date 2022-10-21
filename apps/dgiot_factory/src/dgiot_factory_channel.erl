@@ -108,13 +108,12 @@ handle_event(_EventId, Event, State) ->
 
 handle_message({sync_parse, _Pid, 'after', put, _Token, <<"_User">>, #{<<"objectId">> := UserId} = _QueryData},
     #state{id = ChannelId} = State) ->
-    io:format("~s ~p ChannelId =~p ~n", [?FILE, ?LINE, ChannelId]),
     case dgiot_data:get({ChannelId, worker}) of
         not_find ->
             pass;
         ProductId ->
             case dgiot_parse:get_object(<<"_User">>, UserId) of
-                {ok, #{<<"username">> := WorkerNum, <<"nick">> :=WorkerName }} ->
+                {ok, #{<<"username">> := WorkerNum, <<"nick">> := WorkerName}} ->
                     init_worker_device(ProductId, WorkerNum, WorkerName);
                 _ ->
                     pass
@@ -246,8 +245,7 @@ process_roll_dev(TaskProductId, TaskDeviceId, OrderName, SessionToken, FlatMap) 
         {ok, #{<<"acl">> := Acl}} ->
             io:format("~s ~p BatchDeviceId = ~p ~n", [?FILE, ?LINE, BatchDeviceId]),
             NewAcl = get_new_acl(SessionToken, Acl),
-%%            dgiot_device_cache:put(#{<<"objectId">> => TaskDeviceId, <<"ACL">> => NewAcl}),
-            dgiot_parse:update_object(<<"Device">>, BatchDeviceId, #{<<"ACL">> => NewAcl}),
+            dgiot_parse:update_object(<<"Device">>, BatchDeviceId, #{<<"ACL">> => NewAcl,<<"isEnable">> =>true}),
             dgiot_device:save_subdevice(BatchDeviceId, TaskDeviceId, 1),
             {ok, {BatchProductId, BatchDeviceId, BatchAddr}};
         _ ->
@@ -262,7 +260,7 @@ process_roll_dev(TaskProductId, TaskDeviceId, OrderName, SessionToken, FlatMap) 
                     <<"className">> => <<"Product">>,
                     <<"objectId">> => BatchProductId
                 }},
-%%            dgiot_device_cache:post(Device),
+            dgiot_device_cache:post(Device),
             dgiot_parse:create_object(<<"Device">>, Device),
             dgiot_device:save_subdevice(BatchDeviceId, TaskDeviceId, 1),
             {ok, {BatchProductId, BatchDeviceId, BatchAddr}}
@@ -274,7 +272,7 @@ process_roll_dev(TaskProductId, TaskDeviceId, OrderName, SessionToken, FlatMap) 
 
 get_roll_dev_id(ProductId, FlatMap) ->
     BatchProductId = get_sub_product(ProductId),
-    case maps:find(<<"sheetsid">>, maps:get(<<"person">>,FlatMap,#{})) of
+    case maps:find(<<"sheetsid">>, maps:get(<<"person">>, FlatMap, #{})) of
         {ok, BatchDeviceId} ->
             case dgiot_device:lookup(BatchDeviceId) of
                 {ok, #{<<"devaddr">> := BatchAddr}} ->
@@ -300,7 +298,7 @@ get_new_acl(SessionToken, Acl) ->
                             Acc
                     end
                 end, [], Roles),
-            NewRoleList = Acl ++ (UserRoleList --Acl),
+            NewRoleList = dgiot_utils:unique_2(Acl ++ UserRoleList),
             lists:foldl(
                 fun(X, Acc) ->
                     maps:merge(Acc, #{dgiot_utils:to_binary(X) => #{<<"read">> => true, <<"write">> => true}})
@@ -316,7 +314,7 @@ save2parse(BatchProductId, BatchDeviceId, ALlData) ->
                   _ ->
                       ALlData
               end,
-        dgiot_parse:update_object(<<"Device">>, BatchDeviceId, #{<<"content">> => Content}).
+    dgiot_parse:update_object(<<"Device">>, BatchDeviceId, #{<<"content">> => Content}).
 
 save2td(BatchProductId, BatchAddr, Data) ->
     FlatternData = dgiot_map:flatten(Data),
@@ -348,7 +346,7 @@ init_worker_device(ProductId, WorkerNum, WorkerName) ->
                         <<"worker_date">> => 0,
                         <<"worker_name">> => WorkerName,
                         <<"product">> => ProductId},
-                    NumData = dgiot_factory_utils:turn_num(AllData,ProductId),
+                    NumData = dgiot_factory_utils:turn_num(AllData, ProductId),
                     dgiot_task:save_td_no_match(ProductId, WorkerNum, NumData, #{});
                 _ ->
                     pass
