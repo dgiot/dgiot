@@ -130,7 +130,7 @@ handle_message({sync_parse, _Pid, 'before', put, Token, <<"Device">>,
                 #{<<"person">> := #{<<"type">> := PersonType}} ->
                     case process_data(Content, PersonType, Token, TaskDeviceId) of
                         {BatchProductId, BatchDeviceId, BatchAddr, NewData} ->
-                            handle_data(TaskProductId, TaskDeviceId, BatchProductId, BatchDeviceId, BatchAddr, PersonType, NewData,ChannelId),
+                            handle_data(TaskProductId, TaskDeviceId, BatchProductId, BatchDeviceId, BatchAddr, PersonType, NewData, ChannelId),
                             {ok, State};
                         _ ->
                             {ok, State}
@@ -166,8 +166,8 @@ stop(ChannelType, ChannelId, _State) ->
 %%    save_data(ProductId, Id, DevAddr, DeviceId, PersonType, Payload).
 
 
-handle_data(_TaskProductId, TaskDeviceId, BatchProductId, BatchDeviceId, BatchAddr, PersonType, NewData,ChannelId) ->
-    NewPayLoad = run_factory_hook(_TaskProductId, TaskDeviceId, BatchProductId, BatchDeviceId, PersonType, NewData,ChannelId),
+handle_data(_TaskProductId, TaskDeviceId, BatchProductId, BatchDeviceId, BatchAddr, PersonType, NewData, ChannelId) ->
+    NewPayLoad = run_factory_hook(_TaskProductId, TaskDeviceId, BatchProductId, BatchDeviceId, PersonType, NewData, ChannelId),
     dgiot_data:insert(?FACTORY_ORDER, {BatchProductId, BatchDeviceId, PersonType}, NewPayLoad),
     OldData = get_card_data(BatchProductId, BatchDeviceId),
     ALlData = dgiot_map:merge(OldData, NewPayLoad),
@@ -220,8 +220,8 @@ turn_user(#{<<"person_sessiontoken">> := SessionToken}) ->
             SessionToken
     end.
 
-run_factory_hook(TaskProductId, TaskDeviceId, BatchProductId, BatchDeviceId, PersonType, NewData,ChannelId) ->
-    case dgiot_hook:run_hook({factory, TaskProductId, PersonType}, [BatchProductId, TaskDeviceId, BatchDeviceId, PersonType, NewData,ChannelId]) of
+run_factory_hook(TaskProductId, TaskDeviceId, BatchProductId, BatchDeviceId, PersonType, NewData, ChannelId) ->
+    case dgiot_hook:run_hook({factory, TaskProductId, PersonType}, [BatchProductId, TaskDeviceId, BatchDeviceId, PersonType, NewData, ChannelId]) of
         {ok, [{ok, Res}]} ->
             Res;
         _ ->
@@ -247,7 +247,7 @@ process_roll_dev(TaskProductId, TaskDeviceId, OrderName, SessionToken, FlatMap) 
         {ok, #{<<"acl">> := Acl}} ->
             io:format("~s ~p BatchDeviceId = ~p ~n", [?FILE, ?LINE, BatchDeviceId]),
             NewAcl = get_new_acl(SessionToken, Acl),
-            dgiot_parse:update_object(<<"Device">>, BatchDeviceId, #{<<"ACL">> => NewAcl,<<"isEnable">> =>true}),
+            dgiot_parse:update_object(<<"Device">>, BatchDeviceId, #{<<"ACL">> => NewAcl, <<"isEnable">> => true}),
             dgiot_device:save_subdevice(BatchDeviceId, TaskDeviceId, 1),
             {ok, {BatchProductId, BatchDeviceId, BatchAddr}};
         _ ->
@@ -257,6 +257,7 @@ process_roll_dev(TaskProductId, TaskDeviceId, OrderName, SessionToken, FlatMap) 
                 <<"devaddr">> => BatchAddr,
                 <<"name">> => OrderName,
                 <<"ACL">> => NewAcl,
+                <<"basedata">> => #{},
                 <<"product">> => #{
                     <<"__type">> => <<"Pointer">>,
                     <<"className">> => <<"Product">>,

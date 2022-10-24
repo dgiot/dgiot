@@ -24,7 +24,6 @@ get_material_record(DeviceId, Depart) ->
     case dgiot_parse:get_object(<<"Device">>, DeviceId) of
         {ok, #{<<"basedata">> := #{<<"material">> := Material}}} ->
             DepartMaterial = get_depart_material(Material, Depart),
-
             {ok, get_usable_material(DepartMaterial)};
         _ ->
             case dgiot_hook:run_hook({factory, get_material}, [DeviceId]) of
@@ -95,7 +94,8 @@ hanlde_pickandretrive(DeviceId, #{<<"FPrdOrgId">> := FPrdOrgId, <<"FStockId">> :
                 #{<<"material_pick">> := Pick, <<"material_retrive">> := Retrive, <<"material_picked">> := Picked} ->
                     case Type of
                         <<"picking">> ->
-                            case dgiot_hook:run_hook({kingdee, post_material, <<"picking">>}, [DeviceId, FReplaceGroup, FPrdOrgId, FStockId, Weight, Weight]) of
+                            case dgiot_hook:run_hook({kingdee, post_material, <<"picking">>},
+                                [DeviceId, FReplaceGroup, FPrdOrgId, FStockId, Weight, Weight]) of
                                 {ok, [{ok, _}]} ->
                                     io:format("~s ~p Type = ~p ~n", [?FILE, ?LINE, Type]),
                                     After = dgiot_utils:to_float(Picked) + dgiot_utils:to_float(Weight),
@@ -109,7 +109,8 @@ hanlde_pickandretrive(DeviceId, #{<<"FPrdOrgId">> := FPrdOrgId, <<"FStockId">> :
 
                             end;
                         <<"retriving">> ->
-                            case dgiot_hook:run_hook({kingdee, post_material, <<"retriving">>}, [DeviceId, FReplaceGroup, FPrdOrgId, FStockId, Weight, Weight]) of
+                            case dgiot_hook:run_hook({kingdee, post_material, <<"retriving">>},
+                                [DeviceId, FReplaceGroup, FPrdOrgId, FStockId, Weight, Weight]) of
                                 {ok, [{ok, _}]} ->
                                     After = dgiot_utils:to_float(Picked) - dgiot_utils:to_float(Weight),
                                     handle_warehouse(Id, Type, Num),
