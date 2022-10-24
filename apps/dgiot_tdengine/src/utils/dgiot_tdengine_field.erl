@@ -150,7 +150,7 @@ check_field(Data, #{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> :=
                         Value;
                     _ when Type1 == <<"FLOAT">>; Type1 == <<"DOUBLE">> ->
                         Precision = maps:get(<<"precision">>, Specs, 3),
-                        case size(Value) of
+                        case size(dgiot_utils:to_binary(Value)) of
                             0 ->
                                 0;
                             _ ->

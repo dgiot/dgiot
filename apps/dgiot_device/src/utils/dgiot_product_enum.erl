@@ -36,27 +36,26 @@ save_product_enum(ProductId) ->
                 fun
                     (#{<<"devicetype">> := DeviceType, <<"identifier">> := Identifier,
                         <<"dataType">> := #{<<"type">> := <<"enum">>, <<"specs">> := Spec}}) ->
-                        case dgiot_data:get(?MODULE, {ProductId, device_thing, DeviceType}) of
+                        dgiot_data:insert(?MODULE, {ProductId, device_thing, Identifier},
+                            #{Identifier => <<"enum">>, <<"specs">> => Spec}),
+                        case dgiot_data:get(?DGIOT_PRODUCT, {ProductId, device_thing, DeviceType}) of
                             not_find ->
-                                dgiot_data:insert(?MODULE, {ProductId, device_thing, Identifier},
-                                    #{Identifier => <<"enum">>, <<"specs">> => Spec}),
-                                dgiot_data:insert(?MODULE, {ProductId, device_thing, DeviceType},
+                                dgiot_data:insert(?DGIOT_PRODUCT, {ProductId, device_thing, DeviceType},
                                     #{Identifier => <<"enum">>});
                             Map ->
-                                dgiot_data:insert(?MODULE, {ProductId, device_thing, Identifier},
-                                    #{Identifier => <<"enum">>, <<"specs">> => Spec}),
-                                dgiot_data:insert(?MODULE, {ProductId, device_thing, DeviceType},
+                                dgiot_data:insert(?DGIOT_PRODUCT, {ProductId, device_thing, DeviceType},
                                     Map#{Identifier => <<"enum">>})
                         end;
                     (#{<<"devicetype">> := DeviceType, <<"identifier">> := Identifier, <<"dataType">> := #{<<"type">> := Type}}) ->
-                        case dgiot_data:get(?MODULE, {ProductId, device_thing, DeviceType}) of
+                        dgiot_data:insert(?MODULE, {ProductId, device_thing, Identifier}, #{Identifier => Type}),
+                        case dgiot_data:get(?DGIOT_PRODUCT, {ProductId, device_thing, DeviceType}) of
                             not_find ->
-                                dgiot_data:insert(?MODULE, {ProductId, device_thing, Identifier}, #{Identifier => Type});
+                                dgiot_data:insert(?DGIOT_PRODUCT, {ProductId, device_thing, DeviceType},
+                                    #{Identifier => <<"enum">>});
                             Map ->
-                                dgiot_data:insert(?MODULE, {ProductId, device_thing, DeviceType}, Map#{Identifier => Type})
+                                dgiot_data:insert(?DGIOT_PRODUCT, {ProductId, device_thing, DeviceType},
+                                    Map#{Identifier => <<"enum">>})
                         end
-
-
                 end, Props);
 
         _Error ->
@@ -97,10 +96,9 @@ post_enum_value(ProductId, Identifier, Name) ->
                             Acc
                     end
                 end, 0, Spec),
-
             upadte_thing(ProductId, Identifier, Name, Max);
         _ ->
-            upadte_thing(ProductId, Identifier, Name, #{<<"0">> => Name})
+            upadte_thing(ProductId, Identifier, Name, -1)
     end.
 upadte_thing(ProductId, Identifier, Name, Max) ->
     case dgiot_parse:get_object(<<"Product">>, ProductId) of
@@ -116,7 +114,8 @@ upadte_thing(ProductId, Identifier, Name, Max) ->
                     end
                 end, [], Properties),
             NewThing = Thing#{<<"properties">> => NewProperties},
-            dgiot_parse:update_object(<<"Product">>, ProductId, #{<<"thing">> => NewThing});
+            dgiot_parse:update_object(<<"Product">>, ProductId, #{<<"thing">> => NewThing}),
+            #{Name => Max + 1};
         _ ->
             pass
     end.
@@ -139,7 +138,7 @@ turn_name(FlatMap, ProductId) when is_map(FlatMap) ->
                             case maps:find(K, Acc) of
                                 {ok, Data} ->
                                     case get_enmu_value(ProductId, K, Data) of
-                                        #{K := Value} ->
+                                        #{Data := Value} ->
                                             Acc#{K => Value};
                                         _ ->
                                             Acc
@@ -166,13 +165,19 @@ turn_num(FlatMap, ProductId) ->
                 fun(K, V, Acc) ->
                     case V of
                         <<"enum">> ->
+
                             case maps:find(K, Acc) of
                                 {ok, Data} ->
                                     case get_enmu_key(ProductId, K, Data) of
-                                        #{K := Value} ->
+                                        #{Data := Value} ->
                                             Acc#{K => Value};
                                         _ ->
-                                            Acc
+                                            case post_enum_value(ProductId, K, Data) of
+                                                #{K := Value} ->
+                                                    Acc#{K => Value};
+                                                _ ->
+                                                    Acc
+                                            end
                                     end;
                                 _ ->
                                     Acc
