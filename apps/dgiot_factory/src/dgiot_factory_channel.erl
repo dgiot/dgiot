@@ -245,7 +245,6 @@ process_roll_dev(TaskProductId, TaskDeviceId, OrderName, SessionToken, FlatMap) 
                                                  end,
     case dgiot_device_cache:lookup(BatchDeviceId) of
         {ok, #{<<"acl">> := Acl}} ->
-            io:format("~s ~p BatchDeviceId = ~p ~n", [?FILE, ?LINE, BatchDeviceId]),
             NewAcl = get_new_acl(SessionToken, Acl),
             dgiot_parse:update_object(<<"Device">>, BatchDeviceId, #{<<"ACL">> => NewAcl, <<"isEnable">> => true}),
             dgiot_device:save_subdevice(BatchDeviceId, TaskDeviceId, 1),

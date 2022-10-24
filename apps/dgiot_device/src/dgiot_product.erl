@@ -29,7 +29,7 @@
 -export([save_devicetype/1, get_devicetype/1, get_device_thing/2]).
 -export([save_keys/1, get_keys/1, get_control/1, save_control/1, save_channel/1, save_tdchannel/1,
     save_taskchannel/1, get_channel/1, get_tdchannel/1,
-    get_taskchannel/1, get_interval/1]).
+    get_taskchannel/1, get_interval/1,save_device_thingtype/1]).
 -type(result() :: any()).   %% todo 目前只做参数检查，不做结果检查
 
 init_ets() ->
