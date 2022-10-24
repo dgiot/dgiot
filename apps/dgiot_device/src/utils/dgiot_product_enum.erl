@@ -76,11 +76,13 @@ get_enmu_key(ProductId, Identifier, Value) ->
         _ ->
             #{}
     end.
-get_enmu_value(ProductId, Identifier, Key) ->
+get_enmu_value(ProductId, Identifier, NumKey) ->
+    BinKey = dgiot_utils:to_binary(NumKey),
     case dgiot_data:get(?MODULE, {ProductId, device_thing, Identifier}) of
-        #{Identifier := <<"enum">>, <<"specs">> := #{Key := V}} ->
-            #{Key => V};
-        _ ->
+        #{Identifier := <<"enum">>, <<"specs">> := #{BinKey := V}} ->
+            #{NumKey => V};
+        _R ->
+
             #{}
     end.
 
@@ -140,7 +142,13 @@ turn_name(FlatMap, ProductId) when is_map(FlatMap) ->
                                     case get_enmu_value(ProductId, K, Data) of
                                         #{Data := Value} ->
                                             Acc#{K => Value};
-                                        _ ->
+                                        _R ->
+                                            case K of
+                                                <<"worker_shift">> ->
+                                                    io:format("~s ~p _R =~p ~n", [?FILE, ?LINE, _R]);
+                                                _->
+                                                  pass
+                                            end,
                                             Acc
                                     end;
                                 _ ->

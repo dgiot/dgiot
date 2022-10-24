@@ -24,14 +24,14 @@
 -include_lib("dgiot/include/logger.hrl").
 -include("dgiot_factory.hrl").
 
--export([put_worker_shift/1, get_work_shop_workers/2, get_new_workernum/1]).
+-export([put_worker_shift/1, get_work_shop_workers/2, get_new_workernum/1,format_worker/1]).
 -export([duplicate_shift/4]).
 -export([record_worker_info/4]).
 
 put_worker_shift(#{<<"product">> := ProductId, <<"ids">> := Ids, <<"shift">> := Shift} = Data) ->
     WorkShop = maps:get(<<"workshop">>, Data, <<"">>),
     WorkTeam = maps:get(<<"workteam">>, Data, <<"">>),
-    Validate = maps:get(<<"worker_validate">>, Data, true),
+    _Validate = maps:get(<<"worker_validate">>, Data, true),
     _Leader = maps:get(<<"leader">>, Data, <<"">>),
     WorkerList = re:split(Ids, <<",">>),
     _Today = dgiot_datetime:get_today_stamp(),
@@ -54,7 +54,7 @@ put_worker_shift(#{<<"product">> := ProductId, <<"ids">> := Ids, <<"shift">> := 
                                  end,
                     AllData = #{
                         <<"base_source">> => 1,
-                        <<"worker_validate">> => Validate,
+%%                        <<"worker_validate">> => Validate,
                         <<"worker_num">> => Worker,
                         <<"worker_name">> => WorkerName,
                         <<"worker_workshop">> => WorkShop,
@@ -327,7 +327,7 @@ put_relax(Items, ProductId) ->
 
 
 
-record_worker_info(BatchProductId,BatchDeviceId, #{<<"quality">> := #{<<"type">> := Type}} = Payload, ChannelId) ->
+record_worker_info(BatchProductId, BatchDeviceId, #{<<"quality">> := #{<<"type">> := Type}} = Payload, ChannelId) ->
     Quality = maps:get(<<"quality">>, maps:get(<<"quality">>, Payload, #{}), <<"合格"/utf8>>),
     TypeData = case dgiot_data:get(?FACTORY_ORDER, {BatchProductId, BatchDeviceId, Type}) of
                    not_find ->
@@ -336,11 +336,11 @@ record_worker_info(BatchProductId,BatchDeviceId, #{<<"quality">> := #{<<"type">>
                        R
                end,
     OrderId = maps:get(<<"ordername">>, maps:get(<<"person">>, TypeData, #{}), <<"null">>),
-    People = maps:get(<<"people">>,  maps:get(Type, TypeData, #{}), <<"null">>),
+    People = maps:get(<<"people">>, maps:get(Type, TypeData, #{}), <<"null">>),
     _WorkShop = maps:get(<<"workshop">>, maps:get(Type, TypeData, #{}), <<"null">>),
     Num = maps:get(<<"num">>, maps:get(Type, TypeData, #{}), 0),
     Spec = maps:get(<<"spec">>, maps:get(Type, TypeData, #{}), <<"">>),
-    WorkeTime = maps:get(<<"worketime">>, maps:get(Type, TypeData, #{}), 0),
+    WorkeTime = maps:get(<<"worktime">>, maps:get(Type, TypeData, #{}), 0),
     RollNum = maps:get(<<"rollnum">>, maps:get(<<"person">>, TypeData, #{}), <<"null">>),
     WorkerList = re:split(People, <<",">>),
     lists:foldl(
@@ -372,6 +372,25 @@ record_worker_info(BatchProductId,BatchDeviceId, #{<<"quality">> := #{<<"type">>
             end
 
         end, [], WorkerList);
-record_worker_info(_,_, _, _) ->
+record_worker_info(_, _, _, _) ->
     pass.
+
+
+
+format_worker(Worker) when is_binary(Worker) ->
+    WorkerList = re:split(Worker, <<",">>),
+    lists:foldl(
+        fun(X, Acc) ->
+            case dgiot_data:get(?WORKER, X) of
+                not_find ->
+                    <<Acc/binary, ",", X/binary>>;
+                Res ->
+                    F = lists:nth(1, Res),
+                    Name = maps:get( <<"worker_name">>,F,X),
+                    <<Acc/binary, " ", Name/binary>>
+            end
+        end, <<"">>, WorkerList);
+format_worker(Worker) ->
+    Worker.
+
 

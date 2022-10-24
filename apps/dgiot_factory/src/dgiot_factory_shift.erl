@@ -329,7 +329,7 @@ bits_to_workerlist(Bits) ->
 
 
 format_worker(Worker) when is_binary(Worker) ->
-    WorkerList = re:split(Worker, <<" ">>),
+    WorkerList = re:split(Worker, <<",">>),
     lists:foldl(
         fun(X, Acc) ->
             case dgiot_data:get(?WORKER, X) of
