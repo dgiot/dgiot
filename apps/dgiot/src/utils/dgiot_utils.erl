@@ -62,6 +62,7 @@
     , binary_bits_zip/1
     , zip_bin/1
     , is_in_binary/2
+    , is_number/1
     , get_parity/1
     , crc16/1
     , add_33h/1
@@ -1076,3 +1077,27 @@ write_mock(Module, FileName, Json) ->
         end,
     Path = Dir ++ NewName,
     file:write_file(Path, jsx:encode(Json)).
+
+
+is_number(<<"0">>) ->
+    true;
+is_number(<<"1">>) ->
+    true;
+is_number(<<"2">>) ->
+    true;
+is_number(<<"3">>) ->
+    true;
+is_number(<<"4">>) ->
+    true;
+is_number(<<"5">>) ->
+    true;
+is_number(<<"6">>) ->
+    true;
+is_number(<<"7">>) ->
+    true;
+is_number(<<"8">>) ->
+    true;
+is_number(<<"9">>) ->
+    true;
+is_number(_) ->
+    false.

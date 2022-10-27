@@ -120,6 +120,20 @@ handle_message({sync_parse, _Pid, 'after', put, _Token, <<"_User">>, #{<<"object
             end
     end,
     {ok, State};
+handle_message({sync_parse, _Pid, 'after', post, _Token, <<"_User">>, #{<<"objectId">> := UserId} = _QueryData},
+    #state{id = ChannelId} = State) ->
+    case dgiot_data:get({ChannelId, worker}) of
+        not_find ->
+            pass;
+        ProductId ->
+            case dgiot_parse:get_object(<<"_User">>, UserId) of
+                {ok, #{<<"username">> := WorkerNum, <<"nick">> := WorkerName}} ->
+                    init_worker_device(ProductId, WorkerNum, WorkerName);
+                _ ->
+                    pass
+            end
+    end,
+    {ok, State};
 handle_message({sync_parse, _Pid, 'before', put, Token, <<"Device">>,
     #{<<"content">> := Content, <<"id">> := TaskDeviceId} = _QueryData},
     #state{id = ChannelId} = State) ->
