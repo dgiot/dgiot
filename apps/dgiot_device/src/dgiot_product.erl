@@ -214,7 +214,7 @@ save_device_thingtype(ProductId) ->
                 fun(#{<<"devicetype">> := DeviceType, <<"identifier">> := Identifier, <<"dataType">> := #{<<"type">> := Type}}) ->
                     case dgiot_data:get(?DGIOT_PRODUCT, {ProductId, device_thing, DeviceType}) of
                         not_find ->
-                            dgiot_data:insert(?DGIOT_PRODUCT, {ProductId, device_thing, Identifier}, #{Identifier => Type});
+                            dgiot_data:insert(?DGIOT_PRODUCT, {ProductId, device_thing, DeviceType}, #{Identifier => Type});
                         Map ->
                             dgiot_data:insert(?DGIOT_PRODUCT, {ProductId, device_thing, DeviceType}, Map#{Identifier => Type})
                     end
