@@ -25,6 +25,7 @@
 init_ets() ->
     dgiot_data:init(?DGIOT_PARSE_ETS),
     dgiot_data:init(?ROLE_ETS),
+    dgiot_data:init(?USER_ETS),
     dgiot_data:init(?ROLE_USER_ETS),
     dgiot_data:init(?USER_ROLE_ETS),
     dgiot_data:init(?ROLE_PARENT_ETS),
@@ -35,6 +36,7 @@ init_ets() ->
 
 start_cache(_Pid) ->
     dgiot_role:load_roles(),
+    dgiot_role:load_user(),
     dgiot_parse_auth:load_roleuser(),
     cache_classes().
 

@@ -29,7 +29,7 @@
 
 -export([send_verification_code/2, check_verification_code/2]).
 
--export([get_newbody/1, get_Mobile/2]).
+-export([get_newbody/1, get_Mobile/2, get_users/2]).
 
 init_ets() ->
     dgiot_data:init(?CONFIGURATION),
@@ -268,6 +268,40 @@ get_Mobile(DeviceId, RoleId) ->
                         Acc1
                 end
                         end, [], Users)
+    end.
+
+get_users(DeviceId, RoleId) ->
+    case RoleId of
+        <<>> ->
+            case dgiot_device:lookup(DeviceId) of
+                {ok, #{<<"acl">> := Acl}} ->
+                    lists:foldl(fun(X, Acc) ->
+                        BinX = atom_to_binary(X),
+                        case BinX of
+                            <<"role:", Name/binary>> ->
+                                case dgiot_parse:query_object(<<"_Role">>, #{<<"order">> => <<"updatedAt">>, <<"limit">> => 1,
+                                    <<"where">> => #{<<"name">> => Name}}) of
+                                    {ok, #{<<"results">> := [Role]}} ->
+                                        #{<<"objectId">> := RoleId1} = Role,
+                                        UserIds = dgiot_parse_id:get_userids(RoleId1),
+                                        UsersQuery = #{<<"where">> => #{<<"objectId">> => #{<<"$in">> => UserIds}}},
+                                        {ok, #{<<"results">> := Users}} = dgiot_parse:query_object(<<"_User">>, UsersQuery),
+                                        Acc ++ Users;
+                                    _ ->
+                                        Acc
+                                end;
+                            _ ->
+                                Acc
+                        end
+                                end, [], Acl);
+                _ ->
+                    []
+            end;
+        _ ->
+            UserIds = dgiot_parse_id:get_userids(RoleId),
+            UsersQuery = #{<<"where">> => #{<<"objectId">> => #{<<"$in">> => UserIds}}},
+            {ok, #{<<"results">> := Users}} = dgiot_parse:query_object(<<"_User">>, UsersQuery),
+            Users
     end.
 
 save_configuration() ->

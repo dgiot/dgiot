@@ -21,7 +21,7 @@
 -include_lib("dgiot/include/logger.hrl").
 
 -export([get_device/3, get_device/4, get_device/5]).
--export([get_history_data/3, get_realtime_data/3]).
+-export([get_history_data/3, get_realtime_data/3, get_gps_track/3]).
 -export([get_history_data2/7]).
 
 %% #{<<"keys">> => <<"last_row(*)">>, <<"limit">> => 1} 查询td最新的一条device
@@ -117,16 +117,21 @@ get_device(Channel, ProductId, DeviceId, _DevAddr, Query) ->
 get_history_data(Channel, TableName, Query) ->
     dgiot_tdengine:transaction(Channel,
         fun(Context) ->
-            Database = maps:get(<<"db">>, Query),
-            Function = maps:get(<<"function">>, Query, <<"last">>),
+            Database = maps:get(<<"db">>, Query, <<>>),
+            Function = maps:get(<<"function">>, Query, <<>>),
             Keys = maps:get(<<"keys">>, Query, <<"*">>),
             Limit = dgiot_tdengine_select:format_limit(Query),
-            Interval = maps:get(<<"interval">>, Query, <<"1d">>),
             Starttime = maps:get(<<"starttime">>, Query, dgiot_utils:to_binary(dgiot_datetime:now_ms() - 604800000)),
             Endtime = maps:get(<<"endtime">>, Query, dgiot_utils:to_binary(dgiot_datetime:now_ms())),
             {Names, Newkeys} = dgiot_product_tdengine:get_keys(Database, Function, Keys),
             DB = dgiot_tdengine_select:format_db(?Database(Database)),
-            Tail = <<" where createdat >= ", Starttime/binary, " AND createdat <= ", Endtime/binary, " INTERVAL(", Interval/binary, ") ", Limit/binary, ";">>,
+            Tail =
+                case maps:get(<<"interval">>, Query, <<>>) of
+                    <<>> ->
+                        <<" where createdat >= ", Starttime/binary, " AND createdat <= ", Endtime/binary, " ", Limit/binary, ";">>;
+                    Interval ->
+                        <<" where createdat >= ", Starttime/binary, " AND createdat <= ", Endtime/binary, " INTERVAL(", Interval/binary, ") ", Limit/binary, ";">>
+                end,
             Sql = <<"SELECT ", Newkeys/binary, " FROM ", DB/binary, TableName/binary, Tail/binary>>,
             ?LOG(error, "Sql ~s", [Sql]),
             {Names, dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_query, Sql)}
@@ -156,8 +161,36 @@ get_history_data2(Order, Channel, TableName, Interval, ProductId, StartTime, _En
             Database = ProductId,
             DB = dgiot_tdengine_select:format_db(?Database(Database)),
             BinStartTime = dgiot_utils:to_binary(StartTime),
-            Tail = <<" where createdat >= ", BinStartTime/binary,  " INTERVAL(", Interval/binary, ") ", ";">>,
+            Tail = <<" where createdat >= ", BinStartTime/binary, " INTERVAL(", Interval/binary, ") ", ";">>,
             Sql = <<"SELECT ", Order/binary, " FROM ", DB/binary, TableName/binary, Tail/binary>>,
             ?LOG(error, "Sql ~s", [Sql]),
             dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_query, Sql)
         end).
+
+get_gps_track(Channel, ProductId, DeviceId) ->
+    Query = #{<<"keys">> => <<"latitude,longitude">>},
+    {_Names, Results} =
+        case dgiot_data:get({tdengine_os, Channel}) of
+            <<"windows">> ->
+                dgiot_parse_timescale:get_history_data(DeviceId, Query#{<<"db">> => ProductId});
+            _ ->
+                TableName = ?Table(DeviceId),
+                case dgiot_device_tdengine:get_history_data(Channel, TableName, Query#{<<"db">> => ProductId}) of
+                    {TdNames, {ok, #{<<"results">> := TdResults}}} ->
+                        NewTdResults =
+                            lists:foldl(fun
+                                            (#{<<"latitude">> := null}, Acc1) ->
+                                                Acc1;
+                                            (#{<<"longitude">> := null}, Acc2) ->
+                                                Acc2;
+                                            (#{<<"latitude">> := Latitude, <<"longitude">> := Longitude}, Acc) ->
+                                                Maptype = dgiot_utils:to_binary(application:get_env(dgiot_device, map_type, "baidu")),
+                                                #{<<"longitude">> := Mglng, <<"latitude">> := Mglat} = dgiot_device_channel:get_new_location(#{<<"longitude">> => Longitude, <<"latitude">> => Latitude}, Maptype),
+                                                Acc ++ [#{<<"lat">> => Mglat, <<"lng">> => Mglng}]
+                                        end, [], TdResults),
+                        {TdNames, NewTdResults};
+                    _ ->
+                        {[], []}
+                end
+        end,
+    {ok, #{<<"results">> => Results}}.

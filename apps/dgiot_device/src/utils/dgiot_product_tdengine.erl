@@ -208,11 +208,11 @@ check_field(<<"date">>, V, _) ->
         <<"1970-01-01 08:00:00.000">> ->
             <<"--">>;
         _ ->
-            V
+            dgiot_utils:to_binary(V)
     end;
 
 check_field(_Typea, V, _) ->
-    V.
+    dgiot_utils:to_binary(V).
 
 get_prop(ProductId) ->
     case dgiot_product:lookup_prod(ProductId) of
