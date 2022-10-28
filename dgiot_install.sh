@@ -1565,3 +1565,5 @@ echo -e  "`date +%F_%T` $LINENO: ${RED} pg_info: postgres://postgres:${pg_auth}@
 echo -e  "`date +%F_%T` $LINENO: ${RED} pg_info: pg_eip=${pg_eip} pg_auth=${pg_auth}${NC}"
 echo -e  "`date +%F_%T` $LINENO: ${RED} parse_info: http://${wlanip}:1337/dashboard/ ${NC}"
 echo -e  "`date +%F_%T` $LINENO: ${RED} parse_info: username=${parse_user} password=${parse_pwd} ${NC}"
+echo -e  "`date +%F_%T` $LINENO: ${RED} dashboard: http://${wlanip}/ ${NC}"
+echo -e  "`date +%F_%T` $LINENO: ${RED} dashboard: username=dgiot_dev password=dgiot_dev ${NC}"
