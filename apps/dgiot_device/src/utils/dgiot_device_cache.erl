@@ -68,12 +68,13 @@ save_(#{<<"objectId">> := DeviceId, <<"devaddr">> := Devaddr, <<"product">> := P
                 dgiot_datetime:to_unixtime(dgiot_datetime:to_localtime(<<Data/binary, " ", Time/binary>>)) + dgiot_datetime:timezone() * 60 * 60;
             Now -> Now
         end,
-    Status =
+    {Status, IsEnable} =
         case maps:get(<<"status">>, Device, <<"OFFLINE">>) of
-            <<"OFFLINE">> -> false;
-            _ -> true
+            <<"OFFLINE">> ->
+                {false, maps:get(<<"isEnable">>, Device, false)};
+            _ ->
+                {true, maps:get(<<"isEnable">>, Device, true)}
         end,
-    IsEnable = maps:get(<<"isEnable">>, Device, false),
     {Longitude, Latitude} =
         case maps:find(<<"location">>, Device) of
             {ok, #{<<"longitude">> := Longitude1, <<"latitude">> := Latitude1}} ->
@@ -92,10 +93,12 @@ post(Device) ->
     ProductId = maps:get(<<"objectId">>, Product),
     DeviceSecret = maps:get(<<"deviceSecret">>, Device, <<"oioojn">>),
     DeviceId = maps:get(<<"objectId">>, Device, dgiot_parse_id:get_deviceid(ProductId, Devaddr)),
-    Status =
+    {Status, IsEnable} =
         case maps:get(<<"status">>, Device, <<"OFFLINE">>) of
-            <<"OFFLINE">> -> false;
-            _ -> true
+            <<"OFFLINE">> ->
+                {false, maps:get(<<"isEnable">>, Device, false)};
+            _ ->
+                {true, maps:get(<<"isEnable">>, Device, true)}
         end,
     IsEnable = maps:get(<<"isEnable">>, Device, false),
     insert_mnesia(DeviceId, dgiot_role:get_acls(Device), Status, dgiot_datetime:now_secs(), IsEnable, ProductId, Devaddr, DeviceSecret, node(), Longitude, Latitude).
@@ -258,9 +261,9 @@ disable(DeviceId) ->
 
 location(DeviceId, Longitude, Latitude) ->
     case lookup(DeviceId) of
-        {ok, #{<<"status">> := Status, <<"acl">> := Acl, <<"devaddr">> := Devaddr, <<"productid">> := ProductId, <<"devicesecret">> := DeviceSecret,
+        {ok, #{<<"status">> := Status, <<"acl">> := Acl, <<"devaddr">> := Devaddr, <<"isEnable">> := IsEnable, <<"productid">> := ProductId, <<"devicesecret">> := DeviceSecret,
             <<"node">> := Node}} ->
-            insert_mnesia(DeviceId, Acl, Status, dgiot_datetime:now_secs(), false, ProductId, Devaddr, DeviceSecret, Node, Longitude, Latitude);
+            insert_mnesia(DeviceId, Acl, Status, dgiot_datetime:now_secs(), IsEnable, ProductId, Devaddr, DeviceSecret, Node, Longitude, Latitude);
         _ -> pass
     end.
 

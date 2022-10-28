@@ -129,7 +129,7 @@ do_request(get_device_deviceid, #{<<"deviceid">> := DeviceId} = Args, #{<<"sessi
     end;
 
 %% TDengine 概要: 获取设备历史数据图表 描述:获取设备历史数据图表
-do_request(get_echart_deviceid, #{<<"deviceid">> := DeviceId,<<"style">> := Style} = Args, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
+do_request(get_echart_deviceid, #{<<"deviceid">> := DeviceId, <<"style">> := Style} = Args, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
     case dgiot_product_tdengine:get_channel(SessionToken) of
         {error, Error} -> {error, Error};
         {ok, Channel} ->
@@ -163,6 +163,47 @@ do_request(get_devicecard_deviceid, #{<<"deviceid">> := DeviceId} = Args, #{<<"s
                     {error, <<"not find device">>}
             end
     end;
+
+%% TDengine 概要: 获取gps轨迹
+do_request(get_gps_track_deviceid, #{<<"deviceid">> := DeviceId}, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
+    case DeviceId of
+        <<"all">> ->
+            case dgiot_parse:query_object(<<"Device">>, #{}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+                {ok, #{<<"results">> := Results}} ->
+                    NewResults =
+                        lists:foldl(fun(#{<<"objectId">> := ObjectId, <<"name">> := Name}, Acc) ->
+                            LineList =
+                                case dgiot_product_tdengine:get_channel(SessionToken) of
+                                    {error, Error} -> {error, Error};
+                                    {ok, Channel} ->
+                                        case dgiot_device:lookup(ObjectId) of
+                                            {ok, #{<<"productid">> := ProductId}} ->
+                                                {ok, #{<<"results">> := Results1}} = dgiot_device_tdengine:get_gps_track(Channel, ProductId, ObjectId),
+                                                Results1;
+                                            _ ->
+                                                []
+                                        end
+                                end,
+                            Acc ++ [#{<<"objectId">> => ObjectId, <<"name">> => Name, <<"lineList">> => LineList}]
+                                    end, [], Results),
+                    {ok, #{<<"results">> => NewResults}};
+                _ ->
+                    {ok, #{<<"results">> => []}}
+            end;
+        _ ->
+            case dgiot_product_tdengine:get_channel(SessionToken) of
+                {error, Error} -> {error, Error};
+                {ok, Channel} ->
+                    case dgiot_device:lookup(DeviceId) of
+                        {ok, #{<<"productid">> := ProductId}} ->
+                            dgiot_device_tdengine:get_gps_track(Channel, ProductId, DeviceId);
+                        _ ->
+                            {ok, #{<<"results">> => []}}
+                    end
+            end
+    end;
+
+
 
 %%  服务器不支持的API接口
 do_request(_OperationId, _Args, _Context, _Req) ->

@@ -303,8 +303,9 @@ save_rule_to_dict(RuleID, Params, Args) ->
     dgiot_data:insert(?DGIOT_RUlES, Dict),
     ObjectId = dgiot_parse_id:get_dictid(RuleID, <<"ruleengine">>, <<"Rule">>, <<"Rule">>),
     case dgiot_parse:get_object(<<"Dict">>, ObjectId) of
-        {ok, _} ->
-            dgiot_parse:update_object(<<"Dict">>, ObjectId, Dict);
+        {ok, #{<<"data">> := Data1}} ->
+            OldArgs = maps:get(<<"args">>, Data1, #{}),
+            dgiot_parse:update_object(<<"Dict">>, ObjectId, #{<<"args">> => maps:merge(OldArgs, Args), <<"data">> => Data1#{<<"rule">> => jsx:encode(Rule)}});
         _ ->
             case dgiot_parse:create_object(<<"Dict">>, Dict) of
                 {ok, #{<<"objectId">> := ObjectId}} ->
