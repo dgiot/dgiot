@@ -20,7 +20,7 @@
 -include_lib("dgiot/include/logger.hrl").
 
 %% API
--export([create_database/3, create_schemas/2, create_object/3, create_user/3, alter_user/3, delete_user/2, query_object/3, batch/2]).
+-export([get_database/2, create_database/3, create_schemas/2, create_object/3, create_user/3, alter_user/3, delete_user/2, query_object/3, batch/2]).
 -export([create_database/2, create_schemas/1, create_object/2, create_user/2, alter_user/2, delete_user/1, query_object/2, batch/1, parse_batch/1]).
 -export([transaction/2, format_data/4]).
 -export([get_reportdata/3]).
@@ -31,6 +31,14 @@ transaction(Channel, Fun) ->
             Fun(Context);
         {error, Reason} ->
             {error, Reason}
+    end.
+
+get_database(ChannelId, ProductId) ->
+    case dgiot_data:get({tdengine_db, ChannelId, ProductId}) of
+        not_find ->
+            dgiot_tdengine_select:format_db(ProductId);
+        DbName ->
+            dgiot_tdengine_select:format_db(DbName)
     end.
 
 create_database(DataBase, Keep) ->
@@ -71,7 +79,8 @@ create_object(TableName, Object) ->
 create_object(Channel, TableName, #{<<"values">> := Values0} = Object) ->
     transaction(Channel,
         fun(Context) ->
-            Values = dgiot_tdengine_select:format_batch(Object#{<<"tableName">> => TableName, <<"values">> => [Values0]}),
+            DB = dgiot_tdengine:get_database(Channel, maps:get(<<"db">>, Object, <<"">>)),
+            Values = dgiot_tdengine_select:format_batch(Object#{<<"db">> => DB, <<"tableName">> => TableName, <<"values">> => [Values0]}),
             Sql = <<"INSERT INTO ", Values/binary, ";">>,
             dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_update, Sql)
         end).
@@ -82,7 +91,8 @@ query_object(TableName, Query) ->
 query_object(Channel, TableName, Query) ->
     transaction(Channel,
         fun(Context) ->
-            Sql = dgiot_tdengine_select:select(TableName, Query),
+            Database = dgiot_tdengine:get_database(Channel, maps:get(<<"db">>, Query, <<"">>)),
+            Sql = dgiot_tdengine_select:select(TableName, Query#{<<"channel">> => Channel,<<"db">> => Database}),
             dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_query, Sql)
         end).
 
@@ -90,29 +100,19 @@ query_object(Channel, TableName, Query) ->
 batch(Batch) ->
     batch(?DEFAULT, Batch).
 batch(Channel, Requests) when is_list(Requests) ->
-    case dgiot_data:get({tdengine_os, Channel}) of
-        <<"windows">> ->
-            parse_batch(Requests);
-        _ ->
-            transaction(Channel,
-                fun(Context) ->
-                    Request1 = list_to_binary(dgiot_utils:join(" ", [dgiot_tdengine_select:format_batch(Request) || Request <- Requests])),
-                    Sql = <<"INSERT INTO ", Request1/binary, ";">>,
-                    dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_update, Sql)
-                end)
-    end;
+    transaction(Channel,
+        fun(Context) ->
+            Request1 = list_to_binary(dgiot_utils:join(" ", [dgiot_tdengine_select:format_batch(Request) || Request <- Requests])),
+            Sql = <<"INSERT INTO ", Request1/binary, ";">>,
+            dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_update, Sql)
+        end);
 batch(Channel, Batch) ->
-    case dgiot_data:get({tdengine_os, Channel}) of
-        <<"windows">> ->
-            parse_batch(Batch);
-        _ ->
-            transaction(Channel,
-                fun(Context) ->
-                    Values = dgiot_tdengine_select:format_batch(Batch),
-                    Sql = <<"INSERT INTO ", Values/binary, ";">>,
-                    dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_update, Sql)
-                end)
-    end.
+    transaction(Channel,
+        fun(Context) ->
+            Values = dgiot_tdengine_select:format_batch(Batch),
+            Sql = <<"INSERT INTO ", Values/binary, ";">>,
+            dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_update, Sql)
+        end).
 
 parse_batch(Requests) when is_list(Requests), length(Requests) < 5 ->
     NewRequests =
@@ -176,11 +176,10 @@ alter_user(Channel, UserName, NewPassword) ->
 get_reportdata(Channel, TableName, Query) ->
     dgiot_tdengine:transaction(Channel,
         fun(Context) ->
-            Database = maps:get(<<"db">>, Query),
+            DB = dgiot_tdengine:get_database(Channel, maps:get(<<"db">>, Query)),
             Keys = maps:get(<<"keys">>, Query),
             Starttime = maps:get(<<"starttime">>, Query),
             Endtime = maps:get(<<"endtime">>, Query),
-            DB = dgiot_tdengine_select:format_db(?Database(Database)),
             Tail = <<" where createdat >= ", Starttime/binary, " AND createdat <= ", Endtime/binary, " order by createdat asc;">>,
             Sql = <<"SELECT ", Keys/binary, " FROM ", DB/binary, TableName/binary, Tail/binary>>,
             ?LOG(error, "Sql ~s", [Sql]),
@@ -192,7 +191,6 @@ format_data(ProductId, DevAddr, Properties, Data) ->
     DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
     Values = dgiot_tdengine_field:check_fields(Data, Properties),
     Fields = get_fields(ProductId),
-
     dgiot_data:insert({td, ProductId, DeviceId}, Values#{<<"createdat">> => dgiot_datetime:nowstamp()}),
     Now = maps:get(<<"createdat">>, Data, now),
     NewValues = get_values(ProductId, Values, Now),
