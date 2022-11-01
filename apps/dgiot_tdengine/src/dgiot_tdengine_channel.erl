@@ -116,20 +116,19 @@
             zh => <<"连接方式包括HTTP请求或JDBC"/utf8>>
         }
     },
-    <<"os">> => #{
+    <<"db">> => #{
         order => 7,
         type => enum,
-        default => <<"linux"/utf8>>,
+        default => <<"ProductId"/utf8>>,
         enum => [
-            #{<<"value">> => <<"linux">>, <<"label">> => <<"linux"/utf8>>},
-            #{<<"value">> => <<"windows">>, <<"label">> => <<"windows"/utf8>>},
-            #{<<"value">> => <<"all">>, <<"label">> => <<"all"/utf8>>}
+            #{<<"value">> => <<"ChannelId">>, <<"label">> => <<"通道ID"/utf8>>},
+            #{<<"value">> => <<"ProductId">>, <<"label">> => <<"产品ID"/utf8>>}
         ],
         title => #{
-            zh => <<"指定操作系统"/utf8>>
+            zh => <<"数据库名称"/utf8>>
         },
         description => #{
-            zh => <<"all:不指定操作系统，自动判断, windows:指定为windows系统，linux:指定为linux系统"/utf8>>
+            zh => <<"ProductId:用产品ID创建数据库，ChannelId:用通道ID创建数据库"/utf8>>
         }
     },
     <<"ico">> => #{
@@ -166,9 +165,8 @@ start(ChannelId, #{
         <<"url">> => Url,
         <<"username">> => UserName,
         <<"password">> => Password,
-        <<"os">> => maps:get(<<"os">>, Cfg, <<"windows">>)
+        <<"db">> => maps:get(<<"db">>, Cfg, <<"ProductId">>)
     }).
-
 
 %% 通道初始化
 init(?TYPE, ChannelId, Config) ->
@@ -187,7 +185,8 @@ init(?TYPE, ChannelId, Config) ->
         {dgiot_dcache, {dgiot_dcache, start_link, Opts}, permanent, 5000, worker, [dgiot_dcache]}
     ],
     dgiot_metrics:dec(dgiot_tdengine, <<"tdengine">>, 1000),
-
+    DbType = maps:get(<<"db">>, Config, <<"ProductId">>),
+    dgiot_data:insert({tdengine_db, ChannelId}, DbType),
     {ok, State, Specs}.
 
 handle_init(#state{id = _ChannelId} = State) ->
@@ -220,40 +219,15 @@ handle_message(init, #state{id = ChannelId, env = Config} = State) ->
     end;
 
 %% 数据与产品，设备地址分离
-handle_message({data, Product, DevAddr, Data, Context}, #state{id = ChannelId, env = Config} = State) ->
+handle_message({data, Product, DevAddr, Data, Context}, #state{id = ChannelId} = State) ->
     dgiot_metrics:inc(dgiot_tdengine, <<"tdengine_recv">>, 1),
-    OsType =
-        case maps:get(<<"os">>, Config, <<"all">>) of
-            <<"all">> ->
-                case os:type() of
-                    {win32, _} ->
-                        <<"windows">>;
-                    _ ->
-                        <<"linux">>
-                end;
-            <<"windows">> -> <<"windows">>;
-            _ -> <<"linux">>
-        end,
-    dgiot_data:insert({tdengine_os, ChannelId}, OsType),
-    case OsType of
-        <<"windows">> ->
-            case catch dgiot_parse_timescale:do_save(Product, DevAddr, Data) of
-                {ok, _} ->
-                    {ok, State};
-                {_, Reason} ->
-                    ?LOG(error, "Save to parse_timescale error, ~p, ~p", [Data, Reason]),
-                    dgiot_bridge:send_log(ChannelId, "Save to parse_timescale error, ~ts~n, ~p", [unicode:characters_to_list(jsx:encode(Data)), Reason]),
-                    ok
-            end;
-        _ ->
-            case catch do_save([Product, DevAddr, Data, Context], State) of
-                {Err, Reason} when Err == error; Err == 'EXIT' ->
-                    ?LOG(error, "Save to Tdengine error, ~p, ~p", [Data, Reason]),
-                    dgiot_bridge:send_log(ChannelId, "Save to Tdengine error, ~ts~n, ~p", [unicode:characters_to_list(jsx:encode(Data)), Reason]),
-                    ok;
-                {ok, NewState} ->
-                    {ok, NewState}
-            end
+    case catch do_save([Product, DevAddr, Data, Context], State) of
+        {Err, Reason} when Err == error; Err == 'EXIT' ->
+            ?LOG(error, "Save to Tdengine error, ~p, ~p", [Data, Reason]),
+            dgiot_bridge:send_log(ChannelId, "Save to Tdengine error, ~ts~n, ~p", [unicode:characters_to_list(jsx:encode(Data)), Reason]),
+            ok;
+        {ok, NewState} ->
+            {ok, NewState}
     end;
 
 handle_message(config, #state{env = Config} = State) ->
@@ -339,32 +313,22 @@ do_check(ChannelId, ProductIds, Config) ->
     spawn(
         fun() ->
             timer:sleep(500),
-            OsType =
-                case maps:get(<<"os">>, Config, <<"all">>) of
-                    <<"all">> ->
-                        case os:type() of
-                            {win32, _} ->
-                                <<"windows">>;
-                            _ ->
-                                <<"linux">>
-                        end;
-                    <<"windows">> -> <<"windows">>;
-                    _ -> <<"linux">>
-                end,
-            dgiot_data:insert({tdengine_os, ChannelId}, OsType),
-            case OsType of
-                <<"windows">> ->
-                    dgiot_parse_channel:start_timescale();
-                _ ->
-                    check_init(ChannelId, ProductIds, Config)
-            end
+            check_init(ChannelId, ProductIds, Config)
         end).
 
 check_init(ChannelId, ProductIds, Config) ->
     lists:map(fun(ProductId) ->
         timer:sleep(500),
         dgiot_data:insert({ProductId, ?TYPE}, ChannelId),
-        check_database(ChannelId, ProductIds, Config#{<<"database">> => ?Database(ProductId)})
+        DataBase =
+            case dgiot_data:get({tdengine_db, ChannelId}) of
+                <<"ProductId">> ->
+                    ?Database(ProductId);
+                _ ->
+                    ?Database(ChannelId)
+            end,
+        dgiot_data:insert({tdengine_db, ChannelId, ProductId}, DataBase),
+        check_database(ChannelId, ProductIds, Config#{<<"database">> => DataBase})
               end, ProductIds),
     ok.
 

@@ -32,8 +32,7 @@ select(TableName, Query) ->
     Group = format_group(Query),
     Tail = list_to_binary(dgiot_utils:join(" ", [TableName, From, Where, Interval, Fill, Group, Order, Limit, Offset], true)),
     Keys = format_keys(Query),
-    Database = maps:get(<<"db">>, Query),
-    DB = format_db(?Database(Database)),
+    DB = maps:get(<<"db">>, Query),
     <<"SELECT ", Keys/binary, " FROM ", DB/binary, Tail/binary>>.
 
 format_value(V) when is_binary(V) -> <<"'", V/binary, "'">>;
@@ -52,18 +51,16 @@ format_tags(Tags) -> <<" TAGS (", Tags/binary, ")">>.
 
 format_batch(#{<<"db">> := DB, <<"tableName">> := TableName, <<"fields">> := _Fields0, <<"values">> := Values0} = Batch) ->
     Using = maps:get(<<"using">>, Batch, <<>>),
-    DB1 = format_db(DB),
     Using1 = format_using(DB, Using),
     Tags = maps:get(<<"tags">>, Batch, []),
     TagFields = format_tags(list_to_binary(dgiot_utils:join(",", Tags, false, fun format_value/1))),
-    <<DB1/binary, TableName/binary, Using1/binary, TagFields/binary, " VALUES ", Values0/binary>>;
+    <<DB/binary, TableName/binary, Using1/binary, TagFields/binary, " VALUES ", Values0/binary>>;
 format_batch(#{<<"db">> := DB, <<"tableName">> := TableName, <<"values">> := Values0} = Batch) ->
     Using = maps:get(<<"using">>, Batch, <<>>),
-    DB1 = format_db(DB),
     Using1 = format_using(DB, Using),
     Tags = maps:get(<<"tags">>, Batch, []),
     TagFields = format_tags(list_to_binary(dgiot_utils:join(",", Tags, false, fun format_value/1))),
-    <<DB1/binary, TableName/binary, Using1/binary, TagFields/binary, " VALUES ", Values0/binary>>.
+    <<DB/binary, TableName/binary, Using1/binary, TagFields/binary, " VALUES ", Values0/binary>>.
 
 format_order([], Acc) -> Acc;
 format_order([<<"-", Field/binary>> | Other], Acc) ->
