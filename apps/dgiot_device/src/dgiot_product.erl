@@ -29,7 +29,7 @@
 -export([save_devicetype/1, get_devicetype/1, get_device_thing/2]).
 -export([save_keys/1, get_keys/1, get_control/1, save_control/1, save_channel/1, save_tdchannel/1,
     save_taskchannel/1, get_channel/1, get_tdchannel/1,
-    get_taskchannel/1, get_interval/1,save_device_thingtype/1]).
+    get_taskchannel/1, get_interval/1, save_device_thingtype/1]).
 -type(result() :: any()).   %% todo 目前只做参数检查，不做结果检查
 
 init_ets() ->
@@ -558,7 +558,7 @@ get_initdata(Type, ProductId) ->
     end.
 
 %% 初始化工单巡检动态数据
-init_inspection(#{<<"objectId">> := MaintenanceId, <<"info">> := Info, <<"product">> := #{<<"objectId">> := ProductId}, <<"device">> := #{<<"objectId">> := DeviceId}} = _QueryData) ->
+init_inspection(#{<<"objectId">> := MaintenanceId, <<"info">> := Info, <<"status">> := 0, <<"product">> := #{<<"objectId">> := ProductId}, <<"device">> := #{<<"objectId">> := DeviceId}} = _QueryData) ->
     InitData = get_initdata(<<"巡检"/utf8>>, ProductId),
     dgiot_parse:update_object(<<"Maintenance">>, MaintenanceId, #{<<"info">> => Info#{<<"dynamicdata">> => InitData}}),
     %%    下发巡检信息
@@ -566,39 +566,29 @@ init_inspection(#{<<"objectId">> := MaintenanceId, <<"info">> := Info, <<"produc
     case dgiot_device:lookup(DeviceId) of
         {ok, #{<<"devaddr">> := DevAddr}} ->
             InspectionTopic = <<"$dg/device/", ProductId/binary, "/", DevAddr/binary, "/init/response/inspection">>,
-            Data = get_inspection(DeviceId),
+            Data = get_inspection(MaintenanceId),
             dgiot_mqtt:publish(DeviceId, InspectionTopic, jsx:encode(Data));
         _ ->
             pass
-    end.
+    end;
 
-get_inspection(DeviceId) ->
-    Where = #{
-        <<"where">> => #{
-            <<"device">> => DeviceId
-        },
-        <<"keys">> => [<<"number">>, <<"status">>, <<"info">>],
-        <<"order">> => <<"-createdAt">>
-    },
-    case dgiot_parse:query_object(<<"Maintenance">>, Where) of
-        {ok, #{<<"results">> := Results}} ->
-            lists:foldl(fun(X, Acc) ->
-                Info = maps:get(<<"info">>, X, #{}),
-                Dynamicdata = maps:get(<<"dynamicdata">>, Info, []),
-                <<Number:10/binary, _/binary>> = dgiot_utils:to_binary(dgiot_datetime:now_secs()),
-                Basic = #{
-                    <<"number">> => maps:get(<<"number">>, X, Number),
-                    <<"status">> => maps:get(<<"status">>, X, <<>>),
-                    <<"productname">> => maps:get(<<"productname">>, Info, <<>>),
-                    <<"devicename">> => maps:get(<<"devicename">>, Info, <<>>),
-                    <<"executorname">> => maps:get(<<"executorname">>, Info, <<>>),
-                    <<"principalname">> => maps:get(<<"principalname">>, Info, <<>>),
-                    <<"startdata">> => maps:get(<<"startdata">>, Info, <<>>),
-                    <<"completiondata">> => maps:get(<<"completiondata">>, Info, <<>>)
-                },
-                Acc ++ [#{<<"basic">> => Basic, <<"time">> => dgiot_datetime:now_secs(), <<"data">> => Dynamicdata}]
-                        end, [], Results);
+init_inspection(_QueryData) ->
+    pass.
+
+get_inspection(MaintenanceId) ->
+    case dgiot_parse:get_object(<<"Maintenance">>, MaintenanceId) of
+        {ok, #{<<"number">> := Number, <<"status">> := Status, <<"info">> := Info}} ->
+            Dynamicdata = maps:get(<<"dynamicdata">>, Info, []),
+            Basic = #{
+                <<"number">> => Number,
+                <<"status">> => Status,
+                <<"productname">> => maps:get(<<"productname">>, Info, <<>>),
+                <<"devicename">> => maps:get(<<"devicename">>, Info, <<>>),
+                <<"executorname">> => maps:get(<<"executorname">>, Info, <<>>),
+                <<"startdata">> => maps:get(<<"startdata">>, Info, <<>>),
+                <<"completiondata">> => maps:get(<<"completiondata">>, Info, <<>>)
+            },
+            #{<<"basic">> => Basic, <<"time">> => dgiot_datetime:now_secs(), <<"data">> => Dynamicdata};
         _ ->
-            []
-
+            #{}
     end.

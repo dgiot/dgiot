@@ -28,7 +28,7 @@
     get_sns/1,
     unbind_sns/1,
     get_wechat_index/1,
-    sendSubscribe/2,
+    sendSubscribe/3,
     sendTemplate/0,
     get_wechat_map/1,
     get_device_info/2,
@@ -107,7 +107,7 @@ get_sns(Jscode) ->
 %% touser     消息接收者openId
 %% POST https://api.weixin.qq.com/cgi-bin/message/wxopen/template/uniform_send?access_token=ACCESS_TOKEN
 %% dgiot_wechat:sendSubscribe().
-sendSubscribe(UserId, Data) ->
+sendSubscribe(UserId, Template_id, Data) ->
     case dgiot_parse:get_object(<<"_User">>, UserId) of
         {ok, #{<<"tag">> := #{<<"wechat">> := #{<<"openid">> := OpenId}}}} when size(OpenId) > 0 ->
             AppId = dgiot_utils:to_binary(application:get_env(dgiot_http, wechat_appid, <<"">>)),
@@ -123,7 +123,7 @@ sendSubscribe(UserId, Data) ->
                                     SubscribeUrl = "https://api.weixin.qq.com/cgi-bin/message/subscribe/send?access_token=" ++ dgiot_utils:to_list(AccessToken),
                                     ?LOG(debug, "SubscribeUrl ~p", [SubscribeUrl]),
                                     Subscribe = #{<<"touser">> => OpenId,
-                                        <<"template_id">> => <<"9Fmc0vtA7vnh_HtoVtXJy_cRDOnIk1ubniO_Oe3WatU">>,
+                                        <<"template_id">> => Template_id,
                                         <<"page">> => <<"pages/alarm/alarm">>,
                                         <<"miniprogram_state">> => <<"formal">>,
                                         <<"lang">> => <<"zh_CN">>,
