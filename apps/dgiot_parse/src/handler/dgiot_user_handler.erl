@@ -138,6 +138,7 @@ do_request(put_token, #{<<"appid">> := AppId, <<"secret">> := Secret}, _Context,
 do_request(post_user, #{<<"username">> := _UserName, <<"password">> := _Password} = Body, #{<<"sessionToken">> := SessionToken}, _Req) ->
     case dgiot_parse_auth:create_user(Body, SessionToken) of
         {ok, Data} ->
+            dgiot_role:load_user(),
             dgiot_parse_auth:load_roleuser(),
             {200, Data};
         {error, Error} -> {500, Error}
@@ -151,6 +152,7 @@ do_request(delete_user, #{<<"username">> := UserName} = Body, #{<<"sessionToken"
         _ ->
             case dgiot_parse_auth:delete_user(Body, SessionToken) of
                 {ok, Data} ->
+                    dgiot_role:load_user(),
                     dgiot_parse_auth:load_roleuser(),
                     {200, Data};
                 {error, Error} -> {error, Error}
@@ -165,6 +167,7 @@ do_request(put_user, #{<<"username">> := UserName} = Body, #{<<"sessionToken">> 
         _ ->
             case dgiot_parse_auth:put_user(Body, SessionToken) of
                 {ok, Data} ->
+                    dgiot_role:load_user(),
                     dgiot_parse_auth:load_roleuser(),
                     {200, Data};
                 {error, Error} -> {500, Error}

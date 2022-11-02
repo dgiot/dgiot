@@ -29,7 +29,6 @@
     test_broadcast/0,
     test_customizedcast/0,
     add_notification/3,
-    save_devicestatus/2,
     save_notification/4,
     update_notification/2,
     sendSubscribe/3,
@@ -37,7 +36,8 @@
     get_operations/0,
     send_message_to3D/3,
     triggeralarm/1,
-    send_msg/1
+    send_msg/1,
+    sendSubscribe/1
 ]).
 
 test_broadcast() ->
@@ -192,26 +192,28 @@ post_notification(Notification) ->
 
 add_notification(<<"start_", Ruleid/binary>>, DeviceId, Payload) ->
     NotificationId = dgiot_parse_id:get_notificationid(Ruleid),
-    Result =
-        case dgiot_data:get(dgiot_notification, {DeviceId, Ruleid}) of
-            {start, _Time, _} ->
-                <<>>;
-            _ ->
-                save_notification(Ruleid, DeviceId, Payload, NotificationId)
-        end,
-    dgiot_data:insert(?NOTIFICATION, {DeviceId, Ruleid}, {start, dgiot_datetime:now_secs(), NotificationId}),
-    Result;
+    case dgiot_data:get(dgiot_notification, {DeviceId, Ruleid}) of
+        {start, _Time, _} ->
+            pass;
+        _ ->
+            Content = save_notification(Ruleid, DeviceId, Payload, NotificationId),
+            dgiot_umeng:send_msg(Content),
+%%            io:format("~s ~p Content = ~p.~n", [?FILE, ?LINE, Content]),
+            dgiot_umeng:sendSubscribe(Content)
+    end,
+    dgiot_data:insert(?NOTIFICATION, {DeviceId, Ruleid}, {start, dgiot_datetime:now_secs(), NotificationId});
 
 add_notification(<<"stop_", Ruleid/binary>>, DeviceId, Payload) ->
-    Result =
-        case dgiot_data:get(?NOTIFICATION, {DeviceId, Ruleid}) of
-            {start, _Time, NotificationId} ->
-                update_notification(NotificationId, Payload);
-            _ ->
-                <<>>
-        end,
-    dgiot_data:insert(?NOTIFICATION, {DeviceId, Ruleid}, {stop, dgiot_datetime:now_secs(), <<>>}),
-    Result;
+    case dgiot_data:get(?NOTIFICATION, {DeviceId, Ruleid}) of
+        {start, _Time, NotificationId} ->
+            Content = update_notification(NotificationId, Payload),
+            dgiot_umeng:send_msg(Content),
+%%            io:format("~s ~p Content1 = ~p.~n", [?FILE, ?LINE, Content]),
+            dgiot_umeng:sendSubscribe(Content);
+        _ ->
+            pass
+    end,
+    dgiot_data:insert(?NOTIFICATION, {DeviceId, Ruleid}, {stop, dgiot_datetime:now_secs(), <<>>});
 
 add_notification(Ruleid, _DevAddr, _Payload) ->
     ?LOG(error, "Ruleid ~p", [Ruleid]),
@@ -231,7 +233,8 @@ save_notification(Ruleid, DeviceId, Payload, NotificationId) ->
                                     <<"write">> => true
                                 }}
                                     end, #{}, Acls),
-                    Content = Payload#{<<"alarm_createdAt">> => Alarm_createdAt, <<"_deviceid">> => DeviceId, <<"_productid">> => ProductId, <<"_viewid">> => ViewId},
+                    Alarm_message = get_defultmessage(ViewId),
+                    Content = Payload#{<<"alarm_createdAt">> => Alarm_createdAt, <<"alarm_message">> => Alarm_message, <<"_deviceid">> => DeviceId, <<"_productid">> => ProductId, <<"_viewid">> => ViewId},
                     dgiot_parse:create_object(<<"Notification">>, #{
                         <<"objectId">> => NotificationId,
                         <<"ACL">> => Acl,
@@ -249,6 +252,19 @@ save_notification(Ruleid, DeviceId, Payload, NotificationId) ->
             <<>>
     end.
 
+get_defultmessage(ViewId) ->
+    case dgiot_parse:get_object(<<"View">>, ViewId) of
+        {ok, #{<<"data">> := #{<<"body">> := [#{<<"body">> := Body} | _]}}} ->
+            lists:foldl(fun
+                            (#{<<"name">> := <<"alarm_message">>, <<"value">> := Value}, _Acc) ->
+                                Value;
+                            (_, Acc) ->
+                                Acc
+                        end, <<"">>, Body);
+        _ ->
+            <<"无"/utf8>>
+    end.
+
 %% 0 未确认 1 误报 2 手动恢复 3 自动恢复
 update_notification(NotificationId, Payload) ->
     case dgiot_parse:get_object(<<"Notification">>, NotificationId) of
@@ -263,170 +279,6 @@ update_notification(NotificationId, Payload) ->
             NewContent#{<<"send_alarm_status">> => <<"stop">>};
         _ ->
             <<>>
-    end.
-
-sendSubscribe(Type, Content, UserId) ->
-    DeviceId = maps:get(<<"_deviceid">>, Content, <<"">>),
-    {Devaddr, _Address} =
-        case dgiot_parse:get_object(<<"Device">>, DeviceId) of
-            {ok, #{<<"devaddr">> := Devaddr1, <<"detail">> := Detail}} ->
-                Address1 = maps:get(<<"address">>, Detail, <<"无位置"/utf8>>),
-                {Devaddr1, Address1};
-            _ ->
-                {<<"">>, <<"无位置"/utf8>>}
-        end,
-    Result =
-        case binary:split(Type, <<$_>>, [global, trim]) of
-            [ProductId, AlertId] ->
-%%                Productname =
-%%                    case dgiot_parse:get_object(<<"Product">>, ProductId) of
-%%                        {ok, #{<<"name">> := Productname1}} ->
-%%                            Productname1;
-%%                        _ ->
-%%                            <<" ">>
-%%                    end,
-                dgiot_datetime:now_secs(),
-                case dgiot_parse:get_object(<<"Product">>, ProductId) of
-                    {ok, #{<<"config">> := #{<<"parser">> := Parse}}} ->
-                        lists:foldl(fun(P, Par) ->
-                            case P of
-                                #{<<"uid">> := AlertId, <<"config">> := #{<<"formDesc">> := FormDesc}} ->
-                                    maps:fold(fun(Key, Value1, Form) ->
-                                        case maps:find(Key, Content) of
-                                            {ok, Value} ->
-                                                BinValue = dgiot_utils:to_binary(Value),
-                                                Form#{<<"thing15">> => #{<<"value">> => BinValue}};
-                                            _ ->
-                                                Default = maps:get(<<"default">>, Value1, <<>>),
-                                                Form#{Key => #{<<"value">> => Default}}
-                                        end
-                                              end, #{<<"thing1">> => #{<<"value">> => Devaddr}, <<"date4">> => #{<<"value">> => dgiot_datetime:format("YYYY-MM-DD HH:NN:SS")}}, FormDesc);
-                                _Oth ->
-                                    Par
-                            end
-                                    end, #{}, Parse);
-                    _Other ->
-                        #{}
-                end;
-            _Other1 ->
-                #{}
-        end,
-    dgiot_wechat:sendSubscribe(UserId, Result).
-
-%% dgiot_umeng:save_devicestatus(<<"5adc65e32e">>, <<"OFFLINE">>).
-save_devicestatus(DeviceId, Status) ->
-    {_DeviceName, Address} =
-        case dgiot_parse:get_object(<<"Device">>, DeviceId) of
-            {ok, #{<<"name">> := DeviceName1, <<"detail">> := Detail}} ->
-                Address1 = maps:get(<<"address">>, Detail, <<"无位置"/utf8>>),
-                {DeviceName1, Address1};
-            _ ->
-                {<<" ">>, <<"无位置"/utf8>>}
-        end,
-
-    case dgiot_device:lookup(DeviceId) of
-        {ok, #{<<"acl">> := Acl, <<"devaddr">> := Devaddr, <<"productid">> := ProductId}} ->
-            Ruleid = <<ProductId/binary, "_status">>,
-            Productname =
-                case dgiot_parse:get_object(<<"Product">>, ProductId) of
-                    {ok, #{<<"name">> := Productname1}} ->
-                        Productname1;
-                    _ ->
-                        <<" ">>
-                end,
-            Requests =
-                lists:foldl(fun(X, Acc) ->
-                    BinX = atom_to_binary(X),
-                    case BinX of
-                        <<"role:", Name/binary>> ->
-                            case dgiot_parse:query_object(<<"_Role">>, #{<<"order">> => <<"updatedAt">>, <<"limit">> => 1,
-                                <<"where">> => #{<<"name">> => Name}}) of
-                                {ok, #{<<"results">> := [Role]}} ->
-                                    #{<<"objectId">> := RoleId} = Role,
-                                    UserIds = dgiot_parse_id:get_userids(RoleId),
-                                    lists:foldl(fun(UserId, Acc1) ->
-                                        ObjectId = dgiot_parse_id:get_notificationid(Ruleid),
-                                        Content = #{<<"_deviceid">> => DeviceId, <<"_productid">> => ProductId, <<"status">> => Status},
-                                        Result = #{<<"thing1">> => #{<<"value">> => Productname},
-                                            <<"date4">> => #{<<"value">> => dgiot_datetime:format("YYYY-MM-DD HH:NN:SS")},
-                                            <<"thing15">> => #{<<"value">> => <<"设备离线"/utf8>>},
-                                            <<"thing5">> => #{<<"value">> => Address},
-                                            <<"thing12">> => #{<<"value">> => <<Devaddr/binary, "离线"/utf8>>}},
-                                        dgiot_wechat:sendSubscribe(UserId, Result),
-                                        Acc1 ++ [#{
-                                            <<"method">> => <<"POST">>,
-                                            <<"path">> => <<"/classes/Notification">>,
-                                            <<"body">> => #{
-                                                <<"objectId">> => ObjectId,
-                                                <<"ACL">> => #{
-                                                    UserId => #{
-                                                        <<"read">> => true,
-                                                        <<"write">> => true
-                                                    }
-                                                },
-                                                <<"content">> => Content,
-                                                <<"public">> => false,
-                                                <<"status">> => 0,
-                                                <<"sender">> => #{
-                                                    <<"__type">> => <<"Pointer">>,
-                                                    <<"className">> => <<"_User">>,
-                                                    <<"objectId">> => <<"Klht7ERlYn">>
-                                                },
-                                                <<"process">> => <<"">>,
-                                                <<"type">> => Ruleid,
-                                                <<"user">> => #{
-                                                    <<"__type">> => <<"Pointer">>,
-                                                    <<"className">> => <<"_User">>,
-                                                    <<"objectId">> => UserId
-                                                }
-                                            }
-                                        }]
-                                                end, Acc, UserIds);
-                                _ ->
-                                    Acc
-                            end;
-                        <<"*">> ->
-                            Acc;
-                        UserId ->
-                            ObjectId = dgiot_parse_id:get_notificationid(Ruleid),
-                            Result = #{<<"thing1">> => #{<<"value">> => Productname},
-                                <<"date4">> => #{<<"value">> => dgiot_datetime:format("YYYY-MM-DD HH:NN:SS")},
-                                <<"thing15">> => #{<<"value">> => <<"设备离线"/utf8>>},
-                                <<"thing5">> => #{<<"value">> => Address},
-                                <<"thing12">> => #{<<"value">> => <<Devaddr/binary, "离线"/utf8>>}},
-                            dgiot_wechat:sendSubscribe(UserId, Result),
-                            Acc ++ [#{
-                                <<"method">> => <<"POST">>,
-                                <<"path">> => <<"/classes/Notification">>,
-                                <<"body">> => #{
-                                    <<"objectId">> => ObjectId,
-                                    <<"ACL">> => #{
-                                        UserId => #{
-                                            <<"read">> => true,
-                                            <<"write">> => true
-                                        }
-                                    },
-                                    <<"content">> => #{<<"_deviceid">> => DeviceId, <<"_productid">> => ProductId, <<"status">> => Status},
-                                    <<"public">> => false,
-                                    <<"status">> => 0,
-                                    <<"sender">> => #{
-                                        <<"__type">> => <<"Pointer">>,
-                                        <<"className">> => <<"_User">>,
-                                        <<"objectId">> => <<"Klht7ERlYn">>
-                                    },
-                                    <<"type">> => Ruleid,
-                                    <<"user">> => #{
-                                        <<"__type">> => <<"Pointer">>,
-                                        <<"className">> => <<"_User">>,
-                                        <<"objectId">> => UserId
-                                    }
-                                }
-                            }]
-                    end
-                            end, [], Acl),
-            dgiot_parse:batch(Requests);
-        _ ->
-            pass
     end.
 
 %%SELECT payload, payload.1.value as value, clientid, 'e636739559' as productid FROM "profile/e636739559/#" WHERE value = '02000000000000001A00000000250222'
@@ -740,6 +592,85 @@ send_msg(#{<<"send_alarm_status">> := <<"stop">>, <<"alarm_createdAt">> := Alarm
 send_msg(_) ->
     pass.
 
+sendSubscribe(Type, Content, _UserId) ->
+    DeviceId = maps:get(<<"_deviceid">>, Content, <<"">>),
+    {Devaddr, _Address} =
+        case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+            {ok, #{<<"devaddr">> := Devaddr1, <<"detail">> := Detail}} ->
+                Address1 = maps:get(<<"address">>, Detail, <<"无位置"/utf8>>),
+                {Devaddr1, Address1};
+            _ ->
+                {<<"">>, <<"无位置"/utf8>>}
+        end,
+    case binary:split(Type, <<$_>>, [global, trim]) of
+        [ProductId, AlertId] ->
+%%                Productname =
+%%                    case dgiot_parse:get_object(<<"Product">>, ProductId) of
+%%                        {ok, #{<<"name">> := Productname1}} ->
+%%                            Productname1;
+%%                        _ ->
+%%                            <<" ">>
+%%                    end,
+            dgiot_datetime:now_secs(),
+            case dgiot_parse:get_object(<<"Product">>, ProductId) of
+                {ok, #{<<"config">> := #{<<"parser">> := Parse}}} ->
+                    lists:foldl(fun(P, Par) ->
+                        case P of
+                            #{<<"uid">> := AlertId, <<"config">> := #{<<"formDesc">> := FormDesc}} ->
+                                maps:fold(fun(Key, Value1, Form) ->
+                                    case maps:find(Key, Content) of
+                                        {ok, Value} ->
+                                            BinValue = dgiot_utils:to_binary(Value),
+                                            Form#{<<"thing15">> => #{<<"value">> => BinValue}};
+                                        _ ->
+                                            Default = maps:get(<<"default">>, Value1, <<>>),
+                                            Form#{Key => #{<<"value">> => Default}}
+                                    end
+                                          end, #{<<"thing1">> => #{<<"value">> => Devaddr}, <<"date4">> => #{<<"value">> => dgiot_datetime:format("YYYY-MM-DD HH:NN:SS")}}, FormDesc);
+                            _Oth ->
+                                Par
+                        end
+                                end, #{}, Parse);
+                _Other ->
+                    #{}
+            end;
+        _Other1 ->
+            #{}
+    end.
+%%    dgiot_wechat:sendSubscribe(UserId, Result).
+
+%% 触发 小程序订阅
+sendSubscribe(#{<<"send_alarm_status">> := <<"start">>, <<"alarm_createdAt">> := Alarm_createdAt, <<"alarm_message">> := Alarm_message, <<"_deviceid">> := DeviceId, <<"_productid">> := ProductId, <<"dgiot_alarmkey">> := Alarmkey, <<"dgiot_alarmvalue">> := Alarmvalue}) ->
+    case dgiot_parse:get_object(<<"Product">>, ProductId) of
+        {ok, #{<<"name">> := ProductName, <<"content">> := #{<<"minipg">> := #{<<"params">> := Params, <<"tplid">> := TplId, <<"roleid">> := RoleId} = _Minipg}}} ->
+            Device =
+                case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+                    {ok, Result} ->
+                        Result;
+                    _ ->
+                        #{}
+                end,
+            Data =
+                maps:fold(fun(Key, Value, Acc) ->
+                    replace_miniparam(Acc, Key, Value, Alarm_createdAt, Alarmkey, Alarmvalue, Device, ProductId, ProductName, Alarm_message)
+                          end, #{}, Params),
+            lists:foldl(fun(#{<<"objectId">> := UserId}, _Acc) ->
+                dgiot_wechat:sendSubscribe(UserId, TplId, Data)
+                        end, [], dgiot_notification:get_users(DeviceId, RoleId));
+        _O ->
+            io:format("~s ~p _O = ~p.~n", [?FILE, ?LINE, _O]),
+            pass
+    end;
+
+%% 恢复 小程序订阅
+%%sendSubscribe(#{<<"send_alarm_status">> := <<"stop">>, <<"alarm_createdAt">> := Alarm_createdAt, <<"_deviceid">> := DeviceId, <<"_productid">> := ProductId, <<"dgiot_alarmkey">> := Key, <<"dgiot_alarmvalue">> := Value}) ->
+%%
+%%    pass;
+
+%% 小程序订阅
+sendSubscribe(_O) ->
+    io:format("~s ~p _O = ~p.~n", [?FILE, ?LINE, _O]),
+    pass.
 
 %%  产品名称：%PRODUCTNAME%
 %%  部门名称：%ROLENAME%
@@ -757,7 +688,9 @@ replace_param(Param, ProductName, ProductId, DeviceId, Key, Value, Alarm_created
     DateTime = dgiot_datetime:format("YYYY-MM-DD HH:NN:SS"),
     {DeviceName, DeviceAddr, OldACL, UserToken} =
         case dgiot_parse:get_object(<<"Device">>, DeviceId) of
-            {ok, #{<<"name">> := Name, <<"devaddr">> := Devaddr, <<"ACL">> := Acl, <<"content">> := #{<<"person">> := #{<<"sessiontoken">> := SessionToken}}}} ->
+            {ok, #{<<"name">> := Name, <<"devaddr">> := Devaddr, <<"ACL">> := Acl, <<"content">> := Content}} ->
+                Person = maps:get(<<"person">>, Content, #{}),
+                SessionToken = maps:get(<<"sessiontoken">>, Person, <<>>),
                 {Name, Devaddr, Acl, SessionToken};
             _ ->
                 {<<"--">>, <<"--">>, <<"--">>, <<"--">>}
@@ -804,6 +737,85 @@ replace_param(Param, ProductName, ProductId, DeviceId, Key, Value, Alarm_created
     re:replace(Str10, "%NOWVALUE%", dgiot_utils:to_list(Value), [global, {return, binary}]).
 
 
+%%  产品名称：%PRODUCTNAME%
+replace_miniparam(Acc, <<"%PRODUCTNAME%">>, Value, _Alarm_createdAt, _Alarmkey, _Alarmvalue, _Device, _ProductId, ProductName, _TriggerdeScription) ->
+    Acc#{Value => #{<<"value">> => ProductName}};
 
+%%  部门名称：%ROLENAME%
+replace_miniparam(Acc, <<"%ROLENAME%">>, Value, _Alarm_createdAt, _Alarmkey, _Alarmvalue, Device, _ProductId, _ProductName, _TriggerdeScription) ->
+    NewACL = dgiot_role:get_acls(Device),
+    DeviceRoleName =
+        lists:foldl(fun(X, _Acc) ->
+            BinX = atom_to_binary(X),
+            case BinX of
+                <<"role:", NewName/binary>> ->
+                    NewName;
+                _ ->
+                    <<"admin">>
+            end
+                    end, <<>>, NewACL),
+    Acc#{Value => #{<<"value">> => DeviceRoleName}};
 
+%%  设备名称：%DEVICENAME%
+replace_miniparam(Acc, <<"%DEVICENAME%">>, Value, _Alarm_createdAt, _Alarmkey, _Alarmvalue, Device, _ProductId, _ProductName, _TriggerdeScription) ->
+    Acc#{Value => #{<<"value">> => maps:get(<<"name">>, Device, <<>>)}};
 
+%%  设备编号：%DEVICEADDR%
+replace_miniparam(Acc, <<"%DEVICEADDR%">>, Value, _Alarm_createdAt, _Alarmkey, _Alarmvalue, Device, _ProductId, _ProductName, _TriggerdeScription) ->
+    Acc#{Value => #{<<"value">> => maps:get(<<"devaddr">>, Device, <<>>)}};
+
+%%  设备位置：%DEVICELOCATION%
+replace_miniparam(Acc, <<"%DEVICELOCATION%">>, Value, _Alarm_createdAt, _Alarmkey, _Alarmvalue, Device, _ProductId, _ProductName, _TriggerdeScription) ->
+    Acc#{Value => #{<<"value">> => maps:get(<<"address">>, Device, <<"无位置"/utf8>>)}};
+
+%%  日期：%DATE%
+replace_miniparam(Acc, <<"%DATE%">>, Value, _Alarm_createdAt, _Alarmkey, _Alarmvalue, _DeviceId, _ProductId, _ProductName, _TriggerdeScription) ->
+    Acc#{Value => #{<<"value">> => dgiot_datetime:format("YYYY-MM-DD")}};
+
+%%  时间：%DATETIME%
+replace_miniparam(Acc, <<"%DATETIME%">>, Value, _Alarm_createdAt, _Alarmkey, _Alarmvalue, _DeviceId, _ProductId, _ProductName, _TriggerdeScription) ->
+    Acc#{Value => #{<<"value">> => dgiot_datetime:format("YYYY-MM-DD HH:NN:SS")}};
+
+%%  用户名称：%USERNAME%
+replace_miniparam(Acc, <<"%USERNAME%">>, Value, _Alarm_createdAt, _Alarmkey, _Alarmvalue, Device, _ProductId, _ProductName, _TriggerdeScription) ->
+    Content = maps:get(<<"content">>, Device, #{}),
+    Person = maps:get(<<"person">>, Content, #{}),
+    SessionToken = maps:get(<<"sessiontoken">>, Person, <<>>),
+    Username =
+        case dgiot_auth:get_session(SessionToken) of
+            #{<<"nick">> := Nick} ->
+                Nick;
+            _ ->
+                <<"admin">>
+        end,
+    Acc#{Value => #{<<"value">> => Username}};
+
+%%  报警时间：%TRIGGERTIME%
+replace_miniparam(Acc, <<"%TRIGGERTIME%">>, Value, Alarm_createdAt, _Alarmkey, _Alarmvalue, _DeviceId, _ProductId, _ProductName, _TriggerdeScription) ->
+    Acc#{Value => #{<<"value">> => Alarm_createdAt}};
+
+%%  变量名称：%DATAPOINTNAME%
+replace_miniparam(Acc, <<"%DATAPOINTNAME%">>, Value, _Alarm_createdAt, Alarmkey, _Alarmvalue, _DeviceId, ProductId, _ProductName, _TriggerdeScription) ->
+    DataPointname =
+        case dgiot_data:get({product, <<ProductId/binary, Alarmkey/binary>>}) of
+            not_find ->
+                <<"--">>;
+            {ThingName, _, _} ->
+                ThingName
+        end,
+    Acc#{Value => #{<<"value">> => DataPointname}};
+
+%%  当前值：%NOWVALUE%
+replace_miniparam(Acc, <<"%NOWVALUE%">>, Value, _Alarm_createdAt, _Alarmkey, Alarmvalue, _DeviceId, _ProductId, _ProductName, _TriggerdeScription) ->
+    Acc#{Value => #{<<"value">> => Alarmvalue}};
+
+%%  触发描述：%TRIGGERDESCRIPTION%
+replace_miniparam(Acc, <<"%TRIGGERDESCRIPTION%">>, Value, _Alarm_createdAt, _Alarmkey, _Alarmvalue, _DeviceId, _ProductId, _ProductName, TriggerdeScription) ->
+    Acc#{Value => #{<<"value">> => TriggerdeScription}};
+
+%%  内容：%TRIGGERCONTENT%
+replace_miniparam(Acc, <<"%TRIGGERCONTENT%">>, Value, _Alarm_createdAt, _Alarmkey, _Alarmvalue, _DeviceId, _ProductId, _ProductName, TriggerdeScription) ->
+    Acc#{Value => #{<<"value">> => TriggerdeScription}};
+
+replace_miniparam(Acc, _, Value, _Alarm_createdAt, _Alarmkey, _Alarmvalue, _DeviceId, _ProductId, _ProductName, _TriggerdeScription) ->
+    Acc#{Value => #{<<"value">> => <<"无"/utf8>>}}.

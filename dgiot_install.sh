@@ -1500,9 +1500,9 @@ dgiot_shell
 # set parameters by default value
 deployType=single                             # [single | cluster | devops | ci]
 domain_name="prod.dgiotcloud.cn"              # [prod.dgiotcloud.cn | your_domain_name]
-software="dgiot_n238"                          # [dgiot_n238| dgiot_n]
+software="dgiot_n248"                          # [dgiot_n248| dgiot_n]
 plugin="dgiot"                                # [dgiot | dgiot_your_plugin]
-dgiotmd5="99097ea5f57d84558fafbe0f7e8904a3"   # [dgiotmd5]
+dgiotmd5="edc105c3bb21a039956a977c608246ae"   # [dgiotmd5]
 pg_eip="changeyourip"                            # [datanode_eip]
 pg_auth='changeyourpassword'                  # [pg_auth]
 islanip="false"                                    # [islanip]
@@ -1565,3 +1565,5 @@ echo -e  "`date +%F_%T` $LINENO: ${RED} pg_info: postgres://postgres:${pg_auth}@
 echo -e  "`date +%F_%T` $LINENO: ${RED} pg_info: pg_eip=${pg_eip} pg_auth=${pg_auth}${NC}"
 echo -e  "`date +%F_%T` $LINENO: ${RED} parse_info: http://${wlanip}:1337/dashboard/ ${NC}"
 echo -e  "`date +%F_%T` $LINENO: ${RED} parse_info: username=${parse_user} password=${parse_pwd} ${NC}"
+echo -e  "`date +%F_%T` $LINENO: ${RED} dashboard: http://${wlanip}/ ${NC}"
+echo -e  "`date +%F_%T` $LINENO: ${RED} dashboard: username=dgiot_dev password=dgiot_dev ${NC}"

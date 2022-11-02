@@ -40,6 +40,8 @@
     remove_rules_role/1,
     get_rules_role/1,
     load_roles/0,
+    load_user/0,
+    get_user/1,
     get_childrole/1,
     get_childacl/1,
     get_roleids/1,
@@ -94,6 +96,26 @@ load_roles() ->
               end,
     Query = #{},
     dgiot_parse_loader:start(<<"_Role">>, Query, 0, 500, 10000, Success).
+
+load_user() ->
+    Success = fun(Page) ->
+        lists:map(fun(User) ->
+            user_ets(User)
+                  end, Page)
+              end,
+    Query = #{},
+    dgiot_parse_loader:start(<<"_User">>, Query, 0, 500, 10000, Success).
+
+user_ets(#{<<"objectId">> := UserId} = User) ->
+    dgiot_data:insert(?USER_ETS, UserId, maps:without([<<"objectId">>, <<"createdAt">>, <<"emailVerified">>, <<"_email_verify_token">>, <<"_failed_login_count">>, <<"updatedAt">>, <<"authData">>, <<"role">>, <<"roles">>, <<"tag">>], User)).
+
+get_user(UserId) ->
+    case dgiot_data:get(?USER_ETS, UserId) of
+        not_find ->
+            not_find;
+        User ->
+            User
+    end.
 
 get_acls(Device) when is_map(Device) ->
     Acl = maps:get(<<"ACL">>, Device, #{}),

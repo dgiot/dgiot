@@ -29,6 +29,7 @@ start(_StartType, _StartArgs) ->
     dgiot_metrics:start(dgiot_parse),
     {ok, Sup} = dgiot_parse_sup:start_link(),
     dgiot_parse_channel:start(),
+    dgiot_parse_channel:start_slave(),
     dgiot_hook:add(one_for_one, {'dgiot','load_cache_classes'}, fun dgiot_parse_cache:start_cache/1),
     {ok, Sup}.
 

@@ -120,8 +120,7 @@ handle_message({rule, #{metadata := #{rule_id := <<"rule:Notification_", Ruleid/
         maps:fold(fun(Key, Value, Acc) ->
             Acc#{<<"dgiot_alarmkey">> => Key, <<"dgiot_alarmvalue">> => Value}
                   end, #{}, Context),
-    Content = dgiot_umeng:add_notification(Ruleid, DeviceId, NewContext),
-    dgiot_umeng:send_msg(Content),
+    dgiot_umeng:add_notification(Ruleid, DeviceId, NewContext),
     {ok, State};
 
 handle_message({sync_parse, Pid, 'after', get, _Token, <<"Notification">>, #{<<"results">> := _Results} = ResBody}, State) ->

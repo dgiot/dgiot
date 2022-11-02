@@ -70,13 +70,13 @@ format_keep(Query) ->
     dgiot_utils:to_binary(Keep).
 
 
-create_table(#{<<"tableName">> := TableName, <<"using">> := STbName, <<"tags">> := Tags} = _Query, _Context) ->
+create_table(#{<<"tableName">> := TableName, <<"using">> := STbName, <<"tags">> := Tags} = _Query, #{<<"channel">> := Channel} = _Context) ->
     TagFields = list_to_binary(dgiot_utils:join(",", Tags, fun dgiot_tdengine_select:format_value/1)),
-    DB1 = dgiot_tdengine_select:format_db(TableName),
+    DB1 = dgiot_tdengine:get_database(Channel, TableName),
     <<"CREATE TABLE IF NOT EXISTS ", DB1/binary, TableName/binary, " USING ", STbName/binary, " TAGS (", TagFields/binary, ");">>;
 
-create_table(#{<<"tableName">> := TableName, <<"fields">> := Fields0} = Query, _Context) ->
-    Database = dgiot_tdengine_select:format_db(TableName),
+create_table(#{<<"tableName">> := TableName, <<"fields">> := Fields0} = Query, #{<<"channel">> := Channel} = _Context) ->
+    Database = dgiot_tdengine:get_database(Channel, TableName),
 %%    alter_table(Query#{<<"db">> => Database}, Context),
     Fields =
         list_to_binary(dgiot_utils:join(",", ["createdat TIMESTAMP"] ++ lists:foldr(
@@ -96,7 +96,7 @@ create_table(#{<<"tableName">> := TableName, <<"fields">> := Fields0} = Query, _
     end.
 
 alter_table(#{<<"tableName">> := TableName}, #{<<"channel">> := Channel} = Context) ->
-    Database = dgiot_tdengine_select:format_db(TableName),
+    Database = dgiot_tdengine:get_database(Channel, TableName),
     Sql1 = <<"DESCRIBE ", Database/binary, TableName/binary, ";">>,
     case dgiot_tdengine_pool:run_sql(Context, execute_query, Sql1) of
         {ok, #{<<"results">> := Results}} when length(Results) > 0 ->

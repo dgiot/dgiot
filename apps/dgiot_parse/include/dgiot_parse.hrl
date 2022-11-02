@@ -15,6 +15,7 @@
 %%--------------------------------------------------------------------
 
 -define(DEFAULT, <<"default">>).
+-define(SLAVE, <<"slave">>).
 -define(TIMESCALE, <<"timescale">>).
 -define(TYPE, <<"PARSE">>).
 -define(CACHE(Channel), binary_to_atom(<<?TYPE/binary, Channel/binary>>, utf8)).
@@ -22,6 +23,7 @@
 -define(DGIOT_PARSE_ETS, dgiot_parse_ets).
 -define(ROLE_USER_ETS, role_user_ets).
 -define(USER_ROLE_ETS, user_role_ets).
+-define(USER_ETS, user_ets).
 -define(ROLE_ETS, role_ets).
 -define(ROLE_PARENT_ETS, role_parent_ets).
 -define(PARENT_ROLE_ETS, parent_role_ets).

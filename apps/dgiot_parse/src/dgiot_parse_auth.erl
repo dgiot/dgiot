@@ -1063,11 +1063,11 @@ get_children(Results) ->
         X2 =
             case maps:find(<<"children">>, X1) of
                 error ->
-                    #{<<"userlist">> := Userlist} = X1,
-                    X1#{<<"children">> => Userlist};
+                    #{<<"userlist">> := Userlist, <<"objectId">> := ObjectId} = X1,
+                    X1#{<<"value">> => ObjectId, <<"children">> => Userlist};
                 {ok, SubChildren} ->
-                    #{<<"userlist">> := Userlist} = X1,
-                    X1#{<<"children">> => get_children(SubChildren) ++ Userlist}
+                    #{<<"userlist">> := Userlist, <<"objectId">> := ObjectId} = X1,
+                    X1#{<<"value">> => ObjectId, <<"children">> => get_children(SubChildren) ++ Userlist}
             end,
         Acc ++ [maps:without([<<"objectId">>, <<"userlist">>, <<"name">>], X2)]
                 end, [], Results).
@@ -1089,7 +1089,7 @@ getuser(#{<<"objectId">> := RoleId, <<"name">> := Depname} = Role) ->
                 #{<<"nick">> := <<"user_for_", _/binary>>} ->
                     Acc;
                 #{<<"nick">> := Nick, <<"objectId">> := ObjectId} ->
-                    Acc ++ [#{<<"label">> => Nick, <<"value">> => #{<<"label">> => Nick, <<"objectId">> => ObjectId}}];
+                    Acc ++ [#{<<"label">> => Nick, <<"value">> => ObjectId}];
                 _ ->
                     Acc
             end

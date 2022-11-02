@@ -78,6 +78,7 @@
     update_schemas_json/0
 ]).
 
+
 create_schemas_json() ->
     {file, Here} = code:is_loaded(?MODULE),
     SchemasFile = dgiot_httpc:url_join([filename:dirname(filename:dirname(Here)), "/priv/json/schemas.json"]),
