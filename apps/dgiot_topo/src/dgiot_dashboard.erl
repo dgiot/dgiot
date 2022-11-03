@@ -14,12 +14,13 @@
 %%--------------------------------------------------------------------
 -module(dgiot_dashboard).
 -author("stoneliu").
--include("dgiot_bamis.hrl").
+-include("dgiot_topo.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -export([post_dashboard/2, do_task/2]).
 
 post_dashboard(#{<<"dashboardId">> := DashboardId} = Args, #{<<"sessionToken">> := SessionToken} = _Context) ->
     NewArgs = Args#{<<"sessionToken">> => SessionToken},
+  
     dgiot_mqtt:publish(DashboardId, <<"dashboard_task/", DashboardId/binary>>, jsx:encode(NewArgs)),
     #{};
 
@@ -41,7 +42,7 @@ do_task(#{<<"dataType">> := <<"card">>, <<"vuekey">> := <<"app_count">>, <<"tabl
 do_task(#{<<"dataType">> := <<"card">>, <<"vuekey">> := <<"product_count">>, <<"table">> := <<"Product">>, <<"query">> := Query}, #task{dashboardId = DashboardId, sessiontoken = SessionToken}) ->
     case dgiot_parse:query_object(<<"Product">>, Query, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
         {ok, #{<<"count">> := _Count} = Value} ->
-            Base64 = base64:encode(jsx:encode(#{<<"dataType">> => <<"card">>, <<"vuekey">> => <<"product_count">>, <<"table">> => <<"Product">>,  <<"value">> => Value})),
+            Base64 = base64:encode(jsx:encode(#{<<"dataType">> => <<"card">>, <<"vuekey">> => <<"product_count">>, <<"table">> => <<"Product">>, <<"value">> => Value})),
             send(DashboardId, Base64);
         _ ->
             pass
@@ -51,7 +52,7 @@ do_task(#{<<"dataType">> := <<"card">>, <<"vuekey">> := <<"product_count">>, <<"
 do_task(#{<<"dataType">> := <<"card">>, <<"vuekey">> := <<"dev_online_count">>, <<"table">> := <<"Device">>, <<"query">> := Query}, #task{dashboardId = DashboardId, sessiontoken = SessionToken}) ->
     case dgiot_parse:query_object(<<"Device">>, Query, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
         {ok, #{<<"count">> := _Count} = Value} ->
-            Base64 = base64:encode(jsx:encode(#{<<"dataType">> => <<"card">>, <<"vuekey">> => <<"dev_online_count">>, <<"table">> => <<"Device">>,  <<"value">> => Value})),
+            Base64 = base64:encode(jsx:encode(#{<<"dataType">> => <<"card">>, <<"vuekey">> => <<"dev_online_count">>, <<"table">> => <<"Device">>, <<"value">> => Value})),
             send(DashboardId, Base64);
         _ ->
             pass

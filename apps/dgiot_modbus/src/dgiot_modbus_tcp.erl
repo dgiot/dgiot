@@ -90,7 +90,7 @@ handle_info({tcp, Buff}, #tcp{state = #state{id = ChannelId, devaddr = DtuAddr, 
             NewTopic = <<"$dg/thing/", DtuProductId/binary, "/", DtuAddr/binary, "/properties/report">>,
             dgiot_bridge:send_log(ChannelId, ProductId, DtuAddr, "~s ~p to task ~p ~ts ", [?FILE, ?LINE, NewTopic, unicode:characters_to_list(jsx:encode(Things))]),
             DeviceId = dgiot_parse_id:get_deviceid(ProductId, DtuAddr),
-            Taskchannel = dgiot_product:get_taskchannel(ProductId),
+            Taskchannel = dgiot_product_channel:get_taskchannel(ProductId),
             dgiot_client:send(Taskchannel, DeviceId, NewTopic, Things);
         Other ->
             ?LOG(info, "Other ~p", [Other]),
@@ -154,7 +154,7 @@ handle_cast(_Msg, TCPState) ->
 
 terminate(_Reason, #tcp{state = #state{devaddr = DtuAddr, product = ProductId}} = _TCPState) ->
     DeviceId = dgiot_parse_id:get_deviceid(ProductId, DtuAddr),
-    Taskchannel = dgiot_product:get_taskchannel(ProductId),
+    Taskchannel = dgiot_product_channel:get_taskchannel(ProductId),
     dgiot_task:del_pnque(DeviceId),
     dgiot_client:stop(Taskchannel, DeviceId),
     ok;

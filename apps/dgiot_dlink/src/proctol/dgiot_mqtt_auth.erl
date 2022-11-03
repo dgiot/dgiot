@@ -32,7 +32,7 @@ check(#{username := Username}, AuthResult, _)
     {ok, AuthResult#{anonymous => true, auth_result => success}};
 
 check(#{username := <<"dgiot">>, password := Password}, AuthResult, _) ->
-    io:format("~s ~p Password: ~p~n", [?FILE, ?LINE, Password]),
+%%    io:format("~s ~p Password: ~p~n", [?FILE, ?LINE, Password]),
     SuperPwd = dgiot_utils:to_binary(dgiot:get_env(dgiot_dlink, super_pwd, <<"">>)),
     case SuperPwd of
         Password ->
@@ -47,6 +47,7 @@ check(#{clientid := <<Token:34/binary, _Type/binary>>, username := UserId, passw
     case dgiot_auth:get_session(Token) of
         #{<<"objectId">> := UserId} ->
             dgiot_mqtt:subscribe(Token, <<"$dg/user/dashboard/#">>),
+            dgiot_mqtt:subscribe(Token, <<"$dg/user/topo/", Token/binary, "/#">>),
             {stop, AuthResult#{anonymous => false, auth_result => success}};
         _ ->
             {stop, AuthResult#{anonymous => false, auth_result => password_error}}
@@ -59,12 +60,12 @@ check(#{clientid := <<Token:34/binary, _Type/binary>>, username := UserId, passw
 %% 2、 尝试ClientID 为deviceID的1机1密认证
 %% 3、 尝试ClientID 为deviceAddr的1机1密认证
 check(#{clientid := <<ProductID:10/binary, "_", DeviceAddr/binary>>, username := ProductID, password := Password, peerhost := PeerHost}, AuthResult, #{hash_type := _HashType}) ->
-    io:format("~s ~p ProductID: ~p ClientId ~p Password ~p PeerHost ~p ~n", [?FILE, ?LINE, ProductID, DeviceAddr, Password, dgiot_utils:get_ip(PeerHost)]),
+%%    io:format("~s ~p ProductID: ~p ClientId ~p Password ~p PeerHost ~p ~n", [?FILE, ?LINE, ProductID, DeviceAddr, Password, dgiot_utils:get_ip(PeerHost)]),
     DeviceId = dgiot_parse_id:get_deviceid(ProductID, DeviceAddr),
     do_check(AuthResult, Password, ProductID, DeviceAddr, DeviceId, dgiot_utils:get_ip(PeerHost));
 
 check(#{clientid := DeviceAddr, username := ProductID, password := Password, peerhost := PeerHost}, AuthResult, #{hash_type := _HashType}) ->
-    io:format("~s ~p ProductID: ~p ClientId ~p Password ~p PeerHost ~p ~n", [?FILE, ?LINE, ProductID, DeviceAddr, Password, dgiot_utils:get_ip(PeerHost)]),
+%%    io:format("~s ~p ProductID: ~p ClientId ~p Password ~p PeerHost ~p ~n", [?FILE, ?LINE, ProductID, DeviceAddr, Password, dgiot_utils:get_ip(PeerHost)]),
     DeviceId = dgiot_parse_id:get_deviceid(ProductID, DeviceAddr),
     do_check(AuthResult, Password, ProductID, DeviceAddr, DeviceId, dgiot_utils:get_ip(PeerHost));
 
