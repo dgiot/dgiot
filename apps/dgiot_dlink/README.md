@@ -50,6 +50,7 @@ Dlink协议是针对物联网开发领域设计的一种数据交换规范，数
 | 通道设置 |$dg/user/channel/{channelId}/commands/request_id={request_id}|用户|平台|
 | 通道设置 |$dg/user/channel/{channelId}/commands/response/request_id={request_id}|平台|用户|
 | 大屏消息 |$dg/user/dashboard/{dashboardId}/{productId}/{deviceId}|平台|用户|
+| 组态大屏 |$dg/user/topo/{SessionToken}/{NodeType}/{NodeId}/report|平台|app|
 | 云云对接 |$dg/bridge/{bridgetopic}|平台|平台|
 | app对接 |$dg/user/uniapp/{SessionToken}/report|平台|app|
 | app对接 |$dg/thing/uniapp/{SessionToken}/report|app|平台|

@@ -95,9 +95,10 @@
             "in": "query",
             "name": "type",
             "type": "string",
-            "description": "Topic/Dashboard/Unit",
+            "description": "Json Templete",
             "required": true,
             "enum": [
+              "Views",
               "Amis",
               "Konva",
               "default",
@@ -115,6 +116,14 @@
               "thing-lite",
               "swaggerTree"
             ]
+          },
+          {
+            "in": "query",
+            "name": "subtype",
+            "type": "string",
+            "description": "子类型",
+            "default": "all",
+            "required": false
           }
         ],
         "responses": {

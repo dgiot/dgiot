@@ -27,6 +27,7 @@ post(ProductId) ->
         <<"title">> => ProductId,
         <<"key">> => ProductId,
         <<"type">> => <<"amis">>,
+        <<"flag">> => <<"amis">>,
         <<"class">> => <<"Product">>,
         <<"data">> => dgiot_utils:get_JsonFile(?MODULE,<<"amis.json">>)
     }).

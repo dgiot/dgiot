@@ -16,7 +16,7 @@
 -author("johnliu").
 -include_lib("dgiot/include/logger.hrl").
 
--export([docroot/0, get_topo/2, send_konva/3, send_realtime_card/3, get_name/3, put_topo/2, push/4]).
+-export([docroot/0, get_topo/2, send_konva/3, send_realtime_card/3, get_name/3, put_topo/2, push/4, send_topo/2, get_que/1]).
 
 docroot() ->
     {file, Here} = code:is_loaded(?MODULE),
@@ -75,7 +75,6 @@ send_konva(ProductId, DeviceId, Payload) ->
     Pubtopic = <<"$dg/user/konva/", DeviceId/binary, "/report">>,
     dgiot_mqtt:publish(self(), Pubtopic, Base64).
 
-
 push(ProductId, Devaddr, DeviceId, Payload) ->
     Base64 = dgiot_product_knova:get_konva(ProductId, DeviceId, Payload),
     Url = dgiot_data:get(topourl),
@@ -84,3 +83,29 @@ push(ProductId, Devaddr, DeviceId, Payload) ->
     Data1 = dgiot_utils:to_list(jsx:encode(Data)),
     httpc:request(post, {Url1, [], "application/json", Data1}, [], []).
 
+send_topo({NodeType, NodeId}, Token) ->
+    io:format("NodeType ~p NodeId ~p Token ~p ~n", [NodeType, NodeId,Token]),
+    case dgiot_hook:run_hook({topo, NodeType, NodeId}, {Token, NodeId}) of
+        {ok, [{ok, Payload}]} ->
+            Base64 = base64:encode(jsx:encode(Payload)),
+            Pubtopic = <<"$dg/user/topo/", Token/binary, "/", NodeType/binary, "/", NodeId/binary, "/report">>,
+            io:format("~s ~p Pubtopic ~p Base64 ~p ~n", [?FILE,?LINE, Pubtopic, Base64]),
+            dgiot_mqtt:publish(self(), Pubtopic, Base64);
+        _ ->
+            pass
+    end.
+
+get_que(DashboardId) ->
+    case dgiot_parse:get_object(<<"View">>, DashboardId) of
+        {ok, #{<<"data">> := #{<<"konva">> := #{<<"Stage">> := Stage}}}} ->
+            Rects = dgiot_product_knova:get_nodes(Stage, [<<"Rect">>]),
+            maps:fold(
+                fun
+                    (NodeId, #{<<"name">> := <<"vuecomponent">>, <<"source">> := <<"mqtt">>, <<"type">> := NodeType}, Acc) ->
+                        Acc ++ [{NodeType, NodeId}];
+                    (_, _, Acc) ->
+                        Acc
+                end, [], Rects);
+        _ ->
+            []
+    end.

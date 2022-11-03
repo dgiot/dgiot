@@ -324,7 +324,7 @@ handle_cast(_Msg, TCPState) ->
 terminate(_Reason, #tcp{state = #state{dtuaddr = DtuAddr, product = ProductId}} = _TCPState) ->
     dgiot_metrics:dec(dgiot_meter, <<"dtu_online">>, 1),
     DeviceId = dgiot_parse_id:get_deviceid(ProductId, DtuAddr),
-    Taskchannel = dgiot_product:get_taskchannel(ProductId),
+    Taskchannel = dgiot_product_channe:get_taskchannel(ProductId),
     dgiot_task:del_pnque(DeviceId),
     dgiot_client:stop(Taskchannel, DeviceId),
     ok;
