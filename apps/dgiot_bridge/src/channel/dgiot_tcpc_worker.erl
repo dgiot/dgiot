@@ -39,7 +39,7 @@ init(#dclient{child = ChildState} = Dclient) when is_map(ChildState) ->
     end;
 
 init(#dclient{channel = ChannelId}) ->
-    case dgiot_product:get_channel(ChannelId) of
+    case dgiot_product_channel:get_channel(ChannelId) of
         not_find ->
             {stop, <<"not find product">>};
         ProductId ->
