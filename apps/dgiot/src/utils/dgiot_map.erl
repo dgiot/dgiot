@@ -10,10 +10,7 @@
 -author("jonhl").
 -export([with/2, get/2, merge/2, flatten/1, flatten/2]).
 -export([test_get/0, test_merge/0]).
-
-
 -export([unflatten/1, unflatten/2]).
-
 unflatten(Data) ->
     unflatten(Data, "_").
 
@@ -37,13 +34,31 @@ unflatten(Data, _) ->
 get_map(KList, V) ->
     lists:foldl(
         fun(X, Acc) ->
-            case maps:size(Acc) of
-                0 ->
-                    #{X => V};
+            Value = case maps:size(Acc) of
+                        0 ->
+                            V;
+                        _ ->
+                            Acc
+                    end,
+            case re:run(X, <<"\[[0-9]*\]">>) of
+                {match, [{First, Len}]} ->
+                    XList = dgiot_utils:to_list(X),
+                    Key = lists:sublist(XList, 1, First),
+                    Index = dgiot_utils:to_int(dgiot_utils:to_binary(lists:sublist(XList, First + 2, Len - 2))),
+                    get_list(Key, Index, Value);
                 _ ->
-                    #{X => Acc}
+                    #{X => Value}
             end
         end, #{}, KList).
+
+get_list(Key, Index, Value) when Index > 0 ->
+    Head = lists:foldl(
+        fun(_, Acc) ->
+            Acc ++ [[]]
+        end, [], lists:seq(1, Index)),
+    #{dgiot_utils:to_binary(Key) => Head ++ [Value]};
+get_list(Key, _, Value) ->
+    #{dgiot_utils:to_binary(Key) => [Value]}.
 
 flatten(Map) ->
     flatten(Map, <<"_">>).
@@ -74,16 +89,25 @@ flatten(Head, Map, Link) ->
 
 
 merge(Data, NewData) ->
-    maps:fold(fun
-                  (NewKey, NewValue, Acc) ->
-                      case maps:find(NewKey, Acc) of
-                          {ok, Value} when is_map(Value) and is_map(NewValue) ->
-                              Acc#{NewKey => merge(Value, NewValue)};
-                          _ ->
-                              Acc#{NewKey => NewValue}
-                      end
-              end,
-        Data, NewData).
+    maps:fold(
+        fun(NewKey, NewValue, Acc) ->
+            case maps:find(NewKey, Acc) of
+                {ok, Value} when is_map(Value) and is_map(NewValue) ->
+                    Acc#{NewKey => merge(Value, NewValue)};
+                {ok, Value} when is_list(Value) and is_list(NewValue) ->
+                    case {Value, NewValue} of
+                        {[Map], [NewMap]} when is_map(Map) and is_map(NewMap) ->
+                            First = lists:nth(1, Value),
+                            NewFirst = lists:nth(1, NewValue),
+                            Acc#{NewKey => [merge(First, NewFirst)]};
+                        _ ->
+                            Acc#{NewKey => lists:merge(Value, NewValue)}
+                    end;
+                _ ->
+                    Acc#{NewKey => NewValue}
+            end
+        end, Data, NewData).
+
 
 with(Keys, Data) ->
     with(Keys, Data, #{}).

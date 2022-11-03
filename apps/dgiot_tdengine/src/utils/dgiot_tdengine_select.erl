@@ -54,13 +54,13 @@ format_batch(#{<<"db">> := DB, <<"tableName">> := TableName, <<"fields">> := _Fi
     Using1 = format_using(DB, Using),
     Tags = maps:get(<<"tags">>, Batch, []),
     TagFields = format_tags(list_to_binary(dgiot_utils:join(",", Tags, false, fun format_value/1))),
-    <<DB/binary, TableName/binary, Using1/binary, TagFields/binary, " VALUES ", Values0/binary>>;
+    <<DB/binary, ".",TableName/binary, Using1/binary, TagFields/binary, " VALUES ", Values0/binary>>;
 format_batch(#{<<"db">> := DB, <<"tableName">> := TableName, <<"values">> := Values0} = Batch) ->
     Using = maps:get(<<"using">>, Batch, <<>>),
     Using1 = format_using(DB, Using),
     Tags = maps:get(<<"tags">>, Batch, []),
     TagFields = format_tags(list_to_binary(dgiot_utils:join(",", Tags, false, fun format_value/1))),
-    <<DB/binary, TableName/binary, Using1/binary, TagFields/binary, " VALUES ", Values0/binary>>.
+    <<DB/binary, ".",TableName/binary, Using1/binary, TagFields/binary, " VALUES ", Values0/binary>>.
 
 format_order([], Acc) -> Acc;
 format_order([<<"-", Field/binary>> | Other], Acc) ->

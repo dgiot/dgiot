@@ -581,7 +581,7 @@ filter_data(Data) when is_map(Data) ->
 %%get_td_sheet(ProductId, Type, Start, End, Channel, DeviceId, Where, Limit, Skip, New)
 
 get_history_data(ProductId, DeviceId, Type, Function, FunctionMap, Group, Having, Where, Order, Channel, Limit, Skip) ->
-    DB = dgiot_tdengine_select:format_db(?Database(ProductId)),
+    DB = dgiot_tdengine:get_database(Channel, ProductId),
     TableName = case DeviceId of
                     undefined ->
                         Lower = list_to_binary(string:to_lower(dgiot_utils:to_list(ProductId))),

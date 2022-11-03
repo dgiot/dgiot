@@ -137,7 +137,7 @@ handle_message({sync_parse, _Pid, 'after', post, _Token, <<"_User">>, #{<<"objec
 handle_message({sync_parse, _Pid, 'before', put, Token, <<"Device">>,
     #{<<"content">> := Content, <<"id">> := TaskDeviceId} = _QueryData},
     #state{id = ChannelId} = State) ->
-    io:format("~s ~p TaskDeviceId =~p ~n", [?FILE, ?LINE, TaskDeviceId]),
+    io:format("~s ~p TaskDeviceId = ~p ~n", [?FILE, ?LINE, TaskDeviceId]),
     case dgiot_device_cache:lookup(TaskDeviceId) of
         {ok, #{<<"productid">> := TaskProductId}} ->
             case Content of
@@ -205,7 +205,7 @@ process_data(FlatMap, PersonType, Token, TaskDeviceId) ->
     case dgiot_parse:get_object(<<"Device">>, TaskDeviceId) of
         {ok, #{<<"name">> := OrderName, <<"product">> := #{<<"objectId">> := TaskProductId}}} ->
             {ok, {BatchProductId, BatchDeviceId, BatchAddr}} = process_roll_dev(TaskProductId, TaskDeviceId, OrderName, Token, FlatMap),
-            io:format("~s ~p BatchDeviceId =~p ~n", [?FILE, ?LINE, BatchDeviceId]),
+            io:format("~s ~p BatchDeviceId = ~p ~n", [?FILE, ?LINE, BatchDeviceId]),
             NewData = init_data(TaskProductId, TaskDeviceId, BatchDeviceId, FlatMap, PersonType, Token),
             {BatchProductId, BatchDeviceId, BatchAddr, NewData};
         _ ->
