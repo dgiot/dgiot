@@ -21,6 +21,60 @@
 -include_lib("dgiot/include/dgiot_mnesia.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -export([stats/2, val/2, val/3, get_count/1, get_count/3]).
+-export([get_counter/1, get_pie/1]).
+
+get_counter({Token, <<"product_counter">>}) ->
+    Query = #{<<"count">> => <<"objectId">>,
+        <<"keys">> => [<<"objectId">>], <<"where">> => #{}, <<"limit">> => 1},
+    case dgiot_parse:query_object(<<"Product">>, Query, [{"X-Parse-Session-Token", Token}], [{from, rest}]) of
+        {ok, #{<<"count">> := Count}} ->
+            {ok, #{<<"lable">> => <<"产品数量"/utf8>>, <<"value">> => Count}};
+        _ ->
+            pass
+    end;
+
+get_counter({Token, <<"device_counter">>}) ->
+    Key = get_count(Token),
+    Count = val(<<"Device">>, Key),
+    {ok, #{<<"lable">> => <<"设备数量"/utf8>>, <<"value">> => Count}};
+
+get_counter({Token, <<"device_online_counter">>}) ->
+    Key = get_count(Token),
+    Count = val(<<"Device_Online">>, Key),
+    {ok, #{<<"lable">> => <<"在线设备"/utf8>>, <<"value">> => Count}};
+
+get_counter({Token, <<"device_offline_counter">>}) ->
+    Key = get_count(Token),
+    Count = val(<<"Device_Offline">>, Key),
+    {ok, #{<<"lable">> => <<"离线设备"/utf8>>, <<"value">> => Count}};
+
+get_counter({Token, <<"device_poweron_counter">>}) ->
+    Key = get_count(Token),
+    Count = val(<<"Device_true">>, Key),
+    {ok, #{<<"lable">> => <<"开机设备"/utf8>>, <<"value">> => Count}};
+
+get_counter({Token, <<"device_poweroff_counter">>}) ->
+    Key = get_count(Token),
+    Count = val(<<"Device_false">>, Key),
+    {ok, #{<<"lable">> => <<"关机设备"/utf8>>, <<"value">> => Count}};
+
+get_counter({_Token, _}) ->
+    pass.
+
+get_pie({Token, <<"device_poweron_poweroff">>}) ->
+    Key = get_count(Token),
+    PowerOnCount = val(<<"Device_true">>, Key),
+    PowerOffCount = val(<<"Device_false">>, Key),
+    Payload = #{
+        <<"columns">> => [<<"名称"/utf8>>, <<"数量"/utf8>>],
+        <<"rows">> => [
+            #{<<"名称"/utf8>> => <<"开机数"/utf8>>, <<"数量"/utf8>> => PowerOnCount},
+            #{<<"名称"/utf8>> => <<"关机数"/utf8>>,  <<"数量"/utf8>> => PowerOffCount}
+        ]
+    },
+    {ok, Payload};
+get_pie({_Token, _}) ->
+    pass.
 
 get_count(Token) ->
     RoleIds =
@@ -56,15 +110,13 @@ loop_count(QueryAcls, Key) ->
     Fun =
         fun
             ({_, _, ['Device', Acls | _] = V}) ->
-%%                io:format("~s ~p  AtomQueryAcls ~p~n", [?FILE, ?LINE, AtomQueryAcls]),
-%%                io:format("~s ~p  Acls ~p~n", [?FILE, ?LINE, Acls]),
                 case AtomQueryAcls -- Acls of
                     AtomQueryAcls -> pass;
                     _ -> add(V, Key)
                 end;
             (_) -> pass
         end,
-    dgiot_mnesia:search(Fun, #{<<"skip">> => 0, <<"limit">> => 1000000}).
+    dgiot_mnesia:search(Fun, #{}).
 
 %%['Device', Acl, Status, Now, IsEnable, dgiot_utils:to_atom(ProductId), Devaddr, DeviceSecret, Node]
 add(['Device', _Acls, Status, _Time, IsEnable, ProductId | _] = _V, Key) ->
@@ -110,7 +162,6 @@ val(Class, Type, Key) ->
         undefined ->
             0;
         Count ->
-%%            io:format("~s ~p ~p ~p Count ~p ~n", [?FILE, ?LINE, BinClass,  BinType, Count]),
             Count
     end.
 

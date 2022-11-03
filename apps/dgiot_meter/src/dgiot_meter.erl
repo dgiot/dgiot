@@ -424,7 +424,7 @@ get_ValueData(Value, ProductId) ->
 
 send_task(ProductId, DevAddr, DtuId, Value) ->
     Topic = <<"$dg/thing/", ProductId/binary, "/", DevAddr/binary, "/properties/report">>, % 发送给task进行数据存储
-    Taskchannel = dgiot_product:get_taskchannel(ProductId),
+    Taskchannel = dgiot_product_channel:get_taskchannel(ProductId),
     dgiot_client:send(Taskchannel, DtuId, Topic, Value),
     Topic.
 

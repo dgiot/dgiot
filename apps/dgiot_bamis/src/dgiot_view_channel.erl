@@ -15,14 +15,14 @@
 %%--------------------------------------------------------------------
 
 
--module(dgiot_bamis_channel).
+-module(dgiot_view_channel).
 -behavior(dgiot_channelx).
 -author("johnliu").
 -include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
 -include_lib("dgiot/include/dgiot_socket.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -include("dgiot_bamis.hrl").
--define(TYPE, <<"AMIS">>).
+-define(TYPE, <<"VIEW">>).
 -define(MAX_BUFF_SIZE, 1024).
 
 %% API
@@ -36,10 +36,10 @@
     cType => ?TYPE,
     type => ?BRIDGE_CHL,
     title => #{
-        zh => <<"AMIS资源通道"/utf8>>
+        zh => <<"VIEW资源通道"/utf8>>
     },
     description => #{
-        zh => <<"AMIS资源通道"/utf8>>
+        zh => <<"VIEW资源通道"/utf8>>
     }
 }).
 %% 注册通道参数
@@ -79,17 +79,17 @@ handle_event(_EventId, _Event, State) ->
 
 handle_message({sync_parse, Pid, 'after', post, _Token, <<"View">>, QueryData}, State) ->
     io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Pid, QueryData]),
-    dgiot_bamis_view:post('after', QueryData),
+    dgiot_view:post('after', QueryData),
     {ok, State};
 
 handle_message({sync_parse, _Pid, 'after', put, _Token, <<"View">>, QueryData}, State) ->
 %%    io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Pid, QueryData]),
-    dgiot_bamis_view:put('after', QueryData),
+    dgiot_view:put('after', QueryData),
     {ok, State};
 
 handle_message({sync_parse, _Pid, 'after', delete, _Token, <<"View">>, ObjectId}, State) ->
 %%    io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Pid, ObjectId]),
-    dgiot_bamis_view:delete('after', ObjectId),
+    dgiot_view:delete('after', ObjectId),
     {ok, State};
 
 handle_message(_Message, State) ->

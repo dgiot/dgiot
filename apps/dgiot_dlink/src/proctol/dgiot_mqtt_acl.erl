@@ -96,18 +96,6 @@ do_check(#{clientid := <<Token:34/binary, _Type/binary>>, username := _UserId} =
             deny
     end;
 
-%% 用户订阅 "$dg/user/deviceid/#"
-do_check(#{clientid := Token, username := UserId} = _ClientInfo, subscribe, <<"$dg/user/", DeviceID:10/binary, "/", _Rest/binary>> = _Topic)
-    when UserId =/= undefined ->
-%%    io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, _Topic]),
-    %% 此时的ClientID为 Token
-    case check_device_acl(Token, DeviceID, UserId) of
-        ok ->
-            allow;
-        _ ->
-            deny
-    end;
-
 %% 告警上报 "$dg/user/alarm/{productId}/{deviceId}/properties/report"
 do_check(#{clientid := Token, username := UserId} = _ClientInfo, publish, <<"$dg/user/alarm/", _ProductID:10/binary, "/", DeviceId:10/binary, "/", _Rest/binary>> = _Topic)
     when Token =/= undefined ->
@@ -140,10 +128,32 @@ do_check(#{clientid := Token} = _ClientInfo, subscribe, <<"$dg/user/dashboard/",
             deny
     end;
 
+%% "$dg/user/topo/{SessionToken}/#"
+do_check(#{clientid := <<Token:34/binary, _Type/binary>>, username := _UserId} = _ClientInfo, subscribe, <<"$dg/user/topo/", SessionToken:34/binary, "/", _Rest/binary>> = _Topic) ->
+%%    io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, _Topic]),
+    case Token of
+        SessionToken ->
+            allow;
+        _ ->
+            deny
+    end;
+
 %% "$dg/user/trace/{DeviceId}/{Topic}"
 do_check(#{clientid := Token, username := UserId} = _ClientInfo, subscribe, <<"$dg/user/trace/", DeviceId:10/binary, "/", _Rest/binary>> = _Topic) ->
 %%    io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, _Topic]),
     check_device_acl(Token, DeviceId, UserId);
+
+%% 用户订阅 "$dg/user/deviceid/#"
+do_check(#{clientid := Token, username := UserId} = _ClientInfo, subscribe, <<"$dg/user/", DeviceID:10/binary, "/", _Rest/binary>> = _Topic)
+    when UserId =/= undefined ->
+%%    io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, _Topic]),
+    %% 此时的ClientID为 Token
+    case check_device_acl(Token, DeviceID, UserId) of
+        ok ->
+            allow;
+        _ ->
+            deny
+    end;
 
 do_check(_ClientInfo, _PubSub, _Topic) ->
 %%    io:format("~s ~p _PubSub: ~p~n", [?FILE, ?LINE, _PubSub]),

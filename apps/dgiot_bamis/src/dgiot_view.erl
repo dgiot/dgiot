@@ -15,7 +15,7 @@
 %%--------------------------------------------------------------------
 
 %% @doc dgiot_bamis Protocol
--module(dgiot_bamis_view).
+-module(dgiot_view).
 -include("dgiot_bamis.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -dgiot_swagger(<<"amis">>).

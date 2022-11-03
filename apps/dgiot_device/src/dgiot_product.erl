@@ -18,19 +18,14 @@
 -author("jonliu").
 -include("dgiot_device.hrl").
 -include_lib("dgiot/include/logger.hrl").
--include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
 -dgiot_data("ets").
 -export([init_ets/0, load_cache/0, local/1, save/1, put/1, get/1, delete/1, save_prod/2, lookup_prod/1]).
 -export([parse_frame/3, to_frame/2]).
 -export([create_product/1, create_product/2, add_product_relation/2, delete_product_relation/1]).
--export([get_prop/1, get_props/1, get_props/2, get_unit/1, do_td_message/1, update_properties/2, update_properties/0]).
+-export([get_prop/1, get_props/1, get_props/2, get_unit/1, update_properties/2, update_properties/0]).
 -export([update_topics/0, update_product_filed/1]).
--export([get_initdata/2, init_inspection/1, get_inspection/1]).
 -export([save_devicetype/1, get_devicetype/1, get_device_thing/2]).
--export([save_keys/1, get_keys/1, get_control/1, save_control/1, save_channel/1, save_tdchannel/1,
-    save_taskchannel/1, get_channel/1, get_tdchannel/1,
-    get_taskchannel/1, get_interval/1, save_device_thingtype/1]).
--type(result() :: any()).   %% todo 目前只做参数检查，不做结果检查
+-export([save_keys/1, get_keys/1, get_control/1, save_control/1, get_interval/1, save_device_thingtype/1]).
 
 init_ets() ->
     dgiot_data:init(?DGIOT_PRODUCT),
@@ -79,9 +74,9 @@ save(Product) ->
     save_keys(ProductId),
     save_control(ProductId),
     save_devicetype(ProductId),
-    save_channel(ProductId),
-    save_tdchannel(ProductId),
-    save_taskchannel(ProductId),
+    dgiot_product_channel:save_channel(ProductId),
+    dgiot_product_channel:save_tdchannel(ProductId),
+    dgiot_product_channel:save_taskchannel(ProductId),
     save_device_thingtype(ProductId),
     dgiot_product_enum:save_product_enum(ProductId),
     {ok, Product1}.
@@ -107,53 +102,6 @@ get(ProductId) ->
         {error, Reason} ->
             {error, Reason}
     end.
-
--spec save_tdchannel(binary()) -> result().
-save_tdchannel(ProductId) ->
-    case lookup_prod(ProductId) of
-        {ok, #{<<"channel">> := #{<<"tdchannel">> := Channel}}} ->
-            dgiot_data:insert({tdchannel_product, binary_to_atom(ProductId)}, Channel);
-        _ ->
-            pass
-    end.
-
--spec save_taskchannel(binary()) -> result().
-save_taskchannel(ProductId) ->
-    case lookup_prod(ProductId) of
-        {ok, #{<<"channel">> := #{<<"taskchannel">> := Channel}}} ->
-            dgiot_data:insert({taskchannel_product, binary_to_atom(ProductId)}, Channel);
-        _ ->
-            pass
-    end.
-
--spec save_channel(binary()) -> result().
-save_channel(ProductId) ->
-    case lookup_prod(ProductId) of
-        {ok, #{<<"channel">> := #{<<"otherchannel">> := [Channel | _]}}} ->
-            dgiot_data:insert({channel_product, binary_to_atom(Channel)}, ProductId);
-        {ok, #{<<"channel">> := #{<<"otherchannel">> := Channel}}} ->
-            dgiot_data:insert({channel_product, binary_to_atom(Channel)}, ProductId);
-        _ ->
-            pass
-    end.
-
--spec get_channel(binary() | atom()) -> result().
-get_channel(ChannelId) when is_binary(ChannelId) ->
-    get_channel(binary_to_atom(ChannelId));
-get_channel(ChannelId) ->
-    dgiot_data:get({channel_product, ChannelId}).
-
--spec get_tdchannel(binary() | atom()) -> result().
-get_tdchannel(ProductId) when is_binary(ProductId) ->
-    get_tdchannel(binary_to_atom(ProductId));
-get_tdchannel(ProductId) ->
-    dgiot_data:get({tdchannel_product, ProductId}).
-
--spec get_taskchannel(binary() | atom()) -> result().
-get_taskchannel(ProductId) when is_binary(ProductId) ->
-    get_taskchannel(binary_to_atom(ProductId));
-get_taskchannel(ProductId) ->
-    dgiot_data:get({taskchannel_product, ProductId}).
 
 
 %% 保存配置下发控制字段
@@ -526,69 +474,3 @@ get_props(ProductId, Keys) ->
                 Acc
         end
                 end, [], List).
-
-%% 发消息通知td 重载超级表、字段
-do_td_message(ProfuctId) ->
-    ChannelId = dgiot_parse_id:get_channelid(dgiot_utils:to_binary(?BRIDGE_CHL), <<"TD">>, <<"TD资源通道"/utf8>>),
-    dgiot_channelx:do_message(ChannelId, {sync_product, <<"Product">>, ProfuctId}).
-
-get_initdata(Type, ProductId) ->
-    case dgiot_product:lookup_prod(ProductId) of
-        {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
-            lists:foldl(fun(#{<<"devicetype">> := Devicetype, <<"name">> := Name,
-                <<"identifier">> := Identifier} = X, Acc) ->
-                DataType = maps:get(<<"datatype">>, X, #{}),
-                Typea = maps:get(<<"type">>, X, <<>>),
-                Specs = maps:get(<<"specs">>, DataType, #{}),
-                Unit = maps:get(<<"unit">>, Specs, <<"">>),
-                Size = size(Type),
-                case binary:match(Devicetype, Type) of
-                    {0, Size} ->
-                        Acc ++ [#{
-                            <<"devicetype">> => Devicetype,
-                            <<"identifier">> => Identifier, <<"name">> => Name,
-                            <<"type">> => Typea, <<"number">> => <<>>,
-                            <<"unit">> => Unit}];
-                    _O ->
-                        Acc
-                end
-                        end, [], Props);
-        _ ->
-            []
-    end.
-
-%% 初始化工单巡检动态数据
-init_inspection(#{<<"objectId">> := MaintenanceId, <<"info">> := Info, <<"status">> := 0, <<"product">> := #{<<"objectId">> := ProductId}, <<"device">> := #{<<"objectId">> := DeviceId}} = _QueryData) ->
-    InitData = get_initdata(<<"巡检"/utf8>>, ProductId),
-    dgiot_parse:update_object(<<"Maintenance">>, MaintenanceId, #{<<"info">> => Info#{<<"dynamicdata">> => InitData}}),
-    %%    下发巡检信息
-    %%    $dg/device/{productId}/{deviceAddr}/init/response/inspection
-    case dgiot_device:lookup(DeviceId) of
-        {ok, #{<<"devaddr">> := DevAddr}} ->
-            InspectionTopic = <<"$dg/device/", ProductId/binary, "/", DevAddr/binary, "/init/response/inspection">>,
-            Data = get_inspection(MaintenanceId),
-            dgiot_mqtt:publish(DeviceId, InspectionTopic, jsx:encode(Data));
-        _ ->
-            pass
-    end;
-
-init_inspection(_QueryData) ->
-    pass.
-
-get_inspection(MaintenanceId) ->
-    case dgiot_parse:get_object(<<"Maintenance">>, MaintenanceId) of
-        {ok, #{<<"number">> := Number, <<"status">> := Status, <<"info">> := Info}} ->
-            Dynamicdata = maps:get(<<"dynamicdata">>, Info, []),
-            Basic = #{
-                <<"number">> => Number,
-                <<"status">> => Status,
-                <<"productname">> => maps:get(<<"productname">>, Info, <<>>),
-                <<"devicename">> => maps:get(<<"devicename">>, Info, <<>>),
-                <<"executorname">> => maps:get(<<"executorname">>, Info, <<>>),
-                <<"startdata">> => maps:get(<<"startdata">>, Info, <<>>),
-                <<"completiondata">> => maps:get(<<"completiondata">>, Info, <<>>)
-            },
-            #{<<"basic">> => Basic, <<"time">> => dgiot_datetime:now_secs(), <<"data">> => Dynamicdata};
-        _ ->
-            #{}
-    end.

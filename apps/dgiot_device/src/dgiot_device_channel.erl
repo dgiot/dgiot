@@ -119,7 +119,6 @@ init(?TYPE, ChannelId, #{<<"offline">> := OffLine} = Args) ->
     dgiot_parse_hook:subscribe(<<"Product/*">>, put, ChannelId),
     dgiot_parse_hook:subscribe(<<"Product/*">>, delete, ChannelId),
     dgiot_parse_hook:subscribe(<<"Channel/*">>, delete, ChannelId),
-    dgiot_parse_hook:subscribe(<<"Maintenance">>, post, ChannelId),
     {ok, State, []}.
 
 handle_init(#state{env = #{<<"checktime">> := CheckTime}} = State) ->
@@ -233,7 +232,7 @@ handle_message({sync_parse, _Pid, 'after', post, _Token, <<"Product">>, QueryDat
     dgiot_product:save(QueryData),
     timer:sleep(100),
     ProductId = maps:get(<<"objectId">>, QueryData),
-    dgiot_product:do_td_message(ProductId),
+    dgiot_product_channel:do_td_message(ProductId),
     dgiot_product_knova:save_Product_konva(ProductId),
     {ok, State};
 
@@ -243,7 +242,7 @@ handle_message({sync_parse, _Pid, 'after', put, _Token, <<"Product">>, QueryData
     dgiot_product:put(QueryData),
     timer:sleep(100),
     ProductId = maps:get(<<"objectId">>, QueryData),
-    dgiot_product:do_td_message(ProductId),
+    dgiot_product_channel:do_td_message(ProductId),
     dgiot_product_knova:save_Product_konva(ProductId),
     {ok, State};
 
@@ -260,10 +259,6 @@ handle_message({sync_parse, _Pid, 'before', delete, _Token, <<"Channel">>, Objec
             dgiot_bridge:control_channel(ObjectId, <<"disable">>);
         _ -> pass
     end,
-    {ok, State};
-
-handle_message({sync_parse, _Pid, 'after', post, _Token, <<"Maintenance">>, QueryData}, State) ->
-    dgiot_product:init_inspection(QueryData),
     {ok, State};
 
 handle_message({update_schemas_json}, State) ->

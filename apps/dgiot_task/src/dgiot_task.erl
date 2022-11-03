@@ -353,7 +353,7 @@ dealwith_data(ProductId, DevAddr, DeviceId, AllData, Storage) ->
     dgiot_channelx:do_message(ChannelId, {topo_thing, ProductId, DeviceId, AllData}),
     %%                    save td
     dgiot_tdengine_adapter:save(ProductId, DevAddr, Storage),
-    Channel = dgiot_product:get_taskchannel(ProductId),
+    Channel = dgiot_product_channel:get_taskchannel(ProductId),
     dgiot_bridge:send_log(Channel, ProductId, DevAddr, "~s ~p save td => ProductId ~p DevAddr ~p ~ts ", [?FILE, ?LINE, ProductId, DevAddr, unicode:characters_to_list(jsx:encode(AllData))]),
     dgiot_metrics:inc(dgiot_task, <<"task_save">>, 1),
     AllData.

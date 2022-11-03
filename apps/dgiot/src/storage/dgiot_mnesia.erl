@@ -311,6 +311,7 @@ search(Name, Fun, Key, Acc, Page = #{<<"skip">> := Skip, <<"limit">> := Limit, <
             search(Name, Fun, ets:next(Name, Key), Acc, Page#{<<"count">> => Count})
     end;
 
+%% just return count
 search(Name, Fun, Key, Acc, Page = #{<<"count">> := Count}) ->
     case ets:lookup(Name, Key) of
         [Row | _] ->
