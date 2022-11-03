@@ -1,0 +1,122 @@
+{
+  "type": "page",
+  "konva": {
+    "Stage": {
+      "attrs": {
+        "width": 1920,
+        "height": 900
+      },
+      "children": [
+        {
+          "attrs": {
+            "id": "Layer_Thing"
+          },
+          "children": [
+            {
+              "attrs": {
+                "x": 203,
+                "y": 22,
+                "id": "product_counter",
+                "fill": "rgba(80, 190, 240, 0.2)",
+                "name": "vuecomponent",
+                "text": "产品数量",
+                "type": "counter",
+                "width": 262,
+                "height": 72,
+                "source": "mqtt",
+                "stroke": "",
+                "fontSize": 12,
+                "draggable": true,
+                "fontFamily": "",
+                "lineHeight": 0,
+                "strokeWidth": 0.1
+              },
+              "className": "Rect"
+            },
+            {
+              "attrs": {
+                "x": 575,
+                "y": 23,
+                "id": "device_counter",
+                "fill": "rgba(80, 190, 240, 0.2)",
+                "name": "vuecomponent",
+                "text": "设备数量",
+                "type": "counter",
+                "width": 262,
+                "height": 72,
+                "source": "mqtt",
+                "stroke": "",
+                "fontSize": 12,
+                "draggable": true,
+                "fontFamily": "",
+                "lineHeight": 0,
+                "strokeWidth": 0.1
+              },
+              "className": "Rect"
+            },
+            {
+              "attrs": {
+                "x": 933,
+                "y": 22,
+                "id": "device_online_counter",
+                "fill": "rgba(80, 190, 240, 0.2)",
+                "name": "vuecomponent",
+                "text": "在线设备",
+                "type": "counter",
+                "width": 262,
+                "height": 72,
+                "source": "mqtt",
+                "stroke": "",
+                "fontSize": 12,
+                "draggable": true,
+                "fontFamily": "",
+                "lineHeight": 0,
+                "strokeWidth": 0.1
+              },
+              "className": "Rect"
+            },
+            {
+              "attrs": {
+                "x": 1315,
+                "y": 21,
+                "id": "device_offline_counter",
+                "fill": "rgba(80, 190, 240, 0.2)",
+                "name": "vuecomponent",
+                "text": "离线设备",
+                "type": "counter",
+                "width": 262,
+                "height": 72,
+                "source": "mqtt",
+                "stroke": "",
+                "fontSize": 12,
+                "draggable": true,
+                "fontFamily": "",
+                "lineHeight": 0,
+                "strokeWidth": 0.1
+              },
+              "className": "Rect"
+            },
+            {
+              "attrs": {
+                "x": 1454,
+                "y": 565,
+                "id": "device_poweron_poweroff",
+                "fill": "rgba(30, 30, 30, 0.7)",
+                "name": "vuecomponent",
+                "type": "pie",
+                "width": 350,
+                "height": 300,
+                "source": "mqtt",
+                "fontSize": 12,
+                "draggable": true
+              },
+              "className": "Rect"
+            }
+          ],
+          "className": "Layer"
+        }
+      ],
+      "className": "Stage"
+    }
+  }
+}

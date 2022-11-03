@@ -1,0 +1,61 @@
+{
+  "device_counter": {
+    "dataType": "card",
+    "vuekey": "device_count",
+    "table": "Device",
+    "query": {
+      "count": "objectId",
+      "keys": [
+        "objectId",
+        "name",
+        "location",
+        "status"
+      ],
+      "where": {}
+    }
+  },
+  "offline_device_counter": {
+    "dataType": "card",
+    "vuekey": "dev_off_count",
+    "table": "Device",
+    "query": {
+      "limit": 15,
+      "order": "-updatedAt",
+      "count": "objectId",
+      "keys": [
+        "objectId"
+      ],
+      "where": {
+        "status": "OFFLINE"
+      }
+    }
+  },
+  "online_device_counter": {
+    "dataType": "card",
+    "vuekey": "dev_online_count",
+    "table": "Device",
+    "query": {
+      "limit": 15,
+      "order": "-updatedAt",
+      "count": "objectId",
+      "keys": [
+        "objectId"
+      ],
+      "where": {
+        "status": "ONLINE"
+      }
+    }
+  },
+  "product_counter": {
+    "dataType": "card",
+    "vuekey": "product_count",
+    "table": "Product",
+    "query": {
+      "count": "objectId",
+      "keys": [
+        "objectId"
+      ],
+      "where": {}
+    }
+  }
+}

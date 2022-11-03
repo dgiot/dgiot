@@ -149,6 +149,30 @@ do_request(get_dlinkjson, #{<<"type">> := <<"Table">>}, _Context, _Req) ->
     {ok, Tables} = dgiot_parse:get_schemas(),
     {200, Tables};
 
+
+do_request(get_dlinkjson, #{<<"type">> := Type, <<"subtype">> := <<"all">>}, _Context, _Req)
+    when Type == <<"Amis">> orelse Type == <<"Konva">> ->
+    {file, Here} = code:is_loaded(?MODULE),
+    Dir = filename:dirname(filename:dirname(Here)),
+    ViewDir = dgiot_httpc:url_join([Dir, "/priv/json/", dgiot_utils:to_list(Type)]),
+    Views =
+        case file:list_dir(ViewDir) of
+            {ok, FS} ->
+                lists:foldl(
+                    fun(FileName, Acc) ->
+                        Name = dgiot_utils:to_binary(filename:rootname(FileName)),
+                        Acc ++ [#{<<"label">> => Name, <<"value">> => Name}]
+                    end, [], FS);
+            _ ->
+                []
+        end,
+    {200, Views};
+
+do_request(get_dlinkjson, #{<<"type">> := Type, <<"subtype">> := SubType}, _Context, _Req)
+    when Type == <<"Amis">> orelse Type == <<"Konva">> ->
+    View = dgiot_dlink:get_json(<<Type/binary, "/", SubType/binary>>),
+    {200, View};
+
 do_request(get_dlinkjson, #{<<"type">> := Type}, _Context, _Req) ->
     DlinkJson = dgiot_dlink:get_json(Type),
     {200, DlinkJson};

@@ -14,7 +14,7 @@
 %%--------------------------------------------------------------------
 -module(dashboard_worker).
 -author("johnliu").
--include("dgiot_bamis.hrl").
+-include("dgiot_topo.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -behaviour(gen_server).
 
@@ -56,26 +56,24 @@ stop(#{<<"sessionToken">> := SessionToken}) ->
 %%%===================================================================
 %%% gen_server callbacks
 %%%===================================================================
-init([#{<<"data">> := Que, <<"dashboardId">> := DashboardId, <<"sessionToken">> := SessionToken} ]) ->
+init([#{<<"data">> := Que, <<"dashboardId">> := DashboardId, <<"sessionToken">> := SessionToken}]) ->
     dgiot_data:insert({dashboard, SessionToken}, self()),
     case length(Que) of
         0 ->
             erlang:send_after(3000, self(), stop);
         _ ->
-%%            Topic = <<"dashboard/", SessionToken/binary, "/heart">>,
-%%            dgiot_mqtt:subscribe(Topic),
-%%            erlang:send_after(30 * 1000, self(), heart),
-            erlang:send_after(1000, self(), retry)
+            erlang:send_after(1000, self(), dashboard)
     end,
     {ok, #task{oldque = Que, newque = Que, freq = 1, dashboardId = DashboardId, sessiontoken = SessionToken}};
 
-init([#{<<"data">> := Que, <<"sessionToken">> := SessionToken}]) ->
+init([#{<<"dashboardId">> := DashboardId, <<"sessionToken">> := SessionToken}]) ->
     dgiot_data:insert({dashboard, SessionToken}, self()),
+    Que = dgiot_topo:get_que(DashboardId),
     case length(Que) of
         0 ->
             erlang:send_after(3000, self(), stop);
         _ ->
-            erlang:send_after(1000, self(), retry)
+            erlang:send_after(1000, self(), topo)
     end,
     {ok, #task{oldque = Que, newque = Que, freq = 1, sessiontoken = SessionToken}};
 
@@ -97,19 +95,20 @@ handle_info({'EXIT', _From, Reason}, State) ->
     {stop, Reason, State};
 
 %% 任务结束
-handle_info(retry, #task{newque = Que} = State) when length(Que) == 0 ->
+handle_info(dashboard, #task{newque = Que} = State) when length(Que) == 0 ->
     erlang:garbage_collect(self()),
     {stop, normal, State};
 
-handle_info(retry, State) ->
-    {noreply, send_msg(State)};
+handle_info(dashboard, State) ->
+    {noreply, send_dashboard(State)};
 
-handle_info(heart, #task{heart = Heart} = State) when Heart < 4 ->
-    erlang:send_after(30 * 1000, self(), heart),
-    {noreply, State#task{heart = Heart + 1}};
-
-handle_info(heart, State) ->
+%% 任务结束
+handle_info(topo, #task{newque = Que} = State) when length(Que) == 0 ->
+    erlang:garbage_collect(self()),
     {stop, normal, State};
+
+handle_info(topo, State) ->
+    {noreply, send_topo(State)};
 
 %% 任务结束
 handle_info({deliver, _, _Msg}, State) ->
@@ -124,9 +123,16 @@ terminate(_Reason, _State) ->
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
-send_msg(#task{newque = Que} =State ) ->
+send_dashboard(#task{newque = Que} = State) ->
     Task = lists:nth(1, Que),
     dgiot_dashboard:do_task(Task, State),
     NewQue = lists:nthtail(1, Que),
-    erlang:send_after(3000, self(), retry),
+    erlang:send_after(3000, self(), dashboard),
+    State#task{newque = NewQue}.
+
+send_topo(#task{newque = Que, sessiontoken = Token} = State) ->
+    Task = lists:nth(1, Que),
+    dgiot_topo:send_topo(Task, Token),
+    NewQue = lists:nthtail(1, Que)  ++ [Task],
+    erlang:send_after(3000, self(), topo),
     State#task{newque = NewQue}.

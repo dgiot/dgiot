@@ -95,6 +95,7 @@ init(?TYPE, ChannelId, Args) ->
     },
     dgiot_notification:save_configuration(),
     dgiot_parse_hook:subscribe(<<"Notification">>, get, ChannelId),
+    dgiot_parse_hook:subscribe(<<"Maintenance">>, post, ChannelId),
 %%    dgiot_parse_id:get_channelid(?BACKEND_CHL, ?TYPE, <<"dgiot_notification">>),
     {ok, State, []}.
 
@@ -127,6 +128,10 @@ handle_message({sync_parse, Pid, 'after', get, _Token, <<"Notification">>, #{<<"
     timer:sleep(100),
     NewResBody = dgiot_notification:get_newbody(ResBody),
     dgiot_parse_hook:publish(Pid, NewResBody),
+    {ok, State};
+
+handle_message({sync_parse, _Pid, 'after', post, _Token, <<"Maintenance">>, QueryData}, State) ->
+    dgiot_maintenance:init_inspection(QueryData),
     {ok, State};
 
 handle_message(_Message, State) ->

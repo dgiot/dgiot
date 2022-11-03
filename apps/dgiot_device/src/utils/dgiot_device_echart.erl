@@ -26,20 +26,13 @@
 get_echart_data(Channel, ProductId, DeviceId, Args) ->
     Query = maps:without([<<"productid">>, <<"deviceid">>], Args),
     Interval = maps:get(<<"interval">>, Args),
+    TableName = ?Table(DeviceId),
     {Names, Results} =
-        case dgiot_data:get({tdengine_os, Channel}) of
-            <<"windows">> ->
-                dgiot_parse_timescale:get_history_data(DeviceId, Query#{<<"db">> => ProductId});
+        case dgiot_device_tdengine:get_history_data(Channel, ProductId, TableName, Query) of
+            {TdNames, {ok, #{<<"results">> := TdResults}}} ->
+                {TdNames, TdResults};
             _ ->
-                TableName = ?Table(DeviceId),
-                case dgiot_device_tdengine:get_history_data(Channel, TableName, Query#{
-                    <<"db">> => ProductId
-                }) of
-                    {TdNames, {ok, #{<<"results">> := TdResults}}} ->
-                        {TdNames, TdResults};
-                    _ ->
-                        {[], []}
-                end
+                {[], []}
         end,
     Chartdata = get_echart(ProductId, Results, Names, Interval),
     {ok, #{<<"chartData">> => Chartdata}}.
@@ -101,44 +94,37 @@ get_echart(ProductId, Results, Names, Interval) ->
 %%get_data_by_month(Channel, ProductId, DeviceId,Args)
 get_data_by_month(Channel, ProductId, DeviceId, Args) ->
 %%    io:format("~s ~p Channel = ~p , ProductId = ~p, DeviceId = ~p    ~n",[?FILE,?LINE,Channel, ProductId, DeviceId]),
-    case dgiot_data:get({tdengine_os, Channel}) of
-        <<"windows">> ->
-            pass;
-        _ ->
-%%            io:format("~s ~p here ~n",[?FILE,?LINE]),
+
 %%           由月份获得起止时间
-            {ok, Count} = maps:find(<<"month_count">>, Args),
-            {StartTime, EndTime} = dgiot_datetime:last_month(Count),
+    {ok, Count} = maps:find(<<"month_count">>, Args),
+    {StartTime, EndTime} = dgiot_datetime:last_month(Count),
 %%            取得key并分割转为list
-            {ok, K} = maps:find(<<"keys">>, Args),
-            Keys = re:split(K, ","),
+    {ok, K} = maps:find(<<"keys">>, Args),
+    Keys = re:split(K, ","),
 %%            由key提取其accu属性并生成sql命令
-            Res = case dgiot_product:lookup_prod(ProductId) of
-                      {ok, Product} ->
+    Res = case dgiot_product:lookup_prod(ProductId) of
+              {ok, Product} ->
 %%                            io:format("~s ~p Product =~p , Keys = ~p ~n",[?FILE,?LINE,Product,Keys]),
-                          get_keys(Product, Keys);
-                      _ ->
-                          error
-                  end,
+                  get_keys(Product, Keys);
+              _ ->
+                  error
+          end,
 %%            io:format("~s ~p Res = ~p~n",[?FILE,?LINE,Res]),
-            {ok, Sql} = maps:find(<<"sql">>, Res),
-            {ok, Name_and_nuit} = maps:find(<<"name_and_unit">>, Res),
+    {ok, Sql} = maps:find(<<"sql">>, Res),
+    {ok, Name_and_nuit} = maps:find(<<"name_and_unit">>, Res),
 %%            配置参数
-            TableName = ?Table(DeviceId),
-            Interval = <<"1d">>,
-            %%传入参数获得结果
-            case dgiot_device_tdengine:get_history_data2(Sql, Channel, TableName, Interval, ProductId, StartTime, EndTime) of
+    TableName = ?Table(DeviceId),
+    Interval = <<"1d">>,
+    %%传入参数获得结果
+    case dgiot_device_tdengine:get_history_data2(Sql, Channel, TableName, Interval, ProductId, StartTime, EndTime) of
 %%                判断结果并转换格式
-                {ok, #{<<"results">> := Results}} ->
+        {ok, #{<<"results">> := Results}} ->
 %%                    io:format("~s ~p Results = ~p,Name_and_nuit = ~p ~n",[?FILE,?LINE,Results,Name_and_nuit]),
-                    Tabledata = get_table(Results, Name_and_nuit),
+            Tabledata = get_table(Results, Name_and_nuit),
 %%                    io:format("~s ~p Tabledata = ~p ~n",[?FILE,?LINE,Tabledata]),
-                    {ok, Tabledata};
-                _ ->
-                    {ok, #{<<"code">> => 400, <<"msg">> => <<"no data">>}}
-            end
-
-
+            {ok, Tabledata};
+        _ ->
+            {ok, #{<<"code">> => 400, <<"msg">> => <<"no data">>}}
     end.
 
 get_keys(#{<<"thing">> := #{<<"properties">> := Properties}}, [<<"*">>]) ->

@@ -23,18 +23,13 @@
 -export([get_card/4, get_device_card/4]).
 
 get_device_card(Channel, ProductId, DeviceId, Args) ->
+    TableName = ?Table(DeviceId),
     Results =
-        case dgiot_data:get({tdengine_os, Channel}) of
-            <<"windows">> ->
-                dgiot_parse_timescale:get_realtime_data(DeviceId);
+        case dgiot_device_tdengine:get_realtime_data(Channel, ProductId, TableName, Args) of
+            {ok, #{<<"results">> := TdResults}} when length(TdResults) > 0 ->
+                TdResults;
             _ ->
-                TableName = ?Table(DeviceId),
-                case dgiot_device_tdengine:get_realtime_data(Channel, TableName, Args#{<<"db">> => ProductId}) of
-                    {ok, #{<<"results">> := TdResults}} when length(TdResults) > 0 ->
-                        TdResults;
-                    _ ->
-                        [#{}]
-                end
+                [#{}]
         end,
     Chartdata = get_card(ProductId, Results, DeviceId, Args),
     {ok, #{<<"data">> => Chartdata}}.
