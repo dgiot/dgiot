@@ -320,15 +320,16 @@ check_init(ChannelId, ProductIds, Config) ->
     lists:map(fun(ProductId) ->
         timer:sleep(500),
         dgiot_data:insert({ProductId, ?TYPE}, ChannelId),
-        DataBase =
+        Id =
             case dgiot_data:get({tdengine_db, ChannelId}) of
                 <<"ProductId">> ->
                     ProductId;
                 _ ->
                     ChannelId
             end,
+        DataBase = dgiot_tdengine_select:format_db(?Database(Id)),
         dgiot_data:insert({tdengine_db, ChannelId, ProductId}, DataBase),
-        check_database(ChannelId, ProductIds, Config#{<<"database">> => DataBase})
+        check_database(ChannelId, ProductIds, Config#{<<"database">> => ?Database(Id)})
               end, ProductIds),
     ok.
 

@@ -32,16 +32,17 @@
     cType => ?TYPE,
     type => ?BRIDGE_CHL,
     title => #{
-        zh => <<"TOPO组态通道"/utf8>>
+        zh => <<"组态大屏桥接通道"/utf8>>
     },
     description => #{
-        zh => <<"TOPO组态通道"/utf8>>
+        zh => <<"组态大屏桥接通道"/utf8>>
     }
 }).
 %% 注册通道参数
 -params(#{
     <<"TOPOBRAND">> => #{
         order => 1,
+        type => string,
         type => string,
         required => true,
         default => <<"dgiottopo"/utf8>>,

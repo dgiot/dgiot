@@ -31,10 +31,10 @@
     cType => ?TYPE,
     type => ?PROTOCOL_CHL,
     title => #{
-        zh => <<"MODBUS通道"/utf8>>
+        zh => <<"MODBUS采集通道"/utf8>>
     },
     description => #{
-        zh => <<"MODBUS通道"/utf8>>
+        zh => <<"MODBUS采集通道"/utf8>>
     }
 }).
 %% 注册通道参数
