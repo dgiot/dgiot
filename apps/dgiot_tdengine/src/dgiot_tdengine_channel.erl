@@ -323,9 +323,9 @@ check_init(ChannelId, ProductIds, Config) ->
         DataBase =
             case dgiot_data:get({tdengine_db, ChannelId}) of
                 <<"ProductId">> ->
-                    ?Database(ProductId);
+                    ProductId;
                 _ ->
-                    ?Database(ChannelId)
+                    ChannelId
             end,
         dgiot_data:insert({tdengine_db, ChannelId, ProductId}, DataBase),
         check_database(ChannelId, ProductIds, Config#{<<"database">> => DataBase})

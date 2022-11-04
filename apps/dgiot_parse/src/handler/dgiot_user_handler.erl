@@ -151,10 +151,10 @@ do_request(delete_user, #{<<"username">> := UserName} = Body, #{<<"sessionToken"
             {ok, #{<<"code">> => 401, <<"msg">> => <<"dgiot_admin PROHIBITED DELETE">>}};
         _ ->
             case dgiot_parse_auth:delete_user(Body, SessionToken) of
-                {ok, Data} ->
+                {ok, _Data} ->
                     dgiot_role:load_user(),
                     dgiot_parse_auth:load_roleuser(),
-                    {200, Data};
+                    {200, #{<<"result">> => true}};
                 {error, Error} -> {error, Error}
             end
     end;
