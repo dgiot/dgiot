@@ -36,9 +36,9 @@ transaction(Channel, Fun) ->
 get_database(ChannelId, ProductId) ->
     case dgiot_data:get({tdengine_db, ChannelId, ProductId}) of
         not_find ->
-            dgiot_tdengine_select:format_db(ProductId);
+            dgiot_tdengine_select:format_db(?Database(ProductId));
         DbName ->
-            dgiot_tdengine_select:format_db(DbName)
+            dgiot_tdengine_select:format_db(?Database(DbName))
     end.
 
 create_database(DataBase, Keep) ->
