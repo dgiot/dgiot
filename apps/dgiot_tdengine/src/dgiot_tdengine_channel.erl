@@ -256,7 +256,7 @@ do_save([ProductId, DevAddr, Data, _Context], #state{id = ChannelId} = State) ->
         {error, Reason} ->
             ?LOG(error, "Save to tdengine error, ~p, ~p, ProductId = ~p.", [Data, Reason, ProductId]);
         {ok, #{<<"thing">> := Properties}} ->
-            Object = dgiot_tdengine:format_data(ProductId, DevAddr, Properties, Data),
+            Object = dgiot_tdengine:format_data(ChannelId, ProductId, DevAddr, Properties, Data),
             dgiot_device:save(ProductId, DevAddr),
             save_to_cache(ChannelId, Object)
     end,

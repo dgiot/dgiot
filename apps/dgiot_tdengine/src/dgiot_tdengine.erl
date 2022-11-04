@@ -22,7 +22,7 @@
 %% API
 -export([get_database/2, create_database/3, create_schemas/2, create_object/3, create_user/3, alter_user/3, delete_user/2, query_object/3, batch/2]).
 -export([create_database/2, create_schemas/1, create_object/2, create_user/2, alter_user/2, delete_user/1, query_object/2, batch/1, parse_batch/1]).
--export([transaction/2, format_data/4]).
+-export([transaction/2, format_data/5]).
 -export([get_reportdata/3]).
 
 transaction(Channel, Fun) ->
@@ -187,7 +187,7 @@ get_reportdata(Channel, TableName, Query) ->
         end).
 
 %% 产品，设备地址与数据分离，推荐
-format_data(ProductId, DevAddr, Properties, Data) ->
+format_data(ChannelId, ProductId, DevAddr, Properties, Data) ->
     DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
     Values = dgiot_tdengine_field:check_fields(Data, Properties),
     Fields = get_fields(ProductId),
@@ -195,8 +195,9 @@ format_data(ProductId, DevAddr, Properties, Data) ->
     Now = maps:get(<<"createdat">>, Data, now),
     NewValues = get_values(ProductId, Values, Now),
     dgiot_data:insert(?DGIOT_TD_THING_ETS, DeviceId, Values),
+    DB = get_database(ChannelId,ProductId),
     #{
-        <<"db">> => ?Database(ProductId),
+        <<"db">> => DB,
         <<"tableName">> => ?Table(DeviceId),
         <<"using">> => ?Table(ProductId),
         <<"tags">> => [?Table(DevAddr)],

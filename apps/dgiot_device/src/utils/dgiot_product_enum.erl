@@ -183,5 +183,3 @@ get_ThingMap(ProductId) ->
                 end, #{}, List),
             {ok, Res}
     end.
-
-%%dgiot_data:get(dgiot_product_enum, {<<"b0ec1970c7">>, device_thing, <<"spunlace_spec">>})
