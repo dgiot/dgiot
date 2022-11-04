@@ -46,8 +46,8 @@ check(#{clientid := <<Token:34/binary, _Type/binary>>, username := UserId, passw
 %%    io:format("~s ~p UserId: ~p~n", [?FILE, ?LINE, UserId]),
     case dgiot_auth:get_session(Token) of
         #{<<"objectId">> := UserId} ->
-            dgiot_mqtt:subscribe(Token, <<"$dg/user/dashboard/#">>),
-            dgiot_mqtt:subscribe(Token, <<"$dg/user/topo/", Token/binary, "/#">>),
+            
+            
             {stop, AuthResult#{anonymous => false, auth_result => success}};
         _ ->
             {stop, AuthResult#{anonymous => false, auth_result => password_error}}

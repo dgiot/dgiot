@@ -362,7 +362,7 @@ sync_parse(OffLine) ->
         end,
         false
           end,
-    dgiot_mnesia:search(Fun, #{<<"skip">> => 0, <<"limit">> => 1000000}).
+    dgiot_mnesia:search(Fun, #{}).
 
 lookup(DeviceId) ->
     case dgiot_mnesia:lookup(DeviceId) of

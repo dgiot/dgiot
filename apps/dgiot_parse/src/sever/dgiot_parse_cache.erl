@@ -144,7 +144,7 @@ test() ->
                ({_, _, [_ClassesName | _]}) ->
                    pass
            end,
-    dgiot_mnesia:search(Fun3, #{<<"skip">> => 0, <<"limit">> => 1000000}).
+    dgiot_mnesia:search(Fun3, #{}).
 
 save_test(Count) ->
     [save_to_cache(#{
