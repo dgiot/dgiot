@@ -61,7 +61,7 @@ get_field_tag(Thing) ->
     {lists:flatten(Columns), lists:flatten(NewTags)}.
 
 create_database(Query) ->
-    DataBase = maps:get(<<"db">>, Query),
+    DataBase = maps:get(<<"database">>, Query),
     KeepTime = format_keep(Query),
     <<"CREATE DATABASE IF NOT EXISTS ", DataBase/binary, " KEEP ", KeepTime/binary>>.
 
@@ -72,11 +72,13 @@ format_keep(Query) ->
 
 create_table(#{<<"tableName">> := TableName, <<"using">> := STbName, <<"tags">> := Tags} = _Query, #{<<"channel">> := Channel} = _Context) ->
     TagFields = list_to_binary(dgiot_utils:join(",", Tags, fun dgiot_tdengine_select:format_value/1)),
-    DB1 = dgiot_tdengine:get_database(Channel, TableName),
-    <<"CREATE TABLE IF NOT EXISTS ", DB1/binary, TableName/binary, " USING ", STbName/binary, " TAGS (", TagFields/binary, ");">>;
+    <<"_", ProductId/binary>> = TableName,
+    DataBase = dgiot_tdengine:get_database(Channel, ProductId),
+    <<"CREATE TABLE IF NOT EXISTS ", DataBase/binary, TableName/binary, " USING ", STbName/binary, " TAGS (", TagFields/binary, ");">>;
 
 create_table(#{<<"tableName">> := TableName, <<"fields">> := Fields0} = Query, #{<<"channel">> := Channel} = _Context) ->
-    Database = dgiot_tdengine:get_database(Channel, TableName),
+    <<"_", ProductId/binary>> = TableName,
+    DataBase = dgiot_tdengine:get_database(Channel, ProductId),
 %%    alter_table(Query#{<<"db">> => Database}, Context),
     Fields =
         list_to_binary(dgiot_utils:join(",", ["createdat TIMESTAMP"] ++ lists:foldr(
@@ -90,17 +92,17 @@ create_table(#{<<"tableName">> := TableName, <<"fields">> := Fields0} = Query, #
             end, [], maps:get(<<"tags">>, Query, [])))),
     case TagFields of
         <<>> ->
-            <<"CREATE TABLE IF NOT EXISTS ", Database/binary, TableName/binary, " (", Fields/binary, ");">>;
+            <<"CREATE TABLE IF NOT EXISTS ", DataBase/binary, TableName/binary, " (", Fields/binary, ");">>;
         _ ->
-            <<"CREATE TABLE IF NOT EXISTS ", Database/binary, TableName/binary, " (", Fields/binary, ") TAGS (", TagFields/binary, ");">>
+            <<"CREATE TABLE IF NOT EXISTS ", DataBase/binary, TableName/binary, " (", Fields/binary, ") TAGS (", TagFields/binary, ");">>
     end.
 
 alter_table(#{<<"tableName">> := TableName}, #{<<"channel">> := Channel} = Context) ->
-    Database = dgiot_tdengine:get_database(Channel, TableName),
+    <<"_", ProductId/binary>> = TableName,
+    Database = dgiot_tdengine:get_database(Channel, ProductId),
     Sql1 = <<"DESCRIBE ", Database/binary, TableName/binary, ";">>,
     case dgiot_tdengine_pool:run_sql(Context, execute_query, Sql1) of
         {ok, #{<<"results">> := Results}} when length(Results) > 0 ->
-            <<"_", ProductId/binary>> = TableName,
             dgiot_data:insert({ProductId, ?TABLEDESCRIBE}, Results),
             TdColumn =
                 lists:foldl(fun(Column, Acc) ->

@@ -38,7 +38,7 @@ get_database(ChannelId, ProductId) ->
         not_find ->
             dgiot_tdengine_select:format_db(?Database(ProductId));
         DbName ->
-            dgiot_tdengine_select:format_db(?Database(DbName))
+            DbName
     end.
 
 create_database(DataBase, Keep) ->
@@ -47,7 +47,7 @@ create_database(DataBase, Keep) ->
 create_database(Channel, DataBase, Keep) ->
     transaction(Channel,
         fun(Context) ->
-            Sql = dgiot_tdengine_schema:create_database(#{<<"db">> => DataBase, <<"keep">> => Keep}),
+            Sql = dgiot_tdengine_schema:create_database(#{<<"database">> => DataBase, <<"keep">> => Keep}),
             dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_update, Sql)
         end).
 
