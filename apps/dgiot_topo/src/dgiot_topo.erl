@@ -84,12 +84,12 @@ push(ProductId, Devaddr, DeviceId, Payload) ->
     httpc:request(post, {Url1, [], "application/json", Data1}, [], []).
 
 send_topo({NodeType, NodeId}, Token) ->
-    io:format("NodeType ~p NodeId ~p Token ~p ~n", [NodeType, NodeId,Token]),
+%%    io:format("NodeType ~p NodeId ~p Token ~p ~n", [NodeType, NodeId,Token]),
     case dgiot_hook:run_hook({topo, NodeType, NodeId}, {Token, NodeId}) of
         {ok, [{ok, Payload}]} ->
             Base64 = base64:encode(jsx:encode(Payload)),
             Pubtopic = <<"$dg/user/topo/", Token/binary, "/", NodeType/binary, "/", NodeId/binary, "/report">>,
-            io:format("~s ~p Pubtopic ~p Base64 ~p ~n", [?FILE,?LINE, Pubtopic, Base64]),
+%%            io:format("~s ~p Pubtopic ~p Base64 ~p ~n", [?FILE,?LINE, Pubtopic, Base64]),
             dgiot_mqtt:publish(self(), Pubtopic, Base64);
         _ ->
             pass
