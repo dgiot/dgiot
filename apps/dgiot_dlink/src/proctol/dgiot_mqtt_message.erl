@@ -66,12 +66,13 @@ on_message_publish(Message = #message{topic = <<"$dg/thing/", Topic/binary>>, pa
 %%            <<"$dg/thing/uniapp/r:e5186aba099ce35105ba811e80bdaefa/report">>
             dgiot_hook:run_hook({uniapp, report}, {Token, get_payload(Payload)});
         _ ->
-            io:format("~s ~p Payload = ~p.~n", [?FILE, ?LINE, get_payload(Payload)]),
+%%            io:format("~s ~p Payload = ~p.~n", [?FILE, ?LINE, get_payload(Payload)]),
             pass
     end,
     {ok, Message};
 
-on_message_publish(Message, _State) ->
+on_message_publish(Message = #message{topic = _Topic, payload = _Payload}, _State) ->
+%%    io:format("~s ~p Topic ~p Payload = ~p.~n", [?FILE, ?LINE,Topic, get_payload(Payload)]),
     %% ignore topics starting with $
     {ok, Message}.
 

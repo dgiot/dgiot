@@ -178,44 +178,19 @@ do_request(get_dlinkjson, #{<<"type">> := Type}, _Context, _Req) ->
     {200, DlinkJson};
 
 do_request(post_topic, #{<<"topic">> := Topic} = _Args, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
-    case is_list(Topic) of
-        true ->
-            TopicKey = <<"dev_states">>,
-            case dgiot_data:get({page_router_key, SessionToken, TopicKey}) of
-                not_find ->
-                    pass;
-                OldTopic ->
-                    lists:foldl(
-                        fun(X, _Acc) ->
-                            dgiot_mqtt:unsubscribe(SessionToken, X),
-                            []
-                        end, [], OldTopic
-                    )
-            end,
-
-            lists:foldl(
-                fun(X, _Acc) ->
-                    dgiot_mqtt:subscribe(SessionToken, X),
-                    []
-                end, [], Topic
-            ),
-            dgiot_data:insert({page_router_key, SessionToken, TopicKey}, Topic),
-            timer:sleep(10),
-            {200, #{<<"message">> => <<"订阅成功"/utf8>>, <<"Topic">> => Topic, <<"TopicKey">> => TopicKey}};
-        false ->
-            [_Head, _User, Key | _] = re:split(Topic, "/"),
-            TopicKey = <<"dg_user_", Key/binary>>,
-            case dgiot_data:get({page_router_key, SessionToken, TopicKey}) of
-                not_find ->
-                    pass;
-                OldTopic ->
-                    dgiot_mqtt:unsubscribe(SessionToken, OldTopic)
-            end,
-            dgiot_mqtt:subscribe(SessionToken, Topic),
-            dgiot_data:insert({page_router_key, SessionToken, TopicKey}, Topic),
-            timer:sleep(10),
-            {200, #{<<"message">> => <<"订阅成功"/utf8>>, <<"Topic">> => Topic, <<"TopicKey">> => TopicKey}}
-    end;
+    TopicKey =
+        case is_list(Topic) of
+            true ->
+                <<"dev_states">>;
+            false ->
+                [_Head, _User, Key | _] = re:split(Topic, "/"),
+                <<"dg_user_", Key/binary>>
+        end,
+    PubTopic = <<"dgiot_topics/", SessionToken/binary>>,
+    Payload = jsx:encode(#{<<"topic">> => Topic, <<"topickey">> => TopicKey}),
+    dgiot_mqtt:publish(SessionToken, PubTopic, Payload),
+    timer:sleep(100),
+    {200, #{<<"message">> => <<"订阅成功"/utf8>>, <<"Topic">> => Topic, <<"TopicKey">> => TopicKey}};
 
 do_request(get_thingecho, _Args, _Context, _Req) ->
 %%    发送mqtt消息
