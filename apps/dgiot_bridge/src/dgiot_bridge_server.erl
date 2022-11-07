@@ -47,7 +47,6 @@ handle_call(_Request, _From, State) ->
 handle_cast(_Request, State) ->
     {noreply, State}.
 
-
 handle_info({deliver, _, Msg}, State) ->
     Payload = dgiot_mqtt:get_payload(Msg),
     Topic = dgiot_mqtt:get_topic(Msg),
@@ -56,8 +55,6 @@ handle_info({deliver, _, Msg}, State) ->
             ?LOG(error, "Payload:~p, error:~p", [Payload, Reason]);
         Message ->
             case re:run(Topic, <<"[^//]+">>, [{capture, all, binary}, global]) of
-                {match, [[<<"dashboard_task">>], [_DashboardId]]} ->
-                    supervisor:start_child(dashboard_task, [Message]);
                 {match, [[<<"channel">>], [ChannelId]]} ->
                     do_handle(Message#{<<"channelId">> => ChannelId});
                 {match, [[<<"channel">>], [ChannelId], [ProductId]]} ->
@@ -116,7 +113,6 @@ do_channel(_Type, CType, ChannelId, Products, Cfg) ->
         {error, not_find} ->
             {error, {CType, unknow}};
         {ok, Mod} ->
-            dgiot_mqtt:subscribe(<<"dashboard_task/#">>),
             case erlang:module_loaded(Mod) of
                 true ->
                     case erlang:function_exported(Mod, start, 2) of
@@ -186,6 +182,7 @@ do_handle(#{<<"channelId">> := ChannelId, <<"action">> := <<"start_logger">>} = 
     dgiot_data:insert(?DGIOT_BRIDGE, {ChannelId, log}, NewFilter#{
         <<"time">> => dgiot_datetime:nowstamp()
     }),
+    timer:sleep(3000),
     case Filter of
         #{<<"devaddr">> := Addr, <<"productId">> := ProductId} ->
             dgiot_bridge:send_log(ChannelId, ProductId, Addr, "Channel[~s] is Running, ProductId:~s, devaddr:~s, Log is ~s", [ChannelId, ProductId, Addr, true]);
@@ -256,3 +253,4 @@ sysnc_product_channel(ChannelId, Action) ->
                       end, ProductIds);
         _ -> pass
     end.
+
