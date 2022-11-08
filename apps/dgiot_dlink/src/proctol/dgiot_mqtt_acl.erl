@@ -38,6 +38,10 @@ description() -> "Acl with Dlink".
 %%--------------------------------------------------------------------
 %% Internal functions
 %%-------------------------------------------------------------------
+do_check(#{peerhost := PeerHost}, _PubSub, _Topic)  when PeerHost == {127,0,0,1}  ->
+%%    io:format("~s ~p ClientId: ~p _Topic ~p ~n", [?FILE, ?LINE, ClientId, _Topic]),
+    allow;
+
 do_check(#{username := <<"dgiot">>, clientid := ClientId}, _PubSub, _Topic) ->
 %%    io:format("~s ~p ClientId: ~p _Topic ~p ~n", [?FILE, ?LINE, ClientId, _Topic]),
     SuperPwd = dgiot_utils:to_binary(dgiot:get_env(dgiot_dlink, super_pwd, <<"">>)),

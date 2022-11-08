@@ -26,7 +26,10 @@
     , description/0
 ]).
 
-check(#{username := Username}, AuthResult, _)
+check(#{ peerhost := PeerHost}, AuthResult, _) when PeerHost == {127,0,0,1}  ->
+    {ok, AuthResult#{anonymous => false, auth_result => success}};
+
+check(#{username := Username},  AuthResult, _)
     when Username == <<"anonymous">> orelse Username == undefined orelse Username == <<>> ->
 %%    io:format("~s ~p Username: ~p~n", [?FILE, ?LINE, Username]),
     {ok, AuthResult#{anonymous => true, auth_result => success}};
@@ -46,8 +49,6 @@ check(#{clientid := <<Token:34/binary, _Type/binary>>, username := UserId, passw
 %%    io:format("~s ~p UserId: ~p~n", [?FILE, ?LINE, UserId]),
     case dgiot_auth:get_session(Token) of
         #{<<"objectId">> := UserId} ->
-            
-            
             {stop, AuthResult#{anonymous => false, auth_result => success}};
         _ ->
             {stop, AuthResult#{anonymous => false, auth_result => password_error}}
