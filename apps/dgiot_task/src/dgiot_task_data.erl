@@ -34,8 +34,8 @@ get_userdata(ProductId, Identifier, _DataForm, #{<<"type">> := <<"geopoint">>}, 
 get_userdata(_ProductId, Identifier, #{<<"collection">> := Collection}, #{<<"type">> := Type, <<"specs">> := Specs}, Payload, Acc) ->
     case maps:find(Identifier, Payload) of
         {ok, Value} ->
-            Str = re:replace(Collection, dgiot_utils:to_list(<<"%%", Identifier/binary>>), "(" ++ dgiot_utils:to_list(Value) ++ ")", [global, {return, list}]),
-            Str1 = re:replace(Str, "%s", "(" ++ dgiot_utils:to_list(Value) ++ ")", [global, {return, list}]),
+            Str = re:replace(Collection, dgiot_utils:to_list(<<"%%{", Identifier/binary, "}">>), dgiot_utils:to_list(Value), [global, {return, list}]),
+            Str1 = re:replace(Str, "%{s}", dgiot_utils:to_list(Value), [global, {return, list}]),
             case dgiot_task:string2value(Str1, Type, Specs) of
                 error ->
                     Acc;

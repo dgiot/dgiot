@@ -154,7 +154,7 @@ check_field(Data, #{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> :=
                             0 ->
                                 0;
                             _ ->
-                                dgiot_utils:to_float(Value / 1, Precision)
+                                dgiot_utils:to_float(Value, Precision)
                         end;
                     <<"BOOL">> ->
                         Value;

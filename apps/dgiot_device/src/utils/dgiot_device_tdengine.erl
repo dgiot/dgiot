@@ -106,9 +106,8 @@ get_history_data(Channel, ProductId, TableName, Query) ->
 get_realtime_data(Channel, ProductId, TableName, Query) ->
     dgiot_tdengine:transaction(Channel,
         fun(Context) ->
-            Database = maps:get(<<"db">>, Query, <<"">>),
             Keys = maps:get(<<"keys">>, Query, <<"*">>),
-            {_Names, Newkeys} = dgiot_product_tdengine:get_keys(Database, <<"last">>, Keys),
+            {_Names, Newkeys} = dgiot_product_tdengine:get_keys(ProductId, <<"last">>, Keys),
             DB = dgiot_tdengine:get_database(Channel, ProductId),
             case size(Newkeys) > 0 of
                 true ->
