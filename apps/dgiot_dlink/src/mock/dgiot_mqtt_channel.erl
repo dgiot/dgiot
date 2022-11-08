@@ -18,7 +18,7 @@
 -behavior(dgiot_channelx).
 -define(TYPE, <<"MQTT">>).
 -author("johnliu").
--record(state, {id, auth = <<"ProductSecret"/utf8>>, count, devaddr, deviceId}).
+-record(state, {id}).
 -include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
 -include_lib("dgiot/include/logger.hrl").
 
@@ -29,46 +29,86 @@
 %% 注册通道类型
 -channel_type(#{
     cType => ?TYPE,
-    type => ?PROTOCOL_CHL,
+    type => ?BRIDGE_CHL,
     title => #{
-        zh => <<"MQTT压测通道"/utf8>>
+        zh => <<"MQTT模拟设备通道"/utf8>>
     },
     description => #{
-        zh => <<"MQTT压测通道"/utf8>>
+        zh => <<"MQTT模拟设备通道"/utf8>>
     }
 }).
 %% 注册通道参数
 -params(#{
-    <<"auth">> => #{
+    <<"address">> => #{
         order => 1,
         type => string,
         required => true,
-        default => <<"ProductSecret"/utf8>>,
-        type => string,
-        required => false,
-        default => #{<<"value">> => <<"ProductSecret">>, <<"label">> => <<"一型一密"/utf8>>},
-        enum => [
-            #{<<"value">> => <<"ProductSecret">>, <<"label">> => <<"一型一密"/utf8>>},
-            #{<<"value">> => <<"DeviceSecret">>, <<"label">> => <<"一机一密"/utf8>>},
-            #{<<"value">> => <<"DeviceCert">>, <<"label">> => <<"设备证书"/utf8>>}
-        ],
+        default => <<"127.0.0.1">>,
         title => #{
-            zh => <<"设备授权"/utf8>>
+            zh => <<"主机地址"/utf8>>
         },
         description => #{
-            zh => <<"设备授权"/utf8>>
+            zh => <<"主机地址"/utf8>>
         }
     },
-    <<"count">> => #{
+    <<"port">> => #{
         order => 2,
         type => integer,
         required => true,
-        default => 10,
+        default => 1883,
         title => #{
-            zh => <<"压测数量"/utf8>>
+            zh => <<"端口"/utf8>>
         },
         description => #{
-            zh => <<"压测数量：数量为-1时, 从设备档案数据库获取Device, 否则自动生成device"/utf8>>
+            zh => <<"端口"/utf8>>
+        }
+    },
+    <<"username">> => #{
+        order => 3,
+        type => string,
+        required => true,
+        default => <<"anonymous"/utf8>>,
+        title => #{
+            zh => <<"用户名"/utf8>>
+        },
+        description => #{
+            zh => <<"用户名"/utf8>>
+        }
+    },
+    <<"password">> => #{
+        order => 4,
+        type => string,
+        required => true,
+        default => <<"test"/utf8>>,
+        title => #{
+            zh => <<"密码"/utf8>>
+        },
+        description => #{
+            zh => <<"密码"/utf8>>
+        }
+    },
+    <<"ssl">> => #{
+        order => 5,
+        type => boolean,
+        required => true,
+        default => false,
+        title => #{
+            zh => <<"SSL"/utf8>>
+        },
+        description => #{
+            zh => <<"是否使用SSL"/utf8>>
+        }
+    },
+    <<"clean_start">> => #{
+        order => 6,
+        type => boolean,
+        required => true,
+        default => false,
+        title => #{
+            zh => <<"清除会话"/utf8>>
+        },
+        description => #{
+            zh => <<"是否清除会话"/utf8>>
         }
     },
     <<"ico">> => #{
@@ -91,21 +131,11 @@ start(ChannelId, ChannelArgs) ->
     dgiot_channelx:add(?TYPE, ChannelId, ?MODULE, ChannelArgs).
 
 %% 通道初始化
-init(?TYPE, ChannelId, #{
-    <<"product">> := [{_ProductId, _Product} |_],
-    <<"auth">> := Auth,
-    <<"count">> := Count}) ->
-    State = #state{
-        id = ChannelId,
-        auth = Auth,
-        count = Count
-    },
-%%    io:format("~s ~p ProductId ~p ~n",[?FILE, ?LINE, ProductId]),
-    {ok, State};
-
-init(?TYPE, _ChannelId, _Args) ->
-%%    io:format("~s ~p _ChannelId ~p ~n",[?FILE, ?LINE, _ChannelId]),
-    {ok, #{}}.
+init(?TYPE, ChannelId, ChannelArgs) ->
+    State = #state{id = ChannelId},
+    dgiot_parse_hook:subscribe(<<"Device/*">>, put, ChannelId, [<<"profile">>]),
+    ChildSpecs = dlink_mqttc:childspec(ChannelId, ChannelArgs),
+    {ok, State, ChildSpecs}.
 
 handle_init(State) ->
     {ok, State}.
@@ -113,6 +143,16 @@ handle_init(State) ->
 %% 通道消息处理,注意：进程池调用
 handle_event(_EventId, _Event, State) ->
     {ok, State}.
+
+handle_message({sync_parse, _Pid, 'after', put, _Token, <<"Device">>, #{<<"profile">> := #{<<"mock">> := #{<<"enable">> := true}}, <<"objectId">> := DeviceId}},
+        #state{id = ChannelId} = State) ->
+    dgiot_client:start(ChannelId, DeviceId, #{}),
+    {ok, State};
+
+handle_message({sync_parse, _Pid, 'after', put, _Token, <<"Device">>, #{<<"profile">> := #{<<"mock">> := #{<<"enable">> := false}}, <<"objectId">> := DeviceId}},
+        #state{id = ChannelId} = State) ->
+    dgiot_client:stop(ChannelId, DeviceId),
+    {ok, State};
 
 handle_message(_Message, State) ->
 %%    io:format("~s ~p _Message = ~p.~n", [?FILE, ?LINE, _Message]),

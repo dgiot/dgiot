@@ -18,12 +18,13 @@
 -include_lib("dgiot/include/logger.hrl").
 -include_lib("dgiot/include/dgiot_client.hrl").
 
--export([childspec/2, start_client/2]).
+-export([childspec/2]).
 
 %% API
 -export([init/1, handle_cast/2, handle_call/3, handle_info/2, terminate/2, code_change/3]).
 
-childspec(ChannelId, #{<<"host">> := Host, <<"port">> := Port,
+
+childspec(ChannelId, #{<<"address">> := Host, <<"port">> := Port,
     <<"username">> := UserName, <<"password">> := Password}) ->
     Options = #{
         host => dgiot_utils:to_list(Host),
@@ -34,27 +35,12 @@ childspec(ChannelId, #{<<"host">> := Host, <<"port">> := Port,
         keepalive => 60,
         clean_start => true
     },
-    Args = #{
-        <<"channel">> => ChannelId,
-        <<"mod">> => ?MODULE,
-        <<"options">> => Options
-    },
+    Args = #{<<"channel">> => ChannelId, <<"mod">> => ?MODULE, <<"options">> => Options},
     dgiot_client:register(ChannelId, mqtt_client_sup, Args).
 
-
-start_client(_ChannelId, 0) ->
-    pass;
-start_client(ChannelId, Count) ->
-    ClientId = <<"">>,
-    dgiot_client:start(ChannelId, ClientId),
-    start_client(ChannelId, Count - 1).
-
-
 %%  callback
-init(#dclient{channel = ChannelId} = Dclient) ->
-    <<_:11/binary, Tid/binary>> = dgiot_utils:to_binary(ChannelId),
-    User = #{tid => dgiot_utils:to_atom(Tid)},
-    {ok, Dclient#dclient{channel = ChannelId, child = User}}.
+init(#dclient{channel = ChannelId} = State) ->
+    {ok, State#dclient{channel = dgiot_utils:to_binary(ChannelId)}}.
 
 handle_call(_Request, _From, State) ->
     {reply, ok, State}.
@@ -62,20 +48,30 @@ handle_call(_Request, _From, State) ->
 handle_cast(_Request, State) ->
     {noreply, State}.
 
-handle_info({connect, Client}, #dclient{channel = ChannelId} = Dclient) ->
-    erlang:send_after(2000, self(), {subscribe, Client}),
+handle_info({connect, Client}, #dclient{channel = ChannelId, client = ClientId} = Dclient) ->
+    emqtt:subscribe(Client, {<<ClientId/binary,"/#">>, 1}), % cloud to edge
+    dgiot_bridge:send_log(ChannelId, "~s ~p  ~p ~n", [?FILE, ?LINE, jsx:encode(#{<<"network">> => <<"connect">>})]),
     update(ChannelId),
     {noreply, Dclient};
 
-handle_info({subscribe, _Client}, Dclient) ->
+handle_info(disconnect, #dclient{channel = ChannelId} = Dclient) ->
+    dgiot_bridge:send_log(ChannelId, "~s ~p  ~p ~n", [?FILE, ?LINE, jsx:encode(#{<<"network">> => <<"disconnect">>})]),
     {noreply, Dclient};
 
-handle_info(disconnect, Dclient) ->
-    ?LOG(info, "disconnect ~p ", [Dclient]),
-    {noreply, Dclient};
+handle_info({publish, #{payload := Payload, topic := Topic} = _Msg}, #dclient{channel = ChannelId} = State) ->
+    io:format("~s ~p ChannelId ~p Topic ~p  Payload ~p  ~n",[?FILE, ?LINE, ChannelId, Topic, Payload]),
+    dgiot_bridge:send_log(ChannelId, "cloud to edge: Topic ~p Payload ~p ~n", [Topic, Payload]),
+%%    dgiot_mqtt:publish(ChannelId, Topic, Payload),
+    {noreply, State};
 
-handle_info({publish, #{payload := _Payload} = _Msg}, Dclient) ->
-    {noreply, Dclient};
+handle_info({deliver, _, Msg}, #dclient{client = Client, channel = ChannelId} = State) ->
+    case dgiot_mqtt:get_topic(Msg) of
+        <<"forward/", Topic/binary>> ->
+            dgiot_bridge:send_log(ChannelId, "edge  to cloud: Topic ~p Payload ~p ~n", [Topic, dgiot_mqtt:get_payload(Msg)]),
+            emqtt:publish(Client, Topic, dgiot_mqtt:get_payload(Msg));
+        _ -> pass
+    end,
+    {noreply, State};
 
 handle_info(_Info, Dclient) ->
 %%    ?LOG(info,"ecapturer ~p~n", [_Info]),
