@@ -16,7 +16,7 @@
 
 -module(dgiot_mock_channel).
 -behavior(dgiot_channelx).
--define(TYPE, <<"MQTT">>).
+-define(TYPE, <<"MOCK">>).
 -author("johnliu").
 -record(state, {id}).
 -include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
