@@ -14,7 +14,7 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
--module(dgiot_mqtt_channel).
+-module(dgiot_mock_channel).
 -behavior(dgiot_channelx).
 -define(TYPE, <<"MQTT">>).
 -author("johnliu").
@@ -31,91 +31,19 @@
     cType => ?TYPE,
     type => ?BRIDGE_CHL,
     title => #{
-        zh => <<"MQTT模拟设备通道"/utf8>>
+        zh => <<"MOCK模拟设备通道"/utf8>>
     },
     description => #{
-        zh => <<"MQTT模拟设备通道"/utf8>>
+        zh => <<"MOCK模拟设备通道"/utf8>>
     }
 }).
 %% 注册通道参数
 -params(#{
-    <<"address">> => #{
-        order => 1,
-        type => string,
-        required => true,
-        default => <<"127.0.0.1">>,
-        title => #{
-            zh => <<"主机地址"/utf8>>
-        },
-        description => #{
-            zh => <<"主机地址"/utf8>>
-        }
-    },
-    <<"port">> => #{
-        order => 2,
-        type => integer,
-        required => true,
-        default => 1883,
-        title => #{
-            zh => <<"端口"/utf8>>
-        },
-        description => #{
-            zh => <<"端口"/utf8>>
-        }
-    },
-    <<"username">> => #{
-        order => 3,
-        type => string,
-        required => true,
-        default => <<"anonymous"/utf8>>,
-        title => #{
-            zh => <<"用户名"/utf8>>
-        },
-        description => #{
-            zh => <<"用户名"/utf8>>
-        }
-    },
-    <<"password">> => #{
-        order => 4,
-        type => string,
-        required => true,
-        default => <<"test"/utf8>>,
-        title => #{
-            zh => <<"密码"/utf8>>
-        },
-        description => #{
-            zh => <<"密码"/utf8>>
-        }
-    },
-    <<"ssl">> => #{
-        order => 5,
-        type => boolean,
-        required => true,
-        default => false,
-        title => #{
-            zh => <<"SSL"/utf8>>
-        },
-        description => #{
-            zh => <<"是否使用SSL"/utf8>>
-        }
-    },
-    <<"clean_start">> => #{
-        order => 6,
-        type => boolean,
-        required => true,
-        default => false,
-        title => #{
-            zh => <<"清除会话"/utf8>>
-        },
-        description => #{
-            zh => <<"是否清除会话"/utf8>>
-        }
-    },
     <<"ico">> => #{
         order => 102,
         type => string,
         required => false,
-        default => <<"/dgiot_file/shuwa_tech/zh/product/dgiot/channel/MQTT.png">>,
+        default => <<"/dgiot_file/shuwa_tech/zh/product/dgiot/channel/dgiot_mock_channel.png">>,
         title => #{
             en => <<"channel ICO">>,
             zh => <<"通道ICO"/utf8>>
@@ -134,7 +62,7 @@ start(ChannelId, ChannelArgs) ->
 init(?TYPE, ChannelId, ChannelArgs) ->
     State = #state{id = ChannelId},
     dgiot_parse_hook:subscribe(<<"Device/*">>, put, ChannelId, [<<"profile">>]),
-    ChildSpecs = dlink_mqttc:childspec(ChannelId, ChannelArgs),
+    ChildSpecs = dgiot_mock_mqtt:childspec(ChannelId, ChannelArgs),
     {ok, State, ChildSpecs}.
 
 handle_init(State) ->
