@@ -13,7 +13,7 @@
 %% See the License for the specific language governing permissions and
 %% limitations under the License.
 %%--------------------------------------------------------------------
--module(dlink_mqttc).
+-module(dgiot_mock_mqtt).
 -author("johnliu").
 -include_lib("dgiot/include/logger.hrl").
 -include_lib("dgiot/include/dgiot_client.hrl").
@@ -24,16 +24,14 @@
 -export([init/1, handle_cast/2, handle_call/3, handle_info/2, terminate/2, code_change/3]).
 
 
-childspec(ChannelId, #{<<"address">> := Host, <<"port">> := Port,
-    <<"username">> := UserName, <<"password">> := Password}) ->
+childspec(ChannelId, ChannelArgs) ->
     Options = #{
-        host => dgiot_utils:to_list(Host),
-        port => Port,
-        username => dgiot_utils:to_list(UserName),
-        password => dgiot_utils:to_list(Password),
-        proto_ver => v3,
-        keepalive => 60,
-        clean_start => true
+        host => binary_to_list(maps:get(<<"address">>, ChannelArgs, <<"127.0.0.1">>)),
+        port => maps:get(<<"port">>, ChannelArgs, 1883),
+        ssl => maps:get(<<"ssl">>, ChannelArgs, false),
+        username => binary_to_list(maps:get(<<"username">>, ChannelArgs, <<"anonymous">>)),
+        password => binary_to_list(maps:get(<<"password">>, ChannelArgs, <<"password">>)),
+        clean_start => maps:get(<<"clean_start">>, ChannelArgs, false)
     },
     Args = #{<<"channel">> => ChannelId, <<"mod">> => ?MODULE, <<"options">> => Options},
     dgiot_client:register(ChannelId, mqtt_client_sup, Args).
@@ -49,7 +47,7 @@ handle_cast(_Request, State) ->
     {noreply, State}.
 
 handle_info({connect, Client}, #dclient{channel = ChannelId, client = ClientId} = Dclient) ->
-    emqtt:subscribe(Client, {<<ClientId/binary,"/#">>, 1}), % cloud to edge
+    emqtt:subscribe(Client, {<<ClientId/binary, "/#">>, 1}), % cloud to edge
     dgiot_bridge:send_log(ChannelId, "~s ~p  ~p ~n", [?FILE, ?LINE, jsx:encode(#{<<"network">> => <<"connect">>})]),
     update(ChannelId),
     {noreply, Dclient};
@@ -59,7 +57,7 @@ handle_info(disconnect, #dclient{channel = ChannelId} = Dclient) ->
     {noreply, Dclient};
 
 handle_info({publish, #{payload := Payload, topic := Topic} = _Msg}, #dclient{channel = ChannelId} = State) ->
-    io:format("~s ~p ChannelId ~p Topic ~p  Payload ~p  ~n",[?FILE, ?LINE, ChannelId, Topic, Payload]),
+    io:format("~s ~p ChannelId ~p Topic ~p  Payload ~p  ~n", [?FILE, ?LINE, ChannelId, Topic, Payload]),
     dgiot_bridge:send_log(ChannelId, "cloud to edge: Topic ~p Payload ~p ~n", [Topic, Payload]),
 %%    dgiot_mqtt:publish(ChannelId, Topic, Payload),
     {noreply, State};
