@@ -25,7 +25,7 @@
 ]).
 
 %% Channel callback
--export([init/3, handle_init/1, handle_event/3, handle_message/2, stop/3]).
+-export([init/3, handle_init/1, handle_event/3, handle_message/2, stop/3, subscribe_topic/2]).
 
 -channel(?TYPE).
 -channel_type(#{
@@ -111,30 +111,24 @@ subscribe_topic(SessionToken, #{<<"topic">> := Topic, <<"topickey">> := TopicKey
                 OldTopic ->
                     lists:foldl(
                         fun(X, _Acc) ->
-%%                            dgiot_mqtt:unsubscribe(SessionToken, X),
-                            emqx_mgmt:unsubscribe(SessionToken, X),
+                            emqx_mgmt:do_unsubscribe(SessionToken, X),
                             []
-                        end, [], OldTopic
-                    )
+                        end, [], OldTopic)
             end,
             lists:foldl(
                 fun(X, _Acc) ->
-%%                    dgiot_mqtt:subscribe(SessionToken, X),
                     emqx_mgmt:subscribe(SessionToken, [{X, #{qos => 0}}]),
                     []
-                end, [], Topic
-            ),
+                end, [], Topic),
             dgiot_data:insert({page_router_key, SessionToken, TopicKey}, Topic);
         false ->
             case dgiot_data:get({page_router_key, SessionToken, TopicKey}) of
                 not_find ->
                     pass;
                 OldTopic ->
-                    emqx_mgmt:unsubscribe(SessionToken, [{OldTopic, #{qos => 0}}])
+                    emqx_mgmt:do_unsubscribe(SessionToken, OldTopic)
             end,
-%%            io:format("~s ~p SessionToken ~p Topic ~p ~n ", [?FILE, ?LINE, SessionToken, Topic]),
             emqx_mgmt:subscribe(SessionToken, [{Topic, #{qos => 0}}]),
-%%            dgiot_mqtt:subscribe(SessionToken, Topic),
             dgiot_data:insert({page_router_key, SessionToken, TopicKey}, Topic)
     end;
 

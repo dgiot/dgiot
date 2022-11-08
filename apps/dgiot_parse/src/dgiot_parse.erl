@@ -78,6 +78,29 @@
     update_schemas_json/0
 ]).
 
+-export([
+    sync_user/0
+    , sync_parse/0
+    , sync_role/0
+    , test/0
+]).
+
+test() ->
+%%    aggregate_object(<<"slave">>, <<"Device">>, #{<<"group">> => #{<<"objectId">> => <<"06b5e7066c">>, <<"total">> => #{<<"$sum">> => <<"state">>}}}).
+%%    aggregate_object(<<"slave">>, <<"Device">>, #{<<"match">> => #{<<"state">> => #{<<"$gt">> => 15}}}).
+    dgiot_parse:query_object(<<"slave">>, <<"Device">>, #{
+        <<"limit">> => 2,
+        <<"keys">> => <<"location">>,
+        <<"where">> => #{
+            <<"location">> => #{
+                <<"$nearSphere">> => #{
+                    <<"__type">> => <<"GeoPoint">>,
+                    <<"latitude">> => 30.266996,
+                    <<"longitude">> => 120.172584
+                },
+                <<"$maxDistanceInKilometers">> => 10
+            }
+        }}).
 
 create_schemas_json() ->
     {file, Here} = code:is_loaded(?MODULE),
@@ -644,4 +667,64 @@ handle_response(Result) ->
             {error, #{<<"code">> => 1, <<"error">> => Reason}}
     end.
 
+%%     dgiot_parse:sync_user().
+sync_user() ->
+    case dgiot_parse:query_object(?DEFAULT, <<"_User">>, #{}) of
+        {ok, #{<<"results">> := Users}} ->
+%%                io:format("X ~p~n",[X]),
+%%                dgiot_parse:create_object(?SLAVE, <<"_User">>, maps:without([<<"_email_verify_token">>, <<"emailVerified">>, <<"role">>, <<"roles">>, <<"createdAt">>, <<"updatedAt">>], X#{<<"password">> => Name}))
+            Requests =
+                lists:foldl(fun(#{<<"username">> := Name} = X, Acc) ->
+                    Acc ++ [#{
+                        <<"method">> => <<"POST">>,
+                        <<"path">> => <<"/classes/_User">>,
+                        <<"body">> => maps:without([<<"_email_verify_token">>, <<"emailVerified">>, <<"role">>, <<"roles">>, <<"createdAt">>, <<"updatedAt">>], X#{<<"password">> => Name})
+                    }]
+                            end, [], Users),
+            dgiot_parse:batch(?SLAVE, Requests);
+        _ ->
+            pass
+    end.
 
+%%     dgiot_parse:sync_parse().
+sync_parse() ->
+    Tables = [<<"Device">>, <<"Product">>, <<"Category">>, <<"Channel">>, <<"Dict">>, <<"Menu">>, <<"Permission">>, <<"ProductTemplet">>, <<"View">>],
+    lists:foldl(fun(Table, _) ->
+        io:format("~s ~p Table = ~p.~n", [?FILE, ?LINE, Table]),
+        case dgiot_parse:query_object(?DEFAULT, Table, #{}) of
+            {ok, #{<<"results">> := Results}} ->
+                Requests =
+                    lists:foldl(fun(X, Acc) ->
+                        Acc ++ [#{
+                            <<"method">> => <<"POST">>,
+                            <<"path">> => <<"/classes/", Table/binary>>,
+                            <<"body">> => maps:without([<<"createdAt">>, <<"updatedAt">>], X)
+                        }]
+                                end, [], Results),
+                dgiot_parse:batch(?SLAVE, Requests);
+            _ ->
+                pass
+        end
+                end, [], Tables),
+    io:format("~s ~p sync_parse end ~n", [?FILE, ?LINE]).
+
+%%     dgiot_parse:sync_role().
+sync_role() ->
+    case dgiot_parse:query_object(?DEFAULT, <<"_Role">>, #{}) of
+        {ok, #{<<"results">> := Roles}} ->
+            Requests =
+                lists:foldl(fun(Role, Acc) ->
+                    NewRole = Role#{
+                        <<"menus">> => dgiot_role:get_menus_role(maps:get(<<"menus">>, Role, [])),
+                        <<"rules">> => dgiot_role:get_rules_role(maps:get(<<"rules">>, Role, []))
+                    },
+                    Acc ++ [#{
+                        <<"method">> => <<"POST">>,
+                        <<"path">> => <<"/classes/_Role">>,
+                        <<"body">> => maps:without([<<"views">>, <<"createdAt">>, <<"updatedAt">>], NewRole)
+                    }]
+                            end, [], Roles),
+            dgiot_parse:batch(?SLAVE, Requests);
+        _ ->
+            pass
+    end.

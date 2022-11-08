@@ -59,8 +59,8 @@ get_calculated(ProductId, Calculated) ->
                                 <<"strategy">> := <<"计算值"/utf8>>, <<"collection">> := Collection},
                                 <<"dataType">> := #{<<"type">> := Type, <<"specs">> := Specs}} ->
                                 Str1 = maps:fold(fun(K, V, Acc2) ->
-                                    Str = re:replace(Acc2, dgiot_utils:to_list(<<"%%", K/binary>>), "(" ++ dgiot_utils:to_list(V) ++ ")", [global, {return, list}]),
-                                    re:replace(Str, "%s", "(" ++ dgiot_utils:to_list(V) ++ ")", [global, {return, list}])
+                                    Str = re:replace(Acc2, dgiot_utils:to_list(<<"%%{", K/binary, "}">>), dgiot_utils:to_list(V), [global, {return, list}]),
+                                    re:replace(Str, "%{s}", dgiot_utils:to_list(V), [global, {return, list}])
                                                  end, dgiot_utils:to_list(Collection), Calculated),
                                 case string2value(Str1, Type, Specs) of
                                     error ->
@@ -131,8 +131,8 @@ get_control(Round, Data, Control) ->
         <<"null">> ->
             <<"null">>;
         Data ->
-            Str = re:replace(dgiot_utils:to_list(Control), "%d", "(" ++ dgiot_utils:to_list(Data) ++ ")", [global, {return, list}]),
-            Str1 = re:replace(Str, "%r", "(" ++ dgiot_utils:to_list(Round) ++ ")", [global, {return, list}]),
+            Str = re:replace(dgiot_utils:to_list(Control), "%{d}", dgiot_utils:to_list(Data), [global, {return, list}]),
+            Str1 = re:replace(Str, "%{r}", dgiot_utils:to_list(Round), [global, {return, list}]),
             dgiot_task:string2value(Str1, <<"type">>)
     end.
 
@@ -410,6 +410,13 @@ save_td_no_match(ProductId, DevAddr, Ack, AppData) ->
             DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
             Interval = maps:get(<<"interval">>, AppData, 3),
             AllData = merge_cache_data(DeviceId, Storage, Interval),
-            dealwith_data(ProductId, DevAddr, DeviceId, AllData, Storage),
+            ChannelId = dgiot_parse_id:get_channelid(dgiot_utils:to_binary(?BRIDGE_CHL), <<"DGIOTTOPO">>, <<"TOPO组态通道"/utf8>>),
+            dgiot_channelx:do_message(ChannelId, {topo_thing, ProductId, DeviceId, AllData}),
+            dgiot_tdengine_adapter:save(ProductId, DevAddr, AllData),
+            Channel = dgiot_product_channel:get_taskchannel(ProductId),
+            dgiot_bridge:send_log(Channel, ProductId, DevAddr, "~s ~p save td => ProductId ~p DevAddr ~p ~ts ", [?FILE, ?LINE, ProductId, DevAddr, unicode:characters_to_list(jsx:encode(AllData))]),
+            dgiot_metrics:inc(dgiot_task, <<"task_save">>, 1),
+            NotificationTopic = <<"$dg/user/alarm/", ProductId/binary, "/", DeviceId/binary, "/properties/report">>,
+            dgiot_mqtt:publish(DeviceId, NotificationTopic, jsx:encode(AllData)),
             AllData
     end.

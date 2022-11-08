@@ -147,6 +147,11 @@ do_check(#{clientid := Token, username := UserId} = _ClientInfo, subscribe, <<"$
 %%    io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, _Topic]),
     check_device_acl(Token, DeviceId, UserId);
 
+%% "$dg/user/trace/{DeviceId}/{Topic}"
+do_check(#{clientid := Token, username := UserId} = _ClientInfo, subscribe, <<"$dg/user/trajectory/", DeviceId:10/binary, "/", _Rest/binary>> = _Topic) ->
+%%    io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, _Topic]),
+    check_device_acl(Token, DeviceId, UserId);
+
 %% 用户订阅 "$dg/user/deviceid/#"
 do_check(#{clientid := Token, username := UserId} = _ClientInfo, subscribe, <<"$dg/user/", DeviceID:10/binary, "/", _Rest/binary>> = _Topic)
     when UserId =/= undefined ->
