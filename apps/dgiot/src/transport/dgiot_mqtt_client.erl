@@ -53,7 +53,7 @@ init([#{<<"channel">> := ChannelId, <<"client">> := ClientId, <<"mod">> := Mod, 
         {ok, NewDclient} ->
             process_flag(trap_exit, true),
             rand:seed(exs1024),
-            Time = erlang:round(rand:uniform() * 60 * 3 + 1) * 1000,
+            Time = erlang:round(rand:uniform() * 4 + 1) * 1000,
             erlang:send_after(Time, self(), connect),
             {ok, NewDclient, hibernate};
         {stop, Reason} ->

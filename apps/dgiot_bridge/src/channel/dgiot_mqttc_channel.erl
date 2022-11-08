@@ -142,7 +142,7 @@ init(?TYPE, ChannelId, ChannelArgs) ->
     State = #state{
         id = ChannelId
     },
-    {ok, State, dgiot_mqttc_worker:childSpec(dgiot_utils:random(), State, ChannelArgs)}.
+    {ok, State, dgiot_mqttc_worker:childSpec(ChannelId, ChannelArgs)}.
 
 %% 初始化池子
 handle_init(State) ->
