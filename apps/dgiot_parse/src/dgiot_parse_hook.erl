@@ -101,7 +101,7 @@ receive_ack(ResBody) ->
     end.
 
 notify(Type, Method, Token, Class, ObjectId, Data) ->
-    Lists =
+    Rules =
         case dgiot_data:get({sub, Class, Method}) of
             not_find ->
                 case dgiot_data:get({sub, <<Class/binary, "/*">>, Method}) of
@@ -122,15 +122,26 @@ notify(Type, Method, Token, Class, ObjectId, Data) ->
         fun
             ({ChannelId, [<<"*">>]}) ->
                 dgiot_channelx:do_message(ChannelId, {sync_parse, self(), Type, Method, Token, Class, Data});
-            ({ChannelId, Keys}) when Method == put ->
+            ({ChannelId, Rule}) when Method == put andalso is_list(Rule)->
                 List = maps:keys(Data),
-                case List -- Keys of
+                %% map 比较
+                case List -- Rule of
                     List ->
                         pass;
                     _ ->
                         dgiot_channelx:do_message(ChannelId, {sync_parse, self(), Type, Method, Token, Class, Data})
+                end;
+            ({ChannelId, SqlRule}) when Method == put ->
+                case parse_sqlrule(SqlRule, Data) of
+                    true ->
+                        dgiot_channelx:do_message(ChannelId, {sync_parse, self(), Type, Method, Token, Class, Data});
+                    false -> pass
                 end
-        end, Lists).
+        end, Rules).
+
+%% 增加一个类似规则引擎的比较规则
+parse_sqlrule(_Rule, _Data) ->
+    pass.
 
 do_request_hook(Type, [<<"classes">>, Class, ObjectId], Method, Token, QueryData, ResBody) ->
     do_hook({<<Class/binary, "/*">>, Method}, {Type, Method, Token, Class, ObjectId, QueryData, ResBody});

@@ -95,11 +95,6 @@ handle_event(EventId, Event, _State) ->
     ?LOG(info, "channel ~p, ~p", [EventId, Event]),
     ok.
 
-handle_message({sync_parse, Args}, State) ->
-    ?LOG(info, "sync_parse ~p", [Args]),
-    {ok, State};
-
-
 handle_message({deliver, _Topic, Msg},State) ->
     Payload = dgiot_mqtt:get_payload(Msg),
     case jsx:is_json(Payload) of
