@@ -24,7 +24,7 @@
 -export([create_product/1, create_product/2, add_product_relation/2, delete_product_relation/1]).
 -export([get_prop/1, get_props/1, get_props/2, get_unit/1, update_properties/2, update_properties/0]).
 -export([update_topics/0, update_product_filed/1]).
--export([save_devicetype/1, get_devicetype/1, get_device_thing/2]).
+-export([save_devicetype/1, get_devicetype/1, get_device_thing/2, get_productSecret/1]).
 -export([save_keys/1, get_keys/1, get_control/1, save_control/1, get_interval/1, save_device_thingtype/1]).
 
 init_ets() ->
@@ -74,6 +74,7 @@ save(Product) ->
     save_keys(ProductId),
     save_control(ProductId),
     save_devicetype(ProductId),
+    save_productSecret(ProductId),
     dgiot_product_channel:save_channel(ProductId),
     dgiot_product_channel:save_tdchannel(ProductId),
     dgiot_product_channel:save_taskchannel(ProductId),
@@ -103,6 +104,16 @@ get(ProductId) ->
             {error, Reason}
     end.
 
+save_productSecret(ProductId) ->
+    case dgiot_product:lookup_prod(ProductId) of
+        {ok, #{<<"productSecret">> := ProductSecret}} ->
+            dgiot_data:insert({productSecret,ProductId}, ProductSecret);
+        _ ->
+            pass
+    end.
+
+get_productSecret(ProductId) ->
+    dgiot_data:get({productSecret, ProductId}).
 
 %% 保存配置下发控制字段
 save_control(ProductId) ->

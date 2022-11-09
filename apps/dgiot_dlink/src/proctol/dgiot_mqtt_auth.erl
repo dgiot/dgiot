@@ -26,13 +26,8 @@
     , description/0
 ]).
 
-check(#{ peerhost := PeerHost}, AuthResult, _) when PeerHost == {127,0,0,1}  ->
+check(#{peerhost := PeerHost, username := <<"dgiot">> }, AuthResult, _) when PeerHost == {127, 0, 0, 1} ->
     {ok, AuthResult#{anonymous => false, auth_result => success}};
-
-check(#{username := Username},  AuthResult, _)
-    when Username == <<"anonymous">> orelse Username == undefined orelse Username == <<>> ->
-%%    io:format("~s ~p Username: ~p~n", [?FILE, ?LINE, Username]),
-    {ok, AuthResult#{anonymous => true, auth_result => success}};
 
 check(#{username := <<"dgiot">>, password := Password}, AuthResult, _) ->
 %%    io:format("~s ~p Password: ~p~n", [?FILE, ?LINE, Password]),
@@ -43,6 +38,11 @@ check(#{username := <<"dgiot">>, password := Password}, AuthResult, _) ->
         _ ->
             {stop, AuthResult#{anonymous => false, auth_result => password_error}}
     end;
+
+check(#{username := Username}, AuthResult, _)
+    when Username == <<"anonymous">> orelse Username == undefined orelse Username == <<>> ->
+%%    io:format("~s ~p Username: ~p~n", [?FILE, ?LINE, Username]),
+    {ok, AuthResult#{anonymous => true, auth_result => success}};
 
 %% 当 clientid 和 password 为token 且相等的时候为用户登录
 check(#{clientid := <<Token:34/binary, _Type/binary>>, username := UserId, password := Token}, AuthResult, #{hash_type := _HashType}) ->
@@ -79,31 +79,7 @@ description() -> "Authentication with Mnesia".
 do_check(AuthResult, Password, ProductID, DeviceAddr, DeviceId, Ip) ->
     Result =
         case dgiot_product:lookup_prod(ProductID) of
-            {ok, #{<<"productSecret">> := Password} = Product} ->
-                case dgiot_device:lookup(DeviceId) of
-                    {ok, _} ->
-                        Body = #{
-                            <<"status">> => <<"ONLINE">>},
-                        dgiot_device:online(DeviceId),
-                        dgiot_parse:update_object(<<"Device">>, DeviceId, Body);
-                    _ ->
-                        case Product of
-                            #{<<"ACL">> := Acl, <<"name">> := Name, <<"devType">> := DevType, <<"dynamicReg">> := true} ->
-                                Device = #{
-                                    <<"ip">> => Ip,
-                                    <<"status">> => <<"ONLINE">>,
-                                    <<"brand">> => Name,
-                                    <<"devModel">> => DevType,
-                                    <<"name">> => DeviceAddr,
-                                    <<"devaddr">> => DeviceAddr,
-                                    <<"product">> => ProductID,
-                                    <<"ACL">> => Acl
-                                },
-                                dgiot_device:create_device(Device);
-                            _ ->
-                                pass
-                        end
-                end,
+            {ok, #{<<"productSecret">> := Password}} ->
                 {stop, AuthResult#{anonymous => false, auth_result => success}};
             _ ->
                 case dgiot_device:lookup(DeviceId) of
@@ -117,8 +93,8 @@ do_check(AuthResult, Password, ProductID, DeviceAddr, DeviceId, Ip) ->
     case Result of
         {stop, #{auth_result := success}} ->
             lists:map(fun
-                          ({ChannelId, _Ctype}) ->
-                              dgiot_channelx:do_message(ChannelId, {dlink_login, do_after, ProductID, DeviceAddr, DeviceId, Ip});
+                          ({ChannelId, <<"DLINK">>}) ->
+                              dgiot_channelx:do_message(ChannelId, {mqtt_login, do_after, ProductID, DeviceAddr, Ip});
                           (_) ->
                               pass
                       end, dgiot_bridge:get_proctol_channel(ProductID));

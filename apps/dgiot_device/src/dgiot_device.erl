@@ -21,7 +21,7 @@
 -include_lib("dgiot/include/logger.hrl").
 -define(TIMEOUT, 60000).
 
--export([create_device/1, create_device/2, get_sub_device/1, get_sub_device/2, save_subdevice/2, get_subdevice/2, get_subdevices/2, save_subdevice/3]).
+-export([create_device/1, create_device/2, create_device/3, get_sub_device/1, get_sub_device/2, save_subdevice/2, get_subdevice/2, get_subdevices/2, save_subdevice/3]).
 -export([parse_cache_Device/1, sync_parse/1, get/2, post/1, post/2, put/1, save/1, save/2, lookup/1, lookup/2, delete/1, delete/2]).
 -export([save_profile/1, get_profile/1, get_profile/2, get_online/1, online/1, offline/1, offline_child/1, enable/1, disable/1]).
 -export([put_location/3, get_location/1, get_address/3]).
@@ -232,6 +232,41 @@ create_device(#{<<"status">> := Status, <<"brand">> := Brand, <<"devModel">> := 
             },
             dgiot_device:post(NewDevice),
             dgiot_parse:create_object(<<"Device">>, maps:without([<<"brand">>, <<"devModel">>], NewDevice))
+    end.
+
+create_device(ProductId, DeviceAddr, Ip) ->
+    DeviceId = dgiot_parse_id:get_deviceid(ProductId, DeviceAddr),
+    case dgiot_device:lookup(DeviceId) of
+        {ok, _} ->
+            Body = #{<<"status">> => <<"ONLINE">>},
+            dgiot_device:online(DeviceId),
+            dgiot_parse:update_object(<<"Device">>, DeviceId, Body);
+        _ ->
+            case dgiot_product:lookup_prod(ProductId) of
+                not_find ->
+                    pass;
+                #{<<"ACL">> := Acl, <<"name">> := Name, <<"devType">> := DevType, <<"dynamicReg">> := true} ->
+                    <<DeviceSecret:10/binary, _/binary>> = dgiot_utils:to_md5(dgiot_utils:random()),
+                    Device = #{
+                        <<"ip">> => Ip,
+                        <<"status">> => <<"ONLINE">>,
+                        <<"deviceSecret">> => DeviceSecret,
+                        <<"isEnable">> => true,
+                        <<"brand">> => Name,
+                        <<"devModel">> => DevType,
+                        <<"name">> => DeviceAddr,
+                        <<"devaddr">> => DeviceAddr,
+                        <<"product">> => #{
+                            <<"__type">> => <<"Pointer">>,
+                            <<"className">> => <<"Product">>,
+                            <<"objectId">> => ProductId
+                        },
+                        <<"ACL">> => Acl
+                    },
+                    dgiot_device:create_device(Device);
+                _ ->
+                    pass
+            end
     end.
 
 get(ProductId, DevAddr) ->

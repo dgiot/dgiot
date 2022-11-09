@@ -37,7 +37,7 @@ on_message_publish(Message = #message{topic = <<"$dg/thing/", Topic/binary>>, pa
 %%      初始化请求      $dg/thing/{productId}/{deviceAddr}/init/request
             dgiot_dlink_proctol:firmware_report(ProductId, DevAddr, get_payload(Payload));
         [ProductId, DevAddr, <<"properties">>, <<"report">>] ->
-%%       属性获取	$dg/thing/{productId}/{deviceAddr}/properties/report	设备	平台
+%%       属性获取	$dg/thing/{productId}/{deviceAddr}/properties/report	设备 => 平台
             DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
             Ts = dgiot_datetime:now_secs(),
             case dgiot_data:get(?DGIOT_DLINK_REQUEST_ID, DeviceId) of
@@ -52,10 +52,10 @@ on_message_publish(Message = #message{topic = <<"$dg/thing/", Topic/binary>>, pa
         [ProductId, DevAddr, <<"firmware">>, <<"report">>] ->
             dgiot_dlink_proctol:firmware_report(ProductId, DevAddr, get_payload(Payload));
         [DeviceId, <<"properties">>, <<"get">>, <<"request_id=", Request_id/binary>>] ->
-%%       属性获取	$dg/thing/{deviceId}/properties/get/request_id={request_id}	用户	平台
+%%       属性获取	$dg/thing/{deviceId}/properties/get/request_id={request_id}	用户 =>	平台
             case dgiot_device:lookup(DeviceId) of
                 {ok, #{<<"devaddr">> := Devaddr, <<"productid">> := ProductId}} ->
-%%                  属性获取	$dg/device/{productId}/{deviceAddr}/properties 	平台	设备
+%%                  属性获取	$dg/device/{productId}/{deviceAddr}/properties 	平台 =>	设备
                     RequestTopic = <<"$dg/device/", ProductId/binary, "/", Devaddr/binary, "/properties">>,
                     dgiot_data:insert(?DGIOT_DLINK_REQUEST_ID, DeviceId, {dgiot_datetime:now_secs(), Request_id}),
                     dgiot_mqtt:publish(DeviceId, RequestTopic, Payload);
@@ -63,35 +63,14 @@ on_message_publish(Message = #message{topic = <<"$dg/thing/", Topic/binary>>, pa
                     pass
             end;
         [<<"uniapp">>, Token, <<"report">>] ->
-%%            <<"$dg/thing/uniapp/r:e5186aba099ce35105ba811e80bdaefa/report">>
             dgiot_hook:run_hook({uniapp, report}, {Token, get_payload(Payload)});
         _ ->
-%%            io:format("~s ~p Payload = ~p.~n", [?FILE, ?LINE, get_payload(Payload)]),
             pass
     end,
     {ok, Message};
 
 on_message_publish(Message = #message{topic = _Topic, payload = _Payload}, _State) ->
-%%    io:format("~s ~p Topic ~p Payload = ~p.~n", [?FILE, ?LINE,Topic, get_payload(Payload)]),
-    %% ignore topics starting with $
     {ok, Message}.
-
-%%on_message_delivered(#{}, #message{topic = <<$$, _Rest/binary>>}, _State) ->
-%%    %% ignore topics starting with $
-%%    ok;
-%%on_message_delivered(#{clientid := ClientId, username := Username},
-%%    Message = #message{topic = Topic, payload = Payload, qos = QoS, flags = Flags = #{retain := Retain}},
-%%    _State) ->
-%%   ok.
-%%
-%%on_message_acked(#{}, #message{topic = <<$$, _Rest/binary>>}, _State) ->
-%%    %% ignore topics starting with $
-%%    ok;
-%%on_message_acked(#{clientid := ClientId, username := Username},
-%%    Message = #message{topic = Topic, payload = Payload, qos = QoS, flags = #{retain := Retain}}, _State) ->
-%%    ?LOG(debug, "Message acked by client(~s): ~s~n",
-%%        [ClientId, emqx_message:format(Message)]),
-%%    ok.
 
 get_payload(Payload) ->
 %%    io:format("~s ~p Payload: ~p~n", [?FILE, ?LINE, Payload]),
