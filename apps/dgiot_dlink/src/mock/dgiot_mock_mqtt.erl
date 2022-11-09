@@ -18,7 +18,7 @@
 -include_lib("dgiot/include/logger.hrl").
 -include_lib("dgiot/include/dgiot_client.hrl").
 
--export([childspec/2]).
+-export([childspec/2,start/3]).
 
 %% API
 -export([init/1, handle_cast/2, handle_call/3, handle_info/2, terminate/2, code_change/3]).
@@ -86,3 +86,39 @@ code_change(_OldVsn, Dclient, _Extra) ->
 
 update(ChannelId) ->
     dgiot_data:insert({<<"mqtt_online">>, dlink_metrics}, dgiot_client:count(ChannelId)).
+
+
+start(ChannelId, DeviceId, #{<<"auth">> := <<"ProductSecret">>}) ->
+    case dgiot_device:lookup(DeviceId) of
+        {ok, #{<<"devaddr">> := DevAddr, <<"productid">> := ProductId}} ->
+
+            Options = #{
+                host => "127.0.0.1",
+                port => 1883,
+                ssl => false,
+                username => binary_to_list(ProductId),
+                password => binary_to_list(dgiot_product:get_productSecret(ProductId)),
+                clean_start => false
+            },
+%%            io:format("~s ~p DeviceId ~p DevAddr ~p ", [?FILE, ?LINE, DeviceId, DevAddr]),
+            dgiot_client:start(ChannelId, <<ProductId/binary, "_", DevAddr/binary>>, #{<<"options">> => Options});
+        _ ->
+            #{}
+    end;
+
+start(ChannelId, DeviceId, #{<<"auth">> := <<"DeviceSecret">>}) ->
+    case dgiot_device:lookup(DeviceId) of
+        {ok, #{<<"devaddr">> := DevAddr, <<"productid">> := ProductId, <<"devicesecret">> := DeviceSecret}} ->
+            Options = #{
+                host => "127.0.0.1",
+                port => 1883,
+                ssl => false,
+                username => binary_to_list(ProductId),
+                password => binary_to_list(DeviceSecret),
+                clean_start => false
+            },
+%%            io:format("~s ~p DeviceId ~p DevAddr ~p ", [?FILE, ?LINE, DeviceId, DevAddr]),
+            dgiot_client:start(ChannelId, <<ProductId/binary, "_", DevAddr/binary>>, #{<<"options">> => Options});
+        _ ->
+            #{}
+    end.

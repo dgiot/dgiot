@@ -14,9 +14,9 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
--module(dgiot_mock_channel).
+-module(dgiot_dlink_channel).
 -behavior(dgiot_channelx).
--define(TYPE, <<"MOCK">>).
+-define(TYPE, <<"DLINK">>).
 -author("johnliu").
 -record(state, {id}).
 -include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
@@ -29,12 +29,12 @@
 %% 注册通道类型
 -channel_type(#{
     cType => ?TYPE,
-    type => ?BRIDGE_CHL,
+    type => ?PROTOCOL_CHL,
     title => #{
-        zh => <<"MOCK模拟设备通道"/utf8>>
+        zh => <<"Dlink采集通道"/utf8>>
     },
     description => #{
-        zh => <<"MOCK模拟设备通道"/utf8>>
+        zh => <<"Dlink采集通道"/utf8>>
     }
 }).
 %% 注册通道参数
@@ -43,7 +43,7 @@
         order => 102,
         type => string,
         required => false,
-        default => <<"/dgiot_file/shuwa_tech/zh/product/dgiot/channel/dgiot_mock_channel.png">>,
+        default => <<"/dgiot_file/shuwa_tech/zh/product/dgiot/channel/dgiot_dlink_channel.png">>,
         title => #{
             en => <<"channel ICO">>,
             zh => <<"通道ICO"/utf8>>
@@ -59,11 +59,9 @@ start(ChannelId, ChannelArgs) ->
     dgiot_channelx:add(?TYPE, ChannelId, ?MODULE, ChannelArgs).
 
 %% 通道初始化
-init(?TYPE, ChannelId, ChannelArgs) ->
+init(?TYPE, ChannelId, _ChannelArgs) ->
     State = #state{id = ChannelId},
-    dgiot_parse_hook:subscribe(<<"Device/*">>, put, ChannelId, [<<"profile">>]),
-    ChildSpecs = dgiot_mock_mqtt:childspec(ChannelId, ChannelArgs),
-    {ok, State, ChildSpecs}.
+    {ok, State}.
 
 handle_init(State) ->
     {ok, State}.
@@ -72,22 +70,9 @@ handle_init(State) ->
 handle_event(_EventId, _Event, State) ->
     {ok, State}.
 
-handle_message({sync_parse, _Pid, 'after', put, _Token, <<"Device">>, #{<<"profile">> := #{<<"mock">> := #{
-    <<"enable">> := true, <<"transport">> := <<"mqtt">>} = Mock}, <<"objectId">> := DeviceId}},
-        #state{id = ChannelId} = State) ->
-%%    io:format("~s ~p DeviceId ~p Mock ~p", [?FILE, ?LINE, DeviceId, Mock]),
-    dgiot_mock_mqtt:start(ChannelId, DeviceId, Mock),
-    {ok, State};
-
-handle_message({sync_parse, _Pid, 'after', put, _Token, <<"Device">>, #{<<"profile">> := #{<<"mock">> := #{<<"enable">> := false}}, <<"objectId">> := DeviceId}},
-        #state{id = ChannelId} = State) ->
-%%    io:format("~s ~p DeviceId ~p", [?FILE, ?LINE, DeviceId]),
-    case dgiot_device:lookup(DeviceId) of
-        {ok, #{<<"devaddr">> := DevAddr, <<"productid">> := ProductId}} ->
-            dgiot_client:stop(ChannelId, <<ProductId/binary, "_", DevAddr/binary>>, DevAddr);
-        _ ->
-            pass
-    end,
+handle_message({mqtt_login, do_after, ProductId, DeviceAddr, Ip}, State) ->
+    io:format("~s ~p DeviceAddr ~p ~n",[?FILE, ?LINE, DeviceAddr]),
+    dgiot_device:create_device(ProductId, DeviceAddr, Ip),
     {ok, State};
 
 handle_message(_Message, State) ->
