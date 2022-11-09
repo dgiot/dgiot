@@ -101,7 +101,7 @@ receive_ack(ResBody) ->
     end.
 
 notify(Type, Method, Token, Class, ObjectId, Data) ->
-    Rules =
+    ChannelRules =
         case dgiot_data:get({sub, Class, Method}) of
             not_find ->
                 case dgiot_data:get({sub, <<Class/binary, "/*">>, Method}) of
@@ -109,14 +109,14 @@ notify(Type, Method, Token, Class, ObjectId, Data) ->
                         case dgiot_data:get({sub, <<Class/binary, "/", ObjectId/binary>>, Method}) of
                             not_find ->
                                 [];
-                            List3 ->
-                                List3
+                            ChannelRules3 ->
+                                ChannelRules3
                         end;
-                    List2 ->
-                        List2
+                    ChannelRules2 ->
+                        ChannelRules2
                 end;
-            List1 ->
-                List1
+            ChannelRules1 ->
+                ChannelRules1
         end,
     lists:map(
         fun
@@ -137,7 +137,7 @@ notify(Type, Method, Token, Class, ObjectId, Data) ->
                         dgiot_channelx:do_message(ChannelId, {sync_parse, self(), Type, Method, Token, Class, Data});
                     false -> pass
                 end
-        end, Rules).
+        end, ChannelRules).
 
 %% 增加一个类似规则引擎的比较规则
 parse_sqlrule(_Rule, _Data) ->
