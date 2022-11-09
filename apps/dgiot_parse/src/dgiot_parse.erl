@@ -686,11 +686,11 @@ sync_user() ->
             pass
     end.
 
-%%     dgiot_parse:sync_parse().
+%%    dgiot_parse:sync_parse().
 sync_parse() ->
     Tables = [<<"Device">>, <<"Product">>, <<"Category">>, <<"Channel">>, <<"Dict">>, <<"Menu">>, <<"Permission">>, <<"ProductTemplet">>, <<"View">>],
     lists:foldl(fun(Table, _) ->
-        io:format("~s ~p Table = ~p.~n", [?FILE, ?LINE, Table]),
+%%        io:format("~s ~p Table = ~p.~n", [?FILE, ?LINE, Table]),
         case dgiot_parse:query_object(?DEFAULT, Table, #{}) of
             {ok, #{<<"results">> := Results}} ->
                 Requests =
@@ -705,8 +705,7 @@ sync_parse() ->
             _ ->
                 pass
         end
-                end, [], Tables),
-    io:format("~s ~p sync_parse end ~n", [?FILE, ?LINE]).
+                end, [], Tables).
 
 %%     dgiot_parse:sync_role().
 sync_role() ->

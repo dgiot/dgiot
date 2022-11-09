@@ -134,10 +134,6 @@ handle_message(offline_jud, #state{env = Env} = State) ->
     [offline_modify(DeviceID) ||{DeviceID,_} <- Deviceinfo_list],
     {ok, State};
 
-handle_message({sync_parse, _Method, Args}, State) ->
-    ?LOG(info,"sync_parse ~p", [Args]),
-    {ok, State};
-
 handle_message(scan_opc, #state{env = Env} = State) ->
     dgiot_opc:scan_opc(Env),
 %%    #{<<"Topic">> := Topic} = Env,
