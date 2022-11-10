@@ -70,8 +70,7 @@ handle_init(State) ->
 handle_event(_EventId, _Event, State) ->
     {ok, State}.
 
-handle_message({mqtt_login, do_after, ProductId, DeviceAddr, Ip}, State) ->
-    io:format("~s ~p DeviceAddr ~p ~n",[?FILE, ?LINE, DeviceAddr]),
+handle_message({dlink_login, do_after, ProductId, DeviceAddr, Ip}, State) ->
     dgiot_device:create_device(ProductId, DeviceAddr, Ip),
     {ok, State};
 
