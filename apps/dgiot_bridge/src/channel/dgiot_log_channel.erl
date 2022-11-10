@@ -111,13 +111,13 @@ subscribe_topic(SessionToken, #{<<"topic">> := Topic, <<"topickey">> := TopicKey
                 OldTopic ->
                     lists:foldl(
                         fun(X, _Acc) ->
-                            emqx_mgmt:do_unsubscribe(SessionToken, X),
+                            dgiot_mqtt:unsubscribe_mgmt(SessionToken, X),
                             []
                         end, [], OldTopic)
             end,
             lists:foldl(
                 fun(X, _Acc) ->
-                    emqx_mgmt:subscribe(SessionToken, [{X, #{qos => 0}}]),
+                    dgiot_mqtt:subscribe_mgmt(SessionToken, [{X, #{qos => 0}}]),
                     []
                 end, [], Topic),
             dgiot_data:insert({page_router_key, SessionToken, TopicKey}, Topic);
@@ -126,9 +126,9 @@ subscribe_topic(SessionToken, #{<<"topic">> := Topic, <<"topickey">> := TopicKey
                 not_find ->
                     pass;
                 OldTopic ->
-                    emqx_mgmt:do_unsubscribe(SessionToken, OldTopic)
+                    dgiot_mqtt:unsubscribe_mgmt(SessionToken, OldTopic)
             end,
-            emqx_mgmt:subscribe(SessionToken, [{Topic, #{qos => 0}}]),
+            dgiot_mqtt:subscribe_mgmt(SessionToken, [{Topic, #{qos => 0}}]),
             dgiot_data:insert({page_router_key, SessionToken, TopicKey}, Topic)
     end;
 

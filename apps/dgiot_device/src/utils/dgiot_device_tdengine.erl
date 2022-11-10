@@ -87,7 +87,7 @@ get_history_data(Channel, ProductId, TableName, Query) ->
             Function = maps:get(<<"function">>, Query, <<>>),
             Keys = maps:get(<<"keys">>, Query, <<"*">>),
             Limit = dgiot_tdengine_select:format_limit(Query),
-            Starttime = maps:get(<<"starttime">>, Query, dgiot_utils:to_binary(dgiot_datetime:now_ms() - 604800000)),
+            Starttime = maps:get(<<"starttime">>, Query, dgiot_utils:to_binary(dgiot_datetime:now_ms() - 25920000000)),
             Endtime = maps:get(<<"endtime">>, Query, dgiot_utils:to_binary(dgiot_datetime:now_ms())),
             {Names, Newkeys} = dgiot_product_tdengine:get_keys(ProductId, Function, Keys),
             Tail =
@@ -98,7 +98,7 @@ get_history_data(Channel, ProductId, TableName, Query) ->
                         <<" where createdat >= ", Starttime/binary, " AND createdat <= ", Endtime/binary, " INTERVAL(", Interval/binary, ") ", Limit/binary, ";">>
                 end,
             Sql = <<"SELECT ", Newkeys/binary, " FROM ", DB/binary, TableName/binary, Tail/binary>>,
-            ?LOG(error, "Sql ~s", [Sql]),
+            ?LOG(debug, "Sql ~s", [Sql]),
             {Names, dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_query, Sql)}
         end).
 

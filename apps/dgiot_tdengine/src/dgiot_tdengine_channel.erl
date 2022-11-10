@@ -230,6 +230,18 @@ handle_message({data, Product, DevAddr, Data, Context}, #state{id = ChannelId} =
             {ok, NewState}
     end;
 
+handle_message({export_data, Body, SchemasFile}, #state{id = ChannelId} = State) ->
+    io:format("~s ~p start SchemasFile = ~p.~n", [?FILE, ?LINE, SchemasFile]),
+    NewData = dgiot_tdengine:export(ChannelId, Body),
+    case zip:create(<<"tdengine">>, NewData, [memory]) of
+        {ok, {_, ZipFile}} ->
+          file:write_file("d:/msys64/home/stoneliu/dgiot/_build/emqx/rel/emqx/lib/dgiot_api-4.3.0/priv/www/download/tdengine/1668076954947.zip", ZipFile);
+            %% io:format("~s ~p end = ~p.~n", [?FILE, ?LINE, R]);
+        _ ->
+            pass
+    end,
+    {ok, State};
+
 handle_message(config, #state{env = Config} = State) ->
     {reply, {ok, Config}, State};
 

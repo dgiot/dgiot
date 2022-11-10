@@ -119,12 +119,12 @@ get_channel(Session) ->
 
 get_keys(ProductId, Function, <<"*">>) ->
     case dgiot_product:lookup_prod(ProductId) of
-        {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
+        {ok, #{<<"thing">> := #{<<"properties">> := Props}}} when length(Props) > 0 ->
             lists:foldl(fun(X, {Names, Acc}) ->
                 case X of
                     #{<<"identifier">> := Identifier, <<"name">> := Name, <<"isstorage">> := true} ->
                         case Acc of
-                            <<"">> ->
+                            <<"*">> ->
                                 {Names ++ [Name], <<Function/binary, "(", Identifier/binary, ") \'", Identifier/binary, "\'">>};
                             _ ->
                                 {Names ++ [Name], <<Acc/binary, ", ", Function/binary, "(", Identifier/binary, ") \'", Identifier/binary, "\'">>}
@@ -132,10 +132,10 @@ get_keys(ProductId, Function, <<"*">>) ->
                     _ ->
                         {Names, Acc}
                 end
-                        end, {[], <<"">>}, Props);
+                        end, {[], <<"*">>}, Props);
         _Other ->
-            ?LOG(info, "~p _Other ~p", [ProductId, _Other]),
-            {[], <<"">>}
+            ?LOG(debug, "~p _Other ~p", [ProductId, _Other]),
+            {[], <<"*">>}
     end;
 
 get_keys(ProductId, Function, Keys) when Keys == undefined; Keys == <<>> ->

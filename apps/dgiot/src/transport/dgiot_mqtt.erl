@@ -49,6 +49,8 @@
     , subopts/0
     , subscribe_route_key/3
     , unsubscribe_route_key/1
+    , subscribe_mgmt/2
+    , unsubscribe_mgmt/2
 ]).
 
 init_ets() ->
@@ -64,12 +66,12 @@ subscribe_route_key(DeviceList, SessionToken, Route) ->
         OldTopic ->
             lists:foldl(fun(X, _Acc) ->
                 Topic = <<"$dg/user/devicestate/", X/binary, "/report">>,
-                dgiot_mqtt:unsubscribe(SessionToken, Topic)
+                dgiot_mqtt:unsubscribe_mgmt(SessionToken, Topic)
                         end, [], OldTopic)
     end,
     lists:foldl(fun(X, _Acc) ->
         Topic = <<"$dg/user/devicestate/", X/binary, "/report">>,
-        dgiot_mqtt:subscribe(SessionToken, Topic)
+        dgiot_mqtt:subscribe_mgmt(SessionToken, Topic)
                 end, [], DeviceList),
     dgiot_data:insert(?DGIOT_ROUTE_KEY, {SessionToken, TopicKey}, DeviceList).
 
@@ -82,13 +84,23 @@ unsubscribe_route_key(SessionToken) ->
         OldTopic ->
             lists:foldl(fun(X, _Acc) ->
                 Topic = <<"$dg/user/devicestate/", X/binary, "/report">>,
-                dgiot_mqtt:unsubscribe(SessionToken, Topic)
+                dgiot_mqtt:unsubscribe_mgmt(SessionToken, Topic)
                         end, [], OldTopic)
     end,
     dgiot_data:delete(?DGIOT_ROUTE_KEY, {SessionToken, TopicKey}).
 
 has_routes(Topic) ->
     emqx_router:has_routes(Topic).
+
+%% 根据clientid动态订阅topic
+subscribe_mgmt(ClientId, Topic) ->
+    timer:sleep(1),
+    emqx_mgmt:subscribe(ClientId, [{Topic, #{qos => 0}}]).
+
+%% 根据clientid动态取消订阅topic
+unsubscribe_mgmt(ClientId, Topic) ->
+    timer:sleep(1),
+    emqx_mgmt:do_unsubscribe(ClientId, Topic).
 
 subscribe(Topic) ->
     Options = #{qos => 0},

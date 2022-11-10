@@ -50,7 +50,7 @@ run_sql(#{<<"driver">> := <<"HTTP">>, <<"url">> := Url, <<"username">> := UserNa
         {error, #{<<"code">> := 896} = Reason} ->
             {ok, Reason#{<<"affected_rows">> => 0}};
         {error, Reason} ->
-            ?LOG(error, "Execute Fail ~p (~ts) ~p", [Url, unicode:characters_to_list(Sql), Reason]),
+%%            ?LOG(error, "Execute Fail ~p (~ts) ~p", [Url, unicode:characters_to_list(Sql), Reason]),
             {error, Reason}
     end;
 
