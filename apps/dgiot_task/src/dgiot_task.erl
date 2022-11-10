@@ -179,7 +179,7 @@ get_instruct(ProductId, Round) ->
                         <<"dataSource">> := DataSource} ->
                         Min = maps:get(<<"min">>, Specs, 0),
                         Protocol = maps:get(<<"protocol">>, DataForm, <<"Dlink">>),
-                        Control = maps:get(<<"control">>, DataForm, "%d"),                       %% 控制参数
+                        Control = maps:get(<<"control">>, DataForm, "%{d}"),                       %% 控制参数
                         Data = dgiot_task:get_control(Round, Min, Control),                      %% 控制参数的初始值，可以根据轮次进行计算
                         NewDataSource = dgiot_task_data:get_datasource(Protocol, AccessMode, Data, DataSource),    %% 根据协议类型生成采集数据格式
                         Order = maps:get(<<"order">>, DataForm, Seq),                            %% 指令顺序

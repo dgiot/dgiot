@@ -18,12 +18,104 @@
 -author("kenneth").
 -include("dgiot_tdengine.hrl").
 -include_lib("dgiot/include/logger.hrl").
-
+-include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
 %% API
 -export([get_database/2, create_database/3, create_schemas/2, create_object/3, create_user/3, alter_user/3, delete_user/2, query_object/3, batch/2]).
 -export([create_database/2, create_schemas/1, create_object/2, create_user/2, alter_user/2, delete_user/1, query_object/2, batch/1, parse_batch/1]).
 -export([transaction/2, format_data/5]).
 -export([get_reportdata/3]).
+-export([export/2, import/2]).
+
+%% dgiot_tdengine:export().
+export(ChannelId, #{<<"deviceid">> := DeviceId} = Body) ->
+    case dgiot_device:lookup(DeviceId) of
+        {ok, #{<<"productid">> := ProductId}} ->
+            export_device_data(ChannelId, #{<<"objectId">> => DeviceId, <<"product">> => #{<<"objectId">> => ProductId}}, Body, []);
+        _ ->
+            []
+    end;
+
+export(ChannelId, _Body) ->
+%%    io:format("~s ~p 111Body = ~p.~n", [?FILE, ?LINE, Body]),
+    Query = #{
+        <<"keys">> => [<<"objectId">>, <<"product">>]
+    },
+    TdQuery = #{<<"limit">> => 100000, <<"function">> => <<"last">>, <<"interval">> => <<"1m">>},
+    case dgiot_parse:query_object(<<"Device">>, Query) of
+        {ok, #{<<"results">> := Data}} ->
+            lists:foldl(fun(Device, Acc) ->
+                export_device_data(ChannelId, Device, TdQuery, Acc)
+                        end, [], Data);
+        _ ->
+            []
+    end.
+
+%% dgiot_tdengine:import().
+import(ChannelId, Result) ->
+    lists:foldl(fun({Name, Bin}, _Acc) ->
+        case catch jsx:decode(Bin, [{labels, binary}, return_maps]) of
+            {'EXIT', _} ->
+                pass;
+            Data ->
+                case binary:split(dgiot_utils:to_binary(Name), <<$/>>, [global, trim]) of
+                    [ProductId, <<DeviceId:10/binary, _/binary>>] ->
+                        import_device_data(ChannelId, ProductId, DeviceId, Data);
+                    _ ->
+                        pass
+                end
+        end
+                end, #{}, Result).
+
+export_device_data(ChannelId, #{<<"objectId">> := DeviceId, <<"product">> := #{<<"objectId">> := ProductId}}, Query, NewData) ->
+%%    io:format("~s ~p Query = ~p.~n", [?FILE, ?LINE, Query]),
+    TableName = ?Table(DeviceId),
+    case dgiot_device_tdengine:get_history_data(ChannelId, ProductId, TableName, Query) of
+        {_TdNames, {ok, #{<<"results">> := TdResults}}} when length(TdResults) > 0 ->
+            NewTdResults =
+                lists:foldl(fun(Result, Acc) ->
+                    Acc ++ [Result]
+                            end, [], TdResults),
+            NewData ++ [{dgiot_utils:to_list(<<ProductId/binary, "/", DeviceId/binary, ".json">>), unicode:characters_to_binary(jsx:encode(#{<<"results">> => NewTdResults}))}];
+        _ ->
+            NewData
+    end.
+
+%% INSERT INTO _010e2df351._da06aff7f0 using _010e2df351._010e2df351 TAGS ('_844425383144878') VALUES  (now,null,6756.5,null,null,null);
+import_device_data(ChannelId, ProductId, DeviceId, TdData) ->
+    case TdData of
+        #{<<"results">> := TdResults} ->
+            transaction(ChannelId,
+                fun(_Context) ->
+                    case dgiot_device:lookup(DeviceId) of
+                        {ok, #{<<"devaddr">> := DevAddr}} ->
+                            case dgiot_bridge:get_product_info(ProductId) of
+                                {ok, #{<<"thing">> := Properties}} ->
+                                    lists:foldl(fun
+                                                    (#{<<"createdat">> := V} = Data, _Acc) ->
+                                                        NewV =
+                                                            case binary:split(V, <<$.>>, [global, trim]) of
+                                                                [NewV1, _] ->
+                                                                    NewV1;
+                                                                _ ->
+                                                                    V
+                                                            end,
+                                                        Createdat = dgiot_datetime:localtime_to_unixtime(dgiot_datetime:to_localtime(NewV)) * 1000,
+                                                        Object = dgiot_tdengine:format_data(ChannelId, ProductId, DevAddr, Properties, Data#{<<"createdat">> => Createdat}),
+                                                        dgiot_tdengine_channel:save_to_cache(ChannelId, Object);
+                                                    (Data, _Acc) ->
+                                                        Object = dgiot_tdengine:format_data(ChannelId, ProductId, DevAddr, Properties, Data),
+                                                        dgiot_tdengine_channel:save_to_cache(ChannelId, Object)
+                                                end, [], TdResults);
+                                _ ->
+                                    pass
+                            end;
+                        _ ->
+                            pass
+                    end
+                end);
+        _ ->
+            pass
+    end.
 
 transaction(Channel, Fun) ->
     case dgiot_channelx:call(?TYPE, Channel, config) of
@@ -92,7 +184,7 @@ query_object(Channel, TableName, Query) ->
     transaction(Channel,
         fun(Context) ->
             Database = dgiot_tdengine:get_database(Channel, maps:get(<<"db">>, Query, <<"">>)),
-            Sql = dgiot_tdengine_select:select(TableName, Query#{<<"channel">> => Channel,<<"db">> => Database}),
+            Sql = dgiot_tdengine_select:select(TableName, Query#{<<"channel">> => Channel, <<"db">> => Database}),
             dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_query, Sql)
         end).
 
@@ -195,7 +287,7 @@ format_data(ChannelId, ProductId, DevAddr, Properties, Data) ->
     Now = maps:get(<<"createdat">>, Data, now),
     NewValues = get_values(ProductId, Values, Now),
     dgiot_data:insert(?DGIOT_TD_THING_ETS, DeviceId, Values),
-    DB = get_database(ChannelId,ProductId),
+    DB = get_database(ChannelId, ProductId),
     #{
         <<"db">> => DB,
         <<"tableName">> => ?Table(DeviceId),
