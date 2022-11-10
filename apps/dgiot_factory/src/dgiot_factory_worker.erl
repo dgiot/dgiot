@@ -389,3 +389,45 @@ format_worker(Worker) ->
     Worker.
 
 
+
+%%record_worker_info(BatchProductId, BatchDeviceId, #{<<"quality">> := #{<<"type">> := Type}} = Payload, ChannelId, WorkerList, WorkTime, Num) ->
+%%    Quality = maps:get(<<"quality">>, maps:get(<<"quality">>, Payload, #{}), <<"合格"/utf8>>),
+%%    TypeData = case dgiot_data:get(?FACTORY_ORDER, {BatchProductId, BatchDeviceId, Type}) of
+%%                   not_find ->
+%%                       #{};
+%%                   R ->
+%%                       R
+%%               end,
+%%    OrderId = maps:get(<<"ordername">>, maps:get(<<"person">>, TypeData, #{}), <<"null">>),
+%%    _WorkShop = maps:get(<<"workshop">>, maps:get(Type, TypeData, #{}), <<"null">>),
+%%    Spec = maps:get(<<"spec">>, maps:get(Type, TypeData, #{}), <<"">>),
+%%    RollNum = maps:get(<<"rollnum">>, maps:get(<<"person">>, TypeData, #{}), <<"null">>),
+%%    lists:foldl(
+%%        fun(Worker, _) ->
+%%            case dgiot_data:get({ChannelId, worker}) of
+%%                not_find ->
+%%                    pass;
+%%                ProductId ->
+%%                    WorkerData = case dgiot_data:get(?WORKER, Worker) of
+%%                                     not_find ->
+%%                                         #{};
+%%                                     N ->
+%%                                         lists:nth(1, N)
+%%                                 end,
+%%                    ManufacData = #{
+%%%%                        <<"manufac_type">> => dgiot_utils:to_binary(Type),
+%%                        <<"manufac_quality">> => Quality,
+%%                        <<"manufac_orderid">> => OrderId,
+%%                        <<"manufac_spec">> => Spec,
+%%                        <<"manufac_num">> => Num,
+%%                        <<"manufac_worktime">> => WorkTime,
+%%                        <<"manufac_batchid">> => BatchDeviceId,
+%%                        <<"manufac_rollnum">> => RollNum,
+%%                        <<"manufac_type">> => dgiot_utils:to_binary(Type),
+%%                        <<"base_source">> => <<"质检数据"/utf8>>
+%%                    },
+%%                    NumData = dgiot_product_enum:turn_num(maps:merge(WorkerData, ManufacData), ProductId),
+%%                    dgiot_task:save_td(ProductId, Worker, NumData, #{})
+%%            end
+%%
+%%        end, [], WorkerList);

@@ -21,6 +21,7 @@
 -export([get_usertree/2, getalluser/1, clear_cache/2]).
 -export([get_zero_list/1, get_zero_binary/1]).
 -export([fix_model/1, get_worker/1, get_children/1, check_workteam/1]).
+-export([get_sum/1]).
 
 fix_model(ID) ->
     {ok, #{<<"thing">> := Model}} = dgiot_parse:get_object(<<"Product">>, ID),
@@ -268,3 +269,15 @@ clear_cache(BatchProduct, BatchDeviceId) ->
         fun(Type, _) ->
             dgiot_data:delete(?FACTORY_ORDER, {BatchProduct, BatchDeviceId, Type})
         end, [], DeviceTypeList).
+
+get_sum(BatchList) when is_list(BatchList)->
+    lists:foldl(
+        fun
+            (#{<<"PickNum">> := PickNum},Acc)->
+            Acc + dgiot_utils:to_int(PickNum);
+            (_,Acc)->
+                Acc
+    end,0,BatchList);
+
+get_sum(_) ->
+    0.

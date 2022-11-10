@@ -244,7 +244,7 @@ do_request(post_duplicate_shift, #{<<"product">> := ProductId, <<"sink_date">> :
         {error, Error} ->
             {error, Error};
         {ok, Channel} ->
-            case dgiot_factory_worker:duplicate_shift(SinkDate,Where, ProductId, Channel) of
+            case dgiot_factory_worker:duplicate_shift(SinkDate, Where, ProductId, Channel) of
                 {ok, Res} ->
                     {ok, #{<<"status">> => 0, msg => <<"操作成功"/utf8>>, <<"data">> => Res}};
                 _ ->
@@ -253,6 +253,12 @@ do_request(post_duplicate_shift, #{<<"product">> := ProductId, <<"sink_date">> :
 
             end
     end;
+do_request(put_sumpick, #{<<"BatchList">> := BatchList} = _Arg, _Context, _Req) ->
+    Sum = dgiot_factory_utils:get_sum(BatchList),
+    {ok, #{<<"status">> => 0, msg => <<"操作成功"/utf8>>, <<"data">> => #{<<"SumPick">> => Sum}}};
+do_request(put_materialapply_id, #{<<"id">> := DeviceId,<<"basedata">> := BaseData} = _Arg, _Context, _Req) ->
+    dgiot_material_channel:handle_material_apply(DeviceId,BaseData),
+    {ok, #{<<"status">> => 0, msg => <<"操作成功"/utf8>>, <<"data">> => #{}}};
 %%  服务器不支持的API接口
 do_request(_OperationId, _Args, _Context, _Req) ->
     io:format("~s ~p _Args = ~p  ~n", [?FILE, ?LINE, _Args]),

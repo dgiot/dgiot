@@ -20,15 +20,16 @@
 %% API
 -export([get_material_record/2, post_material/2]).
 -export([get_warehouse_material/4, put_warehouse_material/1]).
+-export([get_usable_material/1]).
 get_material_record(DeviceId, Depart) ->
     case dgiot_parse:get_object(<<"Device">>, DeviceId) of
         {ok, #{<<"basedata">> := #{<<"material">> := Material}}} ->
             DepartMaterial = get_depart_material(Material, Depart),
-            {ok, get_usable_material(DepartMaterial)};
+            {ok, DepartMaterial};
         _ ->
             case dgiot_hook:run_hook({factory, get_material}, [DeviceId]) of
                 {ok, [{ok, Material}]} ->
-                    {ok, get_usable_material(Material)};
+                    {ok, Material};
                 _ ->
                     error
             end
@@ -139,16 +140,16 @@ handle_warehouse(BatchId, Type, Number) ->
     NewWeight = dgiot_utils:to_float(Number),
     Num = case Type of
               <<"picking">> ->
-                  NewWeight;
-              <<"retriving">> ->
                   -NewWeight;
+              <<"retriving">> ->
+                  NewWeight;
               _ ->
                   0
           end,
     io:format("~s ~p BatchId = ~p  ~n", [?FILE, ?LINE, BatchId]),
     case dgiot_parse:get_object(<<"Device">>, BatchId) of
         {ok, #{<<"content">> := #{<<"FQty">> := FQty} = Res}} ->
-            Remaining = maps:get(<<"Remaining">>, Res, 0),
+            Remaining = maps:get(<<"Remaining">>, Res, FQty),
             NewRemaining = case Remaining + Num > FQty of
                                true ->
                                    FQty;

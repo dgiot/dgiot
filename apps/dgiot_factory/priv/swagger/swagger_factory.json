@@ -764,12 +764,106 @@
           "factory"
         ]
       }
+    },
+    "/sumpick": {
+      "put": {
+        "summary": "获取总数",
+        "security": [],
+        "description": "获取总数",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "BatchList",
+            "description": "list",
+            "type": "string",
+            "required": true
+          }
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "factory"
+        ]
+      }
+    },
+    "/materialApply": {
+      "put": {
+        "summary": "获取总数",
+        "security": [],
+        "description": "获取总数",
+        "parameters": [
+          {
+            "description": "更新设备管理的ID",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "description": "日历",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "basedata": {
+                  "description": "basedata",
+                  "type": "string"
+                }
+              }
+            }
+          }
+
+        ],
+        "consumes": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "factory"
+        ]
+      }
     }
   },
   "tags": [
     {
       "name": "factory",
-      "description": "数字工厂"
+      "description": "factory"
     }
   ]
 }

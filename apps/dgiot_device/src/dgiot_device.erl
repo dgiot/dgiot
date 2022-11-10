@@ -25,7 +25,7 @@
 -export([parse_cache_Device/1, sync_parse/1, get/2, post/1, post/2, put/1, save/1, save/2, lookup/1, lookup/2, delete/1, delete/2]).
 -export([save_profile/1, get_profile/1, get_profile/2, get_online/1, online/1, offline/1, offline_child/1, enable/1, disable/1]).
 -export([put_location/3, get_location/1, get_address/3]).
--export([get_acl/1, save_log/3, get_url/1, get_appname/1]).
+-export([get_acl/1,get_readonly_acl/1, save_log/3, get_url/1, get_appname/1]).
 
 parse_cache_Device(_ClasseName) ->
     dgiot_device_cache:parse_cache_Device(_ClasseName).
@@ -339,3 +339,16 @@ save_log(DeviceId, Payload, Domain) ->
             pass
     end.
 
+
+get_readonly_acl(DeviceId) ->
+    case dgiot_device_cache:lookup(DeviceId) of
+        {ok, #{<<"acl">> := AclList}} ->
+            lists:foldl(
+                fun(Role, Acc) ->
+                    Acc#{Role => #{
+                        <<"read">> => true,
+                        <<"write">> => false}}
+                end, #{}, AclList);
+        _ ->
+            #{}
+    end.
