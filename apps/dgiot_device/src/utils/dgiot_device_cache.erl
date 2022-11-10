@@ -90,7 +90,13 @@ post(Device) ->
     #{<<"longitude">> := Longitude, <<"latitude">> := Latitude} = put_location(Device),
     Devaddr = maps:get(<<"devaddr">>, Device),
     Product = maps:get(<<"product">>, Device),
-    ProductId = maps:get(<<"objectId">>, Product),
+    ProductId =
+        case Product of
+            #{<<"objectId">> := Id} ->
+                Id;
+            _ ->
+                Product
+        end,
     DeviceSecret = maps:get(<<"deviceSecret">>, Device, <<"oioojn">>),
     DeviceId = maps:get(<<"objectId">>, Device, dgiot_parse_id:get_deviceid(ProductId, Devaddr)),
     {Status, IsEnable} =
@@ -178,7 +184,6 @@ insert_mnesia(DeviceId, Acl, Status, Now, IsEnable, ProductId, Devaddr, DeviceSe
                 Addr
         end,
     dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(#{DeviceId => #{<<"status">> => NewStatus, <<"isEnable">> => IsEnable, <<"lastOnlineTime">> => Now, <<"address">> => Address, <<"location">> => NewLocation}})),
-%%    io:format("~s ~p Data = ~ts~n", [?FILE, ?LINE, jsx:encode(#{DeviceId => #{<<"status">> => NewStatus, <<"isEnable">> => IsEnable, <<"lastOnlineTime">> => Now, <<"address">> => Address}})]),
     dgiot_mnesia:insert(DeviceId, ['Device', Acl, Status, Now, IsEnable, dgiot_utils:to_atom(ProductId), Devaddr, DeviceSecret, Node, Longitude, Latitude]).
 
 %% 缓存设备的profile配置

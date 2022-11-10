@@ -75,8 +75,9 @@ handle_event(_EventId, Event, State) ->
     ?LOG(info, "channel ~p", [Event]),
     {ok, State}.
 
-handle_message({dlink_login, do_after, ProductId, Devaddr, DeviceId, _Ip}, State) ->
+handle_message({dlink_login, do_after, ProductId, Devaddr, _Ip}, State) ->
     timer:sleep(1 * 1000),
+    DeviceId = dgiot_parse_id:get_deviceid(ProductId,Devaddr),
     RequestTopic = <<"$dg/device/", ProductId/binary, "/", Devaddr/binary, "/properties">>,
     Payload = #{<<"cmd">> => <<"scan_printer">>, <<"data">> => #{}},
     dgiot_mqtt:publish(DeviceId, RequestTopic, jsx:encode(Payload)),
