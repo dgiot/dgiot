@@ -38,7 +38,7 @@ description() -> "Acl with Dlink".
 %%--------------------------------------------------------------------
 %% Internal functions
 %%-------------------------------------------------------------------
-do_check(#{peerhost := PeerHost}, _PubSub, _Topic)  when PeerHost == {127,0,0,1}  ->
+do_check(#{username := <<"dgiot">>, peerhost := PeerHost}, _PubSub, _Topic)  when PeerHost == {127,0,0,1}  ->
 %%    io:format("~s ~p ClientId: ~p _Topic ~p ~n", [?FILE, ?LINE, ClientId, _Topic]),
     allow;
 

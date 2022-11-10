@@ -24,7 +24,7 @@
 -export([parse_cache_Device/1, sync_parse/1, post/1, post/2, put/1, save/1, save/2, save_subdevice/2, get_subdevice/2, lookup/1, lookup/2, delete/1, delete/2]).
 -export([get_profile/1, get_profile/2, get_online/1, online/1, offline/1, offline_child/1, enable/1, disable/1, save_profile/1]).
 -export([location/3, get_location/1, get_address/3]).
-
+-export([put_content/1,put_profile/1]).
 init_ets() ->
     dgiot_data:init(?DGIOT_LOCATION_ADDRESS).
 
@@ -85,8 +85,8 @@ save_(#{<<"objectId">> := DeviceId, <<"devaddr">> := Devaddr, <<"product">> := P
     insert_mnesia(DeviceId, dgiot_role:get_acls(Device), Status, UpdatedAt, IsEnable, ProductId, Devaddr, DeviceSecret, node(), Longitude, Latitude).
 
 post(Device) ->
-    put_content(Device),
-    put_profile(Device),
+%%    put_content(Device),
+%%    put_profile(Device),
     #{<<"longitude">> := Longitude, <<"latitude">> := Latitude} = put_location(Device),
     Devaddr = maps:get(<<"devaddr">>, Device),
     Product = maps:get(<<"product">>, Device),

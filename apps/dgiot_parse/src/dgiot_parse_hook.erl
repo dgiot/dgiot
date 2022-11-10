@@ -36,6 +36,7 @@
     get_trigger/2,
     add_all_trigger/1,
     do_hook/2,
+    do_hook/1,
     notify/6,
     api_hook/1
 ]).
@@ -58,29 +59,30 @@ subscribe(Table, Method, Channel, Keys) ->
     add_hook({Table, Method}).
 
 add_hook(Key) ->
-    Fun =
-        fun
-            ({'after', get, Token, Class, _QueryData, ResBody}) ->
-                notify('after', get, Token, Class, <<"ObjectId">>, dgiot_utils:to_map(ResBody)),
-                receive_ack(ResBody);
-            ({'after', get, Token, Class, _ObjectId, _QueryData, ResBody}) ->
-                notify('after', get, Token, Class, <<"ObjectId">>, dgiot_utils:to_map(ResBody)),
-                receive_ack(ResBody);
-            ({'after', post, Token, Class, QueryData, ResBody}) ->
-                notify('after', post, Token, Class, <<"ObjectId">>, dgiot_utils:to_map(QueryData)),
-                {ok, ResBody};
-            ({'after', put, Token, Class, ObjectId, QueryData, ResBody}) ->
-                Map = dgiot_utils:to_map(QueryData),
-                <<ObjectId1:10/binary, _/binary>> = ObjectId,
-                notify('after', put, Token, Class, ObjectId, Map#{<<"objectId">> => ObjectId1}),
-                {ok, ResBody};
-            ({'after', delete, Token, Class, ObjectId, _QueryData, ResBody}) ->
-                notify('after', delete, Token, Class, ObjectId, ObjectId),
-                {ok, ResBody};
-            (_) ->
-                {ok, []}
-        end,
-    dgiot_hook:add(one_for_one, Key, Fun).
+    dgiot_hook:add(one_for_one, Key, fun dgiot_parse_hook:do_hook/1).
+
+do_hook({'after', get, Token, Class, _QueryData, ResBody}) ->
+    notify('after', get, Token, Class, <<"ObjectId">>, dgiot_utils:to_map(ResBody)),
+    receive_ack(ResBody);
+do_hook({'after', get, Token, Class, _ObjectId, _QueryData, ResBody}) ->
+    notify('after', get, Token, Class, <<"ObjectId">>, dgiot_utils:to_map(ResBody)),
+    receive_ack(ResBody);
+
+do_hook({'after', post, Token, Class, QueryData, ResBody}) ->
+    notify('after', post, Token, Class, <<"ObjectId">>, dgiot_utils:to_map(QueryData)),
+    {ok, ResBody};
+
+do_hook({'after', put, Token, Class, ObjectId, QueryData, ResBody}) ->
+    Map = dgiot_utils:to_map(QueryData),
+    <<ObjectId1:10/binary, _/binary>> = ObjectId,
+    notify('after', put, Token, Class, ObjectId, Map#{<<"objectId">> => ObjectId1}),
+    {ok, ResBody};
+
+do_hook({'after', delete, Token, Class, ObjectId, _QueryData, ResBody}) ->
+    notify('after', delete, Token, Class, ObjectId, ObjectId),
+    {ok, ResBody};
+do_hook(_R) ->
+    {ok, []}.
 
 publish(Pid, Payload) ->
     Pid ! {sync_parse, Payload}.
@@ -90,13 +92,13 @@ receive_ack(ResBody) ->
     receive
         {sync_parse, NewResBody} when is_map(NewResBody) ->
 %%            io:format("~s ~p ~p  ~n", [?FILE, ?LINE, length(maps:to_list(NewResBody))]),
-            {ok, jsx:encode(NewResBody)};
+            {ok, jsx:encode(maps:remove(<<"id">>, NewResBody))};
         {sync_parse, NewResBody} ->
 %%            io:format("~s ~p ~p  ~n", [?FILE, ?LINE, NewResBody]),
             {ok, NewResBody};
         {error} ->
             {ok, ResBody}
-    after 5000 ->  %% 5秒消息没有响应则用原响应报文返回
+    after 2000 ->  %% 2秒消息没有响应则用原响应报文返回
         {ok, ResBody}
     end.
 
@@ -122,7 +124,7 @@ notify(Type, Method, Token, Class, ObjectId, Data) ->
         fun
             ({ChannelId, [<<"*">>]}) ->
                 dgiot_channelx:do_message(ChannelId, {sync_parse, self(), Type, Method, Token, Class, Data});
-            ({ChannelId, Rule}) when Method == put andalso is_list(Rule)->
+            ({ChannelId, Rule}) when Method == put andalso is_list(Rule) ->
                 List = maps:keys(Data),
                 %% map 比较
                 case List -- Rule of
@@ -145,6 +147,15 @@ parse_sqlrule(_Rule, _Data) ->
 
 do_request_hook(Type, [<<"classes">>, Class, ObjectId], Method, Token, QueryData, ResBody) ->
     do_hook({<<Class/binary, "/*">>, Method}, {Type, Method, Token, Class, ObjectId, QueryData, ResBody});
+do_request_hook(Type, [<<"classes">>, Class], Method, Token, QueryData, ResBody) when size(Class) > 50 ->
+    NewClass =
+        case re:run(Class, <<"([^?]+)">>, [global, {capture, all_but_first, binary}]) of
+            {match, List} ->
+                lists:nth(1, lists:flatten(List));
+            _ ->
+                Class
+        end,
+    do_hook({NewClass, Method}, {Type, Method, Token, NewClass, QueryData, ResBody});
 do_request_hook(Type, [<<"classes">>, Class], Method, Token, QueryData, ResBody) ->
     do_hook({Class, Method}, {Type, Method, Token, Class, QueryData, ResBody});
 %% 批处理只做异步通知，不做同步hook
@@ -312,12 +323,14 @@ do_put(<<"put">>, Token, <<"/iotapi/classes/", Tail/binary>>, #{<<"id">> := Id} 
     [ClassName | _] = re:split(Tail, <<"/">>),
 %%    io:format("~s ~p put Id = ~p ~n", [?FILE, ?LINE, Id]),
     notify('before', put, Token, ClassName, Id, Args),
+%%    io:format("~s ~p put Id = ~p ~n", [?FILE, ?LINE, Id]),
+    NewArgs = receive_put(Args),
     case dgiot_parse:get_object(ClassName, Id) of
         {ok, Class} ->
-            Keys = maps:keys(Args),
-            dgiot_map:merge(maps:with([Keys], Class), maps:without([<<"id">>], Args));
+            Keys = maps:keys(NewArgs),
+            dgiot_map:merge(maps:with([Keys], Class), maps:without([<<"id">>], NewArgs));
         _ ->
-            Args
+            maps:without([<<"id">>], NewArgs)
     end;
 
 %% 适配amis iotapi
@@ -337,3 +350,18 @@ do_put(<<"put">>, Token, <<"/iotapi/amis/", Tail/binary>>, #{<<"id">> := Id} = A
 do_put(_, _Token, _ClassName, Args) ->
 %%    io:format("~s ~p put Args = ~p ~n", [?FILE, ?LINE, Args]),
     Args.
+
+%% 同步等待消息处理
+receive_put(ResBody) ->
+    receive
+        {sync_parse, NewResBody} when is_map(NewResBody) ->
+            io:format("~s ~p ~p  ~n", [?FILE, ?LINE, length(maps:to_list(NewResBody))]),
+            {ok, jsx:encode(NewResBody)};
+        {sync_parse, NewResBody} ->
+            io:format("~s ~p ~p  ~n", [?FILE, ?LINE, NewResBody]),
+            {ok, NewResBody};
+        {error} ->
+            {ok, ResBody}
+    after 500 ->  %% 5秒消息没有响应则用原响应报文返回
+        {ok, ResBody}
+    end.
