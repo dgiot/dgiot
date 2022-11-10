@@ -320,32 +320,10 @@ get_id(OperationID) ->
 
 %% todo 多级json的 merge修改
 do_put(<<"put">>, Token, <<"/iotapi/classes/", Tail/binary>>, #{<<"id">> := Id} = Args) ->
-    [ClassName | _] = re:split(Tail, <<"/">>),
-%%    io:format("~s ~p put Id = ~p ~n", [?FILE, ?LINE, Id]),
-    notify('before', put, Token, ClassName, Id, Args),
-%%    io:format("~s ~p put Id = ~p ~n", [?FILE, ?LINE, Id]),
-    NewArgs = receive_put(Args),
-    case dgiot_parse:get_object(ClassName, Id) of
-        {ok, Class} ->
-            Keys = maps:keys(NewArgs),
-            dgiot_map:merge(maps:with([Keys], Class), maps:without([<<"id">>], NewArgs));
-        _ ->
-            maps:without([<<"id">>], NewArgs)
-    end;
-
+    do_put_(Id,Args,Token,Tail);
 %% 适配amis iotapi
 do_put(<<"put">>, Token, <<"/iotapi/amis/", Tail/binary>>, #{<<"id">> := Id} = Args) ->
-    [ClassName | _] = re:split(Tail, <<"/">>),
-    notify('before', put, Token, ClassName, Id, Args),
-    case dgiot_parse:get_object(ClassName, Id) of
-        {ok, Class} ->
-            Keys = maps:keys(Args),
-            Res = dgiot_map:merge(maps:with(Keys, Class), maps:without([<<"id">>], Args)),
-%%            io:format("~s ~p put Res = ~p ~n", [?FILE, ?LINE, Res]),
-            Res;
-        _ ->
-            Args
-    end;
+    do_put_(Id,Args,Token,Tail);
 
 do_put(_, _Token, _ClassName, Args) ->
 %%    io:format("~s ~p put Args = ~p ~n", [?FILE, ?LINE, Args]),
@@ -355,13 +333,23 @@ do_put(_, _Token, _ClassName, Args) ->
 receive_put(ResBody) ->
     receive
         {sync_parse, NewResBody} when is_map(NewResBody) ->
-            io:format("~s ~p ~p  ~n", [?FILE, ?LINE, length(maps:to_list(NewResBody))]),
-            {ok, jsx:encode(NewResBody)};
+            {ok,NewResBody};
         {sync_parse, NewResBody} ->
             io:format("~s ~p ~p  ~n", [?FILE, ?LINE, NewResBody]),
             {ok, NewResBody};
         {error} ->
             {ok, ResBody}
-    after 500 ->  %% 5秒消息没有响应则用原响应报文返回
+    after 2000 ->  %% 2秒消息没有响应则用原响应报文返回
         {ok, ResBody}
+    end.
+do_put_(Id,Args,Token,Tail)->
+    [ClassName | _] = re:split(Tail, <<"/">>),
+    notify('before', put, Token, ClassName, Id, Args),
+    {ok,NewArgs} = receive_put(Args),
+    case dgiot_parse:get_object(ClassName, Id) of
+        {ok, Class} ->
+            Keys = maps:keys(NewArgs),
+            dgiot_map:merge(maps:with([Keys], Class), maps:without([<<"id">>], NewArgs));
+        _ ->
+            maps:without([<<"id">>], NewArgs)
     end.
