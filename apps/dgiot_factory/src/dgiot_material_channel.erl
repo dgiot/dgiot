@@ -28,8 +28,6 @@
 
 %% Channel callback
 -export([init/3, handle_init/1, handle_event/3, handle_message/2, stop/3]).
--export([handle_material_apply/2]).
--export([handle_apply_form/2]).
 %% 注册通道类型
 -channel_type(#{
     cType => ?TYPE,
@@ -89,7 +87,6 @@ handle_message({sync_parse, _Pid, 'before', put, _Token, <<"Device">>, #{<<"id">
             {ok, #{<<"productid">> := ProductId}} ->
                 case catch dgiot_hook:run_hook({sync_parse, before, put, ProductId}, {QueryData, ProductId, State}) of
                     {ok, [Res]} ->
-%%                        io:format("~s ~p Res = ~ts.~n", [?FILE, ?LINE, unicode:characters_to_list(jsx:encode(Res))]),
                         Res;
                     _ ->
                         QueryData
@@ -100,142 +97,10 @@ handle_message({sync_parse, _Pid, 'before', put, _Token, <<"Device">>, #{<<"id">
     dgiot_parse_hook:publish(_Pid, NewQueryData),
     {ok, State};
 
-
-%%handle_message({sync_parse, _Pid, 'before', put, _Token, <<"Device">>, #{<<"basedata">> := _BaseData,
-%%    <<"objectId">> := DeviceId}},
-%%    State) ->
-%%    io:format("~s ~p DeviceId = ~p ~n", [?FILE, ?LINE, DeviceId]),
-%%    handle_apply_form(#{a => a}, DeviceId),
-%%    {ok, State};
-
-
-%%handle_message({sync_parse, _Pid, 'after', put, _Token, <<"Device">>, _QueryData},
-%%    State) ->
-%%%%    io:format("~s ~p Message = ~p ~n", [?FILE, ?LINE, Message]),
-%%    {ok, State};
 handle_message({_, _Pid, _, _, _Token, <<"Device">>, _QueryData} = Message, State) ->
-%%    io:format("~s ~p Message = ~p ~n", [?FILE, ?LINE, Message]),
-%%    io:format("~s  ~p  QueryData= ~ts ~n", [?FILE, ?LINE, unicode:characters_to_list(jiffy:encode(_QueryData))]),
     ?LOG(debug, "channel ~p", [Message]),
     {ok, State}.
 
 stop(ChannelType, ChannelId, _State) ->
     ?LOG(warning, "Channel[~p,~p] stop", [ChannelType, ChannelId]),
     ok.
-
-handle_apply_form(#{<<"Status">> := 21, <<"SumPick">> := -1, <<"PickList">> := BatchList} = BaseData, DeviceId) when is_list(BatchList) ->
-    {NewList, Sum} = lists:foldl(
-        fun
-            (#{<<"PickNum">> := PickNum, <<"objectId">> := MaterialId} = Batch, {List, Sum}) ->
-                case dgiot_parse:get_object(<<"Device">>, MaterialId) of
-                    {ok, #{<<"content">> := #{<<"FQty">> := FQty} = MaterialContent}} ->
-                        UnConfirm = maps:get(<<"UnConform">>, MaterialContent, 0),
-                        NewUnConfirm = UnConfirm + PickNum,
-                        Remaining = maps:get(<<"Remaining">>, MaterialContent, FQty),
-                        NewRemaining = Remaining - dgiot_utils:to_int(PickNum),
-                        NewContent = MaterialContent#{<<"Remaining">> => NewRemaining, <<"unConform">> => NewUnConfirm},
-                        dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"content">> => NewContent}),
-                        {List ++ [Batch], Sum + PickNum};
-                    _ ->
-                        io:format("~s ~p MaterialId = ~p ~n", [?FILE, ?LINE, MaterialId]),
-                        {List, Sum}
-                end;
-            (_, Acc) ->
-                Acc
-        end, {[], 0}, BatchList),
-    NewBaseData = dgiot_map:merge(BaseData, #{<<"BatchList">> => NewList, <<"SumPick">> => Sum}),
-    io:format("~s ~p SumPick = ~p ~n", [?FILE, ?LINE, Sum]),
-    dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"basedata">> => NewBaseData});
-
-%%handle_apply_form(#{<<"Status">> := 0, <<"PickList">> := BatchList} = BaseData, DeviceId) ->
-%%    lists:foldl(
-%%        fun
-%%            (#{<<"PickNum">> := PickNum, <<"objectId">> := MaterialId} = Batch, {List, Sum}) ->
-%%                case dgiot_parse:get_object(<<"Device">>, MaterialId) of
-%%                    {ok, #{<<"content">> := #{<<"FQty">> := FQty} = MaterialContent}} ->
-%%                        UnConfirm = maps:get(<<"UnConform">>, MaterialContent, 0),
-%%                        NewUnConfirm = UnConfirm - PickNum,
-%%                        Remaining = maps:get(<<"Remaining">>, MaterialContent, FQty),
-%%                        NewRemaining = Remaining - dgiot_utils:to_int(PickNum),
-%%                        NewContent = MaterialContent#{<<"Remaining">> => NewRemaining, <<"unConform">> => NewUnConfirm},
-%%                        dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"content">> => NewContent}),
-%%                        {List ++ [Batch], Sum + PickNum};
-%%                    _ ->
-%%                        io:format("~s ~p MaterialId = ~p ~n", [?FILE, ?LINE, MaterialId]),
-%%                        {List, Sum}
-%%                end;
-%%            (_, Acc) ->
-%%                Acc
-%%        end, {[], 0}, BatchList);
-
-handle_apply_form(_, _) ->
-    pass.
-
-handle_material_apply(DeviceId, #{<<"Status">> := <<"21">>, <<"PickList">> := BatchList} = BaseData) when is_list(BatchList) ->
-    {NewList, Sum} = lists:foldl(
-        fun
-            (#{<<"PickNum">> := PickNum, <<"objectId">> := MaterialId} = Batch, {List, Sum}) ->
-                case dgiot_parse:get_object(<<"Device">>, MaterialId) of
-                    {ok, #{<<"content">> := #{<<"FQty">> := FQty} = MaterialContent}} ->
-                        io:format("~s ~p PickNum = ~p ~n", [?FILE, ?LINE, PickNum]),
-                        UnConfirm = maps:get(<<"UnConform">>, MaterialContent, 0),
-                        NewUnConfirm = UnConfirm + PickNum,
-                        Remaining = maps:get(<<"Remaining">>, MaterialContent, FQty),
-                        NewRemaining = Remaining - dgiot_utils:to_int(PickNum),
-                        NewContent = MaterialContent#{<<"Remaining">> => NewRemaining, <<"unConform">> => NewUnConfirm},
-                        dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"content">> => NewContent}),
-                        {List ++ [Batch], Sum + PickNum};
-                    _ ->
-                        io:format("~s ~p MaterialId = ~p ~n", [?FILE, ?LINE, MaterialId]),
-                        {List, Sum}
-                end;
-            (_, Acc) ->
-                Acc
-        end, {[], 0}, BatchList),
-    NewBaseData = dgiot_map:merge(BaseData, #{<<"PickList">> => NewList, <<"SumPick">> => Sum}),
-    io:format("~s ~p SumPick = ~p ~n", [?FILE, ?LINE, Sum]),
-    dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"basedata">> => NewBaseData});
-
-
-handle_material_apply(DeviceId, #{<<"Status">> := <<"11">>, <<"PickList">> := BatchList} = BaseData) ->
-    lists:foldl(
-        fun
-            (#{<<"PickNum">> := PickNum, <<"objectId">> := MaterialId}, _) ->
-                case dgiot_parse:get_object(<<"Device">>, MaterialId) of
-                    {ok, #{<<"content">> := #{<<"FQty">> := FQty} = MaterialContent}} ->
-                        UnConfirm = maps:get(<<"UnConform">>, MaterialContent, 0),
-                        NewUnConfirm = UnConfirm - PickNum,
-                        Remaining = maps:get(<<"Remaining">>, MaterialContent, FQty),
-                        NewRemaining = Remaining + dgiot_utils:to_int(PickNum),
-                        NewContent = MaterialContent#{<<"Remaining">> => NewRemaining, <<"unConform">> => NewUnConfirm},
-                        dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"content">> => NewContent});
-                    _ ->
-                        pass
-                end;
-            (_, _) ->
-                pass
-        end, [], BatchList),
-    NewBaseData = dgiot_map:merge(BaseData, #{<<"BatchList">> => [], <<"SumPick">> => -1}),
-    dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"basedata">> => NewBaseData});
-
-handle_material_apply(DeviceId, #{<<"Status">> := 0, <<"PickList">> := BatchList, <<"SumPick">> := _SumPick} = BaseData) ->
-    lists:foldl(
-        fun
-            (#{<<"PickNum">> := PickNum, <<"objectId">> := MaterialId}, _) ->
-                case dgiot_parse:get_object(<<"Device">>, MaterialId) of
-                    {ok, #{<<"content">> := MaterialContent}} ->
-                        UnConfirm = maps:get(<<"UnConform">>, MaterialContent, 0),
-                        NewUnConfirm = UnConfirm - PickNum,
-                        NewContent = MaterialContent#{<<"unConform">> => NewUnConfirm},
-                        dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"content">> => NewContent});
-                    _ ->
-                        pass
-                end;
-            (_, _) ->
-                pass
-        end, [], BatchList),
-    dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"basedata">> => BaseData}),
-    dgiot_hook:run_hook();
-handle_material_apply(_, BaseData) ->
-    io:format("~s ~p BaseData = ~p  ~n", [?FILE, ?LINE, BaseData]),
-    pass.
