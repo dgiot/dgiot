@@ -95,14 +95,7 @@ merge(Data, NewData) ->
                 {ok, Value} when is_map(Value) and is_map(NewValue) ->
                     Acc#{NewKey => merge(Value, NewValue)};
                 {ok, Value} when is_list(Value) and is_list(NewValue) ->
-                    case {Value, NewValue} of
-                        {[Map], [NewMap]} when is_map(Map) and is_map(NewMap) ->
-                            First = lists:nth(1, Value),
-                            NewFirst = lists:nth(1, NewValue),
-                            Acc#{NewKey => [merge(First, NewFirst)]};
-                        _ ->
-                            Acc#{NewKey => lists:merge(Value, NewValue)}
-                    end;
+                    Acc#{NewKey => lists:merge(Value, NewValue)};
                 _ ->
                     Acc#{NewKey => NewValue}
             end
