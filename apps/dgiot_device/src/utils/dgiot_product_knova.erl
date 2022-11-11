@@ -366,7 +366,7 @@ save_Product_konva(ProductId) ->
     end.
 
 get_stage(ProductId) ->
-    ViewId = dgiot_parse_id:get_viewid(ProductId, <<"topo">>, <<"Product">>, ProductId),
+    ViewId = dgiot_parse_id:get_viewid(ProductId, <<"Topo">>, <<"Product">>, ProductId),
     case dgiot_parse:get_object(<<"View">>, ViewId) of
         {ok, #{<<"data">> := #{<<"konva">> := #{<<"Stage">> := Stage}}}} ->
             {ok, Stage};
