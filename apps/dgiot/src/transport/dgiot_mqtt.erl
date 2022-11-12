@@ -94,7 +94,7 @@ has_routes(Topic) ->
 
 %% 根据clientid动态订阅topic
 subscribe_mgmt(ClientId, Topic) ->
-    timer:sleep(1),
+    timer:sleep(100),
     emqx_mgmt:subscribe(ClientId, [{Topic, #{qos => 0}}]).
 
 %% 根据clientid动态取消订阅topic
@@ -104,12 +104,12 @@ unsubscribe_mgmt(ClientId, Topic) ->
 
 subscribe(Topic) ->
     Options = #{qos => 0},
-    timer:sleep(1),
+    timer:sleep(100),
     emqx:subscribe(Topic, dgiot_utils:to_binary(self()), Options).
 
 %% 根据clientid动态订阅topic
 subscribe(ClientId, TopicFilter) ->
-    timer:sleep(1),
+    timer:sleep(100),
     case emqx_broker_helper:lookup_subpid(ClientId) of
         Pid when is_pid(Pid) ->
             subscribe(TopicFilter, ClientId, Pid, subopts());

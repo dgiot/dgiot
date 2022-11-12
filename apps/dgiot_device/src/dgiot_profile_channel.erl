@@ -168,7 +168,9 @@ handle_message({sync_parse, _Pid, 'before', put, _Token, <<"Device">>, #{<<"id">
                         Res;
                     _ ->
                         QueryData
-                end
+                end;
+            _->
+                QueryData
         end,
 %%    io:format("~s ~p Template = ~ts ~n", [?FILE, ?LINE, unicode:characters_to_list(jiffy:encode(Template))]),
     dgiot_device_profile:put('before', NewQueryData),
