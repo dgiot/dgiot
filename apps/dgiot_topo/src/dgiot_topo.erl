@@ -98,7 +98,7 @@ send_topo({NodeType, NodeId}, Token) ->
 get_que(DashboardId) ->
     case dgiot_parse:get_object(<<"View">>, DashboardId) of
         {ok, #{<<"data">> := #{<<"konva">> := #{<<"Stage">> := Stage}}}} ->
-            Rects = dgiot_product_knova:get_nodes(Stage, [<<"Rect">>]),
+            Rects = dgiot_product_knova:get_nodes(Stage, [<<"Rect">>, <<"Image">>]),
             maps:fold(
                 fun
                     (NodeId, #{<<"name">> := <<"vuecomponent">>, <<"source">> := <<"mqtt">>, <<"type">> := NodeType}, Acc) ->
