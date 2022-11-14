@@ -25,7 +25,7 @@
 -export([transaction/2, format_data/5]).
 -export([get_reportdata/3]).
 -export([export/2, import/2, save_tdpools/1, tdpool_connect/1]).
--export([save_sql/1]).
+-export([save_sql/1, get_values/3]).
 
 %% dgiot_tdengine:export().
 export(ChannelId, #{<<"deviceid">> := DeviceId} = Body) ->

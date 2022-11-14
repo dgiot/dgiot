@@ -173,7 +173,12 @@ handle_message({sync_parse, Pid, 'after', get, Token, <<"Device">>, #{<<"results
         not_find ->
             pass;
         _ ->
-            dgiot_mqtt:subscribe_route_key(DeviceList, SessionToken, devicestate)
+            Topics =
+                lists:foldl(fun(X, Acc) ->
+                    Topic = <<"$dg/user/devicestate/", X/binary, "/report">>,
+                    Acc ++ [Topic]
+                            end, [], DeviceList),
+            dgiot_mqtt:subscribe_route_key(Topics, SessionToken)
     end,
     dgiot_parse_hook:publish(Pid, ResBody#{<<"results">> => NewResults}),
     {ok, State};
