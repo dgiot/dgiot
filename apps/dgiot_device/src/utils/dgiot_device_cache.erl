@@ -33,8 +33,9 @@ parse_cache_Device(_ClassName) ->
 %%    io:format("~s ~p ~p ~n", [?FILE, ?LINE, ClassName]),
     dgiot_product:load_cache(),
     Success = fun(Page) ->
-        lists:map(fun(Device) ->
+        lists:map(fun(#{<<"devaddr">> := Devaddr} = Device) ->
 %%            save_profile(Device),
+            io:format("Devaddr ~p ~n",[Devaddr]),
             dgiot_device:save(Device)
                   end, Page)
               end,
@@ -43,7 +44,7 @@ parse_cache_Device(_ClassName) ->
         <<"keys">> => [<<"ACL">>, <<"updatedAt">>, <<"devaddr">>, <<"status">>, <<"isEnable">>, <<"profile">>, <<"product">>, <<"location">>, <<"deviceSecret">>],
         <<"where">> => #{}
     },
-    dgiot_parse_loader:start(<<"Device">>, Query, 0, 500, 1000000, Success).
+    dgiot_parse_loader:start(<<"Device">>, Query, 0, 100, 1000000, Success).
 
 save(ProductId, DevAddr) ->
     DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),

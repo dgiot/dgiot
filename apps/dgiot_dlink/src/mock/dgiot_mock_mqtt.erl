@@ -18,11 +18,10 @@
 -include_lib("dgiot/include/logger.hrl").
 -include_lib("dgiot/include/dgiot_client.hrl").
 
--export([childspec/2,start/3]).
+-export([childspec/2, start/3]).
 
 %% API
 -export([init/1, handle_cast/2, handle_call/3, handle_info/2, terminate/2, code_change/3]).
-
 
 childspec(ChannelId, ChannelArgs) ->
     Options = #{
@@ -37,8 +36,20 @@ childspec(ChannelId, ChannelArgs) ->
     dgiot_client:register(ChannelId, mqtt_client_sup, Args).
 
 %%  callback
-init(#dclient{channel = ChannelId} = State) ->
-    {ok, State#dclient{channel = dgiot_utils:to_binary(ChannelId)}}.
+init(#dclient{channel = ChannelId, child = #{<<"endtime">> := EndTime1, <<"starttime">> := StartTime1} = Child} = State) ->
+    Freq = dgiot_utils:to_int(maps:get(<<"freq">>, Child, 5)),
+    StartTime = dgiot_utils:to_int(StartTime1),
+    EndTime = dgiot_utils:to_int(EndTime1),
+    NextTime = dgiot_client:get_nexttime(StartTime, Freq + 5),
+    Count = dgiot_client:get_count(StartTime, EndTime, Freq),
+    Rand =
+        case maps:get(<<"rand">>, Child, true) of
+            true ->
+                dgiot_client:get_rand(Freq);
+            _ ->
+                0
+        end,
+    {ok, State#dclient{channel = dgiot_utils:to_binary(ChannelId), clock = #dclock{nexttime = NextTime + Rand, freq = Freq, count = Count, round = 0}}}.
 
 handle_call(_Request, _From, State) ->
     {reply, ok, State}.
@@ -46,9 +57,11 @@ handle_call(_Request, _From, State) ->
 handle_cast(_Request, State) ->
     {noreply, State}.
 
-handle_info({connect, Client}, #dclient{channel = ChannelId, client = ClientId} = Dclient) ->
-    emqtt:subscribe(Client, {<<ClientId/binary, "/#">>, 1}), % cloud to edge
-    dgiot_bridge:send_log(ChannelId, "~s ~p  ~p ~n", [?FILE, ?LINE, jsx:encode(#{<<"network">> => <<"connect">>})]),
+handle_info({connect, Pid}, #dclient{channel = ChannelId, client = <<ProductId:10/binary, "_", DevAddr/binary>>} = Dclient) ->
+    FirmwareTopic = <<"$dg/thing/", ProductId/binary, "/", DevAddr/binary, "/firmware/report">>,
+    emqtt:publish(Pid, FirmwareTopic, jiffy:encode(#{<<"devaddr">> => DevAddr}), 1),  % cloud to edge
+    ProfileTopic = <<"$dg/device/", ProductId/binary, "/", DevAddr/binary, "/profile">>,
+    emqtt:subscribe(Pid, ProfileTopic, 1),
     update(ChannelId),
     {noreply, Dclient};
 
@@ -56,9 +69,23 @@ handle_info(disconnect, #dclient{channel = ChannelId} = Dclient) ->
     dgiot_bridge:send_log(ChannelId, "~s ~p  ~p ~n", [?FILE, ?LINE, jsx:encode(#{<<"network">> => <<"disconnect">>})]),
     {noreply, Dclient};
 
+
+
+handle_info(next_time, #dclient{channel = Channel, client = <<ProductId:10/binary, "_", DevAddr/binary>> = Client, userdata = UserData,
+    clock = #dclock{round = Round, nexttime = NextTime, count = Count, freq = Freq} = Clock} = Dclient) ->
+    dgiot_client:stop(Channel, Client, Count), %% ¼ì²éÊÇ·ñÐèÒªÍ£Ö¹ÈÎÎñ
+    NewNextTime = dgiot_client:get_nexttime(NextTime, Freq),
+    NewRound = Round + 1,
+    PayLoad = lists:foldl(fun(Key, Acc) ->
+        Acc#{Key => erlang:round(rand:uniform() * 60 * 1 + 1) * 1000}
+                          end, #{}, dgiot_product:get_keys(ProductId)),
+    Topic = <<"$dg/thing/", ProductId/binary, "/", DevAddr/binary, "/properties/report">>,
+    dgiot_mqtt_client:publish(UserData, Topic, jiffy:encode(PayLoad), 0),
+    {noreply, Dclient#dclient{clock = Clock#dclock{nexttime = NewNextTime, count = Count - 1, round = NewRound}}};
+
 handle_info({publish, #{payload := Payload, topic := Topic} = _Msg}, #dclient{channel = ChannelId} = State) ->
     io:format("~s ~p ChannelId ~p Topic ~p  Payload ~p  ~n", [?FILE, ?LINE, ChannelId, Topic, Payload]),
-    dgiot_bridge:send_log(ChannelId, "cloud to edge: Topic ~p Payload ~p ~n", [Topic, Payload]),
+%%    dgiot_bridge:send_log(ChannelId, "cloud to edge: Topic ~p Payload ~p ~n", [Topic, Payload]),
 %%    dgiot_mqtt:publish(ChannelId, Topic, Payload),
     {noreply, State};
 
@@ -87,11 +114,9 @@ code_change(_OldVsn, Dclient, _Extra) ->
 update(ChannelId) ->
     dgiot_data:insert({<<"mqtt_online">>, dlink_metrics}, dgiot_client:count(ChannelId)).
 
-
-start(ChannelId, DeviceId, #{<<"auth">> := <<"ProductSecret">>}) ->
+start(ChannelId, DeviceId, #{<<"auth">> := <<"ProductSecret">>} = Mock) ->
     case dgiot_device:lookup(DeviceId) of
         {ok, #{<<"devaddr">> := DevAddr, <<"productid">> := ProductId}} ->
-
             Options = #{
                 host => "127.0.0.1",
                 port => 1883,
@@ -100,8 +125,7 @@ start(ChannelId, DeviceId, #{<<"auth">> := <<"ProductSecret">>}) ->
                 password => binary_to_list(dgiot_product:get_productSecret(ProductId)),
                 clean_start => false
             },
-%%            io:format("~s ~p DeviceId ~p DevAddr ~p ", [?FILE, ?LINE, DeviceId, DevAddr]),
-            dgiot_client:start(ChannelId, <<ProductId/binary, "_", DevAddr/binary>>, #{<<"options">> => Options});
+            dgiot_client:start(ChannelId, <<ProductId/binary, "_", DevAddr/binary>>, #{<<"options">> => Options, <<"child">> => Mock});
         _ ->
             #{}
     end;

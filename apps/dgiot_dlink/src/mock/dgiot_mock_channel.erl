@@ -75,16 +75,15 @@ handle_event(_EventId, _Event, State) ->
 handle_message({sync_parse, _Pid, 'after', put, _Token, <<"Device">>, #{<<"profile">> := #{<<"mock">> := #{
     <<"enable">> := true, <<"transport">> := <<"mqtt">>} = Mock}, <<"objectId">> := DeviceId}},
         #state{id = ChannelId} = State) ->
-%%    io:format("~s ~p DeviceId ~p Mock ~p", [?FILE, ?LINE, DeviceId, Mock]),
+%%    io:format("~s ~p DeviceId = ~p.~n", [?FILE, ?LINE, DeviceId]),
     dgiot_mock_mqtt:start(ChannelId, DeviceId, Mock),
     {ok, State};
 
 handle_message({sync_parse, _Pid, 'after', put, _Token, <<"Device">>, #{<<"profile">> := #{<<"mock">> := #{<<"enable">> := false}}, <<"objectId">> := DeviceId}},
         #state{id = ChannelId} = State) ->
-%%    io:format("~s ~p DeviceId ~p", [?FILE, ?LINE, DeviceId]),
     case dgiot_device:lookup(DeviceId) of
         {ok, #{<<"devaddr">> := DevAddr, <<"productid">> := ProductId}} ->
-            dgiot_client:stop(ChannelId, <<ProductId/binary, "_", DevAddr/binary>>, DevAddr);
+            dgiot_client:stop(ChannelId, <<ProductId/binary, "_", DevAddr/binary>>);
         _ ->
             pass
     end,

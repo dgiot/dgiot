@@ -62,8 +62,6 @@ on_message_publish(Message = #message{topic = <<"$dg/thing/", Topic/binary>>, pa
                 _ ->
                     pass
             end;
-        [<<"uniapp">>, Token, <<"report">>] ->
-            dgiot_hook:run_hook({uniapp, report}, {Token, get_payload(Payload)});
         _ ->
             pass
     end,

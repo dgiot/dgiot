@@ -54,15 +54,6 @@ properties_report(ProductId, DevAddr, Payload) ->
 
 %% json格式报文
 firmware_report(ProductId, DevAddr, Payload) when is_map(Payload) ->
-%%    OldPayload =
-%%        case dgiot_hook:run_hook({dlink_firmware_report, ProductId}, {ProductId, DevAddr, Payload}) of
-%%            {ok, [Payload1]} ->
-%%                Payload1;
-%%            _ ->
-%%                Payload
-%%        end,
-%%    NewPload = parse_payload(ProductId, OldPayload),
-%%    dgiot_task:save_td(ProductId, DevAddr, NewPload, #{});
     lists:map(fun
                   ({ChannelId, _Ctype}) ->
                       dgiot_channelx:do_message(ChannelId, {dlink_firmware_report, ProductId, DevAddr, Payload});
