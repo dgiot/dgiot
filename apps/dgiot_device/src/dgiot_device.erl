@@ -194,9 +194,8 @@ create_device(#{<<"status">> := Status, <<"brand">> := Brand, <<"devModel">> := 
     DeviceId = maps:get(<<"objectId">>, Device, dgiot_parse_id:get_deviceid(ProductId, DevAddr)),
 %%    #{<<"objectId">> := DeviceId} = dgiot_parse_id:get_objectid(<<"Device">>, #{<<"product">> => ProductId, <<"devaddr">> => DevAddr}),
     case dgiot_parse:get_object(<<"Device">>, DeviceId) of
-        {ok, #{<<"name">> := DeviceName, <<"ip">> := Ip} = Result} ->
+        {ok, #{<<"ip">> := Ip} = Result} ->
             Body = #{
-                <<"name">> => maps:get(<<"name">>, Device, DeviceName),
                 <<"ip">> => maps:get(<<"ip">>, Device, Ip),
                 <<"status">> => Status},
             dgiot_parse:update_object(<<"Device">>, DeviceId, Body),

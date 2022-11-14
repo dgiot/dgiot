@@ -158,6 +158,7 @@ do_request(get_devicecard_deviceid, #{<<"deviceid">> := DeviceId} = Args, #{<<"s
 %%            ?LOG(info,"DeviceId ~p", [DeviceId]),
             case dgiot_parse:get_object(<<"Device">>, DeviceId) of
                 {ok, #{<<"objectId">> := DeviceId, <<"product">> := #{<<"objectId">> := ProductId}}} ->
+                    dgiot_mqtt:subscribe_route_key([<<"$dg/user/realtimecard/", DeviceId/binary, "/#">>], SessionToken),
                     dgiot_device_card:get_device_card(Channel, ProductId, DeviceId, Args);
                 _ ->
                     {error, <<"not find device">>}

@@ -20,8 +20,7 @@
 
 post_dashboard(#{<<"dashboardId">> := DashboardId} = Args, #{<<"sessionToken">> := SessionToken} = _Context) ->
     NewArgs = Args#{<<"sessionToken">> => SessionToken},
-    dgiot_mqtt:subscribe_mgmt(SessionToken, <<"$dg/user/dashboard/#">>),
-    dgiot_mqtt:subscribe_mgmt(SessionToken, <<"$dg/user/topo/", SessionToken/binary, "/#">>),
+    dgiot_mqtt:subscribe_route_key([<<"$dg/user/topo/", SessionToken/binary, "/#">>, <<"$dg/user/dashboard/#">>], SessionToken),
     dgiot_mqtt:publish(DashboardId, <<"dashboard_task/", DashboardId/binary>>, jsx:encode(NewArgs)),
     #{};
 
