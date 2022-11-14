@@ -52,22 +52,13 @@ do_check(#{username := <<"dgiot">>, clientid := ClientId}, _PubSub, _Topic) ->
             deny
     end;
 
-%% <<"$dg/thing/uniapp/r:46d3eaec6dfeafc9d719899eae858cb7_uniapp/report">>
-do_check(#{clientid := <<Token:34/binary, _Type/binary>>, username := _UserId} = _ClientInfo, publish, <<"$dg/thing/uniapp/", SessionToken:34/binary, "/", _Rest/binary>> = _Topic) ->
-    %% io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, _Topic]),
-    case Token of
-        SessionToken ->
-            allow;
-        _ ->
-            deny
-    end;
-
-%% "$dg/thing/productid/devaddr/#"
-do_check(#{clientid := DeviceAddr, username := ProductID} = _ClientInfo, publish, <<"$dg/thing/", ProductID:10/binary, "/", DeviceInfo/binary>> = _Topic) ->
+do_check(#{clientid := <<ProductID:10/binary, "_", DeviceAddr/binary>>, username := ProductID} = _ClientInfo, publish, <<"$dg/thing/", ProductID:10/binary, "/", DeviceInfo/binary>> = _Topic) ->
 %%    io:format("~s ~p Topic: ~p _ClientInfo ~p~n", [?FILE, ?LINE, _Topic, _ClientInfo]),
     check_device_addr(DeviceInfo, DeviceAddr);
 
-do_check(#{clientid := <<ProductID:10/binary, "_", DeviceAddr/binary>>, username := ProductID} = _ClientInfo, publish, <<"$dg/thing/", ProductID:10/binary, "/", DeviceInfo/binary>> = _Topic) ->
+%% "$dg/thing/productid/devaddr/#"
+do_check(#{clientid := DeviceAddr, username := ProductID} = _ClientInfo, publish, <<"$dg/thing/", ProductID:10/binary, "/", DeviceInfo/binary>> = _Topic) ->
+    io:format("~s ~p Topic: ~p _ClientInfo ~p~n", [?FILE, ?LINE, _Topic, _ClientInfo]),
     check_device_addr(DeviceInfo, DeviceAddr);
 
 %% "$dg/thing/deviceid/#"

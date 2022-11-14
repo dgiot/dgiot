@@ -169,7 +169,7 @@ handle_message({sync_parse, _Pid, 'before', put, _Token, <<"Device">>, #{<<"id">
                     _ ->
                         QueryData
                 end;
-            _->
+            _ ->
                 QueryData
         end,
 %%    io:format("~s ~p Template = ~ts ~n", [?FILE, ?LINE, unicode:characters_to_list(jiffy:encode(Template))]),

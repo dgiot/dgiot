@@ -54,7 +54,7 @@ init([#{<<"channel">> := ChannelId, <<"client">> := ClientId, <<"starttime">> :=
             _ ->
                 0
         end,
-    io:format("~s ~p ChannelId ~p ClientId ~p  NextTime = ~p  Freq ~p Count = ~p.~n", [?FILE, ?LINE, ChannelId, ClientId, NextTime, Freq, Count]),
+%%    io:format("~s ~p ChannelId ~p ClientId ~p  NextTime = ~p  Freq ~p Count = ~p.~n", [?FILE, ?LINE, ChannelId, ClientId, NextTime, Freq, Count]),
     Dclient = #dclient{channel = ChannelId, client = ClientId, status = ?DCLIENT_INTIALIZED, userdata = #device_task{},
         clock = #dclock{nexttime = NextTime + Rand, freq = Freq, count = Count, round = 0}},
     {ok, Dclient};

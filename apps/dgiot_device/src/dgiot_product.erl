@@ -34,7 +34,6 @@ init_ets() ->
 load_cache() ->
     Success = fun(Page) ->
         lists:map(fun(Product) ->
-%%            dgiot_mnesia:insert(ObjectId, ['Product', dgiot_role:get_acls(Product), ProductSecret]),
             dgiot_product:save(Product)
                   end, Page)
               end,

@@ -31,11 +31,21 @@
 %%% API
 %%%===================================================================
 
-subscribe(Client, Topic, Qos) ->
-    gen_server:call(Client, {subscribe, Topic, Qos}).
+subscribe(#connect_state{socket = ConnPid}, Topic, Qos) ->
+    case ConnPid of
+        disconnect ->
+            pass;
+        Pid ->
+            emqtt:subscribe(Pid, {Topic, Qos})
+    end.
 
-publish(Client, Topic, Payload, Qos) ->
-    gen_server:call(Client, {publish, Topic, Payload, Qos}).
+publish(#connect_state{socket = ConnPid}, Topic, Payload, Qos) ->
+    case ConnPid of
+        disconnect ->
+            pass;
+        Pid ->
+            emqtt:publish(Pid, Topic, Payload, Qos)
+    end.
 
 start_link(Args) ->
     dgiot_client:start_link(?MODULE, Args).
@@ -87,7 +97,7 @@ handle_cast(_Request, Dclient) ->
 handle_info(connect, #dclient{userdata = #connect_state{options = Options, mod = Mod} = ConnectStat} = Dclient) ->
     case connect(Options) of
         {ok, ConnPid, Props} ->
-            case Mod:handle_info({connect, ConnPid}, Dclient#dclient{userdata = ConnectStat#connect_state{props = Props}}) of
+            case Mod:handle_info({connect, ConnPid}, Dclient#dclient{userdata = ConnectStat#connect_state{props = Props, socket = ConnPid}}) of
                 {noreply, NewDclient} ->
                     {noreply, NewDclient};
                 {stop, Reason, NewDclient} ->
