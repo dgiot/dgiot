@@ -35,8 +35,8 @@ on_session_terminated(#{clientid := <<ProductID:10/binary, "_", DeviceAddr/binar
     io:format("~s ~p ProductID = ~p DeviceAddr ~p DeviceId ~p ~n", [?FILE, ?LINE, ProductID, DeviceAddr, DeviceId]),
     ok;
 
-on_session_terminated(ClientInfo, _Reason, _SessInfo, _State) ->
-    io:format("~s ~p ClientInfo = ~p.~n", [?FILE, ?LINE, ClientInfo]),
+on_session_terminated(_ClientInfo, _Reason, _SessInfo, _State) ->
+%%    io:format("~s ~p ClientInfo = ~p.~n", [?FILE, ?LINE, ClientInfo]),
     ok.
 
 description() -> "Disconnected with Dlink".

@@ -26,7 +26,12 @@
     , description/0
 ]).
 
-check(#{peerhost := PeerHost, username := <<"dgiot">> }, AuthResult, _) when PeerHost == {127, 0, 0, 1} ->
+check(#{peerhost := PeerHost, username := <<"taos">>, clientid := ClientId}, AuthResult, _) when PeerHost == {127, 0, 0, 1} ->
+    io:format("~s ~p ClientId = ~p.~n", [?FILE, ?LINE, ClientId]),
+    dgiot_tdengine:save_tdpools(ClientId),
+    {ok, AuthResult#{anonymous => false, auth_result => success}};
+
+check(#{peerhost := PeerHost, username := <<"dgiot">>}, AuthResult, _) when PeerHost == {127, 0, 0, 1} ->
     {ok, AuthResult#{anonymous => false, auth_result => success}};
 
 check(#{username := <<"dgiot">>, password := Password}, AuthResult, _) ->

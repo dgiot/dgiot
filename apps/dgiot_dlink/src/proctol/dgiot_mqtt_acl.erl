@@ -38,7 +38,11 @@ description() -> "Acl with Dlink".
 %%--------------------------------------------------------------------
 %% Internal functions
 %%-------------------------------------------------------------------
-do_check(#{username := <<"dgiot">>, peerhost := PeerHost}, _PubSub, _Topic)  when PeerHost == {127,0,0,1}  ->
+do_check(#{username := <<"taos">>, peerhost := PeerHost, clientid := ClientId}, publish, <<"$dg/thing/taos/", ClientId/binary>> = _Topic) when PeerHost == {127, 0, 0, 1} ->
+    io:format("~s ~p ClientId: ~p _Topic ~p ~n", [?FILE, ?LINE, ClientId, _Topic]),
+    allow;
+
+do_check(#{username := <<"dgiot">>, peerhost := PeerHost}, _PubSub, _Topic) when PeerHost == {127, 0, 0, 1} ->
 %%    io:format("~s ~p ClientId: ~p _Topic ~p ~n", [?FILE, ?LINE, ClientId, _Topic]),
     allow;
 
@@ -52,13 +56,24 @@ do_check(#{username := <<"dgiot">>, clientid := ClientId}, _PubSub, _Topic) ->
             deny
     end;
 
+do_check(#{clientid := <<ProductID:10/binary, "_", DeviceAddr/binary>>, username := ProductID} = _ClientInfo, publish, <<"$dg/thing/", ProductID:10/binary, "/", ProductID:10/binary, "_", Rest/binary>> = _Topic) ->
+%%    io:format("~s ~p Topic: ~p _ClientInfo ~p~n", [?FILE, ?LINE, _Topic, _ClientInfo]),
+    Len = size(DeviceAddr),
+    case Rest of
+        <<DeviceAddr:Len/binary, _/binary>> ->
+            allow;
+        _ ->
+            deny
+    end;
+
+
 do_check(#{clientid := <<ProductID:10/binary, "_", DeviceAddr/binary>>, username := ProductID} = _ClientInfo, publish, <<"$dg/thing/", ProductID:10/binary, "/", DeviceInfo/binary>> = _Topic) ->
 %%    io:format("~s ~p Topic: ~p _ClientInfo ~p~n", [?FILE, ?LINE, _Topic, _ClientInfo]),
     check_device_addr(DeviceInfo, DeviceAddr);
 
 %% "$dg/thing/productid/devaddr/#"
 do_check(#{clientid := DeviceAddr, username := ProductID} = _ClientInfo, publish, <<"$dg/thing/", ProductID:10/binary, "/", DeviceInfo/binary>> = _Topic) ->
-    io:format("~s ~p Topic: ~p _ClientInfo ~p~n", [?FILE, ?LINE, _Topic, _ClientInfo]),
+%%    io:format("~s ~p Topic: ~p _ClientInfo ~p~n", [?FILE, ?LINE, _Topic, _ClientInfo]),
     check_device_addr(DeviceInfo, DeviceAddr);
 
 %% "$dg/thing/deviceid/#"

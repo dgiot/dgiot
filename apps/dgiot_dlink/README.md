@@ -56,6 +56,11 @@ Dlink协议是针对物联网开发领域设计的一种数据交换规范，数
 | app对接 |$dg/thing/uniapp/{SessionToken}/report|app|平台|
 | 设备初始化请求 |$dg/thing/{productId}/{deviceAddr}/init/request|设备|平台|
 | 设备初始化响应 |$dg/device/{productId}/{deviceAddr}/init/response|平台|设备|
+| taos 默认topic  |$dg/taos/tdpool/{clientId}/# |平台|taos|
+| taos sql        |$dg/taos/tdpool/{clientId}/sql |平台|taos|
+| taos 调试模式    |$dg/taos/tdpool/{clientId}/debug |平台|taos|
+| taos 设置连接参数 |$dg/taos/tdpool/{clientId}/connect |平台|taos|
+| taos sql执行结果 |$dg/thing/taos/{clientId} |taos|平台|
 
 ## payload设计
 ### 属性上报 ($dg/thing/{productId}/{deviceAddr}/properties/report)
