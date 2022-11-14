@@ -33,9 +33,10 @@ parse_cache_Device(_ClassName) ->
 %%    io:format("~s ~p ~p ~n", [?FILE, ?LINE, ClassName]),
     dgiot_product:load_cache(),
     Success = fun(Page) ->
-        lists:map(fun(#{<<"devaddr">> := Devaddr} = Device) ->
+        lists:map(fun(#{<<"devaddr">> := _Devaddr} = Device) ->
 %%            save_profile(Device),
-            io:format("Devaddr ~p ~n",[Devaddr]),
+            timer:sleep(10),
+%%            io:format("Devaddr ~p ~n",[Devaddr]),
             dgiot_device:save(Device)
                   end, Page)
               end,

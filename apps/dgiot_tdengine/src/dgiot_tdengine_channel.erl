@@ -148,6 +148,7 @@
 }).
 
 init_ets() ->
+    dgiot_data:init(tdpool),
     dgiot_data:init(?DGIOT_TD_THING_ETS).
 
 start(ChannelId, #{
@@ -169,7 +170,7 @@ start(ChannelId, #{
     }).
 
 %% 通道初始化
-init(?TYPE, ChannelId, Config) ->
+init(?TYPE, ChannelId, #{<<"password">> := Password} = Config) ->
     Opts = [?CACHE(ChannelId), #{
         auto_save => application:get_env(dgiot_tdengine, cache_auto_save, 30000),
         size => application:get_env(dgiot_tdengine, cache_max_size, 50000),
@@ -184,6 +185,8 @@ init(?TYPE, ChannelId, Config) ->
     Specs = [
         {dgiot_dcache, {dgiot_dcache, start_link, Opts}, permanent, 5000, worker, [dgiot_dcache]}
     ],
+    erlang:spawn(fun() ->
+        apply(dgiot_tdengine, tdpool_connect, [Password]) end),
     dgiot_metrics:dec(dgiot_tdengine, <<"tdengine">>, 1000),
     DbType = maps:get(<<"db">>, Config, <<"ProductId">>),
     dgiot_data:insert({tdengine_db, ChannelId}, DbType),

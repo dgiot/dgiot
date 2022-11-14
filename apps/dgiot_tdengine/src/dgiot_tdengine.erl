@@ -24,7 +24,8 @@
 -export([create_database/2, create_schemas/1, create_object/2, create_user/2, alter_user/2, delete_user/1, query_object/2, batch/1, parse_batch/1]).
 -export([transaction/2, format_data/5]).
 -export([get_reportdata/3]).
--export([export/2, import/2]).
+-export([export/2, import/2, save_tdpools/1, tdpool_connect/1]).
+-export([save_sql/1]).
 
 %% dgiot_tdengine:export().
 export(ChannelId, #{<<"deviceid">> := DeviceId} = Body) ->
@@ -339,4 +340,35 @@ get_fields(Table) ->
                         end, [], Results);
         _ ->
             []
+    end.
+
+save_tdpools(ClientId) ->
+    erlang:spawn(fun() ->
+        apply(dgiot_mqtt, subscribe_mgmt, [ClientId, <<"$dg/taos/tdpool/", ClientId/binary, "/#">>]) end),
+    case dgiot_data:get(tdpool, pools) of
+        not_find ->
+            dgiot_data:insert(tdpool, pools, [ClientId]),
+            dgiot_data:insert(tdpool, {ClientId, pid}, self());
+        Que ->
+            dgiot_data:insert(tdpool, pools, dgiot_utils:unique_1(Que ++ [ClientId])),
+            dgiot_data:insert(tdpool, {ClientId, pid}, self())
+    end.
+
+tdpool_connect(Password) ->
+    case dgiot_data:get(tdpool, pools) of
+        not_find ->
+            pass;
+        [ClientId | _Que] ->
+            Topic = <<"$dg/taos/tdpool/", ClientId/binary, "/connect">>,
+            timer:sleep(1000),
+            dgiot_mqtt:publish(ClientId, Topic, Password)
+    end.
+
+save_sql(Sql) ->
+    case dgiot_data:get(tdpool, pools) of
+        not_find ->
+            pass;
+        [ClientId | _Que] ->
+            Topic = <<"$dg/taos/tdpool/", ClientId/binary, "/sql">>,
+            dgiot_mqtt:publish(ClientId, Topic, Sql)
     end.
