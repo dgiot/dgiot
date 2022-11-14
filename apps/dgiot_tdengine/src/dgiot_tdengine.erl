@@ -25,7 +25,7 @@
 -export([transaction/2, format_data/5]).
 -export([get_reportdata/3]).
 -export([export/2, import/2, save_tdpools/1, tdpool_connect/1]).
--export([save_sql/1, get_values/3]).
+-export([save_sql/1, format_sql/3, get_values/3]).
 
 %% dgiot_tdengine:export().
 export(ChannelId, #{<<"deviceid">> := DeviceId} = Body) ->
@@ -371,4 +371,31 @@ save_sql(Sql) ->
         [ClientId | _Que] ->
             Topic = <<"$dg/taos/tdpool/", ClientId/binary, "/sql">>,
             dgiot_mqtt:publish(ClientId, Topic, Sql)
+    end.
+
+format_sql(ProductId, DevAddr, Data) ->
+    case dgiot_bridge:get_product_info(ProductId) of
+        {ok, #{<<"thing">> := Properties}} ->
+            DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
+            Now = maps:get(<<"createdat">>, Data, now),
+            Length = maps:size(Data),
+            io:format("~s ~p SortFrame   ~p.~n", [?FILE, ?LINE, Length]),
+            NewValues =
+                lists:foldl(fun(Index, Acc) ->
+                    case maps:find(Index, Data) of
+                        {ok, X} ->
+                            Values = dgiot_tdengine_field:check_fields(X, Properties),
+                            Acc ++ dgiot_tdengine:get_values(ProductId, Values, Now);
+                        _ ->
+                            Acc
+                    end
+                            end, " ", lists:seq(1, Length)),
+            TdChannelId = dgiot_parse_id:get_channelid(dgiot_utils:to_binary(2), <<"TD">>, <<"TD资源通道"/utf8>>),
+            DB = dgiot_tdengine:get_database(TdChannelId, ProductId),
+            TableName = ?Table(DeviceId),
+            Using1 = <<" using ", DB/binary, "_", ProductId/binary>>,
+            TagFields = <<" TAGS ('_", DevAddr/binary, "')">>,
+            <<"INSERT INTO ", DB/binary, TableName/binary, Using1/binary, TagFields/binary, " VALUES ", NewValues/binary>>;
+        _ ->
+            ""
     end.
