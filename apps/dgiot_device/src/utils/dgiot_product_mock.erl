@@ -44,23 +44,34 @@ get_data(ProductId) ->
             #{}
     end.
 
-get_value(_Last, #{<<"type">> := <<"INT">>}) ->
-    0;
 
-get_value(_Last, #{<<"dataType">> := #{<<"type">> := <<"INT">>}}) ->
-    0;
+get_value(_Last, #{<<"type">> := <<"INT">>, <<"specs">> := #{<<"min">> := Min, <<"max">> := Max}}) ->
+    Seed = (dgiot_utils:to_int(Max) - dgiot_utils:to_int(Min)),
+    rand:uniform(Seed) + Min;
 
-get_value(_Last, #{<<"type">> := _Type}) when _Type == <<"FLOAT">>; _Type == <<"DOUBLE">> ->
-    0;
+get_value(_Last, #{<<"type">> := <<"FLOAT">>, <<"specs">> := #{<<"min">> := Min, <<"max">> := Max}}) ->
+    Seed = (dgiot_utils:to_int(Max) - dgiot_utils:to_int(Min)),
+    rand:uniform(Seed) + Min;
 
-get_value(_Last, #{<<"type">> := _Type}) when _Type == <<"FLOAT">>; _Type == <<"DOUBLE">> ->
-    0;
+get_value(_Last, #{<<"type">> := <<"DOUBLE">>, <<"specs">> := #{<<"min">> := Min, <<"max">> := Max}}) ->
+    Seed = (dgiot_utils:to_int(Max) - dgiot_utils:to_int(Min)),
+    rand:uniform(Seed);
 
 get_value(_Last, #{<<"type">> := <<"STRING">>}) ->
-    0;
+    <<"mock">>;
 
 get_value(_Last, #{<<"type">> := <<"BOOL">>}) ->
-    0;
+    rand:uniform(2) - 1;
+
+get_value(_Last, #{<<"type">> := <<"ENUM">>, <<"specs">> := Spec}) ->
+    List = maps:to_list(Spec),
+    Pos = rand:uniform(length(List)),
+    case lists:nth(List, Pos) of
+        [{_K, V} | _] ->
+            V;
+        _ ->
+            <<"mock">>
+    end;
 
 %% @todo 其它类型处理
 get_value(_, _) ->

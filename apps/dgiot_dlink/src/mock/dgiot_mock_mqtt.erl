@@ -76,9 +76,7 @@ handle_info(next_time, #dclient{channel = Channel, client = <<ProductId:10/binar
     dgiot_client:stop(Channel, Client, Count), %% ¼ì²éÊÇ·ñÐèÒªÍ£Ö¹ÈÎÎñ
     NewNextTime = dgiot_client:get_nexttime(NextTime, Freq),
     NewRound = Round + 1,
-    PayLoad = lists:foldl(fun(Key, Acc) ->
-        Acc#{Key => erlang:round(rand:uniform() * 60 * 1 + 1) * 1000}
-                          end, #{}, dgiot_product:get_keys(ProductId)),
+    PayLoad = dgiot_product_mock:get_data(ProductId),
     Topic = <<"$dg/thing/", ProductId/binary, "/", DevAddr/binary, "/properties/report">>,
     dgiot_mqtt_client:publish(UserData, Topic, jiffy:encode(PayLoad), 0),
     {noreply, Dclient#dclient{clock = Clock#dclock{nexttime = NewNextTime, count = Count - 1, round = NewRound}}};
