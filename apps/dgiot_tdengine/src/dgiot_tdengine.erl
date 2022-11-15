@@ -369,6 +369,7 @@ save_sql(Sql) ->
         not_find ->
             pass;
         [ClientId | _Que] ->
+            tdpool_connect(<<"taosdata">>),
             Topic = <<"$dg/taos/tdpool/", ClientId/binary, "/sql">>,
             dgiot_mqtt:publish(ClientId, Topic, Sql)
     end.
@@ -377,25 +378,26 @@ format_sql(ProductId, DevAddr, Data) ->
     case dgiot_bridge:get_product_info(ProductId) of
         {ok, #{<<"thing">> := Properties}} ->
             DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
-            Now = maps:get(<<"createdat">>, Data, now),
-            Length = maps:size(Data),
-            io:format("~s ~p SortFrame   ~p.~n", [?FILE, ?LINE, Length]),
-            NewValues =
-                lists:foldl(fun(Index, Acc) ->
-                    case maps:find(Index, Data) of
-                        {ok, X} ->
-                            Values = dgiot_tdengine_field:check_fields(X, Properties),
-                            Acc ++ dgiot_tdengine:get_values(ProductId, Values, Now);
-                        _ ->
-                            Acc
-                    end
-                            end, " ", lists:seq(1, Length)),
+            NewValues = get_allvalues(Data, ProductId, Properties),
             TdChannelId = dgiot_parse_id:get_channelid(dgiot_utils:to_binary(2), <<"TD">>, <<"TD资源通道"/utf8>>),
             DB = dgiot_tdengine:get_database(TdChannelId, ProductId),
             TableName = ?Table(DeviceId),
             Using1 = <<" using ", DB/binary, "_", ProductId/binary>>,
             TagFields = <<" TAGS ('_", DevAddr/binary, "')">>,
-            <<"INSERT INTO ", DB/binary, TableName/binary, Using1/binary, TagFields/binary, " VALUES ", NewValues/binary>>;
+            <<"INSERT INTO ", DB/binary, TableName/binary, Using1/binary, TagFields/binary, " VALUES", NewValues/binary, ";">>;
         _ ->
-            ""
+            <<"show database;">>
     end.
+
+
+get_allvalues(Data, ProductId, Properties) ->
+%%    Len = length(Data),
+    get_allvalues(Data, ProductId, Properties, <<"">>).
+
+get_allvalues([], _ProductId, _Properties, Acc) ->
+    Acc;
+
+get_allvalues([Data | Rest], ProductId, Properties, Acc) ->
+    Now = maps:get(<<"createdat">>, Data, now),
+    Values = dgiot_tdengine:get_values(ProductId, Data, Now),
+    get_allvalues(Rest, ProductId, Properties, <<Acc/binary, Values/binary>>).
