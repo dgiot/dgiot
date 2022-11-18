@@ -69,7 +69,7 @@ init(?TYPE, ChannelId, #{<<"product">> := _Products} = Args) ->
         env = Args
     },
     dgiot_parse_hook:subscribe(<<"Device/*">>, put, ChannelId, [<<"basedata">>]),
-    dgiot_parse_hook:subscribe(<<"Device/*">>, post, ChannelId),
+    dgiot_parse_hook:subscribe(<<"Device">>, post, ChannelId),
     {ok, State, []}.
 
 handle_init(State) ->
@@ -81,7 +81,6 @@ handle_event(_EventId, Event, State) ->
     {ok, State}.
 %%{sync_parse, self(), Type, Method, Token, Class, Data}
 handle_message({sync_parse, _Pid, 'before', put, _Token, <<"Device">>, #{<<"id">> := DeviceId} = QueryData}, State) ->
-    io:format("~s ~p DeviceId = ~p ~n", [?FILE, ?LINE, DeviceId]),
     NewQueryData =
         case dgiot_device:lookup(DeviceId) of
             {ok, #{<<"productid">> := ProductId}} ->
@@ -91,10 +90,28 @@ handle_message({sync_parse, _Pid, 'before', put, _Token, <<"Device">>, #{<<"id">
                     _ ->
                         QueryData
                 end;
-            _->
-                pass
+            _ ->
+                io:format("~s ~p here  ~n", [?FILE, ?LINE]),
+                QueryData
         end,
     dgiot_parse_hook:publish(_Pid, NewQueryData),
+    {ok, State};
+handle_message({sync_parse, _Pid, 'after', post, _Token, <<"Device">>, #{<<"objectId">> := DeviceId} = QueryData}, State) ->
+%%    case dgiot_device:lookup(DeviceId) of
+%%        {ok, #{<<"productid">> := ProductId}} ->
+    case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+        {ok, #{<<"product">> := #{<<"objectId">> := ProductId}}} ->
+            case catch dgiot_hook:run_hook({sync_parse, before, post, ProductId}, {QueryData, ProductId, State}) of
+                {ok, [Res]} ->
+                    io:format("~s ~p DeviceId = ~p ~n", [?FILE, ?LINE, DeviceId]),
+                    Res;
+                _ ->
+                    QueryData
+            end;
+        _ ->
+            io:format("~s ~p DeviceId = ~p ~n", [?FILE, ?LINE, DeviceId]),
+            pass
+    end,
     {ok, State};
 
 handle_message({_, _Pid, _, _, _Token, <<"Device">>, _QueryData} = Message, State) ->
