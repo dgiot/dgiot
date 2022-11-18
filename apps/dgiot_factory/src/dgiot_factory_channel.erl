@@ -353,7 +353,7 @@ init_worker_device(ProductId, WorkerNum, WorkerName) ->
                         <<"name">> => WorkerName,
                         <<"devaddr">> => WorkerNum,
                         <<"product">> => ProductId,
-                        <<"ACL">> => Acl
+                        <<"ACL">> => Acl#{<<"*">> => #{<<"read">> => true}}
                     },
 
                     dgiot_device:create_device(Device),

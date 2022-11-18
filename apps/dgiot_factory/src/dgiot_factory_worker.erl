@@ -339,16 +339,25 @@ record_worker_info(BatchProductId, BatchDeviceId, #{<<"quality">> := #{<<"type">
     RollNum = maps:get(<<"rollnum">>, maps:get(<<"person">>, TypeData, #{}), <<"null">>),
     lists:foldl(
         fun(Worker, _) ->
+
             case dgiot_data:get({ChannelId, worker}) of
                 not_find ->
                     pass;
                 ProductId ->
-                    WorkerData = case dgiot_data:get(?WORKER, Worker) of
-                                     not_find ->
-                                         #{};
-                                     N ->
-                                         lists:nth(1, N)
+                    WorkerId = dgiot_parse_id:get_deviceid(ProductId, Worker),
+                    WorkerData = case dgiot_parse:get_object(<<"Device">>, WorkerId) of
+                                     {ok, #{<<"name">> := WorkerName}} ->
+                                         #{<<"worker_name">> => WorkerName};
+                                     _ ->
+                                         #{}
+
                                  end,
+%%                    WorkerData = case dgiot_data:get(?WORKER, Worker) of
+%%                                     not_find ->
+%%                                         #{};
+%%                                     N ->
+%%                                         lists:nth(1, N)
+%%                                 end,
                     ManufacData = #{
 %%                        <<"manufac_type">> => dgiot_utils:to_binary(Type),
                         <<"manufac_quality">> => Quality,

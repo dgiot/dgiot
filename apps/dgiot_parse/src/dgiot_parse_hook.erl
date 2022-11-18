@@ -320,10 +320,10 @@ get_id(OperationID) ->
 
 %% todo 多级json的 merge修改
 do_put(<<"put">>, Token, <<"/iotapi/classes/", Tail/binary>>, #{<<"id">> := Id} = Args) ->
-    do_put_(Id,Args,Token,Tail);
+    do_put_(Id, Args, Token, Tail);
 %% 适配amis iotapi
 do_put(<<"put">>, Token, <<"/iotapi/amis/", Tail/binary>>, #{<<"id">> := Id} = Args) ->
-    do_put_(Id,Args,Token,Tail);
+    do_put_(Id, Args, Token, Tail);
 
 do_put(_, _Token, _ClassName, Args) ->
 %%    io:format("~s ~p put Args = ~p ~n", [?FILE, ?LINE, Args]),
@@ -342,14 +342,15 @@ receive_put(ResBody) ->
     after 2000 ->  %% 2秒消息没有响应则用原响应报文返回
         {ok, ResBody}
     end.
-do_put_(Id,Args,Token,Tail)->
+do_put_(Id, Args, Token, Tail) ->
     [ClassName | _] = re:split(Tail, <<"/">>),
     notify('before', put, Token, ClassName, Id, Args),
-    {ok,NewArgs} = receive_put(Args),
+    {ok, NewArgs} = receive_put(Args),
     case dgiot_parse:get_object(ClassName, Id) of
         {ok, Class} ->
-            Keys = maps:keys(NewArgs),
-            dgiot_map:merge(maps:with([Keys], Class), maps:without([<<"id">>], NewArgs));
+            Keys = maps:keys(maps:without([<<"id">>], NewArgs)),
+            dgiot_map:merge(maps:with(Keys, Class), maps:without([<<"id">>], NewArgs));
         _ ->
             maps:without([<<"id">>], NewArgs)
     end.
+
