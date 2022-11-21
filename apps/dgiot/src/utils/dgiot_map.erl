@@ -94,8 +94,8 @@ merge(Data, NewData) ->
             case maps:find(NewKey, Acc) of
                 {ok, Value} when is_map(Value) and is_map(NewValue) ->
                     Acc#{NewKey => merge(Value, NewValue)};
-                {ok, Value} when is_list(Value) and is_list(NewValue) ->
-                    Acc#{NewKey => lists:merge(Value, NewValue)};
+%%                {ok, Value} when is_list(Value) and is_list(NewValue) ->
+%%                    Acc#{NewKey => lists:merge(Value, NewValue)};
                 _ ->
                     Acc#{NewKey => NewValue}
             end

@@ -200,8 +200,6 @@ get_card_data(BatchProductId, BatchDeviceId) ->
         end, #{}, DevcieTypeList).
 
 process_data(FlatMap, PersonType, Token, TaskDeviceId) ->
-%%    FlatMap = dgiot_map:flatten(Content),
-%%    io:format("~s ~p status =~p ~n", [?FILE, ?LINE,maps:get(<<"quality_status">>,FlatMap,0)]),
     case dgiot_parse:get_object(<<"Device">>, TaskDeviceId) of
         {ok, #{<<"name">> := OrderName, <<"product">> := #{<<"objectId">> := TaskProductId}}} ->
             {ok, {BatchProductId, BatchDeviceId, BatchAddr}} = process_roll_dev(TaskProductId, TaskDeviceId, OrderName, Token, FlatMap),
@@ -342,31 +340,40 @@ get_wokrer_id(Name, DevType) ->
     dgiot_parse_id:get_productid(?WORKERCATEGORY, DevType, Name).
 
 init_worker_device(ProductId, WorkerNum, WorkerName) ->
-    case dgiot_product:get(ProductId) of
-        {ok, Product} ->
-            case Product of
-                #{<<"ACL">> := Acl, <<"name">> := Name, <<"devType">> := DevType, <<"dynamicReg">> := true} ->
-                    Device = #{
-                        <<"status">> => <<"ONLINE">>,
-                        <<"brand">> => Name,
-                        <<"devModel">> => DevType,
-                        <<"name">> => WorkerName,
-                        <<"devaddr">> => WorkerNum,
-                        <<"product">> => ProductId,
-                        <<"ACL">> => Acl#{<<"*">> => #{<<"read">> => true}}
-                    },
+    DeviceId = dgiot_parse_id:get_deviceid(ProductId,WorkerNum),
+    case dgiot_device_cache:lookup(DeviceId) of
+        {ok,_} ->
+            pass;
+        _->
+            case dgiot_product:get(ProductId) of
+                {ok, Product} ->
+                    case Product of
+                        #{<<"ACL">> := Acl, <<"name">> := Name, <<"devType">> := DevType, <<"dynamicReg">> := true} ->
+                            Device = #{
+                                <<"status">> => <<"ONLINE">>,
+                                <<"brand">> => Name,
+                                <<"devModel">> => DevType,
+                                <<"name">> => WorkerName,
+                                <<"devaddr">> => WorkerNum,
+                                <<"product">> => ProductId,
+                                <<"ACL">> => Acl
+                            },
+                            dgiot_device:create_device(Device),
 
-                    dgiot_device:create_device(Device),
-                    AllData = #{<<"worker_validate">> => true,
-                        <<"worker_num">> => WorkerNum,
-                        <<"worker_date">> => 0,
-                        <<"worker_name">> => WorkerName,
-                        <<"product">> => ProductId},
-                    NumData = dgiot_product_enum:turn_num(AllData, ProductId),
-                    dgiot_task:save_td_no_match(ProductId, WorkerNum, NumData, #{});
+                            io:format("~s ~p DeviceId = ~p ~n", [?FILE, ?LINE, DeviceId]),
+                            dgiot_parse:update_object(<<"Device">>,DeviceId , #{<<"ACL">>=> Acl#{<<"*">> =>#{<<"read">> => true}}}),
+
+                            AllData = #{<<"worker_validate">> => true,
+                                <<"worker_num">> => WorkerNum,
+                                <<"worker_date">> => 0,
+                                <<"worker_name">> => WorkerName,
+                                <<"product">> => ProductId},
+                            NumData = dgiot_product_enum:turn_num(AllData, ProductId),
+                            dgiot_task:save_td_no_match(ProductId, WorkerNum, NumData, #{});
+                        _ ->
+                            pass
+                    end;
                 _ ->
-                    pass
-            end;
-        _ ->
-            error
+                    error
+            end
     end.
