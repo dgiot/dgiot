@@ -170,7 +170,7 @@ start(ChannelId, #{
     }).
 
 %% 通道初始化
-init(?TYPE, ChannelId, #{<<"password">> := Password} = Config) ->
+init(?TYPE, ChannelId, Config) ->
     Opts = [?CACHE(ChannelId), #{
         auto_save => application:get_env(dgiot_tdengine, cache_auto_save, 30000),
         size => application:get_env(dgiot_tdengine, cache_max_size, 50000),
@@ -185,8 +185,6 @@ init(?TYPE, ChannelId, #{<<"password">> := Password} = Config) ->
     Specs = [
         {dgiot_dcache, {dgiot_dcache, start_link, Opts}, permanent, 5000, worker, [dgiot_dcache]}
     ],
-    erlang:spawn(fun() ->
-        apply(dgiot_tdengine, tdpool_connect, [Password]) end),
     dgiot_metrics:dec(dgiot_tdengine, <<"tdengine">>, 1000),
     DbType = maps:get(<<"db">>, Config, <<"ProductId">>),
     dgiot_data:insert({tdengine_db, ChannelId}, DbType),
@@ -250,6 +248,11 @@ handle_message(config, #state{env = Config} = State) ->
 
 handle_message({sync_product, <<"Product">>, ObjectId}, #state{id = ChannelId, env = Config} = State) ->
     do_check(ChannelId, [ObjectId], Config),
+    {ok, State};
+
+handle_message({tdpool_connect}, #state{env = #{<<"password">> := Password}} = State) ->
+    dgiot_tdengine:tdpool_connect(Password),
+    erlang:send_after(60 * 1000, self(), tdpool_connect),
     {ok, State};
 
 handle_message(Message, #state{id = ChannelId, product = ProductId} = _State) ->

@@ -13,7 +13,7 @@
 -export([get_initdata/2, init_inspection/1, get_inspection/1]).
 
 %% 初始化工单巡检动态数据
-init_inspection(#{<<"objectId">> := MaintenanceId, <<"info">> := Info, <<"status">> := 0, <<"product">> := #{<<"objectId">> := ProductId}, <<"device">> := #{<<"objectId">> := DeviceId}} = _QueryData) ->
+init_inspection(#{<<"objectId">> := MaintenanceId, <<"info">> := Info, <<"status">> := 1, <<"product">> := #{<<"objectId">> := ProductId}, <<"device">> := #{<<"objectId">> := DeviceId}} = _QueryData) ->
     InitData = get_initdata(<<"巡检"/utf8>>, ProductId),
     dgiot_parse:update_object(<<"Maintenance">>, MaintenanceId, #{<<"info">> => Info#{<<"dynamicdata">> => InitData}}),
     %%    下发巡检信息

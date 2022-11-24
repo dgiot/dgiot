@@ -61,7 +61,7 @@ handle_call({write, Name, Version, Schema}, _From, #state{swagger = List} = Stat
     case lists:keyfind(Name, 1, List) of
         false ->
             SchemaPath = get_priv(?MODULE, ?SWAGGER(Name, Version)),
-            io:format("~s ~p ~p ~n", [?FILE, ?LINE, SchemaPath]),
+%%            io:format("~s ~p ~p ~n", [?FILE, ?LINE, SchemaPath]),
             Reply = file:write_file(SchemaPath, jsx:encode(Schema), [write]),
             {reply, Reply, State#state{swagger = [{Name, Version} | List]}};
         {Name, _Version} ->

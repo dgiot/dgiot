@@ -21,7 +21,7 @@
 -include_lib("dgiot/include/logger.hrl").
 -define(TIMEOUT, 60000).
 
--export([create_device/1, create_device/2, create_device/3, get_sub_device/1, get_sub_device/2, save_subdevice/2, get_subdevice/2, get_subdevices/2, save_subdevice/3]).
+-export([create_device/1, create_device/3, get_sub_device/1, get_sub_device/2, save_subdevice/2, get_subdevice/2, get_subdevices/2, save_subdevice/3]).
 -export([parse_cache_Device/1, sync_parse/1, get/2, post/1, post/2, put/1, save/1, save/2, lookup/1, lookup/2, delete/1, delete/2]).
 -export([save_profile/1, get_profile/1, get_profile/2, get_online/1, online/1, offline/1, offline_child/1, enable/1, disable/1]).
 -export([put_location/3, get_location/1, get_address/3]).
@@ -150,49 +150,9 @@ get_sub_device(DtuAddr, SessionToken) ->
         _ -> []
     end.
 
-create_device(#{<<"status">> := Status, <<"brand">> := Brand, <<"devModel">> := DevModel,
-    <<"name">> := Name, <<"devaddr">> := DevAddr, <<"product">> := ProductId} = Device, SessionToken) ->
-    #{<<"objectId">> := DeviceId} =
-        dgiot_parse_id:get_objectid(<<"Device">>, #{<<"product">> => ProductId, <<"devaddr">> => DevAddr}),
-    case dgiot_parse:get_object(<<"Device">>, DeviceId) of
-        {ok, #{<<"objectId">> := ObjectId}} ->
-            {ok, Result} = dgiot_parse:update_object(<<"Device">>, ObjectId,
-                #{
-                    <<"isEnable">> => maps:get(<<"isEnable">>, Device, true),
-                    <<"status">> => Status
-                },
-                [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]),
-            {ok, Result#{<<"objectId">> => ObjectId}};
-        _R ->
-            {{Y, M, D}, {_, _, _}} = dgiot_datetime:local_time(),
-            Batch_name = dgiot_utils:to_list(Y) ++ dgiot_utils:to_list(M) ++ dgiot_utils:to_list(D),
-            NewDevice = Device#{
-                <<"isEnable">> => maps:get(<<"isEnable">>, Device, true),
-                <<"product">> => #{
-                    <<"__type">> => <<"Pointer">>,
-                    <<"className">> => <<"Product">>,
-                    <<"objectId">> => ProductId
-                },
-                <<"location">> => maps:get(<<"location">>, Device, #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => 120.161324, <<"latitude">> => 30.262441}),
-                <<"basedata">> => maps:get(<<"basedata">>, Device, #{}),
-                <<"detail">> => #{
-                    <<"desc">> => Name,
-                    <<"brand">> => Brand,
-                    <<"devModel">> => DevModel,
-                    <<"batchId">> => #{
-                        <<"batch_name">> => dgiot_utils:to_binary(Batch_name),
-                        <<"createdtime">> => dgiot_datetime:now_secs()
-                    }
-                }
-            },
-            dgiot_parse:create_object(<<"Device">>, maps:without([<<"brand">>, <<"devModel">>], NewDevice),
-                [{"X-Parse-Session-Token", SessionToken}], [{from, rest}])
-    end.
-
 create_device(#{<<"status">> := Status, <<"brand">> := Brand, <<"devModel">> := DevModel, <<"name">> := Name,
     <<"devaddr">> := DevAddr, <<"product">> := ProductId, <<"ACL">> := Acl} = Device) ->
     DeviceId = maps:get(<<"objectId">>, Device, dgiot_parse_id:get_deviceid(ProductId, DevAddr)),
-%%    #{<<"objectId">> := DeviceId} = dgiot_parse_id:get_objectid(<<"Device">>, #{<<"product">> => ProductId, <<"devaddr">> => DevAddr}),
     case dgiot_parse:get_object(<<"Device">>, DeviceId) of
         {ok, #{<<"ip">> := Ip} = Result} ->
             Body = #{

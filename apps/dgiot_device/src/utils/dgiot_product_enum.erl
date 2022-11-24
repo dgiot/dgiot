@@ -191,4 +191,3 @@ get_ThingMap(ProductId) ->
                 end, #{}, List),
             {ok, Res}
     end.
-
