@@ -101,7 +101,8 @@ get_navigation_by_result([#{<<"success">> := #{<<"results">> := Result}} | Menus
     get_navigation_by_result(Menus, Roles, lists:foldl(Fun, Acc0, Result)).
 
 get_classtree(ClassName, Parent, Filter, SessionToken) ->
-    case dgiot_parse:query_object(ClassName, Filter, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+    NewFilter = dgiot_bamis:format(Filter),
+    case dgiot_parse:query_object(ClassName, NewFilter, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
         {ok, #{<<"results">> := Classes}} when length(Classes) > 0 ->
             NewClasses =
                 lists:foldl(fun(Class, Acc) ->

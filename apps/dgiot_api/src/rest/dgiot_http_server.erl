@@ -150,7 +150,7 @@ get_config([{Key, Value} | Rest], Opts) ->
 
 get_routes(Name, #{docroot := DocRoot}) ->
     Dispatch = dgiot_router:get_paths(Name, DocRoot),
-    io:format("~s ~p Name ~p ~n ",[?FILE, ?LINE, Name]),
+%%    io:format("~s ~p Name ~p ~n ",[?FILE, ?LINE, Name]),
     cowboy_router:compile([{'_', Dispatch}]).
 
 

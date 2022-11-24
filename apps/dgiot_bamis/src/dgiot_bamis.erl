@@ -240,8 +240,14 @@ format_multilayer(Object) ->
         #{}, MapWhere).
 format_value(#{<<"gt">> := V}) ->
     #{<<"$gt">> => V};
+format_value(#{<<"gte">> := V}) ->
+    #{<<"$gte">> => V};
 format_value(#{<<"lt">> := V}) ->
     #{<<"$lt">> => V};
+format_value(#{<<"lte">> := V}) ->
+    #{<<"$lte">> => V};
+format_value(#{<<"ne">> := V}) ->
+    #{<<"$ne">> => V};
 format_value(#{<<"regex">> := V}) ->
     #{<<"$regex">> => V};
 format_value(V) ->

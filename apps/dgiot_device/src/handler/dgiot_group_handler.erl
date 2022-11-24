@@ -270,7 +270,7 @@ post_group(Body, SessionToken) ->
                 <<"product">> => ProductId,
                 <<"ACL">> => Acl},
             io:format("CreateArgs ~p~n", [CreateArgs]),
-            dgiot_device:create_device(CreateArgs, SessionToken);
+            dgiot_device:create_device(CreateArgs);
         Error ->
             Error
     end.

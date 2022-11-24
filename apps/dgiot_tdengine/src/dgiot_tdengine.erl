@@ -348,38 +348,53 @@ save_tdpools(ClientId) ->
     case dgiot_data:get(tdpool, pools) of
         not_find ->
             dgiot_data:insert(tdpool, pools, [ClientId]),
-            dgiot_data:insert(tdpool, {ClientId, pid}, self());
+            dgiot_data:insert(tdpool, {ClientId, pid}, {self(), login});
         Que ->
             dgiot_data:insert(tdpool, pools, dgiot_utils:unique_1(Que ++ [ClientId])),
-            dgiot_data:insert(tdpool, {ClientId, pid}, self())
-    end.
+            dgiot_data:insert(tdpool, {ClientId, pid}, {self(), login})
+    end,
+    TdChannelId = dgiot_parse_id:get_channelid(dgiot_utils:to_binary(?BRIDGE_CHL), <<"TD">>, <<"TD资源通道"/utf8>>),
+    dgiot_channelx:do_message(TdChannelId, {tdpool_connect}).
 
 tdpool_connect(Password) ->
     case dgiot_data:get(tdpool, pools) of
         not_find ->
             pass;
-        [ClientId | _Que] ->
-            Topic = <<"$dg/taos/tdpool/", ClientId/binary, "/connect">>,
-            timer:sleep(1000),
-            dgiot_mqtt:publish(ClientId, Topic, Password)
+        [ClientId | Que] ->
+            case dgiot_data:get(tdpool, {ClientId, pid}) of
+                {_Pid, login} ->
+                    Topic = <<"$dg/taos/tdpool/", ClientId/binary, "/connect">>,
+                    timer:sleep(1000),
+                    dgiot_mqtt:publish(ClientId, Topic, Password),
+                    dgiot_data:insert(tdpool, pools, dgiot_utils:unique_1(Que ++ [ClientId])),
+                    dgiot_data:insert(tdpool, {ClientId, pid}, {self(), connect});
+                _ ->
+                    pass
+            end
     end.
 
 save_sql(Sql) ->
     case dgiot_data:get(tdpool, pools) of
         not_find ->
             pass;
-        [ClientId | _Que] ->
-            tdpool_connect(<<"taosdata">>),
+        [ClientId | Que] ->
             Topic = <<"$dg/taos/tdpool/", ClientId/binary, "/sql">>,
-            dgiot_mqtt:publish(ClientId, Topic, Sql)
+            dgiot_mqtt:publish(ClientId, Topic, Sql),
+            dgiot_data:insert(tdpool, pools, dgiot_utils:unique_1(Que ++ [ClientId]))
     end.
 
 format_sql(ProductId, DevAddr, Data) ->
     case dgiot_bridge:get_product_info(ProductId) of
         {ok, #{<<"thing">> := Properties}} ->
+            NewValues =
+                case dgiot_data:get({ProductId, ?TABLEDESCRIBE}) of
+                    Results when length(Results) > 0 ->
+                        get_sqls(Data, ProductId, Properties, Results);
+                    _ ->
+                        " "
+                end,
             DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
-            NewValues = get_allvalues(Data, ProductId, Properties),
-            TdChannelId = dgiot_parse_id:get_channelid(dgiot_utils:to_binary(2), <<"TD">>, <<"TD资源通道"/utf8>>),
+            TdChannelId = dgiot_parse_id:get_channelid(dgiot_utils:to_binary(?BRIDGE_CHL), <<"TD">>, <<"TD资源通道"/utf8>>),
             DB = dgiot_tdengine:get_database(TdChannelId, ProductId),
             TableName = ?Table(DeviceId),
             Using1 = <<" using ", DB/binary, "_", ProductId/binary>>,
@@ -390,14 +405,39 @@ format_sql(ProductId, DevAddr, Data) ->
     end.
 
 
-get_allvalues(Data, ProductId, Properties) ->
-%%    Len = length(Data),
-    get_allvalues(Data, ProductId, Properties, <<"">>).
+get_sqls(Data, ProductId, Properties, Results) ->
+    get_sqls(Data, ProductId, Properties, Results, <<"">>).
 
-get_allvalues([], _ProductId, _Properties, Acc) ->
+get_sqls([], _ProductId, _Properties, _Results, Acc) ->
     Acc;
 
-get_allvalues([Data | Rest], ProductId, Properties, Acc) ->
+get_sqls([Data | Rest], ProductId, Properties, Results, Acc) ->
     Now = maps:get(<<"createdat">>, Data, now),
-    Values = dgiot_tdengine:get_values(ProductId, Data, Now),
-    get_allvalues(Rest, ProductId, Properties, <<Acc/binary, Values/binary>>).
+    Sql = get_sql(Results, Data, Now),
+    get_sqls(Rest, ProductId, Properties, Results, <<Acc/binary, Sql/binary>>).
+
+get_sql(Results, Values, Now) ->
+    get_sql(Results, Values, Now, " (").
+
+get_sql([], _Values, _Now, Acc) ->
+    list_to_binary(Acc ++ ")");
+
+get_sql([Column | Results], Values, Now, Acc) ->
+    NewAcc =
+        case Column of
+            #{<<"Note">> := <<"TAG">>} ->
+                Acc;
+            #{<<"Field">> := <<"createdat">>} ->
+                Acc ++ dgiot_utils:to_list(Now);
+            #{<<"Field">> := Field} ->
+                Value = maps:get(Field, Values, null),
+                case Value of
+                    {NewValue, text} ->
+                        Acc ++ ",\'" ++ dgiot_utils:to_list(NewValue) ++ "\'";
+                    _ ->
+                        Acc ++ "," ++ dgiot_utils:to_list(Value)
+                end;
+            _ ->
+                Acc
+        end,
+    get_sql(Results, Values, Now, NewAcc).
