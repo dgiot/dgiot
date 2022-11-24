@@ -100,8 +100,17 @@ login(ClinetId) ->
 logout(ClinetId) ->
     _ = grpc_client_sup:stop_channel_pool(ClinetId).
 
-send(ClinetId) ->
-    dgiot_dlink_client:say_hello(#{name => <<"Xiao Ming">>}, #{channel => ClinetId}).
+send(ClinetId, Map) when is_map(Map) ->
+    case dgiot_dlink_client:say_hello(#{name => base64:encode(jsx:encode(Map))}, #{channel => ClinetId}) of
+        {ok, #{message := ReMessage}, _} ->
+            {ok,ReMessage};
+        _->
+            error
+    end;
+
+send(_, _) ->
+    pass.
+
 
 test() ->
     FileName = <<"dlink">>,

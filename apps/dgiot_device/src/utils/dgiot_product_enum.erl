@@ -56,7 +56,7 @@ get_reverse(Spec) ->
 get_enmu_key(ProductId, Identifier, Value) ->
     case dgiot_data:get(?MODULE, {ProductId, device_thing, Identifier}) of
         #{Identifier := <<"enum">>, <<"reverse">> := #{Value := K}} ->
-            #{Value => K};
+            #{Value => dgiot_utils:to_int(K)};
         _ ->
             #{}
     end.
@@ -74,13 +74,21 @@ post_enum_value(ProductId, Identifier, Name) ->
     case dgiot_data:get(?MODULE, {ProductId, device_thing, Identifier}) of
         #{Identifier := <<"enum">>, <<"specs">> := Spec} ->
             Max = maps:fold(
-                fun(K, _, Acc) ->
-                    case dgiot_utils:to_int(K) > Acc of
+                fun
+                    (<<F:1/binary,_/binary>>=K, _, Acc) ->
+                    case dgiot_utils:is_number(F) of
                         true ->
-                            dgiot_utils:to_int(K);
-                        _ ->
+                            case dgiot_utils:to_int(K) > Acc of
+                                true ->
+                                    dgiot_utils:to_int(K);
+                                _ ->
+                                    Acc
+                            end;
+                        _->
                             Acc
-                    end
+                    end;
+                    (_,_,Acc)->
+                        Acc
                 end, 0, Spec),
             upadte_thing(ProductId, Identifier, Name, Max);
         _ ->
@@ -183,3 +191,4 @@ get_ThingMap(ProductId) ->
                 end, #{}, List),
             {ok, Res}
     end.
+

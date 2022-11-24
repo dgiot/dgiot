@@ -24,7 +24,7 @@
 -include_lib("dgiot/include/logger.hrl").
 -include("dgiot_factory.hrl").
 
--export([put_worker_shift/1, get_work_shop_workers/2, get_new_workernum/1, format_worker/1]).
+-export([put_worker_shift/1, get_work_shop_workers/2, get_new_workernum/1, format_worker/2]).
 -export([duplicate_shift/4]).
 -export([record_worker_info/7]).
 
@@ -381,22 +381,19 @@ record_worker_info(_, _, _, _, _, _, _) ->
 
 
 
-format_worker(Worker) when is_binary(Worker) ->
+format_worker(ProductId,Worker) when is_binary(Worker) ->
     WorkerList = re:split(Worker, <<",">>),
     lists:foldl(
         fun(X, Acc) ->
-            case dgiot_data:get(?WORKER, X) of
+            case dgiot_data:get(?WORKER, {ProductId,X}) of
                 not_find ->
                     <<Acc/binary, ",", X/binary>>;
                 Res ->
-                    F = lists:nth(1, Res),
-                    Name = maps:get(<<"worker_name">>, F, X),
-                    <<Acc/binary, " ", Name/binary>>
+                    <<Acc/binary, " ", Res/binary>>
             end
         end, <<"">>, WorkerList);
-format_worker(Worker) ->
+format_worker(_,Worker) ->
     Worker.
-
 
 
 %%record_worker_info(BatchProductId, BatchDeviceId, #{<<"quality">> := #{<<"type">> := Type}} = Payload, ChannelId, WorkerList, WorkTime, Num) ->

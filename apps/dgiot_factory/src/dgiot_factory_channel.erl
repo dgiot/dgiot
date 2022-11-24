@@ -33,7 +33,7 @@
 -export([init/3, handle_init/1, handle_event/3, handle_message/2, stop/3]).
 -export([get_id/2, after_handle/4, handle_data/8, get_card_data/2]).
 -export([get_sub_product/1, get_new_acl/2, init_worker_device/3]).
-
+-export([get_roll_dev_id/2]).
 %% 注册通道类型
 -channel_type(#{
     cType => ?TYPE,
@@ -369,6 +369,7 @@ init_worker_device(ProductId, WorkerNum, WorkerName) ->
                                 <<"worker_name">> => WorkerName,
                                 <<"product">> => ProductId},
                             NumData = dgiot_product_enum:turn_num(AllData, ProductId),
+                            dgiot_data:insert(?WORKER, {ProductId, WorkerNum}, WorkerName),
                             dgiot_task:save_td_no_match(ProductId, WorkerNum, NumData, #{});
                         _ ->
                             pass
