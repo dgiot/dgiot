@@ -12,19 +12,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """The Python implementation of the GRPC helloworld.Greeter server."""
-
+import json
 from concurrent import futures
 import logging
 import grpc
 import dlink_pb2
 import dlink_pb2_grpc
-
+import base64
+import datetime
 
 class Dlink(dlink_pb2_grpc.DlinkServicer):
 
     def SayHello(self, request, context):
+        print(datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S'))
         print( request.name)
-        return dlink_pb2.HelloReply(message='Hello, %s!' % request.name)
+        print( context)
+        json_request = json.loads(base64.b64decode(request.name).decode("utf-8"))
+        print(json_request)
+        return dlink_pb2.HelloReply(message="parameter received")
 
 
 def serve():
@@ -38,3 +43,5 @@ def serve():
 if __name__ == '__main__':
     logging.basicConfig()
     serve()
+
+
