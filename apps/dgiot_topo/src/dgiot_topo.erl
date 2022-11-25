@@ -24,7 +24,7 @@ docroot() ->
     Root = dgiot_httpc:url_join([Dir, "/priv/"]),
     Root ++ "www".
 
-get_topo(Arg, _Context) ->
+get_topo(Arg, #{<<"sessionToken">> := SessionToken} = _Context) ->
     #{<<"productid">> := ProductId, <<"devaddr">> := Devaddr, <<"viewid">> := ViewId} = Arg,
     Type = maps:get(<<"type">>, Arg, <<"web">>),
     NewViewId =
@@ -36,7 +36,7 @@ get_topo(Arg, _Context) ->
         end,
     case dgiot_parse:get_object(<<"View">>, NewViewId) of
         {ok, #{<<"data">> := #{<<"konva">> := #{<<"Stage">> := #{<<"children">> := Children}}}} = View} when length(Children) > 0 ->
-            NewView = dgiot_product_knova:get_konva_view(View, Devaddr, ProductId, Type),
+            NewView = dgiot_product_knova:get_konva_view(View, Devaddr, ProductId, Type, SessionToken),
             {ok, #{<<"code">> => 200, <<"message">> => <<"SUCCESS">>, <<"data">> => NewView#{<<"viewid">> => NewViewId}}};
         _ ->
             {ok, #{<<"code">> => 204, <<"message">> => <<"没有组态"/utf8>>}}

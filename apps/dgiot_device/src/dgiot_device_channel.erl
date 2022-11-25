@@ -183,7 +183,7 @@ handle_message({sync_parse, Pid, 'after', get, Token, <<"Device">>, #{<<"results
     dgiot_parse_hook:publish(Pid, ResBody#{<<"results">> => NewResults}),
     {ok, State};
 
-handle_message({sync_parse, Pid, 'after', get, Token, <<"Device">>, #{<<"objectId">> := _ObjectId} = ResBody}, State) ->
+handle_message({sync_parse, Pid, 'after', get, Token, <<"Device">>, #{<<"objectId">> := DeviceId} = ResBody}, State) ->
     SessionToken = dgiot_parse_auth:get_usersession(dgiot_utils:to_binary(Token)),
     Cookie = case dgiot_parse_auth:get_cookie(SessionToken) of
                  not_find ->
@@ -193,10 +193,24 @@ handle_message({sync_parse, Pid, 'after', get, Token, <<"Device">>, #{<<"objectI
              end,
     MapType = maps:get(<<"mapType">>, Cookie, <<"baidu">>),
     ResBody1 =
-        case ResBody of
-            #{<<"location">> := Location} ->
+        case dgiot_device:lookup(DeviceId) of
+            {ok, #{<<"status">> := Status, <<"isEnable">> := IsEnable, <<"time">> := Time}} ->
+                NewStatus =
+                    case Status of
+                        true ->
+                            <<"ONLINE">>;
+                        _ ->
+                            <<"OFFLINE">>
+                    end,
+                Location =
+                    case maps:find(<<"location">>, ResBody) of
+                        error ->
+                            #{};
+                        {ok, L} ->
+                            L
+                    end,
                 NewLocation = get_new_location(Location, MapType),
-                ResBody#{<<"location">> => NewLocation};
+                ResBody#{<<"location">> => NewLocation, <<"status">> => NewStatus, <<"isEnable">> => IsEnable, <<"lastOnlineTime">> => Time};
             _ ->
                 ResBody
         end,

@@ -24,7 +24,7 @@
     get_konva/3,
     get_konva_thing/2,
     edit_konva/2,
-    get_konva_view/4,
+    get_konva_view/5,
     get_Product_konva/0,
     save_Product_konva/1,
     get_stage/1,
@@ -118,7 +118,7 @@ get_konva_thing(Arg, _Context) ->
             {ok, #{<<"code">> => 200, <<"message">> => <<"SUCCESS">>, <<"data">> => #{<<"nobound">> => #{}, <<"konvathing">> => #{}}}}
     end.
 
-get_konva_view(View, Devaddr, ProductId, Type) ->
+get_konva_view(View, Devaddr, ProductId, Type, SessionToken) ->
     #{<<"data">> := #{<<"konva">> := #{<<"Stage">> := #{<<"children">> := Children} = Stage} = Konva}} = View,
     case Devaddr of
         undefined ->
@@ -132,7 +132,8 @@ get_konva_view(View, Devaddr, ProductId, Type) ->
             end;
         _ ->
             DeviceId = dgiot_parse_id:get_deviceid(ProductId, Devaddr),
-            case dgiot_device_tdengine:get_device(ProductId, Devaddr, #{<<"keys">> => <<"last_row(*)">>, <<"limit">> => 1}) of
+            dgiot_mqtt:subscribe_route_key([<<"$dg/user/konva/", DeviceId/binary, "/#">>], SessionToken),
+            case dgiot_device_tdengine:get_device(ProductId, Devaddr, #{<<"keys">> => <<"*">>, <<"limit">> => 1}) of
                 {ok, #{<<"results">> := [Result | _]}} ->
                     put({self(), td}, Result);
                 _ ->
