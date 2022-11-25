@@ -54,6 +54,7 @@ dist.zip
 scripts/git-token
 etc/*.seg
 _upgrade_base/
+data/
 ci.sh
 *.ipr
 node_modules/
