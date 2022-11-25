@@ -1,0 +1,27 @@
+[Unit]
+Description=dgiot server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=forking
+ExecStart=/bin/sh /data/dgiot/dgiot/bin/emqx start
+User=root
+Group=root
+Environment=HOME=/data/dgiot/dgiot/erts-11.0
+KillMode=mixed
+KillSignal=SIGINT
+TimeoutSec=300
+OOMScoreAdjust=-1000
+TimeoutStopSec=1000000s
+LimitNOFILE=infinity
+LimitNPROC=infinity
+LimitCORE=infinity
+TimeoutStartSec=0
+StandardOutput=null
+Restart=always
+StartLimitBurst=3
+StartLimitInterval=60s
+
+[Install]
+WantedBy=multi-user.target

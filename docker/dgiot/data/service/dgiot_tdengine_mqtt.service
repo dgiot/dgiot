@@ -1,0 +1,24 @@
+[Unit]
+Description=dgiot_tdengine_mqtt server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+ExecStart=/usr/sbin/dgiot_tdengine_mqtt 127.0.0.1
+KillMode=mixed
+KillSignal=SIGINT
+TimeoutSec=300
+OOMScoreAdjust=-1000
+TimeoutStopSec=1000000s
+LimitNOFILE=infinity
+LimitNPROC=infinity
+LimitCORE=infinity
+TimeoutStartSec=0
+StandardOutput=null
+Restart=always
+StartLimitBurst=3
+StartLimitInterval=60s
+
+[Install]
+WantedBy=multi-user.target
