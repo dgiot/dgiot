@@ -36,11 +36,11 @@ Create docker network
 
 Copy the sources down -
 
-    docker build --rm --tag dgiot/dgiot:4.7.0 .
+    docker build --rm --tag dgiot/dgiot_db:4.7.1 .
 
 To run:
 
-    docker run --env IS_INTRANET=false --env DOMAIN_NAME=prod.dgiotcloud.cn -itd --net docker-dgiot --ip 173.173.0.10 --privileged -p 80:80 -p 1337:1337 --hostname dgiot dgiot/dgiot:4.7.0 init
+    docker run --env IS_INTRANET=false -itd --net docker-dgiot --ip 173.173.0.30 --privileged --hostname dgiot_db dgiot/dgiot_db:4.7.1 init
 
 To exec:
 
@@ -51,7 +51,9 @@ To test:
     curl http://localhost
 
 docker login -u dgiot -p ${passWord}  #replace the docker registry username and password
-docker push dgiot/dgiot:${version}
+docker container commit b3b91d654f84 dgiot/dgiot_db:4.7.1
+docker commit b3b91d654f84 dgiot/dgiot_db:4.7.1
+docker push dgiot/dgiot_db:4.7.1
 
 
 

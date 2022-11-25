@@ -468,7 +468,7 @@ do_request(get_producttree, _, _Context, _Req) ->
                 lists:foldl(fun(Class, Acc) ->
                     NewClasse = Class#{
                         <<"label">> => maps:get(<<"name">>, Class, <<"label">>),
-                        <<"value">> => <<>>,
+                        <<"value">> => maps:get(<<"objectId">>, Class, <<>>),
                         <<"parent">> => maps:get(<<"parent">>, Class, <<"0">>)},
                     Acc ++ [maps:without([<<"createdAt">>, <<"updatedAt">>, <<"ACL">>], NewClasse)]
                             end, [], Classes),

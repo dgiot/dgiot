@@ -32,8 +32,8 @@ get_device(ProductId, DevAddr, Query) ->
         ChannelId ->
             DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
             TableName = ?Table(DeviceId),
-            DB = dgiot_tdengine:get_database(ChannelId, ProductId),
-            case dgiot_tdengine:query_object(ChannelId, TableName, Query#{<<"db">> => DB}) of
+%%            DB = dgiot_tdengine:get_database(ChannelId, ProductId),
+            case get_realtime_data(ChannelId, ProductId, TableName, Query) of
                 {ok, Data} ->
                     {ok, Data};
                 {error, Reason} ->
