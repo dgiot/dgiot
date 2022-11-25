@@ -50,9 +50,9 @@ To test:
 
     curl http://localhost
 
-docker login -u dgiot -p iotn2n.com  #replace the docker registry username and password
-docker container commit ea07974973ba dgiot/dgiot_edge:4.7.1
-docker commit ea07974973ba dgiot/dgiot_edge:4.7.1
+docker login -u dgiot -p ${passWord}  #replace the docker registry username and password
+docker container commit 503f4461cc1c dgiot/dgiot_edge:4.7.1
+docker commit 503f4461cc1c dgiot/dgiot_edge:4.7.1
 docker push dgiot/dgiot_edge:4.7.1
 
 
