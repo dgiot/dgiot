@@ -20,12 +20,12 @@
 %% API
 -export([get_material_record/2, post_material/2]).
 -export([get_warehouse_material/4, put_warehouse_material/1]).
--export([get_usable_material/1]).
-get_material_record(DeviceId, Depart) ->
+-export([get_usable_material/1,get_depart_material/2]).
+get_material_record(DeviceId, _Depart) ->
     case dgiot_parse:get_object(<<"Device">>, DeviceId) of
         {ok, #{<<"basedata">> := #{<<"material">> := Material}}} ->
-            DepartMaterial = get_depart_material(Material, Depart),
-            {ok, DepartMaterial};
+%%            DepartMaterial = get_depart_material(Material, Depart),
+            {ok, Material};
         _ ->
             case dgiot_hook:run_hook({factory, get_material}, [DeviceId]) of
                 {ok, [{ok, Material}]} ->
