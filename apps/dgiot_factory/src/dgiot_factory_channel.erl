@@ -142,6 +142,9 @@ handle_message({sync_parse, _Pid, 'before', put, Token, <<"Device">>,
         {ok, #{<<"productid">> := TaskProductId}} ->
             case Content of
                 #{<<"person">> := #{<<"type">> := PersonType}} ->
+
+                    dgiot_metrics:inc(dgiot_factory, <<"input_num">>, 1),
+               
                     case process_data(Content, PersonType, Token, TaskDeviceId) of
                         {BatchProductId, BatchDeviceId, BatchAddr, NewData} ->
                             handle_data(TaskProductId, TaskDeviceId, BatchProductId, BatchDeviceId, BatchAddr, PersonType, NewData, ChannelId),
@@ -276,6 +279,7 @@ process_roll_dev(TaskProductId, TaskDeviceId, OrderName, SessionToken, FlatMap) 
                 }},
             dgiot_device_cache:post(Device),
             dgiot_parse:create_object(<<"Device">>, Device),
+            dgiot_metrics:inc(dgiot_factory, <<"batch_num">>, 1),
             dgiot_device:save_subdevice(BatchDeviceId, TaskDeviceId, 1),
             {ok, {BatchProductId, BatchDeviceId, BatchAddr}}
 

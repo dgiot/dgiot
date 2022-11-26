@@ -30,6 +30,7 @@
 
 start(_StartType, _StartArgs) ->
     init_ets(),
+    dgiot_metrics:start(dgiot_factory),
     dgiot_factory_sup:start_link().
 
 stop(_State) ->
