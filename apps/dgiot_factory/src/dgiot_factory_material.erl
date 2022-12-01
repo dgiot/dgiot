@@ -27,12 +27,7 @@ get_material_record(DeviceId, _Depart) ->
 %%            DepartMaterial = get_depart_material(Material, Depart),
             {ok, Material};
         _ ->
-            case dgiot_hook:run_hook({factory, get_material}, [DeviceId]) of
-                {ok, [{ok, Material}]} ->
-                    {ok, Material};
-                _ ->
-                    error
-            end
+            {ok,#{}}
     end.
 get_depart_material(Material, undefined) ->
     Material;
