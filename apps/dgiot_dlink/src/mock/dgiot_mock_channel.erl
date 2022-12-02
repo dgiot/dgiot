@@ -62,8 +62,9 @@ start(ChannelId, ChannelArgs) ->
 init(?TYPE, ChannelId, ChannelArgs) ->
     State = #state{id = ChannelId},
     dgiot_parse_hook:subscribe(<<"Device/*">>, put, ChannelId, [<<"profile">>]),
-    ChildSpecs = dgiot_mock_mqtt:childspec(ChannelId, ChannelArgs),
-    {ok, State, ChildSpecs}.
+    MqttChildSpecs = dgiot_mock_mqtt:childspec(ChannelId, ChannelArgs),
+    TcpChildSpecs = dgiot_mock_tcp:childspec(ChannelId, ChannelArgs),
+    {ok, State, MqttChildSpecs ++ TcpChildSpecs}.
 
 handle_init(State) ->
     {ok, State}.

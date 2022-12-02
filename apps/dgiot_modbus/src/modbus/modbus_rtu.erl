@@ -274,6 +274,9 @@ set_params(Payload, _ProductId, _DevAddr) ->
 %rtu modbus
 parse_frame(<<>>, Acc, _State) -> {<<>>, Acc};
 
+parse_frame(Buff, _Acc, _State) when length(Buff) < 6 ->
+    {<<>>, #{}};
+
 parse_frame(<<MbAddr:8, BadCode:8, ErrorCode:8, Crc:2/binary>> = Buff, Acc,
     #{<<"addr">> := DtuAddr} = State) ->
     CheckCrc = dgiot_utils:crc16(<<MbAddr:8, BadCode:8, ErrorCode:8>>),

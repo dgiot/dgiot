@@ -67,19 +67,19 @@
         order => 3,
         type => string,
         required => true,
-        default => <<"9C-A5-25-**-**-**">>,
+        default => <<"6D-5G-8I-**-**-**">>,
         title => #{
             zh => <<"登录报文帧头"/utf8>>
         },
         description => #{
-            zh => <<"填写正则表达式匹配login报文, 9C-A5标识设备类型，**-**-**-**为设备地址,中杆会自动去除"/utf8>>
+            zh => <<"填写正则表达式匹配login报文, 设备地址, 中杠会自动去除"/utf8>>
         }
     },
     <<"dtutype">> => #{
         order => 5,
         type => string,
         required => true,
-        default => <<"usr">>,
+        default => <<"DGIOT">>,
         title => #{
             zh => <<"控制器厂商"/utf8>>
         },
