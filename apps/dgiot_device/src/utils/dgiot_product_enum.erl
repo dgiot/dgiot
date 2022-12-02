@@ -36,9 +36,10 @@ save_product_enum(ProductId) ->
                 fun
                     (#{<<"identifier">> := Identifier,
                         <<"dataType">> := #{<<"type">> := <<"enum">>, <<"specs">> := Spec}}) ->
-                        Reverse = get_reverse(Spec),
+                        NewSpec =maps:without([<<"max">>,<<"min">>,<<"step">>],Spec),
+                        Reverse = get_reverse(NewSpec),
                         dgiot_data:insert(?MODULE, {ProductId, device_thing, Identifier},
-                            #{Identifier => <<"enum">>, <<"specs">> => Spec, <<"reverse">> => Reverse});
+                            #{Identifier => <<"enum">>, <<"specs">> => NewSpec, <<"reverse">> => Reverse});
                     (#{<<"identifier">> := Identifier, <<"dataType">> := #{<<"type">> := Type}}) ->
                         dgiot_data:insert(?MODULE, {ProductId, device_thing, Identifier}, #{Identifier => Type})
                 end, Props);
