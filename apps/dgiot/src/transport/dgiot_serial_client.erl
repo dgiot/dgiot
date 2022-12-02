@@ -15,9 +15,10 @@
 %%--------------------------------------------------------------------
 -module(dgiot_serial_client).
 -behaviour(gen_server).
--define(SERIAL, ets).
+-dgiot_data("ets").
+-define(SERIAL, dgiot_serial_ets).
 -export([
-    init/0,
+    init_ets/0,
     open/1, open/2,
     close/1,
 
@@ -63,7 +64,7 @@
     package_send_count = 0 :: integer()
 }).
 
-init() ->
+init_ets() ->
     dgiot_data:init(?SERIAL).
 
 %%--------------------------------------------------------------------
@@ -118,6 +119,7 @@ start_link(Dev, Opt) ->
 %%% Callbacks
 %%--------------------------------------------------------------------
 init([ParentPid, Serialport, Opt]) ->
+%%    io:format("~s ~p Serialport = ~p.~n", [?FILE, ?LINE, Serialport]),
     dgiot_data:insert(?SERIAL, Serialport, self()),
     process_flag(trap_exit, true),
     BSpeed = proplists:get_value(speed, Opt, b9600),
@@ -143,7 +145,6 @@ init([ParentPid, Serialport, Opt]) ->
             fun(N) -> serctl:ospeed(N, BSpeed) end
         ]
     ),
-
     <<"b", Speed/binary>> = dgiot_utils:to_binary(BSpeed),
 
     ok = serctl:tcsetattr(FD, tcsanow, Termios),
@@ -172,14 +173,15 @@ handle_call({send, Data}, _From, #state{port = Port} = State) ->
             error:Error -> {error, Error}
         end,
     {reply, Reply, State};
-handle_call({write, Data}, _From, #state{fd = FD} = State) ->
-    Reply =
-        try serctl:write(FD, Data) of
-            ok -> ok
-        catch
-            error:Error -> {error, Error}
-        end,
-    {reply, Reply, State};
+handle_call({write, Data}, _From, #state{fd = FD, package_send_count = Package_send_count} = State) ->
+    try serctl:write(FD, Data) of
+        ok ->
+            {reply, ok, State#state{package_send_count = Package_send_count + 1}}
+    catch
+        error:Error ->
+            {reply, {error, Error}, State}
+    end;
+
 handle_call(close, _From, State) ->
     {stop, normal, ok, State};
 handle_call({controlling_process, Pid}, {Owner, _}, #state{pid = Owner} = State) ->

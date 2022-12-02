@@ -110,6 +110,8 @@
     , get_computerconfig/0
     , get_ipbymac/1
     , get_ifaddrs/0
+    , get_ifaddr/1
+    , get_ifip/1
     , ping_all/0
     , get_ipbymac/2
     , get_ipv4/1
@@ -919,6 +921,35 @@ get_ifaddrs() ->
                         end, [], Iflist);
         _ -> []
     end.
+
+get_ifaddr(Inetsname) when is_list(Inetsname) ->
+    case inet:getifaddrs() of
+        {ok, Iflist} ->
+            Inets = proplists:get_value(Inetsname, Iflist, []),
+            Hwaddr = proplists:get_value(hwaddr, Inets, []),
+            dgiot_utils:binary_to_hex(iolist_to_binary(Hwaddr));
+        _ -> <<>>
+    end;
+
+get_ifaddr(Inetsname) ->
+    get_ifaddr(dgiot_utils:to_list(Inetsname)).
+
+get_ifip(Inetsname) when is_list(Inetsname) ->
+    case inet:getifaddrs() of
+        {ok, Iflist} ->
+            Inets = proplists:get_value(Inetsname, Iflist, []),
+            case proplists:get_value(addr, Inets, not_find) of
+                not_find ->
+                    <<>>;
+                Ip ->
+                    get_ip(Ip)
+            end;
+        _ ->
+            <<>>
+    end;
+
+get_ifip(Inetsname) ->
+    get_ifip(dgiot_utils:to_list(Inetsname)).
 
 get_ipv4(Hostent) ->
     lists:foldl(fun({K, V}, Acc) ->

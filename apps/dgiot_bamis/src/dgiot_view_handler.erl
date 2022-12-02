@@ -97,7 +97,26 @@ do_request(post_dashboard, Arg, Context, _Req) ->
     Data = dgiot_dashboard:post_dashboard(Arg, Context),
     {200, Data};
 
+%% iot_hub 概要: amis 变量替换
+%% OperationId:get_amis
+%% 请求:POST /iotapi/get_amis
+do_request(post_amis, #{<<"viewid">> := Viewid, <<"render">> := Render} = _Arg, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
+    Amisdata =
+        case dgiot_parse:get_object(<<"View">>, Viewid, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+            {ok, #{<<"data">> := Data} = View} ->
+                Json = jsx:encode(Data),
+                NewJson =
+                    maps:fold(fun(K, V, Acc) ->
+                        re:replace(Acc, <<"%{", K/binary, "}">>, V, [global, {return, binary}])
+                              end, Json, Render),
+                View#{<<"data">> := jsx:decode(NewJson)};
+            _ ->
+                #{}
+        end,
+    {200, Amisdata};
+
 %%  服务器不支持的API接口
 do_request(_OperationId, _Args, _Context, _Req) ->
-    ?LOG(info, "_OperationId:~p~n", [_OperationId]),
+%%    io:format("~s ~p _OperationId = ~p.~n", [?FILE, ?LINE, _OperationId]),
+%%    io:format("~s ~p _Args = ~p.~n", [?FILE, ?LINE, _Args]),
     {error, <<"Not Allowed.">>}.

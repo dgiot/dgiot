@@ -175,7 +175,7 @@ create_device(DeviceId, ProductId, DTUMAC, DTUIP, Dtutype) ->
         {ok, #{<<"ACL">> := Acl, <<"devType">> := DevType}} ->
             dgiot_device:create_device(#{
                 <<"devaddr">> => DTUMAC,
-                <<"name">> => <<Dtutype/binary, DTUMAC/binary>>,
+                <<"name">> => <<Dtutype/binary, "_", DTUMAC/binary>>,
                 <<"ip">> => DTUIP,
                 <<"isEnable">> => true,
                 <<"product">> => ProductId,
