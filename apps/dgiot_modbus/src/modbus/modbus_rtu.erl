@@ -274,8 +274,8 @@ set_params(Payload, _ProductId, _DevAddr) ->
 %rtu modbus
 parse_frame(<<>>, Acc, _State) -> {<<>>, Acc};
 
-parse_frame(Buff, _Acc, _State) when length(Buff) < 6 ->
-    {<<>>, #{}};
+parse_frame(Buff, Acc, _State) when size(Buff) < 6 ->
+    {<<>>, Acc};
 
 parse_frame(<<MbAddr:8, BadCode:8, ErrorCode:8, Crc:2/binary>> = Buff, Acc,
     #{<<"addr">> := DtuAddr} = State) ->
@@ -614,6 +614,7 @@ format_value(Buff, #{<<"identifier">> := BitIdentifier,
                         <<"registersnumber">> := Num,
                         <<"originaltype">> := Originaltype}
                 } ->
+
                     IntOffset = dgiot_utils:to_int(Offset),
                     IntNum = dgiot_utils:to_int(Num),
                     IntLen = get_len(IntNum, Originaltype),
