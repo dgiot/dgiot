@@ -177,19 +177,8 @@ do_request(get_dlinkjson, #{<<"type">> := Type}, _Context, _Req) ->
     DlinkJson = dgiot_dlink:get_json(Type),
     {200, DlinkJson};
 
-do_request(post_topic, #{<<"topic">> := Topic} = _Args, #{<<"sessionToken">> := _SessionToken} = _Context, _Req) ->
-%%    TopicKey =
-%%        case is_list(Topic) of
-%%            true ->
-%%                <<"dev_states">>;
-%%            false ->
-%%                [_Head, _User, Key | _] = re:split(Topic, "/"),
-%%                <<"dg_user_", Key/binary>>
-%%        end,
-%%    PubTopic = <<"dgiot_topics/", SessionToken/binary>>,
-%%    Payload = jsx:encode(#{<<"topic">> => Topic, <<"topickey">> => TopicKey}),
-%%    dgiot_mqtt:publish(self(), PubTopic, Payload),
-%%    timer:sleep(100),
+do_request(post_topic, #{<<"topic">> := Topic} = _Args, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
+    dgiot_mqtt:subscribe_route_key([Topic], SessionToken),
     {200, #{<<"message">> => <<"订阅成功"/utf8>>, <<"Topic">> => Topic, <<"TopicKey">> => <<"TopicKey">>}};
 
 do_request(get_thingecho, _Args, _Context, _Req) ->
