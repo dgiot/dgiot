@@ -14,20 +14,18 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
--module(dgiot_product_amis).
--author("kenneth").
--include("dgiot_device.hrl").
--include_lib("dgiot/include/logger.hrl").
+-module(dgiot_iec104_app).
 
--export([post/1]).
+-emqx_plugin(?MODULE).
 
-%%dgiot_product_amis:post(<<"d0cb711d3d">>).
-post(ProductId) ->
-    dgiot_parse:create_object(<<"View">>, #{
-        <<"title">> => ProductId,
-        <<"key">> => ProductId,
-        <<"type">> => <<"Amis">>,
-        <<"flag">> => <<"Amis">>,
-        <<"class">> => <<"Product">>,
-        <<"data">> => dgiot_utils:get_JsonFile(?MODULE,<<"Amis.json">>)
-    }).
+-behaviour(application).
+-include("dgiot_iec104.hrl").
+
+%% Application callbacks
+-export([start/2, stop/1]).
+
+start(_StartType, _StartArgs) ->
+    dgiot_iec104_sup:start_link().
+
+stop(_State) ->
+    ok.

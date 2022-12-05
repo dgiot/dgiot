@@ -14,20 +14,21 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
--module(dgiot_product_amis).
--author("kenneth").
--include("dgiot_device.hrl").
--include_lib("dgiot/include/logger.hrl").
+-module(dgiot_iec104_sup).
 
--export([post/1]).
+-behaviour(supervisor).
 
-%%dgiot_product_amis:post(<<"d0cb711d3d">>).
-post(ProductId) ->
-    dgiot_parse:create_object(<<"View">>, #{
-        <<"title">> => ProductId,
-        <<"key">> => ProductId,
-        <<"type">> => <<"Amis">>,
-        <<"flag">> => <<"Amis">>,
-        <<"class">> => <<"Product">>,
-        <<"data">> => dgiot_utils:get_JsonFile(?MODULE,<<"Amis.json">>)
-    }).
+%% API
+-export([start_link/0]).
+-include("dgiot_iec104.hrl").
+
+%% Supervisor callbacks
+-export([init/1]).
+
+start_link() ->
+    supervisor:start_link({local, ?MODULE}, ?MODULE, []).
+
+init([]) ->
+    {ok, {{one_for_one, 5, 10}, []}}.
+
+

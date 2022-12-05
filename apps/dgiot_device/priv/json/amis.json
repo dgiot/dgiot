@@ -2,123 +2,21 @@
   "type": "page",
   "body": [
     {
-      "tabs": [
+      "type": "form",
+      "title": "表单",
+      "body": [
         {
-          "body": [
-            {
-              "type": "form",
-              "title": "表单",
-              "body": [
-                {
-                  "mode": "inline",
-                  "name": "name",
-                  "size": "",
-                  "type": "input-text",
-                  "label": "设备名称",
-                  "disabled": true,
-                  "readOnly": true,
-                  "horizontal": {
-                    "left": 4,
-                    "right": 8,
-                    "leftFixed": ""
-                  }
-                },
-                {
-                  "mode": "inline",
-                  "name": "devaddr",
-                  "size": "",
-                  "type": "input-text",
-                  "label": "设备编号",
-                  "disabled": true,
-                  "readOnly": true,
-                  "horizontal": {
-                    "left": 4,
-                    "right": 8,
-                    "leftFixed": ""
-                  }
-                },
-                {
-                  "mode": "inline",
-                  "name": "address",
-                  "size": "",
-                  "type": "input-text",
-                  "label": "安装位置:",
-                  "disabled": true,
-                  "readOnly": true,
-                  "horizontal": {
-                    "left": 4,
-                    "right": 8,
-                    "leftFixed": ""
-                  }
-                },
-                {
-                  "mode": "inline",
-                  "name": "detail.assetNum",
-                  "size": "",
-                  "type": "input-text",
-                  "label": "入网编号",
-                  "disabled": true,
-                  "readOnly": true,
-                  "horizontal": {
-                    "left": 4,
-                    "right": 8,
-                    "leftFixed": ""
-                  }
-                },
-                {
-                  "mode": "inline",
-                  "name": "status",
-                  "size": "",
-                  "type": "switch",
-                  "label": "启用状态",
-                  "disabled": true,
-                  "readOnly": true,
-                  "horizontal": {
-                    "left": 4,
-                    "right": 8,
-                    "leftFixed": ""
-                  },
-                  "optionAtLeft": false,
-                  "trueValue": "ONLINE",
-                  "falseValue": "OFFLINE",
-                  "onText": "启用",
-                  "offText": "禁用"
-                },
-                {
-                  "type": "static-date",
-                  "label": "更新时间",
-                  "name": "updatedAt",
-                  "mode": "inline"
-                },
-                {
-                  "mode": "inline",
-                  "name": "createdAt",
-                  "type": "static-datetime",
-                  "label": "添加时间",
-                  "copyable": false,
-                  "quickEdit": false,
-                  "borderMode": "half",
-                  "placeholder": "",
-                  "valueFormat": "x"
-                }
-              ],
-              "initApi": {
-                "url": "iotapi/amis/Device/parse_objectid",
-                "method": "get",
-                "adaptor": "return {\r\n \"status\":0,\r\n \"msg\":\"\",\r\n \"data\":response.data\r\n }",
-                "headers": {
-                  "store": "localStorage",
-                  "dgiotReplace": "parse_objectid"
-                },
-                "dataType": "json"
-              }
-            }
-          ],
-          "icon": "fa fa-slideshare",
-          "title": "设备信息"
+          "label": "开关",
+          "type": "switch",
+          "name": "switch"
         }
       ],
-      "type": "tabs"
+      "id": "u:034a41e37c72",
+      "api": {
+        "method": "put",
+        "url": "/iotapi/amis/Device/${obejctId}",
+        "requestAdaptor": "let data = api.data\r\nreturn {\r\n  data:{\r\n    profile:data\r\n  }\r\n  msg:\"ok\",\r\n  status:0,\r\n}"
+      }
     }
   ]
 }

@@ -36,7 +36,6 @@ get_topo(#{<<"profile">> := Profile} = QueryData, ProductId) ->
                 maps:fold(fun(K, V, Acc) ->
                     case maps:find(K, Profile) of
                         error ->
-
                             Acc ++ [V];
                         {ok, Text} ->
                             Acc ++ [V#{<<"text">> => Text}]
