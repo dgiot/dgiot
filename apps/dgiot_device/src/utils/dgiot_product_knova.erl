@@ -36,9 +36,10 @@ post(ProductId) ->
     dgiot_parse:create_object(<<"View">>, #{
         <<"title">> => ProductId,
         <<"key">> => ProductId,
-        <<"type">> => <<"topo">>,
+        <<"type">> => <<"Topo">>,
+        <<"flag">> => <<"Profile">>,
         <<"class">> => <<"Product">>,
-        <<"data">> => dgiot_utils:get_JsonFile(?MODULE, <<"knova.json">>)
+        <<"data">> => dgiot_utils:get_JsonFile(?MODULE, <<"Knova.json">>)
     }).
 
 get_konva(ProductId, DeviceId, Payload) ->

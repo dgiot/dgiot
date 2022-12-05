@@ -1,0 +1,8 @@
+{application, dgiot_iec104,
+    [{description, "DGIOT HJT212"},
+        {vsn, "4.3.0"},
+        {modules, []},
+        {registered, [dgiot_iec104_sup]},
+        {applications, [kernel, stdlib, dgiot]},
+        {mod, {dgiot_iec104_app, []}}
+    ]}.
