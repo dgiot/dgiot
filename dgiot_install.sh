@@ -449,6 +449,8 @@ function init_postgres_database(){
 
   mkdir ${install_dir}/dgiot_pg_writer/data -p
   mkdir ${install_dir}/dgiot_pg_writer/archivedir -p
+  chown -R postgres:postgres /data/
+  chown -R postgres:postgres /usr/local/pgsql
   chown -R postgres:postgres ${install_dir}/dgiot_pg_writer
   cd ${install_dir}/dgiot_pg_writer/
   sudo -u postgres /usr/local/pgsql/12/bin/initdb -D ${install_dir}/dgiot_pg_writer/data/ -U postgres --locale=en_US.UTF8 -E UTF8 &> /dev/null
