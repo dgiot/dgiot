@@ -33,7 +33,7 @@ read_csv(ChannelId, FilePath) ->
     timer:sleep(1000),
     dgiot_product_csv:post_thing(FileName, ProductIds),
     timer:sleep(1000),
-    dgiot_bridge:control_channel(TdChannelId, <<"update">>),
+    dgiot_bridge:control_channel(TdChannelId, <<"update">>, <<>>),
     get_max_addrs(FileName).
 
 %% dgiot_product_csv:read_from_csv(<<"/dgiot_file/product/csv/modbustcp.csv">>)
@@ -120,7 +120,7 @@ create_device(FileName, Devicemap, ProductIds) ->
                 {ok, #{<<"ACL">> := Acl}} ->
                     Acl;
                 _ ->
-                    #{<<114,111,108,101,58,229,188,128,229,143,145,232,128,133>> => #{<<"read">> => true, <<"write">> => true}}
+                    #{<<114, 111, 108, 101, 58, 229, 188, 128, 229, 143, 145, 232, 128, 133>> => #{<<"read">> => true, <<"write">> => true}}
             end,
         lists:foldl(fun(Devaddr, _Acc1) ->
             dgiot_device:create_device(#{

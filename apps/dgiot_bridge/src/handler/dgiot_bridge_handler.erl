@@ -80,8 +80,7 @@ handle(OperationID, Args, Context, Req) ->
 %%%===================================================================
 do_request(post_control_channel, #{<<"id">> := ChannelId, <<"action">> := Action}, #{<<"sessionToken">> := SessionToken} = _Context, _Req)
     when Action == <<"enable">>; Action == <<"disable">>; Action == <<"update">>; Action == <<"start_logger">>; Action == <<"stop_logger">> ->
-    dgiot_mqtt:subscribe_route_key([<<"$dg/user/channel/", ChannelId/binary, "/#">>], SessionToken),
-    dgiot_bridge:control_channel(ChannelId, Action);
+    dgiot_bridge:control_channel(ChannelId, Action, SessionToken);
 
 %% Decoder 概要: 获取指令集 描述:根据产品ID关联的解码器获取指令集
 %% OperationId:get_cmd_productid

@@ -26,7 +26,7 @@
 -export([start/0, start_channel/2, start_channel/3, register_channel/2, get_behaviour/1, do_global_message/1]).
 -export([get_product_info/1, get_products/1, get_acl/1, apply_channel/5, apply_product/3, parse_frame/3, to_frame/3]).
 -export([get_data/2, send_log/3, send_log/4, send_log/5]).
--export([get_all_channel/0, control_channel/2, list/0, get_proctol_channel/1, control_uniapp/2, uniapp_report/1]).
+-export([get_all_channel/0, control_channel/3, list/0, get_proctol_channel/1, control_uniapp/2, uniapp_report/1]).
 
 init_ets() ->
     dgiot_data:init(?DGIOT_BRIDGE),
@@ -332,7 +332,7 @@ list() ->
         end,
     lists:sort(dgiot_plugin:check_module(Fun, [])).
 
-control_channel(ChannelId, Action) ->
+control_channel(ChannelId, Action, SessionToken) ->
     {IsEnable, Result} =
         case Action of
             <<"disable">> ->
@@ -365,11 +365,13 @@ control_channel(ChannelId, Action) ->
                 dgiot_mqtt:publish(ChannelId, Topic, Payload),
                 {true, <<"success">>};
             <<"start_logger">> ->
+                dgiot_mqtt:subscribe_route_key([<<"$dg/user/channel/", ChannelId/binary, "/#">>], SessionToken),
                 Topic = <<"channel/", ChannelId/binary>>,
                 Payload = jsx:encode(#{<<"channelId">> => ChannelId, <<"action">> => <<"start_logger">>}),
                 dgiot_mqtt:publish(ChannelId, Topic, Payload),
                 {true, <<"success">>};
             <<"stop_logger">> ->
+                dgiot_mqtt:unsubscribe_route_key(SessionToken),
                 Topic = <<"channel/", ChannelId/binary>>,
                 Payload = jsx:encode(#{<<"channelId">> => ChannelId, <<"action">> => <<"stop_logger">>}),
                 dgiot_mqtt:publish(ChannelId, Topic, Payload),
