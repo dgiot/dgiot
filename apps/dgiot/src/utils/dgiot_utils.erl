@@ -65,6 +65,7 @@
     , is_number/1
     , get_parity/1
     , crc16/1
+    , crc16_h/1
     , add_33h/1
     , sub_33h/1
     , sub_value/1
@@ -151,9 +152,8 @@ binary_to_hex(Id) ->
     <<<<Y>> || <<X:4>> <= Id, Y <- integer_to_list(X, 16)>>.
 
 hex_to_binary(Id) ->
-    NewId = re:replace(Id, " ", "", [global, {return, binary}, unicode]),
+    NewId = trim_string(Id),
     <<<<Z>> || <<X:8, Y:8>> <= NewId, Z <- [binary_to_integer(<<X, Y>>, 16)]>>.
-
 
 to_md5(V) when is_binary(V); is_list(V) ->
     list_to_binary(lists:flatten([io_lib:format("~2.16.0b", [D]) || D <- binary_to_list(erlang:md5(V))]));
@@ -484,6 +484,10 @@ crc16(<<B:8, Other/binary>>, Crc) ->
                 end
             end, Crc bxor B, lists:seq(1, 8)),
     crc16(Other, NewCrc).
+
+crc16_h(Buff) ->
+    <<A:8, B:8>> = crc16(Buff),
+    <<B:8, A:8>>.
 
 add_33h(Data) when is_binary(Data) ->
     add_33h(binary_to_list(Data));
@@ -980,8 +984,8 @@ trim_string(Str) when is_list(Str) ->
     trim_string(Str, list).
 
 trim_string(Str, Ret) ->
-    re:replace(Str, "^[\s\x{3000}]+|[\s\x{3000}]+$", "", [global, {return, Ret}, unicode]).
-
+    Str1 = re:replace(Str, "\\s+", "", [global,{return, Ret}]),
+    re:replace(Str1, "^[\s\x{3000}]+|[\s\x{3000}]+$", "", [global, {return, Ret}, unicode]).
 
 get_url_path(Url) when is_list(Url) ->
     get_url_path(to_binary(Url));
