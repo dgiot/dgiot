@@ -275,7 +275,7 @@ handle_message({sync_parse, _Pid, 'before', delete, _Token, <<"Channel">>, Objec
 %%    io:format("~s ~p ~p ~n", [?FILE, ?LINE, ObjectId]),
     case dgiot_parse:get_object(<<"Channel">>, ObjectId) of
         {ok, #{<<"isEnable">> := true}} ->
-            dgiot_bridge:control_channel(ObjectId, <<"disable">>);
+            dgiot_bridge:control_channel(ObjectId, <<"disable">>, <<>>);
         _ -> pass
     end,
     {ok, State};

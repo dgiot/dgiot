@@ -113,7 +113,7 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, state = #state{id = ChannelId, dt
             case DtuAddr of
                 <<>> ->
                     {noreply, TCPState#tcp{buff = <<>>}};
-                _->
+                _ ->
                     dgiot_meter:create_dtu(DtuAddr, ChannelId, DTUIP),
                     {DtuProductId, _, _} = dgiot_data:get({dtu, ChannelId}),
                     %%                    $dg/device/{productId}/{deviceAddr}/profile
