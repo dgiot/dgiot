@@ -16,7 +16,7 @@
 
 -module(dgiot_rule_sqlparser).
 
--include_lib("emqx_rule_engine/include/rule_engine.hrl").
+-include_lib("dgiot/include/rule_engine.hrl").
 
 -export([parse_select/1]).
 
