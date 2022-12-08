@@ -18,7 +18,7 @@
 
 -behaviour(gen_server).
 
--include_lib("emqx_rule_engine/include/rule_engine.hrl").
+-include_lib("dgiot/include/rule_engine.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -include_lib("stdlib/include/qlc.hrl").
 -define(DGIOT_RULE_TAB, dgiot_rule).

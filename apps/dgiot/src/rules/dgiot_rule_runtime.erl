@@ -16,7 +16,7 @@
 
 -module(dgiot_rule_runtime).
 
--include_lib("emqx_rule_engine/include/rule_engine.hrl").
+-include_lib("dgiot/include/rule_engine.hrl").
 -include_lib("emqx/include/emqx.hrl").
 -include_lib("dgiot/include/logger.hrl").
 
