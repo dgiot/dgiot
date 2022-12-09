@@ -77,6 +77,7 @@ apps/dgiot_emicp/
 apps/dgiot_zhcltech/
 apps/dgiot_http/etc/dgiot_http.conf
 apps/dgiot_edge/
+apps/dgiot_sl651/
 node_modules/
 package-lock.json
 erlang_ls.config
