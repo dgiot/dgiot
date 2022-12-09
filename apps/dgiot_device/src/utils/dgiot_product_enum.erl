@@ -36,7 +36,7 @@ save_product_enum(ProductId) ->
                 fun
                     (#{<<"identifier">> := Identifier,
                         <<"dataType">> := #{<<"type">> := <<"enum">>, <<"specs">> := Spec}}) ->
-                        NewSpec =maps:without([<<"max">>,<<"min">>,<<"step">>],Spec),
+                        NewSpec = maps:without([<<"max">>, <<"min">>, <<"step">>], Spec),
                         Reverse = get_reverse(NewSpec),
                         dgiot_data:insert(?MODULE, {ProductId, device_thing, Identifier},
                             #{Identifier => <<"enum">>, <<"specs">> => NewSpec, <<"reverse">> => Reverse});
@@ -76,19 +76,19 @@ post_enum_value(ProductId, Identifier, Name) ->
         #{Identifier := <<"enum">>, <<"specs">> := Spec} ->
             Max = maps:fold(
                 fun
-                    (<<F:1/binary,_/binary>>=K, _, Acc) ->
-                    case dgiot_utils:is_number(F) of
-                        true ->
-                            case dgiot_utils:to_int(K) > Acc of
-                                true ->
-                                    dgiot_utils:to_int(K);
-                                _ ->
-                                    Acc
-                            end;
-                        _->
-                            Acc
-                    end;
-                    (_,_,Acc)->
+                    (<<F:1/binary, _/binary>> = K, _, Acc) ->
+                        case dgiot_utils:is_number(F) of
+                            true ->
+                                case dgiot_utils:to_int(K) > Acc of
+                                    true ->
+                                        dgiot_utils:to_int(K);
+                                    _ ->
+                                        Acc
+                                end;
+                            _ ->
+                                Acc
+                        end;
+                    (_, _, Acc) ->
                         Acc
                 end, 0, Spec),
             upadte_thing(ProductId, Identifier, Name, Max);
@@ -113,8 +113,9 @@ upadte_thing(ProductId, Identifier, Name, Max) ->
                 end, [], Properties),
             NewThing = Thing#{<<"properties">> => NewProperties},
             dgiot_parse:update_object(<<"Product">>, ProductId, #{<<"thing">> => NewThing}),
-            #{Name => Max + 1};
+            #{Identifier => Max + 1};
         _ ->
+
             pass
     end.
 
@@ -162,10 +163,11 @@ turn_num(FlatMap, ProductId) ->
                                 #{V := Value} ->
                                     Acc#{K => Value};
                                 _ ->
+
                                     case post_enum_value(ProductId, K, V) of
                                         #{K := Value} ->
                                             Acc#{K => Value};
-                                        _ ->
+                                        _R ->
                                             Acc
                                     end
                             end;

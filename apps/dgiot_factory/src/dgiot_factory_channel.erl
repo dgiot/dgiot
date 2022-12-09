@@ -34,6 +34,7 @@
 -export([get_id/2, after_handle/4, handle_data/8, get_card_data/2]).
 -export([get_sub_product/1, get_new_acl/2, init_worker_device/3]).
 -export([get_roll_dev_id/2]).
+-export([save2td/3]).
 %% 注册通道类型
 -channel_type(#{
     cType => ?TYPE,
@@ -114,6 +115,7 @@ handle_message({sync_parse, _Pid, 'after', put, _Token, <<"_User">>, #{<<"object
         ProductId ->
             case dgiot_parse:get_object(<<"_User">>, UserId) of
                 {ok, #{<<"username">> := WorkerNum, <<"nick">> := WorkerName}} ->
+                    io:format("~s ~p ProductId = ~p ~n",[?FILE,?LINE,ProductId]),
                     init_worker_device(ProductId, WorkerNum, WorkerName);
                 _ ->
                     pass
@@ -140,11 +142,11 @@ handle_message({sync_parse, _Pid, 'before', put, Token, <<"Device">>,
     io:format("~s ~p TaskDeviceId = ~p ~n", [?FILE, ?LINE, TaskDeviceId]),
     case dgiot_device_cache:lookup(TaskDeviceId) of
         {ok, #{<<"productid">> := TaskProductId}} ->
+%%    case dgiot_parse:get_object(<<"Device">>,TaskDeviceId) of
+%%        {ok,#{<<"product">> := #{<<"objectId">> := TaskProductId}}} ->
             case Content of
                 #{<<"person">> := #{<<"type">> := PersonType}} ->
-
                     dgiot_metrics:inc(dgiot_factory, <<"input_num">>, 1),
-               
                     case process_data(Content, PersonType, Token, TaskDeviceId) of
                         {BatchProductId, BatchDeviceId, BatchAddr, NewData} ->
                             handle_data(TaskProductId, TaskDeviceId, BatchProductId, BatchDeviceId, BatchAddr, PersonType, NewData, ChannelId),
@@ -184,6 +186,9 @@ stop(ChannelType, ChannelId, _State) ->
 
 
 handle_data(_TaskProductId, TaskDeviceId, BatchProductId, BatchDeviceId, BatchAddr, PersonType, NewData, ChannelId) ->
+    io:format("~s ~p Type = ~p  ~n", [?FILE, ?LINE,PersonType]),
+    io:format("~s ~p BatchProductId = ~p  ~n", [?FILE, ?LINE,BatchProductId]),
+    io:format("~s ~p BatchDeviceId = ~p  ~n", [?FILE, ?LINE,BatchDeviceId]),
     NewPayLoad = run_factory_hook(_TaskProductId, TaskDeviceId, BatchProductId, BatchDeviceId, PersonType, NewData, ChannelId),
     dgiot_data:insert(?FACTORY_ORDER, {BatchProductId, BatchDeviceId, PersonType}, NewPayLoad),
     OldData = get_card_data(BatchProductId, BatchDeviceId),
@@ -198,7 +203,7 @@ get_card_data(BatchProductId, BatchDeviceId) ->
                 not_find ->
                     Acc;
                 Res ->
-                    dgiot_map:merge(Acc, Res)
+                    dgiot_map:merge(Acc, maps:without([<<"quality">>],Res))
             end
         end, #{}, DevcieTypeList).
 
@@ -206,7 +211,6 @@ process_data(FlatMap, PersonType, Token, TaskDeviceId) ->
     case dgiot_parse:get_object(<<"Device">>, TaskDeviceId) of
         {ok, #{<<"name">> := OrderName, <<"product">> := #{<<"objectId">> := TaskProductId}}} ->
             {ok, {BatchProductId, BatchDeviceId, BatchAddr}} = process_roll_dev(TaskProductId, TaskDeviceId, OrderName, Token, FlatMap),
-            io:format("~s ~p BatchDeviceId = ~p ~n", [?FILE, ?LINE, BatchDeviceId]),
             NewData = init_data(TaskProductId, TaskDeviceId, BatchDeviceId, FlatMap, PersonType, Token),
             {BatchProductId, BatchDeviceId, BatchAddr, NewData};
         _ ->
@@ -258,6 +262,7 @@ process_roll_dev(TaskProductId, TaskDeviceId, OrderName, SessionToken, FlatMap) 
                                                          {A, B, C};
                                                      _ -> {<<"1">>, <<"1">>, <<"1">>}
                                                  end,
+    io:format("~s ~p BatchDeviceId = ~p ~n", [?FILE, ?LINE, BatchDeviceId]),
     case dgiot_device_cache:lookup(BatchDeviceId) of
         {ok, #{<<"acl">> := Acl}} ->
             NewAcl = get_new_acl(SessionToken, Acl),
@@ -284,14 +289,14 @@ process_roll_dev(TaskProductId, TaskDeviceId, OrderName, SessionToken, FlatMap) 
             {ok, {BatchProductId, BatchDeviceId, BatchAddr}}
 
     end.
-%%
-%%
+
 
 
 get_roll_dev_id(ProductId, FlatMap) ->
     BatchProductId = get_sub_product(ProductId),
     case maps:find(<<"sheetsid">>, maps:get(<<"person">>, FlatMap, #{})) of
         {ok, BatchDeviceId} ->
+            io:format("~s ~p BatchDeviceId = ~p ~n", [?FILE, ?LINE, BatchDeviceId]),
             case dgiot_device:lookup(BatchDeviceId) of
                 {ok, #{<<"devaddr">> := BatchAddr}} ->
                     {BatchProductId, BatchDeviceId, BatchAddr};
@@ -330,8 +335,10 @@ save2parse(BatchProductId, BatchDeviceId, ALlData) ->
                   {ok, [{ok, Res}]} ->
                       Res;
                   _ ->
+                      io:format("~s ~p BatchDeviceId = ~p ~n", [?FILE, ?LINE, BatchDeviceId]),
                       ALlData
               end,
+
     dgiot_parse:update_object(<<"Device">>, BatchDeviceId, #{<<"content">> => Content}).
 
 save2td(BatchProductId, BatchAddr, Data) ->
@@ -347,6 +354,7 @@ init_worker_device(ProductId, WorkerNum, WorkerName) ->
     DeviceId = dgiot_parse_id:get_deviceid(ProductId,WorkerNum),
     case dgiot_device_cache:lookup(DeviceId) of
         {ok,_} ->
+            io:format("~s ~p DeviceId = ~p ~n",[?FILE,?LINE,DeviceId]),
             pass;
         _->
             case dgiot_product:get(ProductId) of
@@ -354,6 +362,7 @@ init_worker_device(ProductId, WorkerNum, WorkerName) ->
                     case Product of
                         #{<<"ACL">> := Acl, <<"name">> := Name, <<"devType">> := DevType, <<"dynamicReg">> := true} ->
                             Device = #{
+                                <<"profile">>=>#{<<"worker_flag">> => 1},
                                 <<"status">> => <<"ONLINE">>,
                                 <<"brand">> => Name,
                                 <<"devModel">> => DevType,
@@ -363,10 +372,8 @@ init_worker_device(ProductId, WorkerNum, WorkerName) ->
                                 <<"ACL">> => Acl
                             },
                             dgiot_device:create_device(Device),
-
                             io:format("~s ~p DeviceId = ~p ~n", [?FILE, ?LINE, DeviceId]),
                             dgiot_parse:update_object(<<"Device">>,DeviceId , #{<<"ACL">>=> Acl#{<<"*">> =>#{<<"read">> => true}}}),
-
                             AllData = #{<<"worker_validate">> => true,
                                 <<"worker_num">> => WorkerNum,
                                 <<"worker_date">> => 0,

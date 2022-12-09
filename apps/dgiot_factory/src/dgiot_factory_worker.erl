@@ -337,27 +337,26 @@ record_worker_info(BatchProductId, BatchDeviceId, #{<<"quality">> := #{<<"type">
     _WorkShop = maps:get(<<"workshop">>, maps:get(Type, TypeData, #{}), <<"null">>),
     Spec = maps:get(<<"spec">>, maps:get(Type, TypeData, #{}), <<"">>),
     RollNum = maps:get(<<"rollnum">>, maps:get(<<"person">>, TypeData, #{}), <<"null">>),
+    io:format("~s ~p WorkerList = ~p  ~n", [?FILE, ?LINE, WorkerList]),
     lists:foldl(
-        fun(Worker, _) ->
-
+        fun(Worker, _) when is_binary(Worker) ->
             case dgiot_data:get({ChannelId, worker}) of
                 not_find ->
                     pass;
                 ProductId ->
+                    case size(Worker) of
+                        0 ->
+                            pass;
+                        _->
                     WorkerId = dgiot_parse_id:get_deviceid(ProductId, Worker),
                     WorkerData = case dgiot_parse:get_object(<<"Device">>, WorkerId) of
                                      {ok, #{<<"name">> := WorkerName}} ->
                                          #{<<"worker_name">> => WorkerName};
                                      _ ->
+                                         io:format("~s ~p not_find_worker_device,ProductId = ~p  ~n", [?FILE, ?LINE,ProductId]),
                                          #{}
-
                                  end,
-%%                    WorkerData = case dgiot_data:get(?WORKER, Worker) of
-%%                                     not_find ->
-%%                                         #{};
-%%                                     N ->
-%%                                         lists:nth(1, N)
-%%                                 end,
+
                     ManufacData = #{
 %%                        <<"manufac_type">> => dgiot_utils:to_binary(Type),
                         <<"manufac_quality">> => Quality,
@@ -372,6 +371,7 @@ record_worker_info(BatchProductId, BatchDeviceId, #{<<"quality">> := #{<<"type">
                     },
                     NumData = dgiot_product_enum:turn_num(maps:merge(WorkerData, ManufacData), ProductId),
                     dgiot_task:save_td(ProductId, Worker, NumData, #{})
+                    end
             end
 
         end, [], WorkerList);
@@ -381,18 +381,25 @@ record_worker_info(_, _, _, _, _, _, _) ->
 
 
 
-format_worker(ProductId,Worker) when is_binary(Worker) ->
+format_worker(ProductId, Worker) when is_binary(Worker) ->
     WorkerList = re:split(Worker, <<",">>),
     lists:foldl(
         fun(X, Acc) ->
-            case dgiot_data:get(?WORKER, {ProductId,X}) of
+            case dgiot_data:get(?WORKER, {ProductId, X}) of
                 not_find ->
-                    <<Acc/binary, ",", X/binary>>;
+                    WorkerId = dgiot_parse_id:get_deviceid(ProductId, Worker),
+                    case dgiot_parse:get_object(<<"Device">>, WorkerId) of
+                        {ok, #{<<"name">> := WorkerName}} ->
+                            dgiot_data:insert(?WORKER, {ProductId, X}, WorkerName),
+                            <<Acc/binary, ",", WorkerName/binary>>;
+                        _ ->
+                            <<Acc/binary, ",", X/binary>>
+                    end;
                 Res ->
                     <<Acc/binary, " ", Res/binary>>
             end
         end, <<"">>, WorkerList);
-format_worker(_,Worker) ->
+format_worker(_, Worker) ->
     Worker.
 
 
