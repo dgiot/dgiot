@@ -29,7 +29,7 @@
 
 -export([send_verification_code/2, check_verification_code/2]).
 
--export([get_newbody/1, get_Mobile/2, get_Emails/2, get_users/2]).
+-export([get_newbody/1, get_Mobile/3, get_Emails/3, get_users/2]).
 
 init_ets() ->
     dgiot_data:init(?CONFIGURATION),
@@ -220,57 +220,90 @@ get_newbody(#{<<"objectId">> := _Notificatid} = Map) ->
 get_newbody(Body) ->
     Body.
 
-get_Mobile(DeviceId, RoleId) ->
-    case RoleId of
-        <<>> ->
-            case dgiot_device:lookup(DeviceId) of
-                {ok, #{<<"acl">> := Acl}} ->
-                    lists:foldl(fun(X, Acc) ->
-                        BinX = atom_to_binary(X),
-                        case BinX of
-                            <<"role:", Name/binary>> ->
-                                case dgiot_parse:query_object(<<"_Role">>, #{<<"order">> => <<"updatedAt">>, <<"limit">> => 1,
-                                    <<"where">> => #{<<"name">> => Name}}) of
-                                    {ok, #{<<"results">> := [Role]}} ->
-                                        #{<<"objectId">> := RoleId1} = Role,
-                                        UserIds = dgiot_parse_id:get_userids(RoleId1),
-                                        UsersQuery = #{<<"where">> => #{<<"objectId">> => #{<<"$in">> => UserIds}}},
-                                        {ok, #{<<"results">> := Users}} = dgiot_parse:query_object(<<"_User">>, UsersQuery),
-                                        lists:foldl(fun(User, Acc1) ->
-                                            Phone = maps:get(<<"phone">>, User, ""),
-                                            case dgiot_utils:is_phone(Phone) of
-                                                true ->
-                                                    Acc1 ++ [#{<<"mobile">> => Phone, <<"nationcode">> => <<"86">>}];
-                                                _ ->
-                                                    Acc1
-                                            end
-                                                    end, Acc, Users);
-                                    _ ->
-                                        Acc
-                                end;
+get_Mobile(_, _, NotifRoleid) when size(NotifRoleid) > 0 ->
+    UserIds =
+        lists:foldl(fun(Roleid, Acc) ->
+            Acc ++ dgiot_parse_id:get_userids(Roleid)
+                    end, [], binary:split(NotifRoleid, <<$,>>, [global, trim])),
+    UsersQuery = #{<<"where">> => #{<<"objectId">> => #{<<"$in">> => UserIds}}},
+    {ok, #{<<"results">> := Users}} = dgiot_parse:query_object(<<"_User">>, UsersQuery),
+    lists:foldl(fun(User, Acc1) ->
+        Phone = maps:get(<<"phone">>, User, ""),
+        case dgiot_utils:is_phone(Phone) of
+            true ->
+                Acc1 ++ [#{<<"mobile">> => Phone, <<"nationcode">> => <<"86">>}];
+            _ ->
+                Acc1
+        end
+                end, <<>>, Users);
+
+get_Mobile(_, RoleId, _) when size(RoleId) > 0 ->
+    UserIds = dgiot_parse_id:get_userids(RoleId),
+    UsersQuery = #{<<"where">> => #{<<"objectId">> => #{<<"$in">> => UserIds}}},
+    {ok, #{<<"results">> := Users}} = dgiot_parse:query_object(<<"_User">>, UsersQuery),
+    lists:foldl(fun(User, Acc1) ->
+        Phone = maps:get(<<"phone">>, User, ""),
+        case dgiot_utils:is_phone(Phone) of
+            true ->
+                Acc1 ++ [#{<<"mobile">> => Phone, <<"nationcode">> => <<"86">>}];
+            _ ->
+                Acc1
+        end
+                end, <<>>, Users);
+
+get_Mobile(DeviceId, _, _) ->
+    case dgiot_device:lookup(DeviceId) of
+        {ok, #{<<"acl">> := Acl}} ->
+            lists:foldl(fun(X, Acc) ->
+                BinX = atom_to_binary(X),
+                case BinX of
+                    <<"role:", Name/binary>> ->
+                        case dgiot_parse:query_object(<<"_Role">>, #{<<"order">> => <<"updatedAt">>, <<"limit">> => 1,
+                            <<"where">> => #{<<"name">> => Name}}) of
+                            {ok, #{<<"results">> := [Role]}} ->
+                                #{<<"objectId">> := RoleId1} = Role,
+                                UserIds = dgiot_parse_id:get_userids(RoleId1),
+                                UsersQuery = #{<<"where">> => #{<<"objectId">> => #{<<"$in">> => UserIds}}},
+                                {ok, #{<<"results">> := Users}} = dgiot_parse:query_object(<<"_User">>, UsersQuery),
+                                lists:foldl(fun(User, Acc1) ->
+                                    Phone = maps:get(<<"phone">>, User, ""),
+                                    case dgiot_utils:is_phone(Phone) of
+                                        true ->
+                                            Acc1 ++ [#{<<"mobile">> => Phone, <<"nationcode">> => <<"86">>}];
+                                        _ ->
+                                            Acc1
+                                    end
+                                            end, Acc, Users);
                             _ ->
                                 Acc
-                        end
-                                end, [], Acl);
-                _ ->
-                    []
-            end;
-        _ ->
-            UserIds = dgiot_parse_id:get_userids(RoleId),
-            UsersQuery = #{<<"where">> => #{<<"objectId">> => #{<<"$in">> => UserIds}}},
-            {ok, #{<<"results">> := Users}} = dgiot_parse:query_object(<<"_User">>, UsersQuery),
-            lists:foldl(fun(User, Acc1) ->
-                Phone = maps:get(<<"phone">>, User, ""),
-                case dgiot_utils:is_phone(Phone) of
-                    true ->
-                        Acc1 ++ [#{<<"mobile">> => Phone, <<"nationcode">> => <<"86">>}];
+                        end;
                     _ ->
-                        Acc1
+                        Acc
                 end
-                        end, [], Users)
+                        end, <<>>, Acl);
+        _ ->
+            <<>>
     end.
 
-get_Emails(_, RoleId) when size(RoleId) > 0 ->
+get_Emails(_, _, NotifRoleid) when size(NotifRoleid) > 0 ->
+    UserIds =
+        lists:foldl(fun(Roleid, Acc) ->
+            Acc ++ dgiot_parse_id:get_userids(Roleid)
+                    end, [], binary:split(<<"e562014215">>, <<$,>>, [global, trim])),
+    UsersQuery = #{<<"where">> => #{<<"objectId">> => #{<<"$in">> => UserIds}}},
+    {ok, #{<<"results">> := Users}} = dgiot_parse:query_object(<<"_User">>, UsersQuery),
+    lists:foldl(fun(User, Acc1) ->
+        Email = maps:get(<<"email">>, User, ""),
+        case dgiot_utils:is_email(Email) of
+            true ->
+                <<Acc1/binary, Email/binary, ",">>;
+            _ ->
+                Acc1
+        end
+                end, <<>>, Users);
+
+
+get_Emails(_, RoleId, _) when size(RoleId) > 0 ->
     UserIds = dgiot_parse_id:get_userids(RoleId),
     UsersQuery = #{<<"where">> => #{<<"objectId">> => #{<<"$in">> => UserIds}}},
     {ok, #{<<"results">> := Users}} = dgiot_parse:query_object(<<"_User">>, UsersQuery),
@@ -284,7 +317,7 @@ get_Emails(_, RoleId) when size(RoleId) > 0 ->
         end
                 end, <<>>, Users);
 
-get_Emails(DeviceId, _) ->
+get_Emails(DeviceId, _, _) ->
     case dgiot_device:lookup(DeviceId) of
         {ok, #{<<"acl">> := Acl}} ->
             lists:foldl(fun(X, Acc) ->

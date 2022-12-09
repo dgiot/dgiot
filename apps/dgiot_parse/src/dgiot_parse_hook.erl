@@ -333,7 +333,7 @@ do_put(_, _Token, _ClassName, Args) ->
 receive_put(ResBody) ->
     receive
         {sync_parse, NewResBody} when is_map(NewResBody) ->
-            {ok,NewResBody};
+            {ok, NewResBody};
         {sync_parse, NewResBody} ->
             io:format("~s ~p ~p  ~n", [?FILE, ?LINE, NewResBody]),
             {ok, NewResBody};
@@ -348,7 +348,7 @@ do_put_(Id, Args, Token, Tail) ->
     {ok, NewArgs} = receive_put(Args),
     case dgiot_parse:get_object(ClassName, Id) of
         {ok, Class} ->
-            Keys = maps:keys(maps:without([<<"id">>], NewArgs)),
+            Keys = maps:keys(maps:without([<<"id">>, <<"ACL">>], NewArgs)),
             dgiot_map:merge(maps:with(Keys, Class), maps:without([<<"id">>], NewArgs));
         _ ->
             maps:without([<<"id">>], NewArgs)

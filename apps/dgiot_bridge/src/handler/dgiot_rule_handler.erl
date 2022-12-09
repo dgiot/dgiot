@@ -233,8 +233,8 @@ sql_tpl(Trigger, Ruleid, ProductId, Description, Args) ->
             "   \"", FROM/binary, "\"", "\r\n",
             "WHERE", "\r\n     ",
             WHERE/binary>>,
-    create_rules(Ruleid, ChannelId, Description, DefaultSql, FROM, Args),
-    {ok, #{<<"template">> => DefaultSql}}.
+    {_, Msg} = create_rules(Ruleid, ChannelId, Description, DefaultSql, FROM, Args),
+    {ok, Msg#{<<"template">> => DefaultSql}}.
 
 %% 根据设备条件生成sql模板
 %% Select
@@ -528,7 +528,8 @@ create_rules(RuleID, ChannelId, Description, Rawsql, Target_topic, Args) ->
     ObjectId = dgiot_parse_id:get_dictid(RuleID, <<"ruleengine">>, <<"Rule">>, <<"Rule">>),
     case dgiot_parse:get_object(<<"Dict">>, ObjectId) of
         {ok, _} ->
-            dgiot_rule_handler:save_rule_to_dict(RuleID, Params, Args);
+%%          dgiot_rule_handler:save_rule_to_dict(RuleID, Params, Args);
+            {ok, #{<<"msg">> => <<RuleID/binary, " already exists">>}};
         _ ->
             R = emqx_rule_engine_api:create_rule(#{}, maps:to_list(Params)),
             case R of
@@ -536,6 +537,7 @@ create_rules(RuleID, ChannelId, Description, Rawsql, Target_topic, Args) ->
                     dgiot_data:delete(?DGIOT_RUlES, EmqxRuleId),
                     emqx_rule_engine_api:delete_rule(#{id => EmqxRuleId}, []),
                     dgiot_rule_handler:save_rule_to_dict(RuleID, Params, Args);
-                _ -> pass
+                Error ->
+                    {ok, #{<<"error">> => Error}}
             end
     end.
