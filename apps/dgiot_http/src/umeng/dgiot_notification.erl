@@ -235,7 +235,7 @@ get_Mobile(_, _, NotifRoleid) when size(NotifRoleid) > 0 ->
             _ ->
                 Acc1
         end
-                end, <<>>, Users);
+                end, [], Users);
 
 get_Mobile(_, RoleId, _) when size(RoleId) > 0 ->
     UserIds = dgiot_parse_id:get_userids(RoleId),
@@ -249,7 +249,7 @@ get_Mobile(_, RoleId, _) when size(RoleId) > 0 ->
             _ ->
                 Acc1
         end
-                end, <<>>, Users);
+                end, [], Users);
 
 get_Mobile(DeviceId, _, _) ->
     case dgiot_device:lookup(DeviceId) of
@@ -280,9 +280,9 @@ get_Mobile(DeviceId, _, _) ->
                     _ ->
                         Acc
                 end
-                        end, <<>>, Acl);
+                        end, [], Acl);
         _ ->
-            <<>>
+            []
     end.
 
 get_Emails(_, _, NotifRoleid) when size(NotifRoleid) > 0 ->
