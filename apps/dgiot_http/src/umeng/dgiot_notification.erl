@@ -289,7 +289,7 @@ get_Emails(_, _, NotifRoleid) when size(NotifRoleid) > 0 ->
     UserIds =
         lists:foldl(fun(Roleid, Acc) ->
             Acc ++ dgiot_parse_id:get_userids(Roleid)
-                    end, [], binary:split(<<"e562014215">>, <<$,>>, [global, trim])),
+                    end, [], binary:split(NotifRoleid, <<$,>>, [global, trim])),
     UsersQuery = #{<<"where">> => #{<<"objectId">> => #{<<"$in">> => UserIds}}},
     {ok, #{<<"results">> := Users}} = dgiot_parse:query_object(<<"_User">>, UsersQuery),
     lists:foldl(fun(User, Acc1) ->
