@@ -126,7 +126,9 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, state = #state{id = ChannelId, dt
                                     case X of
                                         #{<<"product">> := #{<<"objectId">> := MeterProductid}, <<"devaddr">> := Meteraddr} ->
                                             dgiot_bridge:send_log(ChannelId, MeterProductid, Meteraddr, "save taskque Meteraddr ~p", [Meteraddr]),
-                                            dgiot_task:save_pnque(DtuProductId, DtuAddr, MeterProductid, Meteraddr);
+                                            dgiot_task:save_pnque(DtuProductId, DtuAddr, MeterProductid, Meteraddr),
+                                            ProfileTopic = <<"$dg/device/", MeterProductid/binary, "/", Meteraddr/binary, "/profile">>,
+                                            dgiot_mqtt:subscribe(ProfileTopic);
                                         _ ->
                                             pass
                                     end

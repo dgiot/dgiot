@@ -124,6 +124,7 @@
     , gzip/1
     , reverse/1
     , is_phone/1
+    , is_email/1
     , get_mock/2
     , write_mock/3
 ]).
@@ -1067,6 +1068,13 @@ is_phone(Phone) ->
             false
     end.
 
+is_email(Email) ->
+    case re:run(Email, "(^[a-zA-Z0-9_.-]+@[a-zA-Z0-9-]+(\.[a-zA-Z0-9-]+)*\.(com|cn|net)$)") of
+        {match, _} ->
+            true;
+        _ ->
+            false
+    end.
 
 %%
 %% @description: 读取json文件并返回

@@ -69,7 +69,7 @@ get_pie({Token, <<"device_poweron_poweroff">>}) ->
         <<"columns">> => [<<"名称"/utf8>>, <<"数量"/utf8>>],
         <<"rows">> => [
             #{<<"名称"/utf8>> => <<"开机数"/utf8>>, <<"数量"/utf8>> => PowerOnCount},
-            #{<<"名称"/utf8>> => <<"关机数"/utf8>>,  <<"数量"/utf8>> => PowerOffCount}
+            #{<<"名称"/utf8>> => <<"关机数"/utf8>>, <<"数量"/utf8>> => PowerOffCount}
         ]
     },
     {ok, Payload};
@@ -119,7 +119,7 @@ loop_count(QueryAcls, Key) ->
     dgiot_mnesia:search(Fun, #{}).
 
 %%['Device', Acl, Status, Now, IsEnable, dgiot_utils:to_atom(ProductId), Devaddr, DeviceSecret, Node]
-add(['Device', _Acls, Status, _Time, IsEnable, ProductId | _] = _V, Key) ->
+add(['Device', _Acls, Status, _, _Time, IsEnable, ProductId | _] = _V, Key) ->
     inc(<<"Device">>, Key),
     inc(<<"Device">>, ProductId, Key),
     inc("Device_" ++ dgiot_utils:to_list(IsEnable), Key),

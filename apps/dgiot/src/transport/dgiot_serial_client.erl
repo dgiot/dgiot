@@ -71,8 +71,9 @@ init_ets() ->
 %%% API
 %%--------------------------------------------------------------------
 open(Dev) ->
-    open(Dev, []).
+    open(Dev, #{}).
 
+%% Opt {"baudrate":"b2400","checkbit":"EVEN","connectiontype":"tcp","databit":"8","flowcontrol":"NONE","ip":"127.0.0.1","port":61888,"stopbit":"1"}
 open(Dev, Opt) ->
     start_link(Dev, Opt).
 
@@ -122,20 +123,20 @@ init([ParentPid, Serialport, Opt]) ->
 %%    io:format("~s ~p Serialport = ~p.~n", [?FILE, ?LINE, Serialport]),
     dgiot_data:insert(?SERIAL, Serialport, self()),
     process_flag(trap_exit, true),
-    BSpeed = proplists:get_value(speed, Opt, b9600),
-    Flow = proplists:get_value(flow, Opt, true),
-    PortOpt = proplists:get_value(port_options, Opt, [stream, binary]),
+    BSpeed = dgiot_utils:to_atom(maps:get(<<"baudrate">>, Opt, b9600)),
+    Flow = dgiot_utils:to_atom(maps:get(<<"flow">>, Opt, true)),
+    PortOpt = maps:get(<<"port_options">>, Opt, [stream, binary]),
 
     Dev = <<"/dev/", Serialport/binary>>,
     {ok, FD} = serctl:open(Dev),
 
     {ok, Orig} = serctl:tcgetattr(FD),
-
     Mode =
-        case proplists:get_value(mode, Opt, raw) of
+        case maps:get(<<"mode">>, Opt, raw) of
             raw -> serctl:mode(raw);
             none -> Orig
         end,
+
     Termios = lists:foldl(
         fun(Fun, Acc) -> Fun(Acc) end,
         Mode,
@@ -146,8 +147,11 @@ init([ParentPid, Serialport, Opt]) ->
         ]
     ),
     <<"b", Speed/binary>> = dgiot_utils:to_binary(BSpeed),
-
-    ok = serctl:tcsetattr(FD, tcsanow, Termios),
+    NewTermios =
+        maps:fold(fun(K, V, Acc) ->
+            setflag(Acc, #{K => V})
+                  end, Termios, Opt),
+    ok = serctl:tcsetattr(FD, tcsanow, NewTermios),
     ParentPid ! {serial_open, #{<<"pid">> => ParentPid, <<"fd">> => FD}},
     {ok, #state{
         oattr = Orig,
@@ -251,3 +255,28 @@ flush_events(Ref, Pid) ->
 send(ParentPid, Data, #state{package_recv_count = Recv_count} = State) ->
     ParentPid ! {serial_data, self(), Data},
     State#state{data = <<>>, package_recv_count = Recv_count + 1}.
+
+setflag(Termios, #{<<"checkbit">> := <<"EVEN">>}) ->
+    serctl:setflag(Termios, [{cflag, [{parenb, true}]}]);
+
+setflag(Termios, #{<<"checkbit">> := <<"ODD">>}) ->
+    serctl:setflag(Termios, [{cflag, [{parodd, true}]}]);
+
+setflag(Termios, #{<<"databit">> := <<"5">>}) ->
+    serctl:setflag(Termios, [{cflag, [{cs5, true}]}]);
+
+setflag(Termios, #{<<"databit">> := <<"6">>}) ->
+    serctl:setflag(Termios, [{cflag, [{cs6, true}]}]);
+
+setflag(Termios, #{<<"databit">> := <<"7">>}) ->
+    serctl:setflag(Termios, [{cflag, [{cs7, true}]}]);
+
+setflag(Termios, #{<<"databit">> := <<"8">>}) ->
+    serctl:setflag(Termios, [{cflag, [{cs8, true}]}]);
+
+%%setflag(Termios, #{<<"stopbit">> := <<"1">>}) ->
+%%    serctl:setflag(Termios, [{cflag, [{cstopb, 1}]}]);
+
+setflag(Termios, _) ->
+    io:format("~s ~p Termios = ~p ~n", [?FILE, ?LINE, Termios]),
+    Termios.

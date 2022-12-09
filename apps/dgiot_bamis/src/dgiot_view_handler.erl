@@ -98,8 +98,8 @@ do_request(post_dashboard, Arg, Context, _Req) ->
     {200, Data};
 
 %% iot_hub 概要: amis 变量替换
-%% OperationId:get_amis
-%% 请求:POST /iotapi/get_amis
+%% OperationId:post_amis
+%% 请求:POST /iotapi/post_amis
 do_request(post_amis, #{<<"viewid">> := Viewid, <<"render">> := Render} = _Arg, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
     Amisdata =
         case dgiot_parse:get_object(<<"View">>, Viewid, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of

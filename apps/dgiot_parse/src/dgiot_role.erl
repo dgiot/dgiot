@@ -52,7 +52,7 @@
 
 get_childacl(AclName) ->
     case dgiot_data:get(?NAME_ROLE_ETS, dgiot_utils:to_atom(AclName)) of
-        {error, not_find} ->
+        not_find ->
             [dgiot_utils:to_atom(AclName)];
         RoleId ->
             ChildAcl =

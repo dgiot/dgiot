@@ -248,7 +248,7 @@ set_params(Payload, _ProductId, _DevAddr) ->
                                 end,
                             <<H:8, L:8>> = dgiot_utils:hex_to_binary(is16(Address)),
                             <<Sh:8, Sl:8>> = dgiot_utils:hex_to_binary(is16(SlaveId)),
-                            Str1 = re:replace(Setting, "%d", "(" ++ dgiot_utils:to_list(Value) ++ ")", [global, {return, list}]),
+                            Str1 = re:replace(Setting, "%{d}", "(" ++ dgiot_utils:to_list(Value) ++ ")", [global, {return, list}]),
                             Value1 = dgiot_utils:to_int(dgiot_task:string2value(Str1, <<"type">>)),
 %%                                    NewBt = Bytes * 8,
                             Registersnumber = maps:get(<<"registersnumber">>, DataSource, <<"1">>),
@@ -434,7 +434,7 @@ build_req_message(Req) when is_record(Req, rtu_req) ->
                 ByteCount = length(binary_to_list(ValuesBin)),
                 <<(Req#rtu_req.slaveId):8, (Req#rtu_req.funcode):8, (Req#rtu_req.address):16, Quantity:16, ByteCount:8, ValuesBin/binary>>;
             ?FC_WRITE_HREG ->
-                ValueBin = list_word16_to_binary([Req#rtu_req.data]),
+                ValueBin = list_word16_to_binary([Req#rtu_req.quality]),
                 <<(Req#rtu_req.slaveId):8, (Req#rtu_req.funcode):8, (Req#rtu_req.address):16, ValueBin/binary>>;
             ?FC_WRITE_HREGS ->
 %%                ValuesBin = list_word16_to_binary(Req#rtu_req.quality),
