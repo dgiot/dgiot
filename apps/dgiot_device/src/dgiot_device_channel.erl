@@ -111,7 +111,7 @@ init(?TYPE, ChannelId, #{<<"offline">> := OffLine} = Args) ->
     dgiot_parse_hook:subscribe(<<"Device">>, get, ChannelId),
     dgiot_parse_hook:subscribe(<<"Device/*">>, get, ChannelId),
     dgiot_parse_hook:subscribe(<<"Device">>, post, ChannelId),
-    dgiot_parse_hook:subscribe(<<"Device/*">>, put, ChannelId, [<<"isEnable">>]),
+    dgiot_parse_hook:subscribe(<<"Device/*">>, put, ChannelId, [<<"isEnable">>, <<"ACL">>]),
     dgiot_parse_hook:subscribe(<<"Device/*">>, delete, ChannelId),
     dgiot_parse_hook:subscribe(<<"Product">>, get, ChannelId),
     dgiot_parse_hook:subscribe(<<"Product/*">>, get, ChannelId),
