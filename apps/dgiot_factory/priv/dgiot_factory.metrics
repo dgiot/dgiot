@@ -1,8 +1,14 @@
 [
   {
-    "name": "factory_metric",
-    "help": "数据统计",
-    "type": "gauge",
+    "name": "batch_num",
+    "help": "批次总数",
+    "type": "Counter　　",
     "labels": []
-  }
- ]
+  },
+   {
+      "name": "input_num",
+      "help": "信息录入总数",
+      "type": "Counter　　",
+      "labels": []
+   }
+]
