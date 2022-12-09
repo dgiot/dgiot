@@ -197,8 +197,8 @@ add_notification(<<"start_", Ruleid/binary>>, DeviceId, Payload) ->
         _ ->
             NotificationId = dgiot_parse_id:get_notificationid(Ruleid),
             Content = save_notification(Ruleid, DeviceId, Payload, NotificationId),
+            io:format("~s ~p Content = ~p.~n", [?FILE, ?LINE, Content]),
             dgiot_umeng:send_msg(Content),
-%%            io:format("~s ~p Content = ~p.~n", [?FILE, ?LINE, Content]),
             dgiot_umeng:sendSubscribe(Content),
             dgiot_data:insert(?NOTIFICATION, {DeviceId, Ruleid}, {start, dgiot_datetime:now_secs(), NotificationId})
     end;
@@ -233,8 +233,14 @@ save_notification(Ruleid, DeviceId, Payload, NotificationId) ->
                                     <<"write">> => true
                                 }}
                                     end, #{}, Acls),
-                    Alarm_message = get_defultmessage(ViewId),
-                    Content = Payload#{<<"alarm_createdAt">> => Alarm_createdAt, <<"alarm_message">> => Alarm_message, <<"_deviceid">> => DeviceId, <<"_productid">> => ProductId, <<"_viewid">> => ViewId},
+                    {Alarm_message, RoleId} =
+                        case get_defultmessage(ViewId) of
+                            #{<<"alarm_message">> := Message, <<"roleid">> := Id} ->
+                                {Message, Id};
+                            _ ->
+                                {<<>>, <<>>}
+                        end,
+                    Content = Payload#{<<"alarm_createdAt">> => Alarm_createdAt, <<"alarm_message">> => Alarm_message, <<"roleid">> => RoleId, <<"_deviceid">> => DeviceId, <<"_productid">> => ProductId, <<"_viewid">> => ViewId},
                     dgiot_parse:create_object(<<"Notification">>, #{
                         <<"objectId">> => NotificationId,
                         <<"ACL">> => Acl,
@@ -246,23 +252,25 @@ save_notification(Ruleid, DeviceId, Payload, NotificationId) ->
                     }),
                     Content#{<<"send_alarm_status">> => <<"start">>};
                 _ ->
-                    <<>>
+                    #{}
             end;
         _ ->
-            <<>>
+            #{}
     end.
 
 get_defultmessage(ViewId) ->
     case dgiot_parse:get_object(<<"View">>, ViewId) of
         {ok, #{<<"data">> := #{<<"body">> := [#{<<"body">> := Body} | _]}}} ->
             lists:foldl(fun
-                            (#{<<"name">> := <<"alarm_message">>, <<"value">> := Value}, _Acc) ->
-                                Value;
+                            (#{<<"name">> := <<"alarm_message">>, <<"value">> := Value}, Acc) ->
+                                Acc#{<<"alarm_message">> => Value};
+                            (#{<<"name">> := <<"roleid">>, <<"value">> := Value}, Acc) ->
+                                Acc#{<<"roleid">> => Value};
                             (_, Acc) ->
                                 Acc
-                        end, <<"">>, Body);
+                        end, #{}, Body);
         _ ->
-            <<"无"/utf8>>
+            #{}
     end.
 
 %% 0 未确认 1 误报 2 手动恢复 3 自动恢复
@@ -522,22 +530,22 @@ triggeralarm(DeviceId) ->
 
 
 %% 触发
-send_msg(#{<<"send_alarm_status">> := <<"start">>, <<"alarm_createdAt">> := Alarm_createdAt, <<"_deviceid">> := DeviceId, <<"_productid">> := ProductId, <<"dgiot_alarmkey">> := Key, <<"dgiot_alarmvalue">> := Value}) ->
-    case dgiot_parse:get_object(<<"Product">>, <<"8ea28660a3">>) of
+send_msg(#{<<"send_alarm_status">> := <<"start">>, <<"_productid">> := ProductId} = NotifContent) ->
+    case dgiot_parse:get_object(<<"Product">>, ProductId) of
         {ok, #{<<"name">> := ProductName, <<"content">> := Content}} ->
             maps:fold(fun(K, V, _Acc) ->
-                send_mode(#{K => V}, ProductName, ProductId, DeviceId, Key, Value, Alarm_createdAt, <<"触发"/utf8>>)
+                send_mode(#{K => V}, ProductName, NotifContent, <<"触发"/utf8>>)
                       end, #{}, Content);
         _ ->
             pass
     end;
 
 %% 恢复
-send_msg(#{<<"send_alarm_status">> := <<"stop">>, <<"alarm_createdAt">> := Alarm_createdAt, <<"_deviceid">> := DeviceId, <<"_productid">> := ProductId, <<"dgiot_alarmkey">> := Key, <<"dgiot_alarmvalue">> := Value}) ->
+send_msg(#{<<"send_alarm_status">> := <<"stop">>, <<"_productid">> := ProductId} = NotifContent) ->
     case dgiot_parse:get_object(<<"Product">>, ProductId) of
         {ok, #{<<"name">> := ProductName, <<"content">> := Content}} ->
             maps:fold(fun(K, V, _Acc) ->
-                send_mode(#{K => V}, ProductName, ProductId, DeviceId, Key, Value, Alarm_createdAt, <<"恢复"/utf8>>)
+                send_mode(#{K => V}, ProductName, NotifContent, <<"恢复"/utf8>>)
                       end, #{}, Content);
         _ ->
             pass
@@ -593,7 +601,7 @@ sendSubscribe(Type, Content, _UserId) ->
     end.
 %%    dgiot_wechat:sendSubscribe(UserId, Result).
 
-%% 触发 小程序订阅
+%% 触发 小程序通知
 sendSubscribe(#{<<"send_alarm_status">> := <<"start">>, <<"alarm_createdAt">> := Alarm_createdAt, <<"alarm_message">> := Alarm_message, <<"_deviceid">> := DeviceId, <<"_productid">> := ProductId, <<"dgiot_alarmkey">> := Alarmkey, <<"dgiot_alarmvalue">> := Alarmvalue}) ->
     case dgiot_parse:get_object(<<"Product">>, ProductId) of
         {ok, #{<<"name">> := ProductName, <<"content">> := #{<<"minipg">> := #{<<"params">> := Params, <<"tplid">> := TplId, <<"roleid">> := RoleId} = _Minipg}}} ->
@@ -616,14 +624,14 @@ sendSubscribe(#{<<"send_alarm_status">> := <<"start">>, <<"alarm_createdAt">> :=
             pass
     end;
 
-%% 恢复 小程序订阅
+%% 恢复 小程序通知
 %%sendSubscribe(#{<<"send_alarm_status">> := <<"stop">>, <<"alarm_createdAt">> := Alarm_createdAt, <<"_deviceid">> := DeviceId, <<"_productid">> := ProductId, <<"dgiot_alarmkey">> := Key, <<"dgiot_alarmvalue">> := Value}) ->
 %%
 %%    pass;
 
 %% 小程序订阅
 sendSubscribe(_O) ->
-    io:format("~s ~p _O = ~p.~n", [?FILE, ?LINE, _O]),
+%%    io:format("~s ~p _O = ~p.~n", [?FILE, ?LINE, _O]),
     pass.
 
 %%  产品名称：%PRODUCTNAME%
@@ -775,7 +783,10 @@ replace_miniparam(Acc, <<"%TRIGGERCONTENT%">>, Value, _Alarm_createdAt, _Alarmke
 replace_miniparam(Acc, _, Value, _Alarm_createdAt, _Alarmkey, _Alarmvalue, _DeviceId, _ProductId, _ProductName, _TriggerdeScription) ->
     Acc#{Value => #{<<"value">> => <<"无"/utf8>>}}.
 
-send_mode(#{<<"sms">> := #{<<"issend">> := <<"true">>, <<"params">> := Params, <<"tplid">> := TplId, <<"roleid">> := RoleId} = Sms}, ProductName, ProductId, DeviceId, Key, Value, Alarm_createdAt, TriggerdeScription) when is_list(Params) ->
+send_mode(#{<<"sms">> := #{<<"issend">> := <<"true">>, <<"params">> := Params, <<"tplid">> := TplId, <<"roleid">> := RoleId} = Sms},
+    ProductName,
+    #{<<"roleid">> := NotifRoleid, <<"alarm_createdAt">> := Alarm_createdAt, <<"_deviceid">> := DeviceId, <<"_productid">> := ProductId, <<"dgiot_alarmkey">> := Key, <<"dgiot_alarmvalue">> := Value},
+    TriggerdeScription) when is_list(Params) ->
     NewParams =
         lists:foldl(fun(Param, Acc) ->
             Acc ++ [replace_param(Param, ProductName, ProductId, DeviceId, Key, Value, Alarm_createdAt, TriggerdeScription)]
@@ -796,19 +807,23 @@ send_mode(#{<<"sms">> := #{<<"issend">> := <<"true">>, <<"params">> := Params, <
                             end
                                     end, [], Row);
                     _ ->
-                        dgiot_notification:get_Mobile(DeviceId, RoleId)
+                        dgiot_notification:get_Mobile(DeviceId, RoleId, NotifRoleid)
                 end;
             _ ->
-                dgiot_notification:get_Mobile(DeviceId, RoleId)
+                dgiot_notification:get_Mobile(DeviceId, RoleId, NotifRoleid)
         end,
     dgiot_notification:send_sms(Mobile, TplId, NewParams);
 
-send_mode(#{<<"email">> := #{<<"issend">> := <<"true">>, <<"params">> := Params} = Email}, ProductName, ProductId, DeviceId, Key, Value, Alarm_createdAt, TriggerdeScription) when is_binary(Params) ->
+send_mode(#{<<"email">> := #{<<"issend">> := <<"true">>, <<"params">> := Params} = Email},
+    ProductName,
+    #{<<"roleid">> := NotifRoleid, <<"alarm_createdAt">> := Alarm_createdAt, <<"_deviceid">> := DeviceId, <<"_productid">> := ProductId, <<"dgiot_alarmkey">> := Key, <<"dgiot_alarmvalue">> := Value},
+    TriggerdeScription) when is_binary(Params) ->
     Subject = maps:get(<<"subject">>, Email, <<>>),
     Todes = maps:get(<<"todes">>, Email, <<>>),
     Fromdes = maps:get(<<"fromdes">>, Email, <<>>),
     RoleId = maps:get(<<"roleid">>, Email, <<>>),
-    Emails = dgiot_notification:get_Emails(DeviceId, RoleId),
+    Emails = dgiot_notification:get_Emails(DeviceId, RoleId, NotifRoleid),
+
     Data = #{
         <<"to">> => Emails,
         <<"fromdes">> => replace_param(Fromdes, ProductName, ProductId, DeviceId, Key, Value, Alarm_createdAt, TriggerdeScription),
@@ -818,5 +833,5 @@ send_mode(#{<<"email">> := #{<<"issend">> := <<"true">>, <<"params">> := Params}
     },
     dgiot_notification:send_email(Data);
 
-send_mode(_, _ProductName, _ProductId, _DeviceId, _Key, _Value, _Alarm_createdAt, _) ->
+send_mode(_, _ProductName, _, _) ->
     pass.
