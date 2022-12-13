@@ -45,7 +45,7 @@ check_parse(Tables, I) ->
                                     Acc
                             end
                         end,
-                    lists:foldl(Fun, dgiot_parse_utils:default_schemas(), Schemas);
+                    lists:foldl(Fun, #{}, Schemas);
                 {error, Reason} ->
                     {error, Reason}
             end;
