@@ -31,7 +31,6 @@
     add_notification/3,
     save_notification/4,
     update_notification/2,
-    sendSubscribe/3,
     create_maintenance/2,
     get_operations/0,
     send_message_to3D/3,
@@ -554,53 +553,6 @@ send_msg(#{<<"send_alarm_status">> := <<"stop">>, <<"_productid">> := ProductId}
 send_msg(_) ->
     pass.
 
-sendSubscribe(Type, Content, _UserId) ->
-    DeviceId = maps:get(<<"_deviceid">>, Content, <<"">>),
-    {Devaddr, _Address} =
-        case dgiot_parse:get_object(<<"Device">>, DeviceId) of
-            {ok, #{<<"devaddr">> := Devaddr1, <<"detail">> := Detail}} ->
-                Address1 = maps:get(<<"address">>, Detail, <<"无位置"/utf8>>),
-                {Devaddr1, Address1};
-            _ ->
-                {<<"">>, <<"无位置"/utf8>>}
-        end,
-    case binary:split(Type, <<$_>>, [global, trim]) of
-        [ProductId, AlertId] ->
-%%                Productname =
-%%                    case dgiot_parse:get_object(<<"Product">>, ProductId) of
-%%                        {ok, #{<<"name">> := Productname1}} ->
-%%                            Productname1;
-%%                        _ ->
-%%                            <<" ">>
-%%                    end,
-            dgiot_datetime:now_secs(),
-            case dgiot_parse:get_object(<<"Product">>, ProductId) of
-                {ok, #{<<"config">> := #{<<"parser">> := Parse}}} ->
-                    lists:foldl(fun(P, Par) ->
-                        case P of
-                            #{<<"uid">> := AlertId, <<"config">> := #{<<"formDesc">> := FormDesc}} ->
-                                maps:fold(fun(Key, Value1, Form) ->
-                                    case maps:find(Key, Content) of
-                                        {ok, Value} ->
-                                            BinValue = dgiot_utils:to_binary(Value),
-                                            Form#{<<"thing15">> => #{<<"value">> => BinValue}};
-                                        _ ->
-                                            Default = maps:get(<<"default">>, Value1, <<>>),
-                                            Form#{Key => #{<<"value">> => Default}}
-                                    end
-                                          end, #{<<"thing1">> => #{<<"value">> => Devaddr}, <<"date4">> => #{<<"value">> => dgiot_datetime:format("YYYY-MM-DD HH:NN:SS")}}, FormDesc);
-                            _Oth ->
-                                Par
-                        end
-                                end, #{}, Parse);
-                _Other ->
-                    #{}
-            end;
-        _Other1 ->
-            #{}
-    end.
-%%    dgiot_wechat:sendSubscribe(UserId, Result).
-
 %% 触发 小程序通知
 sendSubscribe(#{<<"send_alarm_status">> := <<"start">>, <<"alarm_createdAt">> := Alarm_createdAt, <<"alarm_message">> := Alarm_message, <<"_deviceid">> := DeviceId, <<"_productid">> := ProductId, <<"dgiot_alarmkey">> := Alarmkey, <<"dgiot_alarmvalue">> := Alarmvalue}) ->
     case dgiot_parse:get_object(<<"Product">>, ProductId) of
@@ -645,7 +597,7 @@ sendSubscribe(_O) ->
 %%  变量名称：%DATAPOINTNAME%
 %%  当前值：%NOWVALUE%
 %%  触发描述：%TRIGGERDESCRIPTION%
-replace_param(Param, ProductName, ProductId, DeviceId, Key, Value, Alarm_createdAt, TriggerdeScription) ->
+replace_param(Param, ProductName, ProductId, DeviceId, Key, Value, Alarm_createdAt, TriggerdeScription, Alarm_message) ->
     Date = dgiot_datetime:format("YYYY-MM-DD"),
     DateTime = dgiot_datetime:format("YYYY-MM-DD HH:NN:SS"),
     {DeviceName, DeviceAddr, OldACL, UserToken} =
@@ -697,7 +649,8 @@ replace_param(Param, ProductName, ProductId, DeviceId, Key, Value, Alarm_created
     Str8 = re:replace(Str7, "%TRIGGERTIME%", Alarm_createdAt, [global, {return, list}]),
     Str9 = re:replace(Str8, "%DATAPOINTNAME%", DataPointname, [global, {return, list}]),
     Str10 = re:replace(Str9, "%TRIGGERDESCRIPTION%", TriggerdeScription, [global, {return, list}]),
-    re:replace(Str10, "%NOWVALUE%", dgiot_utils:to_list(Value), [global, {return, binary}]).
+    Str11 = re:replace(Str10, "%TRIGGERCONTENT%", Alarm_message, [global, {return, list}]),
+    re:replace(Str11, "%NOWVALUE%", dgiot_utils:to_list(Value), [global, {return, binary}]).
 
 
 %%  产品名称：%PRODUCTNAME%
@@ -785,11 +738,11 @@ replace_miniparam(Acc, _, Value, _Alarm_createdAt, _Alarmkey, _Alarmvalue, _Devi
 
 send_mode(#{<<"sms">> := #{<<"issend">> := <<"true">>, <<"params">> := Params, <<"tplid">> := TplId, <<"roleid">> := RoleId} = Sms},
     ProductName,
-    #{<<"roleid">> := NotifRoleid, <<"alarm_createdAt">> := Alarm_createdAt, <<"_deviceid">> := DeviceId, <<"_productid">> := ProductId, <<"dgiot_alarmkey">> := Key, <<"dgiot_alarmvalue">> := Value},
+    #{<<"roleid">> := NotifRoleid, <<"alarm_createdAt">> := Alarm_createdAt, <<"alarm_message">> := Alarm_message, <<"_deviceid">> := DeviceId, <<"_productid">> := ProductId, <<"dgiot_alarmkey">> := Key, <<"dgiot_alarmvalue">> := Value},
     TriggerdeScription) when is_list(Params) ->
     NewParams =
         lists:foldl(fun(Param, Acc) ->
-            Acc ++ [replace_param(Param, ProductName, ProductId, DeviceId, Key, Value, Alarm_createdAt, TriggerdeScription)]
+            Acc ++ [replace_param(Param, ProductName, ProductId, DeviceId, Key, Value, Alarm_createdAt, TriggerdeScription, Alarm_message)]
                     end, [], Params),
     Mobile =
         case maps:find(<<"users">>, Sms) of
@@ -816,7 +769,7 @@ send_mode(#{<<"sms">> := #{<<"issend">> := <<"true">>, <<"params">> := Params, <
 
 send_mode(#{<<"email">> := #{<<"issend">> := <<"true">>, <<"params">> := Params} = Email},
     ProductName,
-    #{<<"roleid">> := NotifRoleid, <<"alarm_createdAt">> := Alarm_createdAt, <<"_deviceid">> := DeviceId, <<"_productid">> := ProductId, <<"dgiot_alarmkey">> := Key, <<"dgiot_alarmvalue">> := Value},
+    #{<<"roleid">> := NotifRoleid, <<"alarm_createdAt">> := Alarm_createdAt, <<"alarm_message">> := Alarm_message, <<"_deviceid">> := DeviceId, <<"_productid">> := ProductId, <<"dgiot_alarmkey">> := Key, <<"dgiot_alarmvalue">> := Value},
     TriggerdeScription) when is_binary(Params) ->
     Subject = maps:get(<<"subject">>, Email, <<>>),
     Todes = maps:get(<<"todes">>, Email, <<>>),
@@ -826,10 +779,10 @@ send_mode(#{<<"email">> := #{<<"issend">> := <<"true">>, <<"params">> := Params}
 
     Data = #{
         <<"to">> => Emails,
-        <<"fromdes">> => replace_param(Fromdes, ProductName, ProductId, DeviceId, Key, Value, Alarm_createdAt, TriggerdeScription),
-        <<"todes">> => replace_param(Todes, ProductName, ProductId, DeviceId, Key, Value, Alarm_createdAt, TriggerdeScription),
-        <<"subject">> => replace_param(Subject, ProductName, ProductId, DeviceId, Key, Value, Alarm_createdAt, TriggerdeScription),
-        <<"data">> => replace_param(Params, ProductName, ProductId, DeviceId, Key, Value, Alarm_createdAt, TriggerdeScription)
+        <<"fromdes">> => replace_param(Fromdes, ProductName, ProductId, DeviceId, Key, Value, Alarm_createdAt, TriggerdeScription, Alarm_message),
+        <<"todes">> => replace_param(Todes, ProductName, ProductId, DeviceId, Key, Value, Alarm_createdAt, TriggerdeScription, Alarm_message),
+        <<"subject">> => replace_param(Subject, ProductName, ProductId, DeviceId, Key, Value, Alarm_createdAt, TriggerdeScription, Alarm_message),
+        <<"data">> => replace_param(Params, ProductName, ProductId, DeviceId, Key, Value, Alarm_createdAt, TriggerdeScription, Alarm_message)
     },
     dgiot_notification:send_email(Data);
 

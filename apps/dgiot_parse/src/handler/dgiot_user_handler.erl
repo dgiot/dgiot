@@ -206,13 +206,13 @@ do_request(post_login, #{<<"username">> := UserName, <<"password">> := Password}
 %% iot_hub 概要: 用户管理 描述: 用户管理
 %% OperationId:post_logout
 %% 请求:POST /iotapi/post_logout
-do_request(post_logout,  #{<<"sessionToken">> := SessionToken}, _Context, _Req) ->
+do_request(post_logout, #{<<"sessionToken">> := SessionToken}, _Context, _Req) ->
     dgiot_auth:delete_session(SessionToken),
     SessionId = dgiot_parse_id:get_sessionId(SessionToken),
-    dgiot_parse:del_object(<<"_Session">>, SessionId),
     dgiot_mqtt:unsubscribe_route_key(SessionToken),
     dgiot_parse_auth:del_usersession(SessionToken),
-    dgiot_parse_auth:del_cookie(SessionToken);
+    dgiot_parse_auth:del_cookie(SessionToken),
+    dgiot_parse:del_object(<<"_Session">>, SessionId);
 
 %% RoleUser 概要: 导库 描述:json文件导库
 %% OperationId:get_roleuser

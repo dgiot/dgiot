@@ -355,6 +355,38 @@
       ]
     },
     {
+      "label": "密度单位",
+      "options": [
+        {
+          "symbol": "mg/l",
+          "name": "毫克每升",
+          "description": "密度单位:毫克每升(mg/l)",
+          "id": "milligraml",
+          "text": "毫克每升(mg/l)",
+          "type": "密度单位",
+          "value": "milligraml"
+        },
+        {
+          "symbol": "g/l",
+          "name": "克每升",
+          "description": "密度单位:克每升(g/l)",
+          "id": "grammel",
+          "text": "克每升(g/l)",
+          "type": "密度单位",
+          "value": "grammel"
+        },
+        {
+          "symbol": "kg/l",
+          "name": "千克每升",
+          "description": "密度单位:千克每升(kg/l)",
+          "id": "kilograml",
+          "text": "千克每升(kg/l)",
+          "type": "密度单位",
+          "value": "kilograml"
+        }
+      ]
+    },
+    {
       "label": "力单位",
       "options": [
         {
@@ -501,6 +533,14 @@
     {
       "label": "速度单位",
       "options": [
+        {
+          "symbol": "m³/s",
+          "typeText": "速度单位",
+          "name": "立方米每秒",
+          "description": "速度单位:立方米每秒(m³/s)",
+          "id": "lifangmPerSec",
+          "type": "speed"
+        },
         {
           "symbol": "m/s",
           "typeText": "速度单位",
@@ -766,6 +806,15 @@
           "text": "千瓦·时(kW·h)",
           "type": "电力单位",
           "value": "kWattsHour"
+        },
+        {
+          "symbol": "us/cm",
+          "name": "微西门/厘米",
+          "description": "电导率单位:微西门/厘米(us/cm)",
+          "id": "weiximenlimi",
+          "text": "微西门/厘米(us/cm)",
+          "type": "电力单位",
+          "value": "weiximenlimi"
         }
       ]
     }

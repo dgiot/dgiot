@@ -125,49 +125,6 @@
         ]
       }
     },
-    "/import_reportTemp": {
-      "post": {
-        "summary": "导库",
-        "description": "json文件导库",
-        "consumes": [
-          "multipart/form-data"
-        ],
-        "parameters": [
-          {
-            "name": "className",
-            "in": "formData",
-            "description": "表名",
-            "type": "string"
-          },
-          {
-            "name": "file",
-            "in": "formData",
-            "description": "数据文件",
-            "type": "file"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Returns operation status"
-          },
-          "400": {
-            "description": "Bad Request"
-          },
-          "401": {
-            "description": "Unauthorized"
-          },
-          "403": {
-            "description": "Forbidden"
-          },
-          "500": {
-            "description": "Server Internal error"
-          }
-        },
-        "tags": [
-          "Data"
-        ]
-      }
-    },
     "/reportTemp": {
       "put": {
         "description": "新增报告子模版",
