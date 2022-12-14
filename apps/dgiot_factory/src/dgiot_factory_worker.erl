@@ -154,8 +154,8 @@ get_new_workernum(WorkerProduct) ->
             Max = lists:foldl(
                 fun(X, Acc) ->
                     case maps:find(<<"devaddr">>, X) of
-                        {ok, WorkerNum} ->
-                            Num = dgiot_utils:to_int(WorkerNum),
+                        {ok, Devaddr} ->
+                            Num = get_worker_num(Devaddr),
                             case Acc > Num of
                                 true ->
                                     Acc;
@@ -444,3 +444,8 @@ format_worker(_, Worker) ->
 %%            end
 %%
 %%        end, [], WorkerList);
+
+
+get_worker_num(Devaddr)->
+    [_,Num] =re:split(Devaddr,<<"_">>),
+    dgiot_utils:to_int(Num).
