@@ -196,7 +196,7 @@ do_compare('<=', L, R) -> L =< R;
 do_compare('>=', L, R) -> L >= R;
 do_compare('<>', L, R) -> L /= R;
 do_compare('!=', L, R) -> L /= R;
-do_compare('=~', T, F) -> emqx_topic:match(T, F).
+do_compare('=~', T, F) -> dgiot_topic:match(T, F).
 
 number(Bin) ->
     try binary_to_integer(Bin)
@@ -305,7 +305,7 @@ apply_func(Name, Args, Input) when is_binary(Name) ->
     do_apply_func(FunName, Args, Input).
 
 do_apply_func(Name, Args, Input) ->
-    case erlang:apply(emqx_rule_funcs, Name, Args) of
+    case erlang:apply(dgiot_rule_funcs, Name, Args) of
         Func when is_function(Func) ->
             erlang:apply(Func, [Input]);
         Result -> Result
@@ -334,7 +334,7 @@ cache_payload(DecodedP) ->
     DecodedP.
 
 safe_decode_and_cache(MaybeJson) ->
-    try cache_payload(emqx_json:decode(MaybeJson, [return_maps]))
+    try cache_payload(dgiot_json:decode(MaybeJson, [return_maps]))
     catch _:_ -> #{}
     end.
 
@@ -343,4 +343,4 @@ ensure_list(_NotList) -> [].
 
 nested_put(Alias, Val, Input0) ->
     Input = handle_alias(Alias, Input0),
-    emqx_rule_maps:nested_put(Alias, Val, Input).
+    dgiot_rule_maps:nested_put(Alias, Val, Input).

@@ -24,6 +24,7 @@
     , delete_rule/1
     , refresh_rules/0
     , test/0
+    , envs_examp/0
 ]).
 
 -type(rule() :: #rule{}).
@@ -104,13 +105,13 @@ refresh_rules() ->
                       (_) -> ok
                   end, dgiot_rule_registry:get_rules()).
 
-refresh_rule(#rule{id = RuleId, for = Topics}) ->
-    ok = emqx_rule_metrics:create_rule_metrics(RuleId),
+refresh_rule(#rule{id = _RuleId, for = Topics}) ->
+%%    ok = emqx_rule_metrics:create_rule_metrics(RuleId),
     lists:foreach(fun emqx_rule_events:load/1, Topics).
 
 -dialyzer([{nowarn_function, may_update_rule_params/2}]).
 may_update_rule_params(Rule, Params = #{rawsql := SQL}) ->
-    case emqx_rule_sqlparser:parse_select(SQL) of
+    case dgiot_rule_sqlparser:parse_select(SQL) of
         {ok, Select} ->
             may_update_rule_params(
                 Rule#rule{
@@ -153,12 +154,19 @@ gen_id(Prefix, TestFun) ->
     end.
 
 test() ->
-    Sql  = <<"SELECT "
-    "  case "
-    "     when a = 1 then a "
-    "     when a = 2 then a "
-    "     else a-1 "
-    "  end "
-    "FROM abc">>,
+    Sql = <<"SELECT a FROM \"t\a\" WHERE \"a\" = 1">>,
     dgiot_rule_sqlparser:parse_select(Sql),
-    create_rule(#{rawsql => Sql}).
+    case create_rule(#{rawsql => Sql}) of
+        {ok, Rule} ->
+            Rule,
+            dgiot_rule_runtime:apply_rule(Rule, envs_examp());
+        _ ->
+            pass
+    end.
+
+envs_examp() ->
+    #{
+        id => emqx_guid:to_hexstr(emqx_guid:gen()),
+        payload => <<"{\"id\": 1, \"a\": 1}">>,
+        topic => <<"t/a">>
+    }.

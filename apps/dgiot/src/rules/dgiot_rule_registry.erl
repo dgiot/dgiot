@@ -21,7 +21,6 @@
 -include_lib("dgiot/include/rule_engine.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -include_lib("stdlib/include/qlc.hrl").
--define(DGIOT_RULE_TAB, dgiot_rule).
 -define(DG_KV_TAB, '@dg_rule_engine_db').
 -export([start_link/0]).
 
@@ -73,7 +72,7 @@ mnesia(boot) ->
     %% Optimize storage
     StoreProps = [{ets, [{read_concurrency, true}]}],
     %% Rule table
-    ok = ekka_mnesia:create_table(?DGIOT_RULE_TAB, [
+    ok = ekka_mnesia:create_table(?RULE_TAB, [
                 {ram_copies, [node()]},
                 {record_name, rule},
                 {index, [#rule.for]},
@@ -82,11 +81,11 @@ mnesia(boot) ->
 
 mnesia(copy) ->
     %% Copy rule table
-    ok = ekka_mnesia:copy_table(?DGIOT_RULE_TAB, ram_copies).
+    ok = ekka_mnesia:copy_table(?RULE_TAB, ram_copies).
 
 dump() ->
     io:format("Rules: ~p~n",
-            [ets:tab2list(?DGIOT_RULE_TAB)]).
+            [ets:tab2list(?RULE_TAB)]).
 
 %%------------------------------------------------------------------------------
 %% Start the registry
@@ -102,11 +101,11 @@ start_link() ->
 
 -spec(get_rules() -> list(emqx_rule_engine:rule())).
 get_rules() ->
-    get_all_records(?DGIOT_RULE_TAB).
+    get_all_records(?RULE_TAB).
 
 get_rules_ordered_by_ts() ->
     F = fun() ->
-        Query = qlc:q([E || E <- mnesia:table(?DGIOT_RULE_TAB)]),
+        Query = qlc:q([E || E <- mnesia:table(?RULE_TAB)]),
         qlc:e(qlc:keysort(#rule.created_at, Query, [{order, ascending}]))
     end,
     {atomic, List} = mnesia:transaction(F),
@@ -152,7 +151,7 @@ remove_rules(Rules) ->
 %% @private
 insert_rule(Rule) ->
     _ = ?CLUSTER_CALL(load_hooks_for_rule, [Rule]),
-    mnesia:write(?DGIOT_RULE_TAB, Rule, write).
+    mnesia:write(?RULE_TAB, Rule, write).
 
 %% @private
 delete_rule(RuleId) when is_binary(RuleId) ->
@@ -162,7 +161,7 @@ delete_rule(RuleId) when is_binary(RuleId) ->
     end;
 delete_rule(Rule) ->
     _ = ?CLUSTER_CALL(unload_hooks_for_rule, [Rule]),
-    mnesia:delete_object(?DGIOT_RULE_TAB, Rule, write).
+    mnesia:delete_object(?RULE_TAB, Rule, write).
 
 load_hooks_for_rule(#rule{for = Topics}) ->
     lists:foreach(fun emqx_rule_events:load/1, Topics).
