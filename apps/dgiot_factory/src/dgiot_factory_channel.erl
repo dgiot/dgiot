@@ -351,7 +351,9 @@ get_wokrer_id(Name, DevType) ->
     dgiot_parse_id:get_productid(?WORKERCATEGORY, DevType, Name).
 
 init_worker_device(ProductId, WorkerNum, WorkerName) ->
-    DeviceId = dgiot_parse_id:get_deviceid(ProductId,WorkerNum),
+    BinNum = dgiot_utils:to_binary(WorkerNum),
+    Devaddr = <<WorkerName/binary,"_",BinNum/binary>>,
+    DeviceId = dgiot_parse_id:get_deviceid(ProductId,Devaddr),
     case dgiot_device_cache:lookup(DeviceId) of
         {ok,_} ->
             io:format("~s ~p DeviceId = ~p ~n",[?FILE,?LINE,DeviceId]),
@@ -361,18 +363,20 @@ init_worker_device(ProductId, WorkerNum, WorkerName) ->
                 {ok, Product} ->
                     case Product of
                         #{<<"ACL">> := Acl, <<"name">> := Name, <<"devType">> := DevType, <<"dynamicReg">> := true} ->
+%%                            以名字+"_"+工号作为工人设备地址，
+
                             Device = #{
                                 <<"profile">>=>#{<<"worker_flag">> => 1},
                                 <<"status">> => <<"ONLINE">>,
                                 <<"brand">> => Name,
                                 <<"devModel">> => DevType,
-                                <<"name">> => WorkerName,
-                                <<"devaddr">> => WorkerNum,
+                                <<"name">> => Devaddr,
+                                <<"devaddr">> => Devaddr,
                                 <<"product">> => ProductId,
                                 <<"ACL">> => Acl
                             },
+                            io:format("~s ~p DeviceId = ~p ~n",[?FILE,?LINE,DeviceId]),
                             dgiot_device:create_device(Device),
-                            io:format("~s ~p DeviceId = ~p ~n", [?FILE, ?LINE, DeviceId]),
                             dgiot_parse:update_object(<<"Device">>,DeviceId , #{<<"ACL">>=> Acl#{<<"*">> =>#{<<"read">> => true}}}),
                             AllData = #{<<"worker_validate">> => true,
                                 <<"worker_num">> => WorkerNum,
@@ -381,8 +385,9 @@ init_worker_device(ProductId, WorkerNum, WorkerName) ->
                                 <<"product">> => ProductId},
                             NumData = dgiot_product_enum:turn_num(AllData, ProductId),
                             dgiot_data:insert(?WORKER, {ProductId, WorkerNum}, WorkerName),
-                            dgiot_task:save_td_no_match(ProductId, WorkerNum, NumData, #{});
+                            dgiot_task:save_td_no_match(ProductId, Devaddr, NumData, #{});
                         _ ->
+                            io:format("~s ~p not_find_product ~n",[?FILE,?LINE]),
                             pass
                     end;
                 _ ->
