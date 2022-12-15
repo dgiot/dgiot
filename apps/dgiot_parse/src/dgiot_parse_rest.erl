@@ -45,7 +45,8 @@ request(Method, Header, Path0, Body, Options) when is_binary(Method) ->
 
 request(Method, Header, Path0, Body, Options) ->
     {IsGetCount, Path, NewBody} = get_request_args(Path0, Method, Body, Options),
-    NewHeads = get_headers(Method, Path, Header, Options),
+    Header1 = dgiot_parse:get_header_token(Header),
+    NewHeads = get_headers(Method, Path, Header1, Options),
     Fun =
         fun() ->
             NewBody1 =
@@ -274,8 +275,10 @@ encode_body(_Path, Method, Args, _Options) when Method == 'GET'; Method == 'DELE
                 (<<"where">>, Where, Acc) ->
                     Value =
                         case is_binary(Where) of
-                            true -> dgiot_httpc:urlencode(Where);
-                            false -> dgiot_httpc:urlencode(jsx:encode(Where))
+                            true ->
+                                dgiot_httpc:urlencode(Where);
+                            false ->
+                                dgiot_httpc:urlencode(jsx:encode(Where))
                         end,
                     [<<"where=", Value/binary>> | Acc];
                 (Key, Value, Acc) ->
