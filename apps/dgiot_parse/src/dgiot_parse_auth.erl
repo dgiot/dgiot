@@ -51,6 +51,7 @@
 -export([create_user_for_app/1, get_token/1, set_cookies/3, add_acl/5]).
 -export([get_usersession/1, put_usersession/1, del_usersession/1]).
 -export([get_cookie/1, put_cookie/2, del_cookie/1]).
+-export([get_depart_session/1, put_depart_session/2]).
 
 
 init_ets() ->
@@ -63,6 +64,7 @@ get_usersession(Depart_token) ->
 put_usersession(SessionMap) ->
     [Depart_token] = maps:keys(SessionMap),
     User_session = maps:get(Depart_token, SessionMap),
+    put_depart_session(User_session, Depart_token),
     dgiot_data:insert(?DGIOT_USERSESSION, {Depart_token}, User_session).
 
 del_usersession(User_session) ->
@@ -79,7 +81,16 @@ del_usersession(User_session) ->
           end,
     dgiot_data:loop(?DGIOT_USERSESSION, Fun).
 
+get_depart_session(User_session) ->
+    case dgiot_data:get(?DGIOT_USERSESSION, {depart, User_session}) of
+        not_find ->
+            User_session;
+        Depart_token ->
+            Depart_token
+    end.
 
+put_depart_session(User_session, Depart_token) ->
+    dgiot_data:insert(?DGIOT_USERSESSION, {depart, User_session}, Depart_token).
 
 put_cookie(UserSession, Cookie) ->
     dgiot_data:insert(?DGIOT_COOKIE, {UserSession}, Cookie).

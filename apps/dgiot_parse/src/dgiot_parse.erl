@@ -75,7 +75,8 @@
     request_rest/6,
     create_schemas_json/0,
     get_schemas_json/0,
-    update_schemas_json/0
+    update_schemas_json/0,
+    get_header_token/1
 ]).
 
 -export([
@@ -381,6 +382,19 @@ get_token(Header) ->
         Token1 ->
             Token1
     end.
+
+get_header_token(Header) ->
+    lists:foldl(
+        fun
+            ({<<"X-Parse-Session-Token">>, Token}, Acc) ->
+                DepartToken = dgiot_parse_auth:get_depart_session(Token),
+                Acc ++ [{<<"X-Parse-Session-Token">>, DepartToken}];
+            ({"X-Parse-Session-Token,Token", Token}, Acc) ->
+                DepartToken = dgiot_parse_auth:get_depart_session(Token),
+                Acc ++ [{<<"X-Parse-Session-Token">>, DepartToken}];
+            ({K, V}, Acc) ->
+                Acc ++ [{K, V}]
+        end, [], Header).
 
 get_qs(Map) ->
     lists:foldl(
