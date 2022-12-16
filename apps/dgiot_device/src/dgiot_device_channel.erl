@@ -282,7 +282,7 @@ handle_message({sync_parse, _Pid, 'before', delete, _Token, <<"Channel">>, Objec
 
 handle_message({update_schemas_json}, State) ->
 %%    更新表字段
-    dgiot_parse:update_schemas_json(),
+    dgiot_parse_utils:update_schemas_json(),
     {ok, State};
 
 handle_message(Message, State) ->

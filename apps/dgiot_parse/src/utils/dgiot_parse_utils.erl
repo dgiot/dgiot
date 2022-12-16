@@ -18,12 +18,15 @@
 -author("zwx").
 -include_lib("dgiot/include/logger.hrl").
 -include("dgiot_parse.hrl").
+-include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
 -dgiot_swagger(<<"classes">>).
 
 -define(RE_OPTIONS, [global, {return, binary}]).
 
 %% API.
 -export([swaggerApi/0, check_parse/2, transform_classes/2, get_paths/2, get_navigation/2, default_schemas/0, create_tree/2, get_classtree/4]).
+
+-export([sync_user/0, sync_parse/0, sync_role/0, update/1, create_schemas_json/0, get_schemas_json/0, update_schemas_json/0, test/0]).
 
 check_parse(Tables, I) ->
     case catch dgiot_parse:health() of
@@ -190,7 +193,6 @@ children_sort(Node1, Node2) ->
 %% ==========================
 %%  swagger
 %% ==========================
-
 default_schemas() ->
     NewSWSchemas =
         case dgiot_swagger:load_schema(?MODULE, "swagger_parse.json", [{labels, binary}, return_maps]) of
@@ -331,6 +333,138 @@ get_path(Tags, ClassName, Type, Mod) ->
     Data2 = re:replace(Data1, "\\{\\{classes\\}\\}", Type, ?RE_OPTIONS),
     jsx:decode(Data2, [{labels, binary}, return_maps]).
 
+test() ->
+%%    aggregate_object(<<"slave">>, <<"Device">>, #{<<"group">> => #{<<"objectId">> => <<"06b5e7066c">>, <<"total">> => #{<<"$sum">> => <<"state">>}}}).
+%%    aggregate_object(<<"slave">>, <<"Device">>, #{<<"match">> => #{<<"state">> => #{<<"$gt">> => 15}}}).
+    dgiot_parse:query_object(<<"slave">>, <<"Device">>, #{
+        <<"limit">> => 2,
+        <<"keys">> => <<"location">>,
+        <<"where">> => #{
+            <<"location">> => #{
+                <<"$nearSphere">> => #{
+                    <<"__type">> => <<"GeoPoint">>,
+                    <<"latitude">> => 30.266996,
+                    <<"longitude">> => 120.172584
+                },
+                <<"$maxDistanceInKilometers">> => 10
+            }
+        }}).
+
+
+%%     dgiot_parse:sync_user().
+sync_user() ->
+    case dgiot_parse:query_object(?DEFAULT, <<"_User">>, #{}) of
+        {ok, #{<<"results">> := Users}} ->
+%%                io:format("X ~p~n",[X]),
+%%                dgiot_parse:create_object(?SLAVE, <<"_User">>, maps:without([<<"_email_verify_token">>, <<"emailVerified">>, <<"role">>, <<"roles">>, <<"createdAt">>, <<"updatedAt">>], X#{<<"password">> => Name}))
+            Requests =
+                lists:foldl(fun(#{<<"username">> := Name} = X, Acc) ->
+                    Acc ++ [#{
+                        <<"method">> => <<"POST">>,
+                        <<"path">> => <<"/classes/_User">>,
+                        <<"body">> => maps:without([<<"_email_verify_token">>, <<"emailVerified">>, <<"role">>, <<"roles">>, <<"createdAt">>, <<"updatedAt">>], X#{<<"password">> => Name})
+                    }]
+                            end, [], Users),
+            dgiot_parse:batch(?SLAVE, Requests);
+        _ ->
+            pass
+    end.
+
+%%    dgiot_parse:sync_parse().
+sync_parse() ->
+    Tables = [<<"Device">>, <<"Product">>, <<"Category">>, <<"Channel">>, <<"Dict">>, <<"Menu">>, <<"Permission">>, <<"ProductTemplet">>, <<"View">>],
+    lists:foldl(fun(Table, _) ->
+%%        io:format("~s ~p Table = ~p.~n", [?FILE, ?LINE, Table]),
+        case dgiot_parse:query_object(?DEFAULT, Table, #{}) of
+            {ok, #{<<"results">> := Results}} ->
+                Requests =
+                    lists:foldl(fun(X, Acc) ->
+                        Acc ++ [#{
+                            <<"method">> => <<"POST">>,
+                            <<"path">> => <<"/classes/", Table/binary>>,
+                            <<"body">> => maps:without([<<"createdAt">>, <<"updatedAt">>], X)
+                        }]
+                                end, [], Results),
+                dgiot_parse:batch(?SLAVE, Requests);
+            _ ->
+                pass
+        end
+                end, [], Tables).
+
+%%     dgiot_parse:sync_role().
+sync_role() ->
+    case dgiot_parse:query_object(?DEFAULT, <<"_Role">>, #{}) of
+        {ok, #{<<"results">> := Roles}} ->
+            Requests =
+                lists:foldl(fun(Role, Acc) ->
+                    NewRole = Role#{
+                        <<"menus">> => dgiot_role:get_menus_role(maps:get(<<"menus">>, Role, [])),
+                        <<"rules">> => dgiot_role:get_rules_role(maps:get(<<"rules">>, Role, []))
+                    },
+                    Acc ++ [#{
+                        <<"method">> => <<"POST">>,
+                        <<"path">> => <<"/classes/_Role">>,
+                        <<"body">> => maps:without([<<"views">>, <<"createdAt">>, <<"updatedAt">>], NewRole)
+                    }]
+                            end, [], Roles),
+            dgiot_parse:batch(?SLAVE, Requests);
+        _ ->
+            pass
+    end.
 
 
 
+update(SessionToken) ->
+    case dgiot_auth:get_session(SessionToken) of
+        #{<<"roles">> := Roles} ->
+            Flag =
+                maps:fold(
+                    fun
+                        (_RoleId, #{<<"level">> := Level}, _Acc1) when Level < 3 ->
+                            %%    发通知异步调用更新
+                            ChannelId = dgiot_parse_id:get_channelid(dgiot_utils:to_binary(?BACKEND_CHL), <<"DEVICE">>, <<"Device缓存通道"/utf8>>),
+                            dgiot_channelx:do_message(ChannelId, {update_schemas_json}),
+                            true;
+                        (_, _, _) ->
+                            false
+                    end, false, Roles),
+            case Flag of
+                true ->
+                    {ok, #{<<"code">> => 200, <<"msg">> => <<"数据库升级成功"/utf8>>}};
+                _ ->
+                    {ok, #{<<"code">> => 200, <<"msg">> => <<"请使用开发者账号"/utf8>>}}
+            end;
+        _ ->
+            {ok, #{<<"code">> => 200, <<"msg">> => <<"请使用开发者账号"/utf8>>}}
+    end.
+
+create_schemas_json() ->
+    {file, Here} = code:is_loaded(?MODULE),
+    SchemasFile = dgiot_httpc:url_join([filename:dirname(filename:dirname(Here)), "/priv/json/schemas.json"]),
+    case dgiot_parse:get_schemas() of
+        {ok, #{<<"results">> := Schemas}} ->
+            file:write_file(SchemasFile, jsx:encode(Schemas));
+        _ ->
+            pass
+    end.
+
+get_schemas_json() ->
+    dgiot_utils:get_JsonFile(?MODULE, <<"schemas.json">>).
+
+%%   dgiot_parse:update_schemas(Fields).
+update_schemas_json() ->
+%%    io:format("~s ~p ~p~n", [?FILE, ?LINE, <<"update_schemas_json start">>]),
+    %%    API更新
+    dgiot_install:generate_rule([{<<"webname">>, #{name => dgiot_apihub}}]),
+    %%    物模型更新
+    dgiot_product:update_properties(),
+    %%    表字段更新
+    Schemas = get_schemas_json(),
+    timer:sleep(1000),
+    lists:foldl(fun(#{<<"className">> := ClassName, <<"fields">> := Fields}, _Acc) ->
+        maps:fold(fun(Key, Value, _Acc1) ->
+%%           io:format("Fields = #{~p => ~p, ~n           ~p => #{~p => ~p}}.~n", [<<"className">>, ClassName, <<"fields">>, Key, Value]),
+            dgiot_parse:update_schemas(#{<<"className">> => ClassName, <<"fields">> => #{Key => Value}}),
+            timer:sleep(100)
+                  end, #{}, Fields)
+                end, #{}, Schemas).
