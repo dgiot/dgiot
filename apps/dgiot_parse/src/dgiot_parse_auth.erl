@@ -52,6 +52,7 @@
 -export([get_usersession/1, put_usersession/1, del_usersession/1]).
 -export([get_cookie/1, put_cookie/2, del_cookie/1]).
 -export([get_depart_session/1, put_depart_session/2]).
+-export([get_view_session/1, put_view_session/2]).
 
 
 init_ets() ->
@@ -68,17 +69,18 @@ put_usersession(SessionMap) ->
     dgiot_data:insert(?DGIOT_USERSESSION, {Depart_token}, User_session).
 
 del_usersession(User_session) ->
-    Fun = fun
-              ({Key, Value}) ->
-                  case Value of
-                      User_session ->
-                          dgiot_data:delete(?DGIOT_USERSESSION, Key);
-                      _ ->
-                          pass
-                  end;
-              (_) ->
-                  pass
-          end,
+    Fun =
+        fun
+            ({Key, Value}) ->
+                case Value of
+                    User_session ->
+                        dgiot_data:delete(?DGIOT_USERSESSION, Key);
+                    _ ->
+                        pass
+                end;
+            (_) ->
+                pass
+        end,
     dgiot_data:loop(?DGIOT_USERSESSION, Fun).
 
 get_depart_session(User_session) ->
@@ -89,8 +91,20 @@ get_depart_session(User_session) ->
             Depart_token
     end.
 
-put_depart_session(User_session, Depart_token) ->
+put_depart_session(User_session, ViewId) ->
+    dgiot_data:insert(?DGIOT_USERSESSION, {view, User_session}, ViewId).
+
+put_view_session(User_session, Depart_token) ->
     dgiot_data:insert(?DGIOT_USERSESSION, {depart, User_session}, Depart_token).
+
+
+get_view_session(User_session) ->
+    case dgiot_data:get(?DGIOT_USERSESSION, {view, User_session}) of
+        not_find ->
+            User_session;
+        ViewId ->
+            ViewId
+    end.
 
 put_cookie(UserSession, Cookie) ->
     dgiot_data:insert(?DGIOT_COOKIE, {UserSession}, Cookie).

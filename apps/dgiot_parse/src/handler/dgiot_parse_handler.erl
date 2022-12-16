@@ -108,7 +108,7 @@ do_request(get_upgrade, _Body, _Context, Req) ->
     Cookies = cowboy_req:parse_cookies(Req),
     SessionToken = proplists:get_value(<<"departmentToken">>, Cookies),
 %%    io:format("~s ~p SessionToken = ~p.~n", [?FILE, ?LINE, SessionToken]),
-    dgiot_parse:update(SessionToken);
+    dgiot_parse_utils:update(SessionToken);
 
 
 %%  服务器不支持的API接口
