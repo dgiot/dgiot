@@ -380,7 +380,7 @@ get_stage(ProductId, Tiltle) ->
     ViewId = dgiot_parse_id:get_viewid(ProductId, <<"Topo">>, <<"Product">>, Tiltle),
     case dgiot_parse:get_object(<<"View">>, ViewId) of
         {ok, #{<<"data">> := #{<<"konva">> := #{<<"Stage">> := Stage}}}} ->
-            Stage;
+            {ok,Stage};
         _ ->
             #{}
     end.
