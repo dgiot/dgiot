@@ -154,7 +154,7 @@ gen_id(Prefix, TestFun) ->
     end.
 
 test() ->
-    Sql = <<"SELECT a FROM \"t\a\" WHERE \"a\" = 1">>,
+    Sql = <<"SELECT * FROM \"t/a\" WHERE \"a\" = 1">>,
     dgiot_rule_sqlparser:parse_select(Sql),
     case create_rule(#{rawsql => Sql}) of
         {ok, Rule} ->
