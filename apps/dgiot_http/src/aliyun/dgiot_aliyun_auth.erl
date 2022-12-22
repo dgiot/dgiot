@@ -148,7 +148,7 @@ real_url_generator(AppName, StreamName, EndTime, Head, Key) ->
 aliyun_api_request(Args) ->
     List = lists:sort(fun({K1, _}, {K2, _}) -> K1 =< K2 end, maps:to_list(Args)),
     Data = "GET&%2F&" ++ http_uri:encode(lists:concat(lists:join("&", [K ++ "=" ++ V || {K, V} <- List]))),
-    Signature = http_uri:encode(dgiot_utils:to_list(base64:encode(crypto:hmac(sha, dgiot_utils:to_list(?AccessKeySecret) ++ "&", Data)))),
+    Signature = http_uri:encode(dgiot_utils:to_list(base64:encode(crypto:mac(sha, dgiot_utils:to_list(?AccessKeySecret) ++ "&", Data)))),
     Url = to_aliyun_url(Args#{"Signature" => Signature}),
     httpc:request(Url).
 
@@ -175,7 +175,7 @@ base_args(Action) ->
 oss_signature(VerB, Expire, Bucket, ObjectName) ->
     LineBreak = "\n",
     String = lists:concat([dgiot_utils:to_list(VerB), LineBreak, LineBreak, LineBreak, dgiot_utils:to_list(Expire), LineBreak, "/", dgiot_utils:to_list(Bucket), "/", dgiot_utils:to_list(ObjectName)]),
-    http_uri:encode(dgiot_utils:to_list(base64:encode(crypto:hmac(sha, dgiot_utils:to_list(?AccessKeySecret), String)))).
+    http_uri:encode(dgiot_utils:to_list(base64:encode(crypto:mac(sha, dgiot_utils:to_list(?AccessKeySecret), String)))).
 
 jwtlogin(<<"yanshizhanghao">>) ->
     Md5Idtoken = dgiot_utils:to_md5(<<"yanshizhanghao">>),

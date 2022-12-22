@@ -30,14 +30,14 @@ encode(aes_cbc128, AES_KEY, AES_IV0, Bin) ->
     Len = erlang:size(Bin),
     Value = 16 - (Len rem 16),
     PadBin = binary:copy(<<0:8>>, Value),
-    EncodeB = crypto:block_encrypt(aes_cbc128, AES_KEY, AES_IV, <<Bin/binary, PadBin/binary>>),
-%%    EncodeB = crypto:crypto_one_time(aes_cbc128, AES_KEY, AES_IV, [<<Bin/binary, PadBin/binary>>], true),
+%%    EncodeB = crypto:block_encrypt(aes_cbc128, AES_KEY, AES_IV, <<Bin/binary, PadBin/binary>>),
+    EncodeB = crypto:crypto_one_time(aes_cbc128, AES_KEY, AES_IV, [<<Bin/binary, PadBin/binary>>], true),
 %%    io:format("~s ~p EncodeB ~p ~n", [?FILE, ?LINE, EncodeB]),
     dgiot_utils:binary_to_hex(EncodeB);
 
 encode(aes_cfb8, AES_KEY, AES_IV, Bin) ->
-    EncodeB = crypto:block_encrypt(aes_cfb8, AES_KEY, AES_IV, Bin),
-%%    EncodeB = crypto:crypto_one_time(aes_cfb8, AES_KEY, AES_IV, [Bin], true),
+%%    EncodeB = crypto:block_encrypt(aes_cfb8, AES_KEY, AES_IV, Bin),
+    EncodeB = crypto:crypto_one_time(aes_cfb8, AES_KEY, AES_IV, [Bin], true),
 %%    io:format("~s ~p EncodeB ~p ~n", [?FILE, ?LINE, EncodeB]),
     dgiot_utils:binary_to_hex(EncodeB).
 
@@ -45,8 +45,8 @@ decode(aes_cbc128, AES_KEY, AES_IV, Bin) ->
     Bin1 = dgiot_utils:hex_to_binary(Bin),
     case erlang:size(Bin1) rem 16 of
         0 ->
-            Bin2 = crypto:block_decrypt(aes_cbc128, AES_KEY, AES_IV, Bin1),
-%%            Bin2 = crypto:crypto_one_time(aes_cbc128, AES_KEY, AES_IV, [Bin1], false),
+%%            Bin2 = crypto:block_decrypt(aes_cbc128, AES_KEY, AES_IV, Bin1),
+            Bin2 = crypto:crypto_one_time(aes_cbc128, AES_KEY, AES_IV, [Bin1], false),
 %%            io:format("~s ~p EncodeB ~p ~n", [?FILE, ?LINE, Bin2]),
             binary:part(Bin2, {0, byte_size(Bin2) - binary:last(Bin2)});
         _ ->
