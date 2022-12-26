@@ -554,9 +554,9 @@ send_msg(_) ->
     pass.
 
 %% 触发 小程序通知
-sendSubscribe(#{<<"send_alarm_status">> := <<"start">>, <<"alarm_createdAt">> := Alarm_createdAt, <<"alarm_message">> := Alarm_message, <<"_deviceid">> := DeviceId, <<"_productid">> := ProductId, <<"dgiot_alarmkey">> := Alarmkey, <<"dgiot_alarmvalue">> := Alarmvalue}) ->
+sendSubscribe(#{<<"send_alarm_status">> := <<"start">>, <<"roleid">> := NotifRoleid, <<"alarm_createdAt">> := Alarm_createdAt, <<"alarm_message">> := Alarm_message, <<"_deviceid">> := DeviceId, <<"_productid">> := ProductId, <<"dgiot_alarmkey">> := Alarmkey, <<"dgiot_alarmvalue">> := Alarmvalue}) ->
     case dgiot_parse:get_object(<<"Product">>, ProductId) of
-        {ok, #{<<"name">> := ProductName, <<"content">> := #{<<"minipg">> := #{<<"params">> := Params, <<"tplid">> := TplId, <<"roleid">> := RoleId} = _Minipg}}} ->
+        {ok, #{<<"name">> := ProductName, <<"content">> := #{<<"minipg">> := #{<<"issend">> := <<"true">>, <<"params">> := Params, <<"tplid">> := TplId, <<"roleid">> := RoleId} = _Minipg}}} ->
             Device =
                 case dgiot_parse:get_object(<<"Device">>, DeviceId) of
                     {ok, Result} ->
@@ -570,7 +570,7 @@ sendSubscribe(#{<<"send_alarm_status">> := <<"start">>, <<"alarm_createdAt">> :=
                           end, #{}, Params),
             lists:foldl(fun(#{<<"objectId">> := UserId}, _Acc) ->
                 dgiot_wechat:sendSubscribe(UserId, TplId, Data)
-                        end, [], dgiot_notification:get_users(DeviceId, RoleId));
+                        end, [], dgiot_notification:get_users(DeviceId, RoleId, NotifRoleid));
         _O ->
 %%            io:format("~s ~p _O = ~p.~n", [?FILE, ?LINE, _O]),
             pass

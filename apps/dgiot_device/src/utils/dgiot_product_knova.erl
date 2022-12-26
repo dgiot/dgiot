@@ -322,7 +322,7 @@ get_konva_value(ProductId, K, V) ->
                     dgiot_utils:to_binary(Addr);
                 Type4 when Type4 == <<"float">>; Type4 == <<"double">> ->
                     Precision = maps:get(<<"precision">>, Specs, 3),
-                    dgiot_utils:to_binary(dgiot_utils:to_float(V, Precision));
+                    dgiot_utils:to_float(V, Precision);
                 _ ->
                     dgiot_utils:to_binary(V)
             end;
@@ -380,7 +380,7 @@ get_stage(ProductId, Tiltle) ->
     ViewId = dgiot_parse_id:get_viewid(ProductId, <<"Topo">>, <<"Product">>, Tiltle),
     case dgiot_parse:get_object(<<"View">>, ViewId) of
         {ok, #{<<"data">> := #{<<"konva">> := #{<<"Stage">> := Stage}}}} ->
-            {ok,Stage};
+            {ok, Stage};
         _ ->
             #{}
     end.

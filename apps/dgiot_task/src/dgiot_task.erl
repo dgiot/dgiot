@@ -248,14 +248,7 @@ string2value(Str, Type, Specs) ->
                     round(Value);
                 Type2 when Type2 == <<"FLOAT">>; Type2 == <<"DOUBLE">> ->
                     Precision = maps:get(<<"precision">>, Specs, 3),
-                    case binary:split(dgiot_utils:to_binary(string:to_lower(dgiot_utils:to_list(Value))), <<$e>>, [global, trim]) of
-                        [Value1, Pow] ->
-                            Valuefloat = dgiot_utils:to_float(Value1),
-                            PowInt = dgiot_utils:to_int(Pow),
-                            dgiot_utils:to_float(Valuefloat * math:pow(10, PowInt), Precision);
-                        [Value2] ->
-                            dgiot_utils:to_float(Value2, Precision)
-                    end;
+                    dgiot_utils:to_float(Value, Precision);
                 _ ->
                     Value
             end

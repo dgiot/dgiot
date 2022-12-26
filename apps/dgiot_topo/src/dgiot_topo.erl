@@ -57,7 +57,7 @@ get_name(ProductId, K, V) ->
         not_find ->
             V;
         {Name, Type, Unit} when Type =:= <<"float">> orelse Type =:= <<"double">> ->
-            NewV = dgiot_utils:to_binary(dgiot_utils:to_float(V, 3)),
+            NewV = dgiot_utils:to_float(V, 3),
             <<Name/binary, ": ", NewV/binary, " ", Unit/binary>>;
         {Name, _Type, Unit} ->
             <<Name/binary, ":", V/binary, " ", Unit/binary>>
