@@ -226,14 +226,7 @@ to_bool(<<"0">>) -> false;
 to_bool(_V) -> true.
 
 to_float(V, Degree) ->
-    NewV =
-        case binary:split(to_binary(V), <<$e>>, [global, trim]) of
-            [V1, _] ->
-                V1;
-            [_] ->
-                V
-        end,
-    New = io_lib:format(lists:concat(["~.", Degree, "f"]), [to_float(NewV)]),
+    New = erlang:float_to_binary(to_float(V), [{decimals, Degree}]),
     to_float(New).
 
 to_float(V) when is_float(V) -> V;

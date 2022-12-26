@@ -32,20 +32,20 @@ post('after', #{<<"objectId">> := ProductId, <<"channel">> := Channel} = QueryDa
     %% io:format("~s ~p ~p ~n ",[?FILE,?LINE, QueryData]),
     post('after', maps:without([<<"channel">>], QueryData));
 
-post('after', #{<<"objectId">> := ProductId, <<"producttemplet">> := #{<<"objectId">> := ProducttempletId}} = _QueryData) ->
-    case dgiot_parse:query_object(<<"Dict">>, #{<<"where">> => #{<<"key">> => ProducttempletId, <<"class">> => <<"ProductTemplet">>}}) of
-        {ok, #{<<"results">> := Dicts}} when length(Dicts) > 0 ->
-            dgiot_product_dict:post_batch(Dicts, ProductId);
-        _ ->
-            pass
-    end,
-    case dgiot_parse:query_object(<<"View">>, #{<<"where">> => #{<<"key">> => ProducttempletId, <<"class">> => <<"ProductTemplet">>}}) of
-        {ok, #{<<"results">> := Views}} when length(Views) > 0 ->
-            dgiot_product_view:post_batch(Views, ProductId);
-        _ ->
-            dgiot_product_knova:post(ProductId),
-            dgiot_product_amis:post(ProductId)
-    end;
+%%post('after', #{<<"objectId">> := ProductId, <<"producttemplet">> := #{<<"objectId">> := ProducttempletId}} = _QueryData) ->
+%%    case dgiot_parse:query_object(<<"Dict">>, #{<<"where">> => #{<<"key">> => ProducttempletId, <<"class">> => <<"ProductTemplet">>}}) of
+%%        {ok, #{<<"results">> := Dicts}} when length(Dicts) > 0 ->
+%%            dgiot_product_dict:post_batch(Dicts, ProductId);
+%%        _ ->
+%%            pass
+%%    end,
+%%    case dgiot_parse:query_object(<<"View">>, #{<<"where">> => #{<<"key">> => ProducttempletId, <<"class">> => <<"ProductTemplet">>}}) of
+%%        {ok, #{<<"results">> := Views}} when length(Views) > 0 ->
+%%            dgiot_product_view:post_batch(Views, ProductId);
+%%        _ ->
+%%            dgiot_product_knova:post(ProductId),
+%%            dgiot_product_amis:post(ProductId)
+%%    end;
 
 post(_, _) ->
     pass.
@@ -67,19 +67,19 @@ delete('before', _ProductId) ->
 %%    todo
     pass;
 
-delete('after', ProductId) ->
-    case dgiot_parse:query_object(<<"Dict">>, #{<<"where">> => #{<<"key">> => ProductId, <<"class">> => <<"Product">>}}) of
-        {ok, #{<<"results">> := Dicts}} ->
-            dgiot_product_dict:delete_batch(Dicts);
-        _ ->
-            pass
-    end,
-    case dgiot_parse:query_object(<<"View">>, #{<<"where">> => #{<<"key">> => ProductId, <<"class">> => <<"Product">>}}) of
-        {ok, #{<<"results">> := Views}} ->
-            dgiot_product_view:delete_batch(Views);
-        _ ->
-            pass
-    end;
+%%delete('after', ProductId) ->
+%%    case dgiot_parse:query_object(<<"Dict">>, #{<<"where">> => #{<<"key">> => ProductId, <<"class">> => <<"Product">>}}) of
+%%        {ok, #{<<"results">> := Dicts}} ->
+%%            dgiot_product_dict:delete_batch(Dicts);
+%%        _ ->
+%%            pass
+%%    end,
+%%    case dgiot_parse:query_object(<<"View">>, #{<<"where">> => #{<<"key">> => ProductId, <<"class">> => <<"Product">>}}) of
+%%        {ok, #{<<"results">> := Views}} ->
+%%            dgiot_product_view:delete_batch(Views);
+%%        _ ->
+%%            pass
+%%    end;
 
 delete(_, _) ->
     pass.

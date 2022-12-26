@@ -73,6 +73,7 @@ apps/dgiot_dahua/
 apps/dgiot_kingdee/
 apps/dgiot_jienuo/
 apps/dgiot_zjimee/
+apps/dgiot_pump/
 apps/dgiot_emicp/
 apps/dgiot_zhcltech/
 apps/dgiot_http/etc/dgiot_http.conf

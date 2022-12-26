@@ -29,7 +29,7 @@
 
 -export([send_verification_code/2, check_verification_code/2]).
 
--export([get_newbody/1, get_Mobile/3, get_Emails/3, get_users/2]).
+-export([get_newbody/1, get_Mobile/3, get_Emails/3, get_users/3]).
 
 init_ets() ->
     dgiot_data:init(?CONFIGURATION),
@@ -352,38 +352,45 @@ get_Emails(DeviceId, _, _) ->
     end.
 
 
-get_users(DeviceId, RoleId) ->
-    case RoleId of
-        <<>> ->
-            case dgiot_device:lookup(DeviceId) of
-                {ok, #{<<"acl">> := Acl}} ->
-                    lists:foldl(fun(X, Acc) ->
-                        BinX = atom_to_binary(X),
-                        case BinX of
-                            <<"role:", Name/binary>> ->
-                                case dgiot_parse:query_object(<<"_Role">>, #{<<"order">> => <<"updatedAt">>, <<"limit">> => 1,
-                                    <<"where">> => #{<<"name">> => Name}}) of
-                                    {ok, #{<<"results">> := [Role]}} ->
-                                        #{<<"objectId">> := RoleId1} = Role,
-                                        UserIds = dgiot_parse_id:get_userids(RoleId1),
-                                        UsersQuery = #{<<"where">> => #{<<"objectId">> => #{<<"$in">> => UserIds}}},
-                                        {ok, #{<<"results">> := Users}} = dgiot_parse:query_object(<<"_User">>, UsersQuery),
-                                        Acc ++ Users;
-                                    _ ->
-                                        Acc
-                                end;
+get_users(_, _, NotifRoleid) when size(NotifRoleid) > 0 ->
+    UserIds =
+        lists:foldl(fun(Roleid, Acc) ->
+            Acc ++ dgiot_parse_id:get_userids(Roleid)
+                    end, [], binary:split(NotifRoleid, <<$,>>, [global, trim])),
+    UsersQuery = #{<<"where">> => #{<<"objectId">> => #{<<"$in">> => UserIds}}},
+    {ok, #{<<"results">> := Users}} = dgiot_parse:query_object(<<"_User">>, UsersQuery),
+    Users;
+
+get_users(_, RoleId, _) when size(RoleId) > 0 ->
+    UserIds = dgiot_parse_id:get_userids(RoleId),
+    UsersQuery = #{<<"where">> => #{<<"objectId">> => #{<<"$in">> => UserIds}}},
+    {ok, #{<<"results">> := Users}} = dgiot_parse:query_object(<<"_User">>, UsersQuery),
+    Users;
+
+get_users(DeviceId, _, _) ->
+    case dgiot_device:lookup(DeviceId) of
+        {ok, #{<<"acl">> := Acl}} ->
+            lists:foldl(fun(X, Acc) ->
+                BinX = atom_to_binary(X),
+                case BinX of
+                    <<"role:", Name/binary>> ->
+                        case dgiot_parse:query_object(<<"_Role">>, #{<<"order">> => <<"updatedAt">>, <<"limit">> => 1,
+                            <<"where">> => #{<<"name">> => Name}}) of
+                            {ok, #{<<"results">> := [Role]}} ->
+                                #{<<"objectId">> := RoleId1} = Role,
+                                UserIds = dgiot_parse_id:get_userids(RoleId1),
+                                UsersQuery = #{<<"where">> => #{<<"objectId">> => #{<<"$in">> => UserIds}}},
+                                {ok, #{<<"results">> := Users}} = dgiot_parse:query_object(<<"_User">>, UsersQuery),
+                                Acc ++ Users;
                             _ ->
                                 Acc
-                        end
-                                end, [], Acl);
-                _ ->
-                    []
-            end;
+                        end;
+                    _ ->
+                        Acc
+                end
+                        end, [], Acl);
         _ ->
-            UserIds = dgiot_parse_id:get_userids(RoleId),
-            UsersQuery = #{<<"where">> => #{<<"objectId">> => #{<<"$in">> => UserIds}}},
-            {ok, #{<<"results">> := Users}} = dgiot_parse:query_object(<<"_User">>, UsersQuery),
-            Users
+            []
     end.
 
 save_configuration() ->
