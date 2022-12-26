@@ -45,8 +45,7 @@
     post_data/2,
     get_filehome/1,
     test/0,
-    get_tabledata/2,
-    properties_report/1
+    get_tabledata/2
 ]).
 
 %%--------------------------------------------------------------------
@@ -709,25 +708,6 @@ get_tabledata(Parameter, Avgdatas) ->
         {Acc1 ++ [Data], Num + 1}
                 end, {[], 1}, Avgdatas).
 
-
-properties_report(Payload) ->
-    case maps:find(<<"groupid">>, Payload) of
-        error ->
-            Payload;
-        {ok, TestDeviceId} ->
-%%            出口管径面积  out_area   out_area_mj
-%%            额定转速  NG rated_speed
-            Basedata =
-                case dgiot_parse:get_object(<<"Device">>, TestDeviceId) of
-                    {ok, #{<<"basedata">> := Basedata1}} ->
-                        Basedata1;
-                    _ ->
-                        #{}
-                end,
-            Out_area_mj = maps:get(<<"out_area">>, Basedata, 490.625),
-            Rated_speed = maps:get(<<"NG">>, Basedata, 2850),
-            Payload#{<<"out_area_mj">> => Out_area_mj, <<"rated_speed">> => Rated_speed}
-    end.
 
 
 
