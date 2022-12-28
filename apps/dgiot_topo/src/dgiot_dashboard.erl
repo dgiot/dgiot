@@ -119,15 +119,23 @@ do_task(#{<<"dataType">> := <<"map">>, <<"vuekey">> := <<"baiduMap">>, <<"table"
 %%    io:format("~s ~p Client = ~p.~n", [?FILE, ?LINE, Query]),
     case dgiot_parse:query_object(<<"Device">>, Query, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
         {ok, #{<<"results">> := Results}} ->
+            UserSessionToken = dgiot_parse_auth:get_usersession(dgiot_utils:to_binary(SessionToken)),
+            Cookie = case dgiot_parse_auth:get_cookie(UserSessionToken) of
+                         not_find ->
+                             #{};
+                         A ->
+                             A
+                     end,
+            MapType = maps:get(<<"mapType">>, Cookie, <<"baidu">>),
             NewResult =
                 lists:foldl(fun(X, Acc) ->
                     case X of
                         #{<<"objectId">> := ObjectId, <<"name">> := Name, <<"status">> := <<"ONLINE">>, <<"location">> := #{<<"latitude">> := Latitude, <<"longitude">> := Longitude}} ->
-                            [BaiduLongitude, BaiduLatitude] = dgiot_gps:get_baidu_gps(Longitude, Latitude, 0, -0.0013),
-                            Acc ++ [#{<<"objectId">> => ObjectId, <<"name">> => Name, <<"icon">> => <<"1">>, <<"location">> => #{<<"latitude">> => BaiduLatitude, <<"longitude">> => BaiduLongitude}}];
+                            NewLocation = dgiot_gps:fromwgs84(#{<<"longitude">> => Longitude, <<"latitude">> => Latitude}, MapType),
+                            Acc ++ [#{<<"objectId">> => ObjectId, <<"name">> => Name, <<"icon">> => <<"1">>, <<"location">> => NewLocation}];
                         #{<<"objectId">> := ObjectId, <<"name">> := Name, <<"status">> := <<"OFFLINE">>, <<"location">> := #{<<"latitude">> := Latitude, <<"longitude">> := Longitude}} ->
-                            [BaiduLongitude, BaiduLatitude] = dgiot_gps:get_baidu_gps(Longitude, Latitude, 0, -0.0013),
-                            Acc ++ [#{<<"objectId">> => ObjectId, <<"name">> => Name, <<"icon">> => <<"2">>, <<"location">> => #{<<"latitude">> => BaiduLatitude, <<"longitude">> => BaiduLongitude}}];
+                            NewLocation = dgiot_gps:fromwgs84(#{<<"longitude">> => Longitude, <<"latitude">> => Latitude}, MapType),
+                            Acc ++ [#{<<"objectId">> => ObjectId, <<"name">> => Name, <<"icon">> => <<"2">>, <<"location">> => NewLocation}];
                         _ ->
                             Acc
                     end

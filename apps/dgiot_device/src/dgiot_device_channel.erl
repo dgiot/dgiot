@@ -28,7 +28,7 @@
 -export([start/2]).
 
 %% Channel callback
--export([init/3, handle_init/1, handle_event/3, handle_message/2, stop/3, get_new_location/2]).
+-export([init/3, handle_init/1, handle_event/3, handle_message/2, stop/3]).
 
 
 %% 注册通道类型
@@ -111,7 +111,7 @@ init(?TYPE, ChannelId, #{<<"offline">> := OffLine} = Args) ->
     dgiot_parse_hook:subscribe(<<"Device">>, get, ChannelId),
     dgiot_parse_hook:subscribe(<<"Device/*">>, get, ChannelId),
     dgiot_parse_hook:subscribe(<<"Device">>, post, ChannelId),
-    dgiot_parse_hook:subscribe(<<"Device/*">>, put, ChannelId, [<<"isEnable">>, <<"ACL">>]),
+    dgiot_parse_hook:subscribe(<<"Device/*">>, put, ChannelId, [<<"isEnable">>, <<"ACL">>, <<"location">>]),
     dgiot_parse_hook:subscribe(<<"Device/*">>, delete, ChannelId),
     dgiot_parse_hook:subscribe(<<"Product">>, get, ChannelId),
     dgiot_parse_hook:subscribe(<<"Product/*">>, get, ChannelId),
@@ -147,6 +147,7 @@ handle_message({sync_parse, Pid, 'after', get, Token, <<"Device">>, #{<<"results
     {NewResults, DeviceList} =
         lists:foldl(
             fun(#{<<"objectId">> := DeviceId} = Device, {NewResult, Dev}) ->
+                NewLocation = dgiot_gps:fromwgs84(maps:get(<<"location">>, Device, #{}), MapType),
                 case dgiot_device:lookup(DeviceId) of
                     {ok, #{<<"status">> := Status, <<"isEnable">> := IsEnable, <<"time">> := Time}} ->
                         NewStatus =
@@ -156,17 +157,9 @@ handle_message({sync_parse, Pid, 'after', get, Token, <<"Device">>, #{<<"results
                                 _ ->
                                     <<"OFFLINE">>
                             end,
-                        Location =
-                            case maps:find(<<"location">>, Device) of
-                                error ->
-                                    #{};
-                                {ok, A} ->
-                                    A
-                            end,
-                        NewLocation = get_new_location(Location, MapType),
                         {NewResult ++ [Device#{<<"location">> => NewLocation, <<"status">> => NewStatus, <<"isEnable">> => IsEnable, <<"lastOnlineTime">> => Time}], Dev ++ [DeviceId]};
                     _ ->
-                        {NewResult ++ [Device], Dev}
+                        {NewResult ++ [Device#{<<"location">> => NewLocation}], Dev ++ [DeviceId]}
                 end
             end, {[], []}, Results),
     case SessionToken of
@@ -192,6 +185,7 @@ handle_message({sync_parse, Pid, 'after', get, Token, <<"Device">>, #{<<"objectI
                      A
              end,
     MapType = maps:get(<<"mapType">>, Cookie, <<"baidu">>),
+    NewLocation = dgiot_gps:fromwgs84(maps:get(<<"location">>, ResBody, #{}), MapType),
     ResBody1 =
         case dgiot_device:lookup(DeviceId) of
             {ok, #{<<"status">> := Status, <<"isEnable">> := IsEnable, <<"time">> := Time}} ->
@@ -202,21 +196,12 @@ handle_message({sync_parse, Pid, 'after', get, Token, <<"Device">>, #{<<"objectI
                         _ ->
                             <<"OFFLINE">>
                     end,
-                Location =
-                    case maps:find(<<"location">>, ResBody) of
-                        error ->
-                            #{};
-                        {ok, L} ->
-                            L
-                    end,
-                NewLocation = get_new_location(Location, MapType),
                 ResBody#{<<"location">> => NewLocation, <<"status">> => NewStatus, <<"isEnable">> => IsEnable, <<"lastOnlineTime">> => Time};
             _ ->
-                ResBody
+                ResBody#{<<"location">> => NewLocation}
         end,
     dgiot_parse_hook:publish(Pid, ResBody1),
     {ok, State};
-
 
 handle_message({sync_parse, _Pid, 'after', post, Token, <<"Device">>, QueryData}, State) ->
     dgiot_device:post(QueryData, Token),
@@ -271,6 +256,34 @@ handle_message({sync_parse, _Pid, 'after', delete, _Token, <<"Product">>, Object
     dgiot_product:delete(ObjectId),
     {ok, State};
 
+handle_message({sync_parse, Pid, 'before', post, Token, <<"Device">>, #{<<"location">> := Location} = QueryData}, State) ->
+    SessionToken = dgiot_parse_auth:get_usersession(dgiot_utils:to_binary(Token)),
+    Cookie = case dgiot_parse_auth:get_cookie(SessionToken) of
+                 not_find ->
+                     #{};
+                 A ->
+                     A
+             end,
+    MapType = maps:get(<<"mapType">>, Cookie, <<"baidu">>),
+    NewLocation = dgiot_gps:towgs84(Location, MapType),
+    NewQueryData = QueryData#{<<"location">> => NewLocation},
+    dgiot_parse_hook:publish(Pid, NewQueryData),
+    {ok, State};
+
+handle_message({sync_parse, Pid, 'before', put, Token, <<"Device">>, #{<<"location">> := Location} = QueryData}, State) ->
+    SessionToken = dgiot_parse_auth:get_usersession(dgiot_utils:to_binary(Token)),
+    Cookie = case dgiot_parse_auth:get_cookie(SessionToken) of
+                 not_find ->
+                     #{};
+                 A ->
+                     A
+             end,
+    MapType = maps:get(<<"mapType">>, Cookie, <<"baidu">>),
+    NewLocation = dgiot_gps:towgs84(Location, MapType),
+    NewQueryData = QueryData#{<<"location">> => NewLocation},
+    dgiot_parse_hook:publish(Pid, NewQueryData),
+    {ok, State};
+
 handle_message({sync_parse, _Pid, 'before', delete, _Token, <<"Channel">>, ObjectId}, State) ->
 %%    io:format("~s ~p ~p ~n", [?FILE, ?LINE, ObjectId]),
     case dgiot_parse:get_object(<<"Channel">>, ObjectId) of
@@ -293,13 +306,3 @@ stop(ChannelType, ChannelId, _State) ->
     ?LOG(warning, "Channel[~p,~p] stop", [ChannelType, ChannelId]),
     ok.
 
-get_new_location(#{<<"longitude">> := Longitude, <<"latitude">> := Latitude}, <<"baidu">>) ->
-    [Mglng, Mglat] = dgiot_gps:get_baidu_gps(dgiot_utils:to_float(Longitude), dgiot_utils:to_float(Latitude)),
-    #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => Mglng, <<"latitude">> => Mglat};
-
-get_new_location(#{<<"longitude">> := Longitude, <<"latitude">> := Latitude}, <<"GCJ">>) ->
-    [Mglng, Mglat] = dgiot_gps:wgs84togcj02(Longitude, Latitude),
-    #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => Mglng, <<"latitude">> => Mglat};
-
-get_new_location(Location, _MapType) ->
-    Location.
