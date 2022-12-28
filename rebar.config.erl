@@ -275,7 +275,6 @@ relx_apps(ReleaseType) ->
         , jesse
         , jwerl
         , odbc
-        , srly
         , erlydtl
         , erlport
         , ecpool
@@ -283,7 +282,6 @@ relx_apps(ReleaseType) ->
         , gpb
         , poolboy
         , ibrowse
-        , gen_smtp
         , emqx
         , {mnesia, load}
         , {ekka, load}
