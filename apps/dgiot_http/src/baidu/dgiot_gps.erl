@@ -38,6 +38,8 @@
 -compile(nowarn_deprecated_function).
 -export([
     bd09togcj02/2,
+    bd09towgs84/2,
+    wgs84tobd09/2,
     gcj02tobd09/2,
     wgs84togcj02/2,
     wgs84togcj02/4,
@@ -50,7 +52,9 @@
     get_baidu_gps/4,
     get_deng_gps/2,
     generate_random_gps/3,
-    nmea0183_frame/1
+    nmea0183_frame/1,
+    towgs84/2,
+    fromwgs84/2
 ]).
 
 %%// 定义一些常量
@@ -92,6 +96,27 @@ bd09togcj02(Bd_lng, Bd_lat) ->
     Gg_lat = Z * math:sin(Theta),
     [Gg_lng, Gg_lat].
 
+%**
+%* 百度坐标系 (BD-09) 与 国际通用坐标系 (WGS-84) 的转换
+%* 即 百度 转 国际通用坐标系
+%* @param bd_lng
+%* @param bd_lat
+%* @returns {*[]}
+%*/
+bd09towgs84(Bd_lng, Bd_lat) ->
+    [Lng, Lat] = bd09togcj02(Bd_lng, Bd_lat),
+    gcj02towgs84(Lng, Lat).
+
+%**
+%* 国际通用坐标系 (WGS-84) 与 百度坐标系 (BD-09) 的转换
+%* 即 国际通用坐标系 转 百度
+%* @param bd_lng
+%* @param bd_lat
+%* @returns {*[]}
+%*/
+wgs84tobd09(Bd_lng, Bd_lat) ->
+    [Lng, Lat] = wgs84togcj02(Bd_lng, Bd_lat),
+    gcj02tobd09(Lng, Lat).
 
 %**
 %* 火星坐标系 (GCJ-02) 与百度坐标系 (BD-09) 的转换
@@ -372,3 +397,25 @@ nmea0183_frame(<<"$GNRMC,", Data:60/binary, "*", _Checksum:2/binary, _/binary>>)
 nmea0183_frame(Buff) ->
     ?LOG(info, "Buff ~p~n", [Buff]),
     <<"">>.
+
+towgs84(#{<<"longitude">> := Longitude, <<"latitude">> := Latitude}, <<"baidu">>) ->
+    [Mglng, Mglat] = bd09towgs84(dgiot_utils:to_float(Longitude), dgiot_utils:to_float(Latitude)),
+    #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => Mglng, <<"latitude">> => Mglat};
+
+towgs84(#{<<"longitude">> := Longitude, <<"latitude">> := Latitude}, <<"gcj">>) ->
+    [Mglng, Mglat] = gcj02towgs84(dgiot_utils:to_float(Longitude), dgiot_utils:to_float(Latitude)),
+    #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => Mglng, <<"latitude">> => Mglat};
+
+towgs84(Location, _MapType) ->
+    Location.
+
+fromwgs84(#{<<"longitude">> := Longitude, <<"latitude">> := Latitude}, <<"baidu">>) ->
+    [Mglng, Mglat] = wgs84tobd09(dgiot_utils:to_float(Longitude), dgiot_utils:to_float(Latitude)),
+    #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => Mglng, <<"latitude">> => Mglat};
+
+fromwgs84(#{<<"longitude">> := Longitude, <<"latitude">> := Latitude}, <<"gcj">>) ->
+    [Mglng, Mglat] = wgs84togcj02(dgiot_utils:to_float(Longitude), dgiot_utils:to_float(Latitude)),
+    #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => Mglng, <<"latitude">> => Mglat};
+
+fromwgs84(Location, _MapType) ->
+    Location.

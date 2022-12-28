@@ -146,7 +146,7 @@ get_gps_track(Channel, ProductId, DeviceId) ->
                             (#{<<"latitude">> := Latitude, <<"longitude">> := Longitude}, Acc) ->
                                 Maptype = dgiot_utils:to_binary(application:get_env(dgiot_device, map_type, "baidu")),
                                 #{<<"longitude">> := Mglng, <<"latitude">> := Mglat} =
-                                    dgiot_device_channel:get_new_location(#{<<"longitude">> => Longitude, <<"latitude">> => Latitude}, Maptype),
+                                    dgiot_gps:fromwgs84(#{<<"longitude">> => Longitude, <<"latitude">> => Latitude}, Maptype),
                                 Acc ++ [#{<<"lat">> => Mglat, <<"lng">> => Mglng}]
                         end, [], TdResults),
                 {TdNames, NewTdResults};

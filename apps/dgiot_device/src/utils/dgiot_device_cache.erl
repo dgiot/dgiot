@@ -176,8 +176,6 @@ insert_mnesia(DeviceId, Acl, Status, State, Now, IsEnable, ProductId, Devaddr, D
             _ ->
                 <<"OFFLINE">>
         end,
-    Maptype = dgiot_utils:to_binary(application:get_env(dgiot_device, map_type, "baidu")),
-    NewLocation = dgiot_device_channel:get_new_location(#{<<"longitude">> => Longitude, <<"latitude">> => Latitude}, Maptype),
     Address =
         case dgiot_data:get(?DGIOT_LOCATION_ADDRESS, DeviceId) of
             not_find ->
@@ -185,7 +183,7 @@ insert_mnesia(DeviceId, Acl, Status, State, Now, IsEnable, ProductId, Devaddr, D
             Addr ->
                 Addr
         end,
-    dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(#{DeviceId => #{<<"status">> => NewStatus, <<"isEnable">> => IsEnable, <<"lastOnlineTime">> => Now, <<"address">> => Address, <<"location">> => NewLocation}})),
+    dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(#{DeviceId => #{<<"status">> => NewStatus, <<"isEnable">> => IsEnable, <<"lastOnlineTime">> => Now, <<"address">> => Address, <<"location">> => #{<<"longitude">> => Longitude, <<"latitude">> => Latitude}}})),
     dgiot_mnesia:insert(DeviceId, ['Device', Acl, Status, State, Now, IsEnable, dgiot_utils:to_atom(ProductId), Devaddr, DeviceSecret, Node, Longitude, Latitude]).
 
 %% 缓存设备的profile配置
