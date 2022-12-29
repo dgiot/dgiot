@@ -1400,7 +1400,7 @@ function centos() {
       install_go_fastdfs      # 文件数据
       #install_word_report    # 报告服务
       deploy_parse_server     # Api网关
-      install_erlang_otp
+      #install_erlang_otp
       install_dgiot
       build_nginx
       #install_node_exporter
