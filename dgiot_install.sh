@@ -238,6 +238,7 @@ function clean_service() {
 
 # $1:service  $2:Type  $3:ExecStart  $4:User  $5:Environment  $6:ExecStop
 function install_service() {
+  rm -rf ${service_dir}/$1.service
   service_config="${service_dir}/$1.service"
   echo -e  "`date +%F_%T` $LINENO: ${GREEN} build ${service_config}${NC}"
   ${csudo} bash -c "echo '[Unit]'                             > ${service_config}"
@@ -807,14 +808,14 @@ function yum_install_erlang_otp {
 function install_erlang_otp() {
   yum_install_erlang_otp
   echo -e "`date +%F_%T` $LINENO: ${GREEN} install_erlang_otp${NC}"
-  if [ ! -f ${script_dir}/otp_src_24.3.tar.gz ]; then
-    wget ${fileserver}/otp_src_24.3.tar.gz -O ${script_dir}/otp_src_24.3.tar.gz &> /dev/null
+  if [ ! -f ${script_dir}/otp_src_24.3.4.2.tar.gz ]; then
+    wget ${fileserver}/otp_src_24.3.4.2.tar.gz -O ${script_dir}/otp_src_24.3.4.2.tar.gz &> /dev/null
   fi
   if [ -d ${install_dir}/otp_src_24.3/ ]; then
     rm ${script_dir}/otp_src_24.3 -rf
   fi
   cd ${script_dir}/
-  tar xf otp_src_24.3.tar.gz &> /dev/null
+  tar xf otp_src_24.3.4.2.tar.gz &> /dev/null
 
   cd ${script_dir}/otp_src_24.3/
   echo -e "`date +%F_%T` $LINENO: ${GREEN} otp configure${NC}"
@@ -857,7 +858,7 @@ function update_dgiot() {
   fi
   mv ${install_dir}/go_fastdfs/files/package/dgiot/  ${install_dir}/
 
-  install_service "dgiot" "forking" "/bin/sh ${install_dir}/dgiot/bin/emqx start"  "root" "HOME=${install_dir}/dgiot/erts-12.3" "/bin/sh /data/dgiot/bin/emqx stop"
+  install_service "dgiot" "forking" "/bin/sh ${install_dir}/dgiot/bin/emqx start"  "root" "HOME=${install_dir}/dgiot/erts-12.3.2.2" "/bin/sh /data/dgiot/bin/emqx stop"
 }
 
 function update_tdengine_server() {
@@ -948,7 +949,7 @@ function install_dgiot() {
   fi
   mv  ${install_dir}/go_fastdfs/files/package/dgiot  ${install_dir}/
 
-  install_service "dgiot" "forking" "/bin/sh ${install_dir}/dgiot/bin/emqx start"  "root" "HOME=${install_dir}/dgiot/erts-12.3" "/bin/sh /data/dgiot/bin/emqx stop"
+  install_service "dgiot" "forking" "/bin/sh ${install_dir}/dgiot/bin/emqx start"  "root" "HOME=${install_dir}/dgiot/erts-12.3.2.2" "/bin/sh /data/dgiot/bin/emqx stop"
 }
 
 #6 运维监控
@@ -1539,9 +1540,9 @@ dgiot_shell
 # set parameters by default value
 deployType=single                             # [single | cluster | devops | ci]
 domain_name="prod.dgiotcloud.cn"              # [prod.dgiotcloud.cn | your_domain_name]
-software="dgiot_n274"                          # [dgiot_n262| dgiot_n]
+software="dgiot_n276"                          # [dgiot_n276| dgiot_n]
 plugin="dgiot"                                # [dgiot | dgiot_your_plugin]
-dgiotmd5="deba2a7ae47cf71ecbe838440dd9a3f3"   # [dgiotmd5]
+dgiotmd5="c654e0b734e78d5762a8f2100752d339"   # [dgiotmd5]
 pg_eip="changeyourip"                            # [datanode_eip]
 pg_auth='changeyourpassword'                  # [pg_auth]
 islanip="false"                                    # [islanip]
