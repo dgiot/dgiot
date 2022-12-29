@@ -911,6 +911,7 @@ function update_html() {
     mv html/ ${backup_dir}/
   fi
   tar xf dgiot_html.tar.gz &> /dev/null
+  sed -ri '/dgiot_api/d' conf/nginx.conf
 }
 
 function install_dgiot() {
