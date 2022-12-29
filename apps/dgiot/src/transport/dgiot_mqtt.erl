@@ -20,7 +20,16 @@
 -include("dgiot_mqtt.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -include_lib("emqx_rule_engine/include/rule_engine.hrl").
--include_lib("emqx_rule_engine/include/rule_actions.hrl").
+%%-include_lib("emqx_rule_engine/include/rule_actions.hrl").
+
+-define(LOG_RULE_ACTION(Level, Metadata, Fmt, Args),
+    emqx_rule_utils:log_action(Level, Metadata, Fmt, Args)).
+
+-define(bound_v(Key, ENVS0),
+    maps:get(Key,
+        maps:get(?BINDING_KEYS, ENVS0, #{}))).
+
+-define(BINDING_KEYS, '__bindings__').
 
 %% ETS tables for PubSub
 -define(SUBOPTION, emqx_suboption).

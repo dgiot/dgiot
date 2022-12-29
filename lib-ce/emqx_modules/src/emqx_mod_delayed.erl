@@ -1,5 +1,5 @@
 %%--------------------------------------------------------------------
-%% Copyright (c) 2020-2021 EMQ Technologies Co., Ltd. All Rights Reserved.
+%% Copyright (c) 2020-2022 EMQ Technologies Co., Ltd. All Rights Reserved.
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -53,10 +53,17 @@
         { key
         , msg
         }).
+-type delayed_message() :: #delayed_message{}.
 
 -define(TAB, ?MODULE).
 -define(SERVER, ?MODULE).
 -define(MAX_INTERVAL, 4294967).
+
+-type state() :: #{ publish_at := non_neg_integer()
+                  , timer := timer:tref() | undefined
+                  , stats_timer => timer:tref() | undefined
+                  , stats_fun => function()
+                  }.
 
 %%--------------------------------------------------------------------
 %% Mnesia bootstrap
@@ -124,7 +131,7 @@ on_message_publish(Msg) ->
 start_link() ->
     gen_server:start_link({local, ?SERVER}, ?MODULE, [], []).
 
--spec(store(#delayed_message{}) -> ok).
+-spec(store(delayed_message()) -> ok).
 store(DelayedMsg) ->
     gen_server:call(?SERVER, {store, DelayedMsg}, infinity).
 
@@ -134,7 +141,9 @@ store(DelayedMsg) ->
 
 init([]) ->
     {ok, ensure_stats_event(
-           ensure_publish_timer(#{timer => undefined, publish_at => 0}))}.
+           ensure_publish_timer(#{timer => undefined,
+                                  publish_at => 0,
+                                  stats_timer => undefined}))}.
 
 handle_call({store, DelayedMsg = #delayed_message{key = Key}}, _From, State) ->
     ok = mnesia:dirty_write(?TAB, DelayedMsg),
@@ -151,7 +160,7 @@ handle_cast(Msg, State) ->
 
 %% Do Publish...
 handle_info({timeout, TRef, do_publish}, State = #{timer := TRef}) ->
-    DeletedKeys = do_publish(mnesia:dirty_first(?TAB), os:system_time(seconds)),
+    DeletedKeys = do_publish(mnesia:dirty_first(?TAB), erlang:system_time(seconds)),
     lists:foreach(fun(Key) -> mnesia:dirty_delete(?TAB, Key) end, DeletedKeys),
     {noreply, ensure_publish_timer(State#{timer := undefined, publish_at := 0})};
 
@@ -163,8 +172,9 @@ handle_info(Info, State) ->
     ?LOG(error, "Unexpected info: ~p", [Info]),
     {noreply, State}.
 
-terminate(_Reason, #{timer := TRef}) ->
-    emqx_misc:cancel_timer(TRef).
+terminate(_Reason, #{timer := PublishTimer} = State) ->
+    emqx_misc:cancel_timer(PublishTimer),
+    emqx_misc:cancel_timer(maps:get(stats_timer, State, undefined)).
 
 code_change({down, Vsn}, State, _Extra) when Vsn =:= "4.3.0" ->
     NState = maps:with([timer, publish_at], State),
@@ -179,23 +189,25 @@ code_change(Vsn, State, _Extra) when Vsn =:= "4.3.0" ->
 %%--------------------------------------------------------------------
 
 %% Ensure the stats
+-spec ensure_stats_event(state()) -> state().
 ensure_stats_event(State) ->
     StatsFun = emqx_stats:statsfun('delayed.count', 'delayed.max'),
     {ok, StatsTimer} = timer:send_interval(timer:seconds(1), stats),
     State#{stats_fun => StatsFun, stats_timer => StatsTimer}.
 
 %% Ensure publish timer
+-spec ensure_publish_timer(state()) -> state().
 ensure_publish_timer(State) ->
     ensure_publish_timer(mnesia:dirty_first(?TAB), State).
 
 ensure_publish_timer('$end_of_table', State) ->
     State#{timer := undefined, publish_at := 0};
 ensure_publish_timer({Ts, _Id}, State = #{timer := undefined}) ->
-    ensure_publish_timer(Ts, os:system_time(seconds), State);
+    ensure_publish_timer(Ts, erlang:system_time(seconds), State);
 ensure_publish_timer({Ts, _Id}, State = #{timer := TRef, publish_at := PubAt})
     when Ts < PubAt ->
     ok = emqx_misc:cancel_timer(TRef),
-    ensure_publish_timer(Ts, os:system_time(seconds), State);
+    ensure_publish_timer(Ts, erlang:system_time(seconds), State);
 ensure_publish_timer(_Key, State) ->
     State.
 
@@ -222,4 +234,3 @@ do_publish(Key = {Ts, _Id}, Now, Acc) when Ts =< Now ->
 
 -spec(delayed_count() -> non_neg_integer()).
 delayed_count() -> mnesia:table_info(?TAB, size).
-

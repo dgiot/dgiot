@@ -1,5 +1,5 @@
 %%--------------------------------------------------------------------
-%% Copyright (c) 2017-2021 EMQ Technologies Co., Ltd. All Rights Reserved.
+%% Copyright (c) 2017-2022 EMQ Technologies Co., Ltd. All Rights Reserved.
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ init_per_suite(Config) ->
     Config.
 
 end_per_suite(_Config) ->
+    emqx_ct_helpers:boot_modules(all),
     emqx_ct_helpers:stop_apps([]).
 
 init_per_testcase(_TestCase, Config) ->

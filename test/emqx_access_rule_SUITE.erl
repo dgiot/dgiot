@@ -1,5 +1,5 @@
 %%--------------------------------------------------------------------
-%% Copyright (c) 2019-2021 EMQ Technologies Co., Ltd. All Rights Reserved.
+%% Copyright (c) 2019-2022 EMQ Technologies Co., Ltd. All Rights Reserved.
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -31,6 +31,84 @@ init_per_suite(Config) ->
 end_per_suite(_Config) ->
     emqx_ct_helpers:stop_apps([]).
 
+t_compile_clientid_common_name_alias_placeholders(_Config) ->
+    Rule1 = {allow, all, pubsub, <<"%cida">>},
+    ?assertEqual(
+       {allow, all, pubsub, [{pattern,[<<"%cida">>]}]},
+       emqx_access_rule:compile(Rule1)),
+
+    Rule2 = {allow, all, pubsub, <<"%cna">>},
+    ?assertEqual(
+       {allow, all, pubsub, [{pattern,[<<"%cna">>]}]},
+       emqx_access_rule:compile(Rule2)),
+
+    ok.
+
+t_match_clientid_common_name_alias_placeholders(_Config) ->
+    ClientInfo1 = #{clientid => <<"something-123456789">>,
+                    cn => <<"another-987654321">>,
+                    clientid_alias => <<"123456789">>,
+                    common_name_alias => <<"987654321">>
+                   },
+
+    Rule1 = {allow, all, pubsub, <<"t/%cida">>},
+    Compiled1 = emqx_access_rule:compile(Rule1),
+    ?assertEqual({matched, allow},
+                 emqx_access_rule:match(
+                   ClientInfo1,
+                   <<"t/123456789">>,
+                   Compiled1)),
+    ?assertEqual(nomatch,
+                 emqx_access_rule:match(
+                   ClientInfo1,
+                   <<"t/987654321">>,
+                   Compiled1)),
+    ?assertEqual(nomatch,
+                 emqx_access_rule:match(
+                   ClientInfo1,
+                   <<"123456789">>,
+                   Compiled1)),
+    ?assertEqual(nomatch,
+                 emqx_access_rule:match(
+                   ClientInfo1,
+                   <<"t/something-123456789">>,
+                   Compiled1)),
+    ?assertEqual(nomatch,
+                 emqx_access_rule:match(
+                   ClientInfo1,
+                   <<"t/%cida">>,
+                   Compiled1)),
+
+    Rule2 = {allow, all, pubsub, <<"t/%cna">>},
+    Compiled2 = emqx_access_rule:compile(Rule2),
+    ?assertEqual(nomatch,
+                 emqx_access_rule:match(
+                   ClientInfo1,
+                   <<"t/123456789">>,
+                   Compiled2)),
+    ?assertEqual({matched, allow},
+                 emqx_access_rule:match(
+                   ClientInfo1,
+                   <<"t/987654321">>,
+                   Compiled2)),
+    ?assertEqual(nomatch,
+                 emqx_access_rule:match(
+                   ClientInfo1,
+                   <<"987654321">>,
+                   Compiled2)),
+    ?assertEqual(nomatch,
+                 emqx_access_rule:match(
+                   ClientInfo1,
+                   <<"t/another-987654321">>,
+                   Compiled2)),
+    ?assertEqual(nomatch,
+                 emqx_access_rule:match(
+                   ClientInfo1,
+                   <<"t/%cida">>,
+                   Compiled2)),
+
+    ok.
+
 t_compile(_) ->
     Rule1 = {allow, all, pubsub, <<"%u">>},
     Compile1 = {allow, all, pubsub, [{pattern,[<<"%u">>]}]},
@@ -56,6 +134,37 @@ t_compile(_) ->
     ?assertEqual(Compile3, emqx_access_rule:compile(Rule3)),
     ?assertEqual(Compile4, emqx_access_rule:compile(Rule4)),
     ?assertEqual(Compile5, emqx_access_rule:compile(Rule5)).
+
+t_unmatching_placeholders(_Config) ->
+    EmptyClientInfo = #{ clientid => undefined
+                       , username => undefined
+                       },
+
+    Topic1 = <<"%u">>,
+    Rule1 = {allow, all, pubsub, <<"%u">>},
+    Compiled1 = emqx_access_rule:compile(Rule1),
+    ?assertEqual(
+       nomatch,
+       emqx_access_rule:match(EmptyClientInfo, Topic1, Compiled1)),
+    Rule2 = {allow, all, pubsub, [{eq, <<"%u">>}]},
+    Compiled2 = emqx_access_rule:compile(Rule2),
+    ?assertEqual(
+       {matched, allow},
+       emqx_access_rule:match(EmptyClientInfo, Topic1, Compiled2)),
+
+    Topic2 = <<"%c">>,
+    Rule3 = {allow, all, pubsub, <<"%c">>},
+    Compiled3 = emqx_access_rule:compile(Rule3),
+    ?assertEqual(
+       nomatch,
+       emqx_access_rule:match(EmptyClientInfo, Topic2, Compiled3)),
+    Rule4 = {allow, all, pubsub, [{eq, <<"%c">>}]},
+    Compiled4 = emqx_access_rule:compile(Rule4),
+    ?assertEqual(
+       {matched, allow},
+       emqx_access_rule:match(EmptyClientInfo, Topic2, Compiled4)),
+
+    ok.
 
 t_match(_) ->
     ClientInfo1 = #{zone => external,

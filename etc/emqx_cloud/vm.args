@@ -1,5 +1,5 @@
 ######################################################################
-## Erlang VM Args for EMQ X Broker
+## Erlang VM Args
 ######################################################################
 
 ## NOTE:
@@ -115,4 +115,4 @@
 -shutdown_time 30000
 
 ## patches dir
--pa {{ platform_data_dir }}/patches
+-pa "{{ platform_data_dir }}/patches"

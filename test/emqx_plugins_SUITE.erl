@@ -1,5 +1,5 @@
 %%--------------------------------------------------------------------
-%% Copyright (c) 2019-2021 EMQ Technologies Co., Ltd. All Rights Reserved.
+%% Copyright (c) 2019-2022 EMQ Technologies Co., Ltd. All Rights Reserved.
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -21,11 +21,11 @@
 
 -include_lib("emqx/include/emqx.hrl").
 -include_lib("eunit/include/eunit.hrl").
+-include_lib("common_test/include/ct.hrl").
 
 all() -> emqx_ct:all(?MODULE).
 
 init_per_suite(Config) ->
-
     %% Compile extra plugin code
 
     DataPath = proplists:get_value(data_dir, Config),
@@ -47,7 +47,35 @@ set_special_cfg(PluginsDir) ->
     ok.
 
 end_per_suite(_Config) ->
-    emqx_ct_helpers:stop_apps([]).
+    emqx_ct_helpers:stop_apps([]),
+    file:delete(get(loaded_file)).
+
+init_per_testcase(t_ensure_default_loaded_plugins_file, Config) ->
+    {ok, LoadedPluginsFilepath} = application:get_env(emqx, plugins_loaded_file),
+    TmpFilepath = filename:join(["/", "tmp", "loaded_plugins_tmp"]),
+    case file:delete(TmpFilepath) of
+        ok -> ok;
+        {error, enoent} -> ok
+    end,
+    application:set_env(emqx, plugins_loaded_file, TmpFilepath),
+    [ {loaded_plugins_filepath, LoadedPluginsFilepath}
+    , {tmp_filepath, TmpFilepath}
+    | Config];
+init_per_testcase(_TestCase, Config) ->
+    Config.
+
+end_per_testcase(t_ensure_default_loaded_plugins_file, Config) ->
+    LoadedPluginsFilepath = ?config(loaded_plugins_filepath, Config),
+    TmpFilepath = ?config(tmp_filepath, Config),
+    file:delete(TmpFilepath),
+    emqx_plugins:unload(),
+    application:set_env(emqx, plugins_loaded_file, LoadedPluginsFilepath),
+    %% need to purge the plugin to avoid inter-testcase dependencies.
+    code:purge(emqx_mini_plugin_app),
+    ok;
+end_per_testcase(_TestCase, _Config) ->
+    emqx_plugins:unload(),
+    ok.
 
 t_load(_) ->
     ?assertEqual(ok, emqx_plugins:load()),
@@ -61,6 +89,43 @@ t_load(_) ->
     ?assertEqual(ignore, emqx_plugins:load()),
     ?assertEqual(ignore, emqx_plugins:unload()).
 
+-ifndef(EMQX_ENTERPRISE).
+default_plugins() ->
+    [
+        {emqx_bridge_mqtt, false},
+        {emqx_dashboard, true},
+        {emqx_management, true},
+        {emqx_modules, false},
+        {emqx_recon, true},
+        {emqx_retainer, true},
+        {emqx_rule_engine, true},
+        {emqx_telemetry, true}
+    ].
+
+-else.
+
+default_plugins() ->
+    [
+        {emqx_bridge_mqtt, false},
+        {emqx_dashboard, true},
+        {emqx_management, true},
+        {emqx_modules, true},
+        {emqx_recon, true},
+        {emqx_retainer, false},
+        {emqx_rule_engine, true}
+    ].
+
+-endif.
+t_ensure_default_loaded_plugins_file(Config) ->
+    %% this will trigger it to write the default plugins to the
+    %% inexistent file; but it won't truly load them in this test
+    %% because there are no config files in `expand_plugins_dir'.
+    TmpFilepath = ?config(tmp_filepath, Config),
+    ok = emqx_plugins:load(),
+    {ok, Contents} = file:consult(TmpFilepath),
+    DefaultPlugins = default_plugins(),
+    ?assertEqual(DefaultPlugins, lists:sort(Contents)),
+    ok.
 
 t_init_config(_) ->
     ConfFile = "emqx_mini_plugin.config",
@@ -95,8 +160,8 @@ t_plugin_loaded(_) ->
     ?assertEqual(ok, emqx_plugins:plugin_loaded(emqx_mini_plugin, true)).
 
 t_plugin_unloaded(_) ->
-    ?assertEqual(ok, emqx_plugins:plugin_unloaded(emqx_mini_plugin, false)),
-    ?assertEqual(ok, emqx_plugins:plugin_unloaded(emqx_mini_plugin, true)).
+    ?assertEqual(ok, emqx_plugins:plugin_unloaded(emqx_mini_plugin)),
+    ?assertEqual(ok, emqx_plugins:plugin_unloaded(emqx_mini_plugin)).
 
 t_plugin(_) ->
     try
@@ -134,8 +199,8 @@ t_unload_plugin(_) ->
                                            (error_app) -> {error, error};
                                            (_) -> ok end),
 
-    ?assertEqual(ok, emqx_plugins:unload_plugin(not_started_app, true)),
-    ?assertEqual(ok, emqx_plugins:unload_plugin(normal, true)),
-    ?assertEqual({error,error}, emqx_plugins:unload_plugin(error_app, true)),
+    ?assertEqual(ok, emqx_plugins:unload_plugin(not_started_app)),
+    ?assertEqual(ok, emqx_plugins:unload_plugin(normal)),
+    ?assertEqual({error,error}, emqx_plugins:unload_plugin(error_app)),
 
     ok = meck:unload(application).

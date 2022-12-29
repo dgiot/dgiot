@@ -17,10 +17,32 @@ image:
 ## Forces the recreation of pods during helm upgrades. This can be useful to update configuration values even if the container image did not change.
 recreatePods: false
 
+podAnnotations: {}
+
 # Pod deployment policy
 # value: OrderedReady | Parallel
 # To redeploy a chart with existing PVC(s), the value must be set to Parallel to avoid deadlock
 podManagementPolicy: Parallel
+
+## Aditional container env vars
+##
+extraEnv: []
+
+## Aditional container env from vars
+##
+extraEnvFrom: []
+
+## Additional container executable args
+##
+extraArgs: []
+
+## Additional container volumes (eg. for mounting certs from secrets)
+##
+extraVolumes: []
+
+## Additional container volume mounts (eg. for mounting certs from secrets)
+##
+extraVolumeMounts: []
 
 persistence:
   enabled: false
@@ -50,7 +72,20 @@ initContainers: {}
 
 ## EMQX configuration item, see the documentation (https://hub.docker.com/r/emqx/emqx)
 emqxConfig:
+  EMQX_NAME:  "{{ .Release.Name }}"
+
+  ## Cluster discovery by dns
+  # EMQX_CLUSTER__DISCOVERY: "dns"
+  # EMQX_CLUSTER__DNS__NAME: "{{ .Release.Name }}-headless.{{ .Release.Namespace }}.svc.cluster.local"
+  # EMQX_CLUSTER__DNS__APP: "{{ .Release.Name }}"
+  # EMQX_CLUSTER__DNS__TYPE: "srv"
+
+  ## Cluster discovery by k8s
+  EMQX_CLUSTER__DISCOVERY: "k8s"
+  EMQX_CLUSTER__K8S__APP_NAME: "{{ .Release.Name }}"
   EMQX_CLUSTER__K8S__APISERVER: "https://kubernetes.default.svc:443"
+  EMQX_CLUSTER__K8S__SERVICE_NAME: "{{ .Release.Name }}-headless"
+  EMQX_CLUSTER__K8S__NAMESPACE: "{{ .Release.Namespace }}"
   ## The address type is used to extract host from k8s service.
   ## Value: ip | dns | hostname
   ## Note：Hostname is only supported after v4.0-rc.2
@@ -58,6 +93,8 @@ emqxConfig:
   EMQX_CLUSTER__K8S__SUFFIX: "svc.cluster.local"
   ## if EMQX_CLUSTER__K8S__ADDRESS_TYPE eq dns
   # EMQX_CLUSTER__K8S__SUFFIX: "pod.cluster.local"
+  EMQX_MANAGEMENT__DEFAULT_APPLICATION__ID: "admin"
+  EMQX_MANAGEMENT__DEFAULT_APPLICATION__SECRET: "public"
 
 ## --------------------------------------------------------------------
 ##  [ACL](https://docs.emqx.io/broker/latest/en/advanced/acl-file.html)
@@ -94,15 +131,17 @@ emqxLoadedPlugins: >
 emqxLoadedModules: >
   {emqx_mod_acl_internal, true}.
   {emqx_mod_presence, true}.
+  {emqx_mod_trace, false}.
+  {emqx_mod_slow_subs, false}.
   {emqx_mod_delayed, false}.
   {emqx_mod_rewrite, false}.
   {emqx_mod_subscription, false}.
   {emqx_mod_topic_metrics, false}.
 
-## EMQX Enterprise Edition requires manual creation of a Secret containing the licensed content. Write the name of Secret to the value of "emqxLicneseSecretName"
+## EMQX Enterprise Edition requires manual creation of a Secret containing the licensed content. Write the name of Secret to the value of "emqxLicenseSecretName"
 ## Example:
 ##   kubectl create secret generic emqx-license-secret-name --from-file=/path/to/emqx.lic
-emqxLicneseSecretName:
+emqxLicenseSecretName:
 
 service:
   ## Service type
@@ -165,6 +204,9 @@ tolerations: []
 affinity: {}
 
 ingress:
+  ## Ingress shared annotations
+  annotations: {}
+
   ## ingress for EMQX Dashboard
   dashboard:
     enabled: false
@@ -172,6 +214,7 @@ ingress:
       # kubernetes.io/ingress.class: nginx
       # kubernetes.io/tls-acme: "true"
     path: /
+    pathType: ImplementationSpecific
     hosts:
     - dashboard.emqx.local
     tls: []
@@ -183,8 +226,33 @@ ingress:
       # kubernetes.io/ingress.class: nginx
       # kubernetes.io/tls-acme: "true"
     path: /
+    pathType: ImplementationSpecific
     hosts:
     - api.emqx.local
+    tls: []
+
+  ## ingress for EMQX Mgmt API
+  wss:
+    enabled: false
+    # ingressClassName: nginx
+    annotations: {}
+      # Sample annotations for nginx-ingress community controller
+      # nginx.ingress.kubernetes.io/rewrite-target: /mqtt$1 # Use to rewrite backend path if needed
+      # nginx.ingress.kubernetes.io/backend-protocol: "http"
+      # nginx.ingress.kubernetes.io/use-forwarded-headers: "true"
+      # nginx.ingress.kubernetes.io/enable-real-ip: "true"
+      # nginx.ingress.kubernetes.io/proxy-request-buffering: "off"
+      # nginx.ingress.kubernetes.io/proxy-connect-timeout: "120"
+      # nginx.ingress.kubernetes.io/proxy-http-version: "1.1"
+      # nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+      # nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+      # nginx.ingress.kubernetes.io/use-proxy-protocol: "false"
+      # nginx.ingress.kubernetes.io/proxy-protocol-header-timeout: "5s"
+    path: /mqtt
+    pathType: ImplementationSpecific
+    # path: /wss(\/.*)?
+    hosts:
+    - wss.emqx.local
     tls: []
 
 podSecurityContext:
@@ -199,3 +267,7 @@ containerSecurityContext:
   enabled: true
   runAsNonRoot: true
   runAsUser: 1000
+
+metrics:
+  enabled: false
+  type: prometheus

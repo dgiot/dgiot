@@ -1,5 +1,5 @@
 %%--------------------------------------------------------------------
-%% Copyright (c) 2019-2021 EMQ Technologies Co., Ltd. All Rights Reserved.
+%% Copyright (c) 2019-2022 EMQ Technologies Co., Ltd. All Rights Reserved.
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -56,21 +56,12 @@ init({_Args, {alarm_handler, _ExistingAlarms}}) ->
 init(_) ->
     {ok, []}.
 
-handle_event({set_alarm, {system_memory_high_watermark, []}}, State) -> 
-    emqx_alarm:activate(high_system_memory_usage, #{high_watermark => emqx_os_mon:get_sysmem_high_watermark()}),
-    {ok, State};
-
-handle_event({set_alarm, {process_memory_high_watermark, Pid}}, State) -> 
+handle_event({set_alarm, {process_memory_high_watermark, Pid}}, State) ->
     emqx_alarm:activate(high_process_memory_usage, #{pid => list_to_binary(pid_to_list(Pid)),
                                                      high_watermark => emqx_os_mon:get_procmem_high_watermark()}),
     {ok, State};
-
-handle_event({clear_alarm, system_memory_high_watermark}, State) -> 
-    emqx_alarm:deactivate(high_system_memory_usage),
-    {ok, State};
-
-handle_event({clear_alarm, process_memory_high_watermark}, State) -> 
-    emqx_alarm:deactivate(high_process_memory_usage),
+handle_event({clear_alarm, process_memory_high_watermark}, State) ->
+    emqx_alarm:ensure_deactivated(high_process_memory_usage),
     {ok, State};
 
 handle_event(_, State) ->

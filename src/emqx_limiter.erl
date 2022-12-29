@@ -1,5 +1,5 @@
 %%--------------------------------------------------------------------
-%% Copyright (c) 2019-2021 EMQ Technologies Co., Ltd. All Rights Reserved.
+%% Copyright (c) 2019-2022 EMQ Technologies Co., Ltd. All Rights Reserved.
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -23,6 +23,8 @@
         , init/4 %% XXX: Compatible with before 4.2 version
         , info/1
         , check/2
+        , update_overall_limiter/3
+        , delete_overall_limiter/1
         ]).
 
 -record(limiter, {
@@ -52,8 +54,6 @@
                     interval := non_neg_integer()}}).
 
 -type(limiter() :: #limiter{}).
-
--dialyzer({nowarn_function, [consume/3]}).
 
 %%--------------------------------------------------------------------
 %% APIs
@@ -152,3 +152,19 @@ is_message_limiter(conn_messages_in) -> true;
 is_message_limiter(conn_messages_routing) -> true;
 is_message_limiter(overall_messages_routing) -> true;
 is_message_limiter(_) -> false.
+
+update_overall_limiter(Zone, Capacity, Interval) ->
+    try
+        esockd_limiter:update({Zone, overall_messages_routing}, Capacity, Interval),
+        true
+    catch _:_ ->
+        false
+    end.
+
+delete_overall_limiter(Zone) ->
+    try
+        esockd_limiter:delete({Zone, overall_messages_routing}),
+        true
+    catch _:_ ->
+        false
+    end.

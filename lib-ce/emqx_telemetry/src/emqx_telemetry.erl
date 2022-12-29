@@ -1,5 +1,5 @@
 %%--------------------------------------------------------------------
-%% Copyright (c) 2020-2021 EMQ Technologies Co., Ltd. All Rights Reserved.
+%% Copyright (c) 2020-2022 EMQ Technologies Co., Ltd. All Rights Reserved.
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -82,7 +82,7 @@
           timer = undefined :: undefined | reference()
         }).
 
-%% The count of 100-nanosecond intervals between the UUID epoch 
+%% The count of 100-nanosecond intervals between the UUID epoch
 %% 1582-10-15 00:00:00 and the UNIX epoch 1970-01-01 00:00:00.
 -define(GREGORIAN_EPOCH_OFFSET, 16#01b21dd213814000).
 
@@ -133,12 +133,6 @@ get_telemetry() ->
 %% gen_server callbacks
 %%--------------------------------------------------------------------
 
-%% This is to suppress dialyzer warnings for mnesia:dirty_write and
-%% dirty_read race condition. Given that the init function is not evaluated
-%% concurrently in one node, it should be free of race condition.
-%% Given the chance of having two nodes bootstraping with the write
-%% is very small, it should be safe to ignore.
--dialyzer([{nowarn_function, [init/1]}]).
 init([Opts]) ->
     State = #state{url = get_value(url, Opts),
                    report_interval = timer:seconds(get_value(report_interval, Opts))},
@@ -253,29 +247,23 @@ os_info() ->
             [{os_name, Name},
              {os_version, Version}];
         {unix, _} ->
-            case file:read_file_info("/etc/os-release") of
+            case file:read_file("/etc/os-release") of
                 {error, _} ->
                     [{os_name, "Unknown"},
                      {os_version, "Unknown"}];
-                {ok, FileInfo} ->
-                    case FileInfo#file_info.access of
-                        Access when Access =:= read orelse Access =:= read_write ->
-                            OSInfo = lists:foldl(fun(Line, Acc) ->
-                                                     [Var, Value] = string:tokens(Line, "="),
-                                                     NValue = case Value of
-                                                                  _ when is_list(Value) ->
-                                                                      lists:nth(1, string:tokens(Value, "\""));
-                                                                  _ ->
-                                                                      Value
-                                                              end,
-                                                     [{Var, NValue} | Acc]
-                                                 end, [], string:tokens(os:cmd("cat /etc/os-release"), "\n")),
-                            [{os_name, get_value("NAME", OSInfo)},
-                             {os_version, get_value("VERSION", OSInfo, get_value("VERSION_ID", OSInfo))}];
-                        _ ->
-                            [{os_name, "Unknown"},
-                             {os_version, "Unknown"}]
-                    end
+                {ok, FileContent} ->
+                    OSInfo = lists:foldl(fun(Line, Acc) ->
+                                                 [Var, Value] = string:tokens(Line, "="),
+                                                 NValue = case Value of
+                                                              _ when is_list(Value) ->
+                                                                  lists:nth(1, string:tokens(Value, "\""));
+                                                              _ ->
+                                                                  Value
+                                                          end,
+                                                 [{Var, NValue} | Acc]
+                                         end, [], string:tokens(binary:bin_to_list(FileContent), "\n")),
+                    [{os_name, get_value("NAME", OSInfo)},
+                     {os_version, get_value("VERSION", OSInfo, get_value("VERSION_ID", OSInfo, get_value("PRETTY_NAME", OSInfo)))}]
             end;
         {win32, nt} ->
             Ver = os:cmd("ver"),
@@ -373,7 +361,9 @@ report_telemetry(State = #state{url = URL}) ->
     end.
 
 httpc_request(Method, URL, Headers, Body) ->
-    httpc:request(Method, {URL, Headers, "application/json", Body}, [], []).
+    HTTPOptions = [{timeout, timer:seconds(10)}, {ssl, [{verify, verify_none}]}],
+    Options = [],
+    httpc:request(Method, {URL, Headers, "application/json", Body}, HTTPOptions, Options).
 
 ignore_lib_apps(Apps) ->
     LibApps = [kernel, stdlib, sasl, appmon, eldap, erts,
@@ -429,5 +419,7 @@ module_attributes(Module) ->
 
 bin(L) when is_list(L) ->
     list_to_binary(L);
+bin(A) when is_atom(A) ->
+    atom_to_binary(A);
 bin(B) when is_binary(B) ->
     B.

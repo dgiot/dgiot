@@ -1,5 +1,5 @@
 %%--------------------------------------------------------------------
-%% Copyright (c) 2019-2021 EMQ Technologies Co., Ltd. All Rights Reserved.
+%% Copyright (c) 2019-2022 EMQ Technologies Co., Ltd. All Rights Reserved.
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -34,6 +34,12 @@ end_per_suite(_Config) ->
 
 t_authenticate(_) ->
     emqx_zone:set_env(zone, allow_anonymous, false),
+    ?assertMatch({error, _}, emqx_access_control:authenticate(clientinfo())),
+    emqx_zone:set_env(zone, allow_anonymous, true),
+    ?assertMatch({ok, _}, emqx_access_control:authenticate(clientinfo())).
+
+t_authenticate_fast_fail(_) ->
+    emqx_zone:set_env(zone, allow_anonymous, false_quick_deny),
     ?assertMatch({error, _}, emqx_access_control:authenticate(clientinfo())),
     emqx_zone:set_env(zone, allow_anonymous, true),
     ?assertMatch({ok, _}, emqx_access_control:authenticate(clientinfo())).

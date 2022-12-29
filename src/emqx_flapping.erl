@@ -1,5 +1,5 @@
 %%--------------------------------------------------------------------
-%% Copyright (c) 2018-2021 EMQ Technologies Co., Ltd. All Rights Reserved.
+%% Copyright (c) 2018-2022 EMQ Technologies Co., Ltd. All Rights Reserved.
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -38,6 +38,10 @@
         , code_change/3
         ]).
 
+%% for testing
+-ifdef(TEST).
+-export([get_policy/0]).
+-endif.
 %% Tab
 -define(FLAPPING_TAB, ?MODULE).
 %% Default Policy

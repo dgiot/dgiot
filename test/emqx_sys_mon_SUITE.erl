@@ -1,5 +1,5 @@
 %%--------------------------------------------------------------------
-%% Copyright (c) 2019-2021 EMQ Technologies Co., Ltd. All Rights Reserved.
+%% Copyright (c) 2019-2022 EMQ Technologies Co., Ltd. All Rights Reserved.
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -33,6 +33,11 @@
                     {self(), busy_port,
                      concat_str("busy_port warning: suspid = ~p, port = ~p",
                                 self(), list_to_port("#Port<0.4>")), list_to_port("#Port<0.4>")},
+                    %% for the case when the port is missing, for some
+                    %% reason.
+                    {self(), busy_port,
+                     concat_str("busy_port warning: suspid = ~p, port = ~p",
+                                self(), []), []},
                     {self(), busy_dist_port,
                      concat_str("busy_dist_port warning: suspid = ~p, port = ~p",
                                 self(), list_to_port("#Port<0.4>")),list_to_port("#Port<0.4>")},
@@ -70,29 +75,67 @@ init_per_testcase(t_sys_mon2, Config) ->
            (_) -> ok
         end),
     Config;
+init_per_testcase(t_procinfo, Config) ->
+    emqx_ct_helpers:boot_modules(all),
+    emqx_ct_helpers:start_apps([]),
+    ok = meck:new(emqx_vm, [passthrough, no_history]),
+    Config;
 init_per_testcase(_, Config) ->
     emqx_ct_helpers:boot_modules(all),
     emqx_ct_helpers:start_apps([]),
     Config.
 
+end_per_testcase(t_procinfo, _Config) ->
+    ok = meck:unload(emqx_vm),
+    emqx_ct_helpers:stop_apps([]);
 end_per_testcase(_, _Config) ->
     emqx_ct_helpers:stop_apps([]).
 
 t_procinfo(_) ->
-    ok = meck:new(emqx_vm, [passthrough, no_history]),
     ok = meck:expect(emqx_vm, get_process_info, fun(_) -> [] end),
     ok = meck:expect(emqx_vm, get_process_gc_info, fun(_) -> [] end),
     ?assertEqual([], emqx_sys_mon:procinfo([])),
     ok = meck:expect(emqx_vm, get_process_info, fun(_) -> ok end),
     ok = meck:expect(emqx_vm, get_process_gc_info, fun(_) -> undefined end),
-    ?assertEqual(undefined, emqx_sys_mon:procinfo([])),
-    ok = meck:unload(emqx_vm).
+    ?assertEqual(undefined, emqx_sys_mon:procinfo([])).
+
+t_procinfo_initial_call_and_stacktrace(_) ->
+    SomePid = proc_lib:spawn(?MODULE, some_function, [self(), arg2]),
+    receive
+        {spawned, SomePid} ->
+            ok
+    after 100 ->
+            error(process_not_spawned)
+    end,
+    ProcInfo = emqx_sys_mon:procinfo(SomePid),
+    ?assertEqual(
+       {?MODULE, some_function, ['Argument__1','Argument__2']},
+       proplists:get_value(proc_lib_initial_call, ProcInfo)),
+    ?assertMatch(
+       [{?MODULE, some_function, 2,
+         [{file, _},
+          {line, _}]},
+        {proc_lib, init_p_do_apply, 3,
+         [{file, _},
+          {line, _}]}],
+       proplists:get_value(current_stacktrace, ProcInfo)),
+    SomePid ! stop.
 
 t_sys_mon(_Config) ->
     lists:foreach(
       fun({PidOrPort, SysMonName,ValidateInfo, InfoOrPort}) ->
               validate_sys_mon_info(PidOrPort, SysMonName,ValidateInfo, InfoOrPort)
       end, ?INPUTINFO).
+
+%% Existing port, but closed.
+t_sys_mon_dead_port(_Config) ->
+    process_flag(trap_exit, true),
+    Port = dead_port(),
+    {PidOrPort, SysMonName, ValidateInfo, InfoOrPort} =
+        {self(), busy_port,
+         concat_str("busy_port warning: suspid = ~p, port = ~p",
+                                self(), Port), Port},
+    validate_sys_mon_info(PidOrPort, SysMonName, ValidateInfo, InfoOrPort).
 
 t_sys_mon2(_Config) ->
     ?SYSMON ! {timeout, ignored, reset},
@@ -120,3 +163,15 @@ validate_sys_mon_info(PidOrPort, SysMonName,ValidateInfo, InfoOrPort) ->
 concat_str(ValidateInfo, InfoOrPort, Info) ->
     WarnInfo = io_lib:format(ValidateInfo, [InfoOrPort, Info]),
     lists:flatten(WarnInfo).
+
+some_function(Parent, _Arg2) ->
+    Parent ! {spawned, self()},
+    receive
+        stop ->
+            ok
+    end.
+
+dead_port() ->
+    Port = erlang:open_port({spawn, "ls"}, []),
+    exit(Port, kill),
+    Port.

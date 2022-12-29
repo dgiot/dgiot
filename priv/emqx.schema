@@ -1,5 +1,5 @@
 %%-*- mode: erlang -*-
-%% EMQ X R4.0 config mapping
+%% EMQX Config Mapping
 
 %%--------------------------------------------------------------------
 %% Cluster
@@ -96,6 +96,11 @@
   {datatype, string}
 ]}.
 
+{mapping, "cluster.dns.type", "ekka.cluster_discovery", [
+  {datatype, {enum, [a, srv]}},
+  {default, a}
+]}.
+
 %%--------------------------------------------------------------------
 %% Cluster using etcd
 
@@ -171,7 +176,8 @@
                   {loop, cuttlefish:conf_get("cluster.mcast.loop", Conf, true)}];
                (dns) ->
                  [{name, cuttlefish:conf_get("cluster.dns.name", Conf)},
-                  {app, cuttlefish:conf_get("cluster.dns.app", Conf)}];
+                  {app, cuttlefish:conf_get("cluster.dns.app", Conf)},
+                  {type, cuttlefish:conf_get("cluster.dns.type", Conf)}];
                (etcd) ->
                  SslOpts = fun(Conf) ->
                               Options = cuttlefish_variable:filter_by_prefix("cluster.etcd.ssl", Conf),
@@ -258,6 +264,28 @@ end}.
 {validator, "range4ports", "must be 1024 to 134217727",
  fun(X) -> X >= 1024 andalso X =< 134217727 end}.
 
+{validator, "range:0-2", "must be 0 to 2",
+ fun(X) -> X >= 0 andalso X =< 2 end}.
+
+{validator, "range:0-128", "must be 0 to 128",
+  fun(X) -> X >= 0 andalso X =< 128 end}.
+
+{validator, "range:0-65535", "must be 0 to 65535",
+ fun(X) -> X >= 0 andalso X =< 65535 end}.
+
+{validator, "range:1-65535", "must be 1 to 65535",
+  fun(X) -> X >= 1 andalso X =< 65535 end}.
+
+{validator, "range:1-9", "must be 1 to 9",
+  fun(X) -> X >= 1 andalso X =< 9 end}.
+
+{validator, "range:8-15", "must be 8 to 15",
+    fun(X) -> X >= 8 andalso X =< 15 end}.
+
+{validator, "range:0-1024", "must be 0 to 1024",
+  fun(X) -> X >= 0 andalso X =< 1024 end}.
+
+
 %% @doc http://www.erlang.org/doc/man/erl.html#%2bzdbbl
 {mapping, "node.dist_buffer_size", "vm_args.+zdbbl", [
   {datatype, bytesize},
@@ -293,10 +321,10 @@ end}.
   {default, 1000},
   {datatype, integer},
   hidden,
-  {validators, ["positive_integer"]}
+  {validators, ["range:0-inf"]}
 ]}.
 
-{validator, "positive_integer", "must be a positive integer",
+{validator, "range:0-inf", "must be a non neg_integer",
   fun(X) -> X >= 0 end}.
 
 %% Note: OTP R15 and earlier uses -env ERL_MAX_ETS_TABLES,
@@ -321,6 +349,23 @@ end}.
   {datatype, integer},
   hidden
 ]}.
+
+%% @doc http://www.erlang.org/doc/man/kernel_app.html#net_ticktime
+{mapping, "node.dist_use_interface", "kernel.inet_dist_use_interface", [
+  {commented, "0.0.0.0"},
+  {datatype, string}
+]}.
+
+{translation, "kernel.inet_dist_use_interface",
+fun(Conf) ->
+  Addr = cuttlefish:conf_get("node.dist_use_interface", Conf, "0.0.0.0"),
+  case inet:parse_address(Addr) of
+    {ok, IP} ->
+      IP;
+    _ ->
+      error({bad_node_dist_use_interface, Addr})
+  end
+end}.
 
 %% @doc http://www.erlang.org/doc/man/kernel_app.html
 {mapping, "node.dist_listen_min", "kernel.inet_dist_listen_min", [
@@ -362,10 +407,56 @@ end}.
 ]}.
 
 %% RPC server port.
+{mapping, "rpc.driver", "gen_rpc.driver",
+[ {default, tcp}
+, {datatype, {enum, [tcp, ssl]}}
+]}.
+
+{mapping, "rpc.default_client_driver", "gen_rpc.default_client_driver",
+[ {default, tcp}
+, {datatype, {enum, [tcp, ssl]}}
+]}.
+
 {mapping, "rpc.tcp_server_port", "gen_rpc.tcp_server_port", [
   {default, 5369},
   {datatype, integer}
 ]}.
+
+%% RPC SSL server port.
+{mapping, "rpc.enable_ssl", "gen_rpc.ssl_server_port", [
+  {default, 5369},
+  {datatype, integer}
+]}.
+
+%% RPC SSL certificates
+{mapping, "rpc.certfile", "gen_rpc.certfile", [
+  {datatype, string}
+]}.
+
+{mapping, "rpc.keyfile", "gen_rpc.keyfile", [
+  {datatype, string}
+]}.
+
+{mapping, "rpc.cacertfile", "gen_rpc.cacertfile", [
+  {datatype, string}
+]}.
+
+%% RPC server, network interface.
+{mapping, "rpc.tcp_server_ip", "gen_rpc.socket_ip", [
+  {default, "0.0.0.0"},
+  {datatype, string}
+]}.
+
+{translation, "gen_rpc.socket_ip",
+fun(Conf) ->
+  Addr = cuttlefish:conf_get("rpc.tcp_server_ip", Conf, "0.0.0.0"),
+  case inet:parse_address(Addr) of
+    {ok, IP} ->
+      IP;
+    _ ->
+      error({bad_gen_rpc_socket_ip, Addr})
+  end
+end}.
 
 %% Number of tcp connections when connecting to RPC server
 {mapping, "rpc.tcp_client_num", "gen_rpc.tcp_client_num", [
@@ -376,7 +467,7 @@ end}.
 
 {translation, "gen_rpc.tcp_client_num", fun(Conf) ->
   case cuttlefish:conf_get("rpc.tcp_client_num", Conf) of
-    0 -> 1; %% keep allowing 0 for backward compatibility
+    0 -> max(1, erlang:system_info(schedulers) div 2);
     V -> V
   end
 end}.
@@ -506,6 +597,12 @@ end}.
   {datatype, {enum, [text, json]}}
 ]}.
 
+%% @doc format logs as text, date format part
+{mapping, "log.formatter.text.date.format", "kernel.logger", [
+  {default, "rfc3339"},
+  {datatype, string}
+]}.
+
 %% @doc format logs in a single line.
 {mapping, "log.single_line", "kernel.logger", [
   {default, true},
@@ -607,8 +704,37 @@ end}.
                     single_line => SingleLine
                    }};
         text ->
+            DateFormat =
+              case cuttlefish:conf_get("log.formatter.text.date.format", Conf, "rfc3339") of
+                "rfc3339" ->
+                  rfc3339;
+                DateStr ->
+                  DateStrTrans =
+                    fun
+                      DST(<<>>, Formatter) -> lists:reverse(Formatter);
+                      DST(<<"%Y", Tail/binary>>, Formatter) -> DST(Tail, [year | Formatter]);
+                      DST(<<"%m", Tail/binary>>, Formatter) -> DST(Tail, [month | Formatter]);
+                      DST(<<"%d", Tail/binary>>, Formatter) -> DST(Tail, [day | Formatter]);
+                      DST(<<"%H", Tail/binary>>, Formatter) -> DST(Tail, [hour | Formatter]);
+                      DST(<<"%M", Tail/binary>>, Formatter) -> DST(Tail, [minute | Formatter]);
+                      DST(<<"%S", Tail/binary>>, Formatter) -> DST(Tail, [second | Formatter]);
+                      DST(<<"%N", Tail/binary>>, Formatter) -> DST(Tail, [nanosecond | Formatter]);
+                      DST(<<"%3N", Tail/binary>>, Formatter) -> DST(Tail, [millisecond | Formatter]);
+                      DST(<<"%6N", Tail/binary>>, Formatter) -> DST(Tail, [microsecond | Formatter]);
+                      DST(<<"%z", Tail/binary>>, Formatter) -> DST(Tail, [timezone | Formatter]);
+                      DST(<<"%:z", Tail/binary>>, Formatter) -> DST(Tail, [timezone1 | Formatter]);
+                      DST(<<"%::z", Tail/binary>>, Formatter) -> DST(Tail, [timezone2 | Formatter]);
+                      DST(<<Char:8, Tail/binary>>, [Str | Formatter]) when is_list(Str) ->
+                          DST(Tail, [lists:append(Str, [Char]) | Formatter]);
+                      DST(<<Char:8, Tail/binary>>, Formatter) ->
+                          DST(Tail, [[Char] | Formatter])
+                    end,
+                    DateStrTrans(list_to_binary(DateStr), [])
+              end,
             {emqx_logger_textfmt,
-                  #{template =>
+                  #{
+                    date_format => DateFormat,
+                    template =>
                       [time," [",level,"] ",
                        {clientid,
                           [{peername,
@@ -713,10 +839,38 @@ end}.
 %% Authentication/ACL
 %%--------------------------------------------------------------------
 
+%% @doc Define a determined authentication plugin/module check order.
+%% see detailed doc in emqx.conf
+{mapping, "auth_order", "emqx.auth_order", [
+  {default, "none"}, % keep default value in sync with emqx_conf.erl
+  {datatype, string}
+]}.
+
+%% @doc Same as auth_order, but for ACL.
+{mapping, "acl_order", "emqx.acl_order", [
+  {default, "none"}, % keep default value in sync with emqx_conf.erl
+  {datatype, string}
+]}.
+
+%% @doc Specify a module that defines the `enrich_with_aliases/2'
+%% function.  This function will be used to enrich the client/channel
+%% information with clientid and/or common name aliases (or other
+%% enrichments the module may implement).
+{mapping, "alias_enrichment_module", "emqx.alias_enrichment_module", [
+  {datatype, atom}
+]}.
+
+%% @doc Specify a module that defines the `check_authn/2' function.
+%% This function will be used in the `client.authenticate' hook as a
+%% way to implement custom authentication logic.
+{mapping, "special_auth_module", "emqx.special_auth_module", [
+  {datatype, atom}
+]}.
+
 %% @doc Allow anonymous authentication.
 {mapping, "allow_anonymous", "emqx.allow_anonymous", [
   {default, false},
-  {datatype, {enum, [true, false]}}
+  {datatype, {enum, [true, false, false_quick_deny]}}
 ]}.
 
 %% @doc ACL nomatch.
@@ -800,8 +954,9 @@ end}.
 
 %% @doc Set the Maximum topic levels.
 {mapping, "mqtt.max_topic_levels", "emqx.max_topic_levels", [
-  {default, 0},
-  {datatype, integer}
+  {default, 128},
+  {datatype, integer},
+  {validators, ["range:0-inf"]}
 ]}.
 
 %% @doc Set the Maximum QoS allowed.
@@ -814,7 +969,8 @@ end}.
 %% @doc Set the Maximum Topic Alias.
 {mapping, "mqtt.max_topic_alias", "emqx.max_topic_alias", [
   {default, 65535},
-  {datatype, integer}
+  {datatype, integer},
+  {validators, ["range:0-65535"]}
 ]}.
 
 %% @doc Whether the server supports MQTT retained messages.
@@ -852,6 +1008,12 @@ end}.
   {datatype, string}
 ]}.
 
+%% @doc Whether the Server supports Exclusive Subscriptions.
+{mapping, "mqtt.exclusive_subscription", "emqx.exclusive_subscription", [
+    {default, false},
+    {datatype, {enum, [true, false]}}
+]}.
+
 %%--------------------------------------------------------------------
 %% Zones
 %%--------------------------------------------------------------------
@@ -863,7 +1025,7 @@ end}.
 ]}.
 
 {mapping, "zone.$name.allow_anonymous", "emqx.zones", [
-  {datatype, {enum, [true, false]}}
+  {datatype, {enum, [true, false, false_quick_deny]}}
 ]}.
 
 {mapping, "zone.$name.acl_nomatch", "emqx.zones", [
@@ -911,7 +1073,8 @@ end}.
 
 %% @doc Set the Maximum topic levels.
 {mapping, "zone.$name.max_topic_levels", "emqx.zones", [
-  {datatype, integer}
+  {datatype, integer},
+  {validators, ["range:0-128"]}
 ]}.
 
 %% @doc Set the Maximum QoS allowed.
@@ -975,6 +1138,13 @@ end}.
 {mapping, "zone.$name.retry_interval", "emqx.zones", [
   {default, "30s"},
   {datatype, {duration, s}}
+]}.
+
+%% @doc the number of smaples for calculate the average latency of delivery
+%% @deprecated This is a obsoleted configuration, kept here only for compatibility
+{mapping, "zone.$name.latency_samples", "emqx.zones", [
+  {default, 10},
+  {datatype, integer}
 ]}.
 
 %% @doc Max Packets that Awaiting PUBREL, 0 means no limit
@@ -1103,6 +1273,11 @@ end}.
 {mapping, "zone.$name.bypass_auth_plugins", "emqx.zones", [
   {default, false},
   {datatype, {enum, [true, false]}}
+]}.
+
+%% @doc Whether the Server supports Exclusive Subscriptions.
+{mapping, "zone.$name.exclusive_subscription", "emqx.zones", [
+    {datatype, {enum, [true, false]}}
 ]}.
 
 {translation, "emqx.zones", fun(Conf) ->
@@ -1488,6 +1663,63 @@ end}.
 
 {mapping, "listener.ssl.$name.peer_cert_as_clientid", "emqx.listeners", [
   {datatype, {enum, [cn, dn, crt, pem, md5]}}
+]}.
+
+{mapping, "listener.ssl.$name.log_level", "emqx.listeners", [
+  {datatype, {enum, [emergency, alert, critical, error, warning, notice, info, debug, none, all]}}
+]}.
+
+{mapping, "listener.ssl.$name.gc_after_handshake", "emqx.listeners", [
+  {default, false},
+  {datatype, {enum, [true, false]}}
+]}.
+
+{mapping, "listener.ssl.$name.hibernate_after", "emqx.listeners", [
+  {default, undefined},
+  {datatype, {duration, ms}}
+]}.
+
+{mapping, "listener.ssl.$name.enable_ocsp_stapling", "emqx.listeners", [
+  {default, false},
+  {datatype, {enum, [true, false]}}
+]}.
+
+{mapping, "listener.ssl.$name.ocsp_responder_url", "emqx.listeners", [
+  {datatype, string}
+]}.
+
+{mapping, "listener.ssl.$name.ocsp_issuer_pem", "emqx.listeners", [
+  {datatype, file}
+]}.
+
+{mapping, "listener.ssl.$name.ocsp_refresh_interval", "emqx.listeners", [
+  {default, "5m"},
+  {datatype, {duration, ms}}
+]}.
+
+{mapping, "listener.ssl.$name.ocsp_refresh_http_timeout", "emqx.listeners", [
+  {default, "15s"},
+  {datatype, {duration, ms}}
+]}.
+
+{mapping, "listener.ssl.$name.enable_crl_check", "emqx.listeners", [
+  {default, false},
+  {datatype, {enum, [true, false]}}
+]}.
+
+{mapping, "listener.ssl.$name.crl_cache_urls", "emqx.listeners", [
+  {default, ""},
+  {datatype, string}
+]}.
+
+{mapping, "crl_cache_http_timeout", "emqx.crl_cache_http_timeout", [
+  {default, "15s"},
+  {datatype, {duration, ms}}
+]}.
+
+{mapping, "crl_cache_refresh_interval", "emqx.crl_cache_refresh_interval", [
+  {default, "15m"},
+  {datatype, {duration, ms}}
 ]}.
 
 %%--------------------------------------------------------------------
@@ -1942,6 +2174,10 @@ end}.
   hidden
 ]}.
 
+{mapping, "listener.wss.$name.log_level", "emqx.listeners", [
+  {datatype, {enum, [emergency, alert, critical, error, warning, notice, info, debug, none, all]}}
+]}.
+
 {translation, "emqx.listeners", fun(Conf) ->
 
     Filter  = fun(Opts) -> [{K, V} || {K, V} <- Opts, V =/= undefined] end,
@@ -1988,6 +2224,14 @@ end}.
                                     lists:flatten(OriginList)
                           end
                       end,
+    OCSPOpts = fun(Prefix) ->
+                 Filter([ {ocsp_stapling_enabled, cuttlefish:conf_get(Prefix ++ ".enable_ocsp_stapling", Conf, undefined)}
+                        , {ocsp_responder_url, cuttlefish:conf_get(Prefix ++ ".ocsp_responder_url", Conf, undefined)}
+                        , {ocsp_issuer_pem, cuttlefish:conf_get(Prefix ++ ".ocsp_issuer_pem", Conf, undefined)}
+                        , {ocsp_refresh_interval, cuttlefish:conf_get(Prefix ++ ".ocsp_refresh_interval", Conf, undefined)}
+                        , {ocsp_refresh_http_timeout, cuttlefish:conf_get(Prefix ++ ".ocsp_refresh_http_timeout", Conf, undefined)}
+                        ])
+               end,
 
     LisOpts = fun(Prefix) ->
                   Filter([{acceptors, cuttlefish:conf_get(Prefix ++ ".acceptors", Conf)},
@@ -2012,7 +2256,9 @@ end}.
                           {mqtt_piggyback, cuttlefish:conf_get(Prefix ++ ".mqtt_piggyback", Conf, undefined)},
                           {check_origin_enable, cuttlefish:conf_get(Prefix ++ ".check_origin_enable", Conf, undefined)},
                           {allow_origin_absence, cuttlefish:conf_get(Prefix ++ ".allow_origin_absence", Conf, undefined)},
-                          {check_origins, WsOpts(Prefix)} | AccOpts(Prefix)])
+                          {check_origins, WsOpts(Prefix)}
+                         | AccOpts(Prefix)
+                         ])
               end,
     DeflateOpts = fun(Prefix) ->
                       Filter([{level, cuttlefish:conf_get(Prefix ++ ".deflate_opts.level", Conf, undefined)},
@@ -2035,18 +2281,45 @@ end}.
                           {reuseaddr, cuttlefish:conf_get(Prefix ++ ".reuseaddr", Conf, undefined)}])
               end,
     SplitFun = fun(undefined) -> undefined; (S) -> string:tokens(S, ",") end,
+    %% In erlang, we only support the following PSK ciphers (ssl_cipher:psk_suites(3))
+    AvaiableCiphers = ["RSA-PSK-AES256-GCM-SHA384","RSA-PSK-AES256-CBC-SHA384",
+                       "RSA-PSK-AES128-GCM-SHA256","RSA-PSK-AES128-CBC-SHA256",
+                       "RSA-PSK-AES256-CBC-SHA","RSA-PSK-AES128-CBC-SHA"
+                      ],
+    %% Compatible with legacy PSK Cipher strings
+    PskMapping = fun("PSK-AES128-CBC-SHA") -> {true, "RSA-PSK-AES128-CBC-SHA"};
+                    ("PSK-AES256-CBC-SHA") -> {true, "RSA-PSK-AES256-CBC-SHA"};
+                    ("PSK-3DES-EDE-CBC-SHA") -> {true, "PSK-3DES-EDE-CBC-SHA"};
+                    ("PSK-RC4-SHA") -> {true, "PSK-RC4-SHA"};
+                    (C) -> case lists:member(C, AvaiableCiphers) of
+                               true -> {true, C};
+                               false -> false
+                           end
+                 end,
     MapPSKCiphers = fun(PSKCiphers) ->
-                      lists:map(
-                          fun("PSK-AES128-CBC-SHA") -> {psk, aes_128_cbc, sha};
-                             ("PSK-AES256-CBC-SHA") -> {psk, aes_256_cbc, sha};
-                             ("PSK-3DES-EDE-CBC-SHA") -> {psk, '3des_ede_cbc', sha};
-                             ("PSK-RC4-SHA") -> {psk, rc4_128, sha}
-                          end, PSKCiphers)
+                      lists:filtermap(fun(C0) ->
+                        case PskMapping(C0) of
+                            false ->
+                              cuttlefish:invalid(
+                                io_lib:format("psk_ciphers: not support ~s", [C0]));
+                            {true, C} ->
+                                {true, C}
+                        end
+                      end, PSKCiphers)
                     end,
     SslOpts = fun(Prefix) ->
                   Versions = case SplitFun(cuttlefish:conf_get(Prefix ++ ".tls_versions", Conf, undefined)) of
                                 undefined -> undefined;
-                                L -> [list_to_atom(V) || V <- L]
+                                L ->
+                                  Versions0 = [list_to_atom(V) || V <- L],
+                                  SupportVersions = ['tlsv1', 'tlsv1.1', 'tlsv1.2', 'tlsv1.3'],
+                                  case lists:all(fun(V) -> lists:member(V, SupportVersions) end, Versions0) of
+                                     false ->
+                                        cuttlefish:invalid(
+                                        lists:flatten(io_lib:format("tls_versions: only support ~p", [SupportVersions])));
+                                      true ->
+                                        Versions0
+                                  end
                             end,
                   TLSCiphers = cuttlefish:conf_get(Prefix++".ciphers", Conf, undefined),
                   PSKCiphers = cuttlefish:conf_get(Prefix++".psk_ciphers", Conf, undefined),
@@ -2057,7 +2330,14 @@ end}.
                       {TLSCiphers, undefined} ->
                         SplitFun(TLSCiphers);
                       {undefined, PSKCiphers} ->
-                        MapPSKCiphers(SplitFun(PSKCiphers));
+                        case Versions == undefined orelse lists:member('tlsv1.3', Versions) of
+                            true ->
+                                cuttlefish:invalid(
+                                  Prefix++".tls_versions cannot contain tlsv1.3 "
+                                  "if "++Prefix++".psk_ciphers is configured");
+                            _ ->
+                                MapPSKCiphers(SplitFun(PSKCiphers))
+                        end;
                       {_TLSCiphers, _PSKCiphers} ->
                         cuttlefish:invalid(Prefix++".ciphers and "++Prefix++".psk_ciphers cannot be configured at the same time")
                     end,
@@ -2066,7 +2346,18 @@ end}.
                       undefined -> undefined;
                       _ -> {fun emqx_psk:lookup/3, <<>>}
                     end,
-                  Filter([{versions, Versions},
+                  CRLCheck = case cuttlefish:conf_get(Prefix ++ ".enable_crl_check", Conf, false) of
+                               true ->
+                                 HTTPTimeout = cuttlefish:conf_get("crl_cache_http_timeout", Conf, timer:seconds(15)),
+                                 %% {crl_check, true} doesn't work
+                                 [ {crl_check, peer}
+                                 , {crl_cache, {ssl_crl_cache, {internal, [{http, HTTPTimeout}]}}}
+                                 ];
+                               false ->
+                                 []
+                             end,
+                  Filter(CRLCheck ++
+                         [{versions, Versions},
                           {ciphers, Ciphers},
                           {user_lookup_fun, UserLookupFun},
                           {handshake_timeout, cuttlefish:conf_get(Prefix ++ ".handshake_timeout", Conf, undefined)},
@@ -2080,9 +2371,22 @@ end}.
                           {fail_if_no_peer_cert, cuttlefish:conf_get(Prefix ++ ".fail_if_no_peer_cert", Conf, undefined)},
                           {secure_renegotiate, cuttlefish:conf_get(Prefix ++ ".secure_renegotiate", Conf, undefined)},
                           {reuse_sessions, cuttlefish:conf_get(Prefix ++ ".reuse_sessions", Conf, undefined)},
-                          {honor_cipher_order, cuttlefish:conf_get(Prefix ++ ".honor_cipher_order", Conf, undefined)}])
+                          {honor_cipher_order, cuttlefish:conf_get(Prefix ++ ".honor_cipher_order", Conf, undefined)},
+                          {log_level, cuttlefish:conf_get(Prefix ++ ".log_level", Conf, undefined)},
+                          {gc_after_handshake, cuttlefish:conf_get(Prefix ++ ".gc_after_handshake", Conf, undefined)},
+                          {hibernate_after, cuttlefish:conf_get(Prefix ++ ".hibernate_after", Conf, undefined)}
+                         ])
               end,
-
+    CRLOpts =
+      fun(Prefix) ->
+        CRLURLs = case cuttlefish:conf_get(Prefix ++ ".crl_cache_urls", Conf, undefined) of
+                    undefined -> undefined;
+                    URLs -> string:tokens(URLs, ", ")
+                  end,
+        Filter([ {crl_check_enabled, cuttlefish:conf_get(Prefix ++ ".enable_crl_check", Conf, false)}
+               , {crl_cache_urls, CRLURLs}
+               ])
+      end,
     Listen_fix = fun({Ip, Port}) -> case inet:parse_address(Ip) of
                                       {ok, R} -> {R, Port};
                                             _ -> {Ip, Port}
@@ -2118,6 +2422,8 @@ end}.
                                  , opts => [ {deflate_options, DeflateOpts(Prefix)}
                                            , {tcp_options, TcpOpts(Prefix)}
                                            , {ssl_options, SslOpts(Prefix)}
+                                           , {crl_options, CRLOpts(Prefix)}
+                                           , {ocsp_options, OCSPOpts(Prefix)}
                                            | LisOpts(Prefix)
                                            ]
                                  }
@@ -2185,7 +2491,47 @@ end}.
 ]}.
 
 {mapping, "module.rewrite.sub.rule.$id", "emqx.modules", [
-  {datatype, string}
+{datatype, string}
+]}.
+
+{mapping, "module.slow_subs.threshold", "emqx.modules", [
+  {default, "500ms"},
+  {datatype, {duration, ms}}
+]}.
+
+{mapping, "module.slow_subs.expire_interval", "emqx.modules", [
+  {default, "300000ms"},
+  {datatype, {duration, ms}}
+]}.
+
+{mapping, "module.slow_subs.top_k_num", "emqx.modules", [
+  {default, 10},
+  {datatype, integer},
+  {validators, ["range:0-1000"]}
+]}.
+
+{mapping, "module.slow_subs.stats_type", "emqx.modules", [
+  {default, whole},
+  {datatype, {enum,[whole,internal,response]}}
+]}.
+
+%% @deprecated This is a obsoleted configuration, kept here only for compatibility
+{mapping, "module.slow_subs.notice_interval", "emqx.modules", [
+  {default, "500ms"},
+  {datatype, {duration, ms}}
+]}.
+
+%% @deprecated This is a obsoleted configuration, kept here only for compatibility
+{mapping, "module.slow_subs.notice_qos", "emqx.modules", [
+  {default, 0},
+  {datatype, integer},
+  {validators, ["range:0-1"]}
+]}.
+
+%% @deprecated This is a obsoleted configuration, kept here only for compatibility
+{mapping, "module.slow_subs.notice_batch_size", "emqx.modules", [
+  {default, 500},
+  {datatype, integer}
 ]}.
 
 {translation, "emqx.modules", fun(Conf, _, Conf1) ->
@@ -2211,12 +2557,20 @@ end}.
                     {rewrite, list_to_atom(PubOrSub), list_to_binary(Topic), list_to_binary(Re), list_to_binary(Dest)}
                 end, TotalRules)
   end,
+
+  SlowSubs = fun() ->
+                   List = cuttlefish_variable:filter_by_prefix("module.slow_subs", Conf),
+                   [{erlang:list_to_atom(Key), Value} || {[_, _, Key], Value} <- List]
+              end,
+
   lists:append([
     [{emqx_mod_presence, [{qos, cuttlefish:conf_get("module.presence.qos", Conf, 1)}]}],
     [{emqx_mod_subscription, Subscriptions()}],
     [{emqx_mod_rewrite, Rewrites()}],
     [{emqx_mod_topic_metrics, []}],
     [{emqx_mod_delayed, []}],
+    [{emqx_mod_trace, []}],
+    [{emqx_mod_slow_subs, SlowSubs()}],
     [{emqx_mod_acl_internal, [{acl_file, cuttlefish:conf_get("acl_file", Conf1)}]}]
   ])
 end}.
@@ -2261,7 +2615,7 @@ end}.
   {datatype, {enum, [local,leader,quorum,all]}}
 ]}.
 
-%% @doc Shared Subscription Dispatch Strategy.
+%% @doc Default shared Subscription Dispatch Strategy.
 {mapping, "broker.shared_subscription_strategy", "emqx.shared_subscription_strategy", [
   {default, round_robin},
   {datatype,
@@ -2270,10 +2624,36 @@ end}.
      round_robin, %% round robin alive subscribers one message after another
      sticky, %% pick a random subscriber and stick to it
      hash, %% hash client ID to a group member
+     local, %% send to some locally available subscriber
      hash_clientid,
      hash_topic
     ]}}
 ]}.
+
+%% @doc Per group Shared Subscription Dispatch Strategy
+{mapping, "broker.$name.shared_subscription_strategy", "emqx.shared_subscription_strategy_per_group", [
+  {default, round_robin},
+  {datatype,
+   {enum,
+    [random, %% randomly pick a subscriber
+     round_robin, %% round robin alive subscribers one message after another
+     sticky, %% pick a random subscriber and stick to it
+     hash, %% hash client ID to a group member
+     local, %% send to some locally available subscriber
+     hash_clientid,
+     hash_topic
+    ]}}
+]}.
+
+{translation, "emqx.shared_subscription_strategy_per_group", fun(Conf) ->
+  Conf0 = cuttlefish_variable:filter_by_prefix("broker", Conf),
+  Groups = lists:filtermap(fun({["broker", Group, "shared_subscription_strategy"], Strategy}) ->
+                       {true, {list_to_binary(Group), Strategy}};
+                     (_) ->
+                       false
+                  end, Conf0),
+  maps:from_list(Groups)
+end}.
 
 %% @doc Enable or disable shared dispatch acknowledgement for QoS1 and QoS2 messages
 {mapping, "broker.shared_dispatch_ack_enabled", "emqx.shared_dispatch_ack_enabled",
@@ -2312,6 +2692,20 @@ end}.
   {default, true},
   {datatype, {enum, [true, false]}}
 ]}.
+
+%% @doc Configuration of disconnected event reason.
+%% `discarded`: session was discarded by another client with same client ID when new connection use `clean_session = true`.
+{mapping, "broker.client_disconnect_discarded", "emqx.client_disconnect_discarded", [
+  {default, off},
+  {datatype, flag}
+]}.
+
+%% `takeovered`: session was takeovered by another client with same client ID when new connection use `clean_session = false`.
+{mapping, "broker.client_disconnect_takeovered", "emqx.client_disconnect_takeovered", [
+  {default, off},
+  {datatype, flag}
+]}.
+
 
 %%--------------------------------------------------------------------
 %% System Monitor
@@ -2356,6 +2750,10 @@ end}.
 %%--------------------------------------------------------------------
 %% Operating System Monitor
 %%--------------------------------------------------------------------
+{mapping, "os_mon.memsup_improved_system_memory_data", "os_mon.memsup_improved_system_memory_data", [
+  {default, true},
+  {datatype, {enum, [true, false]}}
+]}.
 
 {mapping, "os_mon.cpu_check_interval", "emqx.os_mon", [
   {default, 60},
@@ -2388,12 +2786,20 @@ end}.
 ]}.
 
 {translation, "emqx.os_mon", fun(Conf) ->
-    [{cpu_check_interval, cuttlefish:conf_get("os_mon.cpu_check_interval", Conf)},
-     {cpu_high_watermark, cuttlefish:conf_get("os_mon.cpu_high_watermark", Conf) * 100},
-     {cpu_low_watermark, cuttlefish:conf_get("os_mon.cpu_low_watermark", Conf) * 100},
-     {mem_check_interval, cuttlefish:conf_get("os_mon.mem_check_interval", Conf)},
-     {sysmem_high_watermark, cuttlefish:conf_get("os_mon.sysmem_high_watermark", Conf) * 100},
-     {procmem_high_watermark, cuttlefish:conf_get("os_mon.procmem_high_watermark", Conf) * 100}]
+   CpuHw = cuttlefish:conf_get("os_mon.cpu_high_watermark", Conf) * 100,
+   CpuLw = cuttlefish:conf_get("os_mon.cpu_low_watermark", Conf) * 100,
+   case CpuHw > CpuLw of
+     true ->
+      [{cpu_check_interval, cuttlefish:conf_get("os_mon.cpu_check_interval", Conf)},
+       {cpu_high_watermark, CpuHw},
+       {cpu_low_watermark, CpuLw},
+       {mem_check_interval, cuttlefish:conf_get("os_mon.mem_check_interval", Conf)},
+       {sysmem_high_watermark, cuttlefish:conf_get("os_mon.sysmem_high_watermark", Conf) * 100},
+       {procmem_high_watermark, cuttlefish:conf_get("os_mon.procmem_high_watermark", Conf) * 100}];
+      false ->
+         Msg = io_lib:format("high(~w)_must_greater_than_low(~w)", [CpuHw, CpuLw]),
+         error(lists:flatten(Msg))
+      end
 end}.
 
 %%--------------------------------------------------------------------
@@ -2415,9 +2821,17 @@ end}.
 ]}.
 
 {translation, "emqx.vm_mon", fun(Conf) ->
-    [{check_interval, cuttlefish:conf_get("vm_mon.check_interval", Conf)},
-     {process_high_watermark, cuttlefish:conf_get("vm_mon.process_high_watermark", Conf) * 100},
-     {process_low_watermark, cuttlefish:conf_get("vm_mon.process_low_watermark", Conf) * 100}]
+   Hw = cuttlefish:conf_get("vm_mon.process_high_watermark", Conf) * 100,
+   Lw = cuttlefish:conf_get("vm_mon.process_low_watermark", Conf) * 100,
+   case Hw > Lw of
+     true ->
+       [{check_interval, cuttlefish:conf_get("vm_mon.check_interval", Conf)},
+        {process_high_watermark, Hw},
+        {process_low_watermark, Lw}];
+     false ->
+        Msg = io_lib:format("high(~w)_must_greater_than_low(~w)", [Hw, Lw]),
+        error(lists:flatten(Msg))
+      end
 end}.
 
 %%--------------------------------------------------------------------

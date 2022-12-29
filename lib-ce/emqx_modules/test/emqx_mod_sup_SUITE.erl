@@ -1,5 +1,5 @@
 %%--------------------------------------------------------------------
-%% Copyright (c) 2020-2021 EMQ Technologies Co., Ltd. All Rights Reserved.
+%% Copyright (c) 2020-2022 EMQ Technologies Co., Ltd. All Rights Reserved.
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -23,6 +23,18 @@
 
 all() -> emqx_ct:all(?MODULE).
 
+init_per_suite(Config) ->
+    %% do not start the application
+    %% only testing the root supervisor in this suite
+    application:stop(emqx_modules),
+    {ok, Pid} = emqx_mod_sup:start_link(),
+    unlink(Pid),
+    Config.
+
+end_per_suite(_Config) ->
+    exit(whereis(emqx_mod_sup), kill),
+    ok.
+
 %%--------------------------------------------------------------------
 %% Test cases
 %%--------------------------------------------------------------------
@@ -41,9 +53,8 @@ t_start_child(_) ->
              modules => [Mod]},
 
     ok  = emqx_mod_sup:start_child(Mod, worker),
-    ?assertError({already_started, _}, emqx_mod_sup:start_child(Spec)),
+    ?assertEqual(ok, emqx_mod_sup:start_child(Spec)),
 
     ok = emqx_mod_sup:stop_child(Mod),
     {error, not_found} = emqx_mod_sup:stop_child(Mod),
     ok.
-

@@ -39,8 +39,6 @@ etc/emqx.conf.rendered
 Mnesia.*/
 *.DS_Store
 _checkouts
-./rebar.config
-./rebar.config.erl
 rebar.config.rendered
 /rebar3
 rebar.lock
@@ -90,6 +88,9 @@ erlang_ls.config
 *~
 # Emacs temporary files
 .#*
+*#
 # For direnv
 .envrc
+mix.lock
+.gitconfig.tmp
 *.log

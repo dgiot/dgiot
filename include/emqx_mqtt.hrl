@@ -1,5 +1,5 @@
 %%--------------------------------------------------------------------
-%% Copyright (c) 2017-2021 EMQ Technologies Co., Ltd. All Rights Reserved.
+%% Copyright (c) 2017-2022 EMQ Technologies Co., Ltd. All Rights Reserved.
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -541,5 +541,23 @@
 -define(SHARE, "$share").
 -define(SHARE(Group, Topic), emqx_topic:join([<<?SHARE>>, Group, Topic])).
 -define(IS_SHARE(Topic), case Topic of <<?SHARE, _/binary>> -> true; _ -> false end).
+
+-define(TYPE_NAMES, {
+          'CONNECT'
+        , 'CONNACK'
+        , 'PUBLISH'
+        , 'PUBACK'
+        , 'PUBREC'
+        , 'PUBREL'
+        , 'PUBCOMP'
+        , 'SUBSCRIBE'
+        , 'SUBACK'
+        , 'UNSUBSCRIBE'
+        , 'UNSUBACK'
+        , 'PINGREQ'
+        , 'PINGRESP'
+        , 'DISCONNECT'
+        , 'AUTH'
+    }).
 
 -endif.

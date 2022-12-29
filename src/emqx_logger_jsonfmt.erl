@@ -1,5 +1,5 @@
 %%--------------------------------------------------------------------
-%% Copyright (c) 2021 EMQ Technologies Co., Ltd. All Rights Reserved.
+%% Copyright (c) 2021-2022 EMQ Technologies Co., Ltd. All Rights Reserved.
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -37,8 +37,6 @@
 
 -export_type([config/0]).
 
--elvis([{elvis_style, no_nested_try_catch, #{ ignore => [emqx_logger_jsonfmt]}}]).
-
 -type config() :: #{depth       => pos_integer() | unlimited,
                     report_cb   => logger:report_cb(),
                     single_line => boolean()}.
@@ -63,9 +61,7 @@ format(Msg, Meta, Config) ->
                      }
         end,
     Data = maps:without([report_cb], Data0),
-    Payload = jiffy:encode(json_obj(Data, Config)),
-    emqx_hooks:run('logger.send',[Meta, Payload]),
-    Payload.
+    jiffy:encode(json_obj(Data, Config)).
 
 format_msg({string, Chardata}, Meta, Config) ->
     format_msg({"~ts", [Chardata]}, Meta, Config);
@@ -197,9 +193,9 @@ json_obj(Data, Config) ->
               end, maps:new(), Data).
 
 json_kv(mfa, {M, F, A}, Data, _Config) -> %% emqx/snabbkaffe
-    maps:put(mfa, <<(atom_to_binary(M, utf8))/binary, $/,
-        (atom_to_binary(F, utf8))/binary, $/,
-        (integer_to_binary(A))/binary>>, Data);
+    maps:put(mfa, <<(atom_to_binary(M, utf8))/binary, $:,
+                    (atom_to_binary(F, utf8))/binary, $/,
+                    (integer_to_binary(A))/binary>>, Data);
 json_kv('$kind', Kind, Data, Config) -> %% snabbkaffe
     maps:put(msg, json(Kind, Config), Data);
 json_kv(K0, V, Data, Config) ->
@@ -220,6 +216,7 @@ json_key(Term) ->
         _:_ ->
             throw({badkey, Term})
     end.
+
 
 -ifdef(TEST).
 -include_lib("proper/include/proper.hrl").

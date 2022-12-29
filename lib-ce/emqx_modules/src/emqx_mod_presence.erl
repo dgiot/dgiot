@@ -1,5 +1,5 @@
 %%--------------------------------------------------------------------
-%% Copyright (c) 2020-2021 EMQ Technologies Co., Ltd. All Rights Reserved.
+%% Copyright (c) 2020-2022 EMQ Technologies Co., Ltd. All Rights Reserved.
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -57,8 +57,7 @@ on_client_connected(ClientInfo = #{clientid := ClientId}, ConnInfo, Env) ->
                   connack         => 0, %% XXX: connack will be removed in 5.0
                   keepalive       => maps:get(keepalive, ConnInfo, 0),
                   clean_start     => maps:get(clean_start, ConnInfo, true),
-                  expiry_interval => maps:get(expiry_interval, ConnInfo, 0),
-                  connected_at    => maps:get(connected_at, ConnInfo)
+                  expiry_interval => maps:get(expiry_interval, ConnInfo, 0)
                  },
     case emqx_json:safe_encode(NPresence) of
         {ok, Payload} ->
@@ -95,7 +94,8 @@ common_infos(
                   sockport := SockPort
                  },
   _ConnInfo = #{proto_name := ProtoName,
-                proto_ver := ProtoVer
+                proto_ver := ProtoVer,
+                connected_at := ConnectedAt
                }) ->
     #{clientid => ClientId,
       username => Username,
@@ -103,6 +103,7 @@ common_infos(
       sockport => SockPort,
       proto_name => ProtoName,
       proto_ver => ProtoVer,
+      connected_at => ConnectedAt,
       ts => erlang:system_time(millisecond)
      }.
 

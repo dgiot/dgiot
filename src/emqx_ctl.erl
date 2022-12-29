@@ -1,5 +1,5 @@
 %%--------------------------------------------------------------------
-%% Copyright (c) 2017-2021 EMQ Technologies Co., Ltd. All Rights Reserved.
+%% Copyright (c) 2017-2022 EMQ Technologies Co., Ltd. All Rights Reserved.
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -43,8 +43,7 @@
         ]).
 
 %% Exports mainly for test cases
--export([ format/1
-        , format/2
+-export([ format/2
         , format_usage/1
         , format_usage/2
         ]).
@@ -137,7 +136,7 @@ help() ->
 
 -spec(print(io:format()) -> ok).
 print(Msg) ->
-    io:format("~s", [format(Msg)]).
+    io:format("~s", [format(Msg, [])]).
 
 -spec(print(io:format(), [term()]) -> ok).
 print(Format, Args) ->
@@ -150,10 +149,6 @@ usage(UsageList) ->
 -spec(usage(cmd_params(), cmd_descr()) -> ok).
 usage(CmdParams, Desc) ->
     io:format(format_usage(CmdParams, Desc)).
-
--spec(format(io:format()) -> string()).
-format(Msg) ->
-    lists:flatten(io_lib:format("~s", [Msg])).
 
 -spec(format(io:format(), [term()]) -> string()).
 format(Format, Args) ->
@@ -186,7 +181,6 @@ handle_call({register_command, Cmd, MF, Opts}, _From, State = #state{seq = Seq})
     case ets:match(?CMD_TAB, {{'$1', Cmd}, '_', '_'}) of
         [] -> ets:insert(?CMD_TAB, {{Seq, Cmd}, MF, Opts});
         [[OriginSeq] | _] ->
-            ?LOG(warning, "CMD ~s is overidden by ~p", [Cmd, MF]),
             true = ets:insert(?CMD_TAB, {{OriginSeq, Cmd}, MF, Opts})
     end,
     {reply, ok, next_seq(State)};

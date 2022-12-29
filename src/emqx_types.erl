@@ -1,5 +1,5 @@
 %%--------------------------------------------------------------------
-%% Copyright (c) 2018-2021 EMQ Technologies Co., Ltd. All Rights Reserved.
+%% Copyright (c) 2018-2022 EMQ Technologies Co., Ltd. All Rights Reserved.
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -147,7 +147,7 @@
                         dn           => binary(),
                         atom()       => term()
                        }).
--type(clientid() :: binary()|atom()).
+-type(clientid() :: binary() | atom()).
 -type(username() :: maybe(binary())).
 -type(password() :: maybe(binary())).
 -type(peerhost() :: inet:ip_address()).
@@ -193,6 +193,7 @@
                      username => username(),
                      peerhost => peerhost(),
                      properties => properties(),
+                     allow_publish => boolean(),
                      atom() => term()}).
 
 -type(banned() :: #banned{}).
@@ -201,7 +202,6 @@
 -type(deliver_result() :: ok | {ok, non_neg_integer()} | {error, term()}).
 -type(publish_result() :: [{node(), topic(), deliver_result()} |
                            {share, topic(), deliver_result()}]).
--type(route() :: #route{}).
 -type(sub_group() :: tuple() | binary()).
 -type(route_entry() :: {topic(), node()} | {topic, sub_group()}).
 -type(plugin() :: #plugin{}).
@@ -215,4 +215,3 @@
 -type(oom_policy() :: #{message_queue_len => non_neg_integer(),
                         max_heap_size => non_neg_integer()
                        }).
-

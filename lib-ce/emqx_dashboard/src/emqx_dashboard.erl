@@ -1,5 +1,5 @@
 %%--------------------------------------------------------------------
-%% Copyright (c) 2020-2021 EMQ Technologies Co., Ltd. All Rights Reserved.
+%% Copyright (c) 2020-2022 EMQ Technologies Co., Ltd. All Rights Reserved.
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -41,20 +41,21 @@
 start_listeners() ->
     lists:foreach(fun(Listener) -> start_listener(Listener) end, listeners()).
 
-%% Start HTTP Listener
-start_listener({Proto, Port, Options}) when Proto == http ->
+
+%% Start HTTP(S) Listener
+start_listener({Proto, Port, Options}) ->
     Dispatch = [{"/", cowboy_static, {priv_file, emqx_dashboard, "www/index.html"}},
                 {"/static/[...]", cowboy_static, {priv_dir, emqx_dashboard, "www/static"}},
                 {"/api/v4/[...]", minirest, http_handlers()}],
-    minirest:start_http(listener_name(Proto), ranch_opts(Port, Options), Dispatch);
+    Server = listener_name(Proto),
+    RanchOpts = ranch_opts(Port, Options),
+    case Proto of
+        http -> minirest:start_http(Server, RanchOpts, Dispatch);
+        https -> minirest:start_https(Server, RanchOpts, Dispatch)
+    end.
 
-start_listener({Proto, Port, Options}) when Proto == https ->
-    Dispatch = [{"/", cowboy_static, {priv_file, emqx_dashboard, "www/index.html"}},
-                {"/static/[...]", cowboy_static, {priv_dir, emqx_dashboard, "www/static"}},
-                {"/api/v4/[...]", minirest, http_handlers()}],
-    minirest:start_https(listener_name(Proto), ranch_opts(Port, Options), Dispatch).
-
-ranch_opts(Port, Options0) ->
+ranch_opts(Bind, Options0) ->
+    IpPort = ip_port(Bind),
     NumAcceptors = get_value(num_acceptors, Options0, 4),
     MaxConnections = get_value(max_connections, Options0, 512),
     Options = lists:foldl(fun({K, _V}, Acc) when K =:= max_connections orelse K =:= num_acceptors ->
@@ -68,7 +69,13 @@ ranch_opts(Port, Options0) ->
                           end, [], Options0),
     #{num_acceptors => NumAcceptors,
       max_connections => MaxConnections,
-      socket_opts => [{port, Port} | Options]}.
+      socket_opts => IpPort ++  Options}.
+
+ip_port({IpStr, Port}) ->
+    {ok, Ip} = inet:parse_address(IpStr),
+    [{ip, Ip}, {port, Port}];
+ip_port(Port) when is_integer(Port) ->
+    [{port, Port}].
 
 stop_listeners() ->
     lists:foreach(fun(Listener) -> stop_listener(Listener) end, listeners()).
@@ -80,6 +87,8 @@ listeners() ->
     application:get_env(?APP, listeners, []).
 
 listener_name(Proto) ->
+    %% NOTE: this name has referenced by emqx_dashboard.appup.src.
+    %% Please don't change it except you have got how to handle it in hot-upgrade
     list_to_atom(atom_to_list(Proto) ++ ":dashboard").
 
 %%--------------------------------------------------------------------
@@ -89,7 +98,7 @@ listener_name(Proto) ->
 http_handlers() ->
     Plugins = lists:map(fun(Plugin) -> Plugin#plugin.name end, emqx_plugins:list()),
     [{"/api/v4/",
-      minirest:handler(#{apps => Plugins ++  [emqx_modules],
+      minirest:handler(#{apps => Plugins ++ [emqx_modules, emqx_plugin_libs],
                          filter => fun ?MODULE:filter/1}),
       [{authorization, fun ?MODULE:is_authorized/1}]}].
 
@@ -98,24 +107,30 @@ http_handlers() ->
 %%--------------------------------------------------------------------
 
 is_authorized(Req) ->
-    is_authorized(binary_to_list(cowboy_req:path(Req)), Req).
+    is_authorized(
+      iolist_to_binary(string:uppercase(cowboy_req:method(Req))),
+      iolist_to_binary(cowboy_req:path(Req)),
+      Req).
 
-is_authorized("/api/v4/auth", _Req) ->
+is_authorized(<<"GET">>, <<"/api/v4/emqx_prometheus">>, _Req) ->
     true;
-is_authorized(_Path, Req) ->
-    case cowboy_req:parse_header(<<"authorization">>, Req) of
-        {basic, Username, Password} ->
-            case emqx_dashboard_admin:check(iolist_to_binary(Username),
-                                            iolist_to_binary(Password)) of
-                ok -> true;
-                {error, Reason} ->
-                    ?LOG(error, "[Dashboard] Authorization Failure: username=~s, reason=~p",
-                                [Username, Reason]),
-                    false
-            end;
-         _  -> false
+is_authorized(<<"POST">>, <<"/api/v4/auth">>, _Req) ->
+    true;
+is_authorized(_Method, _Path, Req) ->
+    try
+        {basic, Username, Password} = cowboy_req:parse_header(<<"authorization">>, Req),
+        case emqx_dashboard_admin:check(iolist_to_binary(Username), iolist_to_binary(Password)) of
+            ok -> true;
+            {error, Reason} ->
+                ?LOG(error, "[Dashboard] Authorization Failure: username=~s, reason=~p",
+                    [Username, Reason]),
+                false
+        end
+    catch _:_ -> %% bad authorization header will crash.
+        false
     end.
 
+filter(#{app := emqx_plugin_libs}) -> true;
 filter(#{app := emqx_modules}) -> true;
 filter(#{app := App}) ->
     case emqx_plugins:find_plugin(App) of

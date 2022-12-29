@@ -1,5 +1,5 @@
 %%--------------------------------------------------------------------
-%% Copyright (c) 2020-2021 EMQ Technologies Co., Ltd. All Rights Reserved.
+%% Copyright (c) 2020-2022 EMQ Technologies Co., Ltd. All Rights Reserved.
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -38,10 +38,12 @@ t_load_unload(_) ->
     ?assertEqual({error,already_exists}, emqx_mod_acl_internal:load([])).
 
 t_check_acl(_) ->
+    emqx_mod_acl_internal:load([]),
     Rules=#{publish => [{allow,all}], subscribe => [{deny, all}]},
     ?assertEqual({ok, allow}, emqx_mod_acl_internal:check_acl(clientinfo(), publish,  <<"t">>, [], Rules)),
     ?assertEqual({ok, deny}, emqx_mod_acl_internal:check_acl(clientinfo(), subscribe,  <<"t">>, [], Rules)),
-    ?assertEqual(ok, emqx_mod_acl_internal:check_acl(clientinfo(), connect,  <<"t">>, [], Rules)).
+    ?assertEqual(ok, emqx_mod_acl_internal:check_acl(clientinfo(), connect,  <<"t">>, [], Rules)),
+    emqx_mod_acl_internal:unload([]).
 
 t_reload_acl(_) ->
     ?assertEqual(ok, emqx_mod_acl_internal:reload([])).

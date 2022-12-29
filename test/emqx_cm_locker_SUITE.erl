@@ -1,5 +1,5 @@
 %%--------------------------------------------------------------------
-%% Copyright (c) 2019-2021 EMQ Technologies Co., Ltd. All Rights Reserved.
+%% Copyright (c) 2019-2022 EMQ Technologies Co., Ltd. All Rights Reserved.
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ t_trans(_) ->
     ok = emqx_cm_locker:trans(<<"clientid">>, fun(_) -> ok end).
 
 t_lock_unlocak(_) ->
-    {true, _Nodes} = emqx_cm_locker:lock(<<"clientid">>),
-    {true, _Nodes} = emqx_cm_locker:lock(<<"clientid">>),
-    {true, _Nodes} = emqx_cm_locker:unlock(<<"clientid">>),
-    {true, _Nodes} = emqx_cm_locker:unlock(<<"clientid">>).
+    {true, _} = emqx_cm_locker:lock(<<"clientid">>),
+    {true, _} = emqx_cm_locker:lock(<<"clientid">>),
+    {true, _} = emqx_cm_locker:unlock(<<"clientid">>),
+    {true, _} = emqx_cm_locker:unlock(<<"clientid">>).

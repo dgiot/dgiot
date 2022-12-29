@@ -1,5 +1,5 @@
 %%--------------------------------------------------------------------
-%% Copyright (c) 2020-2021 EMQ Technologies Co., Ltd. All Rights Reserved.
+%% Copyright (c) 2020-2022 EMQ Technologies Co., Ltd. All Rights Reserved.
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -43,6 +43,7 @@ load() ->
     case emqx:get_env(modules_loaded_file) of
         undefined -> ok;
         File ->
+            ensure_loaded_modules_file(File),
             load_modules(File)
     end.
 
@@ -56,6 +57,32 @@ load(ModuleName) ->
             {error, already_started};
         [{ModuleName, false}] ->
             emqx_modules:load_module(ModuleName, true)
+    end.
+
+%% @doc Creates a `loaded_modules' file with default values if one
+%% doesn't exist.
+-spec ensure_loaded_modules_file(file:filename()) -> ok.
+ensure_loaded_modules_file(FilePath) ->
+    case filelib:is_regular(FilePath) of
+        true ->
+            ok;
+        false ->
+            ?LOG(warning, "~s is not found, use the default modules instead", [FilePath]),
+            do_ensure_loaded_modules_file(FilePath)
+    end.
+
+do_ensure_loaded_modules_file(Filepath) ->
+    DefaultModules = [emqx_mod_acl_internal, emqx_mod_presence],
+    Res = file:write_file(Filepath,
+                          [io_lib:format("{~p, true}.~n", [Mod])
+                           || Mod <- DefaultModules]),
+    case Res of
+        ok ->
+            ok;
+        {error, Reason} ->
+            ?LOG(error, "Could not write default loaded_modules file ~p ; Error: ~p",
+                 [Filepath, Reason]),
+            ok
     end.
 
 %% @doc Unload all the extended modules.
@@ -175,8 +202,10 @@ write_loaded(false) -> ok.
 
 %%--------------------------------------------------------------------
 %% @doc Modules Command
+%%--------------------------------------------------------------------
+
 cli(["list"]) ->
-    lists:foreach(fun({Name, Active}) -> 
+    lists:foreach(fun({Name, Active}) ->
                     emqx_ctl:print("Module(~s, description=~s, active=~s)~n",
                         [Name, Name:description(), Active])
                   end, emqx_modules:list());

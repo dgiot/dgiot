@@ -1,5 +1,5 @@
 %%--------------------------------------------------------------------
-%% Copyright (c) 2017-2021 EMQ Technologies Co., Ltd. All Rights Reserved.
+%% Copyright (c) 2017-2022 EMQ Technologies Co., Ltd. All Rights Reserved.
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -227,15 +227,30 @@ shutdown() ->
     shutdown(normal).
 
 shutdown(Reason) ->
+    ok = emqx_misc:maybe_mute_rpc_log(),
     ?LOG(critical, "emqx shutdown for ~s", [Reason]),
-    _ = emqx_alarm_handler:unload(),
+    on_shutdown(Reason),
     _ = emqx_plugins:unload(),
     lists:foreach(fun application:stop/1
                  , lists:reverse(default_started_applications())
                  ).
 
 reboot() ->
-    lists:foreach(fun application:start/1 , default_started_applications()).
+    case is_application_running(emqx_dashboard) of
+        true ->
+            _ = application:stop(emqx_dashboard), %% dashboard must be started after mnesia
+            lists:foreach(fun application:start/1 , default_started_applications()),
+            _ = application:start(emqx_dashboard),
+            on_reboot();
+
+        false ->
+            lists:foreach(fun application:start/1 , default_started_applications()),
+            on_reboot()
+    end.
+
+is_application_running(App) ->
+    StartedApps = proplists:get_value(started, application:info()),
+    proplists:is_defined(App, StartedApps).
 
 -ifdef(EMQX_ENTERPRISE).
 default_started_applications() ->
@@ -243,6 +258,33 @@ default_started_applications() ->
 -else.
 default_started_applications() ->
     [gproc, esockd, ranch, cowboy, ekka, emqx, emqx_modules].
+-endif.
+
+-ifdef(EMQX_ENTERPRISE).
+on_reboot() ->
+    try
+        _ = emqx_license_api:bootstrap_license(),
+        _ = emqx_license:load_dynamic_license(),
+        ok
+    catch
+        Kind:Reason:Stack ->
+            ?LOG(critical, "~p while rebooting: ~p, ~p", [Kind, Reason, Stack]),
+            ok
+    end,
+    ok.
+
+on_shutdown(join) ->
+    emqx_modules:sync_load_modules_file(),
+    ok;
+on_shutdown(_) ->
+    ok.
+
+-else.
+on_reboot() ->
+    ok.
+
+on_shutdown(_) ->
+    ok.
 -endif.
 
 %%--------------------------------------------------------------------
@@ -254,4 +296,3 @@ reload_config(ConfFile) ->
     lists:foreach(fun({App, Vals}) ->
                       [application:set_env(App, Par, Val) || {Par, Val} <- Vals]
                   end, Conf).
-

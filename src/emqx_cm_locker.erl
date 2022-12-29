@@ -1,5 +1,5 @@
 %%--------------------------------------------------------------------
-%% Copyright (c) 2019-2021 EMQ Technologies Co., Ltd. All Rights Reserved.
+%% Copyright (c) 2019-2022 EMQ Technologies Co., Ltd. All Rights Reserved.
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -27,6 +27,11 @@
         , lock/2
         , unlock/1
         ]).
+
+%% for testing
+-ifdef(TEST).
+-export([strategy/0]).
+-endif.
 
 -spec(start_link() -> startlink_ret()).
 start_link() ->
@@ -63,4 +68,3 @@ unlock(ClientId) ->
 -spec(strategy() -> local | leader | quorum | all).
 strategy() ->
     emqx:get_env(session_locking_strategy, quorum).
-
