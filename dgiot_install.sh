@@ -1126,12 +1126,12 @@ function build_nginx() {
       unzip -o ${script_dir}/${domain_name}.zip -d /etc/ssl/certs/ &> /dev/null
     fi
     #dashboard
-    if [ ! -f ${script_dir}/dgiot_http.tar.gz ]; then
-      wget ${fileserver}/dgiot_http.tar.gz -O ${script_dir}/dgiot_http.tar.gz &> /dev/null
+    if [ ! -f ${script_dir}/dgiot_html.tar.gz ]; then
+      wget ${fileserver}/dgiot_html.tar.gz -O ${script_dir}/dgiot_html.tar.gz &> /dev/null
     fi
     cd ${script_dir}/
-    if [ -d ${script_dir}/dgiot_http/ ]; then
-      rm ${script_dir}/dgiot_http/ -rf
+    if [ -d ${script_dir}/dgiot_html/ ]; then
+      rm ${script_dir}/dgiot_html/ -rf
     fi
     rm -rf /data/dgiot/nginx/html &> /dev/null
     tar -zxvf dgiot_html.tar.gz -C /data/dgiot/nginx/ &> /dev/null
@@ -1400,7 +1400,7 @@ function centos() {
       install_go_fastdfs      # 文件数据
       #install_word_report    # 报告服务
       deploy_parse_server     # Api网关
-      install_erlang_otp
+      #install_erlang_otp
       install_dgiot
       build_nginx
       #install_node_exporter
