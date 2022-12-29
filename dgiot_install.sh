@@ -807,22 +807,22 @@ function yum_install_erlang_otp {
 function install_erlang_otp() {
   yum_install_erlang_otp
   echo -e "`date +%F_%T` $LINENO: ${GREEN} install_erlang_otp${NC}"
-  if [ ! -f ${script_dir}/otp_src_23.0.tar.gz ]; then
-    wget ${fileserver}/otp_src_23.0.tar.gz -O ${script_dir}/otp_src_23.0.tar.gz &> /dev/null
+  if [ ! -f ${script_dir}/otp_src_24.3.tar.gz ]; then
+    wget ${fileserver}/otp_src_24.3.tar.gz -O ${script_dir}/otp_src_24.3.tar.gz &> /dev/null
   fi
-  if [ -d ${install_dir}/otp_src_23.0/ ]; then
-    rm ${script_dir}/otp_src_23.0 -rf
+  if [ -d ${install_dir}/otp_src_24.3/ ]; then
+    rm ${script_dir}/otp_src_24.3 -rf
   fi
   cd ${script_dir}/
-  tar xf otp_src_23.0.tar.gz &> /dev/null
+  tar xf otp_src_24.3.tar.gz &> /dev/null
 
-  cd ${script_dir}/otp_src_23.0/
+  cd ${script_dir}/otp_src_24.3/
   echo -e "`date +%F_%T` $LINENO: ${GREEN} otp configure${NC}"
   ./configure &> /dev/null
   echo -e "`date +%F_%T` $LINENO: ${GREEN} otp make install${NC}"
   make install &> /dev/null
   cd ${script_dir}/
-  rm ${script_dir}/otp_src_23.0 -rf
+  rm ${script_dir}/otp_src_24.3 -rf
   echo -e "`date +%F_%T` $LINENO: ${GREEN} install erlang otp success${NC}"
 }
 
@@ -849,6 +849,7 @@ function update_dgiot() {
   tar xf ${software}.tar.gz
   rm   ${script_dir}/dgiot/etc/plugins/dgiot_parse.conf -rf
   cp   ${install_dir}/dgiot/etc/plugins/dgiot_parse.conf ${install_dir}/go_fastdfs/files/package/dgiot/etc/plugins/dgiot_parse.conf
+  cp   ${install_dir}/dgiot/etc/plugins/dgiot_http.conf ${install_dir}/go_fastdfs/files/package/dgiot/etc/plugins/dgiot_http.conf
   cp   ${install_dir}/dgiot/etc/emqx.conf ${install_dir}/go_fastdfs/files/package/dgiot/etc/emqx.conf
   if [ -d ${install_dir}/dgiot/ ]; then
     clean_service dgiot
@@ -856,7 +857,7 @@ function update_dgiot() {
   fi
   mv ${install_dir}/go_fastdfs/files/package/dgiot/  ${install_dir}/
 
-  install_service "dgiot" "forking" "/bin/sh ${install_dir}/dgiot/bin/emqx start"  "root" "HOME=${install_dir}/dgiot/erts-11.0" "/bin/sh /data/dgiot/bin/emqx stop"
+  install_service "dgiot" "forking" "/bin/sh ${install_dir}/dgiot/bin/emqx start"  "root" "HOME=${install_dir}/dgiot/erts-12.3" "/bin/sh /data/dgiot/bin/emqx stop"
 }
 
 function update_tdengine_server() {
@@ -887,6 +888,29 @@ function update_dashboard() {
     mv dgiot_dashboard/ ${backup_dir}/
   fi
   tar xf dgiot_dashboard.tar.gz &> /dev/null
+}
+
+function update_html() {
+  #  dgiot_dashboard
+  cd ${install_dir}/nginx
+  if [ -f dgiot_html.tar.gz ]; then
+    htmlmd5=`md5sum dgiot_html.tar.gz |cut -d ' ' -f1`
+    if [ "${htmlmd5}" != "657a7a8ab39c0880c1d4538c68e130a6" ]; then
+      rm -rf dgiot_html.tar.gz &> /dev/null
+    fi
+  fi
+  if [ ! -f dgiot_html.tar.gz ]; then
+    wget ${fileserver}/dgiot_html.tar.gz &> /dev/null
+    htmlmd52=`md5sum dgiot_html.tar.gz |cut -d ' ' -f1`
+    if [ "${htmlmd52}" != "657a7a8ab39c0880c1d4538c68e130a6" ]; then
+      echo -e "`date +%F_%T` $LINENO: ${RED} download dgiot_html.tar.gz failed${NC}"
+      exit 1
+    fi
+  fi
+  if [ -d html/ ]; then
+    mv html/ ${backup_dir}/
+  fi
+  tar xf dgiot_html.tar.gz &> /dev/null
 }
 
 function install_dgiot() {
@@ -923,7 +947,7 @@ function install_dgiot() {
   fi
   mv  ${install_dir}/go_fastdfs/files/package/dgiot  ${install_dir}/
 
-  install_service "dgiot" "forking" "/bin/sh ${install_dir}/dgiot/bin/emqx start"  "root" "HOME=${install_dir}/dgiot/erts-11.0" "/bin/sh /data/dgiot/bin/emqx stop"
+  install_service "dgiot" "forking" "/bin/sh ${install_dir}/dgiot/bin/emqx start"  "root" "HOME=${install_dir}/dgiot/erts-12.3" "/bin/sh /data/dgiot/bin/emqx stop"
 }
 
 #6 运维监控
@@ -1101,6 +1125,17 @@ function build_nginx() {
       echo -e "`date +%F_%T` $LINENO: ${GREEN} ${script_dir}/${domain_name}.zip ${NC}"
       unzip -o ${script_dir}/${domain_name}.zip -d /etc/ssl/certs/ &> /dev/null
     fi
+    #dashboard
+    if [ ! -f ${script_dir}/dgiot_http.tar.gz ]; then
+      wget ${fileserver}/dgiot_http.tar.gz -O ${script_dir}/dgiot_http.tar.gz &> /dev/null
+    fi
+    cd ${script_dir}/
+    if [ -d ${script_dir}/dgiot_http/ ]; then
+      rm ${script_dir}/dgiot_http/ -rf
+    fi
+    rm -rf /data/dgiot/nginx/html &> /dev/null
+    tar -zxvf dgiot_html.tar.gz -C /data/dgiot/nginx/ &> /dev/null
+
     install_service2 "nginx" "forking" "/data/dgiot/nginx/sbin/nginx"
 }
 
@@ -1353,6 +1388,7 @@ function centos() {
     if [ -x ${install_dir}/dgiot ]; then
       update_dgiot
       update_dashboard
+      update_html
       #update_tdengine_server
       #restore_parse_data       # 加载默认档案数据
     else
@@ -1502,9 +1538,9 @@ dgiot_shell
 # set parameters by default value
 deployType=single                             # [single | cluster | devops | ci]
 domain_name="prod.dgiotcloud.cn"              # [prod.dgiotcloud.cn | your_domain_name]
-software="dgiot_n267"                          # [dgiot_n262| dgiot_n]
+software="dgiot_n274"                          # [dgiot_n262| dgiot_n]
 plugin="dgiot"                                # [dgiot | dgiot_your_plugin]
-dgiotmd5="b6fd5fa79a0765837bbb825102f590bf"   # [dgiotmd5]
+dgiotmd5="deba2a7ae47cf71ecbe838440dd9a3f3"   # [dgiotmd5]
 pg_eip="changeyourip"                            # [datanode_eip]
 pg_auth='changeyourpassword'                  # [pg_auth]
 islanip="false"                                    # [islanip]
