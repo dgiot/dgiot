@@ -1,5 +1,5 @@
 %%--------------------------------------------------------------------
-%% Copyright (c) 2018-2021 EMQ Technologies Co., Ltd. All Rights Reserved.
+%% Copyright (c) 2018-2022 EMQ Technologies Co., Ltd. All Rights Reserved.
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -33,7 +33,9 @@ init([]) ->
            child_spec(emqx_stats, worker),
            child_spec(emqx_metrics, worker),
            child_spec(emqx_ctl, worker),
-           child_spec(emqx_zone, worker)]}}.
+           child_spec(emqx_zone, worker),
+           child_spec(emqx_ocsp_cache, worker),
+           child_spec(emqx_crl_cache, worker)]}}.
 
 child_spec(M, Type) ->
     child_spec(M, Type, []).

@@ -1,5 +1,5 @@
 %%--------------------------------------------------------------------
-%% Copyright (c) 2017-2021 EMQ Technologies Co., Ltd. All Rights Reserved.
+%% Copyright (c) 2017-2022 EMQ Technologies Co., Ltd. All Rights Reserved.
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -21,8 +21,11 @@
 -include("types.hrl").
 -include("logger.hrl").
 
+-elvis([{elvis_style, god_modules, disable}]).
+
 -export([ merge_opts/2
         , maybe_apply/2
+        , maybe_mute_rpc_log/0
         , compose/1
         , compose/2
         , run_fold/3
@@ -45,12 +48,43 @@
         , index_of/2
         , maybe_parse_ip/1
         , ipv6_probe/1
+        , ipv6_probe/2
+        , pmap/2
+        , pmap/3
         ]).
 
--export([ bin2hexstr_A_F/1
-        , bin2hexstr_a_f/1
+-export([ bin2hexstr_a_f_upper/1
+        , bin2hexstr_a_f_lower/1
         , hexstr2bin/1
         ]).
+
+-export([ is_sane_id/1
+        ]).
+
+-export([
+    nolink_apply/1,
+    nolink_apply/2
+]).
+
+-export([redact/1]).
+
+-define(VALID_STR_RE, "^[A-Za-z0-9]+[A-Za-z0-9-_]*$").
+-define(DEFAULT_PMAP_TIMEOUT, 5000).
+
+-spec is_sane_id(list() | binary()) -> ok | {error, Reason::binary()}.
+is_sane_id(Str) ->
+    StrLen = len(Str),
+    case StrLen > 0 andalso StrLen =< 256 of
+        true ->
+            case re:run(Str, ?VALID_STR_RE) of
+                nomatch -> {error, <<"required: " ?VALID_STR_RE>>};
+                _ -> ok
+            end;
+        false -> {error, <<"0 < Length =< 256">>}
+    end.
+
+len(Bin) when is_binary(Bin) -> byte_size(Bin);
+len(Str) when is_list(Str) -> length(Str).
 
 -define(OOM_FACTOR, 1.25).
 
@@ -64,19 +98,15 @@ maybe_parse_ip(Host) ->
 
 %% @doc Add `ipv6_probe' socket option if it's supported.
 ipv6_probe(Opts) ->
-    case persistent_term:get({?MODULE, ipv6_probe_supported}, unknown) of
-        unknown ->
-            %% e.g. 23.2.7.1-emqx-2-x86_64-unknown-linux-gnu-64
-            OtpVsn = emqx_vm:get_otp_version(),
-            Bool = (match =:= re:run(OtpVsn, "emqx", [{capture, none}])),
-            _ = persistent_term:put({?MODULE, ipv6_probe_supported}, Bool),
-            ipv6_probe(Bool, Opts);
-        Bool ->
-            ipv6_probe(Bool, Opts)
-    end.
+    ipv6_probe(Opts, true).
 
-ipv6_probe(false, Opts) -> Opts;
-ipv6_probe(true, Opts) -> [{ipv6_probe, true} | Opts].
+ipv6_probe(Opts, Ipv6Probe) when is_boolean(Ipv6Probe) orelse is_integer(Ipv6Probe) ->
+    Bool = try gen_tcp:ipv6_probe()
+           catch _ : _ -> false end,
+    ipv6_probe(Bool, Opts, Ipv6Probe).
+
+ipv6_probe(false, Opts, _) -> Opts;
+ipv6_probe(true, Opts, Ipv6Probe) -> [{ipv6_probe, Ipv6Probe} | Opts].
 
 %% @doc Merge options
 -spec(merge_opts(Opts, Opts) -> Opts when Opts :: proplists:proplist()).
@@ -98,9 +128,9 @@ maybe_apply(Fun, Arg) when is_function(Fun) ->
 -spec(compose(list(F)) -> G
   when F :: fun((any()) -> any()),
        G :: fun((any()) -> any())).
-compose([F|More]) -> compose(F, More).
+compose([F | More]) -> compose(F, More).
 
--spec(compose(F, G|[Gs]) -> C
+-spec(compose(F, G | [Gs]) -> C
   when F :: fun((X1) -> X2),
        G :: fun((X2) -> X3),
        Gs :: [fun((Xn) -> Xn1)],
@@ -108,19 +138,19 @@ compose([F|More]) -> compose(F, More).
        X3 :: any(), Xn :: any(), Xn1 :: any(), Xm :: any()).
 compose(F, G) when is_function(G) -> fun(X) -> G(F(X)) end;
 compose(F, [G]) -> compose(F, G);
-compose(F, [G|More]) -> compose(compose(F, G), More).
+compose(F, [G | More]) -> compose(compose(F, G), More).
 
 %% @doc RunFold
 run_fold([], Acc, _State) ->
     Acc;
-run_fold([Fun|More], Acc, State) ->
+run_fold([Fun | More], Acc, State) ->
     run_fold(More, Fun(Acc, State), State).
 
 %% @doc Pipeline
 pipeline([], Input, State) ->
     {ok, Input, State};
 
-pipeline([Fun|More], Input, State) ->
+pipeline([Fun | More], Input, State) ->
     case apply_fun(Fun, Input, State) of
         ok -> pipeline(More, Input, State);
         {ok, NState} ->
@@ -169,7 +199,7 @@ drain_deliver(0, Acc) ->
 drain_deliver(N, Acc) ->
     receive
         Deliver = {deliver, _Topic, _Msg} ->
-            drain_deliver(N-1, [Deliver|Acc])
+            drain_deliver(N-1, [Deliver | Acc])
     after 0 ->
         lists:reverse(Acc)
     end.
@@ -184,7 +214,7 @@ drain_down(0, Acc) ->
 drain_down(Cnt, Acc) ->
     receive
         {'DOWN', _MRef, process, Pid, _Reason} ->
-            drain_down(Cnt-1, [Pid|Acc])
+            drain_down(Cnt-1, [Pid | Acc])
     after 0 ->
         lists:reverse(Acc)
     end.
@@ -210,7 +240,7 @@ check_oom(Pid, #{message_queue_len := MaxQLen,
     end.
 
 do_check_oom([]) -> ok;
-do_check_oom([{Val, Max, Reason}|Rest]) ->
+do_check_oom([{Val, Max, Reason} | Rest]) ->
     case is_integer(Max) andalso (0 < Max) andalso (Max < Val) of
         true  -> {shutdown, Reason};
         false -> do_check_oom(Rest)
@@ -257,8 +287,8 @@ proc_stats(Pid) ->
                             reductions,
                             memory]) of
         undefined -> [];
-        [{message_queue_len, Len}|ProcStats] ->
-            [{mailbox_len, Len}|ProcStats]
+        [{message_queue_len, Len} | ProcStats] ->
+            [{mailbox_len, Len} | ProcStats]
     end.
 
 rand_seed() ->
@@ -278,17 +308,17 @@ index_of(E, L) ->
 
 index_of(_E, _I, []) ->
     error(badarg);
-index_of(E, I, [E|_]) ->
+index_of(E, I, [E | _]) ->
     I;
-index_of(E, I, [_|L]) ->
+index_of(E, I, [_ | L]) ->
     index_of(E, I+1, L).
 
--spec(bin2hexstr_A_F(binary()) -> binary()).
-bin2hexstr_A_F(B) when is_binary(B) ->
+-spec(bin2hexstr_a_f_upper(binary()) -> binary()).
+bin2hexstr_a_f_upper(B) when is_binary(B) ->
     << <<(int2hexchar(H, upper)), (int2hexchar(L, upper))>> || <<H:4, L:4>> <= B>>.
 
--spec(bin2hexstr_a_f(binary()) -> binary()).
-bin2hexstr_a_f(B) when is_binary(B) ->
+-spec(bin2hexstr_a_f_lower(binary()) -> binary()).
+bin2hexstr_a_f_lower(B) when is_binary(B) ->
     << <<(int2hexchar(H, lower)), (int2hexchar(L, lower))>> || <<H:4, L:4>> <= B>>.
 
 int2hexchar(I, _) when I >= 0 andalso I < 10 -> I + $0;
@@ -297,16 +327,289 @@ int2hexchar(I, lower) -> I - 10 + $a.
 
 -spec(hexstr2bin(binary()) -> binary()).
 hexstr2bin(B) when is_binary(B) ->
-    << <<(hexchar2int(H)*16 + hexchar2int(L))>> || <<H:8, L:8>> <= B>>.
+    hexstr2bin(B, erlang:bit_size(B)).
+
+hexstr2bin(B, Size) when is_binary(B) ->
+    case Size rem 16 of
+        0 ->
+            make_binary(B);
+        8 ->
+            make_binary(<<"0", B/binary>>);
+        _ ->
+            throw({unsupport_hex_string, B, Size})
+    end.
+
+make_binary(B) -> <<<<(hexchar2int(H) * 16 + hexchar2int(L))>> || <<H:8, L:8>> <= B>>.
 
 hexchar2int(I) when I >= $0 andalso I =< $9 -> I - $0;
 hexchar2int(I) when I >= $A andalso I =< $F -> I - $A + 10;
 hexchar2int(I) when I >= $a andalso I =< $f -> I - $a + 10.
+
+%% @doc Like lists:map/2, only the callback function is evaluated
+%% concurrently.
+-spec pmap(fun((A) -> B), list(A)) -> list(B).
+pmap(Fun, List) when is_function(Fun, 1), is_list(List) ->
+    pmap(Fun, List, ?DEFAULT_PMAP_TIMEOUT).
+
+-spec pmap(fun((A) -> B), list(A), timeout()) -> list(B).
+pmap(Fun, List, Timeout) when
+    is_function(Fun, 1), is_list(List), is_integer(Timeout), Timeout >= 0
+->
+    nolink_apply(fun() -> do_parallel_map(Fun, List) end, Timeout).
+
+%% @doc Delegate a function to a worker process.
+%% The function may spawn_link other processes but we do not
+%% want the caller process to be linked.
+%% This is done by isolating the possible link with a not-linked
+%% middleman process.
+nolink_apply(Fun) -> nolink_apply(Fun, infinity).
+
+%% @doc Same as `nolink_apply/1', with a timeout.
+-spec nolink_apply(function(), timer:timeout()) -> term().
+nolink_apply(Fun, Timeout) when is_function(Fun, 0) ->
+    Caller = self(),
+    ResRef = make_ref(),
+    Middleman = erlang:spawn(make_middleman_fn(Caller, Fun, ResRef)),
+    receive
+        {ResRef, {normal, Result}} ->
+            Result;
+        {ResRef, {exception, {C, E, S}}} ->
+            erlang:raise(C, E, S);
+        {ResRef, {'EXIT', Reason}} ->
+            exit(Reason)
+    after Timeout ->
+        exit(Middleman, kill),
+        exit(timeout)
+    end.
+
+-spec make_middleman_fn(pid(), fun(() -> any()), reference()) -> fun(() -> no_return()).
+make_middleman_fn(Caller, Fun, ResRef) ->
+    fun() ->
+        process_flag(trap_exit, true),
+        CallerMRef = erlang:monitor(process, Caller),
+        Worker = erlang:spawn_link(make_worker_fn(Caller, Fun, ResRef)),
+        receive
+            {'DOWN', CallerMRef, process, _, _} ->
+                %% For whatever reason, if the caller is dead,
+                %% there is no reason to continue
+                exit(Worker, kill),
+                exit(normal);
+            {'EXIT', Worker, normal} ->
+                exit(normal);
+            {'EXIT', Worker, Reason} ->
+                %% worker exited with some reason other than 'normal'
+                _ = erlang:send(Caller, {ResRef, {'EXIT', Reason}}),
+                exit(normal)
+        end
+    end.
+
+-spec make_worker_fn(pid(), fun(() -> any()), reference()) -> fun(() -> no_return()).
+make_worker_fn(Caller, Fun, ResRef) ->
+    fun() ->
+        Res =
+            try
+                {normal, Fun()}
+            catch
+                C:E:S ->
+                    {exception, {C, E, S}}
+            end,
+        _ = erlang:send(Caller, {ResRef, Res}),
+        exit(normal)
+    end.
+
+do_parallel_map(Fun, List) ->
+    Parent = self(),
+    PidList = lists:map(
+        fun(Item) ->
+            erlang:spawn_link(
+                fun() ->
+                    Res =
+                        try
+                            {normal, Fun(Item)}
+                        catch
+                            C:E:St ->
+                                {exception, {C, E, St}}
+                        end,
+                    Parent ! {self(), Res}
+                end
+            )
+        end,
+        List
+    ),
+    lists:foldr(
+        fun(Pid, Acc) ->
+            receive
+                {Pid, {normal, Result}} ->
+                    [Result | Acc];
+                {Pid, {exception, {C, E, St}}} ->
+                    erlang:raise(C, E, St)
+            end
+        end,
+        [],
+        PidList
+    ).
+
+%% @doc Call this function to avoid logs printed to RPC caller node.
+-spec maybe_mute_rpc_log() -> ok.
+maybe_mute_rpc_log() ->
+    GlNode = node(group_leader()),
+    maybe_mute_rpc_log(GlNode).
+
+maybe_mute_rpc_log(Node) when Node =:= node() ->
+    %% do nothing, this is a local call
+    ok;
+maybe_mute_rpc_log(Node) ->
+    case atom_to_list(Node) of
+        "remsh" ++ _ ->
+            %% this is either an upgrade script or nodetool
+            %% do nothing, the log may go to the 'emqx' command line console
+            ok;
+        _ ->
+            %% otherwise set group leader to local node
+            _ = group_leader(whereis(init), self()),
+            ok
+    end.
+
+is_sensitive_key(token) -> true;
+is_sensitive_key("token") -> true;
+is_sensitive_key(<<"token">>) -> true;
+is_sensitive_key(password) -> true;
+is_sensitive_key("password") -> true;
+is_sensitive_key(<<"password">>) -> true;
+is_sensitive_key(secret) -> true;
+is_sensitive_key("secret") -> true;
+is_sensitive_key(<<"secret">>) -> true;
+is_sensitive_key(passcode) -> true;
+is_sensitive_key("passcode") -> true;
+is_sensitive_key(<<"passcode">>) -> true;
+is_sensitive_key(passphrase) -> true;
+is_sensitive_key("passphrase") -> true;
+is_sensitive_key(<<"passphrase">>) -> true;
+is_sensitive_key(key) -> true;
+is_sensitive_key("key") -> true;
+is_sensitive_key(<<"key">>) -> true;
+is_sensitive_key(aws_secret_access_key) -> true;
+is_sensitive_key("aws_secret_access_key") -> true;
+is_sensitive_key(<<"aws_secret_access_key">>) -> true;
+is_sensitive_key(secret_key) -> true;
+is_sensitive_key("secret_key") -> true;
+is_sensitive_key(<<"secret_key">>) -> true;
+is_sensitive_key(bind_password) -> true;
+is_sensitive_key("bind_password") -> true;
+is_sensitive_key(<<"bind_password">>) -> true;
+is_sensitive_key(_) -> false.
+
+redact(L) when is_list(L) ->
+    lists:map(fun redact/1, L);
+redact(M) when is_map(M) ->
+    maps:map(fun(K, V) ->
+                     redact(K, V)
+             end, M);
+redact({Key, Value}) ->
+    case is_sensitive_key(Key) of
+        true ->
+            {Key, redact_v(Value)};
+        false ->
+            {redact(Key), redact(Value)}
+    end;
+redact(T) when is_tuple(T) ->
+    Elements = erlang:tuple_to_list(T),
+    Redact = redact(Elements),
+    erlang:list_to_tuple(Redact);
+redact(Any) ->
+    Any.
+
+redact(K, V) ->
+    case is_sensitive_key(K) of
+        true ->
+            redact_v(V);
+        false ->
+            redact(V)
+    end.
+
+-define(REDACT_VAL, "******").
+redact_v(V) when is_binary(V) -> <<?REDACT_VAL>>;
+redact_v(_V) -> ?REDACT_VAL.
 
 -ifdef(TEST).
 -include_lib("eunit/include/eunit.hrl").
 
 ipv6_probe_test() ->
     ?assertEqual([{ipv6_probe, true}], ipv6_probe([])).
+
+is_sane_id_test() ->
+    ?assertMatch({error, _}, is_sane_id("")),
+    ?assertMatch({error, _}, is_sane_id("_")),
+    ?assertMatch({error, _}, is_sane_id("_aaa")),
+    ?assertMatch({error, _}, is_sane_id("lkad/oddl")),
+    ?assertMatch({error, _}, is_sane_id("lkad*oddl")),
+    ?assertMatch({error, _}, is_sane_id("script>lkadoddl")),
+    ?assertMatch({error, _}, is_sane_id("<script>lkadoddl")),
+
+    ?assertMatch(ok, is_sane_id(<<"Abckdf_lkdfd_1222">>)),
+    ?assertMatch(ok, is_sane_id("Abckdf_lkdfd_1222")),
+    ?assertMatch(ok, is_sane_id("abckdf_lkdfd_1222")),
+    ?assertMatch(ok, is_sane_id("abckdflkdfd1222")),
+    ?assertMatch(ok, is_sane_id("abckdflkdf")),
+    ?assertMatch(ok, is_sane_id("a1122222")),
+    ?assertMatch(ok, is_sane_id("1223333434")),
+    ?assertMatch(ok, is_sane_id("1lkdfaldk")),
+
+    Ok = lists:flatten(lists:duplicate(256, "a")),
+    Bad = Ok ++ "a",
+    ?assertMatch(ok, is_sane_id(Ok)),
+    ?assertMatch(ok, is_sane_id(list_to_binary(Ok))),
+    ?assertMatch({error, _}, is_sane_id(Bad)),
+    ?assertMatch({error, _}, is_sane_id(list_to_binary(Bad))),
+    ok.
+
+redact_test_() ->
+    Case = fun(Type, KeyT) ->
+        Key =
+            case Type of
+                atom -> KeyT;
+                string -> erlang:atom_to_list(KeyT);
+                binary -> erlang:atom_to_binary(KeyT)
+            end,
+
+        ?assert(is_sensitive_key(Key)),
+
+        %% direct
+        ?assertEqual({Key, ?REDACT_VAL}, redact({Key, foo})),
+        ?assertEqual(#{Key => ?REDACT_VAL}, redact(#{Key => foo})),
+        ?assertEqual({Key, Key, Key}, redact({Key, Key, Key})),
+        ?assertEqual({[{Key, ?REDACT_VAL}], bar}, redact({[{Key, foo}], bar})),
+
+        %% 1 level nested
+        ?assertEqual([{Key, ?REDACT_VAL}], redact([{Key, foo}])),
+        ?assertEqual([#{Key => ?REDACT_VAL}], redact([#{Key => foo}])),
+
+        %% 2 level nested
+        ?assertEqual(#{opts => [{Key, ?REDACT_VAL}]}, redact(#{opts => [{Key, foo}]})),
+        ?assertEqual(#{opts => #{Key => ?REDACT_VAL}}, redact(#{opts => #{Key => foo}})),
+        ?assertEqual({opts, [{Key, ?REDACT_VAL}]}, redact({opts, [{Key, foo}]})),
+
+        %% 3 level nested
+        ?assertEqual([#{opts => [{Key, ?REDACT_VAL}]}], redact([#{opts => [{Key, foo}]}])),
+        ?assertEqual([{opts, [{Key, ?REDACT_VAL}]}], redact([{opts, [{Key, foo}]}])),
+        ?assertEqual([{opts, [#{Key => ?REDACT_VAL}]}], redact([{opts, [#{Key => foo}]}]))
+    end,
+
+    Types = [atom, string, binary],
+    Keys = [
+        token,
+        password,
+        secret,
+        passcode,
+        passphrase,
+        key,
+        aws_secret_access_key,
+        secret_key,
+        bind_password
+    ],
+    [{case_name(Type, Key), fun() -> Case(Type, Key) end} || Key <- Keys, Type <- Types].
+
+case_name(Type, Key) ->
+    lists:concat([Type, "-", Key]).
 
 -endif.

@@ -1,5 +1,5 @@
 %%--------------------------------------------------------------------
-%% Copyright (c) 2019-2021 EMQ Technologies Co., Ltd. All Rights Reserved.
+%% Copyright (c) 2019-2022 EMQ Technologies Co., Ltd. All Rights Reserved.
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -33,11 +33,9 @@ all() -> emqx_ct:all(?MODULE).
 init_per_suite(Config) ->
     %% CM Meck
     ok = meck:new(emqx_cm, [passthrough, no_history, no_link]),
-    %% Access Control Meck
-    ok = meck:new(emqx_access_control, [passthrough, no_history, no_link]),
-    ok = meck:expect(emqx_access_control, authenticate,
-                     fun(_) -> {ok, #{auth_result => success}} end),
-    ok = meck:expect(emqx_access_control, check_acl, fun(_, _, _) -> allow end),
+    ok = meck:expect(emqx_cm, mark_channel_connected, fun(_) -> ok end),
+    ok = meck:expect(emqx_cm, mark_channel_disconnected, fun(_) -> ok end),
+
     %% Broker Meck
     ok = meck:new(emqx_broker, [passthrough, no_history, no_link]),
     %% Hooks Meck
@@ -53,8 +51,7 @@ init_per_suite(Config) ->
     Config.
 
 end_per_suite(_Config) ->
-    meck:unload([emqx_access_control,
-                 emqx_metrics,
+    meck:unload([emqx_metrics,
                  emqx_session,
                  emqx_broker,
                  emqx_hooks,
@@ -63,10 +60,16 @@ end_per_suite(_Config) ->
 
 init_per_testcase(_TestCase, Config) ->
     meck:new(emqx_zone, [passthrough, no_history, no_link]),
+    %% Access Control Meck
+    ok = meck:new(emqx_access_control, [passthrough, no_history, no_link]),
+    ok = meck:expect(emqx_access_control, authenticate,
+                     fun(_) -> {ok, #{auth_result => success}} end),
+    ok = meck:expect(emqx_access_control, check_acl, fun(_, _, _) -> allow end),
     Config.
 
 end_per_testcase(_TestCase, Config) ->
     meck:unload([emqx_zone]),
+    meck:unload([emqx_access_control]),
     Config.
 
 %%--------------------------------------------------------------------
@@ -80,15 +83,16 @@ t_chan_info(_) ->
     ?assertEqual(clientinfo(), ClientInfo).
 
 t_chan_caps(_) ->
-     #{max_clientid_len := 65535,
-       max_qos_allowed := 2,
-       max_topic_alias := 65535,
-       max_topic_levels := 0,
-       retain_available := true,
-       shared_subscription := true,
-       subscription_identifiers := true,
-       wildcard_subscription := true
-      } = emqx_channel:caps(channel()).
+     ?assertMatch(#{
+        max_clientid_len := 65535,
+        max_qos_allowed := 2,
+        max_topic_alias := 65535,
+        max_topic_levels := Level,
+        retain_available := true,
+        shared_subscription := true,
+        subscription_identifiers := true,
+        wildcard_subscription := true
+      } when is_integer(Level), emqx_channel:caps(channel())).
 
 %%--------------------------------------------------------------------
 %% Test cases for channel handle_in
@@ -209,20 +213,21 @@ t_handle_in_qos2_publish_with_error_return(_) ->
     {ok, ?PUBREC_PACKET(2, ?RC_NO_MATCHING_SUBSCRIBERS), Channel1} =
         emqx_channel:handle_in(Publish2, Channel),
     Publish3 = ?PUBLISH_PACKET(?QOS_2, <<"topic">>, 3, <<"payload">>),
-    {ok, ?PUBREC_PACKET(3, ?RC_RECEIVE_MAXIMUM_EXCEEDED), Channel1} =
+    {ok, [{outgoing, ?DISCONNECT_PACKET(?RC_RECEIVE_MAXIMUM_EXCEEDED)},
+          {close, receive_maximum_exceeded}], Channel1} =
         emqx_channel:handle_in(Publish3, Channel1).
 
 t_handle_in_puback_ok(_) ->
     Msg = emqx_message:make(<<"t">>, <<"payload">>),
     ok = meck:expect(emqx_session, puback,
-                     fun(_PacketId, Session) -> {ok, Msg, Session} end),
+                     fun(_, _PacketId, Session) -> {ok, Msg, Session} end),
     Channel = channel(#{conn_state => connected}),
     {ok, _NChannel} = emqx_channel:handle_in(?PUBACK_PACKET(1, ?RC_SUCCESS), Channel).
     % ?assertEqual(#{puback_in => 1}, emqx_channel:info(pub_stats, NChannel)).
 
 t_handle_in_puback_id_in_use(_) ->
     ok = meck:expect(emqx_session, puback,
-                     fun(_, _Session) ->
+                     fun(_, _, _Session) ->
                              {error, ?RC_PACKET_IDENTIFIER_IN_USE}
                      end),
     {ok, _Channel} = emqx_channel:handle_in(?PUBACK_PACKET(1, ?RC_SUCCESS), channel()).
@@ -230,7 +235,7 @@ t_handle_in_puback_id_in_use(_) ->
 
 t_handle_in_puback_id_not_found(_) ->
     ok = meck:expect(emqx_session, puback,
-                     fun(_, _Session) ->
+                     fun(_, _, _Session) ->
                              {error, ?RC_PACKET_IDENTIFIER_NOT_FOUND}
                      end),
     {ok, _Channel} = emqx_channel:handle_in(?PUBACK_PACKET(1, ?RC_SUCCESS), channel()).
@@ -304,13 +309,13 @@ t_handle_in_pubrel_not_found_error(_) ->
         emqx_channel:handle_in(?PUBREL_PACKET(1, ?RC_SUCCESS), channel()).
 
 t_handle_in_pubcomp_ok(_) ->
-    ok = meck:expect(emqx_session, pubcomp, fun(_, Session) -> {ok, Session} end),
+    ok = meck:expect(emqx_session, pubcomp, fun(_, _, Session) -> {ok, Session} end),
     {ok, _Channel} = emqx_channel:handle_in(?PUBCOMP_PACKET(1, ?RC_SUCCESS), channel()).
     % ?assertEqual(#{pubcomp_in => 1}, emqx_channel:info(pub_stats, Channel)).
 
 t_handle_in_pubcomp_not_found_error(_) ->
     ok = meck:expect(emqx_session, pubcomp,
-                     fun(_PacketId, _Session) ->
+                     fun(_, _PacketId, _Session) ->
                              {error, ?RC_PACKET_IDENTIFIER_NOT_FOUND}
                      end),
     Channel = channel(#{conn_state => connected}),
@@ -479,6 +484,45 @@ t_handle_deliver_nl(_) ->
     NMsg = emqx_message:set_flag(nl, Msg),
     {ok, Channel} = emqx_channel:handle_deliver([{deliver, <<"t1">>, NMsg}], Channel).
 
+t_handle_deliver_shared_in_no_connection(_) ->
+    Grp = <<"g">>,
+    Sender = self(),
+    Ref1 = make_ref(),
+    Ref2 = make_ref(),
+    Chann = emqx_channel:set_field(conn_state, disconnected, channel()),
+
+    Msg0 = emqx_shared_sub:with_group_ack(
+             emqx_message:make(test, ?QOS_1, <<"t">>, <<"qos1">>),
+             Grp,
+             fresh,
+             Sender,
+             Ref1
+            ),
+    Msg1 = emqx_shared_sub:with_group_ack(
+             emqx_message:make(test, ?QOS_2, <<"t">>, <<"qos2">>),
+             Grp,
+             retry,
+             Sender,
+             Ref2
+            ),
+    Delivers = [{deliver, <<"+">>, Msg0}, {deliver, <<"+">>, Msg1}],
+
+    %% all shared msgs should be queued if shared_dispatch_ack_enabled=false
+    meck:new(emqx_shared_sub, [passthrough, no_history]),
+    meck:expect(emqx_shared_sub, is_ack_required, fun(_) -> false end),
+    {ok, Chann1} = emqx_channel:handle_deliver(Delivers, Chann),
+    ?assertEqual(2, proplists:get_value(mqueue_len, emqx_channel:stats(Chann1))),
+    meck:unload(emqx_shared_sub),
+
+    %% only fresh shared msgs should be queued if shared_dispatch_ack_enabled=true
+    meck:new(emqx_shared_sub, [passthrough, no_history]),
+    meck:expect(emqx_shared_sub, is_ack_required, fun(_) -> true end),
+    {ok, Chann2} = emqx_channel:handle_deliver(Delivers, Chann),
+    ?assertEqual(1, proplists:get_value(mqueue_len, emqx_channel:stats(Chann2))),
+    receive {Ref1, {shared_sub_nack, no_connection}} -> ok after 0 -> ?assert(false) end,
+    receive {Ref2, shared_sub_ack} -> ok after 0 -> ?assert(false) end,
+    meck:unload(emqx_shared_sub).
+
 %%--------------------------------------------------------------------
 %% Test cases for handle_out
 %%--------------------------------------------------------------------
@@ -575,7 +619,32 @@ t_handle_out_unexpected(_) ->
 %%--------------------------------------------------------------------
 
 t_handle_call_kick(_) ->
-    {shutdown, kicked, ok, _Chan} = emqx_channel:handle_call(kick, channel()).
+    Channelv5 = channel(),
+    Channelv4 = v4(Channelv5),
+    {shutdown, kicked, ok, _} = emqx_channel:handle_call(kick, Channelv4),
+    {shutdown, kicked, ok,
+     ?DISCONNECT_PACKET(?RC_ADMINISTRATIVE_ACTION),
+     _} = emqx_channel:handle_call(kick, Channelv5),
+
+    DisconnectedChannelv5 = channel(#{conn_state => disconnected}),
+    DisconnectedChannelv4 = v4(DisconnectedChannelv5),
+
+    {shutdown, kicked, ok, _} = emqx_channel:handle_call(kick, DisconnectedChannelv5),
+    {shutdown, kicked, ok, _} = emqx_channel:handle_call(kick, DisconnectedChannelv4).
+
+t_handle_kicked_publish_will_msg(_) ->
+    Self = self(),
+    ok = meck:expect(emqx_broker, publish, fun(M) -> Self ! {pub, M} end),
+
+    Msg = emqx_message:make(test, <<"will_topic">>, <<"will_payload">>),
+
+    {shutdown, kicked, ok,
+     ?DISCONNECT_PACKET(?RC_ADMINISTRATIVE_ACTION),
+     _} = emqx_channel:handle_call(kick, channel(#{will_msg => Msg})),
+    receive
+        {pub, Msg} -> ok
+    after 200 -> exit(will_message_not_published)
+    end.
 
 t_handle_call_discard(_) ->
     Packet = ?DISCONNECT_PACKET(?RC_SESSION_TAKEN_OVER),
@@ -632,7 +701,7 @@ t_handle_timeout_keepalive(_) ->
 
 t_handle_timeout_retry_delivery(_) ->
     TRef = make_ref(),
-    ok = meck:expect(emqx_session, retry, fun(Session) -> {ok, Session} end),
+    ok = meck:expect(emqx_session, retry, fun(_, Session) -> {ok, Session} end),
     Channel = emqx_channel:set_field(timers, #{retry_timer => TRef}, channel()),
     {ok, _Chan} = emqx_channel:handle_timeout(TRef, retry_delivery, Channel).
 
@@ -672,6 +741,13 @@ t_process_alias(_) ->
     {ok, #mqtt_packet{variable = #mqtt_packet_publish{topic_name = <<"t">>}}, _Chan} =
         emqx_channel:process_alias(#mqtt_packet{variable = Publish}, Channel).
 
+t_process_alias_inexistent_alias(_) ->
+    Publish = #mqtt_packet_publish{topic_name = <<>>, properties = #{'Topic-Alias' => 1}},
+    Channel = channel(),
+    ?assertEqual(
+      {error, ?RC_PROTOCOL_ERROR},
+      emqx_channel:process_alias(#mqtt_packet{variable = Publish}, Channel)).
+
 t_packing_alias(_) ->
     Packet1 = #mqtt_packet{variable = #mqtt_packet_publish{
                                          topic_name = <<"x">>,
@@ -708,6 +784,20 @@ t_packing_alias(_) ->
                    #mqtt_packet{variable = #mqtt_packet_publish{topic_name = <<"z">>}},
                    channel())).
 
+t_packing_alias_inexistent_alias(_) ->
+    Publish = #mqtt_packet_publish{topic_name = <<>>, properties = #{'Topic-Alias' => 1}},
+    Channel = channel(),
+    Packet = #mqtt_packet{variable = Publish},
+    ExpectedChannel = emqx_channel:set_field(
+                        topic_aliases,
+                        #{ inbound => #{}
+                         , outbound => #{<<>> => 1}
+                         },
+                        Channel),
+    ?assertEqual(
+      {Packet, ExpectedChannel},
+      emqx_channel:packing_alias(Packet, Channel)).
+
 t_check_pub_acl(_) ->
     ok = meck:expect(emqx_zone, enable_acl, fun(_) -> true end),
     Publish = ?PUBLISH_PACKET(?QOS_0, <<"t">>, 1, <<"payload">>),
@@ -735,15 +825,18 @@ t_enrich_connack_caps(_) ->
                           wildcard_subscription => true
                          }
                      end),
-    AckProps = emqx_channel:enrich_connack_caps(#{}, channel()),
-    ?assertMatch(#{'Retain-Available' := 1,
-                   'Maximum-Packet-Size' := 1024,
-                   'Topic-Alias-Maximum' := 10,
-                   'Wildcard-Subscription-Available' := 1,
-                   'Subscription-Identifier-Available' := 1,
-                   'Shared-Subscription-Available' := 1
-                  }, AckProps),
-    ok = meck:unload(emqx_mqtt_caps).
+    try
+        AckProps = emqx_channel:enrich_connack_caps(#{}, channel()),
+        ?assertMatch(#{'Retain-Available' := 1,
+                    'Maximum-Packet-Size' := 1024,
+                    'Topic-Alias-Maximum' := 10,
+                    'Wildcard-Subscription-Available' := 1,
+                    'Subscription-Identifier-Available' := 1,
+                    'Shared-Subscription-Available' := 1
+                    }, AckProps)
+    after
+        ok = meck:unload(emqx_mqtt_caps)
+    end.
 
 %%--------------------------------------------------------------------
 %% Test cases for terminate
@@ -765,6 +858,30 @@ t_ws_cookie_init(_) ->
                 },
     Channel = emqx_channel:init(ConnInfo, [{zone, zone}]),
     ?assertMatch(#{ws_cookie := WsCookie}, emqx_channel:info(clientinfo, Channel)).
+
+%%--------------------------------------------------------------------
+%% Test cases for other mechnisms
+%%--------------------------------------------------------------------
+
+t_flapping_detect(_) ->
+    Parent = self(),
+    ok = meck:expect(emqx_cm, open_session,
+                     fun(true, _ClientInfo, _ConnInfo) ->
+                             {ok, #{session => session(), present => false}}
+                     end),
+    ok = meck:expect(emqx_access_control, authenticate, fun(_) -> {error, not_authorized} end),
+    ok = meck:new(emqx_flapping, [passthrough, no_history, no_link]),
+    ok = meck:expect(emqx_flapping, detect, fun(_) -> Parent ! flapping_detect end),
+    ok = meck:expect(emqx_zone, enable_flapping_detect, fun(_) -> true end),
+    IdleChannel = channel(#{conn_state => idle}),
+    {shutdown, not_authorized, _ConnAck, _Channel} =
+        emqx_channel:handle_in(?CONNECT_PACKET(connpkt()), IdleChannel),
+    receive
+        flapping_detect -> ok
+    after 2000 ->
+              ?assert(false, "Flapping detect should be exected in connecting progress")
+    end,
+    meck:unload([emqx_flapping]).
 
 %%--------------------------------------------------------------------
 %% Helper functions
@@ -836,3 +953,10 @@ quota() ->
     emqx_limiter:init(zone, [{conn_messages_routing, {5, 1}},
                              {overall_messages_routing, {10, 1}}]).
 
+v4(Channel) ->
+    ConnInfo = emqx_channel:info(conninfo, Channel),
+    emqx_channel:set_field(
+      conninfo,
+      maps:put(proto_ver, ?MQTT_PROTO_V4, ConnInfo),
+      Channel
+     ).

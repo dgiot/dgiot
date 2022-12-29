@@ -1,5 +1,5 @@
 %%--------------------------------------------------------------------
-%% Copyright (c) 2021 EMQ Technologies Co., Ltd. All Rights Reserved.
+%% Copyright (c) 2021-2022 EMQ Technologies Co., Ltd. All Rights Reserved.
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -28,11 +28,35 @@
         , gl        % not interesting
         ]).
 
-check_config(X) -> logger_formatter:check_config(X).
+check_config(Config0) ->
+    Config = maps:without([date_format], Config0),
+    logger_formatter:check_config(Config).
 
-format(#{msg := Msg0, meta := Meta} = Event, Config) ->
+format(Event, Config) ->
+    case maps:get(date_format, Config, rfc3339) of
+        rfc3339 ->
+            format(Event, Config, rfc3339);
+        DateFormatString ->
+            format(Event, Config, DateFormatString)
+    end.
+
+format(#{msg := Msg0, meta := Meta} = Event, Config, rfc3339) ->
     Msg = maybe_merge(Msg0, Meta),
-    logger_formatter:format(Event#{msg := Msg}, Config).
+    logger_formatter:format(Event#{msg := Msg}, Config);
+format(#{msg := Msg0, meta := Meta} = Event,  #{template := Template} = Config, DFS) ->
+    Msg = maybe_merge(Msg0, Meta),
+    Time =
+        case maps:get(time, Event, undefined) of
+            undefined ->
+                erlang:system_time(microsecond);
+            T ->
+                T
+        end,
+    Date = emqx_calendar:format(Time, microsecond, local, DFS),
+    [Date | logger_formatter:format(Event#{msg := Msg}, Config#{template => remove_time(Template)})].
+
+remove_time([time | Tail]) -> Tail;
+remove_time(Template) -> Template.
 
 maybe_merge({report, Report}, Meta) when is_map(Report) ->
     {report, maps:merge(Report, filter(Meta))};

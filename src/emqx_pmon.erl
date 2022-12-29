@@ -1,5 +1,5 @@
 %%--------------------------------------------------------------------
-%% Copyright (c) 2017-2021 EMQ Technologies Co., Ltd. All Rights Reserved.
+%% Copyright (c) 2017-2022 EMQ Technologies Co., Ltd. All Rights Reserved.
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -50,9 +50,11 @@ monitor(Pid, PMon) ->
     ?MODULE:monitor(Pid, undefined, PMon).
 
 -spec(monitor(pid(), term(), pmon()) -> pmon()).
-monitor(Pid, Val, PMon = ?PMON(Map)) ->
+monitor(Pid, Val, ?PMON(Map)) ->
     case maps:is_key(Pid, Map) of
-        true  -> PMon;
+        true  ->
+            {Ref, _Val} = maps:get(Pid, Map),
+            ?PMON(maps:put(Pid, {Ref, Val}, Map));
         false ->
             Ref = erlang:monitor(process, Pid),
             ?PMON(maps:put(Pid, {Ref, Val}, Map))

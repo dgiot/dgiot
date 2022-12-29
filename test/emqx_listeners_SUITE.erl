@@ -1,5 +1,5 @@
 %%--------------------------------------------------------------------
-%% Copyright (c) 2018-2021 EMQ Technologies Co., Ltd. All Rights Reserved.
+%% Copyright (c) 2018-2022 EMQ Technologies Co., Ltd. All Rights Reserved.
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -47,6 +47,12 @@ t_restart_listeners(_) ->
     ok = emqx_listeners:restart(),
     ok = emqx_listeners:stop().
 
+t_wss_conn(_) ->
+    ok = emqx_listeners:start(),
+    {ok, Socket} = ssl:connect({127, 0, 0, 1}, 8084, [{verify, verify_none}], 1000),
+    ok = ssl:close(Socket),
+    ok = emqx_listeners:stop().
+
 render_config_file() ->
     Path = local_path(["..", "..", "..", "..", "etc", "emqx.conf"]),
     {ok, Temp} = file:read_file(Path),
@@ -91,4 +97,3 @@ get_base_dir(Module) ->
 
 get_base_dir() ->
     get_base_dir(?MODULE).
-    

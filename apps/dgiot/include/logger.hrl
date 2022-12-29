@@ -1,5 +1,3 @@
--compile({parse_transform, emqx_logger}).
-
 -define(DEBUG(Format), ?LOG(debug, Format, [])).
 -define(DEBUG(Format, Args), ?LOG(debug, Format, Args)).
 
@@ -26,7 +24,7 @@
 -define(LOG(Level, Format, Args),
     begin
         (logger:log(Level, #{}, #{
-            report_cb => fun(_) -> {'$logger_header'() ++ (Format), (Args)} end,
+            report_cb => fun(_) -> { (Format), (Args)} end,
             domain => [dgiot_public],
             mfa => {?MODULE, ?FUNCTION_NAME, ?FUNCTION_ARITY},
             line => ?LINE}))
@@ -35,7 +33,7 @@
 -define(LOG(Level, Format, Args, ACL),
     begin
         (logger:log(Level, #{}, #{
-            report_cb => fun(_) -> {'$logger_header'() ++ (Format), (Args)} end,
+            report_cb => fun(_) -> {(Format), (Args)} end,
             domain => ACL,
             mfa => {?MODULE, ?FUNCTION_NAME, ?FUNCTION_ARITY},
             line => ?LINE}))
@@ -59,9 +57,10 @@
             line => ?LINE}))
     end).
 
+
 -define(PLOG(Level, Map),
     begin
-        (dgiot_parse:log(#{
+        (dgiot_parse_log:log(#{
             <<"pid">> => erlang:pid_to_list(self()),
             <<"time">> => dgiot_datetime:now_microsecs(),
             <<"node">> => node(),

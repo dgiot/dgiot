@@ -1,5 +1,5 @@
 %%--------------------------------------------------------------------
-%% Copyright (c) 2021 EMQ Technologies Co., Ltd. All Rights Reserved.
+%% Copyright (c) 2021-2022 EMQ Technologies Co., Ltd. All Rights Reserved.
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -89,6 +89,6 @@ uri_parse_test_() ->
     ].
 
 normalise_headers_test() ->
-    ?assertEqual([{"content-type", "applicaiton/binary"}],
+    ?assertEqual([{<<"content-type">>, "applicaiton/binary"}],
                  emqx_http_lib:normalise_headers([{"Content_Type", "applicaiton/binary"},
                                                   {"content-type", "applicaiton/json"}])).

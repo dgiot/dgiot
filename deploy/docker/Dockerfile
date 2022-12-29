@@ -1,9 +1,6 @@
-ARG BUILD_FROM=emqx/build-env:erl23.2.7.2-emqx-2-alpine-amd64
-ARG RUN_FROM=alpine:3.12
+ARG BUILD_FROM=ghcr.io/emqx/emqx-builder/4.4-20:24.3.4.2-1-alpine3.15.1
+ARG RUN_FROM=alpine:3.15.1
 FROM ${BUILD_FROM} AS builder
-
-ARG QEMU_ARCH=x86_64
-COPY tmp/qemu-$QEMU_ARCH-stati* /usr/bin/
 
 RUN apk add --no-cache \
     git \
@@ -19,6 +16,7 @@ RUN apk add --no-cache \
     libc-dev \
     libstdc++ \
     bash \
+    tzdata \
     jq
 
 COPY . /emqx
@@ -26,31 +24,21 @@ COPY . /emqx
 ARG PKG_VSN
 ARG EMQX_NAME=emqx
 
+ENV EMQX_RELUP=false
+
 RUN cd /emqx \
     && rm -rf _build/$EMQX_NAME/lib \
     && make $EMQX_NAME
 
 FROM $RUN_FROM
 
-# Basic build-time metadata as defined at http://label-schema.org
-LABEL org.label-schema.docker.dockerfile="Dockerfile" \
-    org.label-schema.license="GNU" \
-    org.label-schema.name="emqx" \
-    org.label-schema.version=${PKG_VSN} \
-    org.label-schema.description="EMQ (Erlang MQTT Broker) is a distributed, massively scalable, highly extensible MQTT messaging broker written in Erlang/OTP." \
-    org.label-schema.url="https://emqx.io" \
-    org.label-schema.vcs-type="Git" \
-    org.label-schema.vcs-url="https://github.com/emqx/emqx" \
-    maintainer="EMQ X Team <support@emqx.io>"
-
-ARG QEMU_ARCH=x86_64
 ARG EMQX_NAME=emqx
 
-COPY deploy/docker/docker-entrypoint.sh tmp/qemu-$QEMU_ARCH-stati* /usr/bin/
+COPY deploy/docker/docker-entrypoint.sh /usr/bin/
 COPY --from=builder /emqx/_build/$EMQX_NAME/rel/emqx /opt/emqx
 
 RUN ln -s /opt/emqx/bin/* /usr/local/bin/
-RUN apk add --no-cache curl ncurses-libs openssl sudo libstdc++ bash
+RUN apk add --no-cache curl ncurses-libs openssl sudo libstdc++ bash tzdata
 
 WORKDIR /opt/emqx
 
@@ -62,7 +50,8 @@ RUN chgrp -Rf emqx /opt/emqx && chmod -Rf g+w /opt/emqx \
 
 USER emqx
 
-VOLUME ["/opt/emqx/log", "/opt/emqx/data", "/opt/emqx/etc"]
+## NOTE: /opt/emqx/etc is removed from the VOLUME list since 4.3.13
+VOLUME ["/opt/emqx/log", "/opt/emqx/data"]
 
 # emqx will occupy these port:
 # - 1883 port for MQTT

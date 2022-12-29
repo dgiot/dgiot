@@ -1,5 +1,5 @@
 %%--------------------------------------------------------------------
-%% Copyright (c) 2017-2021 EMQ Technologies Co., Ltd. All Rights Reserved.
+%% Copyright (c) 2017-2022 EMQ Technologies Co., Ltd. All Rights Reserved.
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@
 -export([init/0]).
 
 -export([ load/0
+        , force_load/0
         , load/1
         , unload/0
         , unload/1
@@ -40,10 +41,6 @@
 -compile(export_all).
 -compile(nowarn_export_all).
 -endif.
-
--dialyzer({no_match, [ plugin_loaded/2
-                     , plugin_unloaded/2
-                     ]}).
 
 %%--------------------------------------------------------------------
 %% APIs
@@ -63,12 +60,17 @@ init() ->
 %% @doc Load all plugins when the broker started.
 -spec(load() -> ok | ignore | {error, term()}).
 load() ->
+    do_load(#{force_load => false}).
+force_load() ->
+    do_load(#{force_load => true}).
+
+do_load(Options) ->
     ok = load_ext_plugins(emqx:get_env(expand_plugins_dir)),
     case emqx:get_env(plugins_loaded_file) of
         undefined -> ignore; %% No plugins available
         File ->
             _ = ensure_file(File),
-            with_loaded_file(File, fun(Names) -> load_plugins(Names, false) end)
+            with_loaded_file(File, fun(Names) -> load_plugins(Names, Options, false) end)
     end.
 
 %% @doc Load a Plugin
@@ -105,7 +107,7 @@ unload(PluginName) when is_atom(PluginName) ->
             ?LOG(error, "Plugin ~s is not started", [PluginName]),
             {error, not_started};
         {_, _} ->
-            unload_plugin(PluginName, true)
+            unload_plugin(PluginName)
     end.
 
 reload(PluginName) when is_atom(PluginName)->
@@ -215,7 +217,49 @@ load_plugin_conf(AppName, PluginDir) ->
     end, AppsEnv).
 
 ensure_file(File) ->
-    case filelib:is_file(File) of false -> write_loaded([]); true -> ok end.
+    case filelib:is_file(File) of
+        false ->
+            DefaultPlugins = default_plugins(),
+            ?LOG(warning, "~s is not found, use the default plugins instead", [File]),
+            write_loaded(DefaultPlugins);
+        true ->
+            ok
+    end.
+
+-ifndef(EMQX_ENTERPRISE).
+%% default plugins see rebar.config.erl
+default_plugins() ->
+    [
+        {emqx_management, true},
+        {emqx_dashboard, true},
+        %% emqx_modules is not a plugin, but a normal application starting when boots.
+        {emqx_modules, false},
+        {emqx_retainer, true},
+        {emqx_recon, true},
+        {emqx_telemetry, true},
+        {emqx_rule_engine, true},
+        {emqx_bridge_mqtt, false}
+    ].
+
+-else.
+
+default_plugins() ->
+    [
+        {emqx_management, true},
+        {emqx_dashboard, true},
+        %% enterprise version of emqx_modules is a plugin
+        {emqx_modules, true},
+        %% retainer is managed by emqx_modules.
+        %% default is true in data/load_modules. **NOT HERE**
+        {emqx_retainer, false},
+        {emqx_recon, true},
+        %% emqx_telemetry is not exist in enterprise.
+        %% {emqx_telemetry, false},
+        {emqx_rule_engine, true},
+        {emqx_bridge_mqtt, false}
+    ].
+
+-endif.
 
 with_loaded_file(File, SuccFun) ->
     case read_loaded(File) of
@@ -228,23 +272,39 @@ with_loaded_file(File, SuccFun) ->
     end.
 
 filter_plugins(Names) ->
-    lists:filtermap(fun(Name1) when is_atom(Name1) -> {true, Name1};
-                       ({Name1, true}) -> {true, Name1};
-                       ({_Name1, false}) -> false
-                    end, Names).
+    filter_plugins(Names, []).
 
-load_plugins(Names, Persistent) ->
+filter_plugins([], Plugins) ->
+    lists:reverse(Plugins);
+filter_plugins([{Name, Load} | Names], Plugins) ->
+    case {Load, lists:member(Name, Plugins)} of
+        {true, false} ->
+            filter_plugins(Names, [Name | Plugins]);
+        {false, true} ->
+            filter_plugins(Names, Plugins -- [Name]);
+        _ ->
+            filter_plugins(Names, Plugins)
+    end;
+filter_plugins([Name | Names], Plugins) when is_atom(Name) ->
+    filter_plugins([{Name, true} | Names], Plugins).
+
+load_plugins(Names, Options, Persistent) ->
     Plugins = list(),
     NotFound = Names -- names(Plugins),
     case NotFound of
         []       -> ok;
         NotFound -> ?LOG(alert, "cannot_find_plugins: ~p", [NotFound])
     end,
-    NeedToLoad = Names -- NotFound -- names(started_app),
+    NeedToLoad0 = Names -- NotFound,
+    NeedToLoad1 =
+        case Options of
+            #{force_load := true} -> NeedToLoad0;
+            _ -> NeedToLoad0 -- names(started_app)
+        end,
     lists:foreach(fun(Name) ->
                       Plugin = find_plugin(Name, Plugins),
                       load_plugin(Plugin#plugin.name, Persistent)
-                  end, NeedToLoad).
+                  end, NeedToLoad1).
 
 generate_configs(App) ->
     ConfigFile = filename:join([emqx:get_env(plugins_etc_dir), App]) ++ ".config",
@@ -331,10 +391,11 @@ start_app(App, SuccFun) ->
             {error, {ErrApp, Reason}}
     end.
 
-unload_plugin(App, Persistent) ->
+unload_plugin(App) ->
     case stop_app(App) of
         ok ->
-            _ = plugin_unloaded(App, Persistent), ok;
+            _ = plugin_unloaded(App),
+            ok;
         {error, Reason} ->
             {error, Reason}
     end.
@@ -362,7 +423,8 @@ plugin_loaded(_Name, false) ->
     ok;
 plugin_loaded(Name, true) ->
     case read_loaded() of
-        {ok, Names} ->
+        {ok, Names0} ->
+            Names = filter_plugins(Names0),
             case lists:member(Name, Names) of
                 false ->
                     %% write file if plugin is loaded
@@ -374,9 +436,7 @@ plugin_loaded(Name, true) ->
             ?LOG(error, "Cannot read loaded plugins: ~p", [Error])
     end.
 
-plugin_unloaded(_Name, false) ->
-    ok;
-plugin_unloaded(Name, true) ->
+plugin_unloaded(Name) ->
     case read_loaded() of
         {ok, Names0} ->
             Names = filter_plugins(Names0),

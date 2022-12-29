@@ -1,5 +1,5 @@
 %%--------------------------------------------------------------------
-%% Copyright (c) 2018-2021 EMQ Technologies Co., Ltd. All Rights Reserved.
+%% Copyright (c) 2018-2022 EMQ Technologies Co., Ltd. All Rights Reserved.
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -49,3 +49,13 @@
             line => ?LINE}))
     end).
 
+%% Copy-paste to avoid changing the old macro which may cause beam md5 changes in a lot of modules
+%% i.e. hot-upgrade hell
+-define(LOG_SENSITIVE(Level, Format, Args),
+        begin
+          (logger:log(Level,#{},#{report_cb => fun(_) -> {'$logger_header'()++(Format), emqx_misc:redact(Args)} end,
+                                  mfa => {?MODULE, ?FUNCTION_NAME, ?FUNCTION_ARITY},
+                                  line => ?LINE,
+                                  is_sensitive => true
+                                 }))
+        end).

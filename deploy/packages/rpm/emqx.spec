@@ -5,7 +5,7 @@
 %define _log_dir %{_var}/log/%{_name}
 %define _lib_home /usr/lib/%{_name}
 %define _var_home %{_sharedstatedir}/%{_name}
-%define _build_name_fmt %{_arch}/%{_name}%{?_ostype}-%{_version}-%{_release}.%{_arch}.rpm
+%define _build_name_fmt %{_arch}/%{_name}-%{_version}-%{_release}.%{_arch}.rpm
 %define _build_id_links none
 
 Name: %{_package_name}
@@ -18,6 +18,12 @@ URL: https://www.emqx.io
 BuildRoot: %{_tmppath}/%{_name}-%{_version}-root
 Provides: %{_name}
 AutoReq: 0
+
+%if "%{_arch} %{?rhel}" == "x86_64 7"
+Requires: openssl11 libatomic procps which findutils
+%else
+Requires: libatomic procps which findutils
+%endif
 
 %description
 EMQX, a distributed, massively scalable, highly extensible MQTT message broker written in Erlang/OTP.

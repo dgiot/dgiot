@@ -1,5 +1,5 @@
 %%--------------------------------------------------------------------
-%% Copyright (c) 2017-2021 EMQ Technologies Co., Ltd. All Rights Reserved.
+%% Copyright (c) 2017-2022 EMQ Technologies Co., Ltd. All Rights Reserved.
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -65,8 +65,13 @@
         , code_change/3
         ]).
 
-%% BACKW: v4.3.0
--export([ upgrade_retained_delayed_counter_type/0
+%% BACKW
+-export([%% v4.3.0
+         upgrade_retained_delayed_counter_type/0,
+         %% v4.3.0-v4.3.11, e4.3.0-e4.3.6; v4.4.0, e4.4.0
+         assign_acl_stats_from_ets_to_counter/0,
+         %% v4.3.0-v4.3.14, e4.3.0-e4.3.9; v4.4.0-v4.4.3, e4.4.0-e4.4.3,
+         assign_auth_stats_from_ets_to_counter/0
         ]).
 
 -export_type([metric_idx/0]).
@@ -146,7 +151,7 @@
          %% PubSub Metrics
          {counter, 'messages.publish'},       % Messages Publish
          {counter, 'messages.dropped'},       % Messages dropped due to no subscribers
-         {counter, 'messages.dropped.expired'},  % QoS2 Messages expired
+         {counter, 'messages.dropped.await_pubrel_timeout'},  % QoS2 await PUBREL timeout
          {counter, 'messages.dropped.no_subscribers'},  % Messages dropped
          {counter, 'messages.forward'},       % Messages forward
          {counter, 'messages.retained'},      % Messages retained
@@ -171,7 +176,6 @@
          {counter, 'client.connack'},
          {counter, 'client.connected'},
          {counter, 'client.authenticate'},
-         {counter, 'client.auth.anonymous'},
          {counter, 'client.check_acl'},
          {counter, 'client.subscribe'},
          {counter, 'client.unsubscribe'},
@@ -185,6 +189,20 @@
          {counter, 'session.takeovered'},
          {counter, 'session.discarded'},
          {counter, 'session.terminated'}
+        ]).
+
+%% Statistic metrics for auth checking
+-define(STATS_AUTH_METRICS,
+        [ {counter, 'client.auth.success'},
+          {counter, 'client.auth.success.anonymous'},
+          {counter, 'client.auth.failure'}
+        ]).
+
+%% Statistic metrics for ACL checking stats
+-define(STATS_ACL_METRICS,
+        [ {counter, 'client.acl.allow'},
+          {counter, 'client.acl.deny'},
+          {counter, 'client.acl.cache_hit'}
         ]).
 
 -record(state, {next_idx = 1}).
@@ -203,6 +221,36 @@ stop() -> gen_server:stop(?SERVER).
 upgrade_retained_delayed_counter_type() ->
     Ks = ['messages.retained', 'messages.delayed'],
     gen_server:call(?SERVER, {set_type_to_counter, Ks}, infinity).
+
+%% BACKW: %% e4.4.0, e4.3.0-e4.3.6, v4.3.0-v4.3.11
+assign_acl_stats_from_ets_to_counter() ->
+    CRef = persistent_term:get(?MODULE),
+    Names = ['client.acl.allow', 'client.acl.deny', 'client.acl.cache_hit'],
+    lists:foreach(fun(Name) ->
+        Val = case emqx_metrics:val(Name) of
+            undefined -> 0;
+            Val0 -> Val0
+        end,
+        Idx = reserved_idx(Name),
+        Metric = #metric{name = Name, type = counter, idx = Idx},
+        ok = gen_server:call(?SERVER, {set, Metric}),
+        ok = counters:put(CRef, Idx, Val)
+    end, Names).
+
+%% BACKW: %% v4.3.0-v4.3.14, e4.3.0-e4.3.9; v4.4.0-v4.4.3, e4.4.0-e4.4.3,
+assign_auth_stats_from_ets_to_counter() ->
+    CRef = persistent_term:get(?MODULE),
+    Names = ['client.auth.success', 'client.auth.success.anonymous', 'client.auth.failure'],
+    lists:foreach(fun(Name) ->
+        Val = case emqx_metrics:val(Name) of
+            undefined -> 0;
+            Val0 -> Val0
+        end,
+        Idx = reserved_idx(Name),
+        Metric = #metric{name = Name, type = counter, idx = Idx},
+        ok = gen_server:call(?SERVER, {set, Metric}),
+        ok = counters:put(CRef, Idx, Val)
+    end, Names).
 
 %%--------------------------------------------------------------------
 %% Metrics API
@@ -381,8 +429,12 @@ inc_sent(Packet) ->
 
 do_inc_sent(?CONNACK_PACKET(ReasonCode)) ->
     (ReasonCode == ?RC_SUCCESS) orelse inc('packets.connack.error'),
-    (ReasonCode == ?RC_NOT_AUTHORIZED) andalso inc('packets.connack.auth_error'),
-    (ReasonCode == ?RC_BAD_USER_NAME_OR_PASSWORD) andalso inc('packets.connack.auth_error'),
+    ((ReasonCode == ?RC_NOT_AUTHORIZED)
+     orelse (ReasonCode == ?CONNACK_AUTH))
+        andalso inc('packets.connack.auth_error'),
+    ((ReasonCode == ?RC_BAD_USER_NAME_OR_PASSWORD)
+     orelse (ReasonCode == ?CONNACK_CREDENTIALS))
+        andalso inc('packets.connack.auth_error'),
     inc('packets.connack.sent');
 
 do_inc_sent(?PUBLISH_PACKET(QoS)) ->
@@ -433,7 +485,9 @@ init([]) ->
                             ?MESSAGE_METRICS,
                             ?DELIVERY_METRICS,
                             ?CLIENT_METRICS,
-                            ?SESSION_METRICS
+                            ?SESSION_METRICS,
+                            ?STATS_AUTH_METRICS,
+                            ?STATS_ACL_METRICS
                            ]),
     % Store reserved indices
     ok = lists:foreach(fun({Type, Name}) ->
@@ -464,6 +518,10 @@ handle_call({set_type_to_counter, Keys}, _From, State) ->
       fun(K) ->
         ets:update_element(?TAB, K, {#metric.type, counter})
       end, Keys),
+    {reply, ok, State};
+
+handle_call({set, Metric}, _From, State) ->
+    true = ets:insert(?TAB, Metric),
     {reply, ok, State};
 
 handle_call(Req, _From, State) ->
@@ -542,7 +600,8 @@ reserved_idx('messages.qos2.received')       -> 106;
 reserved_idx('messages.qos2.sent')           -> 107;
 reserved_idx('messages.publish')             -> 108;
 reserved_idx('messages.dropped')             -> 109;
-reserved_idx('messages.dropped.expired')     -> 110;
+reserved_idx('messages.dropped.expired')     -> 110; %% To be removed in 5.0
+reserved_idx('messages.dropped.await_pubrel_timeout') -> 110;
 reserved_idx('messages.dropped.no_subscribers') -> 111;
 reserved_idx('messages.forward')             -> 112;
 reserved_idx('messages.retained')            -> 113;
@@ -562,7 +621,6 @@ reserved_idx('client.connack')               -> 201;
 reserved_idx('client.connected')             -> 202;
 reserved_idx('client.authenticate')          -> 203;
 reserved_idx('client.enhanced_authenticate') -> 204;
-reserved_idx('client.auth.anonymous')        -> 205;
 reserved_idx('client.check_acl')             -> 206;
 reserved_idx('client.subscribe')             -> 207;
 reserved_idx('client.unsubscribe')           -> 208;
@@ -573,6 +631,14 @@ reserved_idx('session.resumed')              -> 221;
 reserved_idx('session.takeovered')           -> 222;
 reserved_idx('session.discarded')            -> 223;
 reserved_idx('session.terminated')           -> 224;
+%% Stats metrics
+%% ACL
+reserved_idx('client.acl.allow')             -> 300;
+reserved_idx('client.acl.deny')              -> 301;
+reserved_idx('client.acl.cache_hit')         -> 302;
+%% Auth
+reserved_idx('client.auth.success')          -> 310;
+reserved_idx('client.auth.success.anonymous') -> 311;
+reserved_idx('client.auth.failure')          -> 312;
 
 reserved_idx(_)                              -> undefined.
-

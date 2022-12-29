@@ -1,5 +1,5 @@
 %%--------------------------------------------------------------------
-%% Copyright (c) 2018-2021 EMQ Technologies Co., Ltd. All Rights Reserved.
+%% Copyright (c) 2018-2022 EMQ Technologies Co., Ltd. All Rights Reserved.
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -71,7 +71,16 @@
 
 -define(MULTIPLIER_MAX, 16#200000).
 
--dialyzer({no_match, [serialize_utf8_string/2]}).
+%% proxy_protocol v1 header human readable
+-define(PPV1_PROXY, "PROXY ").
+-define(PPV1_PROXY_UNKNOWN, "PROXY UNKNOWN").
+%% proxy_protocol v2 header signature:
+%% 16#0D,16#0A, 16#0D,16#0A,16#00,16#0D,16#0A,16#51,16#55,16#49,16#54,16#0A
+-define(PPV2_HEADER_SIG, "\r\n\r\n\0\r\nQUIT\n").
+
+-ifdef(TEST).
+-export([parse_variable_byte_integer/1]).
+-endif.
 
 %%--------------------------------------------------------------------
 %% Init Parse State
@@ -100,6 +109,13 @@ parse(Bin) ->
 -spec(parse(binary(), parse_state()) -> parse_result()).
 parse(<<>>, {none, Options}) ->
     {more, {none, Options}};
+parse(<<?PPV1_PROXY, IPVer:5/binary, _Rest/binary>>, {none, _Options})
+  when IPVer =:= <<"TCP4 ">> orelse IPVer =:= <<"TCP6 ">> ->
+    error(proxy_protocol_config_disabled);
+parse(<<?PPV1_PROXY_UNKNOWN, _Rest/binary>>, {none, _Options}) ->
+    error(proxy_protocol_config_disabled);
+parse(<<?PPV2_HEADER_SIG, _Rest/binary>>, {none, _Options}) ->
+    error(proxy_protocol_config_disabled);
 parse(<<Type:4, Dup:1, QoS:2, Retain:1, Rest/binary>>,
       {none, Options = #{strict_mode := StrictMode}}) ->
     %% Validate header if strict mode.
@@ -203,8 +219,9 @@ packet(Header, Variable) ->
 packet(Header, Variable, Payload) ->
     #mqtt_packet{header = Header, variable = Variable, payload = Payload}.
 
-parse_packet(#mqtt_packet_header{type = ?CONNECT}, FrameBin, _Options) ->
-    {ProtoName, Rest} = parse_utf8_string(FrameBin),
+parse_packet(#mqtt_packet_header{type = ?CONNECT}, FrameBin,
+             #{strict_mode := StrictMode}) ->
+    {ProtoName, Rest} = parse_utf8_string(FrameBin, StrictMode),
     <<BridgeTag:4, ProtoVer:4, Rest1/binary>> = Rest,
     % Note: Crash when reserved flag doesn't equal to 0, there is no strict
     % compliance with the MQTT5.0.
@@ -218,8 +235,8 @@ parse_packet(#mqtt_packet_header{type = ?CONNECT}, FrameBin, _Options) ->
       KeepAlive    : 16/big,
       Rest2/binary>> = Rest1,
 
-    {Properties, Rest3} = parse_properties(Rest2, ProtoVer),
-    {ClientId, Rest4} = parse_utf8_string(Rest3),
+    {Properties, Rest3} = parse_properties(Rest2, ProtoVer, StrictMode),
+    {ClientId, Rest4} = parse_utf8_string(Rest3, StrictMode),
     ConnPacket = #mqtt_packet_connect{proto_name  = ProtoName,
                                       proto_ver   = ProtoVer,
                                       is_bridge   = (BridgeTag =:= 8),
@@ -231,14 +248,14 @@ parse_packet(#mqtt_packet_header{type = ?CONNECT}, FrameBin, _Options) ->
                                       properties  = Properties,
                                       clientid    = ClientId
                                      },
-    {ConnPacket1, Rest5} = parse_will_message(ConnPacket, Rest4),
-    {Username, Rest6} = parse_utf8_string(Rest5, bool(UsernameFlag)),
-    {Passsword, <<>>} = parse_utf8_string(Rest6, bool(PasswordFlag)),
+    {ConnPacket1, Rest5} = parse_will_message(ConnPacket, Rest4, StrictMode),
+    {Username, Rest6} = parse_utf8_string(Rest5, StrictMode, bool(UsernameFlag)),
+    {Passsword, <<>>} = parse_utf8_string(Rest6, StrictMode, bool(PasswordFlag)),
     ConnPacket1#mqtt_packet_connect{username = Username, password = Passsword};
 
-parse_packet(#mqtt_packet_header{type = ?CONNACK},
-             <<AckFlags:8, ReasonCode:8, Rest/binary>>, #{version := Ver}) ->
-    {Properties, <<>>} = parse_properties(Rest, Ver),
+parse_packet(#mqtt_packet_header{type = ?CONNACK}, <<AckFlags:8, ReasonCode:8, Rest/binary>>,
+             #{strict_mode := StrictMode, version := Ver}) ->
+    {Properties, <<>>} = parse_properties(Rest, Ver, StrictMode),
     #mqtt_packet_connack{ack_flags   = AckFlags,
                          reason_code = ReasonCode,
                          properties  = Properties
@@ -246,21 +263,22 @@ parse_packet(#mqtt_packet_header{type = ?CONNACK},
 
 parse_packet(#mqtt_packet_header{type = ?PUBLISH, qos = QoS}, Bin,
              #{strict_mode := StrictMode, version := Ver}) ->
-    {TopicName, Rest} = parse_utf8_string(Bin),
+    {TopicName, Rest} = parse_utf8_string(Bin, StrictMode),
     {PacketId, Rest1} = case QoS of
                             ?QOS_0 -> {undefined, Rest};
                             _ -> parse_packet_id(Rest)
                         end,
     (PacketId =/= undefined) andalso
       StrictMode andalso validate_packet_id(PacketId),
-    {Properties, Payload} = parse_properties(Rest1, Ver),
+    {Properties, Payload} = parse_properties(Rest1, Ver, StrictMode),
     Publish = #mqtt_packet_publish{topic_name = TopicName,
                                    packet_id  = PacketId,
                                    properties = Properties
                                   },
     {Publish, Payload};
 
-parse_packet(#mqtt_packet_header{type = PubAck}, <<PacketId:16/big>>, #{strict_mode := StrictMode})
+parse_packet(#mqtt_packet_header{type = PubAck}, <<PacketId:16/big>>,
+             #{strict_mode := StrictMode})
   when ?PUBACK =< PubAck, PubAck =< ?PUBCOMP ->
     StrictMode andalso validate_packet_id(PacketId),
     #mqtt_packet_puback{packet_id = PacketId, reason_code = 0};
@@ -269,7 +287,7 @@ parse_packet(#mqtt_packet_header{type = PubAck}, <<PacketId:16/big, ReasonCode, 
              #{strict_mode := StrictMode, version := Ver = ?MQTT_PROTO_V5})
   when ?PUBACK =< PubAck, PubAck =< ?PUBCOMP ->
     StrictMode andalso validate_packet_id(PacketId),
-    {Properties, <<>>} = parse_properties(Rest, Ver),
+    {Properties, <<>>} = parse_properties(Rest, Ver, StrictMode),
     #mqtt_packet_puback{packet_id   = PacketId,
                         reason_code = ReasonCode,
                         properties  = Properties
@@ -278,7 +296,7 @@ parse_packet(#mqtt_packet_header{type = PubAck}, <<PacketId:16/big, ReasonCode, 
 parse_packet(#mqtt_packet_header{type = ?SUBSCRIBE}, <<PacketId:16/big, Rest/binary>>,
              #{strict_mode := StrictMode, version := Ver}) ->
     StrictMode andalso validate_packet_id(PacketId),
-    {Properties, Rest1} = parse_properties(Rest, Ver),
+    {Properties, Rest1} = parse_properties(Rest, Ver, StrictMode),
     TopicFilters = parse_topic_filters(subscribe, Rest1),
     ok = validate_subqos([QoS || {_, #{qos := QoS}} <- TopicFilters]),
     #mqtt_packet_subscribe{packet_id     = PacketId,
@@ -289,7 +307,7 @@ parse_packet(#mqtt_packet_header{type = ?SUBSCRIBE}, <<PacketId:16/big, Rest/bin
 parse_packet(#mqtt_packet_header{type = ?SUBACK}, <<PacketId:16/big, Rest/binary>>,
              #{strict_mode := StrictMode, version := Ver}) ->
     StrictMode andalso validate_packet_id(PacketId),
-    {Properties, Rest1} = parse_properties(Rest, Ver),
+    {Properties, Rest1} = parse_properties(Rest, Ver, StrictMode),
     ReasonCodes = parse_reason_codes(Rest1),
     #mqtt_packet_suback{packet_id    = PacketId,
                         properties   = Properties,
@@ -299,7 +317,7 @@ parse_packet(#mqtt_packet_header{type = ?SUBACK}, <<PacketId:16/big, Rest/binary
 parse_packet(#mqtt_packet_header{type = ?UNSUBSCRIBE}, <<PacketId:16/big, Rest/binary>>,
              #{strict_mode := StrictMode, version := Ver}) ->
     StrictMode andalso validate_packet_id(PacketId),
-    {Properties, Rest1} = parse_properties(Rest, Ver),
+    {Properties, Rest1} = parse_properties(Rest, Ver, StrictMode),
     TopicFilters = parse_topic_filters(unsubscribe, Rest1),
     #mqtt_packet_unsubscribe{packet_id     = PacketId,
                              properties    = Properties,
@@ -314,7 +332,7 @@ parse_packet(#mqtt_packet_header{type = ?UNSUBACK}, <<PacketId:16/big>>,
 parse_packet(#mqtt_packet_header{type = ?UNSUBACK}, <<PacketId:16/big, Rest/binary>>,
              #{strict_mode := StrictMode, version := Ver}) ->
     StrictMode andalso validate_packet_id(PacketId),
-    {Properties, Rest1} = parse_properties(Rest, Ver),
+    {Properties, Rest1} = parse_properties(Rest, Ver, StrictMode),
     ReasonCodes = parse_reason_codes(Rest1),
     #mqtt_packet_unsuback{packet_id    = PacketId,
                           properties   = Properties,
@@ -322,115 +340,119 @@ parse_packet(#mqtt_packet_header{type = ?UNSUBACK}, <<PacketId:16/big, Rest/bina
                          };
 
 parse_packet(#mqtt_packet_header{type = ?DISCONNECT}, <<ReasonCode, Rest/binary>>,
-             #{version := ?MQTT_PROTO_V5}) ->
-    {Properties, <<>>} = parse_properties(Rest, ?MQTT_PROTO_V5),
+             #{strict_mode := StrictMode, version := ?MQTT_PROTO_V5}) ->
+    {Properties, <<>>} = parse_properties(Rest, ?MQTT_PROTO_V5, StrictMode),
     #mqtt_packet_disconnect{reason_code = ReasonCode,
                             properties  = Properties
                            };
 
 parse_packet(#mqtt_packet_header{type = ?AUTH}, <<ReasonCode, Rest/binary>>,
-             #{version := ?MQTT_PROTO_V5}) ->
-    {Properties, <<>>} = parse_properties(Rest, ?MQTT_PROTO_V5),
+             #{strict_mode := StrictMode, version := ?MQTT_PROTO_V5}) ->
+    {Properties, <<>>} = parse_properties(Rest, ?MQTT_PROTO_V5, StrictMode),
     #mqtt_packet_auth{reason_code = ReasonCode, properties = Properties}.
 
 parse_will_message(Packet = #mqtt_packet_connect{will_flag = true,
-                                                 proto_ver = Ver}, Bin) ->
-    {Props, Rest} = parse_properties(Bin, Ver),
-    {Topic, Rest1} = parse_utf8_string(Rest),
+                                                 proto_ver = Ver},
+                   Bin, StrictMode) ->
+    {Props, Rest} = parse_properties(Bin, Ver, StrictMode),
+    {Topic, Rest1} = parse_utf8_string(Rest, StrictMode),
     {Payload, Rest2} = parse_binary_data(Rest1),
     {Packet#mqtt_packet_connect{will_props   = Props,
                                 will_topic   = Topic,
                                 will_payload = Payload
                                }, Rest2};
-parse_will_message(Packet, Bin) -> {Packet, Bin}.
+parse_will_message(Packet, Bin, _StrictMode) -> {Packet, Bin}.
 
 -compile({inline, [parse_packet_id/1]}).
 parse_packet_id(<<PacketId:16/big, Rest/binary>>) ->
     {PacketId, Rest}.
 
-parse_properties(Bin, Ver) when Ver =/= ?MQTT_PROTO_V5 ->
+parse_properties(Bin, Ver, _StrictMode) when Ver =/= ?MQTT_PROTO_V5 ->
     {#{}, Bin};
 %% TODO: version mess?
-parse_properties(<<>>, ?MQTT_PROTO_V5) ->
+parse_properties(<<>>, ?MQTT_PROTO_V5, _StrictMode) ->
     {#{}, <<>>};
-parse_properties(<<0, Rest/binary>>, ?MQTT_PROTO_V5) ->
+parse_properties(<<0, Rest/binary>>, ?MQTT_PROTO_V5, _StrictMode) ->
     {#{}, Rest};
-parse_properties(Bin, ?MQTT_PROTO_V5) ->
+parse_properties(Bin, ?MQTT_PROTO_V5, StrictMode) ->
     {Len, Rest} = parse_variable_byte_integer(Bin),
     <<PropsBin:Len/binary, Rest1/binary>> = Rest,
-    {parse_property(PropsBin, #{}), Rest1}.
+    {parse_property(PropsBin, #{}, StrictMode), Rest1}.
 
-parse_property(<<>>, Props) ->
+parse_property(<<>>, Props, _StrictMode) ->
     Props;
-parse_property(<<16#01, Val, Bin/binary>>, Props) ->
-    parse_property(Bin, Props#{'Payload-Format-Indicator' => Val});
-parse_property(<<16#02, Val:32/big, Bin/binary>>, Props) ->
-    parse_property(Bin, Props#{'Message-Expiry-Interval' => Val});
-parse_property(<<16#03, Bin/binary>>, Props) ->
-    {Val, Rest} = parse_utf8_string(Bin),
-    parse_property(Rest, Props#{'Content-Type' => Val});
-parse_property(<<16#08, Bin/binary>>, Props) ->
-    {Val, Rest} = parse_utf8_string(Bin),
-    parse_property(Rest, Props#{'Response-Topic' => Val});
-parse_property(<<16#09, Len:16/big, Val:Len/binary, Bin/binary>>, Props) ->
-    parse_property(Bin, Props#{'Correlation-Data' => Val});
-parse_property(<<16#0B, Bin/binary>>, Props) ->
+parse_property(<<16#01, Val, Bin/binary>>, Props, StrictMode) ->
+    parse_property(Bin, Props#{'Payload-Format-Indicator' => Val}, StrictMode);
+parse_property(<<16#02, Val:32/big, Bin/binary>>, Props, StrictMode) ->
+    parse_property(Bin, Props#{'Message-Expiry-Interval' => Val}, StrictMode);
+parse_property(<<16#03, Bin/binary>>, Props, StrictMode) ->
+    {Val, Rest} = parse_utf8_string(Bin, StrictMode),
+    parse_property(Rest, Props#{'Content-Type' => Val}, StrictMode);
+parse_property(<<16#08, Bin/binary>>, Props, StrictMode) ->
+    {Val, Rest} = parse_utf8_string(Bin, StrictMode),
+    parse_property(Rest, Props#{'Response-Topic' => Val}, StrictMode);
+parse_property(<<16#09, Len:16/big, Val:Len/binary, Bin/binary>>, Props, StrictMode) ->
+    parse_property(Bin, Props#{'Correlation-Data' => Val}, StrictMode);
+parse_property(<<16#0B, Bin/binary>>, Props, StrictMode) ->
     {Val, Rest} = parse_variable_byte_integer(Bin),
-    parse_property(Rest, Props#{'Subscription-Identifier' => Val});
-parse_property(<<16#11, Val:32/big, Bin/binary>>, Props) ->
-    parse_property(Bin, Props#{'Session-Expiry-Interval' => Val});
-parse_property(<<16#12, Bin/binary>>, Props) ->
-    {Val, Rest} = parse_utf8_string(Bin),
-    parse_property(Rest, Props#{'Assigned-Client-Identifier' => Val});
-parse_property(<<16#13, Val:16, Bin/binary>>, Props) ->
-    parse_property(Bin, Props#{'Server-Keep-Alive' => Val});
-parse_property(<<16#15, Bin/binary>>, Props) ->
-    {Val, Rest} = parse_utf8_string(Bin),
-    parse_property(Rest, Props#{'Authentication-Method' => Val});
-parse_property(<<16#16, Len:16/big, Val:Len/binary, Bin/binary>>, Props) ->
-    parse_property(Bin, Props#{'Authentication-Data' => Val});
-parse_property(<<16#17, Val, Bin/binary>>, Props) ->
-    parse_property(Bin, Props#{'Request-Problem-Information' => Val});
-parse_property(<<16#18, Val:32, Bin/binary>>, Props) ->
-    parse_property(Bin, Props#{'Will-Delay-Interval' => Val});
-parse_property(<<16#19, Val, Bin/binary>>, Props) ->
-    parse_property(Bin, Props#{'Request-Response-Information' => Val});
-parse_property(<<16#1A, Bin/binary>>, Props) ->
-    {Val, Rest} = parse_utf8_string(Bin),
-    parse_property(Rest, Props#{'Response-Information' => Val});
-parse_property(<<16#1C, Bin/binary>>, Props) ->
-    {Val, Rest} = parse_utf8_string(Bin),
-    parse_property(Rest, Props#{'Server-Reference' => Val});
-parse_property(<<16#1F, Bin/binary>>, Props) ->
-    {Val, Rest} = parse_utf8_string(Bin),
-    parse_property(Rest, Props#{'Reason-String' => Val});
-parse_property(<<16#21, Val:16/big, Bin/binary>>, Props) ->
-    parse_property(Bin, Props#{'Receive-Maximum' => Val});
-parse_property(<<16#22, Val:16/big, Bin/binary>>, Props) ->
-    parse_property(Bin, Props#{'Topic-Alias-Maximum' => Val});
-parse_property(<<16#23, Val:16/big, Bin/binary>>, Props) ->
-    parse_property(Bin, Props#{'Topic-Alias' => Val});
-parse_property(<<16#24, Val, Bin/binary>>, Props) ->
-    parse_property(Bin, Props#{'Maximum-QoS' => Val});
-parse_property(<<16#25, Val, Bin/binary>>, Props) ->
-    parse_property(Bin, Props#{'Retain-Available' => Val});
-parse_property(<<16#26, Bin/binary>>, Props) ->
-    {Pair, Rest} = parse_utf8_pair(Bin),
+    parse_property(Rest, Props#{'Subscription-Identifier' => Val}, StrictMode);
+parse_property(<<16#11, Val:32/big, Bin/binary>>, Props, StrictMode) ->
+    parse_property(Bin, Props#{'Session-Expiry-Interval' => Val}, StrictMode);
+parse_property(<<16#12, Bin/binary>>, Props, StrictMode) ->
+    {Val, Rest} = parse_utf8_string(Bin, StrictMode),
+    parse_property(Rest, Props#{'Assigned-Client-Identifier' => Val}, StrictMode);
+parse_property(<<16#13, Val:16, Bin/binary>>, Props, StrictMode) ->
+    parse_property(Bin, Props#{'Server-Keep-Alive' => Val}, StrictMode);
+parse_property(<<16#15, Bin/binary>>, Props, StrictMode) ->
+    {Val, Rest} = parse_utf8_string(Bin, StrictMode),
+    parse_property(Rest, Props#{'Authentication-Method' => Val}, StrictMode);
+parse_property(<<16#16, Len:16/big, Val:Len/binary, Bin/binary>>, Props, StrictMode) ->
+    parse_property(Bin, Props#{'Authentication-Data' => Val}, StrictMode);
+parse_property(<<16#17, Val, Bin/binary>>, Props, StrictMode) ->
+    parse_property(Bin, Props#{'Request-Problem-Information' => Val}, StrictMode);
+parse_property(<<16#18, Val:32, Bin/binary>>, Props, StrictMode) ->
+    parse_property(Bin, Props#{'Will-Delay-Interval' => Val}, StrictMode);
+parse_property(<<16#19, Val, Bin/binary>>, Props, StrictMode) ->
+    parse_property(Bin, Props#{'Request-Response-Information' => Val}, StrictMode);
+parse_property(<<16#1A, Bin/binary>>, Props, StrictMode) ->
+    {Val, Rest} = parse_utf8_string(Bin, StrictMode),
+    parse_property(Rest, Props#{'Response-Information' => Val}, StrictMode);
+parse_property(<<16#1C, Bin/binary>>, Props, StrictMode) ->
+    {Val, Rest} = parse_utf8_string(Bin, StrictMode),
+    parse_property(Rest, Props#{'Server-Reference' => Val}, StrictMode);
+parse_property(<<16#1F, Bin/binary>>, Props, StrictMode) ->
+    {Val, Rest} = parse_utf8_string(Bin, StrictMode),
+    parse_property(Rest, Props#{'Reason-String' => Val}, StrictMode);
+parse_property(<<16#21, Val:16/big, Bin/binary>>, Props, StrictMode) ->
+    parse_property(Bin, Props#{'Receive-Maximum' => Val}, StrictMode);
+parse_property(<<16#22, Val:16/big, Bin/binary>>, Props, StrictMode) ->
+    parse_property(Bin, Props#{'Topic-Alias-Maximum' => Val}, StrictMode);
+parse_property(<<16#23, Val:16/big, Bin/binary>>, Props, StrictMode) ->
+    parse_property(Bin, Props#{'Topic-Alias' => Val}, StrictMode);
+parse_property(<<16#24, Val, Bin/binary>>, Props, StrictMode) ->
+    parse_property(Bin, Props#{'Maximum-QoS' => Val}, StrictMode);
+parse_property(<<16#25, Val, Bin/binary>>, Props, StrictMode) ->
+    parse_property(Bin, Props#{'Retain-Available' => Val}, StrictMode);
+parse_property(<<16#26, Bin/binary>>, Props, StrictMode) ->
+    {Pair, Rest} = parse_utf8_pair(Bin, StrictMode),
     case maps:find('User-Property', Props) of
         {ok, UserProps} ->
             UserProps1 = lists:append(UserProps, [Pair]),
-            parse_property(Rest, Props#{'User-Property' := UserProps1});
+            parse_property(Rest, Props#{'User-Property' := UserProps1}, StrictMode);
         error ->
-            parse_property(Rest, Props#{'User-Property' => [Pair]})
+            parse_property(Rest, Props#{'User-Property' => [Pair]}, StrictMode)
     end;
-parse_property(<<16#27, Val:32, Bin/binary>>, Props) ->
-    parse_property(Bin, Props#{'Maximum-Packet-Size' => Val});
-parse_property(<<16#28, Val, Bin/binary>>, Props) ->
-    parse_property(Bin, Props#{'Wildcard-Subscription-Available' => Val});
-parse_property(<<16#29, Val, Bin/binary>>, Props) ->
-    parse_property(Bin, Props#{'Subscription-Identifier-Available' => Val});
-parse_property(<<16#2A, Val, Bin/binary>>, Props) ->
-    parse_property(Bin, Props#{'Shared-Subscription-Available' => Val}).
+parse_property(<<16#27, Val:32, Bin/binary>>, Props, StrictMode) ->
+    parse_property(Bin, Props#{'Maximum-Packet-Size' => Val}, StrictMode);
+parse_property(<<16#28, Val, Bin/binary>>, Props, StrictMode) ->
+    parse_property(Bin, Props#{'Wildcard-Subscription-Available' => Val}, StrictMode);
+parse_property(<<16#29, Val, Bin/binary>>, Props, StrictMode) ->
+    parse_property(Bin, Props#{'Subscription-Identifier-Available' => Val}, StrictMode);
+parse_property(<<16#2A, Val, Bin/binary>>, Props, StrictMode) ->
+    parse_property(Bin, Props#{'Shared-Subscription-Available' => Val}, StrictMode);
+parse_property(<<Property:8, _Rest/binary>>, _Props, _StrictMode) ->
+    error(#{invalid_property_code => Property}).
+%% TODO: invalid property in specific packet.
 
 parse_variable_byte_integer(Bin) ->
     parse_variable_byte_integer(Bin, 1, 0).
@@ -452,20 +474,53 @@ parse_topic_filters(unsubscribe, Bin) ->
 parse_reason_codes(Bin) ->
     [Code || <<Code>> <= Bin].
 
-parse_utf8_pair(<<Len1:16/big, Key:Len1/binary,
-                  Len2:16/big, Val:Len2/binary, Rest/binary>>) ->
-    {{Key, Val}, Rest}.
+%%--------------------
+%% parse utf8 pair
+parse_utf8_pair( <<Len1:16/big, Key:Len1/binary,
+                   Len2:16/big, Val:Len2/binary, Rest/binary>>
+               , true) ->
+    {{validate_utf8(Key), validate_utf8(Val)}, Rest};
+parse_utf8_pair( <<Len1:16/big, Key:Len1/binary,
+                   Len2:16/big, Val:Len2/binary, Rest/binary>>
+               , false) ->
+    {{Key, Val}, Rest};
+parse_utf8_pair(<<LenK:16/big, Rest/binary>>, _StrictMode)
+  when LenK > byte_size(Rest) ->
+    error(user_property_not_enough_bytes);
+parse_utf8_pair(<<LenK:16/big, _Key:LenK/binary, %% key maybe malformed
+                  LenV:16/big, Rest/binary>>, _StrictMode)
+  when LenV > byte_size(Rest) ->
+    error(malformed_user_property_value);
+parse_utf8_pair(Bin, _StrictMode)
+  when 4 > byte_size(Bin) ->
+    error(user_property_not_enough_bytes).
 
-parse_utf8_string(Bin, false) ->
+%%--------------------
+%% parse utf8 string
+parse_utf8_string(Bin, _StrictMode, false) ->
     {undefined, Bin};
-parse_utf8_string(Bin, true) ->
-    parse_utf8_string(Bin).
+parse_utf8_string(Bin, StrictMode, true) ->
+    parse_utf8_string(Bin, StrictMode).
 
-parse_utf8_string(<<Len:16/big, Str:Len/binary, Rest/binary>>) ->
-    {Str, Rest}.
+parse_utf8_string(<<Len:16/big, Str:Len/binary, Rest/binary>>, true) ->
+    {validate_utf8(Str), Rest};
+parse_utf8_string(<<Len:16/big, Str:Len/binary, Rest/binary>>, false) ->
+    {Str, Rest};
+parse_utf8_string(<<Len:16/big, Rest/binary>>, _)
+  when Len > byte_size(Rest) ->
+    error(malformed_utf8_string);
+parse_utf8_string(Bin, _)
+  when 2 > byte_size(Bin) ->
+    error(malformed_utf8_string_length).
 
 parse_binary_data(<<Len:16/big, Data:Len/binary, Rest/binary>>) ->
-    {Data, Rest}.
+    {Data, Rest};
+parse_binary_data(<<Len:16/big, Rest/binary>>)
+  when Len > byte_size(Rest) ->
+    error(malformed_binary_data);
+parse_binary_data(Bin)
+  when 2 > byte_size(Bin) ->
+    error(malformed_binary_data_length).
 
 %%--------------------------------------------------------------------
 %% Serialize MQTT Packet
@@ -731,8 +786,6 @@ serialize_utf8_pair({Name, Value}) ->
 serialize_binary_data(Bin) ->
     [<<(byte_size(Bin)):16/big-unsigned-integer>>, Bin].
 
-serialize_utf8_string(undefined, false) ->
-    error(utf8_string_undefined);
 serialize_utf8_string(undefined, true) ->
     <<>>;
 serialize_utf8_string(String, _AllowNull) ->
@@ -803,3 +856,52 @@ fixqos(?PUBREL, 0)      -> 1;
 fixqos(?SUBSCRIBE, 0)   -> 1;
 fixqos(?UNSUBSCRIBE, 0) -> 1;
 fixqos(_Type, QoS)      -> QoS.
+
+validate_utf8(Bin) ->
+    case unicode:characters_to_binary(Bin) of
+        {error, _, _} ->
+            error(utf8_string_invalid);
+        {incomplete, _, _} ->
+            error(utf8_string_invalid);
+        Bin when is_binary(Bin) ->
+            case validate_mqtt_utf8_char(Bin) of
+                true -> Bin;
+                false -> error(utf8_string_invalid)
+            end
+    end.
+
+%% Is the utf8 string respecting UTF-8 characters defined by MQTT Spec?
+%% i.e. contains invalid UTF-8 char or control char
+validate_mqtt_utf8_char(<<>>) ->
+    true;
+%% ==== 1-Byte UTF-8 invalid: [[U+0000 .. U+001F] && [U+007F]]
+validate_mqtt_utf8_char(<<B1, Bs/binary>>)
+  when B1 >= 16#20, B1 =< 16#7E ->
+    validate_mqtt_utf8_char(Bs);
+validate_mqtt_utf8_char(<<B1, _Bs/binary>>)
+  when B1 >=  16#00, B1 =< 16#1F;
+       B1 =:= 16#7F ->
+    %% [U+0000 .. U+001F] && [U+007F]
+    false;
+%% ==== 2-Bytes UTF-8 invalid: [U+0080 .. U+009F]
+validate_mqtt_utf8_char(<<B1, B2, Bs/binary>>)
+  when B1 =:= 16#C2;
+       B2 >=  16#A0, B2 =< 16#BF;
+       B1  >  16#C3, B1 =< 16#DE;
+       B2 >=  16#80, B2 =< 16#BF ->
+    validate_mqtt_utf8_char(Bs);
+validate_mqtt_utf8_char(<<16#C2, B2, _Bs/binary>>)
+  when B2 >= 16#80, B2 =< 16#9F ->
+    %% [U+0080 .. U+009F]
+    false;
+%% ==== 3-Bytes UTF-8 invalid: [U+D800 .. U+DFFF]
+validate_mqtt_utf8_char(<<B1, _B2, _B3, Bs/binary>>)
+  when B1 >= 16#E0, B1 =< 16#EE;
+       B1 =:= 16#EF ->
+    validate_mqtt_utf8_char(Bs);
+validate_mqtt_utf8_char(<<16#ED, _B2, _B3, _Bs/binary>>) ->
+    false;
+%% ==== 4-Bytes UTF-8
+validate_mqtt_utf8_char(<<B1, _B2, _B3, _B4, Bs/binary>>)
+  when B1 =:= 16#0F ->
+    validate_mqtt_utf8_char(Bs).

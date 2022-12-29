@@ -1,7 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bash
 ## EMQ docker image start script
 # Huang Rui <vowstar@gmail.com>
-# EMQ X Team <support@emqx.io>
+# EMQX Team <support@emqx.io>
 
 ## Shell setting
 if [[ -n "$DEBUG" ]]; then
@@ -28,12 +28,20 @@ if [[ -z "$EMQX_NAME" ]]; then
 fi
 
 if [[ -z "$EMQX_HOST" ]]; then
-    if [[ "$EMQX_CLUSTER__K8S__ADDRESS_TYPE" == "dns" ]] && [[ -n "$EMQX_CLUSTER__K8S__NAMESPACE" ]]; then
-        EMQX_CLUSTER__K8S__SUFFIX=${EMQX_CLUSTER__K8S__SUFFIX:-"pod.cluster.local"}
-        EMQX_HOST="${LOCAL_IP//./-}.$EMQX_CLUSTER__K8S__NAMESPACE.$EMQX_CLUSTER__K8S__SUFFIX"
-    elif [[ "$EMQX_CLUSTER__K8S__ADDRESS_TYPE" == 'hostname' ]] && [[ -n "$EMQX_CLUSTER__K8S__NAMESPACE" ]]; then
-        EMQX_CLUSTER__K8S__SUFFIX=${EMQX_CLUSTER__K8S__SUFFIX:-'svc.cluster.local'}
-        EMQX_HOST=$(grep -h "^$LOCAL_IP" /etc/hosts | grep -o "$(hostname).*.$EMQX_CLUSTER__K8S__NAMESPACE.$EMQX_CLUSTER__K8S__SUFFIX")
+    if [[ "$EMQX_CLUSTER__DISCOVERY" == "dns" ]] && \
+        [[ "$EMQX_CLUSTER__DNS__TYPE" == "srv" ]] && \
+        grep -q "$(hostname).$EMQX_CLUSTER__DNS__NAME" /etc/hosts; then
+            EMQX_HOST="$(hostname).$EMQX_CLUSTER__DNS__NAME"
+    elif [[ "$EMQX_CLUSTER__DISCOVERY" == "k8s" ]] && \
+        [[ "$EMQX_CLUSTER__K8S__ADDRESS_TYPE" == "dns" ]] && \
+        [[ -n "$EMQX_CLUSTER__K8S__NAMESPACE" ]]; then
+            EMQX_CLUSTER__K8S__SUFFIX=${EMQX_CLUSTER__K8S__SUFFIX:-"pod.cluster.local"}
+            EMQX_HOST="${LOCAL_IP//./-}.$EMQX_CLUSTER__K8S__NAMESPACE.$EMQX_CLUSTER__K8S__SUFFIX"
+    elif [[ "$EMQX_CLUSTER__DISCOVERY" == "k8s" ]] && \
+        [[ "$EMQX_CLUSTER__K8S__ADDRESS_TYPE" == 'hostname' ]] && \
+        [[ -n "$EMQX_CLUSTER__K8S__NAMESPACE" ]]; then
+            EMQX_CLUSTER__K8S__SUFFIX=${EMQX_CLUSTER__K8S__SUFFIX:-'svc.cluster.local'}
+            EMQX_HOST=$(grep -h "^$LOCAL_IP" /etc/hosts | grep -o "$(hostname).*.$EMQX_CLUSTER__K8S__NAMESPACE.$EMQX_CLUSTER__K8S__SUFFIX")
     else
         EMQX_HOST="$LOCAL_IP"
     fi
@@ -97,13 +105,13 @@ fill_tuples() {
     local file=$1
     local elements=${*:2}
     for var in $elements; do
-        if grep -qE "\{\s*$var\s*,\s*(true|false)\s*\}\s*\." "$file"; then
-            sed -r "s/\{\s*($var)\s*,\s*(true|false)\s*\}\s*\./{\1, true}./1" "$file" > tmpfile && cat tmpfile > "$file" 
-        elif grep -q "$var\s*\." "$file"; then
+        if grep -qE "\{\s*$var\s*,\s*(true|false)\s*\}\s*\." "$file" 2>/dev/null; then
+            sed -r "s/\{\s*($var)\s*,\s*(true|false)\s*\}\s*\./{\1, true}./1" "$file" 2>/dev/null > tmpfile && cat tmpfile > "$file"
+        elif grep -q "$var\s*\." "$file" 2>/dev/null; then
             # backward compatible.
-            sed -r "s/($var)\s*\./{\1, true}./1" "$file" > tmpfile && cat tmpfile > "$file"
+            sed -r "s/($var)\s*\./{\1, true}./1" "$file" > tmpfile 2>/dev/null && cat tmpfile > "$file"
         else
-            sed '$a'\\ "$file" > tmpfile && cat tmpfile > "$file"
+            sed '$a'\\ "$file" 2>/dev/null > tmpfile && cat tmpfile > "$file"
             echo "{$var, true}." >> "$file"
         fi
     done

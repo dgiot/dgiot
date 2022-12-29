@@ -1,5 +1,5 @@
 %%--------------------------------------------------------------------
-%% Copyright (c) 2018-2021 EMQ Technologies Co., Ltd. All Rights Reserved.
+%% Copyright (c) 2018-2022 EMQ Technologies Co., Ltd. All Rights Reserved.
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@
 -export([ start_listener/1
         , start_listener/3
         , stop_listener/1
+        , update_listeners_env/2
         , restart_listener/1
         , restart_listener/3
         ]).
@@ -40,10 +41,13 @@
         , format_listen_on/1
         ]).
 
--type(listener() :: #{ name := binary()
+-type(listener_name() :: binary()).
+-type(listener_id() :: binary()).
+-type(listener() :: #{ name := listener_name()
                      , proto := esockd:proto()
                      , listen_on := esockd:listen_on()
                      , opts := [esockd:option()]
+                     , any() => term()
                      }).
 
 %% @doc Find listener identifier by listen-on.
@@ -68,7 +72,7 @@ find_by_id(Id) ->
     find_by_id(iolist_to_binary(Id), emqx:get_env(listeners, [])).
 
 %% @doc Return the ID of the given listener.
--spec identifier(listener()) -> binary().
+-spec identifier(listener()) -> listener_id().
 identifier(#{proto := Proto, name := Name}) ->
     identifier(Proto, Name).
 
@@ -86,7 +90,8 @@ ensure_all_started() ->
 ensure_all_started([], []) -> ok;
 ensure_all_started([], Failed) -> error(Failed);
 ensure_all_started([L | Rest], Results) ->
-    #{proto := Proto, listen_on := ListenOn, opts := Options} = L,
+    #{proto := Proto, listen_on := ListenOn, opts := Options0} = L,
+    Options = [{listener_id, identifier(L)} | Options0],
     NewResults =
         case start_listener(Proto, ListenOn, Options) of
             {ok, _Pid} ->
@@ -103,9 +108,10 @@ ensure_all_started([L | Rest], Results) ->
 format_listen_on(ListenOn) -> format(ListenOn).
 
 -spec(start_listener(listener()) -> ok).
-start_listener(#{proto := Proto, name := Name, listen_on := ListenOn, opts := Options}) ->
+start_listener(#{proto := Proto, name := Name, listen_on := ListenOn, opts := Opts0}) ->
     ID = identifier(Proto, Name),
-    case start_listener(Proto, ListenOn, Options) of
+    Opts = [{listener_id, ID} | Opts0],
+    case start_listener(Proto, ListenOn, Opts) of
         {ok, _} ->
             console_print("Start ~s listener on ~s successfully.~n", [ID, format(ListenOn)]);
         {error, Reason} ->
@@ -122,13 +128,18 @@ console_print(_Fmt, _Args) -> ok.
 -endif.
 
 %% Start MQTT/TCP listener
--spec(start_listener(esockd:proto(), esockd:listen_on(), [esockd:option()])
+-spec(start_listener(esockd:proto(), esockd:listen_on(), [ esockd:option()
+                                                         | {listener_id, binary()}])
       -> {ok, pid()} | {error, term()}).
 start_listener(tcp, ListenOn, Options) ->
     start_mqtt_listener('mqtt:tcp', ListenOn, Options);
 
 %% Start MQTT/TLS listener
-start_listener(Proto, ListenOn, Options) when Proto == ssl; Proto == tls ->
+start_listener(Proto, ListenOn, Options0) when Proto == ssl; Proto == tls ->
+    ListenerID = proplists:get_value(listener_id, Options0),
+    Options1 = proplists:delete(listener_id, Options0),
+    Options = emqx_ocsp_cache:inject_sni_fun(ListenerID, Options1),
+    ok = maybe_register_crl_urls(Options),
     start_mqtt_listener('mqtt:ssl', ListenOn, Options);
 
 %% Start MQTT/WS listener
@@ -186,6 +197,20 @@ with_port(Port, Opts = #{socket_opts := SocketOption}) when is_integer(Port) ->
     Opts#{socket_opts => [{port, Port}| SocketOption]};
 with_port({Addr, Port}, Opts = #{socket_opts := SocketOption}) ->
     Opts#{socket_opts => [{ip, Addr}, {port, Port}| SocketOption]}.
+
+update_listeners_env(Action, NewConf = #{name := NewName, proto := NewProto}) ->
+    Listener = emqx:get_env(listeners, []),
+    Listener1 = lists:filter(
+        fun(#{name := Name, proto := Proto}) ->
+            not (Name =:= NewName andalso Proto =:= NewProto)
+        end, Listener),
+    Listener2 =
+        case Action of
+            update -> [NewConf | Listener1];
+            delete -> Listener1
+        end,
+    application:set_env(emqx, listeners, Listener2),
+    ok.
 
 %% @doc Restart all listeners
 -spec(restart() -> ok).
@@ -275,4 +300,23 @@ find_by_id(Id, [L | Rest]) ->
     case identifier(L) =:= Id of
         true -> L;
         false -> find_by_id(Id, Rest)
+    end.
+
+%% @doc Called by Enterprise edition to dynamically reload configs.
+-spec maybe_register_crl_urls([esockd:option()]) -> ok.
+maybe_register_crl_urls(Options) ->
+    CRLOptions = proplists:get_value(crl_options, Options, []),
+    case proplists:get_bool(crl_check_enabled, CRLOptions) of
+        false ->
+            ok;
+        true ->
+            URLs =
+                lists:usort(
+                  [URL
+                   || URL <- proplists:get_value(crl_cache_urls, CRLOptions, [])]),
+            lists:foreach(
+              fun(URL) ->
+                emqx_crl_cache:refresh(URL)
+              end,
+              URLs)
     end.

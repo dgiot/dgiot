@@ -1,5 +1,5 @@
 %%--------------------------------------------------------------------
-%% Copyright (c) 2018-2021 EMQ Technologies Co., Ltd. All Rights Reserved.
+%% Copyright (c) 2018-2022 EMQ Technologies Co., Ltd. All Rights Reserved.
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -38,16 +38,22 @@
         , unsubscribe/3
         ]).
 
--export([dispatch/3]).
+-export([ dispatch/3
+        , redispatch/1
+        ]).
 
 -export([ maybe_ack/1
         , maybe_nack_dropped/1
         , nack_no_connection/1
         , is_ack_required/1
+        , is_retry_dispatch/1
         ]).
 
 %% for testing
--export([subscribers/2]).
+-ifdef(TEST).
+-compile(export_all).
+-compile(nowarn_export_all).
+-endif.
 
 %% gen_server callbacks
 -export([ init/1
@@ -63,6 +69,7 @@
 -type strategy() :: random
                   | round_robin
                   | sticky
+                  | local
                   | hash %% same as hash_clientid, backward compatible
                   | hash_clientid
                   | hash_topic.
@@ -76,6 +83,9 @@
 -define(ACK, shared_sub_ack).
 -define(NACK(Reason), {shared_sub_nack, Reason}).
 -define(NO_ACK, no_ack).
+-define(REDISPATCH_TO(GROUP, TOPIC), {GROUP, TOPIC}).
+
+-type redispatch_to() :: ?REDISPATCH_TO(emqx_topic:group(), emqx_topic:topic()).
 
 -record(state, {pmon}).
 
@@ -114,72 +124,83 @@ unsubscribe(Group, Topic, SubPid) when is_pid(SubPid) ->
 record(Group, Topic, SubPid) ->
     #emqx_shared_subscription{group = Group, topic = Topic, subpid = SubPid}.
 
+-spec(dispatch_to_non_self(emqx_topic:group(), emqx_topic:topic(), emqx_types:delivery())
+      -> emqx_types:deliver_result()).
+dispatch_to_non_self(Group, Topic, Delivery) ->
+    Strategy = strategy(Group),
+    dispatch(Strategy, Group, Topic, Delivery, _FailedSubs = #{self() => sender}).
+
 -spec(dispatch(emqx_topic:group(), emqx_topic:topic(), emqx_types:delivery())
       -> emqx_types:deliver_result()).
 dispatch(Group, Topic, Delivery) ->
-    dispatch(Group, Topic, Delivery, _FailedSubs = []).
+    Strategy = strategy(Group),
+    dispatch(Strategy, Group, Topic, Delivery, _FailedSubs = #{}).
 
-dispatch(Group, Topic, Delivery = #delivery{message = Msg}, FailedSubs) ->
-    #message{from = ClientId, topic = SourceTopic} = Msg,
-    case pick(strategy(), ClientId, SourceTopic, Group, Topic, FailedSubs) of
-        false ->
-            {error, no_subscribers};
+dispatch(Strategy, Group, Topic, Delivery = #delivery{message = Msg0}, FailedSubs) ->
+    #message{from = ClientId, topic = SourceTopic} = Msg0,
+    case pick(Strategy, ClientId, SourceTopic, Group, Topic, FailedSubs) of
+        false -> {error, no_subscribers};
         {Type, SubPid} ->
-            case do_dispatch(SubPid, Topic, Msg, Type) of
+            Msg = with_redispatch_to(Msg0, Group, Topic),
+            case do_dispatch(SubPid, Group, Topic, Msg, Type) of
                 ok -> {ok, 1};
-                {error, _Reason} ->
+                {error, Reason} ->
                     %% Failed to dispatch to this sub, try next.
-                    dispatch(Group, Topic, Delivery, [SubPid | FailedSubs])
+                    dispatch(Strategy, Group, Topic, Delivery, FailedSubs#{SubPid => Reason})
             end
     end.
 
--spec(strategy() -> strategy()).
-strategy() ->
-    emqx:get_env(shared_subscription_strategy, random).
+-spec(strategy(emqx_topic:group()) -> strategy()).
+strategy(Group) ->
+    case emqx:get_env(shared_subscription_strategy_per_group, #{}) of
+        #{Group := Strategy} ->
+            Strategy;
+        _ ->
+            emqx:get_env(shared_subscription_strategy, random)
+    end.
+
 
 -spec(ack_enabled() -> boolean()).
 ack_enabled() ->
     emqx:get_env(shared_dispatch_ack_enabled, false).
 
-do_dispatch(SubPid, Topic, Msg, _Type) when SubPid =:= self() ->
-    %% Deadlock otherwise
-    _ = erlang:send(SubPid, {deliver, Topic, Msg}),
-    ok;
-do_dispatch(SubPid, Topic, Msg, Type) ->
-    dispatch_per_qos(SubPid, Topic, Msg, Type).
-
+do_dispatch(SubPid, _Group, Topic, Msg, _Type) when SubPid =:= self() ->
+    %% dispatch without ack, deadlock otherwise
+    send(SubPid, Topic, {deliver, Topic, Msg});
 %% return either 'ok' (when everything is fine) or 'error'
-dispatch_per_qos(SubPid, Topic, #message{qos = ?QOS_0} = Msg, _Type) ->
+do_dispatch(SubPid, _Group, Topic, #message{qos = ?QOS_0} = Msg, _Type) ->
     %% For QoS 0 message, send it as regular dispatch
-    _ = erlang:send(SubPid, {deliver, Topic, Msg}),
-    ok;
-dispatch_per_qos(SubPid, Topic, Msg, retry) ->
-    %% Retry implies all subscribers nack:ed, send again without ack
-    _ = erlang:send(SubPid, {deliver, Topic, Msg}),
-    ok;
-dispatch_per_qos(SubPid, Topic, Msg, fresh) ->
+    send(SubPid, Topic, {deliver, Topic, Msg});
+do_dispatch(SubPid, Group, Topic, Msg, Type) ->
     case ack_enabled() of
         true ->
-            dispatch_with_ack(SubPid, Topic, Msg);
+            dispatch_with_ack(SubPid, Group, Topic, Msg, Type);
         false ->
-            _ = erlang:send(SubPid, {deliver, Topic, Msg}),
-            ok
+            send(SubPid, Topic, {deliver, Topic, Msg})
     end.
 
-dispatch_with_ack(SubPid, Topic, Msg) ->
+with_redispatch_to(#message{qos = ?QOS_0} = Msg, _Group, _Topic) -> Msg;
+with_redispatch_to(Msg, Group, Topic) ->
+    emqx_message:set_headers(#{redispatch_to => ?REDISPATCH_TO(Group, Topic)}, Msg).
+
+dispatch_with_ack(SubPid, Group, Topic, Msg, Type) ->
     %% For QoS 1/2 message, expect an ack
     Ref = erlang:monitor(process, SubPid),
     Sender = self(),
-    _ = erlang:send(SubPid, {deliver, Topic, with_ack_ref(Msg, {Sender, Ref})}),
+    send(SubPid, Topic, {deliver, Topic, with_group_ack(Msg, Group, Type, Sender, Ref)}),
     Timeout = case Msg#message.qos of
                   ?QOS_1 -> timer:seconds(?SHARED_SUB_QOS1_DISPATCH_TIMEOUT_SECONDS);
                   ?QOS_2 -> infinity
               end,
+
+    %% This OpaqueRef is a forward compatibilty workaround. Pre 4.3.15 versions
+    %% pass Ref from `{Sender, Ref}` ack header back as it is.
+    OpaqueRef = old_ref(Type, Group, Ref),
     try
         receive
-            {Ref, ?ACK} ->
+            {ReceivedRef, ?ACK} when ReceivedRef =:= Ref; ReceivedRef =:= OpaqueRef ->
                 ok;
-            {Ref, ?NACK(Reason)} ->
+            {ReceivedRef, ?NACK(Reason)} when ReceivedRef =:= Ref; ReceivedRef =:= OpaqueRef ->
                 %% the receive session may nack this message when its queue is full
                 {error, Reason};
             {'DOWN', Ref, process, SubPid, Reason} ->
@@ -192,24 +213,93 @@ dispatch_with_ack(SubPid, Topic, Msg) ->
         _ = erlang:demonitor(Ref, [flush])
     end.
 
-with_ack_ref(Msg, SenderRef) ->
-    emqx_message:set_headers(#{shared_dispatch_ack => SenderRef}, Msg).
+send(Pid, Topic, Msg) ->
+    Node = node(Pid),
+    if Node =:= node() ->
+            Pid ! Msg;
+       true ->
+            emqx_rpc:cast(Topic, Node, erlang, send, [Pid, Msg])
+    end,
+    ok.
 
-without_ack_ref(Msg) ->
+with_group_ack(Msg, Group, Type, Sender, Ref) ->
+    emqx_message:set_headers(#{shared_dispatch_ack => {Sender, old_ref(Type, Group, Ref)}}, Msg).
+
+old_ref(Type, Group, Ref) ->
+    {Type, Group, Ref}.
+
+-spec(without_group_ack(emqx_types:message()) -> emqx_types:message()).
+without_group_ack(Msg) ->
     emqx_message:set_headers(#{shared_dispatch_ack => ?NO_ACK}, Msg).
 
-get_ack_ref(Msg) ->
+get_group_ack(Msg) ->
     emqx_message:get_header(shared_dispatch_ack, Msg, ?NO_ACK).
 
+%% @hidden Redispatch is neede only for the messages with redispatch_to header added.
+is_redispatch_needed(#message{} = Msg) ->
+    case get_redispatch_to(Msg) of
+        ?REDISPATCH_TO(_, _) ->
+            true;
+        _ ->
+            false
+    end.
+
+%% @hidden Return the `redispatch_to` group-topic in the message header.
+%% `false` is returned if the message is not a shared dispatch.
+%% or when it's a QoS 0 message.
+-spec(get_redispatch_to(emqx_types:message()) -> redispatch_to() | false).
+get_redispatch_to(Msg) ->
+    emqx_message:get_header(redispatch_to, Msg, false).
+
 -spec(is_ack_required(emqx_types:message()) -> boolean()).
-is_ack_required(Msg) -> ?NO_ACK =/= get_ack_ref(Msg).
+is_ack_required(Msg) -> ?NO_ACK =/= get_group_ack(Msg).
+
+-spec(is_retry_dispatch(emqx_types:message()) -> boolean()).
+is_retry_dispatch(Msg) ->
+    case get_group_ack(Msg) of
+        {_Sender, {retry, _Group, _Ref}} -> true;
+        _ -> false
+    end.
+
+%% @doc Redispatch shared deliveries to other members in the group.
+redispatch(Messages0) ->
+    Messages = lists:filter(fun is_redispatch_needed/1, Messages0),
+    case length(Messages) of
+        L when L > 0 ->
+            ?LOG(info, "Redispatching ~p shared subscription message(s)", [L]),
+            lists:foreach(fun redispatch_shared_message/1, Messages);
+        _ ->
+            ok
+    end.
+
+redispatch_shared_message(#message{} = Msg) ->
+    %% As long as it's still a #message{} record in inflight,
+    %% we should try to re-dispatch
+    ?REDISPATCH_TO(Group, Topic) = get_redispatch_to(Msg),
+    %% Note that dispatch is called with self() in failed subs
+    %% This is done to avoid dispatching back to caller
+    Delivery = #delivery{sender = self(), message = Msg},
+    dispatch_to_non_self(Group, Topic, Delivery).
 
 %% @doc Negative ack dropped message due to inflight window or message queue being full.
--spec(maybe_nack_dropped(emqx_types:message()) -> ok).
+-spec(maybe_nack_dropped(emqx_types:message()) -> store | drop).
 maybe_nack_dropped(Msg) ->
-    case get_ack_ref(Msg) of
-        ?NO_ACK -> ok;
-        {Sender, Ref} -> nack(Sender, Ref, dropped)
+    case get_group_ack(Msg) of
+        %% No ack header is present, put it into mqueue
+        ?NO_ACK                          -> store;
+
+        %% For fresh Ref we send a nack and return true, to note that the inflight is full
+        {Sender, {fresh, _Group, Ref}}   -> nack(Sender, Ref, dropped), drop;
+
+        %% For retry Ref we can't reject a message if inflight is full, so we mark it as
+        %% acknowledged and put it into mqueue
+        {_Sender, {retry, _Group, _Ref}} -> _ = maybe_ack(Msg), store;
+
+        %% This clause is for backward compatibility
+        Ack ->
+            {Sender, Ref} = fetch_sender_ref(Ack),
+            nack(Sender, Ref, dropped),
+            drop
     end.
 
 %% @doc Negative ack message due to connection down.
@@ -217,56 +307,88 @@ maybe_nack_dropped(Msg) ->
 %% i.e is_ack_required returned true.
 -spec(nack_no_connection(emqx_types:message()) -> ok).
 nack_no_connection(Msg) ->
-    {Sender, Ref} = get_ack_ref(Msg),
+    {Sender, Ref} = fetch_sender_ref(get_group_ack(Msg)),
     nack(Sender, Ref, no_connection).
 
 -spec(nack(pid(), reference(), dropped | no_connection) -> ok).
 nack(Sender, Ref, Reason) ->
-    erlang:send(Sender, {Ref, ?NACK(Reason)}),
+    Sender ! {Ref, ?NACK(Reason)},
     ok.
 
 -spec(maybe_ack(emqx_types:message()) -> emqx_types:message()).
 maybe_ack(Msg) ->
-    case get_ack_ref(Msg) of
+    case get_group_ack(Msg) of
         ?NO_ACK ->
             Msg;
-        {Sender, Ref} ->
-            erlang:send(Sender, {Ref, ?ACK}),
-            without_ack_ref(Msg)
+        Ack ->
+            {Sender, Ref} = fetch_sender_ref(Ack),
+            ack(Sender, Ref),
+            without_group_ack(Msg)
     end.
+
+-spec(ack(pid(), reference()) -> ok).
+ack(Sender, Ref) ->
+    Sender ! {Ref, ?ACK},
+    ok.
+
+fetch_sender_ref({Sender, {_Type, _Group, Ref}}) -> {Sender, Ref};
+%% These clauses are for backward compatibility
+fetch_sender_ref({Sender, Ref}) -> {Sender, Ref}.
 
 pick(sticky, ClientId, SourceTopic, Group, Topic, FailedSubs) ->
     Sub0 = erlang:get({shared_sub_sticky, Group, Topic}),
-    case is_active_sub(Sub0, FailedSubs) of
+    All = subscribers(Group, Topic),
+    case is_active_sub(Sub0, FailedSubs, All) of
         true ->
             %% the old subscriber is still alive
             %% keep using it for sticky strategy
             {fresh, Sub0};
         false ->
             %% randomly pick one for the first message
-            {Type, Sub} = do_pick(random, ClientId, SourceTopic, Group, Topic, [Sub0 | FailedSubs]),
-            %% stick to whatever pick result
-            erlang:put({shared_sub_sticky, Group, Topic}, Sub),
-            {Type, Sub}
+            FailedSubs1 = maps_put_new(FailedSubs, Sub0, inactive),
+            case do_pick(random, ClientId, SourceTopic, Group, Topic, FailedSubs1) of
+              false -> false;
+              {Type, Sub} ->
+                %% stick to whatever pick result
+                erlang:put({shared_sub_sticky, Group, Topic}, Sub),
+                {Type, Sub}
+            end
     end;
 pick(Strategy, ClientId, SourceTopic, Group, Topic, FailedSubs) ->
     do_pick(Strategy, ClientId, SourceTopic, Group, Topic, FailedSubs).
 
 do_pick(Strategy, ClientId, SourceTopic, Group, Topic, FailedSubs) ->
     All = subscribers(Group, Topic),
-    case All -- FailedSubs of
+    case lists:filter(fun(Sub) -> not maps:is_key(Sub, FailedSubs) end, All) of
         [] when All =:= [] ->
             %% Genuinely no subscriber
             false;
         [] ->
-            %% All offline? pick one anyway
-            {retry, pick_subscriber(Group, Topic, Strategy, ClientId, SourceTopic, All)};
+            %% We try redispatch to subs who dropped the message because inflight was full.
+            Found = maps_find_by(FailedSubs, fun(SubPid, FailReason) ->
+                FailReason == dropped andalso is_alive_sub(SubPid)
+            end),
+            case Found of
+                {ok, Dropped, dropped} ->
+                    %% Found dropped client
+                    {retry, pick_subscriber(Group, Topic, Strategy, ClientId, SourceTopic, [Dropped])};
+                error ->
+                    %% All offline? pick one anyway
+                    {retry, pick_subscriber(Group, Topic, Strategy, ClientId, SourceTopic, All)}
+            end;
         Subs ->
             %% More than one available
             {fresh, pick_subscriber(Group, Topic, Strategy, ClientId, SourceTopic, Subs)}
     end.
 
 pick_subscriber(_Group, _Topic, _Strategy, _ClientId, _SourceTopic, [Sub]) -> Sub;
+pick_subscriber(Group, Topic, local, ClientId, SourceTopic, Subs) ->
+    case lists:filter(fun(Pid) -> erlang:node(Pid) =:= node() end, Subs) of
+        [_ | _] = LocalSubs ->
+            pick_subscriber(Group, Topic, random, ClientId, SourceTopic, LocalSubs);
+        [] ->
+            pick_subscriber(Group, Topic, random, ClientId, SourceTopic, Subs)
+    end;
 pick_subscriber(Group, Topic, Strategy, ClientId, SourceTopic, Subs) ->
     Nth = do_pick_subscriber(Group, Topic, Strategy, ClientId, SourceTopic, length(Subs)),
     lists:nth(Nth, Subs).
@@ -334,6 +456,7 @@ handle_cast(Msg, State) ->
 
 handle_info({mnesia_table_event, {write, NewRecord, _}}, State = #state{pmon = PMon}) ->
     #emqx_shared_subscription{subpid = SubPid} = NewRecord,
+    ok = maybe_insert_alive_tab(SubPid),
     {noreply, update_stats(State#state{pmon = emqx_pmon:monitor(SubPid, PMon)})};
 
 %% The subscriber may have subscribed multiple topics, so we need to keep monitoring the PID until
@@ -386,8 +509,10 @@ update_stats(State) ->
     State.
 
 %% Return 'true' if the subscriber process is alive AND not in the failed list
-is_active_sub(Pid, FailedSubs) ->
-    is_alive_sub(Pid) andalso not lists:member(Pid, FailedSubs).
+is_active_sub(Pid, FailedSubs, All) ->
+    lists:member(Pid, All) andalso
+        (not maps:is_key(Pid, FailedSubs)) andalso
+        is_alive_sub(Pid).
 
 %% erlang:is_process_alive/1 does not work with remote pid.
 is_alive_sub(Pid) when ?IS_LOCAL_PID(Pid) ->
@@ -400,3 +525,22 @@ delete_route_if_needed({Group, Topic}) ->
         true -> ok;
         false -> ok = emqx_router:do_delete_route(Topic, {Group, node()})
     end.
+
+maps_find_by(Map, Predicate) when is_map(Map) ->
+    maps_find_by(maps:iterator(Map), Predicate);
+
+maps_find_by(Iterator, Predicate) ->
+    case maps:next(Iterator) of
+      none -> error;
+      {Key, Value, NewIterator} ->
+        case Predicate(Key, Value) of
+          true -> {ok, Key, Value};
+          false -> maps_find_by(NewIterator, Predicate)
+        end
+    end.
+
+maps_put_new(Map, Key, Value) ->
+   case Map of
+     #{Key := _} -> Map;
+     _ -> Map#{Key => Value}
+   end.

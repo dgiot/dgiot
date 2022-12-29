@@ -1,5 +1,5 @@
 %%--------------------------------------------------------------------
-%% Copyright (c) 2017-2021 EMQ Technologies Co., Ltd. All Rights Reserved.
+%% Copyright (c) 2017-2022 EMQ Technologies Co., Ltd. All Rights Reserved.
 %%
 %% Licensed under the Apache License, Version 2.0 (the "License");
 %% you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@
 %% APIs
 -export([ match/3
         , compile/1
+        , feed_var/2
         ]).
 
 -export_type([rule/0]).
@@ -78,7 +79,10 @@ compile(topic, Topic) ->
     end.
 
 pattern(Words) ->
-    lists:member(<<"%u">>, Words) orelse lists:member(<<"%c">>, Words).
+    lists:member(<<"%u">>, Words)
+        orelse lists:member(<<"%c">>, Words)
+        orelse lists:member(<<"%cida">>, Words)
+        orelse lists:member(<<"%cna">>, Words).
 
 bin(L) when is_list(L) ->
     list_to_binary(L);
@@ -132,9 +136,13 @@ match_who(_ClientInfo, _Who) ->
 match_topics(_ClientInfo, _Topic, []) ->
     false;
 match_topics(ClientInfo, Topic, [{pattern, PatternFilter}|Filters]) ->
-    TopicFilter = feed_var(ClientInfo, PatternFilter),
-    match_topic(emqx_topic:words(Topic), TopicFilter)
-        orelse match_topics(ClientInfo, Topic, Filters);
+    case feed_var(ClientInfo, PatternFilter) of
+        nomatch ->
+            false;
+        TopicFilter ->
+            match_topic(emqx_topic:words(Topic), TopicFilter)
+                orelse match_topics(ClientInfo, Topic, Filters)
+    end;
 match_topics(ClientInfo, Topic, [TopicFilter|Filters]) ->
    match_topic(emqx_topic:words(Topic), TopicFilter)
        orelse match_topics(ClientInfo, Topic, Filters).
@@ -148,14 +156,25 @@ feed_var(ClientInfo, Pattern) ->
     feed_var(ClientInfo, Pattern, []).
 feed_var(_ClientInfo, [], Acc) ->
     lists:reverse(Acc);
-feed_var(ClientInfo = #{clientid := undefined}, [<<"%c">>|Words], Acc) ->
-    feed_var(ClientInfo, Words, [<<"%c">>|Acc]);
+feed_var(#{clientid := undefined}, [<<"%c">>|_Words], _Acc) ->
+    %% we return an impossible to match value to avoid allowing a
+    %% client to pub/sub to the literal `%c' topic unintentionally.
+    nomatch;
 feed_var(ClientInfo = #{clientid := ClientId}, [<<"%c">>|Words], Acc) ->
     feed_var(ClientInfo, Words, [ClientId |Acc]);
-feed_var(ClientInfo = #{username := undefined}, [<<"%u">>|Words], Acc) ->
-    feed_var(ClientInfo, Words, [<<"%u">>|Acc]);
+feed_var(#{username := undefined}, [<<"%u">>|_Words], _Acc) ->
+    %% we return an impossible to match value to avoid allowing a
+    %% client to pub/sub to the literal `%u' topic unintentionally.
+    nomatch;
 feed_var(ClientInfo = #{username := Username}, [<<"%u">>|Words], Acc) ->
     feed_var(ClientInfo, Words, [Username|Acc]);
+feed_var(#{clientid_alias := undefined}, [<<"%cida">>|_Words], _Acc) ->
+    nomatch;
+feed_var(ClientInfo = #{clientid_alias := Alias}, [<<"%cida">>|Words], Acc) ->
+    feed_var(ClientInfo, Words, [Alias|Acc]);
+feed_var(#{common_name_alias := undefined}, [<<"%cna">>|_Words], _Acc) ->
+    nomatch;
+feed_var(ClientInfo = #{common_name_alias := Alias}, [<<"%cna">>|Words], Acc) ->
+    feed_var(ClientInfo, Words, [Alias|Acc]);
 feed_var(ClientInfo, [W|Words], Acc) ->
     feed_var(ClientInfo, Words, [W|Acc]).
-
