@@ -58,6 +58,7 @@ data/
 ci.sh
 *.ipr
 node_modules/
+apps/emqx_*
 apps/dgiot_parse/etc/dgiot_parse.conf
 apps/dgiot_parse/etc/dgiot_parse_temp.conf
 apps/dgiot_jieshun/
