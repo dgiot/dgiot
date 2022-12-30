@@ -616,8 +616,8 @@ function deploy_parse_server() {
   clean_service dgiot_parse_server
   clean_service dgiot_redis
   install_parse_server
-  install_dgiot_redis
-  echo -e "`date +%F_%T` $LINENO: ${GREEN} install install_dgiot_redis success${NC}"
+  #install_dgiot_redis
+  #echo -e "`date +%F_%T` $LINENO: ${GREEN} install install_dgiot_redis success${NC}"
   parsehome="${install_dir}/dgiot_parse_server"
   install_service2 "dgiot_redis" "simple" "${parsehome}/script/redis/src/redis-server ${parsehome}/script/redis.conf"
   install_service2 "dgiot_parse_server" "simple" "${parsehome}/script/node/bin/node  ${parsehome}/server/index.js"
