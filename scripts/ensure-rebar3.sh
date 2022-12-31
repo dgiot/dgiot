@@ -21,7 +21,7 @@ esac
 # ensure dir
 cd -P -- "$(dirname -- "${BASH_SOURCE[0]}")/.."
 
-DOWNLOAD_URL='https://github.com/emqx/rebar3/releases/download'
+DOWNLOAD_URL='https://gitee.com/fastdgiot/rebar3/releases/download/'
 
 download() {
     echo "downloading rebar3 ${VERSION}"

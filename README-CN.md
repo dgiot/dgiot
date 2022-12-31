@@ -75,7 +75,7 @@ wget -qO dgiot_install.sh https://gitee.com/dgiiot/dgiot/raw/master/dgiot_instal
 | 行业运营平台  | 一年 | 面谈 | 7 X 24 小时VIP服务 |
 
 ## 构建
- 构建 *dgiot* 需要 Erlang/OTP R23+, Windows下用 [开发环境包](https://dgiotdev-1308220533.cos.ap-nanjing.myqcloud.com/msys64.zip)开发。下载后解压到D盘根目录，严格按照下图操作：
+ 构建 *dgiot* 需要 Erlang/OTP R24+, [linux](https://github.com/erlang/otp/releases/download/OTP-24.3.4.2/otp_src_24.3.4.2.tar.gz) Windows下用 [开发环境包](https://dgiotdev-1308220533.cos.ap-nanjing.myqcloud.com/msys64.zip)开发。下载后解压到D盘根目录，严格按照下图操作：
 ![dgiotdevtools.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/dgiotdevtools.png)
 +  国外下载源码
 ```bash
@@ -141,7 +141,7 @@ wget -qO dgiot_install.sh https://gitee.com/dgiiot/dgiot/raw/master/dgiot_instal
         <td style={{border : 'none'}}> <a href="https://www.bilibili.com/video/BV1GP4y1M7ot?spm_id_from=333.999.0.0"><img width="216px" src="http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_doc/doc%E8%A7%86%E9%A2%91%E5%9B%BE%E7%89%87/%E5%AE%9E%E6%88%98%E6%95%99%E7%A8%8B/1.jpg" /></a></td>
         <td style={{border : 'none'}}> <a href="https://www.bilibili.com/video/BV1MV4y1p7Yn?spm_id_from=333.999.0.0"><img width="216px" src="http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_doc/doc%E8%A7%86%E9%A2%91%E5%9B%BE%E7%89%87/%E5%AE%9E%E6%88%98%E6%95%99%E7%A8%8B/2.jpg" /></a></td>
         <td style={{border : 'none'}}> <a href="https://www.bilibili.com/video/BV1XF411473H?spm_id_from=333.999.0.0"><img width="216px" src="http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_doc/doc%E8%A7%86%E9%A2%91%E5%9B%BE%E7%89%87/%E5%AE%9E%E6%88%98%E6%95%99%E7%A8%8B/3.jpg" /></a></td>
-        <td style={{border : 'none'}}> <a href="https://www.bilibili.com/video/BV1fG41157CS?spm_id_from=333.999.0.0"><img width="216px" src="http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_doc/doc%E8%A7%86%E9%A2%91%E5%9B%BE%E7%89%87/%E5%AE%9E%E6%88%98%E6%95%99%E7%A8%8B/4.jpg" /></a></td>        
+        <td style={{border : 'none'}}> <a href="https://www.bilibili.com/video/BV1fG41157CS?spm_id_from=333.999.0.0"><img width="216px" src="http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_doc/doc%E8%A7%86%E9%A2%91%E5%9B%BE%E7%89%87/%E5%AE%9E%E6%88%98%E6%95%99%E7%A8%8B/4.jpg" /></a></td>
     </tr>
     <tr class="td1" valign="top" style={{border : 'none',background : '#fff'}}>
         <td class="a1" style={{border : 'none'}}> <a href="https://www.bilibili.com/video/BV18d4y1R74q?spm_id_from=333.999.0.0" title="MODBUS温湿度平台接入">MODBUS温湿度平台接入</a></td>
@@ -152,13 +152,13 @@ wget -qO dgiot_install.sh https://gitee.com/dgiiot/dgiot/raw/master/dgiot_instal
     <tr style={{border : 'none'}}>
         <td style={{border : 'none'}}> <a href="https://www.bilibili.com/video/BV1EU4y1z7wF?spm_id_from=333.999.0.0"><img width="216px" src="http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_doc/doc%E8%A7%86%E9%A2%91%E5%9B%BE%E7%89%87/%E5%AE%9E%E6%88%98%E6%95%99%E7%A8%8B/5.jpg" /></a></td>
         <td style={{border : 'none'}}> <a href="https://www.bilibili.com/video/BV1334y1b7qc?spm_id_from=333.999.0.0"><img width="216px" src="http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_doc/doc%E8%A7%86%E9%A2%91%E5%9B%BE%E7%89%87/%E5%AE%9E%E6%88%98%E6%95%99%E7%A8%8B/6.jpg" /></a></td>
-        <td style={{border : 'none'}}> <a href="https://www.bilibili.com/video/BV1pF411t7bq?spm_id_from=333.999.0.0"><img width="216px" src="http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_doc/doc%E8%A7%86%E9%A2%91%E5%9B%BE%E7%89%87/%E5%AE%9E%E6%88%98%E6%95%99%E7%A8%8B/3.jpg" /></a></td>        
+        <td style={{border : 'none'}}> <a href="https://www.bilibili.com/video/BV1pF411t7bq?spm_id_from=333.999.0.0"><img width="216px" src="http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_doc/doc%E8%A7%86%E9%A2%91%E5%9B%BE%E7%89%87/%E5%AE%9E%E6%88%98%E6%95%99%E7%A8%8B/3.jpg" /></a></td>
     </tr>
     <tr class="td1" valign="top" style={{border : 'none',background : '#fff'}}>
         <td class="a1" style={{border : 'none'}}> <a href="https://www.bilibili.com/video/BV18d4y1R74q?spm_id_from=333.999.0.0" title="mqtt虚拟设备连接">mqtt虚拟设备连接</a></td>
         <td class="a1" style={{border : 'none'}}> <a href="https://www.bilibili.com/video/BV18d4y1R74q?spm_id_from=333.999.0.0" title="opc虚拟设备连接">opc虚拟设备连接</a></td>
-        <td class="a1" style={{border : 'none'}}> <a href="https://www.bilibili.com/video/BV18d4y1R74q?spm_id_from=333.999.0.0" title="dgiot低代码远程控制电表-拉合闸视频演练">dgiot低代码远程控制电表-拉合闸视频演练</a></td>      
-    </tr>     
+        <td class="a1" style={{border : 'none'}}> <a href="https://www.bilibili.com/video/BV18d4y1R74q?spm_id_from=333.999.0.0" title="dgiot低代码远程控制电表-拉合闸视频演练">dgiot低代码远程控制电表-拉合闸视频演练</a></td>
+    </tr>
 </table>
 
 ## 开发教程
@@ -188,12 +188,12 @@ wget -qO dgiot_install.sh https://gitee.com/dgiiot/dgiot/raw/master/dgiot_instal
      </tr>
     <tr style={{border : 'none'}}>
         <td style={{border : 'none'}}> <a href="https://www.bilibili.com/video/BV1C34y1H7rR?spm_id_from=333.999.0.0"><img width="216px" src="http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_doc/doc%E8%A7%86%E9%A2%91%E5%9B%BE%E7%89%87/%E6%99%BA%E6%85%A7%E6%A0%A1%E5%9B%AD%E4%BC%A0%E6%84%9F%E6%8E%A5%E5%85%A5%E6%95%99%E7%A8%8B/5.jpg" /></a></td>
-        <td style={{border : 'none'}}> <a href="https://www.bilibili.com/video/BV12f4y1o7d3?spm_id_from=333.999.0.0"><img width="216px" src="http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_doc/doc%E8%A7%86%E9%A2%91%E5%9B%BE%E7%89%87/%E6%99%BA%E6%85%A7%E6%A0%A1%E5%9B%AD%E4%BC%A0%E6%84%9F%E6%8E%A5%E5%85%A5%E6%95%99%E7%A8%8B/6.jpg" /></a></td>       
+        <td style={{border : 'none'}}> <a href="https://www.bilibili.com/video/BV12f4y1o7d3?spm_id_from=333.999.0.0"><img width="216px" src="http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_doc/doc%E8%A7%86%E9%A2%91%E5%9B%BE%E7%89%87/%E6%99%BA%E6%85%A7%E6%A0%A1%E5%9B%AD%E4%BC%A0%E6%84%9F%E6%8E%A5%E5%85%A5%E6%95%99%E7%A8%8B/6.jpg" /></a></td>
     </tr>
     <tr class="td1" valign="top" style={{border : 'none',background : '#fff'}}>
         <td class="a1" style={{border : 'none'}}> <a href="https://www.bilibili.com/video/BV1C34y1H7rR?spm_id_from=333.999.0.0" title="DGIOT平台接入噪声传感器教程">DGIOT平台接入噪声传感器教程</a></td>
-        <td class="a1" style={{border : 'none'}}> <a href="https://www.bilibili.com/video/BV12f4y1o7d3?spm_id_from=333.999.0.0" title="DGIOT平台接入振动传感器教程">DGIOT平台接入振动传感器教程</a></td>      
-    </tr>     
+        <td class="a1" style={{border : 'none'}}> <a href="https://www.bilibili.com/video/BV12f4y1o7d3?spm_id_from=333.999.0.0" title="DGIOT平台接入振动传感器教程">DGIOT平台接入振动传感器教程</a></td>
+    </tr>
 </table>
 
 ## 案例视频
