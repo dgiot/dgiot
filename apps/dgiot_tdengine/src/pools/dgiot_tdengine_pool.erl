@@ -20,6 +20,8 @@
 -include_lib("dgiot/include/logger.hrl").
 -export([start/3, run_sql/3]).
 
+start(<<"WEBSOCKET">>, Ip, Port) ->
+    {<<"WEBSOCKET">>, {binary_to_list(Ip), Port}};
 start(<<"HTTP">>, Ip, Port) ->
     dgiot_tdengine_http:start(),
     {<<"HTTP">>, list_to_binary(lists:concat(["http://", binary_to_list(Ip), ":", Port, "/rest/sql"]))};
@@ -35,8 +37,21 @@ start(_Type, Ip, Port) ->
     dgiot_tdengine_http:start(),
     {<<"HTTP">>, list_to_binary(lists:concat(["http://", binary_to_list(Ip), ":", Port, "/rest/sql"]))}.
 
+%% WebSocket
+run_sql(#{<<"driver">> := <<"WEBSOCKET">>, <<"ws_pid">> := ConnPid, <<"ws_ref">> := StreamRef} = _Context, _Action, Sql) when byte_size(Sql) > 0 ->
+    Body = #{<<"action">> => <<"version">>},
+    Frame = {text, jiffy:encode(Body)},
+    gun:ws_send(ConnPid, StreamRef, Frame),
+    {ws, Ack} = gun:await(ConnPid, StreamRef),
+    case Ack of
+        {} ->
+            ok;
+        _ ->
+            ok
+    end;
+
 %% Action 用来区分数据库操作语句类型(DQL、DML、DDL、DCL)
-run_sql(#{<<"driver">> := <<"HTTP">>, <<"url">> := Url, <<"username">> := UserName, <<"password">> := Password} = Context, _Action, Sql)  when byte_size(Sql) > 0 ->
+run_sql(#{<<"driver">> := <<"HTTP">>, <<"url">> := Url, <<"username">> := UserName, <<"password">> := Password} = Context, _Action, Sql) when byte_size(Sql) > 0 ->
     ?LOG(debug, " ~p, ~p, ~p, (~ts)", [Url, UserName, Password, unicode:characters_to_list(Sql)]),
     case dgiot_tdengine_http:request(Url, UserName, Password, Sql) of
         {ok, Result} ->

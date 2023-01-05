@@ -106,9 +106,13 @@
     },
     <<"driver">> => #{
         order => 6,
-        type => string,
+        type => enum,
         required => true,
         default => <<"HTTP">>,
+        enum => [
+            #{<<"value">> => <<"HTTP">>, <<"label">> => <<"Rest"/utf8>>},
+            #{<<"value">> => <<"WEBSOCKET">>, <<"label">> => <<"Websocket"/utf8>>}
+        ],
         title => #{
             zh => <<"连接方式"/utf8>>
         },
@@ -189,6 +193,12 @@ init(?TYPE, ChannelId, Config) ->
     DbType = maps:get(<<"db">>, Config, <<"ProductId">>),
     dgiot_data:insert({tdengine_db, ChannelId}, DbType),
     {ok, State, Specs}.
+
+handle_init(#state{id = _ChannelId, env = #{<<"driver">> := <<"WEBSOCKET">>, <<"url">> := {Ip, Port}} = Env} = State) ->
+    dgiot_metrics:inc(dgiot_tdengine, <<"tdengine">>, 1),
+    {ConnPid, StreamRef} = dgiot_tdengine_websocket:start(Ip, Port),
+    erlang:send_after(5000, self(), init),
+    {ok, State#{env = Env#{<<"ws_pid">> => ConnPid, <<"ws_ref">> = StreamRef}}};
 
 handle_init(#state{id = _ChannelId} = State) ->
     dgiot_metrics:inc(dgiot_tdengine, <<"tdengine">>, 1),
