@@ -90,7 +90,7 @@ record2task(DeviceId, #{<<"FMaterialId">> := FMaterialId} = Map) ->
 record2task(_, _) ->
     pass.
 
-update_batch(#{<<"material_type">> := Type, <<"objectId">> := BatchId, <<"FQty">> := Num}) ->
+update_batch(#{<<"material_type">> := Type, <<"batchId">> := BatchId, <<"FQty">> := Num}) ->
     case dgiot_parse:get_object(<<"Device">>, BatchId) of
         {ok, #{<<"content">> := #{<<"FQty">> := FQty} = Res}} ->
             Remaining = maps:get(<<"Remaining">>, Res, FQty),
@@ -118,7 +118,7 @@ update_batch(_) ->
 
 run_material_hook(ProductId, Type, Map) ->
 %%    io:format("~s ~p ProductId = ~p,Type = ~p ,Map = ~p ~n", [?FILE, ?LINE, ProductId,Type,Map]),
-    case dgiot_hook:run_hook({kingdee, post_material, ProductId, Type}, [Map]) of
+    case dgiot_hook:run_hook({kingdee, post_material, ProductId, Type}, Map) of
         {ok, [{ok, _}]} ->
             {ok, ok};
         _ ->
@@ -191,8 +191,8 @@ handle_ets(_) ->
 
 
 
-record2list(V, #{<<"type">> := <<"picking">>, <<"FQty">> := FQty, <<"objectId">> := BatchId} = Map) ->
-    ApplyTime = dgiot_datetime:nowstamp(),
+record2list(V, #{<<"material_type">> := <<"picking">>, <<"FQty">> := FQty, <<"batchId">> := BatchId} = Map) ->
+    ApplyTime = dgiot_datetime:format("YYYY-MM-DD HH:NN:SS"),
     MaterialPicked = maps:get(<<"material_picked">>, V, 0),
     PickList = maps:get(<<"material_pick">>, V, []),
     NewPickEd = MaterialPicked + FQty,
@@ -202,6 +202,6 @@ record2list(V, #{<<"type">> := <<"picking">>, <<"FQty">> := FQty, <<"objectId">>
             <<"material_batchid">> => BatchId,
 %%        <<"material_number">> => Num,
             <<"material_weight">> => FQty}],
-    Map#{<<"material_pick">> => NewPickList, <<"material_picked">> => NewPickEd};
+    V#{<<"material_pick">> => NewPickList, <<"material_picked">> => NewPickEd};
 record2list(_, Map) ->
     Map.
