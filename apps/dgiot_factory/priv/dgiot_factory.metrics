@@ -2,13 +2,13 @@
   {
     "name": "batch_num",
     "help": "批次总数",
-    "type": "Counter　　",
+    "type": "counter",
     "labels": []
   },
    {
       "name": "input_num",
       "help": "信息录入总数",
-      "type": "Counter　　",
+      "type": "counter",
       "labels": []
    }
 ]

@@ -277,7 +277,6 @@ relx_apps(ReleaseType) ->
         , gpb
         , poolboy
         , ibrowse
-      
         , emqx
         , {mnesia, load}
         , {ekka, load}
