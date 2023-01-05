@@ -26,10 +26,9 @@
 -dgiot_data("ets").
 -export([init_ets/0]).
 %% API
--export([start/2, handle_save/1, save_to_cache/2]).
+-export([start/2,check_init/3]).
 -export([init/3, handle_event/3, handle_message/2, stop/3, handle_init/1]).
 -export([test/1]).
--export([check_init/3]).
 
 %% 注册通道类型
 -channel_type(#{
@@ -111,7 +110,7 @@
         default => <<"HTTP">>,
         enum => [
             #{<<"value">> => <<"HTTP">>, <<"label">> => <<"Rest"/utf8>>},
-            #{<<"value">> => <<"WEBSOCKET">>, <<"label">> => <<"Websocket"/utf8>>}
+            #{<<"value">> => <<"WS">>, <<"label">> => <<"Websocket"/utf8>>}
         ],
         title => #{
             zh => <<"连接方式"/utf8>>
@@ -175,28 +174,18 @@ start(ChannelId, #{
 
 %% 通道初始化
 init(?TYPE, ChannelId, Config) ->
-    Opts = [?CACHE(ChannelId), #{
-        auto_save => application:get_env(dgiot_tdengine, cache_auto_save, 30000),
-        size => application:get_env(dgiot_tdengine, cache_max_size, 50000),
-        memory => application:get_env(dgiot_tdengine, cache_max_memory, 102400),
-        max_time => application:get_env(dgiot_tdengine, cache_max_time, 30),
-        handle => {?MODULE, handle_save, [ChannelId]}
-    }],
     State = #state{
         id = ChannelId,
         env = Config
     },
-    Specs = [
-        {dgiot_dcache, {dgiot_dcache, start_link, Opts}, permanent, 5000, worker, [dgiot_dcache]}
-    ],
     dgiot_metrics:dec(dgiot_tdengine, <<"tdengine">>, 1000),
     DbType = maps:get(<<"db">>, Config, <<"ProductId">>),
     dgiot_data:insert({tdengine_db, ChannelId}, DbType),
-    {ok, State, Specs}.
+    {ok, State, []}.
 
-handle_init(#state{id = _ChannelId, env = #{<<"driver">> := <<"WEBSOCKET">>, <<"url">> := {Ip, Port}} = Env} = State) ->
+handle_init(#state{id = _ChannelId, env = #{<<"driver">> := <<"WS">>} = Env} = State) ->
     dgiot_metrics:inc(dgiot_tdengine, <<"tdengine">>, 1),
-    {ConnPid, StreamRef} = dgiot_tdengine_websocket:start(Ip, Port),
+    {ConnPid, StreamRef} = dgiot_tdengine_pool:login(Env),
     erlang:send_after(5000, self(), init),
     {ok, State#state{env = Env#{<<"ws_pid">> => ConnPid, <<"ws_ref">> => StreamRef}}};
 
@@ -205,17 +194,19 @@ handle_init(#state{id = _ChannelId} = State) ->
     erlang:send_after(5000, self(), init),
     {ok, State}.
 
-%% 通道消息处理,注意：进程池调用
-handle_event(full, _From, #state{id = Channel} = State) ->
-    dgiot_dcache:save_to_disk(?CACHE(Channel)),
-    {ok, State};
-
 handle_event(_EventType, _Event, State) ->
     {ok, State}.
 
-%% 规则引擎导入
-handle_message({rule, Msg, Context}, State) ->
-    handle_message({data, Msg, Context}, State);
+%% gun监测 开始
+handle_message({gun_up, _Pid, _Protocol}, #state{id = _ChannelId, env = _Config} = State) ->
+    {ok, State};
+
+handle_message({gun_error, _Pid, _Protocol}, #state{id = _ChannelId, env = _Config} = State) ->
+    {ok, State};
+
+handle_message({gun_down, _Pid, _Protocol}, #state{id = _ChannelId, env = _Config} = State) ->
+    {ok, State};
+%% gun监测结束
 
 handle_message(init, #state{id = ChannelId, env = Config} = State) ->
     case dgiot_bridge:get_products(ChannelId) of
@@ -253,6 +244,10 @@ handle_message({export_data, Body, SchemasFile}, #state{id = ChannelId} = State)
     end,
     {ok, State};
 
+%% 规则引擎导入
+handle_message({rule, Msg, Context}, State) ->
+    handle_message({data, Msg, Context}, State);
+
 handle_message(config, #state{env = Config} = State) ->
     {reply, {ok, Config}, State};
 
@@ -260,19 +255,8 @@ handle_message({sync_product, <<"Product">>, ObjectId}, #state{id = ChannelId, e
     do_check(ChannelId, [ObjectId], Config),
     {ok, State};
 
-handle_message({tdpool_connect}, #state{env = #{<<"password">> := Password}} = State) ->
-    dgiot_tdengine:tdpool_connect(Password),
-    erlang:send_after(60 * 1000, self(), tdpool_connect),
-    {ok, State};
-
 handle_message(Message, #state{id = ChannelId, product = ProductId} = _State) ->
     ?LOG(debug, "Channel ~p, Product ~p, handle_message ~p", [ChannelId, ProductId, Message]),
-    ok.
-
-handle_save(Channel) ->
-    %{_Time, _} = timer:tc(fun() -> save_cache(Channel) end),
-    %?LOG(info,"save:~p~n", [Time / 1000000]),
-    save_cache(Channel),
     ok.
 
 stop(ChannelType, ChannelId, _State) ->
@@ -286,56 +270,9 @@ do_save([ProductId, DevAddr, Data, _Context], #state{id = ChannelId} = State) ->
         {ok, #{<<"thing">> := Properties}} ->
             Object = dgiot_tdengine:format_data(ChannelId, ProductId, DevAddr, Properties, Data),
             dgiot_device:save(ProductId, DevAddr),
-            save_to_cache(ChannelId, Object)
+            dgiot_tdengine:batch(ChannelId, Object)
     end,
     {ok, State}.
-
-save_cache(Channel) ->
-    Max = 50,
-    Fun =
-        fun({Idx, Requests}, Acc) ->
-            true = dgiot_dcache:delete(?CACHE(Channel), Idx),
-            save_cache(Channel, Max, Requests, Acc)
-        end,
-    save_to_tdengine(Channel, dgiot_dcache:search(?CACHE(Channel), Fun)).
-
-save_cache(Channel, Max, [Request | Requests], Acc) when length(Acc) < Max - 1 ->
-    save_cache(Channel, Max, Requests, [Request | Acc]);
-save_cache(Channel, Max, [Request | Requests], Acc) when length(Acc) == Max - 1 ->
-    ok = save_to_tdengine(Channel, [Request | Acc]),
-    save_cache(Channel, Max, Requests, []);
-save_cache(_, _, [], Acc) ->
-    {true, Acc}.
-
-
-save_to_tdengine(_, []) -> ok;
-save_to_tdengine(Channel, Requests) ->
-    case dgiot_tdengine:batch(Channel, Requests) of
-        {ok, _Results} ->
-%%            ?LOG(info, "Batch ~p-> ~p~n", [length(Requests), _Results]),
-            ok;
-        {error, Reason} when Reason == timeout; Reason == disconnect ->
-            ?LOG(error, "save cache,~p,~p~n", [Requests, Reason]),
-%%            save_to_cache(Channel, Requests),
-            pass;
-        {error, Reason} ->
-            ?LOG(error, "save cache,~p,~p~n", [Requests, Reason]),
-%%            save_to_cache(Channel, Requests),
-            pass
-    end.
-
-check_cache(Channel) ->
-    Info = dgiot_dcache:info(?CACHE(Channel)),
-    {size, Size} = lists:keyfind(size, 1, Info),
-    case Size =< 100 of
-        true ->
-            true;
-        false ->
-            {memory, Memory} = lists:keyfind(memory, 1, Info),
-            MaxSize = application:get_env(dgiot_tdengine, cache_max_size, 1000),
-            MaxMemory = application:get_env(dgiot_tdengine, cache_max_memory, 102400),
-            Size >= MaxSize orelse Memory >= MaxMemory
-    end.
 
 do_check(ChannelId, ProductIds, Config) ->
     spawn(
@@ -408,29 +345,6 @@ create_table(ChannelId, [ProductId | ProductIds], Config) ->
             ?LOG(error, "Create Table Error, ~p ~p", [Reason, ProductId])
     end,
     create_table(ChannelId, ProductIds, Config).
-
-
-%% 先缓存定时存库
-save_to_cache(Channel, Requests) when is_list(Requests) ->
-    ETS = ?CACHE(Channel),
-    Key = erlang:system_time(millisecond),
-    NewRequest =
-        case dgiot_dcache:lookup(ETS, Key) of
-            {ok, Acc} ->
-                lists:foldl(fun(Request, Acc1) -> [Request | Acc1] end, Acc, Requests);
-            {error, not_find} ->
-                Requests
-        end,
-    dgiot_dcache:insert(?CACHE(Channel), {Key, NewRequest}),
-    case check_cache(Channel) of
-        true ->
-            dgiot_channelx:do_event(?TYPE, Channel, full, self()),
-            ok;
-        false ->
-            ok
-    end;
-save_to_cache(Channel, Request) when is_map(Request) ->
-    save_to_cache(Channel, [Request]).
 
 test(Count) ->
     test(1, Count).

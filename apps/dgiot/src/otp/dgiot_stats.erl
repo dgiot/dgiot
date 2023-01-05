@@ -384,7 +384,7 @@ do_callback(Spec) ->
 load_config(File) ->
     case file:read_file(File) of
         {ok, Bin} ->
-            {ok, jiffy:decode(Bin, [return_maps])};
+            {ok, dgiot_json:decode(Bin, [return_maps])};
         _ ->
             {error, <<"readfile failed">>}
     end.
