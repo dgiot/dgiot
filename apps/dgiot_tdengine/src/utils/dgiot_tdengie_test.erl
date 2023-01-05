@@ -21,10 +21,6 @@
 -export([test/0]).
 
 test() ->
-%%    ejdbc:drop_table(<<"com.taosdata.jdbc.TSDBDriver">>, <<"DROP TABLE IF EXISTS Product;">>),
-%%    ejdbc:drop_table(<<"com.taosdata.jdbc.TSDBDriver">>, <<"DROP TABLE IF EXISTS Device;">>),
-%%    ejdbc:drop_table(<<"com.taosdata.jdbc.TSDBDriver">>, <<"DROP TABLE IF EXISTS Device2;">>),
-
     %% 创建超级表
     dgiot_tdengine:create_schemas(#{
         <<"tableName">> => <<"Product">>,

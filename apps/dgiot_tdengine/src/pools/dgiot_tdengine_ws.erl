@@ -14,18 +14,19 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
--module(dgiot_tdengine_websocket).
+-module(dgiot_tdengine_ws).
 -author("kenneth").
 -include("dgiot_tdengine.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -define(HTTPOption, [{timeout, 60000}, {connect_timeout, 60000}]).
 -define(REQUESTOption, [{body_format, binary}]).
 %% API
--export([start/2]).
+-export([login/2]).
 -export([test/0]).
 
 test() ->
     {ok, ConnPid} = gun:open("127.0.0.1", 7041, #{
+        supervise => true,
         ws_opts => #{keepalive => 1000}
     }),
     {ok, _} = gun:await_up(ConnPid),
@@ -37,11 +38,12 @@ test() ->
     Frame = {text, jiffy:encode(Body)},
     gun:ws_send(ConnPid, StreamRef, Frame),
     {ws, Ack} = gun:await(ConnPid, StreamRef),
-    io:format("Ack ~p ~n",[Ack]).
-%%    gun:close(ConnPid).
+    io:format("Ack ~p ~n",[Ack]),
+    gun:close(ConnPid).
 
-start(Ip, Port) ->
+login(Ip, Port) ->
     {ok, WsPid} = gun:open(Ip, Port, #{
+        supervise => true,
         ws_opts => #{keepalive => 1000}
     }),
     {ok, _} = gun:await_up(WsPid),

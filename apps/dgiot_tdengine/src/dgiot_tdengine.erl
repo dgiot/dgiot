@@ -21,11 +21,10 @@
 -include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
 %% API
 -export([get_database/2, create_database/3, create_schemas/2, create_object/3, create_user/3, alter_user/3, delete_user/2, query_object/3, batch/2]).
--export([create_database/2, create_schemas/1, create_object/2, create_user/2, alter_user/2, delete_user/1, query_object/2, batch/1, parse_batch/1]).
+-export([create_database/2, create_schemas/1, create_object/2, create_user/2, alter_user/2, delete_user/1, query_object/2, batch/1]).
 -export([transaction/2, format_data/5]).
--export([get_reportdata/3]).
--export([export/2, import/2, save_tdpools/1, tdpool_connect/1]).
--export([save_sql/1, format_sql/3, get_values/3]).
+-export([export/2, import/2]).
+-export([format_sql/3, get_values/3]).
 
 %% dgiot_tdengine:export().
 export(ChannelId, #{<<"deviceid">> := DeviceId} = Body) ->
@@ -102,10 +101,10 @@ import_device_data(ChannelId, ProductId, DeviceId, TdData) ->
                                                             end,
                                                         Createdat = dgiot_datetime:localtime_to_unixtime(dgiot_datetime:to_localtime(NewV)) * 1000,
                                                         Object = dgiot_tdengine:format_data(ChannelId, ProductId, DevAddr, Properties, Data#{<<"createdat">> => Createdat}),
-                                                        dgiot_tdengine_channel:save_to_cache(ChannelId, Object);
+                                                        dgiot_tdengine:batch(ChannelId, Object);
                                                     (Data, _Acc) ->
                                                         Object = dgiot_tdengine:format_data(ChannelId, ProductId, DevAddr, Properties, Data),
-                                                        dgiot_tdengine_channel:save_to_cache(ChannelId, Object)
+                                                        dgiot_tdengine:batch(ChannelId, Object)
                                                 end, [], TdResults);
                                 _ ->
                                     pass
@@ -207,39 +206,6 @@ batch(Channel, Batch) ->
             dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_update, Sql)
         end).
 
-parse_batch(Requests) when is_list(Requests), length(Requests) < 5 ->
-    NewRequests =
-        lists:foldl(fun(X, Acc) ->
-            Acc ++ lists:foldl(fun(Y, Acc1) ->
-                Values = maps:from_list(lists:zip(maps:get(<<"fields">>, X), Y)),
-                Tags = maps:from_list(lists:zip([<<"devaddr">>], maps:get(<<"tags">>, X))),
-                <<"_", ProductId/binary>> = maps:get(<<"db">>, X),
-                <<"_", DeviceId/binary>> = maps:get(<<"tableName">>, X),
-                Acc1 ++ [#{
-                    <<"method">> => <<"POST">>,
-                    <<"path">> => <<"/classes/Timescale">>,
-                    <<"body">> => #{
-                        <<"product">> => #{
-                            <<"className">> => <<"Product">>,
-                            <<"objectId">> => ProductId,
-                            <<"__type">> => <<"Pointer">>
-                        },
-                        <<"device">> => #{
-                            <<"className">> => <<"Device">>,
-                            <<"objectId">> => DeviceId,
-                            <<"__type">> => <<"Pointer">>
-                        },
-                        <<"values">> => Values#{<<"createdat">> => dgiot_datetime:nowstamp()},
-                        <<"tags">> => Tags
-                    }
-                }]
-                               end, Acc, maps:get(<<"values">>, X))
-                    end, [], Requests),
-    dgiot_parse:batch(NewRequests);
-
-parse_batch(_Requests) ->
-    {ok, _Requests}.
-
 create_user(UserName, Password) ->
     create_user(?DEFAULT, UserName, Password).
 create_user(Channel, UserName, Password) ->
@@ -265,19 +231,6 @@ alter_user(Channel, UserName, NewPassword) ->
             dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_update, <<"ALTER USER ", UserName/binary, " PASS ‘", NewPassword/binary, "’">>)
         end).
 
-%% select flow, head, effect, power from _09d0bbcf44._47d9172bf1 where createdat >= 1635581932000 AND createdat <= 1638260333000 order by createdat asc;
-get_reportdata(Channel, TableName, Query) ->
-    dgiot_tdengine:transaction(Channel,
-        fun(Context) ->
-            DB = dgiot_tdengine:get_database(Channel, maps:get(<<"db">>, Query)),
-            Keys = maps:get(<<"keys">>, Query),
-            Starttime = maps:get(<<"starttime">>, Query),
-            Endtime = maps:get(<<"endtime">>, Query),
-            Tail = <<" where createdat >= ", Starttime/binary, " AND createdat <= ", Endtime/binary, " order by createdat asc;">>,
-            Sql = <<"SELECT ", Keys/binary, " FROM ", DB/binary, TableName/binary, Tail/binary>>,
-            ?LOG(error, "Sql ~s", [Sql]),
-            dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_query, Sql)
-        end).
 
 %% 产品，设备地址与数据分离，推荐
 format_data(ChannelId, ProductId, DevAddr, Properties, Data) ->
@@ -342,46 +295,6 @@ get_fields(Table) ->
             []
     end.
 
-save_tdpools(ClientId) ->
-    erlang:spawn(fun() ->
-        apply(dgiot_mqtt, subscribe_mgmt, [ClientId, <<"$dg/taos/tdpool/", ClientId/binary, "/#">>]) end),
-    case dgiot_data:get(tdpool, pools) of
-        not_find ->
-            dgiot_data:insert(tdpool, pools, [ClientId]),
-            dgiot_data:insert(tdpool, {ClientId, pid}, {self(), login});
-        Que ->
-            dgiot_data:insert(tdpool, pools, dgiot_utils:unique_1(Que ++ [ClientId])),
-            dgiot_data:insert(tdpool, {ClientId, pid}, {self(), login})
-    end,
-    TdChannelId = dgiot_parse_id:get_channelid(dgiot_utils:to_binary(?BRIDGE_CHL), <<"TD">>, <<"TD资源通道"/utf8>>),
-    dgiot_channelx:do_message(TdChannelId, {tdpool_connect}).
-
-tdpool_connect(Password) ->
-    case dgiot_data:get(tdpool, pools) of
-        not_find ->
-            pass;
-        [ClientId | Que] ->
-            case dgiot_data:get(tdpool, {ClientId, pid}) of
-                {_Pid, login} ->
-                    Topic = <<"$dg/taos/tdpool/", ClientId/binary, "/connect">>,
-                    timer:sleep(1000),
-                    dgiot_mqtt:publish(ClientId, Topic, Password),
-                    dgiot_data:insert(tdpool, pools, dgiot_utils:unique_1(Que ++ [ClientId])),
-                    dgiot_data:insert(tdpool, {ClientId, pid}, {self(), connect});
-                _ ->
-                    pass
-            end
-    end.
-
-save_sql(Sql) ->
-    case dgiot_data:get(tdpool, pools) of
-        not_find ->
-            pass;
-        [ClientId | Que] ->
-            Topic = <<"$dg/taos/tdpool/", ClientId/binary, "/sql">>,
-            dgiot_mqtt:publish(ClientId, Topic, Sql),
-            dgiot_data:insert(tdpool, pools, dgiot_utils:unique_1(Que ++ [ClientId]))
-    end.
 
 format_sql(ProductId, DevAddr, Data) ->
     case dgiot_bridge:get_product_info(ProductId) of

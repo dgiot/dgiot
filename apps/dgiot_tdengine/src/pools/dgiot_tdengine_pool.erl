@@ -18,27 +18,19 @@
 -author("johnliu").
 -include("dgiot_tdengine.hrl").
 -include_lib("dgiot/include/logger.hrl").
--export([start/3, run_sql/3]).
+-export([start/3, run_sql/3, login/1]).
 
-start(<<"WEBSOCKET">>, Ip, Port) ->
-    {<<"WEBSOCKET">>, {binary_to_list(Ip), Port}};
-start(<<"HTTP">>, Ip, Port) ->
-    dgiot_tdengine_http:start(),
-    {<<"HTTP">>, list_to_binary(lists:concat(["http://", binary_to_list(Ip), ":", Port, "/rest/sql"]))};
-start(<<"MQTT">>, Ip, Port) ->
-    dgiot_tdengine_mqtt:start(),
-    {<<"MQTT">>, list_to_binary(lists:concat(["jdbc:TAOS://", binary_to_list(Ip), ":", Port, "/", binary_to_list(<<"dgiot">>)]))};
-start(<<"ODBC">>, Ip, Port) ->
-    dgiot_tdengine_odbc:start(Ip, Port),
-    {<<"ODBC">>, list_to_binary(lists:concat(["jdbc:TAOS://", binary_to_list(Ip), ":", Port, "/", binary_to_list(<<"dgiot">>)]))};
-start(<<"JDBC">>, Ip, Port) ->
-    {<<"JDBC">>, list_to_binary(lists:concat(["jdbc:TAOS://", binary_to_list(Ip), ":", Port, "/", binary_to_list(<<"dgiot">>)]))};
+start(<<"WS">>, Ip, Port) ->
+    {<<"WS">>, {binary_to_list(Ip), Port}};
 start(_Type, Ip, Port) ->
     dgiot_tdengine_http:start(),
     {<<"HTTP">>, list_to_binary(lists:concat(["http://", binary_to_list(Ip), ":", Port, "/rest/sql"]))}.
 
+login(#{<<"driver">> := <<"WS">>, <<"url">> := {Ip, Port}}) ->
+    dgiot_tdengine_ws:login(Ip, Port).
+
 %% WebSocket
-run_sql(#{<<"driver">> := <<"WEBSOCKET">>, <<"ws_pid">> := ConnPid, <<"ws_ref">> := StreamRef} = _Context, _Action, Sql) when byte_size(Sql) > 0 ->
+run_sql(#{<<"driver">> := <<"WS">>, <<"ws_pid">> := ConnPid, <<"ws_ref">> := StreamRef} = _Context, _Action, Sql) when byte_size(Sql) > 0 ->
     Body = #{<<"action">> => <<"version">>},
     Frame = {text, jiffy:encode(Body)},
     gun:ws_send(ConnPid, StreamRef, Frame),
@@ -69,15 +61,7 @@ run_sql(#{<<"driver">> := <<"HTTP">>, <<"url">> := Url, <<"username">> := UserNa
             {error, Reason}
     end;
 
-run_sql(#{<<"driver">> := <<"mqtt">>, <<"url">> := _Url}, Action, _Sql) when Action == execute_update; Action == execute_query ->
-%%    ?LOG(info,"Execute ~p (~p) ~p", [Url, byte_size(Sql), Sql]),
-%%    apply(ejdbc, Action, [<<"com.taosdata.jdbc.TSDBDriver">>, Sql]).
-    ok;
-
-run_sql(#{<<"driver">> := <<"JDBC">>, <<"url">> := _Url}, Action, _Sql) when Action == execute_update; Action == execute_query ->
-%%    ?LOG(info,"Execute ~p (~p) ~p", [Url, byte_size(Sql), Sql]),
-%%    apply(ejdbc, Action, [<<"com.taosdata.jdbc.TSDBDriver">>, Sql]).
-    ok;
-
 run_sql(_Context, _Action, _Sql) ->
     ok.
+
+
