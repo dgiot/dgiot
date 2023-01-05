@@ -198,7 +198,7 @@ handle_init(#state{id = _ChannelId, env = #{<<"driver">> := <<"WEBSOCKET">>, <<"
     dgiot_metrics:inc(dgiot_tdengine, <<"tdengine">>, 1),
     {ConnPid, StreamRef} = dgiot_tdengine_websocket:start(Ip, Port),
     erlang:send_after(5000, self(), init),
-    {ok, State#{env = Env#{<<"ws_pid">> => ConnPid, <<"ws_ref">> = StreamRef}}};
+    {ok, State#state{env = Env#{<<"ws_pid">> => ConnPid, <<"ws_ref">> => StreamRef}}};
 
 handle_init(#state{id = _ChannelId} = State) ->
     dgiot_metrics:inc(dgiot_tdengine, <<"tdengine">>, 1),
