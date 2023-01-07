@@ -103,7 +103,7 @@ alter_table(#{<<"tableName">> := TableName}, #{<<"channel">> := Channel} = Conte
     Sql1 = <<"DESCRIBE ", Database/binary, TableName/binary, ";">>,
     case dgiot_tdengine_pool:run_sql(Context, execute_query, Sql1) of
         {ok, #{<<"results">> := Results}} when length(Results) > 0 ->
-            dgiot_data:insert({ProductId, ?TABLEDESCRIBE}, Results),
+            dgiot_tdengine:save_fields(ProductId, Results),
             TdColumn =
                 lists:foldl(fun(Column, Acc) ->
                     case Column of

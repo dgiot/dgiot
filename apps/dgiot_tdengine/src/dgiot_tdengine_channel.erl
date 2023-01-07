@@ -28,7 +28,7 @@
 %% API
 -export([start/2, check_init/3]).
 -export([init/3, handle_event/3, handle_message/2, stop/3, handle_init/1]).
--export([test/1]).
+-export([handle_info/2, test/1]).
 
 %% 注册通道类型
 -channel_type(#{
@@ -240,15 +240,28 @@ stop(ChannelType, ChannelId, _State) ->
     ?LOG(info, "channel stop ~p,~p", [ChannelType, ChannelId]),
     ok.
 
+%% gun监测 开始
+handle_info({gun_up, _Pid, _Protocol}, #state{id = _ChannelId, env = _Config} = State) ->
+    io:format("~s ~p gun_up = ~p.~n", [?FILE, ?LINE, _Protocol]),
+    {ok, State};
+
+handle_info({gun_error, _Pid, _Protocol}, #state{id = _ChannelId, env = _Config} = State) ->
+    io:format("~s ~p gun_error = ~p.~n", [?FILE, ?LINE, _Protocol]),
+    {ok, State};
+
+handle_info({gun_down, _Pid, _Protocol}, #state{id = _ChannelId, env = _Config} = State) ->
+    io:format("~s ~p gun_down = ~p.~n", [?FILE, ?LINE, _Protocol]),
+    {ok, State};
+%% gun监测结束
+
+handle_info(Message, State) ->
+    io:format("~s ~p Message = ~p.~n", [?FILE, ?LINE, Message]),
+    {ok, State}.
+
 do_save([ProductId, DevAddr, Data, _Context], #state{id = ChannelId} = State) ->
-    case dgiot_bridge:get_product_info(ProductId) of
-        {error, Reason} ->
-            ?LOG(error, "Save to tdengine error, ~p, ~p, ProductId = ~p.", [Data, Reason, ProductId]);
-        {ok, #{<<"thing">> := Properties}} ->
-            Object = dgiot_tdengine:format_data(ChannelId, ProductId, DevAddr, Properties, Data),
-            dgiot_device:save(ProductId, DevAddr),
-            dgiot_tdengine:batch(ChannelId, Object)
-    end,
+    dgiot_device:save(ProductId, DevAddr),
+    Object = dgiot_tdengine:format_data(ChannelId, ProductId, DevAddr, Data),
+    dgiot_tdengine:batch(ChannelId, Object),
     {ok, State}.
 
 do_check(ChannelId, ProductIds, Config) ->

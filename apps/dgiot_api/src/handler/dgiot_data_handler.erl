@@ -772,9 +772,9 @@ sync_files(#{<<"__path__">> := <<"/upload">>, <<"path">> := Path, <<"filename">>
 
 sync_files(#{<<"__path__">> := <<"/delete">>, <<"path">> := Path} = _Info, _Role, AuthToken) ->
     FilesId = dgiot_parse_id:get_filesId(filename:dirname(Path), filename:basename(Path)),
-    case dgiot_parse:get_object(<<"Files">>, FilesId) of
+    case dgiot_parse:get_object(<<"Files">>, FilesId, [{"X-Parse-Session-Token", AuthToken}], [{from, rest}]) of
         {ok, #{<<"data">> := _}} ->
-            dgiot_parse:del_object(FilesId, [{"X-Parse-Session-Token", AuthToken}], [{from, rest}]);
+            dgiot_parse:del_object(<<"Files">>, FilesId);
         _ ->
 
             pass

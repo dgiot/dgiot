@@ -22,6 +22,7 @@
 -define(Database(Name), <<?PRE/binary, Name/binary>>).
 -define(Table(Name), <<?PRE/binary, Name/binary>>).
 -define(TABLEDESCRIBE, describe_table).
+-define(TABLEFIELDS, fields_table).
 
 -define(Struct(Field, Field1), <<"struct_", Field/binary, "_", Field1/binary>>).
 

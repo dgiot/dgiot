@@ -25,10 +25,11 @@
 -export([get_prop/1, get_props/1, get_props/2, get_unit/1, update_properties/2, update_properties/0]).
 -export([update_topics/0, update_product_filed/1]).
 -export([save_devicetype/1, get_devicetype/1, get_device_thing/2, get_productSecret/1]).
--export([save_keys/1, get_keys/1, get_control/1, save_control/1, get_interval/1, save_device_thingtype/1]).
+-export([save_keys/1, get_keys/1, get_control/1, save_control/1, get_interval/1, save_device_thingtype/1, get_product_identifier/2]).
 
 init_ets() ->
     dgiot_data:init(?DGIOT_PRODUCT),
+    dgiot_data:init(?DGIOT_PRODUCT_IDENTIFIE),
     dgiot_data:init(?DEVICE_PROFILE).
 
 load_cache() ->
@@ -78,6 +79,7 @@ save(Product) ->
     dgiot_product_channel:save_tdchannel(ProductId),
     dgiot_product_channel:save_taskchannel(ProductId),
     save_device_thingtype(ProductId),
+    save_product_identifier(ProductId),
     dgiot_product_enum:save_product_enum(ProductId),
     {ok, Product1}.
 
@@ -186,6 +188,27 @@ save_device_thingtype(ProductId) ->
 
         _Error ->
             []
+    end.
+
+%% 物模型标识符
+save_product_identifier(ProductId) ->
+    case dgiot_product:lookup_prod(ProductId) of
+        {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
+            lists:map(
+                fun(#{<<"identifier">> := Identifie} = Prop) ->
+                    dgiot_data:insert(?DGIOT_PRODUCT_IDENTIFIE, {ProductId, Identifie, identifie}, Prop)
+                end, Props);
+
+        _Error ->
+            []
+    end.
+
+get_product_identifier(ProductId, Identifie) ->
+    case dgiot_data:get(?DGIOT_PRODUCT_IDENTIFIE, {ProductId, Identifie, identifie}) of
+        not_find ->
+            not_find;
+        Prop ->
+            Prop
     end.
 
 get_device_thing(ProductId, DeviceType) ->
@@ -406,7 +429,6 @@ delete_product_relation(ProductId) ->
         _ ->
             []
     end.
-
 
 get_prop(ProductId) ->
     case dgiot_product:lookup_prod(ProductId) of

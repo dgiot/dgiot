@@ -15,6 +15,7 @@
 %%--------------------------------------------------------------------
 
 -define(DGIOT_PRODUCT, dgiot_product).
+-define(DGIOT_PRODUCT_IDENTIFIE, dgiot_product_identifie).
 -define(DEVICE_PROFILE, dgiot_device_profile).
 
 -define(LOCAL, smartdev).
