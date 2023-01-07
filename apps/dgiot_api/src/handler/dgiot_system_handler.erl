@@ -227,24 +227,24 @@ do_request(get_log_level, _Args, _Context, _Req) ->
 
 %% traces 概要: 获取traces 描述:获取traces列表
 do_request(get_trace, _Args, _Context, _Req) ->
-    Data = emqx_tracer:lookup_traces(),
-    NewData =
-        lists:foldl(fun(X, Acc) ->
-            case X of
-                {{topic, Name}, {Level, _}} ->
-                    Acc ++ [#{<<"name">> => dgiot_utils:to_binary(Name), <<"level">> => dgiot_utils:to_binary(Level)}];
-                _ ->
-                    Acc
-            end
-                    end, [], Data),
-    {200, #{<<"code">> => 200, <<"data">> => NewData}};
+%%    Data = emqx_tracer:lookup_traces(),
+%%%%    NewData =
+%%%%        lists:foldl(fun(X, Acc) ->
+%%%%            case X of
+%%%%                {{topic, Name}, {Level, _}} ->
+%%%%                    Acc ++ [#{<<"name">> => dgiot_utils:to_binary(Name), <<"level">> => dgiot_utils:to_binary(Level)}];
+%%%%                _ ->
+%%%%                    Acc
+%%%%            end
+%%%%                    end, [], Data),
+    {200, #{<<"code">> => 200, <<"data">> => #{}}};
 
 %% traces 概要: traces 描述:启动，停止traces
 do_request(post_trace, #{<<"action">> := Action, <<"tracetype">> := Tracetype, <<"handle">> := Handle}, _Context, _Req) ->
     Rtn =
         case Action of
             <<"start">> ->
-                ?LOG(info,"Tracetype ~p, Handle ~p",[Tracetype,Handle]),
+                ?LOG(info, "Tracetype ~p, Handle ~p", [Tracetype, Handle]),
                 dgiot_tracer:add_trace({dgiot_utils:to_atom(Tracetype), Handle});
             <<"stop">> ->
                 dgiot_tracer:del_trace({dgiot_utils:to_atom(Tracetype), Handle});

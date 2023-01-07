@@ -387,22 +387,28 @@ delete(ProductId, DevAddr) ->
 
 notification(DeviceId, Status, Longitude, Latitude, IsEnable, Now) ->
     Topic = <<"$dg/user/devicestate/", DeviceId/binary, "/report">>,
-    NewStatus =
-        case Status of
-            true ->
-                <<"ONLINE">>;
-            _ ->
-                <<"OFFLINE">>
-        end,
-    Address =
-        case dgiot_data:get(?DGIOT_LOCATION_ADDRESS, DeviceId) of
-            not_find ->
-                get_address(DeviceId, Longitude, Latitude);
-            Addr ->
-                Addr
-        end,
-    dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(#{
-        DeviceId => #{
-            <<"status">> => NewStatus, <<"isEnable">> => IsEnable, <<"lastOnlineTime">> => Now, <<"address">> => Address,
-            <<"location">> => #{<<"longitude">> => Longitude, <<"latitude">> => Latitude}
-        }})).
+    case dgiot_mqtt:has_routes(Topic) of
+        true ->
+            NewStatus =
+                case Status of
+                    true ->
+                        <<"ONLINE">>;
+                    _ ->
+                        <<"OFFLINE">>
+                end,
+            Address =
+                case dgiot_data:get(?DGIOT_LOCATION_ADDRESS, DeviceId) of
+                    not_find ->
+                        get_address(DeviceId, Longitude, Latitude);
+                    Addr ->
+                        Addr
+                end,
+            dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(#{
+                DeviceId => #{
+                    <<"status">> => NewStatus, <<"isEnable">> => IsEnable, <<"lastOnlineTime">> => Now, <<"address">> => Address,
+                    <<"location">> => #{<<"longitude">> => Longitude, <<"latitude">> => Latitude}
+                }}));
+        _ ->
+            pass
+    end.
+

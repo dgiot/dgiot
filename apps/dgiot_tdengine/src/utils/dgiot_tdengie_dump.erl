@@ -84,27 +84,22 @@ import_device_data(ChannelId, ProductId, DeviceId, TdData) ->
                 fun(_Context) ->
                     case dgiot_device:lookup(DeviceId) of
                         {ok, #{<<"devaddr">> := DevAddr}} ->
-                            case dgiot_bridge:get_product_info(ProductId) of
-                                {ok, #{<<"thing">> := Properties}} ->
-                                    lists:foldl(fun
-                                                    (#{<<"createdat">> := V} = Data, _Acc) ->
-                                                        NewV =
-                                                            case binary:split(V, <<$.>>, [global, trim]) of
-                                                                [NewV1, _] ->
-                                                                    NewV1;
-                                                                _ ->
-                                                                    V
-                                                            end,
-                                                        Createdat = dgiot_datetime:localtime_to_unixtime(dgiot_datetime:to_localtime(NewV)) * 1000,
-                                                        Object = dgiot_tdengine:format_data(ChannelId, ProductId, DevAddr, Properties, Data#{<<"createdat">> => Createdat}),
-                                                        dgiot_tdengine:batch(ChannelId, Object);
-                                                    (Data, _Acc) ->
-                                                        Object = dgiot_tdengine:format_data(ChannelId, ProductId, DevAddr, Properties, Data),
-                                                        dgiot_tdengine:batch(ChannelId, Object)
-                                                end, [], TdResults);
-                                _ ->
-                                    pass
-                            end;
+                            lists:foldl(fun
+                                            (#{<<"createdat">> := V} = Data, _Acc) ->
+                                                NewV =
+                                                    case binary:split(V, <<$.>>, [global, trim]) of
+                                                        [NewV1, _] ->
+                                                            NewV1;
+                                                        _ ->
+                                                            V
+                                                    end,
+                                                Createdat = dgiot_datetime:localtime_to_unixtime(dgiot_datetime:to_localtime(NewV)) * 1000,
+                                                Object = dgiot_tdengine:format_data(ChannelId, ProductId, DevAddr, Data#{<<"createdat">> => Createdat}),
+                                                dgiot_tdengine:batch(ChannelId, Object);
+                                            (Data, _Acc) ->
+                                                Object = dgiot_tdengine:format_data(ChannelId, ProductId, DevAddr, Data),
+                                                dgiot_tdengine:batch(ChannelId, Object)
+                                        end, [], TdResults);
                         _ ->
                             pass
                     end

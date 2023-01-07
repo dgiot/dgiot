@@ -22,8 +22,9 @@
 %% API
 -export([get_database/2, create_database/3, create_schemas/2, create_object/3, create_user/3, alter_user/3, delete_user/2, query_object/3, batch/2]).
 -export([create_database/2, create_schemas/1, create_object/2, create_user/2, alter_user/2, delete_user/1, query_object/2, batch/1]).
--export([transaction/2, format_data/5]).
+-export([transaction/2, format_data/4]).
 -export([format_sql/3, get_values/3]).
+-export([save_fields/2, get_fields/1]).
 
 transaction(Channel, Fun) ->
     case dgiot_data:get({?TYPE, Channel, config}) of
@@ -139,16 +140,11 @@ alter_user(Channel, UserName, NewPassword) ->
             dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_update, <<"ALTER USER ", UserName/binary, " PASS ‘", NewPassword/binary, "’">>)
         end).
 
-
 %% 产品，设备地址与数据分离，推荐
-format_data(ChannelId, ProductId, DevAddr, Properties, Data) ->
+format_data(ChannelId, ProductId, DevAddr, Data) ->
     DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
-    Values = dgiot_tdengine_field:check_fields(Data, Properties),
     Fields = get_fields(ProductId),
-    dgiot_data:insert({td, ProductId, DeviceId}, Values#{<<"createdat">> => dgiot_datetime:nowstamp()}),
-    Now = maps:get(<<"createdat">>, Data, now),
-    NewValues = get_values(ProductId, Values, Now),
-    dgiot_data:insert(?DGIOT_TD_THING_ETS, DeviceId, Values),
+    NewValues = get_values(Fields, ProductId, Data),
     DB = get_database(ChannelId, ProductId),
     #{
         <<"db">> => DB,
@@ -159,62 +155,51 @@ format_data(ChannelId, ProductId, DevAddr, Properties, Data) ->
         <<"values">> => NewValues
     }.
 
-
 %% INSERT INTO _173acf2f85._af6d16f9ba using _173acf2f85._173acf2f85 TAGS ('_KOHbyuiJilnsdD') VALUES (now,null,null,null,null);
-get_values(Table, Values, Now) ->
+get_values(Fields, ProductId, Data) ->
     Values0 =
-        case dgiot_data:get({Table, ?TABLEDESCRIBE}) of
-            Results when length(Results) > 0 ->
-                lists:foldl(fun(Column, Acc) ->
-                    case Column of
-                        #{<<"Note">> := <<"TAG">>} ->
-                            Acc;
-                        #{<<"note">> := <<"TAG">>} ->
-                            Acc;
-                        #{<<"Field">> := <<"createdat">>} ->
-                            Acc ++ dgiot_utils:to_list(Now);
-                        #{<<"field">> := <<"createdat">>} ->
-                            Acc ++ dgiot_utils:to_list(Now);
-                        #{<<"Field">> := Field} ->
-                            Value = maps:get(Field, Values, null),
-                            case Value of
-                                {NewValue, text} ->
-                                    Acc ++ ",\'" ++ dgiot_utils:to_list(NewValue) ++ "\'";
-                                _ ->
-                                    Acc ++ "," ++ dgiot_utils:to_list(Value)
-                            end;
-                        #{<<"field">> := Field} ->
-                            Value = maps:get(Field, Values, null),
-                            case Value of
-                                {NewValue, text} ->
-                                    Acc ++ ",\'" ++ dgiot_utils:to_list(NewValue) ++ "\'";
-                                _ ->
-                                    Acc ++ "," ++ dgiot_utils:to_list(Value)
-                            end;
+        lists:foldl(fun(Field, Acc) ->
+            case Field of
+                <<"createdat">> ->
+                    Acc ++ dgiot_utils:to_list(maps:get(<<"createdat">>, Data, now));
+                Field ->
+                    Value = dgiot_tdengine_field:check_value(maps:get(Field, Data, null), ProductId, Field),
+                    case Value of
+                        {NewValue, text} ->
+                            Acc ++ ",\'" ++ dgiot_utils:to_list(NewValue) ++ "\'";
                         _ ->
-                            Acc
+                            Acc ++ "," ++ dgiot_utils:to_list(Value)
                     end
-                            end, " (", Results);
-            _ ->
-                " "
-        end,
+            end
+                    end, " (", Fields),
     list_to_binary(Values0 ++ ")").
 
-get_fields(Table) ->
-    case dgiot_data:get({Table, ?TABLEDESCRIBE}) of
-        Results when length(Results) > 0 ->
-            lists:foldl(fun(Column, Acc) ->
-                case Column of
-                    #{<<"Field">> := Field} ->
-                        Acc ++ [Field];
-                    _ ->
-                        Acc
-                end
-                        end, [], Results);
-        _ ->
-            []
-    end.
+save_fields(ProductId, Results) ->
+    dgiot_data:insert({ProductId, ?TABLEDESCRIBE}, Results),
+    Fields =
+        lists:foldl(fun(Column, Acc) ->
+            case Column of
+                #{<<"Note">> := <<"TAG">>} ->
+                    Acc;
+                #{<<"note">> := <<"TAG">>} ->
+                    Acc;
+                #{<<"Field">> := Field} ->
+                    Acc ++ [Field];
+                #{<<"field">> := Field} ->
+                    Acc ++ [Field];
+                _ ->
+                    Acc
+            end
+                    end, [], Results),
+    dgiot_data:insert({ProductId, ?TABLEFIELDS}, Fields).
 
+get_fields(Table) ->
+    case dgiot_data:get({Table, ?TABLEFIELDS}) of
+        not_find ->
+            [];
+        Fields ->
+            Fields
+    end.
 
 format_sql(ProductId, DevAddr, Data) ->
     case dgiot_bridge:get_product_info(ProductId) of

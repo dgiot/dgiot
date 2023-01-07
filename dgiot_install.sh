@@ -899,14 +899,14 @@ function update_html() {
   cd ${install_dir}/nginx
   if [ -f dgiot_html.tar.gz ]; then
     htmlmd5=`md5sum dgiot_html.tar.gz |cut -d ' ' -f1`
-    if [ "${htmlmd5}" != "657a7a8ab39c0880c1d4538c68e130a6" ]; then
+    if [ "${htmlmd5}" != "0902ce40faf0f282523cae62a9ef2ec2" ]; then
       rm -rf dgiot_html.tar.gz &> /dev/null
     fi
   fi
   if [ ! -f dgiot_html.tar.gz ]; then
     wget ${fileserver}/dgiot_html.tar.gz &> /dev/null
     htmlmd52=`md5sum dgiot_html.tar.gz |cut -d ' ' -f1`
-    if [ "${htmlmd52}" != "657a7a8ab39c0880c1d4538c68e130a6" ]; then
+    if [ "${htmlmd52}" != "0902ce40faf0f282523cae62a9ef2ec2" ]; then
       echo -e "`date +%F_%T` $LINENO: ${RED} download dgiot_html.tar.gz failed${NC}"
       exit 1
     fi

@@ -19,7 +19,7 @@
 -include("dgiot_tdengine.hrl").
 -include_lib("dgiot/include/logger.hrl").
 
--export([add_field/4, get_field/1, check_fields/2, check_fields/3, get_time/2]).
+-export([add_field/4, get_field/1, check_fields/2, check_fields/3, get_time/2, check_value/3]).
 
 add_field(#{<<"type">> := <<"enum">>}, Database, TableName, LowerIdentifier) ->
     <<"ALTER TABLE ", Database/binary, TableName/binary, " ADD COLUMN ", LowerIdentifier/binary, " INT;">>;
@@ -94,6 +94,22 @@ get_field_(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"str
     [get_field(SubField#{<<"identifier">> => ?Struct(Field, Field1)}) || #{<<"identifier">> := Field1} = SubField <- SubFields].
 
 
+check_value(Value, ProductId, Field) ->
+    case dgiot_product:get_product_identifier(ProductId, Field) of
+        not_find ->
+            pass;
+        #{<<"dataType">> := #{<<"type">> := Type} = DataType} ->
+            Specs = maps:get(<<"specs">>, DataType, #{}),
+            Type1 = list_to_binary(string:to_upper(binary_to_list(Type))),
+            NewValue = get_type_value(Type1, Value, Specs),
+            case check_validate(NewValue, Specs) of
+                true ->
+                    NewValue;
+                false ->
+                    throw({error, <<Field/binary, " is not validate">>})
+            end
+    end.
+
 check_fields(Data, #{<<"properties">> := Props}) ->
     check_fields(Data, Props);
 check_fields(Data, Props) -> check_fields(Data, Props, #{}).
@@ -123,58 +139,14 @@ check_fields(Data, [#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> 
             end
     end.
 
-check_field(Data, Props) when is_map(Data) ->
-    NewData =
-        maps:fold(fun(K, V, Acc) ->
-            NewK = list_to_binary(string:to_lower(binary_to_list(K))),
-            Acc#{NewK => V}
-                  end, #{}, Data),
-    check_field(maps:to_list(NewData), Props);
-
 check_field(Data, #{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := Type} = DataType}) ->
-    NewField = list_to_binary(string:to_lower(binary_to_list(Field))),
     Specs = maps:get(<<"specs">>, DataType, #{}),
-    case proplists:get_value(NewField, Data) of
+    case maps:get(Field, Data, undefined) of
         undefined ->
             undefined;
         Value ->
             Type1 = list_to_binary(string:to_upper(binary_to_list(Type))),
-
-            NewValue =
-                case Type1 of
-                    _ when Type1 == <<"INT">>; Type1 == <<"DATE">>; Type1 == <<"SHORT">>; Type1 == <<"LONG">>;Type1 == <<"ENUM">>, is_list(Value) ->
-                        round(dgiot_utils:to_int(Value));
-                    _ when Type1 == <<"INT">>; Type1 == <<"DATE">>, is_float(Value) ->
-                        round(Value);
-                    _ when Type1 == <<"INT">>; Type1 == <<"DATE">> ->
-                        Value;
-                    _ when Type1 == <<"FLOAT">>; Type1 == <<"DOUBLE">> ->
-                        Precision = maps:get(<<"precision">>, Specs, 3),
-                        case size(dgiot_utils:to_binary(Value)) of
-                            0 ->
-                                0;
-                            _ ->
-                                dgiot_utils:to_float(Value, Precision)
-                        end;
-                    <<"BOOL">> ->
-                        Value;
-                    <<"TEXT">> ->
-                        {unicode:characters_to_binary(unicode:characters_to_list((dgiot_utils:to_binary(Value)))), text};
-                    <<"GEOPOINT">> ->
-                        {unicode:characters_to_binary(unicode:characters_to_list((Value))), text};
-%%                    <<"ENUM">> ->
-%%%%                        Specs = maps:get(<<"specs">>, DataType, #{}),
-%%%%                        ?LOG(info, "Specs ~p", [Specs]),
-%%%%                        EnumValue = maps:get(Value, Specs, <<"1">>),
-%%%%                        dgiot_utils:to_int(EnumValue);
-%%                        Value;
-                    <<"STRUCT">> ->
-                        Value;
-                    <<"IMAGE">> ->
-                        round(dgiot_utils:to_int(Value));
-                    _ ->
-                        Value
-                end,
+            NewValue = get_type_value(Type1, Value, Specs),
             case check_validate(NewValue, Specs) of
                 true ->
                     NewValue;
@@ -183,9 +155,7 @@ check_field(Data, #{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> :=
             end
     end;
 
-check_field(Data, Props) ->
-    ?LOG(error, "Data ~p", [Data]),
-    ?LOG(error, "Props ~p", [Props]),
+check_field(_, _) ->
     undefined.
 
 check_validate(Value, #{<<"max">> := Max, <<"min">> := Min}) when is_integer(Max), is_integer(Min) ->
@@ -228,3 +198,31 @@ get_time(V, Interval) ->
         _ ->
             dgiot_datetime:format(dgiot_datetime:to_localtime(NewV), <<"YY-MM-DD HH:NN:SS">>)
     end.
+
+
+get_type_value(Type, Value, _Specs) when Type == <<"INT">>; Type == <<"DATE">>; Type == <<"SHORT">>; Type == <<"LONG">>; Type == <<"ENUM">>, is_list(Value) ->
+    round(dgiot_utils:to_int(Value));
+get_type_value(Type, Value, _Specs) when Type == <<"INT">>; Type == <<"DATE">>, is_float(Value) ->
+    round(Value);
+get_type_value(Type, Value, _Specs) when Type == <<"INT">>; Type == <<"DATE">> ->
+    Value;
+get_type_value(Type, Value, Specs) when Type == <<"FLOAT">>; Type == <<"DOUBLE">> ->
+    Precision = maps:get(<<"precision">>, Specs, 3),
+    case size(dgiot_utils:to_binary(Value)) of
+        0 ->
+            0;
+        _ ->
+            dgiot_utils:to_float(Value, Precision)
+    end;
+get_type_value(<<"BOOL">>, Value, _Specs) ->
+    Value;
+get_type_value(<<"TEXT">>, Value, _Specs) ->
+    {unicode:characters_to_binary(unicode:characters_to_list((dgiot_utils:to_binary(Value)))), text};
+get_type_value(<<"GEOPOINT">>, Value, _Specs) ->
+    {unicode:characters_to_binary(unicode:characters_to_list((Value))), text};
+get_type_value(<<"STRUCT">>, Value, _Specs) ->
+    Value;
+get_type_value(<<"IMAGE">>, Value, _Specs) ->
+    round(dgiot_utils:to_int(Value));
+get_type_value(_, Value, _Specs) ->
+    Value.
