@@ -22,20 +22,6 @@ case "${PKG_VSN}" in
         ;;
 esac
 
-RELEASE_ASSET_FILE="emqx-dashboard.zip"
-
-if [ -f 'EMQX_ENTERPRISE' ]; then
-    VERSION="${EMQX_EE_DASHBOARD_VERSION}"
-    DASHBOARD_PATH='lib-ee/emqx_dashboard/priv'
-    DASHBOARD_REPO='emqx-dashboard-web'
-    DIRECT_DOWNLOAD_URL="https://github.com/emqx/${DASHBOARD_REPO}/releases/download/${VERSION}/${RELEASE_ASSET_FILE}"
-else
-    VERSION="${EMQX_CE_DASHBOARD_VERSION}"
-    DASHBOARD_PATH='lib-ce/emqx_dashboard/priv'
-    DASHBOARD_REPO='emqx-dashboard-frontend'
-    DIRECT_DOWNLOAD_URL="https://github.com/emqx/${DASHBOARD_REPO}/releases/download/${VERSION}/${RELEASE_ASSET_FILE}"
-fi
-
 case $(uname) in
     *Darwin*) SED="sed -E";;
     *) SED="sed -r";;
@@ -49,22 +35,12 @@ if [ -d "$DASHBOARD_PATH/www" ] && [ "$(version)" = "$VERSION" ]; then
     exit 0
 fi
 
-curl -L --silent --show-error \
-     --header "Accept: application/octet-stream" \
-     --output "${RELEASE_ASSET_FILE}" \
-     "$DIRECT_DOWNLOAD_URL"
-
-unzip -q "$RELEASE_ASSET_FILE" -d "$DASHBOARD_PATH"
-rm -rf "$DASHBOARD_PATH/www"
-mv "$DASHBOARD_PATH/dist" "$DASHBOARD_PATH/www"
-rm -f "$RELEASE_ASSET_FILE"
 
 EMQX_LIBCE_PATH='lib-ce/'
 DGIOT_DASHBOARD_PATH='apps/dgiot_api/priv'
 FILESEVER="https://dgiot-release-1306147891.cos.ap-nanjing.myqcloud.com/v4.4.0"
 
 get_lib_ce(){
-   cd ../../../
    cd ${$EMQX_LIBCE_PATH}
    if [ ! -d "emqx_dashboard/" ]; then
       git clone  -b "v4.4.11" --depth=1 "https://gitee.com/fastdgiot/emqx-dashboard.git"  emqx_dashboard
@@ -77,6 +53,8 @@ get_lib_ce(){
    if [ ! -d "emqx_telemetry/" ]; then
       git clone  -b "v4.4.11" --depth=1 "https://gitee.com/fastdgiot/emqx-telemetry.git"  emqx_telemetry
    fi
+
+   cd ..
 }
 
 get_dgiot_dashboard(){
