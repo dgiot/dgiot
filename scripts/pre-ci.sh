@@ -6,20 +6,24 @@ set -euo pipefail
 cd -P -- "$(dirname -- "${BASH_SOURCE[0]}")/.."
 
 EMQX_APP='apps/'
-EMQX_DASHBOARD_PATH='lib-ce/emqx_dashboard/priv'
+EMQX_LIBCE_PATH='lib-ce/'
 DGIOT_DASHBOARD_PATH='apps/dgiot_api/priv'
-FILESEVER="https://dgiot-release-1306147891.cos.ap-nanjing.myqcloud.com/v4.4.0"
 
-get_emqx_dashboard(){
-  if [ -d "$EMQX_DASHBOARD_PATH/www" ]; then
-      echo "emqx_dashboard exist"
-  else
-    wget ${FILESEVER}/emqx_dashboard.tar.gz
-    tar xvf emqx_dashboard.tar.gz
-    mv www "$EMQX_DASHBOARD_PATH/"
-    rm emqx_dashboard.tar.gz -rf
-    chmod 777 ./scripts/*
-  fi
+get_lib_ce(){
+   cd ${EMQX_LIBCE_PATH}
+   if [ ! -d "emqx_dashboard/" ]; then
+      git clone  -b "v4.4.11" --depth=1 "https://gitee.com/fastdgiot/emqx-dashboard.git"  emqx_dashboard
+   fi
+
+   if [ ! -d "emqx_modules/" ]; then
+      git clone  -b "v4.4.11" --depth=1 "https://gitee.com/fastdgiot/emqx-modules.git"  emqx_modules
+   fi
+
+   if [ ! -d "emqx_telemetry/" ]; then
+      git clone  -b "v4.4.11" --depth=1 "https://gitee.com/fastdgiot/emqx-telemetry.git"  emqx_telemetry
+   fi
+
+   cd ..
 }
 
 get_dgiot_dashboard(){
@@ -36,11 +40,11 @@ get_dgiot_dashboard(){
 
 get_apps() {
     cd ${EMQX_APP}
-    
+
     if [ ! -d "emqx_plugin_libs/" ]; then
       git clone  -b "v4.4.11" --depth=1 "https://gitee.com/fastdgiot/emqx_plugin_libs.git"  emqx_plugin_libs
     fi
-    
+
     if [ ! -d "emqx_rule_engine/" ]; then
       git clone  -b "v4.4.11" --depth=1 "https://gitee.com/fastdgiot/emqx-rule-engine.git"  emqx_rule_engine
     fi
@@ -90,5 +94,5 @@ get_apps() {
  echo "ci"
  get_apps
  get_dgiot_dashboard
- get_emqx_dashboard
+ get_lib_ce
 
