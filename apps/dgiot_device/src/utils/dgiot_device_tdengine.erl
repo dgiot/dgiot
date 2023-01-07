@@ -76,7 +76,6 @@ get_device(Channel, ProductId, DeviceId, _DevAddr, Query) ->
             {error, Reason}
     end.
 
-
 %% SELECT max(day_electricity) '时间' ,max(charge_current) '日期' FROM _2d26a94cf8._c5e1093e30 WHERE createdat >= now - 1h INTERVAL(1h) limit 10;
 %% SELECT spread(cumulativescale) FROM _797197ad06 WHERE  createdat >= now - 1Y INTERVAL(1h);
 %% SELECT last(cumulativescale) FROM _797197ad06 WHERE createdat >= now - 1Y INTERVAL(1h);

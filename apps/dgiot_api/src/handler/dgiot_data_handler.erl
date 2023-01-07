@@ -98,31 +98,30 @@ do_request(post_upload, #{<<"file">> := FileInfo}, #{<<"user">> := #{<<"objectId
 do_request(post_upload_token, #{<<"from">> := <<"fastdfs">>}, _Context, Req0) ->
     {ok, Body, _Req1} = dgiot_req:read_body(Req0),
     case jsx:decode(Body, [{labels, binary}, return_maps]) of
-        #{<<"path">> := Path, <<"auth_token">> := AuthToken} = Info ->
+        #{<<"auth_token">> := AuthToken} = Info ->
             case dgiot_auth:get_session(AuthToken) of
                 #{<<"roles">> := Role} = User ->
-                    case maps:values(Role) of
-                        [#{<<"name">> := Path} | _] -> {200, <<"ok">>};
+                    case User of
+                        #{<<"objectId">> := UserId} ->
+                            case dgiot_parse_auth:get_role(UserId, AuthToken) of
+                                {ok, _Result} ->
+                                    sync_files(Info, Role, AuthToken),
+                                    {200, <<"ok">>};
+                                _ -> {200, <<"fail">>}
+                            end;
                         _ ->
-                            case User of
-                                #{<<"objectId">> := UserId} ->
-                                    case dgiot_parse_auth:get_role(UserId, AuthToken) of
-                                        {ok, _Result} -> {200, <<"ok">>};
-                                        _ -> {200, <<"fail">>}
-                                    end;
-                                _ ->
-                                    ?LOG(warning, "post_upload_token No Login ~p", [Info]),
-                                    {200, <<"fail">>}
-                            end
+                            ?LOG(warning, "post_upload_token No Login ~p", [Info]),
+                            {200, <<"fail">>}
                     end
             end;
         _ ->
             case _Req1 of
                 #{body := Body1} ->
                     case jsx:decode(Body1, [{labels, binary}, return_maps]) of
-                        #{<<"auth_token">> := AuthToken} ->
+                        #{<<"auth_token">> := AuthToken} = Info ->
                             case dgiot_auth:get_session(AuthToken) of
-                                #{<<"roles">> := _Role} = _User ->
+                                #{<<"roles">> := Role} = _User ->
+                                    sync_files(Info, Role, AuthToken),
                                     {200, <<"ok">>};
                                 _ ->
                                     {200, <<"fail">>}
@@ -487,6 +486,14 @@ do_request(get_producttree, _, _Context, _Req) ->
             {200, #{<<"producttree">> => []}}
     end;
 
+%% iot_hub 概要: 导入导出整站数据
+%% OperationId:post_station_data
+%% 请求:POST /iotapi/post_station_data
+do_request(post_station_data, Args, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
+    NewArgs = Args#{<<"sessionToken">> => SessionToken},
+    dgiot_mqtt:publish(SessionToken, <<"data_task/station_data">>, jsx:encode(NewArgs)),
+    {200, #{}};
+
 %%  服务器不支持的API接口
 do_request(_OperationId, _Args, _Context, _Req) ->
     ?LOG(info, "_Args ~p", [_Args]),
@@ -746,3 +753,34 @@ set_children(ClassTree, Data) ->
                 Acc ++ [NewClass]
         end
                 end, [], ClassTree).
+
+sync_files(#{<<"__path__">> := <<"/upload">>, <<"path">> := Path, <<"filename">> := Name} = _Info, Role, _AuthToken) ->
+    FilesId = dgiot_parse_id:get_filesId(Path, Name),
+    Acl = dgiot_role:get_acl(Role),
+    case dgiot_parse:get_object(<<"Files">>, FilesId) of
+        {ok, #{<<"data">> := _Data}} ->
+            dgiot_parse:update_object(<<"Files">>, FilesId, #{<<"ACL">> => Acl, <<"path">> => Path, <<"name">> => Name});
+        _ ->
+            dgiot_parse:create_object(<<"Files">>,
+                #{
+                    <<"ACL">> => Acl,
+                    <<"path">> => Path,
+                    <<"name">> => Name,
+                    <<"type">> => filename:extension(Name)
+                })
+    end;
+
+sync_files(#{<<"__path__">> := <<"/delete">>, <<"path">> := Path} = _Info, _Role, AuthToken) ->
+    FilesId = dgiot_parse_id:get_filesId(filename:dirname(Path), filename:basename(Path)),
+    case dgiot_parse:get_object(<<"Files">>, FilesId) of
+        {ok, #{<<"data">> := _}} ->
+            dgiot_parse:del_object(FilesId, [{"X-Parse-Session-Token", AuthToken}], [{from, rest}]);
+        _ ->
+
+            pass
+    end;
+
+sync_files(_Info, _Role, _AuthToken) ->
+    pass.
+
+

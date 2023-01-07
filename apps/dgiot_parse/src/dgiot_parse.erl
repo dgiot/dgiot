@@ -305,7 +305,7 @@ get_header_token(Header) ->
             ({<<"X-Parse-Session-Token">>, Token}, Acc) ->
                 DepartToken = dgiot_parse_auth:get_depart_session(Token),
                 Acc ++ [{<<"X-Parse-Session-Token">>, DepartToken}];
-            ({"X-Parse-Session-Token,Token", Token}, Acc) ->
+            ({"X-Parse-Session-Token", Token}, Acc) ->
                 DepartToken = dgiot_parse_auth:get_depart_session(Token),
                 Acc ++ [{<<"X-Parse-Session-Token">>, DepartToken}];
             ({K, V}, Acc) ->

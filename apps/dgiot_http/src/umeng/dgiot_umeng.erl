@@ -36,7 +36,8 @@
     send_message_to3D/3,
     triggeralarm/1,
     send_msg/1,
-    sendSubscribe/1
+    sendSubscribe/1,
+    get_defultmessage/1
 ]).
 
 test_broadcast() ->
@@ -267,7 +268,7 @@ get_defultmessage(ViewId) ->
                                 Acc#{<<"roleid">> => Value};
                             (_, Acc) ->
                                 Acc
-                        end, #{}, Body);
+                        end, #{<<"alarm_message">> => <<>>, <<"roleid">> => <<>>}, Body);
         _ ->
             #{}
     end.

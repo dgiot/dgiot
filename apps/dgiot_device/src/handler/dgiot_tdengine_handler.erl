@@ -204,61 +204,11 @@ do_request(get_gps_track_deviceid, #{<<"deviceid">> := DeviceId}, #{<<"sessionTo
             end
     end;
 
-%% 档案 概要: 导库 描述: 导出td zip
-%% OperationId:
-%% 请求:POST /iotapi/post_export_td
-do_request(post_export_td, Body, #{<<"sessionToken">> := SessionToken} = _Context, _Req0) ->
-    case dgiot_product_tdengine:get_channel(SessionToken) of
-        {error, Error} ->
-            {error, Error};
-        {ok, ChannelId} ->
-%%            io:format("~s ~p ChannelId = ~p.~n", [?FILE, ?LINE, ChannelId]),
-            MS = dgiot_utils:to_binary(dgiot_datetime:now_ms()),
-            Path = list_to_binary(dgiot_http_server:get_env(dgiot_api, docroot)),
-            file:make_dir(<<Path/binary, "/download">>),
-            file:make_dir(<<Path/binary, "/download/tdengine">>),
-            FileName =
-                case maps:find(<<"deviceid">>, Body) of
-                    error ->
-                        "/download/tdengine/" ++ dgiot_utils:to_list(MS) ++ ".zip";
-                    {ok, DeviceId} ->
-                        dgiot_utils:to_list(<<"/download/tdengine/", DeviceId/binary, "_", MS/binary, ".zip">>)
-                end,
-            SchemasFile = dgiot_utils:to_list(Path) ++ FileName,
-            dgiot_channelx:do_message(ChannelId, {export_data, Body, SchemasFile}),
-            {ok, #{<<"path">> => dgiot_utils:to_binary(FileName)}}
-    end;
 
-
-%% DB 概要: 导库 描述: zip导入td
-%% OperationId:post_import_td
-%% 请求:POST /iotapi/post_import_td
-do_request(post_import_td, #{<<"file">> := FileInfo}, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
-    case dgiot_product_tdengine:get_channel(SessionToken) of
-        {error, Error} ->
-            {error, Error};
-        {ok, ChannelId} ->
-            case get_json_from_zip(FileInfo) of
-                {ok, Result} ->
-                    dgiot_tdengine:import(ChannelId, Result);
-                _ ->
-                    pass
-            end
-    end;
 
 %%  服务器不支持的API接口
 do_request(_OperationId, _Args, _Context, _Req) ->
     {error, <<"Not Allowed.">>}.
 
-get_json_from_zip(FileInfo) ->
-    Dir = list_to_binary(dgiot_http_server:get_env(dgiot_api, docroot)),
-    #{<<"path">> := <<"/", Path/binary>>} = FileInfo,
-    FilePath = filename:join([Dir, Path]),
-    case zip:unzip(dgiot_utils:to_list(FilePath), [memory]) of
-        {ok, Result} ->
-            {ok, Result};
-        {error, Reason} ->
-            {error, Reason}
-    end.
 
 

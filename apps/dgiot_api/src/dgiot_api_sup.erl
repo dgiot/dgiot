@@ -38,10 +38,12 @@ start_link() ->
 %%                  modules => modules()}   % optional
 init([]) ->
     SupFlags = #{strategy => one_for_all,
-                 intensity => 0,
-                 period => 1},
+        intensity => 0,
+        period => 1},
     ChildSpecs = [
-        child_spec(dgiot_swagger, worker)],
+        child_spec(dgiot_swagger, worker, []),
+        child_spec(data_sup, supervisor, [data_task])
+    ],
     {ok, {SupFlags, ChildSpecs}}.
 
 %% internal functions
@@ -49,18 +51,18 @@ init([]) ->
 %% Internal functions
 %%--------------------------------------------------------------------
 
-child_spec(Mod, supervisor) ->
+child_spec(Mod, supervisor, Args) ->
     #{id => Mod,
-        start => {Mod, start_link, []},
+        start => {Mod, start_link, Args},
         restart => permanent,
         shutdown => infinity,
         type => supervisor,
         modules => [Mod]
     };
 
-child_spec(Mod, worker) ->
+child_spec(Mod, worker, Args) ->
     #{id => Mod,
-        start => {Mod, start_link, []},
+        start => {Mod, start_link, Args},
         restart => permanent,
         shutdown => 15000,
         type => worker,

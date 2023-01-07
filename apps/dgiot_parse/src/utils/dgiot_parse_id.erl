@@ -43,6 +43,7 @@
     get_evidenceId/2,
     get_devicelogid/2,
     get_notificationid/2,
+    get_filesId/2,
     get_masterDataId/1,
     get_metaDataId/1
 ]).
@@ -53,7 +54,9 @@ get_categoryid(Level, Name) ->
 
 
 get_shapeid(DeviceId, Identifier) ->
-    <<ShapeId:10/binary, _/binary>> = dgiot_utils:to_md5(<<DeviceId/binary, Identifier/binary, "dgiottopo">>),
+    BinDeviceId = dgiot_utils:to_binary(DeviceId),
+    BinIdentifier = dgiot_utils:to_binary(Identifier),
+    <<ShapeId:10/binary, _/binary>> = dgiot_utils:to_md5(<<BinDeviceId/binary, BinIdentifier/binary, "dgiottopo">>),
     ShapeId.
 
 get_dictid(Key, Type, Class, Title) ->
@@ -85,6 +88,11 @@ get_notificationid(DeviceId, Type) ->
     #{<<"objectId">> := NotificationId} =
         dgiot_parse_id:get_objectid(<<"Notification">>, #{<<"device">> => DeviceId, <<"type">> => Type}),
     NotificationId.
+
+get_filesId(Path, Name) ->
+    #{<<"objectId">> := FilesId} =
+        dgiot_parse_id:get_objectid(<<"Files">>, #{<<"path">> => Path, <<"name">> => Name}),
+    FilesId.
 
 get_instructid(DeviceId, Pn, Di) ->
     <<DId:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Instruct", DeviceId/binary, Pn/binary, Di/binary>>),
@@ -351,7 +359,14 @@ get_objectid(Class, Map) ->
             Date = maps:get(<<"date">>, Map, <<"">>),
             Device = maps:get(<<"device">>, Map, <<"">>),
             Shift = maps:get(<<"shift">>, Map, <<"">>),
-            <<DId:10/binary, _/binary>> = dgiot_utils:to_md5(<<"_Shift", Date/binary, Device/binary, Shift/binary>>),
+            <<DId:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Shift", Date/binary, Device/binary, Shift/binary>>),
+            Map#{
+                <<"objectId">> => DId
+            };
+        <<"Files">> ->
+            Path = maps:get(<<"path">>, Map, <<"">>),
+            Name = maps:get(<<"name">>, Map, <<"">>),
+            <<DId:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Files", Path/binary, Name/binary>>),
             Map#{
                 <<"objectId">> => DId
             };

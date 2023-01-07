@@ -21,7 +21,7 @@
 -define(HTTPOption, [{timeout, 60000}, {connect_timeout, 60000}]).
 -define(REQUESTOption, [{body_format, binary}]).
 %% API
--export([login/2]).
+-export([login/5, connect/5, check_version/2]).
 -export([test/0]).
 
 test() ->
@@ -34,20 +34,67 @@ test() ->
     {upgrade, [<<"websocket">>], _} = gun:await(ConnPid, StreamRef),
     %% Gun sent a ping automatically, but we silence ping/pong by default.
 %%    {error, timeout} = gun:await(ConnPid, StreamRef, 2000),
-    Body= #{<<"action">> => <<"version">>},
+    Body = #{<<"action">> => <<"version">>},
     Frame = {text, jiffy:encode(Body)},
     gun:ws_send(ConnPid, StreamRef, Frame),
     {ws, Ack} = gun:await(ConnPid, StreamRef),
-    io:format("Ack ~p ~n",[Ack]),
+    io:format("Ack ~p ~n", [Ack]),
     gun:close(ConnPid).
 
-login(Ip, Port) ->
+login(ChannelId, Ip, Port, UserName, Password) ->
     {ok, WsPid} = gun:open(Ip, Port, #{
-        supervise => true,
-        ws_opts => #{keepalive => 1000}
+        supervise => false,
+        ws_opts => #{keepalive => 1000 * 20}
     }),
-    {ok, _} = gun:await_up(WsPid),
-    StreamRef = gun:ws_upgrade(WsPid, "/rest/ws", []),
-    {upgrade, [<<"websocket">>], _} = gun:await(WsPid, StreamRef),
-    {WsPid, StreamRef}.
+    case gun:await_up(WsPid) of
+        {ok, _} ->
+            StreamRef = gun:ws_upgrade(WsPid, "/rest/ws", []),
+            case catch gun:await(WsPid, StreamRef) of
+                {'EXIT', Reason} ->
+                    {error, Reason};
+                {upgrade, [<<"websocket">>], _} ->
+                    connect(WsPid, StreamRef, ?Database(ChannelId), UserName, Password);
+                Error1 ->
+                    {error, Error1}
+            end;
+        {_, Error} ->
+            {error, Error}
+    end.
 
+connect(WsPid, StreamRef, Db, UserName, Password) ->
+    Version = #{<<"action">> => <<"conn">>,
+        <<"args">> => #{
+            <<"req_id">> => 0,
+            <<"user">> => UserName,
+            <<"password">> => Password,
+            <<"db">> => Db
+        }
+    },
+    put(req_id, 1),
+    VersionFrame = {text, dgiot_json:encode(Version)},
+    gun:ws_send(WsPid, StreamRef, VersionFrame),
+
+    case gun:await(WsPid, StreamRef) of
+        {ws, {text, Data}} ->
+            case catch dgiot_json:decode(Data, [return_maps]) of
+                #{<<"code">> := 0, <<"action">> := <<"conn">>} ->
+                    {ok, {WsPid, StreamRef}};
+                #{<<"code">> := 899, <<"action">> := <<"conn">>} ->
+                    connect(WsPid, StreamRef, <<"">>, UserName, Password);
+                _ ->
+                    {error, Data}
+            end;
+        Error ->
+            {error, Error}
+    end.
+
+check_version(WsPid, StreamRef) ->
+    Version = #{<<"action">> => <<"version">>},
+    VersionFrame = {text, jiffy:encode(Version)},
+    gun:ws_send(WsPid, StreamRef, VersionFrame),
+    case gun:await(WsPid, StreamRef) of
+        {ws, #{<<"code">> := 0, <<"action">> := <<"version">>, <<"version">> := V}} ->
+            {ok, #{<<"version">> => V}};
+        {ws, Error} ->
+            {error, Error}
+    end.

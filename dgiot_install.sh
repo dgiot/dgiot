@@ -633,28 +633,31 @@ function deploy_tdengine_server() {
     mv ${install_dir}/taos/ ${backup_dir}/taos/
   fi
 
-  if [ ! -f ${script_dir}/TDengine-server-2.4.0.4-Linux-x64.tar.gz ]; then
-    wget ${fileserver}/TDengine-server-2.4.0.4-Linux-x64.tar.gz -O ${script_dir}/TDengine-server-2.4.0.4-Linux-x64.tar.gz &> /dev/null
+  if [ ! -f ${script_dir}/TDengine-server-3.0.2.1-Linux-x64.tar.gz ]; then
+    wget ${fileserver}/TDengine-server-3.0.2.1-Linux-x64.tar.gz -O ${script_dir}/TDengine-server-3.0.2.1-Linux-x64.tar.gz &> /dev/null
   fi
 
   cd ${script_dir}/
-  if [ -f ${script_dir}/TDengine-server-2.4.0.4 ]; then
-    rm -rf ${script_dir}/TDengine-server-2.4.0.4/
+  if [ -f ${script_dir}/TDengine-server-3.0.2.1 ]; then
+    rm -rf ${script_dir}/TDengine-server-3.0.2.1/
   fi
 
-  tar xf TDengine-server-2.4.0.4-Linux-x64.tar.gz
-  cd ${script_dir}/TDengine-server-2.4.0.4/
-  mkdir ${install_dir}/taos/log/ -p
-  mkdir ${install_dir}/taos/data/ -p
+  tar xf TDengine-server-3.0.2.1-Linux-x64.tar.gz
+  cd ${script_dir}/TDengine-server-3.0.2.1/
+  mkdir ${install_dir}/taos3/log/ -p
+  mkdir ${install_dir}/taos3/data/ -p
   echo | /bin/sh install.sh &> /dev/null
   ldconfig
   cd ${script_dir}/
-  rm ${script_dir}/TDengine-server-2.4.0.4 -rf
-  ${csudo} bash -c "echo 'logDir                    ${install_dir}/taos/log/'   > /etc/taos/taos.cfg"
-  ${csudo} bash -c "echo 'dataDir                   ${install_dir}/taos/data/'   >> /etc/taos/taos.cfg"
+  rm ${script_dir}/TDengine-server-3.0.2.1 -rf
+  ${csudo} bash -c "echo 'logDir                    ${install_dir}/taos3/log/'   > /etc/taos/taos.cfg"
+  ${csudo} bash -c "echo 'dataDir                   ${install_dir}/taos3/data/'   >> /etc/taos/taos.cfg"
+  ${csudo} bash -c "echo 'supportVnodes             100'   >> /etc/taos/taos.cfg"
   systemctl start taosd
   systemctl start taosadapter
+  systemctl start taoskeeper
   ${csudo} systemctl enable taosadapter &> /dev/null
+  ${csudo} systemctl enable taoskeeper &> /dev/null
   echo -e "`date +%F_%T` $LINENO: ${GREEN} tdengine_server start success${NC}"
   #  install_dgiot_tdengine_mqtt
 }

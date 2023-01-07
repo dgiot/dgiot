@@ -1523,6 +1523,49 @@
           "Product"
         ]
       }
+    },
+    "/station_data": {
+      "post": {
+        "summary": "整站数据",
+        "description": "导入导出整站数据",
+        "consumes": [
+          "multipart/form-data"
+        ],
+        "parameters": [
+          {
+            "name": "type",
+            "in": "formData",
+            "description": "类型",
+            "type": "string"
+          },
+          {
+            "name": "file",
+            "in": "formData",
+            "description": "数据文件",
+            "type": "file"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Data"
+        ]
+      }
     }
   }
 }

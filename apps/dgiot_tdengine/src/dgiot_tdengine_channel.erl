@@ -26,7 +26,7 @@
 -dgiot_data("ets").
 -export([init_ets/0]).
 %% API
--export([start/2,check_init/3]).
+-export([start/2, check_init/3]).
 -export([init/3, handle_event/3, handle_message/2, stop/3, handle_init/1]).
 -export([test/1]).
 
@@ -103,22 +103,6 @@
             zh => <<"密码"/utf8>>
         }
     },
-    <<"driver">> => #{
-        order => 6,
-        type => enum,
-        required => true,
-        default => <<"HTTP">>,
-        enum => [
-            #{<<"value">> => <<"HTTP">>, <<"label">> => <<"Rest"/utf8>>},
-            #{<<"value">> => <<"WS">>, <<"label">> => <<"Websocket"/utf8>>}
-        ],
-        title => #{
-            zh => <<"连接方式"/utf8>>
-        },
-        description => #{
-            zh => <<"连接方式包括HTTP请求或JDBC"/utf8>>
-        }
-    },
     <<"db">> => #{
         order => 7,
         type => enum,
@@ -157,16 +141,16 @@ init_ets() ->
 start(ChannelId, #{
     <<"ip">> := Ip,
     <<"port">> := Port,
-    <<"driver">> := Driver0,
     <<"username">> := UserName,
     <<"password">> := Password
 } = Cfg) ->
-    {Driver, Url} = dgiot_tdengine_pool:start(list_to_binary(string:uppercase(binary_to_list(Driver0))), Ip, Port),
+    dgiot_tdengine_http:start(),
     Keep = min(maps:get(<<"keep">>, Cfg, 365 * 5), 365 * 5),
-    dgiot_channelx:add(?TYPE, ChannelId, ?MODULE, #{
-        <<"driver">> => Driver,
+    dgiot_channelx:add(?TYPE, ChannelId, ?MODULE, Cfg#{
         <<"keep">> => Keep,
-        <<"url">> => Url,
+        <<"url">> => list_to_binary(lists:concat(["http://", binary_to_list(Ip), ":", Port, "/rest/sql"])),
+        <<"ip">> => dgiot_utils:to_list(Ip),
+        <<"port">> => dgiot_utils:to_int(Port),
         <<"username">> => UserName,
         <<"password">> => Password,
         <<"db">> => maps:get(<<"db">>, Cfg, <<"ProductId">>)
@@ -176,22 +160,16 @@ start(ChannelId, #{
 init(?TYPE, ChannelId, Config) ->
     State = #state{
         id = ChannelId,
-        env = Config
+        env = Config#{<<"driver">> => <<"HTTP">>}
     },
     dgiot_metrics:dec(dgiot_tdengine, <<"tdengine">>, 1000),
     DbType = maps:get(<<"db">>, Config, <<"ProductId">>),
     dgiot_data:insert({tdengine_db, ChannelId}, DbType),
     {ok, State, []}.
 
-handle_init(#state{id = _ChannelId, env = #{<<"driver">> := <<"WS">>} = Env} = State) ->
+handle_init(State) ->
     dgiot_metrics:inc(dgiot_tdengine, <<"tdengine">>, 1),
-    {ConnPid, StreamRef} = dgiot_tdengine_pool:login(Env),
-    erlang:send_after(5000, self(), init),
-    {ok, State#state{env = Env#{<<"ws_pid">> => ConnPid, <<"ws_ref">> => StreamRef}}};
-
-handle_init(#state{id = _ChannelId} = State) ->
-    dgiot_metrics:inc(dgiot_tdengine, <<"tdengine">>, 1),
-    erlang:send_after(5000, self(), init),
+    erlang:send_after(1000, self(), ws_login),
     {ok, State}.
 
 handle_event(_EventType, _Event, State) ->
@@ -199,16 +177,30 @@ handle_event(_EventType, _Event, State) ->
 
 %% gun监测 开始
 handle_message({gun_up, _Pid, _Protocol}, #state{id = _ChannelId, env = _Config} = State) ->
+    io:format("~s ~p gun_up = ~p.~n", [?FILE, ?LINE, _Protocol]),
     {ok, State};
 
 handle_message({gun_error, _Pid, _Protocol}, #state{id = _ChannelId, env = _Config} = State) ->
+    io:format("~s ~p gun_error = ~p.~n", [?FILE, ?LINE, _Protocol]),
     {ok, State};
 
 handle_message({gun_down, _Pid, _Protocol}, #state{id = _ChannelId, env = _Config} = State) ->
+    io:format("~s ~p gun_down = ~p.~n", [?FILE, ?LINE, _Protocol]),
     {ok, State};
 %% gun监测结束
 
+handle_message(ws_login, #state{id = ChannelId, env = Env} = State) ->
+    erlang:send_after(5000, self(), init),
+    case dgiot_tdengine_pool:login(ChannelId, Env) of
+        {ok, {ConnPid, StreamRef}} ->
+            {ok, State#state{env = Env#{<<"driver">> => <<"WS">>, <<"ws_pid">> => ConnPid, <<"ws_ref">> => StreamRef}}};
+        {error, _Error} ->
+%%            dgiot_bridge:send_log(ChannelId, "Tdengine WS Login error, ~p~n", [Error]),
+            {ok, State}
+    end;
+
 handle_message(init, #state{id = ChannelId, env = Config} = State) ->
+    dgiot_data:insert({?TYPE, ChannelId, config}, Config),
     case dgiot_bridge:get_products(ChannelId) of
         {ok, _, ProductIds} ->
             NewProducts = lists:foldl(fun(X, Acc) ->
@@ -232,24 +224,9 @@ handle_message({data, Product, DevAddr, Data, Context}, #state{id = ChannelId} =
             {ok, NewState}
     end;
 
-handle_message({export_data, Body, SchemasFile}, #state{id = ChannelId} = State) ->
-    io:format("~s ~p start SchemasFile = ~p.~n", [?FILE, ?LINE, SchemasFile]),
-    NewData = dgiot_tdengine:export(ChannelId, Body),
-    case zip:create(<<"tdengine">>, NewData, [memory]) of
-        {ok, {_, ZipFile}} ->
-            file:write_file(SchemasFile, ZipFile);
-        %% io:format("~s ~p end = ~p.~n", [?FILE, ?LINE, R]);
-        _ ->
-            pass
-    end,
-    {ok, State};
-
 %% 规则引擎导入
 handle_message({rule, Msg, Context}, State) ->
     handle_message({data, Msg, Context}, State);
-
-handle_message(config, #state{env = Config} = State) ->
-    {reply, {ok, Config}, State};
 
 handle_message({sync_product, <<"Product">>, ObjectId}, #state{id = ChannelId, env = Config} = State) ->
     do_check(ChannelId, [ObjectId], Config),
