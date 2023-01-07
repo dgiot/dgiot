@@ -57,8 +57,8 @@ get_konva(ProductId, DeviceId, Payload) ->
                     Type1 ->
                         Type1
                 end,
-            BinV = get_konva_value(ProductId, K, V),
-            Unit = get_konva_unit(ProductId, K),
+            BinV = dgiot_utils:to_binary(get_konva_value(ProductId, K, V)),
+            Unit = dgiot_utils:to_binary(get_konva_unit(ProductId, K)),
             Acc ++ [#{<<"id">> => dgiot_parse_id:get_shapeid(DeviceId, <<ProductId/binary, "_", K/binary, "_text">>), <<"text">> => <<BinV/binary, " ", Unit/binary>>, <<"type">> => Type}]
                   end, Topo, Payload),
     base64:encode(jsx:encode(#{<<"konva">> => Shape})).
@@ -270,7 +270,9 @@ get_text(Type, ProductId, ClassName, Attrs, DeviceId, KonvatId, Shapeid, Identif
                             {ok, Text1} ->
                                 get_konva_value(ProductId, Identifier1, Text1)
                         end,
-                    NewAttrs = Attrs#{<<"id">> => dgiot_parse_id:get_shapeid(DeviceId, Id), <<"text">> => <<Text/binary, " ", Unit/binary>>, <<"draggable">> => false},
+                    BinText = dgiot_utils:to_binary(Text),
+                    BinUnit = dgiot_utils:to_binary(Unit),
+                    NewAttrs = Attrs#{<<"id">> => dgiot_parse_id:get_shapeid(DeviceId, Id), <<"text">> => <<BinText/binary, " ", BinUnit/binary>>, <<"draggable">> => false},
                     save(Type, NewAttrs),
                     X#{<<"attrs">> => NewAttrs}
             end;

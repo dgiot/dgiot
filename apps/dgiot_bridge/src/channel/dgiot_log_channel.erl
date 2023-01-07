@@ -66,7 +66,8 @@ init(?TYPE, ChannelId, Args) ->
 
 handle_init(State) ->
     dgiot_mqtt:subscribe(<<"dashboard_task/#">>),
-%%    io:format("~s ~p topics ~n ", [?FILE, ?LINE]),
+    timer:sleep(100),
+    dgiot_mqtt:subscribe(<<"data_task/#">>),
     timer:sleep(100),
     dgiot_mqtt:subscribe(<<"dgiot_topics/#">>),
     {ok, State}.
@@ -86,6 +87,8 @@ handle_message({deliver, _, Msg}, State) ->
             case re:run(Topic, <<"[^//]+">>, [{capture, all, binary}, global]) of
                 {match, [[<<"dashboard_task">>], [_DashboardId]]} ->
                     supervisor:start_child(dashboard_task, [Message]);
+                {match, [[<<"data_task">>], [_SSS]]} ->
+                    supervisor:start_child(data_task, [Message]);
                 {match, [[<<"dgiot_topics">>], [SessionToken]]} ->
                     subscribe_topic(SessionToken, Message);
                 _ ->

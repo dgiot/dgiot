@@ -425,6 +425,16 @@ put_roleuser(#{<<"userid">> := UserId} = Body, SessionToken) ->
                                             }
                                         ]}
                                     }),
+                                dgiot_parse:update_object(<<"_User">>, UserId, #{<<"roles">> => #{
+                                    <<"__op">> => <<"RemoveRelation">>,
+                                    <<"objects">> => [
+                                        #{
+                                            <<"__type">> => <<"Pointer">>,
+                                            <<"className">> => <<"_Role">>,
+                                            <<"objectId">> => RoleId
+                                        }
+                                    ]}
+                                }),
                                 role_ets(RoleId),
                                 Acc ++ [#{<<"del">> => R0}]
                             end, [], DelRoles);
@@ -448,6 +458,12 @@ put_roleuser(#{<<"userid">> := UserId} = Body, SessionToken) ->
                                         <<"__type">> => <<"Pointer">>,
                                         <<"className">> => <<"_User">>,
                                         <<"objectId">> => UserId}]}}),
+                            dgiot_parse:update_object(<<"_User">>, UserId, #{<<"roles">> => #{
+                                <<"__op">> => <<"AddRelation">>,
+                                <<"objects">> => [#{
+                                    <<"__type">> => <<"Pointer">>,
+                                    <<"className">> => <<"_Role">>,
+                                    <<"objectId">> => RoleId}]}}),
                             role_ets(RoleId),
                             Acc1 ++ [#{<<"add">> => R3}]
                                     end, [], AddRoles);
@@ -506,6 +522,16 @@ del_roleuser(#{<<"userid">> := UserId} = Body, SessionToken) ->
                                             }
                                         ]}
                                     }),
+                                dgiot_parse:update_object(<<"_User">>, UserId, #{<<"roles">> => #{
+                                    <<"__op">> => <<"RemoveRelation">>,
+                                    <<"objects">> => [
+                                        #{
+                                            <<"__type">> => <<"Pointer">>,
+                                            <<"className">> => <<"_Role">>,
+                                            <<"objectId">> => RoleId
+                                        }
+                                    ]}
+                                }),
                                 Acc ++ [#{<<"del">> => R0}]
                             end, [], DelRoles);
                     _ -> []

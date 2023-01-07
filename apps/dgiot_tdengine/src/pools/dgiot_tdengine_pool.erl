@@ -18,35 +18,47 @@
 -author("johnliu").
 -include("dgiot_tdengine.hrl").
 -include_lib("dgiot/include/logger.hrl").
--export([start/3, run_sql/3, login/1]).
+-export([insert_sql/3, run_sql/3, login/2]).
 
-start(<<"WS">>, Ip, Port) ->
-    {<<"WS">>, {binary_to_list(Ip), Port}};
-start(_Type, Ip, Port) ->
-    dgiot_tdengine_http:start(),
-    {<<"HTTP">>, list_to_binary(lists:concat(["http://", binary_to_list(Ip), ":", Port, "/rest/sql"]))}.
-
-login(#{<<"driver">> := <<"WS">>, <<"url">> := {Ip, Port}}) ->
-    dgiot_tdengine_ws:login(Ip, Port).
+login(ChannelId, #{<<"username">> := UserName,
+    <<"password">> := Password, <<"ip">> := Ip, <<"port">> := Port}) ->
+    dgiot_tdengine_ws:login(ChannelId, Ip, Port, UserName, Password).
 
 %% WebSocket
-run_sql(#{<<"driver">> := <<"WS">>, <<"ws_pid">> := ConnPid, <<"ws_ref">> := StreamRef} = _Context, _Action, Sql) when byte_size(Sql) > 0 ->
-    Body = #{<<"action">> => <<"version">>},
-    Frame = {text, jiffy:encode(Body)},
+insert_sql(#{<<"driver">> := <<"WS">>, <<"ws_pid">> := ConnPid, <<"ws_ref">> := StreamRef} = _Context, _Action, Sql) when byte_size(Sql) > 0 ->
+%%    io:format("~s ~p Sql = ~p.~n", [?FILE, ?LINE, Sql]),
+    Req_id = get(req_id),
+    put(req_id, Req_id + 1),
+    Body = #{
+        <<"action">> => <<"query">>,
+        <<"args">> => #{<<"req_id">> => Req_id, <<"sql">> => Sql}
+    },
+    Frame = {text, dgiot_json:encode(Body)},
     gun:ws_send(ConnPid, StreamRef, Frame),
-    {ws, Ack} = gun:await(ConnPid, StreamRef),
-    case Ack of
-        {} ->
-            ok;
-        _ ->
-            ok
+    case gun:await(ConnPid, StreamRef) of
+        {ws, {text, Data}} ->
+            case catch dgiot_json:decode(Data, [return_maps]) of
+                #{<<"code">> := 0} = R ->
+                    {ok, R};
+                _ ->
+                    {error, Data}
+            end;
+        Error ->
+            {error, Error}
     end;
 
+insert_sql(#{<<"driver">> := <<"HTTP">>} = Context, _Action, Sql) when byte_size(Sql) > 0 ->
+    run_sql(Context, _Action, Sql);
+
+insert_sql(_Context, _Action, _Sql) ->
+    ok.
+
 %% Action 用来区分数据库操作语句类型(DQL、DML、DDL、DCL)
-run_sql(#{<<"driver">> := <<"HTTP">>, <<"url">> := Url, <<"username">> := UserName, <<"password">> := Password} = Context, _Action, Sql) when byte_size(Sql) > 0 ->
+run_sql(#{<<"url">> := Url, <<"username">> := UserName, <<"password">> := Password} = Context, _Action, Sql) when byte_size(Sql) > 0 ->
     ?LOG(debug, " ~p, ~p, ~p, (~ts)", [Url, UserName, Password, unicode:characters_to_list(Sql)]),
+%%    io:format("~s ~p Sql = ~p.~n", [?FILE, ?LINE, Sql]),
     case dgiot_tdengine_http:request(Url, UserName, Password, Sql) of
-        {ok, Result} ->
+        {ok, #{<<"results">> := _R} = Result} ->
             case maps:get(<<"channel">>, Context, <<"">>) of
                 <<"">> ->
                     ?LOG(debug, "Execute ~p (~ts) ~p", [Url, unicode:characters_to_list(Sql), Result]);
@@ -54,6 +66,22 @@ run_sql(#{<<"driver">> := <<"HTTP">>, <<"url">> := Url, <<"username">> := UserNa
                     dgiot_bridge:send_log(ChannelId, "Execute ~p (~ts) ~p", [Url, unicode:characters_to_list(Sql), jsx:encode(Result)])
             end,
             {ok, Result};
+        {ok, #{<<"code">> := 0, <<"column_meta">> := Column_meta, <<"data">> := Data} = Result} ->
+%%            io:format("~s ~p Result = ~p.~n", [?FILE, ?LINE, Result]),
+            NewData = get_data(Column_meta, Data),
+            case maps:get(<<"channel">>, Context, <<"">>) of
+                <<"">> ->
+                    ?LOG(debug, "Execute ~p (~ts) ~p", [Url, unicode:characters_to_list(Sql), NewData]);
+                ChannelId ->
+                    dgiot_bridge:send_log(ChannelId, "Execute ~p (~ts) ~p", [Url, unicode:characters_to_list(Sql), jsx:encode(NewData)])
+            end,
+%%            io:format("~s ~p NewData = ~p.~n", [?FILE, ?LINE, NewData]),
+            {ok, Result#{<<"results">> => NewData}};
+        {ok, #{<<"code">> := 9826} = Reason} ->
+            {error, Reason};
+        {ok, Reason} ->
+%%            io:format("~s ~p _OT = ~p.~n", [?FILE, ?LINE, _OT]),
+            {error, Reason};
         {error, #{<<"code">> := 896} = Reason} ->
             {ok, Reason#{<<"affected_rows">> => 0}};
         {error, Reason} ->
@@ -63,5 +91,60 @@ run_sql(#{<<"driver">> := <<"HTTP">>, <<"url">> := Url, <<"username">> := UserNa
 
 run_sql(_Context, _Action, _Sql) ->
     ok.
+
+
+%%    {ok, #{<<"code">> => 0,
+%%    <<"column_meta">> => [
+%%                   [<<"createdat">>, <<"TIMESTAMP">>, 8],
+%%                   [<<"energy">>, <<"FLOAT">>, 4]
+%%              ],
+%%    <<"data">> => [
+%%                   [<<"2023-01-06T11:41:17.901Z">>, 6729]
+%%               ],
+%%    <<"rows">> => 1}
+%%    },
+%%
+%%    {ok, #{<<"results">> =>
+%%    [#{<<"createdat">> => <<"2022-11-10 18:30:04.578">>,
+%%    <<"online">> => 1}]}},
+
+get_data(Column_meta, Data) ->
+    get_data(Column_meta, Data, []).
+
+get_data(_, [], Acc) ->
+    Acc;
+
+get_data(Column_meta, [Data | Rest], Acc) ->
+    Column = get_column(Column_meta, Data),
+    get_data(Column_meta, Rest, Acc ++ [Column]).
+
+get_column(Column_meta, Data) ->
+    get_column(Column_meta, Data, #{}).
+
+get_column([], [], Acc) ->
+    Acc;
+
+get_column([Column_meta | Cest], [Value | Rest], Acc) ->
+    [Field | _] = Column_meta,
+    get_column(Cest, Rest, Acc#{Field => Value}).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

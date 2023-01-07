@@ -47,7 +47,9 @@
     get_roleids/1,
     get_alcname/1,
     get_aclNames/1,
-    get_acls/1
+    get_acls/1,
+    get_acl/1,
+    get_rolenames/1
 ]).
 
 get_childacl(AclName) ->
@@ -879,4 +881,19 @@ get_rules_role(Rules) ->
             {error, Other}
     end.
 
+get_acl(Role) ->
+    lists:foldl(fun
+                    (#{<<"name">> := Rolename}, Acc) ->
+                        Acc#{<<"role:", Rolename/binary>> => #{<<"read">> => true, <<"write">> => true}};
+                    (_, Acc) ->
+                        Acc
+                end, #{}, maps:values(Role)).
 
+
+get_rolenames(Roles) ->
+    lists:foldl(fun
+                    (#{<<"name">> := Rolename}, Acc) ->
+                        Acc ++ [Rolename];
+                    (_, Acc) ->
+                        Acc
+                end, [], maps:values(Roles)).

@@ -61,7 +61,7 @@ get_echart(ProductId, Results, Names, Interval) ->
                           end, #{}, Line),
             Lines ++ [NewLine]
                     end, [], Results),
-    ?LOG(debug, "Rows ~p", [Rows]),
+%%    io:format("~s ~p Rows = ~p.~n", [?FILE, ?LINE, Rows]),
     ChildRows = lists:foldl(fun(X, Acc1) ->
         Date = maps:get(<<"日期"/utf8>>, X),
         maps:fold(fun(K1, V1, Acc) ->

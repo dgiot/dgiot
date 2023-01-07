@@ -84,7 +84,7 @@ save_(#{<<"objectId">> := DeviceId, <<"devaddr">> := Devaddr, <<"product">> := P
             _ ->
                 {120.065714, 30.369491}
         end,
-    insert_mnesia(DeviceId, dgiot_role:get_acls(Device), Status, maps:get(<<"state">>, Device, 0), UpdatedAt, IsEnable, ProductId, Devaddr, DeviceSecret, node(), Longitude, Latitude).
+    dgiot_mnesia:insert(DeviceId, ['Device', dgiot_role:get_acls(Device), Status, maps:get(<<"state">>, Device, 0), UpdatedAt, IsEnable, dgiot_utils:to_atom(ProductId), Devaddr, DeviceSecret, node(), Longitude, Latitude]).
 
 post(Device) ->
 %%    put_content(Device),
@@ -168,22 +168,7 @@ check_time(_, _, _) ->
     {true, dgiot_datetime:now_secs()}.
 
 insert_mnesia(DeviceId, Acl, Status, State, Now, IsEnable, ProductId, Devaddr, DeviceSecret, Node, Longitude, Latitude) ->
-    Topic = <<"$dg/user/devicestate/", DeviceId/binary, "/report">>,
-    NewStatus =
-        case Status of
-            true ->
-                <<"ONLINE">>;
-            _ ->
-                <<"OFFLINE">>
-        end,
-    Address =
-        case dgiot_data:get(?DGIOT_LOCATION_ADDRESS, DeviceId) of
-            not_find ->
-                get_address(DeviceId, Longitude, Latitude);
-            Addr ->
-                Addr
-        end,
-    dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(#{DeviceId => #{<<"status">> => NewStatus, <<"isEnable">> => IsEnable, <<"lastOnlineTime">> => Now, <<"address">> => Address, <<"location">> => #{<<"longitude">> => Longitude, <<"latitude">> => Latitude}}})),
+    notification(DeviceId, Status, Longitude, Latitude, IsEnable, Now),
     dgiot_mnesia:insert(DeviceId, ['Device', Acl, Status, State, Now, IsEnable, dgiot_utils:to_atom(ProductId), Devaddr, DeviceSecret, Node, Longitude, Latitude]).
 
 %% 缓存设备的profile配置
@@ -400,5 +385,24 @@ delete(ProductId, DevAddr) ->
     DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
     dgiot_mnesia:delete(DeviceId).
 
-
-
+notification(DeviceId, Status, Longitude, Latitude, IsEnable, Now) ->
+    Topic = <<"$dg/user/devicestate/", DeviceId/binary, "/report">>,
+    NewStatus =
+        case Status of
+            true ->
+                <<"ONLINE">>;
+            _ ->
+                <<"OFFLINE">>
+        end,
+    Address =
+        case dgiot_data:get(?DGIOT_LOCATION_ADDRESS, DeviceId) of
+            not_find ->
+                get_address(DeviceId, Longitude, Latitude);
+            Addr ->
+                Addr
+        end,
+    dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(#{
+        DeviceId => #{
+            <<"status">> => NewStatus, <<"isEnable">> => IsEnable, <<"lastOnlineTime">> => Now, <<"address">> => Address,
+            <<"location">> => #{<<"longitude">> => Longitude, <<"latitude">> => Latitude}
+        }})).

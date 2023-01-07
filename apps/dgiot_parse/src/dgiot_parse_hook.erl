@@ -143,7 +143,7 @@ notify(Type, Method, Token, Class, ObjectId, Data) ->
 
 %% 增加一个类似规则引擎的比较规则
 parse_sqlrule(_Rule, _Data) ->
-    pass.
+    false.
 
 do_request_hook(Type, [<<"classes">>, Class, ObjectId], Method, Token, QueryData, ResBody) ->
     do_hook({<<Class/binary, "/*">>, Method}, {Type, Method, Token, Class, ObjectId, QueryData, ResBody});

@@ -122,17 +122,12 @@ get_keys(ProductId, Function, <<"*">>) ->
         {ok, #{<<"thing">> := #{<<"properties">> := Props}}} when length(Props) > 0 ->
             lists:foldl(fun(X, {Names, Acc}) ->
                 case X of
-                    #{<<"identifier">> := Identifier, <<"name">> := Name, <<"isstorage">> := true} ->
-                        case Acc of
-                            <<"*">> ->
-                                {Names ++ [Name], <<Function/binary, "(", Identifier/binary, ") \'", Identifier/binary, "\'">>};
-                            _ ->
-                                {Names ++ [Name], <<Acc/binary, ", ", Function/binary, "(", Identifier/binary, ") \'", Identifier/binary, "\'">>}
-                        end;
+                    #{<<"identifier">> := Identifier, <<"name">> := Name, <<"isstorage">> := true, <<"isshow">> := true} ->
+                        {Names ++ [Name], <<Acc/binary, ", ", Function/binary, "(", Identifier/binary, ") ", Identifier/binary>>};
                     _ ->
                         {Names, Acc}
                 end
-                        end, {[], <<"*">>}, Props);
+                        end, {[], <<"createdat">>}, Props);
         _Other ->
             ?LOG(debug, "~p _Other ~p", [ProductId, _Other]),
             {[], <<"*">>}
@@ -153,14 +148,9 @@ get_keys(ProductId, Function, Keys) ->
             error ->
                 {Names, Acc};
             Name ->
-                case Acc of
-                    <<"">> ->
-                        {Names, <<Function/binary, "(", X/binary, ") \'", X/binary, "\'">>};
-                    _ ->
-                        {Names ++ [Name], <<Acc/binary, ", ", Function/binary, "(", X/binary, ") \'", X/binary, "\'">>}
-                end
+                {Names ++ [Name], <<Acc/binary, ", ", Function/binary, "(", X/binary, ") ", X/binary>>}
         end
-                end, {[], <<"">>}, List).
+                end, {[], <<"createdat">>}, List).
 
 check_field(Typea, V, #{<<"specs">> := Specs}) when Typea == <<"enum">>; Typea == <<"bool">> ->
     maps:get(dgiot_utils:to_binary(V), Specs, V);
