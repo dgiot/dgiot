@@ -132,8 +132,8 @@ code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
 %% 开始采集下一个子设备的指令集
-send_msg(#dclient{userdata = #device_task{dique = DisQue}} = State) when length(DisQue) == 0 ->
-    get_next_pn(State);
+send_msg(#dclient{userdata = #device_task{dique = DisQue, pnque_len = PnQueLen} = UserData} = State) when length(DisQue) == 0 ->
+    get_next_pn(State#dclient{userdata = UserData#device_task{pnque_len = PnQueLen - 1}});
 
 %% 发送指令集
 send_msg(#dclient{channel = ChannelId, userdata = #device_task{product = Product, devaddr = DevAddr, dique = DisQue} = UserData} = State) ->
@@ -155,6 +155,16 @@ send_msg(#dclient{channel = ChannelId, userdata = #device_task{product = Product
     dgiot_metrics:inc(dgiot_task, <<"task_send">>, 1),
     erlang:send_after(Interval * 1000, self(), read),
     State#dclient{userdata = UserData#device_task{dique = NewDisQue, interval = Interval}}.
+
+%% 本轮任务结束
+get_next_pn(#dclient{channel = ChannelId, clock = #dclock{round = Round}, userdata = #device_task{product = Product, devaddr = DevAddr, pnque_len = PnQueLen}} = State) when PnQueLen < 1 ->
+    case PnQueLen of
+        0 ->
+            dgiot_bridge:send_log(dgiot_utils:to_binary(ChannelId), Product, DevAddr, "~s ~p time: ~p, round: ~p end ~n", [?FILE, ?LINE, dgiot_datetime:format(dgiot_datetime:now_secs(), <<"YY-MM-DD HH:NN:SS">>), Round]);
+        _ ->
+            pass
+    end,
+    State;
 
 get_next_pn(#dclient{client = CLient, clock = #dclock{round = Round}, userdata = #device_task{product = ProductId, devaddr = DevAddr} = UserData} = State) ->
     case dgiot_task:get_pnque(CLient) of

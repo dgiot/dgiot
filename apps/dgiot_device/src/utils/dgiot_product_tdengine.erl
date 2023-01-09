@@ -127,7 +127,7 @@ get_keys(ProductId, Function, <<"*">>) ->
                     _ ->
                         {Names, Acc}
                 end
-                        end, {[], <<"createdat">>}, Props);
+                        end, {[], <<Function/binary, "(createdat) createdat">>}, Props);
         _Other ->
             ?LOG(debug, "~p _Other ~p", [ProductId, _Other]),
             {[], <<"*">>}
@@ -150,7 +150,7 @@ get_keys(ProductId, Function, Keys) ->
             Name ->
                 {Names ++ [Name], <<Acc/binary, ", ", Function/binary, "(", X/binary, ") ", X/binary>>}
         end
-                end, {[], <<"createdat">>}, List).
+                end, {[], <<Function/binary, "(createdat) createdat">>}, List).
 
 check_field(Typea, V, #{<<"specs">> := Specs}) when Typea == <<"enum">>; Typea == <<"bool">> ->
     maps:get(dgiot_utils:to_binary(V), Specs, V);

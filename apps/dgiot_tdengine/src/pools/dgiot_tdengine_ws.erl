@@ -26,7 +26,7 @@
 
 test() ->
     {ok, ConnPid} = gun:open("127.0.0.1", 7041, #{
-        supervise => true,
+        supervise => false,
         ws_opts => #{keepalive => 1000}
     }),
     {ok, _} = gun:await_up(ConnPid),
@@ -42,20 +42,24 @@ test() ->
     gun:close(ConnPid).
 
 login(ChannelId, Ip, Port, UserName, Password) ->
-    {ok, WsPid} = gun:open(Ip, Port, #{
+    case gun:open(Ip, Port, #{
         supervise => false,
         ws_opts => #{keepalive => 1000 * 20}
-    }),
-    case gun:await_up(WsPid) of
-        {ok, _} ->
-            StreamRef = gun:ws_upgrade(WsPid, "/rest/ws", []),
-            case catch gun:await(WsPid, StreamRef) of
-                {'EXIT', Reason} ->
-                    {error, Reason};
-                {upgrade, [<<"websocket">>], _} ->
-                    connect(WsPid, StreamRef, ?Database(ChannelId), UserName, Password);
-                Error1 ->
-                    {error, Error1}
+    }) of
+        {ok, WsPid} ->
+            case gun:await_up(WsPid) of
+                {ok, _} ->
+                    StreamRef = gun:ws_upgrade(WsPid, "/rest/ws", []),
+                    case catch gun:await(WsPid, StreamRef) of
+                        {'EXIT', Reason} ->
+                            {error, Reason};
+                        {upgrade, [<<"websocket">>], _} ->
+                            connect(WsPid, StreamRef, ?Database(ChannelId), UserName, Password);
+                        Error1 ->
+                            {error, Error1}
+                    end;
+                {_, Error} ->
+                    {error, Error}
             end;
         {_, Error} ->
             {error, Error}
