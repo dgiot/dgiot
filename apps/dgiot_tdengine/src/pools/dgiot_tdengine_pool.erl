@@ -25,7 +25,7 @@ login(ChannelId, #{<<"username">> := UserName,
     dgiot_tdengine_ws:login(ChannelId, Ip, Port, UserName, Password).
 
 %% WebSocket
-insert_sql(#{<<"driver">> := <<"WS">>, <<"ws_pid">> := ConnPid, <<"ws_ref">> := StreamRef} = _Context, _Action, Sql) when byte_size(Sql) > 0 ->
+insert_sql(#{<<"driver">> := <<"WS">>, <<"ws_pid">> := ConnPid, <<"ws_ref">> := StreamRef} = Context, _Action, Sql) when byte_size(Sql) > 0 ->
 %%    io:format("~s ~p Sql = ~p.~n", [?FILE, ?LINE, Sql]),
     Req_id = get(req_id),
     put(req_id, Req_id + 1),
@@ -39,6 +39,12 @@ insert_sql(#{<<"driver">> := <<"WS">>, <<"ws_pid">> := ConnPid, <<"ws_ref">> := 
         {ws, {text, Data}} ->
             case catch dgiot_json:decode(Data, [return_maps]) of
                 #{<<"code">> := 0} = R ->
+                    case maps:get(<<"channel">>, Context, <<"">>) of
+                        <<"">> ->
+                            ?LOG(debug, "Execute (~ts) ", [unicode:characters_to_list(Sql)]);
+                        ChannelId ->
+                            dgiot_bridge:send_log(ChannelId, "Execute (~ts)", [unicode:characters_to_list(Sql)])
+                    end,
                     {ok, R};
                 _ ->
                     {error, Data}

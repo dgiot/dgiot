@@ -97,7 +97,7 @@ get_field_(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"str
 check_value(Value, ProductId, Field) ->
     case dgiot_product:get_product_identifier(ProductId, Field) of
         not_find ->
-            pass;
+            Value;
         #{<<"dataType">> := #{<<"type">> := Type} = DataType} ->
             Specs = maps:get(<<"specs">>, DataType, #{}),
             Type1 = list_to_binary(string:to_upper(binary_to_list(Type))),
