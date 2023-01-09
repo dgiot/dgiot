@@ -110,7 +110,7 @@ get_realtime_data(Channel, ProductId, TableName, Query) ->
             DB = dgiot_tdengine:get_database(Channel, ProductId),
             case size(Newkeys) > 0 of
                 true ->
-                    Sql = <<"SELECT last(createdat) createdat, ", Newkeys/binary, " FROM ", DB/binary, TableName/binary, ";">>,
+                    Sql = <<"SELECT ", Newkeys/binary, " FROM ", DB/binary, TableName/binary, ";">>,
                     dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_query, Sql);
                 _ ->
                     {error, #{<<"msg">> => <<"无物模型"/utf8>>}}

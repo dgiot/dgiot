@@ -58,16 +58,7 @@ run_sql(#{<<"url">> := Url, <<"username">> := UserName, <<"password">> := Passwo
     ?LOG(debug, " ~p, ~p, ~p, (~ts)", [Url, UserName, Password, unicode:characters_to_list(Sql)]),
 %%    io:format("~s ~p Sql = ~p.~n", [?FILE, ?LINE, Sql]),
     case dgiot_tdengine_http:request(Url, UserName, Password, Sql) of
-        {ok, #{<<"results">> := _R} = Result} ->
-            case maps:get(<<"channel">>, Context, <<"">>) of
-                <<"">> ->
-                    ?LOG(debug, "Execute ~p (~ts) ~p", [Url, unicode:characters_to_list(Sql), Result]);
-                ChannelId ->
-                    dgiot_bridge:send_log(ChannelId, "Execute ~p (~ts) ~p", [Url, unicode:characters_to_list(Sql), jsx:encode(Result)])
-            end,
-            {ok, Result};
         {ok, #{<<"code">> := 0, <<"column_meta">> := Column_meta, <<"data">> := Data} = Result} ->
-%%            io:format("~s ~p Result = ~p.~n", [?FILE, ?LINE, Result]),
             NewData = get_data(Column_meta, Data),
             case maps:get(<<"channel">>, Context, <<"">>) of
                 <<"">> ->
@@ -75,17 +66,20 @@ run_sql(#{<<"url">> := Url, <<"username">> := UserName, <<"password">> := Passwo
                 ChannelId ->
                     dgiot_bridge:send_log(ChannelId, "Execute ~p (~ts) ~p", [Url, unicode:characters_to_list(Sql), jsx:encode(NewData)])
             end,
-%%            io:format("~s ~p NewData = ~p.~n", [?FILE, ?LINE, NewData]),
             {ok, Result#{<<"results">> => NewData}};
         {ok, #{<<"code">> := 9826} = Reason} ->
             {error, Reason};
-        {ok, Reason} ->
-%%            io:format("~s ~p _OT = ~p.~n", [?FILE, ?LINE, _OT]),
-            {error, Reason};
+        {ok, Result} ->
+            case maps:get(<<"channel">>, Context, <<"">>) of
+                <<"">> ->
+                    ?LOG(debug, "Execute ~p (~ts) ~p", [Url, unicode:characters_to_list(Sql), Result]);
+                ChannelId ->
+                    dgiot_bridge:send_log(ChannelId, "Execute ~p (~ts) ~p", [Url, unicode:characters_to_list(Sql), jsx:encode(Result)])
+            end,
+            {ok, Result};
         {error, #{<<"code">> := 896} = Reason} ->
             {ok, Reason#{<<"affected_rows">> => 0}};
         {error, Reason} ->
-%%            ?LOG(error, "Execute Fail ~p (~ts) ~p", [Url, unicode:characters_to_list(Sql), Reason]),
             {error, Reason}
     end;
 
