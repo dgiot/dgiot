@@ -32,6 +32,21 @@ start(ChannelId) ->
         end
               end, ets:tab2list(?DGIOT_PNQUE)).
 
+start(ChannelId, Products) when is_list(Products) ->
+    lists:map(fun({ProductId, _}) ->
+        Success = fun(Page) ->
+            lists:map(fun(#{<<"objectId">> := DeviceId}) ->
+                dgiot_client:start(ChannelId, DeviceId)
+                      end, Page)
+                  end,
+        Query = #{
+            <<"order">> => <<"updatedAt">>,
+            <<"keys">> => [<<"objectId">>],
+            <<"where">> => #{<<"product">> => ProductId}
+        },
+        dgiot_parse_loader:start(<<"Device">>, Query, 0, 100, 1000000, Success)
+              end, Products);
+
 start(ChannelId, ClientId) ->
     dgiot_client:start(ChannelId, ClientId).
 

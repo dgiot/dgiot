@@ -99,6 +99,10 @@
     {
       "name": "Article",
       "description": "文章管理"
+    },
+    {
+      "name": "Files",
+      "description": "文件管理"
     }
   ],
   "paths": {
