@@ -83,7 +83,9 @@ node_modules/
 package-lock.json
 erlang_ls.config
 .els_cache/
-./lib-ce
+./lib-ce/emqx_dashboard/
+./lib-ce/emqx_modules/
+./lib-ce/emqx_telemetry/
 # VSCode files
 .vs/
 .vscode/

@@ -20,7 +20,7 @@
 -include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
 -include("dgiot_task.hrl").
 -include_lib("dgiot/include/logger.hrl").
--record(state, {id, mod, product, env = #{}}).
+-record(state, {id, mod, products, env = #{}}).
 
 -dgiot_data("ets").
 -export([init_ets/0]).
@@ -116,11 +116,11 @@ start(ChannelId, ChannelArgs) ->
     dgiot_channelx:add(?TYPE, ChannelId, ?MODULE, ChannelArgs).
 
 %% 通道初始化
-init(?TYPE, ChannelId, Args) ->
+init(?TYPE, ChannelId, #{<<"product">> := Products} = Args) ->
     #{<<"freq">> := Freq, <<"start_time">> := Start_time, <<"end_time">> := End_time} = Args,
     Rand = maps:get(<<"rand">>, Args, true),
     dgiot_client:add_clock(ChannelId, Start_time, End_time),
-    State = #state{id = ChannelId},
+    State = #state{id = ChannelId, products = Products},
     {ok, State, dgiot_client:register(ChannelId, task_sup, #{
         <<"channel">> => ChannelId,
         <<"starttime">> => dgiot_datetime:localtime_to_unixtime(dgiot_datetime:to_localtime(Start_time)),
@@ -137,11 +137,11 @@ handle_event(_EventId, Event, State) ->
     ?LOG(info, "channel ~p", [Event]),
     {ok, State}.
 
-handle_message(start_client, #state{id = ChannelId} = State) ->
+handle_message(start_client, #state{id = ChannelId, products = Products} = State) ->
 %%    io:format("~s ~p ChannelId = ~p.~n", [?FILE, ?LINE, ChannelId]),
     case dgiot_data:get({start_client, ChannelId}) of
         not_find ->
-            dgiot_task:start(ChannelId),
+            dgiot_task:start(ChannelId, Products),
             erlang:send_after(1000 * 60 * 1, self(), check_client);
         _ ->
             pass
@@ -159,11 +159,11 @@ handle_message(stop_client, #state{id = ChannelId} = State) ->
     end,
     {ok, State};
 
-handle_message(check_client, #state{id = ChannelId} = State) ->
+handle_message(check_client, #state{id = ChannelId, products = Products} = State) ->
 %%    io:format("~s ~p time ~p ChannelId = ~p.~n", [?FILE, ?LINE, dgiot_datetime:format(dgiot_datetime:now_secs(), <<"YY-MM-DD HH:NN:SS">>), ChannelId]),
     case dgiot_data:get({stop_client, binary_to_atom(ChannelId)}) of
         not_find ->
-            dgiot_task:start(ChannelId),
+            dgiot_task:start(ChannelId, Products),
             erlang:send_after(1000 * 60 * 1, self(), check_client);
         _ ->
             pass
