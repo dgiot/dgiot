@@ -391,7 +391,7 @@ get_write(ResponseData, SlaveId, FunCode, _DtuAddr, ProductId, Address, Acc) ->
 build_req_message(Req) when is_record(Req, rtu_req) ->
     % validate
     if
-        (Req#rtu_req.slaveId < 0) or (Req#rtu_req.slaveId > 247) ->
+        (Req#rtu_req.slaveId < 0) or (Req#rtu_req.slaveId > 255) ->
             throw({argumentError, Req#rtu_req.slaveId});
         true -> ok
     end,
@@ -406,7 +406,7 @@ build_req_message(Req) when is_record(Req, rtu_req) ->
         true -> ok
     end,
     if
-        (Req#rtu_req.quality < 0) or (Req#rtu_req.quality > 2000) ->
+        (Req#rtu_req.quality < 0) or (Req#rtu_req.quality > 65535) ->
             throw({argumentError, Req#rtu_req.quality});
         true -> ok
     end,
