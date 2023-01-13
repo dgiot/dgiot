@@ -49,7 +49,7 @@
 -export([create_user/2, delete_user/2, put_user/2, disableusere/3, check_roles/1]).
 -export([login_by_account/2, login_by_token/2, login_by_mail_phone/1, do_login/1]).
 -export([create_user_for_app/1, get_token/1, set_cookies/3, add_acl/5]).
--export([get_usersession/1, put_usersession/1, del_usersession/1]).
+-export([get_usersession/1, put_usersession/2, del_usersession/1]).
 -export([get_cookie/1, put_cookie/2, del_cookie/1]).
 -export([get_depart_session/1, put_depart_session/2]).
 -export([get_view_session/1, put_view_session/2]).
@@ -62,9 +62,7 @@ init_ets() ->
 get_usersession(Depart_token) ->
     dgiot_data:get(?DGIOT_USERSESSION, {Depart_token}).
 
-put_usersession(SessionMap) ->
-    [Depart_token] = maps:keys(SessionMap),
-    User_session = maps:get(Depart_token, SessionMap),
+put_usersession(User_session, Depart_token) ->
     put_depart_session(User_session, Depart_token),
     dgiot_data:insert(?DGIOT_USERSESSION, {Depart_token}, User_session).
 
@@ -91,11 +89,11 @@ get_depart_session(User_session) ->
             Depart_token
     end.
 
-put_depart_session(User_session, ViewId) ->
-    dgiot_data:insert(?DGIOT_USERSESSION, {view, User_session}, ViewId).
-
-put_view_session(User_session, Depart_token) ->
+put_depart_session(User_session, Depart_token) ->
     dgiot_data:insert(?DGIOT_USERSESSION, {depart, User_session}, Depart_token).
+
+put_view_session(User_session, ViewId) ->
+    dgiot_data:insert(?DGIOT_USERSESSION, {view, User_session}, ViewId).
 
 
 get_view_session(User_session) ->
