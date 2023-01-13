@@ -1543,9 +1543,9 @@ dgiot_shell
 # set parameters by default value
 deployType=single                             # [single | cluster | devops | ci]
 domain_name="prod.dgiotcloud.cn"              # [prod.dgiotcloud.cn | your_domain_name]
-software="dgiot_n276"                          # [dgiot_n276| dgiot_n]
+software="dgiot_n289"                          # [dgiot_n289| dgiot_n]
 plugin="dgiot"                                # [dgiot | dgiot_your_plugin]
-dgiotmd5="c654e0b734e78d5762a8f2100752d339"   # [dgiotmd5]
+dgiotmd5="ff08a768f1b675d25e82cff7da3200f5"   # [dgiotmd5]
 pg_eip="changeyourip"                            # [datanode_eip]
 pg_auth='changeyourpassword'                  # [pg_auth]
 islanip="false"                                    # [islanip]
