@@ -8,7 +8,6 @@ cd -P -- "$(dirname -- "${BASH_SOURCE[0]}")/.."
 EMQX_APP='apps/'
 EMQX_LIBCE_PATH='lib-ce/'
 DGIOT_DASHBOARD_PATH='apps/dgiot_api/priv'
-
 get_lib_ce(){
    cd ${EMQX_LIBCE_PATH}
    if [ ! -d "emqx_dashboard/" ]; then
@@ -24,18 +23,6 @@ get_lib_ce(){
    fi
 
    cd ..
-}
-
-get_dgiot_dashboard(){
-  if [ -d "$DGIOT_DASHBOARD_PATH/www" ]; then
-      echo "dgiot_dashboard exist"
-  else
-    wget ${FILESEVER}/www.tar.gz
-    tar xvf www.tar.gz
-    mv www "$DGIOT_DASHBOARD_PATH/"
-    rm www.tar.gz -rf
-    chmod 777 ./scripts/*
-  fi
 }
 
 get_apps() {
@@ -93,6 +80,5 @@ get_apps() {
 
  echo "ci"
  get_apps
- get_dgiot_dashboard
  get_lib_ce
 
