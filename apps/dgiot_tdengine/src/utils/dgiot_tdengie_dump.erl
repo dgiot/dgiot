@@ -31,13 +31,13 @@ export(ChannelId, #{<<"deviceid">> := DeviceId} = Body) ->
             []
     end;
 
-export(ChannelId, _Body) ->
+export(ChannelId, #{<<"sessionToken">> := SessionToken} = _Body) ->
 %%    io:format("~s ~p 111Body = ~p.~n", [?FILE, ?LINE, Body]),
     Query = #{
         <<"keys">> => [<<"objectId">>, <<"product">>]
     },
-    TdQuery = #{<<"limit">> => 100000, <<"function">> => <<"last">>, <<"interval">> => <<"1m">>},
-    case dgiot_parse:query_object(<<"Device">>, Query) of
+    TdQuery = #{<<"limit">> => 10000, <<"function">> => <<"last">>, <<"interval">> => <<"1m">>},
+    case dgiot_parse:query_object(<<"Device">>, Query, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
         {ok, #{<<"results">> := Data}} ->
             lists:foldl(fun(Device, Acc) ->
                 export_device_data(ChannelId, Device, TdQuery, Acc)
@@ -71,7 +71,7 @@ export_device_data(ChannelId, #{<<"objectId">> := DeviceId, <<"product">> := #{<
                 lists:foldl(fun(Result, Acc) ->
                     Acc ++ [Result]
                             end, [], TdResults),
-            NewData ++ [{dgiot_utils:to_list(<<ChannelId/binary, "/", DeviceId/binary, ".json">>), unicode:characters_to_binary(jsx:encode(#{<<"results">> => NewTdResults}))}];
+            NewData ++ [{dgiot_utils:to_list(<<ProductId/binary, "/", DeviceId/binary, ".json">>), unicode:characters_to_binary(jsx:encode(#{<<"results">> => NewTdResults}))}];
         _ ->
             NewData
     end.
@@ -94,11 +94,9 @@ import_device_data(ChannelId, ProductId, DeviceId, TdData) ->
                                                             V
                                                     end,
                                                 Createdat = dgiot_datetime:localtime_to_unixtime(dgiot_datetime:to_localtime(NewV)) * 1000,
-                                                Object = dgiot_tdengine:format_data(ChannelId, ProductId, DevAddr, Data#{<<"createdat">> => Createdat}),
-                                                dgiot_tdengine:batch(ChannelId, Object);
+                                                dgiot_tdengine_adapter:save(ProductId, DevAddr, Data#{<<"createdat">> => Createdat});
                                             (Data, _Acc) ->
-                                                Object = dgiot_tdengine:format_data(ChannelId, ProductId, DevAddr, Data),
-                                                dgiot_tdengine:batch(ChannelId, Object)
+                                                dgiot_tdengine_adapter:save(ProductId, DevAddr, Data)
                                         end, [], TdResults);
                         _ ->
                             pass

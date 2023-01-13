@@ -30,8 +30,9 @@
     , export_td/1
     , export_files/1
     , import_parse/1
-    , import_td/0
+    , import_td/1
     , import_files/0
+    , restart_channel/1
 ]).
 
 %%%===================================================================
@@ -69,7 +70,6 @@ init([#{<<"sessionToken">> := SessionToken} = State]) ->
     io:format("~s ~p State = ~p.~n", [?FILE, ?LINE, State]),
     dgiot_data:insert({data, SessionToken}, self()),
     erlang:send_after(1000, self(), station),
-    stop(State),
     {ok, #task{sessiontoken = SessionToken, env = State}};
 
 init(A) ->
@@ -85,29 +85,22 @@ handle_call(_Request, _From, State) ->
 handle_cast(_Msg, State) ->
     {noreply, State}.
 
-%%handle_info({export_data, Body, SchemasFile}, #task{id = ChannelId} = State) ->
-%%    io:format("~s ~p start SchemasFile = ~p.~n", [?FILE, ?LINE, SchemasFile]),
-%%    NewData = dgiot_tdengie_dump:export(ChannelId, Body),
-%%    case zip:create(<<"tdengine">>, NewData, [memory]) of
-%%        {ok, {_, ZipFile}} ->
-%%            file:write_file(SchemasFile, ZipFile);
-%%        %% io:format("~s ~p end = ~p.~n", [?FILE, ?LINE, R]);
-%%        _ ->
-%%            pass
-%%    end,
-%%    {ok, State};
-
 %% 导出
-handle_info(dashboard, #task{sessiontoken = SessionToken, env = #{<<"type">> := <<"export">>}} = State) ->
+handle_info(station, #task{sessiontoken = SessionToken, env = #{<<"type">> := <<"export">>}} = State) ->
+    io:format("~s ~p SessionToken = ~p.~n", [?FILE, ?LINE, SessionToken]),
     export_parse(SessionToken),
     export_td(SessionToken),
     export_files(SessionToken),
     {stop, normal, State};
 
 %% 导入
-handle_info(dashboard, #task{env = #{<<"type">> := <<"import">>, <<"file">> := _File}} = State) ->
-    import_parse(<<"">>),
-    import_td(),
+handle_info(station, #task{sessiontoken = SessionToken, env = #{<<"type">> := <<"import">>, <<"file">> := #{<<"fullpath">> := Fullpath} = _File}} = State) ->
+    io:format("~s ~p State = ~p.~n", [?FILE, ?LINE, State]),
+    import_parse(Fullpath),
+    dgiot_product:load_cache(),
+    dgiot_device_cache:parse_cache_Device(<<>>),
+    restart_channel(SessionToken),
+    import_td(SessionToken),
     import_files(),
     {stop, normal, State};
 
@@ -125,6 +118,7 @@ code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
 
 
+%%  data_worker:export_parse(<<"r:21debcab56050159c174a61195e4f8d6">>).
 export_parse(SessionToken) ->
     RoleNames =
         case dgiot_auth:get_session(SessionToken) of
@@ -135,47 +129,82 @@ export_parse(SessionToken) ->
         end,
     lists:foldl(fun(RoleName, _Acc) ->
         {file, Here} = code:is_loaded(data_worker),
-        Path = dgiot_httpc:url_join([filename:dirname(filename:dirname(Here)), "/priv/station/dgiot_pg_export.sh "]),
-        Cmd = Path ++ dgiot_utils:to_list(RoleName),
-        os:cmd(Cmd)
+        Path = dgiot_utils:to_binary(dgiot_httpc:url_join([filename:dirname(filename:dirname(Here)), "/priv/station/dgiot_pg_export.sh "])),
+        Cmd = <<"sh ", Path/binary, RoleName/binary>>,
+        os:cmd(dgiot_utils:to_atom(Cmd))
                 end, #{}, RoleNames).
 
+%% data_worker:export_td(<<"r:21debcab56050159c174a61195e4f8d6">>).
 export_td(SessionToken) ->
     case dgiot_product_tdengine:get_channel(SessionToken) of
         {error, Error} ->
             {error, Error};
         {ok, ChannelId} ->
-            MS = dgiot_utils:to_binary(dgiot_datetime:now_ms()),
-            Path = list_to_binary(dgiot_http_server:get_env(dgiot_api, docroot)),
-            file:make_dir(<<Path/binary, "/download">>),
-            file:make_dir(<<Path/binary, "/download/tdengine">>),
-            FileName = "/download/tdengine/" ++ dgiot_utils:to_list(MS) ++ ".zip",
-            SchemasFile = dgiot_utils:to_list(Path) ++ FileName,
-            NewData = dgiot_tdengie_dump:export(ChannelId, #{}),
+            file:make_dir(<<"/home/station/tdengine">>),
+            FileName = "/home/station/tdengine/tables.zip",
+            NewData = dgiot_tdengie_dump:export(ChannelId, #{<<"sessionToken">> => SessionToken}),
             case zip:create(<<"tdengine">>, NewData, [memory]) of
                 {ok, {_, ZipFile}} ->
-                    file:write_file(SchemasFile, ZipFile);
-                %% io:format("~s ~p end = ~p.~n", [?FILE, ?LINE, R]);
+                    file:write_file(FileName, ZipFile);
                 _ ->
                     pass
             end,
             {ok, #{<<"path">> => dgiot_utils:to_binary(FileName)}}
     end.
 
-export_files(RoleName) ->
-    {file, Here} = code:is_loaded(data_worker),
-    Path = dgiot_httpc:url_join([filename:dirname(filename:dirname(Here)), "/priv/station/dgiot_files_export.sh "]),
-    Cmd = Path ++ dgiot_utils:to_list(RoleName),
-    os:cmd(Cmd).
+%% data_worker:export_files(<<"r:6dff46c8028917292acc8679f3e790f5">>).
+export_files(SessionToken) ->
+    Query = #{
+        <<"keys">> => [<<"path">>, <<"name">>]
+    },
+    case dgiot_parse:query_object(<<"Files">>, Query, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+        {ok, #{<<"results">> := Data}} ->
+            lists:foldl(fun(#{<<"path">> := Path, <<"name">> := Name}, _Acc) ->
+                {file, Here} = code:is_loaded(data_worker),
+                CPath = dgiot_utils:to_binary(dgiot_httpc:url_join([filename:dirname(filename:dirname(Here)), "/priv/station/dgiot_files_export.sh "])),
+                Cmd = <<"sh ", CPath/binary, Path/binary, " ", Name/binary>>,
+                os:cmd(dgiot_utils:to_atom(Cmd))
+                        end, [], Data);
+        _ ->
+            pass
+    end.
 
-import_parse(RoleName) ->
+%% data_worker:import_parse(<<"/data/dgiot/dgiot/lib/dgiot_api-4.3.0/priv/www/upload/2023112152331.gz">>).
+import_parse(Fullpath) ->
     {file, Here} = code:is_loaded(data_worker),
-    Path = dgiot_httpc:url_join([filename:dirname(filename:dirname(Here)), "/priv/station/dgiot_pg_import.sh "]),
-    Cmd = Path ++ dgiot_utils:to_list(RoleName),
-    os:cmd(Cmd).
+    Basename = filename:basename(Fullpath),
+    Path = dgiot_utils:to_binary(dgiot_httpc:url_join([filename:dirname(filename:dirname(Here)), "/priv/station/dgiot_pg_import.sh "])),
+    Cmd = <<"sh ", Path/binary, Basename/binary>>,
+    io:format("~s ~p Cmd = ~p.~n", [?FILE, ?LINE, Cmd]),
+    os:cmd(dgiot_utils:to_atom(Cmd)).
 
-import_td() ->
-    ok.
+
+%% data_worker:import_td(<<"r:592d00c41d59fd502830d8528b684c7b">>).
+import_td(SessionToken) ->
+    case dgiot_product_tdengine:get_channel(SessionToken) of
+        {error, Error} ->
+            {error, Error};
+        {ok, ChannelId} ->
+            case zip:unzip("/data/dgiot/dgiot/lib/dgiot_api-4.3.0/priv/www/upload/station/tdengine/tables.zip", [memory]) of
+                {ok, Result} ->
+                    dgiot_tdengie_dump:import(ChannelId, Result);
+                {error, Reason} ->
+                    {error, Reason}
+            end
+    end.
 
 import_files() ->
     ok.
+
+%% data_worker:restart_channel(<<"SessionToken">>)
+restart_channel(SessionToken) ->
+    case dgiot_parse:query_object(<<"Channel">>, #{<<"where">> => #{<<"isEnable">> => true}}) of
+        {ok, #{<<"results">> := Results}} ->
+            lists:foldl(fun(#{<<"objectId">> := ChannelId}, _Acc) ->
+                dgiot_bridge:control_channel(ChannelId, <<"disable">>, SessionToken),
+                timer:sleep(1000),
+                dgiot_bridge:control_channel(ChannelId, <<"enable">>, SessionToken)
+                        end, [], Results);
+        _ ->
+            pass
+    end.
