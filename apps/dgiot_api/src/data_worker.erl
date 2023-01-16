@@ -67,7 +67,7 @@ stop(#{<<"sessionToken">> := SessionToken}) ->
 %%% gen_server callbacks
 %%%===================================================================
 init([#{<<"sessionToken">> := SessionToken} = State]) ->
-    io:format("~s ~p State = ~p.~n", [?FILE, ?LINE, State]),
+%%    io:format("~s ~p State = ~p.~n", [?FILE, ?LINE, State]),
     dgiot_data:insert({data, SessionToken}, self()),
     erlang:send_after(1000, self(), station),
     {ok, #task{sessiontoken = SessionToken, env = State}};
@@ -129,7 +129,7 @@ export_parse(SessionToken) ->
         end,
     lists:foldl(fun(RoleName, _Acc) ->
         {file, Here} = code:is_loaded(data_worker),
-        Path = dgiot_utils:to_binary(dgiot_httpc:url_join([filename:dirname(filename:dirname(Here)), "/priv/station/dgiot_pg_export.sh "])),
+        Path = dgiot_utils:to_binary(dgiot_httpc:url_join([filename:dirname(filename:dirname(Here)), "/priv/station/dgiot_pg_copy_export.sh "])),
         Cmd = <<"sh ", Path/binary, RoleName/binary>>,
         os:cmd(dgiot_utils:to_atom(Cmd))
                 end, #{}, RoleNames).
@@ -169,17 +169,17 @@ export_files(SessionToken) ->
             pass
     end.
 
-%% data_worker:import_parse(<<"/data/dgiot/dgiot/lib/dgiot_api-4.3.0/priv/www/upload/2023112152331.gz">>).
+%% data_worker:import_parse(<<"/data/dgiot/dgiot/lib/dgiot_api-4.3.0/priv/www/upload/202311613544.gz">>).
 import_parse(Fullpath) ->
     {file, Here} = code:is_loaded(data_worker),
     Basename = filename:basename(Fullpath),
-    Path = dgiot_utils:to_binary(dgiot_httpc:url_join([filename:dirname(filename:dirname(Here)), "/priv/station/dgiot_pg_import.sh "])),
+    Path = dgiot_utils:to_binary(dgiot_httpc:url_join([filename:dirname(filename:dirname(Here)), "/priv/station/dgiot_pg_dump_import.sh "])),
     Cmd = <<"sh ", Path/binary, Basename/binary>>,
     io:format("~s ~p Cmd = ~p.~n", [?FILE, ?LINE, Cmd]),
     os:cmd(dgiot_utils:to_atom(Cmd)).
 
 
-%% data_worker:import_td(<<"r:592d00c41d59fd502830d8528b684c7b">>).
+%% data_worker:import_td(<<"r:a4f169ffbbb37cdca429570396573ce3">>).
 import_td(SessionToken) ->
     case dgiot_product_tdengine:get_channel(SessionToken) of
         {error, Error} ->
@@ -193,17 +193,23 @@ import_td(SessionToken) ->
             end
     end.
 
+%% data_worker:import_files().
 import_files() ->
-    ok.
+    {file, Here} = code:is_loaded(data_worker),
+    Path = dgiot_utils:to_binary(dgiot_httpc:url_join([filename:dirname(filename:dirname(Here)), "/priv/station/dgiot_files_import.sh "])),
+    Cmd = <<"sh ", Path/binary>>,
+    io:format("~s ~p Cmd = ~p.~n", [?FILE, ?LINE, Cmd]),
+    os:cmd(dgiot_utils:to_atom(Cmd)).
 
-%% data_worker:restart_channel(<<"SessionToken">>)
+%% data_worker:restart_channel(<<"r:a4f169ffbbb37cdca429570396573ce3">>)
 restart_channel(SessionToken) ->
     case dgiot_parse:query_object(<<"Channel">>, #{<<"where">> => #{<<"isEnable">> => true}}) of
         {ok, #{<<"results">> := Results}} ->
             lists:foldl(fun(#{<<"objectId">> := ChannelId}, _Acc) ->
                 dgiot_bridge:control_channel(ChannelId, <<"disable">>, SessionToken),
-                timer:sleep(1000),
-                dgiot_bridge:control_channel(ChannelId, <<"enable">>, SessionToken)
+                timer:sleep(500),
+                dgiot_bridge:control_channel(ChannelId, <<"enable">>, SessionToken),
+                timer:sleep(500)
                         end, [], Results);
         _ ->
             pass

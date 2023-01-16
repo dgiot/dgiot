@@ -6,4 +6,4 @@ name=$2
 mkdir -p /home/station/${path}
 path1="/data/dgiot/go_fastdfs/files/${path}${name}"
 
-cp -rf ${path1} /home/station/${path}
+cp -rf ${path1} /home/station/files/${path}
