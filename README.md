@@ -1,4 +1,4 @@
-#  DGIOT Lightweight industrial IoT open source platform
+#  DGIOT Lightweight industrial iot open source platform
 
 
 [![GitHub Release](https://img.shields.io/github/release/dgiot/dgiot?color=brightgreen)](https://github.com/dgiot/dgiot/releases)
@@ -14,7 +14,7 @@
 
 [github](https://github.com/dgiot?from=git)|[gitee](https://gitee.com/dgiiot)|[Official website](https://www.dgiotcloud.cn/)|[Blog](https://www.dgiotcloud.cn/?cat=19)|[Experience](https://prod.dgiotcloud.cn)|
 
-*DGIOT*  is the first lightweight open source industrial IoT continuous integration platform in China
+*DGIOT*  is the first lightweight open source industrial iot continuous integration platform in China
 
 Before 2016, the Shuwa team had been crawling on the Internet and the mobile Internet for many years. In 2016, it began to enter the Internet of Things crawling. It hopes to share many years of crawling experience through this open source platform and make multidisciplinary industrial Internet projects easier.
    + Let rich engineers to complete industrial Internet projects with simpler requirements through window interaction
