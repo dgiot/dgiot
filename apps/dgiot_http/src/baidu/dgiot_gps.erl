@@ -410,7 +410,7 @@ towgs84(Location, _MapType) ->
     Location.
 
 fromwgs84(#{<<"longitude">> := Longitude, <<"latitude">> := Latitude}, <<"baidu">>) ->
-    [Mglng, Mglat] = wgs84tobd09(dgiot_utils:to_float(Longitude), dgiot_utils:to_float(Latitude)),
+    [Mglng, Mglat] = get_baidu_gps(dgiot_utils:to_float(Longitude), dgiot_utils:to_float(Latitude)),
     #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => Mglng, <<"latitude">> => Mglat};
 
 fromwgs84(#{<<"longitude">> := Longitude, <<"latitude">> := Latitude}, <<"gcj">>) ->
