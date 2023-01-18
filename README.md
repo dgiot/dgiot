@@ -203,3 +203,13 @@ You are welcome to submit any bugs, issues and feature requests to [dgiot/dgiot]
 
 ## Open source license
 Apache License 2.0, 详见 [LICENSE](./LICENSE)。
+
+<script>
+var _hmt = _hmt || [];
+(function() {
+  var hm = document.createElement("script");
+  hm.src = "https://hm.baidu.com/hm.js?a2d7a3281250928de528942c7e16b364";
+  var s = document.getElementsByTagName("script")[0]; 
+  s.parentNode.insertBefore(hm, s);
+})();
+</script>
