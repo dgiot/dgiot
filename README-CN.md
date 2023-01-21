@@ -38,6 +38,10 @@ DG-IoT是国内首款轻量级开源工业物联网平台，我们致力于提�
 |[智慧物流](https://gitee.com/dgiiot/dgiot/wikis/%E8%A1%8C%E4%B8%9A%E6%A1%88%E4%BE%8B/%E6%99%BA%E6%85%A7%E7%89%A9%E6%B5%81)|[Zeta设备接入](https://gitee.com/dgiiot/dgiot/wikis/%E5%AE%9E%E6%88%98%E6%8E%A5%E5%85%A5/Zeta%E8%AE%BE%E5%A4%87%E6%8E%A5%E5%85%A5/%E6%A6%82%E8%BF%B0)|[千万级物流Zetag标签压测](https://gitee.com/dgiiot/dgiot/wikis/%E5%8E%8B%E6%B5%8B%E6%8A%A5%E5%91%8A/1500%E4%B8%87Zetag%E6%A0%87%E7%AD%BE%E7%89%A9%E6%B5%81%E5%85%A8%E4%B8%9A%E5%8A%A1%E5%8E%8B%E6%B5%8B)|
 |[智慧园区](https://gitee.com/dgiiot/dgiot/wikis/%E8%A1%8C%E4%B8%9A%E6%A1%88%E4%BE%8B/%E6%99%BA%E6%85%A7%E5%9B%AD%E5%8C%BA)|[云云对接](https://gitee.com/dgiiot/dgiot/wikis/%E5%AE%9E%E6%88%98%E6%8E%A5%E5%85%A5/%E4%BA%91%E4%BA%91%E5%AF%B9%E6%8E%A5/%E6%A6%82%E8%BF%B0)|智慧场馆|
 
+## 工具矩阵
+
+   ![dgiot_family.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/dgiot_family.png)
+
 ## 业务架构
 ![业务架构图.jpg](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/%E4%B8%9A%E5%8A%A1%E6%9E%B6%E6%9E%84%E5%9B%BE.jpg)
 
