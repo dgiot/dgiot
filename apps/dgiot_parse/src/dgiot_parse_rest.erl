@@ -45,7 +45,7 @@ request(Method, Header, Path0, Body, Options) when is_binary(Method) ->
 
 request(Method, Header, Path0, Body, Options) ->
     {IsGetCount, Path, NewBody} = get_request_args(Path0, Method, Body, Options),
-    Header1 = dgiot_parse:get_header_token(Header),
+    Header1 = dgiot_parse:get_header_token(Path, Header),
     NewHeads = get_headers(Method, Path, Header1, Options),
     Fun =
         fun() ->
@@ -160,15 +160,21 @@ get_headers(Method, Path, Header, Options) ->
             NewHeader1 =
                 case Path of
                     <<"/users">> when Method == 'POST' -> % 注册
-                        [{"X-Parse-Revocable-Session", "1"} | NewHeader];
+                        [{"X-Parse-Revocable-Session", "1"}, {"X-Parse-REST-API-Key", to_list(RestKey)} | NewHeader];
                     <<"/login?", _/binary>> when Method == 'GET' -> % 登录
-                        [{"X-Parse-Revocable-Session", "1"} | NewHeader];
+                        [{"X-Parse-Revocable-Session", "1"}, {"X-Parse-REST-API-Key", to_list(RestKey)} | NewHeader];
+                    <<"/classes/View/", ViewId/binary>> when Method == 'GET' -> % view
+                        case check_view(Header, ViewId) of
+                            true ->
+                                [{"X-Parse-Master-Key", to_list(MasterKey)} | NewHeader];
+                            _ ->
+                                [{"X-Parse-REST-API-Key", to_list(RestKey)} | NewHeader]
+                        end;
                     _ ->
-                        NewHeader
+                        [{"X-Parse-REST-API-Key", to_list(RestKey)} | NewHeader]
                 end,
             lists:flatten([
                 {"X-Parse-Application-Id", to_list(AppId)},
-                {"X-Parse-REST-API-Key", to_list(RestKey)},
                 NewHeader1
             ]);
         master ->
@@ -385,4 +391,43 @@ handle_result(Result, Map) ->
         {error, Reason} ->
             {error, Reason}
     end.
+
+check_view(#{<<"X-Parse-Session-Token">> := SessionToken}, ViewId) ->
+    case dgiot_auth:get_session(SessionToken) of
+        #{<<"roles">> := Roles} ->
+            lists:any(fun(RoleId) ->
+                case dgiot_role:get_role_view(RoleId, ViewId) of
+                    not_find ->
+                        false;
+                    _ ->
+                        true
+                end
+                      end, maps:keys(Roles));
+        _ ->
+            false
+    end;
+
+check_view(_, _) ->
+    false.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

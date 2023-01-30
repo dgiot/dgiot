@@ -21,7 +21,7 @@
 -include_lib("dgiot/include/dgiot_mnesia.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -export([stats/2, val/2, val/3, get_count/1, get_count/3]).
--export([get_counter/1, get_pie/1]).
+-export([get_counter/1, get_pie/1, get_realdata/1]).
 
 get_counter({Token, <<"product_counter">>}) ->
     Query = #{<<"count">> => <<"objectId">>,
@@ -75,6 +75,30 @@ get_pie({Token, <<"device_poweron_poweroff">>}) ->
     {ok, Payload};
 get_pie({_Token, _}) ->
     pass.
+
+get_realdata({Token, NodeId}) ->
+    Len = size(NodeId) - 16,
+    case NodeId of
+        <<DeviceId:10/binary, "_", Identifier:Len/binary, "_text">> ->
+            case dgiot_product_tdengine:get_channel(Token) of
+                {error, Error} ->
+                    {error, Error};
+                {ok, Channel} ->
+                    case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+                        {ok, #{<<"objectId">> := DeviceId, <<"product">> := #{<<"objectId">> := ProductId}}} ->
+                            case dgiot_device_card:get_device_card(Channel, ProductId, DeviceId, #{<<"keys">> => [Identifier]}) of
+                                {ok, #{<<"data">> := [#{<<"identifier">> := Identifier} = Data | _]}} ->
+                                    {ok, #{<<"lable">> => NodeId, <<"data">> => Data}};
+                                _ ->
+                                    pass
+                            end;
+                        _ ->
+                            pass
+                    end
+            end;
+        _ ->
+            pass
+    end.
 
 get_count(Token) ->
     RoleIds =

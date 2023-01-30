@@ -35,6 +35,7 @@
     get_roles_role/1,
     remove_menus_role/1,
     get_menus_role/1,
+    get_views_role/1,
     remove_users_roles/1,
     get_users_role/1,
     remove_rules_role/1,
@@ -49,7 +50,10 @@
     get_aclNames/1,
     get_acls/1,
     get_acl/1,
-    get_rolenames/1
+    get_rolenames/1,
+    save_role_view/1,
+    save_role_menuview/1,
+    get_role_view/2
 ]).
 
 get_childacl(AclName) ->
@@ -89,6 +93,8 @@ load_roles() ->
     Success = fun(Page) ->
         lists:map(fun(X) ->
             #{<<"objectId">> := RoleId, <<"name">> := RoleName, <<"parent">> := #{<<"objectId">> := ParentId}} = X,
+            save_role_view(RoleId),
+            save_role_menuview(RoleId),
             dgiot_data:insert(?ROLE_PARENT_ETS, RoleId, ParentId),
             dgiot_data:insert(?PARENT_ROLE_ETS, ParentId, RoleId),
             dgiot_data:insert(?NAME_ROLE_ETS, dgiot_utils:to_atom(<<"role:", RoleName/binary>>), RoleId),
@@ -243,7 +249,8 @@ put_role(#{<<"objectId">> := RoleId} = Role, SessionToken) ->
                 {ok, #{<<"objectId">> := RoleId}} ->
                     NewRole = #{
                         <<"menus">> => dgiot_role:get_menus_role(maps:get(<<"menus">>, Role, [])),
-                        <<"rules">> => dgiot_role:get_rules_role(maps:get(<<"rules">>, Role, []))
+                        <<"rules">> => dgiot_role:get_rules_role(maps:get(<<"rules">>, Role, [])),
+                        <<"menuviews">> => dgiot_role:get_views_role(maps:get(<<"menus">>, Role, []))
                     },
                     dgiot_role:remove_menus_role(RoleId),
                     dgiot_role:remove_rules_role(RoleId),
@@ -689,6 +696,41 @@ get_menus_role(Menus) ->
             throw({error, Other})
     end.
 
+get_views_role(Menus) ->
+    Where = #{<<"keys">> => [<<"meta">>], <<"where">> => #{<<"name">> => #{<<"$in">> => Menus}}},
+    case dgiot_parse:query_object(<<"Menu">>, Where) of
+        {ok, #{<<"results">> := Results}} ->
+            Objects =
+                lists:foldl(
+                    fun
+                        (#{<<"meta">> := #{<<"viewid">> := ViewId}}, Acc) ->
+                            Acc ++ [#{
+                                <<"__type">> => <<"Pointer">>,
+                                <<"className">> => <<"View">>,
+                                <<"objectId">> => ViewId
+                            }];
+                        (_, Acc) ->
+                            Acc
+                    end, [], Results),
+            case Objects of
+                [] -> #{
+                    <<"__op">> => <<"AddRelation">>,
+                    <<"objects">> => [#{
+                        <<"__type">> => <<"Pointer">>,
+                        <<"className">> => <<"View">>,
+                        <<"objectId">> => 0
+                    }]
+                };
+                _ ->
+                    #{
+                        <<"__op">> => <<"AddRelation">>,
+                        <<"objects">> => Objects
+                    }
+            end;
+        Other ->
+            throw({error, Other})
+    end.
+
 get_role_relation(Table) ->
     Where = #{<<"keys">> => [<<"objectId">>]},
     case dgiot_parse:query_object(Table, Where) of
@@ -897,3 +939,63 @@ get_rolenames(Roles) ->
                     (_, Acc) ->
                         Acc
                 end, [], maps:values(Roles)).
+
+save_role_view(RoleId) ->
+    Where = #{<<"$relatedTo">> => #{
+        <<"object">> => #{
+            <<"__type">> => <<"Pointer">>,
+            <<"className">> => <<"_Role">>,
+            <<"objectId">> => RoleId},
+        <<"key">> => <<"views">>
+    }},
+    Query = #{<<"where">> => Where, <<"order">> => <<"-updatedAt">>},
+    case dgiot_parse:query_object(<<"View">>, Query) of
+        {ok, #{<<"results">> := Results}} ->
+            ViewIds =
+                lists:foldl(
+                    fun(#{<<"objectId">> := ObjectId}, Acc) ->
+                        Acc ++ [ObjectId]
+                    end, [], Results),
+            dgiot_data:insert(?ROLE_VIEWS_ETS, RoleId, ViewIds);
+        _ -> pass
+    end.
+
+save_role_menuview(RoleId) ->
+    Where = #{<<"$relatedTo">> => #{
+        <<"object">> => #{
+            <<"__type">> => <<"Pointer">>,
+            <<"className">> => <<"_Role">>,
+            <<"objectId">> => RoleId},
+        <<"key">> => <<"menuviews">>
+    }},
+    Query = #{<<"where">> => Where, <<"order">> => <<"-updatedAt">>},
+    case dgiot_parse:query_object(<<"View">>, Query) of
+        {ok, #{<<"results">> := Results}} ->
+            ViewIds =
+                lists:foldl(
+                    fun(#{<<"objectId">> := ObjectId}, Acc) ->
+                        Acc ++ [ObjectId]
+                    end, [], Results),
+            dgiot_data:insert(?ROLE_MENUVIEWS_ETS, RoleId, ViewIds);
+        _ -> pass
+    end.
+
+get_role_view(RoleId, ViewId) ->
+    case dgiot_data:get(?ROLE_VIEWS_ETS, RoleId) of
+        not_find ->
+            not_find;
+        ViewIds ->
+            AllViewIds =
+                case dgiot_data:get(?ROLE_MENUVIEWS_ETS, RoleId) of
+                    not_find ->
+                        ViewIds;
+                    MenuviewIds ->
+                        ViewIds ++ MenuviewIds
+                end,
+            case lists:member(ViewId, AllViewIds) of
+                true ->
+                    ViewId;
+                _ ->
+                    not_find
+            end
+    end.

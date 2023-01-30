@@ -71,7 +71,7 @@
 
 -export([
     request_rest/6,
-    get_header_token/1,
+    get_header_token/2,
     get_view_token/2
 ]).
 
@@ -299,7 +299,16 @@ get_token(Header) ->
             Token1
     end.
 
-get_header_token(Header) ->
+get_header_token(<<"/classes/_Role", _/binary>>, Header) ->
+    Header;
+
+get_header_token(<<"/classes/_User", _/binary>>, Header) ->
+    Header;
+
+get_header_token(<<"/classes/_Session", _/binary>>, Header) ->
+    Header;
+
+get_header_token(_, Header) ->
     lists:foldl(
         fun
             ({<<"X-Parse-Session-Token">>, Token}, Acc) ->
@@ -308,8 +317,6 @@ get_header_token(Header) ->
             ({"X-Parse-Session-Token", Token}, Acc) ->
                 DepartToken = dgiot_parse_auth:get_depart_session(Token),
                 Acc ++ [{<<"X-Parse-Session-Token">>, DepartToken}];
-            ({"R-Parse-Session-Token", Token}, Acc) ->
-                Acc ++ [{<<"X-Parse-Session-Token">>, Token}];
             ({K, V}, Acc) ->
                 Acc ++ [{K, V}]
         end, [], Header).

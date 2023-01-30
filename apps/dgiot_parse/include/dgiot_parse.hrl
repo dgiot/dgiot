@@ -23,6 +23,8 @@
 -define(DGIOT_PARSE_ETS, dgiot_parse_ets).
 -define(ROLE_USER_ETS, role_user_ets).
 -define(USER_ROLE_ETS, user_role_ets).
+-define(ROLE_VIEWS_ETS, role_views_ets).
+-define(ROLE_MENUVIEWS_ETS, role_menuviews_ets).
 -define(USER_ETS, user_ets).
 -define(ROLE_ETS, role_ets).
 -define(ROLE_PARENT_ETS, role_parent_ets).

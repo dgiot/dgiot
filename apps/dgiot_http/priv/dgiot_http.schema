@@ -97,3 +97,15 @@
 {datatype, string}
 ]}.
 
+%%--------------------------------------------------------------------
+%% onenet
+%%--------------------------------------------------------------------
+{mapping, "onenet.appid", "dgiot_http.onenet_appid", [
+{default, "c95cca6ec7"},
+{datatype, string}
+]}.
+
+{mapping, "onenet.secret", "dgiot_http.onenet_secret", [
+{default, "TTY4NDMyMTExNjAyNTU1ODI4MTc5"},
+{datatype, string}
+]}.

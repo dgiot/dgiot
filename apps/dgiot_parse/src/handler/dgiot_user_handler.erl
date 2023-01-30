@@ -81,7 +81,7 @@ handle(OperationID, Args, Context, Req) ->
 do_request(get_token, #{<<"name">> := Name} = _Body, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
     case dgiot_parse:query_object(<<"_Role">>, #{
         <<"order">> => <<"updatedAt">>, <<"limit">> => 1,
-        <<"where">> => #{<<"name">> => Name}}, [{"R-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+        <<"where">> => #{<<"name">> => Name}}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
         {ok, #{<<"results">> := Results}} when length(Results) > 0 ->
             Result = dgiot_parse_auth:check_roles(Name),
             case Result of
