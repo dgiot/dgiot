@@ -102,6 +102,8 @@ function dgiot_password() {
 function dgiot_path() {
   # package from path
   fileserver="https://dgiot-release-1306147891.cos.ap-nanjing.myqcloud.com/v4.4.0"
+  fileparseserver="https://dgiot-parse-server-1306147891.cos.ap-nanjing.myqcloud.com"
+  fileversionserver="https://dgiot-version-1306147891.cos.ap-nanjing.myqcloud.com"
   updateserver="http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_release/update"
 
   #install path
@@ -553,7 +555,7 @@ function install_parse_server() {
 
   ###下载dgiot_parse_server软件
   if [ ! -f ${script_dir}/dgiot_parse_server.tar.gz ]; then
-     wget ${fileserver}/dgiot_parse_server.tar.gz -O ${script_dir}/dgiot_parse_server.tar.gz &> /dev/null
+     wget ${fileparseserver}/dgiot_parse_server.tar.gz -O ${script_dir}/dgiot_parse_server.tar.gz &> /dev/null
   fi
 
   cd ${script_dir}/
@@ -843,7 +845,7 @@ function update_dgiot() {
     fi
   fi
   if [ ! -f ${software}.tar.gz ]; then
-    wget ${fileserver}/${software}.tar.gz &> /dev/null
+    wget ${fileversionserver}/${software}.tar.gz &> /dev/null
     md51=`md5sum ${software}.tar.gz |cut -d ' ' -f1`
     if [ "${md51}" != "${dgiotmd5}" ]; then
       echo -e "`date +%F_%T` $LINENO: ${RED} download ${software} failed${NC}"
