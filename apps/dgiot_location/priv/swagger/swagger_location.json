@@ -1,0 +1,56 @@
+{
+  "tags": [
+    {
+      "name": "Location",
+      "description": "位置定位"
+    }
+  ],
+  "definitions": {
+  },
+  "paths": {
+    "/location": {
+      "get": {
+        "description": "位置定位",
+        "parameters": [
+          {
+            "name": "deviceid",
+            "in": "query",
+            "type": "string",
+            "default": "98a159ccae",
+            "description": "设备id"
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "type": "string",
+            "default": "BS",
+            "description": "定位类型",
+            "enum": [
+              "IP",
+              "WIFI",
+              "BS"
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "summary": "位置定位",
+        "tags": [
+          "Location"
+        ]
+      }
+    }
+  }
+}

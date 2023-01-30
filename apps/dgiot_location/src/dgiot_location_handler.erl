@@ -16,12 +16,12 @@
 -module(dgiot_location_handler).
 -author("johnliu").
 -behavior(dgiot_rest).
+-dgiot_rest(all).
 -include_lib("dgiot/include/logger.hrl").
 -include("dgiot_location.hrl").
--dgiot_rest(all).
 %% API
--export([swagger_meter/0]).
--export([handle/4, check_auth/3]).
+-export([swagger_location/0]).
+-export([handle/4]).
 
 %% API描述
 %% 支持二种方式导入
@@ -30,13 +30,10 @@
 %%    dgiot_http_server:bind(<<"/meter">>, ?MODULE, [], Metadata)
 %% 2. 从模块的priv/swagger/下导入
 %%    dgiot_http_server:bind(<<"/swagger_meter.json">>, ?MODULE, [], priv)
-swagger_meter() ->
+swagger_location() ->
     [
-        dgiot_http_server:bind(<<"/swagger_meter.json">>, ?MODULE, [], priv)
+        dgiot_http_server:bind(<<"/swagger_location.json">>, ?MODULE, [], priv)
     ].
-
-check_auth(_OperationID, _Args, Req) ->
-    {true, #{}, Req}.
 
 %%%===================================================================
 %%% 请求处理
@@ -78,57 +75,33 @@ handle(OperationID, Args, Context, Req) ->
 
 
 %% TDengine 概要: 获取当前产品下的所有设备数据 描述:获取当前产品下的所有设备数据
-%% OperationId:get_td_cid_pid
-%% 请求:GET /iotapi/td/prodcut/:productId
-do_request(get_iq60_ctrl, #{
-    <<"pid">> := ProductId,
-    <<"devaddr">> := DevAddr,
-    <<"ctrlflag">> := CtrlFlag,
-    <<"devpass">> := DevPass
-}, _Context, Req0) ->
-    get_iq60_ctrl(Req0, ProductId, DevAddr, CtrlFlag, DevPass);
-
-do_request(get_iq60_ctrl_status, #{
-    <<"pid">> := ProductId,
-    <<"ctrlflag">> := CtrlFlag,
-    <<"devaddr">> := DevAddr
-}, _Context, _Req) ->
-    TopicCtrl = <<"thingctrl/", ProductId/binary, "/", DevAddr/binary>>,
-    ThingData = #{<<"devaddr">> => DevAddr, <<"ctrlflag">> => CtrlFlag, <<"apiname">> => get_iq60_ctrl_status},
-    Payload = [#{<<"appdata">> => #{}, <<"thingdata">> => ThingData}],
-    dgiot_mqtt:publish(DevAddr, TopicCtrl, jsx:encode(Payload));
-
+%% OperationId:get_location
+%% 请求:GET /iotapi/location
+do_request(get_location, #{<<"deviceid">> := DeviceId, <<"type">> := Type}, _Context, _Req) ->
+    Result = get_location(Type, DeviceId),
+    {200, Result};
 
 %%  服务器不支持的API接口
 do_request(_OperationId, _Args, _Context, _Req) ->
     ?LOG(info, "_OperationId:~p~n", [_OperationId]),
     {error, <<"Not Allowed.">>}.
 
-get_iq60_ctrl(Req0, ProductId, DevAddr, CtrlFlag, DevPass) ->
-    Sendtopic = <<"thingctrl/", ProductId/binary, "/", DevAddr/binary>>,
-    ThingData = #{<<"devaddr">> => DevAddr, <<"ctrlflag">> => CtrlFlag, <<"devpass">> => DevPass, <<"apiname">> => get_iq60_ctrl},
-    Payload = [#{<<"pid">> => self(),<<"appdata">> => #{}, <<"thingdata">> => ThingData}],
-    case dgiot_mqtt:has_routes(Sendtopic) of
-        true ->
-            dgiot_mqtt:publish(DevAddr, Sendtopic, jsx:encode(Payload)),
-            receive
-                {ctrl_meter, Msg} ->
-                    Resp = cowboy_req:reply(200, #{<<"content-type">> => <<"application/json">>}, jsx:encode(Msg), Req0),
-                    {ok, Resp};
-                {error} ->
-                    Resp = cowboy_req:reply(200, #{<<"content-type">> => <<"text/plain">>}, <<"CTRL_METER_FAILED">>, Req0),
-                    {ok, Resp}
-            after 10000 ->
-                Resp = cowboy_req:reply(200, #{
-                    <<"content-type">> => <<"text/plain">>
-                }, <<"CTRL_METER_TIMEOUT">>, Req0),
-                {ok, Resp}
-            end;
-        false ->
-            Resp = cowboy_req:reply(200, #{<<"content-type">> => <<"text/plain">>}, <<"METER_OFFLINE">>, Req0),
-            {ok, Resp}
-    end.
+get_location(<<"BS">>, DeviceId) ->
+    case dgiot_device:lookup(DeviceId) of
+        {ok, #{<<"devaddr">> := Devaddr}} ->
+            dgiot_onenet_sim:position_location_message(Devaddr);
+        _ ->
+            #{<<"error">> => <<"not find Device ", DeviceId/binary>>}
+    end;
 
+get_location(<<"WIFI">>, _DeviceId) ->
+    #{<<"data">> => <<"WIFI todo">>};
+
+get_location(<<"IP">>, _DeviceId) ->
+    #{<<"data">> => <<"IP todo">>};
+
+get_location(_Type, _DeviceId) ->
+    #{<<"data">> => <<"todo">>}.
 
 
 

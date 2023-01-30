@@ -28,6 +28,8 @@ init_ets() ->
     dgiot_data:init(?USER_ETS),
     dgiot_data:init(?ROLE_USER_ETS),
     dgiot_data:init(?USER_ROLE_ETS),
+    dgiot_data:init(?ROLE_VIEWS_ETS),
+    dgiot_data:init(?ROLE_MENUVIEWS_ETS),
     dgiot_data:init(?ROLE_PARENT_ETS),
     dgiot_data:init(?NAME_ROLE_ETS),
     dgiot_data:init(?ROLE_NAME_ETS),

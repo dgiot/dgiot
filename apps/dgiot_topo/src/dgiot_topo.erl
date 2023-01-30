@@ -85,7 +85,7 @@ push(ProductId, Devaddr, DeviceId, Payload) ->
 
 send_topo({NodeType, NodeId}, Token) ->
 %%    io:format("NodeType ~p NodeId ~p Token ~p ~n", [NodeType, NodeId,Token]),
-    case dgiot_hook:run_hook({topo, NodeType, NodeId}, {Token, NodeId}) of
+    case dgiot_hook:run_hook({'topo', NodeType}, {Token, NodeId}) of
         {ok, [{ok, Payload}]} ->
             Base64 = base64:encode(jsx:encode(Payload)),
             Pubtopic = <<"$dg/user/topo/", Token/binary, "/", NodeType/binary, "/", NodeId/binary, "/report">>,
@@ -98,10 +98,10 @@ send_topo({NodeType, NodeId}, Token) ->
 get_que(DashboardId) ->
     case dgiot_parse:get_object(<<"View">>, DashboardId) of
         {ok, #{<<"data">> := #{<<"konva">> := #{<<"Stage">> := Stage}}}} ->
-            Rects = dgiot_product_knova:get_nodes(Stage, [<<"Rect">>, <<"Image">>]),
+            Rects = dgiot_product_knova:get_nodes(Stage, [<<"Rect">>, <<"Image">>, <<"Text">>]),
             maps:fold(
                 fun
-                    (NodeId, #{<<"name">> := <<"vuecomponent">>, <<"source">> := <<"mqtt">>, <<"type">> := NodeType}, Acc) ->
+                    (NodeId, #{<<"source">> := <<"mqtt">>, <<"type">> := NodeType}, Acc) ->
                         Acc ++ [{NodeType, NodeId}];
                     (_, _, Acc) ->
                         Acc
