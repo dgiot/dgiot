@@ -455,16 +455,16 @@ get_schemas_json() ->
 update_schemas_json() ->
 %%    io:format("~s ~p ~p~n", [?FILE, ?LINE, <<"update_schemas_json start">>]),
     %%    API更新
-    dgiot_install:generate_rule([{<<"webname">>, #{name => dgiot_apihub}}]),
+    dgiot_install:generate_rule([{<<"webname">>, #{name => dgiot_apihub}}]).
     %%    物模型更新
-    dgiot_product:update_properties(),
+%%    dgiot_product:update_properties(),
     %%    表字段更新
-    Schemas = get_schemas_json(),
-    timer:sleep(1000),
-    lists:foldl(fun(#{<<"className">> := ClassName, <<"fields">> := Fields}, _Acc) ->
-        maps:fold(fun(Key, Value, _Acc1) ->
-%%           io:format("Fields = #{~p => ~p, ~n           ~p => #{~p => ~p}}.~n", [<<"className">>, ClassName, <<"fields">>, Key, Value]),
-            dgiot_parse:update_schemas(#{<<"className">> => ClassName, <<"fields">> => #{Key => Value}}),
-            timer:sleep(100)
-                  end, #{}, Fields)
-                end, #{}, Schemas).
+%%    Schemas = get_schemas_json(),
+%%    timer:sleep(1000),
+%%    lists:foldl(fun(#{<<"className">> := ClassName, <<"fields">> := Fields}, _Acc) ->
+%%        maps:fold(fun(Key, Value, _Acc1) ->
+%%%%           io:format("Fields = #{~p => ~p, ~n           ~p => #{~p => ~p}}.~n", [<<"className">>, ClassName, <<"fields">>, Key, Value]),
+%%            dgiot_parse:update_schemas(#{<<"className">> => ClassName, <<"fields">> => #{Key => Value}}),
+%%            timer:sleep(100)
+%%                  end, #{}, Fields)
+%%                end, #{}, Schemas).
