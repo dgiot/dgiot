@@ -24,10 +24,10 @@
 %% CMIOT_API25L00-物联卡实时位置经纬度查询
 %% dgiot_onenet:position_location_message(<<"1440499147259">>).
 position_location_message(Msisdn) ->
+    Server = dgiot_utils:to_list(application:get_env(dgiot_http, onenet_server, "")),
     AppId = dgiot_utils:to_list(application:get_env(dgiot_http, onenet_appid, "")),
     Secret = dgiot_utils:to_list(application:get_env(dgiot_http, onenet_secret, "")),
-    Url = "http://127.0.0.1:5080/iotapi/position-location-message?msisdn=" ++ dgiot_utils:to_list(Msisdn) ++ "&appid=" ++ AppId ++ "&secret=" ++ Secret,
-    io:format("~s ~p Url = ~p.~n", [?FILE, ?LINE, Url]),
+    Url = Server ++ "/iotapi/position-location-message?msisdn=" ++ dgiot_utils:to_list(Msisdn) ++ "&appid=" ++ AppId ++ "&secret=" ++ Secret,
     case dgiot_http_client:request(get, {Url, []}) of
         {ok, #{<<"status">> := <<"0">>} = Result} ->
 %%            io:format("~s ~p Result = ~ts.~n", [?FILE, ?LINE, jsx:encode(Result)]),

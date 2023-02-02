@@ -256,10 +256,12 @@ put_role(#{<<"objectId">> := RoleId} = Role, SessionToken) ->
                     dgiot_role:remove_rules_role(RoleId),
                     case dgiot_parse:update_object(<<"_Role">>, RoleId, NewRole) of
                         {ok, R} ->
+                            dgiot_role:save_role_menuview(RoleId),
                             {ok, R};
-                        {error, Reason} ->
-                            dgiot_parse:update_object(<<"_Role">>, RoleId, NewRole),
-                            {error, Reason}
+                        {error, _Reason} ->
+                            Result = dgiot_parse:update_object(<<"_Role">>, RoleId, NewRole),
+                            dgiot_role:save_role_menuview(RoleId),
+                            Result
                     end
             end;
         Error -> Error
@@ -703,7 +705,7 @@ get_views_role(Menus) ->
             Objects =
                 lists:foldl(
                     fun
-                        (#{<<"meta">> := #{<<"viewid">> := ViewId}}, Acc) ->
+                        (#{<<"meta">> := #{<<"viewid">> := ViewId}}, Acc) when size(ViewId) > 0 ->
                             Acc ++ [#{
                                 <<"__type">> => <<"Pointer">>,
                                 <<"className">> => <<"View">>,

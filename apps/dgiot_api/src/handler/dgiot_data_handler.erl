@@ -382,6 +382,23 @@ do_request(post_menu, #{<<"file">> := FileInfo} = _Body,
 %% Relation 概要: 增加关系 描述:json文件导库
 %% OperationId:post_relation
 %% 请求:POST /iotapi/relation
+do_request(post_relation, #{<<"destClass">> := <<"_Role">>, <<"destId">> := DestId, <<"destField">> := <<"views">>,
+    <<"srcClass">> := SrcClass, <<"srcId">> := SrcId} = _Body, _Context, _Req) ->
+    Map = #{
+        <<"views">> => #{
+            <<"__op">> => <<"AddRelation">>,
+            <<"objects">> => [
+                #{
+                    <<"__type">> => <<"Pointer">>,
+                    <<"className">> => SrcClass,
+                    <<"objectId">> => SrcId
+                }
+            ]
+        }
+    },
+    dgiot_role:save_role_view(DestId),
+    dgiot_parse:update_object(<<"_Role">>, DestId, Map);
+
 do_request(post_relation, #{<<"destClass">> := DestClass, <<"destId">> := DestId, <<"destField">> := DestField,
     <<"srcClass">> := SrcClass, <<"srcId">> := SrcId} = _Body, _Context, _Req) ->
     Map =

@@ -100,6 +100,11 @@
 %%--------------------------------------------------------------------
 %% onenet
 %%--------------------------------------------------------------------
+{mapping, "onenet.server", "dgiot_http.onenet_server", [
+{default, "https://prod.dgiotcloud.cn/"},
+{datatype, string}
+]}.
+
 {mapping, "onenet.appid", "dgiot_http.onenet_appid", [
 {default, "c95cca6ec7"},
 {datatype, string}
