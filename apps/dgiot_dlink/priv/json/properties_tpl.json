@@ -1,52 +1,11 @@
 {
-  "name": "abc",
-  "isshow": true,
-  "dataForm": {
-    "data": "null",
-    "rate": 1,
-    "order": 0,
-    "round": "all",
-    "offset": 0,
-    "address": "0X10",
-    "control": "%d",
-    "iscount": "0",
-    "slaveid": "0X10",
-    "protocol": "DLINK",
-    "strategy": "主动上报",
-    "collection": "%s",
-    "countround": "all",
-    "operatetype": "readCoils",
-    "originaltype": "short16_AB",
-    "countstrategy": 20,
-    "countcollection": "%s"
-  },
+  "dataForm": {},
   "dataType": {
     "das": [],
-    "type": "float",
-    "specs": {
-      "max": 999999,
-      "min": 0,
-      "step": 0,
-      "unit": "",
-      "precision": 3
-    }
+    "specs": {}
   },
-  "required": true,
-  "updateAt": "1652688237066",
-  "accessMode": "r",
   "dataSource": {
-    "dis": [
-      {
-        "key": "0000",
-        "data": "2",
-        "undefined": "0000"
-      }
-    ],
-    "_dlinkindex": ""
+    "dis": []
   },
-  "devicetype": "abc",
-  "identifier": "abc",
-  "moduleType": "properties",
-  "isaccumulate": false,
-  "index": 0
+  "moduleType": "properties"
 }
