@@ -8,6 +8,7 @@
 
 [English](./README.md) | [中文](./README-CN.md) | [日本語](./README-JP.md) | [русский](./README-RU.md)|
 [github](https://github.com/dgiot)|[gitee](https://gitee.com/dgiiot)|[官网](https://www.dgiotcloud.cn/)|[博客](https://www.dgiotcloud.cn/?cat=19)|[体验](https://prod.dgiotcloud.cn)|[微信群](#jump)
+
 ## DGIOT简介
 DGIOT是国内首款轻量级开源工业物联网平台，我们致力于提供五类物联网解决方案：
 + **国企/研究院**：平台代码开源，无版权产权困扰，国产无“卡脖”之忧
@@ -23,20 +24,21 @@ DGIOT是国内首款轻量级开源工业物联网平台，我们致力于提供
 
 ## 核心特色
 + **完全开源**：前后端完全开源，无收费商业版
-+ **快速部署**：6分钟私有化[一键式部署](https://gitee.com/dgiiot/dgiot/wikis/%E4%BA%A7%E5%93%81%E6%89%8B%E5%86%8C/%E4%BA%A7%E5%93%81%E7%AE%80%E4%BB%8B/%E5%AE%89%E8%A3%85%E9%83%A8%E7%BD%B2)，快速拥有自己的物联网平台
++ **快速部署**：6分钟私有化[一键式部署](https://doc.dgiotcloud.cn/docs/product_doc/docs/deployment_details/)，快速拥有自己的物联网平台
 + **专业可靠**：千万级设备接入与管理，电信级稳定性
 + **兼容并包**：兼容工业领域多行业的常见协议类型
 + **全流程低代码**：物模型-规则引擎-数据通道-组态页面全流程可视化低代码开发
+
 ## 案例教程
 |   |   | |
 | ------------ | ------------ | ------------ |
 | 行业分类 |实战教程| 案例简述  |
-| [智慧能源](https://gitee.com/dgiiot/dgiot/wikis/%E8%A1%8C%E4%B8%9A%E6%A1%88%E4%BE%8B/%E8%83%BD%E6%BA%90%E8%A1%8C%E4%B8%9A?sort_id=4971731) | [电能表接入](https://gitee.com/dgiiot/dgiot/wikis/%E5%AE%9E%E6%88%98%E6%8E%A5%E5%85%A5/%E7%94%B5%E8%A1%A8%E6%8E%A5%E5%85%A5/%E6%A6%82%E8%BF%B0)|[千万级国/南网电表采集](https://gitee.com/dgiiot/dgiot/wikis/%E5%8E%8B%E6%B5%8B%E6%8A%A5%E5%91%8A/3000%E4%B8%87%E7%9C%81%E7%BA%A7%E7%94%B5%E8%A1%A8%E9%9B%86%E6%8A%84%E5%8E%8B%E6%B5%8B)，预付费表采集，太阳能设备管控  |
-| [智能工业](https://gitee.com/dgiiot/dgiot/wikis/%E8%A1%8C%E4%B8%9A%E6%A1%88%E4%BE%8B/%E5%B7%A5%E4%B8%9A%E8%AE%BE%E5%A4%87%E8%A1%8C%E4%B8%9A)  | [Mqtt设备接入](https://gitee.com/dgiiot/dgiot/wikis/%E5%AE%9E%E6%88%98%E6%8E%A5%E5%85%A5/MQTT%E8%AE%BE%E5%A4%87%E6%8E%A5%E5%85%A5)| 工地电梯远程管控 |
+| [智慧能源](https://doc.dgiotcloud.cn/docs/user_manual/docs/wisdom_energy/) | [电能表接入](https://doc.dgiotcloud.cn/docs/practical_tutorial/docs/Meter/dlt645)|[千万级国/南网电表采集](https://doc.dgiotcloud.cn/docs/user_manual/docs/pressure_test/meter_pressure_test)，预付费表采集，太阳能设备管控  |
+| [智能制造](https://doc.dgiotcloud.cn/docs/user_manual/docs/digital_factory/)  | [Mqtt设备接入](https://gitee.com/dgiiot/dgiot/wikis/%E5%AE%9E%E6%88%98%E6%8E%A5%E5%85%A5/MQTT%E8%AE%BE%E5%A4%87%E6%8E%A5%E5%85%A5)| 工地电梯远程管控 |
 | [智慧交通](https://gitee.com/dgiiot/dgiot/wikis/%E8%A1%8C%E4%B8%9A%E6%A1%88%E4%BE%8B/%E4%BA%A4%E9%80%9A%E8%A1%8C%E4%B8%9A)  |[Modbus设备接入](https://gitee.com/dgiiot/dgiot/wikis/%E5%AE%9E%E6%88%98%E6%8E%A5%E5%85%A5/Modbus%E8%AE%BE%E5%A4%87%E6%8E%A5%E5%85%A5?sort_id=5023597)|高速公路隧道设备检测   |
-|[智慧检测](https://gitee.com/dgiiot/dgiot/wikis/%E8%A1%8C%E4%B8%9A%E6%A1%88%E4%BE%8B/%E6%99%BA%E6%85%A7%E6%A3%80%E6%B5%8B)|[OPC设备接入](https://gitee.com/dgiiot/dgiot/wikis/%E5%AE%9E%E6%88%98%E6%8E%A5%E5%85%A5/OPC%E8%AE%BE%E5%A4%87%E6%8E%A5%E5%85%A5/%E6%A6%82%E8%BF%B0)|浙里办水泵远程检测|
-|[智慧物流](https://gitee.com/dgiiot/dgiot/wikis/%E8%A1%8C%E4%B8%9A%E6%A1%88%E4%BE%8B/%E6%99%BA%E6%85%A7%E7%89%A9%E6%B5%81)|[Zeta设备接入](https://gitee.com/dgiiot/dgiot/wikis/%E5%AE%9E%E6%88%98%E6%8E%A5%E5%85%A5/Zeta%E8%AE%BE%E5%A4%87%E6%8E%A5%E5%85%A5/%E6%A6%82%E8%BF%B0)|[千万级物流Zetag标签压测](https://gitee.com/dgiiot/dgiot/wikis/%E5%8E%8B%E6%B5%8B%E6%8A%A5%E5%91%8A/1500%E4%B8%87Zetag%E6%A0%87%E7%AD%BE%E7%89%A9%E6%B5%81%E5%85%A8%E4%B8%9A%E5%8A%A1%E5%8E%8B%E6%B5%8B)|
-|[智慧园区](https://gitee.com/dgiiot/dgiot/wikis/%E8%A1%8C%E4%B8%9A%E6%A1%88%E4%BE%8B/%E6%99%BA%E6%85%A7%E5%9B%AD%E5%8C%BA)|[云云对接](https://gitee.com/dgiiot/dgiot/wikis/%E5%AE%9E%E6%88%98%E6%8E%A5%E5%85%A5/%E4%BA%91%E4%BA%91%E5%AF%B9%E6%8E%A5/%E6%A6%82%E8%BF%B0)|智慧场馆|
+| [智慧检测](https://gitee.com/dgiiot/dgiot/wikis/%E8%A1%8C%E4%B8%9A%E6%A1%88%E4%BE%8B/%E6%99%BA%E6%85%A7%E6%A3%80%E6%B5%8B)|[OPC设备接入](https://gitee.com/dgiiot/dgiot/wikis/%E5%AE%9E%E6%88%98%E6%8E%A5%E5%85%A5/OPC%E8%AE%BE%E5%A4%87%E6%8E%A5%E5%85%A5/%E6%A6%82%E8%BF%B0)|浙里办水泵远程检测|
+| [智慧物流](https://gitee.com/dgiiot/dgiot/wikis/%E8%A1%8C%E4%B8%9A%E6%A1%88%E4%BE%8B/%E6%99%BA%E6%85%A7%E7%89%A9%E6%B5%81)|[Zeta设备接入](https://gitee.com/dgiiot/dgiot/wikis/%E5%AE%9E%E6%88%98%E6%8E%A5%E5%85%A5/Zeta%E8%AE%BE%E5%A4%87%E6%8E%A5%E5%85%A5/%E6%A6%82%E8%BF%B0)|[千万级物流Zetag标签压测](https://gitee.com/dgiiot/dgiot/wikis/%E5%8E%8B%E6%B5%8B%E6%8A%A5%E5%91%8A/1500%E4%B8%87Zetag%E6%A0%87%E7%AD%BE%E7%89%A9%E6%B5%81%E5%85%A8%E4%B8%9A%E5%8A%A1%E5%8E%8B%E6%B5%8B)|
+| [智慧园区](https://doc.dgiotcloud.cn/docs/user_manual/docs/wisdom_park/)|[云云对接](https://gitee.com/dgiiot/dgiot/wikis/%E5%AE%9E%E6%88%98%E6%8E%A5%E5%85%A5/%E4%BA%91%E4%BA%91%E5%AF%B9%E6%8E%A5/%E6%A6%82%E8%BF%B0)|智慧场馆|
 
 ## 业务架构
 ![业务架构图.jpg](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/%E4%B8%9A%E5%8A%A1%E6%9E%B6%E6%9E%84%E5%9B%BE.jpg)
@@ -80,7 +82,7 @@ wget -qO dgiot_install.sh https://gitee.com/dgiiot/dgiot/raw/master/dgiot_instal
 
 ## 构建
  构建 *dgiot* 需要 Erlang/OTP R24+, [linux](https://github.com/erlang/otp/releases/download/OTP-24.3.4.2/otp_src_24.3.4.2.tar.gz) Windows下用 [开发环境包](https://dgiotdev-1308220533.cos.ap-nanjing.myqcloud.com/msys64.zip)开发。下载后解压到D盘根目录，严格按照下图操作：
-![dgiotdevtools.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/dgiotdevtools.png)
+ ![dgiotdevtools.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/dgiotdevtools.png)
 +  国外下载源码
 ```bash
  git clone -b master https://github.com/dgiot/iotStudio.git
