@@ -120,7 +120,8 @@ do_request(get_protocol, _Body, _Context, _Req) ->
         case dgiot_data:get(get_protocol) of
             not_find ->
                 P = dgiot_dlink:get_all_protocol(),
-                dgiot_data:insert(get_protocol, P);
+                dgiot_data:insert(get_protocol, P),
+                P;
             P ->
                 P
         end,
