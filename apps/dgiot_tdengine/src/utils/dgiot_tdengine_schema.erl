@@ -103,7 +103,6 @@ alter_table(#{<<"tableName">> := TableName}, #{<<"channel">> := Channel} = Conte
     Sql1 = <<"DESCRIBE ", Database/binary, TableName/binary, ";">>,
     case dgiot_tdengine_pool:run_sql(Context, execute_query, Sql1) of
         {ok, #{<<"results">> := Results}} when length(Results) > 0 ->
-            dgiot_tdengine:save_fields(ProductId, Results),
             TdColumn =
                 lists:foldl(fun(Column, Acc) ->
                     case Column of
@@ -116,7 +115,13 @@ alter_table(#{<<"tableName">> := TableName}, #{<<"channel">> := Channel} = Conte
             AddSqls = dgiot_tdengine_schema:get_addSql(ProductId, TdColumn, Database, TableName),
             lists:map(fun(AddSql) ->
                 dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_query, AddSql)
-                      end, AddSqls);
+                      end, AddSqls),
+            case dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_query, Sql1) of
+                {ok, #{<<"results">> := Results2}} ->
+                    dgiot_tdengine:save_fields(ProductId, Results2);
+                _ ->
+                    pass
+            end;
         _ ->
             pass
     end.

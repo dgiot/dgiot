@@ -106,7 +106,8 @@ check_value(Value, ProductId, Field) ->
                 true ->
                     NewValue;
                 false ->
-                    throw({error, <<Field/binary, " is not validate">>})
+                    BinNewValue = dgiot_utils:to_binary(NewValue),
+                    throw({error, <<Field/binary, "=", BinNewValue/binary, " is not validate">>})
             end
     end.
 
@@ -158,6 +159,8 @@ check_field(Data, #{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> :=
 check_field(_, _) ->
     undefined.
 
+check_validate(null, _) ->
+    true;
 check_validate(Value, #{<<"max">> := Max, <<"min">> := Min}) when is_integer(Max), is_integer(Min) ->
     Value =< Max andalso Value >= Min;
 check_validate(Value, #{<<"max">> := Max}) when is_integer(Max) ->
@@ -200,10 +203,12 @@ get_time(V, Interval) ->
     end.
 
 
+get_type_value(_, null, _) ->
+    null;
 get_type_value(Type, Value, _Specs) when Type == <<"INT">>; Type == <<"DATE">>; Type == <<"SHORT">>; Type == <<"LONG">>; Type == <<"ENUM">>, is_list(Value) ->
-    round(dgiot_utils:to_int(Value));
+   round(dgiot_utils:to_int(Value));
 get_type_value(Type, Value, _Specs) when Type == <<"INT">>; Type == <<"DATE">>, is_float(Value) ->
-    round(Value);
+   round(Value);
 get_type_value(Type, Value, _Specs) when Type == <<"INT">>; Type == <<"DATE">> ->
     Value;
 get_type_value(Type, Value, Specs) when Type == <<"FLOAT">>; Type == <<"DOUBLE">> ->
