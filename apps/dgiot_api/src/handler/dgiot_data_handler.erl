@@ -396,8 +396,9 @@ do_request(post_relation, #{<<"destClass">> := <<"_Role">>, <<"destId">> := Dest
             ]
         }
     },
+    R = dgiot_parse:update_object(<<"_Role">>, DestId, Map),
     dgiot_role:save_role_view(DestId),
-    dgiot_parse:update_object(<<"_Role">>, DestId, Map);
+    R;
 
 do_request(post_relation, #{<<"destClass">> := DestClass, <<"destId">> := DestId, <<"destField">> := DestField,
     <<"srcClass">> := SrcClass, <<"srcId">> := SrcId} = _Body, _Context, _Req) ->
@@ -441,6 +442,24 @@ do_request(get_relation, #{<<"destClass">> := DestClass, <<"destId">> := DestId,
 %% Relation 概要: 删除关系 描述:json文件导库
 %% OperationId:post_relation
 %% 请求:DELETE /iotapi/relation
+do_request(delete_relation, #{<<"destClass">> := DestClass, <<"destId">> := DestId, <<"destField">> := <<"views">>,
+    <<"srcClass">> := SrcClass, <<"srcId">> := SrcId} = _Body, _Context, _Req) ->
+    Map =
+        #{<<"views">> =>
+        #{
+            <<"__op">> => <<"RemoveRelation">>,
+            <<"objects">> => [
+                #{
+                    <<"__type">> => <<"Pointer">>,
+                    <<"className">> => SrcClass,
+                    <<"objectId">> => SrcId
+                }
+            ]
+        }
+        },
+    R = dgiot_parse:update_object(DestClass, DestId, Map),
+    dgiot_role:save_role_view(DestId),
+    R;
 do_request(delete_relation, #{<<"destClass">> := DestClass, <<"destId">> := DestId, <<"destField">> := DestField,
     <<"srcClass">> := SrcClass, <<"srcId">> := SrcId} = _Body, _Context, _Req) ->
     Map =

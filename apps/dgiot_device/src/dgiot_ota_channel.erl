@@ -18,12 +18,18 @@
 -include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -define(TYPE, <<"OTA">>).
--record(state, {id, env = #{}}).
+-record(state, {
+    id,
+    product,
+    path,
+    md5,
+    env = #{}}
+).
 %% API
 -export([start/2]).
 
 %% Channel callback
--export([init/3, handle_init/1, handle_event/3, handle_message/2, stop/3, send_upgrade/5]).
+-export([init/3, handle_init/1, handle_event/3, handle_message/2, stop/3, send_upgrade/1]).
 
 %% 注册通道类型
 -channel_type(#{
@@ -88,13 +94,13 @@ handle_message({firmware_report, ProductId, DevAddr, #{<<"version">> := Version}
         _ ->
             pass
     end,
-    {ok, State};
+    send_upgrade(State);
 
 %% 升级命令
 handle_message({sync_parse, _Pid, 'after', put, _Token, <<"Files">>, #{<<"content">> := #{
-    <<"enable">> := true} = Content}}, #state{env = Env} = State) ->
+    <<"enable">> := true, <<"key">> := ProductId, <<"path">> := Path, <<"md5">> := Md5} = Content}}, #state{env = Env} = State) ->
     Devices = get_deviceids(Content),
-    {ok, State#state{env = Env#{<<"devices">> => Devices}}};
+    {ok, State#state{product = ProductId, path = Path, md5 = Md5, env = Env#{<<"devices">> => Devices}}};
 
 handle_message(_Message, State) ->
     {ok, State}.
@@ -148,8 +154,10 @@ get_deviceids(#{<<"upgraderange">> := <<"2">>, <<"danwei">> := RoleName}) ->
 get_deviceids(_Content) ->
     [].
 
+send_upgrade(#state{env = #{<<"devices">> := Devices}} = State) when length(Devices) == 0 ->
+    {stop, State};
 
-send_upgrade(ProductId, Devaddr, DeviceId, Path, Md5) ->
+send_upgrade(#state{product = ProductId, path = Path, md5 = Md5, env = #{<<"devices">> := [#{<<"objectId">> := DeviceId, <<"devaddr">> := Devaddr} | Rest]} = Env} = State) ->
     case dgiot_device:lookup(DeviceId) of
         {ok, #{<<"devaddr">> := Devaddr}} ->
             Topic = <<"$dg/device/", ProductId/binary, "/", Devaddr/binary, "/ota/upgrade">>,
@@ -157,7 +165,8 @@ send_upgrade(ProductId, Devaddr, DeviceId, Path, Md5) ->
             dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(Data));
         _ ->
             pass
-    end.
+    end,
+    {ok, State#state{env = Env#{<<"devices">> => Rest}}}.
 
 
 
