@@ -635,23 +635,24 @@ function deploy_tdengine_server() {
     mv ${install_dir}/taos/ ${backup_dir}/taos/
   fi
 
-  if [ ! -f ${script_dir}/TDengine-server-3.0.2.1-Linux-x64.tar.gz ]; then
-    wget ${fileserver}/TDengine-server-3.0.2.1-Linux-x64.tar.gz -O ${script_dir}/TDengine-server-3.0.2.1-Linux-x64.tar.gz &> /dev/null
+  if [ ! -f ${script_dir}/TDengine-server-3.0.2.4-Linux-x64.tar.gz ]; then
+    wget ${fileserver}/TDengine-server-3.0.2.4-Linux-x64.tar.gz -O ${script_dir}/TDengine-server-3.0.2.4-Linux-x64.tar.gz &> /dev/null
   fi
 
   cd ${script_dir}/
-  if [ -f ${script_dir}/TDengine-server-3.0.2.1 ]; then
-    rm -rf ${script_dir}/TDengine-server-3.0.2.1/
+  if [ -f ${script_dir}/TDengine-server-3.0.2.4 ]; then
+    rm -rf ${script_dir}/TDengine-server-3.0.2.4/
   fi
 
-  tar xf TDengine-server-3.0.2.1-Linux-x64.tar.gz
-  cd ${script_dir}/TDengine-server-3.0.2.1/
+  tar xf TDengine-server-3.0.2.4-Linux-x64.tar.gz
+  cd ${script_dir}/TDengine-server-3.0.2.4/
   mkdir ${install_dir}/taos3/log/ -p
   mkdir ${install_dir}/taos3/data/ -p
+  echo | /bin/sh remove.sh &> /dev/null
   echo | /bin/sh install.sh &> /dev/null
   ldconfig
   cd ${script_dir}/
-  rm ${script_dir}/TDengine-server-3.0.2.1 -rf
+  rm ${script_dir}/TDengine-server-3.0.2.4 -rf
   ${csudo} bash -c "echo 'logDir                    ${install_dir}/taos3/log/'   > /etc/taos/taos.cfg"
   ${csudo} bash -c "echo 'dataDir                   ${install_dir}/taos3/data/'   >> /etc/taos/taos.cfg"
   ${csudo} bash -c "echo 'supportVnodes             100'   >> /etc/taos/taos.cfg"
@@ -899,24 +900,24 @@ function update_dashboard() {
 function update_html() {
   #  dgiot_dashboard
   cd ${install_dir}/nginx
-  if [ -f dgiot_html.tar.gz ]; then
-    htmlmd5=`md5sum dgiot_html.tar.gz |cut -d ' ' -f1`
-    if [ "${htmlmd5}" != "f2ec73686869b9abf3a7641803401092" ]; then
-      rm -rf dgiot_html.tar.gz &> /dev/null
+  if [ -f ${html_software}.tar.gz ]; then
+    htmlmd51=`md5sum ${html_software}.tar.gz |cut -d ' ' -f1`
+    if [ "${htmlmd51}" != "${htmlmd5}" ]; then
+      rm -rf ${html_software}.tar.gz &> /dev/null
     fi
   fi
-  if [ ! -f dgiot_html.tar.gz ]; then
-    wget ${fileserver}/dgiot_html.tar.gz &> /dev/null
-    htmlmd52=`md5sum dgiot_html.tar.gz |cut -d ' ' -f1`
-    if [ "${htmlmd52}" != "f2ec73686869b9abf3a7641803401092" ]; then
-      echo -e "`date +%F_%T` $LINENO: ${RED} download dgiot_html.tar.gz failed${NC}"
+  if [ ! -f ${html_software}.tar.gz ]; then
+    wget ${fileserver}/${html_software}.tar.gz &> /dev/null
+    htmlmd52=`md5sum ${html_software}.tar.gz |cut -d ' ' -f1`
+    if [ "${htmlmd52}" != "${htmlmd5}" ]; then
+      echo -e "`date +%F_%T` $LINENO: ${RED} download ${html_software}.tar.gz failed${NC}"
       exit 1
     fi
   fi
   if [ -d html/ ]; then
     mv html/ ${backup_dir}/
   fi
-  tar xf dgiot_html.tar.gz &> /dev/null
+  tar xf ${html_software}.tar.gz &> /dev/null
   sed -ri '/dgiot_api/d' conf/nginx.conf
 }
 
@@ -928,7 +929,7 @@ function install_dgiot() {
 
   if [ ! -f ${install_dir}/go_fastdfs/files/package/${software}.tar.gz ]; then
     if [ ! -f ${script_dir}/${software}.tar.gz ]; then
-       wget ${fileserver}/${software}.tar.gz -O ${install_dir}/go_fastdfs/files/package/${software}.tar.gz &> /dev/null
+       wget ${fileversionserver}/${software}.tar.gz -O ${install_dir}/go_fastdfs/files/package/${software}.tar.gz &> /dev/null
     else
        cp ${script_dir}/${software}.tar.gz ${install_dir}/go_fastdfs/files/package/
     fi
@@ -1133,15 +1134,12 @@ function build_nginx() {
       unzip -o ${script_dir}/${domain_name}.zip -d /etc/ssl/certs/ &> /dev/null
     fi
     #dashboard
-    if [ ! -f ${script_dir}/dgiot_html.tar.gz ]; then
-      wget ${fileserver}/dgiot_html.tar.gz -O ${script_dir}/dgiot_html.tar.gz &> /dev/null
+    if [ ! -f ${script_dir}/${html_software}.tar.gz ]; then
+      wget ${fileserver}/${html_software}.tar.gz -O ${script_dir}/${html_software}.tar.gz &> /dev/null
     fi
     cd ${script_dir}/
-    if [ -d ${script_dir}/dgiot_html/ ]; then
-      rm ${script_dir}/dgiot_html/ -rf
-    fi
     rm -rf /data/dgiot/nginx/html &> /dev/null
-    tar -zxvf dgiot_html.tar.gz -C /data/dgiot/nginx/ &> /dev/null
+    tar -zxvf ${html_software}.tar.gz -C /data/dgiot/nginx/ &> /dev/null
 
     install_service2 "nginx" "forking" "/data/dgiot/nginx/sbin/nginx"
 }
@@ -1545,12 +1543,14 @@ dgiot_shell
 # set parameters by default value
 deployType=single                             # [single | cluster | devops | ci]
 domain_name="prod.dgiotcloud.cn"              # [prod.dgiotcloud.cn | your_domain_name]
-software="dgiot_n289"                          # [dgiot_n289| dgiot_n]
 plugin="dgiot"                                # [dgiot | dgiot_your_plugin]
-dgiotmd5="ff08a768f1b675d25e82cff7da3200f5"   # [dgiotmd5]
+software="dgiot_n295"                          # [dgiot_n295| dgiot_n]
+dgiotmd5="586ba5a8c33ce04e653ae921cd822b8b"   # [dgiotmd5]
 pg_eip="changeyourip"                            # [datanode_eip]
 pg_auth='changeyourpassword'                  # [pg_auth]
 islanip="false"                                    # [islanip]
+html_software="dgiot_html_4.7.5"                          # [dgiot_html_4.7.5| dgiot_html_4.7.5]
+htmlmd5="8d9851f295da10b36876d87f93138f8a"   # [htmlmd5]
 
 while getopts "v:s:p:m:d:e:a:n:" arg
 do
