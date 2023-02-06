@@ -95,6 +95,7 @@ handle_message({firmware_report, ProductId, DevAddr, #{<<"version">> := Version}
             pass
     end,
     send_upgrade(State);
+121
 
 %% 升级命令
 handle_message({sync_parse, _Pid, 'after', put, _Token, <<"Files">>, #{<<"content">> := #{
