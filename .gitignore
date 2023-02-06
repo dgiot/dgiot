@@ -80,6 +80,7 @@ apps/dgiot_http/etc/dgiot_http.conf
 apps/dgiot_edge/
 apps/dgiot_sl651/
 apps/dgiot_onenet/
+apps/dgiot_energy/
 node_modules/
 package-lock.json
 erlang_ls.config
