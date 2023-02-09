@@ -256,9 +256,18 @@ do_request(post_duplicate_shift, #{<<"product">> := ProductId, <<"sink_date">> :
 do_request(put_sumpick, #{<<"BatchList">> := BatchList} = _Arg, _Context, _Req) ->
     Sum = dgiot_factory_utils:get_sum(BatchList),
     {ok, #{<<"status">> => 0, msg => <<"操作成功"/utf8>>, <<"data">> => #{<<"SumPick">> => Sum}}};
+
+do_request(get_factory_screen, _Arg, _Context, _Req) ->
+    case dgiot_factory_screen:get_screen(_Arg) of
+        {ok,Res}->
+            {ok, #{<<"status">> => 0, msg => <<"操作成功"/utf8>>, <<"data">> =>  Res}};
+        _R->
+            io:format("~s ~p _R = ~p.~n", [?FILE, ?LINE, _R]),
+            {ok, #{<<"status">> => 1, msg => <<"操作失败"/utf8>>}}
+    end;
+
 %%  服务器不支持的API接口
 do_request(_OperationId, _Args, _Context, _Req) ->
     io:format("~s ~p _Args = ~p  ~n", [?FILE, ?LINE, _Args]),
     ?LOG(info, "_OperationId:~p~n", [_Args]),
     {error, <<"Not Allowed.">>}.
-

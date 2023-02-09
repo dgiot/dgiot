@@ -252,4 +252,3 @@ format_value(#{<<"regex">> := V}) ->
     #{<<"$regex">> => V};
 format_value(V) ->
     V.
-%%dgiot_parse:query_object(<<"Device">>,#{<<"where">> => #{<<"content.quality.status">> => #{<<"$gt">> => 3}}, <<"product">> => <<"b0ec1970c7">>

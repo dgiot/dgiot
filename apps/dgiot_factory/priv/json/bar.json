@@ -1,0 +1,31 @@
+{
+  "title": {
+    "text": "产量统计"
+  },
+  "tooltip": {
+    "trigger": "axis",
+    "axisPointer": {
+      "type": "shadow"
+    }
+  },
+  "legend": {
+    "data": [
+      "产量"
+    ]
+  },
+  "xAxis": {
+    "data": [
+      "水刺",
+      "印染",
+      "分切"
+    ]
+  },
+  "yAxis": {},
+  "series": [
+    {
+      "name": "实际产量",
+      "type": "bar",
+      "data": [1,2,3]
+    }
+  ]
+}
