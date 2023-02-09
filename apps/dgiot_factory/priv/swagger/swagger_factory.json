@@ -832,7 +832,6 @@
               }
             }
           }
-
         ],
         "consumes": [
           "application/json"
@@ -852,6 +851,64 @@
           },
           "500": {
             "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "factory"
+        ]
+      }
+    },
+    "/factory_screen": {
+      "get": {
+        "consumes": [
+          "application/json"
+        ],
+        "summary": "获取大屏数据",
+        "description": "获取大屏数据",
+        "parameters": [
+          {
+            "name": "orderType",
+            "in": "query",
+            "type": "string",
+            "description": "计划单类型"
+          },
+          {
+            "name": "orderId",
+            "in": "query",
+            "type": "string",
+            "description": "计划单号"
+          },
+          {
+            "name": "productId",
+            "in": "query",
+            "type": "string",
+            "description": "产品编号"
+          },
+          {
+            "name": "process",
+            "in": "query",
+            "type": "string",
+            "description": "工序类型"
+          },
+          {
+            "name": "startTime",
+            "in": "query",
+            "type": "string",
+            "description": "开始时间"
+          },
+          {
+            "name": "endTime",
+            "in": "query",
+            "type": "string",
+            "description": "结束时间"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "404": {
+            "description": ""
           }
         },
         "tags": [

@@ -91,8 +91,19 @@ handle_message({sync_parse, _Pid, 'before', put, _Token, <<"Device">>, #{<<"id">
                         QueryData
                 end;
             _ ->
-                io:format("~s ~p here  ~n", [?FILE, ?LINE]),
-                QueryData
+                case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+                    {ok, #{<<"product">> := #{<<"objectId">> := ProductId}}} ->
+                        case catch dgiot_hook:run_hook({sync_parse, before, put, ProductId}, {QueryData, ProductId, State}) of
+                            {ok, [Res]} ->
+                                Res;
+                            _ ->
+                                QueryData
+                        end;
+                    _ ->
+
+                        io:format("~s ~p here  ~n", [?FILE, ?LINE]),
+                        QueryData
+                end
         end,
     dgiot_parse_hook:publish(_Pid, NewQueryData),
     {ok, State};
@@ -101,7 +112,7 @@ handle_message({sync_parse, _Pid, 'after', post, _Token, <<"Device">>, #{<<"obje
 %%        {ok, #{<<"productid">> := ProductId}} ->
     case dgiot_parse:get_object(<<"Device">>, DeviceId) of
         {ok, #{<<"product">> := #{<<"objectId">> := ProductId}}} ->
-            case catch dgiot_hook:run_hook({sync_parse, before, post, ProductId}, {QueryData, ProductId, State}) of
+            case catch dgiot_hook:run_hook({sync_parse, 'after', post, ProductId}, {QueryData, ProductId, State}) of
                 {ok, [Res]} ->
                     io:format("~s ~p DeviceId = ~p ~n", [?FILE, ?LINE, DeviceId]),
                     Res;

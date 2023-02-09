@@ -52,22 +52,15 @@ get_depart_material(Material, Depart) ->
 post_material(DeviceId, #{<<"material_type">> := Type} = Map) when is_map(Map) ->
     case dgiot_device_cache:lookup(DeviceId) of
         {ok, #{<<"productid">> := ProductId}} ->
-%%    case dgiot_parse:get_object(<<"Device">>, DeviceId) of
-%%        {ok, #{<<"product">> := #{<<"objectId">> := ProductId}}} ->
-%%           回调金蝶，确认回调成功后更新系统数据
-            case run_material_hook(ProductId, Type, Map) of
-                {ok, _} ->
-%%            记录领料信息到订单
-                    record2task(DeviceId, Map),
-%%            更新批次数量信息
-                    update_batch(Map);
+            func(ProductId, DeviceId, Type, Map);
+        _ ->
+            case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+                {ok, #{<<"product">> := #{<<"objectId">> := ProductId}}} ->
+                    func(ProductId, DeviceId, Type, Map);
                 _ ->
                     io:format("~s ~p DeviceId = ~p  ~n", [?FILE, ?LINE, DeviceId]),
-                    error
-            end;
-        _ ->
-            io:format("~s ~p DeviceId = ~p  ~n", [?FILE, ?LINE, DeviceId]),
-            {error, <<"not_find_device">>}
+                    {error, <<"not_find_device">>}
+            end
     end;
 post_material(_, _) ->
     error.
@@ -83,7 +76,7 @@ record2task(DeviceId, #{<<"FMaterialId">> := FMaterialId} = Map) ->
                     error
 
             end;
-        _->
+        _ ->
             error
 
     end;
@@ -111,8 +104,8 @@ update_batch(#{<<"material_type">> := Type, <<"batchId">> := BatchId, <<"FQty">>
             io:format("~s ~p not_find   ~n", [?FILE, ?LINE]),
             error
     end;
-update_batch(_) ->
-    io:format("~s ~p miss_match   ~n", [?FILE, ?LINE]).
+update_batch(_D) ->
+    io:format("~s ~p miss_match,D =~p    ~n", [?FILE, ?LINE, _D]).
 
 
 
@@ -205,3 +198,16 @@ record2list(V, #{<<"material_type">> := <<"picking">>, <<"FQty">> := FQty, <<"ba
     V#{<<"material_pick">> => NewPickList, <<"material_picked">> => NewPickEd};
 record2list(_, Map) ->
     Map.
+
+func(ProductId, DeviceId, Type, Map) ->
+%%           回调金蝶，确认回调成功后更新系统数据
+    case run_material_hook(ProductId, Type, Map) of
+        {ok, _} ->
+%%            记录领料信息到订单
+            record2task(DeviceId, Map),
+%%            更新批次数量信息
+            update_batch(Map);
+        _ ->
+            io:format("~s ~p DeviceId = ~p  ~n", [?FILE, ?LINE, DeviceId]),
+            error
+    end.
