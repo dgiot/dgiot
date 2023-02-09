@@ -20,25 +20,11 @@
 -include("dgiot_factory.hrl").
 -export([get_usertree/2, getalluser/1, clear_cache/2]).
 -export([get_zero_list/1, get_zero_binary/1]).
--export([fix_model/1, get_worker/1, get_children/1, check_workteam/1]).
+-export([get_worker/1, get_children/1, check_workteam/1]).
 -export([get_sum/1]).
+-export([batch_create_worker/3]).
+-export([get_json_file/1]).
 
-fix_model(ID) ->
-    {ok, #{<<"thing">> := Model}} = dgiot_parse:get_object(<<"Product">>, ID),
-    {ok, Pro} = maps:find(<<"properties">>, Model),
-    Res = lists:foldl(
-        fun(X, Acc) ->
-            case X of
-                #{<<"dataType">> := #{<<"type">> := <<"text">>, <<"specs">> := #{<<"max">> := 999999}}} ->
-                    NweData = #{<<"das">> => [], <<"size">> => 50, <<"specs">> => #{}, <<"type">> => <<"text">>},
-                    NewX = maps:merge(X, #{<<"dataType">> => NweData}),
-                    Acc ++ [NewX];
-                _ ->
-                    Acc ++ [X]
-            end
-        end, [], Pro),
-    NewThing = maps:merge(Model, #{<<"properties">> => Res}),
-    dgiot_parse:update_object(<<"Product">>, ID, #{<<"thing">> => NewThing}).
 
 
 
@@ -270,14 +256,44 @@ clear_cache(BatchProduct, BatchDeviceId) ->
             dgiot_data:delete(?FACTORY_ORDER, {BatchProduct, BatchDeviceId, Type})
         end, [], DeviceTypeList).
 
-get_sum(BatchList) when is_list(BatchList)->
+get_sum(BatchList) when is_list(BatchList) ->
     lists:foldl(
         fun
-            (#{<<"PickNum">> := PickNum},Acc)->
-            Acc + dgiot_utils:to_int(PickNum);
-            (_,Acc)->
+            (#{<<"PickNum">> := PickNum}, Acc) ->
+                Acc + dgiot_utils:to_int(PickNum);
+            (_, Acc) ->
                 Acc
     end,0,BatchList);
 
 get_sum(_) ->
     0.
+%%InitNum = 10001,ProductId = <<"5cd9ae6a63">>,WorkerList = re:split(<<"朱文波,周海明,祁新军,王信红,胡大芳,陈卫红,吴正碧,王虎,王东华,陈绿娟,冷群龙,邹白云,金爱莲,陈继强,赵洪彬,张洪平,李国苹,曾天权,潘宗文,张珍群,胡剑波,张晓兰"/utf8>>,<<",">>).
+%%dgiot_parse:update_object(<<"Product">>, ProductId,  #{<<"ACL">> => #{<<"*">> => #{<<"read">> => true}, <<"role:生产计划部门"/utf8>> => #{<<"read">> => true, <<"write">> => true}}})
+batch_create_worker(ProductId, WorkerList, InitNum) ->
+    lists:foldl(
+        fun(Worker, Num) ->
+            dgiot_factory_channel:init_worker_device(ProductId, Num, Worker),
+            Num + 1
+        end, InitNum, WorkerList).
+
+
+get_json_file(FileName) ->
+    {file, Here} = code:is_loaded(?MODULE),
+    Dir = dgiot_httpc:url_join([filename:dirname(filename:dirname(Here)), "/priv/json/"]),
+    Name = dgiot_utils:to_list(FileName),
+    NewName =
+        case filename:extension(Name) of
+            [] ->
+                Name ++ ".json";
+            _ ->
+                Name
+        end,
+    Path = Dir ++ NewName,
+    case catch file:read_file(Path) of
+        {Err, _Reason} when Err == 'EXIT'; Err == error ->
+%%                        ?LOG(error, "read  Path,~p error,~p ~n", [Path, Reason]),
+            #{};
+        {ok, Bin} ->
+%%                        jsx:decode(Bin, [{labels, binary}, return_maps])
+            jsx:decode(Bin)
+    end.
