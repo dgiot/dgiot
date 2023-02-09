@@ -864,7 +864,6 @@
           "application/json"
         ],
         "summary": "获取大屏数据",
-        "security": [],
         "description": "获取大屏数据",
         "parameters": [
           {

@@ -263,12 +263,10 @@ get_sum(BatchList) when is_list(BatchList) ->
                 Acc + dgiot_utils:to_int(PickNum);
             (_, Acc) ->
                 Acc
-    end,0,BatchList);
+        end, 0, BatchList);
 
 get_sum(_) ->
     0.
-%%InitNum = 10001,ProductId = <<"5cd9ae6a63">>,WorkerList = re:split(<<"朱文波,周海明,祁新军,王信红,胡大芳,陈卫红,吴正碧,王虎,王东华,陈绿娟,冷群龙,邹白云,金爱莲,陈继强,赵洪彬,张洪平,李国苹,曾天权,潘宗文,张珍群,胡剑波,张晓兰"/utf8>>,<<",">>).
-%%dgiot_parse:update_object(<<"Product">>, ProductId,  #{<<"ACL">> => #{<<"*">> => #{<<"read">> => true}, <<"role:生产计划部门"/utf8>> => #{<<"read">> => true, <<"write">> => true}}})
 batch_create_worker(ProductId, WorkerList, InitNum) ->
     lists:foldl(
         fun(Worker, Num) ->
