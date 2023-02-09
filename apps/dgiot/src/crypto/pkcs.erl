@@ -83,3 +83,4 @@ unpad3(Bin,PadBin,Size) ->
         _ ->
             {error,bad_padding}
     end.
+

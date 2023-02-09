@@ -18,40 +18,90 @@
 -author("johnliu").
 
 %% API
--export([encode/3, encode/4, decode/4]).
--compile({nowarn_deprecated_function, [{crypto, block_encrypt, 4},{crypto, block_decrypt, 4}]}).
--define(AES_IV, <<"00000000000000000000000000000000">>).
+-export([encode/4, decode/4]).
+%% https://www.erlang.org/doc/man/crypto.html
+%% aes_cbc128
+%% aes_cbc256
+%% aes_ige256
+%% aes_cfb8
+%% aes_cfb128
+%% aes_gcm
 
-encode(Type, AES_KEY, Bin) ->
-    encode(Type, AES_KEY, ?AES_IV, Bin).
+%%ZeroPadding，数据长度不对齐时使用0填充，否则不填充
+%%PKCS7Padding，假设数据长度需要填充n(n>0)个字节才对齐，那么填充n个字节，每个字节都是n;如果数据本身就已经对齐了，则填充一块长度为块大小的数据，每个字节都是块大小
+%%PKCS5Padding，PKCS7Padding的子集，块大小固定为8字节。
+%%
+%% 在AES的CBC加密、解密模式中，包括三个参数：
+%% 1、Key，这是AES加密的密钥，可为iolist类型，也可为binary类型，长度必须为128位，也就是16个字节；
+%% 2、IVec，初始向量，类型为binary，长度必须为128位，16个字节；
+%% 3、Text，待加密的数据，类型可为iolist也可为binary，但是，长度也必须是128位；
+%% Types:
+%% Key = Text = iolist() | binary()
+%% IVec = Cipher = binary()
+%% 根据 AES_KEY 的长度自动判定是
+%% +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
+%% | KEY长度    | IVec长度  | Text       | 算法类型         |
+%% +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
+%% | 16字节     |  16字节   | 16字节*N   | aes_128_cbc      |
+%% +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
+%% | 24字节     |  24字节   | 24字节*N   | aes_192_cbc      |
+%% +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
+%% | 32字节     |  32字节   | 24字节*N   | aes_256_cbc      |
+%% +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
+encode(aes_cbc, AES_KEY,  AES_IV,  Bin) ->
+    PadBin = pkcs:pad(Bin, size(Bin)),
+    crypto:crypto_one_time(aes_cbc, AES_KEY, AES_IV, [<<Bin/binary, PadBin/binary>>], true);
 
-encode(aes_cbc128, AES_KEY, AES_IV0, Bin) ->
-    AES_IV = dgiot_utils:hex_to_binary(AES_IV0),
-    Len = erlang:size(Bin),
-    Value = 16 - (Len rem 16),
-    PadBin = binary:copy(<<0:8>>, Value),
-%%    EncodeB = crypto:block_encrypt(aes_cbc128, AES_KEY, AES_IV, <<Bin/binary, PadBin/binary>>),
-    EncodeB = crypto:crypto_one_time(aes_cbc128, AES_KEY, AES_IV, [<<Bin/binary, PadBin/binary>>], true),
-%%    io:format("~s ~p EncodeB ~p ~n", [?FILE, ?LINE, EncodeB]),
-    dgiot_utils:binary_to_hex(EncodeB);
+encode(aes_cfb8, AES_KEY, AES_IV, Text) ->
+    crypto:crypto_one_time(aes_cfb8, AES_KEY, AES_IV, [Text], true);
 
-encode(aes_cfb8, AES_KEY, AES_IV, Bin) ->
-%%    EncodeB = crypto:block_encrypt(aes_cfb8, AES_KEY, AES_IV, Bin),
-    EncodeB = crypto:crypto_one_time(aes_cfb8, AES_KEY, AES_IV, [Bin], true),
-%%    io:format("~s ~p EncodeB ~p ~n", [?FILE, ?LINE, EncodeB]),
-    dgiot_utils:binary_to_hex(EncodeB).
+encode(aes_cfb128, AES_KEY, AES_IV, Text) ->
+    crypto:crypto_one_time(aes_cfb128, AES_KEY, AES_IV, [Text], true);
 
-decode(aes_cbc128, AES_KEY, AES_IV, Bin) ->
-    Bin1 = dgiot_utils:hex_to_binary(Bin),
-    case erlang:size(Bin1) rem 16 of
+encode(aes_ctr, AES_KEY, AES_IV, Text)->
+    crypto:crypto_one_time(aes_ctr, AES_KEY, AES_IV, [Text], true);
+
+encode(aes_ecb, AES_KEY, AES_IV, Text) ->
+    crypto:crypto_one_time(aes_ecb, AES_KEY, AES_IV, [Text], true);
+
+encode(aes_gcm, AES_KEY, AES_IV, Text) ->
+    crypto:crypto_one_time(aes_gcm, AES_KEY, AES_IV, [Text], true);
+
+encode(aes_ccm, AES_KEY, AES_IV, Text) ->
+    crypto:crypto_one_time(aes_ccm, AES_KEY, AES_IV, [Text], true);
+
+encode(Type, AES_KEY, AES_IV, Text) ->
+    crypto:crypto_one_time(Type, AES_KEY, AES_IV, [Text], true).
+
+decode(aes_cbc, AES_KEY, AES_IV, Text) ->
+    case erlang:size(Text) rem 16 of
         0 ->
-%%            Bin2 = crypto:block_decrypt(aes_cbc128, AES_KEY, AES_IV, Bin1),
-            Bin2 = crypto:crypto_one_time(aes_cbc128, AES_KEY, AES_IV, [Bin1], false),
-%%            io:format("~s ~p EncodeB ~p ~n", [?FILE, ?LINE, Bin2]),
+            Bin2 = crypto:crypto_one_time(aes_cbc, AES_KEY, AES_IV, [Text], false),
             binary:part(Bin2, {0, byte_size(Bin2) - binary:last(Bin2)});
         _ ->
             {error, 1102}
-    end.
+    end;
+
+decode(aes_cfb8, AES_KEY, AES_IV, Text) ->
+    crypto:crypto_one_time(aes_cfb8, AES_KEY, AES_IV, [Text], false);
+
+decode(aes_cfb128, AES_KEY, AES_IV, Text) ->
+    crypto:crypto_one_time(aes_cfb128, AES_KEY, AES_IV, [Text], false);
+
+decode(aes_ctr, AES_KEY, AES_IV, Text)->
+    crypto:crypto_one_time(aes_ctr, AES_KEY, AES_IV, [Text], false);
+
+decode(aes_ecb, AES_KEY, AES_IV, Text) ->
+    crypto:crypto_one_time(aes_ecb, AES_KEY, AES_IV, [Text], false);
+
+decode(aes_gcm, AES_KEY, AES_IV, Text) ->
+    crypto:crypto_one_time(aes_gcm, AES_KEY, AES_IV, [Text], false);
+
+decode(aes_ccm, AES_KEY, AES_IV, Text) ->
+    crypto:crypto_one_time(aes_ccm, AES_KEY, AES_IV, [Text], false);
+
+decode(Type, AES_KEY, AES_IV, Text) ->
+    crypto:crypto_one_time(Type, AES_KEY, AES_IV, [Text], false).
 
 
 
