@@ -56,6 +56,14 @@
     , last_month/1
     , get_today_stamp/0
     , get_today_stamp/1
+    , get_tomonth_stamp/0
+    , get_tomonth_stamp/1
+    , get_tomonth_last/0
+    , get_tomonth_last/1
+    , get_toyear_stamp/0
+    , get_toyear_stamp/1
+    , get_toyear_last/0
+    , get_toyear_last/1
 ]).
 
 -define(MS_ONE_DAY, 86400000).
@@ -366,4 +374,42 @@ get_today_stamp(Date) when is_integer(Date) ->
     {{Year, Month, Day}, _} = to_localtime(Date),
     dgiot_datetime:localtime_to_unixtime({{Year, Month, Day}, {0, 0, 0}});
 get_today_stamp(Date) ->
+    Date.
+
+get_tomonth_stamp() ->
+    {{Year, Month, _}, _} = local_time(),
+    dgiot_datetime:localtime_to_unixtime({{Year, Month, 1}, {0, 0, 0}}).
+get_tomonth_stamp(Date) when is_integer(Date) ->
+    {{Year, Month, _}, _} = to_localtime(Date),
+    dgiot_datetime:localtime_to_unixtime({{Year, Month, 1}, {0, 0, 0}});
+get_tomonth_stamp(Date) ->
+    Date.
+
+get_tomonth_last() ->
+    {{Year, Month, _}, _} = dgiot_datetime:local_time(),
+    Day = calendar:last_day_of_the_month(Year, Month),
+    dgiot_datetime:localtime_to_unixtime({{Year, Month, Day}, {23, 59, 59}}).
+get_tomonth_last(Date) when is_integer(Date) ->
+    {{Year, Month, _}, _} = to_localtime(Date),
+    Day = calendar:last_day_of_the_month(Year, Month),
+    dgiot_datetime:localtime_to_unixtime({{Year, Month, Day}, {23, 59, 59}});
+get_tomonth_last(Date) ->
+    Date.
+
+get_toyear_stamp() ->
+    {{Year, _, _}, _} = local_time(),
+    dgiot_datetime:localtime_to_unixtime({{Year, 1, 1}, {0, 0, 0}}).
+get_toyear_stamp(Date) when is_integer(Date) ->
+    {{Year, _, _}, _} = to_localtime(Date),
+    dgiot_datetime:localtime_to_unixtime({{Year, 1, 1}, {0, 0, 0}});
+get_toyear_stamp(Date) ->
+    Date.
+
+get_toyear_last() ->
+    {{Year, _, _}, _} = local_time(),
+    dgiot_datetime:localtime_to_unixtime({{Year, 12, 31}, {23, 59, 59}}).
+get_toyear_last(Date) when is_integer(Date) ->
+    {{Year, _, _}, _} = to_localtime(Date),
+    dgiot_datetime:localtime_to_unixtime({{Year, 12, 31}, {23, 59, 59}});
+get_toyear_last(Date) ->
     Date.
