@@ -198,6 +198,12 @@ get_time(V, Interval) ->
             dgiot_datetime:format(dgiot_datetime:to_localtime(NewV), <<"YY-MM-DD">>);
         <<"y">> ->
             dgiot_datetime:format(dgiot_datetime:to_localtime(NewV), <<"YY">>);
+        <<"H">> ->
+            dgiot_datetime:format(dgiot_datetime:to_localtime(NewV), <<"HH">>);
+        <<"D">> ->
+            dgiot_datetime:format(dgiot_datetime:to_localtime(NewV), <<"DD">>);
+        <<"M">> ->
+            dgiot_datetime:format(dgiot_datetime:to_localtime(NewV), <<"MM">>);
         _ ->
             dgiot_datetime:format(dgiot_datetime:to_localtime(NewV), <<"YY-MM-DD HH:NN:SS">>)
     end.
