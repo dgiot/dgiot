@@ -74,7 +74,7 @@ encode(Type, AES_KEY, AES_IV, Text) ->
     crypto:crypto_one_time(Type, AES_KEY, AES_IV, [Text], true).
 
 decode(aes_cbc, AES_KEY, AES_IV, Text) ->
-    case erlang:size(Text) rem 16 of
+    case erlang:size(Text) rem size(AES_KEY) of
         0 ->
             Bin2 = crypto:crypto_one_time(aes_cbc, AES_KEY, AES_IV, [Text], false),
             binary:part(Bin2, {0, byte_size(Bin2) - binary:last(Bin2)});
