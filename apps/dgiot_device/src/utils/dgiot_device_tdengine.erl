@@ -97,7 +97,7 @@ get_history_data(Channel, ProductId, TableName, Query) ->
                         <<" where createdat >= ", Starttime/binary, " AND createdat <= ", Endtime/binary, " INTERVAL(", Interval/binary, ") ", Limit/binary, ";">>
                 end,
             Sql = <<"SELECT ", Newkeys/binary, " FROM ", DB/binary, TableName/binary, Tail/binary>>,
-            ?LOG(debug, "Sql ~s", [Sql]),
+%%            io:format("~s ~p Sql = ~p.~n", [?FILE, ?LINE, Sql]),
             {Names, dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_query, Sql)}
         end).
 
