@@ -48,7 +48,7 @@
 %% +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
 %% | 32字节     |  32字节   | 24字节*N   | aes_256_cbc      |
 %% +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
-encode(aes_cbc, AES_KEY,  AES_IV,  Bin) ->
+encode(aes_cbc, AES_KEY, AES_IV, Bin) ->
     PadBin = pkcs:pad(Bin, size(Bin)),
     crypto:crypto_one_time(aes_cbc, AES_KEY, AES_IV, [<<Bin/binary, PadBin/binary>>], true);
 
@@ -58,7 +58,7 @@ encode(aes_cfb8, AES_KEY, AES_IV, Text) ->
 encode(aes_cfb128, AES_KEY, AES_IV, Text) ->
     crypto:crypto_one_time(aes_cfb128, AES_KEY, AES_IV, [Text], true);
 
-encode(aes_ctr, AES_KEY, AES_IV, Text)->
+encode(aes_ctr, AES_KEY, AES_IV, Text) ->
     crypto:crypto_one_time(aes_ctr, AES_KEY, AES_IV, [Text], true);
 
 encode(aes_ecb, AES_KEY, AES_IV, Text) ->
@@ -77,7 +77,12 @@ decode(aes_cbc, AES_KEY, AES_IV, Text) ->
     case erlang:size(Text) rem size(AES_KEY) of
         0 ->
             Bin2 = crypto:crypto_one_time(aes_cbc, AES_KEY, AES_IV, [Text], false),
-            binary:part(Bin2, {0, byte_size(Bin2) - binary:last(Bin2)});
+            case pkcs:unpad(Bin2, size(Bin2)) of
+                {ok, Data} ->
+                    Data;
+                Result ->
+                    Result
+            end;
         _ ->
             {error, 1102}
     end;
@@ -88,7 +93,7 @@ decode(aes_cfb8, AES_KEY, AES_IV, Text) ->
 decode(aes_cfb128, AES_KEY, AES_IV, Text) ->
     crypto:crypto_one_time(aes_cfb128, AES_KEY, AES_IV, [Text], false);
 
-decode(aes_ctr, AES_KEY, AES_IV, Text)->
+decode(aes_ctr, AES_KEY, AES_IV, Text) ->
     crypto:crypto_one_time(aes_ctr, AES_KEY, AES_IV, [Text], false);
 
 decode(aes_ecb, AES_KEY, AES_IV, Text) ->
