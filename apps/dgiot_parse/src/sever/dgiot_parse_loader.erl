@@ -74,7 +74,7 @@ init([From, Name, Class, Query, PageIndex, PageSize, MaxTotal, Success]) ->
     }};
 
 init(Args) ->
-    ?LOG(error," Args ~p",[ Args]).
+    ?LOG(error, " Args ~p", [Args]).
 
 handle_call(_Request, _From, State) ->
     {reply, ok, State}.
@@ -82,7 +82,7 @@ handle_call(_Request, _From, State) ->
 handle_cast(_Request, State) ->
     {noreply, State}.
 
-handle_info(start, #state{ name = Name, class = Class, query = Query} = State) ->
+handle_info(start, #state{name = Name, class = Class, query = Query} = State) ->
     case dgiot_parse:query_object(Name, Class, Query#{<<"limit">> => 0, <<"count">> => 1}) of
         {error, _Reason} ->
             erlang:send_after(3000, self(), start),
@@ -131,7 +131,7 @@ load_page(#state{
         true ->
             case dgiot_parse:read_page(Name, Class, Query, Skip, CurrentSize) of
                 {error, Reason} ->
-                    ?LOG(error,"load ~p error, Query:~p, Reason:~p", [Class, Query, Reason]),
+                    ?LOG(error, "load ~p error, Query:~p, Reason:~p", [Class, Query, Reason]),
                     erlang:send_after(3000, self(), {load, State#state{
                         page_index = PageIndex
                     }});
@@ -145,7 +145,7 @@ load_page(#state{
                         true ->
                             self() ! complete;
                         false ->
-                            ?LOG(debug,"~s Load ~s [~p/~p] Index:~p", [Rate, Class, LoadCount, Total, PageIndex]),
+                            ?LOG(debug, "~s Load ~s [~p/~p] Index:~p", [Rate, Class, LoadCount, Total, PageIndex]),
                             case LastCount > PageSize of
                                 true ->
                                     load_page(State#state{page_index = PageIndex + 1});

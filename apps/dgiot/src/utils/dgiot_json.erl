@@ -73,7 +73,7 @@ safe_encode(Term, Opts) ->
     end.
 
 -spec(decode(json_text()) -> json_term()).
-decode(Json) -> decode(Json, []).
+decode(Json) -> decode(Json, [return_maps]).
 
 -spec(decode(json_text(), decode_options()) -> json_term()).
 decode(Json, Opts) ->

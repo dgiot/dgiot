@@ -41,7 +41,7 @@ load_cache() ->
     Query = #{
         <<"where">> => #{}
     },
-    dgiot_parse_loader:start(<<"Product">>, Query, 0, 100, 1000000, Success).
+    dgiot_parse_loader:start(<<"Product">>, Query, 0, 1000, 1000000, Success).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 save_prod(ProductId, #{<<"thing">> := _thing} = Product) ->

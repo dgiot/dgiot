@@ -39,8 +39,8 @@
 start_connect(#{
     <<"auto_reconnect">> := Recon,
     <<"reconnect_times">> := ReTimes,
-    <<"port">> := Port,
-    <<"ip">> := Ip,
+    <<"port">> := _Port,
+    <<"ip">> := _Ip,
     <<"productid">> := ProductId,
     <<"hb">> := HB,
     <<"login">> := Login,
@@ -54,7 +54,8 @@ start_connect(#{
         login = Login,
         module = dgiot_utils:to_atom(Module)
     },
-    dgiot_udp_client:start_link(?MODULE, Ip, Port, State).
+    State.
+%%    dgiot_udp_client:start_link(?MODULE, Ip, Port, State).
 
 init(UDPState) ->
     {ok, UDPState}.
