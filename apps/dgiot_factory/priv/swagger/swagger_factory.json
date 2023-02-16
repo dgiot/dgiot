@@ -867,19 +867,19 @@
         "description": "获取大屏数据",
         "parameters": [
           {
-            "name": "orderType",
+            "name": "ordertype",
             "in": "query",
             "type": "string",
             "description": "计划单类型"
           },
           {
-            "name": "orderId",
+            "name": "ordername",
             "in": "query",
             "type": "string",
             "description": "计划单号"
           },
           {
-            "name": "productId",
+            "name": "productid",
             "in": "query",
             "type": "string",
             "description": "产品编号"

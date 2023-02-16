@@ -42,5 +42,5 @@ init_ets() ->
     dgiot_data:init(?WORKER),
     dgiot_data:init(?FACTORY_ORDER),
     dgiot_data:init(?FACTORY_QUALITY),
-    dgiot_data:init(?FACTORY).
+    dgiot_data:init(?FACTORYSTATIS).
 
