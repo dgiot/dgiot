@@ -132,6 +132,8 @@ do_request(put_worker_shift, _Args, _Context, _Body) ->
     end;
 
 
+
+
 do_request(get_data, #{<<"productId">> := undefined, <<"objectId">> := DeviceId} = _Args, _Context, _Body) ->
     case dgiot_device_cache:lookup(DeviceId) of
         {ok, #{<<"productid">> := ProductId}} ->
@@ -144,23 +146,24 @@ do_request(get_data, #{<<"productId">> := ProductId, <<"objectId">> := DeviceId,
     <<"function">> := Function, <<"functionmap">> := FunctionMap, <<"group">> := Group, <<"having">> := Having,
     <<"order">> := Order, <<"where">> := Where, <<"limit">> := Limit, <<"skip">> := Skip} = _Args,
     #{<<"sessionToken">> := SessionToken} = _Context, _Body) ->
-%%    io:format("~s ~p _Args = ~p  ~n", [?FILE, ?LINE, _Args]),
     case dgiot_product_tdengine:get_channel(SessionToken) of
         {error, Error} ->
-%%            io:format("~s ~p ProductId = ~p  ~n", [?FILE, ?LINE, ProductId]),
             {error, Error};
         {ok, Channel} ->
             case dgiot_factory_data:get_history_data(ProductId, DeviceId, Type, Function, FunctionMap, Group, Having, Where, Order, Channel, Limit, Skip) of
                 {ok, {Total, Res}} ->
                     {ok, #{<<"status">> => 0, msg => <<"数据请求成功"/utf8>>, <<"data">> => #{<<"total">> => Total, <<"items">> => Res}}};
                 _ ->
-                    io:format("~s ~p here   ~n", [?FILE, ?LINE]),
                     {error, <<"get_data_failed">>}
             end;
         _ ->
-            io:format("~s ~p ProductId = ~p  ~n", [?FILE, ?LINE, ProductId]),
             {error, <<"get_data_failed">>}
     end;
+
+
+
+
+
 do_request(get_material, #{<<"objectId">> := DeviceId, <<"dept">> := Depart} = _Args, _Context, _Req) ->
     case dgiot_factory_material:get_material_record(DeviceId, Depart) of
         {ok, Res} ->
@@ -239,7 +242,6 @@ do_request(get_shift_time, #{<<"product">> := ProductId, <<"shift">> := Shift} =
     {ok, #{<<"status">> => 0, msg => <<"操作成功"/utf8>>, <<"data">> => Res}};
 do_request(post_duplicate_shift, #{<<"product">> := ProductId, <<"sink_date">> := SinkDate, <<"where">> := Where} = _Arg,
     #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
-    io:format("~s ~p _Args = ~p  ~n", [?FILE, ?LINE, _Arg]),
     case dgiot_product_tdengine:get_channel(SessionToken) of
         {error, Error} ->
             {error, Error};
@@ -257,13 +259,19 @@ do_request(put_sumpick, #{<<"BatchList">> := BatchList} = _Arg, _Context, _Req) 
     Sum = dgiot_factory_utils:get_sum(BatchList),
     {ok, #{<<"status">> => 0, msg => <<"操作成功"/utf8>>, <<"data">> => #{<<"SumPick">> => Sum}}};
 
-do_request(get_factory_screen, _Arg, _Context, _Req) ->
-    case dgiot_factory_screen:get_screen(_Arg) of
-        {ok,Res}->
-            {ok, #{<<"status">> => 0, msg => <<"操作成功"/utf8>>, <<"data">> =>  Res}};
-        _R->
-            io:format("~s ~p _R = ~p.~n", [?FILE, ?LINE, _R]),
-            {ok, #{<<"status">> => 1, msg => <<"操作失败"/utf8>>}}
+do_request(get_factory_screen, _Arg, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
+    case dgiot_product_tdengine:get_channel(SessionToken) of
+        {error, Error} ->
+            {error, Error};
+        {ok, Channel} ->
+            Arg = dgiot_factory_utils:kill_undefined(_Arg),
+            case dgiot_factory_screen:get_screen(Arg, Channel) of
+                {ok, Res} ->
+                    {ok, #{<<"status">> => 0, msg => <<"操作成功"/utf8>>, <<"data">> => Res}};
+                _R ->
+                    io:format("~s ~p _R = ~p.~n", [?FILE, ?LINE, _R]),
+                    {ok, #{<<"status">> => 1, msg => <<"操作失败"/utf8>>}}
+            end
     end;
 
 %%  服务器不支持的API接口

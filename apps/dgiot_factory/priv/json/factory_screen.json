@@ -1,0 +1,170 @@
+{
+  "process": {
+    "legend": {
+      "data": [
+        "产量"
+      ]
+    },
+    "series": [
+      {
+        "data": [
+          14,
+          0,
+          0
+        ],
+        "name": "总产量",
+        "type": "bar"
+      },
+      {
+        "data": [
+          50,
+          0,
+          0
+        ],
+        "name": "实际产量",
+        "type": "bar"
+      },
+      {
+        "data": [
+          1072,
+          1072,
+          1072
+        ],
+        "name": "计划产量",
+        "type": "bar"
+      }
+    ],
+    "title": {
+      "text": "车间产量统计"
+    },
+    "tooltip": {
+      "axisPointer": {
+        "type": "shadow"
+      },
+      "trigger": "axis"
+    },
+    "xAxis": {
+      "data": [
+        "1-1#水刺车间",
+        "2-1#印染车间",
+        "3-1#分切车间"
+      ]
+    },
+    "yAxis": {}
+  },
+  "product": {
+    "legend": {
+      "data": [
+        "产量"
+      ]
+    },
+    "series": [
+      {
+        "data": [
+          0,
+          0,
+          14
+        ],
+        "name": "总产量",
+        "type": "bar"
+      },
+      {
+        "data": [
+          0,
+          0,
+          50
+        ],
+        "name": "实际产量",
+        "type": "bar"
+      },
+      {
+        "data": [
+          1072,
+          1072,
+          1072
+        ],
+        "name": "计划产量",
+        "type": "bar"
+      }
+    ],
+    "title": {
+      "text": "产品产量统计"
+    },
+    "tooltip": {
+      "axisPointer": {
+        "type": "shadow"
+      },
+      "trigger": "axis"
+    },
+    "xAxis": {
+      "data": [
+        "M0201000122",
+        "M0201000371",
+        "M0201000440"
+      ]
+    },
+    "yAxis": {}
+  },
+  "order": {
+    "legend": {
+      "data": [
+        "产量"
+      ]
+    },
+    "series": [
+      {
+        "data": [
+          0,
+          0,
+          14
+        ],
+        "name": "总产量",
+        "type": "bar"
+      },
+      {
+        "data": [
+          0,
+          0,
+          50
+        ],
+        "name": "实际产量",
+        "type": "bar"
+      },
+      {
+        "data": [
+          1072,
+          1072,
+          1072
+        ],
+        "name": "计划产量",
+        "type": "bar"
+      }
+    ],
+    "title": {
+      "text": "产品产量统计"
+    },
+    "tooltip": {
+      "axisPointer": {
+        "type": "shadow"
+      },
+      "trigger": "axis"
+    },
+    "xAxis": {
+      "data": [
+        "M0201000122",
+        "M0201000371",
+        "M0201000440"
+      ]
+    },
+    "yAxis": {}
+  },
+  "total": {
+    "produced": {
+      "name": "生产数量",
+      "func": "sum"
+    },
+    "produced": 14,
+    "progress": 50,
+    "schedule": 3216
+  }
+}

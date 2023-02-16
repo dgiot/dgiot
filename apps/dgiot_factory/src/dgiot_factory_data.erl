@@ -620,16 +620,6 @@ get_history_data(ProductId, DeviceId, Type, Function, FunctionMap, Group, Having
 
     end.
 
-%%    {ok, #{<<"results">> := [#{<<"count">> := Total}]}} = dgiot_tdengine:transaction(Channel,
-%%        fun(Context) ->
-%%            Sql = <<"SELECT count(*) as count , FROM ", From/binary, GROPU/binary, WHERE/binary, ORDER/binary, ";">>,
-%%            dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_query, Sql)
-%%        end),
-%%    {ok, {Total, filter_data(HistoryData)}}.
-
-
-
-
 
 group(undefined) ->
     <<" ">>;
@@ -639,11 +629,20 @@ have(undefined) ->
     <<" ">>;
 have(Having) ->
     <<" having ", Having/binary>>.
+
 where(undefined) ->
     <<" ">>;
 
-where(Where) ->
-    <<" where ", Where/binary>>.
+where(Where) when is_binary(Where) ->
+    case byte_size(Where) > 0 of
+        true ->
+            <<" where ", Where/binary>>;
+        _ ->
+            <<" ">>
+    end;
+where(_) ->
+    <<"">>.
+
 order(undefined) ->
     <<" ">>;
 order(Order) ->
@@ -668,6 +667,8 @@ select(ProductId, Type, undefined, _) ->
         end, <<"">>, ThingList),
     Res;
 
+%%使用FunctiongMap1实现指定字段指定函数的要求格式如下
+%%#{<<"sum">> => [ <<"thing1">>,<<"thing2">>],<<"avg">> => <<"thing3">>}
 select(ProductId, Type, Function, FunctiongMap1) ->
     ThingList = get_thing_list(ProductId, Type),
     FunctiongMap = dgiot_utils:to_map(FunctiongMap1),
@@ -675,14 +676,24 @@ select(ProductId, Type, Function, FunctiongMap1) ->
         lists:foldl(
             fun(Thing, Acc) ->
                 Fun = maps:fold(
-                    fun(Func, FuncThingList, Acc1) ->
-                        case lists:member(Thing, FuncThingList) of
-                            true ->
-                                Func;
-                            _ ->
-                                Acc1
-                        end
+                    fun
+                        (Func, FuncThingList, Acc1) when is_list(FuncThingList) ->
+                            case lists:member(Thing, FuncThingList) of
+                                true ->
+                                    Func;
+                                _ ->
+                                    Acc1
+                            end;
+                        (Func, FuncThing, Acc1) ->
+                            case Thing == FuncThing of
+                                true ->
+                                    Func;
+                                _ ->
+                                    Acc1
+                            end
                     end, <<"null">>, FunctiongMap),
+
+
                 case Fun of
                     <<"null">> ->
                         <<Acc/binary, " , ", Function/binary, "( ", Thing/binary, " ) as ", Thing/binary>>;

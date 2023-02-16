@@ -11,6 +11,7 @@
 -define(WORKER, worker).
 -define(FACTORY_ORDER,factory_order).
 -define(FACTORY_QUALITY,factory_quality).
+-define(FACTORYSTATIS,factorystatis).
 -define(FACTORY,factory).
 -define(WORKERSHIFT,workershift).
 -define(MAXWORKERNUM,1024).

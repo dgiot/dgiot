@@ -34,7 +34,6 @@
 -export([get_id/2, after_handle/4, handle_data/8, get_card_data/2]).
 -export([get_sub_product/1, get_new_acl/2, init_worker_device/3]).
 -export([get_roll_dev_id/2]).
--export([save2td/3]).
 %% 注册通道类型
 -channel_type(#{
     cType => ?TYPE,
@@ -115,7 +114,7 @@ handle_message({sync_parse, _Pid, 'after', put, _Token, <<"_User">>, #{<<"object
         ProductId ->
             case dgiot_parse:get_object(<<"_User">>, UserId) of
                 {ok, #{<<"username">> := WorkerNum, <<"nick">> := WorkerName}} ->
-                    io:format("~s ~p ProductId = ~p ~n",[?FILE,?LINE,ProductId]),
+                    io:format("~s ~p ProductId = ~p ~n", [?FILE, ?LINE, ProductId]),
                     init_worker_device(ProductId, WorkerNum, WorkerName);
                 _ ->
                     pass
@@ -137,26 +136,22 @@ handle_message({sync_parse, _Pid, 'after', post, _Token, <<"_User">>, #{<<"objec
     end,
     {ok, State};
 handle_message({sync_parse, _Pid, 'before', put, Token, <<"Device">>,
-    #{<<"content">> := Content, <<"id">> := TaskDeviceId} = _QueryData},
+    #{<<"content">> := #{<<"person">> := #{<<"type">> := PersonType}} = Content, <<"id">> := TaskDeviceId} = _QueryData},
     #state{id = ChannelId} = State) ->
     io:format("~s ~p TaskDeviceId = ~p ~n", [?FILE, ?LINE, TaskDeviceId]),
 %%    case dgiot_device_cache:lookup(TaskDeviceId) of
 %%        {ok, #{<<"productid">> := TaskProductId}} ->
     case dgiot_parse:get_object(<<"Device">>, TaskDeviceId) of
         {ok, #{<<"product">> := #{<<"objectId">> := TaskProductId}}} ->
-            case Content of
-                #{<<"person">> := #{<<"type">> := PersonType}} ->
-                    dgiot_metrics:inc(dgiot_factory, <<"input_num">>, 1),
-                    case process_data(Content, PersonType, Token, TaskDeviceId) of
-                        {BatchProductId, BatchDeviceId, BatchAddr, NewData} ->
-                            handle_data(TaskProductId, TaskDeviceId, BatchProductId, BatchDeviceId, BatchAddr, PersonType, NewData, ChannelId),
-                            {ok, State};
-                        _ ->
-                            {ok, State}
-                    end;
+            dgiot_metrics:inc(dgiot_factory, <<"input_num">>, 1),
+            case process_data(Content, PersonType, Token, TaskDeviceId) of
+                {BatchProductId, BatchDeviceId, BatchAddr, NewData} ->
+                    handle_data(TaskProductId, TaskDeviceId, BatchProductId, BatchDeviceId, BatchAddr, PersonType, NewData, ChannelId),
+                    {ok, State};
                 _ ->
                     {ok, State}
             end;
+
         _ ->
             {ok, State}
     end;
@@ -185,16 +180,17 @@ stop(ChannelType, ChannelId, _State) ->
 %%    save_data(ProductId, Id, DevAddr, DeviceId, PersonType, Payload).
 
 
-handle_data(_TaskProductId, TaskDeviceId, BatchProductId, BatchDeviceId, BatchAddr, PersonType, NewData, ChannelId) ->
+handle_data(TaskProductId, TaskDeviceId, BatchProductId, BatchDeviceId, BatchAddr, PersonType, NewData, ChannelId) ->
     io:format("~s ~p Type = ~p  ~n", [?FILE, ?LINE, PersonType]),
     io:format("~s ~p BatchProductId = ~p  ~n", [?FILE, ?LINE, BatchProductId]),
     io:format("~s ~p BatchDeviceId = ~p  ~n", [?FILE, ?LINE, BatchDeviceId]),
-    NewPayLoad = run_factory_hook(_TaskProductId, TaskDeviceId, BatchProductId, BatchDeviceId, PersonType, NewData, ChannelId),
+    NewPayLoad = run_factory_hook(TaskProductId, TaskDeviceId, BatchProductId, BatchDeviceId, PersonType, NewData, ChannelId),
     dgiot_data:insert(?FACTORY_ORDER, {BatchProductId, BatchDeviceId, PersonType}, NewPayLoad),
     OldData = get_card_data(BatchProductId, BatchDeviceId),
     ALlData = dgiot_map:merge(OldData, NewPayLoad),
+    dgiot_factory_statis:do_statis(TaskProductId, TaskDeviceId, PersonType, NewPayLoad),
     save2parse(BatchProductId, BatchDeviceId, ALlData),
-    save2td(BatchProductId, BatchAddr, ALlData).
+    dgiot_factory_utils:save2td(BatchProductId, BatchAddr, ALlData).
 get_card_data(BatchProductId, BatchDeviceId) ->
     DevcieTypeList = dgiot_product:get_devicetype(BatchProductId) -- [<<"quality">>],
     lists:foldl(
@@ -244,6 +240,7 @@ run_factory_hook(TaskProductId, TaskDeviceId, BatchProductId, BatchDeviceId, Per
         {ok, [{ok, Res}]} ->
             Res;
         _ ->
+            io:format("~s ~p run_hook_failed,PersonType = ~p. ~n", [?FILE, ?LINE, PersonType]),
             NewData
     end.
 
@@ -345,10 +342,6 @@ save2parse(BatchProductId, BatchDeviceId, ALlData) ->
               end,
     dgiot_parse:update_object(<<"Device">>, BatchDeviceId, #{<<"content">> => Content}).
 
-save2td(BatchProductId, BatchAddr, Data) ->
-    FlatternData = dgiot_map:flatten(Data),
-    NumData = dgiot_product_enum:turn_num(FlatternData, BatchProductId),
-    dgiot_task:save_td(BatchProductId, BatchAddr, NumData, #{}).
 
 
 get_wokrer_id(Name, DevType) ->
@@ -398,3 +391,5 @@ init_worker_device(ProductId, WorkerNum, WorkerName) ->
                     error
             end
     end.
+
+

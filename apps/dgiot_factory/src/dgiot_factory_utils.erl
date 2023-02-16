@@ -23,7 +23,9 @@
 -export([get_worker/1, get_children/1, check_workteam/1]).
 -export([get_sum/1]).
 -export([batch_create_worker/3]).
--export([get_json_file/1]).
+-export([get_json_file/1, unflatten_map/1, flatten_map/1]).
+-export([save2td/3, save2td/2]).
+-export([kill_undefined/1]).
 
 
 
@@ -140,9 +142,6 @@ get_zero_binary(Acc, Num) ->
         _ ->
             Acc
     end.
-
-
-
 
 
 %%dgiot_data:insert(?WORKER, Id, {UserName, Nick,1}),
@@ -295,3 +294,195 @@ get_json_file(FileName) ->
 %%                        jsx:decode(Bin, [{labels, binary}, return_maps])
             jsx:decode(Bin)
     end.
+
+
+%%将字典扁平化处理
+%%{
+%%"cutting": {
+%%          "array": [
+%%                {"name": 1,     → cutting_array_1_name :1
+%%                "value": 2},    → cutting_array_1_value :2
+%%                {"name": 2,       → cutting_array_1_name :2
+%%                "value": 2}       → cutting_array_1_value :2
+%%]}}
+%%与dgiot_map:flattern不同，此对字典中的list结构进行处理。将list中每一项的序号添加在两层key之间，并通过unflatten_map函数复原成为字典结构。
+
+%%默认使用 _ 作为分割符
+flatten_map(Map) when is_map(Map) ->
+    flatten_map(Map, <<"_">>);
+flatten_map(Map) ->
+    Map.
+
+flatten_map(Map, Link) when is_map(Map) ->
+%%    遍历字典，对每次生成的字典调用merge函数进行合并
+    maps:fold(
+        fun(K, V, Acc) ->
+            maps:merge(Acc, flatten(<<K/binary>>, V, Link))
+        end, #{}, Map);
+
+flatten_map(Map, _) ->
+    Map.
+
+%%当传入对象仍为字典时，遍历字典并将字典的key加入head中
+flatten(Head, Map, Link) when is_map(Map) ->
+    maps:fold(
+        fun(K, V, Acc) ->
+            maps:merge(Acc, flatten(<<Head/binary, Link/binary, K/binary>>, V, Link))
+        end, #{}, Map);
+
+%%当传入的对象为list时，遍历list并将list的索引加入head中
+flatten(Head, List, Link) when is_list(List) ->
+    Len = length(List),
+    lists:foldl(
+        fun(Index, Acc) ->
+            V = lists:nth(Index, List),
+            BinIndex = dgiot_utils:to_binary(Index),
+            maps:merge(Acc, flatten(<<Head/binary, Link/binary, BinIndex/binary>>, V, Link))
+        end, #{}, lists:seq(1, Len));
+
+%%当传入对象非字典和列表时，认为到达字典终端，构建字典并返回
+flatten(Head, V, _) ->
+    #{<<Head/binary>> => V}.
+
+
+%%用于将扁平化之后的数据复原
+%%默认使用_作为分隔符
+unflatten_map(Map) when is_map(Map) ->
+    unflatten_map(Map, <<"_">>);
+unflatten_map(Map) ->
+    Map.
+
+unflatten_map(Map, Link) when is_map(Map) ->
+%%    遍历字典
+    maps:fold(
+        fun(L, V, Acc) ->
+%%            以分隔符切割key并逆转
+            KList = lists:reverse(re:split(L, Link)),
+%%            调用get_map函数使用切割过后的list生成一个map结构
+            NewMap = get_map(KList, V),
+            merge_map(Acc, NewMap)
+        end, #{}, Map);
+
+unflatten_map(Data, _) ->
+    Data.
+
+%%根据分割过后的keyList构建字典或者列表
+get_map(KList, V) ->
+    lists:foldl(
+        fun(X, Acc) when is_list(Acc) ->
+            Value = case length(Acc) of
+                        0 ->
+                            V;
+                        _ ->
+                            Acc
+                    end,
+
+            case re:run(X, <<"[0-9]">>) of
+                {match, _} ->
+
+                    get_list(a, dgiot_utils:to_int(X), Value);
+                _ ->
+                    #{X => Value}
+            end;
+            (X, Acc) when is_map(Acc) ->
+                Value = case maps:size(Acc) of
+                            0 ->
+                                V;
+                            _ ->
+                                Acc
+                        end,
+                case re:run(X, <<"[0-9]">>) of
+
+                    {match, _} ->
+
+                        get_list(a, dgiot_utils:to_int(X), Value);
+                    _ ->
+                        #{X => Value}
+                end
+        end, #{}, KList).
+
+%%根据传入的索引号生成list ，list的索引默认从1开始
+get_list(_Key, Index, Value) when Index > 0 ->
+    Head = lists:foldl(
+        fun(_, Acc) ->
+            Acc ++ [[]]
+        end, [], lists:seq(1, Index - 1)),
+    Head ++ [Value];
+get_list(_Key, _, Value) ->
+    [Value].
+
+
+
+
+
+
+
+
+
+
+
+merge_map(Data, NewData) ->
+    maps:fold(
+        fun(NewKey, NewValue, Acc) ->
+            case maps:find(NewKey, Acc) of
+                {ok, Value} when is_map(Value) and is_map(NewValue) ->
+                    Acc#{NewKey => merge_map(Value, NewValue)};
+                {ok, Value} when is_list(Value) and is_list(NewValue) ->
+                    Acc#{NewKey => merge_list(Value, NewValue)};
+                _ ->
+                    Acc#{NewKey => NewValue}
+            end
+        end, Data, NewData).
+
+merge_list([Map], [NewMap]) when is_map(Map) and is_map(NewMap) ->
+    [merge_map(Map, NewMap)];
+merge_list(OldList, NewList) ->
+    Len = length(NewList),
+    OldLen = length(OldList),
+    lists:foldl(
+        fun(Index, Acc) ->
+            case Index > OldLen of
+%%            超出原list，则直接加在末尾
+                true ->
+                    Acc ++ [lists:nth(Index, NewList)];
+%%                没超出则合并
+                _ ->
+                    NewIndex = lists:nth(Index, NewList),
+                    OldIndex = lists:nth(Index, OldList),
+                    Acc ++ [merge_index(OldIndex, NewIndex)]
+
+            end
+
+        end, [], lists:seq(1, Len)).
+merge_index([], NewIndex) ->
+    NewIndex;
+merge_index(OldIndex, []) ->
+    OldIndex;
+merge_index(OldIndex, NewIndex) when is_map(OldIndex) and is_map(NewIndex) ->
+    merge_map(OldIndex, NewIndex);
+merge_index(_, NewIndex) ->
+    NewIndex.
+
+save2td(DeviceId, Data) ->
+    case dgiot_device_cache:lookup(DeviceId) of
+        {ok, #{<<"productid">> := ProductId, <<"devaddr">> := DevAddr}} ->
+            save2td(ProductId, DevAddr, Data);
+        _ ->
+            pass
+    end.
+save2td(ProductId, DevAddr, Data) ->
+    FlatternData = dgiot_factory_utils:flatten_map(Data),
+    NumData = dgiot_product_enum:turn_num(FlatternData, ProductId),
+    dgiot_task:save_td(ProductId, DevAddr, NumData, #{}).
+
+kill_undefined(Arg) when is_map(Arg) ->
+    maps:fold(
+        fun(_, undefined, Acc) ->
+            Acc;
+            (_, V, Acc) when is_binary(V) and (byte_size(V)) ->
+                Acc;
+            (K, V, Acc) ->
+                Acc#{K => V}
+        end, #{}, Arg);
+kill_undefined(Arg) ->
+    Arg.
