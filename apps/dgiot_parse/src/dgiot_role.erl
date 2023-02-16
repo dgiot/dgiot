@@ -228,7 +228,7 @@ create_role(#{<<"name">> := Name} = Role) ->
                 <<"parent">> => dgiot_role:get_parent_role(maps:get(<<"roles">>, Role, [])),
                 <<"rules">> => dgiot_role:get_rules_role(maps:get(<<"rules">>, Role, []))
             },
-            case dgiot_parse:create_object(<<"_Role">>, maps:without([<<"views">>], NewRole)) of
+            case dgiot_parse:create_object(<<"_Role">>, maps:without([<<"views">>, <<"menuviews">>], NewRole)) of
                 {ok, R} ->
                     load_roles(),
                     {ok, R};

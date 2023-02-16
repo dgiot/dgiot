@@ -27,6 +27,11 @@
 %% aes_cfb128
 %% aes_gcm
 
+%%pbe_pad(Data, BlockSize) ->
+%%    N = BlockSize - (erlang:byte_size(Data) rem BlockSize),
+%%    Pad = binary:copy(<<N>>, N),
+%%    <<Data/binary, Pad/binary>>.
+
 %%ZeroPadding，数据长度不对齐时使用0填充，否则不填充
 %%PKCS7Padding，假设数据长度需要填充n(n>0)个字节才对齐，那么填充n个字节，每个字节都是n;如果数据本身就已经对齐了，则填充一块长度为块大小的数据，每个字节都是块大小
 %%PKCS5Padding，PKCS7Padding的子集，块大小固定为8字节。
@@ -49,8 +54,7 @@
 %% | 32字节     |  32字节   | 24字节*N   | aes_256_cbc      |
 %% +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-
 encode(aes_cbc, AES_KEY, AES_IV, Bin) ->
-    PadBin = pkcs:pad(Bin, size(Bin)),
-    crypto:crypto_one_time(aes_cbc, AES_KEY, AES_IV, [<<Bin/binary, PadBin/binary>>], true);
+    crypto:crypto_one_time(aes_cbc, AES_KEY, AES_IV, [pkcs:pad(Bin, 16)], true);
 
 encode(aes_cfb8, AES_KEY, AES_IV, Text) ->
     crypto:crypto_one_time(aes_cfb8, AES_KEY, AES_IV, [Text], true);
