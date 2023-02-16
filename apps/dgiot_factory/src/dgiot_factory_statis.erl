@@ -4,7 +4,7 @@
 %%% @doc
 %%%
 %%% @end
-%%% Created : 13. 2ÔÂ 2023 17:12
+%%% Created : 13. 2æœˆ 2023 17:12
 %%%-------------------------------------------------------------------
 -module(dgiot_factory_statis).
 -author("wolong").
@@ -50,8 +50,8 @@ update2parse(TaskDeviceId, NewData) ->
         _ ->
             pass
     end.
-%%Ä¬ÈÏ²Ù×÷£¬¶ÔËùÓĞ¹¤ĞòÍ³¼ÆÊıÁ¿ºÍÆ·¿Ø¼ì²ìÊı
-get_default_data(<<"quality">>, #{<<"quality">> := #{<<"type">> := Process, <<"quality">> := <<"ºÏ¸ñ"/utf8>>}} = Payload, OldData) ->
+%%é»˜è®¤æ“ä½œï¼Œå¯¹æ‰€æœ‰å·¥åºç»Ÿè®¡æ•°é‡å’Œå“æ§æ£€å¯Ÿæ•°
+get_default_data(<<"quality">>, #{<<"quality">> := #{<<"type">> := Process, <<"quality">> := <<"åˆæ ¼"/utf8>>}} = Payload, OldData) ->
     CheckNum = maps:get(<<"num">>, maps:get(<<"quality">>, Payload, #{}), 0),
     OldQualified = maps:get(<<"qualitified">>, maps:get(<<"statis">>, OldData, #{}), 0),
     NewQualified = CheckNum + OldQualified,
@@ -65,7 +65,7 @@ get_default_data(Process, Payload, OldData) ->
     OrderInfo = get_order_info(Process, Payload),
     dgiot_map:merge(OldData, #{<<"order">> => OrderInfo, <<"statis">> => #{<<"produced">> => NewProduced}}).
 
-%%¼ÇÂ¼Éú²ú¼Æ»®ĞÅÏ¢£¬¼Æ»®ºÅ£¬²ú³ÉÆ·±àÂë£¬¹¤Ğò
+%%è®°å½•ç”Ÿäº§è®¡åˆ’ä¿¡æ¯ï¼Œè®¡åˆ’å·ï¼Œäº§æˆå“ç¼–ç ï¼Œå·¥åº
 get_order_info(Process, Payload) ->
     OrderName = maps:get(<<"ordername">>, maps:get(<<"person">>, Payload, #{}), null),
     ProductId = maps:get(<<"fmaterialld">>, maps:get(<<"person">>, Payload, #{}), null),
