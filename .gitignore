@@ -83,6 +83,7 @@ apps/dgiot_onenet/
 apps/dgiot_energy/
 apps/dgiot_openai/
 apps/dgiot_miio/
+apps/dgiot_iec104/
 node_modules/
 package-lock.json
 erlang_ls.config

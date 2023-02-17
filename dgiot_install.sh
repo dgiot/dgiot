@@ -1544,13 +1544,13 @@ dgiot_shell
 deployType=single                             # [single | cluster | devops | ci]
 domain_name="prod.dgiotcloud.cn"              # [prod.dgiotcloud.cn | your_domain_name]
 plugin="dgiot"                                # [dgiot | dgiot_your_plugin]
-software="dgiot_n295"                          # [dgiot_n295| dgiot_n]
-dgiotmd5="586ba5a8c33ce04e653ae921cd822b8b"   # [dgiotmd5]
+software="dgiot_n297"                          # [dgiot_n297| dgiot_n]
+dgiotmd5="f5cb129c526482f7b37b65dbbb56ac6e"   # [dgiotmd5]
 pg_eip="changeyourip"                            # [datanode_eip]
 pg_auth='changeyourpassword'                  # [pg_auth]
 islanip="false"                                    # [islanip]
-html_software="dgiot_html_4.7.5"                          # [dgiot_html_4.7.5| dgiot_html_4.7.5]
-htmlmd5="8d9851f295da10b36876d87f93138f8a"   # [htmlmd5]
+html_software="dgiot_html_4.7.6"                          # [dgiot_html_4.7.5| dgiot_html_4.7.5]
+htmlmd5="d958a56bca7a66b83b123057c19ae884"   # [htmlmd5]
 
 while getopts "v:s:p:m:d:e:a:n:" arg
 do
