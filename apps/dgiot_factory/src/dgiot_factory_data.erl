@@ -16,6 +16,7 @@
 -define(TYPE, <<"TD">>).
 -export([get_history_data/12, filter_data/1, filter_data/3]).
 -export([select/4, get_thing_list/2, limit_skip/2]).
+-export([kill_null/1]).
 %% API
 %%-export([
 %%    get_card_data/2,
@@ -744,3 +745,17 @@ get_thing_list(ProductId, Type) ->
 
 
 %%select last(manufac_rollnum), sum(manufac_worktime) as  manufac_worktime from _d5e32f7542._d5e32f7542 group by devaddr having manufac_worktime = 139;
+
+kill_null(List) when is_list(List) ->
+    lists:foldl(
+        fun(X, Acc) when is_map(X) ->
+            Res = maps:fold(
+                fun(_, null, Acc1) ->
+                    Acc1;
+                    (K, V, Acc1) ->
+                        Acc1#{K => V}
+                end, #{}, X),
+            Acc ++ [Res]
+        end, [], List);
+kill_null(List) ->
+    List.

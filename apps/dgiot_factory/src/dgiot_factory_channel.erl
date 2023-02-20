@@ -151,10 +151,10 @@ handle_message({sync_parse, _Pid, 'before', put, Token, <<"Device">>,
                 _ ->
                     {ok, State}
             end;
-
         _ ->
             {ok, State}
     end;
+
 handle_message(Message, State) ->
     ?LOG(debug, "channel ~p", [Message]),
     {ok, State}.
@@ -333,6 +333,7 @@ get_new_acl(SessionToken, Acl) ->
 
 
 save2parse(BatchProductId, BatchDeviceId, ALlData) ->
+    io:format("~s ~p ALlData = ~p. ~n", [?FILE, ?LINE, maps:keys(ALlData)]),
     Content = case dgiot_hook:run_hook({factory, BatchProductId, beforeParse}, [ALlData]) of
                   {ok, [{ok, Res}]} ->
                       Res;
@@ -340,6 +341,7 @@ save2parse(BatchProductId, BatchDeviceId, ALlData) ->
                       io:format("~s ~p BatchDeviceId = ~p ~n", [?FILE, ?LINE, BatchDeviceId]),
                       ALlData
               end,
+    io:format("~s ~p Content = ~p. ~n", [?FILE, ?LINE, maps:keys(Content)]),
     dgiot_parse:update_object(<<"Device">>, BatchDeviceId, #{<<"content">> => Content}).
 
 

@@ -17,6 +17,7 @@ do_statis(TaskProductId, TaskDeviceId, PersonType, Payload) ->
     NewData = run_statis_hook(TaskProductId, TaskDeviceId, PersonType, Payload, DefaultData),
     dgiot_data:insert(?FACTORYSTATIS, {TaskProductId, TaskDeviceId}, NewData),
     update2parse(TaskDeviceId, NewData),
+    io:format("~s ~p NewData = ~p. ~n", [?FILE, ?LINE, NewData]),
     dgiot_factory_utils:save2td(TaskDeviceId, NewData).
 
 get_old_data(TaskProductId, TaskDeviceId) ->
