@@ -23,7 +23,7 @@
 -export([get_worker/1, get_children/1, check_workteam/1]).
 -export([get_sum/1]).
 -export([batch_create_worker/3]).
--export([get_json_file/1, unflatten_map/1, flatten_map/1]).
+-export([get_json_file/1, unflatten_map/1, flatten_map/1,merge_map/2]).
 -export([save2td/3, save2td/2]).
 -export([kill_undefined/1]).
 
@@ -420,7 +420,7 @@ get_list(_Key, _, Value) ->
 
 
 
-
+%%对list进行替换操作
 merge_map(Data, NewData) ->
     maps:fold(
         fun(NewKey, NewValue, Acc) ->

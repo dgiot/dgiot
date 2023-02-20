@@ -1,170 +1,223 @@
 {
   "process": {
-    "legend": {
-      "data": [
-        "产量"
-      ]
-    },
-    "series": [
-      {
-        "data": [
-          14,
-          0,
-          0
-        ],
-        "name": "总产量",
-        "type": "bar"
+    "type": "bar",
+    "group": "order_process",
+    "data":  {
+      "statis_produced": {
+        "name": 1,
+        "func": "last"
       },
-      {
-        "data": [
-          50,
-          0,
-          0
-        ],
-        "name": "实际产量",
-        "type": "bar"
+      "statis_schedule": {
+        "name": 1,
+        "func": "last"
       },
-      {
-        "data": [
-          1072,
-          1072,
-          1072
-        ],
-        "name": "计划产量",
-        "type": "bar"
+      "statis_qualitified": {
+        "name": 1,
+        "func": "last"
       }
-    ],
-    "title": {
-      "text": "车间产量统计"
     },
-    "tooltip": {
-      "axisPointer": {
-        "type": "shadow"
+    "model": {
+      "legend": {
+        "data": [
+          "产量"
+        ]
       },
-      "trigger": "axis"
-    },
-    "xAxis": {
-      "data": [
-        "1-1#水刺车间",
-        "2-1#印染车间",
-        "3-1#分切车间"
-      ]
-    },
-    "yAxis": {}
+      "series": [
+        {
+          "data": [
+          ],
+          "name": "总产量",
+          "key": "statis_produced",
+          "type": "bar"
+        },
+        {
+          "data": [
+          ],
+          "name": "实际产量",
+          "key": "statis_qualitified",
+          "type": "bar"
+        },
+        {
+          "data": [
+          ],
+          "name": "计划产量",
+          "key": "statis_schedule",
+          "type": "bar"
+        }
+      ],
+      "title": {
+        "text": "工序产量统计"
+      },
+      "tooltip": {
+        "axisPointer": {
+          "type": "shadow"
+        },
+        "trigger": "axis"
+      },
+      "xAxis": {
+        "data": [
+
+        ]
+      },
+      "yAxis": {}
+    }
   },
   "product": {
-    "legend": {
-      "data": [
-        "产量"
-      ]
-    },
-    "series": [
-      {
-        "data": [
-          0,
-          0,
-          14
-        ],
-        "name": "总产量",
-        "type": "bar"
+    "type": "bar",
+    "group": "order_productid",
+    "data":  {
+      "statis_produced": {
+        "name": 1,
+        "func": "last"
       },
-      {
-        "data": [
-          0,
-          0,
-          50
-        ],
-        "name": "实际产量",
-        "type": "bar"
+      "statis_schedule": {
+        "name": 1,
+        "func": "last"
       },
-      {
-        "data": [
-          1072,
-          1072,
-          1072
-        ],
-        "name": "计划产量",
-        "type": "bar"
+      "statis_qualitified": {
+        "name": 1,
+        "func": "last"
       }
-    ],
-    "title": {
-      "text": "产品产量统计"
     },
-    "tooltip": {
-      "axisPointer": {
-        "type": "shadow"
+    "model": {
+      "legend": {
+        "data": [
+          "产量"
+        ]
       },
-      "trigger": "axis"
-    },
-    "xAxis": {
-      "data": [
-        "M0201000122",
-        "M0201000371",
-        "M0201000440"
-      ]
-    },
-    "yAxis": {}
+      "series": [
+        {
+          "data": [
+
+          ],
+          "key": "statis_produced",
+          "name": "总产量",
+          "type": "bar"
+        },
+        {
+          "data": [
+
+          ],
+          "key": "statis_produced",
+          "name": "实际产量",
+          "type": "bar"
+        },
+        {
+          "data": [
+
+          ],
+          "name": "计划产量",
+          "key": "statis_schedule",
+          "type": "bar"
+        }
+      ],
+      "title": {
+        "text": "产品产量统计"
+      },
+      "tooltip": {
+        "axisPointer": {
+          "type": "shadow"
+        },
+        "trigger": "axis"
+      },
+      "xAxis": {
+        "data": [
+
+        ]
+      },
+      "yAxis": {}
+    }
   },
   "order": {
-    "legend": {
-      "data": [
-        "产量"
-      ]
-    },
-    "series": [
-      {
-        "data": [
-          0,
-          0,
-          14
-        ],
-        "name": "总产量",
-        "type": "bar"
+    "type": "bar",
+    "group": "order_ordername",
+    "data":  {
+      "statis_produced": {
+        "name": 1,
+        "func": "last"
       },
-      {
-        "data": [
-          0,
-          0,
-          50
-        ],
-        "name": "实际产量",
-        "type": "bar"
+      "statis_schedule": {
+        "name": 1,
+        "func": "last"
       },
-      {
-        "data": [
-          1072,
-          1072,
-          1072
-        ],
-        "name": "计划产量",
-        "type": "bar"
+
+      "statis_qualitified": {
+        "name": 1,
+        "func": "last"
       }
-    ],
-    "title": {
-      "text": "产品产量统计"
     },
-    "tooltip": {
-      "axisPointer": {
-        "type": "shadow"
+    "model": {
+      "legend": {
+        "data": [
+          "产量"
+        ]
       },
-      "trigger": "axis"
-    },
-    "xAxis": {
-      "data": [
-        "M0201000122",
-        "M0201000371",
-        "M0201000440"
-      ]
-    },
-    "yAxis": {}
+      "series": [
+        {
+          "data": [
+
+          ],
+          "key": "statis_produced",
+          "name": "总产量",
+          "type": "bar"
+        },
+        {
+          "data": [
+
+          ],
+          "key": "statis_produced",
+          "name": "实际产量",
+          "type": "bar"
+        },
+        {
+          "data": [
+
+          ],
+          "key": "statis_schedule",
+          "name": "计划产量",
+          "type": "bar"
+        }
+      ],
+      "title": {
+        "text": "计划产量统计"
+      },
+      "tooltip": {
+        "axisPointer": {
+          "type": "shadow"
+        },
+        "trigger": "axis"
+      },
+      "xAxis": {
+        "data": [
+
+        ]
+      },
+      "yAxis": {}
+    }
   },
   "total": {
-    "produced": {
-      "name": "生产数量",
-      "func": "sum"
+    "type": "total",
+    "group": "order_ordername",
+    "data":  {
+      "statis_produced": {
+        "name": 1,
+        "func": "last"
+      },
+      "statis_schedule": {
+        "name": 1,
+        "func": "last"
+      },
+      "statis_percent": {
+        "name": 1,
+        "func": "last"
+      },
+      "statis_qualitified": {
+        "name": 1,
+        "func": "last"
+      }
     },
-    "produced": 14,
-    "progress": 50,
-    "schedule": 3216
+    "model": {
+
+    }
   }
 }

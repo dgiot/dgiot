@@ -22,34 +22,57 @@
 -include("dgiot_factory.hrl").
 %%大屏echart模板文件名
 -define(FACTORY_SCREEN, factory_screen).
+-define(KEY, <<"key">>).
 -export([get_screen/2]).
 
--export([get_data/3]).
+-export([format_data/3,turn_echart/3]).
 
 -export([init_screen_data/0, updata_screen_data/3, format_bar/1]).
 
 get_screen(#{<<"ordertype">> := ProductId} = Arg, Channel) ->
     ScreenData = init_screen_data(),
     Res = maps:fold(
-        fun(K, V, Acc) ->
-            Data = get_data(K, Arg, Channel),
-            Res = format_echart(K, V, Data),
-            maps:merge(Acc, #{K => Res})
+        fun(EchartName, Para, Acc) ->
+            Data = get_data(EchartName, Para, Arg, Channel),
+%%            case EchartName of
+%%                <<"order">> ->
+%%                    io:format("~s ~p Data = ~p. ~n", [?FILE, ?LINE, Data]);
+%%                _ ->
+%%                    pass
+%%            end,
+            FormatedData = format_data(EchartName, Para, dgiot_factory_data:kill_null(Data)),
+%%            case EchartName of
+%%                <<"order">> ->
+%%                    io:format("~s ~p FormatedData = ~p. ~n", [?FILE, ?LINE, FormatedData]);
+%%                _ ->
+%%                    pass
+%%            end,
+            Res = format_echart(EchartName, Para, FormatedData),
+            maps:merge(Acc, Res)
         end, #{}, ScreenData),
     HookData = run_screen_hook(ProductId, Arg, Channel, Res),
     {ok, HookData};
 
 get_screen(_, _) ->
     error.
-
+get_func_map(#{<<"data">> := Data}) when is_map(Data) ->
+    maps:fold(
+        fun(K, #{<<"func">> := Func}, Acc) ->
+            OldList = maps:get(Func, Acc, []),
+            NewList = OldList ++ [K],
+            Acc#{Func => NewList};
+            (_, _, Acc) ->
+                Acc
+        end, #{}, Data);
+get_func_map(_) ->
+    #{}.
 
 %%get_history_data(ProductId, DeviceId, Type, Function, FunctionMap, Group, Having, Where, Order, Channel, Limit, Skip)
-get_data(<<"total">>, Arg, Channel) ->
+get_data(_, V, Arg, Channel) ->
     ProductId = maps:get(<<"ordertype">>, Arg, error),
     Function = <<"last">>,
-    Group = undefined,
-    FunctionMap = #{<<"avg">> => [<<"percent">>],
-        <<"sum">> => [<<"statis_produced">>, <<"statis_qualitified">>]},
+    Group = maps:get(<<"group">>, V, undefined),
+    FunctionMap = get_func_map(V),
     Where = format_where(Arg),
     case dgiot_factory_data:get_history_data(ProductId, undefined, undefined, Function, FunctionMap, Group, undefined, Where, undefined, Channel, undefined, undefined) of
         {ok, {_, Data}} ->
@@ -57,143 +80,79 @@ get_data(<<"total">>, Arg, Channel) ->
         _ ->
 
             []
-    end;
-get_data(<<"product">>, Arg, Channel) ->
-    ProductId = maps:get(<<"ordertype">>, Arg, error),
-    Function = <<"last">>,
-    Group = <<"order_productid">>,
-    FunctionMap = #{<<"avg">> => [<<"percent">>],
-        <<"sum">> => [<<"statis_produced">>, <<"statis_qualitified">>]},
-    Where = format_where(Arg),
-    case dgiot_factory_data:get_history_data(ProductId, undefined, undefined, Function, FunctionMap, Group, undefined, Where, undefined, Channel, undefined, undefined) of
-        {ok, {_, Data}} ->
-            io:format("~s ~p Data = ~p ~n", [?FILE, ?LINE, length(Data)]),
-            Data;
-        _R ->
-            io:format("~s ~p here  ~p  ~n", [?FILE, ?LINE,_R]),
-            []
-    end;
-
-get_data(<<"process">>, Arg, Channel) ->
-    ProductId = maps:get(<<"ordertype">>, Arg, error),
-    Function = <<"last">>,
-    Group = <<"order_process">>,
-    FunctionMap = #{<<"avg">> => [<<"percent">>],
-        <<"sum">> => [<<"statis_produced">>, <<"statis_qualitified">>]},
-    Where = format_where(Arg),
-    case dgiot_factory_data:get_history_data(ProductId, undefined, undefined, Function, FunctionMap, Group, undefined, Where, undefined, Channel, undefined, undefined) of
-        {ok, {_, Data}} ->
-            io:format("~s ~p Data = ~p ~n", [?FILE, ?LINE, length(Data)]),
-            Data;
-        _ ->
-            io:format("~s ~p here  ~n", [?FILE, ?LINE]),
-            []
-    end;
-get_data(<<"order">>, Arg, Channel) ->
-    ProductId = maps:get(<<"ordertype">>, Arg, error),
-    Function = <<"last">>,
-    Group = <<"ordername">>,
-    FunctionMap = #{<<"avg">> => [<<"percent">>],
-        <<"sum">> => [<<"statis_produced">>, <<"statis_qualitified">>]},
-    Where = format_where(Arg),
-    case dgiot_factory_data:get_history_data(ProductId, undefined, undefined, Function, FunctionMap, Group, undefined, Where, undefined, Channel, undefined, undefined) of
-        {ok, {_, Data}} ->
-            io:format("~s ~p Data = ~p ~n", [?FILE, ?LINE, length(Data)]),
-            Data;
-        _ ->
-            io:format("~s ~p here  ~n", [?FILE, ?LINE]),
-            []
-    end;
-
-get_data(_, _, _) ->
-    [].
+    end.
 
 
-format_echart(<<"total">>, _, [Map]) when is_map(Map) ->
-    Produced = maps:get(<<"statis_produced">>, Map, 0),
-    Qualitified = maps:get(<<"statis_qualitified">>, Map, 0),
-    Schedule = maps:get(<<"statis_schedule">>, Map, 0),
-    Percent = maps:get(<<"statis_percent">>, Map, 0),
-    #{
-        <<"produced">> => Produced,
-        <<"qualitified">> => Qualitified,
-        <<"percent">> => Percent ,
-        <<"schedule">> => Schedule
-    };
-format_echart(<<"product">>, Model, Data) ->
-    {XAxis, SeriesData} = lists:foldl(
-        fun(Item, {X, Y}) ->
-            case maps:find(<<"order_productid">>, Item) of
-                {ok, ProductId} ->
-                    Produced = maps:get(<<"statis_produced">>, Item, 0),
-                    Qualitified = maps:get(<<"statis_qualitified">>, Item, 0),
-                    Schedule = maps:get(<<"statis_schedule">>, Item, 0),
-                    ProducedList = maps:get(<<"statis_produced">>, Y, []),
-                    QualitifiedList = maps:get(<<"statis_qualitified">>, Y, []),
-                    ScheduleList = maps:get(<<"statis_schedule">>, Y, []),
-                    {X ++ [ProductId], #{
-                        <<"statis_produced">> => ProducedList ++ [Produced],
-                        <<"statis_qualitified">> => QualitifiedList ++ [Qualitified],
-                        <<"statis_schedule">> => ScheduleList ++ [Schedule]
-                    }}
-            end
-        end, {[], #{}}, Data),
-    New = #{
-        <<"title">> => #{<<"text">> => <<"产品产量统计"/utf8>>},
-        <<"xAxis">> => #{<<"data">> => XAxis},
-        <<"series">> => format_process_series(SeriesData)
-    },
-    dgiot_map:merge(Model, New);
-format_echart(<<"process">>, Model, Data) ->
-    {XAxis, SeriesData} = lists:foldl(
-        fun(Item, {X, Y}) ->
-            case maps:find(<<"order_process">>, Item) of
-                {ok, Process} ->
-                    Produced = maps:get(<<"statis_produced">>, Item, 0),
-                    Qualitified = maps:get(<<"statis_qualitified">>, Item, 0),
-                    Schedule = maps:get(<<"statis_schedule">>, Item, 0),
-                    ProducedList = maps:get(<<"statis_produced">>, Y, []),
-                    QualitifiedList = maps:get(<<"statis_qualitified">>, Y, []),
-                    ScheduleList = maps:get(<<"statis_schedule">>, Y, []),
-                    {X ++ [Process], #{
-                        <<"statis_produced">> => ProducedList ++ [Produced],
-                        <<"statis_qualitified">> => QualitifiedList ++ [Qualitified],
-                        <<"statis_schedule">> => ScheduleList ++ [Schedule]
-                    }}
-            end
-        end, {[], #{}}, Data),
-    New = #{
-        <<"title">> => #{<<"text">> => <<"工序产量统计"/utf8>>},
-        <<"xAxis">> => #{<<"data">> => XAxis},
-        <<"series">> => format_process_series(SeriesData)
-    },
-    dgiot_map:merge(Model, New);
-format_echart(<<"order">>, Model, Data) ->
-    {XAxis, SeriesData} = lists:foldl(
-        fun(Item, {X, Y}) ->
-            case maps:find(<<"order_productid">>, Item) of
-                {ok, ProductId} ->
-                    Produced = maps:get(<<"statis_produced">>, Item, 0),
-                    Qualitified = maps:get(<<"statis_qualitified">>, Item, 0),
-                    Schedule = maps:get(<<"statis_schedule">>, Item, 0),
-                    ProducedList = maps:get(<<"statis_produced">>, Y, []),
-                    QualitifiedList = maps:get(<<"statis_qualitified">>, Y, []),
-                    ScheduleList = maps:get(<<"statis_schedule">>, Y, []),
-                    {X ++ [ProductId], #{
-                        <<"statis_produced">> => ProducedList ++ [Produced],
-                        <<"statis_qualitified">> => QualitifiedList ++ [Qualitified],
-                        <<"statis_schedule">> => ScheduleList ++ [Schedule]
-                    }}
-            end
-        end, {[], #{}}, Data),
-    New = #{
-        <<"title">> => #{<<"text">> => <<"订单产量统计"/utf8>>},
-        <<"xAxis">> => #{<<"data">> => XAxis},
-        <<"series">> => format_process_series(SeriesData)
-    },
-    dgiot_map:merge(Model, New);
-format_echart(_, _, _) ->
+
+format_data(_Name, #{<<"group">> := Group} = Para, Data) ->
+    io:format("~s ~p _Name = ~p. ~n", [?FILE, ?LINE, _Name]),
+    DataKeys = maps:keys(maps:get(<<"data">>, Para, #{})),
+    lists:foldl(
+        fun(LineData, Acc) ->
+            ValueMap = lists:foldl(
+                fun(Key, Acc1) ->
+                    Acc1#{Key => maps:get(Key, LineData, 0)}
+                end, #{}, DataKeys),
+            GroupValue = maps:get(Group, LineData, null),
+            Acc#{GroupValue => ValueMap}
+        end, #{}, Data);
+format_data(_, Para, [Data]) when is_map(Data) ->
+    DataKeys = maps:keys(maps:get(<<"data">>, Para, #{})),
+    Res = lists:foldl(
+        fun(Key, Acc) ->
+            Acc#{Key => maps:get(Key, Data, 0)}
+        end, #{}, DataKeys),
+    #{<<"数据"/utf8>> => Res};
+format_data(_, _, _) ->
     #{}.
+
+
+format_echart(EchartName, #{<<"type">> := Type} = Model, FormatedData) ->
+    EchartData = turn_echart(Type, Model, FormatedData),
+    #{EchartName => EchartData}.
+
+turn_echart(<<"total">>, #{<<"data">> := Data}, FormatedData) ->
+    InitModel = lists:foldl(
+        fun(Key, Acc) ->
+            Acc#{Key => 0}
+        end, #{}, maps:keys(Data)),
+
+    maps:fold(
+        fun(_, DataMap, OldAcc) ->
+            maps:fold(
+                fun(Key, OldSum, Acc) ->
+
+                    Num = case maps:find(Key, DataMap) of
+                              {ok, null} ->
+                                  0;
+                              error ->
+                                  0;
+                              {ok, R} ->
+                                  R
+                          end,
+
+                    Acc#{Key => OldSum + Num}
+                end, #{}, OldAcc)
+        end, InitModel, FormatedData);
+
+turn_echart(<<"bar">>, #{<<"model">> := #{<<"series">> := SeriesMod} = Model}, FormatedData) ->
+    {XAxis, NewSeries} = maps:fold(
+        fun(X, Data, {Xlist, SeriesAcc}) ->
+            NewSeriesAcc = lists:foldl(
+                fun(#{?KEY := Key} = OneSeries, Acc) ->
+                    OldList = maps:get(<<"data">>, OneSeries, []),
+                    NewValue = maps:get(Key, Data, 0),
+                    io:format("~s ~p NewValue = ~p. ~n", [?FILE, ?LINE, NewValue]),
+                    NewList = OldList ++ [NewValue],
+                    Acc ++ [OneSeries#{<<"data">> => NewList}];
+                    (S, Acc) ->
+                        Acc ++ [S]
+                end, [], SeriesAcc),
+            {Xlist ++ [X], NewSeriesAcc}
+        end, {[], SeriesMod}, FormatedData),
+    io:format("~s ~p XAxis = ~p. ~n", [?FILE, ?LINE, XAxis]),
+    dgiot_map:merge(Model, #{<<"xAxis">> => #{<<"data">> => XAxis}, <<"series">> => NewSeries}).
+
 
 format_where(Arg) ->
     format_where(Arg, <<"">>).
@@ -318,17 +277,17 @@ format_bar(V) ->
 %%<<"Schedule">> => 1 计划产量
 %% }}
 
-format_process_series(Series) when is_map(Series) ->
-    maps:fold(
-        fun
-            (<<"statis_produced">>, V, Acc) ->
-                Acc ++ [#{<<"name">> => <<"总产量"/utf8>>, <<"type">> => <<"bar">>, <<"data">> => V}];
-            (<<"statis_qualitified">>, V, Acc) ->
-                Acc ++ [#{<<"name">> => <<"实际产量"/utf8>>, <<"type">> => <<"bar">>, <<"data">> => V}];
-            (<<"statis_schedule">>, V, Acc) ->
-                Acc ++ [#{<<"name">> => <<"计划产量"/utf8>>, <<"type">> => <<"bar">>, <<"data">> => V}];
-            (K, V, Acc) ->
-                Acc ++ [#{<<"name">> => K, <<"type">> => <<"bar">>, <<"data">> => V}]
-        end, [], Series);
-format_process_series(Series) ->
-    Series.
+%%format_process_series(Series) when is_map(Series) ->
+%%    maps:fold(
+%%        fun
+%%            (<<"statis_produced">>, V, Acc) ->
+%%                Acc ++ [#{<<"name">> => <<"总产量"/utf8>>, <<"type">> => <<"bar">>, <<"data">> => V}];
+%%            (<<"statis_qualitified">>, V, Acc) ->
+%%                Acc ++ [#{<<"name">> => <<"实际产量"/utf8>>, <<"type">> => <<"bar">>, <<"data">> => V}];
+%%            (<<"statis_schedule">>, V, Acc) ->
+%%                Acc ++ [#{<<"name">> => <<"计划产量"/utf8>>, <<"type">> => <<"bar">>, <<"data">> => V}];
+%%            (K, V, Acc) ->
+%%                Acc ++ [#{<<"name">> => K, <<"type">> => <<"bar">>, <<"data">> => V}]
+%%        end, [], Series);
+%%format_process_series(Series) ->
+%%    Series.
