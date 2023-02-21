@@ -346,7 +346,7 @@ save_td(ProductId, DevAddr, Ack, _AppData) ->
                             dealwith_data(ProductId, DevAddr, DeviceId, AllData, Storage);
                         _ ->
                             save_cache_data(DeviceId, CacheData),
-                            AllData
+                            Storage
                     end
             end
     end.
@@ -364,7 +364,7 @@ dealwith_data(ProductId, DevAddr, DeviceId, AllData, Storage) ->
     Channel = dgiot_product_channel:get_taskchannel(ProductId),
     dgiot_bridge:send_log(Channel, ProductId, DevAddr, "~s ~p save td => ProductId ~p DevAddr ~p ~ts ", [?FILE, ?LINE, ProductId, DevAddr, unicode:characters_to_list(jsx:encode(Storage))]),
     dgiot_metrics:inc(dgiot_task, <<"task_save">>, 1),
-    AllData.
+    Storage.
 
 save_cache_data(DeviceId, Data) ->
     NewData = maps:fold(fun(K, V, Acc) ->

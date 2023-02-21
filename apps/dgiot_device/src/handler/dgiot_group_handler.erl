@@ -72,6 +72,41 @@ handle(OperationID, Args, Context, Req) ->
     end.
 
 
+do_request(get_sports, _Args, _Context, _Req) ->
+    Items =
+        case dgiot_parse:query_object(<<"Device">>, #{<<"where">> => #{<<"product">> => <<"2dd1d8b42a">>}}) of
+            {ok, #{<<"results">> := Devices}} ->
+                lists:foldl(fun(#{
+                    <<"objectId">> := ObjectId,
+                    <<"name">> := Name,
+                    <<"state">> := State,
+                    <<"realstate">> := Realstate
+                }, Acc) ->
+                    Acc ++ [#{
+                        <<"objectId">> => ObjectId,
+                        <<"nick">> => Name,
+                        <<"status">> => State,
+                        <<"team">> => Realstate
+                    }]
+                            end, [], Devices);
+            _ ->
+                []
+        end,
+    {ok, #{<<"objectId">> => <<"objectid">>, <<"data">> => #{<<"items">> => Items},
+        <<"msg">> => <<"ok">>,
+        <<"status">> => 0}};
+
+
+do_request(post_sports, #{<<"ids">> := Ids, <<"type">> := Type} = _Args, _Context, _Req) ->
+%%    io:format("Args ~p~n", [Args]),
+    lists:foldl(fun(DeviceId, _Acc) ->
+
+        dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"realstate">> => Type})
+
+                end, [], binary:split(Ids, <<$,>>, [global, trim])),
+
+    {ok, #{<<"data">> => #{}}};
+
 %%%===================================================================
 %%% 内部函数 Version:API版本
 %%%===================================================================

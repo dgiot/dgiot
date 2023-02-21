@@ -7,55 +7,55 @@
   ],
   "definitions": {},
   "paths": {
-    "/group":{
+    "/group": {
       "post": {
-      "description": "创建分组",
-      "parameters": [
-        {
-          "description": "创建分组,自动创建虚拟组设备，无物模型",
-          "in": "body",
-          "name": "group",
-          "required": true,
-          "schema": {
-            "properties": {
-              "name": {
-                "description": "组名",
-                "type": "string",
-                "example": "分组名"
-              },
-              "topo": {
-                "description": "组态文件名",
-                "type": "string",
-                "example": "group_topo"
-              },
-              "devType": {
-                "description": "设备类型",
-                "type": "string",
-                "example": "dgiot_iot_hub"
+        "description": "创建分组",
+        "parameters": [
+          {
+            "description": "创建分组,自动创建虚拟组设备，无物模型",
+            "in": "body",
+            "name": "group",
+            "required": true,
+            "schema": {
+              "properties": {
+                "name": {
+                  "description": "组名",
+                  "type": "string",
+                  "example": "分组名"
+                },
+                "topo": {
+                  "description": "组态文件名",
+                  "type": "string",
+                  "example": "group_topo"
+                },
+                "devType": {
+                  "description": "设备类型",
+                  "type": "string",
+                  "example": "dgiot_iot_hub"
+                }
               }
             }
           }
-        }
-      ],
-      "responses": {
-        "200": {
-          "description": "Returns operation status"
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
         },
-        "400": {
-          "description": "Bad Request"
-        },
-        "403": {
-          "description": "Forbidden"
-        },
-        "500": {
-          "description": "Server Internal error"
-        }
+        "summary": "创建分组",
+        "tags": [
+          "Group"
+        ]
       },
-      "summary": "创建分组",
-      "tags": [
-        "Group"
-      ]
-    },
       "get": {
         "summary": "获取组信息",
         "description": "获取组信息",
@@ -205,6 +205,72 @@
             "description": "Server Internal error"
           }
         },
+        "tags": [
+          "Group"
+        ]
+      }
+    },
+    "/sports": {
+      "get": {
+        "security": [],
+        "description": "获取红蓝队",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "Returns instance data"
+          },
+          "404": {
+            "description": "object not found",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        },
+        "summary": "获取红蓝队",
+        "tags": [
+          "Group"
+        ]
+      },
+      "post": {
+        "security": [],
+        "description": "设置红蓝队",
+        "parameters": [
+          {
+            "description": "创建分组,自动创建虚拟组设备，无物模型",
+            "in": "body",
+            "name": "group",
+            "required": true,
+            "schema": {
+              "properties": {
+                "ids": {
+                  "description": "设备编号",
+                  "type": "string",
+                  "example": "分组名"
+                },
+                "type": {
+                  "description": "组别",
+                  "type": "Number",
+                  "example": 1
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "summary": "设置红蓝队",
         "tags": [
           "Group"
         ]

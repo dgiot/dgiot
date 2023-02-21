@@ -129,7 +129,7 @@ export_parse(SessionToken) ->
         end,
     lists:foldl(fun(RoleName, _Acc) ->
         {file, Here} = code:is_loaded(data_worker),
-        Path = dgiot_utils:to_binary(dgiot_httpc:url_join([filename:dirname(filename:dirname(Here)), "/priv/station/dgiot_pg_copy_export.sh "])),
+        Path = dgiot_utils:to_binary(dgiot_httpc:url_join([filename:dirname(filename:dirname(Here)), "/priv/station/dgiot_pg_dump_export.sh "])),
         Cmd = <<"sh ", Path/binary, RoleName/binary>>,
         os:cmd(dgiot_utils:to_atom(Cmd))
                 end, #{}, RoleNames).
@@ -177,7 +177,6 @@ import_parse(Fullpath) ->
     Cmd = <<"sh ", Path/binary, Basename/binary>>,
     io:format("~s ~p Cmd = ~p.~n", [?FILE, ?LINE, Cmd]),
     os:cmd(dgiot_utils:to_atom(Cmd)).
-
 
 %% data_worker:import_td(<<"r:a4f169ffbbb37cdca429570396573ce3">>).
 import_td(SessionToken) ->
