@@ -204,7 +204,11 @@ do_request(get_gps_track_deviceid, #{<<"deviceid">> := DeviceId}, #{<<"sessionTo
             end
     end;
 
-
+%% TDengine 概要: save_td
+do_request(post_save_td, #{<<"productid">> := ProductId, <<"devaddr">> := DevAddr, <<"data">> := Ack} = _Args, _Context, _Req) ->
+    R = dgiot_task:save_td(ProductId, DevAddr, Ack, #{}),
+%%    io:format("~s ~p R = ~p.~n", [?FILE, ?LINE, R]),
+    {ok, #{<<"data">> => R}};
 
 %%  服务器不支持的API接口
 do_request(_OperationId, _Args, _Context, _Req) ->

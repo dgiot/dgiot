@@ -385,6 +385,59 @@
           "View"
         ]
       }
+    },
+    "/save_td": {
+      "post": {
+        "description": "存td",
+        "parameters": [
+          {
+            "description": "存储数据到td",
+            "in": "body",
+            "name": "data",
+            "required": true,
+            "schema": {
+              "properties": {
+                "productid": {
+                  "description": "产品id",
+                  "type": "string",
+                  "required": true,
+                  "example": ""
+                },
+                "devaddr": {
+                  "description": "设备地址",
+                  "type": "string",
+                  "required": true,
+                  "example": ""
+                },
+                "data": {
+                  "description": "存储数据",
+                  "type": "object",
+                  "required": true,
+                  "example": {}
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "summary": "存储数据到td",
+        "tags": [
+          "Basic"
+        ]
+      }
     }
   }
 }

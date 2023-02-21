@@ -252,7 +252,6 @@ parse_value(Di, Data) ->
             _ ->
                 {Di, 0, dgiot_utils:binary_to_hex(dlt645_proctol:reverse(Di))}
         end,
-
     case dlt645_proctol:parse_data_to_json(DI, Data) of
         {Key, Value} ->
             ValueMap =
@@ -260,16 +259,21 @@ parse_value(Di, Data) ->
                     false ->
                         #{Key => Value};
                     true ->
-                        [{K1, _V1} | _] = Value0 = jsx:decode(Value),
-                        case size(K1) == 8 of
-                            true ->
-                                maps:from_list(Value0);
-                            false ->
-                                maps:from_list(lists:map(fun({K2, V2}) ->
-                                    <<Di1:6/binary, _:2/binary, Di2/binary>> = K2,
-                                    {<<Di1:6/binary, Di2/binary>>, V2}
-                                                         end, Value0))
-
+                        case jsx:decode(Value) of
+                            [{K1, _V1} | _] = Value0 ->
+                                case size(K1) == 8 of
+                                    true ->
+                                        maps:from_list(Value0);
+                                    false ->
+                                        maps:from_list(lists:map(fun({K2, V2}) ->
+                                            <<Di1:6/binary, _:2/binary, Di2/binary>> = K2,
+                                            {<<Di1:6/binary, Di2/binary>>, V2}
+                                                                 end, Value0))
+                                end;
+                            Value1 when is_map(Value1) ->
+                                Value1;
+                            _ ->
+                                #{}
                         end
                 end,
             {ValueMap, Diff, SendDi};
