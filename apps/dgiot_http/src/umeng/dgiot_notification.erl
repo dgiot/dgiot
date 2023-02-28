@@ -43,8 +43,9 @@ send_verification_code(NationCode, Key) ->
         _ ->
             rand:seed(exs1024),
             Rand = 10000 + erlang:round(rand:uniform() * 10000),
-            TTL = 3,
-            case dgiot_notification:send_sms(NationCode, Key, [Rand, TTL]) of
+            TTL = 5,
+            Verify_Code_Tplid = dgiot_data:get(?CONFIGURATION, sms_verify_code_tplid),
+            case dgiot_notification:send_sms(NationCode, Key, Verify_Code_Tplid, [dgiot_utils:to_binary(Rand), dgiot_utils:to_binary(TTL)]) of
                 {ok, _Ext} ->
                     dgiot_cache:set(Key, Rand, TTL * 60),
                     {ok, #{<<"expire">> => TTL * 60}};
@@ -401,9 +402,11 @@ save_configuration() ->
             Sms_appid = maps:get(<<"appid">>, Sms, <<"">>),
             Sms_appkey = maps:get(<<"appkey">>, Sms, <<"">>),
             Sms_sign = maps:get(<<"sign">>, Sms, <<"">>),
+            Verify_Code_Tplid = maps:get(<<"verify_code_tplid">>, Sms, <<"1715928">>),
             dgiot_data:insert(?CONFIGURATION, sms_appid, Sms_appid),
             dgiot_data:insert(?CONFIGURATION, sms_appkey, Sms_appkey),
             dgiot_data:insert(?CONFIGURATION, sms_sign, Sms_sign),
+            dgiot_data:insert(?CONFIGURATION, sms_verify_code_tplid, Verify_Code_Tplid),
             Mail = maps:get(<<"mail">>, Data, #{}),
             Mail_username = maps:get(<<"username">>, Mail, <<"">>),
             Mail_password = maps:get(<<"password">>, Mail, <<"">>),
