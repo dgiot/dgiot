@@ -144,21 +144,19 @@ init(State) ->
 %%    {ok, State}.
 
 to_frame(#{
-    <<"data">> := Data,
     <<"registersnumber">> := Quality,
     <<"slaveid">> := SlaveId,
     <<"operatetype">> := Operatetype,
     <<"originaltype">> := Originaltype,
     <<"address">> := Address
 }) ->
-    encode_data(Data, Quality, Address, SlaveId, Operatetype, Originaltype);
+    encode_data(Quality, Address, SlaveId, Operatetype, Originaltype);
 
 %%<<"cmd">> => Cmd,
 %%<<"gateway">> => DtuAddr,
 %%<<"addr">> => SlaveId,
 %%<<"di">> => Address
 to_frame(#{
-    <<"data">> := Data,
     <<"registersnumber">> := Quality,
     <<"gateway">> := DtuAddr,
     <<"slaveid">> := SlaveId,
@@ -168,11 +166,11 @@ to_frame(#{
     case dgiot_device:get_subdevice(DtuAddr, SlaveId) of
         not_find -> [];
         [ProductId, _DevAddr] ->
-            encode_data(Data, Quality, Address, SlaveId, ProductId, Originaltype)
+            encode_data(Quality, Address, SlaveId, ProductId, Originaltype)
     end.
 
 %% Quality 读的时候代表寄存器个数，16位的寄存器，一个寄存器表示两个字节，写的时候代表实际下发值
-encode_data(Data, Quality, Address, SlaveId, OperateType, Originaltype) ->
+encode_data(Quality, Address, SlaveId, OperateType, Originaltype) ->
     FunCode =
         case OperateType of
             <<"readCoils">> -> ?FC_READ_COILS;
@@ -192,8 +190,7 @@ encode_data(Data, Quality, Address, SlaveId, OperateType, Originaltype) ->
         slaveId = Sh * 256 + Sl,
         funcode = dgiot_utils:to_int(FunCode),
         address = H * 256 + L,
-        quality = NewQuality,
-        data = dgiot_utils:to_int(Data)
+        quality = NewQuality
     },
     build_req_message(RtuReq).
 

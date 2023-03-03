@@ -27,7 +27,13 @@ login(ChannelId, #{<<"username">> := UserName,
 %% WebSocket
 insert_sql(#{<<"driver">> := <<"WS">>, <<"ws_pid">> := ConnPid, <<"ws_ref">> := StreamRef} = Context, _Action, Sql) when byte_size(Sql) > 0 ->
 %%    io:format("~s ~p Sql = ~p.~n", [?FILE, ?LINE, Sql]),
-    Req_id = get(req_id),
+    Req_id =
+        case get(req_id) of
+            undefined ->
+                0;
+            Id ->
+                Id
+        end,
     put(req_id, Req_id + 1),
     Body = #{
         <<"action">> => <<"query">>,
