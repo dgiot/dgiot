@@ -71,14 +71,17 @@ subscribe_route_key(Topics, SessionToken) ->
         not_find ->
             pass;
         OldTopic ->
-            lists:foldl(fun(X, _Acc) ->
-                dgiot_mqtt:unsubscribe_mgmt(SessionToken, X)
+            lists:foldl(fun
+                            (<<"$dg/user/devicestate/", _/binary>> = X, _) ->
+                                dgiot_mqtt:unsubscribe_mgmt(SessionToken, X);
+                            (_, _) ->
+                                pass
                         end, [], OldTopic)
     end,
-        lists:foldl(fun(X, Acc) ->
-            dgiot_mqtt:subscribe_mgmt(SessionToken, X),
-            Acc ++ [X]
-                    end, [], Topics),
+    lists:foldl(fun(X, Acc) ->
+        dgiot_mqtt:subscribe_mgmt(SessionToken, X),
+        Acc ++ [X]
+                end, [], Topics),
     dgiot_data:insert(?DGIOT_ROUTE_KEY, SessionToken, Topics).
 
 
