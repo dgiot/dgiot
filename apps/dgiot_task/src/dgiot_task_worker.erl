@@ -24,6 +24,7 @@
 %% gen_server callbacks
 -export([start_link/1, init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 -record(device_task, {
+    ref = undefined,
     pnque_len = 0 :: integer(),                              %% 本轮任务剩余的设备队列数
     product :: binary()|atom(),                              %% 当前任务网关设备或者网关子设备的产品ID
     devaddr :: binary(),                                     %% 当前任务网关设备或者网关子设备的设备地址
@@ -136,7 +137,7 @@ send_msg(#dclient{userdata = #device_task{dique = DisQue, pnque_len = PnQueLen} 
     get_next_pn(State#dclient{userdata = UserData#device_task{pnque_len = PnQueLen - 1}});
 
 %% 发送指令集
-send_msg(#dclient{channel = ChannelId, userdata = #device_task{product = Product, devaddr = DevAddr, dique = DisQue} = UserData} = State) ->
+send_msg(#dclient{channel = ChannelId, userdata = #device_task{ref = Ref, product = Product, devaddr = DevAddr, dique = DisQue} = UserData} = State) ->
     {InstructOrder, Interval, _Identifier, _NewDataSource} = lists:nth(1, DisQue),
     {NewCount, _Payload, _Dis} =
         lists:foldl(fun(X, {Count, Acc, Acc1}) ->
@@ -151,10 +152,15 @@ send_msg(#dclient{channel = ChannelId, userdata = #device_task{product = Product
                     {Count, Acc, Acc1}
             end
                     end, {0, [], []}, DisQue),
+    %%  在超时期限内，回报文，就取消超时定时器
+    case Ref of
+        undefined ->
+            pass;
+        _ -> erlang:cancel_timer(Ref)
+    end,
     NewDisQue = lists:nthtail(NewCount, DisQue),
     dgiot_metrics:inc(dgiot_task, <<"task_send">>, 1),
-    erlang:send_after(Interval * 1000, self(), read),
-    State#dclient{userdata = UserData#device_task{dique = NewDisQue, interval = Interval}}.
+    State#dclient{userdata = UserData#device_task{ref = erlang:send_after(Interval * 1000, self(), read), dique = NewDisQue, interval = Interval}}.
 
 %% 本轮任务结束
 get_next_pn(#dclient{channel = ChannelId, clock = #dclock{round = Round}, userdata = #device_task{product = Product, devaddr = DevAddr, pnque_len = PnQueLen}} = State) when PnQueLen < 1 ->

@@ -814,7 +814,7 @@ create_user(#{<<"username">> := UserName, <<"department">> := RoleId} = Body, Se
             case dgiot_parse:query_object(<<"_User">>, Query) of
                 {ok, #{<<"results">> := Results}} when length(Results) == 0 ->
                     case dgiot_parse:create_object(<<"_User">>, maps:without([<<"department">>], Body)) of
-                        {ok, #{<<"objectId">> := UserId}} ->
+                        {ok, #{<<"objectId">> := UserId} = R} ->
                             dgiot_parse:update_object(<<"_User">>, UserId, #{
                                 <<"ACL">> => #{UserId => #{
                                     <<"read">> => true,
@@ -838,7 +838,7 @@ create_user(#{<<"username">> := UserName, <<"department">> := RoleId} = Body, Se
                                         <<"objectId">> => UserId
                                     }]
                                 }}),
-                            R = dgiot_parse_auth:save_User_Role(UserId, RoleId),
+                            dgiot_parse_auth:save_User_Role(UserId, RoleId),
                             {ok, #{<<"result">> => R}};
                         Error ->
                             ?LOG(info, "Error ~p", [Error]),

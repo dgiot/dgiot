@@ -35,19 +35,23 @@ init_ets() ->
     dgiot_data:init(?CONFIGURATION),
     dgiot_data:init(?NOTIFICATION).
 
+
+
+
 % 验证类消息
 send_verification_code(NationCode, Key) ->
-    case catch dgiot_cache:get(Key) of
+    case catch dgiot_cache:get(<<Key/binary, "wait">>) of
         Random when is_integer(Random) ->
             {error, unicode:characters_to_binary(<<"验证码未过期，查看验证码！"/utf8>>)};
         _ ->
             rand:seed(exs1024),
-            Rand = 10000 + erlang:round(rand:uniform() * 10000),
+            Rand = rand:uniform(9) * 10000 + rand:uniform(9999),
             TTL = 5,
             Verify_Code_Tplid = dgiot_data:get(?CONFIGURATION, sms_verify_code_tplid),
             case dgiot_notification:send_sms(NationCode, Key, Verify_Code_Tplid, [dgiot_utils:to_binary(Rand), dgiot_utils:to_binary(TTL)]) of
                 {ok, _Ext} ->
                     dgiot_cache:set(Key, Rand, TTL * 60),
+                    dgiot_cache:set(<<Key/binary, "wait">>, Rand, 60),
                     {ok, #{<<"expire">> => TTL * 60}};
                 {error, Err} ->
                     {error, Err}
@@ -58,6 +62,7 @@ check_verification_code(Key, Code) ->
     case catch dgiot_cache:get(Key) of
         Code ->
             dgiot_cache:delete(Key),
+            dgiot_cache:delete(<<Key/binary, "wait">>),
             true;
         _ ->
             false

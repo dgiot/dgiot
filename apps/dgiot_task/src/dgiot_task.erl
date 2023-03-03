@@ -373,18 +373,8 @@ save_cache_data(DeviceId, Data) ->
                         end, #{}, Data),
     dgiot_data:insert(?DGIOT_DATA_CACHE, DeviceId, {NewData, dgiot_datetime:now_secs()}).
 
-merge_cache_data(DeviceId, NewData, 0) ->
-    case dgiot_data:get(?DGIOT_DATA_CACHE, DeviceId) of
-        not_find ->
-            NewData;
-        {OldData, _Ts} ->
-            NewOldData =
-                maps:fold(fun(K, V, Acc) ->
-                    Key = dgiot_utils:to_binary(K),
-                    Acc#{Key => V}
-                          end, #{}, OldData),
-            dgiot_map:merge(NewOldData, NewData)
-    end;
+merge_cache_data(_DeviceId, NewData, 0) ->
+    NewData;
 
 merge_cache_data(DeviceId, NewData, Interval) ->
     case dgiot_data:get(?DGIOT_DATA_CACHE, DeviceId) of
