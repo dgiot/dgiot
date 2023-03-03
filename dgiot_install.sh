@@ -217,7 +217,7 @@ function clean_services(){
   clean_service dgiot_pg_writer
   clean_service dgiot
   clean_service dgiot_parse_server
-  clean_service dgiot_redis
+#  clean_service dgiot_redis
   clean_service grafana-server
   clean_service go_fastdfs
   clean_service taosd
@@ -616,12 +616,12 @@ function install_dgiot_redis() {
 
 function deploy_parse_server() {
   clean_service dgiot_parse_server
-  clean_service dgiot_redis
+#  clean_service dgiot_redis
   install_parse_server
   #install_dgiot_redis
   #echo -e "`date +%F_%T` $LINENO: ${GREEN} install install_dgiot_redis success${NC}"
   parsehome="${install_dir}/dgiot_parse_server"
-  install_service2 "dgiot_redis" "simple" "${parsehome}/script/redis/src/redis-server ${parsehome}/script/redis.conf"
+#  install_service2 "dgiot_redis" "simple" "${parsehome}/script/redis/src/redis-server ${parsehome}/script/redis.conf"
   install_service2 "dgiot_parse_server" "simple" "${parsehome}/script/node/bin/node  ${parsehome}/server/index.js"
 
 }
@@ -1544,13 +1544,13 @@ dgiot_shell
 deployType=single                             # [single | cluster | devops | ci]
 domain_name="prod.dgiotcloud.cn"              # [prod.dgiotcloud.cn | your_domain_name]
 plugin="dgiot"                                # [dgiot | dgiot_your_plugin]
-software="dgiot_n297"                          # [dgiot_n297| dgiot_n]
+software="dgiot_n300"                          # [dgiot_n300| dgiot_n]
 dgiotmd5="f5cb129c526482f7b37b65dbbb56ac6e"   # [dgiotmd5]
 pg_eip="changeyourip"                            # [datanode_eip]
 pg_auth='changeyourpassword'                  # [pg_auth]
 islanip="false"                                    # [islanip]
-html_software="dgiot_html_4.7.6"                          # [dgiot_html_4.7.5| dgiot_html_4.7.5]
-htmlmd5="d958a56bca7a66b83b123057c19ae884"   # [htmlmd5]
+html_software="dgiot_html_4.7.7"                          # [dgiot_html_4.7.7| dgiot_html_n]
+htmlmd5="5afe4baa96517235108dc82153124bc2"   # [htmlmd5]
 
 while getopts "v:s:p:m:d:e:a:n:" arg
 do
