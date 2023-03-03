@@ -105,7 +105,7 @@ load_channel(Channels, Fun) ->
             <<"method">> => <<"GET">>,
             <<"path">> => <<"/classes/Product">>,
             <<"body">> => #{
-                <<"keys">> => [<<"decoder">>, <<"ACL">>, <<"dynamicReg">>, <<"nodeType">>, <<"productSecret">>, <<"config">>, <<"thing">>, <<"topics">>],
+                <<"keys">> => [<<"decoder">>, <<"ACL">>, <<"dynamicReg">>, <<"devType">>, <<"nodeType">>, <<"productSecret">>, <<"config">>, <<"thing">>, <<"topics">>],
                 <<"include">> => [<<"Dict">>],
                 <<"where">> => #{
                     <<"$relatedTo">> => #{
@@ -128,7 +128,7 @@ load_channel(Channels, Fun) ->
 
 format_channel([], [], _, Err) -> {ok, Err};
 format_channel([Info | Channels], [#{<<"success">> := #{<<"results">> := Products}} | Results], Fun, Err) ->
-    Keys = [<<"decoder">>, <<"ACL">>, <<"dynamicReg">>, <<"nodeType">>, <<"productSecret">>, <<"config">>, <<"thing">>, <<"topics">>],
+    Keys = [<<"decoder">>, <<"ACL">>, <<"dynamicReg">>, <<"devType">>, <<"nodeType">>, <<"productSecret">>, <<"config">>, <<"thing">>, <<"topics">>],
     NewProducts = [{ProductId, maps:with(Keys, Product)} || #{<<"objectId">> := ProductId} = Product <- Products],
     Channel = Info#{<<"product">> => NewProducts},
     Fun(Channel),

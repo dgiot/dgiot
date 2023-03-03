@@ -113,6 +113,7 @@
     , get_wlanip/0
     , get_computerconfig/0
     , get_ipbymac/1
+    , get_macbyip/1
     , get_ifaddrs/0
     , get_ifaddr/1
     , get_ifip/1
@@ -868,9 +869,18 @@ get_ipbymac(Mac, ping) ->
     end.
 
 get_ipbymac(Mac) ->
-    case re:run(os:cmd("chcp 65001 & arp -a"),
-        <<"([\\d]{1,3}\\.[\\d]{1,3}\\.[\\d]{1,3}\\.[\\d]{1,3}).*?([\\S]{2}-[\\S]{2}-[\\S]{2}-[\\S]{2}-[\\S]{2}-[\\S]{2})">>,
-        [global, {capture, all_but_first, binary}]) of
+    Ips =
+        case os:type() of
+            {unix, linux} ->
+                re:run(os:cmd("arp -a"),
+                    <<"([\\d]{1,3}\\.[\\d]{1,3}\\.[\\d]{1,3}\\.[\\d]{1,3}).*?([\\S]{2}:[\\S]{2}:[\\S]{2}:[\\S]{2}:[\\S]{2}:[\\S]{2})">>,
+                    [global, {capture, all_but_first, binary}]);
+            _ ->
+                re:run(os:cmd("chcp 65001 & arp -a"),
+                    <<"([\\d]{1,3}\\.[\\d]{1,3}\\.[\\d]{1,3}\\.[\\d]{1,3}).*?([\\S]{2}-[\\S]{2}-[\\S]{2}-[\\S]{2}-[\\S]{2}-[\\S]{2})">>,
+                    [global, {capture, all_but_first, binary}])
+        end,
+    case Ips of
         {match, Iflist} ->
             IpList = lists:foldl(fun(X, Acc) ->
                 case X of
@@ -884,6 +894,36 @@ get_ipbymac(Mac) ->
                     to_binary(trim_string(IpList))
             end;
         _ -> <<"">>
+    end.
+
+get_macbyip(Ip) ->
+    Ips =
+        case os:type() of
+            {unix, linux} ->
+                re:run(dgiot_utils:to_binary(os:cmd("arp -a")),
+                    <<"([\\d]{1,3}\\.[\\d]{1,3}\\.[\\d]{1,3}\\.[\\d]{1,3}).*?([\\S]{2}:[\\S]{2}:[\\S]{2}:[\\S]{2}:[\\S]{2}:[\\S]{2})">>,
+                    [global, {capture, all_but_first, binary}]);
+            _ ->
+                re:run(dgiot_utils:to_binary(os:cmd("chcp 65001 & arp -a")),
+                    <<"([\\d]{1,3}\\.[\\d]{1,3}\\.[\\d]{1,3}\\.[\\d]{1,3}).*?([\\S]{2}-[\\S]{2}-[\\S]{2}-[\\S]{2}-[\\S]{2}-[\\S]{2})">>,
+                    [global, {capture, all_but_first, binary}])
+        end,
+    case Ips of
+        {match, Iflist} ->
+            IpList = lists:foldl(fun(X, Acc) ->
+                case X of
+                    [Ip, Mac] ->
+                        lists:umerge([Acc, [list_to_binary(string:to_upper(re:replace(Mac, "-", ":", [global, {return, list}])))]]);
+                    _ -> Acc
+                end
+                                 end, [], Iflist),
+            case IpList of
+                [] -> <<"">>;
+                _ ->
+                    to_binary(trim_string(IpList))
+            end;
+        _ ->
+            <<"">>
     end.
 
 get_ip({A, B, C, D}) ->
