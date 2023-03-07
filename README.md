@@ -16,7 +16,7 @@
 
 *DGIOT*  is the first lightweight open source industrial iot continuous integration platform in China
 
-Before 2016, the Shuwa team had been crawling on the Internet and the mobile Internet for many years. In 2016, it began to enter the Internet of Things crawling. It hopes to share many years of crawling experience through this open source platform and make multidisciplinary industrial Internet projects easier.
+Before 2016, the dgiot team had been crawling on the Internet and the mobile Internet for many years. In 2016, it began to enter the Internet of Things crawling. It hopes to share many years of crawling experience through this open source platform and make multidisciplinary industrial Internet projects easier.
    + Let rich engineers to complete industrial Internet projects with simpler requirements through window interaction
    + Let the majority of junior front-end engineers to undertake industrial Internet projects with more complex requirements through the serverless method
    + Let Python, Java, Go, C junior background engineers undertake complex industrial Internet projects through web programming development channels
