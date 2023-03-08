@@ -214,11 +214,18 @@ do_request(post_logout, #{<<"sessionToken">> := SessionToken}, _Context, _Req) -
     dgiot_parse_auth:del_cookie(SessionToken),
     dgiot_parse:del_object(<<"_Session">>, SessionId);
 
-%% RoleUser 概要: 导库 描述:json文件导库
+%% RoleUser 概要: 导库 描述:查询部门下用户
 %% OperationId:get_roleuser
 %% 请求:GET /iotapi/roleuser
 do_request(get_roleuser, #{<<"where">> := Where} = Filter, #{<<"sessionToken">> := SessionToken} = _Context, _Req0) ->
-    dgiot_parse_auth:get_roleuser(Filter#{<<"where">> => jsx:decode(Where, [return_maps])}, SessionToken);
+    UserFilter =
+        case maps:get(<<"userfilter">>, Filter, <<"{}">>) of
+            undefined ->
+                <<"{}">>;
+            V ->
+                V
+        end,
+    dgiot_parse_auth:get_roleuser(Filter#{<<"where">> => jsx:decode(Where, [return_maps]), <<"userfilter">> => jsx:decode(UserFilter, [return_maps])}, SessionToken);
 
 %% Role模版 概要: 导库 描述:json文件导库
 %% OperationId:put_roleuser

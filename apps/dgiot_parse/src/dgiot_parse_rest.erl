@@ -26,7 +26,7 @@
 
 
 %% API
--export([request/5, method/1, method/2]).
+-export([request/5, method/1, method/2, check_view/2]).
 
 %%%===================================================================
 %%% API
@@ -44,7 +44,7 @@ request(Method, Header, Path0, Body, Options) when is_binary(Method) ->
     request(NewMethod, Header, Path0, Body, Options);
 
 request(Method, Header, Path0, Body, Options) ->
-    {IsGetCount, Path, NewBody} = get_request_args(Path0, Method, Body, Options),
+    {IsGetCount, Path, NewBody} = get_request_args(Path0, Method, Body, Header, Options),
     Header1 = dgiot_parse:get_header_token(Path, Header),
     NewHeads = get_headers(Method, Path, Header1, Options),
     Fun =
@@ -120,20 +120,65 @@ to_binary(V) when is_integer(V) -> integer_to_binary(V);
 to_binary(V) when is_binary(V) -> V;
 to_binary(V) -> to_binary(io_lib:format("~p", [V])).
 
-get_request_args(Path, Method, <<>>, Options) ->
-    {NewPath, Query} = get_query(Path),
-    get_body(NewPath, Method, Query, Options);
+get_newwhere(Header, Where) ->
+    case jsx:is_json(Where) of
+        true ->
+            SessionToken = proplists:get_value(<<"sessiontoken">>, Header),
+            Map = dgiot_json:decode(Where),
+            case dgiot_auth:get_session(SessionToken) of
+                #{<<"roles">> := Roles} ->
+                    ViewIds =
+                        maps:fold(fun(RoleId, Role, Acc) ->
+                            case maps:find(<<"level">>, Role) of
+                                {ok, Level} when Level < 3 ->
+                                    Acc ++ [true];
+                                _ ->
+                                    case dgiot_role:get_role_views(RoleId) of
+                                        not_find ->
+                                            Acc;
+                                        Ids ->
+                                            Acc ++ Ids
+                                    end
+                            end
+                                  end, [], Roles),
+                    case lists:member(true, ViewIds) of
+                        true ->
+                            Where;
+                        _ ->
+                            dgiot_json:encode(Map#{<<"objectId">> => #{<<"$in">> => ViewIds}})
+                    end;
+                _ ->
+                    Where
+            end;
+        _ ->
+            Where
+    end.
 
-get_request_args(Path, Method, Body, Options) when is_binary(Body) ->
+get_request_args(<<"/classes/View", _/binary>> = Path, Method, <<>>, Header, Options) ->
+    {NewPath, Query} = get_query(Path),
+    NewQuery =
+        case maps:find(<<"where">>, Query) of
+            {ok, Where} ->
+                Query#{<<"where">> => get_newwhere(Header, Where)};
+            _ ->
+                Query
+        end,
+    get_body(NewPath, Method, NewQuery, Header, Options);
+
+get_request_args(Path, Method, <<>>, Header, Options) ->
+    {NewPath, Query} = get_query(Path),
+    get_body(NewPath, Method, Query, Header, Options);
+
+get_request_args(Path, Method, Body, Header, Options) when is_binary(Body) ->
     case catch ?JSON_DECODE(Body) of
         Map when is_map(Map) ->
-            get_request_args(Path, Method, Map, Options);
+            get_request_args(Path, Method, Map, Header, Options);
         _ ->
             {false, Path, Body}
     end;
 
-get_request_args(Path, Method, Body, Options) ->
-    get_body(Path, Method, Body, Options).
+get_request_args(Path, Method, Body, Header, Options) ->
+    get_body(Path, Method, Body, Header, Options).
 
 
 get_headers(Method, Path, Header, Options) when is_list(Header) ->
@@ -163,13 +208,15 @@ get_headers(Method, Path, Header, Options) ->
                         [{"X-Parse-Revocable-Session", "1"}, {"X-Parse-REST-API-Key", to_list(RestKey)} | NewHeader];
                     <<"/login?", _/binary>> when Method == 'GET' -> % 登录
                         [{"X-Parse-Revocable-Session", "1"}, {"X-Parse-REST-API-Key", to_list(RestKey)} | NewHeader];
-                    <<"/classes/View/", ViewId/binary>> when Method == 'GET' -> % view
-                        case check_view(Header, ViewId) of
-                            true ->
-                                [{"X-Parse-Master-Key", to_list(MasterKey)} | NewHeader];
-                            _ ->
-                                [{"X-Parse-REST-API-Key", to_list(RestKey)} | NewHeader]
-                        end;
+%%                    <<"/classes/View/", ViewId/binary>> when Method == 'GET' -> % view
+%%                        case check_view(Header, ViewId) of
+%%                            true ->
+%%                                [{"X-Parse-Master-Key", to_list(MasterKey)} | NewHeader];
+%%                            _ ->
+%%                                [{"X-Parse-REST-API-Key", to_list(RestKey)} | NewHeader]
+%%                        end;
+                    <<"/classes/View", _/binary>> when Method == 'GET' -> % view
+                        [{"X-Parse-Master-Key", to_list(MasterKey)} | NewHeader];
                     _ ->
                         [{"X-Parse-REST-API-Key", to_list(RestKey)} | NewHeader]
                 end,
@@ -206,7 +253,7 @@ get_query(Path) ->
             {Path, #{}}
     end.
 
-get_body(Path, Method, Map, Options) ->
+get_body(Path, Method, Map, _Header, Options) ->
     #{<<"appid">> := AppId, <<"jskey">> := JsKey} = proplists:get_value(cfg, Options),
     {IsGetCount, Columns} =
         case maps:get(<<"keys">>, Map, false) of
