@@ -113,7 +113,7 @@
     },
     "/user": {
       "post": {
-        "summary": "员工入职",
+        "summary": "新增用户",
         "description": "新增用户",
         "parameters": [
           {
@@ -190,8 +190,8 @@
         ]
       },
       "put": {
-        "summary": "员工转岗",
-        "description": "员工转岗",
+        "summary": "修改用户",
+        "description": "修改用户",
         "parameters": [
           {
             "in": "body",
@@ -234,8 +234,8 @@
         ]
       },
       "delete": {
-        "summary": "员工离职",
-        "description": "员工离职",
+        "summary": "删除用户",
+        "description": "删除用户",
         "parameters": [
           {
             "in": "body",
@@ -534,14 +534,14 @@
             "in": "query",
             "type": "string",
             "default": "{}",
-            "description": "过滤条件，eg: {}"
+            "description": "角色过滤条件，eg: {}"
           },
           {
-            "name": "limit",
+            "name": "userfilter",
             "in": "query",
-            "type": "number",
-            "default": 1,
-            "description": "limit, 显示多少条记录，显示100条记录 eg:100"
+            "type": "string",
+            "default": "{}",
+            "description": "用户过滤条件，eg: {}"
           },
           {
             "name": "include",

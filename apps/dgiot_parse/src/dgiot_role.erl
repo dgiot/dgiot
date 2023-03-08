@@ -53,6 +53,7 @@
     get_rolenames/1,
     save_role_view/1,
     save_role_menuview/1,
+    get_role_views/1,
     get_role_view/2
 ]).
 
@@ -980,6 +981,14 @@ save_role_menuview(RoleId) ->
                     end, [], Results),
             dgiot_data:insert(?ROLE_MENUVIEWS_ETS, RoleId, ViewIds);
         _ -> pass
+    end.
+
+get_role_views(RoleId) ->
+    case dgiot_data:get(?ROLE_VIEWS_ETS, RoleId) of
+        not_find ->
+            not_find;
+        ViewIds ->
+            ViewIds
     end.
 
 get_role_view(RoleId, ViewId) ->
