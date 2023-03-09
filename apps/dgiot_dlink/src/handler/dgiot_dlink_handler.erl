@@ -179,7 +179,7 @@ do_request(get_dlinkjson, #{<<"type">> := Type}, _Context, _Req) ->
     {200, DlinkJson};
 
 do_request(post_topic, #{<<"topic">> := Topic} = _Args, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
-    dgiot_mqtt:subscribe_route_key([Topic], SessionToken),
+    dgiot_mqtt:subscribe_route_key([Topic], <<"post_topic">>, SessionToken),
     {200, #{<<"message">> => <<"订阅成功"/utf8>>, <<"Topic">> => Topic, <<"TopicKey">> => <<"TopicKey">>}};
 
 do_request(get_thingecho, _Args, _Context, _Req) ->

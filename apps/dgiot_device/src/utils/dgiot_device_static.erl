@@ -76,6 +76,7 @@ get_pie({Token, <<"device_poweron_poweroff">>}) ->
 get_pie({_Token, _}) ->
     pass.
 
+
 get_realdata({Token, NodeId}) ->
     Len = size(NodeId) - 16,
     case NodeId of

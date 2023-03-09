@@ -365,13 +365,13 @@ control_channel(ChannelId, Action, SessionToken) ->
                 dgiot_mqtt:publish(ChannelId, Topic, Payload),
                 {true, <<"success">>};
             <<"start_logger">> ->
-                dgiot_mqtt:subscribe_route_key([<<"$dg/user/channel/", ChannelId/binary, "/#">>], SessionToken),
+                dgiot_mqtt:subscribe_route_key([<<"$dg/user/channel/", ChannelId/binary, "/#">>], <<"channel">>, SessionToken),
                 Topic = <<"channel/", ChannelId/binary>>,
                 Payload = jsx:encode(#{<<"channelId">> => ChannelId, <<"action">> => <<"start_logger">>}),
                 dgiot_mqtt:publish(ChannelId, Topic, Payload),
                 {true, <<"success">>};
             <<"stop_logger">> ->
-                dgiot_mqtt:unsubscribe_route_key(SessionToken),
+                dgiot_mqtt:unsubscribe_route_key(SessionToken, <<"channel">>),
                 Topic = <<"channel/", ChannelId/binary>>,
                 Payload = jsx:encode(#{<<"channelId">> => ChannelId, <<"action">> => <<"stop_logger">>}),
                 dgiot_mqtt:publish(ChannelId, Topic, Payload),
