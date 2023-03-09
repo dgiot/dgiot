@@ -3,7 +3,7 @@
         {vsn, "4.3.0"},
         {registered, [dgiot_location_sup]},
         {mod, {dgiot_location_app, []}},
-        {applications, [kernel, stdlib]},
+        {applications, [kernel, stdlib, locus]},
         {env, []},
         {modules, []},
         {licenses, ["Apache-2.0"]},
