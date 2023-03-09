@@ -121,10 +121,12 @@ do_request(post_configuration, #{<<"data">> := Data}, _Context, _Req) ->
     dgiot_notification:save_configuration(),
     Result;
 
-% 设备短信发送
-do_request(post_sendsms_deviceid, #{<<"deviceid">> := DeviceId, <<"roleid">> := RoleId, <<"tplid">> := TplId, <<"params">> := Params} = _Args, _Context, _Req) ->
-%%    io:format("~s ~p Args = ~p.~n", [?FILE, ?LINE, _Args]),
-    Mobile = dgiot_notification:get_Mobile(DeviceId, RoleId, RoleId),
+% 短信发送
+do_request(post_sendsms_msg, #{<<"phones">> := Phones, <<"tplid">> := TplId, <<"params">> := Params} = _Args, _Context, _Req) ->
+    Mobile =
+        lists:foldl(fun(Phone, Acc) ->
+            Acc ++ [#{<<"mobile">> => Phone, <<"nationcode">> => <<"86">>}]
+                    end, [], binary:split(Phones, <<$,>>, [global, trim])),
     dgiot_notification:send_sms(Mobile, TplId, Params);
 
 %数字工厂告警
@@ -338,7 +340,7 @@ do_request(post_triggeralarm, #{<<"deviceid">> := DeviceId} = Args, #{<<"session
 %% System 概要: 发送短信验证码 描述:发送短信,短信验证码发送成功后,则会在缓存中写入action + mobile, 用户下一步提交时，可以根据此键查询验证通过
 %% OperationId:post_sendsms_action
 %% 请求:POST /iotapi/sendsms/:Action
-do_request(post_sendsms, #{<<"account">> := Account, <<"nationcode">> := NationCode}, _Context, _Req) ->
+do_request(post_sendsms_code, #{<<"account">> := Account, <<"nationcode">> := NationCode}, _Context, _Req) ->
     case dgiot_notification:send_verification_code(NationCode, Account) of
         {error, Reason} ->
             {500, #{code => 1, error => Reason}};

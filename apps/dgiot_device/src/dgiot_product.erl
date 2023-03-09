@@ -318,7 +318,7 @@ get_interval(ProductId) ->
         {ok, #{<<"config">> := #{<<"interval">> := Interval}}} ->
             dgiot_utils:to_int(Interval);
         _ ->
-            0
+            -1
     end.
 
 %% 解码器

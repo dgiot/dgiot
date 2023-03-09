@@ -133,7 +133,7 @@ get_konva_view(View, Devaddr, ProductId, Type, SessionToken) ->
             end;
         _ ->
             DeviceId = dgiot_parse_id:get_deviceid(ProductId, Devaddr),
-            dgiot_mqtt:subscribe_route_key([<<"$dg/user/konva/", DeviceId/binary, "/#">>], SessionToken),
+            dgiot_mqtt:subscribe_route_key([<<"$dg/user/konva/", DeviceId/binary, "/#">>], <<"konva">>, SessionToken),
             case dgiot_device_tdengine:get_device(ProductId, Devaddr, #{<<"keys">> => <<"*">>, <<"limit">> => 1}) of
                 {ok, #{<<"results">> := [Result | _]}} ->
                     put({self(), td}, Result);

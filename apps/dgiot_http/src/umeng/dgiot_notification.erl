@@ -132,10 +132,10 @@ send_sms(NationCode, Mobile, TplId, Params, AppId, AppKey, Sign, Ext) ->
             case catch httpc:request(post, Request, [], [{body_format, binary}]) of
                 {ok, {{_HTTPVersion, 200, "OK"}, _Header, ResBody}} ->
                     case jsx:decode(ResBody, [{labels, binary}, return_maps]) of
-                        #{<<"result">> := 0, <<"errmsg">> := <<"OK">>} ->
-                            {ok, #{<<"code">> => 200, <<"msg">> => <<"send success">>}};
-                        #{<<"errmsg">> := ErrMsg, <<"result">> := Code} ->
-                            {ok, #{<<"code">> => Code, <<"error">> => ErrMsg}}
+                        #{<<"result">> := 0, <<"errmsg">> := <<"OK">>} = Result ->
+                            {ok, Result#{<<"code">> => 200}};
+                        #{<<"errmsg">> := ErrMsg, <<"result">> := Code} = ErrResult->
+                            {ok, ErrResult#{<<"code">> => Code, <<"error">> => ErrMsg}}
                     end;
                 {Err, Reason} when Err == error; Err == 'EXIT' ->
                     {ok, #{<<"code">> => 1, <<"error">> => Reason}}

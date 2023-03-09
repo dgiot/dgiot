@@ -334,11 +334,8 @@ save_td(ProductId, DevAddr, Ack, _AppData) ->
             AllData = dgiot_task:get_calculated(ProductId, Collection),
             %%            过滤存储值
             Storage = dgiot_task:get_storage(ProductId, AllData),
-            case Interval of
-                0 ->
-                    save_cache_data(DeviceId, CacheData),
-                    dealwith_data(ProductId, DevAddr, DeviceId, AllData, Storage);
-                Interval ->
+            case Interval > 0 of
+                true ->
                     Keys = dgiot_product:get_keys(ProductId),
                     AllStorageKey = maps:keys(Storage),
                     case Keys -- AllStorageKey of
@@ -347,7 +344,10 @@ save_td(ProductId, DevAddr, Ack, _AppData) ->
                         _ ->
                             save_cache_data(DeviceId, CacheData),
                             Storage
-                    end
+                    end;
+                _ ->
+                    save_cache_data(DeviceId, CacheData),
+                    dealwith_data(ProductId, DevAddr, DeviceId, AllData, Storage)
             end
     end.
 
@@ -375,6 +375,19 @@ save_cache_data(DeviceId, Data) ->
 
 merge_cache_data(_DeviceId, NewData, 0) ->
     NewData;
+
+merge_cache_data(DeviceId, NewData, -1) ->
+    case dgiot_data:get(?DGIOT_DATA_CACHE, DeviceId) of
+        not_find ->
+            NewData;
+        {OldData, _Ts} ->
+            NewOldData =
+                maps:fold(fun(K, V, Acc) ->
+                    Key = dgiot_utils:to_binary(K),
+                    Acc#{Key => V}
+                          end, #{}, OldData),
+            dgiot_map:merge(NewOldData, NewData)
+    end;
 
 merge_cache_data(DeviceId, NewData, Interval) ->
     case dgiot_data:get(?DGIOT_DATA_CACHE, DeviceId) of

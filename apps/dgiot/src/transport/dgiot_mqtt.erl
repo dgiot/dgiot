@@ -56,8 +56,8 @@
     , republish/2
     , get_message/2
     , subopts/0
-    , subscribe_route_key/2
-    , unsubscribe_route_key/1
+    , subscribe_route_key/3
+    , unsubscribe_route_key/2
     , subscribe_mgmt/2
     , unsubscribe_mgmt/2
 ]).
@@ -66,35 +66,30 @@ init_ets() ->
     dgiot_data:init(?DGIOT_ROUTE_KEY).
 
 %%
-subscribe_route_key(Topics, SessionToken) ->
-    case dgiot_data:get(?DGIOT_ROUTE_KEY, SessionToken) of
-        not_find ->
-            pass;
-        OldTopic ->
-            lists:foldl(fun
-                            (<<"$dg/user/devicestate/", _/binary>> = X, _) ->
-                                dgiot_mqtt:unsubscribe_mgmt(SessionToken, X);
-                            (_, _) ->
-                                pass
-                        end, [], OldTopic)
-    end,
+subscribe_route_key(Topics, Type, SessionToken) ->
+    unsubscribe_route_key(SessionToken, Type),
     lists:foldl(fun(X, Acc) ->
         dgiot_mqtt:subscribe_mgmt(SessionToken, X),
         Acc ++ [X]
                 end, [], Topics),
-    dgiot_data:insert(?DGIOT_ROUTE_KEY, SessionToken, Topics).
+    dgiot_data:insert(?DGIOT_ROUTE_KEY, {SessionToken, Type}, Topics).
 
+unsubscribe_route_key(_, <<"all">>) ->
+    Fun = fun({{SessionToken, Type}, _}) ->
+        unsubscribe_route_key(SessionToken, Type)
+          end,
+    dgiot_mnesia:search(dgiot_route_key, Fun, #{});
 
-unsubscribe_route_key(SessionToken) ->
-    case dgiot_data:get(?DGIOT_ROUTE_KEY, SessionToken) of
+unsubscribe_route_key(SessionToken, Type) ->
+    case dgiot_data:get(?DGIOT_ROUTE_KEY, {SessionToken, Type}) of
         not_find ->
             pass;
-        OldTopic ->
-            lists:foldl(fun(X, _Acc) ->
+        Topics ->
+            lists:foldl(fun(X, _) ->
                 dgiot_mqtt:unsubscribe_mgmt(SessionToken, X)
-                        end, [], OldTopic)
-    end,
-    dgiot_data:delete(?DGIOT_ROUTE_KEY, SessionToken).
+                        end, [], Topics),
+            dgiot_data:delete(?DGIOT_ROUTE_KEY, {SessionToken, Type})
+    end.
 
 has_routes(Topic) ->
     emqx_router:has_routes(Topic).

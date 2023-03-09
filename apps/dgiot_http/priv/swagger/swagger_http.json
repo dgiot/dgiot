@@ -117,22 +117,15 @@
         ]
       }
     },
-    "/sendsms/{deviceid}": {
+    "/sendsms_msg": {
       "post": {
-        "summary": "设备发送短信",
-        "description": "设备发送短信",
+        "summary": "发送短信",
+        "description": "发送短信",
         "consumes": [
           "application/json",
           "*"
         ],
         "parameters": [
-          {
-            "in": "path",
-            "name": "deviceid",
-            "description": "设备id",
-            "required": true,
-            "type": "string"
-          },
           {
             "in": "body",
             "name": "data",
@@ -140,6 +133,12 @@
             "schema": {
               "type": "object",
               "properties": {
+                "phones": {
+                  "required": true,
+                  "type": "string",
+                  "description": "电话号码 ',' 隔开",
+                  "example": ""
+                },
                 "tplid": {
                   "required": true,
                   "type": "string",
@@ -882,7 +881,7 @@
         ]
       }
     },
-    "/sendsms": {
+    "/sendsms_code": {
       "post": {
         "security": [],
         "consumes": [
