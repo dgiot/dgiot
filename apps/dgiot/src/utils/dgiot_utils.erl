@@ -66,6 +66,7 @@
     , zip_bin/1
     , is_in_binary/2
     , is_number/1
+    , xor_sum/1
     , get_parity/1
     , crc16/1
     , crc16_h/1
@@ -466,6 +467,16 @@ reverse(Bin) -> reverse(Bin, <<>>).
 reverse(<<>>, Acc) -> Acc;
 reverse(<<H:1/binary, Rest/binary>>, Acc) ->
     reverse(Rest, <<H/binary, Acc/binary>>).
+
+% 定义函数
+xor_sum(B) ->
+    xor_sum(1, [X || <<X:8>> <= B], 0).
+
+% 定义递归函数
+xor_sum(I, List, Acc) when I < length(List) ->
+    xor_sum(I+1, List, Acc bxor lists:nth(I, List));
+xor_sum(_, _, Acc) ->
+    Acc.
 
 get_parity(Data) when is_binary(Data) ->
     get_parity(binary_to_list(Data));
