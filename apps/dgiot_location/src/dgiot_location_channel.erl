@@ -55,6 +55,19 @@
             zh => <<"定位模式:IP|BTS|WIFI|GPS"/utf8>>
         }
     },
+    <<"geotype">> => #{
+        order => 2,
+        type => enum,
+        required => false,
+        default => <<"City"/utf8>>,
+        enum => [<<"ASN"/utf8>>, <<"City"/utf8>>, <<"Country"/utf8>>],
+        title => #{
+            zh => <<"IP位置类型"/utf8>>
+        },
+        description => #{
+            zh => <<"通过ip查找位置:ASN|City|Country"/utf8>>
+        }
+    },
     <<"ico">> => #{
         order => 102,
         type => string,
@@ -78,7 +91,9 @@ start(ChannelId, ChannelArgs) ->
 %% 通道初始化
 init(?TYPE, ChannelId, #{
     <<"product">> := Products,
+    <<"geotype">> := Geotype,
     <<"search">> := Search}) ->
+    dgiot_geoip:start(Geotype),
     lists:map(fun(X) ->
         case X of
             {ProductId, #{<<"ACL">> := Acl, <<"nodeType">> := 1, <<"thing">> := Thing}} ->
