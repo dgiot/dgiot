@@ -74,7 +74,7 @@ get_sns(Jscode) ->
     Secret = dgiot_utils:to_binary(application:get_env(dgiot_http, wechat_secret, <<"">>)),
     Url = "https://api.weixin.qq.com/sns/jscode2session?appid=" ++ dgiot_utils:to_list(AppId) ++ "&secret=" ++ dgiot_utils:to_list(Secret) ++
         "&js_code=" ++ dgiot_utils:to_list(Jscode) ++ "&grant_type=authorization_code",
-    ?LOG(info, "Url ~s", [Url]),
+%%    ?LOG(info, "Url ~s", [Url]),
     case httpc:request(Url) of
         {ok, {{_Version, 200, _ReasonPhrase}, _Headers, Body}} ->
             Json = list_to_binary(Body),

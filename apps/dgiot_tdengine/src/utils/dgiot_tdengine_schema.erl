@@ -108,6 +108,8 @@ alter_table(#{<<"tableName">> := TableName}, #{<<"channel">> := Channel} = Conte
                     case Column of
                         #{<<"Field">> := Identifier, <<"Type">> := Type} ->
                             Acc#{Identifier => list_to_binary(string:to_lower(binary_to_list(Type)))};
+                        #{<<"field">> := Identifier, <<"type">> := Type} ->
+                            Acc#{Identifier => list_to_binary(string:to_lower(binary_to_list(Type)))};
                         _ ->
                             Acc
                     end
@@ -131,14 +133,19 @@ get_addSql(ProductId, TdColumn, Database, TableName) ->
         {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
             lists:foldl(fun(Prop, Acc) ->
                 case Prop of
-                    #{<<"dataType">> := DataType, <<"identifier">> := Identifier, <<"isstorage">> := true} ->
+                    #{<<"dataType">> := #{<<"type">> := Type} = DataType, <<"identifier">> := Identifier, <<"isstorage">> := true} ->
                         LowerIdentifier = list_to_binary(string:to_lower(binary_to_list(Identifier))),
+                        LowerType = list_to_binary(string:to_lower(binary_to_list(Type))),
                         case maps:find(LowerIdentifier, TdColumn) of
                             error ->
                                 Acc ++ [dgiot_tdengine_field:add_field(DataType, Database, TableName, LowerIdentifier)];
+                            {ok, LowerType} ->
+                                Acc;
                             _ ->
-                                %% todo   类型改变
-                                Acc
+                                %% 类型改变, 先删除列, 再重新添加
+                                DROP = <<"ALTER TABLE ", Database/binary, TableName/binary, " DROP COLUMN ", LowerIdentifier/binary, ";">>,
+                                ADD = dgiot_tdengine_field:add_field(DataType, Database, TableName, LowerIdentifier),
+                                Acc ++ [DROP, ADD]
                         end;
                     _ ->
                         Acc

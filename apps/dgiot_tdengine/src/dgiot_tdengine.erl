@@ -245,9 +245,21 @@ get_sql([Column | Results], Values, Now, Acc) ->
         case Column of
             #{<<"Note">> := <<"TAG">>} ->
                 Acc;
+            #{<<"note">> := <<"TAG">>} ->
+                Acc;
             #{<<"Field">> := <<"createdat">>} ->
                 Acc ++ dgiot_utils:to_list(Now);
+            #{<<"field">> := <<"createdat">>} ->
+                Acc ++ dgiot_utils:to_list(Now);
             #{<<"Field">> := Field} ->
+                Value = maps:get(Field, Values, null),
+                case Value of
+                    {NewValue, text} ->
+                        Acc ++ ",\'" ++ dgiot_utils:to_list(NewValue) ++ "\'";
+                    _ ->
+                        Acc ++ "," ++ dgiot_utils:to_list(Value)
+                end;
+            #{<<"field">> := Field} ->
                 Value = maps:get(Field, Values, null),
                 case Value of
                     {NewValue, text} ->
