@@ -36,26 +36,8 @@
     module = dgiot_sonbs
 }).
 
-start_connect(#{
-    <<"auto_reconnect">> := Recon,
-    <<"reconnect_times">> := ReTimes,
-    <<"port">> := _Port,
-    <<"ip">> := _Ip,
-    <<"productid">> := ProductId,
-    <<"hb">> := HB,
-    <<"login">> := Login,
-    <<"module">> := Module
-}) ->
-    State = #state{
-        productid = ProductId,
-        hb = HB,
-        auto_reconnect = Recon,
-        reconnect_times = ReTimes,
-        login = Login,
-        module = dgiot_utils:to_atom(Module)
-    },
-    State.
-%%    dgiot_udp_client:start_link(?MODULE, Ip, Port, State).
+start_connect(Args) ->
+    dgiot_udp_client:start_link(Args).
 
 init(UDPState) ->
     {ok, UDPState}.

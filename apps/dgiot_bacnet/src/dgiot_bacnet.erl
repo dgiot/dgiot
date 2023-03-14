@@ -18,9 +18,9 @@
 -include_lib("dgiot/include/logger.hrl").
 
 -export([
-    bacnetcallback/1
+    bacnetcallback/1,
+    whois/2
 ]).
-
 
 bacnetcallback(Data) ->
 %%    io:format("~s ~p Data = ~p.~n", [?FILE, ?LINE, Data]),
@@ -53,3 +53,16 @@ bacnetcallback(Data) ->
         end
                 end, [], Data).
 
+
+whois(ChannelId, ClientId) ->
+    % 构建BACnet Who-Is消息
+    WhoIs = [
+        <<16#01>>, % BACnet协议版本
+        <<16#00, 16#06>>, % 目标网络/长度
+        <<16#FF>>, % 目标MAC地址
+        <<16#00, 16#00>>, % 目标对象类型和实例号
+        <<16#10>> % 最大APDU长度
+    ],
+
+    % 将Who-Is消息发送到BACnet广播地址
+    dgiot_udp_broadcast:send(ChannelId, ClientId, dgiot_utils:to_binary(WhoIs)).
