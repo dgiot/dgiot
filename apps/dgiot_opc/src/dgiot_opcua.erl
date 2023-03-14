@@ -33,7 +33,6 @@ test() ->
         include_subtypes => true}),
     opcua_client:close(Client).
 
-]).
 create_certificate(Name) ->
     Priv = code:priv_dir(opcua),
     Key = Priv ++ "/eopcua.pem",
