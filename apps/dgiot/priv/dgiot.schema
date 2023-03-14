@@ -207,7 +207,7 @@ end}.
           both -> [ConsoleHandler, ConsoleFileHandler];
           _ -> []
     end,
-    LoggerHandlers = [{dgiot__logger,
+    LoggerHandlers = [{dgiot_logger,
         [
            {level, ConsoleLogLevel}
         ]

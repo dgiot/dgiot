@@ -40,5 +40,6 @@ start_link() ->
 %%--------------------------------------------------------------------
 
 init([]) ->
-    {ok, { {one_for_one, 5, 10}, []}}.
+    ChildSpec = [dgiot:child_spec(dgiot_bacnet_client, worker)],
+    {ok, { {one_for_one, 5, 10}, ChildSpec}}.
 

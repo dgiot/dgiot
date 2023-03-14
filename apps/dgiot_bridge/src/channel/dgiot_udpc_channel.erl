@@ -76,23 +76,6 @@
             zh => <<"登录报文"/utf8>>
         }
     },
-    <<"module">> => #{
-        order => 4,
-        type => enum,
-        required => false,
-        default => <<"dgiot_udp"/utf8>>,
-        enum => [
-            #{<<"value">> => <<"dgiot_udp">>, <<"label">> => <<"dgiot_udp"/utf8>>},
-            #{<<"value">> => <<"dgiot_sonbs">>, <<"label">> => <<"dgiot_sonbs"/utf8>>},
-            #{<<"value">> => <<"dgiot_feixing">>, <<"label">> => <<"dgiot_feixing"/utf8>>}
-        ],
-        title => #{
-            zh => <<"回调模块"/utf8>>
-        },
-        description => #{
-            zh => <<"回调模块"/utf8>>
-        }
-    },
     <<"hb">> => #{
         order => 5,
         type => integer,
@@ -133,12 +116,12 @@ init(?TYPE, ChannelId, Args) ->
     },
     {ok, State, []}.
 
-handle_init(#state{env = Args} = State) ->
+handle_init(#state{env = Args, id = ChannelI} = State) ->
     #{<<"product">> := Products,
         <<"ip">> := Ip,
         <<"port">> := Port} = Args,
     lists:map(fun({ProductId, _Opt}) ->
-        start_client(ProductId, Ip, Port, Args)
+        start_client(ChannelI, ProductId, Ip, Port, Args)
               end, Products),
     {ok, State}.
 
@@ -154,43 +137,16 @@ stop(ChannelType, ChannelId, _State) ->
     ?LOG(warning, "channel stop ~p,~p", [ChannelType, ChannelId]),
     ok.
 
-
-start_client(ProductId, Ip, Port,
-    #{<<"hb">> := Hb, <<"login">> := Login, <<"module">> := Module}) ->
+start_client(ChannelId, ProductId, Ip, Port, #{<<"hb">> := Hb,  <<"login">> := Login}) ->
     dgiot_udpc_worker:start_connect(#{
         <<"auto_reconnect">> => 10,
         <<"reconnect_times">> => 3,
         <<"ip">> => Ip,
+        <<"channel">> => ChannelId,
+        <<"client">> => <<"ClientId">>,
         <<"port">> => Port,
         <<"productid">> => ProductId,
         <<"hb">> => Hb,
-        <<"login">> => Login,
-        <<"module">> => Module
+        <<"login">> => Login
     }).
 
-%%start_client(ProductId, Ip, Port,
-%%    #{<<"page_index">> := PageIndex, <<"page_size">> := PageSize, <<"total">> := Total, <<"hb">> := Hb, <<"login">> := Login, <<"module">> := Module}) ->
-%%    Success = fun(Page) ->
-%%        lists:map(fun(X) ->
-%%            case X of
-%%                #{<<"devaddr">> := DevAddr} ->
-%%                    dgiot_udpc_worker:start_connect(#{
-%%                        <<"auto_reconnect">> => 10,
-%%                        <<"reconnect_times">> => 3,
-%%                        <<"ip">> => Ip,
-%%                        <<"port">> => Port,
-%%                        <<"productid">> => ProductId,
-%%                        <<"hb">> => Hb,
-%%                        <<"devaddr">> => DevAddr,
-%%                        <<"login">> => Login,
-%%                        <<"module">> => Module
-%%                    });
-%%                _ ->
-%%                    ok
-%%            end
-%%                  end, Page)
-%%              end,
-%%    Query = #{
-%%        <<"where">> => #{<<"product">> => ProductId}
-%%    },
-%%    dgiot_parse_loader:start(<<"Device">>, Query, PageIndex, PageSize, Total, Success).
