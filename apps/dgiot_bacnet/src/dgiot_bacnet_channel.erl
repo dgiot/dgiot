@@ -94,7 +94,7 @@ init(?TYPE, ChannelId, #{<<"port">> := Port}) ->
         env = NewArgs
     },
     dgiot_client:add_clock(ChannelId, dgiot_datetime:now_secs() - 5000, dgiot_datetime:now_secs() + 300000),
-    {ok, State,  dgiot_client:register(ChannelId, udp_broadcast_sup, NewArgs)}.
+    {ok, State, dgiot_client:register(ChannelId, udp_broadcast_sup, NewArgs)}.
 
 %% 初始化池子
 handle_init(State) ->
@@ -109,17 +109,19 @@ handle_event(EventId, Event, _State) ->
 handle_message(start_client, #state{id = ChannelId, env = #{<<"port">> := Port}} = State) ->
     case dgiot_data:get({start_client, ChannelId}) of
         not_find ->
-            dgiot_bacnet_worker:start_connect(ChannelId,#{
-                <<"auto_reconnect">> => 10,
-                <<"port">> => Port,
-                <<"ip">> => {255,255,255,255}
-            });
+            lists:map(fun(Ip) ->
+                dgiot_bacnet_worker:start_connect(ChannelId, #{
+                    <<"auto_reconnect">> => 10,
+                    <<"port">> => Port,
+                    <<"ip">> => Ip
+                })
+                      end, dgiot_udp_broadcast:get_ipaddrs());
         _ ->
             pass
     end,
     {ok, State};
 
-handle_message({deliver, _Topic, Msg},State) ->
+handle_message({deliver, _Topic, Msg}, State) ->
     Payload = dgiot_mqtt:get_payload(Msg),
     case jsx:is_json(Payload) of
         false ->
