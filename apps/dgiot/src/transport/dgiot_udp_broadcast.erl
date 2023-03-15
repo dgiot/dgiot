@@ -22,7 +22,7 @@
 
 -behaviour(gen_server).
 %% API
--export([start_link/1, send/3, send/4, do_connect/2]).
+-export([start_link/1, send/3, do_connect/2, get_ipaddrs/0]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 -record(connect_state, {host, port, mod, socket = undefined, freq = 30, count = 1000, child, reconnect_times = 3, reconnect_sleep = 30}).
 
@@ -36,25 +36,12 @@ start_link(Args) ->
 %%%===================================================================
 %%% gen_server callbacks
 %%%===================================================================
-
 init([#{<<"channel">> := ChannelId, <<"client">> := ClientId, <<"ip">> := Ip, <<"port">> := Port, <<"mod">> := Mod} = Args]) ->
     Port1 = dgiot_utils:to_int(Port),
     UserData = #connect_state{mod = Mod, host = Ip, port = Port1, freq = 30, count = 300},
     ChildState = maps:get(<<"child">>, Args, #{}),
-    StartTime = dgiot_client:get_time(maps:get(<<"starttime">>, Args, dgiot_datetime:now_secs())),
-    EndTime = dgiot_client:get_time(maps:get(<<"endtime">>, Args, dgiot_datetime:now_secs() + 1000000000)),
-    Freq = maps:get(<<"freq">>, Args, 30),
-    NextTime = dgiot_client:get_nexttime(StartTime, Freq),
-    Count = dgiot_client:get_count(StartTime, EndTime, Freq),
-    Rand =
-        case maps:get(<<"rand">>, Args, true) of
-            true -> 0;
-            _ -> dgiot_client:get_rand(Freq)
-        end,
-    Clock = #dclock{freq = Freq, nexttime = NextTime + Rand, count = Count, round = 0},
-    Dclient = #dclient{channel = ChannelId, client = ClientId, status = ?DCLIENT_INTIALIZED, clock = Clock, userdata = UserData, child = ChildState},
+    Dclient = #dclient{channel = ChannelId, client = ClientId, status = ?DCLIENT_INTIALIZED, userdata = UserData, child = ChildState},
     dgiot_client:add(ChannelId, ClientId),
-    io:format("~s ~p ChannelId ~p ~n",[?FILE, ?LINE, ChannelId]),
     case Mod:init(Dclient) of
         {ok, NewDclient} ->
             do_connect(false, NewDclient),
@@ -117,11 +104,6 @@ handle_info({connection_ready, Socket}, #dclient{userdata = #connect_state{mod =
 handle_info(_, #dclient{userdata = #connect_state{socket = undefined}} = Dclient) ->
     {noreply, Dclient, hibernate};
 
-handle_info({send, Ip, PayLoad}, #dclient{userdata = #connect_state{port = Port, socket = Socket}} = Dclient) ->
-%%    io:format("~s ~p ~p send to ~p:~p : ~p ~n", [?FILE, ?LINE, self(), dgiot_utils:get_ip(Ip), Port, dgiot_utils:to_hex(PayLoad)]),
-    gen_udp:send(Socket, Ip, Port, PayLoad),
-    {noreply, Dclient, hibernate};
-
 handle_info({send, PayLoad}, #dclient{userdata = #connect_state{host = Ip, port = Port, socket = Socket}} = Dclient) ->
 %%    io:format("~s ~p ~p send to ~p:~p : ~p ~n", [?FILE, ?LINE, self(), dgiot_utils:get_ip(Ip), Port, dgiot_utils:to_hex(PayLoad)]),
     gen_udp:send(Socket, Ip, Port, PayLoad),
@@ -150,7 +132,7 @@ handle_info({udp_error, _Socket, _Reason}, Dclient) ->
     {noreply, Dclient, hibernate};
 
 handle_info({udp_closed, _Sock}, #dclient{channel = ChannelId, client = ClientId,
-    userdata = #connect_state{ socket = Socket, mod = Mod}} = Dclient) ->
+    userdata = #connect_state{socket = Socket, mod = Mod}} = Dclient) ->
     gen_udp:close(Socket),
     case Mod:handle_info(udp_closed, Dclient) of
         {noreply, #dclient{userdata = Userdata} = NewDclient} ->
@@ -176,7 +158,7 @@ handle_info({udp_closed, _Sock}, #dclient{channel = ChannelId, client = ClientId
             {noreply, NewDclient, hibernate}
     end;
 
-handle_info(Info, #dclient{channel = ChannelId, client = ClientId, userdata = #connect_state{mod = Mod,  socket = Socket}} = Dclient) ->
+handle_info(Info, #dclient{channel = ChannelId, client = ClientId, userdata = #connect_state{mod = Mod, socket = Socket}} = Dclient) ->
     case Mod:handle_info(Info, Dclient) of
         {noreply, NewDclient} ->
             {noreply, NewDclient, hibernate};
@@ -202,14 +184,6 @@ send(ChannelId, ClientId, Payload) ->
     case dgiot_client:get(ChannelId, ClientId) of
         {ok, Pid} ->
             Pid ! {send, Payload};
-        _ ->
-            pass
-    end.
-
-send(ChannelId, ClientId, Ip, Payload) ->
-    case dgiot_client:get(ChannelId, ClientId) of
-        {ok, Pid} ->
-            Pid ! {send, Ip, Payload};
         _ ->
             pass
     end.
@@ -250,3 +224,17 @@ connect(Client, #dclient{userdata = #connect_state{port = Port, reconnect_times 
                     end
             end
     end.
+
+
+get_ipaddrs() ->
+    {ok, NetConfigs} = inet:getifaddrs(),
+    lists:foldl(fun get_broadcast_addresses/2, [], NetConfigs).
+
+get_broadcast_addresses(NetConfig, AlreadyFoundAddresses) ->
+    case get_broadcast_address(NetConfig) of
+        none -> AlreadyFoundAddresses;
+        Address -> [Address | AlreadyFoundAddresses]
+    end.
+
+get_broadcast_address({_NetName, Opts}) ->
+    proplists:get_value(broadaddr, Opts, none).

@@ -26,15 +26,9 @@
 -define(MAX_BUFF_SIZE, 10 * 1024).
 
 start_connect(ChannelId, #{
-            <<"auto_reconnect">> := Recon,
             <<"ip">> := Ip
         }) ->
-    Child = #{
-        auto_reconnect => Recon,
-        devaddr => ChannelId,
-        mod => ?MODULE
-    },
-    dgiot_client:start(ChannelId, ChannelId, #{<<"ip">> => Ip, <<"child">> => Child}).
+    dgiot_client:start(ChannelId,  dgiot_utils:get_ip(Ip),  #{<<"ip">> => Ip, <<"mod">> => ?MODULE, <<"child">> => #{}}).
 
 init(#dclient{child = ChildState} = Dclient) when is_map(ChildState) ->
     {ok, Dclient};
