@@ -22,9 +22,9 @@
 
 -behaviour(gen_server).
 %% API
--export([start_link/1, send/3, do_connect/2]).
+-export([start_link/1, send/3, send/4, do_connect/2]).
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
--record(connect_state, {host, port, mod, socket = undefined, transport, freq = 30, count = 1000, child, reconnect_times = 3, reconnect_sleep = 30}).
+-record(connect_state, {host, port, mod, socket = undefined, freq = 30, count = 1000, child, reconnect_times = 3, reconnect_sleep = 30}).
 
 -define(TIMEOUT, 10000).
 -define(UDP_OPTIONS, [binary, {active, once}, {packet, raw}, {reuseaddr, true}, {send_timeout, ?TIMEOUT}]).
@@ -37,11 +37,9 @@ start_link(Args) ->
 %%% gen_server callbacks
 %%%===================================================================
 
-init([#{<<"channel">> := ChannelId, <<"client">> := ClientId, <<"ip">> := Host, <<"port">> := Port, <<"mod">> := Mod} = Args]) ->
-    Transport = gen_udp,
-    Ip = dgiot_utils:to_list(Host),
+init([#{<<"channel">> := ChannelId, <<"client">> := ClientId, <<"ip">> := Ip, <<"port">> := Port, <<"mod">> := Mod} = Args]) ->
     Port1 = dgiot_utils:to_int(Port),
-    UserData = #connect_state{mod = Mod, host = Ip, port = Port1, freq = 30, count = 300, transport = Transport},
+    UserData = #connect_state{mod = Mod, host = Ip, port = Port1, freq = 30, count = 300},
     ChildState = maps:get(<<"child">>, Args, #{}),
     StartTime = dgiot_client:get_time(maps:get(<<"starttime">>, Args, dgiot_datetime:now_secs())),
     EndTime = dgiot_client:get_time(maps:get(<<"endtime">>, Args, dgiot_datetime:now_secs() + 1000000000)),
@@ -56,6 +54,7 @@ init([#{<<"channel">> := ChannelId, <<"client">> := ClientId, <<"ip">> := Host, 
     Clock = #dclock{freq = Freq, nexttime = NextTime + Rand, count = Count, round = 0},
     Dclient = #dclient{channel = ChannelId, client = ClientId, status = ?DCLIENT_INTIALIZED, clock = Clock, userdata = UserData, child = ChildState},
     dgiot_client:add(ChannelId, ClientId),
+    io:format("~s ~p ChannelId ~p ~n",[?FILE, ?LINE, ChannelId]),
     case Mod:init(Dclient) of
         {ok, NewDclient} ->
             do_connect(false, NewDclient),
@@ -115,20 +114,24 @@ handle_info({connection_ready, Socket}, #dclient{userdata = #connect_state{mod =
     end;
 
 %% 往udp server 发送报文
-handle_info({send, _PayLoad}, #dclient{userdata = #connect_state{socket = undefined}} = Dclient) ->
+handle_info(_, #dclient{userdata = #connect_state{socket = undefined}} = Dclient) ->
+    {noreply, Dclient, hibernate};
+
+handle_info({send, Ip, PayLoad}, #dclient{userdata = #connect_state{port = Port, socket = Socket}} = Dclient) ->
+%%    io:format("~s ~p ~p send to ~p:~p : ~p ~n", [?FILE, ?LINE, self(), dgiot_utils:get_ip(Ip), Port, dgiot_utils:to_hex(PayLoad)]),
+    gen_udp:send(Socket, Ip, Port, PayLoad),
     {noreply, Dclient, hibernate};
 
 handle_info({send, PayLoad}, #dclient{userdata = #connect_state{host = Ip, port = Port, socket = Socket}} = Dclient) ->
-%%    io:format("~s ~p ~p send to from ~p:~p : ~p ~n", [?FILE, ?LINE, self(), _Ip, _Port, dgiot_utils:to_hex(PayLoad)]),
-%%    gen_udp:send(Socket, {255, 255, 255, 255}, 47808, Payload)
+%%    io:format("~s ~p ~p send to ~p:~p : ~p ~n", [?FILE, ?LINE, self(), dgiot_utils:get_ip(Ip), Port, dgiot_utils:to_hex(PayLoad)]),
     gen_udp:send(Socket, Ip, Port, PayLoad),
     {noreply, Dclient, hibernate};
 
 handle_info({ssl, _RawSock, Data}, Dclient) ->
     handle_info({ssl, _RawSock, Data}, Dclient);
 
-handle_info({udp, Socket, _Ip, _Port, Binary} = _A, #dclient{userdata = #connect_state{socket = Socket, mod = Mod}} = Dclient) ->
-    io:format("~s ~p ~p send to from ~p:~p : ~p ~n", [?FILE, ?LINE, self(), _Ip, _Port, dgiot_utils:to_hex(Binary)]),
+handle_info({udp, Socket, Ip, Port, Binary} = _A, #dclient{userdata = #connect_state{socket = Socket, mod = Mod}} = Dclient) ->
+%%    io:format("~s ~p ~p send from ~p:~p : ~p ~n", [?FILE, ?LINE, self(), dgiot_utils:get_ip(Ip), _Port, dgiot_utils:to_hex(Binary)]),
     NewBin =
         case binary:referenced_byte_size(Binary) of
             Large when Large > 2 * byte_size(Binary) ->
@@ -136,7 +139,7 @@ handle_info({udp, Socket, _Ip, _Port, Binary} = _A, #dclient{userdata = #connect
             _ ->
                 Binary
         end,
-    case Mod:handle_info({udp, NewBin}, Dclient) of
+    case Mod:handle_info({udp, Ip, Port, NewBin}, Dclient) of
         {noreply, NewDclient} ->
             {noreply, NewDclient, hibernate};
         {stop, Reason, NewDclient} ->
@@ -203,6 +206,14 @@ send(ChannelId, ClientId, Payload) ->
             pass
     end.
 
+send(ChannelId, ClientId, Ip, Payload) ->
+    case dgiot_client:get(ChannelId, ClientId) of
+        {ok, Pid} ->
+            Pid ! {send, Ip, Payload};
+        _ ->
+            pass
+    end.
+
 do_connect(Sleep, #dclient{userdata = Connect_state} = State) ->
     Client = self(),
     spawn(
@@ -212,11 +223,11 @@ do_connect(Sleep, #dclient{userdata = Connect_state} = State) ->
         end),
     State.
 
-connect(Client, #dclient{userdata = #connect_state{reconnect_times = Times, reconnect_sleep = Sleep} = Connect_state} = State) ->
+connect(Client, #dclient{userdata = #connect_state{port = Port, reconnect_times = Times, reconnect_sleep = Sleep} = Connect_state} = State) ->
     case is_process_alive(Client) of
         true ->
             SocketConfig = [binary, {active, true}, {broadcast, true}],
-            case gen_udp:open(0, SocketConfig) of
+            case gen_udp:open(Port, SocketConfig) of
                 {ok, Socket} ->
                     case catch gen_server:call(Client, {connection_ready, Socket}, 5000) of
                         ok ->

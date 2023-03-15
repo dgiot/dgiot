@@ -13,6 +13,18 @@
 %% See the License for the specific language governing permissions and
 %% limitations under the License.
 %%--------------------------------------------------------------------
+-module(dgiot_bacnet_utils).
+-author("johnliu").
+-include_lib("dgiot_bacnet.hrl").
+-include_lib("dgiot/include/logger.hrl").
+-protocol([?BACNET]).
 
+%% API
+-export([whois/0]).
 
--define(BACNET, <<"bacnet">>).
+%% ACK <<"810B00190120FFFF00FF1000C40203F7A12205C49103220104">>
+whois() ->
+    % 构建BACnet Who-Is消息
+    WhoIs = <<"810b000c0120ffff00ff1008">>,
+    % 将Who-Is消息发送到BACnet广播地址
+    dgiot_utils:hex_to_binary(WhoIs).
