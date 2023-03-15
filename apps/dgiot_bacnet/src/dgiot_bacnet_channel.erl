@@ -15,7 +15,7 @@
 %%--------------------------------------------------------------------
 -module(dgiot_bacnet_channel).
 -behavior(dgiot_channelx).
--define(TYPE, <<"DGIOTBACNET">>).
+-define(TYPE, <<"BACNET">>).
 -author("johnliu").
 -include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
 -include_lib("dgiot/include/logger.hrl").
@@ -28,7 +28,6 @@
 
 %% 注册通道类型
 -channel_type(#{
-
     cType => ?TYPE,
     type => ?PROTOCOL_CHL,
     title => #{
@@ -50,6 +49,18 @@
         },
         description => #{
             zh => <<"BACnet采集地址"/utf8>>
+        }
+    },
+    <<"port">> => #{
+        order => 2,
+        type => integer,
+        required => true,
+        default => 47808,
+        title => #{
+            zh => <<"端口"/utf8>>
+        },
+        description => #{
+            zh => <<"端口"/utf8>>
         }
     },
     <<"ico">> => #{
@@ -74,16 +85,16 @@ start(ChannelId, ChannelArgs) ->
     }).
 
 %% 通道初始化
-init(?TYPE, ChannelId, ChannelArgs) ->
-    {ProductId, Deviceinfo_list} = get_product(ChannelId), %Deviceinfo_list = [{DeviceId1,Devaddr1},{DeviceId2,Devaddr2}...]
+init(?TYPE, ChannelId, #{<<"port">> := Port}) ->
+    NewArgs = #{
+        <<"port">> => Port
+    },
     State = #state{
         id = ChannelId,
-        env = ChannelArgs#{
-            <<"productid">> => ProductId,
-            <<"deviceinfo_list">> => Deviceinfo_list
-        }
+        env = NewArgs
     },
-    {ok, State}.
+    dgiot_client:add_clock(ChannelId, dgiot_datetime:now_secs() - 5000, dgiot_datetime:now_secs() + 300000),
+    {ok, State,  dgiot_client:register(ChannelId, udp_broadcast_sup, NewArgs)}.
 
 %% 初始化池子
 handle_init(State) ->
@@ -94,6 +105,19 @@ handle_init(State) ->
 handle_event(EventId, Event, _State) ->
     ?LOG(info, "channel ~p, ~p", [EventId, Event]),
     ok.
+
+handle_message(start_client, #state{id = ChannelId, env = #{<<"port">> := Port}} = State) ->
+    case dgiot_data:get({start_client, ChannelId}) of
+        not_find ->
+            dgiot_bacnet_worker:start_connect(ChannelId,#{
+                <<"auto_reconnect">> => 10,
+                <<"port">> => Port,
+                <<"ip">> => {255,255,255,255}
+            });
+        _ ->
+            pass
+    end,
+    {ok, State};
 
 handle_message({deliver, _Topic, Msg},State) ->
     Payload = dgiot_mqtt:get_payload(Msg),
@@ -111,23 +135,4 @@ handle_message(Message, State) ->
 stop(ChannelType, ChannelId, _State) ->
     ?LOG(info, "channel stop ~p,~p", [ChannelType, ChannelId]),
     ok.
-
-get_product(ChannelId) ->
-    case dgiot_bridge:get_products(ChannelId) of
-        {ok, _, [ProductId | _]} ->
-            Filter = #{<<"where">> => #{<<"product">> => ProductId}, <<"limit">> => 10},
-            case dgiot_parse:query_object(<<"Device">>, Filter) of
-                {ok, #{<<"results">> := Results}} ->
-                    Deviceinfo_list = [get_deviceinfo(X) || X <- Results],
-                    {ProductId, Deviceinfo_list};
-                _ ->
-                    {<<>>, [{<<>>, <<>>}]}
-            end;
-        _ ->
-            {<<>>, [{<<>>, <<>>}]}
-    end.
-
-get_deviceinfo(X) ->
-    #{<<"objectId">> := DeviceId, <<"devaddr">> := Devaddr} = X,
-    {DeviceId, Devaddr}.
 
