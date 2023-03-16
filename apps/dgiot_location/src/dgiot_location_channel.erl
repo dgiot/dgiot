@@ -90,20 +90,10 @@ start(ChannelId, ChannelArgs) ->
 
 %% 通道初始化
 init(?TYPE, ChannelId, #{
-    <<"product">> := Products,
+    <<"product">> := _Products,
     <<"geotype">> := Geotype,
     <<"search">> := Search}) ->
     dgiot_geoip:start(Geotype),
-    lists:map(fun(X) ->
-        case X of
-            {ProductId, #{<<"ACL">> := Acl, <<"nodeType">> := 1, <<"thing">> := Thing}} ->
-                dgiot_data:insert({dtu, ChannelId}, {ProductId, Acl, maps:get(<<"properties">>, Thing, [])});
-            {ProductId, #{<<"ACL">> := Acl, <<"thing">> := Thing}} ->
-                dgiot_data:insert({meter, ChannelId}, {ProductId, Acl, maps:get(<<"properties">>, Thing, [])});
-            _ ->
-                pass
-        end
-              end, Products),
     dgiot_data:set_consumer(ChannelId, 20),
     State = #state{
         id = ChannelId,

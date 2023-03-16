@@ -23,6 +23,39 @@
 %% API
 -export([init/1, handle_cast/2, handle_call/3, handle_info/2, terminate/2, code_change/3]).
 
+start(ChannelId, DeviceId, #{<<"auth">> := <<"ProductSecret">>} = Mock) ->
+    case dgiot_device:lookup(DeviceId) of
+        {ok, #{<<"devaddr">> := DevAddr, <<"productid">> := ProductId}} ->
+            Options = #{
+                host => "127.0.0.1",
+                port => 1883,
+                ssl => false,
+                username => binary_to_list(ProductId),
+                password => binary_to_list(dgiot_product:get_productSecret(ProductId)),
+                clean_start => false
+            },
+            dgiot_client:start(<<ChannelId/binary, "_mockmqtt">>, <<ProductId/binary, "_", DevAddr/binary>>, #{<<"options">> => Options, <<"child">> => Mock});
+        _ ->
+            #{}
+    end;
+
+start(ChannelId, DeviceId, #{<<"auth">> := <<"DeviceSecret">>}) ->
+    case dgiot_device:lookup(DeviceId) of
+        {ok, #{<<"devaddr">> := DevAddr, <<"productid">> := ProductId, <<"devicesecret">> := DeviceSecret}} ->
+            Options = #{
+                host => "127.0.0.1",
+                port => 1883,
+                ssl => false,
+                username => binary_to_list(ProductId),
+                password => binary_to_list(DeviceSecret),
+                clean_start => false
+            },
+%%            io:format("~s ~p DeviceId ~p DevAddr ~p ", [?FILE, ?LINE, DeviceId, DevAddr]),
+            dgiot_client:start(<<ChannelId/binary, "_mockmqtt">>, <<ProductId/binary, "_", DevAddr/binary>>, #{<<"options">> => Options});
+        _ ->
+            #{}
+    end.
+
 childspec(ChannelId, ChannelArgs) ->
     Options = #{
         host => binary_to_list(maps:get(<<"address">>, ChannelArgs, <<"127.0.0.1">>)),
@@ -33,7 +66,7 @@ childspec(ChannelId, ChannelArgs) ->
         clean_start => maps:get(<<"clean_start">>, ChannelArgs, false)
     },
     Args = #{<<"channel">> => ChannelId, <<"mod">> => ?MODULE, <<"options">> => Options},
-    dgiot_client:register(ChannelId, mqtt_client_sup, Args).
+    dgiot_client:register(<<ChannelId/binary, "_mockmqtt">>, mqtt_client_sup, Args).
 
 %%  callback
 init(#dclient{channel = ChannelId, child = #{<<"endtime">> := EndTime1, <<"starttime">> := StartTime1} = Child} = State) ->
@@ -112,35 +145,3 @@ code_change(_OldVsn, Dclient, _Extra) ->
 update(ChannelId) ->
     dgiot_data:insert({<<"mqtt_online">>, dlink_metrics}, dgiot_client:count(ChannelId)).
 
-start(ChannelId, DeviceId, #{<<"auth">> := <<"ProductSecret">>} = Mock) ->
-    case dgiot_device:lookup(DeviceId) of
-        {ok, #{<<"devaddr">> := DevAddr, <<"productid">> := ProductId}} ->
-            Options = #{
-                host => "127.0.0.1",
-                port => 1883,
-                ssl => false,
-                username => binary_to_list(ProductId),
-                password => binary_to_list(dgiot_product:get_productSecret(ProductId)),
-                clean_start => false
-            },
-            dgiot_client:start(ChannelId, <<ProductId/binary, "_", DevAddr/binary>>, #{<<"options">> => Options, <<"child">> => Mock});
-        _ ->
-            #{}
-    end;
-
-start(ChannelId, DeviceId, #{<<"auth">> := <<"DeviceSecret">>}) ->
-    case dgiot_device:lookup(DeviceId) of
-        {ok, #{<<"devaddr">> := DevAddr, <<"productid">> := ProductId, <<"devicesecret">> := DeviceSecret}} ->
-            Options = #{
-                host => "127.0.0.1",
-                port => 1883,
-                ssl => false,
-                username => binary_to_list(ProductId),
-                password => binary_to_list(DeviceSecret),
-                clean_start => false
-            },
-%%            io:format("~s ~p DeviceId ~p DevAddr ~p ", [?FILE, ?LINE, DeviceId, DevAddr]),
-            dgiot_client:start(ChannelId, <<ProductId/binary, "_", DevAddr/binary>>, #{<<"options">> => Options});
-        _ ->
-            #{}
-    end.

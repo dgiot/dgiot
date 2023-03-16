@@ -43,24 +43,7 @@
       "get": {
         "description": "bacnet采集属性",
         "security": [],
-        "parameters": [
-          {
-            "name": "host",
-            "description": "host",
-            "in": "query",
-            "required": true,
-            "type": "string",
-            "default": "192.168.1.11"
-          },
-          {
-            "name": "deviceid",
-            "description": "deviceid",
-            "in": "query",
-            "required": true,
-            "type": "string",
-            "default": "15"
-          }
-        ],
+        "parameters": [],
         "responses": {
           "200": {
             "description": "Returns operation status"

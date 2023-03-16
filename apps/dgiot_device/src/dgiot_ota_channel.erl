@@ -23,13 +23,14 @@
     product,
     path,
     md5,
+    version,
     env = #{}}
 ).
 %% API
 -export([start/2]).
 
 %% Channel callback
--export([init/3, handle_init/1, handle_event/3, handle_message/2, stop/3, send_upgrade/1]).
+-export([init/3, handle_init/1, handle_event/3, handle_message/2, stop/3, send_upgrade/2]).
 
 %% 注册通道类型
 -channel_type(#{
@@ -80,12 +81,12 @@ handle_event(_EventId, _Event, State) ->
     {ok, State}.
 
 %% 设备端上报升级进度信息
-handle_message({ota_progress, ProductId, DevAddr, _Payload}, State) ->
+handle_message({dlink_ota_progress, ProductId, DevAddr, _Payload}, State) ->
     _DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
     {ok, State};
 
 %% 上报最新版本
-handle_message({firmware_report, ProductId, DevAddr, #{<<"version">> := Version}}, State) ->
+handle_message({dlink_firmware_report, ProductId, DevAddr, #{<<"version">> := Version}}, State) ->
     DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
     dgiot_parse:update_object(<<"Device">>, DeviceId, #{}),
     case dgiot_parse:get_object(<<"Device">>, DeviceId) of
@@ -94,13 +95,15 @@ handle_message({firmware_report, ProductId, DevAddr, #{<<"version">> := Version}
         _ ->
             pass
     end,
-    send_upgrade(State);
+    send_upgrade(State, Version);
 
 %% 升级命令
 handle_message({sync_parse, _Pid, 'after', put, _Token, <<"Files">>, #{<<"content">> := #{
-    <<"enable">> := true, <<"key">> := ProductId, <<"path">> := Path, <<"md5">> := Md5} = Content}}, #state{env = Env} = State) ->
+    <<"enable">> := true, <<"key">> := ProductId, <<"version">> := Version, <<"path">> := Path, <<"md5">> := Md5} = Content}}, #state{env = Env} = State) ->
     Devices = get_deviceids(Content),
-    {ok, State#state{product = ProductId, path = Path, md5 = Md5, env = Env#{<<"devices">> => Devices}}};
+    NewState = State#state{product = ProductId, path = Path, md5 = Md5, version = Version, env = Env#{<<"devices">> => Devices}},
+    send_upgrade(NewState, Version),
+    {ok, NewState};
 
 handle_message(_Message, State) ->
     {ok, State}.
@@ -154,10 +157,10 @@ get_deviceids(#{<<"upgraderange">> := <<"2">>, <<"danwei">> := RoleName}) ->
 get_deviceids(_Content) ->
     [].
 
-send_upgrade(#state{env = #{<<"devices">> := Devices}} = State) when length(Devices) == 0 ->
+send_upgrade(#state{env = #{<<"devices">> := Devices}} = State, _) when length(Devices) == 0 ->
     {stop, State};
 
-send_upgrade(#state{product = ProductId, path = Path, md5 = Md5, env = #{<<"devices">> := [#{<<"objectId">> := DeviceId, <<"devaddr">> := Devaddr} | Rest]} = Env} = State) ->
+send_upgrade(#state{product = ProductId, path = Path, version = Version, md5 = Md5, env = #{<<"devices">> := [#{<<"objectId">> := DeviceId, <<"devaddr">> := Devaddr} | Rest]} = Env} = State, Version) ->
     case dgiot_device:lookup(DeviceId) of
         {ok, #{<<"devaddr">> := Devaddr}} ->
             Topic = <<"$dg/device/", ProductId/binary, "/", Devaddr/binary, "/ota/upgrade">>,
@@ -166,7 +169,10 @@ send_upgrade(#state{product = ProductId, path = Path, md5 = Md5, env = #{<<"devi
         _ ->
             pass
     end,
-    {ok, State#state{env = Env#{<<"devices">> => Rest}}}.
+    {ok, State#state{env = Env#{<<"devices">> => Rest}}};
+
+send_upgrade(State, _) ->
+    {ok, State}.
 
 
 

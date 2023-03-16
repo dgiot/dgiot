@@ -79,14 +79,15 @@ do_request(post_bacnetcallback, #{<<"data">> := Data} = _Args, _Context, _Req) -
     dgiot_bacnet:bacnetcallback(Data),
     {ok, #{<<"code">> => 200, <<"data">> => Data}};
 
-do_request(get_bacnetcallback, #{<<"deviceid">> := Deviceid, <<"host">> := Host} = _Args, _Context, _Req) ->
-    Url = <<"http://127.0.0.1:8080/BACnetController/scanProperties?deviceid=", Deviceid/binary, "&host=", Host/binary>>,
+do_request(get_bacnetcallback, _Args, _Context, _Req) ->
+    Url = <<"http://173.168.1.96:8080/BACnetController/scanProperties">>,
     case httpc:request(get, {dgiot_utils:to_list(Url), []}, [], []) of
         {ok, {{"HTTP/1.1", 200, "OK"}, _, Json}} ->
             case catch jsx:decode(dgiot_utils:to_binary(Json), [{labels, binary}, return_maps]) of
                 {'EXIT', Reason} ->
                     {error, Reason};
                 Data ->
+                    dgiot_bacnet:bacnetcallback(Data),
                     {ok, #{<<"code">> => 200, <<"data">> => Data}}
             end;
         _ ->
