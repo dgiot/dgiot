@@ -94,7 +94,8 @@ init(?TYPE, ChannelId, #{<<"port">> := Port}) ->
         env = NewArgs
     },
     dgiot_client:add_clock(ChannelId, dgiot_datetime:now_secs() - 5000, dgiot_datetime:now_secs() + 300000),
-    {ok, State, dgiot_client:register(ChannelId, udp_broadcast_sup, NewArgs)}.
+    ChildSpec = dgiot_client:register(<<ChannelId/binary, "_broacast">>, udp_broadcast_sup, NewArgs) ++ dgiot_client:register(ChannelId, udp_client_sup, NewArgs),
+    {ok, State, ChildSpec}.
 
 %% 初始化池子
 handle_init(State) ->
@@ -110,7 +111,7 @@ handle_message(start_client, #state{id = ChannelId, env = #{<<"port">> := Port}}
     case dgiot_data:get({start_client, ChannelId}) of
         not_find ->
             lists:map(fun(Ip) ->
-                dgiot_bacnet_worker:start_connect(ChannelId, #{
+                dgiot_bacnet_broadcast:start_connect(ChannelId, #{
                     <<"auto_reconnect">> => 10,
                     <<"port">> => Port,
                     <<"ip">> => Ip
@@ -129,6 +130,16 @@ handle_message({deliver, _Topic, Msg}, State) ->
         true ->
             {ok, State}
     end;
+
+
+handle_message({whois, Ip, Port, _Buff}, #state{id = ChannelId} = State) ->
+    dgiot_bacnet_worker:start_connect(ChannelId,
+        #{
+            <<"auto_reconnect">> => 10,
+            <<"ip">> => dgiot_utils:to_list(Ip),
+            <<"port">> => Port
+        }),
+    {ok, State};
 
 handle_message(Message, State) ->
     ?LOG(info, "channel ~p", [Message]),

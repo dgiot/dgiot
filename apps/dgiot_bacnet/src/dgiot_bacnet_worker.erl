@@ -26,30 +26,22 @@
 -define(MAX_BUFF_SIZE, 10 * 1024).
 
 start_connect(ChannelId, #{
-            <<"ip">> := Ip
-        }) ->
-    dgiot_client:start(ChannelId,  dgiot_utils:get_ip(Ip),  #{<<"ip">> => Ip, <<"mod">> => ?MODULE, <<"child">> => #{}}).
+    <<"ip">> := Ip} = Opts) ->
+    dgiot_client:start(ChannelId, dgiot_utils:to_binary(Ip), Opts#{<<"ip">> => Ip, <<"mod">> => ?MODULE, <<"child">> => #{}}).
 
 init(#dclient{child = ChildState} = Dclient) when is_map(ChildState) ->
+
     {ok, Dclient};
 
 init(_) ->
     {ok, #{}}.
 
 handle_info(connection_ready, #dclient{child = ChildState} = Dclient) ->
-    rand:seed(exs1024),
-    Time = erlang:round(rand:uniform() * 1 + 1) * 1000,
-    erlang:send_after(Time, self(), whois),
+%%    io:format("~s ~p ~p send from Dclient ~p ~n", [?FILE, ?LINE, self(), Dclient]),
     {noreply, Dclient#dclient{child = ChildState}};
 
 handle_info(udp_closed, #dclient{child = ChildState} = Dclient) ->
     {noreply, Dclient#dclient{child = ChildState}};
-
-handle_info(whois, #dclient{channel = ChannelId, client = ClientId} = Dclient) ->
-    WhoIs = dgiot_bacnet_utils:whois(),
-    dgiot_udp_broadcast:send(ChannelId, ClientId, WhoIs),
-    dgiot_bridge:send_log(ChannelId, "~s ~p 1 send WhoIs => ~p", [?FILE, ?LINE, dgiot_utils:to_hex(WhoIs)]),
-    {noreply, Dclient};
 
 handle_info({udp, Ip, Port, Buff}, Dclient) ->
     io:format("~s ~p ~p send from ~p:~p : ~p ~n", [?FILE, ?LINE, self(), dgiot_utils:get_ip(Ip), Port, dgiot_utils:to_hex(Buff)]),
@@ -88,8 +80,6 @@ handle_info({deliver, _, Msg}, #dclient{channel = ChannelId, client = ClientId} 
     end;
 
 handle_info(_Info, Dclient) ->
-%%    io:format("~s ~p _Info = ~p.~n", [?FILE, ?LINE, _Info]),
-%%    io:format("~s ~p Dclient = ~p.~n", [?FILE, ?LINE, Dclient]),
     {noreply, Dclient}.
 
 terminate(_Reason, _Dclient) ->
