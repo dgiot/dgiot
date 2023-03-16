@@ -25,6 +25,7 @@
     get_categoryid/2,
     get_channelid/3,
     get_deviceid/2,
+    get_userid/1,
     get_dictid/4,
     get_viewid/4,
     get_shapeid/2,
@@ -78,6 +79,11 @@ get_deviceid(ProductId, DevAddr) ->
     #{<<"objectId">> := DeviceId} =
         dgiot_parse_id:get_objectid(<<"Device">>, #{<<"product">> => ProductId, <<"devaddr">> => DevAddr}),
     DeviceId.
+
+get_userid(UserName) ->
+    #{<<"objectId">> := UserId} =
+        dgiot_parse_id:get_objectid(<<"_User">>, #{<<"username">> => UserName}),
+    UserId.
 
 get_devicelogid(DeviceId, DevAddr) ->
     #{<<"objectId">> := DevicelogId} =

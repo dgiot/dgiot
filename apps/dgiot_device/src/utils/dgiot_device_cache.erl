@@ -35,7 +35,7 @@ parse_cache_Device(_ClassName) ->
     Success = fun(Page) ->
         lists:map(fun(#{<<"devaddr">> := _Devaddr} = Device) ->
 %%            save_profile(Device),
-            timer:sleep(10),
+            timer:sleep(2),
 %%            io:format("Devaddr ~p ~n",[Devaddr]),
             dgiot_device:save(Device)
                   end, Page)

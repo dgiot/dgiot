@@ -24,10 +24,10 @@
 -export([init/1, handle_cast/2, handle_call/3, handle_info/2, terminate/2, code_change/3]).
 
 
-start(ChannelId, DeviceId,  Mock) ->
+start(ChannelId, DeviceId, Mock) ->
     case dgiot_device:lookup(DeviceId) of
         {ok, #{<<"devaddr">> := DevAddr, <<"productid">> := ProductId}} ->
-            dgiot_client:start(ChannelId, <<ProductId/binary, "_", DevAddr/binary>>, Mock#{ <<"child">> => Mock});
+            dgiot_client:start(<<ChannelId/binary, "_mocktcp">>, <<ProductId/binary, "_", DevAddr/binary>>, Mock#{<<"child">> => Mock});
         _ ->
             #{}
     end.
@@ -39,7 +39,7 @@ childspec(ChannelId, ChannelArgs) ->
         <<"ip">> => maps:get(<<"address">>, ChannelArgs, <<"127.0.0.1">>),
         <<"port">> => maps:get(<<"port">>, ChannelArgs, 1883)
     },
-    dgiot_client:register(ChannelId, tcp_client_sup, Args).
+    dgiot_client:register(<<ChannelId/binary, "_mocktcp">>, tcp_client_sup, Args).
 
 %%  callback
 init(#dclient{channel = ChannelId} = State) ->
