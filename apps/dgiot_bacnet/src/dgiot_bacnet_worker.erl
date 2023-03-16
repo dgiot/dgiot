@@ -21,9 +21,12 @@
 
 %% API
 -export([init/1, handle_info/2, terminate/2]).
--export([start_connect/2]).
+-export([childspec/2, start_connect/2]).
 
 -define(MAX_BUFF_SIZE, 10 * 1024).
+
+childspec(ChannelId, Args) ->
+    dgiot_client:register(ChannelId, udp_client_sup, Args).
 
 start_connect(ChannelId, #{
     <<"ip">> := Ip} = Opts) ->

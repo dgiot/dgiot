@@ -94,7 +94,7 @@ init(?TYPE, ChannelId, #{<<"port">> := Port}) ->
         env = NewArgs
     },
     dgiot_client:add_clock(ChannelId, dgiot_datetime:now_secs() - 5000, dgiot_datetime:now_secs() + 300000),
-    ChildSpec = dgiot_client:register(<<ChannelId/binary, "_broacast">>, udp_broadcast_sup, NewArgs) ++ dgiot_client:register(ChannelId, udp_client_sup, NewArgs),
+    ChildSpec = dgiot_bacnet_broadcast:childspec(ChannelId, NewArgs) ++ dgiot_bacnet_worker:childspec(ChannelId, NewArgs),
     {ok, State, ChildSpec}.
 
 %% 初始化池子

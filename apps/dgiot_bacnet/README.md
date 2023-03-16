@@ -32,3 +32,30 @@ BACnet
 - Polarsoft - 有一个用于嵌入式的协议源码库， 叫 FreeRangeTM 和 PolarSoft® FreeRange VSB (非常小的 BACnet 协议栈).
 - SCADA Engine - BACnet Linux 服务器是在 Linux 平台上运行的一个完整的 BACnet 设备。 完整的源代码可用于定制应用程序，并用 ANSI C 编写，已成功地移植到 Unix、VxWorks 等。
 - BACnet Stack - Chipkin 自动化系统 BACnet 协议栈是嵌入式系统和应用程序开发的应用层 BACnet 库。
+
+
+# 一、开发准备
+
+    a、模拟器  VTS和BACnetDeviceSimulator
+
+b、主站  BACnetScan
+
+c、参考文档 http://wenku.baidu.com/view/3052760f5acfa1c7aa00cc89.html?from=search
+
+d、参考项目 https://github.com/kib357/BACsharp
+
+# 二、开发概述
+
+    1、采集软件（主站）UDP监听47808 端口 ，同时向从站的网络47808端口广播召唤仪表（whois）
+
+2、从站收到召唤指令向主站回复（IAM）
+
+3、主站收到从站IAM之后，接着发送readproperty（propertylist指令），问询从站所有的数据点属性列表
+
+4、从站回复读属性列表，主站接着（批量）读取属性的presentvalue
+
+# 三、重难点
+
+1、字节解析
+
+2、报文分段
