@@ -31,7 +31,7 @@
 
 %% Channel callback
 -export([init/3, handle_init/1, handle_event/3, handle_message/2, stop/3]).
--export([get_id/2, after_handle/4, handle_data/8, get_card_data/2]).
+-export([get_id/2, after_handle/4, handle_data/8]).
 -export([get_sub_product/1, get_new_acl/2, init_worker_device/3]).
 -export([get_roll_dev_id/2]).
 %% 注册通道类型
@@ -186,22 +186,15 @@ handle_data(TaskProductId, TaskDeviceId, BatchProductId, BatchDeviceId, BatchAdd
     io:format("~s ~p BatchDeviceId = ~p  ~n", [?FILE, ?LINE, BatchDeviceId]),
     NewPayLoad = run_factory_hook(TaskProductId, TaskDeviceId, BatchProductId, BatchDeviceId, PersonType, NewData, ChannelId),
     dgiot_data:insert(?FACTORY_ORDER, {BatchProductId, BatchDeviceId, PersonType}, NewPayLoad),
-    OldData = get_card_data(BatchProductId, BatchDeviceId),
+    record_device_log(BatchProductId, BatchDeviceId, NewPayLoad),
+    OldData =dgiot_factory_utils: get_card_data(BatchProductId, BatchDeviceId),
+%%    io:format("~s ~p keys = ~p.~n", [?FILE, ?LINE, maps:keys(OldData)]),
     ALlData = dgiot_map:merge(OldData, NewPayLoad),
     dgiot_factory_statis:do_statis(TaskProductId, TaskDeviceId, PersonType, NewPayLoad),
     save2parse(BatchProductId, BatchDeviceId, ALlData),
     dgiot_factory_utils:save2td(BatchProductId, BatchAddr, ALlData).
-get_card_data(BatchProductId, BatchDeviceId) ->
-    DevcieTypeList = dgiot_product:get_devicetype(BatchProductId) -- [<<"quality">>],
-    lists:foldl(
-        fun(DeviceType, Acc) ->
-            case dgiot_data:get(?FACTORY_ORDER, {BatchProductId, BatchDeviceId, DeviceType}) of
-                not_find ->
-                    Acc;
-                Res ->
-                    dgiot_map:merge(Acc, maps:without([<<"quality">>], Res))
-            end
-        end, #{}, DevcieTypeList).
+
+
 
 process_data(FlatMap, PersonType, Token, TaskDeviceId) ->
     case dgiot_parse:get_object(<<"Device">>, TaskDeviceId) of
@@ -393,5 +386,42 @@ init_worker_device(ProductId, WorkerNum, WorkerName) ->
                     error
             end
     end.
+
+
+
+record_device_log(TaskProductId, TaskDeviceId, AllContent) ->
+    ACL = case dgiot_device_cache:lookup(TaskDeviceId) of
+              {ok, #{<<"acl">> := AclList}} ->
+                  lists:foldl(
+                      fun(Role, Acc) ->
+                          Acc#{Role => #{
+                              <<"read">> => true,
+                              <<"write">> => false}}
+                      end, #{}, AclList);
+              _ ->
+                  #{<<"*">> => #{<<"read">> => true}}
+          end,
+    Product = #{
+        <<"__type">> => <<"Pointer">>,
+        <<"className">> => <<"Product">>,
+        <<"objectId">> => TaskProductId},
+    Device = #{
+        <<"__type">> => <<"Pointer">>,
+        <<"className">> => <<"Device">>,
+        <<"objectId">> => TaskDeviceId},
+
+    Devaddr = dgiot_utils:to_binary(dgiot_datetime:nowstamp()),
+    LogId = dgiot_parse_id:get_devicelogid(TaskDeviceId, Devaddr),
+    DeviceLog = #{
+        <<"objectId">> => LogId,
+        <<"devaddr">> => Devaddr,
+        <<"ACL">> => ACL,
+        <<"createtime">> => dgiot_utils:to_binary(dgiot_datetime:nowstamp()),
+        <<"data">> => AllContent,
+        <<"product">> => Product,
+        <<"device">> => Device
+    },
+   _R =  dgiot_parse:create_object(<<"Devicelog">>, DeviceLog),
+    io:format("~s ~p _R ~p  ~n ", [?FILE, ?LINE, _R]).
 
 
