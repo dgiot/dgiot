@@ -24,8 +24,7 @@
     , check_lincense/3
     , gen_password/1
     , get_hardkey/0
-    , check/0
-    , check_lincense/0
+    , check/1
     , check_plugin/1
     , update_license/1
     , get_license/0
@@ -45,55 +44,25 @@ init({}) ->
 description() -> "dgiot license".
 
 check_lincense(Type, Key, License) ->
-    case Type of
-        <<"standard">> ->
-            check_standard_license(Key, dgiot_utils:to_list(License));
-        <<"enterprise">> ->
-            check_enterprise_license(Key, dgiot_utils:to_list(License));
-        <<"ultimate">> -> check_ultimate_license(Key, dgiot_utils:to_list(License));
-        _ -> check_old_license(Key, dgiot_utils:to_list(License))
-    end.
-
-check_standard_license(Key, License) ->
     write("data/newsw.key", Key),
-    NewLicense = gen_password(<<"dgiot_stand2020sdfsdf-", Key/binary, "-203019">>),
+    NewLicense = gen_password(<<Type/binary, Key/binary, "-203019">>),
     License == NewLicense.
 
-check_enterprise_license(Key, License) ->
-    write("data/newsw.key", Key),
-    NewLicense = gen_password(<<"dgiot_133enterprise2020sdsfff8dfsdf-", Key/binary, "-2030dd19">>),
-    License == NewLicense.
-
-check_ultimate_license(Key, License) ->
-    write("data/newsw.key", Key),
-    NewLicense = gen_password(<<"dgiot_133ultimate206420sd32sfff8dfsdf-", Key/binary, "-2030dd19">>),
-    License == NewLicense.
-
-check_old_license(Key, License) ->
-    write("data/sw.key", Key),
-    Hash = <<"lorasouth2018test-", Key/binary, "-202019">>,
-    MyPassword = gen_password(Hash),
-    License == MyPassword.
-
-check_lincense() ->
-    check().
-
-check() ->
+check(Type) ->
     case (dgiot_datetime:now_secs() - 1639622310) < 0 of
         true -> true;
         false ->
             case application:get_env(dgiot_license, license) of
                 {ok, License} ->
                     OldKey = get_key(),
-                    NewKey = get_hardkey(),
-                    case check_old_license(OldKey, License) or check_standard_license(NewKey, License) or
-                        check_enterprise_license(NewKey, License) or check_ultimate_license(NewKey, License)
-                    of
+%%                    NewKey = get_hardkey(),
+                    case check_lincense(Type, OldKey, License) of
                         false ->
                             false;
                         true ->
                             case os:type() of
-                                {win32, _} -> true;
+                                {win32, _} ->
+                                    true;
                                 _ ->
                                     case check_sudo() of
                                         not_root_user ->
@@ -109,10 +78,10 @@ check() ->
     end.
 
 gen_password(License) ->
-    binary_to_list(to_md5(License)).
+    dgiot_utils:to_list(to_md5(License)).
 
 to_md5(V) ->
-    list_to_binary(lists:flatten([io_lib:format("~2.16.0b", [D]) || D <- binary_to_list(erlang:md5(V))])).
+    dgiot_utils:to_binary(lists:flatten([io_lib:format("~2.16.0b", [D]) || D <- dgiot_utils:to_list(erlang:md5(V))])).
 
 get_key() ->
     S = lists:foldl(fun(Cmd, Acc) ->
@@ -165,7 +134,7 @@ write(Path, Format, Args) ->
                     io:fwrite(IoDevice, Format, Args),
                     file:close(IoDevice);
                 {error, Why} ->
-                    ?LOG(error,"write file error, ~p~n", [Why])
+                    ?LOG(error, "write file error, ~p~n", [Why])
             end
     end.
 
