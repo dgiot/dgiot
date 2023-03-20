@@ -25,7 +25,7 @@
 -define(KEY, <<"key">>).
 -export([get_screen/2]).
 
--export([format_data/3,turn_echart/3]).
+-export([format_data/3, turn_echart/3]).
 
 -export([init_screen_data/0, updata_screen_data/3, format_bar/1]).
 
@@ -117,7 +117,7 @@ turn_echart(<<"total">>, #{<<"data">> := Data}, FormatedData) ->
             Acc#{Key => 0}
         end, #{}, maps:keys(Data)),
 
-    maps:fold(
+    Map = maps:fold(
         fun(_, DataMap, OldAcc) ->
             maps:fold(
                 fun(Key, OldSum, Acc) ->
@@ -133,8 +133,19 @@ turn_echart(<<"total">>, #{<<"data">> := Data}, FormatedData) ->
 
                     Acc#{Key => OldSum + Num}
                 end, #{}, OldAcc)
-        end, InitModel, FormatedData);
+        end, InitModel, FormatedData),
+%%    io:format("~s ~p Map = ~p. ~n", [?FILE, ?LINE, Map]),
+    case maps:get(<<"statis_produced">>, Map, 0) of
+        0 ->
+            Map#{<<"statis_percent">> => 0};
+        Ptatis_produced ->
+            Qualified = maps:get(<<"statis_qualitified">>, Map, 0),
+%%            io:format("~s ~p Qualified = ~p. ~n", [?FILE, ?LINE, Qualified]),
+            NewMap = maps:merge(Map, #{<<"statis_percent">> => dgiot_factory_utils:float(Qualified / Ptatis_produced, 2)}),
+%%            io:format("~s ~p NewMap = ~p. ~n", [?FILE, ?LINE, NewMap]),
+            NewMap
 
+    end;
 turn_echart(<<"bar">>, #{<<"model">> := #{<<"series">> := SeriesMod} = Model}, FormatedData) ->
     {XAxis, NewSeries} = maps:fold(
         fun(X, Data, {Xlist, SeriesAcc}) ->
@@ -142,7 +153,6 @@ turn_echart(<<"bar">>, #{<<"model">> := #{<<"series">> := SeriesMod} = Model}, F
                 fun(#{?KEY := Key} = OneSeries, Acc) ->
                     OldList = maps:get(<<"data">>, OneSeries, []),
                     NewValue = maps:get(Key, Data, 0),
-                    io:format("~s ~p NewValue = ~p. ~n", [?FILE, ?LINE, NewValue]),
                     NewList = OldList ++ [NewValue],
                     Acc ++ [OneSeries#{<<"data">> => NewList}];
                     (S, Acc) ->
