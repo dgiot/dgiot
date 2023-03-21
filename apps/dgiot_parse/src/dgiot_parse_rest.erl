@@ -45,6 +45,7 @@ request(Method, Header, Path0, Body, Options) when is_binary(Method) ->
 
 request(Method, Header, Path0, Body, Options) ->
     {IsGetCount, Path, NewBody} = get_request_args(Path0, Method, Body, Header, Options),
+    dgiot_parse_git:commit(to_binary(Path), Method, Body),
     Header1 = dgiot_parse:get_header_token(Path, Header),
     NewHeads = get_headers(Method, Path, Header1, Options),
     Fun =
@@ -210,15 +211,6 @@ get_headers(Method, Path, Header, Options) ->
                         [{"X-Parse-Revocable-Session", "1"}, {"X-Parse-REST-API-Key", to_list(RestKey)} | NewHeader];
                     <<"/classes/View", _/binary>> when Method == 'GET' -> % view
                         [{"X-Parse-Master-Key", to_list(MasterKey)} | NewHeader];
-                    <<"/classes/View/", ObjectId/binary>>  when size(ObjectId) > 8-> % view
-                        io:format("~s ~p ObjectId ~p ",[?FILE, ?LINE, ObjectId]),
-                        dgiot_parse_channel:commit_git(#{
-                            <<"id">> => ObjectId,
-                            <<"data">> => #{<<"test">> => <<"ddd">>},
-                            <<"type">> => <<"commit">>,
-                            <<"message">> => <<"save">>
-                        }),
-                        [{"X-Parse-REST-API-Key", to_list(RestKey)} | NewHeader];
                     _ ->
                         [{"X-Parse-REST-API-Key", to_list(RestKey)} | NewHeader]
                 end,
