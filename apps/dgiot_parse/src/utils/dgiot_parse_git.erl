@@ -23,25 +23,23 @@
 %% API
 -export([
     commit/3,
-    commit_git/3,
-    commit_git/4,
-    save/3
+    push/3
 ]).
 
 commit(Path, 'POST', _Body) ->
-    save(Path, <<"init">>);
+    notify(Path, <<"init">>);
 commit(Path, 'PUT', Body) ->
-    save(Path, Body);
+    notify(Path, Body);
 commit(_Path, _, _) ->
     pass.
 
-save(Path, Message) ->
+notify(Path, Message) ->
     Classes = [<<"View">>, <<"Article">>, <<"Dict">>, <<"Product">>, <<"ProductTemplet">>, <<"Category">>, <<"Menu">>, <<"Permission">>],
     case binary:split(Path, <<$/>>, [global, trim]) of
         [<<>>, <<"classes">>, Class, ObjectId] ->
             case lists:member(Class, Classes) of
                 true ->
-                    commit_git(Class, ObjectId, Message);
+                    notify(Class, ObjectId, Message);
                 false ->
                     pass
             end;
@@ -49,14 +47,13 @@ save(Path, Message) ->
             pass
     end.
 
-commit_git(Class, ObjectId, Message) ->
-    commit_git(?DEFAULT, Class, ObjectId, Message).
+notify(Class, ObjectId, Message) ->
+    notify(?DEFAULT, Class, ObjectId, Message).
 
-commit_git(Channel, Class, ObjectId, Message) ->
+notify(Channel, Class, ObjectId, Message) ->
     dgiot_channelx:do_message(dgiot_utils:to_binary(Channel), {git, Class, ObjectId, Message}).
 
-
-save(Class, ObjectId, Message) ->
+push(Class, ObjectId, Message) ->
     case dgiot_parse:get_object(Class, ObjectId) of
         {ok, #{<<"ACL">> := Acl} = Body} ->
             dgiot_parse:create_object(<<"Git">>, #{
