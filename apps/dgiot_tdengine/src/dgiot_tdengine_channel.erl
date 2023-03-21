@@ -177,15 +177,15 @@ handle_event(_EventType, _Event, State) ->
 
 %% gun监测 开始
 handle_message({gun_up, _Pid, _Protocol}, #state{id = _ChannelId, env = _Config} = State) ->
-    io:format("~s ~p gun_up = ~p.~n", [?FILE, ?LINE, _Protocol]),
+%%    io:format("~s ~p gun_up = ~p.~n", [?FILE, ?LINE, _Protocol]),
     {ok, State};
 
 handle_message({gun_error, _Pid, _Protocol}, #state{id = _ChannelId, env = _Config} = State) ->
-    io:format("~s ~p gun_error = ~p.~n", [?FILE, ?LINE, _Protocol]),
+%%    io:format("~s ~p gun_error = ~p.~n", [?FILE, ?LINE, _Protocol]),
     {ok, State};
 
 handle_message({gun_down, _Pid, _Protocol}, #state{id = _ChannelId, env = _Config} = State) ->
-    io:format("~s ~p gun_down = ~p.~n", [?FILE, ?LINE, _Protocol]),
+%%    io:format("~s ~p gun_down = ~p.~n", [?FILE, ?LINE, _Protocol]),
     {ok, State};
 %% gun监测结束
 
