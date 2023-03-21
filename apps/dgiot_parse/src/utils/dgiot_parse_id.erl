@@ -217,7 +217,7 @@ get_objectid(Class, Map) ->
                 <<"objectId">> => get_categoryid(Level, Name)
             };
         <<"Git">> ->
-            Ts = maps:get(<<"ts">>, Map, dgiot_rule_utils:now_ms()),
+            Ts = maps:get(<<"ts">>, Map, dgiot_datetime:now_ms()),
             Id = maps:get(<<"id">>, Map, <<"">>),
             Map#{
                 <<"objectId">> => get_gitid(Id, Ts)
