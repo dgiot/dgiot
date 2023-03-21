@@ -21,7 +21,7 @@
 -include_lib("dgiot/include/logger.hrl").
 -behavior(dgiot_channelx).
 
--export([get_config/0, get_config/1]).
+-export([get_config/0, get_config/1, commit_git/1, commit_git/2]).
 -export([start/0, start_timescale/0, start_slave/0, start/2, init/3, handle_init/1, handle_event/3, handle_message/2, stop/3, handle_save/1]).
 -record(state, {channel, cfg}).
 
@@ -195,6 +195,10 @@ handle_message(export, #state{cfg = Cfg} = State) ->
 handle_message(config, #state{cfg = Cfg} = State) ->
     {reply, {ok, Cfg}, State};
 
+handle_message({git, Data},  State) ->
+    dgiot_parse:create_object(<<"Git">>,Data),
+    {ok, State};
+
 handle_message(_Message, State) ->
     {ok, State}.
 
@@ -212,3 +216,9 @@ get_config() ->
 
 get_config(Channel) ->
     dgiot_channelx:call(?TYPE, Channel, config).
+
+commit_git(Data) ->
+    commit_git(?DEFAULT, Data).
+
+commit_git(Channel, Data) ->
+    dgiot_channelx:do_message(dgiot_utils:to_binary(Channel), {git, Data}).
