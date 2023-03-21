@@ -208,15 +208,17 @@ get_headers(Method, Path, Header, Options) ->
                         [{"X-Parse-Revocable-Session", "1"}, {"X-Parse-REST-API-Key", to_list(RestKey)} | NewHeader];
                     <<"/login?", _/binary>> when Method == 'GET' -> % 登录
                         [{"X-Parse-Revocable-Session", "1"}, {"X-Parse-REST-API-Key", to_list(RestKey)} | NewHeader];
-%%                    <<"/classes/View/", ViewId/binary>> when Method == 'GET' -> % view
-%%                        case check_view(Header, ViewId) of
-%%                            true ->
-%%                                [{"X-Parse-Master-Key", to_list(MasterKey)} | NewHeader];
-%%                            _ ->
-%%                                [{"X-Parse-REST-API-Key", to_list(RestKey)} | NewHeader]
-%%                        end;
                     <<"/classes/View", _/binary>> when Method == 'GET' -> % view
                         [{"X-Parse-Master-Key", to_list(MasterKey)} | NewHeader];
+                    <<"/classes/View/", ObjectId/binary>>  when size(ObjectId) > 8-> % view
+                        io:format("~s ~p ObjectId ~p ",[?FILE, ?LINE, ObjectId]),
+                        dgiot_parse_channel:commit_git(#{
+                            <<"id">> => ObjectId,
+                            <<"data">> => #{<<"test">> => <<"ddd">>},
+                            <<"type">> => <<"commit">>,
+                            <<"message">> => <<"save">>
+                        }),
+                        [{"X-Parse-REST-API-Key", to_list(RestKey)} | NewHeader];
                     _ ->
                         [{"X-Parse-REST-API-Key", to_list(RestKey)} | NewHeader]
                 end,

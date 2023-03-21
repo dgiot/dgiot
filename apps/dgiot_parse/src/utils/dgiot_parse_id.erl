@@ -46,8 +46,14 @@
     get_notificationid/2,
     get_filesId/2,
     get_masterDataId/1,
-    get_metaDataId/1
+    get_metaDataId/1,
+    get_gitid/2
 ]).
+
+
+get_gitid(ObjectId, Ts) ->
+    <<GitId:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Git", ObjectId/binary, Ts:32>>),
+    GitId.
 
 get_categoryid(Level, Name) ->
     <<CategoryId:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Category", Level/binary, Name/binary>>),
@@ -209,6 +215,12 @@ get_objectid(Class, Map) ->
             Name = maps:get(<<"name">>, Map, <<"">>),
             Map#{
                 <<"objectId">> => get_categoryid(Level, Name)
+            };
+        <<"Git">> ->
+            Ts = maps:get(<<"ts">>, Map, dgiot_rule_utils:now_ms()),
+            Id = maps:get(<<"id">>, Map, <<"">>),
+            Map#{
+                <<"objectId">> => get_gitid(Id, Ts)
             };
         <<"post_classes_device">> ->
             get_objectid(<<"Device">>, Map);
