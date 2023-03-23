@@ -195,7 +195,7 @@ to_binary(V) when is_atom(V) -> atom_to_binary(V, utf8);
 to_binary(V) when is_list(V) -> list_to_binary(V);
 to_binary(V) when is_integer(V) -> integer_to_binary(V);
 to_binary(V) when is_pid(V) -> to_binary(pid_to_list(V));
-to_binary(V) when is_map(V) -> jsx:encode(V);
+to_binary(V) when is_map(V) -> dgiot_json:encode(V);
 to_binary(V) when is_float(V) -> to_binary(io_lib:format("~p", [V]));
 to_binary(V) when is_binary(V) -> V.
 

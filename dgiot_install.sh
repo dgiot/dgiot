@@ -1570,6 +1570,7 @@ do
     p)
       echo -e  "`date +%F_%T` $LINENO: ${GREEN} plugin=$OPTARG${NC}"
       plugin=$(echo $OPTARG)
+      ps
       ;;
     d)
       domain_name=$(echo $OPTARG)
