@@ -23,7 +23,6 @@
     test_graphql/0
 ]).
 
-
 graphql(Data) ->
     Header =
         case maps:get(<<"access_token">>, Data, <<"undefined">>) of

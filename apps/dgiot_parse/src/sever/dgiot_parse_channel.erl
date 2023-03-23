@@ -195,6 +195,11 @@ handle_message(export, #state{cfg = Cfg} = State) ->
 handle_message(config, #state{cfg = Cfg} = State) ->
     {reply, {ok, Cfg}, State};
 
+handle_message({git, Class, ObjectId, Message}, State) ->
+    timer:sleep(500),
+    dgiot_parse_git:save(Class, ObjectId, Message),
+    {ok, State};
+
 handle_message(_Message, State) ->
     {ok, State}.
 
@@ -212,3 +217,5 @@ get_config() ->
 
 get_config(Channel) ->
     dgiot_channelx:call(?TYPE, Channel, config).
+
+

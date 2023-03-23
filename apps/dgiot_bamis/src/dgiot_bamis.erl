@@ -153,11 +153,11 @@ delete({'after', Data}) ->
 %%excludeKeys	Exclude specific fields from the returned query
 %%include	Use on Pointer columns to return the full object
 %%*/
-format(#{<<"orderBy">> := OrderBy} = Data) ->
+format(#{<<"orderBy">> := OrderBy} = Data) when byte_size(OrderBy) >0->
     NewData = maps:without([<<"orderBy">>], Data),
     format(NewData#{<<"order">> => [OrderBy]});
 
-format(#{<<"order">> := [Order | _], <<"orderDir">> := OrderDir} = Data) ->
+format(#{<<"order">> := [Order | _], <<"orderDir">> := OrderDir} = Data) when byte_size(Order) >0 ->
     NewData = maps:without([<<"orderDir">>], Data),
     NewOrder =
         case OrderDir of

@@ -26,7 +26,7 @@
 -export([get_json_file/1, unflatten_map/1, flatten_map/1,merge_map/2]).
 -export([save2td/3, save2td/2]).
 -export([kill_undefined/1]).
-
+-export([float/2,get_card_data/2,get_cache_data/3,keep_decimal/2]).
 
 
 
@@ -266,10 +266,11 @@ get_sum(BatchList) when is_list(BatchList) ->
 
 get_sum(_) ->
     0.
+
 batch_create_worker(ProductId, WorkerList, InitNum) ->
     lists:foldl(
         fun(Worker, Num) ->
-            dgiot_factory_channel:init_worker_device(ProductId, Num, Worker),
+            dgiot_factory_channel:init_worker_device(ProductId, Num, dgiot_utils:to_binary( Worker)),
             Num + 1
         end, InitNum, WorkerList).
 
@@ -486,3 +487,49 @@ kill_undefined(Arg) when is_map(Arg) ->
         end, #{}, Arg);
 kill_undefined(Arg) ->
     Arg.
+float(Number, X) ->
+    N = math:pow(10,X),
+    round(Number*N)/N.
+
+
+
+get_card_data(BatchProductId, BatchDeviceId) ->
+    DevcieTypeList = dgiot_product:get_devicetype(BatchProductId),
+    lists:foldl(
+        fun(DeviceType, Acc) ->
+            Res = case get_cache_data(BatchProductId, BatchDeviceId, DeviceType) of
+                      {ok, R} ->
+                          R;
+                      _ ->
+                          #{}
+                  end,
+            dgiot_map:merge(Acc, Res)
+        end, #{}, DevcieTypeList).
+get_cache_data(BatchProductId, BatchDeviceId, DeviceType) ->
+    case dgiot_data:get(?FACTORY_ORDER, {BatchProductId, BatchDeviceId, DeviceType}) of
+        not_find ->
+            case dgiot_parse:query_object(<<"Devicelog">>, #{<<"where">> => #{<<"data.person.sheetsid">> => BatchDeviceId, <<"data.person.type">> => DeviceType}, <<"order">> => <<"-createdAt">>, <<"limit">> => 1}) of
+                {ok, #{<<"results">> := [#{<<"data">>:= Data}]}}   ->
+                    {ok,maps:without([<<"quality">>],Data)};
+                _R ->
+%%                    io:format("~s ~p _R ~p~n", [?FILE, ?LINE, _R]),
+                    error
+            end;
+        Res ->
+            {ok,maps:without([<<"quality">>],Res)}
+    end.
+
+
+keep_decimal(Float, Num) when is_float(Float) ->
+    F=fun(_, Base1) ->
+        Base1*10
+      end,
+    Base = lists:foldl(F, 10, lists:seq(1, Num)),
+    Float2 = Float*Base,
+    Int = erlang:trunc(Float2),
+    Rest = Int rem 10,
+    Keep = Int div 10,
+    Add = erlang:round((Rest/10)),
+    (Keep+Add)*10/Base;
+keep_decimal(Float, _Num) ->
+    Float.
