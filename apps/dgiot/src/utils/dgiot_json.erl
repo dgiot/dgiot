@@ -130,14 +130,14 @@ test() ->
     Dir = filename:dirname(filename:dirname(Here)),
     Root = dgiot_httpc:url_join([Dir, "/priv/"]),
     TplPath = Root ++ "/test.json",
-    map(TplPath, #{
+    map(#{
         <<"switch">> => 33331,
         <<"title">> => <<"cto">>,
         <<"label">> => 12343,
         <<"lsxage">> => 40
-    }).
+    },TplPath).
 
-map(TplPath, Map) ->
+map(Map, TplPath) ->
     case erlydtl:compile({file, TplPath}, dgiot_render, [{out_dir, false}]) of
         {ok, Render} ->
             {ok, IoList} = Render:render(Map),
