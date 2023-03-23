@@ -180,7 +180,7 @@ stop(ChannelType, ChannelId, _State) ->
 %%    save_data(ProductId, Id, DevAddr, DeviceId, PersonType, Payload).
 
 
-handle_data(TaskProductId, TaskDeviceId, BatchProductId, BatchDeviceId, BatchAddr, PersonType, NewData, ChannelId) ->
+handle_data(TaskProductId, TaskDeviceId, BatchProductId, BatchDeviceId, _BatchAddr, PersonType, NewData, ChannelId) ->
     io:format("~s ~p Type = ~p  ~n", [?FILE, ?LINE, PersonType]),
     io:format("~s ~p BatchProductId = ~p  ~n", [?FILE, ?LINE, BatchProductId]),
     io:format("~s ~p BatchDeviceId = ~p  ~n", [?FILE, ?LINE, BatchDeviceId]),
@@ -191,8 +191,8 @@ handle_data(TaskProductId, TaskDeviceId, BatchProductId, BatchDeviceId, BatchAdd
 %%    io:format("~s ~p keys = ~p.~n", [?FILE, ?LINE, maps:keys(OldData)]),
     ALlData = dgiot_map:merge(OldData, NewPayLoad),
     dgiot_factory_statis:do_statis(TaskProductId, TaskDeviceId, PersonType, NewPayLoad),
-    save2parse(BatchProductId, BatchDeviceId, ALlData),
-    dgiot_factory_utils:save2td(BatchProductId, BatchAddr, ALlData).
+    save2parse(BatchProductId, BatchDeviceId, ALlData).
+%%    dgiot_factory_utils:save2td(BatchProductId, BatchAddr, ALlData).
 
 
 
@@ -326,15 +326,13 @@ get_new_acl(SessionToken, Acl) ->
 
 
 save2parse(BatchProductId, BatchDeviceId, ALlData) ->
-    io:format("~s ~p ALlData = ~p. ~n", [?FILE, ?LINE, maps:keys(ALlData)]),
     Content = case dgiot_hook:run_hook({factory, BatchProductId, beforeParse}, [ALlData]) of
                   {ok, [{ok, Res}]} ->
                       Res;
                   _ ->
-                      io:format("~s ~p BatchDeviceId = ~p ~n", [?FILE, ?LINE, BatchDeviceId]),
                       ALlData
               end,
-    io:format("~s ~p Content = ~p. ~n", [?FILE, ?LINE, maps:keys(Content)]),
+    io:format("~s ~p update at = ~p ~n", [?FILE, ?LINE, dgiot_datetime:nowstamp()]),
     dgiot_parse:update_object(<<"Device">>, BatchDeviceId, #{<<"content">> => Content}).
 
 
