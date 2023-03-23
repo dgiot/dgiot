@@ -135,14 +135,13 @@ test() ->
         <<"title">> => <<"cto">>,
         <<"label">> => 12343,
         <<"lsxage">> => 40
-   }).
+    }).
 
-map(TplPath, Vars) ->
+map(TplPath, Map) ->
     case erlydtl:compile({file, TplPath}, dgiot_render, [{out_dir, false}]) of
         {ok, Render} ->
-            {ok, IoList} = Render:render(Vars),
-            BinFile = unicode:characters_to_binary(IoList),
-            io:format("~s ~p ~p ~n", [?FILE, ?LINE, dgiot_json:decode(BinFile)]);
+            {ok, IoList} = Render:render(Map),
+            unicode:characters_to_binary(IoList);
         error ->
             {error, compile_error}
     end.
