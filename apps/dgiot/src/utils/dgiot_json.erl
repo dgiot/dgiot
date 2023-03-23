@@ -18,27 +18,29 @@
 
 -compile(inline).
 
--export([ encode/1
+-export([encode/1
+    , encode/2
+    , safe_encode/1
+    , safe_encode/2
+    , test/0
+    , map/2
+]).
+
+-compile({inline,
+    [encode/1
         , encode/2
-        , safe_encode/1
-        , safe_encode/2
-        ]).
+    ]}).
+
+-export([decode/1
+    , decode/2
+    , safe_decode/1
+    , safe_decode/2
+]).
 
 -compile({inline,
-          [ encode/1
-          , encode/2
-          ]}).
-
--export([ decode/1
+    [decode/1
         , decode/2
-        , safe_decode/1
-        , safe_decode/2
-        ]).
-
--compile({inline,
-          [ decode/1
-          , decode/2
-          ]}).
+    ]}).
 
 -type(encode_options() :: jiffy:encode_options()).
 -type(decode_options() :: jiffy:decode_options()).
@@ -58,12 +60,12 @@ encode(Term, Opts) ->
     to_binary(jiffy:encode(to_ejson(Term), Opts)).
 
 -spec(safe_encode(json_term())
-      -> {ok, json_text()} | {error, Reason :: term()}).
+        -> {ok, json_text()} | {error, Reason :: term()}).
 safe_encode(Term) ->
     safe_encode(Term, [force_utf8]).
 
 -spec(safe_encode(json_term(), encode_options())
-      -> {ok, json_text()} | {error, Reason :: term()}).
+        -> {ok, json_text()} | {error, Reason :: term()}).
 safe_encode(Term, Opts) ->
     try encode(Term, Opts) of
         Json -> {ok, Json}
@@ -80,12 +82,12 @@ decode(Json, Opts) ->
     from_ejson(jiffy:decode(Json, Opts)).
 
 -spec(safe_decode(json_text())
-      -> {ok, json_term()} | {error, Reason :: term()}).
+        -> {ok, json_term()} | {error, Reason :: term()}).
 safe_decode(Json) ->
     safe_decode(Json, []).
 
 -spec(safe_decode(json_text(), decode_options())
-      -> {ok, json_term()} | {error, Reason :: term()}).
+        -> {ok, json_term()} | {error, Reason :: term()}).
 safe_decode(Json, Opts) ->
     try decode(Json, Opts) of
         Term -> {ok, Term}
@@ -99,14 +101,14 @@ safe_decode(Json, Opts) ->
 %%--------------------------------------------------------------------
 
 -compile({inline,
-          [ to_ejson/1
-          , from_ejson/1
-          ]}).
+    [to_ejson/1
+        , from_ejson/1
+    ]}).
 
 to_ejson([{}]) ->
     {[]};
-to_ejson([{_, _}|_] = L) ->
-    {[{K, to_ejson(V)} || {K, V} <- L ]};
+to_ejson([{_, _} | _] = L) ->
+    {[{K, to_ejson(V)} || {K, V} <- L]};
 to_ejson(L) when is_list(L) ->
     [to_ejson(E) || E <- L];
 to_ejson(T) -> T.
@@ -122,3 +124,25 @@ from_ejson(T) -> T.
 to_binary(B) when is_binary(B) -> B;
 to_binary(L) when is_list(L) ->
     iolist_to_binary(L).
+
+test() ->
+    {file, Here} = code:is_loaded(?MODULE),
+    Dir = filename:dirname(filename:dirname(Here)),
+    Root = dgiot_httpc:url_join([Dir, "/priv/"]),
+    TplPath = Root ++ "/test.json",
+    map(TplPath, #{
+        <<"switch">> => 33331,
+        <<"title">> => <<"cto">>,
+        <<"label">> => 12343,
+        <<"lsxage">> => 40
+   }).
+
+map(TplPath, Vars) ->
+    case erlydtl:compile({file, TplPath}, dgiot_render, [{out_dir, false}]) of
+        {ok, Render} ->
+            {ok, IoList} = Render:render(Vars),
+            BinFile = unicode:characters_to_binary(IoList),
+            io:format("~s ~p ~p ~n", [?FILE, ?LINE, dgiot_json:decode(BinFile)]);
+        error ->
+            {error, compile_error}
+    end.
