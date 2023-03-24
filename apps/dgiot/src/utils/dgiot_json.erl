@@ -129,18 +129,25 @@ test() ->
     {file, Here} = code:is_loaded(?MODULE),
     Dir = filename:dirname(filename:dirname(Here)),
     Root = dgiot_httpc:url_join([Dir, "/priv/"]),
-    TplPath = Root ++ "/test.json",
-    map(#{
-        <<"switch">> => 33331,
-        <<"title">> => <<"cto">>,
-        <<"label">> => 12343,
-        <<"lsxage">> => 40
-    },TplPath).
+    TplPath = Root ++ "test.json",
+    case catch file:read_file(TplPath) of
+        {Err, _Reason} when Err == 'EXIT'; Err == error ->
+            <<"">>;
+        {ok, Template} ->
+            map(#{
+                <<"switch">> => 33331,
+                <<"title">> => <<"cto">>,
+                <<"label">> => 12343,
+                <<"lsxage">> => 40
+            }, Template)
+    end.
 
-map(Map, TplPath) ->
-    case erlydtl:compile({file, TplPath}, dgiot_render, [{out_dir, false}]) of
+
+map(Map, Template) ->
+    case erlydtl:compile({template, Template}, dgiot_render, [{out_dir, false}]) of
         {ok, Render} ->
             {ok, IoList} = Render:render(Map),
+%%            io:format("~p ~n",[decode(unicode:characters_to_binary(IoList))]),
             unicode:characters_to_binary(IoList);
         error ->
             {error, compile_error}
