@@ -22,8 +22,6 @@
     , encode/2
     , safe_encode/1
     , safe_encode/2
-    , test/0
-    , map/2
 ]).
 
 -compile({inline,
@@ -124,31 +122,3 @@ from_ejson(T) -> T.
 to_binary(B) when is_binary(B) -> B;
 to_binary(L) when is_list(L) ->
     iolist_to_binary(L).
-
-test() ->
-    {file, Here} = code:is_loaded(?MODULE),
-    Dir = filename:dirname(filename:dirname(Here)),
-    Root = dgiot_httpc:url_join([Dir, "/priv/"]),
-    TplPath = Root ++ "test.json",
-    case catch file:read_file(TplPath) of
-        {Err, _Reason} when Err == 'EXIT'; Err == error ->
-            <<"">>;
-        {ok, Template} ->
-            map(#{
-                <<"switch">> => 33331,
-                <<"title">> => <<"cto">>,
-                <<"label">> => 12343,
-                <<"lsxage">> => 40
-            }, Template)
-    end.
-
-
-map(Map, Template) ->
-    case erlydtl:compile({template, Template}, dgiot_render, [{out_dir, false}]) of
-        {ok, Render} ->
-            {ok, IoList} = Render:render(Map),
-%%            io:format("~p ~n",[decode(unicode:characters_to_binary(IoList))]),
-            unicode:characters_to_binary(IoList);
-        error ->
-            {error, compile_error}
-    end.
