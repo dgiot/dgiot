@@ -168,6 +168,15 @@ test() ->
             }, Template)
     end.
 
+%% 支持变量和逻辑判断
+%%{% ifnotequal var1 var2 %}
+%%if: var1="foo" and var2="foo" are equal
+%%{% endifnotequal %}
+%%This is template 1.
+%%
+%%{{ test_var }}
+%%
+%%{% include "path2/template2" %}
 
 map(Map, Template) ->
     case erlydtl:compile({template, Template}, dgiot_render, [{out_dir, false}]) of
