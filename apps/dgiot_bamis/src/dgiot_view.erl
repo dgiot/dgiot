@@ -21,10 +21,20 @@
 -dgiot_swagger(<<"amis">>).
 
 -export([
+    get/2,
     post/2,
     put/2,
-    delete/2
+    delete/2,
+    get_value/4
 ]).
+
+get('before', Args) ->
+%%    io:format("~s ~p ~p ~p~n", [?FILE, ?LINE, Args, Id]),
+    Args;
+
+get('after', Args) ->
+%%    io:format("~s ~p ~p ~p~n", [?FILE, ?LINE, Args, Id]),
+    Args.
 
 post('before', Args) ->
 %%    io:format("~s ~p ~p ~p~n", [?FILE, ?LINE, Args, Id]),
@@ -45,4 +55,22 @@ delete('before', Args) ->
     Args;
 delete('after', Data) ->
     Data.
+
+get_value(Key, Values, Data, Acc) when is_list(Values) ->
+    List = lists:foldl(fun(Value, NewAcc) ->
+        case maps:find(Value, Data) of
+            {ok, V} ->
+                NewAcc ++ [V];
+            _ ->
+                NewAcc
+        end
+                       end, [], Values),
+    Acc#{Key => List};
+get_value(Key, Value, Data, Acc) ->
+    case maps:find(Value, Data) of
+        {ok, V} ->
+            Acc#{Key => V};
+        _ ->
+            Acc
+    end.
 
