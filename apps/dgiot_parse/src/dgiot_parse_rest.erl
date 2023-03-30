@@ -179,6 +179,7 @@ get_request_args(Path, Method, Body, Header, Options) when is_binary(Body) ->
     end;
 
 get_request_args(Path, Method, Body, Header, Options) ->
+%%    io:format("~s ~p Path ~p Method ~p Body ~p ~n",[?FILE, ?LINE, Path, Method, Body]),
     get_body(Path, Method, Body, Header, Options).
 
 
@@ -344,6 +345,7 @@ do_request(Method, Path, Header, QueryData, Options) ->
             false ->
                 QueryData
         end,
+    do_request_before(Method, Path, Header, QueryData, Options),
     case httpc_request(Method, Path, Header, QueryData, [], [], Options) of
         {error, Reason} ->
             {error, Reason};
@@ -365,10 +367,10 @@ httpc_request(Method, <<"/graphql">> = Path, Header, Body, HttpOptions, ReqOptio
     httpc_request(Method, Request, HttpOptions, ReqOptions);
 
 httpc_request(Method, Path, Header, Query, HttpOptions, ReqOptions, Options) when Method == 'GET'; Method == 'DELETE' ->
-%%    ?LOG(error,"Options ~p",[Options]),
+    %%    ?LOG(error,"Options ~p",[Options]),
     #{<<"host">> := Host, <<"path">> := ParsePath} = proplists:get_value(cfg, Options),
     Url = dgiot_httpc:url_join([Host, ParsePath] ++ [<<Path/binary, Query/binary>>]),
-%%    io:format("~s ~p ~p ~n", [?FILE, ?LINE, Url]),
+    %%    io:format("~s ~p ~p ~n", [?FILE, ?LINE, Url]),
     Request = {Url, Header},
     httpc_request(Method, Request, HttpOptions, ReqOptions);
 
@@ -391,6 +393,22 @@ httpc_request(Method, Request, HttpOptions, ReqOptions) ->
             {error, Reason}
     end.
 
+do_request_before(Method0, Path, Header, QueryData, Options) ->
+    Method =
+        case proplists:get_value(from, Options) of
+            js when QueryData == <<>> ->
+                method(Method0, atom);
+            js ->
+                case maps:get(<<"_method">>, ?JSON_DECODE(QueryData), no) of
+                    no -> method(Method0, atom);
+                    Method1 -> method(Method1, atom)
+                end;
+            _ ->
+                method(Method0, atom)
+        end,
+    {match, PathList} = re:run(Path, <<"([^/]+)">>, [global, {capture, all_but_first, binary}]),
+    dgiot_parse_hook:do_request_hook('before', lists:concat(PathList), Method, dgiot_parse:get_token(Header), QueryData, Options).
+
 do_request_after(Method0, Path, Header, NewQueryData, ResBody, Options) ->
     Method =
         case proplists:get_value(from, Options) of
@@ -405,7 +423,7 @@ do_request_after(Method0, Path, Header, NewQueryData, ResBody, Options) ->
                 method(Method0, atom)
         end,
     {match, PathList} = re:run(Path, <<"([^/]+)">>, [global, {capture, all_but_first, binary}]),
-%%    io:format("~s ~p ~p ~p ~n",[?FILE, ?LINE, Path, NewQueryData]),
+   %% io:format("~s ~p ~p ~p ~n",[?FILE, ?LINE, Path, NewQueryData]),
     dgiot_parse_hook:do_request_hook('after', lists:concat(PathList), Method, dgiot_parse:get_token(Header), NewQueryData, ResBody).
 
 

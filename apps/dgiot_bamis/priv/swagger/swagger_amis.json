@@ -28,6 +28,14 @@
             "required": false,
             "default": "content.i_out,content.i_in",
             "type": "string"
+          },
+          {
+            "in": "query",
+            "name": "mode",
+            "description": "表单的访问模式",
+            "required": false,
+            "default": 0,
+            "type": "integer"
           }
         ],
         "responses": {

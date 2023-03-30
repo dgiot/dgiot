@@ -319,9 +319,9 @@ request_parse(OperationID, Args, Body, Headers, #{base_path := BasePath, <<"sess
 %%    io:format("~s ~p ~p  ~n", [?FILE, ?LINE, NewBody]),
     request_parse(OperationID, Url, Method, NewArgs, NewBody, Headers, Context, Req).
 
-request_parse(OperationID, Url, Method, _Args, Body, Headers, #{from := From} = Context, Req) ->
+request_parse(OperationID, Url, Method, Args, Body, Headers, #{from := From} = Context, Req) ->
     {_Type, NewOperationID} = get_OperationID(OperationID),
-    case dgiot_parse:request(Method, maps:to_list(Headers), Url, dgiot_parse_id:get_objectid(NewOperationID, Body), [{from, From}]) of
+    case dgiot_parse:request(Method, maps:to_list(Headers), Url, dgiot_parse_id:get_objectid(NewOperationID, Body), [{from, From},{args, Args}]) of
         {ok, StatusCode, ResHeaders, ResBody} ->
             NewHeaders =
                 lists:foldl(
