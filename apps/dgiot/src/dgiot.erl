@@ -17,7 +17,7 @@
 -module(dgiot).
 -author("johnliu").
 -include("dgiot.hrl").
--export([get_env/1, get_env/2, get_env/3, init_plugins/0, check_dgiot_app/0, child_spec/2, child_spec/3]).
+-export([get_attr/3, get_env/1, get_env/2, get_env/3, init_plugins/0, check_dgiot_app/0, child_spec/2, child_spec/3]).
 
 %%--------------------------------------------------------------------
 %% API
@@ -33,6 +33,20 @@ get_env(Key, Default) ->
 
 get_env(App, Key, Default) ->
     application:get_env(App, Key, Default).
+
+get_attr(Module, Attr, Fun) ->
+    Attributes = Module:module_info(attributes),
+    case proplists:get_value(Attr, Attributes) of
+        undefined ->
+            true;
+        Module ->
+            case os:type() of
+                {win32,nt} ->
+                    true;
+                _ ->
+                    Attr:Fun(Module)
+            end
+    end.
 
 init_plugins() ->
     SysApp = lists:foldl(fun(X, Acc) ->

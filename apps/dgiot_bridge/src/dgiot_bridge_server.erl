@@ -119,14 +119,19 @@ do_channel(_Type, CType, ChannelId, Products, Cfg) ->
                         true ->
                             ProductIds = do_product(ChannelId, Products),
                             dgiot_data:insert(?DGIOT_BRIDGE, {ChannelId, productIds}, {CType, ProductIds}),
-                            case Mod:start(ChannelId, Cfg#{<<"product">> => Products}) of
-                                {ok, _} ->
-                                    dgiot_mqtt:subscribe(<<"channel/", ChannelId/binary, "/#">>),
-                                    dgiot_bridge:send_log(ChannelId, "Channel ~s is Install Protocol ~s", [ChannelId, jsx:encode(ProductIds)]),
-                                    ok;
-                                {error, Reason} ->
-                                    dgiot_data:delete(?DGIOT_BRIDGE, {ChannelId, productIds}),
-                                    {error, Reason}
+                            case dgiot:get_attr(Mod, dgiot_channel, health) of
+                                true ->
+                                    case Mod:start(ChannelId, Cfg#{<<"product">> => Products}) of
+                                        {ok, _} ->
+                                            dgiot_mqtt:subscribe(<<"channel/", ChannelId/binary, "/#">>),
+                                            dgiot_bridge:send_log(ChannelId, "Channel ~s is Install Protocol ~s", [ChannelId, jsx:encode(ProductIds)]),
+                                            ok;
+                                        {error, Reason} ->
+                                            dgiot_data:delete(?DGIOT_BRIDGE, {ChannelId, productIds}),
+                                            {error, Reason}
+                                    end;
+                                _ ->
+                                    {error, {Mod, start_error}}
                             end;
                         false ->
                             {error, {Mod, start_error}}
