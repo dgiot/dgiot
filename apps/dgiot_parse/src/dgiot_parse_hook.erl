@@ -61,9 +61,19 @@ subscribe(Table, Method, Channel, Keys) ->
 add_hook(Key) ->
     dgiot_hook:add(one_for_one, Key, fun dgiot_parse_hook:do_hook/1).
 
+do_hook({'before', get, Token, Class, ObjectId, QueryData, Options}) ->
+%%    io:format("~s ~p ~p  ~n", [?FILE, ?LINE, proplists:get_value(args, Options)]),
+    notify('before', get, Token, Class, ObjectId, dgiot_utils:to_map(proplists:get_value(args, Options))),
+    {ok, QueryData};
+
+do_hook({'before', get, Token, Class, QueryData, _Opts}) ->
+    notify('after', get, Token, Class, <<"ObjectId">>, dgiot_utils:to_map(QueryData)),
+    receive_ack(QueryData);
+
 do_hook({'after', get, Token, Class, _QueryData, ResBody}) ->
     notify('after', get, Token, Class, <<"ObjectId">>, dgiot_utils:to_map(ResBody)),
     receive_ack(ResBody);
+
 do_hook({'after', get, Token, Class, _ObjectId, _QueryData, ResBody}) ->
     notify('after', get, Token, Class, <<"ObjectId">>, dgiot_utils:to_map(ResBody)),
     receive_ack(ResBody);
@@ -81,6 +91,7 @@ do_hook({'after', put, Token, Class, ObjectId, QueryData, ResBody}) ->
 do_hook({'after', delete, Token, Class, ObjectId, _QueryData, ResBody}) ->
     notify('after', delete, Token, Class, ObjectId, ObjectId),
     {ok, ResBody};
+
 do_hook(_R) ->
     {ok, []}.
 
@@ -335,7 +346,6 @@ receive_put(ResBody) ->
         {sync_parse, NewResBody} when is_map(NewResBody) ->
             {ok, NewResBody};
         {sync_parse, NewResBody} ->
-            io:format("~s ~p ~p  ~n", [?FILE, ?LINE, NewResBody]),
             {ok, NewResBody};
         {error} ->
             {ok, ResBody}

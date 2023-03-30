@@ -20,3 +20,4 @@
     env = #{}
 }).
 
+-define(VIEW_CH_ETS, view_ch_ets).
