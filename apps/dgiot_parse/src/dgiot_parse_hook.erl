@@ -63,12 +63,8 @@ add_hook(Key) ->
 
 do_hook({'before', get, Token, Class, ObjectId, QueryData, Options}) ->
 %%    io:format("~s ~p ~p  ~n", [?FILE, ?LINE, proplists:get_value(args, Options)]),
-    notify('before', get, Token, Class, ObjectId, dgiot_utils:to_map(proplists:get_value(args, Options))),
+    notify('before', get, Token, Class, ObjectId, proplists:get_value(args, Options)),
     {ok, QueryData};
-
-do_hook({'before', get, Token, Class, QueryData, _Opts}) ->
-    notify('after', get, Token, Class, <<"ObjectId">>, dgiot_utils:to_map(QueryData)),
-    receive_ack(QueryData);
 
 do_hook({'after', get, Token, Class, _QueryData, ResBody}) ->
     notify('after', get, Token, Class, <<"ObjectId">>, dgiot_utils:to_map(ResBody)),
