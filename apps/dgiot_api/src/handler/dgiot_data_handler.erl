@@ -82,7 +82,7 @@ handle(OperationID, Args, Context, Req) ->
 %% 请求:POST /iotapi/upload
 do_request(post_upload, #{<<"file">> := FileInfo}, #{<<"user">> := #{<<"objectId">> := UserId}}, _Req) ->
     ?LOG(info, "FileInfo ~p", [FileInfo]),
-    Key = dgiot_license:to_md5(jsx:encode(FileInfo#{node => node()})),
+    Key = dgiot_utils:to_md5(jsx:encode(FileInfo#{node => node()})),
     case dgiot_parse:create_object(<<"Dict">>, #{
         <<"ACL">> => #{UserId => #{<<"read">> => true, <<"write">> => true}},
         <<"type">> => <<"file">>,
