@@ -131,9 +131,6 @@ do_request(put_worker_shift, _Args, _Context, _Body) ->
             {error, <<"failed">>}
     end;
 
-
-
-
 do_request(get_data, #{<<"productId">> := undefined, <<"objectId">> := DeviceId} = _Args, _Context, _Body) ->
     case dgiot_device_cache:lookup(DeviceId) of
         {ok, #{<<"productid">> := ProductId}} ->
@@ -160,10 +157,6 @@ do_request(get_data, #{<<"productId">> := ProductId, <<"objectId">> := DeviceId,
             {error, <<"get_data_failed">>}
     end;
 
-
-
-
-
 do_request(get_material, #{<<"objectId">> := DeviceId, <<"dept">> := Depart} = _Args, _Context, _Req) ->
     case dgiot_factory_material:get_material_record(DeviceId, Depart) of
         {ok, Res} ->
@@ -180,34 +173,6 @@ do_request(post_material, #{<<"objectId">> := DeviceId, <<"shift">> := Data} = _
     end;
 
 
-do_request(get_warehouse_material, #{<<"limit">> := Limit, <<"skip">> := Skip, <<"where">> := OldWhere, <<"productId">> := ProductId} = _Args, _Context, _Req) ->
-%%    io:format("~s ~p _Args = ~p  ~n", [?FILE, ?LINE, _Args]),
-    Where = case is_map(OldWhere) of
-                true ->
-                    OldWhere;
-                _ ->
-                    case jsx:is_json(OldWhere) of
-                        true ->
-                            dgiot_bamis:format_multilayer(OldWhere);
-                        _ ->
-                            OldWhere
-                    end
-            end,
-    case dgiot_factory_material:get_warehouse_material(Limit, Skip, Where, ProductId) of
-        {ok, {Total, Res}} ->
-            {ok, #{<<"status">> => 0, msg => <<"操作成功"/utf8>>, <<"data">> => #{<<"total">> => Total, <<"items">> => Res}}};
-        _ ->
-            error
-    end;
-
-do_request(post_warehouse_material, _Args, _Context, _Req) ->
-    case dgiot_factory_material:put_warehouse_material(_Args) of
-        {ok, _} ->
-            {ok, #{<<"status">> => 0, msg => <<"操作成功"/utf8>>, <<"data">> => []}};
-        _ ->
-            error
-    end;
-
 do_request(get_workertree, _Arg, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
 %%    io:format("~s ~p SessionToken = ~p  ~n", [?FILE, ?LINE, SessionToken]),
     Data = dgiot_factory_utils:get_usertree(_Arg, SessionToken),
@@ -217,29 +182,20 @@ do_request(get_workertree, _Arg, #{<<"sessionToken">> := SessionToken} = _Contex
         <<"data">> => #{<<"options">> => Data}
     }};
 
-do_request(get_useablematerial, #{<<"id">> := Id} = _Arg, _Context, _Req) ->
-    case dgiot_data:match(material, {{Id, '_'}, '$1'}) of
-        {ok, Res} ->
-            {ok, #{
-                <<"status">> => 0,
-                <<"msg">> => <<"ok">>,
-                <<"data">> => #{<<"total">> => length(Res), <<"items">> => Res}
-            }};
-        _ ->
-            {error, <<"not find useable material">>}
-    end;
 do_request(get_workshop_worker, #{<<"WorkShop">> := WorkShop, <<"product">> := ProductId} = _Args, _Context, _Body) ->
 %%    {Res,_} = dgiot_jienuo_utils:get_shift(WorkShop),
     Res = dgiot_factory_worker:get_work_shop_workers(WorkShop, ProductId),
 %%            io:format("~s  ~p  Res= ~ts ~n", [?FILE, ?LINE, unicode:characters_to_list(jiffy:encode(Res))]),
     {ok, #{<<"status">> => 0, msg => <<"操作成功"/utf8>>, <<"data">> => #{<<"options">> => Res}}};
-
+%% 用于自动获取工号，查询传入产品id下设备中最大的工号并+1返回。
 do_request(get_new_worker_num, #{<<"product">> := ProductId} = _Arg, _Context, _Req) ->
     Num = dgiot_factory_worker:get_new_workernum(ProductId),
     {ok, #{<<"status">> => 0, msg => <<"操作成功"/utf8>>, <<"data">> => dgiot_utils:to_binary(Num)}};
+%% 用于获取排班信息
 do_request(get_shift_time, #{<<"product">> := ProductId, <<"shift">> := Shift} = _Arg, _Context, _Req) ->
     Res = dgiot_factory_worker:get_shift_time(ProductId, Shift),
     {ok, #{<<"status">> => 0, msg => <<"操作成功"/utf8>>, <<"data">> => Res}};
+%% 将某一天的排班信息复制到另一天
 do_request(post_duplicate_shift, #{<<"product">> := ProductId, <<"sink_date">> := SinkDate, <<"where">> := Where} = _Arg,
     #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
     case dgiot_product_tdengine:get_channel(SessionToken) of
@@ -255,10 +211,8 @@ do_request(post_duplicate_shift, #{<<"product">> := ProductId, <<"sink_date">> :
 
             end
     end;
-do_request(put_sumpick, #{<<"BatchList">> := BatchList} = _Arg, _Context, _Req) ->
-    Sum = dgiot_factory_utils:get_sum(BatchList),
-    {ok, #{<<"status">> => 0, msg => <<"操作成功"/utf8>>, <<"data">> => #{<<"SumPick">> => Sum}}};
 
+%% 获取车间大屏数据
 do_request(get_factory_screen, _Arg, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
     case dgiot_product_tdengine:get_channel(SessionToken) of
         {error, Error} ->
@@ -269,7 +223,6 @@ do_request(get_factory_screen, _Arg, #{<<"sessionToken">> := SessionToken} = _Co
                 {ok, Res} ->
                     {ok, #{<<"status">> => 0, msg => <<"操作成功"/utf8>>, <<"data">> => Res}};
                 _R ->
-                    io:format("~s ~p _R = ~p.~n", [?FILE, ?LINE, _R]),
                     {ok, #{<<"status">> => 1, msg => <<"操作失败"/utf8>>}}
             end
     end;
