@@ -86,6 +86,13 @@ handle_init(State) ->
 handle_event(_EventId, _Event, State) ->
     {ok, State}.
 
+handle_message({sync_parse, _Pid, 'before', get, _Token, <<"View">>, #{<<"mode">> := undefined} = _Args}, State) ->
+    {ok, State};
+
+handle_message({sync_parse, Pid, 'after', get, _Token, <<"View">>, #{<<"objectId">> := undefined} = ResBody}, State) ->
+    dgiot_parse_hook:publish(Pid, ResBody),
+    {ok, State};
+
 handle_message({sync_parse, Pid, 'before', get, _Token, <<"View">>, #{<<"mode">> := Mode} = _Args}, State) ->
     dgiot_data:insert(?VIEW_CH_ETS, Pid, Mode),
     io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Pid, Mode]),
@@ -95,12 +102,14 @@ handle_message({sync_parse, Pid, 'after', get, Token, <<"View">>, #{<<"data">> :
     ResBody1 =
         case dgiot_data:get(?VIEW_CH_ETS, Pid) of
             not_find ->
-                get_resbody(ViewId, Token, Renders, ResBody);
+%%                io:format("~s ~p ~p  Renders ~p ~n", [?FILE, ?LINE, Pid, Renders]),
+                dgiot_view:get_resbody(ViewId, Token, Renders, ResBody);
             _ ->
+%%                io:format("~s ~p ~p  ViewId ~p ~n", [?FILE, ?LINE, Pid, ViewId]),
                 dgiot_data:delete(?VIEW_CH_ETS, Pid),
                 ResBody
         end,
-%%    io:format("~s ~p Data ~p ~n", [?FILE, ?LINE, dgiot_json:encode(Data)]),
+%%    io:format("~s ~p Data111 ~p ~n", [?FILE, ?LINE, ViewId]),
     dgiot_parse_hook:publish(Pid, ResBody1),
     {ok, State};
 
@@ -126,56 +135,4 @@ stop(_ChannelType, _ChannelId, _State) ->
     ok.
 
 
-get_resbody(ViewId, Token, Renders, ResBody) ->
-    Vars = lists:foldl(
-        fun
-            (#{<<"key">> := Key, <<"api">> := Api, <<"params">> := Args, <<"value">> := Value}, Acc) ->
-                OperationId = dgiot_utils:to_atom(Api),
-                case binary:split(Api, <<$_>>, [global, trim]) of
-                    [<<"get">>, <<"amis">>, Class, ObjectId] ->
-                        case dgiot_parse:get_object(Class, ObjectId, [{"X-Parse-Session-Token", Token}], [{from, rest}]) of
-                            {ok, Result} ->
-                                Res = dgiot_bamis:get({'after', Result}),
-                                dgiot_view:get_value(Key, Value, Res, Acc);
-                            _ ->
-                                Acc
-                        end;
-                    [<<"get">>, <<"amis">>, Class] ->
-                        case dgiot_parse:query_object(Class, Args, [{"X-Parse-Session-Token", Token}], [{from, rest}]) of
-                            {ok, Result} ->
-                                Res = dgiot_bamis:get({'after', Result}),
-                                dgiot_view:get_value(Key, Value, Res, Acc);
-                            _ ->
-                                Acc
-                        end;
-                    [<<"get">>, <<"classes">>, Class, ObjectId] ->
-                        case dgiot_parse:get_object(Class, ObjectId, [{"X-Parse-Session-Token", Token}], [{from, rest}]) of
-                            {ok, Result} ->
-                                dgiot_view:get_value(Key, Value, Result, Acc);
-                            _ ->
-                                Acc
-                        end;
-                    [<<"get">>, <<"classes">>, Class] ->
-                        case dgiot_parse:query_object(Class, Args, [{"X-Parse-Session-Token", Token}], [{from, rest}]) of
-                            {ok, Result} ->
-                                dgiot_view:get_value(Key, Value, Result, Acc);
-                            _ ->
-                                Acc
-                        end;
-                    _ ->
-                        case dgiot_router:get_state_by_operation(OperationId) of
-                            {ok, {220, #{logic_handler := Handler, base_path := Base_path}}} ->
-                                case Handler:handle(OperationId, Args, #{base_path => Base_path, <<"sessionToken">> => Token}, #{bindings => #{id => ViewId}, headers => #{}}) of
-                                    {200, _Headers, Result, _Req} ->
-                                        dgiot_view:get_value(Key, Value, Result, Acc);
-                                    _ ->
-                                        Acc
-                                end;
-                            _ ->
-                                Acc
-                        end
-                end;
-            (_X, Acc) ->
-                Acc
-        end, #{}, Renders),
-    dgiot_json:decode(dgiot_map:map(Vars, dgiot_json:encode(ResBody))).
+
