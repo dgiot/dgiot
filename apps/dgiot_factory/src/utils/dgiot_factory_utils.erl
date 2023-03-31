@@ -266,7 +266,7 @@ get_sum(_) ->
 batch_create_worker(ProductId, WorkerList, InitNum) ->
     lists:foldl(
         fun(Worker, Num) ->
-            dgiot_factory_channel:init_worker_device(ProductId, Num, dgiot_utils:to_binary( Worker)),
+            dgiot_factory_worker:init_worker_device(ProductId, Num, dgiot_utils:to_binary( Worker)),
             Num + 1
         end, InitNum, WorkerList).
 
