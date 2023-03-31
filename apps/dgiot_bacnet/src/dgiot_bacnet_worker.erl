@@ -26,28 +26,25 @@
 -define(MAX_BUFF_SIZE, 10 * 1024).
 
 childspec(ChannelId, Args) ->
-    dgiot_client:register(ChannelId, udp_client_sup, Args).
+    dgiot_client:register(<<ChannelId/binary, "_udpclient">>, udp_client_sup, Args#{<<"mod">> => ?MODULE}).
 
-start_connect(ChannelId, #{
-    <<"ip">> := Ip} = Opts) ->
-    dgiot_client:start(ChannelId, dgiot_utils:to_binary(Ip), Opts#{<<"ip">> => Ip, <<"mod">> => ?MODULE, <<"child">> => #{}}).
+start_connect(ChannelId, #{<<"ip">> := Ip} = Opts) ->
+    dgiot_client:start(<<ChannelId/binary, "_udpclient">>, dgiot_utils:to_binary(Ip), Opts#{<<"ip">> => Ip, <<"child">> => #{<<"channel">> => ChannelId}}).
 
 init(#dclient{child = ChildState} = Dclient) when is_map(ChildState) ->
-
     {ok, Dclient};
 
 init(_) ->
     {ok, #{}}.
 
 handle_info(connection_ready, #dclient{child = ChildState} = Dclient) ->
-%%    io:format("~s ~p ~p send from Dclient ~p ~n", [?FILE, ?LINE, self(), Dclient]),
     {noreply, Dclient#dclient{child = ChildState}};
 
 handle_info(udp_closed, #dclient{child = ChildState} = Dclient) ->
     {noreply, Dclient#dclient{child = ChildState}};
 
-handle_info({udp, Ip, Port, Buff}, Dclient) ->
-    io:format("~s ~p ~p send from ~p:~p : ~p ~n", [?FILE, ?LINE, self(), dgiot_utils:get_ip(Ip), Port, dgiot_utils:to_hex(Buff)]),
+handle_info({udp, Buff}, Dclient) ->
+    io:format("~s ~p Buff ~p ~n", [?FILE, ?LINE, dgiot_utils:to_hex(Buff)]),
     {noreply, Dclient};
 
 handle_info({deliver, _, Msg}, #dclient{channel = ChannelId, client = ClientId} = Dclient) ->

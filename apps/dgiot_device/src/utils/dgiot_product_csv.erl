@@ -140,8 +140,7 @@ post_thing(FileName, Productids) ->
     AtomName = dgiot_utils:to_atom(FileName),
     maps:fold(fun(ProductId, {DeviceName, ProductName}, _Acc) ->
         Things = ets:match(AtomName, {'_', [ProductName, '_', '_', DeviceName, '_', '$1', '$2', '$3', '$4', '$5', '$6', '$7', '$8', '$9', '$10', '$11' | '_']}),
-        Properties = get_properties(Things, AtomName, ProductId, ProductName),
-        dgiot_parse:update_object(<<"Product">>, ProductId, #{<<"thing">> => #{<<"properties">> => Properties}})
+        post_properties(Things, AtomName, ProductId, ProductName)
               end, [], Productids).
 
 get_CategoryId(CategoryName) ->
@@ -181,10 +180,10 @@ get_channelAcl(ChannelId) ->
             }
     end.
 
-get_properties(Things, AtomName, ProductId, ProductName) ->
-    lists:foldl(fun([Devicetype, Identifier, Name, _Address, _Bytes, AccessMode, Min_Max, Unit, Type, _Operatetype, _Originaltype | _], Propertie) ->
+post_properties(Things, AtomName, ProductId, ProductName) ->
+    lists:foldl(fun([Devicetype, Identifier, Name, _Address, _Bytes, AccessMode, Min_Max, Unit, Type, _Operatetype, _Originaltype | _], _) ->
         {Min, Max} = get_min_max(Min_Max),
-        Propertie ++ [#{
+        Item = #{
             <<"name">> => Name,
             <<"index">> => 0,
             <<"isstorage">> => true,
@@ -194,14 +193,14 @@ get_properties(Things, AtomName, ProductId, ProductName) ->
                 <<"order">> => 0,
                 <<"round">> => <<"all">>,
                 <<"offset">> => 0,
-                <<"control">> => <<"%d">>,
+                <<"control">> => <<"%{d}">>,
                 <<"iscount">> => <<"0">>,
                 <<"protocol">> => <<"DLINK">>,
                 <<"strategy">> => <<"主动上报"/utf8>>,
-                <<"collection">> => <<"%s">>,
+                <<"collection">> => <<"%{s}">>,
                 <<"countround">> => <<"all">>,
-                <<"countstrategy">> => 20,
-                <<"countcollection">> => <<"%s">>
+                <<"countstrategy">> => 3,
+                <<"countcollection">> => <<"%{s}">>
             },
             <<"dataType">> => #{
                 <<"das">> => [],
@@ -221,7 +220,29 @@ get_properties(Things, AtomName, ProductId, ProductName) ->
             <<"identifier">> => to_lower(Identifier),
             <<"moduleType">> => <<"properties">>,
             <<"isaccumulate">> => false
-        }]
+        },
+        case dgiot_parse:get_object(<<"Product">>, ProductId) of
+            {ok, #{<<"thing">> := Thing}} ->
+                OldProperties = maps:get(<<"properties">>, Thing, []),
+                #{<<"identifier">> := Identifier} = Item,
+                {Ids, NewModules} =
+                    lists:foldl(fun(X, {Ids1, Acc}) ->
+                        case X of
+                            #{<<"identifier">> := Identifier} ->
+                                {Ids1 ++ [Identifier], Acc};
+                            _ ->
+                                {Ids1, Acc ++ [X]}
+                        end
+                                end, {[], [Item]}, OldProperties),
+                case length(Ids) of
+                    0 ->
+                        dgiot_parse:update_object(<<"Product">>, ProductId, #{<<"thing">> => Thing#{<<"properties">> => NewModules}});
+                    _ ->
+                        pass
+                end;
+            _ ->
+                pass
+        end
                 end, [], Things).
 
 get_dataSource(AtomName, ProductId, ProductName, ThingName) ->

@@ -60,19 +60,51 @@
 ]}.
 
 %%--------------------------------------------------------------------
-%% 微信公众号
+%% 微信小程序
 %%--------------------------------------------------------------------
 
 {mapping, "wechat.appid", "dgiot_http.wechat_appid", [
-{default, "wxfb27e58a4c6b0584"},
+{default, "wxdafafdqb0584"},
 {datatype, string}
 ]}.
 
 {mapping, "wechat.secret", "dgiot_http.wechat_secret", [
-{default, "14a79843ec57d70ce23194f0ab6490ff"},
+{default, "14a79843fdasfafaf0ab6490ff"},
 {datatype, string}
 ]}.
 
+%%--------------------------------------------------------------------
+%% 微信公众号
+%%--------------------------------------------------------------------
+
+{mapping, "wechatpublic.appid", "dgiot_http.wechatpublic_appid", [
+{default, "wxfdasfafdqb0584"},
+{datatype, string}
+]}.
+
+{mapping, "wechatpublic.secret", "dgiot_http.wechatpublic_secret", [
+{default, "14a798dsafasfaf90ff"},
+{datatype, string}
+]}.
+
+%%--------------------------------------------------------------------
+%% 微信商户号
+%%--------------------------------------------------------------------
+
+{mapping, "wechat.mchid", "dgiot_http.wechat_mchid", [
+{default, "1230000109"},
+{datatype, string}
+]}.
+
+
+%%--------------------------------------------------------------------
+%% 商户API证书序列号
+%%--------------------------------------------------------------------
+
+{mapping, "wechat.serial_no", "dgiot_http.wechat_serial_no", [
+{default, "31dfafafasdfdadfafdadfBC47D6E84B7C24"},
+{datatype, string}
+]}.
 
 %%--------------------------------------------------------------------
 %% jwt

@@ -26,6 +26,7 @@
 -export([
     post_sns/3,
     get_sns/1,
+    get_public_sns/1,
     unbind_sns/1,
     get_wechat_index/1,
     sendSubscribe/3,
@@ -67,34 +68,44 @@ unbind_sns(UserId) ->
     dgiot_parse:update_object(<<"_User">>, UserId, #{<<"tag">> => NewTag#{<<"wechat">> => #{<<"openid">> => <<"">>}}}),
     {ok, #{<<"msg">> => <<"succeed">>}}.
 
-%% wechat登陆
+%% 获取小程序openid
 get_sns(Jscode) ->
     inets:start(),
     AppId = dgiot_utils:to_binary(application:get_env(dgiot_http, wechat_appid, <<"">>)),
     Secret = dgiot_utils:to_binary(application:get_env(dgiot_http, wechat_secret, <<"">>)),
     Url = "https://api.weixin.qq.com/sns/jscode2session?appid=" ++ dgiot_utils:to_list(AppId) ++ "&secret=" ++ dgiot_utils:to_list(Secret) ++
         "&js_code=" ++ dgiot_utils:to_list(Jscode) ++ "&grant_type=authorization_code",
-%%    ?LOG(info, "Url ~s", [Url]),
-    case httpc:request(Url) of
-        {ok, {{_Version, 200, _ReasonPhrase}, _Headers, Body}} ->
-            Json = list_to_binary(Body),
-            case jsx:is_json(Json) of
-                true ->
-                    case jsx:decode(Json, [{labels, binary}, return_maps]) of
-                        #{<<"openid">> := OPENID, <<"session_key">> := _SESSIONKEY} ->
-                            ?LOG(info, "~p ~p", [OPENID, _SESSIONKEY]),
-                            case dgiot_parse:query_object(<<"_User">>, #{<<"where">> => #{<<"tag.wechat.openid">> => OPENID}}) of
-                                {ok, #{<<"results">> := Results}} when length(Results) > 0 ->
-                                    [#{<<"objectId">> := UserId, <<"username">> := Name} | _] = Results,
-                                    {ok, UserInfo} = dgiot_parse_auth:create_session(UserId, dgiot_auth:ttl(), Name),
-                                    {ok, UserInfo#{<<"openid">> => OPENID, <<"status">> => <<"bind">>}};
-                                _ ->
-                                    {ok, #{<<"openid">> => OPENID, <<"status">> => <<"unbind">>}}
-                            end;
-                        _Result ->
-                            {error, <<"not find openid">>}
-                    end;
-                false -> {error, <<"not find openid">>}
+    case dgiot_http_client:request(get, {Url, []}) of
+        #{<<"openid">> := OPENID, <<"session_key">> := _SESSIONKEY} ->
+            case dgiot_parse:query_object(<<"_User">>, #{<<"where">> => #{<<"tag.wechat.openid">> => OPENID}}) of
+                {ok, #{<<"results">> := Results}} when length(Results) > 0 ->
+                    [#{<<"objectId">> := UserId, <<"username">> := Name} | _] = Results,
+                    {ok, UserInfo} = dgiot_parse_auth:create_session(UserId, dgiot_auth:ttl(), Name),
+                    {ok, UserInfo#{<<"openid">> => OPENID, <<"status">> => <<"bind">>}};
+                _ ->
+                    {ok, #{<<"openid">> => OPENID, <<"status">> => <<"unbind">>}}
+            end;
+        _Error ->
+            _Error
+    end.
+
+%% 获取公众号openid
+get_public_sns(Code) ->
+    inets:start(),
+    AppId = dgiot_utils:to_binary(application:get_env(dgiot_http, wechatpublic_appid, <<"">>)),
+    Secret = dgiot_utils:to_binary(application:get_env(dgiot_http, wechatpublic_secret, <<"">>)),
+    Url = "https://api.weixin.qq.com/sns/oauth2/access_token?appid=" ++ dgiot_utils:to_list(AppId) ++ "&secret=" ++ dgiot_utils:to_list(Secret) ++
+        "&code=" ++ dgiot_utils:to_list(Code) ++ "&grant_type=authorization_code",
+    io:format("~s ~p Url = ~p.~n", [?FILE, ?LINE, Url]),
+    case dgiot_http_client:request(get, {Url, []}) of
+        #{<<"openid">> := OPENID, <<"access_token">> := _} ->
+            case dgiot_parse:query_object(<<"_User">>, #{<<"where">> => #{<<"tag.wechat.openid">> => OPENID}}) of
+                {ok, #{<<"results">> := Results}} when length(Results) > 0 ->
+                    [#{<<"objectId">> := UserId, <<"username">> := Name} | _] = Results,
+                    {ok, UserInfo} = dgiot_parse_auth:create_session(UserId, dgiot_auth:ttl(), Name),
+                    {ok, UserInfo#{<<"openid">> => OPENID, <<"status">> => <<"bind">>}};
+                _ ->
+                    {ok, #{<<"openid">> => OPENID, <<"status">> => <<"unbind">>}}
             end;
         _Error ->
             _Error

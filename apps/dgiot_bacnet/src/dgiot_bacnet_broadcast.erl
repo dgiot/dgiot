@@ -51,7 +51,7 @@ handle_info(whois, #dclient{channel = ChannelId, client = ClientId} = Dclient) -
     {noreply, Dclient};
 
 handle_info({udp, Ip, Port, Buff}, #dclient{child = #{<<"channel">> := ChannelId}} = Dclient) ->
-    io:format("~s ~p ~p send from ~p:~p : ~p ~n", [?FILE, ?LINE, self(), dgiot_utils:get_ip(Ip), Port, dgiot_utils:to_hex(Buff)]),
+%%    io:format("~s ~p ~p send from ~p:~p : ~p ~n", [?FILE, ?LINE, self(), dgiot_utils:get_ip(Ip), Port, dgiot_utils:to_hex(Buff)]),
     dgiot_channelx:do_message(<<"BACNET">>, ChannelId, {whois, dgiot_utils:get_ip(Ip), Port, Buff}, 30000),
     {noreply, Dclient};
 
