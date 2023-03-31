@@ -100,18 +100,16 @@ handle_message({sync_parse, _Pid, 'before', put, _Token, <<"Device">>, #{<<"id">
                                 QueryData
                         end;
                     _ ->
-
-                        io:format("~s ~p here  ~n", [?FILE, ?LINE]),
+%%                      io:format("~s ~p here  ~n", [?FILE, ?LINE]),
                         QueryData
                 end
         end,
     dgiot_parse_hook:publish(_Pid, NewQueryData),
     {ok, State};
-handle_message({sync_parse, _Pid, 'after', post, _Token, <<"Device">>, #{<<"basedata">> := BaseData,<<"objectId">> := DeviceId} = QueryData}, State) ->
-%%    case dgiot_device:lookup(DeviceId) of
-%%        {ok, #{<<"productid">> := ProductId}} ->
-    case dgiot_parse:get_object(<<"Device">>, DeviceId) of
-        {ok, #{<<"product">> := #{<<"objectId">> := ProductId}}} ->
+
+handle_message({sync_parse, _Pid, 'after', post, _Token, <<"Device">>, #{<<"basedata">> := BaseData, <<"objectId">> := DeviceId} = QueryData}, State) ->
+    case dgiot_device:lookup(DeviceId) of
+        {ok, #{<<"productid">> := ProductId}} ->
             case catch dgiot_hook:run_hook({sync_parse, 'after', post, ProductId}, {QueryData, ProductId, State}) of
                 {ok, [{ok,Res}]} ->
                     NewBaseData = dgiot_map:merge(BaseData,Res),
@@ -120,7 +118,7 @@ handle_message({sync_parse, _Pid, 'after', post, _Token, <<"Device">>, #{<<"base
                     QueryData
             end;
         _ ->
-            io:format("~s ~p DeviceId = ~p ~n", [?FILE, ?LINE, DeviceId]),
+%%            io:format("~s ~p DeviceId = ~p ~n", [?FILE, ?LINE, DeviceId]),
             pass
     end,
     {ok, State};
