@@ -118,7 +118,6 @@ handle_message({sync_parse, _Pid, 'after', post, _Token, <<"Device">>, #{<<"base
                     QueryData
             end;
         _ ->
-%%            io:format("~s ~p DeviceId = ~p ~n", [?FILE, ?LINE, DeviceId]),
             pass
     end,
     {ok, State};

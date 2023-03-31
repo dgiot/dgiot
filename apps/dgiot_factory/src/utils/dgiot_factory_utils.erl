@@ -27,9 +27,7 @@
 -export([save2td/3, save2td/2]).
 -export([kill_undefined/1]).
 -export([float/2,get_card_data/2,get_cache_data/3,keep_decimal/2]).
-
-
-
+-export([get_id/2]).
 get_usertree(#{<<"id">> := undefined}, SessionToken) ->
     case get_same_level_role(SessionToken) of
         RoleTree when length(RoleTree) > 0 ->
@@ -42,8 +40,6 @@ get_usertree(#{<<"id">> := Id}, _) ->
     {NewTree, List} = format_tree(Tree),
     record_workteam(List),
     NewTree.
-
-
 
 get_same_level_role(SessionToken) ->
     case dgiot_auth:get_session(SessionToken) of
@@ -307,7 +303,6 @@ get_json_file(FileName) ->
 %%                "value": 2}       → cutting_array_1_value :2
 %%]}}
 %%与dgiot_map:flattern不同，此对字典中的list结构进行处理。将list中每一项的序号添加在两层key之间，并通过unflatten_map函数复原成为字典结构。
-
 %%默认使用 _ 作为分割符
 flatten_map(Map) when is_map(Map) ->
     flatten_map(Map, <<"_">>);
@@ -345,7 +340,6 @@ flatten(Head, List, Link) when is_list(List) ->
 flatten(Head, V, _) ->
     #{<<Head/binary>> => V}.
 
-
 %%用于将扁平化之后的数据复原
 %%默认使用_作为分隔符
 unflatten_map(Map) when is_map(Map) ->
@@ -377,10 +371,8 @@ get_map(KList, V) ->
                         _ ->
                             Acc
                     end,
-
             case re:run(X, <<"[0-9]">>) of
                 {match, _} ->
-
                     get_list(a, dgiot_utils:to_int(X), Value);
                 _ ->
                     #{X => Value}
@@ -411,15 +403,6 @@ get_list(_Key, Index, Value) when Index > 0 ->
     Head ++ [Value];
 get_list(_Key, _, Value) ->
     [Value].
-
-
-
-
-
-
-
-
-
 
 %%对list进行替换操作
 merge_map(Data, NewData) ->
@@ -491,8 +474,6 @@ float(Number, X) ->
     N = math:pow(10,X),
     round(Number*N)/N.
 
-
-
 get_card_data(BatchProductId, BatchDeviceId) ->
     DevcieTypeList = dgiot_product:get_devicetype(BatchProductId),
     lists:foldl(
@@ -519,7 +500,6 @@ get_cache_data(BatchProductId, BatchDeviceId, DeviceType) ->
             {ok,maps:without([<<"quality">>],Res)}
     end.
 
-
 keep_decimal(Float, Num) when is_float(Float) ->
     F=fun(_, Base1) ->
         Base1*10
@@ -533,3 +513,10 @@ keep_decimal(Float, Num) when is_float(Float) ->
     (Keep+Add)*10/Base;
 keep_decimal(Float, _Num) ->
     Float.
+
+get_id(DevAddr, Type) ->
+    Time = dgiot_utils:to_binary(dgiot_datetime:timestamp()),
+    Bin = dgiot_utils:to_binary(Type),
+    <<ObjID:10/binary, _/binary>> = dgiot_utils:to_md5(<<Bin/binary, DevAddr/binary, Time/binary>>),
+    Res = string:to_upper(dgiot_utils:to_list(ObjID)),
+    dgiot_utils:to_binary(Res).
