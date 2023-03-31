@@ -262,7 +262,7 @@ put_group(#{<<"productid">> := ProductId, <<"topoid">> := TopoId, <<"thingid">> 
 post_group(Body, SessionToken) ->
 %%    HostName = dgiot_utils:get_hostname(),
     NatIP = dgiot_utils:get_natip(),
-    ComputerKey = dgiot_license:get_hardkey(),
+    ComputerKey = dgiot_utils:get_macs(),
     <<Addr:12/binary, _/binary>> = ComputerKey,
     ProductName = case maps:get(<<"name">>, Body, <<"">>) of
                       <<"">> ->

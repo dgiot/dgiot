@@ -113,6 +113,7 @@
     , get_natip/0
     , get_wlanip/0
     , get_computerconfig/0
+    , get_macs/0
     , get_ipbymac/1
     , get_macbyip/1
     , get_ifaddrs/0
@@ -474,7 +475,7 @@ xor_sum(B) ->
 
 % 定义递归函数
 xor_sum(I, List, Acc) when I < length(List) ->
-    xor_sum(I+1, List, Acc bxor lists:nth(I, List));
+    xor_sum(I + 1, List, Acc bxor lists:nth(I, List));
 xor_sum(_, _, Acc) ->
     Acc.
 
@@ -819,6 +820,22 @@ post_file(Root, FileName) ->
             {error, ZipFile ++ "not exirt"}
     end.
 
+
+get_macs() ->
+    case inet:getifaddrs() of
+        {ok, Iflist} ->
+            Macs = lists:foldl(fun({_K, V}, [A, B, C, D, E, F] = Acc) ->
+                case proplists:get_value(hwaddr, V) of
+                    [A1, B1, C1, D1, E1, F1] ->
+                        [A + A1, B + B1, C + C1, D + D1, E + E1, F + F1];
+                    _ ->
+                        Acc
+                end
+                               end, [0, 0, 0, 0, 0, 0], Iflist),
+            dgiot_utils:to_md5(dgiot_utils:to_binary(lists:concat(Macs)));
+        _ ->
+            dgiot_utils:to_md5(dgiot_utils:random())
+    end.
 
 %随机生成16位Key值
 random() ->
