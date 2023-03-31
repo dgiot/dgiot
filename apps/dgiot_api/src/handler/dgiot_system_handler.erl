@@ -141,7 +141,7 @@ do_request(get_plugin, _Args, _Context, _Req) ->
 %% OperationId:post_plugin_action
 %% 请求:POST /iotapi/plugin/:Action
 do_request(post_plugin_app, #{<<"Action">> := Action, <<"App">> := App}, _Context, _Req) ->
-    case dgiot_license:check_plugin(App) of
+    case dgiot_plugin:check_plugin(App) of
         true ->
             case Action of
                 <<"stop">> ->

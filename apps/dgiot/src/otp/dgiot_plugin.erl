@@ -37,6 +37,7 @@
     reload_plugin/2,
     all_changed/0,
     applications/1,
+    check_plugin/1,
     applications/0]).
 
 %% dynamic_compile
@@ -604,3 +605,14 @@ normalize_record({attribute, La, record, {Record, Fields}} = Form) ->
 normalize_record(Form) ->
     {Form, []}.
 
+check_plugin(Name) ->
+    BinName = dgiot_utils:to_binary(Name),
+    case BinName of
+        <<"dgiot_apihub">> ->
+            true;
+        <<"dgiot_", _/binary>> ->
+%%            dgiot_license:check();
+            true;
+        _ ->
+            true
+    end.

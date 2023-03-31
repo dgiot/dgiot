@@ -211,6 +211,7 @@ stop(ChannelId) ->
                 end,
             dgiot_data:loop(ChannelId, Fun),
             dgiot_data:clear(ChannelId),
+            dgiot_data:delete({client, ChannelId}),
             dgiot_client:unregister(ChannelId)
     end.
 

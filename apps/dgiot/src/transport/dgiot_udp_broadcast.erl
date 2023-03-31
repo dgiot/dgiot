@@ -38,8 +38,8 @@ start_link(Args) ->
 %%%===================================================================
 init([#{<<"channel">> := ChannelId, <<"client">> := ClientId, <<"ip">> := Ip, <<"port">> := Port, <<"mod">> := Mod} = Args]) ->
     Port1 = dgiot_utils:to_int(Port),
-    UserData = #connect_state{mod = Mod, host = Ip, port = Port1, freq = 30, count = 300},
     ChildState = maps:get(<<"child">>, Args, #{}),
+    UserData = #connect_state{mod = Mod, host = Ip, port = Port1, freq = 30, count = 300, child = ChildState},
     Dclient = #dclient{channel = ChannelId, client = ClientId, status = ?DCLIENT_INTIALIZED, userdata = UserData, child = ChildState},
     dgiot_client:add(ChannelId, ClientId),
     case Mod:init(Dclient) of

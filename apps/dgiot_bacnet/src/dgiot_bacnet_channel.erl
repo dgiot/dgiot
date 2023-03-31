@@ -116,11 +116,24 @@ handle_message(start_client, #state{id = ChannelId, env = #{<<"port">> := Port}}
                     <<"port">> => Port,
                     <<"ip">> => Ip
                 })
-                      end, dgiot_udp_broadcast:get_ipaddrs());
+                      end, dgiot_udp_broadcast:get_ipaddrs()),
+            dgiot_data:insert({start_client, ChannelId}, ChannelId);
         _ ->
             pass
     end,
     {ok, State};
+
+
+handle_message(stop_client, #state{id = ChannelId} = State) ->
+    %%io:format("~s ~p ChannelId = ~p.~n", [?FILE, ?LINE, ChannelId]),
+    case dgiot_data:get({stop_client, ChannelId}) of
+        not_find ->
+            dgiot_client:stop(ChannelId);
+        _ ->
+            pass
+    end,
+    {ok, State};
+
 
 handle_message({deliver, _Topic, Msg}, State) ->
     Payload = dgiot_mqtt:get_payload(Msg),
@@ -146,6 +159,8 @@ handle_message(Message, State) ->
     {ok, State}.
 
 stop(ChannelType, ChannelId, _State) ->
+    dgiot_data:delete({start_client, ChannelId}),
+    dgiot_client:stop(ChannelId),
     ?LOG(info, "channel stop ~p,~p", [ChannelType, ChannelId]),
     ok.
 
