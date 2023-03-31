@@ -41,7 +41,7 @@ get_attr(Module, Attr, Fun) ->
             true;
         Module ->
             case os:type() of
-                {win32,nt} ->
+                {win32, nt} ->
                     true;
                 _ ->
                     Attr:Fun(Module)
