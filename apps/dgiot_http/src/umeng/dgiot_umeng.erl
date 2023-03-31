@@ -156,7 +156,7 @@ get_msg(UserId, Type, Payload) ->
 get_url(PostPayload) ->
     MasterKey = dgiot_utils:to_binary(dgiot:get_env(umeng_masterkey)),
     Uri = <<"http://msg.umeng.com/api/send">>,
-    Sign = dgiot_license:to_md5(<<"POST", Uri/binary, PostPayload/binary, MasterKey/binary>>),
+    Sign = dgiot_utils:to_md5(<<"POST", Uri/binary, PostPayload/binary, MasterKey/binary>>),
     dgiot_utils:to_list(Uri) ++ "?sign=" ++ dgiot_utils:to_list(Sign).
 
 %%Notification = #{
