@@ -246,7 +246,7 @@ delete_exproto(Type, Mod, Version) ->
         end,
     case Version of
         <<"release">> ->
-            Key = dgiot_license:get_hardkey(),
+            Key = dgiot_utils:get_macs(),
             dgiot_mqtt:publish(self(), <<"restart/webserver/", Key/binary>>, <<"restart">>);
         _ -> pass
     end,
@@ -267,7 +267,7 @@ get_release_exproto(Type, Mod, Code, Swagger, SessionToken) ->
     ok = file:write_file(CodeFile, Data),
     SwaggerFile = CurrDir ++ "swagger_" ++ dgiot_utils:to_list(Type) ++ "_" ++ dgiot_utils:to_list(Mod) ++ ".json",
     ok = file:write_file(SwaggerFile, jsx:encode(Swagger)),
-    Key = dgiot_license:get_hardkey(),
+    Key = dgiot_utils:get_macs(),
     dgiot_mqtt:publish(self(), <<"restart/webserver/", Key/binary>>, <<"restart">>),
     dgiot_utils:to_binary(test_python(Mod, SessionToken)).
 
