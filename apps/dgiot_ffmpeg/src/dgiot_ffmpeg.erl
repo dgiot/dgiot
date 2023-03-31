@@ -78,7 +78,7 @@ push_live(Interval, IPCUSER, IPCPWD, IP, PARAM, Mac, Push, PushKey, PlayUrl, Rep
     dgiot_evidence:post(#{
         <<"id">> => ReportId,
         <<"scene">> => App,
-        <<"md5">> => dgiot_license:to_md5(jsx:encode(Data)),
+        <<"md5">> => dgiot_utils:to_md5(jsx:encode(Data)),
         <<"original">> => #{
             <<"data">> => Data,
             <<"datatype">> => <<"liveMonitor">>,
