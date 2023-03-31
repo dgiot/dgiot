@@ -6,7 +6,7 @@
 %%% @end
 %%% Created : 01. 8月 2022 16:29
 %%%-------------------------------------------------------------------
--module(dgiot_factory_data).
+-module(dgiot_factory_td).
 -author("wolong").
 -include("dgiot_factory.hrl").
 -define(PRE, <<"_">>).
@@ -78,11 +78,6 @@ get_history_data(ProductId, DeviceId, Type, Function, FunctionMap, Group, Having
         _->
             error
     end .
-
-
-
-
-
 
 run_data_sql(Channel,Sql) ->
     case dgiot_tdengine:transaction(Channel,
@@ -177,8 +172,6 @@ select(ProductId, Type, Function, FunctiongMap1) ->
                                     Acc1
                             end
                     end, <<"null">>, FunctiongMap),
-
-
                 case Fun of
                     <<"null">> ->
                         <<Acc/binary, " , ", Function/binary, "( ", Thing/binary, " ) as ", Thing/binary>>;
@@ -206,6 +199,7 @@ get_thing_list(ProductId, undefined) ->
                 end, [], DevTypeList),
             Res ++ [<<"createdat">>]
     end;
+
 get_thing_list(ProductId, Type) ->
     Quality = case dgiot_product:get_device_thing(ProductId, <<"quality">>) of
                   not_find ->
@@ -229,7 +223,6 @@ get_thing_list(ProductId, Type) ->
 
 
 %%select last(manufac_rollnum), sum(manufac_worktime) as  manufac_worktime from _d5e32f7542._d5e32f7542 group by devaddr having manufac_worktime = 139;
-
 kill_null(List) when is_list(List) ->
     lists:foldl(
         fun(X, Acc) when is_map(X) ->

@@ -34,19 +34,7 @@ get_screen(#{<<"ordertype">> := ProductId} = Arg, Channel) ->
     Res = maps:fold(
         fun(EchartName, Para, Acc) ->
             Data = get_data(EchartName, Para, Arg, Channel),
-%%            case EchartName of
-%%                <<"order">> ->
-%%                    io:format("~s ~p Data = ~p. ~n", [?FILE, ?LINE, Data]);
-%%                _ ->
-%%                    pass
-%%            end,
-            FormatedData = format_data(EchartName, Para, dgiot_factory_data:kill_null(Data)),
-%%            case EchartName of
-%%                <<"order">> ->
-%%                    io:format("~s ~p FormatedData = ~p. ~n", [?FILE, ?LINE, FormatedData]);
-%%                _ ->
-%%                    pass
-%%            end,
+            FormatedData = format_data(EchartName, Para, dgiot_factory_td:kill_null(Data)),
             Res = format_echart(EchartName, Para, FormatedData),
             maps:merge(Acc, Res)
         end, #{}, ScreenData),
@@ -74,15 +62,12 @@ get_data(_, V, Arg, Channel) ->
     Group = maps:get(<<"group">>, V, undefined),
     FunctionMap = get_func_map(V),
     Where = format_where(Arg),
-    case dgiot_factory_data:get_history_data(ProductId, undefined, undefined, Function, FunctionMap, Group, undefined, Where, undefined, Channel, undefined, undefined) of
+    case dgiot_factory_td:get_history_data(ProductId, undefined, undefined, Function, FunctionMap, Group, undefined, Where, undefined, Channel, undefined, undefined) of
         {ok, {_, Data}} ->
             Data;
         _ ->
-
             []
     end.
-
-
 
 format_data(_Name, #{<<"group">> := Group} = Para, Data) ->
     io:format("~s ~p _Name = ~p. ~n", [?FILE, ?LINE, _Name]),
@@ -106,7 +91,6 @@ format_data(_, Para, [Data]) when is_map(Data) ->
 format_data(_, _, _) ->
     #{}.
 
-
 format_echart(EchartName, #{<<"type">> := Type} = Model, FormatedData) ->
     EchartData = turn_echart(Type, Model, FormatedData),
     #{EchartName => EchartData}.
@@ -116,12 +100,10 @@ turn_echart(<<"total">>, #{<<"data">> := Data}, FormatedData) ->
         fun(Key, Acc) ->
             Acc#{Key => 0}
         end, #{}, maps:keys(Data)),
-
     Map = maps:fold(
         fun(_, DataMap, OldAcc) ->
             maps:fold(
                 fun(Key, OldSum, Acc) ->
-
                     Num = case maps:find(Key, DataMap) of
                               {ok, null} ->
                                   0;
@@ -130,19 +112,15 @@ turn_echart(<<"total">>, #{<<"data">> := Data}, FormatedData) ->
                               {ok, R} ->
                                   R
                           end,
-
                     Acc#{Key => OldSum + Num}
                 end, #{}, OldAcc)
         end, InitModel, FormatedData),
-%%    io:format("~s ~p Map = ~p. ~n", [?FILE, ?LINE, Map]),
     case maps:get(<<"statis_produced">>, Map, 0) of
         0 ->
             Map#{<<"statis_percent">> => 0};
         Ptatis_produced ->
             Qualified = maps:get(<<"statis_qualitified">>, Map, 0),
-%%            io:format("~s ~p Qualified = ~p. ~n", [?FILE, ?LINE, Qualified]),
             NewMap = maps:merge(Map, #{<<"statis_percent">> => dgiot_factory_utils:float(Qualified / Ptatis_produced, 2)}),
-%%            io:format("~s ~p NewMap = ~p. ~n", [?FILE, ?LINE, NewMap]),
             NewMap
 
     end;
@@ -172,16 +150,11 @@ format_where(#{<<"productid">> := ProductId} = Arg, Acc) when is_binary(ProductI
     format_where(maps:without([<<"productid">>], Arg), <<Acc/binary, "order_productid like '", ProductId/binary, "' and ">>);
 format_where(#{<<"process">> := Process} = Arg, Acc) when is_binary(Process) and (byte_size(Process) > 0) ->
     format_where(maps:without([<<"process">>], Arg), <<Acc/binary, "order_process like '", Process/binary, "' and ">>);
-
-
 format_where(#{<<"startTime">> := StartTime} = Arg, Acc) when is_binary(StartTime) and (byte_size(StartTime) > 0) ->
     format_where(maps:without([<<"startTime">>], Arg), <<Acc/binary, "createdat >", StartTime/binary, " and ">>);
-
-
 format_where(#{<<"endTime">> := EndTime} = Arg, Acc) when is_binary(EndTime) and (byte_size(EndTime) > 0) ->
     io:format("~s ~p EndTime = ~p ~n", [?FILE, ?LINE, EndTime]),
     format_where(maps:without([<<"endTime">>], Arg), <<Acc/binary, "createdat < ", EndTime/binary, " and ">>);
-
 format_where(_, Acc) ->
     case byte_size(Acc) > 0 of
         true ->
@@ -195,9 +168,6 @@ format_where(_, Acc) ->
 
 init_screen_data() ->
     dgiot_factory_utils:get_json_file(?FACTORY_SCREEN).
-
-
-
 
 updata_screen_data(OldData, BaseData, Content) ->
 %%    遍历所有统计图类型，逐个更新
@@ -242,8 +212,6 @@ updata_one_data(<<"product">>, Data, BaseData,
 updata_one_data(_, V, _, _) ->
     V.
 
-
-
 updata_process_echart(Data, Schedule, Produced, Qualitied, Production_workshop) ->
     case maps:find(Production_workshop, Data) of
         {ok, OldData} ->
@@ -257,8 +225,6 @@ updata_process_echart(Data, Schedule, Produced, Qualitied, Production_workshop) 
         _ ->
             dgiot_map:merge(Data, #{Production_workshop => #{<<"Produced">> => dgiot_utils:to_int(Produced), <<"Qualitied">> => dgiot_utils:to_int(Qualitied), <<"Schedule">> => dgiot_utils:to_int(Schedule)}})
     end.
-
-
 
 format_bar(V) when is_map(V) ->
     Keys = maps:keys(V),
@@ -279,25 +245,3 @@ format_bar(V) when is_map(V) ->
     end;
 format_bar(V) ->
     V.
-
-
-%#{<<"水刺">> => 类别
-%% #{<<"Produced">> => 1, 总产量
-%%<<"Qualitied">> => 1, 合格产量
-%%<<"Schedule">> => 1 计划产量
-%% }}
-
-%%format_process_series(Series) when is_map(Series) ->
-%%    maps:fold(
-%%        fun
-%%            (<<"statis_produced">>, V, Acc) ->
-%%                Acc ++ [#{<<"name">> => <<"总产量"/utf8>>, <<"type">> => <<"bar">>, <<"data">> => V}];
-%%            (<<"statis_qualitified">>, V, Acc) ->
-%%                Acc ++ [#{<<"name">> => <<"实际产量"/utf8>>, <<"type">> => <<"bar">>, <<"data">> => V}];
-%%            (<<"statis_schedule">>, V, Acc) ->
-%%                Acc ++ [#{<<"name">> => <<"计划产量"/utf8>>, <<"type">> => <<"bar">>, <<"data">> => V}];
-%%            (K, V, Acc) ->
-%%                Acc ++ [#{<<"name">> => K, <<"type">> => <<"bar">>, <<"data">> => V}]
-%%        end, [], Series);
-%%format_process_series(Series) ->
-%%    Series.
