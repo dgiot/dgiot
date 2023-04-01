@@ -8,10 +8,11 @@
 %%%-------------------------------------------------------------------
 -module(dgiot_map).
 -author("jonhl").
--export([with/2, get/2, merge/2, flatten/1, flatten/2]).
+-export([with/2, get/2, merge/2]).
 -export([test_get/0, test_merge/0]).
--export([unflatten/1, unflatten/2]).
--export([test/0, map/2]).
+-export([test_map/0, map/2]).
+%% ----------------------------------- unflatten flatten 不需要了，后面会去除，用map可以实时逆扁平化过程，td的扁平化通过物模型映射来完成 ------------%%
+-export([flatten/1, flatten/2, unflatten/1, unflatten/2]).
 
 merge(Data, NewData) ->
     maps:fold(
@@ -80,6 +81,43 @@ value([Key | Keys], Data) when is_map(Data) ->
 value(_, _Value) ->
     undefined.
 
+%% 支持变量和逻辑判断
+%%{% ifnotequal var1 var2 %}
+%%if: var1="foo" and var2="foo" are equal
+%%{% endifnotequal %}
+%%This is template 1.
+%%
+%%{{ test_var }}
+%%
+%%{% include "path2/template2" %}
+map(Map, Template) ->
+    case erlydtl:compile({template, Template}, dgiot_render, [{out_dir, false}]) of
+        {ok, Render} ->
+            {ok, IoList} = Render:render(Map),
+%%            io:format("~p ~n",[decode(unicode:characters_to_binary(IoList))]),
+            unicode:characters_to_binary(IoList);
+        error ->
+            {error, compile_error}
+    end.
+
+
+test_map() ->
+    {file, Here} = code:is_loaded(?MODULE),
+    Dir = filename:dirname(filename:dirname(Here)),
+    Root = dgiot_httpc:url_join([Dir, "/priv/"]),
+    TplPath = Root ++ "test.json",
+    case catch file:read_file(TplPath) of
+        {Err, _Reason} when Err == 'EXIT'; Err == error ->
+            <<"">>;
+        {ok, Template} ->
+            map(#{
+                <<"switch">> => 33331,
+                <<"title">> => <<"cto">>,
+                <<"label">> => 12343,
+                <<"lsxage">> => 40
+            }, Template)
+    end.
+
 test_get() ->
     Keys = [<<"content.i_out">>, <<"content.i_in">>, <<"name.[0].b.[0].c">>],
     Data = #{<<"content">> => #{<<"i_out">> => 1, <<"i_in">> => 9},
@@ -94,6 +132,10 @@ test_merge() ->
     B = #{1 => #{1 => 2, 2 => 3}, 2 => #{4 => 5}},
     merge(A, B).
 
+
+
+
+%% ----------------------------------- unflatten flatten 不需要了，后面会去除，用map可以实时逆扁平化过程，td的扁平化通过物模型映射来完成 ------------%%
 unflatten(Data) ->
     unflatten(Data, "_").
 
@@ -166,40 +208,4 @@ flatten(Head, Map, Link) ->
         false ->
             #{<<Head/binary>> => Map}
 
-    end.
-
-test() ->
-    {file, Here} = code:is_loaded(?MODULE),
-    Dir = filename:dirname(filename:dirname(Here)),
-    Root = dgiot_httpc:url_join([Dir, "/priv/"]),
-    TplPath = Root ++ "test.json",
-    case catch file:read_file(TplPath) of
-        {Err, _Reason} when Err == 'EXIT'; Err == error ->
-            <<"">>;
-        {ok, Template} ->
-            map(#{
-                <<"switch">> => 33331,
-                <<"title">> => <<"cto">>,
-                <<"label">> => 12343,
-                <<"lsxage">> => 40
-            }, Template)
-    end.
-
-%% 支持变量和逻辑判断
-%%{% ifnotequal var1 var2 %}
-%%if: var1="foo" and var2="foo" are equal
-%%{% endifnotequal %}
-%%This is template 1.
-%%
-%%{{ test_var }}
-%%
-%%{% include "path2/template2" %}
-map(Map, Template) ->
-    case erlydtl:compile({template, Template}, dgiot_render, [{out_dir, false}]) of
-        {ok, Render} ->
-            {ok, IoList} = Render:render(Map),
-%%            io:format("~p ~n",[decode(unicode:characters_to_binary(IoList))]),
-            unicode:characters_to_binary(IoList);
-        error ->
-            {error, compile_error}
     end.
