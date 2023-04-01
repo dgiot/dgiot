@@ -131,6 +131,7 @@ get(Key, Data) ->
 
 value([], Value) ->
     Value;
+%%<<"data.[0].number">>
 value([<<"[", Tail/binary>> | Keys], Data) when is_list(Data) ->
     Len = size(Tail) - 1,
     <<Index:Len/binary, _/binary>> = Tail,
@@ -153,8 +154,12 @@ value(_, _Value) ->
     undefined.
 
 test_get() ->
-    Keys = [<<"content.i_out">>, <<"content.i_in">>],
-    Data = #{<<"content">> => #{<<"i_out">> => 1, <<"i_in">> => 9}},
+    Keys = [<<"content.i_out">>, <<"content.i_in">>,<<"name.[0].b.[0].c">>],
+    Data = #{<<"content">> => #{<<"i_out">> => 1, <<"i_in">> => 9},
+        <<"name">> => [
+            #{<<"b">> => [#{<<"c">> => 9}]}
+        ]
+    },
     with(Keys, Data).
 
 test_merge() ->
