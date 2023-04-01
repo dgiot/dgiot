@@ -52,7 +52,13 @@ get(Key, Data) ->
 
 value([], Value) ->
     Value;
-%%<<"data.[0].number">>
+%%<<"data.[*].number">>   => number
+%%value([<<"[*]", Tail/binary>> | Keys], Data) when is_list(Data) ->
+%%    lists:foldl(fun(Num, Acc) ->
+%%        BinNum = dgiot_utils:to_binary(Num),
+%%        Acc ++ [value([<<"[", BinNum/binary, "]", Tail/binary>> | Keys], Data)]
+%%                end, [], lists:seq(1, length(Data)));
+%%<<"data.[0].number">>   => number
 value([<<"[", Tail/binary>> | Keys], Data) when is_list(Data) ->
     Len = size(Tail) - 1,
     <<Index:Len/binary, _/binary>> = Tail,
@@ -111,11 +117,10 @@ unflatten(Data, _) ->
 get_map(KList, V) ->
     lists:foldl(
         fun(X, Acc) ->
-            Value =
-                case maps:size(Acc) of
-                    0 -> V;
-                    _ -> Acc
-                end,
+            Value = case maps:size(Acc) of
+                        0 -> V;
+                        _ -> Acc
+                    end,
             case re:run(X, <<"\[[0-9]*\]">>) of
                 {match, [{First, Len}]} ->
                     XList = dgiot_utils:to_list(X),
