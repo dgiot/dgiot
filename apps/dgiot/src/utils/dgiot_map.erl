@@ -115,45 +115,33 @@ with([Key | Keys], Data, Acc) ->
 
 get(Key, Data) ->
     case re:split(Key, <<"[.]">>, [{return, binary}, trim]) of
-        [ParentKey, <<"[", Tail/binary>>, SubKey] ->
-            Len = size(Tail) - 1,
-            <<Index:Len/binary, _/binary>> = Tail,
-            Num = dgiot_utils:to_int(Index),
-            case maps:find(ParentKey, Data) of
-                {ok, List} when is_list(List) ->
-                    case lists:sublist(List, Num + 1) of
-                        [Map | _] when is_map(Map) ->
-                            case maps:find(SubKey, Map) of
-                                {ok, V} ->
-                                    #{Key => V};
-                                _ ->
-                                    #{}
-                            end;
-                        _ ->
-                            #{}
-                    end;
+        List when length(List) == 1 ->
+            case Data of
+                #{Key := Value} ->
+                    #{Key => Value};
                 _ ->
                     #{}
             end;
-        _ ->
-            case re:split(Key, <<"[.]">>, [{return, binary}, trim]) of
-                List when length(List) == 1 ->
-                    case Data of
-                        #{Key := Value} ->
-                            #{Key => Value};
-                        _ ->
-                            #{}
-                    end;
-                JsonKey ->
-                    case value(JsonKey, Data) of
-                        undefined -> #{};
-                        Value -> #{Key => Value}
-                    end
+        JsonKeys ->
+            case value(JsonKeys, Data) of
+                undefined -> #{};
+                Value -> #{Key => Value}
             end
     end.
 
 value([], Value) ->
     Value;
+value([<<"[", Tail/binary>> | Keys], Data) when is_list(Data) ->
+    Len = size(Tail) - 1,
+    <<Index:Len/binary, _/binary>> = Tail,
+    Num = dgiot_utils:to_int(Index),
+    case length(Data) > Num of
+        true ->
+            NewValue = lists:nth(Num + 1, Data),
+            value(Keys, NewValue);
+        _ ->
+            undefined
+    end;
 value([Key | Keys], Data) when is_map(Data) ->
     case Data of
         #{Key := Value} ->
