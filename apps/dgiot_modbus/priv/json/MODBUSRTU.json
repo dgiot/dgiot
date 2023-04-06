@@ -1,0 +1,141 @@
+{
+  "type": "page",
+  "body": [
+    {
+      "body": [
+        {
+          "mode": "inline",
+          "name": "item.dataSource.slaveid",
+          "size": "md",
+          "type": "input-text",
+          "label": "从机地址",
+          "value": "0000",
+          "className": "m-l-lg"
+        },
+        {
+          "mode": "inline",
+          "name": "item.dataSource.operatetype",
+          "size": "md",
+          "type": "select",
+          "label": "寄存器功能码",
+          "value": "readCoils",
+          "options": [
+            {
+              "label": "0X01:读线圈寄存器",
+              "value": "readCoils"
+            },
+            {
+              "label": "0X02:读离散输入寄存器",
+              "value": "readInputs"
+            },
+            {
+              "label": "0X03:读保持寄存器",
+              "value": "readHregs"
+            },
+            {
+              "label": "0X04:读输入寄存器",
+              "value": "readIregs"
+            },
+            {
+              "label": "0X05:写单个线圈寄存器",
+              "value": "writeCoil"
+            },
+            {
+              "label": "0X06:写单个保持寄存器",
+              "value": "writeHreg"
+            },
+            {
+              "label": "0X0f:写多个线圈寄存器",
+              "value": "writeCoils"
+            },
+            {
+              "label": "0X10:写多个保持寄存器",
+              "value": "writeHregs"
+            }
+          ]
+        },
+        {
+          "mode": "inline",
+          "name": "item.dataSource.address",
+          "size": "md",
+          "type": "input-text",
+          "label": "寄存器起始地址",
+          "value": "0X00",
+          "className": "m-l-lg"
+        },
+        {
+          "mode": "inline",
+          "name": "item.dataSource.registernumber",
+          "size": "md",
+          "type": "input-number",
+          "label": "寄存器个数",
+          "value": 1,
+          "className": "m-l-lg"
+        },
+        {
+          "mode": "inline",
+          "name": "item.dataSource.originaltype",
+          "size": "md",
+          "type": "select",
+          "label": "数据格式",
+          "value": "bit",
+          "options": [
+            {
+              "label": "位",
+              "value": "bit"
+            },
+            {
+              "label": "16位 有符号(AB)",
+              "value": "short16_AB"
+            },
+            {
+              "label": "16位 有符号(BA)",
+              "value": "short16_BA"
+            },
+            {
+              "label": "16位 无符号(AB)",
+              "value": "ushort16_AB"
+            },
+            {
+              "label": "16位 无符号(BA)",
+              "value": "ushort16_BA"
+            },
+            {
+              "label": "32位 有符号(ABCD)",
+              "value": "long32_ABCD"
+            },
+            {
+              "label": "32位 有符号(CDAB)",
+              "value": "long32_CDAB"
+            },
+            {
+              "label": "32位 无符号(ABCD)",
+              "value": "ulong32_ABCD"
+            },
+            {
+              "label": "32位 无符号(CDAB)",
+              "value": "ulong32_CDAB"
+            },
+            {
+              "label": "32位 浮点数(ABCD)",
+              "value": "float32_ABCD"
+            },
+            {
+              "label": "32位 浮点数(CDAB)",
+              "value": "float32_CDAB"
+            }
+          ],
+          "className": "m-l-lg"
+        },
+        {
+          "mode": "inline",
+          "name": "item.dataSource._dlinkindex",
+          "size": "md",
+          "type": "input-number",
+          "label": "报文序号"
+        }
+      ],
+      "type": "container"
+    }
+  ]
+}

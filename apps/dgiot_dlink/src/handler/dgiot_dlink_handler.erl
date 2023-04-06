@@ -115,7 +115,7 @@ do_request(post_head, #{<<"items">> := Items, <<"productid">> := ProductId}, _Co
 %% Proctol 概要: 获取Dlink协议列表
 %% OperationId:protocol
 %% 请求:GET /iotapi/protocol
-do_request(get_protocol, _Body, _Context, _Req) ->
+do_request(get_protocol, Body, _Context, _Req) ->
     Protocols =
         case dgiot_data:get(get_protocol) of
             not_find ->
@@ -125,7 +125,24 @@ do_request(get_protocol, _Body, _Context, _Req) ->
             P ->
                 P
         end,
-    {200, Protocols};
+    case Body of
+        #{<<"type">> := undefined} ->
+            {200, Protocols};
+        #{<<"type">> := Type1} ->
+           Amis =  lists:foldl(
+                fun
+                    (#{cType := Type, mod := Mod} = _X, _Acc) when Type1 == Type ->
+                        io:format("Type ~p Mod ~p ~n",[Type, Mod]),
+                         dgiot_utils:get_JsonFile(Mod, <<Type/binary, ".json">>);
+                    (#{cType := Type} = _X, Acc) ->
+                        io:format("Type ~p ~n",[Type]),
+                        Acc
+                end, <<"{}">>, Protocols),
+            {200, Amis};
+        _ ->
+            {200, Protocols}
+    end;
+
 
 %% Proctol 概要: 获取Dlink json信息
 %% OperationId:dlinkjson

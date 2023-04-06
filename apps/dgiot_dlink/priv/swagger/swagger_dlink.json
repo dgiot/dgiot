@@ -62,6 +62,13 @@
         "summary": "获取协议列表",
         "description": "获取协议列表",
         "parameters": [
+          {
+            "in": "query",
+            "name": "type",
+            "type": "string",
+            "description": "协议类型",
+            "required": false
+          }
         ],
         "responses": {
           "200": {
