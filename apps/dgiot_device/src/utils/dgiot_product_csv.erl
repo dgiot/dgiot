@@ -38,13 +38,12 @@ read_csv(ChannelId, FilePath) ->
 
 %% dgiot_product_csv:read_from_csv(<<"/dgiot_file/product/csv/modbustcp.csv">>)
 read_from_csv(FilePath) ->
-    Url = "http://127.0.0.1" ++ dgiot_utils:to_list(FilePath),
     FileName = dgiot_utils:to_md5(FilePath),
     {file, Here} = code:is_loaded(dgiot_product_csv),
+    SourcePath = "/data/dgiot/go_fastdfs/files" ++ dgiot_utils:to_list(FilePath),
     DownloadPath = dgiot_httpc:url_join([filename:dirname(filename:dirname(Here)), "/priv/csv/"]) ++ dgiot_utils:to_list(FileName) ++ ".csv",
-    os:cmd("rm -rf " ++ DownloadPath),
-    case dgiot_httpc:download(Url, DownloadPath) of
-        {ok, saved_to_file} ->
+    case os:cmd("\cp " ++ SourcePath ++" "++ DownloadPath) of
+        [] ->
             AtomName = dgiot_utils:to_atom(FileName),
             dgiot_data:init(AtomName),
             put(count, -1),
@@ -79,21 +78,28 @@ create_product(ChannelId, FileName, Productmap, TdChannelId) ->
         Types = ets:match(AtomName, {'_', [ProductName, '$1', '$2', DeviceName | '_']}),
         case Types of
             [[DevType, CategoryName | _] | _] ->
-                Acl = dgiot_product_csv:get_channelAcl(ChannelId),
                 CategoryId = dgiot_product_csv:get_CategoryId(CategoryName),
-                ProductBody = #{
-                    <<"name">> => ProductName,
-                    <<"devType">> => DevType,
-                    <<"category">> => #{<<"objectId">> => CategoryId, <<"__type">> => <<"Pointer">>, <<"className">> => <<"Category">>},
-                    <<"desc">> => DevType,
-                    <<"config">> => #{},
-                    <<"channel">> => #{<<"type">> => 1, <<"tdchannel">> => TdChannelId, <<"otherchannel">> => [ChannelId]},
-                    <<"thing">> => #{},
-                    <<"ACL">> => Acl,
-                    <<"nodeType">> => 0,
-                    <<"productSecret">> => dgiot_utils:random()
-                },
-                Result = dgiot_product:create_product(ProductBody),
+                ProductId = dgiot_parse_id:get_productid(CategoryId, DevType, ProductName),
+                Result =
+                    case dgiot_parse:get_object(<<"Product">>, ProductId) of
+                        {ok, #{<<"objectId">> := ProductId}} ->
+                            {ok, ProductId};
+                        _ ->
+                            Acl = dgiot_product_csv:get_channelAcl(ChannelId),
+                            ProductBody = #{
+                                <<"name">> => ProductName,
+                                <<"devType">> => DevType,
+                                <<"category">> => #{<<"objectId">> => CategoryId, <<"__type">> => <<"Pointer">>, <<"className">> => <<"Category">>},
+                                <<"desc">> => DevType,
+                                <<"config">> => #{},
+                                <<"channel">> => #{<<"type">> => 1, <<"tdchannel">> => TdChannelId, <<"taskchannel">> => <<"fa3fad91f8">>, <<"otherchannel">> => [ChannelId]},
+                                <<"thing">> => #{},
+                                <<"ACL">> => Acl,
+                                <<"nodeType">> => 0,
+                                <<"productSecret">> => dgiot_utils:random()
+                            },
+                            dgiot_product:create_product(ProductBody)
+                    end,
                 case Result of
                     {ok, ProductId} ->
 %%                        dgiot_data:insert(AtomName, ProductId, ProductName),

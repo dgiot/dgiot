@@ -19,7 +19,30 @@
 -author("johnliu").
 
 %% API
--export([generate/0, en_rsa/2, de_rsa/2, rsa_to_string/1, test/0]).
+-export([generate/0, en_rsa/2, de_rsa/2, rsa_to_string/1, test/0, check_rsa_sign/4, gen_rsa_sign/3]).
+
+%% RSA签名校验
+-spec check_rsa_sign(DataBin, Sign, RSAPublicKeyBin, DigestType) -> boolean when
+    DataBin :: binary(),
+    Sign :: binary(),
+    RSAPublicKeyBin :: binary(),
+    DigestType :: 'md5' | 'sha' | 'sha224' | 'sha256' | 'sha384' | 'sha512'.
+check_rsa_sign(DataBin, Sign, RSAPublicKeyBin, DigestType) ->
+    PemEntries = public_key:pem_decode(RSAPublicKeyBin),
+    RSAPubKey = public_key:pem_entry_decode(hd(PemEntries)),
+    Base64Sign = base64:decode(Sign),
+    public_key:verify(DataBin, DigestType, Base64Sign, RSAPubKey).
+
+%%产生RSA签名
+-spec gen_rsa_sign(MsgBin, DigestType, KeyBin) -> binary() when
+    MsgBin :: binary(),
+    DigestType :: 'md5' | 'sha' | 'sha224' | 'sha256' | 'sha384' | 'sha512',
+    KeyBin :: binary().
+gen_rsa_sign(MsgBin, DigestType, PrivateKey) ->
+    [Entry] = public_key:pem_decode(PrivateKey),
+    RSAPriKey = public_key:pem_entry_decode(Entry),
+    SignBin = public_key:sign(MsgBin, DigestType, RSAPriKey),
+    base64:encode(SignBin).
 
 generate() ->
     %%获取私钥

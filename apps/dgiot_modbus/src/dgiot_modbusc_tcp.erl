@@ -49,7 +49,7 @@ handle_info(read, #dclient{channel = ChannelId, client = ClientId, child = #{min
     Registersnumber =
         case Address + Step >= Maxaddr of
             true ->
-                Maxaddr - Address + 1;
+                Maxaddr - Address + 2;
             _ ->
                 100
         end,

@@ -34,7 +34,9 @@
     get_wechat_map/1,
     get_device_info/2,
     get_notification/6,
-    sendSubscribe_test/2
+    sendSubscribe_test/2,
+    getToken/4,
+    get_paySign/4
 ]).
 
 %% https://api.weixin.qq.com/sns/jscode2session?appid=APPID&secret=SECRET&js_code=JSCODE&grant_type=authorization_code
@@ -96,7 +98,7 @@ get_public_sns(Code) ->
     Secret = dgiot_utils:to_binary(application:get_env(dgiot_http, wechatpublic_secret, <<"">>)),
     Url = "https://api.weixin.qq.com/sns/oauth2/access_token?appid=" ++ dgiot_utils:to_list(AppId) ++ "&secret=" ++ dgiot_utils:to_list(Secret) ++
         "&code=" ++ dgiot_utils:to_list(Code) ++ "&grant_type=authorization_code",
-    io:format("~s ~p Url = ~p.~n", [?FILE, ?LINE, Url]),
+%%    io:format("~s ~p Url = ~p.~n", [?FILE, ?LINE, Url]),
     case dgiot_http_client:request(get, {Url, []}) of
         #{<<"openid">> := OPENID, <<"access_token">> := _} ->
             case dgiot_parse:query_object(<<"_User">>, #{<<"where">> => #{<<"tag.wechat.openid">> => OPENID}}) of
@@ -415,3 +417,37 @@ get_product_not(AlertId, ProductId, Content, Newdate, ObjectId, Alertstatus, Dev
         _Other ->
             []
     end.
+
+
+getToken(Method, Url, Body, Mchid) ->
+    NonceStr = string:to_upper(dgiot_utils:to_list(dgiot_utils:random())),
+    Ttimestamp = dgiot_utils:to_list(dgiot_datetime:now_secs()),
+    Message =
+        Method ++ "\n"
+        ++ dgiot_utils:to_list(Url) ++ "\n"
+        ++ Ttimestamp ++ "\n"
+        ++ NonceStr ++ "\n"
+        ++ Body ++ "\n",
+    Signature = dgiot_utils:to_list(sign(Message)),
+    Serial_no = dgiot_utils:to_list(application:get_env(dgiot_http, wechat_serial_no, <<"">>)),
+    "mchid=\"" ++ Mchid ++ "\","
+        ++ "nonce_str=\"" ++ NonceStr ++ "\","
+        ++ "timestamp=\"" ++ Ttimestamp ++ "\","
+        ++ "serial_no=\"" ++ Serial_no ++ "\","
+        ++ "signature=\"" ++ Signature ++ "\"".
+
+get_paySign(AppId, Ttimestamp, NonceStr, Package) ->
+    Message =
+        dgiot_utils:to_list(AppId) ++ "\n"
+        ++ Ttimestamp ++ "\n"
+        ++ NonceStr ++ "\n"
+        ++ dgiot_utils:to_list(Package) ++ "\n",
+    dgiot_utils:to_binary(sign(Message)).
+
+sign(Message) ->
+    Path = code:priv_dir(dgiot_http),
+    {ok, PrivateKey} = file:read_file(Path ++ "/cert/apiclient_key.pem"),
+    rsa:gen_rsa_sign(dgiot_utils:to_binary(Message), 'sha256', PrivateKey).
+
+
+
