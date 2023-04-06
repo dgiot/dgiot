@@ -59,7 +59,7 @@
                 order => 2,
                 type => string,
                 required => true,
-                default => <<"0000"/utf8>>,
+                default => <<"data.[0].number"/utf8>>,
                 title => #{
                     zh => <<"数据标识"/utf8>>
                 },
@@ -83,6 +83,10 @@
         ]
     }
 }).
+
+%% API
+get_datasource(_) ->
+    ok.
 
 start(Server) ->
     Services = #{protos => [dgiot_dlink_pb],

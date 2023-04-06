@@ -24,10 +24,10 @@
 -module(dgiot_dlink_app).
 -emqx_plugin(auth).
 -behaviour(application).
+-include_lib("dgiot_task/include/dgiot_task.hrl").
 
 %% Application callbacks
 -export([start/2,
-    prep_stop/1,
     stop/1]).
 
 
@@ -37,38 +37,28 @@
 
 start(_StartType, _StartArgs) ->
     {ok, Sup} = dgiot_dlink_sup:start_link(),
-    _ = load_auth_hook(),
-    _ = load_acl_hook(),
-    _ = load_offline_hook(),
-    _ = load_publish_hook(),
+    start_hook(),
     {ok, Sup}.
 
 
 stop(_State) ->
+    stop_hook(_State),
     ok.
 
-prep_stop(State) ->
+stop_hook(State) ->
     emqx:unhook('client.authenticate', fun dgiot_mqtt_auth:check/3),
     emqx:unhook('client.check_acl', fun dgiot_mqtt_acl:check_acl/5),
     emqx:unhook('client.disconnected', fun dgiot_mqtt_offline:on_client_disconnected/4),
     emqx:unhook('session.terminated', fun dgiot_mqtt_offline:on_session_terminated/4),
     emqx:unhook('message.publish', fun dgiot_mqtt_message:on_message_publish/2),
+    dgiot_hook:remove({?DGIOT_DATASOURCE, <<"DLINK">>}),
     State.
 
 %% todo dlink auth
-load_auth_hook() ->
+start_hook() ->
     emqx:hook('client.authenticate', fun dgiot_mqtt_auth:check/3, [#{hash_type => plain}]),
-    ok.
-load_acl_hook() ->
     emqx:hook('client.check_acl', fun dgiot_mqtt_acl:check_acl/5, [#{}]),
-    ok.
-
-load_offline_hook() ->
     emqx:hook('client.disconnected', fun dgiot_mqtt_offline:on_client_disconnected/4, [#{}]),
     emqx:hook('session.terminated', fun dgiot_mqtt_offline:on_session_terminated/4, [#{}]),
-    ok.
-
-load_publish_hook() ->
-    emqx:hook('message.publish', fun dgiot_mqtt_message:on_message_publish/2, [#{}]),
-    ok.
+    dgiot_hook:add(one_for_one, {?DGIOT_DATASOURCE, <<"DLINK">>}, fun dgiot_zhcltech:get_datasource/1).
 
