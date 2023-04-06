@@ -39,7 +39,7 @@ get_attr(Module, Attr, Fun) ->
     case proplists:get_value(Attr, Attributes) of
         undefined ->
             true;
-        Module ->
+        [Module | _] ->
             case os:type() of
                 {win32, nt} ->
                     true;

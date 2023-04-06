@@ -47,6 +47,7 @@ get_userdata(_ProductId, Identifier, #{<<"collection">> := Collection}, #{<<"typ
     end.
 
 get_datasource(Protocol, AccessMode, Data, DataSource) ->
+%%    io:format("~s ~p DataSource = ~p. ~n", [?FILE, ?LINE, DataSource]),
     case catch dgiot_hook:run_hook({?DGIOT_DATASOURCE, Protocol}, DataSource#{<<"accessMode">> => AccessMode, <<"data">> => Data}) of
         {ok, [Rtn | _]} ->
             Rtn;
