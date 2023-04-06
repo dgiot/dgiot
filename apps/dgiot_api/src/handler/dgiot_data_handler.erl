@@ -483,15 +483,18 @@ do_request(get_producttree, _, _Context, _Req) ->
     Data =
         case dgiot_parse:query_object(<<"Product">>, #{<<"keys">> => [<<"name">>, <<"category">>]}) of
             {ok, #{<<"results">> := Result}} ->
-                lists:foldl(fun(#{<<"category">> := #{<<"objectId">> := CategoryId}}, Acc) ->
-                    CategoryIds =
-                        lists:foldl(fun
-                                        (#{<<"name">> := Name, <<"objectId">> := ObjectId, <<"category">> := #{<<"objectId">> := CategoryId1}}, Acc1) when CategoryId1 == CategoryId ->
-                                            Acc1 ++ [#{<<"label">> => Name, <<"value">> => ObjectId}];
-                                        (_, Acc1) ->
-                                            Acc1
-                                    end, [], Result),
-                    Acc#{CategoryId => CategoryIds}
+                lists:foldl(fun
+                                (#{<<"category">> := #{<<"objectId">> := CategoryId}}, Acc) ->
+                                    CategoryIds =
+                                        lists:foldl(fun
+                                                        (#{<<"name">> := Name, <<"objectId">> := ObjectId, <<"category">> := #{<<"objectId">> := CategoryId1}}, Acc1) when CategoryId1 == CategoryId ->
+                                                            Acc1 ++ [#{<<"label">> => Name, <<"value">> => ObjectId}];
+                                                        (_, Acc1) ->
+                                                            Acc1
+                                                    end, [], Result),
+                                    Acc#{CategoryId => CategoryIds};
+                                (_, Acc) ->
+                                    Acc
                             end, #{}, Result);
             _ ->
                 #{}

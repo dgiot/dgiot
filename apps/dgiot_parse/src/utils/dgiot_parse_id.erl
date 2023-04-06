@@ -93,7 +93,7 @@ get_userid(UserName) ->
 
 get_devicelogid(DeviceId, DevAddr) ->
     #{<<"objectId">> := DevicelogId} =
-        dgiot_parse_id:get_objectid(<<"Devicelog">>, #{<<"device">> => DeviceId, <<"devaddr">> => DevAddr}),
+        dgiot_parse_id:get_objectid(<<"Devicelog">>, #{<<"device">> => #{<<"objectId">> => DeviceId}, <<"devaddr">> => DevAddr}),
     DevicelogId.
 
 get_notificationid(DeviceId, Type) ->

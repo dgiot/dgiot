@@ -287,29 +287,45 @@ parse_frame(FileName, Data) ->
                     <<"originaltype">> => Originaltype
                 }},
             IntLen = get_len(1, Originaltype),
+
             Value =
                 case IntOffset of
                     0 ->
-                        <<V:IntLen/binary, _/binary>> = Data,
-                        case format_value(V, Thing, #{}) of
-                            {Value1, _Rest} ->
-                                Value1;
+                        case Data of
+                            <<V:IntLen/binary, _/binary>> ->
+                                case format_value(V, Thing, #{}) of
+                                    {Value1, _Rest} ->
+                                        Value1;
+                                    _ ->
+                                        V
+                                end;
                             _ ->
-                                V
+                                null
                         end;
                     _ ->
                         NewIntOffset = get_len(IntOffset, Originaltype),
-                        <<_:NewIntOffset/binary, V:IntLen/binary, _/binary>> = Data,
-                        case format_value(V, Thing, #{}) of
-                            {Value1, _Rest} ->
-                                Value1;
+                        case Data of
+                            <<_:NewIntOffset/binary, V:IntLen/binary, _/binary>> ->
+                                case format_value(V, Thing, #{}) of
+                                    {Value1, _Rest} ->
+                                        Value1;
+                                    _ ->
+                                        V
+                                end;
                             _ ->
-                                V
+                                null
                         end
                 end,
-            NewData = change_data(ProductId, #{Address => Value}),
-            dgiot_task:save_td(ProductId, Devaddr, NewData, #{<<"interval">> => 30}),
-            Acc ++ [NewData]
+
+            case Value of
+                null ->
+                    Acc;
+                _ ->
+%%                    io:format("~s ~p  Devaddr ~p. => Value = ~p.~n", [?FILE, ?LINE, Devaddr, Value]),
+                    NewData = change_data(ProductId, #{Address => Value}),
+                    dgiot_task:save_td(ProductId, Devaddr, NewData, #{<<"interval">> => 30}),
+                    Acc ++ [NewData]
+            end
                     end, [], Things),
     AllData.
 
