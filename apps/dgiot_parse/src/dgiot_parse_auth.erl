@@ -1099,12 +1099,16 @@ get_same_level_role(SessionToken) ->
         #{<<"roles">> := Roles} ->
             maps:fold(fun(_RoleId, #{<<"parent">> := Parent}, Acc) ->
                 ChildroleIds = dgiot_role:get_childrole(Parent) -- [Parent],
-                case dgiot_parse:query_object(<<"_Role">>, #{<<"where">> => #{<<"objectId">> => #{<<"$in">> => ChildroleIds}}}) of
-                    {ok, #{<<"results">> := RoleList}} ->
-                        Acc ++ dgiot_parse_utils:create_tree(RoleList, <<"parent">>);
-                    _ ->
-                        Acc
-                end
+                RoleList =
+                    lists:foldl(fun(ChildroleId, Acc1) ->
+                        case dgiot_parse:get_object(<<"_Role">>, ChildroleId) of
+                            {ok, Result} ->
+                                Acc1 ++ [Result];
+                            _ ->
+                                Acc1
+                        end
+                                end, [], ChildroleIds),
+                Acc ++ dgiot_parse_utils:create_tree(RoleList, <<"parent">>)
                       end, [], Roles);
         _ ->
             []
