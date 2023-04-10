@@ -256,7 +256,7 @@ get_objectid(Class, Map) ->
             get_objectid(<<"Devicelog">>, Map);
         <<"Devicelog">> ->
             Device =
-                case maps:get(<<"device">>, Map) of
+                case maps:get(<<"device">>, Map, #{}) of
                     #{<<"objectId">> := DeviceId} ->
                         DeviceId;
                     _ ->

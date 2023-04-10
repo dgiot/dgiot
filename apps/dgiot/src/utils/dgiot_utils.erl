@@ -88,6 +88,7 @@
     , split_list/5
     , read/3
     , read_from_csv/2
+    , save_csv_ets/2
     , read_csv/3
     , rate/2
     , merge_maps/1
@@ -642,6 +643,33 @@ read_csv(IoDevice, Fun, Delimiter) ->
             {ok, read_complete};
         {error, Reason} ->
             ?LOG(error, "~p", [Reason])
+    end.
+
+save_csv_ets(Module, FilePath) ->
+    Url = "http://127.0.0.1:1250" ++ dgiot_utils:to_list(FilePath),
+    FileName = dgiot_utils:to_md5(FilePath),
+    {file, Here} = code:is_loaded(Module),
+    DownloadPath = dgiot_httpc:url_join([filename:dirname(filename:dirname(Here)), "/priv/csv/"]) ++ dgiot_utils:to_list(FileName) ++ ".csv",
+    os:cmd("rm -rf " ++ DownloadPath),
+    case dgiot_httpc:download(Url, DownloadPath) of
+        [] ->
+            AtomName = dgiot_utils:to_atom(FileName),
+            dgiot_data:init(AtomName),
+            put(count, -1),
+            Fun = fun(X) ->
+                Count = get(count),
+                case Count > 0 of
+                    true ->
+                        dgiot_data:insert(AtomName, Count, X ++ [0]);
+                    _ ->
+                        pass
+                end,
+                put(count, Count + 1)
+                  end,
+            dgiot_utils:read_from_csv(DownloadPath, Fun),
+            FileName;
+        _ ->
+            FileName
     end.
 
 rate(_Success, 0) ->

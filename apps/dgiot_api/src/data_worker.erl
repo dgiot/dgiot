@@ -186,7 +186,7 @@ import_td(SessionToken) ->
         {ok, ChannelId} ->
             case zip:unzip("/data/dgiot/dgiot/lib/dgiot_api-4.3.0/priv/www/upload/station/tdengine/tables.zip", [memory]) of
                 {ok, Result} ->
-                    dgiot_tdengie_dump:import(ChannelId, Result);
+                    dgiot_tdengine_dump:import(ChannelId, Result);
                 {error, Reason} ->
                     {error, Reason}
             end

@@ -290,28 +290,26 @@ check_init(ChannelId, ProductIds, Config) ->
             end,
         DataBase = dgiot_tdengine_select:format_db(?Database(Id)),
         dgiot_data:insert({tdengine_db, ChannelId, ProductId}, DataBase),
-        check_database(ChannelId, ProductIds, Config#{<<"database">> => ?Database(Id)})
+        check_database(ChannelId, ProductId, Config#{<<"database">> => ?Database(Id)})
               end, ProductIds),
     ok.
 
-check_database(ChannelId, ProductIds, #{<<"database">> := DataBase, <<"keep">> := Keep} = Config) ->
+check_database(ChannelId, ProductId, #{<<"database">> := DataBase, <<"keep">> := Keep} = Config) ->
     case dgiot_tdengine:create_database(ChannelId, DataBase, Keep) of
         {ok, _} ->
-            ?LOG(debug, "Check database ChannelId:~p, ProductIds:~p, Config:~p", [ChannelId, ProductIds, Config]),
-            create_table(ChannelId, ProductIds, Config);
+            ?LOG(debug, "Check database ChannelId:~p, ProductId:~p, Config:~p", [ChannelId, ProductId, Config]),
+            create_table(ChannelId, ProductId, Config);
         {error, <<"channel not find">>} ->
             ok;
         {error, #{<<"code">> := 10, <<"desc">> := <<"authentication failure">>}} ->
-            dgiot_bridge:send_log(ChannelId, "Check database Error, ChannelId:~p, ProductIds:~p, Reason:authentication failure", [ChannelId, ProductIds]),
+            dgiot_bridge:send_log(ChannelId, "Check database Error, ChannelId:~p, ProductId:~p, Reason:authentication failure", [ChannelId, ProductId]),
             timer:sleep(5000),
-            check_database(ChannelId, ProductIds, Config);
+            check_database(ChannelId, ProductId, Config);
         _ ->
             ok
     end.
 
-create_table(_, [], _) ->
-    ok;
-create_table(ChannelId, [ProductId | ProductIds], Config) ->
+create_table(ChannelId, ProductId, _Config) ->
     case dgiot_bridge:get_product_info(ProductId) of
         {ok, Product} ->
             case dgiot_tdengine_schema:get_schema(ChannelId, Product) of
@@ -339,8 +337,7 @@ create_table(ChannelId, [ProductId | ProductIds], Config) ->
             end;
         {error, Reason} ->
             ?LOG(error, "Create Table Error, ~p ~p", [Reason, ProductId])
-    end,
-    create_table(ChannelId, ProductIds, Config).
+    end.
 
 test(Count) ->
     test(1, Count).

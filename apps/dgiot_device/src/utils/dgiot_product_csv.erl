@@ -20,12 +20,13 @@
 -include_lib("dgiot/include/logger.hrl").
 -include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
 
--export([read_csv/2, read_from_csv/1, get_products/1, create_product/4, create_device/3, post_thing/2, get_CategoryId/1, get_channelAcl/1]).
+-export([read_csv/2, get_products/1, create_product/4, create_device/3, post_thing/2, get_CategoryId/1, get_channelAcl/1]).
 -export([get_max_addrs/1]).
 
 %%  dgiot_product_csv:read_csv(<<"8cff09f988">>, <<"modbustcp">>).
+%%  dgiot_utils:save_csv_ets(<<"/dgiot_file/product/csv/modbustcp.csv">>)
 read_csv(ChannelId, FilePath) ->
-    FileName = read_from_csv(FilePath),
+    FileName = dgiot_utils:save_csv_ets(?MODULE, FilePath),
     Productmap = dgiot_product_csv:get_products(FileName),
     TdChannelId = dgiot_parse_id:get_channelid(dgiot_utils:to_binary(?BRIDGE_CHL), <<"TD">>, <<"TD资源通道"/utf8>>),
     {Devicemap, ProductIds} = dgiot_product_csv:create_product(ChannelId, FileName, Productmap, TdChannelId),
@@ -35,33 +36,6 @@ read_csv(ChannelId, FilePath) ->
     timer:sleep(1000),
     dgiot_bridge:control_channel(TdChannelId, <<"update">>, <<>>),
     get_max_addrs(FileName).
-
-%% dgiot_product_csv:read_from_csv(<<"/dgiot_file/product/csv/modbustcp.csv">>)
-read_from_csv(FilePath) ->
-    FileName = dgiot_utils:to_md5(FilePath),
-    {file, Here} = code:is_loaded(dgiot_product_csv),
-    SourcePath = "/data/dgiot/go_fastdfs/files" ++ dgiot_utils:to_list(FilePath),
-    DownloadPath = dgiot_httpc:url_join([filename:dirname(filename:dirname(Here)), "/priv/csv/"]) ++ dgiot_utils:to_list(FileName) ++ ".csv",
-    case os:cmd("\cp " ++ SourcePath ++" "++ DownloadPath) of
-        [] ->
-            AtomName = dgiot_utils:to_atom(FileName),
-            dgiot_data:init(AtomName),
-            put(count, -1),
-            Fun = fun(X) ->
-                Count = get(count),
-                case Count > 0 of
-                    true ->
-                        dgiot_data:insert(AtomName, Count, X ++ [0]);
-                    _ ->
-                        pass
-                end,
-                put(count, Count + 1)
-                  end,
-            dgiot_utils:read_from_csv(DownloadPath, Fun),
-            FileName;
-        _ ->
-            FileName
-    end.
 
 %%  ets:match(ruodian,{'_', ['$1', '_', <<"D6101">> | '_']}).
 get_products(FileName) ->
