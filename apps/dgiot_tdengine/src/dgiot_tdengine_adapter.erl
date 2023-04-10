@@ -21,6 +21,13 @@
 
 %% API
 -export([save/1, save/2, save/3, do_save/2, do_save/4]).
+-export([save_sql/2]).
+
+save_sql(Product, Sql) ->
+    do_channel(Product,
+        fun(Channel) ->
+            do_save_sql(Channel, Sql)
+        end).
 
 save(Product, Devaddr, Msg) when is_map(Msg) ->
     do_channel(Product,
@@ -50,6 +57,9 @@ do_save(Channel, Product, Devaddr, Msg) ->
 
 do_save(Channel, Msg) ->
     dgiot_channelx:do_message(?TYPE, Channel, {data, Msg, #{}}, 30000).
+
+do_save_sql(Channel, Sql) ->
+    dgiot_channelx:do_message(?TYPE, Channel, {sql, Sql}, 30000).
 
 do_channel(Product, Fun) ->
     case dgiot_data:lookup({Product, ?TYPE}) of

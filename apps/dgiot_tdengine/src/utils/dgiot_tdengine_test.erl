@@ -17,6 +17,7 @@
 -module(dgiot_tdengine_test).
 -author("jonhl").
 -include_lib("dgiot/include/logger.hrl").
+-include("dgiot_tdengine.hrl").
 
 -export([test/0]).
 
@@ -31,17 +32,23 @@ max(Count) ->
 test(Count, ProductId, DevAddr) ->
     test(ProductId, DevAddr, 1, Count).
 
+%% INSERT INTO d1001 VALUES ('2021-07-13 14:06:32.272', 10.2, 219, 0.32) (1626164208000, 10.15, 217, 0.33);
 test(Count) ->
     test(<<"676b609811">>, <<"000010800449">>, 1, Count).
 test(ProductId, DevAddr, I, Max) when I =< Max ->
-    Storage = #{
-        <<"energy">> => rand:uniform(9999),
-        <<"rate_energy01">> => rand:uniform(9999),
-        <<"rate_energy02">> => rand:uniform(9999),
-        <<"rate_energy03">> => rand:uniform(9999),
-        <<"rate_energy04">> => rand:uniform(9999)
-    },
-    dgiot_tdengine_adapter:save(ProductId, DevAddr, Storage),
+    Storage =
+        lists:foldl(fun(Num, Acc) ->
+            Acc ++ [#{
+                <<"createdat">> => dgiot_datetime:now_ms()  + Num,
+                <<"energy">> => rand:uniform(9999),
+                <<"rate_energy01">> => rand:uniform(9999),
+                <<"rate_energy02">> => rand:uniform(9999),
+                <<"rate_energy03">> => rand:uniform(9999),
+                <<"rate_energy04">> => rand:uniform(9999)
+            }] end, [], lists:seq(1, 900)),
+    Sql = dgiot_tdengine:format_sql(ProductId, DevAddr, Storage),
+    dgiot_tdengine_adapter:save_sql(ProductId, Sql),
+    timer:sleep(1000),
     test(ProductId, DevAddr, I + 1, Max);
 
 test(_, _, _, _) -> ok.

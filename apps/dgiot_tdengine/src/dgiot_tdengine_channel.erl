@@ -224,6 +224,12 @@ handle_message({data, Product, DevAddr, Data, Context}, #state{id = ChannelId} =
             {ok, NewState}
     end;
 
+%% 数据与产品，设备地址分离
+handle_message({sql, Sql}, #state{id = ChannelId} = State) ->
+    dgiot_metrics:inc(dgiot_tdengine, <<"tdengine_recv">>, 1),
+    dgiot_tdengine:batch_sql(ChannelId,  Sql),
+    {ok, State};
+
 %% 规则引擎导入
 handle_message({rule, Msg, Context}, State) ->
     handle_message({data, Msg, Context}, State);

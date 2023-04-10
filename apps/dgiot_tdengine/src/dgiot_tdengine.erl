@@ -25,6 +25,7 @@
 -export([transaction/2, format_data/4]).
 -export([format_sql/3, get_values/3]).
 -export([save_fields/2, get_fields/1]).
+-export([batch_sql/2]).
 
 transaction(Channel, Fun) ->
     case dgiot_data:get({?TYPE, Channel, config}) of
@@ -112,6 +113,12 @@ batch(Channel, Batch) ->
         fun(Context) ->
             Values = dgiot_tdengine_select:format_batch(Batch),
             Sql = <<"INSERT INTO ", Values/binary, ";">>,
+            dgiot_tdengine_pool:insert_sql(Context#{<<"channel">> => Channel}, execute_update, Sql)
+        end).
+
+batch_sql(Channel, Sql) ->
+    transaction(Channel,
+        fun(Context) ->
             dgiot_tdengine_pool:insert_sql(Context#{<<"channel">> => Channel}, execute_update, Sql)
         end).
 
