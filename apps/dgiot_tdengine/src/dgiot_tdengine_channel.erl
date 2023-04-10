@@ -225,7 +225,7 @@ handle_message({data, Product, DevAddr, Data, Context}, #state{id = ChannelId} =
     end;
 
 %% 数据与产品，设备地址分离
-handle_message({sql, Sql, Context}, #state{id = ChannelId} = State) ->
+handle_message({sql, Sql}, #state{id = ChannelId} = State) ->
     dgiot_metrics:inc(dgiot_tdengine, <<"tdengine_recv">>, 1),
     dgiot_tdengine:batch_sql(ChannelId,  Sql),
     {ok, State};
