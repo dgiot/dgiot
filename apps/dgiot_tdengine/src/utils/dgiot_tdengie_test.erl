@@ -21,21 +21,24 @@
 -export([test/0]).
 
 
--export([max/1, test/1]).
+-export([max/1, test/1, test/3]).
 
 max(Count) ->
     Now1 = dgiot_datetime:now_ms(),
     test(Count),
     io:format("~s ~p time ~p ~n", [?FILE, ?LINE, dgiot_datetime:now_ms() - Now1]).
 
-test(Count) ->
-    test(1, Count).
-test(I, Max) when I =< Max ->
-    Storage = #{<<"energy">> => rand:uniform(9999)},
-    dgiot_tdengine_adapter:save(<<"470cb47206">>, <<"000000624309">>, Storage),
-    test(I + 1, Max);
+test(Count, ProductId, DevAddr) ->
+    test(ProductId, DevAddr, 1, Count).
 
-test(_, _) -> ok.
+test(Count) ->
+    test(<<"470cb47206">>, <<"000000624309">>, 1, Count).
+test(ProductId, DevAddr, I, Max) when I =< Max ->
+    Storage = #{<<"energy">> => rand:uniform(9999)},
+    dgiot_tdengine_adapter:save(ProductId, DevAddr, Storage),
+    test(ProductId, DevAddr, I + 1, Max);
+
+test(_, _, _, _) -> ok.
 
 test() ->
     %% 创建超级表
