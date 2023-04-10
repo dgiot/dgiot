@@ -14,7 +14,7 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
--module(dgiot_tdengie_test).
+-module(dgiot_tdengine_test).
 -author("jonhl").
 -include_lib("dgiot/include/logger.hrl").
 
@@ -32,9 +32,15 @@ test(Count, ProductId, DevAddr) ->
     test(ProductId, DevAddr, 1, Count).
 
 test(Count) ->
-    test(<<"470cb47206">>, <<"000000624309">>, 1, Count).
+    test(<<"676b609811">>, <<"000010800449">>, 1, Count).
 test(ProductId, DevAddr, I, Max) when I =< Max ->
-    Storage = #{<<"energy">> => rand:uniform(9999)},
+    Storage = #{
+        <<"energy">> => rand:uniform(9999),
+        <<"rate_energy01">> => rand:uniform(9999),
+        <<"rate_energy02">> => rand:uniform(9999),
+        <<"rate_energy03">> => rand:uniform(9999),
+        <<"rate_energy04">> => rand:uniform(9999)
+    },
     dgiot_tdengine_adapter:save(ProductId, DevAddr, Storage),
     test(ProductId, DevAddr, I + 1, Max);
 
