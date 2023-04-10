@@ -14,7 +14,7 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
--module(dgiot_tdengie_dump).
+-module(dgiot_tdengine_dump).
 -author("jonhl").
 -include_lib("dgiot/include/logger.hrl").
 -include("dgiot_tdengine.hrl").

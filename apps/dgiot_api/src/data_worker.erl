@@ -142,7 +142,7 @@ export_td(SessionToken) ->
         {ok, ChannelId} ->
             file:make_dir(<<"/home/station/tdengine">>),
             FileName = "/home/station/tdengine/tables.zip",
-            NewData = dgiot_tdengie_dump:export(ChannelId, #{<<"sessionToken">> => SessionToken}),
+            NewData = dgiot_tdengine_dump:export(ChannelId, #{<<"sessionToken">> => SessionToken}),
             case zip:create(<<"tdengine">>, NewData, [memory]) of
                 {ok, {_, ZipFile}} ->
                     file:write_file(FileName, ZipFile);
