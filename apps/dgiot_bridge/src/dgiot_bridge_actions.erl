@@ -72,6 +72,18 @@
             zh => <<"消息内容模板"/utf8>>},
         description => #{en => <<"The payload template, variable interpolation is supported">>,
             zh => <<"消息内容模板，支持变量"/utf8>>}
+    },
+    republish => #{
+        order => 4,
+        type => string,
+        input => textarea,
+        required => false,
+        default => <<"channel">>,
+        enum => [<<"channel">>, <<"mqtt">>, <<"dclient">>],
+        title => #{en => <<"republish">>,
+            zh => <<"消息重定向方法"/utf8>>},
+        description => #{en => <<"republish mode">>,
+            zh => <<"消息重定向方法"/utf8>>}
     }
 }).
 
@@ -140,7 +152,7 @@ on_resource_destroy(ResId, Conf) ->
 %% Action 'dgiot'
 %%------------------------------------------------------------------------------
 -spec on_action_create_dgiot(action_instance_id(), Params :: map()) -> {bindings(), NewParams :: map()}.
-on_action_create_dgiot(_Id, Envs ) ->
+on_action_create_dgiot(_Id, Envs) ->
     Envs.
 
 %% mqtt事件
@@ -159,18 +171,17 @@ on_action_dgiot(Selected, Envs = #{?BINDING_KEYS := #{'_Id' := ActId}, event := 
     Msg = dgiot_mqtt:get_message(Selected, Envs),
     case Event of
         'message.publish' ->
-            post_rule(Msg),
-            case dgiot_channelx:do_message(ChannelId, {rule, Msg, Selected}) of
-                not_find ->
+            case Msg of
+                #{republish_mod := <<"mqtt">>} ->
                     dgiot_mqtt:republish(Msg);
-                _ -> pass
+                #{republish_mod := <<"dclient">>, topic := Topic, payload := Payload, deviceid := DeviceId} ->
+                    dgiot_client:send(ChannelId, DeviceId, Topic, Payload);
+                _ ->
+                    dgiot_channelx:do_message(ChannelId, {rule, Msg, Selected})
             end;
         EventId -> % 'client.connected', 'client.disconnected',  'session.subscribed', 'session.unsubscribed','message.delivered','message.acked','message.dropped'
             dgiot_channelx:do_event(ChannelId, EventId, {rule, Msg, Selected})
     end,
     emqx_rule_metrics:inc_actions_success(ActId).
 
-post_rule(Msg) ->
-%%    io:format("~s ~p Msg = ~p.~n", [?FILE, ?LINE, Msg]),
-    ?LOG(debug, "~s ~p Msg = ~p.~n", [?FILE, ?LINE, Msg]).
 
