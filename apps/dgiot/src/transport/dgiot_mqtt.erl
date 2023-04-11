@@ -169,7 +169,7 @@ get_topic(Msg) ->
 get_channel(#{
     ?BINDING_KEYS := #{
         'Envs' := Params
-        }}) ->
+    }}) ->
     maps:get(<<"channel">>, Params, <<"">>);
 
 get_channel(#{
@@ -184,37 +184,55 @@ get_channel(_) ->
 get_message(Selected, #{?BINDING_KEYS := #{
     '_Id' := ActId,
     'Envs' := #{
+        <<"republish">> := Republish,
+        <<"target_qos">> := Target_qos,
         <<"payload_tmpl">> := Payload_tmpl,
         <<"target_topic">> := Target_topic
-    }}} = Envs) ->
-    message(Selected, ActId, Payload_tmpl, Target_topic, Envs);
+    } = Params
+}} = Envs) ->
+    Republish = maps:get( <<"republish">>, Params, <<"channel">>),
+    message(Selected, ActId, Payload_tmpl, Target_topic, Target_qos, Republish, Envs);
 
 get_message(Selected, #{?BINDING_KEYS := #{
     '_Id' := ActId,
     'Params' := #{
+        <<"republish">> := Republish,
+        <<"target_qos">> := Target_qos,
         <<"payload_tmpl">> := Payload_tmpl,
         <<"target_topic">> := Target_topic
-    }
+    } = Params
 }} = Envs) ->
-    message(Selected, ActId, Payload_tmpl, Target_topic, Envs);
+    Republish = maps:get( <<"republish">>, Params, <<"channel">>),
+    message(Selected, ActId, Payload_tmpl, Target_topic, Target_qos, Republish, Envs);
 
 get_message(_Selected, Envs) ->
     maps:without([?BINDING_KEYS], Envs).
 
-message(Selected, ActId, Payload_tmpl, Target_topic, Envs) ->
+message(Selected, ActId, Payload_tmpl, Target_topic, Target_qos, Republish, Envs) ->
     PayloadTks = emqx_rule_utils:preproc_tmpl(Payload_tmpl),
     TopicTks = emqx_rule_utils:preproc_tmpl(Target_topic),
     {Topic, Payload} =
         case emqx_rule_utils:proc_tmpl(PayloadTks, Selected) of
             <<"undefined">> ->
-                {maps:get(topic, Envs, <<"undefined">>), maps:get(payload, Envs, <<"undefined">>)};
+                {maps:get(topic, Envs, <<"">>), maps:get(payload, Envs, <<"{}">>)};
             Payload1 ->
                 {emqx_rule_utils:proc_tmpl(TopicTks, Selected), Payload1}
         end,
+    DeviceId =
+        case Selected of
+            #{<<"clientid">> := Clientid} ->
+                Clientid;
+            #{<<"devaddr">> := Devaddr, <<"productid">> := Productid} ->
+                dgiot_parse_id:get_deviceid(Productid, Devaddr);
+            _ ->
+                <<"undefined">>
+        end,
     NewEnvs = maps:without([?BINDING_KEYS], Envs),
     NewEnvs#{
+        deviceid => DeviceId,
         republish_by => ActId,
-        'TargetQoS' => 0,
+        republish_mod => Republish,
+        'TargetQoS'  => Target_qos,
         topic => Topic,
         payload => Payload,
         timestamp => maps:get(timestamp, Envs, erlang:system_time(millisecond))

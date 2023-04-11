@@ -317,11 +317,11 @@ save_rule_to_dict(RuleID, Params, Args) ->
     end.
 
 get_channel(_Data) ->
-    case dgiot_parse:query_object(<<"Channel">>, #{<<"keys">> => [<<"name">>]}) of
+    case dgiot_parse:query_object(<<"Channel">>, #{<<"keys">> => [<<"name">>, <<"cType">>]}) of
         {ok, #{<<"results">> := Results}} when length(Results) > 0 ->
-            lists:foldl(fun(#{<<"objectId">> := ChannelId, <<"name">> := Name}, Acc) ->
+            lists:foldl(fun(#{<<"objectId">> := ChannelId, <<"name">> := Name, <<"cType">> := Ctype}, Acc) ->
                 Acc ++ [#{
-                    <<"config">> => #{<<"channel">> => ChannelId},
+                    <<"config">> => #{<<"channel">> => ChannelId, <<"cType">> => Ctype},
                     <<"description">> => Name,
                     <<"id">> => <<"resource:", ChannelId/binary>>,
                     <<"status">> => true,
