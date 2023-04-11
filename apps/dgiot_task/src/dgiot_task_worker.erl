@@ -110,6 +110,7 @@ handle_info(read, State) ->
 %% ACK消息触发进行新的指令发送
 handle_info({dclient_ack, Topic, Payload}, #dclient{channel = ChannelId, userdata = Usedata} = State) ->
     dgiot_metrics:inc(dgiot_task, <<"task_recv">>, 1),
+%%    io:format("~s ~p Topic ~p Payload ~p ",[?FILE, ?LINE,Topic, Payload]),
     case binary:split(Topic, <<$/>>, [global, trim]) of
         [<<"$dg">>, <<"thing">>, ProductId, DevAddr, <<"properties">>, <<"report">>] ->
             dgiot_bridge:send_log(dgiot_utils:to_binary(ChannelId), ProductId, DevAddr, "~s ~p recv => ~p ~ts ", [?FILE, ?LINE, Topic, unicode:characters_to_list(jsx:encode(Payload))]),

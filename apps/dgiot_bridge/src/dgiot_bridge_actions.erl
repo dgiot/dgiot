@@ -175,7 +175,8 @@ on_action_dgiot(Selected, Envs = #{?BINDING_KEYS := #{'_Id' := ActId}, event := 
                 #{republish_mod := <<"mqtt">>} ->
                     dgiot_mqtt:republish(Msg);
                 #{republish_mod := <<"dclient">>, topic := Topic, payload := Payload, deviceid := DeviceId} ->
-                    dgiot_client:send(ChannelId, DeviceId, Topic, Payload);
+%%                    io:format("ChannelId = ~p, DeviceId = ~p, Topic = ~p , Payload =  ~p ~n",[ChannelId, DeviceId, Topic, Payload]),
+                    dgiot_client:send(ChannelId, DeviceId, Topic, dgiot_json:decode(Payload));
                 _ ->
                     dgiot_channelx:do_message(ChannelId, {rule, Msg, Selected})
             end;
