@@ -53,7 +53,7 @@
     , get_payload/1
     , get_topic/1
     , get_channel/1
-    , republish/2
+    , republish/1
     , get_message/2
     , subopts/0
     , subscribe_route_key/3
@@ -165,6 +165,13 @@ get_payload(Msg) ->
 get_topic(Msg) ->
     Msg#message.topic.
 
+
+get_channel(#{
+    ?BINDING_KEYS := #{
+        'Envs' := Params
+        }}) ->
+    maps:get(<<"channel">>, Params, <<"">>);
+
 get_channel(#{
     ?BINDING_KEYS := #{
         'Params' := Params
@@ -174,100 +181,70 @@ get_channel(#{
 get_channel(_) ->
     <<"">>.
 
-get_message(_Selected, #{
-    timestamp := _Timestamp,
-    topic := _Topic,
-    payload := _Payload} = Envs) ->
-    maps:without([?BINDING_KEYS], Envs);
+get_message(Selected, #{?BINDING_KEYS := #{
+    '_Id' := ActId,
+    'Envs' := #{
+        <<"payload_tmpl">> := Payload_tmpl,
+        <<"target_topic">> := Target_topic
+    }}} = Envs) ->
+    message(Selected, ActId, Payload_tmpl, Target_topic, Envs);
 
-get_message(Selected, #{
-    timestamp := Timestamp,
-    ?BINDING_KEYS := #{
-        'Params' := _Params,
-        'TopicTks' := TopicTks,
-        'PayloadTks' := PayloadTks
-    }} = Env) ->
-    NewEnv = maps:without([?BINDING_KEYS], Env),
-    NewEnv#{
-        topic => emqx_rule_utils:proc_tmpl(TopicTks, Selected),
-        payload => emqx_rule_utils:proc_tmpl(PayloadTks, Selected),
-        timestamp => Timestamp
-    };
+get_message(Selected, #{?BINDING_KEYS := #{
+    '_Id' := ActId,
+    'Params' := #{
+        <<"payload_tmpl">> := Payload_tmpl,
+        <<"target_topic">> := Target_topic
+    }
+}} = Envs) ->
+    message(Selected, ActId, Payload_tmpl, Target_topic, Envs);
 
-get_message(Selected, #{
-    ?BINDING_KEYS := #{
-        'Params' := _Params,
-        'TopicTks' := TopicTks,
-        'PayloadTks' := PayloadTks
-    }} = Env) ->
-    NewEnv = maps:without([?BINDING_KEYS], Env),
-    NewEnv#{
-        topic => emqx_rule_utils:proc_tmpl(TopicTks, Selected),
-        payload => emqx_rule_utils:proc_tmpl(PayloadTks, Selected),
-        timestamp => erlang:system_time(millisecond)
-    };
-
-get_message(_Selected, Envs = #{
-    topic := _Topic,
-    headers := #{republish_by := ActId},
-    ?BINDING_KEYS := #{'_Id' := ActId}
-}) ->
+get_message(_Selected, Envs) ->
     maps:without([?BINDING_KEYS], Envs).
 
-republish(Selected, #{
-    qos := QoS, flags := Flags, timestamp := Timestamp,
-    ?BINDING_KEYS := #{
-        '_Id' := ActId,
-        'Params' := _Params,
-        'TopicTks' := TopicTks,
-        'PayloadTks' := PayloadTks
-    } = Bind}) ->
-    TargetQoS = maps:get('TargetQoS', Bind, 0),
-    Msg = #message{
-        id = emqx_guid:gen(),
-        qos = if TargetQoS =:= -1 -> QoS; true -> TargetQoS end,
-        from = ActId,
-        flags = Flags,
-        headers = #{republish_by => ActId},
-        topic = emqx_rule_utils:proc_tmpl(TopicTks, Selected),
-        payload = emqx_rule_utils:proc_tmpl(PayloadTks, Selected),
-        timestamp = Timestamp
-    },
-    _ = emqx_broker:safe_publish(Msg),
-    emqx_rule_metrics:inc_actions_success(ActId),
-    emqx_metrics:inc_msg(Msg);
+message(Selected, ActId, Payload_tmpl, Target_topic, Envs) ->
+    PayloadTks = emqx_rule_utils:preproc_tmpl(Payload_tmpl),
+    TopicTks = emqx_rule_utils:preproc_tmpl(Target_topic),
+    {Topic, Payload} =
+        case emqx_rule_utils:proc_tmpl(PayloadTks, Selected) of
+            <<"undefined">> ->
+                {maps:get(topic, Envs, <<"undefined">>), maps:get(payload, Envs, <<"undefined">>)};
+            Payload1 ->
+                {emqx_rule_utils:proc_tmpl(TopicTks, Selected), Payload1}
+        end,
+    NewEnvs = maps:without([?BINDING_KEYS], Envs),
+    NewEnvs#{
+        republish_by => ActId,
+        'TargetQoS' => 0,
+        topic => Topic,
+        payload => Payload,
+        timestamp => maps:get(timestamp, Envs, erlang:system_time(millisecond))
+    }.
 
-republish(Selected, #{
-    ?BINDING_KEYS := #{
-        '_Id' := ActId,
-        'Params' := _Params,
-        'TopicTks' := TopicTks,
-        'PayloadTks' := PayloadTks
-    } = Bind}) ->
-    ?LOG(debug, "Selected ~p ", [Selected]),
-    TargetQoS = maps:get('TargetQoS', Bind, 0),
+republish(#{headers := #{republish_by := _ActId}} = Envs) ->
+    Envs;
+
+republish(#{
+    payload := Payload,
+    topic := Topic,
+    republish_by := ActId,
+    'TargetQoS' := TargetQoS
+}) ->
     Msg = #message{
         id = emqx_guid:gen(),
         qos = if TargetQoS =:= -1 -> 0; true -> TargetQoS end,
         from = ActId,
         flags = #{dup => false, retain => false},
         headers = #{republish_by => ActId},
-        topic = emqx_rule_utils:proc_tmpl(TopicTks, Selected),
-        payload = emqx_rule_utils:proc_tmpl(PayloadTks, Selected),
+        topic = Topic,
+        payload = Payload,
         timestamp = erlang:system_time(millisecond)
     },
     _ = emqx_broker:safe_publish(Msg),
     emqx_rule_metrics:inc_actions_success(ActId),
     emqx_metrics:inc_msg(Msg);
 
-republish(_Selected, Envs = #{
-    topic := Topic,
-    headers := #{republish_by := ActId},
-    ?BINDING_KEYS := #{'_Id' := ActId}
-}) ->
-    ?LOG(debug, " msg topic: ~p, target topic: ~p",
-        [Topic, ?bound_v('TargetTopic', Envs)]),
-    emqx_rule_metrics:inc_actions_error(?bound_v('_Id', Envs)).
+republish(Envs) ->
+    Envs.
 
 %% @private
 subopts() -> subopts(#{}).
