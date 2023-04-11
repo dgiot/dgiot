@@ -647,12 +647,12 @@ read_csv(IoDevice, Fun, Delimiter) ->
 
 save_csv_ets(Module, FilePath) ->
     Url = "http://127.0.0.1:1250" ++ dgiot_utils:to_list(FilePath),
-    FileName = dgiot_utils:to_md5(FilePath),
+    <<FileName:10/binary, _/binary>> = dgiot_utils:to_md5(FilePath),
     {file, Here} = code:is_loaded(Module),
     DownloadPath = dgiot_httpc:url_join([filename:dirname(filename:dirname(Here)), "/priv/csv/"]) ++ dgiot_utils:to_list(FileName) ++ ".csv",
     os:cmd("rm -rf " ++ DownloadPath),
     case dgiot_httpc:download(Url, DownloadPath) of
-        [] ->
+        {ok, saved_to_file} ->
             AtomName = dgiot_utils:to_atom(FileName),
             dgiot_data:init(AtomName),
             put(count, -1),

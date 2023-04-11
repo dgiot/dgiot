@@ -108,7 +108,6 @@ post(Device) ->
             _ ->
                 {true, maps:get(<<"isEnable">>, Device, true)}
         end,
-    IsEnable = maps:get(<<"isEnable">>, Device, false),
     insert_mnesia(DeviceId, dgiot_role:get_acls(Device), Status, maps:get(<<"state">>, Device, 0), dgiot_datetime:now_secs(), IsEnable, ProductId, Devaddr, DeviceSecret, node(), Longitude, Latitude).
 
 post(#{<<"ACL">> := _Acl} = Device, _SessionToken) ->
