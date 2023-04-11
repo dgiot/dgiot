@@ -112,11 +112,9 @@
 ]).
 
 %% callbacks for rule engine
--export([on_action_create_dgiot/2
-]).
+-export([on_action_create_dgiot/2]).
 
--export([on_action_dgiot/2
-]).
+-export([on_action_dgiot/2]).
 
 -spec(on_resource_create(binary(), map()) -> map()).
 on_resource_create(ResId, Conf) ->
@@ -142,15 +140,8 @@ on_resource_destroy(ResId, Conf) ->
 %% Action 'dgiot'
 %%------------------------------------------------------------------------------
 -spec on_action_create_dgiot(action_instance_id(), Params :: map()) -> {bindings(), NewParams :: map()}.
-on_action_create_dgiot(_Id, Params = #{
-    <<"target_topic">> := TargetTopic,
-    <<"target_qos">> := _TargetQoS,
-    <<"payload_tmpl">> := PayloadTmpl
-}) ->
-    TopicTks = emqx_rule_utils:preproc_tmpl(TargetTopic),
-    PayloadTks = emqx_rule_utils:preproc_tmpl(PayloadTmpl),
-    ?LOG(debug, " msg topic: ~p, payload: ~p", [TopicTks, PayloadTks]),
-    Params.
+on_action_create_dgiot(_Id, Envs ) ->
+    Envs.
 
 %% mqtt事件
 %%[ 'client.connected'
@@ -163,7 +154,7 @@ on_action_create_dgiot(_Id, Params = #{
 %%, 'message.dropped'
 %%]
 -spec on_action_dgiot(selected_data(), env_vars()) -> any().
-on_action_dgiot(Selected, #{event := Event} = Envs) ->
+on_action_dgiot(Selected, Envs = #{?BINDING_KEYS := #{'_Id' := ActId}, event := Event} = Envs) ->
     ChannelId = dgiot_mqtt:get_channel(Envs),
     Msg = dgiot_mqtt:get_message(Selected, Envs),
     case Event of
@@ -171,13 +162,15 @@ on_action_dgiot(Selected, #{event := Event} = Envs) ->
             post_rule(Msg),
             case dgiot_channelx:do_message(ChannelId, {rule, Msg, Selected}) of
                 not_find ->
-                    dgiot_mqtt:republish(Selected, Envs);
+                    dgiot_mqtt:republish(Msg);
                 _ -> pass
             end;
-        EventId ->
+        EventId -> % 'client.connected', 'client.disconnected',  'session.subscribed', 'session.unsubscribed','message.delivered','message.acked','message.dropped'
             dgiot_channelx:do_event(ChannelId, EventId, {rule, Msg, Selected})
-    end.
+    end,
+    emqx_rule_metrics:inc_actions_success(ActId).
 
 post_rule(Msg) ->
-%%    io:format("~s ~p Msg = ~p.~n", [?FILE, ?LINE, Msg]).
+%%    io:format("~s ~p Msg = ~p.~n", [?FILE, ?LINE, Msg]),
     ?LOG(debug, "~s ~p Msg = ~p.~n", [?FILE, ?LINE, Msg]).
+
