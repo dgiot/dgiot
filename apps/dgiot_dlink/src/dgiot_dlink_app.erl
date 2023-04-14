@@ -59,5 +59,6 @@ start_hook() ->
     emqx:hook('client.authenticate', fun dgiot_mqtt_auth:check/3, [#{hash_type => plain}]),
     emqx:hook('client.check_acl', fun dgiot_mqtt_acl:check_acl/5, [#{}]),
     emqx:hook('client.disconnected', fun dgiot_mqtt_offline:on_client_disconnected/4, [#{}]),
-    emqx:hook('session.terminated', fun dgiot_mqtt_offline:on_session_terminated/4, [#{}]).
+    emqx:hook('session.terminated', fun dgiot_mqtt_offline:on_session_terminated/4, [#{}]),
+    emqx:hook('message.publish', fun dgiot_mqtt_message:on_message_publish/2, [#{}]).
 
