@@ -134,13 +134,13 @@ example requires the server to be running before starting the client.
 For example, to try the hello world example first run:
 
 ```
-$ ./build/install/examples/bin/hello-world-server
+$ ./build/install/examples/bin/dlinkserver
 ```
 
 And in a different terminal window run:
 
 ```
-$ ./build/install/examples/bin/hello-world-client
+$ ./build/install/examples/bin/dlinkclient
 ```
 
 That's it!
