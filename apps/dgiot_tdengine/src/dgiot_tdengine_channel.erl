@@ -227,7 +227,7 @@ handle_message({data, Product, DevAddr, Data, Context}, #state{id = ChannelId} =
 %% 数据与产品，设备地址分离
 handle_message({sql, Sql}, #state{id = ChannelId} = State) ->
     dgiot_metrics:inc(dgiot_tdengine, <<"tdengine_recv">>, 1),
-    dgiot_tdengine:batch_sql(ChannelId,  Sql),
+    dgiot_tdengine:batch_sql(ChannelId, Sql),
     {ok, State};
 
 %% 规则引擎导入
@@ -264,10 +264,10 @@ handle_info(Message, State) ->
     io:format("~s ~p Message = ~p.~n", [?FILE, ?LINE, Message]),
     {ok, State}.
 
-do_save([ProductId, DevAddr, Data, _Context], #state{id = ChannelId} = State) ->
+do_save([ProductId, DevAddr, Data, _Context], State) ->
     dgiot_device:save(ProductId, DevAddr),
-    Object = dgiot_tdengine:format_data(ChannelId, ProductId, DevAddr, Data),
-    dgiot_tdengine:batch(ChannelId, Object),
+    Sql = dgiot_tdengine:format_sql(ProductId, DevAddr, [Data]),
+    dgiot_tdengine_adapter:save_sql(ProductId, Sql),
     {ok, State}.
 
 do_check(ChannelId, ProductIds, Config) ->

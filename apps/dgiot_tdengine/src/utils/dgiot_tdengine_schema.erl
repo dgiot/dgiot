@@ -71,7 +71,11 @@ format_keep(Query) ->
 
 
 create_table(#{<<"tableName">> := TableName, <<"using">> := STbName, <<"tags">> := Tags} = _Query, #{<<"channel">> := Channel} = _Context) ->
-    TagFields = list_to_binary(dgiot_utils:join(",", Tags, fun dgiot_tdengine_select:format_value/1)),
+    TagFields =
+        list_to_binary(dgiot_utils:join(",", lists:foldr(
+            fun({TagName, #{<<"type">> := TType}}, Acc) ->
+                [<<TagName/binary, " ", TType/binary>> | Acc]
+            end, [], Tags))),
     <<"_", ProductId/binary>> = TableName,
     DataBase = dgiot_tdengine:get_database(Channel, ProductId),
     <<"CREATE TABLE IF NOT EXISTS ", DataBase/binary, TableName/binary, " USING ", STbName/binary, " TAGS (", TagFields/binary, ");">>;
@@ -128,27 +132,35 @@ alter_table(#{<<"tableName">> := TableName}, #{<<"channel">> := Channel} = Conte
 
 get_addSql(ProductId, TdColumn, Database, TableName) ->
     case dgiot_product:lookup_prod(ProductId) of
-        {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
+        {ok, #{<<"thing">> := #{<<"properties">> := Props} = Thing}} ->
+            Tags = maps:get(<<"tags">>, Thing, []),
             lists:foldl(fun(Prop, Acc) ->
                 case Prop of
-                    #{<<"dataType">> := #{<<"type">> := Type} = DataType, <<"identifier">> := Identifier, <<"isstorage">> := true} ->
+                    #{<<"dataType">> := #{<<"type">> := Type} = DataType, <<"identifier">> := Identifier, <<"moduleType">> := ModuleType, <<"isstorage">> := true} ->
                         LowerIdentifier = list_to_binary(string:to_lower(binary_to_list(Identifier))),
                         LowerType = dgiot_tdengine_field:get_field_type(Type),
+                        FieldType = get_fieldtype(ModuleType),
                         case maps:find(LowerIdentifier, TdColumn) of
                             error ->
-                                Acc ++ [dgiot_tdengine_field:add_field(DataType, Database, TableName, LowerIdentifier)];
+                                Acc ++ [dgiot_tdengine_field:add_field(DataType, Database, TableName, LowerIdentifier, FieldType)];
                             {ok, LowerType} ->
                                 Acc;
                             _ ->
                                 %% 类型改变, 先删除列, 再重新添加
-                                DROP = <<"ALTER TABLE ", Database/binary, TableName/binary, " DROP COLUMN ", LowerIdentifier/binary, ";">>,
-                                ADD = dgiot_tdengine_field:add_field(DataType, Database, TableName, LowerIdentifier),
+                                DROP = <<"ALTER TABLE ", Database/binary, TableName/binary, " DROP ", FieldType/binary, " ", LowerIdentifier/binary, ";">>,
+                                ADD = dgiot_tdengine_field:add_field(DataType, Database, TableName, LowerIdentifier, FieldType),
                                 Acc ++ [DROP, ADD]
                         end;
                     _ ->
                         Acc
                 end
-                        end, [], Props);
+                        end, [], Props ++ Tags);
         _ ->
             []
     end.
+
+get_fieldtype(<<"tags">>) ->
+    <<"TAG">>;
+get_fieldtype(_) ->
+    <<"COLUMN">>.
+
