@@ -7,7 +7,7 @@
       "isdef": true,
       "subscribe": "设备",
       "publisher": "平台",
-      "topic": "$dg/device/{productId}/{deviceAddr}/profile",
+      "topic": "$dg/device/${productId}/${deviceAddr}/profile",
       "type": "sub"
     },
     {
@@ -17,7 +17,7 @@
       "isdef": true,
       "subscribe": "平台",
       "publisher": "设备",
-      "topic": "$dg/thing/{productId}/{deviceAddr}/properties/report",
+      "topic": "$dg/thing/${productId}/${deviceAddr}/properties/report",
       "type": "sub"
     },
     {
@@ -27,7 +27,7 @@
       "isdef": true,
       "subscribe": "用户",
       "publisher": "平台",
-      "topic": "$dg/user/alarm/{productId}/{deviceId}/properties/report",
+      "topic": "$dg/user/alarm/${productId}/${deviceId}/properties/report",
       "type": "sub"
     },
     {
@@ -37,7 +37,7 @@
       "isdef": true,
       "subscribe": "用户",
       "publisher": "平台",
-      "topic": "$dg/user/konva/{DeviceId}/report",
+      "topic": "$dg/user/konva/${DeviceId}/report",
       "type": "sub"
     },
     {
@@ -47,7 +47,7 @@
       "isdef": true,
       "subscribe": "用户",
       "publisher": "平台",
-      "topic": "$dg/user/realtimecard/{DeviceId}/report",
+      "topic": "$dg/user/realtimecard/${DeviceId}/report",
       "type": "sub"
     },
     {
@@ -57,7 +57,7 @@
       "isdef": true,
       "subscribe": "平台",
       "publisher": "设备",
-      "topic": "$dg/thing/{productId}/{deviceAddr}/gateway/sub_devices/properties/report",
+      "topic": "$dg/thing/${productId}/${deviceAddr}/gateway/sub_devices/properties/report",
       "type": "sub"
     },
     {
@@ -67,7 +67,7 @@
       "isdef": true,
       "subscribe": "用户",
       "publisher": "平台",
-      "topic": "$dg/user/gateway/{deviceId}/sub_devices/properties/report",
+      "topic": "$dg/user/gateway/${deviceId}/sub_devices/properties/report",
       "type": "sub"
     },
     {
@@ -77,7 +77,7 @@
       "isdef": true,
       "subscribe": "平台",
       "publisher": "用户",
-      "topic": "$dg/thing/{deviceId}/properties/set/request_id={request_id}",
+      "topic": "$dg/thing/${deviceId}/properties/set/request_id={request_id}",
       "type": "sub"
     },
     {
@@ -87,7 +87,7 @@
       "isdef": true,
       "publisher": "平台",
       "subscribe": "设备",
-      "topic": "$dg/device/{productId}/{deviceAddr}/properties/set/request_id={request_id}",
+      "topic": "$dg/device/${productId}/${deviceAddr}/properties/set/request_id={request_id}",
       "type": "sub"
     },
     {
@@ -97,7 +97,7 @@
       "isdef": true,
       "publisher": "设备",
       "subscribe": "平台",
-      "topic": "$dg/thing/{productId}/{deviceAddr}/properties/set/request_id={request_id}",
+      "topic": "$dg/thing/${productId}/${deviceAddr}/properties/set/request_id={request_id}",
       "type": "sub"
     },
     {
@@ -107,7 +107,7 @@
       "isdef": true,
       "publisher": "平台",
       "subscribe": "用户",
-      "topic": "$dg/user/{deviceId}/properties/set/request_id={request_id}",
+      "topic": "$dg/user/${deviceId}/properties/set/request_id={request_id}",
       "type": "sub"
     },
     {
@@ -117,7 +117,7 @@
       "isdef": true,
       "publisher": "用户",
       "subscribe": "平台",
-      "topic": "$dg/thing/{deviceId}/properties/get/request_id={request_id}",
+      "topic": "$dg/thing/${deviceId}/properties/get/request_id=${request_id}",
       "type": "sub"
     },
     {
@@ -127,7 +127,7 @@
       "isdef": true,
       "publisher": "平台",
       "subscribe": "设备",
-      "topic": "$dg/device/{productId}/{deviceAddr}/properties/get/response/request_id={request_id}",
+      "topic": "$dg/device/${productId}/${deviceAddr}/properties/get/response/request_id=${request_id}",
       "type": "sub"
     },
     {
@@ -137,7 +137,7 @@
       "isdef": true,
       "publisher": "设备",
       "subscribe": "平台",
-      "topic": "$dg/thing/{productId}/{deviceAddr}/properties/get/response/request_id={request_id}",
+      "topic": "$dg/thing/${productId}/${deviceAddr}/properties/get/response/request_id=${request_id}",
       "type": "sub"
     }
   ],

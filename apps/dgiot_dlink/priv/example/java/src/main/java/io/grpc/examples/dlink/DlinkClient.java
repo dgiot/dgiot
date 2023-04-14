@@ -14,32 +14,32 @@
  * limitations under the License.
  */
 
-package io.grpc.examples.helloworld;
+package io.grpc.examples.dlink;
 
 import io.grpc.Channel;
+import io.grpc.Grpc;
+import io.grpc.InsecureChannelCredentials;
 import io.grpc.ManagedChannel;
-import io.grpc.ManagedChannelBuilder;
 import io.grpc.StatusRuntimeException;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * https://github.com/grpc/grpc-java/blob/v1.47.0/examples/src/main/java/io/grpc/examples/helloworld/HelloWorldClient.java
- * A simple client that requests a greeting from the {@link HelloWorldServer}.
+ * A simple client that requests a greeting from the {@link DlinkServer}.
  */
-public class HelloWorldClient {
-  private static final Logger logger = Logger.getLogger(HelloWorldClient.class.getName());
+public class DlinkClient {
+  private static final Logger logger = Logger.getLogger(DlinkClient.class.getName());
 
-  private final GreeterGrpc.GreeterBlockingStub blockingStub;
+  private final DlinkGrpc.DlinkBlockingStub blockingStub;
 
   /** Construct client for accessing HelloWorld server using the existing channel. */
-  public HelloWorldClient(Channel channel) {
+  public DlinkClient(Channel channel) {
     // 'channel' here is a Channel, not a ManagedChannel, so it is not this code's responsibility to
     // shut it down.
 
     // Passing Channels to code makes code easier to test and makes it easier to reuse Channels.
-    blockingStub = GreeterGrpc.newBlockingStub(channel);
+    blockingStub = DlinkGrpc.newBlockingStub(channel);
   }
 
   /** Say hello to server. */
@@ -63,7 +63,7 @@ public class HelloWorldClient {
   public static void main(String[] args) throws Exception {
     String user = "world";
     // Access a service running on the local machine on port 50051
-    String target = "localhost:50051";
+    String target = "localhost:30051";
     // Allow passing in the user and target strings as command line arguments
     if (args.length > 0) {
       if ("--help".equals(args[0])) {
@@ -82,13 +82,13 @@ public class HelloWorldClient {
     // Create a communication channel to the server, known as a Channel. Channels are thread-safe
     // and reusable. It is common to create channels at the beginning of your application and reuse
     // them until the application shuts down.
-    ManagedChannel channel = ManagedChannelBuilder.forTarget(target)
-            // Channels are secure by default (via SSL/TLS). For the example we disable TLS to avoid
-            // needing certificates.
-            .usePlaintext()
-            .build();
+    //
+    // For the example we use plaintext insecure credentials to avoid needing TLS certificates. To
+    // use TLS, use TlsChannelCredentials instead.
+    ManagedChannel channel = Grpc.newChannelBuilder(target, InsecureChannelCredentials.create())
+        .build();
     try {
-      HelloWorldClient client = new HelloWorldClient(channel);
+      DlinkClient client = new DlinkClient(channel);
       client.greet(user);
     } finally {
       // ManagedChannels use resources like threads and TCP connections. To prevent leaking these

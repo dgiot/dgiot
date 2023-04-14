@@ -43,37 +43,3 @@ say_hello(Req, Metadata, Options) ->
                            hello_request, hello_reply, <<"dgiot.HelloRequest">>),
                       Req, Metadata, Options).
 
--spec check(dgiot_dlink_pb:health_check_request())
-    -> {ok, dgiot_dlink_pb:health_check_response(), grpc:metadata()}
-     | {error, term()}.
-check(Req) ->
-    check(Req, #{}, #{}).
-
--spec check(dgiot_dlink_pb:health_check_request(), grpc:options())
-    -> {ok, dgiot_dlink_pb:health_check_response(), grpc:metadata()}
-     | {error, term()}.
-check(Req, Options) ->
-    check(Req, #{}, Options).
-
--spec check(dgiot_dlink_pb:health_check_request(), grpc:metadata(), grpc_client:options())
-    -> {ok, dgiot_dlink_pb:health_check_response(), grpc:metadata()}
-     | {error, term()}.
-check(Req, Metadata, Options) ->
-    grpc_client:unary(?DEF(<<"/dgiot.Dlink/Check">>,
-                           health_check_request, health_check_response, <<"dgiot.HealthCheckRequest">>),
-                      Req, Metadata, Options).
-
--spec watch(grpc_client:options())
-    -> {ok, grpc_client:grpcstream()}
-     | {error, term()}.
-watch(Options) ->
-    watch(#{}, Options).
-
--spec watch(grpc:metadata(), grpc_client:options())
-    -> {ok, grpc_client:grpcstream()}
-     | {error, term()}.
-watch(Metadata, Options) ->
-    grpc_client:open(?DEF(<<"/dgiot.Dlink/Watch">>,
-                          health_check_request, health_check_response, <<"dgiot.HealthCheckRequest">>),
-                     Metadata, Options).
-

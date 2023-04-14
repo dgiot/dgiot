@@ -31,7 +31,7 @@ stop() ->
 
 %%https://grpc.io/docs/languages/php/basics/
 login() ->
-    SvrAddr = "http://127.0.0.1:30051",
+    SvrAddr = "tcp://127.0.0.1:30051",
     {ok, _} = grpc_client_sup:create_channel_pool(channel, SvrAddr, #{}).
 
 logout() ->
