@@ -211,24 +211,22 @@ get_fields(Table) ->
 format_sql(ProductId, DevAddr, Data) ->
     case dgiot_bridge:get_product_info(ProductId) of
         {ok, #{<<"thing">> := Properties}} ->
-            NewValues =
+            Fields =
                 case dgiot_data:get({ProductId, ?TABLEDESCRIBE}) of
                     Results when length(Results) > 0 ->
                         get_sqls(Data, ProductId, Properties, Results);
                     _ ->
-                        " "
+                        ""
                 end,
             DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
             TdChannelId = dgiot_parse_id:get_channelid(dgiot_utils:to_binary(?BRIDGE_CHL), <<"TD">>, <<"TD资源通道"/utf8>>),
             DB = dgiot_tdengine:get_database(TdChannelId, ProductId),
             TableName = ?Table(DeviceId),
             Using1 = <<" using ", DB/binary, "_", ProductId/binary>>,
-            TagFields = <<" TAGS ('_", DevAddr/binary, "')">>,
-            <<"INSERT INTO ", DB/binary, TableName/binary, Using1/binary, TagFields/binary, " VALUES", NewValues/binary, ";">>;
+            <<"INSERT INTO ", DB/binary, TableName/binary, Using1/binary, Fields/binary, ";">>;
         _ ->
             <<"show database;">>
     end.
-
 
 get_sqls(Data, ProductId, Properties, Results) ->
     get_sqls(Data, ProductId, Properties, Results, <<"">>).
@@ -238,43 +236,51 @@ get_sqls([], _ProductId, _Properties, _Results, Acc) ->
 
 get_sqls([Data | Rest], ProductId, Properties, Results, Acc) ->
     Now = maps:get(<<"createdat">>, Data, now),
-    Sql = get_sql(Results, Data, Now),
+    Sql = get_sql(Results, ProductId, Data, Now),
     get_sqls(Rest, ProductId, Properties, Results, <<Acc/binary, Sql/binary>>).
 
-get_sql(Results, Values, Now) ->
-    get_sql(Results, Values, Now, " (").
+get_sql(Results, ProductId, Values, Now) ->
+    get_sql(Results, ProductId, Values, Now, {"", ""}).
 
-get_sql([], _Values, _Now, Acc) ->
-    list_to_binary(Acc ++ ")");
+get_sql([], _ProductId, _Values, _Now, {TagAcc, Acc}) ->
+    list_to_binary(" TAGS(" ++ TagAcc ++ ") VALUES(" ++ Acc ++ ")");
 
-get_sql([Column | Results], Values, Now, Acc) ->
+get_sql([Column | Results], ProductId, Values, Now, {TagAcc, Acc}) ->
     NewAcc =
         case Column of
-            #{<<"Note">> := <<"TAG">>} ->
-                Acc;
-            #{<<"note">> := <<"TAG">>} ->
-                Acc;
+            #{<<"Field">> := Field, <<"Note">> := <<"TAG">>} ->
+                {get_value(Field, Values, ProductId, TagAcc), Acc};
+            #{<<"field">> := Field, <<"note">> := <<"TAG">>} ->
+                {get_value(Field, Values, ProductId, TagAcc), Acc};
             #{<<"Field">> := <<"createdat">>} ->
-                Acc ++ dgiot_utils:to_list(Now);
+                {TagAcc, Acc ++ dgiot_utils:to_list(Now)};
             #{<<"field">> := <<"createdat">>} ->
-                Acc ++ dgiot_utils:to_list(Now);
+                {TagAcc, Acc ++ dgiot_utils:to_list(Now)};
             #{<<"Field">> := Field} ->
-                Value = maps:get(Field, Values, null),
-                case Value of
-                    {NewValue, text} ->
-                        Acc ++ ",\'" ++ dgiot_utils:to_list(NewValue) ++ "\'";
-                    _ ->
-                        Acc ++ "," ++ dgiot_utils:to_list(Value)
-                end;
+                {TagAcc, get_value(Field, Values, ProductId, Acc)};
             #{<<"field">> := Field} ->
-                Value = maps:get(Field, Values, null),
-                case Value of
-                    {NewValue, text} ->
-                        Acc ++ ",\'" ++ dgiot_utils:to_list(NewValue) ++ "\'";
-                    _ ->
-                        Acc ++ "," ++ dgiot_utils:to_list(Value)
-                end;
+                {TagAcc, get_value(Field, Values, ProductId, Acc)};
             _ ->
-                Acc
+                {TagAcc, Acc}
         end,
-    get_sql(Results, Values, Now, NewAcc).
+    get_sql(Results, ProductId, Values, Now, NewAcc).
+
+
+get_value(Field, Values, ProductId, Acc) ->
+    Value = dgiot_tdengine_field:check_value(maps:get(Field, Values, null), ProductId, Field),
+    case Value of
+        {NewValue, text} ->
+            case Acc of
+                "" ->
+                    ",\'" ++ dgiot_utils:to_list(NewValue) ++ "\'";
+                _ ->
+                    Acc ++ ",\'" ++ dgiot_utils:to_list(NewValue) ++ "\'"
+            end;
+        _ ->
+            case Acc of
+                "" ->
+                    dgiot_utils:to_list(Value);
+                _ ->
+                    Acc ++ "," ++ dgiot_utils:to_list(Value)
+            end
+    end.

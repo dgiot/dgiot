@@ -70,6 +70,7 @@ lookup_prod(ProductId) ->
 save(Product) ->
     Product1 = format_product(Product),
     #{<<"productId">> := ProductId} = Product1,
+    dgiot_data:delete(?DGIOT_PRODUCT, ProductId),
     dgiot_data:insert(?DGIOT_PRODUCT, ProductId, Product1),
     save_keys(ProductId),
     save_control(ProductId),
@@ -192,16 +193,33 @@ save_device_thingtype(ProductId) ->
 
 %% 物模型标识符
 save_product_identifier(ProductId) ->
+    delete_product_identifier(ProductId),
     case dgiot_product:lookup_prod(ProductId) of
-        {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
+        {ok, #{<<"thing">> := #{<<"properties">> := Props} = Thing}} ->
+            Tags = maps:get(<<"tags">>, Thing, []),
             lists:map(
                 fun(#{<<"identifier">> := Identifie} = Prop) ->
                     dgiot_data:insert(?DGIOT_PRODUCT_IDENTIFIE, {ProductId, Identifie, identifie}, Prop)
-                end, Props);
+                end, Props ++ Tags);
 
         _Error ->
             []
     end.
+
+delete_product_identifier(ProductId) ->
+    Fun =
+        fun
+            ({Key, _}) ->
+                case Key of
+                    {ProductId, _, identifie} ->
+                        dgiot_data:delete(?DGIOT_PRODUCT_IDENTIFIE, Key);
+                    _ ->
+                        pass
+                end;
+            (_) ->
+                pass
+        end,
+    dgiot_data:loop(?DGIOT_PRODUCT_IDENTIFIE, Fun).
 
 get_product_identifier(ProductId, Identifie) ->
     case dgiot_data:get(?DGIOT_PRODUCT_IDENTIFIE, {ProductId, Identifie, identifie}) of

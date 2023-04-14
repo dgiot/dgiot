@@ -30,6 +30,7 @@ init_ets() ->
 
 %% 设备类型
 save_product_enum(ProductId) ->
+    delete_product_enum(ProductId),
     case dgiot_product:lookup_prod(ProductId) of
         {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
             lists:map(
@@ -47,6 +48,22 @@ save_product_enum(ProductId) ->
         _Error ->
             []
     end.
+
+delete_product_enum(ProductId) ->
+    Fun =
+        fun
+            ({Key, _}) ->
+                case Key of
+                    {ProductId, device_thing, _} ->
+                        dgiot_data:delete(?MODULE, Key);
+                    _ ->
+                        pass
+                end;
+            (_) ->
+                pass
+        end,
+    dgiot_data:loop(?MODULE, Fun).
+
 get_reverse(Spec) ->
     maps:fold(
         fun(K, V, Acc) ->
