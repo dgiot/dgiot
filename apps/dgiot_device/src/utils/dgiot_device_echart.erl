@@ -63,7 +63,7 @@ get_echart(ProductId, Results, Names, Interval) ->
                     end, [], Results),
 %%    io:format("~s ~p Rows = ~p.~n", [?FILE, ?LINE, Rows]),
     ChildRows = lists:foldl(fun(X, Acc1) ->
-        Date = maps:get(<<"日期"/utf8>>, X),
+        Date = maps:get(<<"日期"/utf8>>, X, dgiot_datetime:format(dgiot_datetime:to_localtime(dgiot_datetime:now_secs()), <<"YY-MM-DD HH:NN:SS">>)),
         maps:fold(fun(K1, V1, Acc) ->
             case maps:find(K1, Acc) of
                 error ->

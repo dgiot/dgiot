@@ -211,39 +211,39 @@ get_fields(Table) ->
 format_sql(ProductId, DevAddr, Data) ->
     case dgiot_bridge:get_product_info(ProductId) of
         {ok, #{<<"thing">> := Properties}} ->
-            Fields =
+            {TagFields, ValueFields} =
                 case dgiot_data:get({ProductId, ?TABLEDESCRIBE}) of
                     Results when length(Results) > 0 ->
                         get_sqls(Data, ProductId, Properties, Results);
                     _ ->
-                        ""
+                        {" ", " "}
                 end,
             DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
             TdChannelId = dgiot_parse_id:get_channelid(dgiot_utils:to_binary(?BRIDGE_CHL), <<"TD">>, <<"TD资源通道"/utf8>>),
             DB = dgiot_tdengine:get_database(TdChannelId, ProductId),
             TableName = ?Table(DeviceId),
             Using1 = <<" using ", DB/binary, "_", ProductId/binary>>,
-            <<"INSERT INTO ", DB/binary, TableName/binary, Using1/binary, Fields/binary, ";">>;
+            <<"INSERT INTO ", DB/binary, TableName/binary, Using1/binary, " TAGS", TagFields/binary, " VALUES", ValueFields/binary, ";">>;
         _ ->
             <<"show database;">>
     end.
 
 get_sqls(Data, ProductId, Properties, Results) ->
-    get_sqls(Data, ProductId, Properties, Results, <<"">>).
+    get_sqls(Data, ProductId, Properties, Results, {<<"">>, <<"">>}).
 
 get_sqls([], _ProductId, _Properties, _Results, Acc) ->
     Acc;
 
-get_sqls([Data | Rest], ProductId, Properties, Results, Acc) ->
+get_sqls([Data | Rest], ProductId, Properties, Results, {_, Acc}) ->
     Now = maps:get(<<"createdat">>, Data, now),
-    Sql = get_sql(Results, ProductId, Data, Now),
-    get_sqls(Rest, ProductId, Properties, Results, <<Acc/binary, Sql/binary>>).
+    {TagSql, Sql} = get_sql(Results, ProductId, Data, Now),
+    get_sqls(Rest, ProductId, Properties, Results, {TagSql, <<Acc/binary, Sql/binary>>}).
 
 get_sql(Results, ProductId, Values, Now) ->
-    get_sql(Results, ProductId, Values, Now, {"", ""}).
+    get_sql(Results, ProductId, Values, Now, {"(", "("}).
 
 get_sql([], _ProductId, _Values, _Now, {TagAcc, Acc}) ->
-    list_to_binary(" TAGS(" ++ TagAcc ++ ") VALUES(" ++ Acc ++ ")");
+    {list_to_binary(TagAcc ++ ")"), list_to_binary(Acc ++ ")")};
 
 get_sql([Column | Results], ProductId, Values, Now, {TagAcc, Acc}) ->
     NewAcc =
@@ -271,15 +271,15 @@ get_value(Field, Values, ProductId, Acc) ->
     case Value of
         {NewValue, text} ->
             case Acc of
-                "" ->
-                    ",\'" ++ dgiot_utils:to_list(NewValue) ++ "\'";
+                "(" ->
+                    Acc ++ "\'" ++ dgiot_utils:to_list(NewValue) ++ "\'";
                 _ ->
                     Acc ++ ",\'" ++ dgiot_utils:to_list(NewValue) ++ "\'"
             end;
         _ ->
             case Acc of
-                "" ->
-                    dgiot_utils:to_list(Value);
+                "(" ->
+                    Acc ++ dgiot_utils:to_list(Value);
                 _ ->
                     Acc ++ "," ++ dgiot_utils:to_list(Value)
             end
