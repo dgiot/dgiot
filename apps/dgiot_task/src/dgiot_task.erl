@@ -155,23 +155,16 @@ get_control(Round, Data, Control) ->
 get_storage(ProductId, Calculated) ->
     case dgiot_product:lookup_prod(ProductId) of
         {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
-            lists:foldl(fun(X, Acc) ->
-                case Acc of
-                    error ->
-                        Acc;
-                    _ ->
-                        case X of
-                            #{<<"isstorage">> := true, <<"identifier">> := Identifier} ->
+            lists:foldl(fun
+                            (#{<<"isstorage">> := true, <<"identifier">> := Identifier}, Acc) ->
                                 case maps:find(Identifier, Calculated) of
                                     {ok, Value} ->
                                         Acc#{Identifier => Value};
                                     _ ->
                                         Acc
                                 end;
-                            _ ->
+                            (_, Acc) ->
                                 Acc
-                        end
-                end
                         end, #{}, Props);
         _Error ->
             Calculated
@@ -327,7 +320,7 @@ save_td(ProductId, DevAddr, Ack, _AppData) ->
             DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
             Interval = dgiot_product:get_interval(ProductId),
             %%            是否有缓存
-            CacheData = merge_cache_data(DeviceId, Ack, Interval),
+            CacheData = dgiot_task:merge_cache_data(DeviceId, Ack, Interval),
             %%            计算上报值
             Collection = dgiot_task:get_collection(ProductId, [], CacheData),
             %%            计算计算值

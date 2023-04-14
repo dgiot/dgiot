@@ -44,12 +44,12 @@ insert_sql(#{<<"driver">> := <<"WS">>, <<"ws_pid">> := ConnPid, <<"ws_ref">> := 
     case gun:await(ConnPid, StreamRef) of
         {ws, {text, Data}} ->
             case catch dgiot_json:decode(Data, [return_maps]) of
-                #{<<"code">> := 0} = R ->
+                #{<<"code">> := _} = R ->
                     case maps:get(<<"channel">>, Context, <<"">>) of
                         <<"">> ->
                             ?LOG(debug, "Execute (~ts) ", [unicode:characters_to_list(Sql)]);
                         ChannelId ->
-                            dgiot_bridge:send_log(ChannelId, "Execute (~ts)", [unicode:characters_to_list(Sql)])
+                            dgiot_bridge:send_log(ChannelId, "Execute (~ts) ~p", [unicode:characters_to_list(Sql), jsx:encode(R)])
                     end,
                     {ok, R};
                 _ ->

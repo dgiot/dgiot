@@ -35,9 +35,6 @@ init_ets() ->
     dgiot_data:init(?CONFIGURATION),
     dgiot_data:init(?NOTIFICATION).
 
-
-
-
 % 验证类消息
 send_verification_code(NationCode, Key) ->
     case catch dgiot_cache:get(<<Key/binary, "wait">>) of
@@ -134,7 +131,7 @@ send_sms(NationCode, Mobile, TplId, Params, AppId, AppKey, Sign, Ext) ->
                     case jsx:decode(ResBody, [{labels, binary}, return_maps]) of
                         #{<<"result">> := 0, <<"errmsg">> := <<"OK">>} = Result ->
                             {ok, Result#{<<"code">> => 200}};
-                        #{<<"errmsg">> := ErrMsg, <<"result">> := Code} = ErrResult->
+                        #{<<"errmsg">> := ErrMsg, <<"result">> := Code} = ErrResult ->
                             {ok, ErrResult#{<<"code">> => Code, <<"error">> => ErrMsg}}
                     end;
                 {Err, Reason} when Err == error; Err == 'EXIT' ->
@@ -403,22 +400,14 @@ save_configuration() ->
     DictId = dgiot_parse_id:get_dictid(<<"dgiotconfiguration">>, <<"configuration">>, <<"configuration">>, <<"dgiotconfiguration">>),
     case dgiot_parse:get_object(<<"Dict">>, DictId) of
         {ok, #{<<"data">> := Data}} ->
-            Sms = maps:get(<<"sms">>, Data, #{}),
-            Sms_appid = maps:get(<<"appid">>, Sms, <<"">>),
-            Sms_appkey = maps:get(<<"appkey">>, Sms, <<"">>),
-            Sms_sign = maps:get(<<"sign">>, Sms, <<"">>),
-            Verify_Code_Tplid = maps:get(<<"verify_code_tplid">>, Sms, <<"1715928">>),
-            dgiot_data:insert(?CONFIGURATION, sms_appid, Sms_appid),
-            dgiot_data:insert(?CONFIGURATION, sms_appkey, Sms_appkey),
-            dgiot_data:insert(?CONFIGURATION, sms_sign, Sms_sign),
-            dgiot_data:insert(?CONFIGURATION, sms_verify_code_tplid, Verify_Code_Tplid),
-            Mail = maps:get(<<"mail">>, Data, #{}),
-            Mail_username = maps:get(<<"username">>, Mail, <<"">>),
-            Mail_password = maps:get(<<"password">>, Mail, <<"">>),
-            Mail_smtp = maps:get(<<"smtp">>, Mail, <<"">>),
-            dgiot_data:insert(?CONFIGURATION, mail_username, Mail_username),
-            dgiot_data:insert(?CONFIGURATION, mail_password, Mail_password),
-            dgiot_data:insert(?CONFIGURATION, mail_smtp, Mail_smtp);
+            maps:fold(fun
+                          (Key, Value, _) when is_map(Value) ->
+                              maps:fold(fun(Key1, Value1, _) ->
+                                  dgiot_data:insert(?CONFIGURATION, dgiot_utils:to_atom(<<Key/binary, "_", Key1/binary>>), Value1)
+                                        end, #{}, Value);
+                          (_, _, _) ->
+                              pass
+                      end, #{}, Data);
         _ ->
             pass
     end.

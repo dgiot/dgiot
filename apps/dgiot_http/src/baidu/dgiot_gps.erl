@@ -334,7 +334,13 @@ get_baidu_gps(LonDeg, LatDeg, Lonoffset, Latoffset) ->
 %%http://lbsyun.baidu.com/index.php?title=webapi/guide/webservice-geocoding-abroad
 %<<"http://api.map.baidu.com/reverse_geocoding/v3/?ak=0twrgSghSF1Q6zUvvYdUu2KFhFiGdbm5&output=json&coordtype=wgs84ll&location=25.368078,111.064845">>.
 get_baidu_addr(LonDeg, LatDeg) ->
-    AppKey = dgiot_utils:to_binary(application:get_env(dgiot_http, baidumap_appkey, <<"">>)),
+    AppKey =
+        case dgiot_data:get(dgiot_configuration, baidu_sak) of
+            not_find ->
+                dgiot_utils:to_binary(application:get_env(dgiot_http, baidumap_appkey, <<"">>));
+            Ak ->
+                Ak
+        end,
     get_baidu_addr(AppKey, "wgs84ll", LonDeg, LatDeg).
 
 get_baidu_addr(AK, Coordtype, Lng, Lat) ->
