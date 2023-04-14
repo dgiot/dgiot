@@ -78,11 +78,13 @@ public class DlinkServer {
     server.start();
     server.blockUntilShutdown();
   }
-
+  private HelloReply helloReply;
   static class DlinkImpl extends DlinkGrpc.DlinkImplBase {
 
     @Override
     public void sayHello(HelloRequest req, StreamObserver<HelloReply> responseObserver) {
+      //System.err.println("" + req.getMessage());
+      System.err.println("msg from: " + req.getName());
       HelloReply reply = HelloReply.newBuilder().setMessage("Hello " + req.getName()).build();
       responseObserver.onNext(reply);
       responseObserver.onCompleted();
