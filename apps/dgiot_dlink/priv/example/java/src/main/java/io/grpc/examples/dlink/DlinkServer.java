@@ -14,29 +14,29 @@
  * limitations under the License.
  */
 
-package io.grpc.examples.helloworld;
+package io.grpc.examples.dlink;
 
+import io.grpc.Grpc;
+import io.grpc.InsecureServerCredentials;
 import io.grpc.Server;
-import io.grpc.ServerBuilder;
 import io.grpc.stub.StreamObserver;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 /**
- * https://github.com/grpc/grpc-java/blob/v1.47.0/examples/src/main/java/io/grpc/examples/helloworld/HelloWorldClient.java
- * Server that manages startup/shutdown of a {@code Greeter} server.
+ * Server that manages startup/shutdown of a {@code Dlink} server.
  */
-public class HelloWorldServer {
-  private static final Logger logger = Logger.getLogger(HelloWorldServer.class.getName());
+public class DlinkServer {
+  private static final Logger logger = Logger.getLogger(DlinkServer.class.getName());
 
   private Server server;
 
   private void start() throws IOException {
     /* The port on which the server should run */
-    int port = 50051;
-    server = ServerBuilder.forPort(port)
-        .addService(new GreeterImpl())
+    int port = 30051;
+    server = Grpc.newServerBuilderForPort(port, InsecureServerCredentials.create())
+        .addService(new DlinkImpl())
         .build()
         .start();
     logger.info("Server started, listening on " + port);
@@ -46,7 +46,7 @@ public class HelloWorldServer {
         // Use stderr here since the logger may have been reset by its JVM shutdown hook.
         System.err.println("*** shutting down gRPC server since JVM is shutting down");
         try {
-          HelloWorldServer.this.stop();
+          DlinkServer.this.stop();
         } catch (InterruptedException e) {
           e.printStackTrace(System.err);
         }
@@ -74,12 +74,12 @@ public class HelloWorldServer {
    * Main launches the server from the command line.
    */
   public static void main(String[] args) throws IOException, InterruptedException {
-    final HelloWorldServer server = new HelloWorldServer();
+    final DlinkServer server = new DlinkServer();
     server.start();
     server.blockUntilShutdown();
   }
 
-  static class GreeterImpl extends GreeterGrpc.GreeterImplBase {
+  static class DlinkImpl extends DlinkGrpc.DlinkImplBase {
 
     @Override
     public void sayHello(HelloRequest req, StreamObserver<HelloReply> responseObserver) {

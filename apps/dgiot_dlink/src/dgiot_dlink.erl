@@ -107,14 +107,13 @@ logout(ClinetId) ->
 send(ClinetId, Map) when is_map(Map) ->
     case dgiot_dlink_client:say_hello(#{name => base64:encode(jsx:encode(Map))}, #{channel => ClinetId}) of
         {ok, #{message := ReMessage}, _} ->
-            {ok,ReMessage};
-        _->
+            {ok, ReMessage};
+        _ ->
             error
     end;
 
 send(_, _) ->
     pass.
-
 
 test() ->
     FileName = <<"dlink">>,
@@ -123,17 +122,17 @@ test() ->
     ErlangDir = dgiot_httpc:url_join([filename:dirname(filename:dirname(Here)), "/priv/example/Erlang/"]),
     Dir = dgiot_httpc:url_join([filename:dirname(filename:dirname(Here)), "/priv/example/Erlang/priv/"]),
     Name = dgiot_utils:to_list(FileName),
-    ?LOG(info, "~p", [Dir ++ Name ++ ".proto"]),
-    ?LOG(info, "~p", [base64:decode(Proto)]),
+    io:format(" ~s ~p file =  ~p ~n", [?FILE, ?LINE, Dir ++ Name ++ ".proto"]),
+    io:format(" ~s ~p Proto =  ~p ~n", [?FILE, ?LINE, base64:decode(Proto)]),
     case file:open(Name, [raw, write, delayed_write, binary]) of
         {ok, Fd} ->
             Result = file:write_file(Dir ++ Name ++ ".proto", base64:decode(Proto)),
             file:close(Fd),
-            ?LOG(info, "~p", [Result]);
+            io:format(" ~s ~p Result =  ~p ~n", [?FILE, ?LINE, Result]);
         _ -> pass
     end,
     Cmd = "cd " ++ ErlangDir ++ " &&  ./rebar3 compile",
-    ?LOG(info, "~p", [Cmd]),
+    io:format(" ~s ~p Cmd = ~p ~n", [?FILE, ?LINE, Cmd]),
     os:cmd(Cmd),
     ok.
 
