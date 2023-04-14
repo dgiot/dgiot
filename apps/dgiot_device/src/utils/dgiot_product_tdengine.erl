@@ -123,11 +123,16 @@ get_keys(ProductId, Function, <<"*">>) ->
             lists:foldl(fun(X, {Names, Acc}) ->
                 case X of
                     #{<<"identifier">> := Identifier, <<"name">> := Name, <<"isstorage">> := true, <<"isshow">> := true} ->
-                        {Names ++ [Name], <<Acc/binary, ", ", Function/binary, "(", Identifier/binary, ") ", Identifier/binary>>};
+                        case Acc of
+                            <<>> ->
+                                {Names ++ [Name], <<Acc/binary, Function/binary, "(", Identifier/binary, ") ", Identifier/binary>>};
+                            _ ->
+                                {Names ++ [Name], <<Acc/binary, ", ", Function/binary, "(", Identifier/binary, ") ", Identifier/binary>>}
+                        end;
                     _ ->
                         {Names, Acc}
                 end
-                        end, {[], <<Function/binary, "(createdat) createdat">>}, Props);
+                        end, {[], get_defult(Function)}, Props);
         _Other ->
             ?LOG(debug, "~p _Other ~p", [ProductId, _Other]),
             {[], <<"*">>}
@@ -148,9 +153,14 @@ get_keys(ProductId, Function, Keys) ->
             error ->
                 {Names, Acc};
             Name ->
-                {Names ++ [Name], <<Acc/binary, ", ", Function/binary, "(", X/binary, ") ", X/binary>>}
+                case Acc of
+                    <<>> ->
+                        {Names ++ [Name], <<Acc/binary, Function/binary, "(", X/binary, ") ", X/binary>>};
+                    _ ->
+                        {Names ++ [Name], <<Acc/binary, ", ", Function/binary, "(", X/binary, ") ", X/binary>>}
+                end
         end
-                end, {[], <<Function/binary, "(createdat) createdat">>}, List).
+                end, {[], get_defult(Function)}, List).
 
 check_field(Typea, V, #{<<"specs">> := Specs}) when Typea == <<"enum">>; Typea == <<"bool">> ->
     maps:get(dgiot_utils:to_binary(V), Specs, V);
@@ -260,3 +270,10 @@ get_product_data(Channel, ProductId, DeviceId, Args) ->
                     {400, Reason}
             end
     end.
+
+get_defult(<<"first">>) ->
+    <<"first(createdat) createdat">>;
+get_defult(<<"last">>) ->
+    <<"last(createdat) createdat">>;
+get_defult(_) ->
+    <<>>.
