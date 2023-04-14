@@ -397,14 +397,21 @@ notification(DeviceId, Status, Longitude, Latitude, IsEnable, Now) ->
                 end,
             Address =
                 case dgiot_data:get(?DGIOT_LOCATION_ADDRESS, DeviceId) of
-                    not_find ->
-                        get_address(DeviceId, Longitude, Latitude);
-                    Addr ->
-                        Addr
+                    Addr when size(Addr) > 0 ->
+                        Addr;
+                    _ ->
+                        get_address(DeviceId, Longitude, Latitude)
                 end,
-            dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(#{
+            PubData =
+                case size(Address) of
+                    0 ->
+                        #{};
+                    _ ->
+                        #{<<"address">> => Address}
+                end,
+            dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(PubData#{
                 DeviceId => #{
-                    <<"status">> => NewStatus, <<"isEnable">> => IsEnable, <<"lastOnlineTime">> => Now, <<"address">> => Address,
+                    <<"status">> => NewStatus, <<"isEnable">> => IsEnable, <<"lastOnlineTime">> => Now,
                     <<"location">> => #{<<"longitude">> => Longitude, <<"latitude">> => Latitude}
                 }}));
         _ ->

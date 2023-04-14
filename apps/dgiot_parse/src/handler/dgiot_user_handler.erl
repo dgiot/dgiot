@@ -144,19 +144,14 @@ do_request(post_user, #{<<"username">> := _UserName, <<"password">> := _Password
         {error, Error} -> {500, Error}
     end;
 
-do_request(delete_user, #{<<"username">> := UserName} = Body, #{<<"sessionToken">> := SessionToken}, _Req) ->
-    DefaultUsers = ?DEFUser,
-    case lists:member(UserName, DefaultUsers) of
-        true ->
-            {ok, #{<<"code">> => 401, <<"msg">> => <<"dgiot_admin PROHIBITED DELETE">>}};
-        _ ->
-            case dgiot_parse_auth:delete_user(Body, SessionToken) of
-                {ok, _Data} ->
-                    dgiot_role:load_user(),
-                    dgiot_parse_auth:load_roleuser(),
-                    {200, #{<<"result">> => true}};
-                {error, Error} -> {error, Error}
-            end
+do_request(delete_user, Body, #{<<"sessionToken">> := SessionToken}, _Req) ->
+    case dgiot_parse_auth:delete_user(Body, SessionToken) of
+        {ok, Data} ->
+            dgiot_role:load_user(),
+            dgiot_parse_auth:load_roleuser(),
+            {200, Data};
+        {error, Error} ->
+            {error, Error}
     end;
 
 do_request(put_user, #{<<"username">> := UserName} = Body, #{<<"sessionToken">> := SessionToken}, _Req) ->
@@ -172,6 +167,15 @@ do_request(put_user, #{<<"username">> := UserName} = Body, #{<<"sessionToken">> 
                     {200, Data};
                 {error, Error} -> {500, Error}
             end
+    end;
+
+do_request(get_users_id, Body, #{<<"sessionToken">> := SessionToken}, _Req) ->
+    case dgiot_parse_auth:get_user(Body, SessionToken) of
+        {ok, Data} ->
+            dgiot_role:load_user(),
+            dgiot_parse_auth:load_roleuser(),
+            {200, Data};
+        {error, Error} -> {500, Error}
     end;
 
 %% IoTDevice 概要: 禁用账号
@@ -268,6 +272,7 @@ do_request(get_usertree, _Arg, #{<<"sessionToken">> := SessionToken} = _Context,
 
 %%  服务器不支持的API接口
 do_request(_OperationId, _Args, _Context, _Req) ->
-    ?LOG(info, "_Args ~p", [_Args]),
+%%    io:format("~s ~p _OperationId = ~p.~n", [?FILE, ?LINE, _OperationId]),
+%%    io:format("~s ~p _Args = ~p.~n", [?FILE, ?LINE, _Args]),
     {error, <<"Not Allowed.">>}.
 

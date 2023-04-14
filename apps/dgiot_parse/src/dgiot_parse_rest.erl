@@ -128,25 +128,26 @@ get_newwhere(Header, Where) ->
             Map = dgiot_json:decode(Where),
             case dgiot_auth:get_session(SessionToken) of
                 #{<<"roles">> := Roles} ->
-                    ViewIds =
+                    RoleIds =
                         maps:fold(fun(RoleId, Role, Acc) ->
                             case maps:find(<<"level">>, Role) of
                                 {ok, Level} when Level < 3 ->
                                     Acc ++ [true];
                                 _ ->
-                                    case dgiot_role:get_role_views(RoleId) of
-                                        not_find ->
-                                            Acc;
-                                        Ids ->
-                                            Acc ++ Ids
-                                    end
+                                    Acc ++ [RoleId]
                             end
                                   end, [], Roles),
-                    case lists:member(true, ViewIds) of
+                    case lists:member(true, RoleIds) of
                         true ->
                             Where;
                         _ ->
-                            dgiot_json:encode(Map#{<<"objectId">> => #{<<"$in">> => ViewIds}})
+                            dgiot_json:encode(Map#{<<"$relatedTo">> => #{
+                                <<"object">> =>
+                                #{<<"__type">> => <<"Pointer">>,
+                                    <<"className">> => <<"_Role">>,
+                                    <<"objectId">> => #{<<"$in">> => RoleIds}},
+                                <<"key">> => <<"views">>
+                            }})
                     end;
                 _ ->
                     Where
@@ -423,7 +424,7 @@ do_request_after(Method0, Path, Header, NewQueryData, ResBody, Options) ->
                 method(Method0, atom)
         end,
     {match, PathList} = re:run(Path, <<"([^/]+)">>, [global, {capture, all_but_first, binary}]),
-   %% io:format("~s ~p ~p ~p ~n",[?FILE, ?LINE, Path, NewQueryData]),
+    %% io:format("~s ~p ~p ~p ~n",[?FILE, ?LINE, Path, NewQueryData]),
     dgiot_parse_hook:do_request_hook('after', lists:concat(PathList), Method, dgiot_parse:get_token(Header), NewQueryData, ResBody).
 
 

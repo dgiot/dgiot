@@ -19,7 +19,7 @@
 -include("dgiot_tdengine.hrl").
 -include_lib("dgiot/include/logger.hrl").
 
--export([add_field/4, get_field/1, check_fields/2, check_fields/3, get_time/2, check_value/3]).
+-export([add_field/4, get_field/1, check_fields/2, check_fields/3, get_time/2, check_value/3, get_field_type/1]).
 
 add_field(#{<<"type">> := <<"enum">>}, Database, TableName, LowerIdentifier) ->
     <<"ALTER TABLE ", Database/binary, TableName/binary, " ADD COLUMN ", LowerIdentifier/binary, " INT;">>;
@@ -212,9 +212,9 @@ get_time(V, Interval) ->
 get_type_value(_, null, _) ->
     null;
 get_type_value(Type, Value, _Specs) when Type == <<"INT">>; Type == <<"DATE">>; Type == <<"SHORT">>; Type == <<"LONG">>; Type == <<"ENUM">>, is_list(Value) ->
-   round(dgiot_utils:to_int(Value));
+    round(dgiot_utils:to_int(Value));
 get_type_value(Type, Value, _Specs) when Type == <<"INT">>; Type == <<"DATE">>, is_float(Value) ->
-   round(Value);
+    round(Value);
 get_type_value(Type, Value, _Specs) when Type == <<"INT">>; Type == <<"DATE">> ->
     Value;
 get_type_value(Type, Value, Specs) when Type == <<"FLOAT">>; Type == <<"DOUBLE">> ->
@@ -237,3 +237,23 @@ get_type_value(<<"IMAGE">>, Value, _Specs) ->
     round(dgiot_utils:to_int(Value));
 get_type_value(_, Value, _Specs) ->
     Value.
+
+
+get_field_type(<<"enum">>) ->
+    <<"int">>;
+get_field_type(<<"file">>) ->
+    <<"nchar">>;
+get_field_type(<<"text">>) ->
+    <<"nchar">>;
+get_field_type(<<"url">>) ->
+    <<"nchar">>;
+get_field_type(<<"geopoint">>) ->
+    <<"nchar">>;
+get_field_type(<<"image">>) ->
+    <<"bigint;">>;
+get_field_type(<<"date">>) ->
+    <<"timestamp">>;
+get_field_type(<<"long">>) ->
+    <<"bigint">>;
+get_field_type(Type) ->
+    list_to_binary(string:to_lower(binary_to_list(Type))).

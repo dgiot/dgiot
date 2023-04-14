@@ -104,15 +104,13 @@ alter_table(#{<<"tableName">> := TableName}, #{<<"channel">> := Channel} = Conte
     case dgiot_tdengine_pool:run_sql(Context, execute_query, Sql1) of
         {ok, #{<<"results">> := Results}} when length(Results) > 0 ->
             TdColumn =
-                lists:foldl(fun(Column, Acc) ->
-                    case Column of
-                        #{<<"Field">> := Identifier, <<"Type">> := Type} ->
-                            Acc#{Identifier => list_to_binary(string:to_lower(binary_to_list(Type)))};
-                        #{<<"field">> := Identifier, <<"type">> := Type} ->
-                            Acc#{Identifier => list_to_binary(string:to_lower(binary_to_list(Type)))};
-                        _ ->
-                            Acc
-                    end
+                lists:foldl(fun
+                                (#{<<"Field">> := Identifier, <<"Type">> := Type}, Acc) ->
+                                    Acc#{Identifier => list_to_binary(string:to_lower(binary_to_list(Type)))};
+                                (#{<<"field">> := Identifier, <<"type">> := Type}, Acc) ->
+                                    Acc#{Identifier => list_to_binary(string:to_lower(binary_to_list(Type)))};
+                                (_, Acc) ->
+                                    Acc
                             end, #{}, Results),
             AddSqls = dgiot_tdengine_schema:get_addSql(ProductId, TdColumn, Database, TableName),
             lists:map(fun(AddSql) ->
@@ -135,7 +133,7 @@ get_addSql(ProductId, TdColumn, Database, TableName) ->
                 case Prop of
                     #{<<"dataType">> := #{<<"type">> := Type} = DataType, <<"identifier">> := Identifier, <<"isstorage">> := true} ->
                         LowerIdentifier = list_to_binary(string:to_lower(binary_to_list(Identifier))),
-                        LowerType = list_to_binary(string:to_lower(binary_to_list(Type))),
+                        LowerType = dgiot_tdengine_field:get_field_type(Type),
                         case maps:find(LowerIdentifier, TdColumn) of
                             error ->
                                 Acc ++ [dgiot_tdengine_field:add_field(DataType, Database, TableName, LowerIdentifier)];
