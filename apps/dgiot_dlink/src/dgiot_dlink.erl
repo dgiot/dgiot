@@ -97,24 +97,6 @@ start(Server) ->
 stop(Server) ->
     _ = grpc:stop_server(Server).
 
-login(ClinetId) ->
-    SvrAddr = "http://127.0.0.1:30051",
-    {ok, _} = grpc_client_sup:create_channel_pool(ClinetId, SvrAddr, #{}).
-
-logout(ClinetId) ->
-    _ = grpc_client_sup:stop_channel_pool(ClinetId).
-
-send(ClinetId, Map) when is_map(Map) ->
-    case dgiot_dlink_client:say_hello(#{name => base64:encode(jsx:encode(Map))}, #{channel => ClinetId}) of
-        {ok, #{message := ReMessage}, _} ->
-            {ok, ReMessage};
-        _ ->
-            error
-    end;
-
-send(_, _) ->
-    pass.
-
 get_all_protocol() ->
     lists:foldl(fun({_, Channel_type}, Acc) ->
         App = maps:get(app, Channel_type),

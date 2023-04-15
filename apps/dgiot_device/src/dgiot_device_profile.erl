@@ -34,8 +34,8 @@ put('before', #{<<"id">> := DeviceId, <<"profile">> := UserProfile} = Device) ->
             ProfileTopic =
                 case dgiot_product:lookup_prod(ProductId) of
                     {ok, #{<<"topics">> := #{<<"device_profile">> := ToipcTempl}}} ->
-                        Topic = re:replace(ToipcTempl, <<"{productId}">>, ProductId, [{return, binary}]),
-                        re:replace(Topic, <<"{deviceAddr}">>, Devaddr, [{return, binary}]);
+                        Topic = re:replace(ToipcTempl, <<"${productId}">>, ProductId, [{return, binary}]),
+                        re:replace(Topic, <<"${deviceAddr}">>, Devaddr, [{return, binary}]);
                     _ ->
                         <<"$dg/device/", ProductId/binary, "/", Devaddr/binary, "/profile">>
                 end,
