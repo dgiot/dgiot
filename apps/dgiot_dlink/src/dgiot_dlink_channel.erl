@@ -25,7 +25,6 @@
 -export([start/2]).
 -export([init/3, handle_event/3, handle_message/2, handle_init/1, stop/3]).
 
-
 %% 注册通道类型
 -channel_type(#{
     cType => ?TYPE,
@@ -39,6 +38,61 @@
 }).
 %% 注册通道参数
 -params(#{
+    <<"network">> => #{
+        order => 1,
+        type => enum,
+        required => false,
+        default => <<"mqtt"/utf8>>,
+        enum => [
+            #{<<"value">> => <<"grpc">>, <<"label">> => <<"grpc采集"/utf8>>},
+            #{<<"value">> => <<"mqtt">>, <<"label">> => <<"mqtt采集"/utf8>>},
+            #{<<"value">> => <<"tcp">>, <<"label">> => <<"tcp采集"/utf8>>},
+            #{<<"value">> => <<"udp">>, <<"label">> => <<"udp采集"/utf8>>},
+            #{<<"value">> => <<"http">>, <<"label">> => <<"http采集"/utf8>>}
+        ],
+        title => #{
+            zh => <<"设备接入网络"/utf8>>
+        },
+        description => #{
+            zh => <<"设备接入网络"/utf8>>
+        }
+    },
+    <<"port">> => #{
+        order => 2,
+        type => integer,
+        required => true,
+        default => 30051,
+        title => #{
+            zh => <<"设备接入端口"/utf8>>
+        },
+        description => #{
+            zh => <<"设备接入端口"/utf8>>
+        }
+    },
+    <<"url">> => #{
+        order => 3,
+        type => string,
+        required => false,
+        default => <<"tcp://127.0.0.1:30051"/utf8>>,
+        title => #{
+            zh => <<"设备协议解析"/utf8>>
+        },
+        description => #{
+            zh => <<"设备协议解析: product | tcp://127.0.0.1:30051"/utf8>>
+        }
+    },
+    <<"rule">> => #{
+        order => 4,
+        type => string,
+        required => false,
+        default => <<"rule:956cc06e"/utf8>>,
+        title => #{
+            zh => <<"消息流转规则"/utf8>>
+        },
+        description => #{
+            zh => <<"消息流转规则"/utf8>>
+        }
+    },
     <<"ico">> => #{
         order => 102,
         type => string,
@@ -61,6 +115,7 @@ start(ChannelId, ChannelArgs) ->
 %% 通道初始化
 init(?TYPE, ChannelId, _ChannelArgs) ->
     State = #state{id = ChannelId},
+    dgiot_grpc_client:login(ChannelId),
     {ok, State}.
 
 handle_init(State) ->
