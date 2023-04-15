@@ -16,8 +16,8 @@
 
 -module(dgiot_grpc_test).
 
--compile(export_all).
--compile(nowarn_export_all).
+-export([start/0, stop/0]).
+-export([login/0, logout/0, send/0, test/0]).
 
 start() ->
     Services = #{
@@ -34,20 +34,6 @@ login() ->
     SvrAddr = "tcp://127.0.0.1:30051",
     {ok, _} = grpc_client_sup:create_channel_pool(<<"channel">>, SvrAddr, #{}).
 
-%%start_client_channel() ->
-%%    ClientOps = #{},
-%%    SvrAddr = "http://127.0.0.1:10000",
-%%    {ok, _} = grpc_client_sup:create_channel_pool(
-%%        ?CHANN_NAME,
-%%        SvrAddr,
-%%        ClientOps
-%%    ),
-%%    io:format("Start client channel ~s for ~s successfully!~n~n"
-%%    "Call the 'routeguide_route_guide_client' module exported functions "
-%%    "to use it. e.g:~n"
-%%    "  routeguide_route_guide_client:get_feature(#{latitude => 1"
-%%    ", longitude => 1}, #{channel => channel1}).~n",
-%%        [?CHANN_NAME, SvrAddr]).
 
 logout() ->
     _ = grpc_client_sup:stop_channel_pool(<<"channel">>).

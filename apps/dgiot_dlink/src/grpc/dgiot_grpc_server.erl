@@ -18,14 +18,14 @@
 
 -behavior(dgiot_dlink_bhvr).
 
--compile(export_all).
--compile(nowarn_export_all).
+-export([say_hello/2]).
+-export([check/2, watch/2]).
 
 %%--------------------------------------------------------------------
 %% Callbacks
 
 say_hello(_Req = #{name := Name}, _Md) ->
-    {ok, #{message => <<"Hi fff, ", Name/binary, "~">>}, _Md}.
+    {ok, #{message => <<"Hi dgiot, ", Name/binary, "~">>}, _Md}.
 
 -spec check(grpc_health_pb:health_check_request(), grpc:metadata())
         -> {ok, grpc_health_pb:health_check_response(), grpc:metadata()}
