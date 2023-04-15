@@ -55,7 +55,6 @@ test() ->
         {ok, Fd} ->
             Result = file:write_file(Dir ++ Name ++ ".proto", base64:decode(Proto)),
             file:close(Fd),
-            grpcx_client:compile(Dir ++ Name ++ ".proto", base64:decode(Proto)),
             io:format(" ~s ~p Result =  ~p ~n", [?FILE, ?LINE, Result]);
         _ -> pass
     end,
