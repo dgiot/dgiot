@@ -19,7 +19,9 @@
 -export([login/1, logout/1, send/2]).
 
 login(ClinetId) ->
-    SvrAddr = "http://127.0.0.1:30051",
+    login(ClinetId, "http://127.0.0.1:30051").
+
+login(ClinetId, SvrAddr) ->
     {ok, _} = grpc_client_sup:create_channel_pool(ClinetId, SvrAddr, #{}).
 
 logout(ClinetId) ->

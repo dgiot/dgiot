@@ -23,66 +23,7 @@
 
 -include_lib("dgiot/include/logger.hrl").
 
--define(TYPE, <<"DLINK">>).
 
-%% 注册协议类型
--protocol_type(#{
-    cType => ?TYPE,
-    type => <<"DLINK">>,
-    colum => 3,
-    title => #{
-        zh => <<"DLINK协议"/utf8>>
-    },
-    description => #{
-        zh => <<"DLINK协议"/utf8>>
-    }
-}).
-%% 注册协议参数
--params (#{
-    <<"dis">> => #{
-        order => 1,
-        type => object,
-        allowCreate => true,
-        required => true,
-        default => [
-            #{<<"value">> => <<"lable">>, <<"name">> => <<"key">>}
-        ],
-        title => #{
-            zh => <<"数据标识"/utf8>>
-        },
-        description => #{
-            zh => <<"数据标识"/utf8>>
-        },
-        <<"table">> => [
-            #{
-                key => <<"key">>,
-                order => 2,
-                type => string,
-                required => true,
-                default => <<"data.[0].number"/utf8>>,
-                title => #{
-                    zh => <<"数据标识"/utf8>>
-                },
-                description => #{
-                    zh => <<"数据标识"/utf8>>
-                }
-            },
-            #{
-                key => <<"data">>,
-                order => 2,
-                type => integer,
-                required => true,
-                default => <<"2"/utf8>>,
-                title => #{
-                    zh => <<"数据长度(字节)"/utf8>>
-                },
-                description => #{
-                    zh => <<"数据长度(字节)"/utf8>>
-                }
-            }
-        ]
-    }
-}).
 
 %% API
 get_datasource(_) ->

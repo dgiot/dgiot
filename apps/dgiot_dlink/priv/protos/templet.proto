@@ -1,0 +1,25 @@
+// copy from: https://grpc.io/docs/what-is-grpc/introduction/
+
+
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "io.grpc.examples.dlink";
+option java_outer_classname = "DlinkProto";
+option objc_class_prefix = "dlink";
+
+package dgiot;
+
+service {{Productid}} {
+  rpc {{Api}} ({{Request}}) returns ({{Response}}) {}
+}
+
+// The request message containing the user's name.
+message {{Request}} {
+  {{DataType}} {{Key}} = {{Value}};
+}
+
+// The response message containing the greetings
+message {{Response}} {
+  {{DataType}} {{Key}} = {{Value}};
+}
