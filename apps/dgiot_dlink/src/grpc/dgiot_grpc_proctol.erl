@@ -16,7 +16,7 @@
 %% https://doc.oschina.net/grpc
 %% https://www.grpc.io/docs/
 
--module(dgiot_dlink_proctol).
+-module(dgiot_grpc_proctol).
 
 -include_lib("dgiot/include/logger.hrl").
 

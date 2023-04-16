@@ -44,17 +44,17 @@
         required => false,
         default => <<"mqtt"/utf8>>,
         enum => [
-            #{<<"value">> => <<"grpc">>, <<"label">> => <<"grpc采集"/utf8>>},
-            #{<<"value">> => <<"mqtt">>, <<"label">> => <<"mqtt采集"/utf8>>},
-            #{<<"value">> => <<"tcp">>, <<"label">> => <<"tcp采集"/utf8>>},
-            #{<<"value">> => <<"udp">>, <<"label">> => <<"udp采集"/utf8>>},
-            #{<<"value">> => <<"http">>, <<"label">> => <<"http采集"/utf8>>}
+            #{<<"value">> => <<"grpc">>, <<"label">> => <<"grpc服务端"/utf8>>},
+            #{<<"value">> => <<"mqtt">>, <<"label">> => <<"mqtt服务端"/utf8>>},
+            #{<<"value">> => <<"tcp">>, <<"label">> => <<"tcp服务端"/utf8>>},
+            #{<<"value">> => <<"udp">>, <<"label">> => <<"udp服务端"/utf8>>},
+            #{<<"value">> => <<"http">>, <<"label">> => <<"http服务端"/utf8>>}
         ],
         title => #{
-            zh => <<"设备接入网络"/utf8>>
+            zh => <<"网络组件"/utf8>>
         },
         description => #{
-            zh => <<"设备接入网络"/utf8>>
+            zh => <<"网络组件"/utf8>>
         }
     },
     <<"port">> => #{
@@ -113,8 +113,12 @@ start(ChannelId, ChannelArgs) ->
     dgiot_channelx:add(?TYPE, ChannelId, ?MODULE, ChannelArgs).
 
 %% 通道初始化
-init(?TYPE, ChannelId, _ChannelArgs) ->
+%%<<"network">> => <<"grpc">>,<<"port">> => 30051,
+%%<<"product">> => [],<<"rule">> => <<"rule:956cc06e">>,
+%%<<"url">> => <<"tcp://127.0.0.1:30051">>
+init(?TYPE, ChannelId, #{<<"network">> := NetWork} = ChannelArgs) ->
     State = #state{id = ChannelId},
+    io:format("_ChannelArgs ~p ~n",[_ChannelArgs]),
     dgiot_grpc_client:login(ChannelId),
     {ok, State}.
 
@@ -142,7 +146,8 @@ handle_message(_Message, State) ->
 %%    io:format("~s ~p _Message = ~p.~n", [?FILE, ?LINE, _Message]),
     {ok, State}.
 
-stop(_ChannelType, _ChannelId, _State) ->
+stop(_ChannelType, ChannelId, _State) ->
+    dgiot_grpc_client:logout(ChannelId),
     ok.
 
 
