@@ -116,9 +116,9 @@ start(ChannelId, ChannelArgs) ->
 %%<<"network">> => <<"grpc">>,<<"port">> => 30051,
 %%<<"product">> => [],<<"rule">> => <<"rule:956cc06e">>,
 %%<<"url">> => <<"tcp://127.0.0.1:30051">>
-init(?TYPE, ChannelId, #{<<"network">> := NetWork} = ChannelArgs) ->
+init(?TYPE, ChannelId, #{<<"network">> := _NetWork} = _ChannelArgs) ->
     State = #state{id = ChannelId},
-    io:format("_ChannelArgs ~p ~n",[_ChannelArgs]),
+%%    io:format("_ChannelArgs ~p ~n",[_ChannelArgs]),
     dgiot_grpc_client:login(ChannelId),
     {ok, State}.
 
