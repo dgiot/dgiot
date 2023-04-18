@@ -18,16 +18,10 @@
 
 -behavior(dgiot_dlink_bhvr).
 
--export([login/2,logout/2,payload/2]).
+-export([payload/2]).
 
 %%--------------------------------------------------------------------
 %% Callbacks
 
-login(_Req = #{data := Name}, _Md) ->
-    {ok, #{ack => <<"Hi dgiot, ", Name/binary, "~">>}, _Md}.
-
-logout(_Req = #{data := Name}, _Md) ->
-    {ok, #{ack => <<"Hi dgiot, ", Name/binary, "~">>}, _Md}.
-
 payload(_Req = #{data := Name}, _Md) ->
-    {ok, #{ack => <<"Hi dgiot, ", Name/binary, "~">>}, _Md}.
+    {ok, #{payload => <<"Hi dgiot, ", Name/binary, "~">>}, _Md}.

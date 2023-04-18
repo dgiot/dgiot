@@ -104,18 +104,16 @@ start(ChannelId, ChannelArgs) ->
 %%<<"network">> => <<"grpc">>,<<"port">> => 30051,
 %%<<"product">> => [],<<"rule">> => <<"rule:956cc06e">>,
 %%<<"url">> => <<"tcp://127.0.0.1:30051">>
-init(?TYPE, ChannelId, #{<<"network">> := NetWork, <<"port">> := Port, <<"url">> := Url} = _ChannelArgs) ->
+init(?TYPE, ChannelId, #{<<"network">> := NetWork, <<"port">> := Port, <<"url">> := Url, <<"Size">> := PoolSize} = _ChannelArgs) ->
     State = #state{id = ChannelId},
-    io:format("_NetWork ~p ~n", [NetWork]),
-    io:format("Port ~p ~n", [Port]),
-    io:format("Url ~p ~n", [Url]),
-    case Url of
+    Mode = case Url of
         <<"product">> ->
-            pass;
+            <<"product">>;
         _ ->
-            dgiot_grpc_client:login(ChannelId, Url)
+            dgiot_grpc_client:create_channel_pool(ChannelId, Url, PoolSize),
+            <<"grpc">>
     end,
-    {ok, State, get_child_spec(NetWork, Port, State)}.
+    {ok, State, get_child_spec(NetWork, Port, ChannelId, Mode)}.
 
 handle_init(State) ->
     {ok, State}.
@@ -142,11 +140,10 @@ handle_message(_Message, State) ->
     {ok, State}.
 
 stop(_ChannelType, ChannelId, _State) ->
-    dgiot_grpc_client:logout(ChannelId),
+    dgiot_grpc_client:stop_channel_pool(ChannelId),
     ok.
 
-
-get_child_spec(<<"tcp">>, Port, State) ->
-    dgiot_tcp2grpc_worker:child_spec(Port, State);
-get_child_spec(_, _Port, _State) ->
+get_child_spec(<<"tcp">>, Port, ChannelId, Mode) ->
+    dgiot_tcp2grpc_worker:child_spec(Port, ChannelId, Mode);
+get_child_spec(_, _Port, _ChannelId, _Mode) ->
     [].

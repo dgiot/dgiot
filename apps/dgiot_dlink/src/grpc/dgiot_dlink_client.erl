@@ -23,46 +23,6 @@
           marshal => ?MARSHAL(Req),
           unmarshal => ?UNMARSHAL(Resp)}).
 
--spec login(dgiot_dlink_pb:login_request())
-    -> {ok, dgiot_dlink_pb:login_response(), grpc:metadata()}
-     | {error, term()}.
-login(Req) ->
-    login(Req, #{}, #{}).
-
--spec login(dgiot_dlink_pb:login_request(), grpc:options())
-    -> {ok, dgiot_dlink_pb:login_response(), grpc:metadata()}
-     | {error, term()}.
-login(Req, Options) ->
-    login(Req, #{}, Options).
-
--spec login(dgiot_dlink_pb:login_request(), grpc:metadata(), grpc_client:options())
-    -> {ok, dgiot_dlink_pb:login_response(), grpc:metadata()}
-     | {error, term()}.
-login(Req, Metadata, Options) ->
-    grpc_client:unary(?DEF(<<"/dgiot.Dlink/Login">>,
-                           login_request, login_response, <<"dgiot.LoginRequest">>),
-                      Req, Metadata, Options).
-
--spec logout(dgiot_dlink_pb:logout_request())
-    -> {ok, dgiot_dlink_pb:logout_response(), grpc:metadata()}
-     | {error, term()}.
-logout(Req) ->
-    logout(Req, #{}, #{}).
-
--spec logout(dgiot_dlink_pb:logout_request(), grpc:options())
-    -> {ok, dgiot_dlink_pb:logout_response(), grpc:metadata()}
-     | {error, term()}.
-logout(Req, Options) ->
-    logout(Req, #{}, Options).
-
--spec logout(dgiot_dlink_pb:logout_request(), grpc:metadata(), grpc_client:options())
-    -> {ok, dgiot_dlink_pb:logout_response(), grpc:metadata()}
-     | {error, term()}.
-logout(Req, Metadata, Options) ->
-    grpc_client:unary(?DEF(<<"/dgiot.Dlink/Logout">>,
-                           logout_request, logout_response, <<"dgiot.LogoutRequest">>),
-                      Req, Metadata, Options).
-
 -spec payload(dgiot_dlink_pb:payload_request())
     -> {ok, dgiot_dlink_pb:payload_response(), grpc:metadata()}
      | {error, term()}.
