@@ -23,5 +23,9 @@
 %%--------------------------------------------------------------------
 %% Callbacks
 
-payload(_Req = #{data := Name}, _Md) ->
-    {ok, #{payload => <<"Hi dgiot, ", Name/binary, "~">>}, _Md}.
+payload(_Req = #{data := Name, cmd := _Cmd, product := Productid}, _Md) ->
+    {ok, #{
+        topic => <<"$dgiot/thing/",Productid/binary,"/devaddr">>,
+        payload => <<"Hi dgiot, ", Name/binary, " ddd">>,
+        ack => <<"Hi dgiot, ", Name/binary, " ddd">>
+    }, _Md}.

@@ -52,9 +52,8 @@
 %% message types
 -type payload_request() ::
       #{product                 => iodata(),        % = 1
-        devaddr                 => iodata(),        % = 2
-        cmd                     := iodata(),        % = 3
-        data                    := iodata()         % = 4
+        cmd                     := iodata(),        % = 2
+        data                    := iodata()         % = 3
        }.
 
 -type payload_response() ::
@@ -90,7 +89,7 @@ encode_msg_payload_request(Msg, TrUserData) ->
     encode_msg_payload_request(Msg, <<>>, TrUserData).
 
 
-encode_msg_payload_request(#{cmd := F3, data := F4} = M,
+encode_msg_payload_request(#{cmd := F2, data := F3} = M,
                            Bin, TrUserData) ->
     B1 = case M of
              #{product := F1} ->
@@ -104,25 +103,13 @@ encode_msg_payload_request(#{cmd := F3, data := F4} = M,
                  end;
              _ -> Bin
          end,
-    B2 = case M of
-             #{devaddr := F2} ->
-                 begin
-                     TrF2 = id(F2, TrUserData),
-                     case is_empty_string(TrF2) of
-                         true -> B1;
-                         false ->
-                             e_type_string(TrF2, <<B1/binary, 18>>, TrUserData)
-                     end
-                 end;
-             _ -> B1
-         end,
-    B3 = begin
-             TrF3 = id(F3, TrUserData),
-             e_type_string(TrF3, <<B2/binary, 26>>, TrUserData)
+    B2 = begin
+             TrF2 = id(F2, TrUserData),
+             e_type_string(TrF2, <<B1/binary, 18>>, TrUserData)
          end,
     begin
-        TrF4 = id(F4, TrUserData),
-        e_type_string(TrF4, <<B3/binary, 34>>, TrUserData)
+        TrF3 = id(F3, TrUserData),
+        e_type_string(TrF3, <<B2/binary, 26>>, TrUserData)
     end.
 
 encode_msg_payload_response(Msg, TrUserData) ->
@@ -314,73 +301,53 @@ decode_msg_payload_request(Bin, TrUserData) ->
                                        0,
                                        0,
                                        id(<<>>, TrUserData),
-                                       id(<<>>, TrUserData),
                                        id('$undef', TrUserData),
                                        id('$undef', TrUserData),
                                        TrUserData).
 
 dfp_read_field_def_payload_request(<<10, Rest/binary>>,
-                                   Z1, Z2, F@_1, F@_2, F@_3, F@_4,
-                                   TrUserData) ->
+                                   Z1, Z2, F@_1, F@_2, F@_3, TrUserData) ->
     d_field_payload_request_product(Rest,
                                     Z1,
                                     Z2,
                                     F@_1,
                                     F@_2,
                                     F@_3,
-                                    F@_4,
                                     TrUserData);
 dfp_read_field_def_payload_request(<<18, Rest/binary>>,
-                                   Z1, Z2, F@_1, F@_2, F@_3, F@_4,
-                                   TrUserData) ->
-    d_field_payload_request_devaddr(Rest,
-                                    Z1,
-                                    Z2,
-                                    F@_1,
-                                    F@_2,
-                                    F@_3,
-                                    F@_4,
-                                    TrUserData);
-dfp_read_field_def_payload_request(<<26, Rest/binary>>,
-                                   Z1, Z2, F@_1, F@_2, F@_3, F@_4,
-                                   TrUserData) ->
+                                   Z1, Z2, F@_1, F@_2, F@_3, TrUserData) ->
     d_field_payload_request_cmd(Rest,
                                 Z1,
                                 Z2,
                                 F@_1,
                                 F@_2,
                                 F@_3,
-                                F@_4,
                                 TrUserData);
-dfp_read_field_def_payload_request(<<34, Rest/binary>>,
-                                   Z1, Z2, F@_1, F@_2, F@_3, F@_4,
-                                   TrUserData) ->
+dfp_read_field_def_payload_request(<<26, Rest/binary>>,
+                                   Z1, Z2, F@_1, F@_2, F@_3, TrUserData) ->
     d_field_payload_request_data(Rest,
                                  Z1,
                                  Z2,
                                  F@_1,
                                  F@_2,
                                  F@_3,
-                                 F@_4,
                                  TrUserData);
 dfp_read_field_def_payload_request(<<>>, 0, 0, F@_1,
-                                   F@_2, F@_3, F@_4, _) ->
-    #{product => F@_1, devaddr => F@_2, cmd => F@_3,
-      data => F@_4};
+                                   F@_2, F@_3, _) ->
+    #{product => F@_1, cmd => F@_2, data => F@_3};
 dfp_read_field_def_payload_request(Other, Z1, Z2, F@_1,
-                                   F@_2, F@_3, F@_4, TrUserData) ->
+                                   F@_2, F@_3, TrUserData) ->
     dg_read_field_def_payload_request(Other,
                                       Z1,
                                       Z2,
                                       F@_1,
                                       F@_2,
                                       F@_3,
-                                      F@_4,
                                       TrUserData).
 
 dg_read_field_def_payload_request(<<1:1, X:7,
                                     Rest/binary>>,
-                                  N, Acc, F@_1, F@_2, F@_3, F@_4, TrUserData)
+                                  N, Acc, F@_1, F@_2, F@_3, TrUserData)
     when N < 32 - 7 ->
     dg_read_field_def_payload_request(Rest,
                                       N + 7,
@@ -388,11 +355,10 @@ dg_read_field_def_payload_request(<<1:1, X:7,
                                       F@_1,
                                       F@_2,
                                       F@_3,
-                                      F@_4,
                                       TrUserData);
 dg_read_field_def_payload_request(<<0:1, X:7,
                                     Rest/binary>>,
-                                  N, Acc, F@_1, F@_2, F@_3, F@_4, TrUserData) ->
+                                  N, Acc, F@_1, F@_2, F@_3, TrUserData) ->
     Key = X bsl N + Acc,
     case Key of
         10 ->
@@ -402,34 +368,22 @@ dg_read_field_def_payload_request(<<0:1, X:7,
                                             F@_1,
                                             F@_2,
                                             F@_3,
-                                            F@_4,
                                             TrUserData);
         18 ->
-            d_field_payload_request_devaddr(Rest,
-                                            0,
-                                            0,
-                                            F@_1,
-                                            F@_2,
-                                            F@_3,
-                                            F@_4,
-                                            TrUserData);
-        26 ->
             d_field_payload_request_cmd(Rest,
                                         0,
                                         0,
                                         F@_1,
                                         F@_2,
                                         F@_3,
-                                        F@_4,
                                         TrUserData);
-        34 ->
+        26 ->
             d_field_payload_request_data(Rest,
                                          0,
                                          0,
                                          F@_1,
                                          F@_2,
                                          F@_3,
-                                         F@_4,
                                          TrUserData);
         _ ->
             case Key band 7 of
@@ -440,7 +394,6 @@ dg_read_field_def_payload_request(<<0:1, X:7,
                                                 F@_1,
                                                 F@_2,
                                                 F@_3,
-                                                F@_4,
                                                 TrUserData);
                 1 ->
                     skip_64_payload_request(Rest,
@@ -449,7 +402,6 @@ dg_read_field_def_payload_request(<<0:1, X:7,
                                             F@_1,
                                             F@_2,
                                             F@_3,
-                                            F@_4,
                                             TrUserData);
                 2 ->
                     skip_length_delimited_payload_request(Rest,
@@ -458,7 +410,6 @@ dg_read_field_def_payload_request(<<0:1, X:7,
                                                           F@_1,
                                                           F@_2,
                                                           F@_3,
-                                                          F@_4,
                                                           TrUserData);
                 3 ->
                     skip_group_payload_request(Rest,
@@ -467,7 +418,6 @@ dg_read_field_def_payload_request(<<0:1, X:7,
                                                F@_1,
                                                F@_2,
                                                F@_3,
-                                               F@_4,
                                                TrUserData);
                 5 ->
                     skip_32_payload_request(Rest,
@@ -476,18 +426,16 @@ dg_read_field_def_payload_request(<<0:1, X:7,
                                             F@_1,
                                             F@_2,
                                             F@_3,
-                                            F@_4,
                                             TrUserData)
             end
     end;
 dg_read_field_def_payload_request(<<>>, 0, 0, F@_1,
-                                  F@_2, F@_3, F@_4, _) ->
-    #{product => F@_1, devaddr => F@_2, cmd => F@_3,
-      data => F@_4}.
+                                  F@_2, F@_3, _) ->
+    #{product => F@_1, cmd => F@_2, data => F@_3}.
 
 d_field_payload_request_product(<<1:1, X:7,
                                   Rest/binary>>,
-                                N, Acc, F@_1, F@_2, F@_3, F@_4, TrUserData)
+                                N, Acc, F@_1, F@_2, F@_3, TrUserData)
     when N < 57 ->
     d_field_payload_request_product(Rest,
                                     N + 7,
@@ -495,11 +443,10 @@ d_field_payload_request_product(<<1:1, X:7,
                                     F@_1,
                                     F@_2,
                                     F@_3,
-                                    F@_4,
                                     TrUserData);
 d_field_payload_request_product(<<0:1, X:7,
                                   Rest/binary>>,
-                                N, Acc, _, F@_2, F@_3, F@_4, TrUserData) ->
+                                N, Acc, _, F@_2, F@_3, TrUserData) ->
     {NewFValue, RestF} = begin
                              Len = X bsl N + Acc,
                              <<Bytes:Len/binary, Rest2/binary>> = Rest,
@@ -511,40 +458,10 @@ d_field_payload_request_product(<<0:1, X:7,
                                        NewFValue,
                                        F@_2,
                                        F@_3,
-                                       F@_4,
-                                       TrUserData).
-
-d_field_payload_request_devaddr(<<1:1, X:7,
-                                  Rest/binary>>,
-                                N, Acc, F@_1, F@_2, F@_3, F@_4, TrUserData)
-    when N < 57 ->
-    d_field_payload_request_devaddr(Rest,
-                                    N + 7,
-                                    X bsl N + Acc,
-                                    F@_1,
-                                    F@_2,
-                                    F@_3,
-                                    F@_4,
-                                    TrUserData);
-d_field_payload_request_devaddr(<<0:1, X:7,
-                                  Rest/binary>>,
-                                N, Acc, F@_1, _, F@_3, F@_4, TrUserData) ->
-    {NewFValue, RestF} = begin
-                             Len = X bsl N + Acc,
-                             <<Bytes:Len/binary, Rest2/binary>> = Rest,
-                             {id(binary:copy(Bytes), TrUserData), Rest2}
-                         end,
-    dfp_read_field_def_payload_request(RestF,
-                                       0,
-                                       0,
-                                       F@_1,
-                                       NewFValue,
-                                       F@_3,
-                                       F@_4,
                                        TrUserData).
 
 d_field_payload_request_cmd(<<1:1, X:7, Rest/binary>>,
-                            N, Acc, F@_1, F@_2, F@_3, F@_4, TrUserData)
+                            N, Acc, F@_1, F@_2, F@_3, TrUserData)
     when N < 57 ->
     d_field_payload_request_cmd(Rest,
                                 N + 7,
@@ -552,10 +469,9 @@ d_field_payload_request_cmd(<<1:1, X:7, Rest/binary>>,
                                 F@_1,
                                 F@_2,
                                 F@_3,
-                                F@_4,
                                 TrUserData);
 d_field_payload_request_cmd(<<0:1, X:7, Rest/binary>>,
-                            N, Acc, F@_1, F@_2, _, F@_4, TrUserData) ->
+                            N, Acc, F@_1, _, F@_3, TrUserData) ->
     {NewFValue, RestF} = begin
                              Len = X bsl N + Acc,
                              <<Bytes:Len/binary, Rest2/binary>> = Rest,
@@ -565,13 +481,12 @@ d_field_payload_request_cmd(<<0:1, X:7, Rest/binary>>,
                                        0,
                                        0,
                                        F@_1,
-                                       F@_2,
                                        NewFValue,
-                                       F@_4,
+                                       F@_3,
                                        TrUserData).
 
 d_field_payload_request_data(<<1:1, X:7, Rest/binary>>,
-                             N, Acc, F@_1, F@_2, F@_3, F@_4, TrUserData)
+                             N, Acc, F@_1, F@_2, F@_3, TrUserData)
     when N < 57 ->
     d_field_payload_request_data(Rest,
                                  N + 7,
@@ -579,10 +494,9 @@ d_field_payload_request_data(<<1:1, X:7, Rest/binary>>,
                                  F@_1,
                                  F@_2,
                                  F@_3,
-                                 F@_4,
                                  TrUserData);
 d_field_payload_request_data(<<0:1, X:7, Rest/binary>>,
-                             N, Acc, F@_1, F@_2, F@_3, _, TrUserData) ->
+                             N, Acc, F@_1, F@_2, _, TrUserData) ->
     {NewFValue, RestF} = begin
                              Len = X bsl N + Acc,
                              <<Bytes:Len/binary, Rest2/binary>> = Rest,
@@ -593,35 +507,31 @@ d_field_payload_request_data(<<0:1, X:7, Rest/binary>>,
                                        0,
                                        F@_1,
                                        F@_2,
-                                       F@_3,
                                        NewFValue,
                                        TrUserData).
 
 skip_varint_payload_request(<<1:1, _:7, Rest/binary>>,
-                            Z1, Z2, F@_1, F@_2, F@_3, F@_4, TrUserData) ->
+                            Z1, Z2, F@_1, F@_2, F@_3, TrUserData) ->
     skip_varint_payload_request(Rest,
                                 Z1,
                                 Z2,
                                 F@_1,
                                 F@_2,
                                 F@_3,
-                                F@_4,
                                 TrUserData);
 skip_varint_payload_request(<<0:1, _:7, Rest/binary>>,
-                            Z1, Z2, F@_1, F@_2, F@_3, F@_4, TrUserData) ->
+                            Z1, Z2, F@_1, F@_2, F@_3, TrUserData) ->
     dfp_read_field_def_payload_request(Rest,
                                        Z1,
                                        Z2,
                                        F@_1,
                                        F@_2,
                                        F@_3,
-                                       F@_4,
                                        TrUserData).
 
 skip_length_delimited_payload_request(<<1:1, X:7,
                                         Rest/binary>>,
-                                      N, Acc, F@_1, F@_2, F@_3, F@_4,
-                                      TrUserData)
+                                      N, Acc, F@_1, F@_2, F@_3, TrUserData)
     when N < 57 ->
     skip_length_delimited_payload_request(Rest,
                                           N + 7,
@@ -629,12 +539,10 @@ skip_length_delimited_payload_request(<<1:1, X:7,
                                           F@_1,
                                           F@_2,
                                           F@_3,
-                                          F@_4,
                                           TrUserData);
 skip_length_delimited_payload_request(<<0:1, X:7,
                                         Rest/binary>>,
-                                      N, Acc, F@_1, F@_2, F@_3, F@_4,
-                                      TrUserData) ->
+                                      N, Acc, F@_1, F@_2, F@_3, TrUserData) ->
     Length = X bsl N + Acc,
     <<_:Length/binary, Rest2/binary>> = Rest,
     dfp_read_field_def_payload_request(Rest2,
@@ -643,11 +551,10 @@ skip_length_delimited_payload_request(<<0:1, X:7,
                                        F@_1,
                                        F@_2,
                                        F@_3,
-                                       F@_4,
                                        TrUserData).
 
 skip_group_payload_request(Bin, FNum, Z2, F@_1, F@_2,
-                           F@_3, F@_4, TrUserData) ->
+                           F@_3, TrUserData) ->
     {_, Rest} = read_group(Bin, FNum),
     dfp_read_field_def_payload_request(Rest,
                                        0,
@@ -655,29 +562,26 @@ skip_group_payload_request(Bin, FNum, Z2, F@_1, F@_2,
                                        F@_1,
                                        F@_2,
                                        F@_3,
-                                       F@_4,
                                        TrUserData).
 
 skip_32_payload_request(<<_:32, Rest/binary>>, Z1, Z2,
-                        F@_1, F@_2, F@_3, F@_4, TrUserData) ->
+                        F@_1, F@_2, F@_3, TrUserData) ->
     dfp_read_field_def_payload_request(Rest,
                                        Z1,
                                        Z2,
                                        F@_1,
                                        F@_2,
                                        F@_3,
-                                       F@_4,
                                        TrUserData).
 
 skip_64_payload_request(<<_:64, Rest/binary>>, Z1, Z2,
-                        F@_1, F@_2, F@_3, F@_4, TrUserData) ->
+                        F@_1, F@_2, F@_3, TrUserData) ->
     dfp_read_field_def_payload_request(Rest,
                                        Z1,
                                        Z2,
                                        F@_1,
                                        F@_2,
                                        F@_3,
-                                       F@_4,
                                        TrUserData).
 
 decode_msg_payload_response(Bin, TrUserData) ->
@@ -1044,19 +948,12 @@ merge_msgs(Prev, New, MsgName, Opts) ->
 merge_msg_payload_request(#{} = PMsg,
                           #{cmd := NFcmd, data := NFdata} = NMsg, _) ->
     S1 = #{cmd => NFcmd, data => NFdata},
-    S2 = case {PMsg, NMsg} of
-             {_, #{product := NFproduct}} ->
-                 S1#{product => NFproduct};
-             {#{product := PFproduct}, _} ->
-                 S1#{product => PFproduct};
-             _ -> S1
-         end,
     case {PMsg, NMsg} of
-        {_, #{devaddr := NFdevaddr}} ->
-            S2#{devaddr => NFdevaddr};
-        {#{devaddr := PFdevaddr}, _} ->
-            S2#{devaddr => PFdevaddr};
-        _ -> S2
+        {_, #{product := NFproduct}} ->
+            S1#{product => NFproduct};
+        {#{product := PFproduct}, _} ->
+            S1#{product => PFproduct};
+        _ -> S1
     end.
 
 -compile({nowarn_unused_function,merge_msg_payload_response/3}).
@@ -1097,22 +994,16 @@ verify_msg(Msg, MsgName, Opts) ->
 
 -compile({nowarn_unused_function,v_msg_payload_request/3}).
 -dialyzer({nowarn_function,v_msg_payload_request/3}).
-v_msg_payload_request(#{cmd := F3, data := F4} = M,
+v_msg_payload_request(#{cmd := F2, data := F3} = M,
                       Path, TrUserData) ->
     case M of
         #{product := F1} ->
             v_type_string(F1, [product | Path], TrUserData);
         _ -> ok
     end,
-    case M of
-        #{devaddr := F2} ->
-            v_type_string(F2, [devaddr | Path], TrUserData);
-        _ -> ok
-    end,
-    v_type_string(F3, [cmd | Path], TrUserData),
-    v_type_string(F4, [data | Path], TrUserData),
+    v_type_string(F2, [cmd | Path], TrUserData),
+    v_type_string(F3, [data | Path], TrUserData),
     lists:foreach(fun (product) -> ok;
-                      (devaddr) -> ok;
                       (cmd) -> ok;
                       (data) -> ok;
                       (OtherKey) ->
@@ -1228,11 +1119,9 @@ get_msg_defs() ->
     [{{msg, payload_request},
       [#{name => product, fnum => 1, rnum => 2,
          type => string, occurrence => optional, opts => []},
-       #{name => devaddr, fnum => 2, rnum => 3, type => string,
-         occurrence => optional, opts => []},
-       #{name => cmd, fnum => 3, rnum => 4, type => string,
+       #{name => cmd, fnum => 2, rnum => 3, type => string,
          occurrence => required, opts => []},
-       #{name => data, fnum => 4, rnum => 5, type => string,
+       #{name => data, fnum => 3, rnum => 4, type => string,
          occurrence => required, opts => []}]},
      {{msg, payload_response},
       [#{name => topic, fnum => 1, rnum => 2, type => string,
@@ -1271,11 +1160,9 @@ fetch_enum_def(EnumName) ->
 find_msg_def(payload_request) ->
     [#{name => product, fnum => 1, rnum => 2,
        type => string, occurrence => optional, opts => []},
-     #{name => devaddr, fnum => 2, rnum => 3, type => string,
-       occurrence => optional, opts => []},
-     #{name => cmd, fnum => 3, rnum => 4, type => string,
+     #{name => cmd, fnum => 2, rnum => 3, type => string,
        occurrence => required, opts => []},
-     #{name => data, fnum => 4, rnum => 5, type => string,
+     #{name => data, fnum => 3, rnum => 4, type => string,
        occurrence => required, opts => []}];
 find_msg_def(payload_response) ->
     [#{name => topic, fnum => 1, rnum => 2, type => string,

@@ -18,9 +18,8 @@ service Dlink {
 // The request message containing PayloadRequest.
 message PayloadRequest {
   string product = 1;
-  string devaddr = 2;
-  required string cmd = 3;
-  required string data = 4;
+  required string cmd = 2;
+  required string data = 3;
 }
 
 // The response message containing PayloadResponse

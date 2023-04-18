@@ -24,14 +24,10 @@
 -record(state, {
     id,
     mode = product,
-    buff_size = 1024000,
-    heartcount = 0,
     env = #{},
-    dtutype = <<>>,
-    productIds = <<>>,
-    productId = <<>>
+    devaddr = <<>>,
+    productIds = <<>>
 }).
-
 
 
 %% TCP callback
@@ -43,7 +39,6 @@ child_spec(Port, ChannleId, Mode) ->
 %% =======================
 %% {ok, State} | {stop, Reason}
 init(#tcp{state = #state{id = ChannelId} = State} = TCPState) ->
-    io:format("~s ~p ~p ~n",[?FILE, ?LINE, ChannelId]),
     case dgiot_bridge:get_products(ChannelId) of
         {ok, ?TYPE, ProductIds} ->
             lists:map(fun(ProductId) ->
@@ -55,8 +50,7 @@ init(#tcp{state = #state{id = ChannelId} = State} = TCPState) ->
             {error, not_find_channel}
     end;
 
-init(#tcp{state = State} = TCPState) ->
-    io:format("~s ~p  State ~p ~n",[?FILE, ?LINE, State]),
+init(TCPState) ->
     {ok, TCPState}.
 
 handle_info({deliver, _, Msg}, TCPState) ->
@@ -132,18 +126,31 @@ do_cmd(ProductId, Cmd, Data, #tcp{state = #state{id = ChannelId, mode = product}
             {noreply, TCPState}
     end;
 
+%%{ok,#{ack => <<"Hi dgiot, Xiao Ming ddd">>,
+%%payload => <<"Hi dgiot, Xiao Ming ddd">>,
+%%topic => <<"$dgiot/thing/dsdfsfsdfe/devaddr">>},
+%%[{<<"grpc-status">>,<<"0">>}]}
 do_cmd(ProductId, Cmd, Data, #tcp{state = #state{id = ChannelId}} = TCPState) ->
     case dgiot_dlink_client:payload(#{data => Data, cmd => Cmd, productid => ProductId}, #{channel => ChannelId}) of
-        {ok, NewState} ->
-            {noreply, TCPState#tcp{state = NewState}};
-        {reply, ProductId, Payload, NewState} ->
-            case dgiot_tcp_server:send(TCPState, Payload) of
-                ok ->
-                    ok;
-                {error, Reason} ->
-                    dgiot_bridge:send_log(ChannelId, ProductId, "Send Fail, ~p, CMD:~p", [Cmd, Reason])
+        {ok, #{ack := Ack, topic := Topic, payload := Payload},_} ->
+            case Ack of
+                <<>> ->
+                    pass;
+                Ack ->
+                    case dgiot_tcp_server:send(TCPState, Ack) of
+                        ok ->
+                            ok;
+                        {error, Reason} ->
+                            dgiot_bridge:send_log(ChannelId, ProductId, "Send Fail, ~p, CMD:~p", [Cmd, Reason])
+                    end
             end,
-            {noreply, TCPState#tcp{state = NewState}};
+            case Topic of
+                <<>> ->
+                    pass;
+                Topic ->
+                    dgiot_mqtt:publish(ProductId, Topic, Payload)
+            end,
+            {noreply, TCPState};
         _ ->
             {noreply, TCPState}
     end.
