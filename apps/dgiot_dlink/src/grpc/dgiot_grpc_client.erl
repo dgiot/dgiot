@@ -16,24 +16,22 @@
 
 -module(dgiot_grpc_client).
 
--export([login/1, login/2, logout/1, send/2]).
+-export([create_channel_pool/1, create_channel_pool/3, stop_channel_pool/1, send/2]).
 
-login(ClinetId) ->
-    login(ClinetId, "http://127.0.0.1:30051").
+create_channel_pool(ClinetId) ->
+    create_channel_pool(ClinetId, "http://127.0.0.1:30051", 1).
 
-login(ClinetId, SvrAddr) ->
-    {ok, _} = grpc_client_sup:create_channel_pool(ClinetId, SvrAddr, #{}).
+create_channel_pool(ClinetId, SvrAddr, PoolSize) ->
+    {ok, _} = grpc_client_sup:create_channel_pool(ClinetId, SvrAddr, #{pool_size => PoolSize}).
 
-logout(ClinetId) ->
+stop_channel_pool(ClinetId) ->
     _ = grpc_client_sup:stop_channel_pool(ClinetId).
 
-send(ClinetId, Map) when is_map(Map) ->
-    case dgiot_dlink_client:payload(#{name => base64:encode(jsx:encode(Map))}, #{channel => ClinetId}) of
-        {ok, #{message := ReMessage}, _} ->
+send(ClinetId, Request) ->
+    case dgiot_dlink_client:payload(Request, #{channel => ClinetId}) of
+        {ok, #{ack := ReMessage}, _} ->
+
             {ok, ReMessage};
         _ ->
-            error
-    end;
-
-send(_, _) ->
-    pass.
+            #{}
+    end.

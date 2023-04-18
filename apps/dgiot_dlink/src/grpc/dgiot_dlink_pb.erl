@@ -16,9 +16,6 @@
 -export([find_msg_def/1, fetch_msg_def/1]).
 -export([find_enum_def/1, fetch_enum_def/1]).
 -export([enum_symbol_by_value/2, enum_value_by_symbol/2]).
--export(['enum_symbol_by_value_login_response.Ack'/1, 'enum_value_by_symbol_login_response.Ack'/1]).
--export(['enum_symbol_by_value_logout_response.Ack'/1, 'enum_value_by_symbol_logout_response.Ack'/1]).
--export(['enum_symbol_by_value_payload_response.Ack'/1, 'enum_value_by_symbol_payload_response.Ack'/1]).
 -export([get_service_names/0]).
 -export([get_service_def/1]).
 -export([get_rpc_names/1]).
@@ -49,57 +46,30 @@
 
 
 %% enumerated types
--type 'login_response.Ack'() :: 'NOACK' | 'ACK'.
--type 'logout_response.Ack'() :: 'NOACK' | 'ACK'.
--type 'payload_response.Ack'() :: 'NOACK' | 'ACK'.
--export_type(['login_response.Ack'/0, 'logout_response.Ack'/0, 'payload_response.Ack'/0]).
+
+-export_type([]).
 
 %% message types
--type login_request() ::
-      #{data                    => iodata()         % = 2
-       }.
-
--type login_response() ::
-      #{status                  => 'NOACK' | 'ACK' | integer(), % = 1, enum login_response.Ack
-        ack                     => iodata(),        % = 2
-        productid               => iodata(),        % = 3
-        devaddr                 => iodata(),        % = 4
-        payload                 => iodata()         % = 5
-       }.
-
--type logout_request() ::
-      #{productid               => iodata(),        % = 1
-        devaddr                 => iodata(),        % = 2
-        data                    => iodata()         % = 3
-       }.
-
--type logout_response() ::
-      #{status                  => 'NOACK' | 'ACK' | integer(), % = 1, enum logout_response.Ack
-        ack                     => iodata(),        % = 2
-        topic                   => iodata(),        % = 3
-        payload                 => iodata()         % = 4
-       }.
-
 -type payload_request() ::
-      #{productid               => iodata(),        % = 1
+      #{product                 => iodata(),        % = 1
         devaddr                 => iodata(),        % = 2
-        data                    => iodata()         % = 3
+        cmd                     := iodata(),        % = 3
+        data                    := iodata()         % = 4
        }.
 
 -type payload_response() ::
-      #{status                  => 'NOACK' | 'ACK' | integer(), % = 1, enum payload_response.Ack
-        ack                     => iodata(),        % = 2
-        topic                   => iodata(),        % = 3
-        payload                 => iodata()         % = 4
+      #{topic                   => iodata(),        % = 1
+        payload                 => iodata(),        % = 2
+        ack                     => iodata()         % = 3
        }.
 
--export_type(['login_request'/0, 'login_response'/0, 'logout_request'/0, 'logout_response'/0, 'payload_request'/0, 'payload_response'/0]).
+-export_type(['payload_request'/0, 'payload_response'/0]).
 
--spec encode_msg(login_request() | login_response() | logout_request() | logout_response() | payload_request() | payload_response(), atom()) -> binary().
+-spec encode_msg(payload_request() | payload_response(), atom()) -> binary().
 encode_msg(Msg, MsgName) when is_atom(MsgName) ->
     encode_msg(Msg, MsgName, []).
 
--spec encode_msg(login_request() | login_response() | logout_request() | logout_response() | payload_request() | payload_response(), atom(), list()) -> binary().
+-spec encode_msg(payload_request() | payload_response(), atom(), list()) -> binary().
 encode_msg(Msg, MsgName, Opts) ->
     case proplists:get_bool(verify, Opts) of
         true -> verify_msg(Msg, MsgName, Opts);
@@ -107,18 +77,6 @@ encode_msg(Msg, MsgName, Opts) ->
     end,
     TrUserData = proplists:get_value(user_data, Opts),
     case MsgName of
-        login_request ->
-            encode_msg_login_request(id(Msg, TrUserData),
-                                     TrUserData);
-        login_response ->
-            encode_msg_login_response(id(Msg, TrUserData),
-                                      TrUserData);
-        logout_request ->
-            encode_msg_logout_request(id(Msg, TrUserData),
-                                      TrUserData);
-        logout_response ->
-            encode_msg_logout_response(id(Msg, TrUserData),
-                                       TrUserData);
         payload_request ->
             encode_msg_payload_request(id(Msg, TrUserData),
                                        TrUserData);
@@ -128,195 +86,14 @@ encode_msg(Msg, MsgName, Opts) ->
     end.
 
 
-encode_msg_login_request(Msg, TrUserData) ->
-    encode_msg_login_request(Msg, <<>>, TrUserData).
-
-
-encode_msg_login_request(#{} = M, Bin, TrUserData) ->
-    case M of
-        #{data := F1} ->
-            begin
-                TrF1 = id(F1, TrUserData),
-                case is_empty_string(TrF1) of
-                    true -> Bin;
-                    false ->
-                        e_type_string(TrF1, <<Bin/binary, 18>>, TrUserData)
-                end
-            end;
-        _ -> Bin
-    end.
-
-encode_msg_login_response(Msg, TrUserData) ->
-    encode_msg_login_response(Msg, <<>>, TrUserData).
-
-
-encode_msg_login_response(#{} = M, Bin, TrUserData) ->
-    B1 = case M of
-             #{status := F1} ->
-                 begin
-                     TrF1 = id(F1, TrUserData),
-                     if TrF1 =:= 'NOACK'; TrF1 =:= 0 -> Bin;
-                        true ->
-                            'e_enum_login_response.Ack'(TrF1,
-                                                        <<Bin/binary, 8>>,
-                                                        TrUserData)
-                     end
-                 end;
-             _ -> Bin
-         end,
-    B2 = case M of
-             #{ack := F2} ->
-                 begin
-                     TrF2 = id(F2, TrUserData),
-                     case is_empty_string(TrF2) of
-                         true -> B1;
-                         false ->
-                             e_type_string(TrF2, <<B1/binary, 18>>, TrUserData)
-                     end
-                 end;
-             _ -> B1
-         end,
-    B3 = case M of
-             #{productid := F3} ->
-                 begin
-                     TrF3 = id(F3, TrUserData),
-                     case is_empty_string(TrF3) of
-                         true -> B2;
-                         false ->
-                             e_type_string(TrF3, <<B2/binary, 26>>, TrUserData)
-                     end
-                 end;
-             _ -> B2
-         end,
-    B4 = case M of
-             #{devaddr := F4} ->
-                 begin
-                     TrF4 = id(F4, TrUserData),
-                     case is_empty_string(TrF4) of
-                         true -> B3;
-                         false ->
-                             e_type_string(TrF4, <<B3/binary, 34>>, TrUserData)
-                     end
-                 end;
-             _ -> B3
-         end,
-    case M of
-        #{payload := F5} ->
-            begin
-                TrF5 = id(F5, TrUserData),
-                case is_empty_string(TrF5) of
-                    true -> B4;
-                    false ->
-                        e_type_string(TrF5, <<B4/binary, 42>>, TrUserData)
-                end
-            end;
-        _ -> B4
-    end.
-
-encode_msg_logout_request(Msg, TrUserData) ->
-    encode_msg_logout_request(Msg, <<>>, TrUserData).
-
-
-encode_msg_logout_request(#{} = M, Bin, TrUserData) ->
-    B1 = case M of
-             #{productid := F1} ->
-                 begin
-                     TrF1 = id(F1, TrUserData),
-                     case is_empty_string(TrF1) of
-                         true -> Bin;
-                         false ->
-                             e_type_string(TrF1, <<Bin/binary, 10>>, TrUserData)
-                     end
-                 end;
-             _ -> Bin
-         end,
-    B2 = case M of
-             #{devaddr := F2} ->
-                 begin
-                     TrF2 = id(F2, TrUserData),
-                     case is_empty_string(TrF2) of
-                         true -> B1;
-                         false ->
-                             e_type_string(TrF2, <<B1/binary, 18>>, TrUserData)
-                     end
-                 end;
-             _ -> B1
-         end,
-    case M of
-        #{data := F3} ->
-            begin
-                TrF3 = id(F3, TrUserData),
-                case is_empty_string(TrF3) of
-                    true -> B2;
-                    false ->
-                        e_type_string(TrF3, <<B2/binary, 26>>, TrUserData)
-                end
-            end;
-        _ -> B2
-    end.
-
-encode_msg_logout_response(Msg, TrUserData) ->
-    encode_msg_logout_response(Msg, <<>>, TrUserData).
-
-
-encode_msg_logout_response(#{} = M, Bin, TrUserData) ->
-    B1 = case M of
-             #{status := F1} ->
-                 begin
-                     TrF1 = id(F1, TrUserData),
-                     if TrF1 =:= 'NOACK'; TrF1 =:= 0 -> Bin;
-                        true ->
-                            'e_enum_logout_response.Ack'(TrF1,
-                                                         <<Bin/binary, 8>>,
-                                                         TrUserData)
-                     end
-                 end;
-             _ -> Bin
-         end,
-    B2 = case M of
-             #{ack := F2} ->
-                 begin
-                     TrF2 = id(F2, TrUserData),
-                     case is_empty_string(TrF2) of
-                         true -> B1;
-                         false ->
-                             e_type_string(TrF2, <<B1/binary, 18>>, TrUserData)
-                     end
-                 end;
-             _ -> B1
-         end,
-    B3 = case M of
-             #{topic := F3} ->
-                 begin
-                     TrF3 = id(F3, TrUserData),
-                     case is_empty_string(TrF3) of
-                         true -> B2;
-                         false ->
-                             e_type_string(TrF3, <<B2/binary, 26>>, TrUserData)
-                     end
-                 end;
-             _ -> B2
-         end,
-    case M of
-        #{payload := F4} ->
-            begin
-                TrF4 = id(F4, TrUserData),
-                case is_empty_string(TrF4) of
-                    true -> B3;
-                    false ->
-                        e_type_string(TrF4, <<B3/binary, 34>>, TrUserData)
-                end
-            end;
-        _ -> B3
-    end.
-
 encode_msg_payload_request(Msg, TrUserData) ->
     encode_msg_payload_request(Msg, <<>>, TrUserData).
 
 
-encode_msg_payload_request(#{} = M, Bin, TrUserData) ->
+encode_msg_payload_request(#{cmd := F3, data := F4} = M,
+                           Bin, TrUserData) ->
     B1 = case M of
-             #{productid := F1} ->
+             #{product := F1} ->
                  begin
                      TrF1 = id(F1, TrUserData),
                      case is_empty_string(TrF1) of
@@ -339,17 +116,13 @@ encode_msg_payload_request(#{} = M, Bin, TrUserData) ->
                  end;
              _ -> B1
          end,
-    case M of
-        #{data := F3} ->
-            begin
-                TrF3 = id(F3, TrUserData),
-                case is_empty_string(TrF3) of
-                    true -> B2;
-                    false ->
-                        e_type_string(TrF3, <<B2/binary, 26>>, TrUserData)
-                end
-            end;
-        _ -> B2
+    B3 = begin
+             TrF3 = id(F3, TrUserData),
+             e_type_string(TrF3, <<B2/binary, 26>>, TrUserData)
+         end,
+    begin
+        TrF4 = id(F4, TrUserData),
+        e_type_string(TrF4, <<B3/binary, 34>>, TrUserData)
     end.
 
 encode_msg_payload_response(Msg, TrUserData) ->
@@ -358,20 +131,19 @@ encode_msg_payload_response(Msg, TrUserData) ->
 
 encode_msg_payload_response(#{} = M, Bin, TrUserData) ->
     B1 = case M of
-             #{status := F1} ->
+             #{topic := F1} ->
                  begin
                      TrF1 = id(F1, TrUserData),
-                     if TrF1 =:= 'NOACK'; TrF1 =:= 0 -> Bin;
-                        true ->
-                            'e_enum_payload_response.Ack'(TrF1,
-                                                          <<Bin/binary, 8>>,
-                                                          TrUserData)
+                     case is_empty_string(TrF1) of
+                         true -> Bin;
+                         false ->
+                             e_type_string(TrF1, <<Bin/binary, 10>>, TrUserData)
                      end
                  end;
              _ -> Bin
          end,
     B2 = case M of
-             #{ack := F2} ->
+             #{payload := F2} ->
                  begin
                      TrF2 = id(F2, TrUserData),
                      case is_empty_string(TrF2) of
@@ -382,55 +154,18 @@ encode_msg_payload_response(#{} = M, Bin, TrUserData) ->
                  end;
              _ -> B1
          end,
-    B3 = case M of
-             #{topic := F3} ->
-                 begin
-                     TrF3 = id(F3, TrUserData),
-                     case is_empty_string(TrF3) of
-                         true -> B2;
-                         false ->
-                             e_type_string(TrF3, <<B2/binary, 26>>, TrUserData)
-                     end
-                 end;
-             _ -> B2
-         end,
     case M of
-        #{payload := F4} ->
+        #{ack := F3} ->
             begin
-                TrF4 = id(F4, TrUserData),
-                case is_empty_string(TrF4) of
-                    true -> B3;
+                TrF3 = id(F3, TrUserData),
+                case is_empty_string(TrF3) of
+                    true -> B2;
                     false ->
-                        e_type_string(TrF4, <<B3/binary, 34>>, TrUserData)
+                        e_type_string(TrF3, <<B2/binary, 26>>, TrUserData)
                 end
             end;
-        _ -> B3
+        _ -> B2
     end.
-
-'e_enum_login_response.Ack'('NOACK', Bin,
-                            _TrUserData) ->
-    <<Bin/binary, 0>>;
-'e_enum_login_response.Ack'('ACK', Bin, _TrUserData) ->
-    <<Bin/binary, 1>>;
-'e_enum_login_response.Ack'(V, Bin, _TrUserData) ->
-    e_varint(V, Bin).
-
-'e_enum_logout_response.Ack'('NOACK', Bin,
-                             _TrUserData) ->
-    <<Bin/binary, 0>>;
-'e_enum_logout_response.Ack'('ACK', Bin, _TrUserData) ->
-    <<Bin/binary, 1>>;
-'e_enum_logout_response.Ack'(V, Bin, _TrUserData) ->
-    e_varint(V, Bin).
-
-'e_enum_payload_response.Ack'('NOACK', Bin,
-                              _TrUserData) ->
-    <<Bin/binary, 0>>;
-'e_enum_payload_response.Ack'('ACK', Bin,
-                              _TrUserData) ->
-    <<Bin/binary, 1>>;
-'e_enum_payload_response.Ack'(V, Bin, _TrUserData) ->
-    e_varint(V, Bin).
 
 -compile({nowarn_unused_function,e_type_sint/3}).
 e_type_sint(Value, Bin, _TrUserData) when Value >= 0 ->
@@ -565,18 +300,6 @@ decode_msg_1_catch(Bin, MsgName, TrUserData) ->
     end.
 -endif.
 
-decode_msg_2_doit(login_request, Bin, TrUserData) ->
-    id(decode_msg_login_request(Bin, TrUserData),
-       TrUserData);
-decode_msg_2_doit(login_response, Bin, TrUserData) ->
-    id(decode_msg_login_response(Bin, TrUserData),
-       TrUserData);
-decode_msg_2_doit(logout_request, Bin, TrUserData) ->
-    id(decode_msg_logout_request(Bin, TrUserData),
-       TrUserData);
-decode_msg_2_doit(logout_response, Bin, TrUserData) ->
-    id(decode_msg_logout_response(Bin, TrUserData),
-       TrUserData);
 decode_msg_2_doit(payload_request, Bin, TrUserData) ->
     id(decode_msg_payload_request(Bin, TrUserData),
        TrUserData);
@@ -586,1337 +309,78 @@ decode_msg_2_doit(payload_response, Bin, TrUserData) ->
 
 
 
-decode_msg_login_request(Bin, TrUserData) ->
-    dfp_read_field_def_login_request(Bin,
-                                     0,
-                                     0,
-                                     id(<<>>, TrUserData),
-                                     TrUserData).
-
-dfp_read_field_def_login_request(<<18, Rest/binary>>,
-                                 Z1, Z2, F@_1, TrUserData) ->
-    d_field_login_request_data(Rest,
-                               Z1,
-                               Z2,
-                               F@_1,
-                               TrUserData);
-dfp_read_field_def_login_request(<<>>, 0, 0, F@_1, _) ->
-    #{data => F@_1};
-dfp_read_field_def_login_request(Other, Z1, Z2, F@_1,
-                                 TrUserData) ->
-    dg_read_field_def_login_request(Other,
-                                    Z1,
-                                    Z2,
-                                    F@_1,
-                                    TrUserData).
-
-dg_read_field_def_login_request(<<1:1, X:7,
-                                  Rest/binary>>,
-                                N, Acc, F@_1, TrUserData)
-    when N < 32 - 7 ->
-    dg_read_field_def_login_request(Rest,
-                                    N + 7,
-                                    X bsl N + Acc,
-                                    F@_1,
-                                    TrUserData);
-dg_read_field_def_login_request(<<0:1, X:7,
-                                  Rest/binary>>,
-                                N, Acc, F@_1, TrUserData) ->
-    Key = X bsl N + Acc,
-    case Key of
-        18 ->
-            d_field_login_request_data(Rest,
-                                       0,
-                                       0,
-                                       F@_1,
-                                       TrUserData);
-        _ ->
-            case Key band 7 of
-                0 ->
-                    skip_varint_login_request(Rest, 0, 0, F@_1, TrUserData);
-                1 ->
-                    skip_64_login_request(Rest, 0, 0, F@_1, TrUserData);
-                2 ->
-                    skip_length_delimited_login_request(Rest,
-                                                        0,
-                                                        0,
-                                                        F@_1,
-                                                        TrUserData);
-                3 ->
-                    skip_group_login_request(Rest,
-                                             Key bsr 3,
-                                             0,
-                                             F@_1,
-                                             TrUserData);
-                5 -> skip_32_login_request(Rest, 0, 0, F@_1, TrUserData)
-            end
-    end;
-dg_read_field_def_login_request(<<>>, 0, 0, F@_1, _) ->
-    #{data => F@_1}.
-
-d_field_login_request_data(<<1:1, X:7, Rest/binary>>, N,
-                           Acc, F@_1, TrUserData)
-    when N < 57 ->
-    d_field_login_request_data(Rest,
-                               N + 7,
-                               X bsl N + Acc,
-                               F@_1,
-                               TrUserData);
-d_field_login_request_data(<<0:1, X:7, Rest/binary>>, N,
-                           Acc, _, TrUserData) ->
-    {NewFValue, RestF} = begin
-                             Len = X bsl N + Acc,
-                             <<Bytes:Len/binary, Rest2/binary>> = Rest,
-                             {id(binary:copy(Bytes), TrUserData), Rest2}
-                         end,
-    dfp_read_field_def_login_request(RestF,
-                                     0,
-                                     0,
-                                     NewFValue,
-                                     TrUserData).
-
-skip_varint_login_request(<<1:1, _:7, Rest/binary>>, Z1,
-                          Z2, F@_1, TrUserData) ->
-    skip_varint_login_request(Rest,
-                              Z1,
-                              Z2,
-                              F@_1,
-                              TrUserData);
-skip_varint_login_request(<<0:1, _:7, Rest/binary>>, Z1,
-                          Z2, F@_1, TrUserData) ->
-    dfp_read_field_def_login_request(Rest,
-                                     Z1,
-                                     Z2,
-                                     F@_1,
-                                     TrUserData).
-
-skip_length_delimited_login_request(<<1:1, X:7,
-                                      Rest/binary>>,
-                                    N, Acc, F@_1, TrUserData)
-    when N < 57 ->
-    skip_length_delimited_login_request(Rest,
-                                        N + 7,
-                                        X bsl N + Acc,
-                                        F@_1,
-                                        TrUserData);
-skip_length_delimited_login_request(<<0:1, X:7,
-                                      Rest/binary>>,
-                                    N, Acc, F@_1, TrUserData) ->
-    Length = X bsl N + Acc,
-    <<_:Length/binary, Rest2/binary>> = Rest,
-    dfp_read_field_def_login_request(Rest2,
-                                     0,
-                                     0,
-                                     F@_1,
-                                     TrUserData).
-
-skip_group_login_request(Bin, FNum, Z2, F@_1,
-                         TrUserData) ->
-    {_, Rest} = read_group(Bin, FNum),
-    dfp_read_field_def_login_request(Rest,
-                                     0,
-                                     Z2,
-                                     F@_1,
-                                     TrUserData).
-
-skip_32_login_request(<<_:32, Rest/binary>>, Z1, Z2,
-                      F@_1, TrUserData) ->
-    dfp_read_field_def_login_request(Rest,
-                                     Z1,
-                                     Z2,
-                                     F@_1,
-                                     TrUserData).
-
-skip_64_login_request(<<_:64, Rest/binary>>, Z1, Z2,
-                      F@_1, TrUserData) ->
-    dfp_read_field_def_login_request(Rest,
-                                     Z1,
-                                     Z2,
-                                     F@_1,
-                                     TrUserData).
-
-decode_msg_login_response(Bin, TrUserData) ->
-    dfp_read_field_def_login_response(Bin,
-                                      0,
-                                      0,
-                                      id('NOACK', TrUserData),
-                                      id(<<>>, TrUserData),
-                                      id(<<>>, TrUserData),
-                                      id(<<>>, TrUserData),
-                                      id(<<>>, TrUserData),
-                                      TrUserData).
-
-dfp_read_field_def_login_response(<<8, Rest/binary>>,
-                                  Z1, Z2, F@_1, F@_2, F@_3, F@_4, F@_5,
-                                  TrUserData) ->
-    d_field_login_response_status(Rest,
-                                  Z1,
-                                  Z2,
-                                  F@_1,
-                                  F@_2,
-                                  F@_3,
-                                  F@_4,
-                                  F@_5,
-                                  TrUserData);
-dfp_read_field_def_login_response(<<18, Rest/binary>>,
-                                  Z1, Z2, F@_1, F@_2, F@_3, F@_4, F@_5,
-                                  TrUserData) ->
-    d_field_login_response_ack(Rest,
-                               Z1,
-                               Z2,
-                               F@_1,
-                               F@_2,
-                               F@_3,
-                               F@_4,
-                               F@_5,
-                               TrUserData);
-dfp_read_field_def_login_response(<<26, Rest/binary>>,
-                                  Z1, Z2, F@_1, F@_2, F@_3, F@_4, F@_5,
-                                  TrUserData) ->
-    d_field_login_response_productid(Rest,
-                                     Z1,
-                                     Z2,
-                                     F@_1,
-                                     F@_2,
-                                     F@_3,
-                                     F@_4,
-                                     F@_5,
-                                     TrUserData);
-dfp_read_field_def_login_response(<<34, Rest/binary>>,
-                                  Z1, Z2, F@_1, F@_2, F@_3, F@_4, F@_5,
-                                  TrUserData) ->
-    d_field_login_response_devaddr(Rest,
-                                   Z1,
-                                   Z2,
-                                   F@_1,
-                                   F@_2,
-                                   F@_3,
-                                   F@_4,
-                                   F@_5,
-                                   TrUserData);
-dfp_read_field_def_login_response(<<42, Rest/binary>>,
-                                  Z1, Z2, F@_1, F@_2, F@_3, F@_4, F@_5,
-                                  TrUserData) ->
-    d_field_login_response_payload(Rest,
-                                   Z1,
-                                   Z2,
-                                   F@_1,
-                                   F@_2,
-                                   F@_3,
-                                   F@_4,
-                                   F@_5,
-                                   TrUserData);
-dfp_read_field_def_login_response(<<>>, 0, 0, F@_1,
-                                  F@_2, F@_3, F@_4, F@_5, _) ->
-    #{status => F@_1, ack => F@_2, productid => F@_3,
-      devaddr => F@_4, payload => F@_5};
-dfp_read_field_def_login_response(Other, Z1, Z2, F@_1,
-                                  F@_2, F@_3, F@_4, F@_5, TrUserData) ->
-    dg_read_field_def_login_response(Other,
-                                     Z1,
-                                     Z2,
-                                     F@_1,
-                                     F@_2,
-                                     F@_3,
-                                     F@_4,
-                                     F@_5,
-                                     TrUserData).
-
-dg_read_field_def_login_response(<<1:1, X:7,
-                                   Rest/binary>>,
-                                 N, Acc, F@_1, F@_2, F@_3, F@_4, F@_5,
-                                 TrUserData)
-    when N < 32 - 7 ->
-    dg_read_field_def_login_response(Rest,
-                                     N + 7,
-                                     X bsl N + Acc,
-                                     F@_1,
-                                     F@_2,
-                                     F@_3,
-                                     F@_4,
-                                     F@_5,
-                                     TrUserData);
-dg_read_field_def_login_response(<<0:1, X:7,
-                                   Rest/binary>>,
-                                 N, Acc, F@_1, F@_2, F@_3, F@_4, F@_5,
-                                 TrUserData) ->
-    Key = X bsl N + Acc,
-    case Key of
-        8 ->
-            d_field_login_response_status(Rest,
-                                          0,
-                                          0,
-                                          F@_1,
-                                          F@_2,
-                                          F@_3,
-                                          F@_4,
-                                          F@_5,
-                                          TrUserData);
-        18 ->
-            d_field_login_response_ack(Rest,
-                                       0,
-                                       0,
-                                       F@_1,
-                                       F@_2,
-                                       F@_3,
-                                       F@_4,
-                                       F@_5,
-                                       TrUserData);
-        26 ->
-            d_field_login_response_productid(Rest,
-                                             0,
-                                             0,
-                                             F@_1,
-                                             F@_2,
-                                             F@_3,
-                                             F@_4,
-                                             F@_5,
-                                             TrUserData);
-        34 ->
-            d_field_login_response_devaddr(Rest,
-                                           0,
-                                           0,
-                                           F@_1,
-                                           F@_2,
-                                           F@_3,
-                                           F@_4,
-                                           F@_5,
-                                           TrUserData);
-        42 ->
-            d_field_login_response_payload(Rest,
-                                           0,
-                                           0,
-                                           F@_1,
-                                           F@_2,
-                                           F@_3,
-                                           F@_4,
-                                           F@_5,
-                                           TrUserData);
-        _ ->
-            case Key band 7 of
-                0 ->
-                    skip_varint_login_response(Rest,
-                                               0,
-                                               0,
-                                               F@_1,
-                                               F@_2,
-                                               F@_3,
-                                               F@_4,
-                                               F@_5,
-                                               TrUserData);
-                1 ->
-                    skip_64_login_response(Rest,
-                                           0,
-                                           0,
-                                           F@_1,
-                                           F@_2,
-                                           F@_3,
-                                           F@_4,
-                                           F@_5,
-                                           TrUserData);
-                2 ->
-                    skip_length_delimited_login_response(Rest,
-                                                         0,
-                                                         0,
-                                                         F@_1,
-                                                         F@_2,
-                                                         F@_3,
-                                                         F@_4,
-                                                         F@_5,
-                                                         TrUserData);
-                3 ->
-                    skip_group_login_response(Rest,
-                                              Key bsr 3,
-                                              0,
-                                              F@_1,
-                                              F@_2,
-                                              F@_3,
-                                              F@_4,
-                                              F@_5,
-                                              TrUserData);
-                5 ->
-                    skip_32_login_response(Rest,
-                                           0,
-                                           0,
-                                           F@_1,
-                                           F@_2,
-                                           F@_3,
-                                           F@_4,
-                                           F@_5,
-                                           TrUserData)
-            end
-    end;
-dg_read_field_def_login_response(<<>>, 0, 0, F@_1, F@_2,
-                                 F@_3, F@_4, F@_5, _) ->
-    #{status => F@_1, ack => F@_2, productid => F@_3,
-      devaddr => F@_4, payload => F@_5}.
-
-d_field_login_response_status(<<1:1, X:7, Rest/binary>>,
-                              N, Acc, F@_1, F@_2, F@_3, F@_4, F@_5, TrUserData)
-    when N < 57 ->
-    d_field_login_response_status(Rest,
-                                  N + 7,
-                                  X bsl N + Acc,
-                                  F@_1,
-                                  F@_2,
-                                  F@_3,
-                                  F@_4,
-                                  F@_5,
-                                  TrUserData);
-d_field_login_response_status(<<0:1, X:7, Rest/binary>>,
-                              N, Acc, _, F@_2, F@_3, F@_4, F@_5, TrUserData) ->
-    {NewFValue, RestF} =
-        {id('d_enum_login_response.Ack'(begin
-                                            <<Res:32/signed-native>> = <<(X bsl
-                                                                              N
-                                                                              +
-                                                                              Acc):32/unsigned-native>>,
-                                            id(Res, TrUserData)
-                                        end),
-            TrUserData),
-         Rest},
-    dfp_read_field_def_login_response(RestF,
-                                      0,
-                                      0,
-                                      NewFValue,
-                                      F@_2,
-                                      F@_3,
-                                      F@_4,
-                                      F@_5,
-                                      TrUserData).
-
-d_field_login_response_ack(<<1:1, X:7, Rest/binary>>, N,
-                           Acc, F@_1, F@_2, F@_3, F@_4, F@_5, TrUserData)
-    when N < 57 ->
-    d_field_login_response_ack(Rest,
-                               N + 7,
-                               X bsl N + Acc,
-                               F@_1,
-                               F@_2,
-                               F@_3,
-                               F@_4,
-                               F@_5,
-                               TrUserData);
-d_field_login_response_ack(<<0:1, X:7, Rest/binary>>, N,
-                           Acc, F@_1, _, F@_3, F@_4, F@_5, TrUserData) ->
-    {NewFValue, RestF} = begin
-                             Len = X bsl N + Acc,
-                             <<Bytes:Len/binary, Rest2/binary>> = Rest,
-                             {id(binary:copy(Bytes), TrUserData), Rest2}
-                         end,
-    dfp_read_field_def_login_response(RestF,
-                                      0,
-                                      0,
-                                      F@_1,
-                                      NewFValue,
-                                      F@_3,
-                                      F@_4,
-                                      F@_5,
-                                      TrUserData).
-
-d_field_login_response_productid(<<1:1, X:7,
-                                   Rest/binary>>,
-                                 N, Acc, F@_1, F@_2, F@_3, F@_4, F@_5,
-                                 TrUserData)
-    when N < 57 ->
-    d_field_login_response_productid(Rest,
-                                     N + 7,
-                                     X bsl N + Acc,
-                                     F@_1,
-                                     F@_2,
-                                     F@_3,
-                                     F@_4,
-                                     F@_5,
-                                     TrUserData);
-d_field_login_response_productid(<<0:1, X:7,
-                                   Rest/binary>>,
-                                 N, Acc, F@_1, F@_2, _, F@_4, F@_5,
-                                 TrUserData) ->
-    {NewFValue, RestF} = begin
-                             Len = X bsl N + Acc,
-                             <<Bytes:Len/binary, Rest2/binary>> = Rest,
-                             {id(binary:copy(Bytes), TrUserData), Rest2}
-                         end,
-    dfp_read_field_def_login_response(RestF,
-                                      0,
-                                      0,
-                                      F@_1,
-                                      F@_2,
-                                      NewFValue,
-                                      F@_4,
-                                      F@_5,
-                                      TrUserData).
-
-d_field_login_response_devaddr(<<1:1, X:7,
-                                 Rest/binary>>,
-                               N, Acc, F@_1, F@_2, F@_3, F@_4, F@_5, TrUserData)
-    when N < 57 ->
-    d_field_login_response_devaddr(Rest,
-                                   N + 7,
-                                   X bsl N + Acc,
-                                   F@_1,
-                                   F@_2,
-                                   F@_3,
-                                   F@_4,
-                                   F@_5,
-                                   TrUserData);
-d_field_login_response_devaddr(<<0:1, X:7,
-                                 Rest/binary>>,
-                               N, Acc, F@_1, F@_2, F@_3, _, F@_5, TrUserData) ->
-    {NewFValue, RestF} = begin
-                             Len = X bsl N + Acc,
-                             <<Bytes:Len/binary, Rest2/binary>> = Rest,
-                             {id(binary:copy(Bytes), TrUserData), Rest2}
-                         end,
-    dfp_read_field_def_login_response(RestF,
-                                      0,
-                                      0,
-                                      F@_1,
-                                      F@_2,
-                                      F@_3,
-                                      NewFValue,
-                                      F@_5,
-                                      TrUserData).
-
-d_field_login_response_payload(<<1:1, X:7,
-                                 Rest/binary>>,
-                               N, Acc, F@_1, F@_2, F@_3, F@_4, F@_5, TrUserData)
-    when N < 57 ->
-    d_field_login_response_payload(Rest,
-                                   N + 7,
-                                   X bsl N + Acc,
-                                   F@_1,
-                                   F@_2,
-                                   F@_3,
-                                   F@_4,
-                                   F@_5,
-                                   TrUserData);
-d_field_login_response_payload(<<0:1, X:7,
-                                 Rest/binary>>,
-                               N, Acc, F@_1, F@_2, F@_3, F@_4, _, TrUserData) ->
-    {NewFValue, RestF} = begin
-                             Len = X bsl N + Acc,
-                             <<Bytes:Len/binary, Rest2/binary>> = Rest,
-                             {id(binary:copy(Bytes), TrUserData), Rest2}
-                         end,
-    dfp_read_field_def_login_response(RestF,
-                                      0,
-                                      0,
-                                      F@_1,
-                                      F@_2,
-                                      F@_3,
-                                      F@_4,
-                                      NewFValue,
-                                      TrUserData).
-
-skip_varint_login_response(<<1:1, _:7, Rest/binary>>,
-                           Z1, Z2, F@_1, F@_2, F@_3, F@_4, F@_5, TrUserData) ->
-    skip_varint_login_response(Rest,
-                               Z1,
-                               Z2,
-                               F@_1,
-                               F@_2,
-                               F@_3,
-                               F@_4,
-                               F@_5,
-                               TrUserData);
-skip_varint_login_response(<<0:1, _:7, Rest/binary>>,
-                           Z1, Z2, F@_1, F@_2, F@_3, F@_4, F@_5, TrUserData) ->
-    dfp_read_field_def_login_response(Rest,
-                                      Z1,
-                                      Z2,
-                                      F@_1,
-                                      F@_2,
-                                      F@_3,
-                                      F@_4,
-                                      F@_5,
-                                      TrUserData).
-
-skip_length_delimited_login_response(<<1:1, X:7,
-                                       Rest/binary>>,
-                                     N, Acc, F@_1, F@_2, F@_3, F@_4, F@_5,
-                                     TrUserData)
-    when N < 57 ->
-    skip_length_delimited_login_response(Rest,
-                                         N + 7,
-                                         X bsl N + Acc,
-                                         F@_1,
-                                         F@_2,
-                                         F@_3,
-                                         F@_4,
-                                         F@_5,
-                                         TrUserData);
-skip_length_delimited_login_response(<<0:1, X:7,
-                                       Rest/binary>>,
-                                     N, Acc, F@_1, F@_2, F@_3, F@_4, F@_5,
-                                     TrUserData) ->
-    Length = X bsl N + Acc,
-    <<_:Length/binary, Rest2/binary>> = Rest,
-    dfp_read_field_def_login_response(Rest2,
-                                      0,
-                                      0,
-                                      F@_1,
-                                      F@_2,
-                                      F@_3,
-                                      F@_4,
-                                      F@_5,
-                                      TrUserData).
-
-skip_group_login_response(Bin, FNum, Z2, F@_1, F@_2,
-                          F@_3, F@_4, F@_5, TrUserData) ->
-    {_, Rest} = read_group(Bin, FNum),
-    dfp_read_field_def_login_response(Rest,
-                                      0,
-                                      Z2,
-                                      F@_1,
-                                      F@_2,
-                                      F@_3,
-                                      F@_4,
-                                      F@_5,
-                                      TrUserData).
-
-skip_32_login_response(<<_:32, Rest/binary>>, Z1, Z2,
-                       F@_1, F@_2, F@_3, F@_4, F@_5, TrUserData) ->
-    dfp_read_field_def_login_response(Rest,
-                                      Z1,
-                                      Z2,
-                                      F@_1,
-                                      F@_2,
-                                      F@_3,
-                                      F@_4,
-                                      F@_5,
-                                      TrUserData).
-
-skip_64_login_response(<<_:64, Rest/binary>>, Z1, Z2,
-                       F@_1, F@_2, F@_3, F@_4, F@_5, TrUserData) ->
-    dfp_read_field_def_login_response(Rest,
-                                      Z1,
-                                      Z2,
-                                      F@_1,
-                                      F@_2,
-                                      F@_3,
-                                      F@_4,
-                                      F@_5,
-                                      TrUserData).
-
-decode_msg_logout_request(Bin, TrUserData) ->
-    dfp_read_field_def_logout_request(Bin,
-                                      0,
-                                      0,
-                                      id(<<>>, TrUserData),
-                                      id(<<>>, TrUserData),
-                                      id(<<>>, TrUserData),
-                                      TrUserData).
-
-dfp_read_field_def_logout_request(<<10, Rest/binary>>,
-                                  Z1, Z2, F@_1, F@_2, F@_3, TrUserData) ->
-    d_field_logout_request_productid(Rest,
-                                     Z1,
-                                     Z2,
-                                     F@_1,
-                                     F@_2,
-                                     F@_3,
-                                     TrUserData);
-dfp_read_field_def_logout_request(<<18, Rest/binary>>,
-                                  Z1, Z2, F@_1, F@_2, F@_3, TrUserData) ->
-    d_field_logout_request_devaddr(Rest,
-                                   Z1,
-                                   Z2,
-                                   F@_1,
-                                   F@_2,
-                                   F@_3,
-                                   TrUserData);
-dfp_read_field_def_logout_request(<<26, Rest/binary>>,
-                                  Z1, Z2, F@_1, F@_2, F@_3, TrUserData) ->
-    d_field_logout_request_data(Rest,
-                                Z1,
-                                Z2,
-                                F@_1,
-                                F@_2,
-                                F@_3,
-                                TrUserData);
-dfp_read_field_def_logout_request(<<>>, 0, 0, F@_1,
-                                  F@_2, F@_3, _) ->
-    #{productid => F@_1, devaddr => F@_2, data => F@_3};
-dfp_read_field_def_logout_request(Other, Z1, Z2, F@_1,
-                                  F@_2, F@_3, TrUserData) ->
-    dg_read_field_def_logout_request(Other,
-                                     Z1,
-                                     Z2,
-                                     F@_1,
-                                     F@_2,
-                                     F@_3,
-                                     TrUserData).
-
-dg_read_field_def_logout_request(<<1:1, X:7,
-                                   Rest/binary>>,
-                                 N, Acc, F@_1, F@_2, F@_3, TrUserData)
-    when N < 32 - 7 ->
-    dg_read_field_def_logout_request(Rest,
-                                     N + 7,
-                                     X bsl N + Acc,
-                                     F@_1,
-                                     F@_2,
-                                     F@_3,
-                                     TrUserData);
-dg_read_field_def_logout_request(<<0:1, X:7,
-                                   Rest/binary>>,
-                                 N, Acc, F@_1, F@_2, F@_3, TrUserData) ->
-    Key = X bsl N + Acc,
-    case Key of
-        10 ->
-            d_field_logout_request_productid(Rest,
-                                             0,
-                                             0,
-                                             F@_1,
-                                             F@_2,
-                                             F@_3,
-                                             TrUserData);
-        18 ->
-            d_field_logout_request_devaddr(Rest,
-                                           0,
-                                           0,
-                                           F@_1,
-                                           F@_2,
-                                           F@_3,
-                                           TrUserData);
-        26 ->
-            d_field_logout_request_data(Rest,
-                                        0,
-                                        0,
-                                        F@_1,
-                                        F@_2,
-                                        F@_3,
-                                        TrUserData);
-        _ ->
-            case Key band 7 of
-                0 ->
-                    skip_varint_logout_request(Rest,
-                                               0,
-                                               0,
-                                               F@_1,
-                                               F@_2,
-                                               F@_3,
-                                               TrUserData);
-                1 ->
-                    skip_64_logout_request(Rest,
-                                           0,
-                                           0,
-                                           F@_1,
-                                           F@_2,
-                                           F@_3,
-                                           TrUserData);
-                2 ->
-                    skip_length_delimited_logout_request(Rest,
-                                                         0,
-                                                         0,
-                                                         F@_1,
-                                                         F@_2,
-                                                         F@_3,
-                                                         TrUserData);
-                3 ->
-                    skip_group_logout_request(Rest,
-                                              Key bsr 3,
-                                              0,
-                                              F@_1,
-                                              F@_2,
-                                              F@_3,
-                                              TrUserData);
-                5 ->
-                    skip_32_logout_request(Rest,
-                                           0,
-                                           0,
-                                           F@_1,
-                                           F@_2,
-                                           F@_3,
-                                           TrUserData)
-            end
-    end;
-dg_read_field_def_logout_request(<<>>, 0, 0, F@_1, F@_2,
-                                 F@_3, _) ->
-    #{productid => F@_1, devaddr => F@_2, data => F@_3}.
-
-d_field_logout_request_productid(<<1:1, X:7,
-                                   Rest/binary>>,
-                                 N, Acc, F@_1, F@_2, F@_3, TrUserData)
-    when N < 57 ->
-    d_field_logout_request_productid(Rest,
-                                     N + 7,
-                                     X bsl N + Acc,
-                                     F@_1,
-                                     F@_2,
-                                     F@_3,
-                                     TrUserData);
-d_field_logout_request_productid(<<0:1, X:7,
-                                   Rest/binary>>,
-                                 N, Acc, _, F@_2, F@_3, TrUserData) ->
-    {NewFValue, RestF} = begin
-                             Len = X bsl N + Acc,
-                             <<Bytes:Len/binary, Rest2/binary>> = Rest,
-                             {id(binary:copy(Bytes), TrUserData), Rest2}
-                         end,
-    dfp_read_field_def_logout_request(RestF,
-                                      0,
-                                      0,
-                                      NewFValue,
-                                      F@_2,
-                                      F@_3,
-                                      TrUserData).
-
-d_field_logout_request_devaddr(<<1:1, X:7,
-                                 Rest/binary>>,
-                               N, Acc, F@_1, F@_2, F@_3, TrUserData)
-    when N < 57 ->
-    d_field_logout_request_devaddr(Rest,
-                                   N + 7,
-                                   X bsl N + Acc,
-                                   F@_1,
-                                   F@_2,
-                                   F@_3,
-                                   TrUserData);
-d_field_logout_request_devaddr(<<0:1, X:7,
-                                 Rest/binary>>,
-                               N, Acc, F@_1, _, F@_3, TrUserData) ->
-    {NewFValue, RestF} = begin
-                             Len = X bsl N + Acc,
-                             <<Bytes:Len/binary, Rest2/binary>> = Rest,
-                             {id(binary:copy(Bytes), TrUserData), Rest2}
-                         end,
-    dfp_read_field_def_logout_request(RestF,
-                                      0,
-                                      0,
-                                      F@_1,
-                                      NewFValue,
-                                      F@_3,
-                                      TrUserData).
-
-d_field_logout_request_data(<<1:1, X:7, Rest/binary>>,
-                            N, Acc, F@_1, F@_2, F@_3, TrUserData)
-    when N < 57 ->
-    d_field_logout_request_data(Rest,
-                                N + 7,
-                                X bsl N + Acc,
-                                F@_1,
-                                F@_2,
-                                F@_3,
-                                TrUserData);
-d_field_logout_request_data(<<0:1, X:7, Rest/binary>>,
-                            N, Acc, F@_1, F@_2, _, TrUserData) ->
-    {NewFValue, RestF} = begin
-                             Len = X bsl N + Acc,
-                             <<Bytes:Len/binary, Rest2/binary>> = Rest,
-                             {id(binary:copy(Bytes), TrUserData), Rest2}
-                         end,
-    dfp_read_field_def_logout_request(RestF,
-                                      0,
-                                      0,
-                                      F@_1,
-                                      F@_2,
-                                      NewFValue,
-                                      TrUserData).
-
-skip_varint_logout_request(<<1:1, _:7, Rest/binary>>,
-                           Z1, Z2, F@_1, F@_2, F@_3, TrUserData) ->
-    skip_varint_logout_request(Rest,
-                               Z1,
-                               Z2,
-                               F@_1,
-                               F@_2,
-                               F@_3,
-                               TrUserData);
-skip_varint_logout_request(<<0:1, _:7, Rest/binary>>,
-                           Z1, Z2, F@_1, F@_2, F@_3, TrUserData) ->
-    dfp_read_field_def_logout_request(Rest,
-                                      Z1,
-                                      Z2,
-                                      F@_1,
-                                      F@_2,
-                                      F@_3,
-                                      TrUserData).
-
-skip_length_delimited_logout_request(<<1:1, X:7,
-                                       Rest/binary>>,
-                                     N, Acc, F@_1, F@_2, F@_3, TrUserData)
-    when N < 57 ->
-    skip_length_delimited_logout_request(Rest,
-                                         N + 7,
-                                         X bsl N + Acc,
-                                         F@_1,
-                                         F@_2,
-                                         F@_3,
-                                         TrUserData);
-skip_length_delimited_logout_request(<<0:1, X:7,
-                                       Rest/binary>>,
-                                     N, Acc, F@_1, F@_2, F@_3, TrUserData) ->
-    Length = X bsl N + Acc,
-    <<_:Length/binary, Rest2/binary>> = Rest,
-    dfp_read_field_def_logout_request(Rest2,
-                                      0,
-                                      0,
-                                      F@_1,
-                                      F@_2,
-                                      F@_3,
-                                      TrUserData).
-
-skip_group_logout_request(Bin, FNum, Z2, F@_1, F@_2,
-                          F@_3, TrUserData) ->
-    {_, Rest} = read_group(Bin, FNum),
-    dfp_read_field_def_logout_request(Rest,
-                                      0,
-                                      Z2,
-                                      F@_1,
-                                      F@_2,
-                                      F@_3,
-                                      TrUserData).
-
-skip_32_logout_request(<<_:32, Rest/binary>>, Z1, Z2,
-                       F@_1, F@_2, F@_3, TrUserData) ->
-    dfp_read_field_def_logout_request(Rest,
-                                      Z1,
-                                      Z2,
-                                      F@_1,
-                                      F@_2,
-                                      F@_3,
-                                      TrUserData).
-
-skip_64_logout_request(<<_:64, Rest/binary>>, Z1, Z2,
-                       F@_1, F@_2, F@_3, TrUserData) ->
-    dfp_read_field_def_logout_request(Rest,
-                                      Z1,
-                                      Z2,
-                                      F@_1,
-                                      F@_2,
-                                      F@_3,
-                                      TrUserData).
-
-decode_msg_logout_response(Bin, TrUserData) ->
-    dfp_read_field_def_logout_response(Bin,
-                                       0,
-                                       0,
-                                       id('NOACK', TrUserData),
-                                       id(<<>>, TrUserData),
-                                       id(<<>>, TrUserData),
-                                       id(<<>>, TrUserData),
-                                       TrUserData).
-
-dfp_read_field_def_logout_response(<<8, Rest/binary>>,
-                                   Z1, Z2, F@_1, F@_2, F@_3, F@_4,
-                                   TrUserData) ->
-    d_field_logout_response_status(Rest,
-                                   Z1,
-                                   Z2,
-                                   F@_1,
-                                   F@_2,
-                                   F@_3,
-                                   F@_4,
-                                   TrUserData);
-dfp_read_field_def_logout_response(<<18, Rest/binary>>,
-                                   Z1, Z2, F@_1, F@_2, F@_3, F@_4,
-                                   TrUserData) ->
-    d_field_logout_response_ack(Rest,
-                                Z1,
-                                Z2,
-                                F@_1,
-                                F@_2,
-                                F@_3,
-                                F@_4,
-                                TrUserData);
-dfp_read_field_def_logout_response(<<26, Rest/binary>>,
-                                   Z1, Z2, F@_1, F@_2, F@_3, F@_4,
-                                   TrUserData) ->
-    d_field_logout_response_topic(Rest,
-                                  Z1,
-                                  Z2,
-                                  F@_1,
-                                  F@_2,
-                                  F@_3,
-                                  F@_4,
-                                  TrUserData);
-dfp_read_field_def_logout_response(<<34, Rest/binary>>,
-                                   Z1, Z2, F@_1, F@_2, F@_3, F@_4,
-                                   TrUserData) ->
-    d_field_logout_response_payload(Rest,
-                                    Z1,
-                                    Z2,
-                                    F@_1,
-                                    F@_2,
-                                    F@_3,
-                                    F@_4,
-                                    TrUserData);
-dfp_read_field_def_logout_response(<<>>, 0, 0, F@_1,
-                                   F@_2, F@_3, F@_4, _) ->
-    #{status => F@_1, ack => F@_2, topic => F@_3,
-      payload => F@_4};
-dfp_read_field_def_logout_response(Other, Z1, Z2, F@_1,
-                                   F@_2, F@_3, F@_4, TrUserData) ->
-    dg_read_field_def_logout_response(Other,
-                                      Z1,
-                                      Z2,
-                                      F@_1,
-                                      F@_2,
-                                      F@_3,
-                                      F@_4,
-                                      TrUserData).
-
-dg_read_field_def_logout_response(<<1:1, X:7,
-                                    Rest/binary>>,
-                                  N, Acc, F@_1, F@_2, F@_3, F@_4, TrUserData)
-    when N < 32 - 7 ->
-    dg_read_field_def_logout_response(Rest,
-                                      N + 7,
-                                      X bsl N + Acc,
-                                      F@_1,
-                                      F@_2,
-                                      F@_3,
-                                      F@_4,
-                                      TrUserData);
-dg_read_field_def_logout_response(<<0:1, X:7,
-                                    Rest/binary>>,
-                                  N, Acc, F@_1, F@_2, F@_3, F@_4, TrUserData) ->
-    Key = X bsl N + Acc,
-    case Key of
-        8 ->
-            d_field_logout_response_status(Rest,
-                                           0,
-                                           0,
-                                           F@_1,
-                                           F@_2,
-                                           F@_3,
-                                           F@_4,
-                                           TrUserData);
-        18 ->
-            d_field_logout_response_ack(Rest,
-                                        0,
-                                        0,
-                                        F@_1,
-                                        F@_2,
-                                        F@_3,
-                                        F@_4,
-                                        TrUserData);
-        26 ->
-            d_field_logout_response_topic(Rest,
-                                          0,
-                                          0,
-                                          F@_1,
-                                          F@_2,
-                                          F@_3,
-                                          F@_4,
-                                          TrUserData);
-        34 ->
-            d_field_logout_response_payload(Rest,
-                                            0,
-                                            0,
-                                            F@_1,
-                                            F@_2,
-                                            F@_3,
-                                            F@_4,
-                                            TrUserData);
-        _ ->
-            case Key band 7 of
-                0 ->
-                    skip_varint_logout_response(Rest,
-                                                0,
-                                                0,
-                                                F@_1,
-                                                F@_2,
-                                                F@_3,
-                                                F@_4,
-                                                TrUserData);
-                1 ->
-                    skip_64_logout_response(Rest,
-                                            0,
-                                            0,
-                                            F@_1,
-                                            F@_2,
-                                            F@_3,
-                                            F@_4,
-                                            TrUserData);
-                2 ->
-                    skip_length_delimited_logout_response(Rest,
-                                                          0,
-                                                          0,
-                                                          F@_1,
-                                                          F@_2,
-                                                          F@_3,
-                                                          F@_4,
-                                                          TrUserData);
-                3 ->
-                    skip_group_logout_response(Rest,
-                                               Key bsr 3,
-                                               0,
-                                               F@_1,
-                                               F@_2,
-                                               F@_3,
-                                               F@_4,
-                                               TrUserData);
-                5 ->
-                    skip_32_logout_response(Rest,
-                                            0,
-                                            0,
-                                            F@_1,
-                                            F@_2,
-                                            F@_3,
-                                            F@_4,
-                                            TrUserData)
-            end
-    end;
-dg_read_field_def_logout_response(<<>>, 0, 0, F@_1,
-                                  F@_2, F@_3, F@_4, _) ->
-    #{status => F@_1, ack => F@_2, topic => F@_3,
-      payload => F@_4}.
-
-d_field_logout_response_status(<<1:1, X:7,
-                                 Rest/binary>>,
-                               N, Acc, F@_1, F@_2, F@_3, F@_4, TrUserData)
-    when N < 57 ->
-    d_field_logout_response_status(Rest,
-                                   N + 7,
-                                   X bsl N + Acc,
-                                   F@_1,
-                                   F@_2,
-                                   F@_3,
-                                   F@_4,
-                                   TrUserData);
-d_field_logout_response_status(<<0:1, X:7,
-                                 Rest/binary>>,
-                               N, Acc, _, F@_2, F@_3, F@_4, TrUserData) ->
-    {NewFValue, RestF} =
-        {id('d_enum_logout_response.Ack'(begin
-                                             <<Res:32/signed-native>> = <<(X bsl
-                                                                               N
-                                                                               +
-                                                                               Acc):32/unsigned-native>>,
-                                             id(Res, TrUserData)
-                                         end),
-            TrUserData),
-         Rest},
-    dfp_read_field_def_logout_response(RestF,
-                                       0,
-                                       0,
-                                       NewFValue,
-                                       F@_2,
-                                       F@_3,
-                                       F@_4,
-                                       TrUserData).
-
-d_field_logout_response_ack(<<1:1, X:7, Rest/binary>>,
-                            N, Acc, F@_1, F@_2, F@_3, F@_4, TrUserData)
-    when N < 57 ->
-    d_field_logout_response_ack(Rest,
-                                N + 7,
-                                X bsl N + Acc,
-                                F@_1,
-                                F@_2,
-                                F@_3,
-                                F@_4,
-                                TrUserData);
-d_field_logout_response_ack(<<0:1, X:7, Rest/binary>>,
-                            N, Acc, F@_1, _, F@_3, F@_4, TrUserData) ->
-    {NewFValue, RestF} = begin
-                             Len = X bsl N + Acc,
-                             <<Bytes:Len/binary, Rest2/binary>> = Rest,
-                             {id(binary:copy(Bytes), TrUserData), Rest2}
-                         end,
-    dfp_read_field_def_logout_response(RestF,
-                                       0,
-                                       0,
-                                       F@_1,
-                                       NewFValue,
-                                       F@_3,
-                                       F@_4,
-                                       TrUserData).
-
-d_field_logout_response_topic(<<1:1, X:7, Rest/binary>>,
-                              N, Acc, F@_1, F@_2, F@_3, F@_4, TrUserData)
-    when N < 57 ->
-    d_field_logout_response_topic(Rest,
-                                  N + 7,
-                                  X bsl N + Acc,
-                                  F@_1,
-                                  F@_2,
-                                  F@_3,
-                                  F@_4,
-                                  TrUserData);
-d_field_logout_response_topic(<<0:1, X:7, Rest/binary>>,
-                              N, Acc, F@_1, F@_2, _, F@_4, TrUserData) ->
-    {NewFValue, RestF} = begin
-                             Len = X bsl N + Acc,
-                             <<Bytes:Len/binary, Rest2/binary>> = Rest,
-                             {id(binary:copy(Bytes), TrUserData), Rest2}
-                         end,
-    dfp_read_field_def_logout_response(RestF,
-                                       0,
-                                       0,
-                                       F@_1,
-                                       F@_2,
-                                       NewFValue,
-                                       F@_4,
-                                       TrUserData).
-
-d_field_logout_response_payload(<<1:1, X:7,
-                                  Rest/binary>>,
-                                N, Acc, F@_1, F@_2, F@_3, F@_4, TrUserData)
-    when N < 57 ->
-    d_field_logout_response_payload(Rest,
-                                    N + 7,
-                                    X bsl N + Acc,
-                                    F@_1,
-                                    F@_2,
-                                    F@_3,
-                                    F@_4,
-                                    TrUserData);
-d_field_logout_response_payload(<<0:1, X:7,
-                                  Rest/binary>>,
-                                N, Acc, F@_1, F@_2, F@_3, _, TrUserData) ->
-    {NewFValue, RestF} = begin
-                             Len = X bsl N + Acc,
-                             <<Bytes:Len/binary, Rest2/binary>> = Rest,
-                             {id(binary:copy(Bytes), TrUserData), Rest2}
-                         end,
-    dfp_read_field_def_logout_response(RestF,
-                                       0,
-                                       0,
-                                       F@_1,
-                                       F@_2,
-                                       F@_3,
-                                       NewFValue,
-                                       TrUserData).
-
-skip_varint_logout_response(<<1:1, _:7, Rest/binary>>,
-                            Z1, Z2, F@_1, F@_2, F@_3, F@_4, TrUserData) ->
-    skip_varint_logout_response(Rest,
-                                Z1,
-                                Z2,
-                                F@_1,
-                                F@_2,
-                                F@_3,
-                                F@_4,
-                                TrUserData);
-skip_varint_logout_response(<<0:1, _:7, Rest/binary>>,
-                            Z1, Z2, F@_1, F@_2, F@_3, F@_4, TrUserData) ->
-    dfp_read_field_def_logout_response(Rest,
-                                       Z1,
-                                       Z2,
-                                       F@_1,
-                                       F@_2,
-                                       F@_3,
-                                       F@_4,
-                                       TrUserData).
-
-skip_length_delimited_logout_response(<<1:1, X:7,
-                                        Rest/binary>>,
-                                      N, Acc, F@_1, F@_2, F@_3, F@_4,
-                                      TrUserData)
-    when N < 57 ->
-    skip_length_delimited_logout_response(Rest,
-                                          N + 7,
-                                          X bsl N + Acc,
-                                          F@_1,
-                                          F@_2,
-                                          F@_3,
-                                          F@_4,
-                                          TrUserData);
-skip_length_delimited_logout_response(<<0:1, X:7,
-                                        Rest/binary>>,
-                                      N, Acc, F@_1, F@_2, F@_3, F@_4,
-                                      TrUserData) ->
-    Length = X bsl N + Acc,
-    <<_:Length/binary, Rest2/binary>> = Rest,
-    dfp_read_field_def_logout_response(Rest2,
-                                       0,
-                                       0,
-                                       F@_1,
-                                       F@_2,
-                                       F@_3,
-                                       F@_4,
-                                       TrUserData).
-
-skip_group_logout_response(Bin, FNum, Z2, F@_1, F@_2,
-                           F@_3, F@_4, TrUserData) ->
-    {_, Rest} = read_group(Bin, FNum),
-    dfp_read_field_def_logout_response(Rest,
-                                       0,
-                                       Z2,
-                                       F@_1,
-                                       F@_2,
-                                       F@_3,
-                                       F@_4,
-                                       TrUserData).
-
-skip_32_logout_response(<<_:32, Rest/binary>>, Z1, Z2,
-                        F@_1, F@_2, F@_3, F@_4, TrUserData) ->
-    dfp_read_field_def_logout_response(Rest,
-                                       Z1,
-                                       Z2,
-                                       F@_1,
-                                       F@_2,
-                                       F@_3,
-                                       F@_4,
-                                       TrUserData).
-
-skip_64_logout_response(<<_:64, Rest/binary>>, Z1, Z2,
-                        F@_1, F@_2, F@_3, F@_4, TrUserData) ->
-    dfp_read_field_def_logout_response(Rest,
-                                       Z1,
-                                       Z2,
-                                       F@_1,
-                                       F@_2,
-                                       F@_3,
-                                       F@_4,
-                                       TrUserData).
-
 decode_msg_payload_request(Bin, TrUserData) ->
     dfp_read_field_def_payload_request(Bin,
                                        0,
                                        0,
                                        id(<<>>, TrUserData),
                                        id(<<>>, TrUserData),
-                                       id(<<>>, TrUserData),
+                                       id('$undef', TrUserData),
+                                       id('$undef', TrUserData),
                                        TrUserData).
 
 dfp_read_field_def_payload_request(<<10, Rest/binary>>,
-                                   Z1, Z2, F@_1, F@_2, F@_3, TrUserData) ->
-    d_field_payload_request_productid(Rest,
-                                      Z1,
-                                      Z2,
-                                      F@_1,
-                                      F@_2,
-                                      F@_3,
-                                      TrUserData);
+                                   Z1, Z2, F@_1, F@_2, F@_3, F@_4,
+                                   TrUserData) ->
+    d_field_payload_request_product(Rest,
+                                    Z1,
+                                    Z2,
+                                    F@_1,
+                                    F@_2,
+                                    F@_3,
+                                    F@_4,
+                                    TrUserData);
 dfp_read_field_def_payload_request(<<18, Rest/binary>>,
-                                   Z1, Z2, F@_1, F@_2, F@_3, TrUserData) ->
+                                   Z1, Z2, F@_1, F@_2, F@_3, F@_4,
+                                   TrUserData) ->
     d_field_payload_request_devaddr(Rest,
                                     Z1,
                                     Z2,
                                     F@_1,
                                     F@_2,
                                     F@_3,
+                                    F@_4,
                                     TrUserData);
 dfp_read_field_def_payload_request(<<26, Rest/binary>>,
-                                   Z1, Z2, F@_1, F@_2, F@_3, TrUserData) ->
+                                   Z1, Z2, F@_1, F@_2, F@_3, F@_4,
+                                   TrUserData) ->
+    d_field_payload_request_cmd(Rest,
+                                Z1,
+                                Z2,
+                                F@_1,
+                                F@_2,
+                                F@_3,
+                                F@_4,
+                                TrUserData);
+dfp_read_field_def_payload_request(<<34, Rest/binary>>,
+                                   Z1, Z2, F@_1, F@_2, F@_3, F@_4,
+                                   TrUserData) ->
     d_field_payload_request_data(Rest,
                                  Z1,
                                  Z2,
                                  F@_1,
                                  F@_2,
                                  F@_3,
+                                 F@_4,
                                  TrUserData);
 dfp_read_field_def_payload_request(<<>>, 0, 0, F@_1,
-                                   F@_2, F@_3, _) ->
-    #{productid => F@_1, devaddr => F@_2, data => F@_3};
+                                   F@_2, F@_3, F@_4, _) ->
+    #{product => F@_1, devaddr => F@_2, cmd => F@_3,
+      data => F@_4};
 dfp_read_field_def_payload_request(Other, Z1, Z2, F@_1,
-                                   F@_2, F@_3, TrUserData) ->
+                                   F@_2, F@_3, F@_4, TrUserData) ->
     dg_read_field_def_payload_request(Other,
                                       Z1,
                                       Z2,
                                       F@_1,
                                       F@_2,
                                       F@_3,
+                                      F@_4,
                                       TrUserData).
 
 dg_read_field_def_payload_request(<<1:1, X:7,
                                     Rest/binary>>,
-                                  N, Acc, F@_1, F@_2, F@_3, TrUserData)
+                                  N, Acc, F@_1, F@_2, F@_3, F@_4, TrUserData)
     when N < 32 - 7 ->
     dg_read_field_def_payload_request(Rest,
                                       N + 7,
@@ -1924,20 +388,22 @@ dg_read_field_def_payload_request(<<1:1, X:7,
                                       F@_1,
                                       F@_2,
                                       F@_3,
+                                      F@_4,
                                       TrUserData);
 dg_read_field_def_payload_request(<<0:1, X:7,
                                     Rest/binary>>,
-                                  N, Acc, F@_1, F@_2, F@_3, TrUserData) ->
+                                  N, Acc, F@_1, F@_2, F@_3, F@_4, TrUserData) ->
     Key = X bsl N + Acc,
     case Key of
         10 ->
-            d_field_payload_request_productid(Rest,
-                                              0,
-                                              0,
-                                              F@_1,
-                                              F@_2,
-                                              F@_3,
-                                              TrUserData);
+            d_field_payload_request_product(Rest,
+                                            0,
+                                            0,
+                                            F@_1,
+                                            F@_2,
+                                            F@_3,
+                                            F@_4,
+                                            TrUserData);
         18 ->
             d_field_payload_request_devaddr(Rest,
                                             0,
@@ -1945,14 +411,25 @@ dg_read_field_def_payload_request(<<0:1, X:7,
                                             F@_1,
                                             F@_2,
                                             F@_3,
+                                            F@_4,
                                             TrUserData);
         26 ->
+            d_field_payload_request_cmd(Rest,
+                                        0,
+                                        0,
+                                        F@_1,
+                                        F@_2,
+                                        F@_3,
+                                        F@_4,
+                                        TrUserData);
+        34 ->
             d_field_payload_request_data(Rest,
                                          0,
                                          0,
                                          F@_1,
                                          F@_2,
                                          F@_3,
+                                         F@_4,
                                          TrUserData);
         _ ->
             case Key band 7 of
@@ -1963,6 +440,7 @@ dg_read_field_def_payload_request(<<0:1, X:7,
                                                 F@_1,
                                                 F@_2,
                                                 F@_3,
+                                                F@_4,
                                                 TrUserData);
                 1 ->
                     skip_64_payload_request(Rest,
@@ -1971,6 +449,7 @@ dg_read_field_def_payload_request(<<0:1, X:7,
                                             F@_1,
                                             F@_2,
                                             F@_3,
+                                            F@_4,
                                             TrUserData);
                 2 ->
                     skip_length_delimited_payload_request(Rest,
@@ -1979,6 +458,7 @@ dg_read_field_def_payload_request(<<0:1, X:7,
                                                           F@_1,
                                                           F@_2,
                                                           F@_3,
+                                                          F@_4,
                                                           TrUserData);
                 3 ->
                     skip_group_payload_request(Rest,
@@ -1987,6 +467,7 @@ dg_read_field_def_payload_request(<<0:1, X:7,
                                                F@_1,
                                                F@_2,
                                                F@_3,
+                                               F@_4,
                                                TrUserData);
                 5 ->
                     skip_32_payload_request(Rest,
@@ -1995,27 +476,30 @@ dg_read_field_def_payload_request(<<0:1, X:7,
                                             F@_1,
                                             F@_2,
                                             F@_3,
+                                            F@_4,
                                             TrUserData)
             end
     end;
 dg_read_field_def_payload_request(<<>>, 0, 0, F@_1,
-                                  F@_2, F@_3, _) ->
-    #{productid => F@_1, devaddr => F@_2, data => F@_3}.
+                                  F@_2, F@_3, F@_4, _) ->
+    #{product => F@_1, devaddr => F@_2, cmd => F@_3,
+      data => F@_4}.
 
-d_field_payload_request_productid(<<1:1, X:7,
-                                    Rest/binary>>,
-                                  N, Acc, F@_1, F@_2, F@_3, TrUserData)
+d_field_payload_request_product(<<1:1, X:7,
+                                  Rest/binary>>,
+                                N, Acc, F@_1, F@_2, F@_3, F@_4, TrUserData)
     when N < 57 ->
-    d_field_payload_request_productid(Rest,
-                                      N + 7,
-                                      X bsl N + Acc,
-                                      F@_1,
-                                      F@_2,
-                                      F@_3,
-                                      TrUserData);
-d_field_payload_request_productid(<<0:1, X:7,
-                                    Rest/binary>>,
-                                  N, Acc, _, F@_2, F@_3, TrUserData) ->
+    d_field_payload_request_product(Rest,
+                                    N + 7,
+                                    X bsl N + Acc,
+                                    F@_1,
+                                    F@_2,
+                                    F@_3,
+                                    F@_4,
+                                    TrUserData);
+d_field_payload_request_product(<<0:1, X:7,
+                                  Rest/binary>>,
+                                N, Acc, _, F@_2, F@_3, F@_4, TrUserData) ->
     {NewFValue, RestF} = begin
                              Len = X bsl N + Acc,
                              <<Bytes:Len/binary, Rest2/binary>> = Rest,
@@ -2027,11 +511,12 @@ d_field_payload_request_productid(<<0:1, X:7,
                                        NewFValue,
                                        F@_2,
                                        F@_3,
+                                       F@_4,
                                        TrUserData).
 
 d_field_payload_request_devaddr(<<1:1, X:7,
                                   Rest/binary>>,
-                                N, Acc, F@_1, F@_2, F@_3, TrUserData)
+                                N, Acc, F@_1, F@_2, F@_3, F@_4, TrUserData)
     when N < 57 ->
     d_field_payload_request_devaddr(Rest,
                                     N + 7,
@@ -2039,10 +524,11 @@ d_field_payload_request_devaddr(<<1:1, X:7,
                                     F@_1,
                                     F@_2,
                                     F@_3,
+                                    F@_4,
                                     TrUserData);
 d_field_payload_request_devaddr(<<0:1, X:7,
                                   Rest/binary>>,
-                                N, Acc, F@_1, _, F@_3, TrUserData) ->
+                                N, Acc, F@_1, _, F@_3, F@_4, TrUserData) ->
     {NewFValue, RestF} = begin
                              Len = X bsl N + Acc,
                              <<Bytes:Len/binary, Rest2/binary>> = Rest,
@@ -2054,10 +540,38 @@ d_field_payload_request_devaddr(<<0:1, X:7,
                                        F@_1,
                                        NewFValue,
                                        F@_3,
+                                       F@_4,
+                                       TrUserData).
+
+d_field_payload_request_cmd(<<1:1, X:7, Rest/binary>>,
+                            N, Acc, F@_1, F@_2, F@_3, F@_4, TrUserData)
+    when N < 57 ->
+    d_field_payload_request_cmd(Rest,
+                                N + 7,
+                                X bsl N + Acc,
+                                F@_1,
+                                F@_2,
+                                F@_3,
+                                F@_4,
+                                TrUserData);
+d_field_payload_request_cmd(<<0:1, X:7, Rest/binary>>,
+                            N, Acc, F@_1, F@_2, _, F@_4, TrUserData) ->
+    {NewFValue, RestF} = begin
+                             Len = X bsl N + Acc,
+                             <<Bytes:Len/binary, Rest2/binary>> = Rest,
+                             {id(binary:copy(Bytes), TrUserData), Rest2}
+                         end,
+    dfp_read_field_def_payload_request(RestF,
+                                       0,
+                                       0,
+                                       F@_1,
+                                       F@_2,
+                                       NewFValue,
+                                       F@_4,
                                        TrUserData).
 
 d_field_payload_request_data(<<1:1, X:7, Rest/binary>>,
-                             N, Acc, F@_1, F@_2, F@_3, TrUserData)
+                             N, Acc, F@_1, F@_2, F@_3, F@_4, TrUserData)
     when N < 57 ->
     d_field_payload_request_data(Rest,
                                  N + 7,
@@ -2065,9 +579,10 @@ d_field_payload_request_data(<<1:1, X:7, Rest/binary>>,
                                  F@_1,
                                  F@_2,
                                  F@_3,
+                                 F@_4,
                                  TrUserData);
 d_field_payload_request_data(<<0:1, X:7, Rest/binary>>,
-                             N, Acc, F@_1, F@_2, _, TrUserData) ->
+                             N, Acc, F@_1, F@_2, F@_3, _, TrUserData) ->
     {NewFValue, RestF} = begin
                              Len = X bsl N + Acc,
                              <<Bytes:Len/binary, Rest2/binary>> = Rest,
@@ -2078,31 +593,35 @@ d_field_payload_request_data(<<0:1, X:7, Rest/binary>>,
                                        0,
                                        F@_1,
                                        F@_2,
+                                       F@_3,
                                        NewFValue,
                                        TrUserData).
 
 skip_varint_payload_request(<<1:1, _:7, Rest/binary>>,
-                            Z1, Z2, F@_1, F@_2, F@_3, TrUserData) ->
+                            Z1, Z2, F@_1, F@_2, F@_3, F@_4, TrUserData) ->
     skip_varint_payload_request(Rest,
                                 Z1,
                                 Z2,
                                 F@_1,
                                 F@_2,
                                 F@_3,
+                                F@_4,
                                 TrUserData);
 skip_varint_payload_request(<<0:1, _:7, Rest/binary>>,
-                            Z1, Z2, F@_1, F@_2, F@_3, TrUserData) ->
+                            Z1, Z2, F@_1, F@_2, F@_3, F@_4, TrUserData) ->
     dfp_read_field_def_payload_request(Rest,
                                        Z1,
                                        Z2,
                                        F@_1,
                                        F@_2,
                                        F@_3,
+                                       F@_4,
                                        TrUserData).
 
 skip_length_delimited_payload_request(<<1:1, X:7,
                                         Rest/binary>>,
-                                      N, Acc, F@_1, F@_2, F@_3, TrUserData)
+                                      N, Acc, F@_1, F@_2, F@_3, F@_4,
+                                      TrUserData)
     when N < 57 ->
     skip_length_delimited_payload_request(Rest,
                                           N + 7,
@@ -2110,10 +629,12 @@ skip_length_delimited_payload_request(<<1:1, X:7,
                                           F@_1,
                                           F@_2,
                                           F@_3,
+                                          F@_4,
                                           TrUserData);
 skip_length_delimited_payload_request(<<0:1, X:7,
                                         Rest/binary>>,
-                                      N, Acc, F@_1, F@_2, F@_3, TrUserData) ->
+                                      N, Acc, F@_1, F@_2, F@_3, F@_4,
+                                      TrUserData) ->
     Length = X bsl N + Acc,
     <<_:Length/binary, Rest2/binary>> = Rest,
     dfp_read_field_def_payload_request(Rest2,
@@ -2122,10 +643,11 @@ skip_length_delimited_payload_request(<<0:1, X:7,
                                        F@_1,
                                        F@_2,
                                        F@_3,
+                                       F@_4,
                                        TrUserData).
 
 skip_group_payload_request(Bin, FNum, Z2, F@_1, F@_2,
-                           F@_3, TrUserData) ->
+                           F@_3, F@_4, TrUserData) ->
     {_, Rest} = read_group(Bin, FNum),
     dfp_read_field_def_payload_request(Rest,
                                        0,
@@ -2133,89 +655,12 @@ skip_group_payload_request(Bin, FNum, Z2, F@_1, F@_2,
                                        F@_1,
                                        F@_2,
                                        F@_3,
+                                       F@_4,
                                        TrUserData).
 
 skip_32_payload_request(<<_:32, Rest/binary>>, Z1, Z2,
-                        F@_1, F@_2, F@_3, TrUserData) ->
+                        F@_1, F@_2, F@_3, F@_4, TrUserData) ->
     dfp_read_field_def_payload_request(Rest,
-                                       Z1,
-                                       Z2,
-                                       F@_1,
-                                       F@_2,
-                                       F@_3,
-                                       TrUserData).
-
-skip_64_payload_request(<<_:64, Rest/binary>>, Z1, Z2,
-                        F@_1, F@_2, F@_3, TrUserData) ->
-    dfp_read_field_def_payload_request(Rest,
-                                       Z1,
-                                       Z2,
-                                       F@_1,
-                                       F@_2,
-                                       F@_3,
-                                       TrUserData).
-
-decode_msg_payload_response(Bin, TrUserData) ->
-    dfp_read_field_def_payload_response(Bin,
-                                        0,
-                                        0,
-                                        id('NOACK', TrUserData),
-                                        id(<<>>, TrUserData),
-                                        id(<<>>, TrUserData),
-                                        id(<<>>, TrUserData),
-                                        TrUserData).
-
-dfp_read_field_def_payload_response(<<8, Rest/binary>>,
-                                    Z1, Z2, F@_1, F@_2, F@_3, F@_4,
-                                    TrUserData) ->
-    d_field_payload_response_status(Rest,
-                                    Z1,
-                                    Z2,
-                                    F@_1,
-                                    F@_2,
-                                    F@_3,
-                                    F@_4,
-                                    TrUserData);
-dfp_read_field_def_payload_response(<<18, Rest/binary>>,
-                                    Z1, Z2, F@_1, F@_2, F@_3, F@_4,
-                                    TrUserData) ->
-    d_field_payload_response_ack(Rest,
-                                 Z1,
-                                 Z2,
-                                 F@_1,
-                                 F@_2,
-                                 F@_3,
-                                 F@_4,
-                                 TrUserData);
-dfp_read_field_def_payload_response(<<26, Rest/binary>>,
-                                    Z1, Z2, F@_1, F@_2, F@_3, F@_4,
-                                    TrUserData) ->
-    d_field_payload_response_topic(Rest,
-                                   Z1,
-                                   Z2,
-                                   F@_1,
-                                   F@_2,
-                                   F@_3,
-                                   F@_4,
-                                   TrUserData);
-dfp_read_field_def_payload_response(<<34, Rest/binary>>,
-                                    Z1, Z2, F@_1, F@_2, F@_3, F@_4,
-                                    TrUserData) ->
-    d_field_payload_response_payload(Rest,
-                                     Z1,
-                                     Z2,
-                                     F@_1,
-                                     F@_2,
-                                     F@_3,
-                                     F@_4,
-                                     TrUserData);
-dfp_read_field_def_payload_response(<<>>, 0, 0, F@_1,
-                                    F@_2, F@_3, F@_4, _) ->
-    #{status => F@_1, ack => F@_2, topic => F@_3,
-      payload => F@_4};
-dfp_read_field_def_payload_response(Other, Z1, Z2, F@_1,
-                                    F@_2, F@_3, F@_4, TrUserData) ->
-    dg_read_field_def_payload_response(Other,
                                        Z1,
                                        Z2,
                                        F@_1,
@@ -2224,9 +669,69 @@ dfp_read_field_def_payload_response(Other, Z1, Z2, F@_1,
                                        F@_4,
                                        TrUserData).
 
+skip_64_payload_request(<<_:64, Rest/binary>>, Z1, Z2,
+                        F@_1, F@_2, F@_3, F@_4, TrUserData) ->
+    dfp_read_field_def_payload_request(Rest,
+                                       Z1,
+                                       Z2,
+                                       F@_1,
+                                       F@_2,
+                                       F@_3,
+                                       F@_4,
+                                       TrUserData).
+
+decode_msg_payload_response(Bin, TrUserData) ->
+    dfp_read_field_def_payload_response(Bin,
+                                        0,
+                                        0,
+                                        id(<<>>, TrUserData),
+                                        id(<<>>, TrUserData),
+                                        id(<<>>, TrUserData),
+                                        TrUserData).
+
+dfp_read_field_def_payload_response(<<10, Rest/binary>>,
+                                    Z1, Z2, F@_1, F@_2, F@_3, TrUserData) ->
+    d_field_payload_response_topic(Rest,
+                                   Z1,
+                                   Z2,
+                                   F@_1,
+                                   F@_2,
+                                   F@_3,
+                                   TrUserData);
+dfp_read_field_def_payload_response(<<18, Rest/binary>>,
+                                    Z1, Z2, F@_1, F@_2, F@_3, TrUserData) ->
+    d_field_payload_response_payload(Rest,
+                                     Z1,
+                                     Z2,
+                                     F@_1,
+                                     F@_2,
+                                     F@_3,
+                                     TrUserData);
+dfp_read_field_def_payload_response(<<26, Rest/binary>>,
+                                    Z1, Z2, F@_1, F@_2, F@_3, TrUserData) ->
+    d_field_payload_response_ack(Rest,
+                                 Z1,
+                                 Z2,
+                                 F@_1,
+                                 F@_2,
+                                 F@_3,
+                                 TrUserData);
+dfp_read_field_def_payload_response(<<>>, 0, 0, F@_1,
+                                    F@_2, F@_3, _) ->
+    #{topic => F@_1, payload => F@_2, ack => F@_3};
+dfp_read_field_def_payload_response(Other, Z1, Z2, F@_1,
+                                    F@_2, F@_3, TrUserData) ->
+    dg_read_field_def_payload_response(Other,
+                                       Z1,
+                                       Z2,
+                                       F@_1,
+                                       F@_2,
+                                       F@_3,
+                                       TrUserData).
+
 dg_read_field_def_payload_response(<<1:1, X:7,
                                      Rest/binary>>,
-                                   N, Acc, F@_1, F@_2, F@_3, F@_4, TrUserData)
+                                   N, Acc, F@_1, F@_2, F@_3, TrUserData)
     when N < 32 - 7 ->
     dg_read_field_def_payload_response(Rest,
                                        N + 7,
@@ -2234,50 +739,36 @@ dg_read_field_def_payload_response(<<1:1, X:7,
                                        F@_1,
                                        F@_2,
                                        F@_3,
-                                       F@_4,
                                        TrUserData);
 dg_read_field_def_payload_response(<<0:1, X:7,
                                      Rest/binary>>,
-                                   N, Acc, F@_1, F@_2, F@_3, F@_4,
-                                   TrUserData) ->
+                                   N, Acc, F@_1, F@_2, F@_3, TrUserData) ->
     Key = X bsl N + Acc,
     case Key of
-        8 ->
-            d_field_payload_response_status(Rest,
-                                            0,
-                                            0,
-                                            F@_1,
-                                            F@_2,
-                                            F@_3,
-                                            F@_4,
-                                            TrUserData);
-        18 ->
-            d_field_payload_response_ack(Rest,
-                                         0,
-                                         0,
-                                         F@_1,
-                                         F@_2,
-                                         F@_3,
-                                         F@_4,
-                                         TrUserData);
-        26 ->
+        10 ->
             d_field_payload_response_topic(Rest,
                                            0,
                                            0,
                                            F@_1,
                                            F@_2,
                                            F@_3,
-                                           F@_4,
                                            TrUserData);
-        34 ->
+        18 ->
             d_field_payload_response_payload(Rest,
                                              0,
                                              0,
                                              F@_1,
                                              F@_2,
                                              F@_3,
-                                             F@_4,
                                              TrUserData);
+        26 ->
+            d_field_payload_response_ack(Rest,
+                                         0,
+                                         0,
+                                         F@_1,
+                                         F@_2,
+                                         F@_3,
+                                         TrUserData);
         _ ->
             case Key band 7 of
                 0 ->
@@ -2287,7 +778,6 @@ dg_read_field_def_payload_response(<<0:1, X:7,
                                                  F@_1,
                                                  F@_2,
                                                  F@_3,
-                                                 F@_4,
                                                  TrUserData);
                 1 ->
                     skip_64_payload_response(Rest,
@@ -2296,7 +786,6 @@ dg_read_field_def_payload_response(<<0:1, X:7,
                                              F@_1,
                                              F@_2,
                                              F@_3,
-                                             F@_4,
                                              TrUserData);
                 2 ->
                     skip_length_delimited_payload_response(Rest,
@@ -2305,7 +794,6 @@ dg_read_field_def_payload_response(<<0:1, X:7,
                                                            F@_1,
                                                            F@_2,
                                                            F@_3,
-                                                           F@_4,
                                                            TrUserData);
                 3 ->
                     skip_group_payload_response(Rest,
@@ -2314,7 +802,6 @@ dg_read_field_def_payload_response(<<0:1, X:7,
                                                 F@_1,
                                                 F@_2,
                                                 F@_3,
-                                                F@_4,
                                                 TrUserData);
                 5 ->
                     skip_32_payload_response(Rest,
@@ -2323,80 +810,16 @@ dg_read_field_def_payload_response(<<0:1, X:7,
                                              F@_1,
                                              F@_2,
                                              F@_3,
-                                             F@_4,
                                              TrUserData)
             end
     end;
 dg_read_field_def_payload_response(<<>>, 0, 0, F@_1,
-                                   F@_2, F@_3, F@_4, _) ->
-    #{status => F@_1, ack => F@_2, topic => F@_3,
-      payload => F@_4}.
-
-d_field_payload_response_status(<<1:1, X:7,
-                                  Rest/binary>>,
-                                N, Acc, F@_1, F@_2, F@_3, F@_4, TrUserData)
-    when N < 57 ->
-    d_field_payload_response_status(Rest,
-                                    N + 7,
-                                    X bsl N + Acc,
-                                    F@_1,
-                                    F@_2,
-                                    F@_3,
-                                    F@_4,
-                                    TrUserData);
-d_field_payload_response_status(<<0:1, X:7,
-                                  Rest/binary>>,
-                                N, Acc, _, F@_2, F@_3, F@_4, TrUserData) ->
-    {NewFValue, RestF} =
-        {id('d_enum_payload_response.Ack'(begin
-                                              <<Res:32/signed-native>> = <<(X
-                                                                                bsl
-                                                                                N
-                                                                                +
-                                                                                Acc):32/unsigned-native>>,
-                                              id(Res, TrUserData)
-                                          end),
-            TrUserData),
-         Rest},
-    dfp_read_field_def_payload_response(RestF,
-                                        0,
-                                        0,
-                                        NewFValue,
-                                        F@_2,
-                                        F@_3,
-                                        F@_4,
-                                        TrUserData).
-
-d_field_payload_response_ack(<<1:1, X:7, Rest/binary>>,
-                             N, Acc, F@_1, F@_2, F@_3, F@_4, TrUserData)
-    when N < 57 ->
-    d_field_payload_response_ack(Rest,
-                                 N + 7,
-                                 X bsl N + Acc,
-                                 F@_1,
-                                 F@_2,
-                                 F@_3,
-                                 F@_4,
-                                 TrUserData);
-d_field_payload_response_ack(<<0:1, X:7, Rest/binary>>,
-                             N, Acc, F@_1, _, F@_3, F@_4, TrUserData) ->
-    {NewFValue, RestF} = begin
-                             Len = X bsl N + Acc,
-                             <<Bytes:Len/binary, Rest2/binary>> = Rest,
-                             {id(binary:copy(Bytes), TrUserData), Rest2}
-                         end,
-    dfp_read_field_def_payload_response(RestF,
-                                        0,
-                                        0,
-                                        F@_1,
-                                        NewFValue,
-                                        F@_3,
-                                        F@_4,
-                                        TrUserData).
+                                   F@_2, F@_3, _) ->
+    #{topic => F@_1, payload => F@_2, ack => F@_3}.
 
 d_field_payload_response_topic(<<1:1, X:7,
                                  Rest/binary>>,
-                               N, Acc, F@_1, F@_2, F@_3, F@_4, TrUserData)
+                               N, Acc, F@_1, F@_2, F@_3, TrUserData)
     when N < 57 ->
     d_field_payload_response_topic(Rest,
                                    N + 7,
@@ -2404,11 +827,10 @@ d_field_payload_response_topic(<<1:1, X:7,
                                    F@_1,
                                    F@_2,
                                    F@_3,
-                                   F@_4,
                                    TrUserData);
 d_field_payload_response_topic(<<0:1, X:7,
                                  Rest/binary>>,
-                               N, Acc, F@_1, F@_2, _, F@_4, TrUserData) ->
+                               N, Acc, _, F@_2, F@_3, TrUserData) ->
     {NewFValue, RestF} = begin
                              Len = X bsl N + Acc,
                              <<Bytes:Len/binary, Rest2/binary>> = Rest,
@@ -2417,15 +839,14 @@ d_field_payload_response_topic(<<0:1, X:7,
     dfp_read_field_def_payload_response(RestF,
                                         0,
                                         0,
-                                        F@_1,
-                                        F@_2,
                                         NewFValue,
-                                        F@_4,
+                                        F@_2,
+                                        F@_3,
                                         TrUserData).
 
 d_field_payload_response_payload(<<1:1, X:7,
                                    Rest/binary>>,
-                                 N, Acc, F@_1, F@_2, F@_3, F@_4, TrUserData)
+                                 N, Acc, F@_1, F@_2, F@_3, TrUserData)
     when N < 57 ->
     d_field_payload_response_payload(Rest,
                                      N + 7,
@@ -2433,11 +854,35 @@ d_field_payload_response_payload(<<1:1, X:7,
                                      F@_1,
                                      F@_2,
                                      F@_3,
-                                     F@_4,
                                      TrUserData);
 d_field_payload_response_payload(<<0:1, X:7,
                                    Rest/binary>>,
-                                 N, Acc, F@_1, F@_2, F@_3, _, TrUserData) ->
+                                 N, Acc, F@_1, _, F@_3, TrUserData) ->
+    {NewFValue, RestF} = begin
+                             Len = X bsl N + Acc,
+                             <<Bytes:Len/binary, Rest2/binary>> = Rest,
+                             {id(binary:copy(Bytes), TrUserData), Rest2}
+                         end,
+    dfp_read_field_def_payload_response(RestF,
+                                        0,
+                                        0,
+                                        F@_1,
+                                        NewFValue,
+                                        F@_3,
+                                        TrUserData).
+
+d_field_payload_response_ack(<<1:1, X:7, Rest/binary>>,
+                             N, Acc, F@_1, F@_2, F@_3, TrUserData)
+    when N < 57 ->
+    d_field_payload_response_ack(Rest,
+                                 N + 7,
+                                 X bsl N + Acc,
+                                 F@_1,
+                                 F@_2,
+                                 F@_3,
+                                 TrUserData);
+d_field_payload_response_ack(<<0:1, X:7, Rest/binary>>,
+                             N, Acc, F@_1, F@_2, _, TrUserData) ->
     {NewFValue, RestF} = begin
                              Len = X bsl N + Acc,
                              <<Bytes:Len/binary, Rest2/binary>> = Rest,
@@ -2448,35 +893,31 @@ d_field_payload_response_payload(<<0:1, X:7,
                                         0,
                                         F@_1,
                                         F@_2,
-                                        F@_3,
                                         NewFValue,
                                         TrUserData).
 
 skip_varint_payload_response(<<1:1, _:7, Rest/binary>>,
-                             Z1, Z2, F@_1, F@_2, F@_3, F@_4, TrUserData) ->
+                             Z1, Z2, F@_1, F@_2, F@_3, TrUserData) ->
     skip_varint_payload_response(Rest,
                                  Z1,
                                  Z2,
                                  F@_1,
                                  F@_2,
                                  F@_3,
-                                 F@_4,
                                  TrUserData);
 skip_varint_payload_response(<<0:1, _:7, Rest/binary>>,
-                             Z1, Z2, F@_1, F@_2, F@_3, F@_4, TrUserData) ->
+                             Z1, Z2, F@_1, F@_2, F@_3, TrUserData) ->
     dfp_read_field_def_payload_response(Rest,
                                         Z1,
                                         Z2,
                                         F@_1,
                                         F@_2,
                                         F@_3,
-                                        F@_4,
                                         TrUserData).
 
 skip_length_delimited_payload_response(<<1:1, X:7,
                                          Rest/binary>>,
-                                       N, Acc, F@_1, F@_2, F@_3, F@_4,
-                                       TrUserData)
+                                       N, Acc, F@_1, F@_2, F@_3, TrUserData)
     when N < 57 ->
     skip_length_delimited_payload_response(Rest,
                                            N + 7,
@@ -2484,12 +925,10 @@ skip_length_delimited_payload_response(<<1:1, X:7,
                                            F@_1,
                                            F@_2,
                                            F@_3,
-                                           F@_4,
                                            TrUserData);
 skip_length_delimited_payload_response(<<0:1, X:7,
                                          Rest/binary>>,
-                                       N, Acc, F@_1, F@_2, F@_3, F@_4,
-                                       TrUserData) ->
+                                       N, Acc, F@_1, F@_2, F@_3, TrUserData) ->
     Length = X bsl N + Acc,
     <<_:Length/binary, Rest2/binary>> = Rest,
     dfp_read_field_def_payload_response(Rest2,
@@ -2498,11 +937,10 @@ skip_length_delimited_payload_response(<<0:1, X:7,
                                         F@_1,
                                         F@_2,
                                         F@_3,
-                                        F@_4,
                                         TrUserData).
 
 skip_group_payload_response(Bin, FNum, Z2, F@_1, F@_2,
-                            F@_3, F@_4, TrUserData) ->
+                            F@_3, TrUserData) ->
     {_, Rest} = read_group(Bin, FNum),
     dfp_read_field_def_payload_response(Rest,
                                         0,
@@ -2510,42 +948,27 @@ skip_group_payload_response(Bin, FNum, Z2, F@_1, F@_2,
                                         F@_1,
                                         F@_2,
                                         F@_3,
-                                        F@_4,
                                         TrUserData).
 
 skip_32_payload_response(<<_:32, Rest/binary>>, Z1, Z2,
-                         F@_1, F@_2, F@_3, F@_4, TrUserData) ->
+                         F@_1, F@_2, F@_3, TrUserData) ->
     dfp_read_field_def_payload_response(Rest,
                                         Z1,
                                         Z2,
                                         F@_1,
                                         F@_2,
                                         F@_3,
-                                        F@_4,
                                         TrUserData).
 
 skip_64_payload_response(<<_:64, Rest/binary>>, Z1, Z2,
-                         F@_1, F@_2, F@_3, F@_4, TrUserData) ->
+                         F@_1, F@_2, F@_3, TrUserData) ->
     dfp_read_field_def_payload_response(Rest,
                                         Z1,
                                         Z2,
                                         F@_1,
                                         F@_2,
                                         F@_3,
-                                        F@_4,
                                         TrUserData).
-
-'d_enum_login_response.Ack'(0) -> 'NOACK';
-'d_enum_login_response.Ack'(1) -> 'ACK';
-'d_enum_login_response.Ack'(V) -> V.
-
-'d_enum_logout_response.Ack'(0) -> 'NOACK';
-'d_enum_logout_response.Ack'(1) -> 'ACK';
-'d_enum_logout_response.Ack'(V) -> V.
-
-'d_enum_payload_response.Ack'(0) -> 'NOACK';
-'d_enum_payload_response.Ack'(1) -> 'ACK';
-'d_enum_payload_response.Ack'(V) -> V.
 
 read_group(Bin, FieldNum) ->
     {NumBytes, EndTagLen} = read_gr_b(Bin, 0, 0, 0, 0, FieldNum),
@@ -2611,160 +1034,50 @@ merge_msgs(Prev, New, MsgName) when is_atom(MsgName) ->
 merge_msgs(Prev, New, MsgName, Opts) ->
     TrUserData = proplists:get_value(user_data, Opts),
     case MsgName of
-        login_request ->
-            merge_msg_login_request(Prev, New, TrUserData);
-        login_response ->
-            merge_msg_login_response(Prev, New, TrUserData);
-        logout_request ->
-            merge_msg_logout_request(Prev, New, TrUserData);
-        logout_response ->
-            merge_msg_logout_response(Prev, New, TrUserData);
         payload_request ->
             merge_msg_payload_request(Prev, New, TrUserData);
         payload_response ->
             merge_msg_payload_response(Prev, New, TrUserData)
     end.
 
--compile({nowarn_unused_function,merge_msg_login_request/3}).
-merge_msg_login_request(PMsg, NMsg, _) ->
-    S1 = #{},
-    case {PMsg, NMsg} of
-        {_, #{data := NFdata}} -> S1#{data => NFdata};
-        {#{data := PFdata}, _} -> S1#{data => PFdata};
-        _ -> S1
-    end.
-
--compile({nowarn_unused_function,merge_msg_login_response/3}).
-merge_msg_login_response(PMsg, NMsg, _) ->
-    S1 = #{},
-    S2 = case {PMsg, NMsg} of
-             {_, #{status := NFstatus}} -> S1#{status => NFstatus};
-             {#{status := PFstatus}, _} -> S1#{status => PFstatus};
-             _ -> S1
-         end,
-    S3 = case {PMsg, NMsg} of
-             {_, #{ack := NFack}} -> S2#{ack => NFack};
-             {#{ack := PFack}, _} -> S2#{ack => PFack};
-             _ -> S2
-         end,
-    S4 = case {PMsg, NMsg} of
-             {_, #{productid := NFproductid}} ->
-                 S3#{productid => NFproductid};
-             {#{productid := PFproductid}, _} ->
-                 S3#{productid => PFproductid};
-             _ -> S3
-         end,
-    S5 = case {PMsg, NMsg} of
-             {_, #{devaddr := NFdevaddr}} ->
-                 S4#{devaddr => NFdevaddr};
-             {#{devaddr := PFdevaddr}, _} ->
-                 S4#{devaddr => PFdevaddr};
-             _ -> S4
-         end,
-    case {PMsg, NMsg} of
-        {_, #{payload := NFpayload}} ->
-            S5#{payload => NFpayload};
-        {#{payload := PFpayload}, _} ->
-            S5#{payload => PFpayload};
-        _ -> S5
-    end.
-
--compile({nowarn_unused_function,merge_msg_logout_request/3}).
-merge_msg_logout_request(PMsg, NMsg, _) ->
-    S1 = #{},
-    S2 = case {PMsg, NMsg} of
-             {_, #{productid := NFproductid}} ->
-                 S1#{productid => NFproductid};
-             {#{productid := PFproductid}, _} ->
-                 S1#{productid => PFproductid};
-             _ -> S1
-         end,
-    S3 = case {PMsg, NMsg} of
-             {_, #{devaddr := NFdevaddr}} ->
-                 S2#{devaddr => NFdevaddr};
-             {#{devaddr := PFdevaddr}, _} ->
-                 S2#{devaddr => PFdevaddr};
-             _ -> S2
-         end,
-    case {PMsg, NMsg} of
-        {_, #{data := NFdata}} -> S3#{data => NFdata};
-        {#{data := PFdata}, _} -> S3#{data => PFdata};
-        _ -> S3
-    end.
-
--compile({nowarn_unused_function,merge_msg_logout_response/3}).
-merge_msg_logout_response(PMsg, NMsg, _) ->
-    S1 = #{},
-    S2 = case {PMsg, NMsg} of
-             {_, #{status := NFstatus}} -> S1#{status => NFstatus};
-             {#{status := PFstatus}, _} -> S1#{status => PFstatus};
-             _ -> S1
-         end,
-    S3 = case {PMsg, NMsg} of
-             {_, #{ack := NFack}} -> S2#{ack => NFack};
-             {#{ack := PFack}, _} -> S2#{ack => PFack};
-             _ -> S2
-         end,
-    S4 = case {PMsg, NMsg} of
-             {_, #{topic := NFtopic}} -> S3#{topic => NFtopic};
-             {#{topic := PFtopic}, _} -> S3#{topic => PFtopic};
-             _ -> S3
-         end,
-    case {PMsg, NMsg} of
-        {_, #{payload := NFpayload}} ->
-            S4#{payload => NFpayload};
-        {#{payload := PFpayload}, _} ->
-            S4#{payload => PFpayload};
-        _ -> S4
-    end.
-
 -compile({nowarn_unused_function,merge_msg_payload_request/3}).
-merge_msg_payload_request(PMsg, NMsg, _) ->
-    S1 = #{},
+merge_msg_payload_request(#{} = PMsg,
+                          #{cmd := NFcmd, data := NFdata} = NMsg, _) ->
+    S1 = #{cmd => NFcmd, data => NFdata},
     S2 = case {PMsg, NMsg} of
-             {_, #{productid := NFproductid}} ->
-                 S1#{productid => NFproductid};
-             {#{productid := PFproductid}, _} ->
-                 S1#{productid => PFproductid};
+             {_, #{product := NFproduct}} ->
+                 S1#{product => NFproduct};
+             {#{product := PFproduct}, _} ->
+                 S1#{product => PFproduct};
              _ -> S1
          end,
-    S3 = case {PMsg, NMsg} of
-             {_, #{devaddr := NFdevaddr}} ->
-                 S2#{devaddr => NFdevaddr};
-             {#{devaddr := PFdevaddr}, _} ->
-                 S2#{devaddr => PFdevaddr};
-             _ -> S2
-         end,
     case {PMsg, NMsg} of
-        {_, #{data := NFdata}} -> S3#{data => NFdata};
-        {#{data := PFdata}, _} -> S3#{data => PFdata};
-        _ -> S3
+        {_, #{devaddr := NFdevaddr}} ->
+            S2#{devaddr => NFdevaddr};
+        {#{devaddr := PFdevaddr}, _} ->
+            S2#{devaddr => PFdevaddr};
+        _ -> S2
     end.
 
 -compile({nowarn_unused_function,merge_msg_payload_response/3}).
 merge_msg_payload_response(PMsg, NMsg, _) ->
     S1 = #{},
     S2 = case {PMsg, NMsg} of
-             {_, #{status := NFstatus}} -> S1#{status => NFstatus};
-             {#{status := PFstatus}, _} -> S1#{status => PFstatus};
+             {_, #{topic := NFtopic}} -> S1#{topic => NFtopic};
+             {#{topic := PFtopic}, _} -> S1#{topic => PFtopic};
              _ -> S1
          end,
     S3 = case {PMsg, NMsg} of
-             {_, #{ack := NFack}} -> S2#{ack => NFack};
-             {#{ack := PFack}, _} -> S2#{ack => PFack};
+             {_, #{payload := NFpayload}} ->
+                 S2#{payload => NFpayload};
+             {#{payload := PFpayload}, _} ->
+                 S2#{payload => PFpayload};
              _ -> S2
          end,
-    S4 = case {PMsg, NMsg} of
-             {_, #{topic := NFtopic}} -> S3#{topic => NFtopic};
-             {#{topic := PFtopic}, _} -> S3#{topic => PFtopic};
-             _ -> S3
-         end,
     case {PMsg, NMsg} of
-        {_, #{payload := NFpayload}} ->
-            S4#{payload => NFpayload};
-        {#{payload := PFpayload}, _} ->
-            S4#{payload => PFpayload};
-        _ -> S4
+        {_, #{ack := NFack}} -> S3#{ack => NFack};
+        {#{ack := PFack}, _} -> S3#{ack => PFack};
+        _ -> S3
     end.
 
 
@@ -2774,14 +1087,6 @@ verify_msg(Msg, MsgName) when is_atom(MsgName) ->
 verify_msg(Msg, MsgName, Opts) ->
     TrUserData = proplists:get_value(user_data, Opts),
     case MsgName of
-        login_request ->
-            v_msg_login_request(Msg, [MsgName], TrUserData);
-        login_response ->
-            v_msg_login_response(Msg, [MsgName], TrUserData);
-        logout_request ->
-            v_msg_logout_request(Msg, [MsgName], TrUserData);
-        logout_response ->
-            v_msg_logout_response(Msg, [MsgName], TrUserData);
         payload_request ->
             v_msg_payload_request(Msg, [MsgName], TrUserData);
         payload_response ->
@@ -2790,166 +1095,13 @@ verify_msg(Msg, MsgName, Opts) ->
     end.
 
 
--compile({nowarn_unused_function,v_msg_login_request/3}).
--dialyzer({nowarn_function,v_msg_login_request/3}).
-v_msg_login_request(#{} = M, Path, TrUserData) ->
-    case M of
-        #{data := F1} ->
-            v_type_string(F1, [data | Path], TrUserData);
-        _ -> ok
-    end,
-    lists:foreach(fun (data) -> ok;
-                      (OtherKey) ->
-                          mk_type_error({extraneous_key, OtherKey}, M, Path)
-                  end,
-                  maps:keys(M)),
-    ok;
-v_msg_login_request(M, Path, _TrUserData)
-    when is_map(M) ->
-    mk_type_error({missing_fields,
-                   [] -- maps:keys(M),
-                   login_request},
-                  M,
-                  Path);
-v_msg_login_request(X, Path, _TrUserData) ->
-    mk_type_error({expected_msg, login_request}, X, Path).
-
--compile({nowarn_unused_function,v_msg_login_response/3}).
--dialyzer({nowarn_function,v_msg_login_response/3}).
-v_msg_login_response(#{} = M, Path, TrUserData) ->
-    case M of
-        #{status := F1} ->
-            'v_enum_login_response.Ack'(F1,
-                                        [status | Path],
-                                        TrUserData);
-        _ -> ok
-    end,
-    case M of
-        #{ack := F2} ->
-            v_type_string(F2, [ack | Path], TrUserData);
-        _ -> ok
-    end,
-    case M of
-        #{productid := F3} ->
-            v_type_string(F3, [productid | Path], TrUserData);
-        _ -> ok
-    end,
-    case M of
-        #{devaddr := F4} ->
-            v_type_string(F4, [devaddr | Path], TrUserData);
-        _ -> ok
-    end,
-    case M of
-        #{payload := F5} ->
-            v_type_string(F5, [payload | Path], TrUserData);
-        _ -> ok
-    end,
-    lists:foreach(fun (status) -> ok;
-                      (ack) -> ok;
-                      (productid) -> ok;
-                      (devaddr) -> ok;
-                      (payload) -> ok;
-                      (OtherKey) ->
-                          mk_type_error({extraneous_key, OtherKey}, M, Path)
-                  end,
-                  maps:keys(M)),
-    ok;
-v_msg_login_response(M, Path, _TrUserData)
-    when is_map(M) ->
-    mk_type_error({missing_fields,
-                   [] -- maps:keys(M),
-                   login_response},
-                  M,
-                  Path);
-v_msg_login_response(X, Path, _TrUserData) ->
-    mk_type_error({expected_msg, login_response}, X, Path).
-
--compile({nowarn_unused_function,v_msg_logout_request/3}).
--dialyzer({nowarn_function,v_msg_logout_request/3}).
-v_msg_logout_request(#{} = M, Path, TrUserData) ->
-    case M of
-        #{productid := F1} ->
-            v_type_string(F1, [productid | Path], TrUserData);
-        _ -> ok
-    end,
-    case M of
-        #{devaddr := F2} ->
-            v_type_string(F2, [devaddr | Path], TrUserData);
-        _ -> ok
-    end,
-    case M of
-        #{data := F3} ->
-            v_type_string(F3, [data | Path], TrUserData);
-        _ -> ok
-    end,
-    lists:foreach(fun (productid) -> ok;
-                      (devaddr) -> ok;
-                      (data) -> ok;
-                      (OtherKey) ->
-                          mk_type_error({extraneous_key, OtherKey}, M, Path)
-                  end,
-                  maps:keys(M)),
-    ok;
-v_msg_logout_request(M, Path, _TrUserData)
-    when is_map(M) ->
-    mk_type_error({missing_fields,
-                   [] -- maps:keys(M),
-                   logout_request},
-                  M,
-                  Path);
-v_msg_logout_request(X, Path, _TrUserData) ->
-    mk_type_error({expected_msg, logout_request}, X, Path).
-
--compile({nowarn_unused_function,v_msg_logout_response/3}).
--dialyzer({nowarn_function,v_msg_logout_response/3}).
-v_msg_logout_response(#{} = M, Path, TrUserData) ->
-    case M of
-        #{status := F1} ->
-            'v_enum_logout_response.Ack'(F1,
-                                         [status | Path],
-                                         TrUserData);
-        _ -> ok
-    end,
-    case M of
-        #{ack := F2} ->
-            v_type_string(F2, [ack | Path], TrUserData);
-        _ -> ok
-    end,
-    case M of
-        #{topic := F3} ->
-            v_type_string(F3, [topic | Path], TrUserData);
-        _ -> ok
-    end,
-    case M of
-        #{payload := F4} ->
-            v_type_string(F4, [payload | Path], TrUserData);
-        _ -> ok
-    end,
-    lists:foreach(fun (status) -> ok;
-                      (ack) -> ok;
-                      (topic) -> ok;
-                      (payload) -> ok;
-                      (OtherKey) ->
-                          mk_type_error({extraneous_key, OtherKey}, M, Path)
-                  end,
-                  maps:keys(M)),
-    ok;
-v_msg_logout_response(M, Path, _TrUserData)
-    when is_map(M) ->
-    mk_type_error({missing_fields,
-                   [] -- maps:keys(M),
-                   logout_response},
-                  M,
-                  Path);
-v_msg_logout_response(X, Path, _TrUserData) ->
-    mk_type_error({expected_msg, logout_response}, X, Path).
-
 -compile({nowarn_unused_function,v_msg_payload_request/3}).
 -dialyzer({nowarn_function,v_msg_payload_request/3}).
-v_msg_payload_request(#{} = M, Path, TrUserData) ->
+v_msg_payload_request(#{cmd := F3, data := F4} = M,
+                      Path, TrUserData) ->
     case M of
-        #{productid := F1} ->
-            v_type_string(F1, [productid | Path], TrUserData);
+        #{product := F1} ->
+            v_type_string(F1, [product | Path], TrUserData);
         _ -> ok
     end,
     case M of
@@ -2957,13 +1109,11 @@ v_msg_payload_request(#{} = M, Path, TrUserData) ->
             v_type_string(F2, [devaddr | Path], TrUserData);
         _ -> ok
     end,
-    case M of
-        #{data := F3} ->
-            v_type_string(F3, [data | Path], TrUserData);
-        _ -> ok
-    end,
-    lists:foreach(fun (productid) -> ok;
+    v_type_string(F3, [cmd | Path], TrUserData),
+    v_type_string(F4, [data | Path], TrUserData),
+    lists:foreach(fun (product) -> ok;
                       (devaddr) -> ok;
+                      (cmd) -> ok;
                       (data) -> ok;
                       (OtherKey) ->
                           mk_type_error({extraneous_key, OtherKey}, M, Path)
@@ -2973,7 +1123,7 @@ v_msg_payload_request(#{} = M, Path, TrUserData) ->
 v_msg_payload_request(M, Path, _TrUserData)
     when is_map(M) ->
     mk_type_error({missing_fields,
-                   [] -- maps:keys(M),
+                   [cmd, data] -- maps:keys(M),
                    payload_request},
                   M,
                   Path);
@@ -2984,31 +1134,23 @@ v_msg_payload_request(X, Path, _TrUserData) ->
 -dialyzer({nowarn_function,v_msg_payload_response/3}).
 v_msg_payload_response(#{} = M, Path, TrUserData) ->
     case M of
-        #{status := F1} ->
-            'v_enum_payload_response.Ack'(F1,
-                                          [status | Path],
-                                          TrUserData);
+        #{topic := F1} ->
+            v_type_string(F1, [topic | Path], TrUserData);
         _ -> ok
     end,
     case M of
-        #{ack := F2} ->
-            v_type_string(F2, [ack | Path], TrUserData);
+        #{payload := F2} ->
+            v_type_string(F2, [payload | Path], TrUserData);
         _ -> ok
     end,
     case M of
-        #{topic := F3} ->
-            v_type_string(F3, [topic | Path], TrUserData);
+        #{ack := F3} ->
+            v_type_string(F3, [ack | Path], TrUserData);
         _ -> ok
     end,
-    case M of
-        #{payload := F4} ->
-            v_type_string(F4, [payload | Path], TrUserData);
-        _ -> ok
-    end,
-    lists:foreach(fun (status) -> ok;
-                      (ack) -> ok;
-                      (topic) -> ok;
+    lists:foreach(fun (topic) -> ok;
                       (payload) -> ok;
+                      (ack) -> ok;
                       (OtherKey) ->
                           mk_type_error({extraneous_key, OtherKey}, M, Path)
                   end,
@@ -3023,69 +1165,6 @@ v_msg_payload_response(M, Path, _TrUserData)
                   Path);
 v_msg_payload_response(X, Path, _TrUserData) ->
     mk_type_error({expected_msg, payload_response},
-                  X,
-                  Path).
-
--compile({nowarn_unused_function,'v_enum_login_response.Ack'/3}).
--dialyzer({nowarn_function,'v_enum_login_response.Ack'/3}).
-'v_enum_login_response.Ack'('NOACK', _Path,
-                            _TrUserData) ->
-    ok;
-'v_enum_login_response.Ack'('ACK', _Path,
-                            _TrUserData) ->
-    ok;
-'v_enum_login_response.Ack'(V, Path, TrUserData)
-    when is_integer(V) ->
-    v_type_sint32(V, Path, TrUserData);
-'v_enum_login_response.Ack'(X, Path, _TrUserData) ->
-    mk_type_error({invalid_enum, 'login_response.Ack'},
-                  X,
-                  Path).
-
--compile({nowarn_unused_function,'v_enum_logout_response.Ack'/3}).
--dialyzer({nowarn_function,'v_enum_logout_response.Ack'/3}).
-'v_enum_logout_response.Ack'('NOACK', _Path,
-                             _TrUserData) ->
-    ok;
-'v_enum_logout_response.Ack'('ACK', _Path,
-                             _TrUserData) ->
-    ok;
-'v_enum_logout_response.Ack'(V, Path, TrUserData)
-    when is_integer(V) ->
-    v_type_sint32(V, Path, TrUserData);
-'v_enum_logout_response.Ack'(X, Path, _TrUserData) ->
-    mk_type_error({invalid_enum, 'logout_response.Ack'},
-                  X,
-                  Path).
-
--compile({nowarn_unused_function,'v_enum_payload_response.Ack'/3}).
--dialyzer({nowarn_function,'v_enum_payload_response.Ack'/3}).
-'v_enum_payload_response.Ack'('NOACK', _Path,
-                              _TrUserData) ->
-    ok;
-'v_enum_payload_response.Ack'('ACK', _Path,
-                              _TrUserData) ->
-    ok;
-'v_enum_payload_response.Ack'(V, Path, TrUserData)
-    when is_integer(V) ->
-    v_type_sint32(V, Path, TrUserData);
-'v_enum_payload_response.Ack'(X, Path, _TrUserData) ->
-    mk_type_error({invalid_enum, 'payload_response.Ack'},
-                  X,
-                  Path).
-
--compile({nowarn_unused_function,v_type_sint32/3}).
--dialyzer({nowarn_function,v_type_sint32/3}).
-v_type_sint32(N, _Path, _TrUserData)
-    when -2147483648 =< N, N =< 2147483647 ->
-    ok;
-v_type_sint32(N, Path, _TrUserData)
-    when is_integer(N) ->
-    mk_type_error({value_out_of_range, sint32, signed, 32},
-                  N,
-                  Path);
-v_type_sint32(X, Path, _TrUserData) ->
-    mk_type_error({bad_integer, sint32, signed, 32},
                   X,
                   Path).
 
@@ -3146,88 +1225,35 @@ cons(Elem, Acc, _TrUserData) -> [Elem | Acc].
 
 
 get_msg_defs() ->
-    [{{enum, 'login_response.Ack'},
-      [{'NOACK', 0}, {'ACK', 1}]},
-     {{enum, 'logout_response.Ack'},
-      [{'NOACK', 0}, {'ACK', 1}]},
-     {{enum, 'payload_response.Ack'},
-      [{'NOACK', 0}, {'ACK', 1}]},
-     {{msg, login_request},
-      [#{name => data, fnum => 2, rnum => 2, type => string,
-         occurrence => optional, opts => []}]},
-     {{msg, login_response},
-      [#{name => status, fnum => 1, rnum => 2,
-         type => {enum, 'login_response.Ack'},
-         occurrence => optional, opts => []},
-       #{name => ack, fnum => 2, rnum => 3, type => string,
-         occurrence => optional, opts => []},
-       #{name => productid, fnum => 3, rnum => 4,
-         type => string, occurrence => optional, opts => []},
-       #{name => devaddr, fnum => 4, rnum => 5, type => string,
-         occurrence => optional, opts => []},
-       #{name => payload, fnum => 5, rnum => 6, type => string,
-         occurrence => optional, opts => []}]},
-     {{msg, logout_request},
-      [#{name => productid, fnum => 1, rnum => 2,
+    [{{msg, payload_request},
+      [#{name => product, fnum => 1, rnum => 2,
          type => string, occurrence => optional, opts => []},
        #{name => devaddr, fnum => 2, rnum => 3, type => string,
          occurrence => optional, opts => []},
-       #{name => data, fnum => 3, rnum => 4, type => string,
-         occurrence => optional, opts => []}]},
-     {{msg, logout_response},
-      [#{name => status, fnum => 1, rnum => 2,
-         type => {enum, 'logout_response.Ack'},
-         occurrence => optional, opts => []},
-       #{name => ack, fnum => 2, rnum => 3, type => string,
-         occurrence => optional, opts => []},
-       #{name => topic, fnum => 3, rnum => 4, type => string,
-         occurrence => optional, opts => []},
-       #{name => payload, fnum => 4, rnum => 5, type => string,
-         occurrence => optional, opts => []}]},
-     {{msg, payload_request},
-      [#{name => productid, fnum => 1, rnum => 2,
-         type => string, occurrence => optional, opts => []},
-       #{name => devaddr, fnum => 2, rnum => 3, type => string,
-         occurrence => optional, opts => []},
-       #{name => data, fnum => 3, rnum => 4, type => string,
-         occurrence => optional, opts => []}]},
+       #{name => cmd, fnum => 3, rnum => 4, type => string,
+         occurrence => required, opts => []},
+       #{name => data, fnum => 4, rnum => 5, type => string,
+         occurrence => required, opts => []}]},
      {{msg, payload_response},
-      [#{name => status, fnum => 1, rnum => 2,
-         type => {enum, 'payload_response.Ack'},
+      [#{name => topic, fnum => 1, rnum => 2, type => string,
          occurrence => optional, opts => []},
-       #{name => ack, fnum => 2, rnum => 3, type => string,
+       #{name => payload, fnum => 2, rnum => 3, type => string,
          occurrence => optional, opts => []},
-       #{name => topic, fnum => 3, rnum => 4, type => string,
-         occurrence => optional, opts => []},
-       #{name => payload, fnum => 4, rnum => 5, type => string,
+       #{name => ack, fnum => 3, rnum => 4, type => string,
          occurrence => optional, opts => []}]}].
 
 
-get_msg_names() ->
-    [login_request,
-     login_response,
-     logout_request,
-     logout_response,
-     payload_request,
-     payload_response].
+get_msg_names() -> [payload_request, payload_response].
 
 
 get_group_names() -> [].
 
 
 get_msg_or_group_names() ->
-    [login_request,
-     login_response,
-     logout_request,
-     logout_response,
-     payload_request,
-     payload_response].
+    [payload_request, payload_response].
 
 
-get_enum_names() ->
-    ['login_response.Ack',
-     'logout_response.Ack',
-     'payload_response.Ack'].
+get_enum_names() -> [].
 
 
 fetch_msg_def(MsgName) ->
@@ -3237,114 +1263,42 @@ fetch_msg_def(MsgName) ->
     end.
 
 
+-spec fetch_enum_def(_) -> no_return().
 fetch_enum_def(EnumName) ->
-    case find_enum_def(EnumName) of
-        Es when is_list(Es) -> Es;
-        error -> erlang:error({no_such_enum, EnumName})
-    end.
+    erlang:error({no_such_enum, EnumName}).
 
 
-find_msg_def(login_request) ->
-    [#{name => data, fnum => 2, rnum => 2, type => string,
-       occurrence => optional, opts => []}];
-find_msg_def(login_response) ->
-    [#{name => status, fnum => 1, rnum => 2,
-       type => {enum, 'login_response.Ack'},
-       occurrence => optional, opts => []},
-     #{name => ack, fnum => 2, rnum => 3, type => string,
-       occurrence => optional, opts => []},
-     #{name => productid, fnum => 3, rnum => 4,
-       type => string, occurrence => optional, opts => []},
-     #{name => devaddr, fnum => 4, rnum => 5, type => string,
-       occurrence => optional, opts => []},
-     #{name => payload, fnum => 5, rnum => 6, type => string,
-       occurrence => optional, opts => []}];
-find_msg_def(logout_request) ->
-    [#{name => productid, fnum => 1, rnum => 2,
-       type => string, occurrence => optional, opts => []},
-     #{name => devaddr, fnum => 2, rnum => 3, type => string,
-       occurrence => optional, opts => []},
-     #{name => data, fnum => 3, rnum => 4, type => string,
-       occurrence => optional, opts => []}];
-find_msg_def(logout_response) ->
-    [#{name => status, fnum => 1, rnum => 2,
-       type => {enum, 'logout_response.Ack'},
-       occurrence => optional, opts => []},
-     #{name => ack, fnum => 2, rnum => 3, type => string,
-       occurrence => optional, opts => []},
-     #{name => topic, fnum => 3, rnum => 4, type => string,
-       occurrence => optional, opts => []},
-     #{name => payload, fnum => 4, rnum => 5, type => string,
-       occurrence => optional, opts => []}];
 find_msg_def(payload_request) ->
-    [#{name => productid, fnum => 1, rnum => 2,
+    [#{name => product, fnum => 1, rnum => 2,
        type => string, occurrence => optional, opts => []},
      #{name => devaddr, fnum => 2, rnum => 3, type => string,
        occurrence => optional, opts => []},
-     #{name => data, fnum => 3, rnum => 4, type => string,
-       occurrence => optional, opts => []}];
+     #{name => cmd, fnum => 3, rnum => 4, type => string,
+       occurrence => required, opts => []},
+     #{name => data, fnum => 4, rnum => 5, type => string,
+       occurrence => required, opts => []}];
 find_msg_def(payload_response) ->
-    [#{name => status, fnum => 1, rnum => 2,
-       type => {enum, 'payload_response.Ack'},
+    [#{name => topic, fnum => 1, rnum => 2, type => string,
        occurrence => optional, opts => []},
-     #{name => ack, fnum => 2, rnum => 3, type => string,
+     #{name => payload, fnum => 2, rnum => 3, type => string,
        occurrence => optional, opts => []},
-     #{name => topic, fnum => 3, rnum => 4, type => string,
-       occurrence => optional, opts => []},
-     #{name => payload, fnum => 4, rnum => 5, type => string,
+     #{name => ack, fnum => 3, rnum => 4, type => string,
        occurrence => optional, opts => []}];
 find_msg_def(_) -> error.
 
 
-find_enum_def('login_response.Ack') ->
-    [{'NOACK', 0}, {'ACK', 1}];
-find_enum_def('logout_response.Ack') ->
-    [{'NOACK', 0}, {'ACK', 1}];
-find_enum_def('payload_response.Ack') ->
-    [{'NOACK', 0}, {'ACK', 1}];
 find_enum_def(_) -> error.
 
 
-enum_symbol_by_value('login_response.Ack', Value) ->
-    'enum_symbol_by_value_login_response.Ack'(Value);
-enum_symbol_by_value('logout_response.Ack', Value) ->
-    'enum_symbol_by_value_logout_response.Ack'(Value);
-enum_symbol_by_value('payload_response.Ack', Value) ->
-    'enum_symbol_by_value_payload_response.Ack'(Value).
+-spec enum_symbol_by_value(_, _) -> no_return().
+enum_symbol_by_value(E, V) ->
+    erlang:error({no_enum_defs, E, V}).
 
 
-enum_value_by_symbol('login_response.Ack', Sym) ->
-    'enum_value_by_symbol_login_response.Ack'(Sym);
-enum_value_by_symbol('logout_response.Ack', Sym) ->
-    'enum_value_by_symbol_logout_response.Ack'(Sym);
-enum_value_by_symbol('payload_response.Ack', Sym) ->
-    'enum_value_by_symbol_payload_response.Ack'(Sym).
+-spec enum_value_by_symbol(_, _) -> no_return().
+enum_value_by_symbol(E, V) ->
+    erlang:error({no_enum_defs, E, V}).
 
-
-'enum_symbol_by_value_login_response.Ack'(0) -> 'NOACK';
-'enum_symbol_by_value_login_response.Ack'(1) -> 'ACK'.
-
-
-'enum_value_by_symbol_login_response.Ack'('NOACK') -> 0;
-'enum_value_by_symbol_login_response.Ack'('ACK') -> 1.
-
-'enum_symbol_by_value_logout_response.Ack'(0) ->
-    'NOACK';
-'enum_symbol_by_value_logout_response.Ack'(1) -> 'ACK'.
-
-
-'enum_value_by_symbol_logout_response.Ack'('NOACK') ->
-    0;
-'enum_value_by_symbol_logout_response.Ack'('ACK') -> 1.
-
-'enum_symbol_by_value_payload_response.Ack'(0) ->
-    'NOACK';
-'enum_symbol_by_value_payload_response.Ack'(1) -> 'ACK'.
-
-
-'enum_value_by_symbol_payload_response.Ack'('NOACK') ->
-    0;
-'enum_value_by_symbol_payload_response.Ack'('ACK') -> 1.
 
 
 get_service_names() -> ['dgiot.Dlink'].
@@ -3352,20 +1306,13 @@ get_service_names() -> ['dgiot.Dlink'].
 
 get_service_def('dgiot.Dlink') ->
     {{service, 'dgiot.Dlink'},
-     [#{name => 'Login', input => login_request,
-        output => login_response, input_stream => false,
-        output_stream => false, opts => []},
-      #{name => 'Logout', input => logout_request,
-        output => logout_response, input_stream => false,
-        output_stream => false, opts => []},
-      #{name => 'Payload', input => payload_request,
+     [#{name => 'Payload', input => payload_request,
         output => payload_response, input_stream => false,
         output_stream => false, opts => []}]};
 get_service_def(_) -> error.
 
 
-get_rpc_names('dgiot.Dlink') ->
-    ['Login', 'Logout', 'Payload'];
+get_rpc_names('dgiot.Dlink') -> ['Payload'];
 get_rpc_names(_) -> error.
 
 
@@ -3374,14 +1321,6 @@ find_rpc_def('dgiot.Dlink', RpcName) ->
 find_rpc_def(_, _) -> error.
 
 
-'find_rpc_def_dgiot.Dlink'('Login') ->
-    #{name => 'Login', input => login_request,
-      output => login_response, input_stream => false,
-      output_stream => false, opts => []};
-'find_rpc_def_dgiot.Dlink'('Logout') ->
-    #{name => 'Logout', input => logout_request,
-      output => logout_response, input_stream => false,
-      output_stream => false, opts => []};
 'find_rpc_def_dgiot.Dlink'('Payload') ->
     #{name => 'Payload', input => payload_request,
       output => payload_response, input_stream => false,
@@ -3414,10 +1353,6 @@ service_name_to_fqbin(X) ->
 %% Convert a a fully qualified (ie with package name) service name
 %% and an rpc name, both as binaries to a service name and an rpc
 %% name, as atoms.
-fqbins_to_service_and_rpc_name(<<"dgiot.Dlink">>, <<"Login">>) ->
-    {'dgiot.Dlink', 'Login'};
-fqbins_to_service_and_rpc_name(<<"dgiot.Dlink">>, <<"Logout">>) ->
-    {'dgiot.Dlink', 'Logout'};
 fqbins_to_service_and_rpc_name(<<"dgiot.Dlink">>, <<"Payload">>) ->
     {'dgiot.Dlink', 'Payload'};
 fqbins_to_service_and_rpc_name(S, R) ->
@@ -3428,46 +1363,28 @@ fqbins_to_service_and_rpc_name(S, R) ->
 %% to a fully qualified (ie with package name) service name and
 %% an rpc name as binaries.
 service_and_rpc_name_to_fqbins('dgiot.Dlink',
-                               'Login') ->
-    {<<"dgiot.Dlink">>, <<"Login">>};
-service_and_rpc_name_to_fqbins('dgiot.Dlink',
-                               'Logout') ->
-    {<<"dgiot.Dlink">>, <<"Logout">>};
-service_and_rpc_name_to_fqbins('dgiot.Dlink',
                                'Payload') ->
     {<<"dgiot.Dlink">>, <<"Payload">>};
 service_and_rpc_name_to_fqbins(S, R) ->
     error({gpb_error, {badservice_or_rpc, {S, R}}}).
 
 
-fqbin_to_msg_name(<<"dgiot.LoginRequest">>) -> login_request;
-fqbin_to_msg_name(<<"dgiot.LoginResponse">>) -> login_response;
-fqbin_to_msg_name(<<"dgiot.LogoutRequest">>) -> logout_request;
-fqbin_to_msg_name(<<"dgiot.LogoutResponse">>) -> logout_response;
 fqbin_to_msg_name(<<"dgiot.PayloadRequest">>) -> payload_request;
 fqbin_to_msg_name(<<"dgiot.PayloadResponse">>) -> payload_response;
 fqbin_to_msg_name(E) -> error({gpb_error, {badmsg, E}}).
 
 
-msg_name_to_fqbin(login_request) -> <<"dgiot.LoginRequest">>;
-msg_name_to_fqbin(login_response) -> <<"dgiot.LoginResponse">>;
-msg_name_to_fqbin(logout_request) -> <<"dgiot.LogoutRequest">>;
-msg_name_to_fqbin(logout_response) -> <<"dgiot.LogoutResponse">>;
 msg_name_to_fqbin(payload_request) -> <<"dgiot.PayloadRequest">>;
 msg_name_to_fqbin(payload_response) -> <<"dgiot.PayloadResponse">>;
 msg_name_to_fqbin(E) -> error({gpb_error, {badmsg, E}}).
 
 
-fqbin_to_enum_name(<<"dgiot.LoginResponse.Ack">>) -> 'login_response.Ack';
-fqbin_to_enum_name(<<"dgiot.LogoutResponse.Ack">>) -> 'logout_response.Ack';
-fqbin_to_enum_name(<<"dgiot.PayloadResponse.Ack">>) -> 'payload_response.Ack';
+-spec fqbin_to_enum_name(_) -> no_return().
 fqbin_to_enum_name(E) ->
     error({gpb_error, {badenum, E}}).
 
 
-enum_name_to_fqbin('login_response.Ack') -> <<"dgiot.LoginResponse.Ack">>;
-enum_name_to_fqbin('logout_response.Ack') -> <<"dgiot.LogoutResponse.Ack">>;
-enum_name_to_fqbin('payload_response.Ack') -> <<"dgiot.PayloadResponse.Ack">>;
+-spec enum_name_to_fqbin(_) -> no_return().
 enum_name_to_fqbin(E) ->
     error({gpb_error, {badenum, E}}).
 
@@ -3500,12 +1417,7 @@ get_all_proto_names() -> ["dlink"].
 
 
 get_msg_containment("dlink") ->
-    [login_request,
-     login_response,
-     logout_request,
-     logout_response,
-     payload_request,
-     payload_response];
+    [payload_request, payload_response];
 get_msg_containment(P) ->
     error({gpb_error, {badproto, P}}).
 
@@ -3521,27 +1433,18 @@ get_service_containment(P) ->
 
 
 get_rpc_containment("dlink") ->
-    [{'dgiot.Dlink', 'Login'},
-     {'dgiot.Dlink', 'Logout'},
-     {'dgiot.Dlink', 'Payload'}];
+    [{'dgiot.Dlink', 'Payload'}];
 get_rpc_containment(P) ->
     error({gpb_error, {badproto, P}}).
 
 
-get_enum_containment("dlink") ->
-    ['login_response.Ack',
-     'logout_response.Ack',
-     'payload_response.Ack'];
+get_enum_containment("dlink") -> [];
 get_enum_containment(P) ->
     error({gpb_error, {badproto, P}}).
 
 
 get_proto_by_msg_name_as_fqbin(<<"dgiot.PayloadRequest">>) -> "dlink";
-get_proto_by_msg_name_as_fqbin(<<"dgiot.LogoutRequest">>) -> "dlink";
-get_proto_by_msg_name_as_fqbin(<<"dgiot.LoginRequest">>) -> "dlink";
 get_proto_by_msg_name_as_fqbin(<<"dgiot.PayloadResponse">>) -> "dlink";
-get_proto_by_msg_name_as_fqbin(<<"dgiot.LogoutResponse">>) -> "dlink";
-get_proto_by_msg_name_as_fqbin(<<"dgiot.LoginResponse">>) -> "dlink";
 get_proto_by_msg_name_as_fqbin(E) ->
     error({gpb_error, {badmsg, E}}).
 
@@ -3551,9 +1454,7 @@ get_proto_by_service_name_as_fqbin(E) ->
     error({gpb_error, {badservice, E}}).
 
 
-get_proto_by_enum_name_as_fqbin(<<"dgiot.PayloadResponse.Ack">>) -> "dlink";
-get_proto_by_enum_name_as_fqbin(<<"dgiot.LogoutResponse.Ack">>) -> "dlink";
-get_proto_by_enum_name_as_fqbin(<<"dgiot.LoginResponse.Ack">>) -> "dlink";
+-spec get_proto_by_enum_name_as_fqbin(_) -> no_return().
 get_proto_by_enum_name_as_fqbin(E) ->
     error({gpb_error, {badenum, E}}).
 
