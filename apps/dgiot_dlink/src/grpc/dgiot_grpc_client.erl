@@ -16,7 +16,7 @@
 
 -module(dgiot_grpc_client).
 
--export([login/1, logout/1, send/2]).
+-export([login/1, login/2, logout/1, send/2]).
 
 login(ClinetId) ->
     login(ClinetId, "http://127.0.0.1:30051").
@@ -28,7 +28,7 @@ logout(ClinetId) ->
     _ = grpc_client_sup:stop_channel_pool(ClinetId).
 
 send(ClinetId, Map) when is_map(Map) ->
-    case dgiot_dlink_client:say_hello(#{name => base64:encode(jsx:encode(Map))}, #{channel => ClinetId}) of
+    case dgiot_dlink_client:payload(#{name => base64:encode(jsx:encode(Map))}, #{channel => ClinetId}) of
         {ok, #{message := ReMessage}, _} ->
             {ok, ReMessage};
         _ ->

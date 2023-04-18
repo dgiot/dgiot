@@ -61,7 +61,7 @@
         order => 2,
         type => integer,
         required => true,
-        default => 30051,
+        default => 5000,
         title => #{
             zh => <<"设备接入端口"/utf8>>
         },
@@ -79,18 +79,6 @@
         },
         description => #{
             zh => <<"设备协议解析: product | tcp://127.0.0.1:30051"/utf8>>
-        }
-    },
-    <<"rule">> => #{
-        order => 4,
-        type => string,
-        required => false,
-        default => <<"rule:956cc06e"/utf8>>,
-        title => #{
-            zh => <<"消息流转规则"/utf8>>
-        },
-        description => #{
-            zh => <<"消息流转规则"/utf8>>
         }
     },
     <<"ico">> => #{
@@ -116,17 +104,24 @@ start(ChannelId, ChannelArgs) ->
 %%<<"network">> => <<"grpc">>,<<"port">> => 30051,
 %%<<"product">> => [],<<"rule">> => <<"rule:956cc06e">>,
 %%<<"url">> => <<"tcp://127.0.0.1:30051">>
-init(?TYPE, ChannelId, #{<<"network">> := _NetWork} = _ChannelArgs) ->
+init(?TYPE, ChannelId, #{<<"network">> := NetWork, <<"port">> := Port, <<"url">> := Url} = _ChannelArgs) ->
     State = #state{id = ChannelId},
-%%    io:format("_ChannelArgs ~p ~n",[_ChannelArgs]),
-    dgiot_grpc_client:login(ChannelId),
-    {ok, State}.
+    io:format("_NetWork ~p ~n", [NetWork]),
+    io:format("Port ~p ~n", [Port]),
+    io:format("Url ~p ~n", [Url]),
+    case Url of
+        <<"product">> ->
+            pass;
+        _ ->
+            dgiot_grpc_client:login(ChannelId, Url)
+    end,
+    {ok, State, get_child_spec(NetWork, Port, State)}.
 
 handle_init(State) ->
     {ok, State}.
 
 %% 通道消息处理,注意：进程池调用
-handle_event('client.connected', {rule, #{clientid := _ClientId }, _Msg} = _Event, State) ->
+handle_event('client.connected', {rule, #{clientid := _ClientId}, _Msg} = _Event, State) ->
     io:format("~s ~p _EventId ~p , _ClientId ~p ~n", [?FILE, ?LINE, 'client.connected', _ClientId]),
     {ok, State};
 
@@ -138,7 +133,7 @@ handle_message({dlink_login, do_after, ProductId, DeviceAddr, Ip}, State) ->
     dgiot_device:create_device(ProductId, DeviceAddr, Ip),
     {ok, State};
 
-handle_message({rule,#{clientid := _ClientId, payload := _Payload, topic := _Topic}, _Msg}, State) ->
+handle_message({rule, #{clientid := _ClientId, payload := _Payload, topic := _Topic}, _Msg}, State) ->
 %%    io:format("~s ~p _ClientId ~p , Payload ~p , Topic ~p ~n", [?FILE, ?LINE, _ClientId, _Payload, _Topic]),
     {ok, State};
 
@@ -151,3 +146,7 @@ stop(_ChannelType, ChannelId, _State) ->
     ok.
 
 
+get_child_spec(<<"tcp">>, Port, State) ->
+    dgiot_tcp2grpc_worker:child_spec(Port, State);
+get_child_spec(_, _Port, _State) ->
+    [].

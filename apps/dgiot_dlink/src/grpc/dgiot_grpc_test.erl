@@ -39,7 +39,7 @@ logout() ->
     _ = grpc_client_sup:stop_channel_pool(<<"channel">>).
 
 send() ->
-    Result = dgiot_dlink_client:say_hello(#{name => <<"Xiao Ming">>}, #{channel => <<"channel">>}),
+    Result = dgiot_dlink_client:login(#{name => <<"Xiao Ming">>}, #{channel => <<"channel">>}),
     io:format("Result ~p ~n", [Result]).
 
 test() ->
