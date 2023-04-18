@@ -23,57 +23,63 @@
           marshal => ?MARSHAL(Req),
           unmarshal => ?UNMARSHAL(Resp)}).
 
--spec say_hello(dgiot_dlink_pb:hello_request())
-    -> {ok, dgiot_dlink_pb:hello_reply(), grpc:metadata()}
+-spec login(dgiot_dlink_pb:login_request())
+    -> {ok, dgiot_dlink_pb:login_response(), grpc:metadata()}
      | {error, term()}.
-say_hello(Req) ->
-    say_hello(Req, #{}, #{}).
+login(Req) ->
+    login(Req, #{}, #{}).
 
--spec say_hello(dgiot_dlink_pb:hello_request(), grpc:options())
-    -> {ok, dgiot_dlink_pb:hello_reply(), grpc:metadata()}
+-spec login(dgiot_dlink_pb:login_request(), grpc:options())
+    -> {ok, dgiot_dlink_pb:login_response(), grpc:metadata()}
      | {error, term()}.
-say_hello(Req, Options) ->
-    say_hello(Req, #{}, Options).
+login(Req, Options) ->
+    login(Req, #{}, Options).
 
--spec say_hello(dgiot_dlink_pb:hello_request(), grpc:metadata(), grpc_client:options())
-    -> {ok, dgiot_dlink_pb:hello_reply(), grpc:metadata()}
+-spec login(dgiot_dlink_pb:login_request(), grpc:metadata(), grpc_client:options())
+    -> {ok, dgiot_dlink_pb:login_response(), grpc:metadata()}
      | {error, term()}.
-say_hello(Req, Metadata, Options) ->
-    grpc_client:unary(?DEF(<<"/dgiot.Dlink/SayHello">>,
-                           hello_request, hello_reply, <<"dgiot.HelloRequest">>),
+login(Req, Metadata, Options) ->
+    grpc_client:unary(?DEF(<<"/dgiot.Dlink/Login">>,
+                           login_request, login_response, <<"dgiot.LoginRequest">>),
                       Req, Metadata, Options).
 
--spec check(dgiot_dlink_pb:health_check_request())
-    -> {ok, dgiot_dlink_pb:health_check_response(), grpc:metadata()}
+-spec logout(dgiot_dlink_pb:logout_request())
+    -> {ok, dgiot_dlink_pb:logout_response(), grpc:metadata()}
      | {error, term()}.
-check(Req) ->
-    check(Req, #{}, #{}).
+logout(Req) ->
+    logout(Req, #{}, #{}).
 
--spec check(dgiot_dlink_pb:health_check_request(), grpc:options())
-    -> {ok, dgiot_dlink_pb:health_check_response(), grpc:metadata()}
+-spec logout(dgiot_dlink_pb:logout_request(), grpc:options())
+    -> {ok, dgiot_dlink_pb:logout_response(), grpc:metadata()}
      | {error, term()}.
-check(Req, Options) ->
-    check(Req, #{}, Options).
+logout(Req, Options) ->
+    logout(Req, #{}, Options).
 
--spec check(dgiot_dlink_pb:health_check_request(), grpc:metadata(), grpc_client:options())
-    -> {ok, dgiot_dlink_pb:health_check_response(), grpc:metadata()}
+-spec logout(dgiot_dlink_pb:logout_request(), grpc:metadata(), grpc_client:options())
+    -> {ok, dgiot_dlink_pb:logout_response(), grpc:metadata()}
      | {error, term()}.
-check(Req, Metadata, Options) ->
-    grpc_client:unary(?DEF(<<"/dgiot.Dlink/Check">>,
-                           health_check_request, health_check_response, <<"dgiot.HealthCheckRequest">>),
+logout(Req, Metadata, Options) ->
+    grpc_client:unary(?DEF(<<"/dgiot.Dlink/Logout">>,
+                           logout_request, logout_response, <<"dgiot.LogoutRequest">>),
                       Req, Metadata, Options).
 
--spec watch(grpc_client:options())
-    -> {ok, grpc_client:grpcstream()}
+-spec payload(dgiot_dlink_pb:payload_request())
+    -> {ok, dgiot_dlink_pb:payload_response(), grpc:metadata()}
      | {error, term()}.
-watch(Options) ->
-    watch(#{}, Options).
+payload(Req) ->
+    payload(Req, #{}, #{}).
 
--spec watch(grpc:metadata(), grpc_client:options())
-    -> {ok, grpc_client:grpcstream()}
+-spec payload(dgiot_dlink_pb:payload_request(), grpc:options())
+    -> {ok, dgiot_dlink_pb:payload_response(), grpc:metadata()}
      | {error, term()}.
-watch(Metadata, Options) ->
-    grpc_client:open(?DEF(<<"/dgiot.Dlink/Watch">>,
-                          health_check_request, health_check_response, <<"dgiot.HealthCheckRequest">>),
-                     Metadata, Options).
+payload(Req, Options) ->
+    payload(Req, #{}, Options).
+
+-spec payload(dgiot_dlink_pb:payload_request(), grpc:metadata(), grpc_client:options())
+    -> {ok, dgiot_dlink_pb:payload_response(), grpc:metadata()}
+     | {error, term()}.
+payload(Req, Metadata, Options) ->
+    grpc_client:unary(?DEF(<<"/dgiot.Dlink/Payload">>,
+                           payload_request, payload_response, <<"dgiot.PayloadRequest">>),
+                      Req, Metadata, Options).
 
