@@ -23,7 +23,7 @@
 -record(state, {id, env}).
 %% API
 -export([start/2]).
-
+-dgiot_channel(?MODULE).
 %% Channel callback
 -export([init/3, handle_init/1, handle_event/3, handle_message/2, stop/3]).
 
