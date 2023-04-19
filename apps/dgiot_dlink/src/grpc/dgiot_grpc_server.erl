@@ -18,32 +18,14 @@
 
 -behavior(dgiot_dlink_bhvr).
 
--export([say_hello/2]).
--export([check/2, watch/2]).
+-export([payload/2]).
 
 %%--------------------------------------------------------------------
 %% Callbacks
 
-say_hello(_Req = #{name := Name}, _Md) ->
-    {ok, #{message => <<"Hi dgiot, ", Name/binary, "~">>}, _Md}.
-
--spec check(grpc_health_pb:health_check_request(), grpc:metadata())
-        -> {ok, grpc_health_pb:health_check_response(), grpc:metadata()}
-    | {error, grpc_stream:error_response()}.
-
-check(#{service := _Service}, _Md) ->
-    %% TODO: How to get the Service running status?
-    {ok, #{status => 'SERVING'}, _Md}.
-
--spec watch(grpc_stream:stream(), grpc:metadata())
-        -> {ok, grpc_stream:stream()}.
-watch(Stream, _Md) ->
-    %% TODO: How to get the Service running status?
-    {eos, [#{service := _Service}], NStream} = grpc_stream:recv(Stream),
-    RelpyLp = fun _Lp() ->
-        grpc_stream:reply(NStream, [#{status => 'SERVING'}]),
-        timer:sleep(15000),
-        _Lp()
-              end,
-    RelpyLp(),
-    {ok, NStream}.
+payload(_Req = #{data := Name, cmd := _Cmd, product := Productid}, _Md) ->
+    {ok, #{
+        topic => <<"$dgiot/thing/",Productid/binary,"/devaddr">>,
+        payload => <<"Hi dgiot, ", Name/binary, " ddd">>,
+        ack => <<"Hi dgiot, ", Name/binary, " ddd">>
+    }, _Md}.

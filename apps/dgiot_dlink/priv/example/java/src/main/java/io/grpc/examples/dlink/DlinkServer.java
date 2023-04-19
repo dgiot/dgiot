@@ -78,14 +78,29 @@ public class DlinkServer {
     server.start();
     server.blockUntilShutdown();
   }
-  private HelloReply helloReply;
   static class DlinkImpl extends DlinkGrpc.DlinkImplBase {
 
     @Override
-    public void sayHello(HelloRequest req, StreamObserver<HelloReply> responseObserver) {
+    public void login(LoginRequest req, StreamObserver<LoginResponse> responseObserver) {
       //System.err.println("" + req.getMessage());
-      System.err.println("msg from: " + req.getName());
-      HelloReply reply = HelloReply.newBuilder().setMessage("Hello " + req.getName()).build();
+      System.err.println("msg from: " + req.getData());
+      LoginResponse reply = LoginResponse.newBuilder().setAck("Hello " + req.getData()).build();
+      responseObserver.onNext(reply);
+      responseObserver.onCompleted();
+    }
+
+    public void logout(LogoutRequest req, StreamObserver<LogoutResponse> responseObserver) {
+      //System.err.println("" + req.getMessage());
+      System.err.println("msg from: " + req.getData());
+      LogoutResponse reply = LogoutResponse.newBuilder().setAck("Hello " + req.getData()).build();
+      responseObserver.onNext(reply);
+      responseObserver.onCompleted();
+    }
+
+    public void payload(PayloadRequest req, StreamObserver<PayloadResponse> responseObserver) {
+      //System.err.println("" + req.getMessage());
+      System.err.println("msg from: " + req.getData());
+      PayloadResponse reply = PayloadResponse.newBuilder().setAck("Hello " + req.getData()).build();
       responseObserver.onNext(reply);
       responseObserver.onCompleted();
     }

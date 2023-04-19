@@ -32,13 +32,13 @@
 %% 注册协议类型
 -protocol_type(#{
     cType => ?TYPE,
-    type => <<"DLINK">>,
+    type => <<"GRPC">>,
     colum => 3,
     title => #{
-        zh => <<"DLINK协议"/utf8>>
+        zh => <<"GRPC协议"/utf8>>
     },
     description => #{
-        zh => <<"DLINK协议"/utf8>>
+        zh => <<"GRPC协议"/utf8>>
     }
 }).
 %% 注册协议参数
