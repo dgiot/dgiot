@@ -227,7 +227,13 @@ handle_message({data, Product, DevAddr, Data, Context}, #state{id = ChannelId} =
 %% 数据与产品，设备地址分离
 handle_message({sql, Sql}, #state{id = ChannelId} = State) ->
     dgiot_metrics:inc(dgiot_tdengine, <<"tdengine_recv">>, 1),
-    dgiot_tdengine:batch_sql(ChannelId, Sql),
+    case catch dgiot_tdengine:batch_sql(ChannelId, Sql) of
+        {Err, Reason} when Err == error; Err == 'EXIT' ->
+            dgiot_bridge:send_log(ChannelId, "Save to Tdengine error, ~p, ~p", [Sql, Reason]),
+            ok;
+       _ ->
+           pass
+    end,
     {ok, State};
 
 %% 规则引擎导入
