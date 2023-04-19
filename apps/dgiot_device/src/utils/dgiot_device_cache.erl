@@ -42,7 +42,7 @@ parse_cache_Device(_ClassName) ->
               end,
     Query = #{
         <<"order">> => <<"updatedAt">>,
-        <<"keys">> => [<<"ACL">>, <<"updatedAt">>, <<"devaddr">>, <<"status">>, <<"isEnable">>, <<"profile">>, <<"product">>, <<"location">>, <<"deviceSecret">>],
+        <<"keys">> => [<<"ACL">>, <<"updatedAt">>, <<"state">>, <<"devaddr">>, <<"status">>, <<"isEnable">>, <<"profile">>, <<"product">>, <<"location">>, <<"deviceSecret">>],
         <<"where">> => #{}
     },
     dgiot_parse_loader:start(<<"Device">>, Query, 0, 100, 1000000, Success).
