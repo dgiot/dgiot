@@ -43,17 +43,17 @@ public class DlinkClient {
   }
 
   /** Say hello to server. */
-  public void greet(String name) {
-    logger.info("Will try to greet " + name + " ...");
-    HelloRequest request = HelloRequest.newBuilder().setName(name).build();
-    HelloReply response;
+  public void login(String data) {
+    logger.info("Will try to login " + data + " ...");
+    LoginRequest request = LoginRequest.newBuilder().setData(data).build();
+    LoginResponse response;
     try {
-      response = blockingStub.sayHello(request);
+      response = blockingStub.login(request);
     } catch (StatusRuntimeException e) {
       logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
       return;
     }
-    logger.info("Greeting: " + response.getMessage());
+    logger.info("Greeting: " + response.getPayload());
   }
 
   /**
@@ -61,7 +61,7 @@ public class DlinkClient {
    * greeting. The second argument is the target server.
    */
   public static void main(String[] args) throws Exception {
-    String user = "world";
+    String data = "world";
     // Access a service running on the local machine on port 50051
     String target = "localhost:30051";
     // Allow passing in the user and target strings as command line arguments
@@ -89,7 +89,7 @@ public class DlinkClient {
         .build();
     try {
       DlinkClient client = new DlinkClient(channel);
-      client.greet(user);
+      client.login(data);
     } finally {
       // ManagedChannels use resources like threads and TCP connections. To prevent leaking these
       // resources the channel should be shut down when it will no longer be used. If it may be used
