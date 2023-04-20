@@ -125,7 +125,8 @@ handle_info(_Msg, State) ->
 %%    io:format("~s ~p State = ~p.~n", [?FILE, ?LINE, State]),
     {noreply, State}.
 
-terminate(_Reason, _State) ->
+terminate(_Reason, #dclient{channel = ChannelId, client = ClientId} = _State) ->
+    dgiot_client:stop(ChannelId, ClientId),
     dgiot_metrics:dec(dgiot_task, <<"task">>, 1),
     ok.
 
