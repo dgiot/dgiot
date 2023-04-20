@@ -11,24 +11,24 @@ before trying out the examples.
 
 ## Basic examples
 
-- [Hello world](src/main/java/io/grpc/examples/dlink)
+- [Hello world](src/main/java/io/grpc/dgiot/dlink)
 
-- [Route guide](src/main/java/io/grpc/examples/routeguide)
+- [Route guide](src/main/java/io/grpc/dgiot/routeguide)
 
-- [Metadata](src/main/java/io/grpc/examples/header)
+- [Metadata](src/main/java/io/grpc/dgiot/header)
 
-- [Error handling](src/main/java/io/grpc/examples/errorhandling)
+- [Error handling](src/main/java/io/grpc/dgiot/errorhandling)
 
-- [Compression](src/main/java/io/grpc/examples/experimental)
+- [Compression](src/main/java/io/grpc/dgiot/experimental)
 
-- [Flow control](src/main/java/io/grpc/examples/manualflowcontrol)
+- [Flow control](src/main/java/io/grpc/dgiot/manualflowcontrol)
 
-- [Json serialization](src/main/java/io/grpc/examples/advanced)
+- [Json serialization](src/main/java/io/grpc/dgiot/advanced)
 
 - <details>
   <summary>Hedging</summary>
 
-  The [hedging example](src/main/java/io/grpc/examples/hedging) demonstrates that enabling hedging
+  The [hedging example](src/main/java/io/grpc/dgiot/hedging) demonstrates that enabling hedging
   can reduce tail latency. (Users should note that enabling hedging may introduce other overhead;
   and in some scenarios, such as when some server resource gets exhausted for a period of time and
   almost every RPC during that time has high latency or fails, hedging may make things worse.
@@ -36,7 +36,7 @@ before trying out the examples.
   inappropriate retry or hedging requests.)
 
   The server and the client in the example are basically the same as those in the
-  [hello world](src/main/java/io/grpc/examples/dlink) example, except that the server mimics a
+  [hello world](src/main/java/io/grpc/dgiot/dlink) example, except that the server mimics a
   long tail of latency, and the client sends 2000 requests and can turn on and off hedging.
 
   To mimic the latency, the server randomly delays the RPC handling by 2 seconds at 10% chance, 5
@@ -90,22 +90,22 @@ before trying out the examples.
 - <details>
   <summary>Retrying</summary>
 
-  The [retrying example](src/main/java/io/grpc/examples/retrying) provides a HelloWorld gRPC client &
+  The [retrying example](src/main/java/io/grpc/dgiot/retrying) provides a HelloWorld gRPC client &
   server which demos the effect of client retry policy configured on the [ManagedChannel](
   ../api/src/main/java/io/grpc/ManagedChannel.java) via [gRPC ServiceConfig](
   https://github.com/grpc/grpc/blob/master/doc/service_config.md). Retry policy implementation &
   configuration details are outlined in the [proposal](https://github.com/grpc/proposal/blob/master/A6-client-retries.md).
 
-  This retrying example is very similar to the [hedging example](src/main/java/io/grpc/examples/hedging) in its setup.
-  The [RetryingHelloWorldServer](src/main/java/io/grpc/examples/retrying/RetryingHelloWorldServer.java) responds with
+  This retrying example is very similar to the [hedging example](src/main/java/io/grpc/dgiot/hedging) in its setup.
+  The [RetryingHelloWorldServer](src/main/java/io/grpc/dgiot/retrying/RetryingHelloWorldServer.java) responds with
   a status UNAVAILABLE error response to a specified percentage of requests to simulate server resource exhaustion and
-  general flakiness. The [RetryingHelloWorldClient](src/main/java/io/grpc/examples/retrying/RetryingHelloWorldClient.java) makes
+  general flakiness. The [RetryingHelloWorldClient](src/main/java/io/grpc/dgiot/retrying/RetryingHelloWorldClient.java) makes
   a number of sequential requests to the server, several of which will be retried depending on the configured policy in
   [retrying_service_config.json](src/main/resources/io/grpc/examples/retrying/retrying_service_config.json). Although
   the requests are blocking unary calls for simplicity, these could easily be changed to future unary calls in order to
   test the result of request concurrency with retry policy enabled.
 
-  One can experiment with the [RetryingHelloWorldServer](src/main/java/io/grpc/examples/retrying/RetryingHelloWorldServer.java)
+  One can experiment with the [RetryingHelloWorldServer](src/main/java/io/grpc/dgiot/retrying/RetryingHelloWorldServer.java)
   failure conditions to simulate server throttling, as well as alter policy values in the [retrying_service_config.json](
   src/main/resources/io/grpc/examples/retrying/retrying_service_config.json) to see their effects. To disable retrying
   entirely, set environment variable `DISABLE_RETRYING_IN_RETRYING_EXAMPLE=true` before running the client.
@@ -126,21 +126,21 @@ before trying out the examples.
 $ ./gradlew installDist
 ```
 
-This creates the scripts `hello-world-server`, `hello-world-client`,
+This creates the scripts `dlinkserver`, `dlinkclient`,
 `route-guide-server`, `route-guide-client`, etc. in the
-`build/install/examples/bin/` directory that run the examples. Each
+`build/install/dgiot/bin/` directory that run the examples. Each
 example requires the server to be running before starting the client.
 
 For example, to try the hello world example first run:
 
 ```
-$ ./build/install/examples/bin/dlinkserver
+$ ./build/install/dgiot/bin/dlinkserver
 ```
 
 And in a different terminal window run:
 
 ```
-$ ./build/install/examples/bin/dlinkclient
+$ ./build/install/dgiot/bin/dlinkclient
 ```
 
 That's it!

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.grpc.examples.dlink;
+package io.grpc.dgiot.dlink;
 
 import io.grpc.Grpc;
 import io.grpc.InsecureServerCredentials;
@@ -79,28 +79,16 @@ public class DlinkServer {
     server.blockUntilShutdown();
   }
   static class DlinkImpl extends DlinkGrpc.DlinkImplBase {
-
-    @Override
-    public void login(LoginRequest req, StreamObserver<LoginResponse> responseObserver) {
+    @Override public void payload(PayloadRequest req, StreamObserver<PayloadResponse> responseObserver) {
       //System.err.println("" + req.getMessage());
-      System.err.println("msg from: " + req.getData());
-      LoginResponse reply = LoginResponse.newBuilder().setAck("Hello " + req.getData()).build();
-      responseObserver.onNext(reply);
-      responseObserver.onCompleted();
-    }
-
-    public void logout(LogoutRequest req, StreamObserver<LogoutResponse> responseObserver) {
-      //System.err.println("" + req.getMessage());
-      System.err.println("msg from: " + req.getData());
-      LogoutResponse reply = LogoutResponse.newBuilder().setAck("Hello " + req.getData()).build();
-      responseObserver.onNext(reply);
-      responseObserver.onCompleted();
-    }
-
-    public void payload(PayloadRequest req, StreamObserver<PayloadResponse> responseObserver) {
-      //System.err.println("" + req.getMessage());
-      System.err.println("msg from: " + req.getData());
-      PayloadResponse reply = PayloadResponse.newBuilder().setAck("Hello " + req.getData()).build();
+      System.err.println("data from: " + req.getData());
+      System.err.println("cmd from: " + req.getCmd());
+      System.err.println("product from: " + req.getProduct());
+      PayloadResponse reply = PayloadResponse.newBuilder()
+              .setAck("Hello " + req.getData())
+              .setTopic("topic ")
+              .setPayload("payload ")
+              .build();
       responseObserver.onNext(reply);
       responseObserver.onCompleted();
     }
