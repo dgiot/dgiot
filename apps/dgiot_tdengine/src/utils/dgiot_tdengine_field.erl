@@ -91,7 +91,9 @@ get_field_(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"enu
 %%    Size = integer_to_binary(maps:size(Specs)),
     {Field, #{<<"type">> => <<"INT">>}};
 get_field_(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"struct">>, <<"specs">> := SubFields}}) ->
-    [get_field(SubField#{<<"identifier">> => ?Struct(Field, Field1)}) || #{<<"identifier">> := Field1} = SubField <- SubFields].
+    [get_field(SubField#{<<"identifier">> => ?Struct(Field, Field1)}) || #{<<"identifier">> := Field1} = SubField <- SubFields];
+get_field_(_) ->
+    pass.
 
 
 check_value(Value, ProductId, Field) ->
