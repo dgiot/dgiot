@@ -42,7 +42,9 @@ save_product_enum(ProductId) ->
                         dgiot_data:insert(?MODULE, {ProductId, device_thing, Identifier},
                             #{Identifier => <<"enum">>, <<"specs">> => NewSpec, <<"reverse">> => Reverse});
                     (#{<<"identifier">> := Identifier, <<"dataType">> := #{<<"type">> := Type}}) ->
-                        dgiot_data:insert(?MODULE, {ProductId, device_thing, Identifier}, #{Identifier => Type})
+                        dgiot_data:insert(?MODULE, {ProductId, device_thing, Identifier}, #{Identifier => Type});
+                    (_) ->
+                        pass
                 end, Props);
 
         _Error ->
