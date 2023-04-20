@@ -79,7 +79,7 @@
         input => textarea,
         required => false,
         default => <<"channel">>,
-        enum => [<<"channel">>, <<"mqtt">>, <<"dclient">>],
+        enum => [<<"channel">>, <<"mqtt">>, <<"dclient">>, <<"grpc">>],
         title => #{en => <<"republish">>,
             zh => <<"消息重定向方法"/utf8>>},
         description => #{en => <<"republish mode">>,
