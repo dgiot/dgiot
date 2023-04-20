@@ -14,7 +14,6 @@
 
 using System;
 using Grpc.Core;
-using Dgiot;
 using CommandLine;
 
 namespace DlinkClient
@@ -40,7 +39,7 @@ namespace DlinkClient
             var client = new Dlink.DlinkClient(channel);
             String user = "you";
 
-            var reply = client.SayHello(new HelloRequest { Name = user });
+            var reply = client.Payload(new PayloadRequest { Name = user });
             Console.WriteLine("Dlink client received: " + reply.Message);
 
             channel.ShutdownAsync().Wait();

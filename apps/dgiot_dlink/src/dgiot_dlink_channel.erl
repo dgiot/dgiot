@@ -129,6 +129,20 @@ handle_event(_EventId, _Event, State) ->
     io:format("~s ~p _EventId ~p , _Event ~p ~n", [?FILE, ?LINE, _EventId, _Event]),
     {ok, State}.
 
+%% gun监测 开始
+handle_message({gun_up, _Pid, Proctol, Status, Env }, #state{id = _ChannelId} = State) ->
+    io:format("~s ~p gun_up = Proctol ~p.  Status ~p , Env ~p ~n", [?FILE, ?LINE, Proctol, Status, Env]),
+    {ok, State};
+
+handle_message({gun_error, _Pid, Proctol, Status, Env }, #state{id = _ChannelId} = State) ->
+    io:format("~s ~p gun_error = Proctol ~p.  Status ~p , Env ~p ~n", [?FILE, ?LINE, Proctol, Status, Env]),
+    {ok, State};
+
+handle_message({gun_down, _Pid, Proctol, Status, Env }, #state{id = _ChannelId} = State) ->
+    io:format("~s ~p gun_down = Proctol ~p.  Status ~p , Env ~p ~n", [?FILE, ?LINE, Proctol, Status, Env]),
+    {ok, State};
+%% gun监测结束
+
 handle_message({dlink_login, do_after, ProductId, DeviceAddr, Ip}, State) ->
     dgiot_device:create_device(ProductId, DeviceAddr, Ip),
     {ok, State};
