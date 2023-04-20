@@ -133,7 +133,7 @@ do_cmd(ProductId, Cmd, Data, #tcp{state = #state{id = ChannelId, mode = product}
 do_cmd(ProductId, Cmd, Data, #tcp{state = #state{id = ChannelId}} = TCPState) ->
     case dgiot_dlink_client:payload(#{data => Data, cmd => dgiot_utils:to_binary(Cmd), product => ProductId}, #{channel => ChannelId}) of
         {ok, #{ack := Ack, topic := Topic, payload := Payload} = _Result, _} ->
-            io:format("~s ~p Result ~p ~n",[?FILE, ?LINE, _Result]),
+%%            io:format("~s ~p Result ~p ~n",[?FILE, ?LINE, _Result]),
             case Ack of
                 <<>> ->
                     pass;
