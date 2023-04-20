@@ -82,11 +82,23 @@ Dlink协议是针对物联网开发领域设计的一种数据交换规范，数
 ```
 
 ## 通道接入
+###  grpc2tpc桥接
+ + https://gitee.com/dgiiot/dgiot/tree/master/apps/dgiot_dlink/priv/example/java
+----------------------------------------------------------------------------
+     Dlink RunTime                                Third-party Decode/Encode
++================================+                 +========+==========+
+|    Dlink                       |                 |        |          |
+| +--------------+--------- ---+ |        gRPC     | gRPC   |  User's  |
+| +  tpc server  | gPRC Client   |---------------> | Server |  Codes   |
+| +--------------|-------------+ |       (HTTP/2)  |        |          |
+|                                |                 |        |          |
++================================+                 +========+==========+
+
+
 ### http server
 ### http client
 ### mqtt client
 ### mqtt bridge
-### tpc server
 ### tcp client
 ### udp server
 ### udp client
