@@ -38,8 +38,9 @@ childSpec(ChannelId, ChannelArgs) ->
     [?CHILD(dgiot_mqtt_client, worker, [Args])].
 
 %% mqtt client hook
-init(#dclient{channel = ChannelId} = State) ->
+init(#dclient{channel = ChannelId, client = ClientId} = State) ->
 %%    io:format("~s ~p State ~p ~n",[?FILE, ?LINE, State]),
+    dgiot_client:add(ChannelId, ClientId),
     {ok, State#dclient{channel = dgiot_utils:to_binary(ChannelId)}}.
 
 handle_call(_Request, _From, State) ->
@@ -76,7 +77,8 @@ handle_info({deliver, _, Msg}, #dclient{client = Client,channel = ChannelId} = S
 handle_info(_Info, State) ->
     {noreply, State}.
 
-terminate(_Reason, _State) ->
+terminate(_Reason, #dclient{channel = ChannelId, client = ClientId} = _State) ->
+    dgiot_client:stop(ChannelId, ClientId),
     ok.
 
 code_change(_OldVsn, State, _Extra) ->
