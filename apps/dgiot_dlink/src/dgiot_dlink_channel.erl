@@ -110,7 +110,9 @@ init(?TYPE, ChannelId, #{<<"network">> := NetWork, <<"port">> := Port, <<"url">>
         <<"product">> ->
             <<"product">>;
         _ ->
-            dgiot_grpc_client:create_channel_pool(ChannelId, Url, PoolSize),
+%%            dgiot_grpc_test:start(),
+            R = dgiot_grpc_client:create_channel_pool(ChannelId, Url, PoolSize),
+            io:format("~s ~p R ~p ~n",[?FILE, ?LINE, R]),
             <<"grpc">>
     end,
     {ok, State, get_child_spec(NetWork, Port, ChannelId, Mode)}.

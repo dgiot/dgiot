@@ -131,8 +131,9 @@ do_cmd(ProductId, Cmd, Data, #tcp{state = #state{id = ChannelId, mode = product}
 %%topic => <<"$dgiot/thing/dsdfsfsdfe/devaddr">>},
 %%[{<<"grpc-status">>,<<"0">>}]}
 do_cmd(ProductId, Cmd, Data, #tcp{state = #state{id = ChannelId}} = TCPState) ->
-    case dgiot_dlink_client:payload(#{data => Data, cmd => Cmd, productid => ProductId}, #{channel => ChannelId}) of
-        {ok, #{ack := Ack, topic := Topic, payload := Payload},_} ->
+    case dgiot_dlink_client:payload(#{data => Data, cmd => dgiot_utils:to_binary(Cmd), product => ProductId}, #{channel => ChannelId}) of
+        {ok, #{ack := Ack, topic := Topic, payload := Payload} = _Result, _} ->
+            io:format("~s ~p Result ~p ~n",[?FILE, ?LINE, _Result]),
             case Ack of
                 <<>> ->
                     pass;
@@ -149,11 +150,11 @@ do_cmd(ProductId, Cmd, Data, #tcp{state = #state{id = ChannelId}} = TCPState) ->
                     pass;
                 Topic ->
                     dgiot_mqtt:publish(ProductId, Topic, Payload)
-            end,
-            {noreply, TCPState};
+            end;
         _ ->
-            {noreply, TCPState}
-    end.
+            pass
+    end,
+    {noreply, TCPState}.
 
 log_fun(ChannelId) ->
     fun(Type, Buff) ->

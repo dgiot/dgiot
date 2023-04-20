@@ -63,14 +63,14 @@ sourceSets {
 startScripts.enabled = false
 
 task dlinkServer(type: CreateStartScripts) {
-    mainClass = 'io.grpc.examples.dlink.DlinkServer'
+    mainClass = 'io.grpc.dgiot.dlink.DlinkServer'
     applicationName = 'dlinkserver'
     outputDir = new File(project.buildDir, 'tmp/scripts/' + name)
     classpath = startScripts.classpath
 }
 
 task dlinkClient(type: CreateStartScripts) {
-    mainClass = 'io.grpc.examples.dlink.DlinkClient'
+    mainClass = 'io.grpc.dgiot.dlink.DlinkClient'
     applicationName = 'dlinkclient'
     outputDir = new File(project.buildDir, 'tmp/scripts/' + name)
     classpath = startScripts.classpath

@@ -22,7 +22,7 @@ create_channel_pool(ClinetId) ->
     create_channel_pool(ClinetId, "http://127.0.0.1:30051", 1).
 
 create_channel_pool(ClinetId, SvrAddr, PoolSize) ->
-    {ok, _} = grpc_client_sup:create_channel_pool(ClinetId, SvrAddr, #{pool_size => PoolSize}).
+    {ok, _} = grpc_client_sup:create_channel_pool(ClinetId, dgiot_utils:to_list(SvrAddr), #{pool_size => PoolSize}).
 
 stop_channel_pool(ClinetId) ->
     _ = grpc_client_sup:stop_channel_pool(ClinetId).

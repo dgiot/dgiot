@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package io.grpc.examples.dlink;
+package io.grpc.dgiot.dlink;
 
 import io.grpc.Channel;
 import io.grpc.Grpc;
@@ -43,12 +43,17 @@ public class DlinkClient {
   }
 
   /** Say hello to server. */
-  public void login(String data) {
+  public void payload(String data) {
     logger.info("Will try to login " + data + " ...");
-    LoginRequest request = LoginRequest.newBuilder().setData(data).build();
-    LoginResponse response;
+    PayloadRequest request = PayloadRequest.newBuilder()
+            .setData(data)
+            .setCmd("cmd")
+            .setProduct("product")
+            .build();
+
+    PayloadResponse response;
     try {
-      response = blockingStub.login(request);
+      response = blockingStub.payload(request);
     } catch (StatusRuntimeException e) {
       logger.log(Level.WARNING, "RPC failed: {0}", e.getStatus());
       return;
@@ -69,11 +74,11 @@ public class DlinkClient {
       if ("--help".equals(args[0])) {
         System.err.println("Usage: [name [target]]");
         System.err.println("");
-        System.err.println("  name    The name you wish to be greeted by. Defaults to " + user);
+        System.err.println("  name    The name you wish to be greeted by. Defaults to " + data);
         System.err.println("  target  The server to connect to. Defaults to " + target);
         System.exit(1);
       }
-      user = args[0];
+        data = args[0];
     }
     if (args.length > 1) {
       target = args[1];
@@ -89,7 +94,7 @@ public class DlinkClient {
         .build();
     try {
       DlinkClient client = new DlinkClient(channel);
-      client.login(data);
+      client.payload(data);
     } finally {
       // ManagedChannels use resources like threads and TCP connections. To prevent leaking these
       // resources the channel should be shut down when it will no longer be used. If it may be used
