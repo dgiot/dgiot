@@ -234,28 +234,7 @@ get_product_data(Channel, ProductId, DeviceId, Args) ->
     ?LOG(info, "Channel ~p Args ~p", [Channel, Args]),
     case dgiot_data:get({tdengine_os, Channel}) of
         <<"windows">> ->
-            Keys =
-                lists:foldl(fun(X, Acc) ->
-                    case X of
-                        <<"count(*)">> -> Acc ++ [<<"count(*)">>];
-                        <<"*">> -> Acc ++ [<<"values">>];
-                        _ -> Acc ++ [<<"values.", X/binary>>]
-                    end
-                            end, [], binary:split(maps:get(<<"keys">>, Args, <<"count(*)">>), <<$,>>, [global, trim])),
-            Query2 = Query#{<<"where">> => #{<<"product">> => ProductId,
-                <<"device">> => DeviceId}, <<"keys">> => Keys},
-            ?LOG(info, "Query2 ~p", [Query2]),
-            case dgiot_parse:query_object(<<"Timescale">>, Query2) of
-                {ok, #{<<"results">> := Results} = All} when length(Results) > 0 ->
-                    Data = lists:foldl(fun(X, Acc) ->
-                        Acc ++ [maps:get(<<"values">>, X)]
-                                       end, [], Results),
-                    {ok, All#{<<"results">> => Data}};
-                {ok, #{<<"results">> := Result}} ->
-                    {error, Result};
-                Error ->
-                    Error
-            end;
+            pass;
         _ ->
             Where = maps:get(<<"where">>, Args),
             Query = maps:without([<<"productid">>, <<"deviceid">>], Args),

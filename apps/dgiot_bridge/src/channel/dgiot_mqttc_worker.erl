@@ -24,11 +24,11 @@
 -define(CHILD(I, Type, Args), {I, {I, start_link, Args}, permanent, 5000, Type, [I]}).
 
 childSpec(ChannelId, ChannelArgs) ->
-    ClientId = dgiot_utils:random(),
+    ClientId = binary_to_list(maps:get(<<"password">>, ChannelArgs)),
     Options = #{
         host => binary_to_list(maps:get(<<"address">>, ChannelArgs)),
         port => maps:get(<<"port">>, ChannelArgs),
-        clientid => binary_to_list(ClientId),
+        clientid => binary_to_list(maps:get(<<"password">>, ChannelArgs)),
         ssl => maps:get(<<"ssl">>, ChannelArgs, false),
         username => binary_to_list(maps:get(<<"username">>, ChannelArgs)),
         password => binary_to_list(maps:get(<<"password">>, ChannelArgs)),
@@ -52,12 +52,12 @@ handle_cast(_Request, State) ->
 handle_info({connect, Client}, #dclient{channel = ChannelId} = State) ->
     emqtt:subscribe(Client, {<<"bridge/#">>, 1}), % cloud to edge
     timer:sleep(1000),
-    dgiot_bridge:send_log(ChannelId, "~s ~p  ~p ~n", [?FILE, ?LINE, jsx:encode(#{<<"network">> => <<"connect">>})]),
+    dgiot_bridge:send_log(ChannelId, "~s ~p ~p ~n", [?FILE, ?LINE, jsx:encode(#{<<"network">> => <<"connect">>})]),
     dgiot_mqtt:subscribe(<<"forward/#">>),      %  edge  to cloud
     {noreply, State#dclient{client = Client}};
 
 handle_info(disconnect, #dclient{channel = ChannelId} = State) ->
-    dgiot_bridge:send_log(ChannelId, "~s ~p  ~p ~n", [?FILE, ?LINE, jsx:encode(#{<<"network">> => <<"disconnect">>})]),
+    dgiot_bridge:send_log(ChannelId, "~s ~p ~p ~n", [?FILE, ?LINE, jsx:encode(#{<<"network">> => <<"disconnect">>})]),
     {noreply, State#dclient{client = disconnect}};
 
 handle_info({publish, #{payload := Payload, topic := <<"bridge/", Topic/binary>>} = _Msg}, #dclient{channel = ChannelId} = State) ->
@@ -65,10 +65,10 @@ handle_info({publish, #{payload := Payload, topic := <<"bridge/", Topic/binary>>
     dgiot_mqtt:publish(ChannelId, Topic, Payload),
     {noreply, State};
 
-handle_info({deliver, _, Msg}, #dclient{client = Client,channel = ChannelId} = State) ->
+handle_info({deliver, _, Msg}, #dclient{client = Client, channel = ChannelId} = State) ->
     case dgiot_mqtt:get_topic(Msg) of
         <<"forward/", Topic/binary>> ->
-            dgiot_bridge:send_log(ChannelId, "edge  to cloud: Topic ~p Payload ~p ~n", [Topic, dgiot_mqtt:get_payload(Msg)]),
+            dgiot_bridge:send_log(ChannelId, "edge to cloud: Topic ~p Payload ~p ~n", [Topic, dgiot_mqtt:get_payload(Msg)]),
             emqtt:publish(Client, Topic, dgiot_mqtt:get_payload(Msg));
         _ -> pass
     end,
