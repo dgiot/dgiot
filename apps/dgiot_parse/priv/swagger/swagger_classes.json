@@ -69,10 +69,6 @@
       "description": "数据管理"
     },
     {
-      "name": "Timescale",
-      "description": "时序管理"
-    },
-    {
       "name": "Maintenance",
       "description": "工单管理"
     },
