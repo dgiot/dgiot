@@ -29,6 +29,7 @@
     test_broadcast/0,
     test_customizedcast/0,
     add_notification/3,
+    manual_recovery/1,
     save_notification/4,
     update_notification/2,
     create_maintenance/2,
@@ -218,6 +219,15 @@ add_notification(<<"stop_", Ruleid/binary>>, DeviceId, Payload) ->
 add_notification(Ruleid, _DevAddr, _Payload) ->
     ?LOG(error, "Ruleid ~p", [Ruleid]),
     ok.
+
+%% 手动恢复
+manual_recovery(ObjectId) ->
+    case dgiot_parse:get_object(<<"Notification">>, ObjectId) of
+        {ok, #{<<"content">> := #{<<"_deviceid">> := DeviceId}, <<"type">> := Ruleid}} ->
+            dgiot_data:insert(?NOTIFICATION, {DeviceId, Ruleid}, {stop, dgiot_datetime:now_secs(), <<>>});
+        _ ->
+            pass
+    end.
 
 save_notification(Ruleid, DeviceId, Payload, NotificationId) ->
     Alarm_createdAt = dgiot_datetime:format("YYYY-MM-DD HH:NN:SS"),
