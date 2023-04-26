@@ -65,6 +65,11 @@ handle_info({publish, #{payload := Payload, topic := <<"bridge/", Topic/binary>>
     dgiot_mqtt:publish(ChannelId, Topic, Payload),
     {noreply, State};
 
+handle_info({forward, Topic, Payload}, #dclient{client = Client, channel = ChannelId} = State) ->
+    dgiot_bridge:send_log(ChannelId, "edge to cloud: Topic ~p Payload ~p ~n", [Topic, Payload]),
+    emqtt:publish(Client, Topic, Payload),
+    {noreply, State};
+
 handle_info({deliver, _, Msg}, #dclient{client = Client, channel = ChannelId} = State) ->
     case dgiot_mqtt:get_topic(Msg) of
         <<"forward/", Topic/binary>> ->

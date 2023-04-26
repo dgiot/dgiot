@@ -114,6 +114,7 @@ handle_info({dclient_ack, Topic, Payload}, #dclient{channel = ChannelId, userdat
         [<<"$dg">>, <<"thing">>, ProductId, DevAddr, <<"properties">>, <<"report">>] ->
             dgiot_bridge:send_log(dgiot_utils:to_binary(ChannelId), ProductId, DevAddr, "~s ~p recv => ~p ~ts ", [?FILE, ?LINE, Topic, unicode:characters_to_list(jsx:encode(Payload))]),
             dgiot_task:save_td(ProductId, DevAddr, Payload, #{}),
+            dgiot_mqttc_channel:send(ProductId, Topic, Payload),
             {noreply, send_msg(State#dclient{userdata = Usedata#device_task{product = ProductId, devaddr = DevAddr}})};
         _ ->
             io:format("~s ~p Topic = ~p.~n", [?FILE, ?LINE, Topic]),
@@ -145,8 +146,10 @@ send_msg(#dclient{channel = ChannelId, userdata = #device_task{ref = Ref, produc
             case X of
                 {InstructOrder, _, Identifier1, DataSource} ->
                     Topic = <<"$dg/device/", Product/binary, "/", DevAddr/binary, "/properties">>,
-%%                    io:format("~s ~p DataSource = ~p.~n", [?FILE, ?LINE, DataSource]),
-                    dgiot_mqtt:publish(dgiot_utils:to_binary(ChannelId), Topic, jsx:encode(DataSource)),
+                    Payload = jsx:encode(DataSource),
+%%                  io:format("~s ~p DataSource = ~p.~n", [?FILE, ?LINE, DataSource]),
+                    dgiot_mqtt:publish(dgiot_utils:to_binary(ChannelId), Topic, Payload),
+                    dgiot_mqttc_channel:send(bridge, Topic, Payload),
                     dgiot_bridge:send_log(dgiot_utils:to_binary(ChannelId), Product, DevAddr, "~s ~p to dev => ~ts: ~ts", [?FILE, ?LINE, unicode:characters_to_list(Topic), unicode:characters_to_list(jsx:encode(DataSource))]),
                     {Count + 1, Acc ++ [DataSource], Acc1 ++ [Identifier1]};
                 _ ->
