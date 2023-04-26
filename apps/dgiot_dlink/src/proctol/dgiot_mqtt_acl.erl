@@ -45,8 +45,8 @@ do_check(#{username := <<"dgiot">>, peerhost := PeerHost}, _PubSub, _Topic) when
 do_check(#{username := <<"dgiot">>, clientid := ClientId}, _PubSub, _Topic) ->
 %%    io:format("~s ~p ClientId: ~p _Topic ~p ~n", [?FILE, ?LINE, ClientId, _Topic]),
     SuperPwd = dgiot_utils:to_binary(dgiot:get_env(dgiot_dlink, super_pwd, <<"">>)),
-    case SuperPwd of
-        ClientId ->
+    case re:run(ClientId, SuperPwd, [{capture, none}]) of
+        match ->
             allow;
         _ ->
             deny

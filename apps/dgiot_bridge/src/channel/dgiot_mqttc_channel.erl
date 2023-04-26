@@ -71,7 +71,7 @@
         order => 3,
         type => string,
         required => true,
-        default => <<"anonymous"/utf8>>,
+        default => <<"dgiot"/utf8>>,
         title => #{
             zh => <<"用户名"/utf8>>
         },
@@ -83,12 +83,24 @@
         order => 4,
         type => string,
         required => true,
-        default => <<"test"/utf8>>,
+        default => <<"w9943535dsgfgdsgdsertet"/utf8>>,
         title => #{
             zh => <<"密码"/utf8>>
         },
         description => #{
             zh => <<"密码"/utf8>>
+        }
+    },
+    <<"clientid">> => #{
+        order => 4,
+        type => string,
+        required => true,
+        default => <<"w9943535dsgfgdsgdsertet223"/utf8>>,
+        title => #{
+            zh => <<"ClientId"/utf8>>
+        },
+        description => #{
+            zh => <<"ClientId"/utf8>>
         }
     },
     <<"ssl">> => #{
