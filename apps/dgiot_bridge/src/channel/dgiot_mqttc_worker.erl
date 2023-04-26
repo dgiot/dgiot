@@ -28,7 +28,7 @@ childSpec(ChannelId, ChannelArgs) ->
     Options = #{
         host => binary_to_list(maps:get(<<"address">>, ChannelArgs)),
         port => maps:get(<<"port">>, ChannelArgs),
-        clientid => binary_to_list(maps:get(<<"password">>, ChannelArgs)),
+        clientid => binary_to_list(maps:get(<<"clientid">>, ChannelArgs)),
         ssl => maps:get(<<"ssl">>, ChannelArgs, false),
         username => binary_to_list(maps:get(<<"username">>, ChannelArgs)),
         password => binary_to_list(maps:get(<<"password">>, ChannelArgs)),
