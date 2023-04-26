@@ -23,7 +23,7 @@
 
 %% API
 -dgiot_data("ets").
--export([init_ets/0]).
+-export([init_ets/0, send/3]).
 
 -export([start/2]).
 -export([init/3, handle_event/3, handle_message/2, handle_init/1, stop/3]).
@@ -154,6 +154,12 @@ init(?TYPE, ChannelId, ChannelArgs) ->
     State = #state{
         id = ChannelId
     },
+    case dgiot_bridge:get_products(ChannelId) of
+        {ok, ?TYPE, ProductIds} ->
+            [dgiot_data:insert(?DGIOT_MQTT_WORK, ProductId, ChannelId) || ProductId <- ProductIds];
+        _ ->
+            pass
+    end,
     {ok, State, dgiot_mqttc_worker:childSpec(ChannelId, ChannelArgs)}.
 
 %% 初始化池子
@@ -173,3 +179,25 @@ handle_message(Message, State) ->
 stop(ChannelType, ChannelId, _State) ->
     ?LOG(info, "channel stop ~p,~p", [ChannelType, ChannelId]),
     ok.
+
+send(bridge, Topic, Payload) ->
+    case dgiot_mqtt:has_routes(<<"bridge/#">>) of
+        true ->
+            dgiot_mqtt:publish(Topic, <<"bridge/", Topic/binary>>, Payload);
+        _ ->
+            pass
+    end;
+
+send(ProductId, Topic, Payload) ->
+    case dgiot_data:get(?DGIOT_MQTT_WORK, ProductId) of
+        not_find ->
+            case dgiot_mqtt:has_routes(<<"forward/#">>) of
+                true ->
+                    dgiot_mqtt:publish(ProductId, <<"forward/", Topic/binary>>, Payload);
+                _ ->
+                    pass
+            end;
+        ChannelId ->
+            dgiot_channelx:do_message(ChannelId, {forward, Topic, Payload})
+    end.
+

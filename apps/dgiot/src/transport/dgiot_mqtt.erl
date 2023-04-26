@@ -190,7 +190,7 @@ get_message(Selected, #{?BINDING_KEYS := #{
         <<"target_topic">> := Target_topic
     } = Params
 }} = Envs) ->
-    Republish = maps:get( <<"republish">>, Params, <<"channel">>),
+    Republish = maps:get(<<"republish">>, Params, <<"channel">>),
     message(Selected, ActId, Payload_tmpl, Target_topic, Target_qos, Republish, Envs);
 
 get_message(Selected, #{?BINDING_KEYS := #{
@@ -202,7 +202,7 @@ get_message(Selected, #{?BINDING_KEYS := #{
         <<"target_topic">> := Target_topic
     } = Params
 }} = Envs) ->
-    Republish = maps:get( <<"republish">>, Params, <<"channel">>),
+    Republish = maps:get(<<"republish">>, Params, <<"channel">>),
     message(Selected, ActId, Payload_tmpl, Target_topic, Target_qos, Republish, Envs);
 
 get_message(_Selected, Envs) ->
@@ -232,7 +232,7 @@ message(Selected, ActId, Payload_tmpl, Target_topic, Target_qos, Republish, Envs
         deviceid => DeviceId,
         republish_by => ActId,
         republish_mod => Republish,
-        'TargetQoS'  => Target_qos,
+        'TargetQoS' => Target_qos,
         topic => Topic,
         payload => Payload,
         timestamp => maps:get(timestamp, Envs, erlang:system_time(millisecond))
