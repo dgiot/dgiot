@@ -79,8 +79,8 @@ description() -> "Authentication with Mnesia".
 do_check(AuthResult, Password, ProductID, DeviceAddr, DeviceId, Ip) ->
     Result =
         case dgiot_product:lookup_prod(ProductID) of
-            {ok, #{<<"productSecret">> := Password}} ->
-                {stop, AuthResult#{anonymous => false, auth_result => success}};
+            {ok, #{<<"productSecret">> := Password, <<"dynamicReg">> := DynamicReg}} ->
+                {stop, AuthResult#{anonymous => false, auth_result => success, dynamicReg => DynamicReg}};
             _ ->
                 case dgiot_device:lookup(DeviceId) of
                     {ok, #{<<"devicesecret">> := Password}} ->
@@ -89,9 +89,8 @@ do_check(AuthResult, Password, ProductID, DeviceAddr, DeviceId, Ip) ->
                         {stop, AuthResult#{anonymous => false, auth_result => password_error}}
                 end
         end,
-
     case Result of
-        {stop, #{auth_result := success}} ->
+        {stop, #{auth_result := success, dynamicReg := true}} ->
             lists:map(fun
                           ({ChannelId, _}) ->
                               dgiot_channelx:do_message(ChannelId, {dlink_login, do_after, ProductID, DeviceAddr, Ip});

@@ -114,7 +114,6 @@ handle_info({dclient_ack, Topic, Payload}, #dclient{channel = ChannelId, userdat
         [<<"$dg">>, <<"thing">>, ProductId, DevAddr, <<"properties">>, <<"report">>] ->
             dgiot_bridge:send_log(dgiot_utils:to_binary(ChannelId), ProductId, DevAddr, "~s ~p recv => ~p ~ts ", [?FILE, ?LINE, Topic, unicode:characters_to_list(jsx:encode(Payload))]),
             dgiot_task:save_td(ProductId, DevAddr, Payload, #{}),
-            dgiot_mqttc_channel:send(ProductId, DevAddr, Topic, Payload),
             {noreply, send_msg(State#dclient{userdata = Usedata#device_task{product = ProductId, devaddr = DevAddr}})};
         _ ->
             io:format("~s ~p Topic = ~p.~n", [?FILE, ?LINE, Topic]),

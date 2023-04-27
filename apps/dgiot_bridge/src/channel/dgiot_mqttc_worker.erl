@@ -25,6 +25,7 @@
 
 start(ChannelId, #{<<"product">> := Products} = ChannelArgs) ->
     lists:map(fun({ProductId, #{<<"productSecret">> := ProductSecret}}) ->
+        dgiot_data:insert(?DGIOT_MQTT_WORK, ProductId, <<ChannelId/binary, "_mqttbridge">>),
         Success = fun(Page) ->
             lists:map(fun(#{<<"devaddr">> := DevAddr}) ->
                 Clientid = <<ProductId:10/binary, "_", DevAddr/binary>>,
@@ -42,7 +43,7 @@ start(ChannelId, #{<<"product">> := Products} = ChannelArgs) ->
                   end,
         Query = #{
             <<"order">> => <<"updatedAt">>,
-            <<"keys">> => [<<"objectId">>],
+            <<"keys">> => [<<"devaddr">>],
             <<"where">> => #{<<"product">> => ProductId}
         },
         dgiot_parse_loader:start(<<"Device">>, Query, 0, 100, 1000000, Success)
@@ -75,7 +76,7 @@ handle_info(disconnect, #dclient{channel = ChannelId} = State) ->
     dgiot_bridge:send_log(ChannelId, "~s ~p ~p ~n", [?FILE, ?LINE, jsx:encode(#{<<"network">> => <<"disconnect">>})]),
     {noreply, State#dclient{client = disconnect}};
 
-handle_info({dclient_ack, <<"edge2cloud/", Topic/binary>>, Payload}, #dclient{client = Client, channel = ChannelId} = State) ->
+handle_info({dclient_ack, Topic, Payload}, #dclient{client = Client, channel = ChannelId} = State) ->
     dgiot_bridge:send_log(ChannelId, "edge to cloud: Topic ~p Payload ~p ~n", [Topic, Payload]),
     emqtt:publish(Client, Topic, Payload),
     {noreply, State};
