@@ -216,7 +216,7 @@ format_sql(ProductId, DevAddr, Data) ->
                     Results when length(Results) > 0 ->
                         get_sqls(Data, ProductId, Properties, Results);
                     _ ->
-                        {" ", " "}
+                        {<<" ">>, <<" ">>}
                 end,
             DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
             TdChannelId = dgiot_parse_id:get_channelid(dgiot_utils:to_binary(?BRIDGE_CHL), <<"TD">>, <<"TD资源通道"/utf8>>),

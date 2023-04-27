@@ -204,7 +204,6 @@ post_properties(Things, AtomName, ProductId, ProductName) ->
         case dgiot_parse:get_object(<<"Product">>, ProductId) of
             {ok, #{<<"thing">> := Thing}} ->
                 OldProperties = maps:get(<<"properties">>, Thing, []),
-                #{<<"identifier">> := Identifier} = Item,
                 {Ids, NewModules} =
                     lists:foldl(fun(X, {Ids1, Acc}) ->
                         case X of

@@ -27,7 +27,7 @@
     , parse_payload/2
 ]).
 
--define(TYPE, <<"DLINK">>).
+-define(TYPE, <<"GRPC">>).
 
 %% 注册协议类型
 -protocol_type(#{

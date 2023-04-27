@@ -250,5 +250,7 @@ format_value(#{<<"ne">> := V}) ->
     #{<<"$ne">> => V};
 format_value(#{<<"regex">> := V}) ->
     #{<<"$regex">> => V};
+format_value(#{<<"in">> := V}) ->
+    #{<<"$in">> => V};
 format_value(V) ->
     V.
