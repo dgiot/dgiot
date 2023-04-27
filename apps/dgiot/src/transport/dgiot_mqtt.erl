@@ -21,7 +21,7 @@
 -include_lib("dgiot/include/logger.hrl").
 -include_lib("emqx_rule_engine/include/rule_engine.hrl").
 %%-include_lib("emqx_rule_engine/include/rule_actions.hrl").
-
+-define(DGIOT_MQTT_WORK, dgiot_mqtt_work).
 -define(LOG_RULE_ACTION(Level, Metadata, Fmt, Args),
     emqx_rule_utils:log_action(Level, Metadata, Fmt, Args)).
 
@@ -60,6 +60,8 @@
     , unsubscribe_route_key/2
     , subscribe_mgmt/2
     , unsubscribe_mgmt/2
+    , send/4
+    , send/5
 ]).
 
 init_ets() ->
@@ -130,6 +132,18 @@ unsubscribe(ClientId, TopicFilter) ->
             do_unsubscribe(TopicFilter, Pid);
         _ ->
             emqx_broker:unsubscribe(TopicFilter)
+    end.
+
+send(ProductId, DevAddr, Client, Topic, Payload) ->
+    publish(Client, Topic, Payload),
+    send(ProductId, DevAddr, Topic, Payload).
+
+send(ProductId, DevAddr, Topic, Payload) ->
+    case dgiot_data:get(?DGIOT_MQTT_WORK, ProductId) of
+        not_find ->
+            pass;
+        ChannelId ->
+            dgiot_client:send(ChannelId, <<ProductId:10/binary, "_", DevAddr/binary>>, Topic, dgiot_json:encode(Payload))
     end.
 
 -spec(publish(Client :: binary(), Topic :: binary(), Payload :: binary())

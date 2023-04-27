@@ -39,8 +39,7 @@ put('before', #{<<"id">> := DeviceId, <<"profile">> := UserProfile} = Device) ->
                     _ ->
                         <<"$dg/device/", ProductId/binary, "/", Devaddr/binary, "/profile">>
                 end,
-            dgiot_mqtt:publish(DeviceId, ProfileTopic, jsx:encode(UserProfile)),
-            dgiot_mqttc_channel:send(cloud2edge, ProfileTopic, jsx:encode(UserProfile));
+            dgiot_mqtt:publish(DeviceId, ProfileTopic, jsx:encode(UserProfile));
         _ ->
             pass
     end;

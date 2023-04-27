@@ -44,7 +44,7 @@ on_message_publish(Message = #message{topic = <<"$dg/thing/", Topic/binary>>, pa
                 {OldTs, Request_id} when (Ts - OldTs) < 5 ->
 %%                    $dg/user/realtimecard/{DeviceId}/report
                     RequestTopic = <<"$dg/user/", Request_id/binary, "/", DeviceId/binary, "/report">>,
-                    dgiot_mqtt:publish(DeviceId, RequestTopic, Payload);
+                    dgiot_mqtt:send(ProductId, DevAddr, DeviceId, RequestTopic, Payload);
                 _ ->
                     pass
             end,
@@ -54,11 +54,11 @@ on_message_publish(Message = #message{topic = <<"$dg/thing/", Topic/binary>>, pa
         [DeviceId, <<"properties">>, <<"get">>, <<"request_id=", Request_id/binary>>] ->
 %%       属性获取	$dg/thing/{deviceId}/properties/get/request_id={request_id}	用户 =>	平台
             case dgiot_device:lookup(DeviceId) of
-                {ok, #{<<"devaddr">> := Devaddr, <<"productid">> := ProductId}} ->
+                {ok, #{<<"devaddr">> := DevAddr, <<"productid">> := ProductId}} ->
 %%                  属性获取	$dg/device/{productId}/{deviceAddr}/properties 	平台 =>	设备
-                    RequestTopic = <<"$dg/device/", ProductId/binary, "/", Devaddr/binary, "/properties">>,
+                    RequestTopic = <<"$dg/device/", ProductId/binary, "/", DevAddr/binary, "/properties">>,
                     dgiot_data:insert(?DGIOT_DLINK_REQUEST_ID, DeviceId, {dgiot_datetime:now_secs(), Request_id}),
-                    dgiot_mqtt:publish(DeviceId, RequestTopic, Payload);
+                    dgiot_mqtt:send(ProductId, DevAddr, DeviceId, RequestTopic, Payload);
                 _ ->
                     pass
             end;

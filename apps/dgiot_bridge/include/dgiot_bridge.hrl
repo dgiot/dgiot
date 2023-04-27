@@ -26,4 +26,4 @@
 -define(AUTH_CHL, 5).
 -define(DEFAULT_CHL, 5).
 -define(DGIOT_SUP(Name), dgiot_utils:to_atom(lists:concat(["dgiot_sup", dgiot_utils:to_atom(Name)]))).
-
+-define(DGIOT_MQTT_WORK, dgiot_mqtt_work).
