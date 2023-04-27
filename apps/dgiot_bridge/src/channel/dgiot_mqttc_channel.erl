@@ -17,13 +17,13 @@
 -behavior(dgiot_channelx).
 -define(TYPE, <<"MQTTC">>).
 -author("kenneth").
--record(state, {id, client = disconnect}).
+-record(state, {id, client = disconnect, env = #{}}).
 -include("dgiot_bridge.hrl").
 -include_lib("dgiot/include/logger.hrl").
 
 %% API
 -dgiot_data("ets").
--export([init_ets/0, send/3]).
+-export([init_ets/0, send/3, send/4]).
 
 -export([start/2]).
 -export([init/3, handle_event/3, handle_message/2, handle_init/1, stop/3]).
@@ -65,42 +65,6 @@
         },
         description => #{
             zh => <<"端口"/utf8>>
-        }
-    },
-    <<"username">> => #{
-        order => 3,
-        type => string,
-        required => true,
-        default => <<"dgiot"/utf8>>,
-        title => #{
-            zh => <<"用户名"/utf8>>
-        },
-        description => #{
-            zh => <<"用户名"/utf8>>
-        }
-    },
-    <<"password">> => #{
-        order => 4,
-        type => string,
-        required => true,
-        default => <<"w9943535dsgfgdsgdsertet"/utf8>>,
-        title => #{
-            zh => <<"密码"/utf8>>
-        },
-        description => #{
-            zh => <<"密码"/utf8>>
-        }
-    },
-    <<"clientid">> => #{
-        order => 4,
-        type => string,
-        required => true,
-        default => <<"w9943535dsgfgdsgdsertet223"/utf8>>,
-        title => #{
-            zh => <<"ClientId"/utf8>>
-        },
-        description => #{
-            zh => <<"ClientId"/utf8>>
         }
     },
     <<"ssl">> => #{
@@ -152,14 +116,10 @@ start(ChannelId, ChannelArgs) ->
 %% 通道初始化
 init(?TYPE, ChannelId, ChannelArgs) ->
     State = #state{
-        id = ChannelId
+        id = ChannelId,
+        env = ChannelArgs
     },
-    case dgiot_bridge:get_products(ChannelId) of
-        {ok, ?TYPE, ProductIds} ->
-            [dgiot_data:insert(?DGIOT_MQTT_WORK, ProductId, ChannelId) || ProductId <- ProductIds];
-        _ ->
-            pass
-    end,
+    dgiot_client:add_clock(ChannelId, dgiot_datetime:now_secs() - 60000, dgiot_datetime:now_secs() + 31536000),
     {ok, State, dgiot_mqttc_worker:childSpec(ChannelId, ChannelArgs)}.
 
 %% 初始化池子
@@ -171,33 +131,47 @@ handle_event(EventId, Event, _State) ->
     ?LOG(info, "channel ~p, ~p", [EventId, Event]),
     ok.
 
-handle_message(Message, State) ->
-    ?LOG(info, "channel ~p", [Message]),
+handle_message(start_client, #state{id = ChannelId, env = ChannelArgs} = State) ->
+    case dgiot_data:get({start_client, ChannelId}) of
+        not_find ->
+            dgiot_mqttc_worker:start(ChannelId, ChannelArgs),
+            dgiot_data:insert({start_client, ChannelId}, ChannelId);
+        _ ->
+            pass
+    end,
+    {ok, State};
+
+handle_message(_Message, State) ->
     {ok, State}.
 
 
-stop(ChannelType, ChannelId, _State) ->
-    ?LOG(info, "channel stop ~p,~p", [ChannelType, ChannelId]),
+stop(_ChannelType, ChannelId, _State) ->
+    dgiot_data:delete({start_client, ChannelId}),
     ok.
 
-send(bridge, Topic, Payload) ->
-    case dgiot_mqtt:has_routes(<<"bridge/#">>) of
-        true ->
-            dgiot_mqtt:publish(Topic, <<"bridge/", Topic/binary>>, Payload);
-        _ ->
-            pass
-    end;
+send(cloud2edge, Topic, Payload) ->
+    dgiot_mqtt:publish(Topic, Topic, Payload).
 
-send(ProductId, Topic, Payload) ->
+send(ProductId, DevAddr, Topic, Payload) ->
     case dgiot_data:get(?DGIOT_MQTT_WORK, ProductId) of
         not_find ->
-            case dgiot_mqtt:has_routes(<<"forward/#">>) of
-                true ->
-                    dgiot_mqtt:publish(ProductId, <<"forward/", Topic/binary>>, Payload);
-                _ ->
-                    pass
-            end;
+            pass;
         ChannelId ->
-            dgiot_channelx:do_message(ChannelId, {forward, Topic, Payload})
+            dgiot_client:send(ChannelId, <<ProductId:10/binary, "_", DevAddr/binary>>, <<"edge2cloud/", Topic/binary>>, Payload)
     end.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
