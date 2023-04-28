@@ -2,8 +2,8 @@
   "konva": {
     "Stage": {
       "attrs": {
-        "width": 1200,
-        "height": 700
+        "height": 700,
+        "width": 1200
       },
       "children": [
         {
@@ -13,46 +13,36 @@
           "children": [
             {
               "attrs": {
-                "id": "bg",
-                "src": "/dgiot_file/knova/knova_bg.png?timestamp=1635422987361",
-                "type": "bg-image",
-                "width": "1200",
-                "height": "700"
-              },
-              "className": "Image"
-            },
-            {
-              "attrs": {
-                "x": 323,
-                "y": 84.95900920567532,
+                "draggable": true,
                 "id": "f9dddd0eeb_amisBMK8t",
                 "name": "amis",
                 "opacity": 0.75,
-                "draggable": true
+                "x": 323,
+                "y": 84.95900920567532
               },
               "children": [],
               "className": "Label"
             },
             {
               "attrs": {
-                "x": 547,
-                "y": 264,
+                "draggable": true,
                 "id": "f9dddd0eeb_texthsl01",
                 "name": "thing",
                 "opacity": 0.75,
-                "draggable": true
+                "x": 547,
+                "y": 264
               },
               "children": [],
               "className": "Label"
             },
             {
               "attrs": {
-                "x": 482,
-                "y": 157,
+                "draggable": true,
                 "id": "f9dddd0eeb_textZGRWA",
                 "name": "thing",
                 "opacity": 0.75,
-                "draggable": true
+                "x": 482,
+                "y": 157
               },
               "children": [],
               "className": "Label"
