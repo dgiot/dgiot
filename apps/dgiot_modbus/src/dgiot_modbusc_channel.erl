@@ -148,7 +148,8 @@ handle_event(_EventId, Event, State) ->
 handle_message(start_client, #state{id = ChannelId, env = #{size := Size}} = State) ->
     case dgiot_data:get({start_client, ChannelId}) of
         not_find ->
-            [dgiot_client:start(ChannelId, dgiot_utils:to_binary(I)) || I <- lists:seq(1, Size)];
+            [dgiot_client:start(ChannelId, dgiot_utils:to_binary(I)) || I <- lists:seq(1, Size)],
+            dgiot_data:insert({start_client, ChannelId}, ChannelId);
         _ ->
             pass
     end,
@@ -159,6 +160,7 @@ handle_message(_Message, State) ->
     {ok, State}.
 
 stop(ChannelType, ChannelId, _State) ->
+    dgiot_data:delete({start_client, ChannelId}),
     ?LOG(info, "channel stop ~p,~p", [ChannelType, ChannelId]),
     ok.
 
