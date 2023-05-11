@@ -270,7 +270,12 @@ get_address(DeviceId, DgLon, DgLat) ->
             #{<<"baiduaddr">> := #{<<"formatted_address">> := Formatted_address}} ->
                 Formatted_address;
             _ ->
-                <<"">>
+                case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+                    {ok, #{<<"address">> := Addr}} ->
+                        Addr;
+                    _ ->
+                        <<"">>
+                end
         end,
     dgiot_data:insert(?DGIOT_LOCATION_ADDRESS, DeviceId, Address),
     Address.

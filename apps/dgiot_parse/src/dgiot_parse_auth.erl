@@ -926,7 +926,24 @@ get_user(#{<<"id">> := UserId}, SessionToken) ->
 
 %% 修改企业内部用户
 %%[{"X-Parse-Session-Token", Session}], [{from, rest}]
-put_user(#{<<"username">> := UserName} = Body, SessionToken) ->
+put_user(#{<<"data">> := _} = Body, SessionToken) ->
+    case dgiot_auth:get_session(dgiot_utils:to_binary(SessionToken)) of
+        #{<<"roles">> := Roles} ->
+            R =
+                maps:fold(fun
+                              (_, #{<<"name">> := <<"admin">>}, _) ->
+                                  put_user_(Body, SessionToken);
+                              (_, _, _) ->
+                                  #{<<"msg">> => <<"No permission to modify data">>}
+                          end, #{}, Roles),
+            {ok, R};
+        _ ->
+            {ok, #{<<"msg">> => <<"token fail">>}}
+    end;
+put_user(Body, SessionToken) ->
+    put_user_(Body, SessionToken).
+
+put_user_(#{<<"username">> := UserName} = Body, SessionToken) ->
     case dgiot_auth:get_session(dgiot_utils:to_binary(SessionToken)) of
         #{<<"roles">> := Roles} ->
             R =
@@ -960,9 +977,9 @@ put_user(#{<<"username">> := UserName} = Body, SessionToken) ->
                         end
                                 end, #{}, ChildUsers)
                           end, #{}, Roles),
-            {ok, R};
+            R;
         _ ->
-            {ok, #{<<"msg">> => <<"token fail">>}}
+            #{<<"msg">> => <<"token fail">>}
     end.
 
 %% 用户名和密码登录
