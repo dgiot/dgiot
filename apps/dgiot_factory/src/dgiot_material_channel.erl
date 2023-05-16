@@ -108,8 +108,8 @@ handle_message({sync_parse, _Pid, 'before', put, _Token, <<"Device">>, #{<<"id">
     {ok, State};
 
 handle_message({sync_parse, _Pid, 'after', post, _Token, <<"Device">>, #{<<"basedata">> := BaseData, <<"objectId">> := DeviceId} = QueryData}, State) ->
-    case dgiot_device:lookup(DeviceId) of
-        {ok, #{<<"productid">> := ProductId}} ->
+    case dgiot_factory_utils:get_productId(DeviceId) of
+        {ok,  ProductId} ->
             case catch dgiot_hook:run_hook({sync_parse, 'after', post, ProductId}, {QueryData, ProductId, State}) of
                 {ok, [{ok,Res}]} ->
                     NewBaseData = dgiot_map:merge(BaseData,Res),
