@@ -26,8 +26,8 @@
 -export([get_json_file/1, unflatten_map/1, flatten_map/1,merge_map/2]).
 -export([save2td/3, save2td/2]).
 -export([kill_undefined/1]).
--export([float/2,get_card_data/2,get_cache_data/3,keep_decimal/2]).
--export([get_id/2]).
+-export([float/2, get_card_data/2, get_cache_data/3, keep_decimal/2]).
+-export([get_id/2, get_productId/1]).
 get_usertree(#{<<"id">> := undefined}, SessionToken) ->
     case get_same_level_role(SessionToken) of
         RoleTree when length(RoleTree) > 0 ->
@@ -285,11 +285,9 @@ get_json_file(FileName) ->
     Path = Dir ++ NewName,
     case catch file:read_file(Path) of
         {Err, _Reason} when Err == 'EXIT'; Err == error ->
-%%                        ?LOG(error, "read  Path,~p error,~p ~n", [Path, Reason]),
             #{};
         {ok, Bin} ->
-%%                        jsx:decode(Bin, [{labels, binary}, return_maps])
-            jsx:decode(Bin)
+            dgiot_json:decode(Bin)
     end.
 
 
@@ -470,9 +468,10 @@ kill_undefined(Arg) when is_map(Arg) ->
         end, #{}, Arg);
 kill_undefined(Arg) ->
     Arg.
+
 float(Number, X) ->
-    N = math:pow(10,X),
-    round(Number*N)/N.
+    N = math:pow(10, X),
+    round(Number * N) / N.
 
 get_card_data(BatchProductId, BatchDeviceId) ->
     DevcieTypeList = dgiot_product:get_devicetype(BatchProductId),
@@ -486,14 +485,14 @@ get_card_data(BatchProductId, BatchDeviceId) ->
                   end,
             dgiot_map:merge(Acc, Res)
         end, #{}, DevcieTypeList).
+
 get_cache_data(BatchProductId, BatchDeviceId, DeviceType) ->
     case dgiot_data:get(?FACTORY_ORDER, {BatchProductId, BatchDeviceId, DeviceType}) of
         not_find ->
             case dgiot_parse:query_object(<<"Devicelog">>, #{<<"where">> => #{<<"data.person.sheetsid">> => BatchDeviceId, <<"data.person.type">> => DeviceType}, <<"order">> => <<"-createdAt">>, <<"limit">> => 1}) of
-                {ok, #{<<"results">> := [#{<<"data">>:= Data}]}}   ->
-                    {ok,maps:without([<<"quality">>],Data)};
+                {ok, #{<<"results">> := [#{<<"data">> := Data}]}} ->
+                    {ok, maps:without([<<"quality">>], Data)};
                 _R ->
-%%                    io:format("~s ~p _R ~p~n", [?FILE, ?LINE, _R]),
                     error
             end;
         Res ->
@@ -520,3 +519,16 @@ get_id(DevAddr, Type) ->
     <<ObjID:10/binary, _/binary>> = dgiot_utils:to_md5(<<Bin/binary, DevAddr/binary, Time/binary>>),
     Res = string:to_upper(dgiot_utils:to_list(ObjID)),
     dgiot_utils:to_binary(Res).
+
+get_productId(DeviceId) ->
+    case dgiot_device:lookup(DeviceId) of
+        {ok, #{<<"productid">> := ProductId}} ->
+            {ok, ProductId};
+        _ ->
+            case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+                {ok, #{<<"product">> := #{<<"objectId">> := ProductId}}} ->
+                    {ok, ProductId};
+                _ ->
+                    error
+            end
+    end.
