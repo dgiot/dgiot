@@ -476,7 +476,7 @@ xor_sum(B) ->
     xor_sum(1, [X || <<X:8>> <= B], 0).
 
 % 定义递归函数
-xor_sum(I, List, Acc) when I < length(List) ->
+xor_sum(I, List, Acc) when I =< length(List) ->
     xor_sum(I + 1, List, Acc bxor lists:nth(I, List));
 xor_sum(_, _, Acc) ->
     Acc.
