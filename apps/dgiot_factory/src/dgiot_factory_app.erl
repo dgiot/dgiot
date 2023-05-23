@@ -23,13 +23,13 @@
 
 %% Application callbacks
 -export([start/2, stop/1]).
-
+-dgiot_data("ets").
+-export([init_ets/0]).
 %%--------------------------------------------------------------------
 %% Application callbacks
 %%--------------------------------------------------------------------
 
 start(_StartType, _StartArgs) ->
-    init_ets(),
     dgiot_metrics:start(dgiot_factory),
     dgiot_factory_sup:start_link().
 

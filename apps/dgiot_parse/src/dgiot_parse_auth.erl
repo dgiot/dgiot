@@ -941,7 +941,7 @@ put_user(#{<<"data">> := _} = Body, SessionToken) ->
             {ok, #{<<"msg">> => <<"token fail">>}}
     end;
 put_user(Body, SessionToken) ->
-    put_user_(Body, SessionToken).
+    {ok, put_user_(Body, SessionToken)}.
 
 put_user_(#{<<"username">> := UserName} = Body, SessionToken) ->
     case dgiot_auth:get_session(dgiot_utils:to_binary(SessionToken)) of
