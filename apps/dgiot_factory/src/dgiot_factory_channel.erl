@@ -135,8 +135,9 @@ handle_message({sync_parse, _Pid, 'after', post, _Token, <<"_User">>, #{<<"objec
 handle_message({sync_parse, _Pid, 'before', put, Token, <<"Device">>,
     #{<<"content">> := #{<<"person">> := #{<<"type">> := PersonType}} = Content, <<"id">> := TaskDeviceId} = _QueryData},
     #state{id = ChannelId} = State) ->
-    case dgiot_device_cache:lookup(TaskDeviceId) of
-        {ok, #{<<"productid">> := TaskProductId}} ->
+    io:format("~s  ~p  TaskDeviceId= ~p ~n", [?FILE, ?LINE, TaskDeviceId]),
+    case dgiot_factory_utils:get_productId(TaskDeviceId) of
+        {ok,  TaskProductId} ->
             dgiot_metrics:inc(dgiot_factory, <<"input_num">>, 1),
             case dgiot_factory_batch:merge_data(Content, PersonType, Token, TaskDeviceId) of
                 {BatchProductId, BatchDeviceId, BatchAddr, NewData} ->
