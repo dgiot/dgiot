@@ -19,7 +19,7 @@
 -include("dgiot_tdengine.hrl").
 -include_lib("dgiot/include/logger.hrl").
 
--export([select/2, format_batch/1, format_db/1, format_value/1, format_limit/1]).
+-export([select/2, format_batch/1, format_db/1, format_value/1, format_limit/1, format_offset/1]).
 
 select(TableName, Query) ->
     Order = format_order(Query),
