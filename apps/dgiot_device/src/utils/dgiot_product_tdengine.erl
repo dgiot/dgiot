@@ -152,7 +152,7 @@ get_keys(ProductId, Function, Keys) ->
         case maps:find(X, Maps) of
             error ->
                 {Names, Acc};
-            Name ->
+            {ok, Name} ->
                 case Acc of
                     <<>> ->
                         {Names ++ [Name], <<Acc/binary, Function/binary, "(", X/binary, ") ", X/binary>>};

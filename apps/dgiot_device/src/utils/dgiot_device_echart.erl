@@ -73,7 +73,7 @@ get_echart(ProductId, Results, Names, Interval) ->
             end
                   end, Acc1, maps:without([<<"日期"/utf8>>], X))
                             end, #{}, Rows),
-    ?LOG(debug, "ChildRows ~p", [ChildRows]),
+%%    io:format("~s ~p ChildRows = ~p.~n", [?FILE, ?LINE, ChildRows]),
     Child =
         maps:fold(fun(K, V, Acc) ->
             Unit =
@@ -83,7 +83,7 @@ get_echart(ProductId, Results, Names, Interval) ->
                 end,
             Acc ++ [#{<<"columns">> => [<<"日期"/utf8>>, K], <<"rows">> => V, <<"unit">> => Unit}]
                   end, [], ChildRows),
-    ?LOG(debug, "Child ~p", [Child]),
+%%    io:format("~s ~p Child = ~p.~n", [?FILE, ?LINE, Child]),
     #{<<"columns">> => Columns, <<"rows">> => Rows, <<"child">> => Child}.
 
 %%判断目标keys是否累计并根据结果设置Function

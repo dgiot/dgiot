@@ -49,6 +49,9 @@ on_message_publish(Message = #message{topic = <<"$dg/thing/", Topic/binary>>, pa
                     pass
             end,
             dgiot_dlink_proctol:properties_report(ProductId, DevAddr, get_payload(Payload));
+        [ProductId, DevAddr, <<"report">>] ->
+%%       属性获取	$dg/thing/{productId}/{deviceAddr}/properties/report	设备 => 平台
+            dgiot_dlink_proctol:properties_report(ProductId, DevAddr, get_payload(Payload));
         [ProductId, DevAddr, <<"firmware">>, <<"report">>] ->
             dgiot_dlink_proctol:firmware_report(ProductId, DevAddr, get_payload(Payload));
         [DeviceId, <<"properties">>, <<"get">>, <<"request_id=", Request_id/binary>>] ->

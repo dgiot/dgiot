@@ -322,7 +322,7 @@ parse_frame(FileName, Data) ->
                     Acc;
                 _ ->
 %%                    io:format("~s ~p  Devaddr ~p. => Value = ~p.~n", [?FILE, ?LINE, Devaddr, Value]),
-                    NewData = change_data(ProductId, #{Address => Value}),
+                    NewData = change_data(ProductId, #{Address => dgiot_utils:to_float(Value, 3)}),
                     dgiot_task:save_td(ProductId, Devaddr, NewData, #{<<"interval">> => 30}),
                     Acc ++ [NewData]
             end
