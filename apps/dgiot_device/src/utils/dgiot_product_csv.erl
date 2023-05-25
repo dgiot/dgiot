@@ -116,12 +116,25 @@ create_device(FileName, Devicemap, ProductIds) ->
                     end, #{}, Devaddrs)
               end, #{}, Devicemap).
 
-post_thing(FileName, Productids) ->
+post_thing(FileName, ProductIds) ->
     AtomName = dgiot_utils:to_atom(FileName),
     maps:fold(fun(ProductId, {DeviceName, ProductName}, _Acc) ->
         Things = ets:match(AtomName, {'_', [ProductName, '_', '_', DeviceName, '_', '$1', '$2', '$3', '$4', '$5', '$6', '$7', '$8', '$9', '$10', '$11' | '_']}),
-        post_properties(Things, AtomName, ProductId, ProductName)
-              end, [], Productids).
+        NewProperties = post_properties(Things, AtomName, ProductId, ProductName),
+        Len = length(NewProperties),
+        case dgiot_parse:get_object(<<"Product">>, ProductId) of
+            {ok, #{<<"thing">> := Thing}} ->
+                OldProperties = maps:get(<<"properties">>, Thing, []),
+                case length(OldProperties) of
+                    Len ->
+                        pass;
+                    _ ->
+                        dgiot_parse:update_object(<<"Product">>, ProductId, #{<<"thing">> => Thing#{<<"properties">> => NewProperties}})
+                end;
+            _ ->
+                pass
+        end
+              end, [], ProductIds).
 
 get_CategoryId(CategoryName) ->
     case dgiot_parse:query_object(<<"Category">>, #{<<"limit">> => 1, <<"where">> => #{<<"name">> => CategoryName}}) of
@@ -161,9 +174,9 @@ get_channelAcl(ChannelId) ->
     end.
 
 post_properties(Things, AtomName, ProductId, ProductName) ->
-    lists:foldl(fun([Devicetype, Identifier, Name, _Address, _Bytes, AccessMode, Min_Max, Unit, Type, _Operatetype, _Originaltype | _], _) ->
+    lists:foldl(fun([Devicetype, Identifier, Name, _Address, _Bytes, AccessMode, Min_Max, Unit, Type, _Operatetype, _Originaltype | _], Acc) ->
         {Min, Max} = get_min_max(Min_Max),
-        Item = #{
+        Acc ++ [#{
             <<"name">> => Name,
             <<"index">> => 0,
             <<"isstorage">> => true,
@@ -200,28 +213,7 @@ post_properties(Things, AtomName, ProductId, ProductName) ->
             <<"identifier">> => to_lower(Identifier),
             <<"moduleType">> => <<"properties">>,
             <<"isaccumulate">> => false
-        },
-        case dgiot_parse:get_object(<<"Product">>, ProductId) of
-            {ok, #{<<"thing">> := Thing}} ->
-                OldProperties = maps:get(<<"properties">>, Thing, []),
-                {Ids, NewModules} =
-                    lists:foldl(fun(X, {Ids1, Acc}) ->
-                        case X of
-                            #{<<"identifier">> := Identifier} ->
-                                {Ids1 ++ [Identifier], Acc};
-                            _ ->
-                                {Ids1, Acc ++ [X]}
-                        end
-                                end, {[], [Item]}, OldProperties),
-                case length(Ids) of
-                    0 ->
-                        dgiot_parse:update_object(<<"Product">>, ProductId, #{<<"thing">> => Thing#{<<"properties">> => NewModules}});
-                    _ ->
-                        pass
-                end;
-            _ ->
-                pass
-        end
+        }]
                 end, [], Things).
 
 get_dataSource(AtomName, ProductId, ProductName, ThingName) ->
