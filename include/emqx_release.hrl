@@ -29,7 +29,7 @@
 
 -ifndef(EMQX_ENTERPRISE).
 
--define(EMQX_RELEASE, {opensource, "4.8.1"}).
+-define(EMQX_RELEASE, {opensource, "4.8.2"}).
 
 -else.
 
