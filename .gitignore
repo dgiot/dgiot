@@ -89,6 +89,7 @@ apps/dgiot_cpile/
 apps/dgiot_bacnet/
 apps/dgiot_workshop/
 apps/dgiot_yantai/
+apps/dgiot_current/
 node_modules/
 package-lock.json
 erlang_ls.config
