@@ -26,6 +26,7 @@
 -export([format_sql/3, get_values/3]).
 -export([save_fields/2, get_fields/1]).
 -export([batch_sql/2]).
+-export([get_channel/1]).
 
 transaction(Channel, Fun) ->
     case dgiot_data:get({?TYPE, Channel, config}) of
@@ -283,4 +284,12 @@ get_value(Field, Values, ProductId, Acc) ->
                 _ ->
                     Acc ++ "," ++ dgiot_utils:to_list(Value)
             end
+    end.
+
+get_channel(Product) ->
+    case dgiot_data:lookup({Product, ?TYPE}) of
+        {ok, Channel} ->
+            {ok, Channel};
+        {error, not_find} ->
+            {error, not_find_tdengine}
     end.

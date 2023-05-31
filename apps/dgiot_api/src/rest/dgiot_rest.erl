@@ -392,7 +392,7 @@ default_mock_handler(_OperationID, _Populated, Context, Req) ->
 do_response(Status, Headers, Body, Req, State) when is_map(Body); is_list(Body) ->
     %% @todo 这个地方有点问题
     %% catch dgiot_rest_check:check_response(Status, State#state.context, Body),
-    do_response(Status, Headers, jsx:encode(Body), Req, State);
+    do_response(Status, Headers, dgiot_json:encode(Body), Req, State);
 do_response(Status, Headers, Body, Req0, State) when is_binary(Body) ->
     NewHeaders = maps:merge(Headers, ?HEADER),
     Req =
@@ -404,7 +404,7 @@ do_response(Status, Headers, Body, Req0, State) when is_binary(Body) ->
                         dgiot_req:reply(Status, NewHeaders, Body, Req0);
                     false ->
                         Res = #{<<"error">> => <<"Server Internal error">>},
-                        dgiot_req:reply(Status, NewHeaders, jsx:encode(Res), Req0)
+                        dgiot_req:reply(Status, NewHeaders, dgiot_json:encode(Res), Req0)
                 end;
             false ->
                 dgiot_req:reply(Status, NewHeaders, Body, Req0)
