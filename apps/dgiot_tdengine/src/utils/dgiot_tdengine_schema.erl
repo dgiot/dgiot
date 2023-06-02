@@ -57,7 +57,7 @@ get_field_tag(Thing) ->
                 V ->
                     Acc ++ [V]
             end
-                    end, [], Tags),
+                    end, [{<<"devaddr">>, #{<<"type">> => <<"NCHAR(50)">>}}], Tags),
     {lists:flatten(Columns), lists:flatten(NewTags)}.
 
 create_database(Query) ->
