@@ -16,7 +16,7 @@
 -author("johnliu").
 -include_lib("dgiot/include/logger.hrl").
 
--export([docroot/0, get_topo/2, send_konva/3, send_realtime_card/3, get_name/3, put_topo/2, push/4, send_topo/2, get_que/1]).
+-export([docroot/0, get_topo/2, send_konva/3, send_realtime_card/3, get_name/3, put_topo/2, push/4, send_topo/2, get_que/1, get_konva/1]).
 
 docroot() ->
     {file, Here} = code:is_loaded(?MODULE),
@@ -108,4 +108,38 @@ get_que(DashboardId) ->
                 end, [], Rects);
         _ ->
             []
+    end.
+
+get_konva(#{<<"Stage">> := #{<<"children">> := [#{<<"children">> := LayerChildren} = Layer | _]} = Stage} = Konva) ->
+    NewSubChildren =
+        lists:foldl(
+            fun
+                (#{<<"className">> := <<"Label">>, <<"children">> := LabelChild} = X, Acc) ->
+                    NewLabelChild = get_labelchild(LabelChild),
+                    Acc ++ [X#{<<"children">> => NewLabelChild}];
+                (X, Acc) ->
+                    Acc ++ [X]
+            end, [], LayerChildren),
+    Konva#{<<"Stage">> => Stage#{<<"children">> => [Layer#{<<"children">> => NewSubChildren}]}};
+get_konva(Konva) ->
+    Konva.
+
+get_labelchild(LabelChild) ->
+    case lists:nth(1, LabelChild) of
+        #{<<"className">> := <<"Text">>, <<"attrs">> := #{<<"id">> := Id}} = TextChild ->
+            case lists:nth(2, LabelChild) of
+                #{<<"className">> := <<"Tag">>, <<"attrs">> := TagAttrs} = TagChild ->
+                    [TagChild#{<<"attrs">> := TagAttrs#{<<"id">> => <<Id/binary, "_tag">>}}, TextChild];
+                _ ->
+                    LabelChild
+            end;
+        #{<<"className">> := <<"Tag">>, <<"attrs">> := TagAttrs} = TagChild ->
+            case lists:nth(2, LabelChild) of
+                #{<<"className">> := <<"Text">>, <<"attrs">> := #{<<"id">> := Id}} = TextChild ->
+                    [TagChild#{<<"attrs">> := TagAttrs#{<<"id">> => <<Id/binary, "_tag">>}}, TextChild];
+                _ ->
+                    LabelChild
+            end;
+        _ ->
+            LabelChild
     end.
