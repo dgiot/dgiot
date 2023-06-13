@@ -76,8 +76,8 @@ save(Name, #{<<"id">> := Id, <<"start_time">> := {{_Y, M, D}, {H, N, S}}} = Task
 save(Name, #{<<"id">> := Id, <<"freq">> := Freq, <<"unit">> := Unit} = Task, Now) ->
     StartTime = maps:get(<<"start_time">>, Task, dgiot_datetime:unixtime_to_localtime(Now)),
     UnixStartTime = dgiot_datetime:to_unixtime(StartTime),
-    RunTime = maps:get(<<"run_time">>, Task, StartTime),
-    NextTime = dgiot_cron_worker:get_next_time(RunTime, Freq, Unit),
+%%  RunTime = maps:get(<<"run_time">>, Task, StartTime),
+    NextTime = dgiot_cron_worker:get_next_time(UnixStartTime, Freq, Unit),
     Enable = maps:get(<<"enable">>, Task, true),
     Count = maps:get(<<"count">>, Task, forever),
     NewTask = Task#{
@@ -95,12 +95,10 @@ save(Name, #{<<"id">> := Id, <<"freq">> := Freq, <<"unit">> := Unit} = Task, Now
                 NewTask#{<<"end_time">> => dgiot_datetime:to_unixtime(EndTime)}
         end,
     if
-        Now < UnixStartTime ->
-            dgiot_data:insert(?CRON_DB, Id, NewTask1#{<<"next_time">> => UnixStartTime});
         Now == NextTime ->
             dgiot_data:insert(?CRON_DB, Id, NewTask1#{<<"next_time">> => NextTime + 1});
         Now < NextTime ->
-            dgiot_data:insert(?CRON_DB, Id, NewTask1);
+            dgiot_data:insert(?CRON_DB, Id, NewTask1#{<<"next_time">> => NextTime});
         true ->
             case dgiot_cron_worker:get_sec_by_unit(Freq, Unit) of
                 error ->

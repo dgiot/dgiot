@@ -42,6 +42,17 @@ push(ID, {{Y, M, D}, {H, N, S}}, Callback) ->
         <<"callback">> => Callback
     });
 
+%% 测试代码
+%%push(ID, {{Y, M, D}, {H, N, S}}, Callback) ->
+%%    Config = [
+%%        {<<"start_time">>, {{Y, M, D}, {H, N, S}}},
+%%        {<<"frequency">>, 5},
+%%        {<<"unit">>, second},
+%%        {<<"run_time">>, 5 * 60 * 10000},
+%%        {<<"count">>, 10}
+%%    ],
+%%    dgiot_cron_worker:start(ID, Config, Callback);
+
 push(ID, Secs, Callback) when is_integer(Secs) ->
     save(?DGIOT_TIMER, #{
         <<"id">> => ID,
@@ -50,6 +61,8 @@ push(ID, Secs, Callback) when is_integer(Secs) ->
         <<"count">> => 1,
         <<"callback">> => Callback
     }).
+
+
 
 %% === 测试代码 =====
 test() ->
