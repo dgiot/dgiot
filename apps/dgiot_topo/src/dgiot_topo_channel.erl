@@ -107,6 +107,7 @@ init(?TYPE, ChannelId, #{<<"product">> := Products, <<"BRIDGEURL">> := Bridgeurl
         id = ChannelId,
         env = NewEnv#{productids => get_prodcutids(Products)}
     },
+    dgiot_parse_hook:subscribe(<<"View/*">>, put, ChannelId),
     dgiot_data:insert(topourl, <<Bridgeurl/binary, "/iotapi/topo">>),
     dgiot_product_knova:get_Product_konva(),
     {ok, State}.
@@ -119,6 +120,11 @@ handle_init(State) ->
 handle_event(EventId, Event, _State) ->
     ?LOG(info, "channel ~p, ~p", [EventId, Event]),
     ok.
+
+handle_message({sync_parse, Pid, 'before', put, _Token, <<"View">>, #{<<"id">> := _ObjectId, <<"data">> := #{<<"konva">> := Konva} = Data} = QueryData}, State) ->
+    NewKonva =  dgiot_topo:get_konva(Konva),
+    dgiot_parse_hook:publish(Pid, QueryData#{<<"data">> => Data#{<<"konva">> => NewKonva}}),
+    {ok, State};
 
 handle_message({topo_thing, ProductId, DeviceId, Data}, State) ->
 %%     发送组态数据
@@ -147,3 +153,5 @@ get_newenv(Args) ->
         <<"Size">>,
         <<"applicationtText">>,
         <<"product">>], Args).
+
+
