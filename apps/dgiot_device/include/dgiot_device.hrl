@@ -17,6 +17,7 @@
 -define(DGIOT_PRODUCT, dgiot_product).
 -define(DGIOT_PRODUCT_IDENTIFIE, dgiot_product_identifie).
 -define(DEVICE_PROFILE, dgiot_device_profile).
+-define(DGIOT_CHANNEL_SESSION, dgiot_channel_session).
 
 -define(LOCAL, smartdev).
 -define(VCON, 0).

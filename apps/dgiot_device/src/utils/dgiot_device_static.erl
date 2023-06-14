@@ -85,16 +85,16 @@ get_realdata({Token, NodeId}) ->
                 {error, Error} ->
                     {error, Error};
                 {ok, Channel} ->
-                    case dgiot_parse:get_object(<<"Device">>, DeviceId) of
-                        {ok, #{<<"objectId">> := DeviceId, <<"product">> := #{<<"objectId">> := ProductId}}} ->
+                    case dgiot_device:get_productid(DeviceId) of
+                        not_find ->
+                            pass;
+                        ProductId ->
                             case dgiot_device_card:get_device_card(Channel, ProductId, DeviceId, #{<<"keys">> => [Identifier]}) of
                                 {ok, #{<<"data">> := [#{<<"identifier">> := Identifier} = Data | _]}} ->
                                     {ok, #{<<"lable">> => NodeId, <<"data">> => Data}};
                                 _ ->
                                     pass
-                            end;
-                        _ ->
-                            pass
+                            end
                     end
             end;
         _ ->

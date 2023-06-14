@@ -108,13 +108,19 @@ get_channel(Session) ->
             <<"isEnable">> => true
         }
     },
-    case dgiot_parse:query_object(<<"Channel">>, Body, [{"X-Parse-Session-Token", Session}], [{from, rest}]) of
-        {ok, #{<<"results">> := []}} ->
-            {error, <<"not find channel">>};
-        {ok, #{<<"results">> := [#{<<"objectId">> := ChannelId}]}} ->
-            {ok, ChannelId};
-        {error, Reason} ->
-            {error, Reason}
+    case dgiot_data:get(?DGIOT_CHANNEL_SESSION, Session) of
+        not_find ->
+            case dgiot_parse:query_object(<<"Channel">>, Body, [{"X-Parse-Session-Token", Session}], [{from, rest}]) of
+                {ok, #{<<"results">> := []}} ->
+                    {error, <<"not find channel">>};
+                {ok, #{<<"results">> := [#{<<"objectId">> := ChannelId}]}} ->
+                    dgiot_data:insert(?DGIOT_CHANNEL_SESSION, Session, ChannelId),
+                    {ok, ChannelId};
+                {error, Reason} ->
+                    {error, Reason}
+            end;
+        ChannelId ->
+            {ok, ChannelId}
     end.
 
 get_keys(ProductId, Function, <<"*">>) ->
