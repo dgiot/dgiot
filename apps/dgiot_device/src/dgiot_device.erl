@@ -24,7 +24,7 @@
 -export([create_device/1, create_device/3, get_sub_device/1, get_sub_device/2, save_subdevice/2, get_subdevice/2, get_subdevices/2, save_subdevice/3]).
 -export([parse_cache_Device/1, sync_parse/1, get/2, post/1, post/2, put/1, save/1, save/2, lookup/1, lookup/2, delete/1, delete/2]).
 -export([save_profile/1, get_profile/1, get_profile/2, get_online/1, online/1, offline/1, offline_child/1, enable/1, disable/1]).
--export([put_location/3, get_location/1, get_address/3]).
+-export([put_location/3, get_location/1, get_address/3, get_productid/1]).
 -export([get_acl/1, get_readonly_acl/1, save_log/3, get_url/1, get_appname/1]).
 
 parse_cache_Device(_ClasseName) ->
@@ -54,6 +54,7 @@ get_subdevice(DtuAddr, SlaveId) ->
 lookup(DeviceId) ->
     dgiot_device_cache:lookup(DeviceId).
 
+
 lookup(ProductId, DevAddr) ->
     dgiot_device_cache:lookup(ProductId, DevAddr).
 
@@ -71,6 +72,19 @@ get_profile(DeviceId) ->
 
 get_profile(DeviceId, Key) ->
     dgiot_device_cache:get_profile(DeviceId, Key).
+
+get_productid(DeviceId) ->
+    case dgiot_device:lookup(DeviceId) of
+        {ok, #{<<"productid">> := ProductId}} ->
+            ProductId;
+        _ ->
+            case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+                {ok, #{<<"product">> := #{<<"objectId">> := ProductId}}} ->
+                    ProductId;
+                _ ->
+                    not_find
+            end
+    end.
 
 get_online(DeviceId) ->
     dgiot_device_cache:get_online(DeviceId).
@@ -192,7 +206,7 @@ create_device(#{<<"status">> := Status, <<"brand">> := Brand, <<"devModel">> := 
 
             case dgiot_parse:create_object(<<"Device">>, maps:without([<<"brand">>, <<"devModel">>], NewDevice)) of
                 {ok, _} ->
-                    dgiot_device:post(NewDevice#{ <<"product">> => ProductId});
+                    dgiot_device:post(NewDevice#{<<"product">> => ProductId});
                 R ->
                     R
             end
