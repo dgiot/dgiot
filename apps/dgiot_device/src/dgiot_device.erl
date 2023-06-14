@@ -24,7 +24,7 @@
 -export([create_device/1, create_device/3, get_sub_device/1, get_sub_device/2, save_subdevice/2, get_subdevice/2, get_subdevices/2, save_subdevice/3]).
 -export([parse_cache_Device/1, sync_parse/1, get/2, post/1, post/2, put/1, save/1, save/2, lookup/1, lookup/2, delete/1, delete/2]).
 -export([save_profile/1, get_profile/1, get_profile/2, get_online/1, online/1, offline/1, offline_child/1, enable/1, disable/1]).
--export([put_location/3, get_location/1, get_address/3, get_productid/1]).
+-export([put_color/3, get_color/2, put_location/3, get_location/1, get_address/3, get_productid/1]).
 -export([get_acl/1, get_readonly_acl/1, save_log/3, get_url/1, get_appname/1]).
 
 parse_cache_Device(_ClasseName) ->
@@ -53,7 +53,6 @@ get_subdevice(DtuAddr, SlaveId) ->
 
 lookup(DeviceId) ->
     dgiot_device_cache:lookup(DeviceId).
-
 
 lookup(ProductId, DevAddr) ->
     dgiot_device_cache:lookup(ProductId, DevAddr).
@@ -103,6 +102,17 @@ enable(DeviceId) ->
 
 disable(DeviceId) ->
     dgiot_device_cache:disable(DeviceId).
+
+put_color(DeviceId, Identifier, Color) ->
+    dgiot_data:insert(?DEVICE_DEVICE_COLOR, {DeviceId, Identifier}, Color).
+
+get_color(DeviceId, Identifier) ->
+    case dgiot_data:get(?DEVICE_DEVICE_COLOR, {DeviceId, Identifier}) of
+        not_find ->
+            <<"green">>;
+        Color1 ->
+            Color1
+    end.
 
 put_location(DeviceId, Longitude, Latitude) ->
     dgiot_device_cache:location(DeviceId, Longitude, Latitude).

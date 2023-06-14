@@ -31,6 +31,7 @@ init_ets() ->
     dgiot_data:init(?DGIOT_PRODUCT),
     dgiot_data:init(?DGIOT_PRODUCT_IDENTIFIE),
     dgiot_data:init(?DGIOT_CHANNEL_SESSION),
+    dgiot_data:init(?DEVICE_DEVICE_COLOR),
     dgiot_data:init(?DEVICE_PROFILE).
 
 load_cache() ->
