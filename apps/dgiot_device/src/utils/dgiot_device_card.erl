@@ -56,6 +56,7 @@ get_card(ProductId, Results, DeviceId, Args) ->
                 Ico = maps:get(<<"ico">>, X, <<"">>),
                 Specs = maps:get(<<"specs">>, DataType, #{}),
                 Unit = maps:get(<<"unit">>, Specs, <<"">>),
+                Color = dgiot_device:get_color(DeviceId, Identifier),
                 case do_hook({Protocol, Identifier}, DataSource#{<<"deviceid">> => DeviceId}) of
                     ignore ->
                         NewV =
@@ -67,18 +68,18 @@ get_card(ProductId, Results, DeviceId, Args) ->
                             end,
                         Acc ++ [#{<<"identifier">> => Identifier, <<"name">> => Name,
                             <<"type">> => Typea, <<"number">> => NewV,
-                            <<"time">> => NewTime, <<"unit">> => Unit,
+                            <<"time">> => NewTime, <<"unit">> => Unit, <<"color">> => Color,
                             <<"imgurl">> => Ico, <<"devicetype">> => Devicetype}];
                     {error, _Reason} ->
                         Acc ++ [#{<<"identifier">> => Identifier, <<"name">> => Name,
                             <<"type">> => Typea, <<"number">> => <<"--">>,
-                            <<"time">> => NewTime, <<"unit">> => Unit,
+                            <<"time">> => NewTime, <<"unit">> => Unit, <<"color">> => Color,
                             <<"imgurl">> => Ico, <<"devicetype">> => Devicetype}];
                     V ->
                         NewV = dgiot_product_tdengine:check_field(Typea, V, #{<<"datatype">> => DataType, <<"specs">> => Specs, <<"deviceid">> => DeviceId}),
                         Acc ++ [#{<<"identifier">> => Identifier, <<"name">> => Name,
                             <<"type">> => Typea, <<"number">> => NewV,
-                            <<"time">> => NewTime, <<"unit">> => Unit,
+                            <<"time">> => NewTime, <<"unit">> => Unit, <<"color">> => Color,
                             <<"imgurl">> => Ico, <<"devicetype">> => Devicetype}]
                 end;
             _ ->
