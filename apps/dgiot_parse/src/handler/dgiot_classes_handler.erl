@@ -45,29 +45,33 @@ init(Req0, Map) ->
     case catch jsx:decode(Body, [{labels, binary}, return_maps]) of
         #{<<"_JavaScriptKey">> := _JSKey} = RecvMap ->
             Method = maps:get(<<"_method">>, RecvMap, dgiot_req:method(Req)),
-            Index = maps:get(Method, Map),
-            {ok, {_, Config}} = dgiot_router:get_state(Index),
-            OperationId = maps:get(operationid, Config, not_allowed),
-            Produces = maps:get(produces, Config, []),
-            %% 鉴权时，我们使用的是cookies，parse js放在body里面
-            Authorize =
-                case maps:get(authorize, Config, []) of
-                    [] -> [];
-                    AuthList ->
-                        [{<<"apiKey">>, #{
-                            <<"in">> => <<"body">>,
-                            <<"name">> => <<"_SessionToken">>
-                        }} | AuthList]
-                end,
-            {dgiot_rest, Req, Config#{
-                authorize => Authorize,
-                from => js,
-                operationid => OperationId,
-                check_request => [],  %parse调用都是post，跟rest不一样
-                check_response => #{}, %parse调用都是post，跟rest不一样
-                produces => Produces,
-                consumes => [<<"*">>]
-            }};
+            case maps:find(Method, Map) of
+                {ok, Index} ->
+                    {ok, {_, Config}} = dgiot_router:get_state(Index),
+                    OperationId = maps:get(operationid, Config, not_allowed),
+                    Produces = maps:get(produces, Config, []),
+                    %% 鉴权时，我们使用的是cookies，parse js放在body里面
+                    Authorize =
+                        case maps:get(authorize, Config, []) of
+                            [] -> [];
+                            AuthList ->
+                                [{<<"apiKey">>, #{
+                                    <<"in">> => <<"body">>,
+                                    <<"name">> => <<"_SessionToken">>
+                                }} | AuthList]
+                        end,
+                    {dgiot_rest, Req, Config#{
+                        authorize => Authorize,
+                        from => js,
+                        operationid => OperationId,
+                        check_request => [],  %parse调用都是post，跟rest不一样
+                        check_response => #{}, %parse调用都是post，跟rest不一样
+                        produces => Produces,
+                        consumes => [<<"*">>]
+                    }};
+                _ ->
+                    {no_call, Req}
+            end;
         _ ->
             {no_call, Req}
     end.
@@ -321,7 +325,7 @@ request_parse(OperationID, Args, Body, Headers, #{base_path := BasePath, <<"sess
 
 request_parse(OperationID, Url, Method, Args, Body, Headers, #{from := From} = Context, Req) ->
     {_Type, NewOperationID} = get_OperationID(OperationID),
-    case dgiot_parse:request(Method, maps:to_list(Headers), Url, dgiot_parse_id:get_objectid(NewOperationID, Body), [{from, From},{args, Args}]) of
+    case dgiot_parse:request(Method, maps:to_list(Headers), Url, dgiot_parse_id:get_objectid(NewOperationID, Body), [{from, From}, {args, Args}]) of
         {ok, StatusCode, ResHeaders, ResBody} ->
             NewHeaders =
                 lists:foldl(

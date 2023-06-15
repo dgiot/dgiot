@@ -58,7 +58,7 @@ get_field_tag(Thing) ->
                     Acc ++ [V]
             end
                     end, [{<<"devaddr">>, #{<<"type">> => <<"NCHAR(50)">>}}], Tags),
-    {lists:flatten(Columns), lists:flatten(NewTags)}.
+    {lists:flatten(Columns), lists:flatten(dgiot_utils:unique_1(NewTags))}.
 
 create_database(Query) ->
     DataBase = maps:get(<<"database">>, Query),
