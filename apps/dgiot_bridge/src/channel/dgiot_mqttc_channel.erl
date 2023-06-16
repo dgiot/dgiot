@@ -117,7 +117,7 @@ init(?TYPE, ChannelId, ChannelArgs) ->
         id = ChannelId,
         env = ChannelArgs
     },
-    dgiot_client:add_clock(ChannelId, dgiot_datetime:now_secs() - 60000, dgiot_datetime:now_secs() + 31536000),
+    dgiot_client:add_clock(ChannelId, dgiot_datetime:now_secs() - 10, dgiot_datetime:now_secs() + 120),
     {ok, State, dgiot_mqttc_worker:childSpec(ChannelId, ChannelArgs)}.
 
 %% 初始化池子

@@ -25,12 +25,14 @@
 
 start(ChannelId, #{<<"product">> := Products} = ChannelArgs) ->
     lists:map(fun({ProductId, #{<<"productSecret">> := ProductSecret}}) ->
+        io:format("~s ~p ProductId ~p , ProductSecret ~p ~n ",[?FILE, ?LINE, ProductId, ProductSecret]),
         dgiot_data:insert(?DGIOT_MQTT_WORK, ProductId, <<ChannelId/binary, "_mqttbridge">>),
         Success = fun(Page) ->
             lists:map(fun(#{<<"devaddr">> := DevAddr}) ->
                 Clientid = <<ProductId:10/binary, "_", DevAddr/binary>>,
+                Host = dgiot_utils:resolve(maps:get(<<"address">>, ChannelArgs)),
                 Options = #{
-                    host => binary_to_list(maps:get(<<"address">>, ChannelArgs)),
+                    host => Host,
                     port => maps:get(<<"port">>, ChannelArgs),
                     clientid => binary_to_list(Clientid),
                     ssl => maps:get(<<"ssl">>, ChannelArgs),

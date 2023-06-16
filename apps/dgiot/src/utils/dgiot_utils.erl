@@ -125,6 +125,7 @@
     , get_ipbymac/2
     , get_ipv4/1
     , get_ipv6/1
+    , resolve/1
     , trim_string/1
     , get_url_path/1
     , get_ports/0
@@ -1094,6 +1095,21 @@ get_ipv6(Hostent) ->
         end
                 end, [], Hostent).
 
+resolve(Host) ->
+    case inet:parse_address(dgiot_utils:to_list(Host)) of  %%判定是否为ip地址
+        {ok, {IP1, IP2, IP3, IP4}} ->
+            combin_ip(IP1, IP2, IP3, IP4);
+        _ ->
+            case inet:getaddr(dgiot_utils:to_list(Host), inet) of  %%DNS解析，通过域名解析对应一个IP值
+                {ok, {IP1, IP2, IP3, IP4}} ->
+                    combin_ip(IP1, IP2, IP3, IP4);
+                {error, _Reason} -> Host
+            end
+    end.
+
+combin_ip(IP1, IP2, IP3, IP4) ->
+    dgiot_utils:to_list(IP1) ++ "." ++ dgiot_utils:to_list(IP2) ++ "." ++ dgiot_utils:to_list(IP3) ++ "." ++ dgiot_utils:to_list(IP4).
+
 trim_string(Str) when is_binary(Str) ->
     trim_string(Str, binary);
 trim_string(Str) when is_list(Str) ->
@@ -1259,7 +1275,6 @@ is_number(<<"9">>) ->
     true;
 is_number(_) ->
     false.
-
 
 
 %% 这个函数采用递归方式实现，处理二进制数据时每次处理一个字节。
