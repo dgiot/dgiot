@@ -113,8 +113,8 @@ handle_info(connect, #dclient{userdata = #connect_state{options = Options, mod =
             {noreply, Dclient#dclient{userdata = ConnectStat#connect_state{socket = disconnect, props = undefined}}}
     end;
 
-handle_info({publish, Message}, #dclient{userdata = #connect_state{mod = Mod}} = Dclient) ->
-    case Mod:handle_info({publish, Message}, Dclient) of
+handle_info({publish, #{topic := Topic, payload := Payload} = _Message}, #dclient{userdata = #connect_state{mod = Mod}} = Dclient) ->
+    case Mod:handle_info({publish, Topic, Payload}, Dclient) of
         {noreply, NewDclient} ->
             {noreply, NewDclient};
         {stop, Reason, NewDclient} ->

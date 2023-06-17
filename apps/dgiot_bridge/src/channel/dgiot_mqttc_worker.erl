@@ -25,11 +25,11 @@
 
 start(ChannelId, #{<<"product">> := Products} = ChannelArgs) ->
     lists:map(fun({ProductId, #{<<"productSecret">> := ProductSecret}}) ->
-        io:format("~s ~p ProductId ~p , ProductSecret ~p ~n ",[?FILE, ?LINE, ProductId, ProductSecret]),
-        dgiot_data:insert(?DGIOT_MQTT_WORK, ProductId, <<ChannelId/binary, "_mqttbridge">>),
+        dgiot_data:insert(?DGIOT_MQTT_WORK, ProductId, ChannelId),
         Success = fun(Page) ->
             lists:map(fun(#{<<"devaddr">> := DevAddr}) ->
-                Clientid = <<ProductId:10/binary, "_", DevAddr/binary>>,
+                Clientid = <<ProductId/binary, "_", DevAddr/binary>>,
+                io:format("~s ~p Clientid ~p ~n", [?FILE, ?LINE, Clientid]),
                 Host = dgiot_utils:resolve(maps:get(<<"address">>, ChannelArgs)),
                 Options = #{
                     host => Host,
@@ -40,7 +40,7 @@ start(ChannelId, #{<<"product">> := Products} = ChannelArgs) ->
                     password => binary_to_list(ProductSecret),
                     clean_start => maps:get(<<"clean_start">>, ChannelArgs)
                 },
-                dgiot_client:start(<<ChannelId/binary, "_mqttbridge">>, Clientid, #{<<"options">> => Options})
+                dgiot_client:start(ChannelId, Clientid, #{<<"options">> => Options})
                       end, Page)
                   end,
         Query = #{
@@ -53,7 +53,7 @@ start(ChannelId, #{<<"product">> := Products} = ChannelArgs) ->
 
 childSpec(ChannelId, _ChannelArgs) ->
     Args = #{<<"channel">> => ChannelId, <<"mod">> => ?MODULE},
-    dgiot_client:register(<<ChannelId/binary, "_mqttbridge">>, mqtt_client_sup, Args).
+    dgiot_client:register(ChannelId, mqtt_client_sup, Args).
 
 %% mqtt client hook
 init(#dclient{channel = ChannelId, client = ClientId} = State) ->
@@ -68,15 +68,23 @@ handle_cast(_Request, State) ->
     {noreply, State}.
 
 handle_info({connect, Client}, #dclient{channel = ChannelId, client = <<ProductId:10/binary, "_", DevAddr/binary>>} = State) ->
-    emqtt:subscribe(Client, {<<"$dg/device/", ProductId/binary, "/", DevAddr/binary, "/#">>, 1}), % cloud to edge
-    timer:sleep(1000),
     dgiot_bridge:send_log(ChannelId, "~s ~p ~p ~n", [?FILE, ?LINE, jsx:encode(#{<<"network">> => <<"connect">>})]),
-    dgiot_mqtt:subscribe(<<"edge2cloud/#">>),      %  edge  to cloud
+    erlang:send_after(1000, self(), {sub, Client, ProductId, DevAddr}),
     {noreply, State#dclient{client = Client}};
 
 handle_info(disconnect, #dclient{channel = ChannelId} = State) ->
     dgiot_bridge:send_log(ChannelId, "~s ~p ~p ~n", [?FILE, ?LINE, jsx:encode(#{<<"network">> => <<"disconnect">>})]),
     {noreply, State#dclient{client = disconnect}};
+
+handle_info({sub, Client, ProductId, DevAddr},State) ->
+    emqtt:subscribe(Client, {<<"$dg/device/", ProductId/binary, "/", DevAddr/binary, "/#">>, 1}), % cloud to edge
+    dgiot_mqtt:subscribe(<<"edge2cloud/#">>),      %  edge  to cloud
+    {noreply, State};
+
+%% #{client_pid => <0.11482.0>, dup => false, packet_id => undefined, payload => <<"{ \"msg\": \"Hello, World!\" }">>, topic =><<"$dg/device/5392ccb3d7/00E0B45BFB4F_usb6-ai15/test">>, properties => undefined,qos => 0, retain => false}
+handle_info({publish, Topic, Payload}, #dclient{channel = ChannelId} = State) ->
+    dgiot_bridge:send_log(ChannelId, "~s ~p cloud to edge Topic ~p Payload ~p ~n", [?FILE, ?LINE, Topic, Payload]),
+    {noreply, State};
 
 handle_info({dclient_ack, Topic, Payload}, #dclient{client = Client, channel = ChannelId} = State) ->
     dgiot_bridge:send_log(ChannelId, "edge to cloud: Topic ~p Payload ~p ~n", [Topic, Payload]),
@@ -84,6 +92,7 @@ handle_info({dclient_ack, Topic, Payload}, #dclient{client = Client, channel = C
     {noreply, State};
 
 handle_info(_Info, State) ->
+    io:format("~s ~p _Info ~p", [?FILE, ?LINE, _Info]),
     {noreply, State}.
 
 terminate(_Reason, #dclient{channel = ChannelId, client = ClientId} = _State) ->
