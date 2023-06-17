@@ -88,11 +88,16 @@ handle_info({publish, Topic, Payload}, #dclient{channel = ChannelId} = State) ->
 
 handle_info({dclient_ack, Topic, Payload}, #dclient{client = Client, channel = ChannelId} = State) ->
     dgiot_bridge:send_log(ChannelId, "edge to cloud: Topic ~p Payload ~p ~n", [Topic, Payload]),
-    emqtt:publish(Client, Topic, Payload),
+    case is_map(Payload) of
+        true ->
+            emqtt:publish(Client, Topic, dgiot_json:encode(Payload));
+        _ ->
+            emqtt:publish(Client, Topic,Payload)
+    end,
+
     {noreply, State};
 
 handle_info(_Info, State) ->
-    io:format("~s ~p _Info ~p", [?FILE, ?LINE, _Info]),
     {noreply, State}.
 
 terminate(_Reason, #dclient{channel = ChannelId, client = ClientId} = _State) ->

@@ -23,7 +23,7 @@
 
 %% API
 -dgiot_data("ets").
--export([init_ets/0]).
+-export([init_ets/0, send/4]).
 
 -export([start/2]).
 -export([init/3, handle_event/3, handle_message/2, handle_init/1, stop/3]).
@@ -142,13 +142,18 @@ handle_message(start_client, #state{id = ChannelId, env = ChannelArgs} = State) 
 handle_message(_Message, State) ->
     {ok, State}.
 
-
 stop(_ChannelType, ChannelId, _State) ->
     dgiot_data:delete({start_client, ChannelId}),
     ok.
 
-
-
+send(ProductId, DevAddr, Topic, Payload) ->
+    Clientid = <<ProductId/binary, "_", DevAddr/binary>>,
+    case dgiot_data:get(?DGIOT_MQTT_WORK, ProductId) of
+        not_find ->
+            pass;
+        ChannelId ->
+            dgiot_client:send(ChannelId, Clientid, Topic, Payload)
+    end.
 
 
 
