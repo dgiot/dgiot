@@ -166,7 +166,7 @@ do_request(get_devicecard_deviceid, #{<<"deviceid">> := DeviceId} = Args, #{<<"s
     end;
 
 %% TDengine 概要: 获取gps轨迹
-do_request(get_gps_track_deviceid, #{<<"deviceid">> := DeviceId}, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
+do_request(get_gps_track_deviceid, #{<<"deviceid">> := DeviceId} = Args, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
     case DeviceId of
         <<"all">> ->
             case dgiot_parse:query_object(<<"Device">>, #{}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
@@ -179,7 +179,7 @@ do_request(get_gps_track_deviceid, #{<<"deviceid">> := DeviceId}, #{<<"sessionTo
                                     {ok, Channel} ->
                                         case dgiot_device:lookup(ObjectId) of
                                             {ok, #{<<"productid">> := ProductId}} ->
-                                                {ok, #{<<"results">> := Results1}} = dgiot_device_tdengine:get_gps_track(Channel, ProductId, ObjectId),
+                                                {ok, #{<<"results">> := Results1}} = dgiot_device_tdengine:get_gps_track(Channel, ProductId, ObjectId, Args),
                                                 Results1;
                                             _ ->
                                                 []
@@ -197,7 +197,7 @@ do_request(get_gps_track_deviceid, #{<<"deviceid">> := DeviceId}, #{<<"sessionTo
                 {ok, Channel} ->
                     case dgiot_device:lookup(DeviceId) of
                         {ok, #{<<"productid">> := ProductId}} ->
-                            dgiot_device_tdengine:get_gps_track(Channel, ProductId, DeviceId);
+                            dgiot_device_tdengine:get_gps_track(Channel, ProductId, DeviceId, Args);
                         _ ->
                             {ok, #{<<"results">> => []}}
                     end

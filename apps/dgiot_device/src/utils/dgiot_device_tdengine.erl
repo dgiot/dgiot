@@ -21,7 +21,7 @@
 -include_lib("dgiot/include/logger.hrl").
 
 -export([get_device/3, get_device/4, get_device/5]).
--export([get_history_data/4, get_realtime_data/4, get_gps_track/3]).
+-export([get_history_data/4, get_realtime_data/4, get_gps_track/4]).
 -export([get_history_data2/7]).
 
 %% #{<<"keys">> => <<"last_row(*)">>, <<"limit">> => 1} 查询td最新的一条device
@@ -86,8 +86,8 @@ get_history_data(Channel, ProductId, TableName, Query) ->
             Function = maps:get(<<"function">>, Query, <<>>),
             Keys = maps:get(<<"keys">>, Query, <<"*">>),
             Limit = dgiot_tdengine_select:format_limit(Query),
-            Starttime = maps:get(<<"starttime">>, Query, dgiot_utils:to_binary(dgiot_datetime:now_ms() - 25920000000)),
-            Endtime = maps:get(<<"endtime">>, Query, dgiot_utils:to_binary(dgiot_datetime:now_ms())),
+            Starttime = dgiot_utils:to_binary(maps:get(<<"starttime">>, Query, dgiot_datetime:now_ms() - 25920000000)),
+            Endtime = dgiot_utils:to_binary(maps:get(<<"endtime">>, Query, dgiot_datetime:now_ms())),
             {Names, Newkeys} = dgiot_product_tdengine:get_keys(ProductId, Function, Keys),
             Tail =
                 case maps:get(<<"interval">>, Query, <<>>) of
@@ -129,12 +129,13 @@ get_history_data2(Order, Channel, TableName, Interval, ProductId, StartTime, _En
             dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_query, Sql)
         end).
 
-get_gps_track(Channel, ProductId, DeviceId) ->
-    Query = #{<<"keys">> => <<"latitude,longitude">>},
+get_gps_track(Channel, ProductId, DeviceId, Args) ->
+    Query = Args#{<<"keys">> => <<"latitude,longitude">>},
     TableName = ?Table(DeviceId),
     {_Names, Results} =
         case dgiot_device_tdengine:get_history_data(Channel, ProductId, TableName, Query) of
             {TdNames, {ok, #{<<"results">> := TdResults}}} ->
+%%                io:format("~s ~p TdResults = ~p.~n", [?FILE, ?LINE, TdResults]),
                 NewTdResults =
                     lists:foldl(
                         fun
@@ -142,11 +143,11 @@ get_gps_track(Channel, ProductId, DeviceId) ->
                                 Acc1;
                             (#{<<"longitude">> := null}, Acc2) ->
                                 Acc2;
-                            (#{<<"latitude">> := Latitude, <<"longitude">> := Longitude}, Acc) ->
+                            (#{<<"latitude">> := Latitude, <<"longitude">> := Longitude} = X, Acc) ->
                                 Maptype = dgiot_utils:to_binary(application:get_env(dgiot_device, map_type, "baidu")),
                                 #{<<"longitude">> := Mglng, <<"latitude">> := Mglat} =
                                     dgiot_gps:fromwgs84(#{<<"longitude">> => Longitude, <<"latitude">> => Latitude}, Maptype),
-                                Acc ++ [#{<<"lat">> => Mglat, <<"lng">> => Mglng}]
+                                Acc ++ [X#{<<"lat">> => Mglat, <<"lng">> => Mglng}]
                         end, [], TdResults),
                 {TdNames, NewTdResults};
             _ ->

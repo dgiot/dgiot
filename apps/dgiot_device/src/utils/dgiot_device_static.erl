@@ -58,8 +58,32 @@ get_counter({Token, <<"device_poweroff_counter">>}) ->
     Count = val(<<"Device_false">>, Key),
     {ok, #{<<"lable">> => <<"关机设备"/utf8>>, <<"value">> => Count}};
 
+get_counter({Token, <<"device_peace_counter">>}) ->
+    Key = get_count(Token),
+    Count = val(<<"Device_peace">>, Key),
+    {ok, #{<<"lable">> => <<"平时设备"/utf8>>, <<"value">> => Count}};
+
+get_counter({Token, <<"device_war_counter">>}) ->
+    Key = get_count(Token),
+    Count = val(<<"Device_war">>, Key),
+    {ok, #{<<"lable">> => <<"战时设备"/utf8>>, <<"value">> => Count}};
+
 get_counter({_Token, _}) ->
     pass.
+
+get_pie({Token, <<"device_online_offline">>}) ->
+    Key = get_count(Token),
+    Device_Online = val(<<"Device_Online">>, Key),
+    Device_Offline = val(<<"Device_Offline">>, Key),
+    Payload = #{
+        <<"columns">> => [<<"名称"/utf8>>, <<"数量"/utf8>>],
+        <<"rows">> => [
+            #{<<"名称"/utf8>> => <<"在线数"/utf8>>, <<"数量"/utf8>> => Device_Online},
+            #{<<"名称"/utf8>> => <<"离线数"/utf8>>, <<"数量"/utf8>> => Device_Offline}
+        ]
+    },
+    {ok, Payload};
+
 
 get_pie({Token, <<"device_poweron_poweroff">>}) ->
     Key = get_count(Token),
@@ -85,16 +109,16 @@ get_realdata({Token, NodeId}) ->
                 {error, Error} ->
                     {error, Error};
                 {ok, Channel} ->
-                    case dgiot_device:get_productid(DeviceId) of
-                        not_find ->
-                            pass;
-                        ProductId ->
+                    case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+                        {ok, #{<<"objectId">> := DeviceId, <<"product">> := #{<<"objectId">> := ProductId}}} ->
                             case dgiot_device_card:get_device_card(Channel, ProductId, DeviceId, #{<<"keys">> => [Identifier]}) of
                                 {ok, #{<<"data">> := [#{<<"identifier">> := Identifier} = Data | _]}} ->
                                     {ok, #{<<"lable">> => NodeId, <<"data">> => Data}};
                                 _ ->
                                     pass
-                            end
+                            end;
+                        _ ->
+                            pass
                     end
             end;
         _ ->
@@ -144,7 +168,7 @@ loop_count(QueryAcls, Key) ->
     dgiot_mnesia:search(Fun, #{}).
 
 %%['Device', Acl, Status, Now, IsEnable, dgiot_utils:to_atom(ProductId), Devaddr, DeviceSecret, Node]
-add(['Device', _Acls, Status, _, _Time, IsEnable, ProductId | _] = _V, Key) ->
+add(['Device', _Acls, Status, State, _Time, IsEnable, ProductId | _] = _V, Key) ->
     inc(<<"Device">>, Key),
     inc(<<"Device">>, ProductId, Key),
     inc("Device_" ++ dgiot_utils:to_list(IsEnable), Key),
@@ -156,6 +180,14 @@ add(['Device', _Acls, Status, _, _Time, IsEnable, ProductId | _] = _V, Key) ->
         false ->
             inc(<<"Device_Offline">>, ProductId, Key),
             inc(<<"Device_Offline">>, Key)
+    end,
+    case State of
+        1 ->
+            inc(<<"Device_war">>, ProductId, Key),
+            inc(<<"Device_war">>, Key);
+        _ ->
+            inc(<<"Device_peace">>, ProductId, Key),
+            inc(<<"Device_peace">>, Key)
     end;
 
 add(_V, _Key) ->
