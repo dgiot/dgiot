@@ -167,8 +167,11 @@ gcj02tobd09(Lng, Lat) ->
 %%}
 %%};
 wgs84togcj02(Lng, Lat) ->
+    Latoffset = dgiot_utils:to_float(application:get_env(dgiot_http, baidumap_latoffset, <<"-0.0002">>)),
+    Lngoffset = dgiot_utils:to_float(application:get_env(dgiot_http, baidumap_lngoffset, <<"-0.0000">>)),
     case out_of_china(Lng, Lat) of
-        true -> [Lng, Lat];
+        true ->
+            [dgiot_utils:to_float(Lng + Lngoffset, 6), dgiot_utils:to_float(Lat + Latoffset, 6)];
         false ->
             Dlat = transformlat(Lng - 105.0, Lat - 35.0),
             Dlng = transformlng(Lng - 105.0, Lat - 35.0),
@@ -180,7 +183,7 @@ wgs84togcj02(Lng, Lat) ->
             Dlng1 = (Dlng * 180.0) / (?A / Sqrtmagic * math:cos(Radlat) * ?PI),
             Mglat = Lat + Dlat1,
             Mglng = Lng + Dlng1,
-            [Mglng, Mglat]
+            [dgiot_utils:to_float(Mglng + Lngoffset, 6), dgiot_utils:to_float(Mglat + Latoffset, 6)]
     end.
 
 wgs84togcj02(Lng, Lat, Lonoffset, Latoffset) ->

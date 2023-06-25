@@ -261,4 +261,4 @@ get_defult(<<"first">>) ->
 get_defult(<<"last">>) ->
     <<"last(createdat) createdat">>;
 get_defult(_) ->
-    <<>>.
+    <<"(createdat) createdat">>.

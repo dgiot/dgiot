@@ -78,7 +78,7 @@ get_sns(Jscode) ->
     Url = "https://api.weixin.qq.com/sns/jscode2session?appid=" ++ dgiot_utils:to_list(AppId) ++ "&secret=" ++ dgiot_utils:to_list(Secret) ++
         "&js_code=" ++ dgiot_utils:to_list(Jscode) ++ "&grant_type=authorization_code",
     case dgiot_http_client:request(get, {Url, []}) of
-        #{<<"openid">> := OPENID, <<"session_key">> := _SESSIONKEY} ->
+        {ok, #{<<"openid">> := OPENID, <<"session_key">> := _SESSIONKEY}} ->
             case dgiot_parse:query_object(<<"_User">>, #{<<"where">> => #{<<"tag.wechat.openid">> => OPENID}}) of
                 {ok, #{<<"results">> := Results}} when length(Results) > 0 ->
                     [#{<<"objectId">> := UserId, <<"username">> := Name} | _] = Results,
@@ -100,7 +100,7 @@ get_public_sns(Code) ->
         "&code=" ++ dgiot_utils:to_list(Code) ++ "&grant_type=authorization_code",
 %%    io:format("~s ~p Url = ~p.~n", [?FILE, ?LINE, Url]),
     case dgiot_http_client:request(get, {Url, []}) of
-        #{<<"openid">> := OPENID, <<"access_token">> := _} ->
+        {ok, #{<<"openid">> := OPENID, <<"access_token">> := _}} ->
             case dgiot_parse:query_object(<<"_User">>, #{<<"where">> => #{<<"tag.wechat.openid">> => OPENID}}) of
                 {ok, #{<<"results">> := Results}} when length(Results) > 0 ->
                     [#{<<"objectId">> := UserId, <<"username">> := Name} | _] = Results,
