@@ -776,6 +776,15 @@ function install_word_report() {
   install_service  dgiot_report "simple"  "${install_dir}/dgiot_report/bin/startup.sh"  "root" "test=1" "${install_dir}/dgiot_report/bin/shutdown.sh"
 }
 
+function install_n2n() {
+  echo -e  "`date +%F_%T` $LINENO: ${GREEN} yum install n2n${NC}"
+  ${csudo} yum install -y libzstd &> /dev/null
+  if [ ! -f ${script_dir}/n2n-3.0.0-1038.x86_64.rpm ]; then
+      wget ${fileserver}/n2n-3.0.0-1038.x86_64.rpm -O ${script_dir}/n2n-3.0.0-1038.x86_64.rpm &> /dev/null
+  fi
+  rpm -i n2n-3.0.0-1038.x86_64.rpm &> /dev/null
+}
+
 function yum_install_git {
 rm /etc/yum.repos.d/wandisco-git.repo -rf
 cat > /etc/yum.repos.d/wandisco-git.repo << "EOF"
@@ -1407,6 +1416,7 @@ function centos() {
       deploy_parse_server     # Api网关
       #install_erlang_otp
       install_dgiot
+      install_n2n
       build_nginx
       #install_node_exporter
     fi
