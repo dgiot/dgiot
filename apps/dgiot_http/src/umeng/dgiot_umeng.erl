@@ -198,7 +198,7 @@ add_notification(<<"start_", Ruleid/binary>>, DeviceId, Payload) ->
         _ ->
             NotificationId = dgiot_parse_id:get_notificationid(Ruleid),
             Content = save_notification(Ruleid, DeviceId, Payload, NotificationId),
-%%            io:format("~s ~p Content = ~p.~n", [?FILE, ?LINE, Content]),
+            io:format("~s ~p Content = ~p.~n", [?FILE, ?LINE, Content]),
             dgiot_umeng:send_msg(Content),
             dgiot_umeng:sendSubscribe(Content),
             dgiot_data:insert(?NOTIFICATION, {DeviceId, Ruleid}, {start, dgiot_datetime:now_secs(), NotificationId})
@@ -209,7 +209,7 @@ add_notification(<<"stop_", Ruleid/binary>>, DeviceId, Payload) ->
         {start, _Time, NotificationId} ->
             Content = update_notification(NotificationId, Payload),
             dgiot_umeng:send_msg(Content),
-%%            io:format("~s ~p Content1 = ~p.~n", [?FILE, ?LINE, Content]),
+            io:format("~s ~p Content1 = ~p.~n", [?FILE, ?LINE, Content]),
             dgiot_umeng:sendSubscribe(Content),
             dgiot_data:insert(?NOTIFICATION, {DeviceId, Ruleid}, {stop, dgiot_datetime:now_secs(), <<>>});
         _ ->
