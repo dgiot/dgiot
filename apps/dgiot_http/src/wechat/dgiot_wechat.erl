@@ -138,7 +138,7 @@ sendSubscribe(UserId, Template_id, Data, Page) ->
                     Data1 = dgiot_utils:to_list(jiffy:encode(Subscribe)),
 %%                    io:format("~s ~p Data1 = ~p.~n", [?FILE, ?LINE, Data1]),
                     R = httpc:request(post, {SubscribeUrl, [], "application/x-www-form-urlencoded", Data1}, [{timeout, 5000}, {connect_timeout, 10000}], [{body_format, binary}]),
-                    ?LOG(info, "R ~p", [R]);
+                    ?LOG(debug, "send ~p~n", [R]);
                 _Result ->
                     {error, <<"not find access_token">>}
             end;
@@ -149,19 +149,18 @@ sendSubscribe(UserId, Template_id, Data, Page) ->
 getAccessToken() ->
     AppId = dgiot_utils:to_binary(application:get_env(dgiot_http, wechat_appid, <<"">>)),
     Secret = dgiot_utils:to_binary(application:get_env(dgiot_http, wechat_secret, <<"">>)),
-    Now = dgiot_datetime:now_secs(),
-    Url = "https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=" ++ dgiot_utils:to_list(AppId) ++ "&secret=" ++ dgiot_utils:to_list(Secret),
-    case dgiot_data:get({accesstoken, AppId, Secret}) of
-        {Time, ExpiresIn, AccessToken} when (Time + ExpiresIn) > Now ->
+    Url = "https://api.weixin.qq.com/cgi-bin/stable_token",
+    Body = #{
+        <<"grant_type">> => <<"client_credential">>,
+        <<"appid">> => AppId,
+        <<"secret">> => Secret,
+        <<"force_refresh">> => false
+    },
+    case dgiot_http_client:request(post, {Url, [], "application/json", jsx:encode(Body)}) of
+        {ok, #{<<"access_token">> := AccessToken}} ->
             {ok, AccessToken};
         _ ->
-            case dgiot_http_client:request(get, {Url, []}) of
-                {ok, #{<<"access_token">> := AccessToken, <<"expires_in">> := Expires_in}} ->
-                    dgiot_data:insert({accesstoken, AppId, Secret}, {Now, Expires_in, AccessToken}),
-                    {ok, AccessToken};
-                _ ->
-                    not_find
-            end
+            not_find
     end.
 
 %% 发送小程序订阅消息
