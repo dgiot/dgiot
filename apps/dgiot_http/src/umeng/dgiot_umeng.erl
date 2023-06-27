@@ -38,7 +38,8 @@
     triggeralarm/1,
     send_msg/1,
     sendSubscribe/1,
-    get_defultmessage/1
+    get_defultmessage/1,
+    replace_miniparam/10
 ]).
 
 test_broadcast() ->
@@ -198,7 +199,7 @@ add_notification(<<"start_", Ruleid/binary>>, DeviceId, Payload) ->
         _ ->
             NotificationId = dgiot_parse_id:get_notificationid(Ruleid),
             Content = save_notification(Ruleid, DeviceId, Payload, NotificationId),
-            io:format("~s ~p Content = ~p.~n", [?FILE, ?LINE, Content]),
+%%            io:format("~s ~p Content = ~p.~n", [?FILE, ?LINE, Content]),
             dgiot_umeng:send_msg(Content),
             dgiot_umeng:sendSubscribe(Content),
             dgiot_data:insert(?NOTIFICATION, {DeviceId, Ruleid}, {start, dgiot_datetime:now_secs(), NotificationId})
@@ -209,7 +210,7 @@ add_notification(<<"stop_", Ruleid/binary>>, DeviceId, Payload) ->
         {start, _Time, NotificationId} ->
             Content = update_notification(NotificationId, Payload),
             dgiot_umeng:send_msg(Content),
-            io:format("~s ~p Content1 = ~p.~n", [?FILE, ?LINE, Content]),
+%%            io:format("~s ~p Content1 = ~p.~n", [?FILE, ?LINE, Content]),
             dgiot_umeng:sendSubscribe(Content),
             dgiot_data:insert(?NOTIFICATION, {DeviceId, Ruleid}, {stop, dgiot_datetime:now_secs(), <<>>});
         _ ->
@@ -296,7 +297,7 @@ update_notification(NotificationId, Payload) ->
             }),
             NewContent#{<<"send_alarm_status">> => <<"stop">>};
         _ ->
-            <<>>
+            #{}
     end.
 
 %%SELECT payload, payload.1.value as value, clientid, 'e636739559' as productid FROM "profile/e636739559/#" WHERE value = '02000000000000001A00000000250222'
@@ -565,9 +566,10 @@ send_msg(_) ->
     pass.
 
 %% 触发 小程序通知
-sendSubscribe(#{<<"send_alarm_status">> := <<"start">>, <<"roleid">> := NotifRoleid, <<"alarm_createdAt">> := Alarm_createdAt, <<"alarm_message">> := Alarm_message, <<"_deviceid">> := DeviceId, <<"_productid">> := ProductId, <<"dgiot_alarmkey">> := Alarmkey, <<"dgiot_alarmvalue">> := Alarmvalue}) ->
+sendSubscribe(#{<<"send_alarm_status">> := <<"start">>, <<"roleid">> := NotifRoleid, <<"alarm_createdAt">> := Alarm_createdAt,
+    <<"alarm_message">> := Alarm_message, <<"_deviceid">> := DeviceId, <<"_productid">> := ProductId, <<"dgiot_alarmkey">> := Alarmkey, <<"dgiot_alarmvalue">> := Alarmvalue}) ->
     case dgiot_parse:get_object(<<"Product">>, ProductId) of
-        {ok, #{<<"name">> := ProductName, <<"content">> := #{<<"minipg">> := #{<<"issend">> := <<"true">>, <<"params">> := Params, <<"tplid">> := TplId, <<"roleid">> := RoleId} = _Minipg}}} ->
+        {ok, #{<<"name">> := ProductName, <<"content">> := #{<<"minipg">> := #{<<"issend">> := <<"true">>, <<"params">> := Params, <<"tplid">> := TplId, <<"roleid">> := RoleId} = Minipg}}} ->
             Device =
                 case dgiot_parse:get_object(<<"Device">>, DeviceId) of
                     {ok, Result} ->
@@ -575,12 +577,15 @@ sendSubscribe(#{<<"send_alarm_status">> := <<"start">>, <<"roleid">> := NotifRol
                     _ ->
                         #{}
                 end,
+            NewAlarm_message = maps:get(<<"alarm_message">>, Minipg, Alarm_message),
+            Page = maps:get(<<"page">>, Minipg, <<"pages/home/home">>),
             Data =
                 maps:fold(fun(Key, Value, Acc) ->
-                    replace_miniparam(Acc, Key, Value, Alarm_createdAt, Alarmkey, Alarmvalue, Device, ProductId, ProductName, Alarm_message)
+                    dgiot_umeng:replace_miniparam(Acc, Key, Value, Alarm_createdAt, Alarmkey, Alarmvalue, Device, ProductId, ProductName, NewAlarm_message)
                           end, #{}, Params),
+%%            io:format("~s ~p Data = ~p.~n", [?FILE, ?LINE, Data]),
             lists:foldl(fun(#{<<"objectId">> := UserId}, _Acc) ->
-                dgiot_wechat:sendSubscribe(UserId, TplId, Data)
+                dgiot_wechat:sendSubscribe(UserId, TplId, Data,Page)
                         end, [], dgiot_notification:get_users(DeviceId, RoleId, NotifRoleid));
         _O ->
 %%            io:format("~s ~p _O = ~p.~n", [?FILE, ?LINE, _O]),
