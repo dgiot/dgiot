@@ -1416,7 +1416,7 @@ function centos() {
       deploy_parse_server     # Api网关
       #install_erlang_otp
       install_dgiot
-      install_n2n
+      #install_n2n
       build_nginx
       #install_node_exporter
     fi
