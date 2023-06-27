@@ -47,7 +47,7 @@ test(ProductId, DevAddr, I, Max) when I =< Max ->
                 <<"rate_energy04">> => rand:uniform(9999)
             }] end, [], lists:seq(1, 900)),
     Sql = dgiot_tdengine:format_sql(ProductId, DevAddr, Storage),
-    dgiot_tdengine_adapter:save_sql(ProductId, Sql),
+    dgiot_tdengine_adapter:save_sql(ProductId, DevAddr, Sql),
     timer:sleep(1000),
     test(ProductId, DevAddr, I + 1, Max);
 

@@ -21,7 +21,16 @@
 
 %% API
 -export([save/1, save/2, save/3, do_save/2, do_save/4]).
--export([save_sql/2]).
+-export([save_sql/2, save_sql/3]).
+
+
+save_sql(Product, DevAddr, Sql) ->
+    DeviceId = dgiot_parse_id:get_deviceid(Product, DevAddr),
+    dgiot_device:online(DeviceId),
+    do_channel(Product,
+        fun(Channel) ->
+            do_save_sql(Channel, Sql)
+        end).
 
 save_sql(Product, Sql) ->
     do_channel(Product,
@@ -30,6 +39,8 @@ save_sql(Product, Sql) ->
         end).
 
 save(Product, Devaddr, Msg) when is_map(Msg) ->
+    DeviceId = dgiot_parse_id:get_deviceid(Product, Devaddr),
+    dgiot_device:online(DeviceId),
     do_channel(Product,
         fun(Channel) ->
             do_save(Channel, Product, Devaddr, Msg)

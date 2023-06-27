@@ -273,7 +273,7 @@ handle_info(Message, State) ->
 do_save([ProductId, DevAddr, Data, _Context], State) ->
     dgiot_device:save(ProductId, DevAddr),
     Sql = dgiot_tdengine:format_sql(ProductId, DevAddr, [Data]),
-    dgiot_tdengine_adapter:save_sql(ProductId, Sql),
+    dgiot_tdengine_adapter:save_sql(ProductId, DevAddr, Sql),
     {ok, State}.
 
 do_check(ChannelId, ProductIds, Config) ->
