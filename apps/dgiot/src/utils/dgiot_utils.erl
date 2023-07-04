@@ -999,16 +999,25 @@ get_ip({{A, B, C, D}, _Port}) ->
     to_binary(Ip);
 
 get_ip(Socket) ->
-    {ok, {{A, B, C, D}, _Port}} = esockd_transport:peername(Socket),
-    Ip = to_list(A) ++ "." ++
-        to_list(B) ++ "." ++
-        to_list(C) ++ "." ++
-        to_list(D),
-    to_binary(Ip).
+    case esockd_transport:peername(Socket) of
+        {ok, {{A, B, C, D}, _Port}} ->
+            Ip = to_list(A) ++ "." ++
+                to_list(B) ++ "." ++
+                to_list(C) ++ "." ++
+                to_list(D),
+            to_binary(Ip);
+        _ ->
+            <<"">>
+
+    end.
 
 get_port(Socket) ->
-    {ok, {{_A, _B, _C, _D}, Port}} = esockd_transport:peername(Socket),
-    Port.
+    case esockd_transport:peername(Socket) of
+        {ok, {{_A, _B, _C, _D}, Port}} ->
+            Port;
+        _ ->
+            0
+    end.
 
 %%re:run(os:cmd("chcp 65001 & arp -a"),
 %%<<"([\\d]{1,3}\\.[\\d]{1,3}\\.[\\d]{1,3}\\.[\\d]{1,3}).*?([\\S]{2}-[\\S]{2}-[\\S]{2}-[\\S]{2}-[\\S]{2}-[\\S]{2})">>,
