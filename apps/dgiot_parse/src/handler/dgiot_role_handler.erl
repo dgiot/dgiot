@@ -143,7 +143,7 @@ do_request(put_roletemp, Body, #{<<"sessionToken">> := SessionToken} = _Context,
 %% 请求:GET /iotapi/roletree
 do_request(get_roletree, _Body, #{<<"sessionToken">> := SessionToken} = _Context, _Req0) ->
     ?LOG(debug, "SessionToken ~p ", [SessionToken]),
-    dgiot_parse_utils:get_classtree(<<"_Role">>, <<"parent">>, #{}, SessionToken);
+    dgiot_parse_utils:get_classtree(<<"_Role">>, <<"parent">>, #{<<"orderBy">> => <<"order">>}, SessionToken);
 
 
 %%  服务器不支持的API接口

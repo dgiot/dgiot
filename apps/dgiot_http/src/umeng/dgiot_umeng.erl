@@ -33,6 +33,7 @@
     save_notification/4,
     update_notification/2,
     create_maintenance/2,
+    send_maintenance/1,
     get_operations/0,
     send_message_to3D/3,
     triggeralarm/1,
@@ -200,6 +201,7 @@ add_notification(<<"start_", Ruleid/binary>>, DeviceId, Payload) ->
             NotificationId = dgiot_parse_id:get_notificationid(Ruleid),
             Content = save_notification(Ruleid, DeviceId, Payload, NotificationId),
 %%            io:format("~s ~p Content = ~p.~n", [?FILE, ?LINE, Content]),
+            dgiot_umeng:send_maintenance(Content#{<<"notificationid">> => NotificationId}),
             dgiot_umeng:send_msg(Content),
             dgiot_umeng:sendSubscribe(Content),
             dgiot_data:insert(?NOTIFICATION, {DeviceId, Ruleid}, {start, dgiot_datetime:now_secs(), NotificationId})
@@ -235,7 +237,7 @@ save_notification(Ruleid, DeviceId, Payload, NotificationId) ->
     case binary:split(Ruleid, <<$_>>, [global, trim]) of
         [ProductId, ViewId] ->
             case dgiot_device:lookup(DeviceId) of
-                {ok, #{<<"acl">> := Acls}} ->
+                {ok, #{<<"acl">> := Acls, <<"devaddr">> := Devaddr}} ->
                     Acl =
                         lists:foldl(fun(X, Acc) ->
                             Acc#{
@@ -259,9 +261,10 @@ save_notification(Ruleid, DeviceId, Payload, NotificationId) ->
                         <<"public">> => false,
                         <<"status">> => 0,
                         <<"process">> => <<"">>,
-                        <<"type">> => Ruleid
+                        <<"type">> => Ruleid,
+                        <<"device">> => #{<<"__type">> => <<"Pointer">>, <<"className">> => <<"Device">>, <<"objectId">> => DeviceId}
                     }),
-                    Content#{<<"send_alarm_status">> => <<"start">>};
+                    Content#{<<"send_alarm_status">> => <<"start">>, <<"devaddr">> => Devaddr};
                 _ ->
                     #{}
             end;
@@ -585,7 +588,7 @@ sendSubscribe(#{<<"send_alarm_status">> := <<"start">>, <<"roleid">> := NotifRol
                           end, #{}, Params),
 %%            io:format("~s ~p Data = ~p.~n", [?FILE, ?LINE, Data]),
             lists:foldl(fun(#{<<"objectId">> := UserId}, _Acc) ->
-                dgiot_wechat:sendSubscribe(UserId, TplId, Data,Page)
+                dgiot_wechat:sendSubscribe(UserId, TplId, Data, Page)
                         end, [], dgiot_notification:get_users(DeviceId, RoleId, NotifRoleid));
         _O ->
 %%            io:format("~s ~p _O = ~p.~n", [?FILE, ?LINE, _O]),
@@ -600,6 +603,58 @@ sendSubscribe(#{<<"send_alarm_status">> := <<"start">>, <<"roleid">> := NotifRol
 %% 小程序订阅
 sendSubscribe(_O) ->
 %%    io:format("~s ~p _O = ~p.~n", [?FILE, ?LINE, _O]),
+    pass.
+
+%% 触发 告警工单创建
+send_maintenance(#{<<"send_alarm_status">> := <<"start">>, <<"notificationid">> := NotificationId, <<"_deviceid">> := DeviceId, <<"devaddr">> := Devaddr, <<"_productid">> := ProductId}) ->
+    case dgiot_parse:get_object(<<"Product">>, ProductId) of
+        {ok, #{<<"content">> := #{<<"workorder">> := #{<<"iscreat">> := <<"true">>, <<"type">> := Type, <<"cause">> := Cause}}}} ->
+            Now = dgiot_datetime:now_secs(),
+            Num = dgiot_datetime:format(dgiot_datetime:to_localtime(Now), <<"YYMMDDHHNNSS">>),
+            Timestamp = dgiot_datetime:format(dgiot_datetime:to_localtime(Now), <<"YY-MM-DD HH:NN:SS">>),
+            Body = #{
+                <<"number">> => <<"WX", Num/binary>>,
+                <<"type">> => Type,
+                <<"status">> => 0,
+                <<"devaddr">> => Devaddr,
+                <<"ACL">> => #{<<"role:开发者"/utf8>> => #{<<"read">> => true, <<"write">> => true}},
+                <<"info">> => #{
+                    <<"phone">> => <<"">>,
+                    <<"video">> => <<"">>,
+                    <<"spinner">> => <<"">>,
+                    <<"devaddr">> => Devaddr,
+                    <<"fault_cause">> => Cause,
+                    <<"timeline">> => [
+                        #{
+                            <<"timestamp">> => Timestamp,
+                            <<"h4">> => <<"生成工单"/utf8>>,
+                            <<"p">> => <<"自动创建工单"/utf8>>
+                        }
+                    ]
+                },
+                <<"product">> => #{
+                    <<"objectId">> => ProductId,
+                    <<"__type">> => <<"Pointer">>,
+                    <<"className">> => <<"Product">>
+                },
+                <<"device">> => #{
+                    <<"objectId">> => DeviceId,
+                    <<"__type">> => <<"Pointer">>,
+                    <<"className">> => <<"Device">>
+                },
+                <<"notification">> => #{
+                    <<"objectId">> => NotificationId,
+                    <<"__type">> => <<"Pointer">>,
+                    <<"className">> => <<"Notification">>
+                }
+            },
+            dgiot_parse:create_object(<<"Maintenance">>, Body);
+        _O ->
+%%            io:format("~s ~p _O = ~p.~n", [?FILE, ?LINE, _O]),
+            pass
+    end;
+
+send_maintenance(_O) ->
     pass.
 
 %%  产品名称：%PRODUCTNAME%
