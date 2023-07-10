@@ -30,7 +30,7 @@
 
 %% API
 -export([swagger_rule/0]).
--export([handle/4, sysc_rules/0, save_rule_to_dict/3, device_sql/4, create_rules/6]).
+-export([handle/4, sysc_rules/0, save_rule_to_dict/3, device_sql/4, create_rules/6, sql_tpl/5]).
 
 %% API描述
 %% 支持二种方式导入
@@ -224,8 +224,7 @@ sql_tpl(Trigger, Ruleid, ProductId, Description, Args) ->
     SELECT = generateSelect(Trigger),
     FROM = generateFrom(ProductId, Trigger),
     WHERE = generateWhere(Trigger),
-
-    ChannelId = dgiot_parse_id:get_channelid(dgiot_utils:to_binary(?BACKEND_CHL), <<"NOTIFICATION">>, <<"dgiot_notification">>),
+    ChannelId = maps:get(<<"channel">>, Args, dgiot_parse_id:get_channelid(dgiot_utils:to_binary(?BACKEND_CHL), <<"NOTIFICATION">>, <<"dgiot_notification">>)),
     DefaultSql =
         <<"SELECT", "\r\n",
             SELECT/binary, "\r\n",

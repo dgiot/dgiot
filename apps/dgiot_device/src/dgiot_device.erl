@@ -192,6 +192,8 @@ create_device(#{<<"status">> := Status, <<"brand">> := Brand, <<"devModel">> := 
             NewDevice = Device#{
                 <<"location">> => maps:get(<<"location">>, Device, #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => 120.161324, <<"latitude">> => 30.262441}),
                 <<"basedata">> => maps:get(<<"basedata">>, Device, #{}),
+                <<"content">> => maps:get(<<"content">>, Device, #{}),
+                <<"profile">> => maps:get(<<"profile">>, Device, #{}),
                 <<"isEnable">> => maps:get(<<"isEnable">>, Device, true),
                 <<"product">> => #{
                     <<"__type">> => <<"Pointer">>,
