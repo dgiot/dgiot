@@ -527,7 +527,8 @@ create_rules(RuleID, ChannelId, Description, Rawsql, Target_topic, Args) ->
     ObjectId = dgiot_parse_id:get_dictid(RuleID, <<"ruleengine">>, <<"Rule">>, <<"Rule">>),
     case dgiot_parse:get_object(<<"Dict">>, ObjectId) of
         {ok, _} ->
-%%          dgiot_rule_handler:save_rule_to_dict(RuleID, Params, Args);
+            dgiot_rule_handler:save_rule_to_dict(RuleID, Params, Args),
+            emqx_rule_engine_api:update_rule(#{id => RuleID}, maps:to_list(Params)),
             {ok, #{<<"msg">> => <<RuleID/binary, " already exists">>}};
         _ ->
             R = emqx_rule_engine_api:create_rule(#{}, maps:to_list(Params)),

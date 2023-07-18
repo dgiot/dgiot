@@ -215,7 +215,7 @@ format_sql(ProductId, DevAddr, Data) ->
             {TagFields, ValueFields} =
                 case dgiot_data:get({ProductId, ?TABLEDESCRIBE}) of
                     Results when length(Results) > 0 ->
-                        get_sqls(Data, ProductId, Properties, Results);
+                        get_sqls(Data, ProductId, DevAddr, Properties, Results);
                     _ ->
                         {<<" ">>, <<" ">>}
                 end,
@@ -229,16 +229,16 @@ format_sql(ProductId, DevAddr, Data) ->
             <<"show database;">>
     end.
 
-get_sqls(Data, ProductId, Properties, Results) ->
-    get_sqls(Data, ProductId, Properties, Results, {<<"">>, <<"">>}).
+get_sqls(Data, ProductId, DevAddr, Properties, Results) ->
+    get_sqls(Data, ProductId, DevAddr, Properties, Results, {<<"">>, <<"">>}).
 
-get_sqls([], _ProductId, _Properties, _Results, Acc) ->
+get_sqls([], _ProductId, _DevAddr, _Properties, _Results, Acc) ->
     Acc;
 
-get_sqls([Data | Rest], ProductId, Properties, Results, {_, Acc}) ->
+get_sqls([Data | Rest], ProductId, DevAddr, Properties, Results, {_, Acc}) ->
     Now = maps:get(<<"createdat">>, Data, now),
-    {TagSql, Sql} = get_sql(Results, ProductId, Data, Now),
-    get_sqls(Rest, ProductId, Properties, Results, {TagSql, <<Acc/binary, Sql/binary>>}).
+    {TagSql, Sql} = get_sql(Results, ProductId, Data#{<<"devaddr">> => DevAddr}, Now),
+    get_sqls(Rest, ProductId, DevAddr, Properties, Results, {TagSql, <<Acc/binary, Sql/binary>>}).
 
 get_sql(Results, ProductId, Values, Now) ->
     get_sql(Results, ProductId, Values, Now, {"(", "("}).

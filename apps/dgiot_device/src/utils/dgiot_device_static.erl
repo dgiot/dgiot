@@ -21,7 +21,7 @@
 -include_lib("dgiot/include/dgiot_mnesia.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -export([stats/2, val/2, val/3, get_count/1, get_count/3]).
--export([get_counter/1, get_pie/1, get_realdata/1]).
+-export([get_counter/1, get_pie/1, get_realdata/1, query_realdata/2, get_labels/2]).
 
 get_counter({Token, <<"product_counter">>}) ->
     Query = #{<<"count">> => <<"objectId">>,
@@ -100,30 +100,65 @@ get_pie({Token, <<"device_poweron_poweroff">>}) ->
 get_pie({_Token, _}) ->
     pass.
 
+query_realdata(Channel, Sql) ->
+    dgiot_tdengine:transaction(Channel,
+        fun(Context) ->
+            dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_query, Sql)
+        end).
 
-get_realdata({Token, NodeId}) ->
-    Len = size(NodeId) - 16,
-    case NodeId of
-        <<DeviceId:10/binary, "_", Identifier:Len/binary, "_text">> ->
-            case dgiot_product_tdengine:get_channel(Token) of
-                {error, Error} ->
-                    {error, Error};
-                {ok, Channel} ->
-                    case dgiot_parse:get_object(<<"Device">>, DeviceId) of
-                        {ok, #{<<"objectId">> := DeviceId, <<"product">> := #{<<"objectId">> := ProductId}}} ->
-                            case dgiot_device_card:get_device_card(Channel, ProductId, DeviceId, #{<<"keys">> => [Identifier]}) of
-                                {ok, #{<<"data">> := [#{<<"identifier">> := Identifier} = Data | _]}} ->
-                                    {ok, #{<<"lable">> => NodeId, <<"data">> => Data}};
+get_labels(ProductId, Results) ->
+    Props = dgiot_product:get_props(ProductId),
+    lists:foldl(fun
+                    (#{<<"devaddr">> := Devaddr} = X, Acc) ->
+                        DeviceId = dgiot_parse_id:get_deviceid(ProductId, Devaddr),
+                        maps:fold(
+                            fun
+                                (Identifier, Value, Lcc) ->
+                                    case maps:find(Identifier, Props) of
+                                        {ok, #{<<"identifier">> := Identifier, <<"dataType">> := #{<<"type">> := Typea} = DataType}} ->
+                                            Specs = maps:get(<<"specs">>, DataType, #{}),
+                                            Unit = maps:get(<<"unit">>, Specs, <<"">>),
+                                            Color = dgiot_device:get_color(DeviceId, Identifier),
+                                            NewV = dgiot_product_tdengine:check_field(Typea, Value, #{<<"datatype">> => DataType, <<"specs">> => Specs, <<"deviceid">> => DeviceId}),
+                                            Lcc ++ [#{<<"label">> => <<DeviceId/binary, "_", Identifier/binary, "_text">>, <<"number">> => NewV, <<"unit">> => Unit, <<"color">> => Color}];
+                                        _ ->
+                                            Lcc
+                                    end
+                            end, Acc, X);
+                    (_, Acc) ->
+                        Acc
+                end, [], Results).
+
+%% INSERT INTO _24b9b4bc50._77c57f6860 using _24b9b4bc50._19c923fd82 TAGS("322000_AL_usb7") VALUES(now,15,30,29,26.9,54.7);
+get_realdata({Token, Realdatas}) when is_map(Realdatas) ->
+    Payload =
+        maps:fold(
+            fun
+                (ProductId, #{<<"keys">> := Keys, <<"deviceids">> := _Deviceids}, Acc) ->
+                    case dgiot_product_tdengine:get_channel(Token) of
+                        {error, Error} ->
+                            {error, Error};
+                        {ok, Channel} ->
+                            {_, Newkeys} = dgiot_product_tdengine:get_keys(ProductId, <<"last">>, Keys),
+                            DB = dgiot_tdengine:get_database(Channel, ProductId),
+                            Sql1 = <<"select last(devaddr) as devaddr,", Newkeys/binary, " FROM ", DB/binary, "_", ProductId/binary, " group by devaddr;">>,
+%%                            io:format("Channel = ~p.~n Sql = ~p.~n", [Channel, Sql1]),
+                            case dgiot_device_static:query_realdata(Channel, Sql1) of
+                                {ok, #{<<"code">> := 0, <<"results">> := Results1}} ->
+                                    Acc ++ dgiot_device_static:get_labels(ProductId, Results1);
                                 _ ->
-                                    pass
-                            end;
-                        _ ->
-                            pass
-                    end
-            end;
-        _ ->
-            pass
-    end.
+                                    Acc
+                            end
+                    end;
+                (_, _, Acc) ->
+                    Acc
+            end, [], Realdatas),
+    Base64 = base64:encode(jsx:encode(Payload)),
+    Pubtopic = <<"$dg/user/topo/", Token/binary, "/allrealdata/report">>,
+    dgiot_mqtt:publish(self(), Pubtopic, Base64);
+
+get_realdata(_) ->
+    pass.
 
 get_count(Token) ->
     RoleIds =

@@ -84,7 +84,6 @@ push(ProductId, Devaddr, DeviceId, Payload) ->
     httpc:request(post, {Url1, [], "application/json", Data1}, [], []).
 
 send_topo({NodeType, NodeId}, Token) ->
-%%    io:format("NodeType ~p NodeId ~p Token ~p ~n", [NodeType, NodeId,Token]),
     case dgiot_hook:run_hook({'topo', NodeType}, {Token, NodeId}) of
         {ok, [{ok, Payload}]} ->
             Base64 = base64:encode(jsx:encode(Payload)),
@@ -99,13 +98,32 @@ get_que(DashboardId) ->
     case dgiot_parse:get_object(<<"View">>, DashboardId) of
         {ok, #{<<"data">> := #{<<"konva">> := #{<<"Stage">> := Stage}}}} ->
             Rects = dgiot_product_knova:get_nodes(Stage, [<<"Rect">>, <<"Image">>, <<"Text">>]),
+            Realdatas =
+                maps:fold(
+                    fun
+                        (NodeId, #{<<"source">> := <<"mqtt">>, <<"type">> := <<"realdata">>, <<"screen_productid">> := ProductId}, Acc) ->
+                            Len = size(NodeId) - 16,
+                            case NodeId of
+                                <<DeviceId:10/binary, "_", Identifier:Len/binary, "_text">> ->
+                                    List = maps:get(ProductId, Acc, #{}),
+                                    Keys = maps:get(<<"keys">>, List, []),
+                                    DeviceIds = maps:get(<<"deviceids">>, List, []),
+                                    Acc#{ProductId => List#{<<"keys">> => lists:umerge(Keys, [Identifier]), <<"deviceids">> => lists:umerge(DeviceIds, [DeviceId])}};
+                                _ ->
+                                    pass
+                            end;
+                        (_, _, Acc) ->
+                            Acc
+                    end, #{}, Rects),
             maps:fold(
                 fun
+                    (_, #{<<"source">> := <<"mqtt">>, <<"type">> := <<"realdata">>}, Acc) ->
+                        Acc;
                     (NodeId, #{<<"source">> := <<"mqtt">>, <<"type">> := NodeType}, Acc) ->
                         Acc ++ [{NodeType, NodeId}];
                     (_, _, Acc) ->
                         Acc
-                end, [], Rects);
+                end, [{<<"realdata">>, Realdatas}], Rects);
         _ ->
             []
     end.
@@ -124,7 +142,7 @@ get_konva(#{<<"Stage">> := #{<<"children">> := [#{<<"children">> := LayerChildre
 get_konva(Konva) ->
     Konva.
 
-get_labelchild(LabelChild) ->
+get_labelchild(LabelChild) when length(LabelChild) > 1 ->
     case lists:nth(1, LabelChild) of
         #{<<"className">> := <<"Text">>, <<"attrs">> := #{<<"id">> := Id}} = TextChild ->
             case lists:nth(2, LabelChild) of
@@ -142,4 +160,7 @@ get_labelchild(LabelChild) ->
             end;
         _ ->
             LabelChild
-    end.
+    end;
+
+get_labelchild(LabelChild) ->
+    LabelChild.

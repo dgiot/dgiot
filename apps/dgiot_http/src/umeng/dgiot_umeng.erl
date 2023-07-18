@@ -544,9 +544,16 @@ triggeralarm(DeviceId) ->
 
 
 %% 触发
-send_msg(#{<<"send_alarm_status">> := <<"start">>, <<"_productid">> := ProductId} = NotifContent) ->
-    case dgiot_parse:get_object(<<"Product">>, ProductId) of
-        {ok, #{<<"name">> := ProductName, <<"content">> := Content}} ->
+send_msg(#{<<"send_alarm_status">> := <<"start">>, <<"_productid">> := ProductId, <<"_viewid">> := ViewId} = NotifContent) ->
+    case dgiot_parse:get_object(<<"View">>, ViewId) of
+        {ok, #{<<"meta">> := Content}} ->
+            ProductName =
+                case dgiot_product:lookup_prod(ProductId) of
+                    {ok, #{<<"name">> := Name}} ->
+                        Name;
+                    _ ->
+                        <<>>
+                end,
             maps:fold(fun(K, V, _Acc) ->
                 send_mode(#{K => V}, ProductName, NotifContent, <<"触发"/utf8>>)
                       end, #{}, Content);
@@ -555,9 +562,16 @@ send_msg(#{<<"send_alarm_status">> := <<"start">>, <<"_productid">> := ProductId
     end;
 
 %% 恢复
-send_msg(#{<<"send_alarm_status">> := <<"stop">>, <<"_productid">> := ProductId} = NotifContent) ->
-    case dgiot_parse:get_object(<<"Product">>, ProductId) of
-        {ok, #{<<"name">> := ProductName, <<"content">> := Content}} ->
+send_msg(#{<<"send_alarm_status">> := <<"stop">>, <<"_productid">> := ProductId, <<"_viewid">> := ViewId} = NotifContent) ->
+    case dgiot_parse:get_object(<<"View">>, ViewId) of
+        {ok, #{<<"meta">> := Content}} ->
+            ProductName =
+                case dgiot_product:lookup_prod(ProductId) of
+                    {ok, #{<<"name">> := Name}} ->
+                        Name;
+                    _ ->
+                        <<>>
+                end,
             maps:fold(fun(K, V, _Acc) ->
                 send_mode(#{K => V}, ProductName, NotifContent, <<"恢复"/utf8>>)
                       end, #{}, Content);
@@ -570,9 +584,16 @@ send_msg(_) ->
 
 %% 触发 小程序通知
 sendSubscribe(#{<<"send_alarm_status">> := <<"start">>, <<"roleid">> := NotifRoleid, <<"alarm_createdAt">> := Alarm_createdAt,
-    <<"alarm_message">> := Alarm_message, <<"_deviceid">> := DeviceId, <<"_productid">> := ProductId, <<"dgiot_alarmkey">> := Alarmkey, <<"dgiot_alarmvalue">> := Alarmvalue}) ->
-    case dgiot_parse:get_object(<<"Product">>, ProductId) of
-        {ok, #{<<"name">> := ProductName, <<"content">> := #{<<"minipg">> := #{<<"issend">> := <<"true">>, <<"params">> := Params, <<"tplid">> := TplId, <<"roleid">> := RoleId} = Minipg}}} ->
+    <<"alarm_message">> := Alarm_message, <<"_deviceid">> := DeviceId, <<"_productid">> := ProductId, <<"_viewid">> := ViewId, <<"dgiot_alarmkey">> := Alarmkey, <<"dgiot_alarmvalue">> := Alarmvalue}) ->
+    case dgiot_parse:get_object(<<"View">>, ViewId) of
+        {ok, #{<<"meta">> := #{<<"minipg">> := #{<<"issend">> := <<"true">>, <<"params">> := Params, <<"tplid">> := TplId, <<"roleid">> := RoleId} = Minipg}}} ->
+            ProductName =
+                case dgiot_product:lookup_prod(ProductId) of
+                    {ok, #{<<"name">> := Name}} ->
+                        Name;
+                    _ ->
+                        <<>>
+                end,
             Device =
                 case dgiot_parse:get_object(<<"Device">>, DeviceId) of
                     {ok, Result} ->
@@ -606,9 +627,9 @@ sendSubscribe(_O) ->
     pass.
 
 %% 触发 告警工单创建
-send_maintenance(#{<<"send_alarm_status">> := <<"start">>, <<"notificationid">> := NotificationId, <<"_deviceid">> := DeviceId, <<"devaddr">> := Devaddr, <<"_productid">> := ProductId}) ->
-    case dgiot_parse:get_object(<<"Product">>, ProductId) of
-        {ok, #{<<"content">> := #{<<"workorder">> := #{<<"iscreat">> := <<"true">>, <<"type">> := Type, <<"cause">> := Cause}}}} ->
+send_maintenance(#{<<"send_alarm_status">> := <<"start">>, <<"notificationid">> := NotificationId, <<"_deviceid">> := DeviceId, <<"devaddr">> := Devaddr, <<"_viewid">> := ViewId, <<"_productid">> := ProductId}) ->
+    case dgiot_parse:get_object(<<"View">>, ViewId) of
+        {ok, #{<<"meta">> := #{<<"workorder">> := #{<<"iscreat">> := <<"true">>, <<"type">> := Type, <<"cause">> := Cause}}}} ->
             Now = dgiot_datetime:now_secs(),
             Num = dgiot_datetime:format(dgiot_datetime:to_localtime(Now), <<"YYMMDDHHNNSS">>),
             Timestamp = dgiot_datetime:format(dgiot_datetime:to_localtime(Now), <<"YY-MM-DD HH:NN:SS">>),

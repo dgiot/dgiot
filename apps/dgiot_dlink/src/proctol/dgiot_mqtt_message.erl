@@ -31,6 +31,11 @@
 init_ets() ->
     dgiot_data:init(?DGIOT_DLINK_REQUEST_ID).
 
+%%
+on_message_publish(Message = #message{topic = <<"$dg/user/dashboard/", SessionToken:34/binary, _Rest/binary>>, payload = Payload, from = ClientId}, _State) ->
+    dgiot_mqtt:publish(dgiot_utils:to_md5(ClientId), <<"dashboard_ack/", SessionToken/binary>>, Payload),
+    {ok, Message};
+
 on_message_publish(Message = #message{topic = <<"$dg/thing/", Topic/binary>>, payload = Payload, from = _ClientId, headers = _Headers}, _State) ->
     case re:split(Topic, <<"/">>) of
         [ProductId, DevAddr, <<"init">>, <<"request">>] ->

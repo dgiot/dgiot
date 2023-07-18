@@ -1200,7 +1200,7 @@ getuser(#{<<"objectId">> := RoleId, <<"name">> := Depname} = Role) ->
                 #{<<"nick">> := <<"user_for_", _/binary>>} ->
                     Acc;
                 #{<<"nick">> := Nick, <<"objectId">> := ObjectId} ->
-                    Acc ++ [#{<<"label">> => Nick, <<"value">> => ObjectId}];
+                    Acc ++ [#{<<"label">> => Nick, <<"value">> => #{<<"name">> => Nick, <<"objectId">> => ObjectId}}];
                 _ ->
                     Acc
             end
