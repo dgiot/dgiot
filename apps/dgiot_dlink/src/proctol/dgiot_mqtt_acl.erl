@@ -113,6 +113,12 @@ do_check(#{clientid := Token, username := UserId} = _ClientInfo, publish, <<"$dg
             deny
     end;
 
+%% 大屏消息回复 "$dg/user/dashboard/{dashboardId}/ack"
+do_check(#{clientid := Token} = _ClientInfo, publish, <<"$dg/user/dashboard/", Token:34/binary, _Rest/binary>> = _Topic)
+    when Token =/= undefined ->
+%%    io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, _Topic]),
+    allow;
+
 %% "$dg/user/channel/{channelId}/{productId}/{deviceId}"
 do_check(#{clientid := Token} = _ClientInfo, subscribe, <<"$dg/user/channel/", DeviceInfo/binary>> = _Topic) ->
 %%    io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, _Topic]),

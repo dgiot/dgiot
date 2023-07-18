@@ -57,8 +57,15 @@ get_field_tag(Thing) ->
                 V ->
                     Acc ++ [V]
             end
-                    end, [{<<"devaddr">>, #{<<"type">> => <<"NCHAR(50)">>}}], Tags),
-    {lists:flatten(Columns), lists:flatten(dgiot_utils:unique_1(NewTags))}.
+                    end, [], Tags),
+    NewTags1 =
+        case proplists:get_value(<<"devaddr">>, NewTags) of
+            undefined ->
+                NewTags ++ [{<<"devaddr">>, #{<<"type">> => <<"NCHAR(50)">>}}];
+            _ ->
+                NewTags
+        end,
+    {lists:flatten(Columns), lists:flatten(dgiot_utils:unique_1(NewTags1))}.
 
 create_database(Query) ->
     DataBase = maps:get(<<"database">>, Query),
