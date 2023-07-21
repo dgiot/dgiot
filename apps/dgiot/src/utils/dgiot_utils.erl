@@ -136,6 +136,7 @@
     , is_email/1
     , get_mock/2
     , write_mock/3
+    , variance/2
 ]).
 
 -define(TIMEZONE, + 8).
@@ -1285,6 +1286,16 @@ is_number(<<"9">>) ->
 is_number(_) ->
     false.
 
+%% 方差计算
+variance(Avg, Values) when length(Values) > 0 ->
+    Sum =
+        lists:foldl(fun(V, Acc) ->
+            Acc + ((V - Avg) * (V - Avg))
+                    end, 0, Values),
+    Sum / length(Values);
+
+variance(_, _) ->
+    0.
 
 %% 这个函数采用递归方式实现，处理二进制数据时每次处理一个字节。
 %% 在递归过程中，每个字节都会被异或到累计的CRC高字节中，

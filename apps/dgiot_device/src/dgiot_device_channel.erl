@@ -137,13 +137,7 @@ handle_message(check, #state{id = ChannelId, env = #{<<"offline">> := OffLine, <
 
 handle_message({sync_parse, Pid, 'after', get, Token, <<"Device">>, #{<<"results">> := Results} = ResBody}, State) ->
     SessionToken = dgiot_parse_auth:get_usersession(dgiot_utils:to_binary(Token)),
-    Cookie = case dgiot_parse_auth:get_cookie(SessionToken) of
-                 not_find ->
-                     #{};
-                 Cooki ->
-                     Cooki
-             end,
-    MapType = maps:get(<<"mapType">>, Cookie, <<"baidu">>),
+    MapType = dgiot_utils:to_binary(application:get_env(dgiot_device, map_type, "baidu")),
     {NewResults, DeviceList} =
         lists:foldl(
             fun(#{<<"objectId">> := DeviceId} = Device, {NewResult, Dev}) ->
@@ -176,15 +170,8 @@ handle_message({sync_parse, Pid, 'after', get, Token, <<"Device">>, #{<<"results
     dgiot_parse_hook:publish(Pid, ResBody#{<<"results">> => NewResults}),
     {ok, State};
 
-handle_message({sync_parse, Pid, 'after', get, Token, <<"Device">>, #{<<"objectId">> := DeviceId} = ResBody}, State) ->
-    SessionToken = dgiot_parse_auth:get_usersession(dgiot_utils:to_binary(Token)),
-    Cookie = case dgiot_parse_auth:get_cookie(SessionToken) of
-                 not_find ->
-                     #{};
-                 A ->
-                     A
-             end,
-    MapType = maps:get(<<"mapType">>, Cookie, <<"baidu">>),
+handle_message({sync_parse, Pid, 'after', get, _Token, <<"Device">>, #{<<"objectId">> := DeviceId} = ResBody}, State) ->
+    MapType = dgiot_utils:to_binary(application:get_env(dgiot_device, map_type, "baidu")),
     NewLocation = dgiot_gps:fromwgs84(maps:get(<<"location">>, ResBody, #{}), MapType),
     ResBody1 =
         case dgiot_device:lookup(DeviceId) of
