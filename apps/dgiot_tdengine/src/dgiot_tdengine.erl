@@ -215,7 +215,7 @@ format_sql(ProductId, DevAddr, Data) ->
             {TagFields, ValueFields} =
                 case dgiot_data:get({ProductId, ?TABLEDESCRIBE}) of
                     Results when length(Results) > 0 ->
-                        get_sqls(Data, ProductId, DevAddr, Properties, Results);
+                        get_sqls(Data, ProductId, {unicode:characters_to_binary(unicode:characters_to_list((dgiot_utils:to_binary(DevAddr)))), text}, Properties, Results);
                     _ ->
                         {<<" ">>, <<" ">>}
                 end,

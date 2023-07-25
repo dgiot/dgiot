@@ -99,7 +99,7 @@ get_field_(_) ->
 check_value(Value, ProductId, Field) ->
     case dgiot_product:get_product_identifier(ProductId, Field) of
         not_find ->
-            Value;
+            get_type_value(<<>>, Value, #{});
         #{<<"dataType">> := #{<<"type">> := Type} = DataType} ->
             Specs = maps:get(<<"specs">>, DataType, #{}),
             Type1 = list_to_binary(string:to_upper(binary_to_list(Type))),
@@ -210,7 +210,8 @@ get_time(V, Interval) ->
             dgiot_datetime:format(dgiot_datetime:to_localtime(NewV), <<"YY-MM-DD HH:NN:SS">>)
     end.
 
-
+get_type_value(_, {Value, text}, _) ->
+    {Value, text};
 get_type_value(_, null, _) ->
     null;
 get_type_value(Type, Value, _Specs) when Type == <<"INT">>; Type == <<"DATE">>; Type == <<"SHORT">>; Type == <<"LONG">>; Type == <<"ENUM">>, is_list(Value) ->
