@@ -46,6 +46,10 @@
     , get_category/2
     , get_ListAllCategoryConsole/0
     , getCookie/0
+    , getTokenByAccessCode/1
+    , getUserInfoByToken/2
+    , getCompanyInfo/1
+    , aliyun_isplat/1
 ]).
 
 -define(EXPIRE, 300).
@@ -406,4 +410,208 @@ getCookie() ->
         {ok, Bin} ->
             {ok, Bin}
     end.
+
+%% 阿里云工业互联网 ⾏业平台账号免登对接
+%% dgiot_aliyun_auth:aliyun_isplat(<<"b1797239c4e942898649274da642ab84">>).
+aliyun_isplat(AccessCode) ->
+    Md5Idtoken = dgiot_utils:to_md5(AccessCode),
+    case dgiot_data:get({userinfo, Md5Idtoken}) of
+        not_find ->
+            case dgiot_aliyun_auth:getTokenByAccessCode(AccessCode) of
+                {ok, #{<<"code">> := 200, <<"data">> := #{<<"cptToken">> := CptToken}}} ->
+                    getUserInfoByToken(AccessCode, CptToken);
+                Error ->
+                    Error
+            end;
+        {UserInfo2, Username2, UdAccountUuid2} ->
+            case dgiot_parse_auth:login_by_account(Username2, UdAccountUuid2) of
+                {ok, #{<<"objectId">> := _UserId} = UserInfo3} ->
+                    {ok, maps:merge(UserInfo2, UserInfo3)};
+                {error, _Msg} ->
+                    {ok, UserInfo2}
+            end
+    end.
+
+%% 换取⽤户登录token（根据accessCode换取新token)
+%%  dgiot_aliyun_auth:getTokenByAccessCode(AccessCode)
+getTokenByAccessCode(AccessCode) ->
+    Path = "/industry/isplat/usercenter/session/getTokenByAccessCode",
+    Body = #{
+        <<"ctx">> => #{
+            <<"domainCode">> => <<"IPT_PORTAL">>
+        },
+        <<"params">> => #{
+            <<"accessCode">> => AccessCode
+        }
+    },
+    ailiyun_gateway(Path, Body).
+
+%% 获取登录⽤户信息(验证登录态）
+%% dgiot_aliyun_auth:getUserInfoByToken(<<"8801c592b0c748be9609a7980412ab2f">>).
+getUserInfoByToken(AccessCode, CptToken) ->
+    Md5Idtoken = dgiot_utils:to_md5(AccessCode),
+    Path = "/industry/isplat/usercenter/session/getUserInfoByToken",
+    Body = #{
+        <<"ctx">> => #{
+            <<"domainCode">> => <<"IPT_PORTAL">>,
+            <<"cptToken">> => CptToken
+        },
+        <<"params">> => #{}
+    },
+    case ailiyun_gateway(Path, Body) of
+        {ok, #{<<"code">> := 2402, <<"data">> := null}} ->
+            dgiot_data:delete({userinfo, Md5Idtoken}),
+            aliyun_isplat(AccessCode);
+        {ok, #{<<"code">> := 200, <<"data">> := #{<<"userId">> := UserId, <<"loginName">> := Username} = Data}} ->
+            Mobile = dgiot_utils:to_binary(maps:get(<<"phone">>, Data, <<"">>)),
+            Email = dgiot_utils:to_binary(maps:get(<<"email">>, Data, <<Mobile/binary, "@email.com">>)),
+            Name = dgiot_utils:to_binary(maps:get(<<"name">>, Data, Username)),
+            UserBody = #{
+                <<"email">> => Email,
+                <<"emailVerified">> => true,
+                <<"nick">> => Name,
+                <<"password">> => UserId,
+                <<"phone">> => Mobile,
+                <<"username">> => Username,
+                <<"tag">> => #{
+                    <<"companyinfo">> => #{
+                        <<"Copyright">> => <<"© 2017-2021 温岭水泵远程检测中心 Corporation, All Rights Reserved"/utf8>>,
+                        <<"backgroundimage">> => <<"/dgiot_file/user/profile/Klht7ERlYn_companyinfo_backgroundimage.jpg?timestamp=1636974751417">>,
+                        <<"logo">> => <<"/group1/default/20211019/18/33/4/微信图片_20210705103613.jpg"/utf8>>,
+                        <<"name">> => <<"温岭水泵远程检测中心"/utf8>>,
+                        <<"title">> => <<"欢迎登录温岭水泵远程检测中心"/utf8>>,
+                        <<"_mimg">> => <<"/dgiot_file/user/profile/Klht7ERlYn_companyinfo__mimg.jpeg?timestamp=1635245663651">>,
+                        <<"_pcimg">> => <<"/dgiot_file/user/profile/Klht7ERlYn_companyinfo__pcimg.jpeg?timestamp=1635245685140">>
+                    },
+                    <<"theme">> => #{
+                        <<"columnStyle">> => <<"horizontal">>,
+                        <<"fixedHeader">> => true,
+                        <<"layout">> => <<"horizontal">>,
+                        <<"pictureSwitch">> => false,
+                        <<"showFullScreen">> => true,
+                        <<"showLanguage">> => true,
+                        <<"showNotice">> => true,
+                        <<"showProgressBar">> => true,
+                        <<"showRefresh">> => true,
+                        <<"showSearch">> => true,
+                        <<"showTabs">> => true,
+                        <<"showTabsBarIcon">> => true,
+                        <<"showTheme">> => true,
+                        <<"showThemeSetting">> => true,
+                        <<"tabsBarStyle">> => <<"smooth">>,
+                        <<"themeName">> => <<"white">>
+                    },
+                    <<"userinfo">> => #{
+                        <<"avatar">> => <<"/dgiot_file/user/profile/Klht7ERlYn_userinfo_avatar.png?timestamp=1637914878741">>,
+                        <<"phone">> => Mobile,
+                        <<"sex">> => "男"
+                    },
+                    <<"userinfobytoken">> => Data}},
+            SessionToken = dgiot_parse_auth:get_token(<<230, 181, 153, 233, 135, 140, 229, 138, 158, 228, 186, 167, 228, 184, 154, 229, 164, 167, 232, 132, 145>>),
+%                   用户匹配查找
+            case dgiot_parse:query_object(<<"_User">>, #{<<"where">> => #{<<"username">> => Username}}) of
+                {ok, #{<<"results">> := Results}} when length(Results) == 0 ->
+                    dgiot_parse_auth:create_user(UserBody#{<<"department">> => <<"459e01521c">>}, SessionToken);
+                {ok, #{<<"results">> := [#{<<"objectId">> := UserId, <<"tag">> := Tag} | _]}} ->
+                    dgiot_parse:update_object(<<"_User">>, UserId, #{<<"tag">> => Tag#{<<"userinfobytoken">> => Data}})
+            end,
+%                   验证账户登录获取用户信息
+            UserInfo =
+                case dgiot_parse_auth:login_by_account(Username, UserId) of
+                    {ok, #{<<"objectId">> := _UserId} = UserInfo1} ->
+                        UserInfo1#{<<"code">> => 200, <<"username">> => Username, <<"state">> => Data#{<<"cptToken">> => CptToken}, <<"msg">> => <<"operation success">>};
+                    {error, _Msg} ->
+                        UserInfo2 =
+                            case dgiot_parse:query_object(<<"_User">>, #{<<"where">> => #{<<"username">> => Username}}) of
+                                {ok, #{<<"results">> := Results1}} when length(Results1) == 0 ->
+                                    UserInfo3 = UserBody#{<<"department">> => <<"459e01521c">>},
+                                    dgiot_parse_auth:create_user(UserInfo3, SessionToken),
+                                    UserInfo3;
+                                {ok, #{<<"results">> := [#{<<"objectId">> := UserId1, <<"tag">> := Tag1} = UserInfo1 | _]}} ->
+                                    dgiot_parse:update_object(<<"_User">>, UserId1, #{<<"tag">> => Tag1#{<<"userinfobytoken">> => Data}}),
+                                    UserInfo1
+                            end,
+                        UserInfo2#{<<"code">> => 200, <<"username">> => Username, <<"state">> => Data#{<<"cptToken">> => CptToken}, <<"msg">> => <<"operation success">>}
+                end,
+            dgiot_data:insert({userinfo, Md5Idtoken}, {UserInfo, Username, UserId}),
+            {ok, UserInfo};
+        _ ->
+            pass
+    end.
+
+%% 获取登录⽤户公司信息(验证登录态）
+getCompanyInfo(CptToken) ->
+    Path = "/industry/isplat/usercenter/user/getCompanyInfo",
+    Body = #{
+        <<"ctx">> => #{
+            <<"domainCode">> => <<"IPT_PORTAL">>,
+            <<"cptToken">> => CptToken
+        },
+        <<"params">> => #{}
+    },
+    ailiyun_gateway(Path, Body).
+
+ailiyun_gateway(Path, Body) ->
+    Url = "http://api.inplat.com.cn" ++ Path,
+    AppKey = "204225341",
+    AppSecret = "MtLbnyAgIC26czYlVPBlRO8pwWBNnwRK",
+    Date = dgiot_utils:to_list(dgiot_datetime:now_ms()),
+    Nonce = uuid(),
+    Md5 = calcMd5(Body),
+    Signature = get_Signature(Md5, Date, AppKey, Nonce, Path, AppSecret),
+    Headers = [
+        {"Content-Type", "application/json"},
+        {"X-Ca-SignatureMethod", "HmacSHA256"},
+        {"Date", Date},
+        {"Content-MD5", Md5},
+        {"X-Ca-Nonce", Nonce},
+        {"X-Ca-Key", AppKey},
+        {"X-Ca-Signature", Signature},
+        {"X-Ca-Signature-Headers", "x-ca-key,x-ca-nonce,x-ca-signaturemethod"},
+        {"User-Agent", "PostmanRuntime/7.32.3"},
+        {"Accept", "*/*"},
+        {"Cache-Control", "no-cache"},
+        {"Postman-Token", "78ff7879-35e9-4e0a-be65-6651a2783b89"},
+        {"Accept-Encoding", "gzip, deflate, br"},
+        {"Connection", "keep-alive"}
+    ],
+    Request = {Url, Headers, "application/json", dgiot_json:encode(Body)},
+    dgiot_http_client:request(post, Request).
+
+
+
+calcMd5(Body) ->
+    dgiot_utils:to_list(base64:encode(dgiot_utils:hex_to_binary(dgiot_utils:to_md5(dgiot_json:encode(Body))))).
+
+get_Signature(Md5, Date, AppKey, Nonce, Url, AppSecret) ->
+    TextToSign =
+        "POST" ++ "\n"
+        ++ "*/*" ++ "\n"
+        ++ Md5 ++ "\n"
+        ++ "application/json" ++ "\n"
+        ++ Date ++ "\n"
+        ++ "x-ca-key:" ++ AppKey ++ "\n"
+        ++ "x-ca-nonce:" ++ Nonce ++ "\n"
+        ++ "x-ca-signaturemethod:HmacSHA256" ++ "\n"
+        ++ Url,
+    dgiot_utils:to_list(base64:encode(crypto:mac(hmac, sha256, AppSecret, TextToSign))).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

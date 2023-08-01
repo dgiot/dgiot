@@ -103,13 +103,13 @@ enable(DeviceId) ->
 disable(DeviceId) ->
     dgiot_device_cache:disable(DeviceId).
 
-put_color(DeviceId, Identifier, Color) ->
-    dgiot_data:insert(?DEVICE_DEVICE_COLOR, {DeviceId, Identifier}, Color).
+put_color(DeviceId, Identifier, Value) ->
+    dgiot_data:insert(?DEVICE_DEVICE_COLOR, {DeviceId, Identifier}, Value).
 
 get_color(DeviceId, Identifier) ->
     case dgiot_data:get(?DEVICE_DEVICE_COLOR, {DeviceId, Identifier}) of
         not_find ->
-            <<"green">>;
+            {<<"orange">>, 0, 0};
         Color1 ->
             Color1
     end.

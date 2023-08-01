@@ -56,7 +56,7 @@ get_card(ProductId, Results, DeviceId, Args) ->
                 Ico = maps:get(<<"ico">>, X, <<"">>),
                 Specs = maps:get(<<"specs">>, DataType, #{}),
                 Unit = maps:get(<<"unit">>, Specs, <<"">>),
-                Color = dgiot_device:get_color(DeviceId, Identifier),
+                {Color, _, _} = dgiot_device:get_color(DeviceId, Identifier),
                 case do_hook({Protocol, Identifier}, DataSource#{<<"deviceid">> => DeviceId}) of
                     ignore ->
                         NewV =
