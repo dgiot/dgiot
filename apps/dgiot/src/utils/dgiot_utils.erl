@@ -137,6 +137,7 @@
     , get_mock/2
     , write_mock/3
     , variance/2
+    , find_median/1
 ]).
 
 -define(TIMEZONE, + 8).
@@ -1296,6 +1297,11 @@ variance(Avg, Values) when length(Values) > 0 ->
 
 variance(_, _) ->
     0.
+
+%%  中位数
+find_median(Values) ->
+
+    (lists:max(Values) + lists:min(Values)) / 2.
 
 %% 这个函数采用递归方式实现，处理二进制数据时每次处理一个字节。
 %% 在递归过程中，每个字节都会被异或到累计的CRC高字节中，

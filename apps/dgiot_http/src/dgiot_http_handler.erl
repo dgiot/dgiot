@@ -191,7 +191,9 @@ do_request(post_warnsendsms, #{<<"objectId">> := DeviceId, <<"branchId">> := Bra
 %% OperationId:get_jwtlogin
 %% 请求:POST /iotapi/get_jwtlogin
 do_request(get_jwtlogin, #{<<"id_token">> := Idtoken}, _Context, _Req) ->
-    dgiot_aliyun_auth:jwtlogin(Idtoken);
+%%    dgiot_aliyun_auth:jwtlogin(Idtoken);
+    io:format("~s ~p Idtoken = ~p.~n", [?FILE, ?LINE, Idtoken]),
+    dgiot_aliyun_auth:aliyun_isplat(Idtoken);
 
 %% iot_hub 概要: 查询平台api资源 描述:wechat登陆
 %% OperationId:get_wechat

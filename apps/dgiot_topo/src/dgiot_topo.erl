@@ -110,7 +110,7 @@ get_que(DashboardId) ->
                                     DeviceIds = maps:get(<<"deviceids">>, List, []),
                                     Acc#{ProductId => List#{<<"keys">> => lists:umerge(Keys, [Identifier]), <<"deviceids">> => lists:umerge(DeviceIds, [DeviceId])}};
                                 _ ->
-                                    pass
+                                    Acc
                             end;
                         (_, _, Acc) ->
                             Acc

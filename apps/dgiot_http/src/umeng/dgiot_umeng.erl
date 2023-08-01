@@ -633,13 +633,28 @@ send_maintenance(#{<<"send_alarm_status">> := <<"start">>, <<"notificationid">> 
             Now = dgiot_datetime:now_secs(),
             Num = dgiot_datetime:format(dgiot_datetime:to_localtime(Now), <<"YYMMDDHHNNSS">>),
             Timestamp = dgiot_datetime:format(dgiot_datetime:to_localtime(Now), <<"YY-MM-DD HH:NN:SS">>),
+            ACL =
+                case dgiot_device:lookup(DeviceId) of
+                    {ok, #{<<"acl">> := Acls, <<"devaddr">> := Devaddr}} ->
+                        lists:foldl(fun(X, Acc) ->
+                            Acc#{
+                                dgiot_utils:to_binary(X) => #{
+                                    <<"read">> => true,
+                                    <<"write">> => true
+                                }}
+                                    end, #{}, Acls);
+                    _ ->
+                        #{<<"role:开发者"/utf8>> => #{<<"read">> => true, <<"write">> => true}}
+                end,
+
             Body = #{
                 <<"number">> => <<"WX", Num/binary>>,
                 <<"type">> => Type,
                 <<"status">> => 0,
                 <<"devaddr">> => Devaddr,
-                <<"ACL">> => #{<<"role:开发者"/utf8>> => #{<<"read">> => true, <<"write">> => true}},
+                <<"ACL">> => ACL,
                 <<"info">> => #{
+                    <<"createdtime">> => dgiot_datetime:now_ms(),
                     <<"phone">> => <<"">>,
                     <<"video">> => <<"">>,
                     <<"spinner">> => <<"">>,

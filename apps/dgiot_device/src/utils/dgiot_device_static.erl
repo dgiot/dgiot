@@ -109,8 +109,8 @@ query_realdata(Channel, Sql) ->
 get_labels(ProductId, Results) ->
     Props = dgiot_product:get_props(ProductId),
     lists:foldl(fun
-                    (#{<<"devaddr">> := Devaddr} = X, Acc) ->
-                        DeviceId = dgiot_parse_id:get_deviceid(ProductId, Devaddr),
+                    (#{<<"devaddr">> := Devaddr} = X, Acc) when Devaddr =/= null->
+                        DeviceId = dgiot_parse_id:get_deviceid(ProductId, dgiot_utils:to_binary(Devaddr)),
                         maps:fold(
                             fun
                                 (Identifier, Value, Lcc) ->
@@ -118,7 +118,7 @@ get_labels(ProductId, Results) ->
                                         {ok, #{<<"identifier">> := Identifier, <<"dataType">> := #{<<"type">> := Typea} = DataType}} ->
                                             Specs = maps:get(<<"specs">>, DataType, #{}),
                                             Unit = maps:get(<<"unit">>, Specs, <<"">>),
-                                            Color = dgiot_device:get_color(DeviceId, Identifier),
+                                            {Color, _, _} = dgiot_device:get_color(DeviceId, <<"quantity">>),
                                             NewV = dgiot_product_tdengine:check_field(Typea, Value, #{<<"datatype">> => DataType, <<"specs">> => Specs, <<"deviceid">> => DeviceId}),
                                             Lcc ++ [#{<<"label">> => <<DeviceId/binary, "_", Identifier/binary, "_text">>, <<"number">> => NewV, <<"unit">> => Unit, <<"color">> => Color}];
                                         _ ->
@@ -130,6 +130,8 @@ get_labels(ProductId, Results) ->
                 end, [], Results).
 
 %% INSERT INTO _24b9b4bc50._77c57f6860 using _24b9b4bc50._19c923fd82 TAGS("322000_AL_usb7") VALUES(now,15,30,29,26.9,54.7);
+%% select last(devaddr) as devaddr, last(process_duration) as process_duration FROM  _24b9b4bc50._5392ccb3d7 group by devaddr;
+%% select last(devaddr) as devaddr, sum(process_duration) as process_duration FROM  _24b9b4bc50._5392ccb3d7 where quantity = 2 group by devaddr;
 get_realdata({Token, Realdatas}) when is_map(Realdatas) ->
     Payload =
         maps:fold(

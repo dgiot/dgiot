@@ -168,6 +168,10 @@ get_keys(ProductId, Function, Keys) ->
         end
                 end, {[], get_defult(Function)}, List).
 
+check_field(_, V, #{<<"specs">> := #{<<"type">> := <<"day">>}}) ->
+%%    秒转换为天
+    dgiot_utils:to_float(V / (60 * 60 * 24), 2);
+
 check_field(Typea, V, #{<<"specs">> := Specs}) when Typea == <<"enum">>; Typea == <<"bool">> ->
     maps:get(dgiot_utils:to_binary(V), Specs, V);
 
