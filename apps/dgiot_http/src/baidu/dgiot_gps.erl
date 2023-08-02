@@ -54,7 +54,8 @@
     generate_random_gps/3,
     nmea0183_frame/1,
     towgs84/2,
-    fromwgs84/2
+    fromwgs84/2,
+    get_ip_addr/1
 ]).
 
 %%// 定义一些常量
@@ -365,6 +366,22 @@ get_baidu_addr(AK, Coordtype, Lng, Lat) ->
             end;
         _Error ->
             #{}
+    end.
+
+get_ip_addr(Ip) ->
+    AppKey =
+        case dgiot_data:get(dgiot_configuration, baidu_sak) of
+            not_find ->
+                dgiot_utils:to_binary(application:get_env(dgiot_http, baidumap_appkey, <<"">>));
+            Ak ->
+                Ak
+        end,
+    Url = "https://api.map.baidu.com/location/ip?ip=" ++ dgiot_utils:to_list(Ip) ++ "&coor=bd09ll&ak=" ++ dgiot_utils:to_list(AppKey),
+    case dgiot_http_client:request(get, {Url, []}) of
+        {ok, #{<<"status">> := 0, <<"content">> := #{<<"address">> := Address}}} ->
+            Address;
+        _Error ->
+            Ip
     end.
 
 %%#  参数含义
