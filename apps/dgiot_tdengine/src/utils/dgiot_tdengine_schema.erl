@@ -137,6 +137,7 @@ alter_table(#{<<"tableName">> := TableName}, #{<<"channel">> := Channel} = Conte
             pass
     end.
 
+%% ALTER TABLE  _24b9b4bc50._5392ccb3d7 drop COLUMN status;
 get_addSql(ProductId, TdColumn, Database, TableName) ->
     case dgiot_product:lookup_prod(ProductId) of
         {ok, #{<<"thing">> := #{<<"properties">> := Props} = Thing}} ->
