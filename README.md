@@ -31,7 +31,7 @@ Before 2016, the dgiot team had been crawling on the Internet and the mobile Int
 + Multi-industry industrial protocol compatibility
 # Building
 
- Bulid *DGIOT* Need Erlang/OTP R24+, [linux](https://github.com/erlang/otp/releases/download/OTP-24.3.4.2/otp_src_24.3.4.2.tar.gz) Windows download  [msys64.zip](https://dgiotdev-1308220533.cos.ap-nanjing.myqcloud.com/msys64.zip)    ,After downloading, unzip it to the root directory of Disk D, and operate strictly in accordance with the following figure：
+ Bulid *DGIOT* Need Erlang/OTP R24+, [linux](https://github.com/erlang/otp/releases/download/OTP-24.3.4.2/otp_src_24.3.4.2.tar.gz) Windows download  [msys64.zip](https://prod.dgiotcloud.cn/msys64.zip)    ,After downloading, unzip it to the root directory of Disk D, and operate strictly in accordance with the following figure：
 ![dgiotdevtools.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/dgiotdevtools.png)
 
  +  Download source code abroad
