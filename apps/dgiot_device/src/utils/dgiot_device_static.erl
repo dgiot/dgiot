@@ -109,7 +109,7 @@ query_realdata(Channel, Sql) ->
 get_labels(ProductId, Results) ->
     Props = dgiot_product:get_props(ProductId),
     lists:foldl(fun
-                    (#{<<"devaddr">> := Devaddr} = X, Acc) when Devaddr =/= null->
+                    (#{<<"devaddr">> := Devaddr} = X, Acc) when Devaddr =/= null ->
                         DeviceId = dgiot_parse_id:get_deviceid(ProductId, dgiot_utils:to_binary(Devaddr)),
                         maps:fold(
                             fun

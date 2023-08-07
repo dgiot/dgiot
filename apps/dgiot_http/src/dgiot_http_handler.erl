@@ -258,13 +258,12 @@ do_request(get_notification, #{<<"productid">> := ProductId, <<"order">> := Orde
 %% iot_hub 概要: 查询平台api资源 描述:发送订阅消息
 %% OperationId:post_sendsubscribe
 %% 请求:POST /iotapi/post_sendsubscribe
-do_request(post_sendsubscribe, Args, #{<<"sessionToken">> := SessionToken}, _Req) ->
-    case dgiot_auth:get_session(SessionToken) of
-        #{<<"objectId">> := UserId} ->
-            dgiot_wechat:sendSubscribe_test(UserId, Args);
-        _ ->
-            {error, <<"Not Allowed.">>}
-    end;
+do_request(post_sendsubscribe, #{<<"roleid">> := RoleId} = Args, #{<<"sessionToken">> := _SessionToken}, _Req) ->
+    UserIds = dgiot_parse_id:get_userids(RoleId),
+    lists:map(fun(UserId) ->
+        dgiot_wechat:sendSubscribe_test(UserId, Args)
+              end, UserIds),
+    {ok, #{<<"msg">> => <<"send success">>}};
 
 %% iot_hub 概要: 查询平台api资源 描述:发送邮件
 %% OperationId:post_sendsubscribe
