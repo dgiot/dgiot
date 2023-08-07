@@ -217,10 +217,11 @@ create_device(#{<<"status">> := Status, <<"brand">> := Brand, <<"devModel">> := 
             },
 
             case dgiot_parse:create_object(<<"Device">>, maps:without([<<"brand">>, <<"devModel">>], NewDevice)) of
-                {ok, _} ->
-                    dgiot_device:post(NewDevice#{<<"product">> => ProductId});
-                R ->
-                    R
+                {ok, R} ->
+                    dgiot_device:post(NewDevice#{<<"product">> => ProductId}),
+                    {ok, R};
+                R1 ->
+                    R1
             end
     end.
 

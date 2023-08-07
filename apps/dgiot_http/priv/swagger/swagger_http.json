@@ -550,6 +550,12 @@
             "schema": {
               "type": "object",
               "properties": {
+                "roleid": {
+                  "type": "string",
+                  "required": true,
+                  "example": "9Fmc0vtA7v",
+                  "description": "部门id"
+                },
                 "templateid": {
                   "type": "string",
                   "required": true,
