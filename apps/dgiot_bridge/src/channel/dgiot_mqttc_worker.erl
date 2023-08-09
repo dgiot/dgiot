@@ -30,7 +30,7 @@ start(ChannelId, #{<<"product">> := Products} = ChannelArgs) ->
 
         case dgiot_parse:query_object(<<"Device">>, #{
             <<"limit">> => 500,
-            <<"order">> => <<"updatedAt">>,
+            <<"order">> => <<"devaddr">>,
             <<"keys">> => [<<"devaddr">>],
             <<"where">> => #{<<"product">> => ProductId}
         }) of
