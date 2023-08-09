@@ -63,7 +63,7 @@ init([#{<<"channel">> := ChannelId, <<"client">> := ClientId, <<"mod">> := Mod, 
         {ok, NewDclient} ->
             process_flag(trap_exit, true),
             rand:seed(exs1024),
-            Time = erlang:round(rand:uniform() * 4 + 1) * 1000,
+            Time = erlang:round(rand:uniform() * 200 + 1) * 20,
             erlang:send_after(Time, self(), connect),
             {ok, NewDclient, hibernate};
         {stop, Reason} ->
@@ -97,6 +97,7 @@ handle_cast(_Request, Dclient) ->
 handle_info(connect, #dclient{userdata = #connect_state{options = Options, mod = Mod} = ConnectStat} = Dclient) ->
     case connect(Options) of
         {ok, ConnPid, Props} ->
+            dgiot_metrics:inc(dgiot, <<"mqttc_online">>, 1),
             case Mod:handle_info({connect, ConnPid}, Dclient#dclient{userdata = ConnectStat#connect_state{props = Props, socket = ConnPid}}) of
                 {noreply, NewDclient} ->
                     {noreply, NewDclient};
@@ -114,6 +115,7 @@ handle_info(connect, #dclient{userdata = #connect_state{options = Options, mod =
     end;
 
 handle_info({publish, #{topic := Topic, payload := Payload} = _Message}, #dclient{userdata = #connect_state{mod = Mod}} = Dclient) ->
+    dgiot_metrics:dec(dgiot, <<"mqttc_recv">>, 1),
     case Mod:handle_info({publish, Topic, Payload}, Dclient) of
         {noreply, NewDclient} ->
             {noreply, NewDclient};
@@ -122,6 +124,7 @@ handle_info({publish, #{topic := Topic, payload := Payload} = _Message}, #dclien
     end;
 
 handle_info({disconnected, shutdown, tcp_closed}, Dclient) ->
+    dgiot_metrics:dec(dgiot, <<"mqttc_online">>, 1),
     {noreply, Dclient#dclient{userdata = #connect_state{socket = disconnect}}};
 
 handle_info({'EXIT', _Conn, Reason}, #dclient{userdata = #connect_state{mod = Mod} = ConnectState} = Dclient) ->
@@ -136,6 +139,7 @@ handle_info({'EXIT', _Conn, Reason}, #dclient{userdata = #connect_state{mod = Mo
             end,
             {noreply, NewDclient#dclient{userdata = ConnectState#connect_state{socket = disconnect}}};
         {stop, Reason, NewDclient} ->
+            dgiot_metrics:dec(dgiot, <<"mqttc_online">>, 1),
             {stop, Reason, NewDclient#dclient{userdata = ConnectState#connect_state{socket = disconnect}}}
     end;
 

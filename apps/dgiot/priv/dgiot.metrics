@@ -1,0 +1,56 @@
+[
+  {
+    "name": "mqttc_online",
+    "help": "mqtt客户端在线数据统计",
+    "type": "gauge",
+    "labels": []
+  },
+  {
+    "name": "mqttc_recv",
+    "help": "mqtt客户端收包数据统计",
+    "type": "gauge",
+    "labels": []
+  },
+  {
+      "name": "mqttc_send",
+      "help": "mqtt客户端发包数据统计",
+      "type": "gauge",
+      "labels": []
+    },
+  {
+      "name": "tcpc_online",
+      "help": "tcp客户端在线数据统计",
+      "type": "gauge",
+      "labels": []
+    },
+    {
+      "name": "tcpc_recv",
+      "help": "tcp客户端收包数据统计",
+      "type": "gauge",
+      "labels": []
+    },
+    {
+          "name": "tcpc_send",
+          "help": "tcp客户端发包数据统计",
+          "type": "gauge",
+          "labels": []
+    },
+    {
+          "name": "tcp_online",
+          "help": "tcp服务端在线数据统计",
+          "type": "gauge",
+          "labels": []
+        },
+        {
+          "name": "tcp_recv",
+          "help": "tcp服务端收包数据统计",
+          "type": "gauge",
+          "labels": []
+        },
+        {
+              "name": "tcp_send",
+              "help": "tcp服务端发包数据统计",
+              "type": "gauge",
+              "labels": []
+        }
+]

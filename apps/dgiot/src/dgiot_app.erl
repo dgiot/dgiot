@@ -33,6 +33,7 @@ start(_StartType, _StartArgs) ->
     dgiot_cron_timer:start(),
     start_plugin(Sup),
     dgiot_pushgateway:start_link(),
+    dgiot_metrics:start(dgiot),
     {ok, Sup}.
 
 stop(_State) ->

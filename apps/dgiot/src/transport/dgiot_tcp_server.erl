@@ -55,6 +55,7 @@ start_link(Transport, Sock, Mod, Opts, State) ->
 init(Mod, Transport, Opts, Sock0, State) ->
     case Transport:wait(Sock0) of
         {ok, Sock} ->
+            dgiot_metrics:inc(dgiot, <<"tcp_online">>, 1),
             ChildState = #tcp{socket = Sock, register = false, transport = Transport, state = State},
             case Mod:init(ChildState) of
                 {ok, NewChildState} ->
@@ -103,7 +104,7 @@ handle_info({tcp_passive, _Sock}, State) ->
 
 %% add register function
 handle_info({tcp, Sock, Data}, #state{mod = Mod, child = #tcp{register = false, buff = Buff, socket = Sock} = ChildState} = State) ->
-    dgiot_metrics:inc(dgiot_bridge, <<"tcp_server_recv">>, 1),
+    dgiot_metrics:inc(dgiot, <<"tcp_recv">>, 1),
     Binary = iolist_to_binary(Data),
     NewBin =
         case binary:referenced_byte_size(Binary) of
@@ -129,7 +130,7 @@ handle_info({tcp, Sock, Data}, #state{mod = Mod, child = #tcp{register = false, 
     end;
 
 handle_info({tcp, Sock, Data}, #state{mod = Mod, child = #tcp{buff = Buff, socket = Sock} = ChildState} = State) ->
-    dgiot_metrics:inc(dgiot_bridge, <<"tcp_server_recv">>, 1),
+    dgiot_metrics:inc(dgiot, <<"tcp_recv">>, 1),
     Binary = iolist_to_binary(Data),
     NewBin =
         case binary:referenced_byte_size(Binary) of
@@ -174,6 +175,7 @@ handle_info({tcp_error, _Sock, Reason}, #state{child = ChildState} = State) ->
 
 handle_info({tcp_closed, Sock}, #state{mod = Mod, child = #tcp{socket = Sock} = ChildState} = State) ->
     write_log(ChildState#tcp.log, <<"ERROR">>, <<"tcp_closed">>),
+    dgiot_metrics:dec(dgiot, <<"tcp_online">>, 1),
     ?LOG(error, "tcp_closed ~p", [ChildState#tcp.state]),
     case Mod:handle_info(tcp_closed, ChildState) of
         {noreply, NewChild} ->
