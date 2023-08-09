@@ -40,7 +40,7 @@ register(ChannelId, Sup, State) ->
         _ ->
             pass
     end,
-    set_consumer(ChannelId, 100),
+    dgiot_client:set_consumer(ChannelId, 1000),
     dgiot_data:init(ChannelId),
     dgiot_data:init(?DCLINET_QUE(ChannelId)),
     dgiot_data:init(?DCLINET_PNQUE(ChannelId)),

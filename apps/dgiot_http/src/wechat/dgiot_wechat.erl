@@ -137,8 +137,8 @@ sendSubscribe(UserId, Template_id, Data, Page) ->
                     Data1 = dgiot_utils:to_list(jiffy:encode(Subscribe)),
                     %% io:format("~s ~p SubscribeUrl = ~p.~n", [?FILE, ?LINE, SubscribeUrl]),
                     %% io:format("~s ~p Subscribe = ~p.~n", [?FILE, ?LINE, Subscribe]),
-                    R = httpc:request(post, {SubscribeUrl, [], "application/x-www-form-urlencoded", Data1}, [{timeout, 5000}, {connect_timeout, 10000}], [{body_format, binary}]),
-                    io:format("~s ~p R = ~p.~n", [?FILE, ?LINE, R]),
+                    _R = httpc:request(post, {SubscribeUrl, [], "application/x-www-form-urlencoded", Data1}, [{timeout, 5000}, {connect_timeout, 10000}], [{body_format, binary}]),
+%%                    io:format("~s ~p R = ~p.~n", [?FILE, ?LINE, R]),
                     {ok, UserId};
                 _Result ->
                     {error, <<"not find access_token">>}

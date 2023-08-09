@@ -62,9 +62,10 @@ init([#{<<"channel">> := ChannelId, <<"client">> := ClientId, <<"mod">> := Mod, 
     case Mod:init(Dclient) of
         {ok, NewDclient} ->
             process_flag(trap_exit, true),
+            Time = dgiot_client:get_consumer(ChannelId),
             rand:seed(exs1024),
-            Time = erlang:round(rand:uniform() * 200 + 1) * 20,
-            erlang:send_after(Time, self(), connect),
+            Rand = erlang:round(rand:uniform() * 25 + 30),
+            erlang:send_after(Time * Rand, self(), connect),
             {ok, NewDclient, hibernate};
         {stop, Reason} ->
             {stop, Reason}
@@ -152,7 +153,6 @@ handle_info(Info, #dclient{userdata = #connect_state{mod = Mod} = ConnectState} 
     end.
 
 terminate(Reason, #dclient{userdata = #connect_state{mod = Mod}} = Dclient) ->
-    dgiot_metrics:dec(dgiot, <<"mqttc_online">>, 1),
     Mod:terminate(Reason, Dclient).
 
 code_change(OldVsn, #dclient{userdata = #connect_state{mod = Mod}} = Dclient, Extra) ->
