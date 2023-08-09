@@ -55,7 +55,7 @@ start_link(Args) ->
 %%%===================================================================
 
 init([#{<<"channel">> := ChannelId, <<"client">> := ClientId, <<"mod">> := Mod, <<"options">> := Options} = Args]) ->
-    UserData = #connect_state{mod = Mod, options = Options#{clientid => ClientId}},
+    UserData = #connect_state{mod = Mod, options = Options},
     ChildState = maps:get(<<"child">>, Args, #{}),
     Dclient = #dclient{channel = ChannelId, client = ClientId, status = ?DCLIENT_INTIALIZED, userdata = UserData, child = ChildState},
     dgiot_client:add(ChannelId, ClientId),

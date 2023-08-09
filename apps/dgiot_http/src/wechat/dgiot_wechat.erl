@@ -127,7 +127,6 @@ sendSubscribe(UserId, Template_id, Data, Page) ->
             case getAccessToken() of
                 {ok, AccessToken} ->
                     SubscribeUrl = "https://api.weixin.qq.com/cgi-bin/message/subscribe/send?access_token=" ++ dgiot_utils:to_list(AccessToken),
-%%                    io:format("~s ~p SubscribeUrl = ~p.~n", [?FILE, ?LINE, SubscribeUrl]),
                     Subscribe = #{<<"touser">> => OpenId,
                         <<"template_id">> => Template_id,
                         <<"page">> => Page,
@@ -136,13 +135,15 @@ sendSubscribe(UserId, Template_id, Data, Page) ->
                         <<"data">> => Data},
 %%                    io:format("~s ~p Subscribe = ~p.~n", [?FILE, ?LINE, Subscribe]),
                     Data1 = dgiot_utils:to_list(jiffy:encode(Subscribe)),
-%%                    io:format("~s ~p Data1 = ~p.~n", [?FILE, ?LINE, Data1]),
+                    %% io:format("~s ~p SubscribeUrl = ~p.~n", [?FILE, ?LINE, SubscribeUrl]),
+                    %% io:format("~s ~p Subscribe = ~p.~n", [?FILE, ?LINE, Subscribe]),
                     R = httpc:request(post, {SubscribeUrl, [], "application/x-www-form-urlencoded", Data1}, [{timeout, 5000}, {connect_timeout, 10000}], [{body_format, binary}]),
-                    ?LOG(debug, "send ~p~n", [R]);
+                    io:format("~s ~p R = ~p.~n", [?FILE, ?LINE, R]),
+                    {ok, UserId};
                 _Result ->
                     {error, <<"not find access_token">>}
             end;
-        _ -> {error, <<"user unbind openid">>}
+        _ -> {error, <<UserId/binary, " unbind openid">>}
     end.
 
 %% dgiot_wechat:getAccessToken().

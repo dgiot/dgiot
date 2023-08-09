@@ -147,7 +147,7 @@ stop(_ChannelType, ChannelId, _State) ->
     ok.
 
 send(ProductId, DevAddr, Topic, Payload) ->
-    Clientid = <<ProductId/binary, "_", DevAddr/binary>>,
+    Clientid = <<"mqttc_", ProductId/binary, "_", DevAddr/binary>>,
     case dgiot_data:get(?DGIOT_MQTT_WORK, ProductId) of
         not_find ->
             pass;
