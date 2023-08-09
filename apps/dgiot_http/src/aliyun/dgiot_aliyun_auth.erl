@@ -225,8 +225,8 @@ jwtlogin(<<"yanshizhanghao">>) ->
                 end,
             dgiot_data:insert({userinfo, Md5Idtoken}, {UserInfo#{<<"state">> => State}, <<"yanshizhanghao">>, <<"yanshizhanghao">>}),
             {ok, UserInfo#{<<"state">> => State}};
-        {UserInfo2, Username2, UdAccountUuid2} ->
-            case dgiot_parse_auth:login_by_account(Username2, UdAccountUuid2) of
+        {UserInfo2, Username2, Password2} ->
+            case dgiot_parse_auth:login_by_account(Username2, Password2) of
                 {ok, #{<<"objectId">> := _UserId} = UserInfo3} ->
                     {ok, maps:merge(UserInfo2, UserInfo3)};
                 {error, _Msg} ->
@@ -423,8 +423,8 @@ aliyun_isplat(AccessCode) ->
                 Error ->
                     Error
             end;
-        {UserInfo2, Username2, UdAccountUuid2} ->
-            case dgiot_parse_auth:login_by_account(Username2, UdAccountUuid2) of
+        {UserInfo2, Username2, Password} ->
+            case dgiot_parse_auth:login_by_account(Username2, Password) of
                 {ok, #{<<"objectId">> := _UserId} = UserInfo3} ->
                     {ok, maps:merge(UserInfo2, UserInfo3)};
                 {error, _Msg} ->
@@ -462,7 +462,7 @@ getUserInfoByToken(AccessCode, CptToken) ->
         {ok, #{<<"code">> := 2402, <<"data">> := null}} ->
             dgiot_data:delete({userinfo, Md5Idtoken}),
             aliyun_isplat(AccessCode);
-        {ok, #{<<"code">> := 200, <<"data">> := #{<<"userId">> := UserId, <<"loginName">> := Username} = Data}} ->
+        {ok, #{<<"code">> := 200, <<"data">> := #{<<"userId">> := Password, <<"loginName">> := Username} = Data}} ->
             Mobile = dgiot_utils:to_binary(maps:get(<<"phone">>, Data, <<"">>)),
             Email = dgiot_utils:to_binary(maps:get(<<"email">>, Data, <<Mobile/binary, "@email.com">>)),
             Name = dgiot_utils:to_binary(maps:get(<<"name">>, Data, Username)),
@@ -470,7 +470,7 @@ getUserInfoByToken(AccessCode, CptToken) ->
                 <<"email">> => Email,
                 <<"emailVerified">> => true,
                 <<"nick">> => Name,
-                <<"password">> => UserId,
+                <<"password">> => Password,
                 <<"phone">> => Mobile,
                 <<"username">> => Username,
                 <<"tag">> => #{
@@ -509,15 +509,16 @@ getUserInfoByToken(AccessCode, CptToken) ->
                     <<"userinfobytoken">> => Data}},
             SessionToken = dgiot_parse_auth:get_token(<<230, 181, 153, 233, 135, 140, 229, 138, 158, 228, 186, 167, 228, 184, 154, 229, 164, 167, 232, 132, 145>>),
 %                   用户匹配查找
-            case dgiot_parse:query_object(<<"_User">>, #{<<"where">> => #{<<"username">> => Username}}) of
-                {ok, #{<<"results">> := Results}} when length(Results) == 0 ->
-                    dgiot_parse_auth:create_user(UserBody#{<<"department">> => <<"459e01521c">>}, SessionToken);
-                {ok, #{<<"results">> := [#{<<"objectId">> := UserId, <<"tag">> := Tag} | _]}} ->
-                    dgiot_parse:update_object(<<"_User">>, UserId, #{<<"tag">> => Tag#{<<"userinfobytoken">> => Data}})
+            UserId = dgiot_parse_id:get_userid(Username),
+            case dgiot_parse:get_object(<<"_User">>, UserId) of
+                {ok, #{<<"objectId">> := UserId, <<"tag">> := Tag}} ->
+                    dgiot_parse:update_object(<<"_User">>, UserId, #{<<"tag">> => Tag#{<<"userinfobytoken">> => Data}});
+                _ ->
+                    dgiot_parse_auth:create_user(UserBody#{<<"department">> => <<"459e01521c">>}, SessionToken)
             end,
 %                   验证账户登录获取用户信息
             UserInfo =
-                case dgiot_parse_auth:login_by_account(Username, UserId) of
+                case dgiot_parse_auth:login_by_account(Username, Password) of
                     {ok, #{<<"objectId">> := _UserId} = UserInfo1} ->
                         UserInfo1#{<<"code">> => 200, <<"username">> => Username, <<"state">> => Data#{<<"cptToken">> => CptToken}, <<"msg">> => <<"operation success">>};
                     {error, _Msg} ->
@@ -533,7 +534,7 @@ getUserInfoByToken(AccessCode, CptToken) ->
                             end,
                         UserInfo2#{<<"code">> => 200, <<"username">> => Username, <<"state">> => Data#{<<"cptToken">> => CptToken}, <<"msg">> => <<"operation success">>}
                 end,
-            dgiot_data:insert({userinfo, Md5Idtoken}, {UserInfo, Username, UserId}),
+            dgiot_data:insert({userinfo, Md5Idtoken}, {UserInfo, Username, Password}),
             {ok, UserInfo};
         _ ->
             pass

@@ -199,22 +199,22 @@ add_notification(<<"start_", Ruleid/binary>>, DeviceId, Payload) ->
             pass;
         _ ->
             NotificationId = dgiot_parse_id:get_notificationid(Ruleid),
+            dgiot_data:insert(?NOTIFICATION, {DeviceId, Ruleid}, {start, dgiot_datetime:now_secs(), NotificationId}),
             Content = save_notification(Ruleid, DeviceId, Payload, NotificationId),
 %%            io:format("~s ~p Content = ~p.~n", [?FILE, ?LINE, Content]),
             dgiot_umeng:send_maintenance(Content#{<<"notificationid">> => NotificationId}),
             dgiot_umeng:send_msg(Content),
-            dgiot_umeng:sendSubscribe(Content),
-            dgiot_data:insert(?NOTIFICATION, {DeviceId, Ruleid}, {start, dgiot_datetime:now_secs(), NotificationId})
+            dgiot_umeng:sendSubscribe(Content)
     end;
 
 add_notification(<<"stop_", Ruleid/binary>>, DeviceId, Payload) ->
     case dgiot_data:get(?NOTIFICATION, {DeviceId, Ruleid}) of
         {start, _Time, NotificationId} ->
+            dgiot_data:insert(?NOTIFICATION, {DeviceId, Ruleid}, {stop, dgiot_datetime:now_secs(), <<>>}),
             Content = update_notification(NotificationId, Payload),
             dgiot_umeng:send_msg(Content),
 %%            io:format("~s ~p Content1 = ~p.~n", [?FILE, ?LINE, Content]),
-            dgiot_umeng:sendSubscribe(Content),
-            dgiot_data:insert(?NOTIFICATION, {DeviceId, Ruleid}, {stop, dgiot_datetime:now_secs(), <<>>});
+            dgiot_umeng:sendSubscribe(Content);
         _ ->
             pass
     end;
@@ -608,8 +608,8 @@ sendSubscribe(#{<<"send_alarm_status">> := <<"start">>, <<"roleid">> := NotifRol
                     dgiot_umeng:replace_miniparam(Acc, Key, Value, Alarm_createdAt, Alarmkey, Alarmvalue, Device, ProductId, ProductName, NewAlarm_message)
                           end, #{}, Params),
 %%            io:format("~s ~p Data = ~p.~n", [?FILE, ?LINE, Data]),
-            lists:foldl(fun(#{<<"objectId">> := UserId}, _Acc) ->
-                dgiot_wechat:sendSubscribe(UserId, TplId, Data, Page)
+            lists:foldl(fun(#{<<"objectId">> := UserId}, Rcc) ->
+                Rcc ++ [dgiot_wechat:sendSubscribe(UserId, TplId, Data, Page)]
                         end, [], dgiot_notification:get_users(DeviceId, RoleId, NotifRoleid));
         _O ->
 %%            io:format("~s ~p _O = ~p.~n", [?FILE, ?LINE, _O]),

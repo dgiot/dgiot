@@ -358,7 +358,6 @@ get_roleuser(Filter, _SessionToken) ->
         end,
     UsersQuery = NewUserFilter#{
         <<"where">> => UserWhere#{
-            <<"limit">> => 9999999,
             <<"tag">> => #{<<"$exists">> => true},
             <<"$relatedTo">> => #{
                 <<"key">> => <<"users">>,

@@ -49,8 +49,7 @@
     match_object/2,
     search/0,
     search/2,
-    search/3,
-    get/1
+    search/3
 ]).
 
 -export([start_link/2]).
@@ -144,21 +143,7 @@ lookup(Tab, Key) ->
 %%%%    end.
 -spec(insert(dgiot_type:key(), dgiot_type:value()) -> ok | {error, term()}).
 insert(Key, Value) ->
-    insert(?MNESIA_TAB, Key, Value).
-
-insert(TB, Key, Value) ->
-    case lookup(TB, Key) of
-        {ok, _} ->
-            delete(TB, Key);
-        _ ->
-            pass
-    end,
-    case dgiot_data:get(TB, Key) of
-        not_find ->
-            insert_(#mnesia{key = Key, value = Value});
-        _ -> pass
-    end,
-    insert_(TB, #mnesia{key = Key, value = Value}).
+    insert_(?MNESIA_TAB, #mnesia{key = Key, value = Value}).
 
 insert_(TAB, Record) ->
     F = fun() ->
@@ -166,16 +151,6 @@ insert_(TAB, Record) ->
         end,
     Result = mnesia:transaction(F),
     result(Result).
-
-insert_(#mnesia{key = Key}) ->
-    Uid = mnesia:dirty_update_counter(mnesia_id, mnesia, 1),
-    dgiot_data:insert(?MNESIA_INDEX, Uid, Key).
-
-get(Index) ->
-    case dgiot_data:get(?MNESIA_INDEX, Index) of
-        not_find -> not_find;
-        Key -> dgiot_data:get(?MNESIA_TAB, Key)
-    end.
 
 delete(Key) ->
     delete(?MNESIA_TAB, Key).
