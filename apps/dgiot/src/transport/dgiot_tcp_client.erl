@@ -161,6 +161,7 @@ handle_info(Info, #dclient{channel = ChannelId, client = ClientId, userdata = #c
     end.
 
 terminate(Reason, #dclient{userdata = #connect_state{mod = Mod}} = Dclient) ->
+    dgiot_metrics:dec(dgiot, <<"tcpc_online">>, 1),
     Mod:terminate(Reason, Dclient).
 
 code_change(OldVsn, #dclient{userdata = #connect_state{mod = Mod}} = Dclient, Extra) ->

@@ -152,6 +152,7 @@ handle_info(Info, #dclient{userdata = #connect_state{mod = Mod} = ConnectState} 
     end.
 
 terminate(Reason, #dclient{userdata = #connect_state{mod = Mod}} = Dclient) ->
+    dgiot_metrics:dec(dgiot, <<"mqttc_online">>, 1),
     Mod:terminate(Reason, Dclient).
 
 code_change(OldVsn, #dclient{userdata = #connect_state{mod = Mod}} = Dclient, Extra) ->
