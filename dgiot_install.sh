@@ -1486,6 +1486,7 @@ function cluster_app() {
 
 function devops() {
   #一键式开发环境
+  pre_install
   install_node
   install_erlang_otp
   pre_build_dgiot
