@@ -907,24 +907,24 @@ function update_dashboard() {
 function update_html() {
   #  dgiot_dashboard
   cd ${install_dir}/nginx
-  if [ -f ${html_software}.tar.gz ]; then
-    htmlmd51=$(md5sum ${html_software}.tar.gz | cut -d ' ' -f1)
+  if [ -f ${html_software}.zip ]; then
+    htmlmd51=$(md5sum ${html_software}.zip | cut -d ' ' -f1)
     if [ "${htmlmd51}" != "${htmlmd5}" ]; then
-      rm -rf ${html_software}.tar.gz &>/dev/null
+      rm -rf ${html_software}.zip &>/dev/null
     fi
   fi
-  if [ ! -f ${html_software}.tar.gz ]; then
-    wget ${fileserver}/${html_software}.tar.gz &>/dev/null
-    htmlmd52=$(md5sum ${html_software}.tar.gz | cut -d ' ' -f1)
+  if [ ! -f ${html_software}.zip ]; then
+    wget ${fileserver}/${html_software}.zip &>/dev/null
+    htmlmd52=$(md5sum ${html_software}.zip | cut -d ' ' -f1)
     if [ "${htmlmd52}" != "${htmlmd5}" ]; then
-      echo -e "$(date +%F_%T) $LINENO: ${RED} download ${html_software}.tar.gz failed${NC}"
+      echo -e "$(date +%F_%T) $LINENO: ${RED} download ${html_software}.zip failed${NC}"
       exit 1
     fi
   fi
   if [ -d html/ ]; then
     mv html/ ${backup_dir}/
   fi
-  tar xf ${html_software}.tar.gz &>/dev/null
+  unzip ${html_software}.zip &>/dev/null
   sed -ri '/dgiot_api/d' conf/nginx.conf
 }
 
@@ -1142,12 +1142,12 @@ function build_nginx() {
     unzip -o ${script_dir}/${domain_name}.zip -d /etc/ssl/certs/ &>/dev/null
   fi
   #dashboard
-  if [ ! -f ${script_dir}/${html_software}.tar.gz ]; then
-    wget ${fileserver}/${html_software}.tar.gz -O ${script_dir}/${html_software}.tar.gz &>/dev/null
+  if [ ! -f ${script_dir}/${html_software}.zip ]; then
+    wget ${fileserver}/${html_software}.zip -O ${script_dir}/${html_software}.zip &>/dev/null
   fi
   cd ${script_dir}/
   rm -rf /data/dgiot/nginx/html &>/dev/null
-  tar -zxvf ${html_software}.tar.gz -C /data/dgiot/nginx/ &>/dev/null
+  unzip -d /data/dgiot/nginx/ ${html_software}.zip &>/dev/null
 
   install_service2 "nginx" "forking" "/data/dgiot/nginx/sbin/nginx"
 }
@@ -1542,13 +1542,13 @@ dgiot_shell
 deployType=single                           # [single | cluster | devops | ci]
 domain_name="prod.dgiotcloud.cn"            # [prod.dgiotcloud.cn | your_domain_name]
 plugin="dgiot"                              # [dgiot | dgiot_your_plugin]
-software="dgiot_b23"                        # [dgiot_b20| dgiot_n]
-dgiotmd5="ccaa89c901971158cbc75981e018cf46" # [dgiotmd5]
+software="dgiot_b25"                        # [dgiot_b20| dgiot_n]
+dgiotmd5="c0e848de09319194db5ccdf4b031fa23" # [dgiotmd5]
 pg_eip="changeyourip"                       # [datanode_eip]
 pg_auth='changeyourpassword'                # [pg_auth]
 islanip="false"                             # [islanip]
-html_software="dgiot_html_4.8.3"            # [dgiot_html_4.8.2| dgiot_html_n]
-htmlmd5="31175b6acd8823087e54c3bf836786aa"  # [htmlmd5]
+html_software="dgiot_html_4.8.4"            # [dgiot_html_4.8.2| dgiot_html_n]
+htmlmd5="87236771fa53b6dbeaf1e07eb86eb789"  # [htmlmd5]
 
 while getopts "v:s:p:m:d:e:a:n:" arg; do
   case $arg in
