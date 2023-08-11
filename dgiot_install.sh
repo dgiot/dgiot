@@ -1260,8 +1260,8 @@ function pre_build_dgiot() {
   cd ${script_dir}
   rm ${script_dir}/$plugin/_build/emqx/rel/ -rf
 
-  if [ ! -d ${script_dir}/iotEdit/dist ]; then
-      build_iotEdit
+  if [ ! -d ${script_dir}/iotView/dist ]; then
+      build_iotView
   fi
 
   if [ -d ${script_dir}/iotView/dist ]; then
@@ -1269,7 +1269,7 @@ function pre_build_dgiot() {
   fi
 
   if [ ! -d ${script_dir}/iotEdit/dist ]; then
-      build_iotView
+      build_iotEdit
   fi
 
   if [ -d ${script_dir}/iotEdit/dist ]; then
@@ -1497,8 +1497,6 @@ function devops() {
 function ci() {
   #一键式持续集成
   install_node
-  build_iotEdit
-  build_iotView
   install_erlang_otp
   pre_build_dgiot
   make ci
