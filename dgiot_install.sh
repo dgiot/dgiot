@@ -105,7 +105,7 @@ function dgiot_path() {
   fileparseserver="https://dgiot-parse-server-1306147891.cos.ap-nanjing.myqcloud.com"
   fileversionserver="https://dgiot-version-1306147891.cos.ap-nanjing.myqcloud.com"
   updateserver="http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_release/update"
-
+  otpversion="24.3.4.2"
   #install path
   install_dir="/data/dgiot"
 
@@ -820,23 +820,23 @@ function yum_install_erlang_otp() {
 # 5.1 安装erlang/otp环境
 function install_erlang_otp() {
   yum_install_erlang_otp
-  echo -e "$(date +%F_%T) $LINENO: ${GREEN} install_erlang_otp${NC}"
-  if [ ! -f ${script_dir}/otp_src_24.3.4.2.tar.gz ]; then
-    wget ${fileserver}/otp_src_24.3.4.2.tar.gz -O ${script_dir}/otp_src_24.3.4.2.tar.gz &>/dev/null
+  echo -e "$(date +%F_%T) $LINENO: ${GREEN} install_erlang_otp ${otpversion} ${NC}"
+  if [ ! -f ${script_dir}/otp_src_${otpversion}.tar.gz ]; then
+    wget ${fileserver}/otp_src_${otpversion}.tar.gz -O ${script_dir}/otp_src_${otpversion}.tar.gz &>/dev/null
   fi
-  if [ -d ${install_dir}/otp_src_24.3/ ]; then
-    rm ${script_dir}/otp_src_24.3 -rf
+  if [ -d ${install_dir}/otp_src_${otpversion}/ ]; then
+    rm ${script_dir}/otp_src_${otpversion} -rf
   fi
   cd ${script_dir}/
-  tar xf otp_src_24.3.4.2.tar.gz &>/dev/null
+  tar xf otp_src_${otpversion}.tar.gz &>/dev/null
 
-  cd ${script_dir}/otp_src_24.3/
+  cd ${script_dir}/otp_src_${otpversion}/
   echo -e "$(date +%F_%T) $LINENO: ${GREEN} otp configure${NC}"
   ./configure &>/dev/null
   echo -e "$(date +%F_%T) $LINENO: ${GREEN} otp make install${NC}"
   make install &>/dev/null
   cd ${script_dir}/
-  rm ${script_dir}/otp_src_24.3 -rf
+  rm ${script_dir}/otp_src_${otpversion} -rf
   echo -e "$(date +%F_%T) $LINENO: ${GREEN} install erlang otp success${NC}"
 }
 
@@ -1175,76 +1175,55 @@ function make_ssl() {
   fi
 }
 
-function build_dashboard_lite() {
+function install_ndoe() {
   if [ ! -d ${script_dir}/node-v16.5.0-linux-x64/bin/ ]; then
-    if [ ! -f ${script_dir}/node-v16.5.0-linux-x64.tar.gz ]; then
-      wget https://dgiotdev-1308220533.cos.ap-nanjing.myqcloud.com/node-v16.5.0-linux-x64.tar.gz &>/dev/null
-      tar xvf node-v16.5.0-linux-x64.tar.gz &>/dev/null
-      if [ ! -f usr/bin/node ]; then
-        rm /usr/bin/node -rf
+      if [ ! -f ${script_dir}/node-v16.5.0-linux-x64.tar.gz ]; then
+        wget https://dgiotdev-1308220533.cos.ap-nanjing.myqcloud.com/node-v16.5.0-linux-x64.tar.gz &>/dev/null
+        tar xvf node-v16.5.0-linux-x64.tar.gz &>/dev/null
+        if [ ! -f usr/bin/node ]; then
+          rm /usr/bin/node -rf
+        fi
+        ln -s ${script_dir}/node-v16.5.0-linux-x64/bin/node /usr/bin/node
+        ln -s ${script_dir}/node-v16.5.0-linux-x64/bin/yarn /usr/bin/yarn
+        sudo /bin/dd if=/dev/zero of=/var/swap.1 bs=1M count=1024
+        sudo /sbin/mkswap /var/swap.1
+        sudo /sbin/swapon /var/swap.1
       fi
-      ln -s ${script_dir}/node-v16.5.0-linux-x64/bin/node /usr/bin/node
-      ${script_dir}/node-v16.5.0-linux-x64/bin/npm i -g yarn --registry=https://registry.npmmirror.com
-      ${script_dir}/node-v16.5.0-linux-x64/bin/yarn config set registry https://registry.npmmirror.com
-      ${script_dir}/node-v16.5.0-linux-x64/bin/yarn -v
-      ${script_dir}/node-v16.5.0-linux-x64/bin/yarn get registry
-      sudo /bin/dd if=/dev/zero of=/var/swap.1 bs=1M count=1024
-      sudo /sbin/mkswap /var/swap.1
-      sudo /sbin/swapon /var/swap.1
     fi
-  fi
+  }
 
+function build_iotView() {
   cd ${script_dir}/
-  if [ ! -d ${script_dir}/dgiot_dashboard_lite/ ]; then
-    git clone -b master https://gitee.com/dgiiot/dgiot-amis-dashboard.git dgiot_dashboard_lite
+  if [ ! -d ${script_dir}/iotView/ ]; then
+    git clone -b master https://gitee.com/dgiiot/iotView.git.git iotView
   fi
 
-  cd ${script_dir}/dgiot_dashboard_lite
+  cd ${script_dir}/iotView
   git reset --hard
   git pull
 
   export PATH=$PATH:/usr/local/bin:${script_dir}/node-v16.5.0-linux-x64/bin/
-  rm ${script_dir}/dgiot_dashboard_lite/dist/ -rf
-  ${script_dir}/node-v16.5.0-linux-x64/bin/yarn install
-  ${script_dir}/node-v16.5.0-linux-x64/bin/yarn build
-  echo "build_dashboard_lite "
+  rm ${script_dir}/iotView/dist/ -rf
+  ${script_dir}/node-v16.5.0-linux-x64/bin/npm install
+  ${script_dir}/node-v16.5.0-linux-x64/bin/npm run build:prod
+  echo "build_iotView "
 }
 
-function build_dashboard() {
-  if [ ! -d ${script_dir}/node-v16.5.0-linux-x64/bin/ ]; then
-    if [ ! -f ${script_dir}/node-v16.5.0-linux-x64.tar.gz ]; then
-      wget https://dgiotdev-1308220533.cos.ap-nanjing.myqcloud.com/node-v16.5.0-linux-x64.tar.gz &>/dev/null
-      tar xvf node-v16.5.0-linux-x64.tar.gz &>/dev/null
-      if [ ! -f usr/bin/node ]; then
-        rm /usr/bin/node -rf
-      fi
-      ln -s ${script_dir}/node-v16.5.0-linux-x64/bin/node /usr/bin/node
-      ${script_dir}/node-v16.5.0-linux-x64/bin/npm i -g pnpm --registry=https://registry.npmmirror.com
-      ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm config set registry https://registry.npmmirror.com
-      ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm add -g pnpm to update
-      ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm -v
-      ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm get registry
-      sudo /bin/dd if=/dev/zero of=/var/swap.1 bs=1M count=1024
-      sudo /sbin/mkswap /var/swap.1
-      sudo /sbin/swapon /var/swap.1
-    fi
-  fi
-
+function build_iotEdit() {
   cd ${script_dir}/
-  if [ ! -d ${script_dir}/dgiot_dashboard/ ]; then
-    git clone -b master https://gitee.com/dgiiot/dgiot-dashboard.git dgiot_dashboard
+  if [ ! -d ${script_dir}/iotEdit/ ]; then
+    git clone -b master https://gitee.com/dgiiot/iotEdit.git.git iotEdit
   fi
 
-  cd ${script_dir}/dgiot_dashboard
+  cd ${script_dir}/iotEdit
   git reset --hard
   git pull
 
   export PATH=$PATH:/usr/local/bin:${script_dir}/node-v16.5.0-linux-x64/bin/
-  rm ${script_dir}/dgiot_dashboard/dist/ -rf
-  #${script_dir}/node-v16.5.0-linux-x64/bin/pnpm add -g pnpm
-  ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm install --no-frozen-lockfile
-  ${script_dir}/node-v16.5.0-linux-x64/bin/pnpm build
-  echo "build_dashboard"
+  rm ${script_dir}/iotEdit/dist/ -rf
+  ${script_dir}/node-v16.5.0-linux-x64/bin/yarn install
+   ${script_dir}/node-v16.5.0-linux-x64/bin/yarn build
+  echo "build_iotEdit"
 }
 
 function pre_build_dgiot() {
@@ -1497,8 +1476,10 @@ function cluster_app() {
 
 function devops() {
   #一键式开发环境
-  build_dashboard
-  build_dashboard_lite
+  install_ndoe
+  build_iotEdit
+  build_iotView
+  install_erlang_otp
   pre_build_dgiot
   make
   post_build_dgiot
@@ -1506,8 +1487,10 @@ function devops() {
 
 function ci() {
   #一键式持续集成
-  build_dashboard
-  build_dashboard_lite
+  install_ndoe
+  build_iotEdit
+  build_iotView
+  install_erlang_otp
   pre_build_dgiot
   make ci
   post_build_dgiot
