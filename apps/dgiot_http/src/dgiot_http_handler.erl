@@ -334,7 +334,7 @@ do_request(post_operations, Args, #{<<"sessionToken">> := _SessionToken}, _Req) 
 %% 请求:POST /iotapi/post_triggeralarm
 do_request(post_triggeralarm, #{<<"deviceid">> := DeviceId} = Args, #{<<"sessionToken">> := _SessionToken}, _Req) ->
 %%    dgiot_mqtt:publish(<<"">>, <<"">>, jsx:decode(Args)),
-    dgiot_umeng:triggeralarm(DeviceId),
+    dgiot_umeng:triggeralarm(DeviceId, maps:get(<<"content">>, Args, <<>>)),
     {ok, #{<<"msg">> => <<"trigger successfully">>, <<"data">> => Args}};
 
 

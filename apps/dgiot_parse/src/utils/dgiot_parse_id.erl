@@ -231,11 +231,11 @@ get_objectid(Class, Map) ->
         <<"Device">> ->
             Product = case maps:get(<<"product">>, Map) of
                           #{<<"objectId">> := ProductId} ->
-                              ProductId;
+                              dgiot_utils:to_binary(ProductId);
                           ProductId1 ->
-                              ProductId1
+                              dgiot_utils:to_binary(ProductId1)
                       end,
-            DevAddr = maps:get(<<"devaddr">>, Map, <<"">>),
+            DevAddr = dgiot_utils:to_binary(maps:get(<<"devaddr">>, Map, <<>>)),
             <<Did:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Device", Product/binary, DevAddr/binary>>),
             Map#{
                 <<"objectId">> => Did
