@@ -1265,6 +1265,8 @@ function pre_build_dgiot() {
   fi
 
   if [ -d ${script_dir}/iotView/dist ]; then
+      rm ${script_dir}/$plugin/_build/emqx/lib/dgiot_api -rf
+      rm ${script_dir}/$plugin/apps/dgiot_api/priv/www/ -rf
       cp ${script_dir}/iotView/dist/ ${script_dir}/$plugin/apps/dgiot_api/priv/www/ -rf
   fi
 
@@ -1273,8 +1275,6 @@ function pre_build_dgiot() {
   fi
 
   if [ -d ${script_dir}/iotEdit/dist ]; then
-    rm ${script_dir}/$plugin/_build/emqx/lib/dgiot_api -rf
-    rm ${script_dir}/$plugin/apps/dgiot_api/priv/www/ -rf
     cp ${script_dir}/iotEdit/dist/ ${script_dir}/$plugin/apps/dgiot_api/priv/www/admin -rf
   fi
 
