@@ -1175,7 +1175,7 @@ function make_ssl() {
   fi
 }
 
-function install_ndoe() {
+function install_node() {
   if [ ! -d ${script_dir}/node-v16.5.0-linux-x64/bin/ ]; then
       if [ ! -f ${script_dir}/node-v16.5.0-linux-x64.tar.gz ]; then
         wget https://dgiotdev-1308220533.cos.ap-nanjing.myqcloud.com/node-v16.5.0-linux-x64.tar.gz &>/dev/null
@@ -1183,6 +1183,9 @@ function install_ndoe() {
         if [ ! -f usr/bin/node ]; then
           rm /usr/bin/node -rf
         fi
+        rm /usr/bin/npm -rf
+        rm /usr/bin/node -rf
+        rm /usr/bin/yarn -rf
         ln -s ${script_dir}/node-v16.5.0-linux-x64/bin/node /usr/bin/node
         ln -s ${script_dir}/node-v16.5.0-linux-x64/bin/yarn /usr/bin/yarn
         sudo /bin/dd if=/dev/zero of=/var/swap.1 bs=1M count=1024
@@ -1257,14 +1260,14 @@ function pre_build_dgiot() {
   cd ${script_dir}
   rm ${script_dir}/$plugin/_build/emqx/rel/ -rf
 
-  if [ -d ${script_dir}/dgiot_dashboard/dist ]; then
-    rm ${script_dir}/$plugin/_build/emqx/lib/dgiot_api -rf
-    rm ${script_dir}/$plugin/apps/dgiot_api/priv/www/ -rf
-    cp ${script_dir}/dgiot_dashboard/dist/ ${script_dir}/$plugin/apps/dgiot_api/priv/www -rf
+  if [ -d ${script_dir}/iotView/dist ]; then
+      cp ${script_dir}/iotView/dist/ ${script_dir}/$plugin/apps/dgiot_api/priv/www/ -rf
   fi
 
-  if [ -d ${script_dir}/dgiot_dashboard_lite/dist ]; then
-    cp ${script_dir}/dgiot_dashboard_lite/dist/ ${script_dir}/$plugin/apps/dgiot_api/priv/www/dgiot-amis-dashboard -rf
+  if [ -d ${script_dir}/iotEdit/dist ]; then
+    rm ${script_dir}/$plugin/_build/emqx/lib/dgiot_api -rf
+    rm ${script_dir}/$plugin/apps/dgiot_api/priv/www/ -rf
+    cp ${script_dir}/iotEdit/dist/ ${script_dir}/$plugin/apps/dgiot_api/priv/www/admin -rf
   fi
 
   if [ -d ${script_dir}/dgiot/emqx/rel/ ]; then
@@ -1476,10 +1479,10 @@ function cluster_app() {
 
 function devops() {
   #一键式开发环境
-  install_ndoe
+  install_node
+  install_erlang_otp
   build_iotEdit
   build_iotView
-  install_erlang_otp
   pre_build_dgiot
   make
   post_build_dgiot
@@ -1487,7 +1490,7 @@ function devops() {
 
 function ci() {
   #一键式持续集成
-  install_ndoe
+  install_node
   build_iotEdit
   build_iotView
   install_erlang_otp
