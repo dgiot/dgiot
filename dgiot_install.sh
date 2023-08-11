@@ -53,6 +53,10 @@ function dgiot_shell() {
   # Color setting
   RED='\033[0;31m'
   GREEN='\033[1;32m'
+  BLUE='\033[34m'
+  BLACK='\033[30m'
+  YELLOW='\033[33m'
+  PINK='\033[35m'
   GREEN_DARK='\033[0;32m'
   GREEN_UNDERLINE='\033[4;32m'
   NC='\033[0m'
@@ -1603,14 +1607,13 @@ dgiot_auto_variables
 deploy_dgiot
 
 ###---------------------------- install dgiot-------------------------------------------------
-echo -e "$(date +%F_%T) $LINENO: ${RED} database login info${NC}"
-echo -e "$(date +%F_%T) $LINENO: ${RED} pg_info: postgres://postgres:${pg_auth}@${pg_eip}:7432/parse${NC}"
-echo -e "$(date +%F_%T) $LINENO: ${RED} pg_info: pg_eip=${pg_eip} pg_auth=${pg_auth}${NC}"
-echo -e "$(date +%F_%T) $LINENO: ${RED} parse_info: http://${wlanip}:1337/dashboard/ ${NC}"
-echo -e "$(date +%F_%T) $LINENO: ${RED} parse_info: username=${parse_user} password=${parse_pwd} ${NC}"
-echo -e "$(date +%F_%T) $LINENO: ${RED} dashboard: http://${wlanip}/ ${NC}"
-echo -e "$(date +%F_%T) $LINENO: ${RED} dashboard: username=dgiot_dev password=dgiot_dev ${NC}"
-
+echo -e "$(date +%F_%T) $LINENO: ${BLUE} database login info${NC}"
+echo -e "$(date +%F_%T) $LINENO: ${BLUE} pg_info: postgres://postgres:${pg_auth}@${pg_eip}:7432/parse${NC}"
+echo -e "$(date +%F_%T) $LINENO: ${BLUE} pg_info: pg_eip=${pg_eip} pg_auth=${pg_auth}${NC}"
+echo -e "$(date +%F_%T) $LINENO: ${BLUE} parse_info: http://${wlanip}:1337/dashboard/ ${NC}"
+echo -e "$(date +%F_%T) $LINENO: ${BLUE} parse_info: username=${parse_user} password=${parse_pwd} ${NC}"
+echo -e "$(date +%F_%T) $LINENO: ${BLUE} dashboard: http://${wlanip}/ ${NC}"
+echo -e "$(date +%F_%T) $LINENO: ${BLUE} dashboard: username=dgiot_dev password=dgiot_dev ${NC}"
 
 
 
