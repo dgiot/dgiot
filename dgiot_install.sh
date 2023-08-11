@@ -1260,8 +1260,16 @@ function pre_build_dgiot() {
   cd ${script_dir}
   rm ${script_dir}/$plugin/_build/emqx/rel/ -rf
 
+  if [ ! -d ${script_dir}/iotEdit/dist ]; then
+      build_iotEdit
+  fi
+
   if [ -d ${script_dir}/iotView/dist ]; then
       cp ${script_dir}/iotView/dist/ ${script_dir}/$plugin/apps/dgiot_api/priv/www/ -rf
+  fi
+
+  if [ ! -d ${script_dir}/iotEdit/dist ]; then
+      build_iotView
   fi
 
   if [ -d ${script_dir}/iotEdit/dist ]; then
@@ -1481,8 +1489,6 @@ function devops() {
   #一键式开发环境
   install_node
   install_erlang_otp
-  build_iotEdit
-  build_iotView
   pre_build_dgiot
   make
   post_build_dgiot
