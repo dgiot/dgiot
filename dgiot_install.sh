@@ -1610,3 +1610,36 @@ echo -e "$(date +%F_%T) $LINENO: ${RED} parse_info: http://${wlanip}:1337/dashbo
 echo -e "$(date +%F_%T) $LINENO: ${RED} parse_info: username=${parse_user} password=${parse_pwd} ${NC}"
 echo -e "$(date +%F_%T) $LINENO: ${RED} dashboard: http://${wlanip}/ ${NC}"
 echo -e "$(date +%F_%T) $LINENO: ${RED} dashboard: username=dgiot_dev password=dgiot_dev ${NC}"
+
+
+
+ 功能：
+1.添加一键式linux开发环境搭建
+2.添加tcp和mqtt的连接数和收发报文统计
+3.添加ip获取地理位置
+4.添加阿里云工业互联网,⾏业平台账号免登对接
+
+优化：
+1.
+2.更换微信小程序token刷新接口
+3.优化产品通道缓存关系表
+
+BUG：
+1.修复物模型默认tag的类型错误问题
+2.修复task定时任务延迟问题
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
