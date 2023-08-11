@@ -553,9 +553,9 @@ getCompanyInfo(CptToken) ->
     ailiyun_gateway(Path, Body).
 
 ailiyun_gateway(Path, Body) ->
-    Url = "http://api.inplat.com.cn" ++ Path,
-    AppKey = "204225341",
-    AppSecret = "MtLbnyAgIC26czYlVPBlRO8pwWBNnwRK",
+    Url = "http://aliyun.com.cn" ++ Path,
+    AppKey = "AppKey",
+    AppSecret = "AppSecret",
     Date = dgiot_utils:to_list(dgiot_datetime:now_ms()),
     Nonce = uuid(),
     Md5 = calcMd5(Body),
