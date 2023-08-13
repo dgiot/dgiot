@@ -184,6 +184,11 @@ get_count(Acls, acl, Key) ->
             end, [], Acls),
     loop_count(dgiot_utils:unique_1(ChildAcls), Key);
 
+get_count([], roleid, _Key) ->
+    pass;
+get_count([RoleId | Roles1] = RoleIds, roleid, Key) when is_list(RoleIds) ->
+    get_count(RoleId, roleid, Key),
+    get_count(dgiot_utils:unique_1(Roles1), roleid, Key);
 get_count(RoleId, roleid, Key) ->
     ChildRoleIds = dgiot_role:get_childrole(dgiot_utils:to_binary(RoleId)),
     Acls = lists:foldl(fun(ChildRoleId, Acc) ->
