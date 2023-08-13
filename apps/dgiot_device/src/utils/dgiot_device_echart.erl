@@ -94,7 +94,6 @@ get_echart(ProductId, Results, Names, Interval) ->
 %%get_data_by_month(Channel, ProductId, DeviceId,Args)
 get_data_by_month(Channel, ProductId, DeviceId, Args) ->
 %%    io:format("~s ~p Channel = ~p , ProductId = ~p, DeviceId = ~p    ~n",[?FILE,?LINE,Channel, ProductId, DeviceId]),
-
 %%           由月份获得起止时间
     {ok, Count} = maps:find(<<"month_count">>, Args),
     {StartTime, EndTime} = dgiot_datetime:last_month(Count),
