@@ -22,22 +22,30 @@
   + Эксперты в технической области продолжают интегрировать превосходную техническую базу отрасли, а эксперты в области бизнеса продолжают оптимизировать бизнес-модели и процессы и создавать междисциплинарную открытую платформу
   + Платформа IoT, наконец, может быть простой и удобной в использовании, возвращаясь к сути инструментов
 
+![dgiot_family.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/dgiot_family.png)
+
 # Строительство
 
   Bulid * DGIOT * Требуется Erlang/OTP R24+, [linux](https://github.com/erlang/otp/releases/download/OTP-24.3.4.2/otp_src_24.3.4.2.tar.gz) загрузка Windows [msys64](https://prod.dgiotcloud.cn/msys64.zip), После загрузки распакуйте его в корневой каталог диска D, и работайте строго в соответствии со следующим рисунком ：
 ![dgiotdevtools.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/dgiotdevtools.png)
 
 + Скачать исходный код за границу
-  ```bash
-     git clone https://github.com/dgiot/dgiot_dashboard.git
+    ```bash
+     git clone -b master https://github.com/dgiot/iotStudio.git
+     git clone -b master https://github.com/dgiot/iotView.git
+     git clone -b master https://github.com/dgiot/iotApp.git
+     git clone -b master https://github.com/dgiot/iotWechat.git
      git clone https://github.com/dgiot/dgiot.git
-   ```
+    ```
 
 + Китай скачать исходный код
-   ```bash
-     git clone https://gitee.com/dgiiot/dgiot_dashboard.git
-     git clone https://gitee.com/dgiiot/dgiot.git
-   ```
+    ```bash
+      git clone -b master https://gitee.com/dgiot/iotStudio.git
+      git clone -b master https://gitee.com/dgiot/iotView.git
+      git clone -b master https://gitee.com/dgiot/iotApp.git
+      git clone -b master https://gitee.com/dgiot/iotWechat.git
+      git clone https://gitee.com/dgiiot/dgiot.git
+    ```
 
 + Китайская Linux / Unix / Mac / Windows Build
   ```bash

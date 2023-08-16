@@ -176,9 +176,13 @@ wget -qO dgiot_install.sh https://gitee.com/dgiiot/dgiot/raw/master/dgiot_instal
 ## 开发教程
 <table style={{border : 'none'}}>
     <tr style={{border : 'none'}}>
-        <td style={{border : 'none'}}> <a href="https://www.bilibili.com/video/BV15u411z73i?spm_id_from=333.999.0.0"><img width="216px" src="http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_doc/doc%E8%A7%86%E9%A2%91%E5%9B%BE%E7%89%87/%E5%BC%80%E5%8F%91%E6%95%99%E7%A8%8B/1.jpg" /></a></td>
+       <td style={{border : 'none'}}> <a href="https://www.bilibili.com/video/BV1Yx4y1f791/?spm_id_from=333.337"><img width="216px" src="http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_doc/developer_guid/front_end/dgiot_build.png" /></a></td>
+      <td style={{border : 'none'}}> <a href="https://www.bilibili.com/video/BV1A44y1U7pk/?spm_id_from=333.337"><img width="216px" src="http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_doc/developer_guid/front_end/dgiot_wechat_dev.png" /></a></td>
+      <td style={{border : 'none'}}> <a href="https://www.bilibili.com/video/BV15u411z73i?spm_id_from=333.999.0.0"><img width="216px" src="http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_doc/doc%E8%A7%86%E9%A2%91%E5%9B%BE%E7%89%87/%E5%BC%80%E5%8F%91%E6%95%99%E7%A8%8B/1.jpg" /></a></td>
     </tr>
     <tr class="td1" valign="top" style={{border : 'none',background : '#fff'}}>
+       <td class="a1" style={{border : 'none'}}> <a href="https://www.bilibili.com/video/BV1Yx4y1f791?spm_id_from=333.337" title="dgiot编译环境搭建踩坑记之深夜鏖战">dgiot编译环境搭建踩坑记之深夜鏖战</a></td>
+       <td class="a1" style={{border : 'none'}}> <a href="https://www.bilibili.com/video/BV15u411z73i?spm_id_from=333.337" title="微信小程序零基础接入教程">微信小程序零基础接入教程</a></td>
         <td class="a1" style={{border : 'none'}}> <a href="https://www.bilibili.com/video/BV15u411z73i?spm_id_from=333.999.0.0" title="dgiot api编写教程">dgiot api编写教程</a></td>
      </tr>
 </table>

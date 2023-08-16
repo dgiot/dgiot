@@ -29,22 +29,31 @@ Before 2016, the dgiot team had been crawling on the Internet and the mobile Int
 + Carrying over tens of millions of long connections, carrier-class stability
 + Object model-rule engine-data channel-configuration page full-process visualization low-code development
 + Multi-industry industrial protocol compatibility
+
+![dgiot_family.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/dgiot_family.png)
+
 # Building
 
  Bulid *DGIOT* Need Erlang/OTP R24+, [linux](https://github.com/erlang/otp/releases/download/OTP-24.3.4.2/otp_src_24.3.4.2.tar.gz) Windows download  [msys64.zip](https://prod.dgiotcloud.cn/msys64.zip)    ,After downloading, unzip it to the root directory of Disk D, and operate strictly in accordance with the following figure：
 ![dgiotdevtools.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/dgiotdevtools.png)
 
  +  Download source code abroad
-  ```bash
-     git clone -b master https://github.com/dgiot/dgiot-dashboard.git
+     ```bash
+     git clone -b master https://github.com/dgiot/iotStudio.git
+     git clone -b master https://github.com/dgiot/iotView.git
+     git clone -b master https://github.com/dgiot/iotApp.git
+     git clone -b master https://github.com/dgiot/iotWechat.git
      git clone https://github.com/dgiot/dgiot.git
-   ```
+    ```
 
  +  China download source code
-   ```bash
-     git clone -b master https://gitee.com/dgiiot/dgiot-dashboard.git
-     git clone https://gitee.com/dgiiot/dgiot.git
-   ```
+     ```bash
+      git clone -b master https://gitee.com/dgiot/iotStudio.git
+      git clone -b master https://gitee.com/dgiot/iotView.git
+      git clone -b master https://gitee.com/dgiot/iotApp.git
+      git clone -b master https://gitee.com/dgiot/iotWechat.git
+      git clone https://gitee.com/dgiiot/dgiot.git
+    ```
 
  +  One touch start command Linux/Unix/Mac/windows
  ```bash
@@ -155,9 +164,13 @@ You are welcome to submit any bugs, issues and feature requests to [dgiot/dgiot]
 ## 开发教程
 <table style={{border : 'none'}}>
     <tr style={{border : 'none'}}>
-        <td style={{border : 'none'}}> <a href="https://www.bilibili.com/video/BV15u411z73i?spm_id_from=333.999.0.0"><img width="216px" src="http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_doc/doc%E8%A7%86%E9%A2%91%E5%9B%BE%E7%89%87/%E5%BC%80%E5%8F%91%E6%95%99%E7%A8%8B/1.jpg" /></a></td>
+       <td style={{border : 'none'}}> <a href="https://www.bilibili.com/video/BV1Yx4y1f791/?spm_id_from=333.337"><img width="216px" src="http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_doc/developer_guid/front_end/dgiot_build.png" /></a></td>
+      <td style={{border : 'none'}}> <a href="https://www.bilibili.com/video/BV1A44y1U7pk/?spm_id_from=333.337"><img width="216px" src="http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_doc/developer_guid/front_end/dgiot_wechat_dev.png" /></a></td>
+      <td style={{border : 'none'}}> <a href="https://www.bilibili.com/video/BV15u411z73i?spm_id_from=333.999.0.0"><img width="216px" src="http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_doc/doc%E8%A7%86%E9%A2%91%E5%9B%BE%E7%89%87/%E5%BC%80%E5%8F%91%E6%95%99%E7%A8%8B/1.jpg" /></a></td>
     </tr>
     <tr class="td1" valign="top" style={{border : 'none',background : '#fff'}}>
+       <td class="a1" style={{border : 'none'}}> <a href="https://www.bilibili.com/video/BV1Yx4y1f791?spm_id_from=333.337" title="dgiot编译环境搭建踩坑记之深夜鏖战">dgiot编译环境搭建踩坑记之深夜鏖战</a></td>
+       <td class="a1" style={{border : 'none'}}> <a href="https://www.bilibili.com/video/BV15u411z73i?spm_id_from=333.337" title="微信小程序零基础接入教程">微信小程序零基础接入教程</a></td>
         <td class="a1" style={{border : 'none'}}> <a href="https://www.bilibili.com/video/BV15u411z73i?spm_id_from=333.999.0.0" title="dgiot api编写教程">dgiot api编写教程</a></td>
      </tr>
 </table>
