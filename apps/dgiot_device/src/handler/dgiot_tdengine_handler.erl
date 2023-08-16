@@ -165,8 +165,10 @@ do_request(get_devicecard_deviceid, #{<<"deviceid">> := DeviceId} = Args, #{<<"s
             end
     end;
 
-%% TDengine 概要: 获取gps轨迹
-do_request(get_gps_track_deviceid, #{<<"deviceid">> := DeviceId} = Args, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
+%% TDengine 概要: 获取gps轨迹c
+do_request(get_gps_track_deviceid, #{<<"deviceid">> := DeviceId, <<"starttime">> := Start, <<"endtime">> := End} = Args, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
+    Starttime = dgiot_datetime:get_today_stamp(dgiot_utils:to_int(dgiot_utils:to_int(Start) / 1000)) * 1000,
+    Endtime = dgiot_datetime:get_today_stamp(dgiot_utils:to_int(dgiot_utils:to_int(End) / 1000)) * 1000,
     case DeviceId of
         <<"all">> ->
             case dgiot_parse:query_object(<<"Device">>, #{}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
@@ -179,7 +181,7 @@ do_request(get_gps_track_deviceid, #{<<"deviceid">> := DeviceId} = Args, #{<<"se
                                     {ok, Channel} ->
                                         case dgiot_device:lookup(ObjectId) of
                                             {ok, #{<<"productid">> := ProductId}} ->
-                                                {ok, #{<<"results">> := Results1}} = dgiot_device_tdengine:get_gps_track(Channel, ProductId, ObjectId, Args),
+                                                {ok, #{<<"results">> := Results1}} = dgiot_device_tdengine:get_gps_track(Channel, ProductId, ObjectId, Args#{<<"starttime">> => Starttime, <<"endtime">> => Endtime, <<"interval">> => <<"8m">>, <<"function">> => <<"last">>}),
                                                 Results1;
                                             _ ->
                                                 []
@@ -197,7 +199,7 @@ do_request(get_gps_track_deviceid, #{<<"deviceid">> := DeviceId} = Args, #{<<"se
                 {ok, Channel} ->
                     case dgiot_device:lookup(DeviceId) of
                         {ok, #{<<"productid">> := ProductId}} ->
-                            dgiot_device_tdengine:get_gps_track(Channel, ProductId, DeviceId, Args);
+                            dgiot_device_tdengine:get_gps_track(Channel, ProductId, DeviceId, Args#{<<"starttime">> => Starttime, <<"endtime">> => Endtime, <<"interval">> => <<"8m">>, <<"function">> => <<"last">>});
                         _ ->
                             {ok, #{<<"results">> => []}}
                     end
