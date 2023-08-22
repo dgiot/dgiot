@@ -48,7 +48,7 @@
     get_masterDataId/1,
     get_metaDataId/1,
     get_gitid/2,
-    get_orderid/3
+    get_orderid/2
 ]).
 
 
@@ -88,8 +88,8 @@ get_deviceid(ProductId, DevAddr) ->
     DeviceId.
 
 
-get_orderid(Device, Proccess, Schedule) ->
-    <<DId:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Order", Device/binary, Proccess/binary, Schedule/binary>>),
+get_orderid(Device, Schedule) ->
+    <<DId:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Order", Device/binary, Schedule/binary>>),
     DId.
 
 get_userid(UserName) ->
@@ -396,9 +396,8 @@ get_objectid(Class, Map) ->
             };
         <<"Order">> ->
             #{<<"objectId">> := Device} = maps:get(<<"device">>, Map, #{<<"objectId">> => <<"">>}),
-            #{<<"objectId">> := Proccess} = maps:get(<<"proccess">>, Map, #{<<"objectId">> => <<"">>}),
             #{<<"objectId">> := Schedule} = maps:get(<<"schedule">>, Map, #{<<"objectId">> => <<"">>}),
-            <<DId:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Order", Device/binary, Proccess/binary, Schedule/binary>>),
+            <<DId:10/binary, _/binary>> = dgiot_utils:to_md5(<<"Order", Device/binary, Schedule/binary>>),
             Map#{
                 <<"objectId">> => DId
             };

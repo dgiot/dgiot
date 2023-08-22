@@ -9,6 +9,20 @@
 {datatype, string}
 ]}.
 
+%%--------------------------------------------------------------------
+%% 阿里云工业互联网
+%%--------------------------------------------------------------------
+{mapping, "inplat.host", "dgiot_http.inplat_host", [
+{datatype, string}
+]}.
+
+{mapping, "inplat.appkey", "dgiot_http.inplat_appkey", [
+{datatype, string}
+]}.
+
+{mapping, "inplat.appsecret", "dgiot_http.inplat_appsecret", [
+{datatype, string}
+]}.
 
 %%--------------------------------------------------------------------
 %% 阿里云oss

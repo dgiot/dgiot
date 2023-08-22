@@ -1022,7 +1022,7 @@ login_by_token(AppId, Secret) ->
                     },
                     case dgiot_parse:query_object(<<"_User">>, Query) of
                         {ok, #{<<"results">> := [#{<<"objectId">> := UserId} | _]}} ->
-                            TTL = maps:get(<<"expires">>, Config, dgiot_auth:ttl()),
+                            TTL = dgiot_auth:ttl(),
                             create_session(UserId, TTL, Name);
                         _ -> {error, #{<<"code">> => 101, <<"error">> => <<"User not found.">>}}
                     end;
