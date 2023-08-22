@@ -553,9 +553,10 @@ getCompanyInfo(CptToken) ->
     ailiyun_gateway(Path, Body).
 
 ailiyun_gateway(Path, Body) ->
-    Url = "http://aliyun.com.cn" ++ Path,
-    AppKey = "AppKey",
-    AppSecret = "AppSecret",
+    Host = dgiot_utils:to_list(application:get_env(dgiot_http, inplat_host, <<"http://api.inplat.com.cn">>)),
+    Url = Host ++ Path,
+    AppKey = dgiot_utils:to_list(application:get_env(dgiot_http, inplat_appkey, <<"rs256">>)),
+    AppSecret = dgiot_utils:to_list(application:get_env(dgiot_http, inplat_appsecret, <<"rs256">>)),
     Date = dgiot_utils:to_list(dgiot_datetime:now_ms()),
     Nonce = uuid(),
     Md5 = calcMd5(Body),

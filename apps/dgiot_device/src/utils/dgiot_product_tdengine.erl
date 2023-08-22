@@ -235,7 +235,7 @@ get_prop(ProductId) ->
                 end
                         end, #{}, Props);
         _ ->
-            []
+            #{}
     end.
 
 
