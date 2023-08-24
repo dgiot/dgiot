@@ -212,9 +212,14 @@ handle_message({sync_parse, Pid, 'after', get, Token, <<"Product">>, #{<<"result
     dgiot_parse_hook:publish(Pid, NewResBody),
     {ok, State};
 
-handle_message({sync_parse, Pid, 'after', get, _Token, <<"Product">>, #{<<"objectId">> := _ObjectId} = ResBody}, State) ->
+handle_message({sync_parse, Pid, 'after', get, Token, <<"Product">>, #{<<"objectId">> := _ObjectId} = ResBody}, State) ->
 %%    io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Pid, ObjectId]),
-    dgiot_parse_hook:publish(Pid, ResBody),
+    Key = dgiot_device_static:get_count(Token),
+%%    io:format("~s ~p ~p  ~n", [?FILE, ?LINE, Key]),
+    timer:sleep(100),
+    NewResBody = dgiot_device_static:stats(ResBody, Key),
+%%    io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Pid,NewResBody]),
+    dgiot_parse_hook:publish(Pid, NewResBody),
     {ok, State};
 
 handle_message({sync_parse, _Pid, 'after', post, _Token, <<"Product">>, QueryData}, State) ->
@@ -292,4 +297,3 @@ handle_message(Message, State) ->
 stop(ChannelType, ChannelId, _State) ->
     ?LOG(warning, "Channel[~p,~p] stop", [ChannelType, ChannelId]),
     ok.
-
