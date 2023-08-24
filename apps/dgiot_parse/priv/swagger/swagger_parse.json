@@ -91,7 +91,7 @@
       "post": {
         "summary": "数据批处理",
         "description": "为了减少网络往返的时间，可以使用批处理端点在一次调用中创建、更新或删除多达50个对象。",
-        "position" : 0,
+        "position": 0,
         "parameters": [
           {
             "in": "body",
@@ -331,6 +331,71 @@
           },
           "400": {
             "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Basic"
+        ]
+      },
+      "post": {
+        "summary": "版本升级",
+        "description": "版本升级",
+        "parameters": [
+          {
+            "description": "升级类型",
+            "in": "query",
+            "name": "type",
+            "required": true,
+            "type": "string",
+            "default": "dgiot",
+            "enum": [
+              "all",
+              "dgiot",
+              "amis",
+              "admin",
+              "tdengine",
+              "postgres",
+              "gofastd",
+              "parse",
+              "erlang"
+            ]
+          },
+          {
+            "in": "body",
+            "name": "info",
+            "description": "版本信息",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "url": {
+                  "description": "软件名称",
+                  "type": "string",
+                  "example": "dgiot_edge_v10.tar.gz"
+                },
+                "md5": {
+                  "description": "校验码",
+                  "type": "array"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns success"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
           },
           "403": {
             "description": "Forbidden"
