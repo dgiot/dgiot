@@ -710,14 +710,15 @@ putTing(ProductId, Item, SessionToken) ->
         {ok, #{<<"thing">> := Thing}} ->
             Modules = maps:get(ModuleType, Thing, []),
             NewModules =
-                lists:foldl(fun(X, Acc) ->
-                    case X of
-                        #{<<"identifier">> := Identifier} ->
-                            Acc ++ [Item];
-                        _ ->
-                            Acc ++ [X]
-                    end
-                            end, [], Modules),
+                lists:foldl(
+                    fun(X, Acc) ->
+                        case X of
+                            #{<<"identifier">> := Identifier} ->
+                                Acc ++ [Item];
+                            _ ->
+                                Acc ++ [X]
+                        end
+                    end, [], Modules),
             {_, R} = dgiot_parse:update_object(<<"Product">>, ProductId,
                 #{<<"thing">> => Thing#{ModuleType => NewModules}},
                 [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]),
