@@ -172,8 +172,8 @@ do_request(put_user, #{<<"username">> := UserName} = Body, #{<<"sessionToken">> 
 do_request(get_users_id, Body, #{<<"sessionToken">> := SessionToken}, _Req) ->
     case dgiot_parse_auth:get_user(Body, SessionToken) of
         {ok, Data} ->
-            dgiot_role:load_user(),
-            dgiot_parse_auth:load_roleuser(),
+%%            dgiot_role:load_user(),
+%%            dgiot_parse_auth:load_roleuser(),
             {200, Data};
         {error, Error} -> {500, Error}
     end;

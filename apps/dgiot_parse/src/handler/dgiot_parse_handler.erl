@@ -110,6 +110,13 @@ do_request(get_upgrade, _Body, _Context, Req) ->
 %%    io:format("~s ~p SessionToken = ~p.~n", [?FILE, ?LINE, SessionToken]),
     dgiot_parse_utils:update(SessionToken);
 
+%%%% 版本升级
+do_request(post_upgrade, _Body, _Context, Req) ->
+    Cookies = cowboy_req:parse_cookies(Req),
+    SessionToken = proplists:get_value(<<"departmentToken">>, Cookies),
+%%    io:format("~s ~p SessionToken = ~p.~n", [?FILE, ?LINE, SessionToken]),
+    dgiot_parse_utils:update(SessionToken);
+
 %%  服务器不支持的API接口
 do_request(_OperationId, _Args, _Context, _Req) ->
     {error, <<"Not Allowed.">>}.
