@@ -105,7 +105,7 @@ load_channel(Channels, Fun) ->
             <<"method">> => <<"GET">>,
             <<"path">> => <<"/classes/Product">>,
             <<"body">> => #{
-                <<"keys">> => [<<"decoder">>, <<"ACL">>, <<"dynamicReg">>, <<"devType">>, <<"nodeType">>, <<"productSecret">>, <<"config">>, <<"thing">>, <<"topics">>],
+                <<"keys">> => [<<"decoder">>, <<"ACL">>, <<"name">>, <<"channel">>, <<"dynamicReg">>, <<"devType">>, <<"nodeType">>, <<"productSecret">>, <<"config">>, <<"thing">>, <<"topics">>],
                 <<"include">> => [<<"Dict">>],
                 <<"where">> => #{
                     <<"$relatedTo">> => #{
@@ -128,10 +128,11 @@ load_channel(Channels, Fun) ->
 
 format_channel([], [], _, Err) -> {ok, Err};
 format_channel([Info | Channels], [#{<<"success">> := #{<<"results">> := Products}} | Results], Fun, Err) ->
-    Keys = [<<"decoder">>, <<"ACL">>, <<"dynamicReg">>, <<"devType">>, <<"nodeType">>, <<"productSecret">>, <<"config">>, <<"thing">>, <<"topics">>],
+    Keys = [<<"decoder">>, <<"ACL">>, <<"channel">>, <<"dynamicReg">>, <<"devType">>, <<"nodeType">>, <<"productSecret">>, <<"config">>, <<"thing">>, <<"topics">>],
     NewProducts = [{ProductId, maps:with(Keys, Product)} || #{<<"objectId">> := ProductId} = Product <- Products],
     Channel = Info#{<<"product">> => NewProducts},
     Fun(Channel),
+%%    update_products(NewProducts, Channel),
     format_channel(Channels, Results, Fun, Err);
 format_channel([Channel | Channels], [#{<<"error">> := Reason} | Results], Fun, Err) ->
     ?LOG(error, "~p load error, ~p", [Channel, Reason]),
@@ -144,7 +145,7 @@ start_load_channel(Pid, PageSize, MaxTotal, [Filter | Filters]) ->
 
 
 start_load_channel(Pid, PageSize, MaxTotal, #{<<"mod">> := Module, <<"where">> := Where}) ->
-    Keys = [<<"type">>, <<"cType">>, <<"config">>],
+    Keys = [<<"type">>, <<"cType">>, <<"name">>, <<"config">>],
     Query = #{
         <<"keys">> => Keys,
         <<"where">> => Where
@@ -178,3 +179,30 @@ start_load_channel(Pid, PageSize, MaxTotal, #{<<"where">> := Where}) ->
 %%        {ok, Data} ->
 %%            io:
 %%    end.
+
+%%update_products([], _Channel) ->
+%%    pass;
+%%update_products([Product | Products], #{<<"objectId">> := ChannleId, <<"name">> := Name, <<"cType">> := _CType} = Channel) ->
+%%    update_product(Product, ChannleId, Name, _CType),
+%%    io:format("~s ~p ~p ~n", [?FILE, ?LINE, ChannleId]),
+%%    update_products(Products,  Channel);
+%%update_products(_,  _Channel) ->
+%%   pass.
+%%
+%%update_product(Product, ChannleId, Name, <<"INSTRUCT">>) ->
+%%    update_product_(Product, ChannleId, Name, <<"task_channel">>);
+%%
+%%update_product(Product, ChannleId, Name, <<"TD">>) ->
+%%    update_product_(Product, ChannleId, Name, <<"td_channel">>);
+%%
+%%update_product(Product, ChannleId, Name, _CType) ->
+%%    update_product_(Product, ChannleId, Name, <<"other_channel">>).
+%%
+%%update_product_({ProductId, #{<<"channel">> := Channel}}, ChannleId, Name, Type) ->
+%%    dgiot_parse:update_object(<<"Product">>, ProductId, #{<<"channel">> => Channel#{Type => #{<<"id">> => ChannleId, <<"name">> => Name}}});
+%%update_product_({ProductId, _}, ChannleId, Name, Type) ->
+%%    dgiot_parse:update_object(<<"Product">>, ProductId, #{<<"channel">> => #{Type => #{<<"id">> => ChannleId, <<"name">> => Name}}});
+%%update_product_(_, _ChannleId, _Name, _Type) ->
+%%    pass.
+
+
