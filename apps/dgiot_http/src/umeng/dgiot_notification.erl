@@ -144,11 +144,11 @@ send_sms(NationCode, Mobile, TplId, Params, AppId, AppKey, Sign, Ext) ->
 test_email() ->
     Map = #{
         <<"from">> => <<"18257190166@163.com">>,
-        <<"to">> => <<"463544084@qq.com">>,
+        <<"to">> => <<"344896904@qq.com">>,
         <<"subject">> => <<"测试邮件"/utf8>>,
         <<"fromdes">> => <<"徐 <18257190166@163.com>"/utf8>>,
-        <<"todes">> => <<"唐 <463544084@qq.com>"/utf8>>,
-        <<"data">> => <<"唐 中文测试 欢迎访问 https://github.com/dgiot "/utf8>>,
+        <<"todes">> => <<"刘 <344896904@qq.com>"/utf8>>,
+        <<"data">> => <<"刘 中文测试 欢迎访问 https://github.com/dgiot "/utf8>>,
         <<"relay">> => <<"smtp.163.com">>,
         <<"username">> => <<"18257190166@163.com">>,
         <<"password">> => <<"ALRFYEVAFSITDXSX">>
@@ -182,9 +182,15 @@ send_email(Email) ->
     FromDes = maps:get(<<"fromdes">>, Email, <<"dgiot开源物联网 <dgiot@163.com>"/utf8>>),
     ToDes = maps:get(<<"todes">>, Email, <<"dgiot用户 <3333333@qq.com>"/utf8>>),
     Data = maps:get(<<"data">>, Email, <<"dgiot邮件 中文测试 欢迎访问 https://github.com/dgiot "/utf8>>),
-    BodyBin = <<"Subject: ", Subject/binary, "\r\n", "From: ", FromDes/binary, "\r\n", "To:", ToDes/binary, "\r\n\r\n", Data/binary>>,
 
-    gen_smtp_client:send({From, ArrTo, BodyBin}, [{relay, Relay}, {username, UserName}, {password, PassWord}]).
+    EmailBody = {<<"multipart">>, <<"alternative">>, [{<<"From">>, FromDes}, {<<"To">>, ToDes}, {<<"Subject">>, Subject}], #{},
+        [
+            {<<"text">>,<<"plain">>, [], #{}, <<"This message contains rich text.\r\n", "and is =quoted printable= encoded!">>},
+            {<<"text">>,<<"html">>, [], #{}, Data}
+        ]
+    },
+    MailBody = mimemail:encode(EmailBody),
+    gen_smtp_client:send({From, ArrTo, MailBody}, [{relay, Relay}, {username, UserName}, {password, PassWord}]).
 
 get_newbody(#{<<"results">> := Results} = Map) ->
     NewResults =
