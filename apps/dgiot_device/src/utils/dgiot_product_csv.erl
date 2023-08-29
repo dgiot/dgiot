@@ -26,7 +26,7 @@
 %%  dgiot_product_csv:read_csv(<<"8cff09f988">>, <<"modbustcp">>).
 %%  dgiot_utils:save_csv_ets(<<"/dgiot_file/product/csv/modbustcp.csv">>)
 read_csv(ChannelId, FilePath) ->
-    FileName = dgiot_utils:save_csv_ets(?MODULE, FilePath),
+    FileName = dgiot_csv:save_csv_ets(?MODULE, FilePath),
     Productmap = dgiot_product_csv:get_products(FileName),
     TdChannelId = dgiot_parse_id:get_channelid(dgiot_utils:to_binary(?BRIDGE_CHL), <<"TD">>, <<"TD资源通道"/utf8>>),
     {Devicemap, ProductIds} = dgiot_product_csv:create_product(ChannelId, FileName, Productmap, TdChannelId),
@@ -100,7 +100,7 @@ create_device(FileName, Devicemap, ProductIds) ->
                 {ok, #{<<"ACL">> := Acl}} ->
                     Acl;
                 _ ->
-                    #{<<114, 111, 108, 101, 58, 229, 188, 128, 229, 143, 145, 232, 128, 133>> => #{<<"read">> => true, <<"write">> => true}}
+                    #{<<"role:开发者"/utf8>> => #{<<"read">> => true, <<"write">> => true}}
             end,
         lists:foldl(fun(Devaddr, _Acc1) ->
             dgiot_device:create_device(#{

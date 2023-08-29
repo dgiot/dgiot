@@ -131,7 +131,7 @@ do_request(post_bed, _Body, #{<<"sessionToken">> := SessionToken} = _Context, _R
 %% 请求:POST /iotapi/testpaper
 do_request(post_testpaper, #{<<"productid">> := Productid, <<"file">> := FileInfo},
     #{<<"sessionToken">> := _SessionToken} = _Context, _Req) ->
-    {ok, get_paper(Productid, FileInfo)};
+    {ok, dgiot_paper:get_paper(Productid, FileInfo)};
 
 %% evidence 概要: 增加取证报告模版 描述:新增取证报告模版
 %% OperationId:put_reporttemp
@@ -287,118 +287,6 @@ do_report(Config, DevType, Name, SessionToken, FullPath, Uri) ->
         _Oth ->
             _Oth
     end.
-
-get_paper(_ProductId, FileInfo) ->
-    Path = maps:get(<<"fullpath">>, FileInfo),
-    Fun = fun(Row) ->
-        Map = jiffy:encode(#{<<"1">> => dgiot_utils:to_binary(Row)}),
-        [V | _] = maps:values(jsx:decode(Map, [{labels, binary}, return_maps])),
-        V
-          end,
-    List = dgiot_utils:read(Path, Fun, []),
-%%    Title = lists:nth(1, List),
-%    DeviceId = dgiot_parse_id:get_deviceid(ProductId, dgiot_utils:to_md5(Title)),
-    Single = dgiot_utils:split_list(<<"一、单选题"/utf8>>, <<"二、多选题"/utf8>>, false, List, []),
-    Multiple = dgiot_utils:split_list(<<"二、多选题"/utf8>>, <<"三、判断题"/utf8>>, false, List, []),
-    Judge = dgiot_utils:split_list(<<"三、判断题"/utf8>>, <<"四、案例题"/utf8>>, false, List, []),
-    Cases = dgiot_utils:split_list(<<"四、案例题"/utf8>>, <<"四、案例题222"/utf8>>, false, List, []),
-    Cases1 = get_case(Cases, {<<"">>, []}, []),
-    {Single_question, _} = get_simple(Single, {[], #{}}),
-    {Multiple_question, _} = get_simple(Multiple, {[], #{}}),
-    {Judge_question, _} = get_simple(Judge, {[], #{}}),
-    Paper = Single_question ++ Multiple_question ++ Judge_question ++ Cases1,
-%    create_device(DeviceId, ProductId, Title, Paper),
-    #{
-        <<"paper">> => Paper
-    }.
-
-get_simple([], {Acc, Map}) ->
-    {Acc, Map};
-get_simple([Row | List], {Acc, Map}) ->
-    case Row of
-        <<"A."/utf8, _Result/binary>> ->
-            get_simple(List, {Acc, Map#{<<"A"/utf8>> => Row}});
-        <<"B."/utf8, _Result/binary>> ->
-            get_simple(List, {Acc, Map#{<<"B"/utf8>> => Row}});
-        <<"C."/utf8, _Result/binary>> ->
-            get_simple(List, {Acc, Map#{<<"C"/utf8>> => Row}});
-        <<"D."/utf8, _Result/binary>> ->
-            get_simple(List, {Acc, Map#{<<"D"/utf8>> => Row}});
-        <<"E."/utf8, _Result/binary>> ->
-            get_simple(List, {Acc, Map#{<<"E"/utf8>> => Row}});
-        <<"F."/utf8, _Result/binary>> ->
-            get_simple(List, {Acc, Map#{<<"F"/utf8>> => Row}});
-        <<"答案："/utf8, Result/binary>> ->
-            R1 = re:replace(Result, <<"\n">>, <<>>, [{return, binary}]),
-            R = re:replace(R1, <<" ">>, <<>>, [{return, binary}]),
-            get_simple(List, {Acc ++ [Map#{<<"Answer"/utf8>> => R}], #{}});
-        <<"答案:"/utf8, Result/binary>> ->
-            R1 = re:replace(Result, <<"\n">>, <<>>, [{return, binary}]),
-            R = re:replace(R1, <<" ">>, <<>>, [{return, binary}]),
-            get_simple(List, {Acc ++ [Map#{<<"Answer"/utf8>> => R}], #{}});
-        <<"\n"/utf8, _/binary>> ->
-            get_simple(List, {Acc, Map});
-        R when size(R) > 6 ->
-            get_simple(List, {Acc, Map#{<<"Question"/utf8>> => Row, <<"type">> => get_type(R)}});
-        _ ->
-            get_simple(List, {Acc, Map})
-    end.
-
-get_type(Question) ->
-%%    io:format("~ts", [unicode:characters_to_list(Question)]),
-    case re:run(Question, <<"判断"/utf8>>, [{capture, none}]) of
-        match ->
-            <<"判断题"/utf8>>;
-        _ ->
-            case re:run(Question, <<"多选"/utf8>>, [{capture, none}]) of
-                match ->
-                    <<"多选题"/utf8>>;
-                _ ->
-                    <<"单选题"/utf8>>
-            end
-    end.
-
-get_case([], {Title, Acc}, Result) ->
-    {Single_question, _} = get_simple(Acc, {[], #{}}),
-    Result ++ [#{<<"type">> => <<"材料题"/utf8>>, <<"Question"/utf8>> => Title, <<"questions"/utf8>> => Single_question}];
-get_case([Row | List], {Title, Acc}, Result) ->
-    case re:run(Row, <<"背景材料"/utf8>>, [{capture, none}]) of
-        match ->
-            case Title of
-                <<"">> ->
-                    get_case(List, {Row, Acc}, Result);
-                _ ->
-                    {Single_question, _} = get_simple(Acc, {[], #{}}),
-                    get_case(List, {Row, []}, Result ++ [#{<<"type">> => <<"材料题"/utf8>>, <<"Question"/utf8>> => Title, <<"questions"/utf8>> => Single_question}])
-            end;
-        _ ->
-            get_case(List, {Title, Acc ++ [Row]}, Result)
-    end.
-
-%%create_device(DeviceId, ProductId, Devaddr, Paper) ->
-%%    case dgiot_parse:get_object(<<"Product">>, ProductId) of
-%%        {ok, #{<<"ACL">> := Acl, <<"devType">> := DevType}} ->
-%%            case dgiot_parse:get_object(<<"Device">>, DeviceId) of
-%%                {ok, #{<<"devaddr">> := _GWAddr}} ->
-%%                    dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"basedata">> => #{<<"paper">> => Paper}, <<"status">> => <<"ONLINE">>});
-%%                _ ->
-%%                    dgiot_device:create_device(#{
-%%                        <<"devaddr">> => dgiot_utils:to_md5(Devaddr),
-%%                        <<"name">> => Devaddr,
-%%                        <<"isEnable">> => true,
-%%                        <<"product">> => ProductId,
-%%                        <<"ACL">> => Acl,
-%%                        <<"status">> => <<"ONLINE">>,
-%%                        <<"location">> => #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => 120.161324, <<"latitude">> => 30.262441},
-%%                        <<"brand">> => DevType,
-%%                        <<"devModel">> => DevType,
-%%                        <<"basedata">> =>  #{<<"paper">> => Paper}
-%%                    })
-%%            end;
-%%        Error2 ->
-%%            ?LOG(info, "Error2 ~p ", [Error2]),
-%%            pass
-%%    end.
 
 post_point(#{
     <<"reportid">> := ReportId,

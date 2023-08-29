@@ -86,11 +86,7 @@
     , hash_2/4
     , squotes_wrapped/1
     , round/2
-    , split_list/5
     , read/3
-    , read_from_csv/2
-    , save_csv_ets/2
-    , read_csv/3
     , rate/2
     , merge_maps/1
     , make_error_response/3
@@ -639,75 +635,6 @@ read_line(IoDevice, Fun, Acc) ->
             Acc;
         {error, _Reason} ->
             Acc
-    end.
-
-split_list(_Start, _End, _Flag, [], Result) ->
-    Result;
-split_list(Start, End, Flag, [Row | Acc], Result) ->
-    case re:run(Row, Start, [{capture, first, list}]) of
-        {match, [_]} ->
-            split_list(Start, End, true, Acc, Result);
-        _ ->
-            case re:run(Row, End, [{capture, first, list}]) of
-                {match, [_]} ->
-                    Result;
-                _ ->
-                    case Flag of
-                        true ->
-                            split_list(Start, End, Flag, Acc, Result ++ [Row]);
-                        _ ->
-                            split_list(Start, End, Flag, Acc, Result)
-                    end
-            end
-    end.
-
-read_from_csv(Path, Fun) ->
-    case file:open(Path, [read]) of
-        {ok, IoDevice} ->
-            R = read_csv(IoDevice, Fun, ","),
-            file:close(IoDevice),
-            R;
-        {error, Reason} ->
-            {error, Reason}
-    end.
-
-read_csv(IoDevice, Fun, Delimiter) ->
-    case file:read_line(IoDevice) of
-        {ok, Row} ->
-            Cols = [list_to_binary(Col) || Col <- string:tokens(lists:sublist(Row, 1, length(Row) - 1), Delimiter)],
-            Fun(Cols),
-            read_csv(IoDevice, Fun, Delimiter);
-        eof ->
-            {ok, read_complete};
-        {error, Reason} ->
-            ?LOG(error, "~p", [Reason])
-    end.
-
-save_csv_ets(Module, FilePath) ->
-    Url = "http://127.0.0.1:1250" ++ dgiot_utils:to_list(FilePath),
-    <<FileName:10/binary, _/binary>> = dgiot_utils:to_md5(FilePath),
-    {file, Here} = code:is_loaded(Module),
-    DownloadPath = dgiot_httpc:url_join([filename:dirname(filename:dirname(Here)), "/priv/csv/"]) ++ dgiot_utils:to_list(FileName) ++ ".csv",
-    os:cmd("rm -rf " ++ DownloadPath),
-    case dgiot_httpc:download(Url, DownloadPath) of
-        {ok, saved_to_file} ->
-            AtomName = dgiot_utils:to_atom(FileName),
-            dgiot_data:init(AtomName),
-            put(count, -1),
-            Fun = fun(X) ->
-                Count = get(count),
-                case Count > 0 of
-                    true ->
-                        dgiot_data:insert(AtomName, Count, X ++ [0]);
-                    _ ->
-                        pass
-                end,
-                put(count, Count + 1)
-                  end,
-            dgiot_utils:read_from_csv(DownloadPath, Fun),
-            FileName;
-        _ ->
-            FileName
     end.
 
 rate(_Success, 0) ->
