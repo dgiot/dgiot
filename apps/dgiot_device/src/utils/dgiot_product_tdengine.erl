@@ -168,8 +168,16 @@ get_keys(ProductId, Function, Keys) ->
         end
                 end, {[], get_defult(Function)}, List).
 
-check_field(_, V, #{<<"specs">> := #{<<"type">> := <<"day">>}}) ->
+%%    秒转换为分钟
+check_field(_, V, #{<<"specs">> := #{<<"type">> := <<"minutes">>}}) ->
+    dgiot_utils:to_float(V / 60, 2);
+
+%%    秒转换为小时
+check_field(_, V, #{<<"specs">> := #{<<"type">> := <<"hour">>}}) ->
+    dgiot_utils:to_float(V / (60 * 60), 2);
+
 %%    秒转换为天
+check_field(_, V, #{<<"specs">> := #{<<"type">> := <<"day">>}}) ->
     dgiot_utils:to_float(V / (60 * 60 * 24), 2);
 
 check_field(Typea, V, #{<<"specs">> := Specs}) when Typea == <<"enum">>; Typea == <<"bool">> ->

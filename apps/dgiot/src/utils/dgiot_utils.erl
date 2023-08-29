@@ -70,6 +70,7 @@
     , xor_sum/1
     , get_parity/1
     , crc16/1
+    , crc16_ccitt/1
     , crc16_h/1
     , add_33h/1
     , sub_33h/1
@@ -491,6 +492,40 @@ get_parity(Data) when is_list(Data) ->
         fun(X, Sum) ->
             ((X rem 256) + Sum) rem 256
         end, 0, Data).
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% @spec crc16_ccitt(Data::binary()) -> Result::integer()
+%% @doc Caclulate crc.
+%%  Name  : CRC-16 CCITT-FALSE
+%%  Poly  : 0x8408
+%%  Init  : 0xFFFF
+%%  Revert: false
+%%  XorOut: 0x0000
+%%  Check : 0x6F91 ("123456789")
+%%  MaxLen: 4095 bytes (32767 bits) - detection single, double, triple, and all odd errors
+%% @end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+-spec crc16_ccitt(Data :: binary()) -> integer().
+crc16_ccitt(Data) when is_binary(Data) ->
+    crc16_ccitt(binary_to_list(Data), 16#ffff).
+
+crc16_ccitt([], Crc) ->
+    <<A:8, B:8>> = <<Crc:16>>,
+    <<B:8, A:8>>;
+crc16_ccitt([Head | Tail], Crc) ->
+    NewCrc = Crc bxor ((Head bsl 8) band 16#ffff),
+    crc16_ccitt(Tail, crc16_ccitt_loop(8, NewCrc)).
+
+crc16_ccitt_loop(Count, Crc) when Count == 0 ->
+    Crc;
+crc16_ccitt_loop(Count, Crc) ->
+    NewCrc = ((Crc bsl 1) band 16#ffff),
+    case (Crc band 16#8000) of
+        0 ->
+            crc16_ccitt_loop(Count - 1, NewCrc);
+        _ ->
+            crc16_ccitt_loop(Count - 1, NewCrc bxor 16#1021)
+    end.
 
 %%    CRC-16/MODBUS 算法：
 %%    在CRC计算时只用8个数据位，起始位及停止位，如有奇偶校验位也包括奇偶校验位，都不参与CRC计算。
