@@ -85,7 +85,6 @@ create_iq60(MeterAddr, ChannelId, DTUIP, DtuAddr) ->
 parse_frame(?LOCATION, _Buff, _Opts) ->
     ok.
 
-
 % DLT376发送抄数指令
 to_frame(#{
     <<"devaddr">> := _Addr,
