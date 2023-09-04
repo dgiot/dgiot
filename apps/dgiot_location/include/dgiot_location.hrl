@@ -17,6 +17,7 @@
 
 -define(LOCATION, <<"LOCATION">>).
 
+-define(PHONE_CITYE, dgiot_phone_city).
 
 -record(state, {
     id,
