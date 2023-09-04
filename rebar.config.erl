@@ -230,6 +230,10 @@ overlay_vars_rel(RelType) ->
         , {enable_plugin_dgiot_factory, true}
         , {enable_plugin_dgiot_printer, true}
         , {enable_plugin_dgiot_location, true}
+        , {enable_plugin_dgiot_current, true}
+        , {enable_plugin_dgiot_workshop, true}
+        , {enable_plugin_dgiot_customer, true}
+        , {enable_plugin_dgiot_zhixin, true}
         , {vm_args_file, VmArgs}
     ].
 
@@ -352,6 +356,10 @@ relx_plugin_apps_per_rel(cloud) ->
         , dgiot_factory
         , dgiot_printer
         , dgiot_location
+        , dgiot_workshop
+        , dgiot_current
+        , dgiot_customer
+        , dgiot_zhixin
     ];
 relx_plugin_apps_per_rel(edge) ->
     [].
