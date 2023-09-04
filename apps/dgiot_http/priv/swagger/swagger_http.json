@@ -1036,6 +1036,51 @@
           "Notification"
         ]
       }
+    },
+    "/excel": {
+      "post": {
+        "summary": "上传excel",
+        "description": "上传excel到指定通道",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "id",
+            "type": "string",
+            "description": "通道id",
+            "required": true
+          },
+          {
+            "in": "body",
+            "name": "data",
+            "schema": {
+              "type": "object",
+              "properties": {
+              }
+            },
+            "description": "exel内容"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "302": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Data"
+        ]
+      }
     }
   }
 }

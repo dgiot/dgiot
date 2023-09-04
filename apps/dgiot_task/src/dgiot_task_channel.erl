@@ -146,7 +146,6 @@ handle_message(start_client, #state{id = ChannelId, products = Products} = State
         _ ->
             pass
     end,
-
     {ok, State};
 
 handle_message(stop_client, #state{id = ChannelId} = State) ->

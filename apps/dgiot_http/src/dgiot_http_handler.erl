@@ -360,6 +360,14 @@ do_request(post_verify_code_action, #{<<"account">> := Account, <<"code">> := Co
             {400, unicode:characters_to_binary(<<"验证码未通过！"/utf8>>)}
     end;
 
+%% System 概要: 验证手机号/邮箱是否通过 描述:验证手机号/邮箱是否通过
+%% OperationId:post_excel_id
+%% 请求:POST /iotapi/excel_id
+do_request(post_excel_id, #{<<"id">> := ChannelId, <<"data">> := Data} = _Args, Context, Req) ->
+    io:format("~s ~p ~p ~n",[?FILE, ?LINE, ChannelId]),
+    dgiot_channelx:do_message(ChannelId, {excel_data, Data, Context, Req}),
+    {ok, #{<<"id">> => ChannelId}};
+
 %%  服务器不支持的API接口
 do_request(_OperationId, _Args, _Context, _Req) ->
     io:format("~s ~p Q = ~p  ~n", [?FILE, ?LINE, _Args]),

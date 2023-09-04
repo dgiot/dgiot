@@ -826,8 +826,7 @@ create_user_for_app(App) ->
 %% 创建企业内部用户
 %%[{"X-Parse-Session-Token", Session}], [{from, rest}]
 create_user(#{<<"username">> := UserName, <<"department">> := RoleId} = Body, SessionToken) ->
-    case dgiot_parse:get_object(<<"_Role">>, RoleId,
-        [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+    case dgiot_parse:get_object(<<"_Role">>, RoleId, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
         {ok, #{<<"objectId">> := RoleId}} ->
             Query = #{
                 <<"order">> => <<"-updatedAt,-createdAt">>,
