@@ -63,4 +63,3 @@ start(Type) ->
 lookup(Type, Ip) ->
     AtomType = dgiot_utils:to_atom(string:to_lower(dgiot_utils:to_list(Type))),
     locus:lookup(AtomType, dgiot_utils:to_list(Ip)).
-
