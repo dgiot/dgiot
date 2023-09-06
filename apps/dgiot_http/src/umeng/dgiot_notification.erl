@@ -146,7 +146,7 @@ test_email() ->
         <<"from">> => <<"18257190166@163.com">>,
         <<"to">> => <<"344896904@qq.com">>,
         <<"subject">> => <<"测试邮件"/utf8>>,
-        <<"fromdes">> => <<"徐 <18257190166@163.com>"/utf8>>,
+        <<"fromdes">> => <<"刘 <18257190166@163.com>"/utf8>>,
         <<"todes">> => <<"刘 <344896904@qq.com>"/utf8>>,
         <<"data">> => <<"刘 中文测试 欢迎访问 https://github.com/dgiot "/utf8>>,
         <<"relay">> => <<"smtp.163.com">>,
