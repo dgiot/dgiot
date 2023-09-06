@@ -212,7 +212,7 @@ post_role(#{<<"tempname">> := TempName, <<"parent">> := Parent, <<"depname">> :=
                 <<"roles">> => [maps:get(<<"name">>, ParentInfo)]
             },
             create_role(Role);
-        {error, What} ->
+        {_, What} ->
             {error, What}
     end.
 
@@ -237,7 +237,7 @@ create_role(#{<<"name">> := Name} = Role) ->
                     {error, Reason}
             end;
         {ok, #{<<"objectId">> := RoleId}} ->
-            {error, #{<<"msg">> => <<"role is exist">>}}
+            {error, #{<<"objectId">> => RoleId, <<"msg">> => <<"role is exist">>}}
     end.
 
 put_role(#{<<"objectId">> := RoleId} = Role, SessionToken) ->

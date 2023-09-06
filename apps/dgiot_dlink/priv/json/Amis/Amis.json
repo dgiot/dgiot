@@ -393,7 +393,6 @@
       ],
       "type": "tabs",
       "mountOnEnter": true
-    },
-    {}
+    }
   ]
 }
