@@ -415,7 +415,7 @@ get_roleuser(Filter, SessionToken) ->
                                 case dgiot_parse:query_object(<<"_Role">>, Query) of
                                     {ok, #{<<"results">> := UserRoles}} ->
                                         lists:foldl(fun(UserRole, Acc3) ->
-                                            Acc3 ++ [maps:with([<<"org_type">>, <<"tag">>, <<"depname">>], UserRole)]
+                                            Acc3 ++ [maps:with([<<"objectId">>, <<"org_type">>, <<"tag">>, <<"depname">>], UserRole)]
                                                     end, [], UserRoles);
                                     _ ->
                                         []
