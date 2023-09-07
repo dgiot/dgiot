@@ -1179,18 +1179,18 @@ function make_ssl() {
 }
 
 function install_node() {
-  if [ ! -d ${script_dir}/node-v16.5.0-linux-x64/bin/ ]; then
-      if [ ! -f ${script_dir}/node-v16.5.0-linux-x64.tar.gz ]; then
-        wget https://dgiotdev-1308220533.cos.ap-nanjing.myqcloud.com/node-v16.5.0-linux-x64.tar.gz &>/dev/null
-        tar xvf node-v16.5.0-linux-x64.tar.gz &>/dev/null
+  if [ ! -d ${script_dir}/node-v16.15.1-linux-x64/bin/ ]; then
+      if [ ! -f ${script_dir}/node-v16.15.1-linux-x64.tar.xz ]; then
+        wget https://dgiot-release-1306147891.cos.ap-nanjing.myqcloud.com/v4.4.0/node-v16.15.1-linux-x64.tar.xz &>/dev/null
+        tar xvf node-v16.15.1-linux-x64.tar.xz &>/dev/null
         if [ ! -f usr/bin/node ]; then
           rm /usr/bin/node -rf
         fi
         rm /usr/bin/npm -rf
         rm /usr/bin/node -rf
         rm /usr/bin/yarn -rf
-        ln -s ${script_dir}/node-v16.5.0-linux-x64/bin/node /usr/bin/node
-        ln -s ${script_dir}/node-v16.5.0-linux-x64/bin/yarn /usr/bin/yarn
+        ln -s ${script_dir}/node-v16.15.1-linux-x64/bin/node /usr/bin/node
+        ln -s ${script_dir}/node-v16.15.1-linux-x64/bin/yarn /usr/bin/yarn
         sudo /bin/dd if=/dev/zero of=/var/swap.1 bs=1M count=1024
         sudo /sbin/mkswap /var/swap.1
         sudo /sbin/swapon /var/swap.1
@@ -1208,10 +1208,10 @@ function build_iotView() {
   git reset --hard
   git pull
 
-  export PATH=$PATH:/usr/local/bin:${script_dir}/node-v16.5.0-linux-x64/bin/
+  export PATH=$PATH:/usr/local/bin:${script_dir}/node-v16.15.1-linux-x64/bin/
   rm ${script_dir}/iotView/dist/ -rf
-  ${script_dir}/node-v16.5.0-linux-x64/bin/npm install
-  ${script_dir}/node-v16.5.0-linux-x64/bin/npm run build:prod
+  ${script_dir}/node-v16.15.1-linux-x64/bin/npm install
+  ${script_dir}/node-v16.15.1-linux-x64/bin/npm run build:prod
   echo "build_iotView "
 }
 
@@ -1225,10 +1225,10 @@ function build_iotEdit() {
   git reset --hard
   git pull
 
-  export PATH=$PATH:/usr/local/bin:${script_dir}/node-v16.5.0-linux-x64/bin/
+  export PATH=$PATH:/usr/local/bin:${script_dir}/node-v16.15.1-linux-x64/bin/
   rm ${script_dir}/iotEdit/dist/ -rf
-  ${script_dir}/node-v16.5.0-linux-x64/bin/yarn install
-   ${script_dir}/node-v16.5.0-linux-x64/bin/yarn build
+  ${script_dir}/node-v16.15.1-linux-x64/bin/yarn install
+   ${script_dir}/node-v16.15.1-linux-x64/bin/yarn build
   echo "build_iotEdit"
 }
 

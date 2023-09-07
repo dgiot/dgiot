@@ -73,7 +73,7 @@ wget -qO dgiot_install.sh https://gitee.com/dgiiot/dgiot/raw/master/dgiot_instal
 | 行业运营平台  | 一年 | 面谈 | 7 X 24 小时VIP服务 |
 
 ## 构建
-构建 *dgiot* 需要 Erlang/OTP R23+, Windows下用 [开发环境包](https://prod.dgiotcloud.cn/msys64.zip)开发。下载后解压到D盘根目录，严格按照下图操作：
+构建 *dgiot* 需要 Erlang/OTP R23+, Windows下用 [开发环境包](https://dgiotdev-1308220533.cos.ap-nanjing.myqcloud.com/msys64.zip)开发。下载后解压到D盘根目录，严格按照下图操作：
 ![dgiotdevtools.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/dgiotdevtools.png)
 +  国外下载源码
 ```bash
