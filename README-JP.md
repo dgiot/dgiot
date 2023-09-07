@@ -25,7 +25,7 @@
 
 # Building
 
- Bulid *DGIOT* Need Erlang/OTP R24+, [linux](https://github.com/erlang/otp/releases/download/OTP-24.3.4.2/otp_src_24.3.4.2.tar.gz) Windows download [msys64](https://prod.dgiotcloud.cn/msys64.zip),ダウンロード後、ディスクDのルートディレクトリに解凍し、次の図に従って厳密に操作してください。
+ Bulid *DGIOT* Need Erlang/OTP R24+, [linux](https://github.com/erlang/otp/releases/download/OTP-24.3.4.2/otp_src_24.3.4.2.tar.gz) Windows download [msys64](https://dgiotdev-1308220533.cos.ap-nanjing.myqcloud.com/msys64.zip),ダウンロード後、ディスクDのルートディレクトリに解凍し、次の図に従って厳密に操作してください。
 ![dgiotdevtools.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/dgiotdevtools.png)
 
  +  海外でソースコードをダウンロードする

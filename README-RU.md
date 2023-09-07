@@ -26,7 +26,7 @@
 
 # Строительство
 
-  Bulid * DGIOT * Требуется Erlang/OTP R24+, [linux](https://github.com/erlang/otp/releases/download/OTP-24.3.4.2/otp_src_24.3.4.2.tar.gz) загрузка Windows [msys64](https://prod.dgiotcloud.cn/msys64.zip), После загрузки распакуйте его в корневой каталог диска D, и работайте строго в соответствии со следующим рисунком ：
+  Bulid * DGIOT * Требуется Erlang/OTP R24+, [linux](https://github.com/erlang/otp/releases/download/OTP-24.3.4.2/otp_src_24.3.4.2.tar.gz) загрузка Windows [msys64](https://dgiotdev-1308220533.cos.ap-nanjing.myqcloud.com/msys64.zip), После загрузки распакуйте его в корневой каталог диска D, и работайте строго в соответствии со следующим рисунком ：
 ![dgiotdevtools.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/dgiotdevtools.png)
 
 + Скачать исходный код за границу
