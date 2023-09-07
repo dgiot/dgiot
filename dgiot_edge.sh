@@ -1232,7 +1232,7 @@ function install_node() {
         echo -e "`date +%F_%T` $LINENO: ${GREEN}  ${script_dir}/node-v16.15.1-linux-x64/bin/node/ ${NC}"
       else
         rm  ${script_dir}/node-v16.15.1-linux-x64.tar.xz  -rf
-        wget https://dgiotdev-1308220533.cos.ap-nanjing.myqcloud.com/node-v16.15.1-linux-x64.tar.xz &> /dev/null
+        wget https://dgiot-release-1306147891.cos.ap-nanjing.myqcloud.com/v4.4.0/node-v16.15.1-linux-x64.tar.xz &> /dev/null
         tar xvf node-v16.15.1-linux-x64.tar.xz &> /dev/null
       if [ -f /usr/bin/node ]; then
           rm /usr/bin/node -rf
