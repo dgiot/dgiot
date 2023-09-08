@@ -205,12 +205,14 @@ do_request(get_thingecho, _Args, _Context, _Req) ->
 
 
 do_request(post_cookie, #{<<"UserSession">> := UserSession, <<"cookie">> := Cookie} = _Args, _Context, _Req) ->
+    io:format("~s ~p ~p ~n",[?FILE, ?LINE,Cookie]),
     case dgiot_parse_auth:put_cookie(UserSession, Cookie) of
         true ->
-            {ok, <<"success">>};
+            {ok, #{<<"result">> => <<"success">>}};
         _ ->
-            {500, <<"save_cookie_failed">>}
+            {500, #{<<"result">> => <<"save_cookie_failed">>}}
     end;
 
 do_request(_OperationId, _Args, _Context, _Req) ->
+    io:format("~s ~p ~p ~n",[?FILE, ?LINE,_OperationId]),
     {error, <<"Not Allowed.">>}.

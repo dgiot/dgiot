@@ -172,7 +172,7 @@ scan_ipc(#{
     <<"IPCTYPE">> := _IPCTYPE,
     <<"ACL">> := _Acl}) ->
     ok.
-%%    Thing = dgiot_license:load_config(?MODULE, "ffmpeg_thing"),
+%%    Thing = dgiot_utils:load_config(?MODULE, "ffmpeg_thing"),
 %%    Topo = dgiot_license:load_config(?MODULE, "ffmpeg_topo"),
 %%    windows_capture:update_config(#{
 %%        <<"name">> => <<IPCMAC/binary>>,
