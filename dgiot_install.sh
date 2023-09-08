@@ -1546,13 +1546,13 @@ dgiot_shell
 deployType=single                           # [single | cluster | devops | ci]
 domain_name="prod.dgiotcloud.cn"            # [prod.dgiotcloud.cn | your_domain_name]
 plugin="dgiot"                              # [dgiot | dgiot_your_plugin]
-software="dgiot_b25"                        # [dgiot_b20| dgiot_n]
-dgiotmd5="c0e848de09319194db5ccdf4b031fa23" # [dgiotmd5]
+software="dgiot_b27"                        # [dgiot_b20| dgiot_n]
+dgiotmd5="63a6b0fec32c7be12e25b46274814694" # [dgiotmd5]
 pg_eip="changeyourip"                       # [datanode_eip]
 pg_auth='changeyourpassword'                # [pg_auth]
 islanip="false"                             # [islanip]
-html_software="dgiot_html_4.8.4"            # [dgiot_html_4.8.2| dgiot_html_n]
-htmlmd5="87236771fa53b6dbeaf1e07eb86eb789"  # [htmlmd5]
+html_software="dgiot_html_4.8.5"            # [dgiot_html_4.8.2| dgiot_html_n]
+htmlmd5="0bd179653d25f1b48a0b09eeecce0170"  # [htmlmd5]
 
 while getopts "v:s:p:m:d:e:a:n:" arg; do
   case $arg in
@@ -1614,6 +1614,7 @@ echo -e "$(date +%F_%T) $LINENO: ${BLUE} parse_info: http://${wlanip}:1337/dashb
 echo -e "$(date +%F_%T) $LINENO: ${BLUE} parse_info: username=${parse_user} password=${parse_pwd} ${NC}"
 echo -e "$(date +%F_%T) $LINENO: ${BLUE} dashboard: http://${wlanip}/ ${NC}"
 echo -e "$(date +%F_%T) $LINENO: ${BLUE} dashboard: username=dgiot_dev password=dgiot_dev ${NC}"
+echo -e "$(date +%F_%T) $LINENO: ${BLUE} software: ${software}  ${html_software} ${NC}"
 
 
 
