@@ -16,7 +16,7 @@
 -author("johnliu").
 -include_lib("dgiot/include/logger.hrl").
 
--export([docroot/0, get_topo/2, send_konva/3, send_realtime_card/3, get_name/3, put_topo/2, push/4, send_topo/2, get_que/1, get_konva/1]).
+-export([docroot/0, get_topo/2, send_konva/3, send_realtime_card/3, get_name/3, put_topo/2, push/4, send_topo/2, get_que/1, get_konva/1, send_amisdata/1]).
 
 docroot() ->
     {file, Here} = code:is_loaded(?MODULE),
@@ -93,6 +93,48 @@ send_topo({NodeType, NodeId}, Token) ->
         _ ->
             pass
     end.
+
+%% dgiot_topo:send_amisdata(#{<<"dashboardId">> => <<"599080d6d5">>, <<"sessionToken">> => <<"r:93a396474043d106b40557ff3ff6a3cf">>})
+send_amisdata(#{<<"dashboardId">> := DashboardId, <<"sessionToken">> := Token}) ->
+    {ViewIds, AmisDatas} =
+        case dgiot_parse:get_object(<<"View">>, DashboardId) of
+            {ok, #{<<"data">> := #{<<"konva">> := #{<<"Stage">> := Stage}}}} ->
+                Rects = dgiot_product_knova:get_nodes(Stage, [<<"Rect">>, <<"Image">>, <<"Text">>]),
+                maps:fold(
+                    fun
+                        (_, #{<<"source">> := <<"mqtt">>, <<"type">> := <<"amisview">>, <<"amisid">> := Viewid} = AmisData, {Idd, Acc}) ->
+                            {Idd ++ [Viewid], Acc ++ [AmisData]};
+                        (_, _, {Idd, Acc}) ->
+                            {Idd, Acc}
+                    end, {[], []}, Rects);
+            _ ->
+                {[], []}
+        end,
+    ViewDatas =
+        case dgiot_parse:query_object(<<"View">>, #{<<"where">> => #{<<"objectId">> => #{<<"$in">> => ViewIds}}}) of
+            {ok, #{<<"results">> := Views}} ->
+                lists:foldl(fun(#{<<"objectId">> := ViewId, <<"data">> := Data}, Acc) ->
+                    Acc#{ViewId => Data}
+                            end, #{}, Views);
+            _ ->
+                #{}
+        end,
+    Payload =
+        lists:foldl(fun(#{<<"amisid">> := ViewId} = AmisData, Acc) ->
+            case maps:find(ViewId, ViewDatas) of
+                {ok, ViewData} ->
+                    Screen_productid = maps:get(<<"screen_productid">>, AmisData, <<>>),
+                    Screen_deviceid = maps:get(<<"screen_deviceid">>, AmisData, <<>>),
+                    Rep = re:replace(jsx:encode(ViewData), <<"{{screen_productid}}">>, Screen_productid, [global, {return, binary}]),
+                    NewJson = re:replace(Rep, <<"{{screen_deviceid}}">>, Screen_deviceid, [global, {return, binary}]),
+                    Acc ++ [AmisData#{<<"viewData">> => jsx:decode(NewJson)}];
+                _ ->
+                    Acc
+            end
+                    end, [], AmisDatas),
+    Base64 = base64:encode(jsx:encode(Payload)),
+    Pubtopic = <<"$dg/user/topo/", Token/binary, "/amisdata/report">>,
+    dgiot_mqtt:publish(self(), Pubtopic, Base64).
 
 get_que(DashboardId) ->
     case dgiot_parse:get_object(<<"View">>, DashboardId) of
