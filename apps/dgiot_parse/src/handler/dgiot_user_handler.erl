@@ -227,7 +227,6 @@ do_request(get_roleuser, #{<<"where">> := Where} = Filter, #{<<"sessionToken">> 
             undefined ->
                 <<"{}">>;
             V ->
-                io:format("~s ~p V ~p ~n",[?FILE, ?LINE, V]),
                 V
         end,
     dgiot_parse_auth:get_roleuser(Filter#{<<"where">> => jsx:decode(Where, [return_maps]), <<"userfilter">> => jsx:decode(UserFilter, [return_maps])}, SessionToken);
