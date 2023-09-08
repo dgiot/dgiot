@@ -415,7 +415,7 @@ get_roleuser(Filter, SessionToken) ->
                                 case dgiot_parse:query_object(<<"_Role">>, Query) of
                                     {ok, #{<<"results">> := UserRoles}} ->
                                         lists:foldl(fun(UserRole, Acc3) ->
-                                            Acc3 ++ [maps:with([<<"org_type">>, <<"tag">>, <<"depname">>], UserRole)]
+                                            Acc3 ++ [maps:with([<<"objectId">>, <<"org_type">>, <<"tag">>, <<"depname">>], UserRole)]
                                                     end, [], UserRoles);
                                     _ ->
                                         []
@@ -826,8 +826,7 @@ create_user_for_app(App) ->
 %% 创建企业内部用户
 %%[{"X-Parse-Session-Token", Session}], [{from, rest}]
 create_user(#{<<"username">> := UserName, <<"department">> := RoleId} = Body, SessionToken) ->
-    case dgiot_parse:get_object(<<"_Role">>, RoleId,
-        [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+    case dgiot_parse:get_object(<<"_Role">>, RoleId, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
         {ok, #{<<"objectId">> := RoleId}} ->
             Query = #{
                 <<"order">> => <<"-updatedAt,-createdAt">>,
