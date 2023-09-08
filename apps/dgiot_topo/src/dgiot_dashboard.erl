@@ -23,6 +23,11 @@ post_dashboard(#{<<"dashboardId">> := DashboardId} = Args, #{<<"sessionToken">> 
     dgiot_mqtt:subscribe_route_key([<<"$dg/user/topo/", SessionToken/binary, "/#">>], <<"topo">>, SessionToken),
     dgiot_mqtt:subscribe_route_key([<<"$dg/user/dashboard/#">>], <<"dashboard">>, SessionToken),
     dgiot_mqtt:publish(DashboardId, <<"dashboard_task/", DashboardId/binary>>, jsx:encode(NewArgs)),
+%%    发送amisdata
+    spawn(
+        fun() ->
+            dgiot_topo:send_amisdata(NewArgs)
+        end),
     #{};
 
 post_dashboard(_Args, _Context) ->

@@ -402,7 +402,7 @@ get_attrs(#{<<"id">> := Id} = Attrs, ClassName, ClassNames, Acc) ->
         false ->
             Acc;
         _ ->
-            Acc#{Id => maps:without([<<"id">>], Attrs)}
+            Acc#{Id => Attrs}
     end;
 get_attrs(_Attrs, _ClassName, _ClassNames, Acc) ->
     Acc.
