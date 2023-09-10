@@ -16,59 +16,158 @@
 -module(dgiot_ws_h).
 -include_lib("dgiot/include/dgiot_socket.hrl").
 -include_lib("dgiot/include/logger.hrl").
--export([init/2]).
--export([websocket_init/1]).
--export([websocket_handle/2]).
--export([websocket_info/2]).
--export([terminate/3]).
+-export([
+    init/2,
+    websocket_init/1,
+    websocket_handle/2,
+    websocket_info/2,
+    terminate/3
+]).
 -export([run_hook/2]).
 
-
-%%GET /websocket/test HTTP/1.1
-%%Host: 127.0.0.1:9082
-%%Connection: Upgrade
-%%Pragma: no-cache
-%%Cache-Control: no-cache
-%%User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36
-%%Upgrade: websocket
-%%Origin: http://127.0.0.1:3080
-%%Sec-WebSocket-Version: 13
-%%Accept-Encoding: gzip, deflate, br
-%%Accept-Language: zh-CN,zh;q=0.9
-%%Sec-WebSocket-Key: D7JD3d7II0KEJKvb4qCXcQ==
-%%Sec-WebSocket-Extensions: permessage-deflate; client_max_window_bits
-%%Sec-WebSocket-Protocol: null
-
-init(Req0, Opts) ->
-    case cowboy_websocket:is_upgrade_request(Req0) of
-        true ->
-            io:format("~s ~p ~p ~n", [?FILE, ?LINE, <<"1">>]),
-            cowboy_req:headers(Req0),
-            cowboy_websocket:upgrade(Req0, Opts, cowboy_websocket, #{});
-        _ ->
-            io:format("~s ~p ~p ~n", [?FILE, ?LINE, <<"2">>]),
-            {cowboy_websocket, Req0, Opts}
-    end.
-
-websocket_init([Req, Opts]) ->
+%%%%GET /websocket/test HTTP/1.1
+%%%%Host: 127.0.0.1:9082
+%%%%Connection: Upgrade
+%%%%Pragma: no-cache
+%%%%Cache-Control: no-cache
+%%%%User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36
+%%%%Upgrade: websocket
+%%%%Origin: http://127.0.0.1:3080
+%%%%Sec-WebSocket-Version: 13
+%%%%Accept-Encoding: gzip, deflate, br
+%%%%Accept-Language: zh-CN,zh;q=0.9
+%%%%Sec-WebSocket-Key: D7JD3d7II0KEJKvb4qCXcQ==
+%%%%Sec-WebSocket-Extensions: permessage-deflate; client_max_window_bits
+%%%%Sec-WebSocket-Protocol: null
+%%
+init(Req, State) ->
     Path = cowboy_req:path(Req),
     add_hook(Path),
-    erlang:start_timer(1000, self(), <<"Hello!">>),
-    {[], Opts}.
+%%    check_update(Req, State),
+    {cowboy_websocket, Req, State}.  %Perform websocket setup
 
+
+websocket_init(State) ->
+    io:format("~s ~p State ~p ~n", [?FILE, ?LINE, State]),
+    {ok, State}.
+
+websocket_handle(ping, State) ->
+    io:format("~s ~p ~p ~p ~p ~n", [?FILE, ?LINE, ping, cowboy_clock:rfc1123(), State]),
+    case maps:find(error, State) of
+        {ok, _Code} ->
+            {stop, State};
+        error ->
+            {reply, pong, State, hibernate}
+    end;
+websocket_handle({text, <<"ping">>}, State) ->
+    io:format("~s ~p ~p ~p ~p ~n", [?FILE, ?LINE, <<"ping">>, cowboy_clock:rfc1123(), State]),
+    case maps:find(error, State) of
+        {ok, _Code} ->
+            {stop, State};
+        error ->
+            {reply, {text, <<"pong2">>}, State, hibernate}
+    end;
 websocket_handle({text, Msg}, State) ->
-    {[{text, <<"That's what she said! ", Msg/binary>>}], State};
+    io:format("~s ~p Msg ~p ~n", [?FILE, ?LINE, Msg]),
+    case dgiot_json:safe_decode(dgiot_utils:to_binary(Msg), [return_maps]) of
+        {ok,#{<<"name">> := _Name} = Json} ->
+            io:format("~s ~p ~p ~n",[?FILE,?LINE, Json]),
+            {[{text, dgiot_json:encode(#{<<"name">> => <<"dgiotgood">>})}], State};
+        _ ->
+            {[{text, dgiot_json:encode(#{<<"name">> => <<"dgiotbad">>})}], State}
+    end;
+
 websocket_handle(_Data, State) ->
+    io:format("~s ~p _Data ~p ~n", [?FILE, ?LINE, _Data]),
     {[], State}.
 
 websocket_info({timeout, _Ref, Msg}, State) ->
-%%    erlang:start_timer(1000, self(), <<"How' you doin'?">>),
-    {[{text, Msg}], State};
+    io:format("~s ~p  ~p ~p ~p ~p ~p  ~n", [?FILE, ?LINE, timeout, cowboy_clock:rfc1123(), _Ref, Msg, State]),
+    {reply, {text, Msg}, State, hibernate};
+websocket_info({close, CloseCode, Reason}, State) ->
+    io:format("~s ~p  ~p ~p ~p ~p  ~n", [?FILE, ?LINE,close, CloseCode, Reason, State]),
+    {reply, {close, CloseCode, Reason}, State};
+websocket_info(stop, State) ->
+%%    ?LOG([stop, State]),
+    {stop, State};
 websocket_info({http2ws, Data}, State) ->
     io:format("~s ~p ~p ~n", [?FILE, ?LINE, byte_size(Data)]),
     {[{binary, Data}], State};
 websocket_info(_Info, State) ->
     {[], State}.
+
+
+%% 断开socket onclose
+%% Rename websocket_terminate/3 to terminate/3
+%% link: https://github.com/ninenines/cowboy/issues/787
+terminate(Reason, _Req, State) ->
+    io:format("~s ~p ~p ~p ~p ~n", [?FILE, ?LINE, cowboy_clock:rfc1123(), State, Reason]),
+    ok.
+
+%%init(Req0, State0) ->
+%%    DID = cowboy_req:header(<<"did">>, Req0, undefined),
+%%    DType = cowboy_req:header(<<"cos">>, Req0, undefined),
+%%%%    Auth = cowboy_req:header(<<"authorization">>, Req0, undefined),
+%%    % [<<"sip">>,<<"text">>] = Subprotocols
+%%%%    SubPt = cowboy_req:parse_header(<<"sec-websocket-protocol">>, Req0),
+%%    Opt0 = #{
+%%        num_acceptors => infinity,
+%%        max_connections => infinity,
+%%        max_frame_size => 1048576,  % 1MB
+%%        % Cowboy关闭连接空闲120秒 默认值为 60000
+%%        idle_timeout => 120000
+%%    },
+%%    case cowboy_websocket:is_upgrade_request(Req0) of
+%%        true ->
+%%            cowboy_req:headers(Req0),
+%%            cowboy_websocket:upgrade(Req0, State0, cowboy_websocket, Opt0);
+%%        _ ->
+%%            pass
+%%    end,
+%%    State1 = State0#{
+%%        dtype => DType,
+%%        did => DID
+%%    },
+%%    Req1 = cowboy_req:reply(412, Req0),
+%%    case throttle:check(throttle_ws, DID) of
+%%        {limit_exceeded, _, _} ->
+%%            % 429 Too Many Requests
+%%            Req = cowboy_req:reply(429, Req0),
+%%            {ok, Req, State0};
+%%        _ ->
+%%%%            % ?LOG([SubPt]),
+%%%%            case websocket_ds:check_subprotocols(SubPt, Req0) of
+%%%%                {ok, Req1} ->
+%%                    {ok, Req1, State1}
+%%%%                {cowboy_websocket, Req1} ->
+%%%%                    % ?LOG([State1]),
+%%%%                    websocket_ds:auth(Auth, Req1, State1, Opt0)
+%%%%            end
+%%    end.
+
+%%websocket_init([Req, Opts]) ->
+%%    io:format("~s ~p 22 ~p ~n", [?FILE, ?LINE, Req]),
+%%    Path = cowboy_req:path(Req),
+%%    add_hook(Path),
+%%    erlang:start_timer(1000, self(), <<"Hello!">>),
+%%    {[], Opts}.
+%%
+
+run_hook(Key, Data) ->
+    case dgiot_data:get({http2ws, Key}) of
+        not_find ->
+            pass;
+        Pids ->
+            lists:map(fun(Pid) ->
+                case is_process_alive(Pid) of
+                    true ->
+                        Pid ! {http2ws, Data};
+                    _ ->
+                        pass
+                end
+                      end, Pids)
+    end.
+
 
 add_hook(Path) ->
     case re:split(Path, <<"/">>) of
@@ -93,24 +192,7 @@ add_hook(Path) ->
             pass
     end.
 
-terminate(_Reason, _Req, _UnExpectedState) ->
-    ok.
-
-run_hook(Key, Data) ->
-    case dgiot_data:get({http2ws, Key}) of
-        not_find ->
-            pass;
-        Pids ->
-            lists:map(fun(Pid) ->
-                case is_process_alive(Pid) of
-                    true ->
-                        Pid ! {http2ws, Data};
-                    _ ->
-                        pass
-                end
-                      end, Pids)
-    end.
-
+%%
 %%check_update(Req0, Opts) ->
 %%    case cowboy_websocket:is_upgrade_request(Req0) of
 %%        true ->
@@ -121,6 +203,7 @@ run_hook(Key, Data) ->
 %%            io:format("~s ~p ~p ~n", [?FILE, ?LINE, <<"2">>]),
 %%            {cowboy_websocket, Req0, Opts}
 %%    end.
+
 %%handshake(Data) ->
 %%Key = list_to_binary(lists:last(string:tokens(hd(lists:filter(fun(S) -> lists:prefix("Sec-WebSocket-Key:", S) end, string:tokens(Data, "\r\n"))), ": "))),
 %%Challenge = base64:encode(crypto:sha(<< Key/binary, "258EAFA5-E914-47DA-95CA-C5AB0DC85B11" >>)),

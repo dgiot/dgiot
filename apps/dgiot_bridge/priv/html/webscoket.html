@@ -1,0 +1,46 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <script type="text/javascript">
+        var ws = new Object;
+
+        function send() {
+            ws.send("hi, cowboy websocket by cheungmine!");
+            console.log('sent');
+        }
+
+        function open() {
+            if (!("WebSocket" in window)) {
+                alert("WebSocket NOT supported by your Browser!");
+                return;
+            }
+
+            console.log('open');
+            ws = new WebSocket("ws://127.0.0.1:8777/websocket");
+            ws.onopen = function() {
+                console.log('connected');
+            };
+
+            ws.onmessage = function (evt) {
+                var received_msg = evt.data;
+                console.log("Received: " + received_msg);
+                var txt = document.createTextNode("Got from server: " + received_msg);
+                document.getElementById('messages').appendChild(txt);
+            };
+
+            ws.onclose = function() {
+                // websocket is closed.
+                console.log('close');
+            };
+        }
+    </script>
+</head>
+<body>
+<div id="sse">
+    <a href="javascript:open()">Press Me to Open WebSocket</a><br/>
+    <a href="javascript:send()">Press Me to Send hi Message</a>
+</div>
+<div id="messages">
+</div>
+</body>
+</html>
