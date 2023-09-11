@@ -904,32 +904,37 @@ delete_user(#{<<"username">> := UserName, <<"department">> := RoleId}, _SessionT
 %% 查询企业内部用户
 %%[{"X-Parse-Session-Token", Session}], [{from, rest}]
 get_user(#{<<"id">> := UserId}, SessionToken) ->
-    case dgiot_auth:get_session(dgiot_utils:to_binary(SessionToken)) of
-        #{<<"roles">> := Roles} ->
-            R =
-                maps:fold(fun(RoleId, _, _) ->
-                    ChildRoleIds = dgiot_role:get_childrole(RoleId),
-                    lists:foldl(fun(ChildRoleId, Acc) ->
-                        UsersQuery = #{<<"where">> => #{
-                            <<"objectId">> => UserId,
-                            <<"$relatedTo">> => #{
-                                <<"key">> => <<"users">>,
-                                <<"object">> => #{
-                                    <<"__type">> => <<"Pointer">>,
-                                    <<"className">> => <<"_Role">>,
-                                    <<"objectId">> => ChildRoleId}}}},
-                        case dgiot_parse:query_object(<<"_User">>, UsersQuery) of
-                            {ok, #{<<"results">> := Results}} ->
-                                Acc ++ Results;
-                            _ ->
-                                Acc
-                        end
-                                end, [], ChildRoleIds)
-                          end, #{}, Roles),
-            {ok, #{<<"data">> => R, <<"msg">> => <<"success">>, <<"status">> => 0}};
+    case dgiot_parse:get_object(<<"_User">>, UserId, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+        {ok, _} ->
+            case dgiot_auth:get_session(dgiot_utils:to_binary(SessionToken)) of
+                #{<<"roles">> := Roles} ->
+                    R =
+                        maps:fold(fun(RoleId, _, _) ->
+                            ChildRoleIds = dgiot_role:get_childrole(RoleId),
+                            lists:foldl(fun(ChildRoleId, Acc) ->
+                                UsersQuery = #{<<"where">> => #{
+                                    <<"objectId">> => UserId,
+                                    <<"$relatedTo">> => #{
+                                        <<"key">> => <<"users">>,
+                                        <<"object">> => #{
+                                            <<"__type">> => <<"Pointer">>,
+                                            <<"className">> => <<"_Role">>,
+                                            <<"objectId">> => ChildRoleId}}}},
+                                case dgiot_parse:query_object(<<"_User">>, UsersQuery) of
+                                    {ok, #{<<"results">> := Results}} ->
+                                        Acc ++ Results;
+                                    _ ->
+                                        Acc
+                                end
+                                        end, [], ChildRoleIds)
+                                  end, #{}, Roles),
+                    {ok, #{<<"data">> => R, <<"msg">> => <<"success">>, <<"status">> => 0}};
+                _ ->
+                    {ok, #{<<"msg">> => <<"token fail">>}}
+            end;
         _ ->
             {ok, #{<<"msg">> => <<"token fail">>}}
-    end.
+end.
 
 %% 修改企业内部用户
 %%[{"X-Parse-Session-Token", Session}], [{from, rest}]
