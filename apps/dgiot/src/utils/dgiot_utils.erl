@@ -65,6 +65,7 @@
     , binary_bits_zip/1
     , zip_bin/1
     , is_in_binary/2
+    , binary_start_with/2
     , is_number/1
     , modbus_crc16/1
     , xor_sum/1
@@ -463,6 +464,14 @@ is_in_binary(Partten, Binary) ->
     case binary:match(Binary, Partten) of
         nomatch -> false;
         _ -> true
+    end.
+
+binary_start_with(_Binary, <<>>) ->
+    true;
+binary_start_with(Binary, Partten) ->
+    case binary:match(Binary, Partten) of
+        {0, _} -> true;
+        _ -> false
     end.
 
 

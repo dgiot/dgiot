@@ -153,11 +153,11 @@ delete({'after', Data}) ->
 %%excludeKeys	Exclude specific fields from the returned query
 %%include	Use on Pointer columns to return the full object
 %%*/
-format(#{<<"orderBy">> := OrderBy} = Data) when byte_size(OrderBy) >0->
+format(#{<<"orderBy">> := OrderBy} = Data) when byte_size(OrderBy) > 0 ->
     NewData = maps:without([<<"orderBy">>], Data),
     format(NewData#{<<"order">> => [OrderBy]});
 
-format(#{<<"order">> := [Order | _], <<"orderDir">> := OrderDir} = Data) when byte_size(Order) >0 ->
+format(#{<<"order">> := [Order | _], <<"orderDir">> := OrderDir} = Data) when byte_size(Order) > 0 ->
     NewData = maps:without([<<"orderDir">>], Data),
     NewOrder =
         case OrderDir of
@@ -188,7 +188,7 @@ format(OldData) ->
                {ok, Object} ->
                    NewWhere = format_multilayer(Object),
 %%                   io:format("~s ~p NewWhere= ~p ~n", [?FILE, ?LINE, NewWhere]),
-                   maps:merge(OldData, #{<<"where">> =>NewWhere });
+                   maps:merge(OldData, #{<<"where">> => NewWhere});
                _ ->
                    OldData
            end,
@@ -227,14 +227,42 @@ format_multilayer(Object) ->
                         Acc;
                     _ ->
                         NewV = format_value(V),
-                        Acc#{K => NewV}
+                        NewK = format_value(K),
+                        Acc#{NewK => NewV}
                 end;
-            (K, V, Acc)  ->
+            (K, V, Acc) when is_list(V) ->
+                NewK = format_value(K),
+                NewV =
+                    lists:foldl(fun
+                                    (V1, Acc1) when is_map(V1) ->
+                                        Fv = format_multilayer(V1),
+                                        case length(maps:values(Fv)) > 0 of
+                                            true ->
+                                                Acc1 ++ [Fv];
+                                            _ ->
+                                                Acc1
+                                        end;
+                                    (V2, Acc1) ->
+                                        case size(dgiot_utils:to_binary(V2)) of
+                                            0 ->
+                                                Acc1;
+                                            _ ->
+                                                Acc1 ++ [V2]
+                                        end
+                                end, [], V),
+                case length(NewV) > 0 of
+                    true ->
+                        Acc#{NewK => NewV};
+                    _ ->
+                        Acc
+                end;
+            (K, V, Acc) ->
                 case size(dgiot_utils:to_binary(V)) of
                     0 ->
                         Acc;
                     _ ->
-                        Acc#{K => V}
+                        NewK = format_value(K),
+                        Acc#{NewK => V}
                 end
         end,
         #{}, MapWhere).
@@ -252,5 +280,9 @@ format_value(#{<<"regex">> := V}) ->
     #{<<"$regex">> => V};
 format_value(#{<<"in">> := V}) ->
     #{<<"$in">> => V};
+format_value(<<"or">>) ->
+    <<"$or">>;
+format_value(<<"and">>) ->
+    <<"$and">>;
 format_value(V) ->
     V.
