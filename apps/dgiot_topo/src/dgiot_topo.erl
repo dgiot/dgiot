@@ -99,7 +99,7 @@ send_amisdata(#{<<"dashboardId">> := DashboardId, <<"sessionToken">> := Token}) 
     {ViewIds, AmisDatas} =
         case dgiot_parse:get_object(<<"View">>, DashboardId) of
             {ok, #{<<"data">> := #{<<"konva">> := #{<<"Stage">> := Stage}}}} ->
-                Rects = dgiot_product_knova:get_nodes(Stage, [<<"Rect">>, <<"Image">>, <<"Text">>]),
+                Rects = dgiot_product_knova:get_nodes(Stage, [<<"Rect">>, <<"Image">>, <<"Text">>, <<"Group">>]),
                 maps:fold(
                     fun
                         (_, #{<<"source">> := <<"mqtt">>, <<"type">> := <<"amisview">>, <<"amisid">> := Viewid} = AmisData, {Idd, Acc}) ->
@@ -124,7 +124,7 @@ send_amisdata(#{<<"dashboardId">> := DashboardId, <<"sessionToken">> := Token}) 
             case maps:find(ViewId, ViewDatas) of
                 {ok, ViewData} ->
                     Screen_productid = maps:get(<<"screen_productid">>, AmisData, <<>>),
-                    Screen_deviceid = maps:get(<<"screen_deviceid">>, AmisData, <<>>),
+                    Screen_deviceid = maps:get(<<"screen_deviceid">>, AmisData, maps:get(<<"terminalId">>, AmisData, <<>>)),
                     Rep = re:replace(jsx:encode(ViewData), <<"{{screen_productid}}">>, Screen_productid, [global, {return, binary}]),
                     NewJson = re:replace(Rep, <<"{{screen_deviceid}}">>, Screen_deviceid, [global, {return, binary}]),
                     Acc ++ [AmisData#{<<"viewData">> => jsx:decode(NewJson)}];
