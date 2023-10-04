@@ -139,6 +139,11 @@ sendSubscribe(UserId, Template_id, Data, Page) ->
                     %% io:format("~s ~p Subscribe = ~p.~n", [?FILE, ?LINE, Subscribe]),
                     _R = httpc:request(post, {SubscribeUrl, [], "application/x-www-form-urlencoded", Data1}, [{timeout, 5000}, {connect_timeout, 10000}], [{body_format, binary}]),
 %%                    io:format("~s ~p R = ~p.~n", [?FILE, ?LINE, R]),
+                    dgiot_parse:create_object(<<"Log">>, #{
+                        <<"clientid">> => UserId,
+                        <<"mfa">> => SubscribeUrl,
+                        <<"msg">> => jiffy:encode(Subscribe)
+                    }),
                     {ok, UserId};
                 _Result ->
                     {error, <<"not find access_token">>}

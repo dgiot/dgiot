@@ -1610,9 +1610,9 @@ deploy_dgiot
 echo -e "$(date +%F_%T) $LINENO: ${BLUE} database login info${NC}"
 echo -e "$(date +%F_%T) $LINENO: ${BLUE} pg_info: postgres://postgres:${pg_auth}@${pg_eip}:7432/parse${NC}"
 echo -e "$(date +%F_%T) $LINENO: ${BLUE} pg_info: pg_eip=${pg_eip} pg_auth=${pg_auth}${NC}"
-echo -e "$(date +%F_%T) $LINENO: ${BLUE} parse_info: http://${wlanip}:1337/dashboard/ ${NC}"
+echo -e "$(date +%F_%T) $LINENO: ${BLUE} parse_info: http://${wlanip}:1337/dashboard/# ${NC}"
 echo -e "$(date +%F_%T) $LINENO: ${BLUE} parse_info: username=${parse_user} password=${parse_pwd} ${NC}"
-echo -e "$(date +%F_%T) $LINENO: ${BLUE} dashboard: http://${wlanip}/ ${NC}"
+echo -e "$(date +%F_%T) $LINENO: ${BLUE} dashboard: http://${wlanip}/# ${NC}"
 echo -e "$(date +%F_%T) $LINENO: ${BLUE} dashboard: username=dgiot_dev password=dgiot_dev ${NC}"
 echo -e "$(date +%F_%T) $LINENO: ${BLUE} software: ${software}  ${html_software} ${NC}"
 

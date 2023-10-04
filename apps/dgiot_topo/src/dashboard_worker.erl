@@ -59,6 +59,7 @@ stop(#{<<"sessionToken">> := SessionToken}) ->
 init([#{<<"data">> := Que, <<"dashboardId">> := DashboardId, <<"sessionToken">> := SessionToken}]) ->
     dgiot_data:insert({dashboard, SessionToken}, self()),
     dgiot_mqtt:subscribe(<<"dashboard_ack/", SessionToken/binary>>),
+    dgiot_data:delete({dashboard_heart, SessionToken}),
     case length(Que) of
         0 ->
             erlang:send_after(3000, self(), stop);
@@ -70,6 +71,7 @@ init([#{<<"data">> := Que, <<"dashboardId">> := DashboardId, <<"sessionToken">> 
 init([#{<<"dashboardId">> := DashboardId, <<"sessionToken">> := SessionToken}]) ->
     dgiot_data:insert({dashboard, SessionToken}, self()),
     dgiot_mqtt:subscribe(<<"dashboard_ack/", SessionToken/binary>>),
+    dgiot_data:delete({dashboard_heart, SessionToken}),
     Que = dgiot_topo:get_que(DashboardId),
     case length(Que) of
         0 ->
@@ -112,7 +114,7 @@ handle_info(topo, #task{newque = Que} = State) when length(Que) == 0 ->
 handle_info(topo, State) ->
     {noreply, send_topo(State)};
 
-%% 任务结束
+%%
 handle_info({deliver, _, Msg}, State) ->
     Topic = dgiot_mqtt:get_topic(Msg),
     case Topic of
@@ -146,6 +148,7 @@ send_topo(#task{newque = Que, sessiontoken = SessionToken} = State) ->
     dgiot_topo:send_topo(Task, SessionToken),
     NewQue = lists:nthtail(1, Que) ++ [Task],
     erlang:send_after(10 * 1000, self(), topo),
+%%    ets:lookup(emqx_channel, SessionToken)
     case dgiot_data:get({dashboard_heart, SessionToken}) of
         Oldtime when Now - Oldtime > 30 ->
 %%            停止任务

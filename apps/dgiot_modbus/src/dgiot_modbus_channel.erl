@@ -175,7 +175,13 @@ get_app(Products) ->
                 _ -> false
             end
                     end,
-        [<<"role:", App/binary>> | _] = lists:filter(Predicate, maps:keys(Acl)),
+        App =
+            case lists:filter(Predicate, maps:keys(Acl)) of
+                [<<"role:", Name/binary>> | _] ->
+                    Name;
+                _ ->
+                    <<"dgiot">>
+            end,
         {ProdcutId, App}
               end, Products).
 

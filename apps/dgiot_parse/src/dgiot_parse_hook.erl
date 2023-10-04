@@ -88,6 +88,10 @@ do_hook({'after', delete, Token, Class, ObjectId, _QueryData, ResBody}) ->
     notify('after', delete, Token, Class, ObjectId, ObjectId),
     {ok, ResBody};
 
+do_hook({'before', delete, Token, Class, ObjectId, _QueryData, ResBody}) ->
+    notify('before', delete, Token, Class, ObjectId, ObjectId),
+    {ok, ResBody};
+
 do_hook(_R) ->
     {ok, []}.
 

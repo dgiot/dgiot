@@ -181,6 +181,8 @@ get_time(V, Interval) ->
                 case binary:split(V, <<$.>>, [global, trim]) of
                     [NewV1, _] ->
                         NewV1;
+                    [<<T:10/binary, _/binary>> | _] ->
+                        T;
                     _ ->
                         V
                 end
