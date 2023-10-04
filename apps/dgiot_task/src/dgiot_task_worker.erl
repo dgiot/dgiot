@@ -145,7 +145,7 @@ send_msg(#dclient{channel = ChannelId, userdata = #device_task{ref = Ref, produc
             case X of
                 {InstructOrder, _, Identifier1, DataSource} ->
                     Topic = <<"$dg/device/", Product/binary, "/", DevAddr/binary, "/properties">>,
-                    Payload = jsx:encode(DataSource),
+                    Payload = jsx:encode(DataSource#{<<"identifier">> => Identifier1}),
 %%                  io:format("~s ~p DataSource = ~p.~n", [?FILE, ?LINE, DataSource]),
                     dgiot_mqtt:publish(dgiot_utils:to_binary(ChannelId), Topic, Payload),
                     dgiot_bridge:send_log(dgiot_utils:to_binary(ChannelId), Product, DevAddr, "~s ~p to dev => ~ts: ~ts", [?FILE, ?LINE, unicode:characters_to_list(Topic), unicode:characters_to_list(jsx:encode(DataSource))]),

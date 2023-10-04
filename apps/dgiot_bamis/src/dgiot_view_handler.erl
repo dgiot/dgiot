@@ -93,9 +93,12 @@ handle(OperationID, Args, Context, Req) ->
 %% iot_hub 概要: 大屏数据任务推送 描述:启动任务推送大屏数据
 %% OperationId:post_dashboard
 %% 请求:POST /iotapi/post_dashboard
+do_request(post_dashboard, #{<<"dashboardId">> := <<"null">>} = Arg, _Context, _Req) ->
+    {200, Arg};
+
 do_request(post_dashboard, Arg, Context, _Req) ->
-    Data = dgiot_dashboard:post_dashboard(Arg, Context),
-    {200, Data};
+    dgiot_dashboard:post_dashboard(Arg, Context),
+    {200, Arg#{<<"status">> => 0}};
 
 %% iot_hub 概要: amis 变量替换
 %% OperationId:post_amis
