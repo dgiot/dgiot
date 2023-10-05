@@ -90,13 +90,9 @@ do_request(delete_role, #{<<"name">> := _Name, <<"tempname">> := _TempName} = Bo
 %% Role模版 概要: 导库 描述:json文件导库
 %% OperationId:post_role
 %% 请求:POST /iotapi/role
-do_request(put_role, #{<<"menus">> := Menus, <<"rules">> := Rules} = Body, #{<<"sessionToken">> := SessionToken} = _Context, _Req0) when length(Menus) > 0 andalso length(Rules) > 0 ->
+do_request(put_role, Body, #{<<"sessionToken">> := SessionToken} = _Context, _Req0) ->
     ?LOG(debug, "Body ~p ", [Body]),
     dgiot_role:put_role(Body, SessionToken);
-
-do_request(put_role, _Body, #{<<"sessionToken">> := _SessionToken} = _Context, _Req0) ->
-    ?LOG(debug, "Body ~p ", [_Body]),
-    {ok, #{<<"code">> => 401, <<"msg">> => <<"Menus or Rules is empty">>}};
 
 %% Role 概要: 导库 描述:json文件导库
 %% OperationId:get_role
@@ -109,7 +105,7 @@ do_request(get_role, #{<<"name">> := Name} = Body, #{<<"sessionToken">> := Sessi
 %% OperationId:post_roletemp
 %% 请求:GET /iotapi/roletemp
 do_request(get_roletemp, #{<<"name">> := Name} = Body,
-        #{<<"sessionToken">> := SessionToken} = _Context, _Req0) ->
+    #{<<"sessionToken">> := SessionToken} = _Context, _Req0) ->
     ?LOG(debug, "Body ~p ", [Body]),
     FileName = dgiot_utils:to_list(Name) ++ ".zip",
     case dgiot_role:get_roletemp(FileName, Name, SessionToken) of
