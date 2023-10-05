@@ -248,20 +248,32 @@ put_role(#{<<"objectId">> := RoleId} = Role, SessionToken) ->
                 {error, _} ->
                     {error, #{<<"msg">> => <<"role is not exist">>}};
                 {ok, #{<<"objectId">> := RoleId}} ->
-                    NewRole = #{
-                        <<"menus">> => dgiot_role:get_menus_role(maps:get(<<"menus">>, Role, [])),
-                        <<"rules">> => dgiot_role:get_rules_role(maps:get(<<"rules">>, Role, [])),
-                        <<"menuviews">> => dgiot_role:get_views_role(maps:get(<<"menus">>, Role, []))
-                    },
-                    dgiot_role:remove_menus_role(RoleId),
-                    dgiot_role:remove_rules_role(RoleId),
+                    RolesMenus =
+                        case maps:find(<<"menus">>, Role) of
+                            {ok, Menus} ->
+                                dgiot_role:remove_menus_role(RoleId),
+                                #{
+                                    <<"menus">> => dgiot_role:get_menus_role(Menus),
+                                    <<"menuviews">> => dgiot_role:get_views_role(Menus)
+                                };
+                            _ ->
+                                #{}
+                        end,
+                    NewRole =
+                        case maps:find(<<"rules">>, Role) of
+                            {ok, Rules} ->
+                                dgiot_role:remove_rules_role(RoleId),
+                                RolesMenus#{<<"rules">> => dgiot_role:get_rules_role(Rules)};
+                            _ ->
+                                RolesMenus
+                        end,
                     case dgiot_parse:update_object(<<"_Role">>, RoleId, NewRole) of
                         {ok, R} ->
-                            dgiot_role:save_role_menuview(RoleId),
+                            _R2 = dgiot_role:save_role_menuview(RoleId),
                             {ok, R};
                         {error, _Reason} ->
                             Result = dgiot_parse:update_object(<<"_Role">>, RoleId, NewRole),
-                            dgiot_role:save_role_menuview(RoleId),
+                            _R3 = dgiot_role:save_role_menuview(RoleId),
                             Result
                     end
             end;
@@ -686,7 +698,7 @@ get_menus_role(Menus) ->
                     <<"objects">> => [#{
                         <<"__type">> => <<"Pointer">>,
                         <<"className">> => <<"Menu">>,
-                        <<"objectId">> => 0
+                        <<"objectId">> => <<"0">>
                     }]
                 };
                 _ ->
@@ -721,7 +733,7 @@ get_views_role(Menus) ->
                     <<"objects">> => [#{
                         <<"__type">> => <<"Pointer">>,
                         <<"className">> => <<"View">>,
-                        <<"objectId">> => 0
+                        <<"objectId">> => <<"0">>
                     }]
                 };
                 _ ->
@@ -752,7 +764,7 @@ get_role_relation(Table) ->
                     <<"objects">> => [#{
                         <<"__type">> => <<"Pointer">>,
                         <<"className">> => Table,
-                        <<"objectId">> => 0
+                        <<"objectId">> => <<"0">>
                     }]
                 };
                 _ ->
@@ -813,7 +825,7 @@ get_users_role(Users) ->
                     <<"objects">> => [#{
                         <<"__type">> => <<"Pointer">>,
                         <<"className">> => <<"_User">>,
-                        <<"objectId">> => 0
+                        <<"objectId">> => <<"0">>
                     }]
                 };
                 _ ->
@@ -875,7 +887,7 @@ get_rules_role([<<"*">>]) ->
                     <<"objects">> => [#{
                         <<"__type">> => <<"Pointer">>,
                         <<"className">> => <<"Permission">>,
-                        <<"objectId">> => 0
+                        <<"objectId">> => <<"0">>
                     }]
                 };
                 _ ->
@@ -912,7 +924,7 @@ get_rules_role(Rules) ->
                     <<"objects">> => [#{
                         <<"__type">> => <<"Pointer">>,
                         <<"className">> => <<"Permission">>,
-                        <<"objectId">> => 0
+                        <<"objectId">> => <<"0">>
                     }]
                 };
                 _ ->
