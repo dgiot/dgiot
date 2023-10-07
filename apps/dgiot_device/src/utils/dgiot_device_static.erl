@@ -120,7 +120,7 @@ get_labels(ProductId, Results) ->
                                             Unit = maps:get(<<"unit">>, Specs, <<"">>),
                                             {Color, _, _} = dgiot_device:get_color(DeviceId, <<"quantity">>),
                                             NewV = dgiot_product_tdengine:check_field(Typea, Value, #{<<"datatype">> => DataType, <<"specs">> => Specs, <<"deviceid">> => DeviceId}),
-                                            Lcc ++ [#{<<"label">> => <<DeviceId/binary, "_", Identifier/binary, "_text">>, <<"number">> => NewV, <<"unit">> => Unit, <<"color">> => Color}];
+                                            Lcc ++ [#{<<"label">> => <<DeviceId/binary, "_", Identifier/binary, "_text">>, <<"number">> => NewV, <<"unit">> => Unit, <<"color">> => Color, <<"screen_deviceid">> => DeviceId, <<"funcId">> => Identifier}];
                                         _ ->
                                             Lcc
                                     end
