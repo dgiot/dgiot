@@ -143,6 +143,11 @@ get_que(DashboardId) ->
             Realdatas =
                 maps:fold(
                     fun
+                        (_, #{<<"source">> := <<"mqtt">>, <<"type">> := <<"realdata">>, <<"screen_productid">> := ProductId, <<"screen_deviceid">> := DeviceId, <<"funcId">> := Identifier}, Acc) ->
+                            List = maps:get(ProductId, Acc, #{}),
+                            Keys = maps:get(<<"keys">>, List, []),
+                            DeviceIds = maps:get(<<"deviceids">>, List, []),
+                            Acc#{ProductId => List#{<<"keys">> => lists:umerge(Keys, [Identifier]), <<"deviceids">> => lists:umerge(DeviceIds, [DeviceId])}};
                         (NodeId, #{<<"source">> := <<"mqtt">>, <<"type">> := <<"realdata">>, <<"screen_productid">> := ProductId}, Acc) ->
                             Len = size(NodeId) - 16,
                             case NodeId of
