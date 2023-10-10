@@ -24,6 +24,7 @@
     terminate/3
 ]).
 -export([run_hook/2]).
+-record(state, {id, env, type = stream}).
 
 %%%%GET /websocket/test HTTP/1.1
 %%%%Host: 127.0.0.1:9082
@@ -70,9 +71,10 @@ websocket_handle({text, <<"ping">>}, State) ->
 websocket_handle({text, Msg}, State) ->
     io:format("~s ~p Msg ~p ~n", [?FILE, ?LINE, Msg]),
     case dgiot_json:safe_decode(dgiot_utils:to_binary(Msg), [return_maps]) of
-        {ok,#{<<"name">> := _Name} = Json} ->
-            io:format("~s ~p ~p ~n",[?FILE,?LINE, Json]),
-            {[{text, dgiot_json:encode(#{<<"name">> => <<"dgiotgood">>})}], State};
+        {ok, #{<<"topic">> := Topic, <<"type">> := _Type} = Json} ->
+            io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Json, <<"$dg", Topic/binary>>]),
+            dgiot_mqtt:subscribe(<<"$dg", Topic/binary>>),
+            {[], State};
         _ ->
             {[{text, dgiot_json:encode(#{<<"name">> => <<"dgiotbad">>})}], State}
     end;
@@ -85,7 +87,7 @@ websocket_info({timeout, _Ref, Msg}, State) ->
     io:format("~s ~p  ~p ~p ~p ~p ~p  ~n", [?FILE, ?LINE, timeout, cowboy_clock:rfc1123(), _Ref, Msg, State]),
     {reply, {text, Msg}, State, hibernate};
 websocket_info({close, CloseCode, Reason}, State) ->
-    io:format("~s ~p  ~p ~p ~p ~p  ~n", [?FILE, ?LINE,close, CloseCode, Reason, State]),
+    io:format("~s ~p  ~p ~p ~p ~p  ~n", [?FILE, ?LINE, close, CloseCode, Reason, State]),
     {reply, {close, CloseCode, Reason}, State};
 websocket_info(stop, State) ->
 %%    ?LOG([stop, State]),
@@ -93,7 +95,20 @@ websocket_info(stop, State) ->
 websocket_info({http2ws, Data}, State) ->
     io:format("~s ~p ~p ~n", [?FILE, ?LINE, byte_size(Data)]),
     {[{binary, Data}], State};
+
+websocket_info(send_realdata, #state{env = #{<<"num">> := Num} = Env} = State) ->
+    BinNum = dgiot_utils:to_binary(Num),
+    erlang:send_after(1000, self(), send_realdata),
+    {[{text, dgiot_json:encode(#{<<"name">> => <<"realdata_", BinNum/binary>>})}], State#state{env = Env#{<<"num">> => Num + 1}}};
+
+websocket_info({deliver, _, Msg}, State) ->
+    Topic = dgiot_mqtt:get_topic(Msg),
+    Payload = dgiot_mqtt:get_payload(Msg),
+%%    erlang:send_after(1000, self(), send_realdata),
+    {[{text, base64:decode(Payload)}], State};
+
 websocket_info(_Info, State) ->
+    %% io:format("~s ~p _Info ~p ~n", [?FILE, ?LINE, _Info]),
     {[], State}.
 
 

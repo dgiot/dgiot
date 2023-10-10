@@ -111,7 +111,7 @@ handle_info(connect, #dclient{userdata = #connect_state{options = Options, mod =
         {error, econnrefused} ->
             {noreply, Dclient#dclient{userdata = ConnectStat#connect_state{socket = disconnect, props = undefined}}};
         {error, Reason} ->
-            ?LOG(warning, "connect error,~p", [Reason]),
+            ?LOG(warning, "connect error,~p,~p", [Options, Reason]),
             {noreply, Dclient#dclient{userdata = ConnectStat#connect_state{socket = disconnect, props = undefined}}}
     end;
 
