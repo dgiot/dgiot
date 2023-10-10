@@ -83,6 +83,19 @@ push(ProductId, Devaddr, DeviceId, Payload) ->
     Data1 = dgiot_utils:to_list(jsx:encode(Data)),
     httpc:request(post, {Url1, [], "application/json", Data1}, [], []).
 
+send_topo({<<"counter">>, CounterId, Id}, Token) ->
+%%    io:format("~s ~p CounterId = ~p,Token = ~p, Id = ~p.~n", [?FILE, ?LINE, CounterId, Token, Id]),
+    case dgiot_hook:run_hook({'topo', <<"counter">>}, {Token, CounterId}) of
+        {ok, [{ok, Payload}]} ->
+            Base64 = base64:encode(jsx:encode(Payload#{<<"id">> => Id})),
+            Pubtopic = <<"$dg/user/topo/", Token/binary, "/counter/report">>,
+%%            io:format("~s ~p Pubtopic ~p Base64 ~p ~n", [?FILE, ?LINE, Pubtopic, Base64]),
+            dgiot_mqtt:publish(self(), Pubtopic, Base64);
+        _R ->
+            io:format("~s ~p _R ~p ~n", [?FILE, ?LINE, _R]),
+            pass
+    end;
+
 send_topo({NodeType, NodeId}, Token) ->
     case dgiot_hook:run_hook({'topo', NodeType}, {Token, NodeId}) of
         {ok, [{ok, Payload}]} ->
@@ -166,6 +179,8 @@ get_que(DashboardId) ->
                 fun
                     (_, #{<<"source">> := <<"mqtt">>, <<"type">> := <<"realdata">>}, Acc) ->
                         Acc;
+                    (NodeId, #{<<"source">> := <<"mqtt">>, <<"type">> := <<"counter">>, <<"counterId">> := CounterId}, Acc) ->
+                        Acc ++ [{<<"counter">>, CounterId, NodeId}];
                     (NodeId, #{<<"source">> := <<"mqtt">>, <<"type">> := NodeType}, Acc) ->
                         Acc ++ [{NodeType, NodeId}];
                     (_, _, Acc) ->

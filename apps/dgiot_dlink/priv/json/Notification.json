@@ -2,230 +2,623 @@
   "type": "page",
   "body": [
     {
-      "id": "u:2c72c2d76916",
-      "api": {
-        "url": "iotapi/sendsms/parse_objectid",
-        "data": {
-          "tplid": "${tplid}",
-          "params": [
-            "${updatedAt}",
-            "${product_name}",
-            "${name}",
-            "${devaddr}",
-            "${alarm_level}",
-            "${alarm_message}"
-          ]
-        },
-        "method": "post",
-        "headers": {
-          "store": "localStorage",
-          "dgiotReplace": "parse_objectid"
-        },
-        "dataType": "json",
-        "requestAdaptor": "console.log('ffds ', ...api.data)\r\nreturn {\r\n    ...api,\r\n    data: {\r\n        tplid: ...api.data.tplid\r\n    }\r\n}"
-      },
-      "body": [
+      "tabs": [
         {
-          "hint": "1519757",
-          "name": "tplid",
-          "type": "input-text",
-          "label": "模板编号",
-          "value": "1519757",
-          "visible": false,
-          "disabled": "",
-          "readOnly": true,
-          "visibleOn": "",
-          "clearValueOnHidden": false
-        },
-        {
-          "mode": "horizontal",
-          "name": "alarm_createdAt",
-          "size": "md",
-          "type": "input-datetime",
-          "label": "告警时间",
-          "value": "now",
-          "format": "YYYY-MM-DD HH:mm:ss",
-          "maxDate": "",
-          "minDate": "",
-          "clearable": false,
-          "horizontal": {
-            "left": 2,
-            "right": 10,
-            "leftFixed": "sm"
-          },
-          "placeholder": "请选择日期时间",
-          "validateApi": ""
-        },
-        {
-          "id": "u:55d89cd2eb42",
-          "api": "",
           "body": [
             {
-              "hint": "",
-              "mode": "horizontal",
-              "name": "product_name",
-              "size": "md",
-              "type": "input-text",
-              "label": "产品名称",
-              "inline": false,
-              "readOnly": true,
-              "horizontal": {
-                "left": 2,
-                "right": 10,
-                "leftFixed": "sm"
-              },
-              "submitOnChange": false
+              "columns": [
+                {
+                  "body": [
+                    {
+                      "api": {
+                        "data": {
+                          "&": "$$",
+                          "sms.roleid": "${sms.roleid}"
+                        },
+                        "dataType": "json",
+                        "headers": {
+                          "dgiotReplace": "parse_view_objectid",
+                          "store": "localStorage"
+                        },
+                        "method": "put",
+                        "requestAdaptor": "return {\r\n  ...api,\r\n  data:{\r\n    meta:api.data    \r\n  }\r\n}",
+                        "url": "/iotapi/classes/View/parse_view_objectid"
+                      },
+                      "body": [
+                        {
+                          "horizontal": null,
+                          "id": "u:bed322f57e6c",
+                          "joinValues": true,
+                          "label": "是否发送",
+                          "mode": "horizontal",
+                          "name": "sms.issend",
+                          "options": [
+                            {
+                              "label": "发送",
+                              "value": "true"
+                            },
+                            {
+                              "label": "不发送",
+                              "value": "false"
+                            }
+                          ],
+                          "type": "radios",
+                          "value": "true"
+                        },
+                        {
+                          "horizontal": null,
+                          "label": "模板编号",
+                          "mode": "horizontal",
+                          "name": "sms.tplid",
+                          "readOnly": false,
+                          "size": "lg",
+                          "type": "input-text"
+                        },
+                        {
+                          "autoComplete": false,
+                          "checkAll": false,
+                          "clearValueOnHidden": false,
+                          "horizontal": null,
+                          "id": "u:088637def0f3",
+                          "joinValues": true,
+                          "label": "接收部门",
+                          "mode": "horizontal",
+                          "multiple": false,
+                          "name": "sms.roleid",
+                          "options": [
+                            {
+                              "label": "默认(空)",
+                              "value": ""
+                            },
+                            {
+                              "label": "质检",
+                              "value": "c5858f08bf"
+                            },
+                            {
+                              "label": "开发者(测试)",
+                              "value": "ccf5456562"
+                            },
+                            {
+                              "label": "运维部(test)",
+                              "value": "9470abe2e7"
+                            }
+                          ],
+                          "readOnly": true,
+                          "size": "lg",
+                          "type": "select",
+                          "value": "",
+                          "visible": ""
+                        },
+                        {
+                          "className": "",
+                          "flat": true,
+                          "horizontal": null,
+                          "items": [
+                            {
+                              "id": "u:ae0d88f0b31b",
+                              "label": "短信字段",
+                              "name": "text",
+                              "options": [
+                                {
+                                  "label": "设备名称",
+                                  "value": "%DEVICENAME%"
+                                },
+                                {
+                                  "label": "设备地址",
+                                  "value": "%DEVICEADDR%"
+                                },
+                                {
+                                  "label": "产品名称",
+                                  "value": "%PRODUCTNAME%"
+                                },
+                                {
+                                  "label": "日期",
+                                  "value": "%DATE%"
+                                },
+                                {
+                                  "label": "用户名称",
+                                  "value": "%USERNAME%"
+                                },
+                                {
+                                  "label": "报警时间",
+                                  "value": "%TRIGGERTIME%"
+                                },
+                                {
+                                  "label": "变量名称",
+                                  "value": "%DATAPOINTNAME%"
+                                },
+                                {
+                                  "label": "当前值",
+                                  "value": "%NOWVALUE%"
+                                }
+                              ],
+                              "type": "input-text"
+                            }
+                          ],
+                          "joinValues": false,
+                          "label": "字段顺序",
+                          "labelClassName": "",
+                          "maxLength": "",
+                          "messages": {
+                          },
+                          "minLength": "",
+                          "mode": "horizontal",
+                          "multiLine": true,
+                          "multiple": true,
+                          "name": "sms.params",
+                          "size": "lg",
+                          "type": "combo",
+                          "typeSwitchable": true
+                        }
+                      ],
+                      "checkAll": false,
+                      "id": "u:2c72c2d76916",
+                      "initApi": "",
+                      "joinValues": true,
+                      "multiLine": false,
+                      "name": "alarm_form",
+                      "title": "告警短信模板",
+                      "type": "form"
+                    }
+                  ]
+                },
+                {
+                  "body": [
+                    {
+                      "body": [
+                        {
+                          "style": {
+                          },
+                          "tpl": "<p>字段解释:</p>\n<p>模板编号：云服务器短信模板编号</p>\n<p>字段顺序：一条短信字段则是短信模板中的一个变量，按顺序进行添加</p>\n<p>短信字段：一条短信字段可包括多个参数</p>\n<p>产品名称：%PRODUCTNAME%</p>\n<p>设备名称：%DEVICENAME%</p>\n<p>设备地址：%DEVICEADDR%</p>\n<p>产品名称：%PRODUCTNAME%</p>\n<p>日期：%DATE%</p>\n<p>时间：%DATETIME%</p>\n<p>用户名称：%USERNAME%</p>\n<p>报警时间：%TRIGGERTIME%</p>\n<p>变量名称：%DATAPOINTNAME%</p>\n<p>当前值：%NOWVALUE%</p>\n<p>触发描述：%TRIGGERDESCRIPTION%</p>\n<p>&nbsp;</p>",
+                          "trigger": [
+                            "hover"
+                          ],
+                          "type": "tpl"
+                        }
+                      ],
+                      "id": "u:9b96b2b0313b",
+                      "tooltip": "提示文字",
+                      "type": "tooltip-wrapper"
+                    }
+                  ]
+                }
+              ],
+              "id": "u:258c50b2e0c0",
+              "type": "grid"
             }
           ],
-          "mode": "inline",
-          "type": "form",
-          "title": "",
-          "target": "alarm_form",
-          "initApi": {
-            "url": "iotapi/classes/Product/${_productid}",
-            "data": null,
-            "method": "get",
-            "adaptor": "return {\r\n  \"status\":0,\r\n  \"msg\":\"\",\r\n  \"data\":response.data\r\n  }",
-            "responseData": {
-              "product_name": "${name}"
-            },
-            "requestAdaptor": ""
-          },
-          "className": "m-t-lg m-b-lg",
-          "horizontal": {
-            "left": 2,
-            "right": 10,
-            "leftFixed": "normal"
-          },
-          "submitText": "",
-          "wrapWithPanel": false
+          "title": "短信配置"
         },
         {
-          "id": "u:55d89cd2eb42",
-          "api": "",
           "body": [
             {
-              "hint": "",
-              "mode": "horizontal",
-              "name": "name",
-              "size": "md",
-              "type": "input-text",
-              "label": "设备名称",
-              "inline": false,
-              "readOnly": true,
-              "horizontal": {
-                "left": 2,
-                "right": 10,
-                "leftFixed": "sm"
-              }
-            },
-            {
-              "id": "u:a656b5747025",
-              "hint": "",
-              "mode": "horizontal",
-              "name": "devaddr",
-              "size": "md",
-              "type": "input-text",
-              "label": "设备地址",
-              "inline": false,
-              "readOnly": true,
-              "horizontal": {
-                "left": 1,
-                "right": 11,
-                "leftFixed": "sm"
-              }
+              "columns": [
+                {
+                  "body": [
+                    {
+                      "api": {
+                        "data": null,
+                        "dataType": "json",
+                        "headers": {
+                          "dgiotReplace": "parse_view_objectid",
+                          "store": "localStorage"
+                        },
+                        "method": "put",
+                        "requestAdaptor": "return {\r\n  ...api,\r\n  data:{\r\n    meta:{\r\n      minipg:{\r\n        tplid:api.data.minipg.tplid,\r\n        issend:api.data.minipg.issend,\r\n        roleid:api.data.minipg.roleid || '',\r\n        params:api.data.minipg.params,\r\n        alarm_message:api.data.minipg.alarm_message || '',\r\n        page:api.data.minipg.page || ''\r\n      },\r\n      sms:api.data.sms,\r\n      email:api.data.email\r\n    }    \r\n  }\r\n}",
+                        "url": "/iotapi/classes/View/parse_view_objectid"
+                      },
+                      "body": [
+                        {
+                          "id": "u:bed322f57e6c",
+                          "joinValues": true,
+                          "label": "是否发送",
+                          "mode": "horizontal",
+                          "name": "minipg.issend",
+                          "options": [
+                            {
+                              "label": "发送",
+                              "value": "true"
+                            },
+                            {
+                              "label": "不发送",
+                              "value": "false"
+                            }
+                          ],
+                          "type": "radios",
+                          "value": "true"
+                        },
+                        {
+                          "hint": "",
+                          "horizontal": null,
+                          "label": "模板ID",
+                          "mode": "horizontal",
+                          "name": "minipg.tplid",
+                          "readOnly": false,
+                          "size": "lg",
+                          "type": "input-text",
+                          "value": ""
+                        },
+                        {
+                          "hint": "",
+                          "horizontal": null,
+                          "label": "跳转页面",
+                          "mode": "horizontal",
+                          "name": "minipg.page",
+                          "readOnly": false,
+                          "size": "lg",
+                          "type": "input-text",
+                          "value": ""
+                        },
+                        {
+                          "hint": "",
+                          "horizontal": null,
+                          "label": "报警内容",
+                          "mode": "horizontal",
+                          "name": "minipg.alarm_message",
+                          "readOnly": false,
+                          "size": "lg",
+                          "type": "input-text",
+                          "value": ""
+                        },
+                        {
+                          "autoComplete": false,
+                          "checkAll": false,
+                          "clearValueOnHidden": false,
+                          "horizontal": null,
+                          "id": "u:088637def0f3",
+                          "joinValues": true,
+                          "label": "接收部门",
+                          "mode": "horizontal",
+                          "multiple": false,
+                          "name": "minipg.roleid",
+                          "options": [
+                            {
+                              "label": "默认(空)",
+                              "value": ""
+                            },
+                            {
+                              "label": "质检",
+                              "value": "c5858f08bf"
+                            },
+                            {
+                              "label": "开发者(测试)",
+                              "value": "ccf5456562"
+                            },
+                            {
+                              "label": "运维部(test)",
+                              "value": "9470abe2e7"
+                            }
+                          ],
+                          "readOnly": true,
+                          "size": "lg",
+                          "type": "select",
+                          "value": "",
+                          "visible": ""
+                        },
+                        {
+                          "draggable": true,
+                          "id": "u:50e4e189ef02",
+                          "items": [
+                            {
+                              "name": "key",
+                              "placeholder": "平台参数名",
+                              "required": true,
+                              "type": "input-text",
+                              "unique": true,
+                              "validateOnChange": true
+                            },
+                            {
+                              "name": "value",
+                              "placeholder": "小程序内容字段参数",
+                              "type": "input-text"
+                            }
+                          ],
+                          "keyPlaceholder": "平台参数名",
+                          "label": "字段配对",
+                          "mode": "horizontal",
+                          "multiple": true,
+                          "name": "minipg.params",
+                          "type": "input-kv",
+                          "valuePlaceholder": "小程序内容字段参数"
+                        }
+                      ],
+                      "id": "u:2c72c2d76916",
+                      "initApi": "",
+                      "multiLine": false,
+                      "name": "alarm_form",
+                      "title": "告警小程序模板",
+                      "type": "form"
+                    }
+                  ]
+                },
+                {
+                  "body": [
+                    {
+                      "body": [
+                        {
+                          "style": {
+                          },
+                          "tpl": "<p>字段解释:</p>\n<p>模板编号：小程序订阅消息<label class=\"tmplmsg_detail_meta_title\">模板ID</label></p>\n<p>字段配对（平台参数名与模板字段名一一对应）</p>\n<p>key为平台参数名，value为订阅模板内容字段名</p>\n<p>产品名称：%PRODUCTNAME%</p>\n<p>部门名称: %ROLENAME%</p>\n<p>设备名称：%DEVICENAME%</p>\n<p>设备编号：%DEVICEADDR%</p>\n<p>设备位置：%DEVICELOCATION%</p>\n<p>产品名称：%PRODUCTNAME%</p>\n<p>日期：%DATE%</p>\n<p>时间：%DATETIME%</p>\n<p>用户名称：%USERNAME%</p>\n<p>报警时间：%TRIGGERTIME%</p>\n<p>变量名称：%DATAPOINTNAME%</p>\n<p>当前值：%NOWVALUE%</p>\n<p>触发描述：%TRIGGERDESCRIPTION%</p>\n<p><label class=\"simple_preview_label\">报警内容</label>：%TRIGGERCONTENT%</p>\n<p>&nbsp;</p>",
+                          "trigger": [
+                            "hover"
+                          ],
+                          "type": "tpl"
+                        }
+                      ],
+                      "id": "u:9b96b2b0313b",
+                      "tooltip": "提示文字",
+                      "type": "tooltip-wrapper"
+                    }
+                  ]
+                }
+              ],
+              "id": "u:258c50b2e0c0",
+              "type": "grid"
             }
           ],
-          "mode": "normal",
-          "type": "form",
-          "title": "",
-          "target": "alarm_form",
-          "initApi": {
-            "url": "iotapi/classes/Device/${_deviceid}",
-            "data": null,
-            "method": "get",
-            "adaptor": "return {\r\n  \"status\":0,\r\n  \"msg\":\"\",\r\n  \"data\":response.data\r\n  }",
-            "responseData": {
-              "name": "${name}",
-              "devaddr": "${devaddr}"
-            },
-            "requestAdaptor": ""
-          },
-          "className": "m-b-lg",
-          "horizontal": {
-            "left": 2,
-            "right": 10,
-            "leftFixed": "normal"
-          },
-          "submitText": "",
-          "wrapWithPanel": false
+          "title": "小程序配置"
         },
         {
-          "id": "u:b5d871f9d40f",
-          "mode": "horizontal",
-          "name": "alarm_level",
-          "size": "md",
-          "type": "input-text",
-          "label": "告警等级",
-          "value": "二级告警(自行填写)",
-          "horizontal": {
-            "left": 2,
-            "right": 10,
-            "leftFixed": "sm"
-          }
+          "body": [
+            {
+              "columns": [
+                {
+                  "body": [
+                    {
+                      "api": {
+                        "data": null,
+                        "dataType": "json",
+                        "headers": {
+                          "dgiotReplace": "parse_view_objectid",
+                          "store": "localStorage"
+                        },
+                        "method": "put",
+                        "requestAdaptor": "return {\r\n  ...api,\r\n  data:{\r\n    meta:api.data    \r\n  }\r\n}",
+                        "url": "/iotapi/classes/View/parse_view_objectid"
+                      },
+                      "body": [
+                        {
+                          "id": "u:bed322f57e6c",
+                          "joinValues": true,
+                          "label": "是否发送",
+                          "mode": "horizontal",
+                          "name": "email.issend",
+                          "options": [
+                            {
+                              "label": "发送",
+                              "value": "true"
+                            },
+                            {
+                              "label": "不发送",
+                              "value": "false"
+                            }
+                          ],
+                          "type": "radios",
+                          "value": "true"
+                        },
+                        {
+                          "autoComplete": false,
+                          "checkAll": false,
+                          "clearValueOnHidden": false,
+                          "horizontal": null,
+                          "id": "u:088637def0f3",
+                          "joinValues": true,
+                          "label": "接收部门",
+                          "mode": "horizontal",
+                          "multiple": false,
+                          "name": "email.roleid",
+                          "options": [
+                            {
+                              "label": "默认(该设备所属部门)",
+                              "value": ""
+                            },
+                            {
+                              "label": "质检",
+                              "value": "c5858f08bf"
+                            },
+                            {
+                              "label": "开发者(测试)",
+                              "value": "ccf5456562"
+                            },
+                            {
+                              "label": "运维部(test)",
+                              "value": "9470abe2e7"
+                            }
+                          ],
+                          "readOnly": true,
+                          "size": "lg",
+                          "type": "select",
+                          "value": "",
+                          "visible": ""
+                        },
+                        {
+                          "id": "u:c53e8920d140",
+                          "label": "主题",
+                          "mode": "horizontal",
+                          "name": "email.subject",
+                          "size": "lg",
+                          "type": "input-text"
+                        },
+                        {
+                          "id": "u:3a7e9eac4fe7",
+                          "label": "发件人描述",
+                          "mode": "horizontal",
+                          "name": "email.fromdes",
+                          "size": "lg",
+                          "type": "input-text"
+                        },
+                        {
+                          "id": "u:0a5166757e76",
+                          "label": "收件人描述",
+                          "mode": "horizontal",
+                          "name": "email.todes",
+                          "size": "lg",
+                          "type": "input-text"
+                        },
+                        {
+                          "id": "u:163ee5404403",
+                          "label": "发件内容",
+                          "name": "email.params",
+                          "options": {
+                            "height": 400,
+                            "menubar": "true",
+                            "plugins": "advlist autolink link image lists charmap print preview hr anchor pagebreak spellchecker searchreplace wordcount visualblocks visualchars code fullscreen insertdatetime media nonbreaking table emoticons template paste help",
+                            "toolbar": "undo redo | styleselect | bold italic | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image | print preview media fullpage | forecolor backcolor emoticons | help"
+                          },
+                          "receiver": "/api/upload/image",
+                          "type": "input-rich-text",
+                          "value": "产品名称：%PRODUCTNAME%；\n部门名称: %ROLENAME%；\n设备名称：%DEVICENAME%；\n设备编号：%DEVICEADDR%。",
+                          "vendor": "tinymce"
+                        }
+                      ],
+                      "id": "u:2c72c2d76916",
+                      "initApi": "",
+                      "multiLine": false,
+                      "name": "alarm_form",
+                      "title": "告警邮箱模板",
+                      "type": "form"
+                    }
+                  ]
+                },
+                {
+                  "body": [
+                    {
+                      "body": [
+                        {
+                          "style": {
+                          },
+                          "tpl": "<p>字段解释:</p>\n<p>字段配对（平台参数名与模板字段名一一对应）</p>\n<p>key为平台参数名，value为邮箱内容字段名</p>\n<p>产品名称：%PRODUCTNAME%</p>\n<p>部门名称: %ROLENAME%</p>\n<p>设备名称：%DEVICENAME%</p>\n<p>设备编号：%DEVICEADDR%</p>\n<p>设备位置：%DEVICELOCATION%</p>\n<p>产品名称：%PRODUCTNAME%</p>\n<p>日期：%DATE%</p>\n<p>时间：%DATETIME%</p>\n<p>用户名称：%USERNAME%</p>\n<p>报警时间：%TRIGGERTIME%</p>\n<p>变量名称：%DATAPOINTNAME%</p>\n<p>当前值：%NOWVALUE%</p>\n<p>触发描述：%TRIGGERDESCRIPTION%</p>\n<p><label class=\"simple_preview_label\">报警内容</label>：%TRIGGERCONTENT%</p>\n<p>&nbsp;</p>",
+                          "trigger": [
+                            "hover"
+                          ],
+                          "type": "tpl"
+                        }
+                      ],
+                      "id": "u:9b96b2b0313b",
+                      "tooltip": "提示文字",
+                      "type": "tooltip-wrapper"
+                    }
+                  ]
+                }
+              ],
+              "id": "u:258c50b2e0c0",
+              "type": "grid"
+            }
+          ],
+          "title": "邮箱配置"
         },
         {
-          "id": "u:2739169db893",
-          "mode": "horizontal",
-          "name": "alarm_message",
-          "size": "md",
-          "type": "input-text",
-          "label": "告警信息",
-          "value": "温度过高(自行填写)",
-          "horizontal": {
-            "left": 2,
-            "right": 10,
-            "leftFixed": "sm"
-          }
-        },
-        {
-          "id": "u:cdfa428176ab",
-          "hint": "字段名改为物模型标识符",
-          "mode": "horizontal",
-          "name": "dgiot_alarmvalue",
-          "size": "md",
-          "type": "input-text",
-          "label": "告警值",
-          "readOnly": true,
-          "horizontal": {
-            "left": 2,
-            "right": 10,
-            "leftFixed": "sm"
-          }
+          "body": [
+            {
+              "columns": [
+                {
+                  "body": [
+                    {
+                      "api": {
+                        "data": null,
+                        "dataType": "json",
+                        "headers": {
+                          "dgiotReplace": "parse_view_objectid",
+                          "store": "localStorage"
+                        },
+                        "method": "put",
+                        "requestAdaptor": "return {\r\n  ...api,\r\n  data:{\r\n    meta:api.data    \r\n  }\r\n}",
+                        "url": "/iotapi/classes/View/parse_view_objectid"
+                      },
+                      "body": [
+                        {
+                          "checkAll": false,
+                          "id": "u:de68a1c03290",
+                          "joinValues": true,
+                          "label": "是否自动创建",
+                          "mode": "horizontal",
+                          "name": "workorder.iscreat",
+                          "options": [
+                            {
+                              "label": "创建",
+                              "value": "true"
+                            },
+                            {
+                              "label": "不创建",
+                              "value": "false"
+                            }
+                          ],
+                          "type": "radios",
+                          "value": "false"
+                        },
+                        {
+                          "checkAll": false,
+                          "id": "u:4fcc58963f83",
+                          "label": "工单类型",
+                          "mode": "horizontal",
+                          "name": "workorder.type",
+                          "options": [
+                            {
+                              "label": "维修工单",
+                              "value": "maintenance_work"
+                            },
+                            {
+                              "label": "故障工单",
+                              "value": "malfunction_work"
+                            }
+                          ],
+                          "size": "lg",
+                          "type": "select",
+                          "value": "maintenance_work"
+                        },
+                        {
+                          "id": "u:32dded637284",
+                          "label": "产生原因",
+                          "mode": "horizontal",
+                          "name": "workorder.cause",
+                          "size": "lg",
+                          "type": "input-text"
+                        }
+                      ],
+                      "id": "u:4ae24134beb4",
+                      "initApi": "",
+                      "multiLine": false,
+                      "name": "alarm_form",
+                      "title": "告警工单",
+                      "type": "form"
+                    }
+                  ]
+                },
+                {
+                  "body": [
+                    {
+                      "body": [
+                      ],
+                      "id": "u:04756045cdb3",
+                      "tooltip": "提示文字",
+                      "type": "tooltip-wrapper"
+                    }
+                  ]
+                }
+              ],
+              "id": "u:259b3c1cba08",
+              "type": "grid"
+            }
+          ],
+          "title": "工单配置"
         }
       ],
-      "name": "alarm_form",
-      "type": "form",
-      "rules": [
-      ],
-      "title": "",
-      "initApi": "",
-      "submitText": ""
+      "type": "tabs"
     }
   ],
-  "style": {
-  },
   "initApi": {
-    "url": "/iotapi/classes/Notification/parse_notificationid",
-    "method": "get",
-    "adaptor": "return {\r\n  \"status\":0,\r\n  \"msg\":\"\",\r\n  \"data\":response.data.content\r\n  }",
+    "adaptor": "return {\r\n  \"status\":0,\r\n  \"msg\":\"\",\r\n  \"data\":response.data.meta\r\n  }",
+    "dataType": "json",
     "headers": {
-      "store": "localStorage",
-      "dgiotReplace": "parse_notificationid"
+      "dgiotReplace": "parse_view_objectid",
+      "store": "localStorage"
     },
-    "dataType": "json"
+    "method": "get",
+    "url": "/iotapi/classes/View/parse_view_objectid"
   },
+  "initFetch": true,
   "messages": {
   },
-  "initFetch": true
+  "style": {
+  }
 }

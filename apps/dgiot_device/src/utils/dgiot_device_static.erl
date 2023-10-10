@@ -157,6 +157,7 @@ get_realdata({Token, Realdatas}) when is_map(Realdatas) ->
             end, [], Realdatas),
     Base64 = base64:encode(jsx:encode(Payload)),
     Pubtopic = <<"$dg/user/topo/", Token/binary, "/allrealdata/report">>,
+%%    io:format("~s ~p Pubtopic ~p Base64 ~p ~n", [?FILE, ?LINE, Pubtopic, Base64]),
     dgiot_mqtt:publish(self(), Pubtopic, Base64);
 
 get_realdata(_) ->

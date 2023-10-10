@@ -92,6 +92,7 @@ apps/dgiot_yantai/
 apps/dgiot_current/
 apps/dgiot_zhixin/
 apps/dgiot_plc/
+apps/dgiot_viewx/
 node_modules/
 package-lock.json
 erlang_ls.config
