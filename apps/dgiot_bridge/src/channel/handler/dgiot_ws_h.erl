@@ -102,7 +102,7 @@ websocket_info(send_realdata, #state{env = #{<<"num">> := Num} = Env} = State) -
     {[{text, dgiot_json:encode(#{<<"name">> => <<"realdata_", BinNum/binary>>})}], State#state{env = Env#{<<"num">> => Num + 1}}};
 
 websocket_info({deliver, _, Msg}, State) ->
-    Topic = dgiot_mqtt:get_topic(Msg),
+    _Topic = dgiot_mqtt:get_topic(Msg),
     Payload = dgiot_mqtt:get_payload(Msg),
 %%    erlang:send_after(1000, self(), send_realdata),
     {[{text, base64:decode(Payload)}], State};
