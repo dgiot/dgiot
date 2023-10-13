@@ -44,7 +44,6 @@ childSpec(Name, ChannelId, #{<<"port">> := Port} = ChannelArgs) ->
     Dispatch = cowboy_router:compile([
         {'_', [
             {"/", cowboy_static, {priv_file, dgiot_bridge, "www/index.html"}},
-            {"/websocket/[...]", dgiot_ws_h, State},
             {"/static/[...]", cowboy_static, {priv_dir, dgiot_bridge, "www/static"}},
             {"/api/[...]", dgiot_rest_h, State},
             {"/http2ws/[...]", dgiot_http2ws_h, State},

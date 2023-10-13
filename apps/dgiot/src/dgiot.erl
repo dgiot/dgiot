@@ -17,7 +17,7 @@
 -module(dgiot).
 -author("johnliu").
 -include("dgiot.hrl").
--export([get_attr/3, get_env/1, get_env/2, get_env/3, init_plugins/0, check_dgiot_app/0, child_spec/2, child_spec/3]).
+-export([get_attr/3, get_env/1, get_env/2, get_env/3, init_plugins/0, check_dgiot_app/0, child_spec/2, child_spec/3, domain/1]).
 
 %%--------------------------------------------------------------------
 %% API
@@ -96,3 +96,47 @@ child_spec(M, supervisor, Args) ->
         type => supervisor,
         modules => [M]
     }.
+
+
+domain(Args) ->
+    DictId = dgiot_parse_id:get_dictid(<<"dgiotdomain">>, <<"domain">>, <<"domain">>, <<"dgiotdomainconfiguration">>),
+    Data =
+        case dgiot_parse:get_object(<<"Dict">>, DictId) of
+            {ok, Dict} ->
+                domain_(Args, Dict);
+            _ ->
+                Dict = #{
+                    <<"objectId">> => DictId,
+                    <<"key">> => <<"dgiotdomain">>,
+                    <<"type">> => <<"domain">>,
+                    <<"class">> => <<"domain">>,
+                    <<"title">> => <<"dgiotdomainconfiguration">>,
+                    <<"data">> => Args
+                },
+                dgiot_parse:create_object(<<"Dict">>, Dict),
+                domain_(Args, Dict),
+                Args
+        end,
+    {ok, Data#{<<"status">> => 0}}.
+
+%% 获取域名
+domain_(#{<<"action">> := <<"getDomainSSL">>}, #{<<"data">> := Data}) ->
+    #{<<"data">> => Data};
+
+%% 修改域名
+%% sed -ri 's/(server_name )[^*]*/\1 dev.dgiotcloud.com;/' /data/dgiot/nginx/conf/nginx.conf
+%% sed -ri 's/("download_domain": ")[^"]*/\1dev.dgiotcloud.com/' /data/dgiot/go_fastdfs/conf/cfg.json
+domain_(#{<<"action">> := <<"setDomainSSL">>, <<"domain">> := Domain, <<"key">> := Key, <<"csr">> := Csr} = Args, #{<<"objectId">> := DictId, <<"data">> := Data}) ->
+%%    nginx
+    os:cmd("sed -ri 's/(server_name )[^*]*/\\1 " ++ dgiot_utils:to_list(Domain) ++ ";/' /data/dgiot/nginx/conf/nginx.conf"),
+    os:cmd("sed -ri 's/(ssl_certificate )[^*]*/\\1 \\/etc\\/pki\\/tls\\/certs\\/fullchain.pem;/' /data/dgiot/nginx/conf/nginx.conf"),
+    os:cmd("sed -ri 's/(ssl_certificate_key )[^*]*/\\1 \\/etc\\/pki\\/tls\\/certs\\/privkey.key;/' /data/dgiot/nginx/conf/nginx.conf"),
+    os:cmd("echo '" ++ dgiot_utils:to_list(Key) ++ "' > /etc/pki/tls/certs/fullchain.pem"),
+    os:cmd("echo '" ++ dgiot_utils:to_list(Csr) ++ "' > /etc/pki/tls/certs/privkey.pem"),
+%%    go_fastdfs
+    os:cmd("sed -ri 's/(\"download_domain\": \")[^\"]*/\\1" ++ dgiot_utils:to_list(Domain) ++ "/' /data/dgiot/go_fastdfs/conf/cfg.json"),
+    dgiot_parse:update_object(<<"Dict">>, DictId, #{<<"data">> => maps:merge(Data, maps:without([<<"action">>], Args))}),
+    #{<<"domain">> => Domain, <<"msg">> => <<"已保存"/utf8>>};
+
+domain_(_Args, _) ->
+    #{<<"msg">> => <<"success">>}.

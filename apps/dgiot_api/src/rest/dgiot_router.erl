@@ -38,7 +38,6 @@
 %% 获取路径
 get_paths(Name, DocRoot) ->
     Routes = [
-        {"/websocket/[...]", dgiot_ws_h, []},
         {"/mod/:Mod/:Fun", ?MODULE, mod},
         {"/swagger/list", ?MODULE, swagger_list},
         {"/install/:Product", ?MODULE, install},

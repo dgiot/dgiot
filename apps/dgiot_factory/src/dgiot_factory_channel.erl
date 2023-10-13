@@ -24,6 +24,7 @@
 -define(TYPE, <<"FACTORY">>).
 -define(SHEETID(SHEET), <<SHEET/binary, "_id">>).
 -define(MAX_BUFF_SIZE, 1024).
+-dgiot_channel(?MODULE).
 
 -record(state, {id, mod, product, env = #{}}).
 %% API

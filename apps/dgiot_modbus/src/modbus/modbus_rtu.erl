@@ -598,6 +598,7 @@ format_value(Buff, #{<<"identifier">> := BitIdentifier,
     <<"dataSource">> := #{
         <<"originaltype">> := <<"bit">>
     }}, Props) ->
+    <<BitValue:8, _/binary>> = Buff,
     Values =
         lists:foldl(fun(X, Acc) ->
             case X of
@@ -611,7 +612,6 @@ format_value(Buff, #{<<"identifier">> := BitIdentifier,
                         <<"registersnumber">> := Num,
                         <<"originaltype">> := Originaltype}
                 } ->
-
                     IntOffset = dgiot_utils:to_int(Offset),
                     IntNum = dgiot_utils:to_int(Num),
                     IntLen = get_len(IntNum, Originaltype),
@@ -639,7 +639,7 @@ format_value(Buff, #{<<"identifier">> := BitIdentifier,
                 _ ->
                     Acc
             end
-                    end, #{}, Props),
+                    end, #{BitIdentifier => BitValue}, Props),
     {map, Values};
 
 format_value(Buff, #{<<"dataSource">> := #{

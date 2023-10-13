@@ -22,6 +22,7 @@
 -define(TYPE, <<"gb26875">>).
 -dgiot_data("ets").
 -export([init_ets/0]).
+-dgiot_channel(?MODULE).
 
 %% API
 -export([start/2]).
