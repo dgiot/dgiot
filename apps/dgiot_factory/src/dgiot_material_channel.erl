@@ -22,10 +22,10 @@
 -include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
 -include("dgiot_factory.hrl").
 -define(TYPE, <<"MATERIAL">>).
+-dgiot_channel(?MODULE).
 -record(state, {id, mod, product, env = #{}}).
 %% API
 -export([start/2]).
-
 %% Channel callback
 -export([init/3, handle_init/1, handle_event/3, handle_message/2, stop/3]).
 %% 注册通道类型

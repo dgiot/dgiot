@@ -24,7 +24,7 @@
     terminate/3
 ]).
 -export([run_hook/2]).
--record(state, {id, env, type = stream}).
+-record(state, {id, mod, env, type = stream}).
 
 %%%%GET /websocket/test HTTP/1.1
 %%%%Host: 127.0.0.1:9082
@@ -41,16 +41,22 @@
 %%%%Sec-WebSocket-Extensions: permessage-deflate; client_max_window_bits
 %%%%Sec-WebSocket-Protocol: null
 %%
-init(Req, State) ->
+init(Req, #state{env = #{<<"idle_timeout">> := Idle_timeout}} = State) ->
+%%    io:format("~s ~p Req ~p ~n", [?FILE, ?LINE, Req]),
     Path = cowboy_req:path(Req),
     add_hook(Path),
 %%    check_update(Req, State),
-    {cowboy_websocket, Req, State}.  %Perform websocket setup
+    {cowboy_websocket, Req, State, #{
+        idle_timeout => Idle_timeout * 60 * 1000
+    }}.  %Perform websocket setup
 
-
-websocket_init(State) ->
-    io:format("~s ~p State ~p ~n", [?FILE, ?LINE, State]),
-    {ok, State}.
+websocket_init(#state{mod = Mod} = State) ->
+    case Mod:websocket_init(State) of
+        {ok, State} ->
+            {ok, State, hibernate};
+        _ ->
+            {stop, State}
+    end.
 
 websocket_handle(ping, State) ->
     io:format("~s ~p ~p ~p ~p ~n", [?FILE, ?LINE, ping, cowboy_clock:rfc1123(), State]),
@@ -68,56 +74,57 @@ websocket_handle({text, <<"ping">>}, State) ->
         error ->
             {reply, {text, <<"pong2">>}, State, hibernate}
     end;
-websocket_handle({text, Msg}, State) ->
-    io:format("~s ~p Msg ~p ~n", [?FILE, ?LINE, Msg]),
+websocket_handle({text, Msg}, #state{mod = Mod} = State) ->
     case dgiot_json:safe_decode(dgiot_utils:to_binary(Msg), [return_maps]) of
-        {ok, #{<<"topic">> := Topic, <<"type">> := _Type} = Json} ->
-            io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Json, <<"$dg", Topic/binary>>]),
-            dgiot_mqtt:subscribe(<<"$dg", Topic/binary>>),
-            {[], State};
+        {ok, Json} ->
+            NewState = State#state{env = #{<<"data">> => Json}},
+            case Mod:websocket_handle({json, Json}, NewState) of
+                {ok, Text} ->
+                    io:format("~s ~p Text ~p ~n", [?FILE, ?LINE, Text]),
+
+                    {Text, NewState, hibernate};
+                _ ->
+                    {[], State, hibernate}
+            end;
         _ ->
-            {[{text, dgiot_json:encode(#{<<"name">> => <<"dgiotbad">>})}], State}
+            {[{text, dgiot_json:encode(#{<<"name">> => <<"dgiotbad">>})}], State, hibernate}
     end;
 
-websocket_handle(_Data, State) ->
-    io:format("~s ~p _Data ~p ~n", [?FILE, ?LINE, _Data]),
-    {[], State}.
+websocket_handle(Data, #state{mod = Mod} = State) ->
+    case Mod:websocket_handle(Data, State) of
+        {ok, Text} ->
+            {Text, State, hibernate};
+        _ ->
+            {[], State, hibernate}
+    end.
 
 websocket_info({timeout, _Ref, Msg}, State) ->
-    io:format("~s ~p  ~p ~p ~p ~p ~p  ~n", [?FILE, ?LINE, timeout, cowboy_clock:rfc1123(), _Ref, Msg, State]),
+    io:format("~s ~p ~p ~p ~p ~p ~p ~n", [?FILE, ?LINE, timeout, cowboy_clock:rfc1123(), _Ref, Msg, State]),
     {reply, {text, Msg}, State, hibernate};
 websocket_info({close, CloseCode, Reason}, State) ->
-    io:format("~s ~p  ~p ~p ~p ~p  ~n", [?FILE, ?LINE, close, CloseCode, Reason, State]),
+    io:format("~s ~p ~p ~p ~p ~p ~n", [?FILE, ?LINE, close, CloseCode, Reason, State]),
     {reply, {close, CloseCode, Reason}, State};
 websocket_info(stop, State) ->
 %%    ?LOG([stop, State]),
+    io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, stop, State]),
     {stop, State};
 websocket_info({http2ws, Data}, State) ->
     io:format("~s ~p ~p ~n", [?FILE, ?LINE, byte_size(Data)]),
-    {[{binary, Data}], State};
+    {[{binary, Data}], State, hibernate};
 
-websocket_info(send_realdata, #state{env = #{<<"num">> := Num} = Env} = State) ->
-    BinNum = dgiot_utils:to_binary(Num),
-    erlang:send_after(1000, self(), send_realdata),
-    {[{text, dgiot_json:encode(#{<<"name">> => <<"realdata_", BinNum/binary>>})}], State#state{env = Env#{<<"num">> => Num + 1}}};
-
-websocket_info({deliver, _, Msg}, State) ->
-    _Topic = dgiot_mqtt:get_topic(Msg),
-    Payload = dgiot_mqtt:get_payload(Msg),
-%%    erlang:send_after(1000, self(), send_realdata),
-    {[{text, base64:decode(Payload)}], State};
-
-websocket_info(_Info, State) ->
-    %% io:format("~s ~p _Info ~p ~n", [?FILE, ?LINE, _Info]),
-    {[], State}.
-
+websocket_info(Info, #state{mod = Mod} = State) ->
+    case Mod:websocket_info(Info, State) of
+        {ok, Text} ->
+            {Text, State, hibernate};
+        _ ->
+            {[], State}
+    end.
 
 %% 断开socket onclose
 %% Rename websocket_terminate/3 to terminate/3
 %% link: https://github.com/ninenines/cowboy/issues/787
-terminate(Reason, _Req, State) ->
-    io:format("~s ~p ~p ~p ~p ~n", [?FILE, ?LINE, cowboy_clock:rfc1123(), State, Reason]),
-    ok.
+terminate(Reason, _Req, #state{mod = Mod} = State) ->
+    Mod:terminate(Reason, _Req, State).
 
 %%init(Req0, State0) ->
 %%    DID = cowboy_req:header(<<"did">>, Req0, undefined),

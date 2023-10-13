@@ -80,6 +80,10 @@ handle(OperationID, Args, Context, Req) ->
 %%% 内部函数 Version:API版本
 %%%===================================================================
 
+%% 修改域名证书
+do_request(post_domain, Args, _Context, _Req) ->
+    dgiot:domain(Args);
+
 %% 产生handler代码
 do_request(post_generate_api, #{<<"mod">> := Mod, <<"type">> := <<"erlang">>} = Args, _Context, _Req) ->
     SWSchema = maps:without([<<"mod">>, <<"type">>], Args),

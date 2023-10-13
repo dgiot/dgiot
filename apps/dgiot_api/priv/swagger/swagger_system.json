@@ -555,6 +555,65 @@
           "System"
         ]
       }
+    },
+    "/domain": {
+      "post": {
+        "summary": "修改域名证书",
+        "description": "修改域名证书",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "action": {
+                  "type": "string",
+                  "description": "操作类型",
+                  "example": "getDomain,setDomain,getSSL,setSSL"
+                },
+                "domain": {
+                  "type": "string",
+                  "description": "域名",
+                  "example": "www.dgiotcloud.cn"
+                },
+                "key": {
+                  "type": "string",
+                  "description": "密钥(KEY)",
+                  "example": "-----BEGIN RSA PRIVATE KEY-----"
+                },
+                "csr": {
+                  "type": "string",
+                  "description": "证书(PEM格式)",
+                  "example": "-----BEGIN CERTIFICATE-----"
+                }
+              }
+            },
+            "description": "相关参数",
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "System"
+        ]
+      }
     }
   }
 }

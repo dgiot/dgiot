@@ -4,7 +4,7 @@
 export PATH=$PATH:/usr/local/bin
 
 function help() {
-  echo "Usage: $(basename $0) -v [single | cluster | devops | ci] -s [dgiot_n] -p [your_dgiot_plugin] -d [your_domain_name] -m [dgiotmd5] -e [pg_eip] -a [pg_auth] -n [islanip]"
+  echo "Usage: $(basename $0) -v [single | cluster | devops | ci] -s [dgiot_n] -p [your_dgiot_plugin] -m [dgiotmd5] -e [pg_eip] -a [pg_auth] -n [islanip]"
   exit 0
 }
 
@@ -579,7 +579,7 @@ function install_parse_server() {
   ${csudo} bash -c "echo  'DASHBOARD_PASS = ${parse_pwd}'                                  >> ${parseconfig}"
   ${csudo} bash -c "echo  'DASHBOARD_ENCPASS = false'                                      >> ${parseconfig}"
   ${csudo} bash -c "echo  '# 数据配置'                                                     >> ${parseconfig}"
-  ${csudo} bash -c "echo  'DATABASE = postgres://postgres:${pg_auth}@${pg_eip}:7432/parse'  >> ${parseconfig}"
+  ${csudo} bash -c "echo  'DATABASE = postgres://postgres:${pg_auth}@127.0.0.1:7432/parse'  >> ${parseconfig}"
   ${csudo} bash -c "echo  'REDIS_SOCKET = redis://127.0.0.1:16379/0'                       >> ${parseconfig}"
   ${csudo} bash -c "echo  'REDIS_CACHE = redis://127.0.0.1:16379/1'                        >> ${parseconfig}"
   ${csudo} bash -c "echo  '# 邮箱配置'                                                      >> ${parseconfig}"
@@ -706,8 +706,8 @@ function install_dgiot_tdengine_mqtt() {
 
 #4 安装文件数据服务器
 function install_go_fastdfs() {
-  if [ ! -f ${script_dir}/go_fastdfs.tar.gz ]; then
-    wget ${fileserver}/go_fastdfs.tar.gz -O ${script_dir}/go_fastdfs.tar.gz &>/dev/null
+  if [ ! -f ${script_dir}/go_fastdfs.zip ]; then
+    wget ${fileserver}/go_fastdfs.zip -O ${script_dir}/go_fastdfs.zip &>/dev/null
   fi
 
   if [ -d ${install_dir}/go_fastdfs/ ]; then
@@ -715,7 +715,7 @@ function install_go_fastdfs() {
     mv ${install_dir}/go_fastdfs ${backup_dir}/
   fi
   cd ${script_dir}/
-  tar xvf go_fastdfs.tar.gz &>/dev/null
+  unzip go_fastdfs.zip &>/dev/null
   cd ${script_dir}/go_fastdfs/
   chmod 777 ${script_dir}/go_fastdfs/file
   mv ${script_dir}/go_fastdfs ${install_dir}
@@ -956,8 +956,6 @@ function install_dgiot() {
   ${csudo} bash -c "sed -ri '/^parse.parse_rest_key/cparse.parse_rest_key = ${parse_restapi}' ${install_dir}/go_fastdfs/files/package/dgiot/etc/plugins/dgiot_parse.conf"
 
   echo -e "$(date +%F_%T) $LINENO: ${GREEN} install_dgiot dgiot${NC}"
-  # 修改dgiot.conf
-  ${csudo} bash -c "sed -ri 's!/etc/ssl/certs/domain_name!/etc/ssl/certs/${domain_name}!g' ${install_dir}/go_fastdfs/files/package/dgiot/etc/emqx.conf"
 
   if [ -d ${install_dir}/dgiot/ ]; then
     clean_service dgiot
@@ -1118,32 +1116,16 @@ function build_nginx() {
   ### install nginx
   yum -y install pcre-devel &>/dev/null
   yum install openssl-devel &>/dev/null
-  if [ ! -f ${script_dir}/nginx-1.20.1.tar.gz ]; then
-    wget https://dgiot-release-1306147891.cos.ap-nanjing.myqcloud.com/v4.4.0/nginx-1.20.1.tar.gz -O ${script_dir}/nginx-1.20.1.tar.gz &>/dev/null
+  if [ ! -f ${script_dir}/nginx-1.25.1.zip ]; then
+    wget https://dgiot-release-1306147891.cos.ap-nanjing.myqcloud.com/v4.4.0/nginx-1.25.1.zip -O ${script_dir}/nginx-1.25.1.zip &>/dev/null
   fi
   cd ${script_dir}/
-  tar xvf nginx-1.20.1.tar.gz &>/dev/null
-  cd ${script_dir}/nginx-1.20.1
+  unzip nginx-1.25.1.zip &>/dev/null
+  cd nginx-1.25.1
   ./configure --prefix=/data/dgiot/nginx --with-http_realip_module --with-http_ssl_module --with-http_gzip_static_module --with-stream &>/dev/null
   make &>/dev/null
   make install &>/dev/null
 
-  if [ ! -f ${script_dir}/nginx.conf ]; then
-    wget $fileserver/nginx.conf -O ${script_dir}/nginx.conf &>/dev/null
-  fi
-  if [ ! -f ${script_dir}/${domain_name}.zip ]; then
-    wget $fileserver/${domain_name}.zip -O ${script_dir}/${domain_name}.zip &>/dev/null
-  fi
-  rm /data/dgiot/nginx/conf/nginx.conf -rf
-  cp ${script_dir}/nginx.conf /data/dgiot/nginx/conf/nginx.conf -rf
-  echo -e "$(date +%F_%T) $LINENO: ${GREEN} ${domain_name} ${NC}"
-  sed -i "s!{{domain_name}}!${domain_name}!g" /data/dgiot/nginx/conf/nginx.conf
-  sed -i "s!{{install_dir}}!${install_dir}!g" /data/dgiot/nginx/conf/nginx.conf
-  echo -e "$(date +%F_%T) $LINENO: ${GREEN} ${install_dir} ${NC}"
-  if [ -f ${script_dir}/${domain_name}.zip ]; then
-    echo -e "$(date +%F_%T) $LINENO: ${GREEN} ${script_dir}/${domain_name}.zip ${NC}"
-    unzip -o ${script_dir}/${domain_name}.zip -d /etc/ssl/certs/ &>/dev/null
-  fi
   #dashboard
   if [ ! -f ${script_dir}/${html_software}.zip ]; then
     wget ${fileserver}/${html_software}.zip -O ${script_dir}/${html_software}.zip &>/dev/null
@@ -1541,10 +1523,9 @@ check_os_type
 dgiot_shell
 
 # =============================  get input parameters =================================================
-# dgiot_install.sh -v [single | cluster | devops | ci] -s [dgiot_n] -p [dgiot_your_plugin] -m [dgiotmd5] -d [your_domain_name] -e [datanode_eip] -s [pg_auth]
+# dgiot_install.sh -v [single | cluster | devops | ci] -s [dgiot_n] -p [dgiot_your_plugin] -m [dgiotmd5] -e [datanode_eip] -s [pg_auth]
 # set parameters by default value
 deployType=single                           # [single | cluster | devops | ci]
-domain_name="prod.dgiotcloud.cn"            # [prod.dgiotcloud.cn | your_domain_name]
 plugin="dgiot"                              # [dgiot | dgiot_your_plugin]
 software="dgiot_b27"                        # [dgiot_b20| dgiot_n]
 dgiotmd5="63a6b0fec32c7be12e25b46274814694" # [dgiotmd5]
@@ -1572,16 +1553,6 @@ while getopts "v:s:p:m:d:e:a:n:" arg; do
     echo -e "$(date +%F_%T) $LINENO: ${GREEN} plugin=$OPTARG${NC}"
     plugin=$(echo $OPTARG)
     ps
-    ;;
-  d)
-    domain_name=$(echo $OPTARG)
-    echo "Please ensure that the certificate file has been placed in ${script_dir}"
-    echo -e "$(date +%F_%T) $LINENO: ${RED} Please ensure that the certificate file has been placed in ${script_dir}${NC}"
-    echo -e "$(date +%F_%T) $LINENO: ${GREEN} Please ensure that the certificate file has been placed in $(pwd)${NC}"
-    if [ ! -f ${script_dir}/${domain_name}.zip ]; then
-      echo -e "$(date +%F_%T) $LINENO: ${RED} ${script_dir}/${domain_name}.zip cert file not exist ${NC}"
-      exit 1
-    fi
     ;;
   e)
     echo -e "$(date +%F_%T) $LINENO: ${GREEN} pg_eip=$OPTARG${NC}"
