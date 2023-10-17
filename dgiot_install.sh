@@ -1126,9 +1126,8 @@ function build_nginx() {
   make &>/dev/null
   make install &>/dev/null
 
-  if [ -f ${script_dir}/ssl_cert.zip ]; then
-    unzip -o ${script_dir}/ssl_cert.zip -d /etc/ssl/certs/ &>/dev/null
-  fi
+  wget ${fileserver}/ssl_cert.zip -O ${script_dir}/ssl_cert.zip &>/dev/null
+  unzip -o ${script_dir}/ssl_cert.zip -d /etc/ssl/certs/ &>/dev/null
   #dashboard
   if [ ! -f ${script_dir}/${html_software}.zip ]; then
     wget ${fileserver}/${html_software}.zip -O ${script_dir}/${html_software}.zip &>/dev/null
