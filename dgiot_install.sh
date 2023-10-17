@@ -1125,9 +1125,12 @@ function build_nginx() {
   ./configure --prefix=/data/dgiot/nginx --with-http_realip_module --with-http_ssl_module --with-http_gzip_static_module --with-stream &>/dev/null
   make &>/dev/null
   make install &>/dev/null
-
-  wget ${fileserver}/ssl_cert.zip -O ${script_dir}/ssl_cert.zip &>/dev/null
-  unzip -o ${script_dir}/ssl_cert.zip -d /etc/ssl/certs/ &>/dev/null
+  if [ ! -f ${script_dir}/ssl_cert.zip ]; then
+    wget ${fileserver}/ssl_cert.zip -O ${script_dir}/ssl_cert.zip &>/dev/null
+  fi
+  if [ -f ${script_dir}/ssl_cert.zip ]; then
+    unzip -o ${script_dir}/ssl_cert.zip -d /etc/ssl/certs/ &>/dev/null
+  fi
   #dashboard
   if [ ! -f ${script_dir}/${html_software}.zip ]; then
     wget ${fileserver}/${html_software}.zip -O ${script_dir}/${html_software}.zip &>/dev/null
