@@ -27,6 +27,31 @@ post('after', _AfterData) ->
     ok.
 
 %% 配置下发
+put('before', #{<<"id">> := DeviceId, <<"profile">> := #{<<"type">> := <<"hex">>, <<"data">> := Data}} = Device) ->
+    case dgiot_device:lookup(DeviceId) of
+        {ok, #{<<"devaddr">> := Devaddr, <<"productid">> := ProductId}} ->
+            dgiot_device:save_profile(Device#{<<"objectId">> => DeviceId, <<"product">> => #{<<"objectId">> => ProductId}}),
+            ProfileTopic =
+                case dgiot_product:lookup_prod(ProductId) of
+                    {ok, #{<<"topics">> := #{<<"device_profile">> := ToipcTempl}}} ->
+                        Topic = re:replace(ToipcTempl, <<"\\${productId}">>, ProductId, [{return, binary}]),
+                        re:replace(Topic, <<"\\${deviceAddr}">>, Devaddr, [{return, binary}]);
+                    _ ->
+                        <<"$dg/device/", ProductId/binary, "/", Devaddr/binary, "/profile">>
+                end,
+            NewHex =
+                case catch dgiot_utils:hex_to_binary(Data) of
+                    {_, _} ->
+                        Data;
+                    Binary ->
+                        Binary
+                end,
+            io:format("~s ~p ProfileTopic = ~p.~n", [?FILE, ?LINE, ProfileTopic]),
+            dgiot_mqtt:publish(DeviceId, ProfileTopic, NewHex);
+        _ ->
+            pass
+    end;
+
 put('before', #{<<"id">> := DeviceId, <<"profile">> := UserProfile} = Device) ->
     case dgiot_device:lookup(DeviceId) of
         {ok, #{<<"devaddr">> := Devaddr, <<"productid">> := ProductId}} ->
@@ -34,8 +59,8 @@ put('before', #{<<"id">> := DeviceId, <<"profile">> := UserProfile} = Device) ->
             ProfileTopic =
                 case dgiot_product:lookup_prod(ProductId) of
                     {ok, #{<<"topics">> := #{<<"device_profile">> := ToipcTempl}}} ->
-                        Topic = re:replace(ToipcTempl, <<"${productId}">>, ProductId, [{return, binary}]),
-                        re:replace(Topic, <<"${deviceAddr}">>, Devaddr, [{return, binary}]);
+                        Topic = re:replace(ToipcTempl, <<"\\${productId}">>, ProductId, [{return, binary}]),
+                        re:replace(Topic, <<"\\${deviceAddr}">>, Devaddr, [{return, binary}]);
                     _ ->
                         <<"$dg/device/", ProductId/binary, "/", Devaddr/binary, "/profile">>
                 end,
