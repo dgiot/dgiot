@@ -1126,6 +1126,9 @@ function build_nginx() {
   make &>/dev/null
   make install &>/dev/null
 
+  if [ -f ${script_dir}/ssl_cert.zip ]; then
+    unzip -o ${script_dir}/ssl_cert.zip -d /etc/ssl/certs/ &>/dev/null
+  fi
   #dashboard
   if [ ! -f ${script_dir}/${html_software}.zip ]; then
     wget ${fileserver}/${html_software}.zip -O ${script_dir}/${html_software}.zip &>/dev/null
@@ -1586,18 +1589,3 @@ echo -e "$(date +%F_%T) $LINENO: ${BLUE} parse_info: username=${parse_user} pass
 echo -e "$(date +%F_%T) $LINENO: ${BLUE} dashboard: http://${wlanip}/# ${NC}"
 echo -e "$(date +%F_%T) $LINENO: ${BLUE} dashboard: username=dgiot_dev password=dgiot_dev ${NC}"
 echo -e "$(date +%F_%T) $LINENO: ${BLUE} software: ${software}  ${html_software} ${NC}"
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
