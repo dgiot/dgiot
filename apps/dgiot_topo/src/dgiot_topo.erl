@@ -109,14 +109,14 @@ send_topo({NodeType, NodeId}, Token) ->
 
 %% dgiot_topo:send_amisdata(#{<<"dashboardId">> => <<"599080d6d5">>, <<"sessionToken">> => <<"r:93a396474043d106b40557ff3ff6a3cf">>})
 send_amisdata(#{<<"dashboardId">> := DashboardId, <<"sessionToken">> := Token}) ->
-    {ViewIds, AmisDatas} =
+    {ViewIds, AmisNodes} =
         case dgiot_parse:get_object(<<"View">>, DashboardId) of
             {ok, #{<<"data">> := #{<<"konva">> := #{<<"Stage">> := Stage}}}} ->
                 Rects = dgiot_product_knova:get_nodes(Stage, [<<"Rect">>, <<"Image">>, <<"Text">>, <<"Group">>]),
                 maps:fold(
                     fun
-                        (_, #{<<"source">> := <<"mqtt">>, <<"type">> := <<"amisview">>, <<"amisid">> := Viewid} = AmisData, {Idd, Acc}) ->
-                            {Idd ++ [Viewid], Acc ++ [AmisData]};
+                        (_, #{<<"amisid">> := Viewid} = AmisNode, {Idd, Acc}) ->
+                            {Idd ++ [Viewid], Acc ++ [AmisNode]};
                         (_, _, {Idd, Acc}) ->
                             {Idd, Acc}
                     end, {[], []}, Rects);
@@ -138,54 +138,46 @@ send_amisdata(#{<<"dashboardId">> := DashboardId, <<"sessionToken">> := Token}) 
                 {ok, ViewData} ->
                     Screen_productid = maps:get(<<"screen_productid">>, AmisData, <<>>),
                     Screen_deviceid = maps:get(<<"screen_deviceid">>, AmisData, maps:get(<<"terminalId">>, AmisData, <<>>)),
-                    Rep = re:replace(jsx:encode(ViewData), <<"{{screen_productid}}">>, Screen_productid, [global, {return, binary}]),
+                    Rep = re:replace(dgiot_json:encode(ViewData), <<"{{screen_productid}}">>, Screen_productid, [global, {return, binary}]),
                     NewJson = re:replace(Rep, <<"{{screen_deviceid}}">>, Screen_deviceid, [global, {return, binary}]),
-                    Acc ++ [AmisData#{<<"viewData">> => jsx:decode(NewJson)}];
+                    Acc ++ [AmisData#{<<"viewData">> => dgiot_json:decode(NewJson)}];
                 _ ->
                     Acc
             end
-                    end, [], AmisDatas),
-    Base64 = base64:encode(jsx:encode(Payload)),
+                    end, [], AmisNodes),
+    Base64 = base64:encode(dgiot_json:encode(Payload)),
     Pubtopic = <<"$dg/user/topo/", Token/binary, "/amisdata/report">>,
     dgiot_mqtt:publish(self(), Pubtopic, Base64).
 
 get_que(DashboardId) ->
     case dgiot_parse:get_object(<<"View">>, DashboardId) of
         {ok, #{<<"data">> := #{<<"konva">> := #{<<"Stage">> := Stage}}}} ->
-            Rects = dgiot_product_knova:get_nodes(Stage, [<<"Rect">>, <<"Image">>, <<"Text">>]),
-            Realdatas =
+            Rects = dgiot_product_knova:get_nodes(Stage, [<<"Rect">>, <<"Image">>, <<"Text">>, <<"Group">>]),
+            {Que, Realdatas} =
                 maps:fold(
                     fun
-                        (_, #{<<"source">> := <<"mqtt">>, <<"type">> := <<"realdata">>, <<"screen_productid">> := ProductId, <<"screen_deviceid">> := DeviceId, <<"funcId">> := Identifier}, Acc) ->
-                            List = maps:get(ProductId, Acc, #{}),
+                        (_, #{<<"screen_productid">> := ProductId, <<"screen_deviceid">> := DeviceId, <<"funcId">> := Identifier}, {Qcc, Rcc}) ->
+                            List = maps:get(ProductId, Rcc, #{}),
                             Keys = maps:get(<<"keys">>, List, []),
                             DeviceIds = maps:get(<<"deviceids">>, List, []),
-                            Acc#{ProductId => List#{<<"keys">> => lists:umerge(Keys, [Identifier]), <<"deviceids">> => lists:umerge(DeviceIds, [DeviceId])}};
-                        (NodeId, #{<<"source">> := <<"mqtt">>, <<"type">> := <<"realdata">>, <<"screen_productid">> := ProductId}, Acc) ->
+                            {Qcc, Rcc#{ProductId => List#{<<"keys">> => lists:umerge(Keys, [Identifier]), <<"deviceids">> => lists:umerge(DeviceIds, [DeviceId])}}};
+                        (NodeId, #{<<"screen_productid">> := ProductId}, {Qcc, Rcc}) ->
                             Len = size(NodeId) - 16,
                             case NodeId of
                                 <<DeviceId:10/binary, "_", Identifier:Len/binary, "_text">> ->
-                                    List = maps:get(ProductId, Acc, #{}),
+                                    List = maps:get(ProductId, Rcc, #{}),
                                     Keys = maps:get(<<"keys">>, List, []),
                                     DeviceIds = maps:get(<<"deviceids">>, List, []),
-                                    Acc#{ProductId => List#{<<"keys">> => lists:umerge(Keys, [Identifier]), <<"deviceids">> => lists:umerge(DeviceIds, [DeviceId])}};
+                                    {Qcc, Rcc#{ProductId => List#{<<"keys">> => lists:umerge(Keys, [Identifier]), <<"deviceids">> => lists:umerge(DeviceIds, [DeviceId])}}};
                                 _ ->
-                                    Acc
+                                    {Qcc, Rcc}
                             end;
-                        (_, _, Acc) ->
-                            Acc
-                    end, #{}, Rects),
-            maps:fold(
-                fun
-                    (_, #{<<"source">> := <<"mqtt">>, <<"type">> := <<"realdata">>}, Acc) ->
-                        Acc;
-                    (NodeId, #{<<"source">> := <<"mqtt">>, <<"type">> := <<"counter">>, <<"counterId">> := CounterId}, Acc) ->
-                        Acc ++ [{<<"counter">>, CounterId, NodeId}];
-                    (NodeId, #{<<"source">> := <<"mqtt">>, <<"type">> := NodeType}, Acc) ->
-                        Acc ++ [{NodeType, NodeId}];
-                    (_, _, Acc) ->
-                        Acc
-                end, [{<<"realdata">>, Realdatas}], Rects);
+                        (NodeId, #{<<"counterId">> := CounterId}, {Qcc, Rcc}) ->
+                            {Qcc ++ [{<<"counter">>, CounterId, NodeId}], Rcc};
+                        (_, _, {Qcc, Rcc}) ->
+                            {Qcc, Rcc}
+                    end, {[], #{}}, Rects),
+            Que ++ [{<<"realdata">>, Realdatas}];
         _ ->
             []
     end.
