@@ -86,6 +86,7 @@ handle_info(disconnect, #dclient{channel = ChannelId} = State) ->
 handle_info({sub, Client, ProductId, DevAddr}, State) ->
     emqtt:subscribe(Client, {<<"$dg/device/", ProductId/binary, "/", DevAddr/binary, "/#">>, 1}), % cloud to edge
     dgiot_mqtt:subscribe(<<"edge2cloud/#">>),      %  edge  to cloud
+    emqtt:subscribe(Client, {<<"$dg/thing/", ProductId/binary, "/", DevAddr/binary, "/#">>, 1}), % cloud to edge
     {noreply, State};
 
 %% #{client_pid => <0.11482.0>, dup => false, packet_id => undefined, payload => <<"{ \"msg\": \"Hello, World!\" }">>, topic =><<"$dg/device/5392ccb3d7/00E0B45BFB4F_usb6-ai15/test">>, properties => undefined,qos => 0, retain => false}
