@@ -132,7 +132,7 @@ domain_(#{<<"action">> := <<"setDomainSSL">>, <<"domain">> := Domain, <<"key">> 
     os:cmd("sed -ri 's/(ssl_certificate )[^*]*/\\1 \\/etc\\/pki\\/tls\\/certs\\/fullchain.pem;/' /data/dgiot/nginx/conf/nginx.conf"),
     os:cmd("sed -ri 's/(ssl_certificate_key )[^*]*/\\1 \\/etc\\/pki\\/tls\\/certs\\/privkey.key;/' /data/dgiot/nginx/conf/nginx.conf"),
     os:cmd("echo '" ++ dgiot_utils:to_list(Key) ++ "' > /etc/pki/tls/certs/fullchain.pem"),
-    os:cmd("echo '" ++ dgiot_utils:to_list(Csr) ++ "' > /etc/pki/tls/certs/privkey.pem"),
+    os:cmd("echo '" ++ dgiot_utils:to_list(Csr) ++ "' > /etc/pki/tls/certs/privkey.key"),
 %%    go_fastdfs
     os:cmd("sed -ri 's/(\"download_domain\": \")[^\"]*/\\1" ++ dgiot_utils:to_list(Domain) ++ "/' /data/dgiot/go_fastdfs/conf/cfg.json"),
     dgiot_parse:update_object(<<"Dict">>, DictId, #{<<"data">> => maps:merge(Data, maps:without([<<"action">>], Args))}),
