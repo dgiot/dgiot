@@ -53,6 +53,7 @@ on_message_publish(Message = #message{topic = <<"$dg/thing/", Topic/binary>>, pa
                 _ ->
                     pass
             end,
+            dgiot_mqttc_channel:send(ProductId, DevAddr, <<"$dg/thing/", Topic/binary>>, Payload),
             dgiot_dlink_proctol:properties_report(ProductId, DevAddr, get_payload(Payload));
         [ProductId, DevAddr, <<"report">>] ->
 %%       属性获取	$dg/thing/{productId}/{deviceAddr}/properties/report	设备 => 平台

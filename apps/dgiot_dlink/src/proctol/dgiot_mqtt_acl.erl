@@ -83,6 +83,14 @@ do_check(#{clientid := Token, username := UserId} = _ClientInfo, publish, <<"$dg
             deny
     end;
 
+%%"$dg/thing/productid/devaddr/#"
+do_check(#{clientid := <<ProductID:10/binary, "_", DeviceAddr/binary>>, username := ProductID} = _ClientInfo, subscribe, <<"$dg/thing/", ProductID:10/binary, "/", DeviceInfo/binary>> = _Topic) ->
+    check_device_addr(DeviceInfo, DeviceAddr);
+
+do_check(#{clientid := DeviceAddr, username := ProductID} = _ClientInfo, subscribe, <<"$dg/thing/", ProductID:10/binary, "/", DeviceInfo/binary>> = _Topic) ->
+%%    io:format("~s ~p Topic: ~p _ClientInfo ~p~n", [?FILE, ?LINE, _Topic, _ClientInfo]),
+    check_device_addr(DeviceInfo, DeviceAddr);
+
 %%"$dg/device/productid/devaddr/#"
 do_check(#{clientid := <<ProductID:10/binary, "_", DeviceAddr/binary>>, username := ProductID} = _ClientInfo, subscribe, <<"$dg/device/", ProductID:10/binary, "/", DeviceInfo/binary>> = _Topic) ->
     check_device_addr(DeviceInfo, DeviceAddr);
