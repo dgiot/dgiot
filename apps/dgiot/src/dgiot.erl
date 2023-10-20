@@ -131,11 +131,14 @@ domain_(#{<<"action">> := <<"setDomainSSL">>, <<"domain">> := Domain, <<"key">> 
     os:cmd("sed -ri 's/(server_name )[^*]*/\\1 " ++ dgiot_utils:to_list(Domain) ++ ";/' /data/dgiot/nginx/conf/nginx.conf"),
     os:cmd("sed -ri 's/(ssl_certificate )[^*]*/\\1 \\/etc\\/pki\\/tls\\/certs\\/fullchain.pem;/' /data/dgiot/nginx/conf/nginx.conf"),
     os:cmd("sed -ri 's/(ssl_certificate_key )[^*]*/\\1 \\/etc\\/pki\\/tls\\/certs\\/privkey.key;/' /data/dgiot/nginx/conf/nginx.conf"),
-    os:cmd("echo '" ++ dgiot_utils:to_list(Key) ++ "' > /etc/pki/tls/certs/fullchain.pem"),
-    os:cmd("echo '" ++ dgiot_utils:to_list(Csr) ++ "' > /etc/pki/tls/certs/privkey.key"),
+    os:cmd("echo '" ++ dgiot_utils:to_list(Key) ++ "' > /etc/pki/tls/certs/privkey.key"),
+    os:cmd("echo '" ++ dgiot_utils:to_list(Csr) ++ "' > /etc/pki/tls/certs/fullchain.pem"),
 %%    go_fastdfs
     os:cmd("sed -ri 's/(\"download_domain\": \")[^\"]*/\\1" ++ dgiot_utils:to_list(Domain) ++ "/' /data/dgiot/go_fastdfs/conf/cfg.json"),
     dgiot_parse:update_object(<<"Dict">>, DictId, #{<<"data">> => maps:merge(Data, maps:without([<<"action">>], Args))}),
+%%    restart
+    os:cmd("systemctl restart nginx"),
+    os:cmd("systemctl restart gofastdfs"),
     #{<<"domain">> => Domain, <<"msg">> => <<"已保存"/utf8>>};
 
 domain_(_Args, _) ->
