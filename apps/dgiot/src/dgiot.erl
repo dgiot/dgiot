@@ -137,9 +137,13 @@ domain_(#{<<"action">> := <<"setDomainSSL">>, <<"domain">> := Domain, <<"key">> 
     os:cmd("sed -ri 's/(\"download_domain\": \")[^\"]*/\\1" ++ dgiot_utils:to_list(Domain) ++ "/' /data/dgiot/go_fastdfs/conf/cfg.json"),
     dgiot_parse:update_object(<<"Dict">>, DictId, #{<<"data">> => maps:merge(Data, maps:without([<<"action">>], Args))}),
 %%    restart
-    os:cmd("systemctl restart nginx"),
-    os:cmd("systemctl restart gofastdfs"),
-    #{<<"domain">> => Domain, <<"msg">> => <<"已保存"/utf8>>};
+    proc_lib:spawn_link(
+        fun() ->
+            timer:sleep(10000),
+            os:cmd("systemctl restart nginx"),
+            os:cmd("systemctl restart gofastdfs")
+        end),
+    #{<<"domain">> => Domain, <<"msg">> => <<"已保存,请稍后刷新页面"/utf8>>};
 
 domain_(_Args, _) ->
     #{<<"msg">> => <<"success">>}.
