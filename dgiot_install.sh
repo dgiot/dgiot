@@ -1532,13 +1532,13 @@ dgiot_shell
 # set parameters by default value
 deployType=single                           # [single | cluster | devops | ci]
 plugin="dgiot"                              # [dgiot | dgiot_your_plugin]
-software="dgiot_b27"                        # [dgiot_b20| dgiot_n]
-dgiotmd5="63a6b0fec32c7be12e25b46274814694" # [dgiotmd5]
+software="dgiot_b34"                        # [dgiot_b20| dgiot_n]
+dgiotmd5="d5426a73ce1a9903abc0494261132cbc" # [dgiotmd5]
 pg_eip="changeyourip"                       # [datanode_eip]
 pg_auth='changeyourpassword'                # [pg_auth]
 islanip="false"                             # [islanip]
-html_software="dgiot_html_4.8.5"            # [dgiot_html_4.8.2| dgiot_html_n]
-htmlmd5="0bd179653d25f1b48a0b09eeecce0170"  # [htmlmd5]
+html_software="dgiot_html_4.8.6"            # [dgiot_html_4.8.2| dgiot_html_n]
+htmlmd5="cf7ecfc44b3fff2083754271d60fa00f"  # [htmlmd5]
 
 while getopts "v:s:p:m:d:e:a:n:" arg; do
   case $arg in
