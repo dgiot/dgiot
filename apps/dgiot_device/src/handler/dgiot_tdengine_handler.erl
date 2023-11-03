@@ -208,9 +208,33 @@ do_request(get_gps_track_deviceid, #{<<"deviceid">> := DeviceId, <<"starttime">>
 
 %% TDengine 概要: save_td
 do_request(post_save_td, #{<<"productid">> := ProductId, <<"devaddr">> := DevAddr, <<"data">> := Ack} = _Args, _Context, _Req) ->
-    R = dgiot_task:save_td(ProductId, DevAddr, Ack, #{}),
-%%    io:format("~s ~p R = ~p.~n", [?FILE, ?LINE, R]),
-    {ok, #{<<"data">> => R}};
+    DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
+    case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+        {ok, #{<<"devaddr">> := DevAddr}} ->
+            pass;
+        _ ->
+            case dgiot_parse:get_object(<<"Product">>, ProductId) of
+                {ok, #{<<"ACL">> := Acl, <<"devType">> := DevType}} ->
+                    dgiot_device:create_device(#{
+                        <<"devaddr">> => DevAddr,
+                        <<"name">> => DevAddr,
+                        <<"isEnable">> => true,
+                        <<"product">> => ProductId,
+                        <<"ACL">> => Acl,
+                        <<"status">> => <<"ONLINE">>,
+                        <<"brand">> => DevType,
+                        <<"devModel">> => DevType,
+                        <<"basedata">> => Ack
+                    });
+                _Error2 ->
+                    pass
+            end
+    end,
+    spawn(fun() ->
+        Sql1 = dgiot_tdengine:format_sql(ProductId, DevAddr, [Ack]),
+        dgiot_tdengine_adapter:save_sql(ProductId, Sql1)
+          end),
+    {ok, #{<<"status">> => 0, <<"msg">> => <<"success">>}};
 
 %%  服务器不支持的API接口
 do_request(_OperationId, _Args, _Context, _Req) ->
