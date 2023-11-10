@@ -1,5 +1,6 @@
 #  DGIOT Lightweight industrial iot open source platform
 
+![新品发布.jpg](https://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_edge.png)
 
 [![GitHub Release](https://img.shields.io/github/release/dgiot/dgiot?color=brightgreen)](https://github.com/dgiot/dgiot/releases)
 [![Docker Pulls](https://img.shields.io/docker/pulls/dgiot/dgiot)](https://hub.docker.com/r/dgiot/dgiot)
