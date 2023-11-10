@@ -532,7 +532,7 @@ modbus_decoder(ProductId, SlaveId, Address, Data, Acc1) ->
                         NewAddress = Sh * 256 + Sl,
                         case {SlaveId, Address} of
                             {NewSlaveid, NewAddress} ->
-                                case format_value(Data, X, Props) of
+                                case catch format_value(Data, X, Props) of
                                     {map, Value} ->
                                         maps:merge(Acc, Value);
                                     {Value, _Rest} ->
@@ -620,7 +620,7 @@ format_value(Buff, #{<<"identifier">> := BitIdentifier,
                         case IntOffset of
                             0 ->
                                 <<V:IntLen/binary, _/binary>> = Buff,
-                                case format_value(V, X, Props) of
+                                case catch format_value(V, X, Props) of
                                     {Value1, _Rest} ->
                                         Value1;
                                     _ ->
@@ -628,7 +628,7 @@ format_value(Buff, #{<<"identifier">> := BitIdentifier,
                                 end;
                             _ ->
                                 <<_:IntOffsetLen/binary, V:IntLen/binary, _/binary>> = Buff,
-                                case format_value(V, X, Props) of
+                                case catch format_value(V, X, Props) of
                                     {Value1, _Rest} ->
                                         Value1;
                                     _ ->
@@ -689,59 +689,46 @@ format_value(Buff, #{<<"dataSource">> := #{
     {Value, Rest};
 
 format_value(Buff, #{<<"dataSource">> := #{
-    <<"registersnumber">> := Num,
     <<"originaltype">> := <<"long32_CDAB">>
 }}, _Props) ->
-    IntNum = dgiot_utils:to_int(Num),
-    Size = IntNum * 4 * 8,
     <<H:2/binary, L:2/binary, Rest/binary>> = Buff,
-    <<Value:Size/integer>> = <<L/binary, H/binary>>,
+    <<Value:32/integer>> = <<L/binary, H/binary>>,
     {Value, Rest};
 
 format_value(Buff, #{<<"dataSource">> := #{
-    <<"registersnumber">> := Num,
     <<"originaltype">> := <<"ulong32_ABCD">>
 }}, _Props) ->
-    IntNum = dgiot_utils:to_int(Num),
-    Size = IntNum * 4 * 8,
     <<H:2/binary, L:2/binary, Rest/binary>> = Buff,
-    <<Value:Size/integer>> = <<H/binary, L/binary>>,
+    <<Value:32/integer>> = <<H/binary, L/binary>>,
     {Value, Rest};
 
 format_value(Buff, #{<<"dataSource">> := #{
-    <<"registersnumber">> := Num,
     <<"originaltype">> := <<"ulong32_CDAB">>
 }}, _Props) ->
-    IntNum = dgiot_utils:to_int(Num),
-    Size = IntNum * 4 * 8,
     <<H:2/binary, L:2/binary, Rest/binary>> = Buff,
-    <<Value:Size/integer>> = <<L/binary, H/binary>>,
+    <<Value:32/integer>> = <<L/binary, H/binary>>,
     {Value, Rest};
 
 format_value(Buff, #{<<"dataSource">> := #{
-    <<"registersnumber">> := Num,
     <<"originaltype">> := <<"float32_ABCD">>
 }}, _Props) ->
-    IntNum = dgiot_utils:to_int(Num),
-    Size = IntNum * 4 * 8,
     <<H:2/binary, L:2/binary, Rest/binary>> = Buff,
-    <<Value:Size/float>> = <<H/binary, L/binary>>,
+    <<Value:32/float>> = <<H/binary, L/binary>>,
     {Value, Rest};
 
 format_value(Buff, #{<<"dataSource">> := #{
-    <<"registersnumber">> := Num,
     <<"originaltype">> := <<"float32_CDAB">>
 }}, _Props) ->
-    IntNum = dgiot_utils:to_int(Num),
-    Size = IntNum * 4 * 8,
     <<H:2/binary, L:2/binary, Rest/binary>> = Buff,
-    <<Value:Size/float>> = <<L/binary, H/binary>>,
+    <<Value:32/float>> = <<L/binary, H/binary>>,
     {Value, Rest};
 
 %% @todo 其它类型处理
-format_value(_, #{<<"identifier">> := Field}, _Props) ->
-    ?LOG(info, "Field ~p", [Field]),
-    throw({field_error, <<Field/binary, " is not validate">>}).
+format_value(Buff, _, _) ->
+%%    ?LOG(info, "Field ~p", [Field]),
+%%    throw({field_error, <<Field/binary, " is not validate">>}),
+    <<Value:8/signed-big-integer, Rest/binary>> = Buff,
+    {Value, Rest}.
 
 %% 获取寄存器字节长度
 get_len(IntNum, <<"short16_AB">>) ->

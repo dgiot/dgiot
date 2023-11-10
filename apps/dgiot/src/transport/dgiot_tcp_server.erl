@@ -103,7 +103,7 @@ handle_info({tcp_passive, _Sock}, State) ->
     {noreply, NState};
 
 %% add register function
-handle_info({tcp, Sock, Data}, #state{mod = Mod, child = #tcp{register = false, buff = Buff, socket = Sock} = ChildState} = State) ->
+handle_info({tcp, Sock, Data}, #state{mod = Mod, child = #tcp{clientid = Clientid, register = false, buff = Buff, socket = Sock} = ChildState} = State) ->
     dgiot_metrics:inc(dgiot, <<"tcp_recv">>, 1),
     Binary = iolist_to_binary(Data),
     NewBin =
@@ -113,7 +113,8 @@ handle_info({tcp, Sock, Data}, #state{mod = Mod, child = #tcp{register = false, 
             _ ->
                 Binary
         end,
-    write_log(ChildState#tcp.log, <<"RECV">>, NewBin),
+    DTUIP = dgiot_utils:get_ip(Sock),
+    write_log(ChildState#tcp.log, <<" RECV ", DTUIP/binary, " ", Clientid/binary>>, NewBin),
     Cnt = byte_size(NewBin),
     NewChildState = ChildState#tcp{buff = <<>>},
     case Mod:handle_info({tcp, <<Buff/binary, NewBin/binary>>}, NewChildState) of
@@ -129,7 +130,7 @@ handle_info({tcp, Sock, Data}, #state{mod = Mod, child = #tcp{register = false, 
             {stop, Reason, State#state{child = NewChild}}
     end;
 
-handle_info({tcp, Sock, Data}, #state{mod = Mod, child = #tcp{buff = Buff, socket = Sock} = ChildState} = State) ->
+handle_info({tcp, Sock, Data}, #state{mod = Mod, child = #tcp{clientid = Clientid, buff = Buff, socket = Sock} = ChildState} = State) ->
     dgiot_metrics:inc(dgiot, <<"tcp_recv">>, 1),
     Binary = iolist_to_binary(Data),
     NewBin =
@@ -139,7 +140,8 @@ handle_info({tcp, Sock, Data}, #state{mod = Mod, child = #tcp{buff = Buff, socke
             _ ->
                 Binary
         end,
-    write_log(ChildState#tcp.log, <<"RECV">>, NewBin),
+    DTUIP = dgiot_utils:get_ip(Sock),
+    write_log(ChildState#tcp.log, <<"RECV ", DTUIP/binary, " ", Clientid/binary>>, NewBin),
     Cnt = byte_size(NewBin),
     NewChildState = ChildState#tcp{buff = <<>>},
     case NewChildState of
@@ -156,25 +158,29 @@ handle_info({tcp, Sock, Data}, #state{mod = Mod, child = #tcp{buff = Buff, socke
             {stop, Reason, State#state{child = NewChild}}
     end;
 
-handle_info({shutdown, Reason}, #state{child = #tcp{clientid = CliendId, register = true} = ChildState} = State) ->
+handle_info({shutdown, Reason}, #state{child = #tcp{clientid = CliendId, socket = Sock, register = true} = ChildState} = State) ->
     ?LOG(error, "shutdown, ~p, ~p~n", [Reason, ChildState#tcp.state]),
     dgiot_cm:unregister_channel(CliendId),
     dgiot_device:offline(CliendId),
-    write_log(ChildState#tcp.log, <<"ERROR">>, list_to_binary(io_lib:format("~w", [Reason]))),
+    DTUIP = dgiot_utils:get_ip(Sock),
+    write_log(ChildState#tcp.log, <<"ERROR ", DTUIP/binary, " ", CliendId/binary>>, list_to_binary(io_lib:format("~w", [Reason]))),
     {stop, normal, State#state{child = ChildState#tcp{socket = undefined}}};
 
-handle_info({shutdown, Reason}, #state{child = ChildState} = State) ->
+handle_info({shutdown, Reason}, #state{child = #tcp{clientid = Clientid, socket = Sock} = ChildState} = State) ->
     ?LOG(error, "shutdown, ~p, ~p~n", [Reason, ChildState#tcp.state]),
-    write_log(ChildState#tcp.log, <<"ERROR">>, list_to_binary(io_lib:format("~w", [Reason]))),
+    DTUIP = dgiot_utils:get_ip(Sock),
+    write_log(ChildState#tcp.log, <<"ERROR ", DTUIP/binary, " ", Clientid/binary>>, list_to_binary(io_lib:format("~w", [Reason]))),
     {stop, normal, State#state{child = ChildState#tcp{socket = undefined}}};
 
-handle_info({tcp_error, _Sock, Reason}, #state{child = ChildState} = State) ->
+handle_info({tcp_error, _Sock, Reason}, #state{child = #tcp{clientid = Clientid, socket = Sock} = ChildState} = State) ->
     ?LOG(error, "tcp_error, ~p, ~p~n", [Reason, ChildState#tcp.state]),
-    write_log(ChildState#tcp.log, <<"ERROR">>, list_to_binary(io_lib:format("~w", [Reason]))),
+    DTUIP = dgiot_utils:get_ip(Sock),
+    write_log(ChildState#tcp.log, <<"ERROR ", DTUIP/binary, " ", Clientid/binary>>, list_to_binary(io_lib:format("~w", [Reason]))),
     {stop, {shutdown, Reason}, State};
 
-handle_info({tcp_closed, Sock}, #state{mod = Mod, child = #tcp{socket = Sock} = ChildState} = State) ->
-    write_log(ChildState#tcp.log, <<"ERROR">>, <<"tcp_closed">>),
+handle_info({tcp_closed, Sock}, #state{mod = Mod, child = #tcp{clientid = Clientid, socket = Sock} = ChildState} = State) ->
+    DTUIP = dgiot_utils:get_ip(Sock),
+    write_log(ChildState#tcp.log, <<"ERROR ", DTUIP/binary, " ", Clientid/binary>>, <<"tcp_closed">>),
     dgiot_metrics:dec(dgiot, <<"tcp_online">>, 1),
     ?LOG(error, "tcp_closed ~p", [ChildState#tcp.state]),
     case Mod:handle_info(tcp_closed, ChildState) of
@@ -209,22 +215,26 @@ code_change(OldVsn, #state{mod = Mod, child = ChildState} = State, Extra) ->
 %%% Internal functions
 %%%===================================================================
 
-send(#tcp{clientid = CliendId, register = true, transport = Transport, socket = Socket}, Payload) ->
+send(#tcp{clientid = CliendId, register = true, transport = Transport, socket = Socket} = ChildState, Payload) ->
     dgiot_tracer:check_trace(CliendId, CliendId, dgiot_utils:binary_to_hex(Payload), ?MODULE, ?LINE),
     dgiot_metrics:inc(dgiot_bridge, <<"tcp_server_send">>, 1),
     case Socket == undefined of
         true ->
             {error, disconnected};
         false ->
+            DTUIP = dgiot_utils:get_ip(Socket),
+            write_log(ChildState#tcp.log, <<"send ", DTUIP/binary, " ", CliendId/binary>>, Payload),
             Transport:send(Socket, Payload)
     end;
 
-send(#tcp{transport = Transport, socket = Socket}, Payload) ->
+send(#tcp{clientid = Clientid, transport = Transport, socket = Socket} = ChildState, Payload) ->
     dgiot_metrics:inc(dgiot_bridge, <<"tcp_server_send">>, 1),
     case Socket == undefined of
         true ->
             {error, disconnected};
         false ->
+            DTUIP = dgiot_utils:get_ip(Socket),
+            write_log(ChildState#tcp.log, <<"send ", DTUIP/binary, " ", Clientid/binary>>, Payload),
             Transport:send(Socket, Payload)
     end.
 
@@ -256,7 +266,9 @@ ensure_rate_limit(State) ->
             State#state{conn_state = blocked, incoming_bytes = 0, rate_limit = RateLimit, limit_timer = TRef}
     end.
 
-
+%%write_log(false, Type, Buff) ->
+%%    write_log(file, Type, Buff),
+%%    ok;
 write_log(file, Type, Buff) ->
     [Pid] = io_lib:format("~p", [self()]),
     Date = dgiot_datetime:format("YYYY-MM-DD"),
