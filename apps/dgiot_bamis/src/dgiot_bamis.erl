@@ -46,7 +46,6 @@
 %% @description 备注
 %% 已实现 get post 的适配工作
 get({'before', '*', Args}) ->
-%%    io:format("~s ~p Data: ~p ~n", [?FILE, ?LINE, Data]),
     NewData = maps:fold(fun(K, V, Acc) ->
         case V of
             undefined -> Acc;
@@ -226,8 +225,8 @@ format_multilayer(Object) ->
                     [<<"">>] ->
                         Acc;
                     _ ->
-                        NewV = format_value(V),
                         NewK = format_value(K),
+                        NewV = dgiot_bamis:format_multilayer(V),
                         Acc#{NewK => NewV}
                 end;
             (K, V, Acc) when is_list(V) ->
@@ -235,7 +234,7 @@ format_multilayer(Object) ->
                 NewV =
                     lists:foldl(fun
                                     (V1, Acc1) when is_map(V1) ->
-                                        Fv = format_multilayer(V1),
+                                        Fv = dgiot_bamis:format_multilayer(V1),
                                         case length(maps:values(Fv)) > 0 of
                                             true ->
                                                 Acc1 ++ [Fv];
@@ -280,6 +279,25 @@ format_value(#{<<"regex">> := V}) ->
     #{<<"$regex">> => V};
 format_value(#{<<"in">> := V}) ->
     #{<<"$in">> => V};
+format_value(#{<<"or">> := V}) ->
+    #{<<"$or">> => V};
+format_value(#{<<"and">> := V}) ->
+    #{<<"$and">> => V};
+
+format_value(<<"gt">>) ->
+    <<"$gt">>;
+format_value(<<"gte">>) ->
+    <<"$gte">>;
+format_value(<<"lt">>) ->
+    <<"$lt">>;
+format_value(<<"lte">>) ->
+    <<"$lte">>;
+format_value(<<"ne">>) ->
+    <<"$ne">>;
+format_value(<<"regex">>) ->
+    <<"$regex">>;
+format_value(<<"in">>) ->
+    <<"$in">>;
 format_value(<<"or">>) ->
     <<"$or">>;
 format_value(<<"and">>) ->

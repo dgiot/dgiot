@@ -34,6 +34,7 @@
     update_notification/2,
     create_maintenance/2,
     send_maintenance/1,
+    send_other/1,
     get_operations/0,
     send_message_to3D/3,
     triggeralarm/2,
@@ -201,7 +202,7 @@ add_notification(<<"start_", Ruleid/binary>>, DeviceId, Payload) ->
             NotificationId = dgiot_parse_id:get_notificationid(Ruleid),
             dgiot_data:insert(?NOTIFICATION, {DeviceId, Ruleid}, {start, dgiot_datetime:now_secs(), NotificationId}),
             Content = save_notification(Ruleid, DeviceId, Payload, NotificationId),
-%%            io:format("~s ~p Content = ~p.~n", [?FILE, ?LINE, Content]),
+            dgiot_umeng:send_other(Content),
             dgiot_umeng:send_maintenance(Content#{<<"notificationid">> => NotificationId}),
             dgiot_umeng:send_msg(Content),
             dgiot_umeng:sendSubscribe(Content)
@@ -621,6 +622,53 @@ sendSubscribe(#{<<"send_alarm_status">> := <<"start">>, <<"roleid">> := NotifRol
 %% 小程序订阅
 sendSubscribe(_O) ->
 %%    io:format("~s ~p _O = ~p.~n", [?FILE, ?LINE, _O]),
+    pass.
+
+%% 推送第三方
+send_other(#{<<"send_alarm_status">> := <<"start">>, <<"_deviceid">> := DeviceId, <<"_viewid">> := ViewId, <<"dgiot_alarmvalue">> := Alarmvalue}) ->
+    case dgiot_parse:get_object(<<"View">>, ViewId) of
+        {ok, #{<<"meta">> := #{<<"otherpush">> := #{<<"ispush">> := <<"true">>, <<"type">> := <<"mqtt">>, <<"topic">> := Topic, <<"level">> := Level, <<"description">> := Description}}}} ->
+            case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+                {ok, #{<<"name">> := DeviceName, <<"product">> := #{<<"objectId">> := ProductId}}} ->
+                    ProductName =
+                        case dgiot_parse:get_object(<<"Product">>, ProductId) of
+                            {ok, #{<<"name">> := Name1}} ->
+                                Name1;
+                            _ ->
+                                <<>>
+                        end,
+                    <<Number:10/binary, _/binary>> = dgiot_utils:random(),
+                    Timestamp = dgiot_datetime:format(dgiot_datetime:to_localtime(dgiot_datetime:now_secs()), <<"YY-MM-DD HH:NN:SS">>),
+                    BinAlarmvalue = dgiot_utils:to_binary(Alarmvalue),
+                    Data = #{
+                        <<"id">> => Number,
+                        <<"deviceid">> => DeviceId,
+                        <<"devicename">> => DeviceName,
+                        <<"status">> => <<"在线"/utf8>>,
+                        <<"content">> => Description,
+                        <<"time">> => Timestamp,
+                        <<"level">> => Level,
+                        <<"data">> => #{
+                            <<"id">> => Number,
+                            <<"deviceid">> => DeviceId,
+                            <<"devicename">> => DeviceName,
+                            <<"productid">> => ProductId,
+                            <<"productname">> => ProductName,
+                            <<"value">> => Alarmvalue,
+                            <<"type">> => <<"warn">>,
+                            <<"description">> => <<Description/binary, "；触发值："/utf8, BinAlarmvalue/binary>>
+                        }
+                    },
+                    dgiot_mqtt:publish(DeviceId, <<"bridge/", Topic/binary>>, jsx:encode(Data)),
+                    dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(Data));
+                _ ->
+                    pass
+            end;
+        _O ->
+            pass
+    end;
+
+send_other(_O) ->
     pass.
 
 %% 触发 告警工单创建
