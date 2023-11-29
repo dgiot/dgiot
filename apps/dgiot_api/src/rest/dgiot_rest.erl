@@ -82,13 +82,25 @@ init(Req, #{logic_handler := LogicHandler} = Map) ->
         _ ->
             case call(LogicHandler, init, [Req, Map]) of
                 {no_call, Req1} ->
-                    Index = maps:get(Method, Map),
-                    {ok, {_, Config}} = dgiot_router:get_state(Index),
-                    default_init(Config, State, Req1);
+                    case maps:find(Method, Map) of
+                        {ok, Index} ->
+                            {ok, {_, Config}} = dgiot_router:get_state(Index),
+                            default_init(Config, State, Req1);
+                        _ ->
+                            pass
+                    end;
                 no_call ->
-                    Index = maps:get(Method, Map),
-                    {ok, {_, Config}} = dgiot_router:get_state(Index),
-                    default_init(Config, State, Req);
+                    case maps:find(Method, Map) of
+                        {ok, Index} ->
+                            case dgiot_router:get_state(Index) of
+                                {ok, {_, Config}} ->
+                                    default_init(Config, State, Req);
+                                _ ->
+                                    pass
+                            end;
+                        _ ->
+                            pass
+                    end;
                 {?MODULE, Req1, NewConfig} ->
                     default_init(NewConfig, State, Req1)
             end
@@ -172,7 +184,7 @@ is_authorized(Req0, State = #state{
     end.
 
 get_OperationID(OperationID, LogicHandler) ->
-    case proplists:get_value(exports,LogicHandler:module_info()) of
+    case proplists:get_value(exports, LogicHandler:module_info()) of
         undefined ->
             OperationID;
         Exports ->
