@@ -141,6 +141,9 @@ put(Device) ->
         {ok, #{<<"status">> := Status, <<"state">> := State, <<"acl">> := Acl, <<"isEnable">> := IsEnable, <<"devaddr">> := Devaddr, <<"time">> := Oldtime,
             <<"productid">> := ProductId, <<"devicesecret">> := DeviceSecret, <<"node">> := Node, <<"longitude">> := Longitude, <<"latitude">> := Latitude}} ->
             NewIsEnable = maps:get(<<"isEnable">>, Device, IsEnable),
+            Location = maps:get(<<"location">>, Device, #{<<"longitude">> => Longitude, <<"latitude">> => Latitude}),
+            NewLongitude = maps:get(<<"longitude">>, Location, Longitude),
+            NewLatitude = maps:get(<<"latitude">>, Location, Latitude),
             {NewStatus, Now} = check_time(Status, Device, Oldtime),
             NewAcl =
                 case maps:find(<<"ACL">>, Device) of
@@ -149,7 +152,7 @@ put(Device) ->
                     _ ->
                         dgiot_role:get_acls(Device)
                 end,
-            insert_mnesia(DeviceId, NewAcl, NewStatus, State, Now, NewIsEnable, ProductId, Devaddr, DeviceSecret, Node, Longitude, Latitude);
+            insert_mnesia(DeviceId, NewAcl, NewStatus, State, Now, NewIsEnable, ProductId, Devaddr, DeviceSecret, Node, NewLongitude, NewLatitude);
         _ ->
             pass
     end.

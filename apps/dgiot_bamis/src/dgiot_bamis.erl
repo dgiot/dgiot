@@ -53,7 +53,7 @@ get({'before', '*', Args}) ->
         end
                         end, #{}, Args),
     Basic = format(NewData),
-%%    io:format("~s ~p Basic: ~p ~n", [?FILE, ?LINE, Basic]),
+%%    io:format("~s ~p Basic = ~p.~n", [?FILE, ?LINE, Basic]),
     Basic;
 
 get({'after', #{<<"results">> := Response, <<"count">> := Count} = _Data}) ->

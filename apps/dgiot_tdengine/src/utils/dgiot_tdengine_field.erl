@@ -161,6 +161,8 @@ check_field(Data, #{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> :=
 check_field(_, _) ->
     undefined.
 
+check_validate({_, text}, _) ->
+    true;
 check_validate(null, _) ->
     true;
 check_validate(Value, #{<<"max">> := Max, <<"min">> := Min}) when is_integer(Max), is_integer(Min) ->

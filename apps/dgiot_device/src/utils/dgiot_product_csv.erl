@@ -198,6 +198,7 @@ post_properties(Things, AtomName, ProductId, ProductName) ->
             <<"dataType">> => #{
                 <<"das">> => [],
                 <<"type">> => to_lower(Type),
+                <<"size">> => 99,
                 <<"specs">> => #{
                     <<"min">> => Min,
                     <<"max">> => Max,
@@ -244,10 +245,12 @@ get_accessmode(_AccessMode) ->
 
 get_min_max(Min_Max) ->
     case binary:split(Min_Max, <<$->>, [global, trim]) of
+        [<<>>, Min, Max] ->
+            {-dgiot_utils:to_int(Min), dgiot_utils:to_int(Max)};
         [Min, Max] ->
             {dgiot_utils:to_int(Min), dgiot_utils:to_int(Max)};
         _ ->
-            {0, 999}
+            {-65535, 65535}
     end.
 
 %%get_operatetype(Operatetype) ->

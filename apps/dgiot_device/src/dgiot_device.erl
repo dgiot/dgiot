@@ -190,7 +190,6 @@ create_device(#{<<"status">> := Status, <<"brand">> := Brand, <<"devModel">> := 
             Batch_name = dgiot_utils:to_list(Y) ++ dgiot_utils:to_list(M) ++ dgiot_utils:to_list(D),
             <<DeviceSecret:10/binary, _/binary>> = dgiot_utils:to_md5(dgiot_utils:random()),
             NewDevice = Device#{
-                <<"location">> => maps:get(<<"location">>, Device, #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => 120.161324, <<"latitude">> => 30.262441}),
                 <<"basedata">> => maps:get(<<"basedata">>, Device, #{}),
                 <<"content">> => maps:get(<<"content">>, Device, #{}),
                 <<"profile">> => maps:get(<<"profile">>, Device, #{}),

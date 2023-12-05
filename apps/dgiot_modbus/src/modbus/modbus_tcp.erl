@@ -24,7 +24,6 @@
 -export([
     init/1,
     parse_frame/1,
-    parse_frame/2,
     parse_frame/3,
     to_frame/1,
     build_req_message/1,
@@ -272,14 +271,15 @@ set_params(Payload, _ProductId, _DevAddr) ->
 parse_frame(<<_TransactionId:16, _ProtocolId:16, _Size1:16, _Slaveid:8, _FunCode:8, DataLen:8, Data:DataLen/bytes, _/bytes>>) ->
     Data.
 
-%% 00 03 64 5c
-parse_frame(FileName, Data) ->
+%% 00000001000200030004000540C0000041000000412000004140000041600000418000004190000041A0000041B0000041C0000041D0000041E000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000063
+%% 3F800000400000004080000040C0000041000000412000004140000041600000418000004190000041A0000041B0000041C0000041D0000041E0000041F00000420000004208000000000000000000000000000000000000000000000000000000000000000000000000000000000000426000004268000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000630000000000000000000000000000006B
+parse_frame(StartAddr, FileName, Data) ->
     AtomName = dgiot_utils:to_atom(FileName),
     Things = ets:match(AtomName, {'$1', ['_', '_', '_', '_', '$2', '_', '_', '_', '$3', '_', '_', '_', '_', '_', '_', '$4' | '_']}),
     AllData =
-        lists:foldl(fun([Number, Devaddr, Address, Originaltype | _], Acc) ->
+        lists:foldl(fun([_Number, Devaddr, Address, Originaltype | _], Acc) ->
             ProductId = dgiot_data:get(AtomName, {addr, Address}),
-            IntOffset = dgiot_utils:to_int(Number) - 1,
+            IntOffset = (dgiot_utils:to_int(Address) + 1)  - StartAddr,
             Thing = #{
                 <<"identifier">> => Address,
                 <<"dataSource">> => #{
@@ -287,7 +287,6 @@ parse_frame(FileName, Data) ->
                     <<"originaltype">> => Originaltype
                 }},
             IntLen = get_len(1, Originaltype),
-
             Value =
                 case IntOffset of
                     0 ->
@@ -303,11 +302,13 @@ parse_frame(FileName, Data) ->
                                 null
                         end;
                     _ ->
-                        NewIntOffset = get_len(IntOffset, Originaltype),
+%%                        NewIntOffset = get_len(IntOffset, Originaltype),
+                        NewIntOffset = IntOffset * 2,
                         case Data of
                             <<_:NewIntOffset/binary, V:IntLen/binary, _/binary>> ->
                                 case format_value(V, Thing, #{}) of
                                     {Value1, _Rest} ->
+%%                                        io:format("~s ~p ~p => ~p => ~p => ~p => ~p => ~p ~n", [?FILE, ?LINE, Address, IntOffset, NewIntOffset, IntLen, V, Value1]),
                                         Value1;
                                     _ ->
                                         V
@@ -316,18 +317,25 @@ parse_frame(FileName, Data) ->
                                 null
                         end
                 end,
-
             case Value of
                 null ->
                     Acc;
                 _ ->
-%%                    io:format("~s ~p  Devaddr ~p. => Value = ~p.~n", [?FILE, ?LINE, Devaddr, Value]),
-                    NewData = change_data(ProductId, #{Address => dgiot_utils:to_float(Value, 3)}),
-                    dgiot_task:save_td(ProductId, Devaddr, NewData, #{<<"interval">> => 30}),
-                    Acc ++ [NewData]
+                    NewData = change_data(ProductId, #{Address => Value}),
+                    {ProductId, Devaddr, OldData} = maps:get(<<ProductId/binary, Devaddr/binary>>, Acc, {ProductId, Devaddr, #{}}),
+                    Acc#{<<ProductId/binary, Devaddr/binary>> => {ProductId, Devaddr, maps:merge(OldData, NewData)}}
             end
-                    end, [], Things),
-    AllData.
+                    end, #{}, Things),
+%%    io:format("~s ~p  AllData = ~p.~n", [?FILE, ?LINE, AllData]),
+    NewAllData =
+        maps:fold(fun
+                      (_, {ProductId1, Devaddr1, Ack}, Ncc) ->
+                          NewData = dgiot_task:save_td(ProductId1, Devaddr1, Ack, #{<<"interval">> => 30}),
+                          Ncc#{Devaddr1 => NewData};
+                      (_, _, Ncc) ->
+                          Ncc
+                  end, #{}, AllData),
+    NewAllData.
 
 change_data(ProductId, Data) ->
     case dgiot_product:lookup_prod(ProductId) of
@@ -361,71 +369,6 @@ change_data(ProductId, Data) ->
         _Error ->
             Data
     end.
-
-%rtu modbus
-parse_frame(<<>>, Acc, _State) -> {<<>>, Acc};
-
-parse_frame(<<MbAddr:8, BadCode:8, ErrorCode:8, Crc:2/binary>> = Buff, Acc,
-    #{<<"addr">> := DtuAddr} = State) ->
-    CheckCrc = dgiot_utils:crc16(<<MbAddr:8, BadCode:8, ErrorCode:8>>),
-    case CheckCrc =:= Crc of
-        true ->
-            Error = case ErrorCode of
-                        ?ILLEGAL_FUNCTION -> {error, illegal_function};
-                        ?ILLEGAL_DATA_ADDRESS -> {error, illegal_data_address};
-                        ?ILLEGAL_DATA_VALUE -> {error, illegal_data_value};
-                        ?SLAVE_DEVICE_FAILURE -> {error, slave_device_failure};
-                        ?ACKNOWLEDGE -> {error, acknowledge};
-                        ?SLAVE_DEVICE_BUSY -> {error, slave_device_busy};
-                        ?NEGATIVE_ACKNOWLEDGE -> {error, negative_acknowledge};
-                        ?MEMORY_PARITY_ERROR -> {error, memory_parity_error};
-                        ?GATEWAY_PATH_UNAVAILABLE -> {error, gateway_path_unavailable};
-                        ?GATEWAY_TARGET_DEVICE_FAILED_TO_RESPOND -> {error, gateway_target_device_failed_to_respond};
-                        _ -> {error, unknown_response_code}
-                    end,
-            ?LOG(info, "DtuAddr ~p Modbus ~p, BadCode ~p, Error ~p", [DtuAddr, MbAddr, BadCode, Error]),
-            {<<>>, #{}};
-        false ->
-            parse_frame(Buff, Acc, State)
-    end;
-
-%% modbustcp
-%% Buff = <<"000100000006011000000001">>,
-parse_frame(<<_TransactionId:16, _ProtocolId:16, Size:16, _ResponseData:Size/bytes>> = Buff, Acc, #{<<"dtuproduct">> := ProductId, <<"address">> := Address} = State) ->
-    io:format("~s ~p Buff = ~p.~n", [?FILE, ?LINE, Buff]),
-    case decode_data(Buff, ProductId, Address, Acc) of
-        {Rest1, Acc1} ->
-            parse_frame(Rest1, Acc1, State);
-        [Buff, Acc] ->
-            [Buff, Acc]
-    end;
-
-%% 传感器直接做为dtu物模型的一个指标
-parse_frame(<<SlaveId:8, _/binary>> = Buff, Acc, #{<<"dtuproduct">> := ProductId, <<"slaveId">> := SlaveId, <<"dtuaddr">> := _DtuAddr, <<"address">> := Address} = State) ->
-    case decode_data(Buff, ProductId, Address, Acc) of
-        {Rest1, Acc1} ->
-            parse_frame(Rest1, Acc1, State);
-        [Buff, Acc] ->
-            [Buff, Acc]
-    end;
-
-%% 传感器独立建产品，做为子设备挂载到dtu上面
-parse_frame(<<SlaveId:8, _/binary>> = Buff, Acc, #{<<"dtuaddr">> := DtuAddr, <<"slaveId">> := SlaveId, <<"address">> := Address} = State) ->
-    case dgiot_device:get_subdevice(DtuAddr, dgiot_utils:to_binary(SlaveId)) of
-        not_find ->
-            [<<>>, Acc];
-        [ProductId, _DevAddr] ->
-            case decode_data(Buff, ProductId, Address, Acc) of
-                {Rest1, Acc1} ->
-                    parse_frame(Rest1, Acc1, State);
-                [Buff, Acc] ->
-                    {Buff, Acc}
-            end
-    end;
-%rtu modbus
-parse_frame(_Other, Acc, _State) ->
-    io:format("~s ~p _Other = ~p.~n", [?FILE, ?LINE, _Other]),
-    {error, Acc}.
 
 decode_data(<<_TransactionId:16, _ProtocolId:16, _Size1:16, Slaveid:8, _FunCode:8, DataLen:8, Data:DataLen/bytes>>, ProductId, Address, Acc) ->
     {<<>>, modbus_tcp_decoder(ProductId, Slaveid, Address, Data, Acc)};

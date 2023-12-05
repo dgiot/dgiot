@@ -112,7 +112,7 @@ encode_profile(ProductId, Profile) ->
                         case maps:find(Identifier, Profile) of
                             {ok, V} ->
                                 Acc#{
-                                    Index => #{
+                                    dgiot_utils:to_int(Index) => #{
                                         <<"value">> => V,
                                         <<"identifier">> => Identifier,
                                         <<"name">> => Name,
