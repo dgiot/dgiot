@@ -358,7 +358,7 @@ do_put_(Id, Args, Token, Tail) ->
     {ok, NewArgs} = receive_put(Args),
     case dgiot_parse:get_object(ClassName, Id) of
         {ok, Class} ->
-            Keys = maps:keys(maps:without([<<"id">>, <<"ACL">>], NewArgs)),
+            Keys = maps:keys(maps:with([<<"profile">>], NewArgs)),
             dgiot_map:merge(maps:with(Keys, Class), maps:without([<<"id">>], NewArgs));
         _ ->
             maps:without([<<"id">>], NewArgs)

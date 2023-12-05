@@ -259,6 +259,7 @@ handle_message({sync_parse, Pid, 'before', post, Token, <<"Device">>, #{<<"locat
     MapType = maps:get(<<"mapType">>, Cookie, <<"baidu">>),
     NewLocation = dgiot_gps:towgs84(Location, MapType),
     NewQueryData = QueryData#{<<"location">> => NewLocation},
+    dgiot_device:put(NewQueryData),
     dgiot_parse_hook:publish(Pid, NewQueryData),
     {ok, State};
 

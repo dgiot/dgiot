@@ -181,7 +181,6 @@ create_device(DeviceId, ProductId, DTUMAC, DTUIP, Dtutype) ->
                 <<"product">> => ProductId,
                 <<"ACL">> => Acl,
                 <<"status">> => <<"ONLINE">>,
-                <<"location">> => #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => 120.161324, <<"latitude">> => 30.262441},
                 <<"brand">> => Dtutype,
                 <<"devModel">> => DevType
             }),

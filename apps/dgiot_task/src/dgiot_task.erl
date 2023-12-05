@@ -314,7 +314,7 @@ del_pnque(DtuId) ->
 
 save_td(ProductId, DevAddr, Ack, _AppData) ->
     Topic = <<"$dg/thing/", ProductId/binary, "/", DevAddr/binary, "/properties/report">>,
-    dgiot_mqtt:send(ProductId, DevAddr, Topic, Ack),
+    dgiot_mqttc_channel:send(ProductId, DevAddr, Topic, Ack),
     case length(maps:to_list(Ack)) of
         0 ->
             #{};

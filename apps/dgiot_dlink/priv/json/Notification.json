@@ -43,7 +43,7 @@
                             }
                           ],
                           "type": "radios",
-                          "value": "true"
+                          "value": "false"
                         },
                         {
                           "horizontal": null,
@@ -71,16 +71,8 @@
                               "value": ""
                             },
                             {
-                              "label": "质检",
-                              "value": "c5858f08bf"
-                            },
-                            {
-                              "label": "开发者(测试)",
-                              "value": "ccf5456562"
-                            },
-                            {
-                              "label": "运维部(test)",
-                              "value": "9470abe2e7"
+                              "label": "智慧车间",
+                              "value": "8f7191ca2d"
                             }
                           ],
                           "readOnly": true,
@@ -225,7 +217,7 @@
                             }
                           ],
                           "type": "radios",
-                          "value": "true"
+                          "value": "false"
                         },
                         {
                           "hint": "",
@@ -394,7 +386,7 @@
                             }
                           ],
                           "type": "radios",
-                          "value": "true"
+                          "value": "false"
                         },
                         {
                           "autoComplete": false,
@@ -601,6 +593,127 @@
             }
           ],
           "title": "工单配置"
+        },
+        {
+          "body": [
+            {
+              "api": {
+                "data": null,
+                "dataType": "json",
+                "headers": {
+                  "dgiotReplace": "parse_view_objectid",
+                  "store": "localStorage"
+                },
+                "method": "put",
+                "requestAdaptor": "return {\r\n  ...api,\r\n  data:{\r\n    meta:api.data    \r\n  }\r\n}",
+                "url": "/iotapi/classes/View/parse_view_objectid"
+              },
+              "body": [
+                {
+                  "checkAll": false,
+                  "id": "u:de68a1c03290",
+                  "joinValues": true,
+                  "label": "是否推送",
+                  "mode": "horizontal",
+                  "name": "otherpush.ispush",
+                  "options": [
+                    {
+                      "label": "推送",
+                      "value": "true"
+                    },
+                    {
+                      "label": "不推送",
+                      "value": "false"
+                    }
+                  ],
+                  "type": "radios",
+                  "value": "false"
+                },
+                {
+                  "checkAll": false,
+                  "id": "u:4fcc58963f83",
+                  "label": "推送类型",
+                  "mode": "horizontal",
+                  "name": "otherpush.type",
+                  "options": [
+                    {
+                      "label": "mqtt",
+                      "value": "mqtt"
+                    },
+                    {
+                      "label": "api",
+                      "value": "api"
+                    }
+                  ],
+                  "size": "lg",
+                  "type": "select",
+                  "value": "mqtt"
+                },
+                {
+                  "hint": "",
+                  "id": "u:32dded637284",
+                  "label": "第三方topic",
+                  "mode": "horizontal",
+                  "name": "otherpush.topic",
+                  "size": "lg",
+                  "type": "input-text",
+                  "value": "/devWar/up",
+                  "visibleOn": "this.otherpush.type == \"mqtt\""
+                },
+                {
+                  "hint": "",
+                  "id": "u:616e61bbae74",
+                  "label": "第三方api",
+                  "mode": "horizontal",
+                  "name": "otherpush.api",
+                  "size": "lg",
+                  "type": "input-text",
+                  "value": "http://127.0.0.1/devWar/up",
+                  "visibleOn": "this.otherpush.type == \"api\""
+                },
+                {
+                  "checkAll": false,
+                  "id": "u:450ee0bc94e2",
+                  "label": "告警等级",
+                  "mode": "horizontal",
+                  "name": "otherpush.level",
+                  "options": [
+                    {
+                      "label": "一级",
+                      "value": "一级"
+                    },
+                    {
+                      "label": "二级",
+                      "value": "二级"
+                    },
+                    {
+                      "label": "三级",
+                      "value": "三级"
+                    }
+                  ],
+                  "size": "lg",
+                  "type": "select",
+                  "value": "一级"
+                },
+                {
+                  "checkAll": false,
+                  "id": "u:073a9a76df1c",
+                  "label": "告警描述",
+                  "mode": "horizontal",
+                  "name": "otherpush.description",
+                  "size": "lg",
+                  "type": "input-text"
+                }
+              ],
+              "id": "u:4ae24134beb4",
+              "initApi": "",
+              "multiLine": false,
+              "name": "alarm_form",
+              "title": "",
+              "type": "form"
+            }
+          ],
+          "title": "第三方推送"
         }
       ],
       "type": "tabs"

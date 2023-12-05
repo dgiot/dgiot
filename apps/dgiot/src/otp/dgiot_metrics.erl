@@ -28,7 +28,7 @@
 -export([histogram_reset/1, histogram_reset/2, histogram_reset/3]).
 
 -export([init_metrics/1, collect_metrics/4]).
--export([start_metrics/1, inc/3, inc/4, inc/5, dec/3, dec/4, dec/5]).
+-export([start_metrics/1, get/2, inc/3, inc/4, inc/5, dec/3, dec/4, dec/5]).
 -export([start/1, check_metrics/0, reset_metrics/1]).
 
 -route_path("/metrics/:Registry").
@@ -108,6 +108,14 @@ histogram_reset(Name, LabelValues) ->
     histogram_reset(?DEFREGISTRY, Name, LabelValues).
 histogram_reset(Registry, Name, LabelValues) ->
     prometheus_histogram:reset(Registry, Name, LabelValues).
+
+get(Registry, Name) ->
+    case dgiot_data:lookup(?DGIOT_METRICS_ETS, {Name, Registry}) of
+        {error, not_find} ->
+            not_find;
+        {ok, Count1} ->
+            Count1
+    end.
 
 %%新增统计函数
 inc(Registry, Name, Value) ->

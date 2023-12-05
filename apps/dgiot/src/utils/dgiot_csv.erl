@@ -55,6 +55,7 @@ save_csv_ets(Module, FilePath) ->
     case dgiot_httpc:download(Url, DownloadPath) of
         {ok, saved_to_file} ->
             AtomName = dgiot_utils:to_atom(FileName),
+            dgiot_data:delete(AtomName),
             dgiot_data:init(AtomName),
             put(count, -1),
             Fun = fun(X) ->

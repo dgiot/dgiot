@@ -64,20 +64,61 @@
             zh => <<"服务器端口"/utf8>>
         }
     },
-    <<"filepath">> => #{
+    <<"slaveid">> => #{
         order => 3,
-        type => upload,
+        type => integer,
         required => true,
-        default => <<"">>,
+        default => 1,
         title => #{
-            zh => <<"csv文件"/utf8>>
+            zh => <<"从机地址"/utf8>>
         },
         description => #{
-            zh => <<"上传csv点位文件"/utf8>>
+            zh => <<"从机地址"/utf8>>
+        }
+    },
+    <<"function">> => #{
+        order => 4,
+        type => string,
+        required => true,
+        default => #{<<"value">> => <<"readHregs">>, <<"label">> => <<"0X03:读保持寄存器"/utf8>>},
+        enum => [#{<<"value">> => <<"readCoils">>, <<"label">> => <<"0X01:读线圈"/utf8>>},
+            #{<<"value">> => <<"readInputs">>, <<"label">> => <<"0X02:读离散量输入"/utf8>>},
+            #{<<"value">> => <<"readHregs">>, <<"label">> => <<"0X03:读保持寄存器"/utf8>>},
+            #{<<"value">> => <<"readIregs">>, <<"label">> => <<"0X04:读输入寄存器"/utf8>>}
+        ],
+        title => #{
+            zh => <<"功能码"/utf8>>
+        },
+        description => #{
+            zh => <<"功能码"/utf8>>
+        }
+    },
+    <<"address">> => #{
+        order => 5,
+        type => integer,
+        required => true,
+        default => 0,
+        title => #{
+            zh => <<"起始地址"/utf8>>
+        },
+        description => #{
+            zh => <<"起始地址"/utf8>>
+        }
+    },
+    <<"quantity">> => #{
+        order => 6,
+        type => integer,
+        required => true,
+        default => 100,
+        title => #{
+            zh => <<"长度"/utf8>>
+        },
+        description => #{
+            zh => <<"长度"/utf8>>
         }
     },
     <<"freq">> => #{
-        order => 4,
+        order => 7,
         type => integer,
         required => true,
         default => 60,
@@ -86,6 +127,18 @@
         },
         description => #{
             zh => <<"采集频率/秒"/utf8>>
+        }
+    },
+    <<"filepath">> => #{
+        order => 8,
+        type => upload,
+        required => true,
+        default => <<"">>,
+        title => #{
+            zh => <<"csv文件"/utf8>>
+        },
+        description => #{
+            zh => <<"上传csv点位文件"/utf8>>
         }
     },
     <<"ico">> => #{
@@ -111,6 +164,10 @@ start(ChannelId, ChannelArgs) ->
 init(?TYPE, ChannelId, #{
     <<"ip">> := Ip,
     <<"port">> := Port,
+    <<"slaveid">> := SlaveId,
+    <<"function">> := Function,
+    <<"address">> := Address,
+    <<"quantity">> := Quantity,
     <<"freq">> := Freq,
     <<"Size">> := Size
 } = Args) ->
@@ -128,6 +185,10 @@ init(?TYPE, ChannelId, #{
         <<"port">> => Port,
         <<"mod">> => dgiot_modbusc_tcp,
         <<"child">> => #{
+            slaveid => SlaveId,
+            function => Function,
+            address => dgiot_utils:to_int(Address),
+            quantity => Quantity,
             filename => FileName,
             data => <<>>,
             freq => Freq,
@@ -160,6 +221,7 @@ handle_message(_Message, State) ->
     {ok, State}.
 
 stop(ChannelType, ChannelId, _State) ->
+    dgiot_client:stop(ChannelId),
     dgiot_data:delete({start_client, ChannelId}),
     ?LOG(info, "channel stop ~p,~p", [ChannelType, ChannelId]),
     ok.
