@@ -22,8 +22,10 @@
 
 -export([
     init/1,
+    dealwith/1,
     parse_frame/3,
     to_frame/1,
+    format_value/3,
     build_req_message/1]
 ).
 
@@ -267,6 +269,13 @@ set_params(Payload, _ProductId, _DevAddr) ->
             end
                     end, [], lists:seq(1, Length)),
     Payloads.
+
+%% 010300000002C40B 01030438A93E3B76C0
+dealwith(<<SlaveId:8, FunCode:8, Address:16, _:4/binary, SlaveId:8, FunCode:8, Rest/binary>>) ->
+    {ok, #{<<"buff">> => <<SlaveId:8, FunCode:8, Rest/binary>>, <<"slaveId">> => SlaveId, <<"address">> => Address}};
+
+dealwith(Buff) ->
+    Buff.
 
 %rtu modbus
 parse_frame(<<>>, Acc, _State) -> {<<>>, Acc};

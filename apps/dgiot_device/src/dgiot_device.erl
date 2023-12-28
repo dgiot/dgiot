@@ -109,7 +109,7 @@ put_color(DeviceId, Identifier, Value) ->
 get_color(DeviceId, Identifier) ->
     case dgiot_data:get(?DEVICE_DEVICE_COLOR, {DeviceId, Identifier}) of
         not_find ->
-            {<<"orange">>, 0, 0};
+            {<<"not">>, 0, 0};
         Color1 ->
             Color1
     end.

@@ -98,6 +98,33 @@ handle_info({tcp, Buff}, #tcp{state = #state{id = ChannelId, devaddr = DtuAddr, 
     end,
     {noreply, TCPState#tcp{buff = <<>>, state = State#state{env = <<>>}}};
 
+%% 主动上报 Buff = <<"01 03 0000 000C45CF 0103184BC73E373AB53E361BFD3E4100000000000000000000000021AC">>.
+handle_info({tcp, Buff}, #tcp{state = #state{id = ChannelId, devaddr = DtuAddr, env = <<>>, product = DtuProductId} = State} = TCPState) ->
+    dgiot_bridge:send_log(ChannelId, DtuProductId, DtuAddr, "~s ~p DTU ~p recv ~p", [?FILE, ?LINE, DtuAddr, dgiot_utils:binary_to_hex(Buff)]),
+%%    io:format("~s ~p Buff = ~p.~n", [?FILE, ?LINE, dgiot_utils:to_hex(Buff)]),
+    case modbus_rtu:dealwith(Buff) of
+        {ok, #{<<"buff">> := NewBuff, <<"slaveId">> := SlaveId, <<"address">> := Address}} ->
+            case modbus_rtu:parse_frame(NewBuff, #{}, #{
+                <<"dtuproduct">> => DtuProductId,
+                <<"channel">> => ChannelId,
+                <<"dtuaddr">> => DtuAddr,
+                <<"slaveId">> => SlaveId,
+                <<"address">> => Address}) of
+                {_, Things} ->
+                    NewTopic = <<"$dg/thing/", DtuProductId/binary, "/", DtuAddr/binary, "/properties/report">>,
+                    dgiot_bridge:send_log(ChannelId, DtuProductId, DtuAddr, "~s ~p to task ~p ~ts ", [?FILE, ?LINE, NewTopic, unicode:characters_to_list(jsx:encode(Things))]),
+                    DeviceId = dgiot_parse_id:get_deviceid(DtuProductId, DtuAddr),
+                    Taskchannel = dgiot_product_channel:get_taskchannel(DtuProductId),
+                    dgiot_client:send(Taskchannel, DeviceId, NewTopic, Things);
+                Other ->
+                    ?LOG(info, "Other ~p", [Other]),
+                    pass
+            end;
+        _ ->
+            pass
+    end,
+    {noreply, TCPState#tcp{buff = <<>>, state = State#state{env = <<>>}}};
+
 handle_info({deliver, _, Msg}, #tcp{state = #state{id = ChannelId} = State} = TCPState) ->
     Payload = dgiot_mqtt:get_payload(Msg),
     Topic = dgiot_mqtt:get_topic(Msg),
@@ -143,7 +170,8 @@ handle_info({deliver, _, Msg}, #tcp{state = #state{id = ChannelId} = State} = TC
     end;
 %% {stop, TCPState} | {stop, Reason} | {ok, TCPState} | ok | stop
 handle_info(_Info, TCPState) ->
-%%    ?LOG(info, "TCPState ~p", [TCPState]),
+%%    io:format("~s ~p _Info = ~p.~n", [?FILE, ?LINE, _Info]),
+%%    io:format("~s ~p TCPState = ~p.~n", [?FILE, ?LINE, TCPState]),
     {noreply, TCPState}.
 
 handle_call(_Msg, _From, TCPState) ->
