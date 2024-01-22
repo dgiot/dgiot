@@ -297,14 +297,14 @@ save_rule_to_dict(RuleID, Params, Args) ->
         <<"title">> => <<"Rule">>,
         <<"key">> => RuleID,
         <<"type">> => <<"ruleengine">>,
-        <<"data">> => #{<<"args">> => Args, <<"rule">> => jsx:encode(Rule)}
+        <<"data">> => #{<<"args">> => Args, <<"rule">> => dgiot_json:encode(Rule)}
     },
     dgiot_data:insert(?DGIOT_RUlES, Dict),
     ObjectId = dgiot_parse_id:get_dictid(RuleID, <<"ruleengine">>, <<"Rule">>, <<"Rule">>),
     case dgiot_parse:get_object(<<"Dict">>, ObjectId) of
         {ok, #{<<"data">> := Data1}} ->
             OldArgs = maps:get(<<"args">>, Data1, #{}),
-            dgiot_parse:update_object(<<"Dict">>, ObjectId, #{<<"args">> => maps:merge(OldArgs, Args), <<"data">> => Data1#{<<"rule">> => jsx:encode(Rule)}});
+            dgiot_parse:update_object(<<"Dict">>, ObjectId, #{<<"args">> => maps:merge(OldArgs, Args), <<"data">> => Data1#{<<"rule">> => dgiot_json:encode(Rule)}});
         _ ->
             case dgiot_parse:create_object(<<"Dict">>, Dict) of
                 {ok, #{<<"objectId">> := ObjectId}} ->
@@ -354,7 +354,7 @@ sysc_rules() ->
                         {ok, #{<<"results">> := Results}} when length(Results) > 0 ->
                             lists:map(fun(#{<<"key">> := RuleID, <<"data">> := Data}) ->
                                 #{<<"rule">> := Rule} = Data,
-                                NewRule = jsx:decode(Rule, [return_maps]),
+                                NewRule = dgiot_json:decode(Rule, [return_maps]),
                                 Actions = maps:get(<<"actions">>, NewRule),
                                 lists:foldl(fun(X, Acc) ->
                                     #{<<"params">> := #{<<"$resource">> := Resource}} = X,

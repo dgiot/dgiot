@@ -41,8 +41,8 @@ do_message(ChannelId, ProductId, Frame) ->
                             ok;
                         Addr ->
                             Topic = <<"thing/", ProductId/binary, "/", Addr/binary, "/post">>,
-                            dgiot_mqtt:publish(ChannelId,Topic,jsx:encode(Msg)),
-                            dgiot_bridge:send_log(ChannelId, ProductId, Addr, "~s", [jsx:encode(Msg)]),
+                            dgiot_mqtt:publish(ChannelId,Topic,dgiot_json:encode(Msg)),
+                            dgiot_bridge:send_log(ChannelId, ProductId, Addr, "~s", [dgiot_json:encode(Msg)]),
                             dgiot_data:insert(?DGIOT_BRIDGE, {ProductId, Addr, Key}, Msg)
                     end
                 end,

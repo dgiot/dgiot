@@ -127,10 +127,11 @@ handle_message({sync_parse, Pid, 'before', put, _Token, <<"View">>, #{<<"id">> :
     {ok, State};
 
 handle_message({topo_thing, ProductId, DeviceId, Data}, State) ->
-%%     发送组态数据
-    dgiot_topo:send_konva(ProductId, DeviceId, Data),
-%%            发送实时数据
+    timer:sleep(200),
+%%     发送实时数据
     dgiot_topo:send_realtime_card(ProductId, DeviceId, Data),
+%%     发送组态数据
+%%    dgiot_topo:send_konva(ProductId, DeviceId, Data),
     {ok, State};
 
 handle_message(Message, State) ->

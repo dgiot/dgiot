@@ -145,7 +145,7 @@ format_where([{Field, Value} | Other], Acc) ->
 format_where(#{<<"where">> := Where0}) when Where0 =/= undefined, Where0 =/= <<>> ->
     Where =
         case jsx:is_json(Where0) of
-            true -> jsx:decode(Where0, [return_maps]);
+            true -> dgiot_json:decode(Where0, [return_maps]);
             fasle -> Where0
         end,
     Where1 =

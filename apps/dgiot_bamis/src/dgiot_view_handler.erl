@@ -107,12 +107,12 @@ do_request(post_amis, #{<<"viewid">> := Viewid, <<"render">> := Render} = _Arg, 
     Amisdata =
         case dgiot_parse:get_object(<<"View">>, Viewid, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
             {ok, #{<<"data">> := Data} = View} ->
-                Json = jsx:encode(Data),
+                Json = dgiot_json:encode(Data),
                 NewJson =
                     maps:fold(fun(K, V, Acc) ->
                         re:replace(Acc, <<"%{", K/binary, "}">>, V, [global, {return, binary}])
                               end, Json, Render),
-                View#{<<"data">> := jsx:decode(NewJson)};
+                View#{<<"data">> := dgiot_json:decode(NewJson)};
             _ ->
                 #{}
         end,

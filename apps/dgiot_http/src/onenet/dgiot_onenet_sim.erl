@@ -30,7 +30,7 @@ position_location_message(Msisdn) ->
     Url = Server ++ "/iotapi/position-location-message?msisdn=" ++ dgiot_utils:to_list(Msisdn) ++ "&appid=" ++ AppId ++ "&secret=" ++ Secret,
     case dgiot_http_client:request(get, {Url, []}) of
         {ok, #{<<"status">> := <<"0">>} = Result} ->
-%%            io:format("~s ~p Result = ~ts.~n", [?FILE, ?LINE, jsx:encode(Result)]),
+%%            io:format("~s ~p Result = ~ts.~n", [?FILE, ?LINE, dgiot_json:encode(Result)]),
             Result;
         {_, Error} ->
             Error

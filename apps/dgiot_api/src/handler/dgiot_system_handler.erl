@@ -92,7 +92,7 @@ do_request(post_generate_api, #{<<"mod">> := Mod, <<"type">> := <<"erlang">>} = 
     case dgiot_swagger:compile_handler(Module, SWSchema, Fun) of
         {ok, Src} when is_binary(Src) ->
             FileName = "dgiot.zip",
-            case generate_erl_packet(FileName, Mod, Src, jsx:encode(SWSchema)) of
+            case generate_erl_packet(FileName, Mod, Src, dgiot_json:encode(SWSchema)) of
                 {ok, ZipFile} ->
                     Headers = #{
                         <<"content-type">> => <<"application/zip">>,

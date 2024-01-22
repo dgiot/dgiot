@@ -44,7 +44,7 @@ scan_opc(#{<<"OPCSEVER">> := OpcServer, <<"Topic">> := Topic}) ->
         <<"cmdtype">> => <<"scan">>,
         <<"opcserver">> => OpcServer
     },
-    dgiot_mqtt:publish(<<"opcserver">>, Topic, jsx:encode(Payload)).
+    dgiot_mqtt:publish(<<"opcserver">>, Topic, dgiot_json:encode(Payload)).
 
 read_opc(ChannelId, OpcServer, Topic, Instruct) ->
     Payload = #{
@@ -53,10 +53,10 @@ read_opc(ChannelId, OpcServer, Topic, Instruct) ->
         <<"items">> => Instruct
     },
     dgiot_bridge:send_log(ChannelId, "to_opc: ~p: ~p  ~ts ", [OpcServer, unicode:characters_to_list(Instruct)]),
-    dgiot_mqtt:publish(<<"opcserver">>, Topic, jsx:encode(Payload)).
+    dgiot_mqtt:publish(<<"opcserver">>, Topic, dgiot_json:encode(Payload)).
 
 scan_opc_ack(Payload, OpcServer, Topic, Group, ProductId) ->            %%---------- 用以创建组态、物模型。
-    Map = jsx:decode(Payload, [return_maps]),
+    Map = dgiot_json:decode(Payload, [return_maps]),
     {ok, #{<<"name">> := ProductName}} = dgiot_parse:get_object(<<"Product">>, ProductId),
     Instruct = maps:fold(fun(K, V, Acc) ->
         IsSystem = lists:any(fun(E) ->
@@ -110,7 +110,7 @@ scan_opc_ack(Payload, OpcServer, Topic, Group, ProductId) ->            %%------
         <<"items">> => Instruct
     },
 
-    dgiot_mqtt:publish(<<"opcserver">>, Topic, jsx:encode(Payload1)).
+    dgiot_mqtt:publish(<<"opcserver">>, Topic, dgiot_json:encode(Payload1)).
 
 
 get_instruct(Acc1, ItemId) ->
@@ -122,7 +122,7 @@ get_instruct(Acc1, ItemId) ->
     end.
 
 read_opc_ack(Payload, ProductId, {DeviceId, Devaddr}) ->
-    case jsx:decode(Payload, [return_maps]) of
+    case dgiot_json:decode(Payload, [return_maps]) of
         #{<<"status">> := 0} = Map0 -> %% opc read的情况
             [Map1 | _] = maps:values(maps:without([<<"status">>], Map0)),
             Map2 = case maps:find(<<"status">>, Map1) of
@@ -217,8 +217,8 @@ process_opc(ChannelId, Payload) ->
             pass;
         ProductId ->
             NewTopic = <<"thing/", ProductId/binary, "/", DevAddr/binary, "/post">>,
-            dgiot_bridge:send_log(ChannelId, "to_task: ~ts", [unicode:characters_to_list(jsx:encode(Items))]),
-            dgiot_mqtt:publish(DevAddr, NewTopic, jsx:encode(Items))
+            dgiot_bridge:send_log(ChannelId, "to_task: ~ts", [unicode:characters_to_list(dgiot_json:encode(Items))]),
+            dgiot_mqtt:publish(DevAddr, NewTopic, dgiot_json:encode(Items))
 %%        _ -> pass
     end.
 
@@ -399,7 +399,7 @@ send_properties(ProductId, DtuAddr, Properties) ->
     NewTopic = <<"thing/", ProductId/binary, "/", DtuAddr/binary, "/post">>,
     DeviceId = dgiot_parse_id:get_deviceid(ProductId, DtuAddr),
 %%    io:format("~s ~p NewProperties = ~p.~n", [?FILE, ?LINE, NewProperties]),
-    dgiot_mqtt:publish(DeviceId, NewTopic, jsx:encode(NewProperties)).
+    dgiot_mqtt:publish(DeviceId, NewTopic, dgiot_json:encode(NewProperties)).
 
 get_properties(ProductId, Properties) ->
     case dgiot_product:lookup_prod(ProductId) of

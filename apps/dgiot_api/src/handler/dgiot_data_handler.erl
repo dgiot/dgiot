@@ -82,7 +82,7 @@ handle(OperationID, Args, Context, Req) ->
 %% 请求:POST /iotapi/upload
 do_request(post_upload, #{<<"file">> := FileInfo}, #{<<"user">> := #{<<"objectId">> := UserId}}, _Req) ->
     ?LOG(info, "FileInfo ~p", [FileInfo]),
-    Key = dgiot_utils:to_md5(jsx:encode(FileInfo#{node => node()})),
+    Key = dgiot_utils:to_md5(dgiot_json:encode(FileInfo#{node => node()})),
     case dgiot_parse:create_object(<<"Dict">>, #{
         <<"ACL">> => #{UserId => #{<<"read">> => true, <<"write">> => true}},
         <<"type">> => <<"file">>,
@@ -529,7 +529,7 @@ do_request(get_producttree, _, _Context, _Req) ->
 %% 请求:POST /iotapi/post_station_data
 do_request(post_station_data, Args, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
     NewArgs = Args#{<<"sessionToken">> => SessionToken},
-    dgiot_mqtt:publish(SessionToken, <<"data_task/station_data">>, jsx:encode(NewArgs)),
+    dgiot_mqtt:publish(SessionToken, <<"data_task/station_data">>, dgiot_json:encode(NewArgs)),
     {200, #{}};
 
 %%  服务器不支持的API接口
@@ -544,7 +544,7 @@ get_class(Name, Filter, FileName, SessionToken) ->
             NewData = lists:foldl(fun(X, Acc) ->
                 Acc ++ [maps:without([<<"createdAt">>, <<"updatedAt">>, <<"children">>], X)]
                                   end, [], Data),
-            BinFile = unicode:characters_to_binary(jsx:encode(NewData)),
+            BinFile = unicode:characters_to_binary(dgiot_json:encode(NewData)),
             case zip:create(FileName, [{"data.json", BinFile}], [memory]) of
                 {ok, {_ZipFile, Bin}} ->
                     {ok, Bin};
@@ -558,7 +558,7 @@ get_product(Name, FileName, SessionToken) ->
     case dgiot_parse:query_object(<<"Product">>, #{<<"where">> => #{<<"name">> => Name}},
         [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
         {ok, #{<<"results">> := [Product]}} ->
-            BinFile = unicode:characters_to_binary(jsx:encode(Product)),
+            BinFile = unicode:characters_to_binary(dgiot_json:encode(Product)),
             case zip:create(FileName, [{"product.json", BinFile}], [memory]) of
                 {ok, {_ZipFile, Bin}} ->
                     {ok, Bin};

@@ -67,7 +67,7 @@ get_name(ProductId, K, V) ->
 send_realtime_card(ProductId, DeviceId, Payload) ->
     Data = dgiot_device_card:get_card(ProductId, [Payload], DeviceId, #{}),
     Pubtopic = <<"$dg/user/realtimecard/", DeviceId/binary, "/report">>,
-    dgiot_mqtt:publish(self(), Pubtopic, base64:encode(jsx:encode(#{<<"data">> => Data}))).
+    dgiot_mqtt:publish(self(), Pubtopic, base64:encode(dgiot_json:encode(#{<<"data">> => Data}))).
 
 %% 发送实时组态数据
 send_konva(ProductId, DeviceId, Payload) ->
@@ -80,14 +80,14 @@ push(ProductId, Devaddr, DeviceId, Payload) ->
     Url = dgiot_data:get(topourl),
     Url1 = dgiot_utils:to_list(Url),
     Data = #{<<"productid">> => ProductId, <<"devaddr">> => Devaddr, <<"base64">> => Base64},
-    Data1 = dgiot_utils:to_list(jsx:encode(Data)),
+    Data1 = dgiot_utils:to_list(dgiot_json:encode(Data)),
     httpc:request(post, {Url1, [], "application/json", Data1}, [], []).
 
 send_topo({<<"counter">>, CounterId, Id}, Token) ->
 %%    io:format("~s ~p CounterId = ~p,Token = ~p, Id = ~p.~n", [?FILE, ?LINE, CounterId, Token, Id]),
     case dgiot_hook:run_hook({'topo', <<"counter">>}, {Token, CounterId}) of
         {ok, [{ok, Payload}]} ->
-            Base64 = base64:encode(jsx:encode(Payload#{<<"id">> => Id})),
+            Base64 = base64:encode(dgiot_json:encode(Payload#{<<"id">> => Id})),
             Pubtopic = <<"$dg/user/topo/", Token/binary, "/counter/report">>,
 %%            io:format("~s ~p Pubtopic ~p Base64 ~p ~n", [?FILE, ?LINE, Pubtopic, Base64]),
             dgiot_mqtt:publish(self(), Pubtopic, Base64);
@@ -99,7 +99,7 @@ send_topo({<<"counter">>, CounterId, Id}, Token) ->
 send_topo({NodeType, NodeId}, Token) ->
     case dgiot_hook:run_hook({'topo', NodeType}, {Token, NodeId}) of
         {ok, [{ok, Payload}]} ->
-            Base64 = base64:encode(jsx:encode(Payload)),
+            Base64 = base64:encode(dgiot_json:encode(Payload)),
             Pubtopic = <<"$dg/user/topo/", Token/binary, "/", NodeType/binary, "/", NodeId/binary, "/report">>,
 %%            io:format("~s ~p Pubtopic ~p Base64 ~p ~n", [?FILE,?LINE, Pubtopic, Base64]),
             dgiot_mqtt:publish(self(), Pubtopic, Base64);

@@ -154,11 +154,11 @@ init(Req0, swagger_list) ->
                         end, [], List),
                 dgiot_req:reply(200, ?HEADER#{
                     <<"content-type">> => <<"application/json; charset=utf-8">>
-                }, jsx:encode(Swaggers), Req0);
+                }, dgiot_json:encode(Swaggers), Req0);
             {error, Reason} ->
                 dgiot_req:reply(500, ?HEADER#{
                     <<"content-type">> => <<"application/json; charset=utf-8">>
-                }, jsx:encode(#{error => dgiot_utils:to_binary(Reason)}), Req0)
+                }, dgiot_json:encode(#{error => dgiot_utils:to_binary(Reason)}), Req0)
         end,
     {ok, Req, swagger_list};
 
@@ -170,11 +170,11 @@ init(Req0, {swagger, Name} = Opts) ->
 
                 dgiot_req:reply(200, ?HEADER#{
                     <<"content-type">> => <<"application/json; charset=utf-8">>
-                }, jsx:encode(filter(Schema)), Req0);
+                }, dgiot_json:encode(filter(Schema)), Req0);
             {error, Reason} ->
                 dgiot_req:reply(500, ?HEADER#{
                     <<"content-type">> => <<"application/json; charset=utf-8">>
-                }, jsx:encode(#{error => dgiot_utils:to_binary(Reason)}), Req0)
+                }, dgiot_json:encode(#{error => dgiot_utils:to_binary(Reason)}), Req0)
         end,
     {ok, Req, Opts};
 
@@ -191,16 +191,16 @@ init(Req0, install) ->
                     {Type, Reason} when Type == 'EXIT'; Type == error ->
                         dgiot_req:reply(500, ?HEADER#{
                             <<"content-type">> => <<"application/json; charset=utf-8">>
-                        }, jsx:encode(#{error => list_to_binary(io_lib:format("~p", [Reason]))}), Req0);
+                        }, dgiot_json:encode(#{error => list_to_binary(io_lib:format("~p", [Reason]))}), Req0);
                     Result ->
                         dgiot_req:reply(200, #{
                             <<"content-type">> => <<"application/json; charset=utf-8">>
-                        }, jsx:encode(Result), Req0)
+                        }, dgiot_json:encode(Result), Req0)
                 end;
             _ ->
                 dgiot_req:reply(200, #{
                     <<"content-type">> => <<"application/json; charset=utf-8">>
-                }, jsx:encode(#{<<"result">> => <<"forbid">>}), Req0)
+                }, dgiot_json:encode(#{<<"result">> => <<"forbid">>}), Req0)
         end,
     {ok, Req, install};
 
@@ -212,7 +212,7 @@ init(Req0, mod) ->
     Req =
         case catch apply(list_to_atom(binary_to_list(Mod)), list_to_atom(binary_to_list(Fun)), [Req0]) of
             {Err, Reason} when Err == 'EXIT'; Err == error ->
-                Msg = jsx:encode(#{error => dgiot_utils:to_binary(Reason)}),
+                Msg = dgiot_json:encode(#{error => dgiot_utils:to_binary(Reason)}),
                 dgiot_req:reply(500, ?HEADER#{
                     <<"content-type">> => <<"application/json; charset=utf-8">>
                 }, Msg, Req0);

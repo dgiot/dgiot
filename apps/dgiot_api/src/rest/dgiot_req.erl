@@ -129,7 +129,7 @@ read_body(Req0) ->
                         ok ->
                             case cowboy_req:header(<<"content-type">>, Req) of
                                Type when Type == <<"application/x-www-form-urlencoded">>; Type == <<"application/x-www-urlencoded">> ->
-                                    Body2 = jsx:encode(cow_qs:parse_qs(Body)),
+                                    Body2 = dgiot_json:encode(cow_qs:parse_qs(Body)),
                                     {ok, Body2, Req#{body =>Body2 }};
                                 _ ->
                                     {ok, Body, Req#{body => Body}}

@@ -125,7 +125,7 @@ send_sms(NationCode, Mobile, TplId, Params, AppId, AppKey, Sign, Ext) ->
                 <<"time">> => Now,
                 <<"sig">> => Sig
             },
-            Request = {Url, [], "application/json", jsx:encode(Data)},
+            Request = {Url, [], "application/json", dgiot_json:encode(Data)},
             case catch httpc:request(post, Request, [], [{body_format, binary}]) of
                 {ok, {{_HTTPVersion, 200, "OK"}, _Header, ResBody}} ->
                     case jsx:decode(ResBody, [{labels, binary}, return_maps]) of

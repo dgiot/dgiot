@@ -28,11 +28,11 @@
 -export([save_keys/1, get_keys/1, get_control/1, save_control/1, get_interval/1, save_device_thingtype/1, get_product_identifier/2]).
 
 init_ets() ->
-    dgiot_data:init(?DGIOT_PRODUCT),
-    dgiot_data:init(?DGIOT_PRODUCT_IDENTIFIE),
-    dgiot_data:init(?DGIOT_CHANNEL_SESSION),
-    dgiot_data:init(?DEVICE_DEVICE_COLOR),
-    dgiot_data:init(?DEVICE_PROFILE).
+    dgiot_data:init(?DGIOT_PRODUCT,[public, named_table, set, {write_concurrency, true}, {read_concurrency, true}]),
+    dgiot_data:init(?DGIOT_PRODUCT_IDENTIFIE,[public, named_table, set, {write_concurrency, true}, {read_concurrency, true}]),
+    dgiot_data:init(?DGIOT_CHANNEL_SESSION,[public, named_table, set, {write_concurrency, true}, {read_concurrency, true}]),
+    dgiot_data:init(?DEVICE_DEVICE_COLOR,[public, named_table, set, {write_concurrency, true}, {read_concurrency, true}]),
+    dgiot_data:init(?DEVICE_PROFILE,[public, named_table, set, {write_concurrency, true}, {read_concurrency, true}]).
 
 load_cache() ->
     Success = fun(Page) ->
@@ -80,10 +80,12 @@ save(Product) ->
     save_productSecret(ProductId),
     dgiot_product_channel:save_channel(ProductId),
     dgiot_product_channel:save_tdchannel(ProductId),
-    dgiot_product_channel:save_taskchannel(ProductId),
+%%    dgiot_product_channel:save_taskchannel(ProductId),
     save_device_thingtype(ProductId),
     save_product_identifier(ProductId),
     dgiot_product_enum:save_product_enum(ProductId),
+    timer:sleep(10000),
+    dgiot_bridge_server ! {start_custom_channel},
     {ok, Product1}.
 
 put(Product) ->

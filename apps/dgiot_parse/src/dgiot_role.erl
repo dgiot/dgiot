@@ -306,7 +306,7 @@ get_roletemp(FileName, TempName, SessionToken) ->
         <<"where">> => #{<<"key">> => TempName}},
         [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
         {ok, #{<<"results">> := Role}} ->
-            BinFile = unicode:characters_to_binary(jsx:encode(Role)),
+            BinFile = unicode:characters_to_binary(dgiot_json:encode(Role)),
             case zip:create(FileName, [{dgiot_utils:to_list(FileName) ++ ".json", BinFile}], [memory]) of
                 {ok, {_ZipFile, Bin}} ->
                     {ok, Bin};

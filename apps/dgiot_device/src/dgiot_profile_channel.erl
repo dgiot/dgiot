@@ -164,7 +164,7 @@ handle_message({sync_parse, _Pid, 'before', put, _Token, <<"Device">>, #{<<"id">
             {ok, #{<<"productid">> := ProductId}} ->
                 case catch dgiot_hook:run_hook({sync_parse, before, put, ProductId}, {QueryData, ProductId, State}) of
                     {ok, [Res]} ->
-%%                        io:format("~s ~p Res = ~ts.~n", [?FILE, ?LINE, unicode:characters_to_list(jsx:encode(Res))]),
+%%                        io:format("~s ~p Res = ~ts.~n", [?FILE, ?LINE, unicode:characters_to_list(dgiot_json:encode(Res))]),
                         Res;
                     _ ->
                         QueryData

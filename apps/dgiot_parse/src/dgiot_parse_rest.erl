@@ -315,7 +315,7 @@ encode_body(<<"/batch">>, 'POST', #{<<"requests">> := Requests}, Options) ->
                 }
         end,
     Requests1 = [Fun(Request) || Request <- Requests],
-    jsx:encode(#{<<"requests">> => Requests1});
+    dgiot_json:encode(#{<<"requests">> => Requests1});
 
 encode_body(_Path, Method, Args, _Options) when Method == 'GET'; Method == 'DELETE' ->
     NewArgs =
@@ -327,7 +327,7 @@ encode_body(_Path, Method, Args, _Options) when Method == 'GET'; Method == 'DELE
                             true ->
                                 dgiot_httpc:urlencode(Where);
                             false ->
-                                dgiot_httpc:urlencode(jsx:encode(Where))
+                                dgiot_httpc:urlencode(dgiot_json:encode(Where))
                         end,
                     [<<"where=", Value/binary>> | Acc];
                 (Key, Value, Acc) ->
@@ -336,7 +336,7 @@ encode_body(_Path, Method, Args, _Options) when Method == 'GET'; Method == 'DELE
             end, [], Args),
     iolist_to_binary(list_join(NewArgs, "&"));
 encode_body(_Path, _Method, Map, _) ->
-    jsx:encode(Map).
+    dgiot_json:encode(Map).
 
 do_request(Method, Path, Header, QueryData, Options) ->
     NewQueryData =
@@ -441,7 +441,7 @@ handle_result(Result, Map) ->
                 true ->
                     case catch ?JSON_DECODE(Body) of
                         NewMap when is_map(NewMap) ->
-                            {ok, StatusCode, Headers, jsx:encode(maps:merge(Map, NewMap))};
+                            {ok, StatusCode, Headers, dgiot_json:encode(maps:merge(Map, NewMap))};
                         _ ->
                             {ok, StatusCode, Headers, Body}
                     end;

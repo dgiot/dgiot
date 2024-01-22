@@ -48,7 +48,7 @@ reverse(<<H:1/binary, Rest/binary>>, Acc) ->
 parse_data_to_json(<<16#00, Di2:8, 16#FF, Di4:8>>, Data) ->
 %%  io:format("parse_data_to_json Data ~p ~n", [Data]),
     DataIndex = #di_645data{di1 = 16#00, di2 = Di2, di3 = 16#00, di4 = Di4},
-    Value = jsx:encode(split_a1_data({DataIndex, Data})),
+    Value = dgiot_json:encode(split_a1_data({DataIndex, Data})),
     Key = binary_to_hex(list_to_binary([16#00, Di2, 16#FF, Di4])),
 %%  io:format("00 zz ff zz parse_data_to_json Key ~p Value ~s ~n", [Key, Value]),
     {Key, Value};
@@ -72,7 +72,7 @@ parse_data_to_json(<<Di1:4, Di2:4, Di3:8>>, Data)
 parse_data_to_json(<<16#00, Di2:8, Di3:8, 16#FF>>, Data) ->
 %%  io:format("parse_data_to_json Data ~p ~n", [Data]),
     DataIndex = #di_645data{di1 = 16#00, di2 = Di2, di3 = Di3, di4 = 16#00},
-    Value = jsx:encode(split_a1_data_1({DataIndex, Data})),
+    Value = dgiot_json:encode(split_a1_data_1({DataIndex, Data})),
     Key = binary_to_hex(list_to_binary([16#00, Di2, Di3, 16#FF])),
 %%  io:format("00 zz zz ff parse_data_to_json Key ~p Value ~s ~n", [Key, Value]),
     {Key, Value};
@@ -87,7 +87,7 @@ parse_data_to_json(<<16#00, Di2:8, Di3:8, Di4:8>>, Data) ->
 %A2 Multi
 parse_data_to_json(<<16#01, Di2:8, 16#FF, Di4:8>>, Data) ->
     DataIndex = #di_645data{di1 = 16#01, di2 = Di2, di3 = 16#00, di4 = Di4},
-    Value = jsx:encode(split_a2_data_1({DataIndex, Data})),
+    Value = dgiot_json:encode(split_a2_data_1({DataIndex, Data})),
     Key = binary_to_hex(list_to_binary([16#01, Di2, 16#FF, Di4])),
 %%  io:format("01 .. FF ..  parse_data_to_json Key ~p Value ~p ~n", [Key, Value]),
     {Key, Value};
@@ -100,7 +100,7 @@ parse_data_to_json(<<16#01, Di2:1/binary, Di3:1/binary, Di4:1/binary>>, <<Data0:
     ListDataIndex1 = list_to_binary([16#01, Di2, Di3, Di4, 16#01]),
     HexDataIndex = binary_to_hex(ListDataIndex),
     HexDataIndex1 = binary_to_hex(ListDataIndex1),
-    Value = jsx:encode([{HexDataIndex, Value0}, {HexDataIndex1, Value1}]),
+    Value = dgiot_json:encode([{HexDataIndex, Value0}, {HexDataIndex1, Value1}]),
     Key = binary_to_hex(list_to_binary([16#01, Di2, Di3, Di4])),
 %%  io:format("01   parse_data_to_json Key ~p Value ~p ~n", [Key, Value]),
     {Key, Value};
@@ -108,7 +108,7 @@ parse_data_to_json(<<16#01, Di2:1/binary, Di3:1/binary, Di4:1/binary>>, <<Data0:
 %A2 00 zz zz ff
 parse_data_to_json(<<16#01, Di2:8, Di3:8, 16#FF>>, Data) ->
     DataIndex = #di_645data{di1 = 16#01, di2 = Di2, di3 = Di3, di4 = 16#00},
-    Value = jsx:encode(split_a2_data_2({DataIndex, Data})),
+    Value = dgiot_json:encode(split_a2_data_2({DataIndex, Data})),
     Key = binary_to_hex(list_to_binary([16#01, Di2, Di3, 16#FF])),
 %%  io:format("01 zz zz ff parse_data_to_json Key ~p Value ~s ~n", [Key, Value]),
     {Key, Value};
@@ -116,7 +116,7 @@ parse_data_to_json(<<16#01, Di2:8, Di3:8, 16#FF>>, Data) ->
 %A3 Multi 02 01/07 ff xxx.x
 parse_data_to_json(<<16#02, Di2:8, 16#FF, Di4:8>>, Data) when Di2 == 16#01 orelse Di2 == 16#07 ->
     DataIndex = #di_645data{di1 = 16#02, di2 = Di2, di3 = 16#01, di4 = Di4},
-    Value = jsx:encode(split_a3_data_1({DataIndex, Data})),
+    Value = dgiot_json:encode(split_a3_data_1({DataIndex, Data})),
     Key = binary_to_hex(list_to_binary([16#02, Di2, 16#FF, Di4])),
     %% io:format("02 01/07 ff xxx.x parse_data_to_json Key ~p Value ~p ~n", [Key, Value]),
     {Key, Value};
@@ -132,7 +132,7 @@ parse_data_to_json(<<16#02, Di2:8, Di3:1/binary, Di4:1/binary>>, Data)
 %A3 Multi 02 02 ff xxx.xxx
 parse_data_to_json(<<16#02, 16#02, 16#FF, Di4:8>>, Data) ->
     DataIndex = #di_645data{di1 = 16#02, di2 = 16#02, di3 = 16#01, di4 = Di4},
-    Value = jsx:encode(split_a3_data_2({DataIndex, Data})),
+    Value = dgiot_json:encode(split_a3_data_2({DataIndex, Data})),
     Key = binary_to_hex(list_to_binary([16#02, 16#02, 16#FF, Di4])),
 %%  io:format("02  02 FF xxx.xxx parse_data_to_json Key ~p Value ~p ~n", [Key, Value]),
     {Key, Value};
@@ -149,7 +149,7 @@ parse_data_to_json(<<16#02, 16#02, Di3:1/binary, Di4:1/binary>>, Data) ->
 %A3 Multi 02 03/04/05  ff xx.xxxx
 parse_data_to_json(<<16#02, Di2:8, 16#FF, Di4:8>>, Data) when Di2 == 16#03 orelse Di2 == 16#04 orelse Di2 == 16#05 ->
     DataIndex = #di_645data{di1 = 16#02, di2 = Di2, di3 = 16#01, di4 = Di4},
-    Value = jsx:encode(split_a3_data_3({DataIndex, Data})),
+    Value = dgiot_json:encode(split_a3_data_3({DataIndex, Data})),
     Key = binary_to_hex(list_to_binary([16#02, Di2, 16#FF, Di4])),
     %% io:format("02  03/04/05 FF xx.xxxx parse_data_to_json Key ~p Value ~p ~n", [Key, Value]),
     {Key, Value};
@@ -165,7 +165,7 @@ parse_data_to_json(<<16#02, Di2:8, Di3:1/binary, Di4:1/binary>>, Data)
 %A3 Multi 02 06 ff x.xxx
 parse_data_to_json(<<16#02, 16#06, 16#FF, Di4:8>>, Data) ->
     DataIndex = #di_645data{di1 = 16#02, di2 = 16#06, di3 = 16#01, di4 = Di4},
-    Value = jsx:encode(split_a3_data_4({DataIndex, Data})),
+    Value = dgiot_json:encode(split_a3_data_4({DataIndex, Data})),
     Key = binary_to_hex(list_to_binary([16#02, 16#06, 16#FF, Di4])),
     %% io:format("02  03/04/05 FF  x.xxx parse_data_to_json Key ~p Value ~p ~n", [Key, Value]),
     {Key, Value};
@@ -181,7 +181,7 @@ parse_data_to_json(<<16#02, 16#06, Di3:1/binary, Di4:1/binary>>, Data) ->
 %A3 Multi 02 08/09 ff xx.xx
 parse_data_to_json(<<16#02, Di2:8, 16#FF, Di4:8>>, Data) when Di2 == 16#08 orelse Di2 == 16#09 ->
     DataIndex = #di_645data{di1 = 16#02, di2 = Di2, di3 = 16#01, di4 = Di4},
-    Value = jsx:encode(split_a3_data_5({DataIndex, Data})),
+    Value = dgiot_json:encode(split_a3_data_5({DataIndex, Data})),
     Key = binary_to_hex(list_to_binary([16#02, Di2, 16#FF, Di4])),
     %% io:format("02 08/09 ff xx.xx parse_data_to_json Key ~p Value ~p ~n", [Key, Value]),
     {Key, Value};
@@ -199,7 +199,7 @@ parse_data_to_json(<<16#02, Di2:8, Di3:1/binary, Di4:1/binary>>, Data)
 parse_data_to_json(<<16#02, Di2:8, Di3:8, 16#FF>>, Data) when
     (Di2 == 16#0A orelse Di2 == 16#0B) andalso (Di3 == 16#01 orelse Di3 == 16#02 orelse Di3 == 16#03) ->
     DataIndex = #di_645data{di1 = 16#02, di2 = Di2, di3 = Di3, di4 = 16#01},
-    Value = jsx:encode(split_a3_data_6({DataIndex, Data})),
+    Value = dgiot_json:encode(split_a3_data_6({DataIndex, Data})),
     Key = binary_to_hex(list_to_binary([16#02, Di2, Di3, 16#FF])),
     %% io:format("02 0A/0B 01-03 ff xx.xx parse_data_to_json Key ~p Value ~p ~n", [Key, Value]),
     {Key, Value};
@@ -262,41 +262,41 @@ parse_data_to_json(<<16#02, 16#80, 16#00, 16#0B>>, Data) ->
 
 %%A4 => 03 01-0F 00 00   6*3
 parse_data_to_json(<<16#03, Di2:8, 16#00, 16#00>>, Data) when Di2 =< 16#0F ->
-    Value = jsx:encode(split_a4_data_1({#di_data_A6{di1 = 16#03, di2 = Di2, di3 = 16#00, di4 = 16#00, di5 = 16#00}, Data})),
+    Value = dgiot_json:encode(split_a4_data_1({#di_data_A6{di1 = 16#03, di2 = Di2, di3 = 16#00, di4 = 16#00, di5 = 16#00}, Data})),
     Key = binary_to_hex(list_to_binary([16#03, Di2, 16#00, 16#00])),
     %% io:format("03 01-0F 00 00   6*3   parse_data_to_json Key ~p Value ~p ~n", [Key, Value]),
     {Key, Value};
 
 %%A4 => 03 01-04 01-03  01-0A   n*n
 parse_data_to_json(<<16#03, Di2:8, Di3:8, Di4:8>>, Data) when (Di2 > 0 andalso Di2 =< 16#04) andalso (Di3 > 0 andalso Di3 =< 16#03) andalso (Di4 > 0 andalso Di4 =< 16#0A) ->
-    Value = jsx:encode(split_a4_data_2({#di_data_A6{di1 = 16#03, di2 = Di2, di3 = Di3, di4 = Di4, di5 = 16#00}, Data})),
+    Value = dgiot_json:encode(split_a4_data_2({#di_data_A6{di1 = 16#03, di2 = Di2, di3 = Di3, di4 = Di4, di5 = 16#00}, Data})),
     Key = binary_to_hex(list_to_binary([16#03, Di2, Di3, Di4])),
     %% io:format("03 01-04 01-03  01-0A   n*n   parse_data_to_json Key ~p Value ~p ~n", [Key, Value]),
     {Key, Value};
 
 %%A4 => 03 05 00  01-0A   n*n
 parse_data_to_json(<<16#03, 16#05, 16#00, Di4:8>>, Data) when Di4 =< 16#0A ->
-    Value = jsx:encode(split_a4_data_3({#di_data_A6{di1 = 16#03, di2 = 16#05, di3 = 16#00, di4 = Di4, di5 = 16#00}, Data})),
+    Value = dgiot_json:encode(split_a4_data_3({#di_data_A6{di1 = 16#03, di2 = 16#05, di3 = 16#00, di4 = Di4, di5 = 16#00}, Data})),
     Key = binary_to_hex(list_to_binary([16#03, 16#05, 16#00, Di4])),
     %% io:format("03 05 00  01-0A   n*3   parse_data_to_json Key ~p Value ~p ~n", [Key, Value]),
     {Key, Value};
 
 %%A4 => 03 06/11 00  01-0A   n*n
 parse_data_to_json(<<16#03, Di2:8, 16#00, Di4:8>>, Data) when (Di4 > 0 andalso Di4 =< 16#0A) andalso (Di2 == 16#06 orelse Di2 == 16#11) ->
-    Value = jsx:encode(split_a4_data_4({#di_data_A6{di1 = 16#03, di2 = 16#06, di3 = 16#00, di4 = Di4, di5 = 16#00}, Data})),
+    Value = dgiot_json:encode(split_a4_data_4({#di_data_A6{di1 = 16#03, di2 = 16#06, di3 = 16#00, di4 = Di4, di5 = 16#00}, Data})),
     Key = binary_to_hex(list_to_binary([16#03, Di2, 16#00, Di4])),
     %% io:format("03 06/11 00  01-0A   n*n   parse_data_to_json Key ~p Value ~p ~n", [Key, Value]),
     {Key, Value};
 
 %%A4 => 03 07-08 00  01-0A   n*n
 parse_data_to_json(<<16#03, Di2:8, 16#00, Di4:8>>, Data) when Di4 =< 16#0A andalso (Di2 == 7 orelse Di2 == 8) ->
-    Value = jsx:encode(split_a4_data_5({#di_data_A6{di1 = 16#03, di2 = Di2, di3 = 16#00, di4 = Di4, di5 = 16#00}, Data})),
+    Value = dgiot_json:encode(split_a4_data_5({#di_data_A6{di1 = 16#03, di2 = Di2, di3 = 16#00, di4 = Di4, di5 = 16#00}, Data})),
     Key = binary_to_hex(list_to_binary([16#03, Di2, 16#00, Di4])),
     %% io:format("03 07-08 00  01-0A   n*n   parse_data_to_json Key ~p Value ~p ~n", [Key, Value]),
     {Key, Value};
 %%A4 => 03 09-0A 00  01-0A   n*n
 parse_data_to_json(<<16#03, Di2:8, 16#00, Di4:8>>, Data) when Di4 =< 16#0A andalso (Di2 == 9 orelse Di2 == 10) ->
-    Value = jsx:encode(split_a4_data_6({#di_data_A6{di1 = 16#03, di2 = Di2, di3 = 16#00, di4 = Di4, di5 = 16#00}, Data})),
+    Value = dgiot_json:encode(split_a4_data_6({#di_data_A6{di1 = 16#03, di2 = Di2, di3 = 16#00, di4 = Di4, di5 = 16#00}, Data})),
     Key = binary_to_hex(list_to_binary([16#03, Di2, 16#00, Di4])),
     %% io:format("03 09 00  01-0A   n*n   parse_data_to_json Key ~p Value ~p ~n", [Key, Value]),
     {Key, Value};
@@ -305,7 +305,7 @@ parse_data_to_json(<<16#03, Di2:8, 16#00, Di4:8>>, Data) when Di4 =< 16#0A andal
 parse_data_to_json(<<16#03, Di2:8, Di3:8, Di4:8>>, Data) when Di4 =< 16#0A
     andalso (Di3 == 16#01 orelse Di3 == 16#02 orelse Di3 == 16#03)
     andalso (Di2 == 16#0B orelse Di2 == 16#0C orelse Di2 == 16#0D) ->
-    Value = jsx:encode(split_a4_data_2({#di_data_A6{di1 = 16#03, di2 = Di2, di3 = Di3, di4 = Di4, di5 = 16#00}, Data})),
+    Value = dgiot_json:encode(split_a4_data_2({#di_data_A6{di1 = 16#03, di2 = Di2, di3 = Di3, di4 = Di4, di5 = 16#00}, Data})),
     Key = binary_to_hex(list_to_binary([16#03, Di2, Di3, Di4])),
     %% io:format("03 0B-0D 01-03  01-0A   n*n  parse_data_to_json Key ~p Value ~p ~n", [Key, Value]),
     {Key, Value};
@@ -314,14 +314,14 @@ parse_data_to_json(<<16#03, Di2:8, Di3:8, Di4:8>>, Data) when Di4 =< 16#0A
 parse_data_to_json(<<16#03, Di2:8, Di3:8, Di4:8>>, Data) when Di4 =< 16#0A
     andalso (Di3 == 16#01 orelse Di3 == 16#02 orelse Di3 == 16#03)
     andalso (Di2 == 16#0E orelse Di2 == 16#0F) ->
-    Value = jsx:encode(split_a4_data_5({#di_data_A6{di1 = 16#03, di2 = Di2, di3 = Di3, di4 = Di4, di5 = 16#00}, Data})),
+    Value = dgiot_json:encode(split_a4_data_5({#di_data_A6{di1 = 16#03, di2 = Di2, di3 = Di3, di4 = Di4, di5 = 16#00}, Data})),
     Key = binary_to_hex(list_to_binary([16#03, Di2, Di3, Di4])),
     %% io:format("03 0E-0F 01-03  01-0A   n*n   parse_data_to_json Key ~p Value ~p ~n", [Key, Value]),
     {Key, Value};
 
 %%A4 => 03 10 00-03  00-0C   n*n
 parse_data_to_json(<<16#03, 16#10, Di3:8, Di4:8>>, Data) when Di4 =< 16#0C andalso Di3 =< 16#03 ->
-    Value = jsx:encode(split_a4_data_7({#di_data_A6{di1 = 16#03, di2 = 16#10, di3 = Di3, di4 = Di4, di5 = 16#00}, Data})),
+    Value = dgiot_json:encode(split_a4_data_7({#di_data_A6{di1 = 16#03, di2 = 16#10, di3 = Di3, di4 = Di4, di5 = 16#00}, Data})),
     Key = binary_to_hex(list_to_binary([16#03, 16#10, Di3, Di4])),
     %% io:format(" 03 10 00-03  00-0C   n*n parse_data_to_json Key ~p Value ~p ~n", [Key, Value]),
     {Key, Value};
@@ -385,7 +385,7 @@ parse_data_to_json(<<16#B6, Di2:8>>, Data)
 
 %%A4 => 03 12 00 00  3*n
 parse_data_to_json(<<16#03, 16#12, 16#00, 16#00>>, Data) ->
-    Value = jsx:encode(split_a4_data_8({#di_data_A6{di1 = 16#03, di2 = 16#12, di3 = 16#00, di4 = 16#00, di5 = 16#00}, Data})),
+    Value = dgiot_json:encode(split_a4_data_8({#di_data_A6{di1 = 16#03, di2 = 16#12, di3 = 16#00, di4 = 16#00, di5 = 16#00}, Data})),
     Key = binary_to_hex(list_to_binary([16#03, 16#12, 16#00, 16#00])),
     %% io:format("03 12 00 00  3*n  parse_data_to_json Key ~p Value ~p ~n", [Key, Value]),
     {Key, Value};
@@ -398,7 +398,7 @@ parse_data_to_json(<<16#03, 16#11, 16#00, 16#00>>, Data) ->
 
 %%A4 => 03 12 01-06 01-0A
 parse_data_to_json(<<16#03, 16#12, Di3:8, Di4:8>>, Data) when Di3 =< 16#06 andalso Di4 =< 16#0A ->
-    Value = jsx:encode(split_a4_data_9({#di_data_A6{di1 = 16#03, di2 = 16#12, di3 = Di3, di4 = Di4, di5 = 16#00}, Data})),
+    Value = dgiot_json:encode(split_a4_data_9({#di_data_A6{di1 = 16#03, di2 = 16#12, di3 = Di3, di4 = Di4, di5 = 16#00}, Data})),
     Key = binary_to_hex(list_to_binary([16#03, 16#12, Di3, Di4])),
     %% io:format("03 12 01-06 01-0A    parse_data_to_json Key ~p Value ~p ~n", [Key, Value]),
     {Key, Value};
@@ -411,72 +411,72 @@ parse_data_to_json(<<16#03, 16#30, Di3:8, 16#00>>, Data)
     {Key, Value};
 %%A4 => 03 30 00/03 01-0A
 parse_data_to_json(<<16#03, 16#30, Di3:8, Di4:8>>, Data) when (Di3 == 16#00 orelse Di3 == 16#03) andalso Di4 =< 16#0A ->
-    Value = jsx:encode(split_a4_data_10({#di_data_A6{di1 = 16#03, di2 = 16#30, di3 = Di3, di4 = Di4, di5 = 16#00}, Data})),
+    Value = dgiot_json:encode(split_a4_data_10({#di_data_A6{di1 = 16#03, di2 = 16#30, di3 = Di3, di4 = Di4, di5 = 16#00}, Data})),
     Key = binary_to_hex(list_to_binary([16#03, 16#30, Di3, Di4])),
     %% io:format("03 30 00/03  01-0A   parse_data_to_json Key ~p Value ~p ~n", [Key, Value]),
     {Key, Value};
 
 %%A4 => 03 30 01 01-0A
 parse_data_to_json(<<16#03, 16#30, 16#01, Di4:8>>, Data) when Di4 =< 16#0A ->
-    Value = jsx:encode(split_a4_data_11({#di_data_A6{di1 = 16#03, di2 = 16#30, di3 = 16#01, di4 = Di4, di5 = 16#00}, Data})),
+    Value = dgiot_json:encode(split_a4_data_11({#di_data_A6{di1 = 16#03, di2 = 16#30, di3 = 16#01, di4 = Di4, di5 = 16#00}, Data})),
     Key = binary_to_hex(list_to_binary([16#03, 16#30, 16#01, Di4])),
     %% io:format("03 30 01 01-0A   parse_data_to_json Key ~p Value ~p ~n", [Key, Value]),
     {Key, Value};
 %%A4 => 03 30 02 01-0A
 parse_data_to_json(<<16#03, 16#30, 16#02, Di4:8>>, Data) when Di4 =< 16#0A ->
-    Value = jsx:encode(split_a4_data_12({#di_data_A6{di1 = 16#03, di2 = 16#30, di3 = 16#02, di4 = Di4, di5 = 16#00}, Data})),
+    Value = dgiot_json:encode(split_a4_data_12({#di_data_A6{di1 = 16#03, di2 = 16#30, di3 = 16#02, di4 = Di4, di5 = 16#00}, Data})),
     Key = binary_to_hex(list_to_binary([16#03, 16#30, 16#02, Di4])),
     %% io:format("03 30 02 01-0A   parse_data_to_json Key ~p Value ~p ~n", [Key, Value]),
     {Key, Value};
 
 %%A4 => 03 30 04 01-0A
 parse_data_to_json(<<16#03, 16#30, 16#04, Di4:8>>, Data) when Di4 =< 16#0A ->
-    Value = jsx:encode(split_a4_data_13({#di_data_A6{di1 = 16#03, di2 = 16#30, di3 = 16#04, di4 = Di4, di5 = 16#00}, Data})),
+    Value = dgiot_json:encode(split_a4_data_13({#di_data_A6{di1 = 16#03, di2 = 16#30, di3 = 16#04, di4 = Di4, di5 = 16#00}, Data})),
     Key = binary_to_hex(list_to_binary([16#03, 16#30, 16#04, Di4])),
     %% io:format("03 30 04 01-0A   parse_data_to_json Key ~p Value ~p ~n", [Key, Value]),
     {Key, Value};
 
 %%A4 => 03 30 05 01-0A
 parse_data_to_json(<<16#03, 16#30, 16#05, Di4:8>>, Data) when Di4 =< 16#0A ->
-    Value = jsx:encode(split_a4_data_14({#di_data_A6{di1 = 16#03, di2 = 16#30, di3 = 16#05, di4 = Di4, di5 = 16#00}, Data})),
+    Value = dgiot_json:encode(split_a4_data_14({#di_data_A6{di1 = 16#03, di2 = 16#30, di3 = 16#05, di4 = Di4, di5 = 16#00}, Data})),
     Key = binary_to_hex(list_to_binary([16#03, 16#30, 16#05, Di4])),
     %% io:format("03 30 05 01-0A   parse_data_to_json Key ~p Value ~p ~n", [Key, Value]),
     {Key, Value};
 %%A4 => 03 30 06 01-0A
 parse_data_to_json(<<16#03, 16#30, 16#06, Di4:8>>, Data) when Di4 =< 16#0A ->
-    Value = jsx:encode(split_a4_data_15({#di_data_A6{di1 = 16#03, di2 = 16#30, di3 = 16#06, di4 = Di4, di5 = 16#00}, Data})),
+    Value = dgiot_json:encode(split_a4_data_15({#di_data_A6{di1 = 16#03, di2 = 16#30, di3 = 16#06, di4 = Di4, di5 = 16#00}, Data})),
     Key = binary_to_hex(list_to_binary([16#03, 16#30, 16#06, Di4])),
     %% io:format("03 30 06 01-0A   parse_data_to_json Key ~p Value ~p ~n", [Key, Value]),
     {Key, Value};
 %%A4 => 03 30 07 01-0A
 parse_data_to_json(<<16#03, 16#30, Di3:8, Di4:8>>, Data)
     when (Di3 == 16#07) andalso Di4 =< 16#0A ->
-    Value = jsx:encode(split_a4_data_16({#di_data_A6{di1 = 16#03, di2 = 16#30, di3 = Di3, di4 = Di4, di5 = 16#00}, Data})),
+    Value = dgiot_json:encode(split_a4_data_16({#di_data_A6{di1 = 16#03, di2 = 16#30, di3 = Di3, di4 = Di4, di5 = 16#00}, Data})),
     Key = binary_to_hex(list_to_binary([16#03, 16#30, Di3, Di4])),
     %% io:format("03 30 07 01-0A   parse_data_to_json Key ~p Value ~p ~n", [Key, Value]),
     {Key, Value};
 %%A4 => 03 30 09-0B 01-0A
 parse_data_to_json(<<16#03, 16#30, Di3:8, Di4:8>>, Data)
     when (Di3 == 16#09 orelse Di3 == 16#0A orelse Di3 == 16#0B) andalso Di4 =< 16#0A ->
-    Value = jsx:encode(split_a4_data_27({#di_data_A6{di1 = 16#03, di2 = 16#30, di3 = Di3, di4 = Di4, di5 = 16#00}, Data})),
+    Value = dgiot_json:encode(split_a4_data_27({#di_data_A6{di1 = 16#03, di2 = 16#30, di3 = Di3, di4 = Di4, di5 = 16#00}, Data})),
     Key = binary_to_hex(list_to_binary([16#03, 16#30, Di3, Di4])),
     %% io:format("03 30 09-0B 01-0A   parse_data_to_json Key ~p Value ~p ~n", [Key, Value]),
     {Key, Value};
 %%A4 => 03 30 08 01-0A
 parse_data_to_json(<<16#03, 16#30, 16#08, Di4:8>>, Data) when Di4 =< 16#0A ->
-    Value = jsx:encode(split_a4_data_17({#di_data_A6{di1 = 16#03, di2 = 16#30, di3 = 16#08, di4 = Di4, di5 = 16#00}, Data})),
+    Value = dgiot_json:encode(split_a4_data_17({#di_data_A6{di1 = 16#03, di2 = 16#30, di3 = 16#08, di4 = Di4, di5 = 16#00}, Data})),
     Key = binary_to_hex(list_to_binary([16#03, 16#30, 16#08, Di4])),
     %% io:format("03 30 08 01-0A   parse_data_to_json Key ~p Value ~p ~n", [Key, Value]),
     {Key, Value};
 %%A4 => 03 30 0C 01-0A
 parse_data_to_json(<<16#03, 16#30, 16#0C, Di4:8>>, Data) when Di4 =< 16#0A ->
-    Value = jsx:encode(split_a4_data_18({#di_data_A6{di1 = 16#03, di2 = 16#30, di3 = 16#0C, di4 = Di4, di5 = 16#00}, Data})),
+    Value = dgiot_json:encode(split_a4_data_18({#di_data_A6{di1 = 16#03, di2 = 16#30, di3 = 16#0C, di4 = Di4, di5 = 16#00}, Data})),
     Key = binary_to_hex(list_to_binary([16#03, 16#30, 16#0C, Di4])),
     %% io:format("03 30 0C 01-0A   parse_data_to_json Key ~p Value ~p ~n", [Key, Value]),
     {Key, Value};
 %%A4 => 03 30 0D/0E 01-0A
 parse_data_to_json(<<16#03, 16#30, Di3:8, Di4:8>>, Data) when (Di3 == 16#0D orelse Di3 == 16#0E) andalso Di4 =< 16#0A ->
-    Value = jsx:encode(split_a4_data_5({#di_data_A6{di1 = 16#03, di2 = 16#30, di3 = Di3, di4 = Di4, di5 = 16#00}, Data})),
+    Value = dgiot_json:encode(split_a4_data_5({#di_data_A6{di1 = 16#03, di2 = 16#30, di3 = Di3, di4 = Di4, di5 = 16#00}, Data})),
     Key = binary_to_hex(list_to_binary([16#03, 16#30, Di3, Di4])),
     %% io:format("03 30 0D/0E 01-0A   parse_data_to_json Key ~p Value ~p ~n", [Key, Value]),
     {Key, Value};
@@ -524,14 +524,14 @@ parse_data_to_json(<<16#10, 16#00, Di3:8, 16#01>>, Data)
 parse_data_to_json(<<Di1:8, Di2:8, 16#FF, Di4:8>>, Data)
     when (Di2 == 16#01 orelse Di2 == 16#02 orelse Di2 == 16#03) andalso (Di4 >= 16#01 andalso Di4 =< 16#0A) andalso (Di1 == 16#10 orelse Di1 == 16#18 orelse Di1 == 16#1A orelse Di1 == 16#19) ->
     %% io:format("  10/18/1A/19   01-03 FF(01-35) 01-0A ",[]),
-    Value = jsx:encode(split_a4_data_19({#di_data_A6{di1 = Di1, di2 = Di2, di3 = 16#01, di4 = Di4}, Data})),
+    Value = dgiot_json:encode(split_a4_data_19({#di_data_A6{di1 = Di1, di2 = Di2, di3 = 16#01, di4 = Di4}, Data})),
     Key = binary_to_hex(list_to_binary([Di1, Di2, 16#FF, Di4])),
     %% io:format("  10/11/12/13/18/1A/19    01-03 FF(01-35) 01-0A  parse_data_to_json Key ~p Value ~p ~n", [Key, Value]),
     {Key, Value};
 %%10/11/12/13/18/1A/19   01-03  01-35  FF (01-0A)
 parse_data_to_json(<<Di1:8, Di2:8, Di3:8, 16#FF>>, Data)
     when (Di2 == 16#01 orelse Di2 == 16#02 orelse Di2 == 16#03) andalso (Di3 =< 16#35) andalso (Di1 == 16#10 orelse Di1 == 16#18 orelse Di1 == 16#1A orelse Di1 == 16#19) ->
-    Value = jsx:encode(split_a4_data_20({#di_data_A6{di1 = Di1, di2 = Di2, di3 = Di3, di4 = 16#01}, Data})),
+    Value = dgiot_json:encode(split_a4_data_20({#di_data_A6{di1 = Di1, di2 = Di2, di3 = Di3, di4 = 16#01}, Data})),
     Key = binary_to_hex(list_to_binary([Di1, Di2, Di3, 16#FF])),
     %% io:format("  10/11/12/13/18/1A/19    01-03  01-35  FF (01-0A) parse_data_to_json Key ~p Value ~p ~n", [Key, Value]),
     {Key, Value};
@@ -597,7 +597,7 @@ parse_data_to_json(<<Di1:8, Di2:8, Di3:8, Di4:8>>, Data)
 parse_data_to_json(<<Di1:8, Di2:8, Di3:8, 16#FF>>, Data)
     when (Di1 >= 16#11 andalso Di1 =< 16#13 orelse Di1 == 16#19 orelse Di1 == 16#1A orelse Di1 == 16#1C)
     andalso (Di2 >= 16#01 andalso Di2 =< 16#03) andalso (Di3 =/= 16#FF) ->
-    Value = jsx:encode(split_a4_data_21({#di_data_A6{di1 = Di1, di2 = Di2, di3 = Di3, di4 = 16#01}, Data})),
+    Value = dgiot_json:encode(split_a4_data_21({#di_data_A6{di1 = Di1, di2 = Di2, di3 = Di3, di4 = 16#01}, Data})),
     Key = binary_to_hex(list_to_binary([Di1, Di2, Di3, 16#FF])),
     %% io:format(" 11-13/19/1A/1c  01-03     zz   FF  xxxxxx parse_data_to_json Key ~p Value ~p ~n", [Key, Value]),
     {Key, Value};
@@ -627,14 +627,14 @@ parse_data_to_json(<<Di1:8, Di2:8, 16#FF, Di4:8>>, Data)
     andalso (Di4 >= 16#01 andalso Di4 =< 16#0A) ->
     %% io:format("  14  00 and  1B/1c    01-03 FF(01-35) 01-0A ",[]),
 
-    Value = jsx:encode(split_a4_data_22({#di_data_A6{di1 = Di1, di2 = Di2, di3 = 16#01, di4 = Di4}, Data})),
+    Value = dgiot_json:encode(split_a4_data_22({#di_data_A6{di1 = Di1, di2 = Di2, di3 = 16#01, di4 = Di4}, Data})),
     Key = binary_to_hex(list_to_binary([Di1, Di2, 16#FF, Di4])),
     %% io:format("14  00 and  1B/1c  01-03  FF  01-0A  parse_data_to_json Key ~p Value ~p ~n", [Key, Value]),
     {Key, Value};
 %%1B/1c  01-03  zz  FF
 parse_data_to_json(<<Di1:8, Di2:8, Di3:8, 16#FF>>, Data)
     when (((Di1 == 16#1B orelse Di1 == 16#1C) andalso (Di2 >= 16#01 andalso Di2 =< 16#03))) ->
-    Value = jsx:encode(split_a4_data_24({#di_data_A6{di1 = Di1, di2 = Di2, di3 = Di3, di4 = 16#01}, Data})),
+    Value = dgiot_json:encode(split_a4_data_24({#di_data_A6{di1 = Di1, di2 = Di2, di3 = Di3, di4 = 16#01}, Data})),
     Key = binary_to_hex(list_to_binary([Di1, Di2, Di3, 16#FF])),
     %% io:format("1B/1c  01-03  zz  FF  parse_data_to_json Key ~p Value ~p ~n", [Key, Value]),
     {Key, Value};
@@ -663,7 +663,7 @@ parse_data_to_json(<<Di1:8, Di2:8, Di3:8, Di4:8>>, Data)
 %%1D/1E/1F   00     FF  01-0A
 parse_data_to_json(<<Di1:8, 16#00, 16#FF, Di4:8>>, Data)
     when (Di1 == 16#1D orelse Di1 == 16#1E orelse Di1 == 16#1F) andalso (Di4 >= 16#01 andalso Di4 =< 16#0A) ->
-    Value = jsx:encode(split_a4_data_25({#di_data_A6{di1 = Di1, di2 = 16#00, di3 = 16#01, di4 = Di4}, Data})),
+    Value = dgiot_json:encode(split_a4_data_25({#di_data_A6{di1 = Di1, di2 = 16#00, di3 = 16#01, di4 = Di4}, Data})),
     Key = binary_to_hex(list_to_binary([Di1, 16#00, 16#FF, Di4])),
     %% io:format("1D/1E/1F   00     FF  01-0A parse_data_to_json Key ~p Value ~p ~n", [Key, Value]),
 
@@ -671,7 +671,7 @@ parse_data_to_json(<<Di1:8, 16#00, 16#FF, Di4:8>>, Data)
 %%1D/1E/1F  00  zz  FF
 parse_data_to_json(<<Di1:8, 16#00, Di3:8, 16#FF>>, Data)
     when (Di1 == 16#1D orelse Di1 == 16#1E orelse Di1 == 16#1F) ->
-    Value = jsx:encode(split_a4_data_26({#di_data_A6{di1 = Di1, di2 = 16#00, di3 = Di3, di4 = 16#01}, Data})),
+    Value = dgiot_json:encode(split_a4_data_26({#di_data_A6{di1 = Di1, di2 = 16#00, di3 = Di3, di4 = 16#01}, Data})),
     Key = binary_to_hex(list_to_binary([Di1, 16#00, Di3, 16#FF])),
     %% io:format("1D/1E/1F  00  zz  FF  parse_data_to_json Key ~p Value ~p ~n", [Key, Value]),
     {Key, Value};
@@ -705,7 +705,7 @@ parse_data_to_json(<<Di1:8, 16#00, Di3:8, Di4:8>>, Data)
 %%16  00  FF  01-0A
 parse_data_to_json(<<Di1:8, 16#00, 16#FF, Di4:8>>, Data)
     when Di1 == 16#16 andalso (Di4 >= 16#01 andalso Di4 =< 16#0A) ->
-    Value = jsx:encode(split_a4_data_23({#di_data_A6{di1 = Di1, di2 = 16#00, di3 = 16#01, di4 = Di4}, Data})),
+    Value = dgiot_json:encode(split_a4_data_23({#di_data_A6{di1 = Di1, di2 = 16#00, di3 = 16#01, di4 = Di4}, Data})),
     Key = binary_to_hex(list_to_binary([Di1, 16#00, 16#FF, Di4])),
     %% io:format("16  00  FF  01-0A  parse_data_to_json Key ~p Value ~p ~n", [Key, Value]),
     {Key, Value};
@@ -738,7 +738,7 @@ parse_data_to_json(<<16#04, 16#00, 16#01, 16#01>>, <<Da7:4, Da6:4, Data:3/binary
     DataIndex1 = binary_to_hex(list_to_binary([16#04, 16#00, 16#01, 16#01, 16#00])),
     DataIndex2 = binary_to_hex(list_to_binary([16#04, 16#00, 16#01, 16#01, 16#01])),
     %% io:format("04 00 01 01 DataIndex1 ~p,DataIndex2 ~p ~n",[DataIndex1,DataIndex2]),
-    Value = jsx:encode([{DataIndex1, S}, {DataIndex2, W}]),
+    Value = dgiot_json:encode([{DataIndex1, S}, {DataIndex2, W}]),
     Key = binary_to_hex(list_to_binary([16#04, 16#00, 16#01, 16#01])),
     %% io:format("04 00 01 01  parse_data_to_json Key ~p Value ~p ~n", [Key, Value]),
     {Key, Value};
@@ -816,21 +816,21 @@ parse_data_to_json(<<16#04, 14#00, 16#0E, Di4:1/binary>>, Data) when Di4 == 16#0
 
 %A5=> 04 01/02 00  00 mmdd nn
 parse_data_to_json(<<16#04, Di2:8, 16#00, 16#00>>, Data) when Di2 == 16#01 orelse Di2 == 16#02 ->
-    Value = jsx:encode(split_a5_data_1({#di_data_A6{di1 = 16#04, di2 = Di2, di3 = 16#00, di4 = 16#00, di5 = 16#00}, Data})),
+    Value = dgiot_json:encode(split_a5_data_1({#di_data_A6{di1 = 16#04, di2 = Di2, di3 = 16#00, di4 = 16#00, di5 = 16#00}, Data})),
     Key = binary_to_hex(list_to_binary([16#04, Di2, 16#00, 16#00])),
     %%  io:format("04 00 01/02 00 mmdd  nn   parse_data_to_json Key ~p Value ~p ~n", [Key, Value]),
     {Key, Value};
 
 %A5=> 04 01/02 00  01-08 hhmm nn
 parse_data_to_json(<<16#04, Di2:8, 16#00, Di4:1/binary>>, Data) when Di2 == 16#01 orelse Di2 == 16#02 ->
-    Value = jsx:encode(split_a5_data_2({#di_data_A6{di1 = 16#04, di2 = Di2, di3 = 16#00, di4 = Di4, di5 = 16#00}, Data})),
+    Value = dgiot_json:encode(split_a5_data_2({#di_data_A6{di1 = 16#04, di2 = Di2, di3 = 16#00, di4 = Di4, di5 = 16#00}, Data})),
     Key = binary_to_hex(list_to_binary([16#04, Di2, 16#00, Di4])),
     %%  io:format("04 01/02 00 01-08 hhmm nn  parse_data_to_json Key ~p Value ~p ~n", [Key, Value]),
     {Key, Value};
 
 %A5=> 04 03 00  01-08 YYMMDD nn
 parse_data_to_json(<<16#04, 16#03, 16#00, Di4:1/binary>>, Data) ->
-    Value = jsx:encode(split_a5_data_3({#di_data_A6{di1 = 16#04, di2 = 16#03, di3 = 16#00, di4 = Di4, di5 = 16#00}, Data})),
+    Value = dgiot_json:encode(split_a5_data_3({#di_data_A6{di1 = 16#04, di2 = 16#03, di3 = 16#00, di4 = Di4, di5 = 16#00}, Data})),
     Key = binary_to_hex(list_to_binary([16#04, 16#03, 16#00, Di4])),
     %%  io:format("04 03 00 01-08 mmddnn   parse_data_to_json Key ~p Value ~p ~n", [Key, Value]),
     {Key, Value};
@@ -961,7 +961,7 @@ parse_data_to_json(<<16#04, Di2:1/binary, Di3:1/binary, Di4:1/binary>>, <<Da1:4,
 parse_data_to_json(<<16#05, 16#04, 16#FF, Di4:1/binary>>, Data) ->
 %%   io:format("parse_data_to_json Data ~p ~n", [Data]),
     DataIndex = #di_645data{di1 = 16#05, di2 = 16#04, di3 = 16#01, di4 = Di4},
-    Value = jsx:encode(split_a1_data({DataIndex, Data})),
+    Value = dgiot_json:encode(split_a1_data({DataIndex, Data})),
     Key = binary_to_hex(list_to_binary([16#05, 16#04, 16#FF, Di4])),
 %%  io:format("05 04 FF 01-FE parse_data_to_json Key ~p Value ~p ~n", [Key, Value]),
     {Key, Value};
@@ -984,7 +984,7 @@ parse_data_to_json(<<16#05, 16#04, Di3:1/binary, Di4:1/binary>>, Data) ->
 %%%%A6 => 05 00 FF 01-0D
 %%parse_data_to_json(<<16#05,16#00, 16#FF, Di4:1/binary>>, Data) ->
 %%  DataIndex = #di_645data{di1 = 16#05, di2 =  16#00, di3 =16#01, di4 = Di4},
-%%  Value = jsx:encode(split_a6_data_1({DataIndex, Data})),
+%%  Value = dgiot_json:encode(split_a6_data_1({DataIndex, Data})),
 %%  Key = binary_to_hex(list_to_binary([16#05, 16#00, 16#FF, Di4])),
 %%  io:format("  05 00 FF 01-0D parse_data_to_json Key ~p Value ~p ~n", [Key, Value]),
 %%  {Key,Value};
@@ -999,7 +999,7 @@ parse_data_to_json(<<16#05, Di2:1/binary, 16#00, Di4:1/binary>>, Data) ->
 %A6=> 05 00-07 10 01-0D/0C-3C
 parse_data_to_json(<<16#05, Di2:1/binary, 16#10, Di4:1/binary>>, Data) ->
     DataIndex = #di_data_A6{di1 = 16#05, di2 = Di2, di3 = 16#10, di4 = Di4, di5 = 16#00},
-    Value = jsx:encode(split_a6_data_3({DataIndex, Data})),
+    Value = dgiot_json:encode(split_a6_data_3({DataIndex, Data})),
     Key = binary_to_hex(list_to_binary([16#05, Di2, 16#10, Di4])),
 %%  io:format("05 00-07 10 01-0D/0C-3C parse_data_to_json Key ~p Value ~s ~n", [Key, Value]),
     {Key, Value};
@@ -1007,7 +1007,7 @@ parse_data_to_json(<<16#05, Di2:1/binary, 16#10, Di4:1/binary>>, Data) ->
 %A6=> 05 00-07 01-08 01-0D/0C-3C
 parse_data_to_json(<<16#05, Di2:1/binary, Di3:8, Di4:1/binary>>, Data) when Di3 >= 1 andalso Di3 =< 8 ->
     DataIndex = #di_data_A6{di1 = 16#05, di2 = Di2, di3 = Di3, di4 = Di4, di5 = 16#00},
-    Value = jsx:encode(split_a6_data_4({DataIndex, Data})),
+    Value = dgiot_json:encode(split_a6_data_4({DataIndex, Data})),
     Key = binary_to_hex(list_to_binary([16#05, Di2, Di3, Di4])),
 %%  io:format("parse_data_to_json Key ~p Value ~s ~n", [Key, Value]),
     {Key, Value};
@@ -1017,7 +1017,7 @@ parse_data_to_json(<<16#05, Di2:1/binary, Di3:8, Di4:1/binary>>, Data) when Di3 
 parse_data_to_json(<<16#05, Di2:1/binary, Di3:8, Di4:1/binary>>, Data) when Di3 == 9 orelse Di3 == 10 ->
 %%   io:format("parse_data_to_json Data ~p ~n", [Data]),
     DataIndex = #di_data_A6{di1 = 16#05, di2 = Di2, di3 = Di3, di4 = Di4, di5 = 16#00},
-    Value = jsx:encode(split_a6_data_8({DataIndex, Data})),
+    Value = dgiot_json:encode(split_a6_data_8({DataIndex, Data})),
     Key = binary_to_hex(list_to_binary([16#05, Di2, Di3, Di4])),
 %%  io:format("parse_data_to_json Key ~p Value ~s ~n", [Key, Value]),
     {Key, Value};
@@ -1035,7 +1035,7 @@ parse_data_to_json(<<16#06, Di2:1/binary, 16#00, 16#01>>, <<Data:5/binary, Data1
     DataIndex1 = binary_to_hex(list_to_binary([16#06, Di2, 16#00, 16#01, 16#00])),
     DataIndex2 = binary_to_hex(list_to_binary([16#06, Di2, 16#00, 16#01, 16#01])),
     %%  io:format("06 00-06 00 01 DataIndex1 ~p,DataIndex2 ~p ~n",[DataIndex1,DataIndex2]),
-    Value = jsx:encode([{DataIndex1, Value1}, {DataIndex2, Value2}]),
+    Value = dgiot_json:encode([{DataIndex1, Value1}, {DataIndex2, Value2}]),
     Key = binary_to_hex(list_to_binary([16#06, Di2, 16#00, 16#01])),
 %%   io:format("06 00-06 00 01 parse_data_to_json Key ~p Value ~s ~n", [Key, Value]),
     {Key, Value};
@@ -1055,7 +1055,7 @@ parse_data_to_json(<<16#C0, 16#10>>, <<Da7:4, Da6:4, Data:3/binary>>) ->
     DataIndex1 = binary_to_hex(list_to_binary([16#C0, 16#10, 16#00])),
     DataIndex2 = binary_to_hex(list_to_binary([16#C0, 16#10, 16#01])),
     %%  io:format("C0 10 DataIndex1 ~p,DataIndex2 ~p ~n",[DataIndex1,DataIndex2]),
-    Value = jsx:encode([{DataIndex1, S}, {DataIndex2, W}]),
+    Value = dgiot_json:encode([{DataIndex1, S}, {DataIndex2, W}]),
     Key = binary_to_hex(list_to_binary([16#C0, 16#10])),
 %%   io:format("C0 10 parse_data_to_json Key ~p Value ~p ~n", [Key, Value]),
     {Key, Value};
@@ -1141,7 +1141,7 @@ parse_data_to_json(<<16#C5, 16#10>>, Data) ->
 %97A6=> D1/D2 10
 parse_data_to_json(<<Di1:8, 16#10>>, Data) when Di1 == 16#D1 orelse Di1 == 16#D2 ->
     DataIndex = #di_645_data_97{di1 = Di1, di2 = 16#10, di3 = 16#00},
-    Value = jsx:encode(split_a6_data_99({DataIndex, Data})),
+    Value = dgiot_json:encode(split_a6_data_99({DataIndex, Data})),
     Key = binary_to_hex(list_to_binary([Di1, 16#10])),
 %%   io:format("parse_data_to_json Key ~p Value ~s ~n", [Key, Value]),
     {Key, Value};
@@ -1923,7 +1923,7 @@ split_a2_data_1({DataIndex = #di_645data{di1 = Di1, di2 = Di2, di3 = Di3, di4 = 
     ListDataIndex1 = list_to_binary([Di1, Di2, Di3, Di4, 16#01]),
     HexDataIndex0 = binary_to_hex(ListDataIndex0),
     HexDataIndex1 = binary_to_hex(ListDataIndex1),
-    Value = jsx:encode([{HexDataIndex0, Value0}, {HexDataIndex1, Value1}]),
+    Value = dgiot_json:encode([{HexDataIndex0, Value0}, {HexDataIndex1, Value1}]),
     NewDi3 = Di3 + 1,
     NextDataIndex = DataIndex#di_645data{di3 = NewDi3},
     ListDataIndex = list_to_binary([DataIndex#di_645data.di1, DataIndex#di_645data.di2, DataIndex#di_645data.di3, DataIndex#di_645data.di4]),
@@ -1940,7 +1940,7 @@ split_a2_data_2({DataIndex = #di_645data{di1 = Di1, di2 = Di2, di3 = Di3, di4 = 
     ListDataIndex1 = list_to_binary([Di1, Di2, Di3, Di4, 16#01]),
     HexDataIndex0 = binary_to_hex(ListDataIndex0),
     HexDataIndex1 = binary_to_hex(ListDataIndex1),
-    Value = jsx:encode([{HexDataIndex0, Value0}, {HexDataIndex1, Value1}]),
+    Value = dgiot_json:encode([{HexDataIndex0, Value0}, {HexDataIndex1, Value1}]),
     NewDi4 = Di4 + 1,
     NextDataIndex = DataIndex#di_645data{di4 = NewDi4},
     ListDataIndex = list_to_binary([DataIndex#di_645data.di1, DataIndex#di_645data.di2, DataIndex#di_645data.di3, DataIndex#di_645data.di4]),

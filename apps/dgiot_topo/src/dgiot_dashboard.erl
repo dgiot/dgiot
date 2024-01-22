@@ -22,7 +22,7 @@ post_dashboard(#{<<"dashboardId">> := DashboardId} = Args, #{<<"sessionToken">> 
     NewArgs = Args#{<<"sessionToken">> => SessionToken},
     dgiot_mqtt:subscribe_route_key([<<"$dg/user/topo/", SessionToken/binary, "/#">>], <<"topo">>, SessionToken),
     dgiot_mqtt:subscribe_route_key([<<"$dg/user/dashboard/#">>], <<"dashboard">>, SessionToken),
-    dgiot_mqtt:publish(DashboardId, <<"dashboard_task/", DashboardId/binary>>, jsx:encode(NewArgs)),
+    dgiot_mqtt:publish(DashboardId, <<"dashboard_task/", DashboardId/binary>>, dgiot_json:encode(NewArgs)),
 %%    发送amisdata
     spawn(
         fun() ->
@@ -38,7 +38,7 @@ post_dashboard(_Args, _Context) ->
 do_task(#{<<"dataType">> := <<"card">>, <<"vuekey">> := <<"app_count">>, <<"table">> := <<"App">>, <<"query">> := Query}, #task{dashboardId = DashboardId, sessiontoken = SessionToken}) ->
     case dgiot_parse:query_object(<<"App">>, Query, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
         {ok, #{<<"count">> := _Count} = Value} ->
-            Base64 = base64:encode(jsx:encode(#{<<"dataType">> => <<"card">>, <<"vuekey">> => <<"app_count">>, <<"table">> => <<"App">>, <<"value">> => Value})),
+            Base64 = base64:encode(dgiot_json:encode(#{<<"dataType">> => <<"card">>, <<"vuekey">> => <<"app_count">>, <<"table">> => <<"App">>, <<"value">> => Value})),
             send(DashboardId, Base64);
         _ ->
             pass
@@ -48,7 +48,7 @@ do_task(#{<<"dataType">> := <<"card">>, <<"vuekey">> := <<"app_count">>, <<"tabl
 do_task(#{<<"dataType">> := <<"card">>, <<"vuekey">> := <<"product_count">>, <<"table">> := <<"Product">>, <<"query">> := Query}, #task{dashboardId = DashboardId, sessiontoken = SessionToken}) ->
     case dgiot_parse:query_object(<<"Product">>, Query, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
         {ok, #{<<"count">> := _Count} = Value} ->
-            Base64 = base64:encode(jsx:encode(#{<<"dataType">> => <<"card">>, <<"vuekey">> => <<"product_count">>, <<"table">> => <<"Product">>, <<"value">> => Value})),
+            Base64 = base64:encode(dgiot_json:encode(#{<<"dataType">> => <<"card">>, <<"vuekey">> => <<"product_count">>, <<"table">> => <<"Product">>, <<"value">> => Value})),
             send(DashboardId, Base64);
         _ ->
             pass
@@ -58,7 +58,7 @@ do_task(#{<<"dataType">> := <<"card">>, <<"vuekey">> := <<"product_count">>, <<"
 do_task(#{<<"dataType">> := <<"card">>, <<"vuekey">> := <<"dev_online_count">>, <<"table">> := <<"Device">>, <<"query">> := Query}, #task{dashboardId = DashboardId, sessiontoken = SessionToken}) ->
     case dgiot_parse:query_object(<<"Device">>, Query, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
         {ok, #{<<"count">> := _Count} = Value} ->
-            Base64 = base64:encode(jsx:encode(#{<<"dataType">> => <<"card">>, <<"vuekey">> => <<"dev_online_count">>, <<"table">> => <<"Device">>, <<"value">> => Value})),
+            Base64 = base64:encode(dgiot_json:encode(#{<<"dataType">> => <<"card">>, <<"vuekey">> => <<"dev_online_count">>, <<"table">> => <<"Device">>, <<"value">> => Value})),
             send(DashboardId, Base64);
         _ ->
             pass
@@ -68,7 +68,7 @@ do_task(#{<<"dataType">> := <<"card">>, <<"vuekey">> := <<"dev_online_count">>, 
 do_task(#{<<"dataType">> := <<"card">>, <<"vuekey">> := <<"dev_off_count">>, <<"table">> := <<"Device">>, <<"query">> := Query}, #task{dashboardId = DashboardId, sessiontoken = SessionToken}) ->
     case dgiot_parse:query_object(<<"Device">>, Query, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
         {ok, #{<<"count">> := _Count} = Value} ->
-            Base64 = base64:encode(jsx:encode(#{<<"dataType">> => <<"card">>, <<"vuekey">> => <<"dev_off_count">>, <<"table">> => <<"Device">>, <<"value">> => Value})),
+            Base64 = base64:encode(dgiot_json:encode(#{<<"dataType">> => <<"card">>, <<"vuekey">> => <<"dev_off_count">>, <<"table">> => <<"Device">>, <<"value">> => Value})),
             send(DashboardId, Base64);
         _ ->
             pass
@@ -78,7 +78,7 @@ do_task(#{<<"dataType">> := <<"card">>, <<"vuekey">> := <<"dev_off_count">>, <<"
 do_task(#{<<"dataType">> := <<"card">>, <<"vuekey">> := <<"device_count">>, <<"table">> := <<"Device">>, <<"query">> := Query}, #task{dashboardId = DashboardId, sessiontoken = SessionToken}) ->
     case dgiot_parse:query_object(<<"Device">>, Query, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
         {ok, #{<<"count">> := _Count} = Value} ->
-            Base64 = base64:encode(jsx:encode(#{<<"dataType">> => <<"card">>, <<"vuekey">> => <<"device_count">>, <<"table">> => <<"Device">>, <<"value">> => Value})),
+            Base64 = base64:encode(dgiot_json:encode(#{<<"dataType">> => <<"card">>, <<"vuekey">> => <<"device_count">>, <<"table">> => <<"Device">>, <<"value">> => Value})),
             send(DashboardId, Base64);
         _ ->
             pass
@@ -101,7 +101,7 @@ do_task(#{<<"dataType">> := <<"card">>, <<"vuekey">> := <<"ChartStatus">>, <<"ta
             _ ->
                 0
         end,
-    Base64 = base64:encode(jsx:encode(#{<<"dataType">> => <<"card">>, <<"vuekey">> => <<"ChartStatus">>, <<"table">> => <<"Device">>,
+    Base64 = base64:encode(dgiot_json:encode(#{<<"dataType">> => <<"card">>, <<"vuekey">> => <<"ChartStatus">>, <<"table">> => <<"Device">>,
         <<"value">> => #{<<"chartData">> => #{
             <<"columns">> => [<<"状态"/utf8>>, <<"数量"/utf8>>],
             <<"rows">> => [
@@ -113,7 +113,7 @@ do_task(#{<<"dataType">> := <<"card">>, <<"vuekey">> := <<"ChartStatus">>, <<"ta
 do_task(#{<<"dataType">> := <<"card">>, <<"vuekey">> := <<"warn_count">>, <<"table">> := <<"Notification">>, <<"query">> := Query}, #task{dashboardId = DashboardId, sessiontoken = SessionToken}) ->
     case dgiot_parse:query_object(<<"Notification">>, Query, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
         {ok, #{<<"count">> := _Count} = Value} ->
-            Base64 = base64:encode(jsx:encode(#{<<"dataType">> => <<"card">>, <<"vuekey">> => <<"warn_count">>, <<"table">> => <<"Notification">>, <<"value">> => Value})),
+            Base64 = base64:encode(dgiot_json:encode(#{<<"dataType">> => <<"card">>, <<"vuekey">> => <<"warn_count">>, <<"table">> => <<"Notification">>, <<"value">> => Value})),
             send(DashboardId, Base64);
         _ ->
             pass
@@ -146,7 +146,7 @@ do_task(#{<<"dataType">> := <<"map">>, <<"vuekey">> := <<"baiduMap">>, <<"table"
                             Acc
                     end
                             end, [], Results),
-            Base64 = base64:encode(jsx:encode(#{<<"dataType">> => <<"map">>, <<"vuekey">> => <<"baiduMap">>, <<"table">> => <<"Device">>, <<"value">> => NewResult})),
+            Base64 = base64:encode(dgiot_json:encode(#{<<"dataType">> => <<"map">>, <<"vuekey">> => <<"baiduMap">>, <<"table">> => <<"Device">>, <<"value">> => NewResult})),
             send(DashboardId, Base64);
         _ ->
             pass

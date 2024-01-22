@@ -80,7 +80,7 @@ handle_message({dlink_login, do_after, ProductId, Devaddr, _Ip}, State) ->
     DeviceId = dgiot_parse_id:get_deviceid(ProductId,Devaddr),
     RequestTopic = <<"$dg/device/", ProductId/binary, "/", Devaddr/binary, "/properties">>,
     Payload = #{<<"cmd">> => <<"scan_printer">>, <<"data">> => #{}},
-    dgiot_mqtt:publish(DeviceId, RequestTopic, jsx:encode(Payload)),
+    dgiot_mqtt:publish(DeviceId, RequestTopic, dgiot_json:encode(Payload)),
     {ok, State};
 
 handle_message({dlink_firmware_report, ProductId, DevAddr, Payload}, State) ->

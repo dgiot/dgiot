@@ -432,5 +432,5 @@ send_mqtt(ProductId, DevAddr, Di, Value) ->
     DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
     Topic = <<"thing/", ProductId/binary, "/", DevAddr/binary, "/status">>,
     DValue = #{dgiot_utils:to_hex(Di) => Value},
-    dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(DValue)),
+    dgiot_mqtt:publish(DeviceId, Topic, dgiot_json:encode(DValue)),
     Topic.

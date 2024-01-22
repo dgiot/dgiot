@@ -48,12 +48,12 @@ handle_cast(_Request, State) ->
 
 handle_info({connect, Client}, #dclient{channel = ChannelId, client = ClientId} = Dclient) ->
     emqtt:subscribe(Client, {<<ClientId/binary, "/#">>, 1}), % cloud to edge
-    dgiot_bridge:send_log(ChannelId, "~s ~p  ~p ~n", [?FILE, ?LINE, jsx:encode(#{<<"network">> => <<"connect">>})]),
+    dgiot_bridge:send_log(ChannelId, "~s ~p  ~p ~n", [?FILE, ?LINE, dgiot_json:encode(#{<<"network">> => <<"connect">>})]),
     update(ChannelId),
     {noreply, Dclient};
 
 handle_info(disconnect, #dclient{channel = ChannelId} = Dclient) ->
-    dgiot_bridge:send_log(ChannelId, "~s ~p  ~p ~n", [?FILE, ?LINE, jsx:encode(#{<<"network">> => <<"disconnect">>})]),
+    dgiot_bridge:send_log(ChannelId, "~s ~p  ~p ~n", [?FILE, ?LINE, dgiot_json:encode(#{<<"network">> => <<"disconnect">>})]),
     {noreply, Dclient};
 
 handle_info({publish, #{payload := Payload, topic := Topic} = _Msg}, #dclient{channel = ChannelId} = State) ->

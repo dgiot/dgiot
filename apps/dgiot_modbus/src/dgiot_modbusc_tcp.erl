@@ -48,7 +48,7 @@ handle_info(read, #dclient{channel = ChannelId, client = ClientId, child = #{sla
     Registersnumber =
         case (Address + Step) >= Maxaddr of
             true ->
-                Maxaddr - Address + 1;
+                Maxaddr - Address + 2;
             _ ->
                 100
         end,
@@ -73,9 +73,8 @@ handle_info({tcp, Buff}, #dclient{channel = ChannelId,
         true ->
             EndData = <<OldData/binary, Data/binary>>,
 %%            io:format("~s ~p EndData = ~p.~n", [?FILE, ?LINE, dgiot_utils:binary_to_hex(EndData)]),
-            dgiot_bridge:send_log(dgiot_utils:to_binary(ChannelId), "~p recv EndData ~p", [dgiot_datetime:format("YYYY-MM-DD HH:NN:SS"), dgiot_utils:binary_to_hex(EndData)]),
             AllData = modbus_tcp:parse_frame(StartAddr, FileName, EndData),
-            dgiot_bridge:send_log(dgiot_utils:to_binary(ChannelId), "~p AllData ~ts", [dgiot_datetime:format("YYYY-MM-DD HH:NN:SS"), unicode:characters_to_list(jsx:encode(AllData))]),
+            dgiot_bridge:send_log(dgiot_utils:to_binary(ChannelId), "~p recv data ~ts => ~p", [dgiot_datetime:format("YYYY-MM-DD HH:NN:SS"), unicode:characters_to_list(dgiot_json:encode(AllData)), dgiot_utils:binary_to_hex(EndData)]),
             erlang:send_after(Freq * 1000, self(), read),
             {noreply, Dclient#dclient{child = ChildState#{di => StartAddr, data => <<>>}}};
         _ ->

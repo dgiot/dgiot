@@ -270,7 +270,8 @@ set_params(Payload, _ProductId, _DevAddr) ->
 
 parse_frame(<<_TransactionId:16, _ProtocolId:16, _Size1:16, _Slaveid:8, _FunCode:8, DataLen:8, Data:DataLen/bytes, _/bytes>>) ->
     Data.
-
+%%  1    2    3    4    5    6
+%% 0000 0018 0280 0000 0004 2102 0402 0000 0005 0017001C001C0000001802800000000421020402
 %% 00000001000200030004000540C0000041000000412000004140000041600000418000004190000041A0000041B0000041C0000041D0000041E000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000063
 %% 3F800000400000004080000040C0000041000000412000004140000041600000418000004190000041A0000041B0000041C0000041D0000041E0000041F00000420000004208000000000000000000000000000000000000000000000000000000000000000000000000000000000000426000004268000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000630000000000000000000000000000006B
 parse_frame(StartAddr, FileName, Data) ->
@@ -279,12 +280,20 @@ parse_frame(StartAddr, FileName, Data) ->
     AllData =
         lists:foldl(fun([_Number, Devaddr, Address, Originaltype | _], Acc) ->
             ProductId = dgiot_data:get(AtomName, {addr, Address}),
-            IntOffset = (dgiot_utils:to_int(Address) + 1)  - StartAddr,
+            {NewAddress, Bytes} =
+                case binary:split(Address, <<$.>>, [global, trim]) of
+                    [Addr, Num] ->
+                        {Addr, dgiot_utils:to_int(Num)};
+                    _ ->
+                        {Address, 1}
+                end,
+            IntOffset = dgiot_utils:to_int(NewAddress) - StartAddr,
             Thing = #{
-                <<"identifier">> => Address,
+                <<"identifier">> => NewAddress,
                 <<"dataSource">> => #{
                     <<"registersnumber">> => 1,
-                    <<"originaltype">> => Originaltype
+                    <<"originaltype">> => Originaltype,
+                    <<"bytes">> => Bytes
                 }},
             IntLen = get_len(1, Originaltype),
             Value =
@@ -308,7 +317,7 @@ parse_frame(StartAddr, FileName, Data) ->
                             <<_:NewIntOffset/binary, V:IntLen/binary, _/binary>> ->
                                 case format_value(V, Thing, #{}) of
                                     {Value1, _Rest} ->
-%%                                        io:format("~s ~p ~p => ~p => ~p => ~p => ~p => ~p ~n", [?FILE, ?LINE, Address, IntOffset, NewIntOffset, IntLen, V, Value1]),
+%%                                        io:format("~s ~p ~p => ~p => ~p => ~p => ~p => ~p ~n", [?FILE, ?LINE, NewAddress, IntOffset, NewIntOffset, IntLen, V, Value1]),
                                         Value1;
                                     _ ->
                                         V
@@ -580,6 +589,14 @@ format_value(Buff, #{<<"identifier">> := BitIdentifier,
     {map, Values};
 
 format_value(Buff, #{<<"dataSource">> := #{
+    <<"originaltype">> := <<"bool">>,
+    <<"bytes">> := Bytes
+}}, _Props) ->
+    NewBytes = 16 - Bytes,
+    <<_:NewBytes, Value:1, Rest/bits>> = Buff,
+    {Value, Rest};
+
+format_value(Buff, #{<<"dataSource">> := #{
     <<"registersnumber">> := Num,
     <<"originaltype">> := <<"short16_AB">>
 }}, _Props) ->
@@ -682,6 +699,9 @@ format_value(Buff, #{<<"identifier">> := Field, <<"originaltype">> := Originalty
     {<<"">>, Buff}.
 
 %% 获取寄存器字节长度
+get_len(IntNum, <<"bool">>) ->
+    IntNum * 2;
+
 get_len(IntNum, <<"short16_AB">>) ->
     IntNum * 2;
 

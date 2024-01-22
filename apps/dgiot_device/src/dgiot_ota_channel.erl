@@ -165,7 +165,7 @@ send_upgrade(#state{product = ProductId, path = Path, version = Version, md5 = M
         {ok, #{<<"devaddr">> := Devaddr}} ->
             Topic = <<"$dg/device/", ProductId/binary, "/", Devaddr/binary, "/ota/upgrade">>,
             Data = #{<<"path">> => Path, <<"md5">> => Md5},
-            dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(Data));
+            dgiot_mqtt:publish(DeviceId, Topic, dgiot_json:encode(Data));
         _ ->
             pass
     end,

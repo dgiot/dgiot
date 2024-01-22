@@ -61,7 +61,7 @@ get_konva(ProductId, DeviceId, Payload) ->
             Unit = dgiot_utils:to_binary(get_konva_unit(ProductId, K)),
             Acc ++ [#{<<"id">> => dgiot_parse_id:get_shapeid(DeviceId, <<ProductId/binary, "_", K/binary, "_text">>), <<"text">> => <<BinV/binary, " ", Unit/binary>>, <<"type">> => Type}]
                   end, Topo, Payload),
-    base64:encode(jsx:encode(#{<<"konva">> => Shape})).
+    base64:encode(dgiot_json:encode(#{<<"konva">> => Shape})).
 
 get_konva_thing(Arg, _Context) ->
     #{<<"productid">> := ProductId,

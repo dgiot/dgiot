@@ -62,10 +62,10 @@ handle_info({message, #{<<"subAddr">> := SubAddr} = Frame}, #{ <<"addr">> := Add
     Devices = maps:get(<<"devices">>, State, #{}),
     case maps:get(SubAddr, Devices, no) of
         no ->
-            dgiot_bridge:send_log(ChannelId, ProductId, "DTU:~p online Recv ~s", [Addr, jsx:encode(Frame)]),
+            dgiot_bridge:send_log(ChannelId, ProductId, "DTU:~p online Recv ~s", [Addr, dgiot_json:encode(Frame)]),
             {ok, State#{<<"devices">> => Devices#{SubAddr => true}}};
         true ->
-            dgiot_bridge:send_log(ChannelId, ProductId, "DTU:~p Recv ~s", [Addr, jsx:encode(Frame)]),
+            dgiot_bridge:send_log(ChannelId, ProductId, "DTU:~p Recv ~s", [Addr, dgiot_json:encode(Frame)]),
             {ok, State}
     end;
 

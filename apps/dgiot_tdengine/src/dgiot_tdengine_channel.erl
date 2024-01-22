@@ -204,6 +204,7 @@ handle_message(init, #state{id = ChannelId, env = Config} = State) ->
     case dgiot_bridge:get_products(ChannelId) of
         {ok, _, ProductIds} ->
             NewProducts = lists:foldl(fun(X, Acc) ->
+                dgiot_data:insert({tdchannel_product, binary_to_atom(X)}, ChannelId),
                 Acc ++ dgiot_product_tdengine:get_products(X, ChannelId)
                                       end, [], ProductIds),
             do_check(ChannelId, dgiot_utils:unique_1(NewProducts), Config),
@@ -218,7 +219,7 @@ handle_message({data, Product, DevAddr, Data, Context}, #state{id = ChannelId} =
     case catch do_save([Product, DevAddr, Data, Context], State) of
         {Err, Reason} when Err == error; Err == 'EXIT' ->
             ?LOG(error, "Save to Tdengine error, ~p, ~p", [Data, Reason]),
-            dgiot_bridge:send_log(ChannelId, "Save to Tdengine error, ~ts~n, ~p", [unicode:characters_to_list(jsx:encode(Data)), Reason]),
+            dgiot_bridge:send_log(ChannelId, "Save to Tdengine error, ~ts~n, ~p", [unicode:characters_to_list(dgiot_json:encode(Data)), Reason]),
             ok;
         {ok, NewState} ->
             {ok, NewState}
@@ -231,8 +232,8 @@ handle_message({sql, Sql}, #state{id = ChannelId} = State) ->
         {Err, Reason} when Err == error; Err == 'EXIT' ->
             dgiot_bridge:send_log(ChannelId, "Save to Tdengine error, ~p, ~p", [Sql, Reason]),
             ok;
-       _ ->
-           pass
+        _ ->
+            pass
     end,
     {ok, State};
 

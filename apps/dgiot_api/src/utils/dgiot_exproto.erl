@@ -52,7 +52,7 @@ do_exproto(OperationId, #{<<"exprotomode">> := <<"async">>} = Args, #{<<"session
                 <<"host">> => Host
             },
             Topic = <<SessionToken/binary, "/", BinFun/binary ,"_",  "python_",BinMod/binary>>,
-            dgiot_mqtt:publish(self(), <<"dgiot_exproto_api">>, jsx:encode(Payload)),
+            dgiot_mqtt:publish(self(), <<"dgiot_exproto_api">>, dgiot_json:encode(Payload)),
             {ok, #{<<"results">> => #{<<"topic">> => Topic}}};
         _ ->
             {error, <<"Not Allowed.">>}
@@ -68,7 +68,7 @@ do_exproto(OperationId, Args, #{<<"sessionToken">> := SessionToken}, #{headers :
             Result =
                 case jsx:is_json(Data) of
                     true ->
-                        jsx:decode(Data);
+                        dgiot_json:decode(Data);
                     _ -> Data
                 end,
             {ok, #{<<"results">> => Result}};
@@ -92,7 +92,7 @@ do_python(Mod, OperationId, Args, SessionToken, Host) ->
     Env = maps:without([<<"rules">>, <<"menu">>], dgiot_auth:get_session(SessionToken)),
     Roles = maps:values(maps:get(<<"roles">>, Env)),
     python:call(NewPid, list_to_atom(dgiot_utils:to_list(OperationId)), do_exproto,
-        [base64:encode(jsx:encode(Args)), SessionToken, base64:encode(jsx:encode(Env#{<<"roles">> => Roles, <<"host">> => Host}))]
+        [base64:encode(dgiot_json:encode(Args)), SessionToken, base64:encode(dgiot_json:encode(Env#{<<"roles">> => Roles, <<"host">> => Host}))]
     ).
 
 get_exproto(Type, Mod, <<"all">>) ->
@@ -174,7 +174,7 @@ post_exproto(Type, Mod, Code, Swagger) ->
             Data = base64:decode(Code),
             ok = file:write_file(CodeFile, dgiot_utils:to_binary(Data)),
             SwaggerFile = CurrDir ++ "swagger_" ++ dgiot_utils:to_list(Type) ++ "_" ++ dgiot_utils:to_list(Mod) ++ ".json",
-            ok = file:write_file(SwaggerFile, jsx:encode(Swagger)),
+            ok = file:write_file(SwaggerFile, dgiot_json:encode(Swagger)),
             <<"post succeed">>
     end.
 
@@ -205,7 +205,7 @@ put_exproto(Type, Mod, Code, Swagger, SessionToken) ->
             Data = base64:decode(Code),
             ok = file:write_file(CodeFile, Data),
             SwaggerFile = CurrDir ++ "swagger_" ++ dgiot_utils:to_list(Type) ++ "_" ++ dgiot_utils:to_list(Mod) ++ ".json",
-            ok = file:write_file(SwaggerFile, jsx:encode(Swagger)),
+            ok = file:write_file(SwaggerFile, dgiot_json:encode(Swagger)),
             dgiot_utils:to_binary(test_python(Mod, SessionToken))
     end.
 
@@ -266,7 +266,7 @@ get_release_exproto(Type, Mod, Code, Swagger, SessionToken) ->
     Data = base64:decode(Code),
     ok = file:write_file(CodeFile, Data),
     SwaggerFile = CurrDir ++ "swagger_" ++ dgiot_utils:to_list(Type) ++ "_" ++ dgiot_utils:to_list(Mod) ++ ".json",
-    ok = file:write_file(SwaggerFile, jsx:encode(Swagger)),
+    ok = file:write_file(SwaggerFile, dgiot_json:encode(Swagger)),
     Key = dgiot_utils:get_macs(),
     dgiot_mqtt:publish(self(), <<"restart/webserver/", Key/binary>>, <<"restart">>),
     dgiot_utils:to_binary(test_python(Mod, SessionToken)).

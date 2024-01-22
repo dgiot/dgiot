@@ -22,7 +22,7 @@ init_inspection(#{<<"objectId">> := MaintenanceId, <<"info">> := Info, <<"status
         {ok, #{<<"devaddr">> := DevAddr}} ->
             InspectionTopic = <<"$dg/device/", ProductId/binary, "/", DevAddr/binary, "/init/response/inspection">>,
             Data = get_inspection(MaintenanceId),
-            dgiot_mqtt:publish(DeviceId, InspectionTopic, jsx:encode(Data));
+            dgiot_mqtt:publish(DeviceId, InspectionTopic, dgiot_json:encode(Data));
         _ ->
             pass
     end;

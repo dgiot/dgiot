@@ -20,21 +20,23 @@
 -include_lib("dgiot/include/logger.hrl").
 -include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
 
--export([read_csv/2, get_products/1, create_product/4, create_device/3, post_thing/2, get_CategoryId/1, get_channelAcl/1]).
+-export([read_csv/3, get_products/1, create_product/4, create_device/3, post_thing/3, get_CategoryId/1, get_channelAcl/1]).
 -export([get_max_addrs/1]).
 
 %%  dgiot_product_csv:read_csv(<<"8cff09f988">>, <<"modbustcp">>).
 %%  dgiot_utils:save_csv_ets(<<"/dgiot_file/product/csv/modbustcp.csv">>)
-read_csv(ChannelId, FilePath) ->
+read_csv(ChannelId, FilePath, Is_refresh) ->
     FileName = dgiot_csv:save_csv_ets(?MODULE, FilePath),
-    Productmap = dgiot_product_csv:get_products(FileName),
-    TdChannelId = dgiot_parse_id:get_channelid(dgiot_utils:to_binary(?BRIDGE_CHL), <<"TD">>, <<"TD资源通道"/utf8>>),
-    {Devicemap, ProductIds} = dgiot_product_csv:create_product(ChannelId, FileName, Productmap, TdChannelId),
-    dgiot_product_csv:create_device(FileName, Devicemap, ProductIds),
-    timer:sleep(1000),
-    dgiot_product_csv:post_thing(FileName, ProductIds),
-    timer:sleep(1000),
-    dgiot_bridge:control_channel(TdChannelId, <<"update">>, <<>>),
+    spawn(fun() ->
+        Productmap = dgiot_product_csv:get_products(FileName),
+        TdChannelId = dgiot_parse_id:get_channelid(dgiot_utils:to_binary(?BRIDGE_CHL), <<"TD">>, <<"TD资源通道"/utf8>>),
+        {Devicemap, ProductIds} = dgiot_product_csv:create_product(ChannelId, FileName, Productmap, TdChannelId),
+        dgiot_product_csv:create_device(FileName, Devicemap, ProductIds),
+        timer:sleep(1000),
+        dgiot_product_csv:post_thing(FileName, ProductIds, Is_refresh)
+%%        timer:sleep(1000),
+%%        dgiot_bridge:control_channel(TdChannelId, <<"update">>, <<>>)
+          end),
     get_max_addrs(FileName).
 
 %%  ets:match(ruodian,{'_', ['$1', '_', <<"D6101">> | '_']}).
@@ -48,8 +50,8 @@ get_products(FileName) ->
 
 create_product(ChannelId, FileName, Productmap, TdChannelId) ->
     AtomName = dgiot_utils:to_atom(FileName),
-    maps:fold(fun(ProductName, [DeviceName | _] = DeviceNames, {Acc, Acc2}) ->
-        Types = ets:match(AtomName, {'_', [ProductName, '$1', '$2', DeviceName | '_']}),
+    maps:fold(fun(ProductName, DeviceNames, {Acc, Acc2}) ->
+        Types = ets:match(AtomName, {'_', [ProductName, '$1', '$2' | '_']}),
         case Types of
             [[DevType, CategoryName | _] | _] ->
                 CategoryId = dgiot_product_csv:get_CategoryId(CategoryName),
@@ -65,7 +67,7 @@ create_product(ChannelId, FileName, Productmap, TdChannelId) ->
                                 <<"devType">> => DevType,
                                 <<"category">> => #{<<"objectId">> => CategoryId, <<"__type">> => <<"Pointer">>, <<"className">> => <<"Category">>},
                                 <<"desc">> => DevType,
-                                <<"config">> => #{},
+                                <<"config">> => #{<<"interval">> => -1},
                                 <<"channel">> => #{<<"type">> => 1, <<"tdchannel">> => TdChannelId, <<"taskchannel">> => <<"fa3fad91f8">>, <<"otherchannel">> => [ChannelId]},
                                 <<"thing">> => #{},
                                 <<"ACL">> => Acl,
@@ -81,7 +83,7 @@ create_product(ChannelId, FileName, Productmap, TdChannelId) ->
                             lists:foldl(fun(DeviceName1, Acc1) ->
                                 Acc1#{DeviceName1 => ProductId}
                                         end, Acc, DeviceNames),
-                        {Devicemap, Acc2#{ProductId => {DeviceName, ProductName}}};
+                        {Devicemap, Acc2#{ProductId => ProductName}};
                     _ ->
                         {Acc, Acc2}
                 end;
@@ -93,7 +95,7 @@ create_product(ChannelId, FileName, Productmap, TdChannelId) ->
 create_device(FileName, Devicemap, ProductIds) ->
     AtomName = dgiot_utils:to_atom(FileName),
     maps:fold(fun(DeviceName, ProductId, _Acc) ->
-        {_, ProductName} = maps:get(ProductId, ProductIds, {'_', '_'}),
+        ProductName = maps:get(ProductId, ProductIds, '_'),
         Devaddrs = dgiot_utils:unique_1(lists:flatten(ets:match(AtomName, {'_', [ProductName, '_', '_', DeviceName, '$1' | '_']}))),
         NewAcl =
             case dgiot_parse:get_object(<<"Product">>, ProductId) of
@@ -116,21 +118,22 @@ create_device(FileName, Devicemap, ProductIds) ->
                     end, #{}, Devaddrs)
               end, #{}, Devicemap).
 
-post_thing(FileName, ProductIds) ->
+post_thing(FileName, ProductIds, Is_refresh) ->
     AtomName = dgiot_utils:to_atom(FileName),
-    maps:fold(fun(ProductId, {DeviceName, ProductName}, _Acc) ->
-        Things = ets:match(AtomName, {'_', [ProductName, '_', '_', DeviceName, '_', '$1', '$2', '$3', '$4', '$5', '$6', '$7', '$8', '$9', '$10', '$11' | '_']}),
+    maps:fold(fun(ProductId, ProductName, _) ->
+        Things = ets:match(AtomName, {'_', [ProductName, '_', '_', '_', '_', '$1', '$2', '$3', '$4', '$5', '$6', '$7', '$8', '$9', '$10', '$11', '$12' | '_']}),
         NewProperties = post_properties(Things, AtomName, ProductId, ProductName),
-        Len = length(NewProperties),
         case dgiot_parse:get_object(<<"Product">>, ProductId) of
-            {ok, #{<<"thing">> := Thing}} ->
-                OldProperties = maps:get(<<"properties">>, Thing, []),
-                case length(OldProperties) of
-                    Len ->
-                        pass;
-                    _ ->
-                        dgiot_parse:update_object(<<"Product">>, ProductId, #{<<"thing">> => Thing#{<<"properties">> => NewProperties}})
-                end;
+            {ok, #{<<"thing">> := Thing}} when Is_refresh ->
+                OldProperties =
+                    lists:foldl(fun(#{<<"identifier">> := Identifier} = X, Acc) ->
+                        Acc#{Identifier => X}
+                                end, #{}, maps:get(<<"properties">>, Thing, [])),
+                Properties =
+                    maps:fold(fun(_, Prop, Acc) ->
+                        Acc ++ [Prop]
+                              end, [], dgiot_map:merge(OldProperties, NewProperties)),
+                dgiot_parse:update_object(<<"Product">>, ProductId, #{<<"thing">> => Thing#{<<"properties">> => Properties}});
             _ ->
                 pass
         end
@@ -174,51 +177,94 @@ get_channelAcl(ChannelId) ->
     end.
 
 post_properties(Things, AtomName, ProductId, ProductName) ->
-    lists:foldl(fun([Devicetype, Identifier, Name, _Address, _Bytes, AccessMode, Min_Max, Unit, Type, _Operatetype, _Originaltype | _], Acc) ->
-        {Min, Max} = get_min_max(Min_Max),
-        Acc ++ [#{
-            <<"name">> => Name,
-            <<"index">> => 0,
-            <<"isstorage">> => true,
-            <<"isshow">> => true,
-            <<"dataForm">> => #{
-                <<"rate">> => 1,
-                <<"order">> => 0,
-                <<"round">> => <<"all">>,
-                <<"offset">> => 0,
-                <<"control">> => <<"%{d}">>,
-                <<"iscount">> => <<"0">>,
-                <<"protocol">> => <<"DLINK">>,
-                <<"strategy">> => <<"主动上报"/utf8>>,
-                <<"collection">> => <<"%{s}">>,
-                <<"countround">> => <<"all">>,
-                <<"countstrategy">> => 3,
-                <<"countcollection">> => <<"%{s}">>
-            },
-            <<"dataType">> => #{
-                <<"das">> => [],
-                <<"type">> => to_lower(Type),
-                <<"size">> => 99,
-                <<"specs">> => #{
-                    <<"min">> => Min,
-                    <<"max">> => Max,
-                    <<"step">> => 0,
-                    <<"unit">> => get_unit(Unit),
-                    <<"precision">> => 3
-                }
-            },
-            <<"required">> => true,
-            <<"accessMode">> => get_accessmode(AccessMode),
-            <<"dataSource">> => get_dataSource(AtomName, ProductId, ProductName, Name),
-            <<"devicetype">> => Devicetype,
-            <<"identifier">> => to_lower(Identifier),
-            <<"moduleType">> => <<"properties">>,
-            <<"isaccumulate">> => false
-        }]
-                end, [], Things).
+    lists:foldl(fun([Devicetype, Identifier, Name, _Address, _Bytes, AccessMode, Min_Max, Unit, Type, _Operatetype, _Originaltype, Specs | _], Acc) ->
+        Acc#{
+            to_lower(Identifier) =>
+            #{
+                <<"name">> => Name,
+                <<"index">> => 0,
+                <<"isstorage">> => true,
+                <<"isshow">> => true,
+                <<"dataForm">> => #{
+                    <<"address">> => <<"0">>,
+                    <<"rate">> => 1,
+                    <<"order">> => 0,
+                    <<"round">> => <<"all">>,
+                    <<"offset">> => 0,
+                    <<"control">> => <<"%{d}">>,
+                    <<"iscount">> => <<"0">>,
+                    <<"protocol">> => <<"DLINK">>,
+                    <<"strategy">> => <<"主动上报"/utf8>>,
+                    <<"collection">> => <<"%{s}">>,
+                    <<"countround">> => <<"all">>,
+                    <<"countstrategy">> => 3,
+                    <<"countcollection">> => <<"%{s}">>
+                },
+                <<"dataType">> => get_dataType(to_lower(Type), Min_Max, Unit, Specs),
+                <<"required">> => true,
+                <<"accessMode">> => get_accessmode(AccessMode),
+                <<"dataSource">> => get_dataSource(AtomName, ProductId, ProductName, Identifier),
+                <<"devicetype">> => Devicetype,
+                <<"identifier">> => to_lower(Identifier),
+                <<"moduleType">> => <<"properties">>,
+                <<"isaccumulate">> => false
+            }
+        }
+                end, #{}, Things).
 
-get_dataSource(AtomName, ProductId, ProductName, ThingName) ->
-    Things = ets:match(AtomName, {'_', [ProductName, '_', '_', '_', '_', '_', '_', ThingName, '$1', '$2' | '_']}),
+get_dataType(<<"float">>, Min_Max, Unit, _) ->
+    {Min, Max} = get_min_max(Min_Max),
+    #{
+        <<"das">> => [],
+        <<"type">> => <<"float">>,
+        <<"specs">> => #{
+            <<"min">> => Min,
+            <<"max">> => Max,
+            <<"step">> => 0,
+            <<"unit">> => get_unit(Unit),
+            <<"precision">> => 3
+        }
+    };
+
+get_dataType(<<"enum">>, _, _, Specs) ->
+    Newspecs = get_specs(Specs),
+    #{
+        <<"das">> => [],
+        <<"type">> => <<"enum">>,
+        <<"specs">> => Newspecs
+    };
+
+get_dataType(Type, Min_Max, Unit, _) ->
+    {Min, Max} = get_min_max(Min_Max),
+    #{
+        <<"das">> => [],
+        <<"type">> => Type,
+        <<"specs">> => #{
+            <<"min">> => Min,
+            <<"max">> => Max,
+            <<"step">> => 0,
+            <<"unit">> => get_unit(Unit),
+            <<"precision">> => 3
+        }
+    }.
+
+get_specs(Specs) ->
+    case binary:split(Specs, <<$;>>, [global, trim]) of
+        List when length(List) > 0 ->
+            lists:foldl(fun(Map, Acc) ->
+                case binary:split(Map, <<$:>>, [global, trim]) of
+                    [Key, Value] ->
+                        Acc#{Key => Value};
+                    _ ->
+                        Acc
+                end
+                        end, #{}, List);
+        _ ->
+            #{}
+    end.
+
+get_dataSource(AtomName, ProductId, ProductName, Identifier) ->
+    Things = ets:match(AtomName, {'_', [ProductName, '_', '_', '_', '_', '_', Identifier, '_', '$1', '$2' | '_']}),
     Dis =
         lists:foldl(fun([Address, Bytes | _], Acc) ->
             dgiot_data:insert(AtomName, {addr, Address}, ProductId),
@@ -230,12 +276,13 @@ get_dataSource(AtomName, ProductId, ProductName, ThingName) ->
 get_max_addrs(FileName) ->
     AtomName = dgiot_utils:to_atom(FileName),
     Address = dgiot_utils:unique_1(lists:flatten(ets:match(AtomName, {'_', ['_', '_', '_', '_', '_', '_', '_', '_', '$1' | '_']}))),
-    Address1 = [dgiot_utils:to_int(X) || X <- Address],
+    Address1 = [dgiot_utils:to_int(dgiot_utils:to_float(X)) || X <- Address],
 %%    dgiot_data:insert(AtomName, adds, Address1),
     {FileName, lists:min(Address1), lists:max(Address1)}.
 
 to_lower(Value) ->
-    list_to_binary(string:to_lower(binary_to_list(Value))).
+    Str1 = re:replace(Value, <<"\\.">>, <<"_">>, [global, {return, list}]),
+    list_to_binary(string:to_lower(Str1)).
 
 get_accessmode(<<229, 143, 170, 232, 175, 187>>) ->
     <<"r">>;

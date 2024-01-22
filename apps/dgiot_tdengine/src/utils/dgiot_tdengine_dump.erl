@@ -71,7 +71,7 @@ export_device_data(ChannelId, #{<<"objectId">> := DeviceId, <<"product">> := #{<
                 lists:foldl(fun(Result, Acc) ->
                     Acc ++ [Result]
                             end, [], TdResults),
-            NewData ++ [{dgiot_utils:to_list(<<ProductId/binary, "/", DeviceId/binary, ".json">>), unicode:characters_to_binary(jsx:encode(#{<<"results">> => NewTdResults}))}];
+            NewData ++ [{dgiot_utils:to_list(<<ProductId/binary, "/", DeviceId/binary, ".json">>), unicode:characters_to_binary(dgiot_json:encode(#{<<"results">> => NewTdResults}))}];
         _ ->
             NewData
     end.
