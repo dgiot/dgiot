@@ -776,7 +776,7 @@ get_JsonFile(Mod, FileName) ->
         {ok, Bin} ->
             case jsx:is_json(dgiot_utils:to_binary(Bin)) of
                 true ->
-                    jsx:decode(Bin);
+                    dgiot_json:decode(Bin);
                 false ->
                     Bin
             end
@@ -1211,7 +1211,7 @@ get_mock(Module, FileName) ->
         {ok, Bin} ->
             case jsx:is_json(dgiot_utils:to_binary(Bin)) of
                 true ->
-                    jsx:decode(Bin);
+                    dgiot_json:decode(Bin);
                 false ->
                     Bin
             end
@@ -1232,7 +1232,7 @@ write_mock(Module, FileName, Json) ->
                 Name
         end,
     Path = Dir ++ NewName,
-    file:write_file(Path, jsx:encode(Json)).
+    file:write_file(Path, dgiot_json:encode(Json)).
 
 
 is_number(<<"0">>) ->

@@ -55,7 +55,7 @@ handle_info({deliver, _, Msg}, #dclient{channel = ChannelId, client = ClientId} 
             case binary:split(Topic, <<$/>>, [global, trim]) of
                 [<<"$dg">>, <<"device">>, ProductId, _, <<"profile">>] ->
 %%                    设置参数
-                    _ProfilePayload = dgiot_device_profile:encode_profile(ProductId, jsx:decode(Payload)),
+                    _ProfilePayload = dgiot_device_profile:encode_profile(ProductId, dgiot_json:decode(Payload)),
                     {noreply, Dclient};
                 [<<"$dg">>, <<"device">>, _, _, <<"properties">>] ->
                     case jsx:decode(Payload, [{labels, binary}, return_maps]) of

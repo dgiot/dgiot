@@ -345,7 +345,7 @@ get_qs(Map) ->
 format_value(V) when is_binary(V) ->
     dgiot_httpc:urlencode(V);
 format_value(V) ->
-    Json = jsx:encode(V),
+    Json = dgiot_json:encode(V),
 %%    V1 = re:replace(Json, <<"\[.*?\]">>, <<"">>, [global, {return, binary}, unicode]),
     dgiot_httpc:urlencode(Json).
 
@@ -367,7 +367,7 @@ format_data(<<"Dict">>, Data) ->
     NewData =
         case Data of
             #{<<"key">> := _} -> Data;
-            _ -> Data#{<<"key">> => dgiot_utils:to_md5(jsx:encode(Data))}
+            _ -> Data#{<<"key">> => dgiot_utils:to_md5(dgiot_json:encode(Data))}
         end,
     maps:fold(
         fun(Key, Value, Acc) ->
@@ -511,7 +511,7 @@ init_database(Name, Dirs, Op) when Op == merge; Op == delete ->
                                 Acc#{Class => Tab#{<<"fields">> => Fields}}
                         end
                     end, #{}, OldSchemas1),
-            file:write_file("data/db.schema", jsx:encode(maps:values(OldSchemas))),
+            file:write_file("data/db.schema", dgiot_json:encode(maps:values(OldSchemas))),
             Schemas = get_tables(Dirs),
             init_tables(Name, OldSchemas, Schemas, Op);
         {error, Reason} ->

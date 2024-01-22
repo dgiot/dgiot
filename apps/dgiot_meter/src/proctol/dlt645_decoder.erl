@@ -259,7 +259,7 @@ parse_value(Di, Data) ->
                     false ->
                         #{Key => Value};
                     true ->
-                        case jsx:decode(Value) of
+                        case dgiot_json:decode(Value) of
                             [{K1, _V1} | _] = Value0 ->
                                 case size(K1) == 8 of
                                     true ->

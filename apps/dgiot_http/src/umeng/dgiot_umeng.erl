@@ -144,7 +144,7 @@ get_msg(UserId, Type, Payload) ->
         <<"sender">> => UserId,
         <<"public">> => true,
         <<"type">> => maps:get(<<"type">>, Payload, <<"title">>),
-        <<"content">> => jsx:encode(Payload)
+        <<"content">> => dgiot_json:encode(Payload)
     },
     post_notification(Notification),
     NewData =
@@ -152,7 +152,7 @@ get_msg(UserId, Type, Payload) ->
             undefined -> Data;
             _ -> Data#{<<"alias">> => UserId}
         end,
-    jsx:encode(NewData).
+    dgiot_json:encode(NewData).
 
 %% https://developer.umeng.com/docs/67966/detail/149296#h1--i-9
 %% 签名验证方法
@@ -208,11 +208,11 @@ add_notification(<<"start_", Ruleid/binary>>, DeviceId, Payload) ->
             dgiot_umeng:sendSubscribe(Content)
     end;
 
-add_notification(<<"stop_", Ruleid/binary>>, DeviceId, Payload) ->
+add_notification(<<"stop_", Ruleid/binary>>, DeviceId, #{<<"dgiot_alarmvalue">> := Value}) ->
     case dgiot_data:get(?NOTIFICATION, {DeviceId, Ruleid}) of
         {start, _Time, NotificationId} ->
             dgiot_data:insert(?NOTIFICATION, {DeviceId, Ruleid}, {stop, dgiot_datetime:now_secs(), <<>>}),
-            Content = update_notification(NotificationId, Payload),
+            Content = update_notification(NotificationId, #{<<"restored_value">> => Value}),
             dgiot_umeng:send_msg(Content),
 %%            io:format("~s ~p Content1 = ~p.~n", [?FILE, ?LINE, Content]),
             dgiot_umeng:sendSubscribe(Content);
@@ -356,9 +356,9 @@ send_message_to3D(ProductId, DevAddr, Payload) ->
     case Payload of
 %%        拉闸 <<"02000000000000001A00000000250222">>
         #{1 := #{<<"value">> := <<"02000000000000001A", _/binary>>}} ->
-            dgiot_mqtt:publish(Deviceid, Topic, jsx:encode(Data));
+            dgiot_mqtt:publish(Deviceid, Topic, dgiot_json:encode(Data));
         #{4 := #{<<"value">> := <<"1A">>}} ->
-            dgiot_mqtt:publish(Deviceid, Topic, jsx:encode(Data));
+            dgiot_mqtt:publish(Deviceid, Topic, dgiot_json:encode(Data));
         _ ->
             pass
     end.
@@ -534,8 +534,8 @@ triggeralarm(DeviceId, Content) ->
                 }
             },
             Topic = <<"/devWar/up">>,
-            dgiot_mqtt:publish(DeviceId, <<"bridge/", Topic/binary>>, jsx:encode(Data)),
-            dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(Data));
+            dgiot_mqtt:publish(DeviceId, <<"bridge/", Topic/binary>>, dgiot_json:encode(Data)),
+            dgiot_mqtt:publish(DeviceId, Topic, dgiot_json:encode(Data));
         _ ->
             pass
     end.
@@ -659,8 +659,8 @@ send_other(#{<<"send_alarm_status">> := <<"start">>, <<"_deviceid">> := DeviceId
                             <<"description">> => <<Description/binary, "；触发值："/utf8, BinAlarmvalue/binary>>
                         }
                     },
-                    dgiot_mqtt:publish(DeviceId, <<"bridge/", Topic/binary>>, jsx:encode(Data)),
-                    dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(Data));
+                    dgiot_mqtt:publish(DeviceId, <<"bridge/", Topic/binary>>, dgiot_json:encode(Data)),
+                    dgiot_mqtt:publish(DeviceId, Topic, dgiot_json:encode(Data));
                 _ ->
                     pass
             end;

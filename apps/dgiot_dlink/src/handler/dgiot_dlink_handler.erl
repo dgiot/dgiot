@@ -155,7 +155,7 @@ do_request(get_dlinkjson, #{<<"type">> := <<"swaggerTree">>}, _Context, _Req) ->
     SwaggerFile = dgiot_httpc:url_join([Dir, "/priv/json/", dgiot_utils:to_list(FileName)]),
     case dgiot_data:get(swaggerTree) of
         not_find ->
-            file:write_file(SwaggerFile, jsx:encode(Swagger)),
+            file:write_file(SwaggerFile, dgiot_json:encode(Swagger)),
             dgiot_data:insert(swaggerTree, <<"swaggerTree">>);
         _ ->
             pass

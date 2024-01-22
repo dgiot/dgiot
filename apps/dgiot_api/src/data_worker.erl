@@ -97,7 +97,6 @@ handle_info(station, #task{sessiontoken = SessionToken, env = #{<<"type">> := <<
 handle_info(station, #task{sessiontoken = SessionToken, env = #{<<"type">> := <<"import">>, <<"file">> := #{<<"fullpath">> := Fullpath} = _File}} = State) ->
     io:format("~s ~p State = ~p.~n", [?FILE, ?LINE, State]),
     import_parse(Fullpath),
-    dgiot_product:load_cache(),
     dgiot_device_cache:parse_cache_Device(<<>>),
     restart_channel(SessionToken),
     import_td(SessionToken),

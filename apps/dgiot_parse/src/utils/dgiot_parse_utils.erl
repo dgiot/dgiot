@@ -443,7 +443,7 @@ create_schemas_json() ->
     SchemasFile = dgiot_httpc:url_join([filename:dirname(filename:dirname(Here)), "/priv/json/schemas.json"]),
     case dgiot_parse:get_schemas() of
         {ok, #{<<"results">> := Schemas}} ->
-            file:write_file(SchemasFile, jsx:encode(Schemas));
+            file:write_file(SchemasFile, dgiot_json:encode(Schemas));
         _ ->
             pass
     end.

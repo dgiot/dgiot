@@ -141,6 +141,22 @@
             zh => <<"上传csv点位文件"/utf8>>
         }
     },
+    <<"is_refresh">> => #{
+        order => 9,
+        type => enum,
+        required => true,
+        default => #{<<"value">> => true, <<"label">> => <<"是"/utf8>>},
+        enum => [
+            #{<<"value">> => true, <<"label">> => <<"是"/utf8>>},
+            #{<<"value">> => false, <<"label">> => <<"否"/utf8>>}
+        ],
+        title => #{
+            zh => <<"刷新点位"/utf8>>
+        },
+        description => #{
+            zh => <<"是否刷新物模型"/utf8>>
+        }
+    },
     <<"ico">> => #{
         order => 102,
         type => string,
@@ -169,12 +185,13 @@ init(?TYPE, ChannelId, #{
     <<"address">> := Address,
     <<"quantity">> := Quantity,
     <<"freq">> := Freq,
+    <<"is_refresh">> := Is_refresh,
     <<"Size">> := Size
 } = Args) ->
     {FileName, MinAddr, MaxAddr} =
         case maps:find(<<"filepath">>, Args) of
             {ok, FilePath} ->
-                {FileName1, MinAddr1, MaxAddr1} = dgiot_product_csv:read_csv(ChannelId, FilePath),
+                {FileName1, MinAddr1, MaxAddr1} = dgiot_product_csv:read_csv(ChannelId, FilePath, Is_refresh),
                 %% modbus_tcp:set_addr(ChannelId, MinAddr1, MaxAddr1),
                 {FileName1, MinAddr1, MaxAddr1};
             _ ->

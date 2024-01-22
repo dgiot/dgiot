@@ -103,7 +103,7 @@ receive_ack(ResBody) ->
     receive
         {sync_parse, NewResBody} when is_map(NewResBody) ->
 %%            io:format("~s ~p ~p  ~n", [?FILE, ?LINE, length(maps:to_list(NewResBody))]),
-            {ok, jsx:encode(maps:remove(<<"id">>, NewResBody))};
+            {ok, dgiot_json:encode(maps:remove(<<"id">>, NewResBody))};
         {sync_parse, NewResBody} ->
 %%            io:format("~s ~p ~p  ~n", [?FILE, ?LINE, NewResBody]),
             {ok, NewResBody};
@@ -315,7 +315,7 @@ api_hook({'after', OperationID, Map, ResBody}) ->
     [Method, Type | _] = re:split(OperationID, <<"_">>),
     case dgiot_hook:run_hook({Method, Type}, {'after', Map}) of
         {ok, [Rtn | _]} when is_map(Rtn) ->
-            jsx:encode(Rtn);
+            dgiot_json:encode(Rtn);
         _ ->
             ResBody
     end.
@@ -358,7 +358,7 @@ do_put_(Id, Args, Token, Tail) ->
     {ok, NewArgs} = receive_put(Args),
     case dgiot_parse:get_object(ClassName, Id) of
         {ok, Class} ->
-            Keys = maps:keys(maps:with([<<"profile">>], NewArgs)),
+            Keys = maps:keys(maps:with([<<"profile">>, <<"content">>], NewArgs)),
             dgiot_map:merge(maps:with(Keys, Class), maps:without([<<"id">>], NewArgs));
         _ ->
             maps:without([<<"id">>], NewArgs)

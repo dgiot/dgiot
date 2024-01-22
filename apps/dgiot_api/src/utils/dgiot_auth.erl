@@ -129,7 +129,7 @@ put_session(#{<<"sessionToken">> := SessionToken} = UserInfo, TTL) ->
     put_session(SessionToken, maps:remove(<<"sessionToken">>, UserInfo), dgiot_utils:to_int(TTL)).
 
 put_session(SessionToken, UserInfo, TTL) ->
-    dgiot_cache:set({SessionToken, parse}, jsx:encode(UserInfo), dgiot_utils:to_int(TTL)),
+    dgiot_cache:set({SessionToken, parse}, dgiot_json:encode(UserInfo), dgiot_utils:to_int(TTL)),
     timer:sleep(500),
     ok.
 

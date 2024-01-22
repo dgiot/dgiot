@@ -88,7 +88,7 @@ handle_info({tcp, Buff}, #tcp{state = #state{id = ChannelId, devaddr = DtuAddr, 
         <<"address">> => H * 256 + L}) of
         {_, Things} ->
             NewTopic = <<"$dg/thing/", DtuProductId/binary, "/", DtuAddr/binary, "/properties/report">>,
-            dgiot_bridge:send_log(ChannelId, ProductId, DtuAddr, "~s ~p to task ~p ~ts ", [?FILE, ?LINE, NewTopic, unicode:characters_to_list(jsx:encode(Things))]),
+            dgiot_bridge:send_log(ChannelId, ProductId, DtuAddr, "~s ~p to task ~p ~ts ", [?FILE, ?LINE, NewTopic, unicode:characters_to_list(dgiot_json:encode(Things))]),
             DeviceId = dgiot_parse_id:get_deviceid(ProductId, DtuAddr),
             Taskchannel = dgiot_product_channel:get_taskchannel(ProductId),
             dgiot_client:send(Taskchannel, DeviceId, NewTopic, Things);
@@ -112,7 +112,7 @@ handle_info({tcp, Buff}, #tcp{state = #state{id = ChannelId, devaddr = DtuAddr, 
                 <<"address">> => Address}) of
                 {_, Things} ->
                     NewTopic = <<"$dg/thing/", DtuProductId/binary, "/", DtuAddr/binary, "/properties/report">>,
-                    dgiot_bridge:send_log(ChannelId, DtuProductId, DtuAddr, "~s ~p to task ~p ~ts ", [?FILE, ?LINE, NewTopic, unicode:characters_to_list(jsx:encode(Things))]),
+                    dgiot_bridge:send_log(ChannelId, DtuProductId, DtuAddr, "~s ~p to task ~p ~ts ", [?FILE, ?LINE, NewTopic, unicode:characters_to_list(dgiot_json:encode(Things))]),
                     DeviceId = dgiot_parse_id:get_deviceid(DtuProductId, DtuAddr),
                     Taskchannel = dgiot_product_channel:get_taskchannel(DtuProductId),
                     dgiot_client:send(Taskchannel, DeviceId, NewTopic, Things);
@@ -133,7 +133,7 @@ handle_info({deliver, _, Msg}, #tcp{state = #state{id = ChannelId} = State} = TC
             case binary:split(Topic, <<$/>>, [global, trim]) of
                 [<<"$dg">>, <<"device">>, ProductId, DevAddr, <<"profile">>] ->
 %%                    设置参数
-                    ProfilePayload = dgiot_device_profile:encode_profile(ProductId, jsx:decode(Payload)),
+                    ProfilePayload = dgiot_device_profile:encode_profile(ProductId, dgiot_json:decode(Payload)),
                     Payloads = modbus_rtu:set_params(ProfilePayload, ProductId, DevAddr),
                     lists:map(fun(X) ->
                         dgiot_tcp_server:send(TCPState, X)
@@ -158,7 +158,7 @@ handle_info({deliver, _, Msg}, #tcp{state = #state{id = ChannelId} = State} = TC
             case binary:split(Topic, <<$/>>, [global, trim]) of
                 [<<"$dg">>, <<"device">>, ProductId, DevAddr, <<"profile">>] ->
                     %% 设置参数
-                    ProfilePayload = dgiot_device_profile:encode_profile(ProductId, jsx:decode(Payload)),
+                    ProfilePayload = dgiot_device_profile:encode_profile(ProductId, dgiot_json:decode(Payload)),
                     Payloads = modbus_rtu:set_params(ProfilePayload, ProductId, DevAddr),
                     lists:map(fun(X) ->
                         dgiot_tcp_server:send(TCPState, X)

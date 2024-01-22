@@ -95,7 +95,7 @@ get_trace(_) ->
 check_trace(From, Topic, Payload, Module, Line) ->
     Msg = #{<<"msg">> => Payload, <<"topic">> => Topic, <<"time">> => dgiot_datetime:now_secs(),
         <<"pid">> => dgiot_utils:to_binary(self()), <<"peername">> => From, <<"mfa">> => Module, <<"line">> => Line},
-    check_trace(From, Topic, jsx:encode(Msg)).
+    check_trace(From, Topic, dgiot_json:encode(Msg)).
 
 check_trace(From, Topic, Payload) ->
     case get_trace({clientid, From}) of

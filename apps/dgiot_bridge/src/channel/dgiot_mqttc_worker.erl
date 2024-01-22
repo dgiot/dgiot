@@ -75,12 +75,12 @@ handle_cast(_Request, State) ->
     {noreply, State}.
 
 handle_info({connect, Client}, #dclient{channel = ChannelId, userdata = #connect_state{options = #{clientid := <<ProductId:10/binary, "_", DevAddr/binary>>}}} = State) ->
-    dgiot_bridge:send_log(ChannelId, "~s ~p ~p ~n", [?FILE, ?LINE, jsx:encode(#{<<"network">> => <<"connect">>})]),
+    dgiot_bridge:send_log(ChannelId, "~s ~p ~p ~n", [?FILE, ?LINE, dgiot_json:encode(#{<<"network">> => <<"connect">>})]),
     erlang:send_after(1000, self(), {sub, Client, ProductId, DevAddr}),
     {noreply, State#dclient{client = Client}};
 
 handle_info(disconnect, #dclient{channel = ChannelId} = State) ->
-    dgiot_bridge:send_log(ChannelId, "~s ~p ~p ~n", [?FILE, ?LINE, jsx:encode(#{<<"network">> => <<"disconnect">>})]),
+    dgiot_bridge:send_log(ChannelId, "~s ~p ~p ~n", [?FILE, ?LINE, dgiot_json:encode(#{<<"network">> => <<"disconnect">>})]),
     {noreply, State#dclient{client = disconnect}};
 
 handle_info({sub, Client, ProductId, DevAddr}, State) ->

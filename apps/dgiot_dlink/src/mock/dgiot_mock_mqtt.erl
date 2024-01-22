@@ -99,7 +99,7 @@ handle_info({connect, Pid}, #dclient{channel = ChannelId, client = <<ProductId:1
     {noreply, Dclient};
 
 handle_info(disconnect, #dclient{channel = ChannelId} = Dclient) ->
-    dgiot_bridge:send_log(ChannelId, "~s ~p  ~p ~n", [?FILE, ?LINE, jsx:encode(#{<<"network">> => <<"disconnect">>})]),
+    dgiot_bridge:send_log(ChannelId, "~s ~p  ~p ~n", [?FILE, ?LINE, dgiot_json:encode(#{<<"network">> => <<"disconnect">>})]),
     {noreply, Dclient};
 
 

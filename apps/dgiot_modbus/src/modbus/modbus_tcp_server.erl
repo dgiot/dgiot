@@ -89,7 +89,7 @@
 %%            case dgiot_data:get({meter, ChannelId}) of
 %%                {ProductId, _ACL, _Properties} -> DevAddr = dgiot_utils:binary_to_hex(Addr),
 %%                    Topic = <<"thing/", ProductId/binary, "/", DevAddr/binary, "/post">>,
-%%                    dgiot_mqtt:publish(DevAddr, Topic, jsx:encode(Value));
+%%                    dgiot_mqtt:publish(DevAddr, Topic, dgiot_json:encode(Value));
 %%                _ -> pass
 %%            end;
 %%        _ -> pass

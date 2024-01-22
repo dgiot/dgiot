@@ -26,7 +26,7 @@
 -export([location/3, get_location/1, get_address/3]).
 -export([put_content/1, put_profile/1, insert_mnesia/12]).
 init_ets() ->
-    dgiot_data:init(?DGIOT_LOCATION_ADDRESS).
+    dgiot_data:init(?DGIOT_LOCATION_ADDRESS, [public, named_table, set, {write_concurrency, true}, {read_concurrency, true}]).
 
 %% Device 数量统计，权限统计，在线离线统计，产品下面设备数量统计等是用户非常关系的数据指标
 parse_cache_Device(_ClassName) ->
@@ -417,7 +417,7 @@ notification(DeviceId, Status, Longitude, Latitude, IsEnable, Now) ->
                     _ ->
                         #{<<"address">> => Address}
                 end,
-            dgiot_mqtt:publish(DeviceId, Topic, jsx:encode(PubData#{
+            dgiot_mqtt:publish(DeviceId, Topic, dgiot_json:encode(PubData#{
                 DeviceId => #{
                     <<"status">> => NewStatus, <<"isEnable">> => IsEnable, <<"lastOnlineTime">> => Now,
                     <<"location">> => #{<<"longitude">> => Longitude, <<"latitude">> => Latitude}

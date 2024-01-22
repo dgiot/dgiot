@@ -180,7 +180,7 @@ handle_message({deliver, _Topic, Msg}, #state{ step = pre_read, env = Env} = Sta
         false ->
             pass;
         true ->
-            case jsx:decode(Payload, [return_maps]) of
+            case dgiot_json:decode(Payload, [return_maps]) of
                 #{<<"status">> := 0} = Map0 ->
                     [Map1 | _] = maps:values(maps:without([<<"status">>], Map0)),
                     case maps:find(<<"status">>,Map1) of
@@ -226,7 +226,7 @@ handle_message({deliver, _Topic, Msg}, #state{ step = pre_read, env = Env} = Sta
 handle_message({deliver, _Topic, Msg}, #state{id = ChannelId, step = read, env = Env} = State) ->
     Payload = dgiot_mqtt:get_payload(Msg),
     #{<<"productid">> := ProductId, <<"deviceinfo_list">> := Deviceinfo_list} = Env,  %Deviceinfo_list = [{DeviceId1,Devaddr1},{DeviceId2,Devaddr2}...]
-    dgiot_bridge:send_log(ChannelId, "from opc read: ~p  ", [jsx:decode(Payload, [return_maps])]),
+    dgiot_bridge:send_log(ChannelId, "from opc read: ~p  ", [dgiot_json:decode(Payload, [return_maps])]),
     case jsx:is_json(Payload) of
         false ->
             pass;

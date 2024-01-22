@@ -33,12 +33,12 @@ init_ets() ->
     dgiot_data:init(?DGIOT_RUlES),
     dgiot_data:init(?DGIOT_PRODUCT_CHANNEL),
     register_all_channel(),
-    dgiot_hook:add(<<"global/dgiot">>, fun ?MODULE:do_global_message/1),
-    proc_lib:spawn_link(
-        fun() ->
-            timer:sleep(10000),
-            dgiot_bridge:start()
-        end).
+    dgiot_hook:add(<<"global/dgiot">>, fun ?MODULE:do_global_message/1).
+%%    proc_lib:spawn_link(
+%%        fun() ->
+%%            timer:sleep(10000),
+%%            dgiot_bridge:start()
+%%        end).
 
 start() ->
     load_channel().
@@ -46,6 +46,7 @@ start() ->
 start_channel(Name, Filter) ->
     dgiot_bridge_loader:start(Name, Filter,
         fun(Module, Channel) ->
+            timer:sleep(1000),
             dgiot_bridge_server ! {start_channel, Module, Channel}
         end).
 
@@ -224,7 +225,7 @@ load_channel() ->
                         false ->
                             ?LOG(error, "~p is not json.", [Json]);
                         Filter ->
-                            ?LOG(error, "Filter: ~p", [Filter]),
+                            ?LOG(info, "Filter: ~p", [Filter]),
                             start_channel(dgiot_bridge, Filter)
                     end
                 end, Filters);
@@ -337,11 +338,11 @@ control_channel(ChannelId, Action, SessionToken) ->
         case Action of
             <<"disable">> ->
                 Topic = <<"channel/", ChannelId/binary>>,
-                Payload = jsx:encode(#{<<"enable">> => false}),
+                Payload = dgiot_json:encode(#{<<"enable">> => false}),
                 dgiot_mqtt:publish(ChannelId, Topic, Payload),
                 {false, <<"success">>};
             <<"enable">> ->
-                Payload = jsx:encode(#{<<"channelId">> => ChannelId, <<"enable">> => true}),
+                Payload = dgiot_json:encode(#{<<"channelId">> => ChannelId, <<"enable">> => true}),
                 Topic = <<"global/dgiot">>,
                 case dgiot_parse:get_object(<<"Channel">>, ChannelId) of
                     {ok, #{<<"config">> := #{<<"ip">> := _IP}}} ->
@@ -361,19 +362,19 @@ control_channel(ChannelId, Action, SessionToken) ->
                 end;
             <<"update">> ->
                 Topic = <<"channel/", ChannelId/binary>>,
-                Payload = jsx:encode(#{<<"channelId">> => ChannelId, <<"action">> => <<"update">>}),
+                Payload = dgiot_json:encode(#{<<"channelId">> => ChannelId, <<"action">> => <<"update">>}),
                 dgiot_mqtt:publish(ChannelId, Topic, Payload),
                 {true, <<"success">>};
             <<"start_logger">> ->
                 dgiot_mqtt:subscribe_route_key([<<"$dg/user/channel/", ChannelId/binary, "/#">>], <<"channel">>, SessionToken),
                 Topic = <<"channel/", ChannelId/binary>>,
-                Payload = jsx:encode(#{<<"channelId">> => ChannelId, <<"action">> => <<"start_logger">>}),
+                Payload = dgiot_json:encode(#{<<"channelId">> => ChannelId, <<"action">> => <<"start_logger">>}),
                 dgiot_mqtt:publish(ChannelId, Topic, Payload),
                 {true, <<"success">>};
             <<"stop_logger">> ->
                 dgiot_mqtt:unsubscribe_route_key(SessionToken, <<"channel">>),
                 Topic = <<"channel/", ChannelId/binary>>,
-                Payload = jsx:encode(#{<<"channelId">> => ChannelId, <<"action">> => <<"stop_logger">>}),
+                Payload = dgiot_json:encode(#{<<"channelId">> => ChannelId, <<"action">> => <<"stop_logger">>}),
                 dgiot_mqtt:publish(ChannelId, Topic, Payload),
                 {true, <<"success">>}
         end,
@@ -422,7 +423,7 @@ wait_request(Time, Fun) ->
 
 control_uniapp(#{<<"instruct">> := _Instruct} = Args, SessionToken) ->
     Topic = <<"$dg/user/uniapp/", SessionToken/binary, "/report">>,
-    dgiot_mqtt:publish(SessionToken, Topic, jsx:encode(Args)),
+    dgiot_mqtt:publish(SessionToken, Topic, dgiot_json:encode(Args)),
     {ok, #{<<"code">> => 200, <<"msg">> => <<"success">>}};
 
 control_uniapp(_Args, _SessionToken) ->

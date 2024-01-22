@@ -67,6 +67,17 @@ handle_info({deliver, _, Msg}, State) ->
     end,
     {noreply, State};
 
+handle_info({start_custom_channel}, State) ->
+    case dgiot_data:get({dgiot_bridge, start_custom_channel}) of
+        not_find ->
+            dgiot_bridge:start(),
+            dgiot_data:insert({dgiot_bridge, start_custom_channel}, true);
+        _ ->
+            pass
+    end,
+
+    {noreply, State};
+
 handle_info({start_channel, Module, #{<<"objectId">> := ChannelId, <<"ACL">> := Acl, <<"type">> := Type, <<"cType">> := CType, <<"product">> := Products, <<"config">> := Cfg}}, State) ->
     ChannelType = list_to_binary(string:uppercase(binary_to_list(CType))),
     Behaviour = binary_to_atom(list_to_binary(io_lib:format("~s", [Module])), utf8),
@@ -124,7 +135,7 @@ do_channel(_Type, CType, ChannelId, Products, Cfg) ->
                                     case Mod:start(ChannelId, Cfg#{<<"product">> => Products}) of
                                         {ok, _} ->
                                             dgiot_mqtt:subscribe(<<"channel/", ChannelId/binary, "/#">>),
-                                            dgiot_bridge:send_log(ChannelId, "Channel ~s is Install Protocol ~s", [ChannelId, jsx:encode(ProductIds)]),
+                                            dgiot_bridge:send_log(ChannelId, "Channel ~s is Install Protocol ~s", [ChannelId, dgiot_json:encode(ProductIds)]),
                                             ok;
                                         {error, Reason} ->
                                             dgiot_data:delete(?DGIOT_BRIDGE, {ChannelId, productIds}),
@@ -172,7 +183,7 @@ do_handle(#{<<"channelId">> := ChannelId, <<"action">> := <<"update">>}) ->
                 fun(#{<<"product">> := Products}) ->
                     ProductIds = do_product(ChannelId, Products),
                     dgiot_data:insert(?DGIOT_BRIDGE, {ChannelId, productIds}, {Type, ProductIds}),
-                    dgiot_bridge:send_log(ChannelId, "Channel ~s is Install Protocol ~s", [ChannelId, jsx:encode(ProductIds)])
+                    dgiot_bridge:send_log(ChannelId, "Channel ~s is Install Protocol ~s", [ChannelId, dgiot_json:encode(ProductIds)])
                 end);
         _ -> pass
     end;
@@ -183,7 +194,7 @@ do_handle(#{<<"channelId">> := ChannelId, <<"action">> := <<"start_logger">>} = 
     NewFilter = maps:without([<<"channelId">>, <<"action">>], Filter),
     {ok, _Type, ProductIds} = dgiot_bridge:get_products(ChannelId),
     Fmt = "Channel[~s] is Running, Products:~s, Log is ~s",
-    Args = [ChannelId, jsx:encode(ProductIds), true],
+    Args = [ChannelId, dgiot_json:encode(ProductIds), true],
     dgiot_data:insert(?DGIOT_BRIDGE, {ChannelId, log}, NewFilter#{
         <<"time">> => dgiot_datetime:nowstamp()
     }),

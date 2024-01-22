@@ -78,7 +78,7 @@ push_live(Interval, IPCUSER, IPCPWD, IP, PARAM, Mac, Push, PushKey, PlayUrl, Rep
     dgiot_evidence:post(#{
         <<"id">> => ReportId,
         <<"scene">> => App,
-        <<"md5">> => dgiot_utils:to_md5(jsx:encode(Data)),
+        <<"md5">> => dgiot_utils:to_md5(dgiot_json:encode(Data)),
         <<"original">> => #{
             <<"data">> => Data,
             <<"datatype">> => <<"liveMonitor">>,
@@ -102,7 +102,7 @@ push_screenlive(Interval, PARAM, Mac, Push, PushKey, PlayUrl, ReportId, App, Ses
     dgiot_evidence:post(#{
         <<"id">> => ReportId,
         <<"scene">> => App,
-        <<"md5">> => dgiot_utils:to_md5(jsx:encode(Data)),
+        <<"md5">> => dgiot_utils:to_md5(dgiot_json:encode(Data)),
         <<"original">> => #{
             <<"data">> => Data,
             <<"datatype">> => <<"liveMonitor">>,
@@ -310,8 +310,8 @@ upload(#{
 
                 dgiot_tdengine_adapter:save(Product, DevAddr, Ack),
                 NewTopic = <<"thing/", Product/binary, "/", DevAddr/binary, "/post">>,
-                dgiot_bridge:send_log(ChannelId, "to_task: ~p: ~p", [NewTopic, jsx:encode(Ack)]),
-%%                dgiot_mqtt:publish(DevAddr, NewTopic, jsx:encode(Ack)),
+                dgiot_bridge:send_log(ChannelId, "to_task: ~p: ~p", [NewTopic, dgiot_json:encode(Ack)]),
+%%                dgiot_mqtt:publish(DevAddr, NewTopic, dgiot_json:encode(Ack)),
                 case maps:find(<<"reportId">>, Appdata) of
                     {ok, ReportId} ->
                         dgiot_evidence:post(#{

@@ -229,7 +229,7 @@ do_request(get_roleuser, #{<<"where">> := Where} = Filter, #{<<"sessionToken">> 
             V ->
                 V
         end,
-    dgiot_parse_auth:get_roleuser(Filter#{<<"where">> => jsx:decode(Where, [return_maps]), <<"userfilter">> => jsx:decode(UserFilter, [return_maps])}, SessionToken);
+    dgiot_parse_auth:get_roleuser(Filter#{<<"where">> => dgiot_json:decode(Where, [return_maps]), <<"userfilter">> => dgiot_json:decode(UserFilter, [return_maps])}, SessionToken);
 
 %% Role模版 概要: 导库 描述:json文件导库
 %% OperationId:put_roleuser

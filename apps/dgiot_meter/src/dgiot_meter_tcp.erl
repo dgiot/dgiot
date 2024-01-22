@@ -205,20 +205,20 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, clientid = DtuId, state = #state{
                         % 抄表数据返回
                         #{<<"productid">> := ProductId, <<"addr">> := DevAddr, <<"value">> := Value, <<"childvalues">> := ChildValues} ->
                             Topic = dgiot_meter:send_task(ProductId, DevAddr, DtuId, Value),
-                            dgiot_bridge:send_log(ChannelId, ProductId, DevAddr, "~s ~p Dtu to task ~p ~ts ", [?FILE, ?LINE, Topic, unicode:characters_to_list(jsx:encode(Value))]),
+                            dgiot_bridge:send_log(ChannelId, ProductId, DevAddr, "~s ~p Dtu to task ~p ~ts ", [?FILE, ?LINE, Topic, unicode:characters_to_list(dgiot_json:encode(Value))]),
                             timer:sleep(1 * 1000),
                             lists:foldl(fun(#{<<"productid">> := ChildProductId, <<"addr">> := ChildDevAddr, <<"value">> := ChildValue}, _Acc) ->
                                 ChildTopic = dgiot_meter:send_task(ChildProductId, ChildDevAddr, DtuId, ChildValue),
-                                dgiot_bridge:send_log(ChannelId, ProductId, DevAddr, "~s ~p DtuChild to task ~p ~ts ", [?FILE, ?LINE, ChildTopic, unicode:characters_to_list(jsx:encode(ChildValue))]),
+                                dgiot_bridge:send_log(ChannelId, ProductId, DevAddr, "~s ~p DtuChild to task ~p ~ts ", [?FILE, ?LINE, ChildTopic, unicode:characters_to_list(dgiot_json:encode(ChildValue))]),
                                 timer:sleep(1 * 1000)
                                         end, #{}, ChildValues);
                         % 抄表数据返回
                         #{<<"productid">> := ProductId, <<"addr">> := Addr, <<"value">> := Value} ->
                             DevAddr = dgiot_utils:binary_to_hex(Addr),
                             Topic = dgiot_meter:send_task(ProductId, DevAddr, DtuId, Value),
-                            dgiot_bridge:send_log(ChannelId, ProductId, DevAddr, "~s ~p Dtu to task ~p ~ts ", [?FILE, ?LINE, Topic, unicode:characters_to_list(jsx:encode(Value))]);
+                            dgiot_bridge:send_log(ChannelId, ProductId, DevAddr, "~s ~p Dtu to task ~p ~ts ", [?FILE, ?LINE, Topic, unicode:characters_to_list(dgiot_json:encode(Value))]);
                         Error ->
-                            dgiot_bridge:send_log(ChannelId, "~s ~p process_message error ~ts ", [?FILE, ?LINE, unicode:characters_to_list(jsx:encode(Error))]),
+                            dgiot_bridge:send_log(ChannelId, "~s ~p process_message error ~ts ", [?FILE, ?LINE, unicode:characters_to_list(dgiot_json:encode(Error))]),
                             pass
                     end
             end,
@@ -236,9 +236,9 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, clientid = DtuId, state = #state{
                 #{<<"productid">> := ProductId, <<"addr">> := Addr, <<"value">> := Value} ->
                     DevAddr = dgiot_utils:binary_to_hex(Addr),
                     Topic = dgiot_meter:send_task(ProductId, DevAddr, DtuId, Value),
-                    dgiot_bridge:send_log(ChannelId, ProductId, DevAddr, "~s ~p to task ~p ~ts ", [?FILE, ?LINE, Topic, unicode:characters_to_list(jsx:encode(Value))]);
+                    dgiot_bridge:send_log(ChannelId, ProductId, DevAddr, "~s ~p to task ~p ~ts ", [?FILE, ?LINE, Topic, unicode:characters_to_list(dgiot_json:encode(Value))]);
                 Error ->
-                    dgiot_bridge:send_log(ChannelId, "~s ~p process_message error ~ts ", [?FILE, ?LINE, unicode:characters_to_list(jsx:encode(Error))]),
+                    dgiot_bridge:send_log(ChannelId, "~s ~p process_message error ~ts ", [?FILE, ?LINE, unicode:characters_to_list(dgiot_json:encode(Error))]),
                     pass
             end,
             {noreply, TCPState#tcp{buff = Rest}};
@@ -290,7 +290,7 @@ handle_info({deliver, _Topic, Msg}, #tcp{state = #state{id = ChannelId, protocol
                     end,
                     {noreply, TCPState};
                 [<<"$dg">>, <<"device">>, ProductId, DevAddr, <<"profile">>] ->
-                    ProfilePayload = dgiot_device_profile:encode_profile(ProductId, jsx:decode(Payload)),
+                    ProfilePayload = dgiot_device_profile:encode_profile(ProductId, dgiot_json:decode(Payload)),
                     case Protocol of
                         ?DLT376 ->
                             Payload2 = dlt376_decoder:frame_write_param(#{<<"concentrator">> => DevAddr, <<"payload">> => ProfilePayload}),

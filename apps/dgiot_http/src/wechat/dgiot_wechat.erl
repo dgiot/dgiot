@@ -162,7 +162,7 @@ getAccessToken() ->
         <<"secret">> => Secret,
         <<"force_refresh">> => false
     },
-    case dgiot_http_client:request(post, {Url, [], "application/json", jsx:encode(Body)}) of
+    case dgiot_http_client:request(post, {Url, [], "application/json", dgiot_json:encode(Body)}) of
         {ok, #{<<"access_token">> := AccessToken}} ->
             {ok, AccessToken};
         _ ->

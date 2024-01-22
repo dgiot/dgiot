@@ -281,8 +281,8 @@ do_request(post_sendemail, Args, #{<<"sessionToken">> := _SessionToken}, _Req) -
 %% 请求:POST /iotapi/get_maintenancefinish
 do_request(get_maintenancefinish, #{<<"number">> := Number}, #{<<"sessionToken">> := _SessionToken}, _Req) ->
     Topic = <<"/workOrderCompletion/up">>,
-    dgiot_mqtt:publish(Number, <<"bridge/", Topic/binary>>, jsx:encode(#{<<"id">> => Number})),
-    dgiot_mqtt:publish(Number, Topic, jsx:encode(#{<<"id">> => Number}));
+    dgiot_mqtt:publish(Number, <<"bridge/", Topic/binary>>, dgiot_json:encode(#{<<"id">> => Number})),
+    dgiot_mqtt:publish(Number, Topic, dgiot_json:encode(#{<<"id">> => Number}));
 
 %% iot_hub 概要: 查询平台api资源 描述:创建工单
 %% OperationId:post_maintenance
@@ -293,7 +293,7 @@ do_request(post_maintenance, Args, #{<<"sessionToken">> := SessionToken}, _Req) 
     Result = dgiot_umeng:create_maintenance(Args, SessionToken),
     case Isbridge of
         true ->
-            case catch httpc:request(post, {Url, [], "application/json", jsx:encode(Args)}, [], []) of
+            case catch httpc:request(post, {Url, [], "application/json", dgiot_json:encode(Args)}, [], []) of
                 {'EXIT', _Reason} ->
                     pass;
                 {ok, {{"HTTP/1.1", 200, "OK"}, _, Json}} ->
@@ -326,14 +326,14 @@ do_request(get_operations, _Args, #{<<"sessionToken">> := _SessionToken}, _Req) 
 %% OperationId:post_operations
 %% 请求:POST /iotapi/post_operations
 do_request(post_operations, Args, #{<<"sessionToken">> := _SessionToken}, _Req) ->
-%%    dgiot_mqtt:publish(<<"">>, <<"">>, jsx:decode(Args)),
+%%    dgiot_mqtt:publish(<<"">>, <<"">>, dgiot_json:decode(Args)),
     {ok, #{<<"msg">> => <<"modify successfully">>, <<"data">> => Args}};
 
 %% iot_hub 概要: 查询平台api资源 描述:触发告警
 %% OperationId:post_triggeralarm
 %% 请求:POST /iotapi/post_triggeralarm
 do_request(post_triggeralarm, #{<<"deviceid">> := DeviceId} = Args, #{<<"sessionToken">> := _SessionToken}, _Req) ->
-%%    dgiot_mqtt:publish(<<"">>, <<"">>, jsx:decode(Args)),
+%%    dgiot_mqtt:publish(<<"">>, <<"">>, dgiot_json:decode(Args)),
     dgiot_umeng:triggeralarm(DeviceId, maps:get(<<"content">>, Args, <<>>)),
     {ok, #{<<"msg">> => <<"trigger successfully">>, <<"data">> => Args}};
 

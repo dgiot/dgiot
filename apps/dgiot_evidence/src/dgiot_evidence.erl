@@ -175,7 +175,7 @@ get(#{<<"reportId">> := ReportId}, SessionToken) ->
 
 post(#{<<"id">> := ReportId, <<"objectId">> := ObjectId, <<"ukey">> := UKey, <<"timestamp">> := Timestamp, <<"md5">> := Md5, <<"original">> := Original,
     <<"sessionToken">> := SessionToken}) ->
-    Payload = jsx:encode(#{<<"md5">> => Md5}),
+    Payload = dgiot_json:encode(#{<<"md5">> => Md5}),
     UkeyProductId = <<"3f95880e09">>,
     Topic = <<"/", UkeyProductId/binary, "/", UKey/binary, "/properties/read">>,
     dgiot_mqtt:publish(UKey, Topic, Payload),
@@ -253,9 +253,9 @@ get_report_package(ReportId, Devices, Products, Evidence, Files, SessionToken) -
             ZipRoot = Root ++ "/" ++ AppList ++ "/" ++ ListNow,
             file:make_dir(ZipRoot),
             ?LOG(info, "ZipRoot ~p", [ZipRoot]),
-            file:write_file(ZipRoot ++ "/Device.json", jsx:encode(Devices)),
-            file:write_file(ZipRoot ++ "/Product.json", jsx:encode(Products)),
-            file:write_file(ZipRoot ++ "/Evidence.json", jsx:encode(Evidence)),
+            file:write_file(ZipRoot ++ "/Device.json", dgiot_json:encode(Devices)),
+            file:write_file(ZipRoot ++ "/Product.json", dgiot_json:encode(Products)),
+            file:write_file(ZipRoot ++ "/Evidence.json", dgiot_json:encode(Evidence)),
             FileList = lists:foldl(fun(X, Acc) ->
                 [_, _Group, FileApp, FileName] = re:split(X, <<"/">>),
                 Acc ++ [{FileApp, FileName}]
@@ -452,7 +452,7 @@ file_reload(Action, Body) ->
         case Action of
             <<"set">> ->
                 Cfg = maps:get(<<"cfg">>, Body, #{}),
-                "http://127.0.0.1:1250/reload?action=set&cfg=" ++ jsx:encode(Cfg);
+                "http://127.0.0.1:1250/reload?action=set&cfg=" ++ dgiot_json:encode(Cfg);
             <<"reload">> ->
                 "http://127.0.0.1:1250/reload?action=reload";
             _ ->

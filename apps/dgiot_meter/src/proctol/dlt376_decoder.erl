@@ -562,7 +562,7 @@ parse_value(Di, Data) ->
                     false ->
                         #{Key => Value};
                     true ->
-                        [{K1, _V1} | _] = Value0 = jsx:decode(Value),
+                        [{K1, _V1} | _] = Value0 = dgiot_json:decode(Value),
                         case size(K1) == 8 of
                             true ->
                                 maps:from_list(Value0);
@@ -585,28 +585,28 @@ process_message(Frames, ChannelId) ->
         [#{<<"di">> := <<16#1E, 16#00, 16#01, 16#01>>, <<"addr">> := Addr, <<"value">> := Value} | _] ->
             case dgiot_data:get({meter, ChannelId}) of
                 {ProductId, _ACL, _Properties} ->
-                    #{<<"productid">> => ProductId, <<"di">> => <<16#1E, 16#00, 16#01, 16#01>>, <<"addr">> => Addr, <<"value">> => jsx:encode(Value)};
+                    #{<<"productid">> => ProductId, <<"di">> => <<16#1E, 16#00, 16#01, 16#01>>, <<"addr">> => Addr, <<"value">> => dgiot_json:encode(Value)};
                 _ -> #{}
             end;
         % 返回读取上次拉闸时间
         [#{<<"di">> := <<16#1D, 16#00, 16#01, 16#01>>, <<"addr">> := Addr, <<"value">> := Value} | _] ->
             case dgiot_data:get({meter, ChannelId}) of
                 {ProductId, _ACL, _Properties} ->
-                    #{<<"productid">> => ProductId, <<"di">> => <<16#1D, 16#00, 16#01, 16#01>>, <<"addr">> => Addr, <<"value">> => jsx:encode(Value)};
+                    #{<<"productid">> => ProductId, <<"di">> => <<16#1D, 16#00, 16#01, 16#01>>, <<"addr">> => Addr, <<"value">> => dgiot_json:encode(Value)};
                 _ -> #{}
             end;
         % 拉闸，合闸成功
         [#{<<"di">> := <<16#FE, 16#FE, 16#FE, 16#FE>>, <<"addr">> := Addr, <<"value">> := Value} | _] ->
             case dgiot_data:get({meter, ChannelId}) of
                 {ProductId, _ACL, _Properties} ->
-                    #{<<"productid">> => ProductId, <<"di">> => <<16#FE, 16#FE, 16#FE, 16#FE>>, <<"addr">> => Addr, <<"value">> => jsx:encode(Value)};
+                    #{<<"productid">> => ProductId, <<"di">> => <<16#FE, 16#FE, 16#FE, 16#FE>>, <<"addr">> => Addr, <<"value">> => dgiot_json:encode(Value)};
                 _ -> #{}
             end;
         % 拉闸，合闸失败
         [#{<<"di">> := <<16#FE, 16#FE, 16#FE, 16#FD>>, <<"addr">> := Addr, <<"value">> := Value} | _] ->
             case dgiot_data:get({meter, ChannelId}) of
                 {ProductId, _ACL, _Properties} ->
-                    #{<<"productid">> => ProductId, <<"di">> => <<16#FE, 16#FE, 16#FE, 16#FD>>, <<"addr">> => Addr, <<"value">> => jsx:encode(Value)};
+                    #{<<"productid">> => ProductId, <<"di">> => <<16#FE, 16#FE, 16#FE, 16#FD>>, <<"addr">> => Addr, <<"value">> => dgiot_json:encode(Value)};
                 _ -> #{}
             end;
         % 返回抄表数据
