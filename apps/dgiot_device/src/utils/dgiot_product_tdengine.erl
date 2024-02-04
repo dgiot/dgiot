@@ -128,7 +128,7 @@ get_keys(ProductId, Function, <<"*">>) ->
         {ok, #{<<"thing">> := #{<<"properties">> := Props}}} when length(Props) > 0 ->
             lists:foldl(fun(X, {Names, Acc}) ->
                 case X of
-                    #{<<"identifier">> := Identifier, <<"name">> := Name, <<"isstorage">> := true, <<"isshow">> := true} ->
+                    #{<<"identifier">> := Identifier, <<"name">> := Name, <<"isstorage">> := true} ->
                         case Acc of
                             <<>> ->
                                 {Names ++ [Name], <<Acc/binary, Function/binary, "(", Identifier/binary, ") ", Identifier/binary>>};

@@ -210,35 +210,30 @@ get_fields(Table) ->
     end.
 
 format_sql(ProductId, DevAddr, Data) ->
-    case dgiot_bridge:get_product_info(ProductId) of
-        {ok, #{<<"thing">> := Properties}} ->
-            {TagFields, ValueFields} =
-                case dgiot_data:get({ProductId, ?TABLEDESCRIBE}) of
-                    Results when length(Results) > 0 ->
-                        get_sqls(Data, ProductId, {unicode:characters_to_binary(unicode:characters_to_list((dgiot_utils:to_binary(DevAddr)))), text}, Properties, Results);
-                    _ ->
-                        {<<" ">>, <<" ">>}
-                end,
-            DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
-            TdChannelId = dgiot_parse_id:get_channelid(dgiot_utils:to_binary(?BRIDGE_CHL), <<"TD">>, <<"TD资源通道"/utf8>>),
-            DB = dgiot_tdengine:get_database(TdChannelId, ProductId),
-            TableName = ?Table(DeviceId),
-            Using1 = <<" using ", DB/binary, "_", ProductId/binary>>,
-            <<"INSERT INTO ", DB/binary, TableName/binary, Using1/binary, " TAGS", TagFields/binary, " VALUES", ValueFields/binary, ";">>;
-        _ ->
-            <<"show database;">>
-    end.
+    {TagFields, ValueFields} =
+        case dgiot_data:get({ProductId, ?TABLEDESCRIBE}) of
+            Results when length(Results) > 0 ->
+                get_sqls(Data, ProductId, {unicode:characters_to_binary(unicode:characters_to_list((dgiot_utils:to_binary(DevAddr)))), text}, Results);
+            _ ->
+                {<<" ">>, <<" ">>}
+        end,
+    DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
+    TdChannelId = dgiot_parse_id:get_channelid(dgiot_utils:to_binary(?BRIDGE_CHL), <<"TD">>, <<"TD资源通道"/utf8>>),
+    DB = dgiot_tdengine:get_database(TdChannelId, ProductId),
+    TableName = ?Table(DeviceId),
+    Using1 = <<" using ", DB/binary, "_", ProductId/binary>>,
+    <<"INSERT INTO ", DB/binary, TableName/binary, Using1/binary, " TAGS", TagFields/binary, " VALUES", ValueFields/binary, ";">>.
 
-get_sqls(Data, ProductId, DevAddr, Properties, Results) ->
-    get_sqls(Data, ProductId, DevAddr, Properties, Results, {<<"">>, <<"">>}).
+get_sqls(Data, ProductId, DevAddr, Results) ->
+    get_sqls(Data, ProductId, DevAddr, Results, {<<"">>, <<"">>}).
 
-get_sqls([], _ProductId, _DevAddr, _Properties, _Results, Acc) ->
+get_sqls([], _ProductId, _DevAddr, _Results, Acc) ->
     Acc;
 
-get_sqls([Data | Rest], ProductId, DevAddr, Properties, Results, {_, Acc}) ->
+get_sqls([Data | Rest], ProductId, DevAddr, Results, {_, Acc}) ->
     Now = maps:get(<<"createdat">>, Data, now),
     {TagSql, Sql} = get_sql(Results, ProductId, Data#{<<"devaddr">> => DevAddr}, Now),
-    get_sqls(Rest, ProductId, DevAddr, Properties, Results, {TagSql, <<Acc/binary, Sql/binary>>}).
+    get_sqls(Rest, ProductId, DevAddr, Results, {TagSql, <<Acc/binary, Sql/binary>>}).
 
 get_sql(Results, ProductId, Values, Now) ->
     get_sql(Results, ProductId, Values, Now, {"(", "("}).

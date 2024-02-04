@@ -24,16 +24,16 @@
 add_field(#{<<"type">> := <<"enum">>}, Database, TableName, LowerIdentifier, FieldType) ->
     <<"ALTER TABLE ", Database/binary, TableName/binary, " ADD ", FieldType/binary, " ", LowerIdentifier/binary, " INT;">>;
 add_field(#{<<"type">> := <<"file">>} = Spec, Database, TableName, LowerIdentifier, FieldType) ->
-    Size = integer_to_binary(min(maps:get(<<"size">>, Spec, 50), 200)),
+    Size = integer_to_binary(min(maps:get(<<"size">>, Spec, 50), 999)),
     <<"ALTER TABLE ", Database/binary, TableName/binary, " ADD ", FieldType/binary, " ", LowerIdentifier/binary, " NCHAR(", Size/binary, ");">>;
 add_field(#{<<"type">> := <<"text">>} = Spec, Database, TableName, LowerIdentifier, FieldType) ->
-    Size = integer_to_binary(min(maps:get(<<"size">>, Spec, 50), 200)),
+    Size = integer_to_binary(min(maps:get(<<"size">>, Spec, 50), 999)),
     <<"ALTER TABLE ", Database/binary, TableName/binary, " ADD ", FieldType/binary, " ", LowerIdentifier/binary, " NCHAR(", Size/binary, ");">>;
 add_field(#{<<"type">> := <<"url">>} = Spec, Database, TableName, LowerIdentifier, FieldType) ->
-    Size = integer_to_binary(min(maps:get(<<"size">>, Spec, 50), 200)),
+    Size = integer_to_binary(min(maps:get(<<"size">>, Spec, 50), 999)),
     <<"ALTER TABLE ", Database/binary, TableName/binary, " ADD ", FieldType/binary, " ", LowerIdentifier/binary, " NCHAR((", Size/binary, ");">>;
 add_field(#{<<"type">> := <<"geopoint">>} = Spec, Database, TableName, LowerIdentifier, FieldType) ->
-    Size = integer_to_binary(min(maps:get(<<"size">>, Spec, 50), 200)),
+    Size = integer_to_binary(min(maps:get(<<"size">>, Spec, 50), 999)),
     <<"ALTER TABLE ", Database/binary, TableName/binary, " ADD ", FieldType/binary, " ", LowerIdentifier/binary, " NCHAR(", Size/binary, ");">>;
 add_field(#{<<"type">> := <<"image">>}, Database, TableName, LowerIdentifier, FieldType) ->
     <<"ALTER TABLE ", Database/binary, TableName/binary, " ADD ", FieldType/binary, " ", LowerIdentifier/binary, " BIGINT;">>;
@@ -79,13 +79,13 @@ get_field_(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"boo
 get_field_(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"double">>}}) ->
     {Field, #{<<"type">> => <<"DOUBLE">>}};
 get_field_(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"string">>} = Spec}) ->
-    Size = integer_to_binary(min(maps:get(<<"size">>, Spec, 10), 200)),
+    Size = integer_to_binary(min(maps:get(<<"size">>, Spec, 10), 999)),
     {Field, #{<<"type">> => <<"NCHAR(", Size/binary, ")">>}};
 get_field_(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"text">>} = Spec}) ->
-    Size = integer_to_binary(min(maps:get(<<"size">>, Spec, 50), 200)),
+    Size = integer_to_binary(min(maps:get(<<"size">>, Spec, 50), 999)),
     {Field, #{<<"type">> => <<"NCHAR(", Size/binary, ")">>}};
 get_field_(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"geopoint">>} = Spec}) ->
-    Size = integer_to_binary(min(maps:get(<<"size">>, Spec, 50), 200)),
+    Size = integer_to_binary(min(maps:get(<<"size">>, Spec, 50), 999)),
     {Field, #{<<"type">> => <<"NCHAR(", Size/binary, ")">>}};
 get_field_(#{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> := <<"enum">>, <<"specs">> := _Specs}}) ->
 %%    Size = integer_to_binary(maps:size(Specs)),

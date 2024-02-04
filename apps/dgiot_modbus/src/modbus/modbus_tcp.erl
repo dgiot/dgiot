@@ -28,7 +28,10 @@
     to_frame/1,
     build_req_message/1,
     get_addr/4,
-    set_addr/3]
+    set_addr/3,
+    shard_data/1,
+    change_data/2
+]
 ).
 
 -export([is16/1, set_params/3, decode_data/4]).
@@ -287,7 +290,7 @@ parse_frame(StartAddr, FileName, Data) ->
                     _ ->
                         {Address, 1}
                 end,
-            IntOffset = dgiot_utils:to_int(NewAddress) - StartAddr,
+            IntOffset = dgiot_utils:to_int(NewAddress) - (StartAddr + 1),
             Thing = #{
                 <<"identifier">> => NewAddress,
                 <<"dataSource">> => #{
@@ -330,21 +333,56 @@ parse_frame(StartAddr, FileName, Data) ->
                 null ->
                     Acc;
                 _ ->
-                    NewData = change_data(ProductId, #{Address => Value}),
                     {ProductId, Devaddr, OldData} = maps:get(<<ProductId/binary, Devaddr/binary>>, Acc, {ProductId, Devaddr, #{}}),
-                    Acc#{<<ProductId/binary, Devaddr/binary>> => {ProductId, Devaddr, maps:merge(OldData, NewData)}}
+                    Acc#{<<ProductId/binary, Devaddr/binary>> => {ProductId, Devaddr, maps:merge(OldData, #{Address => Value})}}
             end
                     end, #{}, Things),
 %%    io:format("~s ~p  AllData = ~p.~n", [?FILE, ?LINE, AllData]),
     NewAllData =
         maps:fold(fun
                       (_, {ProductId1, Devaddr1, Ack}, Ncc) ->
-                          NewData = dgiot_task:save_td(ProductId1, Devaddr1, Ack, #{<<"interval">> => 30}),
-                          Ncc#{Devaddr1 => NewData};
+                          DeviceId = dgiot_parse_id:get_deviceid(ProductId1, Devaddr1),
+%%                          NewAck = change_data(ProductId1, Ack),
+                          CacheAck = dgiot_task:merge_cache_data(ProductId1, Ack, -1),
+                          dgiot_task:save_cache_data(ProductId1, CacheAck),
+                          BinData =
+                              maps:fold(fun(K, V, Acc) ->
+                                  BinK = dgiot_utils:to_binary(K),
+                                  Len = dgiot_utils:to_binary(size(BinK)),
+                                  BinV = dgiot_utils:to_binary(V),
+                                  <<Acc/binary, Len/binary, BinK/binary, BinV/binary, ",">>
+                                        end, <<>>, CacheAck),
+                          Shard_data = modbus_tcp:shard_data(BinData),
+                          case dgiot_data:get({modbus_tcp, dgiot_datetime:now_secs()}) of
+                              not_find ->
+                                  spawn(fun() ->
+                                      dgiot_device:save(ProductId1, Devaddr1),
+                                      Sql = dgiot_tdengine:format_sql(ProductId1, Devaddr1, [Shard_data]),
+                                      dgiot_tdengine_adapter:save_sql(ProductId1, Sql)
+                                        end),
+                                  ChannelId = dgiot_parse_id:get_channelid(<<"2">>, <<"DGIOTTOPO">>, <<"TOPO组态通道"/utf8>>),
+                                  dgiot_channelx:do_message(ChannelId, {topo_thing, ProductId1, DeviceId, Shard_data}),
+                                  dgiot_data:insert({modbus_tcp, dgiot_datetime:now_secs()}, true);
+                              _ ->
+                                  pass
+                          end,
+                          Ncc#{Devaddr1 => Ack};
                       (_, _, Ncc) ->
                           Ncc
                   end, #{}, AllData),
     NewAllData.
+
+shard_data(Data) ->
+    shard_data(Data, 1, #{}).
+
+shard_data(<<>>, _, Acc) ->
+    Acc;
+shard_data(<<Data:990/binary, Rest/binary>>, Index, Acc) ->
+    BinIndex = dgiot_utils:to_binary(Index),
+    shard_data(Rest, Index + 1, Acc#{<<"shard_", BinIndex/binary>> => Data});
+shard_data(Data, Index, Acc) ->
+    BinIndex = dgiot_utils:to_binary(Index),
+    Acc#{<<"shard_", BinIndex/binary>> => Data}.
 
 change_data(ProductId, Data) ->
     case dgiot_product:lookup_prod(ProductId) of
@@ -353,8 +391,7 @@ change_data(ProductId, Data) ->
                 case X of
                     #{<<"identifier">> := Identifier,
                         <<"dataSource">> := DataSource} ->
-                        Dis = maps:get(<<"dis">>, DataSource, []),
-                        NewDis =
+                        Dis =
                             lists:foldl(fun(X1, Acc1) ->
                                 case X1 of
                                     #{<<"key">> := Key} ->
@@ -362,9 +399,9 @@ change_data(ProductId, Data) ->
                                     _ ->
                                         Acc1
                                 end
-                                        end, [], Dis),
+                                        end, [], maps:get(<<"dis">>, DataSource, [])),
                         maps:fold(fun(PK, PV, Acc2) ->
-                            case lists:member(PK, NewDis) of
+                            case lists:member(PK, Dis) of
                                 true ->
                                     Acc2#{Identifier => PV};
                                 _ ->

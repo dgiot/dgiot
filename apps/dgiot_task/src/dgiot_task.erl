@@ -20,7 +20,7 @@
 -include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
 
 -export([start/1, start/2, send/3, get_pnque_len/1, save_pnque/4, get_pnque/1, del_pnque/1, save_td/4, merge_cache_data/3, save_cache_data/2]).
--export([get_control/3, get_collection/3, get_calculated/2, get_instruct/2, get_storage/2, string2value/2, string2value/3]).
+-export([get_props/1, get_control/3, get_collection/4, get_calculated/2, get_instruct/2, get_storage/2, string2value/2, string2value/3]).
 -export([save_td_no_match/4]).
 start(ChannelId) ->
     lists:map(fun(Y) ->
@@ -61,85 +61,78 @@ send(ProductId, DevAddr, Payload) ->
     end.
 
 %%获取计算值，必须返回物模型里面的数据表示，不能用寄存器地址
-get_calculated(ProductId, Calculated) ->
+get_calculated(Calculated, Props) ->
+    lists:foldl(fun(X, Acc) ->
+        case Acc of
+            error ->
+                Acc;
+            _ ->
+                case X of
+                    #{<<"isstorage">> := true,
+                        <<"identifier">> := Identifier, <<"dataForm">> := #{
+                        <<"strategy">> := <<"计算值"/utf8>>, <<"collection">> := Collection},
+                        <<"dataType">> := #{<<"type">> := Type, <<"specs">> := Specs}} ->
+                        Str1 = maps:fold(fun(K, V, Acc2) ->
+                            Str = re:replace(Acc2, dgiot_utils:to_list(<<"%%{", K/binary, "}">>), dgiot_utils:to_list(V), [global, {return, list}]),
+                            re:replace(Str, "%{s}", dgiot_utils:to_list(V), [global, {return, list}])
+                                         end, dgiot_utils:to_list(Collection), Calculated),
+                        case string2value(Str1, Type, Specs) of
+                            error ->
+                                maps:without([Identifier], Acc);
+                            Value1 ->
+                                Acc#{Identifier => Value1}
+                        end;
+                    _ ->
+                        Acc
+                end
+        end
+                end, Calculated, Props).
+
+get_props(ProductId) ->
     case dgiot_product:lookup_prod(ProductId) of
         {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
-            lists:foldl(fun(X, Acc) ->
-                case Acc of
-                    error ->
-                        Acc;
-                    _ ->
-                        case X of
-                            #{<<"isstorage">> := true,
-                                <<"identifier">> := Identifier, <<"dataForm">> := #{
-                                <<"strategy">> := <<"计算值"/utf8>>, <<"collection">> := Collection},
-                                <<"dataType">> := #{<<"type">> := Type, <<"specs">> := Specs}} ->
-                                Str1 = maps:fold(fun(K, V, Acc2) ->
-                                    Str = re:replace(Acc2, dgiot_utils:to_list(<<"%%{", K/binary, "}">>), dgiot_utils:to_list(V), [global, {return, list}]),
-                                    re:replace(Str, "%{s}", dgiot_utils:to_list(V), [global, {return, list}])
-                                                 end, dgiot_utils:to_list(Collection), Calculated),
-                                case string2value(Str1, Type, Specs) of
-                                    error ->
-                                        maps:without([Identifier], Acc);
-                                    Value1 ->
-                                        Acc#{Identifier => Value1}
-                                end;
-                            _ ->
-                                Acc
-                        end
-                end
-                        end, Calculated, Props);
+            Props;
         _Error ->
-            Calculated
+            []
     end.
 
 %% 主动上报 dis为[]
-get_collection(ProductId, [], Payload) ->
-    case dgiot_product:lookup_prod(ProductId) of
-        {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
-            lists:foldl(fun(X, Acc2) ->
-                case Acc2 of
-                    error ->
-                        Acc2;
+get_collection(ProductId, [], Payload, Props) ->
+    lists:foldl(fun(X, Acc2) ->
+        case Acc2 of
+            error ->
+                Acc2;
+            _ ->
+                case X of
+                    #{<<"dataForm">> := #{<<"strategy">> := Strategy} = DataForm,
+                        <<"dataType">> := DataType,
+                        <<"identifier">> := Identifier} when Strategy =/= <<"计算值"/utf8>> ->
+                        dgiot_task_data:get_userdata(ProductId, Identifier, DataForm, DataType, Payload, Acc2);
                     _ ->
-                        case X of
-                            #{<<"dataForm">> := #{<<"strategy">> := Strategy} = DataForm,
-                                <<"dataType">> := DataType,
-                                <<"identifier">> := Identifier} when Strategy =/= <<"计算值"/utf8>> ->
-                                dgiot_task_data:get_userdata(ProductId, Identifier, DataForm, DataType, Payload, Acc2);
-                            _ ->
-                                Acc2
-                        end
+                        Acc2
                 end
-                        end, Payload, Props);
-        _Error ->
-            Payload
-    end;
+        end
+                end, Payload, Props);
 
 %%转换设备上报值，必须返回物模型里面的数据表示，不能用寄存器地址
-get_collection(ProductId, Dis, Payload) ->
-    case dgiot_product:lookup_prod(ProductId) of
-        {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
-            lists:foldl(fun(Identifier, Acc1) ->
-                lists:foldl(fun(X, Acc2) ->
-                    case Acc2 of
-                        error ->
-                            Acc2;
+get_collection(ProductId, Dis, Payload, Props) ->
+    lists:foldl(fun(Identifier, Acc1) ->
+        lists:foldl(fun(X, Acc2) ->
+            case Acc2 of
+                error ->
+                    Acc2;
+                _ ->
+                    case X of
+                        #{<<"dataForm">> := #{<<"strategy">> := Strategy} = DataForm,
+                            <<"dataType">> := DataType,
+                            <<"identifier">> := Identifier} when Strategy =/= <<"计算值"/utf8>> ->
+                            dgiot_task_data:get_userdata(ProductId, Identifier, DataForm, DataType, Payload, Acc2);
                         _ ->
-                            case X of
-                                #{<<"dataForm">> := #{<<"strategy">> := Strategy} = DataForm,
-                                    <<"dataType">> := DataType,
-                                    <<"identifier">> := Identifier} when Strategy =/= <<"计算值"/utf8>> ->
-                                    dgiot_task_data:get_userdata(ProductId, Identifier, DataForm, DataType, Payload, Acc2);
-                                _ ->
-                                    Acc2
-                            end
+                            Acc2
                     end
-                            end, Acc1, Props)
-                        end, Payload, Dis);
-        _Error ->
-            Payload
-    end.
+            end
+                    end, Acc1, Props)
+                end, Payload, Dis).
 
 %% 获取控制值
 get_control(Round, Data, Control) ->
@@ -153,23 +146,18 @@ get_control(Round, Data, Control) ->
     end.
 
 %%获取存储值
-get_storage(ProductId, Calculated) ->
-    case dgiot_product:lookup_prod(ProductId) of
-        {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
-            lists:foldl(fun
-                            (#{<<"isstorage">> := true, <<"identifier">> := Identifier}, Acc) ->
-                                case maps:find(Identifier, Calculated) of
-                                    {ok, Value} ->
-                                        Acc#{Identifier => Value};
-                                    _ ->
-                                        Acc
-                                end;
-                            (_, Acc) ->
+get_storage(Calculated, Props) ->
+    lists:foldl(fun
+                    (#{<<"isstorage">> := true, <<"identifier">> := Identifier}, Acc) ->
+                        case maps:find(Identifier, Calculated) of
+                            {ok, Value} ->
+                                Acc#{Identifier => Value};
+                            _ ->
                                 Acc
-                        end, #{}, Props);
-        _Error ->
-            Calculated
-    end.
+                        end;
+                    (_, Acc) ->
+                        Acc
+                end, #{}, Props).
 
 get_instruct(ProductId, Round) ->
     case dgiot_product:lookup_prod(ProductId) of
@@ -324,12 +312,14 @@ save_td(ProductId, DevAddr, Ack, _AppData) ->
             Interval = dgiot_product:get_interval(ProductId),
             %%            是否有缓存
             CacheData = dgiot_task:merge_cache_data(DeviceId, Ack, Interval),
+            %%            获取物模型
+            Props = dgiot_task:get_props(ProductId),
             %%            计算上报值
-            Collection = dgiot_task:get_collection(ProductId, [], CacheData),
+            Collection = dgiot_task:get_collection(ProductId, [], CacheData, Props),
             %%            计算计算值
-            AllData = dgiot_task:get_calculated(ProductId, Collection),
+            AllData = dgiot_task:get_calculated(Collection, Props),
             %%            过滤存储值
-            Storage = dgiot_task:get_storage(ProductId, AllData),
+            Storage = dgiot_task:get_storage(AllData, Props),
             case Interval > 0 of
                 true ->
                     Keys = dgiot_product:get_keys(ProductId),
@@ -408,12 +398,13 @@ save_td_no_match(ProductId, DevAddr, Ack, AppData) ->
         0 ->
             #{};
         _ ->
+            Props = dgiot_task:get_props(ProductId),
 %%            计算上报值
-            Collection = dgiot_task:get_collection(ProductId, [], Ack),
+            Collection = dgiot_task:get_collection(ProductId, [], Ack, Props),
 %%            计算计算值
-            Calculated = dgiot_task:get_calculated(ProductId, Collection),
+            Calculated = dgiot_task:get_calculated(Collection, Props),
 %%            过滤存储值
-            Storage = dgiot_task:get_storage(ProductId, Calculated),
+            Storage = dgiot_task:get_storage(Calculated, Props),
             DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
             Interval = maps:get(<<"interval">>, AppData, 3),
             AllData = merge_cache_data(DeviceId, Storage, Interval),

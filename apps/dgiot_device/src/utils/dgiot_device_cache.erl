@@ -24,7 +24,7 @@
 -export([parse_cache_Device/1, sync_parse/1, post/1, post/2, put/1, save/1, save/2, save_subdevice/2, get_subdevice/2, lookup/1, lookup/2, delete/1, delete/2]).
 -export([get_profile/1, get_profile/2, get_online/1, online/1, offline/1, offline_child/1, enable/1, disable/1, save_profile/1]).
 -export([location/3, get_location/1, get_address/3]).
--export([put_content/1, put_profile/1, insert_mnesia/12]).
+-export([put_content/1, put_profile/1, insert_mnesia/12, notification/6]).
 init_ets() ->
     dgiot_data:init(?DGIOT_LOCATION_ADDRESS, [public, named_table, set, {write_concurrency, true}, {read_concurrency, true}]).
 
@@ -170,7 +170,7 @@ check_time(_, _, _) ->
     {true, dgiot_datetime:now_secs()}.
 
 insert_mnesia(DeviceId, Acl, Status, State, Now, IsEnable, ProductId, Devaddr, DeviceSecret, Node, Longitude, Latitude) ->
-    notification(DeviceId, Status, Longitude, Latitude, IsEnable, Now),
+%%    notification(DeviceId, Status, Longitude, Latitude, IsEnable, Now),
     dgiot_mnesia:insert(DeviceId, ['Device', Acl, Status, State, Now, IsEnable, dgiot_utils:to_atom(ProductId), Devaddr, DeviceSecret, Node, Longitude, Latitude]).
 
 %% 缓存设备的profile配置
