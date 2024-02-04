@@ -1,6 +1,6 @@
 # DGIOT轻量级工业物联网开源平台
 
-![开源大赛.jpg](https://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/kaiyuandasai.png)
+<a href="https://www.bilibili.com/video/BV13B421z7NP/?spm_id_from=333.999.0.0"><img src="https://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/kaiyuandasai.png" /></a>
 
 [![GitHub Release](https://img.shields.io/github/release/dgiot/dgiot?color=brightgreen)](https://github.com/dgiot/dgiot/releases)
 [![Docker Pulls](https://img.shields.io/docker/pulls/dgiot/dgiot)](https://hub.docker.com/r/dgiot/dgiot)
