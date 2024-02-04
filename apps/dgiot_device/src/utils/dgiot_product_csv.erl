@@ -79,6 +79,7 @@ create_product(ChannelId, FileName, Productmap, TdChannelId) ->
                 case Result of
                     {ok, ProductId} ->
 %%                        dgiot_data:insert(AtomName, ProductId, ProductName),
+                        dgiot_data:insert({shard_storage, ProductId}, true),
                         Devicemap =
                             lists:foldl(fun(DeviceName1, Acc1) ->
                                 Acc1#{DeviceName1 => ProductId}
@@ -183,7 +184,7 @@ post_properties(Things, AtomName, ProductId, ProductName) ->
             #{
                 <<"name">> => Name,
                 <<"index">> => 0,
-                <<"isstorage">> => true,
+                <<"isstorage">> => false,
                 <<"isshow">> => true,
                 <<"dataForm">> => #{
                     <<"address">> => <<"0">>,

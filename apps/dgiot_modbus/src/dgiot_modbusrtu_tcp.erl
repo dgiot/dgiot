@@ -101,7 +101,6 @@ handle_info({tcp, Buff}, #tcp{state = #state{id = ChannelId, devaddr = DtuAddr, 
 %% 主动上报 Buff = <<"01 03 0000 000C45CF 0103184BC73E373AB53E361BFD3E4100000000000000000000000021AC">>.
 handle_info({tcp, Buff}, #tcp{state = #state{id = ChannelId, devaddr = DtuAddr, env = <<>>, product = DtuProductId} = State} = TCPState) ->
     dgiot_bridge:send_log(ChannelId, DtuProductId, DtuAddr, "~s ~p DTU ~p recv ~p", [?FILE, ?LINE, DtuAddr, dgiot_utils:binary_to_hex(Buff)]),
-%%    io:format("~s ~p Buff = ~p.~n", [?FILE, ?LINE, dgiot_utils:to_hex(Buff)]),
     case modbus_rtu:dealwith(Buff) of
         {ok, #{<<"buff">> := NewBuff, <<"slaveId">> := SlaveId, <<"address">> := Address}} ->
             case modbus_rtu:parse_frame(NewBuff, #{}, #{

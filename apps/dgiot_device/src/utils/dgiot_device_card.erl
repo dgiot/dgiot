@@ -20,7 +20,7 @@
 -include_lib("dgiot/include/logger.hrl").
 -include_lib("dgiot_tdengine/include/dgiot_tdengine.hrl").
 
--export([get_card/4, get_device_card/4]).
+-export([get_card/5, get_device_card/4]).
 
 get_device_card(Channel, ProductId, DeviceId, Args) ->
     TableName = ?Table(DeviceId),
@@ -31,19 +31,53 @@ get_device_card(Channel, ProductId, DeviceId, Args) ->
             _ ->
                 [#{}]
         end,
-    Chartdata = get_card(ProductId, Results, DeviceId, Args),
+    Chartdata = get_card(ProductId, Results, DeviceId, Args, dgiot_data:get({shard_storage, ProductId})),
     {ok, #{<<"data">> => Chartdata}}.
 
-get_card(ProductId, Results, DeviceId, Args) ->
+decode_shard_data(Data) ->
+    case binary:split(Data, <<$,>>, [global, trim]) of
+        List when length(List) > 0 ->
+            lists:foldl(fun(<<Len:1/binary, Rest/binary>>, Acc) ->
+                IntLen = dgiot_utils:to_int(Len),
+                case Rest of
+                    <<Key:IntLen/binary, Value/binary>> ->
+                        Acc#{Key => Value};
+                    _ ->
+                        Acc
+                end
+                        end, #{}, List);
+        _ ->
+            #{}
+    end.
+
+%% 分片存储 dgiot_data:get({shard_storage, <<"857ed41119">>}).
+get_card(ProductId, Results, DeviceId, Args, true) ->
+    [Result | _] = Results,
+    Createdat = maps:get(<<"createdat">>, Result, dgiot_datetime:now_secs()),
+    Buff =
+        lists:foldl(fun(Index, Acc) ->
+            BinIndex = dgiot_utils:to_binary(Index),
+            case maps:find(<<"shard_", BinIndex/binary>>, Result) of
+                {ok, Value} when Value =/= null ->
+                    <<Acc/binary, Value/binary>>;
+                _ ->
+                    Acc
+            end
+                    end, <<>>, lists:seq(1, maps:size(Result))),
+    NewResult = dgiot_dlink_proctol:parse_payload(ProductId, decode_shard_data(Buff)),
+%%    io:format("success NewResult = ~ts~n", [unicode:characters_to_list(dgiot_json:encode(NewResult))]),
+    get_card(ProductId, [NewResult#{<<"createdat">> => Createdat}], DeviceId, Args, false);
+
+get_card(ProductId, Results, DeviceId, Args, _) ->
     [Result | _] = Results,
     Keys = maps:get(<<"keys">>, Args, <<"*">>),
     Props = dgiot_product:get_props(ProductId, Keys),
+    Time = maps:get(<<"createdat">>, Result, dgiot_datetime:now_secs()),
+    NewTime = dgiot_tdengine_field:get_time(dgiot_utils:to_binary(Time), <<"111">>),
     lists:foldl(fun(X, Acc) ->
         case X of
-            #{<<"name">> := Name, <<"identifier">> := Identifier, <<"dataForm">> := #{<<"protocol">> := Protocol}, <<"dataType">> := #{<<"type">> := Typea} = DataType} ->
+            #{<<"dataSource">> := #{<<"api">> := _}, <<"name">> := Name, <<"identifier">> := Identifier, <<"dataForm">> := #{<<"protocol">> := Protocol}, <<"dataType">> := #{<<"type">> := Typea} = DataType} ->
                 DataSource = maps:get(<<"dataSource">>, X, #{}),
-                Time = maps:get(<<"createdat">>, Result, dgiot_datetime:now_secs()),
-                NewTime = dgiot_tdengine_field:get_time(dgiot_utils:to_binary(Time), <<"111">>),
                 Devicetype =
                     case maps:find(<<"devicetype">>, X) of
                         {ok, <<"">>} ->
@@ -56,32 +90,57 @@ get_card(ProductId, Results, DeviceId, Args) ->
                 Ico = maps:get(<<"ico">>, X, <<"">>),
                 Specs = maps:get(<<"specs">>, DataType, #{}),
                 Unit = maps:get(<<"unit">>, Specs, <<"">>),
-                {Color, _, _} = dgiot_device:get_color(DeviceId, Identifier),
+%%                {Color, _, _} = dgiot_device:get_color(DeviceId, Identifier),
                 case do_hook({Protocol, Identifier}, DataSource#{<<"deviceid">> => DeviceId}) of
                     ignore ->
-                        NewV =
+                        {Value, NewV} =
                             case maps:find(Identifier, Result) of
                                 error ->
-                                    <<"--">>;
+                                    {<<>>, <<"--">>};
                                 {ok, V} ->
-                                    dgiot_product_tdengine:check_field(Typea, V, #{<<"datatype">> => DataType, <<"specs">> => Specs, <<"deviceid">> => DeviceId})
+                                    {V, dgiot_product_tdengine:check_field(Typea, V, #{<<"datatype">> => DataType, <<"specs">> => Specs, <<"deviceid">> => DeviceId})}
                             end,
                         Acc ++ [#{<<"identifier">> => Identifier, <<"name">> => Name,
-                            <<"type">> => Typea, <<"number">> => NewV,
-                            <<"time">> => NewTime, <<"unit">> => Unit, <<"color">> => Color,
+                            <<"type">> => Typea, <<"number">> => NewV, <<"value">> => Value,
+                            <<"time">> => NewTime, <<"unit">> => Unit,
                             <<"imgurl">> => Ico, <<"devicetype">> => Devicetype}];
                     {error, _Reason} ->
                         Acc ++ [#{<<"identifier">> => Identifier, <<"name">> => Name,
                             <<"type">> => Typea, <<"number">> => <<"--">>,
-                            <<"time">> => NewTime, <<"unit">> => Unit, <<"color">> => Color,
+                            <<"time">> => NewTime, <<"unit">> => Unit,
                             <<"imgurl">> => Ico, <<"devicetype">> => Devicetype}];
                     V ->
                         NewV = dgiot_product_tdengine:check_field(Typea, V, #{<<"datatype">> => DataType, <<"specs">> => Specs, <<"deviceid">> => DeviceId}),
                         Acc ++ [#{<<"identifier">> => Identifier, <<"name">> => Name,
                             <<"type">> => Typea, <<"number">> => NewV,
-                            <<"time">> => NewTime, <<"unit">> => Unit, <<"color">> => Color,
+                            <<"time">> => NewTime, <<"unit">> => Unit,
                             <<"imgurl">> => Ico, <<"devicetype">> => Devicetype}]
                 end;
+            #{<<"name">> := Name, <<"identifier">> := Identifier, <<"dataType">> := #{<<"type">> := Typea} = DataType} ->
+                Devicetype =
+                    case maps:find(<<"devicetype">>, X) of
+                        {ok, <<"">>} ->
+                            <<"others">>;
+                        {ok, Data} when byte_size(Data) > 0 ->
+                            Data;
+                        _ ->
+                            <<"others">>
+                    end,
+                Ico = maps:get(<<"ico">>, X, <<"">>),
+                Specs = maps:get(<<"specs">>, DataType, #{}),
+                Unit = maps:get(<<"unit">>, Specs, <<"">>),
+%%                {Color, _, _} = dgiot_device:get_color(DeviceId, Identifier),
+                {Value, Number} =
+                    case maps:find(Identifier, Result) of
+                        error ->
+                            {<<>>, <<"--">>};
+                        {ok, V} ->
+                            {V, dgiot_product_tdengine:check_field(Typea, V, #{<<"datatype">> => DataType, <<"specs">> => Specs, <<"deviceid">> => DeviceId})}
+                    end,
+                Acc ++ [#{<<"identifier">> => Identifier, <<"name">> => Name,
+                    <<"type">> => Typea, <<"number">> => Number, <<"value">> => Value,
+                    <<"time">> => NewTime, <<"unit">> => Unit,
+                    <<"imgurl">> => Ico, <<"devicetype">> => Devicetype}];
             _ ->
                 Acc
         end

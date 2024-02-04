@@ -105,12 +105,18 @@ get_history_data(Channel, ProductId, TableName, Query) ->
 get_realtime_data(Channel, ProductId, TableName, Query) ->
     dgiot_tdengine:transaction(Channel,
         fun(Context) ->
-            Keys = maps:get(<<"keys">>, Query, <<"*">>),
-            {_Names, Newkeys} = dgiot_product_tdengine:get_keys(ProductId, <<"last">>, Keys),
+            Keys =
+                case dgiot_data:get({shard_storage, ProductId}) of
+                    true ->
+                        <<"*">>;
+                    _ ->
+                        maps:get(<<"keys">>, Query, <<"*">>)
+                end,
+            {_Names, Newkeys} = dgiot_product_tdengine:get_keys(ProductId, <<"">>, Keys),
             DB = dgiot_tdengine:get_database(Channel, ProductId),
             case size(Newkeys) > 0 of
                 true ->
-                    Sql = <<"SELECT ", Newkeys/binary, " FROM ", DB/binary, TableName/binary, ";">>,
+                    Sql = <<"SELECT ", Newkeys/binary, " FROM ", DB/binary, TableName/binary, " order by createdat desc limit 1;">>,
                     dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_query, Sql);
                 _ ->
                     {error, #{<<"msg">> => <<"无物模型"/utf8>>}}
