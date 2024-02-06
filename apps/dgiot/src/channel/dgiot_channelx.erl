@@ -58,7 +58,8 @@ add2(ServerName, ChannelType, ChannelId, Mod, ChannelArgs) ->
     dgiot_channelx_sup:add(channelx_mgr, ServerName, ChannelType, ChannelId, Mod, ChannelArgs).
 
 add(ChannelType, ChannelId, Mod, ChannelArgs) ->
-    add(channelx_mgr, ChannelType, ChannelId, Mod, ChannelArgs).
+    CType1 = list_to_binary(string:uppercase(dgiot_utils:to_list(ChannelType))),
+    add(channelx_mgr, CType1, ChannelId, Mod, ChannelArgs).
 
 add(Sup, ChannelType, ChannelId, Mod, ChannelArgs) ->
     dgiot_channelx_sup:add(Sup, ChannelType, ChannelId, Mod, ChannelArgs).
