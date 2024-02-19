@@ -182,6 +182,16 @@ do_request(post_plugin_app, #{<<"Action">> := Action, <<"App">> := App}, _Contex
             {200, #{<<"error">> => <<"license error">>}}
     end;
 
+%% iot_hub 概要: 升级插件dgiot_system_handler
+%% OperationId:post_station_data
+%% 请求:POST /iotapi/post_station_data
+do_request(post_upgrade_plugin, #{<<"file">> := #{<<"filename">> := Filename, <<"fullpath">> := Fullpath}}, _Context, _Req) ->
+    Len = size(Filename) - 5,
+    <<Mod:Len/binary, _/binary>> = Filename,
+    {file, Here} = code:is_loaded(dgiot_utils:to_atom(Mod)),
+    os:cmd("cp -R " ++ dgiot_utils:to_list(Fullpath) ++ " " ++ Here),
+    {200, #{<<"status">> => 0, <<"msg">> => <<"success">>, <<"data">> => #{}}};
+
 
 %% System 概要: 编译代码 描述:在线编译代码
 %% OperationId:post_compile

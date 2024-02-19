@@ -39,22 +39,15 @@ init(#tcp{state = #state{id = ChannelId}} = TCPState) ->
             {stop, not_find_channel}
     end.
 
-handle_info({tcp, Buff}, #tcp{state = #state{id = ChannelId} = State} = TCPState) ->
-    dgiot_bridge:send_log(ChannelId, "revice from  ~p", [Buff]),
-    case dgiot_hjt212_decoder:parse_frame(Buff, State) of
-        {ok, [Frame | _]} ->
-            io:format("~s ~p ~p  ~n",[?FILE, ?LINE, Frame]);
-%%            dgiot_bridge:send_log(ChannelId, "~s ~p ~ts", [?FILE, ?LINE, unicode:characters_to_list(jiffy:encode(Result))]),
-%%            R = dgiot_hjt212_decoder:to_frame(Frame),
-%%            case R  of
-%%                Buff ->
-%%                    io:format("success to_frame Buff ~p~n", [Buff]),
-%%                    dgiot_bridge:send_log(ChannelId, "success to_frame Buff ~p", [Buff]);
-%%                _ ->
-%%                    io:format("error to_frame R ~p~n", [R]),
-%%                    dgiot_bridge:send_log(ChannelId, "error to_frame Buff ~p", [R])
-%%            end;
-        _ ->
+handle_info({tcp, Buff}, #tcp{state = #state{id = ChannelId, product = ProductId} = _State} = TCPState) ->
+    dgiot_bridge:send_log(ChannelId, ProductId, "~s ~p ~p revice from ~p => ProductId ~p ", [?FILE, ?LINE, dgiot_datetime:format("YYYY-MM-DD HH:NN:SS"), Buff, ProductId]),
+    case dgiot_hjt212_decoder:parse_frame(Buff, []) of
+        {ok, [#{<<"devaddr">> := Devaddr} = Data | _]} ->
+            NewData = dgiot_dlink_proctol:parse_payload(ProductId, Data),
+            dgiot_bridge:send_log(ChannelId, ProductId, Devaddr, "~s ~p ~p revice from ~p~n save td => ProductId ~p DevAddr ~p ~ts ", [?FILE, ?LINE, dgiot_datetime:format("YYYY-MM-DD HH:NN:SS"), Buff, ProductId, Devaddr, unicode:characters_to_list(dgiot_json:encode(NewData))]),
+            dgiot_task:save_td(ProductId, Devaddr, NewData, #{});
+        _O ->
+            dgiot_bridge:send_log(ChannelId, ProductId, "~s ~p ~p revice from => ~p ", [?FILE, ?LINE, dgiot_datetime:format("YYYY-MM-DD HH:NN:SS"), _O]),
             pass
     end,
     {noreply, TCPState};

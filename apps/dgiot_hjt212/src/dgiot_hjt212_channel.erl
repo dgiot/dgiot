@@ -19,7 +19,7 @@
 -include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
 -include("dgiot_hjt212.hrl").
 -include_lib("dgiot/include/logger.hrl").
--define(TYPE, <<"hjt212">>).
+-define(TYPE, <<"HJT212">>).
 -dgiot_data("ets").
 -export([init_ets/0]).
 
@@ -91,19 +91,25 @@ start(ChannelId, ChannelArgs) ->
 %% 通道初始化
 init(?TYPE, ChannelId, #{
     <<"port">> := Port,
-    <<"devtype">> := DevType
+    <<"devtype">> := DevType,
+    <<"product">> := Products
 } = _Args) ->
+    {ProdcutId, App} =
+        case get_app(Products) of
+            [{ProdcutId1, App1} | _] ->
+                {ProdcutId1, App1};
+            [] ->
+                {<<>>, <<>>};
+            _ ->
+                {<<>>, <<>>}
+        end,
     State = #state{
         id = ChannelId,
+        app = App,
+        product = ProdcutId,
         devtype = DevType
     },
-    case dgiot_parse:get_object(<<"Channel">>, ChannelId) of
-        {ok, Channel} ->
-            App = get_app(Channel),
-            {ok, State, dgiot_hjt212_tcp:start(Port, State#state{app = App})};
-        _ ->
-            {ok, State, []}
-    end;
+    {ok, State, dgiot_hjt212_tcp:start(Port, State)};
 
 init(?TYPE, _ChannelId, _Args) ->
     {ok, #{}, #{}}.
@@ -137,14 +143,22 @@ handle_message(_Message, State) ->
 stop(_ChannelType, _ChannelId, _State) ->
     ok.
 
-get_app(#{<<"ACL">> := Acl}) ->
-    Predicate = fun(E) ->
-        case E of
-            <<"role:", _/binary>> -> true;
-            _ -> false
-        end
-                end,
-    [<<"role:", App/binary>> | _] = lists:filter(Predicate, maps:keys(Acl)),
-    App.
+get_app(Products) ->
+    lists:map(fun({ProdcutId, #{<<"ACL">> := Acl}}) ->
+        Predicate = fun(E) ->
+            case E of
+                <<"role:", _/binary>> -> true;
+                _ -> false
+            end
+                    end,
+        App =
+            case lists:filter(Predicate, maps:keys(Acl)) of
+                [<<"role:", Name/binary>> | _] ->
+                    Name;
+                _ ->
+                    <<"dgiot">>
+            end,
+        {ProdcutId, App}
+              end, Products).
 
 

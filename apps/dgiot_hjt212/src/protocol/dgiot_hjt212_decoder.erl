@@ -115,13 +115,23 @@ parse_frame(<<_:8, Data/binary>> = _Rest, Acc, Opts) ->
 %|  指令参数 CP      |    字符     | 0≤n≤950| CP=&&数据区&&，数据区定义见 6.3.3 章节                                      |
 %|----------------------------------------------------------------------------------------------------------------------|
 %%parse_userzone(<<"QN=",QN:17/binary,";ST=", ST:2/binary, ";CN=", CN:4/binary, ";PW=", PWD:6/binary, ";MN=", MN:24/binary, ";Flag=", Flag:2/binary, PNUM:9/binary, PNO:8/binary, ";CP=", CP/binary>>, _State) ->
+%%  ##0331QN=20240204193300000;ST=31;CN=2011;PW=123456;MN=60436377;Flag=4;CP=&&DataTime=20240204193300;a34004-Rtd=10,a34004-Flag=N;a34002-Rtd=12,a34002-Flag=N;a34001-Rtd=26,a34001-Flag=N;a01001-Rtd=1.8,a01001-Flag=N;a01002-Rtd=91.0,a01002-Flag=N;a01007-Rtd=3.9,a01007-Flag=N;a01008-Rtd=314.00,a01008-Flag=N;a01006-Rtd=102.36,a01006-Flag=N;&&7F80\r\n
 parse_userzone(UserZone, _State) ->
     lists:foldl(fun(X, Acc) ->
         case X of
+            <<"MN=", Devaddr/binary>> ->
+                Acc#{<<"devaddr">> => Devaddr};
             <<"CP=&&", CP/binary>> ->
                 Acc#{<<"CP">> => dgiot_hjt212_utils:get_cps(CP)};
             _ ->
-                case re:split(X, <<"=">>) of
+                NewX =
+                    case re:split(X, <<",">>) of
+                        [First, _] ->
+                            First;
+                        _ ->
+                            X
+                    end,
+                case re:split(NewX, <<"=">>) of
                     [K, V] ->
                         Acc#{K => V};
                     _ -> Acc
@@ -131,7 +141,7 @@ parse_userzone(UserZone, _State) ->
 
 to_frame(#{<<"QN">> := QN, <<"ST">> := ST, <<"CN">> := CN, <<"PW">> := PW, <<"MN">> := MN, <<"Flag">> := Flag, <<"CP">> := CP, <<"PNUM">> := PNUM, <<"PNO">> := PNO}) ->
     Rdata = <<"QN=", QN/binary, ";ST=", ST/binary, ";CN=", CN/binary, ";PW=", PW/binary, ";MN=", MN/binary,
-        ";Flag=", Flag/binary, ";PNUM=",PNUM/binary,";PNO=", PNO/binary, ";CP=&&", CP/binary, "&&">>,
+        ";Flag=", Flag/binary, ";PNUM=", PNUM/binary, ";PNO=", PNO/binary, ";CP=&&", CP/binary, "&&">>,
     Len = dgiot_hjt212_utils:get_len(Rdata),
     Crc = dgiot_hjt212_utils:crc16(Rdata),
     <<"##", Len/binary, Rdata/binary, Crc/binary, "\r\n">>;
