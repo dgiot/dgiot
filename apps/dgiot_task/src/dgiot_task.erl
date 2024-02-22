@@ -20,8 +20,85 @@
 -include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
 
 -export([start/1, start/2, send/3, get_pnque_len/1, save_pnque/4, get_pnque/1, del_pnque/1, save_td/4, merge_cache_data/3, save_cache_data/2]).
--export([get_props/1, get_control/3, get_collection/4, get_calculated/2, get_instruct/2, get_storage/2, string2value/2, string2value/3]).
+-export([get_props/1, get_control/3, get_collection/4, get_calculated/4, get_instruct/2, get_storage/2, string2value/2, string2value/3]).
 -export([save_td_no_match/4]).
+
+%% 注册协议类型
+-protocol_type(#{
+    cType => <<"TASKSTATISTICS">>,
+    type => <<"TASKSTATISTICS">>,
+    colum => 10,
+    title => #{
+        zh => <<"任务统计"/utf8>>
+    },
+    description => #{
+        zh => <<"任务统计"/utf8>>
+    }
+}).
+
+-params(#{
+    <<"type">> => #{
+        order => 1,
+        type => string,
+        required => true,
+        default => #{<<"value">> => <<"duration">>, <<"label">> => <<"时长累加"/utf8>>},
+        enum => [
+            #{<<"value">> => <<"duration">>, <<"label">> => <<"时长累加"/utf8>>},
+            #{<<"value">> => <<"frequency">>, <<"label">> => <<"次数累加"/utf8>>}
+        ],
+        title => #{
+            zh => <<"条件"/utf8>>
+        },
+        description => #{
+            zh => <<"条件"/utf8>>
+        }
+    },
+    <<"key">> => #{
+        order => 2,
+        type => string,
+        required => true,
+        default => <<"key"/utf8>>,
+        title => #{
+            zh => <<"物模型标识符"/utf8>>
+        },
+        description => #{
+            zh => <<"统计的物模型标识符"/utf8>>
+        }
+    },
+    <<"comparetype">> => #{
+        order => 3,
+        type => string,
+        required => true,
+        default => #{<<"value">> => <<"EQ">>, <<"label">> => <<"等于"/utf8>>},
+        enum => [
+            #{<<"value">> => <<"LT">>, <<"label">> => <<"小于"/utf8>>},
+            #{<<"value">> => <<"LE">>, <<"label">> => <<"小于等于"/utf8>>},
+            #{<<"value">> => <<"GT">>, <<"label">> => <<"大于"/utf8>>},
+            #{<<"value">> => <<"GE">>, <<"label">> => <<"大于等于"/utf8>>},
+            #{<<"value">> => <<"EQ">>, <<"label">> => <<"等于"/utf8>>},
+            #{<<"value">> => <<"NE">>, <<"label">> => <<"不等于"/utf8>>}
+        ],
+        title => #{
+            zh => <<"条件"/utf8>>
+        },
+        description => #{
+            zh => <<"条件"/utf8>>
+        }
+    },
+    <<"value">> => #{
+        order => 4,
+        type => string,
+        required => true,
+        default => <<"1">>,
+        title => #{
+            zh => <<"值"/utf8>>
+        },
+        description => #{
+            zh => <<"物模型比较值"/utf8>>
+        }
+    }
+}).
+
 start(ChannelId) ->
     lists:map(fun(Y) ->
         case Y of
@@ -60,18 +137,108 @@ send(ProductId, DevAddr, Payload) ->
             dgiot_client:send(ChannelId, DevAddr, Topic, Payload)
     end.
 
+%% 比较统计值
+compare(KeyValue, <<"LT">>, Value) ->
+    KeyValue < Value;
+compare(KeyValue, <<"LE">>, Value) ->
+    KeyValue =< Value;
+compare(KeyValue, <<"GT">>, Value) ->
+    KeyValue > Value;
+compare(KeyValue, <<"GE">>, Value) ->
+    KeyValue >= Value;
+compare(KeyValue, <<"EQ">>, Value) ->
+    KeyValue == Value;
+compare(KeyValue, <<"NE">>, Value) ->
+    KeyValue =/= Value;
+compare(_, _, _) ->
+    false.
+
+%% 查询上次值
+%% select last(devaddr) as devaddr FROM  _24b9b4bc50._1c9966755d;
+get_last_value(ProductId, DevAddr, Identifier) ->
+    case dgiot_data:get({last_value, ProductId, DevAddr, Identifier}) of
+        not_find ->
+            case dgiot_tdengine:get_channel(ProductId) of
+                {ok, Channel} ->
+                    dgiot_tdengine:transaction(Channel,
+                        fun(Context) ->
+                            DB = dgiot_tdengine:get_database(Channel, ProductId),
+                            DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
+                            Sql = <<"select last(", Identifier/binary, ") as ", Identifier/binary, " FROM ", DB/binary, "_", DeviceId/binary, ";">>,
+                            case dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_query, Sql) of
+                                {ok, #{<<"results">> := [#{Identifier := Value} | _]}} when Value =/= null ->
+                                    dgiot_utils:to_int(Value);
+                                _ ->
+                                    0
+                            end
+                        end);
+                _ ->
+                    0
+            end;
+        Value ->
+            dgiot_utils:to_int(Value)
+    end.
+
+%% 统计时长
+get_statistic(ProductId, DevAddr, Identifier, KeyValue, #{<<"type">> := <<"duration">>, <<"comparetype">> := Comparetype, <<"value">> := Value}, Acc) ->
+    Last_Value = get_last_value(ProductId, DevAddr, Identifier),
+    case compare(KeyValue, Comparetype, Value) of
+        true ->
+            Last_Value = get_last_value(ProductId, DevAddr, Identifier),
+            Time =
+                case dgiot_data:get({last_time, ProductId, DevAddr, Identifier}) of
+                    {true, OldTime} ->
+                        dgiot_datetime:now_secs() - OldTime;
+                    _ ->
+                        0
+                end,
+            dgiot_data:insert({last_time, ProductId, DevAddr, Identifier}, {true, dgiot_datetime:now_secs()}),
+            dgiot_data:insert({last_value, ProductId, DevAddr, Identifier}, Last_Value + Time),
+            Acc#{Identifier => Last_Value + Time};
+        _ ->
+            dgiot_data:insert({last_time, ProductId, DevAddr, Identifier}, {false, dgiot_datetime:now_secs()}),
+            Acc#{Identifier => Last_Value}
+    end;
+
+%% 次数累加
+get_statistic(ProductId, DevAddr, Identifier, KeyValue, #{<<"type">> := <<"frequency">>, <<"comparetype">> := Comparetype, <<"value">> := Value}, Acc) ->
+    Num = get_last_value(ProductId, DevAddr, Identifier),
+    case compare(KeyValue, Comparetype, Value) of
+        true ->
+            dgiot_data:insert({last_value, ProductId, DevAddr, Identifier}, Num + 1),
+            Acc#{Identifier => Num + 1};
+        _ ->
+            Acc#{Identifier => Num}
+    end;
+
+get_statistic(_, _, _, _, _, Acc) ->
+    Acc.
+
 %%获取计算值，必须返回物模型里面的数据表示，不能用寄存器地址
-get_calculated(Calculated, Props) ->
+get_calculated(ProductId, DevAddr, Calculated, Props) ->
     lists:foldl(fun(X, Acc) ->
         case Acc of
             error ->
                 Acc;
             _ ->
                 case X of
+                    #{<<"isaccumulate">> := true,
+                        <<"isstorage">> := true,
+                        <<"identifier">> := Identifier,
+                        <<"dataForm">> := #{<<"strategy">> := <<"计算值"/utf8>>},
+                        <<"dataSource">> := #{<<"key">> := Key} = DataSource
+                    } ->
+                        case maps:get(Key, Calculated, not_find) of
+                            not_find ->
+                                Acc;
+                            KeyValue ->
+                                get_statistic(ProductId, DevAddr, Identifier, dgiot_utils:to_int(KeyValue), DataSource, Acc)
+                        end;
                     #{<<"isstorage">> := true,
-                        <<"identifier">> := Identifier, <<"dataForm">> := #{
-                        <<"strategy">> := <<"计算值"/utf8>>, <<"collection">> := Collection},
-                        <<"dataType">> := #{<<"type">> := Type, <<"specs">> := Specs}} ->
+                        <<"identifier">> := Identifier,
+                        <<"dataForm">> := #{<<"strategy">> := <<"计算值"/utf8>>, <<"collection">> := Collection},
+                        <<"dataType">> := #{<<"type">> := Type, <<"specs">> := Specs}
+                    } ->
                         Str1 = maps:fold(fun(K, V, Acc2) ->
                             Str = re:replace(Acc2, dgiot_utils:to_list(<<"%%{", K/binary, "}">>), dgiot_utils:to_list(V), [global, {return, list}]),
                             re:replace(Str, "%{s}", dgiot_utils:to_list(V), [global, {return, list}])
@@ -317,7 +484,7 @@ save_td(ProductId, DevAddr, Ack, _AppData) ->
             %%            计算上报值
             Collection = dgiot_task:get_collection(ProductId, [], CacheData, Props),
             %%            计算计算值
-            AllData = dgiot_task:get_calculated(Collection, Props),
+            AllData = dgiot_task:get_calculated(ProductId, DevAddr, Collection, Props),
             %%            过滤存储值
             Storage = dgiot_task:get_storage(AllData, Props),
             case Interval > 0 of
@@ -402,7 +569,7 @@ save_td_no_match(ProductId, DevAddr, Ack, AppData) ->
 %%            计算上报值
             Collection = dgiot_task:get_collection(ProductId, [], Ack, Props),
 %%            计算计算值
-            Calculated = dgiot_task:get_calculated(Collection, Props),
+            Calculated = dgiot_task:get_calculated(ProductId, DevAddr, Collection, Props),
 %%            过滤存储值
             Storage = dgiot_task:get_storage(Calculated, Props),
             DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
