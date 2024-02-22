@@ -182,7 +182,7 @@ do_request(post_plugin_app, #{<<"Action">> := Action, <<"App">> := App}, _Contex
             {200, #{<<"error">> => <<"license error">>}}
     end;
 
-%% iot_hub 概要: 升级插件dgiot_system_handler
+%% iot_hub 概要: 升级插件
 %% OperationId:post_station_data
 %% 请求:POST /iotapi/post_station_data
 do_request(post_upgrade_plugin, #{<<"file">> := #{<<"filename">> := Filename, <<"fullpath">> := Fullpath}}, _Context, _Req) ->

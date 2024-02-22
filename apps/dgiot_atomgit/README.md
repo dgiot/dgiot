@@ -3,7 +3,6 @@
 
 ![开源大赛.jpg](https://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/kaiyuandasai.png)
 
-
 <a href="https://www.bilibili.com/video/BV13B421z7NP/?spm_id_from=333.999.0.0"><img src="https://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_doc/bilibidasai.jpg" /></a>
 
 ### DGIOT物联网开源平台，承办了工信部开放原子的开源大赛，
@@ -63,3 +62,4 @@
 3：可信接入与网络安全算法
 
 4：设备精细化能耗分析与优化
+
