@@ -4,7 +4,7 @@
 export PATH=$PATH:/usr/local/bin
 
 function help() {
-  echo "Usage: $(basename $0) -v [single | cluster | devops | ci] -s [dgiot_n] -p [your_dgiot_plugin] -m [dgiotmd5] -e [pg_eip] -a [pg_auth] -n [islanip] -g [atomgit_plugin]"
+  echo "Usage: $(basename $0) -v [single | cluster | devops | ci | atomgit] -s [dgiot_n] -p [your_dgiot_plugin] -m [dgiotmd5] -e [pg_eip] -a [pg_auth] -n [islanip] -g [atomgit_plugin]"
   exit 0
 }
 
@@ -932,14 +932,18 @@ function update_html() {
 }
 
 function atomgit_plugin() {
-  for file in ${script_dir}/dgiot/apps/dgiot_atomgit; do
-      new_name=$(echo "$file" | sed 's/atomgit/${atomgit_plugin}/')
+  echo -e "$(date +%F_%T) $LINENO: ${GREEN} ${script_dir}/apps/dgiot_atomgit/${NC}"
+  echo -e "$(date +%F_%T) $LINENO: ${GREEN} ${atomplugin}${NC}"
+  for file in ${script_dir}/apps/dgiot_atomgit/*; do
+      new_name=$(echo "$file" | sed 's/atomgit/${atomplugin}/')
+      echo -e "$(date +%F_%T) $LINENO: ${GREEN} $file${NC}"
+      echo -e "$(date +%F_%T) $LINENO: ${GREEN} new_name${NC}"
       sed -i 's/atomgit/${atomgit_plugin}/g' $file
       mv "$file" "$new_name"
   done
-  mv ${script_dir}/dgiot/apps/dgiot_atomgit ${script_dir}/dgiot/apps/dgiot_${atomgit_plugin}
-  sed -i 's/atomgit/${atomgit_plugin}/g' ${script_dir}/dgiot/rebar.config.erl
-  sed -i 's/atomgit/${atomgit_plugin}/g' ${script_dir}/dgiot/data/load_plugin.tmpl
+  mv ${script_dir}/apps/dgiot_atomgit ${script_dir}/dgiot/apps/dgiot_${atomplugin}
+  sed -i 's/atomgit/${atomplugin}/g' ${script_dir}/rebar.config.erl
+  sed -i 's/atomgit/${atomplugin}/g' ${script_dir}/data/load_plugin.tmpl
 }
 
 function install_dgiot() {
@@ -1520,6 +1524,9 @@ function deploy_dgiot() {
   #  持续集成环境部署 (已完成)
   elif [ "${deployType}" == "ci" ]; then
     ci
+  #  持续集成环境部署 (已完成)
+  elif [ "${deployType}" == "atomgit" ]; then
+    atomgit_plugin
   else
     echo "please input correct deployType"
   fi
@@ -1541,7 +1548,7 @@ dgiot_shell
 # =============================  get input parameters =================================================
 # dgiot_install.sh -v [single | cluster | devops | ci] -s [dgiot_n] -p [dgiot_your_plugin] -m [dgiotmd5] -e [datanode_eip] -s [pg_auth] -g [atomgit]
 # set parameters by default value
-deployType=single                           # [single | cluster | devops | ci]
+deployType=single                           # [single | cluster | devops | ci | atomgit]
 plugin="dgiot"                              # [dgiot | dgiot_your_plugin]
 software="dgiot_b34"                        # [dgiot_b20| dgiot_n]
 dgiotmd5="d5426a73ce1a9903abc0494261132cbc" # [dgiotmd5]
@@ -1550,9 +1557,9 @@ pg_auth='changeyourpassword'                # [pg_auth]
 islanip="false"                             # [islanip]
 html_software="dgiot_html_4.8.6"            # [dgiot_html_4.8.2| dgiot_html_n]
 htmlmd5="cf7ecfc44b3fff2083754271d60fa00f"  # [htmlmd5]
-atomgit_plugin="atomgit"  # [atomgit | jt808]
+atomplugin="atomgit"                        # [atomgit | jt808]
 
-while getopts "v:s:p:m:d:e:a:n:" arg; do
+while getopts "v:s:p:m:d:e:a:n:g" arg; do
   case $arg in
   v)
     echo -e "$(date +%F_%T) $LINENO: ${GREEN} deployType=$OPTARG${NC}"
@@ -1583,8 +1590,10 @@ while getopts "v:s:p:m:d:e:a:n:" arg; do
     islanip=$(echo $OPTARG)
     ;;
   g)
-      atomgit_plugin=$(echo $OPTARG)
-      ;;
+    echo -e "$(date +%F_%T) $LINENO: ${GREEN} eeatomplugin=$OPTARG${NC}"
+    atomplugin=$(echo $OPTARG)
+    echo  "${atomplugin}"
+    ;;
   ?) #unknow option
     help
     ;;
