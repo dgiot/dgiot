@@ -1214,6 +1214,7 @@ function build_iotView() {
   fi
 
   cd ${script_dir}/iotView
+  cd ${script_dir}/iotView
   git reset --hard
   git pull
 
@@ -1533,6 +1534,7 @@ function deploy_dgiot() {
     ci
   #  持续集成环境部署 (已完成)
   elif [ "${deployType}" == "atomgit" ]; then
+    install_erlang_otp
     atomgit_plugin
   else
     echo "please input correct deployType"
