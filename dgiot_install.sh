@@ -4,7 +4,7 @@
 export PATH=$PATH:/usr/local/bin
 
 function help() {
-  echo "Usage: $(basename $0) -v [single | cluster | devops | ci | atomgit] -s [dgiot_n] -p [your_dgiot_plugin] -m [dgiotmd5 | atomplugin] -e [pg_eip] -a [pg_auth] -n [islanip]"
+  echo "Usage: $(basename $0) -v [single | cluster | devops | ci |  otp | atomgit] -s [dgiot_n] -p [your_dgiot_plugin] -m [dgiotmd5 | atomplugin] -e [pg_eip] -a [pg_auth] -n [islanip]"
   exit 0
 }
 
@@ -1532,9 +1532,10 @@ function deploy_dgiot() {
   #  持续集成环境部署 (已完成)
   elif [ "${deployType}" == "ci" ]; then
     ci
+  elif [ "${deployType}" == "otp" ]; then
+    install_erlang_otp
   #  持续集成环境部署 (已完成)
   elif [ "${deployType}" == "atomgit" ]; then
-    install_erlang_otp
     atomgit_plugin
   else
     echo "please input correct deployType"
@@ -1555,9 +1556,9 @@ check_os_type
 dgiot_shell
 
 # =============================  get input parameters =================================================
-# dgiot_install.sh -v [single | cluster | devops | ci | atomgit] -s [dgiot_n] -p [dgiot_your_plugin] -m [dgiotmd5 | atomgit] -e [datanode_eip] -s [pg_auth]
+# dgiot_install.sh -v [single | cluster | devops | otp | ci | atomgit] -s [dgiot_n] -p [dgiot_your_plugin] -m [dgiotmd5 | atomgit] -e [datanode_eip] -s [pg_auth]
 # set parameters by default value
-deployType=single                           # [single | cluster | devops | ci | atomgit]
+deployType=single                           # [single | cluster | devops | otp|  ci | atomgit]
 plugin="dgiot"                              # [dgiot | dgiot_your_plugin]
 software="dgiot_b34"                        # [dgiot_b20| dgiot_n]
 dgiotmd5="d5426a73ce1a9903abc0494261132cbc" # [dgiotmd5]
