@@ -1,10 +1,10 @@
 {
   "definitions": {},
   "paths": {
-    "/demotest": {
+    "/atomgitapi": {
       "post": {
-        "summary": "demo新增设备",
-        "description": "demo测试接口",
+        "summary": "atomgit接口",
+        "description": "atomgit接口",
         "parameters": [
           {
             "in": "body",

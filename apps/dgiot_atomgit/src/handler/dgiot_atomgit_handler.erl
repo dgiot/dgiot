@@ -21,19 +21,19 @@
 
 
 %% API
--export([swagger_dahua/0]).
+-export([swagger_atomgit/0]).
 -export([handle/4]).
 
 %% API描述
 %% 支持二种方式导入
 %% 示例:
 %% 1. Metadata为map表示的JSON,
-%%    dgiot_http_server:bind(<<"/dahua>>, ?MODULE, [], Metadata)
+%%    dgiot_http_server:bind(<<"/atomgit>>, ?MODULE, [], Metadata)
 %% 2. 从模块的priv/swagger/下导入
-%%    dgiot_http_server:bind(<<"/swagger_dahua.json">>, ?MODULE, [], priv)
-swagger_dahua() ->
+%%    dgiot_http_server:bind(<<"/swagger_atomgit.json">>, ?MODULE, [], priv)
+swagger_atomgit() ->
     [
-        dgiot_http_server:bind(<<"/swagger_demo.json">>, ?MODULE, [], priv)
+        dgiot_http_server:bind(<<"/swagger_atomgit.json">>, ?MODULE, [], priv)
     ].
 
 
@@ -79,8 +79,8 @@ handle(OperationID, Args, Context, Req) ->
 %% System 概要: demo测试接口 描述:demo测试接口
 %% OperationId:post_demotest
 %% 请求:POST /iotapi/post_demotest
-do_request(post_demotest, Args, _Context, _Req) ->
-    case dgiot_atomgit:demo_test(Args) of
+do_request(post_atomgitapi, Args, _Context, _Req) ->
+    case dgiot_atomgit:atomgitapi(Args) of
         {ok, Data} ->
             {ok, #{<<"data">> => Data, <<"status">> => 0, <<"msg">> => <<"success">>}};
         _ ->
