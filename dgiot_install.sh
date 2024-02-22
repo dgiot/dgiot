@@ -937,14 +937,19 @@ function atomgit_plugin() {
   if [ -d ${script_dir}/apps/dgiot_atomgit/ ]; then
     mv ${script_dir}/apps/dgiot_atomgit ${script_dir}/apps/dgiot_${dgiotmd5}
     for file in `find ${script_dir}/apps/dgiot_${dgiotmd5}/ -type f`; do
-        new_name=$(echo "$file" | sed 's/atomgit/${dgiotmd5}/')
+        new_name=$(echo "$file" | sed "s/atomgit/${dgiotmd5}/")
         echo -e "$(date +%F_%T) $LINENO: ${GREEN} file= $file${NC}"
-        echo -e "$(date +%F_%T) $LINENO: ${GREEN} new_name= ${new_name}${NC}"
-        sed -i 's/atomgit/${dgiotmd5}/g' $file
-        mv "${file}" "${new_name}"
+        sed -i "s/atomgit/${dgiotmd5}/g" $file
+        if  [ ${file} == ${new_name} ]
+        then
+          echo -e "$(date +%F_%T) $LINENO: ${GREEN} file= ${file}${NC}"
+        else
+          echo -e "$(date +%F_%T) $LINENO: ${GREEN} new_name= ${new_name}${NC}"
+          mv "${file}" "${new_name}"
+        fi
     done
-    sed -i 's/atomgit/${dgiotmd5}/g' ${script_dir}/rebar.config.erl
-    sed -i 's/atomgit/${dgiotmd5}/g' ${script_dir}/data/load_plugin.tmpl
+    sed -i "s/atomgit/${dgiotmd5}/g" ${script_dir}/rebar.config.erl
+    sed -i "s/atomgit/${dgiotmd5}/g" ${script_dir}/data/loaded_plugins.tmpl
   fi
 }
 
