@@ -4,7 +4,7 @@
 export PATH=$PATH:/usr/local/bin
 
 function help() {
-  echo "Usage: $(basename $0) -v [single | cluster | devops | ci] -s [dgiot_n] -p [your_dgiot_plugin] -m [dgiotmd5] -e [pg_eip] -a [pg_auth] -n [islanip]"
+  echo "Usage: $(basename $0) -v [single | cluster | devops | ci] -s [dgiot_n] -p [your_dgiot_plugin] -m [dgiotmd5] -e [pg_eip] -a [pg_auth] -n [islanip] -g [atomgit_plugin]"
   exit 0
 }
 
@@ -931,6 +931,17 @@ function update_html() {
   sed -ri '/dgiot_api/d' conf/nginx.conf
 }
 
+function atomgit_plugin() {
+  for file in ${script_dir}/dgiot/apps/dgiot_atomgit; do
+      new_name=$(echo "$file" | sed 's/atomgit/${atomgit_plugin}/')
+      sed -i 's/atomgit/${atomgit_plugin}/g' $file
+      mv "$file" "$new_name"
+  done
+  mv ${script_dir}/dgiot/apps/dgiot_atomgit ${script_dir}/dgiot/apps/dgiot_${atomgit_plugin}
+  sed -i 's/atomgit/${atomgit_plugin}/g' ${script_dir}/dgiot/rebar.config.erl
+  sed -i 's/atomgit/${atomgit_plugin}/g' ${script_dir}/dgiot/data/load_plugin.tmpl
+}
+
 function install_dgiot() {
   make_ssl
   if [ ! -d ${install_dir}/go_fastdfs/files/package/ ]; then
@@ -1528,7 +1539,7 @@ check_os_type
 dgiot_shell
 
 # =============================  get input parameters =================================================
-# dgiot_install.sh -v [single | cluster | devops | ci] -s [dgiot_n] -p [dgiot_your_plugin] -m [dgiotmd5] -e [datanode_eip] -s [pg_auth]
+# dgiot_install.sh -v [single | cluster | devops | ci] -s [dgiot_n] -p [dgiot_your_plugin] -m [dgiotmd5] -e [datanode_eip] -s [pg_auth] -g [atomgit]
 # set parameters by default value
 deployType=single                           # [single | cluster | devops | ci]
 plugin="dgiot"                              # [dgiot | dgiot_your_plugin]
@@ -1539,6 +1550,7 @@ pg_auth='changeyourpassword'                # [pg_auth]
 islanip="false"                             # [islanip]
 html_software="dgiot_html_4.8.6"            # [dgiot_html_4.8.2| dgiot_html_n]
 htmlmd5="cf7ecfc44b3fff2083754271d60fa00f"  # [htmlmd5]
+atomgit_plugin="atomgit"  # [atomgit | jt808]
 
 while getopts "v:s:p:m:d:e:a:n:" arg; do
   case $arg in
@@ -1570,6 +1582,9 @@ while getopts "v:s:p:m:d:e:a:n:" arg; do
   n)
     islanip=$(echo $OPTARG)
     ;;
+  g)
+      atomgit_plugin=$(echo $OPTARG)
+      ;;
   ?) #unknow option
     help
     ;;
