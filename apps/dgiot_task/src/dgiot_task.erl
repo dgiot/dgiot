@@ -182,7 +182,7 @@ get_last_value(ProductId, DevAddr, Identifier) ->
 %% 统计时长
 get_statistic(ProductId, DevAddr, Identifier, KeyValue, #{<<"type">> := <<"duration">>, <<"comparetype">> := Comparetype, <<"value">> := Value}, Acc) ->
     Last_Value = get_last_value(ProductId, DevAddr, Identifier),
-    case compare(KeyValue, Comparetype, Value) of
+    case compare(KeyValue, Comparetype, dgiot_utils:to_int(Value)) of
         true ->
             Last_Value = get_last_value(ProductId, DevAddr, Identifier),
             Time =
