@@ -934,6 +934,10 @@ function update_html() {
 function atomgit_plugin() {
   echo -e "$(date +%F_%T) $LINENO: ${GREEN} ${script_dir}/apps/dgiot_atomgit/${NC}"
   echo -e "$(date +%F_%T) $LINENO: ${GREEN} ${script_dir}/apps/dgiot_${dgiotmd5}${NC}"
+  cd ${script_dir}/apps/
+  rm -rf dgiot_atomgit
+  git clone https://atomgit.com/dgiot/dgiot_atomgit.git
+  rm -rf dgiot_atomgit/.git
   if [ -d ${script_dir}/apps/dgiot_atomgit/ ]; then
     mv ${script_dir}/apps/dgiot_atomgit ${script_dir}/apps/dgiot_${dgiotmd5}
     for file in `find ${script_dir}/apps/dgiot_${dgiotmd5}/ -type f`; do
