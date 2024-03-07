@@ -17,7 +17,7 @@
 -module(dgiot_atomgit_decoder).
 -include_lib("dgiot_atomgit.hrl").
 -include_lib("dgiot/include/logger.hrl").
--protocol([?ATOMGIT]).
+-protocol([?atomgit]).
 -define(CRLF, "\r\n").
 %% API
 -export([parse_frame/2, to_frame/1]).

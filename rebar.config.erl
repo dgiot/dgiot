@@ -271,7 +271,6 @@ relx_apps(ReleaseType) ->
         , jsx
         , jesse
         , jwerl
-        , odbc
         , erlydtl
         , erlport
         , ecpool

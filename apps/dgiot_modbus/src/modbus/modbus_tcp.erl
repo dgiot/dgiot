@@ -29,7 +29,7 @@
     build_req_message/1,
     get_addr/4,
     set_addr/3,
-    shard_data/1,
+    shard_data/2,
     change_data/2
 ]
 ).
@@ -308,7 +308,7 @@ parse_frame(StartAddr, FileName, Data) ->
                                     {Value1, _Rest} ->
                                         Value1;
                                     _ ->
-                                        V
+                                        null
                                 end;
                             _ ->
                                 null
@@ -323,7 +323,7 @@ parse_frame(StartAddr, FileName, Data) ->
 %%                                        io:format("~s ~p ~p => ~p => ~p => ~p => ~p => ~p ~n", [?FILE, ?LINE, NewAddress, IntOffset, NewIntOffset, IntLen, V, Value1]),
                                         Value1;
                                     _ ->
-                                        V
+                                        null
                                 end;
                             _ ->
                                 null
@@ -344,6 +344,10 @@ parse_frame(StartAddr, FileName, Data) ->
                           DeviceId = dgiot_parse_id:get_deviceid(ProductId1, Devaddr1),
 %%                          NewAck = change_data(ProductId1, Ack),
                           CacheAck = dgiot_task:merge_cache_data(ProductId1, Ack, -1),
+                          NewResult = dgiot_dlink_proctol:parse_payload(ProductId1, CacheAck),
+                          Props = dgiot_task:get_props(ProductId1),
+                          Calculated = get_calculated(ProductId1, Devaddr1, NewResult, Props),
+
                           dgiot_task:save_cache_data(ProductId1, CacheAck),
                           BinData =
                               maps:fold(fun(K, V, Acc) ->
@@ -352,7 +356,8 @@ parse_frame(StartAddr, FileName, Data) ->
                                   BinV = dgiot_utils:to_binary(V),
                                   <<Acc/binary, Len/binary, BinK/binary, BinV/binary, ",">>
                                         end, <<>>, CacheAck),
-                          Shard_data = modbus_tcp:shard_data(BinData),
+
+                          Shard_data = modbus_tcp:shard_data(BinData, Calculated),
                           case dgiot_data:get({modbus_tcp, dgiot_datetime:now_secs()}) of
                               not_find ->
                                   spawn(fun() ->
@@ -372,8 +377,8 @@ parse_frame(StartAddr, FileName, Data) ->
                   end, #{}, AllData),
     NewAllData.
 
-shard_data(Data) ->
-    shard_data(Data, 1, #{}).
+shard_data(Data, Acc) ->
+    shard_data(Data, 1, Acc).
 
 shard_data(<<>>, _, Acc) ->
     Acc;
@@ -546,6 +551,8 @@ modbus_tcp_decoder(ProductId, Slaveid, Address, Data, Acc1) ->
                                         maps:merge(Acc, Value);
                                     {Value, _Rest} ->
                                         Acc#{Identifier => Value};
+                                    null ->
+                                        Acc;
                                     _ ->
                                         Acc
                                 end;
@@ -606,6 +613,8 @@ format_value(Buff, #{<<"identifier">> := BitIdentifier,
                                 case format_value(V, X, Props) of
                                     {Value1, _Rest} ->
                                         Value1;
+                                    null ->
+                                        null;
                                     _ ->
                                         V
                                 end;
@@ -614,6 +623,8 @@ format_value(Buff, #{<<"identifier">> := BitIdentifier,
                                 case format_value(V, X, Props) of
                                     {Value1, _Rest} ->
                                         Value1;
+                                    null ->
+                                        null;
                                     _ ->
                                         V
                                 end
@@ -716,8 +727,12 @@ format_value(Buff, #{<<"dataSource">> := #{
     IntNum = dgiot_utils:to_int(Num),
     Size = IntNum * 4 * 8,
     <<H:2/binary, L:2/binary, Rest/binary>> = Buff,
-    <<Value:Size/float>> = <<H/binary, L/binary>>,
-    {Value, Rest};
+    case catch <<H/binary, L/binary>> of
+        <<Value:Size/float>> ->
+            {Value, Rest};
+        _ ->
+            null
+    end;
 
 format_value(Buff, #{<<"dataSource">> := #{
     <<"registersnumber">> := Num,
@@ -726,14 +741,18 @@ format_value(Buff, #{<<"dataSource">> := #{
     IntNum = dgiot_utils:to_int(Num),
     Size = IntNum * 4 * 8,
     <<H:2/binary, L:2/binary, Rest/binary>> = Buff,
-    <<Value:Size/float>> = <<L/binary, H/binary>>,
-    {Value, Rest};
+    case catch <<L/binary, H/binary>> of
+        <<Value:Size/float>> ->
+            {Value, Rest};
+        _ ->
+            null
+    end;
 
 %% @todo 其它类型处理
-format_value(Buff, #{<<"identifier">> := Field, <<"originaltype">> := Originaltype}, _Props) ->
-    ?LOG(error, "Field ~p originaltype ~p", [Field, Originaltype]),
+format_value(_Buff, #{<<"identifier">> := _Field, <<"originaltype">> := _Originaltype}, _Props) ->
+%%    ?LOG(error, "Field ~p originaltype ~p", [Field, Originaltype]),
 %%    throw({field_error, <<Field/binary, "_", Originaltype/binary, " is not validate">>}),
-    {<<"">>, Buff}.
+    null.
 
 %% 获取寄存器字节长度
 get_len(IntNum, <<"bool">>) ->
@@ -785,3 +804,33 @@ get_addr(ChannelId, Min, Max, Step) ->
 
 set_addr(ChannelId, Min, Max) ->
     dgiot_data:set_consumer(?consumer(ChannelId), Min, Max).
+
+
+get_calculated(ProductId, DevAddr, Calculated, Props) ->
+    lists:foldl(fun(X, Acc) ->
+        case X of
+            #{<<"isaccumulate">> := true,
+                <<"isstorage">> := true,
+                <<"identifier">> := Identifier,
+                <<"dataForm">> := #{<<"strategy">> := <<"计算值"/utf8>>},
+                <<"dataSource">> := #{<<"key">> := Key} = DataSource
+            } ->
+                case maps:get(Key, Calculated, not_find) of
+                    not_find ->
+                        Acc;
+                    KeyValue ->
+                        dgiot_task:get_statistic(ProductId, DevAddr, Key, Identifier, dgiot_utils:to_int(KeyValue), DataSource, Acc)
+                end;
+            #{<<"isstorage">> := true,
+                <<"identifier">> := Identifier
+            } ->
+                case maps:get(Identifier, Calculated, not_find) of
+                    not_find ->
+                        Acc;
+                    Value ->
+                        Acc#{Identifier => Value}
+                end;
+            _ ->
+                Acc
+        end
+                end, #{}, Props).

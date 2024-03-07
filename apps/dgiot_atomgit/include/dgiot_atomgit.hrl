@@ -1,4 +1,4 @@
--define(ATOMGIT, <<"ATOMGIT">>).
+-define(atomgit, <<"atomgit">>).
 
 -record(state, {
     id,

@@ -20,8 +20,8 @@
 -include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
 
 -export([start/1, start/2, send/3, get_pnque_len/1, save_pnque/4, get_pnque/1, del_pnque/1, save_td/4, merge_cache_data/3, save_cache_data/2]).
--export([get_props/1, get_control/3, get_collection/4, get_calculated/4, get_instruct/2, get_storage/2, string2value/2, string2value/3]).
--export([save_td_no_match/4]).
+-export([get_props/1, get_control/3, get_collection/4, get_calculated/4, get_instruct/2, get_storage/2, string2value/2, string2value/3, get_statistic/7]).
+-export([save_td_no_match/4, get_last_value/4]).
 
 %% 注册协议类型
 -protocol_type(#{
@@ -155,8 +155,9 @@ compare(_, _, _) ->
 
 %% 查询上次值
 %% select last(devaddr) as devaddr FROM  _24b9b4bc50._1c9966755d;
-get_last_value(ProductId, DevAddr, Identifier) ->
-    case dgiot_data:get({last_value, ProductId, DevAddr, Identifier}) of
+%% dgiot_data:get({last_value, <<"857ed41119">>, <<"PDJ">>, <<"m583_10">>, <<"bc11c_failnum">>})
+get_last_value(ProductId, DevAddr, Key, Identifier) ->
+    case dgiot_data:get({last_value, ProductId, DevAddr, Key, Identifier}) of
         not_find ->
             case dgiot_tdengine:get_channel(ProductId) of
                 {ok, Channel} ->
@@ -180,38 +181,51 @@ get_last_value(ProductId, DevAddr, Identifier) ->
     end.
 
 %% 统计时长
-get_statistic(ProductId, DevAddr, Identifier, KeyValue, #{<<"type">> := <<"duration">>, <<"comparetype">> := Comparetype, <<"value">> := Value}, Acc) ->
-    Last_Value = get_last_value(ProductId, DevAddr, Identifier),
+get_statistic(ProductId, DevAddr, Key, Identifier, KeyValue, #{<<"type">> := <<"duration">>, <<"comparetype">> := Comparetype, <<"value">> := Value}, Acc) ->
+    Last_Value = get_last_value(ProductId, DevAddr, Key, Identifier),
     case compare(KeyValue, Comparetype, dgiot_utils:to_int(Value)) of
         true ->
-            Last_Value = get_last_value(ProductId, DevAddr, Identifier),
             Time =
-                case dgiot_data:get({last_time, ProductId, DevAddr, Identifier}) of
+                case dgiot_data:get({last_time, ProductId, DevAddr, Key, Identifier}) of
                     {true, OldTime} ->
                         dgiot_datetime:now_secs() - OldTime;
                     _ ->
                         0
                 end,
-            dgiot_data:insert({last_time, ProductId, DevAddr, Identifier}, {true, dgiot_datetime:now_secs()}),
-            dgiot_data:insert({last_value, ProductId, DevAddr, Identifier}, Last_Value + Time),
+            dgiot_data:insert({last_time, ProductId, DevAddr, Key, Identifier}, {true, dgiot_datetime:now_secs()}),
+            dgiot_data:insert({last_value, ProductId, DevAddr, Key, Identifier}, Last_Value + Time),
             Acc#{Identifier => Last_Value + Time};
         _ ->
-            dgiot_data:insert({last_time, ProductId, DevAddr, Identifier}, {false, dgiot_datetime:now_secs()}),
+            dgiot_data:insert({last_time, ProductId, DevAddr, Key, Identifier}, {false, dgiot_datetime:now_secs()}),
+            dgiot_data:insert({last_value, ProductId, DevAddr, Key, Identifier}, Last_Value),
             Acc#{Identifier => Last_Value}
     end;
 
 %% 次数累加
-get_statistic(ProductId, DevAddr, Identifier, KeyValue, #{<<"type">> := <<"frequency">>, <<"comparetype">> := Comparetype, <<"value">> := Value}, Acc) ->
-    Num = get_last_value(ProductId, DevAddr, Identifier),
-    case compare(KeyValue, Comparetype, Value) of
+%% dgiot_data:get({last_flag, <<"857ed41119">>, <<"PDJ">>, <<"m583_10">>, <<"bc11c_failnum">>}).
+get_statistic(ProductId, DevAddr, Key, Identifier, KeyValue, #{<<"type">> := <<"frequency">>, <<"comparetype">> := Comparetype, <<"value">> := Value}, Acc) ->
+    Num = get_last_value(ProductId, DevAddr, Key, Identifier),
+    case compare(KeyValue, Comparetype, dgiot_utils:to_int(Value)) of
         true ->
-            dgiot_data:insert({last_value, ProductId, DevAddr, Identifier}, Num + 1),
-            Acc#{Identifier => Num + 1};
+            case dgiot_data:get({last_flag, ProductId, DevAddr, Key, Identifier}) of
+                not_find when Num =:= 0 ->
+                    dgiot_data:insert({last_value, ProductId, DevAddr, Key, Identifier}, Num + 1),
+                    dgiot_data:insert({last_flag, ProductId, DevAddr, Key, Identifier}, true),
+                    Acc#{Identifier => Num + 1};
+                false ->
+                    dgiot_data:insert({last_value, ProductId, DevAddr, Key, Identifier}, Num + 1),
+                    dgiot_data:insert({last_flag, ProductId, DevAddr, Key, Identifier}, true),
+                    Acc#{Identifier => Num + 1};
+                _ ->
+                    Acc#{Identifier => Num}
+            end;
         _ ->
+            dgiot_data:insert({last_value, ProductId, DevAddr, Key, Identifier}, Num),
+            dgiot_data:insert({last_flag, ProductId, DevAddr, Key, Identifier}, false),
             Acc#{Identifier => Num}
     end;
 
-get_statistic(_, _, _, _, _, Acc) ->
+get_statistic(_, _, _, _, _, _, Acc) ->
     Acc.
 
 %%获取计算值，必须返回物模型里面的数据表示，不能用寄存器地址
@@ -232,7 +246,7 @@ get_calculated(ProductId, DevAddr, Calculated, Props) ->
                             not_find ->
                                 Acc;
                             KeyValue ->
-                                get_statistic(ProductId, DevAddr, Identifier, dgiot_utils:to_int(KeyValue), DataSource, Acc)
+                                get_statistic(ProductId, DevAddr, Key, Identifier, dgiot_utils:to_int(KeyValue), DataSource, Acc)
                         end;
                     #{<<"isstorage">> := true,
                         <<"identifier">> := Identifier,

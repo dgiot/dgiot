@@ -113,9 +113,23 @@ handle_message({sync_parse, Pid, 'after', get, Token, <<"View">>, #{<<"data">> :
     dgiot_parse_hook:publish(Pid, ResBody1),
     {ok, State};
 
-handle_message({sync_parse, _Pid, 'after', post, _Token, <<"View">>, QueryData}, State) ->
-%%    io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, _Pid, QueryData]),
+handle_message({sync_parse, _Pid, 'after', post, SessionToken, <<"View">>, #{<<"objectId">> := ViewId} = QueryData}, State) ->
+%%    io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, SessionToken, QueryData]),
     dgiot_view:post('after', QueryData),
+    case dgiot_auth:get_session(dgiot_utils:to_binary(SessionToken)) of
+        #{<<"roles">> := Roles} ->
+            maps:fold(fun(RoleId, _, _) ->
+                dgiot_parse:update_object(<<"_Role">>, RoleId, #{
+                    <<"views">> => #{
+                        <<"__op">> => <<"AddRelation">>,
+                        <<"objects">> => [#{
+                            <<"__type">> => <<"Pointer">>,
+                            <<"className">> => <<"View">>,
+                            <<"objectId">> => ViewId}]}})
+                      end, [], Roles);
+        _ ->
+            pass
+    end,
     {ok, State};
 
 handle_message({sync_parse, _Pid, 'after', put, _Token, <<"View">>, QueryData}, State) ->

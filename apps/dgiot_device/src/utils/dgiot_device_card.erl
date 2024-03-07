@@ -34,7 +34,7 @@ get_device_card(Channel, ProductId, DeviceId, Args) ->
     Chartdata = get_card(ProductId, Results, DeviceId, Args, dgiot_data:get({shard_storage, ProductId})),
     {ok, #{<<"data">> => Chartdata}}.
 
-decode_shard_data(Data) ->
+decode_shard_data(Data, Result) ->
     case binary:split(Data, <<$,>>, [global, trim]) of
         List when length(List) > 0 ->
             lists:foldl(fun(<<Len:1/binary, Rest/binary>>, Acc) ->
@@ -45,9 +45,9 @@ decode_shard_data(Data) ->
                     _ ->
                         Acc
                 end
-                        end, #{}, List);
+                        end, Result, List);
         _ ->
-            #{}
+            Result
     end.
 
 %% 分片存储 dgiot_data:get({shard_storage, <<"857ed41119">>}).
@@ -64,9 +64,9 @@ get_card(ProductId, Results, DeviceId, Args, true) ->
                     Acc
             end
                     end, <<>>, lists:seq(1, maps:size(Result))),
-    NewResult = dgiot_dlink_proctol:parse_payload(ProductId, decode_shard_data(Buff)),
+    NewResult = dgiot_dlink_proctol:parse_payload(ProductId, decode_shard_data(Buff, Result)),
 %%    io:format("success NewResult = ~ts~n", [unicode:characters_to_list(dgiot_json:encode(NewResult))]),
-    get_card(ProductId, [NewResult#{<<"createdat">> => Createdat}], DeviceId, Args, false);
+    get_card(ProductId, [dgiot_map:merge(NewResult#{<<"createdat">> => Createdat}, Result)], DeviceId, Args, false);
 
 get_card(ProductId, Results, DeviceId, Args, _) ->
     [Result | _] = Results,
@@ -132,10 +132,12 @@ get_card(ProductId, Results, DeviceId, Args, _) ->
 %%                {Color, _, _} = dgiot_device:get_color(DeviceId, Identifier),
                 {Value, Number} =
                     case maps:find(Identifier, Result) of
-                        error ->
+                        {ok, null} ->
                             {<<>>, <<"--">>};
                         {ok, V} ->
-                            {V, dgiot_product_tdengine:check_field(Typea, V, #{<<"datatype">> => DataType, <<"specs">> => Specs, <<"deviceid">> => DeviceId})}
+                            {V, dgiot_product_tdengine:check_field(Typea, V, #{<<"datatype">> => DataType, <<"specs">> => Specs, <<"deviceid">> => DeviceId})};
+                        _ ->
+                            {<<>>, <<"--">>}
                     end,
                 Acc ++ [#{<<"identifier">> => Identifier, <<"name">> => Name,
                     <<"type">> => Typea, <<"number">> => Number, <<"value">> => Value,
