@@ -103,4 +103,36 @@
 <img src="https://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/atom/viewps.jpg" width = "100%" />
 
 
+## **六：gRPC**
+### 1:grpc介绍
+  gRPC是一个高性能，开源和通用的RPC框架，基于Protobuf序列化协议开发，且支持众多开发语言。gRPC基于以下理念：定义一个服务，指定其能够被远程调用的方法（包含参数和返回类型）。在服务端实现这个接口。并运行一个gRPC服务器来处理客户端调用。在客户端拥有一个存根能够向服务端一样的方法。
+###  2:dgiot_grpc_python连接
+  ![1.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_web/doc_gjb/grpc/1.png)
+### 3:Dgiot客户端
+dgiot通过grpc与其他语言相互通信以及函数调用。在dgiot中，以一个grpc通道处理所有交互。而grpc相关函数定义在dgiot_dlink下，分为login,logout,send三个函数。
+![1.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_web/doc_gjb/grpc/2.png)
+  + login
+    login函数用于登录grpc服务端，其参数为ClinetId，为客户端编号。建立grpc通道后，将会在通道启动时以通道id为ClinetId登录python服务器。
+  + send
+    send函数用于向python客户端发送消息。send函数位于通道的handle_message函数中。在通道接收到消息，并且匹配上Message中内容后即可根据消息内容执行send函数调用python服务。
+    send函数以map的格式发送消息，消息在发送前将经过base64编码。
+  + logout
+   logout函数用于断开与python服务的连接，一般在通道的关闭函数stop中调用。
 
+### 4:Python 程序文件
+  python程序示例位于插件\priv\example\python3目录下，其目录结构如下：
+  ![1.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_web/doc_gjb/grpc/3.png)
+
+  运行dlink_server文件即可启动python服务，接收信息函数位于Dlink类下SayHello方法。其接收request和context两个参数，参数含义如下：
+  + 1.request：接收参数，request下name属性为接收到的信息。
+  + 2.context：接收参数，当前的环境
+
+  通过对request.name使用base64解码并转为字典后即可获取原本的信息。
+  ![1.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_web/doc_gjb/grpc/4.png)
+  接收参数后通过HelloReply的message字段返回一条信息：
+  ![1.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_web/doc_gjb/grpc/5.png)
+  完整交互结果如下图：
+  ![1.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_web/doc_gjb/grpc/6.png)
+
+### 5:gRPC官方文档
+  https://grpc.io/docs/

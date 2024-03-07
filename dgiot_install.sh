@@ -941,6 +941,7 @@ function atomgit_plugin() {
   if [ -d ${script_dir}/apps/dgiot_atomgit/ ]; then
     mv ${script_dir}/apps/dgiot_atomgit ${script_dir}/apps/dgiot_${dgiotmd5}
     for file in `find ${script_dir}/apps/dgiot_${dgiotmd5}/ -type f`; do
+      if [[ $file != *HJ212-2017.pdf* ]]; then
         new_name=$(echo "$file" | sed "s/atomgit/${dgiotmd5}/")
         echo -e "$(date +%F_%T) $LINENO: ${GREEN} file= $file${NC}"
         sed -i "s/atomgit/${dgiotmd5}/g" $file
@@ -951,6 +952,7 @@ function atomgit_plugin() {
           echo -e "$(date +%F_%T) $LINENO: ${GREEN} new_name= ${new_name}${NC}"
           mv "${file}" "${new_name}"
         fi
+      fi
     done
     sed -i "s/atomgit/${dgiotmd5}/g" ${script_dir}/rebar.config.erl
     sed -i "s/atomgit/${dgiotmd5}/g" ${script_dir}/data/loaded_plugins.tmpl

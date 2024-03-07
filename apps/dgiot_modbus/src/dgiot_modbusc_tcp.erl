@@ -78,7 +78,7 @@ handle_info({tcp, Buff}, #dclient{channel = ChannelId,
             erlang:send_after(Freq * 1000, self(), read),
             {noreply, Dclient#dclient{child = ChildState#{di => StartAddr, data => <<>>}}};
         _ ->
-            erlang:send_after(1 * 1500, self(), read),
+            erlang:send_after(1 * 1000, self(), read),
             {noreply, Dclient#dclient{child = ChildState#{di => Address + Step, data => <<OldData/binary, Data/binary>>}}}
     end;
 

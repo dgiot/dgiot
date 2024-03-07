@@ -1,0 +1,64 @@
+// copy from: https://grpc.io/docs/what-is-grpc/introduction/
+
+
+syntax = "proto3";
+
+option java_multiple_files = true;
+option java_package = "io.grpc.examples.dlink";
+option java_outer_classname = "DlinkProto";
+option objc_class_prefix = "dlink";
+
+package dgiot;
+
+// The dlink service definition.
+service Dlink {
+  // Sends a greeting
+  rpc SayHello (HelloRequest) returns (HelloReply) {}
+
+  // If the requested service is unknown, the call will fail with status
+  // NOT_FOUND.
+  rpc Check(HealthCheckRequest) returns (HealthCheckResponse);
+
+  // Performs a watch for the serving status of the requested service.
+  // The server will immediately send back a message indicating the current
+  // serving status.  It will then subsequently send a new message whenever
+  // the service's serving status changes.
+  //
+  // If the requested service is unknown when the call is received, the
+  // server will send a message setting the serving status to
+  // SERVICE_UNKNOWN but will *not* terminate the call.  If at some
+  // future point, the serving status of the service becomes known, the
+  // server will send a new message with the service's serving status.
+  //
+  // If the call terminates with status UNIMPLEMENTED, then clients
+  // should assume this method is not supported and should not retry the
+  // call.  If the call terminates with any other status (including OK),
+  // clients should retry the call with appropriate exponential backoff.
+  rpc Watch(HealthCheckRequest) returns (stream HealthCheckResponse);
+
+}
+
+// The request message containing the user's name.
+message HelloRequest {
+  string name = 1;
+}
+
+// The response message containing the greetings
+message HelloReply {
+  string message = 1;
+}
+
+
+message HealthCheckRequest {
+  string service = 1;
+}
+
+message HealthCheckResponse {
+  enum ServingStatus {
+    UNKNOWN = 0;
+    SERVING = 1;
+    NOT_SERVING = 2;
+    SERVICE_UNKNOWN = 3;  // Used only by the Watch method.
+  }
+  ServingStatus status = 1;
+}

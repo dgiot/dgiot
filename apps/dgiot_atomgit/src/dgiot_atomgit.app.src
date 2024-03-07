@@ -1,5 +1,5 @@
 {application, dgiot_atomgit,
-    [{description, "DGIOT ATOMGIT"},
+    [{description, "DGIOT atomgit"},
         {vsn, "4.3.0"},
         {registered, []},
         {mod, {dgiot_atomgit_app, []}},

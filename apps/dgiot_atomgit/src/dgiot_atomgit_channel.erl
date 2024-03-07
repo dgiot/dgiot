@@ -21,7 +21,7 @@
 -include_lib("dgiot/include/dgiot_socket.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -include("dgiot_atomgit.hrl").
--define(TYPE, <<"ATOMGIT">>).
+-define(TYPE, <<"atomgit">>).
 %% API
 -export([start/2]).
 
@@ -33,10 +33,10 @@
     cType => ?TYPE,
     type => ?PROTOCOL_CHL,
     title => #{
-        zh => <<"ATOMGIT测试通道"/utf8>>
+        zh => <<"atomgit测试通道"/utf8>>
     },
     description => #{
-        zh => <<"ATOMGIT测试通道"/utf8>>
+        zh => <<"atomgit测试通道"/utf8>>
     }
 }).
 %% 注册通道参数
