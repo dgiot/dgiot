@@ -36,6 +36,7 @@
     remove_menus_role/1,
     get_menus_role/1,
     get_views_role/1,
+    get_menuviews_role/1,
     remove_users_roles/1,
     get_users_role/1,
     remove_rules_role/1,
@@ -254,7 +255,7 @@ put_role(#{<<"objectId">> := RoleId} = Role, SessionToken) ->
                                 dgiot_role:remove_menus_role(RoleId),
                                 #{
                                     <<"menus">> => dgiot_role:get_menus_role(Menus),
-                                    <<"menuviews">> => dgiot_role:get_views_role(Menus)
+                                    <<"menuviews">> => dgiot_role:get_menuviews_role(Menus)
                                 };
                             _ ->
                                 #{}
@@ -411,6 +412,25 @@ get_roletemp(Name, SessionToken) ->
             NewMenus = lists:foldl(fun(X, Acc) ->
                 Acc ++ [maps:get(<<"name">>, X)]
                                    end, [], Menus),
+
+            ViewsQuery =
+                #{<<"where">> => #{<<"$relatedTo">> => #{
+                    <<"object">> => #{
+                        <<"__type">> => <<"Pointer">>,
+                        <<"className">> => <<"_Role">>,
+                        <<"objectId">> => <<"6a08d0cf31">>},
+                    <<"key">> => <<"views">>}
+                }},
+            Views =
+                case dgiot_parse:query_object(<<"View">>, ViewsQuery) of
+                    {ok, #{<<"results">> := View}} when length(View) > 0 ->
+                        View;
+                    _ -> []
+                end,
+            NewViews = lists:foldl(fun(X, Acc) ->
+                Acc ++ [maps:get(<<"objectId">>, X)]
+                                   end, [], Views),
+
             NewRole = maps:without([
                 <<"ACL">>,
                 <<"parent">>,
@@ -422,6 +442,7 @@ get_roletemp(Name, SessionToken) ->
             ], Role),
             {ok, NewRole#{
                 <<"rules">> => NewRules,
+                <<"views">> => NewViews,
                 <<"menus">> => NewMenus
             }};
         _ -> {error, <<"not find">>}
@@ -711,7 +732,7 @@ get_menus_role(Menus) ->
             throw({error, Other})
     end.
 
-get_views_role(Menus) ->
+get_menuviews_role(Menus) ->
     Where = #{<<"keys">> => [<<"meta">>], <<"where">> => #{<<"name">> => #{<<"$in">> => Menus}}},
     case dgiot_parse:query_object(<<"Menu">>, Where) of
         {ok, #{<<"results">> := Results}} ->
@@ -723,6 +744,40 @@ get_views_role(Menus) ->
                                 <<"__type">> => <<"Pointer">>,
                                 <<"className">> => <<"View">>,
                                 <<"objectId">> => ViewId
+                            }];
+                        (_, Acc) ->
+                            Acc
+                    end, [], Results),
+            case Objects of
+                [] -> #{
+                    <<"__op">> => <<"AddRelation">>,
+                    <<"objects">> => [#{
+                        <<"__type">> => <<"Pointer">>,
+                        <<"className">> => <<"View">>,
+                        <<"objectId">> => <<"0">>
+                    }]
+                };
+                _ ->
+                    #{
+                        <<"__op">> => <<"AddRelation">>,
+                        <<"objects">> => Objects
+                    }
+            end;
+        Other ->
+            throw({error, Other})
+    end.
+
+get_views_role(Views) ->
+    Where = #{<<"keys">> => [<<"meta">>], <<"where">> => #{<<"objectId">> => #{<<"$in">> => Views}}},
+    case dgiot_parse:query_object(<<"View">>, Where) of
+        {ok, #{<<"results">> := Results}} ->
+            Objects =
+                lists:foldl(
+                    fun(#{<<"objectId">> := ObjectId}, Acc) ->
+                            Acc ++ [#{
+                                <<"__type">> => <<"Pointer">>,
+                                <<"className">> => <<"View">>,
+                                <<"objectId">> => ObjectId
                             }];
                         (_, Acc) ->
                             Acc

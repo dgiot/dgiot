@@ -132,6 +132,7 @@ handle_event(_EventId, Event, State) ->
 
 handle_message(check, #state{id = ChannelId, env = #{<<"offline">> := OffLine, <<"checktime">> := CheckTime}} = State) ->
     dgiot_channelx:send_after(CheckTime * 60 * 1000, ChannelId, check),
+    dgiot_device_cache:parse_cache_Device(<<>>),
     dgiot_device:sync_parse(OffLine),
     {ok, State};
 

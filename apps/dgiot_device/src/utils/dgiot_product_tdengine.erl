@@ -272,5 +272,13 @@ get_defult(<<"first">>) ->
     <<"first(createdat) createdat">>;
 get_defult(<<"last">>) ->
     <<"last(createdat) createdat">>;
+get_defult(<<"count">>) ->
+    <<"">>;
+get_defult(<<"avg">>) ->
+    <<"">>;
+get_defult(<<"sum">>) ->
+    <<"">>;
+get_defult(<<"stddev">>) ->
+    <<"">>;
 get_defult(_) ->
     <<"(createdat) createdat">>.
