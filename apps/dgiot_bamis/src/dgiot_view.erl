@@ -133,6 +133,6 @@ get_resbody(ViewId, Token, Renders, ResBody) ->
             (_X, Acc) ->
                 Acc
         end, #{}, Renders),
-    io:format("~s ~p Vars =  ~p ~n", [?FILE, ?LINE, Vars]),
+%%    io:format("~s ~p Vars =  ~p ~n", [?FILE, ?LINE, Vars]),
 %%    io:format("~s ~p Body =  ~p ~n", [?FILE, ?LINE,  dgiot_json:encode(ResBody)]),
     dgiot_json:decode(dgiot_map:map(Vars, dgiot_json:encode(ResBody))).

@@ -195,8 +195,9 @@ post_notification(Notification) ->
     }).
 
 add_notification(<<"start_", Ruleid/binary>>, DeviceId, Payload) ->
+    Now = dgiot_datetime:now_secs(),
     case dgiot_data:get(dgiot_notification, {DeviceId, Ruleid}) of
-        {start, _Time, _} ->
+        {start, Time, _} when (Now - Time) < 3600 ->
             pass;
         _ ->
             NotificationId = dgiot_parse_id:get_notificationid(Ruleid),

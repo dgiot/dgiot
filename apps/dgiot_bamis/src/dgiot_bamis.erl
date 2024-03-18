@@ -180,7 +180,7 @@ format(#{<<"perPage">> := PerPage} = Data) ->
 format(#{<<"page">> := Page} = Data) ->
     NewData = maps:without([<<"perPage">>, <<"page">>], Data),
     Skip = (Page - 1) * 10,
-    format(NewData#{<<"limit">> => 10, <<"skip">> => Skip});
+    format(NewData#{<<"skip">> => Skip});
 
 format(OldData) ->
     Data = case maps:find(<<"where">>, OldData) of
