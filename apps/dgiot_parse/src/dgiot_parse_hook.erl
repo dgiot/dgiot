@@ -147,7 +147,7 @@ notify(Type, Method, Token, Class, ObjectId, Data) ->
                     List ->
                         pass;
                     _ ->
-                        dgiot_channelx:do_message(ChannelId, {sync_parse, self(), Type, Method, Token, Class, Data})
+                        dgiot_channelx:do_message(ChannelId, {sync_parse, self(), Type, Method, Token, Class, maps:with(Rule ++ [<<"objectId">>], Data})
                 end;
             ({ChannelId, SqlRule}) when Method == put ->
                 case parse_sqlrule(SqlRule, Data) of
