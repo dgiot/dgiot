@@ -114,23 +114,28 @@ receive_ack(ResBody) ->
     end.
 
 notify(Type, Method, Token, Class, ObjectId, Data) ->
-    ChannelRules =
+    ClassesRules =
         case dgiot_data:get({sub, Class, Method}) of
             not_find ->
-                case dgiot_data:get({sub, <<Class/binary, "/*">>, Method}) of
-                    not_find ->
-                        case dgiot_data:get({sub, <<Class/binary, "/", ObjectId/binary>>, Method}) of
-                            not_find ->
-                                [];
-                            ChannelRules3 ->
-                                ChannelRules3
-                        end;
-                    ChannelRules2 ->
-                        ChannelRules2
-                end;
+                [];
             ChannelRules1 ->
                 ChannelRules1
         end,
+    ClassAllRules =
+        case dgiot_data:get({sub, <<Class/binary, "/*">>, Method}) of
+            not_find ->
+                [];
+            ChannelRules2 ->
+                ChannelRules2
+        end,
+    ClassOneRules =
+        case dgiot_data:get({sub, <<Class/binary, "/", ObjectId/binary>>, Method}) of
+            not_find ->
+                [];
+            ChannelRules3 ->
+                ChannelRules3
+        end,
+    ChannelRules = ClassesRules ++ ClassAllRules ++ ClassOneRules,
     lists:map(
         fun
             ({ChannelId, [<<"*">>]}) ->

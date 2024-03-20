@@ -29,8 +29,8 @@
 %%% API
 %%%===================================================================
 
-start_link(#{<<"sessionToken">> := SessionToken} = State) ->
-    case dgiot_data:lookup({dashboard, SessionToken}) of
+start_link(#{<<"dashboardId">> := DashboardId, <<"sessionToken">> := SessionToken} = State) ->
+    case dgiot_data:lookup({dashboard, DashboardId, SessionToken}) of
         {ok, Pid} when is_pid(Pid) ->
             case is_process_alive(Pid) of
                 true ->
@@ -45,8 +45,8 @@ start_link(#{<<"sessionToken">> := SessionToken} = State) ->
 start_link(_State) ->
     ok.
 
-stop(#{<<"sessionToken">> := SessionToken}) ->
-    case dgiot_data:lookup({dashboard, SessionToken}) of
+stop(#{<<"dashboardId">> := DashboardId, <<"sessionToken">> := SessionToken}) ->
+    case dgiot_data:lookup({dashboard, DashboardId, SessionToken}) of
         {ok, Pid} when is_pid(Pid) ->
             is_process_alive(Pid) andalso gen_server:call(Pid, stop, 5000);
         _Reason ->
@@ -56,20 +56,8 @@ stop(#{<<"sessionToken">> := SessionToken}) ->
 %%%===================================================================
 %%% gen_server callbacks
 %%%===================================================================
-init([#{<<"data">> := Que, <<"dashboardId">> := DashboardId, <<"sessionToken">> := SessionToken}]) ->
-    dgiot_data:insert({dashboard, SessionToken}, self()),
-    dgiot_mqtt:subscribe(<<"dashboard_ack/", SessionToken/binary>>),
-    dgiot_data:delete({dashboard_heart, SessionToken}),
-    case length(Que) of
-        0 ->
-            erlang:send_after(3000, self(), stop);
-        _ ->
-            erlang:send_after(1000, self(), dashboard)
-    end,
-    {ok, #task{oldque = Que, newque = Que, freq = 1, dashboardId = DashboardId, sessiontoken = SessionToken}};
-
 init([#{<<"dashboardId">> := DashboardId, <<"sessionToken">> := SessionToken}]) ->
-    dgiot_data:insert({dashboard, SessionToken}, self()),
+    dgiot_data:insert({dashboard, DashboardId, SessionToken}, self()),
     dgiot_mqtt:subscribe(<<"dashboard_ack/", SessionToken/binary>>),
     dgiot_data:delete({dashboard_heart, SessionToken}),
     Que = dgiot_topo:get_que(DashboardId),
