@@ -147,14 +147,18 @@ start_load_channel(Pid, PageSize, MaxTotal, [Filter | Filters]) ->
 start_load_channel(Pid, PageSize, MaxTotal, #{<<"mod">> := Module, <<"where">> := Where}) ->
     Keys = [<<"type">>, <<"cType">>, <<"name">>, <<"config">>],
     Query = #{
+        <<"limit">> => PageSize * MaxTotal,
         <<"keys">> => Keys,
         <<"where">> => Where
     },
-    dgiot_parse_loader:start(<<"Channel">>, Query, PageSize, MaxTotal,
-        fun(Channels) ->
+    case dgiot_parse:query_object(<<"Channel">>, Query) of
+        {ok, #{<<"results">> := Channels}} ->
             [dgiot_data:insert(?DGIOT_BRIDGE, {ChannelId, type}, {dgiot_utils:to_int(Type), CType}) || #{<<"type">> := Type, <<"cType">> := CType, <<"objectId">> := ChannelId} <- Channels],
-            Pid ! {load, 0, Module, Channels}
-        end);
+            Pid ! {load, 0, Module, Channels};
+        _ ->
+            pass
+    end;
+
 start_load_channel(Pid, PageSize, MaxTotal, #{<<"where">> := Where}) ->
     start_load_channel(Pid, PageSize, MaxTotal, #{
         <<"mod">> => <<"dgiot_bridge_frame">>,
