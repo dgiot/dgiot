@@ -98,6 +98,7 @@ apps/dgiot_demo/
 apps/dgiot_jingmao/
 apps/dgiot_atom/
 apps/dgiot_12184/
+apps/dgiot_rtsp2ws/
 node_modules/
 package-lock.json
 erlang_ls.config

@@ -40,6 +40,7 @@
     triggeralarm/2,
     send_msg/1,
     sendSubscribe/1,
+    send_dashboard/1,
     get_defultmessage/1,
     replace_miniparam/10
 ]).
@@ -203,6 +204,7 @@ add_notification(<<"start_", Ruleid/binary>>, DeviceId, Payload) ->
             NotificationId = dgiot_parse_id:get_notificationid(Ruleid),
             dgiot_data:insert(?NOTIFICATION, {DeviceId, Ruleid}, {start, dgiot_datetime:now_secs(), NotificationId}),
             Content = save_notification(Ruleid, DeviceId, Payload, NotificationId),
+            dgiot_umeng:send_dashboard(Content),
             dgiot_umeng:send_other(Content),
             dgiot_umeng:send_maintenance(Content#{<<"notificationid">> => NotificationId}),
             dgiot_umeng:send_msg(Content),
@@ -623,6 +625,41 @@ sendSubscribe(#{<<"send_alarm_status">> := <<"start">>, <<"roleid">> := NotifRol
 %% 小程序订阅
 sendSubscribe(_O) ->
 %%    io:format("~s ~p _O = ~p.~n", [?FILE, ?LINE, _O]),
+    pass.
+
+%% 推送前端弹框
+send_dashboard(#{<<"_deviceid">> := DeviceId, <<"dgiot_alarmvalue">> := Alarmvalue} = Args) ->
+    case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+        {ok, #{<<"name">> := DeviceName, <<"product">> := #{<<"objectId">> := ProductId}}} ->
+            ProductName =
+                case dgiot_parse:get_object(<<"Product">>, ProductId) of
+                    {ok, #{<<"name">> := Name1}} ->
+                        Name1;
+                    _ ->
+                        <<>>
+                end,
+            <<Number:10/binary, _/binary>> = dgiot_utils:random(),
+            Timestamp = dgiot_datetime:format(dgiot_datetime:to_localtime(dgiot_datetime:now_secs()), <<"YY-MM-DD HH:NN:SS">>),
+%%            BinAlarmvalue = dgiot_utils:to_binary(Alarmvalue),
+            Data = #{
+                <<"id">> => Number,
+                <<"deviceid">> => DeviceId,
+                <<"devicename">> => DeviceName,
+                <<"productid">> => ProductId,
+                <<"productname">> => ProductName,
+                <<"value">> => Alarmvalue,
+                <<"time">> => Timestamp,
+                <<"level">> => 1,
+                <<"type">> => <<"warn">>,
+                <<"description">> => maps:get(<<"description">>, Args, <<>>)
+            },
+            Pubtopic = <<"$dg/user/dashboard/notification/report">>,
+            dgiot_mqtt:publish(DeviceId, Pubtopic, dgiot_json:encode(Data));
+        _ ->
+            pass
+    end;
+
+send_dashboard(_O) ->
     pass.
 
 %% 推送第三方
