@@ -997,15 +997,20 @@ get_port(Socket) ->
 %%[global, {capture, all_but_first, binary}])
 
 ping_all() ->
-    lists:map(fun({A, B, C, _D}) ->
-        Cmd = "for /l %i in (1,1,255) do ping -n 1 -w 50 "
-            ++ to_list(A) ++ "."
-            ++ to_list(B) ++ "."
-            ++ to_list(C) ++ "."
-            ++ "%i",
-        os:cmd(Cmd)
-              end,
-        get_ifaddrs()).
+    lists:map(
+        fun({A, B, C, _D}) ->
+            lists:map(
+                fun(N) ->
+                    Cmd =
+                        case os:type() of
+                            {unix, linux} ->
+                                "ping -c 1 -w 50 " ++ to_list(A) ++ "." ++ to_list(B) ++ "." ++ to_list(C) ++ "." ++ dgiot_utils:to_list(N);
+                            _ ->
+                                "ping -n 1 -w 50 " ++ to_list(A) ++ "." ++ to_list(B) ++ "." ++ to_list(C) ++ "." ++ dgiot_utils:to_list(N)
+                        end,
+                    os:cmd(Cmd)
+                end, lists:seq(1, 255))
+        end, get_ifaddrs()).
 
 get_ifaddrs() ->
     case inet:getifaddrs() of
