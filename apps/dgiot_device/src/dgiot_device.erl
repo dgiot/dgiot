@@ -77,7 +77,7 @@ get_productid(DeviceId) ->
         {ok, #{<<"productid">> := ProductId}} ->
             ProductId;
         _ ->
-            case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+            case dgiot_parsex:get_object(<<"Device">>, DeviceId) of
                 {ok, #{<<"product">> := #{<<"objectId">> := ProductId}}} ->
                     ProductId;
                 _ ->
@@ -132,13 +132,13 @@ save_subdevice(DeviceId, DtuDeviceId, SlaveId) ->
         <<"className">> => <<"Device">>,
         <<"objectId">> => DtuDeviceId
     },
-    case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+    case dgiot_parsex:get_object(<<"Device">>, DeviceId) of
         {ok, #{<<"route">> := OldRoute}} ->
 
-            dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"route">> => OldRoute#{DtuDeviceId => SlaveId}, <<"parentId">> => Parent});
+            dgiot_parsex:update_object(<<"Device">>, DeviceId, #{<<"route">> => OldRoute#{DtuDeviceId => SlaveId}, <<"parentId">> => Parent});
 
         _ ->
-            dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"route">> => #{DtuDeviceId => SlaveId}, <<"parentId">> => Parent})
+            dgiot_parsex:update_object(<<"Device">>, DeviceId, #{<<"route">> => #{DtuDeviceId => SlaveId}, <<"parentId">> => Parent})
     end.
 
 get_sub_device(DtuDeviceId) ->
@@ -146,7 +146,7 @@ get_sub_device(DtuDeviceId) ->
         <<"where">> => #{<<"route.", DtuDeviceId/binary>> => #{<<"$regex">> => <<".+">>}},
         <<"order">> => <<"devaddr">>, <<"limit">> => 1000,
         <<"include">> => <<"product">>},
-    case dgiot_parse:query_object(<<"Device">>, Query) of
+    case dgiot_parsex:query_object(<<"Device">>, Query) of
         {ok, #{<<"results">> := []}} -> [];
         {ok, #{<<"results">> := List}} -> List;
         _ -> []
@@ -157,7 +157,7 @@ get_subdevices(DtuDeviceId, Keys) ->
     Query = #{<<"keys">> => NewKeys,
         <<"where">> => #{<<"route.", DtuDeviceId/binary>> => #{<<"$regex">> => <<".+">>}},
         <<"order">> => <<"devaddr">>, <<"limit">> => 100},
-    case dgiot_parse:query_object(<<"Device">>, Query) of
+    case dgiot_parsex:query_object(<<"Device">>, Query) of
         {ok, #{<<"results">> := []}} -> [];
         {ok, #{<<"results">> := List}} -> List;
         _ -> []
@@ -168,7 +168,7 @@ get_sub_device(DtuAddr, SessionToken) ->
         <<"where">> => #{<<"route.", DtuAddr/binary>> => #{<<"$regex">> => <<".+">>}},
         <<"order">> => <<"devaddr">>, <<"limit">> => 1000,
         <<"include">> => <<"product">>},
-    case dgiot_parse:query_object(<<"Device">>, Query, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+    case dgiot_parsex:query_object(<<"Device">>, Query, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
         {ok, #{<<"results">> := []}} -> [];
         {ok, #{<<"results">> := List}} -> List;
         _ -> []
@@ -177,12 +177,12 @@ get_sub_device(DtuAddr, SessionToken) ->
 create_device(#{<<"status">> := Status, <<"brand">> := Brand, <<"devModel">> := DevModel, <<"name">> := Name,
     <<"devaddr">> := DevAddr, <<"product">> := ProductId, <<"ACL">> := Acl} = Device) ->
     DeviceId = maps:get(<<"objectId">>, Device, dgiot_parse_id:get_deviceid(ProductId, DevAddr)),
-    case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+    case dgiot_parsex:get_object(<<"Device">>, DeviceId) of
         {ok, #{<<"ip">> := Ip} = Result} ->
             Body = #{
                 <<"ip">> => maps:get(<<"ip">>, Device, Ip),
                 <<"status">> => Status},
-            dgiot_parse:update_object(<<"Device">>, DeviceId, Body),
+            dgiot_parsex:update_object(<<"Device">>, DeviceId, Body),
             dgiot_device:put(#{<<"objectId">> => DeviceId, <<"status">> => Status}),
             {ok, Result};
         _R ->
@@ -215,7 +215,7 @@ create_device(#{<<"status">> := Status, <<"brand">> := Brand, <<"devModel">> := 
                 }
             },
 
-            case dgiot_parse:create_object(<<"Device">>, maps:without([<<"brand">>, <<"devModel">>], NewDevice)) of
+            case dgiot_parsex:create_object(<<"Device">>, maps:without([<<"brand">>, <<"devModel">>], NewDevice)) of
                 {ok, R} ->
                     dgiot_device:post(NewDevice#{<<"product">> => ProductId}),
                     {ok, R};
@@ -230,7 +230,7 @@ create_device(ProductId, DeviceAddr, Ip) ->
         {ok, _} ->
             Body = #{<<"status">> => <<"ONLINE">>},
             dgiot_device:online(DeviceId),
-            dgiot_parse:update_object(<<"Device">>, DeviceId, Body);
+            dgiot_parsex:update_object(<<"Device">>, DeviceId, Body);
         _ ->
             case dgiot_product:lookup_prod(ProductId) of
                 not_find ->
@@ -258,7 +258,7 @@ create_device(ProductId, DeviceAddr, Ip) ->
 get(ProductId, DevAddr) ->
     Keys = [<<"objectId">>, <<"status">>, <<"isEnable">>],
     DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
-    case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+    case dgiot_parsex:get_object(<<"Device">>, DeviceId) of
         {ok, Device} ->
             case maps:get(<<"isEnable">>, Device, false) of
                 false ->
@@ -272,7 +272,7 @@ get(ProductId, DevAddr) ->
 
 get_url(AppName) ->
     Roleid = dgiot_parse_id:get_roleid(AppName),
-    case dgiot_parse:get_object(<<"_Role">>, Roleid) of
+    case dgiot_parsex:get_object(<<"_Role">>, Roleid) of
         {ok, #{<<"tag">> := #{<<"appconfig">> := #{<<"file">> := Url}}}} ->
             <<Url/binary>>;
         _ -> <<"">>

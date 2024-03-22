@@ -57,7 +57,7 @@ create_product(ChannelId, FileName, Productmap, TdChannelId) ->
                 CategoryId = dgiot_product_csv:get_CategoryId(CategoryName),
                 ProductId = dgiot_parse_id:get_productid(CategoryId, DevType, ProductName),
                 Result =
-                    case dgiot_parse:get_object(<<"Product">>, ProductId) of
+                    case dgiot_parsex:get_object(<<"Product">>, ProductId) of
                         {ok, #{<<"objectId">> := ProductId}} ->
                             {ok, ProductId};
                         _ ->
@@ -99,7 +99,7 @@ create_device(FileName, Devicemap, ProductIds) ->
         ProductName = maps:get(ProductId, ProductIds, '_'),
         Devaddrs = dgiot_utils:unique_1(lists:flatten(ets:match(AtomName, {'_', [ProductName, '_', '_', DeviceName, '$1' | '_']}))),
         NewAcl =
-            case dgiot_parse:get_object(<<"Product">>, ProductId) of
+            case dgiot_parsex:get_object(<<"Product">>, ProductId) of
                 {ok, #{<<"ACL">> := Acl}} ->
                     Acl;
                 _ ->
@@ -124,7 +124,7 @@ post_thing(FileName, ProductIds, Is_refresh) ->
     maps:fold(fun(ProductId, ProductName, _) ->
         Things = ets:match(AtomName, {'_', [ProductName, '_', '_', '_', '_', '$1', '$2', '$3', '$4', '$5', '$6', '$7', '$8', '$9', '$10', '$11', '$12' | '_']}),
         NewProperties = post_properties(Things, AtomName, ProductId, ProductName),
-        case dgiot_parse:get_object(<<"Product">>, ProductId) of
+        case dgiot_parsex:get_object(<<"Product">>, ProductId) of
             {ok, #{<<"thing">> := Thing}} when Is_refresh ->
                 OldProperties =
                     lists:foldl(fun(#{<<"identifier">> := Identifier} = X, Acc) ->
@@ -134,14 +134,14 @@ post_thing(FileName, ProductIds, Is_refresh) ->
                     maps:fold(fun(_, Prop, Acc) ->
                         Acc ++ [Prop]
                               end, [], dgiot_map:merge(OldProperties, NewProperties)),
-                dgiot_parse:update_object(<<"Product">>, ProductId, #{<<"thing">> => Thing#{<<"properties">> => Properties}});
+                dgiot_parsex:update_object(<<"Product">>, ProductId, #{<<"thing">> => Thing#{<<"properties">> => Properties}});
             _ ->
                 pass
         end
               end, [], ProductIds).
 
 get_CategoryId(CategoryName) ->
-    case dgiot_parse:query_object(<<"Category">>, #{<<"limit">> => 1, <<"where">> => #{<<"name">> => CategoryName}}) of
+    case dgiot_parsex:query_object(<<"Category">>, #{<<"limit">> => 1, <<"where">> => #{<<"name">> => CategoryName}}) of
         {ok, #{<<"results">> := [#{<<"objectId">> := CategoryId} | _]}} ->
             CategoryId;
         _ ->
@@ -157,7 +157,7 @@ get_CategoryId(CategoryName) ->
                 <<"parent">> => #{<<"objectId">> => <<"a60a85475a">>, <<"__type">> => <<"Pointer">>, <<"className">> => <<"Category">>},
                 <<"level">> => 1
             },
-            case dgiot_parse:create_object(<<"Category">>, Body) of
+            case dgiot_parsex:create_object(<<"Category">>, Body) of
                 {ok, #{<<"objectId">> := ObjectId}} ->
                     ObjectId;
                 _ ->

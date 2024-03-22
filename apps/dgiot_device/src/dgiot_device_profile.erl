@@ -94,17 +94,17 @@ publish(ProductId, DeviceAddr, DeviceProfile, Delay) ->
     end.
 
 update_profile(DeviceId, NewProfile) ->
-    case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+    case dgiot_parsex:get_object(<<"Device">>, DeviceId) of
         {ok, Device} ->
             OldProfile = maps:get(<<"profile">>, Device, #{}),
-            dgiot_parse:update_object(<<"Device">>, DeviceId, #{
+            dgiot_parsex:update_object(<<"Device">>, DeviceId, #{
                 <<"profile">> => dgiot_map:merge(OldProfile, NewProfile)});
         _ ->
             pass
     end.
 
 encode_profile(ProductId, Profile) ->
-    case dgiot_parse:get_object(<<"Product">>, ProductId) of
+    case dgiot_parsex:get_object(<<"Product">>, ProductId) of
         {ok, #{<<"name">> := ProductName, <<"thing">> := #{<<"properties">> := Properties}}} ->
             lists:foldl(fun(X, Acc) ->
                 case X of

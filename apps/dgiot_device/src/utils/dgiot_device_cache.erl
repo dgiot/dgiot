@@ -54,7 +54,7 @@ save(ProductId, DevAddr) ->
 save(#{<<"objectId">> := _DeviceId, <<"devaddr">> := _Devaddr, <<"product">> := _Product} = Device) ->
     save_(Device);
 save(#{<<"objectId">> := DeviceId}) ->
-    {ok, Device} = dgiot_parse:get_object(<<"Device">>, DeviceId),
+    {ok, Device} = dgiot_parsex:get_object(<<"Device">>, DeviceId),
     save_(Device);
 save(V) ->
     io:format("~s ~p ~p ~n", [?FILE, ?LINE, V]),
@@ -132,7 +132,7 @@ post(Device, SessionToken) ->
                 ?LOG(error, "~s ~p DeviceId ~p  Err = ~p.~n", [?FILE, ?LINE, DeviceId, Err]),
                 #{<<"role:admin">> => #{<<"read">> => true, <<"write">> => true}}
         end,
-    dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"ACL">> => SetAcl}),
+    dgiot_parsex:update_object(<<"Device">>, DeviceId, #{<<"ACL">> => SetAcl}),
     dgiot_device_cache:post(Device#{<<"ACL">> => SetAcl}).
 
 put(Device) ->
@@ -199,7 +199,7 @@ put_content(#{<<"product">> := Product, <<"objectId">> := DeviceId}) ->
     ProductId = maps:get(<<"objectId">>, Product),
     case dgiot_product:lookup_prod(ProductId) of
         {ok, #{<<"content">> := Content}} ->
-            dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"content">> => Content});
+            dgiot_parsex:update_object(<<"Device">>, DeviceId, #{<<"content">> => Content});
         _ ->
             pass
     end;
@@ -213,7 +213,7 @@ put_profile(#{<<"product">> := Product, <<"objectId">> := DeviceId}) ->
     ProductId = maps:get(<<"objectId">>, Product),
     case dgiot_product:lookup_prod(ProductId) of
         {ok, #{<<"profile">> := Profile}} ->
-            dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"profile">> => Profile});
+            dgiot_parsex:update_object(<<"Device">>, DeviceId, #{<<"profile">> => Profile});
         _ ->
             pass
     end;
@@ -227,7 +227,7 @@ put_location(#{<<"product">> := Product, <<"objectId">> := DeviceId}) ->
     ProductId = maps:get(<<"objectId">>, Product),
     case dgiot_product:lookup_prod(ProductId) of
         {ok, #{<<"config">> := #{<<"location">> := Location, <<"address">> := Address}}} ->
-            dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"location">> => Location, <<"address">> => Address}),
+            dgiot_parsex:update_object(<<"Device">>, DeviceId, #{<<"location">> => Location, <<"address">> => Address}),
             Location;
         _ ->
             #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => 120.065714, <<"latitude">> => 30.369491}
@@ -273,7 +273,7 @@ get_address(DeviceId, DgLon, DgLat) ->
             #{<<"baiduaddr">> := #{<<"formatted_address">> := Formatted_address}} ->
                 Formatted_address;
             _ ->
-                case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+                case dgiot_parsex:get_object(<<"Device">>, DeviceId) of
                     {ok, #{<<"address">> := Addr}} ->
                         Addr;
                     _ ->
@@ -331,7 +331,7 @@ sync_parse(OffLine) ->
         Now = dgiot_datetime:now_secs(),
         case V of
             ['Device', Acl, _, State, Last, IsEnable, ProductId, Devaddr, DeviceSecret, Node, Longitude, Latitude] when (Now - Last) < 0 ->
-                case dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"status">> => <<"ONLINE">>, <<"isEnable">> => IsEnable, <<"lastOnlineTime">> => Last, <<"location">> => #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => Longitude, <<"latitude">> => Latitude}}) of
+                case dgiot_parsex:update_object(<<"Device">>, DeviceId, #{<<"status">> => <<"ONLINE">>, <<"isEnable">> => IsEnable, <<"lastOnlineTime">> => Last, <<"location">> => #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => Longitude, <<"latitude">> => Latitude}}) of
                     {ok, _R} ->
                         insert_mnesia(DeviceId, Acl, true, State, Last, IsEnable, ProductId, Devaddr, DeviceSecret, Node, Longitude, Latitude);
                     _ ->
@@ -339,7 +339,7 @@ sync_parse(OffLine) ->
                 end,
                 timer:sleep(50);
             ['Device', Acl, true, State, Last, IsEnable, ProductId, Devaddr, DeviceSecret, Node, Longitude, Latitude] when (Now - Last) > OffLine ->
-                case dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"status">> => <<"OFFLINE">>, <<"isEnable">> => IsEnable, <<"lastOnlineTime">> => Last, <<"location">> => #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => Longitude, <<"latitude">> => Latitude}}) of
+                case dgiot_parsex:update_object(<<"Device">>, DeviceId, #{<<"status">> => <<"OFFLINE">>, <<"isEnable">> => IsEnable, <<"lastOnlineTime">> => Last, <<"location">> => #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => Longitude, <<"latitude">> => Latitude}}) of
                     {ok, _R} ->
                         insert_mnesia(DeviceId, Acl, false, State, Last, IsEnable, ProductId, Devaddr, DeviceSecret, Node, Longitude, Latitude);
                     _ ->
@@ -347,7 +347,7 @@ sync_parse(OffLine) ->
                 end,
                 timer:sleep(50);
             ['Device', Acl, false, State, Last, IsEnable, ProductId, Devaddr, DeviceSecret, Node, Longitude, Latitude] when (Now - Last) < OffLine ->
-                case dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"status">> => <<"ONLINE">>, <<"isEnable">> => IsEnable, <<"lastOnlineTime">> => Last, <<"location">> => #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => Longitude, <<"latitude">> => Latitude}}) of
+                case dgiot_parsex:update_object(<<"Device">>, DeviceId, #{<<"status">> => <<"ONLINE">>, <<"isEnable">> => IsEnable, <<"lastOnlineTime">> => Last, <<"location">> => #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => Longitude, <<"latitude">> => Latitude}}) of
                     {ok, _R} ->
                         insert_mnesia(DeviceId, Acl, true, State, Last, IsEnable, ProductId, Devaddr, DeviceSecret, Node, Longitude, Latitude);
                     _ ->

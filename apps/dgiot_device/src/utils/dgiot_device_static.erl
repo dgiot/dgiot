@@ -26,7 +26,7 @@
 get_counter({Token, <<"product_counter">>}) ->
     Query = #{<<"count">> => <<"objectId">>,
         <<"keys">> => [<<"objectId">>], <<"where">> => #{}, <<"limit">> => 1},
-    case dgiot_parse:query_object(<<"Product">>, Query, [{"X-Parse-Session-Token", Token}], [{from, rest}]) of
+    case dgiot_parsex:query_object(<<"Product">>, Query, [{"X-Parse-Session-Token", Token}], [{from, rest}]) of
         {ok, #{<<"count">> := Count}} ->
             {ok, #{<<"lable">> => <<"产品数量"/utf8>>, <<"value">> => Count}};
         _ ->
