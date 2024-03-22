@@ -115,7 +115,7 @@ post_enum_value(ProductId, Identifier, Name) ->
             upadte_thing(ProductId, Identifier, Name, -1)
     end.
 upadte_thing(ProductId, Identifier, Name, Max) ->
-    case dgiot_parse:get_object(<<"Product">>, ProductId) of
+    case dgiot_parsex:get_object(<<"Product">>, ProductId) of
         {ok, #{<<"thing">> := #{<<"properties">> := Properties} = Thing}} ->
             NewProperties = lists:foldl(
                 fun(X, Acc) ->
@@ -131,7 +131,7 @@ upadte_thing(ProductId, Identifier, Name, Max) ->
                     end
                 end, [], Properties),
             NewThing = Thing#{<<"properties">> => NewProperties},
-            dgiot_parse:update_object(<<"Product">>, ProductId, #{<<"thing">> => NewThing}),
+            dgiot_parsex:update_object(<<"Product">>, ProductId, #{<<"thing">> => NewThing}),
             #{Identifier => Max + 1};
         _ ->
 

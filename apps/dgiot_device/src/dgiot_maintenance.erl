@@ -15,7 +15,7 @@
 %% 初始化工单巡检动态数据
 init_inspection(#{<<"objectId">> := MaintenanceId, <<"info">> := Info, <<"status">> := 1, <<"product">> := #{<<"objectId">> := ProductId}, <<"device">> := #{<<"objectId">> := DeviceId}} = _QueryData) ->
     InitData = get_initdata(<<"巡检"/utf8>>, ProductId),
-    dgiot_parse:update_object(<<"Maintenance">>, MaintenanceId, #{<<"info">> => Info#{<<"dynamicdata">> => InitData}}),
+    dgiot_parsex:update_object(<<"Maintenance">>, MaintenanceId, #{<<"info">> => Info#{<<"dynamicdata">> => InitData}}),
     %%    下发巡检信息
     %%    $dg/device/{productId}/{deviceAddr}/init/response/inspection
     case dgiot_device:lookup(DeviceId) of
@@ -56,7 +56,7 @@ get_initdata(Type, ProductId) ->
     end.
 
 get_inspection(MaintenanceId) ->
-    case dgiot_parse:get_object(<<"Maintenance">>, MaintenanceId) of
+    case dgiot_parsex:get_object(<<"Maintenance">>, MaintenanceId) of
         {ok, #{<<"number">> := Number, <<"status">> := Status, <<"info">> := Info}} ->
             Dynamicdata = maps:get(<<"dynamicdata">>, Info, []),
             Basic = #{

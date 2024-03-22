@@ -35,7 +35,7 @@ put(_, _) ->
 
 delete('after', DeviceId) ->
     dgiot_device:delete(DeviceId),
-    case dgiot_parse:query_object(<<"Dict">>, #{<<"where">> => #{<<"key">> => DeviceId, <<"class">> => <<"Device">>}}) of
+    case dgiot_parsex:query_object(<<"Dict">>, #{<<"where">> => #{<<"key">> => DeviceId, <<"class">> => <<"Device">>}}) of
         {ok, #{<<"results">> := Dicts}} ->
             DictRequests =
                 lists:foldl(fun(#{<<"objectId">> := DictId}, Acc) ->
@@ -45,11 +45,11 @@ delete('after', DeviceId) ->
                         <<"body">> => #{}
                     }]
                             end, [], Dicts),
-            dgiot_parse:batch(DictRequests);
+            dgiot_parsex:batch(DictRequests);
         _ ->
             pass
     end,
-    case dgiot_parse:query_object(<<"View">>, #{<<"where">> => #{<<"key">> => DeviceId, <<"class">> => <<"Device">>}}) of
+    case dgiot_parsex:query_object(<<"View">>, #{<<"where">> => #{<<"key">> => DeviceId, <<"class">> => <<"Device">>}}) of
         {ok, #{<<"results">> := Views}} ->
             ViewRequests =
                 lists:foldl(fun(#{<<"objectId">> := ViewId}, Acc) ->
@@ -59,7 +59,7 @@ delete('after', DeviceId) ->
                         <<"body">> => #{}
                     }]
                             end, [], Views),
-            dgiot_parse:batch(ViewRequests);
+            dgiot_parsex:batch(ViewRequests);
         _ ->
             pass
     end;
