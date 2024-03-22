@@ -119,6 +119,7 @@
     , get_ifaddrs/0
     , get_ifaddr/1
     , get_ifip/1
+    , ping_all/1
     , ping_all/0
     , get_ipbymac/2
     , get_ipv4/1
@@ -897,10 +898,17 @@ get_ipbymac(Mac, ping) ->
             ping_all(),
             get_ipbymac(Mac);
         Ip -> Ip
+    end;
+get_ipbymac(Mac, Network) ->
+    case get_ipbymac(Mac) of
+        <<"">> ->
+            ping_all(Network),
+            get_ipbymac(Mac);
+        Ip -> Ip
     end.
 
 get_ipbymac(Mac) ->
-    Ips =
+    IpMacs =
         case os:type() of
             {unix, linux} ->
                 re:run(os:cmd("arp -a"),
@@ -911,14 +919,23 @@ get_ipbymac(Mac) ->
                     <<"([\\d]{1,3}\\.[\\d]{1,3}\\.[\\d]{1,3}\\.[\\d]{1,3}).*?([\\S]{2}-[\\S]{2}-[\\S]{2}-[\\S]{2}-[\\S]{2}-[\\S]{2})">>,
                     [global, {capture, all_but_first, binary}])
         end,
-    case Ips of
+    NewMac = case os:type() of
+                 {unix, linux} ->
+                     dgiot_utils:to_binary(re:replace(dgiot_utils:to_list(Mac), "-", ":", [global, {return, list}]));
+                 _ ->
+                     Mac
+             end,
+    case IpMacs of
         {match, Iflist} ->
-            IpList = lists:foldl(fun(X, Acc) ->
-                case X of
-                    [Ip, Mac] -> lists:umerge([Acc, [<<Ip/binary, " ">>]]);
-                    _ -> Acc
-                end
-                                 end, [], Iflist),
+            IpList =
+                lists:foldl(fun(X, Acc) ->
+                    case X of
+                        [Ip, NewMac] ->
+                            lists:umerge([Acc, [<<Ip/binary, " ">>]]);
+                        _ ->
+                            Acc
+                    end
+                            end, [], Iflist),
             case IpList of
                 [] -> <<"">>;
                 _ ->
@@ -941,13 +958,14 @@ get_macbyip(Ip) ->
         end,
     case Ips of
         {match, Iflist} ->
-            IpList = lists:foldl(fun(X, Acc) ->
-                case X of
-                    [Ip, Mac] ->
-                        lists:umerge([Acc, [list_to_binary(string:to_upper(re:replace(Mac, "-", ":", [global, {return, list}])))]]);
-                    _ -> Acc
-                end
-                                 end, [], Iflist),
+            IpList = lists:foldl(
+                fun(X, Acc) ->
+                    case X of
+                        [Ip, Mac] ->
+                            lists:umerge([Acc, [list_to_binary(string:to_upper(re:replace(Mac, "-", ":", [global, {return, list}])))]]);
+                        _ -> Acc
+                    end
+                end, [], Iflist),
             case IpList of
                 [] -> <<"">>;
                 _ ->
@@ -996,6 +1014,28 @@ get_port(Socket) ->
 %%<<"([\\d]{1,3}\\.[\\d]{1,3}\\.[\\d]{1,3}\\.[\\d]{1,3}).*?([\\S]{2}-[\\S]{2}-[\\S]{2}-[\\S]{2}-[\\S]{2}-[\\S]{2})">>,
 %%[global, {capture, all_but_first, binary}])
 
+ping_all(Network) ->
+    Ips = re:split(dgiot_utils:to_list(Network), ";", [{return, list}]),
+    lists:map(
+        fun(Ip) ->
+            case inet:parse_address(dgiot_utils:to_list(Ip)) of  %%判定是否为ip地址
+                {ok, {A, B, C, _D}} ->
+                    lists:map(
+                        fun(N) ->
+                            Cmd =
+                                case os:type() of
+                                    {unix, linux} ->
+                                        "ping -c 2 -w 50 " ++ to_list(A) ++ "." ++ to_list(B) ++ "." ++ to_list(C) ++ "." ++ dgiot_utils:to_list(N);
+                                    _ ->
+                                        "ping -n 2 -w 50 " ++ to_list(A) ++ "." ++ to_list(B) ++ "." ++ to_list(C) ++ "." ++ dgiot_utils:to_list(N)
+                                end,
+                            os:cmd(Cmd)
+                        end, lists:seq(1, 255));
+                _ ->
+                    pass
+            end
+        end, Ips).
+
 ping_all() ->
     lists:map(
         fun({A, B, C, _D}) ->
@@ -1004,9 +1044,9 @@ ping_all() ->
                     Cmd =
                         case os:type() of
                             {unix, linux} ->
-                                "ping -c 1 -w 50 " ++ to_list(A) ++ "." ++ to_list(B) ++ "." ++ to_list(C) ++ "." ++ dgiot_utils:to_list(N);
+                                "ping -c 2 -w 50 " ++ to_list(A) ++ "." ++ to_list(B) ++ "." ++ to_list(C) ++ "." ++ dgiot_utils:to_list(N);
                             _ ->
-                                "ping -n 1 -w 50 " ++ to_list(A) ++ "." ++ to_list(B) ++ "." ++ to_list(C) ++ "." ++ dgiot_utils:to_list(N)
+                                "ping -n 2 -w 50 " ++ to_list(A) ++ "." ++ to_list(B) ++ "." ++ to_list(C) ++ "." ++ dgiot_utils:to_list(N)
                         end,
                     os:cmd(Cmd)
                 end, lists:seq(1, 255))
@@ -1036,7 +1076,8 @@ get_ifaddr(Inetsname) when is_list(Inetsname) ->
             Inets = proplists:get_value(Inetsname, Iflist, []),
             Hwaddr = proplists:get_value(hwaddr, Inets, []),
             dgiot_utils:binary_to_hex(iolist_to_binary(Hwaddr));
-        _ -> <<>>
+        _ ->
+            <<>>
     end;
 
 get_ifaddr(Inetsname) ->
