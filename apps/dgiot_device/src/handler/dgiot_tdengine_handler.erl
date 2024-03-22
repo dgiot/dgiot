@@ -120,7 +120,7 @@ do_request(get_device_deviceid, #{<<"deviceid">> := DeviceId} = Args, #{<<"sessi
         {error, Error} -> {error, Error};
         {ok, Channel} ->
             ?LOG(info, "DeviceId ~p", [DeviceId]),
-            case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+            case dgiot_parsex:get_object(<<"Device">>, DeviceId) of
                 {ok, #{<<"objectId">> := DeviceId, <<"product">> := #{<<"objectId">> := ProductId}}} ->
                     dgiot_product_tdengine:get_product_data(Channel, ProductId, DeviceId, Args);
                 _ ->
@@ -133,7 +133,7 @@ do_request(get_echart_deviceid, #{<<"deviceid">> := DeviceId, <<"style">> := Sty
     case dgiot_product_tdengine:get_channel(SessionToken) of
         {error, Error} -> {error, Error};
         {ok, Channel} ->
-            case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+            case dgiot_parsex:get_object(<<"Device">>, DeviceId) of
                 {ok, #{<<"objectId">> := DeviceId, <<"product">> := #{<<"objectId">> := ProductId}}} ->
                     case Style of
                         <<"amis_table">> ->
@@ -156,7 +156,7 @@ do_request(get_devicecard_deviceid, #{<<"deviceid">> := DeviceId} = Args, #{<<"s
             {error, Error};
         {ok, Channel} ->
 %%            ?LOG(info,"DeviceId ~p", [DeviceId]),
-            case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+            case dgiot_parsex:get_object(<<"Device">>, DeviceId) of
                 {ok, #{<<"objectId">> := DeviceId, <<"product">> := #{<<"objectId">> := ProductId}}} ->
                     dgiot_mqtt:subscribe_route_key([<<"$dg/user/realtimecard/", DeviceId/binary, "/#">>], <<"realtimecard">>, SessionToken),
                     dgiot_device_card:get_device_card(Channel, ProductId, DeviceId, Args);
@@ -171,7 +171,7 @@ do_request(get_gps_track_deviceid, #{<<"deviceid">> := DeviceId, <<"starttime">>
     Endtime = dgiot_datetime:get_today_stamp(dgiot_utils:to_int(dgiot_utils:to_int(End) / 1000)) * 1000,
     case DeviceId of
         <<"all">> ->
-            case dgiot_parse:query_object(<<"Device">>, #{}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+            case dgiot_parsex:query_object(<<"Device">>, #{}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
                 {ok, #{<<"results">> := Results}} ->
                     NewResults =
                         lists:foldl(fun(#{<<"objectId">> := ObjectId, <<"name">> := Name}, Acc) ->
@@ -209,11 +209,11 @@ do_request(get_gps_track_deviceid, #{<<"deviceid">> := DeviceId, <<"starttime">>
 %% TDengine 概要: save_td
 do_request(post_save_td, #{<<"productid">> := ProductId, <<"devaddr">> := DevAddr, <<"data">> := Ack} = _Args, _Context, _Req) ->
     DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
-    case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+    case dgiot_parsex:get_object(<<"Device">>, DeviceId) of
         {ok, #{<<"devaddr">> := DevAddr}} ->
             pass;
         _ ->
-            case dgiot_parse:get_object(<<"Product">>, ProductId) of
+            case dgiot_parsex:get_object(<<"Product">>, ProductId) of
                 {ok, #{<<"ACL">> := Acl, <<"devType">> := DevType}} ->
                     dgiot_device:create_device(#{
                         <<"devaddr">> => DevAddr,

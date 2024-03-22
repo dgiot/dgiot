@@ -88,10 +88,10 @@ handle_message({dlink_ota_progress, ProductId, DevAddr, _Payload}, State) ->
 %% 上报最新版本
 handle_message({dlink_firmware_report, ProductId, DevAddr, #{<<"version">> := Version}}, State) ->
     DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
-    dgiot_parse:update_object(<<"Device">>, DeviceId, #{}),
-    case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+    dgiot_parsex:update_object(<<"Device">>, DeviceId, #{}),
+    case dgiot_parsex:get_object(<<"Device">>, DeviceId) of
         {ok, #{<<"basedata">> := Basedata} = _Device} ->
-            dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"basedata">> => Basedata#{<<"version">> => Version}});
+            dgiot_parsex:update_object(<<"Device">>, DeviceId, #{<<"basedata">> => Basedata#{<<"version">> => Version}});
         _ ->
             pass
     end,
@@ -113,7 +113,7 @@ stop(_ChannelType, _ChannelId, _State) ->
 
 %% 全部设备
 get_deviceids(#{<<"upgraderange">> := <<"0">>, <<"key">> := ProductId}) ->
-    case dgiot_parse:query_object(<<"Device">>, #{<<"keys">> => [<<"devaddr">>], <<"where">> => #{<<"product">> => ProductId}}) of
+    case dgiot_parsex:query_object(<<"Device">>, #{<<"keys">> => [<<"devaddr">>], <<"where">> => #{<<"product">> => ProductId}}) of
         {ok, #{<<"results">> := Devices}} when length(Devices) > 0 ->
             lists:foldl(fun(#{<<"objectId">> := DeviceId, <<"devaddr">> := Devaddr}, Acc) ->
                 Acc ++ [#{<<"objectId">> => DeviceId, <<"devaddr">> => Devaddr}]
@@ -142,7 +142,7 @@ get_deviceids(#{<<"upgraderange">> := <<"1">>, <<"picker">> := Picker}) ->
 get_deviceids(#{<<"upgraderange">> := <<"2">>, <<"danwei">> := RoleName}) ->
     case dgiot_parse_auth:check_roles(RoleName) of
         {200, #{<<"access_token">> := Depart_token}} ->
-            case dgiot_parse:query_object(<<"Device">>, #{}, [{"X-Parse-Session-Token", Depart_token}], [{from, rest}]) of
+            case dgiot_parsex:query_object(<<"Device">>, #{}, [{"X-Parse-Session-Token", Depart_token}], [{from, rest}]) of
                 {ok, #{<<"results">> := Devices}} when length(Devices) > 0 ->
                     lists:foldl(fun(#{<<"objectId">> := DeviceId, <<"devaddr">> := Devaddr}, Acc) ->
                         Acc ++ [#{<<"objectId">> => DeviceId, <<"devaddr">> => Devaddr}]

@@ -33,13 +33,13 @@ post('after', #{<<"objectId">> := ProductId, <<"channel">> := Channel} = QueryDa
     post('after', maps:without([<<"channel">>], QueryData));
 
 %%post('after', #{<<"objectId">> := ProductId, <<"producttemplet">> := #{<<"objectId">> := ProducttempletId}} = _QueryData) ->
-%%    case dgiot_parse:query_object(<<"Dict">>, #{<<"where">> => #{<<"key">> => ProducttempletId, <<"class">> => <<"ProductTemplet">>}}) of
+%%    case dgiot_parsex:query_object(<<"Dict">>, #{<<"where">> => #{<<"key">> => ProducttempletId, <<"class">> => <<"ProductTemplet">>}}) of
 %%        {ok, #{<<"results">> := Dicts}} when length(Dicts) > 0 ->
 %%            dgiot_product_dict:post_batch(Dicts, ProductId);
 %%        _ ->
 %%            pass
 %%    end,
-%%    case dgiot_parse:query_object(<<"View">>, #{<<"where">> => #{<<"key">> => ProducttempletId, <<"class">> => <<"ProductTemplet">>}}) of
+%%    case dgiot_parsex:query_object(<<"View">>, #{<<"where">> => #{<<"key">> => ProducttempletId, <<"class">> => <<"ProductTemplet">>}}) of
 %%        {ok, #{<<"results">> := Views}} when length(Views) > 0 ->
 %%            dgiot_product_view:post_batch(Views, ProductId);
 %%        _ ->
@@ -68,13 +68,13 @@ delete('before', _ProductId) ->
     pass;
 
 %%delete('after', ProductId) ->
-%%    case dgiot_parse:query_object(<<"Dict">>, #{<<"where">> => #{<<"key">> => ProductId, <<"class">> => <<"Product">>}}) of
+%%    case dgiot_parsex:query_object(<<"Dict">>, #{<<"where">> => #{<<"key">> => ProductId, <<"class">> => <<"Product">>}}) of
 %%        {ok, #{<<"results">> := Dicts}} ->
 %%            dgiot_product_dict:delete_batch(Dicts);
 %%        _ ->
 %%            pass
 %%    end,
-%%    case dgiot_parse:query_object(<<"View">>, #{<<"where">> => #{<<"key">> => ProductId, <<"class">> => <<"Product">>}}) of
+%%    case dgiot_parsex:query_object(<<"View">>, #{<<"where">> => #{<<"key">> => ProductId, <<"class">> => <<"Product">>}}) of
 %%        {ok, #{<<"results">> := Views}} ->
 %%            dgiot_product_view:delete_batch(Views);
 %%        _ ->

@@ -74,7 +74,7 @@ handle(OperationID, Args, Context, Req) ->
 
 do_request(get_sports, _Args, _Context, _Req) ->
     Items =
-        case dgiot_parse:query_object(<<"Device">>, #{<<"where">> => #{<<"product">> => <<"2dd1d8b42a">>}}) of
+        case dgiot_parsex:query_object(<<"Device">>, #{<<"where">> => #{<<"product">> => <<"2dd1d8b42a">>}}) of
             {ok, #{<<"results">> := Devices}} ->
                 lists:foldl(fun(#{
                     <<"objectId">> := ObjectId,
@@ -101,7 +101,7 @@ do_request(post_sports, #{<<"ids">> := Ids, <<"type">> := Type} = _Args, _Contex
 %%    io:format("Args ~p~n", [Args]),
     lists:foldl(fun(DeviceId, _Acc) ->
 
-        dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"realstate">> => Type})
+        dgiot_parsex:update_object(<<"Device">>, DeviceId, #{<<"realstate">> => Type})
 
                 end, [], binary:split(Ids, <<$,>>, [global, trim])),
 
@@ -116,7 +116,7 @@ do_request(post_sports, #{<<"ids">> := Ids, <<"type">> := Type} = _Args, _Contex
 do_request(get_group_id, #{<<"id">> := Id},
     #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
     ?LOG(info, "Id ~p", [Id]),
-    case dgiot_parse:query_object(<<"Device">>, #{<<"limit">> => 1, <<"where">> => #{<<"product">> => Id}},
+    case dgiot_parsex:query_object(<<"Device">>, #{<<"limit">> => 1, <<"where">> => #{<<"product">> => Id}},
         [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
         {ok, #{<<"results">> := [Device | _]}} ->
             #{<<"devaddr">> := Devaddr, <<"objectId">> := ParentId} = Device,
@@ -161,7 +161,7 @@ do_request(_OperationId, _Args, _Context, _Req) ->
     {error, <<"Not Allowed.">>}.
 
 put_group(#{<<"productid">> := ProductId, <<"topoid">> := TopoId, <<"thingid">> := ThingId} = Payload, SessionToken) ->
-    case dgiot_parse:get_object(<<"Product">>, ProductId, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+    case dgiot_parsex:get_object(<<"Product">>, ProductId, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
         {ok, #{<<"config">> := Config, <<"thing">> := #{<<"properties">> := Properties}}} when length(Properties) > 0 ->
             ControlList =
                 lists:foldl(fun(X, Acc) ->
@@ -219,7 +219,7 @@ put_group(#{<<"productid">> := ProductId, <<"topoid">> := TopoId, <<"thingid">> 
                         _ -> Acc ++ [X]
                     end
                             end, [], Properties),
-            case dgiot_parse:update_object(<<"Product">>, ProductId, #{
+            case dgiot_parsex:update_object(<<"Product">>, ProductId, #{
                 <<"config">> => Config#{<<"components">> => ControlList},
                 <<"thing">> => #{<<"properties">> => NewProperties}}) of
                 {ok, _} -> {ok, #{
@@ -247,7 +247,7 @@ put_group(#{<<"productid">> := ProductId, <<"topoid">> := TopoId, <<"thingid">> 
                         _ -> Acc ++ [X]
                     end
                             end, [], maps:get(<<"components">>, Config)),
-            case dgiot_parse:update_object(<<"Product">>, ProductId, #{
+            case dgiot_parsex:update_object(<<"Product">>, ProductId, #{
                 <<"config">> => Config#{<<"components">> => ControlList}}) of
                 {ok, _} -> {ok, #{
                     <<"config">> => Config#{<<"components">> => ControlList}}
@@ -311,13 +311,13 @@ post_group(Body, SessionToken) ->
     end.
 
 delete_group(#{<<"name">> := _Name, <<"devType">> := _DevType} = Where, SessionToken) ->
-    case dgiot_parse:query_object(<<"Product">>, #{<<"where">> => Where, <<"limit">> => 1}) of
+    case dgiot_parsex:query_object(<<"Product">>, #{<<"where">> => Where, <<"limit">> => 1}) of
         {ok, #{<<"results">> := [#{<<"objectId">> := ProductId} | _]}} ->
-            case dgiot_parse:query_object(<<"Device">>, #{<<"where">> => Where, <<"limit">> => 1}) of
+            case dgiot_parsex:query_object(<<"Device">>, #{<<"where">> => Where, <<"limit">> => 1}) of
                 {ok, #{<<"results">> := [#{<<"objectId">> := DeviceId} | _]}} ->
-                    dgiot_parse:del_object(<<"Device">>, DeviceId, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]);
+                    dgiot_parsex:del_object(<<"Device">>, DeviceId, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]);
                 _ -> pass
             end,
-            dgiot_parse:del_object(<<"Product">>, ProductId, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]);
+            dgiot_parsex:del_object(<<"Product">>, ProductId, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]);
         Error -> Error
     end.

@@ -103,7 +103,7 @@ delete(ProductId) ->
 
 get(ProductId) ->
     Keys = [<<"ACL">>, <<"name">>, <<"devType">>, <<"status">>, <<"content">>, <<"profile">>, <<"nodeType">>, <<"dynamicReg">>, <<"topics">>, <<"productSecret">>],
-    case dgiot_parse:get_object(<<"Product">>, ProductId) of
+    case dgiot_parsex:get_object(<<"Product">>, ProductId) of
         {ok, Product} ->
             {ok, maps:with(Keys, Product)};
         {error, Reason} ->
@@ -255,14 +255,14 @@ update_properties(ProductId, Product) ->
             NewThing = Thing#{
                 <<"properties">> => NewProperties
             },
-            dgiot_parse:update_object(<<"Product">>, ProductId, #{<<"thing">> => NewThing}),
+            dgiot_parsex:update_object(<<"Product">>, ProductId, #{<<"thing">> => NewThing}),
             dgiot_data:insert(?DGIOT_PRODUCT, ProductId, Product#{<<"thing">> => NewThing});
         _Error ->
             []
     end.
 
 update_properties() ->
-    case dgiot_parse:query_object(<<"Product">>, #{<<"skip">> => 0}) of
+    case dgiot_parsex:query_object(<<"Product">>, #{<<"skip">> => 0}) of
         {ok, #{<<"results">> := Results}} ->
             lists:foldl(fun(X, _Acc) ->
                 case X of
@@ -278,16 +278,16 @@ update_properties() ->
 
 %% 更新topics
 update_topics() ->
-    {ok, #{<<"fields">> := Fields}} = dgiot_parse:get_schemas(<<"Product">>),
+    {ok, #{<<"fields">> := Fields}} = dgiot_parsex:get_schemas(<<"Product">>),
     #{<<"type">> := Type} = maps:get(<<"topics">>, Fields),
     case Type of
         <<"Object">> ->
 %% 判断目前topics 是那种类型，如果是object类型，就不更新
 %% 删除原有topics字段
-            case dgiot_parse:del_filed_schemas(<<"topics">>, <<"Product">>) of
+            case dgiot_parsex:del_filed_schemas(<<"topics">>, <<"Product">>) of
                 {ok, _} ->
                     %%  新增topics字段
-                    dgiot_parse:create_schemas(<<"Product">>, #{<<"topics">> => []});
+                    dgiot_parsex:create_schemas(<<"Product">>, #{<<"topics">> => []});
                 Err ->
                     io:format("~s ~p ~p ~n", [?FILE, ?LINE, Err])
             end;
@@ -296,7 +296,7 @@ update_topics() ->
 
 %% 产品字段新增
 update_product_filed(_Filed) ->
-    case dgiot_parse:query_object(<<"Product">>, #{<<"skip">> => 0}) of
+    case dgiot_parsex:query_object(<<"Product">>, #{<<"skip">> => 0}) of
         {ok, #{<<"results">> := Results}} ->
             lists:foldl(fun(X, _Acc) ->
                 case X of
@@ -369,9 +369,9 @@ format_product(#{<<"objectId">> := ProductId} = Product) ->
 create_product(#{<<"name">> := ProductName, <<"devType">> := DevType, <<"category">> := #{
     <<"objectId">> := CategoryId, <<"__type">> := <<"Pointer">>, <<"className">> := <<"Category">>}} = Product, SessionToken) ->
     ProductId = dgiot_parse_id:get_productid(CategoryId, DevType, ProductName),
-    case dgiot_parse:get_object(<<"Product">>, ProductId, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+    case dgiot_parsex:get_object(<<"Product">>, ProductId, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
         {ok, #{<<"objectId">> := ObjectId}} ->
-            dgiot_parse:update_object(<<"Product">>, ObjectId, Product,
+            dgiot_parsex:update_object(<<"Product">>, ObjectId, Product,
                 [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]);
         _ ->
             ACL = maps:get(<<"ACL">>, Product, #{}),
@@ -386,7 +386,7 @@ create_product(#{<<"name">> := ProductName, <<"devType">> := DevType, <<"categor
                             }
                         },
                         <<"productSecret">> => dgiot_utils:random()},
-                    dgiot_parse:create_object(<<"Product">>,
+                    dgiot_parsex:create_object(<<"Product">>,
                         CreateProductArgs, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]);
                 Err ->
                     {400, Err}
@@ -396,12 +396,12 @@ create_product(#{<<"name">> := ProductName, <<"devType">> := DevType, <<"categor
 create_product(#{<<"name">> := ProductName, <<"devType">> := DevType, <<"category">> := #{
     <<"objectId">> := CategoryId, <<"__type">> := <<"Pointer">>, <<"className">> := <<"Category">>}} = Product) ->
     ProductId = dgiot_parse_id:get_productid(CategoryId, DevType, ProductName),
-    case dgiot_parse:get_object(<<"Product">>, ProductId) of
+    case dgiot_parsex:get_object(<<"Product">>, ProductId) of
         {ok, #{<<"objectId">> := ObjectId}} ->
-            dgiot_parse:update_object(<<"Product">>, ObjectId, Product),
+            dgiot_parsex:update_object(<<"Product">>, ObjectId, Product),
             {ok, ObjectId};
         _ ->
-            case dgiot_parse:create_object(<<"Product">>, Product) of
+            case dgiot_parsex:create_object(<<"Product">>, Product) of
                 {ok, #{<<"objectId">> := ObjectId}} ->
                     {ok, ObjectId};
                 {error, Reason} ->
@@ -425,7 +425,7 @@ add_product_relation(ChannelIds, ProductId) ->
         },
     lists:map(fun
                   (ChannelId) when size(ChannelId) > 0 ->
-                      dgiot_parse:update_object(<<"Channel">>, ChannelId, Map);
+                      dgiot_parsex:update_object(<<"Channel">>, ChannelId, Map);
                   (_) ->
                       pass
               end, ChannelIds).
@@ -442,11 +442,11 @@ delete_product_relation(ProductId) ->
                 }
             ]}
         },
-    case dgiot_parse:query_object(<<"Channel">>, #{<<"where">> => #{<<"product">> => #{
+    case dgiot_parsex:query_object(<<"Channel">>, #{<<"where">> => #{<<"product">> => #{
         <<"__type">> => <<"Pointer">>, <<"className">> => <<"Product">>, <<"objectId">> => ProductId}}, <<"limit">> => 20}) of
         {ok, #{<<"results">> := Results}} when length(Results) > 0 ->
             lists:foldl(fun(#{<<"objectId">> := ChannelId}, _Acc) ->
-                dgiot_parse:update_object(<<"Channel">>, ChannelId, Map)
+                dgiot_parsex:update_object(<<"Channel">>, ChannelId, Map)
                         end, [], Results);
         _ ->
             []
