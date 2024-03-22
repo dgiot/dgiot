@@ -14,7 +14,7 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
--module(dgiot_parse_rest).
+-module(dgiot_parse_restx).
 -compile(nowarn_deprecated_function).
 -author("kenneth").
 -include("dgiot_parse.hrl").
@@ -339,26 +339,17 @@ encode_body(_Path, _Method, Map, _) ->
     dgiot_json:encode(Map).
 
 do_request(Method, Path, Header, QueryData, Options) ->
-    NewQueryData =
-        case jsx:is_json(QueryData) of
-            true ->
-                jsx:decode(QueryData, [{labels, binary}, return_maps]);
-            false ->
-                QueryData
-        end,
-    do_request_before(Method, Path, Header, QueryData, Options),
+    case jsx:is_json(QueryData) of
+        true ->
+            jsx:decode(QueryData, [{labels, binary}, return_maps]);
+        false ->
+            QueryData
+    end,
     case httpc_request(Method, Path, Header, QueryData, [], [], Options) of
         {error, Reason} ->
             {error, Reason};
         {ok, StatusCode, Headers, ResBody} ->
-            case do_request_after(Method, Path, Header, NewQueryData, ResBody, Options) of
-                {ok, NewResBody} ->
-                    {ok, StatusCode, Headers, NewResBody};
-                ignore ->
-                    {ok, StatusCode, Headers, ResBody};
-                {error, Reason} ->
-                    {error, Reason}
-            end
+            {ok, StatusCode, Headers, ResBody}
     end.
 
 httpc_request(Method, <<"/graphql">> = Path, Header, Body, HttpOptions, ReqOptions, Options) when Method == 'POST'; Method == 'PUT' ->
@@ -393,40 +384,6 @@ httpc_request(Method, Request, HttpOptions, ReqOptions) ->
         {Err, Reason} when Err == error; Err == 'EXIT' ->
             {error, Reason}
     end.
-
-do_request_before(Method0, Path, Header, QueryData, Options) ->
-    Method =
-        case proplists:get_value(from, Options) of
-            js when QueryData == <<>> ->
-                method(Method0, atom);
-            js ->
-                case maps:get(<<"_method">>, ?JSON_DECODE(QueryData), no) of
-                    no -> method(Method0, atom);
-                    Method1 -> method(Method1, atom)
-                end;
-            _ ->
-                method(Method0, atom)
-        end,
-    {match, PathList} = re:run(Path, <<"([^/]+)">>, [global, {capture, all_but_first, binary}]),
-    dgiot_parse_hook:do_request_hook('before', lists:concat(PathList), Method, dgiot_parse:get_token(Header), QueryData, Options).
-
-do_request_after(Method0, Path, Header, NewQueryData, ResBody, Options) ->
-    Method =
-        case proplists:get_value(from, Options) of
-            js when NewQueryData == <<>> ->
-                method(Method0, atom);
-            js ->
-                case maps:get(<<"_method">>, ?JSON_DECODE(NewQueryData), no) of
-                    no -> method(Method0, atom);
-                    Method1 -> method(Method1, atom)
-                end;
-            _ ->
-                method(Method0, atom)
-        end,
-    {match, PathList} = re:run(Path, <<"([^/]+)">>, [global, {capture, all_but_first, binary}]),
-    %% io:format("~s ~p ~p ~p ~n",[?FILE, ?LINE, Path, NewQueryData]),
-    dgiot_parse_hook:do_request_hook('after', lists:concat(PathList), Method, dgiot_parse:get_token(Header), NewQueryData, ResBody).
-
 
 list_join([], Sep) when is_list(Sep) -> [];
 list_join([H | T], Sep) ->
