@@ -37,7 +37,7 @@ export(ChannelId, #{<<"sessionToken">> := SessionToken} = _Body) ->
         <<"keys">> => [<<"objectId">>, <<"product">>]
     },
     TdQuery = #{<<"limit">> => 10000, <<"function">> => <<"last">>, <<"interval">> => <<"1m">>},
-    case dgiot_parse:query_object(<<"Device">>, Query, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+    case dgiot_parsex:query_object(<<"Device">>, Query, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
         {ok, #{<<"results">> := Data}} ->
             lists:foldl(fun(Device, Acc) ->
                 export_device_data(ChannelId, Device, TdQuery, Acc)

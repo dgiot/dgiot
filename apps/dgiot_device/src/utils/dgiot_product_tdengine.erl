@@ -51,13 +51,13 @@ get_product(ProductId, Query) ->
     end.
 
 get_products(ProductId, ChannelId) ->
-    case dgiot_parse:get_object(<<"Product">>, ProductId) of
+    case dgiot_parsex:get_object(<<"Product">>, ProductId) of
         {ok, #{<<"nodeType">> := 2}} ->
             dgiot_data:insert({ProductId, ?TYPE}, ChannelId),
-            case dgiot_parse:query_object(<<"Device">>, #{<<"limit">> => 1, <<"where">> => #{<<"product">> => ProductId}}) of
+            case dgiot_parsex:query_object(<<"Device">>, #{<<"limit">> => 1, <<"where">> => #{<<"product">> => ProductId}}) of
                 {ok, #{<<"results">> := Results}} when length(Results) > 0 ->
                     [#{<<"objectId">> := Devid} | _] = Results,
-                    case dgiot_parse:query_object(<<"Device">>, #{<<"limit">> => 1000, <<"keys">> => [<<"product">>], <<"where">> => #{<<"parentId">> => Devid}}) of
+                    case dgiot_parsex:query_object(<<"Device">>, #{<<"limit">> => 1000, <<"keys">> => [<<"product">>], <<"where">> => #{<<"parentId">> => Devid}}) of
                         {ok, #{<<"results">> := R}} ->
                             lists:foldl(fun(#{<<"product">> := Product}, Acc) ->
                                 #{<<"objectId">> := SubProductId} = Product,
@@ -89,7 +89,7 @@ do_channel(ProductId, Session, Fun) ->
             }
         }
     },
-    case dgiot_parse:query_object(<<"Channel">>, Body, [{"X-Parse-Session-Token", Session}], [{from, rest}]) of
+    case dgiot_parsex:query_object(<<"Channel">>, Body, [{"X-Parse-Session-Token", Session}], [{from, rest}]) of
         {ok, #{<<"results">> := []}} ->
             {404, <<"not find channel">>};
         {ok, #{<<"results">> := [#{<<"objectId">> := ChannelId}]}} ->
@@ -110,7 +110,7 @@ get_channel(Session) ->
     },
     case dgiot_data:get(?DGIOT_CHANNEL_SESSION, Session) of
         not_find ->
-            case dgiot_parse:query_object(<<"Channel">>, Body, [{"X-Parse-Session-Token", Session}], [{from, rest}]) of
+            case dgiot_parsex:query_object(<<"Channel">>, Body, [{"X-Parse-Session-Token", Session}], [{from, rest}]) of
                 {ok, #{<<"results">> := []}} ->
                     {error, <<"not find channel">>};
                 {ok, #{<<"results">> := [#{<<"objectId">> := ChannelId}]}} ->
@@ -192,11 +192,11 @@ check_field(<<"geopoint">>, V, #{<<"deviceid">> := DeviceId}) ->
         [Longitude, Latitude] ->
             case dgiot_gps:get_baidu_addr(Longitude, Latitude) of
                 #{<<"baiduaddr">> := #{<<"formatted_address">> := FormattedAddress}} ->
-                    case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+                    case dgiot_parsex:get_object(<<"Device">>, DeviceId) of
                         {ok, #{<<"location">> := #{<<"__type">> := <<"GeoPoint">>, <<"longitude">> := Longitude, <<"latitude">> := Latitude}}} ->
                             pass;
                         {ok, #{<<"detail">> := Detail}} ->
-                            dgiot_parse:update_object(<<"Device">>, DeviceId, #{
+                            dgiot_parsex:update_object(<<"Device">>, DeviceId, #{
                                 <<"location">> => #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => Longitude, <<"latitude">> => Latitude},
                                 <<"detail">> => Detail#{<<"address">> => FormattedAddress}});
                         _ ->

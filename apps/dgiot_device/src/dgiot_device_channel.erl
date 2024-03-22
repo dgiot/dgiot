@@ -279,7 +279,7 @@ handle_message({sync_parse, Pid, 'before', put, Token, <<"Device">>, #{<<"locati
 
 handle_message({sync_parse, _Pid, 'before', delete, _Token, <<"Channel">>, ObjectId}, State) ->
 %%    io:format("~s ~p ~p ~n", [?FILE, ?LINE, ObjectId]),
-    case dgiot_parse:get_object(<<"Channel">>, ObjectId) of
+    case dgiot_parsex:get_object(<<"Channel">>, ObjectId) of
         {ok, #{<<"isEnable">> := true}} ->
             dgiot_bridge:control_channel(ObjectId, <<"disable">>, <<>>);
         _ -> pass

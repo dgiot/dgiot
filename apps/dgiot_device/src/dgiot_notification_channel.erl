@@ -176,6 +176,6 @@ test(ProductId) ->
                     },
                     <<"type">> => <<ProductId/binary, "_alarm">>
                 },
-                dgiot_parse:create_object(<<"Notification">>, Body)
+                dgiot_parsex:create_object(<<"Notification">>, Body)
             end, lists:seq(1, 6000))
           end).

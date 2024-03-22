@@ -37,7 +37,7 @@ post_batch(Views, ProductId) ->
                     <<"class">> => <<"Product">>}
             }]
                     end, [], Views),
-    dgiot_parse:batch(ViewRequests).
+    dgiot_parsex:batch(ViewRequests).
 
 delete_batch(Views) ->
     ViewRequests =
@@ -48,11 +48,11 @@ delete_batch(Views) ->
                 <<"body">> => #{}
             }]
                     end, [], Views),
-    dgiot_parse:batch(ViewRequests).
+    dgiot_parsex:batch(ViewRequests).
 
 %%dgiot_product_view:post(<<"d0cb711d3d">>).
 post(ProductId) ->
-    dgiot_parse:create_object(<<"View">>, #{
+    dgiot_parsex:create_object(<<"View">>, #{
         <<"title">> => ProductId,
         <<"key">> => ProductId,
         <<"type">> => <<"topo">>,

@@ -33,7 +33,7 @@
 
 %%dgiot_product_knova:post(<<"d0cb711d3d">>).
 post(ProductId) ->
-    dgiot_parse:create_object(<<"View">>, #{
+    dgiot_parsex:create_object(<<"View">>, #{
         <<"title">> => ProductId,
         <<"key">> => ProductId,
         <<"type">> => <<"Topo">>,
@@ -76,7 +76,7 @@ get_konva_thing(Arg, _Context) ->
                 ViewId
         end,
     Children =
-        case dgiot_parse:get_object(<<"View">>, NewViewId) of
+        case dgiot_parsex:get_object(<<"View">>, NewViewId) of
             {ok, #{<<"data">> := #{<<"konva">> := #{<<"Stage">> := #{<<"children">> := Children2}}}}} when length(Children2) > 0 ->
                 Children2;
             _ ->
@@ -85,7 +85,7 @@ get_konva_thing(Arg, _Context) ->
 
     case length(Children) > 0 of
         true ->
-            case dgiot_parse:get_object(<<"Product">>, ProductId) of
+            case dgiot_parsex:get_object(<<"Product">>, ProductId) of
                 {ok, #{<<"thing">> := #{<<"properties">> := Properties}}} ->
                     put({self(), shapeids}, []),
                     get_children(<<"web">>, ProductId, Children, ProductId, <<"KonvatId">>, <<"Shapeid">>, <<"Identifier">>, <<"Name">>),
@@ -173,12 +173,12 @@ edit_konva(Arg, _Context) ->
             {ok, ViewId} ->
                 ViewId
         end,
-    case dgiot_parse:get_object(<<"View">>, NewViewId) of
+    case dgiot_parsex:get_object(<<"View">>, NewViewId) of
         {ok, #{<<"data">> := #{<<"konva">> := #{<<"Stage">> := #{<<"children">> := Children2} = Stage} = Konva} = Data}} when length(Children2) > 0 ->
             put({self(), shapeids}, []),
             NewChildren = get_children(<<"web">>, ProductId, Children2, ProductId, ProductId, Shapeid, Identifier, Name),
             NewData = Data#{<<"konva">> => Konva#{<<"Stage">> => Stage#{<<"children">> => NewChildren}}},
-            case dgiot_parse:update_object(<<"View">>, NewViewId, #{<<"data">> => NewData}) of
+            case dgiot_parsex:update_object(<<"View">>, NewViewId, #{<<"data">> => NewData}) of
                 {ok, Message} ->
                     {ok, #{<<"code">> => 200, <<"message">> => Message}};
                 {error, Message} ->
@@ -356,7 +356,7 @@ save_Product_konva(ProductId) ->
                 dgiot_data:insert({product, <<ProductId/binary, Identifier/binary>>}, {Name, Type, Unit}),
                 dgiot_data:insert({thing, <<ProductId/binary, Identifier/binary>>}, P)
                       end, Properties),
-            case dgiot_parse:query_object(<<"View">>, #{<<"limit">> => 1, <<"where">> => #{<<"key">> => ProductId, <<"type">> => <<"topo">>, <<"class">> => <<"Product">>}}) of
+            case dgiot_parsex:query_object(<<"View">>, #{<<"limit">> => 1, <<"where">> => #{<<"key">> => ProductId, <<"type">> => <<"topo">>, <<"class">> => <<"Product">>}}) of
                 {ok, #{<<"results">> := Views}} when length(Views) > 0 ->
                     lists:foldl(fun(View, _Acc1) ->
                         #{<<"data">> := #{<<"konva">> := #{<<"Stage">> := #{<<"children">> := Children}}}} = View,
@@ -371,7 +371,7 @@ save_Product_konva(ProductId) ->
 
 get_stage(ProductId) ->
     ViewId = dgiot_parse_id:get_viewid(ProductId, <<"Topo">>, <<"Product">>, ProductId),
-    case dgiot_parse:get_object(<<"View">>, ViewId) of
+    case dgiot_parsex:get_object(<<"View">>, ViewId) of
         {ok, #{<<"data">> := #{<<"konva">> := #{<<"Stage">> := Stage}}}} ->
             {ok, Stage};
         _ ->
@@ -380,7 +380,7 @@ get_stage(ProductId) ->
 
 get_stage(ProductId, Tiltle) ->
     ViewId = dgiot_parse_id:get_viewid(ProductId, <<"Topo">>, <<"Product">>, Tiltle),
-    case dgiot_parse:get_object(<<"View">>, ViewId) of
+    case dgiot_parsex:get_object(<<"View">>, ViewId) of
         {ok, #{<<"data">> := #{<<"konva">> := #{<<"Stage">> := Stage}}}} ->
             {ok, Stage};
         _ ->
