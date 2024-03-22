@@ -107,6 +107,7 @@
     , get_JsonFile/2
     , post_file/2
     , random/0
+%% network start
     , get_hostname/0
     , get_ip/1
     , get_port/1
@@ -125,10 +126,11 @@
     , get_ipv4/1
     , get_ipv6/1
     , resolve/1
-    , trim_string/1
     , get_url_path/1
     , get_ports/0
     , check_port/1
+% network end
+    , trim_string/1
     , gzip/1
     , reverse/1
     , is_phone/1
@@ -846,297 +848,63 @@ random() ->
     to_md5(io_lib:format("~p", [erlang:make_ref()])).
 
 get_hostname() ->
-    {ok, Hostname} = inet:gethostname(),
-    unicode:characters_to_binary(Hostname).
+    dgiot_network:get_hostname().
 
 get_natip() ->
-    IpList = lists:foldl(fun({A, B, C, D}, Acc) ->
-        Acc
-        ++ [to_list(A) ++ "."]
-            ++ [to_list(B) ++ "."]
-            ++ [to_list(C) ++ "."]
-            ++ [to_list(D) ++ " "]
-                         end, [], get_ifaddrs()),
-    to_binary(IpList).
+    dgiot_network:get_natip().
 
 get_wlanip() ->
-    inets:start(),
-    case httpc:request(get, {"http://whatismyip.akamai.com/", []}, [], []) of
-        {ok, {_, _, IP}} -> to_binary(IP);
-        _ -> <<"">>
-    end.
+    dgiot_network:get_wlanip().
 
 get_computerconfig() ->
-    case os:type() of
-        {win32, _} ->
-            <<"Active code page: 65001\r\nNumberOfCores  \r\r\n", CPU:2/binary, _/binary>> =
-                unicode:characters_to_binary(os:cmd("chcp 65001 && wmic cpu get NumberOfCores")),
-            <<"Active code page: 65001\r\nCapacity    \r\r\n", MemBin/binary>> =
-                unicode:characters_to_binary(os:cmd("chcp 65001 && wmic memorychip  get Capacity")),
-            List = re:split(MemBin, " "),
-            Mem = lists:foldl(fun(X, Acc) ->
-                M = trim_string(to_list(X)),
-                case to_binary(M) of
-                    <<"\n", _/binary>> -> Acc;
-                    <<"\r", _/binary>> -> Acc;
-                    _ -> Acc + to_int(M) div (1024 * 1024 * 1024)
-                end
-                              end, 0, List),
-            BinMem = to_binary(Mem),
-            <<CPU/binary, "C/", BinMem/binary, " G">>;
-        _ ->
-            <<BinCPU/binary>> =
-                unicode:characters_to_binary(string:strip(os:cmd("cat /proc/cpuinfo | grep \"cpu cores\" | uniq | wc -l"), right, $\n)),
-            <<BinMem/binary>> =
-                unicode:characters_to_binary(string:strip(os:cmd("grep MemTotal /proc/meminfo | awk '{print $2 / 1024 / 1024}'"), right, $\n)),
-            <<BinCPU/binary, "C/", BinMem/binary, " G">>
-    end.
+    dgiot_network:get_computerconfig().
 
-get_ipbymac(Mac, ping) ->
-    case get_ipbymac(Mac) of
-        <<"">> ->
-            ping_all(),
-            get_ipbymac(Mac);
-        Ip -> Ip
-    end;
 get_ipbymac(Mac, Network) ->
-    case get_ipbymac(Mac) of
-        <<"">> ->
-            ping_all(Network),
-            get_ipbymac(Mac);
-        Ip -> Ip
-    end.
+    dgiot_network:get_ipbymac(Mac, Network).
 
 get_ipbymac(Mac) ->
-    IpMacs =
-        case os:type() of
-            {unix, linux} ->
-                re:run(os:cmd("arp -a"),
-                    <<"([\\d]{1,3}\\.[\\d]{1,3}\\.[\\d]{1,3}\\.[\\d]{1,3}).*?([\\S]{2}:[\\S]{2}:[\\S]{2}:[\\S]{2}:[\\S]{2}:[\\S]{2})">>,
-                    [global, {capture, all_but_first, binary}]);
-            _ ->
-                re:run(os:cmd("chcp 65001 & arp -a"),
-                    <<"([\\d]{1,3}\\.[\\d]{1,3}\\.[\\d]{1,3}\\.[\\d]{1,3}).*?([\\S]{2}-[\\S]{2}-[\\S]{2}-[\\S]{2}-[\\S]{2}-[\\S]{2})">>,
-                    [global, {capture, all_but_first, binary}])
-        end,
-    NewMac = case os:type() of
-                 {unix, linux} ->
-                     dgiot_utils:to_binary(re:replace(dgiot_utils:to_list(Mac), "-", ":", [global, {return, list}]));
-                 _ ->
-                     Mac
-             end,
-    case IpMacs of
-        {match, Iflist} ->
-            IpList =
-                lists:foldl(fun(X, Acc) ->
-                    case X of
-                        [Ip, NewMac] ->
-                            lists:umerge([Acc, [<<Ip/binary, " ">>]]);
-                        _ ->
-                            Acc
-                    end
-                            end, [], Iflist),
-            case IpList of
-                [] -> <<"">>;
-                _ ->
-                    to_binary(trim_string(IpList))
-            end;
-        _ -> <<"">>
-    end.
+    dgiot_network:get_ipbymac(Mac).
 
 get_macbyip(Ip) ->
-    Ips =
-        case os:type() of
-            {unix, linux} ->
-                re:run(dgiot_utils:to_binary(os:cmd("arp -a")),
-                    <<"([\\d]{1,3}\\.[\\d]{1,3}\\.[\\d]{1,3}\\.[\\d]{1,3}).*?([\\S]{2}:[\\S]{2}:[\\S]{2}:[\\S]{2}:[\\S]{2}:[\\S]{2})">>,
-                    [global, {capture, all_but_first, binary}]);
-            _ ->
-                re:run(dgiot_utils:to_binary(os:cmd("chcp 65001 & arp -a")),
-                    <<"([\\d]{1,3}\\.[\\d]{1,3}\\.[\\d]{1,3}\\.[\\d]{1,3}).*?([\\S]{2}-[\\S]{2}-[\\S]{2}-[\\S]{2}-[\\S]{2}-[\\S]{2})">>,
-                    [global, {capture, all_but_first, binary}])
-        end,
-    case Ips of
-        {match, Iflist} ->
-            IpList = lists:foldl(
-                fun(X, Acc) ->
-                    case X of
-                        [Ip, Mac] ->
-                            lists:umerge([Acc, [list_to_binary(string:to_upper(re:replace(Mac, "-", ":", [global, {return, list}])))]]);
-                        _ -> Acc
-                    end
-                end, [], Iflist),
-            case IpList of
-                [] -> <<"">>;
-                _ ->
-                    to_binary(trim_string(IpList))
-            end;
-        _ ->
-            <<"">>
-    end.
+    dgiot_network:get_macbyip(Ip).
 
-get_ip({A, B, C, D}) ->
-    Ip = to_list(A) ++ "." ++
-        to_list(B) ++ "." ++
-        to_list(C) ++ "." ++
-        to_list(D),
-    to_binary(Ip);
-
-get_ip({{A, B, C, D}, _Port}) ->
-    Ip = to_list(A) ++ "." ++
-        to_list(B) ++ "." ++
-        to_list(C) ++ "." ++
-        to_list(D),
-    to_binary(Ip);
-
-get_ip(Socket) ->
-    case esockd_transport:peername(Socket) of
-        {ok, {{A, B, C, D}, _Port}} ->
-            Ip = to_list(A) ++ "." ++
-                to_list(B) ++ "." ++
-                to_list(C) ++ "." ++
-                to_list(D),
-            to_binary(Ip);
-        _ ->
-            <<"">>
-
-    end.
+get_ip(A) ->
+    dgiot_network:get_ip(A).
 
 get_port(Socket) ->
-    case esockd_transport:peername(Socket) of
-        {ok, {{_A, _B, _C, _D}, Port}} ->
-            Port;
-        _ ->
-            0
-    end.
-
-%%re:run(os:cmd("chcp 65001 & arp -a"),
-%%<<"([\\d]{1,3}\\.[\\d]{1,3}\\.[\\d]{1,3}\\.[\\d]{1,3}).*?([\\S]{2}-[\\S]{2}-[\\S]{2}-[\\S]{2}-[\\S]{2}-[\\S]{2})">>,
-%%[global, {capture, all_but_first, binary}])
-
-ping_all(Network) ->
-    Ips = re:split(dgiot_utils:to_list(Network), ";", [{return, list}]),
-    lists:map(
-        fun(Ip) ->
-            case inet:parse_address(dgiot_utils:to_list(Ip)) of  %%判定是否为ip地址
-                {ok, {A, B, C, _D}} ->
-                    lists:map(
-                        fun(N) ->
-                            Cmd =
-                                case os:type() of
-                                    {unix, linux} ->
-                                        "ping -c 2 -w 50 " ++ to_list(A) ++ "." ++ to_list(B) ++ "." ++ to_list(C) ++ "." ++ dgiot_utils:to_list(N);
-                                    _ ->
-                                        "ping -n 2 -w 50 " ++ to_list(A) ++ "." ++ to_list(B) ++ "." ++ to_list(C) ++ "." ++ dgiot_utils:to_list(N)
-                                end,
-                            os:cmd(Cmd)
-                        end, lists:seq(1, 255));
-                _ ->
-                    pass
-            end
-        end, Ips).
+    dgiot_network:get_port(Socket).
 
 ping_all() ->
-    lists:map(
-        fun({A, B, C, _D}) ->
-            lists:map(
-                fun(N) ->
-                    Cmd =
-                        case os:type() of
-                            {unix, linux} ->
-                                "ping -c 2 -w 50 " ++ to_list(A) ++ "." ++ to_list(B) ++ "." ++ to_list(C) ++ "." ++ dgiot_utils:to_list(N);
-                            _ ->
-                                "ping -n 2 -w 50 " ++ to_list(A) ++ "." ++ to_list(B) ++ "." ++ to_list(C) ++ "." ++ dgiot_utils:to_list(N)
-                        end,
-                    os:cmd(Cmd)
-                end, lists:seq(1, 255))
-        end, get_ifaddrs()).
+    dgiot_network:ping_all().
+ping_all(Network) ->
+    dgiot_network:ping_all(Network).
 
 get_ifaddrs() ->
-    case inet:getifaddrs() of
-        {ok, Iflist} ->
-            lists:foldl(fun({_K, V}, Acc) ->
-                NewAcc =
-                    case lists:keyfind([up, running], 2, V) of
-                        false -> Acc;
-                        _ ->
-                            Acc ++ get_ipv4(V)
-                    end,
-                case lists:keyfind([up, broadcast, running, multicast], 2, V) of
-                    false -> NewAcc;
-                    _ -> NewAcc ++ get_ipv4(V)
-                end
-                        end, [], Iflist);
-        _ -> []
-    end.
-
-get_ifaddr(Inetsname) when is_list(Inetsname) ->
-    case inet:getifaddrs() of
-        {ok, Iflist} ->
-            Inets = proplists:get_value(Inetsname, Iflist, []),
-            Hwaddr = proplists:get_value(hwaddr, Inets, []),
-            dgiot_utils:binary_to_hex(iolist_to_binary(Hwaddr));
-        _ ->
-            <<>>
-    end;
+    dgiot_network:get_ifaddrs().
 
 get_ifaddr(Inetsname) ->
-    get_ifaddr(dgiot_utils:to_list(Inetsname)).
-
-get_ifip(Inetsname) when is_list(Inetsname) ->
-    case inet:getifaddrs() of
-        {ok, Iflist} ->
-            Inets = proplists:get_value(Inetsname, Iflist, []),
-            case proplists:get_value(addr, Inets, not_find) of
-                not_find ->
-                    <<>>;
-                Ip ->
-                    get_ip(Ip)
-            end;
-        _ ->
-            <<>>
-    end;
+    dgiot_network:get_ifaddr(Inetsname).
 
 get_ifip(Inetsname) ->
-    get_ifip(dgiot_utils:to_list(Inetsname)).
+    dgiot_network:get_ifip(Inetsname).
 
 get_ipv4(Hostent) ->
-    lists:foldl(fun({K, V}, Acc) ->
-        case K of
-            addr ->
-                case inet:parse_ipv4_address(inet:ntoa(V)) of
-                    {error, einval} -> Acc;
-                    _ -> Acc ++ [V]
-                end;
-            _ -> Acc
-        end
-                end, [], Hostent).
+    dgiot_network:get_ipv4(Hostent).
 
 get_ipv6(Hostent) ->
-    lists:foldl(fun({K, V}, Acc) ->
-        case K of
-            addr -> case inet:parse_ipv6_address(inet:ntoa(V)) of
-                        {error, einval} -> Acc;
-                        _ -> Acc ++ [V]
-                    end;
-            _ -> Acc
-        end
-                end, [], Hostent).
+    dgiot_network:get_ipv6(Hostent).
 
 resolve(Host) ->
-    case inet:parse_address(dgiot_utils:to_list(Host)) of  %%判定是否为ip地址
-        {ok, {IP1, IP2, IP3, IP4}} ->
-            combin_ip(IP1, IP2, IP3, IP4);
-        _ ->
-            case inet:getaddr(dgiot_utils:to_list(Host), inet) of  %%DNS解析，通过域名解析对应一个IP值
-                {ok, {IP1, IP2, IP3, IP4}} ->
-                    combin_ip(IP1, IP2, IP3, IP4);
-                {error, _Reason} -> Host
-            end
-    end.
+    dgiot_network:resolve(Host).
 
-combin_ip(IP1, IP2, IP3, IP4) ->
-    dgiot_utils:to_list(IP1) ++ "." ++ dgiot_utils:to_list(IP2) ++ "." ++ dgiot_utils:to_list(IP3) ++ "." ++ dgiot_utils:to_list(IP4).
+get_url_path(Url) when is_list(Url) ->
+    dgiot_network:get_url_path(Url).
+
+get_ports() ->
+    dgiot_network:get_ports().
+
+check_port(Port) ->
+    dgiot_network:check_port(Port).
 
 trim_string(Str) when is_binary(Str) ->
     trim_string(Str, binary);
@@ -1146,40 +914,6 @@ trim_string(Str) when is_list(Str) ->
 trim_string(Str, Ret) ->
     Str1 = re:replace(Str, "\\s+", "", [global, {return, Ret}]),
     re:replace(Str1, "^[\s\x{3000}]+|[\s\x{3000}]+$", "", [global, {return, Ret}, unicode]).
-
-get_url_path(Url) when is_list(Url) ->
-    get_url_path(to_binary(Url));
-
-get_url_path(<<"http://", Rest/binary>>) ->
-    url_path(to_list(Rest));
-
-get_url_path(<<"https://", Rest/binary>>) ->
-    url_path(to_list(Rest)).
-
-url_path(Url) ->
-%%    "192.168.0.183:5094/wordServer/20211112142832/1.jpg",
-    {match, [{Start, _Len}]} = re:run(Url, <<"\/">>),
-    to_binary(string:substr(Url, Start + 1, length(Url))).
-
-get_ports() ->
-    lists:foldl(fun(X, Acc) ->
-        case inet:port(X) of
-            {ok, Port} ->
-                Acc ++ [Port];
-            _ ->
-                Acc
-        end
-                end, [], erlang:ports()).
-
-check_port(Port) ->
-    lists:any(fun(X) ->
-        case inet:port(X) of
-            {ok, Port} ->
-                true;
-            _ ->
-                false
-        end
-              end, erlang:ports()).
 
 
 %% @private
