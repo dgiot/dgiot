@@ -119,7 +119,7 @@ load_channel(Channels, Fun) ->
                 }
             }
         } || #{<<"objectId">> := ChannelId} <- Channels],
-    case dgiot_parse:batch(Request) of
+    case dgiot_parsex:batch(Request) of
         {ok, Results} ->
             format_channel(Channels, Results, Fun, []);
         {error, Reason} ->
@@ -151,7 +151,7 @@ start_load_channel(Pid, PageSize, MaxTotal, #{<<"mod">> := Module, <<"where">> :
         <<"keys">> => Keys,
         <<"where">> => Where
     },
-    case dgiot_parse:query_object(<<"Channel">>, Query) of
+    case dgiot_parsex:query_object(<<"Channel">>, Query) of
         {ok, #{<<"results">> := Channels}} ->
             [dgiot_data:insert(?DGIOT_BRIDGE, {ChannelId, type}, {dgiot_utils:to_int(Type), CType}) || #{<<"type">> := Type, <<"cType">> := CType, <<"objectId">> := ChannelId} <- Channels],
             Pid ! {load, 0, Module, Channels};
@@ -203,9 +203,9 @@ start_load_channel(Pid, PageSize, MaxTotal, #{<<"where">> := Where}) ->
 %%    update_product_(Product, ChannleId, Name, <<"other_channel">>).
 %%
 %%update_product_({ProductId, #{<<"channel">> := Channel}}, ChannleId, Name, Type) ->
-%%    dgiot_parse:update_object(<<"Product">>, ProductId, #{<<"channel">> => Channel#{Type => #{<<"id">> => ChannleId, <<"name">> => Name}}});
+%%    dgiot_parsex:update_object(<<"Product">>, ProductId, #{<<"channel">> => Channel#{Type => #{<<"id">> => ChannleId, <<"name">> => Name}}});
 %%update_product_({ProductId, _}, ChannleId, Name, Type) ->
-%%    dgiot_parse:update_object(<<"Product">>, ProductId, #{<<"channel">> => #{Type => #{<<"id">> => ChannleId, <<"name">> => Name}}});
+%%    dgiot_parsex:update_object(<<"Product">>, ProductId, #{<<"channel">> => #{Type => #{<<"id">> => ChannleId, <<"name">> => Name}}});
 %%update_product_(_, _ChannleId, _Name, _Type) ->
 %%    pass.
 

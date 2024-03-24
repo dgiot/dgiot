@@ -112,7 +112,7 @@ do_request(put_rule_id, #{<<"id">> := RuleID} = Params, _Context, _Req) ->
 %% 请求:DELETE /iotapi/rule/:{id}
 do_request(delete_rule_id, #{<<"id">> := RuleID}, _Context, _Req) ->
     ObjectId = dgiot_parse_id:get_dictid(RuleID, <<"ruleengine">>, <<"Rule">>, <<"Rule">>),
-    dgiot_parse:del_object(<<"Dict">>, ObjectId),
+    dgiot_parsex:del_object(<<"Dict">>, ObjectId),
     dgiot_data:delete(?DGIOT_RUlES, RuleID),
     emqx_rule_engine_api:delete_rule(#{id => RuleID}, []);
 
@@ -301,12 +301,12 @@ save_rule_to_dict(RuleID, Params, Args) ->
     },
     dgiot_data:insert(?DGIOT_RUlES, Dict),
     ObjectId = dgiot_parse_id:get_dictid(RuleID, <<"ruleengine">>, <<"Rule">>, <<"Rule">>),
-    case dgiot_parse:get_object(<<"Dict">>, ObjectId) of
+    case dgiot_parsex:get_object(<<"Dict">>, ObjectId) of
         {ok, #{<<"data">> := Data1}} ->
             OldArgs = maps:get(<<"args">>, Data1, #{}),
-            dgiot_parse:update_object(<<"Dict">>, ObjectId, #{<<"args">> => maps:merge(OldArgs, Args), <<"data">> => Data1#{<<"rule">> => dgiot_json:encode(Rule)}});
+            dgiot_parsex:update_object(<<"Dict">>, ObjectId, #{<<"args">> => maps:merge(OldArgs, Args), <<"data">> => Data1#{<<"rule">> => dgiot_json:encode(Rule)}});
         _ ->
-            case dgiot_parse:create_object(<<"Dict">>, Dict) of
+            case dgiot_parsex:create_object(<<"Dict">>, Dict) of
                 {ok, #{<<"objectId">> := ObjectId}} ->
                     {ok, #{<<"objectId">> => ObjectId}};
                 {error, Reason1} ->
@@ -316,7 +316,7 @@ save_rule_to_dict(RuleID, Params, Args) ->
     end.
 
 get_channel(_Data) ->
-    case dgiot_parse:query_object(<<"Channel">>, #{<<"keys">> => [<<"name">>, <<"cType">>]}) of
+    case dgiot_parsex:query_object(<<"Channel">>, #{<<"keys">> => [<<"name">>, <<"cType">>]}) of
         {ok, #{<<"results">> := Results}} when length(Results) > 0 ->
             lists:foldl(fun(#{<<"objectId">> := ChannelId, <<"name">> := Name, <<"cType">> := Ctype}, Acc) ->
                 Acc ++ [#{
@@ -335,7 +335,7 @@ get_channel(_Data) ->
 %% ;结尾是分支 .结尾是结束
 get_dictLanguage(Language) ->
     Type = dgiot_parse_id:get_dictid(Language, <<"dict_template">>, <<"Dict">>, <<"Dict">>),
-    case dgiot_parse:query_object(<<"Dict">>, #{<<"where">> => #{<<"type">> => Type}}) of
+    case dgiot_parsex:query_object(<<"Dict">>, #{<<"where">> => #{<<"type">> => Type}}) of
         {ok, #{<<"results">> := Results}} when length(Results) > 0 ->
             lists:foldl(fun(#{<<"data">> := Data}, Acc) ->
                 Acc ++ [maps:with([<<"name">>, <<"value">>, <<"caption">>, <<"meta">>, <<"type">>, <<"score">>], Data)]
@@ -350,7 +350,7 @@ sysc_rules() ->
         false ->
             case ets:tab2list(?DGIOT_RUlES) of
                 Result when length(Result) == 0 ->
-                    case dgiot_parse:query_object(<<"Dict">>, #{<<"where">> => #{<<"type">> => <<"ruleengine">>}}) of
+                    case dgiot_parsex:query_object(<<"Dict">>, #{<<"where">> => #{<<"type">> => <<"ruleengine">>}}) of
                         {ok, #{<<"results">> := Results}} when length(Results) > 0 ->
                             lists:map(fun(#{<<"key">> := RuleID, <<"data">> := Data}) ->
                                 #{<<"rule">> := Rule} = Data,
@@ -525,7 +525,7 @@ create_rules(RuleID, ChannelId, Description, Rawsql, Target_topic, Args) ->
         <<"rawsql">> => Rawsql
     },
     ObjectId = dgiot_parse_id:get_dictid(RuleID, <<"ruleengine">>, <<"Rule">>, <<"Rule">>),
-    case dgiot_parse:get_object(<<"Dict">>, ObjectId) of
+    case dgiot_parsex:get_object(<<"Dict">>, ObjectId) of
         {ok, _} ->
             dgiot_rule_handler:save_rule_to_dict(RuleID, Params, Args),
             emqx_rule_engine_api:update_rule(#{id => RuleID}, maps:to_list(Params)),
