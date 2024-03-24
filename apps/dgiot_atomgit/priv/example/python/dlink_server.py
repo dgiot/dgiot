@@ -22,21 +22,20 @@ import base64
 import datetime
 
 class Dlink(dlink_pb2_grpc.DlinkServicer):
-
-    def SayHello(self, request, context):
+    def Payload(self, request, context):
         print(datetime.datetime.now().strftime('%Y-%m-%d-%H-%M-%S'))
-        print( request.name)
-        print( context)
-        json_request = json.loads(base64.b64decode(request.name).decode("utf-8"))
-        print(json_request)
-        return dlink_pb2.HelloReply(message="parameter received")
+        print( request.cmd)
+        print( request.data)
+        return dlink_pb2.PayloadResponse(topic="dgiot/ddd", payload="ddddd")
 
 
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     dlink_pb2_grpc.add_DlinkServicer_to_server(Dlink(), server)
     server.add_insecure_port('[::]:30051')
+    print( "start")
     server.start()
+    print( "start dd")
     server.wait_for_termination()
 
 
