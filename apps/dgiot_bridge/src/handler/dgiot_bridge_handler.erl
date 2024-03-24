@@ -93,7 +93,7 @@ do_request(get_decoder_func_id, #{<<"id">> := Id}, _Context, _Req) ->
 %% 请求:POST /iotapi/classes/Decoder/:pid
 do_request(post_classes_decoder, Data, #{<<"user">> := #{<<"objectId">> := UserId}, <<"sessionToken">> := SessionToken}, _Req) ->
     ACL = maps:get(<<"ACL">>, Data, #{UserId => #{<<"read">> => true, <<"write">> => true}}),
-    dgiot_parse:create_object(<<"Dict">>, #{
+    dgiot_parsex:create_object(<<"Dict">>, #{
         <<"type">> => <<"decoder">>,
         <<"ACL">> => ACL,
         <<"data">> => maps:without([<<"ACL">>], Data)
@@ -108,7 +108,7 @@ do_request(put_classes_decoder_id, #{<<"id">> := Id} = Data, #{<<"user">> := #{<
             no -> #{};
             ACL -> #{<<"ACL">> => ACL}
         end,
-    case dgiot_parse:update_object(<<"Dict">>, Id, Data1#{
+    case dgiot_parsex:update_object(<<"Dict">>, Id, Data1#{
         <<"type">> => <<"decoder">>,
         <<"data">> => maps:without([<<"id">>, <<"ACL">>], Data)
     }, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
@@ -124,7 +124,7 @@ do_request(put_classes_decoder_id, #{<<"id">> := Id} = Data, #{<<"user">> := #{<
 %% OperationId:get_classes_decoder_id
 %% 请求:GET /iotapi/classes/Decoder/:id
 do_request(get_classes_decoder_id, #{<<"id">> := Id}, #{<<"sessionToken">> := Session}, _Req) ->
-    case dgiot_parse:get_object(<<"Dict">>, Id, [{"X-Parse-Session-Token", Session}], [{from, rest}]) of
+    case dgiot_parsex:get_object(<<"Dict">>, Id, [{"X-Parse-Session-Token", Session}], [{from, rest}]) of
         {ok, Result} ->
             {ok, Result};
         {error, #{<<"error">> := #{<<"coder">> := 101}} = Result} ->
@@ -137,7 +137,7 @@ do_request(get_classes_decoder_id, #{<<"id">> := Id}, #{<<"sessionToken">> := Se
 %% OperationId:delete_classes_decoder_id
 %% 请求:DELETE /iotapi/classes/Decoder/:id
 do_request(delete_classes_decoder_id, #{<<"id">> := Id}, #{<<"sessionToken">> := Session}, _Req) ->
-    case dgiot_parse:del_object(<<"Dict">>, Id, [{"X-Parse-Session-Token", Session}], [{from, rest}]) of
+    case dgiot_parsex:del_object(<<"Dict">>, Id, [{"X-Parse-Session-Token", Session}], [{from, rest}]) of
         {ok, Result} ->
             {ok, Result};
         {error, #{<<"error">> := #{<<"coder">> := 101}} = Result} ->
@@ -168,7 +168,7 @@ do_request(get_classes_decoder, Args, #{<<"sessionToken">> := Session}, _Req) ->
                         Acc#{Key => Value}
                 end
             end, #{}, Args),
-    case dgiot_parse:query_object(<<"Dict">>, Query, [{"X-Parse-Session-Token", Session}], [{from, rest}]) of
+    case dgiot_parsex:query_object(<<"Dict">>, Query, [{"X-Parse-Session-Token", Session}], [{from, rest}]) of
         {ok, Result} ->
             {ok, Result};
         {error, Reason} ->

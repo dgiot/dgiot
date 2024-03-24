@@ -344,7 +344,7 @@ control_channel(ChannelId, Action, SessionToken) ->
             <<"enable">> ->
                 Payload = dgiot_json:encode(#{<<"channelId">> => ChannelId, <<"enable">> => true}),
                 Topic = <<"global/dgiot">>,
-                case dgiot_parse:get_object(<<"Channel">>, ChannelId) of
+                case dgiot_parsex:get_object(<<"Channel">>, ChannelId) of
                     {ok, #{<<"config">> := #{<<"ip">> := _IP}}} ->
                         dgiot_mqtt:publish(ChannelId, Topic, Payload),
                         {true, <<"success">>};
@@ -380,7 +380,7 @@ control_channel(ChannelId, Action, SessionToken) ->
         end,
     Fun =
         fun() ->
-            case dgiot_parse:get_object(<<"Channel">>, ChannelId) of
+            case dgiot_parsex:get_object(<<"Channel">>, ChannelId) of
                 {ok, #{<<"status">> := Status}} ->
                     case IsEnable of
                         true -> Status == <<"ONLINE">>;
@@ -392,7 +392,7 @@ control_channel(ChannelId, Action, SessionToken) ->
         end,
     case Result of
         <<"success">> ->
-            case dgiot_parse:update_object(<<"Channel">>, ChannelId, #{<<"isEnable">> => IsEnable}) of
+            case dgiot_parsex:update_object(<<"Channel">>, ChannelId, #{<<"isEnable">> => IsEnable}) of
                 {ok, Update} ->
                     case wait_request(30000, Fun) of
                         false ->
@@ -431,20 +431,20 @@ control_uniapp(_Args, _SessionToken) ->
 
 %% 拍照
 uniapp_report({_Token, #{<<"instruct">> := <<"photo">>, <<"deviceid">> := DeviceId, <<"url">> := Url} = _Payload}) ->
-    case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+    case dgiot_parsex:get_object(<<"Device">>, DeviceId) of
         {ok, #{<<"objectId">> := DeviceId} = Device} ->
             Content = maps:get(<<"content">>, Device, #{}),
-            dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"content">> => Content#{<<"app_photo">> => Url}});
+            dgiot_parsex:update_object(<<"Device">>, DeviceId, #{<<"content">> => Content#{<<"app_photo">> => Url}});
         _ ->
             pass
     end;
 
 %% 扫码
 uniapp_report({_Token, #{<<"instruct">> := <<"scancode">>, <<"deviceid">> := DeviceId, <<"url">> := Url} = _Payload}) ->
-    case dgiot_parse:get_object(<<"Device">>, DeviceId) of
+    case dgiot_parsex:get_object(<<"Device">>, DeviceId) of
         {ok, #{<<"objectId">> := DeviceId} = Device} ->
             Content = maps:get(<<"content">>, Device, #{}),
-            dgiot_parse:update_object(<<"Device">>, DeviceId, #{<<"content">> => Content#{<<"app_scancode">> => Url}});
+            dgiot_parsex:update_object(<<"Device">>, DeviceId, #{<<"content">> => Content#{<<"app_scancode">> => Url}});
         _ ->
             pass
     end;

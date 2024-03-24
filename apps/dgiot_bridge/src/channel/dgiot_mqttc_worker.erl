@@ -28,7 +28,7 @@ start(ChannelId, #{<<"product">> := Products} = ChannelArgs) ->
     lists:map(fun({ProductId, #{<<"productSecret">> := ProductSecret}}) ->
         dgiot_data:insert(?DGIOT_MQTT_WORK, ProductId, ChannelId),
 
-        case dgiot_parse:query_object(<<"Device">>, #{
+        case dgiot_parsex:query_object(<<"Device">>, #{
             <<"limit">> => 500,
             <<"order">> => <<"devaddr">>,
             <<"keys">> => [<<"devaddr">>],

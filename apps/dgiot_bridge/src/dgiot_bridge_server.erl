@@ -160,14 +160,14 @@ do_handle(#{<<"channelId">> := ChannelId, <<"enable">> := false}) ->
             dgiot_data:delete(?DGIOT_BRIDGE, {ChannelId, productIds}),
             ?LOG(info, "Channel[~s,~p] offline!", [CType, ChannelId]),
             sysnc_product_channel(ChannelId, <<"disable">>),
-            dgiot_parse:update_object(<<"Channel">>, ChannelId, #{<<"status">> => <<"OFFLINE">>});
+            dgiot_parsex:update_object(<<"Channel">>, ChannelId, #{<<"status">> => <<"OFFLINE">>});
         _ ->
             ok
     end;
 
 %% 启用通道
 do_handle(#{<<"channelId">> := ChannelId, <<"enable">> := true}) ->
-    case dgiot_parse:update_object(<<"Channel">>, ChannelId, #{<<"status">> => <<"ONLINE">>}) of
+    case dgiot_parsex:update_object(<<"Channel">>, ChannelId, #{<<"status">> => <<"ONLINE">>}) of
         {ok, _} ->
             sysnc_product_channel(ChannelId, <<"enable">>);
         {error, Reason} ->
