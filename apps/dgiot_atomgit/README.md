@@ -127,6 +127,11 @@ dgiot通过grpc与其他语言相互通信以及函数调用。在dgiot中，以
   + 1.request：接收参数，request下name属性为接收到的信息。
   + 2.context：接收参数，当前的环境
 
+  自动生成python代码
+  '''
+   python -m grpc_tools.protoc -I. --python_out=. --grpc_python_out=. ./dlink_server.proto
+  '''
+
   通过对request.name使用base64解码并转为字典后即可获取原本的信息。
   ![1.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_web/doc_gjb/grpc/4.png)
   接收参数后通过HelloReply的message字段返回一条信息：
