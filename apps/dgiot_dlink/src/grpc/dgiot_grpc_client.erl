@@ -30,7 +30,6 @@ stop_channel_pool(ClinetId) ->
 send(ClinetId, Request) ->
     case dgiot_dlink_client:payload(Request, #{channel => ClinetId}) of
         {ok, #{ack := ReMessage}, _} ->
-
             {ok, ReMessage};
         _ ->
             #{}

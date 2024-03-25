@@ -23,6 +23,7 @@
     , get_natip/0
     , get_wlanip/0
     , get_computerconfig/0
+    , get_arp/0
     , get_macs/0
     , get_ipbymac/1
     , get_macbyip/1
@@ -91,6 +92,28 @@ get_computerconfig() ->
             <<BinCPU/binary, "C/", BinMem/binary, " G">>
     end.
 
+get_arp() ->
+    Result =
+        case os:type() of
+            {unix, linux} ->
+                re:run(os:cmd("arp -a"),
+                    <<"([\\d]{1,3}\\.[\\d]{1,3}\\.[\\d]{1,3}\\.[\\d]{1,3}).*?([\\S]{2}:[\\S]{2}:[\\S]{2}:[\\S]{2}:[\\S]{2}:[\\S]{2})">>,
+                    [global, {capture, all_but_first, binary}]);
+            _ ->
+                re:run(os:cmd("chcp 65001 & arp -a"),
+                    <<"([\\d]{1,3}\\.[\\d]{1,3}\\.[\\d]{1,3}\\.[\\d]{1,3}).*?([\\S]{2}-[\\S]{2}-[\\S]{2}-[\\S]{2}-[\\S]{2}-[\\S]{2})">>,
+                    [global, {capture, all_but_first, binary}])
+        end,
+    case Result of
+        {match, Ips} ->
+            lists:foldl(
+                fun([Ip, Mac], Acc) ->
+                    Acc#{Ip => Mac}
+                end, #{}, Ips);
+        _ ->
+            #{}
+    end.
+
 get_ipbymac(Mac, ping) ->
     case get_ipbymac(Mac) of
         <<"">> ->
@@ -100,10 +123,11 @@ get_ipbymac(Mac, ping) ->
     end;
 get_ipbymac(Mac, Network) ->
     case get_ipbymac(Mac) of
-        <<"">> ->
+        Ip when size(Ip) > 6 ->
+            Ip;
+        _ ->
             ping_all(Network),
-            get_ipbymac(Mac);
-        Ip -> Ip
+            get_ipbymac(Mac)
     end.
 
 get_ipbymac(Mac) ->
@@ -233,9 +257,9 @@ ping([Ip | Ips]) ->
 do_ping({A, B, C, _D}) ->
     case os:type() of
         {unix, linux} ->
-            [os:cmd("ping -c 1 -w 1 " ++ to_list(A) ++ "." ++ to_list(B) ++ "." ++ to_list(C) ++ "." ++ dgiot_utils:to_list(N)) || N <- lists:seq(2, 254)];
+            [ping_("ping -c 2 -w 2 " ++ to_list(A) ++ "." ++ to_list(B) ++ "." ++ to_list(C) ++ "." ++ dgiot_utils:to_list(N)) || N <- lists:seq(1, 254)];
         _ ->
-            [os:cmd("ping -n 1 -w 1 " ++ to_list(A) ++ "." ++ to_list(B) ++ "." ++ to_list(C) ++ "." ++ dgiot_utils:to_list(N)) || N <- lists:seq(2, 254)]
+            [ping_("ping -n 2 -w 2 " ++ to_list(A) ++ "." ++ to_list(B) ++ "." ++ to_list(C) ++ "." ++ dgiot_utils:to_list(N)) || N <- lists:seq(1, 254)]
     end.
 
 do_ping({A, B, C, _D}, Ifaddr) ->
@@ -243,21 +267,31 @@ do_ping({A, B, C, _D}, Ifaddr) ->
         {unix, linux} ->
             arping({A, B, C, _D}, Ifaddr);
         _ ->
-            [os:cmd("ping -n 1 -w 1 " ++ to_list(A) ++ "." ++ to_list(B) ++ "." ++ to_list(C) ++ "." ++ dgiot_utils:to_list(N)) || N <- lists:seq(2, 254)]
+            [ping_("ping -n 2 -w 2 " ++ to_list(A) ++ "." ++ to_list(B) ++ "." ++ to_list(C) ++ "." ++ dgiot_utils:to_list(N)) || N <- lists:seq(1, 254)]
     end.
 
 arping({A, B, C, _D}, Ifaddr) ->
-    [os:cmd("arping -I " ++ dgiot_utils:to_list(Ifaddr) ++ " -f -w 1 " ++ to_list(A) ++ "." ++ to_list(B) ++ "." ++ to_list(C) ++ "." ++ dgiot_utils:to_list(N)) || N <- lists:seq(1, 255)].
+    [ping_("arping -I " ++ dgiot_utils:to_list(Ifaddr) ++ " -f -w 2 " ++ to_list(A) ++ "." ++ to_list(B) ++ "." ++ to_list(C) ++ "." ++ dgiot_utils:to_list(N)) || N <- lists:seq(1, 254)].
 
 arping({_A, _B, _C, 255}, _Ifaddr, Mac) ->
     {Mac, 255};
 arping({A, B, C, N}, Ifaddr, Mac) ->
-    Result = os:cmd("arping -I " ++ dgiot_utils:to_list(Ifaddr) ++ " -f -w 1 " ++ to_list(A) ++ "." ++ to_list(B) ++ "." ++ to_list(C) ++ "." ++ dgiot_utils:to_list(N)),
+    Result = ping_("arping -I " ++ dgiot_utils:to_list(Ifaddr) ++ " -f -w 2 " ++ to_list(A) ++ "." ++ to_list(B) ++ "." ++ to_list(C) ++ "." ++ dgiot_utils:to_list(N)),
     case re:run(Result, Mac) of
         {match, _} ->
             {Mac, N};
         _ ->
             arping({A, B, C, N + 1}, Ifaddr, Mac)
+    end.
+
+ping_(Command) ->
+    timer:sleep(100),
+    open_port({spawn, "sh -c 'exec " ++ dgiot_utils:to_list(Command) ++ "'"}, []),
+    receive
+        {_Port, {data, Data}} ->
+            dgiot_mqtt:publish(self(), <<"dgiot/ping/logs">>, dgiot_utils:to_binary(Data));
+        {_Port, {exit_status, Status}} ->
+            Status
     end.
 
 get_ifaddrs() ->
