@@ -147,6 +147,9 @@ do_request(get_protocol, Body, _Context, _Req) ->
 %% Proctol 概要: 获取Dlink json信息
 %% OperationId:dlinkjson
 %% 请求:GET /iotapi/dlinkjson
+do_request(get_dlinkjson, #{<<"type">> := <<"arp">>}, _Context, _Req) ->
+    {200, dgiot_network:get_arp()};
+
 do_request(get_dlinkjson, #{<<"type">> := <<"swaggerTree">>}, _Context, _Req) ->
     {ok, Swagger} = dgiot_swagger:tree(),
     {file, Here} = code:is_loaded(?MODULE),
