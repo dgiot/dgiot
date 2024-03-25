@@ -19,7 +19,7 @@
 -include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
 -include("dgiot_gb26875.hrl").
 -include_lib("dgiot/include/logger.hrl").
--define(TYPE, <<"gb26875">>).
+-define(TYPE, <<"GB26875">>).
 -dgiot_data("ets").
 -export([init_ets/0]).
 -dgiot_channel(?MODULE).
