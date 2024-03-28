@@ -290,7 +290,7 @@ post_group(Body, SessionToken) ->
         <<"ACL">> => Acl,
         <<"name">> => ProductName,
         <<"nodeType">> => 2},
-    io:format("NewBody ~p~n", [Body1]),
+%%    io:format("NewBody ~p~n", [Body1]),
 
     case dgiot_product:create_product(Body1, SessionToken) of
         {_, #{<<"objectId">> := ProductId}} ->
@@ -304,7 +304,7 @@ post_group(Body, SessionToken) ->
                 <<"devModel">> => <<"DGIOT_GROUP">>,
                 <<"product">> => ProductId,
                 <<"ACL">> => Acl},
-            io:format("CreateArgs ~p~n", [CreateArgs]),
+%%            io:format("CreateArgs ~p~n", [CreateArgs]),
             dgiot_device:create_device(CreateArgs);
         Error ->
             Error
