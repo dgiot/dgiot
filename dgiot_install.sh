@@ -1566,8 +1566,8 @@ dgiot_shell
 # set parameters by default value
 deployType=single                           # [single | cluster | devops | otp|  ci | atomgit]
 plugin="dgiot"                              # [dgiot | dgiot_your_plugin]
-software="dgiot_b34"                        # [dgiot_b20| dgiot_n]
-dgiotmd5="d5426a73ce1a9903abc0494261132cbc" # [dgiotmd5]
+software="dgiot_b37"                        # [dgiot_b20| dgiot_n]
+dgiotmd5="4fc88e3b797ae4104fd3f6779604a2c7" # [dgiotmd5]
 pg_eip="changeyourip"                       # [datanode_eip]
 pg_auth='changeyourpassword'                # [pg_auth]
 islanip="false"                             # [islanip]
