@@ -138,14 +138,14 @@ send_msg(#dclient{userdata = #device_task{dique = DisQue, pnque_len = PnQueLen} 
     get_next_pn(State#dclient{userdata = UserData#device_task{pnque_len = PnQueLen - 1}});
 
 %% 发送指令集
-send_msg(#dclient{channel = ChannelId, userdata = #device_task{ref = Ref, product = Product, devaddr = DevAddr, dique = DisQue} = UserData} = State) ->
+send_msg(#dclient{channel = ChannelId, clock = #dclock{freq = Freq}, userdata = #device_task{ref = Ref, product = Product, devaddr = DevAddr, dique = DisQue} = UserData} = State) ->
     {InstructOrder, Interval, _Identifier, _NewDataSource} = lists:nth(1, DisQue),
     {NewCount, _Payload, _Dis} =
         lists:foldl(fun(X, {Count, Acc, Acc1}) ->
             case X of
                 {InstructOrder, _, Identifier1, DataSource} ->
                     Topic = <<"$dg/device/", Product/binary, "/", DevAddr/binary, "/properties">>,
-                    Payload = dgiot_json:encode(DataSource#{<<"identifier">> => Identifier1}),
+                    Payload = dgiot_json:encode(DataSource#{<<"identifier">> => Identifier1, <<"_dgiotTaskFreq">> => Freq}),
 %%                  io:format("~s ~p DataSource = ~p.~n", [?FILE, ?LINE, DataSource]),
                     dgiot_mqtt:publish(dgiot_utils:to_binary(ChannelId), Topic, Payload),
                     dgiot_bridge:send_log(dgiot_utils:to_binary(ChannelId), Product, DevAddr, "~s ~p to dev => ~ts: ~ts", [?FILE, ?LINE, unicode:characters_to_list(Topic), unicode:characters_to_list(dgiot_json:encode(DataSource))]),
