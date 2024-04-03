@@ -46,6 +46,19 @@ init(#tcp{state = #state{id = ChannelId}} = TCPState) ->
             {stop, not_find_channel}
     end.
 
+handle_info(check_connection, #tcp{state = #state{id = ChannelId, hb = Hb}} = TCPState) ->
+    Now = dgiot_datetime:now_secs(),
+    case dgiot_data:get({check_connection, ChannelId}) of
+        OldTime when (Now - OldTime) > (Hb + 60) ->
+%%            重启通道
+            dgiot_bridge:control_channel(ChannelId, <<"disable">>, <<>>),
+            dgiot_bridge:control_channel(ChannelId, <<"enable">>, <<>>);
+        _ ->
+            pass
+    end,
+    erlang:send_after(Hb * 1000, self(), check_connection),
+    {noreply, TCPState};
+
 %% 9C A5 25 CD 00 DB
 %% 11 04 02 06 92 FA FE
 handle_info({tcp, Buff}, #tcp{socket = Socket, state = #state{id = ChannelId, devaddr = <<>>, head = Head, len = Len, product = ProductId, dtutype = Dtutype} = State} = TCPState) ->
@@ -53,6 +66,7 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, state = #state{id = ChannelId, de
     DtuAddr = dgiot_utils:binary_to_hex(Buff),
     List = dgiot_utils:to_list(DtuAddr),
     List1 = dgiot_utils:to_list(Buff),
+    erlang:send_after(120 * 1000, self(), check_connection),
     case re:run(DtuAddr, Head, [{capture, first, list}]) of
         {match, [Head]} when length(List) == Len ->
             DeviceId = dgiot_parse_id:get_deviceid(ProductId, DtuAddr),
@@ -140,12 +154,13 @@ handle_info({deliver, _, Msg}, #tcp{state = #state{id = ChannelId} = State} = TC
                     {noreply, TCPState};
                 [<<"$dg">>, <<"device">>, ProductId, DevAddr, <<"properties">>] ->
                     case jsx:decode(Payload, [{labels, binary}, return_maps]) of
-                        #{<<"slaveid">> := SlaveId, <<"address">> := Address} = DataSource ->
+                        #{<<"_dgiotTaskFreq">> := Freq, <<"slaveid">> := SlaveId, <<"address">> := Address} = DataSource ->
+                            dgiot_data:insert({check_connection, ChannelId}, dgiot_datetime:now_secs()),
                             Data = modbus_rtu:to_frame(DataSource),
 %%                            io:format("~s ~p Data = ~p.~n", [?FILE, ?LINE, dgiot_utils:to_hex(Data)]),
                             dgiot_bridge:send_log(ChannelId, ProductId, DevAddr, "Channel sends ~p to DTU ~p", [dgiot_utils:binary_to_hex(Data), DevAddr]),
                             dgiot_tcp_server:send(TCPState, Data),
-                            {noreply, TCPState#tcp{state = State#state{env = #{product => ProductId, pn => SlaveId, di => Address}}}};
+                            {noreply, TCPState#tcp{state = State#state{hb = Freq, env = #{product => ProductId, pn => SlaveId, di => Address}}}};
                         _ ->
                             {noreply, TCPState}
                     end;
