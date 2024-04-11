@@ -148,7 +148,7 @@ send_msg(#dclient{channel = ChannelId, clock = #dclock{freq = Freq}, userdata = 
                     Payload = dgiot_json:encode(DataSource#{<<"identifier">> => Identifier1, <<"_dgiotTaskFreq">> => Freq}),
 %%                  io:format("~s ~p DataSource = ~p.~n", [?FILE, ?LINE, DataSource]),
                     dgiot_mqtt:publish(dgiot_utils:to_binary(ChannelId), Topic, Payload),
-                    dgiot_bridge:send_log(dgiot_utils:to_binary(ChannelId), Product, DevAddr, "~s ~p to dev => ~ts: ~ts", [?FILE, ?LINE, unicode:characters_to_list(Topic), unicode:characters_to_list(dgiot_json:encode(DataSource))]),
+                    dgiot_bridge:send_log(dgiot_utils:to_binary(ChannelId), Product, DevAddr, "~s ~p to dev => ~ts: ~ts", [?FILE, ?LINE, unicode:characters_to_list(Topic), unicode:characters_to_list(Payload)]),
                     {Count + 1, Acc ++ [DataSource], Acc1 ++ [Identifier1]};
                 _ ->
                     {Count, Acc, Acc1}

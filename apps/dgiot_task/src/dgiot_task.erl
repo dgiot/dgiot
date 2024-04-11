@@ -19,7 +19,7 @@
 -include_lib("dgiot/include/logger.hrl").
 -include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
 
--export([start/1, start/2, send/3, get_pnque_len/1, save_pnque/4, get_pnque/1, del_pnque/1, save_td/4, merge_cache_data/3, save_cache_data/2]).
+-export([start/1, send/3, get_pnque_len/1, save_pnque/4, get_pnque/1, del_pnque/1, save_td/4, merge_cache_data/3, save_cache_data/2]).
 -export([get_props/1, get_control/3, get_collection/4, get_calculated/4, get_instruct/2, get_storage/2, string2value/2, string2value/3, get_statistic/7]).
 -export([save_td_no_match/4, get_last_value/4]).
 
@@ -102,31 +102,14 @@
 start(ChannelId) ->
     lists:map(fun(Y) ->
         case Y of
-            {ClientId, _} ->
+            {ClientId, [{ProductId, _} | _]} ->
+                timer:sleep(1),
+                dgiot_data:insert({taskchannel_product, binary_to_atom(ProductId)}, ChannelId),
                 dgiot_client:start(ChannelId, ClientId);
             _ ->
                 pass
         end
-              end, ets:tab2list(?DGIOT_PNQUE)).
-
-start(ChannelId, Products) when is_list(Products) ->
-    lists:map(fun({ProductId, _}) ->
-        dgiot_data:insert({taskchannel_product, binary_to_atom(ProductId)}, ChannelId),
-        Success = fun(Page) ->
-            lists:map(fun(#{<<"objectId">> := DeviceId}) ->
-                dgiot_client:start(ChannelId, DeviceId)
-                      end, Page)
-                  end,
-        Query = #{
-            <<"order">> => <<"updatedAt">>,
-            <<"keys">> => [<<"objectId">>],
-            <<"where">> => #{<<"product">> => ProductId}
-        },
-        dgiot_parse_loader:start(<<"Device">>, Query, 0, 100, 1000000, Success)
-              end, Products);
-
-start(ChannelId, ClientId) ->
-    dgiot_client:start(ChannelId, ClientId).
+              end, ets:tab2list(dgiot_pnque)).
 
 send(ProductId, DevAddr, Payload) ->
     case dgiot_data:get({?TYPE, ProductId}) of
@@ -442,13 +425,6 @@ save_pnque(DtuProductId, DtuAddr, ProductId, DevAddr) ->
         Pn_que ->
             New_Pn_que = dgiot_utils:unique_2(Pn_que ++ [{ProductId, DevAddr}]),
             dgiot_data:insert(?DGIOT_PNQUE, DtuId, New_Pn_que)
-    end,
-    case dgiot_data:get({task_args, DtuProductId}) of
-        not_find ->
-            pass;
-        #{<<"channel">> := Channel} = Args ->
-%%            io:format("Args ~p.~n", [Args]),
-            supervisor:start_child(?TASK_SUP(Channel), [Args#{<<"dtuid">> => DtuId}])
     end.
 
 get_pnque_len(DtuId) ->
