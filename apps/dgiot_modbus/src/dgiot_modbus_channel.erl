@@ -164,7 +164,8 @@ handle_message({rule, #{clientid := DevAddr, payload := Payload, topic := _Topic
 handle_message(_Message, State) ->
     {ok, State}.
 
-stop(_ChannelType, _ChannelId, _State) ->
+stop(_ChannelType, ChannelId, _State) ->
+    dgiot_data:delete({check_connection, ChannelId}),
     ok.
 
 get_app(Products) ->
