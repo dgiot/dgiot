@@ -46,19 +46,6 @@ init(#tcp{state = #state{id = ChannelId}} = TCPState) ->
             {stop, not_find_channel}
     end.
 
-handle_info(check_connection, #tcp{state = #state{id = ChannelId, hb = Hb}} = TCPState) ->
-    Now = dgiot_datetime:now_secs(),
-    case dgiot_data:get({check_connection, ChannelId}) of
-        OldTime when (Now - OldTime) > (Hb + 60) ->
-%%            重启通道
-            dgiot_bridge:control_channel(ChannelId, <<"disable">>, <<>>),
-            timer:sleep(500),
-            dgiot_bridge:control_channel(ChannelId, <<"enable">>, <<>>);
-        _ ->
-            pass
-    end,
-    erlang:send_after(Hb * 1000, self(), check_connection),
-    {noreply, TCPState};
 
 %% 9C A5 25 CD 00 DB
 %% 11 04 02 06 92 FA FE
@@ -67,7 +54,6 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, state = #state{id = ChannelId, de
     DtuAddr = dgiot_utils:binary_to_hex(Buff),
     List = dgiot_utils:to_list(DtuAddr),
     List1 = dgiot_utils:to_list(Buff),
-    erlang:send_after(600 * 1000, self(), check_connection),
     case re:run(DtuAddr, Head, [{capture, first, list}]) of
         {match, [Head]} when length(List) == Len ->
             DeviceId = dgiot_parse_id:get_deviceid(ProductId, DtuAddr),
@@ -102,7 +88,6 @@ handle_info({tcp, Buff}, #tcp{state = #state{id = ChannelId, devaddr = DtuAddr, 
         <<"slaveId">> => Sh * 256 + Sl,
         <<"address">> => H * 256 + L}) of
         {_, Things} ->
-            dgiot_data:insert({check_connection, ChannelId}, dgiot_datetime:now_secs()),
             NewTopic = <<"$dg/thing/", DtuProductId/binary, "/", DtuAddr/binary, "/properties/report">>,
             dgiot_bridge:send_log(ChannelId, ProductId, DtuAddr, "~s ~p to task ~p ~ts ", [?FILE, ?LINE, NewTopic, unicode:characters_to_list(dgiot_json:encode(Things))]),
             DeviceId = dgiot_parse_id:get_deviceid(ProductId, DtuAddr),
@@ -126,7 +111,6 @@ handle_info({tcp, Buff}, #tcp{state = #state{id = ChannelId, devaddr = DtuAddr, 
                 <<"slaveId">> => SlaveId,
                 <<"address">> => Address}) of
                 {_, Things} ->
-                    dgiot_data:insert({check_connection, ChannelId}, dgiot_datetime:now_secs()),
                     NewTopic = <<"$dg/thing/", DtuProductId/binary, "/", DtuAddr/binary, "/properties/report">>,
                     dgiot_bridge:send_log(ChannelId, DtuProductId, DtuAddr, "~s ~p to task ~p ~ts~n ", [?FILE, ?LINE, NewTopic, unicode:characters_to_list(dgiot_json:encode(Things))]),
                     DeviceId = dgiot_parse_id:get_deviceid(DtuProductId, DtuAddr),
@@ -158,7 +142,6 @@ handle_info({deliver, _, Msg}, #tcp{state = #state{id = ChannelId} = State} = TC
                 [<<"$dg">>, <<"device">>, ProductId, DevAddr, <<"properties">>] ->
                     case jsx:decode(Payload, [{labels, binary}, return_maps]) of
                         #{<<"_dgiotTaskFreq">> := Freq, <<"slaveid">> := SlaveId, <<"address">> := Address} = DataSource ->
-                            dgiot_data:insert({check_connection, ChannelId}, dgiot_datetime:now_secs()),
                             Data = modbus_rtu:to_frame(DataSource),
 %%                            io:format("~s ~p Data = ~p.~n", [?FILE, ?LINE, dgiot_utils:to_hex(Data)]),
                             dgiot_bridge:send_log(ChannelId, ProductId, DevAddr, "Channel sends ~p to DTU ~p", [dgiot_utils:binary_to_hex(Data), DevAddr]),
@@ -197,8 +180,7 @@ handle_call(_Msg, _From, TCPState) ->
 handle_cast(_Msg, TCPState) ->
     {noreply, TCPState}.
 
-terminate(_Reason, #tcp{state = #state{id = ChannelId, devaddr = DtuAddr, product = ProductId}} = _TCPState) ->
-    dgiot_data:delete({check_connection, ChannelId}),
+terminate(_Reason, #tcp{state = #state{id = _ChannelId, devaddr = DtuAddr, product = ProductId}} = _TCPState) ->
     DeviceId = dgiot_parse_id:get_deviceid(ProductId, DtuAddr),
     Taskchannel = dgiot_product_channel:get_taskchannel(ProductId),
     dgiot_task:del_pnque(DeviceId),

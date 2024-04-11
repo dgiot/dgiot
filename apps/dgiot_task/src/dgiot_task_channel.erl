@@ -137,12 +137,13 @@ handle_event(_EventId, Event, State) ->
     ?LOG(info, "channel ~p", [Event]),
     {ok, State}.
 
-handle_message(start_client, #state{id = ChannelId, products = Products} = State) ->
+handle_message(start_client, #state{id = ChannelId, products = _Products} = State) ->
 %%    io:format("~s ~p ChannelId = ~p.~n", [?FILE, ?LINE, ChannelId]),
-    case dgiot_data:get({start_client, ChannelId}) of
+    case dgiot_data:get({start_client, binary_to_atom(ChannelId)}) of
         not_find ->
-            dgiot_task:start(ChannelId, Products),
-            erlang:send_after(1000 * 60 * 1, self(), check_client);
+            dgiot_task:start(ChannelId),
+            dgiot_data:insert({start_client, ChannelId}, ChannelId),
+            erlang:send_after(1000 * 60 * 1, self(), check_newdevice);
         _ ->
             pass
     end,
@@ -150,20 +151,16 @@ handle_message(start_client, #state{id = ChannelId, products = Products} = State
 
 handle_message(stop_client, #state{id = ChannelId} = State) ->
 %%    io:format("~s ~p ChannelId = ~p.~n", [?FILE, ?LINE, ChannelId]),
-    case dgiot_data:get({stop_client, binary_to_atom(ChannelId)}) of
-        not_find ->
-            dgiot_client:stop(ChannelId);
-        _ ->
-            pass
-    end,
+    dgiot_client:stop(ChannelId),
+    dgiot_data:insert({stop_client, ChannelId}, ChannelId),
     {ok, State};
 
-handle_message(check_client, #state{id = ChannelId, products = Products} = State) ->
+handle_message(check_newdevice, #state{id = ChannelId, products = _Products} = State) ->
 %%    io:format("~s ~p time ~p ChannelId = ~p.~n", [?FILE, ?LINE, dgiot_datetime:format(dgiot_datetime:now_secs(), <<"YY-MM-DD HH:NN:SS">>), ChannelId]),
     case dgiot_data:get({stop_client, binary_to_atom(ChannelId)}) of
         not_find ->
-            dgiot_task:start(ChannelId, Products),
-            erlang:send_after(1000 * 60 * 1, self(), check_client);
+            dgiot_task:start(ChannelId),
+            erlang:send_after(1000 * 60 * 1, self(), check_newdevice);
         _ ->
             pass
     end,
