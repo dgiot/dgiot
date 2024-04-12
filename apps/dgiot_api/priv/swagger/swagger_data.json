@@ -205,6 +205,49 @@
         ]
       }
     },
+    "/import_wmxdata": {
+      "post": {
+        "summary": "导入物模型",
+        "description": "导入物模型",
+        "consumes": [
+          "multipart/form-data"
+        ],
+        "parameters": [
+          {
+            "name": "objectId",
+            "in": "formData",
+            "description": "产品id",
+            "type": "string"
+          },
+          {
+            "name": "file",
+            "in": "formData",
+            "description": "数据文件",
+            "type": "file"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Data"
+        ]
+      }
+    },
     "/import_data": {
       "post": {
         "summary": "导库",

@@ -273,6 +273,28 @@ do_request(post_export_data, #{<<"classname">> := Name} = Body, #{<<"sessionToke
             Err
     end;
 
+%% 导入物模型
+do_request(post_import_wmxdata, #{<<"objectId">> := ProductId, <<"file">> := File} = Args, _Context, _Req) ->
+    io:format("~s ~p Args =~p.~n", [?FILE, ?LINE, Args]),
+    AtomName = dgiot_csv:save_csv_ets(File),
+    Things = ets:match(AtomName, {'$1', ['$2', '$3', '$4', '$5', '$6', '$7', '$8', '$9', '$10', '$11' | '_']}),
+    NewProperties = dgiot_csv:post_properties(Things),
+    case dgiot_parsex:get_object(<<"Product">>, ProductId) of
+        {ok, #{<<"thing">> := Thing}} ->
+            OldProperties =
+                lists:foldl(fun(#{<<"identifier">> := Identifier} = X, Acc) ->
+                    Acc#{Identifier => X}
+                            end, #{}, maps:get(<<"properties">>, Thing, [])),
+            Properties =
+                maps:fold(fun(_, Prop, Acc) ->
+                    Acc ++ [Prop]
+                          end, [], dgiot_map:merge(OldProperties, NewProperties)),
+            dgiot_parsex:update_object(<<"Product">>, ProductId, #{<<"thing">> => Thing#{<<"properties">> => Properties}});
+        _ ->
+            pass
+    end,
+    {ok, #{<<"code">> => 200, <<"msg">> => <<"success">>}};
+
 %% DB 概要: 导库 描述:json文件导库
 %% OperationId:post_import_data
 %% 请求:POST /iotapi/import_data
