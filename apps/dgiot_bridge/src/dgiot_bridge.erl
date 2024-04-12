@@ -46,7 +46,7 @@ start() ->
 start_channel(Name, Filter) ->
     dgiot_bridge_loader:start(Name, Filter,
         fun(Module, Channel) ->
-            timer:sleep(1000),
+            timer:sleep(100),
             dgiot_bridge_server ! {start_channel, Module, Channel}
         end).
 
@@ -225,7 +225,6 @@ load_channel() ->
                         false ->
                             ?LOG(error, "~p is not json.", [Json]);
                         Filter ->
-                            ?LOG(info, "Filter: ~p", [Filter]),
                             start_channel(dgiot_bridge, Filter)
                     end
                 end, Filters);
