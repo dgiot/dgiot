@@ -77,9 +77,10 @@ handle_info({'EXIT', _From, Reason}, State) ->
     erlang:garbage_collect(self()),
     {stop, Reason, State};
 
-handle_info(stop, State) ->
+handle_info(stop, #dclient{channel = Channel, client = Client} = Dclient) ->
+    dgiot_client:stop(Channel, Client),
     erlang:garbage_collect(self()),
-    {stop, normal, State};
+    {stop, normal, Dclient};
 
 %% 动态修改任务启动时间和周期
 handle_info({change_clock, NextTime, EndTime, Freq}, #dclient{clock = Clock} = Dclient) ->
@@ -121,8 +122,6 @@ handle_info({dclient_ack, Topic, Payload}, #dclient{channel = ChannelId, userdat
     end;
 
 handle_info(_Msg, State) ->
-%%    io:format("~s ~p _Msg = ~p.~n", [?FILE, ?LINE, _Msg]),
-%%    io:format("~s ~p State = ~p.~n", [?FILE, ?LINE, State]),
     {noreply, State}.
 
 terminate(_Reason, #dclient{channel = ChannelId, client = ClientId} = _State) ->
