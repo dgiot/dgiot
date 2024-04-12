@@ -22,6 +22,7 @@
 -export([start/1, send/3, get_pnque_len/1, save_pnque/4, get_pnque/1, del_pnque/1, save_td/4, merge_cache_data/3, save_cache_data/2]).
 -export([get_props/1, get_control/3, get_collection/4, get_calculated/4, get_instruct/2, get_storage/2, string2value/2, string2value/3, get_statistic/7]).
 -export([save_td_no_match/4, get_last_value/4]).
+-export([save_client/2, del_client/1]).
 
 %% 注册协议类型
 -protocol_type(#{
@@ -105,11 +106,34 @@ start(ChannelId) ->
             {ClientId, [{ProductId, _} | _]} ->
                 timer:sleep(1),
                 dgiot_data:insert({taskchannel_product, binary_to_atom(ProductId)}, ChannelId),
+                save_client(ChannelId, ClientId),
                 dgiot_client:start(ChannelId, ClientId);
             _ ->
                 pass
         end
               end, ets:tab2list(dgiot_pnque)).
+
+save_client(ChannelId, ClientId) ->
+    case dgiot_data:get(?DGIOT_TASK, ChannelId) of
+        not_find ->
+            dgiot_data:insert(?DGIOT_TASK, ChannelId, [ClientId]);
+        ClientIds ->
+            New_ClientIds = dgiot_utils:unique_2(ClientIds ++ [ClientId]),
+            dgiot_data:insert(?DGIOT_TASK, ChannelId, New_ClientIds)
+    end.
+
+del_client(ChannelId) ->
+    case dgiot_data:get(?DGIOT_TASK, ChannelId) of
+        not_find ->
+            pass;
+        ClientIds when length(ClientIds) > 0 ->
+            lists:map(fun(ClientId) ->
+                dgiot_client:stop(ChannelId, ClientId)
+                      end, ClientIds),
+            dgiot_data:delete(?DGIOT_TASK, ChannelId);
+        _ ->
+            pass
+    end.
 
 send(ProductId, DevAddr, Payload) ->
     case dgiot_data:get({?TYPE, ProductId}) of

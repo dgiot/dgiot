@@ -167,10 +167,10 @@ handle_message(check_newdevice, #state{id = ChannelId, products = _Products} = S
     {ok, State};
 
 handle_message(_Message, State) ->
-    ?LOG(info, "_Message ~p", [_Message]),
     {ok, State}.
 
 stop(_ChannelType, ChannelId, _State) ->
+    dgiot_task:del_client(ChannelId),
     dgiot_client:stop(ChannelId),
     ok.
 
