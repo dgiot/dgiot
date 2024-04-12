@@ -19,7 +19,7 @@
 -include_lib("dgiot/include/logger.hrl").
 -include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
 
--export([start/1, send/3, get_pnque_len/1, save_pnque/4, get_pnque/1, del_pnque/1, save_td/4, merge_cache_data/3, save_cache_data/2]).
+-export([start/2, send/3, get_pnque_len/1, save_pnque/4, get_pnque/1, del_pnque/1, save_td/4, merge_cache_data/3, save_cache_data/2]).
 -export([get_props/1, get_control/3, get_collection/4, get_calculated/4, get_instruct/2, get_storage/2, string2value/2, string2value/3, get_statistic/7]).
 -export([save_td_no_match/4, get_last_value/4]).
 -export([save_client/2, del_client/1]).
@@ -100,14 +100,20 @@
     }
 }).
 
-start(ChannelId) ->
+start(ChannelId, ProductIds) ->
     lists:map(fun(Y) ->
         case Y of
             {ClientId, [{ProductId, _} | _]} ->
-                timer:sleep(1),
-                dgiot_data:insert({taskchannel_product, binary_to_atom(ProductId)}, ChannelId),
-                save_client(ChannelId, ClientId),
-                dgiot_client:start(ChannelId, ClientId);
+                case lists:member(ProductId, ProductIds) of
+                    true ->
+                        timer:sleep(1),
+                        dgiot_data:insert({taskchannel_product, binary_to_atom(ProductId)}, ChannelId),
+                        save_client(ChannelId, ClientId),
+                        dgiot_client:start(ChannelId, ClientId);
+                    _ ->
+                        pass
+
+                end;
             _ ->
                 pass
         end

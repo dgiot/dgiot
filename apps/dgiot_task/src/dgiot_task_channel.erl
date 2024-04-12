@@ -120,7 +120,7 @@ init(?TYPE, ChannelId, #{<<"product">> := Products} = Args) ->
     #{<<"freq">> := Freq, <<"start_time">> := Start_time, <<"end_time">> := End_time} = Args,
     Rand = maps:get(<<"rand">>, Args, true),
     dgiot_client:add_clock(ChannelId, Start_time, End_time),
-    State = #state{id = ChannelId, products = Products},
+    State = #state{id = ChannelId, products = get_productids(Products)},
     {ok, State, dgiot_client:register(ChannelId, task_sup, #{
         <<"channel">> => ChannelId,
         <<"starttime">> => dgiot_datetime:localtime_to_unixtime(dgiot_datetime:to_localtime(Start_time)),
@@ -137,11 +137,11 @@ handle_event(_EventId, Event, State) ->
     ?LOG(info, "channel ~p", [Event]),
     {ok, State}.
 
-handle_message(start_client, #state{id = ChannelId, products = _Products} = State) ->
+handle_message(start_client, #state{id = ChannelId, products = Products} = State) ->
 %%    io:format("~s ~p ChannelId = ~p.~n", [?FILE, ?LINE, ChannelId]),
     case dgiot_data:get({start_client, binary_to_atom(ChannelId)}) of
         not_find ->
-            dgiot_task:start(ChannelId),
+            dgiot_task:start(ChannelId, Products),
             dgiot_data:insert({start_client, ChannelId}, ChannelId),
             erlang:send_after(1000 * 60 * 1, self(), check_newdevice);
         _ ->
@@ -155,11 +155,11 @@ handle_message(stop_client, #state{id = ChannelId} = State) ->
     dgiot_data:insert({stop_client, ChannelId}, ChannelId),
     {ok, State};
 
-handle_message(check_newdevice, #state{id = ChannelId, products = _Products} = State) ->
+handle_message(check_newdevice, #state{id = ChannelId, products = Products} = State) ->
 %%    io:format("~s ~p time ~p ChannelId = ~p.~n", [?FILE, ?LINE, dgiot_datetime:format(dgiot_datetime:now_secs(), <<"YY-MM-DD HH:NN:SS">>), ChannelId]),
     case dgiot_data:get({stop_client, binary_to_atom(ChannelId)}) of
         not_find ->
-            dgiot_task:start(ChannelId),
+            dgiot_task:start(ChannelId, Products),
             erlang:send_after(1000 * 60 * 1, self(), check_newdevice);
         _ ->
             pass
@@ -174,4 +174,7 @@ stop(_ChannelType, ChannelId, _State) ->
     dgiot_client:stop(ChannelId),
     ok.
 
-
+get_productids(Products) ->
+    lists:foldl(fun({ProductId, _}, Acc) ->
+        Acc ++ [ProductId]
+                end, [], Products).
