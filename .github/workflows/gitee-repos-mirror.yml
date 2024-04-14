@@ -1,60 +1,56 @@
 name: Gitee repos mirror periodic job
 
 on:
-  push:
-  watch:
-    types: started
-  schedule:
-    - cron: "0 23 * * *"
+  workflow_dispatch:
 
 jobs:
   dgiot:
     name: dgiot
     runs-on: ubuntu-latest
     steps:
-    - name: dgiot
-      uses: Yikun/hub-mirror-action@v1.0
-      with:
-        src: github/dgiot
-        dst: gitee/dgiiot
-        dst_key: ${{ secrets.PRIVATE_KEY }}
-        dst_token:  ${{ secrets.TOKEN }}
-        account_type: org
-        timeout: '1h'
-        debug: true
-        force_update: true
-        static_list: "dgiot"
+      - name: dgiot
+        uses: Yikun/hub-mirror-action@v1.0
+        with:
+          src: github/dgiot
+          dst: gitee/dgiiot
+          dst_key: ${{ secrets.PRIVATE_KEY }}
+          dst_token: ${{ secrets.TOKEN }}
+          account_type: org
+          timeout: "1h"
+          debug: true
+          force_update: true
+          static_list: "dgiot"
   dgiot-org:
     name: dgiot-org
     runs-on: ubuntu-latest
     steps:
-    - name: dgiot
-      uses: Yikun/hub-mirror-action@v1.0
-      with:
-        src: github/dgiot
-        dst: gitee/dgiiot
-        dst_key: ${{ secrets.PRIVATE_KEY }}
-        dst_token:  ${{ secrets.TOKEN }}
-        account_type: org
-        timeout: '1h'
-        debug: true
-        force_update: true
-        black_list: "issue-generator,dgiot-dashboard"
+      - name: dgiot
+        uses: Yikun/hub-mirror-action@v1.0
+        with:
+          src: github/dgiot
+          dst: gitee/dgiiot
+          dst_key: ${{ secrets.PRIVATE_KEY }}
+          dst_token: ${{ secrets.TOKEN }}
+          account_type: org
+          timeout: "1h"
+          debug: true
+          force_update: true
+          black_list: "issue-generator,dgiot-dashboard"
     needs: fastdgiot
   fastdgiot:
     name: fastdgiot
     runs-on: ubuntu-latest
     steps:
-    - name: fastdgiot
-      uses: Yikun/hub-mirror-action@v1.0
-      with:
-        src: github/dgiot
-        dst: gitee/fastdgiot
-        dst_key: ${{ secrets.PRIVATE_KEY }}
-        dst_token:  ${{ secrets.TOKEN }}
-        account_type: org
-        timeout: '1h'
-        debug: true
-        force_update: true
-        static_list: "dgiot" # 只同步这个项目 https://github.com/Yikun/hub-mirror-action#%E9%BB%91%E7%99%BD%E5%90%8D%E5%8D%95
+      - name: fastdgiot
+        uses: Yikun/hub-mirror-action@v1.0
+        with:
+          src: github/dgiot
+          dst: gitee/fastdgiot
+          dst_key: ${{ secrets.PRIVATE_KEY }}
+          dst_token: ${{ secrets.TOKEN }}
+          account_type: org
+          timeout: "1h"
+          debug: true
+          force_update: true
+          static_list: "dgiot" # 只同步这个项目 https://github.com/Yikun/hub-mirror-action#%E9%BB%91%E7%99%BD%E5%90%8D%E5%8D%95
     needs: dgiot
