@@ -274,8 +274,8 @@ do_request(post_export_data, #{<<"classname">> := Name} = Body, #{<<"sessionToke
     end;
 
 %% 导入物模型
-do_request(post_import_wmxdata, #{<<"objectId">> := ProductId, <<"file">> := File} = Args, _Context, _Req) ->
-    io:format("~s ~p Args =~p.~n", [?FILE, ?LINE, Args]),
+do_request(post_import_wmxdata, #{<<"objectId">> := ProductId, <<"file">> := File} = _Args, _Context, _Req) ->
+%%    io:format("~s ~p Args =~p.~n", [?FILE, ?LINE, Args]),
     AtomName = dgiot_csv:save_csv_ets(File),
     Things = ets:match(AtomName, {'$1', ['$2', '$3', '$4', '$5', '$6', '$7', '$8', '$9', '$10', '$11' | '_']}),
     NewProperties = dgiot_csv:post_properties(Things),

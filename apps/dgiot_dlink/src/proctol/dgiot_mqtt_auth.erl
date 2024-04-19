@@ -26,6 +26,15 @@
     , description/0
 ]).
 
+save_client(<<Token:34/binary, _Type/binary>> = ClientId) ->
+    case dgiot_data:get({dlink_client, Token}) of
+        not_find ->
+            dgiot_data:insert({dlink_client, Token}, [ClientId]);
+        ClientIds ->
+            New_ClientIds = dgiot_utils:unique_2(ClientIds ++ [ClientId]),
+            dgiot_data:insert({dlink_client, Token}, New_ClientIds)
+    end.
+
 check(#{peerhost := PeerHost, username := <<"dgiot">>}, AuthResult, _) when PeerHost == {127, 0, 0, 1} ->
     {ok, AuthResult#{anonymous => false, auth_result => success}};
 
@@ -45,10 +54,11 @@ check(#{username := Username}, AuthResult, _)
     {ok, AuthResult#{anonymous => true, auth_result => success}};
 
 %% 当 clientid 和 password 为token 且相等的时候为用户登录
-check(#{clientid := <<Token:34/binary, _Type/binary>>, username := UserId, password := Token}, AuthResult, #{hash_type := _HashType}) ->
+check(#{clientid := <<Token:34/binary, _Type/binary>> = ClientId, username := UserId, password := Token}, AuthResult, #{hash_type := _HashType}) ->
 %%    io:format("~s ~p UserId: ~p~n", [?FILE, ?LINE, UserId]),
     case dgiot_auth:get_session(Token) of
         #{<<"objectId">> := UserId} ->
+            save_client(ClientId),
             {stop, AuthResult#{anonymous => false, auth_result => success}};
         _ ->
             {stop, AuthResult#{anonymous => false, auth_result => password_error}}
