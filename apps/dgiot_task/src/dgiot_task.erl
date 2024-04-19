@@ -117,7 +117,7 @@ start(ChannelId, ProductIds) ->
             _ ->
                 pass
         end
-              end, ets:tab2list(dgiot_pnque)).
+              end, ets:tab2list(?DGIOT_PNQUE)).
 
 save_client(ChannelId, ClientId) ->
     case dgiot_data:get(?DGIOT_TASK, ChannelId) of
@@ -507,25 +507,12 @@ save_td(ProductId, DevAddr, Ack, _AppData) ->
             AllData = dgiot_task:get_calculated(ProductId, DevAddr, Collection, Props),
             %%            过滤存储值
             Storage = dgiot_task:get_storage(AllData, Props),
-            case Interval > 0 of
-                true ->
-                    Keys = dgiot_product:get_keys(ProductId),
-                    AllStorageKey = maps:keys(Storage),
-                    case Keys -- AllStorageKey of
-                        List when length(List) == 0 andalso length(AllStorageKey) =/= 0 ->
-                            dealwith_data(ProductId, DevAddr, DeviceId, AllData, Storage);
-                        _ ->
-                            save_cache_data(DeviceId, CacheData),
-                            Storage
-                    end;
-                _ ->
-                    save_cache_data(DeviceId, CacheData),
-                    dealwith_data(ProductId, DevAddr, DeviceId, AllData, Storage)
-            end
+            save_cache_data(DeviceId, CacheData),
+            dealwith_data(ProductId, DevAddr, DeviceId, AllData, Storage, Interval)
     end.
 
 %% 处理数据
-dealwith_data(ProductId, DevAddr, DeviceId, AllData, Storage) ->
+dealwith_data(ProductId, DevAddr, DeviceId, AllData, Storage, Interval) ->
     %%                    告警
     NotificationTopic = <<"$dg/user/alarm/", ProductId/binary, "/", DeviceId/binary, "/properties/report">>,
     dgiot_mqtt:publish(DeviceId, NotificationTopic, dgiot_json:encode(AllData)),
@@ -533,9 +520,20 @@ dealwith_data(ProductId, DevAddr, DeviceId, AllData, Storage) ->
     ChannelId = dgiot_parse_id:get_channelid(dgiot_utils:to_binary(?BRIDGE_CHL), <<"DGIOTTOPO">>, <<"TOPO组态通道"/utf8>>),
     dgiot_channelx:do_message(ChannelId, {topo_thing, ProductId, DeviceId, AllData}),
     %%  save td
-    dgiot_tdengine_adapter:save(ProductId, DevAddr, Storage),
-    Channel = dgiot_product_channel:get_taskchannel(ProductId),
-    dgiot_bridge:send_log(Channel, ProductId, DevAddr, "~s ~p save td => ProductId ~p DevAddr ~p ~ts ", [?FILE, ?LINE, ProductId, DevAddr, unicode:characters_to_list(dgiot_json:encode(Storage))]),
+    case dgiot_data:get(?DGIOT_DATA_CACHE, {save_cache_time, DeviceId}) of
+        not_find ->
+            dgiot_data:insert(?DGIOT_DATA_CACHE, {save_cache_time, DeviceId}, dgiot_datetime:now_ms());
+        Ts ->
+            case dgiot_datetime:now_ms() - Ts < (Interval * 1000) of
+                true ->
+                    pass;
+                _ ->
+                    Channel = dgiot_product_channel:get_taskchannel(ProductId),
+                    dgiot_bridge:send_log(Channel, ProductId, DevAddr, "~s ~p save td => ProductId ~p DevAddr ~p ~ts ", [?FILE, ?LINE, ProductId, DevAddr, unicode:characters_to_list(dgiot_json:encode(Storage))]),
+                    dgiot_data:insert(?DGIOT_DATA_CACHE, {save_cache_time, DeviceId}, dgiot_datetime:now_ms()),
+                    dgiot_tdengine_adapter:save(ProductId, DevAddr, Storage)
+            end
+    end,
     dgiot_metrics:inc(dgiot_task, <<"task_save">>, 1),
     Storage.
 
@@ -544,40 +542,22 @@ save_cache_data(DeviceId, Data) ->
         AtomKey = dgiot_utils:to_atom(K),
         Acc#{AtomKey => V}
                         end, #{}, Data),
-    dgiot_data:insert(?DGIOT_DATA_CACHE, DeviceId, {NewData, dgiot_datetime:now_secs()}).
+    dgiot_data:insert(?DGIOT_DATA_CACHE, DeviceId, {NewData, dgiot_datetime:now_ms()}).
 
 merge_cache_data(_DeviceId, NewData, 0) ->
     NewData;
 
-merge_cache_data(DeviceId, NewData, -1) ->
+merge_cache_data(DeviceId, NewData, _) ->
     case dgiot_data:get(?DGIOT_DATA_CACHE, DeviceId) of
         not_find ->
             NewData;
-        {OldData, _Ts} ->
+        {OldData, _} ->
             NewOldData =
                 maps:fold(fun(K, V, Acc) ->
                     Key = dgiot_utils:to_binary(K),
                     Acc#{Key => V}
                           end, #{}, OldData),
             dgiot_map:merge(NewOldData, NewData)
-    end;
-
-merge_cache_data(DeviceId, NewData, Interval) ->
-    case dgiot_data:get(?DGIOT_DATA_CACHE, DeviceId) of
-        not_find ->
-            NewData;
-        {OldData, Ts} ->
-            case dgiot_datetime:now_secs() - Ts < Interval of
-                true ->
-                    NewOldData =
-                        maps:fold(fun(K, V, Acc) ->
-                            Key = dgiot_utils:to_binary(K),
-                            Acc#{Key => V}
-                                  end, #{}, OldData),
-                    dgiot_map:merge(NewOldData, NewData);
-                false ->
-                    NewData
-            end
     end.
 
 save_td_no_match(ProductId, DevAddr, Ack, AppData) ->
@@ -595,6 +575,6 @@ save_td_no_match(ProductId, DevAddr, Ack, AppData) ->
             DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
             Interval = maps:get(<<"interval">>, AppData, 3),
             AllData = merge_cache_data(DeviceId, Storage, Interval),
-            dealwith_data(ProductId, DevAddr, DeviceId, AllData, Storage),
+            dealwith_data(ProductId, DevAddr, DeviceId, AllData, Storage, Interval),
             AllData
     end.

@@ -71,7 +71,14 @@ init_ets() ->
 subscribe_route_key(Topics, Type, SessionToken) ->
     unsubscribe_route_key(SessionToken, Type),
     lists:foldl(fun(X, Acc) ->
-        dgiot_mqtt:subscribe_mgmt(SessionToken, X),
+        case dgiot_data:get({dlink_client, SessionToken}) of
+            not_find ->
+                pass;
+            Clients ->
+                lists:foldl(fun(Client, _) ->
+                    dgiot_mqtt:subscribe_mgmt(Client, X)
+                            end, {}, Clients)
+        end,
         Acc ++ [X]
                 end, [], Topics),
     dgiot_data:insert(?DGIOT_ROUTE_KEY, {SessionToken, Type}, Topics).

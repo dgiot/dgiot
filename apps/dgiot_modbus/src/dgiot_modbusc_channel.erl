@@ -157,6 +157,22 @@
             zh => <<"是否刷新物模型"/utf8>>
         }
     },
+    <<"is_shard">> => #{
+        order => 9,
+        type => enum,
+        required => true,
+        default => #{<<"value">> => true, <<"label">> => <<"是"/utf8>>},
+        enum => [
+            #{<<"value">> => true, <<"label">> => <<"是"/utf8>>},
+            #{<<"value">> => false, <<"label">> => <<"否"/utf8>>}
+        ],
+        title => #{
+            zh => <<"是否分片"/utf8>>
+        },
+        description => #{
+            zh => <<"是否分片存储"/utf8>>
+        }
+    },
     <<"ico">> => #{
         order => 102,
         type => string,
@@ -191,7 +207,7 @@ init(?TYPE, ChannelId, #{
     {FileName, MinAddr, MaxAddr} =
         case maps:find(<<"filepath">>, Args) of
             {ok, FilePath} ->
-                {FileName1, MinAddr1, MaxAddr1} = dgiot_product_csv:read_csv(ChannelId, FilePath, Is_refresh),
+                {FileName1, MinAddr1, MaxAddr1} = dgiot_product_csv:read_csv(ChannelId, FilePath, Is_refresh, maps:get(<<"is_shard">>, Args, true)),
                 %% modbus_tcp:set_addr(ChannelId, MinAddr1, MaxAddr1),
                 {FileName1, MinAddr1, MaxAddr1};
             _ ->

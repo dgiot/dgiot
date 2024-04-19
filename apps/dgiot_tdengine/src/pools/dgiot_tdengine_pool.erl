@@ -30,7 +30,7 @@ login(ChannelId, #{<<"username">> := UserName,
     dgiot_tdengine_ws:login(ChannelId, Ip, Port, UserName, Password).
 
 %% WebSocket
-insert_sql(#{<<"driver">> := <<"WS">>, <<"ws_pid">> := ConnPid, <<"ws_ref">> := StreamRef} = Context, _Action, Sql) when byte_size(Sql) > 0 ->
+insert_sql(#{<<"driver">> := <<"WS">>, <<"ws_pid">> := ConnPid, <<"ws_ref">> := StreamRef} = _Context, _Action, Sql) when byte_size(Sql) > 0 ->
 %%    io:format("~s ~p insert_sql = ~p.~n", [?FILE, ?LINE, Sql]),
     Req_id =
         case get(req_id) of
@@ -50,13 +50,13 @@ insert_sql(#{<<"driver">> := <<"WS">>, <<"ws_pid">> := ConnPid, <<"ws_ref">> := 
         {ws, {text, Data}} ->
             case catch dgiot_json:decode(Data, [return_maps]) of
                 #{<<"code">> := _} = R ->
-                    case maps:get(<<"channel">>, Context, <<"">>) of
-                        <<"">> ->
-%%                            ?LOG(debug, "Execute (~ts) ", [unicode:characters_to_list(Sql)]);
-                            pass;
-                        ChannelId ->
-                            dgiot_bridge:send_log(ChannelId, "Execute (~ts) ~p", [unicode:characters_to_list(Sql), dgiot_json:encode(R)])
-                    end,
+%%                    case maps:get(<<"channel">>, Context, <<"">>) of
+%%                        <<"">> ->
+%%%%                            ?LOG(debug, "Execute (~ts) ", [unicode:characters_to_list(Sql)]);
+%%                            pass;
+%%                        ChannelId ->
+%%                            dgiot_bridge:send_log(ChannelId, "Execute (~ts) ~p", [unicode:characters_to_list(Sql), dgiot_json:encode(R)])
+%%                    end,
                     {ok, R};
                 _ ->
                     {error, Data}
@@ -72,30 +72,30 @@ insert_sql(_Context, _Action, _Sql) ->
     ok.
 
 %% Action 用来区分数据库操作语句类型(DQL、DML、DDL、DCL)
-run_sql(#{<<"url">> := Url, <<"username">> := UserName, <<"password">> := Password} = Context, _Action, Sql) when byte_size(Sql) > 0 ->
+run_sql(#{<<"url">> := Url, <<"username">> := UserName, <<"password">> := Password} = _Context, _Action, Sql) when byte_size(Sql) > 0 ->
 %%    io:format("Url = ~p, UserName = ~p, Password = ~p.~n", [Url, UserName, Password]),
 %%    io:format("~s ~p Sql = ~p.~n", [?FILE, ?LINE, Sql]),
     case dgiot_tdengine_http:request(Url, UserName, Password, Sql) of
         {ok, #{<<"code">> := 0, <<"column_meta">> := Column_meta, <<"data">> := Data} = Result} ->
             NewData = get_data(Column_meta, Data),
-            case maps:get(<<"channel">>, Context, <<"">>) of
-                <<"">> ->
-%%                    ?LOG(debug, "Execute ~p (~ts) ~p", [Url, unicode:characters_to_list(Sql), NewData]);
-                    pass;
-                ChannelId ->
-                    dgiot_bridge:send_log(ChannelId, "Execute ~p (~ts) ~p", [Url, unicode:characters_to_list(Sql), dgiot_json:encode(NewData)])
-            end,
+%%            case maps:get(<<"channel">>, Context, <<"">>) of
+%%                <<"">> ->
+%%%%                    ?LOG(debug, "Execute ~p (~ts) ~p", [Url, unicode:characters_to_list(Sql), NewData]);
+%%                    pass;
+%%                ChannelId ->
+%%                    dgiot_bridge:send_log(ChannelId, "Execute ~p (~ts) ~p", [Url, unicode:characters_to_list(Sql), dgiot_json:encode(NewData)])
+%%            end,
             {ok, Result#{<<"results">> => NewData}};
         {ok, #{<<"code">> := 9826} = Reason} ->
             {error, Reason};
         {ok, Result} ->
-            case maps:get(<<"channel">>, Context, <<"">>) of
-                <<"">> ->
-%%                    ?LOG(debug, "Execute ~p (~ts) ~p", [Url, unicode:characters_to_list(Sql), Result]);
-                    pass;
-                ChannelId ->
-                    dgiot_bridge:send_log(ChannelId, "Execute ~p (~ts) ~p", [Url, unicode:characters_to_list(Sql), dgiot_json:encode(Result)])
-            end,
+%%            case maps:get(<<"channel">>, Context, <<"">>) of
+%%                <<"">> ->
+%%%%                    ?LOG(debug, "Execute ~p (~ts) ~p", [Url, unicode:characters_to_list(Sql), Result]);
+%%                    pass;
+%%                ChannelId ->
+%%                    dgiot_bridge:send_log(ChannelId, "Execute ~p (~ts) ~p", [Url, unicode:characters_to_list(Sql), dgiot_json:encode(Result)])
+%%            end,
             {ok, Result};
         {error, #{<<"code">> := 896} = Reason} ->
             {ok, Reason#{<<"affected_rows">> => 0}};

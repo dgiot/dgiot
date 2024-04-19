@@ -20,17 +20,17 @@
 -include_lib("dgiot/include/logger.hrl").
 -include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
 
--export([read_csv/3, get_products/1, create_product/4, create_device/3, post_thing/3, get_CategoryId/1, get_channelAcl/1]).
+-export([read_csv/4, get_products/1, create_product/5, create_device/3, post_thing/3, get_CategoryId/1, get_channelAcl/1]).
 -export([get_max_addrs/1]).
 
 %%  dgiot_product_csv:read_csv(<<"8cff09f988">>, <<"modbustcp">>).
 %%  dgiot_utils:save_csv_ets(<<"/dgiot_file/product/csv/modbustcp.csv">>)
-read_csv(ChannelId, FilePath, Is_refresh) ->
+read_csv(ChannelId, FilePath, Is_refresh, Is_shard) ->
     FileName = dgiot_csv:save_csv_ets(?MODULE, FilePath),
     spawn(fun() ->
         Productmap = dgiot_product_csv:get_products(FileName),
         TdChannelId = dgiot_parse_id:get_channelid(dgiot_utils:to_binary(?BRIDGE_CHL), <<"TD">>, <<"TD资源通道"/utf8>>),
-        {Devicemap, ProductIds} = dgiot_product_csv:create_product(ChannelId, FileName, Productmap, TdChannelId),
+        {Devicemap, ProductIds} = dgiot_product_csv:create_product(ChannelId, FileName, Productmap, TdChannelId, Is_shard),
         dgiot_product_csv:create_device(FileName, Devicemap, ProductIds),
         timer:sleep(1000),
         dgiot_product_csv:post_thing(FileName, ProductIds, Is_refresh)
@@ -48,7 +48,7 @@ get_products(FileName) ->
         Acc#{ProductName => Devices}
                 end, #{}, Products).
 
-create_product(ChannelId, FileName, Productmap, TdChannelId) ->
+create_product(ChannelId, FileName, Productmap, TdChannelId, Is_shard) ->
     AtomName = dgiot_utils:to_atom(FileName),
     maps:fold(fun(ProductName, DeviceNames, {Acc, Acc2}) ->
         Types = ets:match(AtomName, {'_', [ProductName, '$1', '$2' | '_']}),
@@ -79,7 +79,7 @@ create_product(ChannelId, FileName, Productmap, TdChannelId) ->
                 case Result of
                     {ok, ProductId} ->
 %%                        dgiot_data:insert(AtomName, ProductId, ProductName),
-                        dgiot_data:insert({shard_storage, ProductId}, true),
+                        dgiot_data:insert({shard_storage, ProductId}, Is_shard),
                         Devicemap =
                             lists:foldl(fun(DeviceName1, Acc1) ->
                                 Acc1#{DeviceName1 => ProductId}
