@@ -64,7 +64,10 @@ check(#{clientid := <<Token:34/binary, _Type/binary>> = ClientId, username := Us
     case dgiot_auth:get_session(Token) of
         #{<<"objectId">> := UserId} = User ->
 %%            登录时订阅告警推送
-            sub_notification(ClientId, maps:get(<<"roles">>, User, #{})),
+            spawn(fun() ->
+                timer:sleep(1000 * 10),
+                sub_notification(ClientId, maps:get(<<"roles">>, User, #{}))
+                  end),
             save_client(ClientId),
             {stop, AuthResult#{anonymous => false, auth_result => success}};
         _ ->
