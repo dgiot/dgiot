@@ -80,7 +80,7 @@ save(Product) ->
     save_productSecret(ProductId),
     dgiot_product_channel:save_channel(ProductId),
     dgiot_product_channel:save_tdchannel(ProductId),
-%%    dgiot_product_channel:save_taskchannel(ProductId),
+    dgiot_product_channel:save_taskchannel(ProductId),
     save_device_thingtype(ProductId),
     save_product_identifier(ProductId),
     dgiot_product_enum:save_product_enum(ProductId),

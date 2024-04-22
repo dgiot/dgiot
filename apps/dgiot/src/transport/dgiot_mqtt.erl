@@ -73,7 +73,7 @@ subscribe_route_key(Topics, Type, SessionToken) ->
     lists:foldl(fun(X, Acc) ->
         case dgiot_data:get({dlink_client, SessionToken}) of
             not_find ->
-                pass;
+                dgiot_mqtt:subscribe_mgmt(SessionToken, X);
             Clients ->
                 lists:foldl(fun(Client, _) ->
                     dgiot_mqtt:subscribe_mgmt(Client, X)

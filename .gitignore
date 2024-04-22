@@ -101,6 +101,7 @@ apps/dgiot_12184/
 apps/dgiot_modbusx/
 apps/dgiot_rtsp2ws/
 apps/dgiot_sophon/
+apps/dgiot_open62541/
 node_modules/
 package-lock.json
 erlang_ls.config

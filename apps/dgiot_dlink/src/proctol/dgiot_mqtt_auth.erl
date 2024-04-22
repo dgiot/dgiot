@@ -35,6 +35,11 @@ save_client(<<Token:34/binary, _Type/binary>> = ClientId) ->
             dgiot_data:insert({dlink_client, Token}, New_ClientIds)
     end.
 
+sub_notification(ClientId, Roles) ->
+    maps:fold(fun(RoleId, _, _) ->
+        dgiot_mqtt:subscribe_route_key([<<"$dg/user/dashboard/notification/", RoleId/binary, "/#">>], <<"notification">>, ClientId)
+              end, {}, Roles).
+
 check(#{peerhost := PeerHost, username := <<"dgiot">>}, AuthResult, _) when PeerHost == {127, 0, 0, 1} ->
     {ok, AuthResult#{anonymous => false, auth_result => success}};
 
@@ -57,7 +62,9 @@ check(#{username := Username}, AuthResult, _)
 check(#{clientid := <<Token:34/binary, _Type/binary>> = ClientId, username := UserId, password := Token}, AuthResult, #{hash_type := _HashType}) ->
 %%    io:format("~s ~p UserId: ~p~n", [?FILE, ?LINE, UserId]),
     case dgiot_auth:get_session(Token) of
-        #{<<"objectId">> := UserId} ->
+        #{<<"objectId">> := UserId} = User ->
+%%            登录时订阅告警推送
+            sub_notification(ClientId, maps:get(<<"roles">>, User, #{})),
             save_client(ClientId),
             {stop, AuthResult#{anonymous => false, auth_result => success}};
         _ ->
