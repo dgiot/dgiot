@@ -630,7 +630,7 @@ sendSubscribe(_O) ->
 %% 推送前端弹框
 send_dashboard(#{<<"_deviceid">> := DeviceId, <<"dgiot_alarmvalue">> := Alarmvalue} = Args) ->
     case dgiot_parse:get_object(<<"Device">>, DeviceId) of
-        {ok, #{<<"name">> := DeviceName, <<"product">> := #{<<"objectId">> := ProductId}}} ->
+        {ok, #{<<"ACL">> := ACL, <<"name">> := DeviceName, <<"product">> := #{<<"objectId">> := ProductId}}} ->
             ProductName =
                 case dgiot_parse:get_object(<<"Product">>, ProductId) of
                     {ok, #{<<"name">> := Name1}} ->
@@ -653,8 +653,11 @@ send_dashboard(#{<<"_deviceid">> := DeviceId, <<"dgiot_alarmvalue">> := Alarmval
                 <<"type">> => <<"warn">>,
                 <<"description">> => maps:get(<<"description">>, Args, <<>>)
             },
-            Pubtopic = <<"$dg/user/dashboard/notification/report">>,
-            dgiot_mqtt:publish(DeviceId, Pubtopic, dgiot_json:encode(Data));
+            RoleIds = dgiot_role:get_roleids(maps:keys(ACL)),
+            lists:foldl(fun(RoleId, _) ->
+                Pubtopic = <<"$dg/user/dashboard/notification/", RoleId/binary, "/report">>,
+                dgiot_mqtt:publish(DeviceId, Pubtopic, dgiot_json:encode(Data))
+                        end, {}, RoleIds);
         _ ->
             pass
     end;
