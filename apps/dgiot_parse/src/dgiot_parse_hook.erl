@@ -26,6 +26,8 @@
     do_request_hook/6,
     subscribe/3,
     subscribe/4,
+    unsubscribe/3,
+    unsubscribe/4,
     publish/2,
     add_trigger/3,
     del_trigger/2,
@@ -57,6 +59,23 @@ subscribe(Table, Method, Channel, Keys) ->
             dgiot_data:insert({sub, Table, Method}, dgiot_utils:unique_2(Acc ++ [{Channel, NewKeys}]))
     end,
     add_hook({Table, Method}).
+
+unsubscribe(Table, Method, Channel) ->
+    subscribe(Table, Method, Channel, [<<"*">>]).
+
+unsubscribe(Table, Method, Channel, Keys) ->
+    NewKeys =
+        case Method of
+            put -> Keys;
+            _ -> [<<"*">>]
+        end,
+    case dgiot_data:get({sub, Table, Method}) of
+        not_find ->
+            pass;
+        Acc ->
+
+            dgiot_data:insert({sub, Table, Method}, dgiot_utils:unique_2(Acc -- [{Channel, NewKeys}]))
+    end.
 
 add_hook(Key) ->
     dgiot_hook:add(one_for_one, Key, fun dgiot_parse_hook:do_hook/1).
