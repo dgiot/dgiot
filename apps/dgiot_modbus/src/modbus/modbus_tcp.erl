@@ -378,7 +378,7 @@ parse_frame(StartAddr, FileName, Data, MinAddr) ->
                               _ ->
                                   pass
                           end,
-                          Ncc#{Devaddr1 => #{a => CacheAck, b => Shard_data}};
+                          Ncc#{Devaddr1 => Calculated};
                       (_, _, Ncc) ->
                           Ncc
                   end, #{}, AllData),
