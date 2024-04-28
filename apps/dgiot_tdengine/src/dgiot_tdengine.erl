@@ -120,7 +120,7 @@ batch(Channel, Batch) ->
 batch_sql(Channel, Sql) ->
     transaction(Channel,
         fun(Context) ->
-            dgiot_tdengine_pool:insert_sql(Context#{<<"channel">> => Channel}, execute_update, Sql)
+            dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_update, Sql)
         end).
 
 create_user(UserName, Password) ->
