@@ -19,11 +19,11 @@
 -include("dgiot.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -export([
-     read_from_csv/2
+    read_from_csv/2
     , save_csv_ets/2
     , read_csv/3
     , save_csv_ets/1
-    , post_properties/1
+    , post_properties/2
 ]).
 
 read_from_csv(Path, Fun) ->
@@ -97,7 +97,8 @@ save_csv_ets(#{<<"fullpath">> := Fullpath}) ->
     AtomName.
 
 
-post_properties(Things) ->
+post_properties(<<"plc">>, AtomName) ->
+    Things = ets:match(AtomName, {'$1', ['$2', '$3', '$4', '$5', '$6', '$7', '$8', '$9', '$10', '$11' | '_']}),
     lists:foldl(fun([Index, Devicetype, Name, Identifier, Address, Originaltype, AccessMode, Min_Max, Unit, Type, Specs | _], Acc) ->
         Acc#{
             to_lower(Identifier) => #{
@@ -133,7 +134,50 @@ post_properties(Things) ->
                 <<"moduleType">> => <<"properties">>,
                 <<"isaccumulate">> => false
             }}
-                end, #{}, Things).
+                end, #{}, Things);
+
+post_properties(<<"dlink">>, AtomName) ->
+    Things = ets:match(AtomName, {'$1', ['$2', '$3', '$4', '$5', '$6', '$7', '$8', '$9', '$10', '$11' | '_']}),
+    lists:foldl(fun([Index, Devicetype, Name, Identifier, Key, Len, AccessMode, Min_Max, Unit, Type, Specs | _], Acc) ->
+        Acc#{
+            to_lower(Identifier) => #{
+                <<"name">> => Name,
+                <<"index">> => Index,
+                <<"isstorage">> => true,
+                <<"isshow">> => true,
+                <<"dataForm">> => #{
+                    <<"address">> => <<"0">>,
+                    <<"rate">> => 1,
+                    <<"order">> => 0,
+                    <<"round">> => <<"all">>,
+                    <<"offset">> => 0,
+                    <<"control">> => <<"%{d}">>,
+                    <<"iscount">> => <<"0">>,
+                    <<"protocol">> => <<"DLINK">>,
+                    <<"strategy">> => <<"Ö÷¶¯ÉÏ±¨"/utf8>>,
+                    <<"collection">> => <<"%{s}">>,
+                    <<"countround">> => <<"all">>,
+                    <<"countstrategy">> => 3,
+                    <<"countcollection">> => <<"%{s}">>
+                },
+                <<"dataType">> => get_dataType(to_lower(Type), Min_Max, Unit, Specs),
+                <<"required">> => true,
+                <<"accessMode">> => get_accessmode(AccessMode),
+                <<"dataSource">> => #{
+                    <<"_dlinkindex">> => <<"1">>,
+                    <<"dis">> => [
+                        #{<<"key">> => Key, <<"data">> => Len}
+                    ]
+                },
+                <<"devicetype">> => Devicetype,
+                <<"identifier">> => to_lower(Identifier),
+                <<"moduleType">> => <<"properties">>,
+                <<"isaccumulate">> => false
+            }}
+                end, #{}, Things);
+
+post_properties(_, _) ->
+    error.
 
 get_accessmode(<<229, 143, 170, 232, 175, 187>>) ->
     <<"r">>;
