@@ -154,7 +154,7 @@ post_properties(<<"dlink">>, AtomName) ->
                     <<"control">> => <<"%{d}">>,
                     <<"iscount">> => <<"0">>,
                     <<"protocol">> => <<"DLINK">>,
-                    <<"strategy">> => <<"Ö÷¶¯ÉÏ±¨"/utf8>>,
+                    <<"strategy">> => <<"主动上报"/utf8>>,
                     <<"collection">> => <<"%{s}">>,
                     <<"countround">> => <<"all">>,
                     <<"countstrategy">> => 3,

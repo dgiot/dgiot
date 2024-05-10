@@ -512,7 +512,7 @@ save_td(ProductId, DevAddr, Ack, _AppData) ->
     end.
 
 %% 处理数据
-dealwith_data(ProductId, DevAddr, DeviceId, AllData, Storage, Interval) ->
+dealwith_data(ProductId, DevAddr, DeviceId, AllData, Storage, _Interval) ->
     %%                    告警
     NotificationTopic = <<"$dg/user/alarm/", ProductId/binary, "/", DeviceId/binary, "/properties/report">>,
     dgiot_mqtt:publish(DeviceId, NotificationTopic, dgiot_json:encode(AllData)),
@@ -520,28 +520,10 @@ dealwith_data(ProductId, DevAddr, DeviceId, AllData, Storage, Interval) ->
     ChannelId = dgiot_parse_id:get_channelid(dgiot_utils:to_binary(?BRIDGE_CHL), <<"DGIOTTOPO">>, <<"TOPO组态通道"/utf8>>),
     dgiot_channelx:do_message(ChannelId, {topo_thing, ProductId, DeviceId, AllData}),
     %%  save td
-    Now = dgiot_datetime:now_ms(),
-    case dgiot_data:get(?DGIOT_DATA_CACHE, {save_cache_time, DeviceId}) of
-        not_find ->
-            dgiot_data:insert(?DGIOT_DATA_CACHE, {save_cache_time, DeviceId}, Now);
-        OldTs ->
-            case Now -  OldTs < (Interval * 500) of
-                true ->
-                    pass;
-                _ ->
-                    case dgiot_data:get({save_td, DeviceId, dgiot_datetime:now_secs()}) of
-                        not_find ->
-                            Channel = dgiot_product_channel:get_taskchannel(ProductId),
-                            dgiot_bridge:send_log(Channel, ProductId, DevAddr, "~s ~p save td => ProductId ~p DevAddr ~p ~ts ", [?FILE, ?LINE, ProductId, DevAddr, unicode:characters_to_list(dgiot_json:encode(Storage))]),
-                            dgiot_data:insert(?DGIOT_DATA_CACHE, {save_cache_time, DeviceId}, Now),
-                            dgiot_tdengine_adapter:save(ProductId, DevAddr, Storage),
-                            dgiot_data:insert({save_td, DeviceId, dgiot_datetime:now_secs()}, true);
-                        _ ->
-                            pass
-                    end
-            end
-    end,
+    dgiot_tdengine_adapter:save(ProductId, DevAddr, Storage),
     dgiot_metrics:inc(dgiot_task, <<"task_save">>, 1),
+    Channel = dgiot_product_channel:get_taskchannel(ProductId),
+    dgiot_bridge:send_log(Channel, ProductId, DevAddr, "~s ~p save td => ProductId ~p DevAddr ~p ~ts ", [?FILE, ?LINE, ProductId, DevAddr, unicode:characters_to_list(dgiot_json:encode(Storage))]),
     Storage.
 
 save_cache_data(DeviceId, Data) ->

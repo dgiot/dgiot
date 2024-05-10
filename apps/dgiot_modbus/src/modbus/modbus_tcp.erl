@@ -365,16 +365,19 @@ parse_frame(StartAddr, FileName, Data, MinAddr) ->
                                         end, <<>>, CacheAck),
 
                           Shard_data = modbus_tcp:shard_data(BinData, Calculated),
-                          case dgiot_data:get({modbus_tcp, Devaddr1, dgiot_datetime:now_secs()}) of
+                          Now = dgiot_datetime:now_secs(),
+                          case dgiot_data:get({modbus_tcp, Devaddr1, Now}) of
                               not_find ->
                                   spawn(fun() ->
                                       dgiot_device:save(ProductId1, Devaddr1),
-                                      Sql = dgiot_tdengine:format_sql(ProductId1, Devaddr1, [Shard_data]),
+                                      Sql = dgiot_tdengine:format_sql(ProductId1, Devaddr1, [Shard_data#{<<"createdat">> => Now * 1000}]),
                                       dgiot_tdengine_adapter:save_sql(ProductId1, Sql)
                                         end),
-                                  ChannelId = dgiot_parse_id:get_channelid(<<"2">>, <<"DGIOTTOPO">>, <<"TOPO组态通道"/utf8>>),
-                                  dgiot_channelx:do_message(ChannelId, {topo_thing, ProductId1, DeviceId, Shard_data}),
-                                  dgiot_data:insert({modbus_tcp, Devaddr1, dgiot_datetime:now_secs()}, true);
+%%                                  ChannelId = dgiot_parse_id:get_channelid(<<"2">>, <<"DGIOTTOPO">>, <<"TOPO组态通道"/utf8>>),
+%%                                  dgiot_channelx:do_message(ChannelId, {topo_thing, ProductId1, DeviceId, Shard_data}),
+                                  RealData = dgiot_device_card:get_card(ProductId1, [Shard_data#{<<"createdat">> => Now * 1000}], DeviceId, #{}, dgiot_data:get({shard_storage, ProductId1})),
+                                  dgiot_data:insert({last_data, DeviceId}, RealData),
+                                  dgiot_data:insert({modbus_tcp, Devaddr1, Now}, true);
                               _ ->
                                   pass
                           end,
