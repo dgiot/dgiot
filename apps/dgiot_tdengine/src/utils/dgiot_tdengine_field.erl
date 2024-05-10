@@ -104,13 +104,14 @@ check_value(Value, ProductId, Field) ->
             Specs = maps:get(<<"specs">>, DataType, #{}),
             Type1 = list_to_binary(string:to_upper(binary_to_list(Type))),
             NewValue = get_type_value(Type1, Value, Specs),
-            case check_validate(NewValue, Specs) of
-                true ->
-                    NewValue;
-                false ->
-                    BinNewValue = dgiot_utils:to_binary(NewValue),
-                    throw({error, <<Field/binary, "=", BinNewValue/binary, " is not validate">>})
-            end
+            NewValue
+%%            case check_validate(NewValue, Specs) of
+%%                true ->
+%%                    NewValue;
+%%                false ->
+%%                    BinNewValue = dgiot_utils:to_binary(NewValue),
+%%                    throw({error, <<Field/binary, "=", BinNewValue/binary, " is not validate">>})
+%%            end
     end.
 
 check_fields(Data, #{<<"properties">> := Props}) ->
@@ -150,12 +151,13 @@ check_field(Data, #{<<"identifier">> := Field, <<"dataType">> := #{<<"type">> :=
         Value ->
             Type1 = list_to_binary(string:to_upper(binary_to_list(Type))),
             NewValue = get_type_value(Type1, Value, Specs),
-            case check_validate(NewValue, Specs) of
-                true ->
-                    NewValue;
-                false ->
-                    throw({error, <<Field/binary, " is not validate">>})
-            end
+            NewValue
+%%            case check_validate(NewValue, Specs) of
+%%                true ->
+%%                    NewValue;
+%%                false ->
+%%                    throw({error, <<Field/binary, " is not validate">>})
+%%            end
     end;
 
 check_field(_, _) ->

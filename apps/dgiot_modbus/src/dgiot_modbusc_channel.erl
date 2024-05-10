@@ -161,7 +161,7 @@
         order => 9,
         type => enum,
         required => true,
-        default => #{<<"value">> => true, <<"label">> => <<"是"/utf8>>},
+        default => #{<<"value">> => false, <<"label">> => <<"否"/utf8>>},
         enum => [
             #{<<"value">> => true, <<"label">> => <<"是"/utf8>>},
             #{<<"value">> => false, <<"label">> => <<"否"/utf8>>}

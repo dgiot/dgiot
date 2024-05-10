@@ -67,6 +67,7 @@ get_name(ProductId, K, V) ->
 send_realtime_card(ProductId, DeviceId, Payload) ->
     Data = dgiot_device_card:get_card(ProductId, [Payload], DeviceId, #{}, dgiot_data:get({shard_storage, ProductId})),
     Pubtopic = <<"$dg/user/realtimecard/", DeviceId/binary, "/report">>,
+    dgiot_data:insert({last_data, DeviceId}, Data),
     dgiot_mqtt:publish(self(), Pubtopic, base64:encode(dgiot_json:encode(#{<<"data">> => Data}))).
 
 %% 发送实时组态数据

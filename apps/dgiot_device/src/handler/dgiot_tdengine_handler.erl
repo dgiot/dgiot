@@ -151,18 +151,22 @@ do_request(get_echart_deviceid, #{<<"deviceid">> := DeviceId, <<"style">> := Sty
 
 %% TDengine 概要: 获取当前设备最新时序数据卡片
 do_request(get_devicecard_deviceid, #{<<"deviceid">> := DeviceId} = Args, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
-    case dgiot_product_tdengine:get_channel(SessionToken) of
-        {error, Error} ->
-            {error, Error};
-        {ok, Channel} ->
-%%            ?LOG(info,"DeviceId ~p", [DeviceId]),
-            case dgiot_parsex:get_object(<<"Device">>, DeviceId) of
-                {ok, #{<<"objectId">> := DeviceId, <<"product">> := #{<<"objectId">> := ProductId}}} ->
-                    dgiot_mqtt:subscribe_route_key([<<"$dg/user/realtimecard/", DeviceId/binary, "/#">>], <<"realtimecard">>, SessionToken),
-                    dgiot_device_card:get_device_card(Channel, ProductId, DeviceId, Args);
-                _ ->
-                    {error, <<"not find device">>}
-            end
+    case dgiot_data:get({last_data, DeviceId}) of
+        not_find ->
+            case dgiot_product_tdengine:get_channel(SessionToken) of
+                {error, Error} ->
+                    {error, Error};
+                {ok, Channel} ->
+                    case dgiot_parsex:get_object(<<"Device">>, DeviceId) of
+                        {ok, #{<<"objectId">> := DeviceId, <<"product">> := #{<<"objectId">> := ProductId}}} ->
+                            dgiot_mqtt:subscribe_route_key([<<"$dg/user/realtimecard/", DeviceId/binary, "/#">>], <<"realtimecard">>, SessionToken),
+                            dgiot_device_card:get_device_card(Channel, ProductId, DeviceId, Args);
+                        _ ->
+                            {error, <<"not find device">>}
+                    end
+            end;
+        Data ->
+            {ok, #{<<"data">> => Data}}
     end;
 
 %% TDengine 概要: 获取gps轨迹c
