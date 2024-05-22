@@ -205,6 +205,39 @@ do_request(get_resource_types, _Args, _Context, _Req) ->
     Resources = dgiot_bridge:get_all_channel(),
     {200, Resources};
 
+do_request(get_resource_types_ctype, #{<<"cType">> := CType} = _Args, _Context, _Req) ->
+    case dgiot_bridge:get_behaviour(CType) of
+        {error, not_find} ->
+            {200, #{<<"status">> => 404, <<"msg">> => unknow}};
+        {ok, Mod} ->
+            Attributes = Mod:module_info(attributes),
+            [Params] = proplists:get_value(params, Attributes, [#{}]),
+            Controls =
+                maps:fold(fun
+                              (Key, #{default := Default, type := Type, required := Required, title := #{zh := Name}}, Acc) ->
+                                  Acc ++ [
+                                      #{
+                                          <<"type">> => format(Type),
+                                          <<"label">> => Name,
+                                          <<"name">> => <<"profile.", Key/binary>>,
+                                          <<"required">> => Required,
+                                          <<"placeholder">> => Default
+                                          }
+                                  ];
+                              (Key, _, Acc) ->
+                                  Acc ++ [
+                                      #{
+                                          <<"type">> => <<"text">>,
+                                          <<"label">> => Key,
+                                          <<"name">> => <<"profile.", Key/binary>>,
+                                          <<"required">> => false
+                                      }
+                                  ]
+                          end, [], maps:without([<<"ico">>], Params)),
+
+            {200, #{<<"status">> => 0, <<"msg">> => <<"">>, <<"data">> => #{<<"controls">> => Controls}}}
+    end;
+
 
 %%  服务器不支持的API接口
 do_request(_OperationId, _Args, _Context, _Req) ->
@@ -541,3 +574,13 @@ create_rules(RuleID, ChannelId, Description, Rawsql, Target_topic, Args) ->
                     {ok, #{<<"error">> => Error}}
             end
     end.
+
+
+format(string) ->
+    <<"text">>;
+
+format(integer) ->
+    <<"number">>;
+
+format(_) ->
+    <<"text">>.

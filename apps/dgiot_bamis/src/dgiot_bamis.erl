@@ -283,6 +283,8 @@ format_value(#{<<"or">> := V}) ->
     #{<<"$or">> => V};
 format_value(#{<<"and">> := V}) ->
     #{<<"$and">> => V};
+format_value(#{<<"relatedTo">> := V}) ->
+    #{<<"$relatedTo">> => V};
 
 format_value(<<"gt">>) ->
     <<"$gt">>;
@@ -302,5 +304,7 @@ format_value(<<"or">>) ->
     <<"$or">>;
 format_value(<<"and">>) ->
     <<"$and">>;
+format_value(<<"relatedTo">>) ->
+    <<"$relatedTo">>;
 format_value(V) ->
     V.

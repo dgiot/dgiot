@@ -112,7 +112,7 @@ do_request(post_token, #{<<"appid">> := AppId, <<"secret">> := Secret}, _Context
 %% IoTDevice 概要: 刷新Token 描述:刷新Token
 %% OperationId: get_refresh_session
 %% POST /token
-do_request(get_refresh_session, #{<<"sessionToken">> := SessionToken}, _Context, _Req) ->
+do_request(get_refresh_session_sessiontoken, #{<<"sessionToken">> := SessionToken}, _Context, _Req) ->
     case dgiot_parse_auth:refresh_session(SessionToken) of
         {ok, Ref} ->
             {200, Ref};

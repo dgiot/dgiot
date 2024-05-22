@@ -100,41 +100,40 @@ save_csv_ets(#{<<"fullpath">> := Fullpath}) ->
 post_properties(<<"plc">>, AtomName) ->
     Things = ets:match(AtomName, {'$1', ['$2', '$3', '$4', '$5', '$6', '$7', '$8', '$9', '$10', '$11' | '_']}),
     lists:foldl(fun([Index, Devicetype, Name, Identifier, Address, Originaltype, AccessMode, Min_Max, Unit, Type, Specs | _], Acc) ->
-        Acc#{
-            to_lower(Identifier) => #{
-                <<"name">> => Name,
-                <<"index">> => Index,
-                <<"isstorage">> => true,
-                <<"isshow">> => true,
-                <<"dataForm">> => #{
-                    <<"address">> => <<"0">>,
-                    <<"rate">> => 1,
-                    <<"order">> => Index,
-                    <<"round">> => <<"all">>,
-                    <<"offset">> => 0,
-                    <<"control">> => <<"%{d}">>,
-                    <<"iscount">> => <<"0">>,
-                    <<"protocol">> => <<"S7">>,
-                    <<"strategy">> => <<"1">>,
-                    <<"collection">> => <<"%{s}">>,
-                    <<"countround">> => <<"all">>,
-                    <<"countstrategy">> => 3,
-                    <<"countcollection">> => <<"%{s}">>
-                },
-                <<"dataType">> => get_dataType(to_lower(Type), Min_Max, Unit, Specs),
-                <<"required">> => true,
-                <<"accessMode">> => get_accessmode(AccessMode),
-                <<"dataSource">> => #{
-                    <<"_dlinkindex">> => <<"">>,
-                    <<"address">> => Address,
-                    <<"originaltype">> => Originaltype
-                },
-                <<"devicetype">> => Devicetype,
-                <<"identifier">> => to_lower(Identifier),
-                <<"moduleType">> => <<"properties">>,
-                <<"isaccumulate">> => false
-            }}
-                end, #{}, Things);
+        Acc ++ [#{
+            <<"name">> => Name,
+            <<"index">> => Index,
+            <<"isstorage">> => true,
+            <<"isshow">> => true,
+            <<"dataForm">> => #{
+                <<"address">> => <<"0">>,
+                <<"rate">> => 1,
+                <<"order">> => Index,
+                <<"round">> => <<"all">>,
+                <<"offset">> => 0,
+                <<"control">> => <<"%{d}">>,
+                <<"iscount">> => <<"0">>,
+                <<"protocol">> => <<"S7">>,
+                <<"strategy">> => <<"1">>,
+                <<"collection">> => <<"%{s}">>,
+                <<"countround">> => <<"all">>,
+                <<"countstrategy">> => 3,
+                <<"countcollection">> => <<"%{s}">>
+            },
+            <<"dataType">> => get_dataType(to_lower(Type), Min_Max, Unit, Specs),
+            <<"required">> => true,
+            <<"accessMode">> => get_accessmode(AccessMode),
+            <<"dataSource">> => #{
+                <<"_dlinkindex">> => <<"">>,
+                <<"address">> => Address,
+                <<"originaltype">> => Originaltype
+            },
+            <<"devicetype">> => Devicetype,
+            <<"identifier">> => to_lower(Identifier),
+            <<"moduleType">> => <<"properties">>,
+            <<"isaccumulate">> => false
+        }]
+                end, [], Things);
 
 post_properties(<<"dlink">>, AtomName) ->
     Things = ets:match(AtomName, {'$1', ['$2', '$3', '$4', '$5', '$6', '$7', '$8', '$9', '$10', '$11' | '_']}),
