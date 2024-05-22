@@ -280,21 +280,8 @@ do_request(post_import_wmxdata, #{<<"type">> := Type, <<"objectId">> := ProductI
     case dgiot_csv:post_properties(Type, AtomName) of
         error ->
             {ok, #{<<"code">> => 500, <<"msg">> => <<"error">>}};
-        NewProperties ->
-            case dgiot_parsex:get_object(<<"Product">>, ProductId) of
-                {ok, #{<<"thing">> := Thing}} ->
-                    OldProperties =
-                        lists:foldl(fun(#{<<"identifier">> := Identifier} = X, Acc) ->
-                            Acc#{Identifier => X}
-                                    end, #{}, maps:get(<<"properties">>, Thing, [])),
-                    Properties =
-                        maps:fold(fun(_, Prop, Acc) ->
-                            Acc ++ [Prop]
-                                  end, [], dgiot_map:merge(OldProperties, NewProperties)),
-                    dgiot_parsex:update_object(<<"Product">>, ProductId, #{<<"thing">> => Thing#{<<"properties">> => Properties}});
-                _ ->
-                    pass
-            end,
+        Properties ->
+            dgiot_parsex:update_object(<<"Product">>, ProductId, #{<<"thing">> => #{<<"properties">> => Properties}}),
             {ok, #{<<"code">> => 200, <<"msg">> => <<"success">>}}
     end;
 

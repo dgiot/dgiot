@@ -824,6 +824,71 @@
         ]
       }
     },
+    "/resource_types/{cType}": {
+      "get": {
+        "summary": "根据cType获取资源类型列表",
+        "description": "根据cType获取资源类型列表",
+        "parameters": [
+          {
+            "name": "cType",
+            "in": "path",
+            "description": "通道类型",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "名称"
+                  },
+                  "params": {
+                    "type": "object",
+                    "description": "参数",
+                    "properties": {
+                    }
+                  },
+                  "provider": {
+                    "type": "string",
+                    "description": "provider"
+                  },
+                  "title": {
+                    "type": "string",
+                    "description": "标题"
+                  },
+                  "description": {
+                    "type": "string",
+                    "description": "描述"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "Rule"
+        ]
+      }
+    },
     "/rulesql": {
       "post": {
         "summary": "生成规则sql",

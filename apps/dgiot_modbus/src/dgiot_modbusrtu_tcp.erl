@@ -136,6 +136,7 @@ handle_info({deliver, _, Msg}, #tcp{state = #state{id = ChannelId} = State} = TC
                     ProfilePayload = dgiot_device_profile:encode_profile(ProductId, dgiot_json:decode(Payload)),
                     Payloads = modbus_rtu:set_params(ProfilePayload, ProductId, DevAddr),
                     lists:map(fun(X) ->
+                        timer:sleep(100),
                         dgiot_tcp_server:send(TCPState, X)
                               end, Payloads),
                     {noreply, TCPState};
@@ -161,6 +162,7 @@ handle_info({deliver, _, Msg}, #tcp{state = #state{id = ChannelId} = State} = TC
                     ProfilePayload = dgiot_device_profile:encode_profile(ProductId, dgiot_json:decode(Payload)),
                     Payloads = modbus_rtu:set_params(ProfilePayload, ProductId, DevAddr),
                     lists:map(fun(X) ->
+                        timer:sleep(100),
                         dgiot_tcp_server:send(TCPState, X)
                               end, Payloads),
                     {noreply, TCPState};

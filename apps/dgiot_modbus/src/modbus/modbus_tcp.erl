@@ -348,40 +348,37 @@ parse_frame(StartAddr, FileName, Data, MinAddr) ->
     NewAllData =
         maps:fold(fun
                       (_, {ProductId1, Devaddr1, Ack}, Ncc) ->
-                          DeviceId = dgiot_parse_id:get_deviceid(ProductId1, Devaddr1),
+%%                          DeviceId = dgiot_parse_id:get_deviceid(ProductId1, Devaddr1),
 %%                          NewAck = change_data(ProductId1, Ack),
                           CacheAck = dgiot_task:merge_cache_data(ProductId1, Ack, -1),
-                          NewResult = dgiot_dlink_proctol:parse_payload(ProductId1, CacheAck),
-                          Props = dgiot_task:get_props(ProductId1),
-                          Calculated = get_calculated(ProductId1, Devaddr1, NewResult, Props),
-
                           dgiot_task:save_cache_data(ProductId1, CacheAck),
-                          BinData =
-                              maps:fold(fun(K, V, Acc) ->
-                                  BinK = dgiot_utils:to_binary(K),
-                                  Len = dgiot_utils:to_binary(size(BinK)),
-                                  BinV = dgiot_utils:to_binary(V),
-                                  <<Acc/binary, Len/binary, BinK/binary, BinV/binary, ",">>
-                                        end, <<>>, CacheAck),
-
-                          Shard_data = modbus_tcp:shard_data(BinData, Calculated),
                           Now = dgiot_datetime:now_secs(),
                           case dgiot_data:get({modbus_tcp, Devaddr1, Now}) of
                               not_find ->
-                                  spawn(fun() ->
-                                      dgiot_device:save(ProductId1, Devaddr1),
-                                      Sql = dgiot_tdengine:format_sql(ProductId1, Devaddr1, [Shard_data#{<<"createdat">> => Now * 1000}]),
-                                      dgiot_tdengine_adapter:save_sql(ProductId1, Sql)
-                                        end),
+                                  dgiot_data:insert({modbus_tcp, Devaddr1, Now}, true),
+                                  NewResult = dgiot_dlink_proctol:parse_payload(ProductId1, CacheAck),
+                                  Props = dgiot_task:get_props(ProductId1),
+                                  Calculated = get_calculated(ProductId1, Devaddr1, NewResult, Props),
+                                  BinData =
+                                      maps:fold(fun(K, V, Acc) ->
+                                          BinK = dgiot_utils:to_binary(K),
+                                          Len = dgiot_utils:to_binary(size(BinK)),
+                                          BinV = dgiot_utils:to_binary(V),
+                                          <<Acc/binary, Len/binary, BinK/binary, BinV/binary, ",">>
+                                                end, <<>>, CacheAck),
+                                  Shard_data = modbus_tcp:shard_data(BinData, Calculated),
+
+                                  dgiot_device:save(ProductId1, Devaddr1),
+                                  Sql = dgiot_tdengine:format_sql(ProductId1, Devaddr1, [Shard_data#{<<"createdat">> => Now * 1000}]),
+                                  dgiot_tdengine_adapter:save_sql(ProductId1, Sql),
 %%                                  ChannelId = dgiot_parse_id:get_channelid(<<"2">>, <<"DGIOTTOPO">>, <<"TOPO组态通道"/utf8>>),
 %%                                  dgiot_channelx:do_message(ChannelId, {topo_thing, ProductId1, DeviceId, Shard_data}),
-                                  RealData = dgiot_device_card:get_card(ProductId1, [Shard_data#{<<"createdat">> => Now * 1000}], DeviceId, #{}, dgiot_data:get({shard_storage, ProductId1})),
-                                  dgiot_data:insert({last_data, DeviceId}, RealData),
-                                  dgiot_data:insert({modbus_tcp, Devaddr1, Now}, true);
+%%                                  RealData = dgiot_device_card:get_card(ProductId1, [Shard_data#{<<"createdat">> => Now * 1000}], DeviceId, #{}, dgiot_data:get({shard_storage, ProductId1})),
+%%                                  dgiot_data:insert({last_data, DeviceId}, RealData),
+                                  Ncc#{Devaddr1 => Calculated};
                               _ ->
-                                  pass
-                          end,
-                          Ncc#{Devaddr1 => Calculated};
+                                  Ncc
+                          end;
                       (_, _, Ncc) ->
                           Ncc
                   end, #{}, AllData),

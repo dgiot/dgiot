@@ -213,61 +213,55 @@ is16(Data) ->
     dgiot_utils:binary_to_hex(<<IntData:16>>).
 
 set_params(Payload, _ProductId, _DevAddr) ->
-    Length = length(maps:keys(Payload)),
     Payloads =
-        lists:foldl(fun(Index, Acc) ->
-            case maps:find(Index, Payload) of
-                {ok, #{
-                    <<"dataForm">> := #{
-                        <<"protocol">> := <<"MODBUSRTU">>,
-                        <<"control">> := Setting},
-                    <<"dataSource">> := #{
-                        <<"slaveid">> := SlaveId,
-                        <<"address">> := Address,
-                        <<"originaltype">> := Originaltype,
-                        <<"operatetype">> := OperateType} = DataSource
-                } = Data} ->
-                    case maps:find(<<"value">>, Data) of
-                        error ->
-                            Acc;
-                        {ok, Value} when erlang:byte_size(Value) == 0 ->
-                            Acc;
-                        {ok, Value} ->
-                            FunCode =
-                                case OperateType of
-                                    <<"readCoils">> -> ?FC_READ_COILS;
-                                    <<"readInputs">> -> ?FC_READ_INPUTS;
-                                    <<"readHregs">> -> ?FC_READ_HREGS;
-                                    <<"readIregs">> -> ?FC_READ_IREGS;
-                                    <<"writeCoil">> -> ?FC_WRITE_COIL;
-                                    <<"writeHreg">> -> ?FC_WRITE_HREG;
-                                    <<"writeCoils">> -> ?FC_WRITE_COILS; %%需要校验，写多个线圈是什么状态
-                                    <<"writeHregs">> -> ?FC_WRITE_HREGS; %%需要校验，写多个保持寄存器是什么状态
-                                    _ -> ?FC_READ_HREGS
-                                end,
-                            <<H:8, L:8>> = dgiot_utils:hex_to_binary(is16(Address)),
-                            <<Sh:8, Sl:8>> = dgiot_utils:hex_to_binary(is16(SlaveId)),
-                            Str1 = re:replace(Setting, "%{d}", "(" ++ dgiot_utils:to_list(Value) ++ ")", [global, {return, list}]),
-                            Value1 = dgiot_utils:to_int(dgiot_task:string2value(Str1, <<"type">>)),
+        maps:fold(fun(_, #{
+            <<"dataForm">> := #{
+                <<"protocol">> := <<"MODBUSRTU">>,
+                <<"control">> := Setting},
+            <<"dataSource">> := #{
+                <<"slaveid">> := SlaveId,
+                <<"address">> := Address,
+                <<"originaltype">> := Originaltype,
+                <<"operatetype">> := OperateType} = DataSource
+        } = Data, Acc) ->
+            case maps:find(<<"value">>, Data) of
+                error ->
+                    Acc;
+                {ok, Value} when erlang:byte_size(Value) == 0 ->
+                    Acc;
+                {ok, Value} ->
+                    FunCode =
+                        case OperateType of
+                            <<"readCoils">> -> ?FC_READ_COILS;
+                            <<"readInputs">> -> ?FC_READ_INPUTS;
+                            <<"readHregs">> -> ?FC_READ_HREGS;
+                            <<"readIregs">> -> ?FC_READ_IREGS;
+                            <<"writeCoil">> -> ?FC_WRITE_COIL;
+                            <<"writeHreg">> -> ?FC_WRITE_HREG;
+                            <<"writeCoils">> -> ?FC_WRITE_COILS; %%需要校验，写多个线圈是什么状态
+                            <<"writeHregs">> -> ?FC_WRITE_HREGS; %%需要校验，写多个保持寄存器是什么状态
+                            _ -> ?FC_READ_HREGS
+                        end,
+                    <<H:8, L:8>> = dgiot_utils:hex_to_binary(is16(Address)),
+                    <<Sh:8, Sl:8>> = dgiot_utils:hex_to_binary(is16(SlaveId)),
+                    Str1 = re:replace(Setting, "%{d}", "(" ++ dgiot_utils:to_list(Value) ++ ")", [global, {return, list}]),
+                    Value1 = dgiot_utils:to_int(dgiot_task:string2value(Str1, <<"type">>)),
 %%                                    NewBt = Bytes * 8,
-                            Registersnumber = maps:get(<<"registersnumber">>, DataSource, <<"1">>),
-                            Bytes = get_len(Registersnumber, Originaltype),
-                            RtuReq = #rtu_req{
-                                slaveId = Sh * 256 + Sl,
-                                funcode = dgiot_utils:to_int(FunCode),
-                                address = H * 256 + L,
-                                registersnumber = dgiot_utils:to_int(Registersnumber),
-                                dataByteSize = dgiot_utils:to_int(Bytes),
-                                quality = Value1
-                            },
-                            Acc ++ [build_req_message(RtuReq)];
-                        _ ->
-                            Acc
-                    end;
+                    Registersnumber = maps:get(<<"registersnumber">>, DataSource, <<"1">>),
+                    Bytes = get_len(Registersnumber, Originaltype),
+                    RtuReq = #rtu_req{
+                        slaveId = Sh * 256 + Sl,
+                        funcode = dgiot_utils:to_int(FunCode),
+                        address = H * 256 + L,
+                        registersnumber = dgiot_utils:to_int(Registersnumber),
+                        dataByteSize = dgiot_utils:to_int(Bytes),
+                        quality = Value1
+                    },
+                    Acc ++ [build_req_message(RtuReq)];
                 _ ->
                     Acc
             end
-                    end, [], lists:seq(1, Length)),
+                  end, [], Payload),
     Payloads.
 
 %% 010300000002C40B 01030438A93E3B76C0
