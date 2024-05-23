@@ -27,8 +27,8 @@
 -export([put_color/3, get_color/2, put_location/3, get_location/1, get_address/3, get_productid/1]).
 -export([get_acl/1, get_readonly_acl/1, save_log/3, get_url/1, get_appname/1]).
 
-parse_cache_Device(_ClasseName) ->
-    dgiot_device_cache:parse_cache_Device(_ClasseName).
+parse_cache_Device(Skip) ->
+    dgiot_device_cache:parse_cache_Device(Skip).
 
 sync_parse(OffLine) ->
     dgiot_device_cache:sync_parse(OffLine).

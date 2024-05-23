@@ -19,31 +19,33 @@
 -include("dgiot_device.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -dgiot_data("ets").
--export([init_ets/0, load_cache/0, local/1, save/1, put/1, get/1, delete/1, save_prod/2, lookup_prod/1]).
+-export([init_ets/0, load_all_cache/1, local/1, save/1, put/1, get/1, delete/1, save_prod/2, lookup_prod/1]).
 -export([parse_frame/3, to_frame/2]).
 -export([create_product/1, create_product/2, add_product_relation/2, delete_product_relation/1]).
 -export([get_prop/1, get_props/1, get_props/2, get_unit/1, update_properties/2, update_properties/0]).
 -export([update_topics/0, update_product_filed/1]).
 -export([save_devicetype/1, get_devicetype/1, get_device_thing/2, get_productSecret/1]).
--export([save_keys/1, get_keys/1, get_control/1, save_control/1, get_interval/1, save_device_thingtype/1, get_product_identifier/2]).
+-export([save_/1, get_keys/1, get_control/1, save_control/1, get_interval/1, save_device_thingtype/1, get_product_identifier/2]).
 
 init_ets() ->
-    dgiot_data:init(?DGIOT_PRODUCT,[public, named_table, set, {write_concurrency, true}, {read_concurrency, true}]),
-    dgiot_data:init(?DGIOT_PRODUCT_IDENTIFIE,[public, named_table, set, {write_concurrency, true}, {read_concurrency, true}]),
-    dgiot_data:init(?DGIOT_CHANNEL_SESSION,[public, named_table, set, {write_concurrency, true}, {read_concurrency, true}]),
-    dgiot_data:init(?DEVICE_DEVICE_COLOR,[public, named_table, set, {write_concurrency, true}, {read_concurrency, true}]),
-    dgiot_data:init(?DEVICE_PROFILE,[public, named_table, set, {write_concurrency, true}, {read_concurrency, true}]).
+    dgiot_data:init(?DGIOT_PRODUCT, [public, named_table, set, {write_concurrency, true}, {read_concurrency, true}]),
+    dgiot_data:init(?DGIOT_PRODUCT_IDENTIFIE, [public, named_table, set, {write_concurrency, true}, {read_concurrency, true}]),
+    dgiot_data:init(?DGIOT_CHANNEL_SESSION, [public, named_table, set, {write_concurrency, true}, {read_concurrency, true}]),
+    dgiot_data:init(?DEVICE_DEVICE_COLOR, [public, named_table, set, {write_concurrency, true}, {read_concurrency, true}]),
+    dgiot_data:init(?DEVICE_PROFILE, [public, named_table, set, {write_concurrency, true}, {read_concurrency, true}]).
 
-load_cache() ->
-    Success = fun(Page) ->
-        lists:map(fun(Product) ->
-            dgiot_product:save(Product)
-                  end, Page)
-              end,
-    Query = #{
-        <<"where">> => #{}
-    },
-    dgiot_parse_loader:start(<<"Product">>, Query, 0, 1000, 1000000, Success).
+load_all_cache({Skip}) ->
+    case dgiot_parsex:query_object(<<"Product">>, #{<<"limit">> => 1000, <<"skip">> => Skip}) of
+        {ok, #{<<"results">> := Results}} when length(Results) == 0 ->
+            load_end;
+        {ok, #{<<"results">> := Products}} ->
+            lists:map(fun(Product) ->
+                dgiot_product:save(Product)
+                      end, Products),
+            {next, Skip + 1000};
+        _ ->
+            {next, Skip}
+    end.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 save_prod(ProductId, #{<<"thing">> := _thing} = Product) ->
@@ -74,18 +76,12 @@ save(Product) ->
     #{<<"productId">> := ProductId} = Product1,
     dgiot_data:delete(?DGIOT_PRODUCT, ProductId),
     dgiot_data:insert(?DGIOT_PRODUCT, ProductId, Product1),
-    save_keys(ProductId),
-    save_control(ProductId),
-    save_devicetype(ProductId),
+    save_(ProductId),
     save_productSecret(ProductId),
     dgiot_product_channel:save_channel(ProductId),
     dgiot_product_channel:save_tdchannel(ProductId),
     dgiot_product_channel:save_taskchannel(ProductId),
-    save_device_thingtype(ProductId),
-    save_product_identifier(ProductId),
-    dgiot_product_enum:save_product_enum(ProductId),
-    timer:sleep(10000),
-    dgiot_bridge_server ! {start_custom_channel},
+%%    dgiot_product_enum:save_product_enum(ProductId),
     {ok, Product1}.
 
 put(Product) ->
@@ -175,6 +171,14 @@ get_devicetype(ProductId) ->
 
 
 %% 设备类型
+save_device_thingtype(ProductId, DeviceType, NewMap) ->
+    case dgiot_data:get(?DGIOT_PRODUCT, {ProductId, device_thing, DeviceType}) of
+        not_find ->
+            dgiot_data:insert(?DGIOT_PRODUCT, {ProductId, device_thing, DeviceType}, NewMap);
+        Map ->
+            dgiot_data:insert(?DGIOT_PRODUCT, {ProductId, device_thing, DeviceType}, dgiot_map:merge(Map, NewMap))
+    end.
+
 save_device_thingtype(ProductId) ->
     case dgiot_product:lookup_prod(ProductId) of
         {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
@@ -196,20 +200,6 @@ save_device_thingtype(ProductId) ->
     end.
 
 %% 物模型标识符
-save_product_identifier(ProductId) ->
-    delete_product_identifier(ProductId),
-    case dgiot_product:lookup_prod(ProductId) of
-        {ok, #{<<"thing">> := #{<<"properties">> := Props} = Thing}} ->
-            Tags = maps:get(<<"tags">>, Thing, []),
-            lists:map(
-                fun(#{<<"identifier">> := Identifie} = Prop) ->
-                    dgiot_data:insert(?DGIOT_PRODUCT_IDENTIFIE, {ProductId, Identifie, identifie}, Prop)
-                end, Props ++ Tags);
-
-        _Error ->
-            []
-    end.
-
 delete_product_identifier(ProductId) ->
     Fun =
         fun
@@ -310,22 +300,35 @@ update_product_filed(_Filed) ->
             pass
     end.
 
-save_keys(ProductId) ->
-    Keys =
+save_(ProductId) ->
+    {Keys, Control, DeviceTypes} =
         case dgiot_product:lookup_prod(ProductId) of
-            {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
+            {ok, #{<<"thing">> := #{<<"properties">> := Props} = Thing}} ->
+                delete_product_identifier(ProductId),
+                Tags = maps:get(<<"tags">>, Thing, []),
                 lists:foldl(
                     fun
-                        (#{<<"identifier">> := Identifier, <<"isstorage">> := true}, Acc) ->
-                            Acc ++ [Identifier];
-                        (_, Acc) ->
-                            Acc
-                    end, [], Props);
-
+                        (#{<<"devicetype">> := DeviceType, <<"identifier">> := Identifier, <<"isstorage">> := true, <<"profile">> := Profile, <<"dataType">> := #{<<"type">> := Type}} = Prop, {Acc, Ccc, Dcc}) ->
+                            dgiot_data:insert(?DGIOT_PRODUCT_IDENTIFIE, {ProductId, Identifier, identifie}, Prop),
+                            save_device_thingtype(ProductId, DeviceType, #{Identifier => Type}),
+                            {Acc ++ [Identifier], Ccc#{Identifier => Profile}, Dcc ++ [DeviceType]};
+                        (#{<<"devicetype">> := DeviceType, <<"identifier">> := Identifier, <<"profile">> := Profile, <<"dataType">> := #{<<"type">> := Type}} = Prop, {Acc, Ccc, Dcc}) ->
+                            dgiot_data:insert(?DGIOT_PRODUCT_IDENTIFIE, {ProductId, Identifier, identifie}, Prop),
+                            save_device_thingtype(ProductId, DeviceType, #{Identifier => Type}),
+                            {Acc, Ccc#{Identifier => Profile}, Dcc ++ [DeviceType]};
+                        (#{<<"devicetype">> := DeviceType, <<"identifier">> := Identifier, <<"isstorage">> := true, <<"dataType">> := #{<<"type">> := Type}} = Prop, {Acc, Ccc, Dcc}) ->
+                            dgiot_data:insert(?DGIOT_PRODUCT_IDENTIFIE, {ProductId, Identifier, identifie}, Prop),
+                            save_device_thingtype(ProductId, DeviceType, #{Identifier => Type}),
+                            {Acc ++ [Identifier], Ccc, Dcc ++ [DeviceType]};
+                        (_, {Acc, Ccc, Dcc}) ->
+                            {Acc, Ccc, Dcc}
+                    end, {[], #{}, []}, Props ++ Tags);
             _Error ->
-                []
+                {[], #{}, []}
         end,
-    dgiot_data:insert(?DGIOT_PRODUCT, {ProductId, keys}, Keys).
+    dgiot_data:insert(?DGIOT_PRODUCT, {ProductId, keys}, Keys),
+    dgiot_data:insert(?DGIOT_PRODUCT, {ProductId, profile_control}, Control),
+    dgiot_data:insert(?DGIOT_PRODUCT, {ProductId, devicetype}, dgiot_utils:unique_2(DeviceTypes)).
 
 get_keys(ProductId) ->
     case dgiot_data:get(?DGIOT_PRODUCT, {ProductId, keys}) of
