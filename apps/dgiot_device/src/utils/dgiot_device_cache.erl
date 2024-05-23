@@ -29,23 +29,19 @@ init_ets() ->
     dgiot_data:init(?DGIOT_LOCATION_ADDRESS, [public, named_table, set, {write_concurrency, true}, {read_concurrency, true}]).
 
 %% Device 数量统计，权限统计，在线离线统计，产品下面设备数量统计等是用户非常关系的数据指标
-parse_cache_Device(_ClassName) ->
-%%    io:format("~s ~p ~p ~n", [?FILE, ?LINE, ClassName]),
-    dgiot_product:load_cache(),
-    Success = fun(Page) ->
-        lists:map(fun(#{<<"devaddr">> := _Devaddr} = Device) ->
-%%            save_profile(Device),
-            timer:sleep(2),
-%%            io:format("Devaddr ~p ~n",[Devaddr]),
-            dgiot_device:save(Device)
-                  end, Page)
-              end,
-    Query = #{
-        <<"order">> => <<"updatedAt">>,
-        <<"keys">> => [<<"ACL">>, <<"updatedAt">>, <<"state">>, <<"devaddr">>, <<"status">>, <<"isEnable">>, <<"profile">>, <<"product">>, <<"location">>, <<"deviceSecret">>],
-        <<"where">> => #{}
-    },
-    dgiot_parse_loader:start(<<"Device">>, Query, 0, 100, 1000000, Success).
+parse_cache_Device({Skip}) ->
+    case dgiot_parsex:query_object(<<"Device">>, #{<<"limit">> => 1000, <<"skip">> => Skip,
+        <<"keys">> => [<<"ACL">>, <<"updatedAt">>, <<"state">>, <<"devaddr">>, <<"status">>, <<"isEnable">>, <<"profile">>, <<"product">>, <<"location">>, <<"deviceSecret">>]}) of
+        {ok, #{<<"results">> := Results}} when length(Results) == 0 ->
+            load_end;
+        {ok, #{<<"results">> := Page}} ->
+            lists:map(fun(Device) ->
+                dgiot_device:save(Device)
+                      end, Page),
+            {next, Skip + 1000};
+        _ ->
+            {next, Skip}
+    end.
 
 save(ProductId, DevAddr) ->
     DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),

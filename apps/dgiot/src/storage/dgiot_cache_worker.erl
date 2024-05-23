@@ -27,7 +27,7 @@
 -export([init/1, handle_call/3, handle_cast/2,
     handle_info/2, terminate/2, code_change/3]).
 
--record(cachestate, {threshold, maxsize, cacheets, checkpid}).
+-record(cachestate, {threshold, maxsize, cacheets, checkpid, skip, dskip}).
 
 
 %%%===================================================================
@@ -83,10 +83,14 @@ init(Opts) ->
     ValueEts = ets:new(?MODULE, [public, named_table, {write_concurrency, true}, {read_concurrency, true}]),
     Interval = dgiot:get_env(load_cache_classes_interval, 10),
     erlang:send_after(1000 * Interval, self(), load_cache_classes),
+    erlang:send_after(1000 * Interval, self(), load_cache_all_classes),
     {ok, #cachestate{maxsize = MaxSize,
         threshold = Threshold,
         cacheets = ValueEts,
-        checkpid = CheckPid}}.
+        checkpid = CheckPid,
+        skip = 0,
+        dskip = 0
+    }}.
 
 handle_call({get, Key}, _From, #cachestate{cacheets = ValueEts} = State) ->
     Reply = get(ValueEts, Key),
@@ -127,15 +131,26 @@ handle_info({'load_cache_classes_fin'}, State) ->
     io:format("~s ~p ~p ~n", [?FILE, ?LINE, load_cache_classes_fin]),
     {noreply, State};
 
-handle_info(load_cache_classes, State) ->
-    case dgiot_hook:run_hook({'dgiot', 'load_cache_classes'}, [self()]) of
-        {error, not_find} ->
+handle_info(load_cache_all_classes, #cachestate{skip = Skip} = State) ->
+    case dgiot_hook:run_hook('parse_cache_Product', {Skip}) of
+        {ok, [{next, Next_Skip}]} ->
             Interval = dgiot:get_env(load_cache_classes_interval, 10),
-            erlang:send_after(1000 * Interval, self(), load_cache_classes);
+            erlang:send_after(1000 * Interval, self(), load_cache_all_classes),
+            {noreply, State#cachestate{skip = Next_Skip}};
         _ ->
-            pass
-    end,
-    {noreply, State};
+            dgiot_bridge_server ! {start_custom_channel},
+            {noreply, State}
+    end;
+
+handle_info(load_cache_classes, #cachestate{dskip = DSkip} = State) ->
+    case dgiot_hook:run_hook('parse_cache_Device', {DSkip}) of
+        {ok, [{next, Next_DSkip}]} ->
+            Interval = dgiot:get_env(load_cache_classes_interval, 10),
+            erlang:send_after(1000 * Interval, self(), load_cache_classes),
+            {noreply, State#cachestate{dskip = Next_DSkip}};
+        _ ->
+            {noreply, State}
+    end;
 
 handle_info(_Msg, State) ->
     {noreply, State}.

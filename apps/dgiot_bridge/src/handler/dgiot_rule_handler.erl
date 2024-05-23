@@ -214,6 +214,16 @@ do_request(get_resource_types_ctype, #{<<"cType">> := CType} = _Args, _Context, 
             [Params] = proplists:get_value(params, Attributes, [#{}]),
             Controls =
                 maps:fold(fun
+                              (Key, #{type := enum, required := Required, title := #{zh := Name}} = Param, Acc) ->
+                                  Acc ++ [
+                                      #{
+                                          <<"type">> => <<"select">>,
+                                          <<"label">> => Name,
+                                          <<"name">> => <<"profile.", Key/binary>>,
+                                          <<"required">> => Required,
+                                          <<"options">> => maps:get(enum, Param, [])
+                                      }
+                                  ];
                               (Key, #{default := Default, type := Type, required := Required, title := #{zh := Name}}, Acc) ->
                                   Acc ++ [
                                       #{
@@ -222,7 +232,7 @@ do_request(get_resource_types_ctype, #{<<"cType">> := CType} = _Args, _Context, 
                                           <<"name">> => <<"profile.", Key/binary>>,
                                           <<"required">> => Required,
                                           <<"placeholder">> => Default
-                                          }
+                                      }
                                   ];
                               (Key, _, Acc) ->
                                   Acc ++ [
