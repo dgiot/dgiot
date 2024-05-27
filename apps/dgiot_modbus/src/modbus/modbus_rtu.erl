@@ -205,6 +205,15 @@ is16(<<"0X", Data/binary>>) when size(Data) > 4 ->
 is16(<<"0X", Data/binary>>) ->
     <<"00", Data/binary>>;
 
+is16(<<"0x", Data/binary>>) when size(Data) == 4 ->
+    Data;
+
+is16(<<"0x", Data/binary>>) when size(Data) > 4 ->
+    Data;
+
+is16(<<"0x", Data/binary>>) ->
+    <<"00", Data/binary>>;
+
 is16(<<"00", Data/binary>>) ->
     is16(Data);
 

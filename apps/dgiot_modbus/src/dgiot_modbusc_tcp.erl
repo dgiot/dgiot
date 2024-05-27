@@ -74,6 +74,7 @@ handle_info({tcp, Buff}, #dclient{channel = ChannelId,
             EndData = <<OldData/binary, Data/binary>>,
 %%            io:format("~s ~p EndData = ~p.~n", [?FILE, ?LINE, dgiot_utils:binary_to_hex(EndData)]),
             AllData = modbus_tcp:parse_frame(StartAddr, FileName, EndData, MinAddr),
+            dgiot_data:insert({check_connection, ChannelId, FileName}, dgiot_datetime:now_secs()),
             dgiot_bridge:send_log(dgiot_utils:to_binary(ChannelId), "~p recv data ~ts => ~p", [dgiot_datetime:format("YYYY-MM-DD HH:NN:SS"), unicode:characters_to_list(dgiot_json:encode(AllData)), dgiot_utils:binary_to_hex(EndData)]),
             erlang:send_after(Freq * 1000, self(), read),
             {noreply, Dclient#dclient{child = ChildState#{di => StartAddr, data => <<>>}}};
