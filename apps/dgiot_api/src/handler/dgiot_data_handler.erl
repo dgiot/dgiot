@@ -281,7 +281,7 @@ do_request(post_import_wmxdata, #{<<"type">> := Type, <<"objectId">> := ProductI
         error ->
             {ok, #{<<"code">> => 500, <<"msg">> => <<"error">>}};
         Properties ->
-            dgiot_parsex:update_object(<<"Product">>, ProductId, #{<<"thing">> => #{<<"properties">> => Properties}}),
+            dgiot_parse:update_object(<<"Product">>, ProductId, #{<<"thing">> => #{<<"properties">> => Properties}}),
             {ok, #{<<"code">> => 200, <<"msg">> => <<"success">>}}
     end;
 

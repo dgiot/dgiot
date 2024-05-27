@@ -39,9 +39,10 @@ init_ets() ->
 start_cache(_Pid) ->
     dgiot_role:load_roles(),
     dgiot_role:load_user(),
-    dgiot_parse_auth:load_roleuser(),
-    cache_classes().
+    dgiot_parse_auth:load_roleuser().
+%%    cache_classes().
 
+%% todo
 cache_classes() ->
     case dgiot_parse:get_schemas() of
         {ok, #{<<"results">> := Results}} ->
