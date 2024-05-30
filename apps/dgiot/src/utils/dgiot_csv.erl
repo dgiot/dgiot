@@ -138,8 +138,7 @@ post_properties(<<"plc">>, AtomName) ->
 post_properties(<<"dlink">>, AtomName) ->
     Things = ets:match(AtomName, {'$1', ['$2', '$3', '$4', '$5', '$6', '$7', '$8', '$9', '$10', '$11' | '_']}),
     lists:foldl(fun([Index, Devicetype, Name, Identifier, Key, Len, AccessMode, Min_Max, Unit, Type, Specs | _], Acc) ->
-        Acc#{
-            to_lower(Identifier) => #{
+        Acc++ [#{
                 <<"name">> => Name,
                 <<"index">> => Index,
                 <<"isstorage">> => true,
@@ -172,8 +171,46 @@ post_properties(<<"dlink">>, AtomName) ->
                 <<"identifier">> => to_lower(Identifier),
                 <<"moduleType">> => <<"properties">>,
                 <<"isaccumulate">> => false
-            }}
-                end, #{}, Things);
+            }]
+                end, [], Things);
+
+post_properties(<<"modbusxtcp">>, AtomName) ->
+    Things = ets:match(AtomName, {'$1', ['$2', '$3', '$4', '$5', '$6', '$7', '$8', '$9', '$10' | '_']}),
+    lists:foldl(fun([Index, Devicetype, Name, Identifier, Address, Min_Max, Unit, Type, Originaltype, Specs | _], Acc) ->
+        Acc++ [#{
+                <<"name">> => Name,
+                <<"index">> => Index,
+                <<"isstorage">> => true,
+                <<"isshow">> => true,
+                <<"dataForm">> => #{
+                    <<"address">> => <<"0">>,
+                    <<"rate">> => 1,
+                    <<"order">> => 0,
+                    <<"round">> => <<"all">>,
+                    <<"offset">> => 0,
+                    <<"control">> => <<"%{d}">>,
+                    <<"iscount">> => <<"0">>,
+                    <<"protocol">> => <<"MODBUSXTCP">>,
+                    <<"strategy">> => <<"主动上报"/utf8>>,
+                    <<"collection">> => <<"%{s}">>,
+                    <<"countround">> => <<"all">>,
+                    <<"countstrategy">> => 3,
+                    <<"countcollection">> => <<"%{s}">>
+                },
+                <<"dataType">> => get_dataType(to_lower(Type), Min_Max, Unit, Specs),
+                <<"required">> => true,
+                <<"accessMode">> =>  <<"r">>,
+                <<"dataSource">> => #{
+                    <<"_dlinkindex">> => <<"">>,
+                    <<"address">> => Address,
+                    <<"originaltype">> => Originaltype
+                },
+                <<"devicetype">> => Devicetype,
+                <<"identifier">> => to_lower(Identifier),
+                <<"moduleType">> => <<"properties">>,
+                <<"isaccumulate">> => false
+            }]
+                end, [], Things);
 
 post_properties(_, _) ->
     error.
