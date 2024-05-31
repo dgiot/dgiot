@@ -156,7 +156,7 @@ send(ProductId, DevAddr, Topic, Payload) ->
 -spec(publish(Client :: binary(), Topic :: binary(), Payload :: binary())
         -> ok | {error, Reason :: any()}).
 publish(Client, Topic, Payload) ->
-    timer:sleep(10),
+    timer:sleep(1),
     Msg = emqx_message:make(dgiot_utils:to_binary(Client), 0, Topic, Payload),
     emqx:publish(Msg),
     ok.
