@@ -91,12 +91,12 @@ handle_info({sub, Client, ProductId, DevAddr}, State) ->
 
 %% #{client_pid => <0.11482.0>, dup => false, packet_id => undefined, payload => <<"{ \"msg\": \"Hello, World!\" }">>, topic =><<"$dg/device/5392ccb3d7/00E0B45BFB4F_usb6-ai15/test">>, properties => undefined,qos => 0, retain => false}
 handle_info({publish, Topic, Payload}, #dclient{channel = ChannelId} = State) ->
-    dgiot_bridge:send_log(ChannelId, "~s ~p cloud to edge Topic ~p Payload ~p ~n", [?FILE, ?LINE, Topic, Payload]),
+    dgiot_bridge:send_log(ChannelId, "~s ~p cloud to edge Topic ~p Payload~n ~p ~n", [?FILE, ?LINE, Topic, Payload]),
     dgiot_mqtt:publish(ChannelId, <<"cloud2edge/", Topic/binary>>, Payload),
     {noreply, State};
 
 handle_info({dclient_ack, Topic, Payload}, #dclient{client = ClientId, channel = ChannelId} = State) ->
-    dgiot_bridge:send_log(ChannelId, "edge to cloud: Topic ~p Payload ~p ~n", [Topic, Payload]),
+    dgiot_bridge:send_log(ChannelId, "edge to cloud: Topic ~p Payload~n ~ts ~n", [Topic, unicode:characters_to_list(dgiot_json:encode(Payload))]),
     case is_map(Payload) of
         true ->
             emqtt:publish(ClientId, Topic, dgiot_json:encode(Payload));
