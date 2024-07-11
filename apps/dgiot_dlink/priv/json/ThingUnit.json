@@ -684,6 +684,47 @@
           "description": "容积单位:升(L)",
           "id": "litre",
           "type": "capacity"
+        },
+
+        {
+          "symbol": "Lux",
+          "typeText": "其他",
+          "name": "光照强度",
+          "description": "光照单位:光照强度(Lux)",
+          "id": "lightintensity",
+          "type": "capacity"
+        },
+        {
+          "symbol": "%RH",
+          "typeText": "其他",
+          "name": "相对湿度",
+          "description": "湿度单位:相对湿度(%RH)",
+          "id": "relativehumidity",
+          "type": "capacity"
+        },
+        {
+          "symbol": "μmol/㎡·s",
+          "typeText": "其他",
+          "name": "光合辐射",
+          "description": "光合辐射:微爱因/(米²秒)(μmol/㎡·s)",
+          "id": "microeine",
+          "type": "capacity"
+        },
+        {
+          "symbol": "mm/h",
+          "typeText": "其他",
+          "name": "降雨强度",
+          "description": "降雨强度(mm/h)",
+          "id": "rainfallintensity",
+          "type": "capacity"
+        },
+        {
+          "symbol": "L",
+          "typeText": "其他",
+          "name": "升",
+          "description": "容积单位:升(L)",
+          "id": "litre",
+          "type": "capacity"
         }
       ]
     },

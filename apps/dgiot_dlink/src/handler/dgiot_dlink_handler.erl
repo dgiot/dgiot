@@ -129,13 +129,13 @@ do_request(get_protocol, Body, _Context, _Req) ->
         #{<<"type">> := undefined} ->
             {200, Protocols};
         #{<<"type">> := Type1} ->
-           Amis =  lists:foldl(
+            Amis = lists:foldl(
                 fun
                     (#{cType := Type, mod := Mod} = _X, _Acc) when Type1 == Type ->
-                        io:format("Type ~p Mod ~p ~n",[Type, Mod]),
-                         dgiot_utils:get_JsonFile(Mod, <<Type/binary, ".json">>);
+                        io:format("Type ~p Mod ~p ~n", [Type, Mod]),
+                        dgiot_utils:get_JsonFile(Mod, <<Type/binary, ".json">>);
                     (#{cType := Type} = _X, Acc) ->
-                        io:format("Type ~p ~n",[Type]),
+                        io:format("Type ~p ~n", [Type]),
                         Acc
                 end, <<"{}">>, Protocols),
             {200, Amis};
@@ -214,6 +214,17 @@ do_request(post_cookie, #{<<"UserSession">> := UserSession, <<"cookie">> := Cook
         _ ->
             {500, #{<<"result">> => <<"save_cookie_failed">>}}
     end;
+
+%% 第三方上报api
+%% wget -qoP /data/dgiot/go_fastdfs/files/dgiot_file/device/861551058865106 https://bigdata-image.oss-cn-hangzhou.aliyuncs.com/Basics/cbd/861551058865106/2023/8/29/861551058865106-20230829234037.jpg
+do_request(post_third_party_push, #{<<"imei">> := Imei} = Args, _Context, _Req) ->
+    Image = maps:get(<<"Image">>, Args, <<>>),
+    Result_image = maps:get(<<"Result_image">>, Args, Image),
+
+    os:cmd(<<"wget -qoP /data/dgiot/go_fastdfs/files/dgiot_file/device/", Imei/binary, " ", Image/binary>>),
+    os:cmd(<<"wget -qoP /data/dgiot/go_fastdfs/files/dgiot_file/device/", Imei/binary, " ", Result_image/binary>>),
+    io:format("~s ~p Args = ~p.~n", [?FILE, ?LINE, Args]),
+    {ok, #{<<"status">> => 0, <<"msg">> => <<"success">>}};
 
 do_request(_OperationId, _Args, _Context, _Req) ->
     {error, <<"Not Allowed.">>}.

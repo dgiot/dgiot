@@ -240,6 +240,7 @@ handle_message({sync_parse, _Pid, 'after', put, _Token, <<"Product">>, QueryData
     ProductId = maps:get(<<"objectId">>, QueryData),
     dgiot_product_channel:do_td_message(ProductId),
     dgiot_product_knova:save_Product_konva(ProductId),
+    dgiot_product:hook_topic(QueryData),
     {ok, State};
 
 handle_message({sync_parse, _Pid, 'after', delete, _Token, <<"Product">>, ObjectId}, State) ->

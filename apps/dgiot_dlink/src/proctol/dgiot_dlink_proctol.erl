@@ -25,6 +25,7 @@
     properties_report/3
     , firmware_report/3
     , parse_payload/2
+    , nested_map/2
 ]).
 
 -define(TYPE, <<"DLINK">>).
@@ -90,7 +91,7 @@
 
 %% json格式报文
 properties_report(ProductId, DevAddr, Payload) when is_map(Payload) ->
-%%    io:format("~s ~p ProductId ~p, DevAddr ~p, Payload: ~p ~n", [?FILE, ?LINE, ProductId, DevAddr, Payload]),
+%%    io:format("~s ~p ProductId ~p, DevAddr ~p, Payload = ~p.~n", [?FILE, ?LINE, ProductId, DevAddr, Payload]),
     OldPayload =
         case dgiot_hook:run_hook({dlink_properties_report, ProductId}, {DevAddr, Payload}) of
             {ok, [Payload1]} ->
@@ -143,26 +144,74 @@ parse_payload(ProductId, Payload) ->
                 case X of
                     #{<<"identifier">> := Identifier,
                         <<"dataSource">> := DtaSource} ->
-                        Dis =
-                            lists:foldl(
-                                fun
-                                    (#{<<"key">> := Key}, Acc1) ->
-                                        Acc1 ++ [Key];
-                                    (_, Acc1) ->
-                                        Acc1
-                                end, [], maps:get(<<"dis">>, DtaSource, [])),
-                        maps:fold(fun(PK, PV, Acc1) ->
-                            case lists:member(PK, Dis) of
-                                true ->
-                                    Acc1#{Identifier => PV};
-                                _ ->
-                                    Acc1#{PK => PV}
-                            end
-                                  end, Acc, Payload);
+                        lists:foldl(
+                            fun
+                                (#{<<"key">> := Key}, Acc1) ->
+                                    case dgiot_dlink_proctol:nested_map(Key, Payload) of
+                                        {ok, V} ->
+                                            Acc1#{Identifier => V};
+                                        _ ->
+                                            Acc1
+                                    end;
+                                (_, Acc1) ->
+                                    Acc1
+                            end, Acc, maps:get(<<"dis">>, DtaSource, []));
                     _ ->
                         Acc
                 end
-                        end, #{}, Props);
+                        end, Payload, Props);
         _Error ->
             Payload
     end.
+
+nested_map(Key, Map) ->
+    case maps:find(Key, Map) of
+        {ok, V} ->
+            {ok, V};
+        _ ->
+            nested_map(Key, maps:keys(Map), Map)
+    end.
+nested_map(_, [], _) ->
+    undefined;
+nested_map(Key, [H | T], Map) ->
+    case maps:get(H, Map) of
+        HMap when is_map(HMap) ->
+            case nested_map(Key, HMap) of
+                undefined ->
+                    nested_map(Key, T, Map);
+                Value ->
+                    Value
+            end;
+        HList when is_list(HList) ->
+            nested_list(Key, HList);
+        _ ->
+            nested_map(Key, T, Map)
+    end.
+
+nested_list(Key, List) ->
+    nested_list(Key, List, undefined).
+
+nested_list(_, [], Value) ->
+    Value;
+
+nested_list(Key, [H | T], Value) when is_map(H) ->
+    NewValue =
+        case Value of
+            undefined ->
+                nested_map(Key, H);
+            _ ->
+                Value
+        end,
+    nested_list(Key, T, NewValue);
+
+nested_list(Key, [_ | T], Value) ->
+    nested_list(Key, T, Value).
+
+
+
+
+
+
+
+
+

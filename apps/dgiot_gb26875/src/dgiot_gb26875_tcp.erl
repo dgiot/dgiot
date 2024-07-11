@@ -42,6 +42,7 @@ init(#tcp{state = #state{id = ChannelId}} = TCPState) ->
 %%40400000010214200E0C07160000000000006400000000000A000218010101220D0E0C07165F2323
 handle_info({tcp, Buff}, #tcp{state = #state{id = ChannelId} = State} = TCPState) ->
     dgiot_bridge:send_log(ChannelId, "revice from  ~p", [dgiot_utils:binary_to_hex(Buff)]),
+        io:format("~s ~p Data = ~p.~n", [?FILE, ?LINE, dgiot_utils:binary_to_hex(Buff)]),
     case dgiot_gb26875_decoder:parse_frame(Buff, State) of
         {ok, #{<<"ack">> := Ack}} ->
             dgiot_tcp_server:send(TCPState, Ack),

@@ -25,7 +25,7 @@
 -export([get_prop/1, get_props/1, get_props/2, get_unit/1, update_properties/2, update_properties/0]).
 -export([update_topics/0, update_product_filed/1]).
 -export([save_devicetype/1, get_devicetype/1, get_device_thing/2, get_productSecret/1]).
--export([save_/1, get_keys/1, get_control/1, save_control/1, get_interval/1, save_device_thingtype/1, get_product_identifier/2]).
+-export([save_/1, get_keys/1, get_control/1, save_control/1, get_interval/1, save_device_thingtype/1, get_product_identifier/2, hook_topic/1]).
 
 init_ets() ->
     dgiot_data:init(?DGIOT_PRODUCT, [public, named_table, set, {write_concurrency, true}, {read_concurrency, true}]),
@@ -81,6 +81,7 @@ save(Product) ->
     dgiot_product_channel:save_channel(ProductId),
     dgiot_product_channel:save_tdchannel(ProductId),
     dgiot_product_channel:save_taskchannel(ProductId),
+    hook_topic(Product),
 %%    dgiot_product_enum:save_product_enum(ProductId),
     {ok, Product1}.
 
@@ -537,3 +538,14 @@ get_props(ProductId, Keys) ->
                 Acc
         end
                 end, [], List).
+
+
+hook_topic(#{<<"objectId">> := ProductId, <<"topics">> := Topics}) ->
+    maps:fold(
+        fun(K, Topic, _) ->
+            dgiot_data:insert({ProductId, Topic}, K),
+            dgiot_hook:add(one_for_one, {ProductId, Topic}, fun dgiot_mqtt_message:redirect_topic/1)
+        end, {}, Topics);
+
+hook_topic(_) ->
+    pass.

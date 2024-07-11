@@ -57,10 +57,6 @@
       "Name": "只"
     },
     {
-      "Symbol": "%RH",
-      "Name": "相对湿度"
-    },
-    {
       "Symbol": "m³/s",
       "Name": "立方米每秒"
     },
@@ -135,10 +131,6 @@
     {
       "Symbol": "pixel",
       "Name": "像素"
-    },
-    {
-      "Symbol": "Lux",
-      "Name": "照度"
     },
     {
       "Symbol": "grav",
@@ -367,6 +359,22 @@
     {
       "Symbol": "Pa",
       "Name": "帕斯卡"
+    },
+    {
+      "Symbol": "Lux",
+      "Name": "光照强度"
+    },
+    {
+      "Symbol": "%RH",
+      "Name": "相对湿度"
+    },
+    {
+      "Symbol": "μmol/㎡·s",
+      "Name": "微爱因/(米²秒)"
+    },
+    {
+      "Symbol": "mm/h",
+      "Name": "降雨强度"
     },
     {
       "Symbol": "mg",

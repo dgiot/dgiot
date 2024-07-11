@@ -23,7 +23,8 @@
 %% ACL Callbacks
 -export([
     on_message_publish/2,
-    init_ets/0
+    init_ets/0,
+    redirect_topic/1
 ]).
 
 -define(EMPTY_USERNAME, <<"">>).
@@ -76,8 +77,31 @@ on_message_publish(Message = #message{topic = <<"$dg/thing/", Topic/binary>>, pa
     end,
     {ok, Message};
 
+on_message_publish(Message = #message{from = DeviceAddr, headers = #{username := ProductId}, topic = Topic}, State) ->
+    Topic1 = re:replace(Topic, DeviceAddr, <<"${deviceAddr}">>, [global, {return, binary}]),
+    NewTopic = re:replace(Topic1, ProductId, <<"${productId}">>, [global, {return, binary}]),
+    dgiot_hook:run_hook({ProductId, NewTopic}, {NewTopic, Message, State}),
+    {ok, Message};
+
 on_message_publish(Message = #message{topic = _Topic, payload = _Payload}, _State) ->
     {ok, Message}.
+
+%% topic 重定向
+redirect_topic({HookTopic, Message = #message{from = DeviceAddr, headers = #{username := ProductId}}, State}) ->
+    case dgiot_data:get({ProductId, HookTopic}) of
+        not_find ->
+            pass;
+        Type ->
+            Topic = get_topic(Type, ProductId, DeviceAddr),
+            on_message_publish(Message#message{topic = Topic}, State)
+
+    end.
+
+get_topic(<<"device_property_report">>, ProductId, DeviceAddr) ->
+    <<"$dg/thing/", ProductId/binary, "/", DeviceAddr/binary, "/properties/report">>;
+
+get_topic(_, ProductId, DeviceAddr) ->
+    <<"$dg/thing/", ProductId/binary, "/", DeviceAddr/binary, "/properties/report">>.
 
 get_payload(Payload) ->
 %%    io:format("~s ~p Payload: ~p~n", [?FILE, ?LINE, Payload]),
