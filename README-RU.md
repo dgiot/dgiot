@@ -48,7 +48,7 @@
     ```
 
 + Китайская Linux / Unix / Mac / Windows Build
-  ```bash
+   ```bash
     cd dgiot-dashboard
     git pull
     pnpm install
@@ -66,22 +66,23 @@
     rm ./apps/dgiot_api/priv/www -rf
     cp ../dgiot-dashboard/dist/ ./apps/dgiot_api/priv/www -rf
     make run
- ```
-+ Make Debug
- ```
-  make DIAGNOSTIC=1
- ```
- *DGIOT* start, you can use a browser to visit http://localhost:5080 to view Dashboard.。
+   ```
+  + Make Debug
+   ```
+    make DIAGNOSTIC=1
+   ```
+    *DGIOT* start, you can use a browser to visit http://localhost:5080 to view Dashboard.。
 
-- Полный список новых функций см. [DGIOT Release Notes](https://github.com/dgiot/dgiot/releases)。
-- Для получения дополнительной информации, пожалуйста, посетите [DGIOT Website](https://www.dgiotcloud.cn/)。
-## Установка и развертывание
+   - Полный список новых функций см. [DGIOT Release Notes](https://github.com/dgiot/dgiot/releases)。
+   - Для получения дополнительной информации, пожалуйста, посетите [DGIOT Website](https://www.dgiotcloud.cn/)。
+   ## Установка и развертывание
 
- + **centos 7.6**
+    + **centos 7.6**
 
-```
-wget -q https://gitee.com/dgiiot/dgiot/raw/master/dgiot_install.sh  && sh dgiot_install.sh
-```
+   ```
+   wget -q https://gitee.com/dgiiot/dgiot/raw/master/dgiot_install.sh  && sh dgiot_install.sh
+   ```
+
 
 ## Сообщество
 
@@ -113,6 +114,7 @@ Visit [DGIOT FAQ](https://www.dgiotcloud.cn/?page_id=12) to get help on frequent
 | Blog           | [https://www.dgiotcloud.cn/?cat=19](https://www.dgiotcloud.cn/?cat=19)                               |
 | IoT access platform | [https://prod.dgiotcloud.cn](https://prod.dgiotcloud.cn)                             |
 | The public         | ![qrcode.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/wechat/qrcode.png) |
+| We chat group      | <img src="https://dgiot-web-1306147891.cos.ap-nanjing.myqcloud.com/wechat.png" width = "50%" />|
 | QQ group             | 346566935   |
 
 ### Связаться с нами
