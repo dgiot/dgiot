@@ -19,26 +19,34 @@ function check_os_type() {
   fi
   echo "osinfo: ${osinfo}"
   os_type=0
+  os_name="Linux"
   if echo $osinfo | grep -qwi "ubuntu"; then
     #  echo "This is ubuntu system"
+    os_name="ubuntu"
     os_type=1
   elif echo $osinfo | grep -qwi "debian"; then
     #  echo "This is debian system"
+    os_name="debian"
     os_type=1
   elif echo $osinfo | grep -qwi "Kylin"; then
     #  echo "This is Kylin system"
-    os_type=1
+    os_name="Linux"
+    os_type="kylin"
   elif echo $osinfo | grep -qwi "centos"; then
     #  echo "This is centos system"
+    os_name="Linux"
     os_type=2
   elif echo $osinfo | grep -qwi "fedora"; then
     #  echo "This is fedora system"
+    os_name="fedora"
     os_type=2
   elif echo $osinfo | grep -qwi "Amazon"; then
     #  echo "This is Amazon system"
+    os_name="amazon"
     os_type=2
   elif echo $osinfo | grep -qwi "Red"; then
     #  echo "This is Red Hat system"
+    os_name="redhat"
     os_type=2
   else
     echo " osinfo: ${osinfo}"
@@ -47,6 +55,18 @@ function check_os_type() {
     echo " please feel free to contact www.iotn2n.com for support."
     os_type=3
   fi
+}
+
+function check_cpu_type() {
+  cpuinfo=$(uname -m)
+  cpu_name="x64"
+  if echo $cpuinfo | grep -qwi "aarch64"; then
+    #  echo "This is ubuntu system"
+    cpu_name="arm64"
+  else
+    echo " osinfo: ${osinfo}"
+  fi
+  echo -e "$(date +%F_%T) $LINENO: ${GREEN} os_name: ${os_name} cpu_name: ${cpu_name}${NC}"
 }
 
 function dgiot_shell() {
@@ -109,6 +129,7 @@ function dgiot_path() {
   fileparseserver="https://dgiot-parse-server-1306147891.cos.ap-nanjing.myqcloud.com"
   fileversionserver="https://dgiot-version-1306147891.cos.ap-nanjing.myqcloud.com"
   updateserver="http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_release/update"
+  tdversion="3.0.2.4"
   otpversion="24.3.4.2"
   #install path
   install_dir="/data/dgiot"
@@ -124,6 +145,7 @@ function dgiot_path() {
 
 function dgiot_auto_variables() {
   # ============================= get auto variables =================================================
+  yum -y install net-tools &>/dev/null
   dgiot_path
   dgiot_fqdn
   dgiot_password
@@ -142,13 +164,13 @@ function pre_install() {
   sed -ri s/SELINUX=enforcing/SELINUX=disabled/g /etc/selinux/config
 
   ## 1.5 配置yum源
-  if [ ! -f /etc/yum.repos.d/CentOS-Base.repo ]; then
+  if [ ! -f /etc/yum.repos.d/kylin_x86_64.repo ] && [ ! -f /etc/yum.repos.d/kylin_aarch64.repo ] && [ ! -f /etc/yum.repos.d/CentOS-Base.repo ]; then
     curl -o /etc/yum.repos.d/CentOS-Base.repo https://dgiot-release-1306147891.cos.ap-nanjing.myqcloud.com/v4.4.0/CentOS-Base.repo &>/dev/null
   fi
 
   ## 1.6 echo "installing tools"
   echo -e "$(date +%F_%T) $LINENO: ${GREEN} installing tools${NC}"
-  yum -y install vim net-tools wget ntpdate &>/dev/null
+  yum -y install vim  wget ntpdate &>/dev/null
   yum -y groupinstall "Development Tools" &>/dev/null
   yum install -y wget git &>/dev/null
 
@@ -271,9 +293,9 @@ function install_service() {
   ${csudo} bash -c "echo 'TimeoutSec=300'                      >> ${service_config}"
   ${csudo} bash -c "echo 'OOMScoreAdjust=-1000'                >> ${service_config}"
   ${csudo} bash -c "echo 'TimeoutStopSec=1000000s'             >> ${service_config}"
-  ${csudo} bash -c "echo 'LimitNOFILE=infinity'                >> ${service_config}"
-  ${csudo} bash -c "echo 'LimitNPROC=infinity'                 >> ${service_config}"
-  ${csudo} bash -c "echo 'LimitCORE=infinity'                  >> ${service_config}"
+#  ${csudo} bash -c "echo 'LimitNOFILE=infinity'                >> ${service_config}"
+#  ${csudo} bash -c "echo 'LimitNPROC=infinity'                 >> ${service_config}"
+#  ${csudo} bash -c "echo 'LimitCORE=infinity'                  >> ${service_config}"
   ${csudo} bash -c "echo 'TimeoutStartSec=0'                   >> ${service_config}"
   ${csudo} bash -c "echo 'StandardOutput=null'                 >> ${service_config}"
   ${csudo} bash -c "echo 'Restart=always'                      >> ${service_config}"
@@ -387,7 +409,7 @@ set_host() {
 ### 2.1.1 环境准备，根据自身需要，减少或者增加
 function yum_install_postgres() {
   echo -e "$(date +%F_%T) $LINENO: ${GREEN} yum install postgres${NC}"
-  ${csudo} yum install -y gcc gcc-c++ epel-release &>/dev/null
+  ${csudo} yum install -y gcc gcc-c++ &>/dev/null
   # ${csudo} yum install -y llvm llvm-devel &> /dev/null
   ${csudo} yum install -y clang libicu-devel perl-ExtUtils-Embed &>/dev/null
   ${csudo} yum install -y readline readline-devel &>/dev/null
@@ -554,14 +576,15 @@ function install_parse_server() {
     mv ${install_dir}/dgiot_parse_server/ ${backup_dir}/dgiot_parse_server
     chown -R postgres:postgres ${backup_dir}/dgiot_parse_server/
   fi
-
+  parse_server_name="dgiot_parse_server-${os_name}-${cpu_name}.tar.gz"
+  echo -e "$(date +%F_%T) $LINENO: ${GREEN} dgiot_parse_server : ${parse_server_name}${NC}"
   ###下载dgiot_parse_server软件
-  if [ ! -f ${script_dir}/dgiot_parse_server.tar.gz ]; then
-    wget ${fileparseserver}/dgiot_parse_server.tar.gz -O ${script_dir}/dgiot_parse_server.tar.gz &>/dev/null
+  if [ ! -f ${script_dir}/${parse_server_name} ]; then
+    wget ${fileparseserver}/${parse_server_name} -O ${script_dir}/${parse_server_name} &>/dev/null
   fi
 
   cd ${script_dir}/
-  tar xf dgiot_parse_server.tar.gz
+  tar xf ${parse_server_name}
   mv ./dgiot_parse_server ${install_dir}/dgiot_parse_server
 
   ###  配置dgiot_parse_server配置参数
@@ -636,25 +659,27 @@ function deploy_tdengine_server() {
     clean_service "taosd"
     mv ${install_dir}/taos/ ${backup_dir}/taos/
   fi
-
-  if [ ! -f ${script_dir}/TDengine-server-3.0.2.4-Linux-x64.tar.gz ]; then
-    wget ${fileserver}/TDengine-server-3.0.2.4-Linux-x64.tar.gz -O ${script_dir}/TDengine-server-3.0.2.4-Linux-x64.tar.gz &>/dev/null
+  tdname="TDengine-server-${tdversion}-${os_name}-${cpu_name}.tar.gz"
+  echo -e "$(date +%F_%T) $LINENO: ${GREEN} TDengine Version : ${tdname}${NC}"
+  if [ ! -f ${script_dir}/${tdname} ]; then
+    wget ${fileserver}/${tdname} -O ${script_dir}/${tdname} &>/dev/null
   fi
 
   cd ${script_dir}/
-  if [ -f ${script_dir}/TDengine-server-3.0.2.4 ]; then
-    rm -rf ${script_dir}/TDengine-server-3.0.2.4/
+  if [ -f ${script_dir}/TDengine-server-${tdversion} ]; then
+    rm -rf ${script_dir}/TDengine-server-${tdversion}/
   fi
 
-  tar xf TDengine-server-3.0.2.4-Linux-x64.tar.gz
-  cd ${script_dir}/TDengine-server-3.0.2.4/
+  tar xf ${tdname}
+  cd ${script_dir}/TDengine-server-${tdversion}/
   mkdir ${install_dir}/taos3/log/ -p
   mkdir ${install_dir}/taos3/data/ -p
   echo | /bin/sh remove.sh &>/dev/null
   echo | /bin/sh install.sh &>/dev/null
+  ln -sf /usr/lib64/libLLVM-7.0.0.so /usr/lib64/libLLVM-7.so &>/dev/null
   ldconfig
   cd ${script_dir}/
-  rm ${script_dir}/TDengine-server-3.0.2.4 -rf
+  rm ${script_dir}/TDengine-server-${tdversion} -rf
   ${csudo} bash -c "echo 'logDir                    ${install_dir}/taos3/log/'   > /etc/taos/taos.cfg"
   ${csudo} bash -c "echo 'dataDir                   ${install_dir}/taos3/data/'   >> /etc/taos/taos.cfg"
   ${csudo} bash -c "echo 'supportVnodes             100'   >> /etc/taos/taos.cfg"
@@ -706,8 +731,10 @@ function install_dgiot_tdengine_mqtt() {
 
 #4 安装文件数据服务器
 function install_go_fastdfs() {
-  if [ ! -f ${script_dir}/go_fastdfs.zip ]; then
-    wget ${fileserver}/go_fastdfs.zip -O ${script_dir}/go_fastdfs.zip &>/dev/null
+  gfname="go_fastdfs-${os_name}-${cpu_name}.zip"
+  echo -e "$(date +%F_%T) $LINENO: ${GREEN} go_fastdfs : ${gfname}${NC}"
+  if [ ! -f ${script_dir}/${gfname} ]; then
+    wget ${fileserver}/${gfname} -O ${script_dir}/${gfname} &>/dev/null
   fi
 
   if [ -d ${install_dir}/go_fastdfs/ ]; then
@@ -715,7 +742,7 @@ function install_go_fastdfs() {
     mv ${install_dir}/go_fastdfs ${backup_dir}/
   fi
   cd ${script_dir}/
-  unzip go_fastdfs.zip &>/dev/null
+  unzip ${gfname} &>/dev/null
   cd ${script_dir}/go_fastdfs/
   chmod 777 ${script_dir}/go_fastdfs/file
   mv ${script_dir}/go_fastdfs ${install_dir}
@@ -728,8 +755,13 @@ function install_go_fastdfs() {
   fi
   mkdir ${install_dir}/go_fastdfs/conf/ -p
   cp ${install_dir}/go_fastdfs/cfg.json ${install_dir}/go_fastdfs/conf/cfg.json
-  go_fastdhome=${install_dir}/go_fastdfs
-  install_service1 gofastdfs "simple" "${install_dir}/go_fastdfs/file ${go_fastdhome}" "GO_FASTDFS_DIR=${go_fastdhome}" "${go_fastdhome}"
+
+  mv ${install_dir}/go_fastdfs/gofastdfs.service /usr/lib/systemd/system
+
+  ${csudo} systemctl daemon-reload &>/dev/null
+  ${csudo} systemctl enable gofastdfs &>/dev/null
+  ${csudo} systemctl start gofastdfs &>/dev/null
+  echo -e "$(date +%F_%T) $LINENO: ${GREEN} systemctl start gofastdfs.service ${NC}"
 
   if [ ! -d ${install_dir}/go_fastdfs/files/ ]; then
     mkdir -p ${install_dir}/go_fastdfs/files/
@@ -822,6 +854,7 @@ function yum_install_erlang_otp() {
 #5. 部署应用服务器
 # 5.1 安装erlang/otp环境
 function install_erlang_otp() {
+  pre_install
   yum_install_erlang_otp
   echo -e "$(date +%F_%T) $LINENO: ${GREEN} install_erlang_otp ${otpversion} ${NC}"
   if [ ! -f ${script_dir}/otp_src_${otpversion}.tar.gz ]; then
@@ -960,6 +993,10 @@ function atomgit_plugin() {
 }
 
 function install_dgiot() {
+  if [ ${os_type} == "kylin" ]; then
+    software="dgiot_kylin_${cpu_name}"
+  fi
+
   make_ssl
   if [ ! -d ${install_dir}/go_fastdfs/files/package/ ]; then
     mkdir -p ${install_dir}/go_fastdfs/files/package/
@@ -1408,8 +1445,8 @@ function centos() {
   # Install app and data node
   if [ -x ${install_dir}/dgiot ]; then
     update_dgiot
-    update_dashboard
-    update_html
+    #update_dashboard
+    #update_html
     #update_tdengine_server
     #restore_parse_data       # 加载默认档案数据
   else
@@ -1435,7 +1472,7 @@ function single() {
   ## windows单机版本部署(待完成)
   if [ "${os_type}" == 3 ]; then
     windows
-  else ## linux单机版本目前只支持centos 7.6/7.9
+  else ## linux单机版本目前 支持centos 7.6/7.9  银河麒麟(ARM版本)V10  银河麒麟(X86版本)V10
     centos
   fi
 }
@@ -1516,6 +1553,7 @@ function devops() {
 
 function ci() {
   #一键式持续集成
+  pre_install
   install_node
   install_erlang_otp
   pre_build_dgiot
@@ -1558,6 +1596,7 @@ fi
 ###---------------------------- prepare config-------------------------------------------------
 ## 当前支持cetos 7.6/7.9, 计划支持windows
 check_os_type
+check_cpu_type
 ## shell parameter init
 dgiot_shell
 
