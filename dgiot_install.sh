@@ -66,7 +66,7 @@ function check_cpu_type() {
   else
     echo " osinfo: ${osinfo}"
   fi
-  echo -e "$(date +%F_%T) $LINENO: ${GREEN} os_name: ${os_name} cpu_name: ${cpu_name}${NC}"
+  echo -e "$(date +%F_%T) $LINENO: ${GREEN} os_name: ${os_name} cpu_type: ${cpu_name}${NC}"
 }
 
 function dgiot_shell() {
@@ -129,7 +129,9 @@ function dgiot_path() {
   fileparseserver="https://dgiot-parse-server-1306147891.cos.ap-nanjing.myqcloud.com"
   fileversionserver="https://dgiot-version-1306147891.cos.ap-nanjing.myqcloud.com"
   updateserver="http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_release/update"
-  tdversion="3.0.2.4"
+  td_version="3.0.2.4"
+  pg_version="16.0"
+  parse_server_version="5.6.0"
   otpversion="24.3.4.2"
   #install path
   install_dir="/data/dgiot"
@@ -419,52 +421,63 @@ function yum_install_postgres() {
   ${csudo} yum install -y tcl-devel python-devel &>/dev/null
 }
 
-### 2.1.2 编译安装postgres
-function install_postgres() {
-  echo -e "$(date +%F_%T) $LINENO: ${GREEN} install_postgres${NC}"
+### 编译安装polardb
+function build_polardb() {
+  echo -e "$(date +%F_%T) $LINENO: ${GREEN} build_polardb${NC}"
   ##下载软件
-  if [ ! -f ${script_dir}/postgresql-12.0.tar.gz ]; then
-    ${csudo} wget ${fileserver}/postgresql-12.0.tar.gz -O ${script_dir}/postgresql-12.0.tar.gz &>/dev/null
+  polardb_software="PolarDB-${pg_version}.tar.gz"
+  if [ ! -f ${script_dir}/${polardb_software} ]; then
+    ${csudo} wget ${fileserver}/${polardb_software} -O ${script_dir}/${polardb_software} &>/dev/null
   fi
 
-  ### 创建目录和用户,以及配置环境变化
-  echo -e "$(date +%F_%T) $LINENO: ${GREEN} create postgres user and group ${NC}"
-  set +uxe
-  egrep "^postgres" /etc/passwd >/dev/null
-  if [ $? -eq 0 ]; then
-    echo -e "$(date +%F_%T) $LINENO: ${GREEN} postgres user and group exist ${NC}"
-  else
-    ${csudo} groupadd postgres &>/dev/null
-    ${csudo} useradd -g postgres postgres &>/dev/null
+  if [ -d ${script_dir}/PolarDB-${pg_version} ]; then
+    ${csudo} rm ${script_dir}/PolarDB-${pg_version} -rf
   fi
 
-  ###  密码设置在引号内输入自己的密码
-  echo ${pg_pwd} | passwd --stdin postgres
-  echo "export PATH=/usr/local/pgsql/12/bin:$PATH" >/etc/profile.d/pgsql.sh
-  source /etc/profile.d/pgsql.sh
+  tar xvf PolarDB-${pg_version}.tar.gz &>/dev/null
+  cd ./PolarDB-${pg_version}/
 
-  if [ -d ${script_dir}/postgresql-12.0 ]; then
-    ${csudo} rm ${script_dir}/postgresql-12.0 -rf
+  echo -e "$(date +%F_%T) $LINENO: ${GREEN} configure polardb${NC}"
+  ./configure --prefix=/usr/local/pgsql/${pg_version} --with-pgport=7432 &>/dev/null
+
+  echo -e "$(date +%F_%T) $LINENO: ${GREEN} make install polardb${NC}"
+  make install -j${processor} &>/dev/null
+
+  cd ${script_dir}/
+  rm ${script_dir}/postgresql-${pg_version} -rf
+  echo -e "$(date +%F_%T) $LINENO: ${GREEN} build polardb sueccess${NC}"
+}
+
+### 2.1.2 编译安装postgres
+function build_postgres() {
+  echo -e "$(date +%F_%T) $LINENO: ${GREEN} build_postgres${NC}"
+  ##下载软件
+  pg_software="postgresql-${pg_version}.tar.gz"
+  if [ ! -f ${script_dir}/${pg_software} ]; then
+    ${csudo} wget ${fileserver}/${pg_software} -O ${script_dir}/${pg_software} &>/dev/null
   fi
 
-  tar xvf postgresql-12.0.tar.gz &>/dev/null
-  cd ./postgresql-12.0/
-  set -ue
-  yum_install_postgres
+  if [ -d ${script_dir}/postgresql-${pg_version} ]; then
+    ${csudo} rm ${script_dir}/postgresql-${pg_version} -rf
+  fi
+
+  tar xvf postgresql-${pg_version}.tar.gz &>/dev/null
+  cd ./postgresql-${pg_version}/
+
   echo -e "$(date +%F_%T) $LINENO: ${GREEN} configure postgres${NC}"
-  ./configure --prefix=/usr/local/pgsql/12 --with-pgport=7432 --enable-nls --with-python --with-tcl --with-gssapi --with-icu --with-openssl --with-pam --with-ldap --with-systemd --with-libxml --with-libxslt &>/dev/null
+  ./configure --prefix=/usr/local/pgsql/${pg_version} --with-pgport=7432 --enable-nls --with-tcl --with-gssapi --with-icu --with-openssl --with-pam --with-ldap --with-systemd --with-libxml --with-libxslt &>/dev/null
 
   echo -e "$(date +%F_%T) $LINENO: ${GREEN} make install postgres${NC}"
   make install -j${processor} &>/dev/null
 
   ### 添加pg_stat_statements数据库监控插件
-  cd ${script_dir}/postgresql-12.0/contrib/pg_stat_statements/
+  cd ${script_dir}/postgresql-${pg_version}/contrib/pg_stat_statements/
   echo -e "$(date +%F_%T) $LINENO: ${GREEN} make install pg_stat_statements ${NC}"
   make install -j${processor} &>/dev/null
   sleep 5
 
   cd ${script_dir}/
-  rm ${script_dir}/postgresql-12.0 -rf
+  rm ${script_dir}/postgresql-${pg_version} -rf
   echo -e "$(date +%F_%T) $LINENO: ${GREEN} build postgres sueccess${NC}"
 }
 
@@ -480,7 +493,7 @@ function init_postgres_database() {
   chown -R postgres:postgres /usr/local/pgsql
   chown -R postgres:postgres ${install_dir}/dgiot_pg_writer
   cd ${install_dir}/dgiot_pg_writer/
-  sudo -u postgres /usr/local/pgsql/12/bin/initdb -D ${install_dir}/dgiot_pg_writer/data/ -U postgres --locale=en_US.UTF8 -E UTF8 &>/dev/null
+  sudo -u postgres /usr/local/pgsql/${pg_version}/bin/initdb -D ${install_dir}/dgiot_pg_writer/data/ -U postgres --locale=en_US.UTF8 -E UTF8 &>/dev/null
   ${csudo} bash -c "cp ${install_dir}/dgiot_pg_writer/data/{pg_hba.conf,pg_hba.conf.bak}"
   ${csudo} bash -c "cp ${install_dir}/dgiot_pg_writer/data/{postgresql.conf,postgresql.conf.bak}"
   echo -e "$(date +%F_%T) $LINENO: ${GREEN} initdb postgres success${NC}"
@@ -535,17 +548,124 @@ EOF
   echo -e "$(date +%F_%T) $LINENO: ${GREEN} ${postgresql_conf}${NC}"
 }
 
+
+function init_polardb_database() {
+  echo -e "$(date +%F_%T) $LINENO: ${GREEN} init polardb${NC}"
+
+#  polardb_software="polardb-${pg_version}-${os_name}-${cpu_name}.tar.gz"
+#
+#  if [ ! -f ${script_dir}/${polardb_software} ]; then
+#    wget ${fileserver}/${polardb_software} -O ${script_dir}/${polardb_software} &>/dev/null
+#  fi
+#  mkdir /usr/local/pgsql/ -p
+#  tar -zxvf ${polardb_software} -C /usr/local/pgsql/ &>/dev/null
+  ln -sf /usr/local/pgsql/${pg_version}/lib/libpq.so.5 /usr/lib/libpq.so.5 &>/dev/null
+  ln -sf /usr/lib64/libLLVM-7.0.0.so /usr/lib64/libLLVM-7.so &>/dev/null
+  ldconfig
+  ### 2.1.4.搭建主数据库
+  if [ -d ${install_dir}/dgiot_pg_writer ]; then
+    mv ${install_dir}/dgiot_pg_writer/ ${backup_dir}/
+  fi
+
+  mkdir ${install_dir}/dgiot_pg_writer/data -p
+  mkdir ${install_dir}/dgiot_pg_writer/archivedir -p
+  chown -R postgres:postgres /data/
+  chown -R postgres:postgres /usr/local/pgsql
+  chown -R postgres:postgres ${install_dir}/dgiot_pg_writer
+  cd ${install_dir}/dgiot_pg_writer/
+  sudo -u postgres /usr/local/pgsql/${pg_version}/bin/initdb -D ${install_dir}/dgiot_pg_writer/data/ -U postgres --locale=en_US.UTF8 -E UTF8 &>/dev/null
+  ${csudo} bash -c "cp ${install_dir}/dgiot_pg_writer/data/{pg_hba.conf,pg_hba.conf.bak}"
+  ${csudo} bash -c "cp ${install_dir}/dgiot_pg_writer/data/{postgresql.conf,postgresql.conf.bak}"
+  echo -e "$(date +%F_%T) $LINENO: ${GREEN} initdb polardb success${NC}"
+
+  ### 2.1.5 配置postgresql.conf
+  postgresql_conf="${install_dir}/dgiot_pg_writer/data/postgresql.conf"
+  cat >${postgresql_conf} <<"EOF"
+  listen_addresses = '*'
+  port = 7432
+  max_connections = 100
+  superuser_reserved_connections = 10
+  full_page_writes = on
+  wal_log_hints = off
+  max_wal_senders = 50
+  hot_standby = on
+  log_destination = 'csvlog'
+  logging_collector = off
+  log_directory = 'log'
+  log_filename = 'postgresql-%Y-%m-%d_%H%M%S'
+  log_rotation_age = 1d
+  log_rotation_size = 10MB
+  log_statement = 'mod'
+  log_timezone = 'PRC'
+  timezone = 'PRC'
+  unix_socket_directories = '/tmp'
+  shared_buffers = 512MB
+  temp_buffers = 16MB
+  work_mem = 32MB
+  effective_cache_size = 2GB
+  maintenance_work_mem = 128MB
+  #max_stack_depth = 2MB
+  dynamic_shared_memory_type = posix
+  ## PITR
+  full_page_writes = on
+  wal_buffers = 16MB
+  wal_writer_delay = 200ms
+  commit_delay = 0
+  commit_siblings = 5
+  wal_level = replica
+  archive_mode = off
+  archive_timeout = 60s
+EOF
+  archivedir="${install_dir}/dgiot_pg_writer/archivedir"
+  echo "  archive_command = 'test ! -f ${archivedir}/%f && cp %p ${archivedir}/%f'" >>${postgresql_conf}
+  pg_hba_conf="${install_dir}/dgiot_pg_writer/data/pg_hba.conf"
+  # METHOD "trust", "reject","md5","password","scram-sha-256","gss","sspi","ident","peer","pam","ldap","radius","cert"
+  ${csudo} bash -c "echo 'host    all             all             ${pg_eip}/24           password'    >> ${pg_hba_conf}"
+  echo -e "$(date +%F_%T) $LINENO: ${GREEN} ${postgresql_conf}${NC}"
+}
+
 ### 2.1.4 安装部署postgres
 function deploy_postgres() {
   clean_service dgiot_pg_writer
-  install_postgres
-  init_postgres_database
+  yum_install_postgres
+  pg_user
+  if [ ${os_type} == "kylin" ]; then
+    pg_version="11"
+    build_polardb
+    init_polardb_database
+  else
+    build_postgres
+    init_postgres_database
+  fi
+
   DATA_DIR="${install_dir}/dgiot_pg_writer/data"
-  install_service dgiot_pg_writer "notify" "/usr/local/pgsql/12/bin/postgres -D ${DATA_DIR}" "postgres" "DATA_DIR=${DATA_DIR}"
+  install_service dgiot_pg_writer "simple" "/usr/local/pgsql/${pg_version}/bin/postgres -D ${DATA_DIR}" "postgres" "DATA_DIR=${DATA_DIR}"
   sleep 2
-  sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -c "CREATE USER  repl WITH PASSWORD '${pg_pwd}' REPLICATION;" &>/dev/null
+  ln -sf /usr/local/pgsql/${pg_version}/bin/psql /usr/sbin/psql &>/dev/null
+  sudo -u postgres /usr/local/pgsql/${pg_version}/bin/psql -U postgres -c "CREATE USER  repl WITH PASSWORD '${pg_pwd}' REPLICATION;" &>/dev/null
   echo -e "$(date +%F_%T) $LINENO: ${GREEN} deploy postgres success${NC}"
 }
+
+### 创建目录和用户,以及配置环境变化
+function pg_user() {
+  echo -e "$(date +%F_%T) $LINENO: ${GREEN} create postgres user and group ${NC}"
+  set +uxe
+  egrep "^postgres" /etc/passwd &>/dev/null
+  if [ $? -eq 0 ]; then
+    echo -e "$(date +%F_%T) $LINENO: ${GREEN} postgres user and group exist ${NC}"
+  else
+    ${csudo} groupadd postgres &>/dev/null
+    ${csudo} useradd -g postgres postgres &>/dev/null
+  fi
+
+  ###  密码设置在引号内输入自己的密码
+  echo ${pg_pwd} | passwd --stdin postgres &>/dev/null
+  echo "export PATH=/usr/local/pgsql/${pg_version}/bin:$PATH" >/etc/profile.d/pgsql.sh &>/dev/null
+  source /etc/profile.d/pgsql.sh
+
+  set -ue
+}
+
 
 function restore_parse_data() {
   ### 下载dgiot_parse_server初始数据
@@ -556,14 +676,14 @@ function restore_parse_data() {
   cd ${install_dir}/dgiot_pg_writer/
   tar xvf parse_4.0.sql.tar.gz &>/dev/null
 
-  sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -c "ALTER USER postgres WITH PASSWORD '${pg_pwd}';" &>/dev/null
-  retval=$(sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -c "SELECT datname FROM pg_database WHERE datistemplate = false;" &>/dev/null)
+  sudo -u postgres /usr/local/pgsql/${pg_version}/bin/psql -U postgres -c "ALTER USER postgres WITH PASSWORD '${pg_pwd}';" &>/dev/null
+  retval=$(sudo -u postgres /usr/local/pgsql/${pg_version}/bin/psql -U postgres -c "SELECT datname FROM pg_database WHERE datistemplate = false;" &>/dev/null)
   if [[ $retval == *"parse"* ]]; then
-    sudo -u postgres /usr/local/pgsql/12/bin/pg_dump -F p -f ${backup_dir}/dgiot_pg_writer/parse_4.0_backup.sql -C -E UTF8 -h 127.0.0.1 -U postgres parse &>/dev/null
-    sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -c "DROP DATABASE parse;" &>/dev/null
+    sudo -u postgres /usr/local/pgsql/${pg_version}/bin/pg_dump -F p -f ${backup_dir}/dgiot_pg_writer/parse_4.0_backup.sql -C -E UTF8 -h 127.0.0.1 -U postgres parse &>/dev/null
+    sudo -u postgres /usr/local/pgsql/${pg_version}/bin/psql -U postgres -c "DROP DATABASE parse;" &>/dev/null
   fi
-  sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -c "CREATE DATABASE parse;" &>/dev/null
-  sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -f ${install_dir}/dgiot_pg_writer/parse_4.0.sql parse &>/dev/null
+  sudo -u postgres /usr/local/pgsql/${pg_version}/bin/psql -U postgres -c "CREATE DATABASE parse;" &>/dev/null
+  sudo -u postgres /usr/local/pgsql/${pg_version}/bin/psql -U postgres -f ${install_dir}/dgiot_pg_writer/parse_4.0.sql parse &>/dev/null
   echo -e "$(date +%F_%T) $LINENO: ${GREEN} restore parse data success${NC}"
 }
 
@@ -576,15 +696,15 @@ function install_parse_server() {
     mv ${install_dir}/dgiot_parse_server/ ${backup_dir}/dgiot_parse_server
     chown -R postgres:postgres ${backup_dir}/dgiot_parse_server/
   fi
-  parse_server_name="dgiot_parse_server-${os_name}-${cpu_name}.tar.gz"
-  echo -e "$(date +%F_%T) $LINENO: ${GREEN} dgiot_parse_server : ${parse_server_name}${NC}"
+  parse_server_software="dgiot_parse_server-${parse_server_version}-${os_name}-${cpu_name}.tar.gz"
+  echo -e "$(date +%F_%T) $LINENO: ${GREEN} dgiot_parse_server software : ${parse_server_software}${NC}"
   ###下载dgiot_parse_server软件
-  if [ ! -f ${script_dir}/${parse_server_name} ]; then
-    wget ${fileparseserver}/${parse_server_name} -O ${script_dir}/${parse_server_name} &>/dev/null
+  if [ ! -f ${script_dir}/${parse_server_software} ]; then
+    wget ${fileparseserver}/${parse_server_software} -O ${script_dir}/${parse_server_software} &>/dev/null
   fi
 
   cd ${script_dir}/
-  tar xf ${parse_server_name}
+  tar xf ${parse_server_software}
   mv ./dgiot_parse_server ${install_dir}/dgiot_parse_server
 
   ###  配置dgiot_parse_server配置参数
@@ -659,27 +779,26 @@ function deploy_tdengine_server() {
     clean_service "taosd"
     mv ${install_dir}/taos/ ${backup_dir}/taos/
   fi
-  tdname="TDengine-server-${tdversion}-${os_name}-${cpu_name}.tar.gz"
+  tdname="TDengine-server-${td_version}-${os_name}-${cpu_name}.tar.gz"
   echo -e "$(date +%F_%T) $LINENO: ${GREEN} TDengine Version : ${tdname}${NC}"
   if [ ! -f ${script_dir}/${tdname} ]; then
     wget ${fileserver}/${tdname} -O ${script_dir}/${tdname} &>/dev/null
   fi
 
   cd ${script_dir}/
-  if [ -f ${script_dir}/TDengine-server-${tdversion} ]; then
-    rm -rf ${script_dir}/TDengine-server-${tdversion}/
+  if [ -f ${script_dir}/TDengine-server-${td_version} ]; then
+    rm -rf ${script_dir}/TDengine-server-${td_version}/
   fi
 
   tar xf ${tdname}
-  cd ${script_dir}/TDengine-server-${tdversion}/
+  cd ${script_dir}/TDengine-server-${td_version}/
   mkdir ${install_dir}/taos3/log/ -p
   mkdir ${install_dir}/taos3/data/ -p
   echo | /bin/sh remove.sh &>/dev/null
   echo | /bin/sh install.sh &>/dev/null
-  ln -sf /usr/lib64/libLLVM-7.0.0.so /usr/lib64/libLLVM-7.so &>/dev/null
   ldconfig
   cd ${script_dir}/
-  rm ${script_dir}/TDengine-server-${tdversion} -rf
+  rm ${script_dir}/TDengine-server-${td_version} -rf
   ${csudo} bash -c "echo 'logDir                    ${install_dir}/taos3/log/'   > /etc/taos/taos.cfg"
   ${csudo} bash -c "echo 'dataDir                   ${install_dir}/taos3/data/'   >> /etc/taos/taos.cfg"
   ${csudo} bash -c "echo 'supportVnodes             100'   >> /etc/taos/taos.cfg"
@@ -1055,15 +1174,15 @@ function install_postgres_exporter() {
     wget ${fileserver}/postgres_exporter-0.10.0.linux-amd64.tar.gz -O ${script_dir}/postgres_exporter-0.10.0.linux-amd64.tar.gz &>/dev/null
   fi
 
-  retval=$(sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -d parse -c "SELECT * FROM pg_available_extensions;" &>/dev/null)
+  retval=$(sudo -u postgres /usr/local/pgsql/${pg_version}/bin/psql -U postgres -d parse -c "SELECT * FROM pg_available_extensions;" &>/dev/null)
   if [[ $retval == *"pg_stat_statements"* ]]; then
     echo -e "$(date +%F_%T) $LINENO: ${GREEN} pg_stat_statements has installed${NC}"
   else
-    sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -d parse -c "CREATE EXTENSION pg_stat_statements SCHEMA public;" &>/dev/null
-    sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -d parse -c "CREATE USER postgres_exporter PASSWORD '${pg_pwd}';" &>/dev/null
-    sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -d parse -c "ALTER USER postgres_exporter SET SEARCH_PATH TO postgres_exporter,pg_catalog;" &>/dev/null
-    sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -d parse -c "CREATE SCHEMA postgres_exporter AUTHORIZATION postgres_exporter;" &>/dev/null
-    sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -d parse -c "CREATE FUNCTION postgres_exporter.f_select_pg_stat_activity()
+    sudo -u postgres /usr/local/pgsql/${pg_version}/bin/psql -U postgres -d parse -c "CREATE EXTENSION pg_stat_statements SCHEMA public;" &>/dev/null
+    sudo -u postgres /usr/local/pgsql/${pg_version}/bin/psql -U postgres -d parse -c "CREATE USER postgres_exporter PASSWORD '${pg_pwd}';" &>/dev/null
+    sudo -u postgres /usr/local/pgsql/${pg_version}/bin/psql -U postgres -d parse -c "ALTER USER postgres_exporter SET SEARCH_PATH TO postgres_exporter,pg_catalog;" &>/dev/null
+    sudo -u postgres /usr/local/pgsql/${pg_version}/bin/psql -U postgres -d parse -c "CREATE SCHEMA postgres_exporter AUTHORIZATION postgres_exporter;" &>/dev/null
+    sudo -u postgres /usr/local/pgsql/${pg_version}/bin/psql -U postgres -d parse -c "CREATE FUNCTION postgres_exporter.f_select_pg_stat_activity()
     RETURNS setof pg_catalog.pg_stat_activity
     LANGUAGE sql
     SECURITY DEFINER
@@ -1071,7 +1190,7 @@ function install_postgres_exporter() {
     SELECT * from pg_catalog.pg_stat_activity;
     \$\$;" &>/dev/null
 
-    sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -d parse -c "CREATE FUNCTION postgres_exporter.f_select_pg_stat_replication()
+    sudo -u postgres /usr/local/pgsql/${pg_version}/bin/psql -U postgres -d parse -c "CREATE FUNCTION postgres_exporter.f_select_pg_stat_replication()
     RETURNS setof pg_catalog.pg_stat_replication
     LANGUAGE sql
     SECURITY DEFINER
@@ -1079,16 +1198,16 @@ function install_postgres_exporter() {
       SELECT * from pg_catalog.pg_stat_replication;
     \$\$;" &>/dev/null
 
-    sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -d parse -c "CREATE VIEW postgres_exporter.pg_stat_replication
+    sudo -u postgres /usr/local/pgsql/${pg_version}/bin/psql -U postgres -d parse -c "CREATE VIEW postgres_exporter.pg_stat_replication
     AS
       SELECT * FROM postgres_exporter.f_select_pg_stat_replication();" &>/dev/null
 
-    sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -d parse -c "CREATE VIEW postgres_exporter.pg_stat_activity
+    sudo -u postgres /usr/local/pgsql/${pg_version}/bin/psql -U postgres -d parse -c "CREATE VIEW postgres_exporter.pg_stat_activity
     AS
       SELECT * FROM postgres_exporter.f_select_pg_stat_activity();" &>/dev/null
 
-    sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -d parse -c "GRANT SELECT ON postgres_exporter.pg_stat_replication TO postgres_exporter;" &>/dev/null
-    sudo -u postgres /usr/local/pgsql/12/bin/psql -U postgres -d parse -c "GRANT SELECT ON postgres_exporter.pg_stat_activity TO postgres_exporter;" &>/dev/null
+    sudo -u postgres /usr/local/pgsql/${pg_version}/bin/psql -U postgres -d parse -c "GRANT SELECT ON postgres_exporter.pg_stat_replication TO postgres_exporter;" &>/dev/null
+    sudo -u postgres /usr/local/pgsql/${pg_version}/bin/psql -U postgres -d parse -c "GRANT SELECT ON postgres_exporter.pg_stat_activity TO postgres_exporter;" &>/dev/null
   fi
 
   systemctl restart dgiot_pg_writer
