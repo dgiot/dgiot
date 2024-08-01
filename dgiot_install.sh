@@ -642,6 +642,7 @@ function deploy_postgres() {
   install_service dgiot_pg_writer "simple" "/usr/local/pgsql/${pg_version}/bin/postgres -D ${DATA_DIR}" "postgres" "DATA_DIR=${DATA_DIR}"
   sleep 2
   ln -sf /usr/local/pgsql/${pg_version}/bin/psql /usr/sbin/psql &>/dev/null
+  ln -sf /usr/local/pgsql/${pg_version}/bin/pg_dump /usr/sbin/pg_dump &>/dev/null
   sudo -u postgres /usr/local/pgsql/${pg_version}/bin/psql -U postgres -c "CREATE USER  repl WITH PASSWORD '${pg_pwd}' REPLICATION;" &>/dev/null
   echo -e "$(date +%F_%T) $LINENO: ${GREEN} deploy postgres success${NC}"
 }
