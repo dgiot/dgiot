@@ -67,6 +67,7 @@ create_dtu(DtuAddr, ChannelId, DTUIP) ->
                 <<"brand">> => <<"DTU", DtuAddr/binary>>,
                 <<"devModel">> => <<"DTU_">>
             },
+            dgiot_device:save_log(ProductId, DtuAddr, DtuAddr, <<"online">>),
             dgiot_device:create_device(Requests);
         _ ->
             pass
@@ -147,6 +148,7 @@ create_meter4G(DevAddr, ChannelId, DTUIP) ->
                 <<"brand">> => <<"Concentrator", DevAddr/binary>>,
                 <<"devModel">> => <<"Concentrator">>
             },
+            dgiot_device:save_log(ProductId, DevAddr, DevAddr, <<"online">>),
             dgiot_device:create_device(Requests),
             dgiot_task:save_pnque(ProductId, DevAddr, ProductId, DevAddr);
         _ ->

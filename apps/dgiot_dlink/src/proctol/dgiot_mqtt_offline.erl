@@ -23,6 +23,7 @@
 on_client_disconnected(#{clientid := <<ProductID:10/binary, "_", DeviceAddr/binary>>, username := ProductID}, _ReasonCode, #{disconnected_at := _DisconnectedAt}, _State) ->
     DeviceId = dgiot_parse_id:get_deviceid(ProductID, DeviceAddr),
     dgiot_device:offline(DeviceId),
+    dgiot_device:save_log(ProductID, DeviceAddr, DeviceAddr, <<"offline">>),
     io:format("~s ~p ProductID = ~p DeviceAddr ~p DeviceId ~p ~n", [?FILE, ?LINE, ProductID, DeviceAddr, DeviceId]),
     ok;
 

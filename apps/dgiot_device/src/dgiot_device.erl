@@ -25,7 +25,7 @@
 -export([parse_cache_Device/1, sync_parse/1, get/2, post/1, post/2, put/1, save/1, save/2, lookup/1, lookup/2, delete/1, delete/2]).
 -export([save_profile/1, get_profile/1, get_profile/2, get_online/1, online/1, offline/1, offline_child/1, enable/1, disable/1]).
 -export([put_color/3, get_color/2, put_location/3, get_location/1, get_address/3, get_productid/1]).
--export([get_acl/1, get_readonly_acl/1, save_log/3, get_url/1, get_appname/1]).
+-export([get_acl/1, get_readonly_acl/1, save_log/3, get_url/1, get_appname/1, save_log/4]).
 
 parse_cache_Device(Skip) ->
     dgiot_device_cache:parse_cache_Device(Skip).
@@ -178,9 +178,9 @@ create_device(#{<<"status">> := Status, <<"brand">> := Brand, <<"devModel">> := 
     <<"devaddr">> := DevAddr, <<"product">> := ProductId, <<"ACL">> := Acl} = Device) ->
     DeviceId = maps:get(<<"objectId">>, Device, dgiot_parse_id:get_deviceid(ProductId, DevAddr)),
     case dgiot_parsex:get_object(<<"Device">>, DeviceId) of
-        {ok, #{<<"ip">> := Ip} = Result} ->
+        {ok, Result} ->
             Body = #{
-                <<"ip">> => maps:get(<<"ip">>, Device, Ip),
+                <<"ip">> => maps:get(<<"ip">>, Device, maps:get(<<"ip">>, Result, <<>>)),
                 <<"status">> => Status},
             dgiot_parsex:update_object(<<"Device">>, DeviceId, Body),
             dgiot_device:put(#{<<"objectId">> => DeviceId, <<"status">> => Status}),
@@ -226,6 +226,7 @@ create_device(#{<<"status">> := Status, <<"brand">> := Brand, <<"devModel">> := 
 
 create_device(ProductId, DeviceAddr, Ip) ->
     DeviceId = dgiot_parse_id:get_deviceid(ProductId, DeviceAddr),
+    dgiot_device:save_log(ProductId, DeviceAddr, DeviceAddr, <<"online">>),
     case dgiot_device:lookup(DeviceId) of
         {ok, _} ->
             Body = #{<<"status">> => <<"ONLINE">>},
@@ -338,3 +339,14 @@ get_readonly_acl(DeviceId) ->
         _ ->
             #{}
     end.
+
+
+save_log(ProductId, DevAddr, Data, Domain) ->
+    dgiot_parsex:create_object(<<"Log">>, #{
+        <<"deviceid">> => dgiot_parse_id:get_deviceid(ProductId, DevAddr)
+        , <<"productid">> => ProductId
+        , <<"msg">> => dgiot_json:encode(#{<<"data">> => Data})
+        , <<"domain">> => [Domain]
+        , <<"devaddr">> => DevAddr
+        , <<"time">> => dgiot_datetime:nowstamp() * 1000
+    }).
