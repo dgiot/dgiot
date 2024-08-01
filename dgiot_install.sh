@@ -1725,13 +1725,13 @@ dgiot_shell
 # set parameters by default value
 deployType=single                           # [single | cluster | devops | otp|  ci | atomgit]
 plugin="dgiot"                              # [dgiot | dgiot_your_plugin]
-software="dgiot_b40"                        # [dgiot_b20| dgiot_n]
-dgiotmd5="c0a54cea57298c688628f70baa41cc16" # [dgiotmd5]
+software="dgiot_b41"                        # [dgiot_b20| dgiot_n]
+dgiotmd5="c28bd55d0f2ced8a0da9958f41a45125" # [dgiotmd5]
 pg_eip="changeyourip"                       # [datanode_eip]
 pg_auth='changeyourpassword'                # [pg_auth]
 islanip="false"                             # [islanip]
-html_software="dgiot_html_4.8.7"            # [dgiot_html_4.8.2| dgiot_html_n]
-htmlmd5="c2f6f842363c29852b43da42373edb73"  # [htmlmd5]
+html_software="dgiot_html_4.8.9"            # [dgiot_html_4.8.2| dgiot_html_n]
+htmlmd5="9548035c09c383f8abc233556fb9e526"  # [htmlmd5]
 atomplugin="atomgit"                        # [atomgit | jt808]
 
 while getopts "v:s:p:m:d:e:a:n" arg; do
