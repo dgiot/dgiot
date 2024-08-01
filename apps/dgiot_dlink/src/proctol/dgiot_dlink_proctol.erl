@@ -101,6 +101,7 @@ properties_report(ProductId, DevAddr, Payload) when is_map(Payload) ->
         end,
     NewPload = parse_payload(ProductId, OldPayload),
     dgiot_device_profile:publish(ProductId, DevAddr, NewPload),
+    dgiot_device:save_log(ProductId, DevAddr, NewPload, <<"reportProperty">>),
     dgiot_task:save_td(ProductId, DevAddr, NewPload, #{});
 
 %% 二进制报文

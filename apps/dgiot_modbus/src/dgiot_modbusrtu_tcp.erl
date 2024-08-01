@@ -58,6 +58,7 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, state = #state{id = ChannelId, de
         {match, [Head]} when length(List) == Len ->
             DeviceId = dgiot_parse_id:get_deviceid(ProductId, DtuAddr),
             create_device(DeviceId, ProductId, DtuAddr, DTUIP, Dtutype),
+            dgiot_device:save_log(ProductId, DtuAddr, DtuAddr, <<"online">>),
             dgiot_bridge:send_log(ChannelId, ProductId, DtuAddr, "~s ~p DTU login DtuAddr:~p", [?FILE, ?LINE, DtuAddr]),
             Topic = <<"$dg/device/", ProductId/binary, "/", DtuAddr/binary, "/profile">>,
             dgiot_mqtt:subscribe(Topic),
@@ -67,6 +68,7 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, state = #state{id = ChannelId, de
                 {match, [Head]} when length(List1) == Len ->
                     DeviceId = dgiot_parse_id:get_deviceid(ProductId, Buff),
                     create_device(DeviceId, ProductId, Buff, DTUIP, Dtutype),
+                    dgiot_device:save_log(ProductId, Buff, Buff, <<"online">>),
                     Topic = <<"$dg/device/", ProductId/binary, "/", Buff/binary, "/profile">>,
                     dgiot_bridge:send_log(ChannelId, ProductId, Buff, "~s ~p DTU login DtuAddr:~p", [?FILE, ?LINE, Buff]),
                     dgiot_mqtt:subscribe(Topic),
@@ -81,6 +83,7 @@ handle_info({tcp, Buff}, #tcp{state = #state{id = ChannelId, devaddr = DtuAddr, 
     dgiot_bridge:send_log(ChannelId, ProductId, DtuAddr, "~p ~s ~p DTU ~p recv ~p", [dgiot_datetime:format("YYYY-MM-DD HH:NN:SS"), ?FILE, ?LINE, DtuAddr, dgiot_utils:binary_to_hex(Buff)]),
     <<H:8, L:8>> = dgiot_utils:hex_to_binary(modbus_rtu:is16(Di)),
     <<Sh:8, Sl:8>> = dgiot_utils:hex_to_binary(modbus_rtu:is16(Pn)),
+    dgiot_device:save_log(ProductId, DtuAddr, dgiot_utils:binary_to_hex(Buff), <<"tcp_receive">>),
     case modbus_rtu:parse_frame(Buff, #{}, #{
         <<"dtuproduct">> => ProductId,
         <<"channel">> => ChannelId,
@@ -92,6 +95,7 @@ handle_info({tcp, Buff}, #tcp{state = #state{id = ChannelId, devaddr = DtuAddr, 
             dgiot_bridge:send_log(ChannelId, ProductId, DtuAddr, "~s ~p to task ~p ~ts ", [?FILE, ?LINE, NewTopic, unicode:characters_to_list(dgiot_json:encode(Things))]),
             DeviceId = dgiot_parse_id:get_deviceid(ProductId, DtuAddr),
             Taskchannel = dgiot_product_channel:get_taskchannel(ProductId),
+            dgiot_device:save_log(ProductId, DtuAddr, Things, <<"reportProperty">>),
             dgiot_client:send(Taskchannel, DeviceId, NewTopic, Things);
         Other ->
             ?LOG(info, "Other ~p", [Other]),
@@ -102,6 +106,7 @@ handle_info({tcp, Buff}, #tcp{state = #state{id = ChannelId, devaddr = DtuAddr, 
 %% 主动上报 Buff = <<"01 03 0000 000C45CF 0103184BC73E373AB53E361BFD3E4100000000000000000000000021AC">>.
 handle_info({tcp, Buff}, #tcp{state = #state{id = ChannelId, devaddr = DtuAddr, env = <<>>, product = DtuProductId} = State} = TCPState) ->
     dgiot_bridge:send_log(ChannelId, DtuProductId, DtuAddr, "~p ~s ~p DTU ~p recv ~p", [dgiot_datetime:format("YYYY-MM-DD HH:NN:SS"), ?FILE, ?LINE, DtuAddr, dgiot_utils:binary_to_hex(Buff)]),
+    dgiot_device:save_log(DtuProductId, DtuAddr, dgiot_utils:binary_to_hex(Buff), <<"other">>),
     case modbus_rtu:dealwith(Buff) of
         {ok, #{<<"buff">> := NewBuff, <<"slaveId">> := SlaveId, <<"address">> := Address}} ->
             case modbus_rtu:parse_frame(NewBuff, #{}, #{
@@ -137,6 +142,7 @@ handle_info({deliver, _, Msg}, #tcp{state = #state{id = ChannelId} = State} = TC
                     Payloads = modbus_rtu:set_params(ProfilePayload, ProductId, DevAddr),
                     lists:map(fun(X) ->
                         timer:sleep(100),
+                        dgiot_device:save_log(ProductId, DevAddr, dgiot_utils:binary_to_hex(X), <<"device_operationlog">>),
                         dgiot_tcp_server:send(TCPState, X)
                               end, Payloads),
                     {noreply, TCPState};
@@ -145,6 +151,7 @@ handle_info({deliver, _, Msg}, #tcp{state = #state{id = ChannelId} = State} = TC
                         #{<<"_dgiotTaskFreq">> := Freq, <<"slaveid">> := SlaveId, <<"address">> := Address} = DataSource ->
                             Data = modbus_rtu:to_frame(DataSource),
 %%                            io:format("~s ~p Data = ~p.~n", [?FILE, ?LINE, dgiot_utils:to_hex(Data)]),
+                            dgiot_device:save_log(ProductId, DevAddr, dgiot_utils:binary_to_hex(Data), <<"readProperty">>),
                             dgiot_bridge:send_log(ChannelId, ProductId, DevAddr, "Channel sends ~p to DTU ~p", [dgiot_utils:binary_to_hex(Data), DevAddr]),
                             dgiot_tcp_server:send(TCPState, Data),
                             {noreply, TCPState#tcp{state = State#state{hb = Freq, env = #{product => ProductId, pn => SlaveId, di => Address}}}};
@@ -163,6 +170,7 @@ handle_info({deliver, _, Msg}, #tcp{state = #state{id = ChannelId} = State} = TC
                     Payloads = modbus_rtu:set_params(ProfilePayload, ProductId, DevAddr),
                     lists:map(fun(X) ->
                         timer:sleep(100),
+                        dgiot_device:save_log(ProductId, DevAddr, dgiot_utils:binary_to_hex(X), <<"device_operationlog">>),
                         dgiot_tcp_server:send(TCPState, X)
                               end, Payloads),
                     {noreply, TCPState};
@@ -186,6 +194,7 @@ terminate(_Reason, #tcp{state = #state{id = _ChannelId, devaddr = DtuAddr, produ
     DeviceId = dgiot_parse_id:get_deviceid(ProductId, DtuAddr),
     Taskchannel = dgiot_product_channel:get_taskchannel(ProductId),
     dgiot_task:del_pnque(DeviceId),
+    dgiot_device:save_log(ProductId, DtuAddr, DtuAddr, <<"offline">>),
     dgiot_client:stop(Taskchannel, DeviceId),
     ok;
 

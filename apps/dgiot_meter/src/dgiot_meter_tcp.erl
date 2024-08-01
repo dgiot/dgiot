@@ -92,6 +92,7 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, state = #state{id = ChannelId, dt
             dgiot_mqtt:subscribe(Topic2),
             {NewRef, NewStep} = {undefined, read_meter},
             DtuId = dgiot_parse_id:get_deviceid(DtuProductId, DtuAddr),
+            dgiot_device:save_log(ProductId, DtuAddr, DtuAddr, <<"online">>),
             case Search of
                 <<"nosearch">> ->
                     lists:map(fun(X) ->
@@ -192,7 +193,6 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, clientid = DtuId, state = #state{
             case Frames of
                 [#{<<"con">> := 1, <<"frame">> := Frame} | _] ->
                     dgiot_bridge:send_log(ChannelId, "~s ~p DLT376 response: ~p ", [?FILE, ?LINE, dgiot_utils:binary_to_hex(Frame)]),
-%%                    io:format("~s ~p DLT376 send = ~p.~n", [?FILE, ?LINE, dgiot_utils:binary_to_hex(Buff)]),
                     dgiot_tcp_server:send(TCPState, Frame);  %%回复确认
                 [#{<<"afn">> := 16#0A, <<"di">> := <<16#00, 16#00, 16#02, 16#01>>} | _] ->
                     dlt376_decoder:process_message(Frames, ChannelId, DTUIP, DtuId);  %%注册或更新电表信
@@ -208,6 +208,7 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, clientid = DtuId, state = #state{
                             dgiot_bridge:send_log(ChannelId, ProductId, DevAddr, "~s ~p Dtu to task ~p ~ts ", [?FILE, ?LINE, Topic, unicode:characters_to_list(dgiot_json:encode(Value))]),
                             timer:sleep(1 * 1000),
                             lists:foldl(fun(#{<<"productid">> := ChildProductId, <<"addr">> := ChildDevAddr, <<"value">> := ChildValue}, _Acc) ->
+                                dgiot_device:save_log(ChildProductId, ChildDevAddr, ChildValue, <<"reportProperty">>),
                                 ChildTopic = dgiot_meter:send_task(ChildProductId, ChildDevAddr, DtuId, ChildValue),
                                 dgiot_bridge:send_log(ChannelId, ProductId, DevAddr, "~s ~p DtuChild to task ~p ~ts ", [?FILE, ?LINE, ChildTopic, unicode:characters_to_list(dgiot_json:encode(ChildValue))]),
                                 timer:sleep(1 * 1000)
@@ -215,6 +216,7 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, clientid = DtuId, state = #state{
                         % 抄表数据返回
                         #{<<"productid">> := ProductId, <<"addr">> := Addr, <<"value">> := Value} ->
                             DevAddr = dgiot_utils:binary_to_hex(Addr),
+                            dgiot_device:save_log(ProductId, DevAddr, Value, <<"reportProperty">>),
                             Topic = dgiot_meter:send_task(ProductId, DevAddr, DtuId, Value),
                             dgiot_bridge:send_log(ChannelId, ProductId, DevAddr, "~s ~p Dtu to task ~p ~ts ", [?FILE, ?LINE, Topic, unicode:characters_to_list(dgiot_json:encode(Value))]);
                         Error ->
@@ -235,6 +237,7 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, clientid = DtuId, state = #state{
                 % 抄表数据返回
                 #{<<"productid">> := ProductId, <<"addr">> := Addr, <<"value">> := Value} ->
                     DevAddr = dgiot_utils:binary_to_hex(Addr),
+                    dgiot_device:save_log(ProductId, DevAddr, Value, <<"reportProperty">>),
                     Topic = dgiot_meter:send_task(ProductId, DevAddr, DtuId, Value),
                     dgiot_bridge:send_log(ChannelId, ProductId, DevAddr, "~s ~p to task ~p ~ts ", [?FILE, ?LINE, Topic, unicode:characters_to_list(dgiot_json:encode(Value))]);
                 Error ->
@@ -269,12 +272,14 @@ handle_info({deliver, _Topic, Msg}, #tcp{state = #state{id = ChannelId, protocol
                                     DataSource = jsx:decode(dgiot_mqtt:get_payload(Msg), [{labels, binary}, return_maps]),
                                     Payload1 = dgiot_meter:to_frame(#{<<"devaddr">> => DevAddr, <<"dataSource">> => DataSource}),
                                     dgiot_bridge:send_log(ChannelId, ProductId, DevAddr, " ~s ~p DLT376 send to DevAddr ~p => ~p", [?FILE, ?LINE, DevAddr, dgiot_utils:binary_to_hex(Payload1)]),
+                                    dgiot_device:save_log(ProductId, DevAddr, dgiot_utils:binary_to_hex(Payload1), <<"readProperty">>),
                                     dgiot_tcp_server:send(TCPState, Payload1);
                                 {Da, Dtuaddr} ->
                                     DA = dgiot_utils:binary_to_hex(dlt376_decoder:pn_to_da(dgiot_utils:to_int(Da))),
                                     DataSource = jsx:decode(dgiot_mqtt:get_payload(Msg), [{labels, binary}, return_maps]),
                                     Payload1 = dgiot_meter:to_frame(#{<<"protocol">> => Protocol, <<"devaddr">> => Dtuaddr, <<"dataSource">> => DataSource#{<<"da">> => DA}}),
                                     dgiot_bridge:send_log(ChannelId, ProductId, DevAddr, " ~s ~p DLT376 send to DevAddr ~p => ~p", [?FILE, ?LINE, DevAddr, dgiot_utils:binary_to_hex(Payload1)]),
+                                    dgiot_device:save_log(ProductId, DevAddr, dgiot_utils:binary_to_hex(Payload1), <<"readProperty">>),
                                     dgiot_tcp_server:send(TCPState, Payload1)
                             end;
                         ?DLT645 ->
@@ -286,6 +291,7 @@ handle_info({deliver, _Topic, Msg}, #tcp{state = #state{id = ChannelId, protocol
                             },
                             Payload1 = dgiot_meter:to_frame(ThingData),
                             dgiot_bridge:send_log(ChannelId, "~s ~p DLT645 to dev => ~p", [?FILE, ?LINE, dgiot_utils:binary_to_hex(Payload1)]),
+                            dgiot_device:save_log(ProductId, DevAddr, dgiot_utils:binary_to_hex(Payload1), <<"readProperty">>),
                             dgiot_tcp_server:send(TCPState, Payload1)
                     end,
                     {noreply, TCPState};
@@ -295,11 +301,13 @@ handle_info({deliver, _Topic, Msg}, #tcp{state = #state{id = ChannelId, protocol
                         ?DLT376 ->
                             Payload2 = dlt376_decoder:frame_write_param(#{<<"concentrator">> => DevAddr, <<"payload">> => ProfilePayload}),
                             dgiot_bridge:send_log(ChannelId, " ~s ~p DLT376(下发) send to DevAddr ~p => ~p", [?FILE, ?LINE, DevAddr, dgiot_utils:binary_to_hex(Payload2)]),
+                            dgiot_device:save_log(ProductId, DevAddr, dgiot_utils:binary_to_hex(Payload2), <<"device_operationlog">>),
                             dgiot_tcp_server:send(TCPState, Payload2);
                         ?DLT645 ->
 %%                            dgiot_umeng:send_message_to3D(ProductId, DevAddr, ProfilePayload),
                             Payload1 = dlt645_decoder:frame_write_param(#{<<"meter">> => DevAddr, <<"payload">> => ProfilePayload}),
                             ?LOG(info, "DLT645 Payload1 :~p ~n~n", [dgiot_utils:binary_to_hex(Payload1)]),
+                            dgiot_device:save_log(ProductId, DevAddr, dgiot_utils:binary_to_hex(Payload1), <<"device_operationlog">>),
                             dgiot_tcp_server:send(TCPState, Payload1)
                     end,
                     {noreply, TCPState#tcp{state = State#state{env = #{product => ProductId, devaddr => DevAddr}}}};
@@ -328,6 +336,7 @@ terminate(_Reason, #tcp{state = #state{dtuaddr = DtuAddr, product = ProductId}} 
     DeviceId = dgiot_parse_id:get_deviceid(ProductId, DtuAddr),
     Taskchannel = dgiot_product_channel:get_taskchannel(ProductId),
     dgiot_task:del_pnque(DeviceId),
+    dgiot_device:save_log(ProductId, DtuAddr, DtuAddr, <<"unregister">>),
     dgiot_client:stop(Taskchannel, DeviceId),
     ok;
 
