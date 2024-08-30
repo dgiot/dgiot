@@ -105,7 +105,7 @@ load_channel(Channels, Fun) ->
             <<"method">> => <<"GET">>,
             <<"path">> => <<"/classes/Product">>,
             <<"body">> => #{
-                <<"keys">> => [<<"decoder">>, <<"ACL">>, <<"name">>, <<"channel">>, <<"dynamicReg">>, <<"devType">>, <<"nodeType">>, <<"productSecret">>, <<"config">>, <<"thing">>, <<"topics">>],
+                <<"keys">> => [<<"decoder">>, <<"ACL">>, <<"name">>, <<"channel">>, <<"dynamicReg">>, <<"devType">>, <<"nodeType">>, <<"productSecret">>, <<"config">>, <<"topics">>],
                 <<"include">> => [<<"Dict">>],
                 <<"where">> => #{
                     <<"$relatedTo">> => #{

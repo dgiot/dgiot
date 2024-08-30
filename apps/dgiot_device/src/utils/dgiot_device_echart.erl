@@ -20,69 +20,105 @@
 -include_lib("dgiot/include/logger.hrl").
 -include_lib("dgiot_tdengine/include/dgiot_tdengine.hrl").
 
--export([get_echart_data/4]).
+-export([get_echart_data/5, get_echart_data/4]).
 -export([get_data_by_month/4, get_data_by_echart_category/4, get_keys/2, get_table/2]).
 
-get_echart_data(Channel, ProductId, DeviceId, Args) ->
-    Query = maps:without([<<"productid">>, <<"deviceid">>], Args),
-    Interval = maps:get(<<"interval">>, Args),
-    TableName = ?Table(DeviceId),
+get_echart_data(Channel, ProductId, DeviceId, Devaddr, Args) ->
     {Names, Results} =
-        case dgiot_device_tdengine:get_history_data(Channel, ProductId, TableName, Query) of
-            {TdNames, {ok, #{<<"results">> := TdResults}}} ->
-                {TdNames, TdResults};
+        case dgiot_product:get_sub_tab(ProductId) of
+            not_find ->
+                get_echart_data(Channel, ProductId, DeviceId, Args);
+            Subs when length(Subs) > 1 ->
+                TableNames =
+                    lists:foldl(fun(SubId, Acc) ->
+                        SubDevid = dgiot_parse_id:get_deviceid(SubId, Devaddr),
+                        Acc ++ [SubDevid]
+                                end, [], Subs),
+                get_echart_data(Channel, ProductId, TableNames, Args);
             _ ->
-                {[], []}
+                get_echart_data(Channel, ProductId, DeviceId, Args)
         end,
+    Interval = maps:get(<<"interval">>, Args),
     Chartdata = get_echart(ProductId, Results, Names, Interval),
     {ok, #{<<"chartData">> => Chartdata}}.
 
-get_echart(ProductId, Results, Names, Interval) ->
-    Maps = dgiot_product:get_prop(ProductId),
-    Units = dgiot_product:get_unit(ProductId),
-    NewMaps = maps:merge(#{<<"createdat">> => <<"日期"/utf8>>}, Maps),
-    Columns = [<<"日期"/utf8>>] ++ Names,
-    Rows =
-        lists:foldl(fun(Line, Lines) ->
-            NewLine =
-                maps:fold(fun(K, V, Acc) ->
-                    case maps:find(K, NewMaps) of
-                        error ->
-                            Acc;
-                        {ok, Name} ->
-                            case Name of
-                                <<"日期"/utf8>> ->
-                                    NewV = dgiot_tdengine_field:get_time(V, Interval),
-                                    Acc#{Name => NewV};
-                                _ ->
-                                    Acc#{Name => V}
-                            end
-                    end
-                          end, #{}, Line),
-            Lines ++ [NewLine]
-                    end, [], Results),
-%%    io:format("~s ~p Rows = ~p.~n", [?FILE, ?LINE, Rows]),
-    ChildRows = lists:foldl(fun(X, Acc1) ->
-        Date = maps:get(<<"日期"/utf8>>, X, dgiot_datetime:format(dgiot_datetime:to_localtime(dgiot_datetime:now_secs()), <<"YY-MM-DD HH:NN:SS">>)),
-        maps:fold(fun(K1, V1, Acc) ->
-            case maps:find(K1, Acc) of
+get_echart_data(Channel, ProductId, DeviceId, Args) ->
+    Query = maps:without([<<"productid">>, <<"deviceid">>], Args),
+    case dgiot_device_tdengine:get_history_data(Channel, ProductId, DeviceId, Query) of
+        {TdNames, {ok, #{<<"results">> := TdResults}}} ->
+            {TdNames, TdResults};
+        _ ->
+            {[], []}
+    end.
+
+
+format_line(ProductId, Interval, Line, Acc) when length(Line) > 1 ->
+    Acc ++ [format_line_(ProductId, Interval, Line, #{})];
+format_line(_ProductId, _Interval, _Line, Acc) ->
+    Acc.
+
+format_line_(_ProductId, _Interval, [], Acc) ->
+    Acc;
+
+format_line_(ProductId, Interval, [{<<"createdat">>, V} | Tail], Acc) ->
+    NewV = dgiot_tdengine_field:get_time(V, Interval),
+    NewAcc = Acc#{<<"日期"/utf8>> => NewV},
+    format_line_(ProductId, Interval, Tail, NewAcc);
+
+format_line_(ProductId, Interval, [{K, V} | Tail], Acc) ->
+    NewAcc =
+        case dgiot_product:get_product_identifier(ProductId, K) of
+            #{<<"name">> := Name} ->
+                Acc#{Name => V};
+            _ ->
+                Acc
+        end,
+    format_line_(ProductId, Interval, Tail, NewAcc).
+
+format_results(_ProductId, _Interval, [], Acc) ->
+    Acc;
+
+format_results(ProductId, Interval, [Line | Results], Acc) ->
+    NewAcc = format_line(ProductId, Interval, maps:to_list(Line), Acc),
+    format_results(ProductId, Interval, Results, NewAcc).
+
+format_rows([], Acc) ->
+    Acc;
+
+format_rows([Row | Rows], Acc) ->
+    Date = maps:get(<<"日期"/utf8>>, Row, dgiot_datetime:format(dgiot_datetime:to_localtime(dgiot_datetime:now_secs()), <<"YY-MM-DD HH:NN:SS">>)),
+    NewAcc =
+        maps:fold(fun(K1, V1, Acc1) ->
+            case maps:find(K1, Acc1) of
                 error ->
-                    Acc#{K1 => [#{<<"日期"/utf8>> => Date, K1 => V1}]};
+                    Acc1#{K1 => [#{<<"日期"/utf8>> => Date, K1 => V1}]};
                 {ok, V2} ->
-                    Acc#{K1 => V2 ++ [#{<<"日期"/utf8>> => Date, K1 => V1}]}
+                    Acc1#{K1 => V2 ++ [#{<<"日期"/utf8>> => Date, K1 => V1}]}
             end
-                  end, Acc1, maps:without([<<"日期"/utf8>>], X))
-                            end, #{}, Rows),
+                  end, Acc, maps:without([<<"日期"/utf8>>], Row)),
+    format_rows(Rows, NewAcc).
+
+format_childrows(_ProductId, [], Acc) ->
+    Acc;
+
+format_childrows(ProductId, [{K, V} | ChildRows], Acc) ->
+    Unit =
+        case dgiot_product:get_product_identifier(ProductId, K) of
+            #{<<"dataType">> := #{<<"specs">> := #{<<"unit">> := Unit1}}} ->
+                Unit1;
+            _ ->
+                <<"">>
+        end,
+    NewAcc = Acc ++ [#{<<"columns">> => [<<"日期"/utf8>>, K], <<"rows">> => V, <<"unit">> => Unit}],
+    format_childrows(ProductId, ChildRows, NewAcc).
+
+get_echart(ProductId, Results, Names, Interval) ->
+    Columns = [<<"日期"/utf8>>] ++ Names,
+    Rows = format_results(ProductId, Interval, Results, []),
+%%    io:format("~s ~p Rows = ~ts.~n", [?FILE, ?LINE, unicode:characters_to_list(dgiot_json:encode(Rows))]),
+    ChildRows = format_rows(Rows, #{}),
 %%    io:format("~s ~p ChildRows = ~p.~n", [?FILE, ?LINE, ChildRows]),
-    Child =
-        maps:fold(fun(K, V, Acc) ->
-            Unit =
-                case maps:find(K, Units) of
-                    error -> <<"">>;
-                    {ok, Unit1} -> Unit1
-                end,
-            Acc ++ [#{<<"columns">> => [<<"日期"/utf8>>, K], <<"rows">> => V, <<"unit">> => Unit}]
-                  end, [], ChildRows),
+    Child = format_childrows(ProductId, maps:to_list(ChildRows), []),
 %%    io:format("~s ~p Child = ~p.~n", [?FILE, ?LINE, Child]),
     #{<<"columns">> => Columns, <<"rows">> => Rows, <<"child">> => Child}.
 
@@ -112,10 +148,9 @@ get_data_by_month(Channel, ProductId, DeviceId, Args) ->
     {ok, Sql} = maps:find(<<"sql">>, Res),
     {ok, Name_and_nuit} = maps:find(<<"name_and_unit">>, Res),
 %%            配置参数
-    TableName = ?Table(DeviceId),
     Interval = <<"1d">>,
     %%传入参数获得结果
-    case dgiot_device_tdengine:get_history_data2(Sql, Channel, TableName, Interval, ProductId, StartTime, EndTime) of
+    case dgiot_device_tdengine:get_history_data2(Sql, Channel, DeviceId, Interval, ProductId, StartTime, EndTime) of
 %%                判断结果并转换格式
         {ok, #{<<"results">> := Results}} ->
 %%                    io:format("~s ~p Results = ~p,Name_and_nuit = ~p ~n",[?FILE,?LINE,Results,Name_and_nuit]),
@@ -271,10 +306,9 @@ get_data_by_echart_category(Channel, ProductId, DeviceId, Args) ->
             {ok, Sql} = maps:find(<<"sql">>, Res),
             {ok, Names} = maps:find(<<"names">>, Res),
 %%            配置参数
-            TableName = ?Table(DeviceId),
             Interval = <<"1d">>,
             %%传入参数获得结果
-            case dgiot_device_tdengine:get_history_data2(Sql, Channel, TableName, Interval, ProductId, StartTime, EndTime) of
+            case dgiot_device_tdengine:get_history_data2(Sql, Channel, DeviceId, Interval, ProductId, StartTime, EndTime) of
 %%                判断结果并转换格式
                 {ok, #{<<"results">> := Results}} ->
 %%                    io:format("~s ~p Results = ~p ~n",[?FILE,?LINE,Results]),

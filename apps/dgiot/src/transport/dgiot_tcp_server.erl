@@ -182,7 +182,7 @@ handle_info({tcp_closed, Sock}, #state{mod = Mod, child = #tcp{clientid = Client
     DTUIP = dgiot_utils:get_ip(Sock),
     write_log(ChildState#tcp.log, <<"ERROR ", DTUIP/binary, " ", Clientid/binary>>, <<"tcp_closed">>),
     dgiot_metrics:dec(dgiot, <<"tcp_online">>, 1),
-    ?LOG(error, "tcp_closed ~p", [ChildState#tcp.state]),
+%%    ?LOG(error, "tcp_closed ~p", [ChildState#tcp.state]),
     case Mod:handle_info(tcp_closed, ChildState) of
         {noreply, NewChild} ->
             {stop, normal, State#state{child = NewChild#tcp{socket = undefined}}};

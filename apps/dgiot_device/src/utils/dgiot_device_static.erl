@@ -141,7 +141,7 @@ get_realdata({Token, Realdatas}) when is_map(Realdatas) ->
                         {error, Error} ->
                             {error, Error};
                         {ok, Channel} ->
-                            {_, Newkeys} = dgiot_product_tdengine:get_keys(ProductId, <<"last">>, Keys),
+                            {_, Newkeys} = dgiot_product_tdengine:get_keys(ProductId, <<"_", ProductId/binary>>, <<"last">>, Keys),
                             DB = dgiot_tdengine:get_database(Channel, ProductId),
                             Sql1 = <<"select last(devaddr) as devaddr,", Newkeys/binary, " FROM ", DB/binary, "_", ProductId/binary, " group by devaddr;">>,
 %%                            io:format("Channel = ~p.~n Sql = ~p.~n", [Channel, Sql1]),

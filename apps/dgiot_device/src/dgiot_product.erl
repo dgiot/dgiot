@@ -25,16 +25,18 @@
 -export([get_prop/1, get_props/1, get_props/2, get_unit/1, update_properties/2, update_properties/0]).
 -export([update_topics/0, update_product_filed/1]).
 -export([save_devicetype/1, get_devicetype/1, get_device_thing/2, get_productSecret/1]).
--export([save_/1, get_keys/1, get_control/1, save_control/1, get_interval/1, save_device_thingtype/1, get_product_identifier/2, hook_topic/1]).
+-export([save_/1, get_keys/1, get_sub_tab/1, get_control/1, save_control/1, get_interval/1, get_product_identifier/2, hook_topic/1]).
 
 init_ets() ->
     dgiot_data:init(?DGIOT_PRODUCT, [public, named_table, set, {write_concurrency, true}, {read_concurrency, true}]),
     dgiot_data:init(?DGIOT_PRODUCT_IDENTIFIE, [public, named_table, set, {write_concurrency, true}, {read_concurrency, true}]),
+    dgiot_data:init(?DGIOT_PRODUCT_STAB, [public, named_table, set, {write_concurrency, true}, {read_concurrency, true}]),
     dgiot_data:init(?DGIOT_CHANNEL_SESSION, [public, named_table, set, {write_concurrency, true}, {read_concurrency, true}]),
     dgiot_data:init(?DEVICE_DEVICE_COLOR, [public, named_table, set, {write_concurrency, true}, {read_concurrency, true}]),
     dgiot_data:init(?DEVICE_PROFILE, [public, named_table, set, {write_concurrency, true}, {read_concurrency, true}]).
 
 load_all_cache({Skip}) ->
+
     case dgiot_parsex:query_object(<<"Product">>, #{<<"limit">> => 1000, <<"skip">> => Skip}) of
         {ok, #{<<"results">> := Results}} when length(Results) == 0 ->
             load_end;
@@ -46,6 +48,7 @@ load_all_cache({Skip}) ->
         _ ->
             {next, Skip}
     end.
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 save_prod(ProductId, #{<<"thing">> := _thing} = Product) ->
@@ -170,34 +173,58 @@ get_devicetype(ProductId) ->
             DeviceTypes
     end.
 
+save_product_thing(ProductId, Identifier, undefined, Profile, DeviceType, Prop, Type, 0) ->
+    dgiot_data:insert(?DGIOT_PRODUCT_IDENTIFIE, {ProductId, Identifier, identifie}, Prop),
+    save_product_thing({ProductId, device_thing, DeviceType}, #{Identifier => Type}, map),
+    save_product_thing({ProductId, devicetype}, [DeviceType], list),
+    save_product_thing({ProductId, profile_control}, #{Identifier => Profile}, map);
 
-%% 设备类型
-save_device_thingtype(ProductId, DeviceType, NewMap) ->
-    case dgiot_data:get(?DGIOT_PRODUCT, {ProductId, device_thing, DeviceType}) of
+save_product_thing(ProductId, Identifier, Key, undefined, DeviceType, Prop, Type, Isstorage) ->
+    dgiot_data:insert(?DGIOT_PRODUCT_IDENTIFIE, {ProductId, Identifier, identifie}, Prop),
+    save_product_thing({ProductId, device_thing, DeviceType}, #{Identifier => Type}, map),
+    save_product_thing({ProductId, keys}, [Key], list),
+    save_product_thing({ProductId, devicetype}, [DeviceType], list),
+
+    <<PId:10/binary, _/binary>> = dgiot_utils:to_md5(<<ProductId/binary, Isstorage/binary>>),
+    save_product_thing({ProductId, sub_tab}, [PId], list),
+
+    dgiot_data:insert(?DGIOT_PRODUCT_IDENTIFIE, {PId, Identifier, identifie}, Prop),
+    save_product_thing({PId, device_thing, DeviceType}, #{Identifier => Type}, map),
+    save_product_thing({PId, keys}, [Key], list),
+    save_product_thing({PId, devicetype}, [DeviceType], list),
+    dgiot_data:insert(?DGIOT_PRODUCT_STAB, {ProductId, Identifier, stab}, PId);
+
+save_product_thing(ProductId, Identifier, Key, Profile, DeviceType, Prop, Type, Isstorage) ->
+
+    dgiot_data:insert(?DGIOT_PRODUCT_IDENTIFIE, {ProductId, Identifier, identifie}, Prop),
+    save_product_thing({ProductId, device_thing, DeviceType}, #{Identifier => Type}, map),
+    save_product_thing({ProductId, keys}, [Key], list),
+    save_product_thing({ProductId, devicetype}, [DeviceType], list),
+    save_product_thing({ProductId, profile_control}, #{Identifier => Profile}, map),
+
+    <<PId:10/binary, _/binary>> = dgiot_utils:to_md5(<<ProductId/binary, Isstorage/binary>>),
+    save_product_thing({ProductId, sub_tab}, [PId], list),
+
+    dgiot_data:insert(?DGIOT_PRODUCT_IDENTIFIE, {ProductId, Identifier, identifie}, Prop),
+    save_product_thing({PId, device_thing, DeviceType}, #{Identifier => Type}, map),
+    save_product_thing({PId, keys}, [Key], list),
+    save_product_thing({PId, devicetype}, [DeviceType], list),
+    save_product_thing({PId, profile_control}, #{Identifier => Profile}, map),
+    dgiot_data:insert(?DGIOT_PRODUCT_STAB, {ProductId, Identifier, stab}, PId).
+
+save_product_thing(Key, Value, list) ->
+    case dgiot_data:get(?DGIOT_PRODUCT, Key) of
         not_find ->
-            dgiot_data:insert(?DGIOT_PRODUCT, {ProductId, device_thing, DeviceType}, NewMap);
-        Map ->
-            dgiot_data:insert(?DGIOT_PRODUCT, {ProductId, device_thing, DeviceType}, dgiot_map:merge(Map, NewMap))
-    end.
-
-save_device_thingtype(ProductId) ->
-    case dgiot_product:lookup_prod(ProductId) of
-        {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
-            lists:map(
-                fun
-                    (#{<<"devicetype">> := DeviceType, <<"identifier">> := Identifier, <<"dataType">> := #{<<"type">> := Type}}) ->
-                        case dgiot_data:get(?DGIOT_PRODUCT, {ProductId, device_thing, DeviceType}) of
-                            not_find ->
-                                dgiot_data:insert(?DGIOT_PRODUCT, {ProductId, device_thing, DeviceType}, #{Identifier => Type});
-                            Map ->
-                                dgiot_data:insert(?DGIOT_PRODUCT, {ProductId, device_thing, DeviceType}, Map#{Identifier => Type})
-                        end;
-                    (_) ->
-                        pass
-                end, Props);
-
-        _Error ->
-            []
+            dgiot_data:insert(?DGIOT_PRODUCT, Key, Value);
+        Values ->
+            dgiot_data:insert(?DGIOT_PRODUCT, Key, dgiot_utils:unique_2(Values ++ Value))
+    end;
+save_product_thing(Key, Value, map) ->
+    case dgiot_data:get(?DGIOT_PRODUCT, Key) of
+        not_find ->
+            dgiot_data:insert(?DGIOT_PRODUCT, Key, Value);
+        Values ->
+            dgiot_data:insert(?DGIOT_PRODUCT, Key, dgiot_map:merge(Values, Value))
     end.
 
 %% 物模型标识符
@@ -302,37 +329,56 @@ update_product_filed(_Filed) ->
     end.
 
 save_(ProductId) ->
-    {Keys, Control, DeviceTypes} =
-        case dgiot_product:lookup_prod(ProductId) of
-            {ok, #{<<"thing">> := #{<<"properties">> := Props} = Thing}} ->
-                delete_product_identifier(ProductId),
-                Tags = maps:get(<<"tags">>, Thing, []),
-                lists:foldl(
-                    fun
-                        (#{<<"devicetype">> := DeviceType, <<"identifier">> := Identifier, <<"isstorage">> := true, <<"profile">> := Profile, <<"dataType">> := #{<<"type">> := Type}} = Prop, {Acc, Ccc, Dcc}) ->
-                            dgiot_data:insert(?DGIOT_PRODUCT_IDENTIFIE, {ProductId, Identifier, identifie}, Prop),
-                            save_device_thingtype(ProductId, DeviceType, #{Identifier => Type}),
-                            {Acc ++ [Identifier], Ccc#{Identifier => Profile}, Dcc ++ [DeviceType]};
-                        (#{<<"devicetype">> := DeviceType, <<"identifier">> := Identifier, <<"profile">> := Profile, <<"dataType">> := #{<<"type">> := Type}} = Prop, {Acc, Ccc, Dcc}) ->
-                            dgiot_data:insert(?DGIOT_PRODUCT_IDENTIFIE, {ProductId, Identifier, identifie}, Prop),
-                            save_device_thingtype(ProductId, DeviceType, #{Identifier => Type}),
-                            {Acc, Ccc#{Identifier => Profile}, Dcc ++ [DeviceType]};
-                        (#{<<"devicetype">> := DeviceType, <<"identifier">> := Identifier, <<"isstorage">> := true, <<"dataType">> := #{<<"type">> := Type}} = Prop, {Acc, Ccc, Dcc}) ->
-                            dgiot_data:insert(?DGIOT_PRODUCT_IDENTIFIE, {ProductId, Identifier, identifie}, Prop),
-                            save_device_thingtype(ProductId, DeviceType, #{Identifier => Type}),
-                            {Acc ++ [Identifier], Ccc, Dcc ++ [DeviceType]};
-                        (_, {Acc, Ccc, Dcc}) ->
-                            {Acc, Ccc, Dcc}
-                    end, {[], #{}, []}, Props ++ Tags);
-            _Error ->
-                {[], #{}, []}
-        end,
-    dgiot_data:insert(?DGIOT_PRODUCT, {ProductId, keys}, Keys),
-    dgiot_data:insert(?DGIOT_PRODUCT, {ProductId, profile_control}, Control),
-    dgiot_data:insert(?DGIOT_PRODUCT, {ProductId, devicetype}, dgiot_utils:unique_2(DeviceTypes)).
+    case dgiot_product:lookup_prod(ProductId) of
+        {ok, #{<<"thing">> := #{<<"properties">> := Props} = Thing}} ->
+            delete_product_identifier(ProductId),
+            Tags = maps:get(<<"tags">>, Thing, []),
+            fold_prop(ProductId, Props ++ Tags);
+        _Error ->
+            {[], #{}, []}
+    end.
+
+fold_prop(ProductId, Props) when length(Props) =< 40 ->
+    fold_prop_(ProductId, Props);
+
+fold_prop(ProductId, [A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, A19, A20,
+    A21, A22, A23, A24, A25, A26, A27, A28, A29, A30, A31, A32, A33, A34, A35, A36, A37, A38, A39, A40 | Tail]) ->
+    Head = [A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A14, A15, A16, A17, A18, A19, A20,
+        A21, A22, A23, A24, A25, A26, A27, A28, A29, A30, A31, A32, A33, A34, A35, A36, A37, A38, A39, A40],
+    ?LOG(warning, "~p", [erlang:process_info(self(), total_heap_size)]),
+    fold_prop(ProductId, Tail),
+    ?LOG(warning, "~p", [erlang:process_info(self(), total_heap_size)]),
+    fold_prop_(ProductId, Head),
+    ?LOG(warning, "~p", [erlang:process_info(self(), total_heap_size)]),
+    erlang:garbage_collect(self()).
+
+fold_prop_(_ProductId, []) ->
+    ok;
+
+fold_prop_(ProductId, [#{<<"devicetype">> := DeviceType, <<"identifier">> := Identifier, <<"isstorage">> := Isstorage,
+    <<"dataType">> := #{<<"type">> := Type}} = Prop | Props]) when Isstorage > 0 ->
+    save_product_thing(ProductId, Identifier, Identifier, maps:get(<<"profile">>, Prop, undefined), DeviceType, Prop, Type, dgiot_utils:to_binary(Isstorage)),
+    fold_prop_(ProductId, Props);
+
+fold_prop_(ProductId, [#{<<"devicetype">> := DeviceType, <<"identifier">> := Identifier, <<"profile">> := Profile,
+    <<"dataType">> := #{<<"type">> := Type}} = Prop | Props]) ->
+    save_product_thing(ProductId, Identifier, undefined, Profile, DeviceType, Prop, Type, 0),
+    fold_prop_(ProductId, Props);
+
+fold_prop_(ProductId, [_Prop | Props]) ->
+    fold_prop_(ProductId, Props).
+
 
 get_keys(ProductId) ->
     case dgiot_data:get(?DGIOT_PRODUCT, {ProductId, keys}) of
+        not_find ->
+            [];
+        Keys ->
+            Keys
+    end.
+
+get_sub_tab(ProductId) ->
+    case dgiot_data:get(?DGIOT_PRODUCT, {ProductId, sub_tab}) of
         not_find ->
             [];
         Keys ->

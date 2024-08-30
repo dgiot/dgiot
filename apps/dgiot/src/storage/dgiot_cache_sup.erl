@@ -34,7 +34,7 @@ start_link(Opts) ->
     supervisor:start_link({local, ?SERVER}, ?MODULE, Opts).
 
 init(Opts) ->
-    MaxSize = proplists:get_value(ets_maxsize, Opts, 32 * 1024 * 1024),
+    MaxSize = proplists:get_value(ets_maxsize, Opts, 1024 * 1024 * 1024),
     Threshold = proplists:get_value(ets_threshold, Opts, 0.85),
     Weight = proplists:get_value(ets_weight, Opts, 30),
     ValOpts = [{ets_maxsize, MaxSize}, {ets_threshold, Threshold}, {checkpid, dgiot_cache_check_worker}],
