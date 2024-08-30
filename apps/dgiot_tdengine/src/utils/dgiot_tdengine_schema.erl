@@ -90,7 +90,6 @@ create_table(#{<<"tableName">> := TableName, <<"using">> := STbName, <<"tags">> 
 create_table(#{<<"tableName">> := TableName, <<"fields">> := Fields0} = Query, #{<<"channel">> := Channel} = _Context) ->
     <<"_", ProductId/binary>> = TableName,
     DataBase = dgiot_tdengine:get_database(Channel, ProductId),
-%%    alter_table(Query#{<<"db">> => Database}, Context),
     Fields =
         list_to_binary(dgiot_utils:join(",", ["createdat TIMESTAMP"] ++ lists:foldr(
             fun({FieldName, #{<<"type">> := Type}}, Acc) ->

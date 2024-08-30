@@ -64,8 +64,7 @@ import(ChannelId, Result) ->
 
 export_device_data(ChannelId, #{<<"objectId">> := DeviceId, <<"product">> := #{<<"objectId">> := ProductId}}, Query, NewData) ->
 %%    io:format("~s ~p Query = ~p.~n", [?FILE, ?LINE, Query]),
-    TableName = ?Table(DeviceId),
-    case dgiot_device_tdengine:get_history_data(ChannelId, ProductId, TableName, Query) of
+    case dgiot_device_tdengine:get_history_data(ChannelId, ProductId, DeviceId, Query) of
         {_TdNames, {ok, #{<<"results">> := TdResults}}} when length(TdResults) > 0 ->
             NewTdResults =
                 lists:foldl(fun(Result, Acc) ->
