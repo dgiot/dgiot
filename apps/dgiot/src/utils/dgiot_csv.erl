@@ -136,12 +136,12 @@ post_properties(<<"plc">>, AtomName) ->
                 end, [], Things);
 
 post_properties(<<"dlink">>, AtomName) ->
-    Things = ets:match(AtomName, {'$1', ['$2', '$3', '$4', '$5', '$6', '$7', '$8', '$9', '$10', '$11' | '_']}),
-    lists:foldl(fun([Index, Devicetype, Name, Identifier, Key, Len, AccessMode, Min_Max, Unit, Type, Specs | _], Acc) ->
+    Things = ets:match(AtomName, {'$1', ['$2', '$3', '$4', '$5', '$6', '$7', '$8', '$9', '$10', '$11', '$12' | '_']}),
+    lists:foldl(fun([Index, Devicetype, Name, Identifier, Key, Len, Isstorage, AccessMode, Min_Max, Unit, Type, Specs | _], Acc) ->
         Acc++ [#{
                 <<"name">> => Name,
                 <<"index">> => Index,
-                <<"isstorage">> => true,
+                <<"isstorage">> => dgiot_utils:to_int(Isstorage),
                 <<"isshow">> => true,
                 <<"dataForm">> => #{
                     <<"address">> => <<"0">>,

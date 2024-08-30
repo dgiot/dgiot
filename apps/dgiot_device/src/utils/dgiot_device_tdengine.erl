@@ -76,27 +76,48 @@ get_device(Channel, ProductId, DeviceId, _DevAddr, Query) ->
             {error, Reason}
     end.
 
+get_tablename(DB, [FirstDevId | _] = DeviceIds) ->
+    format_join(DB, ?Table(FirstDevId), DeviceIds, <<>>, <<>>);
+
+get_tablename(DB, DeviceId) ->
+    TableName = ?Table(DeviceId),
+    {<<DB/binary, TableName/binary>>, <<"1=1">>, TableName}.
+
+format_join(_DB, FirstTableName, [], Tcc, Wcc) ->
+    {Tcc, Wcc, FirstTableName};
+format_join(DB, FirstTableName, [DeviceId | DeviceIds], Tcc, Wcc) ->
+    TableName = ?Table(DeviceId),
+    {NewTcc, NewWcc} =
+        case Tcc of
+            <<>> ->
+                {<<DB/binary, TableName/binary>>, <<FirstTableName/binary, ".createdat = ", FirstTableName/binary, ".createdat">>};
+            _ ->
+                {<<Tcc/binary, ", ", DB/binary, TableName/binary>>, <<Wcc/binary, " AND ", FirstTableName/binary, ".createdat = ", TableName/binary, ".createdat">>}
+        end,
+    format_join(DB, TableName, DeviceIds, NewTcc, NewWcc).
+
 %% SELECT max(day_electricity) '时间' ,max(charge_current) '日期' FROM _2d26a94cf8._c5e1093e30 WHERE createdat >= now - 1h INTERVAL(1h) limit 10;
 %% SELECT spread(cumulativescale) FROM _797197ad06 WHERE  createdat >= now - 1Y INTERVAL(1h);
 %% SELECT last(cumulativescale) FROM _797197ad06 WHERE createdat >= now - 1Y INTERVAL(1h);
-get_history_data(Channel, ProductId, TableName, Query) ->
+get_history_data(Channel, ProductId, DeviceId, Query) ->
     dgiot_tdengine:transaction(Channel,
         fun(Context) ->
             DB = dgiot_tdengine:get_database(Channel, ProductId),
+            {TableName, DefWhere, FirstTableName} = get_tablename(DB, DeviceId),
             Function = maps:get(<<"function">>, Query, <<>>),
             Keys = maps:get(<<"keys">>, Query, <<"*">>),
             Limit = dgiot_tdengine_select:format_limit(Query),
             Starttime = dgiot_utils:to_binary(maps:get(<<"starttime">>, Query, dgiot_datetime:now_ms() - 25920000000)),
             Endtime = dgiot_utils:to_binary(maps:get(<<"endtime">>, Query, dgiot_datetime:now_ms())),
-            {Names, Newkeys} = dgiot_product_tdengine:get_keys(ProductId, Function, Keys),
+            {Names, Newkeys} = dgiot_product_tdengine:get_keys(ProductId, FirstTableName, Function, Keys),
             Tail =
                 case maps:get(<<"interval">>, Query, <<>>) of
                     <<>> ->
-                        <<" where createdat >= ", Starttime/binary, " AND createdat <= ", Endtime/binary, " ", Limit/binary, ";">>;
+                        <<" where ", DefWhere/binary, " AND ", FirstTableName/binary, ".createdat >= ", Starttime/binary, " AND ", FirstTableName/binary, ".createdat <= ", Endtime/binary, " ", Limit/binary, ";">>;
                     Interval ->
-                        <<" where createdat >= ", Starttime/binary, " AND createdat <= ", Endtime/binary, " INTERVAL(", Interval/binary, ") ", Limit/binary, ";">>
+                        <<" where ", DefWhere/binary, " AND ", FirstTableName/binary, ".createdat >= ", Starttime/binary, " AND ", FirstTableName/binary, ".createdat <= ", Endtime/binary, " INTERVAL(", Interval/binary, ") ", Limit/binary, ";">>
                 end,
-            Sql = <<"SELECT ", Newkeys/binary, " FROM ", DB/binary, TableName/binary, Tail/binary>>,
+            Sql = <<"SELECT ", Newkeys/binary, " FROM ", TableName/binary, Tail/binary>>,
 %%            io:format("~s ~p Sql = ~p.~n", [?FILE, ?LINE, Sql]),
             {Names, dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_query, Sql)}
         end).
@@ -112,7 +133,7 @@ get_realtime_data(Channel, ProductId, TableName, Query) ->
                     _ ->
                         maps:get(<<"keys">>, Query, <<"*">>)
                 end,
-            {_Names, Newkeys} = dgiot_product_tdengine:get_keys(ProductId, <<"">>, Keys),
+            {_Names, Newkeys} = dgiot_product_tdengine:get_keys(ProductId, TableName, <<"">>, Keys),
             DB = dgiot_tdengine:get_database(Channel, ProductId),
             case size(Newkeys) > 0 of
                 true ->
@@ -123,11 +144,12 @@ get_realtime_data(Channel, ProductId, TableName, Query) ->
             end
         end).
 
-get_history_data2(Order, Channel, TableName, Interval, ProductId, StartTime, _EndTime) ->
+get_history_data2(Order, Channel, DeviceId, Interval, ProductId, StartTime, _EndTime) ->
 %%    io:format("~s ~p Order= ~p, Channel= ~p, TableName= ~p, TableName= ~p,~n Interval= ~p, ProductId= ~p, ~n StartTime= ~p, EndTime =~p. ~n",[?FILE,?LINE,Order, Channel, TableName, TableName, Interval, ProductId, StartTime, _EndTime]),
     dgiot_tdengine:transaction(Channel,
         fun(Context) ->
             DB = dgiot_tdengine:get_database(Channel, ProductId),
+            TableName = ?Table(DeviceId),
             BinStartTime = dgiot_utils:to_binary(StartTime),
             Tail = <<" where createdat >= ", BinStartTime/binary, " INTERVAL(", Interval/binary, ") ", ";">>,
             Sql = <<"SELECT ", Order/binary, " FROM ", DB/binary, TableName/binary, Tail/binary>>,
@@ -137,9 +159,8 @@ get_history_data2(Order, Channel, TableName, Interval, ProductId, StartTime, _En
 
 get_gps_track(Channel, ProductId, DeviceId, Args) ->
     Query = Args#{<<"keys">> => <<"latitude,longitude">>},
-    TableName = ?Table(DeviceId),
     {_Names, Results} =
-        case dgiot_device_tdengine:get_history_data(Channel, ProductId, TableName, Query) of
+        case dgiot_device_tdengine:get_history_data(Channel, ProductId, DeviceId, Query) of
             {TdNames, {ok, #{<<"results">> := TdResults}}} ->
 %%                io:format("~s ~p TdResults = ~p.~n", [?FILE, ?LINE, TdResults]),
                 NewTdResults =

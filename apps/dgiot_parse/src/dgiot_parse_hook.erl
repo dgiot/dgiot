@@ -121,8 +121,15 @@ publish(Pid, Payload) ->
 receive_ack(ResBody) ->
     receive
         {sync_parse, NewResBody} when is_map(NewResBody) ->
-%%            io:format("~s ~p ~p  ~n", [?FILE, ?LINE, length(maps:to_list(NewResBody))]),
-            {ok, dgiot_json:encode(maps:remove(<<"id">>, NewResBody))};
+            ?LOG(warning, "~p", [erlang:process_info(self(), total_heap_size)]),
+            erlang:garbage_collect(self()),
+            M = maps:remove(<<"id">>, NewResBody),
+            erlang:garbage_collect(self()),
+            ?LOG(warning, "~p", [erlang:process_info(self(), total_heap_size)]),
+            ResBody1 = jsx:encode(M),
+            erlang:garbage_collect(self()),
+            ?LOG(warning, "~p", [erlang:process_info(self(), total_heap_size)]),
+            {ok, ResBody1};
         {sync_parse, NewResBody} ->
 %%            io:format("~s ~p ~p  ~n", [?FILE, ?LINE, NewResBody]),
             {ok, NewResBody};

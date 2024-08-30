@@ -20,7 +20,7 @@
 -include_lib("dgiot_tdengine/include/dgiot_tdengine.hrl").
 -include_lib("dgiot/include/logger.hrl").
 
--export([get_product/2, get_products/2, get_keys/3, check_field/3, test_product/0]).
+-export([get_product/2, get_products/2, get_keys/4, check_field/3, test_product/0]).
 -export([get_channel/1, do_channel/3, get_product_data/4]).
 
 test_product() ->
@@ -123,50 +123,63 @@ get_channel(Session) ->
             {ok, ChannelId}
     end.
 
-get_keys(ProductId, Function, <<"*">>) ->
-    case dgiot_product:lookup_prod(ProductId) of
-        {ok, #{<<"thing">> := #{<<"properties">> := Props}}} when length(Props) > 0 ->
-            lists:foldl(fun(X, {Names, Acc}) ->
-                case X of
-                    #{<<"identifier">> := Identifier, <<"name">> := Name, <<"isstorage">> := true} ->
-                        case Acc of
-                            <<>> ->
-                                {Names ++ [Name], <<Acc/binary, Function/binary, "(", Identifier/binary, ") ", Identifier/binary>>};
-                            _ ->
-                                {Names ++ [Name], <<Acc/binary, ", ", Function/binary, "(", Identifier/binary, ") ", Identifier/binary>>}
-                        end;
+spell_sql(_ProductId, _Function, [], {Names, Acc}) ->
+    {Names, Acc};
+spell_sql(ProductId, Function, [Key | Keys], {Names, Acc}) ->
+    case dgiot_product:get_product_identifier(ProductId, Key) of
+        #{<<"identifier">> := Identifier, <<"name">> := Name, <<"isstorage">> := Isstorage} when Isstorage > 0 ->
+            {NewNames, NewAcc} =
+                case Acc of
+                    <<>> ->
+                        {Names ++ [Name], <<Acc/binary, Function/binary, "(", Identifier/binary, ") ", Identifier/binary>>};
                     _ ->
-                        {Names, Acc}
-                end
-                        end, {[], get_defult(Function)}, Props);
-        _Other ->
-            ?LOG(debug, "~p _Other ~p", [ProductId, _Other]),
+                        {Names ++ [Name], <<Acc/binary, ", ", Function/binary, "(", Identifier/binary, ") ", Identifier/binary>>}
+                end,
+            spell_sql(ProductId, Function, Keys, {NewNames, NewAcc});
+        _ ->
+            {Names, Acc}
+    end.
+
+get_keys(ProductId, TableName, Function, <<"*">>) ->
+    case dgiot_product:get_keys(ProductId) of
+        Keys when length(Keys) > 0 ->
+            spell_sql(ProductId, Function, Keys, {[], get_defult(TableName, Function)});
+        _ ->
             {[], <<"*">>}
     end;
 
-get_keys(ProductId, Function, Keys) when Keys == undefined; Keys == <<>> ->
-    get_keys(ProductId, Function, <<"*">>);
+get_keys(ProductId, TableName, Function, Keys) when Keys == undefined; Keys == <<>> ->
+    get_keys(ProductId, TableName, Function, <<"*">>);
 
-get_keys(ProductId, Function, Keys) ->
+get_keys(ProductId, TableName, Function, Keys) ->
     List =
         case is_list(Keys) of
             true -> Keys;
             false -> re:split(Keys, <<",">>)
         end,
-    Maps = get_prop(ProductId),
-    lists:foldl(fun(X, {Names, Acc}) ->
-        case maps:find(X, Maps) of
-            error ->
-                {Names, Acc};
-            {ok, Name} ->
-                case Acc of
-                    <<>> ->
-                        {Names ++ [Name], <<Acc/binary, Function/binary, "(", X/binary, ") ", X/binary>>};
+    case dgiot_product:get_keys(ProductId) of
+        TdKeys when length(TdKeys) > 0 ->
+            lists:foldl(fun(Key, {Names, Acc}) ->
+                case TdKeys -- [Key] of
+                    TdKeys ->
+                        {Names, Acc};
                     _ ->
-                        {Names ++ [Name], <<Acc/binary, ", ", Function/binary, "(", X/binary, ") ", X/binary>>}
+                        case dgiot_product:get_product_identifier(ProductId, Key) of
+                            #{<<"identifier">> := Identifier, <<"name">> := Name, <<"isstorage">> := Isstorage} when Isstorage > 0 ->
+                                case Acc of
+                                    <<>> ->
+                                        {Names ++ [Name], <<Acc/binary, Function/binary, "(", Identifier/binary, ") ", Identifier/binary>>};
+                                    _ ->
+                                        {Names ++ [Name], <<Acc/binary, ", ", Function/binary, "(", Identifier/binary, ") ", Identifier/binary>>}
+                                end;
+                            _ ->
+                                {Names, Acc}
+                        end
                 end
-        end
-                end, {[], get_defult(Function)}, List).
+                        end, {[], get_defult(TableName, Function)}, List);
+        _ ->
+            {[], <<"*">>}
+    end.
 
 %%    秒转换为分钟
 check_field(_, V, #{<<"specs">> := #{<<"type">> := <<"minutes">>}}) ->
@@ -232,21 +245,6 @@ check_field(<<"date">>, V, _) ->
 check_field(_Typea, V, _) ->
     dgiot_utils:to_binary(V).
 
-get_prop(ProductId) ->
-    case dgiot_product:lookup_prod(ProductId) of
-        {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
-            lists:foldl(fun(X, Acc) ->
-                case X of
-                    #{<<"identifier">> := Identifier, <<"name">> := Name} ->
-                        Acc#{Identifier => Name};
-                    _ -> Acc
-                end
-                        end, #{}, Props);
-        _ ->
-            #{}
-    end.
-
-
 get_product_data(Channel, ProductId, DeviceId, Args) ->
     Query = maps:without([<<"productid">>, <<"deviceid">>], Args),
     ?LOG(info, "Channel ~p Args ~p", [Channel, Args]),
@@ -268,17 +266,17 @@ get_product_data(Channel, ProductId, DeviceId, Args) ->
             end
     end.
 
-get_defult(<<"first">>) ->
-    <<"first(createdat) createdat">>;
-get_defult(<<"last">>) ->
-    <<"last(createdat) createdat">>;
-get_defult(<<"count">>) ->
+get_defult(TableName, <<"first">>) ->
+    <<"first(", TableName/binary, ".createdat) createdat">>;
+get_defult(TableName, <<"last">>) ->
+    <<"last(", TableName/binary, ".createdat) createdat">>;
+get_defult(_TableName, <<"count">>) ->
     <<"">>;
-get_defult(<<"avg">>) ->
+get_defult(_TableName, <<"avg">>) ->
     <<"">>;
-get_defult(<<"sum">>) ->
+get_defult(_TableName, <<"sum">>) ->
     <<"">>;
-get_defult(<<"stddev">>) ->
+get_defult(_TableName, <<"stddev">>) ->
     <<"">>;
-get_defult(_) ->
-    <<"(createdat) createdat">>.
+get_defult(TableName, _) ->
+    <<"(", TableName/binary, ".createdat) createdat">>.

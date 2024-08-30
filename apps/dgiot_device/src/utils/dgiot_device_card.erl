@@ -20,7 +20,22 @@
 -include_lib("dgiot/include/logger.hrl").
 -include_lib("dgiot_tdengine/include/dgiot_tdengine.hrl").
 
--export([get_card/5, get_device_card/4]).
+-export([get_devcard/5, get_card/5, get_device_card/4]).
+
+get_devcard(Channel, ProductId, DeviceId, Devaddr, Args) ->
+    Chartdata =
+        case dgiot_product:get_sub_tab(ProductId) of
+            not_find ->
+                get_device_card(Channel, ProductId, DeviceId, Args);
+            Subs when length(Subs) > 1 ->
+                lists:foldl(fun(SubId, Acc) ->
+                    SubDevid = dgiot_parse_id:get_deviceid(SubId, Devaddr),
+                    Acc ++ get_device_card(Channel, SubId, SubDevid, Args)
+                            end, [], Subs);
+            _ ->
+                get_device_card(Channel, ProductId, DeviceId, Args)
+        end,
+    {ok, #{<<"data">> => Chartdata}}.
 
 get_device_card(Channel, ProductId, DeviceId, Args) ->
     TableName = ?Table(DeviceId),
@@ -31,8 +46,8 @@ get_device_card(Channel, ProductId, DeviceId, Args) ->
             _ ->
                 [#{}]
         end,
-    Chartdata = get_card(ProductId, Results, DeviceId, Args, dgiot_data:get({shard_storage, ProductId})),
-    {ok, #{<<"data">> => Chartdata}}.
+    get_card(ProductId, Results, DeviceId, Args, dgiot_data:get({shard_storage, ProductId})).
+
 
 decode_shard_data(Data, Result) ->
     case binary:split(Data, <<$,>>, [global, trim]) of

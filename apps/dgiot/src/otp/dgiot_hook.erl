@@ -29,37 +29,44 @@ add(Key, Fun) ->
 add(HookType, Key, Fun) ->
     Hooks = get_hooks(),
     New = case HookType of
-    	one_for_more ->
-    	    Old = maps:get(Key, Hooks, []),
-    	    [Fun|Old];
-    	one_for_one ->
-    	    [Fun]
-    end,
-    dgiot_data:insert(dgiot_hook, Hooks#{ Key => New }).
+              one_for_more ->
+                  Old = maps:get(Key, Hooks, []),
+                  [Fun | Old];
+              one_for_one ->
+                  [Fun]
+          end,
+    dgiot_data:insert(dgiot_hook, Hooks#{Key => New}).
 
 remove(Key) ->
     Hooks = get_hooks(),
-	NewHooks = maps:remove(Key, Hooks),
-	dgiot_data:insert(dgiot_hook, NewHooks).
+    NewHooks = maps:remove(Key, Hooks),
+    dgiot_data:insert(dgiot_hook, NewHooks).
 
 run_hook(Key, Args) ->
-	Funs = get_hooks(Key),
-	case Funs of
-		not_find ->
-			{error, not_find};
-		_ ->
-			{_NewFuns, Rtns} = lists:foldl(
-				fun(Fun, {Acc, R}) ->
-					case catch (do_hook(Fun, Args)) of
-						{'EXIT', Reason} ->
-							?LOG(error,"do hook error, Args:~p -> ~p~n", [Args, Reason]),
-							{Acc, R};
-						Result ->
-							{[Fun | Acc], [Result | R]}
-					end
-				end, {[], []}, Funs),
-			{ok, Rtns}
-	end.
+    Funs = get_hooks(Key),
+    case Funs of
+        not_find ->
+            {error, not_find};
+        _ ->
+            Rtns = fold_hook(Funs, Args),
+            {ok, Rtns}
+    end.
+
+fold_hook(Funs, Args) ->
+    fold_hook(Funs, Args, []).
+fold_hook([], _Args, Acc) ->
+    Acc;
+fold_hook([Fun | Funs], Args, Acc) ->
+    NewAcc =
+        case catch (do_hook(Fun, Args)) of
+            {'EXIT', Reason} ->
+                ?LOG(error, "do hook error, Args:~p -> ~p~n", [Args, Reason]),
+                Acc;
+            Result ->
+                [Result | Acc]
+        end,
+    erlang:garbage_collect(self()),
+    fold_hook(Funs, Args, NewAcc).
 
 do_hook({M, F}, Args) when is_list(Args) ->
     apply(M, F, Args);
@@ -71,14 +78,14 @@ do_hook(Fun, Args) ->
     Fun(Args).
 
 get_hooks(Key) ->
-	Hooks = get_hooks(),
-	maps:get(Key, Hooks, not_find).
+    Hooks = get_hooks(),
+    maps:get(Key, Hooks, not_find).
 
 get_hooks() ->
-	case dgiot_data:lookup(dgiot_hook) of
-		{ok, Hooks} -> Hooks;
-		{error, not_find} -> #{}
-	end.
+    case dgiot_data:lookup(dgiot_hook) of
+        {ok, Hooks} -> Hooks;
+        {error, not_find} -> #{}
+    end.
 
 
 

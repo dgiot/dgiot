@@ -77,7 +77,7 @@ stop(NameOrPid) ->
 %%%===================================================================
 
 init(Opts) ->
-    MaxSize = proplists:get_value(ets_maxsize, Opts, 8 * 1024 * 1024),
+    MaxSize = proplists:get_value(ets_maxsize, Opts, 1024 * 1024 * 1024),
     Threshold = proplists:get_value(ets_threshold, Opts, 0.85),
     CheckPid = proplists:get_value(checkpid, Opts),
     ValueEts = ets:new(?MODULE, [public, named_table, {write_concurrency, true}, {read_concurrency, true}]),

@@ -589,6 +589,9 @@ merge_table(Name, Class, NewFields, OldFields) ->
 handle_response(Result) ->
     Fun =
         fun(Res, Body) ->
+            ?LOG(warning, "~p", [erlang:process_info(self(), total_heap_size)]),
+            erlang:garbage_collect(self()),
+            ?LOG(warning, "~p", [erlang:process_info(self(), total_heap_size)]),
             case jsx:is_json(Body) of
                 true ->
                     case catch jsx:decode(Body, [{labels, binary}, return_maps]) of

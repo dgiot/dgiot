@@ -134,14 +134,14 @@ do_request(get_echart_deviceid, #{<<"deviceid">> := DeviceId, <<"style">> := Sty
         {error, Error} -> {error, Error};
         {ok, Channel} ->
             case dgiot_parsex:get_object(<<"Device">>, DeviceId) of
-                {ok, #{<<"objectId">> := DeviceId, <<"product">> := #{<<"objectId">> := ProductId}}} ->
+                {ok, #{<<"objectId">> := DeviceId, <<"devaddr">> := Devaddr, <<"product">> := #{<<"objectId">> := ProductId}}} ->
                     case Style of
                         <<"amis_table">> ->
                             dgiot_device_echart:get_data_by_month(Channel, ProductId, DeviceId, Args);
                         <<"echart_category">> ->
                             dgiot_device_echart:get_data_by_echart_category(Channel, ProductId, DeviceId, Args);
                         _ ->
-                            dgiot_device_echart:get_echart_data(Channel, ProductId, DeviceId, Args)
+                            dgiot_device_echart:get_echart_data(Channel, ProductId, DeviceId, Devaddr, Args)
 
                     end;
                 _ ->
@@ -158,9 +158,9 @@ do_request(get_devicecard_deviceid, #{<<"deviceid">> := DeviceId} = Args, #{<<"s
                     {error, Error};
                 {ok, Channel} ->
                     case dgiot_parsex:get_object(<<"Device">>, DeviceId) of
-                        {ok, #{<<"objectId">> := DeviceId, <<"product">> := #{<<"objectId">> := ProductId}}} ->
+                        {ok, #{<<"objectId">> := DeviceId, <<"devaddr">> := Devaddr, <<"product">> := #{<<"objectId">> := ProductId}}} ->
                             dgiot_mqtt:subscribe_route_key([<<"$dg/user/realtimecard/", DeviceId/binary, "/#">>], <<"realtimecard">>, SessionToken),
-                            dgiot_device_card:get_device_card(Channel, ProductId, DeviceId, Args);
+                            dgiot_device_card:get_devcard(Channel, ProductId, DeviceId, Devaddr, Args);
                         _ ->
                             {error, <<"not find device">>}
                     end
