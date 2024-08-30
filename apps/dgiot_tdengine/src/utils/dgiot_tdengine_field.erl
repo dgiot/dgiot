@@ -60,6 +60,8 @@ get_field(#{<<"isstorage">> := false}) ->
     pass;
 get_field(#{<<"isstorage">> := true} = Property) ->
     get_field_(Property);
+get_field(#{<<"isstorage">> := Isstorage} = Property) when Isstorage > 0 ->
+    get_field_(Property);
 get_field(#{<<"isshow">> := true} = Property) ->
     get_field_(Property);
 get_field(_) ->
