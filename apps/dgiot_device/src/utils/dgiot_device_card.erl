@@ -28,19 +28,20 @@ get_devcard(Channel, ProductId, DeviceId, Devaddr, Args) ->
             not_find ->
                 get_device_card(Channel, ProductId, DeviceId, Args);
             Subs when length(Subs) > 1 ->
-                lists:foldl(fun(SubId, Acc) ->
-                    SubDevid = dgiot_parse_id:get_deviceid(SubId, Devaddr),
-                    Acc ++ get_device_card(Channel, SubId, SubDevid, Args)
-                            end, [], Subs);
+                TableNames =
+                    lists:foldl(fun(SubId, Acc) ->
+                        SubDevid = dgiot_parse_id:get_deviceid(SubId, Devaddr),
+                        Acc ++ [SubDevid]
+                                end, [], Subs),
+                get_device_card(Channel, ProductId, TableNames, Args);
             _ ->
                 get_device_card(Channel, ProductId, DeviceId, Args)
         end,
     {ok, #{<<"data">> => Chartdata}}.
 
 get_device_card(Channel, ProductId, DeviceId, Args) ->
-    TableName = ?Table(DeviceId),
     Results =
-        case dgiot_device_tdengine:get_realtime_data(Channel, ProductId, TableName, Args) of
+        case dgiot_device_tdengine:get_realtime_data(Channel, ProductId, DeviceId, Args) of
             {ok, #{<<"results">> := TdResults}} when length(TdResults) > 0 ->
                 TdResults;
             _ ->

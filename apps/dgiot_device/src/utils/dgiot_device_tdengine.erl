@@ -123,25 +123,14 @@ get_history_data(Channel, ProductId, DeviceId, Query) ->
         end).
 
 %% SELECT last(*) FROM _2d26a94cf8._c5e1093e30;
-get_realtime_data(Channel, ProductId, TableName, Query) ->
+get_realtime_data(Channel, ProductId, DeviceId, _Query) ->
     dgiot_tdengine:transaction(Channel,
         fun(Context) ->
-            Keys =
-                case dgiot_data:get({shard_storage, ProductId}) of
-                    true ->
-                        <<"*">>;
-                    _ ->
-                        maps:get(<<"keys">>, Query, <<"*">>)
-                end,
-            {_Names, Newkeys} = dgiot_product_tdengine:get_keys(ProductId, TableName, <<"">>, Keys),
             DB = dgiot_tdengine:get_database(Channel, ProductId),
-            case size(Newkeys) > 0 of
-                true ->
-                    Sql = <<"SELECT ", Newkeys/binary, " FROM ", DB/binary, TableName/binary, " order by createdat desc limit 1;">>,
-                    dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_query, Sql);
-                _ ->
-                    {error, #{<<"msg">> => <<"无物模型"/utf8>>}}
-            end
+            {TableName, DefWhere, FirstTableName} = get_tablename(DB, DeviceId),
+            Sql = <<"SELECT * FROM ", TableName/binary, " where ", DefWhere/binary, " order by ", FirstTableName/binary, ".createdat desc limit 1;">>,
+%%                    io:format("~p", [Sql]),
+            dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_query, Sql)
         end).
 
 get_history_data2(Order, Channel, DeviceId, Interval, ProductId, StartTime, _EndTime) ->
