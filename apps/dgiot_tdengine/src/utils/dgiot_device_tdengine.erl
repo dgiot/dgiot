@@ -16,9 +16,10 @@
 
 -module(dgiot_device_tdengine).
 -author("jonhliu").
--include("dgiot_device.hrl").
--include_lib("dgiot_tdengine/include/dgiot_tdengine.hrl").
+-include("dgiot_tdengine.hrl").
 -include_lib("dgiot/include/logger.hrl").
+-include_lib("dgiot_device/include/dgiot_device.hrl").
+
 
 -export([get_device/3, get_device/4, get_device/5]).
 -export([get_history_data/4, get_realtime_data/4, get_gps_track/4]).
