@@ -129,7 +129,7 @@ function dgiot_path() {
   fileparseserver="https://dgiot-parse-server-1306147891.cos.ap-nanjing.myqcloud.com"
   fileversionserver="https://dgiot-version-1306147891.cos.ap-nanjing.myqcloud.com"
   updateserver="http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_release/update"
-  td_version="3.0.2.4"
+  td_version="3.3.2.0"
   pg_version="16.0"
   parse_server_version="5.6.0"
   otpversion="24.3.4.2"
@@ -1725,13 +1725,13 @@ dgiot_shell
 # set parameters by default value
 deployType=single                           # [single | cluster | devops | otp|  ci | atomgit]
 plugin="dgiot"                              # [dgiot | dgiot_your_plugin]
-software="dgiot_b41"                        # [dgiot_b20| dgiot_n]
-dgiotmd5="c28bd55d0f2ced8a0da9958f41a45125" # [dgiotmd5]
+software="dgiot_b42"                        # [dgiot_b20| dgiot_n]
+dgiotmd5="ed01d78fff2da17009219e06f5c151bd" # [dgiotmd5]
 pg_eip="changeyourip"                       # [datanode_eip]
 pg_auth='changeyourpassword'                # [pg_auth]
 islanip="false"                             # [islanip]
-html_software="dgiot_html_4.8.9"            # [dgiot_html_4.8.2| dgiot_html_n]
-htmlmd5="9548035c09c383f8abc233556fb9e526"  # [htmlmd5]
+html_software="dgiot_html_4.9.0"            # [dgiot_html_4.8.2| dgiot_html_n]
+htmlmd5="842f64ed1bc4df33eec8ac38cd22d9e7"  # [htmlmd5]
 atomplugin="atomgit"                        # [atomgit | jt808]
 
 while getopts "v:s:p:m:d:e:a:n" arg; do
