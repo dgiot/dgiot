@@ -20,7 +20,6 @@
 -dgiot_data("ets").
 -export([init_ets/0]).
 -include_lib("dgiot/include/logger.hrl").
--include_lib("dgiot_tdengine/include/dgiot_tdengine.hrl").
 -export([parse_cache_Device/1, sync_parse/1, post/1, post/2, put/1, save/1, save/2, save_subdevice/2, get_subdevice/2, lookup/1, lookup/2, delete/1, delete/2]).
 -export([get_profile/1, get_profile/2, get_online/1, online/1, offline/1, offline_child/1, enable/1, disable/1, save_profile/1]).
 -export([location/3, get_location/1, get_address/3]).

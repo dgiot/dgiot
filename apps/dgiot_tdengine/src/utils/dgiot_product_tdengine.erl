@@ -16,9 +16,9 @@
 
 -module(dgiot_product_tdengine).
 -author("kenneth").
--include("dgiot_device.hrl").
--include_lib("dgiot_tdengine/include/dgiot_tdengine.hrl").
+-include("dgiot_tdengine.hrl").
 -include_lib("dgiot/include/logger.hrl").
+-include_lib("dgiot_device/include/dgiot_device.hrl").
 
 -export([get_product/2, get_products/2, get_keys/4, check_field/3, test_product/0]).
 -export([get_channel/1, do_channel/3, get_product_data/4]).

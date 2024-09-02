@@ -18,7 +18,6 @@
 -author("kenneth").
 -include("dgiot_device.hrl").
 -include_lib("dgiot/include/logger.hrl").
--include_lib("dgiot_tdengine/include/dgiot_tdengine.hrl").
 
 -export([get_devcard/5, get_card/5, get_device_card/4]).
 

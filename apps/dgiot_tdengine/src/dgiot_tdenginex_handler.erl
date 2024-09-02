@@ -14,11 +14,11 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
--module(dgiot_tdengine_handler).
+-module(dgiot_tdenginex_handler).
 -author("dgiot").
 -behavior(dgiot_rest).
 -dgiot_rest(all).
--include_lib("dgiot_tdengine/include/dgiot_tdengine.hrl").
+-include("dgiot_tdengine.hrl").
 -include_lib("dgiot/include/logger.hrl").
 
 %% API
