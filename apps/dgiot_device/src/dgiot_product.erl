@@ -179,6 +179,12 @@ save_product_thing(ProductId, Identifier, undefined, Profile, DeviceType, Prop, 
     save_product_thing({ProductId, devicetype}, [DeviceType], list),
     save_product_thing({ProductId, profile_control}, #{Identifier => Profile}, map);
 
+save_product_thing(ProductId, Identifier, Key, undefined, DeviceType, Prop, Type, <<"true">>) ->
+    dgiot_data:insert(?DGIOT_PRODUCT_IDENTIFIE, {ProductId, Identifier, identifie}, Prop),
+    save_product_thing({ProductId, device_thing, DeviceType}, #{Identifier => Type}, map),
+    save_product_thing({ProductId, keys}, [Key], list),
+    save_product_thing({ProductId, devicetype}, [DeviceType], list);
+
 save_product_thing(ProductId, Identifier, Key, undefined, DeviceType, Prop, Type, Isstorage) ->
     dgiot_data:insert(?DGIOT_PRODUCT_IDENTIFIE, {ProductId, Identifier, identifie}, Prop),
     save_product_thing({ProductId, device_thing, DeviceType}, #{Identifier => Type}, map),
@@ -194,6 +200,13 @@ save_product_thing(ProductId, Identifier, Key, undefined, DeviceType, Prop, Type
     save_product_thing({PId, devicetype}, [DeviceType], list),
     dgiot_data:insert(?DGIOT_PRODUCT_STAB, {ProductId, Identifier, stab}, PId);
 
+save_product_thing(ProductId, Identifier, Key, Profile, DeviceType, Prop, Type, <<"true">>) ->
+    dgiot_data:insert(?DGIOT_PRODUCT_IDENTIFIE, {ProductId, Identifier, identifie}, Prop),
+    save_product_thing({ProductId, device_thing, DeviceType}, #{Identifier => Type}, map),
+    save_product_thing({ProductId, keys}, [Key], list),
+    save_product_thing({ProductId, devicetype}, [DeviceType], list),
+    save_product_thing({ProductId, profile_control}, #{Identifier => Profile}, map);
+
 save_product_thing(ProductId, Identifier, Key, Profile, DeviceType, Prop, Type, Isstorage) ->
 
     dgiot_data:insert(?DGIOT_PRODUCT_IDENTIFIE, {ProductId, Identifier, identifie}, Prop),
@@ -205,7 +218,7 @@ save_product_thing(ProductId, Identifier, Key, Profile, DeviceType, Prop, Type, 
     <<PId:10/binary, _/binary>> = dgiot_utils:to_md5(<<ProductId/binary, Isstorage/binary>>),
     save_product_thing({ProductId, sub_tab}, [PId], list),
 
-    dgiot_data:insert(?DGIOT_PRODUCT_IDENTIFIE, {ProductId, Identifier, identifie}, Prop),
+    dgiot_data:insert(?DGIOT_PRODUCT_IDENTIFIE, {PId, Identifier, identifie}, Prop),
     save_product_thing({PId, device_thing, DeviceType}, #{Identifier => Type}, map),
     save_product_thing({PId, keys}, [Key], list),
     save_product_thing({PId, devicetype}, [DeviceType], list),
@@ -354,6 +367,11 @@ fold_prop(ProductId, [A1, A2, A3, A4, A5, A6, A7, A8, A9, A10, A11, A12, A13, A1
 
 fold_prop_(_ProductId, []) ->
     ok;
+
+fold_prop_(ProductId, [#{<<"devicetype">> := DeviceType, <<"identifier">> := Identifier, <<"isstorage">> := false,
+    <<"dataType">> := #{<<"type">> := Type}} = Prop | Props]) ->
+    save_product_thing(ProductId, Identifier, undefined, maps:get(<<"profile">>, Prop, undefined), DeviceType, Prop, Type, 0),
+    fold_prop_(ProductId, Props);
 
 fold_prop_(ProductId, [#{<<"devicetype">> := DeviceType, <<"identifier">> := Identifier, <<"isstorage">> := Isstorage,
     <<"dataType">> := #{<<"type">> := Type}} = Prop | Props]) when Isstorage > 0 ->
