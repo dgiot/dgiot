@@ -55,7 +55,13 @@ encode(Term) ->
 
 -spec(encode(json_term(), encode_options()) -> json_text()).
 encode(Term, Opts) ->
-    to_binary(jiffy:encode(to_ejson(Term), Opts)).
+    case os:type() of
+        {win32,nt} ->
+%%            io:format("~s ~p ~p ~p ~n",[?FILE, ?LINE,Term,Opts]),
+            to_binary(jsx:encode(Term));
+        _ ->
+            to_binary(jiffy:encode(to_ejson(Term), Opts))
+    end.
 
 -spec(safe_encode(json_term())
         -> {ok, json_text()} | {error, Reason :: term()}).
@@ -77,7 +83,13 @@ decode(Json) -> decode(Json, [return_maps]).
 
 -spec(decode(json_text(), decode_options()) -> json_term()).
 decode(Json, Opts) ->
-    from_ejson(jiffy:decode(Json, Opts)).
+    case os:type() of
+        {win32,nt} ->
+%%            io:format("~s ~p ~p ~p ~n",[?FILE, ?LINE,Json,Opts]),
+            from_ejson(jsx:decode(Json, Opts));
+        _ ->
+            from_ejson(jiffy:decode(Json, Opts))
+    end.
 
 -spec(safe_decode(json_text())
         -> {ok, json_term()} | {error, Reason :: term()}).
