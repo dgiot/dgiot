@@ -14,7 +14,7 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
--module(dgiot_tdenginex_handler).
+-module(dgiot_tdengine_handler).
 -author("dgiot").
 -behavior(dgiot_rest).
 -dgiot_rest(all).
