@@ -1,0 +1,11 @@
+{application, route_guide,
+ [{description, "An OTP application"},
+  {vsn, "0.1.0"},
+  {registered, []},
+  {mod, {route_guide, []}},
+  {applications, [kernel,stdlib,grpc]},
+  {env,[]},
+  {modules, []},
+  {licenses, ["Apache 2.0"]},
+  {links, []}
+ ]}.
