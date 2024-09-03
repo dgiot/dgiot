@@ -1730,7 +1730,7 @@ pg_eip="changeyourip"                       # [datanode_eip]
 pg_auth='changeyourpassword'                # [pg_auth]
 islanip="false"                             # [islanip]
 html_software="dgiot_html_4.9.0"            # [dgiot_html_4.8.2| dgiot_html_n]
-htmlmd5="86da99394109e0521b7273c1760ef829"  # [htmlmd5]
+htmlmd5="44c9b9b1489b5faf1b5758fa8af3afcb"  # [htmlmd5]
 atomplugin="atomgit"                        # [atomgit | jt808]
 
 while getopts "v:s:p:m:d:e:a:n" arg; do
