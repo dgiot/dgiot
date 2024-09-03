@@ -586,7 +586,7 @@ get_props(ProductId, Keys) ->
                 end, [], List).
 
 
-hook_topic(#{<<"objectId">> := ProductId, <<"topics">> := Topics}) ->
+hook_topic(#{<<"objectId">> := ProductId, <<"topics">> := Topics}) when is_map(Topics) ->
     maps:fold(
         fun(K, Topic, _) ->
             dgiot_data:insert({ProductId, Topic}, K),
