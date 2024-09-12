@@ -23,7 +23,7 @@
 
 -export([get_device/3, get_device/4, get_device/5]).
 -export([get_history_data/4, get_realtime_data/4, get_gps_track/4]).
--export([get_history_data2/7]).
+-export([get_history_data2/7, get_tablename/2]).
 
 %% #{<<"keys">> => <<"last_row(*)">>, <<"limit">> => 1} 查询td最新的一条device
 get_device(ProductId, DevAddr, Query) ->

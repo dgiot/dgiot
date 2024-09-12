@@ -141,9 +141,18 @@ get_realdata({Token, Realdatas}) when is_map(Realdatas) ->
                         {error, Error} ->
                             {error, Error};
                         {ok, Channel} ->
-                            {_, Newkeys} = dgiot_product_tdengine:get_keys(ProductId, <<"_", ProductId/binary>>, <<"last">>, Keys),
                             DB = dgiot_tdengine:get_database(Channel, ProductId),
-                            Sql1 = <<"select last(devaddr) as devaddr,", Newkeys/binary, " FROM ", DB/binary, "_", ProductId/binary, " group by devaddr;">>,
+                            {TableName, DefWhere, FirstTableName} =
+                                case dgiot_product:get_sub_tab(ProductId) of
+                                    not_find ->
+                                        {<<DB/binary, "_", ProductId/binary>>, <<"1=1">>, <<"_", ProductId/binary>>};
+                                    Subs when length(Subs) > 1 ->
+                                        dgiot_device_tdengine:get_tablename(DB, Subs);
+                                    _ ->
+                                        {<<DB/binary, "_", ProductId/binary>>, <<"1=1">>, <<"_", ProductId/binary>>}
+                                end,
+                            {_, Newkeys} = dgiot_product_tdengine:get_keys(ProductId, FirstTableName, <<"">>, Keys),
+                            Sql1 = <<"SELECT ", FirstTableName/binary, ".devaddr,", Newkeys/binary, " FROM ", TableName/binary, " where ", DefWhere/binary, " order by ", FirstTableName/binary, ".createdat desc limit 1;">>,
 %%                            io:format("Channel = ~p.~n Sql = ~p.~n", [Channel, Sql1]),
                             case dgiot_device_static:query_realdata(Channel, Sql1) of
                                 {ok, #{<<"code">> := 0, <<"results">> := Results1}} ->
