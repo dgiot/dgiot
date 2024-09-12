@@ -34,13 +34,15 @@ start_link(#{<<"dashboardId">> := DashboardId, <<"sessionToken">> := SessionToke
         {ok, Pid} when is_pid(Pid) ->
             case is_process_alive(Pid) of
                 true ->
-                    ok;
+                    gen_server:call(Pid, stop, 5000),
+                    erlang:garbage_collect(Pid);
                 false ->
-                    gen_server:start_link(?MODULE, [State], [])
+                    pass
             end;
         _Reason ->
-            gen_server:start_link(?MODULE, [State], [])
-    end;
+            pass
+    end,
+    gen_server:start_link(?MODULE, [State], []);
 
 start_link(_State) ->
     ok.
