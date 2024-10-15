@@ -238,7 +238,7 @@
           {
             "description": "创建分组,自动创建虚拟组设备，无物模型",
             "in": "body",
-            "name": "group",
+            "name": "sports",
             "required": true,
             "schema": {
               "properties": {
@@ -271,6 +271,51 @@
           }
         },
         "summary": "设置红蓝队",
+        "tags": [
+          "Group"
+        ]
+      }
+    },
+    "/dev_transfer": {
+      "post": {
+        "description": "设备迁移",
+        "parameters": [
+          {
+            "description": "设备迁移",
+            "in": "body",
+            "name": "group",
+            "required": true,
+            "schema": {
+              "properties": {
+                "objectId": {
+                  "description": "设备Id",
+                  "type": "string",
+                  "example": "3655a61cc1"
+                },
+                "rolename": {
+                  "description": "部门名称",
+                  "type": "string",
+                  "example": "test"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "summary": "设备迁移",
         "tags": [
           "Group"
         ]

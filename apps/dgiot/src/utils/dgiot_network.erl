@@ -50,13 +50,17 @@ get_hostname() ->
     unicode:characters_to_binary(Hostname).
 
 get_natip() ->
-    IpList = lists:foldl(fun({_, [{A, B, C, D}]}, Acc) ->
-        Acc
-        ++ [to_list(A) ++ "."]
-            ++ [to_list(B) ++ "."]
-            ++ [to_list(C) ++ "."]
-            ++ [to_list(D) ++ " "]
-                         end, [], get_ifaddrs()),
+    IpList = lists:foldl(
+        fun
+            ({_, [{A, B, C, D}]}, Acc) ->
+                Acc
+                ++ [to_list(A) ++ "."]
+                    ++ [to_list(B) ++ "."]
+                    ++ [to_list(C) ++ "."]
+                    ++ [to_list(D) ++ " "];
+            (_, Acc) ->
+                Acc
+        end, [], get_ifaddrs()),
     to_binary(IpList).
 
 get_wlanip() ->
