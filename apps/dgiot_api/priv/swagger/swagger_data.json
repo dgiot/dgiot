@@ -220,6 +220,12 @@
             "type": "string"
           },
           {
+            "name": "type",
+            "in": "formData",
+            "description": "dlink",
+            "type": "string"
+          },
+          {
             "name": "file",
             "in": "formData",
             "description": "数据文件",

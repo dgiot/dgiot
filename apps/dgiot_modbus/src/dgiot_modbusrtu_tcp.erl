@@ -91,6 +91,7 @@ handle_info({tcp, Buff}, #tcp{state = #state{id = ChannelId, devaddr = DtuAddr, 
         <<"slaveId">> => Sh * 256 + Sl,
         <<"address">> => H * 256 + L}) of
         {_, Things} ->
+            timer:sleep(1000),
             NewTopic = <<"$dg/thing/", DtuProductId/binary, "/", DtuAddr/binary, "/properties/report">>,
             dgiot_bridge:send_log(ChannelId, ProductId, DtuAddr, "~s ~p to task ~p ~ts ", [?FILE, ?LINE, NewTopic, unicode:characters_to_list(dgiot_json:encode(Things))]),
             DeviceId = dgiot_parse_id:get_deviceid(ProductId, DtuAddr),
