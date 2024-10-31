@@ -183,6 +183,11 @@ do_request(delete_group, #{<<"name">> := _Name, <<"devType">> := _DevType} = Bod
     ?LOG(info, "Body ~p ", [Body]),
     delete_group(Body, SessionToken);
 
+do_request(get_product_statistics, #{<<"type">> := Type} = _Args, #{<<"sessionToken">> := _SessionToken}, _Body) ->
+%%    Data = get_statistics(SessionToken),
+    Data = dgiot_product:get_product_statistics(Type),
+    {ok, #{<<"status">> => 0, msg => <<"ok">>, <<"data">> => Data}};
+
 %%  服务器不支持的API接口
 do_request(_OperationId, _Args, _Context, _Req) ->
     {error, <<"Not Allowed.">>}.

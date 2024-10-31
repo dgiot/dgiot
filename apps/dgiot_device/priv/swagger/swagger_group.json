@@ -320,6 +320,32 @@
           "Group"
         ]
       }
+    },
+    "/product_statistics": {
+      "get": {
+        "summary": "获取产品统计",
+        "description": "获取产品统计",
+        "parameters": [
+          {
+            "name": "type",
+            "in": "query",
+            "default": "thing",
+            "description": "类型",
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          },
+          "404": {
+            "description": ""
+          }
+        },
+        "tags": [
+          "Group"
+        ]
+      }
     }
   }
 }

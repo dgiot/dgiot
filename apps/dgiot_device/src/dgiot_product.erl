@@ -25,7 +25,7 @@
 -export([get_prop/1, get_props/1, get_props/2, get_unit/1, update_properties/2, update_properties/0]).
 -export([update_topics/0, update_product_filed/1]).
 -export([save_devicetype/1, get_devicetype/1, get_device_thing/2, get_productSecret/1]).
--export([save_/1, get_keys/1, get_sub_tab/1, get_control/1, save_control/1, get_interval/1, get_product_identifier/2, hook_topic/1]).
+-export([save_/1, get_keys/1, get_sub_tab/1, get_control/1, save_control/1, get_interval/1, get_product_identifier/2, hook_topic/1, get_product_statistics/1]).
 
 init_ets() ->
     dgiot_data:init(?DGIOT_PRODUCT, [public, named_table, set, {write_concurrency, true}, {read_concurrency, true}]),
@@ -613,3 +613,177 @@ hook_topic(#{<<"objectId">> := ProductId, <<"topics">> := Topics}) when is_map(T
 
 hook_topic(_) ->
     pass.
+
+get_product_statistics(<<"protocol">>) ->
+    DevTypes =
+        case dgiot_parsex:query_object(<<"Product">>, #{}) of
+            {ok, #{<<"results">> := Products}} ->
+                lists:foldl(fun(#{<<"devType">> := DevType}, Acc) ->
+                    DList = maps:get(DevType, Acc, []),
+                    Acc#{DevType => DList ++ [DevType]}
+                            end, #{}, Products);
+            _ ->
+                pass
+        end,
+
+    DevData =
+        maps:fold(fun(K, V, Acc) ->
+            Acc ++ [#{ <<"value">> => length(V), <<"name">> => K}]
+                  end, [], DevTypes),
+    #{
+        <<"series">> => [
+            #{
+                <<"type">> => <<"pie">>,
+                <<"radius">> => <<"50%">>,
+                <<"data">> => DevData,
+                <<"axisLabel">> => #{
+                    <<"show">> => true,
+                    <<"textStyle">> => #{
+                        <<"color">> => <<"#FFFFFF">>
+                    }
+                }
+            }],
+        <<"tooltip">> => #{
+            <<"trigger">> => <<"item">>,
+            <<"axisLabel">> => #{
+                <<"show">> => true,
+                <<"textStyle">> => #{
+                    <<"color">> => <<"#FFFFFF">>
+                }
+            }
+        }
+    };
+
+get_product_statistics(<<"network">>) ->
+    NetTypes =
+        case dgiot_parsex:query_object(<<"Product">>, #{}) of
+            {ok, #{<<"results">> := Products}} ->
+                lists:foldl(fun(#{<<"netType">> := NetType}, Acc) ->
+                    NList = maps:get(NetType, Acc, []),
+                    Acc#{NetType => NList ++ [NetType]}
+                            end, #{}, Products);
+            _ ->
+                pass
+        end,
+    {YAxis, Series} =
+        maps:fold(fun(K, V, {Ycc, Xcc}) ->
+            {Ycc ++ [K], Xcc ++ [#{<<"value">> => length(V), <<"name">> => K}]}
+                  end, {[], []}, NetTypes),
+    #{
+        <<"tooltip">> => #{
+            <<"trigger">> => <<"axis">>,
+            <<"axisLabel">> => #{
+                <<"show">> => true,
+                <<"textStyle">> => #{
+                    <<"color">> => <<"#FFFFFF">>
+                }
+            }
+        },
+        <<"yAxis">> => #{
+            <<"type">> => <<"category">>,
+            <<"data">> => YAxis,
+            <<"axisLabel">> => #{
+                <<"show">> => true,
+                <<"textStyle">> => #{
+                    <<"color">> => <<"#ffffff">>
+                }
+            }
+        },
+        <<"xAxis">> => #{
+            <<"type">> => <<"value">>,
+            <<"axisLabel">> => #{
+                <<"show">> => true,
+                <<"textStyle">> => #{
+                    <<"color">> => <<"#ffffff">>
+                }
+            }
+        },
+        <<"series">> => [
+            #{
+                <<"data">> => Series,
+                <<"type">> => <<"bar">>
+            }
+        ]
+    };
+
+get_product_statistics(<<"thing">>) ->
+    Props =
+        case dgiot_parsex:query_object(<<"Product">>, #{}) of
+            {ok, #{<<"results">> := Products}} ->
+                lists:foldl(fun(#{<<"name">> := Name, <<"thing">> := Thing}, Acc) ->
+                    Properties = maps:get(<<"properties">>, Thing, []),
+                    Acc#{Name => length(Properties)}
+                            end, #{}, Products);
+            _ ->
+                pass
+        end,
+
+    {Xdata, Sdata} =
+        maps:fold(fun(K, V, {Xcc, Scc}) ->
+            {Xcc ++ [K], Scc ++ [#{<<"value">> => V, <<"name">> => K}]}
+                  end, {[], []}, Props),
+    #{
+        <<"tooltip">> => #{
+            <<"trigger">> => <<"axis">>,
+            <<"axisLabel">> => #{
+                <<"show">> => true,
+                <<"textStyle">> => #{
+                    <<"color">> => <<"#FFFFFF">>
+                }
+            }
+        },
+        <<"xAxis">> => #{
+            <<"data">> => Xdata,
+            <<"type">> => <<"category">>,
+            <<"axisLabel">> => #{
+                <<"show">> => true,
+                <<"textStyle">> => #{
+                    <<"color">> => <<"#ffffff">>
+                }
+            }
+        },
+        <<"yAxis">> => #{
+            <<"axisLabel">> => #{
+                <<"show">> => true,
+                <<"textStyle">> => #{
+                    <<"color">> => <<"#ffffff">>
+                }
+            }
+        },
+        <<"series">> => [
+            #{
+                <<"data">> => Sdata, <<"type">> => <<"line">>
+            }
+        ]
+    }.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
