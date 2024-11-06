@@ -215,7 +215,7 @@ add_notification(<<"stop_", Ruleid/binary>>, DeviceId, #{<<"dgiot_alarmvalue">> 
     case dgiot_data:get(?NOTIFICATION, {DeviceId, Ruleid}) of
         {start, _Time, NotificationId} ->
             dgiot_data:insert(?NOTIFICATION, {DeviceId, Ruleid}, {stop, dgiot_datetime:now_secs(), <<>>}),
-            Content = update_notification(NotificationId, #{<<"restored_value">> => Value}),
+            Content = update_notification(NotificationId, #{<<"restored_value">> => Value, <<"restored_createdAt">> => dgiot_datetime:format("YYYY-MM-DD HH:NN:SS")}),
             dgiot_umeng:send_msg(Content),
 %%            io:format("~s ~p Content1 = ~p.~n", [?FILE, ?LINE, Content]),
             dgiot_umeng:sendSubscribe(Content);
@@ -239,7 +239,7 @@ manual_recovery(ObjectId) ->
 save_notification(Ruleid, DeviceId, Payload, NotificationId) ->
     Alarm_createdAt = dgiot_datetime:format("YYYY-MM-DD HH:NN:SS"),
     case binary:split(Ruleid, <<$_>>, [global, trim]) of
-        [ProductId, ViewId] ->
+        [ProductId | _] ->
             case dgiot_device:lookup(DeviceId) of
                 {ok, #{<<"acl">> := Acls, <<"devaddr">> := Devaddr}} ->
                     Acl =
@@ -250,14 +250,14 @@ save_notification(Ruleid, DeviceId, Payload, NotificationId) ->
                                     <<"write">> => true
                                 }}
                                     end, #{}, Acls),
-                    {Alarm_message, RoleId} =
-                        case get_defultmessage(ViewId) of
-                            #{<<"alarm_message">> := Message, <<"roleid">> := Id} ->
-                                {Message, Id};
+                    {Alarm_message, Level} =
+                        case dgiot_data:get(<<"rule:Notification_start_", Ruleid/binary>>) of
+                            #{<<"args">> := #{<<"description">> := Desc, <<"level">> := L}} ->
+                                {Desc, L};
                             _ ->
-                                {<<>>, <<>>}
+                                {<<>>, 1}
                         end,
-                    Content = Payload#{<<"alarm_createdAt">> => Alarm_createdAt, <<"alarm_message">> => Alarm_message, <<"roleid">> => RoleId, <<"_deviceid">> => DeviceId, <<"_productid">> => ProductId, <<"_viewid">> => ViewId},
+                    Content = Payload#{<<"starttime">> => dgiot_datetime:format("MM.DD"), <<"alarm_createdAt">> => Alarm_createdAt, <<"alarm_message">> => Alarm_message, <<"level">> => Level, <<"_deviceid">> => DeviceId, <<"_productid">> => ProductId},
                     dgiot_parse:create_object(<<"Notification">>, #{
                         <<"objectId">> => NotificationId,
                         <<"ACL">> => Acl,
