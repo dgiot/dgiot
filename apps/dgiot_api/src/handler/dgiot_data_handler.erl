@@ -545,6 +545,19 @@ do_request(post_station_data, Args, #{<<"sessionToken">> := SessionToken} = _Con
     dgiot_mqtt:publish(SessionToken, <<"data_task/station_data">>, dgiot_json:encode(NewArgs)),
     {200, #{}};
 
+%% iot_hub 概要: 设备调试接口
+%% OperationId:post_device_debug
+%% 请求:POST /iotapi/post_device_debug
+do_request(post_device_debug, #{<<"deviceid">> := DeviceId, <<"messagetype">> := Messagetype, <<"data">> := Data} = _Args, _Context, _Req) ->
+    case dgiot_parsex:get_object(<<"Device">>, DeviceId) of
+        {ok, #{<<"devaddr">> := Devaddr, <<"product">> := #{<<"objectId">> := ProductId}}} ->
+            ProfileTopic = <<"$dg/device/", ProductId/binary, "/", Devaddr/binary, "/debug">>,
+            NewData = dgiot_edge:get_writeData(Messagetype, Data),
+            dgiot_mqtt:publish(DeviceId, ProfileTopic, NewData);
+        _ ->
+            {200, #{<<"status">> => <<"error">>, <<"msg">> => <<"not find device">>}}
+    end;
+
 %%  服务器不支持的API接口
 do_request(_OperationId, _Args, _Context, _Req) ->
     ?LOG(info, "_Args ~p", [_Args]),

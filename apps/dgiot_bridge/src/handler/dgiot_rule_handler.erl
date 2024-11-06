@@ -100,6 +100,28 @@ do_request(get_provider, #{<<"language">> := Language}, _Context, _Req) ->
 do_request(get_rule_id, #{<<"id">> := RuleID}, _Context, _Req) ->
     emqx_rule_engine_api:show_rule(#{id => RuleID}, []);
 
+%% Rule 概要: 获取规则引擎列表 描述:获取规则引擎列表
+%% OperationId:get_rules
+%% 请求:GET /iotapi/rules
+do_request(get_rules, _Args, _Context, _Req) ->
+    dgiot_rule_handler:sysc_rules(),
+%%    emqx_rule_engine_api:list_rules(#{}, []),
+    Data =
+        case dgiot_parsex:query_object(<<"Dict">>, #{<<"where">> => #{<<"type">> => <<"ruleengine">>}}) of
+            {ok, #{<<"results">> := Results}} when length(Results) > 0 ->
+                lists:foldl(fun(#{<<"key">> := RuleID} = X, Acc) ->
+                    case emqx_rule_engine_api:show_rule(#{id => RuleID}, []) of
+                        {ok, #{code := 0, data := Data}} ->
+                            Acc ++ [dgiot_map:merge(X, Data)];
+                        _ ->
+                            Acc ++ [X]
+                    end
+                            end, [], Results);
+            _ ->
+                []
+        end,
+    {ok, #{<<"code">> => 0, <<"data">> => Data}};
+
 %% Rule 概要: 修改规则引擎 描述:修改规则引擎
 %% OperationId:put_rules_id
 %% 请求:PUT /iotapi/rule/:{id}
@@ -143,13 +165,6 @@ do_request(post_rules, Params, _Context, _Req) ->
         _ -> pass
     end,
     R;
-
-%% Rule 概要: 获取规则引擎列表 描述:获取规则引擎列表
-%% OperationId:get_rules
-%% 请求:GET /iotapi/rules
-do_request(get_rules, _Args, _Context, _Req) ->
-    dgiot_rule_handler:sysc_rules(),
-    emqx_rule_engine_api:list_rules(#{}, []);
 
 %% OperationId:get_actions
 do_request(get_actions, _Args, _Context, _Req) ->
@@ -330,7 +345,12 @@ save_rule_to_dict(RuleID, Params, Args) ->
             {ok, #{message := <<"Not Found">>}} ->
                 Params;
             {ok, #{code := 0, data := Data}} ->
-                Nedata = maps:merge(Data, Params),
+                NewParams =
+                    maps:fold(fun(Key, Value, Acc) ->
+
+                        Acc#{dgiot_utils:to_atom(Key) => Value}
+                              end, #{}, Params),
+                Nedata = maps:merge(Data, NewParams),
                 emqx_rule_engine_api:update_rule(#{id => RuleID}, maps:to_list(Nedata)),
                 Nedata
         end,
@@ -340,13 +360,13 @@ save_rule_to_dict(RuleID, Params, Args) ->
         <<"title">> => <<"Rule">>,
         <<"key">> => RuleID,
         <<"type">> => <<"ruleengine">>,
-        <<"data">> => #{<<"args">> => Args, <<"rule">> => dgiot_json:encode(Rule)}
+        <<"args">> => Args,
+        <<"data">> => #{<<"rule">> => dgiot_json:encode(Rule)}
     },
     dgiot_data:insert(?DGIOT_RUlES, Dict),
     ObjectId = dgiot_parse_id:get_dictid(RuleID, <<"ruleengine">>, <<"Rule">>, <<"Rule">>),
     case dgiot_parsex:get_object(<<"Dict">>, ObjectId) of
-        {ok, #{<<"data">> := Data1}} ->
-            OldArgs = maps:get(<<"args">>, Data1, #{}),
+        {ok, #{<<"args">> := OldArgs, <<"data">> := Data1}} ->
             dgiot_parsex:update_object(<<"Dict">>, ObjectId, #{<<"args">> => maps:merge(OldArgs, Args), <<"data">> => Data1#{<<"rule">> => dgiot_json:encode(Rule)}});
         _ ->
             case dgiot_parsex:create_object(<<"Dict">>, Dict) of
@@ -395,7 +415,7 @@ sysc_rules() ->
                 Result when length(Result) == 0 ->
                     case dgiot_parsex:query_object(<<"Dict">>, #{<<"where">> => #{<<"type">> => <<"ruleengine">>}}) of
                         {ok, #{<<"results">> := Results}} when length(Results) > 0 ->
-                            lists:map(fun(#{<<"key">> := RuleID, <<"data">> := Data}) ->
+                            lists:map(fun(#{<<"key">> := RuleID, <<"data">> := Data} = Dict) ->
                                 #{<<"rule">> := Rule} = Data,
                                 NewRule = dgiot_json:decode(Rule, [return_maps]),
                                 Actions = maps:get(<<"actions">>, NewRule),
@@ -423,7 +443,8 @@ sysc_rules() ->
                                     _ ->
                                         emqx_rule_engine_api:update_rule(#{id => RuleID}, maps:to_list(NewRule))
                                 end,
-                                dgiot_data:insert(RuleID, NewRule)
+                                Args = maps:get(<<"args">>, Dict,#{}),
+                                dgiot_data:insert(RuleID, NewRule#{<<"args">> => Args})
                                       end, Results);
                         _ -> pass
                     end;
@@ -567,22 +588,14 @@ create_rules(RuleID, ChannelId, Description, Rawsql, Target_topic, Args) ->
         <<"for">> => <<"[\"t/#\"]">>,
         <<"rawsql">> => Rawsql
     },
-    ObjectId = dgiot_parse_id:get_dictid(RuleID, <<"ruleengine">>, <<"Rule">>, <<"Rule">>),
-    case dgiot_parsex:get_object(<<"Dict">>, ObjectId) of
-        {ok, _} ->
-            dgiot_rule_handler:save_rule_to_dict(RuleID, Params, Args),
-            emqx_rule_engine_api:update_rule(#{id => RuleID}, maps:to_list(Params)),
-            {ok, #{<<"msg">> => <<RuleID/binary, " already exists">>}};
-        _ ->
-            R = emqx_rule_engine_api:create_rule(#{}, maps:to_list(Params)),
-            case R of
-                {ok, #{data := #{id := EmqxRuleId}}} ->
-                    dgiot_data:delete(?DGIOT_RUlES, EmqxRuleId),
-                    emqx_rule_engine_api:delete_rule(#{id => EmqxRuleId}, []),
-                    dgiot_rule_handler:save_rule_to_dict(RuleID, Params, Args);
-                Error ->
-                    {ok, #{<<"error">> => Error}}
-            end
+%%    io:format("~s ~p Params = ~p.~n", [?FILE, ?LINE, Params]),
+    case emqx_rule_engine_api:create_rule(#{}, maps:to_list(Params)) of
+        {ok, #{data := #{id := EmqxRuleId}}} ->
+            dgiot_data:delete(?DGIOT_RUlES, EmqxRuleId),
+            emqx_rule_engine_api:delete_rule(#{id => EmqxRuleId}, []),
+            dgiot_rule_handler:save_rule_to_dict(RuleID, Params, Args);
+        Error ->
+            {ok, #{<<"error">> => Error}}
     end.
 
 

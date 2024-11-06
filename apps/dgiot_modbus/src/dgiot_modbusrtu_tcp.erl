@@ -61,7 +61,9 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, state = #state{id = ChannelId, de
             dgiot_device:save_log(ProductId, DtuAddr, DtuAddr, <<"online">>),
             dgiot_bridge:send_log(ChannelId, ProductId, DtuAddr, "~s ~p DTU login DtuAddr:~p", [?FILE, ?LINE, DtuAddr]),
             Topic = <<"$dg/device/", ProductId/binary, "/", DtuAddr/binary, "/profile">>,
+            Topic1 = <<"$dg/device/", ProductId/binary, "/", Buff/binary, "/debug">>,
             dgiot_mqtt:subscribe(Topic),
+            dgiot_mqtt:subscribe(Topic1),
             {noreply, TCPState#tcp{buff = <<>>, register = true, clientid = DeviceId, state = State#state{devaddr = DtuAddr, deviceId = DeviceId}}};
         _Error ->
             case re:run(Buff, Head, [{capture, first, list}]) of
@@ -70,8 +72,10 @@ handle_info({tcp, Buff}, #tcp{socket = Socket, state = #state{id = ChannelId, de
                     create_device(DeviceId, ProductId, Buff, DTUIP, Dtutype),
                     dgiot_device:save_log(ProductId, Buff, Buff, <<"online">>),
                     Topic = <<"$dg/device/", ProductId/binary, "/", Buff/binary, "/profile">>,
+                    Topic1 = <<"$dg/device/", ProductId/binary, "/", Buff/binary, "/debug">>,
                     dgiot_bridge:send_log(ChannelId, ProductId, Buff, "~s ~p DTU login DtuAddr:~p", [?FILE, ?LINE, Buff]),
                     dgiot_mqtt:subscribe(Topic),
+                    dgiot_mqtt:subscribe(Topic1),
                     {noreply, TCPState#tcp{buff = <<>>, register = true, clientid = DeviceId, state = State#state{devaddr = Buff}}};
                 Error1 ->
                     ?LOG(info, "Error1 ~p Buff ~p ", [Error1, dgiot_utils:to_list(Buff)]),
@@ -159,6 +163,12 @@ handle_info({deliver, _, Msg}, #tcp{state = #state{id = ChannelId} = State} = TC
                         _ ->
                             {noreply, TCPState}
                     end;
+                [<<"$dg">>, <<"device">>, ProductId, DevAddr, <<"debug">>] ->
+                    %% 设备调试
+                    dgiot_tcp_server:send(TCPState, Payload),
+                    dgiot_device:save_log(ProductId, DevAddr, dgiot_utils:binary_to_hex(Payload), <<"device_debug">>),
+                    dgiot_bridge:send_log(ChannelId, ProductId, DevAddr, "Channel device_debug ~p to DTU ~p", [dgiot_utils:binary_to_hex(Payload), DevAddr]),
+                    {noreply, TCPState};
                 _Other ->
                     ?LOG(error, "_Other ~p", [_Other]),
                     {noreply, TCPState}
@@ -174,6 +184,12 @@ handle_info({deliver, _, Msg}, #tcp{state = #state{id = ChannelId} = State} = TC
                         dgiot_device:save_log(ProductId, DevAddr, dgiot_utils:binary_to_hex(X), <<"device_operationlog">>),
                         dgiot_tcp_server:send(TCPState, X)
                               end, Payloads),
+                    {noreply, TCPState};
+                [<<"$dg">>, <<"device">>, ProductId, DevAddr, <<"debug">>] ->
+                    %% 设备调试
+                    dgiot_tcp_server:send(TCPState, Payload),
+                    dgiot_device:save_log(ProductId, DevAddr, dgiot_utils:binary_to_hex(Payload), <<"device_debug">>),
+                    dgiot_bridge:send_log(ChannelId, ProductId, DevAddr, "Channel device_debug ~p to DTU ~p", [dgiot_utils:binary_to_hex(Payload), DevAddr]),
                     {noreply, TCPState};
                 _ ->
                     {noreply, TCPState}

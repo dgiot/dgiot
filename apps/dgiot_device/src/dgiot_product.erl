@@ -623,12 +623,12 @@ get_product_statistics(<<"protocol">>) ->
                     Acc#{DevType => DList ++ [DevType]}
                             end, #{}, Products);
             _ ->
-                pass
+                #{}
         end,
 
     DevData =
         maps:fold(fun(K, V, Acc) ->
-            Acc ++ [#{ <<"value">> => length(V), <<"name">> => K}]
+            Acc ++ [#{<<"value">> => length(V), <<"name">> => K}]
                   end, [], DevTypes),
     #{
         <<"series">> => [
@@ -663,7 +663,7 @@ get_product_statistics(<<"network">>) ->
                     Acc#{NetType => NList ++ [NetType]}
                             end, #{}, Products);
             _ ->
-                pass
+                #{}
         end,
     {YAxis, Series} =
         maps:fold(fun(K, V, {Ycc, Xcc}) ->
@@ -715,7 +715,7 @@ get_product_statistics(<<"thing">>) ->
                     Acc#{Name => length(Properties)}
                             end, #{}, Products);
             _ ->
-                pass
+                #{}
         end,
 
     {Xdata, Sdata} =
@@ -755,6 +755,119 @@ get_product_statistics(<<"thing">>) ->
                 <<"data">> => Sdata, <<"type">> => <<"line">>
             }
         ]
+    };
+
+get_product_statistics(<<"device_statis">>) ->
+    Now = dgiot_datetime:format(dgiot_datetime:get_today_stamp(), "YYYY-MM-DDT16:00:00.000Z"),
+    {ok, #{<<"count">> := Count}} = dgiot_parsex:query_object(<<"Device">>, #{<<"keys">> => [<<"objectId">>], <<"limit">> => 1, <<"count">> => <<"objectId">>}),
+    {ok, #{<<"count">> := Online}} = dgiot_parsex:query_object(<<"Device">>, #{<<"keys">> => [<<"objectId">>], <<"limit">> => 1, <<"count">> => <<"objectId">>,
+        <<"where">> => #{<<"status">> => <<"ONLINE">>}}),
+    {ok, #{<<"count">> := Enable}} = dgiot_parsex:query_object(<<"Device">>, #{<<"keys">> => [<<"isEable">>], <<"limit">> => 1, <<"count">> => <<"objectId">>,
+        <<"where">> => #{<<"isEnable">> => true}}),
+    {ok, #{<<"count">> := Add}} = dgiot_parsex:query_object(<<"Device">>, #{<<"keys">> => [<<"objectId">>], <<"limit">> => 1, <<"count">> => <<"objectId">>,
+        <<"where">> => #{<<"createdAt">> => #{<<"$gte">> => #{<<"__type">> => <<"Date">>, <<"iso">> => Now}}}}),
+    #{
+        <<"all">> => Count,
+        <<"online">> => Online,
+        <<"enable">> => Enable,
+        <<"add">> => Add
+    };
+
+get_product_statistics(<<"alarm_statis">>) ->
+    {ok, #{<<"count">> := One}} = dgiot_parsex:query_object(<<"Notification">>, #{<<"keys">> => [<<"objectId">>], <<"limit">> => 1, <<"count">> => <<"objectId">>,
+        <<"where">> => #{<<"content.level">> => <<"1">>}}),
+    {ok, #{<<"count">> := Two}} = dgiot_parsex:query_object(<<"Notification">>, #{<<"keys">> => [<<"objectId">>], <<"limit">> => 1, <<"count">> => <<"objectId">>,
+        <<"where">> => #{<<"content.level">> => <<"2">>}}),
+    {ok, #{<<"count">> := Three}} = dgiot_parsex:query_object(<<"Notification">>, #{<<"keys">> => [<<"objectId">>], <<"limit">> => 1, <<"count">> => <<"objectId">>,
+        <<"where">> => #{<<"content.level">> => <<"3">>}}),
+
+    Now = dgiot_datetime:format(dgiot_datetime:get_today_stamp() - 604800, "YYYY-MM-DDT16:00:00.000Z"),
+    {Props, Notifications} =
+        case dgiot_parsex:query_object(<<"Notification">>, #{<<"keys">> => [<<"content">>,<<"device">>], <<"count">> => <<"objectId">>,<<"include">> => <<"device">>,
+            <<"where">> => #{<<"createdAt">> => #{<<"$gte">> => #{<<"__type">> => <<"Date">>, <<"iso">> => Now}}}}) of
+            {ok, #{<<"results">> := Results}} ->
+                Result =
+                    lists:foldl(fun
+                                    (#{<<"content">> := #{<<"starttime">> := Starttime}} = X, Acc) ->
+                                        SList = maps:get(Starttime, Acc, []),
+                                        Acc#{Starttime => SList ++ [X]};
+                                    (_, Acc) ->
+                                        Acc
+                                end, #{}, Results),
+                {Result, Results};
+            _ ->
+                {#{}, #{}}
+        end,
+    {XAxis, Series} =
+        maps:fold(fun(K, V, {Xcc, Scc}) ->
+            {Xcc ++ [K], Scc ++ [#{<<"value">> => length(V), <<"name">> => K}]}
+                  end, {[], []}, Props),
+    #{
+        <<"notifications">> => Notifications,
+        <<"one">> => One,
+        <<"two">> => Two,
+        <<"three">> => Three,
+        <<"event">> => #{
+            <<"tooltip">> => #{
+                <<"trigger">> => <<"axis">>,
+                <<"axisLabel">> => #{
+                    <<"textStyle">> => #{
+                        <<"color">> => "#FFFFFF"
+                    },
+                    <<"show">> => true
+                }
+            },
+            <<"xAxis">> => [
+                #{
+                    <<"data">> => XAxis,
+                    <<"type">> => <<"category">>,
+                    <<"axisLabel">> => #{
+                        <<"show">> => true,
+                        <<"textStyle">> => #{
+                            <<"color">> => <<"#FFFFFF">>
+                        }
+                    },
+                    <<"axisPointer">> => #{
+                        <<"type">> => <<"shadow">>
+                    }
+                }
+            ],
+            <<"yAxis">> => [
+                #{
+                    <<"name">> => <<"告警事件"/utf8>>,
+                    <<"type">> => <<"value">>,
+                    <<"interval">> => 1,
+                    <<"axisLabel">> => #{
+                        <<"formatter">> => <<"{value}">>,
+                        <<"textStyle">> => #{
+                            <<"color">> => <<"#FFFFFF">>
+                        }
+                    }
+                }
+            ],
+            <<"legend">> => #{
+                <<"data">> => [
+                    <<"告警事件"/utf8>>
+                ],
+                <<"textStyle">> => #{
+                    <<"color">> => <<"#FFFFFF">>,
+                    <<"fontSize">> => 14
+                }
+            },
+            <<"series">> => [
+                #{
+                    <<"data">> => Series,
+                    <<"name">> => <<"告警事件"/utf8>>,
+                    <<"type">> => <<"bar">>,
+                    <<"axisLabel">> => #{
+                        <<"show">> => true,
+                        <<"textStyle">> => #{
+                            <<"color">> => <<"#ffffff">>
+                        }
+                    }
+                }
+            ]
+        }
     }.
 
 
