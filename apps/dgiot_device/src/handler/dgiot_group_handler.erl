@@ -75,7 +75,7 @@ handle(OperationID, Args, Context, Req) ->
 do_request(post_dev_transfer, #{<<"objectId">> := ObjectId, <<"rolename">> := RoleName} = _Args, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
     ACL = #{<<"role:", RoleName/binary>> => #{<<"read">> => true, <<"write">> => true}},
     case dgiot_parsex:get_object(<<"Device">>, ObjectId) of
-        {ok, #{<<"name">> := DevName}} ->
+        {ok, #{<<"name">> := DevName, <<"devaddr">> := Devaddr}} ->
             case dgiot_parsex:update_object(<<"Device">>, ObjectId, #{<<"ACL">> => ACL}) of
                 {ok, Data} ->
                     #{<<"nick">> := Nick} = dgiot_auth:get_session(SessionToken),
@@ -87,6 +87,7 @@ do_request(post_dev_transfer, #{<<"objectId">> := ObjectId, <<"rolename">> := Ro
                         , <<"domain">> => [<<"DeviceTransfer">>]
                         , <<"mfa">> => <<"DeviceTransfer">>
                         , <<"peername">> => DevName
+                        , <<"devaddr">> => Devaddr
                         , <<"time">> => dgiot_datetime:nowstamp() * 1000
                     }),
                     dgiot_device:put(#{<<"objectId">> => ObjectId, <<"ACL">> => ACL}),
@@ -183,9 +184,9 @@ do_request(delete_group, #{<<"name">> := _Name, <<"devType">> := _DevType} = Bod
     ?LOG(info, "Body ~p ", [Body]),
     delete_group(Body, SessionToken);
 
-do_request(get_product_statistics, #{<<"type">> := Type} = _Args, #{<<"sessionToken">> := _SessionToken}, _Body) ->
+do_request(get_product_statistics, #{<<"type">> := Type} = _Args, #{<<"sessionToken">> := SessionToken}, _Body) ->
 %%    Data = get_statistics(SessionToken),
-    Data = dgiot_product:get_product_statistics(Type),
+    Data = dgiot_product:get_product_statistics(Type, SessionToken),
     {ok, #{<<"status">> => 0, msg => <<"ok">>, <<"data">> => Data}};
 
 %%  服务器不支持的API接口

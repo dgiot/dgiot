@@ -25,7 +25,7 @@
 -export([get_prop/1, get_props/1, get_props/2, get_unit/1, update_properties/2, update_properties/0]).
 -export([update_topics/0, update_product_filed/1]).
 -export([save_devicetype/1, get_devicetype/1, get_device_thing/2, get_productSecret/1]).
--export([save_/1, get_keys/1, get_sub_tab/1, get_control/1, save_control/1, get_interval/1, get_product_identifier/2, hook_topic/1, get_product_statistics/1]).
+-export([save_/1, get_keys/1, get_sub_tab/1, get_control/1, save_control/1, get_interval/1, get_product_identifier/2, hook_topic/1, get_product_statistics/2]).
 
 init_ets() ->
     dgiot_data:init(?DGIOT_PRODUCT, [public, named_table, set, {write_concurrency, true}, {read_concurrency, true}]),
@@ -614,7 +614,7 @@ hook_topic(#{<<"objectId">> := ProductId, <<"topics">> := Topics}) when is_map(T
 hook_topic(_) ->
     pass.
 
-get_product_statistics(<<"protocol">>) ->
+get_product_statistics(<<"protocol">>, _) ->
     DevTypes =
         case dgiot_parsex:query_object(<<"Product">>, #{}) of
             {ok, #{<<"results">> := Products}} ->
@@ -654,7 +654,7 @@ get_product_statistics(<<"protocol">>) ->
         }
     };
 
-get_product_statistics(<<"network">>) ->
+get_product_statistics(<<"network">>, _) ->
     NetTypes =
         case dgiot_parsex:query_object(<<"Product">>, #{}) of
             {ok, #{<<"results">> := Products}} ->
@@ -706,7 +706,7 @@ get_product_statistics(<<"network">>) ->
         ]
     };
 
-get_product_statistics(<<"thing">>) ->
+get_product_statistics(<<"thing">>, _) ->
     Props =
         case dgiot_parsex:query_object(<<"Product">>, #{}) of
             {ok, #{<<"results">> := Products}} ->
@@ -757,8 +757,8 @@ get_product_statistics(<<"thing">>) ->
         ]
     };
 
-get_product_statistics(<<"device_statis">>) ->
-    Now = dgiot_datetime:format(dgiot_datetime:get_today_stamp(), "YYYY-MM-DDT16:00:00.000Z"),
+get_product_statistics(<<"device_statis">>, _) ->
+    Now = dgiot_datetime:format(dgiot_datetime:get_today_stamp() - 86400, "YYYY-MM-DDT16:00:00.000Z"),
     {ok, #{<<"count">> := Count}} = dgiot_parsex:query_object(<<"Device">>, #{<<"keys">> => [<<"objectId">>], <<"limit">> => 1, <<"count">> => <<"objectId">>}),
     {ok, #{<<"count">> := Online}} = dgiot_parsex:query_object(<<"Device">>, #{<<"keys">> => [<<"objectId">>], <<"limit">> => 1, <<"count">> => <<"objectId">>,
         <<"where">> => #{<<"status">> => <<"ONLINE">>}}),
@@ -773,7 +773,7 @@ get_product_statistics(<<"device_statis">>) ->
         <<"add">> => Add
     };
 
-get_product_statistics(<<"alarm_statis">>) ->
+get_product_statistics(<<"alarm_statis">>, _) ->
     {ok, #{<<"count">> := One}} = dgiot_parsex:query_object(<<"Notification">>, #{<<"keys">> => [<<"objectId">>], <<"limit">> => 1, <<"count">> => <<"objectId">>,
         <<"where">> => #{<<"content.level">> => <<"1">>}}),
     {ok, #{<<"count">> := Two}} = dgiot_parsex:query_object(<<"Notification">>, #{<<"keys">> => [<<"objectId">>], <<"limit">> => 1, <<"count">> => <<"objectId">>,
@@ -783,12 +783,12 @@ get_product_statistics(<<"alarm_statis">>) ->
 
     Now = dgiot_datetime:format(dgiot_datetime:get_today_stamp() - 604800, "YYYY-MM-DDT16:00:00.000Z"),
     {Props, Notifications} =
-        case dgiot_parsex:query_object(<<"Notification">>, #{<<"keys">> => [<<"content">>,<<"device">>], <<"count">> => <<"objectId">>,<<"include">> => <<"device">>,
+        case dgiot_parsex:query_object(<<"Notification">>, #{<<"keys">> => [<<"content">>, <<"device">>], <<"count">> => <<"objectId">>, <<"include">> => <<"device">>,
             <<"where">> => #{<<"createdAt">> => #{<<"$gte">> => #{<<"__type">> => <<"Date">>, <<"iso">> => Now}}}}) of
             {ok, #{<<"results">> := Results}} ->
                 Result =
                     lists:foldl(fun
-                                    (#{<<"content">> := #{<<"starttime">> := Starttime}} = X, Acc) ->
+                                    (#{<<"content">> := #{<<"startdatetime">> := Starttime}} = X, Acc) ->
                                         SList = maps:get(Starttime, Acc, []),
                                         Acc#{Starttime => SList ++ [X]};
                                     (_, Acc) ->
@@ -868,7 +868,143 @@ get_product_statistics(<<"alarm_statis">>) ->
                 }
             ]
         }
-    }.
+    };
+
+get_product_statistics(<<"information">>, Token) ->
+    Key = dgiot_device_static:get_count(Token),
+    Props =
+        case dgiot_parsex:query_object(<<"Product">>, #{<<"keys">> => [<<"name">>], <<"count">> => <<"objectId">>}) of
+            {ok, #{<<"results">> := Results}} ->
+                lists:foldl(fun
+                                (#{<<"objectId">> := ProductId, <<"name">> := Name}, Acc) ->
+                                    NewResBody = dgiot_device_static:stats(#{<<"objectId">> => ProductId}, Key),
+                                    Acc#{Name => NewResBody};
+                                (_, Acc) ->
+                                    Acc
+                            end, #{}, Results);
+            _ ->
+                #{}
+        end,
+    {XAxis, ONSeries, OFFSeries, PONSeries} =
+        maps:fold(fun(K, #{<<"online_counts">> := On, <<"offline_counts">> := Off, <<"poweron_counts">> := Pon}, {Xcc, ON, OFF, PON}) ->
+            {Xcc ++ [K], ON ++ [#{<<"value">> => On, <<"name">> => K}], OFF ++ [#{<<"value">> => Off, <<"name">> => K}], PON ++ [#{<<"value">> => Pon, <<"name">> => K}]}
+                  end, {[], [], [], []}, Props),
+    #{
+        <<"tooltip">> => #{
+            <<"trigger">> => <<"axis">>,
+            <<"axisLabel">> => #{
+                <<"textStyle">> => #{
+                    <<"color">> => "#FFFFFF"
+                },
+                <<"show">> => true
+            }
+        },
+        <<"xAxis">> => [
+            #{
+                <<"data">> => XAxis,
+                <<"type">> => <<"category">>,
+                <<"axisLabel">> => #{
+                    <<"show">> => true,
+                    <<"textStyle">> => #{
+                        <<"color">> => <<"#FFFFFF">>
+                    }
+                },
+                <<"axisPointer">> => #{
+                    <<"type">> => <<"shadow">>
+                }
+            }
+        ],
+        <<"yAxis">> => [
+            #{
+                <<"name">> => <<"在线数"/utf8>>,
+                <<"type">> => <<"value">>,
+                <<"interval">> => 1,
+                <<"axisLabel">> => #{
+                    <<"formatter">> => <<"{value}">>,
+                    <<"textStyle">> => #{
+                        <<"color">> => <<"#FFFFFF">>
+                    }
+                }
+            },
+            #{
+                <<"name">> => <<"离线数"/utf8>>,
+                <<"type">> => <<"value">>,
+                <<"interval">> => 1,
+                <<"axisLabel">> => #{
+                    <<"formatter">> => <<"{value}">>,
+                    <<"textStyle">> => #{
+                        <<"color">> => <<"#FFFFFF">>
+                    }
+                }
+            },
+            #{
+                <<"name">> => <<"激活数"/utf8>>,
+                <<"type">> => <<"value">>,
+                <<"interval">> => 1,
+                <<"axisLabel">> => #{
+                    <<"formatter">> => <<"{value}">>,
+                    <<"textStyle">> => #{
+                        <<"color">> => <<"#FFFFFF">>
+                    }
+                }
+            }
+        ],
+        <<"legend">> => #{
+            <<"data">> => [
+                <<"在线数"/utf8>>,
+                <<"离线数"/utf8>>,
+                <<"激活数"/utf8>>
+            ],
+            <<"textStyle">> => #{
+                <<"color">> => <<"#FFFFFF">>,
+                <<"fontSize">> => 14
+            }
+        },
+        <<"series">> => [
+            #{
+                <<"data">> => ONSeries,
+                <<"name">> => <<"在线数"/utf8>>,
+                <<"type">> => <<"bar">>,
+                <<"itemStyle">> => #{
+                    <<"color">> => <<"#13ce66">>
+                },
+                <<"axisLabel">> => #{
+                    <<"show">> => true,
+                    <<"textStyle">> => #{
+                        <<"color">> => <<"#ffffff">>
+                    }
+                }
+            },
+            #{
+                <<"data">> => OFFSeries,
+                <<"name">> => <<"离线数"/utf8>>,
+                <<"type">> => <<"bar">>,
+                <<"itemStyle">> => #{
+                    <<"color">> => <<"#d91b1b">>
+                },
+                <<"axisLabel">> => #{
+                    <<"show">> => true,
+                    <<"textStyle">> => #{
+                        <<"color">> => <<"#ffffff">>
+                    }
+                }
+            },
+            #{
+                <<"data">> => PONSeries,
+                <<"name">> => <<"激活数"/utf8>>,
+                <<"type">> => <<"line">>,
+                <<"axisLabel">> => #{
+                    <<"show">> => true,
+                    <<"textStyle">> => #{
+                        <<"color">> => <<"#ffffff">>
+                    }
+                }
+            }
+        ]
+    };
+
+get_product_statistics(_, _) ->
+    #{}.
 
 
 

@@ -204,9 +204,9 @@ restart_channel(SessionToken) ->
     case dgiot_parse:query_object(<<"Channel">>, #{<<"where">> => #{<<"isEnable">> => true}}) of
         {ok, #{<<"results">> := Results}} ->
             lists:foldl(fun(#{<<"objectId">> := ChannelId}, _Acc) ->
-                dgiot_bridge:control_channel(ChannelId, <<"disable">>, SessionToken),
+                dgiot_bridge:control_channel(#{<<"id">> => ChannelId, <<"action">> => <<"disable">>}, SessionToken),
                 timer:sleep(500),
-                dgiot_bridge:control_channel(ChannelId, <<"enable">>, SessionToken),
+                dgiot_bridge:control_channel(#{<<"id">> => ChannelId, <<"action">> => <<"enable">>}, SessionToken),
                 timer:sleep(500)
                         end, [], Results);
         _ ->
