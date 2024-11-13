@@ -553,7 +553,8 @@ do_request(post_device_debug, #{<<"deviceid">> := DeviceId, <<"messagetype">> :=
         {ok, #{<<"devaddr">> := Devaddr, <<"product">> := #{<<"objectId">> := ProductId}}} ->
             ProfileTopic = <<"$dg/device/", ProductId/binary, "/", Devaddr/binary, "/debug">>,
             NewData = dgiot_edge:get_writeData(Messagetype, Data),
-            dgiot_mqtt:publish(DeviceId, ProfileTopic, NewData);
+            dgiot_mqtt:publish(DeviceId, ProfileTopic, NewData),
+            {200, #{<<"status">> => 0, <<"data">> => #{<<"topic">> => ProfileTopic}}};
         _ ->
             {200, #{<<"status">> => <<"error">>, <<"msg">> => <<"not find device">>}}
     end;

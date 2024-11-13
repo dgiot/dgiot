@@ -351,7 +351,7 @@ save_Product_konva(ProductId) ->
                 Type = maps:get(<<"type">>, DataType, <<"">>),
                 Specs = maps:get(<<"specs">>, DataType, #{}),
                 Unit = maps:get(<<"unit">>, Specs, <<"">>),
-                Identifier = maps:get(<<"identifier">>, P, <<"">>),
+                Identifier = dgiot_utils:to_binary(maps:get(<<"identifier">>, P, <<"">>)),
                 Name = maps:get(<<"name">>, P, <<"">>),
                 dgiot_data:insert({product, <<ProductId/binary, Identifier/binary>>}, {Name, Type, Unit}),
                 dgiot_data:insert({thing, <<ProductId/binary, Identifier/binary>>}, P)

@@ -257,7 +257,7 @@ save_notification(Ruleid, DeviceId, Payload, NotificationId) ->
                             _ ->
                                 {<<>>, 1}
                         end,
-                    Content = Payload#{<<"starttime">> => dgiot_datetime:format("MM.DD"), <<"alarm_createdAt">> => Alarm_createdAt, <<"alarm_message">> => Alarm_message, <<"level">> => Level, <<"_deviceid">> => DeviceId, <<"_productid">> => ProductId},
+                    Content = Payload#{<<"startdatetime">> => dgiot_datetime:format("MM.DD"), <<"alarm_createdAt">> => Alarm_createdAt, <<"alarm_message">> => Alarm_message, <<"level">> => Level, <<"_deviceid">> => DeviceId, <<"_productid">> => ProductId},
                     dgiot_parse:create_object(<<"Notification">>, #{
                         <<"objectId">> => NotificationId,
                         <<"ACL">> => Acl,

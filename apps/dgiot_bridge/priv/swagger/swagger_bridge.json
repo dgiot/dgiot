@@ -26,6 +26,18 @@
             "type": "string"
           },
           {
+            "description": "产品ID",
+            "in": "query",
+            "name": "productid",
+            "type": "string"
+          },
+          {
+            "description": "设备地址",
+            "in": "query",
+            "name": "devaddr",
+            "type": "string"
+          },
+          {
             "description": "动作",
             "in": "query",
             "name": "action",

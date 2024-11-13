@@ -26,7 +26,7 @@
 -export([start/0, start_channel/2, start_channel/3, register_channel/2, get_behaviour/1, do_global_message/1]).
 -export([get_product_info/1, get_products/1, get_acl/1, apply_channel/5, apply_product/3, parse_frame/3, to_frame/3]).
 -export([get_data/2, send_log/3, send_log/4, send_log/5]).
--export([get_all_channel/0, control_channel/3, list/0, get_proctol_channel/1, control_uniapp/2, uniapp_report/1]).
+-export([get_all_channel/0, control_channel/2, list/0, get_proctol_channel/1, control_uniapp/2, uniapp_report/1]).
 
 init_ets() ->
     dgiot_data:init(?DGIOT_BRIDGE),
@@ -332,7 +332,21 @@ list() ->
         end,
     lists:sort(dgiot_plugin:check_module(Fun, [])).
 
-control_channel(ChannelId, Action, SessionToken) ->
+control_channel(#{<<"id">> := ChannelId, <<"action">> := <<"start_logger">>, <<"productid">> := Productid, <<"devaddr">> := Devaddr}, SessionToken) when Devaddr =/= undefined ->
+    dgiot_mqtt:subscribe_route_key([<<"$dg/user/channel/", ChannelId/binary, "/", Productid/binary, "/", Devaddr/binary, "/#">>], <<"channel">>, SessionToken),
+    Topic = <<"channel/", ChannelId/binary>>,
+    Payload = dgiot_json:encode(#{<<"channelId">> => ChannelId, <<"productId">> => Productid, <<"devaddr">> => Devaddr, <<"action">> => <<"start_logger">>}),
+    dgiot_mqtt:publish(ChannelId, Topic, Payload),
+    {ok, #{}};
+
+control_channel(#{<<"id">> := ChannelId, <<"action">> := <<"start_logger">>, <<"productid">> := Productid}, SessionToken) when Productid =/= undefined ->
+    dgiot_mqtt:subscribe_route_key([<<"$dg/user/channel/", ChannelId/binary, "/", Productid/binary, "/#">>], <<"channel">>, SessionToken),
+    Topic = <<"channel/", ChannelId/binary>>,
+    Payload = dgiot_json:encode(#{<<"channelId">> => ChannelId, <<"productId">> => Productid, <<"action">> => <<"start_logger">>}),
+    dgiot_mqtt:publish(ChannelId, Topic, Payload),
+    {ok, #{}};
+
+control_channel(#{<<"id">> := ChannelId, <<"action">> := Action}, SessionToken) ->
     {IsEnable, Result} =
         case Action of
             <<"disable">> ->
