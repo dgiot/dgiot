@@ -71,32 +71,49 @@ handle(OperationID, Args, Context, Req) ->
             {Status, maps:merge(Headers, NewHeaders), Res, Req}
     end.
 
-%% 设备迁移
-do_request(post_dev_transfer, #{<<"objectId">> := ObjectId, <<"rolename">> := RoleName} = _Args, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
-    ACL = #{<<"role:", RoleName/binary>> => #{<<"read">> => true, <<"write">> => true}},
-    case dgiot_parsex:get_object(<<"Device">>, ObjectId) of
+%% 设备迁移列表
+do_request(post_dev_transfer, #{<<"objectId">> := DeviceId, <<"rolename">> := RoleName} = _Args, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
+    case dgiot_parsex:get_object(<<"Device">>, DeviceId) of
         {ok, #{<<"name">> := DevName, <<"devaddr">> := Devaddr}} ->
-            case dgiot_parsex:update_object(<<"Device">>, ObjectId, #{<<"ACL">> => ACL}) of
+            #{<<"nick">> := Nick} = dgiot_auth:get_session(SessionToken),
+            OldRole = dgiot_device:get_appname(DeviceId),
+            Msg = <<Nick/binary, " 将设备从部门【"/utf8, OldRole/binary, "】转移到新部门【"/utf8, RoleName/binary, "】"/utf8>>,
+            dgiot_parsex:create_object(<<"Log">>, #{
+                <<"deviceid">> => DeviceId
+                , <<"msg">> => Msg
+                , <<"domain">> => [<<"DeviceTransferlist">>]
+                , <<"type">> => <<"DeviceTransferlist">>
+                , <<"mfa">> => RoleName
+                , <<"topic">> => OldRole
+                , <<"peername">> => DevName
+                , <<"devaddr">> => Devaddr
+                , <<"time">> => dgiot_datetime:nowstamp() * 1000
+            }),
+            {ok, #{<<"data">> => <<"ok">>, <<"msg">> => Msg, <<"status">> => 0}};
+        _ ->
+            {ok, #{<<"msg">> => <<"not find device">>, <<"status">> => 0}}
+    end;
+
+%% 设备迁移
+do_request(post_dev_transfer, #{<<"logid">> := LogId} = _Args, _Context, _Req) ->
+    case dgiot_parsex:get_object(<<"Log">>, LogId) of
+        {ok, #{<<"deviceid">> := DeviceId, <<"mfa">> := RoleName}} ->
+            ACL = #{<<"role:", RoleName/binary>> => #{<<"read">> => true, <<"write">> => true}},
+            case dgiot_parsex:update_object(<<"Device">>, DeviceId, #{<<"ACL">> => ACL}) of
                 {ok, Data} ->
-                    #{<<"nick">> := Nick} = dgiot_auth:get_session(SessionToken),
-                    OldRole = dgiot_device:get_appname(ObjectId),
-                    Msg = <<Nick/binary, " 将设备从部门【"/utf8, OldRole/binary, "】转移到新部门【"/utf8, RoleName/binary, "】"/utf8>>,
-                    dgiot_parsex:create_object(<<"Log">>, #{
-                        <<"deviceid">> => ObjectId
-                        , <<"msg">> => Msg
+                    dgiot_parsex:update_object(<<"Log">>, LogId, #{
+                        <<"deviceid">> => DeviceId
                         , <<"domain">> => [<<"DeviceTransfer">>]
-                        , <<"mfa">> => <<"DeviceTransfer">>
-                        , <<"peername">> => DevName
-                        , <<"devaddr">> => Devaddr
+                        , <<"type">> => <<"DeviceTransfer">>
                         , <<"time">> => dgiot_datetime:nowstamp() * 1000
                     }),
-                    dgiot_device:put(#{<<"objectId">> => ObjectId, <<"ACL">> => ACL}),
-                    {ok, #{<<"data">> => Data, <<"msg">> => Msg, <<"status">> => 0}};
+                    dgiot_device:put(#{<<"objectId">> => DeviceId, <<"ACL">> => ACL}),
+                    {ok, #{<<"data">> => Data, <<"status">> => 0}};
                 {_, Data} ->
                     {ok, #{<<"data">> => Data, <<"msg">> => <<"error">>, <<"status">> => 0}}
             end;
         _ ->
-            {ok, #{<<"msg">> => <<"not find device">>, <<"status">> => 0}}
+            {ok, #{<<"msg">> => <<"not find log">>, <<"status">> => 0}}
     end;
 
 
