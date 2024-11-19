@@ -68,7 +68,7 @@
         order => 102,
         type => string,
         required => false,
-        default => <<"/dgiot_file/shuwa_tech/zh/product/dgiot/channel/Tcpc.jpg">>,
+        default => <<"/dgiot_file/shuwa_tech/zh/product/dgiot/channel/tcpc_channel.png">>,
         title => #{
             en => <<"channel ICO">>,
             zh => <<"通道ICO"/utf8>>

@@ -70,7 +70,7 @@
         order => 102,
         type => string,
         required => false,
-        default => <<"/dgiot_file/shuwa_tech/zh/product/dgiot/channel/HJT212.png">>,
+        default => <<"/dgiot_file/shuwa_tech/zh/product/dgiot/channel/hjt212_channel.png">>,
         title => #{
             en => <<"channel ICO">>,
             zh => <<"通道ICO"/utf8>>
