@@ -85,7 +85,7 @@
         order => 102,
         type => string,
         required => false,
-        default => <<"/dgiot_file/shuwa_tech/zh/product/dgiot/channel/device_profile.png">>,
+        default => <<"/dgiot_file/shuwa_tech/zh/product/dgiot/channel/device_channel.png">>,
         title => #{
             en => <<"channel ICO">>,
             zh => <<"通道ICO"/utf8>>

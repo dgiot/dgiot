@@ -67,7 +67,7 @@
         order => 102,
         type => string,
         required => false,
-        default => <<"/dgiot_file/shuwa_tech/zh/product/dgiot/channel/TcpIcon.jpeg">>,
+        default => <<"/dgiot_file/shuwa_tech/zh/product/dgiot/channel/tcp2dlink_channel.png">>,
         title => #{
             en => <<"channel ICO">>,
             zh => <<"通道ICO"/utf8>>
@@ -78,7 +78,6 @@
         }
     }
 }).
-
 
 start(ChannelId, ChannelArgs) ->
     dgiot_channelx:add(?TYPE, ChannelId, ?MODULE, ChannelArgs).
