@@ -103,6 +103,7 @@ apps/dgiot_rtsp2ws/
 apps/dgiot_sophon/
 apps/dgiot_open62541/
 apps/dgiot_tdenginex/
+apps/dgiot_zeta/
 node_modules/
 package-lock.json
 erlang_ls.config
