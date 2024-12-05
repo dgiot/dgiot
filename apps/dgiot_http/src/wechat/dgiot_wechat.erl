@@ -37,7 +37,8 @@
     sendSubscribe_test/2,
     getToken/4,
     get_paySign/4,
-    getAccessToken/0
+    getAccessToken/0,
+    sign/1
 ]).
 
 %% https://api.weixin.qq.com/sns/jscode2session?appid=APPID&secret=SECRET&js_code=JSCODE&grant_type=authorization_code
@@ -459,9 +460,9 @@ get_paySign(AppId, Ttimestamp, NonceStr, Package) ->
     dgiot_utils:to_binary(sign(Message)).
 
 sign(Message) ->
-    Path = code:priv_dir(dgiot_http),
-    {ok, PrivateKey} = file:read_file(Path ++ "/cert/apiclient_key.pem"),
-    rsa:gen_rsa_sign(dgiot_utils:to_binary(Message), 'sha256', PrivateKey).
-
-
+    Path = code:priv_dir(dgiot_http) ++ "/cert/apiclient_key.pem",
+%%    {ok, PrivateKey} = file:read_file(Path ++ "/cert/apiclient_key.pem"),
+%%    rsa:gen_rsa_sign(dgiot_utils:to_binary(Message), 'sha256', PrivateKey),
+    Cmd = "echo -n -e '" ++ Message ++ "' | openssl dgst -sha256 -sign " ++ Path ++ " | openssl base64 -A",
+    dgiot_utils:to_binary(os:cmd(Cmd)).
 

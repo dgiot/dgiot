@@ -511,7 +511,7 @@ delete_product_relation(ProductId) ->
             ]}
         },
     case dgiot_parsex:query_object(<<"Channel">>, #{<<"where">> => #{<<"product">> => #{
-        <<"__type">> => <<"Pointer">>, <<"className">> => <<"Product">>, <<"objectId">> => ProductId}}, <<"limit">> => 20}) of
+        <<"__type">> => <<"Pointer">>, <<"className">> => <<"Product">>, <<"objectId">> => ProductId}}, <<"limit">> => 1}) of
         {ok, #{<<"results">> := Results}} when length(Results) > 0 ->
             lists:foldl(fun(#{<<"objectId">> := ChannelId}, _Acc) ->
                 dgiot_parsex:update_object(<<"Channel">>, ChannelId, Map)
@@ -628,7 +628,7 @@ get_product_statistics(<<"protocol">>, _) ->
 
     DevData =
         maps:fold(fun(K, V, Acc) ->
-            Acc ++ [#{<<"value">> => length(V), <<"name">> => K}]
+            Acc ++ [#{<<"value">> => length(V), <<"name">> => K, <<"color">> => <<"ffffff">>}]
                   end, [], DevTypes),
     #{
         <<"series">> => [
@@ -636,22 +636,13 @@ get_product_statistics(<<"protocol">>, _) ->
                 <<"type">> => <<"pie">>,
                 <<"radius">> => <<"50%">>,
                 <<"data">> => DevData,
-                <<"axisLabel">> => #{
+                <<"label">> => #{
                     <<"show">> => true,
                     <<"textStyle">> => #{
                         <<"color">> => <<"#FFFFFF">>
                     }
                 }
-            }],
-        <<"tooltip">> => #{
-            <<"trigger">> => <<"item">>,
-            <<"axisLabel">> => #{
-                <<"show">> => true,
-                <<"textStyle">> => #{
-                    <<"color">> => <<"#FFFFFF">>
-                }
-            }
-        }
+            }]
     };
 
 get_product_statistics(<<"network">>, _) ->
@@ -684,6 +675,9 @@ get_product_statistics(<<"network">>, _) ->
             <<"data">> => YAxis,
             <<"axisLabel">> => #{
                 <<"show">> => true,
+                <<"rotate">> => 90,
+                <<"fontSize">> => 10,
+                <<"interval">> => 0,
                 <<"textStyle">> => #{
                     <<"color">> => <<"#ffffff">>
                 }
@@ -710,7 +704,8 @@ get_product_statistics(<<"thing">>, _) ->
     Props =
         case dgiot_parsex:query_object(<<"Product">>, #{}) of
             {ok, #{<<"results">> := Products}} ->
-                lists:foldl(fun(#{<<"name">> := Name, <<"thing">> := Thing}, Acc) ->
+                lists:foldl(fun(#{<<"name">> := Name} = P, Acc) ->
+                    Thing = maps:get(<<"thing">>, P, #{}),
                     Properties = maps:get(<<"properties">>, Thing, []),
                     Acc#{Name => length(Properties)}
                             end, #{}, Products);
@@ -737,6 +732,8 @@ get_product_statistics(<<"thing">>, _) ->
             <<"type">> => <<"category">>,
             <<"axisLabel">> => #{
                 <<"show">> => true,
+                <<"fontSize">> => 10,
+                <<"interval">> => 2,
                 <<"textStyle">> => #{
                     <<"color">> => <<"#ffffff">>
                 }
@@ -752,7 +749,8 @@ get_product_statistics(<<"thing">>, _) ->
         },
         <<"series">> => [
             #{
-                <<"data">> => Sdata, <<"type">> => <<"line">>
+                <<"data">> => Sdata,
+                <<"type">> => <<"line">>
             }
         ]
     };
@@ -783,7 +781,7 @@ get_product_statistics(<<"alarm_statis">>, _) ->
 
     Now = dgiot_datetime:format(dgiot_datetime:get_today_stamp() - 604800, "YYYY-MM-DDT16:00:00.000Z"),
     {Props, Notifications} =
-        case dgiot_parsex:query_object(<<"Notification">>, #{<<"keys">> => [<<"content">>, <<"device">>], <<"count">> => <<"objectId">>, <<"include">> => <<"device">>,
+        case dgiot_parsex:query_object(<<"Notification">>, #{<<"keys">> => [<<"content">>, <<"device">>], <<"count">> => <<"objectId">>, <<"include">> => <<"device">>,<<"order">> => <<"-createdAt">>,
             <<"where">> => #{<<"createdAt">> => #{<<"$gte">> => #{<<"__type">> => <<"Date">>, <<"iso">> => Now}}}}) of
             {ok, #{<<"results">> := Results}} ->
                 Result =
@@ -905,6 +903,8 @@ get_product_statistics(<<"information">>, Token) ->
                 <<"type">> => <<"category">>,
                 <<"axisLabel">> => #{
                     <<"show">> => true,
+                    <<"interval">> => 1,
+                    <<"fontSize">> => 12,
                     <<"textStyle">> => #{
                         <<"color">> => <<"#FFFFFF">>
                     }
