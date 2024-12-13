@@ -18,9 +18,9 @@ DGIOT是国内首款轻量级开源工业物联网平台，我们致力于提供
 + **垂直领域物联网平台**：快速部署私有化平台，千万级承载，运营级底座，全开放扩展
 
 ## 快速体验与微信群
-| 微信技术支持群 | [QQ技术支持群](https://jq.qq.com/?_wv=1027&k=LipWZvDe)   | 小程序体验 |电脑端https://prod.dgiotcloud.cn|
+| 微信技术支持群 | [QQ技术支持群](https://jq.qq.com/?_wv=1027&k=LipWZvDe)   | 小程序体验 | 官网案例 |
 |:---:|:---:|:---:|:---:|
-|<img src="https://dgiot-web-1306147891.cos.ap-nanjing.myqcloud.com/wechat.png" width = "100%" />|<img src="http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/QQ%E6%8A%80%E6%9C%AF%E7%BE%A4%E4%BA%8C%E7%BB%B4%E7%A0%81.png" width = "100%" /> |<img src="http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_release/dgiot_wechat.jpg" width = "100%" />|运维账号：dgiot_admin  </br>  密码: dgiot_admin  </br> </br>开发账号: dgiot_dev  </br>  密码: dgiot_dev |
+|<img src="https://dgiot-web-1306147891.cos.ap-nanjing.myqcloud.com/wechat.png" width = "100%" />|<img src="http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/QQ%E6%8A%80%E6%9C%AF%E7%BE%A4%E4%BA%8C%E7%BB%B4%E7%A0%81.png" width = "100%" /> |<img src="http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_release/dgiot_wechat.jpg" width = "100%" /> | [官网体验地址](https://prod.dgiotcloud.cn)  </br> </br> [智慧园区](https://www.dgiotcloud.cn/smartpark/) </br></br> [平安校园](https://www.dgiotcloud.cn/smartcampus/)|
 
 ## 核心特色
 + **完全开源**：前后端完全开源，无收费商业版
@@ -57,10 +57,10 @@ wget -qO dgiot_install.sh https://gitee.com/dgiiot/dgiot/raw/master/dgiot_instal
 |Docker部署|https://hub.docker.com/r/dgiot/dgiot|
 
 ## 服务支持
- 数字化需求日益增长与企业缺钱缺人缺经验的矛盾日益突出，为此dgiot坚持代码开源，产品免费，持续改善物联网服务性价比，同时倡议：
- + 欢迎dgiot用户多尝试自助服务，多参与社区建设，多提issue，多在qq或者微信上反馈真实的物联网需求，助力提升社区服务品质
- + 欢迎dgiot先来者可以为后来者提供系统部署，插件开发和设备接入等指导服务，一起提供更多优质VIP服务，构建可持续的社区生态
- + dgiot团队在保守用户商业机密的前提下，将持续提炼行业业务需求和物联网平台运维经验，把行业真需求和一线经验沉淀到社区生态中
+数字化需求日益增长与企业缺钱缺人缺经验的矛盾日益突出，为此dgiot坚持代码开源，产品免费，持续改善物联网服务性价比，同时倡议：
++ 欢迎dgiot用户多尝试自助服务，多参与社区建设，多提issue，多在qq或者微信上反馈真实的物联网需求，助力提升社区服务品质
++ 欢迎dgiot先来者可以为后来者提供系统部署，插件开发和设备接入等指导服务，一起提供更多优质VIP服务，构建可持续的社区生态
++ dgiot团队在保守用户商业机密的前提下，将持续提炼行业业务需求和物联网平台运维经验，把行业真需求和一线经验沉淀到社区生态中
 
 |   |   | | |
 | -----| ------ |------- |------- |
@@ -78,11 +78,11 @@ wget -qO dgiot_install.sh https://gitee.com/dgiiot/dgiot/raw/master/dgiot_instal
 
 ## 工具矩阵
 
-   ![dgiot_family.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/dgiot_family.png)
+![dgiot_family.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/dgiot_family.png)
 
 ## 构建
- 构建 *dgiot* 需要 Erlang/OTP R24+, [linux](https://github.com/erlang/otp/releases/download/OTP-24.3.4.2/otp_src_24.3.4.2.tar.gz) Windows下用 [开发环境包](https://dgiotdev-1308220533.cos.ap-nanjing.myqcloud.com/msys64.zip)开发。下载后解压到D盘根目录，严格按照下图操作：
- ![dgiotdevtools.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/dgiotdevtools.png)
+构建 *dgiot* 需要 Erlang/OTP R24+, [linux](https://github.com/erlang/otp/releases/download/OTP-24.3.4.2/otp_src_24.3.4.2.tar.gz) Windows下用 [开发环境包](https://dgiotdev-1308220533.cos.ap-nanjing.myqcloud.com/msys64.zip)开发。下载后解压到D盘根目录，严格按照下图操作：
+![dgiotdevtools.png](http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/shuwa_tech/zh/dgiotdevtools.png)
 +  国外下载源码
 ```bash
  git clone -b master https://github.com/dgiot/iotStudio.git
@@ -99,7 +99,7 @@ wget -qO dgiot_install.sh https://gitee.com/dgiiot/dgiot/raw/master/dgiot_instal
   git clone -b master https://gitee.com/dgiot/iotWechat.git
   git clone https://gitee.com/dgiiot/dgiot.git
 ```
- +  一键式启动命令Linux/Unix/Mac/windows
++  一键式启动命令Linux/Unix/Mac/windows
  ```bash
  make run
  ```
