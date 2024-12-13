@@ -84,14 +84,30 @@ do_request(post_dev_transfer, #{<<"objectId">> := DeviceId, <<"rolename">> := Ro
                 , <<"domain">> => [<<"DeviceTransferlist">>]
                 , <<"type">> => <<"DeviceTransferlist">>
                 , <<"mfa">> => RoleName
+                , <<"line">> => 1
                 , <<"topic">> => OldRole
                 , <<"peername">> => DevName
                 , <<"devaddr">> => Devaddr
-                , <<"time">> => dgiot_datetime:nowstamp() * 1000
             }),
             {ok, #{<<"data">> => <<"ok">>, <<"msg">> => Msg, <<"status">> => 0}};
         _ ->
             {ok, #{<<"msg">> => <<"not find device">>, <<"status">> => 0}}
+    end;
+
+%% 设备迁移拒绝
+do_request(post_dev_transfer, #{<<"logid">> := LogId, <<"status">> := false} = _Args, #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
+    case dgiot_parsex:get_object(<<"Log">>, LogId) of
+        {ok, #{<<"deviceid">> := DeviceId, <<"mfa">> := RoleName, <<"topic">> := OldRole}} ->
+            #{<<"nick">> := Nick} = dgiot_auth:get_session(SessionToken),
+            Msg = <<Nick/binary, " 拒绝 将设备从部门【"/utf8, OldRole/binary, "】转移到新部门【"/utf8, RoleName/binary, "】"/utf8>>,
+            dgiot_parsex:update_object(<<"Log">>, LogId, #{
+                <<"deviceid">> => DeviceId
+                , <<"msg">> => Msg
+                , <<"line">> => 3
+                , <<"time">> => dgiot_datetime:nowstamp()
+            });
+        _ ->
+            {ok, #{<<"msg">> => <<"not find log">>, <<"status">> => 0}}
     end;
 
 %% 设备迁移
@@ -103,9 +119,8 @@ do_request(post_dev_transfer, #{<<"logid">> := LogId} = _Args, _Context, _Req) -
                 {ok, Data} ->
                     dgiot_parsex:update_object(<<"Log">>, LogId, #{
                         <<"deviceid">> => DeviceId
-                        , <<"domain">> => [<<"DeviceTransfer">>]
-                        , <<"type">> => <<"DeviceTransfer">>
-                        , <<"time">> => dgiot_datetime:nowstamp() * 1000
+                        , <<"line">> => 2
+                        , <<"time">> => dgiot_datetime:nowstamp()
                     }),
                     dgiot_device:put(#{<<"objectId">> => DeviceId, <<"ACL">> => ACL}),
                     {ok, #{<<"data">> => Data, <<"status">> => 0}};
