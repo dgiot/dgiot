@@ -29,7 +29,6 @@
 
 -define(APP, ?MODULE).
 
-
 atomgitapi(#{<<"name">> := _Name, <<"devaddr">> := _Devaddr} = Args) ->
     io:format("~s ~p Args = ~p.~n", [?FILE, ?LINE, Args]),
     {ok, Args};

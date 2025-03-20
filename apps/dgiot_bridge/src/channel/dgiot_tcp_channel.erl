@@ -32,7 +32,8 @@
     env = #{},
     dtutype = <<>>,
     productIds = <<>>,
-    productId = <<>>
+    productId = <<>>,
+    devaddr = <<>>
 }).
 
 %% API

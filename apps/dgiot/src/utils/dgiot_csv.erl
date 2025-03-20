@@ -138,78 +138,121 @@ post_properties(<<"plc">>, AtomName) ->
 post_properties(<<"dlink">>, AtomName) ->
     Things = ets:match(AtomName, {'$1', ['$2', '$3', '$4', '$5', '$6', '$7', '$8', '$9', '$10', '$11', '$12' | '_']}),
     lists:foldl(fun([Index, Devicetype, Name, Identifier, Key, Len, Isstorage, AccessMode, Min_Max, Unit, Type, Specs | _], Acc) ->
-        Acc++ [#{
-                <<"name">> => Name,
-                <<"index">> => Index,
-                <<"isstorage">> => dgiot_utils:to_int(Isstorage),
-                <<"isshow">> => true,
-                <<"dataForm">> => #{
-                    <<"address">> => <<"0">>,
-                    <<"rate">> => 1,
-                    <<"order">> => 0,
-                    <<"round">> => <<"all">>,
-                    <<"offset">> => 0,
-                    <<"control">> => <<"%{d}">>,
-                    <<"iscount">> => <<"0">>,
-                    <<"protocol">> => <<"DLINK">>,
-                    <<"strategy">> => <<"主动上报"/utf8>>,
-                    <<"collection">> => <<"%{s}">>,
-                    <<"countround">> => <<"all">>,
-                    <<"countstrategy">> => 3,
-                    <<"countcollection">> => <<"%{s}">>
-                },
-                <<"dataType">> => get_dataType(to_lower(Type), Min_Max, Unit, Specs),
-                <<"required">> => true,
-                <<"accessMode">> => get_accessmode(AccessMode),
-                <<"dataSource">> => #{
-                    <<"_dlinkindex">> => <<"1">>,
-                    <<"dis">> => [
-                        #{<<"key">> => Key, <<"data">> => Len}
-                    ]
-                },
-                <<"devicetype">> => Devicetype,
-                <<"identifier">> => to_lower(Identifier),
-                <<"moduleType">> => <<"properties">>,
-                <<"isaccumulate">> => false
-            }]
+        Acc ++ [#{
+            <<"name">> => Name,
+            <<"index">> => Index,
+            <<"isstorage">> => dgiot_utils:to_int(Isstorage),
+            <<"isshow">> => true,
+            <<"dataForm">> => #{
+                <<"address">> => <<"0">>,
+                <<"rate">> => 1,
+                <<"order">> => 0,
+                <<"round">> => <<"all">>,
+                <<"offset">> => 0,
+                <<"control">> => <<"%{d}">>,
+                <<"iscount">> => <<"0">>,
+                <<"protocol">> => <<"DLINK">>,
+                <<"strategy">> => <<"主动上报"/utf8>>,
+                <<"collection">> => <<"%{s}">>,
+                <<"countround">> => <<"all">>,
+                <<"countstrategy">> => 3,
+                <<"countcollection">> => <<"%{s}">>
+            },
+            <<"dataType">> => get_dataType(to_lower(Type), Min_Max, Unit, Specs),
+            <<"required">> => true,
+            <<"accessMode">> => get_accessmode(AccessMode),
+            <<"dataSource">> => #{
+                <<"_dlinkindex">> => <<"1">>,
+                <<"dis">> => [
+                    #{<<"key">> => Key, <<"data">> => Len}
+                ]
+            },
+            <<"devicetype">> => Devicetype,
+            <<"identifier">> => to_lower(Identifier),
+            <<"moduleType">> => <<"properties">>,
+            <<"isaccumulate">> => false
+        }]
                 end, [], Things);
 
 post_properties(<<"modbusxtcp">>, AtomName) ->
     Things = ets:match(AtomName, {'$1', ['$2', '$3', '$4', '$5', '$6', '$7', '$8', '$9', '$10' | '_']}),
     lists:foldl(fun([Index, Devicetype, Name, Identifier, Address, Min_Max, Unit, Type, Originaltype, Specs | _], Acc) ->
-        Acc++ [#{
-                <<"name">> => Name,
-                <<"index">> => Index,
-                <<"isstorage">> => true,
-                <<"isshow">> => true,
-                <<"dataForm">> => #{
-                    <<"address">> => <<"0">>,
-                    <<"rate">> => 1,
-                    <<"order">> => 0,
-                    <<"round">> => <<"all">>,
-                    <<"offset">> => 0,
-                    <<"control">> => <<"%{d}">>,
-                    <<"iscount">> => <<"0">>,
-                    <<"protocol">> => <<"MODBUSXTCP">>,
-                    <<"strategy">> => <<"主动上报"/utf8>>,
-                    <<"collection">> => <<"%{s}">>,
-                    <<"countround">> => <<"all">>,
-                    <<"countstrategy">> => 3,
-                    <<"countcollection">> => <<"%{s}">>
-                },
-                <<"dataType">> => get_dataType(to_lower(Type), Min_Max, Unit, Specs),
-                <<"required">> => true,
-                <<"accessMode">> =>  <<"r">>,
-                <<"dataSource">> => #{
-                    <<"_dlinkindex">> => <<"">>,
-                    <<"address">> => Address,
-                    <<"originaltype">> => Originaltype
-                },
-                <<"devicetype">> => Devicetype,
-                <<"identifier">> => to_lower(Identifier),
-                <<"moduleType">> => <<"properties">>,
-                <<"isaccumulate">> => false
-            }]
+        Acc ++ [#{
+            <<"name">> => Name,
+            <<"index">> => Index,
+            <<"isstorage">> => true,
+            <<"isshow">> => true,
+            <<"dataForm">> => #{
+                <<"address">> => <<"0">>,
+                <<"rate">> => 1,
+                <<"order">> => 0,
+                <<"round">> => <<"all">>,
+                <<"offset">> => 0,
+                <<"control">> => <<"%{d}">>,
+                <<"iscount">> => <<"0">>,
+                <<"protocol">> => <<"MODBUSXTCP">>,
+                <<"strategy">> => <<"主动上报"/utf8>>,
+                <<"collection">> => <<"%{s}">>,
+                <<"countround">> => <<"all">>,
+                <<"countstrategy">> => 3,
+                <<"countcollection">> => <<"%{s}">>
+            },
+            <<"dataType">> => get_dataType(to_lower(Type), Min_Max, Unit, Specs),
+            <<"required">> => true,
+            <<"accessMode">> => <<"r">>,
+            <<"dataSource">> => #{
+                <<"_dlinkindex">> => <<"">>,
+                <<"address">> => Address,
+                <<"originaltype">> => Originaltype
+            },
+            <<"devicetype">> => Devicetype,
+            <<"identifier">> => to_lower(Identifier),
+            <<"moduleType">> => <<"properties">>,
+            <<"isaccumulate">> => false
+        }]
+                end, [], Things);
+
+post_properties(<<"modbusxrtu">>, AtomName) ->
+    Things = ets:match(AtomName, {'$1', ['$2', '$3', '$4', '$5', '$6', '$7', '$8', '$9', '$10', '$11', '$12', '$13', '$14', '$15', '$16', '$17', '$18', '$19' | '_']}),
+    lists:foldl(fun
+                    ([Index, Devicetype, Name, Identifier, Type, AccessMode, Isstorage, Isshow, Min_Max, Unit,Strategy, Collection,
+                        Slaveid, Operatetype, Address, Registersnumber, Originaltype, Dlinkindex, Specs | _], Acc) ->
+                        Acc ++ [#{
+                            <<"name">> => Name,
+                            <<"index">> => Index,
+                            <<"isstorage">> => dgiot_utils:to_atom(Isstorage),
+                            <<"isshow">> => dgiot_utils:to_atom(Isshow),
+                            <<"dataForm">> => #{
+                                <<"address">> => <<"0">>,
+                                <<"rate">> => 1,
+                                <<"order">> => 0,
+                                <<"round">> => <<"all">>,
+                                <<"offset">> => 0,
+                                <<"control">> => <<"%{d}">>,
+                                <<"iscount">> => <<"0">>,
+                                <<"protocol">> => <<"MODBUSRTU">>,
+                                <<"strategy">> => Strategy,
+                                <<"collection">> => Collection,
+                                <<"countround">> => <<"all">>,
+                                <<"countstrategy">> => 3,
+                                <<"countcollection">> => <<"%{s}">>
+                            },
+                            <<"dataType">> => get_dataType(to_lower(Type), Min_Max, Unit, Specs),
+                            <<"required">> => true,
+                            <<"accessMode">> => AccessMode,
+                            <<"dataSource">> => #{
+                                <<"slaveid">> => Slaveid,
+                                <<"registersnumber">> => Registersnumber,
+                                <<"originaltype">> => Originaltype,
+                                <<"operatetype">> => Operatetype,
+                                <<"address">> => Address,
+                                <<"_dlinkindex">> => Dlinkindex
+                            },
+                            <<"devicetype">> => Devicetype,
+                            <<"identifier">> => to_lower(Identifier),
+                            <<"moduleType">> => <<"properties">>,
+                            <<"isaccumulate">> => false
+                        }]
                 end, [], Things);
 
 post_properties(_, _) ->

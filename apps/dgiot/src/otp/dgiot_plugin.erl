@@ -613,6 +613,9 @@ check_plugin(Name) ->
         <<"dgiot_", _/binary>> ->
 %%            dgiot_license:check();
             true;
+        <<"dgaiot_", _/binary>> ->
+%%            dgiot_license:check();
+            true;
         _ ->
             true
     end.
