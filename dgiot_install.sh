@@ -35,6 +35,10 @@ function check_os_type() {
     #  echo "This is centos system"
     os_name="Linux"
     os_type=2
+  elif echo $osinfo | grep -qwi "openEuler"; then
+    #  echo "This is centos system"
+    os_name="Linux"
+    os_type="openEuler"
   elif echo $osinfo | grep -qwi "fedora"; then
     #  echo "This is fedora system"
     os_name="fedora"
@@ -130,6 +134,7 @@ function dgiot_path() {
   updateserver="http://dgiot-1253666439.cos.ap-shanghai-fsi.myqcloud.com/dgiot_release/update"
   td_version="3.3.2.0"
   pg_version="16.0"
+  dgaiot_version="3.0.0"
   parse_server_version="5.6.0"
   otpversion="24.3.4.2"
   #install path
@@ -147,6 +152,7 @@ function dgiot_path() {
 function dgiot_auto_variables() {
   # ============================= get auto variables =================================================
   yum -y install net-tools &>/dev/null
+  ${csudo} setenforce 0 &>/dev/null
   dgiot_path
   dgiot_fqdn
   dgiot_password
@@ -162,10 +168,12 @@ function pre_install() {
   fi
 
   #  setenforce 0
-  sed -ri s/SELINUX=enforcing/SELINUX=disabled/g /etc/selinux/config
+  if [ -f /etc/selinux/config ]; then
+    sed -ri s/SELINUX=enforcing/SELINUX=disabled/g /etc/selinux/config
+  fi
 
   ## 1.5 配置yum源
-  if [ ! -f /etc/yum.repos.d/kylin_x86_64.repo ] && [ ! -f /etc/yum.repos.d/kylin_aarch64.repo ] && [ ! -f /etc/yum.repos.d/CentOS-Base.repo ]; then
+  if [ ! -f /etc/yum.repos.d/openEuler.repo ] && [ ! -f /etc/yum.repos.d/kylin_x86_64.repo ] && [ ! -f /etc/yum.repos.d/kylin_aarch64.repo ] && [ ! -f /etc/yum.repos.d/CentOS-Base.repo ]; then
     curl -o /etc/yum.repos.d/CentOS-Base.repo https://dgiot-release-1306147891.cos.ap-nanjing.myqcloud.com/v4.4.0/CentOS-Base.repo &>/dev/null
   fi
 
@@ -417,7 +425,195 @@ function yum_install_postgres() {
   ${csudo} yum install -y zlib zlib-devel &>/dev/null
   ${csudo} yum install -y pam-devel libxml2-devel libxslt-devel &>/dev/null
   ${csudo} yum install -y openldap-devel systemd-devel &>/dev/null
-  ${csudo} yum install -y tcl-devel python-devel &>/dev/null
+  ${csudo} yum install -y tcl-devel &>/dev/null
+}
+
+### 安装dgaiot
+function install_dgaiot() {
+  echo -e "$(date +%F_%T) $LINENO: ${GREEN} install dgaiot${NC}"
+  ##下载软件
+  dgaiot_software="dgaiot-${dgaiot_version}-${os_type}.tar.gz"
+  if [ ! -f ${script_dir}/${dgaiot_software} ]; then
+    ${csudo} wget ${fileserver}/${dgaiot_software} -O ${script_dir}/${dgaiot_software} &>/dev/null
+  fi
+
+  if [ -d ${script_dir}/dgaiot ]; then
+    ${csudo} rm ${script_dir}/dgaiot -rf
+  fi
+
+  tar xvf ${dgaiot_software} &>/dev/null
+  mv ${script_dir}/dgaiot ${install_dir}
+  mkdir -p ${install_dir}/go_fastdfs/files/dgaiot_models
+  mv ${install_dir}/dgaiot/dgaiot.service /lib/systemd/system
+
+  ${csudo} systemctl daemon-reload &>/dev/null
+  ${csudo} systemctl enable dgaiot &>/dev/null
+  ${csudo} systemctl start dgaiot &>/dev/null
+
+  echo -e "$(date +%F_%T) $LINENO: ${GREEN} install dgaiot sueccess${NC}"
+}
+
+### 安装ollama
+function install_ollama() {
+  echo -e "$(date +%F_%T) $LINENO: ${GREEN} install ollama${NC}"
+  curl -fsSL ${fileserver}/ollama_install.sh | sh &>/dev/null
+
+  mkdir -p /data/dgiot/models/ollama &>/dev/null
+  chmod 777 /data/dgiot/models/ollama &>/dev/null
+
+  #修改脚本
+  ${csudo} systemctl stop ollama &>/dev/null
+
+  sed -i '/Environment="PATH=/a Environment="OLLAMA_HOST=0.0.0.0:11434"' /etc/systemd/system/ollama.service &>/dev/null
+  sed -i '/Environment="OLLAMA_HOST=/a Environment="OLLAMA_MODELS=/data/dgiot/models/ollama"' /etc/systemd/system/ollama.service &>/dev/null
+
+  ${csudo} systemctl daemon-reload &>/dev/null
+  ${csudo} systemctl start ollama &>/dev/null
+
+  echo -e "$(date +%F_%T) $LINENO: ${GREEN} install ollama sueccess${NC}"
+}
+
+### 安装xinference
+function install_xinference() {
+  echo -e "$(date +%F_%T) $LINENO: ${GREEN} install xinference${NC}"
+  # 添加环境变量
+  mkdir -p /data/dgiot/models/xinference &>/dev/null
+  chmod 777 /data/dgiot/models/xinference  &>/dev/null
+  echo 'export XINFERENCE_HOME=/data/dgiot/models/xinference' >> ~/.bashrc   &>/dev/null
+  /bin/bash -c 'source ~/.bashrc' &>/dev/null
+
+  cd /data/dgiot  
+  python3 -m venv xinference  &>/dev/null
+  sudo dnf install -y libgomp &>/dev/null
+  sudo ln -sf /usr/lib/gcc/x86_64-openEuler-linux/12/libgomp.so /usr/lib/libgomp.so.1   &>/dev/null
+  sudo dnf install -y mesa-libGL  &>/dev/null
+  /bin/bash -c 'source xinference/bin/activate && 
+  pip install --upgrade pip &&
+  export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib64  &&
+  pip install llama-cpp-python==0.3.2 && 
+  pip install xinference && 
+  rm -rf /data/dgiot/xinference/lib64/python3.11/site-packages/nvidia/nvjitlink/lib/libcusparse.so.12 && 
+  ln -s /data/dgiot/xinference/lib64/python3.11/site-packages/nvidia/nvjitlink/lib/libnvJitLink.so.12 /data/dgiot/xinference/lib64/python3.11/site-packages/nvidia/cusparse/lib/libnvJitLink.so.12' &>/dev/null
+  
+  install_service2 "dgiot_xinference" "simple" "/data/dgiot/xinference/bin/xinference-local --host 0.0.0.0 --port 9997" 
+  
+  echo -e "$(date +%F_%T) $LINENO: ${GREEN} install milvus sueccess${NC}"
+}
+
+### 安装Miniconda3
+function install_miniconda3() {
+  echo -e "$(date +%F_%T) $LINENO: ${GREEN} install Miniconda3${NC}"
+  ##下载软件
+  miniconda3_software="Miniconda3-py311_25.1.1-2-Linux-x86_64.sh"
+
+  rm -rf ${miniconda3_software}
+  
+  ${csudo} wget ${fileserver}/${miniconda3_software} -O ${script_dir}/${miniconda3_software}  &>/dev/null
+  bash Miniconda3-py311_25.1.1-2-Linux-x86_64.sh &>/dev/null
+  source ~/.bashrc
+
+  echo -e "$(date +%F_%T) $LINENO: ${GREEN} install Miniconda3 sueccess${NC}"
+}
+
+### 安装milvus
+function install_milvus() {
+  echo -e "$(date +%F_%T) $LINENO: ${GREEN} install milvus${NC}"
+  cd ${script_dir}
+  install_docker
+  ##下载软件
+  milvus_software="milvusdb-2.5.4.tar.gz"
+  if [ ! -f ${script_dir}/${milvus_software} ]; then
+    ${csudo} wget ${fileserver}/${milvus_software} -O ${script_dir}/${milvus_software} &>/dev/null
+  fi
+  # docker save -o milvus-v2.5.4.tar.gz milvusdb/milvus:v2.5.4
+  docker load -i milvusdb-2.5.4.tar.gz  &>/dev/null
+
+  mkdir -p ${install_dir}/milvus
+  ${csudo} wget ${fileserver}/standalone_embed.sh -O ${install_dir}/milvus/standalone_embed.sh &>/dev/null
+  chmod 777 ${install_dir}/milvus/standalone_embed.sh &>/dev/null
+
+  install_service2 "dgiot_milvus" "simple" "${install_dir}/milvus/standalone_embed.sh start" 
+
+  echo -e "$(date +%F_%T) $LINENO: ${GREEN} install milvus sueccess${NC}"
+}
+
+### 安装dify
+function install_dify() {
+  echo -e "$(date +%F_%T) $LINENO: ${GREEN} install dify${NC}"
+  cd ${script_dir}
+  ##下载软件
+  dify_software="dify-0.15.3.tar.gz"
+  if [ ! -f ${script_dir}/${dify_software} ]; then
+    ${csudo} wget ${fileserver}/${dify_software} -O ${script_dir}/${dify_software} &>/dev/null
+  fi
+  tar zxvf ${dify_software} &>/dev/null
+  rm -rf /data/dgiot/dify
+  mv -f dify  ${install_dir}
+  echo -e "$(date +%F_%T) $LINENO: ${GREEN} ${wlanip}${NC}"
+  # 部署后端服务
+  cd ${install_dir}/dify/api
+  # 后端服务在api文件夹中
+  # sed -i "s/127.0.0.1/${wlanip}/g" .env
+  yum install -y python  &>/dev/null
+  yum install -y python-pip  &>/dev/null
+  pip config set global.extra-index-url https://mirrors.cloud.tencent.com/pypi/simple/
+  pip install --upgrade pip &>/dev/null
+  # 安装poetry
+  pip install poetry  &>/dev/null
+  poetry env use 3.11 &>/dev/null
+  poetry self add poetry-plugin-shell &>/dev/null
+
+  /bin/bash -c 'source /data/dgiot/dify/api/.venv/bin/activate && pip install pyproject.toml && pip install -r requirements.txt && pip install flask  &&  flask db upgrade' &>/dev/null
+  
+  echo -e "$(date +%F_%T) $LINENO: ${GREEN} install dify api sueccess${NC}"
+  
+  # 安装前端
+  install_node 
+  cd /data/dgiot/dify/web
+  cp -R .env.example .env.local
+  # sed -i "s/localhost/${wlanip}/g" .env.local
+  
+  /bin/bash -c 'npm install && npm run build'  &>/dev/null
+
+  echo -e "$(date +%F_%T) $LINENO: ${GREEN} install dify web sueccess${NC}"
+
+  install_service2 "dgiot_dify" "forking" "/data/dgiot/dify/dify_start.sh"
+
+  # ${csudo} systemctl daemon-reload &>/dev/null
+  # ${csudo} systemctl enable dgiot_dify &>/dev/null
+  # ${csudo} systemctl start dgiot_dify &>/dev/null
+
+  echo -e "$(date +%F_%T) $LINENO: ${GREEN} install dify sueccess${NC}"
+}
+
+function install_docker() {
+  echo -e "$(date +%F_%T) $LINENO: ${GREEN} install docker${NC}"
+  yum install -y docker &>/dev/null
+  ##下载软件
+  ${csudo} wget ${fileserver}/daemon.json -O /etc/docker/daemon.json &>/dev/null
+
+  ${csudo} systemctl restart docker &>/dev/null
+
+  echo -e "$(date +%F_%T) $LINENO: ${GREEN} install docker sueccess${NC}"
+}
+
+function install_node() {
+  echo -e "$(date +%F_%T) $LINENO: ${GREEN} install node${NC}"
+  cd ${script_dir}
+  ##下载软件
+  node_software="node-v22.14.0-linux-x64.tar.xz"
+  if [ ! -f ${script_dir}/${node_software} ]; then
+    ${csudo} wget ${fileserver}/${node_software} -O ${script_dir}/${node_software} &>/dev/null
+  fi
+  tar -xf ${node_software}  &>/dev/null
+  mv -f node-v22.14.0-linux-x64  ${install_dir}
+
+  ln -s /data/dgiot/node-v22.14.0-linux-x64/bin/node /usr/local/bin/node &>/dev/null
+  ln -s /data/dgiot/node-v22.14.0-linux-x64/bin/npm /usr/local/bin/npm &>/dev/null
+
+  npm config set registry https://registry.npmmirror.com/ &>/dev/null
+
+  echo -e "$(date +%F_%T) $LINENO: ${GREEN} install node sueccess${NC}"
 }
 
 ### 编译安装polardb
@@ -425,25 +621,58 @@ function build_polardb() {
   echo -e "$(date +%F_%T) $LINENO: ${GREEN} build_polardb${NC}"
   ##下载软件
   polardb_software="PolarDB-${pg_version}.tar.gz"
-  if [ ! -f ${script_dir}/${polardb_software} ]; then
-    ${csudo} wget ${fileserver}/${polardb_software} -O ${script_dir}/${polardb_software} &>/dev/null
+  mkdir /home/dgiot/
+  if [ ! -f /home/dgiot/${polardb_software} ]; then
+    ${csudo} wget ${fileserver}/${polardb_software} -O /home/dgiot/${polardb_software} &>/dev/null
   fi
 
-  if [ -d ${script_dir}/PolarDB-${pg_version} ]; then
-    ${csudo} rm ${script_dir}/PolarDB-${pg_version} -rf
+  if [ -d /home/dgiot/PolarDB-${pg_version} ]; then
+    ${csudo} rm /home/dgiot/PolarDB-${pg_version} -rf
   fi
-
+  cd /home/dgiot
   tar xvf PolarDB-${pg_version}.tar.gz &>/dev/null
-  cd ./PolarDB-${pg_version}/
+  cd /home/dgiot/PolarDB-${pg_version}/
 
   echo -e "$(date +%F_%T) $LINENO: ${GREEN} configure polardb${NC}"
-  ./configure --prefix=/usr/local/pgsql/${pg_version} --with-pgport=7432 &>/dev/null
+  dnf -y install \
+        git libicu-devel pam-devel readline-devel \
+        libxml2-devel libxslt-devel openldap \
+        openldap-devel openldap-clients libuuid-devel \
+        xerces-c-devel bison flex gettext tcl-devel \
+        python3-devel perl-Test-Simple perl-DBD-Pg \
+        perl-ExtUtils-Embed perl-ExtUtils-MakeMaker zlib-devel \
+        krb5-devel krb5-workstation krb5-server \
+        psmisc libaio-devel fuse-devel cmake wget \
+        perl-Pod-Html xz gcc-c++ \
+        protobuf-compiler protobuf-c protobuf-devel perl-CPAN \
+  clang llvm llvm-devel lz4-devel libzstd-devel \
+  libunwind-devel perl-IPC-Run openssl-devel e2fsprogs-devel  uuid-devel libuuid-devel &>/dev/null
 
-  echo -e "$(date +%F_%T) $LINENO: ${GREEN} make install polardb${NC}"
-  make install -j${processor} &>/dev/null
+  cd /home/dgiot/PolarDB-${pg_version}/external/zlog-1.2.18
+  make install &>/dev/null
 
-  cd ${script_dir}/
-  rm ${script_dir}/postgresql-${pg_version} -rf
+  cd /home/dgiot/PolarDB-${pg_version}/external/pfsd4pg
+  ./autobuild.sh &>/dev/null
+  ./uninstall.sh &>/dev/null
+  ./install.sh &>/dev/null
+
+  cd /home/dgiot/PolarDB-${pg_version} &>/dev/null
+  ./build.sh --prefix=/usr/local/pgsql --port=7432 --jobs=${processor} --ni &>/dev/null
+
+  ln -sf /usr/local/pgsql/${pg_version}/bin/psql /usr/sbin/psql &>/dev/null
+  ln -sf /usr/local/pgsql/${pg_version}/bin/pg_dump /usr/sbin/pg_dump &>/dev/null
+  ln -sf /usr/local/pgsql/${pg_version}/bin/pg_config /usr/sbin/pg_config &>/dev/null
+
+  # 安装uuid
+  cd /home/dgiot/PolarDB-${pg_version}/contrib/uuid-ossp &>/dev/null
+  make && make install &>/dev/null
+
+  # 安装pgvector
+  cd /home/dgiot/PolarDB-${pg_version}/external/pgvector &>/dev/null
+  make && make install &>/dev/null
+ 
+  cd ${script_dir}  &>/dev/null
+  rm ${script_dir}/PolarDB-${pg_version} -rf &>/dev/null
   echo -e "$(date +%F_%T) $LINENO: ${GREEN} build polardb sueccess${NC}"
 }
 
@@ -508,7 +737,7 @@ function init_postgres_database() {
   wal_log_hints = off
   max_wal_senders = 50
   hot_standby = on
-  log_destination = 'csvlog'
+  #log_destination = 'csvlog'
   logging_collector = off
   log_directory = 'log'
   log_filename = 'postgresql-%Y-%m-%d_%H%M%S'
@@ -560,6 +789,8 @@ function init_polardb_database() {
 #  tar -zxvf ${polardb_software} -C /usr/local/pgsql/ &>/dev/null
   ln -sf /usr/local/pgsql/${pg_version}/lib/libpq.so.5 /usr/lib/libpq.so.5 &>/dev/null
   ln -sf /usr/lib64/libLLVM-7.0.0.so /usr/lib64/libLLVM-7.so &>/dev/null
+  ln -sf /usr/lib64/libtinfo.so.6 /usr/lib64/libtinfo.so.5 &>/dev/null
+  ln -sf /usr/lib64/libcrypto.so.3 /usr/lib64/libcrypto.so.10 &>/dev/null
   ldconfig
   ### 2.1.4.搭建主数据库
   if [ -d ${install_dir}/dgiot_pg_writer ]; then
@@ -588,7 +819,7 @@ function init_polardb_database() {
   wal_log_hints = off
   max_wal_senders = 50
   hot_standby = on
-  log_destination = 'csvlog'
+  #log_destination = 'csvlog'
   logging_collector = off
   log_directory = 'log'
   log_filename = 'postgresql-%Y-%m-%d_%H%M%S'
@@ -620,6 +851,7 @@ EOF
   pg_hba_conf="${install_dir}/dgiot_pg_writer/data/pg_hba.conf"
   # METHOD "trust", "reject","md5","password","scram-sha-256","gss","sspi","ident","peer","pam","ldap","radius","cert"
   ${csudo} bash -c "echo 'host    all             all             ${pg_eip}/24           password'    >> ${pg_hba_conf}"
+  
   echo -e "$(date +%F_%T) $LINENO: ${GREEN} ${postgresql_conf}${NC}"
 }
 
@@ -629,7 +861,11 @@ function deploy_postgres() {
   yum_install_postgres
   pg_user
   if [ ${os_type} == "kylin" ]; then
-    pg_version="11"
+    pg_version="15"
+    build_polardb
+    init_polardb_database
+  elif [ ${os_type} == "openEuler" ]; then
+    pg_version="15"
     build_polardb
     init_polardb_database
   else
@@ -643,6 +879,13 @@ function deploy_postgres() {
   ln -sf /usr/local/pgsql/${pg_version}/bin/psql /usr/sbin/psql &>/dev/null
   ln -sf /usr/local/pgsql/${pg_version}/bin/pg_dump /usr/sbin/pg_dump &>/dev/null
   sudo -u postgres /usr/local/pgsql/${pg_version}/bin/psql -U postgres -c "CREATE USER  repl WITH PASSWORD '${pg_pwd}' REPLICATION;" &>/dev/null
+
+  echo -e "$(date +%F_%T) $LINENO: ${GREEN} CREATE DATABASE dify ${NC}"
+  sudo -u postgres /usr/local/pgsql/${pg_version}/bin/psql -U postgres -c "CREATE DATABASE dify;"   &>/dev/null
+  sudo -u postgres /usr/local/pgsql/${pg_version}/bin/psql -U postgres -c "ALTER USER postgres WITH PASSWORD 'difyai123456';"  &>/dev/null
+  sudo -u postgres /usr/local/pgsql/${pg_version}/bin/psql -U postgres -c "create extension \"uuid-ossp\";"   &>/dev/null
+  sudo -u postgres /usr/local/pgsql/${pg_version}/bin/psql -U postgres -c "create extension vector;"   &>/dev/null
+
   echo -e "$(date +%F_%T) $LINENO: ${GREEN} deploy postgres success${NC}"
 }
 
@@ -696,7 +939,7 @@ function install_parse_server() {
     mv ${install_dir}/dgiot_parse_server/ ${backup_dir}/dgiot_parse_server
     chown -R postgres:postgres ${backup_dir}/dgiot_parse_server/
   fi
-  parse_server_software="dgiot_parse_server-${parse_server_version}-${os_name}-${cpu_name}.tar.gz"
+  parse_server_software="dgiot_parse_server_redis-${parse_server_version}-${os_name}-${cpu_name}.tar.gz"
   echo -e "$(date +%F_%T) $LINENO: ${GREEN} dgiot_parse_server software : ${parse_server_software}${NC}"
   ###下载dgiot_parse_server软件
   if [ ! -f ${script_dir}/${parse_server_software} ]; then
@@ -761,13 +1004,13 @@ function install_dgiot_redis() {
 
 function deploy_parse_server() {
   clean_service dgiot_parse_server
-  #  clean_service dgiot_redis
+  clean_service dgiot_redis
   install_parse_server
-  #install_dgiot_redis
-  #echo -e "`date +%F_%T` $LINENO: ${GREEN} install install_dgiot_redis success${NC}"
+  # install_dgiot_redis
+  echo -e "`date +%F_%T` $LINENO: ${GREEN} install install_dgiot_redis success${NC}"
   parsehome="${install_dir}/dgiot_parse_server"
-  #  install_service2 "dgiot_redis" "simple" "${parsehome}/script/redis/src/redis-server ${parsehome}/script/redis.conf"
-  install_service2 "dgiot_parse_server" "simple" "${parsehome}/script/node/bin/node  ${parsehome}/server/index.js"
+  install_service2 "dgiot_redis" "simple" "${parsehome}/script/redis/src/redis-server ${parsehome}/script/redis.conf"
+  install_service2 dgiot_parse_server "simple" "${parsehome}/script/node/bin/node  ${parsehome}/server/index.js"
 
 }
 
@@ -875,7 +1118,8 @@ function install_go_fastdfs() {
   mkdir ${install_dir}/go_fastdfs/conf/ -p
   cp ${install_dir}/go_fastdfs/cfg.json ${install_dir}/go_fastdfs/conf/cfg.json
 
-  mv ${install_dir}/go_fastdfs/gofastdfs.service /usr/lib/systemd/system
+  rm -rf /lib/systemd/system/gofastdfs.service
+  mv ${install_dir}/go_fastdfs/gofastdfs.service /lib/systemd/system
 
   ${csudo} systemctl daemon-reload &>/dev/null
   ${csudo} systemctl enable gofastdfs &>/dev/null
@@ -973,26 +1217,32 @@ function yum_install_erlang_otp() {
 #5. 部署应用服务器
 # 5.1 安装erlang/otp环境
 function install_erlang_otp() {
-  pre_install
-  yum_install_erlang_otp
-  echo -e "$(date +%F_%T) $LINENO: ${GREEN} install_erlang_otp ${otpversion} ${NC}"
-  if [ ! -f ${script_dir}/otp_src_${otpversion}.tar.gz ]; then
-    wget ${fileserver}/otp_src_${otpversion}.tar.gz -O ${script_dir}/otp_src_${otpversion}.tar.gz &>/dev/null
-  fi
-  if [ -d ${install_dir}/otp_src_${otpversion}/ ]; then
+  otpversion1="$(erl -version 2>&1 | awk '/version/ {print $NF}')"
+  echo -e "$(date +%F_%T) $LINENO: ${GREEN} install_erlang_otp ${otpversion1} ${NC}"
+  if [ "${otpversion1}" = "${otpversion}" ]; then
+    echo -e "$(date +%F_%T) $LINENO: ${GREEN}erlang otp already install${NC}"
+  else
+    pre_install
+    yum_install_erlang_otp
+    echo -e "$(date +%F_%T) $LINENO: ${GREEN} install_erlang_otp ${otpversion} ${NC}"
+    if [ ! -f ${script_dir}/otp_src_${otpversion}.tar.gz ]; then
+      wget ${fileserver}/otp_src_${otpversion}.tar.gz -O ${script_dir}/otp_src_${otpversion}.tar.gz &>/dev/null
+    fi
+    if [ -d ${install_dir}/otp_src_${otpversion}/ ]; then
+      rm ${script_dir}/otp_src_${otpversion} -rf
+    fi
+    cd ${script_dir}/
+    tar xf otp_src_${otpversion}.tar.gz &>/dev/null
+
+    cd ${script_dir}/otp_src_${otpversion}/
+    echo -e "$(date +%F_%T) $LINENO: ${GREEN} otp configure${NC}"
+    ./configure &>/dev/null
+    echo -e "$(date +%F_%T) $LINENO: ${GREEN} otp make install${NC}"
+    make install &>/dev/null
+    cd ${script_dir}/
     rm ${script_dir}/otp_src_${otpversion} -rf
   fi
-  cd ${script_dir}/
-  tar xf otp_src_${otpversion}.tar.gz &>/dev/null
-
-  cd ${script_dir}/otp_src_${otpversion}/
-  echo -e "$(date +%F_%T) $LINENO: ${GREEN} otp configure${NC}"
-  ./configure &>/dev/null
-  echo -e "$(date +%F_%T) $LINENO: ${GREEN} otp make install${NC}"
-  make install &>/dev/null
-  cd ${script_dir}/
-  rm ${script_dir}/otp_src_${otpversion} -rf
-  echo -e "$(date +%F_%T) $LINENO: ${GREEN} install erlang otp success${NC}"
+    echo -e "$(date +%F_%T) $LINENO: ${GREEN} install erlang otp success${NC}"
 }
 
 function update_dgiot() {
@@ -1026,7 +1276,7 @@ function update_dgiot() {
   fi
   mv ${install_dir}/go_fastdfs/files/package/dgiot/ ${install_dir}/
 
-  install_service "dgiot" "forking" "/bin/sh ${install_dir}/dgiot/bin/emqx start" "root" "HOME=${install_dir}/dgiot/erts-12.3.2.2" "/bin/sh /data/dgiot/bin/emqx stop"
+  install_service dgiot "forking" "/bin/sh ${install_dir}/dgiot/bin/emqx start" "root" "HOME=${install_dir}/dgiot/erts-12.3.2.2" "/bin/sh /data/dgiot/bin/emqx stop"
 }
 
 function update_tdengine_server() {
@@ -1114,6 +1364,12 @@ function atomgit_plugin() {
 function install_dgiot() {
   if [ ${os_type} == "kylin" ]; then
     software="dgiot_kylin_${cpu_name}"
+  elif [ ${os_type} == "openEuler" ]; then
+    software="dgiot_openEuler"
+#    install_erlang_otp
+#    pre_ci_dgiot
+#    make ci &>/dev/null
+#    post_build_dgiot
   fi
 
   make_ssl
@@ -1147,7 +1403,7 @@ function install_dgiot() {
   fi
   mv ${install_dir}/go_fastdfs/files/package/dgiot ${install_dir}/
 
-  install_service "dgiot" "forking" "/bin/sh ${install_dir}/dgiot/bin/emqx start" "root" "HOME=${install_dir}/dgiot/erts-12.3.2.2" "/bin/sh /data/dgiot/bin/emqx stop"
+  install_service dgiot "forking" "/bin/sh ${install_dir}/dgiot/bin/emqx start" "root" "HOME=${install_dir}/dgiot/erts-12.3.2.2" "/bin/sh /data/dgiot/bin/emqx stop"
 }
 
 #6 运维监控
@@ -1282,7 +1538,7 @@ function install_grafana() {
 
 function build_nginx() {
   echo -e "$(date +%F_%T) $LINENO: ${GREEN} build_nginx ${NC}"
-  clean_service nginx
+  clean_service nginx 
   if systemctl is-active --quiet nginx; then
     echo -e "$(date +%F_%T) $LINENO: ${GREEN} nginx is running, stopping it...${NC}"
     rpm -e nginx
@@ -1323,7 +1579,7 @@ function build_nginx() {
   rm -rf /data/dgiot/nginx/html &>/dev/null
   unzip -d /data/dgiot/nginx/ ${html_software}.zip &>/dev/null
 
-  install_service2 "nginx" "forking" "/data/dgiot/nginx/sbin/nginx"
+  install_service2 nginx "forking" "/data/dgiot/nginx/sbin/nginx"
 }
 
 function make_ssl() {
@@ -1349,25 +1605,25 @@ function make_ssl() {
   fi
 }
 
-function install_node() {
-  if [ ! -d ${script_dir}/node-v16.15.1-linux-x64/bin/ ]; then
-      if [ ! -f ${script_dir}/node-v16.15.1-linux-x64.tar.xz ]; then
-        wget https://dgiot-release-1306147891.cos.ap-nanjing.myqcloud.com/v4.4.0/node-v16.15.1-linux-x64.tar.xz &>/dev/null
-        tar xvf node-v16.15.1-linux-x64.tar.xz &>/dev/null
-        if [ ! -f usr/bin/node ]; then
-          rm /usr/bin/node -rf
-        fi
-        rm /usr/bin/npm -rf
-        rm /usr/bin/node -rf
-        rm /usr/bin/yarn -rf
-        ln -s ${script_dir}/node-v16.15.1-linux-x64/bin/node /usr/bin/node
-        ln -s ${script_dir}/node-v16.15.1-linux-x64/bin/yarn /usr/bin/yarn
-        sudo /bin/dd if=/dev/zero of=/var/swap.1 bs=1M count=1024
-        sudo /sbin/mkswap /var/swap.1
-        sudo /sbin/swapon /var/swap.1
-      fi
-    fi
-  }
+# function install_node() {
+#   if [ ! -d ${script_dir}/node-v16.15.1-linux-x64/bin/ ]; then
+#       if [ ! -f ${script_dir}/node-v16.15.1-linux-x64.tar.xz ]; then
+#         wget https://dgiot-release-1306147891.cos.ap-nanjing.myqcloud.com/v4.4.0/node-v16.15.1-linux-x64.tar.xz &>/dev/null
+#         tar xvf node-v16.15.1-linux-x64.tar.xz &>/dev/null
+#         if [ ! -f usr/bin/node ]; then
+#           rm /usr/bin/node -rf
+#         fi
+#         rm /usr/bin/npm -rf
+#         rm /usr/bin/node -rf
+#         rm /usr/bin/yarn -rf
+#         ln -s ${script_dir}/node-v16.15.1-linux-x64/bin/node /usr/bin/node
+#         ln -s ${script_dir}/node-v16.15.1-linux-x64/bin/yarn /usr/bin/yarn
+#         sudo /bin/dd if=/dev/zero of=/var/swap.1 bs=1M count=1024
+#         sudo /sbin/mkswap /var/swap.1
+#         sudo /sbin/swapon /var/swap.1
+#       fi
+#     fi
+#   }
 
 function build_iotView() {
   cd ${script_dir}/
@@ -1402,6 +1658,61 @@ function build_iotEdit() {
   ${script_dir}/node-v16.15.1-linux-x64/bin/yarn install
    ${script_dir}/node-v16.15.1-linux-x64/bin/yarn build
   echo "build_iotEdit"
+}
+
+function pre_ci_dgiot() {
+  ## 关闭dgiot
+  clean_service dgiot
+  count=$(ps -ef | grep beam.smp | grep -v "grep" | wc -l)
+  if [ 0 == $count ]; then
+    echo $count
+  else
+    killall -9 beam.smp
+  fi
+
+  cd ${script_dir}/
+
+  if [ ! -d ${script_dir}/$plugin/ ]; then
+    git clone https://gitee.com/dgiiot/dgiot.git $plugin
+  fi
+
+  cd ${script_dir}/$plugin/
+  git reset --hard
+  git pull
+
+  if [ $plugin == 'dgiot' ]; then
+    echo "dgiot plugin"
+  else
+    cd ${script_dir}/$plugin/apps/
+    rm $plugin -rf
+    git clone root@git.iotn2n.com:dgiot/$plugin.git
+  fi
+
+  cd ${script_dir}
+  rm ${script_dir}/$plugin/_build/emqx/rel/ -rf
+
+  if [ -d ${script_dir}/dgiot/emqx/rel/ ]; then
+    rm ${script_dir}/dgiot/emqx/rel -rf
+  fi
+
+  rm ${script_dir}/$plugin/rebar.config -rf
+  cp ${script_dir}/$plugin/apps/$plugin/conf/rebar.config ${script_dir}/$plugin/rebar.config -rf
+  rm ${script_dir}/$plugin/rebar.config.erl -rf
+  cp ${script_dir}/$plugin/apps/$plugin/conf/rebar.config.erl ${script_dir}/$plugin/rebar.config.erl -rf
+  rm ${script_dir}/$plugin/data/loaded_plugins.tmpl -rf
+  cp ${script_dir}/$plugin/apps/$plugin/conf/loaded_plugins.tmpl ${script_dir}/$plugin/data/loaded_plugins.tmpl
+  rm ${script_dir}/$plugin/apps/dgiot_parse/etc/dgiot_parse.conf -rf
+  cp ${script_dir}/$plugin/apps/$plugin/conf/dgiot_parse.conf ${script_dir}/$plugin/apps/dgiot_parse/etc/dgiot_parse.conf -rf
+
+  rm ${script_dir}/$plugin/apps/dgiot_http/etc/dgiot_http.conf -rf
+  cp ${script_dir}/$plugin/apps/$plugin/conf/dgiot_http.conf ${script_dir}/$plugin/apps/dgiot_http/etc/dgiot_http.conf -rf
+
+  if [ -f ${script_dir}/$plugin/apps/$plugin/conf/other.sh ]; then
+    cd ${script_dir}/$plugin/apps/
+    echo | /bin/sh ${script_dir}/$plugin/apps/$plugin/conf/other.sh &>/dev/null
+  fi
+
+  cd ${script_dir}/$plugin/
 }
 
 function pre_build_dgiot() {

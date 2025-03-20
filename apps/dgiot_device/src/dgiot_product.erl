@@ -649,9 +649,12 @@ get_product_statistics(<<"network">>, _) ->
     NetTypes =
         case dgiot_parsex:query_object(<<"Product">>, #{}) of
             {ok, #{<<"results">> := Products}} ->
-                lists:foldl(fun(#{<<"netType">> := NetType}, Acc) ->
-                    NList = maps:get(NetType, Acc, []),
-                    Acc#{NetType => NList ++ [NetType]}
+                lists:foldl(fun
+                                (#{<<"netType">> := NetType}, Acc) ->
+                                    NList = maps:get(NetType, Acc, []),
+                                    Acc#{NetType => NList ++ [NetType]};
+                                (_, Acc) ->
+                                    Acc
                             end, #{}, Products);
             _ ->
                 #{}
@@ -781,7 +784,7 @@ get_product_statistics(<<"alarm_statis">>, _) ->
 
     Now = dgiot_datetime:format(dgiot_datetime:get_today_stamp() - 604800, "YYYY-MM-DDT16:00:00.000Z"),
     {Props, Notifications} =
-        case dgiot_parsex:query_object(<<"Notification">>, #{<<"keys">> => [<<"content">>, <<"device">>], <<"count">> => <<"objectId">>, <<"include">> => <<"device">>,<<"order">> => <<"-createdAt">>,
+        case dgiot_parsex:query_object(<<"Notification">>, #{<<"keys">> => [<<"content">>, <<"device">>], <<"count">> => <<"objectId">>, <<"include">> => <<"device">>, <<"order">> => <<"-createdAt">>,
             <<"where">> => #{<<"createdAt">> => #{<<"$gte">> => #{<<"__type">> => <<"Date">>, <<"iso">> => Now}}}}) of
             {ok, #{<<"results">> := Results}} ->
                 Result =

@@ -55,6 +55,7 @@ init_plugins() ->
                 BinPlugin = dgiot_utils:to_binary(Plugin),
                 case BinPlugin of
                     <<"dgiot_", _>> -> Acc ++ [Plugin];
+                    <<"dgaiot_", _>> -> Acc ++ [Plugin];
                     _ -> Acc
                 end;
             _ -> Acc
@@ -66,6 +67,8 @@ check_dgiot_app() ->
     lists:foldl(fun({Module, _, _} = App, Acc) ->
         case dgiot_utils:to_binary(Module) of
             <<"dgiot_", _/binary>> ->
+                Acc ++ [App];
+            <<"dgaiot_", _/binary>> ->
                 Acc ++ [App];
             <<"dgiot">> ->
                 Acc ++ [App];

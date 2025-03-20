@@ -1,0 +1,143 @@
+{
+  "definitions": {},
+  "paths": {
+    "/completions": {
+      "post": {
+        "summary": "completions",
+        "description": "completions",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "data",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "model": {
+                  "description": "使用的模型的 ID",
+                  "type": "boolean",
+                  "enum": [
+                    "deepseek-chat",
+                    "deepseek-coder"
+                  ],
+                  "example": "deepseek-chat"
+                },
+                "prompt": {
+                  "description": "发送的问题",
+                  "type": "string",
+                  "example": "你是谁?"
+                },
+                "system_content": {
+                  "description": "system 消息的内容",
+                  "type": "string",
+                  "example": "You are a helpful assistant"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "edge"
+        ]
+      }
+    },
+    "/milvus": {
+      "post": {
+        "summary": "milvus",
+        "description": "milvus",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "data",
+            "schema": {
+              "type": "object",
+              "properties": {
+                "appid": {
+                  "description": "appid",
+                  "type": "string",
+                  "example": "WgXZ0G5L1Y"
+                },
+                "secret": {
+                  "description": "secret",
+                  "type": "string",
+                  "example": "WgXZ0G5L1Y"
+                },
+                "action": {
+                  "description": "",
+                  "type": "boolean",
+                  "enum": [
+                    "create_device",
+                    "query"
+                  ],
+                  "example": "query"
+                },
+                "productid": {
+                  "description": "产品id",
+                  "type": "string",
+                  "example": "e3ee494031"
+                },
+                "deviceid": {
+                  "description": "设备id",
+                  "type": "string",
+                  "example": "d4fbd025f9"
+                },
+                "question": {
+                  "description": "发送的问题",
+                  "type": "string",
+                  "example": "你是谁?"
+                },
+                "system_content": {
+                  "description": "system 消息的内容",
+                  "type": "string",
+                  "example": "You are a helpful assistant"
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Returns operation status"
+          },
+          "400": {
+            "description": "Bad Request"
+          },
+          "401": {
+            "description": "Unauthorized"
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Server Internal error"
+          }
+        },
+        "tags": [
+          "edge"
+        ]
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "openai",
+      "description": "openai"
+    }
+  ]
+}

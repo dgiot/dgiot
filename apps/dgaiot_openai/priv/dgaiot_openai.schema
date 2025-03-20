@@ -1,0 +1,4 @@
+{mapping, "openai.key", "dgaiot_openai.openai_key", [
+  {default, "sk-123131231"},
+  {datatype, string}
+]}.

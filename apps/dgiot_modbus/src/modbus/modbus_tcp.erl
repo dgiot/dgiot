@@ -450,22 +450,25 @@ build_req_message(Req) when is_record(Req, rtu_req) ->
             throw({argumentError, Req#rtu_req.quality});
         true -> ok
     end,
+    %%              事务处理标识 随机值
+    <<R:1/binary, _/binary>> = dgiot_utils:random(),
+    Transaction = dgiot_utils:to_int(dgiot_utils:binary_to_hex(R)),
+    %% 协议标识符 00 00表示ModbusTCP协议。
+    Protocol = 0,
     Message =
         case Req#rtu_req.funcode of
             ?FC_READ_COILS ->
-                <<(Req#rtu_req.slaveId):8, (Req#rtu_req.funcode):8, (Req#rtu_req.address):16, (Req#rtu_req.quality):16>>;
+                Data = <<(Req#rtu_req.slaveId):8, (Req#rtu_req.funcode):8, (Req#rtu_req.address):16, (Req#rtu_req.quality):16>>,
+                <<Transaction:16, Protocol:16, (size(Data)):16, Data/binary>>;
             ?FC_READ_INPUTS ->
-                <<(Req#rtu_req.slaveId):8, (Req#rtu_req.funcode):8, (Req#rtu_req.address):16, (Req#rtu_req.quality):16>>;
+                Data = <<(Req#rtu_req.slaveId):8, (Req#rtu_req.funcode):8, (Req#rtu_req.address):16, (Req#rtu_req.quality):16>>,
+                <<Transaction:16, Protocol:16, (size(Data)):16, Data/binary>>;
             ?FC_READ_HREGS -> %% 读保持寄存器
-%%              事务处理标识 随机值
-                <<R:1/binary, _/binary>> = dgiot_utils:random(),
-                Transaction = dgiot_utils:to_int(dgiot_utils:binary_to_hex(R)),
-                %% 协议标识符 00 00表示ModbusTCP协议。
-                Protocol = 0,
                 Data = <<(Req#rtu_req.slaveId):8, (Req#rtu_req.funcode):8, (Req#rtu_req.address):16, (Req#rtu_req.quality):16>>,
                 <<Transaction:16, Protocol:16, (size(Data)):16, Data/binary>>;
             ?FC_READ_IREGS ->
-                <<(Req#rtu_req.slaveId):8, (Req#rtu_req.funcode):8, (Req#rtu_req.address):16, (Req#rtu_req.quality):16>>;
+                Data = <<(Req#rtu_req.slaveId):8, (Req#rtu_req.funcode):8, (Req#rtu_req.address):16, (Req#rtu_req.quality):16>>,
+                <<Transaction:16, Protocol:16, (size(Data)):16, Data/binary>>;
             ?FC_WRITE_COIL ->
                 ValuesBin = case Req#rtu_req.quality of
                                 1 ->
@@ -473,15 +476,18 @@ build_req_message(Req) when is_record(Req, rtu_req) ->
                                 _ ->
                                     <<16#00, 16#00>>
                             end,
-                <<(Req#rtu_req.slaveId):8, (Req#rtu_req.funcode):8, (Req#rtu_req.address):16, ValuesBin/binary>>;
+                Data = <<(Req#rtu_req.slaveId):8, (Req#rtu_req.funcode):8, (Req#rtu_req.address):16, ValuesBin/binary>>,
+                <<Transaction:16, Protocol:16, (size(Data)):16, Data/binary>>;
             ?FC_WRITE_COILS ->
                 Quantity = length(Req#rtu_req.quality),
                 ValuesBin = list_bit_to_binary(Req#rtu_req.quality),
                 ByteCount = length(binary_to_list(ValuesBin)),
-                <<(Req#rtu_req.slaveId):8, (Req#rtu_req.funcode):8, (Req#rtu_req.address):16, Quantity:16, ByteCount:8, ValuesBin/binary>>;
+                Data = <<(Req#rtu_req.slaveId):8, (Req#rtu_req.funcode):8, (Req#rtu_req.address):16, Quantity:16, ByteCount:8, ValuesBin/binary>>,
+                <<Transaction:16, Protocol:16, (size(Data)):16, Data/binary>>;
             ?FC_WRITE_HREG ->
                 ValueBin = list_word16_to_binary([Req#rtu_req.quality]),
-                <<(Req#rtu_req.slaveId):8, (Req#rtu_req.funcode):8, (Req#rtu_req.address):16, ValueBin/binary>>;
+                Data = <<(Req#rtu_req.slaveId):8, (Req#rtu_req.funcode):8, (Req#rtu_req.address):16, ValueBin/binary>>,
+                <<Transaction:16, Protocol:16, (size(Data)):16, Data/binary>>;
             ?FC_WRITE_HREGS ->
 %%                ValuesBin = list_word16_to_binary(Req#rtu_req.quality),
 %%                寄存器个数
@@ -489,7 +495,8 @@ build_req_message(Req) when is_record(Req, rtu_req) ->
 %%                写入字节数
 %%                ByteCount = 2,
 %%                               01                        10                  01 00           00 01 02
-                <<(Req#rtu_req.slaveId):8, (Req#rtu_req.funcode):8, (Req#rtu_req.address):16, (Req#rtu_req.registersnumber):16, (Req#rtu_req.dataByteSize):8, (Req#rtu_req.quality):16>>;
+                Data = <<(Req#rtu_req.slaveId):8, (Req#rtu_req.funcode):8, (Req#rtu_req.address):16, (Req#rtu_req.registersnumber):16, (Req#rtu_req.dataByteSize):8, (Req#rtu_req.quality):16>>,
+                <<Transaction:16, Protocol:16, (size(Data)):16, Data/binary>>;
             _ ->
                 erlang:error(function_not_implemented)
         end,
