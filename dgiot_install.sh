@@ -151,7 +151,7 @@ function dgiot_path() {
 
 function dgiot_auto_variables() {
   # ============================= get auto variables =================================================
-  yum -y install net-tools &>/dev/null
+  yum -y install net-tools sudo &>/dev/null
   ${csudo} setenforce 0 &>/dev/null
   dgiot_path
   dgiot_fqdn
@@ -621,7 +621,7 @@ function build_polardb() {
   echo -e "$(date +%F_%T) $LINENO: ${GREEN} build_polardb${NC}"
   ##下载软件
   polardb_software="PolarDB-${pg_version}.tar.gz"
-  mkdir /home/dgiot/
+  mkdir /home/dgiot/ -p
   if [ ! -f /home/dgiot/${polardb_software} ]; then
     ${csudo} wget ${fileserver}/${polardb_software} -O /home/dgiot/${polardb_software} &>/dev/null
   fi
@@ -665,11 +665,13 @@ function build_polardb() {
 
   # 安装uuid
   cd /home/dgiot/PolarDB-${pg_version}/contrib/uuid-ossp &>/dev/null
-  make && make install &>/dev/null
+  make &>/dev/null
+  make install &>/dev/null
 
   # 安装pgvector
   cd /home/dgiot/PolarDB-${pg_version}/external/pgvector &>/dev/null
-  make && make install &>/dev/null
+  make &>/dev/null
+  make install &>/dev/null
  
   cd ${script_dir}  &>/dev/null
   rm ${script_dir}/PolarDB-${pg_version} -rf &>/dev/null
@@ -693,7 +695,7 @@ function build_postgres() {
   cd ./postgresql-${pg_version}/
 
   echo -e "$(date +%F_%T) $LINENO: ${GREEN} configure postgres${NC}"
-  ./configure --prefix=/usr/local/pgsql/${pg_version} --with-pgport=7432 --enable-nls --with-tcl --with-gssapi --with-icu --with-openssl --with-pam --with-ldap --with-systemd --with-libxml --with-libxslt &>/dev/null
+  ./configure --prefix=/usr/local/pgsql/${pg_version} --with-pgport=7432 --with-uuid=ossp --enable-nls --with-tcl --with-gssapi --with-icu --with-openssl --with-pam --with-ldap --with-systemd --with-libxml --with-libxslt &>/dev/null
 
   echo -e "$(date +%F_%T) $LINENO: ${GREEN} make install postgres${NC}"
   make install -j${processor} &>/dev/null
@@ -703,6 +705,10 @@ function build_postgres() {
   echo -e "$(date +%F_%T) $LINENO: ${GREEN} make install pg_stat_statements ${NC}"
   make install -j${processor} &>/dev/null
   sleep 5
+
+  cd ${script_dir}/postgresql-${pg_version}/contrib/uuid-ossp &>/dev/null
+  make  &>/dev/null
+  make install  &>/dev/null
 
   cd ${script_dir}/
   rm ${script_dir}/postgresql-${pg_version} -rf
@@ -865,9 +871,14 @@ function deploy_postgres() {
     build_polardb
     init_polardb_database
   elif [ ${os_type} == "openEuler" ]; then
-    pg_version="15"
-    build_polardb
-    init_polardb_database
+    if [ ${cpu_name} == "arm64" ]; then
+       build_postgres
+       init_postgres_database
+    else
+       pg_version="15"
+       build_polardb
+       init_polardb_database
+    fi
   else
     build_postgres
     init_postgres_database
@@ -884,7 +895,10 @@ function deploy_postgres() {
   sudo -u postgres /usr/local/pgsql/${pg_version}/bin/psql -U postgres -c "CREATE DATABASE dify;"   &>/dev/null
   sudo -u postgres /usr/local/pgsql/${pg_version}/bin/psql -U postgres -c "ALTER USER postgres WITH PASSWORD 'difyai123456';"  &>/dev/null
   sudo -u postgres /usr/local/pgsql/${pg_version}/bin/psql -U postgres -c "create extension \"uuid-ossp\";"   &>/dev/null
-  sudo -u postgres /usr/local/pgsql/${pg_version}/bin/psql -U postgres -c "create extension vector;"   &>/dev/null
+  if [ ${pg_version} == "15" ]; then
+    sudo -u postgres /usr/local/pgsql/${pg_version}/bin/psql -U postgres -c "create extension vector;"   &>/dev/null
+  fi
+  
 
   echo -e "$(date +%F_%T) $LINENO: ${GREEN} deploy postgres success${NC}"
 }
@@ -1365,7 +1379,7 @@ function install_dgiot() {
   if [ ${os_type} == "kylin" ]; then
     software="dgiot_kylin_${cpu_name}"
   elif [ ${os_type} == "openEuler" ]; then
-    software="dgiot_openEuler"
+    software="dgiot_openEuler_${cpu_name}"
 #    install_erlang_otp
 #    pre_ci_dgiot
 #    make ci &>/dev/null
