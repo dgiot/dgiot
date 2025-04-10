@@ -425,7 +425,7 @@ function yum_install_postgres() {
   ${csudo} yum install -y zlib zlib-devel &>/dev/null
   ${csudo} yum install -y pam-devel libxml2-devel libxslt-devel &>/dev/null
   ${csudo} yum install -y openldap-devel systemd-devel &>/dev/null
-  ${csudo} yum install -y tcl-devel &>/dev/null
+  ${csudo} yum install -y tcl-devel uuid-devel libuuid-devel &>/dev/null
 }
 
 ### 安装dgaiot
@@ -482,21 +482,21 @@ function install_xinference() {
   echo 'export XINFERENCE_HOME=/data/dgiot/models/xinference' >> ~/.bashrc   &>/dev/null
   /bin/bash -c 'source ~/.bashrc' &>/dev/null
 
-  cd /data/dgiot  
+  cd /data/dgiot
   python3 -m venv xinference  &>/dev/null
   sudo dnf install -y libgomp &>/dev/null
   sudo ln -sf /usr/lib/gcc/x86_64-openEuler-linux/12/libgomp.so /usr/lib/libgomp.so.1   &>/dev/null
   sudo dnf install -y mesa-libGL  &>/dev/null
-  /bin/bash -c 'source xinference/bin/activate && 
+  /bin/bash -c 'source xinference/bin/activate &&
   pip install --upgrade pip &&
   export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/lib64  &&
-  pip install llama-cpp-python==0.3.2 && 
-  pip install xinference && 
-  rm -rf /data/dgiot/xinference/lib64/python3.11/site-packages/nvidia/nvjitlink/lib/libcusparse.so.12 && 
+  pip install llama-cpp-python==0.3.2 &&
+  pip install xinference &&
+  rm -rf /data/dgiot/xinference/lib64/python3.11/site-packages/nvidia/nvjitlink/lib/libcusparse.so.12 &&
   ln -s /data/dgiot/xinference/lib64/python3.11/site-packages/nvidia/nvjitlink/lib/libnvJitLink.so.12 /data/dgiot/xinference/lib64/python3.11/site-packages/nvidia/cusparse/lib/libnvJitLink.so.12' &>/dev/null
-  
-  install_service2 "dgiot_xinference" "simple" "/data/dgiot/xinference/bin/xinference-local --host 0.0.0.0 --port 9997" 
-  
+
+  install_service2 "dgiot_xinference" "simple" "/data/dgiot/xinference/bin/xinference-local --host 0.0.0.0 --port 9997"
+
   echo -e "$(date +%F_%T) $LINENO: ${GREEN} install milvus sueccess${NC}"
 }
 
@@ -507,7 +507,7 @@ function install_miniconda3() {
   miniconda3_software="Miniconda3-py311_25.1.1-2-Linux-x86_64.sh"
 
   rm -rf ${miniconda3_software}
-  
+
   ${csudo} wget ${fileserver}/${miniconda3_software} -O ${script_dir}/${miniconda3_software}  &>/dev/null
   bash Miniconda3-py311_25.1.1-2-Linux-x86_64.sh &>/dev/null
   source ~/.bashrc
@@ -532,7 +532,7 @@ function install_milvus() {
   ${csudo} wget ${fileserver}/standalone_embed.sh -O ${install_dir}/milvus/standalone_embed.sh &>/dev/null
   chmod 777 ${install_dir}/milvus/standalone_embed.sh &>/dev/null
 
-  install_service2 "dgiot_milvus" "simple" "${install_dir}/milvus/standalone_embed.sh start" 
+  install_service2 "dgiot_milvus" "simple" "${install_dir}/milvus/standalone_embed.sh start"
 
   echo -e "$(date +%F_%T) $LINENO: ${GREEN} install milvus sueccess${NC}"
 }
@@ -564,15 +564,15 @@ function install_dify() {
   poetry self add poetry-plugin-shell &>/dev/null
 
   /bin/bash -c 'source /data/dgiot/dify/api/.venv/bin/activate && pip install pyproject.toml && pip install -r requirements.txt && pip install flask  &&  flask db upgrade' &>/dev/null
-  
+
   echo -e "$(date +%F_%T) $LINENO: ${GREEN} install dify api sueccess${NC}"
-  
+
   # 安装前端
-  install_node 
+  install_node
   cd /data/dgiot/dify/web
   cp -R .env.example .env.local
   # sed -i "s/localhost/${wlanip}/g" .env.local
-  
+
   /bin/bash -c 'npm install && npm run build'  &>/dev/null
 
   echo -e "$(date +%F_%T) $LINENO: ${GREEN} install dify web sueccess${NC}"
@@ -646,7 +646,7 @@ function build_polardb() {
         perl-Pod-Html xz gcc-c++ \
         protobuf-compiler protobuf-c protobuf-devel perl-CPAN \
   clang llvm llvm-devel lz4-devel libzstd-devel \
-  libunwind-devel perl-IPC-Run openssl-devel e2fsprogs-devel  uuid-devel libuuid-devel &>/dev/null
+  libunwind-devel perl-IPC-Run openssl-devel e2fsprogs-devel &>/dev/null
 
   cd /home/dgiot/PolarDB-${pg_version}/external/zlog-1.2.18
   make install &>/dev/null
@@ -672,7 +672,7 @@ function build_polardb() {
   cd /home/dgiot/PolarDB-${pg_version}/external/pgvector &>/dev/null
   make &>/dev/null
   make install &>/dev/null
- 
+
   cd ${script_dir}  &>/dev/null
   rm ${script_dir}/PolarDB-${pg_version} -rf &>/dev/null
   echo -e "$(date +%F_%T) $LINENO: ${GREEN} build polardb sueccess${NC}"
@@ -857,7 +857,7 @@ EOF
   pg_hba_conf="${install_dir}/dgiot_pg_writer/data/pg_hba.conf"
   # METHOD "trust", "reject","md5","password","scram-sha-256","gss","sspi","ident","peer","pam","ldap","radius","cert"
   ${csudo} bash -c "echo 'host    all             all             ${pg_eip}/24           password'    >> ${pg_hba_conf}"
-  
+
   echo -e "$(date +%F_%T) $LINENO: ${GREEN} ${postgresql_conf}${NC}"
 }
 
@@ -898,7 +898,7 @@ function deploy_postgres() {
   if [ ${pg_version} == "15" ]; then
     sudo -u postgres /usr/local/pgsql/${pg_version}/bin/psql -U postgres -c "create extension vector;"   &>/dev/null
   fi
-  
+
 
   echo -e "$(date +%F_%T) $LINENO: ${GREEN} deploy postgres success${NC}"
 }
@@ -1552,7 +1552,7 @@ function install_grafana() {
 
 function build_nginx() {
   echo -e "$(date +%F_%T) $LINENO: ${GREEN} build_nginx ${NC}"
-  clean_service nginx 
+  clean_service nginx
   if systemctl is-active --quiet nginx; then
     echo -e "$(date +%F_%T) $LINENO: ${GREEN} nginx is running, stopping it...${NC}"
     rpm -e nginx
