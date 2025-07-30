@@ -433,19 +433,22 @@ upload(Path, AppName, SessionToken) ->
             {error, Reason}
     end.
 
-delete_file(Path, SessionToken) ->
-    Url = "http://127.0.0.1:1250/delete?auth_token=" ++ dgiot_utils:to_list(SessionToken) ++ "&path=" ++ dgiot_utils:to_list(Path),
-    case httpc:request(get, {[Url], []}, [], []) of
-        {ok, {{"HTTP/1.1", 200, "OK"}, _, Json}} ->
-            case jsx:decode(dgiot_utils:to_binary(Json), [{labels, binary}, return_maps]) of
-                #{<<"status">> := <<"ok">>} = Data ->
-                    {ok, Data};
-                Error1 ->
-                    {ok, Error1}
-            end;
-        Error ->
-            {error, Error}
-    end.
+delete_file(Path, _SessionToken) ->
+    NewPath =  <<"rm /data/dgiot/go_fastdfs/",Path/binary>>,
+    io:format("~ts", [unicode:characters_to_list(NewPath)]),
+    os:cmd(unicode:characters_to_list(NewPath)),
+    % Url = "http://127.0.0.1:1250/delete?auth_token=" ++ dgiot_utils:to_list(SessionToken) ++ "&path=" ++ dgiot_utils:to_list(Path),
+    % case httpc:request(get, {[Url], []}, [], []) of
+        % {ok, {{"HTTP/1.1", 200, "OK"}, _, Json}} ->
+    % case jsx:decode(dgiot_utils:to_binary(Json), [{labels, binary}, return_maps]) of
+    %     #{<<"status">> := <<"ok">>} = Data ->
+            {ok,#{<<"path">> => NewPath}}.
+    %     Error1 ->
+    %         {ok, Error1}
+    % end.
+        % Error ->
+            % {error, Error}
+    % end.
 
 file_reload(Action, Body) ->
     Url =
