@@ -105,6 +105,7 @@ apps/dgiot_open62541/
 apps/dgiot_tdenginex/
 apps/dgiot_zeta/
 apps/dgiot_onvif/
+apps/dgiot_drone/
 node_modules/
 package-lock.json
 erlang_ls.config

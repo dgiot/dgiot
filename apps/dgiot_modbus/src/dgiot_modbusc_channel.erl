@@ -214,19 +214,21 @@ init(?TYPE, ChannelId, #{
                 {<<>>, 0, 100}
         end,
     NewArgs = #{
-        <<"ip">> => Ip,
-        <<"port">> => Port,
-        <<"mod">> => dgiot_modbusc_tcp,
-        <<"child">> => #{
-            slaveid => SlaveId,
-            function => Function,
-            address => dgiot_utils:to_int(Address),
-            quantity => Quantity,
-            filename => FileName,
-            data => <<>>,
-            freq => Freq,
-            minaddr => MinAddr,
-            maxaddr => MaxAddr}},
+                <<"ip">> => Ip,
+                <<"port">> => Port,
+                <<"mod">> => dgiot_modbusc_tcp,
+                <<"child">> => #{
+                        slaveid => SlaveId,
+                        function => Function,
+                        address => dgiot_utils:to_int(Address),
+                        quantity => Quantity,
+                        filename => FileName,
+                        data => <<>>,
+                        freq => Freq,
+                        minaddr => MinAddr,
+                        maxaddr => MaxAddr
+                    }
+                },
 %%    dgiot_client:add_clock(ChannelId, Start_time, End_time),
     dgiot_client:add_clock(ChannelId, dgiot_datetime:now_secs() - 5000, dgiot_datetime:now_secs() + 300000),
     {ok, #state{id = ChannelId, env = #{size => Size, filename => FileName, freq => Freq}}, dgiot_client:register(ChannelId, tcp_client_sup, NewArgs)}.
@@ -241,6 +243,7 @@ handle_event(_EventId, Event, State) ->
 
 handle_message(check_connection, #state{id = ChannelId, env = #{filename := FileName, freq := Freq}} = Dclient) ->
     Now = dgiot_datetime:now_secs(),
+    io:format("~s ~p Now = ~p. ChannelId=~p, FileName=~p~n", [?FILE, ?LINE, Now, ChannelId, FileName]),
     case dgiot_data:get({check_connection, ChannelId, FileName}) of
         OldTime when (Now - OldTime) > Freq ->
             dgiot_client:stop(ChannelId, FileName),
@@ -252,6 +255,7 @@ handle_message(check_connection, #state{id = ChannelId, env = #{filename := File
     {noreply, Dclient};
 
 handle_message(start_client, #state{id = ChannelId, env = #{size := _Size, filename := FileName}} = State) ->
+    % io:format("~s ~p ChannelId = ~p.~n", [?FILE, ?LINE, ChannelId]),
     case dgiot_data:get({start_client, ChannelId}) of
         not_find ->
 %%            [dgiot_client:start(ChannelId, dgiot_utils:to_binary(I)) || I <- lists:seq(1, Size)],
