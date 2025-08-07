@@ -27,15 +27,16 @@
 
 %% tcp client  callback
 init(#dclient{child = ChildState} = Dclient) when is_map(ChildState) ->
+    io:format("~s ~p ChildState = ~p.~n", [?FILE, ?LINE, ChildState]),
     {ok, Dclient};
 
 init(_) ->
     {ok, #{}}.
 
 handle_info(connection_ready, #dclient{child = ChildState} = Dclient) ->
-%%    io:format("~s ~p ChildState = ~p.~n", [?FILE, ?LINE, ChildState]),
+    % io:format("~s ~p ChildState = ~p.~n", [?FILE, ?LINE, ChildState]),
     rand:seed(exs1024),
-    Time = erlang:round(rand:uniform() * 1 + 1) * 1000,
+    Time = erlang:round(rand:uniform() * 2 + 1) * 1000,
     erlang:send_after(Time, self(), read),
     {noreply, Dclient#dclient{child = ChildState}};
 
@@ -62,17 +63,17 @@ handle_info(read, #dclient{channel = ChannelId, client = ClientId, child = #{sla
     Data = modbus_tcp:to_frame(DataSource),
     dgiot_tcp_client:send(ChannelId, ClientId, Data),
     dgiot_bridge:send_log(dgiot_utils:to_binary(ChannelId), "~p Channel sends ~p to DTU", [dgiot_datetime:format("YYYY-MM-DD HH:NN:SS"), dgiot_utils:binary_to_hex(Data)]),
-%%    io:format("~s ~p Address = ~p.~n", [?FILE, ?LINE, Address]),
+    % io:format("~s ~p Address = ~p.~n", [?FILE, ?LINE, Address]),
     {noreply, Dclient#dclient{child = ChildState#{di => Address, step => Step}}};
 
 handle_info({tcp, Buff}, #dclient{channel = ChannelId,
     child = #{freq := Freq, minaddr := MinAddr, maxaddr := Maxaddr, di := Address, filename := FileName, address := StartAddr, data := OldData, step := Step} = ChildState} = Dclient) ->
-%%    io:format("~s ~p Buff = ~p.~n", [?FILE, ?LINE, dgiot_utils:binary_to_hex(Buff)]),
+    % io:format("~s ~p Buff = ~p.~n", [?FILE, ?LINE, dgiot_utils:binary_to_hex(Buff)]),
     Data = modbus_tcp:parse_frame(Buff),
     case Address + Step >= Maxaddr of
         true ->
             EndData = <<OldData/binary, Data/binary>>,
-%%            io:format("~s ~p EndData = ~p.~n", [?FILE, ?LINE, dgiot_utils:binary_to_hex(EndData)]),
+            % io:format("~s ~p EndData = ~p.~n", [?FILE, ?LINE, dgiot_utils:binary_to_hex(EndData)]),
             AllData = modbus_tcp:parse_frame(StartAddr, FileName, EndData, MinAddr),
             dgiot_data:insert({check_connection, dgiot_utils:to_binary(ChannelId), FileName}, dgiot_datetime:now_secs()),
             dgiot_bridge:send_log(dgiot_utils:to_binary(ChannelId), "~p recv data ~ts => ~p", [dgiot_datetime:format("YYYY-MM-DD HH:NN:SS"), unicode:characters_to_list(dgiot_json:encode(AllData)), dgiot_utils:binary_to_hex(EndData)]),
@@ -84,7 +85,7 @@ handle_info({tcp, Buff}, #dclient{channel = ChannelId,
     end;
 
 handle_info(_Info, #dclient{child = _ChildState} = Dclient) ->
-%%    io:format("~s ~p _Info = ~p.~n", [?FILE, ?LINE, _Info]),
+%    io:format("~s ~p _Info = ~p.~n", [?FILE, ?LINE, _Info]),
 %%    io:format("~s ~p Dclient = ~p.~n", [?FILE, ?LINE, Dclient]),
 %%    io:format("~s ~p ChildState = ~p.~n", [?FILE, ?LINE, ChildState]),
     {noreply, Dclient}.

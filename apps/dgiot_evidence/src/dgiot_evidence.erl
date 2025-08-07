@@ -434,7 +434,7 @@ upload(Path, AppName, SessionToken) ->
     end.
 
 delete_file(Path, _SessionToken) ->
-    NewPath =  <<"rm /data/dgiot/go_fastdfs/",Path/binary>>,
+    NewPath =  <<"rm -rf /data/dgiot/go_fastdfs/",Path/binary>>,
     io:format("~ts", [unicode:characters_to_list(NewPath)]),
     os:cmd(unicode:characters_to_list(NewPath)),
     % Url = "http://127.0.0.1:1250/delete?auth_token=" ++ dgiot_utils:to_list(SessionToken) ++ "&path=" ++ dgiot_utils:to_list(Path),
@@ -442,7 +442,10 @@ delete_file(Path, _SessionToken) ->
         % {ok, {{"HTTP/1.1", 200, "OK"}, _, Json}} ->
     % case jsx:decode(dgiot_utils:to_binary(Json), [{labels, binary}, return_maps]) of
     %     #{<<"status">> := <<"ok">>} = Data ->
-            {ok,#{<<"path">> => NewPath}}.
+            {ok,#{
+                <<"status">> => ok,
+                <<"message">>  => <<"remove success">>,
+                <<"data">> => NewPath}}.
     %     Error1 ->
     %         {ok, Error1}
     % end.
