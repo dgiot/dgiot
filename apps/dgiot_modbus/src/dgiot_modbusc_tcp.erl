@@ -26,15 +26,15 @@
 
 
 %% tcp client  callback
-init(#dclient{child = ChildState} = Dclient) when is_map(ChildState) ->
-    io:format("~s ~p ChildState = ~p.~n", [?FILE, ?LINE, ChildState]),
+init(#dclient{child = ChildState, channel = ChannelId} = Dclient) when is_map(ChildState) ->
+    dgiot_bridge:send_log(ChannelId, "~s ~p init ChannelId = ~p ~n ", [?FILE, ?LINE, ChannelId]),
     {ok, Dclient};
 
 init(_) ->
     {ok, #{}}.
 
-handle_info(connection_ready, #dclient{child = ChildState} = Dclient) ->
-    % io:format("~s ~p ChildState = ~p.~n", [?FILE, ?LINE, ChildState]),
+handle_info(connection_ready, #dclient{child = ChildState, channel = ChannelId} = Dclient) ->
+    dgiot_bridge:send_log(ChannelId, "~s ~p connection_ready ChannelId = ~p ChildState ~p ~n  ", [?FILE, ?LINE, ChannelId, ChildState]),
     rand:seed(exs1024),
     Time = erlang:round(rand:uniform() * 2 + 1) * 1000,
     erlang:send_after(Time, self(), read),

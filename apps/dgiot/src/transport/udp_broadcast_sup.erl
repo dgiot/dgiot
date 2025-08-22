@@ -14,16 +14,26 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
+%% @doc UDP广播服务监督者模块
+%% 负责启动和管理UDP广播工作进程
 -module(udp_broadcast_sup).
 
 -behaviour(supervisor).
 
 -export([start_link/1, init/1]).
 
+%% @doc 启动监督者进程
+%% Name: 监督者注册名称
+%% 返回: {ok, Pid} | {error, Reason}
 start_link(Name) ->
     supervisor:start_link({local, Name}, ?MODULE, []).
 
+%% @doc 初始化监督者
+%% 设置监督策略和子进程规格
 init([]) ->
+    % 定义子进程规格
+    % 使用simple_one_for_one策略，适用于动态添加相同类型的子进程
+    % 重启策略: 5次重启/10秒内
+    % 子进程规格: dgiot_udp_broadcast工作进程
     ChildSpec = [dgiot:child_spec(dgiot_udp_broadcast, worker)],
     {ok, {{simple_one_for_one, 5, 10}, ChildSpec}}.
-
