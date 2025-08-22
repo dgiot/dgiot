@@ -14,34 +14,102 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
+%% @doc 兼容性UDP客户端模块
+%% 支持普通UDP通信、UDP广播和多播功能
 -module(dgiot_udp_client).
 -author("johnliu").
 -include("dgiot_socket.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -include_lib("dgiot/include/dgiot_client.hrl").
-
 -behaviour(gen_server).
+
 %% API
--export([start_link/1, send/2, send/3, do_connect/2]).
--export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
--record(connect_state, {host, port, mod, socket = undefined, transport, freq = 30, count = 1000, child, reconnect_times = 3, reconnect_sleep = 30}).
+-export([
+    start_link/1, 
+    send/3, 
+    send/4, 
+    do_connect/2,
+    join_multicast_group/2,
+    leave_multicast_group/2,
+    is_multicast_ip/1
+]).
+-export([
+    init/1, 
+    handle_call/3, 
+    handle_cast/2, 
+    handle_info/2, 
+    terminate/2, 
+    code_change/3
+]).
+
+-export([
+    test_udp/0, 
+    test_udp_broadcast/0, 
+    test_udp_multicast/0
+]).
+-record(connect_state, {
+    host,           % 目标主机地址
+    port,           % 目标端口号
+    mod,            % 业务逻辑模块
+    socket = undefined, % UDP套接字
+    transport,      % 传输协议模块
+    freq = 30,      % 频率
+    count = 1000,   % 计数
+    child,          % 子模块状态
+    reconnect_times = 3,    % 重连次数
+    reconnect_sleep = 30,   % 重连间隔（秒）
+    broadcast = false,      % 是否启用广播模式
+    multicast = false,      % 是否启用多播模式
+    multicast_groups = [],  % 多播组列表
+    broadcast_addrs = []    % 广播地址列表
+}).
 
 -define(TIMEOUT, 10000).
 -define(UDP_OPTIONS, [binary, {active, once}, {packet, raw}, {reuseaddr, true}, {send_timeout, ?TIMEOUT}]).
-%%-define(UDP_OPTIONS, [binary, {reuseaddr, true}]).
+-define(UDP_BROADCAST_OPTIONS, [binary, {active, once}, {packet, raw}, {broadcast, true}, {reuseaddr, true}, {send_timeout, ?TIMEOUT}]).
+-define(UDP_MULTICAST_OPTIONS, [binary, {active, once}, {packet, raw}, {reuseaddr, true}, {multicast_ttl, 4}, {send_timeout, ?TIMEOUT}]).
 
+%% @doc 启动UDP客户端
+%% Args: 包含通道ID、客户端ID、IP、端口和业务模块的映射
 start_link(Args) ->
     dgiot_client:start_link(?MODULE, Args).
 
 %%%===================================================================
-%%% gen_server callbacks
+%%% gen_server回调函数
 %%%===================================================================
 
+%% @doc 初始化UDP客户端
 init([#{<<"channel">> := ChannelId, <<"client">> := ClientId, <<"ip">> := Host, <<"port">> := Port, <<"mod">> := Mod} = Args]) ->
     Transport = gen_udp,
     Ip = dgiot_utils:to_list(Host),
     Port1 = dgiot_utils:to_int(Port),
-    UserData = #connect_state{mod = Mod, host = Ip, port = Port1, freq = 30, count = 300, transport = Transport},
+    
+    % 检查是否启用广播模式
+    Broadcast = maps:get(<<"broadcast">>, Args, false),
+    
+    % 检查是否启用多播模式
+    Multicast = maps:get(<<"multicast">>, Args, false),
+    MulticastGroups = maps:get(<<"multicast_groups">>, Args, []),
+    
+    % 获取广播地址（如果启用广播模式）
+    BroadcastAddrs = case Broadcast of
+        true -> get_broadcast_addrs();
+        false -> []
+    end,
+    
+    UserData = #connect_state{
+        mod = Mod, 
+        host = Ip, 
+        port = Port1, 
+        freq = 30, 
+        count = 300, 
+        transport = Transport,
+        broadcast = Broadcast,
+        multicast = Multicast,
+        multicast_groups = MulticastGroups,
+        broadcast_addrs = BroadcastAddrs
+    },
+    
     ChildState = maps:get(<<"child">>, Args, #{}),
     StartTime = dgiot_client:get_time(maps:get(<<"starttime">>, Args, dgiot_datetime:now_secs())),
     EndTime = dgiot_client:get_time(maps:get(<<"endtime">>, Args, dgiot_datetime:now_secs() + 1000000000)),
@@ -96,17 +164,25 @@ handle_cast(Msg, #dclient{channel = ChannelId, client = ClientId,
 
 %% 连接次数为0了
 handle_info(do_connect, Dclient) ->
-%%    ?LOG(info, "do_connect ~s:~p", [State#connect_state.host, State#connect_state.port]),
     {stop, normal, Dclient};
 
 %% 连接次数为0了
 handle_info(connect_stop, Dclient) ->
-%%    ?LOG(info, "CONNECT CLOSE ~s:~p", [State#connect_state.host, State#connect_state.port]),
     {noreply, Dclient, hibernate};
 
-handle_info({connection_ready, Socket}, #dclient{userdata = #connect_state{mod = Mod} = UserData} = Dclient) ->
-%%    io:format("~s ~p connection_ready ~p ~n", [?FILE, ?LINE, Dclient]),
+handle_info({connection_ready, Socket}, #dclient{userdata = #connect_state{mod = Mod, multicast = Multicast, multicast_groups = Groups} = UserData} = Dclient) ->
     NewUserData = UserData#connect_state{socket = Socket},
+    
+    % 加入多播组（如果启用多播模式）
+    case Multicast of
+        true ->
+            lists:foreach(fun(Group) ->
+                join_multicast_group(Socket, Group)
+            end, Groups);
+        false ->
+            ok
+    end,
+    
     case Mod:handle_info(connection_ready, Dclient#dclient{userdata = NewUserData}) of
         {noreply, NewDclient} ->
             inet:setopts(Socket, [{active, once}]),
@@ -118,15 +194,50 @@ handle_info({connection_ready, Socket}, #dclient{userdata = #connect_state{mod =
 %% 往udp server 发送报文
 handle_info({send, _PayLoad}, #dclient{userdata = #connect_state{socket = undefined}} = Dclient) ->
     {noreply, Dclient, hibernate};
-handle_info({send, PayLoad}, #dclient{userdata = #connect_state{host = _Ip, port = _Port, transport = Transport, socket = Socket}} = Dclient) ->
-%%    io:format("~s ~p ~p send to from ~p:~p : ~p ~n", [?FILE, ?LINE, self(), _Ip, _Port, dgiot_utils:to_hex(PayLoad)]),
-    Transport:send(Socket, PayLoad),
+
+handle_info({send, PayLoad}, #dclient{userdata = #connect_state{host = Ip, port = Port, transport = Transport, socket = Socket, broadcast = Broadcast, multicast = Multicast, broadcast_addrs = Addrs}} = Dclient) ->
+    case {Broadcast, Multicast} of
+        {true, _} ->
+            % 广播模式：发送到所有广播地址
+            lists:foreach(fun(Addr) ->
+                Transport:send(Socket, Addr, Port, PayLoad)
+            end, Addrs);
+        {_, true} ->
+            % 多播模式：发送到多播地址
+            Transport:send(Socket, Ip, Port, PayLoad);
+        {false, false} ->
+            % 普通模式：发送到指定地址
+            Transport:send(Socket, Ip, Port, PayLoad)
+    end,
+    {noreply, Dclient, hibernate};
+
+handle_info({send, PayLoad, Opts}, #dclient{userdata = #connect_state{host = Ip, port = Port, transport = Transport, socket = Socket, broadcast_addrs = Addrs}} = Dclient) ->
+    % 支持发送选项，例如指定是否广播或多播
+    case proplists:get_value(broadcast, Opts, false) of
+        true ->
+            % 发送到所有广播地址
+            lists:foreach(fun(Addr) ->
+                Transport:send(Socket, Addr, Port, PayLoad)
+            end, Addrs);
+        false ->
+            % 检查是否多播发送
+            case proplists:get_value(multicast, Opts, false) of
+                true ->
+                    % 多播发送
+                    Transport:send(Socket, Ip, Port, PayLoad);
+                false ->
+                    % 单播发送
+                    Transport:send(Socket, Ip, Port, PayLoad)
+            end
+    end,
     {noreply, Dclient, hibernate};
 
 handle_info({ssl, _RawSock, Data}, Dclient) ->
     handle_info({ssl, _RawSock, Data}, Dclient);
 
-handle_info({udp, Socket, _Ip, _Port, Binary} = _A, #dclient{userdata = #connect_state{socket = Socket, mod = Mod}} = Dclient) ->
+%% 处理接收到的UDP数据
+handle_info({udp, Socket, Ip, Port, Binary} = _A, #dclient{userdata = #connect_state{socket = Socket, mod = Mod}} = Dclient) ->
+    % 处理大二进制数据，避免内存问题
     NewBin =
         case binary:referenced_byte_size(Binary) of
             Large when Large > 2 * byte_size(Binary) ->
@@ -134,7 +245,12 @@ handle_info({udp, Socket, _Ip, _Port, Binary} = _A, #dclient{userdata = #connect
             _ ->
                 Binary
         end,
-    case Mod:handle_info({udp, NewBin}, Dclient) of
+    
+    % 检查是否是多播地址
+    IsMulticast = is_multicast_ip(Ip),
+    
+    % 调用业务模块处理接收到的UDP数据，传递多播信息
+    case Mod:handle_info({udp, Ip, Port, NewBin, IsMulticast}, Dclient) of
         {noreply, NewDclient} ->
             inet:setopts(Socket, [{active, once}]),
             {noreply, NewDclient, hibernate};
@@ -142,11 +258,17 @@ handle_info({udp, Socket, _Ip, _Port, Binary} = _A, #dclient{userdata = #connect
             {noreply, Reason, NewDclient, hibernate}
     end;
 
-handle_info({udp_error, _Socket, _Reason}, Dclient) ->
+handle_info({udp_error, _Socket, Reason}, Dclient) ->
+    ?LOG(error, "UDP error: ~p", [Reason]),
     {noreply, Dclient, hibernate};
 
 handle_info({udp_closed, _Sock}, #dclient{channel = ChannelId, client = ClientId,
-    userdata = #connect_state{transport = Transport, socket = Socket, mod = Mod}} = Dclient) ->
+    userdata = #connect_state{transport = Transport, socket = Socket, mod = Mod, multicast_groups = Groups} = _UserData} = Dclient) ->
+    % 离开多播组（如果已加入）
+    lists:foreach(fun(Group) ->
+        leave_multicast_group(Socket, Group)
+    end, Groups),
+    
     Transport:close(Socket),
     case Mod:handle_info(udp_closed, Dclient) of
         {noreply, #dclient{userdata = Userdata} = NewDclient} ->
@@ -172,39 +294,42 @@ handle_info({udp_closed, _Sock}, #dclient{channel = ChannelId, client = ClientId
             {noreply, NewDclient, hibernate}
     end;
 
-handle_info(Info, #dclient{channel = ChannelId, client = ClientId, userdata = #connect_state{mod = Mod, transport = Transport, socket = Socket}} = Dclient) ->
-%%    io:format("~s ~p Info ~p ~n", [?FILE, ?LINE, Info]),
-%%    io:format("~s ~p Dclient ~p ~n", [?FILE, ?LINE, Dclient]),
+handle_info(Info, #dclient{channel = ChannelId, client = ClientId, userdata = #connect_state{mod = Mod, transport = Transport, socket = Socket, multicast_groups = Groups}} = Dclient) ->
     case Mod:handle_info(Info, Dclient) of
         {noreply, NewDclient} ->
             {noreply, NewDclient, hibernate};
         {stop, _Reason, NewDclient} ->
+            % 离开多播组（如果已加入）
+            lists:foreach(fun(Group) ->
+                leave_multicast_group(Socket, Group)
+            end, Groups),
+            
             Transport:close(Socket),
             timer:sleep(10),
             dgiot_client:stop(ChannelId, ClientId),
             {noreply, NewDclient, hibernate}
     end.
 
-terminate(Reason, #connect_state{mod = Mod, child = ChildState}) ->
+terminate(Reason, #dclient{userdata = #connect_state{mod = Mod, child = ChildState, socket = Socket, multicast_groups = Groups}}) ->
+    % 离开多播组（如果已加入）
+    lists:foreach(fun(Group) ->
+        leave_multicast_group(Socket, Group)
+    end, Groups),
+    
     Mod:terminate(Reason, ChildState).
 
-code_change(OldVsn, #connect_state{mod = Mod, child = ChildState} = State, Extra) ->
+code_change(OldVsn, #dclient{userdata = #connect_state{mod = Mod, child = ChildState}} = State, Extra) ->
     {ok, NewChildState} = Mod:code_change(OldVsn, ChildState, Extra),
-    {ok, State#connect_state{child = NewChildState}}.
-
+    {ok, State#dclient{userdata = State#dclient.userdata#connect_state{child = NewChildState}}}.
 
 %%%===================================================================
-%%% Internal functions
+%%% 内部函数
 %%%===================================================================
-send(#udp{transport = Transport, socket = Socket, log = _Log}, Payload) ->
-    case Socket == undefined of
-        true ->
-            {error, disconnected};
-        false ->
-            timer:sleep(1),
-            Transport:send(Socket, Payload)
-    end.
 
+%% @doc 发送数据到指定通道和客户端
+%% ChannelId: 通道ID
+%% ClientId: 客户端ID
+%% Payload: 要发送的数据
 send(ChannelId, ClientId, Payload) ->
     case dgiot_client:get(ChannelId, ClientId) of
         {ok, Pid} ->
@@ -213,6 +338,22 @@ send(ChannelId, ClientId, Payload) ->
             pass
     end.
 
+%% @doc 发送数据到指定通道和客户端（带选项）
+%% ChannelId: 通道ID
+%% ClientId: 客户端ID
+%% Payload: 要发送的数据
+%% Opts: 发送选项，如[{broadcast, true}]或[{multicast, true}]
+send(ChannelId, ClientId, Payload, Opts) ->
+    case dgiot_client:get(ChannelId, ClientId) of
+        {ok, Pid} ->
+            Pid ! {send, Payload, Opts};
+        _ ->
+            pass
+    end.
+
+%% @doc 启动连接过程
+%% Sleep: 是否需要先休眠
+%% State: 客户端状态
 do_connect(Sleep, #dclient{userdata = Connect_state} = State) ->
     Client = self(),
     spawn(
@@ -222,17 +363,22 @@ do_connect(Sleep, #dclient{userdata = Connect_state} = State) ->
         end),
     State.
 
-connect(Client, #dclient{userdata = #connect_state{host = Host, port = Port, reconnect_times = Times, reconnect_sleep = Sleep} = Connect_state} = State) ->
-%%    io:format("~s ~p Client ~s:~p ~p", [?FILE, ?LINE, Host, Port, Client]),
+%% @doc 建立UDP连接
+connect(Client, #dclient{userdata = #connect_state{host = Host, port = Port, reconnect_times = Times, reconnect_sleep = Sleep, broadcast = Broadcast, multicast = Multicast} = Connect_state} = State) ->
     case is_process_alive(Client) of
         true ->
-%%            ?LOG(info, "CONNECT ~s:~p ~p", [Host, Port, Times]),
-%%            io:format("~s ~p CONNECT ~s:~p ~p", [?FILE, ?LINE, Host, Port, Times]),
-            case gen_udp:open(0, [binary, {reuseaddr, true}]) of
+            % 根据是否广播或多播模式选择不同的UDP选项
+            UdpOptions = case {Broadcast, Multicast} of
+                {true, _} -> ?UDP_BROADCAST_OPTIONS;
+                {_, true} -> ?UDP_MULTICAST_OPTIONS;
+                _ -> ?UDP_OPTIONS
+            end,
+            
+            case gen_udp:open(0, UdpOptions) of
                 {ok, Socket} ->
-                    %% Trigger the udp_passive event
-                    case gen_udp:connect(Socket, dgiot_utils:to_list(Host), Port) of
-                        ok ->
+                    case {Broadcast, Multicast} of
+                        {true, _} ->
+                            % 广播模式：不建立连接，直接使用套接字
                             case catch gen_server:call(Client, {connection_ready, Socket}, 5000) of
                                 ok ->
                                     inet:setopts(Socket, [{active, once}]),
@@ -240,21 +386,181 @@ connect(Client, #dclient{userdata = #connect_state{host = Host, port = Port, rec
                                 _ ->
                                     ok
                             end;
-                        {error, Reason} ->
-                            case is_integer(Times) of
-                                true when Times - 1 > 0 ->
-                                    Client ! {connection_error, Reason},
-                                    timer:sleep(Sleep * 1000),
-                                    connect(Client, State#dclient{userdata = Connect_state#connect_state{reconnect_times = Times - 1}});
-                                false when is_atom(Times) ->
-                                    Client ! {connection_error, Reason},
-                                    timer:sleep(Sleep * 1000),
-                                    connect(Client, State);
+                        {_, true} ->
+                            % 多播模式：加入多播组
+                            lists:foreach(fun(Group) ->
+                                join_multicast_group(Socket, Group)
+                            end, Connect_state#connect_state.multicast_groups),
+                            
+                            case catch gen_server:call(Client, {connection_ready, Socket}, 5000) of
+                                ok ->
+                                    inet:setopts(Socket, [{active, once}]),
+                                    gen_udp:controlling_process(Socket, Client);
                                 _ ->
-                                    Client ! connect_stop
+                                    ok
+                            end;
+                        _ ->
+                            % 普通模式：建立连接
+                            case gen_udp:connect(Socket, dgiot_utils:to_list(Host), Port) of
+                                ok ->
+                                    case catch gen_server:call(Client, {connection_ready, Socket}, 5000) of
+                                        ok ->
+                                            inet:setopts(Socket, [{active, once}]),
+                                            gen_udp:controlling_process(Socket, Client);
+                                        _ ->
+                                            ok
+                                    end;
+                                {error, Reason} ->
+                                    handle_connect_error(Client, Reason, Times, Sleep, Connect_state, State)
                             end
                     end;
-                _ ->
-                    pass
+                {error, Reason} ->
+                    handle_connect_error(Client, Reason, Times, Sleep, Connect_state, State)
             end
     end.
+
+%% @doc 处理连接错误
+handle_connect_error(Client, Reason, Times, Sleep, Connect_state, State) ->
+    case is_integer(Times) of
+        true when Times - 1 > 0 ->
+            Client ! {connection_error, Reason},
+            timer:sleep(Sleep * 1000),
+            connect(Client, State#dclient{userdata = Connect_state#connect_state{reconnect_times = Times - 1}});
+        false when is_atom(Times) ->
+            Client ! {connection_error, Reason},
+            timer:sleep(Sleep * 1000),
+            connect(Client, State);
+        _ ->
+            Client ! connect_stop
+    end.
+
+%% @doc 获取所有网络接口的广播地址
+get_broadcast_addrs() ->
+    {ok, Interfaces} = inet:getifaddrs(),
+    lists:foldl(fun get_broadcast_addresses/2, [], Interfaces).
+
+%% @doc 获取网络接口的广播地址
+get_broadcast_addresses(NetConfig, AlreadyFoundAddresses) ->
+    case get_broadcast_address(NetConfig) of
+        none -> AlreadyFoundAddresses;
+        Address -> [Address | AlreadyFoundAddresses]
+    end.
+
+%% @doc 从网络配置中提取广播地址
+get_broadcast_address({_NetName, Opts}) ->
+    proplists:get_value(broadaddr, Opts, none).
+
+%% @doc 检查IP地址是否为多播地址
+is_multicast_ip(Ip) when is_tuple(Ip) andalso tuple_size(Ip) =:= 4 ->
+    {A, B, C, D} = Ip,
+    (A >= 224 andalso A =< 239) orelse
+    (A =:= 239 andalso B =:= 255 andalso C =:= 255 andalso D =:= 255);
+is_multicast_ip(_) ->
+    false.
+
+%% @doc 加入多播组
+join_multicast_group(Socket, MulticastGroup) when is_tuple(MulticastGroup) ->
+    case inet:getifaddrs() of
+        {ok, Interfaces} ->
+            lists:foreach(fun({_IfName, Opts}) ->
+                case proplists:get_value(addr, Opts) of
+                    {A, _B, _C, _D} = LocalIp when A =/= 127 ->
+                        try
+                            inet:setopts(Socket, [{add_membership, {MulticastGroup, LocalIp}}]),
+                            ?LOG(info, "Joined multicast group ~p on interface ~p", [MulticastGroup, LocalIp])
+                        catch
+                            _:Error ->
+                                ?LOG(error, "Failed to join multicast group ~p on interface ~p: ~p", [MulticastGroup, LocalIp, Error])
+                        end;
+                    _ ->
+                        ok
+                end
+            end, Interfaces);
+        {error, Reason} ->
+            ?LOG(error, "Failed to get network interfaces: ~p", [Reason])
+    end;
+join_multicast_group(Socket, MulticastGroup) when is_list(MulticastGroup) ->
+    case inet:parse_address(MulticastGroup) of
+        {ok, Ip} -> join_multicast_group(Socket, Ip);
+        {error, Reason} -> ?LOG(error, "Invalid multicast address ~p: ~p", [MulticastGroup, Reason])
+    end.
+
+%% @doc 离开多播组
+leave_multicast_group(Socket, MulticastGroup) when is_tuple(MulticastGroup) ->
+    case inet:getifaddrs() of
+        {ok, Interfaces} ->
+            lists:foreach(fun({_IfName, Opts}) ->
+                case proplists:get_value(addr, Opts) of
+                    {A, _B, _C, _D} = LocalIp when A =/= 127 ->
+                        try
+                            inet:setopts(Socket, [{drop_membership, {MulticastGroup, LocalIp}}]),
+                            ?LOG(info, "Left multicast group ~p on interface ~p", [MulticastGroup, LocalIp])
+                        catch
+                            _:Error ->
+                                ?LOG(error, "Failed to leave multicast group ~p on interface ~p: ~p", [MulticastGroup, LocalIp, Error])
+                        end;
+                    _ ->
+                        ok
+                end
+            end, Interfaces);
+        {error, Reason} ->
+            ?LOG(error, "Failed to get network interfaces: ~p", [Reason])
+    end;
+leave_multicast_group(Socket, MulticastGroup) when is_list(MulticastGroup) ->
+    case inet:parse_address(MulticastGroup) of
+        {ok, Ip} -> leave_multicast_group(Socket, Ip);
+        {error, Reason} -> ?LOG(error, "Invalid multicast address ~p: ~p", [MulticastGroup, Reason])
+    end.
+
+% 1. 普通UDP模式
+test_udp() ->
+    Args = #{
+        <<"channel">> => <<"channel1">>,
+        <<"client">> => <<"client1">>,
+        <<"ip">> => "192.168.1.100",
+        <<"port">> => 8888,
+        <<"mod">> => your_business_module,
+        <<"broadcast">> => false,  % 默认值，可省略
+        <<"multicast">> => false   % 默认值，可省略
+    },
+    {ok, _Pid} = dgiot_udp_client:start_link(Args),
+
+% 发送数据
+dgiot_udp_client:send(<<"channel1">>, <<"client1">>, <<"Hello">>).
+
+% 2. UDP广播模式
+test_udp_broadcast() ->
+    Args = #{
+        <<"channel">> => <<"channel2">>,
+        <<"client">> => <<"client2">>,
+        <<"ip">> => "192.168.1.255",  % 广播地址
+        <<"port">> => 8888,
+        <<"mod">> => your_business_module,
+        <<"broadcast">> => true  % 启用广播模式
+    },
+{ok, _Pid} = dgiot_udp_client:start_link(Args),
+
+% 发送广播数据
+dgiot_udp_client:send(<<"channel2">>, <<"client2">>, <<"Broadcast Message">>),
+
+% 或者强制发送到特定地址（即使不在广播模式下）
+dgiot_udp_client:send(<<"channel2">>, <<"client2">>, <<"Specific Message">>, [{broadcast, true}]).
+
+% 3. UDP多播模式
+test_udp_multicast() ->
+    Args = #{
+        <<"channel">> => <<"channel3">>,
+        <<"client">> => <<"client3">>,
+        <<"ip">> => "226.0.0.80",  % 多播地址
+        <<"port">> => 8001,
+        <<"mod">> => your_business_module,
+        <<"multicast">> => true,  % 启用多播模式
+        <<"multicast_groups">> => ["226.0.0.80"]  % 要加入的多播组
+        },
+{ok, _Pid} = dgiot_udp_client:start_link(Args),
+
+% 发送多播数据
+dgiot_udp_client:send(<<"channel3">>, <<"client3">>, <<"Multicast Message">>),
+
+% 或者强制发送到特定地址（即使不在多播模式下）
+dgiot_udp_client:send(<<"channel3">>, <<"client3">>, <<"Multicast Message">>, [{multicast, true}]).

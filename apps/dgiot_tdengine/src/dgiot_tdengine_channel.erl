@@ -191,11 +191,12 @@ handle_message({gun_down, _Pid, _Protocol}, #state{id = _ChannelId, env = _Confi
 
 handle_message(ws_login, #state{id = ChannelId, env = Env} = State) ->
     erlang:send_after(5000, self(), init),
+    % io:format("~s ~p gun_down ChannelId = ~p Env ~p.~n", [?FILE, ?LINE, ChannelId, Env]),
     case dgiot_tdengine_pool:login(ChannelId, Env) of
         {ok, {ConnPid, StreamRef}} ->
             {ok, State#state{env = Env#{<<"driver">> => <<"WS">>, <<"ws_pid">> => ConnPid, <<"ws_ref">> => StreamRef}}};
-        {error, _Error} ->
-%%            dgiot_bridge:send_log(ChannelId, "Tdengine WS Login error, ~p~n", [Error]),
+        {error, Error} ->
+           dgiot_bridge:send_log(ChannelId, "Tdengine WS Login error, ~p~n", [Error]),
             {ok, State}
     end;
 
