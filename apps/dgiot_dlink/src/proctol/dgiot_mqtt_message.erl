@@ -34,10 +34,24 @@ init_ets() ->
 
 %%
 on_message_publish(Message = #message{topic = <<"$dg/user/dashboard/", SessionToken:34/binary, _Rest/binary>>, payload = Payload, from = ClientId}, _State) ->
+    % io:format("~s ~p Payload: ~p~n", [?FILE, ?LINE, Payload]),
     dgiot_mqtt:publish(dgiot_utils:to_md5(ClientId), <<"dashboard_ack/", SessionToken/binary>>, Payload),
     {ok, Message};
 
+on_message_publish(Message = #message{topic = <<"$dg/user/", DeviceId:10/binary, "/properties/report">>, payload = Payload}, _State) ->
+    % io:format("~s ~p DeviceId: ~p Payload: ~p~n", [?FILE, ?LINE,DeviceId, Payload]),
+    case dgiot_device:lookup(DeviceId) of
+        {ok,#{ <<"devaddr">> := DevAddr, <<"productid">> := ProductId} } ->
+            Topic = <<"$dg/thing/",ProductId/binary, "/",DevAddr/binary,"/properties/report">>,
+            dgiot_mqtt:publish(DeviceId, Topic, Payload),
+            % io:format("~s ~p Payload: ~p~n", [?FILE, ?LINE, Payload]),
+            {ok, Message};
+        _ ->
+            {ok, Message}
+    end;
+
 on_message_publish(Message = #message{topic = <<"$dg/thing/", Topic/binary>>, payload = Payload, from = _ClientId, headers = _Headers}, _State) ->
+    % io:format("~s ~p Topic: ~p Payload: ~p~n", [?FILE, ?LINE, Topic, Payload]),
     case re:split(Topic, <<"/">>) of
         [ProductId, DevAddr, <<"init">>, <<"request">>] ->
 %%      初始化请求      $dg/thing/{productId}/{deviceAddr}/init/request
@@ -84,6 +98,7 @@ on_message_publish(Message = #message{from = DeviceAddr, headers = #{username :=
     {ok, Message};
 
 on_message_publish(Message = #message{topic = _Topic, payload = _Payload}, _State) ->
+    % io:format("~s ~p _Topic: ~p Payload: ~p~n", [?FILE, ?LINE, _Topic, _Payload]),
     {ok, Message}.
 
 %% topic 重定向

@@ -14,36 +14,43 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
+%% @doc 任务统计主模块
+%% 负责任务统计的核心业务逻辑，包括数据采集、计算、存储和指令生成
 -module(dgiot_task).
 -include("dgiot_task.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
 
+%% 导出函数
 -export([start/2, send/3, get_pnque_len/1, save_pnque/4, get_pnque/1, del_pnque/1, save_td/4, merge_cache_data/3, save_cache_data/2]).
 -export([get_props/1, get_control/3, get_collection/4, get_calculated/4, get_instruct/2, get_storage/2, string2value/2, string2value/3, get_statistic/7]).
 -export([save_td_no_match/4, get_last_value/4]).
 -export([save_client/2, del_client/1]).
+-export([compare/3]).
 
-%% 注册协议类型
+%% @doc 注册任务统计协议类型
+%% 定义任务统计协议的基本信息，包括类型、列数、标题和描述
 -protocol_type(#{
-    cType => <<"TASKSTATISTICS">>,
-    type => <<"TASKSTATISTICS">>,
-    colum => 10,
+    cType => <<"TASKSTATISTICS">>,  %% 协议类型代码
+    type => <<"TASKSTATISTICS">>,   %% 协议类型名称
+    colum => 10,                    %% 显示列数
     title => #{
-        zh => <<"任务统计"/utf8>>
+        zh => <<"任务统计"/utf8>>   %% 中文标题
     },
     description => #{
-        zh => <<"任务统计"/utf8>>
+        zh => <<"任务统计"/utf8>>   %% 中文描述
     }
 }).
 
+%% @doc 定义协议参数
+%% 配置任务统计协议的可配置参数，包括统计类型、键、比较类型和值
 -params(#{
     <<"type">> => #{
-        order => 1,
+        order => 1,  %% 参数顺序
         type => string,
         required => true,
-        default => #{<<"value">> => <<"duration">>, <<"label">> => <<"时长累加"/utf8>>},
-        enum => [
+        default => #{<<"value">> => <<"duration">>, <<"label">> => <<"时长累加"/utf8>>},  %% 默认值
+        enum => [  %% 枚举选项
             #{<<"value">> => <<"duration">>, <<"label">> => <<"时长累加"/utf8>>},
             #{<<"value">> => <<"frequency">>, <<"label">> => <<"次数累加"/utf8>>}
         ],
@@ -71,7 +78,7 @@
         type => string,
         required => true,
         default => #{<<"value">> => <<"EQ">>, <<"label">> => <<"等于"/utf8>>},
-        enum => [
+        enum => [  %% 比较类型枚举
             #{<<"value">> => <<"LT">>, <<"label">> => <<"小于"/utf8>>},
             #{<<"value">> => <<"LE">>, <<"label">> => <<"小于等于"/utf8>>},
             #{<<"value">> => <<"GT">>, <<"label">> => <<"大于"/utf8>>},
@@ -100,6 +107,10 @@
     }
 }).
 
+%% @doc 启动任务客户端
+%% 根据通道ID和产品ID列表启动对应的任务客户端
+%% @param ChannelId 通道ID
+%% @param ProductIds 产品ID列表
 start(ChannelId, ProductIds) ->
     lists:map(fun(Y) ->
         case Y of
@@ -119,6 +130,10 @@ start(ChannelId, ProductIds) ->
         end
               end, ets:tab2list(?DGIOT_PNQUE)).
 
+%% @doc 保存客户端到任务列表
+%% 将客户端ID保存到指定通道的任务客户端列表中
+%% @param ChannelId 通道ID
+%% @param ClientId 客户端ID
 save_client(ChannelId, ClientId) ->
     case dgiot_data:get(?DGIOT_TASK, ChannelId) of
         not_find ->
@@ -128,6 +143,9 @@ save_client(ChannelId, ClientId) ->
             dgiot_data:insert(?DGIOT_TASK, ChannelId, New_ClientIds)
     end.
 
+%% @doc 删除通道的所有客户端
+%% 停止并删除指定通道的所有任务客户端
+%% @param ChannelId 通道ID
 del_client(ChannelId) ->
     case dgiot_data:get(?DGIOT_TASK, ChannelId) of
         not_find ->
@@ -141,6 +159,11 @@ del_client(ChannelId) ->
             pass
     end.
 
+%% @doc 发送数据到任务通道
+%% 通过任务通道发送设备上报数据
+%% @param ProductId 产品ID
+%% @param DevAddr 设备地址
+%% @param Payload 数据负载
 send(ProductId, DevAddr, Payload) ->
     case dgiot_data:get({?TYPE, ProductId}) of
         not_find ->
@@ -150,25 +173,13 @@ send(ProductId, DevAddr, Payload) ->
             dgiot_client:send(ChannelId, DevAddr, Topic, Payload)
     end.
 
-%% 比较统计值
-compare(KeyValue, <<"LT">>, Value) ->
-    KeyValue < Value;
-compare(KeyValue, <<"LE">>, Value) ->
-    KeyValue =< Value;
-compare(KeyValue, <<"GT">>, Value) ->
-    KeyValue > Value;
-compare(KeyValue, <<"GE">>, Value) ->
-    KeyValue >= Value;
-compare(KeyValue, <<"EQ">>, Value) ->
-    KeyValue == Value;
-compare(KeyValue, <<"NE">>, Value) ->
-    KeyValue =/= Value;
-compare(_, _, _) ->
-    false.
-
-%% 查询上次值
-%% select last(devaddr) as devaddr FROM  _24b9b4bc50._1c9966755d;
-%% dgiot_data:get({last_value, <<"857ed41119">>, <<"PDJ">>, <<"m583_10">>, <<"bc11c_failnum">>})
+%% @doc 获取上次统计值
+%% 从缓存或TDengine数据库获取上次统计的值
+%% @param ProductId 产品ID
+%% @param DevAddr 设备地址
+%% @param Key 统计键
+%% @param Identifier 物模型标识符
+%% @return 上次统计值
 get_last_value(ProductId, DevAddr, Key, Identifier) ->
     case dgiot_data:get({last_value, ProductId, DevAddr, Key, Identifier}) of
         not_find ->
@@ -193,55 +204,34 @@ get_last_value(ProductId, DevAddr, Key, Identifier) ->
             dgiot_utils:to_int(Value)
     end.
 
-%% 统计时长
-get_statistic(ProductId, DevAddr, Key, Identifier, KeyValue, #{<<"type">> := <<"duration">>, <<"comparetype">> := Comparetype, <<"value">> := Value}, Acc) ->
-    Last_Value = get_last_value(ProductId, DevAddr, Key, Identifier),
-    case compare(KeyValue, Comparetype, dgiot_utils:to_int(Value)) of
-        true ->
-            Time =
-                case dgiot_data:get({last_time, ProductId, DevAddr, Key, Identifier}) of
-                    {true, OldTime} ->
-                        dgiot_datetime:now_secs() - OldTime;
-                    _ ->
-                        0
-                end,
-            dgiot_data:insert({last_time, ProductId, DevAddr, Key, Identifier}, {true, dgiot_datetime:now_secs()}),
-            dgiot_data:insert({last_value, ProductId, DevAddr, Key, Identifier}, Last_Value + Time),
-            Acc#{Identifier => Last_Value + Time};
-        _ ->
-            dgiot_data:insert({last_time, ProductId, DevAddr, Key, Identifier}, {false, dgiot_datetime:now_secs()}),
-            dgiot_data:insert({last_value, ProductId, DevAddr, Key, Identifier}, Last_Value),
-            Acc#{Identifier => Last_Value}
-    end;
+%% @doc 获取统计值
+%% 根据统计类型（时长/次数）获取相应的统计值
+%% @param ProductId 产品ID
+%% @param DevAddr 设备地址
+%% @param Key 统计键
+%% @param Identifier 物模型标识符
+%% @param KeyValue 当前键值
+%% @param DataSource 数据源配置
+%% @param Acc 累计结果
+%% @return 更新后的统计结果
+get_statistic(ProductId, DevAddr, Key, Identifier, KeyValue, #{<<"type">> := <<"duration">>} = DataSource, Acc) ->
+    dgiot_task_utils:handle_duration_statistic(ProductId, DevAddr, Key, Identifier, KeyValue, DataSource, Acc);
 
-%% 次数累加
-%% dgiot_data:get({last_flag, <<"857ed41119">>, <<"PDJ">>, <<"m583_10">>, <<"bc11c_failnum">>}).
-get_statistic(ProductId, DevAddr, Key, Identifier, KeyValue, #{<<"type">> := <<"frequency">>, <<"comparetype">> := Comparetype, <<"value">> := Value}, Acc) ->
-    Num = get_last_value(ProductId, DevAddr, Key, Identifier),
-    case compare(KeyValue, Comparetype, dgiot_utils:to_int(Value)) of
-        true ->
-            case dgiot_data:get({last_flag, ProductId, DevAddr, Key, Identifier}) of
-                not_find when Num =:= 0 ->
-                    dgiot_data:insert({last_value, ProductId, DevAddr, Key, Identifier}, Num + 1),
-                    dgiot_data:insert({last_flag, ProductId, DevAddr, Key, Identifier}, true),
-                    Acc#{Identifier => Num + 1};
-                false ->
-                    dgiot_data:insert({last_value, ProductId, DevAddr, Key, Identifier}, Num + 1),
-                    dgiot_data:insert({last_flag, ProductId, DevAddr, Key, Identifier}, true),
-                    Acc#{Identifier => Num + 1};
-                _ ->
-                    Acc#{Identifier => Num}
-            end;
-        _ ->
-            dgiot_data:insert({last_value, ProductId, DevAddr, Key, Identifier}, Num),
-            dgiot_data:insert({last_flag, ProductId, DevAddr, Key, Identifier}, false),
-            Acc#{Identifier => Num}
-    end;
+%% @doc 处理次数统计
+get_statistic(ProductId, DevAddr, Key, Identifier, KeyValue, #{<<"type">> := <<"frequency">>} = DataSource, Acc) ->
+    dgiot_task_utils:handle_frequency_statistic(ProductId, DevAddr, Key, Identifier, KeyValue, DataSource, Acc);
 
+%% @doc 默认统计处理
 get_statistic(_, _, _, _, _, _, Acc) ->
     Acc.
 
-%%获取计算值，必须返回物模型里面的数据表示，不能用寄存器地址
+%% @doc 获取计算值
+%% 根据物模型配置计算统计值，必须返回物模型里面的数据表示
+%% @param ProductId 产品ID
+%% @param DevAddr 设备地址
+%% @param Calculated 已计算的数据
+%% @param Props 物模型属性列表
+%% @return 包含计算值的映射
 get_calculated(ProductId, DevAddr, Calculated, Props) ->
     lists:foldl(fun(X, Acc) ->
         case Acc of
@@ -282,6 +272,10 @@ get_calculated(ProductId, DevAddr, Calculated, Props) ->
         end
                 end, Calculated, Props).
 
+%% @doc 获取物模型属性列表
+%% 查询产品的物模型属性配置
+%% @param ProductId 产品ID
+%% @return 物模型属性列表
 get_props(ProductId) ->
     case dgiot_product:lookup_prod(ProductId) of
         {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
@@ -290,7 +284,13 @@ get_props(ProductId) ->
             []
     end.
 
-%% 主动上报 dis为[]
+%% @doc 获取采集数据（主动上报模式）
+%% 当设备主动上报数据时，根据物模型配置获取用户数据
+%% @param ProductId 产品ID
+%% @param Dis 设备标识符列表（为空表示主动上报）
+%% @param Payload 原始数据负载
+%% @param Props 物模型属性列表
+%% @return 处理后的数据映射
 get_collection(ProductId, [], Payload, Props) ->
     lists:foldl(fun(X, Acc2) ->
         case Acc2 of
@@ -308,7 +308,13 @@ get_collection(ProductId, [], Payload, Props) ->
         end
                 end, Payload, Props);
 
-%%转换设备上报值，必须返回物模型里面的数据表示，不能用寄存器地址
+%% @doc 获取采集数据（指定标识符模式）
+%% 根据指定的设备标识符列表获取用户数据
+%% @param ProductId 产品ID
+%% @param Dis 设备标识符列表
+%% @param Payload 原始数据负载
+%% @param Props 物模型属性列表
+%% @return 处理后的数据映射
 get_collection(ProductId, Dis, Payload, Props) ->
     lists:foldl(fun(Identifier, Acc1) ->
         lists:foldl(fun(X, Acc2) ->
@@ -328,7 +334,12 @@ get_collection(ProductId, Dis, Payload, Props) ->
                     end, Acc1, Props)
                 end, Payload, Dis).
 
-%% 获取控制值
+%% @doc 获取控制值
+%% 根据轮次、数据和控件模板生成控制值
+%% @param Round 轮次
+%% @param Data 原始数据
+%% @param Control 控件模板字符串
+%% @return 处理后的控制值
 get_control(Round, Data, Control) ->
     case Data of
         <<"null">> ->
@@ -339,7 +350,11 @@ get_control(Round, Data, Control) ->
             dgiot_task:string2value(Str1, <<"type">>)
     end.
 
-%%获取存储值
+%% @doc 获取存储值
+%% 从计算数据中筛选需要存储的物模型属性
+%% @param Calculated 计算后的数据
+%% @param Props 物模型属性列表
+%% @return 需要存储的数据映射
 get_storage(Calculated, Props) ->
     lists:foldl(fun
                     (#{<<"isstorage">> := true, <<"identifier">> := Identifier}, Acc) ->
@@ -445,6 +460,12 @@ string2value(Str, Type, Specs) ->
             end
     end.
 
+%% @doc 保存PN队列
+%% 将产品设备对保存到DTU的PN队列中，并订阅相关MQTT主题
+%% @param DtuProductId DTU产品ID
+%% @param DtuAddr DTU地址
+%% @param ProductId 产品ID
+%% @param DevAddr 设备地址
 save_pnque(DtuProductId, DtuAddr, ProductId, DevAddr) ->
     DtuId = dgiot_parse_id:get_deviceid(DtuProductId, DtuAddr),
     Topic = <<"$dg/device/", ProductId/binary, "/", DevAddr/binary, "/properties">>,
@@ -457,6 +478,10 @@ save_pnque(DtuProductId, DtuAddr, ProductId, DevAddr) ->
             dgiot_data:insert(?DGIOT_PNQUE, DtuId, New_Pn_que)
     end.
 
+%% @doc 获取PN队列长度
+%% 获取指定DTU的PN队列长度
+%% @param DtuId DTU设备ID
+%% @return 队列长度
 get_pnque_len(DtuId) ->
     case dgiot_data:get(?DGIOT_PNQUE, DtuId) of
         not_find ->
@@ -465,6 +490,10 @@ get_pnque_len(DtuId) ->
             length(PnQue)
     end.
 
+%% @doc 获取PN队列
+%% 轮询获取PN队列中的下一个产品设备对（循环队列）
+%% @param DtuId DTU设备ID
+%% @return {ProductId, DevAddr} | not_find
 get_pnque(DtuId) ->
     case dgiot_data:get(?DGIOT_PNQUE, DtuId) of
         not_find ->
@@ -520,7 +549,7 @@ dealwith_data(ProductId, DevAddr, DeviceId, AllData, Storage, _Interval) ->
     ChannelId = dgiot_parse_id:get_channelid(dgiot_utils:to_binary(?BRIDGE_CHL), <<"DGIOTTOPO">>, <<"TOPO组态通道"/utf8>>),
     dgiot_channelx:do_message(ChannelId, {topo_thing, ProductId, DeviceId, AllData}),
     %%  save td
-    dgiot_tdengine_adapter:save(ProductId, DevAddr, Storage),     
+    dgiot_tdengine_adapter:save(ProductId, DevAddr, Storage),
     dgiot_metrics:inc(dgiot_task, <<"task_save">>, 1),
     Channel = dgiot_product_channel:get_taskchannel(ProductId),
     dgiot_bridge:send_log(Channel, ProductId, DevAddr, "~s ~p save td => ProductId ~p DevAddr ~p ~ts ", [?FILE, ?LINE, ProductId, DevAddr, unicode:characters_to_list(dgiot_json:encode(Storage))]),
@@ -533,21 +562,35 @@ save_cache_data(DeviceId, Data) ->
                         end, #{}, Data),
     dgiot_data:insert(?DGIOT_DATA_CACHE, DeviceId, {NewData, dgiot_datetime:now_ms()}).
 
-merge_cache_data(_DeviceId, NewData, 0) ->
-    NewData;
-
-merge_cache_data(DeviceId, NewData, _) ->
-    case dgiot_data:get(?DGIOT_DATA_CACHE, DeviceId) of
-        not_find ->
+%% @doc 合并缓存数据
+%% 根据时间间隔合并新旧缓存数据，避免频繁的数据库写入
+%% @param DeviceId 设备ID
+%% @param NewData 新数据
+%% @param Interval 缓存间隔（0表示不使用缓存）
+%% @return 合并后的数据
+merge_cache_data(DeviceId, NewData, Interval) ->
+    case Interval of
+        0 -> 
             NewData;
-        {OldData, _} ->
-            NewOldData =
-                maps:fold(fun(K, V, Acc) ->
-                    Key = dgiot_utils:to_binary(K),
-                    Acc#{Key => V}
-                          end, #{}, OldData),
-            dgiot_map:merge(NewOldData, NewData)
+        _ ->
+            case dgiot_data:get(?DGIOT_DATA_CACHE, DeviceId) of
+                not_find ->
+                    NewData;
+                {OldData, _} ->
+                    NewOldData = binary_key_map(OldData),
+                    dgiot_map:merge(NewOldData, NewData)
+            end
     end.
+
+%% @doc 将原子键转换为二进制键
+%% 用于统一缓存数据的键格式
+%% @param OldData 包含原子键的旧数据
+%% @return 包含二进制键的新数据
+binary_key_map(OldData) ->
+    maps:fold(fun(K, V, Acc) ->
+        Key = dgiot_utils:to_binary(K),
+        Acc#{Key => V}
+              end, #{}, OldData).
 
 save_td_no_match(ProductId, DevAddr, Ack, AppData) ->
     case length(maps:to_list(Ack)) of
@@ -567,3 +610,25 @@ save_td_no_match(ProductId, DevAddr, Ack, AppData) ->
             dealwith_data(ProductId, DevAddr, DeviceId, AllData, Storage, Interval),
             AllData
     end.
+
+%% @doc 比较两个值
+%% 根据比较类型比较两个值，支持 LT、LE、GT、GE、EQ、NE 六种比较类型
+%% @param Value1 第一个值
+%% @param CompareType 比较类型（<<"LT">>, <<"LE">>, <<"GT">>, <<"GE">>, <<"EQ">>, <<"NE">>）
+%% @param Value2 第二个值
+%% @return 布尔值，表示比较结果
+-spec compare(Value1 :: term(), CompareType :: binary(), Value2 :: term()) -> boolean().
+compare(Value1, <<"LT">>, Value2) ->
+    Value1 < Value2;
+compare(Value1, <<"LE">>, Value2) ->
+    Value1 =< Value2;
+compare(Value1, <<"GT">>, Value2) ->
+    Value1 > Value2;
+compare(Value1, <<"GE">>, Value2) ->
+    Value1 >= Value2;
+compare(Value1, <<"EQ">>, Value2) ->
+    Value1 == Value2;
+compare(Value1, <<"NE">>, Value2) ->
+    Value1 /= Value2;
+compare(_Value1, _CompareType, _Value2) ->
+    false.

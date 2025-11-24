@@ -41,9 +41,11 @@ handle_info(connection_ready, #dclient{child = ChildState, channel = ChannelId} 
     {noreply, Dclient#dclient{child = ChildState}};
 
 handle_info(tcp_closed, #dclient{child = ChildState} = Dclient) ->
+    % io:format("~s ~p ChildState = ~p.~n", [?FILE, ?LINE, ChildState]),
     {noreply, Dclient#dclient{child = ChildState}};
 
 handle_info(read, #dclient{channel = ChannelId, client = ClientId, child = #{slaveid := SlaveId, function := Operatetype, address := StartAddr, maxaddr := Maxaddr} = ChildState} = Dclient) ->
+    % io:format("~s ~p ChildState = ~p.~n", [?FILE, ?LINE, ChildState]),
     Address = maps:get(di, ChildState, StartAddr),
     Step = maps:get(step, ChildState, 100),
     Registersnumber =
@@ -70,6 +72,12 @@ handle_info({tcp, Buff}, #dclient{channel = ChannelId,
     child = #{freq := Freq, minaddr := MinAddr, maxaddr := Maxaddr, di := Address, filename := FileName, address := StartAddr, data := OldData, step := Step} = ChildState} = Dclient) ->
     % io:format("~s ~p Buff = ~p.~n", [?FILE, ?LINE, dgiot_utils:binary_to_hex(Buff)]),
     Data = modbus_tcp:parse_frame(Buff),
+    % case maps:get(<<"parentId">>, ChildState, <<>>) of
+    %     <<>> ->
+    %         pass;
+    %     ParentId ->
+    %         pass
+    % end,
     case Address + Step >= Maxaddr of
         true ->
             EndData = <<OldData/binary, Data/binary>>,
@@ -85,10 +93,11 @@ handle_info({tcp, Buff}, #dclient{channel = ChannelId,
     end;
 
 handle_info(_Info, #dclient{child = _ChildState} = Dclient) ->
-%    io:format("~s ~p _Info = ~p.~n", [?FILE, ?LINE, _Info]),
+    % io:format("~s ~p _Info = ~p.~n", [?FILE, ?LINE, _Info]),
 %%    io:format("~s ~p Dclient = ~p.~n", [?FILE, ?LINE, Dclient]),
 %%    io:format("~s ~p ChildState = ~p.~n", [?FILE, ?LINE, ChildState]),
     {noreply, Dclient}.
 
 terminate(_Reason, _Dclient) ->
+    % io:format("~s ~p _Reason = ~p.~n", [?FILE, ?LINE, _Reason]),
     ok.

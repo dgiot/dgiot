@@ -44,6 +44,7 @@ request(Method, Header, Path0, Body, Options) when is_binary(Method) ->
     request(NewMethod, Header, Path0, Body, Options);
 
 request(Method, Header, Path0, Body, Options) ->
+    % io:format("~s ~p ~p ~s~n", [?FILE, ?LINE, Method, Path0]),
     {IsGetCount, Path, NewBody} = get_request_args(Path0, Method, Body, Header, Options),
     dgiot_parse_git:commit(to_binary(Path), Method, Body),
     Header1 = dgiot_parse:get_header_token(Path, Header),
@@ -382,6 +383,7 @@ httpc_request(Method, Path, Header, Body, HttpOptions, ReqOptions, Options) when
     httpc_request(Method, Request, HttpOptions, ReqOptions).
 
 httpc_request(Method, Request, HttpOptions, ReqOptions) ->
+    % io:format("~s ~p ~p ~n", [?FILE, ?LINE, Request]),
     dgiot_parse_log:log(Method, Request),
     case catch httpc:request(method(Method), Request, ?HTTPOption(HttpOptions), ?REQUESTOption(ReqOptions)) of
         {ok, {{_HTTPVersion, StatusCode, _ReasonPhrase}, Headers, Body}} ->

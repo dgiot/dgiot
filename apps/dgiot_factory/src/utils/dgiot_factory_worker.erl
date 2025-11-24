@@ -108,7 +108,7 @@ init_worker_device(ProductId, WorkerNum, WorkerName) ->
     BinNum = dgiot_utils:to_binary(WorkerNum),
     Devaddr = <<WorkerName/binary, "_", BinNum/binary>>,
     DeviceId = dgiot_parse_id:get_deviceid(ProductId, Devaddr),
-    case dgiot_device_cache:lookup(DeviceId) of
+    case dgiot_device:lookup(DeviceId) of
         {ok, _} ->
             pass;
         _ ->

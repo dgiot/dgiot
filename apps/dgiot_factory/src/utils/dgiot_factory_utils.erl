@@ -446,7 +446,7 @@ merge_index(_, NewIndex) ->
     NewIndex.
 
 save2td(DeviceId, Data) ->
-    case dgiot_device_cache:lookup(DeviceId) of
+    case dgiot_device:lookup(DeviceId) of
         {ok, #{<<"productid">> := ProductId, <<"devaddr">> := DevAddr}} ->
             save2td(ProductId, DevAddr, Data);
         _ ->

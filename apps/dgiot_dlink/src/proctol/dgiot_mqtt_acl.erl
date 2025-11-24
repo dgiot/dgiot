@@ -72,17 +72,6 @@ do_check(#{clientid := DeviceAddr, username := ProductID} = _ClientInfo, publish
 %%    io:format("~s ~p Topic: ~p _ClientInfo ~p~n", [?FILE, ?LINE, _Topic, _ClientInfo]),
     check_device_addr(DeviceInfo, DeviceAddr);
 
-%% "$dg/thing/deviceid/#"
-do_check(#{clientid := Token, username := UserId} = _ClientInfo, publish, <<"$dg/thing/", DeviceId:10/binary, "/", _Rest/binary>> = _Topic)
-    when Token =/= undefined ->
-%%    io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, _Topic]),
-    case check_device_acl(Token, DeviceId, UserId) of
-        ok ->
-            allow;
-        _ ->
-            deny
-    end;
-
 %%"$dg/thing/productid/devaddr/#"
 do_check(#{clientid := <<ProductID:10/binary, "_", DeviceAddr/binary>>, username := ProductID} = _ClientInfo, subscribe, <<"$dg/thing/", ProductID:10/binary, "/", DeviceInfo/binary>> = _Topic) ->
     check_device_addr(DeviceInfo, DeviceAddr);
@@ -99,10 +88,20 @@ do_check(#{clientid := DeviceAddr, username := ProductID} = _ClientInfo, subscri
 %%    io:format("~s ~p Topic: ~p _ClientInfo ~p~n", [?FILE, ?LINE, _Topic, _ClientInfo]),
     check_device_addr(DeviceInfo, DeviceAddr);
 
+%% "$dg/thing/deviceid/#"
+do_check(#{clientid := <<Token:34/binary, _Type/binary>>, username := UserId} = _ClientInfo, publish, <<"$dg/thing/", DeviceId:10/binary, "/", _Rest/binary>> = _Topic)
+    when Token =/= undefined ->
+    % io:format("~s ~p Token: ~p Topic: ~p~n", [?FILE, ?LINE, Token, _Topic]),
+    case check_device_acl(Token, DeviceId, UserId) of
+        ok ->
+            allow;
+        _ ->
+            deny
+    end;
 
 %% "$dg/user/uniapp/{SessionToken}/report"
 do_check(#{clientid := <<Token:34/binary, _Type/binary>>, username := _UserId} = _ClientInfo, subscribe, <<"$dg/user/uniapp/", SessionToken:34/binary, "/", _Rest/binary>> = _Topic) ->
-%%    io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, _Topic]),
+    % io:format("~s ~p Token: ~p Topic: ~p UserId: ~p ~n", [?FILE, ?LINE, Token, _Topic, UserId]),
     case Token of
         SessionToken ->
             allow;
@@ -111,9 +110,9 @@ do_check(#{clientid := <<Token:34/binary, _Type/binary>>, username := _UserId} =
     end;
 
 %% 告警上报 "$dg/user/alarm/{productId}/{deviceId}/properties/report"
-do_check(#{clientid := Token, username := UserId} = _ClientInfo, publish, <<"$dg/user/alarm/", _ProductID:10/binary, "/", DeviceId:10/binary, "/", _Rest/binary>> = _Topic)
+do_check(#{clientid := <<Token:34/binary, _Type/binary>>, username := UserId} = _ClientInfo, publish, <<"$dg/user/alarm/", _ProductID:10/binary, "/", DeviceId:10/binary, "/", _Rest/binary>> = _Topic)
     when Token =/= undefined ->
-%%    io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, _Topic]),
+    % io:format("~s ~p Token: ~p Topic: ~p~n", [?FILE, ?LINE, Token, _Topic]),
     case check_device_acl(Token, DeviceId, UserId) of
         ok ->
             allow;
@@ -122,14 +121,28 @@ do_check(#{clientid := Token, username := UserId} = _ClientInfo, publish, <<"$dg
     end;
 
 %% 大屏消息回复 "$dg/user/dashboard/{dashboardId}/ack"
-do_check(#{clientid := Token} = _ClientInfo, publish, <<"$dg/user/dashboard/", Token:34/binary, _Rest/binary>> = _Topic)
+do_check(#{clientid := <<Token:34/binary, _Type/binary>>} = _ClientInfo, publish, <<"$dg/user/dashboard/", Token:34/binary, _Rest/binary>> = _Topic)
     when Token =/= undefined ->
-%%    io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, _Topic]),
+    % io:format("~s ~p Token: ~p Topic: ~p~n", [?FILE, ?LINE, Token, _Topic]),
     allow;
 
+
+do_check(#{clientid := <<Token:34/binary, _Type/binary>>, username := UserId} = _ClientInfo, publish, <<"$dg/user/", DeviceID:10/binary, "/", _Rest/binary>> = _Topic)
+    when UserId =/= undefined ->
+    % io:format("~s ~p Topic: ~p DeviceID:~p Token:~p UserId:~p ~n", [?FILE, ?LINE, _Topic, DeviceID, Token, UserId]),
+    %% 此时的ClientID为 Token
+    case check_device_acl(Token, DeviceID, UserId) of
+        ok ->
+            % io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, _Topic]),
+            allow;
+        _ ->
+            io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, _Topic]),
+            deny
+    end;
+
 %% "$dg/user/channel/{channelId}/{productId}/{deviceId}"
-do_check(#{clientid := Token} = _ClientInfo, subscribe, <<"$dg/user/channel/", DeviceInfo/binary>> = _Topic) ->
-%%    io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, _Topic]),
+do_check(#{clientid := <<Token:34/binary, _Type/binary>>} = _ClientInfo, subscribe, <<"$dg/user/channel/", DeviceInfo/binary>> = _Topic) ->
+    % io:format("~s ~p Token: ~p Topic: ~p~n", [?FILE, ?LINE, Token, _Topic]),
     [ChannelId | _] = binary:split(DeviceInfo, <<"/">>, [global]),
     case dgiot_parse:get_object(<<"Channel">>, ChannelId, [{"X-Parse-Session-Token", Token}], [{from, rest}]) of
         {ok, _} ->
@@ -139,8 +152,8 @@ do_check(#{clientid := Token} = _ClientInfo, subscribe, <<"$dg/user/channel/", D
     end;
 
 %% $dg/user/dashboard/{dashboardId}/{productId}/{deviceId}
-do_check(#{clientid := Token} = _ClientInfo, subscribe, <<"$dg/user/dashboard/", DashboardId:10/binary, "/", _Rest/binary>> = _Topic) ->
-%%    io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, _Topic]),
+do_check(#{clientid := <<Token:34/binary, _Type/binary>>} = _ClientInfo, subscribe, <<"$dg/user/dashboard/", DashboardId:10/binary, "/", _Rest/binary>> = _Topic) ->
+    % io:format("~s ~p Token: ~p Topic: ~p~n", [?FILE, ?LINE, Token, _Topic]),
     case dgiot_parse:get_object(<<"View">>, DashboardId, [{"X-Parse-Session-Token", Token}], [{from, rest}]) of
         {ok, _} ->
             allow;
@@ -150,7 +163,7 @@ do_check(#{clientid := Token} = _ClientInfo, subscribe, <<"$dg/user/dashboard/",
 
 %% "$dg/user/topo/{SessionToken}/#"
 do_check(#{clientid := <<Token:34/binary, _Type/binary>>, username := _UserId} = _ClientInfo, subscribe, <<"$dg/user/topo/", SessionToken:34/binary, "/", _Rest/binary>> = _Topic) ->
-%%    io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, _Topic]),
+    % io:format("~s ~p Token: ~p Topic: ~p UserId: ~p ~n", [?FILE, ?LINE, Token, _Topic, UserId]),
     case Token of
         SessionToken ->
             allow;
@@ -159,19 +172,19 @@ do_check(#{clientid := <<Token:34/binary, _Type/binary>>, username := _UserId} =
     end;
 
 %% "$dg/user/trace/{DeviceId}/{Topic}"
-do_check(#{clientid := Token, username := UserId} = _ClientInfo, subscribe, <<"$dg/user/trace/", DeviceId:10/binary, "/", _Rest/binary>> = _Topic) ->
-%%    io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, _Topic]),
+do_check(#{clientid := <<Token:34/binary, _Type/binary>>, username := UserId} = _ClientInfo, subscribe, <<"$dg/user/trace/", DeviceId:10/binary, "/", _Rest/binary>> = _Topic) ->
+    % io:format("~s ~p Token: ~p Topic: ~p~n", [?FILE, ?LINE, Token, _Topic]),
     check_device_acl(Token, DeviceId, UserId);
 
 %% "$dg/user/trace/{DeviceId}/{Topic}"
-do_check(#{clientid := Token, username := UserId} = _ClientInfo, subscribe, <<"$dg/user/trajectory/", DeviceId:10/binary, "/", _Rest/binary>> = _Topic) ->
-%%    io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, _Topic]),
+do_check(#{clientid := <<Token:34/binary, _Type/binary>>, username := UserId} = _ClientInfo, subscribe, <<"$dg/user/trajectory/", DeviceId:10/binary, "/", _Rest/binary>> = _Topic) ->
+    % io:format("~s ~p Token: ~p Topic: ~p~n", [?FILE, ?LINE, Token, _Topic]),
     check_device_acl(Token, DeviceId, UserId);
 
 %% 用户订阅 "$dg/user/deviceid/#"
-do_check(#{clientid := Token, username := UserId} = _ClientInfo, subscribe, <<"$dg/user/", DeviceID:10/binary, "/", _Rest/binary>> = _Topic)
+do_check(#{clientid := <<Token:34/binary, _Type/binary>>, username := UserId} = _ClientInfo, subscribe, <<"$dg/user/", DeviceID:10/binary, "/", _Rest/binary>> = _Topic)
     when UserId =/= undefined ->
-%%    io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, _Topic]),
+        % io:format("~s ~p Token: ~p Topic: ~p~n", [?FILE, ?LINE, Token, _Topic]),
     %% 此时的ClientID为 Token
     case check_device_acl(Token, DeviceID, UserId) of
         ok ->
@@ -181,7 +194,7 @@ do_check(#{clientid := Token, username := UserId} = _ClientInfo, subscribe, <<"$
     end;
 
 do_check(_ClientInfo, _PubSub, _Topic) ->
-%%    io:format("~s ~p _PubSub: ~p~n", [?FILE, ?LINE, _PubSub]),
+    % io:format("~s ~p _PubSub: ~p _Topic: ~p ~n", [?FILE, ?LINE, _PubSub, _Topic]),
 %%    io:format("~s ~p Topic: ~p~n", [?FILE, ?LINE, _Topic]),
     deny.
 
@@ -194,12 +207,18 @@ check_device_addr(DeviceInfo, DeviceAddr) ->
     end.
 
 check_device_acl(Token, DeviceID, UserId) ->
+    % io:format("~s ~p Token: ~p DeviceID: ~p UserId: ~p ~n", [?FILE, ?LINE, Token, DeviceID, UserId]),
     case dgiot_auth:get_session(Token) of
         #{<<"objectId">> := UserId, <<"roles">> := Roles} ->
-            UserAcl = dgiot_role:get_aclNames(Roles),
-            DeviceAcl = maps:keys(dgiot_device:get_acl(DeviceID)),
-            case DeviceAcl -- UserAcl of
-                DeviceAcl ->
+            % io:format("~s ~p Roles: ~p ~n", [?FILE, ?LINE, Roles]),
+            RoleIds = maps:keys(Roles),
+            ChildRoleIds = dgiot_role:childrole(RoleIds, []),
+            AllRoleIds = RoleIds ++ ChildRoleIds,
+            DeviceRoleIds = dgiot_device:get_roleids(DeviceID),
+            % io:format("~s ~p UserRoleIds: ~p DeviceRoleIds: ~p ~p ~p ~n", [?FILE, ?LINE, AllRoleIds, DeviceRoleIds, AllRoleIds -- DeviceRoleIds, DeviceRoleIds -- AllRoleIds]),
+
+            case DeviceRoleIds -- AllRoleIds of
+                DeviceRoleIds ->
                     deny;
                 _ ->
                     ok

@@ -113,7 +113,8 @@ send_amisdata(#{<<"dashboardId">> := DashboardId, <<"sessionToken">> := Token}) 
     {ViewIds, AmisNodes} =
         case dgiot_parse:get_object(<<"View">>, DashboardId) of
             {ok, #{<<"data">> := #{<<"konva">> := #{<<"Stage">> := Stage}}}} ->
-                Rects = dgiot_product_knova:get_nodes(Stage, [<<"Rect">>, <<"Image">>, <<"Text">>, <<"Group">>]),
+            % Rects = dgiot_product_knova:get_nodes(Stage, [<<"Rect">>, <<"Image">>, <<"Text">>, <<"Group">>]),    
+            Rects = dgiot_product_knova:get_nodes(Stage, [<<"Image">>]),
                 maps:fold(
                     fun
                         (_, #{<<"amisid">> := Viewid} = AmisNode, {Idd, Acc}) ->

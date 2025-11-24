@@ -49,7 +49,8 @@
     match_object/2,
     search/0,
     search/2,
-    search/3
+    search/3,
+    count/0
 ]).
 
 -export([start_link/2]).
@@ -253,6 +254,16 @@ select_object(TB, Filter, Order) ->
         end,
     Result = mnesia:transaction(F),
     result(Result).
+
+count() ->
+    Fun = fun(X) ->
+        {_, K, V} = X,
+        #{K => V}
+            end,
+   case dgiot_mnesia:search(Fun, #{<<"skip">> => 0, <<"limit">> => 1}) of
+       #{<<"count">> := Count} -> Count;
+       _ -> 0
+   end.
 
 search() ->
     Fun = fun(X) ->

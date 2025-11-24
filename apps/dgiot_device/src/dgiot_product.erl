@@ -31,19 +31,17 @@ init_ets() ->
     dgiot_data:init(?DGIOT_PRODUCT, [public, named_table, set, {write_concurrency, true}, {read_concurrency, true}]),
     dgiot_data:init(?DGIOT_PRODUCT_IDENTIFIE, [public, named_table, set, {write_concurrency, true}, {read_concurrency, true}]),
     dgiot_data:init(?DGIOT_PRODUCT_STAB, [public, named_table, set, {write_concurrency, true}, {read_concurrency, true}]),
+    dgiot_data:init(?DGIOT_DEVICE, [public, named_table, set, {write_concurrency, true}, {read_concurrency, true}]),
     dgiot_data:init(?DGIOT_CHANNEL_SESSION, [public, named_table, set, {write_concurrency, true}, {read_concurrency, true}]),
     dgiot_data:init(?DEVICE_DEVICE_COLOR, [public, named_table, set, {write_concurrency, true}, {read_concurrency, true}]),
     dgiot_data:init(?DEVICE_PROFILE, [public, named_table, set, {write_concurrency, true}, {read_concurrency, true}]).
 
 load_all_cache({Skip}) ->
-
     case dgiot_parsex:query_object(<<"Product">>, #{<<"limit">> => 1000, <<"skip">> => Skip}) of
         {ok, #{<<"results">> := Results}} when length(Results) == 0 ->
             load_end;
         {ok, #{<<"results">> := Products}} ->
-            lists:map(fun(Product) ->
-                dgiot_product:save(Product)
-                      end, Products),
+            save(Products),
             {next, Skip + 1000};
         _ ->
             {next, Skip}
@@ -74,7 +72,10 @@ lookup_prod(ProductId) ->
             {ok, Value}
     end.
 
-save(Product) ->
+save([]) ->
+    ok;
+
+save([Product|Products]) ->
     Product1 = format_product(Product),
     #{<<"productId">> := ProductId} = Product1,
     dgiot_data:delete(?DGIOT_PRODUCT, ProductId),
@@ -86,7 +87,7 @@ save(Product) ->
     dgiot_product_channel:save_taskchannel(ProductId),
     hook_topic(Product),
 %%    dgiot_product_enum:save_product_enum(ProductId),
-    {ok, Product1}.
+    save(Products).
 
 put(Product) ->
     ProductId = maps:get(<<"objectId">>, Product),
@@ -424,7 +425,7 @@ to_frame(ProductId, Msg) ->
 format_product(#{<<"objectId">> := ProductId} = Product) ->
     Thing = maps:get(<<"thing">>, Product, #{}),
     Props = maps:get(<<"properties">>, Thing, []),
-    Keys = [<<"ACL">>, <<"name">>, <<"config">>, <<"devType">>, <<"status">>, <<"channel">>, <<"content">>, <<"profile">>, <<"nodeType">>, <<"dynamicReg">>, <<"topics">>, <<"productSecret">>],
+    Keys = [<<"ACL">>, <<"name">>, <<"config">>, <<"devType">>, <<"status">>, <<"channel">>, <<"content">>, <<"profile">>, <<"nodeType">>, <<"dynamicReg">>, <<"topics">>, <<"productSecret">>, <<"icon">>],
     Map = maps:with(Keys, Product),
     Map#{
         <<"productId">> => ProductId,
