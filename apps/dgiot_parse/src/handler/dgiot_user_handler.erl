@@ -101,6 +101,7 @@ do_request(get_token, #{<<"name">> := Name} = _Body, #{<<"sessionToken">> := Ses
 %% OperationId: post_token
 %% POST /token
 do_request(post_token, #{<<"appid">> := AppId, <<"secret">> := Secret}, _Context, _Req) ->
+    % io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, AppId, Secret]),
     case dgiot_parse_auth:login_by_token(AppId, Secret) of
         {ok, UserInfo} ->
             {200, maps:with([<<"access_token">>, <<"expires_in">>, <<"desc">>, <<"name">>], UserInfo)};
@@ -136,12 +137,15 @@ do_request(put_token, #{<<"appid">> := AppId, <<"secret">> := Secret}, _Context,
 %% OperationId: put_token
 %% PUT /token
 do_request(post_user, #{<<"username">> := _UserName, <<"password">> := _Password} = Body, #{<<"sessionToken">> := SessionToken}, _Req) ->
+    % io:format("~s ~p create user: ~p ~n", [?FILE, ?LINE, Body]),
     case dgiot_parse_auth:create_user(Body, SessionToken) of
         {ok, Data} ->
             dgiot_role:load_user(),
             dgiot_parse_auth:load_roleuser(),
             {200, Data};
-        {error, Error} -> {500, Error}
+        {error, Error} -> 
+            io:format("~s ~p ~p ~n", [?FILE, ?LINE, Error]),
+            {500, Error}
     end;
 
 do_request(delete_user, Body, #{<<"sessionToken">> := SessionToken}, _Req) ->
@@ -205,6 +209,7 @@ do_request(get_disableuser, #{<<"userid">> := Disuserid, <<"action">> := Action}
 %% OperationId:post_login
 %% 请求:POST /iotapi/post_login
 do_request(post_login, #{<<"username">> := UserName, <<"password">> := Password}, _Context, _Req) ->
+    % io:format("~s ~p ~p ~p ~p ~n", [?FILE, ?LINE, UserName, Password, _Req]),
     dgiot_parse_auth:login_by_account(UserName, Password);
 
 %% iot_hub 概要: 用户管理 描述: 用户管理

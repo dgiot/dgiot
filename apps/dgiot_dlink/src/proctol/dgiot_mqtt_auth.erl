@@ -41,10 +41,11 @@ sub_notification(ClientId, Roles) ->
               end, {}, Roles).
 
 check(#{peerhost := PeerHost, username := <<"dgiot">>}, AuthResult, _) when PeerHost == {127, 0, 0, 1} ->
+    % io:format("~s ~p AuthResult: ~p~n", [?FILE, ?LINE, AuthResult]),
     {ok, AuthResult#{anonymous => false, auth_result => success}};
 
 check(#{username := <<"dgiot">>, password := Password}, AuthResult, _) ->
-%%    io:format("~s ~p Password: ~p~n", [?FILE, ?LINE, Password]),
+    % io:format("~s ~p Password: ~p~n", [?FILE, ?LINE, Password]),
     SuperPwd = dgiot_utils:to_binary(dgiot:get_env(dgiot_dlink, super_pwd, <<"">>)),
     case SuperPwd of
         Password ->
@@ -60,7 +61,7 @@ check(#{username := Username}, AuthResult, _)
 
 %% 当 clientid 和 password 为token 且相等的时候为用户登录
 check(#{clientid := <<Token:34/binary, _Type/binary>> = ClientId, username := UserId, password := Token}, AuthResult, #{hash_type := _HashType}) ->
-%%    io:format("~s ~p UserId: ~p~n", [?FILE, ?LINE, UserId]),
+    % io:format("~s ~p UserId: ~p ClientId: ~p _Type: ~p Token: ~p ~n", [?FILE, ?LINE, UserId, ClientId, _Type, Token]),
     case dgiot_auth:get_session(Token) of
         #{<<"objectId">> := UserId} = User ->
 %%            登录时订阅告警推送
@@ -81,17 +82,17 @@ check(#{clientid := <<Token:34/binary, _Type/binary>> = ClientId, username := Us
 %% 2、 尝试ClientID 为deviceID的1机1密认证
 %% 3、 尝试ClientID 为deviceAddr的1机1密认证
 check(#{clientid := <<ProductID:10/binary, "_", DeviceAddr/binary>>, username := ProductID, password := Password, peerhost := PeerHost}, AuthResult, #{hash_type := _HashType}) ->
-%%    io:format("~s ~p ProductID: ~p ClientId ~p Password ~p PeerHost ~p ~n", [?FILE, ?LINE, ProductID, DeviceAddr, Password, dgiot_utils:get_ip(PeerHost)]),
+    % io:format("~s ~p ProductID: ~p ClientId ~p Password ~p PeerHost ~p ~n", [?FILE, ?LINE, ProductID, DeviceAddr, Password, dgiot_utils:get_ip(PeerHost)]),
     DeviceId = dgiot_parse_id:get_deviceid(ProductID, DeviceAddr),
     do_check(AuthResult, Password, ProductID, DeviceAddr, DeviceId, dgiot_utils:get_ip(PeerHost));
 
 check(#{clientid := DeviceAddr, username := ProductID, password := Password, peerhost := PeerHost}, AuthResult, #{hash_type := _HashType}) ->
-%%    io:format("~s ~p ProductID: ~p ClientId ~p Password ~p PeerHost ~p ~n", [?FILE, ?LINE, ProductID, DeviceAddr, Password, dgiot_utils:get_ip(PeerHost)]),
+    % io:format("~s ~p ProductID: ~p ClientId ~p Password ~p PeerHost ~p ~n", [?FILE, ?LINE, ProductID, DeviceAddr, Password, dgiot_utils:get_ip(PeerHost)]),
     DeviceId = dgiot_parse_id:get_deviceid(ProductID, DeviceAddr),
     do_check(AuthResult, Password, ProductID, DeviceAddr, DeviceId, dgiot_utils:get_ip(PeerHost));
 
 check(#{username := _Username}, AuthResult, _) ->
-%%    io:format("~s ~p Username: ~p~n", [?FILE, ?LINE, _Username]),
+    % io:format("~s ~p Username: ~p~n", [?FILE, ?LINE, _Username]),
     {stop, AuthResult#{anonymous => false, auth_result => password_error}}.
 
 description() -> "Authentication with Mnesia".

@@ -114,10 +114,10 @@ init(?TYPE, ChannelId, #{
     <<"product">> := Products,
     <<"dtutype">> := Dtutype
 } = _Args) ->
-    {ProdcutId, App} =
+    {ProductId, App} =
         case get_app(Products) of
-            [{ProdcutId1, App1} | _] ->
-                {ProdcutId1, App1};
+            [{ProductId1, App1} | _] ->
+                {ProductId1, App1};
             [] ->
                 {<<>>, <<>>};
             _ ->
@@ -130,9 +130,10 @@ init(?TYPE, ChannelId, #{
         head = Header,
         len = Len,
         app = App,
-        product = ProdcutId,
+        product = ProductId,
         dtutype = Dtutype
     },
+    % io:format("~s ~p ~p ~p~n", [?FILE, ?LINE, Port, State]),
     {ok, State, dgiot_modbusrtu_tcp:start(Port, State)};
 
 
@@ -168,7 +169,7 @@ stop(_ChannelType, _ChannelId, _State) ->
     ok.
 
 get_app(Products) ->
-    lists:map(fun({ProdcutId, #{<<"ACL">> := Acl}}) ->
+    lists:map(fun({ProductId, #{<<"ACL">> := Acl}}) ->
         Predicate = fun(E) ->
             case E of
                 <<"role:", _/binary>> -> true;
@@ -182,7 +183,7 @@ get_app(Products) ->
                 _ ->
                     <<"dgiot">>
             end,
-        {ProdcutId, App}
+        {ProductId, App}
               end, Products).
 
 

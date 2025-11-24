@@ -18,16 +18,22 @@
 -include_lib("dgiot/include/logger.hrl").
 -export([post_dashboard/2, do_task/2]).
 
-post_dashboard(#{<<"dashboardId">> := DashboardId} = Args, #{<<"sessionToken">> := SessionToken} = _Context) ->
+post_dashboard(#{<<"dashboardId">> := _} = Args, #{<<"sessionToken">> := SessionToken} = _Context) ->
     NewArgs = Args#{<<"sessionToken">> => SessionToken},
     dgiot_mqtt:subscribe_route_key([<<"$dg/user/topo/", SessionToken/binary, "/#">>], <<"topo">>, SessionToken),
     dgiot_mqtt:subscribe_route_key([<<"$dg/user/dashboard/#">>], <<"dashboard">>, SessionToken),
-    dgiot_mqtt:publish(DashboardId, <<"dashboard_task/", DashboardId/binary>>, dgiot_json:encode(NewArgs)),
+    % dgiot_mqtt:publish(DashboardId, <<"dashboard_task/", DashboardId/binary>>, dgiot_json:encode(NewArgs)),
+    case dgiot_data:get(topo_channel) of
+        not_find ->
+            pass;
+        ChannelId ->
+            dgiot_channelx:do_message(ChannelId, {dashboard_task, NewArgs})
+    end,
 %%    发送amisdata
-    spawn(
-        fun() ->
-            dgiot_topo:send_amisdata(NewArgs)
-        end),
+    % spawn(
+    %     fun() ->
+    %         dgiot_topo:send_amisdata(NewArgs)
+    %     end),
     #{};
 
 post_dashboard(_Args, _Context) ->

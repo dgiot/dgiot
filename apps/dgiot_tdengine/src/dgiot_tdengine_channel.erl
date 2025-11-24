@@ -191,7 +191,6 @@ handle_message({gun_down, _Pid, _Protocol}, #state{id = _ChannelId, env = _Confi
 
 handle_message(ws_login, #state{id = ChannelId, env = Env} = State) ->
     erlang:send_after(5000, self(), init),
-    % io:format("~s ~p gun_down ChannelId = ~p Env ~p.~n", [?FILE, ?LINE, ChannelId, Env]),
     case dgiot_tdengine_pool:login(ChannelId, Env) of
         {ok, {ConnPid, StreamRef}} ->
             {ok, State#state{env = Env#{<<"driver">> => <<"WS">>, <<"ws_pid">> => ConnPid, <<"ws_ref">> => StreamRef}}};
@@ -256,20 +255,20 @@ stop(ChannelType, ChannelId, _State) ->
 
 %% gun监测 开始
 handle_info({gun_up, _Pid, _Protocol}, #state{id = _ChannelId, env = _Config} = State) ->
-    io:format("~s ~p gun_up = ~p.~n", [?FILE, ?LINE, _Protocol]),
+    % io:format("~s ~p gun_up = ~p.~n", [?FILE, ?LINE, _Protocol]),
     {ok, State};
 
 handle_info({gun_error, _Pid, _Protocol}, #state{id = _ChannelId, env = _Config} = State) ->
-    io:format("~s ~p gun_error = ~p.~n", [?FILE, ?LINE, _Protocol]),
+    % io:format("~s ~p gun_error = ~p.~n", [?FILE, ?LINE, _Protocol]),
     {ok, State};
 
 handle_info({gun_down, _Pid, _Protocol}, #state{id = _ChannelId, env = _Config} = State) ->
-    io:format("~s ~p gun_down = ~p.~n", [?FILE, ?LINE, _Protocol]),
+    % io:format("~s ~p gun_down = ~p.~n", [?FILE, ?LINE, _Protocol]),
     {ok, State};
 %% gun监测结束
 
-handle_info(Message, State) ->
-    io:format("~s ~p Message = ~p.~n", [?FILE, ?LINE, Message]),
+handle_info(_Message, State) ->
+    % io:format("~s ~p Message = ~p.~n", [?FILE, ?LINE, _Message]),
     {ok, State}.
 
 do_save([ProductId, DevAddr, Data, _Context], State) ->

@@ -190,62 +190,56 @@
 }).
 
 start(ChannelId, ChannelArgs) ->
+    % io:format("~s ~p ChannelId = ~p ChannelArgs = ~p.~n", [?FILE, ?LINE, ChannelId, ChannelArgs]),
     dgiot_channelx:add(?TYPE, ChannelId, ?MODULE, ChannelArgs).
 
 %% 通道初始化
 init(?TYPE, ChannelId, #{
-    <<"ip">> := Ip,
-    <<"port">> := Port,
     <<"slaveid">> := SlaveId,
     <<"function">> := Function,
     <<"address">> := Address,
     <<"quantity">> := Quantity,
     <<"freq">> := Freq,
-    <<"is_refresh">> := Is_refresh,
-    <<"Size">> := Size
-} = Args) ->
-    {FileName, MinAddr, MaxAddr} =
-        case maps:find(<<"filepath">>, Args) of
-            {ok, FilePath} ->
-                {FileName1, MinAddr1, MaxAddr1} = dgiot_product_csv:read_csv(ChannelId, FilePath, Is_refresh, maps:get(<<"is_shard">>, Args, true)),
-                %% modbus_tcp:set_addr(ChannelId, MinAddr1, MaxAddr1),
-                {FileName1, MinAddr1, MaxAddr1};
-            _ ->
-                {<<>>, 0, 100}
-        end,
+    <<"is_refresh">> := _Is_refresh,
+    <<"Size">> := Size,
+    <<"product">> := Products
+} = _Args) ->
+    % io:format("~s ~p ChannelId = ~p.~n", [?FILE, ?LINE, ChannelId]),
+    % io:format("~s ~p Args = ~p.~n", [?FILE, ?LINE, Args]),
+
     NewArgs = #{
-                <<"ip">> => Ip,
-                <<"port">> => Port,
                 <<"mod">> => dgiot_modbusc_tcp,
                 <<"child">> => #{
                         slaveid => SlaveId,
                         function => Function,
                         address => dgiot_utils:to_int(Address),
                         quantity => Quantity,
-                        filename => FileName,
+                        % filename => FileName,
                         data => <<>>,
-                        freq => Freq,
-                        minaddr => MinAddr,
-                        maxaddr => MaxAddr
+                        freq => Freq
+                        % minaddr => MinAddr,
+                        % maxaddr => MaxAddr
                     }
                 },
 %%    dgiot_client:add_clock(ChannelId, Start_time, End_time),
     dgiot_client:add_clock(ChannelId, dgiot_datetime:now_secs() - 5000, dgiot_datetime:now_secs() + 300000),
-    {ok, #state{id = ChannelId, env = #{size => Size, filename => FileName, freq => Freq}}, dgiot_client:register(ChannelId, tcp_client_sup, NewArgs)}.
+    {ok, #state{id = ChannelId, env = #{size => Size, filename => <<"sfsaf">>, freq => Freq, products => Products }}, dgiot_client:register(ChannelId, tcp_client_sup, NewArgs)}.
 
 handle_init(State) ->
+    % io:format("~s ~p State = ~p.~n", [?FILE, ?LINE, State]),
     {ok, State}.
 
 %% 通道消息处理,注意：进程池调用
-handle_event(_EventId, Event, State) ->
-    io:format("~s ~p Event = ~p.~n", [?FILE, ?LINE, Event]),
+handle_event(_EventId, _Event, State) ->
+    % io:format("~s ~p Event = ~p.~n", [?FILE, ?LINE, Event]),
     {ok, State}.
 
 handle_message(check_connection, #state{id = ChannelId, env = #{filename := FileName, freq := Freq}} = Dclient) ->
     Now = dgiot_datetime:now_secs(),
-    io:format("~s ~p Now = ~p. ChannelId=~p, FileName=~p~n", [?FILE, ?LINE, Now, ChannelId, FileName]),
+    % io:format("~s ~p Now = ~p. ChannelId=~p, FileName=~p~n", [?FILE, ?LINE, Now, ChannelId, FileName]),
     case dgiot_data:get({check_connection, ChannelId, FileName}) of
         OldTime when (Now - OldTime) > Freq ->
+            % io:format("~s ~p Now = ~p. ChannelId=~p, FileName=~p~n", [?FILE, ?LINE, Now, ChannelId, FileName]),
             dgiot_client:stop(ChannelId, FileName),
             dgiot_client:start(ChannelId, FileName);
         _ ->
@@ -254,21 +248,27 @@ handle_message(check_connection, #state{id = ChannelId, env = #{filename := File
     erlang:send_after(Freq * 1200, self(), check_connection),
     {noreply, Dclient};
 
-handle_message(start_client, #state{id = ChannelId, env = #{size := _Size, filename := FileName}} = State) ->
+handle_message(start_client, #state{id = ChannelId, env = #{size := _Size, filename := _FileName, products := Products}} = State) ->
     % io:format("~s ~p ChannelId = ~p.~n", [?FILE, ?LINE, ChannelId]),
+    % io:format("~s ~p Products = ~p.~n", [?FILE, ?LINE, Products]),
     case dgiot_data:get({start_client, ChannelId}) of
         not_find ->
+            % io:format("~s ~p not found ChannelId = ~p.~n", [?FILE, ?LINE, ChannelId]),
+
+            lists:map(fun({ProductId, _}) ->
+                dgiot_modbus:start_client(ChannelId, ProductId)
+            end, Products),
 %%            [dgiot_client:start(ChannelId, dgiot_utils:to_binary(I)) || I <- lists:seq(1, Size)],
-            dgiot_client:start(ChannelId, FileName),
+            % dgiot_client:start(ChannelId, FileName),
             erlang:send_after(30 * 1000, self(), check_connection),
             dgiot_data:insert({start_client, ChannelId}, ChannelId);
-        _ ->
+        _ -> 
             pass
     end,
     {ok, State};
 
 handle_message(_Message, State) ->
-    io:format("~s ~p _Message = ~p.~n", [?FILE, ?LINE, _Message]),
+    % io:format("~s ~p _Message = ~p.~n", [?FILE, ?LINE, _Message]),
     {ok, State}.
 
 stop(ChannelType, ChannelId, _State) ->

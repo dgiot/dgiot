@@ -26,7 +26,7 @@
     generate_role/1,
     generate_approle/1,
     generate_users/1,
-    generate_menus/1,  
+    generate_menus/1,
     generate_rule/1,
     get_roletemp/1,
     save_tables/1,

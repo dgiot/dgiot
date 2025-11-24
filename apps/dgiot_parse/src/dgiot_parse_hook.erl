@@ -81,33 +81,39 @@ add_hook(Key) ->
     dgiot_hook:add(one_for_one, Key, fun dgiot_parse_hook:do_hook/1).
 
 do_hook({'before', get, Token, Class, ObjectId, QueryData, Options}) ->
-%%    io:format("~s ~p ~p  ~n", [?FILE, ?LINE, proplists:get_value(args, Options)]),
+    % io:format("~s ~p ~p  ~n", [?FILE, ?LINE, proplists:get_value(args, Options)]),
     notify('before', get, Token, Class, ObjectId, proplists:get_value(args, Options)),
     {ok, QueryData};
 
 do_hook({'after', get, Token, Class, _QueryData, ResBody}) ->
+    % io:format("~s ~p ~p ~p ~p ~n", [?FILE, ?LINE, Token, Class, _QueryData]),
     notify('after', get, Token, Class, <<"ObjectId">>, dgiot_utils:to_map(ResBody)),
     receive_ack(ResBody);
 
 do_hook({'after', get, Token, Class, _ObjectId, _QueryData, ResBody}) ->
+    % io:format("~s ~p  ~n", [?FILE, ?LINE]),
     notify('after', get, Token, Class, <<"ObjectId">>, dgiot_utils:to_map(ResBody)),
     receive_ack(ResBody);
 
 do_hook({'after', post, Token, Class, QueryData, ResBody}) ->
+    % io:format("~s ~p  ~n", [?FILE, ?LINE]),
     notify('after', post, Token, Class, <<"ObjectId">>, dgiot_utils:to_map(QueryData)),
     {ok, ResBody};
 
 do_hook({'after', put, Token, Class, ObjectId, QueryData, ResBody}) ->
+    % io:format("~s ~p  ~n", [?FILE, ?LINE]),
     Map = dgiot_utils:to_map(QueryData),
     <<ObjectId1:10/binary, _/binary>> = ObjectId,
-    notify('after', put, Token, Class, ObjectId, Map#{<<"objectId">> => ObjectId1}),
+    notify('after', put, Token, Class, ObjectId1, Map#{<<"objectId">> => ObjectId1}),
     {ok, ResBody};
 
 do_hook({'after', delete, Token, Class, ObjectId, _QueryData, ResBody}) ->
+    % io:format("~s ~p  ~n", [?FILE, ?LINE]),
     notify('after', delete, Token, Class, ObjectId, ObjectId),
     {ok, ResBody};
 
 do_hook({'before', delete, Token, Class, ObjectId, _QueryData, ResBody}) ->
+    % io:format("~s ~p  ~n", [?FILE, ?LINE]),
     notify('before', delete, Token, Class, ObjectId, ObjectId),
     {ok, ResBody};
 
@@ -140,6 +146,7 @@ receive_ack(ResBody) ->
     end.
 
 notify(Type, Method, Token, Class, ObjectId, Data) ->
+    % io:format("~s ~p ~p  ~n", [?FILE, ?LINE, Data]),
     ClassesRules =
         case dgiot_data:get({sub, Class, Method}) of
             not_find ->

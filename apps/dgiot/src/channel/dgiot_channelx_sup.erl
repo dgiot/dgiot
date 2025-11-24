@@ -128,28 +128,35 @@ init([ChannelType, ChannelId, Mod]) ->
                 {worker_module, dgiot_channelx}
             ],
             Result =
-                case Mod:init(ChannelType, ChannelId, ChannelArgs) of
-                    {stop, Why} ->
-                        {stop, Why};
-                    {ok, State} ->
-                        put(worker_state, State),
-                        {ok, [
-                            poolboy:child_spec(Name, PoolArgs, [Mod, State])
-                        ]};
-                    {ok, State, ChildSpec} ->
-                        put(worker_state, State),
-                        case is_list(ChildSpec) of
-                            true ->
-                                {ok, [
-                                    poolboy:child_spec(Name, PoolArgs, [Mod, State]) | ChildSpec
-                                ]};
-                            false ->
-                                {ok, [
-                                    poolboy:child_spec(Name, PoolArgs, [Mod, State]),
-                                    ChildSpec
-                                ]}
-                        end
+                try
+                    case Mod:init(ChannelType, ChannelId, ChannelArgs) of
+                        {stop, Why} ->
+                            {stop, Why};
+                        {ok, State} ->
+                            put(worker_state, State),
+                            {ok, [
+                                poolboy:child_spec(Name, PoolArgs, [Mod, State])
+                            ]};
+                        {ok, State, ChildSpec} ->
+                            put(worker_state, State),
+                            case is_list(ChildSpec) of
+                                true ->
+                                    {ok, [
+                                        poolboy:child_spec(Name, PoolArgs, [Mod, State]) | ChildSpec
+                                    ]};
+                                false ->
+                                    {ok, [
+                                        poolboy:child_spec(Name, PoolArgs, [Mod, State]),
+                                        ChildSpec
+                                    ]}
+                            end
+                    end
+                catch
+                    error:Reason1 ->
+                        %io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Mod, Reason1]),
+                        {stop, Reason1}
                 end,
+            % io:format("~s ~p ~p ~n", [?FILE, ?LINE, Result]),
             case Result of
                 {ok, Children} ->
                     dgiot_data:insert({Name, channel}, {self(), ChannelArgs}),

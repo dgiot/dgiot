@@ -112,6 +112,7 @@ init(?TYPE, ChannelId, #{<<"offline">> := OffLine} = Args) ->
     dgiot_parse_hook:subscribe(<<"Device/*">>, get, ChannelId),
     dgiot_parse_hook:subscribe(<<"Device">>, post, ChannelId),
     dgiot_parse_hook:subscribe(<<"Device/*">>, put, ChannelId, [<<"isEnable">>, <<"ACL">>, <<"location">>]),
+    dgiot_parse_hook:subscribe(<<"Device/*">>, put, ChannelId, [<<"objectId">>, <<"parentId">>]),
     dgiot_parse_hook:subscribe(<<"Device/*">>, delete, ChannelId),
     dgiot_parse_hook:subscribe(<<"Product">>, get, ChannelId),
     dgiot_parse_hook:subscribe(<<"Product/*">>, get, ChannelId),
@@ -136,6 +137,7 @@ handle_message(check, #state{id = ChannelId, env = #{<<"offline">> := OffLine, <
     {ok, State};
 
 handle_message({sync_parse, Pid, 'after', get, Token, <<"Device">>, #{<<"results">> := Results} = ResBody}, State) ->
+    io:format("~s ~p ================ ~n", [?FILE, ?LINE]),
     SessionToken = dgiot_parse_auth:get_usersession(dgiot_utils:to_binary(Token)),
     MapType = dgiot_utils:to_binary(application:get_env(dgiot_device, map_type, "baidu")),
     {NewResults, DeviceList} =
@@ -195,17 +197,17 @@ handle_message({sync_parse, _Pid, 'after', post, Token, <<"Device">>, QueryData}
     {ok, State};
 
 handle_message({sync_parse, _Pid, 'after', put, _Token, <<"Device">>, QueryData}, State) ->
-%%    io:format("~s ~p ~p  ~n", [?FILE, ?LINE, QueryData]),
+    % io:format("~s ~p ~p ~n", [?FILE, ?LINE, QueryData]),
     dgiot_device:put(QueryData),
     {ok, State};
 
 handle_message({sync_parse, _Pid, 'after', delete, _Token, <<"Device">>, ObjectId}, State) ->
-%%    io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Pid, ObjectId]),
+    % io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, _Pid, ObjectId]),
     dgiot_device_hook:delete('after', ObjectId),
     {ok, State};
 
 handle_message({sync_parse, Pid, 'after', get, Token, <<"Product">>, #{<<"results">> := _Results} = ResBody}, State) ->
-%%    io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Pid,Header]),
+    % io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Pid, Token]),
     Key = dgiot_device_static:get_count(Token),
     timer:sleep(100),
     NewResBody = dgiot_device_static:stats(ResBody, Key),
@@ -213,12 +215,12 @@ handle_message({sync_parse, Pid, 'after', get, Token, <<"Product">>, #{<<"result
     {ok, State};
 
 handle_message({sync_parse, Pid, 'after', get, Token, <<"Product">>, #{<<"objectId">> := _ObjectId} = ResBody}, State) ->
-%%    io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Pid, ObjectId]),
+    % io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Pid, _ObjectId]),
     Key = dgiot_device_static:get_count(Token),
 %%    io:format("~s ~p ~p  ~n", [?FILE, ?LINE, Key]),
     timer:sleep(100),
     NewResBody = dgiot_device_static:stats(ResBody, Key),
-%%    io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Pid,NewResBody]),
+    % io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, Pid, NewResBody]),
     dgiot_parse_hook:publish(Pid, NewResBody),
     {ok, State};
 

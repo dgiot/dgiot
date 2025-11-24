@@ -20,6 +20,9 @@
 -include("dgiot_modbus.hrl").
 -include_lib("dgiot/include/logger.hrl").
 
+%% @doc Modbus RTU协议处理模块
+%% 负责Modbus RTU协议的编码、解码、数据帧构建和解析
+%% 支持多种功能码和数据格式，包括线圈、离散输入、保持寄存器、输入寄存器等
 -export([
     init/1,
     dealwith/1,
@@ -29,11 +32,14 @@
     build_req_message/1]
 ).
 
+%% @doc 协议编码解码相关函数
 -export([modbus_encoder/4, modbus_decoder/5, is16/1, set_params/3, decode_data/5, get_datasource/1]).
 
+%% 定义协议类型常量
 -define(TYPE, ?MODBUS_RTU).
 
-%% 注册协议参数
+%% @doc 注册Modbus RTU协议参数
+%% 定义协议配置所需的参数结构，用于前端界面展示和参数验证
 -params(#{
     <<"slaveid">> => #{
         order => 1,
@@ -52,7 +58,8 @@
         type => string,
         required => true,
         default => #{<<"value">> => <<"readCoils">>, <<"label">> => <<"0X01:读线圈寄存器"/utf8>>},
-        enum => [#{<<"value">> => <<"readCoils">>, <<"label">> => <<"0X01:读线圈寄存器"/utf8>>},
+        enum => [
+            #{<<"value">> => <<"readCoils">>, <<"label">> => <<"0X01:读线圈寄存器"/utf8>>},
             #{<<"value">> => <<"readInputs">>, <<"label">> => <<"0X02:读离散输入寄存器"/utf8>>},
             #{<<"value">> => <<"readHregs">>, <<"label">> => <<"0X03:读保持寄存器"/utf8>>},
             #{<<"value">> => <<"readIregs">>, <<"label">> => <<"0X04:读输入寄存器"/utf8>>},
@@ -119,7 +126,8 @@
     }
 }).
 
-%% 注册协议类型
+%% @doc 注册Modbus RTU协议类型
+%% 定义协议在系统中的类型标识和显示信息
 -protocol_type(#{
     cType => ?TYPE,
     type => <<"energy">>,
@@ -132,9 +140,14 @@
     }
 }).
 
+%% @doc 初始化Modbus RTU协议状态
+%% 设置初始状态，包括请求列表、时间戳和轮询间隔
+%% State: 初始状态
+%% 返回: 包含默认配置的状态映射
 init(State) ->
     State#{<<"req">> => [], <<"ts">> => dgiot_datetime:now_ms(), <<"interval">> => 300}.
 %%
+%% 登录功能（已注释，保留供参考）
 %%login(#{<<"devaddr">> := DTUAddr, <<"product">> := ProductId, <<"ip">> := Ip,
 %%    <<"channelId">> := ChannelId} = State) ->
 %%    Topic = <<ProductId/binary, "/", ChannelId/binary, "/", DTUAddr/binary>>,
@@ -145,6 +158,10 @@ init(State) ->
 %%login(State) ->
 %%    {ok, State}.
 
+%% @doc 构建Modbus RTU请求帧
+%% 根据配置参数生成Modbus RTU协议请求帧
+%% 参数: 包含寄存器数量、从机地址、操作类型、数据格式、寄存器地址的映射
+%% 返回: 编码后的Modbus RTU请求帧
 to_frame(#{
     <<"registersnumber">> := Quality,
     <<"slaveid">> := SlaveId,
@@ -154,10 +171,10 @@ to_frame(#{
 }) ->
     encode_data(Quality, Address, SlaveId, Operatetype, Originaltype);
 
-%%<<"cmd">> => Cmd,
-%%<<"gateway">> => DtuAddr,
-%%<<"addr">> => SlaveId,
-%%<<"di">> => Address
+%% @doc 构建子设备Modbus RTU请求帧
+%% 针对子设备构建请求帧，通过网关设备获取子设备信息
+%% 参数: 包含寄存器数量、网关地址、从机地址、数据格式、寄存器地址的映射
+%% 返回: 编码后的Modbus RTU请求帧或空列表
 to_frame(#{
     <<"registersnumber">> := Quality,
     <<"gateway">> := DtuAddr,
@@ -312,6 +329,7 @@ parse_frame(<<MbAddr:8, BadCode:8, ErrorCode:8, Crc:2/binary>> = Buff, Acc,
 
 %% 传感器直接做为dtu物模型的一个指标
 parse_frame(<<SlaveId:8, _/binary>> = Buff, Acc, #{<<"dtuproduct">> := ProductId, <<"slaveId">> := SlaveId, <<"dtuaddr">> := DtuAddr, <<"address">> := Address} = State) ->
+    %io:format("~s ~p SlaveId ~p, DtuAddr ~p, Address ~p~n", [?FILE, ?LINE, SlaveId, DtuAddr, Address]),
     case decode_data(Buff, ProductId, DtuAddr, Address, Acc) of
         {Rest1, Acc1} ->
             parse_frame(Rest1, Acc1, State);
@@ -321,6 +339,7 @@ parse_frame(<<SlaveId:8, _/binary>> = Buff, Acc, #{<<"dtuproduct">> := ProductId
 
 %% 传感器独立建产品，做为子设备挂载到dtu上面
 parse_frame(<<SlaveId:8, _/binary>> = Buff, Acc, #{<<"dtuaddr">> := DtuAddr, <<"slaveId">> := SlaveId, <<"address">> := Address} = State) ->
+    %io:format("~s ~p SlaveId ~p, DtuAddr ~p, Address ~p~n", [?FILE, ?LINE, SlaveId, DtuAddr, Address]),
     case dgiot_device:get_subdevice(DtuAddr, dgiot_utils:to_binary(SlaveId)) of
         not_find ->
             [<<>>, Acc];
@@ -334,6 +353,7 @@ parse_frame(<<SlaveId:8, _/binary>> = Buff, Acc, #{<<"dtuaddr">> := DtuAddr, <<"
     end;
 %rtu modbus
 parse_frame(_Other, Acc, _State) ->
+    %io:format("~s ~p Other: ~p Acc:~p State:~p ~n", [?FILE, ?LINE, _Other, Acc, _State]),
 %%    ?LOG(error, "_Other ~p", [_Other]),
     {error, Acc}.
 

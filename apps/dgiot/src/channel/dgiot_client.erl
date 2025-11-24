@@ -224,7 +224,7 @@ stop(ChannelId, ClientId) ->
         Pid when is_pid(Pid) ->
             case is_process_alive(Pid) of
                 true ->
-%%                    io:format("~s ~p DtuId = ~p. Pid ~p ~n", [?FILE, ?LINE, ChannelId, Pid]),
+                    % io:format("~s ~p ChannelId = ~p. Pid ~p ~n", [?FILE, ?LINE, ChannelId, Pid]),
                     supervisor:terminate_child(ChannelId, Pid);
                 _ ->
                     pass

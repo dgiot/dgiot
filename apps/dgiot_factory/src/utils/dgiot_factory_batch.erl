@@ -32,7 +32,7 @@ process_roll_dev(TaskProductId, TaskDeviceId, OrderName, SessionToken, FlatMap) 
                 {A, B, C};
             _ -> {<<"1">>, <<"1">>, <<"1">>}
         end,
-    case dgiot_device_cache:lookup(BatchDeviceId) of
+    case dgiot_device:lookup(BatchDeviceId) of
         {ok, #{<<"acl">> := Acl}} ->
             NewAcl = get_new_acl(SessionToken, Acl),
             dgiot_parse:update_object(<<"Device">>, BatchDeviceId, #{<<"ACL">> => NewAcl, <<"isEnable">> => true}),
@@ -51,7 +51,7 @@ process_roll_dev(TaskProductId, TaskDeviceId, OrderName, SessionToken, FlatMap) 
                     <<"className">> => <<"Product">>,
                     <<"objectId">> => BatchProductId
                 }},
-            dgiot_device_cache:post(Device),
+            dgiot_device:post(Device),
             dgiot_parse:create_object(<<"Device">>, Device),
             dgiot_metrics:inc(dgiot_factory, <<"batch_num">>, 1),
             dgiot_device:save_subdevice(BatchDeviceId, TaskDeviceId, 1),

@@ -276,15 +276,18 @@ do_request(post_export_data, #{<<"classname">> := Name} = Body, #{<<"sessionToke
 %% 导入物模型
 do_request(post_import_wmxdata, #{<<"type">> := Type, <<"objectId">> := ProductId, <<"file">> := File} = _Args, _Context, _Req) ->
 %%    io:format("~s ~p Args =~p.~n", [?FILE, ?LINE, Args]),
-    AtomName = dgiot_csv:save_csv_ets(File),
-    case dgiot_csv:post_properties(Type, AtomName) of
-        error ->
+    case dgiot_csv:save_csv_ets(File) of
+        not_exist ->
             {ok, #{<<"code">> => 500, <<"msg">> => <<"error">>}};
-        Properties ->
-            dgiot_parse:update_object(<<"Product">>, ProductId, #{<<"thing">> => #{<<"properties">> => Properties}}),
-            {ok, #{<<"code">> => 200, <<"msg">> => <<"success">>}}
+        AtomName ->
+            case dgiot_csv:post_properties(Type, AtomName) of
+                error ->
+                    {ok, #{<<"code">> => 500, <<"msg">> => <<"error">>}};
+                Properties ->
+                    dgiot_parse:update_object(<<"Product">>, ProductId, #{<<"thing">> => #{<<"properties">> => Properties}}),
+                    {ok, #{<<"code">> => 200, <<"msg">> => <<"success">>}}
+            end
     end;
-
 
 %% DB 概要: 导库 描述:json文件导库
 %% OperationId:post_import_data

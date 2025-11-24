@@ -45,6 +45,7 @@
     load_user/0,
     get_user/1,
     get_childrole/1,
+    childrole/2,
     get_childacl/1,
     get_roleids/1,
     get_alcname/1,
@@ -98,7 +99,12 @@ load_roles() ->
             save_role_view(RoleId),
             save_role_menuview(RoleId),
             dgiot_data:insert(?ROLE_PARENT_ETS, RoleId, ParentId),
-            dgiot_data:insert(?PARENT_ROLE_ETS, ParentId, RoleId),
+            case dgiot_data:get(?PARENT_ROLE_ETS, ParentId) of 
+                not_find ->
+                    dgiot_data:insert(?PARENT_ROLE_ETS, ParentId, [RoleId]);
+            Son -> 
+                    dgiot_data:insert(?PARENT_ROLE_ETS, ParentId, dgiot_utils:unique_1([RoleId] ++ Son))
+            end,
             dgiot_data:insert(?NAME_ROLE_ETS, dgiot_utils:to_atom(<<"role:", RoleName/binary>>), RoleId),
             dgiot_data:insert(?ROLE_NAME_ETS, RoleId, dgiot_utils:to_atom(<<"role:", RoleName/binary>>)),
             dgiot_data:insert(?ROLE_ETS, RoleId, maps:without([<<"objectId">>, <<"createdAt">>, <<"users">>, <<"menus">>, <<"rules">>, <<"dict">>], X))
