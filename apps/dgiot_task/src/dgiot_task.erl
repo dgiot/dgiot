@@ -520,21 +520,22 @@ del_pnque(DtuId) ->
 save_td(ProductId, DevAddr, Ack, _AppData) ->
     Topic = <<"$dg/thing/", ProductId/binary, "/", DevAddr/binary, "/properties/report">>,
     dgiot_mqttc_channel:send(ProductId, DevAddr, Topic, Ack),
-    case length(maps:to_list(Ack)) of
+    case maps:size(Ack) of
         0 ->
             #{};
         _ ->
             DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
             Interval = dgiot_product:get_interval(ProductId),
-            %%            是否有缓存
+            %% 是否有缓存
             CacheData = dgiot_task:merge_cache_data(DeviceId, Ack, Interval),
-            %%            获取物模型
+            %% 获取物模型
             Props = dgiot_task:get_props(ProductId),
-            %%            计算上报值
+            %% 计算上报值
             Collection = dgiot_task:get_collection(ProductId, [], CacheData, Props),
-            %%            计算计算值
+            %% 计算计算值
+            % io:format("Calculated Collection ~p ~n", [Collection]),
             AllData = dgiot_task:get_calculated(ProductId, DevAddr, Collection, Props),
-            %%            过滤存储值
+            %% 过滤存储值
             Storage = dgiot_task:get_storage(AllData, Props),
             save_cache_data(DeviceId, CacheData),
             dealwith_data(ProductId, DevAddr, DeviceId, AllData, Storage, Interval)

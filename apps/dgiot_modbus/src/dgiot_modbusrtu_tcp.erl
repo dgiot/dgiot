@@ -28,6 +28,7 @@
 
 %% TCP callback
 -export([init/1, handle_info/2, handle_cast/2, handle_call/3, terminate/2, code_change/3]).
+-export([send_aggregated_device_report/5]).
 
 start(Port, State) ->
     dgiot_tcp_server:child_spec(?MODULE, dgiot_utils:to_int(Port), State).
@@ -97,14 +98,8 @@ handle_info({tcp, Buff}, #tcp{state = #state{id = ChannelId, devaddr = DtuAddr, 
         <<"dtuaddr">> => DtuAddr,<<"slaveId">> => Sh * 256 + Sl,<<"address">> => H * 256 + L})  of
         {_, Things} ->
             timer:sleep(1000),
-            NewTopic = <<"$dg/thing/", DtuProductId/binary, "/", DtuAddr/binary, "/properties/report">>,
-            dgiot_bridge:send_log(ChannelId, ProductId, DtuAddr, "~s ~p to task ~p ~ts ", [?FILE, ?LINE, NewTopic, unicode:characters_to_list(dgiot_json:encode(Things))]),
-            DeviceId = dgiot_parse_id:get_deviceid(ProductId, DtuAddr),
-            _ParentId = dgiot_device:get_parent_id(DeviceId),
-            %io:format("~s ~p ParentId:~p~n", [?FILE, ?LINE, ParentId]),
-            Taskchannel = dgiot_product_channel:get_taskchannel(ProductId),
-            dgiot_device:save_log(ProductId, DtuAddr, Things, <<"reportProperty">>),
-            dgiot_client:send(Taskchannel, DeviceId, NewTopic, Things);
+            % 使用封装的函数发送聚合设备报告
+            send_aggregated_device_report(ChannelId, ProductId, DtuAddr, Things, DtuProductId);
         Other ->
             ?LOG(info, "Other ~p", [Other]),
             pass
@@ -233,3 +228,32 @@ terminate(_Reason, _TCPState) ->
 
 code_change(_OldVsn, TCPState, _Extra) ->
     {ok, TCPState}.
+
+%% 发送聚合设备报告消息，支持父设备消息汇聚
+send_aggregated_device_report(ChannelId, ProductId, DtuAddr, Things, _) ->
+    DeviceId = dgiot_parse_id:get_deviceid(ProductId, DtuAddr),
+    
+    % 获取父设备信息
+    ParentInfo = dgiot_device_cache:get_parent_info(DeviceId),
+    ParentId = maps:get(deviceid, ParentInfo, <<"">>),
+    ParentProductId = maps:get(productid, ParentInfo, <<"">>),
+    ParentDevAddr = maps:get(devaddr, ParentInfo, <<"">>),
+    
+    % 发送子设备消息
+    ChildTopic = <<"$dg/thing/", ProductId/binary, "/", DtuAddr/binary, "/properties/report">>,
+    dgiot_bridge:send_log(ChannelId, ProductId, DtuAddr, "~s ~p to task ~p ~ts ", [?FILE, ?LINE, ChildTopic, unicode:characters_to_list(dgiot_json:encode(Things))]),
+    dgiot_device:save_log(ProductId, DtuAddr, Things, <<"reportProperty">>),
+    Taskchannel = dgiot_product_channel:get_taskchannel(ProductId),
+    dgiot_client:send(Taskchannel, DeviceId, ChildTopic, Things),
+    
+    % 如果父设备存在，发送父设备消息
+    case ParentId of
+        <<"">> -> ok;
+        _ ->
+            ParentTopic = <<"$dg/thing/", ParentProductId/binary, "/", ParentDevAddr/binary, "/properties/report">>,
+            dgiot_bridge:send_log(ChannelId, ParentProductId, ParentDevAddr, "~s ~p to parent task ~p ~ts ", [?FILE, ?LINE, ParentTopic, unicode:characters_to_list(dgiot_json:encode(Things))]),
+            dgiot_device:save_log(ParentProductId, ParentDevAddr, Things, <<"reportProperty">>),
+            ParentTaskchannel = dgiot_product_channel:get_taskchannel(ParentProductId),
+            dgiot_client:send(ParentTaskchannel, ParentId, ParentTopic, Things)
+    end,
+    ok.

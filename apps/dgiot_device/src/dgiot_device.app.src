@@ -1,6 +1,6 @@
 {application, dgiot_device,
  [{description, "DGIOT Device Management Application"},
-  {vsn, "4.5.0"},
+  {vsn, "4.3.0"},
   {registered, []},
   {mod, {dgiot_device_app, []}},
   {applications,
