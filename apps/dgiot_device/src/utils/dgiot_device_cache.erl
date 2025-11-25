@@ -24,7 +24,7 @@
 -export([get_profile/1, get_profile/2, get_online/1, online/1, offline/1, offline_child/1, enable/1, disable/1, save_profile/1]).
 -export([location/3, get_location/1, get_address/3]).
 -export([put_content/1, put_profile/1, insert_mnesia/13, notification/6]).
--export([get_parent_id/1]).
+-export([get_parent_id/1, get_parent_info/1]).
 init_ets() ->
     dgiot_data:init(?DGIOT_LOCATION_ADDRESS, [public, named_table, set, {write_concurrency, true}, {read_concurrency, true}]).
 
@@ -54,8 +54,8 @@ save([#{<<"objectId">> := DeviceId}| Devices]) ->
     save_(Device),
     save(Devices);
 save(V) ->
-    io:format("~s ~p ~p ~n", [?FILE, ?LINE, V]),
-    V.
+    % io:format("~s ~p ~p ~n", [?FILE, ?LINE, V]),
+    save_(V).
 
 save_(#{<<"objectId">> := DeviceId, <<"devaddr">> := Devaddr, <<"product">> := Product} = Device) ->
     ProductId = maps:get(<<"objectId">>, Product),
@@ -286,6 +286,24 @@ get_parent_id_from_item(DeviceItem) ->
         #{<<"objectId">> := ParentId} -> ParentId;
         ParentId when is_binary(ParentId) -> ParentId;
         _ -> <<"">>
+    end.
+
+%% 获取父设备的完整信息
+get_parent_info(DeviceId) ->
+    case get_parent_id(DeviceId) of
+        <<"">> -> 
+            #{deviceid => <<"">>, productid => <<"">>, devaddr => <<"">>};
+        ParentId ->
+            case dgiot_parse:get_object(<<"Device">>, ParentId) of
+                {ok, ParentDevice} ->
+                    #{
+                        deviceid => ParentId,
+                        productid => maps:get(<<"product">>, ParentDevice, <<"">>),
+                        devaddr => maps:get(<<"devaddr">>, ParentDevice, <<"">>)
+                    };
+                _ ->
+                    #{deviceid => ParentId, productid => <<"">>, devaddr => <<"">>}
+            end
     end.
 
 insert_mnesia(DeviceId, Acl, Status, State, Now, IsEnable, ProductId, Devaddr, DeviceSecret, Node, Longitude, Latitude, ParentId) ->

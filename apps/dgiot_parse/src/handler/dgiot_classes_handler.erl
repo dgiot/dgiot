@@ -101,7 +101,7 @@ handle(OperationID, Args, #{from := js} = Context, Req) ->
     do_request_before(list_to_binary(atom_to_list(OperationID)), Args, NewBody, ReqHeader, Context, Req1);
 
 handle(OperationID, Args, Context, Req) ->
-    io:format("~s ~p ~p~n", [?FILE, ?LINE, OperationID]),
+    % io:format("~s ~p ~p~n", [?FILE, ?LINE, OperationID]),
     OldHeaders = dgiot_req:headers(Req, [{return, map}]),
     ReqHeader = maps:without([<<"authorization">>, <<"sessionToken">>], OldHeaders),
     {ok, Body, Req1} = dgiot_req:read_body(Req),
