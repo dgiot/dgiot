@@ -37,12 +37,12 @@ init_ets() ->
     dgiot_data:init(?DEVICE_PROFILE, [public, named_table, set, {write_concurrency, true}, {read_concurrency, true}]).
 
 load_all_cache({Skip}) ->
-    case dgiot_parsex:query_object(<<"Product">>, #{<<"limit">> => 1000, <<"skip">> => Skip}) of
-        {ok, #{<<"results">> := Results}} when length(Results) == 0 ->
+    case dgiot_parsex:query_object(<<"Product">>, #{<<"limit">> => 10, <<"skip">> => Skip}) of
+        {ok, #{<<"results">> := Products}} when length(Products) == 0 ->
             load_end;
         {ok, #{<<"results">> := Products}} ->
             save(Products),
-            {next, Skip + 1000};
+            {next, Skip + 10};
         _ ->
             {next, Skip}
     end.

@@ -56,13 +56,18 @@
         type => string,
         required => true,
         default => <<"上传Mac"/utf8>>,
+        default => #{<<"value">> => <<"RegisterByRegular">>, <<"label">> => <<"正则匹配注册"/utf8>>},
+        enum => [
+                    #{<<"value">> =>  <<"RegisterByIp">>, <<"label">> => <<"Ip地址注册"/utf8>>},
+                    #{<<"value">> => <<"RegisterByRegular">>, <<"label">> => <<"正则匹配注册"/utf8>>}
+                ],
         title => #{
             zh => <<"注册类型"/utf8>>
         },
         description => #{
-            zh => <<"上传Mac"/utf8>>
+            zh => <<"正则匹配注册和Ip地址注册"/utf8>>
         }
-    },
+    },      
     <<"regular">> => #{
         order => 3,
         type => string,
@@ -138,9 +143,11 @@ init(?TYPE, ChannelId, #{
 
 
 init(?TYPE, _ChannelId, _Args) ->
+    % io:format("~s ~p ~p ~p~n", [?FILE, ?LINE, _ChannelId, _Args]),
     {ok, #{}, #{}}.
 
 handle_init(State) ->
+    % io:format("~s ~p  ~p~n", [?FILE, ?LINE, State]),
     {ok, State}.
 
 %% 通道消息处理,注意：进程池调用

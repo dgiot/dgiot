@@ -137,7 +137,7 @@ handle_message(check, #state{id = ChannelId, env = #{<<"offline">> := OffLine, <
     {ok, State};
 
 handle_message({sync_parse, Pid, 'after', get, Token, <<"Device">>, #{<<"results">> := Results} = ResBody}, State) ->
-    io:format("~s ~p ================ ~n", [?FILE, ?LINE]),
+    % io:format("~s ~p ================ ~n", [?FILE, ?LINE]),
     SessionToken = dgiot_parse_auth:get_usersession(dgiot_utils:to_binary(Token)),
     MapType = dgiot_utils:to_binary(application:get_env(dgiot_device, map_type, "baidu")),
     {NewResults, DeviceList} =

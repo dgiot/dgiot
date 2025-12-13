@@ -39,25 +39,15 @@ start(Port, State) ->
 %%    erlang:send_after(5 * 1000, self(), login),.
 %%    {ok, TCPState}.
 
-init(#tcp{socket = Socket, state = #state{id = ChannelId, dtutype = Dtutype} = State} = TCPState) ->
+init(#tcp{socket = Socket, state = #state{id = ChannelId, dtutype = Dtutype, regtype = <<"RegisterByIp">>} = State} = TCPState) ->
     DtuAddr = dgiot_utils:get_ip(Socket),
-    %io:format("~s ~p  DtuAddr: ~p   ~n", [?FILE, ?LINE, DtuAddr]),
+    % io:format("~s ~p  State: ~p   ~n", [?FILE, ?LINE, State]),
     case dgiot_bridge:get_products(ChannelId) of
         {ok, _TYPE, [ProductId | _ProductIds]} ->
+            % io:format("~s ~p  ProductId: ~p   ~n", [?FILE, ?LINE, ProductId]),
             DeviceId = dgiot_parse_id:get_deviceid(ProductId, DtuAddr),
-            case dgiot_device:lookup(DeviceId) of
-                {ok, _DeviceItem} ->
-                    dgiot_modbus:register_client(ChannelId, ProductId, DtuAddr, DtuAddr, Dtutype),
-                    {ok, TCPState#tcp{buff = <<>>, register = true, clientid = DeviceId, state = State#state{devaddr = DtuAddr, deviceId = DeviceId}}};
-                _ ->
-                    case dgiot_parsex:get_object(<<"Device">>, DeviceId) of
-                        {ok, #{<<"objectId">> := DeviceId, <<"product">> := #{<<"objectId">> := ProductId}}} ->
-                            dgiot_modbus:register_client(ChannelId, ProductId, DtuAddr, DtuAddr, Dtutype),
-                            {ok, TCPState#tcp{buff = <<>>, register = true, clientid = DeviceId, state = State#state{devaddr = DtuAddr, deviceId = DeviceId}}};
-                        _ ->
-                            {ok, TCPState}
-                    end
-            end;
+            dgiot_modbus:register_client(ChannelId, ProductId, DtuAddr, DtuAddr, Dtutype),
+            {ok, TCPState#tcp{buff = <<>>, register = true, clientid = DeviceId, state = State#state{devaddr = DtuAddr, deviceId = DeviceId}}};
         {error, not_find} ->
            % io:format("~s ~p not_find_channel ~p~n", [?FILE, ?LINE, ChannelId]),
             {stop, not_find_channel}
