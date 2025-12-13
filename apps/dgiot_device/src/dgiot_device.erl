@@ -24,7 +24,7 @@
 -export([create_device/1, create_device/3]).
 -export([get_sub_device/1, get_sub_device/2, save_subdevice/2, get_subdevice/2, get_subdevices/2, save_subdevice/3, get_parent_id/1]).
 -export([parse_cache_Device/1, sync_parse/1, get/2, post/1, post/2, put/1, save/1, save/2, lookup/1, lookup/2, delete/1, delete/2]).
--export([save_profile/1, get_profile/1, get_profile/2, get_online/1, online/1, offline/1, offline_child/1, enable/1, disable/1]).
+-export([save_profile/1, get_profile/1, get_profile/2, get_online/1, online/1, offline/1, set_online/2, offline_child/1, enable/1, disable/1]).
 -export([put_color/3, get_color/2, put_location/3, get_location/1, get_address/3, get_productid/1]).
 -export([get_acl/1, get_roleids/1, get_readonly_acl/1, save_log/3, get_url/1, get_appname/1, save_log/4]).
 
@@ -200,6 +200,11 @@ online(DeviceId) ->
 -spec offline(DeviceId :: binary()) -> ok | pass.
 offline(DeviceId) ->
     dgiot_device_state:offline(DeviceId).
+
+set_online(DeviceId, 0) ->
+    offline(DeviceId);
+set_online(DeviceId, 1) ->
+    online(DeviceId).
 
 %% @doc 设置子设备离线
 -spec offline_child(DeviceId :: binary()) -> any().
