@@ -1,50 +1,50 @@
 %%%-------------------------------------------------------------------
-%%% @doc ÈÕÖ¾ºê¶¨Òå - Ô­Ê¼°æ±¾£¨±£³ÖÔ­Ñù£©
+%%% @doc æ—¥å¿—å®å®šä¹‰ - åŸå§‹ç‰ˆæœ¬ï¼ˆä¿æŒåŸæ ·ï¼‰
 %%%-------------------------------------------------------------------
 
 -ifndef(LOGGER_HRL).
 -define(LOGGER_HRL, true).
 
 %% ====================================================================
-%% »ù´¡ÈÕÖ¾ºê
+%% åŸºç¡€æ—¥å¿—å®
 %% ====================================================================
 
-%% DEBUGºê
+%% DEBUGå®
 -define(DEBUG(Format), ?LOG(debug, Format, [])).
 -define(DEBUG(Format, Args), ?LOG(debug, Format, Args)).
 
-%% INFOºê  
+%% INFOå®  
 -define(INFO(Format), ?LOG(info, Format, [])).
 -define(INFO(Format, Args), ?LOG(info, Format, Args)).
 
-%% NOTICEºê
+%% NOTICEå®
 -define(NOTICE(Format), ?LOG(notice, Format, [])).
 -define(NOTICE(Format, Args), ?LOG(notice, Format, Args)).
 
-%% WARNºê
+%% WARNå®
 -define(WARN(Format), ?LOG(warning, Format, [])).
 -define(WARN(Format, Args), ?LOG(warning, Format, Args)).
 
-%% ERRORºê
+%% ERRORå®
 -define(ERROR(Format), ?LOG(error, Format, [])).
 -define(ERROR(Format, Args), ?LOG(error, Format, Args)).
 
-%% CRITICALºê
+%% CRITICALå®
 -define(CRITICAL(Format), ?LOG(critical, Format, [])).
 -define(CRITICAL(Format, Args), ?LOG(critical, Format, Args)).
 
-%% ALERTºê
+%% ALERTå®
 -define(ALERT(Format), ?LOG(alert, Format, [])).
 -define(ALERT(Format, Args), ?LOG(alert, Format, Args)).
 
 %% ====================================================================
-%% »ù´¡LOGºê¶¨Òå - ±£³ÖÔ­Ñù£¬²»¼ÓÎÄ¼şÎ»ÖÃ
+%% åŸºç¡€LOGå®å®šä¹‰ - ä¿æŒåŸæ ·ï¼Œä¸åŠ æ–‡ä»¶ä½ç½®
 %% ====================================================================
 
-%% LOGºêµ¥²ÎÊı°æ±¾
+%% LOGå®å•å‚æ•°ç‰ˆæœ¬
 -define(LOG(Level, Format), ?LOG(Level, Format, [])).
 
-%% LOGºêË«²ÎÊı°æ±¾
+%% LOGå®åŒå‚æ•°ç‰ˆæœ¬
 -define(LOG(Level, Format, Args),
     begin
         (logger:log(Level, #{}, #{
@@ -54,7 +54,7 @@
             line => ?LINE}))
     end).
 
-%% LOGºêÈı²ÎÊı°æ±¾£¨´øACL£©
+%% LOGå®ä¸‰å‚æ•°ç‰ˆæœ¬ï¼ˆå¸¦ACLï¼‰
 -define(LOG(Level, Format, Args, ACL),
     begin
         (logger:log(Level, #{}, #{
@@ -65,10 +65,10 @@
     end).
 
 %% ====================================================================
-%% ½á¹¹»¯ÈÕÖ¾ºê
+%% ç»“æ„åŒ–æ—¥å¿—å®
 %% ====================================================================
 
-%% MLOGºê
+%% MLOGå®
 -define(MLOG(Level, Map),
     begin
         (logger:log(Level, #{}, #{
@@ -78,7 +78,7 @@
             line => ?LINE}))
     end).
 
-%% MLOGºê´øACL
+%% MLOGå®å¸¦ACL
 -define(MLOG(Level, Map, ACL),
     begin
         (logger:log(Level, #{}, #{
@@ -89,7 +89,7 @@
     end).
 
 %% ====================================================================
-%% ½âÎöÈÕÖ¾ºê
+%% è§£ææ—¥å¿—å®
 %% ====================================================================
 
 -define(PLOG(Level, Map),
@@ -110,7 +110,7 @@
     end).
 
 %% ====================================================================
-%% µ÷ÊÔºê
+%% è°ƒè¯•å®
 %% ====================================================================
 
 -ifdef(DEBUG_ENABLED).
