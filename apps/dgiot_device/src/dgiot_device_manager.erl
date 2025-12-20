@@ -102,7 +102,7 @@ update_device(DeviceId, Updates) when is_binary(DeviceId), is_map(Updates) ->
 -spec delete_device(DeviceId :: binary()) -> ok | {error, term()}.
 delete_device(DeviceId) ->
     ?LOG(info, "Deleting device: ~p", [DeviceId]),
-    case dgiot_parsex:delete_object(<<"Device">>, DeviceId) of
+    case dgiot_parsex:del_object(<<"Device">>, DeviceId) of
         {ok, _Result} ->
             ?LOG(info, "Device deleted successfully: ~p", [DeviceId]),
             ok;

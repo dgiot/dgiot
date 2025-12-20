@@ -280,7 +280,7 @@ do_request(post_import_wmxdata, #{<<"type">> := Type, <<"objectId">> := ProductI
         not_exist ->
             {ok, #{<<"code">> => 500, <<"msg">> => <<"error">>}};
         AtomName ->
-            case dgiot_csv:post_properties(Type, AtomName) of
+            case post_properties(Type, AtomName) of
                 error ->
                     {ok, #{<<"code">> => 500, <<"msg">> => <<"error">>}};
                 Properties ->
@@ -853,3 +853,242 @@ sync_files(_Info, _Role, _AuthToken) ->
     pass.
 
 
+    post_properties(<<"plc">>, AtomName) ->
+        Things = ets:match(AtomName, {'$1', ['$2', '$3', '$4', '$5', '$6', '$7', '$8', '$9', '$10', '$11' | '_']}),
+        lists:foldl(fun([Index, Devicetype, Name, Identifier, Address, Originaltype, AccessMode, Min_Max, Unit, Type, Specs | _], Acc) ->
+            Acc ++ [#{
+                <<"name">> => Name,
+                <<"index">> => Index,
+                <<"isstorage">> => true,
+                <<"isshow">> => true,
+                <<"dataForm">> => #{
+                    <<"address">> => <<"0">>,
+                    <<"rate">> => 1,
+                    <<"order">> => Index,
+                    <<"round">> => <<"all">>,
+                    <<"offset">> => 0,
+                    <<"control">> => <<"%{d}">>,
+                    <<"iscount">> => <<"0">>,
+                    <<"protocol">> => <<"S7">>,
+                    <<"strategy">> => <<"1">>,
+                    <<"collection">> => <<"%{s}">>,
+                    <<"countround">> => <<"all">>,
+                    <<"countstrategy">> => 3,
+                    <<"countcollection">> => <<"%{s}">>
+                },
+                <<"dataType">> => get_dataType(to_lower(Type), Min_Max, Unit, Specs),
+                <<"required">> => true,
+                <<"accessMode">> => get_accessmode(AccessMode),
+                <<"dataSource">> => #{
+                    <<"_dlinkindex">> => <<"">>,
+                    <<"address">> => Address,
+                    <<"originaltype">> => Originaltype
+                },
+                <<"devicetype">> => Devicetype,
+                <<"identifier">> => to_lower(Identifier),
+                <<"moduleType">> => <<"properties">>,
+                <<"isaccumulate">> => false
+            }]
+                    end, [], Things);
+    
+    post_properties(<<"dlink">>, AtomName) ->
+        Things = ets:match(AtomName, {'$1', ['$2', '$3', '$4', '$5', '$6', '$7', '$8', '$9', '$10', '$11', '$12' | '_']}),
+        lists:foldl(fun([Index, Devicetype, Name, Identifier, Key, Len, Isstorage, AccessMode, Min_Max, Unit, Type, Specs | _], Acc) ->
+            Acc ++ [#{
+                <<"name">> => Name,
+                <<"index">> => Index,
+                <<"isstorage">> => dgiot_utils:to_int(Isstorage),
+                <<"isshow">> => true,
+                <<"dataForm">> => #{
+                    <<"address">> => <<"0">>,
+                    <<"rate">> => 1,
+                    <<"order">> => 0,
+                    <<"round">> => <<"all">>,
+                    <<"offset">> => 0,
+                    <<"control">> => <<"%{d}">>,
+                    <<"iscount">> => <<"0">>,
+                    <<"protocol">> => <<"DLINK">>,
+                    <<"strategy">> => <<"主动上报"/utf8>>,
+                    <<"collection">> => <<"%{s}">>,
+                    <<"countround">> => <<"all">>,
+                    <<"countstrategy">> => 3,
+                    <<"countcollection">> => <<"%{s}">>
+                },
+                <<"dataType">> => get_dataType(to_lower(Type), Min_Max, Unit, Specs),
+                <<"required">> => true,
+                <<"accessMode">> => get_accessmode(AccessMode),
+                <<"dataSource">> => #{
+                    <<"_dlinkindex">> => <<"1">>,
+                    <<"dis">> => [
+                        #{<<"key">> => Key, <<"data">> => Len}
+                    ]
+                },
+                <<"devicetype">> => Devicetype,
+                <<"identifier">> => to_lower(Identifier),
+                <<"moduleType">> => <<"properties">>,
+                <<"isaccumulate">> => false
+            }]
+                    end, [], Things);
+    
+    post_properties(<<"modbusxtcp">>, AtomName) ->
+        Things = ets:match(AtomName, {'$1', ['$2', '$3', '$4', '$5', '$6', '$7', '$8', '$9', '$10' | '_']}),
+        lists:foldl(fun([Index, Devicetype, Name, Identifier, Address, Min_Max, Unit, Type, Originaltype, Specs | _], Acc) ->
+            Acc ++ [#{
+                <<"name">> => Name,
+                <<"index">> => Index,
+                <<"isstorage">> => true,
+                <<"isshow">> => true,
+                <<"dataForm">> => #{
+                    <<"address">> => <<"0">>,
+                    <<"rate">> => 1,
+                    <<"order">> => 0,
+                    <<"round">> => <<"all">>,
+                    <<"offset">> => 0,
+                    <<"control">> => <<"%{d}">>,
+                    <<"iscount">> => <<"0">>,
+                    <<"protocol">> => <<"MODBUSXTCP">>,
+                    <<"strategy">> => <<"主动上报"/utf8>>,
+                    <<"collection">> => <<"%{s}">>,
+                    <<"countround">> => <<"all">>,
+                    <<"countstrategy">> => 3,
+                    <<"countcollection">> => <<"%{s}">>
+                },
+                <<"dataType">> => get_dataType(to_lower(Type), Min_Max, Unit, Specs),
+                <<"required">> => true,
+                <<"accessMode">> => <<"r">>,
+                <<"dataSource">> => #{
+                    <<"_dlinkindex">> => <<"">>,
+                    <<"address">> => Address,
+                    <<"originaltype">> => Originaltype
+                },
+                <<"devicetype">> => Devicetype,
+                <<"identifier">> => to_lower(Identifier),
+                <<"moduleType">> => <<"properties">>,
+                <<"isaccumulate">> => false
+            }]
+                    end, [], Things);
+    
+    post_properties(<<"modbusxrtu">>, AtomName) ->
+        Things = ets:match(AtomName, {'$1', ['$2', '$3', '$4', '$5', '$6', '$7', '$8', '$9', '$10', '$11', '$12', '$13', '$14', '$15', '$16', '$17', '$18', '$19' | '_']}),
+        lists:foldl(fun
+                        ([Index, Devicetype, Name, Identifier, Type, AccessMode, Isstorage, Isshow, Min_Max, Unit,Strategy, Collection,
+                            Slaveid, Operatetype, Address, Registersnumber, Originaltype, Dlinkindex, Specs | _], Acc) ->
+                            Acc ++ [#{
+                                <<"name">> => Name,
+                                <<"index">> => Index,
+                                <<"isstorage">> => dgiot_utils:to_atom(Isstorage),
+                                <<"isshow">> => dgiot_utils:to_atom(Isshow),
+                                <<"dataForm">> => #{
+                                    <<"address">> => <<"0">>,
+                                    <<"rate">> => 1,
+                                    <<"order">> => 0,
+                                    <<"round">> => <<"all">>,
+                                    <<"offset">> => 0,
+                                    <<"control">> => <<"%{d}">>,
+                                    <<"iscount">> => <<"0">>,
+                                    <<"protocol">> => <<"MODBUSRTU">>,
+                                    <<"strategy">> => Strategy,
+                                    <<"collection">> => Collection,
+                                    <<"countround">> => <<"all">>,
+                                    <<"countstrategy">> => 3,
+                                    <<"countcollection">> => <<"%{s}">>
+                                },
+                                <<"dataType">> => get_dataType(to_lower(Type), Min_Max, Unit, Specs),
+                                <<"required">> => true,
+                                <<"accessMode">> => AccessMode,
+                                <<"dataSource">> => #{
+                                    <<"slaveid">> => Slaveid,
+                                    <<"registersnumber">> => Registersnumber,
+                                    <<"originaltype">> => Originaltype,
+                                    <<"operatetype">> => Operatetype,
+                                    <<"address">> => Address,
+                                    <<"_dlinkindex">> => Dlinkindex
+                                },
+                                <<"devicetype">> => Devicetype,
+                                <<"identifier">> => to_lower(Identifier),
+                                <<"moduleType">> => <<"properties">>,
+                                <<"isaccumulate">> => false
+                            }]
+                    end, [], Things);
+    
+    post_properties(_, _) ->
+        error.
+    
+    get_accessmode(<<229, 143, 170, 232, 175, 187>>) ->
+        <<"r">>;
+    
+    get_accessmode(_AccessMode) ->
+        <<"rw">>.
+    
+    to_lower(Value) ->
+        Str1 = re:replace(Value, <<"\\.">>, <<"_">>, [global, {return, list}]),
+        list_to_binary(string:to_lower(Str1)).
+    
+    get_min_max(Min_Max) ->
+        case binary:split(Min_Max, <<$->>, [global, trim]) of
+            [<<>>, Min, Max] ->
+                {-dgiot_utils:to_int(Min), dgiot_utils:to_int(Max)};
+            [Min, Max] ->
+                {dgiot_utils:to_int(Min), dgiot_utils:to_int(Max)};
+            _ ->
+                {-65535, 65535}
+        end.
+    
+    get_dataType(<<"float">>, Min_Max, Unit, _) ->
+        {Min, Max} = get_min_max(Min_Max),
+        #{
+            <<"das">> => [],
+            <<"type">> => <<"float">>,
+            <<"specs">> => #{
+                <<"min">> => Min,
+                <<"max">> => Max,
+                <<"step">> => 0,
+                <<"unit">> => get_unit(Unit),
+                <<"precision">> => 3
+            }
+        };
+    
+    get_dataType(<<"enum">>, _, _, Specs) ->
+        Newspecs = get_specs(Specs),
+        #{
+            <<"das">> => [],
+            <<"type">> => <<"enum">>,
+            <<"specs">> => Newspecs
+        };
+    
+    get_dataType(Type, Min_Max, Unit, _) ->
+        {Min, Max} = get_min_max(Min_Max),
+        #{
+            <<"das">> => [],
+            <<"type">> => Type,
+            <<"specs">> => #{
+                <<"min">> => Min,
+                <<"max">> => Max,
+                <<"step">> => 0,
+                <<"unit">> => get_unit(Unit),
+                <<"precision">> => 3
+            }
+        }.
+    
+    
+    get_specs(Specs) ->
+        case binary:split(Specs, <<$;>>, [global, trim]) of
+            List when length(List) > 0 ->
+                lists:foldl(fun(Map, Acc) ->
+                    case binary:split(Map, <<$:>>, [global, trim]) of
+                        [Key, Value] ->
+                            Acc#{Key => Value};
+                        _ ->
+                            Acc
+                    end
+                            end, #{}, List);
+            _ ->
+                #{}
+        end.
+    
+    get_unit(<<"null">>) ->
+        <<"">>;
+    
+    get_unit(Unit) ->
+        Unit.
+    
