@@ -21,11 +21,9 @@
 -include_lib("dgiot/include/dgiot_mqtt.hrl").
 -define(DGIOT_DLINK_REQUEST_ID, dgiot_dlink_request_id).
 %% ACL Callbacks
--export([
-    on_message_publish/2,
-    init_ets/0,
-    redirect_topic/1
-]).
+-export([on_message_publish/2,
+         init_ets/0,
+         redirect_topic/1]).
 
 -define(EMPTY_USERNAME, <<"">>).
 
@@ -43,8 +41,8 @@ on_message_publish(Message = #message{topic = <<"$dg/user/dashboard/", SessionTo
 on_message_publish(Message = #message{topic = <<"$dg/user/", DeviceId:10/binary, "/properties/report">>, payload = Payload}, _State) ->
     % io:format("~s ~p DeviceId: ~p Payload: ~p~n", [?FILE, ?LINE,DeviceId, Payload]),
     case dgiot_device:lookup(DeviceId) of
-        {ok,#{ <<"devaddr">> := DevAddr, <<"productid">> := ProductId} } ->
-            Topic = <<"$dg/thing/",ProductId/binary, "/",DevAddr/binary,"/properties/report">>,
+        {ok, #{<<"devaddr">> := DevAddr, <<"productid">> := ProductId}} ->
+            Topic = <<"$dg/thing/", ProductId/binary, "/", DevAddr/binary, "/properties/report">>,
             dgiot_mqtt:publish(DeviceId, Topic, Payload),
             % io:format("~s ~p Payload: ~p~n", [?FILE, ?LINE, Payload]),
             {ok, Message};
@@ -96,19 +94,25 @@ on_message_publish(Message = #message{topic = <<"$dg/thing/", Topic/binary>>, pa
                     pass
             end;
         _ ->
+            % io:format("~s ~p Topic: ~p Payload: ~p~n", [?FILE, ?LINE, Topic, Payload]),
             pass
     end,
+    % io:format("~s ~p ~n", [?FILE, ?LINE]),
     {ok, Message};
 
 on_message_publish(Message = #message{from = DeviceAddr, headers = #{username := ProductId}, topic = Topic}, State) ->
+    % io:format("~s ~p Topic: ~p Payload: ~p~n", [?FILE, ?LINE, Topic, Message]),
     Topic1 = re:replace(Topic, DeviceAddr, <<"${deviceAddr}">>, [global, {return, binary}]),
     NewTopic = re:replace(Topic1, ProductId, <<"${productId}">>, [global, {return, binary}]),
+    % io:format("~s ~p Topic1: ~p NewTopic: ~p~n", [?FILE, ?LINE, Topic1, NewTopic]),
     dgiot_hook:run_hook({ProductId, NewTopic}, {NewTopic, Message, State}),
+    % io:format("~s ~p Topic1: ~p NewTopic: ~p~n", [?FILE, ?LINE, Topic1, NewTopic]),
     {ok, Message};
 
 on_message_publish(Message = #message{topic = _Topic, payload = _Payload}, _State) ->
     % io:format("~s ~p _Topic: ~p Payload: ~p~n", [?FILE, ?LINE, _Topic, _Payload]),
     {ok, Message}.
+
 
 %% topic 重定向
 redirect_topic({HookTopic, Message = #message{from = DeviceAddr, headers = #{username := ProductId}}, State}) ->

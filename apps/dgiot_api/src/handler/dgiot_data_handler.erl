@@ -17,6 +17,7 @@
 -module(dgiot_data_handler).
 -author("dgiot").
 -include_lib("dgiot/include/logger.hrl").
+
 -include("dgiot_api.hrl").
 -behavior(dgiot_rest).
 -dgiot_rest(all).
@@ -24,6 +25,7 @@
 %% API
 -export([swagger_data/0]).
 -export([handle/4]).
+
 
 %% API描述
 %% 支持二种方式导入
@@ -33,9 +35,7 @@
 %% 2. 从模块的priv/swagger/下导入
 %%    dgiot_http_server:bind(<<"/swagger_data.json">>, ?MODULE, [], priv)
 swagger_data() ->
-    [
-        dgiot_http_server:bind(<<"/swagger_data.json">>, ?MODULE, [], priv)
-    ].
+    [dgiot_http_server:bind(<<"/swagger_data.json">>, ?MODULE, [], priv)].
 
 
 %%%===================================================================
@@ -43,10 +43,11 @@ swagger_data() ->
 %%%  如果登录, Context 内有 <<"user">>, version
 %%%===================================================================
 
+
 -spec handle(OperationID :: atom(), Args :: map(), Context :: map(), Req :: dgiot_req:req()) ->
-    {Status :: dgiot_req:http_status(), Body :: map()} |
-    {Status :: dgiot_req:http_status(), Headers :: map(), Body :: map()} |
-    {Status :: dgiot_req:http_status(), Headers :: map(), Body :: map(), Req :: dgiot_req:req()}.
+          {Status :: dgiot_req:http_status(), Body :: map()} |
+          {Status :: dgiot_req:http_status(), Headers :: map(), Body :: map()} |
+          {Status :: dgiot_req:http_status(), Headers :: map(), Body :: map(), Req :: dgiot_req:req()}.
 
 handle(OperationID, Args, Context, Req) ->
     Headers = #{},
@@ -77,18 +78,20 @@ handle(OperationID, Args, Context, Req) ->
 %%% 内部函数 Version:API版本
 %%%===================================================================
 
+
 %% System 概要: 服务器文件上传 描述:文件上传到服务器
 %% OperationId:post_upload
 %% 请求:POST /iotapi/upload
 do_request(post_upload, #{<<"file">> := FileInfo}, #{<<"user">> := #{<<"objectId">> := UserId}}, _Req) ->
     ?LOG(info, "FileInfo ~p", [FileInfo]),
     Key = dgiot_utils:to_md5(dgiot_json:encode(FileInfo#{node => node()})),
-    case dgiot_parse:create_object(<<"Dict">>, #{
-        <<"ACL">> => #{UserId => #{<<"read">> => true, <<"write">> => true}},
-        <<"type">> => <<"file">>,
-        <<"key">> => Key,
-        <<"data">> => FileInfo#{node => node()}
-    }) of
+    case dgiot_parse:create_object(<<"Dict">>,
+                                   #{
+                                     <<"ACL">> => #{UserId => #{<<"read">> => true, <<"write">> => true}},
+                                     <<"type">> => <<"file">>,
+                                     <<"key">> => Key,
+                                     <<"data">> => FileInfo#{node => node()}
+                                    }) of
         {ok, #{<<"objectId">> := ObjectId}} ->
             {ok, FileInfo#{<<"objectId">> => ObjectId}};
         {error, Reason} ->
@@ -132,42 +135,49 @@ do_request(post_upload_token, #{<<"from">> := <<"fastdfs">>}, _Context, Req0) ->
             end
     end;
 
-
 %% Thing 概要: 导库 描述:查询物模型
 %% OperationId:get_thing
 %% 请求:GET /iotapi/get_thing
-do_request(get_thing, #{<<"productid">> := ProductId, <<"moduleType">> := ModuleType},
-    #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
+do_request(get_thing,
+           #{<<"productid">> := ProductId, <<"moduleType">> := ModuleType},
+           #{<<"sessionToken">> := SessionToken} = _Context,
+           _Req) ->
     getThing(ProductId, ModuleType, SessionToken);
 
 %% Thing 概要: 导库 描述:添加物模型
 %% OperationId:post_thing
 %% 请求:PUT /iotapi/post_thing
-do_request(post_thing, #{<<"productid">> := ProductId, <<"item">> := Item} = _Body,
-    #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
+do_request(post_thing,
+           #{<<"productid">> := ProductId, <<"item">> := Item} = _Body,
+           #{<<"sessionToken">> := SessionToken} = _Context,
+           _Req) ->
     postThing(ProductId, Item, SessionToken);
 
 %% Thing 概要: 导库 描述:修改物模型
 %% OperationId:put_thing
 %% 请求:PUT /iotapi/put_thing
-do_request(put_thing, #{<<"productid">> := ProductId, <<"item">> := Item} = _Body,
-    #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
+do_request(put_thing,
+           #{<<"productid">> := ProductId, <<"item">> := Item} = _Body,
+           #{<<"sessionToken">> := SessionToken} = _Context,
+           _Req) ->
     putTing(ProductId, Item, SessionToken);
-
 
 %% Thing 概要: 导库 描述:删除物模型
 %% OperationId:put_thing
 %% 请求:PUT /iotapi/put_thing
-do_request(delete_thing, #{<<"productid">> := ProductId, <<"item">> := Item} = _Body,
-    #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
+do_request(delete_thing,
+           #{<<"productid">> := ProductId, <<"item">> := Item} = _Body,
+           #{<<"sessionToken">> := SessionToken} = _Context,
+           _Req) ->
     deleteThing(ProductId, SessionToken, Item);
-
 
 %% Product 概要: 导库 描述:json文件导库
 %% OperationId:post_product
 %% 请求:POST /iotapi/post_product
-do_request(post_product, #{<<"file">> := FileInfo, <<"appid">> := Appid} = _Body,
-    #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
+do_request(post_product,
+           #{<<"file">> := FileInfo, <<"appid">> := Appid} = _Body,
+           #{<<"sessionToken">> := SessionToken} = _Context,
+           _Req) ->
     case maps:get(<<"contentType">>, FileInfo, <<"unknow">>) of
         <<"application/x-zip-compressed">> -> post_product(FileInfo, Appid, SessionToken);
         <<"application/zip">> -> post_product(FileInfo, Appid, SessionToken);
@@ -215,17 +225,17 @@ do_request(post_adddevice, #{<<"devaddr">> := Devaddr, <<"productid">> := Produc
                             {ok, Result#{<<"objectId">> => DeviceId}};
                         _R ->
                             dgiot_device:create_device(#{
-                                <<"devaddr">> => Devaddr,
-                                <<"name">> => <<ProductName/binary, Devaddr/binary>>,
-                                <<"ip">> => <<>>,
-                                <<"isEnable">> => true,
-                                <<"product">> => ProductId,
-                                <<"ACL">> => Acl,
-                                <<"status">> => <<"ONLINE">>,
-                                <<"location">> => #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => dgiot_utils:to_float(Longitude), <<"latitude">> => dgiot_utils:to_float(Latitude)},
-                                <<"brand">> => ProductName,
-                                <<"devModel">> => DevType
-                            })
+                                                         <<"devaddr">> => Devaddr,
+                                                         <<"name">> => <<ProductName/binary, Devaddr/binary>>,
+                                                         <<"ip">> => <<>>,
+                                                         <<"isEnable">> => true,
+                                                         <<"product">> => ProductId,
+                                                         <<"ACL">> => Acl,
+                                                         <<"status">> => <<"ONLINE">>,
+                                                         <<"location">> => #{<<"__type">> => <<"GeoPoint">>, <<"longitude">> => dgiot_utils:to_float(Longitude), <<"latitude">> => dgiot_utils:to_float(Latitude)},
+                                                         <<"brand">> => ProductName,
+                                                         <<"devModel">> => DevType
+                                                        })
                     end;
                 Error2 -> ?LOG(info, "Error2 ~p ", [Error2])
             end;
@@ -241,9 +251,9 @@ do_request(get_product, #{<<"name">> := Name}, #{<<"sessionToken">> := SessionTo
     case get_product(Name, FileName, SessionToken) of
         {ok, ZipFile} ->
             Headers = #{
-                <<"content-type">> => <<"application/zip">>,
-                <<"Content-Disposition">> => unicode:characters_to_binary("attachment;filename=" ++ FileName)
-            },
+                        <<"content-type">> => <<"application/zip">>,
+                        <<"Content-Disposition">> => unicode:characters_to_binary("attachment;filename=" ++ FileName)
+                       },
             {200, Headers, ZipFile};
         Err ->
             Err
@@ -265,9 +275,9 @@ do_request(post_export_data, #{<<"classname">> := Name} = Body, #{<<"sessionToke
     case get_class(Name, Filter, FileName, SessionToken) of
         {ok, ZipFile} ->
             Headers = #{
-                <<"content-type">> => <<"application/zip">>,
-                <<"Content-Disposition">> => unicode:characters_to_binary("attachment;filename=" ++ FileName)
-            },
+                        <<"content-type">> => <<"application/zip">>,
+                        <<"Content-Disposition">> => unicode:characters_to_binary("attachment;filename=" ++ FileName)
+                       },
             {200, Headers, ZipFile};
         Err ->
             Err
@@ -275,7 +285,7 @@ do_request(post_export_data, #{<<"classname">> := Name} = Body, #{<<"sessionToke
 
 %% 导入物模型
 do_request(post_import_wmxdata, #{<<"type">> := Type, <<"objectId">> := ProductId, <<"file">> := File} = _Args, _Context, _Req) ->
-%%    io:format("~s ~p Args =~p.~n", [?FILE, ?LINE, Args]),
+    %%    io:format("~s ~p Args =~p.~n", [?FILE, ?LINE, Args]),
     case dgiot_csv:save_csv_ets(File) of
         not_exist ->
             {ok, #{<<"code">> => 500, <<"msg">> => <<"error">>}};
@@ -318,8 +328,8 @@ do_request(post_import_data, #{<<"className">> := Class, <<"file">> := FileInfo}
         {ok, Data} ->
             Fun =
                 fun(Res, Acc) ->
-                    ?LOG(info, "Res ~p", [Res]),
-                    lists:concat([Acc, Res])
+                        ?LOG(info, "Res ~p", [Res]),
+                        lists:concat([Acc, Res])
                 end,
             case dgiot_parse:import(Class, Data, length(Data), Fun, []) of
                 {error, Reason1} ->
@@ -330,27 +340,32 @@ do_request(post_import_data, #{<<"className">> := Class, <<"file">> := FileInfo}
         Error -> Error
     end;
 
-
 %% 文件 概要: 导库 描述:json文件导出
 %% OperationId:post_export_file
 %% 请求:POST /iotapi/post_export_file
 do_request(post_export_file, #{<<"files">> := Files}, #{<<"sessionToken">> := SessionToken} = _Context, _Req0) ->
-    case dgiot_parse:query_object(<<"_Role">>, #{
-        <<"keys">> => [<<"name">>, <<"tag">>],
-        <<"limit">> => 1}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+    case dgiot_parse:query_object(<<"_Role">>,
+                                  #{
+                                    <<"keys">> => [<<"name">>, <<"tag">>],
+                                    <<"limit">> => 1
+                                   },
+                                  [{"X-Parse-Session-Token", SessionToken}],
+                                  [{from, rest}]) of
         {ok, #{<<"results">> := [#{<<"name">> := AppName, <<"tag">> := #{<<"appconfig">> := Config}} | _]}} ->
             Root = unicode:characters_to_list(maps:get(<<"home">>, Config, <<"D:/dgiot/dgiot_data_center/datacenter/file/files">>)),
             FileServer = unicode:characters_to_list(maps:get(<<"file">>, Config, <<"http://127.0.0.1:1250/shapes/upload">>)),
             App = unicode:characters_to_list(AppName),
             Url = string:sub_string(FileServer, 1, string:rchr(FileServer, $/)),
             FileList = lists:foldl(fun(X, Acc) ->
-                [_, _, FileApp, FileName] = re:split(X, <<"/">>),
-                Acc ++ [{FileApp, FileName}]
-                                   end, [], Files),
+                                           [_, _, FileApp, FileName] = re:split(X, <<"/">>),
+                                           Acc ++ [{FileApp, FileName}]
+                                   end,
+                                   [],
+                                   Files),
             FileUrl = Url ++ dgiot_utils:get_file(Root, FileList, App),
             {ok, #{
-                <<"url">> => unicode:characters_to_binary(FileUrl)
-            }};
+                   <<"url">> => unicode:characters_to_binary(FileUrl)
+                  }};
         _ -> {error, <<"not find">>}
     end;
 
@@ -358,9 +373,13 @@ do_request(post_export_file, #{<<"files">> := Files}, #{<<"sessionToken">> := Se
 %% OperationId:post_import_file
 %% 请求:POST /iotapi/post_import_file
 do_request(post_import_file, #{<<"path">> := Path}, #{<<"sessionToken">> := SessionToken} = _Context, _Req0) ->
-    case dgiot_parse:query_object(<<"_Role">>, #{
-        <<"keys">> => [<<"name">>, <<"tag">>],
-        <<"limit">> => 1}, [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+    case dgiot_parse:query_object(<<"_Role">>,
+                                  #{
+                                    <<"keys">> => [<<"name">>, <<"tag">>],
+                                    <<"limit">> => 1
+                                   },
+                                  [{"X-Parse-Session-Token", SessionToken}],
+                                  [{from, rest}]) of
         {ok, #{<<"results">> := [#{<<"name">> := AppName, <<"tag">> := #{<<"appconfig">> := Config}} | _]}} ->
             Root = unicode:characters_to_list(maps:get(<<"home">>, Config, <<"D:/dgiot/dgiot_data_center/datacenter/file/files">>)),
             [_, _, FileApp, FileName] = re:split(Path, <<"/">>),
@@ -374,10 +393,9 @@ do_request(post_import_file, #{<<"path">> := Path}, #{<<"sessionToken">> := Sess
                     end;
                 _ ->
                     {error, #{
-                        <<"appname">> => AppName,
-                        <<"filename">> => FileApp
-                    }
-                    }
+                              <<"appname">> => AppName,
+                              <<"filename">> => FileApp
+                             }}
             end;
         _ -> {error, <<"not find">>}
     end;
@@ -385,8 +403,10 @@ do_request(post_import_file, #{<<"path">> := Path}, #{<<"sessionToken">> := Sess
 %% Product 概要: 导库 描述:json文件导库
 %% OperationId:post_menus
 %% 请求:POST /iotapi/post_menu
-do_request(post_menu, #{<<"file">> := FileInfo} = _Body,
-    #{<<"sessionToken">> := SessionToken} = _Context, _Req) ->
+do_request(post_menu,
+           #{<<"file">> := FileInfo} = _Body,
+           #{<<"sessionToken">> := SessionToken} = _Context,
+           _Req) ->
     ?LOG(info, "FileInfo ~p", [FileInfo]),
     case maps:get(<<"contentType">>, FileInfo, <<"unknow">>) of
         <<"application/x-zip-compressed">> -> post_menu(FileInfo, SessionToken);
@@ -398,39 +418,52 @@ do_request(post_menu, #{<<"file">> := FileInfo} = _Body,
 %% Relation 概要: 增加关系 描述:json文件导库
 %% OperationId:post_relation
 %% 请求:POST /iotapi/relation
-do_request(post_relation, #{<<"destClass">> := <<"_Role">>, <<"destId">> := DestId, <<"destField">> := <<"views">>,
-    <<"srcClass">> := SrcClass, <<"srcId">> := SrcId} = _Body, _Context, _Req) ->
+do_request(post_relation,
+           #{
+             <<"destClass">> := <<"_Role">>,
+             <<"destId">> := DestId,
+             <<"destField">> := <<"views">>,
+             <<"srcClass">> := SrcClass,
+             <<"srcId">> := SrcId
+            } = _Body,
+           _Context,
+           _Req) ->
     Map = #{
-        <<"views">> => #{
-            <<"__op">> => <<"AddRelation">>,
-            <<"objects">> => [
-                #{
-                    <<"__type">> => <<"Pointer">>,
-                    <<"className">> => SrcClass,
-                    <<"objectId">> => SrcId
-                }
-            ]
-        }
-    },
+            <<"views">> => #{
+                             <<"__op">> => <<"AddRelation">>,
+                             <<"objects">> => [#{
+                                                 <<"__type">> => <<"Pointer">>,
+                                                 <<"className">> => SrcClass,
+                                                 <<"objectId">> => SrcId
+                                                }]
+                            }
+           },
     R = dgiot_parse:update_object(<<"_Role">>, DestId, Map),
     dgiot_role:save_role_view(DestId),
     R;
 
-do_request(post_relation, #{<<"destClass">> := DestClass, <<"destId">> := DestId, <<"destField">> := DestField,
-    <<"srcClass">> := SrcClass, <<"srcId">> := SrcId} = _Body, _Context, _Req) ->
+do_request(post_relation,
+           #{
+             <<"destClass">> := DestClass,
+             <<"destId">> := DestId,
+             <<"destField">> := DestField,
+             <<"srcClass">> := SrcClass,
+             <<"srcId">> := SrcId
+            } = _Body,
+           _Context,
+           _Req) ->
     Map =
-        #{DestField =>
         #{
-            <<"__op">> => <<"AddRelation">>,
-            <<"objects">> => [
-                #{
-                    <<"__type">> => <<"Pointer">>,
-                    <<"className">> => SrcClass,
-                    <<"objectId">> => SrcId
-                }
-            ]
-        }
-        },
+          DestField =>
+              #{
+                <<"__op">> => <<"AddRelation">>,
+                <<"objects">> => [#{
+                                    <<"__type">> => <<"Pointer">>,
+                                    <<"className">> => SrcClass,
+                                    <<"objectId">> => SrcId
+                                   }]
+               }
+         },
     dgiot_parse:update_object(DestClass, DestId, Map);
 
 %% Relation 概要: 查询关系
@@ -438,58 +471,72 @@ do_request(post_relation, #{<<"destClass">> := DestClass, <<"destId">> := DestId
 %% 请求:get /iotapi/relation
 do_request(get_relation, #{<<"destClass">> := DestClass, <<"destId">> := DestId, <<"destField">> := DestField, <<"srcClass">> := SrcClass} = _Args, _Context, _Req) ->
     Where = #{
-        <<"where">> => #{
-            <<"$relatedTo">> => #{
-                <<"object">> => #{
-                    <<"__type">> => <<"Pointer">>,
-                    <<"className">> => DestClass,
-                    <<"objectId">> => DestId
-                },
-                <<"key">> => DestField
-            }
-        },
-        <<"order">> => <<"-updatedAt">>,
-        <<"count">> => 1
-    },
+              <<"where">> => #{
+                               <<"$relatedTo">> => #{
+                                                     <<"object">> => #{
+                                                                       <<"__type">> => <<"Pointer">>,
+                                                                       <<"className">> => DestClass,
+                                                                       <<"objectId">> => DestId
+                                                                      },
+                                                     <<"key">> => DestField
+                                                    }
+                              },
+              <<"order">> => <<"-updatedAt">>,
+              <<"count">> => 1
+             },
     dgiot_parse:query_object(SrcClass, Where);
 
 %% Relation 概要: 删除关系
 %% OperationId:post_relation
 %% 请求:DELETE /iotapi/relation
-do_request(delete_relation, #{<<"destClass">> := DestClass, <<"destId">> := DestId, <<"destField">> := <<"views">>,
-    <<"srcClass">> := SrcClass, <<"srcId">> := SrcId} = _Body, _Context, _Req) ->
+do_request(delete_relation,
+           #{
+             <<"destClass">> := DestClass,
+             <<"destId">> := DestId,
+             <<"destField">> := <<"views">>,
+             <<"srcClass">> := SrcClass,
+             <<"srcId">> := SrcId
+            } = _Body,
+           _Context,
+           _Req) ->
     Map =
-        #{<<"views">> =>
         #{
-            <<"__op">> => <<"RemoveRelation">>,
-            <<"objects">> => [
-                #{
-                    <<"__type">> => <<"Pointer">>,
-                    <<"className">> => SrcClass,
-                    <<"objectId">> => SrcId
-                }
-            ]
-        }
-        },
+          <<"views">> =>
+              #{
+                <<"__op">> => <<"RemoveRelation">>,
+                <<"objects">> => [#{
+                                    <<"__type">> => <<"Pointer">>,
+                                    <<"className">> => SrcClass,
+                                    <<"objectId">> => SrcId
+                                   }]
+               }
+         },
     R = dgiot_parse:update_object(DestClass, DestId, Map),
     dgiot_role:save_role_view(DestId),
     R;
 
-do_request(delete_relation, #{<<"destClass">> := DestClass, <<"destId">> := DestId, <<"destField">> := DestField,
-    <<"srcClass">> := SrcClass, <<"srcId">> := SrcId} = _Body, _Context, _Req) ->
+do_request(delete_relation,
+           #{
+             <<"destClass">> := DestClass,
+             <<"destId">> := DestId,
+             <<"destField">> := DestField,
+             <<"srcClass">> := SrcClass,
+             <<"srcId">> := SrcId
+            } = _Body,
+           _Context,
+           _Req) ->
     Map =
-        #{DestField =>
         #{
-            <<"__op">> => <<"RemoveRelation">>,
-            <<"objects">> => [
-                #{
-                    <<"__type">> => <<"Pointer">>,
-                    <<"className">> => SrcClass,
-                    <<"objectId">> => SrcId
-                }
-            ]
-        }
-        },
+          DestField =>
+              #{
+                <<"__op">> => <<"RemoveRelation">>,
+                <<"objects">> => [#{
+                                    <<"__type">> => <<"Pointer">>,
+                                    <<"className">> => SrcClass,
+                                    <<"objectId">> => SrcId
+                                   }]
+               }
+         },
     dgiot_parse:update_object(DestClass, DestId, Map);
 
 %% group 概要: 描述:获取产品树
@@ -499,19 +546,21 @@ do_request(get_producttree, _, _Context, _Req) ->
     Data =
         case dgiot_parse:query_object(<<"Product">>, #{<<"keys">> => [<<"name">>, <<"category">>]}) of
             {ok, #{<<"results">> := Result}} ->
-                lists:foldl(fun
-                                (#{<<"category">> := #{<<"objectId">> := CategoryId}}, Acc) ->
+                lists:foldl(fun(#{<<"category">> := #{<<"objectId">> := CategoryId}}, Acc) ->
                                     CategoryIds =
-                                        lists:foldl(fun
-                                                        (#{<<"name">> := Name, <<"objectId">> := ObjectId, <<"category">> := #{<<"objectId">> := CategoryId1}}, Acc1) when CategoryId1 == CategoryId ->
+                                        lists:foldl(fun(#{<<"name">> := Name, <<"objectId">> := ObjectId, <<"category">> := #{<<"objectId">> := CategoryId1}}, Acc1) when CategoryId1 == CategoryId ->
                                                             Acc1 ++ [#{<<"label">> => Name, <<"value">> => ObjectId}];
-                                                        (_, Acc1) ->
+                                                       (_, Acc1) ->
                                                             Acc1
-                                                    end, [], Result),
+                                                    end,
+                                                    [],
+                                                    Result),
                                     Acc#{CategoryId => CategoryIds};
-                                (_, Acc) ->
+                               (_, Acc) ->
                                     Acc
-                            end, #{}, Result);
+                            end,
+                            #{},
+                            Result);
             _ ->
                 #{}
         end,
@@ -519,21 +568,26 @@ do_request(get_producttree, _, _Context, _Req) ->
         {ok, #{<<"results">> := Classes}} when length(Classes) > 0 ->
             NewClasses =
                 lists:foldl(fun(Class, Acc) ->
-                    NewClasse = Class#{
-                        <<"label">> => maps:get(<<"name">>, Class, <<"label">>),
-                        <<"value">> => maps:get(<<"objectId">>, Class, <<>>),
-                        <<"parent">> => maps:get(<<"parent">>, Class, <<"0">>)},
-                    Acc ++ [maps:without([<<"createdAt">>, <<"updatedAt">>, <<"ACL">>], NewClasse)]
-                            end, [], Classes),
+                                    NewClasse = Class#{
+                                                  <<"label">> => maps:get(<<"name">>, Class, <<"label">>),
+                                                  <<"value">> => maps:get(<<"objectId">>, Class, <<>>),
+                                                  <<"parent">> => maps:get(<<"parent">>, Class, <<"0">>)
+                                                 },
+                                    Acc ++ [maps:without([<<"createdAt">>, <<"updatedAt">>, <<"ACL">>], NewClasse)]
+                            end,
+                            [],
+                            Classes),
             ClassTree = dgiot_parse_utils:create_tree(NewClasses, <<"parent">>),
             lists:foldl(fun(X, Acc1) ->
-                case X of
-                    #{<<"objectId">> := <<"de2ae39f47">>, <<"children">> := Children} ->
-                        Acc1 ++ Children;
-                    _ ->
-                        Acc1
-                end
-                        end, [], dgiot_parse_utils:create_tree(NewClasses, <<"parent">>)),
+                                case X of
+                                    #{<<"objectId">> := <<"de2ae39f47">>, <<"children">> := Children} ->
+                                        Acc1 ++ Children;
+                                    _ ->
+                                        Acc1
+                                end
+                        end,
+                        [],
+                        dgiot_parse_utils:create_tree(NewClasses, <<"parent">>)),
             CategoryTree = set_children(ClassTree, Data),
             {200, #{<<"producttree">> => CategoryTree}};
         _ ->
@@ -567,13 +621,18 @@ do_request(_OperationId, _Args, _Context, _Req) ->
     ?LOG(info, "_Args ~p", [_Args]),
     {error, <<"Not Allowed.">>}.
 
+
 get_class(Name, Filter, FileName, SessionToken) ->
-    case dgiot_parse:query_object(Name, Filter,
-        [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+    case dgiot_parse:query_object(Name,
+                                  Filter,
+                                  [{"X-Parse-Session-Token", SessionToken}],
+                                  [{from, rest}]) of
         {ok, #{<<"results">> := Data}} ->
             NewData = lists:foldl(fun(X, Acc) ->
-                Acc ++ [maps:without([<<"createdAt">>, <<"updatedAt">>, <<"children">>], X)]
-                                  end, [], Data),
+                                          Acc ++ [maps:without([<<"createdAt">>, <<"updatedAt">>, <<"children">>], X)]
+                                  end,
+                                  [],
+                                  Data),
             BinFile = unicode:characters_to_binary(dgiot_json:encode(NewData)),
             case zip:create(FileName, [{"data.json", BinFile}], [memory]) of
                 {ok, {_ZipFile, Bin}} ->
@@ -584,9 +643,12 @@ get_class(Name, Filter, FileName, SessionToken) ->
         _ -> {error, <<"not find">>}
     end.
 
+
 get_product(Name, FileName, SessionToken) ->
-    case dgiot_parse:query_object(<<"Product">>, #{<<"where">> => #{<<"name">> => Name}},
-        [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+    case dgiot_parse:query_object(<<"Product">>,
+                                  #{<<"where">> => #{<<"name">> => Name}},
+                                  [{"X-Parse-Session-Token", SessionToken}],
+                                  [{from, rest}]) of
         {ok, #{<<"results">> := [Product]}} ->
             BinFile = unicode:characters_to_binary(dgiot_json:encode(Product)),
             case zip:create(FileName, [{"product.json", BinFile}], [memory]) of
@@ -598,6 +660,7 @@ get_product(Name, FileName, SessionToken) ->
         _ -> {error, <<"not find">>}
     end.
 
+
 post_product(FileInfo, Appid, SessionToken) ->
     Dir = list_to_binary(dgiot_http_server:get_env(?APP, docroot)),
     #{<<"path">> := <<"/", Path/binary>>} = FileInfo,
@@ -608,19 +671,23 @@ post_product(FileInfo, Appid, SessionToken) ->
                 {'EXIT', Reason1} ->
                     {error, Reason1};
                 #{<<"name">> := ProductName} = Product ->
-                    case catch dgiot_parse:query_object(<<"Product">>, #{<<"where">> => #{<<"name">> => ProductName}},
-                        [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+                    case catch dgiot_parse:query_object(<<"Product">>,
+                                                        #{<<"where">> => #{<<"name">> => ProductName}},
+                                                        [{"X-Parse-Session-Token", SessionToken}],
+                                                        [{from, rest}]) of
                         {ok, #{<<"results">> := []}} ->
                             NewProduct =
                                 Product#{
-                                    <<"ACL">> => #{
-                                        <<"role:", Appid/binary>> => #{<<"read">> => true, <<"write">> => true
-                                        }
-                                    }
-                                },
+                                  <<"ACL">> => #{
+                                                 <<"role:", Appid/binary>> => #{
+                                                                                <<"read">> => true, <<"write">> => true
+                                                                               }
+                                                }
+                                 },
                             case catch dgiot_parse:create_object(<<"Product">>,
-                                maps:without([<<"createdAt">>, <<"updatedAt">>, <<"children">>], NewProduct),
-                                [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]) of
+                                                                 maps:without([<<"createdAt">>, <<"updatedAt">>, <<"children">>], NewProduct),
+                                                                 [{"X-Parse-Session-Token", SessionToken}],
+                                                                 [{from, rest}]) of
                                 {ok, Result} ->
                                     {200, Result};
                                 {'EXIT', Reason2} ->
@@ -634,6 +701,7 @@ post_product(FileInfo, Appid, SessionToken) ->
         {error, Reason} ->
             {error, Reason}
     end.
+
 
 post_menu(FileInfo, SessionToken) ->
     case dgiot_auth:get_session(SessionToken) of
@@ -655,6 +723,7 @@ post_menu(FileInfo, SessionToken) ->
         _ -> {error, <<"not auth">>}
     end.
 
+
 get_json_from_zip(FileInfo) ->
     Dir = list_to_binary(dgiot_http_server:get_env(?APP, docroot)),
     #{<<"path">> := <<"/", Path/binary>>} = FileInfo,
@@ -671,6 +740,7 @@ get_json_from_zip(FileInfo) ->
             {error, Reason}
     end.
 
+
 %% Thing 概要: 导库 描述:查询物模型
 %% OperationId:get_thing
 %% 请求:GET /iotapi/get_thing
@@ -680,24 +750,29 @@ getThing(ProductId, ModuleType, SessionToken) ->
             Modules = maps:get(ModuleType, Thing, []),
             {_, Maps} =
                 lists:foldl(fun(X, {Num, Acc}) ->
-                    case X of
-                        #{<<"updateAt">> := UpdateAt} ->
-                            BinUpdateAt = dgiot_utils:to_binary(UpdateAt),
-                            {Num, Acc#{BinUpdateAt => X}};
-                        _ ->
-                            BinUpdateAt = dgiot_utils:to_binary(1577854035000 + Num),
-                            {Num + 1, Acc#{BinUpdateAt => X}}
-                    end
-                            end, {0, #{}}, Modules),
+                                    case X of
+                                        #{<<"updateAt">> := UpdateAt} ->
+                                            BinUpdateAt = dgiot_utils:to_binary(UpdateAt),
+                                            {Num, Acc#{BinUpdateAt => X}};
+                                        _ ->
+                                            BinUpdateAt = dgiot_utils:to_binary(1577854035000 + Num),
+                                            {Num + 1, Acc#{BinUpdateAt => X}}
+                                    end
+                            end,
+                            {0, #{}},
+                            Modules),
             Keys = maps:keys(Maps),
             NewModules =
                 lists:foldl(fun(X, Acc) ->
-                    Acc ++ [maps:get(X, Maps)]
-                            end, [], lists:sort(Keys)),
+                                    Acc ++ [maps:get(X, Maps)]
+                            end,
+                            [],
+                            lists:sort(Keys)),
             {ok, NewModules};
         Error ->
             {error, Error}
     end.
+
 
 %% Thing 概要: 导库 描述:添加物模型
 %% OperationId:post_thing
@@ -710,18 +785,22 @@ postThing(ProductId, Item, SessionToken) ->
             #{<<"identifier">> := Identifier} = Item,
             {Ids, NewModules} =
                 lists:foldl(fun(X, {Ids1, Acc}) ->
-                    case X of
-                        #{<<"identifier">> := Identifier} ->
-                            {Ids1 ++ [Identifier], Acc};
-                        _ ->
-                            {Ids1, Acc ++ [X]}
-                    end
-                            end, {[], [Item]}, Modules),
+                                    case X of
+                                        #{<<"identifier">> := Identifier} ->
+                                            {Ids1 ++ [Identifier], Acc};
+                                        _ ->
+                                            {Ids1, Acc ++ [X]}
+                                    end
+                            end,
+                            {[], [Item]},
+                            Modules),
             case length(Ids) of
                 0 ->
-                    {_, R} = dgiot_parse:update_object(<<"Product">>, ProductId,
-                        #{<<"thing">> => Thing#{ModuleType => NewModules}},
-                        [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]),
+                    {_, R} = dgiot_parse:update_object(<<"Product">>,
+                                                       ProductId,
+                                                       #{<<"thing">> => Thing#{ModuleType => NewModules}},
+                                                       [{"X-Parse-Session-Token", SessionToken}],
+                                                       [{from, rest}]),
                     {ok, R#{<<"code">> => 200}};
                 _ ->
                     {ok, #{<<"code">> => 204, <<"msg">> => <<Identifier/binary, " already existed">>}}
@@ -729,6 +808,7 @@ postThing(ProductId, Item, SessionToken) ->
         Error ->
             {error, Error}
     end.
+
 
 %% Thing 概要: 导库 描述:更新模型
 %% OperationId:put_thing
@@ -741,21 +821,26 @@ putTing(ProductId, Item, SessionToken) ->
             Modules = maps:get(ModuleType, Thing, []),
             NewModules =
                 lists:foldl(
-                    fun(X, Acc) ->
-                        case X of
-                            #{<<"identifier">> := Identifier} ->
-                                Acc ++ [Item];
-                            _ ->
-                                Acc ++ [X]
-                        end
-                    end, [], Modules),
-            {_, R} = dgiot_parse:update_object(<<"Product">>, ProductId,
-                #{<<"thing">> => Thing#{ModuleType => NewModules}},
-                [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]),
+                  fun(X, Acc) ->
+                          case X of
+                              #{<<"identifier">> := Identifier} ->
+                                  Acc ++ [Item];
+                              _ ->
+                                  Acc ++ [X]
+                          end
+                  end,
+                  [],
+                  Modules),
+            {_, R} = dgiot_parse:update_object(<<"Product">>,
+                                               ProductId,
+                                               #{<<"thing">> => Thing#{ModuleType => NewModules}},
+                                               [{"X-Parse-Session-Token", SessionToken}],
+                                               [{from, rest}]),
             {ok, R#{<<"code">> => 200}};
         Error ->
             {error, Error}
     end.
+
 
 %% Thing 概要: 导库 描述:删除模型
 %% OperationId:delete_thing
@@ -768,30 +853,34 @@ deleteThing(ProductId, SessionToken, Item) ->
             Modules = maps:get(ModuleType, Thing),
             {Ids, NewModules} =
                 lists:foldl(fun(X, {Ids1, Acc}) ->
-                    case X of
-                        #{<<"identifier">> := Identifier} ->
-                            {Ids1, Acc};
-                        #{<<"identifier">> := Identifier1, <<"dataForm">> := #{<<"collection">> := Collection}} ->
-                            case binary:match(Collection, [Identifier]) of
-                                nomatch ->
-                                    {Ids1, Acc ++ [X]};
-                                _ ->
-                                    case Ids1 of
-                                        [] ->
-                                            {Ids1 ++ [Identifier1], Acc};
+                                    case X of
+                                        #{<<"identifier">> := Identifier} ->
+                                            {Ids1, Acc};
+                                        #{<<"identifier">> := Identifier1, <<"dataForm">> := #{<<"collection">> := Collection}} ->
+                                            case binary:match(Collection, [Identifier]) of
+                                                nomatch ->
+                                                    {Ids1, Acc ++ [X]};
+                                                _ ->
+                                                    case Ids1 of
+                                                        [] ->
+                                                            {Ids1 ++ [Identifier1], Acc};
+                                                        _ ->
+                                                            {Ids1 ++ [<<",", Identifier1/binary>>], Acc}
+                                                    end
+                                            end;
                                         _ ->
-                                            {Ids1 ++ [<<",", Identifier1/binary>>], Acc}
+                                            {Ids1, Acc ++ [X]}
                                     end
-                            end;
-                        _ ->
-                            {Ids1, Acc ++ [X]}
-                    end
-                            end, {[], []}, Modules),
+                            end,
+                            {[], []},
+                            Modules),
             case length(Ids) == 0 of
                 true ->
-                    {_, R} = dgiot_parse:update_object(<<"Product">>, ProductId,
-                        #{<<"thing">> => Thing#{ModuleType => NewModules}},
-                        [{"X-Parse-Session-Token", SessionToken}], [{from, rest}]),
+                    {_, R} = dgiot_parse:update_object(<<"Product">>,
+                                                       ProductId,
+                                                       #{<<"thing">> => Thing#{ModuleType => NewModules}},
+                                                       [{"X-Parse-Session-Token", SessionToken}],
+                                                       [{from, rest}]),
                     {ok, R#{<<"code">> => 200}};
                 false ->
                     BinIds = dgiot_utils:to_binary(Ids),
@@ -801,27 +890,31 @@ deleteThing(ProductId, SessionToken, Item) ->
             {error, Error}
     end.
 
+
 set_children(ClassTree, Data) ->
     lists:foldl(fun(#{<<"objectId">> := ObjectId} = Class, Acc) ->
-        NewClass =
-            case maps:find(<<"children">>, Class) of
-                {ok, Children1} when length(Children1) > 0 ->
-                    Class#{<<"children">> => set_children(Children1, Data)};
-                _ ->
-                    case maps:get(ObjectId, Data, []) of
-                        Child when length(Child) > 0 ->
-                            Class#{<<"children">> => maps:get(ObjectId, Data, [])};
-                        _ ->
-                            []
-                    end
-            end,
-        case NewClass of
-            [] ->
-                Acc;
-            _ ->
-                Acc ++ [NewClass]
-        end
-                end, [], ClassTree).
+                        NewClass =
+                            case maps:find(<<"children">>, Class) of
+                                {ok, Children1} when length(Children1) > 0 ->
+                                    Class#{<<"children">> => set_children(Children1, Data)};
+                                _ ->
+                                    case maps:get(ObjectId, Data, []) of
+                                        Child when length(Child) > 0 ->
+                                            Class#{<<"children">> => maps:get(ObjectId, Data, [])};
+                                        _ ->
+                                            []
+                                    end
+                            end,
+                        case NewClass of
+                            [] ->
+                                Acc;
+                            _ ->
+                                Acc ++ [NewClass]
+                        end
+                end,
+                [],
+                ClassTree).
+
 
 sync_files(#{<<"__path__">> := <<"/upload">>, <<"path">> := Path, <<"filename">> := Name} = _Info, Role, _AuthToken) ->
     FilesId = dgiot_parse_id:get_filesId(Path, Name),
@@ -831,12 +924,12 @@ sync_files(#{<<"__path__">> := <<"/upload">>, <<"path">> := Path, <<"filename">>
             dgiot_parse:update_object(<<"Files">>, FilesId, #{<<"ACL">> => Acl, <<"path">> => Path, <<"name">> => Name});
         _ ->
             dgiot_parse:create_object(<<"Files">>,
-                #{
-                    <<"ACL">> => Acl,
-                    <<"path">> => Path,
-                    <<"name">> => Name,
-                    <<"type">> => filename:extension(Name)
-                })
+                                      #{
+                                        <<"ACL">> => Acl,
+                                        <<"path">> => Path,
+                                        <<"name">> => Name,
+                                        <<"type">> => filename:extension(Name)
+                                       })
     end;
 
 sync_files(#{<<"__path__">> := <<"/delete">>, <<"path">> := Path} = _Info, _Role, AuthToken) ->
@@ -853,242 +946,254 @@ sync_files(_Info, _Role, _AuthToken) ->
     pass.
 
 
-    post_properties(<<"plc">>, AtomName) ->
-        Things = ets:match(AtomName, {'$1', ['$2', '$3', '$4', '$5', '$6', '$7', '$8', '$9', '$10', '$11' | '_']}),
-        lists:foldl(fun([Index, Devicetype, Name, Identifier, Address, Originaltype, AccessMode, Min_Max, Unit, Type, Specs | _], Acc) ->
-            Acc ++ [#{
-                <<"name">> => Name,
-                <<"index">> => Index,
-                <<"isstorage">> => true,
-                <<"isshow">> => true,
-                <<"dataForm">> => #{
-                    <<"address">> => <<"0">>,
-                    <<"rate">> => 1,
-                    <<"order">> => Index,
-                    <<"round">> => <<"all">>,
-                    <<"offset">> => 0,
-                    <<"control">> => <<"%{d}">>,
-                    <<"iscount">> => <<"0">>,
-                    <<"protocol">> => <<"S7">>,
-                    <<"strategy">> => <<"1">>,
-                    <<"collection">> => <<"%{s}">>,
-                    <<"countround">> => <<"all">>,
-                    <<"countstrategy">> => 3,
-                    <<"countcollection">> => <<"%{s}">>
-                },
-                <<"dataType">> => get_dataType(to_lower(Type), Min_Max, Unit, Specs),
-                <<"required">> => true,
-                <<"accessMode">> => get_accessmode(AccessMode),
-                <<"dataSource">> => #{
-                    <<"_dlinkindex">> => <<"">>,
-                    <<"address">> => Address,
-                    <<"originaltype">> => Originaltype
-                },
-                <<"devicetype">> => Devicetype,
-                <<"identifier">> => to_lower(Identifier),
-                <<"moduleType">> => <<"properties">>,
-                <<"isaccumulate">> => false
-            }]
-                    end, [], Things);
-    
-    post_properties(<<"dlink">>, AtomName) ->
-        Things = ets:match(AtomName, {'$1', ['$2', '$3', '$4', '$5', '$6', '$7', '$8', '$9', '$10', '$11', '$12' | '_']}),
-        lists:foldl(fun([Index, Devicetype, Name, Identifier, Key, Len, Isstorage, AccessMode, Min_Max, Unit, Type, Specs | _], Acc) ->
-            Acc ++ [#{
-                <<"name">> => Name,
-                <<"index">> => Index,
-                <<"isstorage">> => dgiot_utils:to_int(Isstorage),
-                <<"isshow">> => true,
-                <<"dataForm">> => #{
-                    <<"address">> => <<"0">>,
-                    <<"rate">> => 1,
-                    <<"order">> => 0,
-                    <<"round">> => <<"all">>,
-                    <<"offset">> => 0,
-                    <<"control">> => <<"%{d}">>,
-                    <<"iscount">> => <<"0">>,
-                    <<"protocol">> => <<"DLINK">>,
-                    <<"strategy">> => <<"主动上报"/utf8>>,
-                    <<"collection">> => <<"%{s}">>,
-                    <<"countround">> => <<"all">>,
-                    <<"countstrategy">> => 3,
-                    <<"countcollection">> => <<"%{s}">>
-                },
-                <<"dataType">> => get_dataType(to_lower(Type), Min_Max, Unit, Specs),
-                <<"required">> => true,
-                <<"accessMode">> => get_accessmode(AccessMode),
-                <<"dataSource">> => #{
-                    <<"_dlinkindex">> => <<"1">>,
-                    <<"dis">> => [
-                        #{<<"key">> => Key, <<"data">> => Len}
-                    ]
-                },
-                <<"devicetype">> => Devicetype,
-                <<"identifier">> => to_lower(Identifier),
-                <<"moduleType">> => <<"properties">>,
-                <<"isaccumulate">> => false
-            }]
-                    end, [], Things);
-    
-    post_properties(<<"modbusxtcp">>, AtomName) ->
-        Things = ets:match(AtomName, {'$1', ['$2', '$3', '$4', '$5', '$6', '$7', '$8', '$9', '$10' | '_']}),
-        lists:foldl(fun([Index, Devicetype, Name, Identifier, Address, Min_Max, Unit, Type, Originaltype, Specs | _], Acc) ->
-            Acc ++ [#{
-                <<"name">> => Name,
-                <<"index">> => Index,
-                <<"isstorage">> => true,
-                <<"isshow">> => true,
-                <<"dataForm">> => #{
-                    <<"address">> => <<"0">>,
-                    <<"rate">> => 1,
-                    <<"order">> => 0,
-                    <<"round">> => <<"all">>,
-                    <<"offset">> => 0,
-                    <<"control">> => <<"%{d}">>,
-                    <<"iscount">> => <<"0">>,
-                    <<"protocol">> => <<"MODBUSXTCP">>,
-                    <<"strategy">> => <<"主动上报"/utf8>>,
-                    <<"collection">> => <<"%{s}">>,
-                    <<"countround">> => <<"all">>,
-                    <<"countstrategy">> => 3,
-                    <<"countcollection">> => <<"%{s}">>
-                },
-                <<"dataType">> => get_dataType(to_lower(Type), Min_Max, Unit, Specs),
-                <<"required">> => true,
-                <<"accessMode">> => <<"r">>,
-                <<"dataSource">> => #{
-                    <<"_dlinkindex">> => <<"">>,
-                    <<"address">> => Address,
-                    <<"originaltype">> => Originaltype
-                },
-                <<"devicetype">> => Devicetype,
-                <<"identifier">> => to_lower(Identifier),
-                <<"moduleType">> => <<"properties">>,
-                <<"isaccumulate">> => false
-            }]
-                    end, [], Things);
-    
-    post_properties(<<"modbusxrtu">>, AtomName) ->
-        Things = ets:match(AtomName, {'$1', ['$2', '$3', '$4', '$5', '$6', '$7', '$8', '$9', '$10', '$11', '$12', '$13', '$14', '$15', '$16', '$17', '$18', '$19' | '_']}),
-        lists:foldl(fun
-                        ([Index, Devicetype, Name, Identifier, Type, AccessMode, Isstorage, Isshow, Min_Max, Unit,Strategy, Collection,
-                            Slaveid, Operatetype, Address, Registersnumber, Originaltype, Dlinkindex, Specs | _], Acc) ->
-                            Acc ++ [#{
-                                <<"name">> => Name,
-                                <<"index">> => Index,
-                                <<"isstorage">> => dgiot_utils:to_atom(Isstorage),
-                                <<"isshow">> => dgiot_utils:to_atom(Isshow),
-                                <<"dataForm">> => #{
-                                    <<"address">> => <<"0">>,
-                                    <<"rate">> => 1,
-                                    <<"order">> => 0,
-                                    <<"round">> => <<"all">>,
-                                    <<"offset">> => 0,
-                                    <<"control">> => <<"%{d}">>,
-                                    <<"iscount">> => <<"0">>,
-                                    <<"protocol">> => <<"MODBUSRTU">>,
-                                    <<"strategy">> => Strategy,
-                                    <<"collection">> => Collection,
-                                    <<"countround">> => <<"all">>,
-                                    <<"countstrategy">> => 3,
-                                    <<"countcollection">> => <<"%{s}">>
-                                },
-                                <<"dataType">> => get_dataType(to_lower(Type), Min_Max, Unit, Specs),
-                                <<"required">> => true,
-                                <<"accessMode">> => AccessMode,
-                                <<"dataSource">> => #{
-                                    <<"slaveid">> => Slaveid,
-                                    <<"registersnumber">> => Registersnumber,
-                                    <<"originaltype">> => Originaltype,
-                                    <<"operatetype">> => Operatetype,
-                                    <<"address">> => Address,
-                                    <<"_dlinkindex">> => Dlinkindex
-                                },
-                                <<"devicetype">> => Devicetype,
-                                <<"identifier">> => to_lower(Identifier),
-                                <<"moduleType">> => <<"properties">>,
-                                <<"isaccumulate">> => false
-                            }]
-                    end, [], Things);
-    
-    post_properties(_, _) ->
-        error.
-    
-    get_accessmode(<<229, 143, 170, 232, 175, 187>>) ->
-        <<"r">>;
-    
-    get_accessmode(_AccessMode) ->
-        <<"rw">>.
-    
-    to_lower(Value) ->
-        Str1 = re:replace(Value, <<"\\.">>, <<"_">>, [global, {return, list}]),
-        list_to_binary(string:to_lower(Str1)).
-    
-    get_min_max(Min_Max) ->
-        case binary:split(Min_Max, <<$->>, [global, trim]) of
-            [<<>>, Min, Max] ->
-                {-dgiot_utils:to_int(Min), dgiot_utils:to_int(Max)};
-            [Min, Max] ->
-                {dgiot_utils:to_int(Min), dgiot_utils:to_int(Max)};
-            _ ->
-                {-65535, 65535}
-        end.
-    
-    get_dataType(<<"float">>, Min_Max, Unit, _) ->
-        {Min, Max} = get_min_max(Min_Max),
-        #{
-            <<"das">> => [],
-            <<"type">> => <<"float">>,
-            <<"specs">> => #{
-                <<"min">> => Min,
-                <<"max">> => Max,
-                <<"step">> => 0,
-                <<"unit">> => get_unit(Unit),
-                <<"precision">> => 3
-            }
-        };
-    
-    get_dataType(<<"enum">>, _, _, Specs) ->
-        Newspecs = get_specs(Specs),
-        #{
-            <<"das">> => [],
-            <<"type">> => <<"enum">>,
-            <<"specs">> => Newspecs
-        };
-    
-    get_dataType(Type, Min_Max, Unit, _) ->
-        {Min, Max} = get_min_max(Min_Max),
-        #{
-            <<"das">> => [],
-            <<"type">> => Type,
-            <<"specs">> => #{
-                <<"min">> => Min,
-                <<"max">> => Max,
-                <<"step">> => 0,
-                <<"unit">> => get_unit(Unit),
-                <<"precision">> => 3
-            }
-        }.
-    
-    
-    get_specs(Specs) ->
-        case binary:split(Specs, <<$;>>, [global, trim]) of
-            List when length(List) > 0 ->
-                lists:foldl(fun(Map, Acc) ->
-                    case binary:split(Map, <<$:>>, [global, trim]) of
-                        [Key, Value] ->
-                            Acc#{Key => Value};
-                        _ ->
-                            Acc
-                    end
-                            end, #{}, List);
-            _ ->
-                #{}
-        end.
-    
-    get_unit(<<"null">>) ->
-        <<"">>;
-    
-    get_unit(Unit) ->
-        Unit.
-    
+post_properties(<<"plc">>, AtomName) ->
+    Things = ets:match(AtomName, {'$1', ['$2', '$3', '$4', '$5', '$6', '$7', '$8', '$9', '$10', '$11' | '_']}),
+    lists:foldl(fun([Index, Devicetype, Name, Identifier, Address, Originaltype, AccessMode, Min_Max, Unit, Type, Specs | _], Acc) ->
+                        Acc ++ [#{
+                                  <<"name">> => Name,
+                                  <<"index">> => Index,
+                                  <<"isstorage">> => true,
+                                  <<"isshow">> => true,
+                                  <<"dataForm">> => #{
+                                                      <<"address">> => <<"0">>,
+                                                      <<"rate">> => 1,
+                                                      <<"order">> => Index,
+                                                      <<"round">> => <<"all">>,
+                                                      <<"offset">> => 0,
+                                                      <<"control">> => <<"%{d}">>,
+                                                      <<"iscount">> => <<"0">>,
+                                                      <<"protocol">> => <<"S7">>,
+                                                      <<"strategy">> => <<"1">>,
+                                                      <<"collection">> => <<"%{s}">>,
+                                                      <<"countround">> => <<"all">>,
+                                                      <<"countstrategy">> => 3,
+                                                      <<"countcollection">> => <<"%{s}">>
+                                                     },
+                                  <<"dataType">> => get_dataType(to_lower(Type), Min_Max, Unit, Specs),
+                                  <<"required">> => true,
+                                  <<"accessMode">> => get_accessmode(AccessMode),
+                                  <<"dataSource">> => #{
+                                                        <<"_dlinkindex">> => <<"">>,
+                                                        <<"address">> => Address,
+                                                        <<"originaltype">> => Originaltype
+                                                       },
+                                  <<"devicetype">> => Devicetype,
+                                  <<"identifier">> => to_lower(Identifier),
+                                  <<"moduleType">> => <<"properties">>,
+                                  <<"isaccumulate">> => false
+                                 }]
+                end,
+                [],
+                Things);
+
+post_properties(<<"dlink">>, AtomName) ->
+    Things = ets:match(AtomName, {'$1', ['$2', '$3', '$4', '$5', '$6', '$7', '$8', '$9', '$10', '$11', '$12' | '_']}),
+    lists:foldl(fun([Index, Devicetype, Name, Identifier, Key, Len, Isstorage, AccessMode, Min_Max, Unit, Type, Specs | _], Acc) ->
+                        Acc ++ [#{
+                                  <<"name">> => Name,
+                                  <<"index">> => Index,
+                                  <<"isstorage">> => dgiot_utils:to_int(Isstorage),
+                                  <<"isshow">> => true,
+                                  <<"dataForm">> => #{
+                                                      <<"address">> => <<"0">>,
+                                                      <<"rate">> => 1,
+                                                      <<"order">> => 0,
+                                                      <<"round">> => <<"all">>,
+                                                      <<"offset">> => 0,
+                                                      <<"control">> => <<"%{d}">>,
+                                                      <<"iscount">> => <<"0">>,
+                                                      <<"protocol">> => <<"DLINK">>,
+                                                      <<"strategy">> => <<"主动上报"/utf8>>,
+                                                      <<"collection">> => <<"%{s}">>,
+                                                      <<"countround">> => <<"all">>,
+                                                      <<"countstrategy">> => 3,
+                                                      <<"countcollection">> => <<"%{s}">>
+                                                     },
+                                  <<"dataType">> => get_dataType(to_lower(Type), Min_Max, Unit, Specs),
+                                  <<"required">> => true,
+                                  <<"accessMode">> => get_accessmode(AccessMode),
+                                  <<"dataSource">> => #{
+                                                        <<"_dlinkindex">> => <<"1">>,
+                                                        <<"dis">> => [#{<<"key">> => Key, <<"data">> => Len}]
+                                                       },
+                                  <<"devicetype">> => Devicetype,
+                                  <<"identifier">> => to_lower(Identifier),
+                                  <<"moduleType">> => <<"properties">>,
+                                  <<"isaccumulate">> => false
+                                 }]
+                end,
+                [],
+                Things);
+
+post_properties(<<"modbusxtcp">>, AtomName) ->
+    Things = ets:match(AtomName, {'$1', ['$2', '$3', '$4', '$5', '$6', '$7', '$8', '$9', '$10' | '_']}),
+    lists:foldl(fun([Index, Devicetype, Name, Identifier, Address, Min_Max, Unit, Type, Originaltype, Specs | _], Acc) ->
+                        Acc ++ [#{
+                                  <<"name">> => Name,
+                                  <<"index">> => Index,
+                                  <<"isstorage">> => true,
+                                  <<"isshow">> => true,
+                                  <<"dataForm">> => #{
+                                                      <<"address">> => <<"0">>,
+                                                      <<"rate">> => 1,
+                                                      <<"order">> => 0,
+                                                      <<"round">> => <<"all">>,
+                                                      <<"offset">> => 0,
+                                                      <<"control">> => <<"%{d}">>,
+                                                      <<"iscount">> => <<"0">>,
+                                                      <<"protocol">> => <<"MODBUSXTCP">>,
+                                                      <<"strategy">> => <<"主动上报"/utf8>>,
+                                                      <<"collection">> => <<"%{s}">>,
+                                                      <<"countround">> => <<"all">>,
+                                                      <<"countstrategy">> => 3,
+                                                      <<"countcollection">> => <<"%{s}">>
+                                                     },
+                                  <<"dataType">> => get_dataType(to_lower(Type), Min_Max, Unit, Specs),
+                                  <<"required">> => true,
+                                  <<"accessMode">> => <<"r">>,
+                                  <<"dataSource">> => #{
+                                                        <<"_dlinkindex">> => <<"">>,
+                                                        <<"address">> => Address,
+                                                        <<"originaltype">> => Originaltype
+                                                       },
+                                  <<"devicetype">> => Devicetype,
+                                  <<"identifier">> => to_lower(Identifier),
+                                  <<"moduleType">> => <<"properties">>,
+                                  <<"isaccumulate">> => false
+                                 }]
+                end,
+                [],
+                Things);
+
+post_properties(<<"modbusxrtu">>, AtomName) ->
+    Things = ets:match(AtomName, {'$1', ['$2', '$3', '$4', '$5', '$6', '$7', '$8', '$9', '$10', '$11', '$12', '$13', '$14', '$15', '$16', '$17', '$18', '$19' | '_']}),
+    lists:foldl(fun([Index, Devicetype, Name, Identifier, Type, AccessMode, Isstorage, Isshow, Min_Max, Unit, Strategy, Collection,
+                     Slaveid, Operatetype, Address, Registersnumber, Originaltype, Dlinkindex, Specs | _],
+                    Acc) ->
+                        Acc ++ [#{
+                                  <<"name">> => Name,
+                                  <<"index">> => Index,
+                                  <<"isstorage">> => dgiot_utils:to_atom(Isstorage),
+                                  <<"isshow">> => dgiot_utils:to_atom(Isshow),
+                                  <<"dataForm">> => #{
+                                                      <<"address">> => <<"0">>,
+                                                      <<"rate">> => 1,
+                                                      <<"order">> => 0,
+                                                      <<"round">> => <<"all">>,
+                                                      <<"offset">> => 0,
+                                                      <<"control">> => <<"%{d}">>,
+                                                      <<"iscount">> => <<"0">>,
+                                                      <<"protocol">> => <<"MODBUSRTU">>,
+                                                      <<"strategy">> => Strategy,
+                                                      <<"collection">> => Collection,
+                                                      <<"countround">> => <<"all">>,
+                                                      <<"countstrategy">> => 3,
+                                                      <<"countcollection">> => <<"%{s}">>
+                                                     },
+                                  <<"dataType">> => get_dataType(to_lower(Type), Min_Max, Unit, Specs),
+                                  <<"required">> => true,
+                                  <<"accessMode">> => AccessMode,
+                                  <<"dataSource">> => #{
+                                                        <<"slaveid">> => Slaveid,
+                                                        <<"registersnumber">> => Registersnumber,
+                                                        <<"originaltype">> => Originaltype,
+                                                        <<"operatetype">> => Operatetype,
+                                                        <<"address">> => Address,
+                                                        <<"_dlinkindex">> => Dlinkindex
+                                                       },
+                                  <<"devicetype">> => Devicetype,
+                                  <<"identifier">> => to_lower(Identifier),
+                                  <<"moduleType">> => <<"properties">>,
+                                  <<"isaccumulate">> => false
+                                 }]
+                end,
+                [],
+                Things);
+
+post_properties(_, _) ->
+    error.
+
+
+get_accessmode(<<229, 143, 170, 232, 175, 187>>) ->
+    <<"r">>;
+
+get_accessmode(_AccessMode) ->
+    <<"rw">>.
+
+
+to_lower(Value) ->
+    Str1 = re:replace(Value, <<"\\.">>, <<"_">>, [global, {return, list}]),
+    list_to_binary(string:to_lower(Str1)).
+
+
+get_min_max(Min_Max) ->
+    case binary:split(Min_Max, <<$->>, [global, trim]) of
+        [<<>>, Min, Max] ->
+            {-dgiot_utils:to_int(Min), dgiot_utils:to_int(Max)};
+        [Min, Max] ->
+            {dgiot_utils:to_int(Min), dgiot_utils:to_int(Max)};
+        _ ->
+            {-65535, 65535}
+    end.
+
+
+get_dataType(<<"float">>, Min_Max, Unit, _) ->
+    {Min, Max} = get_min_max(Min_Max),
+    #{
+      <<"das">> => [],
+      <<"type">> => <<"float">>,
+      <<"specs">> => #{
+                       <<"min">> => Min,
+                       <<"max">> => Max,
+                       <<"step">> => 0,
+                       <<"unit">> => get_unit(Unit),
+                       <<"precision">> => 3
+                      }
+     };
+
+get_dataType(<<"enum">>, _, _, Specs) ->
+    Newspecs = get_specs(Specs),
+    #{
+      <<"das">> => [],
+      <<"type">> => <<"enum">>,
+      <<"specs">> => Newspecs
+     };
+
+get_dataType(Type, Min_Max, Unit, _) ->
+    {Min, Max} = get_min_max(Min_Max),
+    #{
+      <<"das">> => [],
+      <<"type">> => Type,
+      <<"specs">> => #{
+                       <<"min">> => Min,
+                       <<"max">> => Max,
+                       <<"step">> => 0,
+                       <<"unit">> => get_unit(Unit),
+                       <<"precision">> => 3
+                      }
+     }.
+
+
+get_specs(Specs) ->
+    case binary:split(Specs, <<$;>>, [global, trim]) of
+        List when length(List) > 0 ->
+            lists:foldl(fun(Map, Acc) ->
+                                case binary:split(Map, <<$:>>, [global, trim]) of
+                                    [Key, Value] ->
+                                        Acc#{Key => Value};
+                                    _ ->
+                                        Acc
+                                end
+                        end,
+                        #{},
+                        List);
+        _ ->
+            #{}
+    end.
+
+
+get_unit(<<"null">>) ->
+    <<"">>;
+
+get_unit(Unit) ->
+    Unit.

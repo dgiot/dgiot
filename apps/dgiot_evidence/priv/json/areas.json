@@ -1,0 +1,27 @@
+[
+    {
+        "label": "随钻测量作业中心",
+        "value": "LWD",
+        "short": "随钻"
+    },
+    {
+        "label": "定向工程作业中心",
+        "value": "DD",
+        "short": "定向"
+    },
+    {
+        "label": "裸眼电缆作业中心",
+        "value": "OH",
+        "short": "裸眼"
+    },
+    {
+        "label": "套管井作业中心",
+        "value": "TG",
+        "short": "套管"
+    },
+    {
+        "label": "装备技术中心",
+        "value": "EM",
+        "short": "装备"
+    }
+]

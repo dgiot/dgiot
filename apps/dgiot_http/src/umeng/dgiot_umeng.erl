@@ -23,9 +23,7 @@
 -include_lib("dgiot/include/logger.hrl").
 
 -include("dgiot_http.hrl").
--export([
-    	send/2,
-    	send/3,
+-export([send/2, send/3,
          test_broadcast/0,
          test_customizedcast/0,
          add_notification/3,
@@ -50,26 +48,29 @@ test_broadcast() ->
     UserId = undefined,
     Type = <<"broadcast">>,
     Payload = #{
-        <<"description">> => <<"description">>,
-        <<"title">> => <<"title">>,
-        <<"ticker">> => <<"ticker">>,
-        <<"text">> => <<"text">>
-    },
+                <<"description">> => <<"description">>,
+                <<"title">> => <<"title">>,
+                <<"ticker">> => <<"ticker">>,
+                <<"text">> => <<"text">>
+               },
     send(UserId, Type, Payload).
+
 
 test_customizedcast() ->
     %%    UserId = <<"QOGSAQMoX4">>, //杜力强
-    UserId = <<"Zf94hIumlQ">>, %13313131319
+    UserId = <<"Zf94hIumlQ">>,  %13313131319
     Payload = #{
-        <<"description">> => <<"description">>,
-        <<"title">> => <<"title">>,
-        <<"ticker">> => <<"ticker">>,
-        <<"text">> => <<"text">>
-    },
+                <<"description">> => <<"description">>,
+                <<"title">> => <<"title">>,
+                <<"ticker">> => <<"ticker">>,
+                <<"text">> => <<"text">>
+               },
     send(UserId, Payload).
+
 
 send(UserId, Payload) ->
     send(UserId, <<"customizedcast">>, Payload).
+
 
 send(UserId, Type, Payload) ->
     Message = get_msg(UserId, Type, Payload),
@@ -89,6 +90,7 @@ send(UserId, Type, Payload) ->
             ?LOG(info, "Reason ~p", [Reason]),
             {error, Reason}
     end.
+
 
 %%#{
 %%<<"policy">> => #{
@@ -117,37 +119,37 @@ send(UserId, Type, Payload) ->
 get_msg(UserId, Type, Payload) ->
     AppKey = dgiot_utils:to_binary(dgiot:get_env(umeng_appkey)),
     Data = #{
-        <<"policy">> => #{
-            <<"expire_time">> => dgiot_datetime:format(dgiot_datetime:nowstamp() + 60 * 60 * 24 * 7, <<"YY-MM-DD HH:NN:SS">>)
-        },
-        <<"description">> => maps:get(<<"description">>, Payload, <<"description">>),
-        <<"production_mode">> => true,
-        <<"appkey">> => AppKey,
-        <<"payload">> => #{
-            <<"body">> => #{
-                <<"title">> => maps:get(<<"title">>, Payload, <<"title">>),
-                <<"ticker">> => maps:get(<<"ticker">>, Payload, <<"ticker">>),
-                <<"text">> => maps:get(<<"text">>, Payload, <<"text">>),
-                <<"after_open">> => <<"go_app">>,
-                <<"play_vibrate">> => <<"false">>,
-                <<"play_lights">> => <<"false">>,
-                <<"play_sound">> => <<"true">>
+             <<"policy">> => #{
+                               <<"expire_time">> => dgiot_datetime:format(dgiot_datetime:nowstamp() + 60 * 60 * 24 * 7, <<"YY-MM-DD HH:NN:SS">>)
+                              },
+             <<"description">> => maps:get(<<"description">>, Payload, <<"description">>),
+             <<"production_mode">> => true,
+             <<"appkey">> => AppKey,
+             <<"payload">> => #{
+                                <<"body">> => #{
+                                                <<"title">> => maps:get(<<"title">>, Payload, <<"title">>),
+                                                <<"ticker">> => maps:get(<<"ticker">>, Payload, <<"ticker">>),
+                                                <<"text">> => maps:get(<<"text">>, Payload, <<"text">>),
+                                                <<"after_open">> => <<"go_app">>,
+                                                <<"play_vibrate">> => <<"false">>,
+                                                <<"play_lights">> => <<"false">>,
+                                                <<"play_sound">> => <<"true">>
+                                               },
+                                <<"display_type">> => <<"notification">>
+                               },
+             <<"alias_type">> => <<"objectId">>,
+             <<"mipush">> => true,
+             <<"mi_activity">> => <<"com.sinmahe.android.activity.StartActivity">>,
+             <<"type">> => Type,
+             <<"timestamp">> => dgiot_utils:to_binary(dgiot_datetime:nowstamp())
             },
-            <<"display_type">> => <<"notification">>
-        },
-        <<"alias_type">> => <<"objectId">>,
-        <<"mipush">> => true,
-        <<"mi_activity">> => <<"com.sinmahe.android.activity.StartActivity">>,
-        <<"type">> => Type,
-        <<"timestamp">> => dgiot_utils:to_binary(dgiot_datetime:nowstamp())
-    },
     Notification = #{
-        <<"userid">> => UserId,
-        <<"sender">> => UserId,
-        <<"public">> => true,
-        <<"type">> => maps:get(<<"type">>, Payload, <<"title">>),
-        <<"content">> => dgiot_json:encode(Payload)
-    },
+                     <<"userid">> => UserId,
+                     <<"sender">> => UserId,
+                     <<"public">> => true,
+                     <<"type">> => maps:get(<<"type">>, Payload, <<"title">>),
+                     <<"content">> => dgiot_json:encode(Payload)
+                    },
     post_notification(Notification),
     NewData =
         case UserId of
@@ -155,6 +157,7 @@ get_msg(UserId, Type, Payload) ->
             _ -> Data#{<<"alias">> => UserId}
         end,
     dgiot_json:encode(NewData).
+
 
 %% https://developer.umeng.com/docs/67966/detail/149296#h1--i-9
 %% 签名验证方法
@@ -207,20 +210,12 @@ post_notification(Notification) ->
                 NewNotification
         end,
 
-    NewNotification3 =
-        case maps:find(<<"createdAt">>, Notification) of
-            {ok, CreatedAt} ->
-                NewNotification2#{<<"createdAt">> => CreatedAt};
-            _ ->
-                NewNotification2
-        end,
-
     FinalNotification =
         case maps:find(<<"key">>, Notification) of
             {ok, Key} ->
-                NewNotification3#{<<"key">> => Key};
+                NewNotification2#{<<"key">> => Key};
             _ ->
-                NewNotification3
+                NewNotification2
         end,
 
     dgiot_parse:create_object(<<"Notification">>, FinalNotification).
@@ -248,7 +243,7 @@ add_notification(<<"stop_", Ruleid/binary>>, DeviceId, #{<<"dgiot_alarmvalue">> 
             dgiot_data:insert(?NOTIFICATION, {DeviceId, Ruleid}, {stop, dgiot_datetime:now_secs(), <<>>}),
             Content = update_notification(NotificationId, #{<<"restored_value">> => Value, <<"restored_createdAt">> => dgiot_datetime:format("YYYY-MM-DD HH:NN:SS")}),
             dgiot_umeng:send_msg(Content),
-%%            io:format("~s ~p Content1 = ~p.~n", [?FILE, ?LINE, Content]),
+            %%            io:format("~s ~p Content1 = ~p.~n", [?FILE, ?LINE, Content]),
             dgiot_umeng:sendSubscribe(Content);
         _ ->
             pass
@@ -258,6 +253,7 @@ add_notification(Ruleid, _DevAddr, _Payload) ->
     ?LOG(error, "Ruleid ~p", [Ruleid]),
     ok.
 
+
 %% 手动恢复
 manual_recovery(ObjectId) ->
     case dgiot_parse:get_object(<<"Notification">>, ObjectId) of
@@ -266,6 +262,7 @@ manual_recovery(ObjectId) ->
         _ ->
             pass
     end.
+
 
 save_notification(Ruleid, DeviceId, Payload, NotificationId) ->
     Alarm_createdAt = dgiot_datetime:format("YYYY-MM-DD HH:NN:SS"),
