@@ -19,7 +19,9 @@
 -behavior(dgiot_channelx).
 -define(CACHE(Channel), binary_to_atom(<<?TYPE/binary, Channel/binary>>, utf8)).
 -include_lib("dgiot_bridge/include/dgiot_bridge.hrl").
+
 -include("dgiot_tdengine.hrl").
+
 -include_lib("dgiot/include/logger.hrl").
 -author("kenneth").
 -record(state, {id, env, product, status}).
@@ -34,161 +36,169 @@
 
 %% 注册通道类型
 -channel_type(#{
-    cType => ?TYPE,
-    type => ?BRIDGE_CHL,
-    title => #{
-        zh => <<"TD资源通道"/utf8>>
-    },
-    description => #{
-        zh => <<"TD资源通道"/utf8>>
-    }
-}).
+                cType => ?TYPE,
+                type => ?BRIDGE_CHL,
+                title => #{
+                           zh => <<"TD资源通道"/utf8>>
+                          },
+                description => #{
+                                 zh => <<"TD资源通道"/utf8>>
+                                }
+               }).
 %% 注册通道参数
 -params(#{
-    <<"ip">> => #{
-        order => 1,
-        type => string,
-        required => true,
-        default => <<"127.0.0.1">>,
-        title => #{
-            zh => <<"服务器地址"/utf8>>
-        },
-        description => #{
-            zh => <<"服务器地址"/utf8>>
-        }
-    },
-    <<"port">> => #{
-        order => 2,
-        type => integer,
-        required => true,
-        default => 6041,
-        title => #{
-            zh => <<"端口"/utf8>>
-        },
-        description => #{
-            zh => <<"端口"/utf8>>
-        }
-    },
-    <<"keep">> => #{
-        order => 3,
-        type => integer,
-        required => true,
-        default => 365,
-        title => #{
-            zh => <<"数据保留时间"/utf8>>
-        },
-        description => #{
-            zh => <<"数据保留时间"/utf8>>
-        }
-    },
-    <<"username">> => #{
-        order => 4,
-        type => string,
-        required => true,
-        default => <<"root">>,
-        title => #{
-            zh => <<"用户名"/utf8>>
-        },
-        description => #{
-            zh => <<"用户名"/utf8>>
-        }
-    },
-    <<"password">> => #{
-        order => 5,
-        type => string,
-        required => true,
-        default => <<"taosdata">>,
-        title => #{
-            zh => <<"密码"/utf8>>
-        },
-        description => #{
-            zh => <<"密码"/utf8>>
-        }
-    },
-    <<"db">> => #{
-        order => 7,
-        type => enum,
-        default => <<"ProductId"/utf8>>,
-        enum => [
-            #{<<"value">> => <<"ChannelId">>, <<"label">> => <<"通道ID"/utf8>>},
-            #{<<"value">> => <<"ProductId">>, <<"label">> => <<"产品ID"/utf8>>}
-        ],
-        title => #{
-            zh => <<"数据库名称"/utf8>>
-        },
-        description => #{
-            zh => <<"ProductId:用产品ID创建数据库，ChannelId:用通道ID创建数据库"/utf8>>
-        }
-    },
-    <<"ico">> => #{
-        order => 102,
-        type => string,
-        required => false,
-        default => <<"/dgiot_file/shuwa_tech/zh/product/dgiot/channel/td_channel.png">>,
-        title => #{
-            en => <<"channel ICO">>,
-            zh => <<"通道ICO"/utf8>>
-        },
-        description => #{
-            en => <<"channel ICO">>,
-            zh => <<"通道ICO"/utf8>>
-        }
-    }
-}).
+          <<"ip">> => #{
+                        order => 1,
+                        type => string,
+                        required => true,
+                        default => <<"127.0.0.1">>,
+                        title => #{
+                                   zh => <<"服务器地址"/utf8>>
+                                  },
+                        description => #{
+                                         zh => <<"服务器地址"/utf8>>
+                                        }
+                       },
+          <<"port">> => #{
+                          order => 2,
+                          type => integer,
+                          required => true,
+                          default => 6041,
+                          title => #{
+                                     zh => <<"端口"/utf8>>
+                                    },
+                          description => #{
+                                           zh => <<"端口"/utf8>>
+                                          }
+                         },
+          <<"keep">> => #{
+                          order => 3,
+                          type => integer,
+                          required => true,
+                          default => 365,
+                          title => #{
+                                     zh => <<"数据保留时间"/utf8>>
+                                    },
+                          description => #{
+                                           zh => <<"数据保留时间"/utf8>>
+                                          }
+                         },
+          <<"username">> => #{
+                              order => 4,
+                              type => string,
+                              required => true,
+                              default => <<"root">>,
+                              title => #{
+                                         zh => <<"用户名"/utf8>>
+                                        },
+                              description => #{
+                                               zh => <<"用户名"/utf8>>
+                                              }
+                             },
+          <<"password">> => #{
+                              order => 5,
+                              type => string,
+                              required => true,
+                              default => <<"taosdata">>,
+                              title => #{
+                                         zh => <<"密码"/utf8>>
+                                        },
+                              description => #{
+                                               zh => <<"密码"/utf8>>
+                                              }
+                             },
+          <<"db">> => #{
+                        order => 7,
+                        type => enum,
+                        default => <<"ProductId"/utf8>>,
+                        enum => [#{<<"value">> => <<"ChannelId">>, <<"label">> => <<"通道ID"/utf8>>},
+                                 #{<<"value">> => <<"ProductId">>, <<"label">> => <<"产品ID"/utf8>>}],
+                        title => #{
+                                   zh => <<"数据库名称"/utf8>>
+                                  },
+                        description => #{
+                                         zh => <<"ProductId:用产品ID创建数据库，ChannelId:用通道ID创建数据库"/utf8>>
+                                        }
+                       },
+          <<"ico">> => #{
+                         order => 102,
+                         type => string,
+                         required => false,
+                         default => <<"/dgiot_file/shuwa_tech/zh/product/dgiot/channel/td_channel.png">>,
+                         title => #{
+                                    en => <<"channel ICO">>,
+                                    zh => <<"通道ICO"/utf8>>
+                                   },
+                         description => #{
+                                          en => <<"channel ICO">>,
+                                          zh => <<"通道ICO"/utf8>>
+                                         }
+                        }
+         }).
+
 
 init_ets() ->
     dgiot_data:init(tdpool),
     dgiot_data:init(?DGIOT_TD_THING_ETS),
     new_productid_ets().
 
-start(ChannelId, #{
-    <<"ip">> := Ip,
-    <<"port">> := Port,
-    <<"username">> := UserName,
-    <<"password">> := Password
-} = Cfg) ->
+
+start(ChannelId,
+      #{
+        <<"ip">> := Ip,
+        <<"port">> := Port,
+        <<"username">> := UserName,
+        <<"password">> := Password
+       } = Cfg) ->
     dgiot_tdengine_http:start(),
     Keep = min(maps:get(<<"keep">>, Cfg, 365 * 5), 365 * 5),
-    dgiot_channelx:add(?TYPE, ChannelId, ?MODULE, Cfg#{
-        <<"keep">> => Keep,
-        <<"url">> => list_to_binary(lists:concat(["http://", binary_to_list(Ip), ":", Port, "/rest/sql"])),
-        <<"ip">> => dgiot_utils:to_list(Ip),
-        <<"port">> => dgiot_utils:to_int(Port),
-        <<"username">> => UserName,
-        <<"password">> => Password,
-        <<"db">> => maps:get(<<"db">>, Cfg, <<"ProductId">>)
-    }).
+    dgiot_channelx:add(?TYPE,
+                       ChannelId,
+                       ?MODULE,
+                       Cfg#{
+                         <<"keep">> => Keep,
+                         <<"url">> => list_to_binary(lists:concat(["http://", binary_to_list(Ip), ":", Port, "/rest/sql"])),
+                         <<"ip">> => dgiot_utils:to_list(Ip),
+                         <<"port">> => dgiot_utils:to_int(Port),
+                         <<"username">> => UserName,
+                         <<"password">> => Password,
+                         <<"db">> => maps:get(<<"db">>, Cfg, <<"ProductId">>)
+                        }).
+
 
 %% 通道初始化
 init(?TYPE, ChannelId, Config) ->
     State = #state{
-        id = ChannelId,
-        env = Config#{<<"driver">> => <<"HTTP">>}
-    },
+              id = ChannelId,
+              env = Config#{<<"driver">> => <<"HTTP">>}
+             },
     dgiot_metrics:dec(dgiot_tdengine, <<"tdengine">>, 1000),
     DbType = maps:get(<<"db">>, Config, <<"ProductId">>),
     dgiot_data:insert({tdengine_db, ChannelId}, DbType),
     {ok, State, []}.
+
 
 handle_init(State) ->
     dgiot_metrics:inc(dgiot_tdengine, <<"tdengine">>, 1),
     erlang:send_after(1000, self(), ws_login),
     {ok, State}.
 
+
 handle_event(_EventType, _Event, State) ->
     {ok, State}.
 
+
 %% gun监测 开始
 handle_message({gun_up, _Pid, _Protocol}, #state{id = _ChannelId, env = _Config} = State) ->
-%%    io:format("~s ~p gun_up = ~p.~n", [?FILE, ?LINE, _Protocol]),
+    %%    io:format("~s ~p gun_up = ~p.~n", [?FILE, ?LINE, _Protocol]),
     {ok, State};
 
 handle_message({gun_error, _Pid, _Protocol}, #state{id = _ChannelId, env = _Config} = State) ->
-%%    io:format("~s ~p gun_error = ~p.~n", [?FILE, ?LINE, _Protocol]),
+    %%    io:format("~s ~p gun_error = ~p.~n", [?FILE, ?LINE, _Protocol]),
     {ok, State};
 
 handle_message({gun_down, _Pid, _Protocol}, #state{id = _ChannelId, env = _Config} = State) ->
-%%    io:format("~s ~p gun_down = ~p.~n", [?FILE, ?LINE, _Protocol]),
+    %%    io:format("~s ~p gun_down = ~p.~n", [?FILE, ?LINE, _Protocol]),
     {ok, State};
 %% gun监测结束
 
@@ -198,7 +208,7 @@ handle_message(ws_login, #state{id = ChannelId, env = Env} = State) ->
         {ok, {ConnPid, StreamRef}} ->
             {ok, State#state{env = Env#{<<"driver">> => <<"WS">>, <<"ws_pid">> => ConnPid, <<"ws_ref">> => StreamRef}}};
         {error, Error} ->
-           dgiot_bridge:send_log(ChannelId, "Tdengine WS Login error, ~p~n", [Error]),
+            dgiot_bridge:send_log(ChannelId, "Tdengine WS Login error, ~p~n", [Error]),
             {ok, State}
     end;
 
@@ -207,10 +217,12 @@ handle_message(init, #state{id = ChannelId, env = Config} = State) ->
     case dgiot_bridge:get_products(ChannelId) of
         {ok, _, ProductIds} ->
             NewProducts = lists:foldl(fun(X, Acc) ->
-                dgiot_data:insert({tdchannel_product, binary_to_atom(X)}, ChannelId),
-                save_productid_to_ets(X, ChannelId),
-                Acc ++ dgiot_product_tdengine:get_products(X, ChannelId)
-                                      end, [], ProductIds),
+                                              dgiot_data:insert({tdchannel_product, binary_to_atom(X)}, ChannelId),
+                                              save_productid_to_ets(X, ChannelId),
+                                              Acc ++ dgiot_product_tdengine:get_products(X, ChannelId)
+                                      end,
+                                      [],
+                                      ProductIds),
             do_check(ChannelId, dgiot_utils:unique_1(NewProducts), Config),
             {ok, State#state{product = NewProducts}};
         {error, not_find} ->
@@ -253,9 +265,11 @@ handle_message(Message, #state{id = ChannelId, product = ProductId} = _State) ->
     ?LOG(debug, "Channel ~p, Product ~p, handle_message ~p", [ChannelId, ProductId, Message]),
     ok.
 
+
 stop(ChannelType, ChannelId, _State) ->
     ?LOG(info, "channel stop ~p,~p", [ChannelType, ChannelId]),
     ok.
+
 
 %% gun监测 开始
 handle_info({gun_up, _Pid, _Protocol}, #state{id = _ChannelId, env = _Config} = State) ->
@@ -275,35 +289,40 @@ handle_info(_Message, State) ->
     % io:format("~s ~p Message = ~p.~n", [?FILE, ?LINE, _Message]),
     {ok, State}.
 
+
 do_save([ProductId, DevAddr, Data, _Context], State) ->
     dgiot_device:save(ProductId, DevAddr),
     Sql = dgiot_tdengine:format_sql(ProductId, DevAddr, [Data]),
     dgiot_tdengine_adapter:save_sql(ProductId, DevAddr, Sql),
     {ok, State}.
 
+
 do_check(ChannelId, ProductIds, Config) ->
     spawn(
-        fun() ->
-            timer:sleep(500),
-            check_init(ChannelId, ProductIds, Config)
-        end).
+      fun() ->
+              timer:sleep(500),
+              check_init(ChannelId, ProductIds, Config)
+      end).
+
 
 check_init(ChannelId, ProductIds, Config) ->
     lists:map(fun(ProductId) ->
-        timer:sleep(500),
-        dgiot_data:insert({ProductId, ?TYPE}, ChannelId),
-        Id =
-            case dgiot_data:get({tdengine_db, ChannelId}) of
-                <<"ProductId">> ->
-                    ProductId;
-                _ ->
-                    ChannelId
-            end,
-        DataBase = dgiot_tdengine_select:format_db(?Database(Id)),
-        dgiot_data:insert({tdengine_db, ChannelId, ProductId}, DataBase),
-        check_database(ChannelId, ProductId, Config#{<<"database">> => ?Database(Id)})
-              end, ProductIds),
+                      timer:sleep(500),
+                      dgiot_data:insert({ProductId, ?TYPE}, ChannelId),
+                      Id =
+                          case dgiot_data:get({tdengine_db, ChannelId}) of
+                              <<"ProductId">> ->
+                                  ProductId;
+                              _ ->
+                                  ChannelId
+                          end,
+                      DataBase = dgiot_tdengine_select:format_db(?Database(Id)),
+                      dgiot_data:insert({tdengine_db, ChannelId, ProductId}, DataBase),
+                      check_database(ChannelId, ProductId, Config#{<<"database">> => ?Database(Id)})
+              end,
+              ProductIds),
     ok.
+
 
 check_database(ChannelId, ProductId, #{<<"database">> := DataBase, <<"keep">> := Keep} = Config) ->
     case dgiot_tdengine:create_database(ChannelId, DataBase, Keep) of
@@ -319,6 +338,7 @@ check_database(ChannelId, ProductId, #{<<"database">> := DataBase, <<"keep">> :=
         _ ->
             ok
     end.
+
 
 create_table(ChannelId, ProductId, _Config) ->
     case dgiot_bridge:get_product_info(ProductId) of
@@ -340,7 +360,7 @@ create_table(ChannelId, ProductId, _Config) ->
                             dgiot_data:insert({ProductId, ?TYPE}, ChannelId),
                             ?LOG(debug, "Create Table[~s] Succ, Schema:~p", [TableName, Schema]);
                         {ok, #{<<"code">> := 904, <<"desc">> := _Desc}} ->
-%%                            io:format("~p ~p Desc ~p ~n Schema = ~p.~n", [?FILE, ?LINE, _Desc, Schema#{<<"tableName">> => TableName}]),
+                            %%                            io:format("~p ~p Desc ~p ~n Schema = ~p.~n", [?FILE, ?LINE, _Desc, Schema#{<<"tableName">> => TableName}]),
                             ok;
                         {ok, #{<<"code">> := Code, <<"desc">> := Desc}} ->
                             ?LOG(debug, "Create Table[~s] failed, Code:~p Desc:~p", [TableName, Code, Desc])
@@ -350,33 +370,39 @@ create_table(ChannelId, ProductId, _Config) ->
             ?LOG(error, "Create Table Error, ~p ~p", [Reason, ProductId])
     end.
 
+
 test(Count) ->
     test(1, Count).
+
 
 test(I, Max) when I =< Max ->
     Addr = list_to_binary(io_lib:format("~8.10.0B,", [I])),
     Msg = {rule, #{
-        <<"addr">> => Addr,
-        <<"te">> => 1,
-        <<"te1">> => 2.2,
-        <<"te2">> => 3.2,
-        <<"te3">> => true,
-        <<"te4">> => <<"1">>,
-        <<"te5">> => <<"zww">>,
-        <<"te6">> => 1587917728,
-        <<"te7">> => #{
-            <<"fasfd">> => 4
-        }
-    }, #{<<"channel">> => <<"aaaaaa">>}},
+                   <<"addr">> => Addr,
+                   <<"te">> => 1,
+                   <<"te1">> => 2.2,
+                   <<"te2">> => 3.2,
+                   <<"te3">> => true,
+                   <<"te4">> => <<"1">>,
+                   <<"te5">> => <<"zww">>,
+                   <<"te6">> => 1587917728,
+                   <<"te7">> => #{
+                                  <<"fasfd">> => 4
+                                 }
+                  },
+                 #{<<"channel">> => <<"aaaaaa">>}},
     dgiot_channelx:do_message(?TYPE, <<"09oqrvmPjr">>, Msg, 30000),
     test(I + 1, Max);
 test(_, _) -> ok.
 
+
 new_productid_ets() ->
     ets:new(td_product_channel, [bag, public, named_table, {write_concurrency, true}, {read_concurrency, true}]).
 
+
 save_productid_to_ets(ProductId, ChannelId) ->
     ets:insert(td_product_channel, {ProductId, ChannelId}).
+
 
 read_productid_from_ets(ProductId) ->
     ets:lookup(td_product_channel, ProductId).

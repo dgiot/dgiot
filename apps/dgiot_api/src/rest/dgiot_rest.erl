@@ -16,6 +16,7 @@
 
 -module(dgiot_rest).
 -include("dgiot_api.hrl").
+
 -include_lib("dgiot/include/logger.hrl").
 -author("johnliu").
 
@@ -44,11 +45,11 @@
 -export([init_ets/0, get_log/4, get_OperationID/2]).
 
 -record(state, {
-    operationid :: atom(),
-    is_mock :: boolean(),
-    logic_handler :: atom(),
-    context = #{} :: #{}
-}).
+          operationid :: atom(),
+          is_mock :: boolean(),
+          logic_handler :: atom(),
+          context = #{} :: #{}
+         }).
 
 -type state() :: state().
 -type response() :: {Result :: stop | binary(), dgiot_req:req(), state()}.
@@ -56,25 +57,26 @@
 
 %% Common handler callbacks.
 -callback init(Req :: dgiot_req:req(), Config :: map()) ->
-    {Mod :: module(), NewReq :: dgiot_req:req(), Context :: map()}.
+              {Mod :: module(), NewReq :: dgiot_req:req(), Context :: map()}.
 -optional_callbacks([init/2]).
 
+
 -callback check_auth(Args :: map(), Req :: dgiot_req:req()) ->
-    {true, Context :: #{binary() => any()}, Req :: dgiot_req:req()} |
-    {false, Result :: #{binary() => any()}, Req :: dgiot_req:req()} |
-    {switch_handler, Mod :: module(), Req :: dgiot_req:req()}.
+              {true, Context :: #{binary() => any()}, Req :: dgiot_req:req()} |
+              {false, Result :: #{binary() => any()}, Req :: dgiot_req:req()} |
+              {switch_handler, Mod :: module(), Req :: dgiot_req:req()}.
 -optional_callbacks([check_auth/2]).
 
--callback handle(OperationID :: atom(), Args :: map(), Context :: map(), Req :: dgiot_req:req()) ->
-    {Code :: dgiot_req:http_status(), Header :: dgiot_req:http_headers(), Body :: map()}.
 
+-callback handle(OperationID :: atom(), Args :: map(), Context :: map(), Req :: dgiot_req:req()) ->
+              {Code :: dgiot_req:http_status(), Header :: dgiot_req:http_headers(), Body :: map()}.
 
 -spec init(Req :: dgiot_req:req(), Opts :: map()) ->
-    {cowboy_rest, Req :: dgiot_req:req(), Opts :: state()}.
+          {cowboy_rest, Req :: dgiot_req:req(), Opts :: state()}.
 init(Req, #{logic_handler := LogicHandler} = Map) ->
     State = #state{
-        logic_handler = LogicHandler
-    },
+              logic_handler = LogicHandler
+             },
     Method = dgiot_req:method(Req),
     case Method of
         <<"OPTIONS">> ->
@@ -115,15 +117,16 @@ default_init(Config, State, Req) ->
             _ -> false
         end,
     OperationId = maps:get(operationid, Config, not_allowed),
-    {cowboy_rest, Req, State#state{
-        operationid = OperationId,
-        is_mock = IsMock,
-        context = maps:without([operationid], Config)
-    }}.
+    {cowboy_rest, Req,
+                  State#state{
+                    operationid = OperationId,
+                    is_mock = IsMock,
+                    context = maps:without([operationid], Config)
+                   }}.
 
 
 -spec allowed_methods(Req :: dgiot_req:req(), State :: state()) ->
-    {Value :: [binary()], Req :: dgiot_req:req(), State :: state()}.
+          {Value :: [binary()], Req :: dgiot_req:req(), State :: state()}.
 allowed_methods(Req, State = #state{operationid = OperationId}) ->
     Method = dgiot_req:method(Req),
     case Method == <<"OPTIONS">> orelse OperationId =/= not_allowed of
@@ -135,34 +138,37 @@ allowed_methods(Req, State = #state{operationid = OperationId}) ->
 
 
 -spec is_authorized(Req :: dgiot_req:req(), State :: state()) ->
-    {
-        Value :: true | {false, AuthHeader :: iodata()},
-        Req :: dgiot_req:req(),
-        State :: state()
-    }.
+          {Value :: true | {false, AuthHeader :: iodata()},
+           Req :: dgiot_req:req(),
+           State :: state()}.
 is_authorized(Req0, #state{operationid = options} = State) ->
     case ?ACCESS_CONTROL_ALLOW_HEADERS of
         false ->
             dgiot_req:reply(403, ?HEADER, <<>>, Req0);
         Header ->
-            do_response(200, ?HEADER#{
-                <<"access-control-allow-headers">> => Header
-            }, #{}, Req0, State)
+            do_response(200,
+                        ?HEADER#{
+                          <<"access-control-allow-headers">> => Header
+                         },
+                        #{},
+                        Req0,
+                        State)
     end;
 
-is_authorized(Req0, State = #state{
-    is_mock = IsMock,
-    operationid = OperationID,
-    logic_handler = LogicHandler,
-    context = Context
-}) ->
+is_authorized(Req0,
+              State = #state{
+                        is_mock = IsMock,
+                        operationid = OperationID,
+                        logic_handler = LogicHandler,
+                        context = Context
+                       }) ->
     case IsMock of
         true ->
             {true, Req0, State};
         false ->
             AuthList = maps:get(authorize, Context, []),
             AuthOperationID = get_OperationID(OperationID, LogicHandler),
-%%            io:format("~s ~p ~p ~p ~p ~n",[?FILE, ?LINE, OperationID, AuthOperationID, LogicHandler]),
+            % io:format("~s ~p ~p ~p ~p ~n",[?FILE, ?LINE, OperationID, AuthOperationID, LogicHandler]),
             CheckResult = dgiot_auth:pre_check(AuthOperationID, LogicHandler, AuthList, Req0),
             case CheckResult of
                 {ok, Args, Req} ->
@@ -183,6 +189,7 @@ is_authorized(Req0, State = #state{
             end
     end.
 
+
 get_OperationID(OperationID, LogicHandler) ->
     case proplists:get_value(exports, LogicHandler:module_info()) of
         undefined ->
@@ -196,42 +203,41 @@ get_OperationID(OperationID, LogicHandler) ->
             end
     end.
 
+
 -spec content_types_accepted(Req :: dgiot_req:req(), State :: state()) ->
-    {
-        Value :: [{binary(), AcceptResource :: atom()}],
-        Req :: dgiot_req:req(),
-        State :: state()
-    }.
+          {Value :: [{binary(), AcceptResource :: atom()}],
+           Req :: dgiot_req:req(),
+           State :: state()}.
 content_types_accepted(Req, #state{context = #{consumes := Consumes}} = State) ->
     Accepts =
         lists:foldl(
-            fun
-                (<<"*">>, Accepted) -> [{'*', handle_request} | Accepted];
-                (<<"multipart/form-data">>, Accepted) -> [{'*', handle_multipart} | Accepted];
-                (Consume, Accepted) -> [{Consume, handle_request} | Accepted]
-            end, [], Consumes),
+          fun(<<"*">>, Accepted) -> [{'*', handle_request} | Accepted];
+             (<<"multipart/form-data">>, Accepted) -> [{'*', handle_multipart} | Accepted];
+             (Consume, Accepted) -> [{Consume, handle_request} | Accepted]
+          end,
+          [],
+          Consumes),
     {Accepts, Req, State}.
 
 
 -spec valid_content_headers(Req :: dgiot_req:req(), State :: state()) ->
-    {Value :: boolean(), Req :: dgiot_req:req(), State :: state()}.
+          {Value :: boolean(), Req :: dgiot_req:req(), State :: state()}.
 valid_content_headers(Req, State) ->
     {true, Req, State}.
 
 
 -spec content_types_provided(Req :: dgiot_req:req(), State :: state()) ->
-    {
-        Value :: [{binary(), ProvideResource :: atom()}],
-        Req :: dgiot_req:req(),
-        State :: state()
-    }.
+          {Value :: [{binary(), ProvideResource :: atom()}],
+           Req :: dgiot_req:req(),
+           State :: state()}.
 content_types_provided(Req, #state{context = #{produces := Produces}} = State) ->
     Product =
         lists:foldl(
-            fun
-                (<<"*">>, Accepted) -> [{'*', handle_request} | Accepted];
-                (Consume, Accepted) -> [{Consume, handle_request} | Accepted]
-            end, [], Produces),
+          fun(<<"*">>, Accepted) -> [{'*', handle_request} | Accepted];
+             (Consume, Accepted) -> [{Consume, handle_request} | Accepted]
+          end,
+          [],
+          Produces),
     {Product, Req, State}.
 
 
@@ -240,13 +246,13 @@ charsets_provided(Req, State) ->
 
 
 -spec malformed_request(Req :: dgiot_req:req(), State :: state()) ->
-    {Value :: false, Req :: dgiot_req:req(), State :: state()}.
+          {Value :: false, Req :: dgiot_req:req(), State :: state()}.
 malformed_request(Req, State) ->
     {false, Req, State}.
 
 
 -spec allow_missing_post(Req :: dgiot_req:req(), State :: state()) ->
-    {Value :: false, Req :: dgiot_req:req(), State :: state()}.
+          {Value :: false, Req :: dgiot_req:req(), State :: state()}.
 allow_missing_post(Req, State) ->
     {false, Req, State}.
 
@@ -257,13 +263,13 @@ delete_resource(Req, State) ->
 
 
 -spec known_content_type(Req :: dgiot_req:req(), State :: state()) ->
-    {Value :: true, Req :: dgiot_req:req(), State :: state()}.
+          {Value :: true, Req :: dgiot_req:req(), State :: state()}.
 known_content_type(Req, State) ->
     {true, Req, State}.
 
 
 -spec valid_entity_length(Req :: dgiot_req:req(), State :: state()) ->
-    {Value :: true, Req :: dgiot_req:req(), State :: state()}.
+          {Value :: true, Req :: dgiot_req:req(), State :: state()}.
 valid_entity_length(Req, State) ->
     %% @TODO check the length
     {true, Req, State}.
@@ -288,6 +294,7 @@ handle_multipart(Req, State) ->
             Err = list_to_binary(io_lib:format("~p", [Reason])),
             do_response(500, #{}, #{error => Err}, Req, State)
     end.
+
 
 -spec handle_request(dgiot_req:req(), state()) -> response().
 handle_request(Req, #state{context = Context} = State) ->
@@ -315,12 +322,15 @@ handle_request(Req, #state{context = Context} = State) ->
             do_response(500, #{}, #{error => Err}, Req, State)
     end.
 
-do_request(Populated, Req0, State = #state{
-    operationid = OperationID,
-    is_mock = IsMock,
-    logic_handler = LogicHandler,
-    context = Context
-}) ->
+
+do_request(Populated,
+           Req0,
+           State = #state{
+                     operationid = OperationID,
+                     is_mock = IsMock,
+                     logic_handler = LogicHandler,
+                     context = Context
+                    }) ->
     Args = [OperationID, Populated, Context, Req0],
     ?LOG(debug, "~p ~p", [OperationID, dgiot_data:get(?DGIOT_SWAGGER, OperationID)]),
     Result =
@@ -350,6 +360,8 @@ handle_multipart(Req, Acc, State) ->
         {done, Req1} ->
             {ok, Acc, Req1}
     end.
+
+
 handle_multipart({data, Name}, Req, Acc, State) ->
     {ok, Data, Req1} = cowboy_req:read_part_body(Req),
     handle_multipart(Req1, Acc#{Name => Data}, State);
@@ -365,13 +377,16 @@ handle_multipart({file, Name, Filename, ContentType}, Req, Acc, State) ->
             {ok, Bin, Req1} = cowboy_req:read_part_body(Req),
             case file:write_file(Path, Bin, [append]) of
                 ok ->
-                    handle_multipart(Req1, Acc#{
-                        Name => #{
-                            <<"path">> => <<"/", FilePath/binary>>,
-                            <<"fullpath">> => Path,
-                            <<"filename">> => Filename,
-                            <<"contentType">> => ContentType
-                        }}, State);
+                    handle_multipart(Req1,
+                                     Acc#{
+                                       Name => #{
+                                                 <<"path">> => <<"/", FilePath/binary>>,
+                                                 <<"fullpath">> => Path,
+                                                 <<"filename">> => Filename,
+                                                 <<"contentType">> => ContentType
+                                                }
+                                      },
+                                     State);
                 {error, Reason} ->
                     {error, Reason}
             end;
@@ -381,7 +396,7 @@ handle_multipart({file, Name, Filename, ContentType}, Req, Acc, State) ->
 
 
 do_authorized(LogicHandler, OperationID, Args, Req) ->
-%%    io:format("~s ~p   LogicHandler = ~p OperationID = ~p ~n", [?FILE, ?LINE, LogicHandler, OperationID]),
+    % io:format("~s ~p   LogicHandler = ~p OperationID = ~p ~n", [?FILE, ?LINE, LogicHandler, OperationID]),
     case call(LogicHandler, check_auth, [OperationID, Args, Req]) of
         no_call ->
             dgiot_auth:check_auth(OperationID, Args, Req);
@@ -394,6 +409,7 @@ do_authorized(LogicHandler, OperationID, Args, Req) ->
         {switch_handler, NLogicHandler, Req1} ->
             call(NLogicHandler, check_auth, [OperationID, Args, Req1])
     end.
+
 
 default_mock_handler(_OperationID, _Populated, Context, Req) ->
     Response = maps:get(check_response, Context, #{}),
@@ -423,6 +439,7 @@ do_response(Status, Headers, Body, Req0, State) when is_binary(Body) ->
         end,
     {stop, Req, State}.
 
+
 call(Mod, Fun, Args) ->
     case erlang:module_loaded(Mod) of
         true ->
@@ -438,11 +455,13 @@ call(Mod, Fun, Args) ->
             no_module
     end.
 
+
 init_ets() ->
     dgiot_data:init(?DGIOT_SWAGGER).
 
+
 get_log(handle, [_OperationID, Body, #{<<"sessionToken">> := SessionToken} = _Context, Req], Time, Result)
-    when is_map(Body) ->
+  when is_map(Body) ->
     {Username, Acl} =
         case dgiot_auth:get_session(SessionToken) of
             #{<<"username">> := Name, <<"ACL">> := Acl1} -> {Name, Acl1};
@@ -453,6 +472,7 @@ get_log(check_auth, [_OperationID, Args, Req], Time, Result) ->
     log(Req, Time, Result, Args);
 get_log(_Fun, _, _, _) ->
     pass.
+
 
 log(#{peer := {PeerName, _}, headers := Headers} = Req, Time, Result, Map) when is_map(Map) ->
     Ip = dgiot_utils:get_ip(PeerName),
@@ -471,18 +491,16 @@ log(#{peer := {PeerName, _}, headers := Headers} = Req, Time, Result, Map) when 
             _ ->
                 {<<"error">>, <<"error">>}
         end,
-    ?MLOG(debug, NewReq#{
-        <<"code">> => Code,
-        <<"reason">> => Reason,
-        <<"ip">> => RealIp,
-        <<"username">> => UserName,
-        <<"body">> => Body,
-        <<"elapsedtime">> => Time},
-        ['parse_api']);
+    ?MLOG(debug,
+          NewReq#{
+            <<"code">> => Code,
+            <<"reason">> => Reason,
+            <<"ip">> => RealIp,
+            <<"username">> => UserName,
+            <<"body">> => Body,
+            <<"elapsedtime">> => Time
+           },
+          ['parse_api']);
 
 log(_Req, _Time, _Result, _Map) ->
     pass.
-
-
-
-

@@ -41,13 +41,24 @@ start(Port, State) ->
 
 init(#tcp{socket = Socket, state = #state{id = ChannelId, dtutype = Dtutype, regtype = <<"RegisterByIp">>} = State} = TCPState) ->
     DtuAddr = dgiot_utils:get_ip(Socket),
-    % io:format("~s ~p  State: ~p   ~n", [?FILE, ?LINE, State]),
+    %io:format("~s ~p  DtuAddr: ~p   ~n", [?FILE, ?LINE, DtuAddr]),
     case dgiot_bridge:get_products(ChannelId) of
         {ok, _TYPE, [ProductId | _ProductIds]} ->
             % io:format("~s ~p  ProductId: ~p   ~n", [?FILE, ?LINE, ProductId]),
             DeviceId = dgiot_parse_id:get_deviceid(ProductId, DtuAddr),
-            dgiot_modbus:register_client(ChannelId, ProductId, DtuAddr, DtuAddr, Dtutype),
-            {ok, TCPState#tcp{buff = <<>>, register = true, clientid = DeviceId, state = State#state{devaddr = DtuAddr, deviceId = DeviceId}}};
+            case dgiot_device:lookup(DeviceId) of
+                {ok, _DeviceItem} ->
+                    dgiot_modbus:register_client(ChannelId, ProductId, DtuAddr, DtuAddr, Dtutype),
+                    {ok, TCPState#tcp{buff = <<>>, register = true, clientid = DeviceId, state = State#state{devaddr = DtuAddr, deviceId = DeviceId}}};
+                _ ->
+                    case dgiot_parsex:get_object(<<"Device">>, DeviceId) of
+                        {ok, #{<<"objectId">> := DeviceId, <<"product">> := #{<<"objectId">> := ProductId}}} ->
+                            dgiot_modbus:register_client(ChannelId, ProductId, DtuAddr, DtuAddr, Dtutype),
+                            {ok, TCPState#tcp{buff = <<>>, register = true, clientid = DeviceId, state = State#state{devaddr = DtuAddr, deviceId = DeviceId}}};
+                        _ ->
+                            {ok, TCPState}
+                    end
+            end;
         {error, not_find} ->
            % io:format("~s ~p not_find_channel ~p~n", [?FILE, ?LINE, ChannelId]),
             {stop, not_find_channel}
