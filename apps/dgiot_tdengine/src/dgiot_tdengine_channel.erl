@@ -30,6 +30,8 @@
 -export([init/3, handle_event/3, handle_message/2, stop/3, handle_init/1]).
 -export([handle_info/2, test/1]).
 
+-export([read_productid_from_ets/1]).
+
 %% 注册通道类型
 -channel_type(#{
     cType => ?TYPE,
@@ -136,7 +138,8 @@
 
 init_ets() ->
     dgiot_data:init(tdpool),
-    dgiot_data:init(?DGIOT_TD_THING_ETS).
+    dgiot_data:init(?DGIOT_TD_THING_ETS),
+    new_productid_ets().
 
 start(ChannelId, #{
     <<"ip">> := Ip,
@@ -205,6 +208,7 @@ handle_message(init, #state{id = ChannelId, env = Config} = State) ->
         {ok, _, ProductIds} ->
             NewProducts = lists:foldl(fun(X, Acc) ->
                 dgiot_data:insert({tdchannel_product, binary_to_atom(X)}, ChannelId),
+                save_productid_to_ets(X, ChannelId),
                 Acc ++ dgiot_product_tdengine:get_products(X, ChannelId)
                                       end, [], ProductIds),
             do_check(ChannelId, dgiot_utils:unique_1(NewProducts), Config),
@@ -367,3 +371,12 @@ test(I, Max) when I =< Max ->
     dgiot_channelx:do_message(?TYPE, <<"09oqrvmPjr">>, Msg, 30000),
     test(I + 1, Max);
 test(_, _) -> ok.
+
+new_productid_ets() ->
+    ets:new(td_product_channel, [bag, public, named_table, {write_concurrency, true}, {read_concurrency, true}]).
+
+save_productid_to_ets(ProductId, ChannelId) ->
+    ets:insert(td_product_channel, {ProductId, ChannelId}).
+
+read_productid_from_ets(ProductId) ->
+    ets:lookup(td_product_channel, ProductId).

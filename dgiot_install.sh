@@ -1568,8 +1568,8 @@ function build_nginx() {
     ${csudo} useradd -g nginx nginx &>/dev/null
   fi
   ### install nginx
-  yum -y install pcre-devel &>/dev/null
-  yum install openssl-devel &>/dev/null
+  yum -y install pcre-devel --nogpgcheck &>/dev/null
+  yum install openssl-devel --nogpgcheck  &>/dev/null
   if [ ! -f ${script_dir}/nginx-1.25.1.zip ]; then
     wget https://dgiot-release-1306147891.cos.ap-nanjing.myqcloud.com/v4.4.0/nginx-1.25.1.zip -O ${script_dir}/nginx-1.25.1.zip &>/dev/null
   fi
