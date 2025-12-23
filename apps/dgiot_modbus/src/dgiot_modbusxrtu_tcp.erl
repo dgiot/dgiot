@@ -16,28 +16,30 @@
 -module(dgiot_modbusxrtu_tcp).
 -author("stoneliu").
 -include("dgiot_modbus.hrl").
+
 -include_lib("dgiot/include/dgiot_socket.hrl").
 -include_lib("dgiot/include/logger.hrl").
 -include_lib("dgiot_device/include/dgiot_device.hrl").
 
--export([
-    get_deviceid/2,
-    start/2
-]).
+-export([get_deviceid/2,
+         start/2]).
 
--export([get_header/1]).
+-export([get_header/1, convert_pattern/1]).
 
 %% TCP callback
 -export([init/1, handle_info/2, handle_cast/2, handle_call/3, terminate/2, code_change/3]).
 
+
 start(Port, State) ->
     dgiot_tcp_server:child_spec(?MODULE, dgiot_utils:to_int(Port), State).
+
 
 %% =======================
 %% {ok, State} | {stop, Reason}
 %%init(TCPState) ->
 %%    erlang:send_after(5 * 1000, self(), login),.
 %%    {ok, TCPState}.
+
 
 init(#tcp{state = #state{id = ChannelId}} = TCPState) ->
     io:format("~s ~p Device Connected~n", [?FILE, ?LINE]),
@@ -50,6 +52,48 @@ init(#tcp{state = #state{id = ChannelId}} = TCPState) ->
             io:format("~s ~p not_find_channel ~p~n", [?FILE, ?LINE, ChannelId]),
             {stop, not_find_channel}
     end.
+
+
+convert_pattern(Pattern) when is_binary(Pattern) ->
+    PatternList = binary_to_list(Pattern),
+    ConvertedList = convert_pattern_list(PatternList, [], []),
+    list_to_binary(ConvertedList);
+convert_pattern(Pattern) when is_list(Pattern) ->
+    convert_pattern_list(Pattern, [], []).
+
+
+%% 修正后的递归处理函数 - 保持正确的字符顺序
+convert_pattern_list([], Acc, []) ->
+    %% 直接返回Acc，不进行reverse
+    Acc;
+convert_pattern_list([], Acc, StarAcc) ->
+    %% 处理末尾的星号序列
+    RegexPart = create_regex_part(StarAcc),
+    %% 直接拼接，保持顺序
+    Acc ++ RegexPart;
+convert_pattern_list([$* | Rest], Acc, StarAcc) ->
+    %% 遇到星号，添加到星号累加器
+    convert_pattern_list(Rest, Acc, [$* | StarAcc]);
+convert_pattern_list([Char | Rest], Acc, []) ->
+    %% 普通字符，没有待处理的星号
+    convert_pattern_list(Rest, Acc ++ [Char], []);
+convert_pattern_list([Char | Rest], Acc, StarAcc) ->
+    %% 遇到普通字符，但有待处理的星号序列
+    RegexPart = create_regex_part(StarAcc),
+    %% 关键修正：先添加正则表达式部分，再添加当前字符
+    convert_pattern_list(Rest, Acc ++ RegexPart ++ [Char], []).
+
+
+%% 您的create_regex_part函数（保持不变）
+create_regex_part(StarAcc) ->
+    Count = length(StarAcc),
+    if
+        Count > 0 ->
+            "[a-zA-Z0-9]{" ++ integer_to_list(Count) ++ "}";
+        true ->
+            ""
+    end.
+
 
 %% 根据dtu头，找到对应的产品
 find_product(_DtuHeader, []) -> not_found;
@@ -69,30 +113,35 @@ find_product(DtuHeader, [OuterMap | Tail]) ->
                             {Header, Len} = get_header(TmpHeader),
                             io:format("~s ~p Header:~p Len:~p~n", [?FILE, ?LINE, Header, Len]),
 
-                            case re:run(DtuHeader, Header, [{capture, first, list}]) of
+                            ReHeader = convert_pattern(Header),
+
+                            io:format("~s ~p ReHeader:~p DtuHeader:~p~n", [?FILE, ?LINE, ReHeader, DtuHeader]),
+
+                            case re:run(DtuHeader, ReHeader, [{capture, first, list}]) of
                                 {match, [_DtuAddr]} when byte_size(DtuHeader) =:= Len ->
                                     io:format("~s ~p ~p ~p ~p Match found! Returning OuterMap.~n", [?FILE, ?LINE, TmpHeader, DtuHeader, _DtuAddr]),
-                                    ProductItem; % 匹配成功，返回整个ProductItem
+                                    ProductItem;  % 匹配成功，返回整个ProductItem
                                 _ ->
                                     io:format("~s ~p Head not match. Continue searching.~n", [?FILE, ?LINE]),
-                                find_product(DtuHeader, Tail) % 不匹配，继续遍历尾部
+                                    find_product(DtuHeader, Tail)  % 不匹配，继续遍历尾部
                             end;
                         _ ->
                             io:format("~s ~p Head not match or structure invalid. Continue searching.~n", [?FILE, ?LINE]),
-                            find_product(DtuHeader, Tail) % 不匹配，继续遍历尾部
+                            find_product(DtuHeader, Tail)  % 不匹配，继续遍历尾部
                     end;
                 _ ->
                     io:format("~s ~p ProductId:~p not found~n", [?FILE, ?LINE, ProductId]),
-                    find_product(DtuHeader, Tail) % 找不到合适的ProductItem，继续遍历尾部
+                    find_product(DtuHeader, Tail)  % 找不到合适的ProductItem，继续遍历尾部
             end;
         _ ->
             io:format("~s ~p not matched~n", [?FILE, ?LINE]),
             not_found
     end;
 
-find_product(_, _) -> 
+find_product(_, _) ->
     io:format("~s ~p not_found, badarg  ~n", [?FILE, ?LINE]),
     not_found.
+
 
 %% 9C A5 25 CD 00 DB
 %% 11 04 02 06 92 FA FE
@@ -152,12 +201,15 @@ handle_info({tcp, Buff}, #tcp{state = #state{id = ChannelId, devaddr = DtuAddr, 
     <<Sh:8, Sl:8>> = dgiot_utils:hex_to_binary(modbus_rtu:is16(Pn)),
     dgiot_device:save_log(ProductId, DtuAddr, dgiot_utils:binary_to_hex(Buff), <<"tcp_receive">>),
     io:format("~s ~p H:~p L:~p Sh:~p Sl:~p ~n", [?FILE, ?LINE, H, L, Sh, Sl]),
-    case modbus_rtu:parse_frame(Buff, #{}, #{
-        <<"dtuproduct">> => ProductId,
-        <<"channel">> => ChannelId,
-        <<"dtuaddr">> => DtuAddr,
-        <<"slaveId">> => Sh * 256 + Sl,
-        <<"address">> => H * 256 + L}) of
+    case modbus_rtu:parse_frame(Buff,
+                                #{},
+                                #{
+                                  <<"dtuproduct">> => ProductId,
+                                  <<"channel">> => ChannelId,
+                                  <<"dtuaddr">> => DtuAddr,
+                                  <<"slaveId">> => Sh * 256 + Sl,
+                                  <<"address">> => H * 256 + L
+                                 }) of
         {_, Things} ->
             io:format("~s ~p ~p ~p ~p ~n", [?FILE, ?LINE, ChannelId, ProductId, DtuAddr]),
             timer:sleep(1000),
@@ -212,12 +264,15 @@ handle_info({tcp, Buff}, #tcp{state = #state{id = ChannelId, devaddr = DtuAddr, 
             case modbus_rtu:dealwith(Buff) of
                 {ok, #{<<"buff">> := NewBuff, <<"slaveId">> := SlaveId, <<"address">> := Address}} ->
                     io:format("~s ~p Buff:~p~n", [?FILE, ?LINE, dgiot_utils:binary_to_hex(Buff)]),
-                    case modbus_rtu:parse_frame(NewBuff, #{}, #{
-                        <<"dtuproduct">> => ProductId,
-                        <<"channel">> => ChannelId,
-                        <<"dtuaddr">> => DtuAddr,
-                        <<"slaveId">> => SlaveId,
-                        <<"address">> => Address}) of
+                    case modbus_rtu:parse_frame(NewBuff,
+                                                #{},
+                                                #{
+                                                  <<"dtuproduct">> => ProductId,
+                                                  <<"channel">> => ChannelId,
+                                                  <<"dtuaddr">> => DtuAddr,
+                                                  <<"slaveId">> => SlaveId,
+                                                  <<"address">> => Address
+                                                 }) of
                         {_, Things} ->
                             NewTopic = <<"$dg/thing/", ProductId/binary, "/", DtuAddr/binary, "/properties/report">>,
                             dgiot_bridge:send_log(ChannelId, ProductId, DtuAddr, "~s ~p to task ~p ~ts~n ", [?FILE, ?LINE, NewTopic, unicode:characters_to_list(dgiot_json:encode(Things))]),
@@ -240,8 +295,7 @@ handle_info({tcp, Buff}, #tcp{state = #state{id = ChannelId, devaddr = DtuAddr, 
     {noreply, TCPState#tcp{buff = <<>>, state = State#state{env = <<>>}}};
 
 handle_info({tcp, Buff}, #tcp{socket = _Socket, state = #state{id = _ChannelId} = _State} = _TCPState) ->
-    io:format("~s ~p Buff = ~p.~n", [?FILE, ?LINE, dgiot_utils:binary_to_hex(Buff)])
-    ;
+    io:format("~s ~p Buff = ~p.~n", [?FILE, ?LINE, dgiot_utils:binary_to_hex(Buff)]);
 
 handle_info({deliver, _, Msg}, #tcp{state = #state{id = ChannelId} = State} = TCPState) ->
     io:format("~s ~p ~n", [?FILE, ?LINE]),
@@ -251,20 +305,21 @@ handle_info({deliver, _, Msg}, #tcp{state = #state{id = ChannelId} = State} = TC
         true ->
             case binary:split(Topic, <<$/>>, [global, trim]) of
                 [<<"$dg">>, <<"device">>, ProductId, DevAddr, <<"profile">>] ->
-%%                    设置参数
+                    %%                    设置参数
                     ProfilePayload = dgiot_device_profile:encode_profile(ProductId, dgiot_json:decode(Payload)),
                     Payloads = modbus_rtu:set_params(ProfilePayload, ProductId, DevAddr),
                     lists:map(fun(X) ->
-                        timer:sleep(100),
-                        dgiot_device:save_log(ProductId, DevAddr, dgiot_utils:binary_to_hex(X), <<"device_operationlog">>),
-                        dgiot_tcp_server:send(TCPState, X)
-                              end, Payloads),
+                                      timer:sleep(100),
+                                      dgiot_device:save_log(ProductId, DevAddr, dgiot_utils:binary_to_hex(X), <<"device_operationlog">>),
+                                      dgiot_tcp_server:send(TCPState, X)
+                              end,
+                              Payloads),
                     {noreply, TCPState};
                 [<<"$dg">>, <<"device">>, ProductId, DevAddr, <<"properties">>] ->
                     case jsx:decode(Payload, [{labels, binary}, return_maps]) of
                         #{<<"_dgiotTaskFreq">> := Freq, <<"slaveid">> := SlaveId, <<"address">> := Address} = DataSource ->
                             Data = modbus_rtu:to_frame(DataSource),
-%%                            io:format("~s ~p Data = ~p.~n", [?FILE, ?LINE, dgiot_utils:to_hex(Data)]),
+                            %%                            io:format("~s ~p Data = ~p.~n", [?FILE, ?LINE, dgiot_utils:to_hex(Data)]),
                             dgiot_device:save_log(ProductId, DevAddr, dgiot_utils:binary_to_hex(Data), <<"readProperty">>),
                             dgiot_bridge:send_log(ChannelId, ProductId, DevAddr, "Channel sends ~p to DTU ~p", [dgiot_utils:binary_to_hex(Data), DevAddr]),
                             dgiot_tcp_server:send(TCPState, Data),
@@ -289,10 +344,11 @@ handle_info({deliver, _, Msg}, #tcp{state = #state{id = ChannelId} = State} = TC
                     ProfilePayload = dgiot_device_profile:encode_profile(ProductId, dgiot_json:decode(Payload)),
                     Payloads = modbus_rtu:set_params(ProfilePayload, ProductId, DevAddr),
                     lists:map(fun(X) ->
-                        timer:sleep(100),
-                        dgiot_device:save_log(ProductId, DevAddr, dgiot_utils:binary_to_hex(X), <<"device_operationlog">>),
-                        dgiot_tcp_server:send(TCPState, X)
-                              end, Payloads),
+                                      timer:sleep(100),
+                                      dgiot_device:save_log(ProductId, DevAddr, dgiot_utils:binary_to_hex(X), <<"device_operationlog">>),
+                                      dgiot_tcp_server:send(TCPState, X)
+                              end,
+                              Payloads),
                     {noreply, TCPState};
                 [<<"$dg">>, <<"device">>, ProductId, DevAddr, <<"debug">>] ->
                     %% 设备调试
@@ -307,14 +363,17 @@ handle_info({deliver, _, Msg}, #tcp{state = #state{id = ChannelId} = State} = TC
 %% {stop, TCPState} | {stop, Reason} | {ok, TCPState} | ok | stop
 handle_info(_Info, TCPState) ->
     % io:format("~s ~p _Info = ~p.~n", [?FILE, ?LINE, _Info]),
-%%    io:format("~s ~p TCPState = ~p.~n", [?FILE, ?LINE, TCPState]),
+    %%    io:format("~s ~p TCPState = ~p.~n", [?FILE, ?LINE, TCPState]),
     {noreply, TCPState}.
+
 
 handle_call(_Msg, _From, TCPState) ->
     {reply, ok, TCPState}.
 
+
 handle_cast(_Msg, TCPState) ->
     {noreply, TCPState}.
+
 
 terminate(_Reason, #tcp{clientid = DeviceId, state = #state{id = _ChannelId, devaddr = DtuAddr, deviceId = DeviceId2, product = _Products}} = _TCPState) ->
     io:format("~s ~p ChannelId:~p _Reason:~p DtuAddr:~p DeviceId:~p DeviceId2:~p ~n", [?FILE, ?LINE, _ChannelId, _Reason, DtuAddr, DeviceId, DeviceId2]),
@@ -339,29 +398,32 @@ terminate(_Reason, #tcp{clientid = DeviceId, state = #state{id = _ChannelId, dev
 terminate(_Reason, _TCPState) ->
     ok.
 
+
 code_change(_OldVsn, TCPState, _Extra) ->
     {ok, TCPState}.
+
 
 get_deviceid(ProdcutId, DevAddr) ->
     #{<<"objectId">> := DeviceId} =
         dgiot_parse_id:get_objectid(<<"Device">>, #{<<"product">> => ProdcutId, <<"devaddr">> => DevAddr}),
     DeviceId.
 
+
 create_device(DeviceId, ProductId, DTUMAC, DTUIP, Dtutype, Icon) ->
     case dgiot_product:lookup_prod(ProductId) of
         {ok, #{<<"ACL">> := Acl, <<"devType">> := DevType}} ->
             dgiot_device:create_device(#{
-                <<"devaddr">> => DTUMAC,
-                <<"name">> => <<Dtutype/binary, "_", DTUMAC/binary>>,
-                <<"ip">> => DTUIP,
-                <<"isEnable">> => true,
-                <<"product">> => ProductId,
-                <<"ACL">> => Acl,
-                <<"status">> => <<"ONLINE">>,
-                <<"brand">> => Dtutype,
-                <<"devModel">> => DevType,
-                <<"icon">> => Icon
-            }),
+                                         <<"devaddr">> => DTUMAC,
+                                         <<"name">> => <<Dtutype/binary, "_", DTUMAC/binary>>,
+                                         <<"ip">> => DTUIP,
+                                         <<"isEnable">> => true,
+                                         <<"product">> => ProductId,
+                                         <<"ACL">> => Acl,
+                                         <<"status">> => <<"ONLINE">>,
+                                         <<"brand">> => Dtutype,
+                                         <<"devModel">> => DevType,
+                                         <<"icon">> => Icon
+                                        }),
             dgiot_task:save_pnque(ProductId, DTUMAC, ProductId, DTUMAC),
             Productname =
                 case dgiot_parse:get_object(<<"Product">>, ProductId) of
@@ -373,17 +435,19 @@ create_device(DeviceId, ProductId, DTUMAC, DTUIP, Dtutype, Icon) ->
             ?MLOG(info, #{<<"clientid">> => DeviceId, <<"devaddr">> => DTUMAC, <<"productid">> => ProductId, <<"productname">> => Productname, <<"devicename">> => <<Dtutype/binary, DTUMAC/binary>>, <<"status">> => <<"上线"/utf8>>}, ['device_statuslog']),
             {DeviceId, DTUMAC};
         _Error2 ->
-%%            ?LOG(info, "Error2 ~p ", [Error2]),
+            %%            ?LOG(info, "Error2 ~p ", [Error2]),
             {<<>>, <<>>}
     end.
 
+
 get_header(Regular) ->
     lists:foldl(fun(X, {Header, Len}) ->
-        % io:format("~s ~p X = ~p Header: ~p, Len: ~p .~n", [?FILE, ?LINE, X, Header, Len]),
-        case X of
-            "**" -> {Header, Len + length(X)};
-            "*" -> {Header, Len + length(X)};
-            _ -> {Header ++ X, Len + length(X)}
-        end
-    end, {[], 0},
-    re:split(dgiot_utils:to_list(Regular), "-", [{return, list}])).
+                        % io:format("~s ~p X = ~p Header: ~p, Len: ~p .~n", [?FILE, ?LINE, X, Header, Len]),
+                        case X of
+                            "**" -> {Header, Len + length(X)};
+                            "*" -> {Header, Len + length(X)};
+                            _ -> {Header ++ X, Len + length(X)}
+                        end
+                end,
+                {[], 0},
+                re:split(dgiot_utils:to_list(Regular), "-", [{return, list}])).
