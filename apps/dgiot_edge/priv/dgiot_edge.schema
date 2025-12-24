@@ -1,4 +1,0 @@
-{mapping, "cloud.host", "dgiot_edge.cloud_host", [
-  {default, "https://ai.dgiotcloud.cn"},
-  {datatype, string}
-]}.

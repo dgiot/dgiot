@@ -603,6 +603,13 @@ dealwith_data(ProductId, DevAddr, DeviceId, AllData, Storage, _Interval) ->
     dgiot_metrics:inc(dgiot_task, <<"task_save">>, 1),
     Channel = dgiot_product_channel:get_taskchannel(ProductId),
     dgiot_bridge:send_log(Channel, ProductId, DevAddr, "~s ~p save td => ProductId ~p DevAddr ~p ~ts ", [?FILE, ?LINE, ProductId, DevAddr, unicode:characters_to_list(dgiot_json:encode(Storage))]),
+    
+    %% 更新两个缓存：确保实时卡片API能获取到数据
+    %% 1. 更新标准缓存（?DGIOT_DATA_CACHE）
+    %% 2. 更新last_data缓存（供实时卡片API使用）
+    dgiot_data:put({last_data, DeviceId}, AllData),
+    ?LOG(info, "Updated last_data cache for device ~p", [DeviceId]),
+    
     Storage.
 
 
