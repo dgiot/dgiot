@@ -1,0 +1,88 @@
+# DG-IoT Modbus 测试框架 Makefile
+# 支持一键式测试、代码覆盖率和工程级测试
+
+# 使用项目根目录的rebar3
+REBAR3 = $(shell cd ../.. && pwd)/rebar3
+
+.PHONY: test-all test-eunit test-ct test-coverage clean-test
+
+# 运行所有测试
+test-all: test-eunit test-ct test-coverage
+	@echo "✅ 所有测试完成"
+
+# 运行EUnit单元测试
+test-eunit:
+	@echo "🔧 运行EUnit单元测试..."
+	@cd ../.. && $(REBAR3) as test eunit -v -c --cover --app dgiot_modbus
+	@echo "✅ EUnit测试完成"
+
+# 运行Common Test集成测试
+test-ct:
+	@echo "🔧 运行Common Test集成测试..."
+	@mkdir -p test/ct/logs
+	@cd ../.. && $(REBAR3) as test ct -v -c --cover --suite apps/dgiot_modbus/test/ct/*_SUITE
+	@echo "✅ Common Test测试完成"
+
+# 生成覆盖率报告
+test-coverage:
+	@echo "📊 生成代码覆盖率报告..."
+	@mkdir -p test/coverage
+	@cd ../.. && $(REBAR3) as test cover -v
+	@if [ -f "../../_build/test/cover/index.html" ]; then \
+		echo "📄 覆盖率报告: file://$(shell cd ../.. && pwd)/_build/test/cover/index.html"; \
+	else \
+		echo "⚠️  覆盖率报告未生成"; \
+	fi
+	@echo "✅ 覆盖率报告生成完成"
+
+# 清理测试文件
+clean-test:
+	@echo "🧹 清理测试文件..."
+	@rm -rf test/ct/logs
+	@rm -rf test/coverage
+	@rm -rf ../../_build/test
+	@echo "✅ 测试文件清理完成"
+
+# 快速测试（使用热编译命令）
+test-quick:
+	@echo "⚡ 快速测试..."
+	@echo "编译modbus_util模块..."
+	@cd /root/gitee/dgiot && _build/emqx/rel/emqx/bin/emqx eval 'dgiot_plugin:compile(dgiot_modbus).'
+	@echo "运行简单测试..."
+	@cd /root/gitee/dgiot && _build/emqx/rel/emqx/bin/emqx eval 'io:format("Testing convert_pattern: ~p~n", [modbus_util:convert_pattern("abc")]), io:format("Testing get_category_id: ~p~n", [modbus_util:get_category_id()]).'
+	@echo "✅ 快速测试完成"
+
+# 测试特定模块
+test-module-%:
+	@echo "🔍 测试模块: $*"
+	@cd ../.. && $(REBAR3) as test eunit -v --module $*
+	@echo "✅ 模块测试完成"
+
+# 性能测试
+test-performance:
+	@echo "⏱️  运行性能测试..."
+	@if [ -f "test/ct/performance_SUITE.erl" ]; then \
+		cd ../.. && $(REBAR3) as test ct -v --suite apps/dgiot_modbus/test/ct/performance_SUITE; \
+	else \
+		echo "⚠️  性能测试套件不存在"; \
+	fi
+	@echo "✅ 性能测试完成"
+
+# 帮助信息
+help:
+	@echo "DG-IoT Modbus 测试框架"
+	@echo ""
+	@echo "可用命令:"
+	@echo "  make test-all         运行所有测试（单元+集成+覆盖率）"
+	@echo "  make test-eunit       运行EUnit单元测试"
+	@echo "  make test-ct          运行Common Test集成测试"
+	@echo "  make test-coverage    生成代码覆盖率报告"
+	@echo "  make test-quick       快速测试（使用热编译）"
+	@echo "  make test-module-NAME 测试特定模块"
+	@echo "  make test-performance 运行性能测试"
+	@echo "  make clean-test       清理测试文件"
+	@echo "  make help             显示此帮助信息"
+	@echo ""
+	@echo "示例:"
+	@echo "  make test-module-modbus_util  测试modbus_util模块"
+	@echo "  make test-all                 完整测试流程"

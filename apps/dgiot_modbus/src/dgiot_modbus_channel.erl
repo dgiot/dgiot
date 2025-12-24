@@ -55,17 +55,17 @@
         order => 2,
         type => string,
         required => true,
-        default => <<"上传Mac"/utf8>>,
         default => #{<<"value">> => <<"RegisterByRegular">>, <<"label">> => <<"正则匹配注册"/utf8>>},
         enum => [
                     #{<<"value">> =>  <<"RegisterByIp">>, <<"label">> => <<"Ip地址注册"/utf8>>},
+                    #{<<"value">> =>  <<"RegisterByPort">>, <<"label">> => <<"Port端口注册"/utf8>>},
                     #{<<"value">> => <<"RegisterByRegular">>, <<"label">> => <<"正则匹配注册"/utf8>>}
                 ],
         title => #{
             zh => <<"注册类型"/utf8>>
         },
         description => #{
-            zh => <<"正则匹配注册和Ip地址注册"/utf8>>
+            zh => <<"正则匹配注册/ip地址注册/Port端口注册"/utf8>>
         }
     },      
     <<"regular">> => #{
@@ -112,38 +112,50 @@ start(ChannelId, ChannelArgs) ->
     dgiot_channelx:add(?TYPE, ChannelId, ?MODULE, ChannelArgs).
 
 %% 通道初始化
-init(?TYPE, ChannelId, #{
-    <<"port">> := Port,
-    <<"regtype">> := Type,
-    <<"regular">> := Regular,
-    <<"product">> := Products,
-    <<"dtutype">> := Dtutype
-} = _Args) ->
-    {ProductId, App} =
-        case get_app(Products) of
-            [{ProductId1, App1} | _] ->
-                {ProductId1, App1};
-            [] ->
-                {<<>>, <<>>};
-            _ ->
-                {<<>>, <<>>}
-        end,
-    {Header, Len} = get_header(Regular),
-    State = #state{
-        id = ChannelId,
-        regtype = Type,
-        head = Header,
-        len = Len,
-        app = App,
-        product = ProductId,
-        dtutype = Dtutype
-    },
-    % io:format("~s ~p ~p ~p~n", [?FILE, ?LINE, Port, State]),
-    {ok, State, dgiot_modbusrtu_tcp:start(Port, State)};
-
-
-init(?TYPE, _ChannelId, _Args) ->
-    {ok, #{}, #{}}.
+init(?TYPE, ChannelId, Args) ->
+    ?LOG(info, "Channel init Args: ~p", [Args]),
+    
+    try
+        #{
+            <<"port">> := Port,
+            <<"regtype">> := RegType,
+            <<"regular">> := Regular,
+            <<"product">> := Products,
+            <<"dtutype">> := Dtutype
+        } = Args,
+        
+        % 解析注册类型
+        Type = parse_regtype(RegType),
+        
+        % 获取产品和应用
+        {ProductId, App} = get_first_app(Products),
+        
+        % 获取报文头部信息
+        {Header, Len} = modbus_util:get_header(Regular),
+        
+        % 构建状态
+        State = #state{
+            id = ChannelId,
+            regtype = Type,
+            head = Header,
+            len = Len,
+            app = App,
+            product = ProductId,
+            dtutype = Dtutype
+        },
+        
+        ?LOG(info, "Channel initialized: Type=~p, ProductId=~p, App=~p, Header=~p, Len=~p", 
+             [Type, ProductId, App, Header, Len]),
+        
+        {ok, State, dgiot_modbusrtu_tcp:start(Port, State)}
+    catch
+        error:{badmatch, _} ->
+            ?LOG(warning, "Channel init with unexpected Args structure: ~p", [Args]),
+            {ok, #{}, #{}};
+        error:Reason ->
+            ?LOG(error, "Channel init error: ~p, Args: ~p", [Reason, Args]),
+            {ok, #{}, #{}}
+    end.
 
 handle_init(State) ->
     {ok, State}.
@@ -191,14 +203,20 @@ get_app(Products) ->
         {ProductId, App}
               end, Products).
 
+%% @doc 解析注册类型
+%% @spec parse_regtype(RegType) -> binary()
+parse_regtype(RegType) ->
+    case RegType of
+        #{<<"value">> := Value} -> Value;
+        Value when is_binary(Value) -> Value;
+        _ -> <<"RegisterByRegular">>
+    end.
 
-
-get_header(Regular) ->
-    lists:foldl(fun(X, {Header, Len}) ->
-        case X of
-            "**" -> {Header, Len + length(X)};
-            "*" -> {Header, Len + length(X)};
-            _ -> {Header ++ X, Len + length(X)}
-        end
-                end, {[], 0},
-        re:split(dgiot_utils:to_list(Regular), "-", [{return, list}])).
+%% @doc 获取第一个产品和应用
+%% @spec get_first_app(Products) -> {ProductId, App}
+get_first_app(Products) ->
+    case get_app(Products) of
+        [{ProductId, App} | _] -> {ProductId, App};
+        [] -> {<<>>, <<>>};
+        _ -> {<<>>, <<>>}
+    end.

@@ -22,3 +22,13 @@
   {default, "modbus_demo_callback"},
   {datatype, string}
 ]}.
+
+{mapping, "modbus.category", "dgiot_modbus.category", [
+  {default, "5ca6049839"},
+  {datatype, string}
+]}.
+
+{mapping, "modbus.dtutype", "dgiot_modbus.dtutype", [
+  {default, "DGIOT"},
+  {datatype, string}
+]}.
