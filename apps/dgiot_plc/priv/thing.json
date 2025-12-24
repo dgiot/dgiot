@@ -1,0 +1,4480 @@
+{
+  "properties": [
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 1,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBD0",
+        "originaltype": "float"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 65535,
+          "min": -65535,
+          "precision": 3,
+          "step": 0,
+          "unit": "M"
+        },
+        "type": "float"
+      },
+      "devicetype": "起升机构",
+      "identifier": "db201_dbd0",
+      "index": 0,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "起升位置",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 2,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBW4",
+        "originaltype": "ushort"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 65535,
+          "min": -65535,
+          "precision": 3,
+          "step": 0,
+          "unit": "A"
+        },
+        "type": "float"
+      },
+      "devicetype": "起升机构",
+      "identifier": "db201_dbw4",
+      "index": 1,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "起升1电流",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 3,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBW6",
+        "originaltype": "ushort"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 65535,
+          "min": -65535,
+          "precision": 3,
+          "step": 0,
+          "unit": ""
+        },
+        "type": "float"
+      },
+      "devicetype": "起升机构",
+      "identifier": "db201_dbw6",
+      "index": 2,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "起升1转速",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 4,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBW8",
+        "originaltype": "ushort"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 65535,
+          "min": -65535,
+          "precision": 3,
+          "step": 0,
+          "unit": "A"
+        },
+        "type": "float"
+      },
+      "devicetype": "起升机构",
+      "identifier": "db201_dbw8",
+      "index": 3,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "起升2电流",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 5,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBW10",
+        "originaltype": "ushort"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 65535,
+          "min": -65535,
+          "precision": 3,
+          "step": 0,
+          "unit": ""
+        },
+        "type": "float"
+      },
+      "devicetype": "起升机构",
+      "identifier": "db201_dbw10",
+      "index": 4,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "起升2转速",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 6,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBD12",
+        "originaltype": "float"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 65535,
+          "min": -65535,
+          "precision": 3,
+          "step": 0,
+          "unit": ""
+        },
+        "type": "float"
+      },
+      "devicetype": "起升机构",
+      "identifier": "db201_dbd12",
+      "index": 5,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "起升1温度",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 7,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBD16",
+        "originaltype": "float"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 65535,
+          "min": -65535,
+          "precision": 3,
+          "step": 0,
+          "unit": ""
+        },
+        "type": "float"
+      },
+      "devicetype": "起升机构",
+      "identifier": "db201_dbd16",
+      "index": 6,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "起升2温度",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 8,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBD20",
+        "originaltype": "float"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 65535,
+          "min": -65535,
+          "precision": 3,
+          "step": 0,
+          "unit": ""
+        },
+        "type": "float"
+      },
+      "devicetype": "起升机构",
+      "identifier": "db201_dbd20",
+      "index": 7,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "起升减速箱温度",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 9,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBD24",
+        "originaltype": "float"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 65535,
+          "min": -65535,
+          "precision": 3,
+          "step": 0,
+          "unit": ""
+        },
+        "type": "float"
+      },
+      "devicetype": "起升机构",
+      "identifier": "db201_dbd24",
+      "index": 8,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "减速箱压力",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 10,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX28.0",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无",
+          "1": "上升允许"
+        },
+        "type": "enum"
+      },
+      "devicetype": "起升机构",
+      "identifier": "db201_dbx28_0",
+      "index": 9,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "上升允许",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 11,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX28.1",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无",
+          "1": "上升允许"
+        },
+        "type": "enum"
+      },
+      "devicetype": "起升机构",
+      "identifier": "db201_dbx28_1",
+      "index": 10,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "下降允许",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 12,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBD30",
+        "originaltype": "float"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 65535,
+          "min": -65535,
+          "precision": 3,
+          "step": 0,
+          "unit": ""
+        },
+        "type": "float"
+      },
+      "devicetype": "开闭机构",
+      "identifier": "db201_dbd30",
+      "index": 11,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "开闭角度",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 13,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBW34",
+        "originaltype": "ushort"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 65535,
+          "min": -65535,
+          "precision": 3,
+          "step": 0,
+          "unit": ""
+        },
+        "type": "float"
+      },
+      "devicetype": "开闭机构",
+      "identifier": "db201_dbw34",
+      "index": 12,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "开闭1电流",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 14,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBW36",
+        "originaltype": "ushort"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 65535,
+          "min": -65535,
+          "precision": 3,
+          "step": 0,
+          "unit": ""
+        },
+        "type": "float"
+      },
+      "devicetype": "开闭机构",
+      "identifier": "db201_dbw36",
+      "index": 13,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "开闭1转速",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 15,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBW38",
+        "originaltype": "ushort"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 65535,
+          "min": -65535,
+          "precision": 3,
+          "step": 0,
+          "unit": ""
+        },
+        "type": "float"
+      },
+      "devicetype": "开闭机构",
+      "identifier": "db201_dbw38",
+      "index": 14,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "开闭2电流",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 16,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBW40",
+        "originaltype": "ushort"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 65535,
+          "min": -65535,
+          "precision": 3,
+          "step": 0,
+          "unit": ""
+        },
+        "type": "float"
+      },
+      "devicetype": "开闭机构",
+      "identifier": "db201_dbw40",
+      "index": 15,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "开闭2转速",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 17,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBD42",
+        "originaltype": "float"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 65535,
+          "min": -65535,
+          "precision": 3,
+          "step": 0,
+          "unit": ""
+        },
+        "type": "float"
+      },
+      "devicetype": "开闭机构",
+      "identifier": "db201_dbd42",
+      "index": 16,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "开闭1温度",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 18,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBD46",
+        "originaltype": "float"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 65535,
+          "min": -65535,
+          "precision": 3,
+          "step": 0,
+          "unit": ""
+        },
+        "type": "float"
+      },
+      "devicetype": "开闭机构",
+      "identifier": "db201_dbd46",
+      "index": 17,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "开闭2温度",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 19,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBD50",
+        "originaltype": "float"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 65535,
+          "min": -65535,
+          "precision": 3,
+          "step": 0,
+          "unit": ""
+        },
+        "type": "float"
+      },
+      "devicetype": "开闭机构",
+      "identifier": "db201_dbd50",
+      "index": 18,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "开闭减速箱温度",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 20,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBD54",
+        "originaltype": "float"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 65535,
+          "min": -65535,
+          "precision": 3,
+          "step": 0,
+          "unit": ""
+        },
+        "type": "float"
+      },
+      "devicetype": "开闭机构",
+      "identifier": "db201_dbd54",
+      "index": 19,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "减速箱压力",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 21,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX58.0",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无",
+          "1": "允许"
+        },
+        "type": "enum"
+      },
+      "devicetype": "开闭机构",
+      "identifier": "db201_dbx58_0",
+      "index": 20,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "闭斗允许",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 22,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX58.1",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无",
+          "1": "允许"
+        },
+        "type": "enum"
+      },
+      "devicetype": "开闭机构",
+      "identifier": "db201_dbx58_1",
+      "index": 21,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "开斗允许",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 23,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBD60",
+        "originaltype": "float"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 65535,
+          "min": -65535,
+          "precision": 3,
+          "step": 0,
+          "unit": "M"
+        },
+        "type": "float"
+      },
+      "devicetype": "小车机构",
+      "identifier": "db201_dbd60",
+      "index": 22,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "小车位置",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 24,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBW64",
+        "originaltype": "ushort"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 65535,
+          "min": -65535,
+          "precision": 3,
+          "step": 0,
+          "unit": ""
+        },
+        "type": "float"
+      },
+      "devicetype": "小车机构",
+      "identifier": "db201_dbw64",
+      "index": 23,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "小车电流",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 25,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBW66",
+        "originaltype": "ushort"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 65535,
+          "min": -65535,
+          "precision": 3,
+          "step": 0,
+          "unit": ""
+        },
+        "type": "float"
+      },
+      "devicetype": "小车机构",
+      "identifier": "db201_dbw66",
+      "index": 24,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "小车转速",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 26,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBD68",
+        "originaltype": "float"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 65535,
+          "min": -65535,
+          "precision": 3,
+          "step": 0,
+          "unit": ""
+        },
+        "type": "float"
+      },
+      "devicetype": "小车机构",
+      "identifier": "db201_dbd68",
+      "index": 25,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "小车温度",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 27,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX72.0",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无",
+          "1": "允许"
+        },
+        "type": "enum"
+      },
+      "devicetype": "小车机构",
+      "identifier": "db201_dbx72_0",
+      "index": 26,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "江侧运行允许",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 28,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX72.1",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无",
+          "1": "允许"
+        },
+        "type": "enum"
+      },
+      "devicetype": "小车机构",
+      "identifier": "db201_dbx72_1",
+      "index": 27,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "岸侧运行允许",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 29,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBD74",
+        "originaltype": "float"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 65535,
+          "min": -65535,
+          "precision": 3,
+          "step": 0,
+          "unit": ""
+        },
+        "type": "float"
+      },
+      "devicetype": "变幅机构",
+      "identifier": "db201_dbd74",
+      "index": 28,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "变幅角度",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 30,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBW78",
+        "originaltype": "ushort"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 65535,
+          "min": -65535,
+          "precision": 3,
+          "step": 0,
+          "unit": ""
+        },
+        "type": "float"
+      },
+      "devicetype": "变幅机构",
+      "identifier": "db201_dbw78",
+      "index": 29,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "变幅电流",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 31,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBW80",
+        "originaltype": "ushort"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 65535,
+          "min": -65535,
+          "precision": 3,
+          "step": 0,
+          "unit": ""
+        },
+        "type": "float"
+      },
+      "devicetype": "变幅机构",
+      "identifier": "db201_dbw80",
+      "index": 30,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "变幅转速",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 32,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBD82",
+        "originaltype": "float"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 65535,
+          "min": -65535,
+          "precision": 3,
+          "step": 0,
+          "unit": ""
+        },
+        "type": "float"
+      },
+      "devicetype": "变幅机构",
+      "identifier": "db201_dbd82",
+      "index": 31,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "变幅温度",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 33,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX86.0",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无",
+          "1": "允许"
+        },
+        "type": "enum"
+      },
+      "devicetype": "变幅机构",
+      "identifier": "db201_dbx86_0",
+      "index": 32,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "抬起允许",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 34,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX86.1",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无",
+          "1": "允许"
+        },
+        "type": "enum"
+      },
+      "devicetype": "变幅机构",
+      "identifier": "db201_dbx86_1",
+      "index": 33,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "放下允许",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 35,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBW88",
+        "originaltype": "ushort"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 65535,
+          "min": -65535,
+          "precision": 3,
+          "step": 0,
+          "unit": ""
+        },
+        "type": "float"
+      },
+      "devicetype": "大车机构",
+      "identifier": "db201_dbw88",
+      "index": 34,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "大车1电流",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 36,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBW90",
+        "originaltype": "ushort"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 65535,
+          "min": -65535,
+          "precision": 3,
+          "step": 0,
+          "unit": ""
+        },
+        "type": "float"
+      },
+      "devicetype": "大车机构",
+      "identifier": "db201_dbw90",
+      "index": 35,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "大车1转速",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 37,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBW92",
+        "originaltype": "ushort"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 65535,
+          "min": -65535,
+          "precision": 3,
+          "step": 0,
+          "unit": ""
+        },
+        "type": "float"
+      },
+      "devicetype": "大车机构",
+      "identifier": "db201_dbw92",
+      "index": 36,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "大车2电流",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 38,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBW94",
+        "originaltype": "ushort"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 65535,
+          "min": -65535,
+          "precision": 3,
+          "step": 0,
+          "unit": ""
+        },
+        "type": "float"
+      },
+      "devicetype": "大车机构",
+      "identifier": "db201_dbw94",
+      "index": 37,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "大车2转速",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 39,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX96.0",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无",
+          "1": "允许"
+        },
+        "type": "enum"
+      },
+      "devicetype": "大车机构",
+      "identifier": "db201_dbx96_0",
+      "index": 38,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "前行允许",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 40,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX96.1",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无",
+          "1": "允许"
+        },
+        "type": "enum"
+      },
+      "devicetype": "大车机构",
+      "identifier": "db201_dbx96_1",
+      "index": 39,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "后行允许",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 41,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX96.2",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无",
+          "1": "前行"
+        },
+        "type": "enum"
+      },
+      "devicetype": "大车页面",
+      "identifier": "db201_dbx96_2",
+      "index": 40,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "大车前行",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 42,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX96.3",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无",
+          "1": "后退"
+        },
+        "type": "enum"
+      },
+      "devicetype": "大车页面",
+      "identifier": "db201_dbx96_3",
+      "index": 41,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "大车后退",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 43,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX96.4",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无",
+          "1": "已锚定"
+        },
+        "type": "enum"
+      },
+      "devicetype": "大车页面",
+      "identifier": "db201_dbx96_4",
+      "index": 42,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "岸侧锚定限位",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 44,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX96.5",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无",
+          "1": "已锚定"
+        },
+        "type": "enum"
+      },
+      "devicetype": "大车页面",
+      "identifier": "db201_dbx96_5",
+      "index": 43,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "江侧锚定限位",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 45,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX96.6",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "未系",
+          "1": "系住"
+        },
+        "type": "enum"
+      },
+      "devicetype": "大车页面",
+      "identifier": "db201_dbx96_6",
+      "index": 44,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "岸侧防风系缆限位1",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 46,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX96.7",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "未系",
+          "1": "系住"
+        },
+        "type": "enum"
+      },
+      "devicetype": "大车页面",
+      "identifier": "db201_dbx96_7",
+      "index": 45,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "岸侧防风系缆限位2",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 47,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX97.0",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "未系",
+          "1": "系住"
+        },
+        "type": "enum"
+      },
+      "devicetype": "大车页面",
+      "identifier": "db201_dbx97_0",
+      "index": 46,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "江侧防风系缆限位1",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 48,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX97.1",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "未系",
+          "1": "系住"
+        },
+        "type": "enum"
+      },
+      "devicetype": "大车页面",
+      "identifier": "db201_dbx97_1",
+      "index": 47,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "江侧防风系缆限位2",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 49,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX97.2",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "限位动作",
+          "1": "正常"
+        },
+        "type": "enum"
+      },
+      "devicetype": "小车页面",
+      "identifier": "db201_dbx97_2",
+      "index": 48,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "小车海侧停止限位",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 50,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX97.3",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "限位动作",
+          "1": "正常"
+        },
+        "type": "enum"
+      },
+      "devicetype": "小车页面",
+      "identifier": "db201_dbx97_3",
+      "index": 49,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "小车海侧减速限位",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 51,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX97.4",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "限位动作",
+          "1": "正常"
+        },
+        "type": "enum"
+      },
+      "devicetype": "小车页面",
+      "identifier": "db201_dbx97_4",
+      "index": 50,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "小车海侧减速检测",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 52,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX97.5",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "限位动作",
+          "1": "正常"
+        },
+        "type": "enum"
+      },
+      "devicetype": "小车页面",
+      "identifier": "db201_dbx97_5",
+      "index": 51,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "小车料斗减速限位",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 53,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX97.6",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "限位动作",
+          "1": "正常"
+        },
+        "type": "enum"
+      },
+      "devicetype": "小车页面",
+      "identifier": "db201_dbx97_6",
+      "index": 52,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "小车料斗停止限位",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 54,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX97.7",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无",
+          "1": "前行"
+        },
+        "type": "enum"
+      },
+      "devicetype": "小车页面",
+      "identifier": "db201_dbx97_7",
+      "index": 53,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "小车前进信号",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 55,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX98.0",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无",
+          "1": "后退"
+        },
+        "type": "enum"
+      },
+      "devicetype": "小车页面",
+      "identifier": "db201_dbx98_0",
+      "index": 54,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "小车后退信号",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 56,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX98.1",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无",
+          "1": "已锚定"
+        },
+        "type": "enum"
+      },
+      "devicetype": "小车页面",
+      "identifier": "db201_dbx98_1",
+      "index": 55,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "小车料斗锚定限位",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 57,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX98.2",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无",
+          "1": "已锚定"
+        },
+        "type": "enum"
+      },
+      "devicetype": "小车页面",
+      "identifier": "db201_dbx98_2",
+      "index": 56,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "小车后大梁锚定限位",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 58,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX98.3",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "限位动作",
+          "1": "正常"
+        },
+        "type": "enum"
+      },
+      "devicetype": "小车页面",
+      "identifier": "db201_dbx98_3",
+      "index": 57,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "变幅放平限位",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 59,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX98.4",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无",
+          "1": "上升"
+        },
+        "type": "enum"
+      },
+      "devicetype": "起升页面",
+      "identifier": "db201_dbx98_4",
+      "index": 58,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "抓斗上升信号",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 60,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX98.5",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无",
+          "1": "下降"
+        },
+        "type": "enum"
+      },
+      "devicetype": "起升页面",
+      "identifier": "db201_dbx98_5",
+      "index": 59,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "抓斗下降信号",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 61,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX98.6",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "限位动作",
+          "1": "正常"
+        },
+        "type": "enum"
+      },
+      "devicetype": "起升页面",
+      "identifier": "db201_dbx98_6",
+      "index": 60,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "起升跳绳限位1",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 62,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX98.7",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "限位动作",
+          "1": "正常"
+        },
+        "type": "enum"
+      },
+      "devicetype": "起升页面",
+      "identifier": "db201_dbx98_7",
+      "index": 61,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "起升跳绳限位2",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 63,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX99.0",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "限位动作",
+          "1": "正常"
+        },
+        "type": "enum"
+      },
+      "devicetype": "起升页面",
+      "identifier": "db201_dbx99_0",
+      "index": 62,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "起升超速开关1",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 64,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX99.1",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "限位动作",
+          "1": "正常"
+        },
+        "type": "enum"
+      },
+      "devicetype": "起升页面",
+      "identifier": "db201_dbx99_1",
+      "index": 63,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "起升超速开关2",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 65,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX99.2",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无",
+          "1": "开斗"
+        },
+        "type": "enum"
+      },
+      "devicetype": "开闭页面",
+      "identifier": "db201_dbx99_2",
+      "index": 64,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "闭斗指令",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 66,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX99.3",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无",
+          "1": "闭斗"
+        },
+        "type": "enum"
+      },
+      "devicetype": "开闭页面",
+      "identifier": "db201_dbx99_3",
+      "index": 65,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "开斗指令",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 67,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX99.4",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "限位动作",
+          "1": "正常"
+        },
+        "type": "enum"
+      },
+      "devicetype": "开闭页面",
+      "identifier": "db201_dbx99_4",
+      "index": 66,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "开闭跳绳限位1",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 68,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX99.5",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "限位动作",
+          "1": "正常"
+        },
+        "type": "enum"
+      },
+      "devicetype": "开闭页面",
+      "identifier": "db201_dbx99_5",
+      "index": 67,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "开闭跳绳限位2",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 69,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX99.6",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "限位动作",
+          "1": "正常"
+        },
+        "type": "enum"
+      },
+      "devicetype": "开闭页面",
+      "identifier": "db201_dbx99_6",
+      "index": 68,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "开闭超速开关1",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 70,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX99.7",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "限位动作",
+          "1": "正常"
+        },
+        "type": "enum"
+      },
+      "devicetype": "开闭页面",
+      "identifier": "db201_dbx99_7",
+      "index": 69,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "开闭超速开关2",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 71,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX100.0",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "限位动作",
+          "1": "已闭合"
+        },
+        "type": "enum"
+      },
+      "devicetype": "开闭页面",
+      "identifier": "db201_dbx100_0",
+      "index": 70,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "抓斗已闭合",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 72,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX100.1",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "限位动作",
+          "1": "已打开"
+        },
+        "type": "enum"
+      },
+      "devicetype": "开闭页面",
+      "identifier": "db201_dbx100_1",
+      "index": 71,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "抓斗已打开",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 73,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX100.2",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "限位动作",
+          "1": "正常"
+        },
+        "type": "enum"
+      },
+      "devicetype": "变幅页面",
+      "identifier": "db201_dbx100_2",
+      "index": 72,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "变幅松绳限位1#",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 74,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX100.3",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "限位动作",
+          "1": "正常"
+        },
+        "type": "enum"
+      },
+      "devicetype": "变幅页面",
+      "identifier": "db201_dbx100_3",
+      "index": 73,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "变幅松绳限位2#",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 75,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX100.4",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "限位动作",
+          "1": "正常"
+        },
+        "type": "enum"
+      },
+      "devicetype": "变幅页面",
+      "identifier": "db201_dbx100_4",
+      "index": 74,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "变幅卷筒超速",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 76,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX100.5",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "限位动作",
+          "1": "正常"
+        },
+        "type": "enum"
+      },
+      "devicetype": "变幅页面",
+      "identifier": "db201_dbx100_5",
+      "index": 75,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "变幅电机超速",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 77,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX100.6",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无",
+          "1": "抬起"
+        },
+        "type": "enum"
+      },
+      "devicetype": "变幅页面",
+      "identifier": "db201_dbx100_6",
+      "index": 76,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "变幅抬起信号",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 78,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX100.7",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无",
+          "1": "放下"
+        },
+        "type": "enum"
+      },
+      "devicetype": "变幅页面",
+      "identifier": "db201_dbx100_7",
+      "index": 77,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "变幅放下信号",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 79,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX101.0",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无",
+          "1": "左行"
+        },
+        "type": "enum"
+      },
+      "devicetype": "卷盘页面",
+      "identifier": "db201_dbx101_0",
+      "index": 78,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "电缆卷盘左行信号",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 80,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX101.1",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无",
+          "1": "右行"
+        },
+        "type": "enum"
+      },
+      "devicetype": "卷盘页面",
+      "identifier": "db201_dbx101_1",
+      "index": 79,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "电缆卷盘右行信号",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 81,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX101.2",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无",
+          "1": "限位动作"
+        },
+        "type": "enum"
+      },
+      "devicetype": "辅助页面",
+      "identifier": "db201_dbx101_2",
+      "index": 80,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "接料板上限位",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 82,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX101.3",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无",
+          "1": "限位动作"
+        },
+        "type": "enum"
+      },
+      "devicetype": "辅助页面",
+      "identifier": "db201_dbx101_3",
+      "index": 81,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "接料板下限位",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 83,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX101.4",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无",
+          "1": "限位动作"
+        },
+        "type": "enum"
+      },
+      "devicetype": "辅助页面",
+      "identifier": "db201_dbx101_4",
+      "index": 82,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "后挡门上限位",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 84,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX101.5",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无",
+          "1": "限位动作"
+        },
+        "type": "enum"
+      },
+      "devicetype": "辅助页面",
+      "identifier": "db201_dbx101_5",
+      "index": 83,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "后挡门下限位",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 85,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX101.6",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无",
+          "1": "限位动作"
+        },
+        "type": "enum"
+      },
+      "devicetype": "辅助页面",
+      "identifier": "db201_dbx101_6",
+      "index": 84,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "三通A侧限位",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 86,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX101.7",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无",
+          "1": "限位动作"
+        },
+        "type": "enum"
+      },
+      "devicetype": "辅助页面",
+      "identifier": "db201_dbx101_7",
+      "index": 85,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "三通B侧限位",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 87,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX102.0",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无",
+          "1": "限位动作"
+        },
+        "type": "enum"
+      },
+      "devicetype": "辅助页面",
+      "identifier": "db201_dbx102_0",
+      "index": 86,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "料斗闸门上停限位",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 88,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX102.1",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无",
+          "1": "限位动作"
+        },
+        "type": "enum"
+      },
+      "devicetype": "辅助页面",
+      "identifier": "db201_dbx102_1",
+      "index": 87,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "料斗闸门下停限位",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 89,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX102.2",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无",
+          "1": "有信号"
+        },
+        "type": "enum"
+      },
+      "devicetype": "辅助页面",
+      "identifier": "db201_dbx102_2",
+      "index": 88,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "除尘系统运行信号",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 90,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX102.3",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无",
+          "1": "江侧"
+        },
+        "type": "enum"
+      },
+      "devicetype": "司机室页面",
+      "identifier": "db201_dbx102_3",
+      "index": 89,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "司机室江侧",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 91,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX102.4",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无",
+          "1": "岸侧"
+        },
+        "type": "enum"
+      },
+      "devicetype": "司机室页面",
+      "identifier": "db201_dbx102_4",
+      "index": 90,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "司机室岸侧",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 92,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX102.5",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无",
+          "1": "已锚定"
+        },
+        "type": "enum"
+      },
+      "devicetype": "司机室页面",
+      "identifier": "db201_dbx102_5",
+      "index": 91,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "司机室锚定限位",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 93,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX102.6",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无",
+          "1": "限位动作"
+        },
+        "type": "enum"
+      },
+      "devicetype": "计量斗页面",
+      "identifier": "db201_dbx102_6",
+      "index": 92,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "计量拱门1打开限位",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 94,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX102.7",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无",
+          "1": "限位动作"
+        },
+        "type": "enum"
+      },
+      "devicetype": "计量斗页面",
+      "identifier": "db201_dbx102_7",
+      "index": 93,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "计量拱门2打开限位",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 95,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX103.0",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无",
+          "1": "限位动作"
+        },
+        "type": "enum"
+      },
+      "devicetype": "计量斗页面",
+      "identifier": "db201_dbx103_0",
+      "index": 94,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "计量拱门3打开限位",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 96,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX103.1",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无",
+          "1": "限位动作"
+        },
+        "type": "enum"
+      },
+      "devicetype": "计量斗页面",
+      "identifier": "db201_dbx103_1",
+      "index": 95,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "计量拱门4打开限位",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 97,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX103.2",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无",
+          "1": "限位动作"
+        },
+        "type": "enum"
+      },
+      "devicetype": "计量斗页面",
+      "identifier": "db201_dbx103_2",
+      "index": 96,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "计量拱门1关闭限位",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 98,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX103.3",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无",
+          "1": "限位动作"
+        },
+        "type": "enum"
+      },
+      "devicetype": "计量斗页面",
+      "identifier": "db201_dbx103_3",
+      "index": 97,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "计量拱门2关闭限位",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 99,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX103.4",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无",
+          "1": "限位动作"
+        },
+        "type": "enum"
+      },
+      "devicetype": "计量斗页面",
+      "identifier": "db201_dbx103_4",
+      "index": 98,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "计量拱门3关闭限位",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 100,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX103.5",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无",
+          "1": "限位动作"
+        },
+        "type": "enum"
+      },
+      "devicetype": "计量斗页面",
+      "identifier": "db201_dbx103_5",
+      "index": 99,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "计量拱门4关闭限位",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 101,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBD104",
+        "originaltype": "float"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 65535,
+          "min": -65535,
+          "precision": 3,
+          "step": 0,
+          "unit": "t"
+        },
+        "type": "float"
+      },
+      "devicetype": "计量斗页面",
+      "identifier": "db201_dbd104",
+      "index": 100,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "当前重量",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 102,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBD108",
+        "originaltype": "float"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 65535,
+          "min": -65535,
+          "precision": 3,
+          "step": 0,
+          "unit": "t"
+        },
+        "type": "float"
+      },
+      "devicetype": "计量斗页面",
+      "identifier": "db201_dbd108",
+      "index": 101,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "前一斗重",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 103,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBD112",
+        "originaltype": "float"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 65535,
+          "min": -65535,
+          "precision": 3,
+          "step": 0,
+          "unit": ""
+        },
+        "type": "float"
+      },
+      "devicetype": "计量斗页面",
+      "identifier": "db201_dbd112",
+      "index": 102,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "斗小计（次）",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 104,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBD116",
+        "originaltype": "float"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 65535,
+          "min": -65535,
+          "precision": 3,
+          "step": 0,
+          "unit": "t"
+        },
+        "type": "float"
+      },
+      "devicetype": "计量斗页面",
+      "identifier": "db201_dbd116",
+      "index": 103,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "小计值",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 105,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBD120",
+        "originaltype": "float"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 65535,
+          "min": -65535,
+          "precision": 3,
+          "step": 0,
+          "unit": ""
+        },
+        "type": "float"
+      },
+      "devicetype": "计量斗页面",
+      "identifier": "db201_dbd120",
+      "index": 104,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "斗总计（次）",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 106,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBD124",
+        "originaltype": "float"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "max": 65535,
+          "min": -65535,
+          "precision": 3,
+          "step": 0,
+          "unit": "t"
+        },
+        "type": "float"
+      },
+      "devicetype": "计量斗页面",
+      "identifier": "db201_dbd124",
+      "index": 105,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "总计值",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 107,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX128.0",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无",
+          "1": "采用"
+        },
+        "type": "enum"
+      },
+      "devicetype": "计量斗页面",
+      "identifier": "db201_dbx128_0",
+      "index": 106,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "是否采用计量模式",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 108,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX128.1",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无",
+          "1": "运行"
+        },
+        "type": "enum"
+      },
+      "devicetype": "其他",
+      "identifier": "db201_dbx128_1",
+      "index": 107,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "1#卸船机运行信号（发与中控）",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 109,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX128.2",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无",
+          "1": "待机"
+        },
+        "type": "enum"
+      },
+      "devicetype": "其他",
+      "identifier": "db201_dbx128_2",
+      "index": 108,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "1#卸船机待机信号（发与中控）",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 110,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX128.3",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无",
+          "1": "故障"
+        },
+        "type": "enum"
+      },
+      "devicetype": "其他",
+      "identifier": "db201_dbx128_3",
+      "index": 109,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "1#卸船机故障信号（发与中控）",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 111,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX128.4",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无",
+          "1": "打开"
+        },
+        "type": "enum"
+      },
+      "devicetype": "其他",
+      "identifier": "db201_dbx128_4",
+      "index": 110,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "照明打开",
+      "required": true
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 3,
+        "iscount": "0",
+        "offset": 0,
+        "order": 112,
+        "protocol": "S7",
+        "rate": 1,
+        "round": "all",
+        "strategy": "3"
+      },
+      "dataSource": {
+        "_dlinkindex": "",
+        "address": "DB201.DBX128.5",
+        "originaltype": "bool"
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "无",
+          "1": "关闭"
+        },
+        "type": "enum"
+      },
+      "devicetype": "其他",
+      "identifier": "db201_dbx128_5",
+      "index": 111,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "照明关闭",
+      "required": true
+    }
+  ]
+}

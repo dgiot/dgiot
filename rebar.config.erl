@@ -225,9 +225,20 @@ overlay_vars_rel(RelType) ->
         , {enable_plugin_dgiot_modbus, true}
         , {enable_plugin_dgiot_ffmpeg, true}
         , {enable_plugin_dgiot_gb26875, true}
-    
+        , {enable_plugin_dgiot_hjt212, true}
+        , {enable_plugin_dgiot_bacnet, true}
+        , {enable_plugin_dgiot_factory, true}
         , {enable_plugin_dgiot_printer, true}
         , {enable_plugin_dgiot_location, true}
+        , {enable_plugin_dgiot_drone, true}
+        , {enable_plugin_dgiot_edge, true}
+        , {enable_plugin_dgiot_plc, true}
+        , {enable_plugin_dgiot_aidrive, true}
+        , {enable_plugin_dgiot_cnooc, true}
+        , {enable_plugin_dgiot_sophon, true}
+        , {enable_plugin_dgiot_rtsp2ws, true}
+        , {enable_plugin_dgiot_wpms, true}
+        , {enable_plugin_dgiot_hikvision, true}
         , {vm_args_file, VmArgs}
     ].
 
@@ -344,9 +355,20 @@ relx_plugin_apps_per_rel(cloud) ->
         , dgiot_modbus
         , dgiot_ffmpeg
         , dgiot_gb26875
-      
+        , dgiot_hjt212
+        , dgiot_bacnet
+        , dgiot_factory
         , dgiot_printer
         , dgiot_location
+        , dgiot_drone
+        , dgiot_edge
+        , dgiot_plc
+        , dgiot_aidrive
+        , dgiot_cnooc
+        , dgiot_sophon
+        , dgiot_rtsp2ws
+        , dgiot_wpms
+        , dgiot_hikvision
     ];
 relx_plugin_apps_per_rel(edge) ->
     [].
