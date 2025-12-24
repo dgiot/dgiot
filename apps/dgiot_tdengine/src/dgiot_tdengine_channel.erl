@@ -51,7 +51,7 @@
                         order => 1,
                         type => string,
                         required => true,
-                        default => <<"192.168.223.93">>,
+                        default => <<"127.0.0.1">>,
                         title => #{
                                    zh => <<"服务器地址"/utf8>>
                                   },
@@ -150,7 +150,6 @@ start(ChannelId,
         <<"username">> := UserName,
         <<"password">> := Password
        } = Cfg) ->
-    % io:format("~s ~p ~p.~n", [?FILE, ?LINE, Ip]),
     dgiot_tdengine_http:start(),
     Keep = min(maps:get(<<"keep">>, Cfg, 365 * 5), 365 * 5),
     dgiot_channelx:add(?TYPE,
@@ -217,9 +216,6 @@ handle_message(init, #state{id = ChannelId, env = Config} = State) ->
     dgiot_data:insert({?TYPE, ChannelId, config}, Config),
     case dgiot_bridge:get_products(ChannelId) of
         {ok, _, ProductIds} ->
-
-            % io:format("~s ~p ~p ~p.~n", [?FILE, ?LINE, ChannelId, ProductIds]),
-
             NewProducts = lists:foldl(fun(X, Acc) ->
                                               dgiot_data:insert({tdchannel_product, binary_to_atom(X)}, ChannelId),
                                               save_productid_to_ets(X, ChannelId),
@@ -329,63 +325,48 @@ check_init(ChannelId, ProductIds, Config) ->
 
 
 check_database(ChannelId, ProductId, #{<<"database">> := DataBase, <<"keep">> := Keep} = Config) ->
-    % io:format("~s ~p DataBase = ~p.~n", [?FILE, ?LINE, DataBase]),
     case dgiot_tdengine:create_database(ChannelId, DataBase, Keep) of
         {ok, _} ->
-            % io:format("~s ~p ~n", [?FILE, ?LINE]),
             ?LOG(debug, "Check database ChannelId:~p, ProductId:~p, Config:~p", [ChannelId, ProductId, Config]),
             create_table(ChannelId, ProductId, Config);
         {error, <<"channel not find">>} ->
-            io:format("~s ~p ~n", [?FILE, ?LINE]),
             ok;
         {error, #{<<"code">> := 10, <<"desc">> := <<"authentication failure">>}} ->
-            io:format("~s ~p ~n", [?FILE, ?LINE]),
             dgiot_bridge:send_log(ChannelId, "Check database Error, ChannelId:~p, ProductId:~p, Reason:authentication failure", [ChannelId, ProductId]),
             timer:sleep(5000),
             check_database(ChannelId, ProductId, Config);
         _ ->
-            % io:format("~s ~p ~p ~p ~n", [?FILE, ?LINE, ChannelId, ProductId]),
             ok
     end.
 
 
 create_table(ChannelId, ProductId, _Config) ->
-    % io:format("~s ~p ~n", [?FILE, ?LINE]),
     case dgiot_bridge:get_product_info(ProductId) of
         {ok, Product} ->
-            % io:format("~s ~p ~p ~n", [?FILE, ?LINE, ProductId]),
             case dgiot_tdengine_schema:get_schema(ChannelId, Product) of
                 ignore ->
-                    % io:format("~s ~p ~p ~n", [?FILE, ?LINE, ProductId]),
                     ?LOG(debug, "Create Table ignore, ChannelId:~p, ProductId:~p", [ChannelId, Product]);
                 Schema ->
                     TableName = ?Table(ProductId),
-                    % io:format("~s ~p ~p ~n", [?FILE, ?LINE, TableName]),
                     case dgiot_tdengine:create_schemas(ChannelId, Schema#{<<"tableName">> => TableName}) of
                         {error, Reason} ->
-                            % io:format("~s ~p ~n", [?FILE, ?LINE]),
                             ?LOG(error, "Create Table[~s] Fail, Schema:~p, Reason:~p", [TableName, Schema, Reason]);
                         {ok, #{<<"affected_rows">> := _}} ->
-                            % io:format("~s ~p ~n", [?FILE, ?LINE]),
                             %% @todo 一个产品只能挂一个TDengine?
                             dgiot_data:insert({ProductId, ?TYPE}, ChannelId),
                             ?LOG(debug, "Create Table[~s] Succ, Schema:~p", [TableName, Schema]);
                         {ok, #{<<"code">> := 0, <<"column_meta">> := _}} ->
-                            % io:format("~s ~p ~n", [?FILE, ?LINE]),
                             %% @todo 一个产品只能挂一个TDengine?
                             dgiot_data:insert({ProductId, ?TYPE}, ChannelId),
                             ?LOG(debug, "Create Table[~s] Succ, Schema:~p", [TableName, Schema]);
                         {ok, #{<<"code">> := 904, <<"desc">> := _Desc}} ->
-                            % io:format("~s ~p ~n", [?FILE, ?LINE]),
                             %%                            io:format("~p ~p Desc ~p ~n Schema = ~p.~n", [?FILE, ?LINE, _Desc, Schema#{<<"tableName">> => TableName}]),
                             ok;
                         {ok, #{<<"code">> := Code, <<"desc">> := Desc}} ->
-                            % io:format("~s ~p ~n", [?FILE, ?LINE]),
                             ?LOG(debug, "Create Table[~s] failed, Code:~p Desc:~p", [TableName, Code, Desc])
                     end
             end;
         {error, Reason} ->
-            io:format("~s ~p ~n", [?FILE, ?LINE]),
             ?LOG(error, "Create Table Error, ~p ~p", [Reason, ProductId])
     end.
 
