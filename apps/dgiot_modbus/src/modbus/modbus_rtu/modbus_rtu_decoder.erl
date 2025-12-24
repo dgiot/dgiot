@@ -119,10 +119,11 @@ extract_data_fragment(#{<<"dataSource">> := DataSource}, Data) ->
     case DataSource of
         #{<<"registersnumber">> := Num, <<"originaltype">> := Originaltype} ->
             IntNum = dgiot_utils:to_int(Num),
-            IntLen = modbus_rtu_utils:get_len(IntNum, Originaltype),
-            case byte_size(Data) >= IntLen of
+            % get_len/2 现在对于bit类型返回字节数，对于其他类型也返回字节数
+            RequiredBytes = modbus_rtu_utils:get_len(IntNum, Originaltype),
+            case byte_size(Data) >= RequiredBytes of
                 true ->
-                    <<Fragment:IntLen/binary, _/binary>> = Data,
+                    <<Fragment:RequiredBytes/binary, _/binary>> = Data,
                     {ok, Fragment};
                 false ->
                     {error, insufficient_data}
@@ -130,11 +131,26 @@ extract_data_fragment(#{<<"dataSource">> := DataSource}, Data) ->
         #{<<"originaltype">> := Originaltype} ->
             case Originaltype of
                 <<"bit">> -> 
-                    case byte_size(Data) >= 1 of
-                        true -> 
-                            <<Fragment:1/binary, _/binary>> = Data,
-                            {ok, Fragment};
-                        false -> {error, insufficient_data}
+                    % 对于bit类型，需要根据registersnumber计算长度
+                    case DataSource of
+                        #{<<"registersnumber">> := Num} ->
+                            IntNum = dgiot_utils:to_int(Num),
+                            IntLen = modbus_rtu_utils:get_len(IntNum, Originaltype),
+                            ByteLen = (IntLen + 7) div 8,  % 位数转换为字节数
+                            case byte_size(Data) >= ByteLen of
+                                true -> 
+                                    <<Fragment:ByteLen/binary, _/binary>> = Data,
+                                    {ok, Fragment};
+                                false -> {error, insufficient_data}
+                            end;
+                        _ ->
+                            % 没有registersnumber，默认提取1字节
+                            case byte_size(Data) >= 1 of
+                                true -> 
+                                    <<Fragment:1/binary, _/binary>> = Data,
+                                    {ok, Fragment};
+                                false -> {error, insufficient_data}
+                            end
                     end;
                 <<"raw">> -> 
                     {ok, Data};
@@ -339,8 +355,8 @@ format_value(Buff, #{<<"accessMode">> := <<"rw">>, <<"dataSource">> := DataSourc
 
 format_value(Buff, #{<<"identifier">> := BitIdentifier,
     <<"dataSource">> := #{<<"originaltype">> := <<"bit">>}}, Props) ->
-    <<BitValue:8, _/binary>> = Buff,
-    Values = process_calculated_properties(Props, Buff, BitIdentifier, BitValue, []),
+    % 对于bit类型，返回整个二进制数据，让process_calculated_properties处理偏移量
+    Values = process_calculated_properties(Props, Buff, BitIdentifier, Buff, []),
     {map, Values};
 
 format_value(Buff, #{<<"identifier">> := RawIdentifier,

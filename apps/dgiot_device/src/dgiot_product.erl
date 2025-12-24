@@ -82,6 +82,10 @@ save([]) ->
     ok;
 
 save([Product | Products]) ->
+    save(Product),
+    save(Products);
+
+save(Product) ->
     Product1 = format_product(Product),
     #{<<"productId">> := ProductId} = Product1,
     dgiot_data:delete(?DGIOT_PRODUCT, ProductId),
@@ -91,10 +95,8 @@ save([Product | Products]) ->
     dgiot_product_channel:save_channel(ProductId),
     dgiot_product_channel:save_tdchannel(ProductId),
     dgiot_product_channel:save_taskchannel(ProductId),
-    hook_topic(Product),
-    %%    dgiot_product_enum:save_product_enum(ProductId),
-    save(Products).
-
+    hook_topic(Product).
+    %%   dgiot_product_enum:save_product_enum(ProductId).
 
 put(Product) ->
     ProductId = maps:get(<<"objectId">>, Product),
@@ -105,7 +107,6 @@ put(Product) ->
         _ ->
             pass
     end.
-
 
 delete(ProductId) ->
     dgiot_data:delete(?DGIOT_PRODUCT, ProductId).

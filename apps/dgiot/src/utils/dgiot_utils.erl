@@ -14,131 +14,209 @@
 %% limitations under the License.
 %%--------------------------------------------------------------------
 
+%%%===================================================================
+%%% @doc DG-IoT 系统级公共实用函数网关
+%%%
+%%% 本模块提供系统级的公共实用函数，按功能分类组织，便于维护和使用。
+%%%
+%%% 功能分类：
+%%% 1. 类型转换函数 (Type Conversion)
+%%% 2. 字符串处理函数 (String Manipulation)
+%%% 3. 二进制处理函数 (Binary Manipulation)
+%%% 4. 网络函数 (Network Functions)
+%%% 5. 加密和哈希函数 (Encryption & Hash)
+%%% 6. 数学和统计函数 (Math & Statistics)
+%%% 7. 文件操作函数 (File Operations)
+%%% 8. 进程和消息函数 (Process & Message)
+%%% 9. 数据验证函数 (Data Validation)
+%%% 10. 工具函数 (Utility Functions)
+%%%===================================================================
+
 -module(dgiot_utils).
 -author("johnliu").
 -include("dgiot.hrl").
 -include_lib("dgiot/include/logger.hrl").
+
+%%%===================================================================
+%%% 类型转换函数 (Type Conversion)
+%%%===================================================================
 -export([
-    send_fsm/3
-    , send_msg/2
-    , wait_request/2
-    , get_env/1
-    , binary_to_hex/1
-    , hex_to_binary/1
-    , hexstr2bin/1
-    , bin2hexstr_A_F/1
-    , bin2hexstr_a_f/1
-    , to_utf8/2
-    , to_md5/1
-    , to_hex/1
-    , to_binary/1
-    , to_atom/1
-    , to_int/1
-    , to_list/1
-    , to_bool/1
-    , to_float/1
-    , to_float/2
-    , to_map/1
-    , list_to_map/1
-    , tokens/2
-    , to_term/1
-    , is_like/2
-    , is_alive/1
-    , join/2
-    , join/3
-    , join/4
-    , append/2
-    , append/3
-    , get_val/2
-    , get_val/3
-    , check_value_is_null/1
-    , check_val/3
-    , open_dets/1
-    , open_dets/2
-    , bits_to_binary/1
-    , binary_to_bits/1
-    , get_binary_bits_n/2
-    , set_binary_bits_n/3
-    , binary_bits_sum/1
-    , binary_bits_zero_list/1
-    , binary_bits_nozero_list/1
-    , binary_bits_zip/1
-    , zip_bin/1
-    , is_in_binary/2
-    , binary_start_with/2
-    , is_number/1
-    , modbus_crc16/1
-    , xor_sum/1
-    , get_parity/1
-    , crc16/1
-    , crc16_ccitt/1
-    , crc16_h/1
-    , add_33h/1
-    , sub_33h/1
-    , sub_value/1
-    , add_value/1
-    , hash/1
-    , hash/2
-    , hash/3
-    , hash/4
-    , hash_2/1
-    , hash_2/2
-    , hash_2/3
-    , hash_2/4
-    , squotes_wrapped/1
-    , round/2
-    , read/3
-    , rate/2
-    , merge_maps/1
-    , make_error_response/3
-    , new_pns/1
-    , new_pns/3
-    , format/2
-    , guid/0
-    , new_counter/2
-    , update_counter/1
-    , parse_objectid/0
-    , shuffle/1
-    , split_zetag/1
-    , unique_1/1
-    , unique_2/1
-    , string2value/1
-    , get_file/3
-    , get_JsonFile/2
-    , post_file/2
-    , random/0
-%% network start
-    , get_hostname/0
-    , get_ip/1
-    , get_port/1
-    , get_natip/0
-    , get_wlanip/0
-    , get_computerconfig/0
-    , get_macs/0
-    , get_ipbymac/1
-    , get_macbyip/1
-    , get_ifaddrs/0
-    , get_ifaddr/1
-    , get_ifip/1
-    , ping_all/1
-    , ping_all/0
-    , get_ipbymac/2
-    , get_ipv4/1
-    , get_ipv6/1
-    , resolve/1
-    , get_url_path/1
-    , get_ports/0
-    , check_port/1
-% network end
-    , trim_string/1
-    , gzip/1
-    , reverse/1
-    , is_phone/1
-    , is_email/1
-    , get_mock/2
-    , write_mock/3
-    , variance/2
-    , find_median/1
+    to_binary/1,     %% 转换为二进制
+    to_atom/1,       %% 转换为原子
+    to_int/1,        %% 转换为整数
+    to_list/1,       %% 转换为列表
+    to_bool/1,       %% 转换为布尔值
+    to_float/1,      %% 转换为浮点数
+    to_float/2,      %% 转换为浮点数（指定精度）
+    to_map/1,        %% 转换为映射
+    list_to_map/1,   %% 列表转换为映射
+    to_term/1,       %% 字符串转换为Erlang项式
+    to_utf8/2        %% 转换为UTF-8编码
+]).
+
+%%%===================================================================
+%%% 字符串处理函数 (String Manipulation)
+%%%===================================================================
+-export([
+    binary_to_hex/1,     %% 二进制转十六进制字符串
+    hex_to_binary/1,     %% 十六进制字符串转二进制
+    hexstr2bin/1,        %% 十六进制字符串转二进制（别名）
+    bin2hexstr_A_F/1,    %% 二进制转十六进制字符串（大写）
+    bin2hexstr_a_f/1,    %% 二进制转十六进制字符串（小写）
+    to_hex/1,           %% 转换为十六进制字符串
+    trim_string/1,      %% 去除字符串空白字符
+    tokens/2,           %% 字符串分割
+    join/2,             %% 列表连接为字符串
+    join/3,             %% 列表连接为字符串（带修剪）
+    join/4,             %% 列表连接为字符串（带转换函数）
+    format/2,           %% 格式化字符串
+    squotes_wrapped/1,  %% 添加单引号包装
+    reverse/1           %% 反转字符串/二进制
+]).
+
+%%%===================================================================
+%%% 二进制处理函数 (Binary Manipulation)
+%%%===================================================================
+-export([
+    bits_to_binary/1,          %% 位列表转二进制
+    binary_to_bits/1,          %% 二进制转位列表
+    get_binary_bits_n/2,       %% 获取二进制指定位
+    set_binary_bits_n/3,       %% 设置二进制指定位
+    binary_bits_sum/1,         %% 计算二进制位总和
+    binary_bits_zero_list/1,   %% 获取二进制零位列表
+    binary_bits_nozero_list/1, %% 获取二进制非零位列表
+    binary_bits_zip/1,         %% 压缩二进制位
+    zip_bin/1,                 %% 压缩二进制（去除前导零）
+    is_in_binary/2,            %% 检查二进制是否包含子串
+    binary_start_with/2,       %% 检查二进制是否以指定前缀开头
+    is_hex_string/1            %% 检查是否为十六进制字符串
+]).
+
+%%%===================================================================
+%%% 网络函数 (Network Functions)
+%%%===================================================================
+-export([
+    get_hostname/0,       %% 获取主机名
+    get_ip/1,             %% 获取IP地址
+    get_port/1,           %% 获取端口号
+    get_natip/0,          %% 获取NAT IP地址
+    get_wlanip/0,         %% 获取WLAN IP地址
+    get_computerconfig/0, %% 获取计算机配置
+    get_macs/0,           %% 获取MAC地址列表
+    get_ipbymac/1,        %% 根据MAC地址获取IP
+    get_ipbymac/2,        %% 根据MAC地址和网络获取IP
+    get_macbyip/1,        %% 根据IP地址获取MAC
+    get_ifaddrs/0,        %% 获取网络接口地址
+    get_ifaddr/1,         %% 获取指定网络接口地址
+    get_ifip/1,           %% 获取指定网络接口IP
+    ping_all/0,           %% ping所有网络
+    ping_all/1,           %% ping指定网络
+    get_ipv4/1,           %% 获取IPv4地址
+    get_ipv6/1,           %% 获取IPv6地址
+    resolve/1,            %% 解析主机名
+    get_url_path/1,       %% 获取URL路径
+    get_ports/0,          %% 获取端口列表
+    check_port/1          %% 检查端口是否可用
+]).
+
+%%%===================================================================
+%%% 加密和哈希函数 (Encryption & Hash)
+%%%===================================================================
+-export([
+    to_md5/1,            %% 计算MD5哈希
+    hash/1,              %% 计算哈希值
+    hash/2,              %% 计算两个值的哈希
+    hash/3,              %% 计算三个值的哈希
+    hash/4,              %% 计算四个值的哈希
+    hash_2/1,            %% 计算哈希值（版本2）
+    hash_2/2,            %% 计算两个值的哈希（版本2）
+    hash_2/3,            %% 计算三个值的哈希（版本2）
+    hash_2/4,            %% 计算四个值的哈希（版本2）
+    modbus_crc16/1,      %% Modbus CRC16校验
+    crc16/1,             %% CRC16校验
+    crc16_ccitt/1,       %% CRC16-CCITT校验
+    crc16_h/1,           %% CRC16校验（高低字节交换）
+    xor_sum/1,           %% 异或校验和
+    get_parity/1,        %% 计算奇偶校验
+    add_33h/1,           %% 加0x33操作
+    sub_33h/1,           %% 减0x33操作
+    add_value/1,         %% 加值操作
+    sub_value/1          %% 减值操作
+]).
+
+%%%===================================================================
+%%% 数学和统计函数 (Math & Statistics)
+%%%===================================================================
+-export([
+    round/2,            %% 四舍五入（指定精度）
+    rate/2,             %% 计算比率
+    variance/2,         %% 计算方差
+    find_median/1,      %% 查找中位数
+    is_number/1         %% 检查是否为数字
+]).
+
+%%%===================================================================
+%%% 文件操作函数 (File Operations)
+%%%===================================================================
+-export([
+    read/3,             %% 读取文件
+    get_file/3,         %% 获取文件
+    get_JsonFile/2,     %% 获取JSON文件
+    post_file/2,        %% 上传文件
+    get_mock/2,         %% 获取模拟数据文件
+    write_mock/3,       %% 写入模拟数据文件
+    gzip/1,             %% GZIP压缩
+    gzip_no_header/1    %% GZIP压缩（无头部）
+]).
+
+%%%===================================================================
+%%% 进程和消息函数 (Process & Message)
+%%%===================================================================
+-export([
+    send_fsm/3,         %% 发送FSM消息
+    send_msg/2,         %% 发送消息
+    wait_request/2,     %% 等待请求
+    is_alive/1,         %% 检查进程是否存活
+    new_counter/2,      %% 创建计数器
+    update_counter/1    %% 更新计数器
+]).
+
+%%%===================================================================
+%%% 数据验证函数 (Data Validation)
+%%%===================================================================
+-export([
+    is_like/2,              %% 模糊匹配
+    is_phone/1,             %% 检查是否为手机号
+    is_email/1,             %% 检查是否为邮箱
+    check_value_is_null/1,  %% 检查值是否为空
+    check_val/3             %% 检查值并抛出错误
+]).
+
+%%%===================================================================
+%%% 工具函数 (Utility Functions)
+%%%===================================================================
+-export([
+    get_env/1,              %% 获取环境变量
+    get_env/2,              %% 获取环境变量（带默认值）
+    get_env/3,              %% 获取应用环境变量
+    append/2,               %% 追加数据
+    append/3,               %% 追加键值对
+    get_val/2,              %% 获取值
+    get_val/3,              %% 获取值（带默认值）
+    open_dets/1,            %% 打开DETS表
+    open_dets/2,            %% 打开DETS表（带选项）
+    merge_maps/1,           %% 合并映射
+    make_error_response/3,  %% 创建错误响应
+    new_pns/1,              %% 创建PN列表
+    new_pns/3,              %% 创建PN列表（内部使用）
+    guid/0,                 %% 生成GUID
+    parse_objectid/0,       %% 解析对象ID
+    shuffle/1,              %% 随机打乱列表
+    split_zetag/1,          %% 分割Zetag
+    unique_1/1,             %% 去重（方法1）
+    unique_2/1,             %% 去重（方法2）
+    string2value/1,         %% 字符串转值
+    random/0                %% 生成随机值
 ]).
 
 -define(TIMEZONE, + 8).
@@ -1127,3 +1205,36 @@ gabyCRCLo() ->
         16#8a, 16#4a, 16#4e, 16#8e, 16#8f, 16#4f, 16#8d, 16#4d, 16#4c, 16#8c,
         16#44, 16#84, 16#85, 16#45, 16#87, 16#47, 16#46, 16#86, 16#82, 16#42,
         16#43, 16#83, 16#41, 16#81, 16#80, 16#40].
+
+%% @doc 检查二进制字符串是否是有效的十六进制字符串
+%% 十六进制字符串只包含 0-9, a-f, A-F 字符
+is_hex_string(Binary) when is_binary(Binary) ->
+    is_hex_string(binary_to_list(Binary));
+is_hex_string([]) ->
+    true;
+is_hex_string([Char | Rest]) ->
+    case Char of
+        $0 -> is_hex_string(Rest);
+        $1 -> is_hex_string(Rest);
+        $2 -> is_hex_string(Rest);
+        $3 -> is_hex_string(Rest);
+        $4 -> is_hex_string(Rest);
+        $5 -> is_hex_string(Rest);
+        $6 -> is_hex_string(Rest);
+        $7 -> is_hex_string(Rest);
+        $8 -> is_hex_string(Rest);
+        $9 -> is_hex_string(Rest);
+        $a -> is_hex_string(Rest);
+        $b -> is_hex_string(Rest);
+        $c -> is_hex_string(Rest);
+        $d -> is_hex_string(Rest);
+        $e -> is_hex_string(Rest);
+        $f -> is_hex_string(Rest);
+        $A -> is_hex_string(Rest);
+        $B -> is_hex_string(Rest);
+        $C -> is_hex_string(Rest);
+        $D -> is_hex_string(Rest);
+        $E -> is_hex_string(Rest);
+        $F -> is_hex_string(Rest);
+        _ -> false
+    end.

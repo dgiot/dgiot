@@ -72,12 +72,18 @@ is16(Data) ->
 %% @doc 根据数据类型和寄存器数量计算数据长度
 %% 参数: Num - 寄存器数量, Originaltype - 数据类型
 %% 返回: 数据长度（字节数）
+%% 注意: 对于"bit"类型，Num是位数；对于其他类型，Num是寄存器数量
 get_len(Num, Originaltype) when is_binary(Num) ->
     get_len(dgiot_utils:to_int(Num), Originaltype);
 
 get_len(Num, Originaltype) when is_integer(Num) ->
     case Originaltype of
-        <<"bit">> -> Num;
+        <<"bit">> -> 
+            % 对于"bit"类型，Num是寄存器数量
+            % 每个寄存器16位，总位数 = Num * 16
+            % 转换为字节数 = (Num * 16 + 7) div 8
+            TotalBits = Num * 16,
+            (TotalBits + 7) div 8;
         <<"raw">> -> Num;
         <<"short16_AB">> -> Num * 2;
         <<"short16_BA">> -> Num * 2;
