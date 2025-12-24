@@ -1,0 +1,516 @@
+{
+  "properties": [
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "": []
+      },
+      "dataType": {
+        "das": [],
+        "size": 99,
+        "specs": {},
+        "type": "text"
+      },
+      "devicetype": "IP",
+      "identifier": "lan1",
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "lan1",
+      "required": true,
+      "updateAt": "1677490563722",
+      "index": 0
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "": []
+      },
+      "dataType": {
+        "das": [],
+        "size": 99,
+        "specs": {},
+        "type": "text"
+      },
+      "devicetype": "IP",
+      "identifier": "lan2",
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "lan2",
+      "required": true,
+      "updateAt": "1677490563722",
+      "index": 0
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "": []
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "在线",
+          "1": "离线"
+        },
+        "type": "enum"
+      },
+      "devicetype": "网卡状态",
+      "identifier": "lan1_state",
+      "index": 1,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "lan1状态",
+      "required": true,
+      "updateAt": "1677485666080"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "": []
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "在线",
+          "1": "离线"
+        },
+        "type": "enum"
+      },
+      "devicetype": "网卡状态",
+      "identifier": "lan2_state",
+      "index": 2,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "lan2状态",
+      "required": true,
+      "updateAt": "1677485666080"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "": []
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "在线",
+          "1": "离线"
+        },
+        "type": "enum"
+      },
+      "devicetype": "串口状态",
+      "identifier": "com1_state",
+      "index": 3,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "com1状态",
+      "required": true,
+      "updateAt": "1677485666080"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "": []
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "在线",
+          "1": "离线"
+        },
+        "type": "enum"
+      },
+      "devicetype": "串口状态",
+      "identifier": "com2_state",
+      "index": 4,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "com2状态",
+      "required": true,
+      "updateAt": "1677485666080"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "": []
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "在线",
+          "1": "离线"
+        },
+        "type": "enum"
+      },
+      "devicetype": "USB状态",
+      "identifier": "usb1_state",
+      "index": 5,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "usb1状态",
+      "required": true,
+      "updateAt": "1677484750402"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "": []
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "在线",
+          "1": "离线"
+        },
+        "type": "enum"
+      },
+      "devicetype": "USB状态",
+      "identifier": "usb2_state",
+      "index": 6,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "usb2状态",
+      "required": true,
+      "updateAt": "1677484750402"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "": []
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "在线",
+          "1": "离线"
+        },
+        "type": "enum"
+      },
+      "devicetype": "USB状态",
+      "identifier": "usb3_state",
+      "index": 7,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "usb3状态",
+      "required": true,
+      "updateAt": "1677484750402"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "": []
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "在线",
+          "1": "离线"
+        },
+        "type": "enum"
+      },
+      "devicetype": "USB状态",
+      "identifier": "usb4_state",
+      "index": 8,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "usb4状态",
+      "required": true,
+      "updateAt": "1677484750402"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "": []
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "在线",
+          "1": "离线"
+        },
+        "type": "enum"
+      },
+      "devicetype": "USB状态",
+      "identifier": "usb5_state",
+      "index": 9,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "usb5状态",
+      "required": true,
+      "updateAt": "1677484750402"
+    },
+    {
+      "accessMode": "r",
+      "dataForm": {
+        "address": "0X10",
+        "collection": "%{s}",
+        "control": "%{d}",
+        "countcollection": "%{s}",
+        "countround": "all",
+        "countstrategy": 20,
+        "data": "null",
+        "iscount": "0",
+        "offset": 0,
+        "operatetype": "readCoils",
+        "order": 0,
+        "originaltype": "short16_AB",
+        "protocol": "",
+        "rate": 1,
+        "round": "all",
+        "slaveid": "0X10",
+        "strategy": "主动上报"
+      },
+      "dataSource": {
+        "": []
+      },
+      "dataType": {
+        "das": [],
+        "specs": {
+          "0": "在线",
+          "1": "离线"
+        },
+        "type": "enum"
+      },
+      "devicetype": "USB状态",
+      "identifier": "usb6_state",
+      "index": 10,
+      "isaccumulate": false,
+      "isshow": true,
+      "isstorage": true,
+      "moduleType": "properties",
+      "name": "usb6状态",
+      "required": true,
+      "updateAt": "1677484750402"
+    }
+  ]
+}

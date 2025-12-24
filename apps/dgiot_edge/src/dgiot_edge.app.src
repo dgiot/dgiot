@@ -1,0 +1,14 @@
+{application, dgiot_edge,
+    [{description, "DGIOT EDGE"},
+        {vsn, "4.3.0"},
+        {modules, []},
+        {registered, [dgiot_edge_sup]},
+        {applications, [kernel, stdlib, dgiot, srly]},
+        {mod, {dgiot_edge_app, []}},
+        {licenses, ["Apache-2.0"]},
+        {maintainers, ["DGIOT TEAM"]},
+        {links, [{"Homepage", "https://www.dgiotcloud.cn/"},
+            {"Github", "https://github.com/dgiot/dgiot"}
+        ]}
+    ]
+}.

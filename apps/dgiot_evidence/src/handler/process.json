@@ -1,0 +1,186 @@
+// checkbox，应该是checkboxgroup，为了简单点，写成checkbox。配置checkbox时，
+// 如果数值就是label，那么可以不填value，填了以value为准。
+// radio，单选，规则同checkbox，但是只能选一个。
+// select，下拉单选，规则同checkbox，但是只能选一个。
+// 节点如果有label,显示此label，没有不显示
+// 节点下面的children是子节点，子节点的label是子节点的显示文本
+{
+    "output": {
+        "pc": {
+            "path": "/dgiot_file/device/process/04c4808b33/pc/pc.docx",
+            // pc展示的图片， 路径是path的目录段
+            "images": [
+                {
+                    "url": "1.jpg",
+                    "width": "868",
+                    "height": "1227"
+                },
+                {
+                    "url": "2.jpg",
+                    "width": "868",
+                    "height": "1227"
+                }
+            ]
+        },
+        "pad": {
+            "path": "/dgiot_file/device/process/04c4808b33/pad/pad.docx",
+            "images": [
+                {
+                    "url": "1.jpg",
+                    "width": "868",
+                    "height": "1227"
+                },
+                {
+                    "url": "2.jpg",
+                    "width": "868",
+                    "height": "1227"
+                }
+            ]
+        },
+        "mobile": {
+            "path": "/dgiot_file/device/process/04c4808b33/mobile/mobile.docx",
+            "images": [
+                {
+                    "url": "1.jpg",
+                    "width": "868",
+                    "height": "1227"
+                },
+                {
+                    "url": "2.jpg",
+                    "width": "868",
+                    "height": "1227"
+                }
+            ]
+        }
+    },
+    "creator": "63dd666bb5",
+    // % 当前步骤 
+    "step_cur": 1,
+    // % 总步骤数
+    "step_all": 6,
+    // % 参数列表
+    "paramList": [
+        {
+            // %步骤id
+            "stepid": 1,
+            // %节点列表
+            // % 权限人objectId，第一步的权限人id省略
+            "roles": [],
+            "nodes": [
+                {
+                    "id": 3,
+                    "type": "text",
+                    "label": "基层单位",
+                    "value": ""
+                },
+                {
+                    "id": 4,
+                    "type": "table",
+                    "desc": "表格填写说明",
+                    "label": "特殊作业证书",
+                    "header": [
+                        "姓名",
+                        "证书编号",
+                        "有效期"
+                    ],
+                    // % 表格数据，二维数组，每个数组代表一行
+                    "value": []
+                }
+            ]
+        },
+        {
+            "stepid": 2,
+            // 审批人人objectId
+            "roles": [
+                "ccf5456562",
+                "63dd666bb5"
+            ],
+            "nodes": [
+                {
+                    "id": 5,
+                    "type": "checkbox",
+                    "label": "工作地点",
+                    "options": [
+                        {
+                            "id": 0,
+                            "label": "厂里",
+                            "value": "inside"
+                        },
+                        {
+                            "id": 1,
+                            "label": "厂外",
+                            "value": "outside"
+                        }
+                    ],
+                    // 选中的结果，如果有value，用value的值，没有value，就用label的值
+                    "value": []
+                },
+                {
+                    "id": 6,
+                    "type": "radio",
+                    "label": "工作方式",
+                    "options": [
+                        {
+                            "id": 0,
+                            "label": "持续",
+                            "textbox": "right"
+                        },
+                        {
+                            "id": 1,
+                            "label": "间歇",
+                            "textbox": "right"
+                        },
+                        {
+                            "id": 2,
+                            "label": "不适用"
+                        }
+                    ],
+                    "value": [
+                        "不适用"
+                    ]
+                },
+                {
+                    "id": 7,
+                    "type": "select",
+                    "label": "上班时间",
+                    "options": [
+                        {
+                            "id": 0,
+                            "label": "7点",
+                            "value": "7"
+                        },
+                        {
+                            "id": 1,
+                            "label": "8点",
+                            "value": "8"
+                        }
+                    ],
+                    // 说明在这个select的上方有一个文本框,down就是下方有，没有textbox就是无。选择select时，值会自动填入textbox中
+                    "textbox": "up",
+                    "value": ""
+                }
+            ]
+        },
+        {
+            // %步骤id
+            "stepid": 4,
+            // %节点列表
+            // % 权限人objectId
+            "roles": [],
+            "nodes": [
+                {
+                    "id": 3,
+                    "type": "date",
+                    "label": "日期",
+                    "value": ""
+                },
+                {
+                    "id": 4,
+                    "type": "datetime",
+                    "label": "日期时间",
+                    "value": ""
+                }
+            ]
+        },
+    ]
+}

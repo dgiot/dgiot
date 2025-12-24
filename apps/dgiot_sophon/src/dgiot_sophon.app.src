@@ -1,0 +1,15 @@
+{application, dgiot_sophon,
+    [{description, "DGIOT sophon"},
+        {vsn, "4.3.0"},
+        {registered, []},
+        {mod, {dgiot_sophon_app, []}},
+        {applications, [kernel, stdlib]},
+        {env, []},
+        {modules, []},
+        {licenses, ["Apache-2.0"]},
+        {maintainers, ["DGIOT Team"]},
+        {links, [{"Homepage", "https://www.dgiotcloud.cn/"},
+            {"Github", "https://github.com/dgiot/dgiot"}
+        ]}
+    ]
+}.
