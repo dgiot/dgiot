@@ -38,6 +38,56 @@
   _build/emqx/rel/emqx/bin/emqx eval dgiot_plugin:reload_plugin(dgiot_modbus).'
   ```
 
+### ⚠️ 热编译质量要求
+
+1. **零警告原则**：热编译必须消除所有编译警告
+   - 修复未使用变量警告（使用`_`前缀或移除未使用变量）
+   - 修复未使用函数警告（添加`-export`或移除未使用函数）
+   - 修复类型不匹配警告（确保类型一致性）
+
+2. **代码质量检查清单**（每次热编译前检查）：
+   - [ ] 没有未使用变量（`unused_var`警告）
+   - [ ] 没有未使用函数（`unused_function`警告）
+   - [ ] 没有语法错误（`syntax_error`）
+   - [ ] 没有类型不匹配（`type_mismatch`）
+   - [ ] 没有拼写错误（如`fasle`应为`false`）
+
+3. **常见警告修复示例**：
+   ```erlang
+   % 错误：未使用变量警告
+   parse_frame(<<MbAddr:8, BadCode:8, ErrorCode:8, Crc:2/binary>> = Buff, Acc,
+       #{<<"addr">> := DtuAddr} = State) ->
+   
+   % 修复：移除未使用的DtuAddr
+   parse_frame(<<MbAddr:8, BadCode:8, ErrorCode:8, Crc:2/binary>> = Buff, Acc, State) ->
+   ```
+
+   ```erlang
+   % 错误：未使用变量警告
+   get_write(ResponseData, SlaveId, FunCode, DtuAddr, ProductId, Address, Acc) ->
+   
+   % 修复：使用_前缀表示忽略该变量
+   get_write(ResponseData, SlaveId, FunCode, _DtuAddr, ProductId, Address, Acc) ->
+   ```
+
+   ```erlang
+   % 错误：未使用变量警告
+   case dgiot_product:lookup_prod(ProductId) of
+       {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
+           {ok, Result};
+       Error ->
+           {error, product_not_found}
+   end.
+   
+   % 修复：使用_前缀
+   case dgiot_product:lookup_prod(ProductId) of
+       {ok, #{<<"thing">> := #{<<"properties">> := Props}}} ->
+           {ok, Result};
+       _Error ->
+           {error, product_not_found}
+   end.
+   ```
+
 ## 开发命令
 
 ### 1. 热编译和热加载
@@ -141,6 +191,7 @@ parse_packet_test() ->
 ## 快速检查清单
 
 - [ ] 使用正确的编译命令
+- [ ] 热编译零警告（必须满足）
 - [ ] 日志格式符合规范
 - [ ] 错误处理完整
 - [ ] 有单元测试
@@ -149,3 +200,4 @@ parse_packet_test() ->
 ## 更新记录
 
 - 2025-12-19：融合全局规则，创建统一通用开发规则
+- 2025-12-24：添加热编译质量要求，强调零警告原则
