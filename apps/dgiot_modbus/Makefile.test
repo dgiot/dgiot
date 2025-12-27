@@ -52,6 +52,198 @@ test-quick:
 	@cd /root/gitee/dgiot && _build/emqx/rel/emqx/bin/emqx eval 'io:format("Testing convert_pattern: ~p~n", [modbus_util:convert_pattern("abc")]), io:format("Testing get_category_id: ~p~n", [modbus_util:get_category_id()]).'
 	@echo "✅ 快速测试完成"
 
+# 集成测试框架
+test-integration:
+	@echo "🔧 运行集成测试框架..."
+	@if [ -f "test/integration/run_integration_test.sh" ]; then \
+		chmod +x test/integration/run_integration_test.sh; \
+		cd /root/gitee/dgiot && ./apps/dgiot_modbus/test/integration/run_integration_test.sh --env-check; \
+		echo "✅ 集成测试框架检查完成"; \
+	else \
+		echo "⚠️  集成测试框架不存在，请先创建"; \
+		echo "当前目录: $(shell pwd)"; \
+		echo "脚本路径: test/integration/run_integration_test.sh"; \
+		ls -la test/integration/ 2>/dev/null || echo "integration目录不存在"; \
+	fi
+
+# 完整集成测试循环
+test-integration-full:
+	@echo "🔄 运行完整集成测试循环..."
+	@if [ -f "test/integration/run_integration_test.sh" ]; then \
+		chmod +x test/integration/run_integration_test.sh; \
+		cd /root/gitee/dgiot && ./apps/dgiot_modbus/test/integration/run_integration_test.sh --full-loop; \
+	else \
+		echo "⚠️  集成测试框架不存在，请先创建"; \
+	fi
+
+# 设备注册测试
+test-integration-device-reg:
+	@echo "📱 运行设备注册测试..."
+	@if [ -f "test/integration/run_integration_test.sh" ]; then \
+		chmod +x test/integration/run_integration_test.sh; \
+		cd /root/gitee/dgiot && ./apps/dgiot_modbus/test/integration/run_integration_test.sh --device-reg; \
+	else \
+		echo "⚠️  集成测试框架不存在，请先创建"; \
+	fi
+
+# Modbus数据上报测试
+test-integration-data-report:
+	@echo "📊 运行Modbus数据上报测试..."
+	@if [ -f "test/integration/run_integration_test.sh" ]; then \
+		chmod +x test/integration/run_integration_test.sh; \
+		cd /root/gitee/dgiot && ./apps/dgiot_modbus/test/integration/run_integration_test.sh --data-report; \
+	else \
+		echo "⚠️  集成测试框架不存在，请先创建"; \
+	fi
+
+# 日志分析测试
+test-integration-log-analysis:
+	@echo "📝 运行日志分析测试..."
+	@if [ -f "test/integration/run_integration_test.sh" ]; then \
+		chmod +x test/integration/run_integration_test.sh; \
+		cd /root/gitee/dgiot && ./apps/dgiot_modbus/test/integration/run_integration_test.sh --log-analysis; \
+	else \
+		echo "⚠️  集成测试框架不存在，请先创建"; \
+	fi
+
+# 热编译测试
+test-integration-hot-reload:
+	@echo "🔥 运行热编译测试..."
+	@if [ -f "test/integration/run_integration_test.sh" ]; then \
+		chmod +x test/integration/run_integration_test.sh; \
+		cd /root/gitee/dgiot && ./apps/dgiot_modbus/test/integration/run_integration_test.sh --hot-reload; \
+	else \
+		echo "⚠️  集成测试框架不存在，请先创建"; \
+	fi
+
+# 测试驱动开发 - 运行所有测试用例
+test-tdd-all:
+	@echo "🧪 测试驱动开发 - 运行所有测试用例..."
+	@if [ -f "test/integration/run_all_test_cases.sh" ]; then \
+		chmod +x test/integration/run_all_test_cases.sh; \
+		cd /root/gitee/dgiot && ./apps/dgiot_modbus/test/integration/run_all_test_cases.sh; \
+	else \
+		echo "⚠️  测试驱动开发框架不存在，请先创建"; \
+		echo "当前目录: $(shell pwd)"; \
+		echo "脚本路径: test/integration/run_all_test_cases.sh"; \
+		ls -la test/integration/ 2>/dev/null || echo "integration目录不存在"; \
+	fi
+
+# 测试驱动开发 - 显示测试用例列表
+test-tdd-list:
+	@echo "📋 测试驱动开发 - 显示测试用例列表..."
+	@if [ -f "test/integration/run_all_test_cases.sh" ]; then \
+		chmod +x test/integration/run_all_test_cases.sh; \
+		cd /root/gitee/dgiot && ./apps/dgiot_modbus/test/integration/run_all_test_cases.sh --list; \
+	else \
+		echo "⚠️  测试驱动开发框架不存在，请先创建"; \
+	fi
+
+# 测试驱动开发 - 运行设备注册测试用例
+test-tdd-device-reg:
+	@echo "📱 测试驱动开发 - 运行设备注册测试用例..."
+	@if [ -f "test/integration/test_cases/test_device_registration.sh" ]; then \
+		chmod +x test/integration/test_cases/test_device_registration.sh; \
+		cd /root/gitee/dgiot && ./apps/dgiot_modbus/test/integration/test_cases/test_device_registration.sh; \
+	else \
+		echo "⚠️  设备注册测试用例不存在，请先创建"; \
+		echo "当前目录: $(shell pwd)"; \
+		echo "脚本路径: test/integration/test_cases/test_device_registration.sh"; \
+		ls -la test/integration/test_cases/ 2>/dev/null || echo "test_cases目录不存在"; \
+	fi
+
+# 测试驱动开发 - 运行Modbus RTU完整测试
+test-tdd-modbus-rtu-full:
+	@echo "🔧 测试驱动开发 - 运行Modbus RTU完整测试..."
+	@if [ -f "test/integration/test_cases/test_modbus_rtu_full.sh" ]; then \
+		chmod +x test/integration/test_cases/test_modbus_rtu_full.sh; \
+		cd /root/gitee/dgiot && ./apps/dgiot_modbus/test/integration/test_cases/test_modbus_rtu_full.sh; \
+	else \
+		echo "⚠️  Modbus RTU完整测试用例不存在，请先创建"; \
+		echo "当前目录: $(shell pwd)"; \
+		echo "脚本路径: test/integration/test_cases/test_modbus_rtu_full.sh"; \
+		ls -la test/integration/test_cases/ 2>/dev/null || echo "test_cases目录不存在"; \
+	fi
+
+# 测试驱动开发 - 查看测试用例规范
+test-tdd-spec:
+	@echo "📄 测试驱动开发 - 查看测试用例规范..."
+	@if [ -f "test/integration/TEST_CASE_SPECIFICATION.md" ]; then \
+		echo "测试用例规范文档:"; \
+		echo "----------------------------------------"; \
+		head -50 test/integration/TEST_CASE_SPECIFICATION.md; \
+		echo "..."; \
+		echo "完整文档: test/integration/TEST_CASE_SPECIFICATION.md"; \
+	else \
+		echo "⚠️  测试用例规范文档不存在"; \
+	fi
+
+# 测试环境管理命令
+test-env-setup:
+	@echo "🏗️  设置完整的Modbus测试环境..."
+	@if [ -f "test/integration/modules/test_environment_manager.sh" ]; then \
+		chmod +x test/integration/modules/test_environment_manager.sh; \
+		cd /root/gitee/dgiot && ./apps/dgiot_modbus/test/integration/modules/test_environment_manager.sh setup; \
+	else \
+		echo "⚠️  测试环境管理器不存在"; \
+	fi
+
+test-env-cleanup:
+	@echo "🧹 清理测试环境..."
+	@if [ -f "test/integration/modules/test_environment_manager.sh" ]; then \
+		chmod +x test/integration/modules/test_environment_manager.sh; \
+		cd /root/gitee/dgiot && ./apps/dgiot_modbus/test/integration/modules/test_environment_manager.sh cleanup; \
+	else \
+		echo "⚠️  测试环境管理器不存在"; \
+	fi
+
+test-env-check:
+	@echo "🔍 检查测试环境状态..."
+	@if [ -f "test/integration/modules/test_environment_manager.sh" ]; then \
+		chmod +x test/integration/modules/test_environment_manager.sh; \
+		cd /root/gitee/dgiot && ./apps/dgiot_modbus/test/integration/modules/test_environment_manager.sh check-services; \
+		cd /root/gitee/dgiot && ./apps/dgiot_modbus/test/integration/modules/test_environment_manager.sh check-channels; \
+	else \
+		echo "⚠️  测试环境管理器不存在"; \
+	fi
+
+test-simulator-start:
+	@echo "🚀 启动所有模拟器..."
+	@if [ -f "test/integration/modules/test_environment_manager.sh" ]; then \
+		chmod +x test/integration/modules/test_environment_manager.sh; \
+		cd /root/gitee/dgiot && ./apps/dgiot_modbus/test/integration/modules/test_environment_manager.sh start-rtu-sim; \
+		sleep 1; \
+		cd /root/gitee/dgiot && ./apps/dgiot_modbus/test/integration/modules/test_environment_manager.sh start-tcp-sim; \
+	else \
+		echo "⚠️  测试环境管理器不存在"; \
+	fi
+
+test-simulator-stop:
+	@echo "🛑 停止所有模拟器..."
+	@if [ -f "test/integration/modules/test_environment_manager.sh" ]; then \
+		chmod +x test/integration/modules/test_environment_manager.sh; \
+		cd /root/gitee/dgiot && ./apps/dgiot_modbus/test/integration/modules/test_environment_manager.sh stop-sims; \
+	else \
+		echo "⚠️  测试环境管理器不存在"; \
+	fi
+
+# 完整的Modbus协议测试
+test-modbus-full:
+	@echo "🔧 运行完整的Modbus协议测试..."
+	@echo "1. 设置测试环境..."
+	@$(MAKE) test-env-setup
+	@echo ""
+	@echo "2. 运行设备注册测试..."
+	@$(MAKE) test-tdd-device-reg
+	@echo ""
+	@echo "3. 运行集成测试..."
+	@$(MAKE) test-integration-full
+	@echo ""
+	@echo "4. 检查测试环境状态..."
+	@$(MAKE) test-env-check
+	@echo ""
+	@echo "✅ 完整的Modbus协议测试完成"
+
 # 测试特定模块
 test-module-%:
 	@echo "🔍 测试模块: $*"
@@ -73,16 +265,44 @@ help:
 	@echo "DG-IoT Modbus 测试框架"
 	@echo ""
 	@echo "可用命令:"
-	@echo "  make test-all         运行所有测试（单元+集成+覆盖率）"
-	@echo "  make test-eunit       运行EUnit单元测试"
-	@echo "  make test-ct          运行Common Test集成测试"
-	@echo "  make test-coverage    生成代码覆盖率报告"
-	@echo "  make test-quick       快速测试（使用热编译）"
-	@echo "  make test-module-NAME 测试特定模块"
-	@echo "  make test-performance 运行性能测试"
-	@echo "  make clean-test       清理测试文件"
-	@echo "  make help             显示此帮助信息"
+	@echo "  make test-all                 运行所有测试（单元+集成+覆盖率）"
+	@echo "  make test-eunit               运行EUnit单元测试"
+	@echo "  make test-ct                  运行Common Test集成测试"
+	@echo "  make test-coverage            生成代码覆盖率报告"
+	@echo "  make test-quick               快速测试（使用热编译）"
+	@echo "  make test-module-NAME         测试特定模块"
+	@echo "  make test-performance         运行性能测试"
+	@echo "  make test-integration         运行集成测试框架检查"
+	@echo "  make test-integration-full    运行完整集成测试循环"
+	@echo "  make test-integration-device-reg  运行设备注册测试"
+	@echo "  make test-integration-data-report 运行Modbus数据上报测试"
+	@echo "  make test-integration-log-analysis 运行日志分析测试"
+	@echo "  make test-integration-hot-reload  运行热编译测试"
+	@echo "  make clean-test               清理测试文件"
+	@echo ""
+	@echo "测试驱动开发 (TDD) 命令:"
+	@echo "  make test-tdd-all             运行所有测试用例"
+	@echo "  make test-tdd-list            显示测试用例列表"
+	@echo "  make test-tdd-device-reg      运行设备注册测试用例"
+	@echo "  make test-tdd-modbus-rtu-full 运行Modbus RTU完整测试"
+	@echo "  make test-tdd-spec            查看测试用例规范"
+	@echo ""
+	@echo "测试环境管理命令:"
+	@echo "  make test-env-setup           设置完整的测试环境"
+	@echo "  make test-env-cleanup         清理测试环境"
+	@echo "  make test-env-check           检查测试环境状态"
+	@echo "  make test-simulator-start     启动所有模拟器"
+	@echo "  make test-simulator-stop      停止所有模拟器"
+	@echo "  make test-modbus-full         运行完整的Modbus协议测试"
+	@echo ""
+	@echo "  make help                     显示此帮助信息"
 	@echo ""
 	@echo "示例:"
-	@echo "  make test-module-modbus_util  测试modbus_util模块"
-	@echo "  make test-all                 完整测试流程"
+	@echo "  make test-module-modbus_util      测试modbus_util模块"
+	@echo "  make test-all                     完整测试流程"
+	@echo "  make test-integration-full        完整集成测试循环"
+	@echo "  make test-integration-device-reg  只测试设备注册"
+	@echo "  make test-tdd-device-reg          测试驱动开发 - 设备注册"
+	@echo "  make test-tdd-modbus-rtu-full     测试驱动开发 - Modbus RTU完整测试"
+	@echo "  make test-tdd-all                 运行所有测试驱动开发用例"
+	@echo "  make test-modbus-full             完整的Modbus协议测试"

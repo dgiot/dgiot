@@ -1,0 +1,88 @@
+# 测试用例注册文件
+# 格式: 插件名:测试用例名:测试脚本路径:描述
+
+# dgiot_modbus 插件测试用例
+dgiot_modbus:simple:apps/dgiot_modbus/test/tools/integration/test_runners/test_modbus_simple.sh:Modbus RTU简化测试
+dgiot_modbus:modbus_rtu_server_register:apps/dgiot_modbus/test/tools/integration/test_runners/integration_test_modbus_rtu_server_register_enhanced.sh:RegisterByPort注册测试
+dgiot_modbus:env_check:apps/dgiot_modbus/test/tools/integration/test_runners/test_modbus_env_check.sh:环境检查测试
+dgiot_modbus:hex_data:apps/dgiot_modbus/test/tools/integration/test_runners/test_modbus_hex_data.sh:十六进制数据测试
+dgiot_modbus:database_report:apps/dgiot_modbus/test/tools/integration/test_runners/test_modbus_rtu_database_report.sh:数据库报告测试
+dgiot_modbus:simulator_python:apps/dgiot_modbus/test/tools/integration/simulators/test_modbus_python.py:Python模拟器测试
+dgiot_modbus:simulator_complete:apps/dgiot_modbus/test/tools/integration/simulators/simulate_rtu_device_complete.py:完整模拟器测试
+dgiot_modbus:api_auth:apps/dgiot_modbus/test/tools/test_modbus_api_with_auth.sh:API认证测试
+dgiot_modbus:integration:apps/dgiot_modbus/test/integration/run_integration_test.sh:集成测试
+dgiot_modbus:all:apps/dgiot_modbus/test/integration/run_all_test_cases.sh:所有测试用例
+
+# 其他插件可以在这里添加
+# dgiot_http:basic:apps/dgiot_http/test/basic_test.sh:HTTP基础测试
+
+# 新增的Modbus测试用例
+dgiot_modbus:error_handling:apps/dgiot_modbus/test/tools/integration/test_runners/test_modbus_error_handling.sh:Modbus错误处理测试
+dgiot_modbus:hot_reload:apps/dgiot_modbus/test/integration/modules/hot_reload.sh:插件热重载测试
+dgiot_modbus:config_management:apps/dgiot_modbus/test/tools/management/product_config_manager.sh:配置管理测试
+dgiot_modbus:data_report:apps/dgiot_modbus/test/integration/modules/data_report.sh:数据上报测试
+dgiot_modbus:log_analysis:apps/dgiot_modbus/test/integration/modules/log_analysis.sh:日志分析测试
+dgiot_modbus:api_query:apps/dgiot_modbus/test/integration/modules/api_query.sh:API查询测试
+
+# 新增的Modbus综合测试用例（基于用户需求）
+
+## 一、通道管理测试用例
+dgiot_modbus:channel_creation:apps/dgiot_modbus/test/comprehensive/channel_management/test_channel_creation.sh:Modbus通道创建测试
+dgiot_modbus:channel_start_stop:apps/dgiot_modbus/test/comprehensive/channel_management/test_channel_start_stop.sh:通道启停测试
+dgiot_modbus:channel_config:apps/dgiot_modbus/test/comprehensive/channel_management/test_channel_config.sh:通道配置测试
+
+## 二、注册方式测试用例
+dgiot_modbus:modbus_tcp_client_connect:apps/dgiot_modbus/test/comprehensive/registration/test_modbus_tcp_client_connect.sh:RegisterByIp注册测试
+dgiot_modbus:modbus_rtu_regular_register:apps/dgiot_modbus/test/comprehensive/registration/test_modbus_rtu_regular_register.sh:RegisterByRegular注册测试
+
+## 三、产品管理测试用例
+dgiot_modbus:product_creation:apps/dgiot_modbus/test/comprehensive/product_management/test_product_creation.sh:产品创建测试
+dgiot_modbus:thing_model:apps/dgiot_modbus/test/comprehensive/product_management/test_thing_model.sh:物模型定义测试
+dgiot_modbus:device_creation:apps/dgiot_modbus/test/comprehensive/product_management/test_device_creation.sh:设备创建测试
+
+## 四、数据查询测试用例
+dgiot_modbus:realtime_data:apps/dgiot_modbus/test/comprehensive/data_query/test_realtime_data.sh:实时数据查询测试
+dgiot_modbus:historical_data:apps/dgiot_modbus/test/comprehensive/data_query/test_historical_data.sh:历史数据查询测试
+dgiot_modbus:tdengine_query:apps/dgiot_modbus/test/comprehensive/data_query/test_tdengine_query.sh:TDengine数据查询测试
+
+## 五、完整流程测试用例
+dgiot_modbus:end_to_end_flow:apps/dgiot_modbus/test/comprehensive/full_flow/test_end_to_end_flow.sh:端到端完整流程测试
+dgiot_modbus:error_recovery:apps/dgiot_modbus/test/comprehensive/full_flow/test_error_recovery.sh:错误恢复测试
+dgiot_modbus:performance_test:apps/dgiot_modbus/test/comprehensive/full_flow/test_performance.sh:性能测试
+
+# 新增的Modbus协议测试用例（基于pymodbus的专业测试）
+
+## 一、基于pymodbus的专业协议测试
+dgiot_modbus:pymodbus_basic:apps/dgiot_modbus/test/protocol/pymodbus_tests/test_modbus_basic.py:基于pymodbus的基础协议测试
+dgiot_modbus:pymodbus_rtu_parsing:apps/dgiot_modbus/test/protocol/pymodbus_tests/test_modbus_rtu_parsing.py:Modbus RTU数据解析测试
+dgiot_modbus:pymodbus_runner:apps/dgiot_modbus/test/protocol/pymodbus_tests/run_pymodbus_tests.sh:pymodbus测试运行器
+
+## 二、Modbus RTU Server测试
+dgiot_modbus:modbus_rtu_server_connection:apps/dgiot_modbus/test/protocol/rtu/test_rtu_server_connection.sh:RTU服务器连接测试
+dgiot_modbus:modbus_rtu_data_parsing:apps/dgiot_modbus/test/protocol/rtu/test_rtu_data_parsing.sh:RTU数据解析测试
+dgiot_modbus:modbus_rtu_crc_validation:apps/dgiot_modbus/test/protocol/rtu/test_rtu_crc_validation.sh:RTU CRC校验测试
+
+## 三、Modbus TCP Client测试
+dgiot_modbus:modbus_tcp_client_connection:apps/dgiot_modbus/test/protocol/tcp/test_tcp_client_connection.sh:TCP客户端连接测试
+dgiot_modbus:modbus_tcp_data_exchange:apps/dgiot_modbus/test/protocol/tcp/test_tcp_data_exchange.sh:TCP数据交换测试
+dgiot_modbus:modbus_tcp_transaction_id:apps/dgiot_modbus/test/protocol/tcp/test_tcp_transaction_id.sh:TCP事务ID测试
+
+## 四、通用功能测试
+dgiot_modbus:modbus_function_codes:apps/dgiot_modbus/test/protocol/common/test_function_codes.sh:功能码测试
+dgiot_modbus:modbus_register_access:apps/dgiot_modbus/test/protocol/common/test_register_access.sh:寄存器访问测试
+dgiot_modbus:modbus_data_consistency:apps/dgiot_modbus/test/protocol/common/test_data_consistency.sh:数据一致性测试
+
+## 五、性能与稳定性测试
+dgiot_modbus:modbus_pressure_test:apps/dgiot_modbus/test/protocol/performance/test_pressure.sh:压力测试
+dgiot_modbus:modbus_concurrent_test:apps/dgiot_modbus/test/protocol/performance/test_concurrent.sh:并发测试
+dgiot_modbus:modbus_polling_test:apps/dgiot_modbus/test/protocol/performance/test_polling.sh:轮询机制测试
+
+## 六、异常与容错测试
+dgiot_modbus:modbus_timeout_reconnect:apps/dgiot_modbus/test/protocol/error/test_timeout_reconnect.sh:超时重连测试
+dgiot_modbus:modbus_invalid_parameters:apps/dgiot_modbus/test/protocol/error/test_invalid_parameters.sh:无效参数测试
+
+## 七、互操作性测试
+dgiot_modbus:modbus_interoperability:apps/dgiot_modbus/test/protocol/interop/test_interoperability.sh:互操作性测试
+
+## 八、安全性测试
+dgiot_modbus:modbus_tcp_security:apps/dgiot_modbus/test/protocol/security/test_tcp_security.sh:TCP安全性测试

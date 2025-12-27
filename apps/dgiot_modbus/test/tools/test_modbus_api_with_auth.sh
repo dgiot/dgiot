@@ -1,4 +1,9 @@
 #!/bin/bash
+
+# 错误处理
+set -euo pipefail
+trap 'echo "脚本执行失败: $?" >&2' ERR
+#!/bin/bash
 # Modbus API测试脚本（带认证）
 
 # 配置
