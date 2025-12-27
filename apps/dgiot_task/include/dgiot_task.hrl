@@ -35,3 +35,13 @@
 
 %% 数据源表名定义
 -define(DGIOT_DATASOURCE, dgiot_datasource).
+
+%% 规则引擎相关定义
+-define(RULE_ENGINE_TABLE, dgiot_rule_engine).  %% 规则引擎表
+-define(DGIOT_RAW_DATA_PARSER, dgiot_raw_data_parser).  %% 原始数据解析钩子
+
+%% 任务编排相关定义
+-define(TASK_SCHEDULER_TABLE, dgiot_task_scheduler).  %% 任务调度表
+-define(DEFAULT_TASK_INTERVAL, 5).  %% 默认任务间隔（秒）
+-define(DEFAULT_TASK_ROUNDS, 1).    %% 默认任务轮次
+-define(MAX_TASK_ORDER, 999).       %% 最大任务序号

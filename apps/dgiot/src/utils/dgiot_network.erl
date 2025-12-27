@@ -16,6 +16,10 @@
 
 -module(dgiot_network).
 
+%% 简单的日志宏定义
+-define(LOG(Level, Format, Args),
+    io:format("~s ~p [" ++ atom_to_list(Level) ++ "] " ++ Format ++ "~n", [?FILE, ?LINE | Args])).
+
 -export([
     get_hostname/0
     , get_ip/1
@@ -217,16 +221,24 @@ get_ip({{A, B, C, D}, _Port}) ->
     to_binary(Ip);
 
 get_ip(Socket) ->
-    case esockd_transport:peername(Socket) of
-        {ok, {{A, B, C, D}, _Port}} ->
-            Ip = to_list(A) ++ "." ++
-                to_list(B) ++ "." ++
-                to_list(C) ++ "." ++
-                to_list(D),
-            to_binary(Ip);
-        _ ->
+    try
+        case esockd_transport:peername(Socket) of
+            {ok, {{A, B, C, D}, _Port}} ->
+                Ip = to_list(A) ++ "." ++
+                    to_list(B) ++ "." ++
+                    to_list(C) ++ "." ++
+                    to_list(D),
+                to_binary(Ip);
+            {error, Reason} ->
+                ?LOG(error, "Failed to get IP from socket: ~p", [Reason]),
+                <<"">>;
+            _ ->
+                <<"">>
+        end
+    catch
+        _:Error ->
+            ?LOG(error, "Error getting IP from socket: ~p", [Error]),
             <<"">>
-
     end.
 
 get_port(Socket) ->

@@ -65,14 +65,34 @@ init_plugins() ->
 
 check_dgiot_app() ->
     lists:foldl(fun({Module, _, _} = App, Acc) ->
-        case dgiot_utils:to_binary(Module) of
-            <<"dgiot_", _/binary>> ->
-                Acc ++ [App];
-            <<"dgaiot_", _/binary>> ->
-                Acc ++ [App];
-            <<"dgiot">> ->
-                Acc ++ [App];
-            _ ->
+        try
+            % 确保Module是原子，而不是列表
+            ModuleAtom = 
+                case is_list(Module) of
+                    true when length(Module) =:= 1 ->
+                        % 如果是单元素列表，提取其中的原子
+                        [Atom] = Module,
+                        Atom;
+                    true ->
+                        % 如果是其他列表，转换为原子
+                        list_to_atom(lists:concat(Module));
+                    false ->
+                        % 如果不是列表，直接使用
+                        Module
+                end,
+            case dgiot_utils:to_binary(ModuleAtom) of
+                <<"dgiot_", _/binary>> ->
+                    Acc ++ [App];
+                <<"dgaiot_", _/binary>> ->
+                    Acc ++ [App];
+                <<"dgiot">> ->
+                    Acc ++ [App];
+                _ ->
+                    Acc
+            end
+        catch
+            _:Reason ->
+                io:format("~s ~p Failed to process module ~p: ~p~n", [?FILE, ?LINE, Module, Reason]),
                 Acc
         end
                 end, [], application:loaded_applications()).

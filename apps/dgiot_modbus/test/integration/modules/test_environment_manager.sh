@@ -1,0 +1,468 @@
+#!/bin/bash
+
+# 错误处理
+set -euo pipefail
+trap 'echo "脚本执行失败: $?" >&2' ERR
+#!/bin/bash
+# test_environment_manager.sh - Modbus测试环境管理器
+# 支持自动创建通道、产品、设备，以及模拟器的启动和管理
+
+# 颜色输出
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# 日志函数
+log_info() { echo -e "${BLUE}[INFO]${NC} $(date '+%Y-%m-%d %H:%M:%S') $*"; }
+log_success() { echo -e "${GREEN}[SUCCESS]${NC} $(date '+%Y-%m-%d %H:%M:%S') $*"; }
+log_warning() { echo -e "${YELLOW}[WARNING]${NC} $(date '+%Y-%m-%d %H:%M:%S') $*"; }
+log_error() { echo -e "${RED}[ERROR]${NC} $(date '+%Y-%m-%d %H:%M:%S') $*" >&2; }
+
+# 配置参数
+MODBUS_RTU_PORT=20000  # 服务器端口（Modbus RTU over TCP Server监听端口）  # Modbus RTU over TCP Server端口
+MODBUS_TCP_PORT=502    # Modbus TCP Server端口（模拟器）
+MODBUS_TCP_CLIENT_PORT=503  # Modbus TCP Client连接端口
+
+# 测试产品配置
+TEST_PRODUCT_ID="feeb43bffb"
+TEST_PRODUCT_NAME="Modbus测试产品"
+TEST_CHANNEL_ID="modbus_test_channel"
+TEST_DEVICE_PREFIX="test_modbus_device"
+
+# 检查系统服务
+check_system_services() {
+    log_info "检查系统服务状态"
+    
+    # 检查emqx进程
+    if ! pgrep -f "emqx" > /dev/null; then
+        log_error "DG-IoT平台未运行，请先启动: make run"
+        return 1
+    fi
+    log_success "DG-IoT平台正在运行"
+    
+    # 检查modbus插件是否加载
+    local plugin_check=$(_build/emqx/rel/emqx/bin/emqx eval 'io:format("Module: ~p~n", [code:which(modbus_rtu)]).' 2>/dev/null)
+    if ! echo "$plugin_check" | grep -q "modbus_rtu.beam"; then
+        log_warning "modbus_rtu模块可能未加载，尝试热编译..."
+        _build/emqx/rel/emqx/bin/emqx eval 'dgiot_plugin:compile(dgiot_modbus).'
+    else
+        log_success "modbus_rtu模块已加载"
+    fi
+    
+    return 0
+}
+
+# 创建测试通道
+create_test_channel() {
+    local channel_type="$1"  # "rtu" 或 "tcp"
+    local port="$2"
+    local regtype="$3"
+    
+    log_info "创建${channel_type}测试通道，端口: ${port}, 注册类型: ${regtype}"
+    
+    # 构建通道配置
+    local channel_config=$(cat <<EOF
+{
+    "name": "Modbus ${channel_type}测试通道",
+    "type": "MODBUS",
+    "port": ${port},
+    "regtype": "${regtype}",
+    "regular": "wrj_dm-zqy",
+    "dtutype": "DGIOT",
+    "product": "${TEST_PRODUCT_ID}",
+    "status": "enable"
+}
+EOF
+    )
+    
+    # 调用API创建通道
+    local response=$(curl -s -X POST "http://127.0.0.1/iotapi/channel" \
+        -H "Authorization: Bearer r:db1f3d43d05c782c8ceebb87724a2ac0" \
+        -H "Content-Type: application/json" \
+        -d "$channel_config")
+    
+    if echo "$response" | grep -q '"code":200'; then
+        log_success "${channel_type}测试通道创建成功"
+        return 0
+    else
+        log_error "${channel_type}测试通道创建失败: $response"
+        return 1
+    fi
+}
+
+# 创建测试产品
+create_test_product() {
+    log_info "创建测试产品"
+    
+    # 检查产品是否已存在
+    local product_check=$(_build/emqx/rel/emqx/bin/emqx eval "
+        case dgiot_product:lookup_prod(<<\"$TEST_PRODUCT_ID\">>) of
+            {ok, _} -> io:format(\"exists\");
+            _ -> io:format(\"not_exists\")
+        end.
+    " 2>/dev/null)
+    
+    if [ "$product_check" = "exists" ]; then
+        log_info "测试产品已存在，跳过创建"
+        return 0
+    fi
+    
+    # 构建产品配置
+    local product_config=$(cat <<EOF
+{
+    "name": "${TEST_PRODUCT_NAME}",
+    "devType": "sensor",
+    "category": "modbus",
+    "accessMethod": "poll",
+    "status": "enable",
+    "config": {
+        "parser": "dgiot_modbus_parser",
+        "channel": "${TEST_CHANNEL_ID}"
+    },
+    "thing": {
+        "properties": [
+            {
+                "identifier": "temperature",
+                "name": "温度",
+                "accessMode": "r",
+                "dataType": {
+                    "type": "float",
+                    "specs": {
+                        "min": -50,
+                        "max": 100,
+                        "step": 0.1,
+                        "unit": "°C"
+                    }
+                },
+                "dataForm": {
+                    "strategy": "上报",
+                    "protocol": "MODBUSRTU"
+                },
+                "dataSource": {
+                    "slaveid": "0X01",
+                    "address": "0X00",
+                    "length": 2
+                }
+            },
+            {
+                "identifier": "humidity",
+                "name": "湿度",
+                "accessMode": "r",
+                "dataType": {
+                    "type": "float",
+                    "specs": {
+                        "min": 0,
+                        "max": 100,
+                        "step": 0.1,
+                        "unit": "%"
+                    }
+                },
+                "dataForm": {
+                    "strategy": "上报",
+                    "protocol": "MODBUSRTU"
+                },
+                "dataSource": {
+                    "slaveid": "0X01",
+                    "address": "0X02",
+                    "length": 2
+                }
+            }
+        ]
+    }
+}
+EOF
+    )
+    
+    # 调用API创建产品
+    local response=$(curl -s -X POST "http://127.0.0.1/iotapi/product" \
+        -H "Authorization: Bearer r:db1f3d43d05c782c8ceebb87724a2ac0" \
+        -H "Content-Type: application/json" \
+        -d "$product_config")
+    
+    if echo "$response" | grep -q '"code":200'; then
+        log_success "测试产品创建成功"
+        return 0
+    else
+        log_error "测试产品创建失败: $response"
+        return 1
+    fi
+}
+
+# 创建测试设备
+create_test_device() {
+    local device_name="$1"
+    local device_addr="$2"
+    
+    log_info "创建测试设备: ${device_name}, 地址: ${device_addr}"
+    
+    # 构建设备配置
+    local device_config=$(cat <<EOF
+{
+    "name": "${device_name}",
+    "product": "${TEST_PRODUCT_ID}",
+    "devaddr": "${device_addr}",
+    "status": "online"
+}
+EOF
+    )
+    
+    # 调用API创建设备
+    local response=$(curl -s -X POST "http://127.0.0.1/iotapi/device" \
+        -H "Authorization: Bearer r:db1f3d43d05c782c8ceebb87724a2ac0" \
+        -H "Content-Type: application/json" \
+        -d "$device_config")
+    
+    if echo "$response" | grep -q '"code":200'; then
+        log_success "测试设备创建成功: ${device_name}"
+        return 0
+    else
+        log_error "测试设备创建失败: $response"
+        return 1
+    fi
+}
+
+# 启动Modbus RTU Client模拟器
+start_modbus_rtu_client_simulator() {
+    log_info "启动Modbus RTU Client模拟器"
+    
+    # 检查是否已安装Python
+    if ! command -v python3 > /dev/null; then
+        log_error "Python3未安装，无法启动模拟器"
+        return 1
+    fi
+    
+    # 使用独立的Python脚本
+    local simulator_script="$(dirname "$0")/simulators/modbus_rtu_client_simulator.py"
+    
+    if [ ! -f "$simulator_script" ]; then
+        log_error "模拟器脚本不存在: $simulator_script"
+        return 1
+    fi
+    
+    # 启动模拟器（后台运行）
+    python3 "$simulator_script" --host 127.0.0.1 --port "$MODBUS_RTU_PORT" \
+        --device "test_rtu_device_01" --regtype "RegisterByPort" --interval 10 &
+    
+    local simulator_pid=$!
+    echo "$simulator_pid" > /tmp/modbus_rtu_client_simulator.pid
+    
+    log_success "Modbus RTU Client模拟器已启动 (PID: $simulator_pid)"
+    return 0
+}
+
+# 启动Modbus TCP Server模拟器
+start_modbus_tcp_server_simulator() {
+    log_info "启动Modbus TCP Server模拟器"
+    
+    # 检查是否已安装Python
+    if ! command -v python3 > /dev/null; then
+        log_error "Python3未安装，无法启动模拟器"
+        return 1
+    fi
+    
+    # 使用独立的Python脚本
+    local simulator_script="$(dirname "$0")/simulators/modbus_tcp_server_simulator.py"
+    
+    if [ ! -f "$simulator_script" ]; then
+        log_error "模拟器脚本不存在: $simulator_script"
+        return 1
+    fi
+    
+    # 启动模拟器（后台运行）
+    python3 "$simulator_script" --host 0.0.0.0 --port "$MODBUS_TCP_PORT" &
+    
+    local simulator_pid=$!
+    echo "$simulator_pid" > /tmp/modbus_tcp_server_simulator.pid
+    
+    log_success "Modbus TCP Server模拟器已启动 (PID: $simulator_pid)"
+    return 0
+}
+
+# 停止所有模拟器
+stop_all_simulators() {
+    log_info "停止所有模拟器"
+    
+    # 停止RTU Client模拟器
+    if [ -f "/tmp/modbus_rtu_client_simulator.pid" ]; then
+        local rtu_pid=$(cat /tmp/modbus_rtu_client_simulator.pid)
+        if kill -0 "$rtu_pid" 2>/dev/null; then
+            kill "$rtu_pid" 2>/dev/null
+            log_success "停止Modbus RTU Client模拟器 (PID: $rtu_pid)"
+        fi
+        rm -f /tmp/modbus_rtu_client_simulator.pid
+    fi
+    
+    # 停止TCP Server模拟器
+    if [ -f "/tmp/modbus_tcp_server_simulator.pid" ]; then
+        local tcp_pid=$(cat /tmp/modbus_tcp_server_simulator.pid)
+        if kill -0 "$tcp_pid" 2>/dev/null; then
+            kill "$tcp_pid" 2>/dev/null
+            log_success "停止Modbus TCP Server模拟器 (PID: $tcp_pid)"
+        fi
+        rm -f /tmp/modbus_tcp_server_simulator.pid
+    fi
+    
+    # 清理其他可能的模拟器进程
+    pkill -f "modbus.*simulator" 2>/dev/null || true
+    
+    return 0
+}
+
+# 清理测试环境
+cleanup_test_environment() {
+    log_info "清理测试环境"
+    
+    # 停止所有模拟器
+    stop_all_simulators
+    
+    # 清理测试设备
+    _build/emqx/rel/emqx/bin/emqx eval "
+        % 清理所有测试设备
+        TestDevices = [<<\"test_rtu_device_01-20000\">>, <<\"test_rtu_device_02-20000\">>, <<\"test_tcp_device_01\">>],
+        ProductId = <<\"$TEST_PRODUCT_ID\">>,
+        
+        lists:foreach(
+            fun(DevAddr) ->
+                DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
+                dgiot_device:delete(DeviceId),
+                io:format(\"清理设备: ~p~n\", [DeviceId])
+            end,
+            TestDevices
+        ).
+    " 2>/dev/null || true
+    
+    log_success "测试环境清理完成"
+}
+
+# 检查通道状态
+check_channel_status() {
+    local channel_type="$1"
+    local port="$2"
+    
+    log_info "检查${channel_type}通道状态，端口: ${port}"
+    
+    # 检查端口监听
+    if netstat -tlnp | grep ":$port" > /dev/null; then
+        log_success "${channel_type}通道正在监听端口${port}"
+        return 0
+    else
+        log_error "${channel_type}通道未监听端口${port}"
+        return 1
+    fi
+}
+
+# 设置完整的测试环境
+setup_complete_test_environment() {
+    log_info "设置完整的Modbus测试环境"
+    
+    # 检查系统服务
+    if ! check_system_services; then
+        return 1
+    fi
+    
+    # 清理现有环境
+    cleanup_test_environment
+    
+    # 创建测试产品
+    if ! create_test_product; then
+        log_warning "产品创建失败，继续测试..."
+    fi
+    
+    # 创建Modbus RTU通道
+    if ! create_test_channel "rtu" "$MODBUS_RTU_PORT" "RegisterByPort"; then
+        log_warning "RTU通道创建失败，继续测试..."
+    fi
+    
+    # 检查RTU通道状态
+    check_channel_status "RTU" "$MODBUS_RTU_PORT"
+    
+    # 创建测试设备
+    create_test_device "RTU测试设备01" "test_rtu_device_01-20000"
+    create_test_device "RTU测试设备02" "test_rtu_device_02-20000"
+    
+    # 启动模拟器
+    start_modbus_rtu_client_simulator
+    start_modbus_tcp_server_simulator
+    
+    # 等待模拟器启动
+    sleep 2
+    
+    log_success "完整的Modbus测试环境设置完成"
+    echo ""
+    echo "测试环境配置:"
+    echo "  - Modbus RTU Server端口: $MODBUS_RTU_PORT"
+    echo "  - Modbus TCP Server端口: $MODBUS_TCP_PORT"
+    echo "  - 测试产品ID: $TEST_PRODUCT_ID"
+    echo "  - RTU测试设备: test_rtu_device_01-20000, test_rtu_device_02-20000"
+    echo ""
+    echo "模拟器状态:"
+    echo "  - Modbus RTU Client模拟器: 已启动"
+    echo "  - Modbus TCP Server模拟器: 已启动"
+    
+    return 0
+}
+
+# 显示使用说明
+show_usage() {
+    echo "Modbus测试环境管理器"
+    echo ""
+    echo "用法: $0 [命令]"
+    echo ""
+    echo "命令:"
+    echo "  setup          设置完整的测试环境"
+    echo "  cleanup        清理测试环境"
+    echo "  check-services 检查系统服务"
+    echo "  start-rtu-sim  启动RTU Client模拟器"
+    echo "  start-tcp-sim  启动TCP Server模拟器"
+    echo "  stop-sims      停止所有模拟器"
+    echo "  check-channels 检查通道状态"
+    echo "  help           显示此帮助信息"
+    echo ""
+    echo "示例:"
+    echo "  $0 setup        # 设置完整的测试环境"
+    echo "  $0 cleanup      # 清理测试环境"
+    echo "  $0 check-channels # 检查通道状态"
+}
+
+# 主函数
+main() {
+    case "$1" in
+        setup)
+            setup_complete_test_environment
+            ;;
+        cleanup)
+            cleanup_test_environment
+            ;;
+        check-services)
+            check_system_services
+            ;;
+        start-rtu-sim)
+            start_modbus_rtu_client_simulator
+            ;;
+        start-tcp-sim)
+            start_modbus_tcp_server_simulator
+            ;;
+        stop-sims)
+            stop_all_simulators
+            ;;
+        check-channels)
+            check_channel_status "RTU" "$MODBUS_RTU_PORT"
+            check_channel_status "TCP" "$MODBUS_TCP_PORT"
+            ;;
+        help|--help|-h)
+            show_usage
+            ;;
+        *)
+            echo "未知命令: $1"
+            show_usage
+            exit 1
+            ;;
+    esac
+}
+
+# 如果直接运行此脚本，执行主函数
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    main "$@"
+fi

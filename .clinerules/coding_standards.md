@@ -219,8 +219,8 @@ ensure_utf8_binary(Value) when is_binary(Value) ->
 
 ```bash
 # 错误：硬编码绝对路径 ❌
-cd /root/gitee/dgiot
-source /root/gitee/dgiot/scripts/config.sh
+cd /absolute/path/to/project
+source /absolute/path/to/project/scripts/config.sh
 
 # 正确：使用相对路径或变量 ✅
 cd "$(dirname "$0")/../.."

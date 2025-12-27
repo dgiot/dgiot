@@ -1,0 +1,296 @@
+#!/bin/bash
+# 脚本名称: run_integration_test.sh
+# 功能描述: 集成测试主脚本
+# 作者: DG-IoT团队
+# 创建日期: 2025-12-26
+# 版本: 1.0.0
+# 使用说明: 运行前确保DG-IoT平台已启动
+
+# 错误处理
+set -euo pipefail
+trap 'echo "脚本执行失败: $?" >&2' ERR
+
+
+
+#!/bin/bash
+# run_integration_test.sh - Modbus集成测试主脚本
+# 提供统一的测试入口，支持完整的测试循环
+
+echo "================================================================"
+echo "Modbus集成测试框架 v2.0"
+echo "支持完整的测试循环：发包 → 读日志 → 检查 → 修改 → 热加载 → 再发包"
+echo "================================================================"
+echo "测试开始时间: $(date)"
+echo ""
+
+# 配置参数
+TEST_DEVICE="wrj_dm-zqy"
+TEST_PORT=20000  # 服务器端口（通道配置中的固定端口）
+TEST_PRODUCT="feeb43bffb"
+DEVICE_ADDR="${TEST_DEVICE}-${TEST_PORT}"  # 设备地址 = 注册报文 + "-" + 服务器端口
+LOG_FILE="_build/emqx/rel/emqx/log/emqx.log.1"
+TEST_START_TIME="$(date)"  # 测试开始时间，用于日志时间戳分析
+
+# 颜色输出
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
+
+# 日志函数
+log_info() { echo -e "${BLUE}[INFO]${NC} $(date '+%Y-%m-%d %H:%M:%S') $*"; }
+log_success() { echo -e "${GREEN}[SUCCESS]${NC} $(date '+%Y-%m-%d %H:%M:%S') $*"; }
+log_warning() { echo -e "${YELLOW}[WARNING]${NC} $(date '+%Y-%m-%d %H:%M:%S') $*"; }
+log_error() { echo -e "${RED}[ERROR]${NC} $(date '+%Y-%m-%d %H:%M:%S') $*" >&2; }
+
+# 导入模块
+source_modules() {
+    local module_dir="$(dirname "$0")/modules"
+    
+    if [ ! -d "$module_dir" ]; then
+        log_error "模块目录不存在: $module_dir"
+        return 1
+    fi
+    
+    # 导入所有模块
+    for module in "$module_dir"/*.sh; do
+        if [ -f "$module" ]; then
+            source "$module"
+            log_info "导入模块: $(basename "$module")"
+        fi
+    done
+    
+    return 0
+}
+
+# 显示使用说明
+show_usage() {
+    echo ""
+    echo "=== 使用说明 ==="
+    echo "主脚本: $0"
+    echo ""
+    echo "测试模式:"
+    echo "  --env-check       环境检查"
+    echo "  --device-reg      设备注册测试"
+    echo "  --data-report     Modbus数据上报测试"
+    echo "  --api-query       API查询测试"
+    echo "  --log-analysis    日志分析"
+    echo "  --data-storage    数据存储验证"
+    echo "  --hot-reload      热编译和热加载"
+    echo "  --full-loop       完整测试循环（发包→读日志→检查→修改→热加载→再发包）"
+    echo "  --help            显示此帮助信息"
+    echo ""
+    echo "完整测试循环包括:"
+    echo "  1. 环境检查 → 2. 设备注册 → 3. 数据上报 → 4. 日志分析"
+    echo "  5. 数据存储验证 → 6. API查询 → 7. 热编译验证"
+    echo "  8. 问题诊断 → 9. 代码修改 → 10. 重新测试"
+    echo ""
+    echo "示例:"
+    echo "  $0 --full-loop     # 执行完整测试循环"
+    echo "  $0 --env-check     # 只检查环境"
+    echo "  $0 --device-reg    # 只测试设备注册"
+}
+
+# 执行完整测试循环
+execute_full_loop() {
+    log_info "开始执行完整测试循环..."
+    
+    local attempt=1
+    local max_attempts=3
+    local success=false
+    
+    while [ $attempt -le $max_attempts ] && [ "$success" = false ]; do
+        echo ""
+        echo "================================================================"
+        echo "测试循环 第 $attempt/$max_attempts 次尝试"
+        echo "================================================================"
+        
+        # 步骤1: 环境检查
+        log_info "步骤1: 环境检查"
+        if ! module_environment_check; then
+            log_error "环境检查失败，请检查系统状态"
+            return 1
+        fi
+        
+        # 步骤2: 清理测试环境
+        log_info "步骤2: 清理测试环境"
+        module_cleanup_environment
+        
+        # 步骤3: 设备注册测试
+        log_info "步骤3: 设备注册测试"
+        if ! module_device_registration; then
+            log_error "设备注册测试失败"
+            ((attempt++))
+            continue
+        fi
+        
+        # 步骤4: Modbus数据上报测试
+        log_info "步骤4: Modbus数据上报测试"
+        if ! module_modbus_data_report; then
+            log_error "Modbus数据上报测试失败"
+            ((attempt++))
+            continue
+        fi
+        
+        # 步骤5: 日志分析
+        log_info "步骤5: 日志分析"
+        if ! module_log_analysis; then
+            log_warning "日志分析发现问题，需要检查"
+            # 继续执行，可能只是警告
+        fi
+        
+        # 步骤5.5: 精准时空对应分析
+        log_info "步骤5.5: 精准时空对应分析"
+        if ! analyze_spatiotemporal_correlation; then
+            log_warning "时空对应分析发现问题"
+            # 继续执行，可能只是警告
+        fi
+        
+        # 步骤6: 数据存储验证
+        log_info "步骤6: 数据存储验证"
+        if ! module_data_storage; then
+            log_warning "数据存储验证发现问题"
+            # 继续执行，可能只是警告
+        fi
+        
+        # 步骤7: API查询测试
+        log_info "步骤7: API查询测试"
+        if ! module_api_query; then
+            log_warning "API查询测试发现问题"
+            # 继续执行，可能只是警告
+        fi
+        
+        # 步骤8: 检查测试结果
+        log_info "步骤8: 检查测试结果"
+        if check_test_results; then
+            log_success "✅ 所有测试通过！"
+            success=true
+            break
+        else
+            log_error "❌ 测试失败，需要修改代码"
+            
+            # 步骤9: 问题诊断
+            log_info "步骤9: 问题诊断"
+            module_problem_diagnosis
+            
+            # 步骤10: 热编译和热加载
+            log_info "步骤10: 热编译和热加载"
+            module_hot_reload
+            
+            ((attempt++))
+            
+            if [ $attempt -le $max_attempts ]; then
+                log_info "等待3秒后重新测试..."
+                sleep 3
+            fi
+        fi
+    done
+    
+    # 输出最终结果
+    echo ""
+    echo "================================================================"
+    echo "测试循环完成总结"
+    echo "================================================================"
+    echo "测试时间: $(date)"
+    echo "总尝试次数: $((attempt-1))"
+    
+    if [ "$success" = true ]; then
+        log_success "✅ 测试成功！在第 $((attempt-1)) 次尝试时通过"
+        return 0
+    else
+        log_error "❌ 测试失败！经过 $max_attempts 次尝试仍未通过"
+        return 1
+    fi
+}
+
+# 检查测试结果
+check_test_results() {
+    log_info "检查测试结果..."
+    
+    local all_passed=true
+    
+    # 检查设备是否注册成功
+    if ! check_device_registration; then
+        log_error "设备注册检查失败"
+        all_passed=false
+    fi
+    
+    # 检查数据是否解析成功
+    if ! check_data_parsing; then
+        log_error "数据解析检查失败"
+        all_passed=false
+    fi
+    
+    # 检查API是否正常
+    if ! check_api_response; then
+        log_warning "API响应检查发现问题"
+        # API问题可能不是致命错误
+    fi
+    
+    # 检查是否有错误日志
+    if check_error_logs; then
+        log_error "发现错误日志"
+        all_passed=false
+    fi
+    
+    if [ "$all_passed" = true ]; then
+        log_success "所有检查通过"
+        return 0
+    else
+        return 1
+    fi
+}
+
+# 主函数
+main() {
+    # 导入模块
+    if ! source_modules; then
+        log_error "模块导入失败"
+        exit 1
+    fi
+    
+    case "${1:-}" in
+        --env-check)
+            module_environment_check
+            ;;
+        --device-reg)
+            module_device_registration
+            ;;
+        --data-report)
+            module_modbus_data_report
+            ;;
+        --api-query)
+            module_api_query
+            ;;
+        --log-analysis)
+            module_log_analysis
+            ;;
+        --data-storage)
+            module_data_storage
+            ;;
+        --hot-reload)
+            module_hot_reload
+            ;;
+        --full-loop|"")
+            execute_full_loop
+            ;;
+        --help|-h)
+            show_usage
+            ;;
+        *)
+            log_error "未知选项: $1"
+            show_usage
+            exit 1
+            ;;
+    esac
+}
+
+# 检查是否在项目根目录
+if [ ! -f "Makefile" ]; then
+    log_error "请在项目根目录运行此脚本"
+    exit 1
+fi
+
+# 执行主函数
+main "$@"

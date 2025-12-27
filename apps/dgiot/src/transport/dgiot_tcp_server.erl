@@ -113,15 +113,26 @@ handle_info({tcp, Sock, Data}, #state{mod = Mod, child = #tcp{clientid = Clienti
             _ ->
                 Binary
         end,
-    DTUIP = dgiot_utils:get_ip(Sock),
+    % 安全获取IP地址，处理可能的socket错误
+    DTUIP = case dgiot_utils:get_ip(Sock) of
+        <<"">> -> <<"unknown_ip">>;
+        IPAddr -> IPAddr
+    end,
     write_log(ChildState#tcp.log, <<" RECV ", DTUIP/binary, " ", Clientid/binary>>, NewBin),
     Cnt = byte_size(NewBin),
     NewChildState = ChildState#tcp{buff = <<>>},
     case Mod:handle_info({tcp, <<Buff/binary, NewBin/binary>>}, NewChildState) of
         {noreply, #tcp{register = true, clientid = ClientId, buff = Buff, socket = Sock} = NewChild} ->
             dgiot_cm:register_channel(ClientId, self(), #{conn_mod => Mod}),
-            Ip = dgiot_utils:get_ip(Sock),
-            Port = dgiot_utils:get_port(Sock),
+            % 安全获取IP地址和端口，处理可能的socket错误
+            Ip = case dgiot_utils:get_ip(Sock) of
+                <<"">> -> <<"unknown_ip">>;
+                IPAddr1 -> IPAddr1
+            end,
+            Port = case dgiot_utils:get_port(Sock) of
+                0 -> 0;
+                P -> P
+            end,
             dgiot_cm:insert_channel_info(ClientId, #{ip => Ip, port => Port, online => dgiot_datetime:now_microsecs()}, [{tcp_recv, 1}]),
             {noreply, State#state{child = NewChild, incoming_bytes = Cnt}, hibernate};
         {noreply, NewChild} ->
@@ -140,7 +151,11 @@ handle_info({tcp, Sock, Data}, #state{mod = Mod, child = #tcp{clientid = Clienti
             _ ->
                 Binary
         end,
-    DTUIP = dgiot_utils:get_ip(Sock),
+    % 安全获取IP地址，处理可能的socket错误
+    DTUIP = case dgiot_utils:get_ip(Sock) of
+        <<"">> -> <<"unknown_ip">>;
+        IPAddr2 -> IPAddr2
+    end,
     write_log(ChildState#tcp.log, <<"RECV ", DTUIP/binary, " ", Clientid/binary>>, NewBin),
     Cnt = byte_size(NewBin),
     NewChildState = ChildState#tcp{buff = <<>>},
@@ -162,24 +177,40 @@ handle_info({shutdown, Reason}, #state{child = #tcp{clientid = CliendId, socket 
     ?LOG(error, "shutdown, ~p, ~p~n", [Reason, ChildState#tcp.state]),
     dgiot_cm:unregister_channel(CliendId),
     dgiot_device:offline(CliendId),
-    DTUIP = dgiot_utils:get_ip(Sock),
+    % 安全获取IP地址，处理可能的socket错误
+    DTUIP = case dgiot_utils:get_ip(Sock) of
+        <<"">> -> <<"unknown_ip">>;
+        IPAddr3 -> IPAddr3
+    end,
     write_log(ChildState#tcp.log, <<"ERROR ", DTUIP/binary, " ", CliendId/binary>>, list_to_binary(io_lib:format("~w", [Reason]))),
     {stop, normal, State#state{child = ChildState#tcp{socket = undefined}}};
 
 handle_info({shutdown, Reason}, #state{child = #tcp{clientid = Clientid, socket = Sock} = ChildState} = State) ->
     ?LOG(error, "shutdown, ~p, ~p~n", [Reason, ChildState#tcp.state]),
-    DTUIP = dgiot_utils:get_ip(Sock),
+    % 安全获取IP地址，处理可能的socket错误
+    DTUIP = case dgiot_utils:get_ip(Sock) of
+        <<"">> -> <<"unknown_ip">>;
+        IPAddr4 -> IPAddr4
+    end,
     write_log(ChildState#tcp.log, <<"ERROR ", DTUIP/binary, " ", Clientid/binary>>, list_to_binary(io_lib:format("~w", [Reason]))),
     {stop, normal, State#state{child = ChildState#tcp{socket = undefined}}};
 
 handle_info({tcp_error, _Sock, Reason}, #state{child = #tcp{clientid = Clientid, socket = Sock} = ChildState} = State) ->
     ?LOG(error, "tcp_error, ~p, ~p~n", [Reason, ChildState#tcp.state]),
-    DTUIP = dgiot_utils:get_ip(Sock),
+    % 安全获取IP地址，处理可能的socket错误
+    DTUIP = case dgiot_utils:get_ip(Sock) of
+        <<"">> -> <<"unknown_ip">>;
+        IPAddr5 -> IPAddr5
+    end,
     write_log(ChildState#tcp.log, <<"ERROR ", DTUIP/binary, " ", Clientid/binary>>, list_to_binary(io_lib:format("~w", [Reason]))),
     {stop, {shutdown, Reason}, State};
 
 handle_info({tcp_closed, Sock}, #state{mod = Mod, child = #tcp{clientid = Clientid, socket = Sock} = ChildState} = State) ->
-    DTUIP = dgiot_utils:get_ip(Sock),
+    % 安全获取IP地址，处理可能的socket错误
+    DTUIP = case dgiot_utils:get_ip(Sock) of
+        <<"">> -> <<"unknown_ip">>;
+        IPAddr6 -> IPAddr6
+    end,
     write_log(ChildState#tcp.log, <<"ERROR ", DTUIP/binary, " ", Clientid/binary>>, <<"tcp_closed">>),
     dgiot_metrics:dec(dgiot, <<"tcp_online">>, 1),
 %%    ?LOG(error, "tcp_closed ~p", [ChildState#tcp.state]),
@@ -222,7 +253,11 @@ send(#tcp{clientid = CliendId, register = true, transport = Transport, socket = 
         true ->
             {error, disconnected};
         false ->
-            DTUIP = dgiot_utils:get_ip(Socket),
+            % 安全获取IP地址，处理可能的socket错误
+            DTUIP = case dgiot_utils:get_ip(Socket) of
+                <<"">> -> <<"unknown_ip">>;
+                IPAddr7 -> IPAddr7
+            end,
             write_log(ChildState#tcp.log, <<"send ", DTUIP/binary, " ", CliendId/binary>>, Payload),
             Transport:send(Socket, Payload)
     end;
@@ -233,7 +268,11 @@ send(#tcp{clientid = Clientid, transport = Transport, socket = Socket} = ChildSt
         true ->
             {error, disconnected};
         false ->
-            DTUIP = dgiot_utils:get_ip(Socket),
+            % 安全获取IP地址，处理可能的socket错误
+            DTUIP = case dgiot_utils:get_ip(Socket) of
+                <<"">> -> <<"unknown_ip">>;
+                IPAddr8 -> IPAddr8
+            end,
             write_log(ChildState#tcp.log, <<"send ", DTUIP/binary, " ", Clientid/binary>>, Payload),
             Transport:send(Socket, Payload)
     end.

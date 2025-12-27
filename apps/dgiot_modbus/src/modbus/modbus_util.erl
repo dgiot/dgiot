@@ -96,7 +96,7 @@ coils_to_binary(Values, Acc) ->
 int16_to_binary(Values) ->
     << <<X:16>> || X <- Values >>.
 
-%% @doc »ñÈ¡Í·²¿Ä£Ê½ºÍ³¤¶È
+%% @doc è·å–å¤´éƒ¨æ¨¡å¼å’Œé•¿åº¦
 %% @spec get_header(Regular) -> {Header, Length}
 get_header(Regular) ->
     lists:foldl(fun(X, {Header, Len}) ->
@@ -107,7 +107,7 @@ get_header(Regular) ->
         end
     end, {[], 0}, re:split(dgiot_utils:to_list(Regular), "-", [{return, list}])).
 
-%% @doc »ñÈ¡²úÆ·Ãû³Æ
+%% @doc è·å–äº§å“åç§°
 %% @spec get_product_name(ProductId) -> ProductName
 get_product_name(ProductId) ->
     case dgiot_parse:get_object(<<"Product">>, ProductId) of
@@ -115,20 +115,20 @@ get_product_name(ProductId) ->
         _ -> <<"">>
     end.
 
-%% @doc ¸ù¾İ²úÆ·Ãû³ÆºÍÉè±¸ÀàĞÍ¼ÆËã²úÆ·ID
+%% @doc æ ¹æ®äº§å“åç§°å’Œè®¾å¤‡ç±»å‹è®¡ç®—äº§å“ID
 %% @spec get_product_id(ProductName, DevType) -> ProductId
 %% ProductName :: binary()
 %% DevType :: binary()
 %% ProductId :: binary()
 get_product_id(ProductName, DevType) ->
-    % ´ÓÅäÖÃ¶ÁÈ¡·ÖÀàID
+    % ä»é…ç½®è¯»å–åˆ†ç±»ID
     CategoryId = get_category_id(),
-    % ¼ÆËã²úÆ·ID
+    % è®¡ç®—äº§å“ID
     dgiot_parse_id:get_productid(CategoryId, DevType, ProductName).
 
-%% @doc ´ÓÓ¦ÓÃÅäÖÃÖĞ»ñÈ¡DGIoTÍø¹Ø·ÖÀàID
-%% ÅäÖÃÏî: modbus.category
-%% Ä¬ÈÏÖµ: <<"5ca6049839">>
+%% @doc ä»åº”ç”¨é…ç½®ä¸­è·å–DGIoTç½‘å…³åˆ†ç±»ID
+%% é…ç½®é¡¹: modbus.category
+%% é»˜è®¤å€¼: <<"5ca6049839">>
 %% @spec get_category_id() -> CategoryId
 %% CategoryId :: binary()
 get_category_id() ->
@@ -138,12 +138,12 @@ get_category_id() ->
         {ok, CategoryId} when is_list(CategoryId) ->
             list_to_binary(CategoryId);
         _ ->
-            % Ä¬ÈÏÖµ
+            % é»˜è®¤å€¼
             <<"5ca6049839">>
     end.
 
-%% @doc ½«Í¨Åä·ûÄ£Ê½×ª»»ÎªÕıÔò±í´ïÊ½Ä£Ê½
-%% Ö§³ÖµÄÍ¨Åä·û£º* Æ¥ÅäÈÎÒâ×Ö·ûĞòÁĞ
+%% @doc å°†é€šé…ç¬¦æ¨¡å¼è½¬æ¢ä¸ºæ­£åˆ™è¡¨è¾¾å¼æ¨¡å¼
+%% æ”¯æŒçš„é€šé…ç¬¦ï¼š* åŒ¹é…ä»»æ„å­—ç¬¦åºåˆ—
 %% @spec convert_pattern(Pattern) -> ConvertedPattern
 %% Pattern :: binary() | list()
 %% ConvertedPattern :: binary()
@@ -155,48 +155,48 @@ convert_pattern(Pattern) when is_list(Pattern) ->
     ConvertedList = convert_pattern_list(Pattern, [], []),
     list_to_binary(ConvertedList).
 
-%% @doc ĞŞÕıºóµÄµİ¹é´¦Àíº¯Êı - ±£³ÖÕıÈ·µÄ×Ö·ûË³Ğò
+%% @doc ä¿®æ­£åçš„é€’å½’å¤„ç†å‡½æ•° - ä¿æŒæ­£ç¡®çš„å­—ç¬¦é¡ºåº
 %% @private
 convert_pattern_list([], Acc, []) ->
-    %% Ö±½Ó·µ»ØAcc£¬²»½øĞĞreverse
+    %% ç›´æ¥è¿”å›Accï¼Œä¸è¿›è¡Œreverse
     Acc;
 convert_pattern_list([], Acc, StarAcc) ->
-    %% ´¦ÀíÄ©Î²µÄĞÇºÅĞòÁĞ
+    %% å¤„ç†æœ«å°¾çš„æ˜Ÿå·åºåˆ—
     RegexPart = create_regex_part(StarAcc),
-    %% Ö±½ÓÆ´½Ó£¬±£³ÖË³Ğò
+    %% ç›´æ¥æ‹¼æ¥ï¼Œä¿æŒé¡ºåº
     Acc ++ RegexPart;
 convert_pattern_list([$* | Rest], Acc, StarAcc) ->
-    %% Óöµ½ĞÇºÅ£¬Ìí¼Óµ½ĞÇºÅÀÛ¼ÓÆ÷
+    %% é‡åˆ°æ˜Ÿå·ï¼Œæ·»åŠ åˆ°æ˜Ÿå·ç´¯åŠ å™¨
     convert_pattern_list(Rest, Acc, [$* | StarAcc]);
 convert_pattern_list([Char | Rest], Acc, []) ->
-    %% ÆÕÍ¨×Ö·û£¬Ã»ÓĞ´ı´¦ÀíµÄĞÇºÅ
+    %% æ™®é€šå­—ç¬¦ï¼Œæ²¡æœ‰å¾…å¤„ç†çš„æ˜Ÿå·
     convert_pattern_list(Rest, Acc ++ [Char], []);
 convert_pattern_list([Char | Rest], Acc, StarAcc) ->
-    %% Óöµ½ÆÕÍ¨×Ö·û£¬µ«ÓĞ´ı´¦ÀíµÄĞÇºÅĞòÁĞ
+    %% é‡åˆ°æ™®é€šå­—ç¬¦ï¼Œä½†æœ‰å¾…å¤„ç†çš„æ˜Ÿå·åºåˆ—
     RegexPart = create_regex_part(StarAcc),
-    %% ¹Ø¼üĞŞÕı£ºÏÈÌí¼ÓÕıÔò±í´ïÊ½²¿·Ö£¬ÔÙÌí¼Óµ±Ç°×Ö·û
+    %% å…³é”®ä¿®æ­£ï¼šå…ˆæ·»åŠ æ­£åˆ™è¡¨è¾¾å¼éƒ¨åˆ†ï¼Œå†æ·»åŠ å½“å‰å­—ç¬¦
     convert_pattern_list(Rest, Acc ++ RegexPart ++ [Char], []).
 
-%% @doc ´´½¨ÕıÔò±í´ïÊ½²¿·Ö
+%% @doc åˆ›å»ºæ­£åˆ™è¡¨è¾¾å¼éƒ¨åˆ†
 %% @private
 create_regex_part(StarAcc) ->
     Count = length(StarAcc),
     if
         Count > 0 ->
-            % ÔÊĞí×ÖÄ¸¡¢Êı×Ö¡¢Á¬×Ö·û¡¢ÏÂ»®ÏßµÈ³£¼û×Ö·û
+            % å…è®¸å­—æ¯ã€æ•°å­—ã€è¿å­—ç¬¦ã€ä¸‹åˆ’çº¿ç­‰å¸¸è§å­—ç¬¦
             "[a-zA-Z0-9\\-_]{" ++ integer_to_list(Count) ++ "}";
         true ->
             ""
     end.
 
-%% @doc ¸ù¾İDTUÍ·²éÕÒ²úÆ·
+%% @doc æ ¹æ®DTUå¤´æŸ¥æ‰¾äº§å“
 %% @spec find_product(DtuHeader, Products) -> ProductItem | not_found
 %% DtuHeader :: binary()
 %% Products :: list()
 %% ProductItem :: map()
 find_product(_DtuHeader, []) -> not_found;
 find_product(DtuHeader, [OuterMap | Tail]) ->
-    % Ê¹ÓÃ maps:to_list/1 ½«Íâ²¿Map×ª»»Îª¼üÖµ¶ÔÁĞ±í£¬È»ºóÌáÈ¡µÚÒ»¸ö£¨Ò²ÊÇÎ¨Ò»Ò»¸ö£©¼üÖµ¶Ô
+    % ä½¿ç”¨ maps:to_list/1 å°†å¤–éƒ¨Mapè½¬æ¢ä¸ºé”®å€¼å¯¹åˆ—è¡¨ï¼Œç„¶åæå–ç¬¬ä¸€ä¸ªï¼ˆä¹Ÿæ˜¯å”¯ä¸€ä¸€ä¸ªï¼‰é”®å€¼å¯¹
     case OuterMap of
         {ProductId, _DetailMap} ->
             case dgiot_product:local(ProductId) of
@@ -208,15 +208,15 @@ find_product(DtuHeader, [OuterMap | Tail]) ->
                             
                             case re:run(DtuHeader, ReHeader, [{capture, first, list}]) of
                                 {match, [_DtuAddr]} when byte_size(DtuHeader) =:= Len ->
-                                    ProductItem;  % Æ¥Åä³É¹¦£¬·µ»ØÕû¸öProductItem
+                                    ProductItem;  % åŒ¹é…æˆåŠŸï¼Œè¿”å›æ•´ä¸ªProductItem
                                 _ ->
-                                    find_product(DtuHeader, Tail)  % ²»Æ¥Åä£¬¼ÌĞø±éÀúÎ²²¿
+                                    find_product(DtuHeader, Tail)  % ä¸åŒ¹é…ï¼Œç»§ç»­éå†å°¾éƒ¨
                             end;
                         _ ->
-                            find_product(DtuHeader, Tail)  % ²»Æ¥Åä£¬¼ÌĞø±éÀúÎ²²¿
+                            find_product(DtuHeader, Tail)  % ä¸åŒ¹é…ï¼Œç»§ç»­éå†å°¾éƒ¨
                     end;
                 _ ->
-                    find_product(DtuHeader, Tail)  % ÕÒ²»µ½ºÏÊÊµÄProductItem£¬¼ÌĞø±éÀúÎ²²¿
+                    find_product(DtuHeader, Tail)  % æ‰¾ä¸åˆ°åˆé€‚çš„ProductItemï¼Œç»§ç»­éå†å°¾éƒ¨
             end;
         _ ->
             not_found

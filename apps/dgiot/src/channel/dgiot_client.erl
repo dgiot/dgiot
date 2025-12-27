@@ -292,10 +292,10 @@ send(ChannelId, ClientId, Topic, Payload) ->
                     Pid ! {dclient_ack, Topic, Payload},
                     ok;
                 false ->
-                    fasle
+                    false
             end;
         _ ->
-            fasle
+            false
     end.
 
 %% @doc client start_link
