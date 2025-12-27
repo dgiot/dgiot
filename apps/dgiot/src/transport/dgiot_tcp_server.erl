@@ -113,7 +113,7 @@ handle_info({tcp, Sock, Data}, #state{mod = Mod, child = #tcp{clientid = Clienti
             _ ->
                 Binary
         end,
-    % 安全获取IP地址，处理可能的socket错误
+    % 瀹夊叏鑾峰彇IP鍦板潃锛屽鐞嗗彲鑳界殑socket閿欒
     DTUIP = case dgiot_utils:get_ip(Sock) of
         <<"">> -> <<"unknown_ip">>;
         IPAddr -> IPAddr
@@ -124,7 +124,7 @@ handle_info({tcp, Sock, Data}, #state{mod = Mod, child = #tcp{clientid = Clienti
     case Mod:handle_info({tcp, <<Buff/binary, NewBin/binary>>}, NewChildState) of
         {noreply, #tcp{register = true, clientid = ClientId, buff = Buff, socket = Sock} = NewChild} ->
             dgiot_cm:register_channel(ClientId, self(), #{conn_mod => Mod}),
-            % 安全获取IP地址和端口，处理可能的socket错误
+            % 瀹夊叏鑾峰彇IP鍦板潃鍜岀鍙ｏ紝澶勭悊鍙兘鐨剆ocket閿欒
             Ip = case dgiot_utils:get_ip(Sock) of
                 <<"">> -> <<"unknown_ip">>;
                 IPAddr1 -> IPAddr1
@@ -151,7 +151,7 @@ handle_info({tcp, Sock, Data}, #state{mod = Mod, child = #tcp{clientid = Clienti
             _ ->
                 Binary
         end,
-    % 安全获取IP地址，处理可能的socket错误
+    % 瀹夊叏鑾峰彇IP鍦板潃锛屽鐞嗗彲鑳界殑socket閿欒
     DTUIP = case dgiot_utils:get_ip(Sock) of
         <<"">> -> <<"unknown_ip">>;
         IPAddr2 -> IPAddr2
@@ -177,7 +177,7 @@ handle_info({shutdown, Reason}, #state{child = #tcp{clientid = CliendId, socket 
     ?LOG(error, "shutdown, ~p, ~p~n", [Reason, ChildState#tcp.state]),
     dgiot_cm:unregister_channel(CliendId),
     dgiot_device:offline(CliendId),
-    % 安全获取IP地址，处理可能的socket错误
+    % 瀹夊叏鑾峰彇IP鍦板潃锛屽鐞嗗彲鑳界殑socket閿欒
     DTUIP = case dgiot_utils:get_ip(Sock) of
         <<"">> -> <<"unknown_ip">>;
         IPAddr3 -> IPAddr3
@@ -187,7 +187,7 @@ handle_info({shutdown, Reason}, #state{child = #tcp{clientid = CliendId, socket 
 
 handle_info({shutdown, Reason}, #state{child = #tcp{clientid = Clientid, socket = Sock} = ChildState} = State) ->
     ?LOG(error, "shutdown, ~p, ~p~n", [Reason, ChildState#tcp.state]),
-    % 安全获取IP地址，处理可能的socket错误
+    % 瀹夊叏鑾峰彇IP鍦板潃锛屽鐞嗗彲鑳界殑socket閿欒
     DTUIP = case dgiot_utils:get_ip(Sock) of
         <<"">> -> <<"unknown_ip">>;
         IPAddr4 -> IPAddr4
@@ -197,7 +197,7 @@ handle_info({shutdown, Reason}, #state{child = #tcp{clientid = Clientid, socket 
 
 handle_info({tcp_error, _Sock, Reason}, #state{child = #tcp{clientid = Clientid, socket = Sock} = ChildState} = State) ->
     ?LOG(error, "tcp_error, ~p, ~p~n", [Reason, ChildState#tcp.state]),
-    % 安全获取IP地址，处理可能的socket错误
+    % 瀹夊叏鑾峰彇IP鍦板潃锛屽鐞嗗彲鑳界殑socket閿欒
     DTUIP = case dgiot_utils:get_ip(Sock) of
         <<"">> -> <<"unknown_ip">>;
         IPAddr5 -> IPAddr5
@@ -206,7 +206,7 @@ handle_info({tcp_error, _Sock, Reason}, #state{child = #tcp{clientid = Clientid,
     {stop, {shutdown, Reason}, State};
 
 handle_info({tcp_closed, Sock}, #state{mod = Mod, child = #tcp{clientid = Clientid, socket = Sock} = ChildState} = State) ->
-    % 安全获取IP地址，处理可能的socket错误
+    % 瀹夊叏鑾峰彇IP鍦板潃锛屽鐞嗗彲鑳界殑socket閿欒
     DTUIP = case dgiot_utils:get_ip(Sock) of
         <<"">> -> <<"unknown_ip">>;
         IPAddr6 -> IPAddr6
@@ -253,7 +253,7 @@ send(#tcp{clientid = CliendId, register = true, transport = Transport, socket = 
         true ->
             {error, disconnected};
         false ->
-            % 安全获取IP地址，处理可能的socket错误
+            % 瀹夊叏鑾峰彇IP鍦板潃锛屽鐞嗗彲鑳界殑socket閿欒
             DTUIP = case dgiot_utils:get_ip(Socket) of
                 <<"">> -> <<"unknown_ip">>;
                 IPAddr7 -> IPAddr7
@@ -268,7 +268,7 @@ send(#tcp{clientid = Clientid, transport = Transport, socket = Socket} = ChildSt
         true ->
             {error, disconnected};
         false ->
-            % 安全获取IP地址，处理可能的socket错误
+            % 瀹夊叏鑾峰彇IP鍦板潃锛屽鐞嗗彲鑳界殑socket閿欒
             DTUIP = case dgiot_utils:get_ip(Socket) of
                 <<"">> -> <<"unknown_ip">>;
                 IPAddr8 -> IPAddr8
