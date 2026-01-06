@@ -106,7 +106,9 @@ fill_serial({obj, Props}, Serial) ->
             {obj, Props};
         ParamList when is_list(ParamList) ->
             NewParamList = update_param_list(ParamList, Serial),
-            NewProps = proplists:put("paramList", NewParamList, Props),
+            % 删除旧的paramList，然后添加新的
+            Props1 = proplists:delete("paramList", Props),
+            NewProps = [{"paramList", NewParamList} | Props1],
             {obj, NewProps}
     end;
 fill_serial(JsonData, _Serial) ->
@@ -131,7 +133,9 @@ update_param({obj, Props}, Serial) ->
         not_found -> {obj, Props};
         Nodes when is_list(Nodes) ->
             NewNodes = update_nodes(Nodes, Serial),
-            NewProps = proplists:put("nodes", NewNodes, Props),
+            % 删除旧的nodes，然后添加新的
+            Props1 = proplists:delete("nodes", Props),
+            NewProps = [{"nodes", NewNodes} | Props1],
             {obj, NewProps}
     end;
 update_param(Param, _Serial) ->
@@ -152,7 +156,9 @@ update_nodes(Nodes, Serial) ->
                       case proplists:get_value("name", Props, undefined) of
                           "serial" ->
                               % 找到目标节点，更新value字段
-                              NewProps = proplists:put("value", Serial, Props),
+                              % 删除旧的value，然后添加新的
+                              Props1 = proplists:delete("value", Props),
+                              NewProps = [{"value", Serial} | Props1],
                               {obj, NewProps};
                           _ ->
                               {obj, Props}
