@@ -24,8 +24,7 @@
     stop/1, get/1, set/3, delete/1]).
 
 %% gen_server callbacks
--export([init/1, handle_call/3, handle_cast/2,
-    handle_info/2, terminate/2, code_change/3]).
+-export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
 
 -record(cachestate, {threshold, maxsize, cacheets, checkpid, skip, dskip}).
 
@@ -139,7 +138,14 @@ handle_info(load_cache_Product, #cachestate{skip = Skip} = State) ->
             erlang:send_after(1000 * Interval, self(), load_cache_Product),
             {noreply, State#cachestate{skip = Next_Skip}};
         _ ->
-            dgiot_bridge_server ! {start_custom_channel},
+            % 检查 dgiot_bridge_server 进程是否存在
+            case whereis(dgiot_bridge_server) of
+                undefined ->
+                    ?LOG(warning, "dgiot_bridge_server not started yet, retrying in 5 seconds"),
+                    erlang:send_after(5000, self(), load_cache_Product);
+                _ ->
+                    dgiot_bridge_server ! {start_custom_channel}
+            end,
             {noreply, State}
     end;
 
