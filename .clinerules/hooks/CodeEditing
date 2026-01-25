@@ -1,0 +1,111 @@
+h#!/bin/bash
+# CodeEditing Hook - 在代码编辑过程中自动检测和推荐相关技能
+# 简化版本，避免复杂的正则表达式问题
+
+# 获取当前编辑的文件信息
+FILE_PATH="$1"
+FILE_EXT="${FILE_PATH##*.}"
+
+# 只处理Erlang文件
+if [[ "$FILE_EXT" != "erl" ]]; then
+    exit 0
+fi
+
+# 读取文件内容
+CONTENT=$(cat "$FILE_PATH" 2>/dev/null)
+
+echo "=== 代码编辑检查 ==="
+echo "文件: $FILE_PATH"
+echo ""
+
+HAS_ISSUES=0
+ISSUES=()
+
+# 简单检查：查找明显的问题模式
+check_patterns() {
+    local file_content="$1"
+    
+    # 检查缺少/utf8后缀的中文字符串（简单模式）
+    if echo "$file_content" | grep -q '<<[^>]*中[^>]*>>' && ! echo "$file_content" | grep -q '<<[^>]*中[^>]*/utf8>>'; then
+        ISSUES+=("发现缺少/utf8后缀的中文字符串")
+        HAS_ISSUES=1
+    fi
+    
+    # 检查使用io:format进行日志打印
+    if echo "$file_content" | grep -q 'io:format.*\[INFO\]\|io:format.*\[ERROR\]\|io:format.*\[WARNING\]\|io:format.*\[DEBUG\]'; then
+        ISSUES+=("发现使用io:format进行日志打印，建议使用?LOG宏")
+        HAS_ISSUES=1
+    fi
+    
+    # 检查是否缺少日志头文件
+    if ! echo "$file_content" | grep -q 'include.*logger\.hrl'; then
+        ISSUES+=("缺少日志头文件引入: -include_lib(\"dgiot/include/logger.hrl\")")
+        HAS_ISSUES=1
+    fi
+    
+    # 检查未使用的变量注释
+    if echo "$file_content" | grep -q '%%.*未使用\|%%.*没有被使用'; then
+        ISSUES+=("发现未使用的变量或函数")
+        HAS_ISSUES=1
+    fi
+}
+
+# 执行检查
+check_patterns "$CONTENT"
+
+# 输出结果
+if [ $HAS_ISSUES -eq 0 ]; then
+    echo "✓ 代码检查通过，未发现问题"
+else
+    echo "⚠️ 发现以下问题:"
+    for issue in "${ISSUES[@]}"; do
+        echo "  • $issue"
+    done
+    
+    echo ""
+    echo "=== 技能调用建议 ==="
+    echo ""
+    echo "根据检测到的问题，建议调用以下技能进行修复:"
+    echo ""
+    
+    # 根据问题类型推荐技能
+    for issue in "${ISSUES[@]}"; do
+        case "$issue" in
+            *中文字符串*)
+                echo "1. 中文编码问题:"
+                echo "   使用技能: erlang_chinese_utf8"
+                echo "   命令: use_skill erlang_chinese_utf8"
+                echo ""
+                ;;
+            *io:format*|*日志头文件*)
+                echo "2. 日志打印问题:"
+                echo "   使用技能: erlang_logging_solution"
+                echo "   命令: use_skill erlang_logging_solution"
+                echo ""
+                ;;
+            *未使用*)
+                echo "3. 编译优化问题:"
+                echo "   使用技能: dgiot_compile_debug"
+                echo "   命令: use_skill dgiot_compile_debug"
+                echo ""
+                ;;
+        esac
+    done
+    
+    echo "=== 手动修复指南 ==="
+    echo ""
+    echo "如果不使用技能，可以手动修复:"
+    echo "1. 中文字符串: 添加/utf8后缀，如 <<\"中文\"/utf8>>"
+    echo "2. 日志打印: 使用?LOG宏代替io:format"
+    echo "3. 头文件: 添加 -include_lib(\"dgiot/include/logger.hrl\")"
+    echo "4. 未使用项: 添加_前缀或删除"
+fi
+
+echo ""
+echo "=== 快速测试 ==="
+echo "要测试技能调用，可以执行:"
+echo "1. use_skill erlang_chinese_utf8"
+echo "2. use_skill erlang_logging_solution"
+echo "3. use_skill dgiot_compile_debug"
+
+exit 0

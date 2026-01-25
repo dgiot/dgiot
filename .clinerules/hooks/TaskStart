@@ -1,0 +1,375 @@
+#!/bin/bash
+#
+# TaskStart Hook - 任务开始处理
+# 
+# 在新任务开始时执行
+# 
+# 输入: { 
+#   taskId, 
+#   taskStart: {
+#     userMessage: string,
+#     environmentDetails: object,
+#     timestamp: number
+#   }, 
+#   ... 
+# }
+# 输出: { cancel: boolean, contextModification?: string, errorMessage?: string }
+# 
+# 使用场景:
+# - 分析任务需求
+# - 检查项目状态
+# - 初始化环境
+# - 提供任务指导
+# - 检查编译环境
+# - 验证编码设置
+
+# 从标准输入读取JSON输入
+INPUT=$(cat)
+
+# 使用jq解析输入（或回退到基本解析）
+if command -v jq &> /dev/null; then
+  USER_MESSAGE=$(echo "$INPUT" | jq -r '.taskStart.userMessage')
+  TASK_ID=$(echo "$INPUT" | jq -r '.taskId')
+  ENV_DETAILS=$(echo "$INPUT" | jq -c '.taskStart.environmentDetails')
+else
+  USER_MESSAGE=""
+  TASK_ID="unknown"
+  ENV_DETAILS="{}"
+fi
+
+echo "[TaskStart] 新任务开始: $TASK_ID" >&2
+echo "[TaskStart] 用户消息: $USER_MESSAGE" >&2
+
+# 检查任务是否与编译、日志、中文编码相关
+analyze_task_requirements() {
+  local message="$1"
+  local task_id="$2"
+  
+  # 定义关键词
+  COMPILE_KEYWORDS=("编译" "compile" "make" "erlc" "build" "构建")
+  LOG_KEYWORDS=("日志" "log" "logger" "打印" "print" "输出")
+  CHINESE_KEYWORDS=("中文" "chinese" "编码" "utf8" "乱码" "unicode")
+  CODING_KEYWORDS=("规范" "standard" "最佳实践" "best practice" "代码质量")
+  
+  local task_lower=$(echo "$message" | tr '[:upper:]' '[:lower:]')
+  local analysis=""
+  
+  # 检查编译相关
+  for keyword in "${COMPILE_KEYWORDS[@]}"; do
+    if [[ "$task_lower" == *"$keyword"* ]]; then
+      analysis="$analysis 检测到编译相关任务。"
+      break
+    fi
+  done
+  
+  # 检查日志相关
+  for keyword in "${LOG_KEYWORDS[@]}"; do
+    if [[ "$task_lower" == *"$keyword"* ]]; then
+      analysis="$analysis 检测到日志相关任务。"
+      break
+    fi
+  done
+  
+  # 检查中文编码相关
+  for keyword in "${CHINESE_KEYWORDS[@]}"; do
+    if [[ "$task_lower" == *"$keyword"* ]]; then
+      analysis="$analysis 检测到中文编码相关任务。"
+      break
+    fi
+  done
+  
+  # 检查编程规范相关
+  for keyword in "${CODING_KEYWORDS[@]}"; do
+    if [[ "$task_lower" == *"$keyword"* ]]; then
+      analysis="$analysis 检测到编程规范相关任务。"
+      break
+    fi
+  done
+  
+  # 如果没有检测到特定关键词，提供通用指导
+  if [[ -z "$analysis" ]]; then
+    analysis="通用任务。建议：1) 先分析需求 2) 检查相关文件 3) 遵循DGIOT项目规范"
+  else
+    # 添加具体建议
+    if [[ "$analysis" == *"编译"* ]]; then
+      analysis="$analysis 建议：使用make compile进行全量编译，erlc进行单个文件编译"
+    fi
+    if [[ "$analysis" == *"日志"* ]]; then
+      analysis="$analysis 建议：使用dgiot_safe_format:safe_format确保中文正确显示"
+    fi
+    if [[ "$analysis" == *"中文编码"* ]]; then
+      analysis="$analysis 建议：在Erlang中使用<<\"中文\"/utf8>>格式"
+    fi
+    if [[ "$analysis" == *"编程规范"* ]]; then
+      analysis="$analysis 建议：遵循Erlang编程思想：简洁、健壮、可扩展"
+    fi
+  fi
+  
+  echo "$analysis"
+}
+
+# 检查项目编译环境
+check_compile_environment() {
+  echo "[TaskStart] 检查编译环境..." >&2
+  
+  local checks=()
+  
+  # 检查rebar3
+  if command -v rebar3 &> /dev/null; then
+    checks+=("✅ rebar3可用")
+  else
+    checks+=("❌ rebar3不可用，建议安装")
+  fi
+  
+  # 检查erlc
+  if command -v erlc &> /dev/null; then
+    checks+=("✅ erlc可用")
+  else
+    checks+=("❌ erlc不可用，Erlang环境可能有问题")
+  fi
+  
+  # 检查make
+  if command -v make &> /dev/null; then
+    checks+=("✅ make可用")
+  else
+    checks+=("❌ make不可用")
+  fi
+  
+  # 检查项目结构
+  if [[ -f "/root/gitee/dgiot/rebar.config" ]]; then
+    checks+=("✅ 找到rebar.config")
+  else
+    checks+=("❌ 未找到rebar.config")
+  fi
+  
+  # 输出检查结果
+  for check in "${checks[@]}"; do
+    echo "[TaskStart] $check" >&2
+  done
+  
+  # 如果有严重问题，返回警告
+  if [[ "${checks[@]}" =~ "❌" ]]; then
+    echo "检测到编译环境问题，可能影响任务执行。"
+  else
+    echo "编译环境检查通过。"
+  fi
+}
+
+# 检查中文编码设置
+check_chinese_encoding_environment() {
+  echo "[TaskStart] 检查中文编码环境..." >&2
+  
+  local checks=()
+  
+  # 检查系统编码
+  if [[ "$LANG" == *"UTF-8"* ]] || [[ "$LC_ALL" == *"UTF-8"* ]]; then
+    checks+=("✅ 系统编码设置为UTF-8")
+  else
+    checks+=("❌ 系统编码未设置为UTF-8，建议: export LANG=en_US.UTF-8")
+  fi
+  
+  # 检查终端编码
+  if [[ "$TERM" == *"utf"* ]] || [[ "$TERM" == *"UTF"* ]]; then
+    checks+=("✅ 终端支持UTF-8")
+  else
+    checks+=("⚠️ 终端可能不支持UTF-8")
+  fi
+  
+  # 检查Erlang中文打印解决方案文档
+  if [[ -f "/root/gitee/dgiot/docs/chinese_printing_solution.md" ]]; then
+    checks+=("✅ 找到中文打印解决方案文档")
+  else
+    checks+=("⚠️ 未找到中文打印解决方案文档")
+  fi
+  
+  # 输出检查结果
+  for check in "${checks[@]}"; do
+    echo "[TaskStart] $check" >&2
+  done
+  
+  # 返回总结
+  if [[ "${checks[@]}" =~ "❌" ]]; then
+    echo "检测到中文编码环境问题，可能影响中文显示。"
+  else
+    echo "中文编码环境检查通过。"
+  fi
+}
+
+# 检查编程规范文档
+check_coding_standards_docs() {
+  echo "[TaskStart] 检查编程规范文档..." >&2
+  
+  local docs=()
+  
+  # 检查各种文档
+  if [[ -f "/root/gitee/dgiot/docs/chinese_printing_solution.md" ]]; then
+    docs+=("chinese_printing_solution.md - 中文打印解决方案")
+  fi
+  
+  if [[ -f "/root/gitee/dgiot/docs/erlang_shell_debug.md" ]]; then
+    docs+=("erlang_shell_debug.md - Erlang Shell调试")
+  fi
+  
+  if [[ -f "/root/gitee/dgiot/docs/code_review_process.md" ]]; then
+    docs+=("code_review_process.md - 代码审查流程")
+  fi
+  
+  # 输出可用文档
+  if [[ ${#docs[@]} -gt 0 ]]; then
+    echo "[TaskStart] 可用编程规范文档:" >&2
+    for doc in "${docs[@]}"; do
+      echo "[TaskStart]   - $doc" >&2
+    done
+    echo "找到相关编程规范文档，建议在任务中参考。"
+  else
+    echo "[TaskStart] 未找到编程规范文档" >&2
+    echo "未找到编程规范文档，建议遵循通用Erlang编程规范。"
+  fi
+}
+
+# 检测相关技能（集成SkillActivation Hook的逻辑）
+detect_related_skills() {
+  local message="$1"
+  
+  # 关键词到技能的映射（简化版）
+  declare -A KEYWORD_TO_SKILL=(
+    ["中文打印"]="erlang_chinese_utf8"
+    ["utf8"]="erlang_chinese_utf8"
+    ["include"]="erlang_include_system"
+    ["日志"]="erlang_logging_solution"
+    ["产品"]="dgiot_core_concepts"
+    ["设备"]="dgiot_core_concepts"
+    ["通道"]="dgiot_core_concepts"
+    ["api"]="dgiot_data_api_auth_system"
+    ["权限"]="dgiot_data_api_auth_system"
+    ["存储"]="dgiot_data_storage"
+    ["tdengine"]="dgiot_data_storage"
+    ["编译"]="dgiot_compile_debug"
+    ["调试"]="dgiot_compile_debug"
+    ["无人机"]="uav_protocol_analyzer"
+    ["uav"]="uav_protocol_analyzer"
+    ["协议"]="uav_protocol_analyzer"
+    ["工作流"]="development_workflow_cycle"
+    ["迭代"]="continuous_iteration_cycle"
+    ["时序数据"]="tdengine_timeseries_storage"
+    ["界面"]="drone_test_web_interface"
+    ["技能"]="skill_manager"
+    ["hook"]="hook_manager"
+    ["主目标"]="main_objective_tracker"
+  )
+  
+  local message_lower=$(echo "$message" | tr '[:upper:]' '[:lower:]')
+  local detected_skills=()
+  
+  for keyword in "${!KEYWORD_TO_SKILL[@]}"; do
+    local keyword_lower=$(echo "$keyword" | tr '[:upper:]' '[:lower:]')
+    if [[ "$message_lower" == *"$keyword_lower"* ]]; then
+      local skill="${KEYWORD_TO_SKILL[$keyword]}"
+      if [[ ! " ${detected_skills[@]} " =~ " $skill " ]]; then
+        detected_skills+=("$skill")
+      fi
+    fi
+  done
+  
+  echo "${detected_skills[@]}"
+}
+
+# 生成技能推荐
+generate_skill_recommendations() {
+  local skills=("$@")
+  
+  if [[ ${#skills[@]} -eq 0 ]]; then
+    echo "未检测到特定技能需求。"
+    return
+  fi
+  
+  echo "检测到相关技能，建议在任务中使用:"
+  for skill in "${skills[@]}"; do
+    case "$skill" in
+      "erlang_chinese_utf8")
+        echo "  - erlang_chinese_utf8: Erlang代码中文字符串UTF8后缀检查与修复"
+        ;;
+      "erlang_include_system")
+        echo "  - erlang_include_system: Erlang include和include_lib系统专家"
+        ;;
+      "erlang_logging_solution")
+        echo "  - erlang_logging_solution: Erlang日志打印解决方案"
+        ;;
+      "dgiot_core_concepts")
+        echo "  - dgiot_core_concepts: DGIOT核心概念专家"
+        ;;
+      "dgiot_data_api_auth_system")
+        echo "  - dgiot_data_api_auth_system: DGIOT数据存储、API设计与权限系统专家"
+        ;;
+      "dgiot_data_storage")
+        echo "  - dgiot_data_storage: DGIOT数据存储专家"
+        ;;
+      "dgiot_compile_debug")
+        echo "  - dgiot_compile_debug: DGIOT编译调试技能"
+        ;;
+      "uav_protocol_analyzer")
+        echo "  - uav_protocol_analyzer: 无人机协议报文分析与解析专家"
+        ;;
+      "development_workflow_cycle")
+        echo "  - development_workflow_cycle: 开发工作流循环技能"
+        ;;
+      "continuous_iteration_cycle")
+        echo "  - continuous_iteration_cycle: 持续迭代循环技能"
+        ;;
+      "tdengine_timeseries_storage")
+        echo "  - tdengine_timeseries_storage: TDengine时序数据存储最佳实践"
+        ;;
+      "drone_test_web_interface")
+        echo "  - drone_test_web_interface: 无人机调测网页界面专家"
+        ;;
+      "skill_manager")
+        echo "  - skill_manager: 技能管理专家"
+        ;;
+      "hook_manager")
+        echo "  - hook_manager: Hook管理技能"
+        ;;
+      "main_objective_tracker")
+        echo "  - main_objective_tracker: 主目标跟踪与偏离检测技能"
+        ;;
+      *)
+        echo "  - $skill: 相关技能"
+        ;;
+    esac
+  done
+  echo "使用use_skill工具激活特定技能，例如: use_skill erlang_chinese_utf8"
+}
+
+# 执行检查
+TASK_ANALYSIS=$(analyze_task_requirements "$USER_MESSAGE" "$TASK_ID")
+COMPILE_ENV=$(check_compile_environment)
+ENCODING_ENV=$(check_chinese_encoding_environment)
+CODING_DOCS=$(check_coding_standards_docs)
+
+# 检测相关技能
+DETECTED_SKILLS=($(detect_related_skills "$USER_MESSAGE"))
+SKILL_RECOMMENDATIONS=$(generate_skill_recommendations "${DETECTED_SKILLS[@]}")
+
+# 构建上下文修改
+CONTEXT_MOD="任务分析: $TASK_ANALYSIS\n"
+CONTEXT_MOD="$CONTEXT_MOD编译环境: $COMPILE_ENV\n"
+CONTEXT_MOD="$CONTEXT_MOD中文编码环境: $ENCODING_ENV\n"
+CONTEXT_MOD="$CONTEXT_MOD编程规范文档: $CODING_DOCS\n"
+
+# 添加技能推荐
+if [[ ${#DETECTED_SKILLS[@]} -gt 0 ]]; then
+  CONTEXT_MOD="$CONTEXT_MOD技能推荐:\n$SKILL_RECOMMENDATIONS\n"
+  echo "[TaskStart] 检测到相关技能: ${DETECTED_SKILLS[*]}" >&2
+else
+  CONTEXT_MOD="$CONTEXT_MOD技能推荐: 未检测到特定技能需求。\n"
+fi
+
+CONTEXT_MOD="$CONTEXT_MOD\n建议：在任务执行过程中，PreToolUse和PostToolUse hook会提供实时指导。"
+CONTEXT_MOD="$CONTEXT_MOD\n技能-Hook联动: SkillActivation Hook已启用，可根据上下文自动推荐技能。"
+
+# 返回结果
+echo "{\"cancel\":false,\"contextModification\":\"$CONTEXT_MOD\",\"errorMessage\":\"\"}"
+
+# 记录任务开始
+LOG_FILE="/tmp/cline_task_start.log"
+TIMESTAMP=$(date +%s%3N)
+echo "$TIMESTAMP|$TASK_ID|$USER_MESSAGE" >> "$LOG_FILE" 2>/dev/null || true

@@ -1,0 +1,32 @@
+{
+  "current_main_objective": {
+    "id": "MO_001",
+    "title": "完善无人机协议业务层解析系统",
+    "description": "修改uav_protocol.py使其能解析完报文后还能解析业务层协议，提供用户需要的业务层协议的报文摘要",
+    "status": "IN_PROGRESS",
+    "priority": "HIGH",
+    "created_at": "2026-01-19",
+    "last_updated": "2026-01-19",
+    "related_files": [
+      "src/protocols/uav_protocol.py",
+      "src/backend/services/uav_multicast_service.py",
+      "src/backend/app.py"
+    ],
+    "completion_criteria": [
+      "uav_protocol.py能正确解析业务层协议",
+      "提供完整的业务层报文摘要",
+      "集成到多播服务中",
+      "通过API提供业务层摘要"
+    ]
+  },
+  "deviation_threshold": {
+    "time_minutes": 10,
+    "steps_count": 5,
+    "relevance_score": 25
+  },
+  "todo_list_settings": {
+    "max_items_per_category": 10,
+    "categories": ["核心任务", "优化任务", "文档任务", "低优先级任务"],
+    "auto_cleanup_days": 30
+  }
+}

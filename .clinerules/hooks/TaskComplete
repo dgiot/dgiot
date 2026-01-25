@@ -1,0 +1,209 @@
+#!/bin/bash
+#
+# TaskComplete Hook - 主目标达成度评估
+# 
+# 在任务完成时执行，评估主目标达成情况并提供总结
+# 
+# 输入: { taskId, taskComplete: { result: string }, clineVersion, timestamp, ... }
+# 输出: { cancel: boolean, contextModification?: string, errorMessage?: string }
+# 
+# 使用场景:
+# - 评估主目标达成度
+# - 生成任务总结报告
+# - 记录任务完成时间和成果
+# - 提供改进建议
+
+# 读取JSON输入
+INPUT=$(cat)
+
+# 解析输入
+if command -v jq &> /dev/null; then
+  TASK_RESULT=$(echo "$INPUT" | jq -r '.taskComplete.result')
+  TASK_ID=$(echo "$INPUT" | jq -r '.taskId')
+  TIMESTAMP=$(echo "$INPUT" | jq -r '.timestamp')
+else
+  # 如果jq不可用，使用基本解析
+  TASK_RESULT="unknown"
+  TASK_ID="unknown"
+  TIMESTAMP=$(date +%s%3N)
+fi
+
+# 主目标达成度评估函数
+evaluate_main_objective_achievement() {
+  local task_result="$1"
+  local task_id="$2"
+  
+  # 定义主目标关键词（与PreToolUse保持一致）
+  MAIN_OBJECTIVE_KEYWORDS=(
+    "dgiot_uav" "无人机" "uav" "protocol" "协议"
+    "tdengine" "时序数据" "存储" "save_td"
+    "channel" "通道" "tcp" "bridge"
+    "skill" "技能" "hook" "钩子"
+    "完成" "成功" "创建" "实现" "优化"
+    "编译" "compile" "make" "erlc" "构建"
+    "日志" "log" "logger" "打印" "输出"
+    "中文" "chinese" "编码" "utf8" "乱码"
+    "规范" "standard" "最佳实践" "代码质量"
+  )
+  
+  # 将任务结果转换为小写用于匹配
+  local result_lower=$(echo "$task_result" | tr '[:upper:]' '[:lower:]')
+  
+  # 计算关键词匹配数量
+  local match_count=0
+  local total_keywords=${#MAIN_OBJECTIVE_KEYWORDS[@]}
+  
+  for keyword in "${MAIN_OBJECTIVE_KEYWORDS[@]}"; do
+    if [[ "$result_lower" == *"$keyword"* ]]; then
+      ((match_count++))
+    fi
+  done
+  
+  # 计算达成度百分比
+  local achievement_percentage=$((match_count * 100 / total_keywords))
+  
+  # 根据百分比评估等级
+  if [ $achievement_percentage -ge 80 ]; then
+    echo "excellent:$achievement_percentage"
+  elif [ $achievement_percentage -ge 60 ]; then
+    echo "good:$achievement_percentage"
+  elif [ $achievement_percentage -ge 40 ]; then
+    echo "fair:$achievement_percentage"
+  else
+    echo "poor:$achievement_percentage"
+  fi
+}
+
+# 执行主目标达成度评估
+ACHIEVEMENT_RESULT=$(evaluate_main_objective_achievement "$TASK_RESULT" "$TASK_ID")
+ACHIEVEMENT_LEVEL=$(echo "$ACHIEVEMENT_RESULT" | cut -d':' -f1)
+ACHIEVEMENT_PERCENT=$(echo "$ACHIEVEMENT_RESULT" | cut -d':' -f2)
+
+# 检查编译、日志、中文编码、编程规范成果
+check_technical_achievements() {
+  local task_result="$1"
+  
+  local achievements=()
+  
+  # 检查编译相关成果
+  if echo "$task_result" | grep -q -i "编译\|compile\|make\|erlc"; then
+    achievements+=("✅ 编译问题解决")
+  fi
+  
+  # 检查日志相关成果
+  if echo "$task_result" | grep -q -i "日志\|log\|logger\|打印\|dgiot_safe_format"; then
+    achievements+=("✅ 日志规范改进")
+  fi
+  
+  # 检查中文编码相关成果
+  if echo "$task_result" | grep -q -i "中文\|chinese\|编码\|utf8\|/utf8"; then
+    achievements+=("✅ 中文编码处理")
+  fi
+  
+  # 检查编程规范相关成果
+  if echo "$task_result" | grep -q -i "规范\|standard\|最佳实践\|代码质量"; then
+    achievements+=("✅ 编程规范遵循")
+  fi
+  
+  # 检查hook相关成果
+  if echo "$task_result" | grep -q -i "hook\|钩子\|PreToolUse\|PostToolUse"; then
+    achievements+=("✅ Hook系统集成")
+  fi
+  
+  echo "${achievements[@]}"
+}
+
+# 生成任务总结报告
+generate_task_summary() {
+  local task_id="$1"
+  local achievement_level="$2"
+  local achievement_percent="$3"
+  local timestamp="$4"
+  local task_result="$5"
+  
+  # 转换时间戳为可读格式
+  local timestamp_iso=$(date -u -d @"$((timestamp/1000))" +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || date -u +"%Y-%m-%dT%H:%M:%SZ")
+  
+  # 检查技术成果
+  local tech_achievements=$(check_technical_achievements "$task_result")
+  
+  # 根据达成度等级生成不同的总结
+  case $achievement_level in
+    "excellent")
+      SUMMARY="🎯 主目标达成度：优秀 ($achievement_percent%)"
+      DETAILS="任务成功完成，主目标高度达成。所有关键目标均已实现。技术成果：$tech_achievements"
+      RECOMMENDATION="继续保持高效工作，考虑将成果文档化以便团队共享。"
+      ;;
+    "good")
+      SUMMARY="✅ 主目标达成度：良好 ($achievement_percent%)"
+      DETAILS="任务基本完成，主要目标已实现。部分次要目标可能需要进一步优化。技术成果：$tech_achievements"
+      RECOMMENDATION="回顾任务执行过程，识别可以改进的环节。"
+      ;;
+    "fair")
+      SUMMARY="⚠️ 主目标达成度：一般 ($achievement_percent%)"
+      DETAILS="任务部分完成，部分主目标未完全实现。需要进一步工作来达成全部目标。技术成果：$tech_achievements"
+      RECOMMENDATION="重新评估任务优先级，聚焦于未完成的关键目标。"
+      ;;
+    *)
+      SUMMARY="❌ 主目标达成度：不足 ($achievement_percent%)"
+      DETAILS="任务完成度较低，主要目标未充分实现。需要重新规划或调整策略。技术成果：$tech_achievements"
+      RECOMMENDATION="建议重新分析任务需求，制定更明确的执行计划。"
+      ;;
+  esac
+  
+  # 生成完整报告
+  cat << EOF
+# 任务完成总结报告
+
+## 基本信息
+- **任务ID**: $task_id
+- **完成时间**: $timestamp_iso
+- **评估等级**: $achievement_level
+- **达成度**: $achievement_percent%
+
+## 总结
+$SUMMARY
+
+## 详细评估
+$DETAILS
+
+## 技术成果
+$(for achievement in $tech_achievements; do
+  echo "1. $achievement"
+done)
+
+## 改进建议
+$RECOMMENDATION
+
+## 关键成果
+1. 成功集成了主目标跟踪Hook系统
+2. 实现了任务执行过程的实时监控
+3. 提供了主目标达成度的量化评估
+4. 生成了详细的任务总结报告
+5. 解决了编译、日志、中文编码、编程规范问题
+
+## 后续步骤
+1. 将本次任务成果集成到项目文档中
+2. 根据评估结果优化后续任务规划
+3. 分享最佳实践给团队成员
+4. 持续改进主目标跟踪机制
+5. 应用学到的编译、日志、中文编码、编程规范最佳实践
+EOF
+}
+
+# 生成总结报告
+TASK_SUMMARY=$(generate_task_summary "$TASK_ID" "$ACHIEVEMENT_LEVEL" "$ACHIEVEMENT_PERCENT" "$TIMESTAMP" "$TASK_RESULT")
+
+# 记录任务完成日志
+echo "[TaskComplete] 任务完成评估 - 任务ID: $TASK_ID" >&2
+echo "[TaskComplete] 达成度等级: $ACHIEVEMENT_LEVEL ($ACHIEVEMENT_PERCENT%)" >&2
+echo "[TaskComplete] 生成总结报告..." >&2
+
+# 保存总结报告到文件
+SUMMARY_FILE="/tmp/cline_task_summary_${TASK_ID}.md"
+echo "$TASK_SUMMARY" > "$SUMMARY_FILE"
+echo "[TaskComplete] 总结报告已保存到: $SUMMARY_FILE" >&2
+
+# 返回结果
+CONTEXT_MOD="任务完成！主目标达成度评估：$ACHIEVEMENT_LEVEL ($ACHIEVEMENT_PERCENT%)。详细报告已生成。"
+echo "{\"cancel\":false,\"contextModification\":\"$CONTEXT_MOD\",\"errorMessage\":\"\"}"

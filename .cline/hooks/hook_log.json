@@ -1,0 +1,64 @@
+[
+  {
+    "timestamp": "2026-01-23T19:10:12.844Z",
+    "type": "file_analysis",
+    "file": "/root/gitee/dgiot/.cline/hooks/test_chinese_printing.erl",
+    "detectors": {
+      "contains_chinese_text": true,
+      "has_io_format_with_chinese": true,
+      "has_chinese_without_utf8": false
+    },
+    "skill_triggers": 2,
+    "recommendations": 1
+  },
+  {
+    "timestamp": "2026-01-23T19:10:12.847Z",
+    "type": "file_analysis",
+    "file": "/root/gitee/dgiot/.cline/hooks/test_utf8_suffix.erl",
+    "detectors": {
+      "contains_chinese_text": true,
+      "has_io_format_with_chinese": true,
+      "has_chinese_without_utf8": true
+    },
+    "skill_triggers": 3,
+    "recommendations": 2
+  },
+  {
+    "timestamp": "2026-01-23T19:10:12.848Z",
+    "type": "file_analysis",
+    "file": "/root/gitee/dgiot/.cline/hooks/test_valid_chinese.erl",
+    "detectors": {
+      "contains_chinese_text": true,
+      "has_io_format_with_chinese": true,
+      "has_chinese_without_utf8": false
+    },
+    "skill_triggers": 2,
+    "recommendations": 1
+  },
+  {
+    "timestamp": "2026-01-23T19:10:12.850Z",
+    "type": "test_summary",
+    "summary": {
+      "total_files": 3,
+      "files_with_chinese": 3,
+      "files_with_issues": 3,
+      "total_skill_triggers": 7,
+      "total_recommendations": 4
+    },
+    "skill_stats": {
+      "chinese_printing_solution": {
+        "total": 6,
+        "by_priority": {
+          "high": 3,
+          "low": 3
+        }
+      },
+      "erlang_chinese_utf8": {
+        "total": 1,
+        "by_priority": {
+          "critical": 1
+        }
+      }
+    }
+  }
+]

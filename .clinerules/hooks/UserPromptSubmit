@@ -1,0 +1,127 @@
+#!/bin/bash
+#
+# UserPromptSubmit Hook - 用户提示提交处理
+# 
+# 在用户提交提示时执行
+# 
+# 输入: { taskId, userPromptSubmit: { prompt: string }, ... }
+# 输出: { cancel: boolean, contextModification?: string, errorMessage?: string }
+# 
+# 使用场景:
+# - 分析用户需求
+# - 检查提示质量
+# - 提供指导建议
+# - 预处理复杂请求
+
+# 从标准输入读取JSON输入
+INPUT=$(cat)
+
+# 使用jq解析输入
+if command -v jq &> /dev/null; then
+  USER_PROMPT=$(echo "$INPUT" | jq -r '.userPromptSubmit.prompt')
+  TASK_ID=$(echo "$INPUT" | jq -r '.taskId')
+else
+  USER_PROMPT=""
+  TASK_ID="unknown"
+fi
+
+echo "[UserPromptSubmit] 用户提示提交: $TASK_ID" >&2
+echo "[UserPromptSubmit] 提示内容: $USER_PROMPT" >&2
+
+# 分析用户提示是否与编译、日志、中文编码相关
+analyze_user_prompt() {
+  local prompt="$1"
+  
+  local analysis=""
+  local suggestions=""
+  
+  # 检查是否与编译相关
+  if echo "$prompt" | grep -q -i "编译\|compile\|make\|erlc\|构建\|build"; then
+    analysis="$analysis 检测到编译相关需求。"
+    suggestions="$suggestions 编译建议：使用'make compile'进行全量编译，'erlc file.erl'进行单个文件编译。"
+  fi
+  
+  # 检查是否与日志相关
+  if echo "$prompt" | grep -q -i "日志\|log\|logger\|打印\|print\|输出"; then
+    analysis="$analysis 检测到日志相关需求。"
+    suggestions="$suggestions 日志建议：使用dgiot_safe_format:safe_format确保中文正确显示，遵循统一的日志宏定义。"
+  fi
+  
+  # 检查是否与中文编码相关
+  if echo "$prompt" | grep -q -i "中文\|chinese\|编码\|utf8\|乱码\|unicode"; then
+    analysis="$analysis 检测到中文编码相关需求。"
+    suggestions="$suggestions 编码建议：在Erlang中使用<<\"中文\"/utf8>>格式，避免直接使用io:format打印中文。"
+  fi
+  
+  # 检查是否与编程规范相关
+  if echo "$prompt" | grep -q -i "规范\|standard\|最佳实践\|代码质量\|质量"; then
+    analysis="$analysis 检测到编程规范相关需求。"
+    suggestions="$suggestions 规范建议：参考docs/目录下的编程规范文档，遵循Erlang编程思想：简洁、健壮、可扩展。"
+  fi
+  
+  # 检查是否与hook相关
+  if echo "$prompt" | grep -q -i "hook\|钩子\|PreToolUse\|PostToolUse"; then
+    analysis="$analysis 检测到Hook系统相关需求。"
+    suggestions="$suggestions Hook建议：已为您配置完整的Hook系统，支持编译、日志、中文编码、编程规范的实时检查。"
+  fi
+  
+  # 检查提示是否清晰
+  if [[ ${#prompt} -lt 10 ]]; then
+    analysis="$analysis 提示可能过于简略。"
+    suggestions="$suggestions 提示建议：请提供更详细的需求描述，包括具体文件、错误信息、期望结果等。"
+  fi
+  
+  if [[ -z "$analysis" ]]; then
+    analysis="通用任务需求。"
+    suggestions="建议：明确任务目标，提供相关文件路径和具体需求。"
+  fi
+  
+  echo "$analysis|$suggestions"
+}
+
+# 检查提示中的文件路径
+extract_file_paths() {
+  local prompt="$1"
+  
+  local files=()
+  
+  # 提取可能的文件路径（简单正则匹配）
+  while read -r match; do
+    if [[ -n "$match" ]]; then
+      # 检查文件是否存在
+      if [[ -f "$match" ]]; then
+        files+=("✅ $match (存在)")
+      else
+        files+=("❓ $match (未找到)")
+      fi
+    fi
+  done < <(echo "$prompt" | grep -o -E '[a-zA-Z0-9_./-]+\.(erl|hrl|js|html|css|json)' | head -5)
+  
+  if [[ ${#files[@]} -gt 0 ]]; then
+    echo "检测到文件引用:"
+    for file in "${files[@]}"; do
+      echo "  $file"
+    done
+  else
+    echo "未检测到具体文件引用。"
+  fi
+}
+
+# 执行分析
+ANALYSIS_RESULT=$(analyze_user_prompt "$USER_PROMPT")
+ANALYSIS=$(echo "$ANALYSIS_RESULT" | cut -d'|' -f1)
+SUGGESTIONS=$(echo "$ANALYSIS_RESULT" | cut -d'|' -f2)
+
+# 提取文件路径
+FILE_INFO=$(extract_file_paths "$USER_PROMPT")
+
+# 构建上下文修改
+CONTEXT_MOD="用户需求分析：$ANALYSIS\n\n$FILE_INFO\n\n指导建议：$SUGGESTIONS\n\n提示：TaskStart hook会提供更详细的环境检查和任务指导。"
+
+# 返回结果
+echo "{\"cancel\":false,\"contextModification\":\"$CONTEXT_MOD\",\"errorMessage\":\"\"}"
+
+# 记录用户提示
+LOG_FILE="/tmp/cline_user_prompt.log"
+TIMESTAMP=$(date +%s%3N)
+echo "$TIMESTAMP|$TASK_ID|$USER_PROMPT" >> "$LOG_FILE" 2>/dev/null || true
