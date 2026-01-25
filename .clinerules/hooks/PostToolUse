@@ -1,0 +1,203 @@
+#!/bin/bash
+#
+# PostToolUse Hook - 工具使用后处理
+# 
+# 在任何工具使用成功或失败后执行
+# 
+# 输入: { 
+#   taskId, 
+#   postToolUse: { 
+#     tool: string, 
+#     parameters: object,
+#     result: string,
+#     success: boolean,
+#     durationMs: number
+#   }, 
+#   ... 
+# }
+# 输出: { cancel: boolean, contextModification?: string, errorMessage?: string }
+# 
+# 使用场景:
+# - 审计工具使用
+# - 验证结果
+# - 触发后续操作
+# - 监控性能
+# - 检查编译错误
+# - 验证中文编码
+
+# 从标准输入读取JSON输入
+INPUT=$(cat)
+
+# 使用jq解析输入（或回退到基本解析）
+if command -v jq &> /dev/null; then
+  TOOL=$(echo "$INPUT" | jq -r '.postToolUse.tool')
+  SUCCESS=$(echo "$INPUT" | jq -r '.postToolUse.success')
+  DURATION=$(echo "$INPUT" | jq -r '.postToolUse.durationMs')
+  RESULT=$(echo "$INPUT" | jq -r '.postToolUse.result')
+  PARAMS=$(echo "$INPUT" | jq -c '.postToolUse.parameters')
+else
+  TOOL="<tool>"
+  SUCCESS="true"
+  DURATION="0"
+  RESULT=""
+  PARAMS="{}"
+fi
+
+# 记录工具完成
+STATUS="成功"
+[[ "$SUCCESS" == "false" ]] && STATUS="失败"
+echo "[PostToolUse] 工具完成: $TOOL ($STATUS) 耗时 ${DURATION}ms" >&2
+
+# Erlang编译错误检查
+check_erlang_compile_errors() {
+  local tool="$1"
+  local result="$2"
+  local params="$3"
+  
+  # 只检查与Erlang编译相关的工具
+  if [[ "$tool" != "execute_command" ]]; then
+    return 0
+  fi
+  
+  # 检查命令是否包含erlc
+  if echo "$result" | grep -q "erlc\|compile\|make"; then
+    # 检查是否有编译错误
+    if echo "$result" | grep -q -i "error\|undefined\|syntax"; then
+      echo "[PostToolUse] 检测到Erlang编译错误" >&2
+      
+      # 提取错误信息
+      local errors=$(echo "$result" | grep -i "error\|undefined\|syntax" | head -5)
+      
+      # 提供修复建议
+      local suggestions=""
+      if echo "$errors" | grep -q "syntax error"; then
+        suggestions="语法错误建议：检查括号匹配、分号使用、函数定义格式"
+      elif echo "$errors" | grep -q "undefined function"; then
+        suggestions="未定义函数建议：检查函数名拼写、模块导出、头文件包含"
+      elif echo "$errors" | grep -q "can't find include"; then
+        suggestions="头文件找不到建议：检查包含路径、文件是否存在、使用-include还是-include_lib"
+      fi
+      
+      echo "[PostToolUse] 编译错误: $errors" >&2
+      echo "[PostToolUse] 修复建议: $suggestions" >&2
+      
+      # 返回上下文修改
+      echo "{\"cancel\":false,\"contextModification\":\"检测到Erlang编译错误。建议：$suggestions\",\"errorMessage\":\"\"}"
+      return 1
+    fi
+  fi
+  
+  return 0
+}
+
+# 中文编码检查
+check_chinese_encoding() {
+  local tool="$1"
+  local result="$2"
+  
+  # 检查文件编辑工具的结果
+  if [[ "$tool" == "replace_in_file" || "$tool" == "write_to_file" ]]; then
+    # 检查结果中是否包含中文字符
+    if echo "$result" | grep -q -P '[\x{4e00}-\x{9fff}]' 2>/dev/null; then
+      # 检查是否使用了正确的编码
+      if echo "$result" | grep -q '<<"[^"]*"/utf8>>'; then
+        echo "[PostToolUse] 中文编码检查：使用了正确的/utf8后缀" >&2
+      else
+        echo "[PostToolUse] 警告：检测到中文字符但未使用/utf8后缀" >&2
+        echo "[PostToolUse] 建议：在Erlang中使用<<\"中文\"/utf8>>格式" >&2
+        
+        # 返回上下文修改
+        echo "{\"cancel\":false,\"contextModification\":\"检测到中文字符但未使用/utf8后缀。建议使用<<\"中文\"/utf8>>格式确保正确编码。\",\"errorMessage\":\"\"}"
+        return 1
+      fi
+    fi
+  fi
+  
+  return 0
+}
+
+# 日志规范检查
+check_logging_standards() {
+  local tool="$1"
+  local params="$2"
+  
+  # 检查文件编辑工具
+  if [[ "$tool" == "replace_in_file" || "$tool" == "write_to_file" ]]; then
+    local file_path=""
+    if command -v jq &> /dev/null; then
+      file_path=$(echo "$params" | jq -r '.path // ""')
+    fi
+    
+    # 只检查Erlang文件
+    if [[ -n "$file_path" && "$file_path" == *.erl ]]; then
+      # 检查是否使用了io:format直接打印中文
+      if [[ -f "$file_path" ]]; then
+        if grep -q 'io:format.*<<"[^"]*">>' "$file_path" 2>/dev/null; then
+          echo "[PostToolUse] 警告：检测到直接使用io:format打印中文" >&2
+          echo "[PostToolUse] 建议：使用dgiot_safe_format:safe_format或添加/utf8后缀" >&2
+          
+          # 返回上下文修改
+          echo "{\"cancel\":false,\"contextModification\":\"检测到直接使用io:format打印中文。建议使用dgiot_safe_format:safe_format或添加/utf8后缀确保中文正确显示。\",\"errorMessage\":\"\"}"
+          return 1
+        fi
+      fi
+    fi
+  fi
+  
+  return 0
+}
+
+# 编程规范检查
+check_coding_standards() {
+  local tool="$1"
+  local result="$2"
+  
+  # 检查编译结果中的警告
+  if [[ "$tool" == "execute_command" ]]; then
+    if echo "$result" | grep -q "Warning:"; then
+      local warnings=$(echo "$result" | grep "Warning:" | head -3)
+      echo "[PostToolUse] 编译警告: $warnings" >&2
+      
+      # 提供警告处理建议
+      local suggestions=""
+      if echo "$warnings" | grep -q "unused"; then
+        suggestions="未使用警告建议：移除未使用的函数或变量，或添加_前缀"
+      elif echo "$warnings" | grep -q "variable.*unsafe"; then
+        suggestions="变量安全警告建议：在try-catch中使用_前缀忽略未绑定变量"
+      fi
+      
+      if [[ -n "$suggestions" ]]; then
+        echo "[PostToolUse] 警告处理建议: $suggestions" >&2
+        echo "{\"cancel\":false,\"contextModification\":\"检测到编译警告：$warnings。建议：$suggestions\",\"errorMessage\":\"\"}"
+        return 1
+      fi
+    fi
+  fi
+  
+  return 0
+}
+
+# 执行检查
+COMPILE_CHECK=$(check_erlang_compile_errors "$TOOL" "$RESULT" "$PARAMS")
+ENCODING_CHECK=$(check_chinese_encoding "$TOOL" "$RESULT")
+LOGGING_CHECK=$(check_logging_standards "$TOOL" "$PARAMS")
+CODING_CHECK=$(check_coding_standards "$TOOL" "$RESULT")
+
+# 如果有检查结果，返回第一个非空结果
+if [[ -n "$COMPILE_CHECK" && "$COMPILE_CHECK" != "{\"cancel\":false,\"contextModification\":\"\",\"errorMessage\":\"\"}" ]]; then
+  echo "$COMPILE_CHECK"
+elif [[ -n "$ENCODING_CHECK" && "$ENCODING_CHECK" != "{\"cancel\":false,\"contextModification\":\"\",\"errorMessage\":\"\"}" ]]; then
+  echo "$ENCODING_CHECK"
+elif [[ -n "$LOGGING_CHECK" && "$LOGGING_CHECK" != "{\"cancel\":false,\"contextModification\":\"\",\"errorMessage\":\"\"}" ]]; then
+  echo "$LOGGING_CHECK"
+elif [[ -n "$CODING_CHECK" && "$CODING_CHECK" != "{\"cancel\":false,\"contextModification\":\"\",\"errorMessage\":\"\"}" ]]; then
+  echo "$CODING_CHECK"
+else
+  # 默认返回
+  echo "{\"cancel\":false,\"contextModification\":\"\",\"errorMessage\":\"\"}"
+fi
+
+# 记录工具使用历史（用于分析和优化）
+LOG_FILE="/tmp/cline_post_tool_${TASK_ID}.log"
+TIMESTAMP=$(date +%s%3N)
+echo "$TIMESTAMP|$TOOL|$SUCCESS|$DURATION" >> "$LOG_FILE" 2>/dev/null || true

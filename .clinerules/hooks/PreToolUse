@@ -1,0 +1,203 @@
+#!/bin/bash
+#
+# PreToolUse Hook - 主目标跟踪与偏离检测
+# 
+# 在每次工具使用前执行，检查当前操作是否偏离主目标
+# 
+# 输入: { taskId, preToolUse: { toolName: string, toolArgs: object }, clineVersion, timestamp, ... }
+# 输出: { cancel: boolean, contextModification?: string, errorMessage?: string }
+# 
+# 使用场景:
+# - 检查工具使用是否与主目标相关
+# - 检测任务偏离并提供纠正建议
+# - 记录工具使用历史用于分析
+# - 集成主目标跟踪技能
+
+# 读取JSON输入
+INPUT=$(cat)
+
+# 解析输入
+if command -v jq &> /dev/null; then
+  TOOL_NAME=$(echo "$INPUT" | jq -r '.preToolUse.toolName')
+  TASK_ID=$(echo "$INPUT" | jq -r '.taskId')
+  TIMESTAMP=$(echo "$INPUT" | jq -r '.timestamp')
+  
+  # 提取工具参数用于分析
+  TOOL_ARGS=$(echo "$INPUT" | jq -c '.preToolUse.toolArgs')
+else
+  # 如果jq不可用，使用基本解析
+  TOOL_NAME="unknown"
+  TASK_ID="unknown"
+  TIMESTAMP=$(date +%s%3N)
+  TOOL_ARGS="{}"
+fi
+
+# 主目标跟踪逻辑
+check_main_objective_deviation() {
+  local tool_name="$1"
+  local tool_args="$2"
+  local task_id="$3"
+  
+  # 定义主目标关键词（根据当前任务动态调整）
+  MAIN_OBJECTIVE_KEYWORDS=(
+    "dgiot_uav" "无人机" "uav" "protocol" "协议"
+    "tdengine" "时序数据" "存储" "save_td"
+    "channel" "通道" "tcp" "bridge"
+    "skill" "技能" "hook" "钩子"
+    "log" "日志" "logger" "打印" "中文打印"
+    "compile" "编译" "make" "erlang"
+    "chinese" "中文" "utf8" "编码" "字符串"
+  )
+  
+  # 定义偏离检测关键词
+  DEVIATION_KEYWORDS=(
+    "unrelated" "offtopic" "distraction"
+    "social" "entertainment" "personal"
+  )
+  
+  # 检查工具名称是否与主目标相关
+  local tool_lower=$(echo "$tool_name" | tr '[:upper:]' '[:lower:]')
+  local is_related=false
+  
+  for keyword in "${MAIN_OBJECTIVE_KEYWORDS[@]}"; do
+    if [[ "$tool_lower" == *"$keyword"* ]] || [[ "$tool_args" == *"$keyword"* ]]; then
+      is_related=true
+      break
+    fi
+  done
+  
+  # 检查是否偏离
+  local is_deviation=false
+  for keyword in "${DEVIATION_KEYWORDS[@]}"; do
+    if [[ "$tool_lower" == *"$keyword"* ]] || [[ "$tool_args" == *"$keyword"* ]]; then
+      is_deviation=true
+      break
+    fi
+  done
+  
+  # 返回结果
+  if $is_deviation; then
+    echo "deviation"
+  elif $is_related; then
+    echo "related"
+  else
+    echo "neutral"
+  fi
+}
+
+# Erlang中文字符串UTF8后缀检查
+check_erlang_chinese_utf8() {
+  local tool_name="$1"
+  local tool_args="$2"
+  
+  # 只检查与文件编辑相关的工具
+  if [[ "$tool_name" != "replace_in_file" && "$tool_name" != "write_to_file" ]]; then
+    return 0
+  fi
+  
+  # 检查是否为Erlang文件
+  local file_path=""
+  if command -v jq &> /dev/null; then
+    file_path=$(echo "$tool_args" | jq -r '.path // ""')
+  fi
+  
+  if [[ -z "$file_path" ]] || [[ "$file_path" != *.erl ]]; then
+    return 0
+  fi
+  
+  # 检查文件是否存在
+  if [[ ! -f "$file_path" ]]; then
+    return 0
+  fi
+  
+  # 检查文件内容中的中文字符串
+  local issues=0
+  local line_num=1
+  
+  while IFS= read -r line; do
+    # 简化检查：如果行包含<<"中文">>但不包含/utf8>>
+    if echo "$line" | grep -q '<<"[^"]*">>' && \
+       ! echo "$line" | grep -q '/utf8>>'; then
+      # 进一步检查是否包含中文字符（简单检查）
+      if echo "$line" | grep -q -P '[\x{4e00}-\x{9fff}]' 2>/dev/null || \
+         echo "$line" | grep -q '[\x80-\xFF]' 2>/dev/null; then
+        echo "[Erlang中文UTF8检查] 第${line_num}行: 缺少/utf8后缀的中文字符串" >&2
+        ((issues++))
+      fi
+    fi
+    ((line_num++))
+  done < "$file_path"
+  
+  if [[ $issues -gt 0 ]]; then
+    echo "[Erlang中文UTF8检查] 发现 $issues 个缺少/utf8后缀的中文字符串" >&2
+    echo "[Erlang中文UTF8检查] 建议使用erlang_chinese_utf8技能进行修复" >&2
+    return 1
+  fi
+  
+  return 0
+}
+
+# 执行主目标检查
+DEVIATION_RESULT=$(check_main_objective_deviation "$TOOL_NAME" "$TOOL_ARGS" "$TASK_ID")
+
+# 执行Erlang中文字符串UTF8检查
+check_erlang_chinese_utf8 "$TOOL_NAME" "$TOOL_ARGS"
+ERLANG_UTF8_CHECK_RESULT=$?
+
+# 根据检查结果采取行动
+case $DEVIATION_RESULT in
+  "deviation")
+    # 检测到偏离，建议纠正
+    ERROR_MSG="检测到可能偏离主目标的操作。当前任务应聚焦于DGIOT无人机协议和时序数据存储相关开发。"
+    CONTEXT_MOD="注意：请确保工具使用与主目标相关。当前任务：创建dgiot_uav_tcp通道、分析时序数据存储、集成Hook系统。"
+    
+    # 添加Erlang中文UTF8检查结果
+    if [[ $ERLANG_UTF8_CHECK_RESULT -ne 0 ]]; then
+      CONTEXT_MOD="$CONTEXT_MOD 注意：检测到Erlang文件中缺少/utf8后缀的中文字符串，建议使用erlang_chinese_utf8技能进行修复。"
+    fi
+    
+    # 记录偏离警告
+    echo "[PreToolUse] 警告：检测到偏离主目标 - 工具: $TOOL_NAME" >&2
+    echo "[PreToolUse] 任务ID: $TASK_ID" >&2
+    
+    # 返回警告但不取消（允许用户继续）
+    echo "{\"cancel\":false,\"contextModification\":\"$CONTEXT_MOD\",\"errorMessage\":\"$ERROR_MSG\"}"
+    ;;
+    
+  "related")
+    # 与主目标相关，记录日志
+    echo "[PreToolUse] 工具使用与主目标相关 - 工具: $TOOL_NAME" >&2
+    echo "[PreToolUse] 任务ID: $TASK_ID" >&2
+    
+    # 添加积极的上下文
+    CONTEXT_MOD="很好！当前操作与主目标相关。继续专注于DGIOT无人机协议和时序数据存储开发。"
+    
+    # 添加Erlang中文UTF8检查结果
+    if [[ $ERLANG_UTF8_CHECK_RESULT -ne 0 ]]; then
+      CONTEXT_MOD="$CONTEXT_MOD 注意：检测到Erlang文件中缺少/utf8后缀的中文字符串，建议使用erlang_chinese_utf8技能进行修复。"
+    fi
+    
+    echo "{\"cancel\":false,\"contextModification\":\"$CONTEXT_MOD\",\"errorMessage\":\"\"}"
+    ;;
+    
+  *)
+    # 中性操作，正常记录
+    echo "[PreToolUse] 工具使用检测 - 工具: $TOOL_NAME" >&2
+    echo "[PreToolUse] 任务ID: $TASK_ID" >&2
+    
+    # 添加中性上下文
+    CONTEXT_MOD="工具使用记录：$TOOL_NAME。请确保操作有助于完成主目标。"
+    
+    # 添加Erlang中文UTF8检查结果
+    if [[ $ERLANG_UTF8_CHECK_RESULT -ne 0 ]]; then
+      CONTEXT_MOD="$CONTEXT_MOD 注意：检测到Erlang文件中缺少/utf8后缀的中文字符串，建议使用erlang_chinese_utf8技能进行修复。"
+    fi
+    
+    echo "{\"cancel\":false,\"contextModification\":\"$CONTEXT_MOD\",\"errorMessage\":\"\"}"
+    ;;
+esac
+
+# 记录工具使用历史（可选）
+LOG_FILE="/tmp/cline_tool_usage_${TASK_ID}.log"
+TIMESTAMP_ISO=$(date -u -d @"$((TIMESTAMP/1000))" +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || date -u +"%Y-%m-%dT%H:%M:%SZ")
+echo "$TIMESTAMP_ISO | $TOOL_NAME | $DEVIATION_RESULT | $TASK_ID" >> "$LOG_FILE" 2>/dev/null || true

@@ -1,0 +1,245 @@
+# 中文打印自动触发Hook配置
+# 自动检测Erlang文件中的中文打印问题并触发相关技能
+
+version: "1.0"
+name: "chinese_printing_auto_detection"
+description: "自动检测Erlang文件中的中文打印问题并触发相关技能"
+
+# Hook触发点配置
+triggers:
+  # 1. 文件保存时触发
+  on_file_save:
+    enabled: true
+    file_patterns: ["*.erl"]
+    actions:
+      - name: "detect_chinese_printing_issues"
+        type: "skill_suggestion"
+        skill: "chinese_printing_solution"
+        conditions:
+          - "contains_chinese_text"
+          - "has_io_format_with_chinese"
+        priority: "medium"
+        message: "检测到Erlang文件中包含中文打印，建议使用chinese_printing_solution技能优化"
+
+  # 2. 编译前触发
+  pre_compile:
+    enabled: true
+    file_patterns: ["*.erl"]
+    actions:
+      - name: "check_erlang_utf8_suffix"
+        type: "skill_execution"
+        skill: "erlang_chinese_utf8"
+        conditions:
+          - "has_chinese_without_utf8"
+        priority: "high"
+        message: "检测到Erlang文件中缺少/utf8后缀的中文字符串，自动触发erlang_chinese_utf8技能"
+
+  # 3. 代码审查时触发
+  code_review:
+    enabled: true
+    file_patterns: ["*.erl"]
+    actions:
+      - name: "review_chinese_encoding"
+        type: "skill_suggestion"
+        skill: "chinese_printing_solution"
+        conditions:
+          - "contains_chinese_text"
+        priority: "low"
+        message: "代码中包含中文文本，建议检查编码规范"
+
+# 检测条件定义
+conditions:
+  contains_chinese_text:
+    description: "检测文件中是否包含中文文本"
+    implementation: |
+      function detect_chinese_text(file_path) {
+        const fs = require('fs');
+        const content = fs.readFileSync(file_path, 'utf8');
+        // 匹配中文字符 Unicode范围：\u4e00-\u9fff
+        const chinese_pattern = /[\u4e00-\u9fff]/;
+        return chinese_pattern.test(content);
+      }
+
+  has_io_format_with_chinese:
+    description: "检测是否包含io:format调用且参数中有中文"
+    implementation: |
+      function detect_io_format_with_chinese(file_path) {
+        const fs = require('fs');
+        const content = fs.readFileSync(file_path, 'utf8');
+        // 匹配 io:format 调用且包含中文
+        const pattern = /io:format\s*\([^)]*[\u4e00-\u9fff][^)]*\)/;
+        return pattern.test(content);
+      }
+
+  has_chinese_without_utf8:
+    description: "检测是否包含没有/utf8后缀的中文字符串"
+    implementation: |
+      function detect_chinese_without_utf8(file_path) {
+        const fs = require('fs');
+        const content = fs.readFileSync(file_path, 'utf8');
+        // 匹配 <<"中文">> 但没有 /utf8 的情况
+        const pattern = /<<"[^"]*[\u4e00-\u9fff]+[^"]*">>(?!\s*\/utf8)/;
+        return pattern.test(content);
+      }
+
+# 动作执行配置
+actions:
+  skill_suggestion:
+    description: "建议使用特定技能"
+    implementation: |
+      function suggest_skill(skill_name, message, file_path) {
+        console.log(`[Hook] ${message}`);
+        console.log(`[Hook] 文件: ${file_path}`);
+        console.log(`[Hook] 建议技能: ${skill_name}`);
+        console.log(`[Hook] 使用命令: use_skill ${skill_name}`);
+        
+        // 记录到日志文件
+        const log_entry = {
+          timestamp: new Date().toISOString(),
+          type: "skill_suggestion",
+          skill: skill_name,
+          file: file_path,
+          message: message
+        };
+        
+        const log_file = "/root/gitee/dgiot/.cline/hooks/hook_log.json";
+        let logs = [];
+        try {
+          const existing = fs.readFileSync(log_file, 'utf8');
+          logs = JSON.parse(existing);
+        } catch (e) {
+          logs = [];
+        }
+        
+        logs.push(log_entry);
+        fs.writeFileSync(log_file, JSON.stringify(logs, null, 2));
+      }
+
+  skill_execution:
+    description: "自动执行特定技能"
+    implementation: |
+      function execute_skill(skill_name, message, file_path) {
+        console.log(`[Hook] ${message}`);
+        console.log(`[Hook] 文件: ${file_path}`);
+        console.log(`[Hook] 自动执行技能: ${skill_name}`);
+        
+        // 在实际环境中，这里会调用Cline的use_skill工具
+        // 由于安全限制，这里只记录日志
+        
+        const log_entry = {
+          timestamp: new Date().toISOString(),
+          type: "skill_execution",
+          skill: skill_name,
+          file: file_path,
+          message: message,
+          action: "would_execute_use_skill"
+        };
+        
+        const log_file = "/root/gitee/dgiot/.cline/hooks/hook_log.json";
+        let logs = [];
+        try {
+          const existing = fs.readFileSync(log_file, 'utf8');
+          logs = JSON.parse(existing);
+        } catch (e) {
+          logs = [];
+        }
+        
+        logs.push(log_entry);
+        fs.writeFileSync(log_file, JSON.stringify(logs, null, 2));
+      }
+
+# 排除配置
+exclusions:
+  directories:
+    - ".git"
+    - "node_modules"
+    - "_build"
+    - "deps"
+    - "ebin"
+  
+  files:
+    - "*.beam"
+    - "*.o"
+    - "*.so"
+    - "*.dll"
+
+# 日志配置
+logging:
+  enabled: true
+  level: "info"
+  file: "/root/gitee/dgiot/.cline/hooks/hook_log.json"
+  max_size: "10MB"
+  retention: "30d"
+
+# 通知配置
+notifications:
+  enabled: true
+  channels:
+    - type: "console"
+      level: "info"
+    - type: "file"
+      level: "warning"
+    - type: "skill_suggestion"
+      level: "info"
+
+# 性能配置
+performance:
+  scan_batch_size: 10
+  max_concurrent_scans: 3
+  timeout_ms: 5000
+  cache_enabled: true
+  cache_ttl_ms: 300000  # 5分钟
+
+# 集成配置
+integration:
+  vscode:
+    enabled: true
+    extension_id: "cline.hook-detector"
+    
+  git_hooks:
+    enabled: true
+    hooks:
+      - "pre-commit"
+      - "pre-push"
+    
+  ci_cd:
+    enabled: false
+    platforms: []
+    
+  monitoring:
+    enabled: true
+    metrics:
+      - "files_scanned"
+      - "issues_found"
+      - "skills_triggered"
+      - "execution_time"
+
+# 技能关联配置
+skill_mappings:
+  - pattern: ".*io:format.*[\u4e00-\u9fff].*"
+    skill: "chinese_printing_solution"
+    priority: "high"
+    message: "检测到io:format调用包含中文文本"
+    
+  - pattern: ".*<<\"[^\"]*[\u4e00-\u9fff]+[^\"]*\">>(?!\s*\/utf8).*"
+    skill: "erlang_chinese_utf8"
+    priority: "critical"
+    message: "检测到缺少/utf8后缀的中文字符串"
+    
+  - pattern: ".*[\u4e00-\u9fff].*"
+    skill: "chinese_printing_solution"
+    priority: "low"
+    message: "检测到中文文本，建议检查编码规范"
+
+# 测试配置
+testing:
+  enabled: true
+  test_files:
+    - "test_chinese_printing.erl"
+    - "test_utf8_suffix.erl"
+  
+  expected_triggers:
+    - file: "test_chinese_printing.erl"
+      expected_skills: ["chinese_printing_solution"]
+    - file: "test_utf8_suffix.erl"
+      expected_skills: ["erlang_chinese_utf8"]

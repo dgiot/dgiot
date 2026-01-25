@@ -1,0 +1,62 @@
+#!/bin/bash
+#
+# TaskResume Hook - 任务恢复处理
+# 
+# 在任务恢复时执行
+# 
+# 输入: { taskId, taskResume: { previousState: object }, ... }
+# 输出: { cancel: boolean, contextModification?: string, errorMessage?: string }
+# 
+# 使用场景:
+# - 恢复任务状态
+# - 检查中断原因
+# - 提供恢复指导
+# - 检查编译环境状态
+
+# 从标准输入读取JSON输入
+INPUT=$(cat)
+
+echo "[TaskResume] 任务恢复" >&2
+
+# 检查编译环境是否仍然可用
+check_compile_environment_on_resume() {
+  echo "[TaskResume] 检查编译环境..." >&2
+  
+  # 检查关键工具
+  local checks=()
+  
+  if command -v erlc &> /dev/null; then
+    checks+=("✅ erlc可用")
+  else
+    checks+=("❌ erlc不可用")
+  fi
+  
+  if [[ -f "/root/gitee/dgiot/rebar.config" ]]; then
+    checks+=("✅ 项目配置存在")
+  else
+    checks+=("❌ 项目配置丢失")
+  fi
+  
+  # 输出检查结果
+  for check in "${checks[@]}"; do
+    echo "[TaskResume] $check" >&2
+  done
+  
+  if [[ "${checks[@]}" =~ "❌" ]]; then
+    echo "编译环境检查失败，可能需要重新设置环境。"
+    return 1
+  else
+    echo "编译环境检查通过。"
+    return 0
+  fi
+}
+
+# 执行检查
+if check_compile_environment_on_resume; then
+  CONTEXT_MOD="任务恢复成功。编译环境检查通过。继续之前的工作，注意保持对编译、日志、中文编码、编程规范的关注。"
+else
+  CONTEXT_MOD="任务恢复，但编译环境有问题。建议先解决环境问题再继续。"
+fi
+
+# 返回结果
+echo "{\"cancel\":false,\"contextModification\":\"$CONTEXT_MOD\",\"errorMessage\":\"\"}"
