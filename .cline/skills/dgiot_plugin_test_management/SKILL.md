@@ -1,8 +1,27 @@
-# 插件测试脚本管理规则
+---
+name: dgiot_plugin_test_management
+description: DGIOT插件测试脚本管理技能，提供测试脚本创建审批、目录结构规范、命名规范，确保测试用例作为系统防护底线
+version: 1.0.0
+author: Cline AI Assistant
+created_date: 2026-01-26
+category: testing
+tags: [dgiot, plugin, test, management, scripts, approval, quality, automation]
+trigger_phrases:
+  - 测试脚本管理
+  - 插件测试
+  - 测试用例
+  - 测试脚本审批
+  - 测试目录结构
+  - 测试脚本规范
+  - 自动化测试
+  - 测试防护底线
+---
+
+# DGIOT插件测试管理技能
 
 ## 概述
 
-本规则定义了DG-IoT平台中插件测试脚本的创建、管理和使用规范。**自动化测试用例是整个软件系统的防护底线**，每一个测试用例都必须严格评审，一旦测试通过就不允许轻易改动，必须经过项目负责人审批才能修改。
+本技能提供DGIOT平台插件测试脚本的创建、管理和使用规范。**自动化测试用例是整个软件系统的防护底线**，每一个测试用例都必须严格评审，一旦测试通过就不允许轻易改动，必须经过项目负责人审批才能修改。
 
 ## 核心原则
 
@@ -321,38 +340,187 @@ if __name__ == '__main__':
 
 **处理方式**：立即删除，追究责任
 
-## 更新记录
+## 技能集成
 
-- **v1.0.0 (2025-12-26)**：创建插件测试脚本管理规则
-- **下次评审**：2026-01-26
-
-## 附录
-
-### A. 相关文档
-- [开发规则](../development_rules.md)
-- [编码规范](../coding_standards.md)
-- [测试用例模板](../templates/test_case.md)
-
-### B. 工具参考
-```bash
-# 检查脚本语法
-bash -n script.sh
-
-# 检查Shell脚本规范
-shellcheck script.sh
-
-# 检查Python脚本规范
-pylint script.py
-
-# 检查脚本权限
-ls -la script.sh
+### 与自主开发技能集成
+```
+dgiot_autonomous_development 激活
+    ↓
+[dgiot_plugin_test_management] 测试管理技能
+    ↓
+检查测试脚本规范
+    ↓
+验证测试用例防护功能
+    ↓
+输出测试管理建议
 ```
 
-### C. 联系方式
-- 规则负责人：插件技术负责人
-- 问题反馈：通过GitHub Issues或团队群组
-- 紧急联系：直接联系规则负责人
+### 与协议调试技能集成
+```
+dgiot_protocol_debug 激活
+    ↓
+[dgiot_plugin_test_management] 测试管理技能
+    ↓
+创建协议测试脚本
+    ↓
+验证协议解析功能
+    ↓
+输出测试脚本模板
+```
 
----
+## 工具脚本
 
-**提示**：严格遵守本规则，确保测试脚本的质量和可维护性。如有疑问，及时咨询规则负责人。
+### 1. 测试脚本检查工具
+```bash
+#!/bin/bash
+# check_test_script.sh
+
+echo "=== 测试脚本检查工具 ==="
+echo ""
+
+SCRIPT_PATH="$1"
+
+if [ -z "$SCRIPT_PATH" ]; then
+    echo "用法: $0 <脚本路径>"
+    exit 1
+fi
+
+if [ ! -f "$SCRIPT_PATH" ]; then
+    echo "❌ 脚本文件不存在: $SCRIPT_PATH"
+    exit 1
+fi
+
+echo "检查脚本: $SCRIPT_PATH"
+echo ""
+
+# 1. 检查头注释
+echo "1. 检查头注释..."
+if grep -q "^# 脚本名称：" "$SCRIPT_PATH"; then
+    echo "✅ 头注释完整"
+else
+    echo "❌ 缺少头注释"
+fi
+
+# 2. 检查参数说明
+echo "2. 检查参数说明..."
+if grep -q "^# 参数说明：" "$SCRIPT_PATH"; then
+    echo "✅ 参数说明完整"
+else
+    echo "❌ 缺少参数说明"
+fi
+
+# 3. 检查错误处理
+echo "3. 检查错误处理..."
+if grep -q "set -euo pipefail" "$SCRIPT_PATH"; then
+    echo "✅ 错误处理完整"
+else
+    echo "❌ 缺少错误处理"
+fi
+
+# 4. 检查日志函数
+echo "4. 检查日志函数..."
+if grep -q "log_info\|log_error\|log_debug" "$SCRIPT_PATH"; then
+    echo "✅ 日志函数完整"
+else
+    echo "❌ 缺少日志函数"
+fi
+
+# 5. 检查权限
+echo "5. 检查权限..."
+if [ -x "$SCRIPT_PATH" ]; then
+    echo "✅ 脚本可执行"
+else
+    echo "❌ 脚本不可执行"
+fi
+
+echo ""
+echo "=== 检查完成 ==="
+```
+
+### 2. 测试目录结构检查工具
+```bash
+#!/bin/bash
+# check_test_structure.sh
+
+echo "=== 测试目录结构检查工具 ==="
+echo ""
+
+PLUGIN_DIR="$1"
+
+if [ -z "$PLUGIN_DIR" ]; then
+    echo "用法: $0 <插件目录>"
+    exit 1
+fi
+
+if [ ! -d "$PLUGIN_DIR" ]; then
+    echo "❌ 插件目录不存在: $PLUGIN_DIR"
+    exit 1
+fi
+
+TEST_DIR="$PLUGIN_DIR/test/tools/integration"
+
+echo "检查插件: $PLUGIN_DIR"
+echo "测试目录: $TEST_DIR"
+echo ""
+
+# 1. 检查测试目录是否存在
+if [ -d "$TEST_DIR" ]; then
+    echo "✅ 测试目录存在"
+else
+    echo "❌ 测试目录不存在"
+    exit 1
+fi
+
+# 2. 检查README.md
+if [ -f "$TEST_DIR/README.md" ]; then
+    echo "✅ README.md存在"
+else
+    echo "❌ 缺少README.md"
+fi
+
+# 3. 检查子目录结构
+for subdir in test_runners simulators analysis; do
+    if [ -d "$TEST_DIR/$subdir" ]; then
+        echo "✅ $subdir目录存在"
+    else
+        echo "⚠️  $subdir目录不存在（可选）"
+    fi
+done
+
+# 4. 检查脚本命名规范
+echo ""
+echo "检查脚本命名规范..."
+find "$TEST_DIR" -name "*.sh" -o -name "*.py" -o -name "*.erl" | while read -r script; do
+    filename=$(basename "$script")
+    
+    # 检查命名前缀
+    if [[ "$filename" =~ ^(test_|simulate_|analyze_|debug_) ]]; then
+        echo "✅ $filename - 命名规范正确"
+    else
+        echo "❌ $filename - 命名不规范（缺少前缀）"
+    fi
+done
+
+echo ""
+echo "=== 检查完成 ==="
+```
+
+## 总结
+
+通过本技能，可以：
+1. **规范测试脚本管理**：确保测试脚本符合规范
+2. **保障系统防护底线**：测试用例作为系统质量保障
+3. **提高测试质量**：严格的审批和审查流程
+4. **统一团队标准**：所有成员使用相同的测试规范
+5. **集成开发流程**：与开发、调试等技能无缝集成
+
+**使用方式**：
+```bash
+# 当需要创建或管理测试脚本时
+use_skill dgiot_plugin_test_management
+
+# 运行测试脚本检查工具
+.cline/skills/dgiot_plugin_test_management/check_test_script.sh <脚本路径>
+
+# 运行目录结构检查工具
+.cline/skills/dgiot_plugin_test_management/check_test_structure.sh <插件目录>
