@@ -1,8 +1,8 @@
-# Makefile统计和自动上库命令指南
+# Makefile使用工作流
 
 ## 概述
 
-本指南说明如何在DG-IoT项目中使用新增的Makefile命令进行规则统计和自动上库操作。
+本工作流说明如何在DG-IoT项目中使用新增的Makefile命令进行规则统计和自动上库操作，支持GitHub/Gitee多平台推送和日常开发流程优化。
 
 ## 新增命令列表
 
@@ -341,16 +341,36 @@ auto-push:
 - `.clinerules/ai_rule_compliance_report.md` - AI规则遵守报告
 - `.clinerules/statistical_methodology.md` - 统计方法说明
 
+## 检查清单
+
+### 配置检查清单
+- [ ] GitHub远程仓库已配置
+- [ ] Gitee远程仓库已配置
+- [ ] SSH密钥或访问令牌有效
+- [ ] 验证脚本可执行
+
+### 使用检查清单
+- [ ] 开发前运行`make stats`检查规则
+- [ ] 提交前运行`make push-with-validation`
+- [ ] 定期运行`make stats-report`查看统计
+- [ ] 多平台同步使用`make auto-push`
+
+### 维护检查清单
+- [ ] 定期更新验证标准
+- [ ] 检查远程仓库配置
+- [ ] 更新统计报告
+- [ ] 优化Makefile命令
+
 ## 更新记录
 
-- **2025-12-19**: 创建Makefile统计和自动上库命令
-  - 添加6个新命令
-  - 支持GitHub/Gitee自动推送
-  - 集成规则验证功能
+- **2026-01-26**: 创建Makefile使用工作流
+  - 从Rules迁移Makefile命令指南
+  - 优化为工作流格式
+  - 添加检查清单和最佳实践
 
 ## 总结
 
-通过新增的Makefile命令，团队可以：
+通过本工作流，团队可以：
 1. **自动化规则验证** - 确保代码质量
 2. **多平台同步** - 一键推送到多个仓库
 3. **统计报告生成** - 量化规则遵守情况

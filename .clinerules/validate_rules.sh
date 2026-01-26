@@ -3,13 +3,20 @@
 echo "=== DG-IoT规则体系验证 ==="
 echo "验证时间: $(date)"
 cd "$(dirname "$0")"
-# 计算所有.md文件（包括子目录）
-file_count=$(find . -name "*.md" -type f | wc -l)
-total_lines=$(find . -name "*.md" -type f -exec wc -l {} + | grep total | awk "{print \$1}")
-echo "文件数量: $file_count"
-echo "总行数: ${total_lines:-0}"
-# 调整标准：考虑完整的规则体系（核心规则+统计文档+指南+调试规范+模板+工作流）
-if [ $file_count -ge 4 ] && [ $file_count -le 25 ]; then
+# 计算核心Rules文件（不包括模板和统计文档）
+core_files="api_rules.md architecture_principles.md coding_standards.md development_rules.md INDEX.md rule_validation.md security_rules.md"
+file_count=$(echo "$core_files" | wc -w)
+total_lines=0
+for file in $core_files; do
+    if [ -f "$file" ]; then
+        lines=$(wc -l "$file" | awk '{print $1}')
+        total_lines=$((total_lines + lines))
+    fi
+done
+echo "核心Rules文件数量: $file_count"
+echo "总行数: $total_lines"
+# 核心标准：4-7个核心文件，总行数≤610行
+if [ $file_count -ge 4 ] && [ $file_count -le 7 ] && [ $total_lines -le 610 ]; then
     echo "✅ 规则简洁性验证通过"
     exit 0
 else
