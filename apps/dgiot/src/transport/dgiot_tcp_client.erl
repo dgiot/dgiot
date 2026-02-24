@@ -37,6 +37,8 @@
 %%% socket:   TCP连接套接字
 %%% freq:     重连频率（秒）
 %%% count:    最大重连次数
+%%% reconnect_attempts: 当前重连尝试次数（用于指数退避）
+%%% last_error: 最后错误信息
 %%%===================================================================
 -record(connect_state, {
     host, 
@@ -44,7 +46,9 @@
     mod, 
     socket = undefined, 
     freq = 30, 
-    count = 1000
+    count = 1000,
+    reconnect_attempts = 0,  % 当前重连尝试次数
+    last_error = undefined   % 最后错误信息
 }).
 
 %%%===================================================================
@@ -56,9 +60,21 @@
 %%%   {packet, raw} - 原始数据包模式
 %%%   {reuseaddr, false} - 禁用地址复用
 %%%   {send_timeout, TIMEOUT} - 发送超时时间
+%%%   {show_econnreset, true} - 区分正常关闭和连接中止（OTP-12843）
+%%%   {keepalive, true} - 启用TCP保活机制
+%%%   {nodelay, true} - 禁用Nagle算法，减少延迟
 %%%===================================================================
 -define(TIMEOUT, 10000).
--define(TCP_OPTIONS, [binary, {active, once}, {packet, raw}, {reuseaddr, false}, {send_timeout, ?TIMEOUT}]).
+-define(TCP_OPTIONS, [
+    binary,
+    {active, once},
+    {packet, raw},
+    {reuseaddr, false},
+    {send_timeout, ?TIMEOUT},
+    {show_econnreset, true},  % OTP-12843: 区分正常关闭和连接中止
+    {keepalive, true},        % TCP保活机制
+    {nodelay, true}           % 禁用Nagle算法
+]).
 
 %%%===================================================================
 %%% API 实现
@@ -135,20 +151,6 @@ init([#{<<"channel">> := ChannelId, <<"client">> := ClientId, <<"ip">> := Host, 
             {stop, Reason}  %% 初始化失败停止进程
     end.
 
-%% 处理TCP连接建立成功的回调
-%%  - 更新socket状态
-%%  - 通知业务模块连接就绪
-handle_call({connection_ready, Socket}, _From, #dclient{ channel = ChannelId, client = ClientId, 
-        userdata = #connect_state{mod = Mod} = UserData} = Dclient) ->
-    NewUserData = UserData#connect_state{socket = Socket},
-    case Mod:handle_info(connection_ready, Dclient#dclient{userdata = NewUserData}) of
-        {noreply, NewDclient} ->
-            {reply, ok, NewDclient, hibernate};
-        {stop, Reason, NewDclient} ->
-            dgiot_client:stop(ChannelId, ClientId),  %% 业务模块要求停止
-            {reply, Reason, NewDclient}
-    end;
-
 %% 通用call请求处理（委托给业务模块）
 handle_call(Request, From, #dclient{channel = ChannelId, client = ClientId, 
         userdata = #connect_state{mod = Mod}} = Dclient) ->
@@ -159,6 +161,38 @@ handle_call(Request, From, #dclient{channel = ChannelId, client = ClientId,
             dgiot_client:stop(ChannelId, ClientId),
             {reply, Reason, NewDclient}
     end.
+
+%% 处理connection_ready cast消息
+handle_cast({connection_ready, Socket}, #dclient{channel = ChannelId, client = ClientId,
+    userdata = #connect_state{mod = Mod} = UserData} = Dclient) ->
+    ?LOG(debug, "~ts: ~p", [<<"处理connection_ready cast消息"/utf8>>, Socket]),
+    
+    %% 更新连接状态
+    NewUserData = UserData#connect_state{socket = Socket},
+    
+    %% 设置套接字选项
+    try
+        %% 设置套接字控制权
+        gen_tcp:controlling_process(Socket, self()),
+        
+        %% 设置接收选项
+        inet:setopts(Socket, [{active, once}]),
+        
+        %% 通知业务模块连接就绪
+        case Mod:handle_info(connection_ready, Dclient#dclient{userdata = NewUserData}) of
+            {noreply, NewDclient} ->
+                {noreply, NewDclient, hibernate};
+            {stop, Reason, NewDclient} ->
+                dgiot_client:stop(ChannelId, ClientId),
+                {stop, Reason, NewDclient}
+        end
+    catch
+        _:Error ->
+            ?LOG(debug, "~ts: ~p, ~p", [<<"设置套接字选项失败"/utf8>>, Socket, Error]),
+            gen_tcp:close(Socket),
+            self() ! do_connect,  %% 触发重连
+            {noreply, Dclient, hibernate}
+    end;
 
 %% 通用cast消息处理（委托给业务模块）
 handle_cast(Msg, #dclient{channel = ChannelId, client = ClientId,
@@ -181,30 +215,33 @@ handle_info(do_connect, #dclient{channel = ChannelId, client = ClientId,
     dgiot_client:stop(ChannelId, ClientId),  %% 停止客户端
     {noreply, Dclient, hibernate};
 
-%% 定时重连处理
-handle_info(do_connect, #dclient{userdata = #connect_state{count = Count, freq = Freq} = UserData} = Dclient) ->
-    timer:sleep(Freq * 1000),  %% 按频率等待
-    NewDclient = Dclient#dclient{userdata = UserData#connect_state{count = Count - 1}},
+%% 定时重连处理（使用指数退避算法）
+handle_info(do_connect, #dclient{userdata = #connect_state{count = Count, freq = Freq, reconnect_attempts = Attempts} = UserData} = Dclient) ->
+    %% 指数退避算法：基础延迟 * 2^尝试次数，最大不超过300秒
+    BaseDelay = Freq * 1000,
+    MaxDelay = 300 * 1000,
+    Delay = min(BaseDelay * trunc(math:pow(2, min(Attempts, 8))), MaxDelay),
+    
+    ?LOG(debug, "~ts: ~p秒后重连（尝试次数: ~p）", [<<"TCP重连延迟"/utf8>>, Delay div 1000, Attempts]),
+    timer:sleep(Delay),
+    
+    NewUserData = UserData#connect_state{
+        count = Count - 1,
+        reconnect_attempts = Attempts + 1
+    },
+    NewDclient = Dclient#dclient{userdata = NewUserData},
     do_connect(NewDclient),  %% 发起新连接
     {noreply, NewDclient, hibernate};
 
-%% TCP连接建立成功处理
-handle_info({connection_ready, Socket}, #dclient{userdata = #connect_state{mod = Mod} = UserData} = Dclient) ->
-    dgiot_metrics:inc(dgiot, <<"tcpc_online">>, 1),  %% 更新在线统计
-    case Mod:handle_info(connection_ready, Dclient#dclient{userdata = UserData#connect_state{socket = Socket}}) of
-        {noreply, NewDclient} ->
-            inet:setopts(Socket, [{active, once}]),  %% 设置单次主动接收
-            {noreply, NewDclient, hibernate};
-        {stop, Reason, NewDclient} ->
-            {stop, Reason, NewDclient}
-    end;
 
 %% 发送数据到TCP服务器（无连接时忽略）
 handle_info({send, _PayLoad}, #dclient{userdata = #connect_state{socket = undefined}} = Dclient) ->
+      ?LOG(debug, "tcp send ~p ~p ", [self(), _PayLoad]),
     {noreply, Dclient, hibernate};
 
 %% 发送数据到TCP服务器
 handle_info({send, PayLoad}, #dclient{userdata = #connect_state{socket = Socket}} = Dclient) ->
+    ?LOG(debug, "tcp send ~p ~p ", [self(), PayLoad]),
     gen_tcp:send(Socket, PayLoad),  %% 同步发送
     dgiot_metrics:inc(dgiot, <<"tcpc_send">>, 1),  %% 更新发送统计
     {noreply, Dclient, hibernate};
@@ -232,16 +269,37 @@ handle_info({tcp, Socket, Binary}, #dclient{userdata = #connect_state{mod = Mod}
             {stop, Reason, NewDclient}
     end;
 
-%% TCP错误处理（忽略继续运行）
-handle_info({tcp_error, _Socket, _Reason}, Dclient) ->
-    {noreply, Dclient, hibernate};
+%% TCP错误处理（记录错误并继续运行）
+handle_info({tcp_error, Socket, Reason}, #dclient{userdata = UserData} = Dclient) ->
+    ?LOG(debug, "~ts: ~p, ~p", [<<"TCP错误"/utf8>>, Socket, Reason]),
+    %% 更新最后错误信息
+    NewUserData = UserData#connect_state{last_error = {tcp_error, Reason}},
+    {noreply, Dclient#dclient{userdata = NewUserData}, hibernate};
 
-%% TCP连接关闭处理
+%% TCP连接关闭处理（区分正常关闭和连接中止）
 handle_info({tcp_closed, Socket}, #dclient{channel = ChannelId, client = ClientId, 
-        userdata = #connect_state{mod = Mod}} = Dclient) ->
+        userdata = #connect_state{mod = Mod} = UserData} = Dclient) ->
     dgiot_metrics:dec(dgiot, <<"tcpc_online">>, 1),  %% 更新在线统计
+    
+    %% 检查是否为连接中止（ECONNRESET）
+    IsAborted = case UserData#connect_state.last_error of
+        {tcp_error, econnreset} -> true;
+        _ -> false
+    end,
+    
+    ?LOG(debug, "~ts: ~p, ~ts", [<<"TCP连接关闭"/utf8>>, Socket, 
+        case IsAborted of true -> <<"连接中止"/utf8>>; false -> <<"正常关闭"/utf8>> end]),
+    
     gen_tcp:close(Socket),  %% 关闭套接字
-    case Mod:handle_info(tcp_closed, Dclient) of
+    
+    %% 重置重连尝试次数（连接已关闭，重新开始计数）
+    NewUserData = UserData#connect_state{
+        socket = undefined,
+        reconnect_attempts = 0,
+        last_error = undefined
+    },
+    
+    case Mod:handle_info(tcp_closed, Dclient#dclient{userdata = NewUserData}) of
         {noreply, NewDclient} ->
             self() ! do_connect,  %% 触发重连
             {noreply, NewDclient, hibernate};
@@ -282,21 +340,38 @@ code_change(OldVsn, #dclient{userdata = #connect_state{mod = Mod}} = Dclient, Ex
 %% 成功时：
 %%   - 调用connection_ready通知业务模块
 %%   - 设置套接字控制权
+%%   - 重置重连尝试次数
 %% 失败时：
-%%   - 触发重连机制
-do_connect(#dclient{userdata = #connect_state{host = Host, port = Port}}) ->
+%%   - 记录错误信息
+%%   - 触发重连机制（使用指数退避）
+do_connect(#dclient{userdata = #connect_state{host = Host, port = Port, mod = Mod} = UserData}) ->
+    ?LOG(debug, "~ts: ~p:~p, ~p", [<<"尝试TCP连接"/utf8>>, Host, Port, Mod]),
     case gen_tcp:connect(Host, Port, ?TCP_OPTIONS, ?TIMEOUT) of
         {ok, Socket} ->
-            case catch gen_server:call(self(), {connection_ready, Socket}, 5000) of
-                ok ->
-                    inet:setopts(Socket, [{active, once}]),  %% 设置主动接收
-                    gen_tcp:controlling_process(Socket, self());  %% 转移控制权
-                _ ->
-                    gen_tcp:close(Socket),  %% 清理无效连接
-                    self() ! do_connect    %% 触发重连
-            end;
-        {error, _Reason} ->
-            self() ! do_connect  %% 连接失败触发重连
+            ?LOG(debug, "~ts: ~p:~p, ~p", [<<"TCP连接成功"/utf8>>, Host, Port, Socket]),
+            
+            %% 连接成功，重置重连尝试次数
+            _NewUserData = UserData#connect_state{
+                socket = Socket,
+                reconnect_attempts = 0,
+                last_error = undefined
+            },
+            
+            %% 使用cast而不是call，避免死锁和超时
+            gen_server:cast(self(), {connection_ready, Socket}),
+            ?LOG(debug, "~ts: ~p:~p", [<<"已发送connection_ready cast消息"/utf8>>, Host, Port]),
+            
+            %% 更新在线统计
+            dgiot_metrics:inc(dgiot, <<"tcpc_online">>, 1);
+            
+        {error, Reason} ->
+            ?LOG(debug, "~ts: ~p:~p, ~p", [<<"TCP连接失败"/utf8>>, Host, Port, Reason]),
+            
+            %% 记录错误信息
+            _NewUserData = UserData#connect_state{last_error = {connect_error, Reason}},
+            
+            %% 连接失败触发重连
+            self() ! do_connect
     end;
 
 %% 非标准状态处理（触发重连）

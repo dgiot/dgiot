@@ -111,8 +111,15 @@ child_spec(M, worker, Args) ->
     };
 
 child_spec(M, supervisor, Args) ->
+    % 对于监督者，使用ChannelId作为id，避免重复
+    % Args通常是[ChannelId]，其中ChannelId是监督者名称
+    Id = case Args of
+        [ChannelId | _] when is_atom(ChannelId) -> ChannelId;
+        [ChannelId | _] when is_binary(ChannelId) -> binary_to_atom(ChannelId);
+        _ -> M
+    end,
     #{
-        id => M,
+        id => Id,
         start => {M, start_link, Args},
         restart => permanent,
         shutdown => infinity,

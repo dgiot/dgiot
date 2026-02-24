@@ -18,7 +18,7 @@
 %% 展示四层架构在多播场景下的协同工作
 -module(test_multicast_demo).
 -author("johnliu").
--include("../../include/logger.hrl").
+-include("logger.hrl").
 
 %% API导出
 -export([run_demo/0, stop_demo/0]).

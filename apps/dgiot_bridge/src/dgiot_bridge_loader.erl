@@ -26,6 +26,9 @@
 
 %% gen_server callbacks
 -export([init/1, handle_call/3, handle_cast/2, handle_info/2, terminate/2, code_change/3]).
+
+%% 内部函数导出（用于测试）
+-export([safe_to_channel_type/1]).
 -define(SERVER, ?MODULE).
 -record(state, {success}).
 
@@ -153,7 +156,7 @@ start_load_channel(Pid, PageSize, MaxTotal, #{<<"mod">> := Module, <<"where">> :
     },
     case dgiot_parsex:query_object(<<"Channel">>, Query) of
         {ok, #{<<"results">> := Channels}} ->
-            [dgiot_data:insert(?DGIOT_BRIDGE, {ChannelId, type}, {dgiot_utils:to_int(Type), CType}) || #{<<"type">> := Type, <<"cType">> := CType, <<"objectId">> := ChannelId} <- Channels],
+            [dgiot_data:insert(?DGIOT_BRIDGE, {ChannelId, type}, {safe_to_channel_type(Type), CType}) || #{<<"type">> := Type, <<"cType">> := CType, <<"objectId">> := ChannelId} <- Channels],
             Pid ! {load, 0, Module, Channels};
         _ ->
             pass
@@ -209,4 +212,19 @@ start_load_channel(Pid, PageSize, MaxTotal, #{<<"where">> := Where}) ->
 %%update_product_(_, _ChannleId, _Name, _Type) ->
 %%    pass.
 
+%% @doc 安全地将通道类型字符串转换为整数类型
+%% @spec safe_to_channel_type(binary()) -> integer()
+safe_to_channel_type(<<"protocol">>) -> ?PROTOCOL_CHL;
+safe_to_channel_type(<<"bridge">>) -> ?BRIDGE_CHL;
+safe_to_channel_type(<<"backend">>) -> ?BACKEND_CHL;
+safe_to_channel_type(<<"feature">>) -> ?FEATURE_CHL;
+safe_to_channel_type(<<"auth">>) -> ?AUTH_CHL;
+safe_to_channel_type(Type) when is_binary(Type) ->
+    try
+        dgiot_utils:to_int(Type)
+    catch
+        _:_ -> ?DEFAULT_CHL
+    end;
+safe_to_channel_type(Type) when is_integer(Type) -> Type;
+safe_to_channel_type(_) -> ?DEFAULT_CHL.
 

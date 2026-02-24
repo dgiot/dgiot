@@ -25,7 +25,7 @@
 -export([transaction/2, format_data/4]).
 -export([format_sql/3, get_values/3]).
 -export([save_fields/2, get_fields/1]).
--export([batch_sql/2]).
+-export([batch_sql/2, batch_sql/3]).
 -export([get_channel/1]).
 
 transaction(Channel, Fun) ->
@@ -54,11 +54,9 @@ create_database(Channel, DataBase, Keep) ->
             dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_update, Sql)
         end).
 
-
 create_schemas(Schema) ->
     create_schemas(?DEFAULT, Schema).
 
-%% 如果里面有using，则为使用了超级表创建子表
 create_schemas(Channel, #{<<"using">> := _STbName} = Query) ->
     transaction(Channel,
         fun(Context) ->
@@ -66,7 +64,6 @@ create_schemas(Channel, #{<<"using">> := _STbName} = Query) ->
             dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_update, Sql)
         end);
 
-%% 如果schema里面带有tags则为超级表，没有则为普通表
 create_schemas(Channel, Query) ->
     transaction(Channel,
         fun(Context) ->
@@ -76,9 +73,9 @@ create_schemas(Channel, Query) ->
             R
         end).
 
-%% 插入
 create_object(TableName, Object) ->
     create_object(?DEFAULT, TableName, Object).
+
 create_object(Channel, TableName, #{<<"values">> := Values0} = Object) ->
     transaction(Channel,
         fun(Context) ->
@@ -88,9 +85,9 @@ create_object(Channel, TableName, #{<<"values">> := Values0} = Object) ->
             dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_update, Sql)
         end).
 
-%% 查询
 query_object(TableName, Query) ->
     query_object(?DEFAULT, TableName, Query).
+
 query_object(Channel, TableName, Query) ->
     transaction(Channel,
         fun(Context) ->
@@ -99,9 +96,9 @@ query_object(Channel, TableName, Query) ->
             dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_query, Sql)
         end).
 
-%% 批处理
 batch(Batch) ->
     batch(?DEFAULT, Batch).
+
 batch(Channel, Requests) when is_list(Requests) ->
     transaction(Channel,
         fun(Context) ->
@@ -123,17 +120,35 @@ batch_sql(Channel, Sql) ->
             dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_update, Sql)
         end).
 
+batch_sql(Channel, Database, Sql) ->
+    transaction(Channel,
+        fun(Context) ->
+            % 从 Context 中获取基础 URL、用户名、密码等信息
+            BaseUrl = maps:get(<<"url">>, Context),
+            % 清洗数据库名：去掉可能存在的末尾点号
+            CleanDb = case binary:last(Database) of
+                $. -> binary:part(Database, 0, byte_size(Database) - 1);
+                _ -> Database
+            end,
+            % 构造带数据库的 URL
+            DbUrl = <<BaseUrl/binary, "/", CleanDb/binary>>,
+            % 构建新的 Context 包含数据库 URL
+            NewContext = Context#{<<"url">> => DbUrl},
+            dgiot_tdengine_pool:run_sql(NewContext#{<<"channel">> => Channel}, execute_update, Sql)
+        end).
+
 create_user(UserName, Password) ->
     create_user(?DEFAULT, UserName, Password).
+
 create_user(Channel, UserName, Password) ->
     transaction(Channel,
         fun(Context) ->
             dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_update, <<"CREATE USER ", UserName/binary, " PASS ‘", Password/binary, "’">>)
         end).
 
-
 delete_user(UserName) ->
     delete_user(?DEFAULT, UserName).
+
 delete_user(Channel, UserName) ->
     transaction(Channel,
         fun(Context) ->
@@ -142,13 +157,13 @@ delete_user(Channel, UserName) ->
 
 alter_user(UserName, NewPassword) ->
     alter_user(?DEFAULT, UserName, NewPassword).
+
 alter_user(Channel, UserName, NewPassword) ->
     transaction(Channel,
         fun(Context) ->
             dgiot_tdengine_pool:run_sql(Context#{<<"channel">> => Channel}, execute_update, <<"ALTER USER ", UserName/binary, " PASS ‘", NewPassword/binary, "’">>)
         end).
 
-%% 产品，设备地址与数据分离，推荐
 format_data(ChannelId, ProductId, DevAddr, Data) ->
     DeviceId = dgiot_parse_id:get_deviceid(ProductId, DevAddr),
     Fields = get_fields(ProductId),
@@ -163,7 +178,6 @@ format_data(ChannelId, ProductId, DevAddr, Data) ->
         <<"values">> => NewValues
     }.
 
-%% INSERT INTO _173acf2f85._af6d16f9ba using _173acf2f85._173acf2f85 TAGS ('_KOHbyuiJilnsdD') VALUES (now,null,null,null,null);
 get_values(Fields, ProductId, Data) ->
     Values0 =
         lists:foldl(fun(Field, Acc) ->
@@ -229,7 +243,6 @@ get_sqls(Data, ProductId, DevAddr, Results) ->
 
 get_sqls([], _ProductId, _DevAddr, _Results, Acc) ->
     Acc;
-
 get_sqls([Data | Rest], ProductId, DevAddr, Results, {_, Acc}) ->
     Now = maps:get(<<"createdat">>, Data, now),
     {TagSql, Sql} = get_sql(Results, ProductId, Data#{<<"devaddr">> => DevAddr}, Now),
@@ -240,7 +253,6 @@ get_sql(Results, ProductId, Values, Now) ->
 
 get_sql([], _ProductId, _Values, _Now, {TagAcc, Acc}) ->
     {list_to_binary(TagAcc ++ ")"), list_to_binary(Acc ++ ")")};
-
 get_sql([Column | Results], ProductId, Values, Now, {TagAcc, Acc}) ->
     NewAcc =
         case Column of
@@ -260,7 +272,6 @@ get_sql([Column | Results], ProductId, Values, Now, {TagAcc, Acc}) ->
                 {TagAcc, Acc}
         end,
     get_sql(Results, ProductId, Values, Now, NewAcc).
-
 
 get_value(Field, Values, ProductId, Acc) ->
     Value = dgiot_tdengine_field:check_value(maps:get(Field, Values, null), ProductId, Field),

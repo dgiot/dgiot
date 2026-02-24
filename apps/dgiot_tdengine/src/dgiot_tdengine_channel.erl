@@ -180,6 +180,8 @@ init(?TYPE, ChannelId, Config) ->
 
 handle_init(State) ->
     dgiot_metrics:inc(dgiot_tdengine, <<"tdengine">>, 1),
+    % 立即发送 init 消息，确保通道启动后立刻创建表
+    self() ! init,
     erlang:send_after(1000, self(), ws_login),
     {ok, State}.
 
@@ -190,15 +192,12 @@ handle_event(_EventType, _Event, State) ->
 
 %% gun监测 开始
 handle_message({gun_up, _Pid, _Protocol}, #state{id = _ChannelId, env = _Config} = State) ->
-    %%    io:format("~s ~p gun_up = ~p.~n", [?FILE, ?LINE, _Protocol]),
     {ok, State};
 
 handle_message({gun_error, _Pid, _Protocol}, #state{id = _ChannelId, env = _Config} = State) ->
-    %%    io:format("~s ~p gun_error = ~p.~n", [?FILE, ?LINE, _Protocol]),
     {ok, State};
 
 handle_message({gun_down, _Pid, _Protocol}, #state{id = _ChannelId, env = _Config} = State) ->
-    %%    io:format("~s ~p gun_down = ~p.~n", [?FILE, ?LINE, _Protocol]),
     {ok, State};
 %% gun监测结束
 
@@ -273,20 +272,16 @@ stop(ChannelType, ChannelId, _State) ->
 
 %% gun监测 开始
 handle_info({gun_up, _Pid, _Protocol}, #state{id = _ChannelId, env = _Config} = State) ->
-    % io:format("~s ~p gun_up = ~p.~n", [?FILE, ?LINE, _Protocol]),
     {ok, State};
 
 handle_info({gun_error, _Pid, _Protocol}, #state{id = _ChannelId, env = _Config} = State) ->
-    % io:format("~s ~p gun_error = ~p.~n", [?FILE, ?LINE, _Protocol]),
     {ok, State};
 
 handle_info({gun_down, _Pid, _Protocol}, #state{id = _ChannelId, env = _Config} = State) ->
-    % io:format("~s ~p gun_down = ~p.~n", [?FILE, ?LINE, _Protocol]),
     {ok, State};
 %% gun监测结束
 
 handle_info(_Message, State) ->
-    % io:format("~s ~p Message = ~p.~n", [?FILE, ?LINE, _Message]),
     {ok, State}.
 
 
@@ -335,39 +330,39 @@ check_database(ChannelId, ProductId, #{<<"database">> := DataBase, <<"keep">> :=
             dgiot_bridge:send_log(ChannelId, "Check database Error, ChannelId:~p, ProductId:~p, Reason:authentication failure", [ChannelId, ProductId]),
             timer:sleep(5000),
             check_database(ChannelId, ProductId, Config);
-        _ ->
+        {error, Reason} ->
+            ?LOG(error, "Create database ~p failed: ~p", [DataBase, Reason]),
             ok
     end.
 
 
 create_table(ChannelId, ProductId, _Config) ->
-    case dgiot_bridge:get_product_info(ProductId) of
-        {ok, Product} ->
-            case dgiot_tdengine_schema:get_schema(ChannelId, Product) of
-                ignore ->
-                    ?LOG(debug, "Create Table ignore, ChannelId:~p, ProductId:~p", [ChannelId, Product]);
-                Schema ->
-                    TableName = ?Table(ProductId),
-                    case dgiot_tdengine:create_schemas(ChannelId, Schema#{<<"tableName">> => TableName}) of
-                        {error, Reason} ->
-                            ?LOG(error, "Create Table[~s] Fail, Schema:~p, Reason:~p", [TableName, Schema, Reason]);
-                        {ok, #{<<"affected_rows">> := _}} ->
-                            %% @todo 一个产品只能挂一个TDengine?
-                            dgiot_data:insert({ProductId, ?TYPE}, ChannelId),
-                            ?LOG(debug, "Create Table[~s] Succ, Schema:~p", [TableName, Schema]);
-                        {ok, #{<<"code">> := 0, <<"column_meta">> := _}} ->
-                            %% @todo 一个产品只能挂一个TDengine?
-                            dgiot_data:insert({ProductId, ?TYPE}, ChannelId),
-                            ?LOG(debug, "Create Table[~s] Succ, Schema:~p", [TableName, Schema]);
-                        {ok, #{<<"code">> := 904, <<"desc">> := _Desc}} ->
-                            %%                            io:format("~p ~p Desc ~p ~n Schema = ~p.~n", [?FILE, ?LINE, _Desc, Schema#{<<"tableName">> => TableName}]),
-                            ok;
-                        {ok, #{<<"code">> := Code, <<"desc">> := Desc}} ->
-                            ?LOG(debug, "Create Table[~s] failed, Code:~p Desc:~p", [TableName, Code, Desc])
-                    end
-            end;
-        {error, Reason} ->
-            ?LOG(error, "Create Table Error, ~p ~p", [Reason, ProductId])
+    ?LOG(info, ">>> create_table for product ~p", [ProductId]),
+    try
+        case dgiot_bridge:get_product_info(ProductId) of
+            {ok, Product} ->
+                Database = dgiot_tdengine:get_database(ChannelId, ProductId),
+                TableName = ?Table(ProductId),
+                AllColumns = dgiot_tdengine_schema:extract_columns(Product),
+                ?LOG(info, ">>> Extracted ~p columns for product ~p", [length(AllColumns), ProductId]),
+                case AllColumns of
+                    [] ->
+                        % 无存储字段 -> 创建包含 dummy 列的最小表，以满足 TDengine 至少一列普通列的要求
+                        ?LOG(info, "Product ~p has no storage columns, creating minimal table with dummy column", [ProductId]),
+                        BaseSql = <<"CREATE STABLE IF NOT EXISTS ", TableName/binary,
+                                    " (createdat TIMESTAMP, dummy INT) TAGS (devaddr NCHAR(64));">>,
+                        dgiot_tdengine:batch_sql(ChannelId, Database, BaseSql);
+                    _ ->
+                        ?LOG(info, ">>> About to call create_stable_by_columns with Database=~p, TableName=~p", [Database, TableName]),
+                        Result = dgiot_tdengine_schema:create_stable_by_columns(ChannelId, ProductId, Database, TableName, AllColumns),
+                        ?LOG(info, ">>> create_stable_by_columns result for product ~p: ~p", [ProductId, Result])
+                end;
+            {error, Reason} ->
+                ?LOG(error, ">>> Failed to get product info for ~p: ~p", [ProductId, Reason])
+        end
+    catch
+        Class:CatchReason:Stacktrace ->
+            ?LOG(error, ">>> Exception in create_table for product ~p: ~p:~p~n~p", [ProductId, Class, CatchReason, Stacktrace])
     end.
 
 

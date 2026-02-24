@@ -18,7 +18,7 @@
 %% 统一处理单播、广播、多播协议
 -module(dgiot_udp_protocol).
 -author("johnliu").
--include("../../include/logger.hrl").
+-include("logger.hrl").
 
 %% API导出
 -export([
