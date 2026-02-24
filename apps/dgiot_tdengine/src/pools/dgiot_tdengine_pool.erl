@@ -31,7 +31,6 @@ login(ChannelId, #{<<"username">> := UserName,
 
 %% WebSocket
 insert_sql(#{<<"driver">> := <<"WS">>, <<"ws_pid">> := ConnPid, <<"ws_ref">> := StreamRef} = _Context, _Action, Sql) when byte_size(Sql) > 0 ->
-%%    io:format("~s ~p insert_sql = ~p.~n", [?FILE, ?LINE, Sql]),
     Req_id =
         case get(req_id) of
             undefined ->
@@ -50,13 +49,6 @@ insert_sql(#{<<"driver">> := <<"WS">>, <<"ws_pid">> := ConnPid, <<"ws_ref">> := 
         {ws, {text, Data}} ->
             case catch dgiot_json:decode(Data, [return_maps]) of
                 #{<<"code">> := _} = R ->
-%%                    case maps:get(<<"channel">>, Context, <<"">>) of
-%%                        <<"">> ->
-%%%%                            ?LOG(debug, "Execute (~ts) ", [unicode:characters_to_list(Sql)]);
-%%                            pass;
-%%                        ChannelId ->
-%%                            dgiot_bridge:send_log(ChannelId, "Execute (~ts) ~p", [unicode:characters_to_list(Sql), dgiot_json:encode(R)])
-%%                    end,
                     {ok, R};
                 _ ->
                     {error, Data}
@@ -73,54 +65,21 @@ insert_sql(_Context, _Action, _Sql) ->
 
 %% Action 用来区分数据库操作语句类型(DQL、DML、DDL、DCL)
 run_sql(#{<<"url">> := Url, <<"username">> := UserName, <<"password">> := Password} = _Context, _Action, Sql) when byte_size(Sql) > 0 ->
-%%    io:format("Url = ~p, UserName = ~p, Password = ~p.~n", [Url, UserName, Password]),
-%%    io:format("~s ~p Sql = ~p.~n", [?FILE, ?LINE, Sql]),
     case dgiot_tdengine_http:request(Url, UserName, Password, Sql) of
         {ok, #{<<"code">> := 0, <<"column_meta">> := Column_meta, <<"data">> := Data} = Result} ->
             NewData = get_data(Column_meta, Data),
-%%            case maps:get(<<"channel">>, Context, <<"">>) of
-%%                <<"">> ->
-%%%%                    ?LOG(debug, "Execute ~p (~ts) ~p", [Url, unicode:characters_to_list(Sql), NewData]);
-%%                    pass;
-%%                ChannelId ->
-%%                    dgiot_bridge:send_log(ChannelId, "Execute ~p (~ts) ~p", [Url, unicode:characters_to_list(Sql), dgiot_json:encode(NewData)])
-%%            end,
             {ok, Result#{<<"results">> => NewData}};
-        {ok, #{<<"code">> := 9826} = Reason} ->
+        {ok, #{<<"code">> := 0} = Result} ->
+            {ok, Result};
+        {ok, #{<<"code">> := Code} = Reason} when Code =/= 0 ->
             {error, Reason};
         {ok, Result} ->
-%%            case maps:get(<<"channel">>, Context, <<"">>) of
-%%                <<"">> ->
-%%%%                    ?LOG(debug, "Execute ~p (~ts) ~p", [Url, unicode:characters_to_list(Sql), Result]);
-%%                    pass;
-%%                ChannelId ->
-%%                    dgiot_bridge:send_log(ChannelId, "Execute ~p (~ts) ~p", [Url, unicode:characters_to_list(Sql), dgiot_json:encode(Result)])
-%%            end,
             {ok, Result};
-        {error, #{<<"code">> := 896} = Reason} ->
-            {ok, Reason#{<<"affected_rows">> => 0}};
         {error, Reason} ->
             {error, Reason}
     end;
-
 run_sql(_Context, _Action, _Sql) ->
     ok.
-
-
-%%    {ok, #{<<"code">> => 0,
-%%    <<"column_meta">> => [
-%%                   [<<"createdat">>, <<"TIMESTAMP">>, 8],
-%%                   [<<"energy">>, <<"FLOAT">>, 4]
-%%              ],
-%%    <<"data">> => [
-%%                   [<<"2023-01-06T11:41:17.901Z">>, 6729]
-%%               ],
-%%    <<"rows">> => 1}
-%%    },
-%%
-%%    {ok, #{<<"results">> =>
-%%    [#{<<"createdat">> => <<"2022-11-10 18:30:04.578">>,
-%%    <<"online">> => 1}]}},
 
 get_data(Column_meta, Data) ->
     get_data(Column_meta, Data, []).
@@ -141,24 +100,3 @@ get_column([], [], Acc) ->
 get_column([Column_meta | Cest], [Value | Rest], Acc) ->
     [Field | _] = Column_meta,
     get_column(Cest, Rest, Acc#{Field => Value}).
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -19,7 +19,7 @@
 -module(dgiot_udp_session).
 -author("johnliu").
 -behaviour(gen_server).
--include("../../include/logger.hrl").
+-include("logger.hrl").
 
 %% API导出
 -export([
@@ -100,7 +100,7 @@ send_multicast(ClientPid, MulticastGroup, Port, Message) ->
 
 %% @doc 初始化会话
 init(Args) ->
-    io:format("~s ~p Args = ~p.~n", [?FILE, ?LINE, Args]),
+    io:format("~s ~p [UDP_SESSION] Args = ~p.~n", [?FILE, ?LINE, Args]),
     
     % 处理参数类型，支持map、proplists和混合类型
     {Mode, Mod, Options, UserState} = case Args of
@@ -171,17 +171,29 @@ init(Args) ->
             end
     end,
     
-    io:format("~s ~p Parsed: Mode=~p, Mod=~p, Options=~p, UserState=~p~n", 
+    io:format("~s ~p [UDP_SESSION] Parsed: Mode=~p, Mod=~p, Options=~p, UserState=~p~n", 
               [?FILE, ?LINE, Mode, Mod, Options, UserState]),
+    
+    % 检查是否有多播组配置
+    MulticastGroups = proplists:get_value(multicast_groups, Options, []),
+    io:format("~s ~p [UDP_SESSION] Multicast groups from options: ~p~n", 
+              [?FILE, ?LINE, MulticastGroups]),
     
     case dgiot_udp_protocol:create_socket(Options) of
         {ok, Socket} ->
+            io:format("~s ~p [UDP_SESSION] Socket created successfully: ~p~n", 
+                     [?FILE, ?LINE, Socket]),
+            
+            % 加入多播组（如果有配置）
+            JoinedGroups = join_multicast_groups(Socket, MulticastGroups),
+            
             State = #state{
                 mode = Mode,
                 socket = Socket,
                 mod = Mod,
                 options = Options,
-                state = UserState
+                state = UserState,
+                multicast_groups = JoinedGroups
             },
             
             % 如果是服务器模式，调用回调模块的init函数
@@ -189,15 +201,22 @@ init(Args) ->
                 server when Mod =/= undefined ->
                     case Mod:init(UserState) of
                         {ok, NewUserState} ->
+                            io:format("~s ~p [UDP_SESSION] Callback module init success~n", 
+                                     [?FILE, ?LINE]),
                             {ok, State#state{state = NewUserState}};
                         {stop, Reason} ->
+                            io:format("~s ~p [UDP_SESSION] Callback module init failed: ~p~n", 
+                                     [?FILE, ?LINE, Reason]),
                             {stop, Reason}
                     end;
                 _ ->
+                    io:format("~s ~p [UDP_SESSION] Session initialized successfully~n", 
+                             [?FILE, ?LINE]),
                     {ok, State}
             end;
         {error, Reason} ->
-            io:format("~s ~p Socket creation failed: ~p~n", [?FILE, ?LINE, Reason]),
+            io:format("~s ~p [UDP_SESSION] Socket creation failed: ~p~n", 
+                     [?FILE, ?LINE, Reason]),
             {stop, Reason}
     end.
 
@@ -313,3 +332,29 @@ terminate(_Reason, #state{socket = Socket}) ->
 %% @doc 代码变更
 code_change(_OldVsn, State, _Extra) ->
     {ok, State}.
+
+%%%===================================================================
+%%% 内部函数
+%%%===================================================================
+
+%% @private 加入多播组列表
+join_multicast_groups(Socket, MulticastGroups) ->
+    io:format("~s ~p [UDP_SESSION] Joining multicast groups: ~p~n", 
+              [?FILE, ?LINE, MulticastGroups]),
+    
+    JoinedGroups = lists:filtermap(fun(Group) ->
+        case dgiot_udp_multicast:join_multicast_group(Socket, Group) of
+            ok ->
+                io:format("~s ~p [UDP_SESSION] ✓ Successfully joined multicast group: ~p~n", 
+                         [?FILE, ?LINE, Group]),
+                {true, Group};
+            Error ->
+                io:format("~s ~p [UDP_SESSION] ✗ Failed to join multicast group ~p: ~p~n", 
+                         [?FILE, ?LINE, Group, Error]),
+                false
+        end
+    end, MulticastGroups),
+    
+    io:format("~s ~p [UDP_SESSION] Total joined groups: ~p~n", 
+              [?FILE, ?LINE, length(JoinedGroups)]),
+    JoinedGroups.

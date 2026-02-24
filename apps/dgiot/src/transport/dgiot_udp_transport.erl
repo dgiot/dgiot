@@ -18,7 +18,7 @@
 %% 纯UDP套接字操作，不包含任何业务逻辑
 -module(dgiot_udp_transport).
 -author("johnliu").
--include("../../include/logger.hrl").
+-include("logger.hrl").
 
 %% API导出
 -export([
