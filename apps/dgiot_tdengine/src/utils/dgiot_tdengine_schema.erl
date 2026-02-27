@@ -28,53 +28,76 @@ extract_columns(Product) ->
     Properties = maps:get(<<"properties">>, Thing, []),
     Tags = maps:get(<<"tags">>, Thing, []),
     
-    AllFields = lists:foldl(fun(Prop, Acc) ->
+    % 收集所有字段，以清洗后的名称为键，类型为值，用 maps 自动去重
+    AllFieldsMap = lists:foldl(fun(Prop, Acc) ->
         case dgiot_tdengine_field:get_field(Prop) of
             pass -> Acc;
-            {Name, Type} -> [{Name, Type} | Acc]
+            {Name, Type} -> Acc#{Name => Type}
         end
-    end, [], Properties ++ Tags),
+    end, #{}, Properties ++ Tags),
     
-    % 去重（按字段名）
-    Unique = lists:foldl(fun({Name, Type}, Acc) ->
-        case lists:keyfind(Name, 1, Acc) of
-            false -> [{Name, Type} | Acc];
-            _ -> Acc
-        end
-    end, [], AllFields),
-    
-    % 过滤掉 devaddr，因为它将作为标签
-    lists:filter(fun({Name, _}) -> Name =/= <<"devaddr">> end, Unique).
+    % 转换为列表，并过滤掉 devaddr
+    lists:filter(fun({Name, _}) -> Name =/= <<"devaddr">> end, maps:to_list(AllFieldsMap)).
 
 %% 逐字段创建超级表（5参数版本）
-create_stable_by_columns(ChannelId, _ProductId, Database, TableName, AllColumns) ->
+create_stable_by_columns(ChannelId, ProductId, Database, TableName, AllColumns) ->
     ?LOG(info, ">>> create_stable_by_columns: Database=~s, Table=~s, total columns=~p", 
          [Database, TableName, length(AllColumns)]),
+    {FinalColumns, _FreshFlag} = case dgiot_parse:get_object(<<"Product">>, ProductId) of
+        {ok, LatestProduct} ->
+            ?LOG(info, ">>> Fetched latest product from Parse, extracting columns"),
+            NewCols = extract_columns(LatestProduct),
+            if length(NewCols) =/= length(AllColumns) ->
+                ?LOG(info, ">>> Cache mismatch: passed ~p columns, fresh ~p columns, using fresh", 
+                     [length(AllColumns), length(NewCols)]),
+                {NewCols, true};
+               true ->
+                {AllColumns, false}
+            end;
+        {error, Reason} ->
+            ?LOG(error, ">>> Failed to fetch latest product from Parse: ~p, using passed columns", [Reason]),
+            {AllColumns, false}
+    end,
+    UniqueColumns = lists:foldl(fun({Name, Type}, Acc) ->
+        Acc#{Name => Type}
+    end, #{}, FinalColumns),
+    UniqueList0 = maps:to_list(UniqueColumns),
+    UniqueList = lists:filter(fun({Name, _}) -> Name =/= <<"createdat">> end, UniqueList0),
+    ColNames = [Name || {Name,_} <- UniqueList],
+    ?LOG(info, ">>> UniqueList column names (count=~p): ~p", [length(ColNames), ColNames]),
+    ContainsCreatedat = lists:keymember(<<"createdat">>, 1, UniqueList0),
+    ?LOG(info, ">>> UniqueList originally contained createdat? ~p", [ContainsCreatedat]),
+    if length(UniqueList) =/= length(FinalColumns) ->
+        ?LOG(info, ">>> Duplicate columns detected and removed, original ~p, unique ~p", [length(FinalColumns), length(UniqueList)]);
+       true -> ok
+    end,
     case table_exists(ChannelId, Database, TableName) of
         true ->
             ExistingColumns = get_existing_columns(ChannelId, Database, TableName),
-            NewColumns = [Col || {Name, _}=Col <- AllColumns, not lists:keymember(Name, 1, ExistingColumns)],
+            NewColumnsToAdd = [Col || {Name, _}=Col <- UniqueList, not lists:keymember(Name, 1, ExistingColumns)],
             ?LOG(info, ">>> Table exists, existing columns: ~p, new columns to add: ~p", 
-                 [length(ExistingColumns), length(NewColumns)]),
-            add_columns(ChannelId, Database, TableName, NewColumns);
+                 [length(ExistingColumns), length(NewColumnsToAdd)]),
+            add_columns(ChannelId, Database, TableName, NewColumnsToAdd);
         false ->
-            % 表不存在，一次性创建包含所有列的完整表
-            ColumnsDef = list_columns_def(AllColumns),
-            ?LOG(info, ">>> Table does not exist, creating full table with columns: ~s", [ColumnsDef]),
-            CreateSql = <<"CREATE STABLE IF NOT EXISTS ", TableName/binary,
-                          " (createdat TIMESTAMP, ", ColumnsDef/binary, ") TAGS (devaddr NCHAR(64));">>,
-            ?LOG(info, ">>> Executing full table creation SQL: ~s", [CreateSql]),
-            case dgiot_tdengine:batch_sql(ChannelId, Database, CreateSql) of
-                {ok, Result} ->
-                    ?LOG(info, ">>> Full table creation succeeded: ~p", [Result]),
-                    ok;
-                {error, Reason} ->
-                    ?LOG(error, ">>> Full table creation failed: ~p", [Reason]),
-                    {error, Reason}
+            ?LOG(info, ">>> Table does not exist, creating base table with createdat and first column..."),
+            % 选择第一列作为基表的附加列
+            [FirstColTuple | _] = UniqueList,
+            BaseColumnsDef = list_columns_def([FirstColTuple]),
+            BaseSql = <<"CREATE STABLE IF NOT EXISTS ", TableName/binary,
+                        " (createdat TIMESTAMP, ", BaseColumnsDef/binary, ") TAGS (devaddr NCHAR(64));">>,
+            ?LOG(error, ">>> Executing base SQL: ~s", [BaseSql]),
+            case dgiot_tdengine:batch_sql(ChannelId, Database, BaseSql) of
+                {ok, _Result} ->
+                    ?LOG(info, ">>> Base table created successfully, now adding remaining columns..."),
+                    % 添加剩余列（不包括第一列）
+                    RemainingColumns = lists:filter(fun({Name, _}) -> Name =/= element(1, FirstColTuple) end, UniqueList),
+                    add_columns(ChannelId, Database, TableName, RemainingColumns);
+                {error, _Reason} ->
+                    ?LOG(error, ">>> Base table creation failed"),
+                    {error, _Reason}
             end
     end.
 
-%% 将列列表转换为 "col1 type1, col2 type2, ..." 格式
 list_columns_def(Columns) ->
     lists:foldr(fun({Name, #{<<"type">> := Type}}, Acc) ->
         case Acc of
@@ -105,7 +128,6 @@ add_columns(ChannelId, Database, TableName, [{Name, #{<<"type">> := Type}} | Res
 table_exists(ChannelId, Database, TableName) ->
     ?LOG(debug, ">>> Checking existence of table ~s in database ~s", [TableName, Database]),
     Sql = <<"SHOW STABLES LIKE '", TableName/binary, "';">>,
-    ?LOG(debug, ">>> Executing SQL: ~s", [Sql]),
     case dgiot_tdengine:batch_sql(ChannelId, Database, Sql) of
         {ok, #{<<"results">> := [_|_]}} ->
             ?LOG(debug, ">>> Table exists"),
@@ -122,10 +144,8 @@ table_exists(ChannelId, Database, TableName) ->
 get_existing_columns(ChannelId, Database, TableName) ->
     ?LOG(debug, ">>> Fetching existing columns for ~s.~s", [Database, TableName]),
     Sql = <<"DESCRIBE ", TableName/binary, ";">>,
-    ?LOG(debug, ">>> Executing SQL: ~s", [Sql]),
     case dgiot_tdengine:batch_sql(ChannelId, Database, Sql) of
         {ok, #{<<"results">> := Rows}} ->
-            % TDengine DESCRIBE 返回的列固定为：field, type, length, note, encode, compress, level（全部小写）
             Cols = [maps:get(<<"field">>, Row) || Row <- Rows, maps:get(<<"note">>, Row, <<"">>) =/= <<"TAG">>],
             ?LOG(debug, ">>> Existing columns: ~p", [Cols]),
             Cols;
